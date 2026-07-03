@@ -1,0 +1,245 @@
+'use client';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { X, Paintbrush, Type, Trash2, Check } from 'lucide-react';
+import { useFlowStore } from '@/lib/store';
+import { cn } from '@/lib/utils';
+
+const COLORS = ['#ef4444', '#f59e0b', '#22c55e', '#38bdf8', '#ffffff'];
+
+function useSourceImage(nodeId: string | null): string | null {
+  const nodes = useFlowStore((s) => s.nodes);
+  const edges = useFlowStore((s) => s.edges);
+  if (!nodeId) return null;
+  const edge = edges.find((e) => e.target === nodeId && e.targetHandle === 'image');
+  if (!edge) return null;
+  const source = nodes.find((n) => n.id === edge.source);
+  if (!source) return null;
+  const fromRun = source.data.run.outputs?.[edge.sourceHandle ?? ''];
+  if (fromRun && fromRun.dataType === 'image') return String(fromRun.value);
+  if (source.data.defType === 'input.image' && source.data.params.file)
+    return String(source.data.params.file);
+  return null;
+}
+
+export function AnnotateModal() {
+  const nodeId = useFlowStore((s) => s.annotateNodeId);
+  const setAnnotateNodeId = useFlowStore((s) => s.setAnnotateNodeId);
+  const updateParam = useFlowStore((s) => s.updateParam);
+  const sourceImage = useSourceImage(nodeId);
+
+  const displayRef = useRef<HTMLCanvasElement>(null);
+  const drawRef = useRef<HTMLCanvasElement | null>(null); // layer chú thích
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const drawing = useRef(false);
+  const lastPoint = useRef<{ x: number; y: number } | null>(null);
+
+  const [tool, setTool] = useState<'brush' | 'text'>('brush');
+  const [color, setColor] = useState(COLORS[0]);
+  const [brush, setBrush] = useState(8);
+  const [text, setText] = useState('');
+  const [ready, setReady] = useState(false);
+
+  const redraw = useCallback(() => {
+    const display = displayRef.current;
+    const img = imgRef.current;
+    const layer = drawRef.current;
+    if (!display || !img || !layer) return;
+    const ctx = display.getContext('2d')!;
+    ctx.clearRect(0, 0, display.width, display.height);
+    ctx.drawImage(img, 0, 0);
+    ctx.drawImage(layer, 0, 0);
+  }, []);
+
+  useEffect(() => {
+    if (!nodeId || !sourceImage) return;
+    setReady(false);
+    const img = new Image();
+    if (!sourceImage.startsWith('data:')) img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      imgRef.current = img;
+      const display = displayRef.current;
+      if (!display) return;
+      display.width = img.naturalWidth;
+      display.height = img.naturalHeight;
+      const layer = document.createElement('canvas');
+      layer.width = img.naturalWidth;
+      layer.height = img.naturalHeight;
+      drawRef.current = layer;
+      setReady(true);
+      redraw();
+    };
+    img.src = sourceImage;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodeId, sourceImage]);
+
+  const canvasPoint = (e: React.PointerEvent) => {
+    const display = displayRef.current!;
+    const rect = display.getBoundingClientRect();
+    return {
+      x: ((e.clientX - rect.left) / rect.width) * display.width,
+      y: ((e.clientY - rect.top) / rect.height) * display.height,
+    };
+  };
+
+  const close = () => setAnnotateNodeId(null);
+
+  const save = () => {
+    const display = displayRef.current;
+    if (!display || !nodeId) return;
+    try {
+      updateParam(nodeId, 'annotated', display.toDataURL('image/jpeg', 0.92));
+      close();
+    } catch {
+      useFlowStore.getState().setConnectError('Ảnh bị chặn CORS — không export được. Dùng ảnh upload/output AI.');
+    }
+  };
+
+  useEffect(() => {
+    if (!nodeId) return;
+    const handler = (e: KeyboardEvent) => e.key === 'Escape' && close();
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodeId]);
+
+  if (!nodeId) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-6 backdrop-blur-sm">
+      <div className="flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl">
+        <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3">
+          <Type size={15} className="text-violet-400" />
+          <span className="flex-1 text-sm font-medium text-[var(--t1)]">Annotate — ghi chú lên ảnh</span>
+          <button onClick={close} className="grid h-7 w-7 place-items-center rounded-md text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t2)]">
+            <X size={15} />
+          </button>
+        </div>
+
+        <div className="grid flex-1 place-items-center overflow-auto bg-[var(--bg)] p-4">
+          {sourceImage ? (
+            <canvas
+              ref={displayRef}
+              data-testid="annotate-canvas"
+              className={cn('max-h-[60vh] max-w-full rounded-lg', tool === 'brush' ? 'cursor-crosshair' : 'cursor-text')}
+              style={{ touchAction: 'none' }}
+              onPointerDown={(e) => {
+                if (!ready) return;
+                const p = canvasPoint(e);
+                const layer = drawRef.current!;
+                const ctx = layer.getContext('2d')!;
+                if (tool === 'text') {
+                  if (!text.trim()) return;
+                  const size = Math.max(20, layer.width / 30);
+                  ctx.font = `600 ${size}px system-ui, sans-serif`;
+                  ctx.fillStyle = color;
+                  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+                  ctx.shadowBlur = 6;
+                  ctx.fillText(text, p.x, p.y);
+                  ctx.shadowBlur = 0;
+                  redraw();
+                  return;
+                }
+                drawing.current = true;
+                lastPoint.current = p;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = brush * (layer.width / 800);
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p.x, p.y);
+                ctx.stroke();
+                redraw();
+                e.currentTarget.setPointerCapture?.(e.pointerId);
+              }}
+              onPointerMove={(e) => {
+                if (!drawing.current || tool !== 'brush') return;
+                const p = canvasPoint(e);
+                const ctx = drawRef.current!.getContext('2d')!;
+                ctx.beginPath();
+                ctx.moveTo(lastPoint.current!.x, lastPoint.current!.y);
+                ctx.lineTo(p.x, p.y);
+                ctx.stroke();
+                lastPoint.current = p;
+                redraw();
+              }}
+              onPointerUp={() => {
+                drawing.current = false;
+                lastPoint.current = null;
+              }}
+            />
+          ) : (
+            <p className="max-w-sm text-center text-sm leading-relaxed text-[var(--t4)]">
+              Chưa có ảnh nguồn — nối ảnh vào input <span className="text-[var(--t2)]">Image</span> rồi mở lại.
+            </p>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 border-t border-[var(--border)] px-4 py-3">
+          <button
+            onClick={() => setTool('brush')}
+            className={cn(
+              'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs',
+              tool === 'brush' ? 'border-violet-500/50 bg-violet-500/10 text-violet-300' : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
+            )}
+          >
+            <Paintbrush size={13} /> Vẽ
+          </button>
+          <button
+            onClick={() => setTool('text')}
+            className={cn(
+              'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs',
+              tool === 'text' ? 'border-violet-500/50 bg-violet-500/10 text-violet-300' : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
+            )}
+          >
+            <Type size={13} /> Text
+          </button>
+          {tool === 'text' && (
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Gõ chú thích rồi click lên ảnh…"
+              className="w-52 rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] outline-none focus:border-violet-500/60"
+            />
+          )}
+          <div className="flex items-center gap-1.5">
+            {COLORS.map((c) => (
+              <button
+                key={c}
+                onClick={() => setColor(c)}
+                className={cn('h-5 w-5 rounded-full border-2', color === c ? 'border-white' : 'border-transparent')}
+                style={{ background: c }}
+              />
+            ))}
+          </div>
+          {tool === 'brush' && (
+            <label className="flex items-center gap-2 text-xs text-[var(--t3)]">
+              Size
+              <input type="range" min={2} max={30} value={brush} onChange={(e) => setBrush(Number(e.target.value))} className="w-24 accent-violet-500" />
+            </label>
+          )}
+          <button
+            onClick={() => {
+              const layer = drawRef.current;
+              if (!layer) return;
+              layer.getContext('2d')!.clearRect(0, 0, layer.width, layer.height);
+              redraw();
+            }}
+            className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--t3)] hover:bg-[var(--hover)]"
+          >
+            <Trash2 size={13} /> Clear
+          </button>
+          <div className="flex-1" />
+          <button
+            onClick={save}
+            disabled={!sourceImage || !ready}
+            className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-40"
+          >
+            <Check size={13} /> Lưu
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

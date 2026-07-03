@@ -2,26 +2,91 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ===== Theme tokens — dark mặc định, light kem đá ấm (quiet luxury) ===== */
+:root,
+:root[data-theme='dark'] {
+  --bg: #0d0d0f;
+  --panel: #111114;
+  --card: #16161a;
+  --field: #18181b;
+  --hover: #27272a;
+  --border: #26262c;
+  --border-strong: #3f3f46;
+  --t1: #f4f4f5;
+  --t2: #d4d4d8;
+  --t3: #a1a1aa;
+  --t4: #71717a;
+  --t5: #52525b;
+  --dots: #2a2a31;
+  --minimap-mask: rgba(13, 13, 15, 0.7);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root[data-theme='light'] {
+  --bg: #efece6;
+  --panel: #f7f5f1;
+  --card: #ffffff;
+  --field: #f1efe9;
+  --hover: #e7e4dd;
+  --border: #ddd9d0;
+  --border-strong: #c2bcb0;
+  --t1: #26231e;
+  --t2: #4b463d;
+  --t3: #7a746a;
+  --t4: #98928a;
+  --t5: #b3ada3;
+  --dots: #d9d5cb;
+  --minimap-mask: rgba(239, 236, 230, 0.72);
+}
+
+html,
+body {
+  height: 100%;
+  overscroll-behavior: none;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--t1);
+  background: var(--bg);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  transition: background-color 0.4s ease;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+/* scrollbar tối giản cho panel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* React Flow — theo theme */
+.react-flow__edge-path {
+  stroke-width: 1.5;
+}
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #a78bfa !important;
+  stroke-width: 2.5;
+}
+.react-flow__handle {
+  cursor: crosshair;
+}
+.react-flow__handle:hover {
+  filter: brightness(1.4);
+  transform: scale(1.25);
+}
+.react-flow__attribution {
+  background: transparent;
+  color: var(--t5);
+}
+.react-flow__minimap-mask {
+  fill: var(--minimap-mask);
+}
+.react-flow__selection {
+  background: rgba(139, 124, 247, 0.08);
+  border: 1px solid rgba(139, 124, 247, 0.4);
 }
