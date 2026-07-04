@@ -1,7 +1,9 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { Loader2, CircleAlert, CircleCheck, Clock3 } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
+import { fadeRise } from '@/lib/motion';
 
 function timeAgo(ts: number) {
   const s = Math.floor((Date.now() - ts) / 1000);
@@ -16,7 +18,14 @@ export function TasksDropdown() {
   const jobs = useFlowStore((s) => s.jobs);
 
   return (
-    <div className="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl shadow-black/60">
+    // material card + fade-rise (Header bọc trong AnimatePresence)
+    <motion.div
+      variants={fadeRise}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      className="mat-card absolute right-0 top-full z-50 mt-2 w-80 origin-top-right overflow-hidden rounded-[14px] border border-[var(--border)] shadow-pop"
+    >
       <div className="border-b border-[var(--border)] px-3 py-2 text-xs font-medium text-[var(--t2)]">
         Tasks
       </div>
@@ -28,7 +37,7 @@ export function TasksDropdown() {
         )}
         {jobs.map((j) => (
           <div key={j.id} className="flex items-center gap-2.5 border-b border-[var(--border)] px-3 py-2.5 last:border-0">
-            {j.status === 'running' && <Loader2 size={14} className="shrink-0 animate-spin text-violet-400" />}
+            {j.status === 'running' && <Loader2 size={14} className="shrink-0 animate-spin text-[var(--accent)]" />}
             {j.status === 'queued' && <Clock3 size={14} className="shrink-0 text-[var(--t4)]" />}
             {j.status === 'done' && <CircleCheck size={14} className="shrink-0 text-emerald-400" />}
             {j.status === 'error' && <CircleAlert size={14} className="shrink-0 text-red-400" />}
@@ -43,6 +52,6 @@ export function TasksDropdown() {
           </div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 }

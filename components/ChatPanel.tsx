@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { X, Send } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
+import { sheetSlide, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 interface Msg {
@@ -65,17 +67,25 @@ export function ChatPanel() {
   if (!open) return null;
 
   return (
-    <aside className="z-20 flex w-72 flex-col border-l border-[var(--border)] bg-[var(--panel)]">
+    // trượt từ cạnh phải (panel nằm bên phải) + material
+    <motion.aside
+      variants={sheetSlide('right')}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      className="mat-panel z-20 flex w-72 flex-col border-l border-[var(--border)]"
+    >
       <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2.5">
         <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--t3)]">
           Chat team
         </span>
-        <button
+        <motion.button
+          {...pressableIcon}
           onClick={() => setOpen(false)}
-          className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t2)]"
+          className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
         >
           <X size={13} />
-        </button>
+        </motion.button>
       </div>
 
       {/* online */}
@@ -98,19 +108,25 @@ export function ChatPanel() {
           <p className="pt-6 text-center text-xs text-[var(--t5)]">Chưa có tin nhắn — chào team đi 👋</p>
         )}
         {messages.map((m) => (
-          <div key={m.id} className={cn('flex flex-col', m.mine ? 'items-end' : 'items-start')}>
+          <motion.div
+            key={m.id}
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
+            className={cn('flex flex-col', m.mine ? 'items-end' : 'items-start')}
+          >
             {!m.mine && <span className="mb-0.5 px-1 text-[9px] text-[var(--t5)]">{m.userName}</span>}
             <div
               className={cn(
-                'max-w-[85%] whitespace-pre-wrap break-words rounded-xl px-2.5 py-1.5 text-xs leading-relaxed',
+                'max-w-[85%] whitespace-pre-wrap break-words rounded-[14px] px-2.5 py-1.5 text-xs leading-relaxed',
                 m.mine
-                  ? 'rounded-br-sm bg-violet-600 text-white'
+                  ? 'rounded-br-sm bg-[var(--accent-strong)] text-white'
                   : 'rounded-bl-sm bg-[var(--hover)] text-[var(--t1)]',
               )}
             >
               {m.text}
             </div>
-          </div>
+          </motion.div>
         ))}
         <div ref={bottomRef} />
       </div>
@@ -128,15 +144,16 @@ export function ChatPanel() {
             }
           }}
           placeholder="Nhắn team… (Enter gửi)"
-          className="max-h-24 min-w-0 flex-1 resize-none rounded-lg border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none focus:border-violet-500/60"
+          className="max-h-24 min-w-0 flex-1 resize-none rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
         />
-        <button
+        <motion.button
+          {...pressableIcon}
           onClick={send}
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-violet-600 text-white hover:bg-violet-500"
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-[var(--accent-strong)] text-white transition-colors hover:bg-[var(--accent)]"
         >
           <Send size={13} />
-        </button>
+        </motion.button>
       </div>
-    </aside>
+    </motion.aside>
   );
 }

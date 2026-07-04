@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { X, Upload, Trash2, Loader2 } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
+import { sheetSlide, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 export const ASSET_MIME = 'application/interiorflow-asset-url';
@@ -57,17 +59,24 @@ export function LibraryPanel() {
   );
 
   return (
-    <aside className="z-20 flex w-72 flex-col border-r border-[var(--border)] bg-[var(--panel)]">
+    <motion.aside
+      variants={sheetSlide('left')}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      className="mat-panel z-20 flex w-72 flex-col border-r border-[var(--border)]"
+    >
       <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2.5">
         <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--t3)]">
           Thư viện <span className="text-emerald-400">(team)</span>
         </span>
-        <button
+        <motion.button
+          {...pressableIcon}
           onClick={() => setPanel(null)}
-          className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t2)]"
+          className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
         >
           <X size={13} />
-        </button>
+        </motion.button>
       </div>
 
       <div className="flex flex-wrap gap-1 px-2.5 pt-2.5">
@@ -76,9 +85,9 @@ export function LibraryPanel() {
             key={c}
             onClick={() => setCat(c)}
             className={cn(
-              'rounded-md px-2 py-1 text-[10px] transition',
+              'rounded-md px-2 py-1 text-[10px] transition-colors',
               cat === c
-                ? 'bg-violet-500/15 text-violet-300'
+                ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
                 : 'text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t2)]',
             )}
           >
@@ -89,14 +98,14 @@ export function LibraryPanel() {
 
       <div className="space-y-1.5 p-2.5">
         <input
-          className="w-full rounded-md border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none focus:border-violet-500/60"
+          className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
           placeholder="Tìm theo tên / tag…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <div className="flex gap-1.5">
           <input
-            className="min-w-0 flex-1 rounded-md border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none focus:border-violet-500/60"
+            className="min-w-0 flex-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
             placeholder="Tag khi upload: NCC, mã, style…"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
@@ -137,14 +146,15 @@ export function LibraryPanel() {
               }
             }}
           />
-          <button
+          <motion.button
+            {...pressableIcon}
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
             title={`Upload vào "${cat}" — cả team thấy`}
-            className="flex shrink-0 items-center gap-1 rounded-md bg-violet-600 px-2.5 text-[11px] font-medium text-white hover:bg-violet-500 disabled:opacity-50"
+            className="flex shrink-0 items-center gap-1 rounded-[10px] bg-[var(--accent-strong)] px-2.5 text-[11px] font-medium text-white transition-colors hover:bg-[var(--accent)] disabled:opacity-50"
           >
             {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />} Upload
-          </button>
+          </motion.button>
         </div>
       </div>
 
@@ -155,14 +165,17 @@ export function LibraryPanel() {
           </p>
         )}
         {filtered.map((item) => (
-          <div
+          <motion.div
             key={item.id}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
             draggable
             onDragStart={(e) => {
               e.dataTransfer.setData(ASSET_MIME, item.url);
               e.dataTransfer.effectAllowed = 'copy';
             }}
-            className="group cursor-grab overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--field)] active:cursor-grabbing"
+            className="group cursor-grab overflow-hidden rounded-[10px] border border-[var(--border)] bg-[var(--field)] active:cursor-grabbing"
             title={`${item.name}${item.tags ? ` · ${item.tags}` : ''} · up bởi ${item.uploader} — kéo ra canvas`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -187,13 +200,13 @@ export function LibraryPanel() {
                 </button>
               )}
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 
       <p className="border-t border-[var(--border)] px-3 py-2 text-[9px] leading-relaxed text-[var(--t5)]">
         Thư viện chung cả team (lưu server) · kéo asset ra canvas → tự tạo node Import Image.
       </p>
-    </aside>
+    </motion.aside>
   );
 }

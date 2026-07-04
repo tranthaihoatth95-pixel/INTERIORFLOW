@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { X, Plus, Trash2, FolderPlus, Link2 } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import {
@@ -13,6 +14,7 @@ import {
   type FlowMeta,
   type ProjectMeta,
 } from '@/lib/workspace';
+import { sheetSlide, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 function timeAgo(iso: string) {
@@ -48,12 +50,19 @@ export function FlowsPanel() {
   if (panel !== 'flows') return null;
 
   return (
-    <aside className="z-20 flex w-72 flex-col border-r border-[var(--border)] bg-[var(--panel)]">
+    <motion.aside
+      variants={sheetSlide('left')}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      className="mat-panel z-20 flex w-72 flex-col border-r border-[var(--border)]"
+    >
       <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2.5">
         <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--t3)]">
           Projects & Flows
         </span>
-        <button
+        <motion.button
+          {...pressableIcon}
           title="Tạo project"
           onClick={async () => {
             const name = prompt('Tên project / khách hàng:');
@@ -62,27 +71,29 @@ export function FlowsPanel() {
               refresh();
             }
           }}
-          className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t2)]"
+          className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
         >
           <FolderPlus size={13} />
-        </button>
-        <button
+        </motion.button>
+        <motion.button
+          {...pressableIcon}
           title="Flow mới"
           onClick={async () => {
             const id = await createFlow('Untitled flow');
             await openFlow(id);
             refresh();
           }}
-          className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t2)]"
+          className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
         >
           <Plus size={14} />
-        </button>
-        <button
+        </motion.button>
+        <motion.button
+          {...pressableIcon}
           onClick={() => setPanel(null)}
-          className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t2)]"
+          className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
         >
           <X size={13} />
-        </button>
+        </motion.button>
       </div>
 
       <div className="flex-1 space-y-1.5 overflow-y-auto p-2.5">
@@ -90,13 +101,16 @@ export function FlowsPanel() {
           <p className="px-1 pt-4 text-center text-xs text-[var(--t5)]">Chưa có flow nào.</p>
         )}
         {flows.map((f) => (
-          <div
+          <motion.div
             key={f.id}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.26, ease: [0.32, 0.72, 0, 1] }}
             className={cn(
-              'group rounded-lg border px-2.5 py-2 transition',
+              'group rounded-[10px] border px-2.5 py-2 transition-colors',
               f.id === currentFlowId
-                ? 'border-violet-500/50 bg-violet-500/10'
-                : 'border-[var(--border)] bg-[var(--field)] hover:border-violet-500/30',
+                ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)]'
+                : 'border-[var(--border)] bg-[var(--field)] hover:border-[var(--accent-ring)]',
             )}
           >
             <div className="flex items-center gap-1.5">
@@ -116,7 +130,7 @@ export function FlowsPanel() {
                     refresh();
                   }
                 }}
-                className="grid h-5 w-5 shrink-0 place-items-center rounded text-[var(--t4)] opacity-0 transition hover:text-red-400 group-hover:opacity-100"
+                className="grid h-5 w-5 shrink-0 place-items-center rounded text-[var(--t4)] opacity-0 transition group-hover:opacity-100 hover:text-red-400"
               >
                 <Trash2 size={11} />
               </button>
@@ -141,13 +155,13 @@ export function FlowsPanel() {
                 v{f.version} · {timeAgo(f.updatedAt)}
               </span>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 
       <p className="border-t border-[var(--border)] px-3 py-2 text-[9px] leading-relaxed text-[var(--t5)]">
         Autosave 2s lên server · Run flow tự snapshot version · Share bật ở nút Share trên header.
       </p>
-    </aside>
+    </motion.aside>
   );
 }

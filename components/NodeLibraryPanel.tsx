@@ -1,10 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { X, GripVertical } from 'lucide-react';
 import { NODE_DEFINITIONS } from '@/lib/nodes/registry';
 import { useFlowStore } from '@/lib/store';
 import { CATEGORY_META, type NodeCategory } from '@/lib/types';
+import { sheetSlide, staggerList, staggerItem, pressableIcon } from '@/lib/motion';
 
 export const DND_MIME = 'application/interiorflow-node';
 
@@ -33,23 +35,31 @@ export function NodeLibraryPanel() {
   if (panel !== 'library' && panel !== 'search') return null;
 
   return (
-    <aside className="z-20 flex w-64 flex-col border-r border-[var(--border)] bg-[var(--panel)]">
+    // iOS sheet trượt từ trái + material blur
+    <motion.aside
+      variants={sheetSlide('left')}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      className="mat-panel z-20 flex w-64 flex-col border-r border-[var(--border)]"
+    >
       <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2.5">
         <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--t3)]">
           Node Library
         </span>
-        <button
+        <motion.button
+          {...pressableIcon}
           onClick={() => setPanel(null)}
-          className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t2)]"
+          className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
         >
           <X size={13} />
-        </button>
+        </motion.button>
       </div>
 
       <div className="p-2.5">
         <input
           autoFocus={panel === 'search'}
-          className="w-full rounded-md border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none focus:border-violet-500/60"
+          className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
           placeholder="Tìm node…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -63,16 +73,21 @@ export function NodeLibraryPanel() {
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: CATEGORY_META[cat].color }} />
               {CATEGORY_META[cat].label}
             </p>
-            <div className="space-y-1">
+            {/* stagger nhẹ — item hiện lần lượt như list iOS */}
+            <motion.div className="space-y-1" variants={staggerList} initial="hidden" animate="visible">
               {defs.map((def) => (
-                <div
+                <motion.div
                   key={def.type}
+                  variants={staggerItem}
+                  whileHover={{ scale: 1.015 }}
+                  whileTap={{ scale: 0.99 }}
+                  transition={{ duration: 0.14, ease: [0.32, 0.72, 0, 1] }}
                   draggable
                   onDragStart={(e) => {
                     e.dataTransfer.setData(DND_MIME, def.type);
                     e.dataTransfer.effectAllowed = 'move';
                   }}
-                  className="group flex cursor-grab items-start gap-2 rounded-lg border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 transition hover:border-violet-500/40 hover:bg-[var(--field)] active:cursor-grabbing"
+                  className="group flex cursor-grab items-start gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 transition-colors hover:border-[var(--accent-ring)] active:cursor-grabbing"
                   title="Kéo thả vào canvas"
                 >
                   <GripVertical size={13} className="mt-0.5 shrink-0 text-[var(--t5)] group-hover:text-[var(--t4)]" />
@@ -87,9 +102,9 @@ export function NodeLibraryPanel() {
                       {def.creditCost}cr
                     </span>
                   )}
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         ))}
         {groups.length === 0 && (
@@ -99,6 +114,6 @@ export function NodeLibraryPanel() {
           Đủ bộ 20 node nội thất — kéo thả vào canvas để dùng.
         </p>
       </div>
-    </aside>
+    </motion.aside>
   );
 }

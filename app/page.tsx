@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
+import { AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { LeftRail } from '@/components/LeftRail';
@@ -59,12 +60,18 @@ export default function Home() {
         <Header />
         <div className="flex min-h-0 flex-1">
           <LeftRail />
-          <NodeLibraryPanel />
-          <GalleryPanel />
-          <LibraryPanel />
-          <FlowsPanel />
+          {/* panel trái mở/đóng như iOS sheet — AnimatePresence để chạy exit khi đóng */}
+          <AnimatePresence mode="wait">
+            <NodeLibraryPanel />
+            <GalleryPanel />
+            <LibraryPanel />
+            <FlowsPanel />
+          </AnimatePresence>
           <FlowCanvas />
-          <ChatPanel />
+          {/* chat panel bên phải — luồng đóng/mở độc lập */}
+          <AnimatePresence>
+            <ChatPanel />
+          </AnimatePresence>
         </div>
         <MaskPainterModal />
         <AnnotateModal />
