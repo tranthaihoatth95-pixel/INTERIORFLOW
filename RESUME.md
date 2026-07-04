@@ -73,9 +73,22 @@ npx prisma migrate dev   # sau khi đổi schema
 # ⚠️ Đừng chạy `npm run build` khi dev server đang chạy — hỏng .next, phải rm -rf .next
 ```
 
-## 7. Thứ tự làm phiên 11:30 (đề xuất)
-1. Cài `framer-motion` + refactor UI sang Apple HIG (type, spacing, materials, spring motion).
-2. Thêm `DataType='video'` + node `ai.image2video` (Kling qua fal) + provider video.
-3. PWA (manifest + service worker + responsive mobile) → cài lên iPad/điện thoại.
-4. Electron/Tauri wrap → .exe Windows + provider ComfyUI self-host cho máy render.
-5. Commit từng bước.
+## 7. Việc đã CHIA RA CHẠY SONG SONG (2026-07-04, mỗi hạng mục 1 branch riêng, worktree cô lập)
+
+4 agent nền đã được phóng để build 4 hạng mục "code thuần" (không dính phần cứng). Mỗi cái tự `git checkout -b` + commit vào branch của nó. Khi quay lại, kiểm tra branch bằng `git branch -a`, xem diff, rồi **merge theo đúng thứ tự dưới** để tránh xung đột:
+
+| Thứ tự merge | Branch | Nội dung | Ghi chú |
+|---|---|---|---|
+| 1 | `feat/electron` | Đóng gói .exe Windows native (Electron + electron-builder), README-electron.md | Chủ yếu thêm file mới → ít xung đột |
+| 2 | `feat/video-nodes` | Node `ai.image2video` (Kling qua fal), DataType 'video', hiển thị `<video>`, provider video | Đụng types/registry/NodeExtras |
+| 3 | `feat/pwa` | PWA cài lên iPad/Android/điện thoại (manifest + service worker + responsive mobile) | Đụng layout + responsive class |
+| 4 (CUỐI) | `feat/apple-design` | Giao diện chuẩn Apple HIG + motion framer-motion (materials, spring, iOS sheet) | Restyle rộng → **merge cuối**, xung đột ưu tiên bản này về styling |
+
+Cách merge (ví dụ): `git checkout main && git merge feat/electron && git merge feat/video-nodes && git merge feat/pwa && git merge feat/apple-design`. Sau mỗi merge chạy `npm run build` để chắc. Nếu apple-design xung đột ở file component, giữ styling của apple-design + logic của branch kia.
+Xoá worktree thừa sau khi merge: `git worktree prune` + `git worktree list` để kiểm tra.
+
+## 8. Còn lại phải làm TRÊN MÁY CÔNG TY (không chạy được autonomous/cloud)
+1. Cài **ComfyUI + FLUX.1 dev** trên máy render (RTX) → viết `lib/ai/providers/comfyui.ts` → render 0đ, không gửi bản vẽ ra ngoài. Đây là hạng mục giá trị nhất, tận dụng dàn máy Vray/D5.
+2. Build & test file **.exe Windows** thật (feat/electron chỉ cấu hình, chưa build ra .exe vì cần chạy trên Windows).
+3. **Nạp fal.ai** (~$10–20) để chạy AI ảnh/video thật, nghiệm thu flow "Phòng ngủ hoàn chỉnh".
+4. Tạo repo GitHub (private) nếu muốn dùng claude.ai/code cloud thật (máy hiện không có `gh`/token nên phải tạo tay 1 lần).
