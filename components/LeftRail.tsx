@@ -32,7 +32,7 @@ export function LeftRail() {
   const setPanel = useFlowStore((s) => s.setPanel);
 
   return (
-    <nav className="z-20 flex w-12 flex-col items-center gap-1 border-r border-[var(--border)] bg-[var(--panel)] py-2">
+    <nav className="relative z-40 flex w-12 shrink-0 flex-col items-center gap-1 border-r border-[var(--border)] bg-[var(--panel)] py-2 md:z-20">
       {ITEMS.map(({ icon: Icon, label, panel: p, soon }) => (
         <button
           key={label}

@@ -27,9 +27,9 @@ export function Header() {
   const activeJobs = jobs.filter((j) => j.status === 'running' || j.status === 'queued').length;
 
   return (
-    <header className="relative z-30 flex h-12 items-center gap-3 border-b border-[var(--border)] bg-[var(--panel)] px-3">
+    <header className="no-scrollbar relative z-30 flex h-12 shrink-0 items-center gap-2 overflow-x-auto overflow-y-hidden border-b border-[var(--border)] bg-[var(--panel)] px-2 sm:gap-3 sm:px-3">
       {/* logo */}
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <div className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-600 text-[13px] font-bold text-white">
           IF
         </div>
@@ -52,7 +52,7 @@ export function Header() {
         />
       ) : (
         <button
-          className="max-w-64 truncate rounded-md px-2 py-1 text-sm text-[var(--t2)] transition hover:bg-[var(--hover)]"
+          className="max-w-40 shrink-0 truncate rounded-md px-2 py-1 text-sm text-[var(--t2)] transition hover:bg-[var(--hover)] sm:max-w-64"
           onClick={() => setEditing(true)}
           title="Đổi tên flow"
         >
@@ -87,14 +87,14 @@ export function Header() {
       <button
         onClick={() => runFlow()}
         disabled={isRunningFlow}
-        className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-violet-500 disabled:opacity-50"
+        className="flex shrink-0 items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-violet-500 disabled:opacity-50"
       >
         {isRunningFlow ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
         Run flow
       </button>
 
       {/* credits */}
-      <div className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
+      <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
         <Coins size={13} className="text-amber-400" />
         {credits}
       </div>
@@ -109,7 +109,7 @@ export function Header() {
       <ThemeToggle />
 
       {/* tasks */}
-      <div className="relative">
+      <div className="relative shrink-0">
         <button
           onClick={() => setTasksOpen(!tasksOpen)}
           className={cn(

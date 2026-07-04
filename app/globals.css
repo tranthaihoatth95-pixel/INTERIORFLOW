@@ -49,6 +49,34 @@ body {
   background: var(--bg);
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   transition: background-color 0.4s ease;
+  /* PWA/mobile: chặn kéo ngang cả trang + khoá double-tap zoom trình duyệt */
+  overflow-x: hidden;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* An toàn vùng tai thỏ (viewport-fit=cover): chừa lề trái/phải cho header + rail */
+@supports (padding: max(0px)) {
+  header {
+    padding-left: max(0.5rem, env(safe-area-inset-left));
+  }
+}
+
+/* Ẩn scrollbar (dùng cho header cuộn ngang trên mobile) — vẫn cuộn được */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Canvas React Flow: pinch/pan nằm trong canvas, không zoom cả trang */
+.react-flow__pane,
+.react-flow__renderer,
+.react-flow__viewport {
+  touch-action: none;
 }
 
 /* scrollbar tối giản cho panel */

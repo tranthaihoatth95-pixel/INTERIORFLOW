@@ -33,7 +33,7 @@ export function NodeLibraryPanel() {
   if (panel !== 'library' && panel !== 'search') return null;
 
   return (
-    <aside className="z-20 flex w-64 flex-col border-r border-[var(--border)] bg-[var(--panel)]">
+    <aside className="absolute inset-y-0 left-12 right-0 z-40 flex flex-col border-r border-[var(--border)] bg-[var(--panel)] shadow-2xl md:static md:z-20 md:w-64 md:shadow-none">
       <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2.5">
         <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--t3)]">
           Node Library
