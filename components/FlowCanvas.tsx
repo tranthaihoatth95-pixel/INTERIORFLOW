@@ -29,6 +29,7 @@ export function FlowCanvas() {
   const onEdgesChange = useFlowStore((s) => s.onEdgesChange);
   const onConnect = useFlowStore((s) => s.onConnect);
   const tool = useFlowStore((s) => s.tool);
+  const snapGrid = useFlowStore((s) => s.snapGrid);
   const connectError = useFlowStore((s) => s.connectError);
   const setConnectError = useFlowStore((s) => s.setConnectError);
   const addNode = useFlowStore((s) => s.addNode);
@@ -175,6 +176,8 @@ export function FlowCanvas() {
         selectionOnDrag={tool === 'select'}
         panOnScroll
         zoomOnPinch
+        snapToGrid={snapGrid}
+        snapGrid={[16, 16]}
         minZoom={0.15}
         maxZoom={2.5}
         fitView

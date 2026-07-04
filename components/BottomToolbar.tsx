@@ -1,6 +1,6 @@
 'use client';
 
-import { MousePointer2, Hand, StickyNote, Undo2, Redo2, Minus, Plus, Maximize } from 'lucide-react';
+import { MousePointer2, Hand, StickyNote, Undo2, Redo2, Minus, Plus, Maximize, LayoutGrid, Grid3x3, Command } from 'lucide-react';
 import { useReactFlow, useViewport } from '@xyflow/react';
 import { useFlowStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,10 @@ export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
   const redo = useFlowStore((s) => s.redo);
   const canUndo = useFlowStore((s) => s.past.length > 0);
   const canRedo = useFlowStore((s) => s.future.length > 0);
+  const snapGrid = useFlowStore((s) => s.snapGrid);
+  const toggleSnap = useFlowStore((s) => s.toggleSnap);
+  const autoLayout = useFlowStore((s) => s.autoLayout);
+  const setPaletteOpen = useFlowStore((s) => s.setPaletteOpen);
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const { zoom } = useViewport();
 
@@ -52,6 +56,20 @@ export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
       </button>
       <button title="Fit view" className={btn()} onClick={() => fitView({ padding: 0.2 })}>
         <Maximize size={15} />
+      </button>
+      <div className="mx-1 h-5 w-px bg-[var(--hover)]" />
+      <button title="Tự sắp xếp graph (auto-layout)" className={btn()} onClick={() => autoLayout()}>
+        <LayoutGrid size={15} />
+      </button>
+      <button
+        title={`Snap lưới: ${snapGrid ? 'đang bật' : 'đang tắt'}`}
+        className={btn(snapGrid)}
+        onClick={() => toggleSnap()}
+      >
+        <Grid3x3 size={15} />
+      </button>
+      <button title="Command palette (⌘K)" className={btn()} onClick={() => setPaletteOpen(true)}>
+        <Command size={15} />
       </button>
     </div>
   );

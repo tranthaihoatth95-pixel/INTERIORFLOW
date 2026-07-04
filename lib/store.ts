@@ -58,10 +58,18 @@ interface FlowState {
   /** URL ảnh đang mở lightbox */
   lightboxUrl: string | null;
   isRunningFlow: boolean;
+  /** command palette (⌘K) đang mở */
+  paletteOpen: boolean;
+  /** snap node vào lưới khi kéo */
+  snapGrid: boolean;
   past: HistoryEntry[];
   future: HistoryEntry[];
 
   setFlowName: (name: string) => void;
+  setPaletteOpen: (open: boolean) => void;
+  toggleSnap: () => void;
+  /** tự sắp graph theo tầng (DAG longest-path), giữ note nguyên vị trí */
+  autoLayout: () => void;
   setTool: (tool: Tool) => void;
   setPanel: (panel: Panel) => void;
   setTasksOpen: (open: boolean) => void;
@@ -143,10 +151,76 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   shareToken: null,
   chatOpen: false,
   isRunningFlow: false,
+  paletteOpen: false,
+  snapGrid: false,
   past: [],
   future: [],
 
   setFlowName: (flowName) => set({ flowName }),
+  setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  toggleSnap: () => set((s) => ({ snapGrid: !s.snapGrid })),
+
+  autoLayout: () => {
+    const { nodes, edges } = get();
+    const flowNodes = nodes.filter((n) => n.type !== 'note');
+    if (!flowNodes.length) return;
+    const ids = new Set(flowNodes.map((n) => n.id));
+
+    // preds theo edge (chỉ giữa các flow node)
+    const preds = new Map<string, string[]>();
+    flowNodes.forEach((n) => preds.set(n.id, []));
+    for (const e of edges) {
+      if (ids.has(e.source) && ids.has(e.target)) preds.get(e.target)!.push(e.source);
+    }
+
+    // layer = longest-path từ node gốc, có chặn cycle
+    const layer = new Map<string, number>();
+    const computing = new Set<string>();
+    const depth = (id: string): number => {
+      const cached = layer.get(id);
+      if (cached !== undefined) return cached;
+      if (computing.has(id)) return 0; // cycle → coi như gốc
+      computing.add(id);
+      const ps = preds.get(id) ?? [];
+      const d = ps.length ? Math.max(...ps.map((p) => depth(p) + 1)) : 0;
+      computing.delete(id);
+      layer.set(id, d);
+      return d;
+    };
+    flowNodes.forEach((n) => depth(n.id));
+
+    const byLayer = new Map<number, FlowNode[]>();
+    flowNodes.forEach((n) => {
+      const l = layer.get(n.id) ?? 0;
+      const bucket = byLayer.get(l);
+      if (bucket) bucket.push(n);
+      else byLayer.set(l, [n]);
+    });
+
+    const COL = 340;
+    const ROW_GAP = 44;
+    const X0 = 80;
+    const Y0 = 80;
+    const posById = new Map<string, { x: number; y: number }>();
+    [...byLayer.keys()]
+      .sort((a, b) => a - b)
+      .forEach((l) => {
+        // giữ thứ tự dọc cũ để layout ổn định
+        const col = byLayer.get(l)!.sort((a, b) => a.position.y - b.position.y);
+        let y = Y0;
+        col.forEach((n) => {
+          posById.set(n.id, { x: X0 + l * COL, y });
+          const h = n.measured?.height ?? 210;
+          y += h + ROW_GAP;
+        });
+      });
+
+    get().snapshot();
+    set((s) => ({
+      nodes: s.nodes.map((n) => (posById.has(n.id) ? { ...n, position: posById.get(n.id)! } : n)),
+    }));
+  },
+
   setTool: (tool) => set({ tool }),
   setPanel: (panel) => set((s) => ({ panel: s.panel === panel ? null : panel })),
   setTasksOpen: (tasksOpen) => set({ tasksOpen }),

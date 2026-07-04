@@ -11,6 +11,7 @@ import { LibraryPanel } from '@/components/LibraryPanel';
 import { FlowsPanel } from '@/components/FlowsPanel';
 import { ChatPanel } from '@/components/ChatPanel';
 import { FlowCanvas } from '@/components/FlowCanvas';
+import { CommandPalette } from '@/components/CommandPalette';
 import { MaskPainterModal } from '@/components/MaskPainterModal';
 import { AnnotateModal } from '@/components/AnnotateModal';
 import { Lightbox } from '@/components/Lightbox';
@@ -68,6 +69,7 @@ export default function Home() {
         <MaskPainterModal />
         <AnnotateModal />
         <Lightbox />
+        <CommandPalette />
       </div>
     </ReactFlowProvider>
   );
