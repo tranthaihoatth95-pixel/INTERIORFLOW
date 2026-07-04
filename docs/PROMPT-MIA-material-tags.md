@@ -4,7 +4,9 @@
 
 ---
 
-Bạn xây tính năng **Material Tag / Bảng vật liệu** cho InteriorFlow (Next.js 14, TypeScript, TailwindCSS, @xyflow/react, Zustand) tại `~/Downloads/interiorflow`. Đây là tính năng **thủ công 100%, không gọi AI** — cho phép chú thích vật liệu lên ảnh phối cảnh (từ AI hoặc từ Vray/D5) bằng dữ liệu thư viện đã có.
+Bạn xây tính năng **Material Tag / Bảng vật liệu (material schedule)** cho InteriorFlow (Next.js 14, TypeScript, TailwindCSS, @xyflow/react, Zustand) tại `~/Downloads/interiorflow`. Đây là tính năng **thủ công 100%, không gọi AI** — chú thích vật liệu lên ảnh phối cảnh (từ AI hoặc từ Vray/D5) bằng **mã vật liệu có sẵn trong thư viện**.
+
+**Mục đích nghiệp vụ (quan trọng):** đây là bước tiến tới **khâu thi công/build** — phối cảnh dùng vật liệu gì thì note ra thành **bảng spec** (mã + ảnh) để khách duyệt và xưởng đặt hàng. App chỉ **đối chiếu + lập bảng**, không sinh ảnh. Nên output phải là **bảng vật liệu chuyên nghiệp** (số thứ tự → swatch → tên → mã NCC), không phải chỉ chú thích rời.
 
 ## Bối cảnh & pattern PHẢI theo (đọc trước khi code)
 - **Node modal có sẵn để bắt chước 1:1**: `components/MaskPainterModal.tsx` và `components/AnnotateModal.tsx` (canvas, click/vẽ, save → dataURL vào param node). Store dùng `maskEditorNodeId`/`annotateNodeId` + setter — LÀM Y HỆT với `materialTagNodeId`.
