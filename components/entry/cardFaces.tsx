@@ -89,6 +89,55 @@ export const presentationFaces = [
   </Card>,
 ];
 
+/* ---------- Concept: moodboard · vật liệu · pre-concept ---------- */
+
+const MAT = ['#c8b9a3', '#8a6f4d', '#d9cfc2', '#6f5b40', '#b39776', '#e8ddcb'];
+
+export const conceptFaces = [
+  // bảng vật liệu (swatch + mã)
+  <Card key="c0" bg="#efe9df">
+    <div className="flex h-full flex-col gap-2 p-3.5">
+      <div className="text-[7px] font-semibold uppercase tracking-[0.2em]" style={{ color: '#8a6f4d' }}>
+        Material board
+      </div>
+      {MAT.slice(0, 4).map((c, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <div className="h-6 w-6 rounded" style={{ background: c }} />
+          <div className="flex-1 space-y-1">
+            <div className="h-[3px] w-14 rounded" style={{ background: 'rgba(33,30,25,.28)' }} />
+            <div className="h-[3px] w-9 rounded" style={{ background: 'rgba(33,30,25,.16)' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  </Card>,
+  // moodboard lưới
+  <Card key="c1" bg="#e8ddcb">
+    <div className="grid h-full grid-cols-2 grid-rows-2 gap-1.5 p-2.5">
+      {['linear-gradient(140deg,#c8b9a3,#8a6f4d)', 'linear-gradient(140deg,#d9cfc2,#b39776)', 'linear-gradient(140deg,#6f5b40,#2b2620)', 'linear-gradient(140deg,#e8ddcb,#c7a397)'].map((g, i) => (
+        <div key={i} className="rounded" style={{ background: g }} />
+      ))}
+    </div>
+  </Card>,
+  // palette + style keyword
+  <Card key="c2" bg="#f4efe6">
+    <div className="flex h-full flex-col justify-between p-4">
+      <div className="font-serif text-[16px] leading-tight" style={{ color: '#211e19' }}>
+        Japandi
+      </div>
+      <div className="space-y-1.5">
+        <div className="h-[3px] w-20 rounded" style={{ background: 'rgba(33,30,25,.25)' }} />
+        <div className="h-[3px] w-14 rounded" style={{ background: 'rgba(33,30,25,.16)' }} />
+      </div>
+      <div className="flex gap-1">
+        {MAT.map((c) => (
+          <div key={c} className="h-3 flex-1 rounded-sm" style={{ background: c }} />
+        ))}
+      </div>
+    </div>
+  </Card>,
+];
+
 /* ---------- 3D Render: phối cảnh nội thất ---------- */
 
 function Room({ h1, h2 }: { h1: number; h2: number }) {

@@ -26,6 +26,8 @@ export interface ExecContext {
   inputs: Record<string, PortValue | undefined>;
   params: Record<string, string | number>;
   onProgress: (progress: number) => void;
+  /** mức phụ thuộc AI hiện tại (1–4) — node AI dùng để chọn provider */
+  aiTier: import('@/lib/ai/tiers').AiTier;
 }
 
 export interface NodeDefinition {

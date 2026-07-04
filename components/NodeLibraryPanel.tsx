@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, GripVertical } from 'lucide-react';
-import { NODE_DEFINITIONS } from '@/lib/nodes/registry';
+import { X, GripVertical, Star } from 'lucide-react';
+import { NODE_DEFINITIONS, NODE_REGISTRY } from '@/lib/nodes/registry';
 import { useFlowStore } from '@/lib/store';
-import { CATEGORY_META, type NodeCategory } from '@/lib/types';
+import { CATEGORY_META, type NodeCategory, type NodeDefinition } from '@/lib/types';
+import { PHASE_MAP, DEFAULT_PHASE } from '@/lib/phases';
 import { sheetSlide, staggerList, pressableIcon } from '@/lib/motion';
 
 export const DND_MIME = 'application/interiorflow-node';
@@ -15,22 +16,39 @@ const CATEGORY_ORDER: NodeCategory[] = ['INPUT', 'AI_GENERATE', 'AI_EDIT', 'SLID
 export function NodeLibraryPanel() {
   const panel = useFlowStore((s) => s.panel);
   const setPanel = useFlowStore((s) => s.setPanel);
+  const aiTier = useFlowStore((s) => s.aiTier);
+  const workspace = useFlowStore((s) => s.workspace);
   const [query, setQuery] = useState('');
+
+  // Mức 1 (Không AI): ẩn hẳn node AI — chỉ còn input/slide/utility/output cho quy trình thủ công.
+  const noAi = aiTier === 1;
+  const phase = PHASE_MAP[workspace ?? DEFAULT_PHASE];
+
+  const matchesQuery = (d: NodeDefinition, q: string) =>
+    !q ||
+    d.title.toLowerCase().includes(q) ||
+    d.description.toLowerCase().includes(q) ||
+    d.type.includes(q);
+  const hiddenByTier = (d: NodeDefinition) => noAi && (d.category === 'AI_GENERATE' || d.category === 'AI_EDIT');
+
+  // Nhóm ★ node ưu tiên của chặng hiện tại (chỉ khi không tìm kiếm — soft focus, không lọc bỏ phần khác).
+  const featured = useMemo(() => {
+    if (query.trim()) return [];
+    return phase.featured
+      .map((t) => NODE_REGISTRY[t])
+      .filter((d): d is NodeDefinition => Boolean(d) && !hiddenByTier(d));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, noAi, query]);
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const filtered = NODE_DEFINITIONS.filter(
-      (d) =>
-        !q ||
-        d.title.toLowerCase().includes(q) ||
-        d.description.toLowerCase().includes(q) ||
-        d.type.includes(q),
-    );
+    const filtered = NODE_DEFINITIONS.filter((d) => matchesQuery(d, q) && !hiddenByTier(d));
     return CATEGORY_ORDER.map((cat) => ({
       cat,
       defs: filtered.filter((d) => d.category === cat),
     })).filter((g) => g.defs.length > 0);
-  }, [query]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, noAi]);
 
   return (
     <AnimatePresence>
@@ -68,6 +86,21 @@ export function NodeLibraryPanel() {
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-2.5 pb-4">
+        {/* ★ Node ưu tiên cho chặng hiện tại — soft focus, phần còn lại vẫn liệt kê đủ bên dưới */}
+        {featured.length > 0 && (
+          <div>
+            <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent)]">
+              <Star size={10} className="fill-[var(--accent)]" />
+              Chặng {phase.label}
+            </p>
+            <motion.div className="space-y-1" variants={staggerList} initial="hidden" animate="visible">
+              {featured.map((def) => (
+                <NodeCard key={`f-${def.type}`} def={def} />
+              ))}
+            </motion.div>
+            <div className="mt-3 border-t border-[var(--border)]" />
+          </div>
+        )}
         {groups.map(({ cat, defs }) => (
           <div key={cat}>
             <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t4)]">
@@ -77,29 +110,7 @@ export function NodeLibraryPanel() {
             {/* stagger nhẹ — item hiện lần lượt như list iOS */}
             <motion.div className="space-y-1" variants={staggerList} initial="hidden" animate="visible">
               {defs.map((def) => (
-                <div
-                  key={def.type}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData(DND_MIME, def.type);
-                    e.dataTransfer.effectAllowed = 'move';
-                  }}
-                  className="group flex cursor-grab items-start gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 transition-transform hover:border-[var(--accent-ring)] hover:scale-[1.015] active:scale-[0.99] active:cursor-grabbing"
-                  title="Kéo thả vào canvas"
-                >
-                  <GripVertical size={13} className="mt-0.5 shrink-0 text-[var(--t5)] group-hover:text-[var(--t4)]" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-[var(--t1)]">{def.title}</p>
-                    <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-[var(--t4)]">
-                      {def.description}
-                    </p>
-                  </div>
-                  {def.creditCost > 0 && (
-                    <span className="ml-auto shrink-0 rounded bg-[var(--hover)] px-1 py-0.5 text-[9px] text-[var(--t4)]">
-                      {def.creditCost}cr
-                    </span>
-                  )}
-                </div>
+                <NodeCard key={def.type} def={def} />
               ))}
             </motion.div>
           </div>
@@ -108,11 +119,39 @@ export function NodeLibraryPanel() {
           <p className="px-1 pt-4 text-center text-xs text-[var(--t5)]">Không tìm thấy node nào.</p>
         )}
         <p className="px-1 pt-2 text-[10px] leading-relaxed text-[var(--t5)]">
-          Đủ bộ 20 node nội thất — kéo thả vào canvas để dùng.
+          {noAi
+            ? 'Mức "Không AI" đang bật — node AI đã ẩn. Đổi mức ở góc trên để hiện lại.'
+            : `Chặng ${phase.label}: node ★ ở trên. Kéo thả bất kỳ node nào vào canvas — các chặng dùng chung 1 canvas.`}
         </p>
       </div>
         </motion.aside>
       )}
     </AnimatePresence>
+  );
+}
+
+/** 1 thẻ node kéo-thả — dùng chung cho nhóm ★ và các category. */
+function NodeCard({ def }: { def: NodeDefinition }) {
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData(DND_MIME, def.type);
+        e.dataTransfer.effectAllowed = 'move';
+      }}
+      className="group flex cursor-grab items-start gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 transition-transform hover:border-[var(--accent-ring)] hover:scale-[1.015] active:scale-[0.99] active:cursor-grabbing"
+      title="Kéo thả vào canvas"
+    >
+      <GripVertical size={13} className="mt-0.5 shrink-0 text-[var(--t5)] group-hover:text-[var(--t4)]" />
+      <div className="min-w-0">
+        <p className="text-xs font-medium text-[var(--t1)]">{def.title}</p>
+        <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-[var(--t4)]">{def.description}</p>
+      </div>
+      {def.creditCost > 0 && (
+        <span className="ml-auto shrink-0 rounded bg-[var(--hover)] px-1 py-0.5 text-[9px] text-[var(--t4)]">
+          {def.creditCost}cr
+        </span>
+      )}
+    </div>
   );
 }

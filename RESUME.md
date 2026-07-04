@@ -108,3 +108,17 @@ Merge xong mỗi cái chạy `npm run build`; `git worktree prune` để dọn.
 - `docs/STRATEGY-ai-tiers-and-safety.md` — núm chỉnh mức phụ thuộc AI (4 mức: Cao/Vừa/Tự-host-0đ/KHÔNG-AI-an-toàn-nhất), note vật liệu lên file, phân công Mia vs Claude Code, câu hỏi Q&A cho user.
 - `docs/PROMPT-MIA-material-tags.md` — prompt gửi Mia làm tính năng Material Tag (0-AI) trên branch feat/material-tags.
 - **Claude Code phiên sau làm**: AI-tier engine (store.aiTier + provider comfyui), tách 2 workspace, restyle nốt Apple, merge 3 branch chờ. Chờ user trả lời Q&A §5 của STRATEGY.
+
+**CẬP NHẬT 04/07 — AI-TIER ENGINE + COMFYUI + CLAY→PHOTOREAL ĐÃ XONG (Claude Code):**
+- **User chốt Q&A**: (5) máy render **RTX ≥16GB** → mức 2 tự-host khả thi, đặt **DEFAULT_TIER=2**. (1) "sản phẩm đầu-cuối look like" ý user = **chất lượng ẢNH nội thất + slide PPTX dàn ra** (chuẩn quiet-luxury), KHÔNG phải giao diện app.
+- **Đã build + verify (tsc sạch, test E2E trên browser):**
+  - `lib/ai/tiers.ts` — 4 mức (TIERS/TIER_ORDER/DEFAULT_TIER=2), `providerForTier`, `resolveModel(task,tier)`.
+  - `lib/ai/models.ts` — thêm `falFast`/`comfy` mỗi task + task mới `clay2render` (depth). Interface `TaskModel`.
+  - `lib/ai/providers/comfyui.ts` — adapter self-host: nạp workflow API-format `comfyui/workflows/*.json`, bơm marker `_meta.title` (IF_POSITIVE/IMAGE/MASK/SEED…), upload ảnh, `/prompt`+`/history`. `providers/index.ts` dispatch fal|comfyui.
+  - API `/api/jobs` (+`[id]`, `/api/health`) nhận `tier`, resolve provider, 503 PROVIDER_NOT_CONFIGURED → client lùi mock. `client.ts`: `runImageJob(...,tier)` + `checkProviders()`.
+  - `store.aiTier` (persist+hydrate), `execution.ts` truyền `ctx.aiTier`, `registry.ts` tier-aware + node **`ai.clay2render`** (Clay→Photoreal, ControlNet depth, prompt khoá geometry).
+  - `Header.tsx` — núm `AiTierMenu` 4 mức (badge + dropdown, cờ "chạy mock" khi provider chưa nối). `NodeLibraryPanel` — mức 1 ẩn hết node AI.
+  - `comfyui/README.md` + `comfyui/workflows/clay_depth.json` (SDXL depth mẫu) — hướng dẫn cài trên máy render.
+- **CÒN LẠI CHO MÁY CÔNG TY**: cài ComfyUI + set `COMFYUI_URL` (badge hết "mock"); tạo nốt các workflow còn lại (sketch_canny/img2img/text2img/inpaint/upscale) bằng Save-API-Format; tune clay_depth (đổi FLUX nếu muốn). Xem comfyui/README.md.
+- **WORKSPACE → 3 CHẶNG MỀM ĐÃ XONG (04/07, sau khi bàn với user)**: KHÔNG tách app cứng. Present↔Render không rời rạc mà là 2 chặng liền của 1 pipeline → làm **3 chặng mềm Concept→Render→Present** (`lib/phases.ts` PHASES/featured/demo). `store.WorkspaceMode = Phase` (migrate 'presentation'→'present', hydrate persist). Header **PhaseSwitcher** segmented (đi lại tự do, chỉ đổi nhấn mạnh — không đụng canvas). NodeLibrary: nhóm **★ Chặng X** (featured node) ở đầu, phần còn lại vẫn liệt kê đủ (soft). Login entry 2→3 lối vào (conceptFaces mới). Starter demo `concept` (ref→palette, style→moodboard). tsc sạch + verify browser. **"Photoshop" KHÔNG làm trụ** (đã là util.edit/mask/annotate bên trong).
+- **CÒN LẠI (autonomous phiên sau)**: restyle nốt Apple (InteriorNode/MaskPainter/Lightbox/BottomToolbar/FlowCanvas); merge 3 branch chờ (electron/video/pwa); (tuỳ chọn) wire empty-state canvas nạp starter theo chặng (`phase.demo`).

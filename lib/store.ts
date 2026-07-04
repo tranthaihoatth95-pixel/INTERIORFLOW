@@ -14,13 +14,16 @@ import {
 import type { InteriorNodeData, Job, NodeRunState } from '@/lib/types';
 import { DATA_TYPE_COLORS } from '@/lib/types';
 import { getDefinition, defaultParams } from '@/lib/nodes/registry';
+import { type AiTier, DEFAULT_TIER, isAiTier } from '@/lib/ai/tiers';
+import { type Phase, isPhase } from '@/lib/phases';
 
 export type FlowNode = Node<InteriorNodeData>;
 export type Tool = 'select' | 'pan';
 export type Panel = 'library' | 'search' | 'gallery' | 'assets' | 'flows' | null;
 export type ThemePref = 'auto' | 'light' | 'dark';
-/** 2 lối làm việc — chọn ở trang đăng nhập; bản tách workspace đầy đủ ở phiên sau */
-export type WorkspaceMode = 'presentation' | 'render';
+/** 3 chặng mềm của cùng 1 pipeline (Concept → Render → Present) — xem lib/phases.ts.
+ *  Không tách app; chỉ nhấn nhóm node + starter-flow theo ngữ cảnh, đi lại tự do. */
+export type WorkspaceMode = Phase;
 /** Kiểu giao diện làm việc — 'node' (hiện tại) | 'window' (kiểu Figma, làm sau) */
 export type ViewMode = 'node' | 'window';
 
@@ -61,6 +64,8 @@ interface FlowState {
   workspace: WorkspaceMode | null;
   /** kiểu xem canvas — node-flow hiện tại; 'window' (Figma) để mốc, chưa bật */
   viewMode: ViewMode;
+  /** mức phụ thuộc AI (4=Cao cloud · 3=Vừa · 2=Tự-host 0đ · 1=Không AI) */
+  aiTier: AiTier;
   /** nodeId đang mở Annotate modal */
   annotateNodeId: string | null;
   /** URL ảnh đang mở lightbox */
@@ -95,6 +100,7 @@ interface FlowState {
   setChatOpen: (open: boolean) => void;
   setWorkspace: (mode: WorkspaceMode) => void;
   setViewMode: (mode: ViewMode) => void;
+  setAiTier: (tier: AiTier) => void;
   /** nạp graph từ server vào canvas, reset history */
   loadGraph: (graphJson: string, name: string, flowId: string, shareToken: string | null) => void;
 
@@ -120,7 +126,7 @@ interface FlowState {
   loadDemoFlow: (kind?: DemoKind) => void;
 }
 
-export type DemoKind = 'sketch' | 'bedroom' | 'slide';
+export type DemoKind = 'sketch' | 'bedroom' | 'slide' | 'concept';
 
 // Dev-only: expose store cho debugging (window.__flowStore)
 declare global {
@@ -162,6 +168,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   chatOpen: false,
   workspace: null,
   viewMode: 'node',
+  aiTier: DEFAULT_TIER,
   isRunningFlow: false,
   paletteOpen: false,
   snapGrid: false,
@@ -254,6 +261,12 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     } catch {}
   },
   setViewMode: (viewMode) => set({ viewMode }),
+  setAiTier: (aiTier) => {
+    set({ aiTier });
+    try {
+      localStorage.setItem('interiorflow.aiTier', String(aiTier));
+    } catch {}
+  },
 
   loadGraph: (graphJson, name, flowId, shareToken) => {
     try {
@@ -301,6 +314,16 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     try {
       const pref = localStorage.getItem(THEME_KEY) as ThemePref | null;
       if (pref === 'auto' || pref === 'light' || pref === 'dark') set({ themePref: pref });
+    } catch {}
+    try {
+      const t = Number(localStorage.getItem('interiorflow.aiTier'));
+      if (isAiTier(t)) set({ aiTier: t });
+    } catch {}
+    try {
+      // chặng làm việc — migrate tên cũ 'presentation' → 'present'
+      const raw = localStorage.getItem('interiorflow.workspace');
+      const ws = raw === 'presentation' ? 'present' : raw;
+      if (isPhase(ws)) set({ workspace: ws });
     } catch {}
     get().applyTheme();
     try {
@@ -509,6 +532,28 @@ export const useFlowStore = create<FlowState>((set, get) => ({
           edge(ref, 'image', s2, 'hero'),
           edge(s1, 'image', deck, 'slide1'),
           edge(s2, 'image', deck, 'slide2'),
+        ],
+      });
+      return;
+    }
+
+    if (kind === 'concept') {
+      // Chặng Concept: ref vật liệu → palette; style preset → moodboard 4 concept
+      const styleRef = svg(
+        '<rect width="768" height="512" fill="#f2ede4"/><rect y="150" width="768" height="120" fill="#d9cfc2"/><rect y="270" width="768" height="90" fill="#b39776"/><rect y="360" width="768" height="80" fill="#6f5b40"/><rect y="440" width="768" height="72" fill="#2b2620"/><circle cx="620" cy="90" r="46" fill="#c7a397"/>',
+      );
+      const ref = mk('input.image', 40, 60);
+      ref.data.params.file = styleRef;
+      const palette = mk('util.palette', 460, 80);
+      const style = mk('input.stylepreset', 40, 460);
+      style.data.params.style = 'Japandi';
+      const mood = mk('ai.moodboard', 460, 380);
+      mood.data.params.style = 'Japandi';
+      set({
+        nodes: [ref, palette, style, mood],
+        edges: [
+          edge(ref, 'image', palette, 'image'),
+          edge(style, 'text', mood, 'prompt', 'text'),
         ],
       });
       return;

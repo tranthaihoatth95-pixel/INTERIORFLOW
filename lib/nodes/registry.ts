@@ -1,6 +1,7 @@
 import type { ExecContext, NodeDefinition, PortValue } from '@/lib/types';
-import { runImageJob, checkFalAvailable, AiJobError } from '@/lib/ai/client';
+import { runImageJob, checkProviders, AiJobError } from '@/lib/ai/client';
 import type { AiTask } from '@/lib/ai/models';
+import { providerForTier } from '@/lib/ai/tiers';
 import { extractPalette, composeBoard, adjustImage } from '@/lib/imaging';
 import { saveToGallery } from '@/lib/gallery';
 import { parseContent, themeFromRef, renderSlide, type FontPairing, type SlideLayout } from '@/lib/slides';
@@ -61,7 +62,15 @@ async function aiImage(
   return { dataType: 'image', value: urls[0] };
 }
 
-/** Bản nhiều ảnh (moodboard). */
+/** Provider của tier hiện tại đã sẵn sàng chưa (fal có key / comfyui có URL). */
+async function providerReady(ctx: ExecContext): Promise<boolean> {
+  const provider = providerForTier(ctx.aiTier);
+  if (!provider) return false; // mức 1 — Không AI
+  const status = await checkProviders();
+  return provider === 'fal' ? status.fal : status.comfyui;
+}
+
+/** Bản nhiều ảnh (moodboard). Chọn provider theo tier; provider chưa sẵn sàng → mock. */
 async function aiImages(
   task: AiTask,
   input: Record<string, unknown>,
@@ -69,7 +78,6 @@ async function aiImages(
   ctx: ExecContext,
   mockCount: number,
 ): Promise<string[]> {
-  const useFal = await checkFalAvailable();
   const runMock = async () => {
     const out: string[] = [];
     for (let i = 0; i < mockCount; i++) {
@@ -82,11 +90,15 @@ async function aiImages(
     }
     return out;
   };
-  if (!useFal) return runMock();
+  // Mức 1 (Không AI): node AI bị khoá — báo rõ, không mock lén.
+  if (!providerForTier(ctx.aiTier)) {
+    throw new Error('Đang ở mức "Không AI" — node AI bị khoá. Đổi mức AI ở góc trên, hoặc dùng node chỉnh tay / import render Vray·D5.');
+  }
+  if (!(await providerReady(ctx))) return runMock();
   try {
-    return await runImageJob(task, input, ctx.onProgress);
+    return await runImageJob(task, input, ctx.onProgress, ctx.aiTier);
   } catch (err) {
-    if (err instanceof AiJobError && err.code === 'FAL_NOT_CONFIGURED') return runMock();
+    if (err instanceof AiJobError && err.code === 'PROVIDER_NOT_CONFIGURED') return runMock();
     throw err;
   }
 }
@@ -222,6 +234,36 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
         'sketch2render',
         { prompt, control_image_url: inputs.image.value, guidance_scale: Number(params.guidance), num_images: 1 },
         String(params.style),
+        ctx,
+      );
+      return { image };
+    },
+  },
+  {
+    type: 'ai.clay2render',
+    title: 'Clay → Photoreal',
+    category: 'AI_GENERATE',
+    description: 'Clay/khối trắng (3ds Max) → render thực, khoá hình học bằng ControlNet Depth. Ổn định nhất cho archviz.',
+    inputs: [
+      { id: 'image', label: 'Clay render', dataType: 'image' },
+      { id: 'prompt', label: 'Prompt', dataType: 'text' },
+    ],
+    outputs: [{ id: 'image', label: 'Render', dataType: 'image' }],
+    params: [
+      { kind: 'select', id: 'style', label: 'Style', options: STYLE_OPTIONS },
+      // cao = bám khối gốc chặt hơn (depth guidance)
+      { kind: 'slider', id: 'preserve', label: 'Bám khối', min: 1, max: 20, step: 0.5, default: 16 },
+    ],
+    creditCost: 4,
+    async execute(ctx) {
+      const { inputs, params } = ctx;
+      if (!inputs.image) throw new Error('Thiếu ảnh clay/khối trắng ở input — xuất từ 3ds Max rồi Import Image.');
+      const extra = inputs.prompt ? String(inputs.prompt.value) : '';
+      const prompt = `${stylePrompt(String(params.style), extra)}, keep exact same geometry, layout and camera, only add realistic materials, lighting and atmosphere`;
+      const image = await aiImage(
+        'clay2render',
+        { prompt, control_image_url: inputs.image.value, guidance_scale: Number(params.preserve), num_images: 1 },
+        `${params.style} clay→photoreal`,
         ctx,
       );
       return { image };
@@ -460,17 +502,24 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     creditCost: 2,
     async execute(ctx) {
       const { inputs, params } = ctx;
-      if (!inputs.image) throw new Error('Thiếu ảnh ở input.');
-      const useFal = await checkFalAvailable();
-      if (!useFal) {
+      const img = inputs.image;
+      if (!img) throw new Error('Thiếu ảnh ở input.');
+      // Upscale local passthrough khi provider chưa sẵn sàng / mức Không AI — vô hại (giữ nguyên ảnh).
+      const localPass = async (): Promise<Record<string, PortValue>> => {
         for (let i = 1; i <= 6; i++) {
           await delay(250);
           ctx.onProgress(i / 6);
         }
-        return { image: inputs.image };
+        return { image: img };
+      };
+      if (!(await providerReady(ctx))) return localPass();
+      try {
+        const urls = await runImageJob('upscale', { image_url: img.value, scale: Number(params.scale) }, ctx.onProgress, ctx.aiTier);
+        return { image: { dataType: 'image', value: urls[0] } };
+      } catch (err) {
+        if (err instanceof AiJobError && err.code === 'PROVIDER_NOT_CONFIGURED') return localPass();
+        throw err;
       }
-      const urls = await runImageJob('upscale', { image_url: inputs.image.value, scale: Number(params.scale) }, ctx.onProgress);
-      return { image: { dataType: 'image', value: urls[0] } };
     },
   },
   {

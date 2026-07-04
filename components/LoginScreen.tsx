@@ -2,13 +2,15 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, Presentation, Box, ArrowRight } from 'lucide-react';
+import { Loader2, Presentation, Box, Palette, ArrowRight } from 'lucide-react';
 import { useFlowStore, type WorkspaceMode } from '@/lib/store';
+import { PHASE_MAP } from '@/lib/phases';
 import { bootstrapWorkspace } from '@/lib/workspace';
 import { StackedCards } from '@/components/entry/StackedCards';
-import { presentationFaces, renderFaces } from '@/components/entry/cardFaces';
+import { conceptFaces, presentationFaces, renderFaces } from '@/components/entry/cardFaces';
 import { easeApple, springPop, pressable } from '@/lib/motion';
 
+// 3 chặng mềm của cùng 1 pipeline — chọn nơi bắt đầu, không phải 3 app rời.
 const MODES: {
   id: WorkspaceMode;
   title: string;
@@ -17,18 +19,25 @@ const MODES: {
   faces: React.ReactNode[];
 }[] = [
   {
-    id: 'presentation',
-    title: 'Presentation',
-    desc: 'Concept → slide thuyết trình. Dàn trang, font, màu, brand từ ảnh tham khảo.',
-    icon: Presentation,
-    faces: presentationFaces,
+    id: 'concept',
+    title: 'Concept',
+    desc: 'Moodboard, vật liệu, palette, style — khởi động ý tưởng trước khi dựng hình.',
+    icon: Palette,
+    faces: conceptFaces,
   },
   {
     id: 'render',
-    title: '3D Prompt Render',
-    desc: 'Sketch / CAD → phối cảnh photoreal. Đổi vật liệu, ánh sáng, upscale, video.',
+    title: 'Render',
+    desc: 'Clay / sketch → phối cảnh photoreal. Đổi vật liệu, ánh sáng, upscale.',
     icon: Box,
     faces: renderFaces,
+  },
+  {
+    id: 'present',
+    title: 'Present',
+    desc: 'Dàn slide 16:9, board, spec vật liệu → đóng gói cho khách duyệt.',
+    icon: Presentation,
+    faces: presentationFaces,
   },
 ];
 
@@ -95,15 +104,15 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
             IF
           </div>
           <h1 className="mt-3 text-lg font-semibold tracking-tight text-[var(--t1)]">
-            Chọn không gian làm việc
+            Bắt đầu ở chặng nào?
           </h1>
           <p className="mt-1 text-xs text-[var(--t4)]">
-            Rê chuột vào tập tài liệu để xem bung · chọn 1 lối để bắt đầu
+            Concept → Render → Present · một pipeline, chung 1 canvas — đi lại tự do sau khi vào
           </p>
         </div>
 
-        {/* 2 lối vào — stacked cards */}
-        <div className="mb-9 grid gap-6 sm:grid-cols-2">
+        {/* 3 chặng — stacked cards */}
+        <div className="mb-9 grid gap-6 sm:grid-cols-3">
           {MODES.map((m) => {
             const active = chosen === m.id;
             return (
@@ -185,7 +194,7 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
               <Loader2 size={14} className="animate-spin" />
             ) : (
               <>
-                {authMode === 'login' ? 'Vào' : 'Tạo tài khoản'} · {chosen === 'presentation' ? 'Presentation' : '3D Render'}
+                {authMode === 'login' ? 'Vào' : 'Tạo tài khoản'} · {PHASE_MAP[chosen].label}
                 <ArrowRight size={14} />
               </>
             )}

@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Share2, Play, Loader2, ChevronDown, Sparkles, FlaskConical, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, Workflow, LayoutDashboard } from 'lucide-react';
+import { Coins, Share2, Play, Loader2, ChevronDown, Cloud, Zap, Cpu, ShieldCheck, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, Workflow, LayoutDashboard, Palette, Box, Presentation } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { runFlow } from '@/lib/execution';
-import { checkFalAvailable } from '@/lib/ai/client';
+import { checkProviders, type ProviderStatus } from '@/lib/ai/client';
+import { TIERS, TIER_ORDER, type AiTier } from '@/lib/ai/tiers';
+import { PHASES, DEFAULT_PHASE, type Phase } from '@/lib/phases';
 import { toggleShare } from '@/lib/workspace';
 import { TasksDropdown } from '@/components/TasksDropdown';
 import { pressable, pressableIcon, easeApple } from '@/lib/motion';
@@ -20,11 +22,6 @@ export function Header() {
   const setTasksOpen = useFlowStore((s) => s.setTasksOpen);
   const jobs = useFlowStore((s) => s.jobs);
   const [editing, setEditing] = useState(false);
-  const [falMode, setFalMode] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    checkFalAvailable().then(setFalMode);
-  }, []);
 
   const activeJobs = jobs.filter((j) => j.status === 'running' || j.status === 'queued').length;
 
@@ -64,34 +61,14 @@ export function Header() {
         </motion.button>
       )}
 
+      {/* chặng làm việc mềm — Concept · Render · Present (đi lại tự do) */}
+      <PhaseSwitcher />
+
       {/* chuyển kiểu xem canvas — Node (hiện tại) | Window (Figma, sắp có) */}
       <ViewToggle />
 
-      {/* AI mode badge */}
-      <AnimatePresence>
-        {falMode !== null && (
-          <motion.span
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.24, ease: easeApple }}
-            data-testid="ai-mode"
-            title={
-              falMode
-                ? 'Đang gọi fal.ai thật'
-                : 'Chưa có FAL_KEY trong .env.local — node AI chạy mock (ảnh placeholder). Thêm key rồi restart để dùng AI thật.'
-            }
-            className={cn(
-              'flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium',
-              falMode
-                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-                : 'border-amber-500/40 bg-amber-500/10 text-amber-300',
-            )}
-          >
-            {falMode ? <Sparkles size={10} /> : <FlaskConical size={10} />}
-            {falMode ? 'AI: fal.ai' : 'AI: mock'}
-          </motion.span>
-        )}
-      </AnimatePresence>
+      {/* Núm chọn mức phụ thuộc AI (4 mức) */}
+      <AiTierMenu />
 
       <div className="flex-1" />
 
@@ -302,6 +279,138 @@ function ViewToggle() {
         <LayoutDashboard size={12} /> Window
         <span className="rounded bg-[var(--hover)] px-1 text-[8px] text-[var(--t4)]">sắp có</span>
       </button>
+    </div>
+  );
+}
+
+// Segmented: chặng làm việc mềm. Chỉ đổi *nhấn mạnh* (Library) — không đụng canvas.
+const PHASE_ICON: Record<Phase, typeof Palette> = { concept: Palette, render: Box, present: Presentation };
+
+function PhaseSwitcher() {
+  const workspace = useFlowStore((s) => s.workspace);
+  const setWorkspace = useFlowStore((s) => s.setWorkspace);
+  const current: Phase = workspace ?? DEFAULT_PHASE;
+  return (
+    <div className="hidden items-center gap-0.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-0.5 lg:flex">
+      {PHASES.map((p) => {
+        const Icon = PHASE_ICON[p.id];
+        const active = current === p.id;
+        return (
+          <button
+            key={p.id}
+            onClick={() => setWorkspace(p.id)}
+            title={`${p.label} — ${p.tagline}`}
+            className={cn(
+              'flex items-center gap-1 rounded-[7px] px-2 py-1 text-[11px] font-medium transition-colors',
+              active ? 'bg-[var(--card)] text-[var(--t1)] shadow-sm' : 'text-[var(--t4)] hover:text-[var(--t2)]',
+            )}
+          >
+            <Icon size={12} /> {p.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// Núm chọn mức phụ thuộc AI — 4 mức (Cao cloud · Vừa · Tự-host 0đ · Không AI).
+const TIER_ICON: Record<AiTier, typeof Cloud> = { 4: Cloud, 3: Zap, 2: Cpu, 1: ShieldCheck };
+const TIER_TONE: Record<AiTier, string> = {
+  4: 'border-sky-500/40 bg-sky-500/10 text-sky-300',
+  3: 'border-violet-500/40 bg-violet-500/10 text-violet-300',
+  2: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
+  1: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
+};
+
+/** null = chưa biết (đang check); true/false = provider của mức đó sẵn sàng chưa. */
+function tierAvailable(tier: AiTier, status: ProviderStatus | null): boolean | null {
+  const p = TIERS[tier].provider;
+  if (!p) return true; // mức 1 luôn "sẵn sàng"
+  if (!status) return null;
+  return p === 'fal' ? status.fal : status.comfyui;
+}
+
+function AiTierMenu() {
+  const aiTier = useFlowStore((s) => s.aiTier);
+  const setAiTier = useFlowStore((s) => s.setAiTier);
+  const [open, setOpen] = useState(false);
+  const [status, setStatus] = useState<ProviderStatus | null>(null);
+
+  useEffect(() => {
+    checkProviders().then(setStatus);
+  }, []);
+
+  const meta = TIERS[aiTier];
+  const Icon = TIER_ICON[aiTier];
+  const avail = tierAvailable(aiTier, status);
+
+  return (
+    <div className="relative">
+      <motion.button
+        {...pressable}
+        data-testid="ai-tier"
+        onClick={() => setOpen((o) => !o)}
+        title="Mức phụ thuộc AI — bấm để đổi (Cao cloud · Vừa · Tự-host 0đ · Không AI)"
+        className={cn(
+          'flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium',
+          TIER_TONE[aiTier],
+        )}
+      >
+        <Icon size={10} /> AI · {meta.name}
+        {avail === false && <span className="text-amber-300/90">· mock</span>}
+        <ChevronDown size={9} className={cn('transition-transform', open && 'rotate-180')} />
+      </motion.button>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: -4, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.98 }}
+              transition={{ duration: 0.16, ease: easeApple }}
+              className="mat-panel absolute left-0 top-8 z-40 w-72 rounded-[14px] border border-[var(--border)] p-1.5 shadow-xl"
+            >
+              <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t4)]">
+                Mức phụ thuộc AI
+              </p>
+              {TIER_ORDER.map((t) => {
+                const m = TIERS[t];
+                const TI = TIER_ICON[t];
+                const a = tierAvailable(t, status);
+                const active = t === aiTier;
+                return (
+                  <button
+                    key={t}
+                    onClick={() => {
+                      setAiTier(t);
+                      setOpen(false);
+                    }}
+                    className={cn(
+                      'flex w-full items-start gap-2 rounded-[10px] px-2 py-1.5 text-left transition-colors hover:bg-[var(--hover)]',
+                      active && 'bg-[var(--accent-soft)]',
+                    )}
+                  >
+                    <TI size={14} className="mt-0.5 shrink-0 text-[var(--t3)]" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-medium text-[var(--t1)]">{m.name}</span>
+                        <span className="rounded bg-[var(--hover)] px-1 text-[9px] text-[var(--t4)]">{m.cost}</span>
+                        {a === false && (
+                          <span className="rounded bg-amber-500/15 px-1 text-[9px] text-amber-300">chạy mock</span>
+                        )}
+                        {active && <Check size={11} className="ml-auto text-[var(--accent)]" />}
+                      </div>
+                      <p className="mt-0.5 text-[10px] leading-snug text-[var(--t4)]">{m.blurb}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
