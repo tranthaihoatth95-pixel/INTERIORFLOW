@@ -2,40 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ===== Theme tokens — dark mặc định, light kem đá ấm (quiet luxury) ===== */
-:root,
-:root[data-theme='dark'] {
-  --bg: #0d0d0f;
-  --panel: #111114;
-  --card: #16161a;
-  --field: #18181b;
-  --hover: #27272a;
-  --border: #26262c;
-  --border-strong: #3f3f46;
-  --t1: #f4f4f5;
-  --t2: #d4d4d8;
-  --t3: #a1a1aa;
-  --t4: #71717a;
-  --t5: #52525b;
-  --dots: #2a2a31;
-  --minimap-mask: rgba(13, 13, 15, 0.7);
+/* ============================================================
+   InteriorFlow — Design tokens theo Apple Human Interface Guidelines
+   - Giữ NGUYÊN tên biến cũ (nhiều component phụ thuộc): --bg/--panel/--card/
+     --field/--hover/--border/--border-strong/--t1..t5/--dots/--minimap-mask.
+   - Thêm biến mới hướng Apple: --accent, --radius-*, --blur, materials.
+   - Tinh light (sạch, kem ấm) + dark (sâu, mực) theo tông quiet-luxury.
+   ============================================================ */
+
+/* ---------- Token dùng chung cho cả 2 theme ---------- */
+:root {
+  /* Accent — tím quiet-luxury, giữ #8b7cf7 làm gốc, biến để tái sử dụng */
+  --accent: #8b7cf7;
+  --accent-strong: #7c6cf0;
+  --accent-soft: rgba(139, 124, 247, 0.14);
+  --accent-ring: rgba(139, 124, 247, 0.55);
+
+  /* Bo góc kiểu Apple (nhịp 10 / 14 / 20 / 28) */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius: var(--radius-md);
+
+  /* Vibrancy — độ nhoè của materials trong suốt */
+  --blur: 22px;
+  --blur-strong: 40px;
+
+  /* Nhịp chuyển động Apple */
+  --ease-apple: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast: 0.18s;
+  --dur-base: 0.32s;
 }
 
+/* ---------- Dark — nền mực sâu (mặc định) ---------- */
+:root,
+:root[data-theme='dark'] {
+  --bg: #0c0c0e;
+  --panel: #141417;
+  --card: #1a1a1e;
+  --field: #202024;
+  --hover: #2a2a30;
+  --border: #2a2a31;
+  --border-strong: #3d3d45;
+  --t1: #f5f5f7; /* mượn nhãn xám hệ Apple */
+  --t2: #d6d6db;
+  --t3: #9e9ea8;
+  --t4: #6e6e78;
+  --t5: #4e4e57;
+  --dots: #26262d;
+  --minimap-mask: rgba(12, 12, 14, 0.7);
+
+  /* Materials trong suốt (vibrancy) cho header / panel / modal */
+  --mat-header: rgba(20, 20, 23, 0.72);
+  --mat-panel: rgba(20, 20, 23, 0.68);
+  --mat-card: rgba(26, 26, 30, 0.82);
+  --mat-overlay: rgba(6, 6, 8, 0.56);
+  --mat-hairline: rgba(255, 255, 255, 0.06);
+
+  /* Bóng đổ mềm kiểu Apple, sâu theo tầng */
+  --shadow-sheet: 0 12px 40px -12px rgba(0, 0, 0, 0.7);
+  --shadow-pop: 0 8px 30px -8px rgba(0, 0, 0, 0.65);
+  --shadow-node: 0 6px 20px -8px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- Light — kem ấm sạch (quiet luxury) ---------- */
 :root[data-theme='light'] {
-  --bg: #efece6;
-  --panel: #f7f5f1;
+  --bg: #f2efe9;
+  --panel: #faf8f4;
   --card: #ffffff;
-  --field: #f1efe9;
-  --hover: #e7e4dd;
-  --border: #ddd9d0;
-  --border-strong: #c2bcb0;
-  --t1: #26231e;
-  --t2: #4b463d;
-  --t3: #7a746a;
-  --t4: #98928a;
-  --t5: #b3ada3;
-  --dots: #d9d5cb;
-  --minimap-mask: rgba(239, 236, 230, 0.72);
+  --field: #f4f1eb;
+  --hover: #e9e5dd;
+  --border: #e3ded4;
+  --border-strong: #cbc4b6;
+  --t1: #211e19;
+  --t2: #47423a;
+  --t3: #726c62;
+  --t4: #9a938a;
+  --t5: #b8b1a7;
+  --dots: #ddd8ce;
+  --minimap-mask: rgba(242, 239, 233, 0.72);
+
+  --mat-header: rgba(250, 248, 244, 0.72);
+  --mat-panel: rgba(250, 248, 244, 0.7);
+  --mat-card: rgba(255, 255, 255, 0.82);
+  --mat-overlay: rgba(60, 55, 48, 0.28);
+  --mat-hairline: rgba(0, 0, 0, 0.05);
+
+  --shadow-sheet: 0 12px 40px -14px rgba(60, 52, 40, 0.28);
+  --shadow-pop: 0 10px 30px -10px rgba(60, 52, 40, 0.22);
+  --shadow-node: 0 6px 18px -8px rgba(60, 52, 40, 0.2);
 }
 
 html,
@@ -47,11 +103,53 @@ body {
 body {
   color: var(--t1);
   background: var(--bg);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
-  transition: background-color 0.4s ease;
+  /* Font stack Apple — SF Pro trên máy Apple, fallback hệ + Geist đã nhúng */
+  font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', system-ui,
+    var(--font-geist-sans), 'Segoe UI', Roboto, sans-serif;
+  /* Chỉnh chữ tinh kiểu Apple */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.011em;
+  /* Chuyển sáng/tối mượt: đổi cả nền + màu chữ theo nhịp Apple */
+  transition: background-color var(--dur-base) var(--ease-apple),
+    color var(--dur-base) var(--ease-apple);
 }
 
-/* scrollbar tối giản cho panel */
+/* Tôn trọng người dùng tắt hiệu ứng */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Materials — class tiện dùng lại cho header/panel/modal (vibrancy) */
+.mat-header {
+  background: var(--mat-header);
+  backdrop-filter: saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter: saturate(180%) blur(var(--blur));
+}
+.mat-panel {
+  background: var(--mat-panel);
+  backdrop-filter: saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter: saturate(180%) blur(var(--blur));
+}
+.mat-card {
+  background: var(--mat-card);
+  backdrop-filter: saturate(180%) blur(var(--blur-strong));
+  -webkit-backdrop-filter: saturate(180%) blur(var(--blur-strong));
+}
+.mat-overlay {
+  background: var(--mat-overlay);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* scrollbar tối giản, overlay kiểu macOS */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -59,25 +157,34 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--border-strong);
   border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--t4);
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 
-/* React Flow — theo theme */
+/* React Flow — theo theme, đường nối mảnh tinh */
 .react-flow__edge-path {
   stroke-width: 1.5;
 }
 .react-flow__edge.selected .react-flow__edge-path {
-  stroke: #a78bfa !important;
+  stroke: var(--accent) !important;
   stroke-width: 2.5;
 }
 .react-flow__handle {
   cursor: crosshair;
+  /* handle nảy nhẹ kiểu Apple khi hover */
+  transition: transform var(--dur-fast) var(--ease-apple),
+    filter var(--dur-fast) var(--ease-apple);
 }
 .react-flow__handle:hover {
-  filter: brightness(1.4);
-  transform: scale(1.25);
+  filter: brightness(1.35);
+  transform: scale(1.28);
 }
 .react-flow__attribution {
   background: transparent;
@@ -86,7 +193,16 @@ body {
 .react-flow__minimap-mask {
   fill: var(--minimap-mask);
 }
+.react-flow__minimap {
+  transition: background-color var(--dur-base) var(--ease-apple);
+}
 .react-flow__selection {
-  background: rgba(139, 124, 247, 0.08);
-  border: 1px solid rgba(139, 124, 247, 0.4);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-ring);
+  border-radius: 6px;
+}
+.react-flow__controls,
+.react-flow__minimap {
+  border-radius: var(--radius-sm);
+  overflow: hidden;
 }

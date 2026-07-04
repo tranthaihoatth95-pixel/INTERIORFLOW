@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { X, Trash2, Download } from 'lucide-react';
 import { listGallery, removeFromGallery, type GalleryItem } from '@/lib/gallery';
 import { useFlowStore } from '@/lib/store';
+import { sheetSlide, pressableIcon } from '@/lib/motion';
 
 export function GalleryPanel() {
   const panel = useFlowStore((s) => s.panel);
@@ -21,17 +23,24 @@ export function GalleryPanel() {
   if (panel !== 'gallery') return null;
 
   return (
-    <aside className="z-20 flex w-64 flex-col border-r border-[var(--border)] bg-[var(--panel)]">
+    <motion.aside
+      variants={sheetSlide('left')}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      className="mat-panel z-20 flex w-64 flex-col border-r border-[var(--border)]"
+    >
       <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2.5">
         <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--t3)]">
           Gallery <span className="text-[var(--t5)]">(local)</span>
         </span>
-        <button
+        <motion.button
+          {...pressableIcon}
           onClick={() => setPanel(null)}
-          className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t2)]"
+          className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
         >
           <X size={13} />
-        </button>
+        </motion.button>
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto p-2.5">
         {items.length === 0 && (
@@ -40,7 +49,13 @@ export function GalleryPanel() {
           </p>
         )}
         {items.map((item) => (
-          <div key={item.id} className="group overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--field)]">
+          <motion.div
+            key={item.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
+            className="group overflow-hidden rounded-[10px] border border-[var(--border)] bg-[var(--field)]"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={item.url}
@@ -58,22 +73,22 @@ export function GalleryPanel() {
                 download={item.name}
                 target="_blank"
                 rel="noreferrer"
-                className="grid h-6 w-6 place-items-center rounded text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t2)]"
+                className="grid h-6 w-6 place-items-center rounded text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
                 title="Tải về"
               >
                 <Download size={12} />
               </a>
               <button
                 onClick={() => removeFromGallery(item.id)}
-                className="grid h-6 w-6 place-items-center rounded text-[var(--t4)] hover:bg-[var(--hover)] hover:text-red-400"
+                className="grid h-6 w-6 place-items-center rounded text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-red-400"
                 title="Xoá"
               >
                 <Trash2 size={12} />
               </button>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
-    </aside>
+    </motion.aside>
   );
 }

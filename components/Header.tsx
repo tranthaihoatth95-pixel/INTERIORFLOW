@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Coins, Share2, Play, Loader2, ChevronDown, Sparkles, FlaskConical, Sun, Moon, SunMoon, MessageCircle, LogOut, Check } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { runFlow } from '@/lib/execution';
 import { checkFalAvailable } from '@/lib/ai/client';
 import { toggleShare } from '@/lib/workspace';
 import { TasksDropdown } from '@/components/TasksDropdown';
+import { pressable, pressableIcon, easeApple } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 export function Header() {
@@ -27,10 +29,11 @@ export function Header() {
   const activeJobs = jobs.filter((j) => j.status === 'running' || j.status === 'queued').length;
 
   return (
-    <header className="relative z-30 flex h-12 items-center gap-3 border-b border-[var(--border)] bg-[var(--panel)] px-3">
+    // material blur (vibrancy) — header trong suốt, hairline mảnh
+    <header className="mat-header relative z-30 flex h-12 items-center gap-3 border-b border-[var(--border)] px-3">
       {/* logo */}
       <div className="flex items-center gap-2">
-        <div className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-600 text-[13px] font-bold text-white">
+        <div className="grid h-7 w-7 place-items-center rounded-[10px] bg-gradient-to-br from-violet-500 to-fuchsia-600 text-[13px] font-bold text-white shadow-sm">
           IF
         </div>
         <span className="hidden text-sm font-semibold tracking-tight text-[var(--t1)] sm:block">
@@ -38,63 +41,70 @@ export function Header() {
         </span>
       </div>
 
-      <div className="mx-1 h-5 w-px bg-[var(--hover)]" />
+      <div className="mx-1 h-5 w-px bg-[var(--border)]" />
 
       {/* flow name — editable */}
       {editing ? (
         <input
           autoFocus
-          className="w-56 rounded-md border border-violet-500/50 bg-[var(--field)] px-2 py-1 text-sm text-[var(--t1)] outline-none"
+          className="w-56 rounded-[10px] border border-[var(--accent-ring)] bg-[var(--field)] px-2 py-1 text-sm text-[var(--t1)] outline-none"
           value={flowName}
           onChange={(e) => setFlowName(e.target.value)}
           onBlur={() => setEditing(false)}
           onKeyDown={(e) => e.key === 'Enter' && setEditing(false)}
         />
       ) : (
-        <button
-          className="max-w-64 truncate rounded-md px-2 py-1 text-sm text-[var(--t2)] transition hover:bg-[var(--hover)]"
+        <motion.button
+          {...pressable}
+          className="max-w-64 truncate rounded-[10px] px-2 py-1 text-sm text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
           onClick={() => setEditing(true)}
           title="Đổi tên flow"
         >
           {flowName}
-        </button>
+        </motion.button>
       )}
 
       {/* AI mode badge */}
-      {falMode !== null && (
-        <span
-          data-testid="ai-mode"
-          title={
-            falMode
-              ? 'Đang gọi fal.ai thật'
-              : 'Chưa có FAL_KEY trong .env.local — node AI chạy mock (ảnh placeholder). Thêm key rồi restart để dùng AI thật.'
-          }
-          className={cn(
-            'flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium',
-            falMode
-              ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-              : 'border-amber-500/40 bg-amber-500/10 text-amber-300',
-          )}
-        >
-          {falMode ? <Sparkles size={10} /> : <FlaskConical size={10} />}
-          {falMode ? 'AI: fal.ai' : 'AI: mock'}
-        </span>
-      )}
+      <AnimatePresence>
+        {falMode !== null && (
+          <motion.span
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.24, ease: easeApple }}
+            data-testid="ai-mode"
+            title={
+              falMode
+                ? 'Đang gọi fal.ai thật'
+                : 'Chưa có FAL_KEY trong .env.local — node AI chạy mock (ảnh placeholder). Thêm key rồi restart để dùng AI thật.'
+            }
+            className={cn(
+              'flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium',
+              falMode
+                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                : 'border-amber-500/40 bg-amber-500/10 text-amber-300',
+            )}
+          >
+            {falMode ? <Sparkles size={10} /> : <FlaskConical size={10} />}
+            {falMode ? 'AI: fal.ai' : 'AI: mock'}
+          </motion.span>
+        )}
+      </AnimatePresence>
 
       <div className="flex-1" />
 
-      {/* run flow */}
-      <button
+      {/* run flow — nút chính, press-scale */}
+      <motion.button
+        {...pressable}
         onClick={() => runFlow()}
         disabled={isRunningFlow}
-        className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-violet-500 disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-50"
       >
         {isRunningFlow ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
         Run flow
-      </button>
+      </motion.button>
 
       {/* credits */}
-      <div className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
+      <div className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
         <Coins size={13} className="text-amber-400" />
         {credits}
       </div>
@@ -110,24 +120,25 @@ export function Header() {
 
       {/* tasks */}
       <div className="relative">
-        <button
+        <motion.button
+          {...pressable}
           onClick={() => setTasksOpen(!tasksOpen)}
           className={cn(
-            'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition',
+            'flex items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors',
             tasksOpen
-              ? 'border-violet-500/50 bg-violet-500/10 text-violet-300'
+              ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
               : 'border-[var(--border)] text-[var(--t2)] hover:bg-[var(--hover)]',
           )}
         >
           Tasks
           {activeJobs > 0 && (
-            <span className="grid h-4 min-w-4 place-items-center rounded-full bg-violet-500 px-1 text-[10px] font-semibold text-white">
+            <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-semibold text-white">
               {activeJobs}
             </span>
           )}
           <ChevronDown size={12} className={cn('transition-transform', tasksOpen && 'rotate-180')} />
-        </button>
-        {tasksOpen && <TasksDropdown />}
+        </motion.button>
+        <AnimatePresence>{tasksOpen && <TasksDropdown />}</AnimatePresence>
       </div>
 
       {/* user chip + logout */}
@@ -159,7 +170,8 @@ function ShareButton() {
   };
 
   return (
-    <button
+    <motion.button
+      {...pressable}
       onClick={onClick}
       onContextMenu={(e) => {
         // chuột phải = tắt share
@@ -172,7 +184,7 @@ function ShareButton() {
           : 'Bật share link read-only cho khách xem flow'
       }
       className={cn(
-        'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition',
+        'flex items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors',
         shareToken
           ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
           : 'border-[var(--border)] text-[var(--t2)] hover:bg-[var(--hover)]',
@@ -180,7 +192,7 @@ function ShareButton() {
     >
       {copied ? <Check size={13} /> : <Share2 size={13} />}
       {copied ? 'Đã copy' : 'Share'}
-    </button>
+    </motion.button>
   );
 }
 
@@ -188,18 +200,20 @@ function ChatToggle() {
   const chatOpen = useFlowStore((s) => s.chatOpen);
   const setChatOpen = useFlowStore((s) => s.setChatOpen);
   return (
-    <button
+    <motion.button
+      {...pressableIcon}
+      whileHover={{ scale: 1.06 }}
       onClick={() => setChatOpen(!chatOpen)}
       title="Chat nội bộ team"
       className={cn(
-        'grid h-8 w-8 place-items-center rounded-lg border transition',
+        'grid h-8 w-8 place-items-center rounded-[10px] border transition-colors',
         chatOpen
-          ? 'border-violet-500/50 bg-violet-500/10 text-violet-300'
+          ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
           : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)] hover:text-[var(--t1)]',
       )}
     >
       <MessageCircle size={14} />
-    </button>
+    </motion.button>
   );
 }
 
@@ -208,20 +222,21 @@ function UserChip() {
   const setUser = useFlowStore((s) => s.setUser);
   if (!user) return null;
   return (
-    <div className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] py-1 pl-2 pr-1 text-xs text-[var(--t2)]">
+    <div className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] py-1 pl-2 pr-1 text-xs text-[var(--t2)]">
       <span className="max-w-24 truncate" title={`${user.name} · ${user.email}${user.isAdmin ? ' · admin' : ''}`}>
         {user.name}
       </span>
-      <button
+      <motion.button
+        {...pressableIcon}
         title="Đăng xuất"
         onClick={async () => {
           await fetch('/api/auth/me', { method: 'DELETE' });
           setUser(null);
         }}
-        className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] hover:bg-[var(--hover)] hover:text-red-400"
+        className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-red-400"
       >
         <LogOut size={12} />
-      </button>
+      </motion.button>
     </div>
   );
 }
@@ -233,16 +248,29 @@ function ThemeToggle() {
   const next = pref === 'auto' ? 'light' : pref === 'light' ? 'dark' : 'auto';
   const Icon = pref === 'auto' ? SunMoon : pref === 'light' ? Sun : Moon;
   return (
-    <button
+    <motion.button
+      {...pressableIcon}
+      whileHover={{ scale: 1.06 }}
       onClick={() => setThemePref(next)}
       title={
         pref === 'auto'
           ? `Theme: tự động theo giờ (sáng 6h30–18h) — đang ${applied === 'light' ? 'sáng' : 'tối'}. Bấm để chuyển.`
           : `Theme: ${pref === 'light' ? 'sáng' : 'tối'} cố định. Bấm để chuyển.`
       }
-      className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--border)] text-[var(--t3)] transition hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+      className="grid h-8 w-8 place-items-center rounded-[10px] border border-[var(--border)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
     >
-      <Icon size={14} />
-    </button>
+      {/* icon xoay-mờ nhẹ khi đổi theme, kiểu Apple */}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={pref}
+          initial={{ opacity: 0, rotate: -30, scale: 0.8 }}
+          animate={{ opacity: 1, rotate: 0, scale: 1 }}
+          exit={{ opacity: 0, rotate: 30, scale: 0.8 }}
+          transition={{ duration: 0.2, ease: easeApple }}
+        >
+          <Icon size={14} />
+        </motion.span>
+      </AnimatePresence>
+    </motion.button>
   );
 }
