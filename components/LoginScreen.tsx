@@ -8,7 +8,6 @@ import { bootstrapWorkspace } from '@/lib/workspace';
 import { StackedCards } from '@/components/entry/StackedCards';
 import { presentationFaces, renderFaces } from '@/components/entry/cardFaces';
 import { easeApple, springPop, pressable } from '@/lib/motion';
-import { cn } from '@/lib/utils';
 
 const MODES: {
   id: WorkspaceMode;
