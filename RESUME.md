@@ -75,17 +75,19 @@ npx prisma migrate dev   # sau khi đổi schema
 
 ## 7. Việc đã CHIA RA CHẠY SONG SONG (2026-07-04, mỗi hạng mục 1 branch riêng, worktree cô lập)
 
-4 agent nền đã được phóng để build 4 hạng mục "code thuần" (không dính phần cứng). Mỗi cái tự `git checkout -b` + commit vào branch của nó. Khi quay lại, kiểm tra branch bằng `git branch -a`, xem diff, rồi **merge theo đúng thứ tự dưới** để tránh xung đột:
+4 branch đã tạo xong, **cả 4 đều compile sạch (`npx tsc --noEmit` exit 0)**. TRẠNG THÁI THỰC TẾ (cập nhật 04/07 sau khi các agent dừng):
 
-| Thứ tự merge | Branch | Nội dung | Ghi chú |
-|---|---|---|---|
-| 1 | `feat/electron` | Đóng gói .exe Windows native (Electron + electron-builder), README-electron.md | Chủ yếu thêm file mới → ít xung đột |
-| 2 | `feat/video-nodes` | Node `ai.image2video` (Kling qua fal), DataType 'video', hiển thị `<video>`, provider video | Đụng types/registry/NodeExtras |
-| 3 | `feat/pwa` | PWA cài lên iPad/Android/điện thoại (manifest + service worker + responsive mobile) | Đụng layout + responsive class |
-| 4 (CUỐI) | `feat/apple-design` | Giao diện chuẩn Apple HIG + motion framer-motion (materials, spring, iOS sheet) | Restyle rộng → **merge cuối**, xung đột ưu tiên bản này về styling |
+| Thứ tự merge | Branch | Commit | Trạng thái | Nội dung |
+|---|---|---|---|---|
+| 1 | `feat/electron` | `5979d49` | ✅ XONG | .exe Windows (Electron): `electron/main.js` spawn Next + SQLite/uploads vào `%APPDATA%`, README-electron.md. Chỉ thêm file + sửa package.json/next.config/.gitignore → ít xung đột |
+| 2 | `feat/video-nodes` | `69c879d` | ✅ XONG | Node `ai.image2video` + `ai.text2video` (Kling qua fal), DataType 'video', `<video>` + tải mp4, lightbox video |
+| 3 | `feat/pwa` | `9c1628d` | ✅ XONG (agent stall lúc *test trình duyệt*, code đã đủ + tsc sạch) | PWA: manifest + `public/sw.js` + `PWARegister.tsx` + responsive mobile (panel overlay). Đụng layout + nhiều component |
+| 4 (CUỐI) | `feat/apple-design` | `6afc48d` | ⚠️ NỀN XONG + COMPILE SẠCH nhưng RESTYLE MỚI ~9 COMPONENT — CẦN HOÀN THIỆN | Tokens Apple (globals.css), `tailwind.config`, `lib/motion.ts` (framer-motion), restyle: Header, LeftRail, 4 panel, ChatPanel, FlowsPanel, TasksDropdown. **CHƯA restyle: InteriorNode (node canvas), MaskPainter/Annotate modal, Lightbox, LoginScreen, FlowCanvas, BottomToolbar**; AnimatePresence bọc panel có thể chưa xong. Đã sửa bug framer nuốt drag-drop ở NodeLibrary/LibraryPanel. |
 
-Cách merge (ví dụ): `git checkout main && git merge feat/electron && git merge feat/video-nodes && git merge feat/pwa && git merge feat/apple-design`. Sau mỗi merge chạy `npm run build` để chắc. Nếu apple-design xung đột ở file component, giữ styling của apple-design + logic của branch kia.
-Xoá worktree thừa sau khi merge: `git worktree prune` + `git worktree list` để kiểm tra.
+**Việc cần làm phiên sau cho apple-design**: mở worktree `.claude/worktrees/agent-a77d075cccbfdd987` (hoặc merge branch ra rồi làm trên main), restyle nốt các component còn lại theo đúng token + `lib/motion.ts` đã có, verify `npm run build`, rồi mới merge.
+
+Cách merge (sau khi apple-design hoàn thiện): `git checkout main && git merge feat/electron && git merge feat/video-nodes && git merge feat/pwa && git merge feat/apple-design`. **Sau mỗi merge chạy `npm run build`.** Xung đột apple-design ở file component → giữ styling apple-design + logic branch kia. Xong: `git worktree prune`.
+⚠️ Hai agent pwa + apple-design **stall vì watchdog (600s không tiến triển — nghi máy ngủ khi rời đi)**, không phải lỗi code; công việc đã được cứu path-scoped vào branch, không mất gì.
 
 ## 8. Còn lại phải làm TRÊN MÁY CÔNG TY (không chạy được autonomous/cloud)
 1. Cài **ComfyUI + FLUX.1 dev** trên máy render (RTX) → viết `lib/ai/providers/comfyui.ts` → render 0đ, không gửi bản vẽ ra ngoài. Đây là hạng mục giá trị nhất, tận dụng dàn máy Vray/D5.
