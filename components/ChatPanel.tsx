@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { sheetSlide, pressableIcon } from '@/lib/motion';
@@ -64,12 +64,13 @@ export function ChatPanel() {
     }).catch(() => {});
   };
 
-  if (!open) return null;
-
   return (
-    // trượt từ cạnh phải (panel nằm bên phải) + material
-    <motion.aside
-      variants={sheetSlide('right')}
+    <AnimatePresence>
+      {open && (
+        // trượt từ cạnh phải (panel nằm bên phải) + material
+        <motion.aside
+          key="chat"
+          variants={sheetSlide('right')}
       initial="hidden"
       animate="visible"
       exit="exit"
@@ -154,6 +155,8 @@ export function ChatPanel() {
           <Send size={13} />
         </motion.button>
       </div>
-    </motion.aside>
+        </motion.aside>
+      )}
+    </AnimatePresence>
   );
 }

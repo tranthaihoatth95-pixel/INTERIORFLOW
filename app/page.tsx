@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
-import { AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { IntroSequence } from '@/components/IntroSequence';
 import { Header } from '@/components/Header';
@@ -78,18 +77,13 @@ export default function Home() {
         <Header />
         <div className="flex min-h-0 flex-1">
           <LeftRail />
-          {/* panel trái mở/đóng như iOS sheet — AnimatePresence để chạy exit khi đóng */}
-          <AnimatePresence mode="wait">
-            <NodeLibraryPanel />
-            <GalleryPanel />
-            <LibraryPanel />
-            <FlowsPanel />
-          </AnimatePresence>
+          {/* mỗi panel tự quản AnimatePresence riêng (iOS sheet, key duy nhất) */}
+          <NodeLibraryPanel />
+          <GalleryPanel />
+          <LibraryPanel />
+          <FlowsPanel />
           <FlowCanvas />
-          {/* chat panel bên phải — luồng đóng/mở độc lập */}
-          <AnimatePresence>
-            <ChatPanel />
-          </AnimatePresence>
+          <ChatPanel />
         </div>
         <MaskPainterModal />
         <AnnotateModal />

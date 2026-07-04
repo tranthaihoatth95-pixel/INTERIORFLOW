@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, GripVertical } from 'lucide-react';
 import { NODE_DEFINITIONS } from '@/lib/nodes/registry';
 import { useFlowStore } from '@/lib/store';
@@ -32,12 +32,13 @@ export function NodeLibraryPanel() {
     })).filter((g) => g.defs.length > 0);
   }, [query]);
 
-  if (panel !== 'library' && panel !== 'search') return null;
-
   return (
-    // iOS sheet trượt từ trái + material blur
-    <motion.aside
-      variants={sheetSlide('left')}
+    <AnimatePresence>
+      {(panel === 'library' || panel === 'search') && (
+        // iOS sheet trượt từ trái + material blur
+        <motion.aside
+          key="node-library"
+          variants={sheetSlide('left')}
       initial="hidden"
       animate="visible"
       exit="exit"
@@ -110,6 +111,8 @@ export function NodeLibraryPanel() {
           Đủ bộ 20 node nội thất — kéo thả vào canvas để dùng.
         </p>
       </div>
-    </motion.aside>
+        </motion.aside>
+      )}
+    </AnimatePresence>
   );
 }

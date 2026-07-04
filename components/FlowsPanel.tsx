@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Trash2, FolderPlus, Link2 } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import {
@@ -50,7 +50,10 @@ export function FlowsPanel() {
   if (panel !== 'flows') return null;
 
   return (
-    <motion.aside
+    <AnimatePresence>
+      {panel === 'flows' && (
+        <motion.aside
+          key="flows"
       variants={sheetSlide('left')}
       initial="hidden"
       animate="visible"
@@ -162,6 +165,8 @@ export function FlowsPanel() {
       <p className="border-t border-[var(--border)] px-3 py-2 text-[9px] leading-relaxed text-[var(--t5)]">
         Autosave 2s lên server · Run flow tự snapshot version · Share bật ở nút Share trên header.
       </p>
-    </motion.aside>
+        </motion.aside>
+      )}
+    </AnimatePresence>
   );
 }

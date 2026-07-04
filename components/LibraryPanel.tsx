@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, Trash2, Loader2 } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { sheetSlide, pressableIcon } from '@/lib/motion';
@@ -59,7 +59,10 @@ export function LibraryPanel() {
   );
 
   return (
-    <motion.aside
+    <AnimatePresence>
+      {panel === 'assets' && (
+        <motion.aside
+          key="assets"
       variants={sheetSlide('left')}
       initial="hidden"
       animate="visible"
@@ -204,6 +207,8 @@ export function LibraryPanel() {
       <p className="border-t border-[var(--border)] px-3 py-2 text-[9px] leading-relaxed text-[var(--t5)]">
         Thư viện chung cả team (lưu server) · kéo asset ra canvas → tự tạo node Import Image.
       </p>
-    </motion.aside>
+        </motion.aside>
+      )}
+    </AnimatePresence>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, Download } from 'lucide-react';
 import { listGallery, removeFromGallery, type GalleryItem } from '@/lib/gallery';
 import { useFlowStore } from '@/lib/store';
@@ -23,7 +23,10 @@ export function GalleryPanel() {
   if (panel !== 'gallery') return null;
 
   return (
-    <motion.aside
+    <AnimatePresence>
+      {panel === 'gallery' && (
+        <motion.aside
+          key="gallery"
       variants={sheetSlide('left')}
       initial="hidden"
       animate="visible"
@@ -89,6 +92,8 @@ export function GalleryPanel() {
           </motion.div>
         ))}
       </div>
-    </motion.aside>
+        </motion.aside>
+      )}
+    </AnimatePresence>
   );
 }
