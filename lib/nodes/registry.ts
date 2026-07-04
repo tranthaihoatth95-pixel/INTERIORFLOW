@@ -91,7 +91,37 @@ async function aiImages(
   }
 }
 
+/**
+ * Chạy AI task trả VIDEO. Khác ảnh: không có mock placeholder hợp lệ (không thể fake mp4),
+ * nên khi chưa có FAL_KEY thì báo lỗi rõ ràng thay vì crash. Có key → poll trả URL mp4.
+ */
+async function aiVideo(
+  task: AiTask,
+  input: Record<string, unknown>,
+  ctx: ExecContext,
+): Promise<PortValue> {
+  const useFal = await checkFalAvailable();
+  if (!useFal) {
+    throw new Error(
+      'Video cần FAL_KEY + số dư fal.ai (không có bản mock). Thêm FAL_KEY vào .env.local rồi nạp credit tại fal.ai/dashboard/billing.',
+    );
+  }
+  try {
+    const urls = await runImageJob(task, input, ctx.onProgress);
+    if (!urls.length) throw new Error('Provider không trả về video.');
+    return { dataType: 'video', value: urls[0] };
+  } catch (err) {
+    if (err instanceof AiJobError && err.code === 'FAL_NOT_CONFIGURED') {
+      throw new Error('Video cần FAL_KEY + số dư fal.ai. Thêm key rồi nạp credit để dùng.');
+    }
+    throw err;
+  }
+}
+
 const STYLE_OPTIONS = ['Scandinavian', 'Japandi', 'Indochine', 'Modern Luxury', 'Wabi-sabi', 'Industrial'];
+
+const VIDEO_MODELS = ['Kling 2.5 Turbo Pro (nhanh)', 'Kling 2 Master (chất lượng)'];
+const VIDEO_DURATIONS = ['5s', '10s'];
 
 /** Prompt template theo style — inject từ khoá nội thất. */
 function stylePrompt(style: string, extra: string) {
@@ -344,6 +374,79 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
         ctx,
       );
       return { image };
+    },
+  },
+  {
+    type: 'ai.image2video',
+    title: 'Image → Video',
+    category: 'AI_GENERATE',
+    description: 'Ảnh render → clip walkthrough nội thất (Kling image-to-video). Cần FAL_KEY + số dư.',
+    inputs: [
+      { id: 'image', label: 'Ảnh render', dataType: 'image' },
+      { id: 'prompt', label: 'Prompt (tuỳ chọn)', dataType: 'text' },
+    ],
+    outputs: [{ id: 'video', label: 'Video', dataType: 'video' }],
+    params: [
+      { kind: 'select', id: 'model', label: 'Chất lượng', options: VIDEO_MODELS },
+      { kind: 'select', id: 'duration', label: 'Thời lượng', options: VIDEO_DURATIONS },
+      {
+        kind: 'text',
+        id: 'motion',
+        label: 'Chuyển động camera',
+        placeholder: 'slow cinematic dolly forward through the living room, subtle parallax…',
+        multiline: true,
+      },
+    ],
+    creditCost: 8,
+    async execute(ctx) {
+      const { inputs, params } = ctx;
+      if (!inputs.image) throw new Error('Thiếu ảnh render ở input — nối 1 ảnh vào.');
+      // Ghép mô tả chuyển động camera + prompt ngoài (nếu có) thành prompt điều khiển video.
+      const motion = String(params.motion ?? '').trim();
+      const extra = inputs.prompt ? String(inputs.prompt.value).trim() : '';
+      const prompt =
+        [motion, extra].filter(Boolean).join(', ') ||
+        'slow smooth cinematic camera movement through the interior space, photorealistic, stable';
+      // Master = chất lượng cao (task riêng), còn lại Turbo Pro.
+      const task: AiTask = String(params.model).startsWith('Kling 2 Master')
+        ? 'image2videoMaster'
+        : 'image2video';
+      const duration = String(params.duration ?? '5s').replace('s', ''); // '5' | '10'
+      const video = await aiVideo(
+        task,
+        { prompt, image_url: inputs.image.value, duration },
+        ctx,
+      );
+      return { video };
+    },
+  },
+  {
+    type: 'ai.text2video',
+    title: 'Text → Video',
+    category: 'AI_GENERATE',
+    description: 'Prompt → clip concept nội thất (Kling text-to-video). Cần FAL_KEY + số dư.',
+    inputs: [{ id: 'prompt', label: 'Prompt', dataType: 'text' }],
+    outputs: [{ id: 'video', label: 'Video', dataType: 'video' }],
+    params: [
+      { kind: 'select', id: 'duration', label: 'Thời lượng', options: VIDEO_DURATIONS },
+      {
+        kind: 'text',
+        id: 'motion',
+        label: 'Mô tả cảnh + chuyển động',
+        placeholder: 'walkthrough of a warm japandi living room, camera slowly panning right…',
+        multiline: true,
+      },
+    ],
+    creditCost: 8,
+    async execute(ctx) {
+      const { inputs, params } = ctx;
+      const motion = String(params.motion ?? '').trim();
+      const extra = inputs.prompt ? String(inputs.prompt.value).trim() : '';
+      const prompt = [extra, motion].filter(Boolean).join(', ');
+      if (!prompt) throw new Error('Nhập prompt hoặc mô tả cảnh + chuyển động.');
+      const duration = String(params.duration ?? '5s').replace('s', '');
+      const video = await aiVideo('text2video', { prompt, duration }, ctx);
+      return { video };
     },
   },
 
