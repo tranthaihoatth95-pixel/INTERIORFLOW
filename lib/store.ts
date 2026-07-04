@@ -19,6 +19,10 @@ export type FlowNode = Node<InteriorNodeData>;
 export type Tool = 'select' | 'pan';
 export type Panel = 'library' | 'search' | 'gallery' | 'assets' | 'flows' | null;
 export type ThemePref = 'auto' | 'light' | 'dark';
+/** 2 lối làm việc — chọn ở trang đăng nhập; bản tách workspace đầy đủ ở phiên sau */
+export type WorkspaceMode = 'presentation' | 'render';
+/** Kiểu giao diện làm việc — 'node' (hiện tại) | 'window' (kiểu Figma, làm sau) */
+export type ViewMode = 'node' | 'window';
 
 export interface SessionUser {
   id: string;
@@ -53,6 +57,10 @@ interface FlowState {
   currentFlowId: string | null;
   shareToken: string | null;
   chatOpen: boolean;
+  /** lối làm việc đã chọn ở login (Presentation | 3D Render) */
+  workspace: WorkspaceMode | null;
+  /** kiểu xem canvas — node-flow hiện tại; 'window' (Figma) để mốc, chưa bật */
+  viewMode: ViewMode;
   /** nodeId đang mở Annotate modal */
   annotateNodeId: string | null;
   /** URL ảnh đang mở lightbox */
@@ -85,6 +93,8 @@ interface FlowState {
   setCurrentFlowId: (id: string | null) => void;
   setShareToken: (token: string | null) => void;
   setChatOpen: (open: boolean) => void;
+  setWorkspace: (mode: WorkspaceMode) => void;
+  setViewMode: (mode: ViewMode) => void;
   /** nạp graph từ server vào canvas, reset history */
   loadGraph: (graphJson: string, name: string, flowId: string, shareToken: string | null) => void;
 
@@ -150,6 +160,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   currentFlowId: null,
   shareToken: null,
   chatOpen: false,
+  workspace: null,
+  viewMode: 'node',
   isRunningFlow: false,
   paletteOpen: false,
   snapGrid: false,
@@ -235,6 +247,13 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   setCurrentFlowId: (currentFlowId) => set({ currentFlowId }),
   setShareToken: (shareToken) => set({ shareToken }),
   setChatOpen: (chatOpen) => set({ chatOpen }),
+  setWorkspace: (workspace) => {
+    set({ workspace });
+    try {
+      localStorage.setItem('interiorflow.workspace', workspace);
+    } catch {}
+  },
+  setViewMode: (viewMode) => set({ viewMode }),
 
   loadGraph: (graphJson, name, flowId, shareToken) => {
     try {

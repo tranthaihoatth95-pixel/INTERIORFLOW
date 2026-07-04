@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import { AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import { IntroSequence } from '@/components/IntroSequence';
 import { Header } from '@/components/Header';
 import { LeftRail } from '@/components/LeftRail';
 import { NodeLibraryPanel } from '@/components/NodeLibraryPanel';
@@ -22,11 +23,14 @@ import { bootstrapWorkspace } from '@/lib/workspace';
 
 export default function Home() {
   const user = useFlowStore((s) => s.user);
+  const [showIntro, setShowIntro] = useState(false);
 
   // theme + flow local trước, rồi check session → workspace server
   useEffect(() => {
     const store = useFlowStore.getState();
     store.hydrate();
+    // intro chỉ hiện lần đầu (chưa xem) — user có thể xem lại từ login
+    if (typeof window !== 'undefined' && !localStorage.getItem('if-intro-seen')) setShowIntro(true);
     const t = setInterval(() => useFlowStore.getState().applyTheme(), 60_000);
 
     fetch('/api/auth/me')
@@ -52,7 +56,21 @@ export default function Home() {
     );
   }
 
-  if (user === null) return <LoginScreen />;
+  if (user === null) {
+    if (showIntro) {
+      return (
+        <IntroSequence
+          onDone={() => {
+            try {
+              localStorage.setItem('if-intro-seen', '1');
+            } catch {}
+            setShowIntro(false);
+          }}
+        />
+      );
+    }
+    return <LoginScreen onReplayIntro={() => setShowIntro(true)} />;
+  }
 
   return (
     <ReactFlowProvider>

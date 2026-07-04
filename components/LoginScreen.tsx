@@ -1,13 +1,43 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import { useFlowStore } from '@/lib/store';
+import { motion } from 'framer-motion';
+import { Loader2, Presentation, Box, ArrowRight } from 'lucide-react';
+import { useFlowStore, type WorkspaceMode } from '@/lib/store';
 import { bootstrapWorkspace } from '@/lib/workspace';
+import { StackedCards } from '@/components/entry/StackedCards';
+import { presentationFaces, renderFaces } from '@/components/entry/cardFaces';
+import { easeApple, springPop, pressable } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 
-export function LoginScreen() {
+const MODES: {
+  id: WorkspaceMode;
+  title: string;
+  desc: string;
+  icon: typeof Presentation;
+  faces: React.ReactNode[];
+}[] = [
+  {
+    id: 'presentation',
+    title: 'Presentation',
+    desc: 'Concept → slide thuyết trình. Dàn trang, font, màu, brand từ ảnh tham khảo.',
+    icon: Presentation,
+    faces: presentationFaces,
+  },
+  {
+    id: 'render',
+    title: '3D Prompt Render',
+    desc: 'Sketch / CAD → phối cảnh photoreal. Đổi vật liệu, ánh sáng, upscale, video.',
+    icon: Box,
+    faces: renderFaces,
+  },
+];
+
+export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
   const setUser = useFlowStore((s) => s.setUser);
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const setWorkspace = useFlowStore((s) => s.setWorkspace);
+  const [chosen, setChosen] = useState<WorkspaceMode>('render');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -19,13 +49,14 @@ export function LoginScreen() {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(`/api/auth/${mode}`, {
+      const res = await fetch(`/api/auth/${authMode}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mode === 'login' ? { email, password } : { email, name, password }),
+        body: JSON.stringify(authMode === 'login' ? { email, password } : { email, name, password }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? 'Có lỗi xảy ra.');
+      setWorkspace(chosen);
       setUser(body.user);
       await bootstrapWorkspace();
     } catch (err) {
@@ -36,22 +67,84 @@ export function LoginScreen() {
   };
 
   return (
-    <div className="grid h-screen place-items-center bg-[var(--bg)] p-6">
-      <div className="w-full max-w-sm">
-        <div className="mb-6 flex items-center gap-2.5">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 text-[15px] font-bold text-white">
+    <div className="relative grid min-h-screen place-items-center overflow-hidden bg-[var(--bg)] px-6 py-10">
+      {/* ambient orbs — chiều sâu điện ảnh */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <motion.div
+          className="absolute -left-32 -top-24 h-96 w-96 rounded-full opacity-30 blur-[90px]"
+          style={{ background: 'var(--accent)' }}
+          animate={{ x: [0, 30, 0], y: [0, 20, 0] }}
+          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute -bottom-32 -right-24 h-[28rem] w-[28rem] rounded-full opacity-20 blur-[100px]"
+          style={{ background: '#e0996b' }}
+          animate={{ x: [0, -24, 0], y: [0, -18, 0] }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: easeApple }}
+        className="relative z-10 w-full max-w-4xl"
+      >
+        {/* brand */}
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className="grid h-11 w-11 place-items-center rounded-[var(--radius-md)] bg-gradient-to-br from-violet-500 to-fuchsia-600 text-[16px] font-bold text-white shadow-lg">
             IF
           </div>
-          <div>
-            <p className="text-base font-semibold tracking-tight text-[var(--t1)]">InteriorFlow</p>
-            <p className="text-xs text-[var(--t4)]">Workspace nội bộ — đăng nhập để lưu flow, credits, chat team</p>
-          </div>
+          <h1 className="mt-3 text-lg font-semibold tracking-tight text-[var(--t1)]">
+            Chọn không gian làm việc
+          </h1>
+          <p className="mt-1 text-xs text-[var(--t4)]">
+            Rê chuột vào tập tài liệu để xem bung · chọn 1 lối để bắt đầu
+          </p>
         </div>
 
-        <form onSubmit={submit} className="space-y-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl shadow-black/10">
-          {mode === 'register' && (
+        {/* 2 lối vào — stacked cards */}
+        <div className="mb-9 grid gap-6 sm:grid-cols-2">
+          {MODES.map((m) => {
+            const active = chosen === m.id;
+            return (
+              <button
+                key={m.id}
+                onClick={() => setChosen(m.id)}
+                className="group relative flex flex-col items-center rounded-[var(--radius-xl)] p-5 text-center transition-colors"
+              >
+                {active && (
+                  <motion.div
+                    layoutId="mode-bg"
+                    className="absolute inset-0 rounded-[var(--radius-xl)] bg-[var(--accent-soft)] ring-1 ring-[var(--accent-ring)]"
+                    transition={springPop}
+                  />
+                )}
+                {/* khu stacked cards — để overflow cho xòe */}
+                <div className="relative z-10 grid h-[220px] w-full place-items-center [overflow:visible]">
+                  <StackedCards faces={m.faces} className="relative h-[200px] w-[160px] cursor-pointer" />
+                </div>
+                <div className="relative z-10 mt-3 flex items-center gap-1.5">
+                  <m.icon size={15} className={active ? 'text-[var(--accent)]' : 'text-[var(--t3)]'} />
+                  <span className="text-sm font-semibold text-[var(--t1)]">{m.title}</span>
+                </div>
+                <p className="relative z-10 mt-1 max-w-[15rem] text-[11px] leading-relaxed text-[var(--t4)]">
+                  {m.desc}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* form đăng nhập — kính Apple */}
+        <form
+          onSubmit={submit}
+          className="mat-card mx-auto w-full max-w-sm space-y-3 rounded-[var(--radius-lg)] border border-[var(--mat-hairline)] p-5"
+          style={{ boxShadow: 'var(--shadow-sheet)' }}
+        >
+          {authMode === 'register' && (
             <input
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--field)] px-3 py-2 text-sm text-[var(--t1)] placeholder-[var(--t5)] outline-none focus:border-violet-500/60"
+              className="w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--field)] px-3 py-2 text-sm text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
               placeholder="Tên hiển thị (vd: Hoà)"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -60,7 +153,7 @@ export function LoginScreen() {
           )}
           <input
             type="email"
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--field)] px-3 py-2 text-sm text-[var(--t1)] placeholder-[var(--t5)] outline-none focus:border-violet-500/60"
+            className="w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--field)] px-3 py-2 text-sm text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -68,33 +161,56 @@ export function LoginScreen() {
           />
           <input
             type="password"
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--field)] px-3 py-2 text-sm text-[var(--t1)] placeholder-[var(--t5)] outline-none focus:border-violet-500/60"
+            className="w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--field)] px-3 py-2 text-sm text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
             placeholder="Mật khẩu (≥ 6 ký tự)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          {error && <p className="rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-400">{error}</p>}
-          <button
+          {error && (
+            <motion.p
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-[var(--radius-sm)] bg-red-500/10 px-3 py-2 text-xs text-red-400"
+            >
+              {error}
+            </motion.p>
+          )}
+          <motion.button
+            {...pressable}
             type="submit"
             disabled={busy}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-violet-600 py-2 text-sm font-medium text-white transition hover:bg-violet-500 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-[var(--accent-strong)] py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-50"
           >
-            {busy && <Loader2 size={14} className="animate-spin" />}
-            {mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản'}
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-            className="w-full text-center text-xs text-[var(--t4)] hover:text-[var(--t2)]"
-          >
-            {mode === 'login' ? 'Chưa có tài khoản? Đăng ký' : 'Đã có tài khoản? Đăng nhập'}
-          </button>
-          <p className="text-center text-[10px] leading-relaxed text-[var(--t5)]">
-            Người đăng ký đầu tiên là admin (500 credits) · thành viên sau 200 credits
-          </p>
+            {busy ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <>
+                {authMode === 'login' ? 'Vào' : 'Tạo tài khoản'} · {chosen === 'presentation' ? 'Presentation' : '3D Render'}
+                <ArrowRight size={14} />
+              </>
+            )}
+          </motion.button>
+          <div className="flex items-center justify-between pt-0.5">
+            <button
+              type="button"
+              onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+              className="text-xs text-[var(--t4)] transition-colors hover:text-[var(--t2)]"
+            >
+              {authMode === 'login' ? 'Chưa có tài khoản? Đăng ký' : 'Đã có tài khoản? Đăng nhập'}
+            </button>
+            {onReplayIntro && (
+              <button
+                type="button"
+                onClick={onReplayIntro}
+                className="text-xs text-[var(--t5)] transition-colors hover:text-[var(--t3)]"
+              >
+                Xem lại intro
+              </button>
+            )}
+          </div>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 }
