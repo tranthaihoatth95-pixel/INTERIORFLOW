@@ -6,3 +6,4 @@ uploads/
 prisma/dev.db*
 build.log
 .claude/
+*.tsbuildinfo
