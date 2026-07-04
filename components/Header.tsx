@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Share2, Play, Loader2, ChevronDown, Sparkles, FlaskConical, Sun, Moon, SunMoon, MessageCircle, LogOut, Check } from 'lucide-react';
+import { Coins, Share2, Play, Loader2, ChevronDown, Sparkles, FlaskConical, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, Workflow, LayoutDashboard } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { runFlow } from '@/lib/execution';
 import { checkFalAvailable } from '@/lib/ai/client';
@@ -63,6 +63,9 @@ export function Header() {
           {flowName}
         </motion.button>
       )}
+
+      {/* chuyển kiểu xem canvas — Node (hiện tại) | Window (Figma, sắp có) */}
+      <ViewToggle />
 
       {/* AI mode badge */}
       <AnimatePresence>
@@ -272,5 +275,33 @@ function ThemeToggle() {
         </motion.span>
       </AnimatePresence>
     </motion.button>
+  );
+}
+
+// Segmented control: kiểu xem canvas. 'node' hoạt động; 'window' (Figma) để mốc, chưa bật.
+function ViewToggle() {
+  const viewMode = useFlowStore((s) => s.viewMode);
+  const setViewMode = useFlowStore((s) => s.setViewMode);
+  return (
+    <div className="hidden items-center gap-0.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-0.5 md:flex">
+      <button
+        onClick={() => setViewMode('node')}
+        title="Node flow (hiện tại)"
+        className={cn(
+          'flex items-center gap-1 rounded-[7px] px-2 py-1 text-[11px] font-medium transition-colors',
+          viewMode === 'node' ? 'bg-[var(--card)] text-[var(--t1)] shadow-sm' : 'text-[var(--t4)] hover:text-[var(--t2)]',
+        )}
+      >
+        <Workflow size={12} /> Node
+      </button>
+      <button
+        disabled
+        title="Window view kiểu Figma — sắp có (đang xây engine riêng)"
+        className="flex cursor-not-allowed items-center gap-1 rounded-[7px] px-2 py-1 text-[11px] font-medium text-[var(--t5)]"
+      >
+        <LayoutDashboard size={12} /> Window
+        <span className="rounded bg-[var(--hover)] px-1 text-[8px] text-[var(--t4)]">sắp có</span>
+      </button>
+    </div>
   );
 }
