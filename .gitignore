@@ -5,3 +5,9 @@ node_modules
 uploads/
 prisma/dev.db*
 build.log
+
+# Electron — output đóng gói (.exe/nsis) do electron-builder tạo
+dist/
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo

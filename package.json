@@ -2,11 +2,18 @@
   "name": "interiorflow",
   "version": "0.1.0",
   "private": true,
+  "description": "InteriorFlow — canvas node AI cho pipeline nội thất (desktop native qua Electron).",
+  "author": "TTT Architects",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "prisma generate",
+    "electron": "electron .",
+    "electron:dev": "cross-env ELECTRON_START_URL=http://localhost:3000 concurrently -k -n NEXT,ELECTRON -c blue,magenta \"next dev\" \"wait-on tcp:3000 && electron .\"",
+    "electron:build": "next build && electron-builder --win"
   },
   "dependencies": {
     "@fal-ai/client": "^1.10.1",
@@ -29,10 +36,65 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.ttt.interiorflow",
+    "productName": "InteriorFlow",
+    "copyright": "TTT Architects",
+    "directories": {
+      "output": "dist",
+      "buildResources": "electron/icons"
+    },
+    "files": [
+      "electron/**/*",
+      ".next/**/*",
+      "prisma/**/*",
+      "node_modules/**/*",
+      "next.config.mjs",
+      "package.json",
+      "!**/node_modules/.cache/**",
+      "!.next/cache/**",
+      "!node_modules/.bin/**",
+      "!**/*.map"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      ".next/**/*",
+      "prisma/**/*",
+      "node_modules/next/**/*",
+      "node_modules/@prisma/**/*",
+      "node_modules/.prisma/**/*",
+      "node_modules/prisma/**/*"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "electron/icons/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "InteriorFlow"
+    }
   }
 }
