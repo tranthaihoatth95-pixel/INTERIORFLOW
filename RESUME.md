@@ -84,10 +84,19 @@ npx prisma migrate dev   # sau khi đổi schema
 | 3 | `feat/pwa` | `9c1628d` | ✅ XONG (agent stall lúc *test trình duyệt*, code đã đủ + tsc sạch) | PWA: manifest + `public/sw.js` + `PWARegister.tsx` + responsive mobile (panel overlay). Đụng layout + nhiều component |
 | 4 (CUỐI) | `feat/apple-design` | `6afc48d` | ⚠️ NỀN XONG + COMPILE SẠCH nhưng RESTYLE MỚI ~9 COMPONENT — CẦN HOÀN THIỆN | Tokens Apple (globals.css), `tailwind.config`, `lib/motion.ts` (framer-motion), restyle: Header, LeftRail, 4 panel, ChatPanel, FlowsPanel, TasksDropdown. **CHƯA restyle: InteriorNode (node canvas), MaskPainter/Annotate modal, Lightbox, LoginScreen, FlowCanvas, BottomToolbar**; AnimatePresence bọc panel có thể chưa xong. Đã sửa bug framer nuốt drag-drop ở NodeLibrary/LibraryPanel. |
 
-**Việc cần làm phiên sau cho apple-design**: mở worktree `.claude/worktrees/agent-a77d075cccbfdd987` (hoặc merge branch ra rồi làm trên main), restyle nốt các component còn lại theo đúng token + `lib/motion.ts` đã có, verify `npm run build`, rồi mới merge.
+**CẬP NHẬT 04/07 (tối) — apple-design ĐÃ MERGE VÀO MAIN + dựng ENTRY EXPERIENCE:**
+- `feat/apple-design` đã merge vào `main` (commit merge `fb3d602`). Main giờ = bản Apple design.
+- Dựng thêm trên main (theo yêu cầu "entry experience trước"): **IntroSequence** (4 cảnh điện ảnh, orb, CTA), **LoginScreen mới** (2 lối vào Presentation/3D Render, `StackedCards` xòe khi hover/xếp lại khi rời, form kính, chọn workspace), store `workspace`+`viewMode`, **ViewToggle Node/Window** (Window "sắp có" — mốc cho engine Figma). Đã verify E2E: intro→login→chọn mode→đăng nhập→vào app. Sửa xong warning AnimatePresence 'two children same key' (mỗi panel tự bọc AnimatePresence + key).
+- File mới: `components/IntroSequence.tsx`, `components/LoginScreen.tsx`, `components/entry/StackedCards.tsx`, `components/entry/cardFaces.tsx`.
+- **CÒN LẠI của apple-design (restyle chưa hết)**: InteriorNode (node canvas — hiện đã ổn nhờ token nhưng chưa có spring appear), MaskPainter/Annotate modal, Lightbox, BottomToolbar, FlowCanvas — nên restyle+motion nốt cho đồng bộ.
 
-Cách merge (sau khi apple-design hoàn thiện): `git checkout main && git merge feat/electron && git merge feat/video-nodes && git merge feat/pwa && git merge feat/apple-design`. **Sau mỗi merge chạy `npm run build`.** Xung đột apple-design ở file component → giữ styling apple-design + logic branch kia. Xong: `git worktree prune`.
-⚠️ Hai agent pwa + apple-design **stall vì watchdog (600s không tiến triển — nghi máy ngủ khi rời đi)**, không phải lỗi code; công việc đã được cứu path-scoped vào branch, không mất gì.
+**3 branch còn CHỜ MERGE vào main (đã Apple hoá)** — thứ tự + lưu ý xung đột mới:
+1. `feat/electron` (`5979d49`) — additive, merge dễ.
+2. `feat/video-nodes` (`69c879d`) — đụng NodeExtras/types/registry, xung đột nhẹ với Apple main.
+3. `feat/pwa` (`9c1628d`) — ⚠️ đụng NHIỀU với Apple restyle (responsive class + layout). Manifest/sw/PWARegister thì additive; phần responsive className phải hoà tay (giữ cả class Apple lẫn responsive modifier). Cân nhắc: lấy phần additive trước, làm lại responsive trên Apple main.
+Merge xong mỗi cái chạy `npm run build`; `git worktree prune` để dọn.
+
+**PHIÊN SAU (theo lựa chọn user):** (a) tách 2 WORKSPACE Presentation vs 3D Render — mỗi bên tool/library gọn theo ngữ cảnh (dùng `store.workspace` đã có); (b) xây engine **Window view kiểu Figma** (ViewToggle đã để mốc, `store.viewMode`); (c) restyle nốt component còn lại.
 
 ## 8. Còn lại phải làm TRÊN MÁY CÔNG TY (không chạy được autonomous/cloud)
 1. Cài **ComfyUI + FLUX.1 dev** trên máy render (RTX) → viết `lib/ai/providers/comfyui.ts` → render 0đ, không gửi bản vẽ ra ngoài. Đây là hạng mục giá trị nhất, tận dụng dàn máy Vray/D5.
