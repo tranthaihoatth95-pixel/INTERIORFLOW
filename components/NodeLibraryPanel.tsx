@@ -6,7 +6,7 @@ import { X, GripVertical } from 'lucide-react';
 import { NODE_DEFINITIONS } from '@/lib/nodes/registry';
 import { useFlowStore } from '@/lib/store';
 import { CATEGORY_META, type NodeCategory } from '@/lib/types';
-import { sheetSlide, staggerList, staggerItem, pressableIcon } from '@/lib/motion';
+import { sheetSlide, staggerList, pressableIcon } from '@/lib/motion';
 
 export const DND_MIME = 'application/interiorflow-node';
 
@@ -76,18 +76,14 @@ export function NodeLibraryPanel() {
             {/* stagger nhẹ — item hiện lần lượt như list iOS */}
             <motion.div className="space-y-1" variants={staggerList} initial="hidden" animate="visible">
               {defs.map((def) => (
-                <motion.div
+                <div
                   key={def.type}
-                  variants={staggerItem}
-                  whileHover={{ scale: 1.015 }}
-                  whileTap={{ scale: 0.99 }}
-                  transition={{ duration: 0.14, ease: [0.32, 0.72, 0, 1] }}
                   draggable
                   onDragStart={(e) => {
                     e.dataTransfer.setData(DND_MIME, def.type);
                     e.dataTransfer.effectAllowed = 'move';
                   }}
-                  className="group flex cursor-grab items-start gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 transition-colors hover:border-[var(--accent-ring)] active:cursor-grabbing"
+                  className="group flex cursor-grab items-start gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 transition-transform hover:border-[var(--accent-ring)] hover:scale-[1.015] active:scale-[0.99] active:cursor-grabbing"
                   title="Kéo thả vào canvas"
                 >
                   <GripVertical size={13} className="mt-0.5 shrink-0 text-[var(--t5)] group-hover:text-[var(--t4)]" />
@@ -102,7 +98,7 @@ export function NodeLibraryPanel() {
                       {def.creditCost}cr
                     </span>
                   )}
-                </motion.div>
+                </div>
               ))}
             </motion.div>
           </div>

@@ -165,17 +165,14 @@ export function LibraryPanel() {
           </p>
         )}
         {filtered.map((item) => (
-          <motion.div
+          <div
             key={item.id}
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
             draggable
             onDragStart={(e) => {
               e.dataTransfer.setData(ASSET_MIME, item.url);
               e.dataTransfer.effectAllowed = 'copy';
             }}
-            className="group cursor-grab overflow-hidden rounded-[10px] border border-[var(--border)] bg-[var(--field)] active:cursor-grabbing"
+            className="group cursor-grab overflow-hidden rounded-[10px] border border-[var(--border)] bg-[var(--field)] transition-transform hover:scale-[1.02] active:cursor-grabbing"
             title={`${item.name}${item.tags ? ` · ${item.tags}` : ''} · up bởi ${item.uploader} — kéo ra canvas`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -200,7 +197,7 @@ export function LibraryPanel() {
                 </button>
               )}
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
