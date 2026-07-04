@@ -103,3 +103,8 @@ Merge xong mỗi cái chạy `npm run build`; `git worktree prune` để dọn.
 2. Build & test file **.exe Windows** thật (feat/electron chỉ cấu hình, chưa build ra .exe vì cần chạy trên Windows).
 3. **Nạp fal.ai** (~$10–20) để chạy AI ảnh/video thật, nghiệm thu flow "Phòng ngủ hoàn chỉnh".
 4. Tạo repo GitHub (private) nếu muốn dùng claude.ai/code cloud thật (máy hiện không có `gh`/token nên phải tạo tay 1 lần).
+
+## 9. Chiến lược AI-tiers + Mia prompt (04/07)
+- `docs/STRATEGY-ai-tiers-and-safety.md` — núm chỉnh mức phụ thuộc AI (4 mức: Cao/Vừa/Tự-host-0đ/KHÔNG-AI-an-toàn-nhất), note vật liệu lên file, phân công Mia vs Claude Code, câu hỏi Q&A cho user.
+- `docs/PROMPT-MIA-material-tags.md` — prompt gửi Mia làm tính năng Material Tag (0-AI) trên branch feat/material-tags.
+- **Claude Code phiên sau làm**: AI-tier engine (store.aiTier + provider comfyui), tách 2 workspace, restyle nốt Apple, merge 3 branch chờ. Chờ user trả lời Q&A §5 của STRATEGY.
