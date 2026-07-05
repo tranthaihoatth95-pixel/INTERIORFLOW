@@ -27,24 +27,24 @@ export function Header() {
 
   return (
     // material blur (vibrancy) — header trong suốt, hairline mảnh
-    <header className="mat-header relative z-30 flex h-12 items-center gap-3 border-b border-[var(--border)] px-3">
+    <header className="mat-header relative z-30 flex h-12 items-center gap-2 border-b border-[var(--border)] px-2 sm:gap-3 sm:px-3">
       {/* logo */}
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <div className="grid h-7 w-7 place-items-center rounded-[10px] bg-gradient-to-br from-violet-500 to-fuchsia-600 text-[13px] font-bold text-white shadow-sm">
           IF
         </div>
-        <span className="hidden text-sm font-semibold tracking-tight text-[var(--t1)] sm:block">
+        <span className="hidden text-sm font-semibold tracking-tight text-[var(--t1)] lg:block">
           InteriorFlow
         </span>
       </div>
 
-      <div className="mx-1 h-5 w-px bg-[var(--border)]" />
+      <div className="mx-1 hidden h-5 w-px bg-[var(--border)] sm:block" />
 
-      {/* flow name — editable */}
+      {/* flow name — editable (co giãn mượt, không đè lên cụm nút phải) */}
       {editing ? (
         <input
           autoFocus
-          className="w-56 rounded-[10px] border border-[var(--accent-ring)] bg-[var(--field)] px-2 py-1 text-sm text-[var(--t1)] outline-none"
+          className="w-36 shrink rounded-[10px] border border-[var(--accent-ring)] bg-[var(--field)] px-2 py-1 text-sm text-[var(--t1)] outline-none sm:w-56"
           value={flowName}
           onChange={(e) => setFlowName(e.target.value)}
           onBlur={() => setEditing(false)}
@@ -53,7 +53,7 @@ export function Header() {
       ) : (
         <motion.button
           {...pressable}
-          className="max-w-64 truncate rounded-[10px] px-2 py-1 text-sm text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+          className="min-w-0 max-w-28 shrink truncate rounded-[10px] px-2 py-1 text-sm text-[var(--t2)] transition-colors hover:bg-[var(--hover)] sm:max-w-40 lg:max-w-56"
           onClick={() => setEditing(true)}
           title="Đổi tên flow"
         >
@@ -70,21 +70,22 @@ export function Header() {
       {/* Núm chọn mức phụ thuộc AI (4 mức) */}
       <AiTierMenu />
 
-      <div className="flex-1" />
+      <div className="min-w-2 flex-1" />
 
       {/* run flow — nút chính, press-scale */}
       <motion.button
         {...pressable}
         onClick={() => runFlow()}
         disabled={isRunningFlow}
-        className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-50"
+        title="Run flow"
+        className="flex shrink-0 items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-2.5 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-50 sm:px-3"
       >
         {isRunningFlow ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
-        Run flow
+        <span className="hidden sm:inline">Run flow</span>
       </motion.button>
 
       {/* credits */}
-      <div className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
+      <div className="flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
         <Coins size={13} className="text-amber-400" />
         {credits}
       </div>
@@ -99,7 +100,7 @@ export function Header() {
       <ThemeToggle />
 
       {/* tasks */}
-      <div className="relative">
+      <div className="relative shrink-0">
         <motion.button
           {...pressable}
           onClick={() => setTasksOpen(!tasksOpen)}
@@ -164,14 +165,14 @@ function ShareButton() {
           : 'Bật share link read-only cho khách xem flow'
       }
       className={cn(
-        'flex items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors',
+        'flex shrink-0 items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors',
         shareToken
           ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
           : 'border-[var(--border)] text-[var(--t2)] hover:bg-[var(--hover)]',
       )}
     >
       {copied ? <Check size={13} /> : <Share2 size={13} />}
-      {copied ? 'Đã copy' : 'Share'}
+      <span className="hidden md:inline">{copied ? 'Đã copy' : 'Share'}</span>
     </motion.button>
   );
 }
@@ -186,7 +187,7 @@ function ChatToggle() {
       onClick={() => setChatOpen(!chatOpen)}
       title="Chat nội bộ team"
       className={cn(
-        'grid h-8 w-8 place-items-center rounded-[10px] border transition-colors',
+        'grid h-8 w-8 shrink-0 place-items-center rounded-[10px] border transition-colors',
         chatOpen
           ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
           : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)] hover:text-[var(--t1)]',
@@ -202,8 +203,8 @@ function UserChip() {
   const setUser = useFlowStore((s) => s.setUser);
   if (!user) return null;
   return (
-    <div className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] py-1 pl-2 pr-1 text-xs text-[var(--t2)]">
-      <span className="max-w-24 truncate" title={`${user.name} · ${user.email}${user.isAdmin ? ' · admin' : ''}`}>
+    <div className="flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--border)] py-1 pl-2 pr-1 text-xs text-[var(--t2)]">
+      <span className="hidden max-w-24 truncate sm:inline" title={`${user.name} · ${user.email}${user.isAdmin ? ' · admin' : ''}`}>
         {user.name}
       </span>
       <motion.button
@@ -237,7 +238,7 @@ function ThemeToggle() {
           ? `Theme: tự động theo giờ (sáng 6h30–18h) — đang ${applied === 'light' ? 'sáng' : 'tối'}. Bấm để chuyển.`
           : `Theme: ${pref === 'light' ? 'sáng' : 'tối'} cố định. Bấm để chuyển.`
       }
-      className="grid h-8 w-8 place-items-center rounded-[10px] border border-[var(--border)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+      className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] border border-[var(--border)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
     >
       {/* icon xoay-mờ nhẹ khi đổi theme, kiểu Apple */}
       <AnimatePresence mode="wait" initial={false}>

@@ -16,6 +16,7 @@ import { CommandPalette } from '@/components/CommandPalette';
 import { MaskPainterModal } from '@/components/MaskPainterModal';
 import { AnnotateModal } from '@/components/AnnotateModal';
 import { Lightbox } from '@/components/Lightbox';
+import { Dashboard } from '@/components/Dashboard';
 import { LoginScreen } from '@/components/LoginScreen';
 import { useFlowStore } from '@/lib/store';
 import { bootstrapWorkspace } from '@/lib/workspace';
@@ -109,6 +110,7 @@ export default function Home() {
         <MaskPainterModal />
         <AnnotateModal />
         <Lightbox />
+        <Dashboard />
         <CommandPalette />
       </div>
     </ReactFlowProvider>

@@ -49,6 +49,8 @@ interface FlowState {
   tool: Tool;
   panel: Panel;
   tasksOpen: boolean;
+  /** Dashboard tổng quan project + team (overlay toàn màn) */
+  dashboardOpen: boolean;
   connectError: string | null;
   /** nodeId đang mở Mask Painter modal */
   maskEditorNodeId: string | null;
@@ -86,6 +88,7 @@ interface FlowState {
   setTool: (tool: Tool) => void;
   setPanel: (panel: Panel) => void;
   setTasksOpen: (open: boolean) => void;
+  setDashboardOpen: (open: boolean) => void;
   setConnectError: (msg: string | null) => void;
   setMaskEditorNodeId: (nodeId: string | null) => void;
   setAnnotateNodeId: (nodeId: string | null) => void;
@@ -156,6 +159,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   tool: 'select',
   panel: null,
   tasksOpen: false,
+  dashboardOpen: false,
   connectError: null,
   maskEditorNodeId: null,
   annotateNodeId: null,
@@ -243,6 +247,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   setTool: (tool) => set({ tool }),
   setPanel: (panel) => set((s) => ({ panel: s.panel === panel ? null : panel })),
   setTasksOpen: (tasksOpen) => set({ tasksOpen }),
+  setDashboardOpen: (dashboardOpen) => set({ dashboardOpen }),
   setConnectError: (connectError) => set({ connectError }),
   setMaskEditorNodeId: (maskEditorNodeId) => set({ maskEditorNodeId }),
   setAnnotateNodeId: (annotateNodeId) => set({ annotateNodeId }),
