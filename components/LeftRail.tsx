@@ -23,7 +23,7 @@ const ITEMS: { icon: typeof Search; label: string; panel?: Panel; soon?: boolean
   { icon: History, label: 'History / Versions', soon: true },
   { icon: Boxes, label: 'Node Library', panel: 'library' },
   { icon: FolderKanban, label: 'Projects & Flows', panel: 'flows' },
-  { icon: ImageIcon, label: 'Thư viện ảnh / vật liệu', panel: 'assets' },
+  { icon: ImageIcon, label: 'Reference — ảnh / vật liệu', panel: 'assets' },
   { icon: Clapperboard, label: 'Video', soon: true },
   { icon: Box, label: '3D', soon: true },
   { icon: Globe, label: 'Web import', soon: true },

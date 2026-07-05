@@ -13,6 +13,14 @@ import {
 
 const TYPE_BADGE: Record<string, string> = { pdf: 'PDF', excel: 'XLS', cad: 'CAD', other: 'FILE' };
 
+interface Scenario { rank: string; title: string; angle: string; why: string; outline?: string[] }
+interface Strategy { understanding?: string; scenarios?: Scenario[] }
+const RANK_META: Record<string, { label: string; tone: string }> = {
+  best: { label: 'Tốt nhất', tone: '#7C9A6B' },
+  uncertain: { label: 'Phân vân', tone: '#C79A63' },
+  reject: { label: 'Để loại', tone: '#9A6B84' },
+};
+
 export default function IngestPage() {
   const [project, setProject] = useState('Dự án chưa đặt tên');
   const [assets, setAssets] = useState<RefAsset[]>([]);
@@ -20,6 +28,9 @@ export default function IngestPage() {
   const [drag, setDrag] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [captioning, setCaptioning] = useState(false);
+  const [brief, setBrief] = useState('');
+  const [strategy, setStrategy] = useState<Strategy | null>(null);
+  const [thinking, setThinking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const mounted = useRef(false);
 
@@ -76,6 +87,25 @@ export default function IngestPage() {
     } finally { setCaptioning(false); }
   };
 
+  // AI Content Strategist — 3 kịch bản (tốt nhất / phân vân / loại) từ đề bài + reference.
+  const suggestStrategy = async () => {
+    setThinking(true); setNotice(null);
+    try {
+      const res = await fetch('/api/strategy/scenarios', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brief, references: assets.map((a) => ({ name: a.name, caption: a.caption, tags: a.tags, usage: a.usage })) }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (body.code === 'NVIDIA_FREE_EXHAUSTED') setNotice('⚠︎ NVIDIA free đã hết lượt — đổi nguồn thủ công (local / oneAI).');
+        else if (body.code === 'NVIDIA_NOT_CONFIGURED') setNotice('Chưa nối NVIDIA. Tạo key free ở build.nvidia.com → NVIDIA_API_KEY vào .env.local → restart.');
+        else setNotice(`Lỗi chiến lược: ${body.error ?? res.status}`);
+        return;
+      }
+      setStrategy(body);
+    } finally { setThinking(false); }
+  };
+
   const manifest: RefManifest = { project, createdAt: new Date().toISOString(), assets };
   const aiManifest = toAiManifest(manifest);
   const rawBytes = assets.reduce((s, a) => s + a.bytes, 0);
@@ -98,6 +128,43 @@ export default function IngestPage() {
         Nạp ảnh/file tham khảo → chưng cất JSON nhẹ (palette · công dụng · tag), ảnh giữ dạng thumbnail.
         Feed AI bằng “AI manifest” (bỏ thumbnail) → không vỡ context.
       </p>
+
+      {/* AI Content Strategist — 3 kịch bản trình khách */}
+      <div style={{ border: '1px solid #2A261F', borderRadius: 12, background: 'linear-gradient(180deg,#141009,transparent)', padding: 18, margin: '16px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <span style={{ fontFamily: '"SF Mono",monospace', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: '#C79A63' }}>AI · Chiến lược content</span>
+          <span style={{ fontSize: 11.5, color: '#8B887F' }}>khai thác → hiểu → biện luận → tốt nhất · phân vân · loại</span>
+        </div>
+        <textarea value={brief} onChange={(e) => setBrief(e.target.value)} rows={2}
+          placeholder="Đề bài / input dự án Detech: khách là ai, mục tiêu, ràng buộc, mong muốn… (càng rõ, kịch bản càng sắc)"
+          style={{ width: '100%', boxSizing: 'border-box', background: '#1B1712', color: '#EFE9DC', border: '1px solid #33302a', borderRadius: 8, padding: '9px 11px', fontSize: 13, resize: 'vertical' }} />
+        <button onClick={suggestStrategy} disabled={thinking}
+          style={{ ...btnPrimary, marginTop: 10 }}>{thinking ? 'Đang tư duy…' : '◆ Đề xuất 3 kịch bản content'}</button>
+
+        {strategy && (
+          <div style={{ marginTop: 16 }}>
+            {strategy.understanding && <p style={{ fontSize: 13, color: '#CFC7B8', margin: '0 0 14px', lineHeight: 1.6 }}><b style={{ color: '#C79A63' }}>Hiểu đề:</b> {strategy.understanding}</p>}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12 }}>
+              {(strategy.scenarios ?? []).map((s, i) => {
+                const rm = RANK_META[s.rank] ?? { label: s.rank, tone: '#8B887F' };
+                return (
+                  <div key={i} style={{ border: `1px solid ${rm.tone}55`, borderRadius: 10, padding: 14, background: `${rm.tone}0D` }}>
+                    <span style={{ fontFamily: '"SF Mono",monospace', fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: rm.tone }}>{rm.label}</span>
+                    <h3 style={{ fontSize: 15, margin: '6px 0 4px', color: '#EFE9DC', fontWeight: 600 }}>{s.title}</h3>
+                    <p style={{ fontSize: 12, color: '#9C8E76', margin: '0 0 8px', fontStyle: 'italic' }}>{s.angle}</p>
+                    <p style={{ fontSize: 12, color: '#CFC7B8', margin: '0 0 8px', lineHeight: 1.5 }}>{s.why}</p>
+                    {s.outline && s.outline.length > 0 && (
+                      <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11.5, color: '#8B887F', lineHeight: 1.6 }}>
+                        {s.outline.map((o, k) => <li key={k}>{o}</li>)}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* drop zone */}
       <div

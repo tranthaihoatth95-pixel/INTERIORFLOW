@@ -71,7 +71,7 @@ export function LibraryPanel() {
     >
       <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2.5">
         <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--t3)]">
-          Thư viện <span className="text-emerald-400">(team)</span>
+          Reference <span className="text-emerald-400">(team)</span>
         </span>
         <motion.button
           {...pressableIcon}
@@ -205,7 +205,7 @@ export function LibraryPanel() {
       </div>
 
       <p className="border-t border-[var(--border)] px-3 py-2 text-[9px] leading-relaxed text-[var(--t5)]">
-        Thư viện chung cả team (lưu server) · kéo asset ra canvas → tự tạo node Import Image.
+        Reference chung cả team (lưu server) · kéo asset ra canvas → tự tạo node Import Image.
       </p>
         </motion.aside>
       )}
