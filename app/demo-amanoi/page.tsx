@@ -139,12 +139,6 @@ function makeSwatch(m: Mat): string {
   return c.toDataURL('image/jpeg', 0.9);
 }
 
-async function save(name: string, dataUri: string) {
-  try {
-    await fetch('/api/demo-save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, dataUri }) });
-  } catch { /* route dev-only; bỏ qua nếu không có */ }
-}
-
 function download(name: string, dataUri: string) {
   const a = document.createElement('a'); a.href = dataUri; a.download = name; a.click();
 }
@@ -192,10 +186,7 @@ export default function DemoAmanoi() {
       const swatches = scene.materials.slice(0, 4).map(makeSwatch);
       const board = await composeBoard({ images: swatches, projectName: scene.project, studioName: 'TTT — Quiet Luxury' });
       setMoodboard(board); push('Moodboard vật liệu dựng xong');
-      // 5) lưu ~/Downloads
-      await save(`Amanoi-${scene.key}-present.pdf`, pdfUri);
-      await save(`Amanoi-${scene.key}-moodboard.png`, board);
-      push('Đã lưu vào ~/Downloads ✓');
+      push('Xong — bấm ⬇ để tải PDF / PNG');
       (window as unknown as { __amanoiDemo?: unknown }).__amanoiDemo = { done: true, scene: scene.key, slides: out.length };
     })();
   }, []);
