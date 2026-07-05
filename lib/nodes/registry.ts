@@ -1,5 +1,6 @@
 import type { ExecContext, NodeDefinition, PortValue } from '@/lib/types';
 import { runImageJob, checkProviders, AiJobError } from '@/lib/ai/client';
+import { webgpuGenerate } from '@/lib/ai/webgpu';
 import type { AiTask } from '@/lib/ai/models';
 import { providerForTier } from '@/lib/ai/tiers';
 import { extractPalette, composeBoard, adjustImage } from '@/lib/imaging';
@@ -96,6 +97,14 @@ async function aiImages(
   // Mức 1 (Không AI): node AI bị khoá — báo rõ, không mock lén.
   if (!providerForTier(ctx.aiTier, ctx.oneAiEngine)) {
     throw new Error('Đang ở mức "Không AI" — node AI bị khoá. Đổi mức AI ở góc trên, hoặc dùng node chỉnh tay / import render Vray·D5.');
+  }
+  // oneAI + SD + WebGPU: chạy client-side (chưa nạp model → tự mock, không lỗi).
+  if (ctx.aiTier === 2 && ctx.oneAiEngine === 'sd' && ctx.oneAiRuntime === 'webgpu') {
+    try {
+      return await webgpuGenerate(task, input, ctx.onProgress);
+    } catch {
+      return runMock();
+    }
   }
   if (!(await providerReady(ctx))) return runMock();
   try {

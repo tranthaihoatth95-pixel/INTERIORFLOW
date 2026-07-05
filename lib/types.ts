@@ -30,6 +30,8 @@ export interface ExecContext {
   aiTier: import('@/lib/ai/tiers').AiTier;
   /** engine của oneAI (mức 2): 'sd' | 'flux' — quyết định provider sd/comfyui */
   oneAiEngine?: import('@/lib/ai/tiers').OneAiEngine;
+  /** runtime của oneAI khi engine 'sd': 'server' (API) | 'webgpu' (client-side) */
+  oneAiRuntime?: import('@/lib/ai/tiers').OneAiRuntime;
 }
 
 export interface NodeDefinition {
