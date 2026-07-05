@@ -76,11 +76,12 @@ export function StackedCards({
         ))}
       </div>
 
-      {/* vòng chọn khi selected */}
+      {/* vòng chọn khi selected — đồng ấm */}
       {selected && (
         <motion.div
           layoutId="ws-select-ring"
-          className="pointer-events-none absolute -inset-3 rounded-[var(--radius-xl)] ring-2 ring-[var(--accent)]"
+          className="pointer-events-none absolute -inset-3 rounded-[var(--radius-xl)]"
+          style={{ boxShadow: 'inset 0 0 0 2px #c79a63' }}
           transition={springPop}
         />
       )}

@@ -1,153 +1,176 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Presentation, Box, Users, ArrowRight, ChevronRight } from 'lucide-react';
+import { useEffect, useReducer } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 import { easeApple } from '@/lib/motion';
 
 /**
  * IntroSequence — màn giới thiệu điện ảnh trước khi đăng nhập.
- * Tự chạy qua các cảnh (auto-advance), có skip + progress, kết bằng CTA "Bắt đầu".
- * Vibe: tối, sâu, gradient trôi — "ngầu" nhưng tiết chế kiểu Apple.
+ * Tự chạy qua 4 cảnh (auto-advance), có skip + progress, kết bằng CTA "Bắt đầu".
+ * Gu: quiet-luxury warm stone — nền đêm ấm, chữ serif biên tập, accent đồng tiết chế.
+ * Tĩnh, tiết chế, nhiều khoảng trống — tôn trọng prefers-reduced-motion.
  */
+
+// Token cục bộ (khai báo inline theo brand đích — warm stone, đồng #C79A63)
+const COPPER = '#c79a63';
+const SERIF = '"Didot","Hoefler Text",Georgia,serif';
+const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
 
 const SCENES = [
   {
-    icon: Sparkles,
+    no: '01',
     kicker: 'InteriorFlow',
     title: 'Studio thiết kế,\nchảy bằng AI.',
-    sub: 'Một canvas nối các bước — phác thảo, dựng ảnh, dàn slide, cộng tác. Không rời khỏi luồng.',
-    orb: 'var(--accent)',
+    sub: 'Một canvas nối liền mọi bước — phác thảo, dựng ảnh, dàn slide, cộng tác. Không rời khỏi luồng.',
   },
   {
-    icon: Box,
+    no: '02',
     kicker: 'Sketch → Photoreal',
     title: 'Từ nét phác\nđến phối cảnh thật.',
-    sub: 'Kéo bản CAD/sketch vào, chọn phong cách, ra ảnh render nội thất giữ đúng hình khối. Đổi vật liệu, ánh sáng, upscale 4K — cả video walkthrough.',
-    orb: '#5b8def',
+    sub: 'Kéo bản CAD hoặc sketch vào, chọn phong cách, nhận ảnh render giữ đúng hình khối. Đổi vật liệu, ánh sáng, upscale 4K.',
   },
   {
-    icon: Presentation,
+    no: '03',
     kicker: 'Concept → Deck',
     title: 'Ý tưởng thành\nbản thuyết trình.',
-    sub: 'Nội dung concept + ảnh tham khảo (màu, brand, dàn trang) → slide 16:9 hoàn chỉnh, xuất PDF. Sạch bản quyền, tức thì.',
-    orb: '#e0996b',
+    sub: 'Concept và ảnh tham khảo hoá thành slide 16:9 hoàn chỉnh, xuất PDF. Sạch bản quyền, tức thì.',
   },
   {
-    icon: Users,
+    no: '04',
     kicker: 'Team · Realtime',
     title: 'Cả team,\nmột dòng chảy.',
     sub: 'Thư viện vật liệu dùng chung, chat nội bộ, credits theo người, share link cho khách. Tất cả trong một nơi.',
-    orb: '#5bbf9a',
   },
 ];
 
-const HOLD = 3200; // ms mỗi cảnh
+const HOLD = 4200; // ms mỗi cảnh — nhịp chậm, điện ảnh
 
 export function IntroSequence({ onDone }: { onDone: () => void }) {
-  const [i, setI] = useState(0);
+  const [i, setI] = useReducer((_: number, v: number) => v, 0);
+  const reduce = useReducedMotion();
   const last = i === SCENES.length - 1;
   const scene = SCENES[i];
 
   // auto-advance (dừng ở cảnh cuối để chờ CTA)
   useEffect(() => {
     if (last) return;
-    const t = setTimeout(() => setI((v) => v + 1), HOLD);
+    const t = setTimeout(() => setI(i + 1), HOLD);
     return () => clearTimeout(t);
   }, [i, last]);
 
   return (
-    <div className="relative grid min-h-screen place-items-center overflow-hidden bg-[var(--bg)] px-6">
-      {/* orb nền đổi màu theo cảnh */}
-      <AnimatePresence mode="wait">
+    <div
+      className="relative grid min-h-screen place-items-center overflow-hidden px-6"
+      style={{ background: 'var(--bg)' }}
+    >
+      {/* Nền đêm ấm: một quầng đồng duy nhất trôi rất chậm + vignette tĩnh */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <motion.div
-          key={`orb-${i}`}
-          className="pointer-events-none absolute h-[42rem] w-[42rem] rounded-full blur-[120px]"
-          style={{ background: scene.orb }}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 0.22, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.1 }}
-          transition={{ duration: 1.1, ease: easeApple }}
+          className="absolute left-1/2 top-1/2 h-[52rem] w-[52rem] -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            background: `radial-gradient(circle, ${COPPER} 0%, transparent 62%)`,
+            filter: 'blur(80px)',
+          }}
+          initial={{ opacity: 0.06 }}
+          animate={reduce ? { opacity: 0.08 } : { opacity: [0.06, 0.11, 0.06], scale: [1, 1.06, 1] }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
         />
-      </AnimatePresence>
+        {/* vignette ép vào giữa cho chiều sâu điện ảnh */}
+        <div
+          className="absolute inset-0"
+          style={{ background: 'radial-gradient(120% 90% at 50% 45%, transparent 40%, rgba(0,0,0,0.55) 100%)' }}
+        />
+        {/* hairline chân trời rất mờ — cảm giác không gian */}
+        <div
+          className="absolute left-0 right-0 top-1/2 h-px"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(199,154,99,0.14), transparent)' }}
+        />
+      </div>
 
       {/* skip */}
       <button
         onClick={onDone}
-        className="absolute right-5 top-5 z-20 rounded-full px-3 py-1.5 text-xs text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
+        className="absolute right-6 top-6 z-20 rounded-full px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-[var(--t4)] transition-colors hover:text-[var(--t2)]"
+        style={{ fontFamily: MONO }}
       >
         Bỏ qua
       </button>
 
-      {/* progress bar theo cảnh */}
-      <div className="absolute left-1/2 top-6 z-20 flex -translate-x-1/2 gap-1.5">
+      {/* progress — vạch mảnh, tinh, đồng */}
+      <div className="absolute left-1/2 top-7 z-20 flex -translate-x-1/2 gap-2">
         {SCENES.map((_, idx) => (
           <button
             key={idx}
             onClick={() => setI(idx)}
-            className="h-1 overflow-hidden rounded-full bg-[var(--border)]"
-            style={{ width: idx === i ? 28 : 14 }}
+            aria-label={`Cảnh ${idx + 1}`}
+            className="h-[3px] overflow-hidden rounded-full transition-all duration-500"
+            style={{ width: idx === i ? 32 : 16, background: 'rgba(199,154,99,0.18)' }}
           >
             {idx === i && (
               <motion.div
                 key={`fill-${i}`}
-                className="h-full rounded-full bg-[var(--accent)]"
-                initial={{ width: '0%' }}
+                className="h-full rounded-full"
+                style={{ background: COPPER }}
+                initial={{ width: reduce ? '100%' : '0%' }}
                 animate={{ width: '100%' }}
-                transition={{ duration: last ? 0.4 : HOLD / 1000, ease: 'linear' }}
+                transition={{ duration: last || reduce ? 0.4 : HOLD / 1000, ease: 'linear' }}
               />
             )}
-            {idx < i && <div className="h-full w-full bg-[var(--accent)]" />}
+            {idx < i && <div className="h-full w-full" style={{ background: COPPER }} />}
           </button>
         ))}
       </div>
 
       {/* nội dung cảnh */}
-      <div className="relative z-10 w-full max-w-xl text-center">
+      <div className="relative z-10 w-full max-w-2xl text-center">
         <AnimatePresence mode="wait">
           <motion.div
             key={i}
-            initial={{ opacity: 0, y: 18, filter: 'blur(6px)' }}
+            initial={{ opacity: 0, y: reduce ? 0 : 16, filter: reduce ? 'blur(0px)' : 'blur(8px)' }}
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, y: -14, filter: 'blur(6px)' }}
-            transition={{ duration: 0.55, ease: easeApple }}
+            exit={{ opacity: 0, y: reduce ? 0 : -12, filter: reduce ? 'blur(0px)' : 'blur(8px)' }}
+            transition={{ duration: 0.7, ease: easeApple }}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1, duration: 0.4, ease: easeApple }}
-              className="mx-auto mb-5 grid h-12 w-12 place-items-center rounded-[var(--radius-md)] ring-1 ring-[var(--mat-hairline)]"
-              style={{ background: 'var(--mat-card)', boxShadow: 'var(--shadow-pop)' }}
+            {/* số cảnh + kicker trên một hàng nhãn tinh */}
+            <div
+              className="mb-6 flex items-center justify-center gap-3 text-[11px] uppercase text-[var(--t4)]"
+              style={{ fontFamily: MONO, letterSpacing: '0.26em' }}
             >
-              <scene.icon size={22} style={{ color: scene.orb }} />
-            </motion.div>
-
-            <div className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--t4)]">
-              {scene.kicker}
+              <span style={{ color: COPPER }}>{scene.no}</span>
+              <span className="h-px w-6" style={{ background: 'var(--border)' }} />
+              <span>{scene.kicker}</span>
             </div>
-            <h1 className="whitespace-pre-line text-[34px] font-semibold leading-[1.08] tracking-tight text-[var(--t1)] sm:text-[44px]">
+
+            <h1
+              className="whitespace-pre-line text-[40px] font-normal leading-[1.05] text-[var(--t1)] sm:text-[60px]"
+              style={{ fontFamily: SERIF, letterSpacing: '-0.01em' }}
+            >
               {scene.title}
             </h1>
-            <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-[var(--t3)]">{scene.sub}</p>
+            <p className="mx-auto mt-6 max-w-lg text-[15px] leading-relaxed text-[var(--t3)]">
+              {scene.sub}
+            </p>
           </motion.div>
         </AnimatePresence>
 
         {/* điều hướng */}
-        <div className="mt-9 flex items-center justify-center">
+        <div className="mt-12 flex h-12 items-center justify-center">
           <AnimatePresence mode="wait">
             {last ? (
               <motion.button
                 key="cta"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ duration: 0.3, ease: easeApple }}
+                initial={{ opacity: 0, y: reduce ? 0 : 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={reduce ? undefined : { scale: 1.02 }}
+                whileTap={reduce ? undefined : { scale: 0.98 }}
+                transition={{ duration: 0.4, ease: easeApple }}
                 onClick={onDone}
-                className="flex items-center gap-2 rounded-full bg-[var(--accent-strong)] px-6 py-3 text-sm font-medium text-white shadow-lg transition-colors hover:bg-[var(--accent)]"
+                className="group flex items-center gap-2.5 rounded-full px-7 py-3 text-sm font-medium text-[var(--bg)] transition-colors"
+                style={{ background: COPPER }}
               >
                 Bắt đầu
-                <ArrowRight size={16} />
+                <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
               </motion.button>
             ) : (
               <motion.button
@@ -155,10 +178,11 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onClick={() => setI((v) => Math.min(v + 1, SCENES.length - 1))}
-                className="flex items-center gap-1 rounded-full px-4 py-2 text-xs text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
+                onClick={() => setI(Math.min(i + 1, SCENES.length - 1))}
+                className="text-[11px] uppercase tracking-[0.2em] text-[var(--t4)] transition-colors hover:text-[var(--t2)]"
+                style={{ fontFamily: MONO }}
               >
-                Tiếp <ChevronRight size={14} />
+                Tiếp →
               </motion.button>
             )}
           </AnimatePresence>

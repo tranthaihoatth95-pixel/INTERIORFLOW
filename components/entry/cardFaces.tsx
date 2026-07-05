@@ -168,17 +168,18 @@ function Room({ h1, h2 }: { h1: number; h2: number }) {
   );
 }
 
+// Tông warm stone quiet-luxury: hue quanh 24–40 (kem/đồng/nâu ấm) cho ăn ý brand.
 export const renderFaces = [
   <Card key="r0" bg="#000">
-    <Room h1={28} h2={32} />
+    <Room h1={34} h2={30} />
   </Card>,
   <Card key="r1" bg="#000">
-    <Room h1={200} h2={210} />
+    <Room h1={26} h2={22} />
   </Card>,
   <Card key="r2" bg="#000">
-    <Room h1={16} h2={26} />
+    <Room h1={40} h2={34} />
   </Card>,
   <Card key="r3" bg="#000">
-    <Room h1={140} h2={150} />
+    <Room h1={20} h2={28} />
   </Card>,
 ];

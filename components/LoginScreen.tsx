@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Loader2, Presentation, Box, Palette, ArrowRight } from 'lucide-react';
 import { useFlowStore, type WorkspaceMode } from '@/lib/store';
 import { PHASE_MAP } from '@/lib/phases';
@@ -10,10 +10,16 @@ import { StackedCards } from '@/components/entry/StackedCards';
 import { conceptFaces, presentationFaces, renderFaces } from '@/components/entry/cardFaces';
 import { easeApple, springPop, pressable } from '@/lib/motion';
 
+// Token cục bộ (brand đích — warm stone, đồng #C79A63)
+const COPPER = '#c79a63';
+const SERIF = '"Didot","Hoefler Text",Georgia,serif';
+const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
+
 // 3 chặng mềm của cùng 1 pipeline — chọn nơi bắt đầu, không phải 3 app rời.
 const MODES: {
   id: WorkspaceMode;
   title: string;
+  tagline: string;
   desc: string;
   icon: typeof Presentation;
   faces: React.ReactNode[];
@@ -21,21 +27,24 @@ const MODES: {
   {
     id: 'concept',
     title: 'Concept',
-    desc: 'Moodboard, vật liệu, palette, style — khởi động ý tưởng trước khi dựng hình.',
+    tagline: 'Gieo ý tưởng',
+    desc: 'Moodboard, vật liệu, palette, style — trước khi dựng hình.',
     icon: Palette,
     faces: conceptFaces,
   },
   {
     id: 'render',
     title: 'Render',
-    desc: 'Clay / sketch → phối cảnh photoreal. Đổi vật liệu, ánh sáng, upscale.',
+    tagline: 'Dựng nên hình',
+    desc: 'Sketch → phối cảnh photoreal. Đổi vật liệu, ánh sáng, upscale.',
     icon: Box,
     faces: renderFaces,
   },
   {
     id: 'present',
     title: 'Present',
-    desc: 'Dàn slide 16:9, board, spec vật liệu → đóng gói cho khách duyệt.',
+    tagline: 'Trình cho khách',
+    desc: 'Slide 16:9, board, spec vật liệu → đóng gói cho khách duyệt.',
     icon: Presentation,
     faces: presentationFaces,
   },
@@ -44,6 +53,7 @@ const MODES: {
 export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
   const setUser = useFlowStore((s) => s.setUser);
   const setWorkspace = useFlowStore((s) => s.setWorkspace);
+  const reduce = useReducedMotion();
   const [chosen, setChosen] = useState<WorkspaceMode>('render');
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -74,57 +84,75 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
     }
   };
 
+  const field =
+    'w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--field)] px-3.5 py-2.5 text-sm text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[color:var(--fc)]';
+
   return (
-    <div className="relative grid min-h-screen place-items-center overflow-hidden bg-[var(--bg)] px-6 py-10">
-      {/* ambient orbs — chiều sâu điện ảnh */}
+    <div
+      className="relative grid min-h-screen place-items-center overflow-hidden px-6 py-12"
+      style={{ background: 'var(--bg)' }}
+    >
+      {/* Nền đêm ấm — quầng đồng tĩnh + vignette (tiết chế, không loè loẹt) */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <motion.div
-          className="absolute -left-32 -top-24 h-96 w-96 rounded-full opacity-30 blur-[90px]"
-          style={{ background: 'var(--accent)' }}
-          animate={{ x: [0, 30, 0], y: [0, 20, 0] }}
-          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -left-40 -top-32 h-[34rem] w-[34rem] rounded-full"
+          style={{ background: `radial-gradient(circle, ${COPPER} 0%, transparent 64%)`, filter: 'blur(90px)' }}
+          initial={{ opacity: 0.1 }}
+          animate={reduce ? { opacity: 0.1 } : { opacity: [0.08, 0.13, 0.08], x: [0, 24, 0] }}
+          transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
         />
-        <motion.div
-          className="absolute -bottom-32 -right-24 h-[28rem] w-[28rem] rounded-full opacity-20 blur-[100px]"
-          style={{ background: '#e0996b' }}
-          animate={{ x: [0, -24, 0], y: [0, -18, 0] }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+        <div
+          className="absolute inset-0"
+          style={{ background: 'radial-gradient(130% 100% at 50% 30%, transparent 45%, rgba(0,0,0,0.5) 100%)' }}
         />
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: reduce ? 0 : 14 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: easeApple }}
+        transition={{ duration: 0.6, ease: easeApple }}
         className="relative z-10 w-full max-w-4xl"
       >
         {/* brand */}
-        <div className="mb-8 flex flex-col items-center text-center">
-          <div className="grid h-11 w-11 place-items-center rounded-[var(--radius-md)] bg-gradient-to-br from-violet-500 to-fuchsia-600 text-[16px] font-bold text-white shadow-lg">
+        <div className="mb-11 flex flex-col items-center text-center">
+          <div
+            className="grid h-11 w-11 place-items-center rounded-[var(--radius-md)] text-[15px] font-semibold text-[var(--bg)]"
+            style={{ background: COPPER, fontFamily: SERIF, boxShadow: 'var(--shadow-pop)' }}
+          >
             IF
           </div>
-          <h1 className="mt-3 text-lg font-semibold tracking-tight text-[var(--t1)]">
+          <div
+            className="mt-5 text-[10px] uppercase text-[var(--t4)]"
+            style={{ fontFamily: MONO, letterSpacing: '0.28em' }}
+          >
+            InteriorFlow
+          </div>
+          <h1
+            className="mt-3 text-[30px] font-normal leading-tight text-[var(--t1)] sm:text-[36px]"
+            style={{ fontFamily: SERIF, letterSpacing: '-0.01em' }}
+          >
             Bắt đầu ở chặng nào?
           </h1>
-          <p className="mt-1 text-xs text-[var(--t4)]">
-            Concept → Render → Present · một pipeline, chung 1 canvas — đi lại tự do sau khi vào
+          <p className="mt-2.5 max-w-md text-[13px] leading-relaxed text-[var(--t4)]">
+            Concept · Render · Present — một pipeline, chung một canvas. Chọn nơi khởi hành, đi lại tự do sau khi vào.
           </p>
         </div>
 
         {/* 3 chặng — stacked cards */}
-        <div className="mb-9 grid gap-6 sm:grid-cols-3">
+        <div className="mb-12 grid gap-4 sm:grid-cols-3">
           {MODES.map((m) => {
             const active = chosen === m.id;
             return (
               <button
                 key={m.id}
                 onClick={() => setChosen(m.id)}
-                className="group relative flex flex-col items-center rounded-[var(--radius-xl)] p-5 text-center transition-colors"
+                className="group relative flex flex-col items-center rounded-[var(--radius-xl)] px-5 pb-6 pt-4 text-center transition-colors"
               >
                 {active && (
                   <motion.div
                     layoutId="mode-bg"
-                    className="absolute inset-0 rounded-[var(--radius-xl)] bg-[var(--accent-soft)] ring-1 ring-[var(--accent-ring)]"
+                    className="absolute inset-0 rounded-[var(--radius-xl)]"
+                    style={{ background: 'rgba(199,154,99,0.09)', boxShadow: 'inset 0 0 0 1px rgba(199,154,99,0.35)' }}
                     transition={springPop}
                   />
                 )}
@@ -132,11 +160,28 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
                 <div className="relative z-10 grid h-[220px] w-full place-items-center [overflow:visible]">
                   <StackedCards faces={m.faces} className="relative h-[200px] w-[160px] cursor-pointer" />
                 </div>
-                <div className="relative z-10 mt-3 flex items-center gap-1.5">
-                  <m.icon size={15} className={active ? 'text-[var(--accent)]' : 'text-[var(--t3)]'} />
-                  <span className="text-sm font-semibold text-[var(--t1)]">{m.title}</span>
+
+                {/* nhãn: số thứ tự nhỏ + tên serif + tagline */}
+                <div
+                  className="relative z-10 mt-4 text-[10px] uppercase transition-colors"
+                  style={{
+                    fontFamily: MONO,
+                    letterSpacing: '0.24em',
+                    color: active ? COPPER : 'var(--t5)',
+                  }}
+                >
+                  {m.tagline}
                 </div>
-                <p className="relative z-10 mt-1 max-w-[15rem] text-[11px] leading-relaxed text-[var(--t4)]">
+                <div className="relative z-10 mt-1.5 flex items-center gap-2">
+                  <m.icon size={15} style={{ color: active ? COPPER : 'var(--t4)' }} />
+                  <span
+                    className="text-[19px] leading-none text-[var(--t1)]"
+                    style={{ fontFamily: SERIF }}
+                  >
+                    {m.title}
+                  </span>
+                </div>
+                <p className="relative z-10 mt-2 max-w-[15rem] text-[11px] leading-relaxed text-[var(--t4)]">
                   {m.desc}
                 </p>
               </button>
@@ -144,15 +189,15 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
           })}
         </div>
 
-        {/* form đăng nhập — kính Apple */}
+        {/* form đăng nhập — kính ấm */}
         <form
           onSubmit={submit}
-          className="mat-card mx-auto w-full max-w-sm space-y-3 rounded-[var(--radius-lg)] border border-[var(--mat-hairline)] p-5"
-          style={{ boxShadow: 'var(--shadow-sheet)' }}
+          style={{ ['--fc' as string]: 'rgba(199,154,99,0.6)', boxShadow: 'var(--shadow-sheet)' }}
+          className="mat-card mx-auto w-full max-w-sm space-y-3 rounded-[var(--radius-lg)] border border-[var(--mat-hairline)] p-6"
         >
           {authMode === 'register' && (
             <input
-              className="w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--field)] px-3 py-2 text-sm text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
+              className={field}
               placeholder="Tên hiển thị (vd: Hoà)"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -161,7 +206,7 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
           )}
           <input
             type="email"
-            className="w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--field)] px-3 py-2 text-sm text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
+            className={field}
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -169,7 +214,7 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
           />
           <input
             type="password"
-            className="w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--field)] px-3 py-2 text-sm text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
+            className={field}
             placeholder="Mật khẩu (≥ 6 ký tự)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -188,7 +233,8 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
             {...pressable}
             type="submit"
             disabled={busy}
-            className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-[var(--accent-strong)] py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] py-3 text-sm font-medium text-[var(--bg)] shadow-sm transition-opacity disabled:opacity-50"
+            style={{ background: COPPER }}
           >
             {busy ? (
               <Loader2 size={14} className="animate-spin" />
@@ -199,7 +245,7 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
               </>
             )}
           </motion.button>
-          <div className="flex items-center justify-between pt-0.5">
+          <div className="flex items-center justify-between pt-1">
             <button
               type="button"
               onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
