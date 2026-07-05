@@ -165,7 +165,7 @@ Chạy song song: phiên chính (main) build Dashboard + header; **1 Claude Code
 - **CÒN**: ở **<400px (mobile thật)** vẫn tràn ~9 control (theme/tasks/user trôi khỏi mép) → cần **menu "⋯" overflow** gom nút phụ + **panel bottom-sheet** cho mobile (mục hoãn từ merge pwa vẫn còn).
 
 ### CÒN LẠI / CHẶN (phiên sau)
-1. **CHẶN AI (quan trọng nhất)**: fal.ai + Gemini vẫn hết balance → mọi node AI chạy **mock**. App hiện dùng được **đường non-AI / AI-tier mức 1** (import/edit/mask/annotate/slide/dashboard/collab đều thật). Muốn AI thật: (a) nạp fal ~$10–20, hoặc (b) cài **ComfyUI + FLUX** trên máy render → mức 2 tự-host 0đ (xem `comfyui/README.md`) — đúng hướng "phụ thuộc AI thấp".
+1. **AI (đã quyết HOÃN theo user 05/07)**: fal.ai + Gemini hết balance → node AI chạy **mock**. **User chốt "CHƯA CẦN AI" — dùng luồng non-AI trước** (import/edit/mask/annotate/slide/dashboard/collab đều THẬT, AI-tier mức 1). Đây là lựa chọn có chủ đích, KHÔNG phải đang kẹt. Khi cần bật AI thật: (a) nạp fal ~$10–20, hoặc (b) cài **ComfyUI + FLUX** máy render → mức 2 tự-host 0đ (`comfyui/README.md`).
 2. Header mobile overflow menu + bottom-sheet panel.
 3. Collab: test 2-máy thật; nâng cấp presence dùng WebSocket nếu polling nặng khi đông người (hiện ổn cho team nhỏ LAN).
 4. Dashboard: thay `window.prompt` "Dự án mới" bằng modal; thêm nút xoá/đổi tên dự án; gán flow vào project.
