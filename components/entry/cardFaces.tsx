@@ -9,6 +9,9 @@
 const W = 152;
 const H = 196;
 
+// Chữ hiển thị trên card = SANS hiện đại, KHÔNG chân (luật font).
+const DISPLAY = '-apple-system,"SF Pro Display","Helvetica Neue","Space Grotesk",system-ui,sans-serif';
+
 function Card({ children, bg }: { children: React.ReactNode; bg: string }) {
   return (
     <div style={{ width: W, height: H, background: bg }} className="relative">
@@ -30,7 +33,7 @@ export const presentationFaces = [
         Concept · Bedroom
       </div>
       <div>
-        <div className="font-serif text-[22px] leading-none" style={{ color: INK[0] }}>
+        <div className="text-[22px] font-bold leading-none" style={{ fontFamily: DISPLAY, letterSpacing: '-0.02em', color: INK[0] }}>
           SERENE
         </div>
         <div className="mt-2 h-[2px] w-8" style={{ background: '#8a6f4d' }} />
@@ -50,7 +53,7 @@ export const presentationFaces = [
   <Card key="p1" bg={SLIDE_BG[1]}>
     <div className="flex h-full gap-2 p-3.5">
       <div className="flex-1 space-y-1.5 pt-2">
-        <div className="font-serif text-[12px] leading-tight" style={{ color: INK[1] }}>
+        <div className="text-[12px] font-semibold leading-tight" style={{ fontFamily: DISPLAY, letterSpacing: '-0.01em', color: INK[1] }}>
           Chất liệu
         </div>
         {[16, 14, 15, 12].map((w, i) => (
@@ -69,7 +72,7 @@ export const presentationFaces = [
   // slide quote nền tối
   <Card key="p2" bg={SLIDE_BG[2]}>
     <div className="flex h-full flex-col items-center justify-center p-4 text-center">
-      <div className="font-serif text-[30px] leading-none" style={{ color: '#8a6f4d' }}>
+      <div className="text-[34px] font-bold leading-none" style={{ fontFamily: DISPLAY, color: '#8a6f4d' }}>
         &ldquo;
       </div>
       <div className="mt-1 space-y-1">
@@ -122,7 +125,7 @@ export const conceptFaces = [
   // palette + style keyword
   <Card key="c2" bg="#f4efe6">
     <div className="flex h-full flex-col justify-between p-4">
-      <div className="font-serif text-[16px] leading-tight" style={{ color: '#211e19' }}>
+      <div className="text-[16px] font-semibold leading-tight" style={{ fontFamily: DISPLAY, letterSpacing: '-0.01em', color: '#211e19' }}>
         Japandi
       </div>
       <div className="space-y-1.5">

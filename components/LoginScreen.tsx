@@ -10,9 +10,9 @@ import { StackedCards } from '@/components/entry/StackedCards';
 import { conceptFaces, presentationFaces, renderFaces } from '@/components/entry/cardFaces';
 import { easeApple, springPop, pressable } from '@/lib/motion';
 
-// Token cục bộ (brand đích — warm stone, đồng #C79A63)
+// Token cục bộ (brand đích — warm stone, đồng #C79A63). SANS hiện đại, KHÔNG chân.
 const COPPER = '#c79a63';
-const SERIF = '"Didot","Hoefler Text",Georgia,serif';
+const SANS = '-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue","Space Grotesk",system-ui,sans-serif';
 const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
 
 // 3 chặng mềm của cùng 1 pipeline — chọn nơi bắt đầu, không phải 3 app rời.
@@ -116,8 +116,8 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
         {/* brand */}
         <div className="mb-11 flex flex-col items-center text-center">
           <div
-            className="grid h-11 w-11 place-items-center rounded-[var(--radius-md)] text-[15px] font-semibold text-[var(--bg)]"
-            style={{ background: COPPER, fontFamily: SERIF, boxShadow: 'var(--shadow-pop)' }}
+            className="grid h-11 w-11 place-items-center rounded-[var(--radius-md)] text-[15px] font-bold text-[var(--bg)]"
+            style={{ background: COPPER, fontFamily: SANS, letterSpacing: '-0.02em', boxShadow: 'var(--shadow-pop)' }}
           >
             IF
           </div>
@@ -128,8 +128,8 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
             InteriorFlow
           </div>
           <h1
-            className="mt-3 text-[30px] font-normal leading-tight text-[var(--t1)] sm:text-[36px]"
-            style={{ fontFamily: SERIF, letterSpacing: '-0.01em' }}
+            className="mt-3 text-[30px] font-semibold leading-tight text-[var(--t1)] sm:text-[36px]"
+            style={{ fontFamily: SANS, letterSpacing: '-0.028em' }}
           >
             Bắt đầu ở chặng nào?
           </h1>
@@ -161,7 +161,7 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
                   <StackedCards faces={m.faces} className="relative h-[200px] w-[160px] cursor-pointer" />
                 </div>
 
-                {/* nhãn: số thứ tự nhỏ + tên serif + tagline */}
+                {/* nhãn: tagline giãn chữ + tên (SANS đậm) + icon */}
                 <div
                   className="relative z-10 mt-4 text-[10px] uppercase transition-colors"
                   style={{
@@ -175,8 +175,8 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
                 <div className="relative z-10 mt-1.5 flex items-center gap-2">
                   <m.icon size={15} style={{ color: active ? COPPER : 'var(--t4)' }} />
                   <span
-                    className="text-[19px] leading-none text-[var(--t1)]"
-                    style={{ fontFamily: SERIF }}
+                    className="text-[19px] font-semibold leading-none text-[var(--t1)]"
+                    style={{ fontFamily: SANS, letterSpacing: '-0.02em' }}
                   >
                     {m.title}
                   </span>
