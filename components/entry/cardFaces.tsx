@@ -1,7 +1,8 @@
 'use client';
 
 /**
- * Mặt các card tài liệu cho trang đăng nhập — tự vẽ bằng CSS/SVG, không cần ảnh ngoài.
+ * Mặt các card tài liệu cho màn chọn chặng — mặt TRƯỚC là ẢNH RENDER THẬT
+ * (public/covers/*), các mặt sau tự vẽ CSS/SVG để tạo chiều sâu khi xòe quạt.
  * Presentation: mini slide (bố cục dàn trang). Render: mini phối cảnh nội thất.
  * Kích thước card portrait ~ 152×196, tông quiet-luxury.
  */
@@ -16,6 +17,30 @@ function Card({ children, bg }: { children: React.ReactNode; bg: string }) {
   return (
     <div style={{ width: W, height: H, background: bg }} className="relative">
       {children}
+    </div>
+  );
+}
+
+/**
+ * CoverPhoto — mặt thẻ ẢNH RENDER THẬT (Detech), phủ đầy khung + nhãn chặng nhỏ.
+ * Ảnh nằm ở public/covers/ → Next serve tại "/covers/render_XX.jpeg".
+ */
+function CoverPhoto({ src, label }: { src: string; label: string }) {
+  return (
+    <div style={{ width: W, height: H }} className="relative bg-[#1a1712]">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt="" className="h-full w-full object-cover" draggable={false} />
+      {/* scrim đáy cho nhãn tách nền */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-1/2"
+        style={{ background: 'linear-gradient(0deg, rgba(15,12,9,0.85), transparent)' }}
+      />
+      <div
+        className="absolute bottom-2.5 left-3 text-[8px] uppercase"
+        style={{ fontFamily: DISPLAY, letterSpacing: '0.18em', fontWeight: 700, color: '#f6efe2' }}
+      >
+        {label}
+      </div>
     </div>
   );
 }
@@ -90,6 +115,8 @@ export const presentationFaces = [
       ))}
     </div>
   </Card>,
+  // mặt trước: ẢNH THẬT — phối cảnh hero để trình khách
+  <CoverPhoto key="p-cover" src="/covers/render_00.jpeg" label="Present · Deck" />,
 ];
 
 /* ---------- Concept: moodboard · vật liệu · pre-concept ---------- */
@@ -139,6 +166,8 @@ export const conceptFaces = [
       </div>
     </div>
   </Card>,
+  // mặt trước: ẢNH THẬT — vật liệu đá travertine ấm cho moodboard concept
+  <CoverPhoto key="c-cover" src="/covers/render_04.jpeg" label="Concept · Material" />,
 ];
 
 /* ---------- 3D Render: phối cảnh nội thất ---------- */
@@ -185,4 +214,6 @@ export const renderFaces = [
   <Card key="r3" bg="#000">
     <Room h1={20} h2={28} />
   </Card>,
+  // mặt trước: ẢNH THẬT — phối cảnh render khối trắng (đang dựng hình)
+  <CoverPhoto key="r-cover" src="/covers/render_10.jpeg" label="Render · 3D" />,
 ];

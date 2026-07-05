@@ -17,13 +17,14 @@ import { MaskPainterModal } from '@/components/MaskPainterModal';
 import { AnnotateModal } from '@/components/AnnotateModal';
 import { Lightbox } from '@/components/Lightbox';
 import { Dashboard } from '@/components/Dashboard';
-import { LoginScreen } from '@/components/LoginScreen';
+import { StageSelect } from '@/components/StageSelect';
 import { useFlowStore } from '@/lib/store';
-import { bootstrapWorkspace } from '@/lib/workspace';
 
 export default function Home() {
   const user = useFlowStore((s) => s.user);
-  const [showIntro, setShowIntro] = useState(false);
+  // Sau khi auth thành công → hiện màn CHỌN 3 CHẶNG (StageSelect) trước canvas.
+  // stageDone bật khi người dùng đã chọn chặng & vào canvas.
+  const [stageDone, setStageDone] = useState(false);
   const panel = useFlowStore((s) => s.panel);
   const chatOpen = useFlowStore((s) => s.chatOpen);
   const setPanel = useFlowStore((s) => s.setPanel);
@@ -31,12 +32,11 @@ export default function Home() {
   // Trên mobile các panel đè lên canvas → cần lớp nền mờ để bấm ra ngoài là đóng.
   const overlayOpen = panel !== null || chatOpen;
 
-  // theme + flow local trước, rồi check session → workspace server
+  // theme + flow local trước, rồi check session.
+  // KHÔNG bootstrap workspace ở đây — để màn StageSelect làm sau khi chọn chặng.
   useEffect(() => {
     const store = useFlowStore.getState();
     store.hydrate();
-    // intro chỉ hiện lần đầu (chưa xem) — user có thể xem lại từ login
-    if (typeof window !== 'undefined' && !localStorage.getItem('if-intro-seen')) setShowIntro(true);
     const t = setInterval(() => useFlowStore.getState().applyTheme(), 60_000);
 
     fetch('/api/auth/me')
@@ -47,7 +47,6 @@ export default function Home() {
         }
         const body = await r.json();
         store.setUser(body.user);
-        await bootstrapWorkspace();
       })
       .catch(() => store.setUser(null));
 
@@ -62,20 +61,15 @@ export default function Home() {
     );
   }
 
+  // Chưa đăng nhập → intro điện ảnh (ô đăng nhập nằm ở cảnh cuối).
+  // Đăng nhập thành công → LoginForm setUser → re-render sang màn chọn chặng.
   if (user === null) {
-    if (showIntro) {
-      return (
-        <IntroSequence
-          onDone={() => {
-            try {
-              localStorage.setItem('if-intro-seen', '1');
-            } catch {}
-            setShowIntro(false);
-          }}
-        />
-      );
-    }
-    return <LoginScreen onReplayIntro={() => setShowIntro(true)} />;
+    return <IntroSequence onDone={() => setStageDone(false)} />;
+  }
+
+  // Đã đăng nhập nhưng chưa chọn chặng → MÀN CHỜ CHỌN 3 GIAI ĐOẠN.
+  if (!stageDone) {
+    return <StageSelect onEnter={() => setStageDone(true)} />;
   }
 
   return (
