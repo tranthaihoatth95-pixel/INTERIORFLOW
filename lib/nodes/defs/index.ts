@@ -14,7 +14,9 @@
  */
 import type { NodeDefinition } from '@/lib/types';
 import { watermarkNodes } from './watermark';
+import { compareNodes } from './compare-models';
 
 export const EXTRA_NODES: NodeDefinition[] = [
   ...watermarkNodes,
+  ...compareNodes,
 ];
