@@ -11,7 +11,7 @@
  */
 import { loadImage, extractPalette } from '@/lib/imaging';
 
-export type RefUsage = 'ref-render' | 'slide' | 'material' | 'cad' | 'brief';
+export type RefUsage = 'ref-render' | 'slide' | 'material' | 'layout' | 'cad' | 'brief';
 export type RefType = 'image' | 'pdf' | 'excel' | 'cad' | 'other';
 
 export interface RefAsset {
@@ -27,6 +27,7 @@ export interface RefAsset {
   bytes: number;
   tags: string[];
   caption: string; // để trống — VLM điền sau
+  content?: string; // chữ bóc từ PDF (đề bài/hồ sơ) để AI đọc
 }
 
 export interface RefManifest {
@@ -36,12 +37,16 @@ export interface RefManifest {
 }
 
 export const USAGES: { id: RefUsage; label: string; tone: string }[] = [
-  { id: 'ref-render', label: 'Ref thiết kế → Render', tone: '#7C9A6B' },
-  { id: 'slide', label: 'Ảnh → Present/Slide', tone: '#6B84A8' },
+  { id: 'ref-render', label: 'Ref nội thất → Render', tone: '#7C9A6B' },
+  { id: 'slide', label: 'Ảnh mood → Present/Slide', tone: '#6B84A8' },
   { id: 'material', label: 'Vật liệu', tone: '#A8825A' },
+  { id: 'layout', label: 'Dàn trang / template', tone: '#B0885A' },
   { id: 'cad', label: 'CAD / Bản vẽ', tone: '#9A6B84' },
   { id: 'brief', label: 'Đầu bài / Brief', tone: '#8A8A8A' },
 ];
+
+/** usage được coi là "hình minh hoạ mood" — picker chỉ lấy các loại này, tránh pick nhầm dàn-trang/CAD/brief. */
+export const MOOD_USAGES: RefUsage[] = ['ref-render', 'slide', 'material'];
 
 const STORE_KEY = 'interiorflow.refManifest';
 
@@ -114,6 +119,21 @@ export async function ingestFile(file: File): Promise<RefAsset> {
     } catch {
       /* ảnh lỗi → vẫn giữ metadata */
     }
+  } else if (type === 'pdf') {
+    // Bóc chữ PDF (đề bài/hồ sơ) để AI đọc được — không còn "chưa đọc".
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/pdf/extract', { method: 'POST', body: fd });
+      if (res.ok) {
+        const j = (await res.json()) as { text?: string; pages?: number };
+        base.content = j.text ?? '';
+        base.caption = (j.text ?? '').slice(0, 180);
+        if (j.pages) base.tags = [`${j.pages} trang`];
+      }
+    } catch {
+      /* đọc lỗi → vẫn giữ metadata */
+    }
   }
   return base;
 }
@@ -150,6 +170,8 @@ export function toAiManifest(m: RefManifest): string {
       h: a.h,
       tags: a.tags,
       caption: a.caption,
+      // nội dung PDF (đề bài) — cắt gọn để không vỡ context
+      ...(a.content ? { content: a.content.slice(0, 1500) } : {}),
     })),
   };
   return JSON.stringify(slim, null, 2);

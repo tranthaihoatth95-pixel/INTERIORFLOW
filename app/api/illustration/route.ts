@@ -6,7 +6,10 @@ import { NextResponse } from 'next/server';
  *   CC, dùng thương mại được) → ③ cờ generate (chỉ khi thực sự cần, app tự route sang SD/NVIDIA).
  * Openverse là API công khai, không cần key. CC yêu cầu ghi công → trả kèm creator + license.
  */
-interface RefLite { id: string; name?: string; caption?: string; tags?: string[] }
+interface RefLite { id: string; name?: string; caption?: string; tags?: string[]; usage?: string }
+
+// Chỉ pick hình minh hoạ từ ref loại "mood/nội thất" — tránh lẫn dàn-trang/template, CAD, brief, PDF.
+const MOOD_USAGES = new Set(['ref-render', 'slide', 'material']);
 
 function scoreMatch(query: string, r: RefLite): number {
   const words = query.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
@@ -29,8 +32,9 @@ export async function POST(req: Request) {
 
   const picks: Record<string, unknown>[] = [];
 
-  // ① Reference trước
-  for (const r of (references ?? []).map((r) => ({ r, s: scoreMatch(q, r) })).filter((x) => x.s > 0).sort((a, b) => b.s - a.s)) {
+  // ① Reference trước — CHỈ ref loại mood/nội thất (bỏ dàn-trang/CAD/brief để không pick nhầm)
+  const moodRefs = (references ?? []).filter((r) => !r.usage || MOOD_USAGES.has(r.usage));
+  for (const r of moodRefs.map((r) => ({ r, s: scoreMatch(q, r) })).filter((x) => x.s > 0).sort((a, b) => b.s - a.s)) {
     picks.push({ source: 'reference', refId: r.r.id, title: r.r.name ?? '', score: r.s });
     if (picks.length >= count) break;
   }

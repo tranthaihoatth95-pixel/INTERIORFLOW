@@ -41,6 +41,10 @@ export async function POST(req: Request) {
   const { brief, qa, references } = (await req.json().catch(() => ({}))) as {
     brief?: string; qa?: string; references?: unknown[];
   };
+  // gom nội dung PDF (đề bài) từ reference vào brief nếu brief trống
+  const pdfContent = Array.isArray(references)
+    ? references.map((r) => (r as { content?: string }).content).filter(Boolean).join('\n\n').slice(0, 6000)
+    : '';
   if (!nvidiaConfigured()) {
     return NextResponse.json(
       { error: 'Chưa nối NVIDIA (NVIDIA_API_KEY). Tạo key free ở build.nvidia.com.', code: 'NVIDIA_NOT_CONFIGURED' },
@@ -57,7 +61,8 @@ export async function POST(req: Request) {
         .slice(0, 4000)
     : '';
   try {
-    const raw = await completeText(buildPrompt(String(brief ?? ''), String(qa ?? ''), refText), SYSTEM);
+    const fullBrief = [String(brief ?? ''), pdfContent ? `\n### TRÍCH HỒ SƠ PDF\n${pdfContent}` : ''].join('').trim();
+    const raw = await completeText(buildPrompt(fullBrief, String(qa ?? ''), refText), SYSTEM);
     const m = raw.match(/\{[\s\S]*\}/);
     let data: unknown;
     try { data = JSON.parse(m ? m[0] : raw); } catch { data = { understanding: raw.slice(0, 500), scenarios: [] }; }

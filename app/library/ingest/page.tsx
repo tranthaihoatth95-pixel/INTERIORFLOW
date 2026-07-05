@@ -101,7 +101,7 @@ export default function IngestPage() {
     try {
       const res = await fetch('/api/strategy/scenarios', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brief, references: assets.map((a) => ({ name: a.name, caption: a.caption, tags: a.tags, usage: a.usage })) }),
+        body: JSON.stringify({ brief, references: assets.map((a) => ({ name: a.name, caption: a.caption, tags: a.tags, usage: a.usage, content: a.content })) }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -121,7 +121,7 @@ export default function IngestPage() {
     try {
       const res = await fetch('/api/illustration', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: illusQuery, references: assets.map((a) => ({ id: a.id, name: a.name, caption: a.caption, tags: a.tags })), count: 6, allowSearch: true, allowGenerate: true }),
+        body: JSON.stringify({ query: illusQuery, references: assets.map((a) => ({ id: a.id, name: a.name, caption: a.caption, tags: a.tags, usage: a.usage })), count: 6, allowSearch: true, allowGenerate: true }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) { setNotice(`Lỗi pick hình: ${body.error ?? res.status}`); return; }
