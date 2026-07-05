@@ -19,6 +19,9 @@ import { BottomToolbar } from '@/components/BottomToolbar';
 import { DND_MIME } from '@/components/NodeLibraryPanel';
 import { ASSET_MIME } from '@/components/LibraryPanel';
 import { CATEGORY_META } from '@/lib/types';
+import { LiveCursors } from '@/components/collab/LiveCursors';
+import { PresenceBar } from '@/components/collab/PresenceBar';
+import { useCollabStore } from '@/lib/collabStore';
 
 const nodeTypes = { interior: InteriorNode, note: NoteNode };
 
@@ -38,6 +41,44 @@ export function FlowCanvas() {
 
   const { screenToFlowPosition } = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // ===== Collab thời-gian-thực (presence + live cursor, KHÔNG AI) =====
+  const user = useFlowStore((s) => s.user);
+  const currentFlowId = useFlowStore((s) => s.currentFlowId);
+  const collabStart = useCollabStore((s) => s.start);
+  const collabStop = useCollabStore((s) => s.stop);
+  const setLocalCursor = useCollabStore((s) => s.setLocalCursor);
+
+  useEffect(() => {
+    // danh tính: user đăng nhập, hoặc guest ổn định theo tab (sessionStorage)
+    let id = user?.id;
+    let name = user?.name;
+    if (!id) {
+      let guestId = '';
+      try {
+        guestId = sessionStorage.getItem('interiorflow.guestId') ?? '';
+        if (!guestId) {
+          guestId = `guest_${Math.random().toString(36).slice(2, 9)}`;
+          sessionStorage.setItem('interiorflow.guestId', guestId);
+        }
+      } catch {
+        guestId = `guest_${Math.random().toString(36).slice(2, 9)}`;
+      }
+      id = guestId;
+      name = 'Khách';
+    }
+    const flowId = currentFlowId ?? 'local';
+    collabStart(flowId, { userId: id, name: name ?? 'Khách' });
+    return () => collabStop();
+  }, [user?.id, user?.name, currentFlowId, collabStart, collabStop]);
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      const p = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+      setLocalCursor(p.x, p.y);
+    },
+    [screenToFlowPosition, setLocalCursor],
+  );
 
   // Type-safe ports: chỉ cho nối cùng dataType
   const isValidConnection: IsValidConnection<Edge> = useCallback(
@@ -156,7 +197,7 @@ export function FlowCanvas() {
   }, [screenToFlowPosition, addNote]);
 
   return (
-    <div ref={wrapperRef} className="relative flex-1 bg-[var(--bg)]">
+    <div ref={wrapperRef} onPointerMove={onPointerMove} className="relative flex-1 bg-[var(--bg)]">
       <ReactFlow<FlowNode>
         nodes={nodes}
         edges={edges}
@@ -204,6 +245,10 @@ export function FlowCanvas() {
           maskColor="var(--minimap-mask)"
         />
       </ReactFlow>
+
+      {/* Collab: con trỏ live (flow-space) + thanh presence */}
+      <LiveCursors />
+      <PresenceBar />
 
       <BottomToolbar onAddNote={handleAddNote} />
 
