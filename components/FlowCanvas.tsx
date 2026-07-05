@@ -190,7 +190,7 @@ export function FlowCanvas() {
         <MiniMap
           pannable
           zoomable
-          className="!bottom-4 !right-4 rounded-lg border border-[var(--border)]"
+          className="!bottom-4 !right-4 hidden rounded-lg border border-[var(--border)] md:block"
           style={{ background: 'var(--card)', width: 160, height: 110 }}
           nodeColor={(n) => {
             if (n.type === 'note') return '#fbbf24';

@@ -27,7 +27,7 @@ export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
     );
 
   return (
-    <div className="pointer-events-auto absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-0.5 rounded-xl border border-[var(--border)] bg-[var(--card)] px-1.5 py-1 shadow-xl shadow-black/40 backdrop-blur">
+    <div className="no-scrollbar pointer-events-auto absolute bottom-4 left-1/2 z-20 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 items-center gap-0.5 overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)] px-1.5 py-1 shadow-xl shadow-black/40 backdrop-blur [&>*]:shrink-0">
       <button title="Select (V)" className={btn(tool === 'select')} onClick={() => setTool('select')}>
         <MousePointer2 size={15} />
       </button>

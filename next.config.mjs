@@ -4,14 +4,26 @@ const nextConfig = {
   // Bản Electron hiện dùng cách "next start" + bundle nguyên node_modules
   // (xem electron/main.js + block "build" trong package.json). Cách này chạy
   // ổn với Prisma/SQLite và mẹo cw=userData cho uploads, KHÔNG cần standalone.
-  //
-  // Nếu về sau muốn gói GỌN hơn, có thể bật standalone:
-  //     output: 'standalone',
-  // Lưu ý khi bật: Next sẽ tạo `.next/standalone/server.js` kèm node_modules tối
-  // giản; phải sửa electron/main.js để chạy `node .next/standalone/server.js`
-  // (thay cho `next start`), copy thủ công `.next/static` + `public` vào standalone,
-  // và tự lo Prisma query engine + `prisma migrate deploy`. Không bật ở đây để
-  // tránh rủi ro và để `next dev`/`next start` chạy y như cũ.
+  // Nếu về sau muốn gói GỌN hơn: output: 'standalone' (phải sửa electron/main.js
+  // chạy .next/standalone/server.js + copy .next/static + public + lo Prisma engine).
+
+  // ── PWA (iPad/Android "Add to Home Screen") ────────────────────────────────
+  async headers() {
+    return [
+      {
+        // Service worker: cho phép scope '/', không cache bản sw.js để update landing kịp.
+        source: '/sw.js',
+        headers: [
+          { key: 'Service-Worker-Allowed', value: '/' },
+          { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+        ],
+      },
+      {
+        source: '/manifest.webmanifest',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
