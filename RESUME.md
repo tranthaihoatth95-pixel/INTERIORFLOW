@@ -1,6 +1,6 @@
 # InteriorFlow — Bàn giao phiên & Roadmap
 
-> File này để mở phiên chat mới đọc là tiếp tục được ngay. Cập nhật 2026-07-04.
+> File này để mở phiên chat mới đọc là tiếp tục được ngay. Cập nhật 2026-07-05 (xem MỤC 10 — mới nhất).
 
 ## 1. Backend hiện tại đang chạy như thế nào
 
@@ -133,5 +133,40 @@ Merge xong mỗi cái chạy `npm run build`; `git worktree prune` để dọn.
   - `nodes/InteriorNode.tsx` — root thành `motion.div` với `nodePop` (spring appear đã thiếu), viền chọn/nút Run/spinner/progress/focus → accent, `mat-card` rounded-16.
 - **Verify**: `npx tsc --noEmit` exit 0. Chạy dev :3000, test browser: node + toolbar render material đúng (blur 40px, radius 14), mở Annotate modal (mount sạch, "chưa có ảnh nguồn" đúng), mở Lightbox (backdrop + ảnh rounded + nút X mới), đóng cả hai → exit animation chạy, **0 console error**. Store lộ ở `window.__flowStore` (dev) tiện test.
 - **FlowCanvas.tsx CHƯA đụng** (chỉ là wrapper React Flow + BG, không có `violet-*`/radius lệch — để nguyên, không cần restyle). Nếu muốn có thể thêm empty-state đẹp sau.
-- **CHƯA COMMIT** — đang ở `main`, working tree có 5 file sửa. Chờ user duyệt rồi commit.
+- ~~CHƯA COMMIT~~ ✅ đã commit `da7b0b6`.
 - **DOCS mới (05/07)**: `docs/STRATEGY-competitive-and-unification.md` (feature map tổng→chi tiết + so Weavy/Canva/Figma + đánh giá vs Max→Vray→PPT + hợp nhất với Creative Board), `docs/PROMPT-MIA-ui-polish.md` (giao Mia polish UI, thư mục cô lập tránh giẫm chân).
+
+---
+
+## 10. PHIÊN 05/07 (chiều) — DASHBOARD + REAL-TIME COLLAB + HEADER RESPONSIVE
+
+Chạy song song: phiên chính (main) build Dashboard + header; **1 Claude Code phụ (worktree cô lập)** build real-time collab. Phân vùng file nghiêm ngặt để 0 xung đột. **Cả 4 commit đã lên `main`, tsc sạch mỗi bước, verify browser.**
+
+| Commit | Nội dung |
+|---|---|
+| `da7b0b6` | Apple restyle overlays+node (mục 9 ở trên) |
+| `4d51d81` | **Real-time collab** (agent phụ, branch `feat/realtime-collab` đã merge) |
+| `8f15509` | **Dashboard** tổng quan + **header responsive** |
+| `109cb5d` | merge collab → main |
+
+### A. Dashboard tổng quan project + team ✅
+- `app/api/dashboard/route.ts` — gộp team (users + presence online<2ph), projects (đếm flow), 12 flow mới nhất, stats (credit dùng 30 ngày / còn lại). App nội bộ → hiện **toàn team**.
+- `components/Dashboard.tsx` — overlay toàn màn Apple-styled: 4 stat card, grid dự án, roster team (avatar màu theo hash userId + online dot + admin crown + "bạn"), recent flows click → `openFlow`. framer-motion stagger. Nút "Dự án mới" (`createProject`, đang dùng `window.prompt` — nên thay bằng modal đẹp sau).
+- `store.dashboardOpen` + setter; **LeftRail** thêm nút "Tổng quan" ở đầu; mount trong `page.tsx`.
+- **Verify**: login `hoa@ttt.vn` → render data thật (3 member / 2 flow / credit), 0 console error.
+
+### B. Real-time collaboration kiểu Canva ✅ (code xong, cần test 2-máy thật)
+- File MỚI (agent phụ): `app/api/cursors/route.ts` (Map in-memory, POST upsert / GET?flowId&me lọc <6s, prune stale — **reset khi restart server**, chấp nhận cho presence ephemeral); `lib/collabStore.ts` (Zustand RIÊNG, poll ~900ms, màu theo hash userId, SSR-guard); `components/collab/LiveCursors.tsx` (mũi tên SVG + pill tên, flow→screen theo `useViewport` nên bám pan/zoom); `components/collab/PresenceBar.tsx` (pill mat-card góc phải, avatar+online dot, ẩn khi 1 mình).
+- Chỉ sửa `components/FlowCanvas.tsx`: onPointerMove→`screenToFlowPosition`→`setLocalCursor`, start/stop theo mount, mount `<LiveCursors/>`+`<PresenceBar/>`. Guest chưa login = "Khách" (id sessionStorage).
+- **Verify**: client poll đúng flowId+me (server log xác nhận); bơm cursor giả 2 "đồng đội" vào flow đang mở → PresenceBar hiện 2 avatar + LiveCursor render (kiểm chứng DOM). **Multiplayer thật cần 2 trình duyệt** — chưa test được tự động.
+
+### C. Header responsive (một phần) ⚠️
+- Đã sửa "tên flow bị co": flow name `min-w-0 shrink truncate` + max-width theo breakpoint; cụm nút phải `shrink-0`; Run/Share thu nhãn theo sm/md. Desktop ≥1280 sạch, 1024 ổn.
+- **CÒN**: ở **<400px (mobile thật)** vẫn tràn ~9 control (theme/tasks/user trôi khỏi mép) → cần **menu "⋯" overflow** gom nút phụ + **panel bottom-sheet** cho mobile (mục hoãn từ merge pwa vẫn còn).
+
+### CÒN LẠI / CHẶN (phiên sau)
+1. **CHẶN AI (quan trọng nhất)**: fal.ai + Gemini vẫn hết balance → mọi node AI chạy **mock**. App hiện dùng được **đường non-AI / AI-tier mức 1** (import/edit/mask/annotate/slide/dashboard/collab đều thật). Muốn AI thật: (a) nạp fal ~$10–20, hoặc (b) cài **ComfyUI + FLUX** trên máy render → mức 2 tự-host 0đ (xem `comfyui/README.md`) — đúng hướng "phụ thuộc AI thấp".
+2. Header mobile overflow menu + bottom-sheet panel.
+3. Collab: test 2-máy thật; nâng cấp presence dùng WebSocket nếu polling nặng khi đông người (hiện ổn cho team nhỏ LAN).
+4. Dashboard: thay `window.prompt` "Dự án mới" bằng modal; thêm nút xoá/đổi tên dự án; gán flow vào project.
+5. Node `ai.clay2render` + các workflow ComfyUI còn thiếu (làm trên máy công ty).
