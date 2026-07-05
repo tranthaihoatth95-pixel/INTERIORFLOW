@@ -166,7 +166,7 @@ Chạy song song: phiên chính (main) build Dashboard + header; **1 Claude Code
 
 ### CÒN LẠI / CHẶN (phiên sau)
 1. **AI (đã quyết HOÃN theo user 05/07)**: fal.ai + Gemini hết balance → node AI chạy **mock**. **User chốt "CHƯA CẦN AI" — dùng luồng non-AI trước** (import/edit/mask/annotate/slide/dashboard/collab đều THẬT, AI-tier mức 1). Đây là lựa chọn có chủ đích, KHÔNG phải đang kẹt. Khi cần bật AI thật: (a) nạp fal ~$10–20, hoặc (b) cài **ComfyUI + FLUX** máy render → mức 2 tự-host 0đ (`comfyui/README.md`).
-2. Header mobile overflow menu + bottom-sheet panel.
+2. ~~Header mobile overflow menu + bottom-sheet panel.~~ ✅ **XONG (05/07, commit `edf54b0`)** — `components/MobileMenu.tsx`: nút ⋯ (`sm:hidden`) mở bottom-sheet **portal ra `document.body`** (tránh ancestor có transform "giam" `fixed` → lúc đầu sheet bám sai vị trí, portal xong bám đáy đúng) gom credits/share/chat/theme/tasks/AI-tier/phase/user; header <640px chỉ còn `[IF][flow name][Run][⋯]`; desktop ≥sm cụm control bọc `hidden sm:flex` giữ nguyên inline. Khoá + khôi phục body scroll khi mở/đóng. Verify mobile 375 + desktop, tsc sạch.
 3. Collab: test 2-máy thật; nâng cấp presence dùng WebSocket nếu polling nặng khi đông người (hiện ổn cho team nhỏ LAN).
 4. Dashboard: thay `window.prompt` "Dự án mới" bằng modal; thêm nút xoá/đổi tên dự án; gán flow vào project.
 5. Node `ai.clay2render` + các workflow ComfyUI còn thiếu (làm trên máy công ty).
