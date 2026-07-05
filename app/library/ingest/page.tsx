@@ -18,6 +18,8 @@ export default function IngestPage() {
   const [assets, setAssets] = useState<RefAsset[]>([]);
   const [busy, setBusy] = useState(false);
   const [drag, setDrag] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [captioning, setCaptioning] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const mounted = useRef(false);
 
@@ -45,6 +47,34 @@ export default function IngestPage() {
   const patch = (id: string, p: Partial<RefAsset>) => setAssets((prev) => prev.map((a) => (a.id === id ? { ...a, ...p } : a)));
   const remove = (id: string) => setAssets((prev) => prev.filter((a) => a.id !== id));
   const setAllUsage = (u: RefUsage) => setAssets((prev) => prev.map((a) => ({ ...a, usage: u })));
+
+  // Auto-caption VLM (NVIDIA free). "Chỉ báo, không tự tụt": hết free → banner, dừng, KHÔNG fallback.
+  // Trả về: 'ok' | 'stop' (không nên chạy tiếp) khi 1 ảnh caption.
+  const captionOne = async (a: RefAsset): Promise<'ok' | 'stop'> => {
+    if (a.type !== 'image' || !a.thumb) return 'ok';
+    const res = await fetch('/api/vision/caption', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: a.thumb }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (body.code === 'NVIDIA_FREE_EXHAUSTED') setNotice('⚠︎ NVIDIA free đã hết lượt — không tự chuyển. Đổi nguồn thủ công (local / oneAI) rồi caption tiếp.');
+      else if (body.code === 'NVIDIA_NOT_CONFIGURED') setNotice('Chưa nối NVIDIA. Tạo key free ở build.nvidia.com → thêm NVIDIA_API_KEY vào .env.local → restart.');
+      else setNotice(`Lỗi caption: ${body.error ?? res.status}`);
+      return 'stop';
+    }
+    const extra = [body.style, body.room, ...(body.materials ?? [])].map((s: string) => String(s).trim()).filter(Boolean);
+    patch(a.id, { caption: String(body.caption ?? ''), tags: Array.from(new Set([...a.tags, ...extra])) });
+    return 'ok';
+  };
+
+  const captionAll = async () => {
+    setNotice(null); setCaptioning(true);
+    try {
+      for (const a of assets.filter((x) => x.type === 'image' && !x.caption)) {
+        if ((await captionOne(a)) === 'stop') break; // hết free → dừng, chờ user đổi nguồn
+      }
+    } finally { setCaptioning(false); }
+  };
 
   const manifest: RefManifest = { project, createdAt: new Date().toISOString(), assets };
   const aiManifest = toAiManifest(manifest);
@@ -94,11 +124,22 @@ export default function IngestPage() {
         </div>
       )}
 
+      {/* banner "chỉ báo" — hết free / chưa nối, KHÔNG tự tụt */}
+      {notice && (
+        <div style={{ background: '#2A1E12', border: '1px solid #C79A6366', color: '#E9D9BE', borderRadius: 10, padding: '10px 14px', margin: '0 0 14px', fontSize: 12.5, display: 'flex', gap: 10, alignItems: 'center' }}>
+          <span style={{ flex: 1 }}>{notice}</span>
+          <button onClick={() => setNotice(null)} style={{ background: 'none', border: 'none', color: '#C79A63', cursor: 'pointer', fontSize: 16 }}>×</button>
+        </div>
+      )}
+
       {/* bulk + export */}
       {assets.length > 0 && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
           <span style={{ fontSize: 12, opacity: 0.6, alignSelf: 'center' }}>Gán tất cả:</span>
           {USAGES.map((u) => <button key={u.id} onClick={() => setAllUsage(u.id)} style={chip(u.tone)}>{u.label}</button>)}
+          <button onClick={captionAll} disabled={captioning} style={{ ...btn, borderColor: '#76b900', color: '#9FCB4B' }}>
+            {captioning ? 'Đang đọc ảnh…' : '✨ Auto-caption (NVIDIA free)'}
+          </button>
           <span style={{ flex: 1 }} />
           <button onClick={() => exportJson(aiManifest, `${project}-ai-manifest.json`)} style={btnPrimary}>⬇ AI manifest (nhẹ)</button>
           <button onClick={() => exportJson(JSON.stringify(manifest), `${project}-full.json`)} style={btn}>⬇ Full (kèm thumb)</button>
@@ -132,6 +173,9 @@ export default function IngestPage() {
                 <input placeholder="tag: NCC, mã, style…" defaultValue={a.tags.join(', ')}
                   onBlur={(e) => patch(a.id, { tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean) })}
                   style={{ width: '100%', boxSizing: 'border-box', background: '#1B1712', color: '#CFC7B8', border: '1px solid #2A261F', borderRadius: 7, padding: '5px 6px', fontSize: 11.5, marginTop: 6 }} />
+                {a.caption
+                  ? <p style={{ fontSize: 11, color: '#9FCB4B', margin: '7px 0 0', lineHeight: 1.45 }}>✨ {a.caption}</p>
+                  : a.type === 'image' && <button onClick={() => captionOne(a)} style={{ marginTop: 7, background: 'none', border: '1px solid #76b90055', color: '#9FCB4B', borderRadius: 6, padding: '3px 8px', fontSize: 10.5, cursor: 'pointer' }}>✨ caption</button>}
               </div>
             </div>
           );
