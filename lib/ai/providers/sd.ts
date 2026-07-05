@@ -37,12 +37,40 @@ async function toBase64(src: string): Promise<string> {
   return buf.toString('base64');
 }
 
-/** Gọi A1111 txt2img/img2img (đồng bộ), trả mảng data-URI PNG. */
+/**
+ * Arg ControlNet cho extension sd-webui-controlnet (A1111/Forge). Module suy từ tên model;
+ * tên checkpoint CN tuỳ máy → đọc từ env (SD_CN_CANNY/DEPTH/... hoặc SD_CN_MODEL), rỗng = server tự chọn.
+ */
+function controlNetArg(model: string, imageB64: string): Record<string, unknown> {
+  const m = model.toLowerCase();
+  const mod =
+    m.includes('depth') ? 'depth_midas' :
+    m.includes('lineart') ? 'lineart_realistic' :
+    m.includes('mlsd') ? 'mlsd' :
+    'canny';
+  const envKey = { depth_midas: 'SD_CN_DEPTH', lineart_realistic: 'SD_CN_LINEART', mlsd: 'SD_CN_MLSD', canny: 'SD_CN_CANNY' }[mod];
+  return {
+    input_image: imageB64,
+    module: mod,
+    model: process.env[envKey] ?? process.env.SD_CN_MODEL ?? '',
+    weight: 1.0,
+    resize_mode: 'Crop and Resize',
+    control_mode: 'Balanced',
+    pixel_perfect: true,
+  };
+}
+
+/**
+ * Gọi A1111 (đồng bộ), trả mảng data-URI PNG. Ba nhánh theo input:
+ *  - control_image_url → txt2img + ControlNet (guide hình học: sketch/clay/exterior).
+ *  - image_url         → img2img (chỉnh trực tiếp ảnh; + mask_url = inpaint).
+ *  - không ảnh         → txt2img thuần (moodboard/text2img).
+ */
 async function generate(model: string, input: Record<string, unknown>): Promise<string[]> {
   if (!sdConfigured()) throw new Error(NOT_WIRED);
 
-  const initSrc = (input.image_url ?? input.control_image_url) as string | undefined;
-  const isImg2Img = Boolean(initSrc);
+  const controlSrc = input.control_image_url as string | undefined;
+  const initSrc = input.image_url as string | undefined;
 
   const payload: Record<string, unknown> = {
     prompt: String(input.prompt ?? ''),
@@ -52,17 +80,26 @@ async function generate(model: string, input: Record<string, unknown>): Promise<
     seed: input.seed != null ? Number(input.seed) : -1,
     width: Number(input.width ?? 768),
     height: Number(input.height ?? 512),
-    // gợi ý checkpoint/mode cho server nào đọc override; server không hiểu sẽ bỏ qua.
+    batch_size: Math.max(1, Number(input.num_images ?? 1)),
     override_settings: {},
     sd_model_checkpoint_hint: model,
   };
-  if (isImg2Img) {
-    payload.init_images = [await toBase64(initSrc as string)];
+
+  let endpoint: string;
+  if (initSrc) {
+    // img2img — chỉnh trực tiếp ảnh (styleTransfer/staging/materialswap/relight/upscale).
+    endpoint = '/sdapi/v1/img2img';
+    payload.init_images = [await toBase64(initSrc)];
     payload.denoising_strength = Number(input.strength ?? 0.65);
     if (input.mask_url != null) payload.mask = await toBase64(String(input.mask_url));
+  } else {
+    // txt2img — kèm ControlNet nếu có ảnh guide hình học.
+    endpoint = '/sdapi/v1/txt2img';
+    if (controlSrc) {
+      payload.alwayson_scripts = { controlnet: { args: [controlNetArg(model, await toBase64(controlSrc))] } };
+    }
   }
 
-  const endpoint = isImg2Img ? '/sdapi/v1/img2img' : '/sdapi/v1/txt2img';
   let res: Response;
   try {
     res = await fetch(`${base()}${endpoint}`, {
