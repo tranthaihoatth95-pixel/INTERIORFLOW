@@ -15,6 +15,11 @@ const TYPE_BADGE: Record<string, string> = { pdf: 'PDF', excel: 'XLS', cad: 'CAD
 
 interface Scenario { rank: string; title: string; angle: string; why: string; outline?: string[] }
 interface Strategy { understanding?: string; scenarios?: Scenario[] }
+interface Pick {
+  source: 'reference' | 'openverse';
+  refId?: string; url?: string; thumb?: string; title?: string;
+  credit?: string; license?: string; landing?: string;
+}
 const RANK_META: Record<string, { label: string; tone: string }> = {
   best: { label: 'Tốt nhất', tone: '#7C9A6B' },
   uncertain: { label: 'Phân vân', tone: '#C79A63' },
@@ -31,6 +36,9 @@ export default function IngestPage() {
   const [brief, setBrief] = useState('');
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [thinking, setThinking] = useState(false);
+  const [illusQuery, setIllusQuery] = useState('');
+  const [picks, setPicks] = useState<Pick[] | null>(null);
+  const [picking, setPicking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const mounted = useRef(false);
 
@@ -106,6 +114,22 @@ export default function IngestPage() {
     } finally { setThinking(false); }
   };
 
+  // Illustration Picker — thác 3 nguồn: Reference → Openverse (CC) → cờ generate.
+  const pickIllustrations = async () => {
+    if (!illusQuery.trim()) return;
+    setPicking(true); setNotice(null);
+    try {
+      const res = await fetch('/api/illustration', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: illusQuery, references: assets.map((a) => ({ id: a.id, name: a.name, caption: a.caption, tags: a.tags })), count: 6, allowSearch: true, allowGenerate: true }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) { setNotice(`Lỗi pick hình: ${body.error ?? res.status}`); return; }
+      setPicks(body.picks ?? []);
+      if (body.searchError) setNotice(`Nguồn free lỗi: ${body.searchError}`);
+    } finally { setPicking(false); }
+  };
+
   const manifest: RefManifest = { project, createdAt: new Date().toISOString(), assets };
   const aiManifest = toAiManifest(manifest);
   const rawBytes = assets.reduce((s, a) => s + a.bytes, 0);
@@ -162,6 +186,46 @@ export default function IngestPage() {
                 );
               })}
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Illustration Picker — thác 3 nguồn */}
+      <div style={{ border: '1px solid #2A261F', borderRadius: 12, background: 'linear-gradient(180deg,#100D14,transparent)', padding: 18, margin: '0 0 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+          <span style={{ fontFamily: '"SF Mono",monospace', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: '#6B84A8' }}>Hình minh hoạ · 3 nguồn</span>
+          <span style={{ fontSize: 11.5, color: '#8B887F' }}>Reference → Openverse (không bản quyền) → sinh khi cần</span>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input value={illusQuery} onChange={(e) => setIllusQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && pickIllustrations()}
+            placeholder="Từ khoá mood/nội dung: vd 'warm minimalist bedroom oak', 'quiet luxury lobby stone'…"
+            style={{ flex: 1, background: '#1B1712', color: '#EFE9DC', border: '1px solid #33302a', borderRadius: 8, padding: '9px 11px', fontSize: 13 }} />
+          <button onClick={pickIllustrations} disabled={picking} style={{ ...btn, borderColor: '#6B84A8', color: '#9DB8DE' }}>{picking ? 'Đang tìm…' : '◆ Pick hình'}</button>
+        </div>
+        {picks && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10, marginTop: 14 }}>
+            {picks.length === 0 && <p style={{ fontSize: 12, color: '#8B887F', gridColumn: '1/-1' }}>Không tìm thấy — thử từ khoá khác, hoặc bật sinh hình.</p>}
+            {picks.map((p, i) => {
+              const ref = p.source === 'reference' ? assets.find((a) => a.id === p.refId) : null;
+              const src = p.source === 'reference' ? ref?.thumb : p.thumb;
+              const tone = p.source === 'reference' ? '#7C9A6B' : '#6B84A8';
+              return (
+                <div key={i} style={{ border: `1px solid ${tone}55`, borderRadius: 9, overflow: 'hidden', background: '#0B0906' }}>
+                  <div style={{ height: 104, background: '#0B0906' }}>
+                    {src ? <img src={src} alt={p.title ?? ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                  </div>
+                  <div style={{ padding: '7px 8px' }}>
+                    <span style={{ fontFamily: '"SF Mono",monospace', fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase', color: tone }}>
+                      {p.source === 'reference' ? 'Reference' : `Openverse · ${p.license || 'CC'}`}
+                    </span>
+                    {p.source === 'openverse' && p.credit && (
+                      <p style={{ fontSize: 9.5, color: '#8B887F', margin: '3px 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`© ${p.credit}`}>© {p.credit}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
