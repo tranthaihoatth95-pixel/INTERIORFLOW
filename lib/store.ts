@@ -14,7 +14,11 @@ import {
 import type { InteriorNodeData, Job, NodeRunState } from '@/lib/types';
 import { DATA_TYPE_COLORS } from '@/lib/types';
 import { getDefinition, defaultParams } from '@/lib/nodes/registry';
-import { type AiTier, DEFAULT_TIER, isAiTier } from '@/lib/ai/tiers';
+import {
+  type AiTier, DEFAULT_TIER, isAiTier,
+  type OneAiEngine, type OneAiRuntime, DEFAULT_ONE_AI_ENGINE, DEFAULT_ONE_AI_RUNTIME,
+  isOneAiEngine, isOneAiRuntime,
+} from '@/lib/ai/tiers';
 import { type Phase, isPhase } from '@/lib/phases';
 
 export type FlowNode = Node<InteriorNodeData>;
@@ -66,8 +70,11 @@ interface FlowState {
   workspace: WorkspaceMode | null;
   /** kiểu xem canvas — node-flow hiện tại; 'window' (Figma) để mốc, chưa bật */
   viewMode: ViewMode;
-  /** mức phụ thuộc AI (4=Cao cloud · 3=Vừa · 2=Tự-host 0đ · 1=Không AI) */
+  /** mức phụ thuộc AI (4=Cao cloud · 3=Vừa · 2=oneAI tự-host · 1=Không AI) */
   aiTier: AiTier;
+  /** oneAI (mức 2): engine SD-portable vs FLUX-RTX + runtime WebGPU vs server */
+  oneAiEngine: OneAiEngine;
+  oneAiRuntime: OneAiRuntime;
   /** nodeId đang mở Annotate modal */
   annotateNodeId: string | null;
   /** URL ảnh đang mở lightbox */
@@ -104,6 +111,8 @@ interface FlowState {
   setWorkspace: (mode: WorkspaceMode) => void;
   setViewMode: (mode: ViewMode) => void;
   setAiTier: (tier: AiTier) => void;
+  setOneAiEngine: (engine: OneAiEngine) => void;
+  setOneAiRuntime: (runtime: OneAiRuntime) => void;
   /** nạp graph từ server vào canvas, reset history */
   loadGraph: (graphJson: string, name: string, flowId: string, shareToken: string | null) => void;
 
@@ -173,6 +182,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   workspace: null,
   viewMode: 'node',
   aiTier: DEFAULT_TIER,
+  oneAiEngine: DEFAULT_ONE_AI_ENGINE,
+  oneAiRuntime: DEFAULT_ONE_AI_RUNTIME,
   isRunningFlow: false,
   paletteOpen: false,
   snapGrid: false,
@@ -272,6 +283,18 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       localStorage.setItem('interiorflow.aiTier', String(aiTier));
     } catch {}
   },
+  setOneAiEngine: (oneAiEngine) => {
+    set({ oneAiEngine });
+    try {
+      localStorage.setItem('interiorflow.oneAiEngine', oneAiEngine);
+    } catch {}
+  },
+  setOneAiRuntime: (oneAiRuntime) => {
+    set({ oneAiRuntime });
+    try {
+      localStorage.setItem('interiorflow.oneAiRuntime', oneAiRuntime);
+    } catch {}
+  },
 
   loadGraph: (graphJson, name, flowId, shareToken) => {
     try {
@@ -323,6 +346,12 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     try {
       const t = Number(localStorage.getItem('interiorflow.aiTier'));
       if (isAiTier(t)) set({ aiTier: t });
+    } catch {}
+    try {
+      const e = localStorage.getItem('interiorflow.oneAiEngine');
+      if (isOneAiEngine(e)) set({ oneAiEngine: e });
+      const r = localStorage.getItem('interiorflow.oneAiRuntime');
+      if (isOneAiRuntime(r)) set({ oneAiRuntime: r });
     } catch {}
     try {
       // chặng làm việc — migrate tên cũ 'presentation' → 'present'

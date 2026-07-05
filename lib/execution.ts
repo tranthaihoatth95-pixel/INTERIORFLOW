@@ -124,6 +124,7 @@ async function execNode(nodeId: string): Promise<boolean> {
       params: node.data.params,
       onProgress: (p) => store.setRunState(nodeId, { progress: p }),
       aiTier: useFlowStore.getState().aiTier,
+      oneAiEngine: useFlowStore.getState().oneAiEngine,
     });
     store.setRunState(nodeId, { status: 'done', progress: 1, outputs, inputHash: hash });
     store.updateJob(job.id, { status: 'done', finishedAt: Date.now() });

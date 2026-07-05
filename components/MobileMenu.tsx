@@ -10,7 +10,10 @@ import {
 } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { checkProviders, type ProviderStatus } from '@/lib/ai/client';
-import { TIERS, TIER_ORDER, type AiTier } from '@/lib/ai/tiers';
+import {
+  TIERS, TIER_ORDER, type AiTier, providerForTier,
+  ONE_AI_ENGINES, ONE_AI_RUNTIMES,
+} from '@/lib/ai/tiers';
 import { PHASES, DEFAULT_PHASE, type Phase } from '@/lib/phases';
 import { toggleShare } from '@/lib/workspace';
 import { pressable, pressableIcon, springSheet, easeApple } from '@/lib/motion';
@@ -182,16 +185,20 @@ function PhaseRow({ close }: { close: () => void }) {
 function TierRow() {
   const aiTier = useFlowStore((s) => s.aiTier);
   const setAiTier = useFlowStore((s) => s.setAiTier);
+  const oneAiEngine = useFlowStore((s) => s.oneAiEngine);
+  const setOneAiEngine = useFlowStore((s) => s.setOneAiEngine);
+  const oneAiRuntime = useFlowStore((s) => s.oneAiRuntime);
+  const setOneAiRuntime = useFlowStore((s) => s.setOneAiRuntime);
   const [status, setStatus] = useState<ProviderStatus | null>(null);
   useEffect(() => {
     checkProviders().then(setStatus);
   }, []);
 
   const avail = (t: AiTier): boolean | null => {
-    const p = TIERS[t].provider;
+    const p = providerForTier(t, oneAiEngine);
     if (!p) return true;
     if (!status) return null;
-    return p === 'fal' ? status.fal : status.comfyui;
+    return p === 'fal' ? status.fal : p === 'comfyui' ? status.comfyui : status.sd;
   };
 
   return (
@@ -225,6 +232,52 @@ function TierRow() {
           );
         })}
       </div>
+
+      {/* oneAI (mức 2): engine + runtime */}
+      {aiTier === 2 && (
+        <div className="mt-2 space-y-1.5">
+          <p className="px-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--t4)]">Engine</p>
+          <div className="flex gap-1.5">
+            {ONE_AI_ENGINES.map((e) => {
+              const on = e.id === oneAiEngine;
+              return (
+                <button
+                  key={e.id}
+                  onClick={() => setOneAiEngine(e.id)}
+                  className={cn(
+                    'flex-1 rounded-[10px] border px-2 py-2 text-[11px] font-medium transition-colors',
+                    on ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--t3)]',
+                  )}
+                >
+                  {e.name}
+                </button>
+              );
+            })}
+          </div>
+          {oneAiEngine === 'sd' && (
+            <>
+              <p className="px-0.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t4)]">Runtime</p>
+              <div className="flex gap-1.5">
+                {ONE_AI_RUNTIMES.map((r) => {
+                  const on = r.id === oneAiRuntime;
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => setOneAiRuntime(r.id)}
+                      className={cn(
+                        'flex-1 rounded-[10px] border px-2 py-2 text-[11px] font-medium transition-colors',
+                        on ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--t3)]',
+                      )}
+                    >
+                      {r.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </Section>
   );
 }

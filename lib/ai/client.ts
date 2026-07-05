@@ -1,7 +1,7 @@
 'use client';
 
 import { AI_TASKS, taskMediaType, type AiTask } from '@/lib/ai/models';
-import type { AiTier } from '@/lib/ai/tiers';
+import type { AiTier, OneAiEngine } from '@/lib/ai/tiers';
 
 export class AiJobError extends Error {
   code?: string;
@@ -27,11 +27,12 @@ export async function runImageJob(
   input: Record<string, unknown>,
   onProgress: (p: number) => void,
   tier: AiTier,
+  engine?: OneAiEngine,
 ): Promise<string[]> {
   const submitRes = await fetch('/api/jobs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ task, input, tier }),
+    body: JSON.stringify({ task, input, tier, engine }),
   });
   const submitBody = await submitRes.json().catch(() => ({}));
   if (!submitRes.ok) {
@@ -53,7 +54,9 @@ export async function runImageJob(
         `Timeout ${Math.round(timeout / 60000)} phút — job chưa xong, thử lại sau.`,
       );
 
-    const res = await fetch(`/api/jobs/${encodeURIComponent(jobId)}?task=${task}&tier=${tier}`);
+    const res = await fetch(
+      `/api/jobs/${encodeURIComponent(jobId)}?task=${task}&tier=${tier}${engine ? `&engine=${engine}` : ''}`,
+    );
     const body = (await res.json().catch(() => ({}))) as {
       status?: string;
       mediaUrls?: string[];
@@ -79,6 +82,8 @@ export async function runImageJob(
 export interface ProviderStatus {
   fal: boolean;
   comfyui: boolean;
+  /** SD-portable server (SD_SERVER_URL) đã nối chưa. */
+  sd: boolean;
 }
 
 let providerStatus: ProviderStatus | null = null;
@@ -88,9 +93,9 @@ export async function checkProviders(): Promise<ProviderStatus> {
   try {
     const res = await fetch('/api/health');
     const j = await res.json();
-    providerStatus = { fal: Boolean(j.fal), comfyui: Boolean(j.comfyui) };
+    providerStatus = { fal: Boolean(j.fal), comfyui: Boolean(j.comfyui), sd: Boolean(j.sd) };
   } catch {
-    providerStatus = { fal: false, comfyui: false };
+    providerStatus = { fal: false, comfyui: false, sd: false };
   }
   return providerStatus;
 }

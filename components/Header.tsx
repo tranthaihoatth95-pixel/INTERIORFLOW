@@ -6,7 +6,10 @@ import { Coins, Share2, Play, Loader2, ChevronDown, Cloud, Zap, Cpu, ShieldCheck
 import { useFlowStore } from '@/lib/store';
 import { runFlow } from '@/lib/execution';
 import { checkProviders, type ProviderStatus } from '@/lib/ai/client';
-import { TIERS, TIER_ORDER, type AiTier } from '@/lib/ai/tiers';
+import {
+  TIERS, TIER_ORDER, type AiTier, providerForTier,
+  type OneAiEngine, ONE_AI_ENGINES, ONE_AI_RUNTIMES,
+} from '@/lib/ai/tiers';
 import { PHASES, DEFAULT_PHASE, type Phase } from '@/lib/phases';
 import { toggleShare } from '@/lib/workspace';
 import { TasksDropdown } from '@/components/TasksDropdown';
@@ -333,16 +336,20 @@ const TIER_TONE: Record<AiTier, string> = {
 };
 
 /** null = chưa biết (đang check); true/false = provider của mức đó sẵn sàng chưa. */
-function tierAvailable(tier: AiTier, status: ProviderStatus | null): boolean | null {
-  const p = TIERS[tier].provider;
+function tierAvailable(tier: AiTier, engine: OneAiEngine, status: ProviderStatus | null): boolean | null {
+  const p = providerForTier(tier, engine);
   if (!p) return true; // mức 1 luôn "sẵn sàng"
   if (!status) return null;
-  return p === 'fal' ? status.fal : status.comfyui;
+  return p === 'fal' ? status.fal : p === 'comfyui' ? status.comfyui : status.sd;
 }
 
 function AiTierMenu() {
   const aiTier = useFlowStore((s) => s.aiTier);
   const setAiTier = useFlowStore((s) => s.setAiTier);
+  const oneAiEngine = useFlowStore((s) => s.oneAiEngine);
+  const setOneAiEngine = useFlowStore((s) => s.setOneAiEngine);
+  const oneAiRuntime = useFlowStore((s) => s.oneAiRuntime);
+  const setOneAiRuntime = useFlowStore((s) => s.setOneAiRuntime);
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<ProviderStatus | null>(null);
 
@@ -352,7 +359,9 @@ function AiTierMenu() {
 
   const meta = TIERS[aiTier];
   const Icon = TIER_ICON[aiTier];
-  const avail = tierAvailable(aiTier, status);
+  const avail = tierAvailable(aiTier, oneAiEngine, status);
+  // badge của oneAI (mức 2) kèm tên engine đang chọn
+  const engineName = aiTier === 2 ? ONE_AI_ENGINES.find((e) => e.id === oneAiEngine)?.name : null;
 
   return (
     <div className="relative">
@@ -367,6 +376,7 @@ function AiTierMenu() {
         )}
       >
         <Icon size={10} /> AI · {meta.name}
+        {engineName && <span className="opacity-80">· {engineName}</span>}
         {avail === false && <span className="text-amber-300/90">· mock</span>}
         <ChevronDown size={9} className={cn('transition-transform', open && 'rotate-180')} />
       </motion.button>
@@ -388,7 +398,7 @@ function AiTierMenu() {
               {TIER_ORDER.map((t) => {
                 const m = TIERS[t];
                 const TI = TIER_ICON[t];
-                const a = tierAvailable(t, status);
+                const a = tierAvailable(t, oneAiEngine, status);
                 const active = t === aiTier;
                 return (
                   <button
@@ -417,6 +427,64 @@ function AiTierMenu() {
                   </button>
                 );
               })}
+
+              {/* oneAI (mức 2): chọn engine + runtime */}
+              {aiTier === 2 && (
+                <div className="mt-1 border-t border-[var(--border)] pt-1.5">
+                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t4)]">
+                    oneAI — Engine
+                  </p>
+                  <div className="flex gap-1 px-1.5">
+                    {ONE_AI_ENGINES.map((e) => {
+                      const on = e.id === oneAiEngine;
+                      return (
+                        <button
+                          key={e.id}
+                          onClick={() => setOneAiEngine(e.id)}
+                          title={e.blurb}
+                          className={cn(
+                            'flex-1 rounded-[9px] border px-2 py-1 text-[11px] font-medium transition-colors',
+                            on
+                              ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                              : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
+                          )}
+                        >
+                          {e.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* runtime chỉ áp cho engine SD-portable */}
+                  {oneAiEngine === 'sd' && (
+                    <>
+                      <p className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--t4)]">
+                        Runtime
+                      </p>
+                      <div className="flex gap-1 px-1.5 pb-1">
+                        {ONE_AI_RUNTIMES.map((r) => {
+                          const on = r.id === oneAiRuntime;
+                          return (
+                            <button
+                              key={r.id}
+                              onClick={() => setOneAiRuntime(r.id)}
+                              title={r.blurb}
+                              className={cn(
+                                'flex-1 rounded-[9px] border px-2 py-1 text-[11px] font-medium transition-colors',
+                                on
+                                  ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                                  : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
+                              )}
+                            >
+                              {r.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </motion.div>
           </>
         )}

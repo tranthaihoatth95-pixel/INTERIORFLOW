@@ -5,6 +5,7 @@
 import type { ProviderName } from '@/lib/ai/tiers';
 import * as fal from '@/lib/ai/providers/fal';
 import * as comfyui from '@/lib/ai/providers/comfyui';
+import * as sd from '@/lib/ai/providers/sd';
 
 export type ProviderJobStatus =
   | { status: 'IN_QUEUE' | 'IN_PROGRESS' }
@@ -12,13 +13,19 @@ export type ProviderJobStatus =
   | { status: 'FAILED'; error: string };
 
 export function providerConfigured(provider: ProviderName): boolean {
-  return provider === 'fal' ? fal.falConfigured() : comfyui.comfyuiConfigured();
+  if (provider === 'fal') return fal.falConfigured();
+  if (provider === 'comfyui') return comfyui.comfyuiConfigured();
+  return sd.sdConfigured();
 }
 
 export function submitJob(provider: ProviderName, model: string, input: Record<string, unknown>): Promise<string> {
-  return provider === 'fal' ? fal.submitJob(model, input) : comfyui.submitJob(model, input);
+  if (provider === 'fal') return fal.submitJob(model, input);
+  if (provider === 'comfyui') return comfyui.submitJob(model, input);
+  return sd.submitJob(model, input);
 }
 
 export function jobStatus(provider: ProviderName, model: string, requestId: string): Promise<ProviderJobStatus> {
-  return provider === 'fal' ? fal.jobStatus(model, requestId) : comfyui.jobStatus(model, requestId);
+  if (provider === 'fal') return fal.jobStatus(model, requestId);
+  if (provider === 'comfyui') return comfyui.jobStatus(model, requestId);
+  return sd.jobStatus(model, requestId);
 }

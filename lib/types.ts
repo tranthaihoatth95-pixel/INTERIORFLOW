@@ -28,6 +28,8 @@ export interface ExecContext {
   onProgress: (progress: number) => void;
   /** mức phụ thuộc AI hiện tại (1–4) — node AI dùng để chọn provider */
   aiTier: import('@/lib/ai/tiers').AiTier;
+  /** engine của oneAI (mức 2): 'sd' | 'flux' — quyết định provider sd/comfyui */
+  oneAiEngine?: import('@/lib/ai/tiers').OneAiEngine;
 }
 
 export interface NodeDefinition {

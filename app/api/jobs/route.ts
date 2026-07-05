@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
 import { isAiTask } from '@/lib/ai/models';
-import { isAiTier, resolveModel, TIERS } from '@/lib/ai/tiers';
+import { isAiTier, isOneAiEngine, resolveModel, TIERS } from '@/lib/ai/tiers';
 import { providerConfigured, submitJob } from '@/lib/ai/providers';
 
 export async function POST(req: Request) {
-  let body: { task?: string; input?: Record<string, unknown>; tier?: number };
+  let body: { task?: string; input?: Record<string, unknown>; tier?: number; engine?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Body không phải JSON.' }, { status: 400 });
   }
 
-  const { task, input, tier } = body;
+  const { task, input, tier, engine } = body;
   if (!task || !isAiTask(task) || !input || typeof input !== 'object') {
     return NextResponse.json({ error: 'Thiếu task hợp lệ hoặc input.' }, { status: 400 });
   }
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   let provider: ReturnType<typeof resolveModel>['provider'];
   let model: string;
   try {
-    ({ provider, model } = resolveModel(task, tier));
+    ({ provider, model } = resolveModel(task, tier, isOneAiEngine(engine) ? engine : undefined));
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Task không hỗ trợ mức này.', code: 'TASK_UNSUPPORTED' }, { status: 400 });
   }

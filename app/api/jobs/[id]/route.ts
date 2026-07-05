@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { isAiTask } from '@/lib/ai/models';
-import { isAiTier, resolveModel } from '@/lib/ai/tiers';
+import { isAiTier, isOneAiEngine, resolveModel } from '@/lib/ai/tiers';
 import { providerConfigured, jobStatus } from '@/lib/ai/providers';
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const url = new URL(req.url);
   const task = url.searchParams.get('task') ?? '';
   const tierRaw = Number(url.searchParams.get('tier'));
+  const engineRaw = url.searchParams.get('engine');
   if (!isAiTask(task)) {
     return NextResponse.json({ error: 'Task không hợp lệ.' }, { status: 400 });
   }
@@ -15,7 +16,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   let provider: ReturnType<typeof resolveModel>['provider'];
   let model: string;
   try {
-    ({ provider, model } = resolveModel(task, tier));
+    ({ provider, model } = resolveModel(task, tier, isOneAiEngine(engineRaw) ? engineRaw : undefined));
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Task không hỗ trợ mức này.' }, { status: 400 });
   }

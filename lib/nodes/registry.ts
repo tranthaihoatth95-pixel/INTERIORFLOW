@@ -65,10 +65,12 @@ async function aiImage(
 
 /** Provider của tier hiện tại đã sẵn sàng chưa (fal có key / comfyui có URL). */
 async function providerReady(ctx: ExecContext): Promise<boolean> {
-  const provider = providerForTier(ctx.aiTier);
+  const provider = providerForTier(ctx.aiTier, ctx.oneAiEngine);
   if (!provider) return false; // mức 1 — Không AI
   const status = await checkProviders();
-  return provider === 'fal' ? status.fal : status.comfyui;
+  if (provider === 'fal') return status.fal;
+  if (provider === 'comfyui') return status.comfyui;
+  return status.sd;
 }
 
 /** Bản nhiều ảnh (moodboard). Chọn provider theo tier; provider chưa sẵn sàng → mock. */
@@ -92,12 +94,12 @@ async function aiImages(
     return out;
   };
   // Mức 1 (Không AI): node AI bị khoá — báo rõ, không mock lén.
-  if (!providerForTier(ctx.aiTier)) {
+  if (!providerForTier(ctx.aiTier, ctx.oneAiEngine)) {
     throw new Error('Đang ở mức "Không AI" — node AI bị khoá. Đổi mức AI ở góc trên, hoặc dùng node chỉnh tay / import render Vray·D5.');
   }
   if (!(await providerReady(ctx))) return runMock();
   try {
-    return await runImageJob(task, input, ctx.onProgress, ctx.aiTier);
+    return await runImageJob(task, input, ctx.onProgress, ctx.aiTier, ctx.oneAiEngine);
   } catch (err) {
     if (err instanceof AiJobError && err.code === 'PROVIDER_NOT_CONFIGURED') return runMock();
     throw err;

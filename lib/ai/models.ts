@@ -12,6 +12,8 @@ export interface TaskModel {
   falModel: string;
   falFast?: string;
   comfy?: string;
+  /** model/workflow SD-portable (engine 'sd' của oneAI). Không khai → mượn `comfy`. */
+  sd?: string;
   typicalMs: number;
   /** task trả video (Kling) khai báo 'video'; còn lại mặc định 'image' */
   mediaType?: 'image' | 'video';
