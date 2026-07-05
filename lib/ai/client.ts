@@ -1,6 +1,6 @@
 'use client';
 
-import { AI_TASKS, type AiTask } from '@/lib/ai/models';
+import { AI_TASKS, taskMediaType, type AiTask } from '@/lib/ai/models';
 import type { AiTier } from '@/lib/ai/tiers';
 
 export class AiJobError extends Error {
@@ -14,9 +14,12 @@ export class AiJobError extends Error {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const POLL_MS = 1500;
 const TIMEOUT_MS = 180_000;
+/** Video render lâu hơn nhiều (Kling ~1–3 phút) → nới timeout riêng cho task video. */
+const VIDEO_TIMEOUT_MS = 300_000;
 
 /**
- * Submit AI job qua /api/jobs (theo tier) rồi poll tới khi xong. Trả danh sách URL ảnh.
+ * Submit AI job qua /api/jobs (theo tier) rồi poll tới khi xong. Trả danh sách URL media
+ * (ảnh: đa số 1, moodboard 4; video: 1 URL mp4).
  * Throw AiJobError code 'PROVIDER_NOT_CONFIGURED' để node fallback sang mock.
  */
 export async function runImageJob(
@@ -38,25 +41,33 @@ export async function runImageJob(
 
   const started = Date.now();
   const typical = AI_TASKS[task].typicalMs;
+  const isVideo = taskMediaType(task) === 'video';
+  const timeout = isVideo ? VIDEO_TIMEOUT_MS : TIMEOUT_MS;
   onProgress(0.04);
 
   for (;;) {
     await sleep(POLL_MS);
     const elapsed = Date.now() - started;
-    if (elapsed > TIMEOUT_MS) throw new AiJobError('Timeout 3 phút — job chưa xong, thử lại sau.');
+    if (elapsed > timeout)
+      throw new AiJobError(
+        `Timeout ${Math.round(timeout / 60000)} phút — job chưa xong, thử lại sau.`,
+      );
 
     const res = await fetch(`/api/jobs/${encodeURIComponent(jobId)}?task=${task}&tier=${tier}`);
     const body = (await res.json().catch(() => ({}))) as {
       status?: string;
+      mediaUrls?: string[];
       imageUrls?: string[];
       error?: string;
       code?: string;
     };
     if (!res.ok) throw new AiJobError(body.error ?? `Poll lỗi (HTTP ${res.status})`, body.code);
 
-    if (body.status === 'COMPLETED' && body.imageUrls?.length) {
+    // mediaUrls tổng quát (ảnh/video); fallback imageUrls cho tương thích.
+    const urls = body.mediaUrls?.length ? body.mediaUrls : body.imageUrls;
+    if (body.status === 'COMPLETED' && urls?.length) {
       onProgress(1);
-      return body.imageUrls;
+      return urls;
     }
     if (body.status === 'FAILED') throw new AiJobError(body.error ?? 'Job thất bại phía provider.');
 

@@ -1,4 +1,4 @@
-export type DataType = 'image' | 'text' | 'mask' | 'number';
+export type DataType = 'image' | 'text' | 'mask' | 'number' | 'video';
 
 export interface PortDef {
   id: string;
@@ -77,6 +77,7 @@ export const DATA_TYPE_COLORS: Record<DataType, string> = {
   text: '#38bdf8',
   mask: '#f59e0b',
   number: '#34d399',
+  video: '#fb7185', // hồng san hô — phân biệt luồng video với ảnh
 };
 
 export const CATEGORY_META: Record<NodeCategory, { label: string; color: string }> = {

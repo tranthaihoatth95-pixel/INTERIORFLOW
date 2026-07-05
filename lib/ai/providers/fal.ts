@@ -52,7 +52,8 @@ export async function submitJob(modelId: string, input: Record<string, unknown>)
 
 export type ProviderJobStatus =
   | { status: 'IN_QUEUE' | 'IN_PROGRESS' }
-  | { status: 'COMPLETED'; imageUrls: string[] }
+  // mediaUrls tổng quát (ảnh hoặc video); imageUrls giữ lại cho tương thích client cũ.
+  | { status: 'COMPLETED'; mediaUrls: string[]; mediaType: 'image' | 'video'; imageUrls: string[] }
   | { status: 'FAILED'; error: string };
 
 /** Chuẩn hoá output ảnh giữa các model (FLUX trả images[], ESRGAN/BiRefNet trả image). */
@@ -63,6 +64,13 @@ function imageUrls(data: unknown): string[] {
   return d?.image?.url ? [d.image.url] : [];
 }
 
+/** Trích URL video: Kling/Veo/… trả { video: { url } }, đôi khi videos[]. */
+function videoUrls(data: unknown): string[] {
+  const d = data as { video?: { url?: string }; videos?: { url?: string }[] };
+  if (d?.video?.url) return [d.video.url];
+  return (d?.videos ?? []).map((v) => v.url).filter((u): u is string => Boolean(u));
+}
+
 export async function jobStatus(modelId: string, requestId: string): Promise<ProviderJobStatus> {
   ensureConfigured();
   try {
@@ -71,9 +79,14 @@ export async function jobStatus(modelId: string, requestId: string): Promise<Pro
       return { status: s.status as 'IN_QUEUE' | 'IN_PROGRESS' };
     }
     const result = await fal.queue.result(modelId, { requestId });
-    const urls = imageUrls(result.data);
-    if (!urls.length) return { status: 'FAILED', error: 'Provider không trả về ảnh.' };
-    return { status: 'COMPLETED', imageUrls: urls };
+    // Ưu tiên video (nếu model trả), fallback ảnh — cùng 1 handler cho mọi task.
+    const vids = videoUrls(result.data);
+    if (vids.length) {
+      return { status: 'COMPLETED', mediaUrls: vids, mediaType: 'video', imageUrls: [] };
+    }
+    const imgs = imageUrls(result.data);
+    if (!imgs.length) return { status: 'FAILED', error: 'Provider không trả về media (ảnh/video).' };
+    return { status: 'COMPLETED', mediaUrls: imgs, mediaType: 'image', imageUrls: imgs };
   } catch (err) {
     return { status: 'FAILED', error: falErrorMessage(err) };
   }

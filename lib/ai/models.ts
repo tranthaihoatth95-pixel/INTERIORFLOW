@@ -13,6 +13,8 @@ export interface TaskModel {
   falFast?: string;
   comfy?: string;
   typicalMs: number;
+  /** task trả video (Kling) khai báo 'video'; còn lại mặc định 'image' */
+  mediaType?: 'image' | 'video';
 }
 
 export const AI_TASKS = {
@@ -74,9 +76,38 @@ export const AI_TASKS = {
     falModel: 'fal-ai/birefnet/v2',
     typicalMs: 10000,
   },
+
+  // ===== VIDEO (image/text → video) =====
+  // Kling image-to-video: mượt cho pan/flythrough nội thất. Job lâu → mediaType 'video'.
+  // Turbo Pro: nhanh + rẻ hơn (mặc định). Master: chất lượng cao hơn, chậm hơn.
+  // Video chỉ chạy trên fal (mức AI Vừa/Cao) — không có workflow tự-host nên bỏ trường comfy.
+  image2video: {
+    falModel: 'fal-ai/kling-video/v2.5-turbo/pro/image-to-video',
+    typicalMs: 120000,
+    mediaType: 'video',
+  },
+  image2videoMaster: {
+    falModel: 'fal-ai/kling-video/v2/master/image-to-video',
+    typicalMs: 150000,
+    mediaType: 'video',
+  },
+  // Text → video (không cần ảnh gốc) — dự phòng cho concept clip.
+  text2video: {
+    falModel: 'fal-ai/kling-video/v2/master/text-to-video',
+    typicalMs: 120000,
+    mediaType: 'video',
+  },
 } as const satisfies Record<string, TaskModel>;
 
 export type AiTask = keyof typeof AI_TASKS;
+
+/** Kiểu media task trả về; mặc định 'image' khi không khai báo. */
+export type MediaType = 'image' | 'video';
+
+/** Media type của task (task video khai báo mediaType: 'video'; còn lại mặc định 'image'). */
+export function taskMediaType(task: AiTask): MediaType {
+  return (AI_TASKS[task] as { mediaType?: MediaType }).mediaType ?? 'image';
+}
 
 export function isAiTask(key: string): key is AiTask {
   return key in AI_TASKS;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Download, FileText } from 'lucide-react';
+import { Download, FileText, Film } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import type { InteriorNodeData, PortValue } from '@/lib/types';
 
@@ -24,6 +24,37 @@ export function OutputImage({ src, className }: { src: string; className?: strin
       className={`nodrag cursor-zoom-in rounded-md object-cover ${className ?? ''}`}
       onClick={() => setLightboxUrl(src)}
     />
+  );
+}
+
+/** Video output: player inline (loop/muted) + click mở lightbox + nút tải mp4. */
+export function OutputVideo({ src, className }: { src: string; className?: string }) {
+  const setLightboxUrl = useFlowStore((s) => s.setLightboxUrl);
+  return (
+    <div className="space-y-1.5">
+      <video
+        src={src}
+        controls
+        loop
+        muted
+        playsInline
+        className={`nodrag w-full rounded-md bg-black object-cover ${className ?? ''}`}
+      />
+      <div className="flex gap-1.5">
+        <button
+          className="nodrag flex flex-1 items-center justify-center gap-1 rounded-md border border-[var(--border-strong)] py-1.5 text-[11px] text-[var(--t2)] hover:border-[#fb7185]/60"
+          onClick={() => setLightboxUrl(src)}
+        >
+          <Film size={12} /> Phóng to
+        </button>
+        <button
+          className="nodrag flex flex-1 items-center justify-center gap-1 rounded-md border border-[var(--border-strong)] py-1.5 text-[11px] text-[var(--t2)] hover:border-[#fb7185]/60"
+          onClick={() => downloadDataUrl(src, 'walkthrough.mp4')}
+        >
+          <Download size={12} /> Tải mp4
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -167,6 +198,12 @@ export function NodeExtras({ nodeId, data }: { nodeId: string; data: InteriorNod
         <p className="mt-1 break-all text-[9px] leading-snug text-[var(--t4)]">{colors.join(' ')}</p>
       </div>
     );
+  }
+
+  // video output → player + tải mp4 (đặt trước ảnh vì node video không có output ảnh)
+  if (run.status === 'done' && outputs) {
+    const video = Object.values(outputs).find((o: PortValue) => o.dataType === 'video');
+    if (video) return <OutputVideo src={String(video.value)} className="h-32" />;
   }
 
   // multi-image outputs (moodboard) — grid 2×2
