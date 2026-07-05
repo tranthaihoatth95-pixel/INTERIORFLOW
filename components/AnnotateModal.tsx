@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Paintbrush, Type, Trash2, Check } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
+import { fade, modalScale, pressable, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 const COLORS = ['#ef4444', '#f59e0b', '#22c55e', '#38bdf8', '#ffffff'];
@@ -103,17 +105,26 @@ export function AnnotateModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeId]);
 
-  if (!nodeId) return null;
-
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-6 backdrop-blur-sm">
-      <div className="flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl">
+    <AnimatePresence>
+      {nodeId && (
+        <motion.div
+          variants={fade}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          className="mat-overlay fixed inset-0 z-50 grid place-items-center p-6"
+        >
+          <motion.div
+            variants={modalScale}
+            className="mat-card flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-[20px] border border-[var(--mat-hairline)] shadow-2xl"
+          >
         <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3">
-          <Type size={15} className="text-violet-400" />
+          <Type size={15} className="text-[var(--accent)]" />
           <span className="flex-1 text-sm font-medium text-[var(--t1)]">Annotate — ghi chú lên ảnh</span>
-          <button onClick={close} className="grid h-7 w-7 place-items-center rounded-md text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t2)]">
+          <motion.button {...pressableIcon} onClick={close} className="grid h-7 w-7 place-items-center rounded-[10px] text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]">
             <X size={15} />
-          </button>
+          </motion.button>
         </div>
 
         <div className="grid flex-1 place-items-center overflow-auto bg-[var(--bg)] p-4">
@@ -121,7 +132,7 @@ export function AnnotateModal() {
             <canvas
               ref={displayRef}
               data-testid="annotate-canvas"
-              className={cn('max-h-[60vh] max-w-full rounded-lg', tool === 'brush' ? 'cursor-crosshair' : 'cursor-text')}
+              className={cn('max-h-[60vh] max-w-full rounded-[12px]', tool === 'brush' ? 'cursor-crosshair' : 'cursor-text')}
               style={{ touchAction: 'none' }}
               onPointerDown={(e) => {
                 if (!ready) return;
@@ -177,38 +188,41 @@ export function AnnotateModal() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 border-t border-[var(--border)] px-4 py-3">
-          <button
+          <motion.button
+            {...pressable}
             onClick={() => setTool('brush')}
             className={cn(
-              'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs',
-              tool === 'brush' ? 'border-violet-500/50 bg-violet-500/10 text-violet-300' : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
+              'flex items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors',
+              tool === 'brush' ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
             )}
           >
             <Paintbrush size={13} /> Vẽ
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            {...pressable}
             onClick={() => setTool('text')}
             className={cn(
-              'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs',
-              tool === 'text' ? 'border-violet-500/50 bg-violet-500/10 text-violet-300' : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
+              'flex items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors',
+              tool === 'text' ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
             )}
           >
             <Type size={13} /> Text
-          </button>
+          </motion.button>
           {tool === 'text' && (
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Gõ chú thích rồi click lên ảnh…"
-              className="w-52 rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] outline-none focus:border-violet-500/60"
+              className="w-52 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] outline-none focus:border-[var(--accent-ring)]"
             />
           )}
           <div className="flex items-center gap-1.5">
             {COLORS.map((c) => (
-              <button
+              <motion.button
                 key={c}
+                {...pressableIcon}
                 onClick={() => setColor(c)}
-                className={cn('h-5 w-5 rounded-full border-2', color === c ? 'border-white' : 'border-transparent')}
+                className={cn('h-5 w-5 rounded-full border-2', color === c ? 'border-[var(--t1)]' : 'border-transparent')}
                 style={{ background: c }}
               />
             ))}
@@ -216,30 +230,34 @@ export function AnnotateModal() {
           {tool === 'brush' && (
             <label className="flex items-center gap-2 text-xs text-[var(--t3)]">
               Size
-              <input type="range" min={2} max={30} value={brush} onChange={(e) => setBrush(Number(e.target.value))} className="w-24 accent-violet-500" />
+              <input type="range" min={2} max={30} value={brush} onChange={(e) => setBrush(Number(e.target.value))} className="w-24 accent-[var(--accent)]" />
             </label>
           )}
-          <button
+          <motion.button
+            {...pressable}
             onClick={() => {
               const layer = drawRef.current;
               if (!layer) return;
               layer.getContext('2d')!.clearRect(0, 0, layer.width, layer.height);
               redraw();
             }}
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--t3)] hover:bg-[var(--hover)]"
+            className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
           >
             <Trash2 size={13} /> Clear
-          </button>
+          </motion.button>
           <div className="flex-1" />
-          <button
+          <motion.button
+            {...pressable}
             onClick={save}
             disabled={!sourceImage || !ready}
-            className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-3.5 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-40"
           >
             <Check size={13} /> Lưu
-          </button>
+          </motion.button>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

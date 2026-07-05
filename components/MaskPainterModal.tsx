@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Paintbrush, Eraser, Trash2, Check } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
+import { fade, modalScale, pressable, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 /** Lấy ảnh nguồn cho node mask painter: output của upstream, hoặc file của Import Image chưa chạy. */
@@ -163,18 +165,27 @@ export function MaskPainterModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeId]);
 
-  if (!nodeId) return null;
-
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-6 backdrop-blur-sm">
-      <div className="flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl">
+    <AnimatePresence>
+      {nodeId && (
+        <motion.div
+          variants={fade}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          className="mat-overlay fixed inset-0 z-50 grid place-items-center p-6"
+        >
+          <motion.div
+            variants={modalScale}
+            className="mat-card flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-[20px] border border-[var(--mat-hairline)] shadow-2xl"
+          >
         {/* header */}
         <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3">
-          <Paintbrush size={15} className="text-violet-400" />
+          <Paintbrush size={15} className="text-[var(--accent)]" />
           <span className="flex-1 text-sm font-medium text-[var(--t1)]">Mask Painter</span>
-          <button onClick={close} className="grid h-7 w-7 place-items-center rounded-md text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t2)]">
+          <motion.button {...pressableIcon} onClick={close} className="grid h-7 w-7 place-items-center rounded-[10px] text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]">
             <X size={15} />
-          </button>
+          </motion.button>
         </div>
 
         {/* canvas */}
@@ -183,7 +194,7 @@ export function MaskPainterModal() {
             <canvas
               ref={displayRef}
               data-testid="mask-canvas"
-              className="max-h-[60vh] max-w-full cursor-crosshair rounded-lg"
+              className="max-h-[60vh] max-w-full cursor-crosshair rounded-[12px]"
               style={{ touchAction: 'none' }}
               onPointerDown={(e) => {
                 if (!ready) return;
@@ -214,24 +225,26 @@ export function MaskPainterModal() {
 
         {/* toolbar */}
         <div className="flex flex-wrap items-center gap-3 border-t border-[var(--border)] px-4 py-3">
-          <button
+          <motion.button
+            {...pressable}
             onClick={() => setEraser(false)}
             className={cn(
-              'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs',
-              !eraser ? 'border-violet-500/50 bg-violet-500/10 text-violet-300' : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
+              'flex items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors',
+              !eraser ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
             )}
           >
             <Paintbrush size={13} /> Brush
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            {...pressable}
             onClick={() => setEraser(true)}
             className={cn(
-              'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs',
-              eraser ? 'border-violet-500/50 bg-violet-500/10 text-violet-300' : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
+              'flex items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors',
+              eraser ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
             )}
           >
             <Eraser size={13} /> Eraser
-          </button>
+          </motion.button>
           <label className="flex items-center gap-2 text-xs text-[var(--t3)]">
             Size
             <input
@@ -240,31 +253,35 @@ export function MaskPainterModal() {
               max={160}
               value={brush}
               onChange={(e) => setBrush(Number(e.target.value))}
-              className="w-28 accent-violet-500"
+              className="w-28 accent-[var(--accent)]"
             />
             <span className="w-7 tabular-nums">{brush}</span>
           </label>
-          <button
+          <motion.button
+            {...pressable}
             onClick={() => {
               const mask = maskRef.current;
               if (!mask) return;
               mask.getContext('2d')!.clearRect(0, 0, mask.width, mask.height);
               redraw();
             }}
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--t3)] hover:bg-[var(--hover)]"
+            className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
           >
             <Trash2 size={13} /> Clear
-          </button>
+          </motion.button>
           <div className="flex-1" />
-          <button
+          <motion.button
+            {...pressable}
             onClick={save}
             disabled={!sourceImage || !ready}
-            className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-3.5 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-40"
           >
             <Check size={13} /> Lưu mask
-          </button>
+          </motion.button>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Play, Loader2, CircleAlert, CircleCheck, RotateCcw, ImagePlus, Paintbrush } from 'lucide-react';
 import { getDefinition } from '@/lib/nodes/registry';
@@ -8,6 +9,7 @@ import { useFlowStore, type FlowNode } from '@/lib/store';
 import { runNode } from '@/lib/execution';
 import { CATEGORY_META, DATA_TYPE_COLORS, type ParamDef } from '@/lib/types';
 import { NodeExtras } from '@/components/nodes/NodeExtras';
+import { nodePop } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 const PORT_GAP = 26;
@@ -31,7 +33,7 @@ function ParamField({
         <span className="mb-1 block text-[10px] uppercase tracking-wider text-[var(--t4)]">{param.label}</span>
         {param.multiline ? (
           <textarea
-            className="nodrag w-full resize-none rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none focus:border-violet-500/60"
+            className="nodrag w-full resize-none rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none focus:border-[var(--accent-ring)]"
             rows={3}
             placeholder={param.placeholder}
             value={String(value)}
@@ -39,7 +41,7 @@ function ParamField({
           />
         ) : (
           <input
-            className="nodrag w-full rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none focus:border-violet-500/60"
+            className="nodrag w-full rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none focus:border-[var(--accent-ring)]"
             placeholder={param.placeholder}
             value={String(value)}
             onChange={(e) => updateParam(nodeId, param.id, e.target.value)}
@@ -54,7 +56,7 @@ function ParamField({
       <label className="block">
         <span className="mb-1 block text-[10px] uppercase tracking-wider text-[var(--t4)]">{param.label}</span>
         <select
-          className="nodrag w-full rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] outline-none focus:border-violet-500/60"
+          className="nodrag w-full rounded-md border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-xs text-[var(--t1)] outline-none focus:border-[var(--accent-ring)]"
           value={String(value)}
           onChange={(e) => updateParam(nodeId, param.id, e.target.value)}
         >
@@ -77,7 +79,7 @@ function ParamField({
         </span>
         <input
           type="range"
-          className="nodrag w-full accent-violet-500"
+          className="nodrag w-full accent-[var(--accent)]"
           min={param.min}
           max={param.max}
           step={param.step}
@@ -98,7 +100,7 @@ function ParamField({
           <img src={String(value)} alt={param.kind} className="mb-1.5 h-20 w-full rounded-md object-cover" loading="lazy" />
         )}
         <button
-          className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--border-strong)] py-2 text-[11px] text-[var(--t3)] transition hover:border-violet-500/60 hover:text-[var(--t1)]"
+          className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--border-strong)] py-2 text-[11px] text-[var(--t3)] transition hover:border-[var(--accent-ring)] hover:text-[var(--t1)]"
           onClick={() =>
             isMask
               ? useFlowStore.getState().setMaskEditorNodeId(nodeId)
@@ -140,7 +142,7 @@ function ParamField({
         />
       ) : (
         <button
-          className="nodrag flex h-24 w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed border-[var(--border-strong)] text-[var(--t4)] transition hover:border-violet-500/60 hover:text-[var(--t2)]"
+          className="nodrag flex h-24 w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed border-[var(--border-strong)] text-[var(--t4)] transition hover:border-[var(--accent-ring)] hover:text-[var(--t2)]"
           onClick={() => fileRef.current?.click()}
         >
           <ImagePlus size={18} />
@@ -153,7 +155,7 @@ function ParamField({
 
 function StatusIcon({ status }: { status: string }) {
   if (status === 'running' || status === 'queued')
-    return <Loader2 size={13} className="animate-spin text-violet-400" />;
+    return <Loader2 size={13} className="animate-spin text-[var(--accent)]" />;
   if (status === 'done') return <CircleCheck size={13} className="text-emerald-400" />;
   if (status === 'error') return <CircleAlert size={13} className="text-red-400" />;
   return null;
@@ -166,10 +168,13 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
   const busy = status === 'running' || status === 'queued';
 
   return (
-    <div
+    <motion.div
+      variants={nodePop}
+      initial="hidden"
+      animate="visible"
       className={cn(
-        'w-64 rounded-xl border bg-[var(--card)] shadow-xl shadow-black/40 backdrop-blur transition-colors',
-        selected ? 'border-violet-500/70' : 'border-[var(--border)]',
+        'mat-card w-64 rounded-[16px] border shadow-xl shadow-black/30 transition-colors',
+        selected ? 'border-[var(--accent-ring)]' : 'border-[var(--mat-hairline)]',
         status === 'error' && 'border-red-500/60',
       )}
     >
@@ -187,7 +192,7 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
           title={status === 'error' ? 'Retry' : 'Run node (+ upstream)'}
           disabled={busy}
           onClick={() => runNode(id)}
-          className="nodrag grid h-6 w-6 place-items-center rounded-md bg-violet-600/90 text-white transition hover:bg-violet-500 disabled:opacity-40"
+          className="nodrag grid h-6 w-6 place-items-center rounded-md bg-[var(--accent-strong)] text-white transition-colors hover:bg-[var(--accent)] disabled:opacity-40"
         >
           {status === 'error' ? <RotateCcw size={12} /> : <Play size={12} className="translate-x-[1px]" />}
         </button>
@@ -205,7 +210,7 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
         {status === 'running' && (
           <div className="h-1 overflow-hidden rounded-full bg-[var(--hover)]">
             <div
-              className="h-full rounded-full bg-violet-500 transition-all duration-200"
+              className="h-full rounded-full bg-[var(--accent)] transition-all duration-200"
               style={{ width: `${Math.round(progress * 100)}%` }}
             />
           </div>
@@ -251,7 +256,7 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
           title={`${port.label} · ${port.dataType}`}
         />
       ))}
-    </div>
+    </motion.div>
   );
 }
 
