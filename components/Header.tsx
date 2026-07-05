@@ -10,6 +10,7 @@ import { TIERS, TIER_ORDER, type AiTier } from '@/lib/ai/tiers';
 import { PHASES, DEFAULT_PHASE, type Phase } from '@/lib/phases';
 import { toggleShare } from '@/lib/workspace';
 import { TasksDropdown } from '@/components/TasksDropdown';
+import { MobileMenu } from '@/components/MobileMenu';
 import { pressable, pressableIcon, easeApple } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
@@ -67,8 +68,10 @@ export function Header() {
       {/* chuyển kiểu xem canvas — Node (hiện tại) | Window (Figma, sắp có) */}
       <ViewToggle />
 
-      {/* Núm chọn mức phụ thuộc AI (4 mức) */}
-      <AiTierMenu />
+      {/* Núm chọn mức phụ thuộc AI (4 mức) — mobile gom vào ⋯ */}
+      <div className="hidden sm:block">
+        <AiTierMenu />
+      </div>
 
       <div className="min-w-2 flex-1" />
 
@@ -84,46 +87,52 @@ export function Header() {
         <span className="hidden sm:inline">Run flow</span>
       </motion.button>
 
-      {/* credits */}
-      <div className="flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
-        <Coins size={13} className="text-amber-400" />
-        {credits}
+      {/* cụm control phụ — desktop inline; mobile (<sm) gom vào ⋯ bên dưới */}
+      <div className="hidden items-center gap-2 sm:flex sm:gap-3">
+        {/* credits */}
+        <div className="flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
+          <Coins size={13} className="text-amber-400" />
+          {credits}
+        </div>
+
+        {/* share — link read-only cho khách */}
+        <ShareButton />
+
+        {/* chat team */}
+        <ChatToggle />
+
+        {/* theme: auto (theo giờ) → light → dark */}
+        <ThemeToggle />
+
+        {/* tasks */}
+        <div className="relative shrink-0">
+          <motion.button
+            {...pressable}
+            onClick={() => setTasksOpen(!tasksOpen)}
+            className={cn(
+              'flex items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors',
+              tasksOpen
+                ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                : 'border-[var(--border)] text-[var(--t2)] hover:bg-[var(--hover)]',
+            )}
+          >
+            Tasks
+            {activeJobs > 0 && (
+              <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-semibold text-white">
+                {activeJobs}
+              </span>
+            )}
+            <ChevronDown size={12} className={cn('transition-transform', tasksOpen && 'rotate-180')} />
+          </motion.button>
+          <AnimatePresence>{tasksOpen && <TasksDropdown />}</AnimatePresence>
+        </div>
+
+        {/* user chip + logout */}
+        <UserChip />
       </div>
 
-      {/* share — link read-only cho khách */}
-      <ShareButton />
-
-      {/* chat team */}
-      <ChatToggle />
-
-      {/* theme: auto (theo giờ) → light → dark */}
-      <ThemeToggle />
-
-      {/* tasks */}
-      <div className="relative shrink-0">
-        <motion.button
-          {...pressable}
-          onClick={() => setTasksOpen(!tasksOpen)}
-          className={cn(
-            'flex items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors',
-            tasksOpen
-              ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
-              : 'border-[var(--border)] text-[var(--t2)] hover:bg-[var(--hover)]',
-          )}
-        >
-          Tasks
-          {activeJobs > 0 && (
-            <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-semibold text-white">
-              {activeJobs}
-            </span>
-          )}
-          <ChevronDown size={12} className={cn('transition-transform', tasksOpen && 'rotate-180')} />
-        </motion.button>
-        <AnimatePresence>{tasksOpen && <TasksDropdown />}</AnimatePresence>
-      </div>
-
-      {/* user chip + logout */}
-      <UserChip />
+      {/* overflow ⋯ — chỉ hiện <sm, gom credits/share/chat/theme/tasks/AI/phase/user */}
+      <MobileMenu />
     </header>
   );
 }
