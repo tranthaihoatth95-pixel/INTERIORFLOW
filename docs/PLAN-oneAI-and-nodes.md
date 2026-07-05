@@ -44,9 +44,9 @@ Vấn đề: thêm node = đụng `registry.ts` (mảng lớn) → dễ đè nha
 
 ## 3. Thứ tự build (đề xuất)
 
-- **M0 — Seam** ✅ XONG (file này).
+- **M0 — Seam** ✅ XONG (commit `5aa248e`).
 - **M1 — Local 0-AI (ship ngay, không cần balance)**: #1✅ #2 #3 #4(HSL) #5 #6 #14. Ứng viên fan-out (file-disjoint).
-- **M2 — oneAI tier + SD adapter**: engine selector + runtime WebGPU/server; rồi #7 #8 #9 #10 #4(SAM2/BiRefNet) #12.
+- **M2 — oneAI tier + SD adapter**: ✅ **KHUNG XONG (commit `450445f`)** — mức 2→oneAI, engine SD-portable/FLUX-RTX + runtime WebGPU/server (chọn được, persist, badge, UI Header+Mobile), provider `sd` stub + thread engine toàn tuyến (ExecContext→registry→/api/jobs→resolveModel), health/checkProviders.sd. **CÒN**: (a) nối inference thật — server SD (`SD_SERVER_URL` → Draw Things/ComfyUI/A1111, sửa `providers/sd.ts`) hoặc WebGPU client-side; (b) `entry.sd` model ids riêng nếu cần khác `comfy`; rồi node #7 #8 #9 #10 #4(SAM2/BiRefNet) #12.
 - **M3 — 3D subsystem**: #11 (three.js viewport, camera Vray-like) → feed clay2render.
 - **M4 — Present LLM**: #13 + trợ lý ảnh.
 
