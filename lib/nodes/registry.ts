@@ -5,6 +5,7 @@ import { providerForTier } from '@/lib/ai/tiers';
 import { extractPalette, composeBoard, adjustImage } from '@/lib/imaging';
 import { saveToGallery } from '@/lib/gallery';
 import { parseContent, themeFromRef, renderSlide, type FontPairing, type SlideLayout } from '@/lib/slides';
+import { EXTRA_NODES } from '@/lib/nodes/defs';
 
 /** Deterministic placeholder "render" — SVG gradient nội thất, dùng cho mock mode. */
 function placeholderRender(label: string, seed: string): string {
@@ -159,7 +160,7 @@ const LIGHT_DIRECTIONS: Record<string, string> = {
   'Bắc (dịu)': 'north-facing soft diffused light',
 };
 
-export const NODE_DEFINITIONS: NodeDefinition[] = [
+const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   // ============ INPUT ============
   {
     type: 'input.image',
@@ -892,6 +893,9 @@ export const NODE_DEFINITIONS: NodeDefinition[] = [
     },
   },
 ];
+
+// Hợp nhất node lõi + node mở rộng (defs/). Downstream không cần biết seam này.
+export const NODE_DEFINITIONS: NodeDefinition[] = [...CORE_NODE_DEFINITIONS, ...EXTRA_NODES];
 
 export const NODE_REGISTRY: Record<string, NodeDefinition> = Object.fromEntries(
   NODE_DEFINITIONS.map((d) => [d.type, d]),
