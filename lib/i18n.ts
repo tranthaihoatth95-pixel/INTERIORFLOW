@@ -13,20 +13,10 @@
 'use client';
 
 import { useFlowStore } from '@/lib/store';
+import { type Lang, t } from '@/lib/lang';
 
-export type Lang = 'vi' | 'en';
-
-export const LANG_KEY = 'interiorflow.lang';
-export const DEFAULT_LANG: Lang = 'vi';
-
-export function isLang(v: unknown): v is Lang {
-  return v === 'vi' || v === 'en';
-}
-
-/** Chọn chuỗi theo ngôn ngữ. `t('vi'|'en', 'chuỗi VI', 'chuỗi EN')`. */
-export function t(lang: Lang, vi: string, en: string): string {
-  return lang === 'en' ? en : vi;
-}
+// Re-export hằng số thuần từ lib/lang (giữ import cũ `from '@/lib/i18n'` chạy được).
+export { type Lang, LANG_KEY, DEFAULT_LANG, isLang, t } from '@/lib/lang';
 
 /** Hook lấy ngôn ngữ hiện tại từ store (re-render khi đổi). */
 export function useLang(): Lang {

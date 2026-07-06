@@ -20,7 +20,7 @@ import {
   isOneAiEngine, isOneAiRuntime,
 } from '@/lib/ai/tiers';
 import { type Phase, isPhase } from '@/lib/phases';
-import { type Lang, DEFAULT_LANG, LANG_KEY, isLang } from '@/lib/i18n';
+import { type Lang, DEFAULT_LANG, LANG_KEY, isLang } from '@/lib/lang';
 
 export type FlowNode = Node<InteriorNodeData>;
 export type Tool = 'select' | 'pan';
