@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
+import './foldable.css';
 import { PWARegister } from '@/components/PWARegister';
 
 const geistSans = localFont({
@@ -33,12 +34,14 @@ export const metadata: Metadata = {
 // Next 14 App Router: viewport tách riêng khỏi metadata.
 // viewport-fit=cover → tràn viền iPhone tai thỏ; khoá zoom cả trang (canvas tự pinch-zoom qua React Flow).
 export const viewport: Viewport = {
-  themeColor: '#0d0d0f',
+  themeColor: '#0c0c0e',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
+  // Android/foldable: keep layout resized above the on-screen keyboard.
+  interactiveWidget: 'resizes-content',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

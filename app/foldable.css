@@ -1,0 +1,102 @@
+/* ============================================================
+   InteriorFlow — Foldable + high-DPI polish (OPPO Find N6 first)
+   Scoped, additive. No token redefinition — only references existing
+   theme CSS vars (--bg/--panel/--card/--border/--t1..t5). Sans only.
+
+   Target device (researched):
+   - Cover (outer): 6.62" 1140x2616 (~20:9), 431 ppi, 120Hz  → narrow + tall
+   - Main  (inner): 8.12" 2248x2480 (~1:1.10), 412 ppi, 120Hz → near-square
+   - Snapdragon 8 Elite Gen 5 + Adreno 840 (powerful GPU)
+
+   Strategy: the app is a flex column (Header → row[LeftRail + panels +
+   canvas]). We (1) guarantee safe-area gutters on all edges under
+   display:standalone / viewport-fit=cover, (2) keep the UI usable on the
+   NARROW folded aspect, (3) let it breathe on the SQUARE unfolded aspect,
+   and (4) respect the fold seam via the foldable spanning media features.
+   ============================================================ */
+
+/* ---------- 1. Safe-area gutters on every edge (cover-display notch,
+   punch-hole, rounded corners, gesture bar) ---------- */
+@supports (padding: max(0px)) {
+  body {
+    /* Bottom gesture bar + rounded corners on the Find N6 cover screen */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Header already pads left in globals.css; mirror the right edge so the
+     cover-screen punch-hole / camera never clips header controls. */
+  header {
+    padding-right: max(0.5rem, env(safe-area-inset-right));
+    padding-top: max(0px, env(safe-area-inset-top));
+  }
+}
+
+/* ---------- 2. NARROW folded aspect (cover screen, ~20:9 portrait)
+   Anything up to ~520px wide is treated as the folded phone. Keep panels
+   from eating the whole canvas; tighten the chat/side panel width. ---------- */
+@media (max-width: 520px) {
+  /* Side sheets should never exceed the narrow screen */
+  aside {
+    max-width: min(88vw, 20rem);
+  }
+}
+
+/* ---------- 3. SQUARE unfolded aspect (inner screen, ~1:1.10)
+   Detect a wide-ish, roughly-square large viewport. On the unfolded panel
+   we have generous width — let side panels sit at a comfortable fixed
+   width and give the canvas the remaining room. ---------- */
+@media (min-width: 720px) and (max-aspect-ratio: 5 / 4) {
+  /* Roughly square (inner) screen: allow panels their natural width and
+     keep the canvas as the flexible remainder — nothing to override on the
+     canvas itself since it already uses flex-1; this block exists so future
+     square-screen tuning has a clear, scoped home. */
+  aside {
+    max-width: 22rem;
+  }
+}
+
+/* ---------- 4. Foldable seam awareness ----------
+   When the browser reports two horizontal viewport segments (the app spans
+   the fold, e.g. a future dual-pane layout), keep the primary column out of
+   the physical hinge gutter. These features degrade to no-op on phones that
+   don't expose them. ---------- */
+@media (horizontal-viewport-segments: 2) {
+  /* App content should avoid the hinge: add gutter equal to the fold width. */
+  body {
+    padding-left: env(viewport-segment-left 1 0, 0px);
+    padding-right: env(viewport-segment-right 0 0, 0px);
+  }
+}
+
+/* Legacy / experimental spanning hook (older Samsung/Surface Duo builds). */
+@media (spanning: single-fold-vertical) {
+  body {
+    /* Keep interactive UI on one side of a vertical fold when spanned. */
+    padding-left: env(fold-right, 0px);
+  }
+}
+
+/* ---------- 5. High-DPI (~2K, 400+ ppi) crispness ----------
+   On the Find N6 both panels are 400+ ppi. Nudge hairlines and edge strokes
+   so 1px borders don't disappear or shimmer on the dense panel. ---------- */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
+  /* Crisper hairline borders that reference the existing theme var */
+  .react-flow__edge-path {
+    stroke-width: 1.25;
+  }
+  /* Slightly larger hit target for React Flow handles on a dense touch panel */
+  .react-flow__handle {
+    min-width: 12px;
+    min-height: 12px;
+  }
+}
+
+/* ---------- 6. Touch ergonomics on the foldable (no hover, coarse pointer)
+   Enlarge tap targets for header/rail controls without touching layout. ---------- */
+@media (hover: none) and (pointer: coarse) {
+  header button,
+  aside button {
+    min-height: 40px;
+    min-width: 40px;
+  }
+}
