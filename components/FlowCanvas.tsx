@@ -21,6 +21,7 @@ import { ASSET_MIME } from '@/components/LibraryPanel';
 import { CATEGORY_META } from '@/lib/types';
 import { LiveCursors } from '@/components/collab/LiveCursors';
 import { PresenceBar } from '@/components/collab/PresenceBar';
+import DemoLauncher from '@/components/DemoLauncher';
 import { useCollabStore } from '@/lib/collabStore';
 
 const nodeTypes = { interior: InteriorNode, note: NoteNode };
@@ -290,6 +291,10 @@ export function FlowCanvas() {
                 Flow mẫu: Concept → Slide deck
               </button>
             </div>
+            <p className="mt-5 text-[10px] uppercase tracking-wider text-[var(--t5)]">
+              Demo one-click
+            </p>
+            <DemoLauncher />
           </div>
         </div>
       )}
