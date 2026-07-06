@@ -1,0 +1,82 @@
+{
+  "10": {
+    "class_type": "UNETLoader",
+    "inputs": { "unet_name": "flux1-dev.safetensors", "weight_dtype": "fp8_e4m3fn" }
+  },
+  "11": {
+    "class_type": "DualCLIPLoader",
+    "inputs": { "clip_name1": "t5xxl_fp16.safetensors", "clip_name2": "clip_l.safetensors", "type": "flux" }
+  },
+  "12": {
+    "class_type": "VAELoader",
+    "inputs": { "vae_name": "ae.safetensors" }
+  },
+  "6": {
+    "class_type": "CLIPTextEncode",
+    "_meta": { "title": "IF_POSITIVE" },
+    "inputs": { "text": "photorealistic interior render, natural light, quiet luxury", "clip": ["11", 0] }
+  },
+  "7": {
+    "class_type": "CLIPTextEncode",
+    "_meta": { "title": "IF_NEGATIVE" },
+    "inputs": { "text": "", "clip": ["11", 0] }
+  },
+  "20": {
+    "class_type": "FluxGuidance",
+    "inputs": { "guidance": 3.5, "conditioning": ["6", 0] }
+  },
+  "15": {
+    "class_type": "LoadImage",
+    "_meta": { "title": "IF_IMAGE" },
+    "inputs": { "image": "example.png", "upload": "image" }
+  },
+  "16": {
+    "class_type": "ControlNetLoader",
+    "inputs": { "control_net_name": "FLUX.1-dev-ControlNet-Union-Pro.safetensors" }
+  },
+  "18": {
+    "class_type": "SetUnionControlNetType",
+    "inputs": { "type": "canny", "control_net": ["16", 0] }
+  },
+  "17": {
+    "class_type": "ControlNetApplyAdvanced",
+    "inputs": {
+      "strength": 0.7,
+      "start_percent": 0.0,
+      "end_percent": 0.8,
+      "positive": ["20", 0],
+      "negative": ["7", 0],
+      "control_net": ["18", 0],
+      "image": ["15", 0],
+      "vae": ["12", 0]
+    }
+  },
+  "5": {
+    "class_type": "EmptySD3LatentImage",
+    "inputs": { "width": 1024, "height": 768, "batch_size": 1 }
+  },
+  "3": {
+    "class_type": "KSampler",
+    "_meta": { "title": "IF_SEED" },
+    "inputs": {
+      "seed": 0,
+      "steps": 22,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0,
+      "model": ["10", 0],
+      "positive": ["17", 0],
+      "negative": ["17", 1],
+      "latent_image": ["5", 0]
+    }
+  },
+  "8": {
+    "class_type": "VAEDecode",
+    "inputs": { "samples": ["3", 0], "vae": ["12", 0] }
+  },
+  "9": {
+    "class_type": "SaveImage",
+    "inputs": { "filename_prefix": "InteriorFlow", "images": ["8", 0] }
+  }
+}

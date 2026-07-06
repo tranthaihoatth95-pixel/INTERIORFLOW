@@ -20,12 +20,14 @@ export interface TaskModel {
 }
 
 export const AI_TASKS = {
-  // Line/sketch → render: khoá hình học bằng ControlNet canny
+  // Line/sketch → render: khoá hình học bằng ControlNet canny.
+  // comfy = FLUX + ControlNet Union (canny) trên máy render RTX — xem sketch_flux.json.
+  // (còn sketch_canny.json = bản SDXL nhẹ hơn nếu chạy máy yếu.)
   sketch2render: {
     falModel: 'fal-ai/flux-pro/v1/canny',
     falFast: 'fal-ai/flux/dev/image-to-image',
-    comfy: 'sketch_canny',
-    typicalMs: 25000,
+    comfy: 'sketch_flux',
+    typicalMs: 30000,
   },
   // Clay/white render (từ 3ds Max) → photoreal: ControlNet DEPTH khoá khối tốt hơn canny.
   // Đây là node cốt lõi cho quy trình clay→AI của công ty (xem STRATEGY §0b).
