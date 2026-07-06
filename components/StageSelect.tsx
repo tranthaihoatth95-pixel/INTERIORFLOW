@@ -9,6 +9,8 @@ import { bootstrapWorkspace } from '@/lib/workspace';
 import { StackedCards } from '@/components/entry/StackedCards';
 import { conceptFaces, renderFaces, presentationFaces } from '@/components/entry/cardFaces';
 import { easeApple, springPop, pressable } from '@/lib/motion';
+import { useLang } from '@/lib/i18n';
+import { LangToggle } from '@/components/LangToggle';
 
 /**
  * StageSelect — MÀN CHỜ CHỌN 3 CHẶNG, hiện SAU khi đăng nhập thành công (ở intro).
@@ -29,32 +31,41 @@ const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
 const MODES: {
   id: WorkspaceMode;
   title: string;
-  tagline: string;
-  desc: string;
+  tagline: { vi: string; en: string };
+  desc: { vi: string; en: string };
   icon: typeof Presentation;
   faces: React.ReactNode[];
 }[] = [
   {
     id: 'concept',
     title: 'Concept',
-    tagline: 'Gieo ý tưởng',
-    desc: 'Moodboard, vật liệu, palette, style — trước khi dựng hình.',
+    tagline: { vi: 'Gieo ý tưởng', en: 'Seed the idea' },
+    desc: {
+      vi: 'Moodboard, vật liệu, palette, style — trước khi dựng hình.',
+      en: 'Moodboard, materials, palette, style — before building any form.',
+    },
     icon: Palette,
     faces: conceptFaces,
   },
   {
     id: 'render',
     title: 'Render',
-    tagline: 'Dựng nên hình',
-    desc: 'Sketch → phối cảnh photoreal. Đổi vật liệu, ánh sáng, upscale.',
+    tagline: { vi: 'Dựng nên hình', en: 'Build the image' },
+    desc: {
+      vi: 'Sketch → phối cảnh photoreal. Đổi vật liệu, ánh sáng, upscale.',
+      en: 'Sketch → photoreal render. Swap materials, light, upscale.',
+    },
     icon: Box,
     faces: renderFaces,
   },
   {
     id: 'present',
     title: 'Present',
-    tagline: 'Trình cho khách',
-    desc: 'Slide 16:9, board, spec vật liệu → đóng gói cho khách duyệt.',
+    tagline: { vi: 'Trình cho khách', en: 'Present to client' },
+    desc: {
+      vi: 'Slide 16:9, board, spec vật liệu → đóng gói cho khách duyệt.',
+      en: '16:9 slides, boards, material specs → packaged for client review.',
+    },
     icon: Presentation,
     faces: presentationFaces,
   },
@@ -64,6 +75,8 @@ export function StageSelect({ onEnter }: { onEnter: () => void }) {
   const user = useFlowStore((s) => s.user);
   const setWorkspace = useFlowStore((s) => s.setWorkspace);
   const reduce = useReducedMotion();
+  const lang = useLang();
+  const en = lang === 'en';
   const [chosen, setChosen] = useState<WorkspaceMode>('render');
   const [busy, setBusy] = useState(false);
 
@@ -84,6 +97,11 @@ export function StageSelect({ onEnter }: { onEnter: () => void }) {
       className="relative grid min-h-screen place-items-center overflow-hidden px-6 py-12"
       style={{ background: 'var(--bg)' }}
     >
+      {/* đổi ngôn ngữ — góc phải trên */}
+      <div className="absolute right-6 top-6 z-20">
+        <LangToggle variant="ghost" />
+      </div>
+
       {/* nền đêm ấm — quầng đồng tĩnh + vignette */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <motion.div
@@ -111,16 +129,18 @@ export function StageSelect({ onEnter }: { onEnter: () => void }) {
             className="text-[10px] uppercase text-[var(--t4)]"
             style={{ fontFamily: MONO, letterSpacing: '0.28em' }}
           >
-            {firstName ? `Chào ${firstName}` : 'InteriorFlow'}
+            {firstName ? (en ? `Hi ${firstName}` : `Chào ${firstName}`) : 'InteriorFlow'}
           </div>
           <h1
             className="mt-3 text-[30px] font-semibold leading-tight text-[var(--t1)] sm:text-[36px]"
             style={{ fontFamily: SANS, letterSpacing: '-0.028em' }}
           >
-            Bắt đầu ở chặng nào?
+            {en ? 'Where do you start?' : 'Bắt đầu ở chặng nào?'}
           </h1>
           <p className="mt-2.5 max-w-md text-[13px] leading-relaxed text-[var(--t4)]" style={{ fontFamily: SANS }}>
-            Concept · Render · Present — một pipeline, chung một canvas. Chọn nơi khởi hành, đi lại tự do sau khi vào.
+            {en
+              ? 'Concept · Render · Present — one pipeline, one canvas. Pick where to begin, move freely once inside.'
+              : 'Concept · Render · Present — một pipeline, chung một canvas. Chọn nơi khởi hành, đi lại tự do sau khi vào.'}
           </p>
         </div>
 
@@ -150,7 +170,7 @@ export function StageSelect({ onEnter }: { onEnter: () => void }) {
                   className="relative z-10 mt-4 text-[10px] uppercase transition-colors"
                   style={{ fontFamily: MONO, letterSpacing: '0.24em', color: active ? COPPER : 'var(--t5)' }}
                 >
-                  {m.tagline}
+                  {m.tagline[lang]}
                 </div>
                 <div className="relative z-10 mt-1.5 flex items-center gap-2">
                   <m.icon size={15} style={{ color: active ? COPPER : 'var(--t4)' }} />
@@ -162,7 +182,7 @@ export function StageSelect({ onEnter }: { onEnter: () => void }) {
                   </span>
                 </div>
                 <p className="relative z-10 mt-2 max-w-[15rem] text-[11px] leading-relaxed text-[var(--t4)]" style={{ fontFamily: SANS }}>
-                  {m.desc}
+                  {m.desc[lang]}
                 </p>
               </button>
             );
@@ -182,7 +202,7 @@ export function StageSelect({ onEnter }: { onEnter: () => void }) {
               <Loader2 size={15} className="animate-spin" />
             ) : (
               <>
-                Vào canvas · {PHASE_MAP[chosen].label}
+                {en ? 'Enter canvas' : 'Vào canvas'} · {PHASE_MAP[chosen].label}
                 <ArrowRight size={15} />
               </>
             )}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Share2, Play, Loader2, ChevronDown, Cloud, Zap, Cpu, ShieldCheck, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, Workflow, LayoutDashboard, Palette, Box, Presentation } from 'lucide-react';
+import { Coins, Share2, Play, Loader2, ChevronDown, Cloud, Zap, Cpu, ShieldCheck, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, Workflow, LayoutDashboard, Palette, Box, Presentation, MoreHorizontal } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { runFlow } from '@/lib/execution';
 import { checkProviders, type ProviderStatus } from '@/lib/ai/client';
@@ -14,18 +14,20 @@ import { PHASES, DEFAULT_PHASE, type Phase } from '@/lib/phases';
 import { toggleShare } from '@/lib/workspace';
 import { TasksDropdown } from '@/components/TasksDropdown';
 import { MobileMenu } from '@/components/MobileMenu';
+import { LangToggle } from '@/components/LangToggle';
 import { pressable, pressableIcon, easeApple } from '@/lib/motion';
+import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 export function Header() {
   const flowName = useFlowStore((s) => s.flowName);
   const setFlowName = useFlowStore((s) => s.setFlowName);
-  const credits = useFlowStore((s) => s.credits);
   const isRunningFlow = useFlowStore((s) => s.isRunningFlow);
   const tasksOpen = useFlowStore((s) => s.tasksOpen);
   const setTasksOpen = useFlowStore((s) => s.setTasksOpen);
   const jobs = useFlowStore((s) => s.jobs);
   const [editing, setEditing] = useState(false);
+  const tr = useT();
 
   const activeJobs = jobs.filter((j) => j.status === 'running' || j.status === 'queued').length;
 
@@ -59,7 +61,7 @@ export function Header() {
           {...pressable}
           className="min-w-0 max-w-28 shrink truncate rounded-[10px] px-2 py-1 text-sm text-[var(--t2)] transition-colors hover:bg-[var(--hover)] sm:max-w-40 lg:max-w-56"
           onClick={() => setEditing(true)}
-          title="Đổi tên flow"
+          title={tr('Đổi tên flow', 'Rename flow')}
         >
           {flowName}
         </motion.button>
@@ -83,54 +85,44 @@ export function Header() {
         {...pressable}
         onClick={() => runFlow()}
         disabled={isRunningFlow}
-        title="Run flow"
-        className="flex shrink-0 items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-2.5 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent)] disabled:opacity-50 sm:px-3"
+        title={tr('Chạy flow', 'Run flow')}
+        className="flex shrink-0 items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-2.5 py-1.5 text-xs font-medium text-white shadow-sm transition-[background-color,transform] duration-200 ease-[cubic-bezier(.32,.72,0,1)] hover:bg-[var(--accent)] disabled:opacity-50 sm:px-3"
       >
         {isRunningFlow ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
-        <span className="hidden sm:inline">Run flow</span>
+        <span className="hidden sm:inline">{tr('Chạy flow', 'Run flow')}</span>
       </motion.button>
 
-      {/* cụm control phụ — desktop inline; mobile (<sm) gom vào ⋯ bên dưới */}
-      <div className="hidden items-center gap-2 sm:flex sm:gap-3">
-        {/* credits */}
-        <div className="flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
-          <Coins size={13} className="text-amber-400" />
-          {credits}
-        </div>
-
-        {/* share — link read-only cho khách */}
-        <ShareButton />
-
-        {/* chat team */}
-        <ChatToggle />
-
-        {/* theme: auto (theo giờ) → light → dark */}
-        <ThemeToggle />
-
-        {/* tasks */}
+      {/* cụm control phụ — desktop inline; mobile (<sm) gom vào ⋯ bên dưới.
+          Progressive disclosure: chỉ Tasks + user luôn hiện; credits/share/chat/theme/lang
+          gom vào popover ⋯ (More), bấm mới xổ — bar gọn hơn nhiều. */}
+      <div className="hidden items-center gap-2 sm:flex sm:gap-2.5">
+        {/* tasks — luôn hiện (trạng thái job quan trọng) */}
         <div className="relative shrink-0">
           <motion.button
             {...pressable}
             onClick={() => setTasksOpen(!tasksOpen)}
             className={cn(
-              'flex items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors',
+              'flex items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
               tasksOpen
                 ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
                 : 'border-[var(--border)] text-[var(--t2)] hover:bg-[var(--hover)]',
             )}
           >
-            Tasks
+            {tr('Việc', 'Tasks')}
             {activeJobs > 0 && (
               <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-semibold text-white">
                 {activeJobs}
               </span>
             )}
-            <ChevronDown size={12} className={cn('transition-transform', tasksOpen && 'rotate-180')} />
+            <ChevronDown size={12} className={cn('transition-transform duration-200 ease-[cubic-bezier(.32,.72,0,1)]', tasksOpen && 'rotate-180')} />
           </motion.button>
           <AnimatePresence>{tasksOpen && <TasksDropdown />}</AnimatePresence>
         </div>
 
-        {/* user chip + logout */}
+        {/* ⋯ More — gom control phụ, chỉ xổ khi bấm (progressive disclosure) */}
+        <MoreMenu />
+
+        {/* user chip + logout — luôn hiện */}
         <UserChip />
       </div>
 
@@ -140,11 +132,78 @@ export function Header() {
   );
 }
 
+/**
+ * MoreMenu — popover "⋯" gom control phụ (credits · share · chat · theme · ngôn ngữ).
+ * Progressive disclosure: bar mặc định gọn, bấm ⋯ mới lộ chi tiết.
+ */
+function MoreMenu() {
+  const tr = useT();
+  const credits = useFlowStore((s) => s.credits);
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative shrink-0">
+      <motion.button
+        {...pressable}
+        onClick={() => setOpen((o) => !o)}
+        title={tr('Thêm', 'More')}
+        aria-expanded={open}
+        className={cn(
+          'grid h-8 w-8 place-items-center rounded-[10px] border transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
+          open
+            ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
+            : 'border-[var(--border)] text-[var(--t2)] hover:bg-[var(--hover)]',
+        )}
+      >
+        <MoreHorizontal size={15} />
+      </motion.button>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: -4, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.98 }}
+              transition={{ duration: 0.18, ease: easeApple }}
+              className="mat-panel absolute right-0 top-9 z-40 w-56 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
+            >
+              {/* credits */}
+              <div className="mb-2 flex items-center justify-between rounded-[10px] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
+                <span className="flex items-center gap-1.5">
+                  <Coins size={13} className="text-amber-400" />
+                  {tr('Tín dụng', 'Credits')}
+                </span>
+                <span className="font-semibold text-[var(--t1)]">{credits}</span>
+              </div>
+
+              {/* hàng nút: share · chat · theme */}
+              <div className="flex items-center gap-1.5">
+                <ShareButton />
+                <ChatToggle />
+                <ThemeToggle />
+              </div>
+
+              {/* ngôn ngữ */}
+              <div className="mt-2 flex items-center justify-between border-t border-[var(--border)] pt-2">
+                <span className="pl-0.5 text-[11px] text-[var(--t4)]">{tr('Ngôn ngữ', 'Language')}</span>
+                <LangToggle />
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function ShareButton() {
   const shareToken = useFlowStore((s) => s.shareToken);
   const currentFlowId = useFlowStore((s) => s.currentFlowId);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
+  const tr = useT();
 
   const onClick = async () => {
     if (!currentFlowId || busy) return;
@@ -173,18 +232,21 @@ function ShareButton() {
       }}
       title={
         shareToken
-          ? 'Đã bật share — bấm để copy link cho khách (chuột phải: tắt share)'
-          : 'Bật share link read-only cho khách xem flow'
+          ? tr(
+              'Đã bật share — bấm để copy link cho khách (chuột phải: tắt share)',
+              'Sharing on — click to copy the guest link (right-click: turn off)',
+            )
+          : tr('Bật share link read-only cho khách xem flow', 'Turn on a read-only share link for guests')
       }
       className={cn(
-        'flex shrink-0 items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors',
+        'flex shrink-0 items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
         shareToken
           ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
           : 'border-[var(--border)] text-[var(--t2)] hover:bg-[var(--hover)]',
       )}
     >
       {copied ? <Check size={13} /> : <Share2 size={13} />}
-      <span className="hidden md:inline">{copied ? 'Đã copy' : 'Share'}</span>
+      <span className="hidden md:inline">{copied ? tr('Đã copy', 'Copied') : tr('Chia sẻ', 'Share')}</span>
     </motion.button>
   );
 }
@@ -192,12 +254,13 @@ function ShareButton() {
 function ChatToggle() {
   const chatOpen = useFlowStore((s) => s.chatOpen);
   const setChatOpen = useFlowStore((s) => s.setChatOpen);
+  const tr = useT();
   return (
     <motion.button
       {...pressableIcon}
       whileHover={{ scale: 1.06 }}
       onClick={() => setChatOpen(!chatOpen)}
-      title="Chat nội bộ team"
+      title={tr('Chat nội bộ team', 'Team chat')}
       className={cn(
         'grid h-8 w-8 shrink-0 place-items-center rounded-[10px] border transition-colors',
         chatOpen
@@ -213,6 +276,7 @@ function ChatToggle() {
 function UserChip() {
   const user = useFlowStore((s) => s.user);
   const setUser = useFlowStore((s) => s.setUser);
+  const tr = useT();
   if (!user) return null;
   return (
     <div className="flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--border)] py-1 pl-2 pr-1 text-xs text-[var(--t2)]">
@@ -221,7 +285,7 @@ function UserChip() {
       </span>
       <motion.button
         {...pressableIcon}
-        title="Đăng xuất"
+        title={tr('Đăng xuất', 'Sign out')}
         onClick={async () => {
           await fetch('/api/auth/me', { method: 'DELETE' });
           setUser(null);
@@ -238,6 +302,7 @@ function ThemeToggle() {
   const pref = useFlowStore((s) => s.themePref);
   const applied = useFlowStore((s) => s.appliedTheme);
   const setThemePref = useFlowStore((s) => s.setThemePref);
+  const tr = useT();
   const next = pref === 'auto' ? 'light' : pref === 'light' ? 'dark' : 'auto';
   const Icon = pref === 'auto' ? SunMoon : pref === 'light' ? Sun : Moon;
   return (
@@ -247,10 +312,16 @@ function ThemeToggle() {
       onClick={() => setThemePref(next)}
       title={
         pref === 'auto'
-          ? `Theme: tự động theo giờ (sáng 6h30–18h) — đang ${applied === 'light' ? 'sáng' : 'tối'}. Bấm để chuyển.`
-          : `Theme: ${pref === 'light' ? 'sáng' : 'tối'} cố định. Bấm để chuyển.`
+          ? tr(
+              `Theme: tự động theo giờ (sáng 6h30–18h) — đang ${applied === 'light' ? 'sáng' : 'tối'}. Bấm để chuyển.`,
+              `Theme: auto by time (light 6:30–18:00) — now ${applied === 'light' ? 'light' : 'dark'}. Click to switch.`,
+            )
+          : tr(
+              `Theme: ${pref === 'light' ? 'sáng' : 'tối'} cố định. Bấm để chuyển.`,
+              `Theme: ${pref === 'light' ? 'light' : 'dark'} fixed. Click to switch.`,
+            )
       }
-      className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] border border-[var(--border)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+      className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] border border-[var(--border)] text-[var(--t3)] transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
     >
       {/* icon xoay-mờ nhẹ khi đổi theme, kiểu Apple */}
       <AnimatePresence mode="wait" initial={false}>
@@ -272,13 +343,14 @@ function ThemeToggle() {
 function ViewToggle() {
   const viewMode = useFlowStore((s) => s.viewMode);
   const setViewMode = useFlowStore((s) => s.setViewMode);
+  const tr = useT();
   return (
     <div className="hidden items-center gap-0.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-0.5 md:flex">
       <button
         onClick={() => setViewMode('node')}
-        title="Node flow (hiện tại)"
+        title={tr('Node flow (hiện tại)', 'Node flow (current)')}
         className={cn(
-          'flex items-center gap-1 rounded-[7px] px-2 py-1 text-[11px] font-medium transition-colors',
+          'flex items-center gap-1 rounded-[7px] px-2 py-1 text-[11px] font-medium transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
           viewMode === 'node' ? 'bg-[var(--card)] text-[var(--t1)] shadow-sm' : 'text-[var(--t4)] hover:text-[var(--t2)]',
         )}
       >
@@ -286,11 +358,11 @@ function ViewToggle() {
       </button>
       <button
         disabled
-        title="Window view kiểu Figma — sắp có (đang xây engine riêng)"
+        title={tr('Window view kiểu Figma — sắp có (đang xây engine riêng)', 'Figma-style window view — coming soon (engine in progress)')}
         className="flex cursor-not-allowed items-center gap-1 rounded-[7px] px-2 py-1 text-[11px] font-medium text-[var(--t5)]"
       >
         <LayoutDashboard size={12} /> Window
-        <span className="rounded bg-[var(--hover)] px-1 text-[8px] text-[var(--t4)]">sắp có</span>
+        <span className="rounded bg-[var(--hover)] px-1 text-[8px] text-[var(--t4)]">{tr('sắp có', 'soon')}</span>
       </button>
     </div>
   );
@@ -352,6 +424,7 @@ function AiTierMenu() {
   const setOneAiRuntime = useFlowStore((s) => s.setOneAiRuntime);
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<ProviderStatus | null>(null);
+  const tr = useT();
 
   useEffect(() => {
     checkProviders().then(setStatus);
@@ -369,7 +442,10 @@ function AiTierMenu() {
         {...pressable}
         data-testid="ai-tier"
         onClick={() => setOpen((o) => !o)}
-        title="Mức phụ thuộc AI — bấm để đổi (Cao cloud · Vừa · Tự-host 0đ · Không AI)"
+        title={tr(
+          'Mức phụ thuộc AI — bấm để đổi (Cao cloud · Vừa · Tự-host 0đ · Không AI)',
+          'AI dependency level — click to switch (High cloud · Medium · Self-host free · No AI)',
+        )}
         className={cn(
           'flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium',
           TIER_TONE[aiTier],
@@ -393,7 +469,7 @@ function AiTierMenu() {
               className="mat-panel absolute left-0 top-8 z-40 w-72 rounded-[14px] border border-[var(--border)] p-1.5 shadow-xl"
             >
               <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t4)]">
-                Mức phụ thuộc AI
+                {tr('Mức phụ thuộc AI', 'AI dependency')}
               </p>
               {TIER_ORDER.map((t) => {
                 const m = TIERS[t];
@@ -418,7 +494,7 @@ function AiTierMenu() {
                         <span className="text-xs font-medium text-[var(--t1)]">{m.name}</span>
                         <span className="rounded bg-[var(--hover)] px-1 text-[9px] text-[var(--t4)]">{m.cost}</span>
                         {a === false && (
-                          <span className="rounded bg-amber-500/15 px-1 text-[9px] text-amber-300">chạy mock</span>
+                          <span className="rounded bg-amber-500/15 px-1 text-[9px] text-amber-300">{tr('chạy mock', 'mock')}</span>
                         )}
                         {active && <Check size={11} className="ml-auto text-[var(--accent)]" />}
                       </div>

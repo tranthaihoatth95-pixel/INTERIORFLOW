@@ -20,6 +20,7 @@ import {
   isOneAiEngine, isOneAiRuntime,
 } from '@/lib/ai/tiers';
 import { type Phase, isPhase } from '@/lib/phases';
+import { type Lang, DEFAULT_LANG, LANG_KEY, isLang } from '@/lib/i18n';
 
 export type FlowNode = Node<InteriorNodeData>;
 export type Tool = 'select' | 'pan';
@@ -61,6 +62,8 @@ interface FlowState {
   /** 'auto' = sáng 6h30–18h, tối ngoài giờ đó */
   themePref: ThemePref;
   appliedTheme: 'light' | 'dark';
+  /** ngôn ngữ hiển thị — VI mặc định, EN cho demo song ngữ (persist localStorage) */
+  lang: Lang;
   /** undefined = đang check session, null = chưa đăng nhập */
   user: SessionUser | null | undefined;
   currentFlowId: string | null;
@@ -102,6 +105,8 @@ interface FlowState {
   setLightboxUrl: (url: string | null) => void;
   setThemePref: (pref: ThemePref) => void;
   applyTheme: () => void;
+  setLang: (lang: Lang) => void;
+  toggleLang: () => void;
   hydrate: () => void;
   setUser: (user: SessionUser | null) => void;
   setCredits: (credits: number) => void;
@@ -175,6 +180,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   lightboxUrl: null,
   themePref: 'auto',
   appliedTheme: 'dark',
+  lang: DEFAULT_LANG,
   user: undefined,
   currentFlowId: null,
   shareToken: null,
@@ -337,11 +343,27 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     if (typeof document !== 'undefined') document.documentElement.dataset.theme = applied;
   },
 
+  setLang: (lang) => {
+    set({ lang });
+    try {
+      localStorage.setItem(LANG_KEY, lang);
+    } catch {}
+    if (typeof document !== 'undefined') document.documentElement.lang = lang;
+  },
+  toggleLang: () => get().setLang(get().lang === 'vi' ? 'en' : 'vi'),
+
   hydrate: () => {
     // theme trước — tránh nháy màu
     try {
       const pref = localStorage.getItem(THEME_KEY) as ThemePref | null;
       if (pref === 'auto' || pref === 'light' || pref === 'dark') set({ themePref: pref });
+    } catch {}
+    try {
+      const l = localStorage.getItem(LANG_KEY);
+      if (isLang(l)) {
+        set({ lang: l });
+        if (typeof document !== 'undefined') document.documentElement.lang = l;
+      }
     } catch {}
     try {
       const t = Number(localStorage.getItem('interiorflow.aiTier'));

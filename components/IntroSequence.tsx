@@ -4,6 +4,8 @@ import { useEffect, useReducer, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { easeApple, pressable } from '@/lib/motion';
+import { useLang, type Lang } from '@/lib/i18n';
+import { LangToggle } from '@/components/LangToggle';
 
 /**
  * IntroSequence — màn mở điện ảnh KỂ CÂU CHUYỆN LÕI của app, KẾT BẰNG Ô ĐĂNG NHẬP.
@@ -27,41 +29,66 @@ const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
 const INK = '#e9e0d2'; // "mực" nhạt trên nền đêm ấm
 
 // 4 cảnh kể chuyện + 1 cảnh đăng nhập. `stage` điều khiển khung tranh.
-const SCENES = [
+// Mỗi cảnh song ngữ: kicker/title/sub có bản {vi,en}.
+interface Scene {
+  no: string;
+  kicker: { vi: string; en: string };
+  title: { vi: string; en: string };
+  sub: { vi: string; en: string };
+  stage: Stage;
+  isLogin?: boolean;
+}
+
+const SCENES: Scene[] = [
   {
     no: '01',
-    kicker: 'Giấy nháp',
-    title: 'Bắt đầu\nbằng một nét phác.',
-    sub: 'Mặt bằng, ý tưởng, một đường bút chì trên giấy can. Thô, nhanh, đầy khả năng — như mọi thiết kế thật sự khởi sinh.',
-    stage: 'sketch' as const,
+    kicker: { vi: 'Giấy nháp', en: 'Draft paper' },
+    title: { vi: 'Bắt đầu\nbằng một nét phác.', en: 'It starts\nwith a sketch.' },
+    sub: {
+      vi: 'Mặt bằng, ý tưởng, một đường bút chì trên giấy can. Thô, nhanh, đầy khả năng — như mọi thiết kế thật sự khởi sinh.',
+      en: 'A plan, an idea, a pencil line on tracing paper. Rough, fast, full of promise — how every real design begins.',
+    },
+    stage: 'sketch',
   },
   {
     no: '02',
-    kicker: 'Sống dậy',
-    title: 'Rồi nó\nsống dậy.',
-    sub: 'AI đọc hình khối, phủ vật liệu và ánh sáng lên đúng nét bạn vẽ. Bản phác bắt đầu có da thịt, có chiều sâu.',
-    stage: 'coloring' as const,
+    kicker: { vi: 'Sống dậy', en: 'It comes alive' },
+    title: { vi: 'Rồi nó\nsống dậy.', en: 'Then it\ncomes alive.' },
+    sub: {
+      vi: 'AI đọc hình khối, phủ vật liệu và ánh sáng lên đúng nét bạn vẽ. Bản phác bắt đầu có da thịt, có chiều sâu.',
+      en: 'AI reads the forms, laying materials and light onto the exact lines you drew. The sketch gains flesh and depth.',
+    },
+    stage: 'coloring',
   },
   {
     no: '03',
-    kicker: 'Photoreal',
-    title: 'Thành\nphối cảnh thật.',
-    sub: 'Đổi vật liệu, chỉnh nắng, upscale 4K — giữ nguyên hình khối gốc. Một phối cảnh đủ tin để đưa cho khách.',
-    stage: 'photoreal' as const,
+    kicker: { vi: 'Photoreal', en: 'Photoreal' },
+    title: { vi: 'Thành\nphối cảnh thật.', en: 'Into a real\nrendering.' },
+    sub: {
+      vi: 'Đổi vật liệu, chỉnh nắng, upscale 4K — giữ nguyên hình khối gốc. Một phối cảnh đủ tin để đưa cho khách.',
+      en: 'Swap materials, tune the sun, upscale to 4K — keeping the original geometry. A render solid enough to show a client.',
+    },
+    stage: 'photoreal',
   },
   {
     no: '04',
-    kicker: 'Trình khách',
-    title: 'Và đóng thành\nbản trình khách.',
-    sub: 'Slide 16:9, board vật liệu, spec — gói gọn thành bản thuyết trình sạch bản quyền. Cả dòng chảy, không rời canvas.',
-    stage: 'deck' as const,
+    kicker: { vi: 'Trình khách', en: 'Client-ready' },
+    title: { vi: 'Và đóng thành\nbản trình khách.', en: 'And packaged into\na client deck.' },
+    sub: {
+      vi: 'Slide 16:9, board vật liệu, spec — gói gọn thành bản thuyết trình sạch bản quyền. Cả dòng chảy, không rời canvas.',
+      en: '16:9 slides, material boards, specs — wrapped into a copyright-clean presentation. The whole flow, without leaving the canvas.',
+    },
+    stage: 'deck',
   },
   {
     no: '05',
-    kicker: 'Vào xưởng',
-    title: 'Bắt đầu\ndòng chảy của bạn.',
-    sub: 'Đăng nhập để mở canvas. Chọn nơi khởi hành ở bước kế — đi lại tự do sau khi vào.',
-    stage: 'deck' as const,
+    kicker: { vi: 'Vào xưởng', en: 'Enter the studio' },
+    title: { vi: 'Bắt đầu\ndòng chảy của bạn.', en: 'Begin\nyour flow.' },
+    sub: {
+      vi: 'Đăng nhập để mở canvas. Chọn nơi khởi hành ở bước kế — đi lại tự do sau khi vào.',
+      en: 'Sign in to open the canvas. Pick where to start next — move freely once you are in.',
+    },
+    stage: 'deck',
     isLogin: true,
   },
 ];
@@ -72,6 +99,7 @@ const HOLD = 4400; // ms mỗi cảnh — nhịp chậm, điện ảnh
 export function IntroSequence({ onDone }: { onDone: () => void }) {
   const [i, setI] = useReducer((_: number, v: number) => v, 0);
   const reduce = useReducedMotion();
+  const lang = useLang();
   const last = i === SCENES.length - 1; // cảnh đăng nhập
   const scene = SCENES[i];
 
@@ -101,6 +129,11 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
         />
       </div>
 
+      {/* đổi ngôn ngữ — góc trái trên, ghost để hoà nền tối */}
+      <div className="absolute left-6 top-6 z-30">
+        <LangToggle variant="ghost" />
+      </div>
+
       {/* nhảy thẳng tới đăng nhập (thay cho "bỏ qua") */}
       {!last && (
         <button
@@ -108,7 +141,7 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
           className="absolute right-6 top-6 z-30 rounded-full px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-[var(--t4)] transition-colors hover:text-[var(--t2)]"
           style={{ fontFamily: MONO }}
         >
-          Đăng nhập →
+          {lang === 'en' ? 'Sign in →' : 'Đăng nhập →'}
         </button>
       )}
 
@@ -118,7 +151,7 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
           <button
             key={idx}
             onClick={() => setI(idx)}
-            aria-label={`Cảnh ${idx + 1}`}
+            aria-label={lang === 'en' ? `Scene ${idx + 1}` : `Cảnh ${idx + 1}`}
             className="h-[3px] overflow-hidden rounded-full transition-all duration-500"
             style={{ width: idx === i ? 32 : 16, background: 'rgba(199,154,99,0.18)' }}
           >
@@ -160,20 +193,20 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
               >
                 <span style={{ color: COPPER }}>{scene.no}</span>
                 <span className="h-px w-6" style={{ background: 'var(--border)' }} />
-                <span>{scene.kicker}</span>
+                <span>{scene.kicker[lang]}</span>
               </div>
 
               <h1
                 className="whitespace-pre-line text-[34px] font-semibold leading-[1.04] text-[var(--t1)] sm:text-[48px]"
                 style={{ fontFamily: SANS, letterSpacing: '-0.028em' }}
               >
-                {scene.title}
+                {scene.title[lang]}
               </h1>
               <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-[var(--t3)]" style={{ fontFamily: SANS }}>
-                {scene.sub}
+                {scene.sub[lang]}
               </p>
 
-              {last && <LoginForm onAuthed={onDone} reduce={!!reduce} />}
+              {last && <LoginForm onAuthed={onDone} reduce={!!reduce} lang={lang} />}
             </motion.div>
           </AnimatePresence>
 
@@ -188,7 +221,7 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
                 className="text-[11px] uppercase tracking-[0.2em] text-[var(--t4)] transition-colors hover:text-[var(--t2)]"
                 style={{ fontFamily: MONO }}
               >
-                Tiếp →
+                {lang === 'en' ? 'Next →' : 'Tiếp →'}
               </motion.button>
             </div>
           )}
@@ -203,13 +236,14 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
  *   POST /api/auth/{login|register} → setUser(body.user).
  * KHÔNG chọn workspace ở đây; việc chọn chặng chuyển sang màn StageSelect sau auth.
  * ==========================================================================*/
-function LoginForm({ onAuthed, reduce }: { onAuthed: () => void; reduce: boolean }) {
+function LoginForm({ onAuthed, reduce, lang }: { onAuthed: () => void; reduce: boolean; lang: Lang }) {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const en = lang === 'en';
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -222,7 +256,7 @@ function LoginForm({ onAuthed, reduce }: { onAuthed: () => void; reduce: boolean
         body: JSON.stringify(authMode === 'login' ? { email, password } : { email, name, password }),
       });
       const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? 'Có lỗi xảy ra.');
+      if (!res.ok) throw new Error(body.error ?? (en ? 'Something went wrong.' : 'Có lỗi xảy ra.'));
       // Cập nhật user vào store → gate app/page.tsx chuyển sang màn chọn chặng.
       const { useFlowStore } = await import('@/lib/store');
       useFlowStore.getState().setUser(body.user);
@@ -249,7 +283,7 @@ function LoginForm({ onAuthed, reduce }: { onAuthed: () => void; reduce: boolean
       {authMode === 'register' && (
         <input
           className={field}
-          placeholder="Tên hiển thị (vd: Hoà)"
+          placeholder={en ? 'Display name (e.g. Hoa)' : 'Tên hiển thị (vd: Hoà)'}
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
@@ -266,7 +300,7 @@ function LoginForm({ onAuthed, reduce }: { onAuthed: () => void; reduce: boolean
       <input
         type="password"
         className={field}
-        placeholder="Mật khẩu (≥ 6 ký tự)"
+        placeholder={en ? 'Password (≥ 6 characters)' : 'Mật khẩu (≥ 6 ký tự)'}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required
@@ -291,7 +325,7 @@ function LoginForm({ onAuthed, reduce }: { onAuthed: () => void; reduce: boolean
           <Loader2 size={14} className="animate-spin" />
         ) : (
           <>
-            {authMode === 'login' ? 'Vào xưởng' : 'Tạo tài khoản'}
+            {authMode === 'login' ? (en ? 'Enter the studio' : 'Vào xưởng') : en ? 'Create account' : 'Tạo tài khoản'}
             <ArrowRight size={14} />
           </>
         )}
@@ -301,7 +335,13 @@ function LoginForm({ onAuthed, reduce }: { onAuthed: () => void; reduce: boolean
         onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
         className="w-full pt-1 text-center text-xs text-[var(--t4)] transition-colors hover:text-[var(--t2)]"
       >
-        {authMode === 'login' ? 'Chưa có tài khoản? Đăng ký' : 'Đã có tài khoản? Đăng nhập'}
+        {authMode === 'login'
+          ? en
+            ? "No account yet? Sign up"
+            : 'Chưa có tài khoản? Đăng ký'
+          : en
+            ? 'Already have an account? Sign in'
+            : 'Đã có tài khoản? Đăng nhập'}
       </button>
     </motion.form>
   );
