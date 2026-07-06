@@ -17,6 +17,8 @@ import {
 import { PHASES, DEFAULT_PHASE, type Phase } from '@/lib/phases';
 import { toggleShare } from '@/lib/workspace';
 import { pressable, pressableIcon, springSheet, easeApple } from '@/lib/motion';
+import { useT } from '@/lib/i18n';
+import { LangToggle } from '@/components/LangToggle';
 import { cn } from '@/lib/utils';
 
 const PHASE_ICON: Record<Phase, typeof Palette> = { concept: Palette, render: Box, present: Presentation };
@@ -97,9 +99,10 @@ function Sheet({ close }: { close: () => void }) {
 
         <div className="space-y-4 px-4 pt-1">
           <AccountRow />
-          <PhaseRow close={close} />
+          <PhaseRow />
           <TierRow />
           <ActionsRow close={close} />
+          <LangRow />
           <TasksRow />
         </div>
       </motion.div>
@@ -152,12 +155,25 @@ function AccountRow() {
   );
 }
 
-function PhaseRow({ close }: { close: () => void }) {
+function LangRow() {
+  const tr = useT();
+  return (
+    <Section label={tr('Ngôn ngữ', 'Language')}>
+      <div className="flex items-center justify-between rounded-[14px] border border-[var(--border)] bg-[var(--field)] px-3 py-2.5">
+        <span className="text-xs text-[var(--t2)]">{tr('Tiếng Việt / English', 'Vietnamese / English')}</span>
+        <LangToggle />
+      </div>
+    </Section>
+  );
+}
+
+function PhaseRow() {
   const workspace = useFlowStore((s) => s.workspace);
   const setWorkspace = useFlowStore((s) => s.setWorkspace);
   const current: Phase = workspace ?? DEFAULT_PHASE;
+  const tr = useT();
   return (
-    <Section label="Chặng làm việc">
+    <Section label={tr('Chặng làm việc', 'Workflow stage')}>
       <div className="grid grid-cols-3 gap-1.5">
         {PHASES.map((p) => {
           const Icon = PHASE_ICON[p.id];
@@ -190,6 +206,7 @@ function TierRow() {
   const oneAiRuntime = useFlowStore((s) => s.oneAiRuntime);
   const setOneAiRuntime = useFlowStore((s) => s.setOneAiRuntime);
   const [status, setStatus] = useState<ProviderStatus | null>(null);
+  const tr = useT();
   useEffect(() => {
     checkProviders().then(setStatus);
   }, []);
@@ -202,7 +219,7 @@ function TierRow() {
   };
 
   return (
-    <Section label="Mức phụ thuộc AI">
+    <Section label={tr('Mức phụ thuộc AI', 'AI dependency')}>
       <div className="space-y-1.5">
         {TIER_ORDER.map((t) => {
           const m = TIERS[t];
@@ -285,13 +302,14 @@ function TierRow() {
 function ActionsRow({ close }: { close: () => void }) {
   const setChatOpen = useFlowStore((s) => s.setChatOpen);
   const setDashboardOpen = useFlowStore((s) => s.setDashboardOpen);
+  const tr = useT();
 
   return (
-    <Section label="Công cụ">
+    <Section label={tr('Công cụ', 'Tools')}>
       <div className="grid grid-cols-2 gap-1.5">
         <Tile
           icon={<LayoutDashboard size={16} />}
-          label="Tổng quan"
+          label={tr('Tổng quan', 'Overview')}
           onClick={() => {
             setDashboardOpen(true);
             close();
@@ -299,7 +317,7 @@ function ActionsRow({ close }: { close: () => void }) {
         />
         <Tile
           icon={<MessageCircle size={16} />}
-          label="Chat team"
+          label={tr('Chat team', 'Team chat')}
           onClick={() => {
             setChatOpen(true);
             close();
