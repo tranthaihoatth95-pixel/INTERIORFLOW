@@ -44,6 +44,7 @@ echo ============================================
 echo   XONG! Dang khoi dong app...
 echo   Mo trinh duyet:  http://localhost:3000
 echo   (Dang ky tai khoan dau tien = admin)
+echo   Export Deck: tai duoc ca PDF va PowerPoint (.pptx)
 echo   Tat app: dong cua so nay hoac Ctrl+C
 echo ============================================
 echo.
