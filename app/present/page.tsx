@@ -9,11 +9,17 @@
  * Toàn màn hình, nền theo CSS var. Không đọc window/location ở render body.
  */
 import PresentDeck from '@/components/present/PresentDeck';
+import { DEMO_DECK } from '@/lib/present-demo';
 
+/**
+ * `/present` = route SHOWCASE demo (deck Detech mẫu), TÁCH khỏi app thật.
+ * App thật (Present mode trong app) KHÔNG dùng deck này — mặc định rỗng.
+ * Xem docs/CONTENT-RULES.md.
+ */
 export default function PresentPage() {
   return (
     <main style={{ position: 'fixed', inset: 0, background: 'var(--bg)' }}>
-      <PresentDeck />
+      <PresentDeck deck={DEMO_DECK} />
     </main>
   );
 }

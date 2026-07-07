@@ -14,7 +14,6 @@ import {
   Boxes,
   Images,
   SunMoon,
-  Sparkles,
   CornerDownLeft,
   type LucideIcon,
 } from 'lucide-react';
@@ -94,9 +93,7 @@ export function CommandPalette() {
         const next = s.themePref === 'auto' ? 'light' : s.themePref === 'light' ? 'dark' : 'auto';
         s.setThemePref(next);
       }) },
-      { id: 'demo-sketch', label: 'Flow mẫu: Sketch → Render', group: 'Hành động', icon: Sparkles, keywords: 'demo template ví dụ', run: run(() => s.loadDemoFlow('sketch')) },
-      { id: 'demo-bedroom', label: 'Flow mẫu: Phòng ngủ hoàn chỉnh', group: 'Hành động', icon: Sparkles, keywords: 'demo template ví dụ bedroom', run: run(() => s.loadDemoFlow('bedroom')) },
-      { id: 'demo-slide', label: 'Flow mẫu: Concept → Slide deck', group: 'Hành động', icon: Sparkles, keywords: 'demo template slide deck', run: run(() => s.loadDemoFlow('slide')) },
+      // Demo flows đã tách khỏi app thật — chuyển sang khu /demo (làm sau cùng). Xem docs/CONTENT-RULES.md
     ];
 
     const nodeCmds: Cmd[] = NODE_DEFINITIONS.map((d) => ({

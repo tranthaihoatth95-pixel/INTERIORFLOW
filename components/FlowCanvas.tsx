@@ -21,7 +21,6 @@ import { ASSET_MIME } from '@/components/LibraryPanel';
 import { CATEGORY_META } from '@/lib/types';
 import { LiveCursors } from '@/components/collab/LiveCursors';
 import { PresenceBar } from '@/components/collab/PresenceBar';
-import DemoLauncher from '@/components/DemoLauncher';
 import { useCollabStore } from '@/lib/collabStore';
 
 const nodeTypes = { interior: InteriorNode, note: NoteNode };
@@ -260,7 +259,7 @@ export function FlowCanvas() {
         </div>
       )}
 
-      {/* empty state */}
+      {/* empty state — SẠCH, không nội dung demo. Demo mẫu tách sang /demo (làm sau cùng). Xem docs/CONTENT-RULES.md */}
       {nodes.length === 0 && (
         <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center">
           <div className="text-center">
@@ -268,33 +267,6 @@ export function FlowCanvas() {
             <p className="mt-1 text-xs text-[var(--t5)]">
               Mở <span className="text-[var(--t3)]">Node Library</span> ở rail trái và kéo node vào đây
             </p>
-            <div className="pointer-events-auto mt-4 flex flex-wrap justify-center gap-2">
-              <button
-                data-testid="load-demo"
-                onClick={() => useFlowStore.getState().loadDemoFlow('sketch')}
-                className="rounded-lg border border-violet-500/40 bg-violet-500/10 px-3.5 py-1.5 text-xs text-violet-300 transition hover:bg-violet-500/20"
-              >
-                Flow mẫu: Sketch → Render
-              </button>
-              <button
-                data-testid="load-demo-bedroom"
-                onClick={() => useFlowStore.getState().loadDemoFlow('bedroom')}
-                className="rounded-lg border border-violet-500/40 bg-violet-500/10 px-3.5 py-1.5 text-xs text-violet-300 transition hover:bg-violet-500/20"
-              >
-                Flow mẫu: Phòng ngủ hoàn chỉnh
-              </button>
-              <button
-                data-testid="load-demo-slide"
-                onClick={() => useFlowStore.getState().loadDemoFlow('slide')}
-                className="rounded-lg border border-orange-500/40 bg-orange-500/10 px-3.5 py-1.5 text-xs text-orange-300 transition hover:bg-orange-500/20"
-              >
-                Flow mẫu: Concept → Slide deck
-              </button>
-            </div>
-            <p className="mt-5 text-[10px] uppercase tracking-wider text-[var(--t5)]">
-              Demo one-click
-            </p>
-            <DemoLauncher />
           </div>
         </div>
       )}

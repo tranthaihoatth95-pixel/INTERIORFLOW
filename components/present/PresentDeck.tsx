@@ -9,7 +9,6 @@
 import { useEffect, useState } from 'react';
 import PresentViewer from './PresentViewer';
 import {
-  DEMO_DECK,
   type PresentDeck as PresentDeckData,
   renderDeck,
   renderMoodboard,
@@ -27,13 +26,14 @@ export interface PresentDeckProps {
   onClose?: () => void;
 }
 
-export default function PresentDeck({ deck = DEMO_DECK, withMoodboard = true, onClose }: PresentDeckProps) {
+export default function PresentDeck({ deck, withMoodboard = true, onClose }: PresentDeckProps) {
   const [slides, setSlides] = useState<string[]>([]);
   const [moodboard, setMoodboard] = useState<string | null>(null);
   const [status, setStatus] = useState('Đang dựng slide…');
   const [done, setDone] = useState(false);
 
   useEffect(() => {
+    if (!deck) return;
     let cancelled = false;
     (async () => {
       try {
@@ -62,7 +62,7 @@ export default function PresentDeck({ deck = DEMO_DECK, withMoodboard = true, on
   }, [deck, withMoodboard]);
 
   const handlePdf = async () => {
-    if (slides.length === 0) return;
+    if (!deck || slides.length === 0) return;
     try {
       const uri = await buildDeckPdf(slides, `${deck.id}-present-deck.pdf`);
       downloadPdf(uri, `${deck.id}-present-deck.pdf`);
@@ -73,8 +73,28 @@ export default function PresentDeck({ deck = DEMO_DECK, withMoodboard = true, on
   };
 
   const handleMoodboard = () => {
-    if (moodboard) downloadImage(moodboard, `${deck.id}-moodboard.png`);
+    if (deck && moodboard) downloadImage(moodboard, `${deck.id}-moodboard.png`);
   };
+
+  // In-app Present mode chưa có deck thật → RỖNG, không hiện nội dung demo (tránh lẫn nội dung app thật).
+  if (!deck) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', background: 'var(--bg)', color: 'var(--t3)' }}>
+        <div style={{ textAlign: 'center', padding: 24 }}>
+          <p style={{ fontSize: 14 }}>Chưa có nội dung để trình chiếu</p>
+          <p style={{ marginTop: 6, fontSize: 12, color: 'var(--t5)' }}>Dàn slide ở chặng Present, rồi mở Present mode lại.</p>
+          {onClose && (
+            <button
+              onClick={onClose}
+              style={{ marginTop: 18, padding: '8px 16px', fontSize: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)' }}
+            >
+              Đóng
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <PresentViewer
