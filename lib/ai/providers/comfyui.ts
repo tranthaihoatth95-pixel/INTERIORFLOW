@@ -52,15 +52,21 @@ async function uploadImage(src: string): Promise<string> {
   return j.subfolder ? `${j.subfolder}/${j.name}` : j.name;
 }
 
-/** title marker → (widget input muốn ghi, kiểu giá trị). */
-const PLACEHOLDERS: Record<string, { widget: string; image?: boolean }> = {
+/**
+ * title marker → (widget input muốn ghi, kiểu giá trị).
+ * `keys`: danh sách tên input ứng viên (dùng cái ĐẦU TIÊN có mặt trong node). Cho phép gắn
+ * marker lên node không có widget tên `value` — vd IF_STRENGTH trên ControlNetApplyAdvanced
+ * (input tên `strength`), IF_GUIDANCE trên node CFG (`cfg`/`guidance`). Backward-compatible:
+ * node kiểu Primitive vẫn có `value` nên vẫn khớp.
+ */
+const PLACEHOLDERS: Record<string, { widget: string; image?: boolean; keys?: string[] }> = {
   IF_POSITIVE: { widget: 'text' },
   IF_NEGATIVE: { widget: 'text' },
   IF_IMAGE: { widget: 'image', image: true },
   IF_MASK: { widget: 'image', image: true },
-  IF_GUIDANCE: { widget: 'value' },
-  IF_STRENGTH: { widget: 'value' },
-  IF_SCALE: { widget: 'value' },
+  IF_GUIDANCE: { widget: 'value', keys: ['value', 'guidance', 'cfg'] },
+  IF_STRENGTH: { widget: 'value', keys: ['value', 'strength', 'denoise'] },
+  IF_SCALE: { widget: 'value', keys: ['value', 'scale', 'upscale_by'] },
   IF_SEED: { widget: 'value' },
 };
 
@@ -102,6 +108,10 @@ export async function submitJob(workflowName: string, input: Record<string, unkn
     if (title === 'IF_SEED') {
       // KSampler dùng 'seed', SamplerCustom dùng 'noise_seed', Primitive dùng 'value'.
       const key = ['seed', 'noise_seed', 'value'].find((k) => k in node.inputs) ?? 'seed';
+      node.inputs[key] = values[title];
+    } else if (spec.keys) {
+      // marker số: ghi vào input đầu tiên có mặt (vd IF_STRENGTH → 'strength' trên ControlNet).
+      const key = spec.keys.find((k) => k in node.inputs) ?? spec.widget;
       node.inputs[key] = values[title];
     } else {
       node.inputs[spec.widget] = values[title];

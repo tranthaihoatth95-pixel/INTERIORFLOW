@@ -11,7 +11,7 @@
       "title": "IF_POSITIVE"
     },
     "inputs": {
-      "text": "photorealistic interior render, natural light",
+      "text": "photorealistic interior render, natural light, high detail",
       "clip": [
         "4",
         1
@@ -24,7 +24,7 @@
       "title": "IF_NEGATIVE"
     },
     "inputs": {
-      "text": "blurry, distorted geometry, warped walls, lowres, watermark, text, cartoon",
+      "text": "extra legs, extra stools, duplicated furniture, duplicate objects, cloned furniture, deformed furniture, malformed, warped geometry, floating objects, floating rods, skeletal furniture, broken chair legs, spindly legs, merged legs, cluttered, messy, recessed room, room within a room, doorway, archway, niche, passage, alcove, clashing colors, random stripes, gaudy, garish, oversaturated, blurry, lowres, distorted, watermark, text, signature, cartoon, cgi, overexposed, blown highlights",
       "clip": [
         "4",
         1
@@ -41,6 +41,36 @@
       "upload": "image"
     }
   },
+  "11": {
+    "class_type": "ImageScale",
+    "_meta": {
+      "title": "IF_scale_input"
+    },
+    "inputs": {
+      "image": [
+        "10",
+        0
+      ],
+      "width": 1216,
+      "height": 832,
+      "upscale_method": "lanczos",
+      "crop": "disabled"
+    }
+  },
+  "14": {
+    "class_type": "Canny",
+    "_meta": {
+      "title": "IF_canny_preprocess"
+    },
+    "inputs": {
+      "image": [
+        "11",
+        0
+      ],
+      "low_threshold": 0.2,
+      "high_threshold": 0.55
+    }
+  },
   "12": {
     "class_type": "ControlNetLoader",
     "inputs": {
@@ -49,10 +79,13 @@
   },
   "13": {
     "class_type": "ControlNetApplyAdvanced",
+    "_meta": {
+      "title": "IF_STRENGTH"
+    },
     "inputs": {
-      "strength": 0.55,
+      "strength": 0.75,
       "start_percent": 0.0,
-      "end_percent": 0.7,
+      "end_percent": 0.9,
       "positive": [
         "6",
         0
@@ -66,7 +99,7 @@
         0
       ],
       "image": [
-        "10",
+        "14",
         0
       ]
     }
@@ -74,8 +107,8 @@
   "5": {
     "class_type": "EmptyLatentImage",
     "inputs": {
-      "width": 1024,
-      "height": 768,
+      "width": 1216,
+      "height": 832,
       "batch_size": 1
     }
   },
@@ -86,8 +119,8 @@
     },
     "inputs": {
       "seed": 0,
-      "steps": 22,
-      "cfg": 6.5,
+      "steps": 26,
+      "cfg": 6.0,
       "sampler_name": "dpmpp_2m",
       "scheduler": "karras",
       "denoise": 1.0,

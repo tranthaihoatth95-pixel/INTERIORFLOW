@@ -21,12 +21,13 @@ export interface TaskModel {
 
 export const AI_TASKS = {
   // Line/sketch → render: khoá hình học bằng ControlNet canny.
-  // comfy = FLUX + ControlNet Union (canny) trên máy render RTX — xem sketch_flux.json.
-  // (còn sketch_canny.json = bản SDXL nhẹ hơn nếu chạy máy yếu.)
+  // comfy: mặc định 'sketch_flux' (FLUX + ControlNet Union canny) trên máy render RTX.
+  // Máy Mac/Apple-Silicon KHÔNG có model FLUX → đặt COMFY_SKETCH_WF=sketch_canny để
+  // dùng bản SDXL + ControlNet canny (sketch_canny.json). Không phá path RTX/FLUX.
   sketch2render: {
     falModel: 'fal-ai/flux-pro/v1/canny',
     falFast: 'fal-ai/flux/dev/image-to-image',
-    comfy: 'sketch_flux',
+    comfy: process.env.COMFY_SKETCH_WF || 'sketch_flux',
     typicalMs: 30000,
   },
   // Clay/white render (từ 3ds Max) → photoreal: ControlNet DEPTH khoá khối tốt hơn canny.

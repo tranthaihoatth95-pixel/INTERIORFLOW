@@ -7,6 +7,21 @@ import { extractPalette, composeBoard, adjustImage } from '@/lib/imaging';
 import { saveToGallery } from '@/lib/gallery';
 import { parseContent, themeFromRef, renderSlide, type FontPairing, type SlideLayout } from '@/lib/slides';
 import { EXTRA_NODES } from '@/lib/nodes/defs';
+import { fetchGuProfile, guToPrompt } from '@/lib/gu';
+
+/**
+ * Kéo hồ sơ gu từ thư viện Reference (usage 'ref-render') → mẩu mô tả nhồi prompt.
+ * Manual-first: thư viện trống thì trả '' (không phá prompt). Lỗi mạng → '' (fetchGuProfile tự nuốt lỗi).
+ */
+async function guRenderPrompt(): Promise<string> {
+  const profile = await fetchGuProfile(['ref-render']);
+  return guToPrompt(profile);
+}
+
+/** Ghép mẩu gu vào cuối prompt nếu có (color/material/style theo gu người dùng). */
+function withGu(prompt: string, gu: string): string {
+  return gu ? `${prompt}, ${gu}` : prompt;
+}
 
 /** Deterministic placeholder "render" — SVG gradient nội thất, dùng cho mock mode. */
 function placeholderRender(label: string, seed: string): string {
@@ -150,6 +165,19 @@ const STYLE_OPTIONS = ['Scandinavian', 'Japandi', 'Indochine', 'Modern Luxury', 
 const VIDEO_MODELS = ['Kling 2.5 Turbo Pro (nhanh)', 'Kling 2 Master (chất lượng)'];
 const VIDEO_DURATIONS = ['5s', '10s'];
 
+/**
+ * Negative chung cho render hình-học (sketch/clay → photoreal). Chặn các defect đã chẩn
+ * trên máy Mac/SDXL: nhân đôi/ghost đồ, chân ghế gãy/mảnh, vật thể bay, trần loạn sọc,
+ * cháy sáng. fal/FLUX bỏ qua nếu model không nhận negative — vô hại.
+ */
+const RENDER_NEGATIVE =
+  'extra legs, extra stools, duplicated furniture, duplicate objects, cloned furniture, ' +
+  'deformed furniture, malformed, warped geometry, floating objects, floating rods, ' +
+  'skeletal furniture, broken chair legs, spindly legs, merged legs, cluttered, messy, ' +
+  'recessed room, room within a room, doorway, archway, niche, passage, alcove, ' +
+  'clashing colors, random stripes, gaudy, garish, oversaturated, ' +
+  'blurry, lowres, distorted, watermark, text, signature, cartoon, cgi, overexposed, blown highlights';
+
 /** Prompt template theo style — inject từ khoá nội thất. */
 function stylePrompt(style: string, extra: string) {
   const base = `${style} interior design, photorealistic interior render, natural light, high detail, professional architectural photography`;
@@ -269,15 +297,26 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
     params: [
       { kind: 'select', id: 'style', label: 'Style', options: STYLE_OPTIONS },
       { kind: 'slider', id: 'guidance', label: 'Guidance', min: 1, max: 20, step: 0.5, default: 15 },
+      // Bám sketch: thoáng 0.4 · vừa 0.6 · chặt 0.8 (SDXL canny tự-host đọc qua IF_STRENGTH).
+      { kind: 'slider', id: 'adherence', label: 'Bám sketch', min: 0.4, max: 0.8, step: 0.2, default: 0.6 },
     ],
     creditCost: 4,
     async execute(ctx) {
       const { inputs, params } = ctx;
       if (!inputs.image) throw new Error('Thiếu ảnh sketch ở input.');
-      const prompt = stylePrompt(String(params.style), inputs.prompt ? String(inputs.prompt.value) : '');
+      const gu = await guRenderPrompt();
+      const prompt = withGu(stylePrompt(String(params.style), inputs.prompt ? String(inputs.prompt.value) : ''), gu);
       const image = await aiImage(
         'sketch2render',
-        { prompt, control_image_url: inputs.image.value, guidance_scale: Number(params.guidance), num_images: 1 },
+        {
+          prompt,
+          negative_prompt: RENDER_NEGATIVE,
+          control_image_url: inputs.image.value,
+          guidance_scale: Number(params.guidance),
+          // Bám sketch (SDXL canny tự-host đọc IF_STRENGTH); 3 mức thoáng/vừa/chặt = 0.4/0.6/0.8.
+          strength: Number(params.adherence),
+          num_images: 1,
+        },
         String(params.style),
         ctx,
       );
@@ -304,10 +343,20 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
       const { inputs, params } = ctx;
       if (!inputs.image) throw new Error('Thiếu ảnh clay/khối trắng ở input — xuất từ 3ds Max rồi Import Image.');
       const extra = inputs.prompt ? String(inputs.prompt.value) : '';
-      const prompt = `${stylePrompt(String(params.style), extra)}, keep exact same geometry, layout and camera, only add realistic materials, lighting and atmosphere`;
+      const gu = await guRenderPrompt();
+      const prompt = withGu(
+        `${stylePrompt(String(params.style), extra)}, keep exact same geometry, layout and camera, only add realistic materials, lighting and atmosphere`,
+        gu,
+      );
       const image = await aiImage(
         'clay2render',
-        { prompt, control_image_url: inputs.image.value, guidance_scale: Number(params.preserve), num_images: 1 },
+        {
+          prompt,
+          negative_prompt: RENDER_NEGATIVE,
+          control_image_url: inputs.image.value,
+          guidance_scale: Number(params.preserve),
+          num_images: 1,
+        },
         `${params.style} clay→photoreal`,
         ctx,
       );
