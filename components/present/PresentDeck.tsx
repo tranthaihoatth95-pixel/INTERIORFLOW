@@ -6,7 +6,7 @@
  * render body → an toàn hydration). Cấp sẵn nút Download PDF / Moodboard PNG.
  * Dùng cho route /present và cho Present mode overlay trong app.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import PresentViewer from './PresentViewer';
 import {
   DEMO_DECK,
@@ -32,11 +32,8 @@ export default function PresentDeck({ deck = DEMO_DECK, withMoodboard = true, on
   const [moodboard, setMoodboard] = useState<string | null>(null);
   const [status, setStatus] = useState('Đang dựng slide…');
   const [done, setDone] = useState(false);
-  const ran = useRef(false);
 
   useEffect(() => {
-    if (ran.current) return;
-    ran.current = true;
     let cancelled = false;
     (async () => {
       try {

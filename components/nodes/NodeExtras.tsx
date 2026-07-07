@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Download, FileText, Film } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
+import ExportPptxButton from '@/components/ExportPptxButton';
 import type { InteriorNodeData, PortValue } from '@/lib/types';
 
 function downloadDataUrl(url: string, filename: string) {
@@ -152,27 +153,30 @@ function DeckActions({ slidesJson, deckName }: { slidesJson: string; deckName: s
   const [busy, setBusy] = useState(false);
   const safeName = (deckName || 'deck').replace(/[\\/:*?"<>|]/g, '').trim() || 'deck';
   return (
-    <button
-      disabled={busy}
-      className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md bg-orange-500/90 py-2 text-[11px] font-medium text-white hover:bg-orange-400 disabled:opacity-40"
-      onClick={async () => {
-        setBusy(true);
-        try {
-          const slides = JSON.parse(slidesJson) as string[];
-          const { jsPDF } = await import('jspdf');
-          const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1920, 1080] });
-          slides.forEach((s, i) => {
-            if (i > 0) pdf.addPage([1920, 1080], 'landscape');
-            pdf.addImage(s, 'JPEG', 0, 0, 1920, 1080);
-          });
-          pdf.save(`${safeName}.pdf`);
-        } finally {
-          setBusy(false);
-        }
-      }}
-    >
-      <FileText size={13} /> {busy ? 'Đang xuất…' : 'Tải PDF thuyết trình'}
-    </button>
+    <div className="flex w-full flex-col gap-1.5">
+      <button
+        disabled={busy}
+        className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md bg-orange-500/90 py-2 text-[11px] font-medium text-white hover:bg-orange-400 disabled:opacity-40"
+        onClick={async () => {
+          setBusy(true);
+          try {
+            const slides = JSON.parse(slidesJson) as string[];
+            const { jsPDF } = await import('jspdf');
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1920, 1080] });
+            slides.forEach((s, i) => {
+              if (i > 0) pdf.addPage([1920, 1080], 'landscape');
+              pdf.addImage(s, 'JPEG', 0, 0, 1920, 1080);
+            });
+            pdf.save(`${safeName}.pdf`);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        <FileText size={13} /> {busy ? 'Đang xuất…' : 'Tải PDF thuyết trình'}
+      </button>
+      <ExportPptxButton slidesJson={slidesJson} deckName={deckName} />
+    </div>
   );
 }
 

@@ -17,6 +17,7 @@ import { MaskPainterModal } from '@/components/MaskPainterModal';
 import { AnnotateModal } from '@/components/AnnotateModal';
 import { Lightbox } from '@/components/Lightbox';
 import { Dashboard } from '@/components/Dashboard';
+import PresentOverlay from '@/components/present/PresentOverlay';
 import { StageSelect } from '@/components/StageSelect';
 import { useFlowStore } from '@/lib/store';
 
@@ -29,6 +30,8 @@ export default function Home() {
   const chatOpen = useFlowStore((s) => s.chatOpen);
   const setPanel = useFlowStore((s) => s.setPanel);
   const setChatOpen = useFlowStore((s) => s.setChatOpen);
+  const presentModeOpen = useFlowStore((s) => s.presentModeOpen);
+  const setPresentModeOpen = useFlowStore((s) => s.setPresentModeOpen);
   // Trên mobile các panel đè lên canvas → cần lớp nền mờ để bấm ra ngoài là đóng.
   const overlayOpen = panel !== null || chatOpen;
 
@@ -105,6 +108,7 @@ export default function Home() {
         <AnnotateModal />
         <Lightbox />
         <Dashboard />
+        {presentModeOpen && <PresentOverlay onClose={() => setPresentModeOpen(false)} />}
         <CommandPalette />
       </div>
     </ReactFlowProvider>

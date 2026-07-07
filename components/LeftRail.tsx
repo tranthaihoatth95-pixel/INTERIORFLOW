@@ -12,6 +12,7 @@ import {
   Globe,
   LayoutGrid,
   LayoutDashboard,
+  Presentation,
   CircleHelp,
 } from 'lucide-react';
 import { useFlowStore, type Panel } from '@/lib/store';
@@ -37,6 +38,8 @@ export function LeftRail() {
   const setPanel = useFlowStore((s) => s.setPanel);
   const dashboardOpen = useFlowStore((s) => s.dashboardOpen);
   const setDashboardOpen = useFlowStore((s) => s.setDashboardOpen);
+  const presentModeOpen = useFlowStore((s) => s.presentModeOpen);
+  const setPresentModeOpen = useFlowStore((s) => s.setPresentModeOpen);
   const tr = useT();
 
   return (
@@ -56,6 +59,21 @@ export function LeftRail() {
         )}
       >
         <LayoutDashboard size={17} strokeWidth={1.75} />
+      </motion.button>
+      {/* Present mode — trình chiếu deck/board toàn màn */}
+      <motion.button
+        {...pressableIcon}
+        whileHover={{ scale: 1.06 }}
+        title={tr('Trình chiếu — Present mode', 'Present mode — full-screen slideshow')}
+        onClick={() => setPresentModeOpen(true)}
+        className={cn(
+          'group relative grid h-9 w-9 place-items-center rounded-[10px] transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
+          presentModeOpen
+            ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
+            : 'text-[var(--t3)] hover:bg-[var(--hover)] hover:text-[var(--t1)]',
+        )}
+      >
+        <Presentation size={17} strokeWidth={1.75} />
       </motion.button>
       <div className="my-1 h-px w-5 bg-[var(--border)]" />
       {ITEMS.map(({ icon: Icon, label, panel: p, soon }) => {

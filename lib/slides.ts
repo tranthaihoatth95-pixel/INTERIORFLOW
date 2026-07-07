@@ -84,9 +84,9 @@ export async function themeFromRef(refUrl: string | null, dark: boolean): Promis
 
 export type FontPairing = 'Editorial' | 'Modern' | 'Elegant';
 const FONTS: Record<FontPairing, { display: string; body: string }> = {
-  Editorial: { display: 'Georgia, serif', body: '"Helvetica Neue", Helvetica, Arial, sans-serif' },
+  Editorial: { display: '"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif', body: '"Helvetica Neue", Helvetica, Arial, sans-serif' },
   Modern: { display: '"Helvetica Neue", Helvetica, Arial, sans-serif', body: '"Helvetica Neue", Helvetica, Arial, sans-serif' },
-  Elegant: { display: 'Didot, "Bodoni 72", Georgia, serif', body: '"Avenir Next", Avenir, "Helvetica Neue", sans-serif' },
+  Elegant: { display: 'Optima, "Avenir Next", "Helvetica Neue", sans-serif', body: '"Avenir Next", Avenir, "Helvetica Neue", sans-serif' },
 };
 
 export type SlideLayout = 'Cover' | 'Nội dung + ảnh' | 'Quote';

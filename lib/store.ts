@@ -56,6 +56,8 @@ interface FlowState {
   tasksOpen: boolean;
   /** Dashboard tổng quan project + team (overlay toàn màn) */
   dashboardOpen: boolean;
+  /** Present mode — trình chiếu deck/board toàn màn (overlay) */
+  presentModeOpen: boolean;
   connectError: string | null;
   /** nodeId đang mở Mask Painter modal */
   maskEditorNodeId: string | null;
@@ -99,6 +101,7 @@ interface FlowState {
   setPanel: (panel: Panel) => void;
   setTasksOpen: (open: boolean) => void;
   setDashboardOpen: (open: boolean) => void;
+  setPresentModeOpen: (open: boolean) => void;
   setConnectError: (msg: string | null) => void;
   setMaskEditorNodeId: (nodeId: string | null) => void;
   setAnnotateNodeId: (nodeId: string | null) => void;
@@ -174,6 +177,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   panel: null,
   tasksOpen: false,
   dashboardOpen: false,
+  presentModeOpen: false,
   connectError: null,
   maskEditorNodeId: null,
   annotateNodeId: null,
@@ -265,6 +269,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   setPanel: (panel) => set((s) => ({ panel: s.panel === panel ? null : panel })),
   setTasksOpen: (tasksOpen) => set({ tasksOpen }),
   setDashboardOpen: (dashboardOpen) => set({ dashboardOpen }),
+  setPresentModeOpen: (presentModeOpen) => set({ presentModeOpen }),
   setConnectError: (connectError) => set({ connectError }),
   setMaskEditorNodeId: (maskEditorNodeId) => set({ maskEditorNodeId }),
   setAnnotateNodeId: (annotateNodeId) => set({ annotateNodeId }),
