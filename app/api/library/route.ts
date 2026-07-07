@@ -23,15 +23,35 @@ export async function GET() {
       uploader: a.user.name,
       mine: a.userId === user.id,
       url: `/api/library/${a.id}/file`,
+      // ---- Gu Engine ----
+      usage: a.usage,
+      palette: safeArr(a.palette),
+      caption: a.caption,
+      w: a.w,
+      h: a.h,
+      hasContent: !!a.content,
     })),
   });
 }
+
+function safeArr(s: string): string[] {
+  try {
+    const v = JSON.parse(s || '[]');
+    return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+const USAGES = ['ref-render', 'slide', 'material', 'layout', 'cad', 'brief'];
 
 /** POST { name, category, tags, dataUrl } — lưu file vào ./uploads + metadata DB. */
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  const { name, category, tags, dataUrl } = await req.json().catch(() => ({}));
+  const { name, category, tags, dataUrl, usage, palette, caption, content, w, h } = await req
+    .json()
+    .catch(() => ({}));
   if (!name || !category || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) {
     return NextResponse.json({ error: 'Thiếu name/category/dataUrl.' }, { status: 400 });
   }
@@ -54,6 +74,13 @@ export async function POST(req: Request) {
       tags: String(tags ?? ''),
       mime,
       path: filename,
+      // ---- Gu Engine: chưng cất gu (client gửi lên; thiếu thì default) ----
+      usage: USAGES.includes(usage) ? usage : 'ref-render',
+      palette: Array.isArray(palette) ? JSON.stringify(palette.slice(0, 8)) : '',
+      caption: typeof caption === 'string' ? caption.slice(0, 400) : '',
+      content: typeof content === 'string' ? content.slice(0, 20000) : null,
+      w: Number.isFinite(w) ? Math.round(w) : 0,
+      h: Number.isFinite(h) ? Math.round(h) : 0,
     },
   });
   return NextResponse.json({ id: asset.id, url: `/api/library/${asset.id}/file` });

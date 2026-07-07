@@ -6,6 +6,8 @@ import { X, Upload, Trash2, Loader2 } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { sheetSlide, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { loadImage, extractPalette } from '@/lib/imaging';
+import { USAGES } from '@/lib/refingest';
 
 export const ASSET_MIME = 'application/interiorflow-asset-url';
 
@@ -35,6 +37,7 @@ export function LibraryPanel() {
   const [cat, setCat] = useState<string>('Ref nội thất');
   const [query, setQuery] = useState('');
   const [tags, setTags] = useState('');
+  const [usage, setUsage] = useState<string>('ref-render');
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -106,6 +109,18 @@ export function LibraryPanel() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        <select
+          value={usage}
+          onChange={(e) => setUsage(e.target.value)}
+          title="Công dụng ảnh khi upload — app đọc gu theo mục này (render / slide / vật liệu…)"
+          className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] outline-none transition-colors focus:border-[var(--accent-ring)]"
+        >
+          {USAGES.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.label}
+            </option>
+          ))}
+        </select>
         <div className="flex gap-1.5">
           <input
             className="min-w-0 flex-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
@@ -131,6 +146,18 @@ export function LibraryPanel() {
                     reader.onerror = () => rej(reader.error);
                     reader.readAsDataURL(f);
                   });
+                  // ---- Gu Engine: chưng cất gu local (0 AI) — palette + kích thước ----
+                  let palette: string[] = [];
+                  let w = 0;
+                  let h = 0;
+                  try {
+                    const img = await loadImage(dataUrl);
+                    w = img.naturalWidth || img.width;
+                    h = img.naturalHeight || img.height;
+                    palette = await extractPalette(dataUrl).catch(() => []);
+                  } catch {
+                    /* ảnh lỗi → vẫn upload, gu để trống */
+                  }
                   await fetch('/api/library', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -139,6 +166,10 @@ export function LibraryPanel() {
                       category: cat,
                       tags,
                       dataUrl,
+                      usage,
+                      palette,
+                      w,
+                      h,
                     }),
                   });
                 }

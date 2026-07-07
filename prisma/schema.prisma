@@ -92,6 +92,13 @@ model LibraryAsset {
   tags      String   @default("")
   mime      String
   path      String
+  // ---- Gu Engine: chưng cất gu từ ref (07/07) ----
+  usage     String   @default("ref-render") // RefUsage: ref-render | slide | material | layout | cad | brief
+  palette   String   @default("")           // JSON string[] hex — màu chủ đạo trích từ ảnh
+  caption   String   @default("")           // mô tả gu (VLM hoặc tay)
+  content   String?                         // chữ bóc từ PDF (đề bài/hồ sơ) cho AI đọc
+  w         Int      @default(0)
+  h         Int      @default(0)
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
