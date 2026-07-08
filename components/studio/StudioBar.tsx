@@ -13,22 +13,29 @@
 import { useRouter } from 'next/navigation';
 import type { Phase } from '@/lib/phases';
 import StageSwitcher from './StageSwitcher';
+import PresentViewToggle from './PresentViewToggle';
 
 export default function StudioBar({ active }: { active: 'present' | 'photo' }) {
   const router = useRouter();
+
+  /** Ghi chặng + uiMode vào localStorage rồi về '/' (store.hydrate khôi phục surface). */
+  const goApp = (p: Phase, ui: 'node' | 'form') => {
+    try {
+      localStorage.setItem('interiorflow.workspace', p);
+      localStorage.setItem('interiorflow.uiMode', ui);
+    } catch {
+      /* bỏ qua */
+    }
+    router.push('/');
+  };
 
   const go = (p: Phase) => {
     if (p === 'present') {
       router.push('/present-editor');
       return;
     }
-    // Concept/Render sống ở app chính — ghi chặng rồi về '/' (store.hydrate khôi phục).
-    try {
-      localStorage.setItem('interiorflow.workspace', p);
-    } catch {
-      /* bỏ qua */
-    }
-    router.push('/');
+    // Concept/Render = canvas node ở app chính.
+    goApp(p, 'node');
   };
 
   return (
@@ -56,6 +63,17 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' }) {
         photoContext={active === 'photo'}
         onPick={go}
       />
+
+      {/* Ở slide studio (present) hiện toggle Present: đang ở mặt Dàn trang (window). */}
+      {active === 'present' && (
+        <PresentViewToggle
+          current="window"
+          onForm={() => goApp('present', 'form')}
+          onWindow={() => {
+            /* đang ở Dàn trang rồi */
+          }}
+        />
+      )}
 
       <div style={{ flex: 1 }} />
     </div>

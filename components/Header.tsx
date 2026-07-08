@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Share2, Play, Loader2, ChevronDown, Cloud, Zap, Cpu, ShieldCheck, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, LayoutGrid, MoreHorizontal, Rows3 } from 'lucide-react';
+import { Coins, Share2, Play, Loader2, ChevronDown, Cloud, Zap, Cpu, ShieldCheck, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, MoreHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { runFlow } from '@/lib/execution';
@@ -13,6 +13,7 @@ import {
 } from '@/lib/ai/tiers';
 import { DEFAULT_PHASE, type Phase } from '@/lib/phases';
 import StageSwitcher from '@/components/studio/StageSwitcher';
+import PresentViewToggle from '@/components/studio/PresentViewToggle';
 import { toggleShare } from '@/lib/workspace';
 import { TasksDropdown } from '@/components/TasksDropdown';
 import { MobileMenu } from '@/components/MobileMenu';
@@ -69,13 +70,15 @@ export function Header() {
         </motion.button>
       )}
 
-      {/* TRỤC ĐIỀU HƯỚNG DUY NHẤT — Concept · Render · Present (Present → slide studio) */}
+      {/* TRỤC ĐIỀU HƯỚNG DUY NHẤT — Concept · Render · Present */}
       <div className="hidden lg:block">
         <PhaseSwitcher />
       </div>
 
-      {/* Canvas | Form — cách xem (canvas node desktop vs form cảm ứng foldable/điện thoại) */}
-      <UiModeToggle />
+      {/* Toggle cách xem — CHỈ hiện ở Present: Nhập nhanh (Form) · Dàn trang (Window) */}
+      <div className="hidden lg:block">
+        <PresentViewToggleHeader />
+      </div>
 
       {/* Núm chọn mức phụ thuộc AI (4 mức) — mobile gom vào ⋯ */}
       <div className="hidden sm:block">
@@ -343,50 +346,39 @@ function ThemeToggle() {
   );
 }
 
-// Segmented: giao diện làm việc. 'node' = canvas node-graph (desktop, nhãn "Canvas") ·
-// 'form' = form cảm ứng (foldable/điện thoại). Luôn hiện — chỗ người dùng Oppo bật/tắt Form.
-function UiModeToggle() {
-  const uiMode = useFlowStore((s) => s.uiMode);
+// Toggle cách xem của Present (gộp Form + Window) — CHỈ hiện khi đang ở chặng Present.
+// Concept/Render không có (thuần canvas node). Header chỉ ở '/' nên mặt hiện luôn là Form.
+function PresentViewToggleHeader() {
+  const workspace = useFlowStore((s) => s.workspace);
+  const setWorkspace = useFlowStore((s) => s.setWorkspace);
   const setUiMode = useFlowStore((s) => s.setUiMode);
-  const tr = useT();
+  const router = useRouter();
+  if (workspace !== 'present') return null;
   return (
-    <div className="flex items-center gap-0.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-0.5">
-      <button
-        onClick={() => setUiMode('node')}
-        title={tr('Canvas node — kéo-nối (desktop)', 'Node canvas — drag-connect (desktop)')}
-        className={cn(
-          'flex items-center gap-1 rounded-[7px] px-2 py-1 text-[11px] font-medium transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
-          uiMode === 'node' ? 'bg-[var(--card)] text-[var(--t1)] shadow-sm' : 'text-[var(--t4)] hover:text-[var(--t2)]',
-        )}
-      >
-        <LayoutGrid size={12} /> Canvas
-      </button>
-      <button
-        onClick={() => setUiMode('form')}
-        title={tr('Form — biểu mẫu cảm ứng, hợp điện thoại / màn gập', 'Form — touch-first, great on phone / foldable')}
-        className={cn(
-          'flex items-center gap-1 rounded-[7px] px-2 py-1 text-[11px] font-medium transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
-          uiMode === 'form' ? 'bg-[var(--card)] text-[var(--t1)] shadow-sm' : 'text-[var(--t4)] hover:text-[var(--t2)]',
-        )}
-      >
-        <Rows3 size={12} /> Form
-      </button>
-    </div>
+    <PresentViewToggle
+      current="form"
+      onForm={() => {
+        setWorkspace('present');
+        setUiMode('form');
+      }}
+      onWindow={() => router.push('/present-editor')}
+    />
   );
 }
 
-// Trục điều hướng: Concept/Render đổi chặng tại chỗ (app chính) · Present → slide studio.
+// Trục điều hướng: Concept/Render = canvas node tại chỗ · Present = mặt Form (nhập nhanh),
+// từ đó toggle sang Dàn trang (studio). uiMode set theo chặng để '/' hiện đúng surface.
 function PhaseSwitcher() {
   const workspace = useFlowStore((s) => s.workspace);
   const setWorkspace = useFlowStore((s) => s.setWorkspace);
-  const router = useRouter();
+  const setUiMode = useFlowStore((s) => s.setUiMode);
   const current: Phase = workspace ?? DEFAULT_PHASE;
   return (
     <StageSwitcher
       active={current}
       onPick={(p) => {
-        if (p === 'present') router.push('/present-editor');
-        else setWorkspace(p);
+        setWorkspace(p);
+        setUiMode(p === 'present' ? 'form' : 'node');
       }}
     />
   );

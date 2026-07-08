@@ -36,8 +36,24 @@ export default function Home() {
   const presentModeOpen = useFlowStore((s) => s.presentModeOpen);
   const setPresentModeOpen = useFlowStore((s) => s.setPresentModeOpen);
   const uiMode = useFlowStore((s) => s.uiMode);
+  const workspace = useFlowStore((s) => s.workspace);
+  const setUiMode = useFlowStore((s) => s.setUiMode);
   // Trên mobile các panel đè lên canvas → cần lớp nền mờ để bấm ra ngoài là đóng.
   const overlayOpen = panel !== null || chatOpen;
+
+  // IA: chỉ Present mới có mặt Form. Concept/Render trên DESKTOP luôn là canvas node —
+  // gỡ kẹt nếu uiMode='form' còn sót (đã bỏ nút Canvas/Form ở 2 chặng này). Mobile giữ form.
+  useEffect(() => {
+    if (
+      workspace &&
+      workspace !== 'present' &&
+      uiMode === 'form' &&
+      typeof window !== 'undefined' &&
+      window.innerWidth >= 640
+    ) {
+      setUiMode('node');
+    }
+  }, [workspace, uiMode, setUiMode]);
 
   // theme + flow local trước, rồi check session.
   // KHÔNG bootstrap workspace ở đây — để màn StageSelect làm sau khi chọn chặng.
