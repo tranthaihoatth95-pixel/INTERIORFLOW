@@ -110,6 +110,26 @@ export interface ShapeElement extends BaseElement {
 
 export type SlideElement = ImageElement | TextElement | ShapeElement;
 
+/**
+ * Hiệu ứng chuyển động (motion) kiểu Apple — chọn cho từng slide.
+ * CHỈ ảnh hưởng khi TRÌNH CHIẾU (preview động), KHÔNG đổi model tĩnh nên PDF/PPTX bỏ qua.
+ * Giữ trong model để serialize được + lưu/khôi phục.
+ */
+export type SlideTransition =
+  | 'none' // cắt cứng
+  | 'fade' // tan mờ
+  | 'slide' // trượt ngang kiểu iOS
+  | 'push' // đẩy (slide cũ ra, mới vào)
+  | 'zoom' // phóng nhẹ (Magic Move rút gọn)
+  | 'rise'; // trồi lên + blur tan (keynote Apple)
+
+/** Kiểu build-in cho các phần tử của 1 slide (áp lần lượt khi slide xuất hiện). */
+export type ElementReveal =
+  | 'none'
+  | 'fade' // hiện mờ đồng loạt
+  | 'rise' // trồi lên lần lượt (stagger)
+  | 'zoom'; // phóng nhẹ lần lượt
+
 /** Một slide = nền + danh sách phần tử (thứ tự mảng = thứ tự vẽ, cuối = trên cùng). */
 export interface EditorSlide {
   id: string;
@@ -120,6 +140,10 @@ export interface EditorSlide {
   elements: SlideElement[];
   /** template gốc đã áp (để hiển thị/gợi ý). */
   templateId?: string;
+  /** hiệu ứng chuyển VÀO slide này (mặc định kế thừa deck.transition). */
+  transition?: SlideTransition;
+  /** kiểu build-in cho phần tử của slide (mặc định kế thừa deck.reveal). */
+  reveal?: ElementReveal;
 }
 
 /** Deck = nhiều slide + brand + bộ chữ + palette gu. */
@@ -131,6 +155,10 @@ export interface EditorDeck {
   /** palette gu (6 màu) — dùng cho picker màu nhanh. */
   palette: string[];
   slides: EditorSlide[];
+  /** hiệu ứng chuyển slide mặc định cho cả deck (slide có thể ghi đè). */
+  transition?: SlideTransition;
+  /** kiểu build-in phần tử mặc định cho cả deck. */
+  reveal?: ElementReveal;
 }
 
 /* ------------------------------------------------------------------ */

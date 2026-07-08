@@ -44,6 +44,7 @@ import {
   AlignEndHorizontal,
   RotateCcw,
   SlidersHorizontal,
+  Wand2,
 } from 'lucide-react';
 
 /** Kiểu căn element trong sân khấu. */
@@ -62,6 +63,8 @@ interface Props {
   onDelete: () => void;
   /** mở chế độ chỉnh ảnh (Canva-style) cho ảnh đang chọn. */
   onOpenImageEditor?: (id: string) => void;
+  /** mở trình chỉnh ảnh nâng cao (Photoshop-level, /photo-editor). */
+  onOpenAdvancedEditor?: () => void;
 }
 
 export default function Inspector({
@@ -76,6 +79,7 @@ export default function Inspector({
   onDuplicate,
   onDelete,
   onOpenImageEditor,
+  onOpenAdvancedEditor,
 }: Props) {
   if (!selected) {
     return (
@@ -128,6 +132,7 @@ export default function Inspector({
           el={selected}
           onUpdate={onUpdateSelected as (m: (el: ImageElement) => void, live?: boolean) => void}
           onOpenEditor={onOpenImageEditor ? () => onOpenImageEditor(selected.id) : undefined}
+          onOpenAdvanced={onOpenAdvancedEditor}
         />
       )}
       {selected.kind === 'shape' && (
@@ -358,10 +363,12 @@ function ImageInspector({
   el,
   onUpdate,
   onOpenEditor,
+  onOpenAdvanced,
 }: {
   el: ImageElement;
   onUpdate: (m: (el: ImageElement) => void, live?: boolean) => void;
   onOpenEditor?: () => void;
+  onOpenAdvanced?: () => void;
 }) {
   const crop = el.crop;
   return (
@@ -384,9 +391,14 @@ function ImageInspector({
             fontSize: 12,
             cursor: 'pointer',
           }}
-          title="Mở chế độ chỉnh ảnh (hoặc nhấp đúp ảnh)"
+          title="Mở chế độ chỉnh ảnh (hoặc nhấp đúp / chuột phải ảnh)"
         >
           <SlidersHorizontal size={14} /> Chỉnh ảnh (crop · lọc · thay ảnh)
+        </button>
+      )}
+      {onOpenAdvanced && (
+        <button type="button" onClick={onOpenAdvanced} style={ghostBtn} title="Layers · mask · clone (mở /photo-editor)">
+          <Wand2 size={12} /> Chỉnh ảnh nâng cao (Photoshop)
         </button>
       )}
       <AdjustControls adjust={el.adjust} onChange={(a, live) => onUpdate((im) => (im.adjust = a), live)} />

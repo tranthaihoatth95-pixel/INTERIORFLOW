@@ -234,3 +234,66 @@ body {
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
+
+/* ---------- Present editor — round 2 (splitter · reference · shelf · motion) ---------- */
+
+/* Spinner nạp (dùng thay animate-spin của Tailwind trong component inline-style). */
+@keyframes pe-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.pe-spin {
+  animation: pe-spin 0.8s linear infinite;
+}
+
+/* Splitter kéo dãn cột trái: hiện dải màu accent khi hover/kéo. */
+.pe-splitter {
+  position: relative;
+  transition: background-color var(--dur-fast, 0.15s) var(--ease-apple, ease);
+}
+.pe-splitter::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+  background: transparent;
+  transition: background-color 0.15s ease;
+}
+.pe-splitter:hover::before,
+.pe-splitter:active::before {
+  background: var(--accent);
+}
+
+/* Ô ảnh Reference: lớp nút (đưa vào slide / xoá) chỉ hiện khi hover. */
+.pe-ref-cell .pe-ref-actions {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.pe-ref-cell:hover .pe-ref-actions {
+  opacity: 1;
+}
+
+/* Nút sinh biến thể trên card bố cục: hiện khi hover card. */
+.pe-shelf-card .pe-variant-btn {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.pe-shelf-card:hover .pe-variant-btn {
+  opacity: 1;
+}
+
+/* Thanh cuộn ngang mảnh cho kệ bố cục. */
+.pe-shelf-row::-webkit-scrollbar {
+  height: 7px;
+}
+.pe-shelf-row::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+.pe-shelf-row::-webkit-scrollbar-track {
+  background: transparent;
+}

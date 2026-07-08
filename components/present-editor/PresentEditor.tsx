@@ -3,17 +3,30 @@
 /**
  * components/present-editor/PresentEditor.tsx — Trình dàn trang "Present" (container).
  *
- * Lắp ráp: Toolbar (trên) · [TemplatePicker | Canvas | Inspector] (giữa) · SlideStrip (dưới).
- * State cục bộ ở useEditor (KHÔNG dùng lib/store). Kéo/resize/xoay ở Element (pointer events).
- * Template: builtin + từ Reference (fetch /api/library qua fetchGuProfile + raw assets).
- * Auto-suggest: suggestTemplate theo nội dung slide hiện tại. Xuất PDF/PPTX từ CÙNG model.
+ * Lắp ráp: Toolbar (trên) · [Panel trái RESIZE (Mẫu | Reference | Motion) | Canvas |
+ * Inspector] (giữa) · SlideStrip (dưới). State cục bộ ở useEditor (KHÔNG dùng lib/store).
  *
- * Hydration-safe: fetch thư viện trong useEffect (không ở render body). Nhận initialDeck
- * làm state đầu (deck mẫu do trang truyền vào).
+ * Round 2 (user):
+ *  - Panel trái KÉO DÃN được (splitter) + 3 tab: bố cục 3 hàng cuộn ngang · Reference
+ *    (xoá + gom theo dự án/thẻ) · Motion (hiệu ứng Apple + trình chiếu).
+ *  - Bảng hỏi số liệu (spec) áp vào bố cục sinh ra.
+ *  - Hai rổ ảnh TÁCH RÕ: "Ảnh" trên toolbar = ảnh NỘI DUNG đưa thẳng vào slide;
+ *    tab Reference = ảnh THAM KHẢO gom nhóm (kéo/bấm để đưa vào slide khi cần).
+ *  - Chỉnh ảnh: nhấp đúp HOẶC chuột phải → "Chỉnh ảnh"; "Chỉnh ảnh nâng cao" mở /photo-editor.
+ *
+ * Hydration-safe: fetch thư viện trong useEffect. Nhận initialDeck làm state đầu.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { EditorDeck, ShapeKind, Frame, SlideElement, ImageElement } from '@/lib/present-editor/model';
+import type {
+  EditorDeck,
+  ShapeKind,
+  Frame,
+  SlideElement,
+  ImageElement,
+  SlideTransition,
+  ElementReveal,
+} from '@/lib/present-editor/model';
 import { makeText, makeImage, makeShape, newId, duplicateElement } from '@/lib/present-editor/model';
 import {
   BUILTIN_TEMPLATES,
@@ -22,6 +35,7 @@ import {
   type TemplateContext,
 } from '@/lib/present-editor/templates';
 import { suggestTemplate } from '@/lib/present-editor/suggest';
+import { DEFAULT_SPEC, applySpecToSlide, type LayoutSpec } from '@/lib/present-editor/spec';
 import { buildGuProfile, type GuAsset, type GuProfile } from '@/lib/gu';
 import { exportDeckToPdf, exportDeckToPptxFromModel } from '@/lib/present-editor/export';
 import { useEditor } from './useEditor';
@@ -29,21 +43,37 @@ import Toolbar from './Toolbar';
 import EditorCanvas from './EditorCanvas';
 import Inspector from './Inspector';
 import SlideStrip from './SlideStrip';
-import TemplatePicker from './TemplatePicker';
+import LayoutShelf from './LayoutShelf';
+import LibraryBrowser, { type RefImage } from './LibraryBrowser';
+import MotionPanel from './MotionPanel';
+import SlidePlayer from './SlidePlayer';
 import ImageEditor from './ImageEditor';
+import { LayoutTemplate, Images, Wand2 } from 'lucide-react';
 
 interface Props {
   initialDeck: EditorDeck;
 }
 
+type LeftTab = 'layout' | 'reference' | 'motion';
+
+const MIN_PANEL = 220;
+const MAX_PANEL = 460;
+
 export default function PresentEditor({ initialDeck }: Props) {
   const ed = useEditor(initialDeck);
-  const [templatesOpen, setTemplatesOpen] = useState(true);
+  const [tab, setTab] = useState<LeftTab>('layout');
+  const [panelOpen, setPanelOpen] = useState(true);
+  const [panelW, setPanelW] = useState(288); // rộng cột trái (kéo dãn)
   const [busy, setBusy] = useState<string | null>(null);
   const [libAssets, setLibAssets] = useState<GuAsset[]>([]);
+  const [libLoading, setLibLoading] = useState(true);
   const [gu, setGu] = useState<GuProfile | null>(null);
-  // id ảnh đang mở chế độ chỉnh ảnh (nhấp đúp ảnh). null = đóng.
   const [imageEditId, setImageEditId] = useState<string | null>(null);
+  const [playing, setPlaying] = useState(false);
+  // bảng hỏi số liệu (áp vào bố cục sinh ra).
+  const [spec, setSpec] = useState<LayoutSpec>(DEFAULT_SPEC);
+  // ảnh reference LOCAL (phiên editor) — bổ sung cho server khi chưa đăng nhập.
+  const [localRefs, setLocalRefs] = useState<RefImage[]>([]);
 
   // Nạp thư viện Reference (layout/slide templates + gu). Không chặn UI nếu lỗi/empty.
   useEffect(() => {
@@ -51,7 +81,10 @@ export default function PresentEditor({ initialDeck }: Props) {
     (async () => {
       try {
         const r = await fetch('/api/library');
-        if (!r.ok) return;
+        if (!r.ok) {
+          if (alive) setLibLoading(false);
+          return;
+        }
         const d = await r.json();
         const assets: GuAsset[] = (d.assets ?? []).map((a: Record<string, unknown>) => ({
           id: String(a.id),
@@ -63,12 +96,15 @@ export default function PresentEditor({ initialDeck }: Props) {
           tags: String(a.tags ?? ''),
           w: Number(a.w ?? 0),
           h: Number(a.h ?? 0),
-        }));
+          mine: Boolean(a.mine),
+        })) as (GuAsset & { mine?: boolean })[];
         if (!alive) return;
         setLibAssets(assets);
         setGu(buildGuProfile(assets));
       } catch {
-        /* thư viện trống hoặc chưa đăng nhập — dùng builtin */
+        /* thư viện trống hoặc chưa đăng nhập — dùng builtin + reference local */
+      } finally {
+        if (alive) setLibLoading(false);
       }
     })();
     return () => {
@@ -80,6 +116,19 @@ export default function PresentEditor({ initialDeck }: Props) {
     () => [...BUILTIN_TEMPLATES, ...templatesFromLibrary(libAssets)],
     [libAssets],
   );
+
+  // Reference gộp: server (mọi asset dùng làm ảnh tham khảo) + local.
+  const refImages: RefImage[] = useMemo(() => {
+    const server: RefImage[] = libAssets.map((a) => ({
+      id: a.id,
+      name: a.name,
+      url: a.url,
+      tags: a.tags,
+      source: 'server' as const,
+      mine: (a as GuAsset & { mine?: boolean }).mine,
+    }));
+    return [...localRefs, ...server];
+  }, [libAssets, localRefs]);
 
   // Nội dung slide hiện tại (bóc từ text role) để nuôi auto-suggest.
   const suggestion = useMemo(() => {
@@ -133,14 +182,12 @@ export default function PresentEditor({ initialDeck }: Props) {
   );
 
   // Kéo NHÓM: chụp frame lúc bắt đầu (ref) rồi cộng delta cho mọi phần tử chọn.
-  // Lưu delta cuối để lúc COMMIT (Element gọi 0,0) vẫn giữ đúng vị trí đã kéo.
   const groupStartRef = useRef<Record<string, Frame> | null>(null);
   const groupLastDelta = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
   const onFrameMany = useCallback(
     (dxPct: number, dyPct: number, live: boolean) => {
       const s = ed.slide;
       if (!s) return;
-      // lần move đầu: chụp frame gốc.
       if (!groupStartRef.current) {
         const snap: Record<string, Frame> = {};
         for (const id of ed.selectedIds) {
@@ -149,7 +196,6 @@ export default function PresentEditor({ initialDeck }: Props) {
         }
         groupStartRef.current = snap;
       }
-      // commit (live=false) với delta 0 → dùng lại delta cuối (Element gửi 0,0 khi thả).
       const dx = !live && dxPct === 0 && dyPct === 0 ? groupLastDelta.current.dx : dxPct;
       const dy = !live && dxPct === 0 && dyPct === 0 ? groupLastDelta.current.dy : dyPct;
       if (live) groupLastDelta.current = { dx, dy };
@@ -162,19 +208,18 @@ export default function PresentEditor({ initialDeck }: Props) {
         }
       }, live);
       if (!live) {
-        groupStartRef.current = null; // chốt xong → xả snapshot
+        groupStartRef.current = null;
         groupLastDelta.current = { dx: 0, dy: 0 };
       }
     },
     [ed],
   );
 
-  // Alt-kéo: nhân bản element rồi chọn bản mới (Element sẽ tiếp tục kéo bản mới).
   const onAltDrag = useCallback(
     (id: string) => {
       const el = ed.slide?.elements.find((e) => e.id === id);
       if (!el) return;
-      const copy = duplicateElement(el, false); // giữ nguyên vị trí để kéo tách ra
+      const copy = duplicateElement(el, false);
       ed.updateSlide((s) => {
         s.elements.push(copy);
       });
@@ -193,7 +238,6 @@ export default function PresentEditor({ initialDeck }: Props) {
     [ed],
   );
 
-  // z-order 4 mức: ra sau cùng / lùi 1 bậc / tiến 1 bậc / lên trước cùng.
   const onZOrder = useCallback(
     (dir: 'front' | 'back' | 'forward' | 'backward') => {
       if (!ed.selectedId) return;
@@ -204,13 +248,12 @@ export default function PresentEditor({ initialDeck }: Props) {
         if (dir === 'front') s.elements.push(el);
         else if (dir === 'back') s.elements.unshift(el);
         else if (dir === 'forward') s.elements.splice(Math.min(i + 1, s.elements.length), 0, el);
-        else s.elements.splice(Math.max(i - 1, 0), 0, el); // backward
+        else s.elements.splice(Math.max(i - 1, 0), 0, el);
       });
     },
     [ed],
   );
 
-  // Xoá TẤT CẢ phần tử đang chọn (đơn hoặc nhóm).
   const onDeleteSelected = useCallback(() => {
     if (!ed.selectedIds.length) return;
     const ids = new Set(ed.selectedIds);
@@ -220,7 +263,6 @@ export default function PresentEditor({ initialDeck }: Props) {
     ed.select(null);
   }, [ed]);
 
-  // Nhân bản mọi phần tử đang chọn (Ctrl/Cmd+D) → chọn luôn các bản mới.
   const onDuplicateSelected = useCallback(() => {
     if (!ed.selectedIds.length) return;
     const originals = (ed.slide?.elements ?? []).filter((e) => ed.selectedIds.includes(e.id));
@@ -232,7 +274,6 @@ export default function PresentEditor({ initialDeck }: Props) {
     ed.selectMany(copies.map((c) => c.id));
   }, [ed]);
 
-  // Clipboard element cục bộ (không đụng clipboard hệ thống — đủ cho copy/paste trong app).
   const clipboardRef = useRef<SlideElement[] | null>(null);
   const onCopySelected = useCallback(() => {
     const sel = (ed.slide?.elements ?? []).filter((e) => ed.selectedIds.includes(e.id));
@@ -248,7 +289,6 @@ export default function PresentEditor({ initialDeck }: Props) {
     ed.selectMany(copies.map((c) => c.id));
   }, [ed]);
 
-  // Tab: chọn phần tử kế tiếp (vòng lại) — như Canva để duyệt nhanh.
   const onSelectNext = useCallback(
     (dir: 1 | -1) => {
       const els = ed.slide?.elements ?? [];
@@ -260,7 +300,6 @@ export default function PresentEditor({ initialDeck }: Props) {
     [ed],
   );
 
-  // Dời element (đơn/nhóm) theo phím mũi tên (step nhỏ 0.5%, Shift = 5%). Clamp trong sân khấu.
   const onNudge = useCallback(
     (dx: number, dy: number) => {
       if (!ed.selectedIds.length) return;
@@ -268,18 +307,13 @@ export default function PresentEditor({ initialDeck }: Props) {
       ed.updateSlide((s) => {
         for (const el of s.elements) {
           if (!ids.has(el.id) || el.locked) continue;
-          el.frame = {
-            ...el.frame,
-            x: clampPct(el.frame.x + dx),
-            y: clampPct(el.frame.y + dy),
-          };
+          el.frame = { ...el.frame, x: clampPct(el.frame.x + dx), y: clampPct(el.frame.y + dy) };
         }
       });
     },
     [ed],
   );
 
-  // Căn element trong sân khấu (trái/giữa-ngang/phải · trên/giữa-dọc/dưới).
   const onAlign = useCallback(
     (mode: 'left' | 'hcenter' | 'right' | 'top' | 'vcenter' | 'bottom') => {
       if (!ed.selectedId) return;
@@ -302,7 +336,6 @@ export default function PresentEditor({ initialDeck }: Props) {
   /* ------------------------- actions slide --------------------------- */
   const onApplyTemplate = useCallback(
     (t: EditorTemplate) => {
-      // Giữ nội dung chữ + ảnh hiện có → nhồi vào template mới (human-in-the-loop).
       const s = ed.slide;
       const texts = (s?.elements.filter((e) => e.kind === 'text') ?? []) as Extract<SlideElement, { kind: 'text' }>[];
       const ctx: TemplateContext = {
@@ -316,7 +349,8 @@ export default function PresentEditor({ initialDeck }: Props) {
         palette: gu?.palette?.length ? gu.palette : palette,
         fonts: ed.deck.fonts,
       };
-      const built = t.build(ctx);
+      // build từ template rồi ÁP BẢNG HỎI SỐ LIỆU (spec) → điểm xuất phát khớp yêu cầu.
+      const built = applySpecToSlide(t.build(ctx), spec, ctx.palette ?? palette);
       ed.updateSlide((slide) => {
         slide.background = built.background;
         slide.backgroundImage = built.backgroundImage ?? null;
@@ -326,8 +360,29 @@ export default function PresentEditor({ initialDeck }: Props) {
       });
       ed.select(null);
     },
-    [ed, gu, palette],
+    [ed, gu, palette, spec],
   );
+
+  // Tạo trang nội dung TRẮNG để tự dàn (human-in-loop từ số 0 khi muốn).
+  const onCreateBlank = useCallback(() => {
+    ed.updateSlide((slide) => {
+      slide.background = spec.background === 'color' ? slide.background : slide.background;
+      slide.backgroundImage = null;
+      slide.backgroundAdjust = undefined;
+      slide.elements = [
+        makeText({
+          text: 'Tiêu đề',
+          role: 'title',
+          frame: { x: 8, y: 10, w: 60, h: 12, rotation: 0 },
+          fontSize: 6,
+          color: pickInk(palette),
+          bold: true,
+        }),
+      ];
+      slide.templateId = 'blank';
+    });
+    ed.select(null);
+  }, [ed, palette, spec.background]);
 
   const onAddSlide = useCallback(() => {
     const built = BUILTIN_TEMPLATES.find((t) => t.id === 'content-image')!.build({
@@ -378,6 +433,64 @@ export default function PresentEditor({ initialDeck }: Props) {
     [ed],
   );
 
+  /* ------------------------- Reference (ảnh tham khảo) ------------------------- */
+  const onUploadLocalRefs = useCallback((files: { name: string; dataUrl: string }[], tags: string) => {
+    const items: RefImage[] = files.map((f) => ({
+      id: newId('ref'),
+      name: f.name,
+      url: f.dataUrl,
+      tags,
+      source: 'local',
+      mine: true,
+    }));
+    setLocalRefs((prev) => [...items, ...prev]);
+  }, []);
+
+  const onDeleteRef = useCallback(async (img: RefImage) => {
+    if (img.source === 'local') {
+      setLocalRefs((prev) => prev.filter((r) => r.id !== img.id));
+      return;
+    }
+    // server: gọi DELETE rồi gỡ khỏi state (chỉ ảnh mình upload mới hiện nút xoá).
+    try {
+      await fetch(`/api/library/${img.id}`, { method: 'DELETE' });
+    } catch {
+      /* nếu lỗi mạng vẫn gỡ khỏi UI cho gọn; refresh sẽ đồng bộ lại */
+    }
+    setLibAssets((prev) => prev.filter((a) => a.id !== img.id));
+  }, []);
+
+  // Đưa ảnh reference vào slide đang dàn (thêm image element cỡ vừa, giữa).
+  const onUseRef = useCallback(
+    (url: string) => {
+      addElement(makeImage(url, { frame: centered(40, 45) }));
+    },
+    [addElement],
+  );
+
+  /* ------------------------- Motion ------------------------- */
+  const onSetSlideTransition = useCallback(
+    (t: SlideTransition) => ed.updateSlide((s) => (s.transition = t)),
+    [ed],
+  );
+  const onSetSlideReveal = useCallback(
+    (r: ElementReveal) => ed.updateSlide((s) => (s.reveal = r)),
+    [ed],
+  );
+  const onApplyDeckMotion = useCallback(
+    (t: SlideTransition, r: ElementReveal) => {
+      ed.update((d) => {
+        d.transition = t;
+        d.reveal = r;
+        for (const s of d.slides) {
+          s.transition = t;
+          s.reveal = r;
+        }
+      });
+    },
+    [ed],
+  );
+
   /* ------------------------------ export ----------------------------- */
   const onExportPdf = useCallback(async () => {
     setBusy('pdf');
@@ -401,40 +514,57 @@ export default function PresentEditor({ initialDeck }: Props) {
     }
   }, [ed.deck]);
 
+  /* ------------------------- splitter kéo dãn panel trái ------------------------- */
+  const dragStart = useRef<{ x: number; w: number } | null>(null);
+  const onSplitDown = useCallback(
+    (e: React.PointerEvent) => {
+      dragStart.current = { x: e.clientX, w: panelW };
+      try {
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    },
+    [panelW],
+  );
+  const onSplitMove = useCallback((e: React.PointerEvent) => {
+    if (!dragStart.current) return;
+    const next = dragStart.current.w + (e.clientX - dragStart.current.x);
+    setPanelW(Math.max(MIN_PANEL, Math.min(MAX_PANEL, next)));
+  }, []);
+  const onSplitUp = useCallback((e: React.PointerEvent) => {
+    dragStart.current = null;
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   /* ----------------------- phím tắt (cấp document) ----------------------- */
-  // Gắn ở window: div canvas không tự nhận focus nên onKeyDown trên div KHÔNG bắn.
-  // Guard: đang gõ trong input/textarea/contenteditable → bỏ qua (trừ Escape).
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const typing = isTypingTarget(document.activeElement);
-
-      // Escape: luôn cho qua (thoát inline-edit do textarea tự blur; ở đây bỏ chọn).
       if (e.key === 'Escape') {
         if (!typing) ed.select(null);
         return;
       }
-      // Đang gõ chữ → không đụng gì để tránh xoá nhầm element.
       if (typing) return;
-      // Đang mở chế độ chỉnh ảnh → nhường phím cho overlay (nó tự xử Esc).
-      if (imageEditId) return;
+      if (imageEditId || playing) return;
 
-      const mod = e.metaKey || e.ctrlKey; // Cmd (mac) hoặc Ctrl (win)
+      const mod = e.metaKey || e.ctrlKey;
 
-      // Chọn tất cả phần tử trên slide
       if (mod && (e.key === 'a' || e.key === 'A')) {
         e.preventDefault();
         const ids = (ed.slide?.elements ?? []).filter((el) => !el.locked).map((el) => el.id);
         if (ids.length) ed.selectMany(ids);
         return;
       }
-      // Tab: chọn phần tử kế (Shift+Tab: lùi)
       if (e.key === 'Tab') {
         e.preventDefault();
         onSelectNext(e.shiftKey ? -1 : 1);
         return;
       }
-
-      // Undo / Redo
       if (mod && (e.key === 'z' || e.key === 'Z')) {
         e.preventDefault();
         if (e.shiftKey) ed.redo();
@@ -446,13 +576,11 @@ export default function PresentEditor({ initialDeck }: Props) {
         ed.redo();
         return;
       }
-      // Nhân bản
       if (mod && (e.key === 'd' || e.key === 'D')) {
         e.preventDefault();
         onDuplicateSelected();
         return;
       }
-      // Copy / Paste (clipboard cục bộ của editor)
       if (mod && (e.key === 'c' || e.key === 'C')) {
         e.preventDefault();
         onCopySelected();
@@ -463,13 +591,11 @@ export default function PresentEditor({ initialDeck }: Props) {
         onPaste();
         return;
       }
-      // Xoá element đang chọn
       if ((e.key === 'Delete' || e.key === 'Backspace') && ed.selectedIds.length) {
         e.preventDefault();
         onDeleteSelected();
         return;
       }
-      // Dời bằng phím mũi tên (Shift = bước lớn 5%, thường 0.5%)
       if (ed.selectedId && e.key.startsWith('Arrow')) {
         const step = e.shiftKey ? 5 : 0.5;
         e.preventDefault();
@@ -481,55 +607,112 @@ export default function PresentEditor({ initialDeck }: Props) {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [ed, onDuplicateSelected, onCopySelected, onPaste, onDeleteSelected, onNudge, onSelectNext, imageEditId]);
+  }, [ed, onDuplicateSelected, onCopySelected, onPaste, onDeleteSelected, onNudge, onSelectNext, imageEditId, playing]);
+
+  // Mở /photo-editor (Photoshop-level) ở tab mới — hậu kỳ ảnh nâng cao.
+  const openAdvancedEditor = useCallback(() => {
+    if (typeof window !== 'undefined') window.open('/photo-editor', '_blank');
+  }, []);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        background: 'var(--bg)',
-        color: 'var(--t1)',
-      }}
-    >
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', color: 'var(--t1)' }}>
       <Toolbar
         onAddText={onAddText}
         onAddImageUrl={onAddImageUrl}
         onAddShape={onAddShape}
-        onToggleTemplates={() => setTemplatesOpen((v) => !v)}
-        templatesOpen={templatesOpen}
+        onToggleTemplates={() => setPanelOpen((v) => !v)}
+        templatesOpen={panelOpen}
         onUndo={ed.undo}
         onRedo={ed.redo}
         canUndo={ed.canUndo}
         canRedo={ed.canRedo}
         onExportPdf={onExportPdf}
         onExportPptx={onExportPptx}
+        onPlay={() => setPlaying(true)}
         busy={busy}
       />
 
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        {/* trái: template */}
-        {templatesOpen && (
-          <aside
-            style={{
-              width: 260,
-              flex: '0 0 260px',
-              borderRight: '1px solid var(--border)',
-              background: 'var(--panel)',
-              padding: 14,
-              overflowY: 'auto',
-            }}
-          >
-            <TemplatePicker
-              templates={templates}
-              suggestedId={suggestion?.templateId ?? null}
-              suggestReason={suggestion?.reason ?? null}
-              onApply={onApplyTemplate}
-              palette={palette}
-              fonts={ed.deck.fonts}
+        {/* trái: panel 3 tab (kéo dãn) */}
+        {panelOpen && (
+          <>
+            <aside
+              style={{
+                width: panelW,
+                flex: `0 0 ${panelW}px`,
+                borderRight: '1px solid var(--border)',
+                background: 'var(--panel)',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0,
+              }}
+            >
+              {/* tab head */}
+              <div style={{ display: 'flex', gap: 4, padding: '10px 12px 0' }}>
+                <TabBtn active={tab === 'layout'} onClick={() => setTab('layout')} icon={<LayoutTemplate size={13} />}>
+                  Mẫu
+                </TabBtn>
+                <TabBtn active={tab === 'reference'} onClick={() => setTab('reference')} icon={<Images size={13} />}>
+                  Reference
+                </TabBtn>
+                <TabBtn active={tab === 'motion'} onClick={() => setTab('motion')} icon={<Wand2 size={13} />}>
+                  Motion
+                </TabBtn>
+              </div>
+
+              <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 12 }}>
+                {tab === 'layout' && (
+                  <LayoutShelf
+                    templates={templates}
+                    suggestedId={suggestion?.templateId ?? null}
+                    suggestReason={suggestion?.reason ?? null}
+                    onApply={onApplyTemplate}
+                    onCreateBlank={onCreateBlank}
+                    palette={palette}
+                    fonts={ed.deck.fonts}
+                    spec={spec}
+                    onSpecChange={setSpec}
+                  />
+                )}
+                {tab === 'reference' && (
+                  <LibraryBrowser
+                    images={refImages}
+                    loading={libLoading}
+                    onUseImage={onUseRef}
+                    onDelete={onDeleteRef}
+                    onUploadLocal={onUploadLocalRefs}
+                  />
+                )}
+                {tab === 'motion' && ed.slide && (
+                  <MotionPanel
+                    slide={ed.slide}
+                    deck={ed.deck}
+                    onSetSlideTransition={onSetSlideTransition}
+                    onSetSlideReveal={onSetSlideReveal}
+                    onApplyDeck={onApplyDeckMotion}
+                    onPlay={() => setPlaying(true)}
+                  />
+                )}
+              </div>
+            </aside>
+
+            {/* splitter kéo dãn */}
+            <div
+              className="pe-splitter"
+              onPointerDown={onSplitDown}
+              onPointerMove={onSplitMove}
+              onPointerUp={onSplitUp}
+              title="Kéo để đổi rộng cột"
+              style={{
+                width: 6,
+                flex: '0 0 6px',
+                cursor: 'col-resize',
+                background: 'transparent',
+                marginLeft: -3,
+                zIndex: 5,
+              }}
             />
-          </aside>
+          </>
         )}
 
         {/* giữa: canvas */}
@@ -557,12 +740,12 @@ export default function PresentEditor({ initialDeck }: Props) {
               onAltDrag={onAltDrag}
               onEditTextCommit={onEditTextCommit}
               onEditImage={(id) => setImageEditId(id)}
+              onEditImageAdvanced={openAdvancedEditor}
+              onDropRefImage={onAddImageUrl}
               onDuplicate={onDuplicateSelected}
               onDelete={onDeleteSelected}
               onZOrder={onZOrder}
-              onToggleLock={() =>
-                ed.updateSelected((el) => (el.locked = !el.locked))
-              }
+              onToggleLock={() => ed.updateSelected((el) => (el.locked = !el.locked))}
             />
           )}
         </main>
@@ -591,6 +774,7 @@ export default function PresentEditor({ initialDeck }: Props) {
               onDuplicate={onDuplicateSelected}
               onDelete={onDeleteSelected}
               onOpenImageEditor={(id) => setImageEditId(id)}
+              onOpenAdvancedEditor={openAdvancedEditor}
             />
           )}
         </aside>
@@ -606,7 +790,7 @@ export default function PresentEditor({ initialDeck }: Props) {
         onMove={onMoveSlide}
       />
 
-      {/* Chế độ chỉnh ảnh (nhấp đúp ảnh) — overlay toàn màn. */}
+      {/* Chế độ chỉnh ảnh (nhấp đúp / chuột phải ảnh) — overlay toàn màn. */}
       {imageEditId && imageEditEl && (
         <ImageEditor
           el={imageEditEl}
@@ -617,34 +801,70 @@ export default function PresentEditor({ initialDeck }: Props) {
               if (el && el.kind === 'image') mutate(el);
             }, live)
           }
+          onOpenAdvanced={openAdvancedEditor}
           onClose={() => setImageEditId(null)}
         />
       )}
+
+      {/* Trình chiếu với hiệu ứng động. */}
+      {playing && <SlidePlayer deck={ed.deck} startIndex={ed.currentSlide} onClose={() => setPlaying(false)} />}
     </div>
   );
 }
 
 /* -------- tiện ích -------- */
+function TabBtn({
+  active,
+  onClick,
+  icon,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 5,
+        padding: '7px 4px',
+        borderRadius: '8px 8px 0 0',
+        border: active ? '1px solid var(--border)' : '1px solid transparent',
+        borderBottom: active ? '1px solid var(--panel)' : '1px solid var(--border)',
+        marginBottom: -1,
+        background: active ? 'var(--card)' : 'transparent',
+        color: active ? 'var(--accent)' : 'var(--t3)',
+        fontSize: 11.5,
+        fontWeight: active ? 600 : 400,
+        cursor: 'pointer',
+      }}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}
+
 function centered(w: number, h: number): Frame {
   return { x: (100 - w) / 2, y: (100 - h) / 2, w, h, rotation: 0 };
 }
 function clampPct(v: number): number {
-  return Math.max(-5, Math.min(v, 105)); // cho lố mép nhẹ để bố cục "tràn viền" vẫn được
+  return Math.max(-5, Math.min(v, 105));
 }
-/** Con trỏ có đang ở trong ô nhập liệu? (chặn phím tắt khi đang gõ). */
 function isTypingTarget(t: EventTarget | null): boolean {
   const el = t as HTMLElement | null;
   if (!el) return false;
   const tag = el.tagName;
-  return (
-    tag === 'INPUT' ||
-    tag === 'TEXTAREA' ||
-    tag === 'SELECT' ||
-    el.isContentEditable === true
-  );
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable === true;
 }
 function pickInk(palette: string[]): string {
-  // màu chữ tối nhất trong palette (hoặc đen)
   const valid = (palette || []).filter((c) => /^#[0-9a-fA-F]{6}$/.test(c));
   if (!valid.length) return '#221f1a';
   return valid.slice().sort((a, b) => lum(a) - lum(b))[0];

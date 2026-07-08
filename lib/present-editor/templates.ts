@@ -43,6 +43,31 @@ export type TemplateCategory =
   | 'Kỹ thuật'
   | 'Trưng bày';
 
+/**
+ * "Kệ" bố cục — 3 HÀNG gọn theo yêu cầu user (cuộn ngang, không đổ dọc):
+ *   - 'cover'   : Bìa (trang mở đầu chính, đậm chất).
+ *   - 'subcover': Bìa phụ (phân mục, mục lục, divider).
+ *   - 'content' : Trang nội dung (mọi bố cục còn lại).
+ */
+export type LayoutShelf = 'cover' | 'subcover' | 'content';
+
+export const SHELF_LABEL: Record<LayoutShelf, string> = {
+  cover: 'Bìa',
+  subcover: 'Bìa phụ',
+  content: 'Trang nội dung',
+};
+
+export const SHELF_ORDER: LayoutShelf[] = ['cover', 'subcover', 'content'];
+
+/** Suy ra kệ từ id/category template (gom 3 hàng). */
+export function shelfOf(t: EditorTemplate): LayoutShelf {
+  if (t.shelf) return t.shelf;
+  const id = t.id;
+  if (id === 'cover' || id === 'dark-cover' || id === 'full-bleed') return 'cover';
+  if (id === 'section-divider' || id === 'agenda') return 'subcover';
+  return 'content';
+}
+
 export interface EditorTemplate {
   id: string;
   name: string;
@@ -50,8 +75,12 @@ export interface EditorTemplate {
   group: 'builtin' | 'library';
   /** phân loại con (chỉ builtin) — picker gom theo đây. */
   category?: TemplateCategory;
+  /** kệ 3 hàng (cuộn ngang). Bỏ trống = suy từ shelfOf(). */
+  shelf?: LayoutShelf;
   /** ảnh xem trước (với library template = chính ảnh ref). */
   thumb?: string | null;
+  /** số ô ảnh mà bố cục này dùng (để khớp bảng hỏi spec). Bỏ trống = ước lượng. */
+  imageSlots?: number;
   build: (ctx: TemplateContext) => EditorSlide;
 }
 
@@ -958,6 +987,223 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
       return { id: newId('sld'), background: c.light, elements: els, templateId: 'big-stat' };
     },
   },
+  /* ---------- Trích từ moodboard AKH-IKI (kỹ thuật designer thật) ---------- */
+
+  {
+    id: 'grid4-philosophy',
+    name: 'Lưới 4 cột (triết lý + bullet)',
+    group: 'builtin',
+    category: 'Moodboard & Vật liệu',
+    shelf: 'content',
+    // AKH-IKI p5: 4 ảnh dọc gần chạm nhau (cột 24.8%, gutter mảnh), dưới mỗi cột
+    // nhãn + gạch đầu dòng + nhãn tổng kết. Tem: header tab-label + hairline.
+    build: (ctx) => {
+      const c = pal(ctx.palette);
+      const els: SlideElement[] = [];
+      // header tab-label trái + breadcrumb phải (đặc trưng bộ moodboard)
+      els.push(
+        makeText({
+          text: (ctx.kicker || 'Triết lý thiết kế').toUpperCase(),
+          role: 'kicker',
+          frame: { x: 2, y: 3.5, w: 40, h: 5, rotation: 0 },
+          fontSize: 2.4,
+          color: c.dark,
+          bold: true,
+          tracking: 2,
+        }),
+      );
+      els.push(
+        makeText({
+          text: (ctx.title || 'IKI VILLAGE — MOODBOARD').toUpperCase(),
+          role: 'free',
+          frame: { x: 55, y: 3.5, w: 43, h: 5, rotation: 0 },
+          fontSize: 1.8,
+          color: c.muted,
+          align: 'right',
+          tracking: 2,
+        }),
+      );
+      els.push(makeShape('line', { frame: { x: 2, y: 10, w: 96, h: 0.3, rotation: 0 }, stroke: c.muted, strokeWidth: 1 }));
+      // 4 cột ảnh gần chạm
+      const colW = 24;
+      const gap = 0.7;
+      const startX = 2;
+      const body = ctx.body?.length ? ctx.body : ['Chuẩn mực', 'Nhấn tinh tế', 'Bền vững', 'Linh hoạt'];
+      for (let i = 0; i < 4; i++) {
+        const x = startX + i * (colW + gap);
+        els.push(imgSlot(imgAt(ctx, i), { x, y: 13, w: colW, h: 56, rotation: 0 }, c, { radius: 1 }));
+        // nhãn cột + 1 dòng bullet
+        els.push(
+          makeText({
+            text: (body[i] || `Ý ${i + 1}`).replace(/^[-•]\s*/, '').toUpperCase(),
+            role: 'body',
+            frame: { x, y: 71, w: colW, h: 5, rotation: 0 },
+            fontSize: 1.9,
+            color: c.dark,
+            align: 'center',
+            bold: true,
+            tracking: 1,
+          }),
+        );
+        els.push(
+          makeText({
+            text: '•  Không gian chuẩn mực\n•  Ít mà đúng',
+            role: 'body',
+            frame: { x, y: 77, w: colW, h: 12, rotation: 0 },
+            fontSize: 1.6,
+            color: c.muted,
+            align: 'center',
+            lineHeight: 1.4,
+          }),
+        );
+      }
+      return { id: newId('sld'), background: c.light, elements: els, templateId: 'grid4-philosophy' };
+    },
+  },
+  {
+    id: 'collage-watermark',
+    name: 'Collage + watermark serif',
+    group: 'builtin',
+    category: 'Trưng bày',
+    shelf: 'content',
+    // AKH-IKI SHOW p15: ảnh chồng mép tự do + watermark serif khổng lồ mờ + inset nhỏ.
+    build: (ctx) => {
+      const c = pal(ctx.palette);
+      const els: SlideElement[] = [];
+      els.push(
+        makeText({
+          text: (ctx.kicker || 'Định hướng không gian').toUpperCase(),
+          role: 'kicker',
+          frame: { x: 2, y: 4, w: 50, h: 5, rotation: 0 },
+          fontSize: 2.2,
+          color: c.dark,
+          bold: true,
+          tracking: 2,
+        }),
+      );
+      // cụm ảnh: 1 lớn trái + 2 nhỏ phải (chồng mép)
+      els.push(imgSlot(imgAt(ctx, 0), { x: 4, y: 12, w: 42, h: 74, rotation: 0 }, c, { radius: 1 }));
+      els.push(imgSlot(imgAt(ctx, 1), { x: 48, y: 12, w: 24, h: 42, rotation: 0 }, c, { radius: 1 }));
+      els.push(imgSlot(imgAt(ctx, 2), { x: 73, y: 12, w: 23, h: 42, rotation: 0 }, c, { radius: 1 }));
+      els.push(imgSlot(imgAt(ctx, 3), { x: 48, y: 56, w: 48, h: 30, rotation: 0 }, c, { radius: 1 }));
+      // watermark serif lớn mờ (đè lên ảnh trái)
+      els.push(
+        makeText({
+          text: ctx.title || 'Master',
+          role: 'free',
+          frame: { x: 8, y: 62, w: 46, h: 22, rotation: 0 },
+          fontSize: 12,
+          color: '#ffffff',
+          italic: true,
+          opacity: 0.85,
+          fontFamily: 'Optima, "Avenir Next", Georgia, serif',
+        }),
+      );
+      return { id: newId('sld'), background: c.light, elements: els, templateId: 'collage-watermark' };
+    },
+  },
+  {
+    id: 'material-flatlay',
+    name: 'Bảng vật liệu (flat-lay + nhãn)',
+    group: 'builtin',
+    category: 'Moodboard & Vật liệu',
+    shelf: 'content',
+    // AKH-IKI p9: 1 ảnh flat-lay mẫu vật liệu lớn + tiêu đề dọc + strip swatch + nhãn CMYK.
+    build: (ctx) => {
+      const c = pal(ctx.palette);
+      const els: SlideElement[] = [];
+      // tiêu đề xoay dọc mép trái
+      els.push(
+        makeText({
+          text: (ctx.kicker || 'Material Board').toUpperCase(),
+          role: 'kicker',
+          frame: { x: -14, y: 45, w: 40, h: 6, rotation: -90 },
+          fontSize: 3,
+          color: c.muted,
+          bold: true,
+          tracking: 4,
+          align: 'center',
+        }),
+      );
+      // ảnh flat-lay lớn
+      els.push(imgSlot(imgAt(ctx, 0), { x: 8, y: 8, w: 62, h: 84, rotation: 0 }, c, { radius: 1 }));
+      // cột phải: tên bộ + strip swatch + nhãn
+      els.push(
+        makeText({
+          text: ctx.title || 'Bảng vật liệu',
+          role: 'title',
+          frame: { x: 73, y: 12, w: 25, h: 10, rotation: 0 },
+          fontSize: 3.6,
+          color: c.dark,
+          bold: true,
+          lineHeight: 1.1,
+        }),
+      );
+      const chips = c.palette.slice(0, 5);
+      chips.forEach((hex, i) => {
+        const y = 30 + i * 12;
+        els.push(
+          makeShape('rect', {
+            frame: { x: 73, y, w: 8, h: 9, rotation: 0 },
+            fill: hex,
+            stroke: 'transparent',
+            strokeWidth: 0,
+            radius: 1,
+          }),
+        );
+        els.push(
+          makeText({
+            text: `${(ctx.body?.[i] || 'Vật liệu').replace(/^[-•]\s*/, '')}\n${hex.toUpperCase()}`,
+            role: 'body',
+            frame: { x: 83, y: y + 0.5, w: 15, h: 9, rotation: 0 },
+            fontSize: 1.6,
+            color: c.dark,
+            lineHeight: 1.35,
+          }),
+        );
+      });
+      return { id: newId('sld'), background: c.light, elements: els, templateId: 'material-flatlay' };
+    },
+  },
+  {
+    id: 'closing',
+    name: 'Trang kết (thông điệp)',
+    group: 'builtin',
+    category: 'Bìa & Mở đầu',
+    shelf: 'subcover',
+    // AKH-IKI trang kết: nền tối, 1-3 dòng căn giữa.
+    build: (ctx) => {
+      const c = pal(ctx.palette);
+      const els: SlideElement[] = [];
+      els.push(
+        makeText({
+          text: ctx.title || 'Cảm xúc ban đầu từ đường nét — ánh sáng — vật liệu',
+          role: 'title',
+          frame: { x: 14, y: 40, w: 72, h: 20, rotation: 0 },
+          fontSize: 4.6,
+          color: '#f3efe8',
+          align: 'center',
+          italic: true,
+          lineHeight: 1.4,
+        }),
+      );
+      if (ctx.kicker)
+        els.push(
+          makeText({
+            text: ctx.kicker.toUpperCase(),
+            role: 'kicker',
+            frame: { x: 20, y: 62, w: 60, h: 5, rotation: 0 },
+            fontSize: 2,
+            color: c.accent,
+            align: 'center',
+            bold: true,
+            tracking: 4,
+          }),
+        );
+      return { id: newId('sld'), background: c.dark, elements: els, templateId: 'closing' };
+    },
+  },
+
   {
     id: 'agenda',
     name: 'Mục lục / Agenda',
@@ -1028,6 +1274,87 @@ export const LAYOUT_USAGES = ['layout', 'slide'];
  * bố cục (full-bleed), người dùng kéo chữ/ảnh của mình chồng lên. Đơn giản mà đúng ý:
  * "mượn bố cục từ ảnh mẫu trong thư viện".
  */
+/**
+ * Đếm số Ô ẢNH của template (build thử với vài ảnh giả) — để khớp bảng hỏi spec.
+ * Đếm cả image element lẫn shape placeholder (imgSlot khi thiếu ảnh) + ảnh nền.
+ */
+export function estimateImageSlots(t: EditorTemplate): number {
+  if (typeof t.imageSlots === 'number') return t.imageSlots;
+  try {
+    const s = t.build({
+      title: 'x',
+      kicker: 'x',
+      body: ['a', 'b', 'c', 'd'],
+      images: ['#a', '#b', '#c', '#d', '#e', '#f'],
+      palette: ['#f5f1ea', '#c7a397', '#8a6f4d', '#221f1a'],
+    });
+    const imgs = s.elements.filter((e) => e.kind === 'image').length;
+    return imgs + (s.backgroundImage ? 1 : 0);
+  } catch {
+    return 1;
+  }
+}
+
+/**
+ * Lật NGANG một slide (mirror trái↔phải) — biến thể "phản chiếu" nhanh, giữ nội dung.
+ * x' = 100 - (x + w). Chữ căn trái ↔ phải để bố cục vẫn cân.
+ */
+export function mirrorSlide(slide: EditorSlide): EditorSlide {
+  const out: EditorSlide = { ...slide, elements: slide.elements.map((e) => ({ ...e, frame: { ...e.frame } })) };
+  for (const el of out.elements) {
+    el.frame.x = 100 - (el.frame.x + el.frame.w);
+    if (el.kind === 'text') {
+      const t = el as { align?: string };
+      if (t.align === 'left') t.align = 'right';
+      else if (t.align === 'right') t.align = 'left';
+    }
+  }
+  return out;
+}
+
+/**
+ * Sinh BIẾN THỂ cho một template gốc (human-in-loop: đề xuất khác đi, không copy nguyên).
+ * v1 = mirror ngang; v2 = đổi nền sáng↔tối (đảo background + màu chữ trắng/đậm).
+ * Trả về danh sách EditorTemplate mới (id có hậu tố) — dùng cho nút "Thêm biến thể".
+ */
+export function makeVariants(base: EditorTemplate, palette?: string[]): EditorTemplate[] {
+  const p = palette && palette.length ? palette : undefined;
+  const shelf = shelfOf(base);
+  return [
+    {
+      ...base,
+      id: `${base.id}__mir`,
+      name: `${base.name} · lật`,
+      shelf,
+      build: (ctx) => {
+        const s = base.build({ ...ctx, palette: ctx.palette ?? p });
+        return { ...mirrorSlide(s), templateId: base.id };
+      },
+    },
+    {
+      ...base,
+      id: `${base.id}__dark`,
+      name: `${base.name} · nền tối`,
+      shelf,
+      build: (ctx) => {
+        const s = base.build({ ...ctx, palette: ctx.palette ?? p });
+        const c = pal(ctx.palette ?? p);
+        const dark = s.background === c.dark;
+        return {
+          ...s,
+          templateId: base.id,
+          background: dark ? c.light : c.dark,
+          elements: s.elements.map((e) => {
+            if (e.kind !== 'text') return e;
+            const isInk = e.color === c.dark || e.color === '#221f1a';
+            return { ...e, color: dark ? (isInk ? e.color : e.color) : isInk ? '#f3efe8' : e.color };
+          }),
+        };
+      },
+    },
+  ];
+}
+
 export function templatesFromLibrary(assets: GuAsset[]): EditorTemplate[] {
   const layoutAssets = (assets || []).filter((a) => LAYOUT_USAGES.includes(a.usage));
   return layoutAssets.slice(0, 24).map((a) => ({

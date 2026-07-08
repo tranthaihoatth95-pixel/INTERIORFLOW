@@ -18,6 +18,7 @@ import {
   Redo2,
   FileDown,
   FileText,
+  Play,
 } from 'lucide-react';
 import type { ShapeKind } from '@/lib/present-editor/model';
 
@@ -33,6 +34,8 @@ interface Props {
   canRedo: boolean;
   onExportPdf: () => void;
   onExportPptx: () => void;
+  /** mở trình chiếu (xem hiệu ứng động). */
+  onPlay: () => void;
   busy: string | null;
 }
 
@@ -75,7 +78,10 @@ export default function Toolbar(p: Props) {
       <Btn onClick={p.onAddText} title="Thêm chữ">
         <Type size={15} /> Chữ
       </Btn>
-      <Btn onClick={() => fileRef.current?.click()} title="Thêm ảnh (tải lên)">
+      <Btn
+        onClick={() => fileRef.current?.click()}
+        title="Ảnh NỘI DUNG: tải ảnh lên và đưa thẳng vào slide đang dàn. (Ảnh tham khảo/style → tab Reference bên trái)"
+      >
         <ImageIcon size={15} /> Ảnh
       </Btn>
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
@@ -106,6 +112,10 @@ export default function Toolbar(p: Props) {
 
       <div style={{ flex: 1 }} />
 
+      <Btn onClick={p.onPlay} title="Trình chiếu (xem hiệu ứng động)">
+        <Play size={15} /> Trình chiếu
+      </Btn>
+      <Divider />
       <Btn onClick={p.onExportPdf} title="Xuất PDF" disabled={!!p.busy}>
         <FileDown size={15} /> {p.busy === 'pdf' ? 'Đang xuất…' : 'PDF'}
       </Btn>

@@ -39,6 +39,10 @@ interface Props {
   onAltDrag: (id: string) => void;
   onEditTextCommit: (id: string, text: string) => void;
   onEditImage: (id: string) => void;
+  /** mở trình chỉnh ảnh nâng cao (Photoshop-level, /photo-editor). */
+  onEditImageAdvanced?: () => void;
+  /** thả ảnh Reference (drag từ panel) lên sân khấu → thêm image element. */
+  onDropRefImage?: (url: string) => void;
   /** thao tác cho menu chuột phải trên element. */
   onDuplicate: () => void;
   onDelete: () => void;
@@ -52,6 +56,8 @@ interface MenuState {
   y: number;
   id: string;
   locked: boolean;
+  /** loại element (để hiện mục "Chỉnh ảnh" khi là ảnh). */
+  kind: 'image' | 'text' | 'shape';
 }
 
 /** Khung marquee đang vẽ (theo % sân khấu). */
@@ -74,6 +80,8 @@ export default function EditorCanvas({
   onAltDrag,
   onEditTextCommit,
   onEditImage,
+  onEditImageAdvanced,
+  onDropRefImage,
   onDuplicate,
   onDelete,
   onZOrder,
@@ -166,6 +174,22 @@ export default function EditorCanvas({
       onPointerDown={onStageDown}
       onPointerMove={onStageMove}
       onPointerUp={onStageUp}
+      onDragOver={(e) => {
+        if (onDropRefImage) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+        }
+      }}
+      onDrop={(e) => {
+        if (!onDropRefImage) return;
+        const url =
+          e.dataTransfer.getData('application/interiorflow-ref') ||
+          e.dataTransfer.getData('text/uri-list');
+        if (url) {
+          e.preventDefault();
+          onDropRefImage(url);
+        }
+      }}
       onContextMenu={(e) => {
         if (e.target === stageRef.current) {
           e.preventDefault();
@@ -217,6 +241,7 @@ export default function EditorCanvas({
               y: rect ? e.clientY - rect.top : 0,
               id: el.id,
               locked: !!el.locked,
+              kind: el.kind,
             });
           }}
         />
@@ -256,6 +281,15 @@ export default function EditorCanvas({
           }}
           onPointerDown={(e) => e.stopPropagation()}
         >
+          {menu.kind === 'image' && (
+            <>
+              <MenuItem onClick={() => { onEditImage(menu.id); setMenu(null); }}>Chỉnh ảnh (crop · lọc · thay)</MenuItem>
+              {onEditImageAdvanced && (
+                <MenuItem onClick={() => { onEditImageAdvanced(); setMenu(null); }}>Chỉnh ảnh nâng cao (Photoshop)</MenuItem>
+              )}
+              <MenuSep />
+            </>
+          )}
           <MenuItem onClick={() => { onDuplicate(); setMenu(null); }}>Nhân bản</MenuItem>
           <MenuItem onClick={() => { onZOrder('front'); setMenu(null); }}>Đưa lên trước</MenuItem>
           <MenuItem onClick={() => { onZOrder('forward'); setMenu(null); }}>Tiến 1 bậc</MenuItem>
@@ -337,6 +371,11 @@ export default function EditorCanvas({
       )}
     </div>
   );
+}
+
+/** Đường ngăn giữa nhóm mục trong menu chuột phải. */
+function MenuSep() {
+  return <div style={{ height: 1, background: 'var(--border)', margin: '4px 6px' }} />;
 }
 
 /** 1 dòng trong menu chuột phải. */

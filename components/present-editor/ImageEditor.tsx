@@ -19,7 +19,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ImageElement, ImageAdjust, CropRect } from '@/lib/present-editor/model';
 import { DEFAULT_ADJUST, adjustToCssFilter } from '@/lib/present-editor/model';
-import { X, Check, Crop as CropIcon, Maximize, RotateCcw, Upload, Images } from 'lucide-react';
+import { X, Check, Crop as CropIcon, Maximize, RotateCcw, Upload, Images, Wand2 } from 'lucide-react';
 import type { GuAsset } from '@/lib/gu';
 
 interface Props {
@@ -27,6 +27,8 @@ interface Props {
   /** ảnh thư viện Reference để "thay ảnh" nhanh. */
   libAssets: GuAsset[];
   onUpdate: (mutate: (el: ImageElement) => void, live?: boolean) => void;
+  /** mở trình chỉnh ảnh nâng cao (Photoshop-level, /photo-editor). */
+  onOpenAdvanced?: () => void;
   onClose: () => void;
 }
 
@@ -43,7 +45,7 @@ const FILTER_PRESETS: { id: string; label: string; adjust: ImageAdjust }[] = [
 
 type CropHandle = 'nw' | 'ne' | 'sw' | 'se' | 'move';
 
-export default function ImageEditor({ el, libAssets, onUpdate, onClose }: Props) {
+export default function ImageEditor({ el, libAssets, onUpdate, onOpenAdvanced, onClose }: Props) {
   const [tab, setTab] = useState<'crop' | 'adjust' | 'replace'>('adjust');
   const fileRef = useRef<HTMLInputElement>(null);
   const viewRef = useRef<HTMLDivElement>(null);
@@ -200,6 +202,16 @@ export default function ImageEditor({ el, libAssets, onUpdate, onClose }: Props)
           <Tab active={tab === 'replace'} onClick={() => setTab('replace')}>Thay ảnh</Tab>
         </div>
         <div style={{ flex: 1 }} />
+        {onOpenAdvanced && (
+          <button
+            type="button"
+            onClick={onOpenAdvanced}
+            style={iconBtn}
+            title="Chỉnh ảnh nâng cao (layers · mask · clone — mở /photo-editor)"
+          >
+            <Wand2 size={15} />
+          </button>
+        )}
         <button type="button" onClick={onClose} style={doneBtn}>
           <Check size={14} /> Xong
         </button>
