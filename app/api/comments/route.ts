@@ -24,7 +24,22 @@ interface Comment {
   route: string;
   stage?: string;
   elementHint?: string;
+  image?: string; // đường dẫn ảnh minh hoạ đính kèm (comments-images/<id>.<ext>)
   ts: number;
+}
+
+/**
+ * Giải mã data URL ảnh → ghi vào public/comments-images/ → trả URL để hiển thị lại
+ * trong danh sách (và Claude đọc file public/comments-images/<id>.<ext>).
+ */
+async function saveImage(id: string, dataUrl: string): Promise<string | undefined> {
+  const m = /^data:image\/(png|jpe?g|webp|gif);base64,(.+)$/.exec(dataUrl);
+  if (!m) return undefined;
+  const ext = m[1] === 'jpeg' ? 'jpg' : m[1];
+  const dir = path.join(process.cwd(), 'public', 'comments-images');
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(path.join(dir, `${id}.${ext}`), Buffer.from(m[2], 'base64'));
+  return `/comments-images/${id}.${ext}`; // URL public
 }
 
 async function readAll(): Promise<Comment[]> {
@@ -49,14 +64,24 @@ export async function POST(req: Request) {
   const text = String(body.text ?? '').trim();
   if (!text) return NextResponse.json({ error: 'Trống' }, { status: 400 });
   const list = await readAll();
+  const id = `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  let image: string | undefined;
+  if (typeof body.image === 'string' && body.image.startsWith('data:image/')) {
+    try {
+      image = await saveImage(id, body.image);
+    } catch {
+      /* ảnh lỗi — vẫn lưu góp ý */
+    }
+  }
   const c: Comment = {
-    id: `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+    id,
     text,
     x: Number(body.x ?? 50),
     y: Number(body.y ?? 50),
     route: String(body.route ?? '/'),
     stage: body.stage ? String(body.stage) : undefined,
     elementHint: body.elementHint ? String(body.elementHint).slice(0, 160) : undefined,
+    image,
     ts: Date.now(),
   };
   list.push(c);

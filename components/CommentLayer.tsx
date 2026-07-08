@@ -19,6 +19,7 @@ interface Comment {
   route: string;
   stage?: string;
   elementHint?: string;
+  image?: string;
   ts: number;
 }
 
@@ -29,8 +30,23 @@ export function CommentLayer() {
   const [on, setOn] = useState(false); // chế độ góp ý
   const [comments, setComments] = useState<Comment[]>([]);
   const [route, setRoute] = useState('/');
-  const [draft, setDraft] = useState<{ x: number; y: number; hint: string; text: string } | null>(null);
+  const [draft, setDraft] = useState<{ x: number; y: number; hint: string; text: string; image?: string } | null>(null);
   const [listOpen, setListOpen] = useState(false);
+
+  /** File ảnh → data URL để đính kèm góp ý. */
+  function fileToDataUrl(f: File): Promise<string> {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(String(r.result));
+      r.onerror = () => rej(r.error);
+      r.readAsDataURL(f);
+    });
+  }
+  async function attachFrom(files: FileList | File[] | null | undefined) {
+    const f = files && files[0];
+    if (!f || !f.type.startsWith('image/') || !draft) return;
+    setDraft({ ...draft, image: await fileToDataUrl(f) });
+  }
 
   const load = useCallback(async () => {
     try {
@@ -80,6 +96,7 @@ export function CommentLayer() {
       route,
       stage: currentStage(),
       elementHint: draft.hint,
+      image: draft.image,
     };
     setDraft(null);
     try {
@@ -165,11 +182,15 @@ export function CommentLayer() {
             autoFocus
             value={draft.text}
             onChange={(e) => setDraft({ ...draft, text: e.target.value })}
+            onPaste={(e) => {
+              const it = [...e.clipboardData.items].find((x) => x.type.startsWith('image/'));
+              if (it) { e.preventDefault(); attachFrom([it.getAsFile()!]); }
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) save();
               if (e.key === 'Escape') setDraft(null);
             }}
-            placeholder="Anh góp ý gì ở đây… (⌘/Ctrl+Enter để lưu)"
+            placeholder="Anh góp ý gì ở đây… (dán ảnh ⌘V để đính kèm · ⌘/Ctrl+Enter lưu)"
             rows={3}
             style={{
               width: '100%',
@@ -182,6 +203,28 @@ export function CommentLayer() {
               fontFamily: 'inherit',
             }}
           />
+
+          {/* Ảnh minh hoạ đính kèm */}
+          {draft.image ? (
+            <div style={{ position: 'relative', marginTop: 8 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={draft.image} alt="minh hoạ" style={{ width: '100%', maxHeight: 160, objectFit: 'contain', borderRadius: 8, border: '1px solid #eee', background: '#fafafa' }} />
+              <button
+                onClick={() => setDraft({ ...draft, image: undefined })}
+                style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11, border: 'none', background: 'rgba(0,0,0,.6)', color: '#fff', cursor: 'pointer', fontSize: 13 }}
+              >×</button>
+            </div>
+          ) : (
+            <label
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => { e.preventDefault(); attachFrom(e.dataTransfer.files); }}
+              style={{ display: 'block', marginTop: 8, padding: '10px', border: '1.5px dashed #ddd', borderRadius: 8, textAlign: 'center', fontSize: 11.5, color: '#999', cursor: 'pointer' }}
+            >
+              📎 Dán · kéo-thả · hoặc bấm chọn ảnh minh hoạ
+              <input type="file" accept="image/*" hidden onChange={(e) => attachFrom(e.target.files)} />
+            </label>
+          )}
+
           <div style={{ display: 'flex', gap: 6, marginTop: 8, justifyContent: 'flex-end' }}>
             <button onClick={() => setDraft(null)} style={btnGhost}>Huỷ</button>
             <button onClick={save} style={{ ...btnSolid, background: ACCENT }}>Lưu góp ý</button>
@@ -223,6 +266,10 @@ export function CommentLayer() {
                 <button onClick={() => del(c.id)} style={{ ...btnGhost, color: '#c00', fontSize: 11 }}>Xoá</button>
               </div>
               <div style={{ margin: '2px 0' }}>{c.text}</div>
+              {c.image && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={c.image} alt="minh hoạ" style={{ width: '100%', maxHeight: 120, objectFit: 'contain', borderRadius: 6, border: '1px solid #eee', margin: '4px 0', background: '#fafafa' }} />
+              )}
               <div style={{ fontSize: 10, color: '#aaa' }}>{c.route} · {c.elementHint}</div>
             </div>
           ))}
