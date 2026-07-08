@@ -26,6 +26,8 @@ export default function Home() {
   const user = useFlowStore((s) => s.user);
   // Sau khi auth thành công → hiện màn CHỌN 3 CHẶNG (StageSelect) trước canvas.
   // stageDone bật khi người dùng đã chọn chặng & vào canvas.
+  // Persist để quay về '/' (vd thoát khỏi /present-editor hay /photo-editor) vào THẲNG
+  // canvas, không rớt lại StageSelect. Khởi tạo false (hydration-safe) rồi khôi phục ở effect.
   const [stageDone, setStageDone] = useState(false);
   const panel = useFlowStore((s) => s.panel);
   const chatOpen = useFlowStore((s) => s.chatOpen);
@@ -52,6 +54,12 @@ export default function Home() {
         }
         const body = await r.json();
         store.setUser(body.user);
+        // Đã đăng nhập + trước đó đã qua StageSelect → bỏ qua, vào thẳng canvas.
+        try {
+          if (localStorage.getItem('interiorflow.stageDone') === '1') setStageDone(true);
+        } catch {
+          /* localStorage chặn — bỏ qua */
+        }
       })
       .catch(() => store.setUser(null));
 
@@ -69,12 +77,35 @@ export default function Home() {
   // Chưa đăng nhập → intro điện ảnh (ô đăng nhập nằm ở cảnh cuối).
   // Đăng nhập thành công → LoginForm setUser → re-render sang màn chọn chặng.
   if (user === null) {
-    return <IntroSequence onDone={() => setStageDone(false)} />;
+    return (
+      <IntroSequence
+        onDone={() => {
+          setStageDone(false);
+          try {
+            localStorage.removeItem('interiorflow.stageDone');
+          } catch {
+            /* bỏ qua */
+          }
+        }}
+      />
+    );
   }
 
   // Đã đăng nhập nhưng chưa chọn chặng → MÀN CHỜ CHỌN 3 GIAI ĐOẠN.
   if (!stageDone) {
-    return <StageSelect onEnter={() => setStageDone(true)} />;
+    return (
+      <StageSelect
+        onEnter={() => {
+          setStageDone(true);
+          // Ghi nhớ để lần quay về '/' vào thẳng canvas (thoát các studio route).
+          try {
+            localStorage.setItem('interiorflow.stageDone', '1');
+          } catch {
+            /* bỏ qua */
+          }
+        }}
+      />
+    );
   }
 
   return (
