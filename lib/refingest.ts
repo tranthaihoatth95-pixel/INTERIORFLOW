@@ -11,7 +11,7 @@
  */
 import { loadImage, extractPalette } from '@/lib/imaging';
 
-export type RefUsage = 'ref-render' | 'slide' | 'material' | 'layout' | 'cad' | 'brief';
+export type RefUsage = 'ref-render' | 'slide' | 'material' | 'layout' | 'cad' | 'brief' | 'furniture';
 export type RefType = 'image' | 'pdf' | 'excel' | 'cad' | 'other';
 
 export interface RefAsset {
@@ -40,6 +40,7 @@ export const USAGES: { id: RefUsage; label: string; tone: string }[] = [
   { id: 'ref-render', label: 'Ref nội thất → Render', tone: '#7C9A6B' },
   { id: 'slide', label: 'Ảnh mood → Present/Slide', tone: '#6B84A8' },
   { id: 'material', label: 'Vật liệu', tone: '#A8825A' },
+  { id: 'furniture', label: 'Furniture / đồ rời', tone: '#7A9AA8' },
   { id: 'layout', label: 'Dàn trang / template', tone: '#B0885A' },
   { id: 'cad', label: 'CAD / Bản vẽ', tone: '#9A6B84' },
   { id: 'brief', label: 'Đầu bài / Brief', tone: '#8A8A8A' },

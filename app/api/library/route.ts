@@ -43,7 +43,7 @@ function safeArr(s: string): string[] {
   }
 }
 
-const USAGES = ['ref-render', 'slide', 'material', 'layout', 'cad', 'brief'];
+const USAGES = ['ref-render', 'slide', 'material', 'layout', 'cad', 'brief', 'furniture'];
 
 /** POST { name, category, tags, dataUrl } — lưu file vào ./uploads + metadata DB. */
 export async function POST(req: Request) {

@@ -8,6 +8,7 @@ import { sheetSlide, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { loadImage, extractPalette } from '@/lib/imaging';
 import { USAGES } from '@/lib/refingest';
+import { classifyImage } from '@/lib/classify';
 
 export const ASSET_MIME = 'application/interiorflow-asset-url';
 
@@ -37,7 +38,7 @@ export function LibraryPanel() {
   const [cat, setCat] = useState<string>('Ref nội thất');
   const [query, setQuery] = useState('');
   const [tags, setTags] = useState('');
-  const [usage, setUsage] = useState<string>('ref-render');
+  const [usage, setUsage] = useState<string>('auto');
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -112,9 +113,10 @@ export function LibraryPanel() {
         <select
           value={usage}
           onChange={(e) => setUsage(e.target.value)}
-          title="Công dụng ảnh khi upload — app đọc gu theo mục này (render / slide / vật liệu…)"
+          title="Phân loại ảnh — Tự động: app tự nhận (dàn trang / không gian / bản vẽ / vật liệu / furniture). Hoặc chọn tay để ép."
           className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] outline-none transition-colors focus:border-[var(--accent-ring)]"
         >
+          <option value="auto">⚡ Tự động phân loại</option>
           {USAGES.map((u) => (
             <option key={u.id} value={u.id}>
               {u.label}
@@ -158,6 +160,13 @@ export function LibraryPanel() {
                   } catch {
                     /* ảnh lỗi → vẫn upload, gu để trống */
                   }
+                  // ---- Auto phân loại (local, 0 AI) khi để "Tự động"; chọn tay thì ép ----
+                  const finalUsage =
+                    usage === 'auto'
+                      ? await classifyImage(dataUrl)
+                          .then((r) => r.usage)
+                          .catch(() => 'ref-render')
+                      : usage;
                   await fetch('/api/library', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -166,7 +175,7 @@ export function LibraryPanel() {
                       category: cat,
                       tags,
                       dataUrl,
-                      usage,
+                      usage: finalUsage,
                       palette,
                       w,
                       h,
