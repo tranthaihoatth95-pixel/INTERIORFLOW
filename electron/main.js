@@ -104,14 +104,10 @@ function waitForServer(port, timeoutMs = 60_000) {
 }
 
 // ── Đường dẫn gốc app khi đã đóng gói ────────────────────────────────────────
-// electron-builder giải nén phần Next (được đánh dấu asarUnpack) ra
-// `resources/app.asar.unpacked`. `.next`, `node_modules`, `prisma`... nằm ở đó.
+// asar TẮT (xem package.json build.asar=false) → mã nằm ở `resources/app/`,
+// main.js ở `resources/app/electron/main.js` nên __dirname/.. = resources/app
+// (chứa .next, node_modules, prisma). Dùng chung cho cả dev lẫn packaged.
 function getAppRoot() {
-  if (isPackaged) {
-    // process.resourcesPath = .../resources
-    return path.join(process.resourcesPath, 'app.asar.unpacked');
-  }
-  // Lúc dev: gốc repo = thư mục cha của electron/
   return path.join(__dirname, '..');
 }
 

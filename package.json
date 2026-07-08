@@ -80,15 +80,7 @@
       "!node_modules/.bin/**",
       "!**/*.map"
     ],
-    "asar": true,
-    "asarUnpack": [
-      ".next/**/*",
-      "prisma/**/*",
-      "node_modules/next/**/*",
-      "node_modules/@prisma/**/*",
-      "node_modules/.prisma/**/*",
-      "node_modules/prisma/**/*"
-    ],
+    "asar": false,
     "extraMetadata": {
       "main": "electron/main.js"
     },
