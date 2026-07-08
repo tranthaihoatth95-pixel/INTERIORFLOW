@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { EditorDeck, ShapeKind, Frame, SlideElement } from '@/lib/present-editor/model';
+import type { EditorDeck, ShapeKind, Frame, SlideElement, ImageElement } from '@/lib/present-editor/model';
 import { makeText, makeImage, makeShape, newId, duplicateElement } from '@/lib/present-editor/model';
 import {
   BUILTIN_TEMPLATES,
@@ -30,6 +30,7 @@ import EditorCanvas from './EditorCanvas';
 import Inspector from './Inspector';
 import SlideStrip from './SlideStrip';
 import TemplatePicker from './TemplatePicker';
+import ImageEditor from './ImageEditor';
 
 interface Props {
   initialDeck: EditorDeck;
@@ -41,6 +42,8 @@ export default function PresentEditor({ initialDeck }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [libAssets, setLibAssets] = useState<GuAsset[]>([]);
   const [gu, setGu] = useState<GuProfile | null>(null);
+  // id ảnh đang mở chế độ chỉnh ảnh (nhấp đúp ảnh). null = đóng.
+  const [imageEditId, setImageEditId] = useState<string | null>(null);
 
   // Nạp thư viện Reference (layout/slide templates + gu). Không chặn UI nếu lỗi/empty.
   useEffect(() => {
@@ -93,6 +96,16 @@ export default function PresentEditor({ initialDeck }: Props) {
 
   const palette = ed.deck.palette;
 
+  // Element ảnh đang chỉnh (nếu overlay mở). Tự đóng nếu không còn tồn tại.
+  const imageEditEl = useMemo(() => {
+    if (!imageEditId) return null;
+    const el = ed.slide?.elements.find((e) => e.id === imageEditId);
+    return el && el.kind === 'image' ? (el as ImageElement) : null;
+  }, [imageEditId, ed.slide]);
+  useEffect(() => {
+    if (imageEditId && !imageEditEl) setImageEditId(null);
+  }, [imageEditId, imageEditEl]);
+
   /* ------------------------- actions element ------------------------- */
   const addElement = useCallback(
     (el: SlideElement) => {
@@ -115,6 +128,57 @@ export default function PresentEditor({ initialDeck }: Props) {
         const el = s.elements.find((e) => e.id === id);
         if (el) el.frame = frame;
       }, live);
+    },
+    [ed],
+  );
+
+  // Kéo NHÓM: chụp frame lúc bắt đầu (ref) rồi cộng delta cho mọi phần tử chọn.
+  // Lưu delta cuối để lúc COMMIT (Element gọi 0,0) vẫn giữ đúng vị trí đã kéo.
+  const groupStartRef = useRef<Record<string, Frame> | null>(null);
+  const groupLastDelta = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
+  const onFrameMany = useCallback(
+    (dxPct: number, dyPct: number, live: boolean) => {
+      const s = ed.slide;
+      if (!s) return;
+      // lần move đầu: chụp frame gốc.
+      if (!groupStartRef.current) {
+        const snap: Record<string, Frame> = {};
+        for (const id of ed.selectedIds) {
+          const el = s.elements.find((e) => e.id === id);
+          if (el && !el.locked) snap[id] = { ...el.frame };
+        }
+        groupStartRef.current = snap;
+      }
+      // commit (live=false) với delta 0 → dùng lại delta cuối (Element gửi 0,0 khi thả).
+      const dx = !live && dxPct === 0 && dyPct === 0 ? groupLastDelta.current.dx : dxPct;
+      const dy = !live && dxPct === 0 && dyPct === 0 ? groupLastDelta.current.dy : dyPct;
+      if (live) groupLastDelta.current = { dx, dy };
+      const start = groupStartRef.current;
+      ed.updateSlide((sl) => {
+        for (const el of sl.elements) {
+          const base = start[el.id];
+          if (!base) continue;
+          el.frame = { ...base, x: clampPct(base.x + dx), y: clampPct(base.y + dy) };
+        }
+      }, live);
+      if (!live) {
+        groupStartRef.current = null; // chốt xong → xả snapshot
+        groupLastDelta.current = { dx: 0, dy: 0 };
+      }
+    },
+    [ed],
+  );
+
+  // Alt-kéo: nhân bản element rồi chọn bản mới (Element sẽ tiếp tục kéo bản mới).
+  const onAltDrag = useCallback(
+    (id: string) => {
+      const el = ed.slide?.elements.find((e) => e.id === id);
+      if (!el) return;
+      const copy = duplicateElement(el, false); // giữ nguyên vị trí để kéo tách ra
+      ed.updateSlide((s) => {
+        s.elements.push(copy);
+      });
+      ed.select(copy.id);
     },
     [ed],
   );
@@ -146,51 +210,70 @@ export default function PresentEditor({ initialDeck }: Props) {
     [ed],
   );
 
+  // Xoá TẤT CẢ phần tử đang chọn (đơn hoặc nhóm).
   const onDeleteSelected = useCallback(() => {
-    if (!ed.selectedId) return;
+    if (!ed.selectedIds.length) return;
+    const ids = new Set(ed.selectedIds);
     ed.updateSlide((s) => {
-      s.elements = s.elements.filter((e) => e.id !== ed.selectedId);
+      s.elements = s.elements.filter((e) => !ids.has(e.id));
     });
     ed.select(null);
   }, [ed]);
 
-  // Nhân bản element đang chọn (Ctrl/Cmd+D) → chọn luôn bản mới.
+  // Nhân bản mọi phần tử đang chọn (Ctrl/Cmd+D) → chọn luôn các bản mới.
   const onDuplicateSelected = useCallback(() => {
-    if (!ed.selected) return;
-    const copy = duplicateElement(ed.selected);
+    if (!ed.selectedIds.length) return;
+    const originals = (ed.slide?.elements ?? []).filter((e) => ed.selectedIds.includes(e.id));
+    if (!originals.length) return;
+    const copies = originals.map((e) => duplicateElement(e));
     ed.updateSlide((s) => {
-      s.elements.push(copy);
+      s.elements.push(...copies);
     });
-    ed.select(copy.id);
+    ed.selectMany(copies.map((c) => c.id));
   }, [ed]);
 
   // Clipboard element cục bộ (không đụng clipboard hệ thống — đủ cho copy/paste trong app).
-  const clipboardRef = useRef<SlideElement | null>(null);
+  const clipboardRef = useRef<SlideElement[] | null>(null);
   const onCopySelected = useCallback(() => {
-    if (ed.selected) clipboardRef.current = JSON.parse(JSON.stringify(ed.selected));
-  }, [ed.selected]);
-
-  const onPaste = useCallback(() => {
-    if (!clipboardRef.current) return;
-    const copy = duplicateElement(clipboardRef.current);
-    ed.updateSlide((s) => {
-      s.elements.push(copy);
-    });
-    ed.select(copy.id);
+    const sel = (ed.slide?.elements ?? []).filter((e) => ed.selectedIds.includes(e.id));
+    if (sel.length) clipboardRef.current = JSON.parse(JSON.stringify(sel));
   }, [ed]);
 
-  // Dời element theo phím mũi tên (step nhỏ 0.5%, Shift = 5%). Clamp trong sân khấu.
+  const onPaste = useCallback(() => {
+    if (!clipboardRef.current?.length) return;
+    const copies = clipboardRef.current.map((e) => duplicateElement(e));
+    ed.updateSlide((s) => {
+      s.elements.push(...copies);
+    });
+    ed.selectMany(copies.map((c) => c.id));
+  }, [ed]);
+
+  // Tab: chọn phần tử kế tiếp (vòng lại) — như Canva để duyệt nhanh.
+  const onSelectNext = useCallback(
+    (dir: 1 | -1) => {
+      const els = ed.slide?.elements ?? [];
+      if (!els.length) return;
+      const cur = els.findIndex((e) => e.id === ed.selectedId);
+      const next = ((cur < 0 ? 0 : cur + dir) + els.length) % els.length;
+      ed.select(els[next].id);
+    },
+    [ed],
+  );
+
+  // Dời element (đơn/nhóm) theo phím mũi tên (step nhỏ 0.5%, Shift = 5%). Clamp trong sân khấu.
   const onNudge = useCallback(
     (dx: number, dy: number) => {
-      if (!ed.selectedId) return;
+      if (!ed.selectedIds.length) return;
+      const ids = new Set(ed.selectedIds);
       ed.updateSlide((s) => {
-        const el = s.elements.find((e) => e.id === ed.selectedId);
-        if (!el || el.locked) return;
-        el.frame = {
-          ...el.frame,
-          x: clampPct(el.frame.x + dx),
-          y: clampPct(el.frame.y + dy),
-        };
+        for (const el of s.elements) {
+          if (!ids.has(el.id) || el.locked) continue;
+          el.frame = {
+            ...el.frame,
+            x: clampPct(el.frame.x + dx),
+            y: clampPct(el.frame.y + dy),
+          };
+        }
       });
     },
     [ed],
@@ -332,8 +415,24 @@ export default function PresentEditor({ initialDeck }: Props) {
       }
       // Đang gõ chữ → không đụng gì để tránh xoá nhầm element.
       if (typing) return;
+      // Đang mở chế độ chỉnh ảnh → nhường phím cho overlay (nó tự xử Esc).
+      if (imageEditId) return;
 
       const mod = e.metaKey || e.ctrlKey; // Cmd (mac) hoặc Ctrl (win)
+
+      // Chọn tất cả phần tử trên slide
+      if (mod && (e.key === 'a' || e.key === 'A')) {
+        e.preventDefault();
+        const ids = (ed.slide?.elements ?? []).filter((el) => !el.locked).map((el) => el.id);
+        if (ids.length) ed.selectMany(ids);
+        return;
+      }
+      // Tab: chọn phần tử kế (Shift+Tab: lùi)
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        onSelectNext(e.shiftKey ? -1 : 1);
+        return;
+      }
 
       // Undo / Redo
       if (mod && (e.key === 'z' || e.key === 'Z')) {
@@ -365,7 +464,7 @@ export default function PresentEditor({ initialDeck }: Props) {
         return;
       }
       // Xoá element đang chọn
-      if ((e.key === 'Delete' || e.key === 'Backspace') && ed.selectedId) {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && ed.selectedIds.length) {
         e.preventDefault();
         onDeleteSelected();
         return;
@@ -382,7 +481,7 @@ export default function PresentEditor({ initialDeck }: Props) {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [ed, onDuplicateSelected, onCopySelected, onPaste, onDeleteSelected, onNudge]);
+  }, [ed, onDuplicateSelected, onCopySelected, onPaste, onDeleteSelected, onNudge, onSelectNext, imageEditId]);
 
   return (
     <div
@@ -449,10 +548,15 @@ export default function PresentEditor({ initialDeck }: Props) {
             <EditorCanvas
               slide={ed.slide}
               fonts={ed.deck.fonts}
-              selectedId={ed.selectedId}
+              selectedIds={ed.selectedIds}
               onSelect={ed.select}
+              onToggleSelect={ed.toggleSelect}
+              onSelectMany={ed.selectMany}
               onFrame={onFrame}
+              onFrameMany={onFrameMany}
+              onAltDrag={onAltDrag}
               onEditTextCommit={onEditTextCommit}
+              onEditImage={(id) => setImageEditId(id)}
               onDuplicate={onDuplicateSelected}
               onDelete={onDeleteSelected}
               onZOrder={onZOrder}
@@ -486,6 +590,7 @@ export default function PresentEditor({ initialDeck }: Props) {
               onAlign={onAlign}
               onDuplicate={onDuplicateSelected}
               onDelete={onDeleteSelected}
+              onOpenImageEditor={(id) => setImageEditId(id)}
             />
           )}
         </aside>
@@ -500,6 +605,21 @@ export default function PresentEditor({ initialDeck }: Props) {
         onDelete={onDeleteSlide}
         onMove={onMoveSlide}
       />
+
+      {/* Chế độ chỉnh ảnh (nhấp đúp ảnh) — overlay toàn màn. */}
+      {imageEditId && imageEditEl && (
+        <ImageEditor
+          el={imageEditEl}
+          libAssets={libAssets}
+          onUpdate={(mutate, live) =>
+            ed.updateSlide((s) => {
+              const el = s.elements.find((e) => e.id === imageEditId);
+              if (el && el.kind === 'image') mutate(el);
+            }, live)
+          }
+          onClose={() => setImageEditId(null)}
+        />
+      )}
     </div>
   );
 }

@@ -43,6 +43,7 @@ import {
   AlignCenterHorizontal,
   AlignEndHorizontal,
   RotateCcw,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 /** Kiểu căn element trong sân khấu. */
@@ -59,6 +60,8 @@ interface Props {
   onAlign: (mode: AlignMode) => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  /** mở chế độ chỉnh ảnh (Canva-style) cho ảnh đang chọn. */
+  onOpenImageEditor?: (id: string) => void;
 }
 
 export default function Inspector({
@@ -72,6 +75,7 @@ export default function Inspector({
   onAlign,
   onDuplicate,
   onDelete,
+  onOpenImageEditor,
 }: Props) {
   if (!selected) {
     return (
@@ -123,6 +127,7 @@ export default function Inspector({
         <ImageInspector
           el={selected}
           onUpdate={onUpdateSelected as (m: (el: ImageElement) => void, live?: boolean) => void}
+          onOpenEditor={onOpenImageEditor ? () => onOpenImageEditor(selected.id) : undefined}
         />
       )}
       {selected.kind === 'shape' && (
@@ -352,13 +357,38 @@ function TextInspector({
 function ImageInspector({
   el,
   onUpdate,
+  onOpenEditor,
 }: {
   el: ImageElement;
   onUpdate: (m: (el: ImageElement) => void, live?: boolean) => void;
+  onOpenEditor?: () => void;
 }) {
   const crop = el.crop;
   return (
     <Panel title="Ảnh">
+      {onOpenEditor && (
+        <button
+          type="button"
+          onClick={onOpenEditor}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            width: '100%',
+            padding: '9px',
+            borderRadius: 8,
+            border: '1px solid var(--accent)',
+            background: 'var(--accent-soft)',
+            color: 'var(--accent)',
+            fontSize: 12,
+            cursor: 'pointer',
+          }}
+          title="Mở chế độ chỉnh ảnh (hoặc nhấp đúp ảnh)"
+        >
+          <SlidersHorizontal size={14} /> Chỉnh ảnh (crop · lọc · thay ảnh)
+        </button>
+      )}
       <AdjustControls adjust={el.adjust} onChange={(a, live) => onUpdate((im) => (im.adjust = a), live)} />
       <Field label={`Bo góc ${el.radius ?? 0}%`}>
         <input

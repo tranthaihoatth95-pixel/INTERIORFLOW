@@ -4,8 +4,14 @@
  * components/present-editor/EditorCanvas.tsx — Sân khấu 16:9 chứa các element.
  *
  * Giữ tỉ lệ 16:9 bằng aspect-ratio + width 100%. `containerType:'size'` để cỡ chữ
- * dùng đơn vị cqh (co giãn theo sân khấu). Click nền = bỏ chọn. Vẽ guide căn khi kéo.
- * Sửa text inline: double-click → textarea phủ đúng khung element.
+ * dùng đơn vị cqh (co giãn theo sân khấu). Vẽ guide căn khi kéo.
+ *
+ * Thao tác chọn kiểu Canva:
+ *   - Click nền = bỏ chọn.
+ *   - RÊ trên nền = MARQUEE (khung chọn) → chọn mọi phần tử giao với khung.
+ *   - Shift/⌘-click phần tử = thêm/bớt khỏi nhóm (onToggle).
+ *   - Kéo khi nhiều phần tử chọn = dời cả nhóm.
+ * Sửa chữ: nhấp đúp → textarea phủ khung. Sửa ảnh: nhấp đúp → onEditImage.
  */
 
 import { useRef, useState } from 'react';
@@ -23,10 +29,16 @@ const CANVAS_FONT: Record<string, string> = {
 interface Props {
   slide: EditorSlide;
   fonts: string;
-  selectedId: string | null;
+  selectedIds: string[];
   onSelect: (id: string | null) => void;
+  onToggleSelect: (id: string) => void;
+  onSelectMany: (ids: string[]) => void;
   onFrame: (id: string, frame: Frame, live: boolean) => void;
+  /** dời cả nhóm đang chọn theo delta % (cộng dồn từ frame lúc bắt đầu). */
+  onFrameMany: (dxPct: number, dyPct: number, live: boolean) => void;
+  onAltDrag: (id: string) => void;
   onEditTextCommit: (id: string, text: string) => void;
+  onEditImage: (id: string) => void;
   /** thao tác cho menu chuột phải trên element. */
   onDuplicate: () => void;
   onDelete: () => void;
@@ -42,13 +54,26 @@ interface MenuState {
   locked: boolean;
 }
 
+/** Khung marquee đang vẽ (theo % sân khấu). */
+interface Marquee {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
 export default function EditorCanvas({
   slide,
   fonts,
-  selectedId,
+  selectedIds,
   onSelect,
+  onToggleSelect,
+  onSelectMany,
   onFrame,
+  onFrameMany,
+  onAltDrag,
   onEditTextCommit,
+  onEditImage,
   onDuplicate,
   onDelete,
   onZOrder,
@@ -58,9 +83,69 @@ export default function EditorCanvas({
   const [guides, setGuides] = useState<Guides | null>(null);
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
   const [menu, setMenu] = useState<MenuState | null>(null);
+  const [marquee, setMarquee] = useState<Marquee | null>(null);
+  const marqueeRef = useRef<{ x0: number; y0: number } | null>(null);
+  // giữ khung marquee mới nhất (không lệ thuộc re-render) để pointerup đọc chính xác.
+  const lastMarquee = useRef<Marquee | null>(null);
 
   const editingEl =
     editing && (slide.elements.find((e) => e.id === editing.id) as TextElement | undefined);
+  const multi = selectedIds.length > 1;
+
+  // px trong stage → % sân khấu.
+  function toPct(clientX: number, clientY: number) {
+    const r = stageRef.current?.getBoundingClientRect();
+    if (!r) return { x: 0, y: 0 };
+    return { x: ((clientX - r.left) / r.width) * 100, y: ((clientY - r.top) / r.height) * 100 };
+  }
+
+  function onStageDown(e: React.PointerEvent) {
+    if (e.target !== stageRef.current) return; // chỉ khi nhấn trúng nền
+    setMenu(null);
+    if (!e.shiftKey) onSelect(null);
+    const p = toPct(e.clientX, e.clientY);
+    marqueeRef.current = { x0: p.x, y0: p.y };
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      /* pointer capture không bắt buộc — bỏ qua nếu môi trường chặn */
+    }
+  }
+  function onStageMove(e: React.PointerEvent) {
+    if (!marqueeRef.current) return;
+    const p = toPct(e.clientX, e.clientY);
+    const m = { x0: marqueeRef.current.x0, y0: marqueeRef.current.y0, x1: p.x, y1: p.y };
+    lastMarquee.current = m;
+    setMarquee(m);
+  }
+  function onStageUp(e: React.PointerEvent) {
+    if (!marqueeRef.current) return;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+    const m = lastMarquee.current;
+    marqueeRef.current = null;
+    lastMarquee.current = null;
+    setMarquee(null);
+    if (!m) return;
+    const rx0 = Math.min(m.x0, m.x1);
+    const ry0 = Math.min(m.y0, m.y1);
+    const rx1 = Math.max(m.x0, m.x1);
+    const ry1 = Math.max(m.y0, m.y1);
+    // khung quá nhỏ = coi như click nền (đã bỏ chọn ở down).
+    if (rx1 - rx0 < 1.2 && ry1 - ry0 < 1.2) return;
+    const hit = slide.elements
+      .filter((el) => !el.locked)
+      .filter((el) => {
+        const f = el.frame;
+        // giao nhau (overlap) giữa khung marquee và bbox element.
+        return f.x < rx1 && f.x + f.w > rx0 && f.y < ry1 && f.y + f.h > ry0;
+      })
+      .map((el) => el.id);
+    if (hit.length) onSelectMany(hit);
+  }
 
   return (
     <div
@@ -78,12 +163,10 @@ export default function EditorCanvas({
         userSelect: 'none',
       }}
       ref={stageRef}
-      onPointerDown={(e) => {
-        if (e.target === stageRef.current) onSelect(null);
-        setMenu(null); // click ra ngoài đóng menu chuột phải
-      }}
+      onPointerDown={onStageDown}
+      onPointerMove={onStageMove}
+      onPointerUp={onStageUp}
       onContextMenu={(e) => {
-        // chuột phải trên nền → không hiện menu trình duyệt, chỉ bỏ chọn
         if (e.target === stageRef.current) {
           e.preventDefault();
           setMenu(null);
@@ -110,20 +193,24 @@ export default function EditorCanvas({
           key={el.id}
           el={el}
           fonts={fonts}
-          selected={el.id === selectedId}
+          selected={selectedIds.includes(el.id)}
+          multi={multi && selectedIds.includes(el.id)}
           stageRef={stageRef}
           onSelect={() => onSelect(el.id)}
+          onToggle={() => onToggleSelect(el.id)}
           onFrame={(frame, live) => onFrame(el.id, frame, live)}
+          onFrameMany={onFrameMany}
+          onAltDrag={() => onAltDrag(el.id)}
           onGuides={setGuides}
           onEditText={(id) => {
             const t = slide.elements.find((x) => x.id === id) as TextElement | undefined;
             if (t) setEditing({ id, text: t.text });
           }}
+          onEditImage={onEditImage}
           onContextMenu={(e) => {
-            // chuột phải trên element → chọn nó + mở menu tại vị trí con trỏ (px trong stage)
             e.preventDefault();
             e.stopPropagation();
-            onSelect(el.id);
+            if (!selectedIds.includes(el.id)) onSelect(el.id);
             const rect = stageRef.current?.getBoundingClientRect();
             setMenu({
               x: rect ? e.clientX - rect.left : 0,
@@ -134,6 +221,22 @@ export default function EditorCanvas({
           }}
         />
       ))}
+
+      {/* khung marquee */}
+      {marquee && (
+        <div
+          style={{
+            position: 'absolute',
+            left: `${Math.min(marquee.x0, marquee.x1)}%`,
+            top: `${Math.min(marquee.y0, marquee.y1)}%`,
+            width: `${Math.abs(marquee.x1 - marquee.x0)}%`,
+            height: `${Math.abs(marquee.y1 - marquee.y0)}%`,
+            border: '1px solid var(--accent)',
+            background: 'var(--accent-soft)',
+            pointerEvents: 'none',
+          }}
+        />
+      )}
 
       {/* menu chuột phải trên element */}
       {menu && (
@@ -228,6 +331,7 @@ export default function EditorCanvas({
             outline: 'none',
             resize: 'none',
             padding: 0,
+            zIndex: 30,
           }}
         />
       )}

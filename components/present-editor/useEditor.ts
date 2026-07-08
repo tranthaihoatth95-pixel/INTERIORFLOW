@@ -6,6 +6,10 @@
  * KHÔNG dùng lib/store.ts (thuộc quyền agent khác). Toàn bộ state deck + selection +
  * undo/redo nằm trong hook này (useReducer). Model phẳng serialize được.
  *
+ * Selection ĐA PHẦN TỬ (như Canva): giữ mảng `selectedIds`. `selectedId` (số ít) =
+ * phần tử "chính" (cuối mảng) để inspector 1-phần-tử + code cũ vẫn chạy. Shift-click
+ * thêm/bớt, rê chọn (marquee) đặt cả mảng, kéo nhóm dời tất cả.
+ *
  * Hydration-safe: KHÔNG đọc window/localStorage trong render body.
  */
 
@@ -20,7 +24,8 @@ import {
 interface State {
   deck: EditorDeck;
   currentSlide: number;
-  selectedId: string | null;
+  /** danh sách id đang chọn (thứ tự chọn; cuối = phần tử chính). */
+  selectedIds: string[];
   past: EditorDeck[];
   future: EditorDeck[];
 }
@@ -29,7 +34,9 @@ type Action =
   | { type: 'commit'; deck: EditorDeck } // ghi có undo
   | { type: 'live'; deck: EditorDeck } // ghi KHÔNG snapshot (khi đang kéo)
   | { type: 'selectSlide'; index: number }
-  | { type: 'select'; id: string | null }
+  | { type: 'select'; id: string | null } // đặt lại selection = 1 (hoặc rỗng)
+  | { type: 'selectMany'; ids: string[] } // đặt lại cả mảng (marquee)
+  | { type: 'toggleSelect'; id: string } // shift-click: thêm/bớt
   | { type: 'undo' }
   | { type: 'redo' };
 
@@ -50,10 +57,21 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         currentSlide: Math.max(0, Math.min(action.index, state.deck.slides.length - 1)),
-        selectedId: null,
+        selectedIds: [],
       };
     case 'select':
-      return { ...state, selectedId: action.id };
+      return { ...state, selectedIds: action.id ? [action.id] : [] };
+    case 'selectMany':
+      return { ...state, selectedIds: [...action.ids] };
+    case 'toggleSelect': {
+      const has = state.selectedIds.includes(action.id);
+      return {
+        ...state,
+        selectedIds: has
+          ? state.selectedIds.filter((x) => x !== action.id)
+          : [...state.selectedIds, action.id],
+      };
+    }
     case 'undo': {
       if (!state.past.length) return state;
       const prev = state.past[state.past.length - 1];
@@ -63,7 +81,7 @@ function reducer(state: State, action: Action): State {
         past: state.past.slice(0, -1),
         future: [state.deck, ...state.future].slice(0, MAX_HISTORY),
         currentSlide: Math.min(state.currentSlide, prev.slides.length - 1),
-        selectedId: null,
+        selectedIds: [],
       };
     }
     case 'redo': {
@@ -75,7 +93,7 @@ function reducer(state: State, action: Action): State {
         past: [...state.past, state.deck].slice(-MAX_HISTORY),
         future: state.future.slice(1),
         currentSlide: Math.min(state.currentSlide, next.slides.length - 1),
-        selectedId: null,
+        selectedIds: [],
       };
     }
     default:
@@ -87,14 +105,18 @@ export function useEditor(initial: EditorDeck) {
   const [state, dispatch] = useReducer(reducer, undefined, () => ({
     deck: initial,
     currentSlide: 0,
-    selectedId: null,
+    selectedIds: [],
     past: [],
     future: [],
   }));
 
   const slide = state.deck.slides[state.currentSlide];
+  // phần tử "chính" = id cuối mảng (phần tử vừa chọn/click gần nhất).
+  const selectedId = state.selectedIds.length
+    ? state.selectedIds[state.selectedIds.length - 1]
+    : null;
   const selected: SlideElement | null =
-    (slide?.elements.find((e) => e.id === state.selectedId) as SlideElement | undefined) ?? null;
+    (slide?.elements.find((e) => e.id === selectedId) as SlideElement | undefined) ?? null;
 
   /** Cập nhật deck bằng một hàm mutate trên bản clone. `live` = không tạo bước undo. */
   const update = useCallback(
@@ -117,22 +139,24 @@ export function useEditor(initial: EditorDeck) {
     [update, state.currentSlide],
   );
 
-  /** Cập nhật element đang chọn. */
+  /** Cập nhật element đang chọn (phần tử chính). */
   const updateSelected = useCallback(
     (mutate: (el: SlideElement) => void, live = false) => {
-      if (!state.selectedId) return;
+      if (!selectedId) return;
       updateSlide((s) => {
-        const el = s.elements.find((e) => e.id === state.selectedId);
+        const el = s.elements.find((e) => e.id === selectedId);
         if (el) mutate(el);
       }, live);
     },
-    [updateSlide, state.selectedId],
+    [updateSlide, selectedId],
   );
 
   const actions = useMemo(
     () => ({
       selectSlide: (index: number) => dispatch({ type: 'selectSlide', index }),
       select: (id: string | null) => dispatch({ type: 'select', id }),
+      selectMany: (ids: string[]) => dispatch({ type: 'selectMany', ids }),
+      toggleSelect: (id: string) => dispatch({ type: 'toggleSelect', id }),
       undo: () => dispatch({ type: 'undo' }),
       redo: () => dispatch({ type: 'redo' }),
     }),
@@ -143,7 +167,8 @@ export function useEditor(initial: EditorDeck) {
     deck: state.deck,
     currentSlide: state.currentSlide,
     slide,
-    selectedId: state.selectedId,
+    selectedId,
+    selectedIds: state.selectedIds,
     selected,
     canUndo: state.past.length > 0,
     canRedo: state.future.length > 0,

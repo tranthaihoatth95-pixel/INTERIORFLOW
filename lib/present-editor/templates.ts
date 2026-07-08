@@ -826,6 +826,196 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
       return { id: newId('sld'), background: c.light, elements: els, templateId: 'catalog-index' };
     },
   },
+  {
+    id: 'compare',
+    name: 'So sánh (2 phương án)',
+    group: 'builtin',
+    category: 'Nội dung',
+    build: (ctx) => {
+      const c = pal(ctx.palette);
+      const els: SlideElement[] = [];
+      els.push(
+        makeText({
+          text: ctx.title || 'So sánh phương án',
+          role: 'title',
+          frame: { x: 6, y: 8, w: 88, h: 10, rotation: 0 },
+          fontSize: 5.4,
+          color: c.dark,
+          bold: true,
+          align: 'center',
+        }),
+      );
+      const body = ctx.body || [];
+      const half = Math.ceil(body.length / 2) || 1;
+      // 2 cột: mỗi cột có ảnh trên (hoặc placeholder) + tiêu đề nhỏ + gạch đầu dòng.
+      const cols: { x: number; label: string; img?: string; lines: string[] }[] = [
+        { x: 6, label: 'Phương án A', img: imgAt(ctx, 0), lines: body.slice(0, half) },
+        { x: 52, label: 'Phương án B', img: imgAt(ctx, 1), lines: body.slice(half) },
+      ];
+      for (const col of cols) {
+        els.push(
+          imgSlot(col.img, { x: col.x, y: 22, w: 42, h: 34, rotation: 0 }, c, { radius: 4 }),
+        );
+        els.push(
+          makeText({
+            text: col.label.toUpperCase(),
+            role: 'kicker',
+            frame: { x: col.x, y: 58, w: 42, h: 5, rotation: 0 },
+            fontSize: 2.4,
+            color: c.accent,
+            bold: true,
+            tracking: 2,
+          }),
+        );
+        els.push(
+          makeText({
+            text: (col.lines.length ? col.lines : ['Ưu điểm 1', 'Ưu điểm 2'])
+              .map((b) => `• ${b.replace(/^[-•]\s*/, '')}`)
+              .join('\n'),
+            role: 'body',
+            frame: { x: col.x, y: 64, w: 42, h: 28, rotation: 0 },
+            fontSize: 2.6,
+            color: c.dark,
+            lineHeight: 1.4,
+          }),
+        );
+      }
+      // đường phân cách giữa
+      els.push(
+        makeShape('line', {
+          frame: { x: 49.6, y: 22, w: 0.8, h: 70, rotation: 90 },
+          stroke: c.muted,
+          strokeWidth: 1.5,
+        }),
+      );
+      return { id: newId('sld'), background: c.light, elements: els, templateId: 'compare' };
+    },
+  },
+  {
+    id: 'big-stat',
+    name: 'Số liệu lớn (3 chỉ số)',
+    group: 'builtin',
+    category: 'Nội dung',
+    build: (ctx) => {
+      const c = pal(ctx.palette);
+      const els: SlideElement[] = [];
+      if (ctx.kicker)
+        els.push(
+          makeText({
+            text: ctx.kicker.toUpperCase(),
+            role: 'kicker',
+            frame: { x: 6, y: 12, w: 88, h: 5, rotation: 0 },
+            fontSize: 2.2,
+            color: c.accent,
+            bold: true,
+            tracking: 3,
+            align: 'center',
+          }),
+        );
+      els.push(
+        makeText({
+          text: ctx.title || 'Những con số biết nói',
+          role: 'title',
+          frame: { x: 10, y: 18, w: 80, h: 10, rotation: 0 },
+          fontSize: 5,
+          color: c.dark,
+          bold: true,
+          align: 'center',
+        }),
+      );
+      // 3 ô số lớn — số lấy từ 3 dòng body đầu (nếu có), nhãn = phần chữ sau số.
+      const body = ctx.body || [];
+      const stats = [0, 1, 2].map((i) => body[i] ?? '');
+      const cols = [8, 37, 66];
+      stats.forEach((raw, i) => {
+        const m = raw.match(/^\s*([^\s—:-]+)\s*[—:-]?\s*(.*)$/);
+        const num = m?.[1] || ['100%', '3', '24'][i];
+        const label = m?.[2] || 'Chỉ số';
+        els.push(
+          makeText({
+            text: num,
+            role: 'free',
+            frame: { x: cols[i], y: 40, w: 26, h: 18, rotation: 0 },
+            fontSize: 11,
+            color: c.accent,
+            bold: true,
+            align: 'center',
+            lineHeight: 1,
+          }),
+        );
+        els.push(
+          makeText({
+            text: label,
+            role: 'body',
+            frame: { x: cols[i], y: 62, w: 26, h: 10, rotation: 0 },
+            fontSize: 2.4,
+            color: c.dark,
+            align: 'center',
+            lineHeight: 1.3,
+          }),
+        );
+      });
+      return { id: newId('sld'), background: c.light, elements: els, templateId: 'big-stat' };
+    },
+  },
+  {
+    id: 'agenda',
+    name: 'Mục lục / Agenda',
+    group: 'builtin',
+    category: 'Bìa & Mở đầu',
+    build: (ctx) => {
+      const c = pal(ctx.palette);
+      const els: SlideElement[] = [];
+      els.push(
+        makeText({
+          text: (ctx.kicker || 'Nội dung').toUpperCase(),
+          role: 'kicker',
+          frame: { x: 8, y: 14, w: 50, h: 5, rotation: 0 },
+          fontSize: 2.2,
+          color: c.accent,
+          bold: true,
+          tracking: 3,
+        }),
+      );
+      els.push(
+        makeText({
+          text: ctx.title || 'Mục lục',
+          role: 'title',
+          frame: { x: 8, y: 20, w: 50, h: 16, rotation: 0 },
+          fontSize: 7,
+          color: c.dark,
+          bold: true,
+        }),
+      );
+      // danh sách mục đánh số 01, 02… ở cột phải.
+      const items = (ctx.body && ctx.body.length ? ctx.body : ['Bối cảnh', 'Concept', 'Không gian', 'Vật liệu', 'Kết luận']).slice(0, 6);
+      const startY = 16;
+      const step = Math.min(12, (80 - startY) / items.length);
+      items.forEach((it, i) => {
+        els.push(
+          makeText({
+            text: String(i + 1).padStart(2, '0'),
+            role: 'free',
+            frame: { x: 56, y: startY + i * step, w: 8, h: step, rotation: 0 },
+            fontSize: 3.4,
+            color: c.accent,
+            bold: true,
+          }),
+        );
+        els.push(
+          makeText({
+            text: it.replace(/^[-•]\s*/, ''),
+            role: 'body',
+            frame: { x: 65, y: startY + i * step, w: 30, h: step, rotation: 0 },
+            fontSize: 3,
+            color: c.dark,
+            lineHeight: 1.1,
+          }),
+        );
+      });
+      return { id: newId('sld'), background: c.light, elements: els, templateId: 'agenda' };
+    },
+  },
 ];
 
 /* --------------------------- TỪ THƯ VIỆN --------------------------- */

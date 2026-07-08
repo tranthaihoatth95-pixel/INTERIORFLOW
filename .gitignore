@@ -17,3 +17,4 @@ test drag/
 
 # APK build artifact (phục vụ LAN download, không commit)
 public/InteriorFlow.apk
+test-input/

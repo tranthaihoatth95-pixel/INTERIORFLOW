@@ -20,7 +20,7 @@ import type { EditorTemplate, TemplateCategory } from '@/lib/present-editor/temp
 import { CATEGORY_ORDER } from '@/lib/present-editor/templates';
 import type { FontPairing } from '@/lib/slides';
 import { renderEditorSlide } from '@/lib/present-editor/render';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Search } from 'lucide-react';
 
 interface Props {
   templates: EditorTemplate[];
@@ -47,11 +47,18 @@ export default function TemplatePicker({
   palette,
   fonts,
 }: Props) {
-  const suggested = templates.find((t) => t.id === suggestedId) ?? null;
-  const builtin = templates.filter((t) => t.group === 'builtin');
-  const library = templates.filter((t) => t.group === 'library');
+  const [query, setQuery] = useState('');
+  const q = query.trim().toLowerCase();
+  const match = (t: EditorTemplate) =>
+    !q || t.name.toLowerCase().includes(q) || (t.category ?? '').toLowerCase().includes(q);
+
+  const suggested = q ? null : templates.find((t) => t.id === suggestedId) ?? null;
+  const allBuiltin = templates.filter((t) => t.group === 'builtin');
+  const builtin = allBuiltin.filter(match);
+  const library = templates.filter((t) => t.group === 'library' && match(t));
 
   // Render preview cho từng builtin template → dataURL (cache theo id + palette).
+  // Render TẤT CẢ builtin (không phụ thuộc bộ lọc tìm kiếm) để gõ tìm không render lại.
   const [previews, setPreviews] = useState<Record<string, string>>({});
   const paletteKey = (palette ?? []).join(',');
   const doneRef = useRef<Set<string>>(new Set());
@@ -62,7 +69,7 @@ export default function TemplatePicker({
     setPreviews({});
     let alive = true;
     (async () => {
-      for (const t of builtin) {
+      for (const t of allBuiltin) {
         if (!alive) return;
         if (doneRef.current.has(t.id)) continue;
         try {
@@ -80,7 +87,7 @@ export default function TemplatePicker({
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paletteKey, fonts, builtin.length]);
+  }, [paletteKey, fonts, allBuiltin.length]);
 
   // builtin gom theo category, giữ thứ tự CATEGORY_ORDER.
   const grouped = useMemo(() => {
@@ -93,8 +100,39 @@ export default function TemplatePicker({
     return CATEGORY_ORDER.filter((c) => map.has(c)).map((c) => ({ cat: c, items: map.get(c)! }));
   }, [builtin]);
 
+  const empty = !builtin.length && !library.length;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* ô tìm mẫu */}
+      <div style={{ position: 'relative' }}>
+        <Search
+          size={14}
+          style={{ position: 'absolute', left: 9, top: 9, color: 'var(--t4)', pointerEvents: 'none' }}
+        />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Tìm mẫu (bìa, moodboard, so sánh…)"
+          style={{
+            width: '100%',
+            padding: '7px 9px 7px 28px',
+            borderRadius: 8,
+            border: '1px solid var(--border)',
+            background: 'var(--field)',
+            color: 'var(--t1)',
+            fontSize: 12,
+          }}
+        />
+      </div>
+
+      {empty && (
+        <p style={{ fontSize: 12, color: 'var(--t4)', lineHeight: 1.5 }}>
+          Không có mẫu khớp “{query}”. Xoá từ khoá để xem tất cả.
+        </p>
+      )}
+
       {suggested && (
         <section>
           <Header icon={<Sparkles size={13} />}>Gợi ý cho slide này</Header>
@@ -128,7 +166,7 @@ export default function TemplatePicker({
           </Grid>
         </section>
       )}
-      {library.length === 0 && (
+      {library.length === 0 && !q && (
         <p style={{ fontSize: 11, color: 'var(--t4)', lineHeight: 1.4 }}>
           Chưa có ảnh bố cục trong thư viện. Gắn thẻ usage “layout” cho ảnh trong Reference để
           dùng làm template.
