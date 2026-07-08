@@ -130,6 +130,7 @@ interface FlowState {
 
   addNode: (defType: string, position: { x: number; y: number }) => void;
   addNote: (position: { x: number; y: number }) => void;
+  deleteNode: (id: string) => void;
   duplicateSelected: () => void;
   updateParam: (nodeId: string, paramId: string, value: string | number) => void;
   updateNote: (nodeId: string, note: string) => void;
@@ -470,6 +471,14 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       data: { defType: 'note', params: {}, run: { status: 'idle', progress: 0 }, note: '' },
     };
     set((s) => ({ nodes: [...s.nodes, node], tool: 'select' }));
+  },
+
+  deleteNode: (id) => {
+    get().snapshot();
+    set((s) => ({
+      nodes: s.nodes.filter((n) => n.id !== id),
+      edges: s.edges.filter((e) => e.source !== id && e.target !== id),
+    }));
   },
 
   duplicateSelected: () => {

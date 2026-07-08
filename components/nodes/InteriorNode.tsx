@@ -3,7 +3,7 @@
 import { memo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Play, Loader2, CircleAlert, CircleCheck, RotateCcw, ImagePlus, Paintbrush } from 'lucide-react';
+import { Play, Loader2, CircleAlert, CircleCheck, RotateCcw, ImagePlus, Paintbrush, X } from 'lucide-react';
 import { getDefinition } from '@/lib/nodes/registry';
 import { useFlowStore, type FlowNode } from '@/lib/store';
 import { runNode } from '@/lib/execution';
@@ -71,11 +71,13 @@ function ParamField({
   }
 
   if (param.kind === 'slider') {
+    // node cũ (autosave) có thể thiếu param mới → value undefined → NaN. Fallback về default.
+    const sv = value == null || Number.isNaN(Number(value)) ? param.default : Number(value);
     return (
       <label className="block">
         <span className="mb-1 flex justify-between text-[10px] uppercase tracking-wider text-[var(--t4)]">
           {param.label}
-          <span className="text-[var(--t3)]">{Number(value).toFixed(2)}</span>
+          <span className="text-[var(--t3)]">{sv.toFixed(2)}</span>
         </span>
         <input
           type="range"
@@ -83,7 +85,7 @@ function ParamField({
           min={param.min}
           max={param.max}
           step={param.step}
-          value={Number(value)}
+          value={sv}
           onChange={(e) => updateParam(nodeId, param.id, Number(e.target.value))}
         />
       </label>
@@ -164,6 +166,7 @@ function StatusIcon({ status }: { status: string }) {
 function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
   const def = getDefinition(data.defType);
   const meta = CATEGORY_META[def.category];
+  const deleteNode = useFlowStore((s) => s.deleteNode);
   const { status, progress, error } = data.run;
   const busy = status === 'running' || status === 'queued';
 
@@ -195,6 +198,14 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
           className="nodrag grid h-6 w-6 place-items-center rounded-md bg-[var(--accent-strong)] text-white transition-colors hover:bg-[var(--accent)] disabled:opacity-40"
         >
           {status === 'error' ? <RotateCcw size={12} /> : <Play size={12} className="translate-x-[1px]" />}
+        </button>
+        <button
+          title="Xoá node"
+          disabled={busy}
+          onClick={() => deleteNode(id)}
+          className="nodrag grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-red-500/15 hover:text-red-400 disabled:opacity-40"
+        >
+          <X size={13} />
         </button>
       </div>
 
