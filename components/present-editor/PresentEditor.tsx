@@ -389,7 +389,7 @@ export default function PresentEditor({ initialDeck }: Props) {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100vh',
+        height: '100%',
         background: 'var(--bg)',
         color: 'var(--t1)',
       }}

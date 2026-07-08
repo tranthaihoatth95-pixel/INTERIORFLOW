@@ -7,14 +7,23 @@
  * biệt lập. Editor tự nạp template từ thư viện Reference (/api/library) nếu có; nếu
  * trống thì dùng template builtin + ảnh /public/covers.
  *
+ * StudioBar ở đầu để chuyển Node ↔ Dàn trang ↔ Chỉnh ảnh + luôn có đường về app chính.
  * Hydration-safe: deck mẫu dựng trong useState initializer (chạy 1 lần ở client).
  */
 
 import { useState } from 'react';
 import PresentEditor from '@/components/present-editor/PresentEditor';
 import { makeSampleDeck } from '@/lib/present-editor/sample';
+import StudioBar from '@/components/studio/StudioBar';
 
 export default function PresentEditorPage() {
   const [deck] = useState(makeSampleDeck);
-  return <PresentEditor initialDeck={deck} />;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
+      <StudioBar active="present" />
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <PresentEditor initialDeck={deck} />
+      </div>
+    </div>
+  );
 }

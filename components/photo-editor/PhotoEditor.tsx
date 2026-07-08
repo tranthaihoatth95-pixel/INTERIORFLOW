@@ -257,7 +257,7 @@ export default function PhotoEditor({ initialDoc }: Props) {
   const selectedIsAdj = ed.selected?.kind === 'adjustment';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg)', color: 'var(--t1)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', color: 'var(--t1)' }}>
       <PhotoToolbar
         tool={tool}
         onTool={setTool}
