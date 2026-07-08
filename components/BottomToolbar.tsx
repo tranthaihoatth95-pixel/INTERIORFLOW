@@ -58,7 +58,7 @@ export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
       initial={{ opacity: 0, y: 20, x: '-50%' }}
       animate={{ opacity: 1, y: 0, x: '-50%' }}
       transition={springSheet}
-      className="mat-card no-scrollbar pointer-events-auto absolute bottom-4 left-1/2 z-20 flex max-w-[calc(100vw-1rem)] items-center gap-0.5 overflow-x-auto rounded-[14px] border border-[var(--mat-hairline)] px-1.5 py-1 shadow-xl shadow-black/30 [&>*]:shrink-0"
+      className="if-bottombar mat-card no-scrollbar pointer-events-auto absolute bottom-4 left-1/2 z-20 flex max-w-[calc(100vw-1rem)] items-center gap-0.5 overflow-x-auto rounded-[14px] border border-[var(--mat-hairline)] px-1.5 py-1 shadow-xl shadow-black/30 [&>*]:shrink-0"
     >
       <Btn title="Select (V)" active={tool === 'select'} onClick={() => setTool('select')}>
         <MousePointer2 size={15} />

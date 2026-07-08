@@ -22,8 +22,31 @@ import PresentOverlay from '@/components/present/PresentOverlay';
 import { StageSelect } from '@/components/StageSelect';
 import { useFlowStore } from '@/lib/store';
 
+/**
+ * Ngưỡng bề rộng phân biệt màn NGOÀI (cover, hẹp) vs màn TRONG (unfolded).
+ * Oppo Find N6: cover ~410px logic · inner ~884px. Chọn 600px làm ranh an toàn.
+ */
+const COVER_MAX_WIDTH = 600;
+
+/**
+ * Hook đọc bề rộng viewport — SSR-safe (khởi tạo undefined, đo trong effect để tránh
+ * hydration mismatch). Tự cập nhật khi gập/mở máy (resize).
+ */
+function useIsCoverScreen(): boolean {
+  const [isCover, setIsCover] = useState(false);
+  useEffect(() => {
+    const check = () => setIsCover(window.innerWidth < COVER_MAX_WIDTH);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return isCover;
+}
+
 export default function Home() {
   const user = useFlowStore((s) => s.user);
+  // Màn ngoài (cover) hẹp → chỉ cho XEM Dashboard; mọi thao tác ở màn trong.
+  const isCover = useIsCoverScreen();
   // Sau khi auth thành công → hiện màn CHỌN 3 CHẶNG (StageSelect) trước canvas.
   // stageDone bật khi người dùng đã chọn chặng & vào canvas.
   // Persist để quay về '/' (vd thoát khỏi /present-editor hay /photo-editor) vào THẲNG
@@ -104,6 +127,16 @@ export default function Home() {
           }
         }}
       />
+    );
+  }
+
+  // MÀN HÌNH NGOÀI (cover, hẹp): chỉ hiện Dashboard read-only — KHÔNG canvas/studio/
+  // toolbar thao tác. Khi mở gập máy (width tăng ≥600) hook tự cập nhật → về full app.
+  if (isCover) {
+    return (
+      <div className="h-[100dvh] overflow-hidden bg-[var(--bg)]">
+        <Dashboard coverMode />
+      </div>
     );
   }
 

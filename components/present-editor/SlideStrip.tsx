@@ -160,6 +160,7 @@ function IconBtn({
       title={title}
       onClick={onClick}
       disabled={disabled}
+      className="pe-strip-btn"
       style={{
         width: 24,
         height: 24,

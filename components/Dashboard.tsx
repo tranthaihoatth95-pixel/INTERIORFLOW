@@ -84,12 +84,21 @@ function StatCard({ icon: Icon, label, value, sub }: { icon: typeof FolderKanban
   );
 }
 
-export function Dashboard() {
+/**
+ * Dashboard tổng quan.
+ * - Mặc định: overlay toàn màn (gated dashboardOpen) — có thao tác (mở flow, tạo dự án).
+ * - coverMode: dùng cho MÀN HÌNH NGOÀI của foldable (cover, hẹp) → chỉ XEM (read-only):
+ *   render inline (không overlay/không cần store), ẩn nút thao tác, hàng flow không bấm mở.
+ */
+export function Dashboard({ coverMode = false }: { coverMode?: boolean }) {
   const open = useFlowStore((s) => s.dashboardOpen);
   const setOpen = useFlowStore((s) => s.setDashboardOpen);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
+
+  // Ở cover luôn coi như "mở" để nạp dữ liệu + hiển thị inline.
+  const shown = coverMode || open;
 
   const load = useCallback(() => {
     setLoading(true);
@@ -101,17 +110,19 @@ export function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (open) load();
-  }, [open, load]);
+    if (shown) load();
+  }, [shown, load]);
 
   useEffect(() => {
-    if (!open) return;
+    // Esc chỉ đóng ở chế độ overlay; cover-mode không có gì để đóng.
+    if (!open || coverMode) return;
     const h = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
-  }, [open, setOpen]);
+  }, [open, coverMode, setOpen]);
 
   const onOpenFlow = async (id: string) => {
+    if (coverMode) return; // màn ngoài read-only — không mở flow
     await openFlow(id);
     setOpen(false);
   };
@@ -128,22 +139,20 @@ export function Dashboard() {
     }
   };
 
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          variants={fade}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          className="fixed inset-0 z-50 flex flex-col bg-[var(--bg)]"
-        >
-          {/* thanh trên */}
-          <div className="mat-header flex h-14 shrink-0 items-center gap-3 border-b border-[var(--border)] px-4 sm:px-6">
-            <FolderKanban size={18} className="text-[var(--accent)]" />
-            <h1 className="text-base font-semibold tracking-tight text-[var(--t1)]">Tổng quan</h1>
-            <span className="hidden text-xs text-[var(--t4)] sm:block">Dự án · Team · Hoạt động</span>
-            <div className="flex-1" />
+  // Nội dung dùng chung cho cả overlay lẫn cover-mode.
+  const inner = (
+    <>
+      {/* thanh trên */}
+      <div className="mat-header flex h-14 shrink-0 items-center gap-3 border-b border-[var(--border)] px-4 sm:px-6">
+        <FolderKanban size={18} className="text-[var(--accent)]" />
+        <h1 className="text-base font-semibold tracking-tight text-[var(--t1)]">Tổng quan</h1>
+        <span className="hidden text-xs text-[var(--t4)] sm:block">Dự án · Team · Hoạt động</span>
+        <div className="flex-1" />
+        {/* Cover (màn ngoài) = CHỈ XEM → ẩn nút thao tác, thay bằng gợi ý mở màn trong. */}
+        {coverMode ? (
+          <span className="text-[11px] text-[var(--t4)]">Mở màn hình trong để thao tác</span>
+        ) : (
+          <>
             <motion.button
               {...pressable}
               onClick={onNewProject}
@@ -162,9 +171,18 @@ export function Dashboard() {
             >
               <X size={16} />
             </motion.button>
-          </div>
+          </>
+        )}
+      </div>
 
-          {/* nội dung cuộn */}
+      {/* Gợi ý mở màn trong — dải mảnh dưới thanh trên (chỉ cover). */}
+      {coverMode && (
+        <div className="shrink-0 border-b border-[var(--border)] bg-[var(--accent-soft)] px-4 py-2 text-center text-[12px] text-[var(--accent)]">
+          Đang xem trên màn hình ngoài. Mở gập máy để thao tác đầy đủ.
+        </div>
+      )}
+
+      {/* nội dung cuộn */}
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
             {loading && !data ? (
               <div className="grid h-64 place-items-center text-[var(--t4)]">
@@ -262,7 +280,11 @@ export function Dashboard() {
                         <button
                           key={f.id}
                           onClick={() => onOpenFlow(f.id)}
-                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[var(--hover)]"
+                          disabled={coverMode}
+                          className={cn(
+                            'flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors',
+                            coverMode ? 'cursor-default' : 'hover:bg-[var(--hover)]',
+                          )}
                         >
                           <Workflow size={15} className="shrink-0 text-[var(--t4)]" />
                           <div className="min-w-0 flex-1">
@@ -281,6 +303,29 @@ export function Dashboard() {
               </div>
             )}
           </div>
+    </>
+  );
+
+  // Cover-mode: render INLINE làm nội dung chính của màn ngoài (không overlay,
+  // không phụ thuộc dashboardOpen). Full chiều cao, tự cuộn.
+  if (coverMode) {
+    return (
+      <div className="flex h-full min-h-0 flex-col bg-[var(--bg)]">{inner}</div>
+    );
+  }
+
+  // Mặc định: overlay toàn màn có animate + gate dashboardOpen.
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          variants={fade}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          className="fixed inset-0 z-50 flex flex-col bg-[var(--bg)]"
+        >
+          {inner}
         </motion.div>
       )}
     </AnimatePresence>

@@ -209,6 +209,7 @@ export default function Element({
           {(['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'] as Handle[]).map((h) => (
             <span
               key={h}
+              className="pe-handle"
               onPointerDown={(e) => onPointerDown(e, h)}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
@@ -217,6 +218,7 @@ export default function Element({
           ))}
           {/* handle xoay */}
           <span
+            className="pe-handle"
             onPointerDown={(e) => onPointerDown(e, 'rot')}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}

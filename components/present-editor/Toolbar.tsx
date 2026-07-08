@@ -180,6 +180,7 @@ function IconOnly({
       title={title}
       onClick={onClick}
       disabled={disabled}
+      className="pe-tool-btn"
       style={{
         width: 38,
         height: 36,

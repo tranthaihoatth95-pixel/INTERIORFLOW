@@ -221,6 +221,9 @@ export function FlowCanvas() {
         snapGrid={[16, 16]}
         minZoom={0.15}
         maxZoom={2.5}
+        /* Bán kính bắt kết nối rộng hơn (mặc định 20) → chạm-kéo nối edge dễ
+           trúng port trên màn cảm ứng foldable mà không cần ngắm chính xác. */
+        connectionRadius={38}
         fitView
         proOptions={{ hideAttribution: false }}
         defaultEdgeOptions={{ type: 'default' }}

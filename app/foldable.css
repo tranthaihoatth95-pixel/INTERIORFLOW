@@ -84,19 +84,134 @@
   .react-flow__edge-path {
     stroke-width: 1.25;
   }
-  /* Slightly larger hit target for React Flow handles on a dense touch panel */
-  .react-flow__handle {
-    min-width: 12px;
-    min-height: 12px;
-  }
 }
 
 /* ---------- 6. Touch ergonomics on the foldable (no hover, coarse pointer)
-   Enlarge tap targets for header/rail controls without touching layout. ---------- */
+   Chỉ áp cho thiết bị cảm ứng thuần (không chuột) → DESKTOP KHÔNG ĐỔI.
+   Nới vùng chạm, KHÔNG đổi hình thức: nút vẫn nhìn như cũ, chỉ dễ trúng ngón hơn.
+   ---------- */
 @media (hover: none) and (pointer: coarse) {
+  /* 6.1 — Nút trong header / rail trái (nav) / side panel / bottom-sheet:
+     đủ 44px chuẩn ngón tay Apple HIG. LeftRail là <nav>, không phải <aside>;
+     MobileMenu portal ra body dưới role="dialog" → kể tên để phủ nốt. */
   header button,
-  aside button {
-    min-height: 40px;
-    min-width: 40px;
+  nav button,
+  aside button,
+  [role='dialog'] button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* 6.2 — CANVAS NODE (điểm đau lớn nhất trên cảm ứng) ------------------- */
+
+  /* Port React Flow: giữ chấm nhìn nhỏ như cũ (không đổi hình thức) nhưng
+     PHỦ 1 vùng chạm vô hình quanh nó → chạm-kéo dễ trúng. Giữ ở ~26px để
+     KHÔNG lấn sâu vào thân node (tránh nuốt tap-để-upload của ảnh). Việc
+     nối-edge dễ chủ yếu do connectionRadius của React Flow (xem FlowCanvas). */
+  .react-flow__handle::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 26px;
+    height: 26px;
+    transform: translate(-50%, -50%);
+    /* trong suốt hoàn toàn — chỉ để bắt sự kiện chạm */
+    background: transparent;
+    border-radius: 50%;
+  }
+  /* Con trỏ kéo edge dày hơn cho dễ thấy khi rê ngón (chỉ trên touch) */
+  .react-flow__connectionline path,
+  .react-flow__connection-path {
+    stroke-width: 2.5;
+  }
+  /* Nút Run / Xoá trên node canvas (h-6 w-6 = 24px). Hai nút nằm SÁT nhau
+     nên KHÔNG nới ngang (tránh chạm nhầm nút bên cạnh) — chỉ nới CHIỀU CAO
+     ra full chiều cao header (~40px) qua ::after vô hình. Giữ nguyên icon. */
+  .react-flow__node .nodrag[title] {
+    position: relative;
+  }
+  .react-flow__node .nodrag[title]::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 40px;
+    transform: translateY(-50%);
+  }
+
+  /* 6.3 — PRESENT EDITOR (studio) — tay cầm resize/xoay + điều khiển slide.
+     Các phần tử này dùng inline-style (kích thước cố định) nên ta chỉ NỚI
+     VÙNG CHẠM qua ::after vô hình, KHÔNG phóng to phần nhìn thấy. */
+
+  /* Tay cầm resize + xoay của element trên sân khấu (span 12–14px). */
+  .pe-handle::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 40px;
+    height: 40px;
+    transform: translate(-50%, -50%);
+    background: transparent;
+  }
+
+  /* Nút sắp xếp / nhân bản / xoá slide trong dải thumbnail (24px). */
+  .pe-strip-btn {
+    position: relative;
+  }
+  .pe-strip-btn::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+
+  /* Toolbar studio: nút icon-only cao 36 → nới lên chuẩn 44 (đổi min, không đổi look) */
+  .pe-tool-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* 6.4 — BottomToolbar canvas (nút h-8 w-8 = 32px) → nới vùng chạm 44px. */
+  .if-bottombar button {
+    position: relative;
+  }
+  .if-bottombar button::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+
+  /* 6.5 — Chống double-tap zoom ngoài ý trên mọi nút/điều khiển cảm ứng. */
+  button,
+  [role='button'],
+  .react-flow__handle {
+    touch-action: manipulation;
+  }
+
+  /* 6.6 — Cuộn có quán tính (momentum) cho panel/dải cuộn trên iOS/Android. */
+  aside,
+  .no-scrollbar,
+  .react-flow__panel {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ---------- 7. Chấm port React Flow đậm hơn 1 chút trên panel dày (2K) để
+   không bị "mất" khi nhìn, nhưng KHÔNG to thêm (giữ hình thức). ---------- */
+@media (-webkit-min-device-pixel-ratio: 2) and (pointer: coarse),
+  (min-resolution: 2dppx) and (pointer: coarse) {
+  .react-flow__handle {
+    /* viền dày hơn nửa pixel cho rõ, không đổi đường kính */
+    border-width: 2.5px;
   }
 }
