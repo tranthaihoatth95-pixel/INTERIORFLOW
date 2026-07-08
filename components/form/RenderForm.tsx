@@ -10,7 +10,7 @@
  */
 
 import { useState } from 'react';
-import { Download, Save } from 'lucide-react';
+import { Download, Save, Wand2 } from 'lucide-react';
 import { fetchGuProfile, guToPrompt } from '@/lib/gu';
 import { saveToGallery } from '@/lib/gallery';
 import { downloadImage } from '@/lib/present-demo';
@@ -158,6 +158,11 @@ export function RenderForm() {
 
       <BigButton onClick={onRender} busy={busy} disabled={!img}>
         Render
+      </BigButton>
+
+      {/* Lối vào editor ảnh raster (hậu kỳ ảnh render): xoá vật thể, relight, grade, ghép/blend. */}
+      <BigButton variant="secondary" onClick={() => { window.location.href = '/photo-editor'; }}>
+        <Wand2 size={16} /> Mở chỉnh ảnh (hậu kỳ)
       </BigButton>
 
       {result && (
