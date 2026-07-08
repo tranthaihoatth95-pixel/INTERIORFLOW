@@ -121,7 +121,7 @@ export function RenderForm() {
 
       <StepCard n={3} title="Phong cách">
         <Field label="Style" hint="chọn nhanh">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
             {STYLES.map((s) => (
               <ChipButton key={s} active={style === s} onClick={() => setStyle(s)}>
                 {s}

@@ -99,7 +99,7 @@ export function ConceptForm() {
             Thư viện trống — thêm ảnh Reference ở chế độ Node trước.
           </p>
         )}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2 lg:grid-cols-5">
           {assets.map((a) => {
             const on = picked.has(a.id);
             return (

@@ -333,7 +333,7 @@ export function ImagePicker({
               Thư viện Reference trống — chuyển sang “Từ máy” để tải ảnh lên.
             </p>
           )}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2 lg:grid-cols-5">
             {assets.map((a) => {
               const on = selectedUrl === a.url;
               return (

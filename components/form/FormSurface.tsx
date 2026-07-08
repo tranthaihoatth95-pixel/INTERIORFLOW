@@ -42,7 +42,7 @@ export function FormSurface() {
     <div className="flex min-h-0 flex-1 flex-col bg-[var(--bg)]">
       {/* Tab bar — sticky trên cùng vùng form, tap-target lớn */}
       <div className="shrink-0 border-b border-[var(--border)] bg-[var(--panel)] px-2 pt-2">
-        <div className="mx-auto flex max-w-[720px] gap-1">
+        <div className="mx-auto flex max-w-[720px] gap-1 lg:max-w-[1120px]">
           {TABS.map(({ id, label, Icon }) => {
             const active = tab === id;
             return (
@@ -65,7 +65,7 @@ export function FormSurface() {
 
       {/* Nội dung form — cuộn dọc, không cuộn ngang, chừa đáy cho ngón tay */}
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="mx-auto max-w-[720px] px-3 pb-24 pt-3">
+        <div className="mx-auto max-w-[720px] px-3 pb-24 pt-3 lg:max-w-[1120px] lg:px-6">
           {tab === 'concept' && <ConceptForm />}
           {tab === 'render' && <RenderForm />}
           {tab === 'present' && <PresentForm />}

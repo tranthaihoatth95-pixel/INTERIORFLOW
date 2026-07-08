@@ -14,6 +14,7 @@ import {
 import { DEFAULT_PHASE, type Phase } from '@/lib/phases';
 import StageSwitcher from '@/components/studio/StageSwitcher';
 import PresentViewToggle from '@/components/studio/PresentViewToggle';
+import CanvasFormToggle from '@/components/studio/CanvasFormToggle';
 import { toggleShare } from '@/lib/workspace';
 import { TasksDropdown } from '@/components/TasksDropdown';
 import { MobileMenu } from '@/components/MobileMenu';
@@ -75,9 +76,9 @@ export function Header() {
         <PhaseSwitcher />
       </div>
 
-      {/* Toggle cách xem — CHỈ hiện ở Present: Nhập nhanh (Form) · Dàn trang (Window) */}
+      {/* Toggle cách xem — theo chặng: Concept/Render = Canvas·Form · Present = Nhập nhanh·Dàn trang */}
       <div className="hidden lg:block">
-        <PresentViewToggleHeader />
+        <HeaderViewToggle />
       </div>
 
       {/* Núm chọn mức phụ thuộc AI (4 mức) — mobile gom vào ⋯ */}
@@ -346,28 +347,31 @@ function ThemeToggle() {
   );
 }
 
-// Toggle cách xem của Present (gộp Form + Window) — CHỈ hiện khi đang ở chặng Present.
-// Concept/Render không có (thuần canvas node). Header chỉ ở '/' nên mặt hiện luôn là Form.
-function PresentViewToggleHeader() {
+// Toggle cách xem THEO CHẶNG: Present = Nhập nhanh(Form)/Dàn trang(Window studio);
+// Concept/Render = Canvas(node)/Form. Chỉ 1 toggle hiện tại một thời điểm, cạnh StageSwitcher.
+function HeaderViewToggle() {
   const workspace = useFlowStore((s) => s.workspace);
   const setWorkspace = useFlowStore((s) => s.setWorkspace);
+  const uiMode = useFlowStore((s) => s.uiMode);
   const setUiMode = useFlowStore((s) => s.setUiMode);
   const router = useRouter();
-  if (workspace !== 'present') return null;
-  return (
-    <PresentViewToggle
-      current="form"
-      onForm={() => {
-        setWorkspace('present');
-        setUiMode('form');
-      }}
-      onWindow={() => router.push('/present-editor')}
-    />
-  );
+  if (workspace === 'present') {
+    return (
+      <PresentViewToggle
+        current="form"
+        onForm={() => {
+          setWorkspace('present');
+          setUiMode('form');
+        }}
+        onWindow={() => router.push('/present-editor')}
+      />
+    );
+  }
+  return <CanvasFormToggle current={uiMode} onPick={setUiMode} />;
 }
 
-// Trục điều hướng: Concept/Render = canvas node tại chỗ · Present = mặt Form (nhập nhanh),
-// từ đó toggle sang Dàn trang (studio). uiMode set theo chặng để '/' hiện đúng surface.
+// Trục điều hướng: đổi chặng. Present → mặt Form (từ đó toggle sang Dàn trang studio);
+// Concept/Render → GIỮ nguyên uiMode (Canvas/Form user tự chọn qua toggle).
 function PhaseSwitcher() {
   const workspace = useFlowStore((s) => s.workspace);
   const setWorkspace = useFlowStore((s) => s.setWorkspace);
@@ -378,7 +382,7 @@ function PhaseSwitcher() {
       active={current}
       onPick={(p) => {
         setWorkspace(p);
-        setUiMode(p === 'present' ? 'form' : 'node');
+        if (p === 'present') setUiMode('form');
       }}
     />
   );

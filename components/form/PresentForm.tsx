@@ -111,7 +111,7 @@ export function PresentForm() {
             Chưa có ảnh — render ở tab Render rồi bấm “Lưu”, hoặc thêm Reference.
           </p>
         )}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2 lg:grid-cols-5">
           {pool.map((p) => {
             const order = picked.indexOf(p.id);
             const on = order >= 0;
