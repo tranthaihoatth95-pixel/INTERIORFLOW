@@ -46,6 +46,70 @@ export async function getSessionUser() {
   }
 }
 
-export function publicUser(u: { id: string; email: string; name: string; credits: number; isAdmin: boolean }) {
-  return { id: u.id, email: u.email, name: u.name, credits: u.credits, isAdmin: u.isAdmin };
+/**
+ * Shape user trả về client. email/phone nullable trong DB (đăng ký bằng email HOẶC SĐT)
+ * — coerce email về '' để giữ contract cũ của client (SessionUser.email: string).
+ */
+export function publicUser(u: {
+  id: string;
+  email: string | null;
+  phone?: string | null;
+  name: string;
+  credits: number;
+  isAdmin: boolean;
+}) {
+  return {
+    id: u.id,
+    email: u.email ?? '',
+    phone: u.phone ?? null,
+    name: u.name,
+    credits: u.credits,
+    isAdmin: u.isAdmin,
+  };
+}
+
+/* ============================================================================
+ * Identifier = email HOẶC số điện thoại VN.
+ * KHÔNG có OTP: app chạy nội bộ/LAN, SĐT chỉ là định danh đăng nhập, không xác minh.
+ * ==========================================================================*/
+
+/**
+ * Chuẩn hoá SĐT Việt Nam về dạng canonical `0xxxxxxxxx`.
+ * Chấp nhận: "+84 912 345 678", "84912345678", "0912.345.678"…
+ * Trả về null nếu không phải SĐT hợp lệ (9–11 số sau chuẩn hoá, bắt đầu bằng 0).
+ */
+export function normalizeVNPhone(raw: string): string | null {
+  let s = String(raw).replace(/[\s.\-()]/g, '');
+  if (s.startsWith('+84')) s = '0' + s.slice(3);
+  else if (s.startsWith('84') && s.length >= 10) s = '0' + s.slice(2);
+  if (!/^0\d{8,10}$/.test(s)) return null;
+  return s;
+}
+
+/** identifier chứa '@' → email; ngược lại thử parse SĐT VN. */
+export function parseIdentifier(raw: string): { email: string } | { phone: string } | null {
+  const s = String(raw).trim();
+  if (!s) return null;
+  if (s.includes('@')) return { email: s.toLowerCase() };
+  const phone = normalizeVNPhone(s);
+  return phone ? { phone } : null;
+}
+
+/** Tìm user theo email hoặc SĐT — null nếu identifier không hợp lệ / không tồn tại. */
+export async function findUserByIdentifier(raw: string) {
+  const id = parseIdentifier(raw);
+  if (!id) return null;
+  return 'email' in id
+    ? prisma.user.findUnique({ where: { email: id.email } })
+    : prisma.user.findUnique({ where: { phone: id.phone } });
+}
+
+/**
+ * passwordHash ngẫu nhiên cho tài khoản social (Google) — không ai biết plaintext,
+ * nên KHÔNG thể đăng nhập bằng mật khẩu; muốn đặt mật khẩu thì thêm flow riêng sau.
+ */
+export async function randomPasswordHash() {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return hashPassword(Buffer.from(bytes).toString('base64url'));
 }

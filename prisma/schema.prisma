@@ -10,7 +10,10 @@ datasource db {
 
 model User {
   id           String   @id @default(cuid())
-  email        String   @unique
+  // email/phone: cần ÍT NHẤT MỘT trong hai (enforce trong code — SQLite/Prisma không có CHECK).
+  // email nullable để cho phép đăng ký bằng SĐT; phone chuẩn hoá dạng 0xxxxxxxxx (VN).
+  email        String?  @unique
+  phone        String?  @unique
   name         String
   passwordHash String
   credits      Int      @default(200)
