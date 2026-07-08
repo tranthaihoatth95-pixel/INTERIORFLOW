@@ -20,6 +20,7 @@ import { Lightbox } from '@/components/Lightbox';
 import { Dashboard } from '@/components/Dashboard';
 import PresentOverlay from '@/components/present/PresentOverlay';
 import { StageSelect } from '@/components/StageSelect';
+import { CommentLayer } from '@/components/CommentLayer';
 import { useFlowStore } from '@/lib/store';
 
 /**
@@ -177,6 +178,7 @@ export default function Home() {
         <MoodboardModal />
         {presentModeOpen && <PresentOverlay onClose={() => setPresentModeOpen(false)} />}
         <CommandPalette />
+        <CommentLayer />
       </div>
     </ReactFlowProvider>
   );

@@ -15,6 +15,7 @@ import { useState } from 'react';
 import PresentEditor from '@/components/present-editor/PresentEditor';
 import { makeSampleDeck } from '@/lib/present-editor/sample';
 import StudioBar from '@/components/studio/StudioBar';
+import { CommentLayer } from '@/components/CommentLayer';
 
 export default function PresentEditorPage() {
   const [deck] = useState(makeSampleDeck);
@@ -24,6 +25,7 @@ export default function PresentEditorPage() {
       <div style={{ flex: 1, minHeight: 0 }}>
         <PresentEditor initialDeck={deck} />
       </div>
+      <CommentLayer />
     </div>
   );
 }
