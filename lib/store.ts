@@ -60,6 +60,8 @@ interface FlowState {
   dashboardOpen: boolean;
   /** Present mode — trình chiếu deck/board toàn màn (overlay) */
   presentModeOpen: boolean;
+  /** Moodboard maker (chặng Concept) — overlay chọn ảnh + style → moodboard */
+  moodboardOpen: boolean;
   connectError: string | null;
   /** nodeId đang mở Mask Painter modal */
   maskEditorNodeId: string | null;
@@ -107,6 +109,7 @@ interface FlowState {
   setTasksOpen: (open: boolean) => void;
   setDashboardOpen: (open: boolean) => void;
   setPresentModeOpen: (open: boolean) => void;
+  setMoodboardOpen: (open: boolean) => void;
   setConnectError: (msg: string | null) => void;
   setMaskEditorNodeId: (nodeId: string | null) => void;
   setAnnotateNodeId: (nodeId: string | null) => void;
@@ -185,6 +188,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   tasksOpen: false,
   dashboardOpen: false,
   presentModeOpen: false,
+  moodboardOpen: false,
   connectError: null,
   maskEditorNodeId: null,
   annotateNodeId: null,
@@ -278,6 +282,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   setTasksOpen: (tasksOpen) => set({ tasksOpen }),
   setDashboardOpen: (dashboardOpen) => set({ dashboardOpen }),
   setPresentModeOpen: (presentModeOpen) => set({ presentModeOpen }),
+  setMoodboardOpen: (moodboardOpen) => set({ moodboardOpen }),
   setConnectError: (connectError) => set({ connectError }),
   setMaskEditorNodeId: (maskEditorNodeId) => set({ maskEditorNodeId }),
   setAnnotateNodeId: (annotateNodeId) => set({ annotateNodeId }),

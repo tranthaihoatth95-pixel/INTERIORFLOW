@@ -12,7 +12,7 @@ import { LibraryPanel } from '@/components/LibraryPanel';
 import { FlowsPanel } from '@/components/FlowsPanel';
 import { ChatPanel } from '@/components/ChatPanel';
 import { FlowCanvas } from '@/components/FlowCanvas';
-import { FormSurface } from '@/components/form/FormSurface';
+import { MoodboardModal } from '@/components/MoodboardModal';
 import { CommandPalette } from '@/components/CommandPalette';
 import { MaskPainterModal } from '@/components/MaskPainterModal';
 import { AnnotateModal } from '@/components/AnnotateModal';
@@ -35,7 +35,6 @@ export default function Home() {
   const setChatOpen = useFlowStore((s) => s.setChatOpen);
   const presentModeOpen = useFlowStore((s) => s.presentModeOpen);
   const setPresentModeOpen = useFlowStore((s) => s.setPresentModeOpen);
-  const uiMode = useFlowStore((s) => s.uiMode);
   // Trên mobile các panel đè lên canvas → cần lớp nền mờ để bấm ra ngoài là đóng.
   const overlayOpen = panel !== null || chatOpen;
 
@@ -134,14 +133,15 @@ export default function Home() {
           <GalleryPanel />
           <LibraryPanel />
           <FlowsPanel />
-          {/* Form mode: thay canvas node bằng form cảm ứng (giữ nguyên engine + panel + rail) */}
-          {uiMode === 'form' ? <FormSurface /> : <FlowCanvas />}
+          {/* Cả 3 chặng đều là canvas node (Present sang studio riêng). Nút Tải lên/Concept = moodboard. */}
+          <FlowCanvas />
           <ChatPanel />
         </div>
         <MaskPainterModal />
         <AnnotateModal />
         <Lightbox />
         <Dashboard />
+        <MoodboardModal />
         {presentModeOpen && <PresentOverlay onClose={() => setPresentModeOpen(false)} />}
         <CommandPalette />
       </div>
