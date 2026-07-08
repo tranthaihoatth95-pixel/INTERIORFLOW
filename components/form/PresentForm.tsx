@@ -10,7 +10,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FileDown, Presentation } from 'lucide-react';
+import { FileDown, Presentation, LayoutTemplate } from 'lucide-react';
 import { listGallery, type GalleryItem } from '@/lib/gallery';
 import { buildDeckPdf, downloadPdf } from '@/lib/present-demo';
 import { exportDeckToPptx, type PptxSlide } from '@/lib/pptx';
@@ -142,8 +142,11 @@ export function PresentForm() {
 
       {error && <ErrorNote>{error}</ErrorNote>}
 
-      <BigButton onClick={() => setShowing(true)} disabled={!slides.length}>
-        <Presentation size={16} /> Trình chiếu
+      <BigButton onClick={() => { window.location.href = '/present-editor'; }}>
+        <LayoutTemplate size={16} /> Mở trình dàn trang (Canva)
+      </BigButton>
+      <BigButton variant="secondary" onClick={() => setShowing(true)} disabled={!slides.length}>
+        <Presentation size={16} /> Trình chiếu nhanh
       </BigButton>
       <div className="flex gap-2">
         <BigButton variant="secondary" onClick={onPdf} busy={busy === 'pdf'} disabled={!slides.length}>
