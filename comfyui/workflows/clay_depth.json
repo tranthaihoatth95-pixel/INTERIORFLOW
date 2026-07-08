@@ -60,7 +60,7 @@
   "12": {
     "class_type": "ControlNetLoader",
     "inputs": {
-      "control_net_name": "controlnet-depth-sdxl-1.0.safetensors"
+      "control_net_name": "controlnet-depth-sdxl-1.0-fp16.safetensors"
     }
   },
   "13": {
