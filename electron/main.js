@@ -228,6 +228,9 @@ function createWindow() {
       contextIsolation: true, // cô lập context — bảo mật
       nodeIntegration: false, // web KHÔNG truy cập Node trực tiếp
       sandbox: true,
+      // TẮT spellcheck: bộ kiểm chính tả của Electron nuốt sự kiện composition IME
+      // → gõ tiếng Việt (Telex/dấu) bị mất dấu / nhảy chữ. Tắt là gõ tiếng Việt đúng.
+      spellcheck: false,
     },
   });
 
