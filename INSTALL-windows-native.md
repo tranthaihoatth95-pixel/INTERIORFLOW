@@ -42,5 +42,28 @@ Xem `INSTALL-windows.md` mục **"đường SDXL"**: cài ComfyUI Desktop + mode
 Node **Export Deck**: **PDF** + **PowerPoint (.pptx)** 16:9, ảnh nhúng sẵn (khách xem không cần mạng).
 
 ---
+
+## TỰ CẬP NHẬT OTA (Hướng 2) — khỏi cài lại khi có tính năng mới
+
+App đã gắn **electron-updater**: mỗi lần mở, nó tự kiểm bản mới trên **GitHub Releases**, tải + cài ngầm; bản mới áp dụng ở lần mở kế tiếp. **Máy dùng cuối không phải làm gì.**
+
+**Cách phát bản mới (làm trên máy build, mỗi lần có tính năng mới):**
+1. `git pull` mã mới.
+2. Tăng số `version` trong `package.json` (vd `0.1.0` → `0.1.1`) — bắt buộc, updater so version.
+3. Tạo **GitHub token** (github.com → Settings → Developer settings → Tokens, quyền `repo`) → đặt biến môi trường:
+   ```powershell
+   $env:GH_TOKEN="ghp_...."
+   ```
+4. `npm run electron:publish` → build + **tự đẩy bản cài lên GitHub Releases** của repo INTERIORFLOW.
+5. Xong. Mọi máy đã cài app sẽ **tự cập nhật** lần mở tiếp theo.
+
+> App chưa mua chữ ký số → Windows có thể cảnh báo lúc updater cài bản mới (nội bộ dùng vẫn ổn). Muốn hết cảnh báo: mua code-signing certificate sau.
+
+## Điện thoại Oppo dùng chung "hub" Windows
+App Windows giờ phục vụ cả LAN (`0.0.0.0`). Muốn Oppo trỏ vào **máy Windows** (thay vì Mac):
+- Lấy IP LAN máy Windows (`ipconfig` → IPv4). Sửa `server.url` trong bản APK sang `http://<IP-windows>:<cổng>` rồi build lại APK **một lần**.
+- Sau đó máy Windows tự cập nhật (OTA) → Oppo tự thấy tính năng mới (vì nó chỉ là cửa sổ nhìn vào server đó), **khỏi build lại APK cho mỗi tính năng.**
+
+---
 ### Nếu chỉ muốn chạy nhanh, chưa cần bản cài native
 Vẫn còn cách cũ: double-click `setup-windows.bat` → app chạy ở cửa sổ trình duyệt `localhost:3000`. Nhẹ, không cần build, nhưng không phải app native.

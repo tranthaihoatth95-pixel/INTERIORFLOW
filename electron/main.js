@@ -22,6 +22,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const { app, BrowserWindow, Menu, shell, dialog } = require('electron');
+// Tự cập nhật OTA (chỉ bản đóng gói): kiểm GitHub Releases → tải + cài bản mới.
+// require phòng thủ: lúc dev trên Mac chưa cài electron-updater thì bỏ qua, không crash.
+let autoUpdater = null;
+try {
+  ({ autoUpdater } = require('electron-updater'));
+} catch {
+  /* electron-updater chưa có (dev) — auto-update tắt */
+}
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -169,7 +177,9 @@ async function startNextServer() {
     NODE_ENV: 'production',
     DATABASE_URL: dbUrl, // ghi đè file:./dev.db bằng path tuyệt đối trong userData
     PORT: String(resolvedPort),
-    HOSTNAME: '127.0.0.1',
+    // 0.0.0.0: server phục vụ cả LAN → điện thoại/máy khác trong mạng trỏ vào máy này được
+    // (dùng làm "hub" cho Oppo). Cửa sổ app vẫn load qua 127.0.0.1 (cục bộ).
+    HOSTNAME: '0.0.0.0',
     ELECTRON_RUN_AS_NODE: '1', // để dùng binary electron như node chạy next start
     // ── Gắn secret/key cố định trước khi build (xem README-electron.md mục 5) ──
     // Bỏ comment và điền giá trị nếu muốn nhúng sẵn vào bản .exe nội bộ:
@@ -189,7 +199,7 @@ async function startNextServer() {
   // truyền appRoot làm tham số để `next start <appRoot>` đọc `.next` đúng chỗ đóng gói.
   serverProcess = spawn(
     process.execPath,
-    [nextBin, 'start', appRoot, '-p', String(resolvedPort), '-H', '127.0.0.1'],
+    [nextBin, 'start', appRoot, '-p', String(resolvedPort), '-H', '0.0.0.0'],
     {
       cwd: userDataDir,
       env: serverEnv,
@@ -307,6 +317,16 @@ if (!gotLock) {
     } catch (err) {
       dialog.showErrorBox('InteriorFlow', `Khởi động thất bại:\n${err && err.message}`);
       app.quit();
+    }
+
+    // OTA: kiểm bản mới trên GitHub Releases rồi tải + cài ngầm (chỉ bản đóng gói).
+    // Bản mới sẽ được cài ở lần thoát/mở app kế tiếp. Lỗi mạng -> bỏ qua im lặng.
+    if (autoUpdater && isPackaged) {
+      try {
+        autoUpdater.checkForUpdatesAndNotify();
+      } catch {
+        /* không có mạng / chưa có release -> chạy bình thường, không update */
+      }
     }
 
     // macOS: click dock mở lại cửa sổ nếu đã đóng hết (server vẫn còn sống).

@@ -13,7 +13,8 @@
     "postinstall": "prisma generate",
     "electron": "electron .",
     "electron:dev": "cross-env ELECTRON_START_URL=http://localhost:3000 concurrently -k -n NEXT,ELECTRON -c blue,magenta \"next dev\" \"wait-on tcp:3000 && electron .\"",
-    "electron:build": "next build && electron-builder --win"
+    "electron:build": "next build && electron-builder --win",
+    "electron:publish": "next build && electron-builder --win --publish always"
   },
   "dependencies": {
     "@fal-ai/client": "^1.10.1",
@@ -21,6 +22,7 @@
     "@xyflow/react": "^12.11.1",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
+    "electron-updater": "^6.3.9",
     "framer-motion": "^12.42.2",
     "jose": "^6.2.3",
     "jspdf": "^4.2.1",
@@ -54,6 +56,13 @@
     "appId": "com.ttt.interiorflow",
     "productName": "InteriorFlow",
     "copyright": "TTT Architects",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "tranthaihoatth95-pixel",
+        "repo": "INTERIORFLOW"
+      }
+    ],
     "directories": {
       "output": "dist",
       "buildResources": "electron/icons"
