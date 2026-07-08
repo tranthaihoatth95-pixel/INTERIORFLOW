@@ -12,10 +12,23 @@ Gói này = **mã nguồn app** (không kèm thư viện — máy tự tải khi
 
 Lần sau muốn chạy lại: double-click `setup-windows.bat` (nó bỏ qua bước đã làm, chỉ chạy app).
 
-## Nối FLUX (render ảnh thật 0đ) — nếu máy này có ComfyUI + RTX
-1. Cài ComfyUI + tải model FLUX theo `comfyui/SETUP-rtx-flux.md`.
-2. `.env.local` đã trỏ sẵn `COMFYUI_URL=http://127.0.0.1:8188` (ComfyUI cùng máy).
-3. Trong app: núm AI → **oneAI** → engine **FLUX-RTX** → node **Sketch→Render** → ảnh thật.
+## Nối render AI thật (0đ) — ComfyUI trên chính máy RTX này
+
+**Đường nhanh nhất hôm nay — SDXL (đã tune sẵn, giống bản chạy trên Mac):**
+1. Cài **ComfyUI Desktop** cho Windows: tải ở **comfy.org** → cài như phần mềm thường. Mở lên 1 lần cho nó tự cấu hình (server chạy ở cổng 8188).
+2. Tải 2 model (bỏ vào thư mục model của ComfyUI):
+   - SDXL base → `models/checkpoints/`: huggingface.co/stabilityai/stable-diffusion-xl-base-1.0 → file `sd_xl_base_1.0.safetensors` (~6.9GB)
+   - ControlNet depth SDXL → `models/controlnet/`: huggingface.co/diffusers/controlnet-depth-sdxl-1.0 → file `diffusion_pytorch_model.safetensors`, **đổi tên thành** `controlnet-depth-sdxl-1.0.safetensors` (~4.7GB)
+   - (Muốn thêm Sketch→Render: tải thêm controlnet **canny** SDXL của xinsir, đặt tên `controlnet-canny-sdxl-1.0.safetensors`)
+3. Cài custom node **comfyui_controlnet_aux** (để tự trích depth từ ảnh clay): trong ComfyUI Desktop → Manager → Install "comfyui_controlnet_aux" (hoặc git clone vào `custom_nodes/`). Model DepthAnythingV2 tự tải lần chạy đầu.
+4. Trong thư mục app, mở `.env.local` thêm 2 dòng:
+   ```
+   COMFYUI_URL=http://127.0.0.1:8188
+   COMFY_SKETCH_WF=sketch_canny
+   ```
+5. Chạy lại app → trong app: núm AI → **oneAI** → engine **FLUX-RTX** → node **Clay→Render** (kéo ảnh clay 3ds Max vào) hoặc **Sketch→Render** (slider "Bám sketch" 3 mức) → ảnh thật.
+
+**Đường FLUX (đẹp hơn, nặng hơn — làm sau):** theo `comfyui/SETUP-rtx-flux.md`.
 
 ## Xuất thuyết trình cho khách
 - Node **Export Deck**: gom tối đa 6 slide 16:9. Ngoài **Tải PDF thuyết trình** (bản trình chiếu cố định), giờ có thêm **Tải PowerPoint (.pptx)** — file mở/chỉnh trực tiếp trong Microsoft PowerPoint.
