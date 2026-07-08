@@ -14,17 +14,36 @@
  *   - Mặc định trình chiếu deck Detech mẫu (DEMO_DECK). Khi pipeline Present của app
  *     xuất được mảng slide thật, truyền vào PresentDeck qua prop `deck`.
  */
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import PresentDeck from './PresentDeck';
 import type { PresentDeck as PresentDeckData } from '@/lib/present-demo';
+import { useFlowStore } from '@/lib/store';
 
 export interface PresentOverlayProps {
   onClose: () => void;
-  /** deck thật từ pipeline app (nếu có); bỏ trống = deck mẫu Detech. */
+  /** deck thật từ pipeline app (nếu có); bỏ trống = tự lấy từ node Export Deck của flow hiện tại. */
   deck?: PresentDeckData;
 }
 
+/** Lấy deck mới nhất từ flow: node slide.deck đã Run — run.outputs._slides = mảng dataURL đã render. */
+function useFlowDeck(): { slides: string[]; name: string } | null {
+  const nodes = useFlowStore((s) => s.nodes);
+  return useMemo(() => {
+    const decks = nodes.filter((n) => n.data?.defType === 'slide.deck' && n.data.run?.outputs?._slides?.value);
+    const last = decks.at(-1);
+    if (!last) return null;
+    try {
+      const slides = JSON.parse(String(last.data.run.outputs!._slides.value)) as string[];
+      if (!Array.isArray(slides) || slides.length === 0) return null;
+      return { slides: slides.map(String), name: String(last.data.params?.deckName ?? 'Deck') };
+    } catch {
+      return null;
+    }
+  }, [nodes]);
+}
+
 export default function PresentOverlay({ onClose, deck }: PresentOverlayProps) {
+  const flowDeck = useFlowDeck();
   // khoá cuộn nền khi overlay mở
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -46,7 +65,12 @@ export default function PresentOverlay({ onClose, deck }: PresentOverlayProps) {
         background: 'var(--bg)',
       }}
     >
-      <PresentDeck deck={deck} onClose={onClose} />
+      <PresentDeck
+        deck={deck}
+        imageSlides={!deck && flowDeck ? flowDeck.slides : undefined}
+        title={!deck && flowDeck ? flowDeck.name : undefined}
+        onClose={onClose}
+      />
     </div>
   );
 }

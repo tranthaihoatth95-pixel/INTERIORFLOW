@@ -73,7 +73,9 @@ export function isAiTier(v: unknown): v is AiTier {
 export type OneAiEngine = 'sd' | 'flux';
 export type OneAiRuntime = 'webgpu' | 'server';
 
-export const DEFAULT_ONE_AI_ENGINE: OneAiEngine = 'sd';
+// 08/07: default 'flux' (→ provider comfyui) — Mac + RTX công ty đều chạy ComfyUI thật;
+// 'sd' (A1111/Draw Things) vẫn chọn được ở engine-selector khi có SD_SERVER_URL.
+export const DEFAULT_ONE_AI_ENGINE: OneAiEngine = 'flux';
 export const DEFAULT_ONE_AI_RUNTIME: OneAiRuntime = 'server';
 
 export interface OneAiEngineMeta { id: OneAiEngine; name: string; blurb: string; }

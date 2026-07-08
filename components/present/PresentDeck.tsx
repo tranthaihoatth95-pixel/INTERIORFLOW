@@ -20,20 +20,32 @@ import {
 export interface PresentDeckProps {
   /** deck để trình chiếu; mặc định deck Detech mẫu. */
   deck?: PresentDeckData;
+  /** slide ĐÃ render sẵn (dataURL) — vd từ node Export Deck của flow thật; ưu tiên hơn `deck`. */
+  imageSlides?: string[];
+  /** tên hiển thị khi dùng imageSlides. */
+  title?: string;
   /** có dựng + hiện moodboard cuối bộ không (mặc định có). */
   withMoodboard?: boolean;
   /** overlay trong app → truyền onClose để hiện nút Đóng + bắt Esc. */
   onClose?: () => void;
 }
 
-export default function PresentDeck({ deck, withMoodboard = true, onClose }: PresentDeckProps) {
+export default function PresentDeck({ deck, imageSlides, title, withMoodboard = true, onClose }: PresentDeckProps) {
   const [slides, setSlides] = useState<string[]>([]);
   const [moodboard, setMoodboard] = useState<string | null>(null);
   const [status, setStatus] = useState('Đang dựng slide…');
   const [done, setDone] = useState(false);
 
+  // Deck thật từ flow: slide đã render sẵn — dùng thẳng, không qua renderDeck.
   useEffect(() => {
-    if (!deck) return;
+    if (!imageSlides?.length) return;
+    setSlides(imageSlides);
+    setStatus(`Đã nạp ${imageSlides.length} slide`);
+    setDone(true);
+  }, [imageSlides]);
+
+  useEffect(() => {
+    if (!deck || imageSlides?.length) return;
     let cancelled = false;
     (async () => {
       try {
@@ -59,13 +71,14 @@ export default function PresentDeck({ deck, withMoodboard = true, onClose }: Pre
     return () => {
       cancelled = true;
     };
-  }, [deck, withMoodboard]);
+  }, [deck, imageSlides, withMoodboard]);
 
+  const pdfName = `${deck?.id ?? title ?? 'present'}-deck.pdf`;
   const handlePdf = async () => {
-    if (!deck || slides.length === 0) return;
+    if (slides.length === 0) return;
     try {
-      const uri = await buildDeckPdf(slides, `${deck.id}-present-deck.pdf`);
-      downloadPdf(uri, `${deck.id}-present-deck.pdf`);
+      const uri = await buildDeckPdf(slides, pdfName);
+      downloadPdf(uri, pdfName);
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error('[PresentDeck] PDF lỗi', e);
@@ -77,7 +90,7 @@ export default function PresentDeck({ deck, withMoodboard = true, onClose }: Pre
   };
 
   // In-app Present mode chưa có deck thật → RỖNG, không hiện nội dung demo (tránh lẫn nội dung app thật).
-  if (!deck) {
+  if (!deck && !imageSlides?.length) {
     return (
       <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', background: 'var(--bg)', color: 'var(--t3)' }}>
         <div style={{ textAlign: 'center', padding: 24 }}>
@@ -99,7 +112,7 @@ export default function PresentDeck({ deck, withMoodboard = true, onClose }: Pre
   return (
     <PresentViewer
       slides={slides}
-      title={deck.project}
+      title={deck?.project ?? title ?? 'Present'}
       loading={!done}
       status={done ? undefined : status}
       moodboard={moodboard}
