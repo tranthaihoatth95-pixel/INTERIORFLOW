@@ -20,6 +20,7 @@ export async function GET() {
         id: true,
         name: true,
         email: true,
+        phone: true,
         credits: true,
         isAdmin: true,
         lastSeenAt: true,
@@ -60,7 +61,7 @@ export async function GET() {
   const team = users.map((u) => ({
     id: u.id,
     name: u.name,
-    email: u.email,
+    email: u.email ?? u.phone ?? '', // user đăng ký bằng SĐT → hiện SĐT thay email
     credits: u.credits,
     isAdmin: u.isAdmin,
     lastSeenAt: u.lastSeenAt,
