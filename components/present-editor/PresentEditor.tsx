@@ -12,9 +12,9 @@
  * làm state đầu (deck mẫu do trang truyền vào).
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { EditorDeck, ShapeKind, Frame, SlideElement } from '@/lib/present-editor/model';
-import { makeText, makeImage, makeShape, newId } from '@/lib/present-editor/model';
+import { makeText, makeImage, makeShape, newId, duplicateElement } from '@/lib/present-editor/model';
 import {
   BUILTIN_TEMPLATES,
   templatesFromLibrary,
@@ -129,15 +129,18 @@ export default function PresentEditor({ initialDeck }: Props) {
     [ed],
   );
 
+  // z-order 4 mức: ra sau cùng / lùi 1 bậc / tiến 1 bậc / lên trước cùng.
   const onZOrder = useCallback(
-    (dir: 'front' | 'back') => {
+    (dir: 'front' | 'back' | 'forward' | 'backward') => {
       if (!ed.selectedId) return;
       ed.updateSlide((s) => {
         const i = s.elements.findIndex((e) => e.id === ed.selectedId);
         if (i < 0) return;
         const [el] = s.elements.splice(i, 1);
         if (dir === 'front') s.elements.push(el);
-        else s.elements.unshift(el);
+        else if (dir === 'back') s.elements.unshift(el);
+        else if (dir === 'forward') s.elements.splice(Math.min(i + 1, s.elements.length), 0, el);
+        else s.elements.splice(Math.max(i - 1, 0), 0, el); // backward
       });
     },
     [ed],
@@ -150,6 +153,68 @@ export default function PresentEditor({ initialDeck }: Props) {
     });
     ed.select(null);
   }, [ed]);
+
+  // Nhân bản element đang chọn (Ctrl/Cmd+D) → chọn luôn bản mới.
+  const onDuplicateSelected = useCallback(() => {
+    if (!ed.selected) return;
+    const copy = duplicateElement(ed.selected);
+    ed.updateSlide((s) => {
+      s.elements.push(copy);
+    });
+    ed.select(copy.id);
+  }, [ed]);
+
+  // Clipboard element cục bộ (không đụng clipboard hệ thống — đủ cho copy/paste trong app).
+  const clipboardRef = useRef<SlideElement | null>(null);
+  const onCopySelected = useCallback(() => {
+    if (ed.selected) clipboardRef.current = JSON.parse(JSON.stringify(ed.selected));
+  }, [ed.selected]);
+
+  const onPaste = useCallback(() => {
+    if (!clipboardRef.current) return;
+    const copy = duplicateElement(clipboardRef.current);
+    ed.updateSlide((s) => {
+      s.elements.push(copy);
+    });
+    ed.select(copy.id);
+  }, [ed]);
+
+  // Dời element theo phím mũi tên (step nhỏ 0.5%, Shift = 5%). Clamp trong sân khấu.
+  const onNudge = useCallback(
+    (dx: number, dy: number) => {
+      if (!ed.selectedId) return;
+      ed.updateSlide((s) => {
+        const el = s.elements.find((e) => e.id === ed.selectedId);
+        if (!el || el.locked) return;
+        el.frame = {
+          ...el.frame,
+          x: clampPct(el.frame.x + dx),
+          y: clampPct(el.frame.y + dy),
+        };
+      });
+    },
+    [ed],
+  );
+
+  // Căn element trong sân khấu (trái/giữa-ngang/phải · trên/giữa-dọc/dưới).
+  const onAlign = useCallback(
+    (mode: 'left' | 'hcenter' | 'right' | 'top' | 'vcenter' | 'bottom') => {
+      if (!ed.selectedId) return;
+      ed.updateSlide((s) => {
+        const el = s.elements.find((e) => e.id === ed.selectedId);
+        if (!el || el.locked) return;
+        const f = { ...el.frame };
+        if (mode === 'left') f.x = 0;
+        else if (mode === 'hcenter') f.x = (100 - f.w) / 2;
+        else if (mode === 'right') f.x = 100 - f.w;
+        else if (mode === 'top') f.y = 0;
+        else if (mode === 'vcenter') f.y = (100 - f.h) / 2;
+        else if (mode === 'bottom') f.y = 100 - f.h;
+        el.frame = f;
+      });
+    },
+    [ed],
+  );
 
   /* ------------------------- actions slide --------------------------- */
   const onApplyTemplate = useCallback(
@@ -253,6 +318,72 @@ export default function PresentEditor({ initialDeck }: Props) {
     }
   }, [ed.deck]);
 
+  /* ----------------------- phím tắt (cấp document) ----------------------- */
+  // Gắn ở window: div canvas không tự nhận focus nên onKeyDown trên div KHÔNG bắn.
+  // Guard: đang gõ trong input/textarea/contenteditable → bỏ qua (trừ Escape).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const typing = isTypingTarget(document.activeElement);
+
+      // Escape: luôn cho qua (thoát inline-edit do textarea tự blur; ở đây bỏ chọn).
+      if (e.key === 'Escape') {
+        if (!typing) ed.select(null);
+        return;
+      }
+      // Đang gõ chữ → không đụng gì để tránh xoá nhầm element.
+      if (typing) return;
+
+      const mod = e.metaKey || e.ctrlKey; // Cmd (mac) hoặc Ctrl (win)
+
+      // Undo / Redo
+      if (mod && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault();
+        if (e.shiftKey) ed.redo();
+        else ed.undo();
+        return;
+      }
+      if (mod && (e.key === 'y' || e.key === 'Y')) {
+        e.preventDefault();
+        ed.redo();
+        return;
+      }
+      // Nhân bản
+      if (mod && (e.key === 'd' || e.key === 'D')) {
+        e.preventDefault();
+        onDuplicateSelected();
+        return;
+      }
+      // Copy / Paste (clipboard cục bộ của editor)
+      if (mod && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault();
+        onCopySelected();
+        return;
+      }
+      if (mod && (e.key === 'v' || e.key === 'V')) {
+        e.preventDefault();
+        onPaste();
+        return;
+      }
+      // Xoá element đang chọn
+      if ((e.key === 'Delete' || e.key === 'Backspace') && ed.selectedId) {
+        e.preventDefault();
+        onDeleteSelected();
+        return;
+      }
+      // Dời bằng phím mũi tên (Shift = bước lớn 5%, thường 0.5%)
+      if (ed.selectedId && e.key.startsWith('Arrow')) {
+        const step = e.shiftKey ? 5 : 0.5;
+        e.preventDefault();
+        if (e.key === 'ArrowLeft') onNudge(-step, 0);
+        else if (e.key === 'ArrowRight') onNudge(step, 0);
+        else if (e.key === 'ArrowUp') onNudge(0, -step);
+        else if (e.key === 'ArrowDown') onNudge(0, step);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [ed, onDuplicateSelected, onCopySelected, onPaste, onDeleteSelected, onNudge]);
+
   return (
     <div
       style={{
@@ -296,6 +427,8 @@ export default function PresentEditor({ initialDeck }: Props) {
               suggestedId={suggestion?.templateId ?? null}
               suggestReason={suggestion?.reason ?? null}
               onApply={onApplyTemplate}
+              palette={palette}
+              fonts={ed.deck.fonts}
             />
           </aside>
         )}
@@ -320,6 +453,12 @@ export default function PresentEditor({ initialDeck }: Props) {
               onSelect={ed.select}
               onFrame={onFrame}
               onEditTextCommit={onEditTextCommit}
+              onDuplicate={onDuplicateSelected}
+              onDelete={onDeleteSelected}
+              onZOrder={onZOrder}
+              onToggleLock={() =>
+                ed.updateSelected((el) => (el.locked = !el.locked))
+              }
             />
           )}
         </main>
@@ -340,9 +479,12 @@ export default function PresentEditor({ initialDeck }: Props) {
               slide={ed.slide}
               selected={ed.selected}
               palette={palette}
+              deckFonts={ed.deck.fonts}
               onUpdateSelected={ed.updateSelected}
               onUpdateSlide={ed.updateSlide}
               onZOrder={onZOrder}
+              onAlign={onAlign}
+              onDuplicate={onDuplicateSelected}
               onDelete={onDeleteSelected}
             />
           )}
@@ -365,6 +507,21 @@ export default function PresentEditor({ initialDeck }: Props) {
 /* -------- tiện ích -------- */
 function centered(w: number, h: number): Frame {
   return { x: (100 - w) / 2, y: (100 - h) / 2, w, h, rotation: 0 };
+}
+function clampPct(v: number): number {
+  return Math.max(-5, Math.min(v, 105)); // cho lố mép nhẹ để bố cục "tràn viền" vẫn được
+}
+/** Con trỏ có đang ở trong ô nhập liệu? (chặn phím tắt khi đang gõ). */
+function isTypingTarget(t: EventTarget | null): boolean {
+  const el = t as HTMLElement | null;
+  if (!el) return false;
+  const tag = el.tagName;
+  return (
+    tag === 'INPUT' ||
+    tag === 'TEXTAREA' ||
+    tag === 'SELECT' ||
+    el.isContentEditable === true
+  );
 }
 function pickInk(palette: string[]): string {
   // màu chữ tối nhất trong palette (hoặc đen)

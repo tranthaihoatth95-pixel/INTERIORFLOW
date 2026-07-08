@@ -1,16 +1,25 @@
 'use client';
 
 /**
- * components/present-editor/TemplatePicker.tsx — Chọn template (Gợi ý + Tất cả).
+ * components/present-editor/TemplatePicker.tsx — Chọn template (Gợi ý + theo nhóm).
  *
- * Hiển thị:
- *  - "Gợi ý" (từ suggestTemplate) đặt lên đầu + lý do.
- *  - "Bố cục" (builtin) và "Thư viện" (từ Reference layout/slide).
- * Áp template = build EditorSlide mới thay cho slide hiện tại (human-in-the-loop:
- * người dùng sửa tiếp tuỳ ý).
+ * Thumbnail = PREVIEW THẬT: build EditorSlide từ template (nội dung mẫu + palette gu),
+ * render qua renderEditorSlide → dataURL. Nhờ vậy mọi template (builtin + mới + thư viện)
+ * hiển thị đúng bố cục, khỏi vẽ glyph tay. Ô ảnh trống = khối placeholder trong chính
+ * template nên preview vẫn "đọc" được ngay.
+ *
+ * Nhóm hiển thị:
+ *  - "Gợi ý" (từ suggestTemplate) đặt lên đầu.
+ *  - builtin gom theo category (CATEGORY_ORDER).
+ *  - "Thư viện" (từ Reference layout/slide).
+ * Áp template = build EditorSlide mới thay slide hiện tại (human-in-the-loop).
  */
 
-import type { EditorTemplate } from '@/lib/present-editor/templates';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { EditorTemplate, TemplateCategory } from '@/lib/present-editor/templates';
+import { CATEGORY_ORDER } from '@/lib/present-editor/templates';
+import type { FontPairing } from '@/lib/slides';
+import { renderEditorSlide } from '@/lib/present-editor/render';
 import { Sparkles } from 'lucide-react';
 
 interface Props {
@@ -18,19 +27,78 @@ interface Props {
   suggestedId: string | null;
   suggestReason: string | null;
   onApply: (t: EditorTemplate) => void;
+  palette?: string[];
+  fonts?: FontPairing;
 }
 
-export default function TemplatePicker({ templates, suggestedId, suggestReason, onApply }: Props) {
+/** Nội dung mẫu để render preview (không đụng deck thật). */
+const PREVIEW_CTX = {
+  kicker: 'Concept',
+  title: 'Không gian sống',
+  body: ['Ánh sáng tự nhiên', 'Vật liệu ấm', 'Tỉ lệ cân bằng', 'Chi tiết tinh tế'],
+  images: [] as string[],
+};
+
+export default function TemplatePicker({
+  templates,
+  suggestedId,
+  suggestReason,
+  onApply,
+  palette,
+  fonts,
+}: Props) {
   const suggested = templates.find((t) => t.id === suggestedId) ?? null;
   const builtin = templates.filter((t) => t.group === 'builtin');
   const library = templates.filter((t) => t.group === 'library');
 
+  // Render preview cho từng builtin template → dataURL (cache theo id + palette).
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+  const paletteKey = (palette ?? []).join(',');
+  const doneRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    // đổi palette → render lại
+    doneRef.current = new Set();
+    setPreviews({});
+    let alive = true;
+    (async () => {
+      for (const t of builtin) {
+        if (!alive) return;
+        if (doneRef.current.has(t.id)) continue;
+        try {
+          const slide = t.build({ ...PREVIEW_CTX, palette, fonts });
+          const url = await renderEditorSlide(slide, fonts ?? 'Editorial');
+          if (!alive) return;
+          doneRef.current.add(t.id);
+          setPreviews((p) => ({ ...p, [t.id]: url }));
+        } catch {
+          /* bỏ qua template lỗi preview */
+        }
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paletteKey, fonts, builtin.length]);
+
+  // builtin gom theo category, giữ thứ tự CATEGORY_ORDER.
+  const grouped = useMemo(() => {
+    const map = new Map<TemplateCategory, EditorTemplate[]>();
+    for (const t of builtin) {
+      const cat = (t.category ?? 'Nội dung') as TemplateCategory;
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(t);
+    }
+    return CATEGORY_ORDER.filter((c) => map.has(c)).map((c) => ({ cat: c, items: map.get(c)! }));
+  }, [builtin]);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {suggested && (
         <section>
           <Header icon={<Sparkles size={13} />}>Gợi ý cho slide này</Header>
-          <Card t={suggested} highlight onApply={onApply} />
+          <Card t={suggested} highlight onApply={onApply} preview={previews[suggested.id]} />
           {suggestReason && (
             <p style={{ fontSize: 11, color: 'var(--t3)', margin: '6px 2px 0', lineHeight: 1.4 }}>
               {suggestReason}
@@ -39,21 +107,23 @@ export default function TemplatePicker({ templates, suggestedId, suggestReason, 
         </section>
       )}
 
-      <section>
-        <Header>Bố cục dựng sẵn</Header>
-        <Grid>
-          {builtin.map((t) => (
-            <Card key={t.id} t={t} onApply={onApply} />
-          ))}
-        </Grid>
-      </section>
+      {grouped.map(({ cat, items }) => (
+        <section key={cat}>
+          <Header>{cat}</Header>
+          <Grid>
+            {items.map((t) => (
+              <Card key={t.id} t={t} onApply={onApply} preview={previews[t.id]} />
+            ))}
+          </Grid>
+        </section>
+      ))}
 
       {library.length > 0 && (
         <section>
           <Header>Từ thư viện Reference</Header>
           <Grid>
             {library.map((t) => (
-              <Card key={t.id} t={t} onApply={onApply} />
+              <Card key={t.id} t={t} onApply={onApply} preview={t.thumb ?? undefined} />
             ))}
           </Grid>
         </section>
@@ -99,10 +169,12 @@ function Card({
   t,
   onApply,
   highlight,
+  preview,
 }: {
   t: EditorTemplate;
   onApply: (t: EditorTemplate) => void;
   highlight?: boolean;
+  preview?: string;
 }) {
   return (
     <button
@@ -126,83 +198,19 @@ function Card({
           aspectRatio: '16 / 9',
           borderRadius: 5,
           border: '1px solid var(--border)',
-          background: t.thumb ? `center/cover no-repeat url("${t.thumb}")` : 'var(--field)',
+          overflow: 'hidden',
+          background: preview
+            ? `center/cover no-repeat url("${preview}")`
+            : 'var(--field)',
           display: 'grid',
           placeItems: 'center',
           color: 'var(--t4)',
           fontSize: 10,
         }}
       >
-        {!t.thumb && <TemplateGlyph id={t.id} />}
+        {!preview && <span style={{ opacity: 0.6 }}>…</span>}
       </div>
       <span style={{ fontSize: 11, color: 'var(--t2)', lineHeight: 1.25 }}>{t.name}</span>
     </button>
-  );
-}
-
-/** Ký hoạ đơn giản gợi bố cục cho các preset builtin. */
-function TemplateGlyph({ id }: { id: string }) {
-  const stroke = 'var(--t4)';
-  const box = (x: number, y: number, w: number, h: number, fill = 'var(--t5)') => (
-    <rect x={x} y={y} width={w} height={h} rx={1.5} fill={fill} />
-  );
-  const line = (x: number, y: number, w: number) => (
-    <rect x={x} y={y} width={w} height={2} rx={1} fill={stroke} />
-  );
-  let content: React.ReactNode = null;
-  if (id === 'cover')
-    content = (
-      <>
-        {line(6, 10, 22)}
-        {line(6, 16, 16)}
-        {box(50, 4, 44, 42)}
-      </>
-    );
-  else if (id === 'content-image')
-    content = (
-      <>
-        {line(6, 10, 20)}
-        {line(6, 16, 24)}
-        {line(6, 22, 22)}
-        {box(56, 8, 38, 34)}
-      </>
-    );
-  else if (id === 'two-column')
-    content = (
-      <>
-        {line(6, 8, 30)}
-        {line(6, 16, 34)}
-        {line(6, 22, 30)}
-        {line(54, 16, 34)}
-        {line(54, 22, 30)}
-      </>
-    );
-  else if (id === 'grid')
-    content = (
-      <>
-        {box(6, 8, 40, 16)}
-        {box(54, 8, 40, 16)}
-        {box(6, 28, 40, 16)}
-        {box(54, 28, 40, 16)}
-      </>
-    );
-  else if (id === 'quote')
-    content = (
-      <>
-        {line(30, 18, 40)}
-        {line(34, 26, 32)}
-      </>
-    );
-  else if (id === 'full-bleed')
-    content = (
-      <>
-        {box(0, 0, 100, 50, 'var(--t4)')}
-        {line(8, 38, 30)}
-      </>
-    );
-  return (
-    <svg viewBox="0 0 100 50" width="100%" height="100%" style={{ display: 'block' }}>
-      {content}
-    </svg>
   );
 }

@@ -49,7 +49,9 @@ export default function SlideStrip({
               aspectRatio: '16 / 9',
               borderRadius: 6,
               border: i === current ? '2px solid var(--accent)' : '1px solid var(--border)',
-              background: s.background,
+              // dùng backgroundColor (không phải shorthand 'background') để không đụng
+              // backgroundImage/Size/Position → tránh cảnh báo mix shorthand của React.
+              backgroundColor: s.background,
               position: 'relative',
               overflow: 'hidden',
               cursor: 'pointer',

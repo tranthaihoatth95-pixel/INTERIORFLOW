@@ -17,28 +17,47 @@ import type {
   ImageAdjust,
   CropRect,
 } from '@/lib/present-editor/model';
+import type { FontPairing } from '@/lib/slides';
 import { DEFAULT_ADJUST } from '@/lib/present-editor/model';
+import { CURATED_FONTS } from '@/lib/present-editor/fonts';
 import {
   Trash2,
+  Copy,
   Lock,
   Unlock,
   ArrowUp,
   ArrowDown,
+  ChevronsUp,
+  ChevronsDown,
   Bold,
   Italic,
+  Underline,
+  List,
   AlignLeft,
   AlignCenter,
   AlignRight,
+  AlignStartVertical,
+  AlignCenterVertical,
+  AlignEndVertical,
+  AlignStartHorizontal,
+  AlignCenterHorizontal,
+  AlignEndHorizontal,
   RotateCcw,
 } from 'lucide-react';
+
+/** Kiểu căn element trong sân khấu. */
+type AlignMode = 'left' | 'hcenter' | 'right' | 'top' | 'vcenter' | 'bottom';
 
 interface Props {
   slide: EditorSlide;
   selected: SlideElement | null;
   palette: string[];
+  deckFonts: FontPairing;
   onUpdateSelected: (mutate: (el: SlideElement) => void, live?: boolean) => void;
   onUpdateSlide: (mutate: (s: EditorSlide) => void, live?: boolean) => void;
-  onZOrder: (dir: 'front' | 'back') => void;
+  onZOrder: (dir: 'front' | 'back' | 'forward' | 'backward') => void;
+  onAlign: (mode: AlignMode) => void;
+  onDuplicate: () => void;
   onDelete: () => void;
 }
 
@@ -46,9 +65,12 @@ export default function Inspector({
   slide,
   selected,
   palette,
+  deckFonts,
   onUpdateSelected,
   onUpdateSlide,
   onZOrder,
+  onAlign,
+  onDuplicate,
   onDelete,
 }: Props) {
   if (!selected) {
@@ -93,6 +115,7 @@ export default function Inspector({
         <TextInspector
           el={selected}
           palette={palette}
+          deckFonts={deckFonts}
           onUpdate={onUpdateSelected as (m: (el: TextElement) => void, live?: boolean) => void}
         />
       )}
@@ -123,15 +146,53 @@ export default function Inspector({
             style={{ width: '100%' }}
           />
         </Field>
+        {/* z-order: lên trước cùng / tiến 1 / lùi 1 / ra sau cùng */}
+        <Sub>Thứ tự lớp</Sub>
         <Row>
-          <ActionBtn onClick={() => onZOrder('front')} title="Đưa lên trên">
-            <ArrowUp size={14} /> Lên trên
+          <ActionBtn onClick={() => onZOrder('front')} title="Đưa lên trước cùng">
+            <ChevronsUp size={14} /> Trước cùng
           </ActionBtn>
-          <ActionBtn onClick={() => onZOrder('back')} title="Đưa xuống dưới">
-            <ArrowDown size={14} /> Xuống dưới
+          <ActionBtn onClick={() => onZOrder('forward')} title="Tiến 1 bậc">
+            <ArrowUp size={14} /> Tiến 1
           </ActionBtn>
         </Row>
         <Row>
+          <ActionBtn onClick={() => onZOrder('backward')} title="Lùi 1 bậc">
+            <ArrowDown size={14} /> Lùi 1
+          </ActionBtn>
+          <ActionBtn onClick={() => onZOrder('back')} title="Đưa ra sau cùng">
+            <ChevronsDown size={14} /> Sau cùng
+          </ActionBtn>
+        </Row>
+
+        {/* căn element trong sân khấu */}
+        <Sub>Căn trong slide</Sub>
+        <Row>
+          <Toggle onClick={() => onAlign('left')} title="Căn mép trái">
+            <AlignStartVertical size={14} />
+          </Toggle>
+          <Toggle onClick={() => onAlign('hcenter')} title="Căn giữa ngang">
+            <AlignCenterVertical size={14} />
+          </Toggle>
+          <Toggle onClick={() => onAlign('right')} title="Căn mép phải">
+            <AlignEndVertical size={14} />
+          </Toggle>
+          <Toggle onClick={() => onAlign('top')} title="Căn mép trên">
+            <AlignStartHorizontal size={14} />
+          </Toggle>
+          <Toggle onClick={() => onAlign('vcenter')} title="Căn giữa dọc">
+            <AlignCenterHorizontal size={14} />
+          </Toggle>
+          <Toggle onClick={() => onAlign('bottom')} title="Căn mép dưới">
+            <AlignEndHorizontal size={14} />
+          </Toggle>
+        </Row>
+
+        <Sub>Thao tác</Sub>
+        <Row>
+          <ActionBtn onClick={onDuplicate} title="Nhân bản (Ctrl/Cmd+D)">
+            <Copy size={14} /> Nhân bản
+          </ActionBtn>
           <ActionBtn
             onClick={() => onUpdateSelected((el) => (el.locked = !el.locked))}
             title="Khoá/mở khoá"
@@ -139,8 +200,10 @@ export default function Inspector({
             {selected.locked ? <Unlock size={14} /> : <Lock size={14} />}
             {selected.locked ? 'Mở khoá' : 'Khoá'}
           </ActionBtn>
-          <ActionBtn onClick={onDelete} title="Xoá" danger>
-            <Trash2 size={14} /> Xoá
+        </Row>
+        <Row>
+          <ActionBtn onClick={onDelete} title="Xoá (Delete)" danger>
+            <Trash2 size={14} /> Xoá phần tử
           </ActionBtn>
         </Row>
       </Panel>
@@ -152,10 +215,12 @@ export default function Inspector({
 function TextInspector({
   el,
   palette,
+  deckFonts,
   onUpdate,
 }: {
   el: TextElement;
   palette: string[];
+  deckFonts: FontPairing;
   onUpdate: (m: (el: TextElement) => void, live?: boolean) => void;
 }) {
   return (
@@ -167,6 +232,27 @@ function TextInspector({
           rows={3}
           style={{ ...input, resize: 'vertical', fontFamily: 'inherit' }}
         />
+      </Field>
+      <Field label="Font chữ">
+        <select
+          value={el.fontFamily ?? ''}
+          onChange={(e) =>
+            onUpdate((t) => {
+              const v = e.target.value;
+              // rỗng = theo bộ chữ của deck; ngược lại ghi đè family riêng cho element
+              if (!v) delete t.fontFamily;
+              else t.fontFamily = v;
+            })
+          }
+          style={input}
+        >
+          <option value="">Theo deck ({deckFonts})</option>
+          {CURATED_FONTS.map((f) => (
+            <option key={f.stack} value={f.stack}>
+              {f.label}
+            </option>
+          ))}
+        </select>
       </Field>
       <Field label={`Cỡ chữ ${el.fontSize.toFixed(1)}`}>
         <input
@@ -180,6 +266,7 @@ function TextInspector({
           style={{ width: '100%' }}
         />
       </Field>
+      {/* kiểu chữ: đậm / nghiêng / gạch chân / bullet */}
       <Row>
         <Toggle active={el.bold} onClick={() => onUpdate((t) => (t.bold = !t.bold))} title="Đậm">
           <Bold size={14} />
@@ -191,6 +278,23 @@ function TextInspector({
         >
           <Italic size={14} />
         </Toggle>
+        <Toggle
+          active={!!el.underline}
+          onClick={() => onUpdate((t) => (t.underline = !t.underline))}
+          title="Gạch chân"
+        >
+          <Underline size={14} />
+        </Toggle>
+        <Toggle
+          active={!!el.bullet}
+          onClick={() => onUpdate((t) => (t.bullet = !t.bullet))}
+          title="Danh sách gạch đầu dòng"
+        >
+          <List size={14} />
+        </Toggle>
+      </Row>
+      {/* căn chữ ngang */}
+      <Row>
         <Toggle
           active={el.align === 'left'}
           onClick={() => onUpdate((t) => (t.align = 'left'))}
@@ -213,6 +317,30 @@ function TextInspector({
           <AlignRight size={14} />
         </Toggle>
       </Row>
+      <Field label={`Giãn dòng ${(el.lineHeight ?? 1.2).toFixed(2)}`}>
+        <input
+          type="range"
+          min={0.8}
+          max={2.4}
+          step={0.05}
+          value={el.lineHeight ?? 1.2}
+          onChange={(e) => onUpdate((t) => (t.lineHeight = +e.target.value), true)}
+          onPointerUp={(e) => onUpdate((t) => (t.lineHeight = +(e.target as HTMLInputElement).value))}
+          style={{ width: '100%' }}
+        />
+      </Field>
+      <Field label={`Giãn chữ ${el.tracking ?? 0}`}>
+        <input
+          type="range"
+          min={-2}
+          max={20}
+          step={0.5}
+          value={el.tracking ?? 0}
+          onChange={(e) => onUpdate((t) => (t.tracking = +e.target.value), true)}
+          onPointerUp={(e) => onUpdate((t) => (t.tracking = +(e.target as HTMLInputElement).value))}
+          style={{ width: '100%' }}
+        />
+      </Field>
       <Field label="Màu chữ">
         <ColorRow value={el.color} palette={palette} onChange={(c) => onUpdate((t) => (t.color = c))} />
       </Field>

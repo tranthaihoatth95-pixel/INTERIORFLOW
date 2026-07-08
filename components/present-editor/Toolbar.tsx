@@ -7,6 +7,7 @@
 
 import { useRef, useState } from 'react';
 import {
+  ArrowLeft,
   Type,
   Image as ImageIcon,
   Square,
@@ -48,6 +49,13 @@ export default function Toolbar(p: Props) {
     e.target.value = '';
   }
 
+  // Thoát Canva mode: quay lại trang trước, không có lịch sử thì về app chính '/'.
+  function onBack() {
+    if (typeof window === 'undefined') return;
+    if (window.history.length > 1) window.history.back();
+    else window.location.href = '/';
+  }
+
   return (
     <div
       style={{
@@ -60,6 +68,10 @@ export default function Toolbar(p: Props) {
         flexWrap: 'wrap',
       }}
     >
+      <Btn onClick={onBack} title="Quay lại app chính">
+        <ArrowLeft size={15} /> Quay lại
+      </Btn>
+      <Divider />
       <Btn onClick={p.onAddText} title="Thêm chữ">
         <Type size={15} /> Chữ
       </Btn>

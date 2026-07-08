@@ -83,6 +83,10 @@ function toContentSlide(
     body,
   };
 
+  // Lưu ý: font riêng theo element (el.fontFamily) + kiểu đậm/nghiêng/gạch chân KHÔNG map được
+  // xuống nhánh PPTX text-editable này vì lib/pptx style theo ROLE cấp deck, không theo run.
+  // Trung thực về font/kiểu chữ được bảo toàn ở PDF và nhánh PPTX-ảnh (render.ts đọc fontFamily).
+
   // Layout heuristic cho PPTX (chỉ có Cover / Nội dung + ảnh / Quote).
   let layout: SlideLayout = 'Nội dung + ảnh';
   if (slide.templateId === 'quote' || (titleEl?.italic && !body.length)) layout = 'Quote';

@@ -117,7 +117,7 @@ function drawShapeEl(ctx: CanvasRenderingContext2D, el: ShapeElement): void {
   ctx.restore();
 }
 
-function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontBody: string): void {
+function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontDeck: string): void {
   const fx = px(el.frame.x);
   const fy = py(el.frame.y);
   const fw = px(el.frame.w);
@@ -127,8 +127,11 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontBody: st
   applyRotation(ctx, el.frame);
   const weight = el.bold ? '700' : '400';
   const style = el.italic ? 'italic ' : '';
+  // Bộ chữ: ưu tiên fontFamily riêng của element (chuỗi CSS dùng thẳng được), không thì deck.
+  const fontBody = el.fontFamily || fontDeck;
   ctx.font = `${style}${weight} ${sizePx}px ${fontBody}`;
   ctx.fillStyle = el.color;
+  ctx.strokeStyle = el.color;
   ctx.textBaseline = 'top';
   const align = el.align || 'left';
   ctx.textAlign = align === 'center' ? 'center' : align === 'right' ? 'right' : 'left';
@@ -136,11 +139,12 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontBody: st
   const lineH = sizePx * (el.lineHeight ?? 1.2);
   const tracking = ((el.tracking ?? 0) / 100) * H;
 
-  // wrap theo từng dòng logic (\n) rồi wrap theo bề rộng
+  // wrap theo từng dòng logic (\n) rồi wrap theo bề rộng. Bullet → thêm "• " đầu mỗi dòng logic.
   const paragraphs = (el.text || '').split('\n');
   let y = fy;
   for (const para of paragraphs) {
-    const words = para.split(/\s+/).filter(Boolean);
+    const raw = el.bullet && para.trim() ? `•  ${para}` : para;
+    const words = raw.split(/\s+/).filter(Boolean);
     if (!words.length) {
       y += lineH;
       continue;
@@ -150,7 +154,7 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontBody: st
       const test = line ? `${line} ${word}` : word;
       const wWidth = measureTracked(ctx, test, tracking);
       if (wWidth > fw && line) {
-        drawTracked(ctx, line, anchorX, y, tracking, align);
+        drawLineText(ctx, line, anchorX, y, tracking, align, el.underline, sizePx);
         line = word;
         y += lineH;
       } else {
@@ -158,11 +162,39 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontBody: st
       }
     }
     if (line) {
-      drawTracked(ctx, line, anchorX, y, tracking, align);
+      drawLineText(ctx, line, anchorX, y, tracking, align, el.underline, sizePx);
       y += lineH;
     }
   }
   ctx.restore();
+}
+
+/** Vẽ 1 dòng chữ (có tracking) + gạch chân nếu bật. */
+function drawLineText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  anchorX: number,
+  y: number,
+  tracking: number,
+  align: string,
+  underline: boolean | undefined,
+  sizePx: number,
+): void {
+  drawTracked(ctx, text, anchorX, y, tracking, align);
+  if (underline) {
+    const width = measureTracked(ctx, text, tracking);
+    let x0 = anchorX;
+    if (align === 'center') x0 = anchorX - width / 2;
+    else if (align === 'right') x0 = anchorX - width;
+    const uy = y + sizePx * 1.02; // ngay dưới đường baseline (textBaseline='top')
+    ctx.save();
+    ctx.lineWidth = Math.max(1, sizePx * 0.05);
+    ctx.beginPath();
+    ctx.moveTo(x0, uy);
+    ctx.lineTo(x0 + width, uy);
+    ctx.stroke();
+    ctx.restore();
+  }
 }
 
 function measureTracked(ctx: CanvasRenderingContext2D, text: string, tracking: number): number {

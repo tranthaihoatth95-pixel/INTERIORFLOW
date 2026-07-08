@@ -83,9 +83,18 @@ export interface TextElement extends BaseElement {
   align: TextAlign;
   bold: boolean;
   italic: boolean;
+  /** gạch chân (như Word). Phản chiếu ở render.ts (canvas) + export PPTX. */
+  underline?: boolean;
   /** khoảng cách chữ (letter-spacing) px @1080. */
   tracking?: number;
   lineHeight?: number; // hệ số
+  /** danh sách bullet — mỗi dòng (\n) là 1 gạch đầu dòng "• ". */
+  bullet?: boolean;
+  /**
+   * Ghi đè bộ chữ riêng cho element này (chuỗi font-family CSS, xem lib/present-editor/fonts).
+   * Bỏ trống = kế thừa bộ chữ của deck (FontPairing).
+   */
+  fontFamily?: string;
   /** vai trò ngữ nghĩa để export PPTX map về SlideContent (title/body/kicker). */
   role?: 'title' | 'kicker' | 'body' | 'free';
 }
@@ -146,8 +155,10 @@ export function makeText(partial: Partial<TextElement> = {}): TextElement {
     align: 'left',
     bold: false,
     italic: false,
+    underline: false,
     tracking: 0,
     lineHeight: 1.2,
+    bullet: false,
     role: 'free',
     opacity: 1,
     ...partial,
@@ -186,6 +197,24 @@ export function makeShape(shape: ShapeKind, partial: Partial<ShapeElement> = {})
 /** Bản sao sâu, serialize được (đủ cho model phẳng). */
 export function cloneDeck(d: EditorDeck): EditorDeck {
   return JSON.parse(JSON.stringify(d));
+}
+
+/**
+ * Nhân bản 1 element: sao sâu + cấp id mới + dời nhẹ (2%) để thấy được bản mới.
+ * Dùng cho Ctrl+D và paste. `offset=false` khi paste vào slide khác (giữ nguyên vị trí).
+ */
+export function duplicateElement(el: SlideElement, offset = true): SlideElement {
+  const copy: SlideElement = JSON.parse(JSON.stringify(el));
+  copy.id = newId(el.kind);
+  if (offset) {
+    copy.frame = {
+      ...copy.frame,
+      x: Math.min(copy.frame.x + 2, 95),
+      y: Math.min(copy.frame.y + 2, 95),
+    };
+  }
+  copy.locked = false; // bản sao luôn mở khoá cho tiện chỉnh
+  return copy;
 }
 
 /** Chuỗi CSS filter từ ImageAdjust — dùng cho hiển thị live VÀ tái dựng khi export. */

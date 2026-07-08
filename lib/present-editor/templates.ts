@@ -35,15 +35,34 @@ export interface TemplateContext {
   fonts?: FontPairing;
 }
 
+/** Phân loại con của builtin để picker gom nhóm gọn (từ archetype trong Reference). */
+export type TemplateCategory =
+  | 'Bìa & Mở đầu'
+  | 'Nội dung'
+  | 'Moodboard & Vật liệu'
+  | 'Kỹ thuật'
+  | 'Trưng bày';
+
 export interface EditorTemplate {
   id: string;
   name: string;
   /** nhóm để hiển thị: 'Bố cục' (builtin) hoặc 'Thư viện' (từ Reference). */
   group: 'builtin' | 'library';
+  /** phân loại con (chỉ builtin) — picker gom theo đây. */
+  category?: TemplateCategory;
   /** ảnh xem trước (với library template = chính ảnh ref). */
   thumb?: string | null;
   build: (ctx: TemplateContext) => EditorSlide;
 }
+
+/** Thứ tự hiển thị category trong picker. */
+export const CATEGORY_ORDER: TemplateCategory[] = [
+  'Bìa & Mở đầu',
+  'Nội dung',
+  'Moodboard & Vật liệu',
+  'Kỹ thuật',
+  'Trưng bày',
+];
 
 /* --------------------------- tiện ích màu --------------------------- */
 
@@ -123,6 +142,34 @@ function textBlocks(
   return els;
 }
 
+/**
+ * Ô ảnh: nếu có src người dùng → ảnh thật; nếu chưa → khối placeholder màu muted
+ * (skeleton) để bố cục vẫn "đọc" được ngay khi chưa gắn ảnh. Người dùng thả ảnh lên sau.
+ */
+function imgSlot(
+  src: string | undefined,
+  frame: SlideElement['frame'],
+  colors: ReturnType<typeof pal>,
+  opts: { radius?: number; fill?: string } = {},
+): SlideElement {
+  if (src) return makeImage(src, { frame, radius: opts.radius ?? 6 });
+  return makeShape('rect', {
+    frame,
+    fill: opts.fill ?? colors.muted,
+    stroke: 'transparent',
+    strokeWidth: 0,
+    radius: opts.radius ?? 6,
+    opacity: 0.55,
+  });
+}
+
+/** Lấy ảnh thứ i (vòng lại nếu thiếu), hoặc undefined nếu không có ảnh nào. */
+function imgAt(ctx: TemplateContext, i: number): string | undefined {
+  const imgs = ctx.images?.filter(Boolean) ?? [];
+  if (!imgs.length) return undefined;
+  return imgs[i % imgs.length];
+}
+
 /* --------------------------- BUILTIN --------------------------- */
 
 export const BUILTIN_TEMPLATES: EditorTemplate[] = [
@@ -130,6 +177,7 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
     id: 'cover',
     name: 'Bìa (chữ trái · ảnh phải)',
     group: 'builtin',
+    category: 'Bìa & Mở đầu',
     build: (ctx) => {
       const c = pal(ctx.palette);
       const els: SlideElement[] = [];
@@ -188,6 +236,7 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
     id: 'content-image',
     name: 'Nội dung + ảnh',
     group: 'builtin',
+    category: 'Nội dung',
     build: (ctx) => {
       const c = pal(ctx.palette);
       const els = textBlocks(ctx, c, { x: 6, w: 44 });
@@ -205,6 +254,7 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
     id: 'two-column',
     name: 'Hai cột chữ',
     group: 'builtin',
+    category: 'Nội dung',
     build: (ctx) => {
       const c = pal(ctx.palette);
       const els: SlideElement[] = [];
@@ -263,6 +313,7 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
     id: 'grid',
     name: 'Lưới ảnh (2×2)',
     group: 'builtin',
+    category: 'Moodboard & Vật liệu',
     build: (ctx) => {
       const c = pal(ctx.palette);
       const els: SlideElement[] = [];
@@ -309,6 +360,7 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
     id: 'quote',
     name: 'Trích dẫn (giữa)',
     group: 'builtin',
+    category: 'Nội dung',
     build: (ctx) => {
       const c = pal(ctx.palette);
       const els: SlideElement[] = [
@@ -350,6 +402,7 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
     id: 'full-bleed',
     name: 'Ảnh tràn viền + tiêu đề',
     group: 'builtin',
+    category: 'Bìa & Mở đầu',
     build: (ctx) => {
       const c = pal(ctx.palette);
       const slide: EditorSlide = {
@@ -384,6 +437,393 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
         }),
       );
       return slide;
+    },
+  },
+
+  /* ---------- ARCHETYPE trích từ Reference "bo cuc dan trang" ---------- */
+
+  {
+    id: 'dark-cover',
+    name: 'Bìa tối điện ảnh',
+    group: 'builtin',
+    category: 'Bìa & Mở đầu',
+    build: (ctx) => {
+      const c = pal(ctx.palette);
+      const els: SlideElement[] = [
+        imgSlot(imgAt(ctx, 0), { x: 22, y: 10, w: 56, h: 52, rotation: 0 }, c, { radius: 3 }),
+      ];
+      if (ctx.kicker)
+        els.push(
+          makeText({
+            text: ctx.kicker.toUpperCase(),
+            role: 'kicker',
+            frame: { x: 12, y: 68, w: 76, h: 4, rotation: 0 },
+            fontSize: 2.2,
+            color: c.accent,
+            align: 'center',
+            bold: true,
+            tracking: 5,
+          }),
+        );
+      els.push(
+        makeText({
+          text: ctx.title || 'Tên dự án',
+          role: 'title',
+          frame: { x: 10, y: 73, w: 80, h: 16, rotation: 0 },
+          fontSize: 7.5,
+          color: '#f3efe8',
+          align: 'center',
+          bold: true,
+          lineHeight: 1.05,
+        }),
+      );
+      return { id: newId('sld'), background: c.dark, elements: els, templateId: 'dark-cover' };
+    },
+  },
+  {
+    id: 'section-divider',
+    name: 'Trang phân mục (số lớn)',
+    group: 'builtin',
+    category: 'Bìa & Mở đầu',
+    build: (ctx) => {
+      const c = pal(ctx.palette);
+      const els: SlideElement[] = [];
+      els.push(
+        makeText({
+          text: (ctx.kicker || 'Phần').toUpperCase(),
+          role: 'kicker',
+          frame: { x: 8, y: 20, w: 50, h: 5, rotation: 0 },
+          fontSize: 2.2,
+          color: c.accent,
+          bold: true,
+          tracking: 4,
+        }),
+      );
+      // số/nhãn lớn bên phải (trang trí)
+      els.push(
+        makeText({
+          text: '01',
+          role: 'free',
+          frame: { x: 62, y: 12, w: 32, h: 30, rotation: 0 },
+          fontSize: 22,
+          color: c.muted,
+          align: 'right',
+          bold: true,
+          lineHeight: 1,
+        }),
+      );
+      els.push(
+        makeText({
+          text: ctx.title || 'Tiêu đề phần',
+          role: 'title',
+          frame: { x: 8, y: 27, w: 52, h: 26, rotation: 0 },
+          fontSize: 8.5,
+          color: c.dark,
+          bold: true,
+          lineHeight: 1.06,
+        }),
+      );
+      els.push(
+        makeShape('line', {
+          frame: { x: 8, y: 58, w: 9, h: 0.5, rotation: 0 },
+          stroke: c.accent,
+          strokeWidth: 3,
+        }),
+      );
+      if (ctx.body?.length)
+        els.push(
+          makeText({
+            text: ctx.body.slice(0, 2).join('\n'),
+            role: 'body',
+            frame: { x: 8, y: 62, w: 52, h: 22, rotation: 0 },
+            fontSize: 2.6,
+            color: c.muted,
+            lineHeight: 1.35,
+          }),
+        );
+      return { id: newId('sld'), background: c.light, elements: els, templateId: 'section-divider' };
+    },
+  },
+  {
+    id: 'moodboard-board',
+    name: 'Moodboard (hero + swatch)',
+    group: 'builtin',
+    category: 'Moodboard & Vật liệu',
+    build: (ctx) => {
+      const c = pal(ctx.palette);
+      const els: SlideElement[] = [];
+      if (ctx.title)
+        els.push(
+          makeText({
+            text: ctx.title,
+            role: 'title',
+            frame: { x: 6, y: 6, w: 60, h: 8, rotation: 0 },
+            fontSize: 4.2,
+            color: c.dark,
+            bold: true,
+          }),
+        );
+      if (ctx.kicker)
+        els.push(
+          makeText({
+            text: ctx.kicker.toUpperCase(),
+            role: 'kicker',
+            frame: { x: 68, y: 8, w: 26, h: 5, rotation: 0 },
+            fontSize: 2,
+            color: c.accent,
+            align: 'right',
+            bold: true,
+            tracking: 3,
+          }),
+        );
+      // hero render
+      els.push(imgSlot(imgAt(ctx, 0), { x: 6, y: 17, w: 88, h: 40, rotation: 0 }, c, { radius: 6 }));
+      // hàng 4 swatch nội thất/vật liệu
+      const cellW = 20.5;
+      const gap = 2.5;
+      for (let i = 0; i < 4; i++) {
+        const x = 6 + i * (cellW + gap);
+        els.push(imgSlot(imgAt(ctx, i + 1), { x, y: 60, w: cellW, h: 26, rotation: 0 }, c, { radius: 4 }));
+        els.push(
+          makeText({
+            text: (ctx.body?.[i] || `Vật liệu ${i + 1}`).replace(/^[-•]\s*/, ''),
+            role: 'body',
+            frame: { x, y: 87, w: cellW, h: 5, rotation: 0 },
+            fontSize: 1.8,
+            color: c.muted,
+            lineHeight: 1.2,
+          }),
+        );
+      }
+      return { id: newId('sld'), background: c.light, elements: els, templateId: 'moodboard-board' };
+    },
+  },
+  {
+    id: 'material-palette',
+    name: 'Bảng màu & vật liệu',
+    group: 'builtin',
+    category: 'Moodboard & Vật liệu',
+    build: (ctx) => {
+      const c = pal(ctx.palette);
+      const els: SlideElement[] = [];
+      els.push(
+        makeText({
+          text: (ctx.kicker || 'Color & Material').toUpperCase(),
+          role: 'kicker',
+          frame: { x: 6, y: 12, w: 44, h: 5, rotation: 0 },
+          fontSize: 2,
+          color: c.accent,
+          bold: true,
+          tracking: 4,
+        }),
+      );
+      els.push(
+        makeText({
+          text: ctx.title || 'Bảng vật liệu',
+          role: 'title',
+          frame: { x: 6, y: 17, w: 44, h: 12, rotation: 0 },
+          fontSize: 5.5,
+          color: c.dark,
+          bold: true,
+        }),
+      );
+      // dải chip màu từ palette
+      const chips = c.palette.slice(0, 6);
+      const chipW = 6.5;
+      const chipGap = 1.5;
+      chips.forEach((hex, i) => {
+        els.push(
+          makeShape('rect', {
+            frame: { x: 6 + i * (chipW + chipGap), y: 33, w: chipW, h: 12, rotation: 0 },
+            fill: hex,
+            stroke: 'transparent',
+            strokeWidth: 0,
+            radius: 3,
+          }),
+        );
+      });
+      // 2 mẫu vật liệu (ảnh) dưới chip
+      els.push(imgSlot(imgAt(ctx, 1), { x: 6, y: 50, w: 21, h: 34, rotation: 0 }, c, { radius: 4 }));
+      els.push(imgSlot(imgAt(ctx, 2), { x: 29, y: 50, w: 21, h: 34, rotation: 0 }, c, { radius: 4 }));
+      // render bối cảnh bên phải
+      els.push(imgSlot(imgAt(ctx, 0), { x: 55, y: 10, w: 39, h: 80, rotation: 0 }, c, { radius: 6 }));
+      return { id: newId('sld'), background: c.light, elements: els, templateId: 'material-palette' };
+    },
+  },
+  {
+    id: 'plan-sheet',
+    name: 'Trang mặt bằng (kỹ thuật)',
+    group: 'builtin',
+    category: 'Kỹ thuật',
+    build: (ctx) => {
+      const c = pal(ctx.palette);
+      const els: SlideElement[] = [];
+      // mặt bằng lớn bên trái
+      els.push(imgSlot(imgAt(ctx, 0), { x: 5, y: 10, w: 58, h: 78, rotation: 0 }, c, { radius: 2, fill: '#ffffff' }));
+      // cột thông tin bên phải
+      els.push(
+        makeText({
+          text: (ctx.kicker || 'Mặt bằng bố trí').toUpperCase(),
+          role: 'kicker',
+          frame: { x: 68, y: 12, w: 27, h: 5, rotation: 0 },
+          fontSize: 1.9,
+          color: c.accent,
+          bold: true,
+          tracking: 3,
+        }),
+      );
+      els.push(
+        makeText({
+          text: ctx.title || 'Tên dự án',
+          role: 'title',
+          frame: { x: 68, y: 17, w: 27, h: 12, rotation: 0 },
+          fontSize: 4.2,
+          color: c.dark,
+          bold: true,
+          lineHeight: 1.1,
+        }),
+      );
+      els.push(
+        makeShape('line', {
+          frame: { x: 68, y: 31, w: 27, h: 0.4, rotation: 0 },
+          stroke: c.muted,
+          strokeWidth: 1.5,
+        }),
+      );
+      const specs =
+        ctx.body?.length ? ctx.body : ['Diện tích: — m²', 'Tỉ lệ: 1:100', 'Phòng: —', 'Ngày: —'];
+      els.push(
+        makeText({
+          text: specs.map((b) => b.replace(/^[-•]\s*/, '')).join('\n'),
+          role: 'body',
+          frame: { x: 68, y: 35, w: 27, h: 40, rotation: 0 },
+          fontSize: 2.2,
+          color: c.dark,
+          lineHeight: 1.7,
+        }),
+      );
+      // số bản vẽ góc dưới
+      els.push(
+        makeText({
+          text: 'A-101',
+          role: 'free',
+          frame: { x: 68, y: 82, w: 27, h: 6, rotation: 0 },
+          fontSize: 3,
+          color: c.muted,
+          align: 'right',
+          bold: true,
+          tracking: 2,
+        }),
+      );
+      return { id: newId('sld'), background: c.light, elements: els, templateId: 'plan-sheet' };
+    },
+  },
+  {
+    id: 'triptych',
+    name: 'Triptych (3 panel dọc)',
+    group: 'builtin',
+    category: 'Trưng bày',
+    build: (ctx) => {
+      const c = pal(ctx.palette);
+      const els: SlideElement[] = [];
+      if (ctx.kicker)
+        els.push(
+          makeText({
+            text: ctx.kicker.toUpperCase(),
+            role: 'kicker',
+            frame: { x: 20, y: 12, w: 60, h: 4, rotation: 0 },
+            fontSize: 2,
+            color: c.accent,
+            align: 'center',
+            bold: true,
+            tracking: 4,
+          }),
+        );
+      const panelW = 26;
+      const gap = 3;
+      const startX = 50 - (panelW * 1.5 + gap);
+      for (let i = 0; i < 3; i++) {
+        els.push(
+          imgSlot(imgAt(ctx, i), { x: startX + i * (panelW + gap), y: 22, w: panelW, h: 52, rotation: 0 }, c, {
+            radius: 4,
+          }),
+        );
+      }
+      els.push(
+        makeText({
+          text: ctx.title || 'Bộ sưu tập không gian',
+          role: 'title',
+          frame: { x: 15, y: 80, w: 70, h: 8, rotation: 0 },
+          fontSize: 3.4,
+          color: c.dark,
+          align: 'center',
+          bold: true,
+        }),
+      );
+      return { id: newId('sld'), background: c.light, elements: els, templateId: 'triptych' };
+    },
+  },
+  {
+    id: 'catalog-index',
+    name: 'Catalog nội thất (nhãn + lưới)',
+    group: 'builtin',
+    category: 'Trưng bày',
+    build: (ctx) => {
+      const c = pal(ctx.palette);
+      const els: SlideElement[] = [];
+      els.push(
+        makeText({
+          text: ctx.title || 'Danh mục nội thất',
+          role: 'title',
+          frame: { x: 6, y: 8, w: 40, h: 10, rotation: 0 },
+          fontSize: 4.5,
+          color: c.dark,
+          bold: true,
+        }),
+      );
+      // cột nhãn hạng mục bên trái
+      const labels = (ctx.body?.length ? ctx.body : ['Bàn', 'Ghế', 'Kệ']).slice(0, 3);
+      labels.forEach((lb, i) => {
+        const y = 30 + i * 20;
+        els.push(
+          makeText({
+            text: lb.replace(/^[-•]\s*/, '').toUpperCase(),
+            role: 'body',
+            frame: { x: 6, y, w: 22, h: 5, rotation: 0 },
+            fontSize: 2.6,
+            color: c.dark,
+            bold: true,
+            tracking: 1,
+          }),
+        );
+        els.push(
+          makeShape('line', {
+            frame: { x: 6, y: y + 6, w: 20, h: 0.3, rotation: 0 },
+            stroke: c.muted,
+            strokeWidth: 1,
+          }),
+        );
+      });
+      // lưới ảnh sản phẩm bên phải (3×2)
+      const gx = 34;
+      const cellW = 19;
+      const cellH = 34;
+      const gap = 2;
+      for (let r = 0; r < 2; r++) {
+        for (let col = 0; col < 3; col++) {
+          const idx = r * 3 + col;
+          els.push(
+            imgSlot(imgAt(ctx, idx), {
+              x: gx + col * (cellW + gap),
+              y: 14 + r * (cellH + gap),
+              w: cellW,
+              h: cellH,
+              rotation: 0,
+            }, c, { radius: 3 }),
+          );
+        }
+      }
+      return { id: newId('sld'), background: c.light, elements: els, templateId: 'catalog-index' };
     },
   },
 ];

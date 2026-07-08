@@ -36,6 +36,8 @@ interface Props {
   onGuides: (g: Guides | null) => void;
   /** double-click text → chỉnh nội dung inline. */
   onEditText?: (id: string) => void;
+  /** chuột phải trên element → mở menu ngữ cảnh. */
+  onContextMenu?: (e: React.MouseEvent) => void;
 }
 
 const SNAP = 1.2; // ngưỡng snap theo %
@@ -59,6 +61,7 @@ export default function Element({
   onFrame,
   onGuides,
   onEditText,
+  onContextMenu,
 }: Props) {
   const dragState = useRef<{
     handle: Handle;
@@ -187,6 +190,7 @@ export default function Element({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onDoubleClick={() => el.kind === 'text' && onEditText?.(el.id)}
+      onContextMenu={onContextMenu}
     >
       <Inner el={el} fonts={fonts} />
 
@@ -314,16 +318,25 @@ function ShapeInner({ el }: { el: ShapeElement }) {
 }
 
 function TextInner({ el, fonts }: { el: TextElement; fonts: string }) {
+  // Bullet: thêm "•  " đầu mỗi dòng logic (khớp cách render.ts vẽ khi export).
+  const shown = el.bullet
+    ? el.text
+        .split('\n')
+        .map((l) => (l.trim() ? `•  ${l}` : l))
+        .join('\n')
+    : el.text;
   return (
     <div
       style={{
         width: '100%',
         height: '100%',
         color: el.color,
-        fontFamily: CANVAS_FONT[fonts] ?? CANVAS_FONT.Editorial,
+        // ưu tiên bộ chữ riêng của element (chuỗi CSS), không thì dùng bộ chữ của deck
+        fontFamily: el.fontFamily || CANVAS_FONT[fonts] || CANVAS_FONT.Editorial,
         fontSize: `${el.fontSize}cqh`,
         fontWeight: el.bold ? 700 : 400,
         fontStyle: el.italic ? 'italic' : 'normal',
+        textDecoration: el.underline ? 'underline' : undefined,
         textAlign: el.align,
         letterSpacing: el.tracking ? `${el.tracking * 0.09}vh` : undefined,
         lineHeight: el.lineHeight ?? 1.2,
@@ -332,7 +345,7 @@ function TextInner({ el, fonts }: { el: TextElement; fonts: string }) {
         wordBreak: 'break-word',
       }}
     >
-      {el.text}
+      {shown}
     </div>
   );
 }
