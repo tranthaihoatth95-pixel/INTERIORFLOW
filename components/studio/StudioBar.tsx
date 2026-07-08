@@ -1,29 +1,36 @@
 'use client';
 
 /**
- * components/studio/StudioBar.tsx — Thanh chuyển "không gian làm việc" dùng chung.
+ * components/studio/StudioBar.tsx — Thanh đầu 2 studio route dùng CHUNG StageSwitcher.
  *
- * Ba studio là 3 route riêng (app chính '/', dàn trang '/present-editor', chỉnh ảnh
- * '/photo-editor'). Bar này luôn hiển thị ở đầu 2 studio editor để:
- *   - LUÔN có đường về app chính (không kẹt trong route),
- *   - chuyển qua lại 3 không gian như một sản phẩm liền mạch.
- *
- * Điều hướng bằng next/link (soft nav) — mượt hơn reload cứng. Về '/' vào thẳng canvas
- * nhờ persist stageDone (xem app/page.tsx).
+ * Trục điều hướng duy nhất: Concept · Render · Present (giống hệt header app chính).
+ *   - present-editor: active = Present.
+ *   - photo-editor: active = Render + nhãn "Chỉnh ảnh" (photo là công cụ con của Render).
+ * Chọn Concept/Render → về '/' đúng chặng (ghi localStorage workspace, store.hydrate đọc lại).
+ * Chọn Present → /present-editor. Luôn có đường về app chính.
  */
 
-import Link from 'next/link';
-import { Workflow, LayoutTemplate, Wand2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import type { Phase } from '@/lib/phases';
+import StageSwitcher from './StageSwitcher';
 
-export type StudioKey = 'node' | 'present' | 'photo';
+export default function StudioBar({ active }: { active: 'present' | 'photo' }) {
+  const router = useRouter();
 
-const MODES: { key: StudioKey; href: string; label: string; icon: React.ReactNode }[] = [
-  { key: 'node', href: '/', label: 'Node canvas', icon: <Workflow size={15} /> },
-  { key: 'present', href: '/present-editor', label: 'Dàn trang', icon: <LayoutTemplate size={15} /> },
-  { key: 'photo', href: '/photo-editor', label: 'Chỉnh ảnh', icon: <Wand2 size={15} /> },
-];
+  const go = (p: Phase) => {
+    if (p === 'present') {
+      router.push('/present-editor');
+      return;
+    }
+    // Concept/Render sống ở app chính — ghi chặng rồi về '/' (store.hydrate khôi phục).
+    try {
+      localStorage.setItem('interiorflow.workspace', p);
+    } catch {
+      /* bỏ qua */
+    }
+    router.push('/');
+  };
 
-export default function StudioBar({ active }: { active: StudioKey }) {
   return (
     <div
       style={{
@@ -37,65 +44,18 @@ export default function StudioBar({ active }: { active: StudioKey }) {
         background: 'var(--panel)',
       }}
     >
-      {/* wordmark */}
       <span
-        style={{
-          fontSize: 13,
-          fontWeight: 700,
-          letterSpacing: 1,
-          color: 'var(--t2)',
-          userSelect: 'none',
-        }}
+        style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1, color: 'var(--t2)', userSelect: 'none' }}
       >
         IF
       </span>
       <span style={{ width: 1, height: 20, background: 'var(--border)' }} />
 
-      {/* segmented control 3 mode */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 2,
-          padding: 3,
-          borderRadius: 10,
-          background: 'var(--field)',
-          border: '1px solid var(--border)',
-        }}
-      >
-        {MODES.map((m) => {
-          const on = m.key === active;
-          const seg = (
-            <span
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 12px',
-                borderRadius: 7,
-                fontSize: 12.5,
-                fontWeight: on ? 600 : 500,
-                color: on ? 'var(--accent)' : 'var(--t3)',
-                background: on ? 'var(--card)' : 'transparent',
-                boxShadow: on ? '0 1px 2px rgba(0,0,0,.08)' : 'none',
-                cursor: on ? 'default' : 'pointer',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {m.icon}
-              {m.label}
-            </span>
-          );
-          return on ? (
-            <div key={m.key} aria-current="page">
-              {seg}
-            </div>
-          ) : (
-            <Link key={m.key} href={m.href} style={{ textDecoration: 'none' }} title={`Sang ${m.label}`}>
-              {seg}
-            </Link>
-          );
-        })}
-      </div>
+      <StageSwitcher
+        active={active === 'photo' ? 'render' : 'present'}
+        photoContext={active === 'photo'}
+        onPick={go}
+      />
 
       <div style={{ flex: 1 }} />
     </div>

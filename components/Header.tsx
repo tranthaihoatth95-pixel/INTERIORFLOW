@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Share2, Play, Loader2, ChevronDown, Cloud, Zap, Cpu, ShieldCheck, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, Workflow, LayoutDashboard, Palette, Box, Presentation, MoreHorizontal, Rows3 } from 'lucide-react';
+import { Coins, Share2, Play, Loader2, ChevronDown, Cloud, Zap, Cpu, ShieldCheck, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, LayoutGrid, MoreHorizontal, Rows3 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { runFlow } from '@/lib/execution';
 import { checkProviders, type ProviderStatus } from '@/lib/ai/client';
@@ -10,7 +11,8 @@ import {
   TIERS, TIER_ORDER, type AiTier, providerForTier,
   type OneAiEngine, ONE_AI_ENGINES, ONE_AI_RUNTIMES,
 } from '@/lib/ai/tiers';
-import { PHASES, DEFAULT_PHASE, type Phase } from '@/lib/phases';
+import { DEFAULT_PHASE, type Phase } from '@/lib/phases';
+import StageSwitcher from '@/components/studio/StageSwitcher';
 import { toggleShare } from '@/lib/workspace';
 import { TasksDropdown } from '@/components/TasksDropdown';
 import { MobileMenu } from '@/components/MobileMenu';
@@ -67,13 +69,12 @@ export function Header() {
         </motion.button>
       )}
 
-      {/* chặng làm việc mềm — Concept · Render · Present (đi lại tự do) */}
-      <PhaseSwitcher />
+      {/* TRỤC ĐIỀU HƯỚNG DUY NHẤT — Concept · Render · Present (Present → slide studio) */}
+      <div className="hidden lg:block">
+        <PhaseSwitcher />
+      </div>
 
-      {/* chuyển kiểu xem canvas — Node (hiện tại) | Window (Figma, sắp có) */}
-      <ViewToggle />
-
-      {/* Node | Form — Form là giao diện cảm ứng cho foldable/điện thoại (luôn hiện) */}
+      {/* Canvas | Form — cách xem (canvas node desktop vs form cảm ứng foldable/điện thoại) */}
       <UiModeToggle />
 
       {/* Núm chọn mức phụ thuộc AI (4 mức) — mobile gom vào ⋯ */}
@@ -342,37 +343,8 @@ function ThemeToggle() {
   );
 }
 
-// Segmented control: kiểu xem canvas. 'node' hoạt động; 'window' (Figma) để mốc, chưa bật.
-function ViewToggle() {
-  const viewMode = useFlowStore((s) => s.viewMode);
-  const setViewMode = useFlowStore((s) => s.setViewMode);
-  const tr = useT();
-  return (
-    <div className="hidden items-center gap-0.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-0.5 md:flex">
-      <button
-        onClick={() => setViewMode('node')}
-        title={tr('Node flow (hiện tại)', 'Node flow (current)')}
-        className={cn(
-          'flex items-center gap-1 rounded-[7px] px-2 py-1 text-[11px] font-medium transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
-          viewMode === 'node' ? 'bg-[var(--card)] text-[var(--t1)] shadow-sm' : 'text-[var(--t4)] hover:text-[var(--t2)]',
-        )}
-      >
-        <Workflow size={12} /> Node
-      </button>
-      <button
-        disabled
-        title={tr('Window view kiểu Figma — sắp có (đang xây engine riêng)', 'Figma-style window view — coming soon (engine in progress)')}
-        className="flex cursor-not-allowed items-center gap-1 rounded-[7px] px-2 py-1 text-[11px] font-medium text-[var(--t5)]"
-      >
-        <LayoutDashboard size={12} /> Window
-        <span className="rounded bg-[var(--hover)] px-1 text-[8px] text-[var(--t4)]">{tr('sắp có', 'soon')}</span>
-      </button>
-    </div>
-  );
-}
-
-// Segmented: giao diện làm việc. 'node' = canvas node-graph (desktop) · 'form' = form cảm ứng (foldable/điện thoại).
-// Luôn hiện (kể cả mobile) — đây là chỗ người dùng Oppo bật/tắt Form mode.
+// Segmented: giao diện làm việc. 'node' = canvas node-graph (desktop, nhãn "Canvas") ·
+// 'form' = form cảm ứng (foldable/điện thoại). Luôn hiện — chỗ người dùng Oppo bật/tắt Form.
 function UiModeToggle() {
   const uiMode = useFlowStore((s) => s.uiMode);
   const setUiMode = useFlowStore((s) => s.setUiMode);
@@ -381,13 +353,13 @@ function UiModeToggle() {
     <div className="flex items-center gap-0.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-0.5">
       <button
         onClick={() => setUiMode('node')}
-        title={tr('Node flow — canvas kéo-nối (desktop)', 'Node flow — drag-connect canvas (desktop)')}
+        title={tr('Canvas node — kéo-nối (desktop)', 'Node canvas — drag-connect (desktop)')}
         className={cn(
           'flex items-center gap-1 rounded-[7px] px-2 py-1 text-[11px] font-medium transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
           uiMode === 'node' ? 'bg-[var(--card)] text-[var(--t1)] shadow-sm' : 'text-[var(--t4)] hover:text-[var(--t2)]',
         )}
       >
-        <Workflow size={12} /> Node
+        <LayoutGrid size={12} /> Canvas
       </button>
       <button
         onClick={() => setUiMode('form')}
@@ -403,33 +375,20 @@ function UiModeToggle() {
   );
 }
 
-// Segmented: chặng làm việc mềm. Chỉ đổi *nhấn mạnh* (Library) — không đụng canvas.
-const PHASE_ICON: Record<Phase, typeof Palette> = { concept: Palette, render: Box, present: Presentation };
-
+// Trục điều hướng: Concept/Render đổi chặng tại chỗ (app chính) · Present → slide studio.
 function PhaseSwitcher() {
   const workspace = useFlowStore((s) => s.workspace);
   const setWorkspace = useFlowStore((s) => s.setWorkspace);
+  const router = useRouter();
   const current: Phase = workspace ?? DEFAULT_PHASE;
   return (
-    <div className="hidden items-center gap-0.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-0.5 lg:flex">
-      {PHASES.map((p) => {
-        const Icon = PHASE_ICON[p.id];
-        const active = current === p.id;
-        return (
-          <button
-            key={p.id}
-            onClick={() => setWorkspace(p.id)}
-            title={`${p.label} — ${p.tagline}`}
-            className={cn(
-              'flex items-center gap-1 rounded-[7px] px-2 py-1 text-[11px] font-medium transition-colors',
-              active ? 'bg-[var(--card)] text-[var(--t1)] shadow-sm' : 'text-[var(--t4)] hover:text-[var(--t2)]',
-            )}
-          >
-            <Icon size={12} /> {p.label}
-          </button>
-        );
-      })}
-    </div>
+    <StageSwitcher
+      active={current}
+      onPick={(p) => {
+        if (p === 'present') router.push('/present-editor');
+        else setWorkspace(p);
+      }}
+    />
   );
 }
 
