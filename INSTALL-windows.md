@@ -1,5 +1,10 @@
 # Cài InteriorFlow trên máy công ty (Windows RTX)
 
+> **Muốn app NATIVE thật (cửa sổ riêng, có icon, vào Start Menu, không trình duyệt)?**
+> → Xem **`INSTALL-windows-native.md`**: double-click `build-windows-native.bat` một lần để tạo bộ cài `.exe`, rồi cài như phần mềm thường. **Đây là cách khuyến nghị.**
+>
+> File dưới đây là **cách chạy nhanh** (mở ở cửa sổ trình duyệt `localhost:3000`, không cần build) — tiện để thử ngay.
+
 Gói này = **mã nguồn app** (không kèm thư viện — máy tự tải khi cài). Chạy được ngay trên máy render RTX, dùng luôn ComfyUI + FLUX local (bản vẽ không rời máy).
 
 ## Cài trong 3 bước
