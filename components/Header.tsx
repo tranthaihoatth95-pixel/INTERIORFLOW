@@ -70,8 +70,9 @@ export function Header() {
         </motion.button>
       )}
 
-      {/* TRỤC ĐIỀU HƯỚNG DUY NHẤT — Concept · Render · Present */}
-      <div className="hidden lg:block">
+      {/* TRỤC ĐIỀU HƯỚNG DUY NHẤT — Concept · Render · Present.
+          Header chỉ render ở màn ≥600px (cover đã tách Dashboard riêng) nên luôn hiện. */}
+      <div className="shrink-0">
         <PhaseSwitcher />
       </div>
 

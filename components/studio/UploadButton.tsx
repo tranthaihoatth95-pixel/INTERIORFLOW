@@ -74,7 +74,7 @@ export function UploadButton() {
         }
         className="flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-[12px] font-medium text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
       >
-        <Upload size={13} /> <span className="hidden md:inline">{label}</span>
+        <Upload size={13} /> <span className="hidden lg:inline">{label}</span>
       </button>
       <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={onFile} />
     </>
