@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Share2, Play, Loader2, ChevronDown, Cloud, Zap, Cpu, ShieldCheck, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, Workflow, LayoutDashboard, Palette, Box, Presentation, MoreHorizontal } from 'lucide-react';
+import { Coins, Share2, Play, Loader2, ChevronDown, Cloud, Zap, Cpu, ShieldCheck, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, Workflow, LayoutDashboard, Palette, Box, Presentation, MoreHorizontal, Rows3 } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { runFlow } from '@/lib/execution';
 import { checkProviders, type ProviderStatus } from '@/lib/ai/client';
@@ -72,6 +72,9 @@ export function Header() {
 
       {/* chuyển kiểu xem canvas — Node (hiện tại) | Window (Figma, sắp có) */}
       <ViewToggle />
+
+      {/* Node | Form — Form là giao diện cảm ứng cho foldable/điện thoại (luôn hiện) */}
+      <UiModeToggle />
 
       {/* Núm chọn mức phụ thuộc AI (4 mức) — mobile gom vào ⋯ */}
       <div className="hidden sm:block">
@@ -363,6 +366,38 @@ function ViewToggle() {
       >
         <LayoutDashboard size={12} /> Window
         <span className="rounded bg-[var(--hover)] px-1 text-[8px] text-[var(--t4)]">{tr('sắp có', 'soon')}</span>
+      </button>
+    </div>
+  );
+}
+
+// Segmented: giao diện làm việc. 'node' = canvas node-graph (desktop) · 'form' = form cảm ứng (foldable/điện thoại).
+// Luôn hiện (kể cả mobile) — đây là chỗ người dùng Oppo bật/tắt Form mode.
+function UiModeToggle() {
+  const uiMode = useFlowStore((s) => s.uiMode);
+  const setUiMode = useFlowStore((s) => s.setUiMode);
+  const tr = useT();
+  return (
+    <div className="flex items-center gap-0.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-0.5">
+      <button
+        onClick={() => setUiMode('node')}
+        title={tr('Node flow — canvas kéo-nối (desktop)', 'Node flow — drag-connect canvas (desktop)')}
+        className={cn(
+          'flex items-center gap-1 rounded-[7px] px-2 py-1 text-[11px] font-medium transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
+          uiMode === 'node' ? 'bg-[var(--card)] text-[var(--t1)] shadow-sm' : 'text-[var(--t4)] hover:text-[var(--t2)]',
+        )}
+      >
+        <Workflow size={12} /> Node
+      </button>
+      <button
+        onClick={() => setUiMode('form')}
+        title={tr('Form — biểu mẫu cảm ứng, hợp điện thoại / màn gập', 'Form — touch-first, great on phone / foldable')}
+        className={cn(
+          'flex items-center gap-1 rounded-[7px] px-2 py-1 text-[11px] font-medium transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
+          uiMode === 'form' ? 'bg-[var(--card)] text-[var(--t1)] shadow-sm' : 'text-[var(--t4)] hover:text-[var(--t2)]',
+        )}
+      >
+        <Rows3 size={12} /> Form
       </button>
     </div>
   );

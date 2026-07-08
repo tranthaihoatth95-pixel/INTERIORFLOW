@@ -31,6 +31,8 @@ export type ThemePref = 'auto' | 'light' | 'dark';
 export type WorkspaceMode = Phase;
 /** Kiểu giao diện làm việc — 'node' (hiện tại) | 'window' (kiểu Figma, làm sau) */
 export type ViewMode = 'node' | 'window';
+/** Chế độ giao diện — 'node' (canvas node-graph, desktop) | 'form' (form cảm ứng, foldable/mobile) */
+export type UiMode = 'node' | 'form';
 
 export interface SessionUser {
   id: string;
@@ -75,6 +77,9 @@ interface FlowState {
   workspace: WorkspaceMode | null;
   /** kiểu xem canvas — node-flow hiện tại; 'window' (Figma) để mốc, chưa bật */
   viewMode: ViewMode;
+  /** giao diện làm việc — 'node' (canvas, desktop) | 'form' (form cảm ứng cho foldable/điện thoại).
+   *  Persist localStorage 'interiorflow.uiMode'; tự bật 'form' khi viewport < 640px lúc hydrate. */
+  uiMode: UiMode;
   /** mức phụ thuộc AI (4=Cao cloud · 3=Vừa · 2=oneAI tự-host · 1=Không AI) */
   aiTier: AiTier;
   /** oneAI (mức 2): engine SD-portable vs FLUX-RTX + runtime WebGPU vs server */
@@ -118,6 +123,7 @@ interface FlowState {
   setChatOpen: (open: boolean) => void;
   setWorkspace: (mode: WorkspaceMode) => void;
   setViewMode: (mode: ViewMode) => void;
+  setUiMode: (mode: UiMode) => void;
   setAiTier: (tier: AiTier) => void;
   setOneAiEngine: (engine: OneAiEngine) => void;
   setOneAiRuntime: (runtime: OneAiRuntime) => void;
@@ -192,6 +198,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   chatOpen: false,
   workspace: null,
   viewMode: 'node',
+  uiMode: 'node',
   aiTier: DEFAULT_TIER,
   oneAiEngine: DEFAULT_ONE_AI_ENGINE,
   oneAiRuntime: DEFAULT_ONE_AI_RUNTIME,
@@ -289,6 +296,12 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     } catch {}
   },
   setViewMode: (viewMode) => set({ viewMode }),
+  setUiMode: (uiMode) => {
+    set({ uiMode });
+    try {
+      localStorage.setItem('interiorflow.uiMode', uiMode);
+    } catch {}
+  },
   setAiTier: (aiTier) => {
     set({ aiTier });
     try {
@@ -386,6 +399,12 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       const raw = localStorage.getItem('interiorflow.workspace');
       const ws = raw === 'presentation' ? 'present' : raw;
       if (isPhase(ws)) set({ workspace: ws });
+    } catch {}
+    try {
+      // giao diện làm việc — pref đã lưu thắng; chưa có pref + màn nhỏ (<640px) → tự bật Form
+      const saved = localStorage.getItem('interiorflow.uiMode');
+      if (saved === 'node' || saved === 'form') set({ uiMode: saved });
+      else if (typeof window !== 'undefined' && window.innerWidth < 640) set({ uiMode: 'form' });
     } catch {}
     get().applyTheme();
     try {
