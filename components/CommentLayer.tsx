@@ -74,18 +74,30 @@ export function CommentLayer() {
     }
   }
 
-  // Bấm lên overlay khi đang ở chế độ góp ý → mở soạn thảo tại điểm bấm.
-  function onOverlayClick(e: React.MouseEvent) {
-    if (!on || draft) return;
-    const xPct = (e.clientX / window.innerWidth) * 100;
-    const yPct = (e.clientY / window.innerHeight) * 100;
-    // phần tử thật dưới điểm bấm (tạm ẩn overlay để lấy)
-    const el = document.elementFromPoint(e.clientX, e.clientY);
+  // Mở soạn thảo góp ý tại 1 điểm màn hình (lấy phần tử THẬT của app dưới điểm đó).
+  const startDraftAt = useCallback((clientX: number, clientY: number) => {
+    const xPct = (clientX / window.innerWidth) * 100;
+    const yPct = (clientY / window.innerHeight) * 100;
+    const el = document.elementFromPoint(clientX, clientY);
     const hint = el
       ? `${el.tagName.toLowerCase()}${el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : ''} · "${(el.textContent || '').trim().slice(0, 40)}"`
       : '';
     setDraft({ x: xPct, y: yPct, hint, text: '' });
-  }
+  }, []);
+
+  // Chế độ góp ý: giữ ⌥ Option (Alt) + bấm → góp ý. Click THƯỜNG vẫn tới app → anh mở
+  // được menu/panel/dropdown đang che chỗ cần góp ý, rồi ⌥+bấm vào đúng chỗ đó.
+  useEffect(() => {
+    if (!on) return;
+    const h = (e: MouseEvent) => {
+      if (!e.altKey || draft) return;
+      e.preventDefault();
+      e.stopPropagation();
+      startDraftAt(e.clientX, e.clientY);
+    };
+    window.addEventListener('click', h, true); // capture: app không nhận ⌥+click
+    return () => window.removeEventListener('click', h, true);
+  }, [on, draft, startDraftAt]);
 
   async function save() {
     if (!draft || !draft.text.trim()) return;
@@ -126,18 +138,42 @@ export function CommentLayer() {
 
   return (
     <>
-      {/* Overlay bắt click — chỉ "ăn" chuột khi bật chế độ góp ý */}
-      <div
-        onClick={onOverlayClick}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 99990,
-          cursor: on ? 'crosshair' : 'default',
-          pointerEvents: on && !draft ? 'auto' : 'none',
-          background: on ? 'rgba(224,96,58,0.04)' : 'transparent',
-        }}
-      />
+      {/* Viền nhắc đang ở chế độ góp ý — KHÔNG chặn chuột (app vẫn dùng bình thường) */}
+      {on && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99990,
+            pointerEvents: 'none',
+            boxShadow: `inset 0 0 0 2px ${ACCENT}`,
+          }}
+        />
+      )}
+
+      {/* Nhắc thao tác khi bật chế độ góp ý */}
+      {on && !draft && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 10,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 99996,
+            background: ACCENT,
+            color: '#fff',
+            fontSize: 12.5,
+            fontWeight: 600,
+            padding: '7px 14px',
+            borderRadius: 999,
+            boxShadow: '0 4px 14px rgba(0,0,0,.25)',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Giữ ⌥ Option + bấm vào chỗ cần góp ý · app vẫn dùng bình thường
+        </div>
+      )}
 
       {/* Ghim các góp ý ở route hiện tại */}
       {here.map((c, i) => (
@@ -150,7 +186,7 @@ export function CommentLayer() {
             top: `${c.y}%`,
             transform: 'translate(-50%, -100%)',
             zIndex: 99992,
-            pointerEvents: 'auto',
+            pointerEvents: 'none',
           }}
         >
           <div style={pinStyle}><span style={{ transform: 'rotate(45deg)' }}>{i + 1}</span></div>
@@ -288,7 +324,7 @@ export function CommentLayer() {
           style={{ ...pillBtn, background: on ? ACCENT : '#333' }}
           title="Bật/tắt chế độ góp ý — bấm vào chỗ muốn góp ý"
         >
-          {on ? '● Đang góp ý — bấm vào chỗ cần' : '✎ Góp ý'}
+          {on ? '● Đang góp ý (⌥+bấm)' : '✎ Góp ý'}
         </button>
       </div>
     </>
