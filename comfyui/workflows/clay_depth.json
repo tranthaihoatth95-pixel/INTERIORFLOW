@@ -6,17 +6,25 @@
   "6": {
     "class_type": "CLIPTextEncode",
     "_meta": { "title": "IF_POSITIVE" },
-    "inputs": { "text": "photorealistic interior render", "clip": ["4", 1] }
+    "inputs": { "text": "photorealistic interior render, natural light, high detail", "clip": ["4", 1] }
   },
   "7": {
     "class_type": "CLIPTextEncode",
     "_meta": { "title": "IF_NEGATIVE" },
-    "inputs": { "text": "blurry, distorted geometry, warped walls, lowres, watermark, text, cartoon", "clip": ["4", 1] }
+    "inputs": {
+      "text": "extra legs, duplicated furniture, duplicate objects, deformed furniture, malformed, warped geometry, floating objects, cluttered, messy, clashing colors, gaudy, oversaturated, blurry, lowres, distorted, watermark, text, cartoon, cgi, overexposed, blown highlights",
+      "clip": ["4", 1]
+    }
   },
   "10": {
     "class_type": "LoadImage",
     "_meta": { "title": "IF_IMAGE" },
     "inputs": { "image": "example.png", "upload": "image" }
+  },
+  "11": {
+    "class_type": "ImageScale",
+    "_meta": { "title": "IF_scale_input" },
+    "inputs": { "image": ["10", 0], "width": 1216, "height": 832, "upscale_method": "lanczos", "crop": "disabled" }
   },
   "12": {
     "class_type": "ControlNetLoader",
@@ -24,6 +32,7 @@
   },
   "13": {
     "class_type": "ControlNetApplyAdvanced",
+    "_meta": { "title": "IF_STRENGTH" },
     "inputs": {
       "strength": 0.8,
       "start_percent": 0.0,
@@ -31,20 +40,20 @@
       "positive": ["6", 0],
       "negative": ["7", 0],
       "control_net": ["12", 0],
-      "image": ["10", 0]
+      "image": ["11", 0]
     }
   },
   "5": {
     "class_type": "EmptyLatentImage",
-    "inputs": { "width": 1024, "height": 768, "batch_size": 1 }
+    "inputs": { "width": 1216, "height": 832, "batch_size": 1 }
   },
   "3": {
     "class_type": "KSampler",
     "_meta": { "title": "IF_SEED" },
     "inputs": {
       "seed": 0,
-      "steps": 28,
-      "cfg": 6.5,
+      "steps": 26,
+      "cfg": 6.0,
       "sampler_name": "dpmpp_2m",
       "scheduler": "karras",
       "denoise": 1.0,
