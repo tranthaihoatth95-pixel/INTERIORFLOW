@@ -19,7 +19,8 @@ import type {
   ListStyle,
 } from '@/lib/present-editor/model';
 import { effectiveListStyle } from '@/lib/present-editor/model';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { getCustomFonts, addCustomFont, registerAllCustom, type CustomFont } from '@/lib/present-editor/custom-fonts';
 import type { FontPairing } from '@/lib/slides';
 import { DEFAULT_ADJUST } from '@/lib/present-editor/model';
 import { CURATED_FONTS } from '@/lib/present-editor/fonts';
@@ -309,6 +310,27 @@ function TextInspector({
   deckFonts: FontPairing;
   onUpdate: (m: (el: TextElement) => void, live?: boolean) => void;
 }) {
+  // Font người dùng tải lên (#13): nạp lại font đã lưu + cho thêm font mới.
+  const [customFonts, setCustomFonts] = useState<CustomFont[]>([]);
+  const fontFileRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    setCustomFonts(getCustomFonts());
+    registerAllCustom();
+  }, []);
+
+  async function onUploadFont(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    try {
+      const cf = await addCustomFont(f);
+      setCustomFonts(getCustomFonts());
+      onUpdate((t) => (t.fontFamily = cf.stack)); // áp luôn cho text đang chọn
+    } catch {
+      /* font lỗi — bỏ qua */
+    }
+  }
+
   return (
     <Panel title="Chữ">
       <Field label="Nội dung">
@@ -320,25 +342,51 @@ function TextInspector({
         />
       </Field>
       <Field label="Font chữ">
-        <select
-          value={el.fontFamily ?? ''}
-          onChange={(e) =>
-            onUpdate((t) => {
-              const v = e.target.value;
-              // rỗng = theo bộ chữ của deck; ngược lại ghi đè family riêng cho element
-              if (!v) delete t.fontFamily;
-              else t.fontFamily = v;
-            })
-          }
-          style={input}
-        >
-          <option value="">Theo deck ({deckFonts})</option>
-          {CURATED_FONTS.map((f) => (
-            <option key={f.stack} value={f.stack}>
-              {f.label}
-            </option>
-          ))}
-        </select>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <select
+            value={el.fontFamily ?? ''}
+            onChange={(e) =>
+              onUpdate((t) => {
+                const v = e.target.value;
+                // rỗng = theo bộ chữ của deck; ngược lại ghi đè family riêng cho element
+                if (!v) delete t.fontFamily;
+                else t.fontFamily = v;
+              })
+            }
+            style={{ ...input, flex: 1 }}
+          >
+            <option value="">Theo deck ({deckFonts})</option>
+            {CURATED_FONTS.map((f) => (
+              <option key={f.stack} value={f.stack}>
+                {f.label}
+              </option>
+            ))}
+            {customFonts.length > 0 && (
+              <optgroup label="Đã tải lên">
+                {customFonts.map((f) => (
+                  <option key={f.stack} value={f.stack}>
+                    {f.label}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+          <button
+            type="button"
+            onClick={() => fontFileRef.current?.click()}
+            title="Tải font lên (.ttf/.otf/.woff)"
+            style={{ ...input, width: 34, cursor: 'pointer', padding: 0 }}
+          >
+            ＋
+          </button>
+          <input
+            ref={fontFileRef}
+            type="file"
+            accept=".ttf,.otf,.woff,.woff2,font/*"
+            hidden
+            onChange={onUploadFont}
+          />
+        </div>
       </Field>
       <Field label={`Cỡ chữ ${el.fontSize.toFixed(1)}`}>
         <input
