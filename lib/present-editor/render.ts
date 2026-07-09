@@ -17,8 +17,12 @@ import {
   type ImageElement,
   type TextElement,
   type ShapeElement,
+  type OpacityGradient,
   adjustToCssFilter,
+  decorateListText,
+  effectiveListStyle,
 } from './model';
+import { polygonPoints01, isPolygonShape } from './shape-geometry';
 import { loadImage } from '@/lib/imaging';
 
 const W = 1920;
@@ -72,6 +76,69 @@ async function drawImageEl(
   ctx.restore();
 }
 
+/** Style fill: màu đơn HOẶC gradient mờ (mô phỏng opacity fade theo hướng) trên fill. */
+function fillStyleFor(
+  ctx: CanvasRenderingContext2D,
+  el: ShapeElement,
+  fx: number,
+  fy: number,
+  fw: number,
+  fh: number,
+): string | CanvasGradient {
+  if (!el.gradient || !el.fill || el.fill === 'transparent') return el.fill;
+  return makeAlphaGradient(ctx, el.fill, el.gradient, fx, fy, fw, fh);
+}
+
+/** Canvas gradient: cùng màu fill nhưng alpha biến thiên theo hướng (giống mask CSS). */
+function makeAlphaGradient(
+  ctx: CanvasRenderingContext2D,
+  color: string,
+  g: OpacityGradient,
+  fx: number,
+  fy: number,
+  fw: number,
+  fh: number,
+): CanvasGradient {
+  const rgb = hexToRgb(color);
+  const c = (a: number) => `rgba(${rgb.r},${rgb.g},${rgb.b},${Math.max(0, Math.min(1, a))})`;
+  let grad: CanvasGradient;
+  if (g.direction === 'center' || g.direction === 'edges') {
+    grad = ctx.createRadialGradient(
+      fx + fw / 2,
+      fy + fh / 2,
+      0,
+      fx + fw / 2,
+      fy + fh / 2,
+      Math.max(fw, fh) / 2,
+    );
+    if (g.direction === 'center') {
+      grad.addColorStop(0, c(g.to));
+      grad.addColorStop(1, c(g.from));
+    } else {
+      grad.addColorStop(0, c(g.to));
+      grad.addColorStop(1, c(g.from));
+    }
+    return grad;
+  }
+  const horiz = g.direction === 'ltr' || g.direction === 'rtl';
+  const rev = g.direction === 'rtl' || g.direction === 'btt';
+  const x0 = horiz ? (rev ? fx + fw : fx) : fx;
+  const x1 = horiz ? (rev ? fx : fx + fw) : fx;
+  const y0 = horiz ? fy : rev ? fy + fh : fy;
+  const y1 = horiz ? fy : rev ? fy : fy + fh;
+  grad = ctx.createLinearGradient(x0, y0, x1, y1);
+  grad.addColorStop(0, c(g.from));
+  grad.addColorStop(1, c(g.to));
+  return grad;
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const h = hex.replace('#', '');
+  if (h.length < 6) return { r: 138, g: 111, b: 77 };
+  const n = parseInt(h.slice(0, 6), 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
 function drawShapeEl(ctx: CanvasRenderingContext2D, el: ShapeElement): void {
   const fx = px(el.frame.x);
   const fy = py(el.frame.y);
@@ -93,7 +160,7 @@ function drawShapeEl(ctx: CanvasRenderingContext2D, el: ShapeElement): void {
     ctx.beginPath();
     ctx.ellipse(fx + fw / 2, fy + fh / 2, fw / 2, fh / 2, 0, 0, Math.PI * 2);
     if (el.fill && el.fill !== 'transparent') {
-      ctx.fillStyle = el.fill;
+      ctx.fillStyle = fillStyleFor(ctx, el, fx, fy, fw, fh);
       ctx.fill();
     }
     if (strokePx > 0) {
@@ -101,11 +168,32 @@ function drawShapeEl(ctx: CanvasRenderingContext2D, el: ShapeElement): void {
       ctx.lineWidth = strokePx;
       ctx.stroke();
     }
+  } else if (isPolygonShape(el.shape)) {
+    // tam giác / đa giác N cạnh / mũi tên — từ đỉnh tỉ lệ 0..1 (dùng chung với canvas UI).
+    const pts = polygonPoints01(el.shape, el.sides);
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      const X = fx + p.x * fw;
+      const Y = fy + p.y * fh;
+      if (i === 0) ctx.moveTo(X, Y);
+      else ctx.lineTo(X, Y);
+    });
+    ctx.closePath();
+    if (el.fill && el.fill !== 'transparent') {
+      ctx.fillStyle = fillStyleFor(ctx, el, fx, fy, fw, fh);
+      ctx.fill();
+    }
+    if (strokePx > 0) {
+      ctx.strokeStyle = el.stroke;
+      ctx.lineWidth = strokePx;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    }
   } else {
     const r = ((el.radius ?? 0) / 100) * Math.min(fw, fh);
     roundRectPath(ctx, fx, fy, fw, fh, r);
     if (el.fill && el.fill !== 'transparent') {
-      ctx.fillStyle = el.fill;
+      ctx.fillStyle = fillStyleFor(ctx, el, fx, fy, fw, fh);
       ctx.fill();
     }
     if (strokePx > 0) {
@@ -139,11 +227,13 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontDeck: st
   const lineH = sizePx * (el.lineHeight ?? 1.2);
   const tracking = ((el.tracking ?? 0) / 100) * H;
 
-  // wrap theo từng dòng logic (\n) rồi wrap theo bề rộng. Bullet → thêm "• " đầu mỗi dòng logic.
-  const paragraphs = (el.text || '').split('\n');
+  // wrap theo từng dòng logic (\n) rồi wrap theo bề rộng.
+  // Danh sách (bullet/số) → decorate tiền tố CHUNG với canvas UI (1 nguồn sự thật).
+  const decorated = decorateListText(el.text || '', effectiveListStyle(el));
+  const paragraphs = decorated.split('\n');
   let y = fy;
   for (const para of paragraphs) {
-    const raw = el.bullet && para.trim() ? `•  ${para}` : para;
+    const raw = para;
     const words = raw.split(/\s+/).filter(Boolean);
     if (!words.length) {
       y += lineH;
@@ -308,8 +398,9 @@ export async function renderEditorSlide(
     }
   }
 
-  // element theo thứ tự mảng (cuối = trên cùng)
+  // element theo thứ tự mảng (cuối = trên cùng); bỏ qua element ẩn (layer tắt).
   for (const el of slide.elements) {
+    if (el.hidden) continue;
     if (el.kind === 'image') await drawImageEl(ctx, el);
     else if (el.kind === 'shape') drawShapeEl(ctx, el);
     else if (el.kind === 'text') drawTextEl(ctx, el, fontBody);

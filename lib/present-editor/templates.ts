@@ -49,21 +49,24 @@ export type TemplateCategory =
  *   - 'subcover': Bìa phụ (phân mục, mục lục, divider).
  *   - 'content' : Trang nội dung (mọi bố cục còn lại).
  */
-export type LayoutShelf = 'cover' | 'subcover' | 'content';
+export type LayoutShelf = 'cover' | 'subcover' | 'content' | 'closing';
 
 export const SHELF_LABEL: Record<LayoutShelf, string> = {
   cover: 'Bìa',
   subcover: 'Bìa phụ',
-  content: 'Trang nội dung',
+  content: 'Nội dung chính',
+  closing: 'Trang kết',
 };
 
-export const SHELF_ORDER: LayoutShelf[] = ['cover', 'subcover', 'content'];
+// Round 3: bổ sung cột "Trang kết" → 4 cột cuộn ngang (góp ý #1 & #12).
+export const SHELF_ORDER: LayoutShelf[] = ['cover', 'subcover', 'content', 'closing'];
 
-/** Suy ra kệ từ id/category template (gom 3 hàng). */
+/** Suy ra kệ từ id/category template (gom 4 hàng). */
 export function shelfOf(t: EditorTemplate): LayoutShelf {
   if (t.shelf) return t.shelf;
   const id = t.id;
   if (id === 'cover' || id === 'dark-cover' || id === 'full-bleed') return 'cover';
+  if (id === 'closing') return 'closing';
   if (id === 'section-divider' || id === 'agenda') return 'subcover';
   return 'content';
 }
@@ -1170,7 +1173,7 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
     name: 'Trang kết (thông điệp)',
     group: 'builtin',
     category: 'Bìa & Mở đầu',
-    shelf: 'subcover',
+    shelf: 'closing',
     // AKH-IKI trang kết: nền tối, 1-3 dòng căn giữa.
     build: (ctx) => {
       const c = pal(ctx.palette);
@@ -1260,6 +1263,49 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
         );
       });
       return { id: newId('sld'), background: c.light, elements: els, templateId: 'agenda' };
+    },
+  },
+
+  {
+    id: 'closing-thanks',
+    name: 'Trang kết (cảm ơn · liên hệ)',
+    group: 'builtin',
+    category: 'Bìa & Mở đầu',
+    shelf: 'closing',
+    // Trang kết sáng: lời cảm ơn lớn + dòng liên hệ/thương hiệu nhỏ, căn giữa.
+    build: (ctx) => {
+      const c = pal(ctx.palette);
+      const els: SlideElement[] = [
+        makeText({
+          text: ctx.kicker ? ctx.kicker.toUpperCase() : 'CẢM ƠN',
+          role: 'kicker',
+          frame: { x: 20, y: 34, w: 60, h: 5, rotation: 0 },
+          fontSize: 2,
+          color: c.accent,
+          align: 'center',
+          bold: true,
+          tracking: 5,
+        }),
+        makeText({
+          text: ctx.title || 'Cảm ơn đã lắng nghe',
+          role: 'title',
+          frame: { x: 14, y: 42, w: 72, h: 16, rotation: 0 },
+          fontSize: 6,
+          color: c.dark,
+          align: 'center',
+          bold: true,
+        }),
+        makeText({
+          text: 'hello@studio.vn · +84 · studio.vn',
+          role: 'body',
+          frame: { x: 20, y: 60, w: 60, h: 6, rotation: 0 },
+          fontSize: 2.2,
+          color: c.muted,
+          align: 'center',
+          tracking: 1,
+        }),
+      ];
+      return { id: newId('sld'), background: c.light, elements: els, templateId: 'closing-thanks' };
     },
   },
 ];

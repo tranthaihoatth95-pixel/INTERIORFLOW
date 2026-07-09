@@ -37,7 +37,7 @@ import {
 import { suggestTemplate } from '@/lib/present-editor/suggest';
 import { DEFAULT_SPEC, applySpecToSlide, type LayoutSpec } from '@/lib/present-editor/spec';
 import { buildGuProfile, type GuAsset, type GuProfile } from '@/lib/gu';
-import { exportDeckToPdf, exportDeckToPptxFromModel } from '@/lib/present-editor/export';
+import { exportDeckToPdf, exportDeckToPptxFromModel, exportDeckToPng } from '@/lib/present-editor/export';
 import { useEditor } from './useEditor';
 import Toolbar from './Toolbar';
 import EditorCanvas from './EditorCanvas';
@@ -238,6 +238,28 @@ export default function PresentEditor({ initialDeck }: Props) {
     [ed],
   );
 
+  // Cập nhật 1 text element cụ thể (cho thanh chữ nổi TextToolbar).
+  const onUpdateText = useCallback(
+    (id: string, mutate: (el: import('@/lib/present-editor/model').TextElement) => void, live?: boolean) => {
+      ed.updateSlide((s) => {
+        const el = s.elements.find((e) => e.id === id);
+        if (el && el.kind === 'text') mutate(el);
+      }, live);
+    },
+    [ed],
+  );
+
+  // Cập nhật 1 shape cụ thể (cho bảng chỉnh shape khi chuột phải).
+  const onUpdateShape = useCallback(
+    (id: string, mutate: (el: import('@/lib/present-editor/model').ShapeElement) => void, live?: boolean) => {
+      ed.updateSlide((s) => {
+        const el = s.elements.find((e) => e.id === id);
+        if (el && el.kind === 'shape') mutate(el);
+      }, live);
+    },
+    [ed],
+  );
+
   const onZOrder = useCallback(
     (dir: 'front' | 'back' | 'forward' | 'backward') => {
       if (!ed.selectedId) return;
@@ -249,6 +271,18 @@ export default function PresentEditor({ initialDeck }: Props) {
         else if (dir === 'back') s.elements.unshift(el);
         else if (dir === 'forward') s.elements.splice(Math.min(i + 1, s.elements.length), 0, el);
         else s.elements.splice(Math.max(i - 1, 0), 0, el);
+      });
+    },
+    [ed],
+  );
+
+  // Reorder z bằng kéo trong ô quản lý layer: chuyển element từ chỉ số from → to (mảng gốc).
+  const onReorderElement = useCallback(
+    (from: number, to: number) => {
+      ed.updateSlide((s) => {
+        if (from < 0 || from >= s.elements.length || to < 0 || to >= s.elements.length) return;
+        const [el] = s.elements.splice(from, 1);
+        s.elements.splice(to, 0, el);
       });
     },
     [ed],
@@ -361,6 +395,30 @@ export default function PresentEditor({ initialDeck }: Props) {
       ed.select(null);
     },
     [ed, gu, palette, spec],
+  );
+
+  // Nhận kết quả từ flow Generate: nạp palette gu từ ảnh reference vào deck + đưa ảnh
+  // nội dung vừa import vào rổ Reference (để kéo vào slide). Human-in-loop: chỉ điểm xuất phát.
+  const onGenerated = useCallback(
+    (r: import('./GenerateFlow').GenerateResult) => {
+      if (r.rules?.palette?.length) {
+        ed.update((d) => {
+          d.palette = r.rules!.palette;
+        });
+      }
+      if (r.contentImages.length) {
+        const items: RefImage[] = r.contentImages.map((url, i) => ({
+          id: newId('ref'),
+          name: `Ảnh nội dung ${i + 1}`,
+          url,
+          tags: 'nội-dung',
+          source: 'local',
+          mine: true,
+        }));
+        setLocalRefs((prev) => [...items, ...prev]);
+      }
+    },
+    [ed],
   );
 
   // Tạo trang nội dung TRẮNG để tự dàn (human-in-loop từ số 0 khi muốn).
@@ -514,6 +572,17 @@ export default function PresentEditor({ initialDeck }: Props) {
     }
   }, [ed.deck]);
 
+  const onExportPng = useCallback(async () => {
+    setBusy('png');
+    try {
+      await exportDeckToPng(ed.deck);
+    } catch (err) {
+      console.error('[PresentEditor] PNG export failed', err);
+    } finally {
+      setBusy(null);
+    }
+  }, [ed.deck]);
+
   /* ------------------------- splitter kéo dãn panel trái ------------------------- */
   const dragStart = useRef<{ x: number; w: number } | null>(null);
   const onSplitDown = useCallback(
@@ -628,6 +697,7 @@ export default function PresentEditor({ initialDeck }: Props) {
         canRedo={ed.canRedo}
         onExportPdf={onExportPdf}
         onExportPptx={onExportPptx}
+        onExportPng={onExportPng}
         onPlay={() => setPlaying(true)}
         busy={busy}
       />
@@ -672,6 +742,8 @@ export default function PresentEditor({ initialDeck }: Props) {
                     fonts={ed.deck.fonts}
                     spec={spec}
                     onSpecChange={setSpec}
+                    refImages={refImages}
+                    onGenerated={onGenerated}
                   />
                 )}
                 {tab === 'reference' && (
@@ -746,6 +818,10 @@ export default function PresentEditor({ initialDeck }: Props) {
               onDelete={onDeleteSelected}
               onZOrder={onZOrder}
               onToggleLock={() => ed.updateSelected((el) => (el.locked = !el.locked))}
+              onUpdateText={onUpdateText}
+              onUpdateShape={onUpdateShape}
+              brand={ed.deck.brand}
+              project={ed.deck.project}
             />
           )}
         </main>
@@ -775,6 +851,9 @@ export default function PresentEditor({ initialDeck }: Props) {
               onDelete={onDeleteSelected}
               onOpenImageEditor={(id) => setImageEditId(id)}
               onOpenAdvancedEditor={openAdvancedEditor}
+              selectedIds={ed.selectedIds}
+              onSelect={ed.select}
+              onReorderElement={onReorderElement}
             />
           )}
         </aside>

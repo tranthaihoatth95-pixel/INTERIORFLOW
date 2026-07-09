@@ -15,9 +15,11 @@
  */
 
 import { useRef, useState } from 'react';
-import type { EditorSlide, Frame, TextElement } from '@/lib/present-editor/model';
+import type { EditorSlide, Frame, TextElement, ShapeElement } from '@/lib/present-editor/model';
 import { adjustToCssFilter } from '@/lib/present-editor/model';
 import Element, { type Guides } from './Element';
+import TextToolbar from './TextToolbar';
+import ShapeQuickPanel from './ShapeQuickPanel';
 
 /** Bộ chữ hiển thị trên canvas (khớp Element.tsx + render.ts). */
 const CANVAS_FONT: Record<string, string> = {
@@ -48,6 +50,13 @@ interface Props {
   onDelete: () => void;
   onZOrder: (dir: 'front' | 'back' | 'forward' | 'backward') => void;
   onToggleLock: () => void;
+  /** cập nhật 1 text element cụ thể (cho thanh chữ nổi). */
+  onUpdateText?: (id: string, mutate: (el: TextElement) => void, live?: boolean) => void;
+  /** cập nhật 1 shape cụ thể (cho bảng chỉnh shape khi chuột phải). */
+  onUpdateShape?: (id: string, mutate: (el: ShapeElement) => void, live?: boolean) => void;
+  /** ngữ cảnh deck để AI "Tạo content" viết đúng giọng. */
+  brand?: string;
+  project?: string;
 }
 
 /** Trạng thái menu chuột phải: vị trí (px trong khung stage) + id element. */
@@ -86,6 +95,10 @@ export default function EditorCanvas({
   onDelete,
   onZOrder,
   onToggleLock,
+  onUpdateText,
+  onUpdateShape,
+  brand,
+  project,
 }: Props) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [guides, setGuides] = useState<Guides | null>(null);
@@ -99,6 +112,14 @@ export default function EditorCanvas({
   const editingEl =
     editing && (slide.elements.find((e) => e.id === editing.id) as TextElement | undefined);
   const multi = selectedIds.length > 1;
+
+  // Thanh chữ nổi: hiện khi CHỌN ĐÚNG 1 text layer (mở khoá) và KHÔNG đang sửa inline.
+  const soleTextEl =
+    !multi && selectedIds.length === 1 && !editing && onUpdateText
+      ? (slide.elements.find((e) => e.id === selectedIds[0] && e.kind === 'text' && !e.locked) as
+          | TextElement
+          | undefined)
+      : undefined;
 
   // px trong stage → % sân khấu.
   function toPct(clientX: number, clientY: number) {
@@ -212,7 +233,8 @@ export default function EditorCanvas({
         />
       )}
 
-      {slide.elements.map((el) => (
+      {slide.elements.map((el) =>
+        el.hidden ? null : (
         <Element
           key={el.id}
           el={el}
@@ -245,7 +267,8 @@ export default function EditorCanvas({
             });
           }}
         />
-      ))}
+        ),
+      )}
 
       {/* khung marquee */}
       {marquee && (
@@ -290,6 +313,17 @@ export default function EditorCanvas({
               <MenuSep />
             </>
           )}
+          {/* Chuột phải SHAPE → bảng chỉnh cạnh/góc bo/số cạnh ngay tại đây (góp ý #6). */}
+          {menu.kind === 'shape' && onUpdateShape && (() => {
+            const sh = slide.elements.find((e) => e.id === menu.id);
+            if (!sh || sh.kind !== 'shape') return null;
+            return (
+              <>
+                <ShapeQuickPanel el={sh as ShapeElement} onUpdate={(m, live) => onUpdateShape(menu.id, m, live)} />
+                <MenuSep />
+              </>
+            );
+          })()}
           <MenuItem onClick={() => { onDuplicate(); setMenu(null); }}>Nhân bản</MenuItem>
           <MenuItem onClick={() => { onZOrder('front'); setMenu(null); }}>Đưa lên trước</MenuItem>
           <MenuItem onClick={() => { onZOrder('forward'); setMenu(null); }}>Tiến 1 bậc</MenuItem>
@@ -333,6 +367,23 @@ export default function EditorCanvas({
           }}
         />
       ))}
+
+      {/* thanh chữ nổi (pill) — hiện khi chọn đúng 1 text layer, chưa sửa inline */}
+      {soleTextEl && onUpdateText && (
+        <TextToolbar
+          el={soleTextEl}
+          leftPct={Math.max(14, Math.min(86, soleTextEl.frame.x + soleTextEl.frame.w / 2))}
+          topPct={
+            soleTextEl.frame.y < 16
+              ? soleTextEl.frame.y + soleTextEl.frame.h
+              : soleTextEl.frame.y
+          }
+          below={soleTextEl.frame.y < 16}
+          onUpdate={(mutate, live) => onUpdateText(soleTextEl.id, mutate, live)}
+          brand={brand}
+          project={project}
+        />
+      )}
 
       {/* editor text inline */}
       {editing && editingEl && (

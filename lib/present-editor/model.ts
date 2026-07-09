@@ -16,8 +16,27 @@ import type { FontPairing } from '@/lib/slides';
 /** Loại phần tử trên slide. */
 export type ElementKind = 'image' | 'text' | 'shape';
 
-/** Hình cơ bản cho shape element. */
-export type ShapeKind = 'rect' | 'ellipse' | 'line';
+/**
+ * Hình cơ bản cho shape element.
+ * Round 3: bổ sung tam giác / đa giác (số cạnh tuỳ chỉnh) / mũi tên — 1 shape cơ bản
+ * chỉnh thông số (cạnh/góc bo/số cạnh) cho ra nhiều biến thể (né bản quyền, human-in-loop).
+ */
+export type ShapeKind = 'rect' | 'ellipse' | 'line' | 'triangle' | 'polygon' | 'arrow';
+
+/**
+ * Gradient MỜ (opacity) có hướng cho shape — phủ 1 lớp fade lên fill.
+ * Chỉ đổi độ mờ theo trục, KHÔNG đổi màu (màu vẫn là fill). Phản chiếu render.ts + Element.
+ */
+export type GradientDirection = 'ltr' | 'rtl' | 'ttb' | 'btt' | 'center' | 'edges';
+export interface OpacityGradient {
+  direction: GradientDirection;
+  /** độ mờ đầu (0..1) và cuối (0..1) của dải fade. */
+  from: number;
+  to: number;
+}
+
+/** Kiểu danh sách của text element. */
+export type ListStyle = 'none' | 'bullet' | 'number';
 
 /** Căn chữ ngang. */
 export type TextAlign = 'left' | 'center' | 'right';
@@ -64,6 +83,10 @@ interface BaseElement {
   /** z nhỏ = dưới. Mảng elements đã theo thứ tự z nhưng giữ field để tiện. */
   locked?: boolean;
   opacity?: number; // 0..1
+  /** ẩn khỏi canvas + export (ô quản lý layer bật/tắt). */
+  hidden?: boolean;
+  /** tên hiển thị trong ô quản lý layer (đổi được). Bỏ trống = tự đặt theo loại/nội dung. */
+  name?: string;
 }
 
 export interface ImageElement extends BaseElement {
@@ -88,8 +111,14 @@ export interface TextElement extends BaseElement {
   /** khoảng cách chữ (letter-spacing) px @1080. */
   tracking?: number;
   lineHeight?: number; // hệ số
-  /** danh sách bullet — mỗi dòng (\n) là 1 gạch đầu dòng "• ". */
+  /** danh sách bullet — mỗi dòng (\n) là 1 gạch đầu dòng "• " (giữ để tương thích cũ). */
   bullet?: boolean;
+  /**
+   * Kiểu danh sách (mới, ưu tiên hơn `bullet`):
+   *   'bullet' → "•  " mỗi dòng, 'number' → "1.  2.  3." auto đánh số. 'none' = không.
+   * Nếu không có, suy từ `bullet` (true → 'bullet').
+   */
+  listStyle?: ListStyle;
   /**
    * Ghi đè bộ chữ riêng cho element này (chuỗi font-family CSS, xem lib/present-editor/fonts).
    * Bỏ trống = kế thừa bộ chữ của deck (FontPairing).
@@ -102,10 +131,14 @@ export interface TextElement extends BaseElement {
 export interface ShapeElement extends BaseElement {
   kind: 'shape';
   shape: ShapeKind;
-  fill: string; // dùng cho rect/ellipse
+  fill: string; // dùng cho rect/ellipse/triangle/polygon/arrow
   stroke: string;
   strokeWidth: number; // px @1080
   radius?: number; // bo góc rect
+  /** số cạnh cho shape 'polygon' (3..12). Bỏ trống = 5 (ngũ giác). */
+  sides?: number;
+  /** gradient MỜ có hướng phủ lên fill (tuỳ chọn). */
+  gradient?: OpacityGradient;
 }
 
 export type SlideElement = ImageElement | TextElement | ShapeElement;
@@ -217,9 +250,38 @@ export function makeShape(shape: ShapeKind, partial: Partial<ShapeElement> = {})
     stroke: '#8a6f4d',
     strokeWidth: shape === 'line' ? 3 : 0,
     radius: 0,
+    // đa giác mặc định 5 cạnh (ngũ giác) — chỉnh xuống 3 = tam giác, tăng lên = lục/thất giác…
+    sides: shape === 'polygon' ? 5 : undefined,
     opacity: 1,
     ...partial,
   };
+}
+
+/** Kiểu danh sách hiệu dụng của 1 text element (suy từ listStyle mới hoặc bullet cũ). */
+export function effectiveListStyle(el: {
+  listStyle?: ListStyle;
+  bullet?: boolean;
+}): ListStyle {
+  if (el.listStyle) return el.listStyle;
+  return el.bullet ? 'bullet' : 'none';
+}
+
+/**
+ * Áp tiền tố danh sách (bullet "•  " / số "1.  ") vào từng DÒNG LOGIC của text.
+ * Dùng CHUNG cho canvas (Element/EditorCanvas) và export (render.ts) để 1 nguồn sự thật.
+ */
+export function decorateListText(text: string, style: ListStyle): string {
+  if (style === 'none') return text;
+  let n = 0;
+  return text
+    .split('\n')
+    .map((line) => {
+      if (!line.trim()) return line;
+      if (style === 'bullet') return `•  ${line}`;
+      n += 1;
+      return `${n}.  ${line}`;
+    })
+    .join('\n');
 }
 
 /** Bản sao sâu, serialize được (đủ cho model phẳng). */

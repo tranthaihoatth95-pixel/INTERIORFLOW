@@ -19,7 +19,8 @@
 
 import { useRef } from 'react';
 import type { SlideElement, ImageElement, TextElement, ShapeElement, Frame } from '@/lib/present-editor/model';
-import { adjustToCssFilter } from '@/lib/present-editor/model';
+import { adjustToCssFilter, decorateListText, effectiveListStyle } from '@/lib/present-editor/model';
+import { shapeClipPath, gradientOverlayCss } from '@/lib/present-editor/shape-geometry';
 
 const CANVAS_FONT: Record<string, string> = {
   Editorial: '"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
@@ -373,27 +374,30 @@ function ShapeInner({ el }: { el: ShapeElement }) {
       </div>
     );
   }
-  return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        background: el.fill === 'transparent' ? 'transparent' : el.fill,
-        border: el.strokeWidth > 0 ? `${sw} solid ${el.stroke}` : 'none',
-        borderRadius: el.shape === 'ellipse' ? '50%' : `${((el.radius ?? 0) / 100) * 50}%`,
-      }}
-    />
-  );
+
+  const clip = shapeClipPath(el.shape, el.sides);
+  // Lớp mask gradient mờ (nếu có) — áp lên chính khối fill.
+  const maskCss = el.gradient ? gradientOverlayCss(el.gradient) : undefined;
+
+  const fillLayer: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    background: el.fill === 'transparent' ? 'transparent' : el.fill,
+    // rect/ellipse dùng border-radius; polygon/tam giác/mũi tên dùng clip-path.
+    border: !clip && el.strokeWidth > 0 ? `${sw} solid ${el.stroke}` : 'none',
+    borderRadius: clip ? 0 : el.shape === 'ellipse' ? '50%' : `${((el.radius ?? 0) / 100) * 50}%`,
+    clipPath: clip,
+    WebkitClipPath: clip,
+    ...(maskCss
+      ? { maskImage: maskCss, WebkitMaskImage: maskCss, maskMode: 'alpha' as const }
+      : {}),
+  };
+  return <div style={fillLayer} />;
 }
 
 function TextInner({ el, fonts }: { el: TextElement; fonts: string }) {
-  // Bullet: thêm "•  " đầu mỗi dòng logic (khớp cách render.ts vẽ khi export).
-  const shown = el.bullet
-    ? el.text
-        .split('\n')
-        .map((l) => (l.trim() ? `•  ${l}` : l))
-        .join('\n')
-    : el.text;
+  // Danh sách: bullet "•  " hoặc số "1.  " đầu mỗi dòng logic (khớp render.ts khi export).
+  const shown = decorateListText(el.text, effectiveListStyle(el));
   return (
     <div
       style={{

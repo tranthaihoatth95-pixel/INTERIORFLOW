@@ -32,6 +32,45 @@ export async function exportDeckToPdf(deck: EditorDeck): Promise<void> {
   doc.save(`${safeName(deck.project || deck.brand || 'deck')}.pdf`);
 }
 
+/* --------------------------------- PNG --------------------------------- */
+
+/**
+ * Xuất mỗi slide thành 1 ảnh PNG 1920×1080 và tải xuống lần lượt (không cần lib zip).
+ * Trung thực 1:1 với editor (renderEditorSlide). Tên: <project>-01.png, -02.png…
+ */
+export async function exportDeckToPng(deck: EditorDeck): Promise<void> {
+  if (typeof window === 'undefined') return;
+  if (!deck.slides.length) throw new Error('Deck rỗng — cần ít nhất 1 slide.');
+  const base = safeName(deck.project || deck.brand || 'deck');
+  for (let i = 0; i < deck.slides.length; i++) {
+    // renderEditorSlide trả JPEG; ép sang PNG qua canvas để đúng định dạng yêu cầu.
+    const jpeg = await renderEditorSlide(deck.slides[i], deck.fonts);
+    const png = await jpegDataUrlToPng(jpeg);
+    const a = document.createElement('a');
+    a.href = png;
+    a.download = `${base}-${String(i + 1).padStart(2, '0')}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    // nhịp nhỏ để trình duyệt không gộp/bỏ bớt tải nhiều file.
+    await new Promise((r) => setTimeout(r, 250));
+  }
+}
+
+async function jpegDataUrlToPng(jpegDataUrl: string): Promise<string> {
+  const img = new Image();
+  await new Promise<void>((res, rej) => {
+    img.onload = () => res();
+    img.onerror = () => rej(new Error('img load fail'));
+    img.src = jpegDataUrl;
+  });
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth || 1920;
+  c.height = img.naturalHeight || 1080;
+  c.getContext('2d')!.drawImage(img, 0, 0);
+  return c.toDataURL('image/png');
+}
+
 /* --------------------------------- PPTX -------------------------------- */
 
 /** Tìm element text theo role. */
@@ -72,7 +111,8 @@ function toContentSlide(
   for (const be of bodyEls) {
     be.text
       .split('\n')
-      .map((l) => l.replace(/^[-•]\s*/, '').trim())
+      // gỡ tiền tố danh sách người dùng gõ tay HOẶC auto (bullet "•", gạch "-", số "1.")
+      .map((l) => l.replace(/^\s*(?:[-•]|\d+\.)\s*/, '').trim())
       .filter(Boolean)
       .forEach((l) => body.push(l));
   }

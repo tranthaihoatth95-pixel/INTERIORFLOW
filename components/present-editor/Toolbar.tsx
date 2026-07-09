@@ -13,13 +13,15 @@ import {
   Square,
   Circle,
   Minus,
+  Triangle,
+  Pentagon,
+  MoveRight,
   LayoutTemplate,
   Undo2,
   Redo2,
-  FileDown,
-  FileText,
   Play,
 } from 'lucide-react';
+import ExportMenu from './ExportMenu';
 import type { ShapeKind } from '@/lib/present-editor/model';
 
 interface Props {
@@ -34,6 +36,8 @@ interface Props {
   canRedo: boolean;
   onExportPdf: () => void;
   onExportPptx: () => void;
+  /** xuất từng slide thành ảnh PNG (zip đơn giản hoá = tải lần lượt). */
+  onExportPng: () => void;
   /** mở trình chiếu (xem hiệu ứng động). */
   onPlay: () => void;
   busy: string | null;
@@ -87,11 +91,20 @@ export default function Toolbar(p: Props) {
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
 
       <Divider />
-      <IconOnly onClick={() => p.onAddShape('rect')} title="Hình chữ nhật">
+      <IconOnly onClick={() => p.onAddShape('rect')} title="Hình chữ nhật (chuột phải shape trên slide để chỉnh cạnh/góc)">
         <Square size={15} />
       </IconOnly>
       <IconOnly onClick={() => p.onAddShape('ellipse')} title="Hình elip">
         <Circle size={15} />
+      </IconOnly>
+      <IconOnly onClick={() => p.onAddShape('triangle')} title="Tam giác">
+        <Triangle size={15} />
+      </IconOnly>
+      <IconOnly onClick={() => p.onAddShape('polygon')} title="Đa giác (chỉnh số cạnh khi chuột phải)">
+        <Pentagon size={15} />
+      </IconOnly>
+      <IconOnly onClick={() => p.onAddShape('arrow')} title="Mũi tên">
+        <MoveRight size={15} />
       </IconOnly>
       <IconOnly onClick={() => p.onAddShape('line')} title="Đường thẳng">
         <Minus size={15} />
@@ -116,12 +129,13 @@ export default function Toolbar(p: Props) {
         <Play size={15} /> Trình chiếu
       </Btn>
       <Divider />
-      <Btn onClick={p.onExportPdf} title="Xuất PDF" disabled={!!p.busy}>
-        <FileDown size={15} /> {p.busy === 'pdf' ? 'Đang xuất…' : 'PDF'}
-      </Btn>
-      <Btn onClick={p.onExportPptx} title="Xuất PowerPoint (.pptx)" disabled={!!p.busy} primary>
-        <FileText size={15} /> {p.busy === 'pptx' ? 'Đang xuất…' : 'PowerPoint'}
-      </Btn>
+      {/* Export gộp: PDF · PowerPoint · PNG trong 1 menu (góp ý #7). */}
+      <ExportMenu
+        onExportPdf={p.onExportPdf}
+        onExportPptx={p.onExportPptx}
+        onExportPng={p.onExportPng}
+        busy={p.busy}
+      />
 
       {/* nút ẩn giữ chỗ cho lib open state (tránh unused) */}
       {libOpen && <span hidden onClick={() => setLibOpen(false)} />}

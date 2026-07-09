@@ -297,3 +297,76 @@ body {
 .pe-shelf-row::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* ---------- Present editor — round 3 (pill bars · generate flow · layer · ẩn panel) ---------- */
+
+/* Ẩn scrollbar ngang cho các thanh pill nổi (text/ảnh) — cuộn được mà không lộ track. */
+.pe-textbar .pe-pill::-webkit-scrollbar,
+.pe-imagebar::-webkit-scrollbar {
+  height: 0;
+  display: none;
+}
+
+/* Hiệu ứng "quét tài liệu" khi Generate deck (góp ý #1, ảnh c_mrcqc6hk). */
+@keyframes pe-scan-sweep {
+  0% {
+    top: 6%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    top: 92%;
+    opacity: 0;
+  }
+}
+.pe-scan-line {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  box-shadow: 0 0 14px 2px var(--accent-ring);
+  animation: pe-scan-sweep 1.9s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+@keyframes pe-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.pe-fade-up {
+  animation: pe-fade-up 0.4s var(--ease-apple, ease) both;
+}
+
+/* Nút ẩn/hiện panel trái (mép trong) — quiet-luxury, hiện rõ khi hover. */
+.pe-panel-toggle {
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.pe-panel-toggle:hover {
+  background: var(--hover);
+  color: var(--t1);
+}
+
+/* Dòng layer trong ô quản lý lớp: nút phụ (ẩn/khoá) rõ khi hover dòng. */
+.pe-layer-row .pe-layer-actions {
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+.pe-layer-row:hover .pe-layer-actions {
+  opacity: 1;
+}
+.pe-layer-row.dragging {
+  opacity: 0.5;
+}

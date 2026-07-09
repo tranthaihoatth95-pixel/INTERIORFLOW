@@ -16,10 +16,14 @@ import type {
   EditorSlide,
   ImageAdjust,
   CropRect,
+  ListStyle,
 } from '@/lib/present-editor/model';
+import { effectiveListStyle } from '@/lib/present-editor/model';
+import { useState } from 'react';
 import type { FontPairing } from '@/lib/slides';
 import { DEFAULT_ADJUST } from '@/lib/present-editor/model';
 import { CURATED_FONTS } from '@/lib/present-editor/fonts';
+import LayerPanel from './LayerPanel';
 import {
   Trash2,
   Copy,
@@ -29,10 +33,13 @@ import {
   ArrowDown,
   ChevronsUp,
   ChevronsDown,
+  ChevronDown,
+  Layers,
   Bold,
   Italic,
   Underline,
   List,
+  ListOrdered,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -65,6 +72,10 @@ interface Props {
   onOpenImageEditor?: (id: string) => void;
   /** mở trình chỉnh ảnh nâng cao (Photoshop-level, /photo-editor). */
   onOpenAdvancedEditor?: () => void;
+  /* ---- ô quản lý layer ---- */
+  selectedIds: string[];
+  onSelect: (id: string) => void;
+  onReorderElement: (fromIndex: number, toIndex: number) => void;
 }
 
 export default function Inspector({
@@ -80,9 +91,58 @@ export default function Inspector({
   onDelete,
   onOpenImageEditor,
   onOpenAdvancedEditor,
+  selectedIds,
+  onSelect,
+  onReorderElement,
 }: Props) {
+  const [layersOpen, setLayersOpen] = useState(true);
+
+  // Ô quản lý layer — luôn hiện đầu inspector (kể cả khi không chọn gì).
+  const layerBlock = (
+    <div style={{ border: '1px solid var(--border)', borderRadius: 10, background: 'var(--card)', marginBottom: 12 }}>
+      <button
+        type="button"
+        onClick={() => setLayersOpen((v) => !v)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          width: '100%',
+          padding: '9px 11px',
+          background: 'transparent',
+          border: 'none',
+          color: 'var(--t2)',
+          fontSize: 11,
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: 0.4,
+          cursor: 'pointer',
+        }}
+      >
+        <Layers size={13} style={{ color: 'var(--accent)' }} />
+        <span style={{ flex: 1, textAlign: 'left' }}>Lớp ({slide.elements.length})</span>
+        <ChevronDown size={14} style={{ transform: layersOpen ? 'rotate(180deg)' : 'none', transition: 'transform .18s', color: 'var(--t4)' }} />
+      </button>
+      {layersOpen && (
+        <div style={{ padding: '0 8px 8px', maxHeight: 220, overflowY: 'auto' }}>
+          <LayerPanel
+            elements={slide.elements}
+            selectedIds={selectedIds}
+            onSelect={onSelect}
+            onToggleHidden={(id) => onUpdateSlide((s) => { const e = s.elements.find((x) => x.id === id); if (e) e.hidden = !e.hidden; })}
+            onToggleLocked={(id) => onUpdateSlide((s) => { const e = s.elements.find((x) => x.id === id); if (e) e.locked = !e.locked; })}
+            onRename={(id, name) => onUpdateSlide((s) => { const e = s.elements.find((x) => x.id === id); if (e) e.name = name || undefined; })}
+            onReorder={onReorderElement}
+          />
+        </div>
+      )}
+    </div>
+  );
+
   if (!selected) {
     return (
+      <>
+      {layerBlock}
       <Panel title="Nền slide">
         <Field label="Màu nền">
           <ColorRow
@@ -114,11 +174,13 @@ export default function Inspector({
           trên đỉnh để xoay. Nhấp đúp chữ để sửa nội dung.
         </p>
       </Panel>
+      </>
     );
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {layerBlock}
       {selected.kind === 'text' && (
         <TextInspector
           el={selected}
@@ -222,6 +284,20 @@ export default function Inspector({
 }
 
 /* ------------------------------- TEXT ------------------------------- */
+function listOf(el: TextElement): ListStyle {
+  return effectiveListStyle(el);
+}
+function setListStyle(
+  el: TextElement,
+  onUpdate: (m: (el: TextElement) => void, live?: boolean) => void,
+  s: ListStyle,
+) {
+  onUpdate((t) => {
+    t.listStyle = s;
+    t.bullet = s === 'bullet';
+  });
+}
+
 function TextInspector({
   el,
   palette,
@@ -296,11 +372,18 @@ function TextInspector({
           <Underline size={14} />
         </Toggle>
         <Toggle
-          active={!!el.bullet}
-          onClick={() => onUpdate((t) => (t.bullet = !t.bullet))}
+          active={listOf(el) === 'bullet'}
+          onClick={() => setListStyle(el, onUpdate, listOf(el) === 'bullet' ? 'none' : 'bullet')}
           title="Danh sách gạch đầu dòng"
         >
           <List size={14} />
+        </Toggle>
+        <Toggle
+          active={listOf(el) === 'number'}
+          onClick={() => setListStyle(el, onUpdate, listOf(el) === 'number' ? 'none' : 'number')}
+          title="Danh sách đánh số tự động"
+        >
+          <ListOrdered size={14} />
         </Toggle>
       </Row>
       {/* căn chữ ngang */}
@@ -516,7 +599,113 @@ function ShapeInspector({
           />
         </Field>
       )}
+      {el.shape === 'polygon' && (
+        <Field label={`Số cạnh ${el.sides ?? 5}`}>
+          <input
+            type="range"
+            min={3}
+            max={12}
+            step={1}
+            value={el.sides ?? 5}
+            onChange={(e) => onUpdate((s) => (s.sides = +e.target.value), true)}
+            onPointerUp={(e) => onUpdate((s) => (s.sides = +(e.target as HTMLInputElement).value))}
+            style={{ width: '100%' }}
+          />
+        </Field>
+      )}
+      {el.shape !== 'line' && <GradientControls el={el} onUpdate={onUpdate} palette={palette} />}
     </Panel>
+  );
+}
+
+/* --------------------- Gradient MỜ có hướng cho shape --------------------- */
+function GradientControls({
+  el,
+  onUpdate,
+  palette,
+}: {
+  el: ShapeElement;
+  onUpdate: (m: (el: ShapeElement) => void, live?: boolean) => void;
+  palette: string[];
+}) {
+  const g = el.gradient;
+  const on = !!g;
+  const dirs: { id: NonNullable<ShapeElement['gradient']>['direction']; label: string }[] = [
+    { id: 'ltr', label: 'Trái → phải' },
+    { id: 'rtl', label: 'Phải → trái' },
+    { id: 'ttb', label: 'Trên → dưới' },
+    { id: 'btt', label: 'Dưới → trên' },
+    { id: 'center', label: 'Từ giữa' },
+    { id: 'edges', label: 'Hai phía' },
+  ];
+  return (
+    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <Row>
+        <span style={{ fontSize: 11, color: 'var(--t3)', flex: 1 }}>Gradient mờ (theo hướng)</span>
+        <Toggle
+          active={on}
+          onClick={() =>
+            onUpdate((s) => {
+              s.gradient = on ? undefined : { direction: 'ltr', from: 1, to: 0 };
+            })
+          }
+          title={on ? 'Tắt gradient mờ' : 'Bật gradient mờ'}
+        >
+          {on ? 'Bật' : 'Tắt'}
+        </Toggle>
+      </Row>
+      {on && g && (
+        <>
+          <Field label="Hướng mờ">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5 }}>
+              {dirs.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => onUpdate((s) => { if (s.gradient) s.gradient.direction = d.id; })}
+                  style={{
+                    padding: '6px 4px',
+                    borderRadius: 6,
+                    fontSize: 10,
+                    border: g.direction === d.id ? '1px solid var(--accent)' : '1px solid var(--border)',
+                    background: g.direction === d.id ? 'var(--accent-soft)' : 'var(--field)',
+                    color: g.direction === d.id ? 'var(--accent)' : 'var(--t2)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </Field>
+          <Field label={`Mờ đầu ${Math.round(g.from * 100)}%`}>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={Math.round(g.from * 100)}
+              onChange={(e) => onUpdate((s) => { if (s.gradient) s.gradient.from = +e.target.value / 100; }, true)}
+              onPointerUp={(e) => onUpdate((s) => { if (s.gradient) s.gradient.from = +(e.target as HTMLInputElement).value / 100; })}
+              style={{ width: '100%' }}
+            />
+          </Field>
+          <Field label={`Mờ cuối ${Math.round(g.to * 100)}%`}>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={Math.round(g.to * 100)}
+              onChange={(e) => onUpdate((s) => { if (s.gradient) s.gradient.to = +e.target.value / 100; }, true)}
+              onPointerUp={(e) => onUpdate((s) => { if (s.gradient) s.gradient.to = +(e.target as HTMLInputElement).value / 100; })}
+              style={{ width: '100%' }}
+            />
+          </Field>
+          <Field label="Màu (chỉnh trực tiếp)">
+            <ColorRow value={el.fill} palette={palette} allowTransparent onChange={(c) => onUpdate((s) => (s.fill = c))} />
+          </Field>
+        </>
+      )}
+    </div>
   );
 }
 

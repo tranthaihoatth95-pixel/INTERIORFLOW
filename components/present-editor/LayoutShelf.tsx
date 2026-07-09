@@ -15,10 +15,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { EditorTemplate, LayoutShelf as Shelf } from '@/lib/present-editor/templates';
 import { SHELF_LABEL, SHELF_ORDER, shelfOf, makeVariants } from '@/lib/present-editor/templates';
 import type { FontPairing } from '@/lib/slides';
-import type { LayoutSpec } from '@/lib/present-editor/spec';
+import type { LayoutSpec, ToneKey } from '@/lib/present-editor/spec';
 import { renderEditorSlide } from '@/lib/present-editor/render';
 import SpecForm from './SpecForm';
-import { Sparkles, Search, Plus, Shuffle, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import GenerateFlow, { type GenerateResult } from './GenerateFlow';
+import type { RefImage } from './LibraryBrowser';
+import { Sparkles, Search, Plus, Shuffle, SlidersHorizontal, ChevronDown, RefreshCw } from 'lucide-react';
 
 interface Props {
   templates: EditorTemplate[];
@@ -31,6 +33,10 @@ interface Props {
   fonts: FontPairing;
   spec: LayoutSpec;
   onSpecChange: (s: LayoutSpec) => void;
+  /** ảnh reference để "đính kèm" trong flow generate. */
+  refImages: RefImage[];
+  /** máy đã học được quy tắc + ảnh nội dung/text → container tiếp nhận (palette, v.v.). */
+  onGenerated?: (r: GenerateResult) => void;
 }
 
 const PREVIEW_CTX = {
@@ -50,11 +56,33 @@ export default function LayoutShelf({
   fonts,
   spec,
   onSpecChange,
+  refImages,
+  onGenerated,
 }: Props) {
   const [query, setQuery] = useState('');
   const [specOpen, setSpecOpen] = useState(false);
   // biến thể sinh thêm theo template gốc (id gốc → danh sách biến thể).
   const [variants, setVariants] = useState<Record<string, EditorTemplate[]>>({});
+  // Flow generate: chỉ hiện kệ 4 cột SAU khi Generate (góp ý #1 & #12). Trước đó = GenerateFlow.
+  const [generated, setGenerated] = useState(false);
+  const [learnedNotes, setLearnedNotes] = useState<string[] | null>(null);
+
+  function handleGenerated(r: GenerateResult) {
+    // áp quy tắc rút được vào bảng hỏi số liệu (spec) — điểm xuất phát khớp gu ref.
+    if (r.rules) {
+      const tone: ToneKey = r.rules.tone === 'dark' ? 'dark' : r.rules.tone === 'warm' ? 'warm' : 'light';
+      onSpecChange({
+        ...spec,
+        minImages: r.rules.minImages,
+        maxImages: r.rules.maxImages,
+        tone,
+        background: r.contentImages.length ? 'image' : spec.background,
+      });
+      setLearnedNotes(r.rules.notes);
+    }
+    setGenerated(true);
+    onGenerated?.(r);
+  }
 
   const q = query.trim().toLowerCase();
   const match = (t: EditorTemplate) => !q || t.name.toLowerCase().includes(q);
@@ -66,7 +94,7 @@ export default function LayoutShelf({
   }, [templates, variants]);
 
   const byShelf = useMemo(() => {
-    const map: Record<Shelf, EditorTemplate[]> = { cover: [], subcover: [], content: [] };
+    const map: Record<Shelf, EditorTemplate[]> = { cover: [], subcover: [], content: [], closing: [] };
     for (const t of allTemplates) {
       if (!match(t)) continue;
       map[shelfOf(t)].push(t);
@@ -111,8 +139,35 @@ export default function LayoutShelf({
     setVariants((prev) => ({ ...prev, [base.id]: [...(prev[base.id] ?? []), ...v] }));
   }
 
+  // Trước khi Generate: hiện flow mở đầu (import ảnh → text → reference → generate).
+  if (!generated) {
+    return <GenerateFlow refImages={refImages} onComplete={handleGenerated} />;
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 }}>
+      {/* dòng máy-học-được + generate lại */}
+      {learnedNotes && (
+        <div style={{ border: '1px solid var(--accent-ring)', borderRadius: 10, background: 'var(--accent-soft)', padding: '9px 11px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+            <Sparkles size={12} style={{ color: 'var(--accent)' }} />
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', flex: 1 }}>Máy đã học từ reference</span>
+            <button
+              type="button"
+              onClick={() => { setGenerated(false); setLearnedNotes(null); }}
+              title="Nhập lại reference / nội dung"
+              style={{ display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'transparent', color: 'var(--accent)', fontSize: 10.5, cursor: 'pointer' }}
+            >
+              <RefreshCw size={11} /> Làm lại
+            </button>
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {learnedNotes.slice(0, 4).map((n, i) => (
+              <li key={i} style={{ fontSize: 10.5, color: 'var(--t2)', lineHeight: 1.4 }}>{n}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       {/* ô tìm + tạo mới */}
       <div style={{ display: 'flex', gap: 6 }}>
         <div style={{ position: 'relative', flex: 1 }}>
