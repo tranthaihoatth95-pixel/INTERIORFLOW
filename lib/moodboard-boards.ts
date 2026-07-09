@@ -17,6 +17,14 @@ export interface BoardImage {
   label?: string; // tên vật liệu / chú thích (dạng material dùng)
 }
 
+/** Vị trí + tỉ lệ 1 ảnh trên khung, theo PHẦN TRĂM khung (0..1). Cho bảng draft chỉnh tay. */
+export interface Placement {
+  xf: number;
+  yf: number;
+  wf: number;
+  hf: number;
+}
+
 export interface BoardOpts {
   variant: BoardVariant;
   eyebrow?: string; // nhãn section trên-trái, vd 'CẢM HỨNG THIẾT KẾ'
@@ -25,6 +33,7 @@ export interface BoardOpts {
   body?: string; // đoạn văn (dạng story)
   mark?: string; // tên dự án góc phải
   palette?: string[]; // palette ép sẵn (từ gu); rỗng = tự trích từ ảnh
+  placements?: Placement[]; // bố cục tay từ bảng draft (song song images); thiếu = autoLayout
 }
 
 const W = 2400;
@@ -290,14 +299,83 @@ function drawPalette(ctx: CanvasRenderingContext2D, palette: RGB[], y: number) {
   });
 }
 
+/* ───────────────────────── AUTO-LAYOUT (bố cục tự động) ───────────────────────── */
+
+const clampF = (v: number, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v));
+
+type Slot = [number, number, number, number]; // xf,yf,wf,hf
+
+// Không gian: hero trái lớn + thẻ chồng nhiều cỡ.
+const SPACE_SLOTS: Slot[] = [
+  [0.03, 0.1, 0.42, 0.8],
+  [0.4, 0.15, 0.22, 0.7],
+  [0.62, 0.09, 0.35, 0.4],
+  [0.62, 0.52, 0.35, 0.39],
+  [0.04, 0.63, 0.17, 0.27],
+  [0.22, 0.66, 0.15, 0.24],
+  [0.8, 0.3, 0.17, 0.3],
+  [0.45, 0.72, 0.15, 0.2],
+];
+// Câu chuyện: hero full + ảnh chồng feather.
+const STORY_SLOTS: Slot[] = [
+  [0, 0, 1, 1],
+  [0.44, 0.1, 0.44, 0.5],
+  [0.6, 0.5, 0.4, 0.48],
+  [0.27, 0.4, 0.42, 0.5],
+  [0.1, 0.24, 0.36, 0.52],
+  [0.78, 0.28, 0.22, 0.4],
+  [0.05, 0.55, 0.36, 0.44],
+  [0.46, 0.02, 0.3, 0.36],
+];
+
+function materialSlots(n: number): Slot[] {
+  const cols = n <= 4 ? 2 : n <= 9 ? 3 : 4;
+  const rows = Math.ceil(n / cols);
+  const clusterW = 0.5;
+  const clusterH = 0.62;
+  const x0 = 0.25;
+  const y0 = 0.16;
+  const gap = 0.008;
+  const cw = clusterW / cols;
+  const ch = clusterH / rows;
+  const out: Slot[] = [];
+  for (let i = 0; i < n; i++) {
+    const c = i % cols;
+    const r = Math.floor(i / cols);
+    out.push([x0 + c * cw, y0 + r * ch + (c % 2) * 0.01, cw - gap, ch - gap]);
+  }
+  return out;
+}
+
+/** Bố cục tự động theo dạng → N placement (fraction). Index 0 = ảnh chủ đạo (hero). */
+export function autoLayout(variant: BoardVariant, n: number): Placement[] {
+  if (n <= 0) return [];
+  if (variant === 'material') return materialSlots(n).map(([xf, yf, wf, hf]) => ({ xf, yf, wf, hf }));
+  const slots = variant === 'space' ? SPACE_SLOTS : STORY_SLOTS;
+  const out: Placement[] = [];
+  for (let i = 0; i < n; i++) {
+    let [x, y, w, h] = slots[i % slots.length];
+    if (i >= slots.length) {
+      const k = Math.floor(i / slots.length);
+      w *= 0.7;
+      h *= 0.7;
+      x = clampF(x + 0.08 * k - 0.04, 0, 1 - w);
+      y = clampF(y + 0.06 * k - 0.03, 0, 1 - h);
+    }
+    out.push({ xf: x, yf: y, wf: w, hf: h });
+  }
+  return out;
+}
+
 /* ───────────────────────── DẠNG 1: VẬT LIỆU ───────────────────────── */
 /**
- * Cụm swatch chồng nhau ở giữa + nhãn chú thích 2 bên có leader-line.
- * Ảnh xếp thành khối lệch tâm (bố cục brick lệch), nhãn = label ảnh, toả trái/phải.
+ * Swatch vật liệu (viền gọn, crisp) theo placements + nhãn chú thích 2 bên có leader-line.
+ * Nhãn = label ảnh, toả trái/phải theo tâm ngang của swatch.
  */
 function renderMaterial(
   ctx: CanvasRenderingContext2D,
   imgs: HTMLImageElement[],
+  placements: Placement[],
   labels: string[],
   palette: RGB[],
   opts: BoardOpts,
@@ -309,20 +387,6 @@ function renderMaterial(
     drawTracked(ctx, opts.title, MARGIN, 150, 1);
   }
 
-  const n = imgs.length;
-  // Khối swatch: lưới brick lệch tâm, chừa lề 2 bên cho nhãn.
-  const clusterW = Math.round(W * 0.5);
-  const clusterX = Math.round((W - clusterW) / 2);
-  const top = 210;
-  const bottom = H - 180;
-  const clusterH = bottom - top;
-
-  const cols = n <= 4 ? 2 : n <= 9 ? 3 : 4;
-  const rows = Math.ceil(n / cols);
-  const gap = 14;
-  const cw = (clusterW - gap * (cols - 1)) / cols;
-  const ch = (clusterH - gap * (rows - 1)) / rows;
-
   interface Sw {
     x: number;
     y: number;
@@ -330,23 +394,19 @@ function renderMaterial(
     h: number;
     label: string;
     side: 'l' | 'r';
-    cx: number;
     cy: number;
   }
-  const sws: Sw[] = [];
-  for (let i = 0; i < n; i++) {
-    const c = i % cols;
-    const r = Math.floor(i / cols);
-    // lệch brick: hàng lẻ dịch xuống chút
-    const offY = (c % 2) * 12;
-    const x = Math.round(clusterX + c * (cw + gap));
-    const y = Math.round(top + r * (ch + gap) + offY);
-    const side: 'l' | 'r' = c < cols / 2 ? 'l' : 'r';
-    sws.push({ x, y, w: Math.round(cw), h: Math.round(ch), label: labels[i] || `Vật liệu ${i + 1}`, side, cx: x + cw / 2, cy: y + ch / 2 });
-  }
+  const sws: Sw[] = placements.map((p, i) => {
+    const x = p.xf * W;
+    const y = p.yf * H;
+    const w = p.wf * W;
+    const h = p.hf * H;
+    const cx = x + w / 2;
+    return { x, y, w, h, label: labels[i] || `Vật liệu ${i + 1}`, side: cx < W / 2 ? 'l' : 'r', cy: y + h / 2 };
+  });
 
-  // vẽ swatch (chồng nhẹ bằng shadow)
-  for (const s of sws) {
+  // vẽ swatch crisp + shadow
+  sws.forEach((s, i) => {
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.16)';
     ctx.shadowBlur = 18;
@@ -358,9 +418,9 @@ function renderMaterial(
     ctx.save();
     roundRect(ctx, s.x, s.y, s.w, s.h, 6);
     ctx.clip();
-    coverDraw(ctx, imgs[sws.indexOf(s)], s.x, s.y, s.w, s.h);
+    coverDraw(ctx, imgs[i], s.x, s.y, s.w, s.h);
     ctx.restore();
-  }
+  });
 
   // nhãn + leader-line
   ctx.font = `600 17px ${SANS}`;
@@ -369,24 +429,21 @@ function renderMaterial(
     const isL = s.side === 'l';
     const anchorX = isL ? s.x : s.x + s.w;
     const labelX = isL ? MARGIN : W - MARGIN;
-    const elbowX = isL ? clusterX - 40 : clusterX + clusterW + 40;
-    // đường dẫn
     ctx.strokeStyle = 'rgba(43,38,34,0.5)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(anchorX, s.cy);
-    ctx.lineTo(elbowX, s.cy);
+    ctx.lineTo(labelX, s.cy);
     ctx.stroke();
     ctx.beginPath();
     ctx.arc(anchorX, s.cy, 3, 0, Math.PI * 2);
     ctx.fillStyle = INK;
     ctx.fill();
-    // nhãn (bọc 2 dòng nếu dài)
     ctx.fillStyle = INK;
     ctx.textAlign = isL ? 'left' : 'right';
-    const lines = wrapLines(ctx, s.label, Math.abs(elbowX - labelX) - 12);
+    const lines = wrapLines(ctx, s.label, Math.abs(anchorX - labelX) - 14);
     const lh = 22;
-    const startY = s.cy - ((lines.length - 1) * lh) / 2;
+    const startY = s.cy - ((Math.min(2, lines.length) - 1) * lh) / 2;
     lines.slice(0, 2).forEach((ln, k) => ctx.fillText(ln, labelX, startY + k * lh));
   }
   ctx.textAlign = 'left';
@@ -397,68 +454,48 @@ function renderMaterial(
 
 /* ───────────────────────── DẠNG 2: KHÔNG GIAN ───────────────────────── */
 /**
- * Collage editorial: 1 hero lớn trái + cột thẻ dọc giữa + cụm thẻ nhỏ phải,
- * thẻ chồng nhau nhẹ, tiêu đề serif lớn đè góc dưới-trái.
+ * Collage editorial theo placements — thẻ ảnh RÌA MỀM (feather nhẹ, bớt viền cứng),
+ * chồng nhau, tiêu đề serif lớn đè góc dưới-trái. Index 0 = hero (feather ít nhất).
  */
 function renderSpace(
   ctx: CanvasRenderingContext2D,
   imgs: HTMLImageElement[],
+  placements: Placement[],
   palette: RGB[],
   opts: BoardOpts,
 ) {
   drawHeader(ctx, opts.eyebrow || 'ĐỊNH HƯỚNG KHÔNG GIAN', opts.mark || 'INTERIORFLOW', INK, MUTE);
 
-  const top = 140;
-  const bottom = H - 150;
-  const areaH = bottom - top;
-  const n = imgs.length;
-  const gap = 22;
+  // vẽ từng ảnh với feather NHẸ → cạnh mềm, blend, không thẻ cứng
+  placements.forEach((p, i) => {
+    const w = p.wf * W;
+    const h = p.hf * H;
+    const x = Math.round(p.xf * W);
+    const y = Math.round(p.yf * H);
+    // bóng khối mềm dưới ảnh cho chiều sâu editorial
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.16)';
+    ctx.shadowBlur = 30;
+    ctx.shadowOffsetY = 14;
+    const tile = featherTile(imgs[i], w, h, i === 0 ? 0.1 : 0.18);
+    ctx.drawImage(tile, x, y);
+    ctx.restore();
+  });
 
-  // hero trái (~46% rộng)
-  const heroW = Math.round(W * 0.4);
-  const heroX = MARGIN;
-  card(ctx, imgs[0], heroX, top, heroW, areaH, 12);
-
-  let idx = 1;
-  // cột giữa: 1 thẻ dọc lớn chồng lên hero
-  const midW = Math.round(W * 0.2);
-  const midX = heroX + heroW - 40; // chồng 40px
-  if (idx < n) {
-    const mh = Math.round(areaH * 0.82);
-    const my = top + Math.round((areaH - mh) / 2);
-    card(ctx, imgs[idx++], midX, my, midW, mh, 10);
-  }
-
-  // cụm phải: lưới thẻ nhỏ
-  const rightX = midX + midW + gap;
-  const rightW = W - MARGIN - rightX;
-  const rest = n - idx;
-  if (rest > 0) {
-    const cols = rest <= 2 ? 1 : 2;
-    const rows = Math.ceil(rest / cols);
-    const cw = (rightW - gap * (cols - 1)) / cols;
-    const chh = (areaH - gap * (rows - 1)) / rows;
-    for (let k = 0; k < rest; k++) {
-      const c = k % cols;
-      const r = Math.floor(k / cols);
-      const x = Math.round(rightX + c * (cw + gap));
-      const y = Math.round(top + r * (chh + gap));
-      card(ctx, imgs[idx + k], x, y, Math.round(cw), Math.round(chh), 10);
-    }
-  }
-
-  // tiêu đề serif đè góc dưới-trái
+  // tiêu đề serif đè góc dưới-trái (theo hero placements[0])
   if (opts.title) {
-    const ty = bottom - 30;
+    const hero = placements[0] ?? { xf: 0.03, yf: 0.1, wf: 0.42, hf: 0.8 };
+    const tx = Math.round(hero.xf * W + 24);
+    const ty = Math.round((hero.yf + hero.hf) * H - 24);
     ctx.fillStyle = MUTE;
     ctx.font = `600 22px ${SANS}`;
-    if (opts.sub) drawTracked(ctx, opts.sub.toUpperCase(), heroX + 30, ty - 96, 4);
+    if (opts.sub) drawTracked(ctx, opts.sub.toUpperCase(), tx + 6, ty - 96, 4);
     ctx.save();
     ctx.shadowColor = 'rgba(245,241,234,0.9)';
     ctx.shadowBlur = 24;
     ctx.fillStyle = INK;
-    ctx.font = `italic 300 108px ${SERIF}`;
-    ctx.fillText(opts.title, heroX + 24, ty);
+    ctx.font = `italic 300 100px ${SERIF}`;
+    ctx.fillText(opts.title, tx, ty);
     ctx.restore();
   }
 
@@ -474,6 +511,7 @@ function renderSpace(
 function renderStory(
   ctx: CanvasRenderingContext2D,
   imgs: HTMLImageElement[],
+  placements: Placement[],
   palette: RGB[],
   opts: BoardOpts,
 ) {
@@ -481,35 +519,16 @@ function renderStory(
   ctx.fillStyle = '#141110';
   ctx.fillRect(0, 0, W, H);
 
-  // hero = ảnh đầu phủ gần full, feather để rìa tan vào nền
-  const hero = featherTile(imgs[0], W, H, 0.16);
-  ctx.drawImage(hero, 0, 0);
-
-  // ảnh còn lại: slot TRẢI khắp, chồng nhau, feather MẠNH → cạnh xoá nhoà, blend liền
-  const slots = [
-    { cx: 0.66, cy: 0.34, s: 0.48 },
-    { cx: 0.84, cy: 0.68, s: 0.42 },
-    { cx: 0.5, cy: 0.62, s: 0.44 },
-    { cx: 0.3, cy: 0.46, s: 0.38 },
-    { cx: 0.9, cy: 0.36, s: 0.34 },
-    { cx: 0.2, cy: 0.72, s: 0.38 },
-    { cx: 0.62, cy: 0.14, s: 0.32 },
-    { cx: 0.44, cy: 0.86, s: 0.3 },
-  ];
-  for (let i = 1; i < imgs.length; i++) {
-    const im = imgs[i];
-    const slot = slots[(i - 1) % slots.length];
-    // ảnh vòng sau (>slots) thu nhỏ dần thành điểm nhấn
-    const shrink = i - 1 >= slots.length ? 0.7 : 1;
-    const w = Math.round(W * slot.s * shrink);
-    const ar = im.width / im.height || 1.5;
-    const h = Math.round(w / ar);
-    const x = Math.round(slot.cx * W - w / 2);
-    const y = Math.round(slot.cy * H - h / 2);
-    const tile = featherTile(im, w, h, 0.44);
-    ctx.globalAlpha = 0.9;
+  // vẽ từng ảnh theo placements, feather MẠNH → cạnh xoá nhoà, blend liền (hero index 0 feather nhẹ hơn)
+  placements.forEach((p, i) => {
+    const w = p.wf * W;
+    const h = p.hf * H;
+    const x = Math.round(p.xf * W);
+    const y = Math.round(p.yf * H);
+    const tile = featherTile(imgs[i], w, h, i === 0 ? 0.16 : 0.44);
+    ctx.globalAlpha = i === 0 ? 1 : 0.9;
     ctx.drawImage(tile, x, y);
-  }
+  });
   ctx.globalAlpha = 1;
 
   // grade ấm hợp nhất tông (soft-light)
@@ -626,9 +645,13 @@ export async function renderMoodboard(images: BoardImage[], opts: BoardOpts): Pr
   const forced = (opts.palette || []).map(fromHex).filter((c): c is RGB => Boolean(c));
   const palette = forced.length >= 4 ? forced.slice(0, 6) : pickPalette(imgs.map(dominantColor), 6);
 
-  if (opts.variant === 'material') renderMaterial(ctx, imgs, labels, palette, opts);
-  else if (opts.variant === 'space') renderSpace(ctx, imgs, palette, opts);
-  else renderStory(ctx, imgs, palette, opts);
+  // bố cục: dùng placements tay (bảng draft) nếu khớp số ảnh; thiếu thì auto.
+  const placements =
+    opts.placements && opts.placements.length === imgs.length ? opts.placements : autoLayout(opts.variant, imgs.length);
+
+  if (opts.variant === 'material') renderMaterial(ctx, imgs, placements, labels, palette, opts);
+  else if (opts.variant === 'space') renderSpace(ctx, imgs, placements, palette, opts);
+  else renderStory(ctx, imgs, placements, palette, opts);
 
   return canvas.toDataURL('image/jpeg', 0.92);
 }

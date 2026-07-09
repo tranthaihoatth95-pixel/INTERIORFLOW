@@ -8,19 +8,22 @@
  * hoặc NHẬN DIỆN từ 1 ảnh tải lên (local, dựa palette). Toàn bộ chạy không cần AI.
  */
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Download, Sparkles, Upload } from 'lucide-react';
 import { guProfileFromPicked, guToPrompt } from '@/lib/gu';
 import { USAGES, type RefUsage } from '@/lib/refingest';
 import {
   renderMoodboard,
   inferStyleFromImage,
+  autoLayout,
   STYLE_PRESETS,
   BOARD_VARIANTS,
   type BoardVariant,
   type BoardImage,
   type StyleGuess,
+  type Placement,
 } from '@/lib/moodboard-boards';
+import { DraftBoard } from './DraftBoard';
 import { downloadImage } from '@/lib/present-demo';
 import {
   BigButton,
@@ -71,6 +74,9 @@ export function ConceptForm() {
   const [board, setBoard] = useState<string | null>(null);
   const [guess, setGuess] = useState<StyleGuess | null>(null);
   const styleFileRef = useRef<HTMLInputElement>(null);
+  // Bố cục tay từ bảng draft — key theo id ảnh (giữ chỉnh khi thêm/bớt ảnh khác).
+  const [place, setPlace] = useState<Record<string, Placement>>({});
+  const lastVariant = useRef<BoardVariant>(variant);
 
   const pickedAssets = useMemo(() => assets.filter((a) => picked.has(a.id)), [assets, picked]);
   const visibleAssets = useMemo(
@@ -82,6 +88,54 @@ export function ConceptForm() {
     for (const a of assets) m.set(a.usage as RefUsage, (m.get(a.usage as RefUsage) ?? 0) + 1);
     return m;
   }, [assets]);
+
+  // Đồng bộ bố cục: mỗi ảnh chọn phải có 1 placement. Đổi DẠNG → reset auto; thêm/bớt
+  // ảnh → giữ chỉnh cũ, cấp auto cho ảnh mới.
+  const pickedIds = pickedAssets.map((a) => a.id).join(',');
+  useEffect(() => {
+    const n = pickedAssets.length;
+    if (n === 0) {
+      setPlace({});
+      return;
+    }
+    const variantChanged = lastVariant.current !== variant;
+    lastVariant.current = variant;
+    const auto = autoLayout(variant, n);
+    setPlace((prev) => {
+      const next: Record<string, Placement> = {};
+      pickedAssets.forEach((a, i) => {
+        next[a.id] = !variantChanged && prev[a.id] ? prev[a.id] : auto[i];
+      });
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickedIds, variant]);
+
+  const draftImages = useMemo(() => pickedAssets.map((a) => ({ id: a.id, url: a.url })), [pickedAssets]);
+  const draftPlacements = useMemo(() => {
+    const auto = autoLayout(variant, pickedAssets.length);
+    return pickedAssets.map((a, i) => place[a.id] ?? auto[i]);
+  }, [pickedAssets, place, variant]);
+
+  function onDraftChange(next: Placement[]) {
+    setPlace((prev) => {
+      const m = { ...prev };
+      pickedAssets.forEach((a, i) => {
+        if (next[i]) m[a.id] = next[i];
+      });
+      return m;
+    });
+  }
+  function onAutoArrange() {
+    const auto = autoLayout(variant, pickedAssets.length);
+    const m: Record<string, Placement> = {};
+    pickedAssets.forEach((a, i) => (m[a.id] = auto[i]));
+    setPlace(m);
+  }
+  function onDraftRemove(i: number) {
+    const a = pickedAssets[i];
+    if (a) toggle(a);
+  }
 
   function toggle(a: LibAsset) {
     setPicked((prev) => {
@@ -123,7 +177,8 @@ export function ConceptForm() {
       setTags([...gu.styles, ...gu.materials].slice(0, 12));
       setProgress(0.25);
 
-      // 2) Dựng COLLAGE local từ TẤT CẢ ảnh đã chọn (không giới hạn số ảnh).
+      // 2) Dựng COLLAGE local từ TẤT CẢ ảnh đã chọn (không giới hạn số ảnh), theo
+      //    ĐÚNG bố cục bảng draft (placements) user đã chỉnh → ra sát ý.
       const images: BoardImage[] = pickedAssets.map((a, i) => ({ url: a.url, label: friendlyLabel(a, i) }));
       const styleTags = [style.trim(), ...gu.styles].filter(Boolean).join(', ');
       const url = await renderMoodboard(images, {
@@ -134,6 +189,7 @@ export function ConceptForm() {
         body: body.trim() || (variant === 'story' ? guToPrompt(gu) : undefined),
         mark: 'INTERIORFLOW',
         palette: gu.palette,
+        placements: draftPlacements,
       });
       setProgress(0.95);
       setBoard(url);
@@ -219,7 +275,19 @@ export function ConceptForm() {
         )}
       </StepCard>
 
-      <StepCard n={3} title="Nội dung & phong cách">
+      {pickedAssets.length > 0 && (
+        <StepCard n={3} title="Bố cục nháp — kéo chỉnh trước khi dựng">
+          <DraftBoard
+            images={draftImages}
+            placements={draftPlacements}
+            onChange={onDraftChange}
+            onAuto={onAutoArrange}
+            onRemove={onDraftRemove}
+          />
+        </StepCard>
+      )}
+
+      <StepCard n={4} title="Nội dung & phong cách">
         <Field label="Tiêu đề" hint="để trống = mặc định theo dạng">
           <input
             value={title}
