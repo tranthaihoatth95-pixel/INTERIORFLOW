@@ -728,15 +728,40 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     s2.data.params.guidance = 15;
     s2.data.params.adherence = 0.6;
     s2.data.run = done('/demo/sketch-out.png');
+    // 2) Clay → Photoreal → Upscale 4K (nối thêm 1 bước hậu kỳ)
     const c1 = mk('input.image', 40, 440);
     c1.data.params.file = '/demo/clay-in.jpg';
     c1.data.run = done('/demo/clay-in.jpg');
     const c2 = mk('ai.clay2render', 480, 440);
     c2.data.run = done('/demo/clay-out.png');
+    const c3 = mk('ai.upscale', 920, 440);
+    c3.data.params.scale = '4';
+    c3.data.run = done('/demo/clay-out.png');
+    // 3) Moodboard: prompt → 4 ảnh concept (ảnh interior thật)
+    const m1 = mk('input.prompt', 40, 820);
+    m1.data.params.prompt =
+      'interior moodboard, quiet luxury ấm, gỗ óc chó, đá travertine, ánh sáng tự nhiên';
+    const m2 = mk('ai.moodboard', 480, 820);
+    m2.data.params.style = 'Japandi';
+    m2.data.run = {
+      status: 'done' as const,
+      progress: 1,
+      outputs: {
+        image1: { dataType: 'image' as const, value: '/demo/mood1.jpg' },
+        image2: { dataType: 'image' as const, value: '/demo/mood2.jpg' },
+        image3: { dataType: 'image' as const, value: '/demo/mood3.jpg' },
+        image4: { dataType: 'image' as const, value: '/demo/mood4.jpg' },
+      },
+    };
     set({
-      nodes: [s1, s2, c1, c2],
-      edges: [edge(s1, 'image', s2, 'image'), edge(c1, 'image', c2, 'image')],
-      flowName: 'Demo — Sketch/Clay → Render',
+      nodes: [s1, s2, c1, c2, c3, m1, m2],
+      edges: [
+        edge(s1, 'image', s2, 'image'),
+        edge(c1, 'image', c2, 'image'),
+        edge(c2, 'image', c3, 'image'),
+        edge(m1, 'text', m2, 'prompt', 'text'),
+      ],
+      flowName: 'Demo — Sketch · Clay · Moodboard',
     });
   },
 

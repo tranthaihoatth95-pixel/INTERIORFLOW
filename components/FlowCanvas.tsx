@@ -276,7 +276,7 @@ export function FlowCanvas() {
               onClick={() => loadDemoFlow('sketch')}
               className="pointer-events-auto mt-3 rounded-[10px] border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
             >
-              ▶ Nạp flow demo (Sketch/Clay → Render)
+              ▶ Nạp flow demo (Sketch · Clay · Moodboard)
             </button>
           </div>
         </div>
