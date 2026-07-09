@@ -28,6 +28,7 @@ const nodeTypes = { interior: InteriorNode, note: NoteNode };
 export function FlowCanvas() {
   const nodes = useFlowStore((s) => s.nodes);
   const edges = useFlowStore((s) => s.edges);
+  const loadDemoFlow = useFlowStore((s) => s.loadDemoFlow);
   const onNodesChange = useFlowStore((s) => s.onNodesChange);
   const onEdgesChange = useFlowStore((s) => s.onEdgesChange);
   const onConnect = useFlowStore((s) => s.onConnect);
@@ -270,6 +271,13 @@ export function FlowCanvas() {
             <p className="mt-1 text-xs text-[var(--t5)]">
               Mở <span className="text-[var(--t3)]">Node Library</span> ở rail trái và kéo node vào đây
             </p>
+            <button
+              type="button"
+              onClick={() => loadDemoFlow('sketch')}
+              className="pointer-events-auto mt-3 rounded-[10px] border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+            >
+              ▶ Nạp flow demo (Sketch/Clay → Render)
+            </button>
           </div>
         </div>
       )}

@@ -713,23 +713,30 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       return;
     }
 
-    // mặc định: sketch phòng khách → render → upscale
-    const img = mk('input.image', 40, 60);
-    const prompt = mk('input.prompt', 40, 420);
-    const render = mk('ai.sketch2render', 420, 180);
-    const upscale = mk('ai.upscale', 800, 220);
-    const sample = svg(
-      '<rect width="768" height="512" fill="#f5f2ec"/><g stroke="#5a5348" stroke-width="3" fill="none"><rect x="60" y="80" width="640" height="340"/><line x1="60" y1="320" x2="700" y2="320"/><rect x="120" y="140" width="160" height="180"/><rect x="440" y="230" width="200" height="90"/><line x1="460" y1="320" x2="460" y2="380"/><line x1="620" y1="320" x2="620" y2="380"/></g><text x="384" y="470" text-anchor="middle" font-family="system-ui" font-size="20" fill="#8a8378">sketch mẫu — phòng khách</text>',
-    );
-    img.data.params.file = sample;
-    prompt.data.params.prompt = 'warm minimalist living room, oak floor, linen sofa, soft morning light';
+    // mặc định: SẢN PHẨM TEST → flow demo DONE sẵn (Sketch→Render + Clay→Render).
+    // Ảnh before/after thật ở /public/demo (do vòng test tạo ra bằng ComfyUI/SDXL).
+    const done = (url: string) => ({
+      status: 'done' as const,
+      progress: 1,
+      outputs: { image: { dataType: 'image' as const, value: url } },
+    });
+    const s1 = mk('input.image', 40, 60);
+    s1.data.params.file = '/demo/sketch-in.jpg';
+    s1.data.run = done('/demo/sketch-in.jpg');
+    const s2 = mk('ai.sketch2render', 480, 60);
+    s2.data.params.style = 'Scandinavian';
+    s2.data.params.guidance = 15;
+    s2.data.params.adherence = 0.6;
+    s2.data.run = done('/demo/sketch-out.png');
+    const c1 = mk('input.image', 40, 440);
+    c1.data.params.file = '/demo/clay-in.jpg';
+    c1.data.run = done('/demo/clay-in.jpg');
+    const c2 = mk('ai.clay2render', 480, 440);
+    c2.data.run = done('/demo/clay-out.png');
     set({
-      nodes: [img, prompt, render, upscale],
-      edges: [
-        edge(img, 'image', render, 'image'),
-        edge(prompt, 'text', render, 'prompt', 'text'),
-        edge(render, 'image', upscale, 'image'),
-      ],
+      nodes: [s1, s2, c1, c2],
+      edges: [edge(s1, 'image', s2, 'image'), edge(c1, 'image', c2, 'image')],
+      flowName: 'Demo — Sketch/Clay → Render',
     });
   },
 
