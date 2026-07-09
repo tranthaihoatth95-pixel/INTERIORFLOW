@@ -10,12 +10,30 @@
  * Chọn Present → /present-editor. Luôn có đường về app chính.
  */
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Sun, Moon, SunMoon, MessageCircle } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
+import { useFlowStore } from '@/lib/store';
 import StageSwitcher from './StageSwitcher';
 
 export default function StudioBar({ active }: { active: 'present' | 'photo' }) {
   const router = useRouter();
+  // Khôi phục chat + sáng/tối cho studio (trước bị thiếu so với app chính).
+  const pref = useFlowStore((s) => s.themePref);
+  const setThemePref = useFlowStore((s) => s.setThemePref);
+  const applyTheme = useFlowStore((s) => s.applyTheme);
+  const setChatOpen = useFlowStore((s) => s.setChatOpen);
+  const chatOpen = useFlowStore((s) => s.chatOpen);
+
+  // Route studio đứng riêng → tự áp theme lúc mở (page không gọi hydrate/applyTheme).
+  useEffect(() => {
+    applyTheme();
+  }, [applyTheme]);
+
+  const nextTheme: 'auto' | 'light' | 'dark' =
+    pref === 'auto' ? 'light' : pref === 'light' ? 'dark' : 'auto';
+  const ThemeIcon = pref === 'auto' ? SunMoon : pref === 'light' ? Sun : Moon;
 
   const go = (p: Phase) => {
     if (p === 'present') {
@@ -58,6 +76,38 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' }) {
       />
 
       <div style={{ flex: 1 }} />
+
+      {/* Chat team + toggle sáng/tối — khôi phục cho chặng Present/studio */}
+      <button
+        type="button"
+        onClick={() => setChatOpen(!chatOpen)}
+        title="Chat nhóm"
+        style={iconBtn(chatOpen)}
+      >
+        <MessageCircle size={16} />
+      </button>
+      <button
+        type="button"
+        onClick={() => setThemePref(nextTheme)}
+        title={`Giao diện: ${pref === 'auto' ? 'tự động' : pref === 'light' ? 'sáng' : 'tối'} — bấm để đổi`}
+        style={iconBtn(false)}
+      >
+        <ThemeIcon size={16} />
+      </button>
     </div>
   );
+}
+
+function iconBtn(active: boolean): React.CSSProperties {
+  return {
+    display: 'grid',
+    placeItems: 'center',
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    border: '1px solid var(--border)',
+    background: active ? 'var(--accent-soft)' : 'var(--field)',
+    color: active ? 'var(--accent)' : 'var(--t2)',
+    cursor: 'pointer',
+  };
 }
