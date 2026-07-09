@@ -12,6 +12,7 @@ import { useMemo, useState } from 'react';
 import { Check, Download } from 'lucide-react';
 import { extractPalette } from '@/lib/imaging';
 import { fetchGuProfile, guToPrompt } from '@/lib/gu';
+import { friendlyAiError } from '@/lib/execution';
 import { downloadImage } from '@/lib/present-demo';
 import {
   BigButton,
@@ -83,7 +84,7 @@ export function ConceptForm() {
       const urls = await runFormJob('moodboard', { prompt, num_images: 1 }, 'Moodboard', setProgress, 1);
       setBoard(urls[0] ?? null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Tạo moodboard lỗi.');
+      setError(friendlyAiError(err instanceof Error ? err.message : 'Tạo moodboard lỗi.'));
     } finally {
       setBusy(false);
     }

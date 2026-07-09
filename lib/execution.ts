@@ -9,6 +9,25 @@ function isFlowNode(n: FlowNode) {
   return n.type === 'interior';
 }
 
+/**
+ * Dịch lỗi backend AI thô ("fetch failed", 502 workflow...) sang thông báo rõ + hướng xử lý,
+ * để node không hiện chuỗi kỹ thuật khó hiểu cho người dùng.
+ */
+export function friendlyAiError(raw: string): string {
+  const m = (raw || '').toLowerCase();
+  if (/fetch failed|econnrefused|failed to fetch|network|connect|timed out|timeout|socket/.test(m))
+    return 'Backend AI chưa chạy / không kết nối được. Bật ComfyUI (cổng 8188) rồi thử lại, hoặc đổi Mức AI ở góc phải header.';
+  if (/text2img|workflow|not found.*json|\.json/.test(m))
+    return 'Engine tự-host (ComfyUI) chưa có workflow cho tác vụ này. Dùng mức AI khác, hoặc bổ sung workflow tương ứng.';
+  if (/provider_not_configured|not configured|chưa cấu hình/.test(m))
+    return 'Chưa cấu hình nhà cung cấp AI cho mức này — chọn mức AI khác ở header.';
+  if (/exhausted|balance|top up|quota|402|insufficient/.test(m))
+    return 'Tài khoản AI hết số dư/hạn mức. Nạp thêm hoặc đổi sang mức tự-host (ComfyUI).';
+  if (/unauthorized|401|forbidden|403/.test(m))
+    return 'Không có quyền truy cập ảnh/đầu vào (401/403). Thử tải ảnh trực tiếp vào node.';
+  return raw;
+}
+
 /** Topo-sort: node đích + toàn bộ upstream của nó (DFS post-order). */
 function upstreamOrder(targetId: string, nodes: FlowNode[], edges: Edge[]): string[] {
   const order: string[] = [];
@@ -131,7 +150,7 @@ async function execNode(nodeId: string): Promise<boolean> {
     store.updateJob(job.id, { status: 'done', finishedAt: Date.now() });
     return true;
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message = friendlyAiError(err instanceof Error ? err.message : String(err));
     store.setRunState(nodeId, { status: 'error', error: message });
     store.updateJob(job.id, { status: 'error', finishedAt: Date.now(), error: message });
     // Hoàn credit khi job lỗi
