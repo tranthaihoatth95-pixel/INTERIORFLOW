@@ -736,7 +736,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     c2.data.run = done('/demo/clay-out.png');
     const c3 = mk('ai.upscale', 920, 440);
     c3.data.params.scale = '4';
-    c3.data.run = done('/demo/clay-out.png');
+    c3.data.run = done('/demo/clay-4k.jpg'); // 4864×3328 — ESRGAN 4x thật (chi tiết, không interpolate)
     // 3) Moodboard: prompt → 4 ảnh concept (ảnh interior thật)
     const m1 = mk('input.prompt', 40, 820);
     m1.data.params.prompt =
