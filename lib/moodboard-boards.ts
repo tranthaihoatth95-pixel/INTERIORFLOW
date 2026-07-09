@@ -111,6 +111,32 @@ function card(
   ctx.restore();
 }
 
+/**
+ * Vẽ ảnh cover-fit vào 1 canvas w×h với RÌA TAN MỜ (feather) — mask ellipse alpha:
+ * đặc ở giữa, mờ dần về biên → khi drawImage chồng nhiều tile, các cạnh XOÁ NHOÀ blend
+ * vào nhau (montage câu chuyện). `feather` = tỉ lệ dải mờ (0.1 rìa mảnh … 0.4 tan rộng).
+ */
+function featherTile(img: HTMLImageElement, w: number, h: number, feather = 0.3): HTMLCanvasElement {
+  const o = document.createElement('canvas');
+  o.width = Math.max(1, Math.round(w));
+  o.height = Math.max(1, Math.round(h));
+  const octx = o.getContext('2d')!;
+  coverDraw(octx, img, 0, 0, o.width, o.height);
+  // mask ellipse mềm bằng destination-in
+  octx.globalCompositeOperation = 'destination-in';
+  const cx = o.width / 2;
+  const cy = o.height / 2;
+  const rMax = Math.max(o.width, o.height) * 0.62;
+  const g = octx.createRadialGradient(cx, cy, Math.min(o.width, o.height) * 0.08, cx, cy, rMax);
+  g.addColorStop(0, 'rgba(0,0,0,1)');
+  g.addColorStop(Math.max(0, 1 - feather), 'rgba(0,0,0,1)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  octx.fillStyle = g;
+  octx.fillRect(0, 0, o.width, o.height);
+  octx.globalCompositeOperation = 'source-over';
+  return o;
+}
+
 function dominantColor(img: HTMLImageElement): RGB {
   const s = 48;
   const c = document.createElement('canvas');
@@ -441,8 +467,9 @@ function renderSpace(
 
 /* ───────────────────────── DẠNG 3: CÂU CHUYỆN ───────────────────────── */
 /**
- * Full-bleed điện ảnh: ảnh chủ đạo phủ nền + scrim tối trái, tiêu đề serif lớn +
- * đoạn văn kể chuyện bên trái. Ảnh phụ chồng dạng thẻ nghiêng góc phải.
+ * MONTAGE điện ảnh liền mạch: N ảnh ghép CHỒNG với biên cạnh XOÁ NHOÀ (feather) blend
+ * vào nhau như double-exposure — không thẻ viền cứng. + grade ấm hợp nhất tông, scrim
+ * trái đậm cho chữ, tiêu đề serif lớn + đoạn văn kể chuyện. (giống ref "Silent Noise".)
  */
 function renderStory(
   ctx: CanvasRenderingContext2D,
@@ -450,84 +477,120 @@ function renderStory(
   palette: RGB[],
   opts: BoardOpts,
 ) {
-  // nền = ảnh đầu full-bleed
+  // nền tối
+  ctx.fillStyle = '#141110';
+  ctx.fillRect(0, 0, W, H);
+
+  // hero = ảnh đầu phủ gần full, feather để rìa tan vào nền
+  const hero = featherTile(imgs[0], W, H, 0.16);
+  ctx.drawImage(hero, 0, 0);
+
+  // ảnh còn lại: slot TRẢI khắp, chồng nhau, feather MẠNH → cạnh xoá nhoà, blend liền
+  const slots = [
+    { cx: 0.66, cy: 0.34, s: 0.48 },
+    { cx: 0.84, cy: 0.68, s: 0.42 },
+    { cx: 0.5, cy: 0.62, s: 0.44 },
+    { cx: 0.3, cy: 0.46, s: 0.38 },
+    { cx: 0.9, cy: 0.36, s: 0.34 },
+    { cx: 0.2, cy: 0.72, s: 0.38 },
+    { cx: 0.62, cy: 0.14, s: 0.32 },
+    { cx: 0.44, cy: 0.86, s: 0.3 },
+  ];
+  for (let i = 1; i < imgs.length; i++) {
+    const im = imgs[i];
+    const slot = slots[(i - 1) % slots.length];
+    // ảnh vòng sau (>slots) thu nhỏ dần thành điểm nhấn
+    const shrink = i - 1 >= slots.length ? 0.7 : 1;
+    const w = Math.round(W * slot.s * shrink);
+    const ar = im.width / im.height || 1.5;
+    const h = Math.round(w / ar);
+    const x = Math.round(slot.cx * W - w / 2);
+    const y = Math.round(slot.cy * H - h / 2);
+    const tile = featherTile(im, w, h, 0.44);
+    ctx.globalAlpha = 0.9;
+    ctx.drawImage(tile, x, y);
+  }
+  ctx.globalAlpha = 1;
+
+  // grade ấm hợp nhất tông (soft-light)
   ctx.save();
-  ctx.beginPath();
-  ctx.rect(0, 0, W, H);
-  ctx.clip();
-  coverDraw(ctx, imgs[0], 0, 0, W, H);
+  ctx.globalCompositeOperation = 'soft-light';
+  const warm = ctx.createLinearGradient(0, 0, W, H);
+  warm.addColorStop(0, 'rgba(120,80,30,0.38)');
+  warm.addColorStop(1, 'rgba(184,146,86,0.3)');
+  ctx.fillStyle = warm;
+  ctx.fillRect(0, 0, W, H);
   ctx.restore();
 
-  // scrim: tối bên trái → trong bên phải (cho chữ nổi)
-  const grad = ctx.createLinearGradient(0, 0, W, 0);
-  grad.addColorStop(0, 'rgba(20,17,14,0.86)');
-  grad.addColorStop(0.5, 'rgba(20,17,14,0.42)');
-  grad.addColorStop(1, 'rgba(20,17,14,0.08)');
+  // vignette
+  const vg = ctx.createRadialGradient(W * 0.5, H * 0.5, Math.min(W, H) * 0.28, W * 0.5, H * 0.5, Math.max(W, H) * 0.72);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(15,12,9,0.58)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, W, H);
+
+  // scrim trái ĐẬM cho chữ (rộng + tối hơn để đoạn văn rõ)
+  const grad = ctx.createLinearGradient(0, 0, W * 0.62, 0);
+  grad.addColorStop(0, 'rgba(16,13,10,0.9)');
+  grad.addColorStop(0.55, 'rgba(16,13,10,0.5)');
+  grad.addColorStop(1, 'rgba(16,13,10,0)');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
-  // thêm scrim đáy nhẹ
   const gb = ctx.createLinearGradient(0, H * 0.5, 0, H);
-  gb.addColorStop(0, 'rgba(20,17,14,0)');
-  gb.addColorStop(1, 'rgba(20,17,14,0.5)');
+  gb.addColorStop(0, 'rgba(16,13,10,0)');
+  gb.addColorStop(1, 'rgba(16,13,10,0.55)');
   ctx.fillStyle = gb;
   ctx.fillRect(0, 0, W, H);
 
+  // nền tối riêng sau KHỐI CHỮ (trái) — đảm bảo tiêu đề + đoạn văn luôn đọc rõ
+  const ts = ctx.createLinearGradient(0, 0, W * 0.46, 0);
+  ts.addColorStop(0, 'rgba(13,10,7,0.74)');
+  ts.addColorStop(1, 'rgba(13,10,7,0)');
+  ctx.fillStyle = ts;
+  ctx.fillRect(0, Math.round(H * 0.22), Math.round(W * 0.46), Math.round(H * 0.72));
+
   const LIGHT = '#f3efe8';
-  const LIGHT_MUTE = 'rgba(243,239,232,0.72)';
+  const LIGHT_MUTE = 'rgba(243,239,232,0.82)';
   drawHeader(ctx, opts.eyebrow || 'CẢM HỨNG THIẾT KẾ', opts.mark || 'INTERIORFLOW', LIGHT, LIGHT_MUTE);
 
-  // ảnh phụ: thẻ chồng góc phải
-  const extras = imgs.slice(1, 4);
-  extras.forEach((im, k) => {
-    const w = 460;
-    const h = 300;
-    const x = W - MARGIN - w + k * 8;
-    const y = 200 + k * 250;
-    card(ctx, im, x, y, w, h, 10);
-  });
-
-  // tiêu đề serif lớn
   const tx = MARGIN;
-  let ty = Math.round(H * 0.42);
+  let ty = Math.round(H * 0.4);
+  ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = LIGHT;
-  ctx.font = `italic 300 132px ${SERIF}`;
-  const titleLines = (opts.title || 'CÂU CHUYỆN').split(/\s+/);
-  // xuống dòng thủ công theo 1-2 từ mỗi dòng cho khối tiêu đề cao
-  const tLines = wrapLines(ctx, opts.title || 'CÂU CHUYỆN', W * 0.42);
-  tLines.forEach((ln) => {
+  ctx.font = `italic 300 128px ${SERIF}`;
+  wrapLines(ctx, opts.title || 'CÂU CHUYỆN', W * 0.42).forEach((ln) => {
     ctx.fillText(ln, tx, ty);
-    ty += 130;
+    ty += 124;
   });
-  void titleLines;
 
   if (opts.sub) {
     ctx.fillStyle = LIGHT;
     ctx.font = `700 30px ${SANS}`;
-    const sLines = wrapLines(ctx, opts.sub, W * 0.36);
-    sLines.forEach((ln) => {
+    wrapLines(ctx, opts.sub, W * 0.34).forEach((ln) => {
       ctx.fillText(ln, tx, ty);
       ty += 40;
     });
-    ty += 12;
+    ty += 14;
   }
 
   if (opts.body) {
     ctx.fillStyle = LIGHT_MUTE;
     ctx.font = `400 24px ${SANS}`;
-    const bLines = wrapLines(ctx, opts.body, W * 0.38);
-    bLines.slice(0, 10).forEach((ln) => {
-      ctx.fillText(ln, tx, ty);
-      ty += 36;
-    });
+    wrapLines(ctx, opts.body, W * 0.36)
+      .slice(0, 9)
+      .forEach((ln) => {
+        ctx.fillText(ln, tx, ty);
+        ty += 36;
+      });
   }
 
-  // dải palette nhỏ dưới-trái (trên nền tối → viền sáng)
-  const py = H - 88;
-  const swW = 96;
+  // dải palette nhỏ dưới-trái
+  const py = H - 84;
+  const swW = 92;
   palette.slice(0, 6).forEach((c, i) => {
     const x = MARGIN + i * (swW + 12);
     ctx.fillStyle = toHex(c);
-    roundRect(ctx, x, py, swW, 40, 5);
+    roundRect(ctx, x, py, swW, 38, 5);
     ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,0.25)';
     ctx.lineWidth = 1;
