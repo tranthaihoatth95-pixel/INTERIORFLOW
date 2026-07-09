@@ -101,6 +101,29 @@ export function buildGuProfile(assets: GuAsset[], opts?: { usage?: string[] }): 
   };
 }
 
+/**
+ * Xây hồ sơ gu TRỰC TIẾP từ tập ảnh ĐÃ CHỌN (không đọc cả thư viện).
+ * Dùng cho moodboard/concept: gu (palette · vật liệu · phong cách) phải phản ánh
+ * đúng những ảnh user vừa chọn cho sản phẩm này — không phải trung bình toàn Reference.
+ * Chấp nhận LibAsset gọn (thiếu w/h/id vẫn được — không ảnh hưởng trích tag/palette).
+ */
+export function guProfileFromPicked(
+  picked: Array<Partial<Pick<GuAsset, 'id' | 'w' | 'h'>> & Pick<GuAsset, 'name' | 'url' | 'usage' | 'palette' | 'caption' | 'tags'>>,
+): GuProfile {
+  const full: GuAsset[] = picked.map((a, i) => ({
+    id: a.id ?? String(i),
+    name: a.name ?? '',
+    url: a.url ?? '',
+    usage: a.usage ?? 'ref-render',
+    palette: a.palette ?? [],
+    caption: a.caption ?? '',
+    tags: a.tags ?? '',
+    w: a.w ?? 0,
+    h: a.h ?? 0,
+  }));
+  return buildGuProfile(full);
+}
+
 /** Hồ sơ gu → mẩu mô tả nhồi vào prompt AI (render/moodboard). */
 export function guToPrompt(p: GuProfile): string {
   const parts: string[] = [];

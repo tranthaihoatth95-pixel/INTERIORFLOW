@@ -11,7 +11,8 @@
 import { useMemo, useState } from 'react';
 import { Check, Download } from 'lucide-react';
 import { extractPalette } from '@/lib/imaging';
-import { fetchGuProfile, guToPrompt } from '@/lib/gu';
+import { guProfileFromPicked, guToPrompt } from '@/lib/gu';
+import { USAGES, type RefUsage } from '@/lib/refingest';
 import { friendlyAiError } from '@/lib/execution';
 import { downloadImage } from '@/lib/present-demo';
 import {
@@ -26,12 +27,20 @@ import {
   type LibAsset,
 } from './shared';
 
-const MOOD_USAGES = ['ref-render', 'slide', 'material'];
+const MOOD_USAGES: RefUsage[] = ['ref-render', 'slide', 'material'];
+// Nhãn ngắn cho chip lọc (rút từ USAGES của refingest — 1 nguồn sự thật).
+const USAGE_CHIP: { id: RefUsage; label: string; tone: string }[] = MOOD_USAGES.map((id) => {
+  const u = USAGES.find((x) => x.id === id);
+  const short: Record<string, string> = { 'ref-render': 'Nội thất', slide: 'Mood', material: 'Vật liệu' };
+  return { id, label: short[id] ?? u?.label ?? id, tone: u?.tone ?? 'var(--t4)' };
+});
 
 export function ConceptForm() {
   const { assets, loading, error: libError } = useLibrary(MOOD_USAGES);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [style, setStyle] = useState('');
+  // Lọc lưới ảnh theo loại (task 4) — 'all' = tất cả. Ảnh đã chọn KHÔNG bị bỏ chọn khi đổi lọc.
+  const [filter, setFilter] = useState<RefUsage | 'all'>('all');
 
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -41,6 +50,16 @@ export function ConceptForm() {
   const [board, setBoard] = useState<string | null>(null);
 
   const pickedAssets = useMemo(() => assets.filter((a) => picked.has(a.id)), [assets, picked]);
+  const visibleAssets = useMemo(
+    () => (filter === 'all' ? assets : assets.filter((a) => a.usage === filter)),
+    [assets, filter],
+  );
+  // Đếm số ảnh mỗi loại để chỉ hiện chip có ảnh (tránh chip rỗng gây rối).
+  const usageCounts = useMemo(() => {
+    const m = new Map<RefUsage, number>();
+    for (const a of assets) m.set(a.usage as RefUsage, (m.get(a.usage as RefUsage) ?? 0) + 1);
+    return m;
+  }, [assets]);
 
   function toggle(a: LibAsset) {
     setPicked((prev) => {
@@ -75,8 +94,9 @@ export function ConceptForm() {
       }
       setPalette(pal);
 
-      // 2) Tag vật liệu / phong cách từ gu (0 AI).
-      const gu = await fetchGuProfile(MOOD_USAGES);
+      // 2) Tag vật liệu / phong cách từ gu — TRÍCH TỪ ĐÚNG ẢNH ĐÃ CHỌN (0 AI),
+      //    không đọc cả thư viện → gu bám sát moodboard này.
+      const gu = guProfileFromPicked(pickedAssets);
       setTags([...gu.styles, ...gu.materials].slice(0, 12));
 
       // 3) Moodboard AI (thêm) — mock-tolerant.
@@ -100,8 +120,25 @@ export function ConceptForm() {
             Thư viện trống — thêm ảnh Reference ở chế độ Node trước.
           </p>
         )}
+        {assets.length > 0 && (
+          <div className="mb-2.5 flex flex-wrap gap-1.5">
+            <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
+              Tất cả · {assets.length}
+            </FilterChip>
+            {USAGE_CHIP.filter((u) => (usageCounts.get(u.id) ?? 0) > 0).map((u) => (
+              <FilterChip
+                key={u.id}
+                active={filter === u.id}
+                tone={u.tone}
+                onClick={() => setFilter(u.id)}
+              >
+                {u.label} · {usageCounts.get(u.id)}
+              </FilterChip>
+            ))}
+          </div>
+        )}
         <div className="grid grid-cols-3 gap-2 lg:grid-cols-5">
-          {assets.map((a) => {
+          {visibleAssets.map((a) => {
             const on = picked.has(a.id);
             return (
               <button
@@ -123,6 +160,9 @@ export function ConceptForm() {
             );
           })}
         </div>
+        {assets.length > 0 && visibleAssets.length === 0 && (
+          <p className="py-4 text-center text-[13px] text-[var(--t4)]">Không có ảnh loại này.</p>
+        )}
         {pickedAssets.length > 0 && (
           <p className="mt-2 text-[12px] text-[var(--t4)]">Đã chọn {pickedAssets.length} ảnh.</p>
         )}
@@ -190,6 +230,33 @@ export function ConceptForm() {
         </section>
       )}
     </div>
+  );
+}
+
+/** Chip lọc loại ảnh — chấm màu tone của usage + nhãn ngắn. */
+function FilterChip({
+  active,
+  tone,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  tone?: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] font-medium transition-colors ${
+        active
+          ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
+          : 'border-[var(--border)] bg-[var(--field)] text-[var(--t3)] hover:bg-[var(--hover)]'
+      }`}
+    >
+      {tone && <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: tone }} />}
+      {children}
+    </button>
   );
 }
 

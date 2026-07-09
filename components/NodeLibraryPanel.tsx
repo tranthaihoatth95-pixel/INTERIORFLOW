@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, GripVertical, Star } from 'lucide-react';
+import { useReactFlow } from '@xyflow/react';
+import { X, GripVertical, Star, Plus, Command } from 'lucide-react';
 import { NODE_DEFINITIONS, NODE_REGISTRY } from '@/lib/nodes/registry';
 import { useFlowStore } from '@/lib/store';
 import { CATEGORY_META, type NodeCategory, type NodeDefinition } from '@/lib/types';
@@ -16,9 +17,21 @@ const CATEGORY_ORDER: NodeCategory[] = ['INPUT', 'AI_GENERATE', 'AI_EDIT', 'SLID
 export function NodeLibraryPanel() {
   const panel = useFlowStore((s) => s.panel);
   const setPanel = useFlowStore((s) => s.setPanel);
+  const setPaletteOpen = useFlowStore((s) => s.setPaletteOpen);
+  const addNode = useFlowStore((s) => s.addNode);
   const aiTier = useFlowStore((s) => s.aiTier);
   const workspace = useFlowStore((s) => s.workspace);
   const [query, setQuery] = useState('');
+  const { screenToFlowPosition } = useReactFlow();
+
+  // Vị trí giữa canvas (khớp CommandPalette) — node thêm bằng CLICK rơi vào giữa tầm nhìn.
+  const centerPos = useCallback(() => {
+    const p = screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+    return { x: p.x - 128, y: p.y - 20 };
+  }, [screenToFlowPosition]);
+
+  // Bấm thẻ node = thêm ngay vào giữa canvas (dễ hơn kéo-thả, nhất là trên cảm ứng).
+  const onAdd = useCallback((type: string) => addNode(type, centerPos()), [addNode, centerPos]);
 
   // Mức 1 (Không AI): ẩn hẳn node AI — chỉ còn input/slide/utility/output cho quy trình thủ công.
   const noAi = aiTier === 1;
@@ -75,7 +88,7 @@ export function NodeLibraryPanel() {
         </motion.button>
       </div>
 
-      <div className="p-2.5">
+      <div className="space-y-1.5 p-2.5">
         <input
           autoFocus={panel === 'search'}
           className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
@@ -83,6 +96,15 @@ export function NodeLibraryPanel() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        <button
+          onClick={() => setPaletteOpen(true)}
+          className="flex w-full items-center gap-1.5 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-1.5 text-[11px] text-[var(--t4)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--t2)]"
+          title="Tìm & thêm nhanh node/hành động"
+        >
+          <Command size={11} className="shrink-0" />
+          Tìm nhanh mọi thứ
+          <kbd className="ml-auto shrink-0 rounded border border-[var(--border)] bg-[var(--field)] px-1 py-0.5 text-[9px]">⌘K</kbd>
+        </button>
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-2.5 pb-4">
@@ -95,7 +117,7 @@ export function NodeLibraryPanel() {
             </p>
             <motion.div className="space-y-1" variants={staggerList} initial="hidden" animate="visible">
               {featured.map((def) => (
-                <NodeCard key={`f-${def.type}`} def={def} />
+                <NodeCard key={`f-${def.type}`} def={def} onAdd={onAdd} />
               ))}
             </motion.div>
             <div className="mt-3 border-t border-[var(--border)]" />
@@ -110,7 +132,7 @@ export function NodeLibraryPanel() {
             {/* stagger nhẹ — item hiện lần lượt như list iOS */}
             <motion.div className="space-y-1" variants={staggerList} initial="hidden" animate="visible">
               {defs.map((def) => (
-                <NodeCard key={def.type} def={def} />
+                <NodeCard key={def.type} def={def} onAdd={onAdd} />
               ))}
             </motion.div>
           </div>
@@ -130,8 +152,11 @@ export function NodeLibraryPanel() {
   );
 }
 
-/** 1 thẻ node kéo-thả — dùng chung cho nhóm ★ và các category. */
-function NodeCard({ def }: { def: NodeDefinition }) {
+/**
+ * 1 thẻ node — BẤM để thêm vào giữa canvas (dễ nhất, nhất là cảm ứng) HOẶC kéo-thả để
+ * đặt đúng chỗ. Cả hai cùng tạo node; click là lối chính vì kéo-thả React Flow khó trên touch.
+ */
+function NodeCard({ def, onAdd }: { def: NodeDefinition; onAdd: (type: string) => void }) {
   return (
     <div
       draggable
@@ -139,19 +164,33 @@ function NodeCard({ def }: { def: NodeDefinition }) {
         e.dataTransfer.setData(DND_MIME, def.type);
         e.dataTransfer.effectAllowed = 'move';
       }}
-      className="group flex cursor-grab items-start gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 transition-transform hover:border-[var(--accent-ring)] hover:scale-[1.015] active:scale-[0.99] active:cursor-grabbing"
-      title="Kéo thả vào canvas"
+      onClick={() => onAdd(def.type)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onAdd(def.type);
+        }
+      }}
+      className="group flex cursor-pointer items-start gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 transition-transform hover:border-[var(--accent-ring)] hover:scale-[1.015] active:scale-[0.99]"
+      title="Bấm để thêm vào giữa canvas · hoặc kéo thả để đặt đúng chỗ"
     >
       <GripVertical size={13} className="mt-0.5 shrink-0 text-[var(--t5)] group-hover:text-[var(--t4)]" />
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-[var(--t1)]">{def.title}</p>
         <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-[var(--t4)]">{def.description}</p>
       </div>
-      {def.creditCost > 0 && (
-        <span className="ml-auto shrink-0 rounded bg-[var(--hover)] px-1 py-0.5 text-[9px] text-[var(--t4)]">
-          {def.creditCost}cr
+      <div className="ml-auto flex shrink-0 flex-col items-end gap-1">
+        {def.creditCost > 0 && (
+          <span className="rounded bg-[var(--hover)] px-1 py-0.5 text-[9px] text-[var(--t4)]">
+            {def.creditCost}cr
+          </span>
+        )}
+        <span className="grid h-5 w-5 place-items-center rounded-md text-[var(--t5)] opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-[var(--accent)]">
+          <Plus size={13} />
         </span>
-      )}
+      </div>
     </div>
   );
 }
