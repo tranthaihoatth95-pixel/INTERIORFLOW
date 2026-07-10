@@ -799,7 +799,7 @@ export default function PresentEditor({ initialDeck }: Props) {
             overflow: 'auto',
           }}
         >
-          {ed.slide && (
+          {ed.slide ? (
             <EditorCanvas
               slide={ed.slide}
               fonts={ed.deck.fonts}
@@ -823,6 +823,31 @@ export default function PresentEditor({ initialDeck }: Props) {
               brand={ed.deck.brand}
               project={ed.deck.project}
             />
+          ) : (
+            // Chưa có trang nào (deck rỗng) — KHÔNG để trống void, mời tạo trang trắng.
+            <div style={{ textAlign: 'center', color: 'var(--t4)', maxWidth: 340 }}>
+              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--t2)', marginBottom: 6 }}>
+                Chưa có trang nào
+              </p>
+              <p style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 16 }}>
+                Bắt đầu bằng 1 trang trắng, hoặc chọn <b>Mẫu</b> ở cột trái để dàn nhanh.
+              </p>
+              <button
+                onClick={onAddSlide}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: 12,
+                  background: 'var(--accent-strong)',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                + Thêm trang trắng
+              </button>
+            </div>
           )}
         </main>
 
