@@ -183,9 +183,10 @@ export function ConceptForm() {
       const styleTags = [style.trim(), ...gu.styles].filter(Boolean).join(', ');
       const url = await renderMoodboard(images, {
         variant,
-        eyebrow: title.trim() || defaultEyebrow(variant),
+        eyebrow: defaultEyebrow(variant),
         title: title.trim() || defaultTitle(variant),
-        sub: styleTags.slice(0, 60),
+        // enso: dùng tagline (body/ô câu chuyện) làm phụ đề tâm; khác: gộp style tags.
+        sub: variant === 'enso' ? body.trim() || 'Vòng tuần hoàn vô cực' : styleTags.slice(0, 60),
         body: body.trim() || (variant === 'story' ? guToPrompt(gu) : undefined),
         mark: 'INTERIORFLOW',
         palette: gu.palette,
@@ -336,14 +337,21 @@ export function ConceptForm() {
           )}
         </div>
 
-        {variant === 'story' && (
+        {(variant === 'story' || variant === 'enso') && (
           <div className="mt-3">
-            <Field label="Đoạn văn kể chuyện" hint="dạng Câu chuyện — mô tả cảm hứng">
+            <Field
+              label={variant === 'enso' ? 'Câu tagline (ở tâm vòng)' : 'Đoạn văn kể chuyện'}
+              hint={variant === 'enso' ? 'dòng chữ dưới ENSŌ' : 'dạng Câu chuyện — mô tả cảm hứng'}
+            >
               <textarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                rows={3}
-                placeholder="Không gian mời gọi sự tĩnh lặng, nơi ánh sáng và vật liệu tự nhiên…"
+                rows={variant === 'enso' ? 2 : 3}
+                placeholder={
+                  variant === 'enso'
+                    ? 'Vòng tuần hoàn vô cực — thiên nhiên · con người · công nghệ'
+                    : 'Không gian mời gọi sự tĩnh lặng, nơi ánh sáng và vật liệu tự nhiên…'
+                }
                 className="w-full resize-none rounded-[12px] border border-[var(--border)] bg-[var(--field)] px-3 py-3 text-[14px] text-[var(--t1)] outline-none placeholder:text-[var(--t5)] focus:border-[var(--accent-ring)]"
               />
             </Field>
@@ -406,10 +414,22 @@ export function ConceptForm() {
 }
 
 function defaultTitle(v: BoardVariant): string {
-  return v === 'material' ? 'BẢNG VẬT LIỆU' : v === 'space' ? 'Không Gian' : 'Câu Chuyện Thiết Kế';
+  return v === 'enso'
+    ? 'ENSŌ'
+    : v === 'material'
+      ? 'BẢNG VẬT LIỆU'
+      : v === 'space'
+        ? 'Không Gian'
+        : 'Câu Chuyện Thiết Kế';
 }
 function defaultEyebrow(v: BoardVariant): string {
-  return v === 'material' ? 'BẢNG VẬT LIỆU' : v === 'space' ? 'ĐỊNH HƯỚNG KHÔNG GIAN' : 'CẢM HỨNG THIẾT KẾ';
+  return v === 'enso'
+    ? 'ĐỊNH HƯỚNG THIẾT KẾ Ý TƯỞNG'
+    : v === 'material'
+      ? 'BẢNG VẬT LIỆU'
+      : v === 'space'
+        ? 'ĐỊNH HƯỚNG KHÔNG GIAN'
+        : 'CẢM HỨNG THIẾT KẾ';
 }
 
 /** Chip lọc loại ảnh — chấm màu tone của usage + nhãn ngắn. */

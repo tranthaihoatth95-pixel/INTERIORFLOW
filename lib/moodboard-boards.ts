@@ -10,7 +10,7 @@
  * Dùng chung engine palette/tile với lib/moodboard-collage.ts nhưng độc lập (file riêng).
  */
 
-export type BoardVariant = 'material' | 'space' | 'story';
+export type BoardVariant = 'material' | 'space' | 'story' | 'enso';
 
 export interface BoardImage {
   url: string;
@@ -45,6 +45,7 @@ const MARGIN = 96;
 const RADIUS = 10;
 const SERIF = "Georgia, 'Times New Roman', serif";
 const SANS = "'Helvetica Neue', Arial, sans-serif";
+const CJK = "'Hiragino Sans GB', 'Hiragino Sans', 'PingFang SC', 'Songti SC', serif";
 
 interface RGB {
   r: number;
@@ -328,6 +329,19 @@ const STORY_SLOTS: Slot[] = [
   [0.46, 0.02, 0.3, 0.36],
 ];
 
+// ENSŌ concept wheel: N yếu tố ĐĂNG ĐỐI quanh tâm (chừa tâm cho vòng enso).
+// 4 ảnh → 4 góc phủ canvas, feather vào tâm; nhiều hơn → thêm cạnh giữa.
+const ENSO_SLOTS: Slot[] = [
+  [0.0, 0.0, 0.5, 0.6],
+  [0.5, 0.0, 0.5, 0.6],
+  [0.0, 0.4, 0.5, 0.6],
+  [0.5, 0.4, 0.5, 0.6],
+  [0.27, 0.0, 0.46, 0.42],
+  [0.27, 0.58, 0.46, 0.42],
+  [0.0, 0.22, 0.4, 0.56],
+  [0.6, 0.22, 0.4, 0.56],
+];
+
 function materialSlots(n: number): Slot[] {
   const cols = n <= 4 ? 2 : n <= 9 ? 3 : 4;
   const rows = Math.ceil(n / cols);
@@ -351,7 +365,7 @@ function materialSlots(n: number): Slot[] {
 export function autoLayout(variant: BoardVariant, n: number): Placement[] {
   if (n <= 0) return [];
   if (variant === 'material') return materialSlots(n).map(([xf, yf, wf, hf]) => ({ xf, yf, wf, hf }));
-  const slots = variant === 'space' ? SPACE_SLOTS : STORY_SLOTS;
+  const slots = variant === 'space' ? SPACE_SLOTS : variant === 'enso' ? ENSO_SLOTS : STORY_SLOTS;
   const out: Placement[] = [];
   for (let i = 0; i < n; i++) {
     let [x, y, w, h] = slots[i % slots.length];
@@ -617,6 +631,167 @@ function renderStory(
   });
 }
 
+/* ───────────────────────── DẠNG 4: 円相 ENSŌ (CONCEPT WHEEL) ───────────────────────── */
+
+/** Vẽ vòng ENSŌ nét cọ Thiền (tapered, hở trên-phải) tại tâm. */
+function drawEnsoRing(ctx: CanvasRenderingContext2D, cx: number, cy: number, R: number) {
+  const steps = 620;
+  const start = (148 * Math.PI) / 180;
+  const end = start + (300 * Math.PI) / 180;
+  let seed = 7;
+  const rnd = () => {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280 - 0.5;
+  };
+  ctx.save();
+  for (let i = 0; i < steps; i++) {
+    const t = i / steps;
+    const a = start + (end - start) * t;
+    const taper = Math.pow(Math.sin(Math.PI * t), 0.7);
+    const bw = 5 + R * 0.085 * taper;
+    const rr = R + Math.sin(a * 3 + 1) * R * 0.015 + rnd() * R * 0.02;
+    const x = cx + Math.cos(a) * rr;
+    const y = cy + Math.sin(a) * rr;
+    ctx.globalAlpha = 0.3 + 0.6 * taper;
+    ctx.fillStyle = '#EEE3CD';
+    ctx.beginPath();
+    ctx.arc(x, y, bw, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+/**
+ * 円相 ENSŌ — bố cục ĐĂNG ĐỐI, điện ảnh: N yếu tố feather quanh tâm, vòng enso ở tâm,
+ * đường tuần hoàn nối tâm↔yếu tố, nền đậm chiều sâu. Nhãn yếu tố = label ảnh.
+ */
+function renderEnso(
+  ctx: CanvasRenderingContext2D,
+  imgs: HTMLImageElement[],
+  placements: Placement[],
+  labels: string[],
+  palette: RGB[],
+  opts: BoardOpts,
+) {
+  const cx = W / 2;
+  const cy = H / 2;
+  // nền đậm ấm + radial nhẹ ở tâm
+  ctx.fillStyle = '#0d0a07';
+  ctx.fillRect(0, 0, W, H);
+  const g0 = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.6);
+  g0.addColorStop(0, 'rgba(58,40,22,0.55)');
+  g0.addColorStop(1, 'rgba(13,10,7,0)');
+  ctx.fillStyle = g0;
+  ctx.fillRect(0, 0, W, H);
+
+  // yếu tố feather
+  placements.forEach((p, i) => {
+    const w = p.wf * W;
+    const h = p.hf * H;
+    const x = Math.round(p.xf * W);
+    const y = Math.round(p.yf * H);
+    const tile = featherTile(imgs[i], w, h, 0.5);
+    ctx.globalAlpha = 0.92;
+    ctx.drawImage(tile, x, y);
+  });
+  ctx.globalAlpha = 1;
+
+  // ÉP MOOD ĐIỆN ẢNH TỐI (multiply ấm) — để cả ảnh sáng/sketch cũng thành nền đậm.
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = 'rgba(44,31,18,0.82)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
+  // grade ấm + vignette + well tối ở tâm
+  ctx.save();
+  ctx.globalCompositeOperation = 'soft-light';
+  ctx.fillStyle = 'rgba(150,110,55,0.32)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  const vg = ctx.createRadialGradient(cx, cy, Math.min(W, H) * 0.28, cx, cy, Math.max(W, H) * 0.72);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(10,7,4,0.6)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, W, H);
+  const wl = ctx.createRadialGradient(cx, cy, 0, cx, cy, W * 0.26);
+  wl.addColorStop(0, 'rgba(12,9,6,0.62)');
+  wl.addColorStop(1, 'rgba(12,9,6,0)');
+  ctx.fillStyle = wl;
+  ctx.fillRect(0, 0, W, H);
+
+  const R = Math.round(W * 0.135);
+  // đường tuần hoàn tâm → mỗi yếu tố
+  placements.forEach((p) => {
+    const ex = (p.xf + p.wf / 2) * W;
+    const ey = (p.yf + p.hf / 2) * H;
+    const dx = ex - cx;
+    const dy = ey - cy;
+    const px = cx + dx * 0.62;
+    const py = cy + dy * 0.62;
+    ctx.strokeStyle = 'rgba(206,168,110,0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx + dx * 0.28, cy + dy * 0.28);
+    ctx.lineTo(px, py);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(px, py, 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(220,192,140,0.85)';
+    ctx.fill();
+  });
+
+  drawEnsoRing(ctx, cx, cy, R);
+
+  const LIGHT = '#f0e9dc';
+  const MUTE2 = 'rgba(178,160,132,0.95)';
+  const ACC = '#cea668';
+  // header
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = LIGHT;
+  ctx.font = `600 30px ${CJK}`;
+  ctx.textAlign = 'left';
+  ctx.fillText('円相', MARGIN, 62);
+  ctx.fillStyle = MUTE2;
+  ctx.font = `700 19px ${SANS}`;
+  ctx.fillText('—  ' + (opts.eyebrow || 'ĐỊNH HƯỚNG THIẾT KẾ Ý TƯỞNG'), MARGIN + 78, 62);
+  ctx.textAlign = 'right';
+  ctx.fillText((opts.mark || 'INTERIORFLOW').toUpperCase(), W - MARGIN, 62);
+
+  // tâm
+  ctx.textAlign = 'center';
+  ctx.fillStyle = LIGHT;
+  ctx.font = `600 52px ${CJK}`;
+  ctx.fillText('円相', cx, cy - 52);
+  ctx.font = `italic 300 92px ${SERIF}`;
+  ctx.fillText(opts.title || 'ENSŌ', cx, cy + 28);
+  ctx.fillStyle = ACC;
+  ctx.font = `italic 300 31px ${SERIF}`;
+  ctx.fillText(opts.sub || 'Vòng tuần hoàn vô cực', cx, cy + 96);
+
+  // nhãn yếu tố (góc ngoài mỗi ảnh)
+  ctx.textBaseline = 'middle';
+  placements.forEach((p, i) => {
+    const midx = p.xf + p.wf / 2;
+    const midy = p.yf + p.hf / 2;
+    const left = midx < 0.5;
+    const top = midy < 0.5;
+    const x = left ? MARGIN : W - MARGIN;
+    const y = (top ? 0.1 : 0.9) * H;
+    ctx.textAlign = left ? 'left' : 'right';
+    ctx.fillStyle = LIGHT;
+    ctx.font = `700 24px ${SANS}`;
+    ctx.fillText(labels[i] || `Yếu tố ${i + 1}`, x, y);
+    ctx.fillStyle = MUTE2;
+    ctx.font = `400 15px ${SANS}`;
+    ctx.fillText('yếu tố hình thành', x, y + 26);
+  });
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
 /* ───────────────────────── entry ───────────────────────── */
 
 /**
@@ -635,8 +810,8 @@ export async function renderMoodboard(images: BoardImage[], opts: BoardOpts): Pr
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas không khả dụng.');
 
-  // nền (story vẽ đè ảnh full-bleed nên bỏ qua)
-  if (opts.variant !== 'story') {
+  // nền (story/enso tự vẽ nền tối full-bleed nên bỏ qua)
+  if (opts.variant !== 'story' && opts.variant !== 'enso') {
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, W, H);
   }
@@ -651,6 +826,7 @@ export async function renderMoodboard(images: BoardImage[], opts: BoardOpts): Pr
 
   if (opts.variant === 'material') renderMaterial(ctx, imgs, placements, labels, palette, opts);
   else if (opts.variant === 'space') renderSpace(ctx, imgs, placements, palette, opts);
+  else if (opts.variant === 'enso') renderEnso(ctx, imgs, placements, labels, palette, opts);
   else renderStory(ctx, imgs, placements, palette, opts);
 
   return canvas.toDataURL('image/jpeg', 0.92);
@@ -742,6 +918,7 @@ export const STYLE_PRESETS: { id: string; label: string; prompt: string }[] = [
 ];
 
 export const BOARD_VARIANTS: { id: BoardVariant; label: string; hint: string }[] = [
+  { id: 'enso', label: '円相 ENSŌ', hint: 'Đăng đối: vòng ở tâm + 4 yếu tố, nền tối điện ảnh' },
   { id: 'material', label: 'Vật liệu', hint: 'Swatch vật liệu + nhãn chú thích' },
   { id: 'space', label: 'Không gian', hint: 'Hero + thẻ ảnh, tiêu đề serif' },
   { id: 'story', label: 'Câu chuyện', hint: 'Full-bleed điện ảnh + đoạn văn' },
