@@ -1,0 +1,287 @@
+[
+  {
+    "node": "ai.relight",
+    "label": "Daylight → prompt daylight",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "lighting": "Daylight"
+    },
+    "expect": {
+      "task": "relight",
+      "promptEquals": "bright natural daylight streaming through windows, fresh morning atmosphere",
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url"
+      ],
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.relight",
+    "label": "Sunset → hoàng hôn ấm",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "lighting": "Sunset"
+    },
+    "expect": {
+      "task": "relight",
+      "promptEquals": "warm golden hour sunset light through the windows, long soft shadows",
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url"
+      ],
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.relight",
+    "label": "Đèn vàng ấm ban đêm",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "lighting": "Đèn vàng ấm ban đêm"
+    },
+    "expect": {
+      "task": "relight",
+      "promptEquals": "cozy warm night scene, warm yellow interior lamps glowing, dark outside the windows",
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url"
+      ],
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.relight",
+    "label": "Studio soft light",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "lighting": "Studio soft light"
+    },
+    "expect": {
+      "task": "relight",
+      "promptEquals": "soft even studio lighting, neutral white balance, editorial photography",
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url"
+      ],
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.relight",
+    "label": "thiếu ảnh → throw",
+    "inputs": {},
+    "params": {
+      "lighting": "Daylight"
+    },
+    "expect": {
+      "expectThrow": "Thiếu ảnh"
+    }
+  },
+  {
+    "node": "ai.upscale",
+    "label": "scale 2 → job upscale",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "scale": "2"
+    },
+    "expect": {
+      "task": "upscale",
+      "inputKeys": [
+        "image_url",
+        "scale"
+      ],
+      "inputEquals": {
+        "scale": 2
+      }
+    }
+  },
+  {
+    "node": "ai.upscale",
+    "label": "scale 4 → job upscale",
+    "inputs": {
+      "image": "/demo/clay-4k.jpg"
+    },
+    "params": {
+      "scale": "4"
+    },
+    "expect": {
+      "task": "upscale",
+      "inputKeys": [
+        "image_url",
+        "scale"
+      ],
+      "inputEquals": {
+        "scale": 4
+      }
+    }
+  },
+  {
+    "node": "ai.upscale",
+    "label": "thiếu ảnh → throw",
+    "inputs": {},
+    "params": {
+      "scale": "4"
+    },
+    "expect": {
+      "expectThrow": "Thiếu ảnh"
+    }
+  },
+  {
+    "node": "util.maskpainter",
+    "label": "có ảnh + mask → local, ra mask",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "mask": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    },
+    "expect": {
+      "expectNoJob": true,
+      "expectOutputKeys": [
+        "mask"
+      ]
+    }
+  },
+  {
+    "node": "util.maskpainter",
+    "label": "thiếu ảnh → throw",
+    "inputs": {},
+    "params": {
+      "mask": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    },
+    "expect": {
+      "expectThrow": "Nối ảnh vào input trước"
+    }
+  },
+  {
+    "node": "util.maskpainter",
+    "label": "chưa vẽ mask → throw",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {},
+    "expect": {
+      "expectThrow": "Chưa vẽ mask"
+    }
+  },
+  {
+    "node": "util.edit",
+    "label": "chỉnh sáng/tương phản → local, ra image",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "brightness": 1.1,
+      "contrast": 1.05,
+      "saturate": 1.2,
+      "temperature": 0.3
+    },
+    "expect": {
+      "expectNoJob": true,
+      "expectOutputKeys": [
+        "image"
+      ]
+    }
+  },
+  {
+    "node": "util.edit",
+    "label": "tham số trung tính → vẫn ra image",
+    "inputs": {
+      "image": "/demo/clay-in.jpg"
+    },
+    "params": {
+      "brightness": 1,
+      "contrast": 1,
+      "saturate": 1,
+      "temperature": 0
+    },
+    "expect": {
+      "expectNoJob": true,
+      "expectOutputKeys": [
+        "image"
+      ]
+    }
+  },
+  {
+    "node": "util.edit",
+    "label": "thiếu ảnh → throw",
+    "inputs": {},
+    "params": {
+      "brightness": 1.1,
+      "contrast": 1,
+      "saturate": 1,
+      "temperature": 0
+    },
+    "expect": {
+      "expectThrow": "Thiếu ảnh"
+    }
+  },
+  {
+    "node": "util.compare",
+    "label": "đủ A + B → pass-through B",
+    "inputs": {
+      "imageA": "/demo/clay-in.jpg",
+      "imageB": "/demo/clay-out.png"
+    },
+    "params": {},
+    "expect": {
+      "expectNoJob": true,
+      "expectOutputKeys": [
+        "image"
+      ]
+    }
+  },
+  {
+    "node": "util.compare",
+    "label": "thiếu ảnh A → throw",
+    "inputs": {
+      "imageB": "/demo/clay-out.png"
+    },
+    "params": {},
+    "expect": {
+      "expectThrow": "Cần đủ 2 ảnh"
+    }
+  },
+  {
+    "node": "util.compare",
+    "label": "thiếu ảnh B → throw",
+    "inputs": {
+      "imageA": "/demo/clay-in.jpg"
+    },
+    "params": {},
+    "expect": {
+      "expectThrow": "Cần đủ 2 ảnh"
+    }
+  }
+]

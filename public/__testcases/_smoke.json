@@ -1,0 +1,30 @@
+[
+  {
+    "node": "ai.sketch2render",
+    "label": "smoke — Japandi + user prompt",
+    "inputs": { "image": "/demo/sketch-in.jpg", "prompt": "warm living room" },
+    "params": { "style": "Japandi", "guidance": 15, "adherence": 0.6 },
+    "expect": {
+      "task": "sketch2render",
+      "promptEquals": "warm living room, Japandi interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptExcludes": ["undefined", "null"],
+      "inputKeys": ["prompt", "negative_prompt", "control_image_url", "guidance_scale", "strength"],
+      "inputEquals": { "guidance_scale": 15, "strength": 0.6 },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.sketch2render",
+    "label": "smoke — thiếu ảnh sketch phải throw",
+    "inputs": {},
+    "params": { "style": "Japandi" },
+    "expect": { "expectThrow": "Thiếu ảnh sketch" }
+  },
+  {
+    "node": "ai.sketch2render",
+    "label": "smoke — CỐ Ý SAI để chắc runner bắt được fail",
+    "inputs": { "image": "/demo/sketch-in.jpg" },
+    "params": { "style": "Japandi" },
+    "expect": { "promptIncludes": ["CHUOI_KHONG_BAO_GIO_CO"] }
+  }
+]

@@ -1,0 +1,686 @@
+[
+  {
+    "node": "ai.sketch2render",
+    "label": "Scandinavian + prompt, guidance min 1, bám thoáng 0.4",
+    "inputs": {
+      "image": "/demo/sketch-in.jpg",
+      "prompt": "cozy reading nook"
+    },
+    "params": {
+      "style": "Scandinavian",
+      "guidance": 1,
+      "adherence": 0.4
+    },
+    "expect": {
+      "task": "sketch2render",
+      "promptEquals": "cozy reading nook, Scandinavian interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptIncludes": [
+        "Scandinavian interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "control_image_url",
+        "guidance_scale",
+        "strength",
+        "num_images"
+      ],
+      "inputEquals": {
+        "guidance_scale": 1,
+        "strength": 0.4,
+        "num_images": 1,
+        "control_image_url": "/demo/sketch-in.jpg"
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.sketch2render",
+    "label": "Japandi + prompt (ca chuẩn đã bắt được)",
+    "inputs": {
+      "image": "/demo/sketch-in.jpg",
+      "prompt": "warm living room"
+    },
+    "params": {
+      "style": "Japandi",
+      "guidance": 15,
+      "adherence": 0.6
+    },
+    "expect": {
+      "task": "sketch2render",
+      "promptEquals": "warm living room, Japandi interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptIncludes": [
+        "Japandi interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "control_image_url",
+        "guidance_scale",
+        "strength",
+        "num_images"
+      ],
+      "inputEquals": {
+        "guidance_scale": 15,
+        "strength": 0.6,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.sketch2render",
+    "label": "Indochine KHÔNG prompt (nhánh base), guidance max 20, bám chặt 0.8",
+    "inputs": {
+      "image": "/demo/sketch-in.jpg"
+    },
+    "params": {
+      "style": "Indochine",
+      "guidance": 20,
+      "adherence": 0.8
+    },
+    "expect": {
+      "task": "sketch2render",
+      "promptEquals": "Indochine interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptIncludes": [
+        "Indochine interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null",
+        ", Indochine"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "control_image_url",
+        "guidance_scale",
+        "strength",
+        "num_images"
+      ],
+      "inputEquals": {
+        "guidance_scale": 20,
+        "strength": 0.8,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.sketch2render",
+    "label": "Modern Luxury KHÔNG prompt (style 2 từ)",
+    "inputs": {
+      "image": "/demo/sketch-in.jpg"
+    },
+    "params": {
+      "style": "Modern Luxury",
+      "guidance": 15,
+      "adherence": 0.6
+    },
+    "expect": {
+      "task": "sketch2render",
+      "promptEquals": "Modern Luxury interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptIncludes": [
+        "Modern Luxury interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "control_image_url",
+        "guidance_scale",
+        "strength",
+        "num_images"
+      ],
+      "inputEquals": {
+        "guidance_scale": 15,
+        "strength": 0.6,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.sketch2render",
+    "label": "Wabi-sabi + prompt (style có gạch nối)",
+    "inputs": {
+      "image": "/demo/sketch-in.jpg",
+      "prompt": "tea corner"
+    },
+    "params": {
+      "style": "Wabi-sabi",
+      "guidance": 8.5,
+      "adherence": 0.6
+    },
+    "expect": {
+      "task": "sketch2render",
+      "promptEquals": "tea corner, Wabi-sabi interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptIncludes": [
+        "Wabi-sabi interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "control_image_url",
+        "guidance_scale",
+        "strength",
+        "num_images"
+      ],
+      "inputEquals": {
+        "guidance_scale": 8.5,
+        "strength": 0.6,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.sketch2render",
+    "label": "Industrial KHÔNG prompt (đủ style thứ 6)",
+    "inputs": {
+      "image": "/demo/sketch-in.jpg"
+    },
+    "params": {
+      "style": "Industrial",
+      "guidance": 15,
+      "adherence": 0.6
+    },
+    "expect": {
+      "task": "sketch2render",
+      "promptEquals": "Industrial interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptIncludes": [
+        "Industrial interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "control_image_url",
+        "guidance_scale",
+        "strength",
+        "num_images"
+      ],
+      "inputEquals": {
+        "guidance_scale": 15,
+        "strength": 0.6,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.sketch2render",
+    "label": "Thiếu ảnh sketch → throw",
+    "inputs": {},
+    "params": {
+      "style": "Japandi",
+      "guidance": 15,
+      "adherence": 0.6
+    },
+    "expect": {
+      "expectThrow": "Thiếu ảnh sketch"
+    }
+  },
+  {
+    "node": "ai.clay2render",
+    "label": "Scandinavian + prompt, preserve default 16 (có hậu tố geometry)",
+    "inputs": {
+      "image": "/demo/clay-in.jpg",
+      "prompt": "cozy bedroom"
+    },
+    "params": {
+      "style": "Scandinavian",
+      "preserve": 16
+    },
+    "expect": {
+      "task": "clay2render",
+      "promptEquals": "cozy bedroom, Scandinavian interior design, photorealistic interior render, natural light, high detail, professional architectural photography, keep exact same geometry, layout and camera, only add realistic materials, lighting and atmosphere",
+      "promptIncludes": [
+        "Scandinavian interior design",
+        "keep exact same geometry, layout and camera"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "control_image_url",
+        "guidance_scale",
+        "num_images"
+      ],
+      "inputEquals": {
+        "guidance_scale": 16,
+        "num_images": 1,
+        "control_image_url": "/demo/clay-in.jpg"
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.clay2render",
+    "label": "Japandi KHÔNG prompt, preserve min 1 (nhánh base + hậu tố)",
+    "inputs": {
+      "image": "/demo/clay-in.jpg"
+    },
+    "params": {
+      "style": "Japandi",
+      "preserve": 1
+    },
+    "expect": {
+      "task": "clay2render",
+      "promptEquals": "Japandi interior design, photorealistic interior render, natural light, high detail, professional architectural photography, keep exact same geometry, layout and camera, only add realistic materials, lighting and atmosphere",
+      "promptIncludes": [
+        "Japandi interior design",
+        "only add realistic materials, lighting and atmosphere"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "control_image_url",
+        "guidance_scale",
+        "num_images"
+      ],
+      "inputEquals": {
+        "guidance_scale": 1,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.clay2render",
+    "label": "Indochine + prompt, preserve max 20",
+    "inputs": {
+      "image": "/demo/clay-in.jpg",
+      "prompt": "villa interior"
+    },
+    "params": {
+      "style": "Indochine",
+      "preserve": 20
+    },
+    "expect": {
+      "task": "clay2render",
+      "promptEquals": "villa interior, Indochine interior design, photorealistic interior render, natural light, high detail, professional architectural photography, keep exact same geometry, layout and camera, only add realistic materials, lighting and atmosphere",
+      "promptIncludes": [
+        "Indochine interior design",
+        "keep exact same geometry"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "control_image_url",
+        "guidance_scale",
+        "num_images"
+      ],
+      "inputEquals": {
+        "guidance_scale": 20,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.clay2render",
+    "label": "Modern Luxury KHÔNG prompt",
+    "inputs": {
+      "image": "/demo/clay-in.jpg"
+    },
+    "params": {
+      "style": "Modern Luxury",
+      "preserve": 16
+    },
+    "expect": {
+      "task": "clay2render",
+      "promptEquals": "Modern Luxury interior design, photorealistic interior render, natural light, high detail, professional architectural photography, keep exact same geometry, layout and camera, only add realistic materials, lighting and atmosphere",
+      "promptIncludes": [
+        "Modern Luxury interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "control_image_url",
+        "guidance_scale",
+        "num_images"
+      ],
+      "inputEquals": {
+        "guidance_scale": 16,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.clay2render",
+    "label": "Wabi-sabi + prompt",
+    "inputs": {
+      "image": "/demo/clay-in.jpg",
+      "prompt": "quiet studio"
+    },
+    "params": {
+      "style": "Wabi-sabi",
+      "preserve": 12.5
+    },
+    "expect": {
+      "task": "clay2render",
+      "promptEquals": "quiet studio, Wabi-sabi interior design, photorealistic interior render, natural light, high detail, professional architectural photography, keep exact same geometry, layout and camera, only add realistic materials, lighting and atmosphere",
+      "promptIncludes": [
+        "Wabi-sabi interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "control_image_url",
+        "guidance_scale",
+        "num_images"
+      ],
+      "inputEquals": {
+        "guidance_scale": 12.5,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.clay2render",
+    "label": "Industrial KHÔNG prompt (đủ style thứ 6)",
+    "inputs": {
+      "image": "/demo/clay-in.jpg"
+    },
+    "params": {
+      "style": "Industrial",
+      "preserve": 16
+    },
+    "expect": {
+      "task": "clay2render",
+      "promptEquals": "Industrial interior design, photorealistic interior render, natural light, high detail, professional architectural photography, keep exact same geometry, layout and camera, only add realistic materials, lighting and atmosphere",
+      "promptIncludes": [
+        "Industrial interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "control_image_url",
+        "guidance_scale",
+        "num_images"
+      ],
+      "inputEquals": {
+        "guidance_scale": 16,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.clay2render",
+    "label": "Thiếu ảnh clay → throw",
+    "inputs": {},
+    "params": {
+      "style": "Japandi",
+      "preserve": 16
+    },
+    "expect": {
+      "expectThrow": "Thiếu ảnh clay"
+    }
+  },
+  {
+    "node": "ai.styletransfer",
+    "label": "Scandinavian + prompt, strength max 0.9 (task camelCase styleTransfer)",
+    "inputs": {
+      "image": "/demo/mood1.jpg",
+      "prompt": "sunlit room"
+    },
+    "params": {
+      "style": "Scandinavian",
+      "strength": 0.9
+    },
+    "expect": {
+      "task": "styleTransfer",
+      "promptEquals": "sunlit room, Scandinavian interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptIncludes": [
+        "Scandinavian interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "strength",
+        "num_images"
+      ],
+      "inputEquals": {
+        "strength": 0.9,
+        "num_images": 1,
+        "image_url": "/demo/mood1.jpg"
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.styletransfer",
+    "label": "Japandi KHÔNG prompt, strength min 0.3 (nhánh base)",
+    "inputs": {
+      "image": "/demo/mood1.jpg"
+    },
+    "params": {
+      "style": "Japandi",
+      "strength": 0.3
+    },
+    "expect": {
+      "task": "styleTransfer",
+      "promptEquals": "Japandi interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptIncludes": [
+        "Japandi interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null",
+        ", Japandi"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "strength",
+        "num_images"
+      ],
+      "inputEquals": {
+        "strength": 0.3,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.styletransfer",
+    "label": "Indochine + prompt",
+    "inputs": {
+      "image": "/demo/mood1.jpg",
+      "prompt": "hallway"
+    },
+    "params": {
+      "style": "Indochine",
+      "strength": 0.65
+    },
+    "expect": {
+      "task": "styleTransfer",
+      "promptEquals": "hallway, Indochine interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptIncludes": [
+        "Indochine interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "strength",
+        "num_images"
+      ],
+      "inputEquals": {
+        "strength": 0.65,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.styletransfer",
+    "label": "Modern Luxury KHÔNG prompt",
+    "inputs": {
+      "image": "/demo/mood1.jpg"
+    },
+    "params": {
+      "style": "Modern Luxury",
+      "strength": 0.65
+    },
+    "expect": {
+      "task": "styleTransfer",
+      "promptEquals": "Modern Luxury interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptIncludes": [
+        "Modern Luxury interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "strength",
+        "num_images"
+      ],
+      "inputEquals": {
+        "strength": 0.65,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.styletransfer",
+    "label": "Wabi-sabi + prompt, strength min 0.3",
+    "inputs": {
+      "image": "/demo/mood1.jpg",
+      "prompt": "loft"
+    },
+    "params": {
+      "style": "Wabi-sabi",
+      "strength": 0.3
+    },
+    "expect": {
+      "task": "styleTransfer",
+      "promptEquals": "loft, Wabi-sabi interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptIncludes": [
+        "Wabi-sabi interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "strength",
+        "num_images"
+      ],
+      "inputEquals": {
+        "strength": 0.3,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.styletransfer",
+    "label": "Industrial KHÔNG prompt, strength max 0.9 (đủ style thứ 6)",
+    "inputs": {
+      "image": "/demo/mood1.jpg"
+    },
+    "params": {
+      "style": "Industrial",
+      "strength": 0.9
+    },
+    "expect": {
+      "task": "styleTransfer",
+      "promptEquals": "Industrial interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptIncludes": [
+        "Industrial interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "strength",
+        "num_images"
+      ],
+      "inputEquals": {
+        "strength": 0.9,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.styletransfer",
+    "label": "Thiếu ảnh gốc → throw",
+    "inputs": {},
+    "params": {
+      "style": "Japandi",
+      "strength": 0.65
+    },
+    "expect": {
+      "expectThrow": "Thiếu ảnh gốc"
+    }
+  }
+]

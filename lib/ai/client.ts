@@ -18,6 +18,20 @@ const TIMEOUT_MS = 180_000;
 const VIDEO_TIMEOUT_MS = 300_000;
 
 /**
+ * Ảnh trong app có thể là URL tương đối (/demo/…, /uploads/… từ gallery/demo).
+ * Provider chạy SERVER-side fetch ảnh → URL tương đối parse fail ("Failed to parse URL").
+ * Tuyệt-đối-hoá mọi string input bắt đầu bằng '/' trước khi submit (data:/http giữ nguyên).
+ */
+function absolutizeInput(input: Record<string, unknown>): Record<string, unknown> {
+  if (typeof window === 'undefined') return input;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(input)) {
+    out[k] = typeof v === 'string' && v.startsWith('/') ? new URL(v, window.location.origin).href : v;
+  }
+  return out;
+}
+
+/**
  * Submit AI job qua /api/jobs (theo tier) rồi poll tới khi xong. Trả danh sách URL media
  * (ảnh: đa số 1, moodboard 4; video: 1 URL mp4).
  * Throw AiJobError code 'PROVIDER_NOT_CONFIGURED' để node fallback sang mock.
@@ -32,7 +46,7 @@ export async function runImageJob(
   const submitRes = await fetch('/api/jobs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ task, input, tier, engine }),
+    body: JSON.stringify({ task, input: absolutizeInput(input), tier, engine }),
   });
   const submitBody = await submitRes.json().catch(() => ({}));
   if (!submitRes.ok) {

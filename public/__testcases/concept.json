@@ -1,0 +1,117 @@
+[
+  {
+    "node": "ai.moodboard",
+    "label": "Moodboard Scandinavian, KHÔNG prompt (nhánh base, num_images 4)",
+    "inputs": {},
+    "params": { "style": "Scandinavian" },
+    "expect": {
+      "task": "moodboard",
+      "promptEquals": "interior design moodboard concept, Scandinavian interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptIncludes": ["interior design moodboard concept", "Scandinavian interior design"],
+      "promptExcludes": ["undefined", "null"],
+      "inputKeys": ["prompt", "num_images"],
+      "inputEquals": { "num_images": 4 }
+    }
+  },
+  {
+    "node": "ai.moodboard",
+    "label": "Moodboard Indochine + brief hospitality (sảnh resort 5 sao)",
+    "inputs": { "prompt": "5-star resort lobby lounge, double-height space" },
+    "params": { "style": "Indochine" },
+    "expect": {
+      "task": "moodboard",
+      "promptEquals": "interior design moodboard concept, 5-star resort lobby lounge, double-height space, Indochine interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptIncludes": ["5-star resort lobby lounge", "Indochine interior design"],
+      "promptExcludes": ["undefined", "null"],
+      "inputKeys": ["prompt", "num_images"],
+      "inputEquals": { "num_images": 4 }
+    }
+  },
+  {
+    "node": "ai.moodboard",
+    "label": "Moodboard Modern Luxury + brief văn phòng hạng A",
+    "inputs": { "prompt": "grade-A office sky lobby reception" },
+    "params": { "style": "Modern Luxury" },
+    "expect": {
+      "task": "moodboard",
+      "promptEquals": "interior design moodboard concept, grade-A office sky lobby reception, Modern Luxury interior design, photorealistic interior render, natural light, high detail, professional architectural photography",
+      "promptIncludes": ["grade-A office sky lobby reception", "Modern Luxury interior design"],
+      "promptExcludes": ["undefined", "null"],
+      "inputKeys": ["prompt", "num_images"],
+      "inputEquals": { "num_images": 4 }
+    }
+  },
+
+  {
+    "node": "util.palette",
+    "label": "Palette trích HEX từ ảnh — client-side, KHÔNG gọi job",
+    "inputs": { "image": "/demo/mood1.jpg" },
+    "params": {},
+    "expect": {
+      "expectNoJob": true,
+      "expectOutputKeys": ["text"]
+    }
+  },
+  {
+    "node": "util.palette",
+    "label": "Palette thiếu ảnh → throw",
+    "inputs": {},
+    "params": {},
+    "expect": { "expectThrow": "Thiếu ảnh" }
+  },
+
+  {
+    "node": "out.moodboard",
+    "label": "Collage 4 ảnh, layout Tự động (Editorial) — client-side, KHÔNG job",
+    "inputs": {
+      "img1": "/demo/mood1.jpg",
+      "img2": "/demo/mood2.jpg",
+      "img3": "/demo/mood3.jpg",
+      "img4": "/demo/mood4.jpg"
+    },
+    "params": {
+      "title": "CONCEPT",
+      "sub": "DESIGN DIRECTION",
+      "eyebrow": "MOODBOARD · ĐỊNH HƯỚNG",
+      "layout": "Tự động (Editorial)"
+    },
+    "expect": {
+      "expectNoJob": true,
+      "expectOutputKeys": ["image"]
+    }
+  },
+  {
+    "node": "out.moodboard",
+    "label": "Collage layout Sắp chữ (Justified), 3 ảnh",
+    "inputs": {
+      "img1": "/demo/mood1.jpg",
+      "img2": "/demo/mood2.jpg",
+      "img3": "/demo/mood3.jpg"
+    },
+    "params": { "layout": "Sắp chữ (Justified)" },
+    "expect": {
+      "expectNoJob": true,
+      "expectOutputKeys": ["image"]
+    }
+  },
+  {
+    "node": "out.moodboard",
+    "label": "Collage layout Lưới đều, 2 ảnh",
+    "inputs": {
+      "img1": "/demo/mood1.jpg",
+      "img2": "/demo/mood2.jpg"
+    },
+    "params": { "layout": "Lưới đều" },
+    "expect": {
+      "expectNoJob": true,
+      "expectOutputKeys": ["image"]
+    }
+  },
+  {
+    "node": "out.moodboard",
+    "label": "Collage KHÔNG ảnh nào → throw",
+    "inputs": {},
+    "params": { "layout": "Tự động (Editorial)" },
+    "expect": { "expectThrow": "Nối ít nhất 1 ảnh" }
+  }
+]

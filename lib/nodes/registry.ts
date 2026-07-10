@@ -8,6 +8,7 @@ import { saveToGallery } from '@/lib/gallery';
 import { parseContent, themeFromRef, renderSlide, type FontPairing, type SlideLayout } from '@/lib/slides';
 import { EXTRA_NODES } from '@/lib/nodes/defs';
 import { fetchGuProfile, guToPrompt } from '@/lib/gu';
+import { buildMoodboardCollage } from '@/lib/moodboard-collage';
 
 /**
  * Kéo hồ sơ gu từ thư viện Reference (usage 'ref-render') → mẩu mô tả nhồi prompt.
@@ -382,10 +383,10 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
       const { inputs, params } = ctx;
       if (!inputs.image) throw new Error('Thiếu ảnh phòng trống ở input.');
       const extra = inputs.prompt ? String(inputs.prompt.value) : '';
-      const prompt = `fully furnished ${stylePrompt(String(params.style), extra)}, complete furniture staging, sofa, rug, lighting fixtures, decor`;
+      const prompt = `fully furnished interior, complete furniture staging, ${stylePrompt(String(params.style), extra)}, sofa, rug, lighting fixtures, decor`;
       const image = await aiImage(
         'staging',
-        { prompt, image_url: inputs.image.value, strength: Number(params.strength), num_images: 1 },
+        { prompt, negative_prompt: RENDER_NEGATIVE, image_url: inputs.image.value, strength: Number(params.strength), num_images: 1 },
         `${params.style} staging`,
         ctx,
       );
@@ -413,7 +414,7 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
       const prompt = stylePrompt(String(params.style), inputs.prompt ? String(inputs.prompt.value) : '');
       const image = await aiImage(
         'styleTransfer',
-        { prompt, image_url: inputs.image.value, strength: Number(params.strength), num_images: 1 },
+        { prompt, negative_prompt: RENDER_NEGATIVE, image_url: inputs.image.value, strength: Number(params.strength), num_images: 1 },
         `${params.style} transfer`,
         ctx,
       );
@@ -581,6 +582,7 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
         'materialSwap',
         {
           prompt: `${material}, photorealistic interior material, seamless, high detail`,
+          negative_prompt: RENDER_NEGATIVE,
           image_url: inputs.image.value,
           mask_url: inputs.mask.value,
         },
@@ -617,7 +619,7 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
         : `${what}, photorealistic furniture, matching the room lighting and perspective`;
       const image = await aiImage(
         'furnitureEdit',
-        { prompt, image_url: inputs.image.value, mask_url: inputs.mask.value },
+        { prompt, negative_prompt: RENDER_NEGATIVE, image_url: inputs.image.value, mask_url: inputs.mask.value },
         remove ? 'Remove' : 'Add',
         ctx,
       );
@@ -651,7 +653,7 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
       };
       const image = await aiImage(
         'relight',
-        { prompt: prompts[String(params.lighting)], image_url: inputs.image.value },
+        { prompt: prompts[String(params.lighting)], negative_prompt: RENDER_NEGATIVE, image_url: inputs.image.value },
         String(params.lighting),
         ctx,
       );
@@ -902,6 +904,51 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
 
   // ============ OUTPUT ============
   {
+    type: 'out.moodboard',
+    title: 'Moodboard (Collage)',
+    category: 'OUTPUT',
+    description: 'Gom nhiều ảnh reference → 1 trang moodboard editorial (lưới + palette đá ấm). Không AI, dựng ngay trong app.',
+    inputs: [
+      { id: 'img1', label: 'Ảnh 1', dataType: 'image' },
+      { id: 'img2', label: 'Ảnh 2', dataType: 'image' },
+      { id: 'img3', label: 'Ảnh 3', dataType: 'image' },
+      { id: 'img4', label: 'Ảnh 4', dataType: 'image' },
+      { id: 'img5', label: 'Ảnh 5', dataType: 'image' },
+      { id: 'img6', label: 'Ảnh 6', dataType: 'image' },
+      { id: 'img7', label: 'Ảnh 7', dataType: 'image' },
+      { id: 'img8', label: 'Ảnh 8', dataType: 'image' },
+    ],
+    outputs: [{ id: 'image', label: 'Moodboard', dataType: 'image' }],
+    params: [
+      { kind: 'text', id: 'title', label: 'Tiêu đề', placeholder: 'VẬT LIỆU' },
+      { kind: 'text', id: 'sub', label: 'Phụ đề (EN)', placeholder: 'MATERIALS & FINISHES' },
+      { kind: 'text', id: 'eyebrow', label: 'Nhãn trên', placeholder: 'MOODBOARD · BẢNG VẬT LIỆU' },
+      { kind: 'select', id: 'layout', label: 'Bố cục', options: ['Tự động (Editorial)', 'Lưới đều', 'Sắp chữ (Justified)'] },
+    ],
+    creditCost: 0,
+    async execute({ inputs, params, onProgress }) {
+      const images = ['img1', 'img2', 'img3', 'img4', 'img5', 'img6', 'img7', 'img8']
+        .map((k) => inputs[k])
+        .filter((v): v is PortValue => Boolean(v))
+        .map((v) => String(v.value));
+      if (!images.length) throw new Error('Nối ít nhất 1 ảnh vào node moodboard.');
+      onProgress(0.3);
+      const layoutMap: Record<string, 'auto' | 'grid' | 'justified'> = {
+        'Tự động (Editorial)': 'auto',
+        'Lưới đều': 'grid',
+        'Sắp chữ (Justified)': 'justified',
+      };
+      const url = await buildMoodboardCollage(images, {
+        title: String(params.title ?? ''),
+        sub: String(params.sub ?? ''),
+        eyebrow: String(params.eyebrow ?? ''),
+        layout: layoutMap[String(params.layout ?? '')] ?? 'auto',
+      });
+      onProgress(1);
+      return { image: { dataType: 'image', value: url } };
+    },
+  },
+  {
     type: 'out.board',
     title: 'Export Board',
     category: 'OUTPUT',
@@ -975,4 +1022,16 @@ export function defaultParams(def: NodeDefinition): Record<string, string | numb
     else params[p.id] = '';
   }
   return params;
+}
+
+// Dev-only: expose registry cho harness test prompt (window.__nodeRegistry).
+// Cùng pattern với window.__flowStore trong lib/store.ts — không lọt vào bản build.
+declare global {
+  interface Window {
+    __nodeRegistry?: unknown;
+  }
+}
+
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  window.__nodeRegistry = { NODE_REGISTRY, NODE_DEFINITIONS, getDefinition, defaultParams };
 }

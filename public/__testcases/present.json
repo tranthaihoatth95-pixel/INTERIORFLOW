@@ -1,0 +1,80 @@
+[
+  {
+    "node": "slide.concept",
+    "label": "Concept Content → xuất JSON {kicker,title,body}",
+    "inputs": {},
+    "params": {
+      "kicker": "Concept · Khách sạn 5 sao",
+      "title": "Sảnh đón — nơi ánh sáng chào khách",
+      "body": "- Đá travertine ấm\n- Gỗ óc chó vân dọc"
+    },
+    "expect": { "expectNoJob": true, "expectOutputKeys": ["text"] }
+  },
+  {
+    "node": "slide.concept",
+    "label": "Concept thiếu tiêu đề phải throw",
+    "inputs": {},
+    "params": { "kicker": "01", "body": "- một ý" },
+    "expect": { "expectThrow": "Chưa nhập tiêu đề concept" }
+  },
+  {
+    "node": "slide.composer",
+    "label": "Composer Cover — content thường (không JSON), không ref/hero",
+    "inputs": { "content": "Sảnh khách sạn 5 sao\nĐịnh hướng quiet-luxury" },
+    "params": { "layout": "Cover", "fonts": "Editorial", "mode": "Sáng", "brand": "TTT ARCHITECTS", "pageNo": "01" },
+    "expect": { "expectNoJob": true, "expectOutputKeys": ["image"] }
+  },
+  {
+    "node": "slide.composer",
+    "label": "Composer Nội dung + ảnh — content JSON + styleref + hero",
+    "inputs": {
+      "content": "{\"kicker\":\"01 — Vật liệu\",\"title\":\"Đá ấm, gỗ trầm, đồng hun\",\"body\":\"- Travertine\\n- Gỗ óc chó\\n- Đồng hun\"}",
+      "styleref": "/detech/mat-palette.png",
+      "hero": "/detech/lobby-water.png"
+    },
+    "params": { "layout": "Nội dung + ảnh", "fonts": "Modern", "mode": "Sáng", "pageNo": "02" },
+    "expect": { "expectNoJob": true, "expectOutputKeys": ["image"] }
+  },
+  {
+    "node": "slide.composer",
+    "label": "Composer Quote — nền Tối, có styleref",
+    "inputs": {
+      "content": "{\"title\":\"Sảnh là ấn tượng đầu tiên được giữ lại.\",\"body\":\"TTT Architects\"}",
+      "styleref": "/demo/mood1.jpg"
+    },
+    "params": { "layout": "Quote", "fonts": "Elegant", "mode": "Tối", "pageNo": "04" },
+    "expect": { "expectNoJob": true, "expectOutputKeys": ["image"] }
+  },
+  {
+    "node": "slide.composer",
+    "label": "Composer thiếu content phải throw",
+    "inputs": {},
+    "params": { "layout": "Cover" },
+    "expect": { "expectThrow": "Nối Concept Content" }
+  },
+  {
+    "node": "slide.deck",
+    "label": "Export Deck — 1 slide vẫn hợp lệ",
+    "inputs": { "slide1": "/demo/mood1.jpg" },
+    "params": { "deckName": "Concept-Sanh-v1" },
+    "expect": { "expectNoJob": true, "expectOutputKeys": ["image"] }
+  },
+  {
+    "node": "slide.deck",
+    "label": "Export Deck — gom nhiều slide",
+    "inputs": {
+      "slide1": "/demo/mood1.jpg",
+      "slide2": "/demo/mood2.jpg",
+      "slide3": "/demo/mood3.jpg"
+    },
+    "params": { "deckName": "Concept-Sanh-v2" },
+    "expect": { "expectNoJob": true, "expectOutputKeys": ["image"] }
+  },
+  {
+    "node": "slide.deck",
+    "label": "Export Deck rỗng phải throw",
+    "inputs": {},
+    "params": {},
+    "expect": { "expectThrow": "Nối ít nhất 1 slide" }
+  }
+]

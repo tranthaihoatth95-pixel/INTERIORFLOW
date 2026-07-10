@@ -21,8 +21,8 @@ export function friendlyAiError(raw: string): string {
     return 'Engine tự-host (ComfyUI) chưa có workflow cho tác vụ này. Dùng mức AI khác, hoặc bổ sung workflow tương ứng.';
   if (/provider_not_configured|not configured|chưa cấu hình/.test(m))
     return 'Chưa cấu hình nhà cung cấp AI cho mức này — chọn mức AI khác ở header.';
-  if (/exhausted|balance|top up|quota|402|insufficient/.test(m))
-    return 'Tài khoản AI hết số dư/hạn mức. Nạp thêm hoặc đổi sang mức tự-host (ComfyUI).';
+  if (/exhausted|balance|top up|top-up|quota|402|insufficient|payment required|user is locked|credit/.test(m))
+    return 'Tài khoản AI (fal.ai) hết số dư — nạp credit tại fal.ai/dashboard/billing. Với ảnh, có thể đổi sang mức tự-host (ComfyUI); riêng video (Kling/Veo) chỉ chạy trên fal nên bắt buộc nạp.';
   if (/unauthorized|401|forbidden|403/.test(m))
     return 'Không có quyền truy cập ảnh/đầu vào (401/403). Thử tải ảnh trực tiếp vào node.';
   return raw;

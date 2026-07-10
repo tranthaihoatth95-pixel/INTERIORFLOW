@@ -1,0 +1,588 @@
+[
+  {
+    "node": "ai.emptystaging",
+    "label": "Staging Scandinavian, không prompt user",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "style": "Scandinavian",
+      "strength": 0.85
+    },
+    "expect": {
+      "task": "staging",
+      "promptEquals": "fully furnished interior, complete furniture staging, Scandinavian interior design, photorealistic interior render, natural light, high detail, professional architectural photography, sofa, rug, lighting fixtures, decor",
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "strength",
+        "num_images"
+      ],
+      "inputEquals": {
+        "num_images": 1,
+        "strength": 0.85,
+        "image_url": "/demo/clay-out.png"
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.emptystaging",
+    "label": "Staging Japandi",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "style": "Japandi",
+      "strength": 0.85
+    },
+    "expect": {
+      "task": "staging",
+      "promptEquals": "fully furnished interior, complete furniture staging, Japandi interior design, photorealistic interior render, natural light, high detail, professional architectural photography, sofa, rug, lighting fixtures, decor",
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "strength",
+        "num_images"
+      ],
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.emptystaging",
+    "label": "Staging Indochine",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "style": "Indochine",
+      "strength": 0.85
+    },
+    "expect": {
+      "task": "staging",
+      "promptEquals": "fully furnished interior, complete furniture staging, Indochine interior design, photorealistic interior render, natural light, high detail, professional architectural photography, sofa, rug, lighting fixtures, decor",
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "strength",
+        "num_images"
+      ],
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.emptystaging",
+    "label": "Staging Modern Luxury",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "style": "Modern Luxury",
+      "strength": 0.85
+    },
+    "expect": {
+      "task": "staging",
+      "promptEquals": "fully furnished interior, complete furniture staging, Modern Luxury interior design, photorealistic interior render, natural light, high detail, professional architectural photography, sofa, rug, lighting fixtures, decor",
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "strength",
+        "num_images"
+      ],
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.emptystaging",
+    "label": "Staging Wabi-sabi",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "style": "Wabi-sabi",
+      "strength": 0.85
+    },
+    "expect": {
+      "task": "staging",
+      "promptEquals": "fully furnished interior, complete furniture staging, Wabi-sabi interior design, photorealistic interior render, natural light, high detail, professional architectural photography, sofa, rug, lighting fixtures, decor",
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "strength",
+        "num_images"
+      ],
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.emptystaging",
+    "label": "Staging Industrial",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "style": "Industrial",
+      "strength": 0.85
+    },
+    "expect": {
+      "task": "staging",
+      "promptEquals": "fully furnished interior, complete furniture staging, Industrial interior design, photorealistic interior render, natural light, high detail, professional architectural photography, sofa, rug, lighting fixtures, decor",
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "strength",
+        "num_images"
+      ],
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.emptystaging",
+    "label": "Staging có prompt user (extra chèn trước style)",
+    "inputs": {
+      "image": "/demo/clay-out.png",
+      "prompt": "warm oak tones, linen sofa"
+    },
+    "params": {
+      "style": "Japandi",
+      "strength": 0.85
+    },
+    "expect": {
+      "task": "staging",
+      "promptEquals": "fully furnished interior, complete furniture staging, warm oak tones, linen sofa, Japandi interior design, photorealistic interior render, natural light, high detail, professional architectural photography, sofa, rug, lighting fixtures, decor",
+      "promptIncludes": [
+        "warm oak tones",
+        "Japandi interior design"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "strength",
+        "num_images"
+      ],
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.emptystaging",
+    "label": "Biên strength min 0.6",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "style": "Scandinavian",
+      "strength": 0.6
+    },
+    "expect": {
+      "task": "staging",
+      "promptIncludes": [
+        "Scandinavian interior design"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "strength",
+        "num_images"
+      ],
+      "inputEquals": {
+        "strength": 0.6,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.emptystaging",
+    "label": "Biên strength max 0.95",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "style": "Industrial",
+      "strength": 0.95
+    },
+    "expect": {
+      "task": "staging",
+      "promptIncludes": [
+        "Industrial interior design"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "strength",
+        "num_images"
+      ],
+      "inputEquals": {
+        "strength": 0.95,
+        "num_images": 1
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.emptystaging",
+    "label": "Thiếu ảnh phòng trống → throw",
+    "inputs": {},
+    "params": {
+      "style": "Scandinavian",
+      "strength": 0.85
+    },
+    "expect": {
+      "expectThrow": "Thiếu ảnh phòng trống"
+    }
+  },
+  {
+    "node": "ai.materialswap",
+    "label": "Đổi vật liệu sàn (material EN, verbatim)",
+    "inputs": {
+      "image": "/demo/clay-out.png",
+      "mask": "/demo/mood2.jpg"
+    },
+    "params": {
+      "material": "walnut wood herringbone floor"
+    },
+    "expect": {
+      "task": "materialSwap",
+      "promptEquals": "walnut wood herringbone floor, photorealistic interior material, seamless, high detail",
+      "promptIncludes": [
+        "walnut wood herringbone floor",
+        "seamless"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "mask_url"
+      ],
+      "inputEquals": {
+        "image_url": "/demo/clay-out.png",
+        "mask_url": "/demo/mood2.jpg"
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.materialswap",
+    "label": "Vật liệu tiếng Việt (KHÔNG dịch, giữ nguyên chữ)",
+    "inputs": {
+      "image": "/demo/clay-out.png",
+      "mask": "/demo/mood2.jpg"
+    },
+    "params": {
+      "material": "đá cẩm thạch trắng vân mây"
+    },
+    "expect": {
+      "task": "materialSwap",
+      "promptEquals": "đá cẩm thạch trắng vân mây, photorealistic interior material, seamless, high detail",
+      "promptIncludes": [
+        "đá cẩm thạch trắng vân mây"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "mask_url"
+      ],
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.materialswap",
+    "label": "Đổi vật liệu tường (đồng đánh xước)",
+    "inputs": {
+      "image": "/demo/clay-out.png",
+      "mask": "/demo/mood2.jpg"
+    },
+    "params": {
+      "material": "brushed brass wall panel"
+    },
+    "expect": {
+      "task": "materialSwap",
+      "promptEquals": "brushed brass wall panel, photorealistic interior material, seamless, high detail",
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "mask_url"
+      ],
+      "inputEquals": {
+        "mask_url": "/demo/mood2.jpg"
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.materialswap",
+    "label": "Thiếu ảnh gốc → throw",
+    "inputs": {
+      "mask": "/demo/mood2.jpg"
+    },
+    "params": {
+      "material": "oak floor"
+    },
+    "expect": {
+      "expectThrow": "Thiếu ảnh gốc"
+    }
+  },
+  {
+    "node": "ai.materialswap",
+    "label": "Có ảnh nhưng thiếu mask → throw",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "material": "oak floor"
+    },
+    "expect": {
+      "expectThrow": "Thiếu mask"
+    }
+  },
+  {
+    "node": "ai.materialswap",
+    "label": "Đủ ảnh + mask nhưng chưa nhập vật liệu → throw",
+    "inputs": {
+      "image": "/demo/clay-out.png",
+      "mask": "/demo/mood2.jpg"
+    },
+    "params": {},
+    "expect": {
+      "expectThrow": "Chưa nhập vật liệu mới"
+    }
+  },
+  {
+    "node": "ai.materialswap",
+    "label": "Vật liệu chỉ toàn khoảng trắng → trim rỗng → throw",
+    "inputs": {
+      "image": "/demo/clay-out.png",
+      "mask": "/demo/mood2.jpg"
+    },
+    "params": {
+      "material": "   "
+    },
+    "expect": {
+      "expectThrow": "Chưa nhập vật liệu mới"
+    }
+  },
+  {
+    "node": "ai.furniture",
+    "label": "Xoá đồ + mask (prompt cố định)",
+    "inputs": {
+      "image": "/demo/clay-out.png",
+      "mask": "/demo/mood2.jpg"
+    },
+    "params": {
+      "mode": "Xoá đồ"
+    },
+    "expect": {
+      "task": "furnitureEdit",
+      "promptEquals": "empty space, clean floor and wall, no furniture, seamless continuation of the room surfaces",
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "mask_url"
+      ],
+      "inputEquals": {
+        "image_url": "/demo/clay-out.png",
+        "mask_url": "/demo/mood2.jpg"
+      },
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.furniture",
+    "label": "Xoá đồ nhưng có điền 'what' → what KHÔNG lọt prompt",
+    "inputs": {
+      "image": "/demo/clay-out.png",
+      "mask": "/demo/mood2.jpg"
+    },
+    "params": {
+      "mode": "Xoá đồ",
+      "what": "a large green sofa"
+    },
+    "expect": {
+      "task": "furnitureEdit",
+      "promptEquals": "empty space, clean floor and wall, no furniture, seamless continuation of the room surfaces",
+      "promptExcludes": [
+        "a large green sofa",
+        "sofa"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "mask_url"
+      ],
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.furniture",
+    "label": "Thêm đồ + mô tả (what verbatim)",
+    "inputs": {
+      "image": "/demo/clay-out.png",
+      "mask": "/demo/mood2.jpg"
+    },
+    "params": {
+      "mode": "Thêm đồ",
+      "what": "a beige linen armchair"
+    },
+    "expect": {
+      "task": "furnitureEdit",
+      "promptEquals": "a beige linen armchair, photorealistic furniture, matching the room lighting and perspective",
+      "promptIncludes": [
+        "a beige linen armchair"
+      ],
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "mask_url"
+      ],
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.furniture",
+    "label": "Thêm đồ mô tả tiếng Việt (KHÔNG dịch)",
+    "inputs": {
+      "image": "/demo/clay-out.png",
+      "mask": "/demo/mood2.jpg"
+    },
+    "params": {
+      "mode": "Thêm đồ",
+      "what": "một chiếc ghế bành nhung xanh rêu"
+    },
+    "expect": {
+      "task": "furnitureEdit",
+      "promptEquals": "một chiếc ghế bành nhung xanh rêu, photorealistic furniture, matching the room lighting and perspective",
+      "promptIncludes": [
+        "một chiếc ghế bành nhung xanh rêu"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "mask_url"
+      ],
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.furniture",
+    "label": "Thêm đồ nhưng bỏ trống 'what' → throw",
+    "inputs": {
+      "image": "/demo/clay-out.png",
+      "mask": "/demo/mood2.jpg"
+    },
+    "params": {
+      "mode": "Thêm đồ"
+    },
+    "expect": {
+      "expectThrow": "Chế độ Thêm đồ cần mô tả món đồ"
+    }
+  },
+  {
+    "node": "ai.furniture",
+    "label": "Không set mode → defaultParams cho Xoá đồ (options[0]), không cần what",
+    "inputs": {
+      "image": "/demo/clay-out.png",
+      "mask": "/demo/mood2.jpg"
+    },
+    "params": {},
+    "expect": {
+      "task": "furnitureEdit",
+      "promptEquals": "empty space, clean floor and wall, no furniture, seamless continuation of the room surfaces",
+      "promptExcludes": [
+        "undefined",
+        "null"
+      ],
+      "inputKeys": [
+        "prompt",
+        "negative_prompt",
+        "image_url",
+        "mask_url"
+      ],
+      "negativeNonEmpty": true
+    }
+  },
+  {
+    "node": "ai.furniture",
+    "label": "Thiếu ảnh gốc → throw",
+    "inputs": {
+      "mask": "/demo/mood2.jpg"
+    },
+    "params": {
+      "mode": "Xoá đồ"
+    },
+    "expect": {
+      "expectThrow": "Thiếu ảnh gốc"
+    }
+  },
+  {
+    "node": "ai.furniture",
+    "label": "Có ảnh nhưng thiếu mask → throw",
+    "inputs": {
+      "image": "/demo/clay-out.png"
+    },
+    "params": {
+      "mode": "Xoá đồ"
+    },
+    "expect": {
+      "expectThrow": "Thiếu mask"
+    }
+  }
+]
