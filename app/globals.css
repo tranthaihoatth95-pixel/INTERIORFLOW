@@ -370,3 +370,50 @@ body {
 .pe-layer-row.dragging {
   opacity: 0.5;
 }
+
+/* ── Slider "hiện đại · frosted" (góp ý: thanh trượt chỉnh ảnh cần trendy hơn) ── */
+input[type='range'].if-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 7px;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  /* fill 2 tông theo --pct: accent (đã kéo) → kính mờ (còn lại) */
+  background: linear-gradient(
+    90deg,
+    var(--accent) 0%,
+    var(--accent) var(--pct, 50%),
+    rgba(255, 255, 255, 0.14) var(--pct, 50%),
+    rgba(255, 255, 255, 0.14) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: filter 0.15s ease;
+}
+input[type='range'].if-slider:hover { filter: brightness(1.08); }
+input[type='range'].if-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+  transition: transform 0.12s ease;
+}
+input[type='range'].if-slider:active::-webkit-slider-thumb { transform: scale(1.15); cursor: grabbing; }
+input[type='range'].if-slider::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+}
+/* fallback: mọi slider khác cũng lên tông accent hiện đại */
+input[type='range']:not(.if-slider) { accent-color: var(--accent); }
