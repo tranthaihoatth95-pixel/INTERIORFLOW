@@ -2,8 +2,12 @@ import { NextResponse } from 'next/server';
 import { isAiTask } from '@/lib/ai/models';
 import { isAiTier, isOneAiEngine, resolveModel, TIERS } from '@/lib/ai/tiers';
 import { providerConfigured, submitJob } from '@/lib/ai/providers';
+import { getSessionUser } from '@/lib/server/auth';
 
 export async function POST(req: Request) {
+  // Chặn người vô danh submit job (đốt balance fal). Chỉ user đăng nhập.
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   let body: { task?: string; input?: Record<string, unknown>; tier?: number; engine?: string };
   try {
     body = await req.json();

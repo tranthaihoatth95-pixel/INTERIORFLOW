@@ -2,8 +2,11 @@ import { NextResponse } from 'next/server';
 import { isAiTask } from '@/lib/ai/models';
 import { isAiTier, isOneAiEngine, resolveModel } from '@/lib/ai/tiers';
 import { providerConfigured, jobStatus } from '@/lib/ai/providers';
+import { getSessionUser } from '@/lib/server/auth';
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const url = new URL(req.url);
   const task = url.searchParams.get('task') ?? '';
   const tierRaw = Number(url.searchParams.get('tier'));

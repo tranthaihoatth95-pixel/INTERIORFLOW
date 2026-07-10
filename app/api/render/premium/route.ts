@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { falConfigured, submitJob, jobStatus } from '@/lib/ai/providers/fal';
 import { getPremiumModel, isPremiumModel } from '@/lib/ai/premium-models';
+import { getSessionUser } from '@/lib/server/auth';
 
 // Render 1 ảnh bằng model "xịn" (whitelist). Đồng bộ hoá cho node Compare: fal thật nếu có
 // balance, không thì trả placeholder có nhãn model (demo/mock vẫn chạy). Server-only.
@@ -19,6 +20,8 @@ function placeholder(name: string, tint: string): string {
 }
 
 export async function POST(req: Request) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const { modelKey, prompt, image } = (await req.json().catch(() => ({}))) as {
     modelKey?: string; prompt?: string; image?: string;
   };
