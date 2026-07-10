@@ -96,7 +96,12 @@ export function CommandPalette() {
       // Demo flows đã tách khỏi app thật — chuyển sang khu /demo (làm sau cùng). Xem docs/CONTENT-RULES.md
     ];
 
-    const nodeCmds: Cmd[] = NODE_DEFINITIONS.map((d) => ({
+    // Mức 1 (Không AI): ẩn node AI khỏi ⌘K — đồng nhất với Node Library (tránh add
+    // được node AI rồi báo lỗi khoá lúc chạy).
+    const noAi = s.aiTier === 1;
+    const nodeCmds: Cmd[] = NODE_DEFINITIONS.filter(
+      (d) => !(noAi && (d.category === 'AI_GENERATE' || d.category === 'AI_EDIT')),
+    ).map((d) => ({
       id: `node:${d.type}`,
       label: d.title,
       hint: d.creditCost > 0 ? `${d.creditCost}cr` : undefined,

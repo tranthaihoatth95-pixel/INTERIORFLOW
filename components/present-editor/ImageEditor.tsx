@@ -517,12 +517,13 @@ function Slider({
       <span style={{ fontSize: 11, color: 'var(--t3)' }}>{label} {value}</span>
       <input
         type="range"
+        className="if-slider"
         min={min}
         max={max}
         value={value}
         onChange={(e) => onChange(+e.target.value, true)}
         onPointerUp={(e) => onChange(+(e.target as HTMLInputElement).value, false)}
-        style={{ width: '100%' }}
+        style={{ ['--pct' as string]: `${((value - min) / (max - min || 1)) * 100}%` }}
       />
     </label>
   );

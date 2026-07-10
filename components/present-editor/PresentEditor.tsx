@@ -39,6 +39,7 @@ import { DEFAULT_SPEC, applySpecToSlide, type LayoutSpec } from '@/lib/present-e
 import { buildGuProfile, type GuAsset, type GuProfile } from '@/lib/gu';
 import { exportDeckToPdf, exportDeckToPptxFromModel, exportDeckToPng } from '@/lib/present-editor/export';
 import { useEditor } from './useEditor';
+import { slidesFromContent } from '@/lib/present-editor/content-deck';
 import Toolbar from './Toolbar';
 import EditorCanvas from './EditorCanvas';
 import Inspector from './Inspector';
@@ -401,11 +402,13 @@ export default function PresentEditor({ initialDeck }: Props) {
   // nội dung vừa import vào rổ Reference (để kéo vào slide). Human-in-loop: chỉ điểm xuất phát.
   const onGenerated = useCallback(
     (r: import('./GenerateFlow').GenerateResult) => {
+      const pal = r.rules?.palette?.length ? r.rules.palette : ed.deck.palette;
       if (r.rules?.palette?.length) {
         ed.update((d) => {
           d.palette = r.rules!.palette;
         });
       }
+      // Ảnh nội dung → rổ Reference (để kéo tay thêm nếu muốn).
       if (r.contentImages.length) {
         const items: RefImage[] = r.contentImages.map((url, i) => ({
           id: newId('ref'),
@@ -416,6 +419,23 @@ export default function PresentEditor({ initialDeck }: Props) {
           mine: true,
         }));
         setLocalRefs((prev) => [...items, ...prev]);
+      }
+      // MỚI: có nội dung text → DÀN SLIDE tự động (cover + quote + content).
+      // KHÔNG âm thầm xoá việc user đang dàn: nếu deck đã có slide → HỎI Thay / Nối cuối.
+      if (r.bodyText.trim()) {
+        const built = slidesFromContent(r.bodyText, r.contentImages, pal, ed.deck.fonts);
+        if (built.length) {
+          const startIdx = ed.deck.slides.length;
+          const replace =
+            startIdx === 0 ||
+            window.confirm(
+              `Dàn ${built.length} slide từ nội dung.\n\nOK = THAY toàn bộ slide hiện có.\nHuỷ = NỐI vào cuối (giữ slide cũ).`,
+            );
+          ed.update((d) => {
+            d.slides = replace ? built : [...d.slides, ...built];
+          });
+          ed.selectSlide(replace ? 0 : startIdx);
+        }
       }
     },
     [ed],
@@ -799,7 +819,7 @@ export default function PresentEditor({ initialDeck }: Props) {
             overflow: 'auto',
           }}
         >
-          {ed.slide && (
+          {ed.slide ? (
             <EditorCanvas
               slide={ed.slide}
               fonts={ed.deck.fonts}
@@ -823,6 +843,31 @@ export default function PresentEditor({ initialDeck }: Props) {
               brand={ed.deck.brand}
               project={ed.deck.project}
             />
+          ) : (
+            // Chưa có trang nào (deck rỗng) — KHÔNG để trống void, mời tạo trang trắng.
+            <div style={{ textAlign: 'center', color: 'var(--t4)', maxWidth: 340 }}>
+              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--t2)', marginBottom: 6 }}>
+                Chưa có trang nào
+              </p>
+              <p style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 16 }}>
+                Bắt đầu bằng 1 trang trắng, hoặc chọn <b>Mẫu</b> ở cột trái để dàn nhanh.
+              </p>
+              <button
+                onClick={onAddSlide}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: 12,
+                  background: 'var(--accent-strong)',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                + Thêm trang trắng
+              </button>
+            </div>
           )}
         </main>
 
