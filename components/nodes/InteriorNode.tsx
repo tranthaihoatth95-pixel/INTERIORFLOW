@@ -9,7 +9,7 @@ import { useFlowStore, type FlowNode } from '@/lib/store';
 import { runNode } from '@/lib/execution';
 import { CATEGORY_META, DATA_TYPE_COLORS, type ParamDef } from '@/lib/types';
 import { NodeExtras } from '@/components/nodes/NodeExtras';
-import { nodePop } from '@/lib/motion';
+import { nodePop, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 const PORT_GAP = 26;
@@ -116,8 +116,11 @@ function ParamField({
     );
   }
 
-  // image upload
-  const hasImage = typeof value === 'string' && value.startsWith('data:');
+  // image upload — nhận cả data-URI (upload thật) LẪN URL ('/demo/…', '/detech/…', http…)
+  const hasImage =
+    typeof value === 'string' &&
+    value.length > 0 &&
+    (value.startsWith('data:') || value.startsWith('/') || value.startsWith('http'));
   return (
     <div>
       <input
@@ -191,22 +194,24 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
           </span>
         )}
         <StatusIcon status={status} />
-        <button
+        <motion.button
+          {...pressableIcon}
           title={status === 'error' ? 'Retry' : 'Run node (+ upstream)'}
           disabled={busy}
           onClick={() => runNode(id)}
           className="nodrag grid h-6 w-6 place-items-center rounded-md bg-[var(--accent-strong)] text-white transition-colors hover:bg-[var(--accent)] disabled:opacity-40"
         >
           {status === 'error' ? <RotateCcw size={12} /> : <Play size={12} className="translate-x-[1px]" />}
-        </button>
-        <button
+        </motion.button>
+        <motion.button
+          {...pressableIcon}
           title="Xoá node"
           disabled={busy}
           onClick={() => deleteNode(id)}
           className="nodrag grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-red-500/15 hover:text-red-400 disabled:opacity-40"
         >
           <X size={13} />
-        </button>
+        </motion.button>
       </div>
 
       {/* body */}

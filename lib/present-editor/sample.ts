@@ -1,12 +1,16 @@
 /**
  * lib/present-editor/sample.ts — Deck MẪU để mở /present-editor phát triển & test.
  *
- * Dùng ảnh render Detech có sẵn trong /public/covers (0 mạng, 0 AI). Nếu thư viện
- * Reference trống, editor vẫn chạy với deck này + template builtin.
+ * `makeSampleDeck()` giờ trả về deck AKH-IKI 8 slide (chuẩn quiet-luxury editorial, ảnh
+ * /demo/*) — dùng để CHỨNG MINH chất lượng trình dàn trang. Định nghĩa ở ./akh-sample.
+ *
+ * Deck DETECH cũ (ảnh /public/covers) vẫn giữ ở `makeDetechDeck()` để tiện đối chiếu.
  */
 
 import type { EditorDeck } from './model';
 import { BUILTIN_TEMPLATES } from './templates';
+import { makeAkhIkiDeck } from './akh-sample';
+import { makeDetechEnsoDeck } from './detech-sample';
 
 const PALETTE = ['#EFE9DC', '#C2AD86', '#8A6A3A', '#6E4A2E', '#3B352F', '#28211A'];
 const COVERS = [
@@ -20,7 +24,14 @@ function tpl(id: string) {
   return BUILTIN_TEMPLATES.find((t) => t.id === id)!;
 }
 
+/** Deck mặc định editor. TẠM trỏ deck Detech ENSŌ để TEST present bằng nội dung thật.
+ *  (đổi về makeAkhIkiDeck() nếu muốn deck proof quiet-luxury.) */
 export function makeSampleDeck(): EditorDeck {
+  return makeDetechEnsoDeck();
+}
+
+/** Deck DETECH 4 slide cũ (giữ để đối chiếu / dev nhanh). */
+export function makeDetechDeck(): EditorDeck {
   const slides = [
     tpl('cover').build({
       kicker: 'DETECH — CONCEPT 2026',

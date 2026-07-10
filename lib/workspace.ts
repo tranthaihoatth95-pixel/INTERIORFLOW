@@ -85,8 +85,26 @@ export async function toggleShare(): Promise<string | null> {
 }
 
 /**
+ * Canvas hiện tại (hydrate từ localStorage) có thuộc về user này không?
+ * Bản lưu đóng dấu `owner` (persistNow): 'anon' = việc làm lúc chưa đăng nhập —
+ * ĐƯỢC mang theo vào tài khoản đầu tiên; id user khác → KHÔNG bê sang (rò dữ liệu
+ * giữa 2 tài khoản trên cùng máy). Bản lưu cũ chưa có owner → coi như anon.
+ */
+function localFlowBelongsTo(userId: string): boolean {
+  try {
+    const raw = localStorage.getItem('interiorflow.flow.v1');
+    if (!raw) return true; // không có bản lưu — canvas là của phiên này
+    const owner = (JSON.parse(raw) as { owner?: string }).owner ?? 'anon';
+    return owner === 'anon' || owner === userId;
+  } catch {
+    return true;
+  }
+}
+
+/**
  * Sau đăng nhập: tải flow gần nhất; nếu chưa có flow nào thì đẩy flow đang có
- * trên máy (localStorage/canvas) lên server làm flow đầu tiên.
+ * trên máy (localStorage/canvas) lên server làm flow đầu tiên — TRỪ khi bản lưu
+ * local thuộc về user khác (tài khoản mới nhận canvas sạch).
  */
 export async function bootstrapWorkspace() {
   const store = useFlowStore.getState();
@@ -96,10 +114,12 @@ export async function bootstrapWorkspace() {
       await openFlow(flows[0].id);
       return;
     }
-    const { nodes, edges, flowName } = useFlowStore.getState();
+    const { nodes, edges, flowName, user } = useFlowStore.getState();
+    const carryOver = !user || localFlowBelongsTo(user.id);
+    if (!carryOver) useFlowStore.setState({ nodes: [], edges: [], flowName: 'Untitled flow' });
     const id = await createFlow(
-      flowName || 'Untitled flow',
-      JSON.stringify({ nodes, edges }),
+      carryOver ? flowName || 'Untitled flow' : 'Untitled flow',
+      JSON.stringify(carryOver ? { nodes, edges } : { nodes: [], edges: [] }),
     );
     store.setCurrentFlowId(id);
   } catch {

@@ -448,13 +448,14 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
       if (ctx.kicker)
         slide.elements.push(
           makeText({
+            // tracking vừa phải để kicker dài vẫn 1 dòng, không wrap đè lên title bên dưới.
             text: ctx.kicker.toUpperCase(),
             role: 'kicker',
-            frame: { x: 8, y: 66, w: 84, h: 5, rotation: 0 },
-            fontSize: 2.4,
+            frame: { x: 8, y: 65, w: 84, h: 5, rotation: 0 },
+            fontSize: 2.2,
             color: '#ffffff',
             bold: true,
-            tracking: 4,
+            tracking: 2.8,
           }),
         );
       slide.elements.push(
@@ -487,21 +488,22 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
       if (ctx.kicker)
         els.push(
           makeText({
+            // kicker ở TRÊN tiêu đề, tracking vừa phải + khung rộng để KHÔNG wrap chồng title.
             text: ctx.kicker.toUpperCase(),
             role: 'kicker',
-            frame: { x: 12, y: 68, w: 76, h: 4, rotation: 0 },
-            fontSize: 2.2,
+            frame: { x: 6, y: 66, w: 88, h: 5, rotation: 0 },
+            fontSize: 2.1,
             color: c.accent,
             align: 'center',
             bold: true,
-            tracking: 5,
+            tracking: 3.5,
           }),
         );
       els.push(
         makeText({
           text: ctx.title || 'Tên dự án',
           role: 'title',
-          frame: { x: 10, y: 73, w: 80, h: 16, rotation: 0 },
+          frame: { x: 8, y: 74, w: 84, h: 16, rotation: 0 },
           fontSize: 7.5,
           color: '#f3efe8',
           align: 'center',
@@ -912,12 +914,16 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
           }),
         );
       }
-      // đường phân cách giữa
+      // đường phân cách giữa — dùng RECT mảnh dọc thay cho LINE xoay 90°.
+      // BUG cũ: line vẽ theo trục NGANG (dài = frame.w) rồi xoay 90° → chỉ ra đoạn ~15px,
+      // KHÔNG cao hết khung như ý. FIX: rect w rất mảnh, cao 70% — WYSIWYG cả canvas lẫn HTML.
       els.push(
-        makeShape('line', {
-          frame: { x: 49.6, y: 22, w: 0.8, h: 70, rotation: 90 },
-          stroke: c.muted,
-          strokeWidth: 1.5,
+        makeShape('rect', {
+          frame: { x: 49.7, y: 22, w: 0.12, h: 70, rotation: 0 },
+          fill: c.muted,
+          stroke: 'transparent',
+          strokeWidth: 0,
+          radius: 0,
         }),
       );
       return { id: newId('sld'), background: c.light, elements: els, templateId: 'compare' };

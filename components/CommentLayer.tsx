@@ -10,6 +10,8 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { pressable, springNode, prefersReducedMotion } from '@/lib/motion';
 
 interface Comment {
   id: string;
@@ -20,6 +22,7 @@ interface Comment {
   stage?: string;
   elementHint?: string;
   image?: string;
+  resolved?: boolean;
   ts: number;
 }
 
@@ -132,9 +135,28 @@ export function CommentLayer() {
     }
   }
 
+  // Bật/tắt trạng thái "đã xử lý" của 1 góp ý (optimistic + lưu qua PATCH).
+  async function resolve(id: string, next: boolean) {
+    setComments((c) => c.map((x) => (x.id === id ? { ...x, resolved: next } : x)));
+    try {
+      await fetch('/api/comments', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id, resolved: next }),
+      });
+    } catch {
+      /* bỏ qua */
+    }
+  }
+
   if (!mounted) return null;
 
+  const reduce = prefersReducedMotion();
   const here = comments.filter((c) => c.route === route);
+  const openCount = comments.filter((c) => !c.resolved).length;
+  const doneCount = comments.length - openCount;
+  // Chưa xử lý lên trên, đã xử lý xuống cuối (sort ổn định → giữ thứ tự trong từng nhóm).
+  const sorted = [...comments].sort((a, b) => Number(!!a.resolved) - Number(!!b.resolved));
 
   return (
     <>
@@ -189,7 +211,7 @@ export function CommentLayer() {
             pointerEvents: 'none',
           }}
         >
-          <div style={pinStyle}><span style={{ transform: 'rotate(45deg)' }}>{i + 1}</span></div>
+          <div style={c.resolved ? pinStyleResolved : pinStyle}><span style={{ transform: 'rotate(45deg)' }}>{c.resolved ? '✓' : i + 1}</span></div>
         </div>
       ))}
 
@@ -289,26 +311,48 @@ export function CommentLayer() {
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <b style={{ fontSize: 13 }}>Góp ý ({comments.length})</b>
+            <b style={{ fontSize: 13 }}>
+              Góp ý ({openCount} chưa xử lý{doneCount > 0 ? ` · ${doneCount} đã xử lý` : ''})
+            </b>
             <button onClick={() => setListOpen(false)} style={btnGhost}>Đóng</button>
           </div>
           {comments.length === 0 && <p style={{ fontSize: 12, color: '#999' }}>Chưa có góp ý.</p>}
-          {comments.map((c, i) => (
-            <div key={c.id} style={{ borderTop: '1px solid #f0f0f0', padding: '8px 0', fontSize: 12.5 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ color: ACCENT, fontWeight: 700 }}>
-                  #{comments.filter((x) => x.route === c.route).indexOf(c) + 1} · {c.stage}
-                </span>
-                <button onClick={() => del(c.id)} style={{ ...btnGhost, color: '#c00', fontSize: 11 }}>Xoá</button>
-              </div>
-              <div style={{ margin: '2px 0' }}>{c.text}</div>
-              {c.image && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={c.image} alt="minh hoạ" style={{ width: '100%', maxHeight: 120, objectFit: 'contain', borderRadius: 6, border: '1px solid #eee', margin: '4px 0', background: '#fafafa' }} />
-              )}
-              <div style={{ fontSize: 10, color: '#aaa' }}>{c.route} · {c.elementHint}</div>
-            </div>
-          ))}
+          <AnimatePresence initial={false}>
+            {sorted.map((c) => (
+              <motion.div
+                key={c.id}
+                layout={!reduce}
+                initial={reduce ? false : { opacity: 0, y: 6 }}
+                animate={{ opacity: c.resolved ? 0.5 : 1, y: 0 }}
+                exit={reduce ? { opacity: 0 } : { opacity: 0, height: 0, marginTop: 0, marginBottom: 0 }}
+                transition={reduce ? { duration: 0 } : springNode}
+                style={{ borderTop: '1px solid #f0f0f0', padding: '8px 0', fontSize: 12.5, overflow: 'hidden' }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+                  <span style={{ color: c.resolved ? '#8a8f98' : ACCENT, fontWeight: 700 }}>
+                    #{comments.filter((x) => x.route === c.route).indexOf(c) + 1} · {c.stage}
+                    {c.resolved && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, color: '#22a06b' }}>✓ Đã xử lý</span>}
+                  </span>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <motion.button
+                      {...pressable}
+                      onClick={() => resolve(c.id, !c.resolved)}
+                      style={{ ...btnGhost, fontSize: 11, color: c.resolved ? '#888' : '#22a06b', borderColor: c.resolved ? '#ddd' : '#bfe6d2' }}
+                    >
+                      {c.resolved ? '↩︎ Mở lại' : '✓ Đã xử lý'}
+                    </motion.button>
+                    <motion.button {...pressable} onClick={() => del(c.id)} style={{ ...btnGhost, color: '#c00', fontSize: 11 }}>Xoá</motion.button>
+                  </div>
+                </div>
+                <div style={{ margin: '2px 0', textDecoration: c.resolved ? 'line-through' : 'none' }}>{c.text}</div>
+                {c.image && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={c.image} alt="minh hoạ" style={{ width: '100%', maxHeight: 120, objectFit: 'contain', borderRadius: 6, border: '1px solid #eee', margin: '4px 0', background: '#fafafa' }} />
+                )}
+                <div style={{ fontSize: 10, color: '#aaa' }}>{c.route} · {c.elementHint}</div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
 
@@ -344,6 +388,12 @@ const pinStyle: React.CSSProperties = {
   fontWeight: 700,
   boxShadow: '0 2px 8px rgba(0,0,0,.3)',
   border: '2px solid #fff',
+};
+// Ghim của góp ý đã xử lý: xám mờ để phân biệt với ghim chưa xử lý (coral).
+const pinStyleResolved: React.CSSProperties = {
+  ...pinStyle,
+  background: '#9aa0a6',
+  opacity: 0.6,
 };
 const pillBtn: React.CSSProperties = {
   border: 'none',

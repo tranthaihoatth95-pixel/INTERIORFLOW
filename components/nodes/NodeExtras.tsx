@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Download, FileText, Film } from 'lucide-react';
+import { tweenBase, prefersReducedMotion } from '@/lib/motion';
 import { useFlowStore } from '@/lib/store';
 import ExportPptxButton from '@/components/ExportPptxButton';
 import type { InteriorNodeData, PortValue } from '@/lib/types';
@@ -13,15 +15,21 @@ function downloadDataUrl(url: string, filename: string) {
   a.click();
 }
 
-/** Ảnh output có lightbox khi click. */
+/** Ảnh output có lightbox khi click. Fade nhẹ khi ảnh load xong. */
 export function OutputImage({ src, className }: { src: string; className?: string }) {
   const setLightboxUrl = useFlowStore((s) => s.setLightboxUrl);
+  const [loaded, setLoaded] = useState(false);
+  const reduce = prefersReducedMotion();
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <motion.img
       src={src}
       alt="output"
       loading="lazy"
+      initial={false}
+      animate={{ opacity: reduce || loaded ? 1 : 0 }}
+      transition={tweenBase}
+      onLoad={() => setLoaded(true)}
       className={`nodrag cursor-zoom-in rounded-md object-cover ${className ?? ''}`}
       onClick={() => setLightboxUrl(src)}
     />

@@ -224,8 +224,23 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontDeck: st
   const align = el.align || 'left';
   ctx.textAlign = align === 'center' ? 'center' : align === 'right' ? 'right' : 'left';
   const anchorX = align === 'center' ? fx + fw / 2 : align === 'right' ? fx + fw : fx;
-  const lineH = sizePx * (el.lineHeight ?? 1.2);
-  const tracking = ((el.tracking ?? 0) / 100) * H;
+  let sizeDraw = sizePx;
+  let lineH = sizePx * (el.lineHeight ?? 1.2);
+  let tracking = ((el.tracking ?? 0) / 100) * H;
+
+  // Kicker = nhãn 1 dòng (tracking rộng): TỰ CO để không rớt xuống 2 dòng khi chữ dài.
+  if (el.role === 'kicker') {
+    let maxW = 0;
+    for (const p of decorateListText(el.text || '', effectiveListStyle(el)).split('\n'))
+      maxW = Math.max(maxW, measureTracked(ctx, p, tracking));
+    if (maxW > fw && fw > 0) {
+      const s = (fw * 0.98) / maxW;
+      sizeDraw = sizePx * s;
+      tracking *= s;
+      lineH *= s;
+      ctx.font = `${style}${weight} ${sizeDraw}px ${fontBody}`;
+    }
+  }
 
   // wrap theo từng dòng logic (\n) rồi wrap theo bề rộng.
   // Danh sách (bullet/số) → decorate tiền tố CHUNG với canvas UI (1 nguồn sự thật).
@@ -244,7 +259,7 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontDeck: st
       const test = line ? `${line} ${word}` : word;
       const wWidth = measureTracked(ctx, test, tracking);
       if (wWidth > fw && line) {
-        drawLineText(ctx, line, anchorX, y, tracking, align, el.underline, sizePx);
+        drawLineText(ctx, line, anchorX, y, tracking, align, el.underline, sizeDraw);
         line = word;
         y += lineH;
       } else {
@@ -252,7 +267,7 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontDeck: st
       }
     }
     if (line) {
-      drawLineText(ctx, line, anchorX, y, tracking, align, el.underline, sizePx);
+      drawLineText(ctx, line, anchorX, y, tracking, align, el.underline, sizeDraw);
       y += lineH;
     }
   }

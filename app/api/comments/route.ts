@@ -5,6 +5,7 @@
  * công cụ file — không cần DB. Dùng cho vòng review app + chặng Present.
  *   GET    → toàn bộ góp ý
  *   POST   → thêm 1 góp ý {text, x, y, route, stage, elementHint}
+ *   PATCH  → cập nhật 1 góp ý theo id {id, resolved} (đánh dấu đã xử lý / bỏ)
  *   DELETE → xoá 1 (?id=) hoặc tất cả (?all=1)
  */
 
@@ -25,6 +26,7 @@ interface Comment {
   stage?: string;
   elementHint?: string;
   image?: string; // đường dẫn ảnh minh hoạ đính kèm (comments-images/<id>.<ext>)
+  resolved?: boolean; // true = đã xử lý (thiếu field = chưa xử lý, tương thích comment cũ)
   ts: number;
 }
 
@@ -87,6 +89,18 @@ export async function POST(req: Request) {
   list.push(c);
   await writeAll(list);
   return NextResponse.json({ ok: true, comment: c, count: list.length });
+}
+
+export async function PATCH(req: Request) {
+  const body = await req.json().catch(() => ({}));
+  const id = String(body.id ?? '');
+  if (!id) return NextResponse.json({ error: 'Thiếu id' }, { status: 400 });
+  const list = await readAll();
+  const c = list.find((x) => x.id === id);
+  if (!c) return NextResponse.json({ error: 'Không thấy' }, { status: 404 });
+  if (typeof body.resolved === 'boolean') c.resolved = body.resolved;
+  await writeAll(list);
+  return NextResponse.json({ ok: true, comment: c });
 }
 
 export async function DELETE(req: Request) {

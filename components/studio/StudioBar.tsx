@@ -27,9 +27,11 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' }) {
   const chatOpen = useFlowStore((s) => s.chatOpen);
 
   // Route studio đứng riêng → tự áp theme lúc mở (page không gọi hydrate/applyTheme).
+  // Prefetch sẵn đường VỀ app chính — bấm Concept/Render chuyển gần như tức thì.
   useEffect(() => {
     applyTheme();
-  }, [applyTheme]);
+    router.prefetch('/');
+  }, [applyTheme, router]);
 
   const nextTheme: 'auto' | 'light' | 'dark' =
     pref === 'auto' ? 'light' : pref === 'light' ? 'dark' : 'auto';
