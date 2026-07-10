@@ -1099,7 +1099,7 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
           color: '#ffffff',
           italic: true,
           opacity: 0.85,
-          fontFamily: 'Optima, "Avenir Next", Georgia, serif',
+          fontFamily: 'Optima, "Avenir Next", "Helvetica Neue", sans-serif',
         }),
       );
       return { id: newId('sld'), background: c.light, elements: els, templateId: 'collage-watermark' };

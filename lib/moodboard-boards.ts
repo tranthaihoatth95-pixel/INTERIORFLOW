@@ -56,11 +56,23 @@ interface RGB {
 /* ───────────────────────── helpers ───────────────────────── */
 
 function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const img = new Image();
     if (!src.startsWith('data:')) img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('Không tải được 1 ảnh reference.'));
+    // 1 ảnh lỗi/CORS KHÔNG phá cả board → trả 1 ô xám ấm thay thế (giữ nguyên chỉ số/bố cục).
+    img.onerror = () => {
+      const c = document.createElement('canvas');
+      c.width = c.height = 8;
+      const g = c.getContext('2d');
+      if (g) {
+        g.fillStyle = '#8c8377';
+        g.fillRect(0, 0, 8, 8);
+      }
+      const fb = new Image();
+      fb.onload = () => resolve(fb);
+      fb.src = c.toDataURL();
+    };
     img.src = src;
   });
 }

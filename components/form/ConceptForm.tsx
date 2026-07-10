@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Download, Sparkles, Upload } from 'lucide-react';
 import { guProfileFromPicked, guToPrompt } from '@/lib/gu';
+import { extractPalette } from '@/lib/imaging';
 import { USAGES, type RefUsage } from '@/lib/refingest';
 import {
   renderMoodboard,
@@ -173,8 +174,21 @@ export function ConceptForm() {
     try {
       // 1) gu (palette · vật liệu · phong cách) TỪ ĐÚNG ảnh đã chọn (0 AI).
       const gu = guProfileFromPicked(pickedAssets);
-      setPalette(gu.palette);
-      setTags([...gu.styles, ...gu.materials].slice(0, 12));
+      // Palette: gu trích từ palette lưu sẵn; nếu ảnh chưa có palette (vd ảnh seed)
+      // → tự trích màu từ pixel. Dedupe hex để không trùng (tránh swatch/ key trùng).
+      let pal = [...new Set(gu.palette)];
+      if (pal.length < 4) {
+        for (const a of pickedAssets.slice(0, 3)) {
+          try {
+            pal = [...new Set([...pal, ...(await extractPalette(a.url))])];
+          } catch {
+            /* ảnh lỗi/CORS — bỏ qua */
+          }
+          if (pal.length >= 6) break;
+        }
+      }
+      setPalette(pal.slice(0, 6));
+      setTags([...new Set([...gu.styles, ...gu.materials])].slice(0, 12));
       setProgress(0.25);
 
       // 2) Dựng COLLAGE local từ TẤT CẢ ảnh đã chọn (không giới hạn số ảnh), theo
@@ -328,8 +342,8 @@ export function ConceptForm() {
           {guess && (
             <div className="mt-2 flex items-center gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--panel)] px-2.5 py-1.5">
               <div className="flex gap-1">
-                {guess.palette.slice(0, 6).map((c) => (
-                  <span key={c} className="h-4 w-4 rounded-[3px] border border-[var(--border)]" style={{ background: c }} />
+                {guess.palette.slice(0, 6).map((c, i) => (
+                  <span key={`${c}-${i}`} className="h-4 w-4 rounded-[3px] border border-[var(--border)]" style={{ background: c }} />
                 ))}
               </div>
               <p className="text-[11px] text-[var(--t3)]">{guess.descriptor}</p>
@@ -383,8 +397,8 @@ export function ConceptForm() {
             <div>
               <h3 className="mb-2 text-[14px] font-semibold text-[var(--t1)]">Bảng màu</h3>
               <div className="flex gap-1.5">
-                {palette.map((c) => (
-                  <div key={c} className="flex-1">
+                {palette.map((c, i) => (
+                  <div key={`${c}-${i}`} className="flex-1">
                     <div className="h-14 rounded-[10px] border border-[var(--border)]" style={{ background: c }} />
                     <p className="mt-1 text-center text-[10px] text-[var(--t4)]">{c}</p>
                   </div>
@@ -396,9 +410,9 @@ export function ConceptForm() {
             <div>
               <h3 className="mb-2 text-[14px] font-semibold text-[var(--t1)]">Vật liệu &amp; phong cách</h3>
               <div className="flex flex-wrap gap-1.5">
-                {tags.map((t) => (
+                {tags.map((t, i) => (
                   <span
-                    key={t}
+                    key={`${t}-${i}`}
                     className="rounded-full border border-[var(--border)] bg-[var(--field)] px-2.5 py-1 text-[12px] text-[var(--t2)]"
                   >
                     {t}
