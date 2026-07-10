@@ -39,6 +39,7 @@ import { DEFAULT_SPEC, applySpecToSlide, type LayoutSpec } from '@/lib/present-e
 import { buildGuProfile, type GuAsset, type GuProfile } from '@/lib/gu';
 import { exportDeckToPdf, exportDeckToPptxFromModel, exportDeckToPng } from '@/lib/present-editor/export';
 import { useEditor } from './useEditor';
+import { slidesFromContent } from '@/lib/present-editor/content-deck';
 import Toolbar from './Toolbar';
 import EditorCanvas from './EditorCanvas';
 import Inspector from './Inspector';
@@ -401,11 +402,13 @@ export default function PresentEditor({ initialDeck }: Props) {
   // nội dung vừa import vào rổ Reference (để kéo vào slide). Human-in-loop: chỉ điểm xuất phát.
   const onGenerated = useCallback(
     (r: import('./GenerateFlow').GenerateResult) => {
+      const pal = r.rules?.palette?.length ? r.rules.palette : ed.deck.palette;
       if (r.rules?.palette?.length) {
         ed.update((d) => {
           d.palette = r.rules!.palette;
         });
       }
+      // Ảnh nội dung → rổ Reference (để kéo tay thêm nếu muốn).
       if (r.contentImages.length) {
         const items: RefImage[] = r.contentImages.map((url, i) => ({
           id: newId('ref'),
@@ -416,6 +419,16 @@ export default function PresentEditor({ initialDeck }: Props) {
           mine: true,
         }));
         setLocalRefs((prev) => [...items, ...prev]);
+      }
+      // MỚI: có nội dung text → DÀN SLIDE tự động (cover + content), thay deck hiện tại.
+      if (r.bodyText.trim()) {
+        const built = slidesFromContent(r.bodyText, r.contentImages, pal, ed.deck.fonts);
+        if (built.length) {
+          ed.update((d) => {
+            d.slides = built;
+          });
+          ed.selectSlide(0);
+        }
       }
     },
     [ed],
