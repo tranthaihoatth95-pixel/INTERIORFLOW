@@ -20,3 +20,6 @@ public/InteriorFlow.apk
 test-input/
 comments-review.json
 public/comments-images/
+
+# macOS
+.DS_Store
