@@ -18,7 +18,7 @@ import { toggleShare } from '@/lib/workspace';
 import { TasksDropdown } from '@/components/TasksDropdown';
 import { MobileMenu } from '@/components/MobileMenu';
 import { LangToggle } from '@/components/LangToggle';
-import { pressable, pressableIcon, easeApple } from '@/lib/motion';
+import { pressable, pressableIcon, easeApple, fade } from '@/lib/motion';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -351,14 +351,38 @@ function PhaseSwitcher() {
   const setWorkspace = useFlowStore((s) => s.setWorkspace);
   const router = useRouter();
   const current: Phase = workspace ?? DEFAULT_PHASE;
+  // Lớp phủ fade khi rời sang /present-editor — mask cú "nhảy" route (khựng).
+  const [leaving, setLeaving] = useState(false);
+
+  // Prefetch sớm route studio ngay khi switcher mount → chuyển gần như tức thì, bớt khựng.
+  useEffect(() => {
+    router.prefetch('/present-editor');
+  }, [router]);
+
   return (
-    <StageSwitcher
-      active={current}
-      onPick={(p) => {
-        if (p === 'present') router.push('/present-editor');
-        else setWorkspace(p);
-      }}
-    />
+    <>
+      <StageSwitcher
+        active={current}
+        onPick={(p) => {
+          if (p === 'present') {
+            setLeaving(true); // bật overlay fade trước, rồi mới điều hướng
+            router.push('/present-editor');
+          } else setWorkspace(p);
+        }}
+      />
+      {/* Overlay che toàn màn khi rời trang: mắt thấy fade nhẹ thay vì giật route. */}
+      <AnimatePresence>
+        {leaving && (
+          <motion.div
+            variants={fade}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="fixed inset-0 z-[100] bg-[var(--bg)]"
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 

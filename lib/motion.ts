@@ -126,3 +126,29 @@ export const staggerItem: Variants = {
   hidden: { opacity: 0, y: 8 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.28, ease: easeApple } },
 };
+
+/* ---------- Chuyển CHẶNG / trang (expressive) ---------- */
+
+/** Spring đằm, có đà — dành cho chuyển chặng Concept↔Render↔Present, mask khựng route. */
+export const springStage: Transition = {
+  type: 'spring',
+  stiffness: 240,
+  damping: 28,
+  mass: 1,
+};
+
+/**
+ * Nội dung chặng đổi: trồi + phóng rất nhẹ. Dùng bọc empty-state/canvas khi đổi
+ * workspace, và bọc chuyển route sang /present-editor để không "nhảy" cứng.
+ */
+export const stageTransition: Variants = {
+  hidden: { opacity: 0, y: 10, scale: 0.985 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: springStage },
+  exit: { opacity: 0, y: -8, scale: 0.99, transition: { duration: 0.24, ease: easeApple } },
+};
+
+/** True nếu user bật Reduce Motion (SSR-safe). Bọc quanh animation nặng để tôn trọng. */
+export function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined' || !window.matchMedia) return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}

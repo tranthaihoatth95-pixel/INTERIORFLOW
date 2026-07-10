@@ -1,9 +1,19 @@
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
+import { Be_Vietnam_Pro } from 'next/font/google';
 import './globals.css';
 import './foldable.css';
 import { PWARegister } from '@/components/PWARegister';
 
+// Font hệ thống TTT Design System — Be Vietnam Pro (hỗ trợ dấu tiếng Việt đầy đủ).
+const beVietnamPro = Be_Vietnam_Pro({
+  subsets: ['latin', 'vietnamese'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+// Giữ Geist làm fallback biến-trục (không đặt làm mặc định nữa).
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
   variable: '--font-geist-sans',
@@ -47,7 +57,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi" className="dark">
-      <body className={`${geistSans.variable} font-sans antialiased`}>
+      <body className={`${beVietnamPro.variable} ${geistSans.variable} font-sans antialiased`}>
         {children}
         <PWARegister />
       </body>

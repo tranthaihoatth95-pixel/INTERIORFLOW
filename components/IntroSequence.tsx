@@ -6,6 +6,7 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 import { easeApple, pressable } from '@/lib/motion';
 import { useLang, type Lang } from '@/lib/i18n';
 import { LangToggle } from '@/components/LangToggle';
+import { TitleSequence } from '@/components/intro/TitleSequence';
 
 /**
  * IntroSequence — màn mở điện ảnh KỂ CÂU CHUYỆN LÕI của app, KẾT BẰNG Ô ĐĂNG NHẬP.
@@ -97,20 +98,33 @@ type Stage = 'sketch' | 'coloring' | 'photoreal' | 'deck';
 const HOLD = 4400; // ms mỗi cảnh — nhịp chậm, điện ảnh
 
 export function IntroSequence({ onDone }: { onDone: () => void }) {
+  // phase 'title' = màn INTRO điện ảnh (title-sequence ~6s) mở đầu;
+  // phase 'story' = phần kể chuyện + ô đăng nhập (giữ nguyên logic auth cũ).
+  const [phase, setPhase] = useState<'title' | 'story'>('title');
   const [i, setI] = useReducer((_: number, v: number) => v, 0);
   const reduce = useReducedMotion();
   const lang = useLang();
   const last = i === SCENES.length - 1; // cảnh đăng nhập
   const scene = SCENES[i];
 
-  // auto-advance qua các cảnh kể chuyện, DỪNG ở cảnh đăng nhập
+  // auto-advance qua các cảnh kể chuyện, DỪNG ở cảnh đăng nhập.
+  // Chỉ chạy khi đã qua màn intro (phase 'story') để timer không tiêu ngầm.
   useEffect(() => {
-    if (last) return;
+    if (phase !== 'story' || last) return;
     const t = setTimeout(() => setI(i + 1), HOLD);
     return () => clearTimeout(t);
-  }, [i, last]);
+  }, [i, last, phase]);
 
   const gotoLogin = () => setI(SCENES.length - 1);
+
+  // Màn INTRO điện ảnh trước — xong (hoặc bỏ qua) thì lộ phần kể chuyện + đăng nhập.
+  if (phase === 'title') {
+    return (
+      <AnimatePresence>
+        <TitleSequence key="title" onFinish={() => setPhase('story')} />
+      </AnimatePresence>
+    );
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden" style={{ background: 'var(--bg)' }}>

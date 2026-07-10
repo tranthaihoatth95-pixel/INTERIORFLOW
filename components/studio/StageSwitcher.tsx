@@ -5,8 +5,8 @@
  * Concept · Render · Present.
  *
  * Trước đây header có tới 3 cụm switcher chồng vai trò (2 cụm cùng ghi "Node"):
- * PhaseSwitcher + ViewToggle(Node/Window "soon") + uiMode(Node/Form). Nay gom về 1:
- *   - Concept/Render = xưởng làm việc (canvas node hoặc Form) ở route '/'.
+ * PhaseSwitcher + ViewToggle(Node/Window "soon") + uiMode(Node/Form — đã bỏ). Nay gom về 1:
+ *   - Concept/Render = xưởng làm việc (canvas node) ở route '/'.
  *   - Present = slide studio (/present-editor) — chính là "Window view" từng hứa.
  *   - Chỉnh ảnh (Photo) KHÔNG phải chặng — là công cụ con của Render (photoContext).
  *
@@ -14,9 +14,11 @@
  * điều hướng route). Cùng 1 giao diện ở mọi nơi → app liền một mạch.
  */
 
+import { motion } from 'framer-motion';
 import { Palette, Box, Presentation } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
 import { PHASES } from '@/lib/phases';
+import { springSheet, pressable } from '@/lib/motion';
 
 const ICON: Record<Phase, typeof Palette> = { concept: Palette, render: Box, present: Presentation };
 
@@ -46,12 +48,14 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
           const Icon = ICON[p.id];
           const on = p.id === active;
           return (
-            <button
+            <motion.button
               key={p.id}
               type="button"
+              {...pressable}
               onClick={() => onPick(p.id)}
               title={`${p.label} — ${p.tagline}`}
               style={{
+                position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
@@ -61,14 +65,30 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
                 fontSize: 12.5,
                 fontWeight: on ? 600 : 500,
                 color: on ? 'var(--t1)' : 'var(--t4)',
-                background: on ? 'var(--card)' : 'transparent',
-                boxShadow: on ? '0 1px 2px rgba(0,0,0,.08)' : 'none',
+                background: 'transparent',
                 cursor: on ? 'default' : 'pointer',
                 whiteSpace: 'nowrap',
               }}
             >
-              <Icon size={13} /> {p.label}
-            </button>
+              {/* pill "active" trượt mượt giữa 3 chặng (shared layout) */}
+              {on && (
+                <motion.span
+                  layoutId="stage-active-pill"
+                  transition={springSheet}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    borderRadius: 7,
+                    background: 'var(--card)',
+                    boxShadow: '0 1px 2px rgba(0,0,0,.08)',
+                    zIndex: 0,
+                  }}
+                />
+              )}
+              <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Icon size={13} /> {p.label}
+              </span>
+            </motion.button>
           );
         })}
       </div>

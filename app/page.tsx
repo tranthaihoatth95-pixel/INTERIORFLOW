@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { ReactFlowProvider } from '@xyflow/react';
 import { Loader2 } from 'lucide-react';
 import { IntroSequence } from '@/components/IntroSequence';
@@ -22,12 +23,16 @@ import PresentOverlay from '@/components/present/PresentOverlay';
 import { StageSelect } from '@/components/StageSelect';
 import { CommentLayer } from '@/components/CommentLayer';
 import { useFlowStore } from '@/lib/store';
+import { bootstrapWorkspace } from '@/lib/workspace';
+import { fade } from '@/lib/motion';
 
 /**
- * Ngưỡng bề rộng phân biệt màn NGOÀI (cover, hẹp) vs màn TRONG (unfolded).
- * Oppo Find N6: cover ~410px logic · inner ~884px. Chọn 600px làm ranh an toàn.
+ * Ngưỡng bề rộng phân biệt màn HẸP (cover foldable / điện thoại) vs màn ĐỦ RỘNG.
+ * Oppo Find N6: cover ~410px · inner ~884px. Đặt 480px: bám sát cover (410) để KHÔNG
+ * bắt nhầm cửa sổ desktop hẹp / tablet dọc (≥480 vẫn vào full app). Có nút "Mở toàn bộ
+ * app" nên kể cả màn hẹp cũng không kẹt.
  */
-const COVER_MAX_WIDTH = 600;
+const COVER_MAX_WIDTH = 480;
 
 /**
  * Hook đọc bề rộng viewport — SSR-safe (khởi tạo undefined, đo trong effect để tránh
@@ -53,6 +58,9 @@ export default function Home() {
   // Persist để quay về '/' (vd thoát khỏi /present-editor hay /photo-editor) vào THẲNG
   // canvas, không rớt lại StageSelect. Khởi tạo false (hydration-safe) rồi khôi phục ở effect.
   const [stageDone, setStageDone] = useState(false);
+  // Cover (màn ngoài Oppo) mặc định chỉ Dashboard; nút "Mở toàn bộ app" ép vào full app
+  // để KHÔNG bị kẹt khi viewport hẹp (điện thoại thường / cửa sổ nhỏ).
+  const [forceFullApp, setForceFullApp] = useState(false);
   const panel = useFlowStore((s) => s.panel);
   const chatOpen = useFlowStore((s) => s.chatOpen);
   const setPanel = useFlowStore((s) => s.setPanel);
@@ -79,7 +87,13 @@ export default function Home() {
         store.setUser(body.user);
         // Đã đăng nhập + trước đó đã qua StageSelect → bỏ qua, vào thẳng canvas.
         try {
-          if (localStorage.getItem('interiorflow.stageDone') === '1') setStageDone(true);
+          if (localStorage.getItem('interiorflow.stageDone') === '1') {
+            setStageDone(true);
+            // StageSelect bị bỏ qua nên bootstrapWorkspace() không chạy → currentFlowId
+            // sẽ null → autosave rơi xuống localStorage thay vì DB, và reload sau khôi phục
+            // flow cũ. Bootstrap ở đây để nạp flow server mới nhất + đặt currentFlowId.
+            void bootstrapWorkspace();
+          }
         } catch {
           /* localStorage chặn — bỏ qua */
         }
@@ -131,20 +145,32 @@ export default function Home() {
     );
   }
 
-  // MÀN HÌNH NGOÀI (cover, hẹp): chỉ hiện Dashboard read-only — KHÔNG canvas/studio/
-  // toolbar thao tác. Khi mở gập máy (width tăng ≥600) hook tự cập nhật → về full app.
-  if (isCover) {
+  // MÀN HÌNH HẸP (cover foldable / điện thoại, <480px): chỉ Dashboard read-only — KHÔNG
+  // canvas/studio/toolbar. Mở rộng (≥480) hook tự cập nhật, hoặc bấm "Mở toàn bộ app"
+  // (forceFullApp) để vào ngay mà không cần đổi màn.
+  if (isCover && !forceFullApp) {
     return (
-      <div className="h-[100dvh] overflow-hidden bg-[var(--bg)]">
-        <Dashboard coverMode />
-      </div>
+      <motion.div
+        variants={fade}
+        initial="hidden"
+        animate="visible"
+        className="h-[100dvh] overflow-hidden bg-[var(--bg)]"
+      >
+        <Dashboard coverMode onEnterFullApp={() => setForceFullApp(true)} />
+      </motion.div>
     );
   }
 
   return (
     <ReactFlowProvider>
-      {/* h-[100dvh]: chiều cao viewport động — trên mobile không bị thanh trình duyệt che */}
-      <div className="flex h-[100dvh] flex-col overflow-hidden bg-[var(--bg)]">
+      {/* h-[100dvh]: chiều cao viewport động — trên mobile không bị thanh trình duyệt che.
+          motion fade-in nhẹ khi shell mount (StageSelect/cover → canvas) cho chuyển mượt. */}
+      <motion.div
+        variants={fade}
+        initial="hidden"
+        animate="visible"
+        className="flex h-[100dvh] flex-col overflow-hidden bg-[var(--bg)]"
+      >
         <Header />
         {/* relative: neo các panel overlay (mobile) vào vùng dưới header */}
         <div className="relative flex min-h-0 flex-1">
@@ -179,7 +205,7 @@ export default function Home() {
         {presentModeOpen && <PresentOverlay onClose={() => setPresentModeOpen(false)} />}
         <CommandPalette />
         <CommentLayer />
-      </div>
+      </motion.div>
     </ReactFlowProvider>
   );
 }

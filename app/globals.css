@@ -103,9 +103,9 @@ body {
 body {
   color: var(--t1);
   background: var(--bg);
-  /* Font stack Apple — SF Pro trên máy Apple, fallback hệ + Geist đã nhúng */
-  font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', system-ui,
-    var(--font-geist-sans), 'Segoe UI', Roboto, sans-serif;
+  /* Font hệ thống TTT — Be Vietnam Pro (dấu TV đầy đủ), fallback hệ + Geist */
+  font-family: var(--font-sans), 'Be Vietnam Pro', -apple-system, 'SF Pro Text',
+    system-ui, var(--font-geist-sans), 'Segoe UI', Roboto, sans-serif;
   /* Chỉnh chữ tinh kiểu Apple */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

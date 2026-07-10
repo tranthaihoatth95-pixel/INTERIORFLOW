@@ -17,11 +17,12 @@ const config: Config = {
           strong: "var(--accent-strong)",
         },
       },
-      // Font stack Apple — SF Pro, fallback hệ + Geist đã nhúng
+      // Font hệ thống TTT — Be Vietnam Pro trước tiên, fallback hệ + Geist
       fontFamily: {
         sans: [
+          "var(--font-sans)",
+          '"Be Vietnam Pro"',
           "-apple-system",
-          '"SF Pro Display"',
           '"SF Pro Text"',
           "system-ui",
           "var(--font-geist-sans)",

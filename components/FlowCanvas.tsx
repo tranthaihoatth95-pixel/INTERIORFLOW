@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ReactFlow,
   Background,
@@ -12,10 +13,13 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useFlowStore, type FlowNode } from '@/lib/store';
+import { stageTransition } from '@/lib/motion';
+import { DEFAULT_PHASE } from '@/lib/phases';
 import { getDefinition } from '@/lib/nodes/registry';
 import { InteriorNode } from '@/components/nodes/InteriorNode';
 import { NoteNode } from '@/components/nodes/NoteNode';
 import { BottomToolbar } from '@/components/BottomToolbar';
+import DemoLauncher from '@/components/DemoLauncher';
 import { DND_MIME } from '@/components/NodeLibraryPanel';
 import { ASSET_MIME } from '@/components/LibraryPanel';
 import { CATEGORY_META } from '@/lib/types';
@@ -28,7 +32,6 @@ const nodeTypes = { interior: InteriorNode, note: NoteNode };
 export function FlowCanvas() {
   const nodes = useFlowStore((s) => s.nodes);
   const edges = useFlowStore((s) => s.edges);
-  const loadDemoFlow = useFlowStore((s) => s.loadDemoFlow);
   const onNodesChange = useFlowStore((s) => s.onNodesChange);
   const onEdgesChange = useFlowStore((s) => s.onEdgesChange);
   const onConnect = useFlowStore((s) => s.onConnect);
@@ -39,6 +42,7 @@ export function FlowCanvas() {
   const addNode = useFlowStore((s) => s.addNode);
   const addNote = useFlowStore((s) => s.addNote);
   const snapshot = useFlowStore((s) => s.snapshot);
+  const workspace = useFlowStore((s) => s.workspace);
 
   const { screenToFlowPosition } = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -263,21 +267,26 @@ export function FlowCanvas() {
         </div>
       )}
 
-      {/* empty state — SẠCH, không nội dung demo. Demo mẫu tách sang /demo (làm sau cùng). Xem docs/CONTENT-RULES.md */}
+      {/* empty state — mở đầu bằng demo THỰC TẾ LỌC theo chặng. Đổi chặng → cụm demo
+          fade/trồi mượt (mask cảm giác đổi nội dung), key theo workspace. */}
       {nodes.length === 0 && (
         <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center">
-          <div className="text-center">
+          <div className="max-w-[520px] text-center">
             <p className="text-sm text-[var(--t4)]">Canvas trống</p>
             <p className="mt-1 text-xs text-[var(--t5)]">
-              Mở <span className="text-[var(--t3)]">Node Library</span> ở rail trái và kéo node vào đây
+              Mở <span className="text-[var(--t3)]">Node Library</span> ở rail trái để kéo node — hoặc bắt đầu bằng 1 demo thực tế:
             </p>
-            <button
-              type="button"
-              onClick={() => loadDemoFlow('sketch')}
-              className="pointer-events-auto mt-3 rounded-[10px] border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
-            >
-              ▶ Nạp flow demo (Sketch · Clay · Moodboard)
-            </button>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={workspace ?? DEFAULT_PHASE}
+                variants={stageTransition}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <DemoLauncher />
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       )}

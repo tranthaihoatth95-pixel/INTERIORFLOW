@@ -90,7 +90,14 @@ function StatCard({ icon: Icon, label, value, sub }: { icon: typeof FolderKanban
  * - coverMode: dùng cho MÀN HÌNH NGOÀI của foldable (cover, hẹp) → chỉ XEM (read-only):
  *   render inline (không overlay/không cần store), ẩn nút thao tác, hàng flow không bấm mở.
  */
-export function Dashboard({ coverMode = false }: { coverMode?: boolean }) {
+export function Dashboard({
+  coverMode = false,
+  onEnterFullApp,
+}: {
+  coverMode?: boolean;
+  /** Cover-mode: nút ép vào full app (không bị kẹt màn ngoài khi viewport hẹp). */
+  onEnterFullApp?: () => void;
+}) {
   const open = useFlowStore((s) => s.dashboardOpen);
   const setOpen = useFlowStore((s) => s.setDashboardOpen);
   const [data, setData] = useState<DashboardData | null>(null);
@@ -177,8 +184,17 @@ export function Dashboard({ coverMode = false }: { coverMode?: boolean }) {
 
       {/* Gợi ý mở màn trong — dải mảnh dưới thanh trên (chỉ cover). */}
       {coverMode && (
-        <div className="shrink-0 border-b border-[var(--border)] bg-[var(--accent-soft)] px-4 py-2 text-center text-[12px] text-[var(--accent)]">
-          Đang xem trên màn hình ngoài. Mở gập máy để thao tác đầy đủ.
+        <div className="flex shrink-0 flex-wrap items-center justify-center gap-x-3 gap-y-1.5 border-b border-[var(--border)] bg-[var(--accent-soft)] px-4 py-2 text-[12px] text-[var(--accent)]">
+          <span>Màn hình hẹp — bản xem nhanh (chỉ đọc). Mở toàn bộ app hoặc dùng màn rộng hơn để thao tác.</span>
+          {onEnterFullApp && (
+            <button
+              type="button"
+              onClick={onEnterFullApp}
+              className="rounded-full border border-[var(--accent)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white"
+            >
+              Mở toàn bộ app
+            </button>
+          )}
         </div>
       )}
 
