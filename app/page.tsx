@@ -20,7 +20,7 @@ import { AnnotateModal } from '@/components/AnnotateModal';
 import { Lightbox } from '@/components/Lightbox';
 import { Dashboard } from '@/components/Dashboard';
 import PresentOverlay from '@/components/present/PresentOverlay';
-import { StageSelect } from '@/components/StageSelect';
+import { ProjectSelect } from '@/components/ProjectSelect';
 import { CommentLayer } from '@/components/CommentLayer';
 import { useFlowStore } from '@/lib/store';
 import { bootstrapWorkspace } from '@/lib/workspace';
@@ -53,10 +53,10 @@ export default function Home() {
   const user = useFlowStore((s) => s.user);
   // Màn ngoài (cover) hẹp → chỉ cho XEM Dashboard; mọi thao tác ở màn trong.
   const isCover = useIsCoverScreen();
-  // Sau khi auth thành công → hiện màn CHỌN 3 CHẶNG (StageSelect) trước canvas.
-  // stageDone bật khi người dùng đã chọn chặng & vào canvas.
+  // Sau khi auth thành công → hiện màn CHỌN DỰ ÁN (ProjectSelect) trước canvas.
+  // stageDone bật khi người dùng đã chọn dự án & vào canvas.
   // Persist để quay về '/' (vd thoát khỏi /present-editor hay /photo-editor) vào THẲNG
-  // canvas, không rớt lại StageSelect. Khởi tạo false (hydration-safe) rồi khôi phục ở effect.
+  // canvas, không rớt lại ProjectSelect. Khởi tạo false (hydration-safe) rồi khôi phục ở effect.
   const [stageDone, setStageDone] = useState(false);
   // Cover (màn ngoài Oppo) mặc định chỉ Dashboard; nút "Mở toàn bộ app" ép vào full app
   // để KHÔNG bị kẹt khi viewport hẹp (điện thoại thường / cửa sổ nhỏ).
@@ -71,7 +71,7 @@ export default function Home() {
   const overlayOpen = panel !== null || chatOpen;
 
   // theme + flow local trước, rồi check session.
-  // KHÔNG bootstrap workspace ở đây — để màn StageSelect làm sau khi chọn chặng.
+  // KHÔNG bootstrap workspace ở đây — ProjectSelect tự openFlow khi user chọn dự án.
   useEffect(() => {
     const store = useFlowStore.getState();
     store.hydrate();
@@ -85,11 +85,11 @@ export default function Home() {
         }
         const body = await r.json();
         store.setUser(body.user);
-        // Đã đăng nhập + trước đó đã qua StageSelect → bỏ qua, vào thẳng canvas.
+        // Đã đăng nhập + trước đó đã qua ProjectSelect → bỏ qua, vào thẳng canvas.
         try {
           if (localStorage.getItem('interiorflow.stageDone') === '1') {
             setStageDone(true);
-            // StageSelect bị bỏ qua nên bootstrapWorkspace() không chạy → currentFlowId
+            // ProjectSelect bị bỏ qua nên openFlow() không chạy → currentFlowId
             // sẽ null → autosave rơi xuống localStorage thay vì DB, và reload sau khôi phục
             // flow cũ. Bootstrap ở đây để nạp flow server mới nhất + đặt currentFlowId.
             void bootstrapWorkspace();
@@ -128,10 +128,11 @@ export default function Home() {
     );
   }
 
-  // Đã đăng nhập nhưng chưa chọn chặng → MÀN CHỜ CHỌN 3 GIAI ĐOẠN.
+  // Đã đăng nhập nhưng chưa chọn dự án → MÀN CHỌN DỰ ÁN (gallery 3D visionOS).
+  // ProjectSelect tự openFlow/createFlow trước khi gọi onEnter → không cần bootstrap.
   if (!stageDone) {
     return (
-      <StageSelect
+      <ProjectSelect
         onEnter={() => {
           setStageDone(true);
           // Ghi nhớ để lần quay về '/' vào thẳng canvas (thoát các studio route).
