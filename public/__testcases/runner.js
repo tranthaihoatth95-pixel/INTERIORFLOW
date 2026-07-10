@@ -65,7 +65,13 @@ function assertCase(c, { captured, jobCalled, err, out }) {
     if (!(k in inp)) fails.push(`thiếu input key "${k}"`);
   }
   for (const [k, v] of Object.entries(E.inputEquals || {})) {
-    if (inp[k] !== v) fails.push(`input.${k}=${JSON.stringify(inp[k])} ≠ ${JSON.stringify(v)}`);
+    // client absolutize URL tương đối trước khi submit (lib/ai/client.ts) —
+    // spec ghi '/demo/…' thì chấp nhận cả bản đã absolutize origin + '/demo/…'.
+    const matchesAbsolutized =
+      typeof v === 'string' && v.startsWith('/') && inp[k] === new URL(v, window.location.origin).href;
+    if (inp[k] !== v && !matchesAbsolutized) {
+      fails.push(`input.${k}=${JSON.stringify(inp[k])} ≠ ${JSON.stringify(v)}`);
+    }
   }
   if (E.negativeNonEmpty && !String(inp.negative_prompt ?? '').trim()) fails.push('negative_prompt RỖNG');
 
