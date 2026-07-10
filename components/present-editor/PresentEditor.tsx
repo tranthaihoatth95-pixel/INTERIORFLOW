@@ -420,14 +420,21 @@ export default function PresentEditor({ initialDeck }: Props) {
         }));
         setLocalRefs((prev) => [...items, ...prev]);
       }
-      // MỚI: có nội dung text → DÀN SLIDE tự động (cover + content), thay deck hiện tại.
+      // MỚI: có nội dung text → DÀN SLIDE tự động (cover + quote + content).
+      // KHÔNG âm thầm xoá việc user đang dàn: nếu deck đã có slide → HỎI Thay / Nối cuối.
       if (r.bodyText.trim()) {
         const built = slidesFromContent(r.bodyText, r.contentImages, pal, ed.deck.fonts);
         if (built.length) {
+          const startIdx = ed.deck.slides.length;
+          const replace =
+            startIdx === 0 ||
+            window.confirm(
+              `Dàn ${built.length} slide từ nội dung.\n\nOK = THAY toàn bộ slide hiện có.\nHuỷ = NỐI vào cuối (giữ slide cũ).`,
+            );
           ed.update((d) => {
-            d.slides = built;
+            d.slides = replace ? built : [...d.slides, ...built];
           });
-          ed.selectSlide(0);
+          ed.selectSlide(replace ? 0 : startIdx);
         }
       }
     },
