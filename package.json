@@ -33,6 +33,7 @@
     "prisma": "^6.19.3",
     "react": "^18",
     "react-dom": "^18",
+    "sharp": "^0.35.3",
     "tailwind-merge": "^3.6.0",
     "unpdf": "^1.6.2",
     "zustand": "^5.0.14"

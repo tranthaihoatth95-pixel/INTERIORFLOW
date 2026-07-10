@@ -1,17 +1,43 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { DEMO_SEEDS, applyDemoSeed } from '@/lib/demo-seeds';
+import { useFlowStore } from '@/lib/store';
+import { DEFAULT_PHASE } from '@/lib/phases';
+import { staggerList, staggerItem, pressable } from '@/lib/motion';
 
 /**
- * Launcher 3 flow mẫu one-click cho empty state.
+ * Launcher các flow mẫu one-click cho empty state — LỌC theo chặng đang mở.
+ * Concept → 1 demo (concept) · Render → 2 demo (sketch, clay) · Present chạy ở route
+ * riêng (/present-editor) nên không hiện trên canvas.
  * Bấm 1 nút → dựng sẵn node + edge + params đã tune lên canvas, chỉ cần Run.
  */
 export default function DemoLauncher() {
+  const workspace = useFlowStore((s) => s.workspace);
+  const phase = workspace ?? DEFAULT_PHASE;
+  const demos = DEMO_SEEDS.filter((d) => d.phase === phase);
+
+  // Chặng không có demo trên canvas (vd Present → studio riêng) → gợi ý nhẹ thay vì trống.
+  if (demos.length === 0) {
+    return (
+      <p className="pointer-events-none mt-4 text-[11px] leading-snug text-[var(--t5)]">
+        Chặng này chưa có demo dựng sẵn — kéo node từ Node Library để bắt đầu.
+      </p>
+    );
+  }
+
   return (
-    <div className="pointer-events-auto mt-4 flex flex-wrap justify-center gap-2">
-      {DEMO_SEEDS.map((demo) => (
-        <button
+    <motion.div
+      variants={staggerList}
+      initial="hidden"
+      animate="visible"
+      className="pointer-events-auto mt-4 flex flex-wrap justify-center gap-2"
+    >
+      {demos.map((demo) => (
+        <motion.button
           key={demo.id}
+          variants={staggerItem}
+          {...pressable}
           type="button"
           data-testid={`demo-${demo.id}`}
           title={demo.desc}
@@ -23,8 +49,8 @@ export default function DemoLauncher() {
             <span className="block text-xs font-medium text-[var(--t2)]">{demo.label}</span>
             <span className="mt-0.5 block text-[10px] leading-snug text-[var(--t4)]">{demo.desc}</span>
           </span>
-        </button>
+        </motion.button>
       ))}
-    </div>
+    </motion.div>
   );
 }
