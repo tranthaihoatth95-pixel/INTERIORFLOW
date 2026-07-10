@@ -783,23 +783,31 @@ function renderEnso(
   ctx.font = `italic 300 31px ${SERIF}`;
   ctx.fillText(opts.sub || 'Vòng tuần hoàn vô cực', cx, cy + 96);
 
-  // nhãn yếu tố (góc ngoài mỗi ảnh)
+  // nhãn yếu tố — đặt cạnh CHÍNH ảnh của nó (theo y của ảnh), tránh chồng đè khi ≥5 ảnh.
   ctx.textBaseline = 'middle';
-  placements.forEach((p, i) => {
-    const midx = p.xf + p.wf / 2;
-    const midy = p.yf + p.hf / 2;
-    const left = midx < 0.5;
-    const top = midy < 0.5;
-    const x = left ? MARGIN : W - MARGIN;
-    const y = (top ? 0.1 : 0.9) * H;
-    ctx.textAlign = left ? 'left' : 'right';
-    ctx.fillStyle = LIGHT;
-    ctx.font = `700 24px ${SANS}`;
-    ctx.fillText(labels[i] || `Yếu tố ${i + 1}`, x, y);
-    ctx.fillStyle = MUTE2;
-    ctx.font = `400 15px ${SANS}`;
-    ctx.fillText('yếu tố hình thành', x, y + 26);
-  });
+  // xếp nhãn theo mép trái/phải; trong mỗi bên, giãn theo y để không đè nhau.
+  const sides: { i: number; left: boolean; y: number }[] = placements.map((p, i) => ({
+    i,
+    left: p.xf + p.wf / 2 < 0.5,
+    y: clampF(p.yf + p.hf / 2, 0.08, 0.92) * H,
+  }));
+  for (const side of [true, false]) {
+    const rows = sides.filter((s) => s.left === side).sort((a, b) => a.y - b.y);
+    const minGap = 62; // khoảng cách tối thiểu giữa 2 nhãn cùng bên
+    for (let k = 1; k < rows.length; k++) {
+      if (rows[k].y - rows[k - 1].y < minGap) rows[k].y = rows[k - 1].y + minGap;
+    }
+    for (const r of rows) {
+      const x = side ? MARGIN : W - MARGIN;
+      ctx.textAlign = side ? 'left' : 'right';
+      ctx.fillStyle = LIGHT;
+      ctx.font = `700 23px ${SANS}`;
+      ctx.fillText(labels[r.i] || `Yếu tố ${r.i + 1}`, x, r.y);
+      ctx.fillStyle = MUTE2;
+      ctx.font = `400 14px ${SANS}`;
+      ctx.fillText('yếu tố hình thành', x, r.y + 24);
+    }
+  }
 
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
