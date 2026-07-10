@@ -354,30 +354,32 @@ const ENSO_SLOTS: Slot[] = [
   [0.6, 0.22, 0.4, 0.56],
 ];
 
-function materialSlots(n: number): Slot[] {
-  const cols = n <= 4 ? 2 : n <= 9 ? 3 : 4;
-  const rows = Math.ceil(n / cols);
-  const clusterW = 0.5;
-  const clusterH = 0.62;
-  const x0 = 0.25;
-  const y0 = 0.16;
-  const gap = 0.008;
-  const cw = clusterW / cols;
-  const ch = clusterH / rows;
-  const out: Slot[] = [];
-  for (let i = 0; i < n; i++) {
-    const c = i % cols;
-    const r = Math.floor(i / cols);
-    out.push([x0 + c * cw, y0 + r * ch + (c % 2) * 0.01, cw - gap, ch - gap]);
-  }
-  return out;
-}
+// Vật liệu: swatch CHỒNG LỚP hữu cơ (kiểu YANG) — cụm bên phải, chừa trái cho legend
+// đánh số + dưới cho tiêu đề. Chồng nhau tạo chiều sâu như mẫu vật liệu xếp trên bàn.
+const MATERIAL_SLOTS: Slot[] = [
+  [0.52, 0.06, 0.19, 0.46],
+  [0.44, 0.44, 0.28, 0.3],
+  [0.36, 0.6, 0.15, 0.21],
+  [0.29, 0.4, 0.1, 0.2],
+  [0.38, 0.5, 0.17, 0.33],
+  [0.32, 0.13, 0.17, 0.3],
+  [0.4, 0.24, 0.13, 0.27],
+  [0.62, 0.46, 0.11, 0.18],
+  [0.66, 0.31, 0.17, 0.26],
+  [0.51, 0.53, 0.15, 0.21],
+];
 
 /** Bố cục tự động theo dạng → N placement (fraction). Index 0 = ảnh chủ đạo (hero). */
 export function autoLayout(variant: BoardVariant, n: number): Placement[] {
   if (n <= 0) return [];
-  if (variant === 'material') return materialSlots(n).map(([xf, yf, wf, hf]) => ({ xf, yf, wf, hf }));
-  const slots = variant === 'space' ? SPACE_SLOTS : variant === 'enso' ? ENSO_SLOTS : STORY_SLOTS;
+  const slots =
+    variant === 'space'
+      ? SPACE_SLOTS
+      : variant === 'enso'
+        ? ENSO_SLOTS
+        : variant === 'material'
+          ? MATERIAL_SLOTS
+          : STORY_SLOTS;
   const out: Placement[] = [];
   for (let i = 0; i < n; i++) {
     let [x, y, w, h] = slots[i % slots.length];
@@ -393,10 +395,11 @@ export function autoLayout(variant: BoardVariant, n: number): Placement[] {
   return out;
 }
 
-/* ───────────────────────── DẠNG 1: VẬT LIỆU ───────────────────────── */
+/* ───────────────────────── DẠNG 1: VẬT LIỆU (kiểu YANG) ───────────────────────── */
 /**
- * Swatch vật liệu (viền gọn, crisp) theo placements + nhãn chú thích 2 bên có leader-line.
- * Nhãn = label ảnh, toả trái/phải theo tâm ngang của swatch.
+ * Bảng vật liệu chuyên nghiệp: swatch CHỒNG LỚP hữu cơ (như mẫu xếp trên bàn) + badge
+ * ĐÁNH SỐ trên từng swatch + LEGEND đánh số bên trái liệt kê tên vật liệu + tiêu đề
+ * song ngữ dưới. Nền off-white sạch. (theo reference YANG "Public Area Material Selection")
  */
 function renderMaterial(
   ctx: CanvasRenderingContext2D,
@@ -406,76 +409,74 @@ function renderMaterial(
   palette: RGB[],
   opts: BoardOpts,
 ) {
+  void palette; // dạng vật liệu KHÔNG hiện dải palette (giữ sạch như reference)
   drawHeader(ctx, opts.eyebrow || 'BẢNG VẬT LIỆU', opts.mark || 'INTERIORFLOW', INK, MUTE);
-  if (opts.title) {
-    ctx.fillStyle = INK;
-    ctx.font = `italic 300 40px ${SERIF}`;
-    drawTracked(ctx, opts.title, MARGIN, 150, 1);
-  }
 
-  interface Sw {
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-    label: string;
-    side: 'l' | 'r';
-    cy: number;
-  }
-  const sws: Sw[] = placements.map((p, i) => {
+  const n = placements.length;
+  const num = (x: number, y: number, r: number, s: string, fill: string, fg: string) => {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.fillStyle = fg;
+    ctx.font = `600 ${Math.round(r * 1.05)}px ${SANS}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(s, x, y + 1);
+  };
+
+  // swatch chồng lớp + shadow khối + viền mảnh + badge số (top-left)
+  placements.forEach((p, i) => {
     const x = p.xf * W;
     const y = p.yf * H;
     const w = p.wf * W;
     const h = p.hf * H;
-    const cx = x + w / 2;
-    return { x, y, w, h, label: labels[i] || `Vật liệu ${i + 1}`, side: cx < W / 2 ? 'l' : 'r', cy: y + h / 2 };
-  });
-
-  // vẽ swatch crisp + shadow
-  sws.forEach((s, i) => {
     ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.16)';
-    ctx.shadowBlur = 18;
-    ctx.shadowOffsetY = 8;
-    roundRect(ctx, s.x, s.y, s.w, s.h, 6);
+    ctx.shadowColor = 'rgba(0,0,0,0.24)';
+    ctx.shadowBlur = 30;
+    ctx.shadowOffsetY = 16;
     ctx.fillStyle = '#fff';
+    roundRect(ctx, x, y, w, h, 4);
     ctx.fill();
     ctx.restore();
     ctx.save();
-    roundRect(ctx, s.x, s.y, s.w, s.h, 6);
+    roundRect(ctx, x, y, w, h, 4);
     ctx.clip();
-    coverDraw(ctx, imgs[i], s.x, s.y, s.w, s.h);
+    coverDraw(ctx, imgs[i], x, y, w, h);
     ctx.restore();
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, x, y, w, h, 4);
+    ctx.stroke();
+    num(x + 28, y + 28, 17, String(i + 1), 'rgba(64,58,52,0.85)', '#fff');
   });
 
-  // nhãn + leader-line
-  ctx.font = `600 17px ${SANS}`;
-  ctx.textBaseline = 'middle';
-  for (const s of sws) {
-    const isL = s.side === 'l';
-    const anchorX = isL ? s.x : s.x + s.w;
-    const labelX = isL ? MARGIN : W - MARGIN;
-    ctx.strokeStyle = 'rgba(43,38,34,0.5)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(anchorX, s.cy);
-    ctx.lineTo(labelX, s.cy);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(anchorX, s.cy, 3, 0, Math.PI * 2);
+  // LEGEND trái: số + tên vật liệu (liệt kê dọc)
+  const legX = MARGIN;
+  const legTop = Math.round(H * 0.17);
+  const legBottom = Math.round(H * 0.82);
+  const step = Math.min(86, (legBottom - legTop) / Math.max(1, n));
+  for (let i = 0; i < n; i++) {
+    const y = legTop + step * i + step / 2;
+    num(legX + 16, y, 15, String(i + 1), 'rgba(64,58,52,0.9)', '#fff');
     ctx.fillStyle = INK;
-    ctx.fill();
-    ctx.fillStyle = INK;
-    ctx.textAlign = isL ? 'left' : 'right';
-    const lines = wrapLines(ctx, s.label, Math.abs(anchorX - labelX) - 14);
-    const lh = 22;
-    const startY = s.cy - ((Math.min(2, lines.length) - 1) * lh) / 2;
-    lines.slice(0, 2).forEach((ln, k) => ctx.fillText(ln, labelX, startY + k * lh));
+    ctx.font = `400 22px ${SANS}`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(labels[i] || `Vật liệu ${i + 1}`, legX + 46, y);
   }
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
 
-  drawPalette(ctx, palette, H - 92);
+  // tiêu đề song ngữ dưới-giữa
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = MUTE;
+  ctx.font = `300 36px ${SERIF}`;
+  ctx.fillText(opts.title || 'BẢNG VẬT LIỆU', W / 2, H - 86);
+  ctx.fillStyle = MUTE;
+  ctx.font = `400 18px ${SANS}`;
+  ctx.textAlign = 'center';
+  ctx.fillText((opts.sub || 'MATERIAL SELECTION INTENTION').toUpperCase(), W / 2, H - 52);
+  ctx.textAlign = 'left';
 }
 
 /* ───────────────────────── DẠNG 2: KHÔNG GIAN ───────────────────────── */
