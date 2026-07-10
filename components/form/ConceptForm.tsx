@@ -11,7 +11,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Download, Sparkles, Upload } from 'lucide-react';
 import { guProfileFromPicked, guToPrompt } from '@/lib/gu';
-import { extractPalette } from '@/lib/imaging';
 import { USAGES, type RefUsage } from '@/lib/refingest';
 import {
   renderMoodboard,
@@ -173,21 +172,9 @@ export function ConceptForm() {
     setProgress(0.05);
     try {
       // 1) gu (palette · vật liệu · phong cách) TỪ ĐÚNG ảnh đã chọn (0 AI).
+      //    DEDUPE hex/tag để không trùng React key (khối "Bảng màu" tự ẩn khi rỗng).
       const gu = guProfileFromPicked(pickedAssets);
-      // Palette: gu trích từ palette lưu sẵn; nếu ảnh chưa có palette (vd ảnh seed)
-      // → tự trích màu từ pixel. Dedupe hex để không trùng (tránh swatch/ key trùng).
-      let pal = [...new Set(gu.palette)];
-      if (pal.length < 4) {
-        for (const a of pickedAssets.slice(0, 3)) {
-          try {
-            pal = [...new Set([...pal, ...(await extractPalette(a.url))])];
-          } catch {
-            /* ảnh lỗi/CORS — bỏ qua */
-          }
-          if (pal.length >= 6) break;
-        }
-      }
-      setPalette(pal.slice(0, 6));
+      setPalette([...new Set(gu.palette)].slice(0, 6));
       setTags([...new Set([...gu.styles, ...gu.materials])].slice(0, 12));
       setProgress(0.25);
 
