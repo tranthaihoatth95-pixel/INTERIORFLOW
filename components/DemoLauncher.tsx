@@ -14,7 +14,9 @@ import { staggerList, staggerItem, pressable } from '@/lib/motion';
  */
 export default function DemoLauncher() {
   const workspace = useFlowStore((s) => s.workspace);
-  const phase = workspace ?? DEFAULT_PHASE;
+  // Legacy: workspace 'concept' (localStorage cũ) giờ là "Layout CAD" ở /cad-editor,
+  // không còn demo trên canvas → coi như 'render' để vẫn hiện demo hợp lý.
+  const phase = (workspace === 'concept' ? 'render' : workspace) ?? DEFAULT_PHASE;
   const demos = DEMO_SEEDS.filter((d) => d.phase === phase);
 
   // Chặng không có demo trên canvas (vd Present → studio riêng) → gợi ý nhẹ thay vì trống.

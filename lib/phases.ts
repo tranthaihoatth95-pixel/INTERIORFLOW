@@ -22,12 +22,15 @@ export interface PhaseMeta {
 
 export const PHASES: PhaseMeta[] = [
   {
+    // NB: giữ id 'concept' để KHÔNG vỡ store/localStorage cũ, nhưng chặng 1 đã đổi
+    // bản chất → "Layout CAD" (trình vẽ mặt bằng 2D ở /cad-editor, không phải canvas node).
     id: 'concept',
     icon: 'concept',
-    label: 'Concept',
-    tagline: 'Moodboard · vật liệu · pre-concept',
-    blurb: 'Khởi động ý tưởng: gom ref, vật liệu, palette, style — trước khi dựng hình.',
-    featured: ['input.image', 'input.stylepreset', 'input.roominfo', 'input.prompt', 'ai.moodboard', 'util.palette'],
+    label: 'Layout CAD',
+    tagline: 'Import CAD 2D · vẽ sơ phác · bố trí furniture',
+    blurb: 'Dựng mặt bằng 2D: mở/vẽ CAD, bố trí nội thất, rồi đưa layout sang Render tô vật liệu.',
+    // Chặng này chạy ở route riêng (/cad-editor), không có node ưu tiên trên canvas.
+    featured: [],
     demo: 'concept',
   },
   {
@@ -39,6 +42,11 @@ export const PHASES: PhaseMeta[] = [
     featured: [
       'input.image',
       'input.prompt',
+      // moodboard/vật liệu (Concept cũ) nay GỘP vào Render
+      'ai.moodboard',
+      'util.palette',
+      'out.moodboard',
+      'input.stylepreset',
       'ai.clay2render',
       'ai.sketch2render',
       'ai.styletransfer',

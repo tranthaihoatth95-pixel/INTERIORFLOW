@@ -15,12 +15,13 @@
  */
 
 import { motion } from 'framer-motion';
-import { Palette, Box, Presentation } from 'lucide-react';
+import { PencilRuler, Box, Presentation } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
 import { PHASES } from '@/lib/phases';
 import { springSheet, pressable } from '@/lib/motion';
 
-const ICON: Record<Phase, typeof Palette> = { concept: Palette, render: Box, present: Presentation };
+// Chặng 1 = Layout CAD → icon thước-bút; Render = khối; Present = trình chiếu.
+const ICON: Record<Phase, typeof PencilRuler> = { concept: PencilRuler, render: Box, present: Presentation };
 
 interface Props {
   /** chặng đang sáng. */

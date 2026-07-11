@@ -357,6 +357,7 @@ function PhaseSwitcher() {
   // Prefetch sớm route studio ngay khi switcher mount → chuyển gần như tức thì, bớt khựng.
   useEffect(() => {
     router.prefetch('/present-editor');
+    router.prefetch('/cad-editor');
   }, [router]);
 
   return (
@@ -367,6 +368,10 @@ function PhaseSwitcher() {
           if (p === 'present') {
             setLeaving(true); // bật overlay fade trước, rồi mới điều hướng
             router.push('/present-editor');
+          } else if (p === 'concept') {
+            // Chặng 1 = Layout CAD → trình vẽ 2D ở route riêng (cùng pattern fade như Present).
+            setLeaving(true);
+            router.push('/cad-editor');
           } else setWorkspace(p);
         }}
       />
