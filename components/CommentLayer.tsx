@@ -149,6 +149,9 @@ export function CommentLayer() {
     }
   }
 
+  // Tắt mặc định (user: vướng khi thao tác). Bật lại: NEXT_PUBLIC_COMMENT_LAYER=1 trong .env.local
+  if (process.env.NEXT_PUBLIC_COMMENT_LAYER !== '1') return null;
+
   if (!mounted) return null;
 
   const reduce = prefersReducedMotion();
