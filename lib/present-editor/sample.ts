@@ -10,7 +10,7 @@
 import type { EditorDeck } from './model';
 import { BUILTIN_TEMPLATES } from './templates';
 import { makeAkhIkiDeck } from './akh-sample';
-import { makeDetechEnsoDeck } from './detech-sample';
+export { makeDetechEnsoDeck } from './detech-sample';
 
 const PALETTE = ['#EFE9DC', '#C2AD86', '#8A6A3A', '#6E4A2E', '#3B352F', '#28211A'];
 const COVERS = [
@@ -24,10 +24,11 @@ function tpl(id: string) {
   return BUILTIN_TEMPLATES.find((t) => t.id === id)!;
 }
 
-/** Deck mặc định editor. TẠM trỏ deck Detech ENSŌ để TEST present bằng nội dung thật.
- *  (đổi về makeAkhIkiDeck() nếu muốn deck proof quiet-luxury.) */
+/** Deck mặc định editor = AKH-IKI generic (proof quiet-luxury, ảnh /demo).
+ *  KHÔNG để deck khách (Detech) làm mặc định — docs/CONTENT-RULES.md: data dự án khách
+ *  chỉ mở tường minh khi cần đối chiếu (makeDetechEnsoDeck/makeDetechDeck vẫn giữ). */
 export function makeSampleDeck(): EditorDeck {
-  return makeDetechEnsoDeck();
+  return makeAkhIkiDeck();
 }
 
 /** Deck DETECH 4 slide cũ (giữ để đối chiếu / dev nhanh). */
