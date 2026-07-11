@@ -11,6 +11,7 @@ import { CATEGORY_META, DATA_TYPE_COLORS, type ParamDef } from '@/lib/types';
 import { NodeExtras } from '@/components/nodes/NodeExtras';
 import { nodePop, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { readRenderImage, ImageIngestError } from '@/lib/images/ingest';
 
 const PORT_GAP = 26;
 const PORT_TOP = 46;
@@ -25,6 +26,7 @@ function ParamField({
   value: string | number;
 }) {
   const updateParam = useFlowStore((s) => s.updateParam);
+  const setConnectError = useFlowStore((s) => s.setConnectError);
   const fileRef = useRef<HTMLInputElement>(null);
 
   if (param.kind === 'text') {
@@ -126,14 +128,21 @@ function ParamField({
       <input
         ref={fileRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         className="hidden"
-        onChange={(e) => {
+        onChange={async (e) => {
           const file = e.target.files?.[0];
+          e.target.value = ''; // cho phép chọn lại cùng file sau khi lỗi
           if (!file) return;
-          const reader = new FileReader();
-          reader.onload = () => updateParam(nodeId, param.id, String(reader.result));
-          reader.readAsDataURL(file);
+          try {
+            const url = await readRenderImage(file);
+            updateParam(nodeId, param.id, url);
+            setConnectError(null);
+          } catch (err) {
+            setConnectError(
+              err instanceof ImageIngestError ? err.message : 'Không nạp được ảnh vào node.',
+            );
+          }
         }}
       />
       {hasImage ? (
