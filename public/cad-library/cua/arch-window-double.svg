@@ -1,0 +1,11 @@
+<svg viewBox="-1140 -290 2280 580" xmlns="http://www.w3.org/2000/svg">
+  <rect x="-1140" y="-290" width="2280" height="580" fill="#f7f4ee" />
+  <g transform="scale(1,-1)" stroke="#3d3a34" stroke-width="12" stroke-linejoin="round" stroke-linecap="round">
+    <line x1="-900" y1="50" x2="900" y2="50" />
+    <line x1="-900" y1="-50" x2="900" y2="-50" />
+    <line x1="-900" y1="0" x2="900" y2="0" />
+    <line x1="-900" y1="50" x2="-900" y2="-50" />
+    <line x1="900" y1="50" x2="900" y2="-50" />
+    <line x1="0" y1="50" x2="0" y2="-50" />
+  </g>
+</svg>

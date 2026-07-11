@@ -1,0 +1,13 @@
+<svg viewBox="-1140 -540 2280 1080" xmlns="http://www.w3.org/2000/svg">
+  <rect x="-1140" y="-540" width="2280" height="1080" fill="#f7f4ee" />
+  <g transform="scale(1,-1)" stroke="#3d3a34" stroke-width="12" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M-900 -300 L900 -300 L900 300 L-900 300 Z" fill="none" />
+    <line x1="-900" y1="260" x2="900" y2="260" />
+    <line x1="-900" y1="-300" x2="-600" y2="260" />
+    <line x1="-300" y1="-300" x2="-600" y2="260" />
+    <line x1="-300" y1="-300" x2="0" y2="260" />
+    <line x1="300" y1="-300" x2="0" y2="260" />
+    <line x1="300" y1="-300" x2="600" y2="260" />
+    <line x1="900" y1="-300" x2="600" y2="260" />
+  </g>
+</svg>
