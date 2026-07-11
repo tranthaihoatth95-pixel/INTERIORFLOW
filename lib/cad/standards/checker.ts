@@ -12,28 +12,13 @@
  * tích + bề rộng nhỏ nhất (polygonMinWidth — xấp xỉ "rotating calipers" bằng cách chiếu lên
  * pháp tuyến từng cạnh, đủ tốt cho phòng hình chữ nhật/gần chữ nhật). Cách này CHÍNH XÁC HƠN
  * so với đọc text diện tích có sẵn (VD "12.2 m²") vì không bị lệch nếu user sửa tường mà quên
- * sửa lại nhãn — NHƯNG có 1 giới hạn THẬT đã phát hiện khi kiểm bằng mặt bằng demo thực tế
- * (xem GIỚI HẠN ĐÃ BIẾT bên dưới).
+ * sửa lại nhãn.
  *
- * ─────────────────────────── GIỚI HẠN ĐÃ BIẾT (đã kiểm chứng, không phải suy đoán) ───────────
- * `findHatchBoundary` dò biên đáng tin cậy cho 1 phòng ĐƠN, khép kín bằng 1 wallChain KHÔNG có
- * vách khác đâm vào giữa tường bao (test hatch.test.ts + phòng NGỦ/WC trong demo-plan.ts đo
- * đúng, đã xác minh bằng tay). NHƯNG với phòng có tường bao bị 1 vách ngăn khác ĐÂM VÀO tạo chữ
- * T (rất phổ biến trong mặt bằng nhiều phòng — VD Phòng khách kề vách dọc 5400, Bếp kề vách tại
- * góc cửa) — do wallChain vẽ mỗi đoạn tường là 1 quad ĐỘC LẬP không vát góc (miter), các quad
- * chồng lấn nhau tại góc/chữ T tạo ra các "khe hở" hình học nhỏ (~ bằng bề dày tường). Thuật
- * toán half-edge face-traversal (traceFace) đôi khi bắt vào khe hở nhỏ đó thay vì đường bao
- * phòng thật — ĐÃ TÁI HIỆN bằng debug thủ công (thử nhiều điểm bắt đầu + tia bắn lên/xuống,
- * cả 2 chiều xoay cw/ccw, không thành công cho phòng "PHÒNG KHÁCH + ĂN"/"BẾP" của demo-plan.ts
- * dù phòng "NGỦ"/"WC" cùng file lại đo ĐÚNG — khác biệt do vị trí nhãn/tường liên quan tới góc
- * chữ T thế nào). Checker XỬ LÝ AN TOÀN: nếu dò biên thất bại (trả null) → BỎ QUA phòng đó,
- * không tạo violation sai (đúng nguyên tắc "không đoán mò"), nhưng nghĩa là MỘT SỐ VI PHẠM THẬT
- * CÓ THỂ BỊ BỎ SÓT (false negative) ở phòng có hình học phức tạp. Cần 1 thuật toán face-finding
- * chắc hơn (VD dùng half-edge DCEL đúng chuẩn + loại bỏ cạnh trùng lặp từ hatch+polyline chồng
- * nhau, hoặc sửa wallChain vát góc thay vì quad độc lập) — để dành cho bản nâng cấp sau, KHÔNG
- * sửa vội trong phạm vi thời gian hiện tại vì rủi ro phá vỡ Nấc 4 (HATCH) đã hoạt động đúng cho
- * trường hợp phổ biến (phòng đơn).
- * ──────────────────────────────────────────────────────────────────────────────────────────────
+ * Giới hạn cũ (phòng có vách đâm chữ T vào tường bao → dò biên trả null, phòng bị BỎ QUA khỏi
+ * phép đo) đã được sửa trong hatch.ts: thay quy tắc rẽ-góc-nhỏ-nhất cục bộ bằng DCEL liệt kê
+ * mặt toàn cục + khử cạnh trùng hatch/polyline — xem đầu file hatch.ts và test [7]/[8] của
+ * hatch.test.ts + checker.test.ts. Nếu dò biên vẫn thất bại vì lý do khác (biên hở thật sự…),
+ * checker giữ nguyên nguyên tắc an toàn: bỏ qua phòng đó, không đoán mò.
  */
 
 import type { Doc, Entity, Pt } from '../model';

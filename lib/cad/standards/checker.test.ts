@@ -7,6 +7,8 @@ import { getAllRules } from './registry';
 import { emptyDoc } from '../model';
 import type { Doc, LineEntity, TextEntity } from '../model';
 import { newId } from '../store';
+import { wallChain } from '../commands';
+import { buildDemoPlan } from '../demo-plan';
 
 let pass = 0;
 let fail = 0;
@@ -84,12 +86,39 @@ function testRegistryIntegrity() {
   ok('không có id trùng lặp giữa các nhóm', new Set(ids).size === ids.length);
 }
 
+function testTJunctionRoomMeasured() {
+  console.log('\n[7] Phòng dưới chuẩn có vách chữ T đâm vào tường bao (quad tường dày) — trước đây dò biên null nên BỎ SÓT vi phạm');
+  const doc: Doc = emptyDoc();
+  // tường quad dày thật (wallChain) thay vì 4 LINE mảnh: bao 5600×3200 t=200, vách giữa tim
+  // x=2800 t=100 đâm chữ T vào tường Nam+Bắc → phòng trái thông thuỷ 2650×3000 = 7.95m² < 9m².
+  doc.entities.push(...wallChain([{ x: 0, y: 0 }, { x: 5600, y: 0 }, { x: 5600, y: 3200 }, { x: 0, y: 3200 }], 200, LAY, true));
+  doc.entities.push(...wallChain([{ x: 2800, y: 0 }, { x: 2800, y: 3200 }], 100, LAY));
+  doc.entities.push(label({ x: 1400, y: 1600 }, 'PHÒNG NGỦ'));
+  const violations = checkStandards(doc, getAllRules());
+  const v = violations.find((v) => v.ruleId === 'vn-res-bedroom-min-area');
+  ok('đo được diện tích phòng kề chữ T → phát hiện vi phạm (hết false negative)', !!v);
+  ok('diện tích trong message là số đo thật ~7.9-8.0m²', !!v && /7\.9|8\.0/.test(v.message));
+}
+
+function testDemoPlanMeasuresAllRooms() {
+  console.log('\n[8] Demo-plan thật: đo được MỌI phòng (kể cả 2 phòng kề chữ T từng bị bỏ qua)');
+  const violations = checkStandards(buildDemoPlan(), getAllRules());
+  const roomViolations = violations.filter((v) => v.ruleId.startsWith('vn-res-') || v.ruleId === 'vn-fire-corridor-min-width-general');
+  // Ngủ 12.2m²/WC 3.6m²/Khách 36.7m²/hành lang 1100mm đều đạt → không violation. Riêng BẾP:
+  // 5.7m² < 10m² là violation THẬT theo rule bếp+ăn gộp (demo tách ăn về phòng khách — message
+  // rule đã ghi rõ caveat này). Trước đây dò biên null nên vi phạm này bị NUỐT — giờ phải thấy.
+  ok('đúng 1 violation phòng: bếp+ăn (caveat bếp tách ăn)', roomViolations.length === 1 && roomViolations[0].ruleId === 'vn-res-kitchen-dining-min-area');
+  ok('diện tích bếp trong message là số đo thật 5.7m²', !!roomViolations[0]?.message.includes('5.7'));
+}
+
 testUndersizedBedroom();
 testOkBedroom();
 testWcUndersized();
 testCorridorNarrow();
 testNoRoomNoViolation();
 testRegistryIntegrity();
+testTJunctionRoomMeasured();
+testDemoPlanMeasuresAllRooms();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);
