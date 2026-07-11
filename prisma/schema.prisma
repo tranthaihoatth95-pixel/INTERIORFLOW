@@ -45,6 +45,8 @@ model Flow {
   projectId  String?
   name       String   @default("Untitled flow")
   graphJson  String   @default("{\"nodes\":[],\"edges\":[]}")
+  coverUrl   String   @default("") // ảnh bìa card chọn tay (url thư viện hoặc cover mặc định); trống = fallback hash-cover
+  status     String   @default("") // dòng trạng thái ngắn hiện dưới tên dự án; trống = "Chưa có ghi chú"
   version    Int      @default(1)
   shareToken String?  @unique
   createdAt  DateTime @default(now())

@@ -49,6 +49,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   if (typeof body.graphJson === 'string') data.graphJson = body.graphJson;
   if (typeof body.name === 'string') data.name = body.name;
   if ('projectId' in body) data.projectId = body.projectId ?? null;
+  if (typeof body.coverUrl === 'string') data.coverUrl = body.coverUrl.slice(0, 500);
+  if (typeof body.status === 'string') data.status = body.status.slice(0, 160);
   const flow = await prisma.flow.update({ where: { id: r.flow.id }, data });
   return NextResponse.json({ ok: true, updatedAt: flow.updatedAt });
 }

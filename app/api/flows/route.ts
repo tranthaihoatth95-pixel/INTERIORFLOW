@@ -2,28 +2,48 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
 
-/** Danh sách flow của user (kèm project). */
+/** Danh sách flow của user (kèm project). Card dự án cần thêm coverUrl + status + roster team. */
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  const flows = await prisma.flow.findMany({
-    where: { userId: user.id },
-    orderBy: { updatedAt: 'desc' },
-    select: {
-      id: true,
-      name: true,
-      version: true,
-      updatedAt: true,
-      shareToken: true,
-      project: { select: { id: true, name: true } },
-    },
-  });
-  const projects = await prisma.project.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: 'desc' },
-    select: { id: true, name: true, clientName: true },
-  });
-  return NextResponse.json({ flows, projects });
+
+  const ONLINE_MS = 45 * 1000; // seen < 45s = đang online (đồng bộ shape roster dashboard)
+
+  const [flows, projects, members] = await Promise.all([
+    prisma.flow.findMany({
+      where: { userId: user.id },
+      orderBy: { updatedAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        coverUrl: true,
+        status: true,
+        version: true,
+        updatedAt: true,
+        shareToken: true,
+        project: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.project.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, name: true, clientName: true },
+    }),
+    // roster cả team (app nội bộ LAN) — hàng avatar memoji trên card
+    prisma.user.findMany({
+      orderBy: { lastSeenAt: 'desc' },
+      select: { id: true, name: true, lastSeenAt: true },
+    }),
+  ]);
+
+  const now = Date.now();
+  const team = members.map((u) => ({
+    id: u.id,
+    name: u.name,
+    online: now - new Date(u.lastSeenAt).getTime() < ONLINE_MS,
+  }));
+
+  return NextResponse.json({ flows, projects, team });
 }
 
 /** Tạo flow mới (kèm graph hiện tại nếu gửi lên) hoặc project mới. */

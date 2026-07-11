@@ -1,12 +1,22 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Loader2, Plus, RefreshCw, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Plus,
+  RefreshCw,
+  ArrowRight,
+  ImagePlus,
+  Check,
+  X,
+} from 'lucide-react';
 import { easeApple, pressable, springStage } from '@/lib/motion';
 import { useLang } from '@/lib/i18n';
 import { useFlowStore } from '@/lib/store';
-import { createFlow, fetchFlows, openFlow, type FlowMeta } from '@/lib/workspace';
+import { createFlow, openFlow } from '@/lib/workspace';
 import { LangToggle } from '@/components/LangToggle';
 
 /**
@@ -18,28 +28,41 @@ import { LangToggle } from '@/components/LangToggle';
  * KHÁC TitleSequence: đây là màn TƯƠNG TÁC — không tự trôi; điều hướng bằng
  * bấm card bên / phím ← → / nút kính ‹ ›; bấm card giữa (hoặc Enter) để VÀO.
  *
- * Data thật: fetchFlows() → mỗi flow một card (tên, project, "x ngày trước",
- * thumbnail cover tĩnh xoay vòng theo hash id). Card cuối = "+ Dự án mới"
- * (dashed, kính mờ) → createFlow rỗng → openFlow → onEnter.
+ * NÂNG CẤP CARD DỰ ÁN:
+ *  1. Ảnh bìa chọn được — flow.coverUrl (từ thư viện /api/library hoặc 3 cover mặc
+ *     định). Card focus có pill kính "Đổi bìa" → picker lưới thumbnail → PUT coverUrl
+ *     (optimistic). Không có coverUrl → fallback hash-cover cũ.
+ *  2. Dòng trạng thái ngắn — flow.status dưới tên; card focus bấm vào → input inline
+ *     pill kính → PUT status. Trống → "· Chưa có ghi chú" mờ.
+ *  3. Hàng memoji nhân sự — avatar tròn 28px chồng mép góc dưới card, mỗi thành viên
+ *     team 1 ô (roster từ GET /api/flows → team). Online = màu đầy + chấm xanh; offline
+ *     = grayscale + mờ. Tooltip tên.
+ *
+ * Data thật: GET /api/flows → { flows(+coverUrl,status), team }. Mỗi flow một card.
+ * Card cuối = "+ Dự án mới" → createFlow rỗng → openFlow → onEnter.
  * Chọn flow → openFlow(id) (nạp graph vào store + currentFlowId) → onEnter().
- * Vì tự openFlow nên KHÔNG cần bootstrapWorkspace ở nhánh chọn tay.
  * Lỗi API → thông báo nhẹ + "Vào canvas trống" để user không bao giờ kẹt.
  *
- * Reduce Motion / mobile hẹp: bỏ gallery 3D, hiện danh sách card phẳng cuộn dọc.
- * Trong app đã có bar 3 chặng Concept·Render·Present trên Header — vào thẳng canvas.
+ * Reduce Motion / mobile hẹp: bỏ gallery 3D, hiện danh sách card phẳng cuộn dọc
+ * (cũng hiện status + avatars).
  */
 
 const COPPER = '#c79a63';
 const SANS = '-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue","Space Grotesk",system-ui,sans-serif';
 const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
 
-/** Cover tĩnh xoay vòng — chưa có cover thật per-flow, chọn theo hash id cho ổn định. */
+/** 3 cover mặc định — cũng dùng làm fallback hash-cover khi flow chưa có coverUrl. */
 const COVERS = ['/covers/render_00.jpeg', '/covers/render_04.jpeg', '/covers/render_10.jpeg'];
 
 function coverFor(id: string): string {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
   return COVERS[h % COVERS.length];
+}
+
+/** Ảnh bìa thực tế của card: coverUrl chọn tay > fallback hash-cover. */
+function coverOf(f: FlowRow): string {
+  return f.coverUrl && f.coverUrl.length > 0 ? f.coverUrl : coverFor(f.id);
 }
 
 /** "2 ngày trước" / "2 days ago" từ ISO updatedAt. */
@@ -55,6 +78,49 @@ function timeAgo(iso: string, en: boolean): string {
   if (d < 30) return en ? (d === 1 ? '1 day ago' : `${d} days ago`) : `${d} ngày trước`;
   const mo = Math.floor(d / 30);
   return en ? (mo === 1 ? '1 month ago' : `${mo} months ago`) : `${mo} tháng trước`;
+}
+
+/* ---------- Memoji-slot avatar: gradient theo hash tên + chữ cái đầu ---------- */
+
+function avatarGradient(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  const a = h % 360;
+  const b = (a + 42) % 360;
+  return `linear-gradient(135deg, hsl(${a} 58% 54%), hsl(${b} 62% 40%))`;
+}
+
+function initialOf(name: string): string {
+  const t = (name ?? '').trim();
+  return t ? t[0].toUpperCase() : '?';
+}
+
+/* ---------- Kiểu dữ liệu cục bộ (FlowMeta ở lib/workspace không có coverUrl/status) ---------- */
+
+type TeamMember = { id: string; name: string; online: boolean };
+type FlowRow = {
+  id: string;
+  name: string;
+  version: number;
+  updatedAt: string;
+  shareToken: string | null;
+  project: { id: string; name: string } | null;
+  coverUrl?: string;
+  status?: string;
+};
+
+/** GET /api/flows — bản giàu hơn fetchFlows() workspace (kèm coverUrl/status + team roster). */
+async function loadProjectCards(): Promise<{ flows: FlowRow[]; team: TeamMember[] }> {
+  const res = await fetch('/api/flows');
+  if (!res.ok) throw new Error('Không tải được danh sách flow.');
+  const j = await res.json().catch(() => ({}));
+  const flows: FlowRow[] = Array.isArray(j?.flows) ? j.flows : [];
+  const team: TeamMember[] = Array.isArray(j?.team)
+    ? j.team
+        .filter((m: unknown): m is TeamMember => !!m && typeof (m as TeamMember).id === 'string')
+        .map((m: TeamMember) => ({ id: m.id, name: m.name ?? '', online: !!m.online }))
+    : [];
+  return { flows, team };
 }
 
 /* ---------- Pose 3D theo offset so với card focus (gu TitleSequence) ---------- */
@@ -104,7 +170,15 @@ const captionGlass: React.CSSProperties = {
   WebkitMaskImage: 'linear-gradient(180deg, transparent 0%, black 26%)',
 };
 
-type CardItem = { kind: 'flow'; flow: FlowMeta } | { kind: 'new' };
+/** Pill kính nhỏ tối trên ảnh (nút Đổi bìa / status). */
+const darkPill: React.CSSProperties = {
+  background: 'rgba(14,12,10,0.5)',
+  backdropFilter: 'blur(10px) saturate(150%)',
+  WebkitBackdropFilter: 'blur(10px) saturate(150%)',
+  border: '1px solid rgba(255,255,255,0.16)',
+};
+
+type CardItem = { kind: 'flow'; flow: FlowRow } | { kind: 'new' };
 
 export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   const user = useFlowStore((s) => s.user);
@@ -112,18 +186,27 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   const lang = useLang();
   const en = lang === 'en';
 
-  const [flows, setFlows] = useState<FlowMeta[] | null>(null); // null = đang tải
+  const [flows, setFlows] = useState<FlowRow[] | null>(null); // null = đang tải
+  const [team, setTeam] = useState<TeamMember[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [active, setActive] = useState(0);
   const [busy, setBusy] = useState(false); // đang mở/tạo flow
   const [openError, setOpenError] = useState<string | null>(null);
 
+  // Đổi bìa
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
+  const [libThumbs, setLibThumbs] = useState<string[] | null>(null);
+  // Sửa status
+  const [statusFor, setStatusFor] = useState<string | null>(null);
+  const [statusDraft, setStatusDraft] = useState('');
+
   const load = useCallback(() => {
     setLoadError(false);
     setFlows(null);
-    fetchFlows()
+    loadProjectCards()
       .then((r) => {
         setFlows(r.flows);
+        setTeam(r.team);
         setActive(0); // flow mới nhất đứng giữa
       })
       .catch(() => setLoadError(true));
@@ -163,10 +246,72 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
     [busy, en, onEnter],
   );
 
-  // Phím ← → điều hướng, Enter mở card đang focus.
+  /* ---------- Đổi bìa: mở picker + PUT optimistic ---------- */
+
+  const openPicker = useCallback(
+    (id: string) => {
+      setPickerFor(id);
+      if (libThumbs === null) {
+        fetch('/api/library')
+          .then((r) => (r.ok ? r.json() : { assets: [] }))
+          .then((j) => {
+            const urls: string[] = Array.isArray(j?.assets)
+              ? j.assets
+                  .map((a: { url?: unknown }) => (typeof a?.url === 'string' ? a.url : null))
+                  .filter((u: string | null): u is string => !!u)
+                  .slice(0, 30)
+              : [];
+            setLibThumbs(urls);
+          })
+          .catch(() => setLibThumbs([]));
+      }
+    },
+    [libThumbs],
+  );
+
+  const setCover = useCallback(async (id: string, url: string) => {
+    setFlows((prev) => (prev ? prev.map((f) => (f.id === id ? { ...f, coverUrl: url } : f)) : prev));
+    setPickerFor(null);
+    try {
+      await fetch(`/api/flows/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ coverUrl: url }),
+      });
+    } catch {
+      /* optimistic — im lặng nếu lỗi mạng, không crash màn */
+    }
+  }, []);
+
+  /* ---------- Status: mở input + PUT optimistic ---------- */
+
+  const beginStatus = useCallback((f: FlowRow) => {
+    setStatusFor(f.id);
+    setStatusDraft(f.status ?? '');
+  }, []);
+
+  const saveStatus = useCallback(
+    async (id: string) => {
+      const value = statusDraft.trim().slice(0, 160);
+      setFlows((prev) => (prev ? prev.map((f) => (f.id === id ? { ...f, status: value } : f)) : prev));
+      setStatusFor(null);
+      try {
+        await fetch(`/api/flows/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: value }),
+        });
+      } catch {
+        /* optimistic — im lặng */
+      }
+    },
+    [statusDraft],
+  );
+
+  // Phím ← → điều hướng, Enter mở card đang focus. Khoá khi đang sửa status/mở picker.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (busy || n === 0) return;
+      if (busy || n === 0 || statusFor || pickerFor) return;
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
         setActive((a) => Math.max(0, a - 1));
@@ -180,7 +325,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [busy, n, active, items, choose]);
+  }, [busy, n, active, items, choose, statusFor, pickerFor]);
 
   const step = (dir: 1 | -1) => setActive((a) => Math.min(n - 1, Math.max(0, a + dir)));
 
@@ -194,26 +339,153 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         filter: { duration: 0.55, ease: easeApple },
       };
 
-  /* ---------- Nội dung card dùng chung (gallery + list phẳng) ---------- */
+  /* ---------- Hàng memoji nhân sự (dùng chung gallery + list phẳng) ---------- */
 
-  const flowCaption = (f: FlowMeta) => (
-    <>
-      <div className="truncate text-[15px] font-semibold leading-tight text-white sm:text-[17px]" style={{ fontFamily: SANS }}>
-        {f.name}
+  const avatarRow = (opts?: { light?: boolean }) => {
+    if (team.length === 0) return null;
+    const ring = opts?.light ? 'rgba(0,0,0,0.12)' : 'rgba(20,18,16,0.9)';
+    return (
+      <div className="flex items-center">
+        {team.slice(0, 7).map((m, idx) => (
+          <span
+            key={m.id}
+            title={m.name}
+            className="relative grid shrink-0 place-items-center rounded-full"
+            style={{
+              width: 28,
+              height: 28,
+              marginLeft: idx === 0 ? 0 : -8,
+              fontFamily: SANS,
+              fontSize: 11,
+              fontWeight: 600,
+              color: '#fff',
+              background: avatarGradient(m.name),
+              border: `1.5px solid ${ring}`,
+              filter: m.online ? undefined : 'grayscale(1)',
+              opacity: m.online ? 1 : 0.55,
+              zIndex: team.length - idx,
+            }}
+          >
+            {initialOf(m.name)}
+            {m.online && (
+              <span
+                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full"
+                style={{ background: '#38d66b', border: `1.5px solid ${ring}` }}
+              />
+            )}
+          </span>
+        ))}
       </div>
-      <div className="mt-1 flex items-center justify-between gap-3">
-        <span className="truncate text-[11px] text-white/60 sm:text-[12px]" style={{ fontFamily: SANS }}>
-          {f.project ? f.project.name : en ? 'No project' : 'Chưa gắn dự án'}
-        </span>
-        <span
-          className="shrink-0 rounded-full px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] text-white/70"
-          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)' }}
-        >
-          {timeAgo(f.updatedAt, en)}
-        </span>
-      </div>
-    </>
-  );
+    );
+  };
+
+  /* ---------- Caption card (gallery) — tên + status + Đổi bìa + memoji ---------- */
+
+  const flowCaption = (f: FlowRow, isCenter: boolean) => {
+    const editing = statusFor === f.id;
+    return (
+      <>
+        <div className="flex items-start justify-between gap-2.5">
+          <div className="min-w-0 flex-1">
+            <div
+              className="truncate text-[15px] font-semibold leading-tight text-white sm:text-[17px]"
+              style={{ fontFamily: SANS }}
+            >
+              {f.name}
+            </div>
+
+            {/* dòng status — bấm để sửa (chỉ card focus) */}
+            {editing ? (
+              <div
+                className="mt-1.5 flex items-center gap-1.5 rounded-full px-2 py-1"
+                style={darkPill}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+                <input
+                  autoFocus
+                  value={statusDraft}
+                  maxLength={160}
+                  onChange={(e) => setStatusDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === 'Enter') void saveStatus(f.id);
+                    else if (e.key === 'Escape') setStatusFor(null);
+                  }}
+                  placeholder={en ? 'Short status…' : 'Ghi chú ngắn…'}
+                  className="w-full bg-transparent text-[12px] text-white placeholder:text-white/40 focus:outline-none"
+                  style={{ fontFamily: SANS }}
+                />
+                <button
+                  type="button"
+                  aria-label={en ? 'Save' : 'Lưu'}
+                  onClick={() => void saveStatus(f.id)}
+                  className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-white/85 hover:text-white"
+                >
+                  <Check size={13} />
+                </button>
+                <button
+                  type="button"
+                  aria-label={en ? 'Cancel' : 'Huỷ'}
+                  onClick={() => setStatusFor(null)}
+                  className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-white/60 hover:text-white/90"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={!isCenter}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  beginStatus(f);
+                }}
+                className="mt-1 block max-w-full truncate text-left text-[12px] transition-colors disabled:cursor-default"
+                style={{
+                  fontFamily: SANS,
+                  color: f.status ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.45)',
+                }}
+              >
+                {f.status ? f.status : en ? '· No note yet' : '· Chưa có ghi chú'}
+              </button>
+            )}
+
+            <div className="mt-1.5 flex items-center gap-2">
+              <span className="truncate text-[11px] text-white/55" style={{ fontFamily: SANS }}>
+                {f.project ? f.project.name : en ? 'No project' : 'Chưa gắn dự án'}
+              </span>
+              <span
+                className="shrink-0 rounded-full px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] text-white/65"
+                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)' }}
+              >
+                {timeAgo(f.updatedAt, en)}
+              </span>
+            </div>
+          </div>
+
+          {/* nút Đổi bìa — chỉ card focus */}
+          {isCenter && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openPicker(f.id);
+              }}
+              className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-white/90 hover:text-white"
+              style={darkPill}
+            >
+              <ImagePlus size={13} />
+              {en ? 'Cover' : 'Đổi bìa'}
+            </button>
+          )}
+        </div>
+
+        {/* hàng memoji nhân sự — góc dưới card */}
+        <div className="mt-2.5">{avatarRow()}</div>
+      </>
+    );
+  };
 
   /* ---------- Các khối trạng thái ---------- */
 
@@ -271,18 +543,17 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             const isCenter = off === 0;
             const key = item.kind === 'flow' ? item.flow.id : '__new__';
             return (
-              <motion.button
+              <motion.div
                 key={key}
-                type="button"
-                disabled={busy}
+                role="button"
+                tabIndex={-1}
+                aria-label={item.kind === 'flow' ? item.flow.name : en ? 'New project' : 'Dự án mới'}
                 onClick={() => {
+                  if (busy) return;
                   if (isCenter) void choose(item);
                   else setActive(i);
                 }}
-                aria-label={
-                  item.kind === 'flow' ? item.flow.name : en ? 'New project' : 'Dự án mới'
-                }
-                className="col-start-1 row-start-1 cursor-pointer overflow-hidden text-left disabled:cursor-wait"
+                className="col-start-1 row-start-1 cursor-pointer overflow-hidden text-left"
                 style={{
                   width: 'clamp(240px, 46vw, 460px)',
                   aspectRatio: '4 / 3',
@@ -313,7 +584,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={coverFor(item.flow.id)}
+                      src={coverOf(item.flow)}
                       alt=""
                       draggable={false}
                       className="h-full w-full object-cover"
@@ -321,12 +592,13 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                     {/* caption kính — rõ ở card trung tâm (gu TitleSequence) */}
                     <motion.div
                       className="absolute inset-x-0 bottom-0 px-4 pb-3.5 pt-8 sm:px-5 sm:pb-4"
-                      style={captionGlass}
+                      // caption chỉ nhận tương tác ở card focus (tránh bấm nhầm nút ở card mờ)
+                      style={{ ...captionGlass, pointerEvents: isCenter ? 'auto' : 'none' }}
                       initial={false}
                       animate={{ opacity: isCenter ? 1 : 0 }}
                       transition={{ duration: reduce ? 0 : 0.45, ease: easeApple }}
                     >
-                      {flowCaption(item.flow)}
+                      {flowCaption(item.flow, isCenter)}
                     </motion.div>
                   </>
                 ) : (
@@ -353,7 +625,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                     </div>
                   </div>
                 )}
-              </motion.button>
+              </motion.div>
             );
           })}
         </div>
@@ -409,23 +681,33 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         {items.map((item) => {
           const key = item.kind === 'flow' ? item.flow.id : '__new__';
           return (
-            <button
+            <div
               key={key}
-              type="button"
-              disabled={busy}
-              onClick={() => void choose(item)}
-              className="flex w-full items-center gap-3.5 p-3 text-left transition-opacity disabled:cursor-wait disabled:opacity-60"
+              role="button"
+              tabIndex={0}
+              aria-disabled={busy}
+              onClick={() => {
+                if (!busy) void choose(item);
+              }}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && !busy) {
+                  e.preventDefault();
+                  void choose(item);
+                }
+              }}
+              className="flex w-full cursor-pointer items-center gap-3.5 p-3 text-left transition-opacity"
               style={{
                 ...glass,
                 borderRadius: 'var(--radius-xl)',
                 border: item.kind === 'new' ? '1.5px dashed rgba(127,127,127,0.4)' : (glass.border as string),
+                opacity: busy ? 0.6 : 1,
               }}
             >
               {item.kind === 'flow' ? (
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={coverFor(item.flow.id)}
+                    src={coverOf(item.flow)}
                     alt=""
                     draggable={false}
                     className="h-14 w-[74px] shrink-0 rounded-lg object-cover"
@@ -434,12 +716,22 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                     <span className="block truncate text-[14px] font-semibold text-[var(--t1)]" style={{ fontFamily: SANS }}>
                       {item.flow.name}
                     </span>
+                    <span
+                      className="mt-0.5 block truncate text-[11px]"
+                      style={{
+                        fontFamily: SANS,
+                        color: item.flow.status ? 'var(--t3,var(--t4))' : 'var(--t5,var(--t4))',
+                      }}
+                    >
+                      {item.flow.status ? item.flow.status : en ? '· No note yet' : '· Chưa có ghi chú'}
+                    </span>
                     <span className="mt-0.5 block truncate text-[11px] text-[var(--t4)]" style={{ fontFamily: SANS }}>
                       {item.flow.project ? `${item.flow.project.name} · ` : ''}
                       {timeAgo(item.flow.updatedAt, en)}
                     </span>
+                    {team.length > 0 && <span className="mt-1.5 block">{avatarRow({ light: true })}</span>}
                   </span>
-                  <ArrowRight size={15} className="shrink-0 text-[var(--t4)]" />
+                  <ArrowRight size={15} className="shrink-0 self-center text-[var(--t4)]" />
                 </>
               ) : (
                 <>
@@ -459,7 +751,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   </span>
                 </>
               )}
-            </button>
+            </div>
           );
         })}
       </div>
@@ -560,6 +852,95 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           </motion.div>
         )}
       </motion.div>
+
+      {/* ---------- Picker Đổi bìa ---------- */}
+      <AnimatePresence>
+        {pickerFor && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: easeApple }}
+            className="absolute inset-0 z-40 grid place-items-center p-4"
+            style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+            onClick={() => setPickerFor(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 6 }}
+              transition={springStage}
+              onClick={(e) => e.stopPropagation()}
+              className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-[var(--radius-xl)]"
+              style={{ ...glass, background: 'rgba(20,18,16,0.72)' }}
+            >
+              <div className="flex items-center justify-between border-b border-white/10 px-5 py-3.5">
+                <span className="text-[14px] font-semibold text-[var(--t1)]" style={{ fontFamily: SANS }}>
+                  {en ? 'Choose a cover' : 'Chọn ảnh bìa'}
+                </span>
+                <button
+                  type="button"
+                  aria-label={en ? 'Close' : 'Đóng'}
+                  onClick={() => setPickerFor(null)}
+                  className="grid h-8 w-8 place-items-center rounded-full text-[var(--t3,var(--t4))] hover:text-[var(--t1)]"
+                  style={glass}
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              <div className="overflow-y-auto px-5 py-4">
+                <p className="mb-2 text-[10px] uppercase tracking-[0.16em] text-[var(--t4)]" style={{ fontFamily: MONO }}>
+                  {en ? 'Defaults' : 'Mặc định'}
+                </p>
+                <div className="grid grid-cols-3 gap-2.5">
+                  {COVERS.map((url) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => void setCover(pickerFor, url)}
+                      className="overflow-hidden rounded-lg border border-white/12 transition-transform hover:scale-[1.03]"
+                      style={{ aspectRatio: '4 / 3' }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt="" className="h-full w-full object-cover" draggable={false} />
+                    </button>
+                  ))}
+                </div>
+
+                <p className="mb-2 mt-4 text-[10px] uppercase tracking-[0.16em] text-[var(--t4)]" style={{ fontFamily: MONO }}>
+                  {en ? 'From library' : 'Từ thư viện'}
+                </p>
+                {libThumbs === null ? (
+                  <div className="flex items-center gap-2 py-3 text-[12px] text-[var(--t4)]" style={{ fontFamily: SANS }}>
+                    <Loader2 size={14} className="animate-spin" style={{ color: COPPER }} />
+                    {en ? 'Loading library…' : 'Đang tải thư viện…'}
+                  </div>
+                ) : libThumbs.length === 0 ? (
+                  <p className="py-3 text-[12px] text-[var(--t4)]" style={{ fontFamily: SANS }}>
+                    {en ? 'No images in the library yet.' : 'Thư viện chưa có ảnh nào.'}
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                    {libThumbs.map((url) => (
+                      <button
+                        key={url}
+                        type="button"
+                        onClick={() => void setCover(pickerFor, url)}
+                        className="overflow-hidden rounded-lg border border-white/12 transition-transform hover:scale-[1.05]"
+                        style={{ aspectRatio: '1 / 1' }}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt="" className="h-full w-full object-cover" draggable={false} loading="lazy" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* overlay kính mờ khi đang mở/tạo flow */}
       {busy && (
