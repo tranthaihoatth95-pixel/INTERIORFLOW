@@ -11,7 +11,7 @@ import { CATEGORY_META, DATA_TYPE_COLORS, type ParamDef } from '@/lib/types';
 import { NodeExtras } from '@/components/nodes/NodeExtras';
 import { nodePop, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
-import { readRenderImage, ImageIngestError } from '@/lib/images/ingest';
+import { smartImportImage, SmartImportError } from '@/lib/images/smart-ingest';
 
 const PORT_GAP = 26;
 const PORT_TOP = 46;
@@ -27,6 +27,7 @@ function ParamField({
 }) {
   const updateParam = useFlowStore((s) => s.updateParam);
   const setConnectError = useFlowStore((s) => s.setConnectError);
+  const setNotice = useFlowStore((s) => s.setNotice);
   const fileRef = useRef<HTMLInputElement>(null);
 
   if (param.kind === 'text') {
@@ -128,19 +129,20 @@ function ParamField({
       <input
         ref={fileRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/jpeg,image/png,image/webp,image/tiff,.tif,.tiff,.psd,image/heic,image/heif"
         className="hidden"
         onChange={async (e) => {
           const file = e.target.files?.[0];
           e.target.value = ''; // cho phép chọn lại cùng file sau khi lỗi
           if (!file) return;
           try {
-            const url = await readRenderImage(file);
-            updateParam(nodeId, param.id, url);
+            const { dataUrl, meta } = await smartImportImage(file);
+            updateParam(nodeId, param.id, dataUrl);
             setConnectError(null);
+            setNotice(`✓ ${meta.note}`);
           } catch (err) {
             setConnectError(
-              err instanceof ImageIngestError ? err.message : 'Không nạp được ảnh vào node.',
+              err instanceof SmartImportError ? err.message : 'Không nạp được ảnh vào node.',
             );
           }
         }}

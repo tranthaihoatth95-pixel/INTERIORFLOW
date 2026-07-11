@@ -107,6 +107,9 @@ export function FlowCanvas() {
     [setConnectError],
   );
 
+  const notice = useFlowStore((s) => s.notice);
+  const setNotice = useFlowStore((s) => s.setNotice);
+
   // Toast lỗi tự tắt sau 3.5s
   useEffect(() => {
     if (!connectError) return;
@@ -114,7 +117,14 @@ export function FlowCanvas() {
     return () => clearTimeout(t);
   }, [connectError, setConnectError]);
 
-  // Drag & drop từ Node Library / Thư viện ảnh
+  // Toast thông báo (smart-import) tự tắt sau 4.5s
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 4500);
+    return () => clearTimeout(t);
+  }, [notice, setNotice]);
+
+  // Drag & drop từ Node Library / Thư viện ảnh / FILE THÔ TỪ MÁY (smart-import)
   const onDrop = useCallback(
     async (e: React.DragEvent) => {
       e.preventDefault();
@@ -144,9 +154,38 @@ export function FlowCanvas() {
         } catch (err) {
           setConnectError(err instanceof Error ? err.message : String(err));
         }
+        return;
+      }
+      // FILE THÔ kéo từ Finder/Explorer → smart-import (tự chuyển định dạng, giữ thông số gốc)
+      const files = Array.from(e.dataTransfer.files || []);
+      if (files.length) {
+        const { smartImportImage, SmartImportError } = await import('@/lib/images/smart-ingest');
+        // Mỗi ảnh 1 node Import Image, xếp so le để không chồng.
+        let placed = 0;
+        for (const file of files) {
+          const nodePos = { x: pos.x + placed * 40, y: pos.y + placed * 40 };
+          const store = useFlowStore.getState();
+          store.addNode('input.image', nodePos);
+          const node = useFlowStore.getState().nodes.at(-1);
+          try {
+            const { dataUrl, meta } = await smartImportImage(file);
+            if (node) store.updateParam(node.id, 'file', dataUrl);
+            setNotice(meta.converted ? `✓ ${meta.note}` : `✓ ${meta.note}`);
+          } catch (err) {
+            // node vừa tạo bị bỏ trống → gỡ đi cho sạch
+            if (node) {
+              const s2 = useFlowStore.getState();
+              useFlowStore.setState({ nodes: s2.nodes.filter((n) => n.id !== node.id) });
+            }
+            setConnectError(
+              err instanceof SmartImportError ? err.message : `Không nạp được “${file.name}”.`,
+            );
+          }
+          placed++;
+        }
       }
     },
-    [screenToFlowPosition, addNode, setConnectError],
+    [screenToFlowPosition, addNode, setConnectError, setNotice],
   );
 
   // Keyboard: Cmd+D duplicate, Cmd+Z / Cmd+Shift+Z undo-redo, Space giữ = pan tạm
@@ -264,6 +303,13 @@ export function FlowCanvas() {
       {connectError && (
         <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-lg border border-red-500/40 bg-red-950/90 px-3.5 py-2 text-xs text-red-200 shadow-xl backdrop-blur">
           {connectError}
+        </div>
+      )}
+
+      {/* toast thông báo smart-import (chuyển định dạng, giữ thông số gốc) */}
+      {notice && !connectError && (
+        <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2 max-w-[92vw] rounded-lg border border-emerald-500/40 bg-emerald-950/90 px-3.5 py-2 text-xs text-emerald-100 shadow-xl backdrop-blur">
+          {notice}
         </div>
       )}
 

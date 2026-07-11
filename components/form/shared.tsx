@@ -13,7 +13,7 @@ import { Loader2, Upload, ImageIcon, Check } from 'lucide-react';
 import { runImageJob, AiJobError } from '@/lib/ai/client';
 import type { AiTask } from '@/lib/ai/models';
 import { useFlowStore } from '@/lib/store';
-import { readRenderImage, ImageIngestError } from '@/lib/images/ingest';
+import { smartImportImage, SmartImportError } from '@/lib/images/smart-ingest';
 
 /* ───────────────────────── AI job (mock-tolerant) ───────────────────────── */
 
@@ -300,11 +300,12 @@ export function ImagePicker({
     async (file: File | undefined) => {
       if (!file) return;
       try {
-        const url = await readRenderImage(file);
+        const { dataUrl, meta } = await smartImportImage(file);
         setUploadError(null);
-        onPick({ url, name: file.name || 'ảnh máy', source: 'upload' });
+        onPick({ url: dataUrl, name: file.name || 'ảnh máy', source: 'upload' });
+        if (meta.converted) useFlowStore.getState().setNotice(`✓ ${meta.note}`);
       } catch (err) {
-        setUploadError(err instanceof ImageIngestError ? err.message : 'Không nạp được ảnh.');
+        setUploadError(err instanceof SmartImportError ? err.message : 'Không nạp được ảnh.');
       }
     },
     [onPick],
@@ -369,7 +370,7 @@ export function ImagePicker({
           <input
             ref={fileRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/tiff,.tif,.tiff,.psd,image/heic,image/heif"
             capture="environment"
             className="hidden"
             onChange={(e) => {
@@ -384,7 +385,7 @@ export function ImagePicker({
           >
             <Upload size={22} />
             <span className="text-[13px] font-medium">Chụp ảnh hoặc chọn từ máy</span>
-            <span className="text-[11px] text-[var(--t4)]">JPG · PNG · WEBP · tối đa 25MB</span>
+            <span className="text-[11px] text-[var(--t4)]">JPG · PNG · WEBP · TIFF · PSD — tự chuyển định dạng</span>
           </button>
           {uploadError && <div className="mt-2"><ErrorNote>{uploadError}</ErrorNote></div>}
         </div>

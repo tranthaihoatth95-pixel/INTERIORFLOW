@@ -61,6 +61,8 @@ interface FlowState {
   /** Moodboard maker (chặng Concept) — overlay chọn ảnh + style → moodboard */
   moodboardOpen: boolean;
   connectError: string | null;
+  /** Thông báo trung tính/thành công (vd smart-import đã chuyển định dạng) — banner xanh, tự tắt. */
+  notice: string | null;
   /** nodeId đang mở Mask Painter modal */
   maskEditorNodeId: string | null;
   /** 'auto' = sáng 6h30–18h, tối ngoài giờ đó */
@@ -106,6 +108,7 @@ interface FlowState {
   setPresentModeOpen: (open: boolean) => void;
   setMoodboardOpen: (open: boolean) => void;
   setConnectError: (msg: string | null) => void;
+  setNotice: (msg: string | null) => void;
   setMaskEditorNodeId: (nodeId: string | null) => void;
   setAnnotateNodeId: (nodeId: string | null) => void;
   setLightboxUrl: (url: string | null) => void;
@@ -184,6 +187,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   presentModeOpen: false,
   moodboardOpen: false,
   connectError: null,
+  notice: null,
   maskEditorNodeId: null,
   annotateNodeId: null,
   lightboxUrl: null,
@@ -277,6 +281,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   setPresentModeOpen: (presentModeOpen) => set({ presentModeOpen }),
   setMoodboardOpen: (moodboardOpen) => set({ moodboardOpen }),
   setConnectError: (connectError) => set({ connectError }),
+  setNotice: (notice) => set({ notice }),
   setMaskEditorNodeId: (maskEditorNodeId) => set({ maskEditorNodeId }),
   setAnnotateNodeId: (annotateNodeId) => set({ annotateNodeId }),
   setLightboxUrl: (lightboxUrl) => set({ lightboxUrl }),
