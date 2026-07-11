@@ -66,3 +66,22 @@ sẽ báo lỗi rõ ("chưa có workflow tự-host"), không crash — cứ chuy
 
 Thay node checkpoint = FLUX loader, ControlNet = FLUX depth, KSampler = SamplerCustomAdvanced.
 Giữ nguyên các `_meta.title` marker → adapter không cần sửa. 16GB VRAM chạy FLUX dev fp8 + depth ổn.
+
+## 6. Custom node cho Clay → Photoreal (BẮT BUỘC)
+
+`clay_depth.json` dùng `DepthAnythingV2Preprocessor` từ **comfyui_controlnet_aux**. Node này chỉ đăng ký
+khi ĐỦ dependency Python — thiếu 1 gói là **cả pack đăng ký 0 node** và app báo "thiếu custom node".
+Cài vào đúng venv của ComfyUI:
+
+```bash
+cd ~/ComfyUI && source venv/bin/activate
+pip install matplotlib scikit-image scikit-learn onnxruntime   # KHÔNG cài onnxruntime-gpu trên Mac
+# (requirements.txt của pack liệt kê onnxruntime-gpu — bỏ qua, Mac dùng onnxruntime CPU)
+```
+
+Restart ComfyUI, kiểm đã đăng ký:
+`curl -s localhost:8188/object_info/DepthAnythingV2Preprocessor` → khác `{}` là OK.
+Model depth ControlNet: `models/controlnet/controlnet-depth-sdxl-1.0-fp16.safetensors` (đã có).
+
+**MPS (Mac 16GB) chậm**: SDXL + ControlNet + depth ~40–55 s/bước. `clay_depth.json` đã hạ
+**steps 26→20, res 1216×832→1024×704** cho đỡ thrash RAM; máy RTX nên nâng lại + đổi FLUX (mục 5).

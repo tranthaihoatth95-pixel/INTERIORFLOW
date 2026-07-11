@@ -51,8 +51,8 @@
         "10",
         0
       ],
-      "width": 1216,
-      "height": 832,
+      "width": 1024,
+      "height": 704,
       "upscale_method": "lanczos",
       "crop": "disabled"
     }
@@ -93,8 +93,8 @@
   "5": {
     "class_type": "EmptyLatentImage",
     "inputs": {
-      "width": 1216,
-      "height": 832,
+      "width": 1024,
+      "height": 704,
       "batch_size": 1
     }
   },
@@ -105,7 +105,7 @@
     },
     "inputs": {
       "seed": 0,
-      "steps": 26,
+      "steps": 20,
       "cfg": 6.0,
       "sampler_name": "dpmpp_2m",
       "scheduler": "karras",
