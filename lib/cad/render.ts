@@ -3,9 +3,17 @@
  * Không phụ thuộc React. Toạ độ world mm, Y-up → screen px qua Viewport (lật Y).
  */
 
-import type { Doc, Entity, Pt, Viewport } from './model';
+import type { Doc, Entity, Pt, Viewport, DimEntity } from './model';
 import { docBox, fitBox, worldToScreen } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
+
+/** Dim style tối thiểu dùng khi vẽ (mặc định nếu không truyền — xem store.ts DimStyle). */
+export interface DimStyle {
+  textHeight: number;
+  arrowSize: number;
+  dimScale: number;
+}
+const DEFAULT_DIM_STYLE: DimStyle = { textHeight: 120, arrowSize: 80, dimScale: 1 };
 
 export interface DrawStyle {
   /** màu nét mặc định khi entity/layer không cho màu (dùng cho export đen-trắng) */
@@ -15,6 +23,8 @@ export interface DrawStyle {
   lineWidth: number;
   /** vẽ chữ text entity */
   text: boolean;
+  /** Nấc 3 — dim style (cỡ chữ/mũi tên/tỉ lệ); mặc định DEFAULT_DIM_STYLE nếu không truyền */
+  dimStyle?: DimStyle;
 }
 
 function layerColor(doc: Doc, e: Entity, style: DrawStyle): string {
@@ -150,15 +160,50 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
   }
 }
 
-function drawDimension(
-  ctx: CanvasRenderingContext2D,
-  v: Viewport,
-  e: { a: Pt; b: Pt; off: number },
-  color: string,
-  style: DrawStyle,
-) {
+function dimText(ctx: CanvasRenderingContext2D, v: Viewport, color: string, text: string, at: Pt, ds: DimStyle) {
+  ctx.fillStyle = color;
+  const px = Math.max(9, ds.textHeight * ds.dimScale * v.scale);
+  ctx.font = `${px}px ui-sans-serif, system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(text, at.x, at.y - 3);
+  ctx.textAlign = 'left';
+}
+
+/** Tick 45° kiểu kiến trúc tại điểm `at`, dọc theo hướng đơn vị (ux,uy) của đường kích thước. */
+function drawTick(ctx: CanvasRenderingContext2D, at: Pt, ux: number, uy: number, size: number) {
+  // xoay hướng (ux,uy) 45° để ra tick chéo — chuẩn ghi kích thước kiến trúc VN thay vì mũi tên.
+  const c = Math.SQRT1_2;
+  const tx = ux * c - uy * c;
+  const ty = ux * c + uy * c;
+  ctx.beginPath();
+  ctx.moveTo(at.x - tx * size, at.y - ty * size);
+  ctx.lineTo(at.x + tx * size, at.y + ty * size);
+  ctx.stroke();
+}
+
+/** Mũi tên tam giác tại điểm `tip`, hướng từ `from`→`tip` (dùng cho leader radius/diameter). */
+function drawArrowHead(ctx: CanvasRenderingContext2D, from: Pt, tip: Pt, size: number) {
+  const dx = tip.x - from.x;
+  const dy = tip.y - from.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  const px = -uy;
+  const py = ux;
+  const back = { x: tip.x - ux * size, y: tip.y - uy * size };
+  ctx.beginPath();
+  ctx.moveTo(tip.x, tip.y);
+  ctx.lineTo(back.x + px * size * 0.4, back.y + py * size * 0.4);
+  ctx.lineTo(back.x - px * size * 0.4, back.y - py * size * 0.4);
+  ctx.closePath();
+  ctx.fillStyle = ctx.strokeStyle as string;
+  ctx.fill();
+}
+
+/** DAL — aligned: đo khoảng cách a-b, đường kích thước lệch `off`. */
+function drawDimAligned(ctx: CanvasRenderingContext2D, v: Viewport, e: DimEntity, color: string, style: DrawStyle, ds: DimStyle) {
   const S = (p: Pt) => worldToScreen(v, p);
-  // pháp tuyến đơn vị của đoạn a-b
   const dx = e.b.x - e.a.x;
   const dy = e.b.y - e.a.y;
   const len = Math.hypot(dx, dy) || 1;
@@ -173,24 +218,81 @@ function drawDimension(
   ctx.strokeStyle = color;
   ctx.lineWidth = style.lineWidth;
   ctx.beginPath();
-  // đường gióng
   ctx.moveTo(sa0.x, sa0.y);
   ctx.lineTo(sa.x, sa.y);
   ctx.moveTo(sb0.x, sb0.y);
   ctx.lineTo(sb.x, sb.y);
-  // đường kích thước
   ctx.moveTo(sa.x, sa.y);
   ctx.lineTo(sb.x, sb.y);
   ctx.stroke();
-  // text mm ở giữa
-  ctx.fillStyle = color;
-  ctx.font = '11px ui-sans-serif, system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'bottom';
-  const mx = (sa.x + sb.x) / 2;
-  const my = (sa.y + sb.y) / 2;
-  ctx.fillText(`${Math.round(len)}`, mx, my - 3);
-  ctx.textAlign = 'left';
+  const tickPx = Math.max(2, ds.arrowSize * ds.dimScale * v.scale * 0.5);
+  const ulen = Math.hypot(sb.x - sa.x, sb.y - sa.y) || 1;
+  const ux = (sb.x - sa.x) / ulen;
+  const uy = (sb.y - sa.y) / ulen;
+  drawTick(ctx, sa, ux, uy, tickPx);
+  drawTick(ctx, sb, ux, uy, tickPx);
+  dimText(ctx, v, color, `${Math.round(len)}`, { x: (sa.x + sb.x) / 2, y: (sa.y + sb.y) / 2 }, ds);
+}
+
+/** DRA/DDI — radius/diameter: leader từ tâm (radius) hoặc xuyên tâm (diameter), mũi tên tại tâm/đối tâm. */
+function drawDimRadial(ctx: CanvasRenderingContext2D, v: Viewport, e: DimEntity, color: string, style: DrawStyle, diameter: boolean, ds: DimStyle) {
+  const S = (p: Pt) => worldToScreen(v, p);
+  const r = Math.hypot(e.b.x - e.a.x, e.b.y - e.a.y);
+  const from = diameter ? { x: e.a.x * 2 - e.b.x, y: e.a.y * 2 - e.b.y } : e.a;
+  const sFrom = S(from);
+  const sTo = S(e.b);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = style.lineWidth;
+  ctx.beginPath();
+  ctx.moveTo(sFrom.x, sFrom.y);
+  ctx.lineTo(sTo.x, sTo.y);
+  ctx.stroke();
+  const arrowPx = Math.max(3, ds.arrowSize * ds.dimScale * v.scale);
+  drawArrowHead(ctx, sFrom, sTo, arrowPx);
+  if (diameter) drawArrowHead(ctx, sTo, sFrom, arrowPx);
+  const label = diameter ? `⌀${Math.round(r * 2)}` : `R${Math.round(r)}`;
+  dimText(ctx, v, color, label, { x: (sFrom.x + sTo.x) / 2, y: (sFrom.y + sTo.y) / 2 }, ds);
+}
+
+/** DAN — angular: cung đo góc bán kính `off` quanh đỉnh `c`, giữa hướng a-c và b-c. */
+function drawDimAngular(ctx: CanvasRenderingContext2D, v: Viewport, e: DimEntity, color: string, style: DrawStyle, ds: DimStyle) {
+  if (!e.c) return;
+  const S = (p: Pt) => worldToScreen(v, p);
+  const ang1 = Math.atan2(e.a.y - e.c.y, e.a.x - e.c.x);
+  const ang2 = Math.atan2(e.b.y - e.c.y, e.b.x - e.c.x);
+  const r = Math.abs(e.off) || 500;
+  const p1 = { x: e.c.x + r * Math.cos(ang1), y: e.c.y + r * Math.sin(ang1) };
+  const p2 = { x: e.c.x + r * Math.cos(ang2), y: e.c.y + r * Math.sin(ang2) };
+  const sc = S(e.c);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = style.lineWidth;
+  // đường gióng từ đỉnh tới cung
+  ctx.beginPath();
+  ctx.moveTo(sc.x, sc.y);
+  const sp1 = S(p1);
+  ctx.lineTo(sp1.x, sp1.y);
+  ctx.moveTo(sc.x, sc.y);
+  const sp2 = S(p2);
+  ctx.lineTo(sp2.x, sp2.y);
+  ctx.stroke();
+  // cung đo (Y lật giống drawEntity arc)
+  ctx.beginPath();
+  ctx.arc(sc.x, sc.y, Math.abs(r * v.scale), -ang2, -ang1);
+  ctx.stroke();
+  const sweep = (((ang2 - ang1) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const deg = Math.round((sweep * 180) / Math.PI);
+  const mid = ang1 + sweep / 2;
+  const tp = S({ x: e.c.x + r * Math.cos(mid), y: e.c.y + r * Math.sin(mid) });
+  dimText(ctx, v, color, `${deg}°`, tp, ds);
+}
+
+function drawDimension(ctx: CanvasRenderingContext2D, v: Viewport, e: DimEntity, color: string, style: DrawStyle) {
+  const kind = e.kind ?? 'aligned';
+  const ds = style.dimStyle ?? DEFAULT_DIM_STYLE;
+  if (kind === 'radius') drawDimRadial(ctx, v, e, color, style, false, ds);
+  else if (kind === 'diameter') drawDimRadial(ctx, v, e, color, style, true, ds);
+  else if (kind === 'angular') drawDimAngular(ctx, v, e, color, style, ds);
+  else drawDimAligned(ctx, v, e, color, style, ds);
 }
 
 /** Vẽ toàn bộ entity (bỏ layer ẩn). */

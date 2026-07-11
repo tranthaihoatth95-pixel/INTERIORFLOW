@@ -398,8 +398,9 @@ export function scaleEntityAbout(e: Entity, base: Pt, f: number): Entity {
   const s = (p: Pt) => scalePt(p, base, f);
   switch (e.type) {
     case 'line':
-    case 'dim':
       return { ...e, a: s(e.a), b: s(e.b) };
+    case 'dim':
+      return { ...e, a: s(e.a), b: s(e.b), off: e.off * f, ...(e.c ? { c: s(e.c) } : {}) };
     case 'polyline':
       return { ...e, points: e.points.map(s) };
     case 'rect':
@@ -452,8 +453,9 @@ export function stretchEntity(e: Entity, w: StretchWindow, dx: number, dy: numbe
   const mv = (p: Pt): Pt => (inWindow(p, w) ? { x: p.x + dx, y: p.y + dy } : p);
   switch (e.type) {
     case 'line':
-    case 'dim':
       return { ...e, a: mv(e.a), b: mv(e.b) };
+    case 'dim':
+      return { ...e, a: mv(e.a), b: mv(e.b), ...(e.c ? { c: mv(e.c) } : {}) };
     case 'polyline':
       return { ...e, points: e.points.map(mv) };
     case 'rect': {

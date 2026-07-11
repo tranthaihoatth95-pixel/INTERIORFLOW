@@ -20,7 +20,7 @@
  * DXF là chuỗi cặp (groupCode, value) mỗi cặp 2 dòng. Ta duyệt tuyến tính, gom ENTITIES.
  */
 
-import type { Doc, Entity, Layer, Pt } from './model';
+import type { Doc, DimEntity, Entity, Layer, Pt } from './model';
 import { docBox } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 
@@ -187,6 +187,34 @@ function buildEntity(
       const txt = (g[1]?.join('') ?? '').replace(/\\[A-Za-z0-9.|]+;?/g, '').trim();
       return { id: eid(), type: 'text', layer, color, at: { x: num(10), y: num(20) }, text: txt, h: num(40) || 250 };
     }
+    case 'DIMENSION': {
+      // Đọc lại đúng encoding do exportDxf ghi (xem case 'dim' ở exportDxf) — KHÔNG cần parse
+      // block ẩn danh (chỉ để hiển thị đúng ở phần mềm CAD khác; app này tự vẽ lại từ a/b/off/c).
+      const typeRaw = num(70) & 7;
+      const has13 = g[13] !== undefined;
+      const has15 = g[15] !== undefined;
+      const a13 = has13 ? { x: num(13), y: num(23) } : undefined;
+      const b14 = g[14] !== undefined ? { x: num(14), y: num(24) } : undefined;
+      const c15 = has15 ? { x: num(15), y: num(25) } : undefined;
+      const dimPt = { x: num(10), y: num(20) };
+      if (typeRaw === 1 && a13 && b14) {
+        const dx = b14.x - a13.x;
+        const dy = b14.y - a13.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len;
+        const ny = dx / len;
+        const off = (dimPt.x - a13.x) * nx + (dimPt.y - a13.y) * ny;
+        return { id: eid(), type: 'dim', kind: 'aligned', layer, color, a: a13, b: b14, off };
+      }
+      if ((typeRaw === 3 || typeRaw === 4) && c15) {
+        return { id: eid(), type: 'dim', kind: typeRaw === 3 ? 'diameter' : 'radius', layer, color, a: c15, b: dimPt, off: 0 };
+      }
+      if (typeRaw === 2 && a13 && b14 && c15) {
+        const off = Math.hypot(dimPt.x - c15.x, dimPt.y - c15.y);
+        return { id: eid(), type: 'dim', kind: 'angular', layer, color, a: a13, b: b14, c: c15, off };
+      }
+      return null; // DIMENSION lạ (không phải do app này ghi) → bỏ qua an toàn
+    }
     case 'LWPOLYLINE': {
       const xs = g[10] ?? [];
       const ys = g[20] ?? [];
@@ -223,7 +251,59 @@ function blockLocalToWorld(lp: Pt, at: Pt, rot: number, sx: number, sy: number):
   return { x: at.x + x * cos - y * sin, y: at.y + x * sin + y * cos };
 }
 
-/** Ghi Doc → DXF ASCII (HEADER + TABLES/LAYER + ENTITIES). Mở sạch ở AutoCAD/BricsCAD/LibreCAD. */
+/**
+ * Nấc 3 — DIMENSION entity THẬT (không còn line+text rời). DXF yêu cầu DIMENSION tham chiếu 1
+ * block ẩn danh chứa hình vẽ thật (đường gióng/đường kích thước/cung đo/text) — đây là cách
+ * AutoCAD tự làm; nếu chỉ ghi entity DIMENSION với các điểm định nghĩa mà KHÔNG có block, nhiều
+ * phần mềm (kể cả không phải AutoCAD) sẽ không vẽ được gì. Hàm này sinh phần hình vẽ đó.
+ */
+function dimBlockGeometry(e: DimEntity, lay: string, aci: number | undefined): string[] {
+  const out: string[] = [];
+  const wLine = (a: Pt, b: Pt) =>
+    out.push(pair(0, 'LINE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, a.x), pair(20, a.y), pair(30, 0), pair(11, b.x), pair(21, b.y), pair(31, 0));
+  const wText = (at: Pt, h: number, s: string) =>
+    out.push(pair(0, 'TEXT'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, at.x), pair(20, at.y), pair(30, 0), pair(40, h), pair(1, s));
+  const wArc = (c: Pt, r: number, a1: number, a2: number) =>
+    out.push(pair(0, 'ARC'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, c.x), pair(20, c.y), pair(30, 0), pair(40, r), pair(50, (a1 * 180) / Math.PI), pair(51, (a2 * 180) / Math.PI));
+
+  const kind = e.kind ?? 'aligned';
+  if (kind === 'aligned') {
+    const dx = e.b.x - e.a.x;
+    const dy = e.b.y - e.a.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len;
+    const ny = dx / len;
+    const oa = { x: e.a.x + nx * e.off, y: e.a.y + ny * e.off };
+    const ob = { x: e.b.x + nx * e.off, y: e.b.y + ny * e.off };
+    wLine(e.a, oa);
+    wLine(e.b, ob);
+    wLine(oa, ob);
+    wText({ x: (oa.x + ob.x) / 2, y: (oa.y + ob.y) / 2 + 20 }, 120, `${Math.round(len)}`);
+  } else if (kind === 'radius' || kind === 'diameter') {
+    const r = Math.hypot(e.b.x - e.a.x, e.b.y - e.a.y);
+    const from = kind === 'diameter' ? { x: e.a.x * 2 - e.b.x, y: e.a.y * 2 - e.b.y } : e.a;
+    wLine(from, e.b);
+    const label = kind === 'diameter' ? `%%c${Math.round(r * 2)}` : `R${Math.round(r)}`;
+    wText({ x: (from.x + e.b.x) / 2, y: (from.y + e.b.y) / 2 + 20 }, 120, label);
+  } else if (kind === 'angular' && e.c) {
+    const c = e.c;
+    const ang1 = Math.atan2(e.a.y - c.y, e.a.x - c.x);
+    const ang2 = Math.atan2(e.b.y - c.y, e.b.x - c.x);
+    const r = Math.abs(e.off) || 500;
+    const p1 = { x: c.x + r * Math.cos(ang1), y: c.y + r * Math.sin(ang1) };
+    const p2 = { x: c.x + r * Math.cos(ang2), y: c.y + r * Math.sin(ang2) };
+    wLine(c, p1);
+    wLine(c, p2);
+    wArc(c, r, ang1, ang2);
+    const sweep = (((ang2 - ang1) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    const mid = ang1 + sweep / 2;
+    const deg = Math.round((sweep * 180) / Math.PI);
+    wText({ x: c.x + r * Math.cos(mid), y: c.y + r * Math.sin(mid) + 20 }, 120, `${deg}%%d`);
+  }
+  return out;
+}
+
+/** Ghi Doc → DXF ASCII (HEADER + TABLES/LAYER/BLOCK_RECORD + BLOCKS + ENTITIES). Mở sạch ở AutoCAD/BricsCAD/LibreCAD. */
 export function exportDxf(doc: Doc): string {
   const out: string[] = [];
   const box = docBox(doc) ?? { minX: 0, minY: 0, maxX: 1000, maxY: 1000 };
@@ -238,7 +318,13 @@ export function exportDxf(doc: Doc): string {
     pair(0, 'ENDSEC'),
   );
 
-  // TABLES — chỉ bảng LAYER (đủ để mọi entity tham chiếu layer có khai báo, tránh "orphan layer").
+  const layerName = (id: string) => sanitizeName(doc.layers.find((l) => l.id === id)?.name ?? '0');
+  const dimEntities = doc.entities.filter((e): e is DimEntity => e.type === 'dim');
+  const dimBlockName = new Map<string, string>();
+  dimEntities.forEach((e, i) => dimBlockName.set(e.id, `*D${i + 1}`));
+
+  // TABLES — LAYER + BLOCK_RECORD (chỉ khi có dimension cần block ẩn danh — furniture vẫn
+  // phẳng hoá, KHÔNG cần BLOCK_RECORD, xem đầu file).
   out.push(pair(0, 'SECTION'), pair(2, 'TABLES'));
   out.push(pair(0, 'TABLE'), pair(2, 'LAYER'), pair(70, doc.layers.length + 1));
   out.push(pair(0, 'LAYER'), pair(2, '0'), pair(70, 0), pair(62, 7), pair(6, 'CONTINUOUS'));
@@ -246,12 +332,34 @@ export function exportDxf(doc: Doc): string {
     out.push(pair(0, 'LAYER'), pair(2, sanitizeName(l.name)), pair(70, l.locked ? 4 : 0), pair(62, hexToAci(l.color)), pair(6, 'CONTINUOUS'));
   }
   out.push(pair(0, 'ENDTAB'));
+  if (dimEntities.length) {
+    out.push(pair(0, 'TABLE'), pair(2, 'BLOCK_RECORD'), pair(70, dimEntities.length + 2));
+    out.push(pair(0, 'BLOCK_RECORD'), pair(2, '*Model_Space'));
+    out.push(pair(0, 'BLOCK_RECORD'), pair(2, '*Paper_Space'));
+    for (const name of dimBlockName.values()) out.push(pair(0, 'BLOCK_RECORD'), pair(2, name));
+    out.push(pair(0, 'ENDTAB'));
+  }
+  out.push(pair(0, 'ENDSEC'));
+
+  // BLOCKS — *Model_Space/*Paper_Space (boilerplate bắt buộc của AC1015+) + 1 block ẩn danh
+  // cho mỗi DIMENSION (chứa hình vẽ thật: đường gióng/kích thước/cung đo/text).
+  out.push(pair(0, 'SECTION'), pair(2, 'BLOCKS'));
+  out.push(pair(0, 'BLOCK'), pair(8, '0'), pair(2, '*Model_Space'), pair(70, 0), pair(10, 0), pair(20, 0), pair(30, 0), pair(3, '*Model_Space'), pair(1, ''));
+  out.push(pair(0, 'ENDBLK'), pair(8, '0'));
+  out.push(pair(0, 'BLOCK'), pair(8, '0'), pair(2, '*Paper_Space'), pair(70, 0), pair(10, 0), pair(20, 0), pair(30, 0), pair(3, '*Paper_Space'), pair(1, ''));
+  out.push(pair(0, 'ENDBLK'), pair(8, '0'));
+  for (const e of dimEntities) {
+    const bname = dimBlockName.get(e.id)!;
+    const lay = layerName(e.layer);
+    const aci = e.color ? hexToAci(e.color) : undefined;
+    out.push(pair(0, 'BLOCK'), pair(8, lay), pair(2, bname), pair(70, 1), pair(10, 0), pair(20, 0), pair(30, 0), pair(3, bname), pair(1, ''));
+    out.push(...dimBlockGeometry(e, lay, aci));
+    out.push(pair(0, 'ENDBLK'), pair(8, lay));
+  }
   out.push(pair(0, 'ENDSEC'));
 
   // ENTITIES
   out.push(pair(0, 'SECTION'), pair(2, 'ENTITIES'));
-
-  const layerName = (id: string) => sanitizeName(doc.layers.find((l) => l.id === id)?.name ?? '0');
 
   const writeLine = (a: Pt, b: Pt, lay: string, aci?: number) => {
     out.push(pair(0, 'LINE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, a.x), pair(20, a.y), pair(30, 0), pair(11, b.x), pair(21, b.y), pair(31, 0));
@@ -283,20 +391,58 @@ export function exportDxf(doc: Doc): string {
         writeLine(e.a, e.b, lay, aci);
         break;
       case 'dim': {
-        // Xuất như line đơn giản + text số đo (không dùng entity DIMENSION thật — xem đầu file).
-        const dx = e.b.x - e.a.x;
-        const dy = e.b.y - e.a.y;
-        const len = Math.hypot(dx, dy) || 1;
-        const nx = -dy / len;
-        const ny = dx / len;
-        const oa = { x: e.a.x + nx * e.off, y: e.a.y + ny * e.off };
-        const ob = { x: e.b.x + nx * e.off, y: e.b.y + ny * e.off };
-        writeLine(e.a, oa, lay, aci);
-        writeLine(e.b, ob, lay, aci);
-        writeLine(oa, ob, lay, aci);
-        const mx = (oa.x + ob.x) / 2;
-        const my = (oa.y + ob.y) / 2;
-        out.push(pair(0, 'TEXT'), pair(8, lay), pair(10, mx), pair(20, my + 20), pair(30, 0), pair(40, 120), pair(1, `${Math.round(len)}`));
+        // Entity DIMENSION thật (Nấc 3) — tham chiếu block ẩn danh đã ghi ở BLOCKS phía trên.
+        const kind = e.kind ?? 'aligned';
+        const bname = dimBlockName.get(e.id) ?? '*D0';
+        const typeCode = kind === 'aligned' ? 1 : kind === 'angular' ? 2 : kind === 'diameter' ? 3 : 4; // radius=4
+        let dimLinePt: Pt;
+        let textAt: Pt;
+        if (kind === 'aligned') {
+          const dx = e.b.x - e.a.x;
+          const dy = e.b.y - e.a.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const nx = -dy / len;
+          const ny = dx / len;
+          dimLinePt = { x: e.a.x + nx * e.off, y: e.a.y + ny * e.off };
+          textAt = { x: (e.a.x + e.b.x) / 2 + nx * e.off, y: (e.a.y + e.b.y) / 2 + ny * e.off };
+        } else if (kind === 'radius' || kind === 'diameter') {
+          dimLinePt = e.b;
+          textAt = { x: (e.a.x + e.b.x) / 2, y: (e.a.y + e.b.y) / 2 };
+        } else {
+          const c = e.c ?? e.a;
+          const ang1 = Math.atan2(e.a.y - c.y, e.a.x - c.x);
+          const ang2 = Math.atan2(e.b.y - c.y, e.b.x - c.x);
+          const r = Math.abs(e.off) || 500;
+          const sweep = (((ang2 - ang1) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+          const mid = ang1 + sweep / 2;
+          dimLinePt = { x: c.x + r * Math.cos(mid), y: c.y + r * Math.sin(mid) };
+          textAt = dimLinePt;
+        }
+        out.push(
+          pair(0, 'DIMENSION'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []),
+          pair(2, bname),
+          pair(10, dimLinePt.x), pair(20, dimLinePt.y), pair(30, 0),
+          pair(11, textAt.x), pair(21, textAt.y), pair(31, 0),
+          pair(70, typeCode + 32),
+          pair(3, 'Standard'),
+        );
+        if (kind === 'aligned') {
+          out.push(pair(13, e.a.x), pair(23, e.a.y), pair(33, 0), pair(14, e.b.x), pair(24, e.b.y), pair(34, 0));
+          out.push(pair(1, `${Math.round(Math.hypot(e.b.x - e.a.x, e.b.y - e.a.y))}`));
+        } else if (kind === 'radius' || kind === 'diameter') {
+          const r = Math.hypot(e.b.x - e.a.x, e.b.y - e.a.y);
+          out.push(pair(15, e.a.x), pair(25, e.a.y), pair(35, 0));
+          out.push(pair(40, kind === 'diameter' ? r * 2 : r));
+          out.push(pair(1, kind === 'diameter' ? `%%c${Math.round(r * 2)}` : `R${Math.round(r)}`));
+        } else if (kind === 'angular' && e.c) {
+          out.push(pair(13, e.a.x), pair(23, e.a.y), pair(33, 0));
+          out.push(pair(14, e.b.x), pair(24, e.b.y), pair(34, 0));
+          out.push(pair(15, e.c.x), pair(25, e.c.y), pair(35, 0));
+          const ang1 = Math.atan2(e.a.y - e.c.y, e.a.x - e.c.x);
+          const ang2 = Math.atan2(e.b.y - e.c.y, e.b.x - e.c.x);
+          const sweep = (((ang2 - ang1) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+          out.push(pair(1, `${Math.round((sweep * 180) / Math.PI)}%%d`));
+        }
         break;
       }
       case 'polyline':

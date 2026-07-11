@@ -13,7 +13,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useCadStore } from '@/lib/cad/store';
-import type { Entity, Pt, Viewport } from '@/lib/cad/model';
+import type { Entity, Pt, Viewport, DimEntity, LineEntity } from '@/lib/cad/model';
 import { screenToWorld, worldToScreen, zoomAt, fitBox, docBox, dist } from '@/lib/cad/model';
 import { drawEntities, drawEntity } from '@/lib/cad/render';
 import { findSnap, hitTest, idsInRect, type SnapResult } from '@/lib/cad/query';
@@ -40,6 +40,7 @@ import {
   explodeEntity,
   lengthenLine,
   lengthenArc,
+  infiniteLineIntersect,
 } from '@/lib/cad/modify';
 import { gripsOf, hitTestGrip, applyGripMove, type Grip } from '@/lib/cad/grips';
 
@@ -64,6 +65,9 @@ interface Ix {
   // Nấc 2 — grips: kéo trực tiếp điểm neo của entity đang chọn (chỉ khi chọn đúng 1)
   gripDrag: { entityId: string; grip: Grip } | null;
   gripPreview: Entity | null;
+  // Nấc 3 — dimension: dim gần nhất tạo ra (cho DCO/DBA nối chuỗi) + đường 1 đang chờ cho DAN
+  lastDim: DimEntity | null;
+  angularFirst: LineEntity | null;
 }
 
 function css(varName: string, fallback: string): string {
@@ -94,6 +98,8 @@ export default function CadCanvas() {
     breakTarget: null,
     gripDrag: null,
     gripPreview: null,
+    lastDim: null,
+    angularFirst: null,
   });
 
   // ── vòng vẽ rAF ──
@@ -389,7 +395,10 @@ export default function CadCanvas() {
       case 'dimension':
         P.push(w);
         if (P.length === 2) {
-          commit({ id: newId('e'), type: 'dim', layer: st.currentLayer, a: P[0], b: P[1], off: 200 });
+          const d: DimEntity = { id: newId('e'), type: 'dim', kind: 'aligned', layer: st.currentLayer, a: P[0], b: P[1], off: 200 };
+          st.addEntity(d);
+          ix.current.lastDim = d;
+          ix.current.pts = [];
         }
         break;
       case 'measure':
@@ -459,6 +468,21 @@ export default function CadCanvas() {
         break;
       case 'lengthen':
         handleLengthen(w);
+        break;
+      case 'dimradius':
+        handleDimRadial(w, false);
+        break;
+      case 'dimdiameter':
+        handleDimRadial(w, true);
+        break;
+      case 'dimangular':
+        handleDimAngular(w);
+        break;
+      case 'dimcontinue':
+        handleDimChain(w, 'continue');
+        break;
+      case 'dimbaseline':
+        handleDimChain(w, 'baseline');
         break;
       default:
         break;
@@ -695,6 +719,74 @@ export default function CadCanvas() {
     }
   }
 
+  /** DRA/DDI — click lên CIRCLE/ARC: điểm click chiếu lên đường tròn xác định hướng leader. */
+  function handleDimRadial(w: Pt, diameter: boolean) {
+    const st = useCadStore.getState();
+    const id = hitTest(st.doc, w, tolMm());
+    if (!id) return;
+    const target = st.doc.entities.find((e) => e.id === id);
+    if (!target || (target.type !== 'circle' && target.type !== 'arc')) {
+      st.setStatus('Dim Radius/Diameter: chỉ đo trên CIRCLE hoặc ARC.');
+      return;
+    }
+    const ang = Math.atan2(w.y - target.c.y, w.x - target.c.x);
+    const onCirc: Pt = { x: target.c.x + target.r * Math.cos(ang), y: target.c.y + target.r * Math.sin(ang) };
+    const d: DimEntity = { id: newId('e'), type: 'dim', kind: diameter ? 'diameter' : 'radius', layer: st.currentLayer, a: target.c, b: onCirc, off: 0 };
+    st.addEntity(d);
+  }
+
+  /** DAN — click 2 đường LINE tạo góc, rồi click vị trí đặt cung đo (xác định bán kính off). */
+  function handleDimAngular(w: Pt) {
+    const st = useCadStore.getState();
+    const id = hitTest(st.doc, w, tolMm());
+    if (!id) return;
+    const target = st.doc.entities.find((e) => e.id === id);
+    if (!target || target.type !== 'line') {
+      st.setStatus('Dim Angular: chỉ hỗ trợ 2 đường LINE.');
+      return;
+    }
+    if (!ix.current.angularFirst) {
+      ix.current.angularFirst = target;
+      st.setStatus('Dim Angular: click đường thứ 2.');
+      return;
+    }
+    const l1 = ix.current.angularFirst;
+    ix.current.angularFirst = null;
+    if (l1.id === id) return;
+    const P0 = infiniteLineIntersect(l1.a, l1.b, target.a, target.b);
+    if (!P0) {
+      st.setStatus('Dim Angular: 2 đường song song — không đo được góc.');
+      return;
+    }
+    const ref1 = dist(l1.a, P0.pt) > dist(l1.b, P0.pt) ? l1.a : l1.b;
+    const ref2 = dist(target.a, P0.pt) > dist(target.b, P0.pt) ? target.a : target.b;
+    const off = Math.max(50, dist(P0.pt, w));
+    const d: DimEntity = { id: newId('e'), type: 'dim', kind: 'angular', layer: st.currentLayer, c: P0.pt, a: ref1, b: ref2, off };
+    st.addEntity(d);
+  }
+
+  /** DCO/DBA — nối tiếp từ dim aligned gần nhất (lastDim); nếu chưa có dim nào, xử lý như DAL 2 điểm. */
+  function handleDimChain(w: Pt, mode: 'continue' | 'baseline') {
+    const st = useCadStore.getState();
+    const last = ix.current.lastDim;
+    if (!last) {
+      const P = ix.current.pts;
+      P.push(w);
+      if (P.length === 2) {
+        const d: DimEntity = { id: newId('e'), type: 'dim', kind: 'aligned', layer: st.currentLayer, a: P[0], b: P[1], off: 200 };
+        st.addEntity(d);
+        ix.current.lastDim = d;
+        ix.current.pts = [];
+      }
+      return;
+    }
+    const a = mode === 'continue' ? last.b : last.a;
+    const off = mode === 'continue' ? last.off : last.off + (last.off >= 0 ? 400 : -400);
+    const d: DimEntity = { id: newId('e'), type: 'dim', kind: 'aligned', layer: st.currentLayer, a, b: w, off };
+    st.addEntity(d);
+    ix.current.lastDim = d;
+  }
+
   function finishPolyline(closed: boolean) {
     const st = useCadStore.getState();
     const pts = ix.current.pts;
@@ -833,6 +925,7 @@ export default function CadCanvas() {
         ix.current.breakTarget = null;
         ix.current.gripDrag = null;
         ix.current.gripPreview = null;
+        ix.current.angularFirst = null;
         st.clearSelection();
         st.setTool('select');
         ix.current.redraw = true;
@@ -945,14 +1038,14 @@ export default function CadCanvas() {
     // trong lúc kéo grip: vẽ bằng bản preview cục bộ (chưa commit store) thay cho bản gốc
     const gp = ix.current.gripDrag && ix.current.gripPreview;
     const docToDraw = gp ? { ...st.doc, entities: st.doc.entities.map((e) => (e.id === ix.current.gripDrag!.entityId ? ix.current.gripPreview! : e)) } : st.doc;
-    drawEntities(ctx, v, docToDraw, { stroke: t3, lineWidth: 1.3, text: true });
+    drawEntities(ctx, v, docToDraw, { stroke: t3, lineWidth: 1.3, text: true, dimStyle: st.dimStyle });
 
     // highlight selection
     if (st.selection.length) {
       const sel = new Set(st.selection);
       for (const e of docToDraw.entities) {
         if (!sel.has(e.id)) continue;
-        drawEntity(ctx, v, docToDraw, e, { stroke: accent, forceColor: accent, lineWidth: 2.4, text: true });
+        drawEntity(ctx, v, docToDraw, e, { stroke: accent, forceColor: accent, lineWidth: 2.4, text: true, dimStyle: st.dimStyle });
       }
     }
 
@@ -1062,11 +1155,22 @@ export default function CadCanvas() {
       case 'line':
       case 'dimension':
       case 'measure':
+      case 'dimcontinue':
+      case 'dimbaseline':
         if (P.length === 1) {
           line(P[0], cur);
           labelLen(ctx, v, P[0], cur, accent);
+        } else if (!P.length && ix.current.lastDim && (st.tool === 'dimcontinue' || st.tool === 'dimbaseline')) {
+          const from = st.tool === 'dimcontinue' ? ix.current.lastDim.b : ix.current.lastDim.a;
+          line(from, cur);
         }
         break;
+      case 'dimangular': {
+        if (ix.current.angularFirst) {
+          drawEntity(ctx, v, st.doc, ix.current.angularFirst, { stroke: accent, forceColor: accent, lineWidth: 2.6, text: false });
+        }
+        break;
+      }
       case 'polyline':
       case 'wall':
         for (let i = 0; i < P.length - 1; i++) line(P[i], P[i + 1]);

@@ -282,6 +282,7 @@ function CommandLine({ status }: { status: string }) {
   const setFilletRadius = useCadStore((s) => s.setFilletRadius);
   const setChamferDist = useCadStore((s) => s.setChamferDist);
   const setLengthenDelta = useCadStore((s) => s.setLengthenDelta);
+  const setDimStyle = useCadStore((s) => s.setDimStyle);
   const polarTracking = useCadStore((s) => s.polarTracking);
   const setPolarTracking = useCadStore((s) => s.setPolarTracking);
   const setPolarStep = useCadStore((s) => s.setPolarStep);
@@ -316,7 +317,13 @@ function CommandLine({ status }: { status: string }) {
       },
       OFFSET: () => setTool('offset'),
       DIM: () => setTool('dimension'),
+      DAL: () => setTool('dimension'),
       DI: () => setTool('measure'),
+      DRA: () => setTool('dimradius'),
+      DDI: () => setTool('dimdiameter'),
+      DAN: () => setTool('dimangular'),
+      DCO: () => setTool('dimcontinue'),
+      DBA: () => setTool('dimbaseline'),
       T: () => setTool('text'),
       TEXT: () => setTool('text'),
       W: () => {
@@ -365,6 +372,15 @@ function CommandLine({ status }: { status: string }) {
         setTool('lengthen');
       },
       LENGTHEN: () => setTool('lengthen'),
+      DIMTXT: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) setDimStyle({ textHeight: parseFloat(arg) });
+      },
+      DIMASZ: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) setDimStyle({ arrowSize: parseFloat(arg) });
+      },
+      DIMSCALE: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) setDimStyle({ dimScale: parseFloat(arg) });
+      },
       POLAR: () => {
         if (arg && Number.isFinite(parseFloat(arg))) {
           setPolarStep(parseFloat(arg));

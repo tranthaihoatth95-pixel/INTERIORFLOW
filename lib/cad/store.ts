@@ -12,6 +12,15 @@ import { create } from 'zustand';
 import type { Doc, Entity, Layer, Viewport } from './model';
 import { emptyDoc } from './model';
 
+/** Dim style TỐI THIỂU (Nấc 3) — tương đương vài biến DIMSTYLE hay chỉnh nhất của AutoCAD.
+ * textHeight/arrowSize là mm ở tỉ lệ 1:1; dimScale nhân thêm (như DIMSCALE) để chữ/mũi tên
+ * không tí hin khi in ở tỉ lệ nhỏ (1:50, 1:100…). Đơn vị hiển thị luôn là mm (khớp toàn app). */
+export interface DimStyle {
+  textHeight: number;
+  arrowSize: number;
+  dimScale: number;
+}
+
 export type Tool =
   | 'select'
   | 'line'
@@ -42,7 +51,12 @@ export type Tool =
   | 'break'
   | 'join'
   | 'explode'
-  | 'lengthen';
+  | 'lengthen'
+  | 'dimradius'
+  | 'dimdiameter'
+  | 'dimangular'
+  | 'dimcontinue'
+  | 'dimbaseline';
 
 export interface SnapSettings {
   enabled: boolean;
@@ -87,6 +101,8 @@ interface CadState {
   chamferD2: number;
   /** độ dài/góc nhớ cho lệnh LENGTHEN (mm cho line; quy đổi ra rad qua bán kính cho arc) */
   lengthenDelta: number;
+  /** Nấc 3 — dim style tối thiểu */
+  dimStyle: DimStyle;
   past: Doc[];
   future: Doc[];
   /** dòng lệnh mini + thông báo trạng thái */
@@ -124,6 +140,7 @@ interface CadState {
   setFilletRadius: (d: number) => void;
   setChamferDist: (d1: number, d2: number) => void;
   setLengthenDelta: (d: number) => void;
+  setDimStyle: (patch: Partial<DimStyle>) => void;
 
   importDoc: (d: Doc, mode: 'replace' | 'merge') => void;
   scaleAll: (factor: number) => void;
@@ -160,6 +177,7 @@ export const useCadStore = create<CadState>((set, get) => ({
   chamferD1: 100,
   chamferD2: 100,
   lengthenDelta: 100,
+  dimStyle: { textHeight: 120, arrowSize: 80, dimScale: 1 },
   past: [],
   future: [],
   status: 'Sẵn sàng — chọn công cụ hoặc gõ lệnh (L, PL, REC, C…).',
@@ -261,6 +279,7 @@ export const useCadStore = create<CadState>((set, get) => ({
   setFilletRadius: (filletRadius) => set({ filletRadius }),
   setChamferDist: (chamferD1, chamferD2) => set({ chamferD1, chamferD2 }),
   setLengthenDelta: (lengthenDelta) => set({ lengthenDelta }),
+  setDimStyle: (patch) => set((s) => ({ dimStyle: { ...s.dimStyle, ...patch } })),
 
   importDoc: (d, mode) => {
     get().snapshot();
@@ -293,8 +312,15 @@ function mergeLayers(a: Layer[], b: Layer[]): Layer[] {
 function scaleEntity(e: Entity, f: number): Entity {
   switch (e.type) {
     case 'line':
-    case 'dim':
       return { ...e, a: { x: e.a.x * f, y: e.a.y * f }, b: { x: e.b.x * f, y: e.b.y * f } };
+    case 'dim':
+      return {
+        ...e,
+        a: { x: e.a.x * f, y: e.a.y * f },
+        b: { x: e.b.x * f, y: e.b.y * f },
+        off: e.off * f,
+        ...(e.c ? { c: { x: e.c.x * f, y: e.c.y * f } } : {}),
+      };
     case 'polyline':
       return { ...e, points: e.points.map((p) => ({ x: p.x * f, y: p.y * f })) };
     case 'rect':
@@ -344,6 +370,11 @@ function toolHint(t: Tool): string {
     join: 'Join (J): click đối tượng thứ nhất → click đối tượng thứ 2 cần nối.',
     explode: 'Explode (X): click block/polyline/rect cần rã thành line/primitive rời.',
     lengthen: 'Lengthen (LEN): click gần đầu đối tượng cần đổi độ dài. Gõ số + Enter = delta (mm, âm = rút ngắn).',
+    dimradius: 'Dim Radius (DRA): click lên CIRCLE/ARC cần ghi bán kính.',
+    dimdiameter: 'Dim Diameter (DDI): click lên CIRCLE/ARC cần ghi đường kính.',
+    dimangular: 'Dim Angular (DAN): click 2 đường LINE tạo góc → click vị trí đặt cung đo.',
+    dimcontinue: 'Dim Continue (DCO): click điểm tiếp theo — nối từ điểm cuối của dim gần nhất, cùng đường kích thước.',
+    dimbaseline: 'Dim Baseline (DBA): click điểm tiếp theo — đo từ gốc chung của dim gần nhất, xếp lớp ra ngoài.',
   };
   return H[t];
 }

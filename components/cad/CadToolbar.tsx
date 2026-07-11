@@ -12,6 +12,7 @@ import {
   Undo2, Redo2, Maximize, BrickWall, LayoutPanelTop, DoorOpen,
   Scissors, Expand, SquareRoundCorner, Slice, Grid3x3, LayoutGrid,
   ZoomIn, SplitSquareHorizontal, ScissorsLineDashed, Link2, Boxes, ArrowLeftRight, Compass,
+  Radius, Diameter, DraftingCompass, ChevronsRight, GitBranch,
 } from 'lucide-react';
 import { useCadStore, type Tool } from '@/lib/cad/store';
 
@@ -42,7 +43,12 @@ const EDIT: ToolBtn[] = [
   { tool: 'offset', icon: StretchHorizontal, label: 'Offset', key: 'O' },
 ];
 const MEASURE: ToolBtn[] = [
-  { tool: 'dimension', icon: Ruler, label: 'Dimension', key: 'DIM' },
+  { tool: 'dimension', icon: Ruler, label: 'Dimension aligned', key: 'DAL' },
+  { tool: 'dimradius', icon: Radius, label: 'Dimension radius', key: 'DRA' },
+  { tool: 'dimdiameter', icon: Diameter, label: 'Dimension diameter', key: 'DDI' },
+  { tool: 'dimangular', icon: DraftingCompass, label: 'Dimension angular', key: 'DAN' },
+  { tool: 'dimcontinue', icon: ChevronsRight, label: 'Dimension continue', key: 'DCO' },
+  { tool: 'dimbaseline', icon: GitBranch, label: 'Dimension baseline', key: 'DBA' },
   { tool: 'measure', icon: MoveDiagonal, label: 'Đo nhanh', key: 'DI' },
   { tool: 'text', icon: Type, label: 'Text', key: 'T' },
 ];

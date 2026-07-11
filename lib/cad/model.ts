@@ -85,13 +85,27 @@ export interface TextEntity extends Base {
   h: number;
 }
 
-/** Dimension tuyến tính: đo khoảng cách 2 điểm, đường kích thước lệch `off` mm. */
+/** Loại dimension (Nấc 3). Thiếu `kind` (dữ liệu cũ) ⇒ coi như 'aligned' (tương thích ngược). */
+export type DimKind = 'aligned' | 'radius' | 'diameter' | 'angular';
+
+/**
+ * Dimension — Nấc 3 mở rộng 4 kiểu, vẫn dùng chung a/b/off (+ c cho angular) để KHÔNG phá vỡ
+ * mọi chỗ đang xử lý 'dim' như 1 đối tượng "2 điểm" (translate/rotate/mirror/hitTest…):
+ *  - aligned  (DAL): a/b = 2 điểm đo, off = độ lệch đường kích thước (mm, dấu = phía).
+ *  - radius   (DRA): a = tâm, b = điểm trên đường tròn/cung (xác định hướng leader); r = |a-b|.
+ *  - diameter (DDI): giống radius nhưng vẽ xuyên tâm (điểm đối xứng qua a).
+ *  - angular  (DAN): c = đỉnh góc; a/b = điểm bất kỳ trên mỗi cạnh (chỉ lấy HƯỚNG từ c); off =
+ *    bán kính cung đo góc.
+ */
 export interface DimEntity extends Base {
   type: 'dim';
+  kind?: DimKind;
   a: Pt;
   b: Pt;
-  /** độ lệch đường ghi kích thước so với đoạn a-b (mm, dấu = phía) */
+  /** độ lệch đường ghi kích thước (aligned) HOẶC bán kính cung đo (angular), mm */
   off: number;
+  /** CHỈ dùng khi kind==='angular': đỉnh góc */
+  c?: Pt;
 }
 
 /** Thể hiện 1 block furniture: key tra trong lib/cad/furniture.ts + phép biến hình. */
@@ -197,9 +211,13 @@ export function entityBox(e: Entity): Box {
   const box: Box = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
   switch (e.type) {
     case 'line':
+      growBox(box, e.a);
+      growBox(box, e.b);
+      break;
     case 'dim':
       growBox(box, e.a);
       growBox(box, e.b);
+      if (e.c) growBox(box, e.c);
       break;
     case 'polyline':
       e.points.forEach((p) => growBox(box, p));

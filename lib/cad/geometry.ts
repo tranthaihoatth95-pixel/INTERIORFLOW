@@ -37,8 +37,9 @@ export function translateEntity(e: Entity, dx: number, dy: number): Entity {
   const t = (p: Pt) => translatePt(p, dx, dy);
   switch (e.type) {
     case 'line':
-    case 'dim':
       return { ...e, a: t(e.a), b: t(e.b) };
+    case 'dim':
+      return { ...e, a: t(e.a), b: t(e.b), ...(e.c ? { c: t(e.c) } : {}) };
     case 'polyline':
       return { ...e, points: e.points.map(t) };
     case 'rect':
@@ -68,8 +69,9 @@ export function rotateEntity(e: Entity, c: Pt, ang: number): Entity {
   const r = (p: Pt) => rotatePt(p, c, ang);
   switch (e.type) {
     case 'line':
-    case 'dim':
       return { ...e, a: r(e.a), b: r(e.b) };
+    case 'dim':
+      return { ...e, a: r(e.a), b: r(e.b), ...(e.c ? { c: r(e.c) } : {}) };
     case 'polyline':
       return { ...e, points: e.points.map(r) };
     case 'rect':
@@ -91,8 +93,9 @@ export function mirrorEntity(e: Entity, o: Pt, phi: number): Entity {
   const m = (p: Pt) => mirrorPt(p, o, phi);
   switch (e.type) {
     case 'line':
-    case 'dim':
       return { ...e, a: m(e.a), b: m(e.b) };
+    case 'dim':
+      return { ...e, a: m(e.a), b: m(e.b), ...(e.c ? { c: m(e.c) } : {}) };
     case 'polyline':
       return { ...e, points: e.points.map(m) };
     case 'rect':
