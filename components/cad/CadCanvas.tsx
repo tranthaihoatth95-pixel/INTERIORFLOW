@@ -13,6 +13,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useCadStore } from '@/lib/cad/store';
+import { useFlowStore } from '@/lib/store';
 import type { Entity, Pt, Viewport } from '@/lib/cad/model';
 import { screenToWorld, worldToScreen, zoomAt, fitBox, docBox, dist } from '@/lib/cad/model';
 import { drawEntities, drawEntity } from '@/lib/cad/render';
@@ -88,6 +89,15 @@ export default function CadCanvas() {
     });
     return unsub;
   }, []);
+
+  // Canvas vẽ bằng màu đọc trực tiếp từ CSS var (--bg/--t1/...) mỗi lần draw(), nhưng
+  // useCadStore.subscribe ở trên không bắt được đổi theme (sống ở useFlowStore khác store)
+  // → bấm sáng/tối không tự vẽ lại, phải đợi thao tác khác (pan/zoom/vẽ) mới cập nhật màu.
+  // Theo dõi appliedTheme để ép vẽ lại ngay khi đổi giao diện.
+  const appliedTheme = useFlowStore((s) => s.appliedTheme);
+  useEffect(() => {
+    ix.current.redraw = true;
+  }, [appliedTheme]);
 
   // resize canvas theo khung + DPR
   useEffect(() => {
