@@ -211,7 +211,16 @@ export const useCadStore = create<CadState>((set, get) => ({
       };
     }),
 
-  setPendingBlock: (pendingBlock) => set({ pendingBlock, tool: pendingBlock ? 'block' : get().tool }),
+  // Đặt cửa/cửa sổ/nội thất (toolbar D, lệnh D/WIN, hoặc chọn từ panel Nội thất) đều
+  // đi thẳng qua đây, KHÔNG qua setTool → thiếu status hint (thanh dưới đứng yên nội
+  // dung tool trước đó, người dùng không biết đang ở chế độ đặt block). Đồng bộ status
+  // giống setTool để luôn có phản hồi rõ ràng khi vào chế độ đặt block.
+  setPendingBlock: (pendingBlock) =>
+    set({
+      pendingBlock,
+      tool: pendingBlock ? 'block' : get().tool,
+      status: pendingBlock ? toolHint('block') : get().status,
+    }),
   setOffsetDist: (offsetDist) => set({ offsetDist }),
   setWallThickness: (wallThickness) => set({ wallThickness }),
 
