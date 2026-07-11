@@ -73,7 +73,8 @@ export default function CadEditor() {
     const origin = box ? { x: box.maxX + 1000, y: box.minY } : { x: 0, y: 0 };
     const wallLayer = st.doc.layers.find((l) => l.name === 'Tường')?.id ?? st.currentLayer;
     const textLayer = st.doc.layers.find((l) => l.name === 'Ghi chú')?.id ?? st.currentLayer;
-    const { entities, note } = describeToEntities(desc, origin, wallLayer, textLayer, st.wallThickness);
+    const furnLayer = st.doc.layers.find((l) => l.name === 'Nội thất')?.id ?? 'l-furniture';
+    const { entities, note } = describeToEntities(desc, origin, wallLayer, textLayer, st.wallThickness, furnLayer);
     st.addEntities(entities);
     st.setStatus(note);
     window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
