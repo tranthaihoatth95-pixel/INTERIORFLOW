@@ -444,9 +444,10 @@ function AiTierMenu() {
           TIER_TONE[aiTier],
         )}
       >
-        <Icon size={10} /> AI · {meta.name}
-        {engineName && <span className="opacity-80">· {engineName}</span>}
-        {avail === false && <span className="text-amber-300/90">· mock</span>}
+        <Icon size={10} /> <span className="whitespace-nowrap">AI · {meta.name}</span>
+        {/* tên engine chỉ hiện từ ≥lg — dưới đó badge bọc 2 dòng làm header cao lệch (bug 768px) */}
+        {engineName && <span className="hidden whitespace-nowrap opacity-80 lg:inline">· {engineName}</span>}
+        {avail === false && <span className="whitespace-nowrap text-amber-300/90">· mock</span>}
         <ChevronDown size={9} className={cn('transition-transform', open && 'rotate-180')} />
       </motion.button>
 
