@@ -12,6 +12,7 @@ import { NodeExtras } from '@/components/nodes/NodeExtras';
 import { nodePop, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { smartImportImage, SmartImportError } from '@/lib/images/smart-ingest';
+import { useSketchStore } from '@/lib/sketch/sketchStore';
 
 const PORT_GAP = 26;
 const PORT_TOP = 46;
@@ -114,6 +115,27 @@ function ParamField({
         >
           <Paintbrush size={13} />
           {isMask ? (has ? 'Sửa mask' : 'Vẽ mask') : has ? 'Sửa chú thích' : 'Chú thích lên ảnh'}
+        </button>
+      </div>
+    );
+  }
+
+  // vẽ tay tự do (Sketch Studio — components/sketch/**) — cùng UI pattern mask/annotate
+  // nhưng mở modal RIÊNG (useSketchStore), không dùng chung state với mask/annotate.
+  if (param.kind === 'sketch') {
+    const has = typeof value === 'string' && value.startsWith('data:');
+    return (
+      <div>
+        {has && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={String(value)} alt="sketch" className="mb-1.5 h-20 w-full rounded-md object-cover" loading="lazy" />
+        )}
+        <button
+          className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--border-strong)] py-2 text-[11px] text-[var(--t3)] transition hover:border-[var(--accent-ring)] hover:text-[var(--t1)]"
+          onClick={() => useSketchStore.getState().open(nodeId)}
+        >
+          <Paintbrush size={13} />
+          {has ? 'Sửa vẽ' : 'Vẽ tay'}
         </button>
       </div>
     );

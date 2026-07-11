@@ -3,25 +3,32 @@
 import { useCallback, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReactFlow } from '@xyflow/react';
-import { X, GripVertical, Star, Plus, Command } from 'lucide-react';
+import { X, GripVertical, Star, Plus, Command, Paintbrush, Wand2 } from 'lucide-react';
 import { NODE_DEFINITIONS, NODE_REGISTRY } from '@/lib/nodes/registry';
 import { useFlowStore } from '@/lib/store';
-import { CATEGORY_META, type NodeCategory, type NodeDefinition } from '@/lib/types';
+import { useSketchStore } from '@/lib/sketch/sketchStore';
+import { SketchStudioModal } from '@/components/sketch/SketchStudioModal';
+import type { NodeDefinition } from '@/lib/types';
+import { TAG_ORDER, TAG_META, tagsFor, type NodeTag } from '@/lib/nodes/tags';
 import { PHASE_MAP, DEFAULT_PHASE } from '@/lib/phases';
 import { sheetSlide, staggerList, pressableIcon } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 
 export const DND_MIME = 'application/interiorflow-node';
 
-const CATEGORY_ORDER: NodeCategory[] = ['INPUT', 'AI_GENERATE', 'AI_EDIT', 'SLIDE', 'UTILITY', 'OUTPUT'];
+const ALL_TAG = 'all' as const;
 
 export function NodeLibraryPanel() {
   const panel = useFlowStore((s) => s.panel);
   const setPanel = useFlowStore((s) => s.setPanel);
   const setPaletteOpen = useFlowStore((s) => s.setPaletteOpen);
   const addNode = useFlowStore((s) => s.addNode);
+  const updateParam = useFlowStore((s) => s.updateParam);
   const aiTier = useFlowStore((s) => s.aiTier);
   const workspace = useFlowStore((s) => s.workspace);
+  const openSketch = useSketchStore((s) => s.open);
   const [query, setQuery] = useState('');
+  const [activeTag, setActiveTag] = useState<NodeTag | typeof ALL_TAG>(ALL_TAG);
   const { screenToFlowPosition } = useReactFlow();
 
   // Vị trí giữa canvas (khớp CommandPalette) — node thêm bằng CLICK rơi vào giữa tầm nhìn.
@@ -32,6 +39,48 @@ export function NodeLibraryPanel() {
 
   // Bấm thẻ node = thêm ngay vào giữa canvas (dễ hơn kéo-thả, nhất là trên cảm ứng).
   const onAdd = useCallback((type: string) => addNode(type, centerPos()), [addNode, centerPos]);
+
+  // "Vẽ tay nhanh": thêm node Free Sketch giữa canvas rồi mở Sketch Studio ngay —
+  // lấy id node vừa tạo bằng cách đọc state NGAY sau addNode (set() của zustand đồng bộ).
+  const quickSketch = useCallback(() => {
+    addNode('util.sketchpad', centerPos());
+    const nodes = useFlowStore.getState().nodes;
+    const created = nodes[nodes.length - 1];
+    if (created) openSketch(created.id);
+  }, [addNode, centerPos, openSketch]);
+
+  // "Demo: Vẽ tay → Render": seed 3 node đã NỐI DÂY sẵn (Free Sketch → Sketch→Render ← Prompt)
+  // minh hoạ pipeline sketch→render mà không cần đụng lib/store.ts (dùng action có sẵn).
+  const demoSketchToRender = useCallback(() => {
+    const base = centerPos();
+    addNode('util.sketchpad', { x: base.x - 340, y: base.y - 120 });
+    const sketchNode = useFlowStore.getState().nodes.at(-1);
+
+    addNode('input.prompt', { x: base.x - 340, y: base.y + 260 });
+    const promptNode = useFlowStore.getState().nodes.at(-1);
+    if (promptNode) {
+      updateParam(
+        promptNode.id,
+        'prompt',
+        'japandi living room, warm oak floor, linen sofa, soft natural light',
+      );
+    }
+
+    addNode('ai.sketch2render', { x: base.x + 60, y: base.y + 20 });
+    const renderNode = useFlowStore.getState().nodes.at(-1);
+
+    if (sketchNode && renderNode) {
+      useFlowStore
+        .getState()
+        .onConnect({ source: sketchNode.id, sourceHandle: 'image', target: renderNode.id, targetHandle: 'image' });
+    }
+    if (promptNode && renderNode) {
+      useFlowStore
+        .getState()
+        .onConnect({ source: promptNode.id, sourceHandle: 'text', target: renderNode.id, targetHandle: 'prompt' });
+    }
+    if (sketchNode) openSketch(sketchNode.id);
+  }, [addNode, centerPos, updateParam, openSketch]);
 
   // Mức 1 (Không AI): ẩn hẳn node AI — chỉ còn input/slide/utility/output cho quy trình thủ công.
   const noAi = aiTier === 1;
@@ -53,17 +102,20 @@ export function NodeLibraryPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, noAi, query]);
 
+  // Nhóm theo TAG chức năng (không phải category kỹ thuật) — 1 node nhiều tag thì xuất
+  // hiện ở nhiều nhóm, giúp tìm theo "việc muốn làm" thay vì tầng hệ thống.
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = NODE_DEFINITIONS.filter((d) => matchesQuery(d, q) && !hiddenByTier(d));
-    return CATEGORY_ORDER.map((cat) => ({
-      cat,
-      defs: filtered.filter((d) => d.category === cat),
-    })).filter((g) => g.defs.length > 0);
+    const tagsToShow = activeTag === ALL_TAG ? TAG_ORDER : [activeTag];
+    return tagsToShow
+      .map((tag) => ({ tag, defs: filtered.filter((d) => tagsFor(d.type).includes(tag)) }))
+      .filter((g) => g.defs.length > 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, noAi]);
+  }, [query, noAi, activeTag]);
 
   return (
+    <>
     <AnimatePresence>
       {(panel === 'library' || panel === 'search') && (
         // iOS sheet trượt từ trái + material blur
@@ -96,6 +148,37 @@ export function NodeLibraryPanel() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+
+        {/* chip lọc theo tag chức năng — 1 chip đang active tại 1 thời điểm, gọn cho panel hẹp */}
+        <div className="flex flex-wrap gap-1">
+          <button
+            onClick={() => setActiveTag(ALL_TAG)}
+            className={cn(
+              'rounded-full border px-2 py-0.5 text-[10px] transition-colors',
+              activeTag === ALL_TAG
+                ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                : 'border-[var(--border)] text-[var(--t4)] hover:bg-[var(--hover)]',
+            )}
+          >
+            Tất cả
+          </button>
+          {TAG_ORDER.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setActiveTag(tag)}
+              className={cn(
+                'flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] transition-colors',
+                activeTag === tag
+                  ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                  : 'border-[var(--border)] text-[var(--t4)] hover:bg-[var(--hover)]',
+              )}
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: TAG_META[tag].color }} />
+              {TAG_META[tag].label}
+            </button>
+          ))}
+        </div>
+
         <button
           onClick={() => setPaletteOpen(true)}
           className="flex w-full items-center gap-1.5 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-1.5 text-[11px] text-[var(--t4)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--t2)]"
@@ -104,6 +187,24 @@ export function NodeLibraryPanel() {
           <Command size={11} className="shrink-0" />
           Tìm nhanh mọi thứ
           <kbd className="ml-auto shrink-0 rounded border border-[var(--border)] bg-[var(--field)] px-1 py-0.5 text-[9px]">⌘K</kbd>
+        </button>
+
+        {/* Sketch Studio — demo & lối vào nhanh cho cơ chế vẽ tay tự do */}
+        <button
+          onClick={quickSketch}
+          className="flex w-full items-center gap-1.5 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-1.5 text-[11px] text-[var(--t4)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--t2)]"
+          title="Thêm node Free Sketch vào canvas rồi mở Sketch Studio ngay"
+        >
+          <Paintbrush size={11} className="shrink-0" />
+          Vẽ tay nhanh
+        </button>
+        <button
+          onClick={demoSketchToRender}
+          className="flex w-full items-center gap-1.5 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-1.5 text-[11px] text-[var(--t4)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--t2)]"
+          title="Tạo sẵn Free Sketch → Sketch→Render ← Prompt đã nối dây — minh hoạ pipeline vẽ tay → render"
+        >
+          <Wand2 size={11} className="shrink-0" />
+          Demo: Vẽ tay → Render
         </button>
       </div>
 
@@ -123,16 +224,16 @@ export function NodeLibraryPanel() {
             <div className="mt-3 border-t border-[var(--border)]" />
           </div>
         )}
-        {groups.map(({ cat, defs }) => (
-          <div key={cat}>
+        {groups.map(({ tag, defs }) => (
+          <div key={tag}>
             <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t4)]">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: CATEGORY_META[cat].color }} />
-              {CATEGORY_META[cat].label}
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: TAG_META[tag].color }} />
+              {TAG_META[tag].label}
             </p>
             {/* stagger nhẹ — item hiện lần lượt như list iOS */}
             <motion.div className="space-y-1" variants={staggerList} initial="hidden" animate="visible">
               {defs.map((def) => (
-                <NodeCard key={def.type} def={def} onAdd={onAdd} />
+                <NodeCard key={`${tag}-${def.type}`} def={def} onAdd={onAdd} />
               ))}
             </motion.div>
           </div>
@@ -149,6 +250,11 @@ export function NodeLibraryPanel() {
         </motion.aside>
       )}
     </AnimatePresence>
+    {/* NodeLibraryPanel LUÔN được mount trong app/page.tsx (chỉ nội dung panel ẩn/hiện) —
+        gắn Sketch Studio ở đây để không phải sửa app/page.tsx (ngoài phạm vi commit).
+        Modal tự portal ra document.body nên vị trí gọi không ảnh hưởng layout/transform. */}
+    <SketchStudioModal />
+    </>
   );
 }
 
