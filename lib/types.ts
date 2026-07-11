@@ -12,7 +12,10 @@ export type ParamDef =
   | { kind: 'slider'; id: string; label: string; min: number; max: number; step: number; default: number }
   | { kind: 'image'; id: string; label: string }
   | { kind: 'mask'; id: string; label: string }
-  | { kind: 'annotate'; id: string; label: string };
+  | { kind: 'annotate'; id: string; label: string }
+  /** Vẽ tay tự do (brush/eraser/line/shape + palette màu) — mở Sketch Studio modal.
+   *  Thêm OPTIONAL (union mới, không đổi field cũ) — xem lib/sketch/**, components/sketch/**. */
+  | { kind: 'sketch'; id: string; label: string };
 
 export type NodeCategory = 'INPUT' | 'AI_GENERATE' | 'AI_EDIT' | 'SLIDE' | 'UTILITY' | 'OUTPUT';
 

@@ -15,8 +15,18 @@
 import type { NodeDefinition } from '@/lib/types';
 import { watermarkNodes } from './watermark';
 import { compareNodes } from './compare-models';
+import { cropCompositeNodes } from './crop-composite';
+import { materialNoteNodes } from './material-notes';
+import { guReferenceNodes } from './gu-reference';
+import { batchVariantNodes } from './batch-variants';
+import { sketchNodes } from './sketch-node';
 
 export const EXTRA_NODES: NodeDefinition[] = [
   ...watermarkNodes,
   ...compareNodes,
+  ...cropCompositeNodes,
+  ...materialNoteNodes,
+  ...guReferenceNodes,
+  ...batchVariantNodes,
+  ...sketchNodes,
 ];
