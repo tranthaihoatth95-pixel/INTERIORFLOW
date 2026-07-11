@@ -25,20 +25,47 @@ export interface PresentOverlayProps {
   deck?: PresentDeckData;
 }
 
-/** Lấy deck mới nhất từ flow: node slide.deck đã Run — run.outputs._slides = mảng dataURL đã render. */
+/** Lấy deck mới nhất từ flow:
+ *  1) Ưu tiên node slide.deck (Export Deck) đã Run — run.outputs._slides = mảng dataURL.
+ *  2) Nếu chưa gắn Export Deck: gom mọi slide.composer đã chạy (theo thứ tự pageNo, rồi vị trí trên canvas)
+ *     — đúng cách user thường dựng slide lẻ mà chưa nối vào Export Deck. */
 function useFlowDeck(): { slides: string[]; name: string } | null {
   const nodes = useFlowStore((s) => s.nodes);
   return useMemo(() => {
+    // (1) Export Deck
     const decks = nodes.filter((n) => n.data?.defType === 'slide.deck' && n.data.run?.outputs?._slides?.value);
-    const last = decks.at(-1);
-    if (!last) return null;
-    try {
-      const slides = JSON.parse(String(last.data.run.outputs!._slides.value)) as string[];
-      if (!Array.isArray(slides) || slides.length === 0) return null;
-      return { slides: slides.map(String), name: String(last.data.params?.deckName ?? 'Deck') };
-    } catch {
-      return null;
+    const lastDeck = decks.at(-1);
+    if (lastDeck) {
+      try {
+        const slides = JSON.parse(String(lastDeck.data.run.outputs!._slides.value)) as string[];
+        if (Array.isArray(slides) && slides.length > 0) {
+          return { slides: slides.map(String), name: String(lastDeck.data.params?.deckName ?? 'Deck') };
+        }
+      } catch {
+        /* rơi xuống fallback composer */
+      }
     }
+
+    // (2) Fallback: các Slide Composer đã render xong
+    const composed = nodes
+      .filter((n) => n.data?.defType === 'slide.composer' && typeof n.data.run?.outputs?.image?.value === 'string')
+      .map((n) => ({
+        url: String(n.data.run!.outputs!.image!.value),
+        page: parseInt(String(n.data.params?.pageNo ?? ''), 10),
+        x: n.position?.x ?? 0,
+        y: n.position?.y ?? 0,
+      }))
+      .sort((a, b) => {
+        const pa = Number.isFinite(a.page) ? a.page : Infinity;
+        const pb = Number.isFinite(b.page) ? b.page : Infinity;
+        if (pa !== pb) return pa - pb; // theo số trang nếu có
+        if (a.x !== b.x) return a.x - b.x; // rồi trái→phải trên canvas
+        return a.y - b.y;
+      });
+    if (composed.length > 0) {
+      return { slides: composed.map((c) => c.url), name: 'Slide' };
+    }
+    return null;
   }, [nodes]);
 }
 
