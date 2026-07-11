@@ -19,7 +19,7 @@ import {
   type OneAiEngine, type OneAiRuntime, DEFAULT_ONE_AI_ENGINE, DEFAULT_ONE_AI_RUNTIME,
   isOneAiEngine, isOneAiRuntime,
 } from '@/lib/ai/tiers';
-import { type Phase, isPhase } from '@/lib/phases';
+import { type Phase, isPhase, phaseFromNodes } from '@/lib/phases';
 import { type Lang, DEFAULT_LANG, LANG_KEY, isLang } from '@/lib/lang';
 
 export type FlowNode = Node<InteriorNodeData>;
@@ -321,23 +321,28 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   loadGraph: (graphJson, name, flowId, shareToken) => {
     try {
       const graph = JSON.parse(graphJson) as { nodes?: FlowNode[]; edges?: Edge[] };
+      const nodes = (graph.nodes ?? []).map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          run:
+            n.data.run?.status === 'running' || n.data.run?.status === 'queued'
+              ? { status: 'idle' as const, progress: 0 }
+              : n.data.run ?? { status: 'idle' as const, progress: 0 },
+        },
+      }));
+      // Đồng bộ chặng theo nội dung flow: mở flow toàn slide → header nhảy về Present,
+      // flow render → Render. Giữ nguyên nếu không đoán được (concept/CAD hoặc flow trống).
+      const inferred = phaseFromNodes(nodes.map((n) => n.data.defType));
       set({
-        nodes: (graph.nodes ?? []).map((n) => ({
-          ...n,
-          data: {
-            ...n.data,
-            run:
-              n.data.run?.status === 'running' || n.data.run?.status === 'queued'
-                ? { status: 'idle' as const, progress: 0 }
-                : n.data.run ?? { status: 'idle' as const, progress: 0 },
-          },
-        })),
+        nodes,
         edges: graph.edges ?? [],
         flowName: name,
         currentFlowId: flowId,
         shareToken,
         past: [],
         future: [],
+        ...(inferred ? { workspace: inferred } : {}),
       });
     } catch {
       get().setConnectError('Graph của flow này bị hỏng — mở flow khác.');

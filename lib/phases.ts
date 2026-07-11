@@ -83,3 +83,21 @@ export const DEFAULT_PHASE: Phase = 'render';
 export function isPhase(v: unknown): v is Phase {
   return v === 'concept' || v === 'render' || v === 'present';
 }
+
+/**
+ * Suy chặng TRỘI của một flow từ danh sách node đang có — để khi MỞ flow, header
+ * phase-switcher khớp nội dung trên canvas (tránh mở flow slide mà header vẫn báo Render).
+ * Đếm node thuộc `featured` của từng chặng canvas (render/present); nhiều hơn thì thắng,
+ * hoà/không có → null (giữ nguyên chặng hiện tại). Chặng 'concept' = Layout CAD ở route riêng,
+ * không có node canvas nên không tính ở đây.
+ */
+export function phaseFromNodes(defTypes: string[]): Phase | null {
+  if (defTypes.length === 0) return null;
+  const count: Record<'render' | 'present', number> = { render: 0, present: 0 };
+  for (const p of ['render', 'present'] as const) {
+    const set = new Set(PHASE_MAP[p].featured);
+    count[p] = defTypes.filter((t) => set.has(t)).length;
+  }
+  if (count.render === 0 && count.present === 0) return null;
+  return count.present > count.render ? 'present' : 'render';
+}
