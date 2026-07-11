@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { falConfigured, submitJob, jobStatus } from '@/lib/ai/providers/fal';
 import { getPremiumModel, isPremiumModel } from '@/lib/ai/premium-models';
 import { getSessionUser } from '@/lib/server/auth';
+import { spendCredits, refundCredits } from '@/lib/server/credits';
+
+/** Giá 1 render model xịn (FLUX Pro/SD3.5/Ideogram/Recraft) — ngang node render mức Cao. */
+const PREMIUM_RENDER_COST = 4;
 
 // Render 1 ảnh bằng model "xịn" (whitelist). Đồng bộ hoá cho node Compare: fal thật nếu có
 // balance, không thì trả placeholder có nhãn model (demo/mock vẫn chạy). Server-only.
@@ -30,20 +34,31 @@ export async function POST(req: Request) {
 
   // fal chưa cấu hình HOẶC render lỗi (vd hết balance) → placeholder có nhãn, demo vẫn chạy.
   const mock = () => NextResponse.json({ imageUrl: placeholder(m.name, m.tint), mock: true });
-  if (!falConfigured()) return mock();
+  if (!falConfigured()) return mock(); // không gọi fal → không tính credit
+
+  // Kế toán TẠI SERVER (node compare creditCost=0 client bypass được): trừ trước,
+  // mock/lỗi/timeout thì hoàn — chỉ render fal THẬT mới tốn credit.
+  const paid = await spendCredits(user.id, PREMIUM_RENDER_COST, `render.premium ${modelKey}`);
+  if (!paid) {
+    return NextResponse.json({ error: 'Hết credits — liên hệ admin nạp thêm.' }, { status: 402 });
+  }
+  const refundThenMock = async () => {
+    await refundCredits(user.id, PREMIUM_RENDER_COST, `refund render.premium ${modelKey}`);
+    return mock();
+  };
   try {
     const input: Record<string, unknown> = { prompt: String(prompt ?? '') };
     if (image) input.image_url = image;
     const jobId = await submitJob(m.fal, input);
     const started = Date.now();
     for (;;) {
-      if (Date.now() - started > 120_000) return mock();
+      if (Date.now() - started > 120_000) return refundThenMock();
       await new Promise((r) => setTimeout(r, 1500));
       const st = await jobStatus(m.fal, jobId);
       if (st.status === 'COMPLETED') return NextResponse.json({ imageUrl: st.imageUrls[0] });
-      if (st.status === 'FAILED') return mock(); // hết balance / provider lỗi → mock có nhãn
+      if (st.status === 'FAILED') return refundThenMock(); // hết balance / provider lỗi → mock có nhãn
     }
   } catch {
-    return mock();
+    return refundThenMock();
   }
 }

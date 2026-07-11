@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isAiTask } from '@/lib/ai/models';
+import { isAiTask, taskMediaType } from '@/lib/ai/models';
 import { isAiTier, isOneAiEngine, resolveModel, TIERS } from '@/lib/ai/tiers';
 import { providerConfigured, submitJob } from '@/lib/ai/providers';
 import { getSessionUser } from '@/lib/server/auth';
@@ -21,6 +21,14 @@ export async function POST(req: Request) {
   }
   if (!isAiTier(tier) || tier === 1) {
     return NextResponse.json({ error: 'Mức AI không hợp lệ (mức 1 không gọi AI).', code: 'TIER_NO_AI' }, { status: 400 });
+  }
+  // Video (Kling, đắt) chỉ mức 3+ — luật này trước đây chỉ ở client (aiVideo)
+  // nên request thủ công bypass được và đốt balance fal.
+  if (taskMediaType(task) === 'video' && tier < 3) {
+    return NextResponse.json(
+      { error: 'Video chỉ chạy ở mức AI Vừa/Cao (fal Kling).', code: 'VIDEO_TIER_TOO_LOW' },
+      { status: 400 },
+    );
   }
 
   let provider: ReturnType<typeof resolveModel>['provider'];

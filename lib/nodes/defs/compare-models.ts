@@ -56,13 +56,16 @@ export const compareNodes: NodeDefinition[] = [
     type: 'render.compare',
     title: 'So sánh model (xịn)',
     category: 'AI_GENERATE',
-    description: '1 prompt → 4 model đỉnh (FLUX Pro · SD3.5 · Ideogram · Recraft) cạnh nhau để chọn. Cần balance fal cho ảnh thật.',
+    description:
+      '1 prompt → 4 model đỉnh (FLUX Pro · SD3.5 · Ideogram · Recraft) cạnh nhau để chọn. Cần balance fal cho ảnh thật — 4cr/model render thật (16cr đủ 4), mock miễn phí.',
     inputs: [
       { id: 'prompt', label: 'Prompt', dataType: 'text' },
       { id: 'image', label: 'Ảnh (tuỳ chọn)', dataType: 'image' },
     ],
     outputs: [{ id: 'image', label: 'Board so sánh', dataType: 'image' }],
     params: [],
+    // Kế toán ở SERVER: /api/render/premium trừ 4cr/model render fal thật (mock hoàn lại)
+    // — creditCost client để 0 tránh trừ đúp, và curl thẳng route cũng không thoát phí.
     creditCost: 0,
     async execute({ inputs, onProgress }) {
       const prompt = String(inputs.prompt?.value ?? '').trim();
