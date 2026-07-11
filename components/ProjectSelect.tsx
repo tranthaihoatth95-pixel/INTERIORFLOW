@@ -17,6 +17,7 @@ import { easeApple, pressable, springStage } from '@/lib/motion';
 import { useLang } from '@/lib/i18n';
 import { useFlowStore } from '@/lib/store';
 import { createFlow, openFlow } from '@/lib/workspace';
+import { applyCadHandoff } from '@/lib/cad/handoff';
 import { LangToggle } from '@/components/LangToggle';
 
 /**
@@ -233,6 +234,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             ? await createFlow('Untitled flow', JSON.stringify({ nodes: [], edges: [] }))
             : item.flow.id;
         await openFlow(id); // nạp graph vào store + set currentFlowId
+        applyCadHandoff(); // bản vẽ CAD chờ handoff (nếu có) — consume sau khi graph nạp
         onEnter();
       } catch {
         setBusy(false);

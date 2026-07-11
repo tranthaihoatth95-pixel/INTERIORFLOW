@@ -19,6 +19,7 @@ import { parseDxf, exportDxf } from '@/lib/cad/dxf';
 import { renderDocToDataURL } from '@/lib/cad/render';
 import { BLOCKS } from '@/lib/cad/furniture';
 import { useFlowStore } from '@/lib/store';
+import { stashCadHandoff } from '@/lib/cad/handoff';
 import CadCanvas from './CadCanvas';
 import CadToolbar from './CadToolbar';
 
@@ -72,16 +73,20 @@ export default function CadEditor() {
     }
     const dataUrl = renderDocToDataURL(doc, 2000);
     const store = useFlowStore.getState();
-    // đưa về chặng Render trước khi tạo node (store.hydrate đọc lại)
     try {
       store.setWorkspace('render');
     } catch {
       /* ignore */
     }
-    const pos = { x: 220, y: 180 };
-    store.addNode('input.image', pos);
-    const newNode = useFlowStore.getState().nodes.at(-1);
-    if (newNode) store.updateParam(newNode.id, 'file', dataUrl);
+    // Node add trực tiếp ở đây sẽ bị wipe khi '/' hydrate + bootstrap loadGraph đè
+    // → stash, page.tsx/ProjectSelect consume SAU khi graph nạp xong.
+    if (!stashCadHandoff(dataUrl)) {
+      // sessionStorage hỏng — fallback add trực tiếp (có thể mất nếu bootstrap đè)
+      const pos = { x: 220, y: 180 };
+      store.addNode('input.image', pos);
+      const newNode = useFlowStore.getState().nodes.at(-1);
+      if (newNode) store.updateParam(newNode.id, 'file', dataUrl);
+    }
     router.push('/');
   };
 

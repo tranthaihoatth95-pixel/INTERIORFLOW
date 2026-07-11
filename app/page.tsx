@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ReactFlowProvider } from '@xyflow/react';
 import { Loader2 } from 'lucide-react';
@@ -24,6 +24,7 @@ import { ProjectSelect } from '@/components/ProjectSelect';
 import { CommentLayer } from '@/components/CommentLayer';
 import { useFlowStore } from '@/lib/store';
 import { bootstrapWorkspace } from '@/lib/workspace';
+import { applyCadHandoff } from '@/lib/cad/handoff';
 import { fade } from '@/lib/motion';
 
 /**
@@ -70,6 +71,11 @@ export default function Home() {
   // Trên mobile các panel đè lên canvas → cần lớp nền mờ để bấm ra ngoài là đóng.
   const overlayOpen = panel !== null || chatOpen;
 
+  // StrictMode dev chạy effect mount 2 lần → 2 chuỗi bootstrapWorkspace song song,
+  // openFlow của chuỗi sau đè graph (mất node CAD-handoff vừa apply). Ref sống qua
+  // simulated-remount nên chặn được lần 2; remount THẬT (điều hướng) ref mới → chạy lại.
+  const bootRan = useRef(false);
+
   // theme + flow local trước, rồi check session.
   // KHÔNG bootstrap workspace ở đây — ProjectSelect tự openFlow khi user chọn dự án.
   useEffect(() => {
@@ -92,7 +98,10 @@ export default function Home() {
             // ProjectSelect bị bỏ qua nên openFlow() không chạy → currentFlowId
             // sẽ null → autosave rơi xuống localStorage thay vì DB, và reload sau khôi phục
             // flow cũ. Bootstrap ở đây để nạp flow server mới nhất + đặt currentFlowId.
-            void bootstrapWorkspace();
+            if (!bootRan.current) {
+              bootRan.current = true;
+              void bootstrapWorkspace().then(() => applyCadHandoff());
+            }
           }
         } catch {
           /* localStorage chặn — bỏ qua */
