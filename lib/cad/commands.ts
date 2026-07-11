@@ -176,6 +176,33 @@ export function northArrow(at: { x: number; y: number }, size = 700, layer = 'l-
   ];
 }
 
+/* ───────────────────────── CAO ĐỘ (spot elevation) ───────────────────────── */
+
+/**
+ * Ký hiệu cao độ kiểu kiến trúc: tam giác đặc nhỏ (đỉnh chạm điểm đo) + gạch chân + trị số —
+ * quy ước ISO cho cao độ sàn/trần (VD "±0.000" nền hoàn thiện tầng trệt, "+2.700" trần...).
+ * `at` = điểm chạm (đỉnh dưới tam giác); giá trị dương chèn phía trên, âm phía dưới `at`.
+ */
+export function elevationMarker(at: { x: number; y: number }, label: string, layer = 'l-text', size = 180): Entity[] {
+  const s = size;
+  const top = { x: at.x, y: at.y + s * 1.4 };
+  return [
+    {
+      id: newId('e'),
+      type: 'hatch',
+      layer,
+      solid: true,
+      points: [
+        { x: at.x, y: at.y },
+        { x: at.x + s * 0.5, y: at.y + s * 0.9 },
+        { x: at.x - s * 0.5, y: at.y + s * 0.9 },
+      ],
+    },
+    { id: newId('e'), type: 'line', layer, a: { x: at.x - s * 0.9, y: top.y }, b: { x: at.x + s * 0.9, y: top.y } },
+    { id: newId('e'), type: 'text', layer, at: { x: at.x + s * 0.15, y: top.y + 20 }, text: label, h: s * 0.9 },
+  ];
+}
+
 /* ───────────────────────── THƯỚC TỈ LỆ ───────────────────────── */
 
 /** Thước tỉ lệ: vạch 1m xen kẽ, số mét dưới mỗi vạch. `at` = góc trái-dưới của thước. */
@@ -222,7 +249,7 @@ export function dimensionChain(points: { x: number; y: number }[], off: number, 
 /** Thêm bộ tiện ích trình bày (lưới trục + khung tên + mũi tên Bắc + thước tỉ lệ) quanh 1 bản vẽ đã có. */
 export function addPresentationKit(doc: Doc, box: Box, info: TitleBlockInfo): Entity[] {
   const out: Entity[] = [];
-  out.push(...axesGrid(box, 3000, 'l-dim'));
+  out.push(...axesGrid(box, 3000, 'l-axis'));
   const tbAt = { x: box.maxX + 2600, y: box.minY - 400 };
   out.push(...titleBlock(tbAt, info, 'l-wall', 'l-text'));
   out.push(...northArrow({ x: box.maxX + 900, y: box.maxY - 300 }, 700, 'l-text'));

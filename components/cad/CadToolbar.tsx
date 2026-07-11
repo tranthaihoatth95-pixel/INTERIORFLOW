@@ -10,6 +10,9 @@ import {
   Move, Copy, RotateCw, FlipHorizontal2, StretchHorizontal,
   Ruler, MoveDiagonal, Type, Sofa, Magnet, Grid2x2, Hand,
   Undo2, Redo2, Maximize, BrickWall, LayoutPanelTop, DoorOpen,
+  Scissors, Expand, SquareRoundCorner, Slice, Grid3x3, LayoutGrid,
+  ZoomIn, SplitSquareHorizontal, ScissorsLineDashed, Link2, Boxes, ArrowLeftRight, Compass,
+  Radius, Diameter, DraftingCompass, ChevronsRight, GitBranch, PaintBucket,
 } from 'lucide-react';
 import { useCadStore, type Tool } from '@/lib/cad/store';
 
@@ -31,6 +34,7 @@ const DRAW: ToolBtn[] = [
 const ARCH: ToolBtn[] = [
   { tool: 'wall', icon: BrickWall, label: 'Tường (chuỗi điểm tim tường)', key: 'W' },
   { tool: 'room', icon: LayoutPanelTop, label: 'Phòng chữ nhật + nhãn diện tích', key: 'ROOM' },
+  { tool: 'hatch', icon: PaintBucket, label: 'Hatch — pick-point tô vùng kín (H ANSI31/ANSI32/ANSI37/SOLID/DOTS)', key: 'H' },
 ];
 const EDIT: ToolBtn[] = [
   { tool: 'move', icon: Move, label: 'Move', key: 'M' },
@@ -40,9 +44,29 @@ const EDIT: ToolBtn[] = [
   { tool: 'offset', icon: StretchHorizontal, label: 'Offset', key: 'O' },
 ];
 const MEASURE: ToolBtn[] = [
-  { tool: 'dimension', icon: Ruler, label: 'Dimension', key: 'DIM' },
+  { tool: 'dimension', icon: Ruler, label: 'Dimension aligned', key: 'DAL' },
+  { tool: 'dimradius', icon: Radius, label: 'Dimension radius', key: 'DRA' },
+  { tool: 'dimdiameter', icon: Diameter, label: 'Dimension diameter', key: 'DDI' },
+  { tool: 'dimangular', icon: DraftingCompass, label: 'Dimension angular', key: 'DAN' },
+  { tool: 'dimcontinue', icon: ChevronsRight, label: 'Dimension continue', key: 'DCO' },
+  { tool: 'dimbaseline', icon: GitBranch, label: 'Dimension baseline', key: 'DBA' },
   { tool: 'measure', icon: MoveDiagonal, label: 'Đo nhanh', key: 'DI' },
   { tool: 'text', icon: Type, label: 'Text', key: 'T' },
+];
+/** Nấc 1 — bộ chỉnh sửa (tương đương AutoCAD LT). Dòng lệnh vẫn là cách chính (TR/EX/F/CHA/…). */
+const MODIFY: ToolBtn[] = [
+  { tool: 'trim', icon: Scissors, label: 'Trim — cắt tại giao điểm', key: 'TR' },
+  { tool: 'extend', icon: Expand, label: 'Extend — kéo dài tới biên', key: 'EX' },
+  { tool: 'fillet', icon: SquareRoundCorner, label: 'Fillet — bo góc (0 = vuông góc)', key: 'F' },
+  { tool: 'chamfer', icon: Slice, label: 'Chamfer — vát góc', key: 'CHA' },
+  { tool: 'arrayrect', icon: Grid3x3, label: 'Array chữ nhật', key: 'AR' },
+  { tool: 'arraypolar', icon: LayoutGrid, label: 'Array tròn', key: 'ARP' },
+  { tool: 'scale', icon: ZoomIn, label: 'Scale', key: 'SC' },
+  { tool: 'stretch', icon: SplitSquareHorizontal, label: 'Stretch — kéo dãn (crossing window)', key: 'S' },
+  { tool: 'break', icon: ScissorsLineDashed, label: 'Break — bẻ đối tượng', key: 'BR' },
+  { tool: 'join', icon: Link2, label: 'Join — nối 2 đối tượng', key: 'J' },
+  { tool: 'explode', icon: Boxes, label: 'Explode — rã block/polyline', key: 'X' },
+  { tool: 'lengthen', icon: ArrowLeftRight, label: 'Lengthen — đổi độ dài', key: 'LEN' },
 ];
 
 function fire(name: string) {
@@ -56,6 +80,9 @@ export default function CadToolbar({ onToggleFurniture }: { onToggleFurniture: (
   const pendingBlock = useCadStore((s) => s.pendingBlock);
   const snap = useCadStore((s) => s.snap);
   const setSnap = useCadStore((s) => s.setSnap);
+  const polarTracking = useCadStore((s) => s.polarTracking);
+  const setPolarTracking = useCadStore((s) => s.setPolarTracking);
+  const polarStep = useCadStore((s) => s.polarStep);
   const undo = useCadStore((s) => s.undo);
   const redo = useCadStore((s) => s.redo);
   const past = useCadStore((s) => s.past.length);
@@ -110,6 +137,8 @@ export default function CadToolbar({ onToggleFurniture }: { onToggleFurniture: (
       <Divider />
       <Group items={EDIT} />
       <Divider />
+      <Group items={MODIFY} />
+      <Divider />
       <Group items={MEASURE} />
       <Divider />
       <button type="button" onClick={onToggleFurniture} title="Thư viện nội thất (block)" style={btn(tool === 'block')}>
@@ -120,7 +149,7 @@ export default function CadToolbar({ onToggleFurniture }: { onToggleFurniture: (
       <button
         type="button"
         onClick={() => setSnap({ enabled: !snap.enabled })}
-        title={`Bắt điểm (snap): ${snap.enabled ? 'BẬT' : 'tắt'} — endpoint/mid/center/giao/lưới`}
+        title={`Bắt điểm (snap): ${snap.enabled ? 'BẬT' : 'tắt'} — endpoint/mid/center/quadrant/node/giao/vuông góc/tiếp tuyến/lưới`}
         style={btn(snap.enabled)}
       >
         <Magnet size={16} />
@@ -132,6 +161,14 @@ export default function CadToolbar({ onToggleFurniture }: { onToggleFurniture: (
         style={btn(snap.grid)}
       >
         <Grid2x2 size={16} />
+      </button>
+      <button
+        type="button"
+        onClick={() => setPolarTracking(!polarTracking)}
+        title={`Polar tracking: ${polarTracking ? 'BẬT' : 'tắt'} — bắt góc ${polarStep}° (Shift = Ortho tuyệt đối, ưu tiên hơn)`}
+        style={btn(polarTracking)}
+      >
+        <Compass size={16} />
       </button>
       <Divider />
       <button type="button" onClick={() => setTool('pan')} title="Pan (space kéo)" style={btn(tool === 'pan')}>

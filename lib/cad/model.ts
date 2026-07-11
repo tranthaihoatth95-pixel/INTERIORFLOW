@@ -12,6 +12,30 @@ export interface Pt {
   y: number;
 }
 
+/**
+ * Nét vẽ (linetype) — tối thiểu theo ISO 128: continuous (liền), hidden (khuất, gạch ngắn đều),
+ * center (trục, chain gạch dài-ngắn-dài), dashed (nét đứt trung), phantom (gạch dài-ngắn-ngắn).
+ */
+export type LineType = 'continuous' | 'hidden' | 'center' | 'dashed' | 'phantom';
+
+/**
+ * Bề dày nét (lineweight, mm) — thang chuẩn hay dùng trong DXF/AutoCAD (khớp enum group 370,
+ * xem dxf.ts). Phân cấp theo ISO 128 cho bản vẽ kiến trúc nội thất tỉ lệ 1:50-1:100:
+ *   0.13/0.18 — mảnh: kích thước, hatch, nét khuất, trục lưới
+ *   0.25/0.35 — trung: thiết bị/nội thất/cửa sổ/đường bao không cắt
+ *   0.50/0.70 — đậm: tường bị mặt phẳng cắt qua (mặt bằng) + khung tên/khung bao
+ */
+export const STANDARD_LINEWEIGHTS = [0.13, 0.18, 0.25, 0.35, 0.5, 0.7, 1.0] as const;
+
+/**
+ * Chiều cao chữ chuẩn ISO 3098 (mm, ĐO TRÊN GIẤY sau khi in — không phải mm world lưu trong
+ * TextEntity.h, vốn là kích thước THẬT ngoài đời ở tỉ lệ 1:1). Quy đổi: h_world = h_iso ×
+ * tỉ lệ bản vẽ (VD tỉ lệ 1:50 → muốn chữ cao 3.5mm trên giấy thì h_world = 3.5×50 = 175mm).
+ * Cần pipeline in ấn (Nấc 7 — paper space/tỉ lệ khổ giấy) để tự động hoá quy đổi này; hiện tại
+ * đây là hằng số THAM CHIẾU cho người vẽ tự chọn khi đặt TEXT/DIM (chưa có UI tự tính).
+ */
+export const ISO_TEXT_HEIGHTS_MM = [2.5, 3.5, 5, 7, 10] as const;
+
 /** Lớp (layer) — entity mới rơi vào layer hiện hành; ẩn/khoá theo cờ. */
 export interface Layer {
   id: string;
@@ -20,6 +44,11 @@ export interface Layer {
   color: string;
   visible: boolean;
   locked: boolean;
+  /** bề dày nét mặc định của layer (mm, khổ giấy in — xem STANDARD_LINEWEIGHTS). Thiếu ⇒ 0.25
+   * (tương thích ngược với layer cũ tạo trước khi có field này). */
+  lineweight?: number;
+  /** nét vẽ mặc định của layer. Thiếu ⇒ 'continuous' (tương thích ngược). */
+  lineType?: LineType;
 }
 
 export type EntityType =
@@ -39,6 +68,9 @@ interface Base {
   layer: string;
   /** override màu layer (hiếm dùng) */
   color?: string;
+  /** override lineweight/lineType của layer (hiếm dùng — giống cơ chế override màu ở trên). */
+  lineweight?: number;
+  lineType?: LineType;
 }
 
 export interface LineEntity extends Base {
@@ -85,13 +117,27 @@ export interface TextEntity extends Base {
   h: number;
 }
 
-/** Dimension tuyến tính: đo khoảng cách 2 điểm, đường kích thước lệch `off` mm. */
+/** Loại dimension (Nấc 3). Thiếu `kind` (dữ liệu cũ) ⇒ coi như 'aligned' (tương thích ngược). */
+export type DimKind = 'aligned' | 'radius' | 'diameter' | 'angular';
+
+/**
+ * Dimension — Nấc 3 mở rộng 4 kiểu, vẫn dùng chung a/b/off (+ c cho angular) để KHÔNG phá vỡ
+ * mọi chỗ đang xử lý 'dim' như 1 đối tượng "2 điểm" (translate/rotate/mirror/hitTest…):
+ *  - aligned  (DAL): a/b = 2 điểm đo, off = độ lệch đường kích thước (mm, dấu = phía).
+ *  - radius   (DRA): a = tâm, b = điểm trên đường tròn/cung (xác định hướng leader); r = |a-b|.
+ *  - diameter (DDI): giống radius nhưng vẽ xuyên tâm (điểm đối xứng qua a).
+ *  - angular  (DAN): c = đỉnh góc; a/b = điểm bất kỳ trên mỗi cạnh (chỉ lấy HƯỚNG từ c); off =
+ *    bán kính cung đo góc.
+ */
 export interface DimEntity extends Base {
   type: 'dim';
+  kind?: DimKind;
   a: Pt;
   b: Pt;
-  /** độ lệch đường ghi kích thước so với đoạn a-b (mm, dấu = phía) */
+  /** độ lệch đường ghi kích thước (aligned) HOẶC bán kính cung đo (angular), mm */
   off: number;
+  /** CHỈ dùng khi kind==='angular': đỉnh góc */
+  c?: Pt;
 }
 
 /** Thể hiện 1 block furniture: key tra trong lib/cad/furniture.ts + phép biến hình. */
@@ -111,11 +157,21 @@ export interface BlockEntity extends Base {
  * đủ cho quad tường do lệnh WALL sinh ra). Xuất DXF: tam-giác-hoá quạt từ đỉnh 0 thành các
  * entity SOLID (an toàn ở mọi bản DXF, không cần bảng BLOCK_RECORD như HATCH thật).
  */
+/** Pattern hatch (Nấc 4). Thiếu `pattern` (dữ liệu cũ — poché tường từ WALL) ⇒ coi như SOLID
+ * đặc, giữ đúng hành vi cũ (tô đặc, không đường gạch). */
+export type HatchPattern = 'SOLID' | 'ANSI31' | 'ANSI32' | 'ANSI37' | 'DOTS';
+
 export interface HatchEntity extends Base {
   type: 'hatch';
   points: Pt[];
-  /** true = tô đặc (mặc định). Để ngỏ cho pattern sau này. */
+  /** true = tô đặc. Khi có `pattern`, field này chỉ còn ý nghĩa lịch sử (giữ tương thích ngược
+   * với dữ liệu cũ); ưu tiên đọc `pattern` nếu có. */
   solid?: boolean;
+  pattern?: HatchPattern;
+  /** tỉ lệ khoảng cách nét gạch (1 = mặc định ~60mm/nét); chỉ áp dụng khi pattern != SOLID. */
+  patternScale?: number;
+  /** góc nét gạch, độ (0-360); chỉ áp dụng khi pattern != SOLID/DOTS. */
+  patternAngle?: number;
 }
 
 export type Entity =
@@ -135,10 +191,11 @@ export interface Doc {
 }
 
 export const DEFAULT_LAYERS: Layer[] = [
-  { id: 'l-wall', name: 'Tường', color: '#e8e4dc', visible: true, locked: false },
-  { id: 'l-furniture', name: 'Nội thất', color: '#c08a5a', visible: true, locked: false },
-  { id: 'l-dim', name: 'Kích thước', color: '#7aa2c4', visible: true, locked: false },
-  { id: 'l-text', name: 'Ghi chú', color: '#9a9488', visible: true, locked: false },
+  { id: 'l-wall', name: 'Tường', color: '#e8e4dc', visible: true, locked: false, lineweight: 0.6, lineType: 'continuous' },
+  { id: 'l-furniture', name: 'Nội thất', color: '#c08a5a', visible: true, locked: false, lineweight: 0.3, lineType: 'continuous' },
+  { id: 'l-dim', name: 'Kích thước', color: '#7aa2c4', visible: true, locked: false, lineweight: 0.15, lineType: 'continuous' },
+  { id: 'l-text', name: 'Ghi chú', color: '#9a9488', visible: true, locked: false, lineweight: 0.15, lineType: 'continuous' },
+  { id: 'l-axis', name: 'Trục', color: '#8a7a9a', visible: true, locked: false, lineweight: 0.13, lineType: 'center' },
 ];
 
 export function emptyDoc(): Doc {
@@ -197,9 +254,13 @@ export function entityBox(e: Entity): Box {
   const box: Box = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
   switch (e.type) {
     case 'line':
+      growBox(box, e.a);
+      growBox(box, e.b);
+      break;
     case 'dim':
       growBox(box, e.a);
       growBox(box, e.b);
+      if (e.c) growBox(box, e.c);
       break;
     case 'polyline':
       e.points.forEach((p) => growBox(box, p));

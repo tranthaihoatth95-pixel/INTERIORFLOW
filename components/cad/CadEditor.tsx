@@ -13,8 +13,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Plus, Trash2, X, Command, Sparkles, Wand2,
+  ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair,
 } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
+import type { HatchPattern } from '@/lib/cad/model';
 import { parseDxf, exportDxf } from '@/lib/cad/dxf';
 import { renderDocToDataURL } from '@/lib/cad/render';
 import { BLOCKS } from '@/lib/cad/furniture';
@@ -24,12 +26,15 @@ import { describeToEntities } from '@/lib/cad/ai-assist';
 import { docBox } from '@/lib/cad/model';
 import { useFlowStore } from '@/lib/store';
 import { stashCadHandoff } from '@/lib/cad/handoff';
+import { checkStandards, type Violation } from '@/lib/cad/standards/checker';
+import { getAllRules } from '@/lib/cad/standards/registry';
 import CadCanvas from './CadCanvas';
 import CadToolbar from './CadToolbar';
 
 export default function CadEditor() {
   const router = useRouter();
   const [furnitureOpen, setFurnitureOpen] = useState(false);
+  const [standardsOpen, setStandardsOpen] = useState(false);
   const [handoffMsg, setHandoffMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -141,6 +146,9 @@ export default function CadEditor() {
         <button type="button" onClick={doExportDxf} style={fileBtn} title="Xuất DXF">
           <Download size={14} /> DXF
         </button>
+        <button type="button" onClick={() => setStandardsOpen((o) => !o)} style={{ ...fileBtn, background: standardsOpen ? 'var(--accent)' : undefined, color: standardsOpen ? '#fff' : undefined }} title="Kiểm chuẩn — đối chiếu bản vẽ với TCVN/QCVN/ISO (chỉ đọc & đề xuất, không tự sửa)">
+          <ShieldCheck size={14} /> Kiểm chuẩn
+        </button>
         <button type="button" onClick={toRender} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Kết xuất layout thành node Import Image ở chặng Render">
           Đưa sang Render <ArrowRight size={14} />
         </button>
@@ -151,6 +159,7 @@ export default function CadEditor() {
         <CadCanvas />
         <CadToolbar onToggleFurniture={() => setFurnitureOpen((o) => !o)} />
         {furnitureOpen && <FurniturePanel onClose={() => setFurnitureOpen(false)} />}
+        {standardsOpen && <StandardsPanel onClose={() => setStandardsOpen(false)} />}
         <LayerPanel />
         {handoffMsg && (
           <div style={{ position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 30, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 14px', fontSize: 12.5, color: 'var(--t2)' }}>
@@ -202,30 +211,56 @@ function LayerPanel() {
           <Plus size={14} />
         </button>
       </div>
-      <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+      <div style={{ maxHeight: 380, overflowY: 'auto' }}>
         {doc.layers.map((l) => {
           const on = l.id === current;
           return (
-            <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 8, background: on ? 'var(--accent-soft)' : 'transparent' }}>
-              <input
-                type="color"
-                value={l.color}
-                onChange={(e) => updateLayer(l.id, { color: e.target.value })}
-                title="Màu lớp"
-                style={{ width: 18, height: 18, padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}
-              />
-              <button type="button" onClick={() => setCurrent(l.id)} title="Đặt lớp hiện hành" style={{ flex: 1, textAlign: 'left', border: 'none', background: 'none', color: on ? 'var(--accent)' : 'var(--t2)', fontSize: 12, fontWeight: on ? 600 : 400, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {l.name}
-              </button>
-              <button type="button" onClick={() => updateLayer(l.id, { visible: !l.visible })} title="Ẩn/hiện" style={miniBtn}>
-                {l.visible ? <Eye size={13} /> : <EyeOff size={13} />}
-              </button>
-              <button type="button" onClick={() => updateLayer(l.id, { locked: !l.locked })} title="Khoá/mở" style={miniBtn}>
-                {l.locked ? <Lock size={13} /> : <Unlock size={13} />}
-              </button>
-              <button type="button" onClick={() => removeLayer(l.id)} title="Xoá lớp" style={miniBtn}>
-                <Trash2 size={13} />
-              </button>
+            <div key={l.id} style={{ padding: '5px 8px', borderRadius: 8, background: on ? 'var(--accent-soft)' : 'transparent' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input
+                  type="color"
+                  value={l.color}
+                  onChange={(e) => updateLayer(l.id, { color: e.target.value })}
+                  title="Màu lớp"
+                  style={{ width: 18, height: 18, padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}
+                />
+                <button type="button" onClick={() => setCurrent(l.id)} title="Đặt lớp hiện hành" style={{ flex: 1, textAlign: 'left', border: 'none', background: 'none', color: on ? 'var(--accent)' : 'var(--t2)', fontSize: 12, fontWeight: on ? 600 : 400, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {l.name}
+                </button>
+                <button type="button" onClick={() => updateLayer(l.id, { visible: !l.visible })} title="Ẩn/hiện" style={miniBtn}>
+                  {l.visible ? <Eye size={13} /> : <EyeOff size={13} />}
+                </button>
+                <button type="button" onClick={() => updateLayer(l.id, { locked: !l.locked })} title="Khoá/mở" style={miniBtn}>
+                  {l.locked ? <Lock size={13} /> : <Unlock size={13} />}
+                </button>
+                <button type="button" onClick={() => removeLayer(l.id)} title="Xoá lớp" style={miniBtn}>
+                  <Trash2 size={13} />
+                </button>
+              </div>
+              <div style={{ display: 'flex', gap: 4, marginTop: 3, paddingLeft: 24 }}>
+                <select
+                  value={l.lineweight ?? 0.25}
+                  onChange={(e) => updateLayer(l.id, { lineweight: parseFloat(e.target.value) })}
+                  title="Bề dày nét (mm, ISO 128)"
+                  style={miniSelect}
+                >
+                  {[0.13, 0.18, 0.25, 0.35, 0.5, 0.7, 1.0].map((w) => (
+                    <option key={w} value={w}>{w.toFixed(2)}mm</option>
+                  ))}
+                </select>
+                <select
+                  value={l.lineType ?? 'continuous'}
+                  onChange={(e) => updateLayer(l.id, { lineType: e.target.value as typeof l.lineType })}
+                  title="Nét vẽ (linetype)"
+                  style={miniSelect}
+                >
+                  <option value="continuous">liền</option>
+                  <option value="hidden">khuất</option>
+                  <option value="center">trục</option>
+                  <option value="dashed">đứt</option>
+                  <option value="phantom">phantom</option>
+                </select>
+              </div>
             </div>
           );
         })}
@@ -325,6 +360,68 @@ function FurniturePanel({ onClose }: { onClose: () => void }) {
   );
 }
 
+/* ───────── Panel Kiểm chuẩn (standards checker) — CHỈ ĐỌC + ĐỀ XUẤT, không tự sửa ───────── */
+function StandardsPanel({ onClose }: { onClose: () => void }) {
+  const doc = useCadStore((s) => s.doc);
+  const [violations, setViolations] = useState<Violation[] | null>(null);
+
+  const run = () => setViolations(checkStandards(doc, getAllRules()));
+
+  const zoomTo = (v: Violation) => {
+    if (!v.at) return;
+    window.dispatchEvent(new CustomEvent('cad:zoom-to', { detail: v.at }));
+  };
+
+  const sevIcon = (s: Violation['severity']) => {
+    if (s === 'error') return <ShieldAlert size={14} color="#d4645a" />;
+    if (s === 'warning') return <AlertTriangle size={14} color="#d4a15a" />;
+    return <Info size={14} color="var(--t3)" />;
+  };
+
+  return (
+    <div style={{ ...panel, right: 12, top: 400, width: 340, maxHeight: '50vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={panelHead}>
+        <span>Kiểm chuẩn (TCVN/QCVN/ISO)</span>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button type="button" onClick={run} title="Chạy kiểm tra" style={miniBtn}>
+            <ShieldCheck size={14} />
+          </button>
+          <button type="button" onClick={onClose} title="Đóng" style={miniBtn}>
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+      <div style={{ fontSize: 10.5, color: 'var(--t4)', padding: '0 6px 6px' }}>
+        Chỉ đọc bản vẽ và đề xuất — KHÔNG tự sửa. Bấm biểu tượng khiên để chạy/chạy lại sau khi sửa bản vẽ.
+      </div>
+      <div style={{ overflowY: 'auto', flex: 1 }}>
+        {violations === null && (
+          <div style={{ padding: '10px 8px', fontSize: 12, color: 'var(--t3)' }}>Chưa chạy — bấm biểu tượng khiên phía trên.</div>
+        )}
+        {violations !== null && violations.length === 0 && (
+          <div style={{ padding: '10px 8px', fontSize: 12, color: 'var(--t3)' }}>Không phát hiện vi phạm nào (trong phạm vi đo được tự động).</div>
+        )}
+        {violations?.map((v, i) => (
+          <div key={`${v.ruleId}-${i}`} style={{ padding: '7px 8px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+            <span style={{ marginTop: 2 }}>{sevIcon(v.severity)}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: 'var(--t1)', lineHeight: 1.4 }}>{v.message}</div>
+              <div style={{ fontSize: 10, color: 'var(--t4)', marginTop: 2 }}>
+                {v.source} {v.verified ? '' : '· CHƯA KIỂM CHỨNG (đối chiếu bản gốc trước khi dùng chính thức)'}
+              </div>
+            </div>
+            {v.at && (
+              <button type="button" onClick={() => zoomTo(v)} title="Zoom tới vị trí" style={miniBtn}>
+                <Crosshair size={13} />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ───────── Command line mini ───────── */
 function CommandLine({ status }: { status: string }) {
   const [val, setVal] = useState('');
@@ -336,11 +433,21 @@ function CommandLine({ status }: { status: string }) {
   const setOffsetDist = useCadStore((s) => s.setOffsetDist);
   const setWallThickness = useCadStore((s) => s.setWallThickness);
   const setPendingBlock = useCadStore((s) => s.setPendingBlock);
+  const setFilletRadius = useCadStore((s) => s.setFilletRadius);
+  const setChamferDist = useCadStore((s) => s.setChamferDist);
+  const setLengthenDelta = useCadStore((s) => s.setLengthenDelta);
+  const setDimStyle = useCadStore((s) => s.setDimStyle);
+  const polarTracking = useCadStore((s) => s.polarTracking);
+  const setPolarTracking = useCadStore((s) => s.setPolarTracking);
+  const setPolarStep = useCadStore((s) => s.setPolarStep);
+  const setHatchPattern = useCadStore((s) => s.setHatchPattern);
+  const setHatchScale = useCadStore((s) => s.setHatchScale);
+  const setHatchAngle = useCadStore((s) => s.setHatchAngle);
 
   const run = () => {
     const raw = val.trim();
     if (!raw) return;
-    const [cmd, arg] = raw.split(/\s+/);
+    const [cmd, arg, arg2] = raw.split(/\s+/);
     const c = cmd.toUpperCase();
     const map: Record<string, () => void> = {
       L: () => setTool('line'),
@@ -367,7 +474,13 @@ function CommandLine({ status }: { status: string }) {
       },
       OFFSET: () => setTool('offset'),
       DIM: () => setTool('dimension'),
+      DAL: () => setTool('dimension'),
       DI: () => setTool('measure'),
+      DRA: () => setTool('dimradius'),
+      DDI: () => setTool('dimdiameter'),
+      DAN: () => setTool('dimangular'),
+      DCO: () => setTool('dimcontinue'),
+      DBA: () => setTool('dimbaseline'),
       T: () => setTool('text'),
       TEXT: () => setTool('text'),
       W: () => {
@@ -380,6 +493,70 @@ function CommandLine({ status }: { status: string }) {
       DOOR: () => setPendingBlock('door'),
       WIN: () => setPendingBlock('window'),
       WINDOW: () => setPendingBlock('window'),
+      // Nấc 1 — bộ chỉnh sửa (alias chuẩn AutoCAD)
+      TR: () => setTool('trim'),
+      TRIM: () => setTool('trim'),
+      EX: () => setTool('extend'),
+      EXTEND: () => setTool('extend'),
+      F: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) setFilletRadius(parseFloat(arg));
+        setTool('fillet');
+      },
+      FILLET: () => setTool('fillet'),
+      CHA: () => {
+        const d1 = arg && Number.isFinite(parseFloat(arg)) ? parseFloat(arg) : undefined;
+        const d2 = arg2 && Number.isFinite(parseFloat(arg2)) ? parseFloat(arg2) : d1;
+        if (d1 !== undefined) setChamferDist(d1, d2 ?? d1);
+        setTool('chamfer');
+      },
+      CHAMFER: () => setTool('chamfer'),
+      AR: () => setTool('arrayrect'),
+      ARRAY: () => setTool('arrayrect'),
+      ARP: () => setTool('arraypolar'),
+      ARRAYPOLAR: () => setTool('arraypolar'),
+      SC: () => setTool('scale'),
+      SCALE: () => setTool('scale'),
+      S: () => setTool('stretch'),
+      STRETCH: () => setTool('stretch'),
+      BR: () => setTool('break'),
+      BREAK: () => setTool('break'),
+      J: () => setTool('join'),
+      JOIN: () => setTool('join'),
+      X: () => setTool('explode'),
+      EXPLODE: () => setTool('explode'),
+      LEN: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) setLengthenDelta(parseFloat(arg));
+        setTool('lengthen');
+      },
+      LENGTHEN: () => setTool('lengthen'),
+      DIMTXT: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) setDimStyle({ textHeight: parseFloat(arg) });
+      },
+      DIMASZ: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) setDimStyle({ arrowSize: parseFloat(arg) });
+      },
+      DIMSCALE: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) setDimStyle({ dimScale: parseFloat(arg) });
+      },
+      H: () => {
+        const patterns: HatchPattern[] = ['SOLID', 'ANSI31', 'ANSI32', 'ANSI37', 'DOTS'];
+        const found = patterns.find((p) => p === arg?.toUpperCase());
+        if (found) setHatchPattern(found);
+        if (arg2 && Number.isFinite(parseFloat(arg2))) setHatchScale(parseFloat(arg2));
+        setTool('hatch');
+      },
+      HATCH: () => setTool('hatch'),
+      HANGLE: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) setHatchAngle(parseFloat(arg));
+      },
+      POLAR: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) {
+          setPolarStep(parseFloat(arg));
+          setPolarTracking(true);
+        } else {
+          setPolarTracking(!polarTracking);
+        }
+      },
       E: () => deleteSelected(),
       DEL: () => deleteSelected(),
       ERASE: () => deleteSelected(),
@@ -387,8 +564,10 @@ function CommandLine({ status }: { status: string }) {
       UNDO: () => undo(),
       RE: () => redo(),
       REDO: () => redo(),
-      F: () => window.dispatchEvent(new CustomEvent('cad:zoom-extents')),
+      // Zoom Extents: KHÔNG dùng "F" ở dòng lệnh nữa (F = FILLET theo chuẩn AutoCAD, xem phía
+      // trên) — phím tắt trực tiếp 'f' trên canvas (ngoài dòng lệnh) vẫn còn (CadCanvas.tsx).
       EXT: () => window.dispatchEvent(new CustomEvent('cad:zoom-extents')),
+      Z: () => window.dispatchEvent(new CustomEvent('cad:zoom-extents')),
       SEL: () => setTool('select'),
     };
     const fn = map[c];
@@ -475,5 +654,15 @@ const miniBtn: React.CSSProperties = {
   border: 'none',
   background: 'transparent',
   color: 'var(--t3)',
+  cursor: 'pointer',
+};
+const miniSelect: React.CSSProperties = {
+  flex: 1,
+  fontSize: 10.5,
+  color: 'var(--t3)',
+  background: 'var(--field)',
+  border: '1px solid var(--border)',
+  borderRadius: 5,
+  padding: '1px 3px',
   cursor: 'pointer',
 };

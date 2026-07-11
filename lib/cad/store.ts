@@ -9,7 +9,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Doc, Entity, Layer, Viewport } from './model';
+import type { Doc, Entity, Layer, Viewport, HatchPattern } from './model';
 import { emptyDoc } from './model';
 
 // Dev-only: expose store cho debugging (window.__cadStore) — cùng pattern với
@@ -18,6 +18,15 @@ declare global {
   interface Window {
     __cadStore?: unknown;
   }
+}
+
+/** Dim style TỐI THIỂU (Nấc 3) — tương đương vài biến DIMSTYLE hay chỉnh nhất của AutoCAD.
+ * textHeight/arrowSize là mm ở tỉ lệ 1:1; dimScale nhân thêm (như DIMSCALE) để chữ/mũi tên
+ * không tí hin khi in ở tỉ lệ nhỏ (1:50, 1:100…). Đơn vị hiển thị luôn là mm (khớp toàn app). */
+export interface DimStyle {
+  textHeight: number;
+  arrowSize: number;
+  dimScale: number;
 }
 
 export type Tool =
@@ -38,7 +47,25 @@ export type Tool =
   | 'block'
   | 'wall'
   | 'room'
-  | 'pan';
+  | 'pan'
+  | 'trim'
+  | 'extend'
+  | 'fillet'
+  | 'chamfer'
+  | 'arrayrect'
+  | 'arraypolar'
+  | 'scale'
+  | 'stretch'
+  | 'break'
+  | 'join'
+  | 'explode'
+  | 'lengthen'
+  | 'dimradius'
+  | 'dimdiameter'
+  | 'dimangular'
+  | 'dimcontinue'
+  | 'dimbaseline'
+  | 'hatch';
 
 export interface SnapSettings {
   enabled: boolean;
@@ -47,6 +74,12 @@ export interface SnapSettings {
   center: boolean;
   intersection: boolean;
   grid: boolean;
+  /** Nấc 2 — bắt điểm bổ sung (chuẩn AutoCAD OSNAP) */
+  quadrant: boolean;
+  node: boolean;
+  nearest: boolean;
+  perpendicular: boolean;
+  tangent: boolean;
 }
 
 const MAX_HISTORY = 50;
@@ -60,6 +93,9 @@ interface CadState {
   snap: SnapSettings;
   /** bước lưới mm (mặc định 100mm, vạch đậm mỗi 1m) */
   gridStep: number;
+  /** Nấc 2 — polar tracking: bật/tắt + góc bước (độ, VD 15/30/45/90) */
+  polarTracking: boolean;
+  polarStep: number;
   viewport: Viewport;
   /** block furniture đang chờ click đặt (khi tool='block') */
   pendingBlock: string | null;
@@ -67,6 +103,19 @@ interface CadState {
   offsetDist: number;
   /** bề dày tường nhớ cho lệnh WALL (mm) */
   wallThickness: number;
+  /** bán kính nhớ cho lệnh FILLET (mm, 0 = vuông góc) */
+  filletRadius: number;
+  /** khoảng cách nhớ cho lệnh CHAMFER (mm) — d1 cạnh chọn trước, d2 cạnh chọn sau */
+  chamferD1: number;
+  chamferD2: number;
+  /** độ dài/góc nhớ cho lệnh LENGTHEN (mm cho line; quy đổi ra rad qua bán kính cho arc) */
+  lengthenDelta: number;
+  /** Nấc 3 — dim style tối thiểu */
+  dimStyle: DimStyle;
+  /** Nấc 4 — pattern/scale/góc nhớ cho lệnh HATCH (H) */
+  hatchPattern: HatchPattern;
+  hatchScale: number;
+  hatchAngle: number;
   past: Doc[];
   future: Doc[];
   /** dòng lệnh mini + thông báo trạng thái */
@@ -91,6 +140,8 @@ interface CadState {
   setViewport: (v: Viewport) => void;
   setSnap: (patch: Partial<SnapSettings>) => void;
   setGridStep: (n: number) => void;
+  setPolarTracking: (on: boolean) => void;
+  setPolarStep: (deg: number) => void;
   setCurrentLayer: (id: string) => void;
   addLayer: () => void;
   updateLayer: (id: string, patch: Partial<Layer>) => void;
@@ -99,6 +150,13 @@ interface CadState {
   setPendingBlock: (b: string | null) => void;
   setOffsetDist: (d: number) => void;
   setWallThickness: (d: number) => void;
+  setFilletRadius: (d: number) => void;
+  setChamferDist: (d1: number, d2: number) => void;
+  setLengthenDelta: (d: number) => void;
+  setDimStyle: (patch: Partial<DimStyle>) => void;
+  setHatchPattern: (p: HatchPattern) => void;
+  setHatchScale: (n: number) => void;
+  setHatchAngle: (n: number) => void;
 
   importDoc: (d: Doc, mode: 'replace' | 'merge') => void;
   scaleAll: (factor: number) => void;
@@ -120,12 +178,25 @@ export const useCadStore = create<CadState>((set, get) => ({
   selection: [],
   tool: 'select',
   currentLayer: 'l-wall',
-  snap: { enabled: true, endpoint: true, midpoint: true, center: true, intersection: true, grid: true },
+  snap: {
+    enabled: true, endpoint: true, midpoint: true, center: true, intersection: true, grid: true,
+    quadrant: true, node: true, nearest: false, perpendicular: true, tangent: true,
+  },
   gridStep: 100,
+  polarTracking: false,
+  polarStep: 15,
   viewport: { scale: 0.08, panX: 300, panY: 400 },
   pendingBlock: null,
   offsetDist: 100,
   wallThickness: 110,
+  filletRadius: 0,
+  chamferD1: 100,
+  chamferD2: 100,
+  lengthenDelta: 100,
+  dimStyle: { textHeight: 120, arrowSize: 80, dimScale: 1 },
+  hatchPattern: 'ANSI31',
+  hatchScale: 1,
+  hatchAngle: 0,
   past: [],
   future: [],
   status: 'Sẵn sàng — chọn công cụ hoặc gõ lệnh (L, PL, REC, C…).',
@@ -187,6 +258,8 @@ export const useCadStore = create<CadState>((set, get) => ({
   setViewport: (viewport) => set({ viewport }),
   setSnap: (patch) => set((s) => ({ snap: { ...s.snap, ...patch } })),
   setGridStep: (gridStep) => set({ gridStep }),
+  setPolarTracking: (polarTracking) => set({ polarTracking }),
+  setPolarStep: (polarStep) => set({ polarStep }),
   setCurrentLayer: (currentLayer) => set({ currentLayer }),
 
   addLayer: () => {
@@ -231,6 +304,13 @@ export const useCadStore = create<CadState>((set, get) => ({
     }),
   setOffsetDist: (offsetDist) => set({ offsetDist }),
   setWallThickness: (wallThickness) => set({ wallThickness }),
+  setFilletRadius: (filletRadius) => set({ filletRadius }),
+  setChamferDist: (chamferD1, chamferD2) => set({ chamferD1, chamferD2 }),
+  setLengthenDelta: (lengthenDelta) => set({ lengthenDelta }),
+  setDimStyle: (patch) => set((s) => ({ dimStyle: { ...s.dimStyle, ...patch } })),
+  setHatchPattern: (hatchPattern) => set({ hatchPattern }),
+  setHatchScale: (hatchScale) => set({ hatchScale }),
+  setHatchAngle: (hatchAngle) => set({ hatchAngle }),
 
   importDoc: (d, mode) => {
     get().snapshot();
@@ -267,8 +347,15 @@ function mergeLayers(a: Layer[], b: Layer[]): Layer[] {
 function scaleEntity(e: Entity, f: number): Entity {
   switch (e.type) {
     case 'line':
-    case 'dim':
       return { ...e, a: { x: e.a.x * f, y: e.a.y * f }, b: { x: e.b.x * f, y: e.b.y * f } };
+    case 'dim':
+      return {
+        ...e,
+        a: { x: e.a.x * f, y: e.a.y * f },
+        b: { x: e.b.x * f, y: e.b.y * f },
+        off: e.off * f,
+        ...(e.c ? { c: { x: e.c.x * f, y: e.c.y * f } } : {}),
+      };
     case 'polyline':
       return { ...e, points: e.points.map((p) => ({ x: p.x * f, y: p.y * f })) };
     case 'rect':
@@ -306,6 +393,24 @@ function toolHint(t: Tool): string {
     wall: 'Wall (W): click các điểm tim tường liên tiếp; Enter/double-click kết thúc. Gõ số + Enter = bề dày (mm).',
     room: 'Room: click 2 góc phòng → tự vẽ 4 tường + nhãn tên/diện tích.',
     pan: 'Pan: kéo để di chuyển khung nhìn.',
+    trim: 'Trim (TR): click phần đối tượng cần xoá (dùng đối tượng đang chọn làm biên cắt, hoặc toàn bộ bản vẽ nếu chưa chọn gì).',
+    extend: 'Extend (EX): click đầu đối tượng cần kéo dài tới biên gần nhất (biên = đối tượng đang chọn, hoặc toàn bộ bản vẽ).',
+    fillet: 'Fillet (F): click 2 đường cần bo góc. Gõ số + Enter = bán kính (mm, 0 = vuông góc).',
+    chamfer: 'Chamfer (CHA): click 2 đường cần vát góc. Gõ số + Enter = khoảng cách d1 (mm, dùng chung d2).',
+    arrayrect: 'Array chữ nhật (AR): chọn đối tượng trước → click để nhập số hàng/cột/khoảng cách.',
+    arraypolar: 'Array tròn (ARP): chọn đối tượng trước → click tâm mảng → nhập số bản/góc quét.',
+    scale: 'Scale (SC): chọn đối tượng trước → click điểm gốc (base) → nhập hệ số scale.',
+    stretch: 'Stretch (S): click 2 góc khung crossing bao phần cần kéo dãn → click điểm gốc → điểm đích.',
+    break: 'Break (BR): click đối tượng tại điểm cắt 1 → click điểm cắt 2 (Enter sau 1 click = cắt tại đúng điểm đó).',
+    join: 'Join (J): click đối tượng thứ nhất → click đối tượng thứ 2 cần nối.',
+    explode: 'Explode (X): click block/polyline/rect cần rã thành line/primitive rời.',
+    lengthen: 'Lengthen (LEN): click gần đầu đối tượng cần đổi độ dài. Gõ số + Enter = delta (mm, âm = rút ngắn).',
+    dimradius: 'Dim Radius (DRA): click lên CIRCLE/ARC cần ghi bán kính.',
+    dimdiameter: 'Dim Diameter (DDI): click lên CIRCLE/ARC cần ghi đường kính.',
+    dimangular: 'Dim Angular (DAN): click 2 đường LINE tạo góc → click vị trí đặt cung đo.',
+    dimcontinue: 'Dim Continue (DCO): click điểm tiếp theo — nối từ điểm cuối của dim gần nhất, cùng đường kích thước.',
+    dimbaseline: 'Dim Baseline (DBA): click điểm tiếp theo — đo từ gốc chung của dim gần nhất, xếp lớp ra ngoài.',
+    hatch: 'Hatch (H): click 1 điểm bên trong vùng kín cần tô. Gõ lệnh "H ANSI31/ANSI32/ANSI37/SOLID/DOTS" để đổi pattern.',
   };
   return H[t];
 }
