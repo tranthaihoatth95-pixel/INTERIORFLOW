@@ -2,7 +2,7 @@
 
 import { loadImage, extractPalette } from '@/lib/imaging';
 
-/** Nội dung 1 slide — parse từ node Concept Content hoặc text thường. */
+/** Noi dung 1 slide - parse tu node Concept Content hoac text thuong. */
 export interface SlideContent {
   kicker: string;
   title: string;
@@ -10,7 +10,7 @@ export interface SlideContent {
 }
 
 export function parseContent(raw: string): SlideContent {
-  // Concept node xuất JSON; Text Prompt thường → dòng 1 = title, còn lại = body
+  // Concept node xuat JSON; Text Prompt thuong -> dong 1 = title, con lai = body
   try {
     const j = JSON.parse(raw);
     if (j && typeof j === 'object' && ('title' in j || 'body' in j)) {
@@ -49,8 +49,13 @@ function saturation(hex: string): number {
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
   return max === 0 ? 0 : (max - min) / max;
 }
+/** hex '#rrggbb' + alpha -> 'rgba(...)' (dung cho scrim/vien toc). */
+function hexToRgba(hex: string, a: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
 
-/** Theme quiet-luxury mặc định khi không có ảnh ref. */
+/** Theme quiet-luxury mac dinh khi khong co anh ref. */
 const DEFAULT_THEME: SlideTheme = {
   bg: '#f5f1ea',
   text: '#221f1a',
@@ -59,7 +64,7 @@ const DEFAULT_THEME: SlideTheme = {
   palette: ['#f5f1ea', '#dad0c7', '#c7a397', '#8a6f4d', '#635c45', '#221f1a'],
 };
 
-/** Dựng theme từ ảnh ref (palette 6 màu) — nền sáng hoặc tối. */
+/** Dung theme tu anh ref (palette 6 mau) - nen sang hoac toi. */
 export async function themeFromRef(refUrl: string | null, dark: boolean): Promise<SlideTheme> {
   let palette: string[];
   if (!refUrl) {
@@ -83,11 +88,33 @@ export async function themeFromRef(refUrl: string | null, dark: boolean): Promis
 }
 
 export type FontPairing = 'Editorial' | 'Modern' | 'Elegant';
-const FONTS: Record<FontPairing, { display: string; body: string }> = {
-  Editorial: { display: '"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif', body: '"Helvetica Neue", Helvetica, Arial, sans-serif' },
-  Modern: { display: '"Helvetica Neue", Helvetica, Arial, sans-serif', body: '"Helvetica Neue", Helvetica, Arial, sans-serif' },
-  Elegant: { display: 'Optima, "Avenir Next", "Helvetica Neue", sans-serif', body: '"Avenir Next", Avenir, "Helvetica Neue", sans-serif' },
+/**
+ * Bo chu cho SLIDE XUAT (ban giao khach) - khac luat "chi sans" cua UI app: ban trinh bay
+ * quiet-luxury editorial can MAT CHU SERIF THANH cho tieu de (dung gu Cormorant/Didot).
+ * Dung serif he thong (Georgia) - co dau tieng Viet day du, hien dien moi may, khong can nap font.
+ *  - Editorial (mac dinh): tieu de serif + than sans nhe -> cap tap-chi kinh dien.
+ *  - Modern: sans nhe toan phan (khi muon kho, toi gian).
+ *  - Elegant: serif toan phan (trang trong nhat).
+ */
+const SERIF = 'Georgia, "Times New Roman", "Noto Serif", serif';
+const SANS = '"Helvetica Neue", "Segoe UI", -apple-system, Arial, sans-serif';
+const FONTS: Record<FontPairing, { display: string; body: string; displayWeight: number }> = {
+  Editorial: { display: SERIF, body: SANS, displayWeight: 400 },
+  Modern: { display: SANS, body: SANS, displayWeight: 300 },
+  Elegant: { display: SERIF, body: SERIF, displayWeight: 400 },
 };
+
+/** Dat letter-spacing an toan (Chromium ho tro ctx.letterSpacing; may cu bo qua). */
+function setTracking(ctx: CanvasRenderingContext2D, px: number) {
+  try {
+    (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${px}px`;
+  } catch {
+    /* bo qua neu khong ho tro */
+  }
+}
+function resetTracking(ctx: CanvasRenderingContext2D) {
+  setTracking(ctx, 0);
+}
 
 export type SlideLayout = 'Cover' | 'Nội dung + ảnh' | 'Quote';
 
@@ -121,12 +148,32 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines;
 }
 
+/** Chon co chu tieu de lon nhat vua maxWidth trong toi da maxLines dong. */
+function fitTitle(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  family: string,
+  weight: number,
+  maxSize: number,
+  minSize: number,
+  maxWidth: number,
+  maxLines: number,
+): { size: number; lines: string[] } {
+  for (let size = maxSize; size >= minSize; size -= 4) {
+    ctx.font = `${weight} ${size}px ${family}`;
+    const lines = wrapText(ctx, text, maxWidth);
+    if (lines.length <= maxLines) return { size, lines };
+  }
+  ctx.font = `${weight} ${minSize}px ${family}`;
+  return { size: minSize, lines: wrapText(ctx, text, maxWidth) };
+}
+
 async function drawCover(ctx: CanvasRenderingContext2D, o: SlideOptions) {
   const { theme, content, heroUrl } = o;
   const f = FONTS[o.fonts];
   const hasHero = Boolean(heroUrl);
-  const textW = hasHero ? W * 0.52 : W;
-  const PAD = 120;
+  const PAD = 150;
+  const textW = hasHero ? W * 0.5 : W * 0.78;
 
   if (hasHero) {
     const img = await loadImage(heroUrl!);
@@ -134,135 +181,152 @@ async function drawCover(ctx: CanvasRenderingContext2D, o: SlideOptions) {
     const scale = Math.max(w / img.naturalWidth, H / img.naturalHeight);
     const sw = w / scale, sh = H / scale;
     ctx.drawImage(img, (img.naturalWidth - sw) / 2, (img.naturalHeight - sh) / 2, sw, sh, x, 0, w, H);
-    // scrim nhẹ để chữ khối trái tách khỏi ảnh
-    const grad = ctx.createLinearGradient(x, 0, x + 200, 0);
+    const grad = ctx.createLinearGradient(x, 0, x + 260, 0);
     grad.addColorStop(0, theme.bg);
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, hexToRgba(theme.bg, 0));
     ctx.fillStyle = grad;
-    ctx.fillRect(x, 0, 200, H);
+    ctx.fillRect(x, 0, 260, H);
   }
 
   if (content.kicker) {
-    ctx.fillStyle = o.theme.accent;
-    ctx.font = `600 30px ${f.body}`;
-    ctx.fillText(content.kicker.toUpperCase().split('').join('  '), PAD, 260);
+    ctx.fillStyle = theme.accent;
+    ctx.font = `600 22px ${f.body}`;
+    setTracking(ctx, 4);
+    ctx.fillText(content.kicker.toUpperCase(), PAD, 300);
+    resetTracking(ctx);
   }
 
+  const fit = fitTitle(ctx, content.title, f.display, f.displayWeight, 116, 64, textW - PAD * 1.3, 4);
+  const lead = fit.size * 1.08;
   ctx.fillStyle = theme.text;
-  ctx.font = `600 118px ${f.display}`;
-  const titleLines = wrapText(ctx, content.title, textW - PAD * 1.6);
-  let y = 400;
-  for (const line of titleLines) {
+  ctx.font = `${f.displayWeight} ${fit.size}px ${f.display}`;
+  setTracking(ctx, -0.5);
+  let y = 392;
+  for (const line of fit.lines) {
     ctx.fillText(line, PAD, y);
-    y += 128;
+    y += lead;
   }
+  resetTracking(ctx);
 
+  const ruleY = y - lead + fit.size * 0.32 + 44;
   ctx.strokeStyle = theme.accent;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(PAD, y + 8);
-  ctx.lineTo(PAD + 140, y + 8);
+  ctx.moveTo(PAD + 0.5, ruleY);
+  ctx.lineTo(PAD + 92, ruleY);
   ctx.stroke();
 
   ctx.fillStyle = theme.muted;
-  ctx.font = `400 36px ${f.body}`;
-  let by = y + 84;
+  ctx.font = `400 30px ${f.body}`;
+  let by = ruleY + 74;
   for (const para of content.body.slice(0, 3)) {
-    for (const line of wrapText(ctx, para.replace(/^[-•]\s*/, ''), textW - PAD * 1.8)) {
+    for (const line of wrapText(ctx, para.replace(/^[-•]\s*/, ''), textW - PAD * 1.4)) {
       ctx.fillText(line, PAD, by);
-      by += 52;
+      by += 46;
     }
-    by += 10;
+    by += 12;
   }
-
-  // dải palette brand dưới cùng
-  const sw2 = 72, sh2 = 14;
-  o.theme.palette.slice(0, 6).forEach((c, i) => {
-    ctx.fillStyle = c;
-    ctx.fillRect(PAD + i * sw2, H - 120, sw2, sh2);
-  });
+  // Bo dai o mau palette (artifact cong cu) - quiet-luxury de trong tho.
 }
 
 async function drawContent(ctx: CanvasRenderingContext2D, o: SlideOptions) {
   const { theme, content, heroUrl } = o;
   const f = FONTS[o.fonts];
-  const PAD = 110;
+  const PAD = 150;
   const hasHero = Boolean(heroUrl);
-  const textW = hasHero ? W * 0.52 : W * 0.8;
+  const textW = hasHero ? W * 0.5 : W * 0.82;
 
   if (content.kicker) {
     ctx.fillStyle = theme.accent;
-    ctx.font = `600 26px ${f.body}`;
-    ctx.fillText(content.kicker.toUpperCase(), PAD, 150);
+    ctx.font = `600 22px ${f.body}`;
+    setTracking(ctx, 4);
+    ctx.fillText(content.kicker.toUpperCase(), PAD, 175);
+    resetTracking(ctx);
   }
+  const fit = fitTitle(ctx, content.title, f.display, f.displayWeight, 76, 48, textW - PAD * 0.5, 3);
   ctx.fillStyle = theme.text;
-  ctx.font = `600 72px ${f.display}`;
-  let y = 240;
-  for (const line of wrapText(ctx, content.title, textW - PAD)) {
+  ctx.font = `${f.displayWeight} ${fit.size}px ${f.display}`;
+  setTracking(ctx, -0.5);
+  let y = 265;
+  for (const line of fit.lines) {
     ctx.fillText(line, PAD, y);
-    y += 84;
+    y += fit.size * 1.12;
   }
+  resetTracking(ctx);
+
   ctx.strokeStyle = theme.accent;
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(PAD, y - 30);
-  ctx.lineTo(PAD + 110, y - 30);
+  ctx.moveTo(PAD + 0.5, y - fit.size * 0.3);
+  ctx.lineTo(PAD + 80, y - fit.size * 0.3);
   ctx.stroke();
 
-  y += 60;
-  ctx.font = `400 34px ${f.body}`;
-  for (const item of content.body.slice(0, 8)) {
+  y += 66;
+  ctx.font = `400 32px ${f.body}`;
+  for (const item of content.body.slice(0, 7)) {
     const clean = item.replace(/^[-•]\s*/, '');
-    ctx.fillStyle = theme.accent;
+    // gach ngang manh thay cham tron - editorial hon
+    ctx.strokeStyle = theme.accent;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.arc(PAD + 8, y - 11, 5.5, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(PAD, y - 11);
+    ctx.lineTo(PAD + 22, y - 11);
+    ctx.stroke();
     ctx.fillStyle = theme.text;
-    for (const line of wrapText(ctx, clean, textW - PAD - 60)) {
-      ctx.fillText(line, PAD + 40, y);
-      y += 50;
+    for (const line of wrapText(ctx, clean, textW - 44)) {
+      ctx.fillText(line, PAD + 42, y);
+      y += 46;
     }
-    y += 22;
+    y += 26;
   }
 
   if (hasHero) {
     const img = await loadImage(heroUrl!);
-    const x = W * 0.58, w = W - x - PAD, h = H - 260;
+    const x = W * 0.56, w = W - x - PAD, h = H - 320;
     const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
     const sw = w / scale, sh = h / scale;
     ctx.save();
     ctx.beginPath();
-    ctx.roundRect(x, 130, w, h, 10);
+    ctx.roundRect(x, 160, w, h, 4);
     ctx.clip();
-    ctx.drawImage(img, (img.naturalWidth - sw) / 2, (img.naturalHeight - sh) / 2, sw, sh, x, 130, w, h);
+    ctx.drawImage(img, (img.naturalWidth - sw) / 2, (img.naturalHeight - sh) / 2, sw, sh, x, 160, w, h);
     ctx.restore();
+    ctx.strokeStyle = hexToRgba(theme.text, 0.14);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(x + 0.5, 160.5, w - 1, h - 1, 4);
+    ctx.stroke();
   }
 }
 
 async function drawQuote(ctx: CanvasRenderingContext2D, o: SlideOptions) {
   const { theme, content } = o;
   const f = FONTS[o.fonts];
-  ctx.fillStyle = theme.accent;
-  ctx.font = `400 260px ${f.display}`;
-  ctx.fillText('“', W / 2 - 70, 330);
+  // dau ngoac kep lon, mo, lam nen - khong chiem san khau
+  ctx.fillStyle = hexToRgba(theme.accent, 0.16);
+  ctx.font = `400 400px ${f.display}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('“', W / 2, 420);
 
   ctx.fillStyle = theme.text;
-  ctx.font = `italic 500 66px ${f.display}`;
-  ctx.textAlign = 'center';
-  let y = 480;
-  for (const line of wrapText(ctx, content.title, W * 0.62)) {
+  const fit = fitTitle(ctx, content.title, f.display, 400, 74, 44, W * 0.66, 4);
+  ctx.font = `italic 400 ${fit.size}px ${f.display}`;
+  let y = 500 - ((fit.lines.length - 1) * fit.size * 1.2) / 2;
+  for (const line of fit.lines) {
     ctx.fillText(line, W / 2, y);
-    y += 90;
+    y += fit.size * 1.2;
   }
   if (content.body.length) {
     ctx.fillStyle = theme.muted;
-    ctx.font = `400 32px ${f.body}`;
-    ctx.fillText(`— ${content.body[0].replace(/^[-•]\s*/, '')}`, W / 2, y + 40);
+    ctx.font = `600 24px ${f.body}`;
+    setTracking(ctx, 3);
+    ctx.fillText(content.body[0].replace(/^[-•]\s*/, '').toUpperCase(), W / 2, y + 44);
+    resetTracking(ctx);
   }
   ctx.textAlign = 'left';
 }
 
-/** Render 1 slide 1920×1080 → JPEG dataURL. */
+/** Render 1 slide 1920x1080 -> JPEG dataURL. */
 export async function renderSlide(o: SlideOptions): Promise<string> {
   const canvas = document.createElement('canvas');
   canvas.width = W;
@@ -277,16 +341,18 @@ export async function renderSlide(o: SlideOptions): Promise<string> {
   else if (o.layout === 'Quote') await drawQuote(ctx, o);
   else await drawContent(ctx, o);
 
-  // footer brand + số trang
+  // footer brand + so trang - nho, gian, muted
   const f = FONTS[o.fonts];
   ctx.fillStyle = o.theme.muted;
-  ctx.font = `500 24px ${f.body}`;
-  if (o.brand) ctx.fillText(o.brand.toUpperCase(), 110, H - 56);
+  ctx.font = `600 19px ${f.body}`;
+  setTracking(ctx, 2);
+  if (o.brand) ctx.fillText(o.brand.toUpperCase(), 150, H - 72);
   if (o.pageNo) {
     ctx.textAlign = 'right';
-    ctx.fillText(o.pageNo, W - 110, H - 56);
+    ctx.fillText(o.pageNo, W - 150, H - 72);
     ctx.textAlign = 'left';
   }
+  resetTracking(ctx);
 
   return canvas.toDataURL('image/jpeg', 0.92);
 }
