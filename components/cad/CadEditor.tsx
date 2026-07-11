@@ -13,6 +13,7 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Plus, Trash2, X, Command, Sparkles, Wand2,
+  ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair,
 } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import type { HatchPattern } from '@/lib/cad/model';
@@ -24,12 +25,15 @@ import { describeToEntities } from '@/lib/cad/ai-assist';
 import { docBox } from '@/lib/cad/model';
 import { useFlowStore } from '@/lib/store';
 import { stashCadHandoff } from '@/lib/cad/handoff';
+import { checkStandards, type Violation } from '@/lib/cad/standards/checker';
+import { getAllRules } from '@/lib/cad/standards/registry';
 import CadCanvas from './CadCanvas';
 import CadToolbar from './CadToolbar';
 
 export default function CadEditor() {
   const router = useRouter();
   const [furnitureOpen, setFurnitureOpen] = useState(false);
+  const [standardsOpen, setStandardsOpen] = useState(false);
   const [handoffMsg, setHandoffMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -141,6 +145,9 @@ export default function CadEditor() {
         <button type="button" onClick={doExportDxf} style={fileBtn} title="Xuất DXF">
           <Download size={14} /> DXF
         </button>
+        <button type="button" onClick={() => setStandardsOpen((o) => !o)} style={{ ...fileBtn, background: standardsOpen ? 'var(--accent)' : undefined, color: standardsOpen ? '#fff' : undefined }} title="Kiểm chuẩn — đối chiếu bản vẽ với TCVN/QCVN/ISO (chỉ đọc & đề xuất, không tự sửa)">
+          <ShieldCheck size={14} /> Kiểm chuẩn
+        </button>
         <button type="button" onClick={toRender} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Kết xuất layout thành node Import Image ở chặng Render">
           Đưa sang Render <ArrowRight size={14} />
         </button>
@@ -151,6 +158,7 @@ export default function CadEditor() {
         <CadCanvas />
         <CadToolbar onToggleFurniture={() => setFurnitureOpen((o) => !o)} />
         {furnitureOpen && <FurniturePanel onClose={() => setFurnitureOpen(false)} />}
+        {standardsOpen && <StandardsPanel onClose={() => setStandardsOpen(false)} />}
         <LayerPanel />
         {handoffMsg && (
           <div style={{ position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 30, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 14px', fontSize: 12.5, color: 'var(--t2)' }}>
@@ -288,6 +296,68 @@ function FurniturePanel({ onClose }: { onClose: () => void }) {
                 {b.name}
               </button>
             ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ───────── Panel Kiểm chuẩn (standards checker) — CHỈ ĐỌC + ĐỀ XUẤT, không tự sửa ───────── */
+function StandardsPanel({ onClose }: { onClose: () => void }) {
+  const doc = useCadStore((s) => s.doc);
+  const [violations, setViolations] = useState<Violation[] | null>(null);
+
+  const run = () => setViolations(checkStandards(doc, getAllRules()));
+
+  const zoomTo = (v: Violation) => {
+    if (!v.at) return;
+    window.dispatchEvent(new CustomEvent('cad:zoom-to', { detail: v.at }));
+  };
+
+  const sevIcon = (s: Violation['severity']) => {
+    if (s === 'error') return <ShieldAlert size={14} color="#d4645a" />;
+    if (s === 'warning') return <AlertTriangle size={14} color="#d4a15a" />;
+    return <Info size={14} color="var(--t3)" />;
+  };
+
+  return (
+    <div style={{ ...panel, right: 12, top: 400, width: 340, maxHeight: '50vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={panelHead}>
+        <span>Kiểm chuẩn (TCVN/QCVN/ISO)</span>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button type="button" onClick={run} title="Chạy kiểm tra" style={miniBtn}>
+            <ShieldCheck size={14} />
+          </button>
+          <button type="button" onClick={onClose} title="Đóng" style={miniBtn}>
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+      <div style={{ fontSize: 10.5, color: 'var(--t4)', padding: '0 6px 6px' }}>
+        Chỉ đọc bản vẽ và đề xuất — KHÔNG tự sửa. Bấm biểu tượng khiên để chạy/chạy lại sau khi sửa bản vẽ.
+      </div>
+      <div style={{ overflowY: 'auto', flex: 1 }}>
+        {violations === null && (
+          <div style={{ padding: '10px 8px', fontSize: 12, color: 'var(--t3)' }}>Chưa chạy — bấm biểu tượng khiên phía trên.</div>
+        )}
+        {violations !== null && violations.length === 0 && (
+          <div style={{ padding: '10px 8px', fontSize: 12, color: 'var(--t3)' }}>Không phát hiện vi phạm nào (trong phạm vi đo được tự động).</div>
+        )}
+        {violations?.map((v, i) => (
+          <div key={`${v.ruleId}-${i}`} style={{ padding: '7px 8px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+            <span style={{ marginTop: 2 }}>{sevIcon(v.severity)}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: 'var(--t1)', lineHeight: 1.4 }}>{v.message}</div>
+              <div style={{ fontSize: 10, color: 'var(--t4)', marginTop: 2 }}>
+                {v.source} {v.verified ? '' : '· CHƯA KIỂM CHỨNG (đối chiếu bản gốc trước khi dùng chính thức)'}
+              </div>
+            </div>
+            {v.at && (
+              <button type="button" onClick={() => zoomTo(v)} title="Zoom tới vị trí" style={miniBtn}>
+                <Crosshair size={13} />
+              </button>
+            )}
           </div>
         ))}
       </div>

@@ -14,6 +14,15 @@
  *     mặt phẳng phân hoạch) cho tới khi khép lại đúng đỉnh xuất phát. Thử cả 2 đầu đoạn × 2
  *     chiều xoay (cw/ccw) = 4 khả năng, giữ lại vòng nào KHÉP + chứa pick-point (point-in-polygon)
  *     + diện tích nhỏ nhất (ưu tiên vùng trong cùng khi có phòng lồng phòng).
+ *
+ * GIỚI HẠN ĐÃ PHÁT HIỆN (qua debug thủ công khi xây lib/cad/standards/checker.ts — xem comment
+ * đầu file đó): với phòng có tường bao bị 1 VÁCH KHÁC ĐÂM VÀO tạo góc chữ T (rất phổ biến trong
+ * mặt bằng nhiều phòng), các quad tường độc lập không vát góc (wallChain/wallSegment trong
+ * commands.ts) chồng lấn nhau tại góc/chữ T tạo khe hở hình học nhỏ khiến traceFace đôi khi bắt
+ * nhầm vào khe hở đó thay vì đường bao phòng thật, dò biên trả về null (thất bại AN TOÀN, không
+ * trả sai) thay vì đúng đa giác mong đợi. Phòng ĐƠN (chỉ tường bao khép kín, không vách khác
+ * đâm vào) vẫn dò đúng bình thường (đã test). Cần thuật toán face-finding chắc hơn cho trường
+ * hợp T-junction — để dành bản nâng cấp sau.
  */
 
 import type { Doc, Entity, Pt } from './model';

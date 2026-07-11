@@ -154,6 +154,21 @@ export default function CadCanvas() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // panel "Kiểm chuẩn" (standards checker) — click 1 violation để zoom tới vị trí (world mm).
+  useEffect(() => {
+    const onZoomTo = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ x: number; y: number }>).detail;
+      if (!detail) return;
+      const st = useCadStore.getState();
+      const { W, H } = screenSize();
+      st.setViewport({ scale: Math.max(st.viewport.scale, 0.15), panX: W / 2 - detail.x * Math.max(st.viewport.scale, 0.15), panY: H / 2 + detail.y * Math.max(st.viewport.scale, 0.15) });
+      ix.current.redraw = true;
+    };
+    window.addEventListener('cad:zoom-to', onZoomTo);
+    return () => window.removeEventListener('cad:zoom-to', onZoomTo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function screenSize() {
     const c = canvasRef.current;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
