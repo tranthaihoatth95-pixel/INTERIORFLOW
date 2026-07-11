@@ -9,6 +9,7 @@
  * Theme qua CSS var (--bg/--panel/--card/--t1..t5/--border...). Font SANS hệ thống.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useT } from '@/lib/i18n';
 
 export interface PresentViewerProps {
   /** JPEG dataURL 1920×1080 mỗi slide (đã render sẵn). */
@@ -38,6 +39,7 @@ export default function PresentViewer({
   onDownloadMoodboard,
   onClose,
 }: PresentViewerProps) {
+  const tr = useT();
   // gộp slide chính + moodboard (nếu có) thành 1 mạch trình chiếu
   const frames = moodboard ? [...slides, moodboard] : slides;
   const total = frames.length;
@@ -129,17 +131,17 @@ export default function PresentViewer({
         <div style={{ flex: 1 }} />
         {onDownloadPdf && (
           <button onClick={onDownloadPdf} disabled={loading || slides.length === 0} style={btnStyle(loading || slides.length === 0)}>
-            Download PDF
+            {tr('Tải PDF', 'Download PDF')}
           </button>
         )}
         {onDownloadMoodboard && moodboard && (
           <button onClick={onDownloadMoodboard} style={btnGhost()}>
-            Moodboard PNG
+            {tr('Tải moodboard PNG', 'Moodboard PNG')}
           </button>
         )}
         {onClose && (
-          <button onClick={onClose} style={btnGhost()} aria-label="Đóng Present">
-            Đóng
+          <button onClick={onClose} style={btnGhost()} aria-label={tr('Đóng Present', 'Close Present')}>
+            {tr('Đóng', 'Close')}
           </button>
         )}
       </header>
@@ -159,10 +161,10 @@ export default function PresentViewer({
         {loading && slides.length === 0 ? (
           <div style={{ color: 'var(--t3)', fontSize: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
             <Spinner />
-            <span>{status ?? 'Đang dựng slide…'}</span>
+            <span>{status ?? tr('Đang dựng slide…', 'Building slides…')}</span>
           </div>
         ) : total === 0 ? (
-          <div style={{ color: 'var(--t3)', fontSize: 14 }}>Chưa có nội dung để trình chiếu.</div>
+          <div style={{ color: 'var(--t3)', fontSize: 14 }}>{tr('Chưa có nội dung để trình chiếu.', 'Nothing to present yet.')}</div>
         ) : (
           <figure
             style={{
@@ -191,8 +193,8 @@ export default function PresentViewer({
         {/* vùng bấm trái/phải trong suốt để lật nhanh */}
         {total > 1 && (
           <>
-            <button aria-label="Slide trước" onClick={prev} style={edgeZone('left')} />
-            <button aria-label="Slide sau" onClick={next} style={edgeZone('right')} />
+            <button aria-label={tr('Slide trước', 'Previous slide')} onClick={prev} style={edgeZone('left')} />
+            <button aria-label={tr('Slide sau', 'Next slide')} onClick={next} style={edgeZone('right')} />
           </>
         )}
       </div>
@@ -214,15 +216,15 @@ export default function PresentViewer({
           zIndex: 3,
         }}
       >
-        <button onClick={prev} disabled={idx === 0} style={navBtn(idx === 0)} aria-label="Trước">
-          ‹ Trước
+        <button onClick={prev} disabled={idx === 0} style={navBtn(idx === 0)} aria-label={tr('Trước', 'Previous')}>
+          ‹ {tr('Trước', 'Prev')}
         </button>
         <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
           {frames.map((_, i) => (
             <button
               key={i}
               onClick={() => go(i)}
-              aria-label={`Tới slide ${i + 1}`}
+              aria-label={tr(`Tới slide ${i + 1}`, `Go to slide ${i + 1}`)}
               style={{
                 width: i === idx ? 22 : 8,
                 height: 8,
@@ -236,8 +238,8 @@ export default function PresentViewer({
             />
           ))}
         </div>
-        <button onClick={next} disabled={idx === total - 1} style={navBtn(idx === total - 1)} aria-label="Sau">
-          Sau ›
+        <button onClick={next} disabled={idx === total - 1} style={navBtn(idx === total - 1)} aria-label={tr('Sau', 'Next')}>
+          {tr('Sau', 'Next')} ›
         </button>
       </footer>
     </div>

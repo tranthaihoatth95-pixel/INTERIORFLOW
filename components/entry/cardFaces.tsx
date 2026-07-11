@@ -79,7 +79,7 @@ export const presentationFaces = [
     <div className="flex h-full gap-2 p-3.5">
       <div className="flex-1 space-y-1.5 pt-2">
         <div className="text-[12px] font-semibold leading-tight" style={{ fontFamily: DISPLAY, letterSpacing: '-0.01em', color: INK[1] }}>
-          Chất liệu
+          Materials
         </div>
         {[16, 14, 15, 12].map((w, i) => (
           <div key={i} className="flex items-center gap-1">

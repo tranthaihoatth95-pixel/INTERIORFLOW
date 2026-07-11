@@ -8,6 +8,7 @@
  */
 import { useEffect, useState } from 'react';
 import PresentViewer from './PresentViewer';
+import { useT } from '@/lib/i18n';
 import {
   type PresentDeck as PresentDeckData,
   renderDeck,
@@ -31,18 +32,19 @@ export interface PresentDeckProps {
 }
 
 export default function PresentDeck({ deck, imageSlides, title, withMoodboard = true, onClose }: PresentDeckProps) {
+  const tr = useT();
   const [slides, setSlides] = useState<string[]>([]);
   const [moodboard, setMoodboard] = useState<string | null>(null);
-  const [status, setStatus] = useState('Đang dựng slide…');
+  const [status, setStatus] = useState('');
   const [done, setDone] = useState(false);
 
   // Deck thật từ flow: slide đã render sẵn — dùng thẳng, không qua renderDeck.
   useEffect(() => {
     if (!imageSlides?.length) return;
     setSlides(imageSlides);
-    setStatus(`Đã nạp ${imageSlides.length} slide`);
+    setStatus(tr(`Đã nạp ${imageSlides.length} slide`, `Loaded ${imageSlides.length} slides`));
     setDone(true);
-  }, [imageSlides]);
+  }, [imageSlides, tr]);
 
   useEffect(() => {
     if (!deck || imageSlides?.length) return;
@@ -52,7 +54,7 @@ export default function PresentDeck({ deck, imageSlides, title, withMoodboard = 
         const out = await renderDeck(deck);
         if (cancelled) return;
         setSlides(out);
-        setStatus(`Đã dựng ${out.length} slide`);
+        setStatus(tr(`Đã dựng ${out.length} slide`, `Built ${out.length} slides`));
         if (withMoodboard) {
           try {
             const board = await renderMoodboard(deck);
@@ -63,7 +65,7 @@ export default function PresentDeck({ deck, imageSlides, title, withMoodboard = 
         }
         if (!cancelled) setDone(true);
       } catch (e) {
-        if (!cancelled) setStatus('Không dựng được slide — thử tải lại trang.');
+        if (!cancelled) setStatus(tr('Không dựng được slide — thử tải lại trang.', 'Could not build slides — try reloading.'));
         // eslint-disable-next-line no-console
         console.error('[PresentDeck] render lỗi', e);
       }
@@ -94,14 +96,16 @@ export default function PresentDeck({ deck, imageSlides, title, withMoodboard = 
     return (
       <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', background: 'var(--bg)', color: 'var(--t3)' }}>
         <div style={{ textAlign: 'center', padding: 24 }}>
-          <p style={{ fontSize: 14 }}>Chưa có nội dung để trình chiếu</p>
-          <p style={{ marginTop: 6, fontSize: 12, color: 'var(--t5)' }}>Dàn slide ở chặng Present, rồi mở Present mode lại.</p>
+          <p style={{ fontSize: 14 }}>{tr('Chưa có nội dung để trình chiếu', 'Nothing to present yet')}</p>
+          <p style={{ marginTop: 6, fontSize: 12, color: 'var(--t5)' }}>
+            {tr('Dàn slide ở chặng Present, rồi mở Present mode lại.', 'Lay out slides in the Present stage, then reopen Present mode.')}
+          </p>
           {onClose && (
             <button
               onClick={onClose}
               style={{ marginTop: 18, padding: '8px 16px', fontSize: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)' }}
             >
-              Đóng
+              {tr('Đóng', 'Close')}
             </button>
           )}
         </div>
@@ -114,7 +118,7 @@ export default function PresentDeck({ deck, imageSlides, title, withMoodboard = 
       slides={slides}
       title={deck?.project ?? title ?? 'Present'}
       loading={!done}
-      status={done ? undefined : status}
+      status={done ? undefined : status || undefined}
       moodboard={moodboard}
       onDownloadPdf={handlePdf}
       onDownloadMoodboard={handleMoodboard}
