@@ -1,0 +1,606 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-11T07:17:36.651Z",
+  "unit": "mm",
+  "count": 46,
+  "categories": [
+    {
+      "slug": "phong-khach",
+      "label": "Phòng khách"
+    },
+    {
+      "slug": "phong-an",
+      "label": "Phòng ăn"
+    },
+    {
+      "slug": "phong-ngu",
+      "label": "Phòng ngủ"
+    },
+    {
+      "slug": "bep",
+      "label": "Bếp"
+    },
+    {
+      "slug": "ve-sinh",
+      "label": "Vệ sinh"
+    },
+    {
+      "slug": "cua",
+      "label": "Cửa & cửa sổ"
+    },
+    {
+      "slug": "cay-canh",
+      "label": "Cây cảnh"
+    },
+    {
+      "slug": "xe",
+      "label": "Xe"
+    },
+    {
+      "slug": "cau-thang",
+      "label": "Cầu thang"
+    },
+    {
+      "slug": "cot",
+      "label": "Cột"
+    },
+    {
+      "slug": "ky-hieu",
+      "label": "Ký hiệu"
+    }
+  ],
+  "blocks": [
+    {
+      "id": "living-sofa-2seat",
+      "name": "Sofa 2 chỗ",
+      "category": "phong-khach",
+      "categoryLabel": "Phòng khách",
+      "w": 1600,
+      "h": 850,
+      "file": "/cad-library/phong-khach/living-sofa-2seat.dxf",
+      "thumb": "/cad-library/phong-khach/living-sofa-2seat.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "living-sofa-3seat",
+      "name": "Sofa 3 chỗ",
+      "category": "phong-khach",
+      "categoryLabel": "Phòng khách",
+      "w": 2100,
+      "h": 850,
+      "file": "/cad-library/phong-khach/living-sofa-3seat.dxf",
+      "thumb": "/cad-library/phong-khach/living-sofa-3seat.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "living-sofa-lshape",
+      "name": "Sofa góc chữ L",
+      "category": "phong-khach",
+      "categoryLabel": "Phòng khách",
+      "w": 2600,
+      "h": 1700,
+      "file": "/cad-library/phong-khach/living-sofa-lshape.dxf",
+      "thumb": "/cad-library/phong-khach/living-sofa-lshape.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "living-armchair",
+      "name": "Ghế bành",
+      "category": "phong-khach",
+      "categoryLabel": "Phòng khách",
+      "w": 800,
+      "h": 800,
+      "file": "/cad-library/phong-khach/living-armchair.dxf",
+      "thumb": "/cad-library/phong-khach/living-armchair.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "living-coffee-table",
+      "name": "Bàn trà",
+      "category": "phong-khach",
+      "categoryLabel": "Phòng khách",
+      "w": 1200,
+      "h": 600,
+      "file": "/cad-library/phong-khach/living-coffee-table.dxf",
+      "thumb": "/cad-library/phong-khach/living-coffee-table.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "living-tv-console",
+      "name": "Kệ TV",
+      "category": "phong-khach",
+      "categoryLabel": "Phòng khách",
+      "w": 1600,
+      "h": 400,
+      "file": "/cad-library/phong-khach/living-tv-console.dxf",
+      "thumb": "/cad-library/phong-khach/living-tv-console.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "living-bookshelf",
+      "name": "Kệ sách",
+      "category": "phong-khach",
+      "categoryLabel": "Phòng khách",
+      "w": 900,
+      "h": 350,
+      "file": "/cad-library/phong-khach/living-bookshelf.dxf",
+      "thumb": "/cad-library/phong-khach/living-bookshelf.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "dining-table-4",
+      "name": "Bàn ăn 4 ghế",
+      "category": "phong-an",
+      "categoryLabel": "Phòng ăn",
+      "w": 1200,
+      "h": 1760,
+      "file": "/cad-library/phong-an/dining-table-4.dxf",
+      "thumb": "/cad-library/phong-an/dining-table-4.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "dining-table-6",
+      "name": "Bàn ăn 6 ghế",
+      "category": "phong-an",
+      "categoryLabel": "Phòng ăn",
+      "w": 1800,
+      "h": 1860,
+      "file": "/cad-library/phong-an/dining-table-6.dxf",
+      "thumb": "/cad-library/phong-an/dining-table-6.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "dining-table-round-4",
+      "name": "Bàn tròn 4 ghế",
+      "category": "phong-an",
+      "categoryLabel": "Phòng ăn",
+      "w": 1780,
+      "h": 1780,
+      "file": "/cad-library/phong-an/dining-table-round-4.dxf",
+      "thumb": "/cad-library/phong-an/dining-table-round-4.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "dining-bar-stool",
+      "name": "Ghế bar",
+      "category": "phong-an",
+      "categoryLabel": "Phòng ăn",
+      "w": 350,
+      "h": 350,
+      "file": "/cad-library/phong-an/dining-bar-stool.dxf",
+      "thumb": "/cad-library/phong-an/dining-bar-stool.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "dining-sideboard",
+      "name": "Tủ búp phê",
+      "category": "phong-an",
+      "categoryLabel": "Phòng ăn",
+      "w": 1600,
+      "h": 450,
+      "file": "/cad-library/phong-an/dining-sideboard.dxf",
+      "thumb": "/cad-library/phong-an/dining-sideboard.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "bed-single",
+      "name": "Giường đơn (1m)",
+      "category": "phong-ngu",
+      "categoryLabel": "Phòng ngủ",
+      "w": 1000,
+      "h": 2000,
+      "file": "/cad-library/phong-ngu/bed-single.dxf",
+      "thumb": "/cad-library/phong-ngu/bed-single.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "bed-double",
+      "name": "Giường đôi (1m4)",
+      "category": "phong-ngu",
+      "categoryLabel": "Phòng ngủ",
+      "w": 1400,
+      "h": 2000,
+      "file": "/cad-library/phong-ngu/bed-double.dxf",
+      "thumb": "/cad-library/phong-ngu/bed-double.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "bed-queen",
+      "name": "Giường Queen (1m6)",
+      "category": "phong-ngu",
+      "categoryLabel": "Phòng ngủ",
+      "w": 1600,
+      "h": 2000,
+      "file": "/cad-library/phong-ngu/bed-queen.dxf",
+      "thumb": "/cad-library/phong-ngu/bed-queen.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "bed-king",
+      "name": "Giường King (1m8)",
+      "category": "phong-ngu",
+      "categoryLabel": "Phòng ngủ",
+      "w": 1800,
+      "h": 2000,
+      "file": "/cad-library/phong-ngu/bed-king.dxf",
+      "thumb": "/cad-library/phong-ngu/bed-king.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "bedroom-nightstand",
+      "name": "Táp đầu giường",
+      "category": "phong-ngu",
+      "categoryLabel": "Phòng ngủ",
+      "w": 450,
+      "h": 400,
+      "file": "/cad-library/phong-ngu/bedroom-nightstand.dxf",
+      "thumb": "/cad-library/phong-ngu/bedroom-nightstand.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "bedroom-wardrobe-2door",
+      "name": "Tủ áo 2 cánh",
+      "category": "phong-ngu",
+      "categoryLabel": "Phòng ngủ",
+      "w": 1200,
+      "h": 600,
+      "file": "/cad-library/phong-ngu/bedroom-wardrobe-2door.dxf",
+      "thumb": "/cad-library/phong-ngu/bedroom-wardrobe-2door.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "bedroom-wardrobe-3door",
+      "name": "Tủ áo 3 cánh",
+      "category": "phong-ngu",
+      "categoryLabel": "Phòng ngủ",
+      "w": 1800,
+      "h": 600,
+      "file": "/cad-library/phong-ngu/bedroom-wardrobe-3door.dxf",
+      "thumb": "/cad-library/phong-ngu/bedroom-wardrobe-3door.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "bedroom-dresser",
+      "name": "Tủ ngăn kéo",
+      "category": "phong-ngu",
+      "categoryLabel": "Phòng ngủ",
+      "w": 1000,
+      "h": 500,
+      "file": "/cad-library/phong-ngu/bedroom-dresser.dxf",
+      "thumb": "/cad-library/phong-ngu/bedroom-dresser.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "kitchen-sink",
+      "name": "Bồn rửa đơn",
+      "category": "bep",
+      "categoryLabel": "Bếp",
+      "w": 600,
+      "h": 500,
+      "file": "/cad-library/bep/kitchen-sink.dxf",
+      "thumb": "/cad-library/bep/kitchen-sink.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "kitchen-stove-4",
+      "name": "Bếp 4 vòng",
+      "category": "bep",
+      "categoryLabel": "Bếp",
+      "w": 600,
+      "h": 600,
+      "file": "/cad-library/bep/kitchen-stove-4.dxf",
+      "thumb": "/cad-library/bep/kitchen-stove-4.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "kitchen-fridge",
+      "name": "Tủ lạnh",
+      "category": "bep",
+      "categoryLabel": "Bếp",
+      "w": 700,
+      "h": 700,
+      "file": "/cad-library/bep/kitchen-fridge.dxf",
+      "thumb": "/cad-library/bep/kitchen-fridge.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "kitchen-island",
+      "name": "Đảo bếp",
+      "category": "bep",
+      "categoryLabel": "Bếp",
+      "w": 2000,
+      "h": 900,
+      "file": "/cad-library/bep/kitchen-island.dxf",
+      "thumb": "/cad-library/bep/kitchen-island.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "kitchen-cabinet-l",
+      "name": "Tủ bếp chữ L",
+      "category": "bep",
+      "categoryLabel": "Bếp",
+      "w": 3000,
+      "h": 2100,
+      "file": "/cad-library/bep/kitchen-cabinet-l.dxf",
+      "thumb": "/cad-library/bep/kitchen-cabinet-l.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "bath-toilet",
+      "name": "Bồn cầu",
+      "category": "ve-sinh",
+      "categoryLabel": "Vệ sinh",
+      "w": 400,
+      "h": 620,
+      "file": "/cad-library/ve-sinh/bath-toilet.dxf",
+      "thumb": "/cad-library/ve-sinh/bath-toilet.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "bath-bidet",
+      "name": "Bồn tiểu nữ (bidet)",
+      "category": "ve-sinh",
+      "categoryLabel": "Vệ sinh",
+      "w": 320,
+      "h": 480,
+      "file": "/cad-library/ve-sinh/bath-bidet.dxf",
+      "thumb": "/cad-library/ve-sinh/bath-bidet.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "bath-lavabo",
+      "name": "Lavabo",
+      "category": "ve-sinh",
+      "categoryLabel": "Vệ sinh",
+      "w": 600,
+      "h": 460,
+      "file": "/cad-library/ve-sinh/bath-lavabo.dxf",
+      "thumb": "/cad-library/ve-sinh/bath-lavabo.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "bath-bathtub",
+      "name": "Bồn tắm",
+      "category": "ve-sinh",
+      "categoryLabel": "Vệ sinh",
+      "w": 1700,
+      "h": 750,
+      "file": "/cad-library/ve-sinh/bath-bathtub.dxf",
+      "thumb": "/cad-library/ve-sinh/bath-bathtub.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "bath-shower",
+      "name": "Vòi sen (phòng tắm đứng)",
+      "category": "ve-sinh",
+      "categoryLabel": "Vệ sinh",
+      "w": 900,
+      "h": 900,
+      "file": "/cad-library/ve-sinh/bath-shower.dxf",
+      "thumb": "/cad-library/ve-sinh/bath-shower.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "arch-door-single",
+      "name": "Cửa đi 1 cánh",
+      "category": "cua",
+      "categoryLabel": "Cửa & cửa sổ",
+      "w": 900,
+      "h": 900,
+      "file": "/cad-library/cua/arch-door-single.dxf",
+      "thumb": "/cad-library/cua/arch-door-single.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "arch-door-double",
+      "name": "Cửa đi 2 cánh",
+      "category": "cua",
+      "categoryLabel": "Cửa & cửa sổ",
+      "w": 1500,
+      "h": 750,
+      "file": "/cad-library/cua/arch-door-double.dxf",
+      "thumb": "/cad-library/cua/arch-door-double.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "arch-door-sliding",
+      "name": "Cửa lùa",
+      "category": "cua",
+      "categoryLabel": "Cửa & cửa sổ",
+      "w": 1800,
+      "h": 200,
+      "file": "/cad-library/cua/arch-door-sliding.dxf",
+      "thumb": "/cad-library/cua/arch-door-sliding.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "arch-window-single",
+      "name": "Cửa sổ đơn",
+      "category": "cua",
+      "categoryLabel": "Cửa & cửa sổ",
+      "w": 1200,
+      "h": 100,
+      "file": "/cad-library/cua/arch-window-single.dxf",
+      "thumb": "/cad-library/cua/arch-window-single.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "arch-window-double",
+      "name": "Cửa sổ đôi",
+      "category": "cua",
+      "categoryLabel": "Cửa & cửa sổ",
+      "w": 1800,
+      "h": 100,
+      "file": "/cad-library/cua/arch-window-double.dxf",
+      "thumb": "/cad-library/cua/arch-window-double.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "arch-window-bay",
+      "name": "Cửa sổ vòm góc",
+      "category": "cua",
+      "categoryLabel": "Cửa & cửa sổ",
+      "w": 1400,
+      "h": 300,
+      "file": "/cad-library/cua/arch-window-bay.dxf",
+      "thumb": "/cad-library/cua/arch-window-bay.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "plant-pot-small",
+      "name": "Chậu cây nhỏ",
+      "category": "cay-canh",
+      "categoryLabel": "Cây cảnh",
+      "w": 400,
+      "h": 400,
+      "file": "/cad-library/cay-canh/plant-pot-small.dxf",
+      "thumb": "/cad-library/cay-canh/plant-pot-small.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "plant-pot-large",
+      "name": "Chậu cây lớn",
+      "category": "cay-canh",
+      "categoryLabel": "Cây cảnh",
+      "w": 700,
+      "h": 700,
+      "file": "/cad-library/cay-canh/plant-pot-large.dxf",
+      "thumb": "/cad-library/cay-canh/plant-pot-large.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "plant-tree-top",
+      "name": "Cây (nhìn từ trên)",
+      "category": "cay-canh",
+      "categoryLabel": "Cây cảnh",
+      "w": 1800,
+      "h": 1800,
+      "file": "/cad-library/cay-canh/plant-tree-top.dxf",
+      "thumb": "/cad-library/cay-canh/plant-tree-top.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "vehicle-car-sedan",
+      "name": "Xe sedan",
+      "category": "xe",
+      "categoryLabel": "Xe",
+      "w": 4500,
+      "h": 1800,
+      "file": "/cad-library/xe/vehicle-car-sedan.dxf",
+      "thumb": "/cad-library/xe/vehicle-car-sedan.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "vehicle-car-suv",
+      "name": "Xe SUV",
+      "category": "xe",
+      "categoryLabel": "Xe",
+      "w": 4700,
+      "h": 1950,
+      "file": "/cad-library/xe/vehicle-car-suv.dxf",
+      "thumb": "/cad-library/xe/vehicle-car-suv.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "stairs-straight",
+      "name": "Thang thẳng",
+      "category": "cau-thang",
+      "categoryLabel": "Cầu thang",
+      "w": 1000,
+      "h": 3000,
+      "file": "/cad-library/cau-thang/stairs-straight.dxf",
+      "thumb": "/cad-library/cau-thang/stairs-straight.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "stairs-l-shape",
+      "name": "Thang chữ L",
+      "category": "cau-thang",
+      "categoryLabel": "Cầu thang",
+      "w": 2400,
+      "h": 2400,
+      "file": "/cad-library/cau-thang/stairs-l-shape.dxf",
+      "thumb": "/cad-library/cau-thang/stairs-l-shape.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "column-square",
+      "name": "Cột vuông",
+      "category": "cot",
+      "categoryLabel": "Cột",
+      "w": 400,
+      "h": 400,
+      "file": "/cad-library/cot/column-square.dxf",
+      "thumb": "/cad-library/cot/column-square.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "column-round",
+      "name": "Cột tròn",
+      "category": "cot",
+      "categoryLabel": "Cột",
+      "w": 400,
+      "h": 400,
+      "file": "/cad-library/cot/column-round.dxf",
+      "thumb": "/cad-library/cot/column-round.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "symbol-north",
+      "name": "Ký hiệu hướng Bắc",
+      "category": "ky-hieu",
+      "categoryLabel": "Ký hiệu",
+      "w": 800,
+      "h": 800,
+      "file": "/cad-library/ky-hieu/symbol-north.dxf",
+      "thumb": "/cad-library/ky-hieu/symbol-north.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    }
+  ]
+}
