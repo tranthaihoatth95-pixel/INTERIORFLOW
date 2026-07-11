@@ -64,7 +64,8 @@ export const conceptDemo: DemoModule = {
     glyph: '◐',
     label: 'Concept — Định hướng',
     desc: 'Brief sảnh khách sạn 5★ → 4 concept (AI) → Moodboard board + palette',
-    phase: 'concept',
+    // Moodboard/vật liệu đã GỘP vào chặng Render (Concept cũ bỏ khỏi canvas).
+    phase: 'render',
   },
   build,
 };

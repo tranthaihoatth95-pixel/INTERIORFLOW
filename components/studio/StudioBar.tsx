@@ -17,7 +17,7 @@ import type { Phase } from '@/lib/phases';
 import { useFlowStore } from '@/lib/store';
 import StageSwitcher from './StageSwitcher';
 
-export default function StudioBar({ active }: { active: 'present' | 'photo' }) {
+export default function StudioBar({ active }: { active: 'present' | 'photo' | 'cad' }) {
   const router = useRouter();
   // Khôi phục chat + sáng/tối cho studio (trước bị thiếu so với app chính).
   const pref = useFlowStore((s) => s.themePref);
@@ -31,6 +31,7 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' }) {
   useEffect(() => {
     applyTheme();
     router.prefetch('/');
+    router.prefetch('/cad-editor');
   }, [applyTheme, router]);
 
   const nextTheme: 'auto' | 'light' | 'dark' =
@@ -42,7 +43,12 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' }) {
       router.push('/present-editor');
       return;
     }
-    // Concept/Render = canvas node ở app chính (ghi chặng, store.hydrate khôi phục).
+    // Chặng 1 (id 'concept') = Layout CAD → trình vẽ 2D ở route riêng.
+    if (p === 'concept') {
+      router.push('/cad-editor');
+      return;
+    }
+    // Render = canvas node ở app chính (ghi chặng, store.hydrate khôi phục).
     try {
       localStorage.setItem('interiorflow.workspace', p);
     } catch {
@@ -72,7 +78,7 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' }) {
       <span style={{ width: 1, height: 20, background: 'var(--border)' }} />
 
       <StageSwitcher
-        active={active === 'photo' ? 'render' : 'present'}
+        active={active === 'photo' ? 'render' : active === 'cad' ? 'concept' : 'present'}
         photoContext={active === 'photo'}
         onPick={go}
       />
