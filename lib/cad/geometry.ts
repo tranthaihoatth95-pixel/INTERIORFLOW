@@ -50,6 +50,8 @@ export function translateEntity(e: Entity, dx: number, dy: number): Entity {
       return { ...e, at: t(e.at) };
     case 'block':
       return { ...e, at: t(e.at) };
+    case 'hatch':
+      return { ...e, points: e.points.map(t) };
   }
 }
 
@@ -80,6 +82,8 @@ export function rotateEntity(e: Entity, c: Pt, ang: number): Entity {
       return { ...e, at: r(e.at) };
     case 'block':
       return { ...e, at: r(e.at), rot: e.rot + ang };
+    case 'hatch':
+      return { ...e, points: e.points.map(r) };
   }
 }
 
@@ -104,6 +108,8 @@ export function mirrorEntity(e: Entity, o: Pt, phi: number): Entity {
       return { ...e, at: m(e.at) };
     case 'block':
       return { ...e, at: m(e.at), rot: 2 * phi - e.rot, sx: -e.sx };
+    case 'hatch':
+      return { ...e, points: e.points.map(m) };
   }
 }
 

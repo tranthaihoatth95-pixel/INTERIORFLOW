@@ -132,6 +132,21 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
       for (const prim of def.prims) drawPrim(ctx, v, prim, tf);
       break;
     }
+    case 'hatch': {
+      if (e.points.length < 3) break;
+      ctx.beginPath();
+      e.points.forEach((p, i) => {
+        const s = S(p);
+        if (i === 0) ctx.moveTo(s.x, s.y);
+        else ctx.lineTo(s.x, s.y);
+      });
+      ctx.closePath();
+      ctx.fillStyle = layerColor(doc, e, style);
+      ctx.globalAlpha = 0.9;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      break;
+    }
   }
 }
 

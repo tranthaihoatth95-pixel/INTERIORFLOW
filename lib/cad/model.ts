@@ -30,7 +30,8 @@ export type EntityType =
   | 'arc'
   | 'text'
   | 'dim'
-  | 'block';
+  | 'block'
+  | 'hatch';
 
 interface Base {
   id: string;
@@ -105,6 +106,18 @@ export interface BlockEntity extends Base {
   sy: number;
 }
 
+/**
+ * Vùng tô đặc (poché tường / fill mặt bằng). Biên là 1 đa giác đơn giản (lồi hoặc gần-lồi —
+ * đủ cho quad tường do lệnh WALL sinh ra). Xuất DXF: tam-giác-hoá quạt từ đỉnh 0 thành các
+ * entity SOLID (an toàn ở mọi bản DXF, không cần bảng BLOCK_RECORD như HATCH thật).
+ */
+export interface HatchEntity extends Base {
+  type: 'hatch';
+  points: Pt[];
+  /** true = tô đặc (mặc định). Để ngỏ cho pattern sau này. */
+  solid?: boolean;
+}
+
 export type Entity =
   | LineEntity
   | PolylineEntity
@@ -113,7 +126,8 @@ export type Entity =
   | ArcEntity
   | TextEntity
   | DimEntity
-  | BlockEntity;
+  | BlockEntity
+  | HatchEntity;
 
 export interface Doc {
   entities: Entity[];
@@ -207,6 +221,9 @@ export function entityBox(e: Entity): Box {
       // xấp xỉ: block chuẩn ~2000mm; scale áp vào. Đủ cho zoom-extents.
       growBox(box, { x: e.at.x - 1200 * Math.abs(e.sx), y: e.at.y - 1200 * Math.abs(e.sy) });
       growBox(box, { x: e.at.x + 1200 * Math.abs(e.sx), y: e.at.y + 1200 * Math.abs(e.sy) });
+      break;
+    case 'hatch':
+      e.points.forEach((p) => growBox(box, p));
       break;
   }
   return box;

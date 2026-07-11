@@ -9,7 +9,7 @@ import {
   MousePointer2, Minus, Waypoints, Square, Circle, Spline,
   Move, Copy, RotateCw, FlipHorizontal2, StretchHorizontal,
   Ruler, MoveDiagonal, Type, Sofa, Magnet, Grid2x2, Hand,
-  Undo2, Redo2, Maximize,
+  Undo2, Redo2, Maximize, BrickWall, LayoutPanelTop, DoorOpen,
 } from 'lucide-react';
 import { useCadStore, type Tool } from '@/lib/cad/store';
 
@@ -27,6 +27,10 @@ const DRAW: ToolBtn[] = [
   { tool: 'rect', icon: Square, label: 'Rect', key: 'REC' },
   { tool: 'circle', icon: Circle, label: 'Circle', key: 'C' },
   { tool: 'arc', icon: Spline, label: 'Arc 3 điểm', key: 'A' },
+];
+const ARCH: ToolBtn[] = [
+  { tool: 'wall', icon: BrickWall, label: 'Tường (chuỗi điểm tim tường)', key: 'W' },
+  { tool: 'room', icon: LayoutPanelTop, label: 'Phòng chữ nhật + nhãn diện tích', key: 'ROOM' },
 ];
 const EDIT: ToolBtn[] = [
   { tool: 'move', icon: Move, label: 'Move', key: 'M' },
@@ -48,6 +52,8 @@ function fire(name: string) {
 export default function CadToolbar({ onToggleFurniture }: { onToggleFurniture: () => void }) {
   const tool = useCadStore((s) => s.tool);
   const setTool = useCadStore((s) => s.setTool);
+  const setPendingBlock = useCadStore((s) => s.setPendingBlock);
+  const pendingBlock = useCadStore((s) => s.pendingBlock);
   const snap = useCadStore((s) => s.snap);
   const setSnap = useCadStore((s) => s.setSnap);
   const undo = useCadStore((s) => s.undo);
@@ -96,6 +102,11 @@ export default function CadToolbar({ onToggleFurniture }: { onToggleFurniture: (
       }}
     >
       <Group items={DRAW} />
+      <Divider />
+      <Group items={ARCH} />
+      <button type="button" onClick={() => setPendingBlock('door')} title="Đặt cửa đi (D) — dùng block cửa có sẵn" style={btn(pendingBlock === 'door')}>
+        <DoorOpen size={17} />
+      </button>
       <Divider />
       <Group items={EDIT} />
       <Divider />

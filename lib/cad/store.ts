@@ -28,6 +28,8 @@ export type Tool =
   | 'measure'
   | 'text'
   | 'block'
+  | 'wall'
+  | 'room'
   | 'pan';
 
 export interface SnapSettings {
@@ -55,6 +57,8 @@ interface CadState {
   pendingBlock: string | null;
   /** offset distance nhớ cho lệnh Offset (mm) */
   offsetDist: number;
+  /** bề dày tường nhớ cho lệnh WALL (mm) */
+  wallThickness: number;
   past: Doc[];
   future: Doc[];
   /** dòng lệnh mini + thông báo trạng thái */
@@ -86,6 +90,7 @@ interface CadState {
 
   setPendingBlock: (b: string | null) => void;
   setOffsetDist: (d: number) => void;
+  setWallThickness: (d: number) => void;
 
   importDoc: (d: Doc, mode: 'replace' | 'merge') => void;
   scaleAll: (factor: number) => void;
@@ -112,6 +117,7 @@ export const useCadStore = create<CadState>((set, get) => ({
   viewport: { scale: 0.08, panX: 300, panY: 400 },
   pendingBlock: null,
   offsetDist: 100,
+  wallThickness: 110,
   past: [],
   future: [],
   status: 'Sẵn sàng — chọn công cụ hoặc gõ lệnh (L, PL, REC, C…).',
@@ -207,6 +213,7 @@ export const useCadStore = create<CadState>((set, get) => ({
 
   setPendingBlock: (pendingBlock) => set({ pendingBlock, tool: pendingBlock ? 'block' : get().tool }),
   setOffsetDist: (offsetDist) => set({ offsetDist }),
+  setWallThickness: (wallThickness) => set({ wallThickness }),
 
   importDoc: (d, mode) => {
     get().snapshot();
@@ -253,6 +260,8 @@ function scaleEntity(e: Entity, f: number): Entity {
       return { ...e, at: { x: e.at.x * f, y: e.at.y * f }, h: e.h * f };
     case 'block':
       return { ...e, at: { x: e.at.x * f, y: e.at.y * f }, sx: e.sx * f, sy: e.sy * f };
+    case 'hatch':
+      return { ...e, points: e.points.map((p) => ({ x: p.x * f, y: p.y * f })) };
   }
 }
 
@@ -273,6 +282,8 @@ function toolHint(t: Tool): string {
     measure: 'Measure: click 2 điểm để đo nhanh.',
     text: 'Text: click vị trí rồi gõ nội dung.',
     block: 'Đặt block: click để đặt. R = xoay 90°, gõ số + Enter cũng xoay.',
+    wall: 'Wall (W): click các điểm tim tường liên tiếp; Enter/double-click kết thúc. Gõ số + Enter = bề dày (mm).',
+    room: 'Room: click 2 góc phòng → tự vẽ 4 tường + nhãn tên/diện tích.',
     pan: 'Pan: kéo để di chuyển khung nhìn.',
   };
   return H[t];
