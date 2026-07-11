@@ -1,75 +1,362 @@
 /**
- * lib/cad/ai-assist.ts — AI-ASSIST TỐI GIẢN (rule-based) cho chặng 1 "Layout CAD".
+ * lib/cad/ai-assist.ts — AI-ASSIST chặng 1 "Layout CAD" (mức SƠ PHÁC DD).
  *
- * PHẠM VI: chặng 1 chỉ cần sơ phác DD nhanh, không phải bộ máy hiểu ngôn ngữ tự nhiên đầy đủ
- * (việc đó để app CAD chuyên nghiệp EFC tách rời lo, nếu cần). Ở đây: 1 hàm rule-based đọc mô
- * tả kiểu "phòng ngủ 4x3.5 có giường và tủ" → tách kích thước (WxH mét) + từ khoá nội thất →
- * sinh ROOM (dùng roomRect trong commands.ts) + đặt vài block khớp từ khoá. Đủ để bấm nút ra
- * ngay 1 phòng có sẵn tường + nội thất, không cần model AI thật.
+ * KIẾN TRÚC 2 TẦNG (xem docs/CAD-AI-MECHANISM.md):
+ *   Tầng 1 — PARSE: đề bài ngôn ngữ tự nhiên → `LayoutSpec` (JSON trung gian có cấu trúc:
+ *     danh sách phòng {tên, công năng, w, h, nội thất}). Đây là CHỖ DUY NHẤT nên cắm LLM thật
+ *     sau này (thay `parseDescription` bằng 1 lời gọi /api/jobs trả JSON đúng schema LayoutSpec).
+ *   Tầng 2 — SOLVER: `layoutToEntities(spec)` HÌNH HỌC THUẦN, TẤT ĐỊNH (deterministic) — cùng
+ *     input luôn ra cùng toạ độ ⇒ KHÔNG "nhảy lung tung". Nó (a) xếp phòng trên lưới không chồng
+ *     nhau, (b) dựng tường qua roomRect (đúng layer Tường + nhãn/diện tích), (c) đặt nội thất
+ *     THEO CÔNG NĂNG (áp đúng tường, đủ clearance) trên layer Nội thất, clamp trong lòng phòng.
  *
- * CHỖ CẮM LLM THẬT (sau này): thay nội dung hàm `describeToEntities` bằng 1 lời gọi tới
- * `/api/jobs` (adapter AI đã có sẵn ở app chính — xem RESUME.md mục "AI: adapter layer
- * lib/ai/") với prompt yêu cầu trả JSON { w, h, name, items: string[] } rồi tái dùng nguyên
- * phần dựng entity bên dưới — KHÔNG cần đổi API bên ngoài hàm này.
+ * Vì tầng 2 tất định, mọi bug "sai thực tế / bố cục nhảy" của bản stub cũ được xử lý ở đây:
+ *   - Nội thất về đúng layer `l-furniture` (không còn nằm nhầm layer Tường).
+ *   - Toạ độ neo theo TƯỜNG của từng phòng (bed áp tường, sofa dọc tường, WC sát tường…), không
+ *     phải 1 hàng ngang cứng ở góc trên-trái ⇒ không tràn ra ngoài phòng.
+ *   - Clamp trong lòng phòng + tránh chồng lấn (AABB) + đa phòng.
  */
 
 import type { Entity } from './model';
 import { roomRect } from './commands';
 import { newId } from './store';
-import { BLOCKS } from './furniture';
+import { BLOCK_MAP } from './furniture';
 
-const KEYWORD_TO_BLOCK: Record<string, string> = {
-  'giường đôi': 'bedD', 'giường': 'bedD', 'giường đơn': 'bedS',
-  'tủ áo': 'wardrobe', 'tủ quần áo': 'wardrobe',
-  'sofa': 'sofa3', 'ghế sofa': 'sofa3', 'ghế bành': 'armchair',
-  'bàn ăn': 'dining4', 'bàn làm việc': 'desk', 'bàn': 'desk',
-  'bồn cầu': 'toilet', 'lavabo': 'lavabo', 'bồn tắm': 'bathtub',
-  'bếp': 'kitchenI',
-};
+/* ═══════════════════════ JSON TRUNG GIAN (schema cho LLM) ═══════════════════════ */
+
+export type RoomFunction =
+  | 'bedroom'
+  | 'living'
+  | 'dining'
+  | 'kitchen'
+  | 'bath'
+  | 'office'
+  | 'corridor'
+  | 'generic';
+
+/** 1 phòng trong đề bài (đã chuẩn hoá). LLM chỉ cần trả đúng shape này (w/h/items có thể bỏ —
+ * solver tự điền mặc định theo công năng). */
+export interface RoomSpec {
+  /** tên hiển thị, VD "PHÒNG NGỦ" */
+  name: string;
+  fn: RoomFunction;
+  /** kích thước phủ bì mong muốn (mm) — thiếu ⇒ solver dùng mặc định theo `fn` */
+  w: number;
+  h: number;
+  /** id block nội thất (khoá trong furniture.ts) — thiếu ⇒ solver dùng bộ mặc định theo `fn` */
+  items: string[];
+}
+
+export interface LayoutSpec {
+  rooms: RoomSpec[];
+}
 
 export interface AiAssistResult {
   entities: Entity[];
   note: string;
 }
 
-/** Tách "4x3.5" hoặc "4 x 3.5" (mét) → {w,h} mm. Mặc định 4000×3500 nếu không tìm thấy. */
-function parseDims(text: string): { w: number; h: number } {
-  const m = text.match(/(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/i);
-  if (!m) return { w: 4000, h: 3500 };
+/* ═══════════════════════ THAM SỐ CÔNG NĂNG (nguồn: xem doc) ═══════════════════════ */
+
+/** Kích thước phủ bì mặc định (mm) theo công năng — sát khung TCVN/thực hành DD. */
+const DEFAULT_SIZE: Record<RoomFunction, { w: number; h: number }> = {
+  bedroom: { w: 3400, h: 3600 },
+  living: { w: 4200, h: 3600 },
+  dining: { w: 3200, h: 3200 },
+  kitchen: { w: 3600, h: 2700 }, // đủ dài cho bếp chữ I 3000 + lối đi
+  bath: { w: 2200, h: 1800 },
+  office: { w: 3000, h: 2800 },
+  corridor: { w: 1300, h: 3000 },
+  generic: { w: 3600, h: 3200 },
+};
+
+/** Nội thất bắt buộc/mặc định theo công năng (id block). */
+const DEFAULT_ITEMS: Record<RoomFunction, string[]> = {
+  bedroom: ['bedD', 'wardrobe'],
+  living: ['sofa3', 'armchair'],
+  dining: ['dining4'],
+  kitchen: ['kitchenI'],
+  bath: ['toilet', 'lavabo'],
+  office: ['desk'],
+  corridor: [],
+  generic: [],
+};
+
+/** Tên hiển thị mặc định theo công năng. */
+const DEFAULT_NAME: Record<RoomFunction, string> = {
+  bedroom: 'PHÒNG NGỦ',
+  living: 'PHÒNG KHÁCH',
+  dining: 'PHÒNG ĂN',
+  kitchen: 'BẾP',
+  bath: 'WC',
+  office: 'PHÒNG LÀM VIỆC',
+  corridor: 'HÀNH LANG',
+  generic: 'PHÒNG',
+};
+
+type Wall = 'N' | 'S' | 'E' | 'W' | 'C';
+
+/**
+ * Quy tắc đặt THEO CÔNG NĂNG cho từng block: áp tường nào, góc xoay để "lưng" quay vào tường.
+ *  - flush=true: món áp sát tường (giường/tủ/sofa/bếp/WC) — chừa khe nhỏ tránh đè poché tường.
+ *  - wall='C': đặt giữa phòng theo 1 hàng (bàn ăn, ghế bành) — hướng tâm.
+ * rot khớp hệ block local (xem furniture.ts): giường/tủ/bếp có "mặt trước" ở +Y.
+ */
+const ANCHOR: Record<string, { wall: Wall; rot: number; flush: boolean }> = {
+  bedD: { wall: 'N', rot: 0, flush: true },
+  bedS: { wall: 'N', rot: 0, flush: true },
+  wardrobe: { wall: 'W', rot: Math.PI / 2, flush: true },
+  sofa3: { wall: 'W', rot: Math.PI / 2, flush: true },
+  sofa2: { wall: 'W', rot: Math.PI / 2, flush: true },
+  armchair: { wall: 'C', rot: 0, flush: false },
+  dining4: { wall: 'C', rot: 0, flush: false },
+  dining6: { wall: 'C', rot: 0, flush: false },
+  dining8: { wall: 'C', rot: 0, flush: false },
+  desk: { wall: 'N', rot: 0, flush: true },
+  kitchenI: { wall: 'S', rot: 0, flush: true },
+  toilet: { wall: 'E', rot: -Math.PI / 2, flush: true },
+  lavabo: { wall: 'E', rot: -Math.PI / 2, flush: true },
+  bathtub: { wall: 'N', rot: 0, flush: true },
+};
+
+/* clearance (mm) — nguồn: Neufert/NKBA (xem doc). Dùng làm KHE giữa các món & lề bắt đầu. */
+const GAP_BETWEEN = 250; // khe giữa 2 món cùng tường
+const GAP_START = 90; // lề bắt đầu (cách tường vuông góc) — nhỏ để món áp tường (bếp chữ I) chạy gần hết tường
+const WALL_KEEP = 40; // khe nhỏ giữ món áp tường không đè poché tường
+
+/* ═══════════════════════ TẦNG 1 — PARSE (stub, sẽ thay bằng LLM) ═══════════════════════ */
+
+const KEYWORD_TO_BLOCK: Record<string, string> = {
+  'giường đôi': 'bedD', 'giường đơn': 'bedS', 'giường': 'bedD',
+  'tủ quần áo': 'wardrobe', 'tủ áo': 'wardrobe', 'tủ': 'wardrobe',
+  'sofa 3': 'sofa3', 'sofa 2': 'sofa2', 'ghế sofa': 'sofa3', 'sofa': 'sofa3',
+  'ghế bành': 'armchair',
+  'bàn ăn 8': 'dining8', 'bàn ăn 6': 'dining6', 'bàn ăn 4': 'dining4', 'bàn ăn': 'dining4',
+  'bàn làm việc': 'desk', 'bàn học': 'desk',
+  'bồn cầu': 'toilet', 'lavabo': 'lavabo', 'chậu rửa': 'lavabo', 'bồn tắm': 'bathtub',
+  'bếp': 'kitchenI',
+};
+
+/** từ khoá công năng → RoomFunction (khớp cụm dài trước cụm ngắn). */
+const FUNCTION_KEYWORDS: [string, RoomFunction][] = [
+  ['phòng ngủ', 'bedroom'], ['ngủ', 'bedroom'],
+  ['phòng khách', 'living'], ['khách', 'living'],
+  ['phòng ăn', 'dining'], ['bàn ăn', 'dining'], ['ăn', 'dining'],
+  ['bếp', 'kitchen'],
+  ['vệ sinh', 'bath'], ['nhà tắm', 'bath'], ['phòng tắm', 'bath'], ['wc', 'bath'], ['toilet', 'bath'],
+  ['làm việc', 'office'], ['văn phòng', 'office'], ['học', 'office'],
+  ['hành lang', 'corridor'],
+];
+
+/** Tách "4x3.5" / "4 x 3.5" (mét) → {w,h} mm. null nếu không thấy. */
+function parseDims(text: string): { w: number; h: number } | null {
+  const m = text.match(/(\d+(?:[.,]\d+)?)\s*[x×*]\s*(\d+(?:[.,]\d+)?)/i);
+  if (!m) return null;
   const w = parseFloat(m[1].replace(',', '.')) * 1000;
   const h = parseFloat(m[2].replace(',', '.')) * 1000;
-  return { w: Number.isFinite(w) && w > 500 ? w : 4000, h: Number.isFinite(h) && h > 500 ? h : 3500 };
+  if (!(Number.isFinite(w) && w > 500 && Number.isFinite(h) && h > 500)) return null;
+  return { w, h };
 }
 
-/** Rule-based: mô tả text ngắn → phòng (tường + nhãn + diện tích) + nội thất khớp từ khoá. */
+/** Đoán công năng từ 1 mệnh đề. */
+function detectFunction(clause: string): RoomFunction {
+  for (const [kw, fn] of FUNCTION_KEYWORDS) if (clause.includes(kw)) return fn;
+  return 'generic';
+}
+
+/** Rút danh sách block id từ 1 mệnh đề (dedupe, giữ thứ tự). Nhận cả block id thô lẫn từ khoá. */
+function extractItems(clause: string): string[] {
+  const out: string[] = [];
+  const add = (id: string) => { if (BLOCK_MAP[id] && !out.includes(id)) out.push(id); };
+  // khớp cụm dài trước (đã sắp trong KEYWORD_TO_BLOCK: "giường đôi" trước "giường")
+  for (const [kw, id] of Object.entries(KEYWORD_TO_BLOCK)) if (clause.includes(kw)) add(id);
+  // cho phép LLM trả thẳng block id
+  for (const id of Object.keys(BLOCK_MAP)) if (new RegExp(`\\b${id}\\b`).test(clause)) add(id);
+  return out;
+}
+
+/** Tên hiển thị: ưu tiên cụm "phòng X" trong text, nếu không có → tên mặc định theo công năng. */
+function detectName(clause: string, fn: RoomFunction): string {
+  const m = clause.match(/phòng\s+(?:ngủ|khách|ăn|tắm|làm việc)?\S*/);
+  if (m) return m[0].trim().toUpperCase();
+  return DEFAULT_NAME[fn];
+}
+
+/**
+ * TẦNG 1 (stub rule-based). Tách đề bài → LayoutSpec. Nhiều phòng: ngăn bằng xuống dòng, ';',
+ * hoặc ' và ' / ',' khi vế sau CÓ từ khoá phòng. Mỗi mệnh đề: dims + công năng + nội thất.
+ * Khi cắm LLM: thay TOÀN BỘ hàm này bằng lời gọi model trả đúng JSON `LayoutSpec`.
+ */
+export function parseDescription(text: string): LayoutSpec {
+  const lower = text.toLowerCase().trim();
+  // tách thô theo dấu mạnh, rồi gộp lại các mảnh không phải "phòng" vào phòng trước đó
+  const raw = lower.split(/\n|;|(?:,|\bvà\b)(?=[^,]*(?:phòng|bếp|wc|vệ sinh|hành lang))/);
+  const clauses = raw.map((s) => s.trim()).filter(Boolean);
+  const rooms: RoomSpec[] = clauses.map((clause) => {
+    const fn = detectFunction(clause);
+    const dims = parseDims(clause) ?? DEFAULT_SIZE[fn];
+    const items = extractItems(clause);
+    return {
+      name: detectName(clause, fn),
+      fn,
+      w: dims.w,
+      h: dims.h,
+      items: items.length ? items : [...DEFAULT_ITEMS[fn]],
+    };
+  });
+  return { rooms: rooms.length ? rooms : [{ name: DEFAULT_NAME.generic, fn: 'generic', ...DEFAULT_SIZE.generic, items: [] }] };
+}
+
+/* ═══════════════════════ TẦNG 2 — SOLVER (tất định, hình học thuần) ═══════════════════════ */
+
+interface Footprint { x: number; y: number; ex: number; ey: number } // tâm + nửa-extent*2 (AABB đầy đủ)
+
+function footprintOf(at: { x: number; y: number }, ex: number, ey: number): Footprint {
+  return { x: at.x, y: at.y, ex, ey };
+}
+
+function aabbOverlap(a: Footprint, b: Footprint): boolean {
+  return Math.abs(a.x - b.x) * 2 < a.ex + b.ex && Math.abs(a.y - b.y) * 2 < a.ey + b.ey;
+}
+
+function clamp(v: number, lo: number, hi: number): number {
+  if (lo > hi) return (lo + hi) / 2; // block to hơn lòng phòng → về giữa
+  return Math.max(lo, Math.min(hi, v));
+}
+
+/**
+ * Đặt nội thất 1 phòng theo công năng. Trả về các BlockEntity (đã đúng layer, đúng toạ độ, clamp,
+ * không chồng). Cursor chạy dọc TỪNG tường ⇒ nhiều món cùng tường xếp nối tiếp, không tràn.
+ */
+function placeFurniture(
+  items: string[],
+  interior: { ix0: number; iy0: number; ix1: number; iy1: number },
+  furnLayer: string,
+): { entities: Entity[]; skipped: string[] } {
+  const { ix0, iy0, ix1, iy1 } = interior;
+  const midX = (ix0 + ix1) / 2;
+  const midY = (iy0 + iy1) / 2;
+  const out: Entity[] = [];
+  const skipped: string[] = [];
+  const placed: Footprint[] = [];
+  // cursor cho mỗi rail (theo trục song song tường): N/S/C chạy theo X, W/E chạy theo Y
+  const cursor: Record<Wall, number> = {
+    N: ix0 + GAP_START, S: ix0 + GAP_START, C: ix0 + GAP_START,
+    W: iy0 + GAP_START, E: iy0 + GAP_START,
+  };
+
+  for (const id of items) {
+    const def = BLOCK_MAP[id];
+    if (!def) continue;
+    const a = ANCHOR[id] ?? { wall: 'C' as Wall, rot: 0, flush: false };
+    const quarter = Math.abs(Math.round((a.rot / (Math.PI / 2)) % 2)) === 1;
+    const ex = quarter ? def.h : def.w; // extent X sau xoay
+    const ey = quarter ? def.w : def.h; // extent Y sau xoay
+    const back = a.flush ? WALL_KEEP : 0;
+
+    let at: { x: number; y: number };
+    if (a.wall === 'N' || a.wall === 'S' || a.wall === 'C') {
+      // rail chạy theo X
+      const cx = cursor[a.wall] + ex / 2;
+      if (cx + ex / 2 > ix1 + 1) { skipped.push(def.name); continue; } // vượt mép trong phòng
+      const cy = a.wall === 'N' ? iy1 - ey / 2 - back : a.wall === 'S' ? iy0 + ey / 2 + back : midY;
+      at = { x: clamp(cx, ix0 + ex / 2, ix1 - ex / 2), y: clamp(cy, iy0 + ey / 2, iy1 - ey / 2) };
+      cursor[a.wall] = cx + ex / 2 + GAP_BETWEEN;
+    } else {
+      // rail chạy theo Y (W/E)
+      const cy = cursor[a.wall] + ey / 2;
+      if (cy + ey / 2 > iy1 + 1) { skipped.push(def.name); continue; }
+      const cx = a.wall === 'W' ? ix0 + ex / 2 + back : ix1 - ex / 2 - back;
+      at = { x: clamp(cx, ix0 + ex / 2, ix1 - ex / 2), y: clamp(cy, iy0 + ey / 2, iy1 - ey / 2) };
+      cursor[a.wall] = cy + ey / 2 + GAP_BETWEEN;
+    }
+
+    const fp = footprintOf(at, ex, ey);
+    if (placed.some((p) => aabbOverlap(p, fp))) { skipped.push(def.name); continue; } // chồng lấn → bỏ
+    placed.push(fp);
+    void midX;
+    out.push({ id: newId('e'), type: 'block', layer: furnLayer, block: id, at, rot: a.rot, sx: 1, sy: 1 });
+  }
+  return { entities: out, skipped };
+}
+
+/**
+ * TẦNG 2 chính. Xếp các phòng trên lưới (row-packing, tất định) → dựng tường + nhãn (roomRect) →
+ * đặt nội thất theo công năng. `origin` = góc trái-dưới của cả cụm. Không phòng nào chồng nhau.
+ */
+export function layoutToEntities(
+  spec: LayoutSpec,
+  origin: { x: number; y: number },
+  wallLayer: string,
+  textLayer: string,
+  furnLayer: string,
+  wallThickness = 110,
+): AiAssistResult {
+  const entities: Entity[] = [];
+  const ROOM_GAP = Math.max(300, wallThickness * 2); // khe giữa 2 phòng để tường không đè nhau
+  const MAX_ROW = 12000; // bề rộng tối đa 1 hàng trước khi xuống dòng (mm)
+
+  let cx = origin.x;
+  let cy = origin.y;
+  let rowH = 0;
+  const summary: string[] = [];
+  const skippedAll: string[] = [];
+
+  for (const room of spec.rooms) {
+    const w = Math.max(1000, room.w);
+    const h = Math.max(1000, room.h);
+    // xuống hàng nếu vượt bề rộng tối đa (giữ nguyên phòng đầu hàng)
+    if (cx > origin.x && cx + w > origin.x + MAX_ROW) {
+      cx = origin.x;
+      cy += rowH + ROOM_GAP;
+      rowH = 0;
+    }
+    const p0 = { x: cx, y: cy };
+    const p1 = { x: cx + w, y: cy + h };
+
+    const { entities: roomEnts, areaM2 } = roomRect(p0, p1, wallThickness, room.name, wallLayer, textLayer);
+    entities.push(...roomEnts);
+
+    // lòng phòng (thông thuỷ) = trong tim tường trừ nửa bề dày mỗi bên
+    const interior = {
+      ix0: p0.x + wallThickness / 2,
+      iy0: p0.y + wallThickness / 2,
+      ix1: p1.x - wallThickness / 2,
+      iy1: p1.y - wallThickness / 2,
+    };
+    const fr = placeFurniture(room.items, interior, furnLayer);
+    entities.push(...fr.entities);
+    if (fr.skipped.length) skippedAll.push(`${room.name}: ${fr.skipped.join(', ')}`);
+
+    summary.push(`${room.name} ${(w / 1000).toFixed(1)}×${(h / 1000).toFixed(1)}m (${areaM2.toFixed(1)} m²)`);
+    cx += w + ROOM_GAP;
+    rowH = Math.max(rowH, h);
+  }
+
+  const skipNote = skippedAll.length
+    ? ` — CHƯA đủ chỗ (đã bỏ để tránh chồng lấn): ${skippedAll.join('; ')}.`
+    : '';
+  return {
+    entities,
+    note: `Solver bố cục: ${spec.rooms.length} phòng — ${summary.join(' · ')}.${skipNote}`,
+  };
+}
+
+/* ═══════════════════════ API ngoài (giữ nguyên chữ ký cũ + tuỳ chọn furnLayer) ═══════════════════════ */
+
+/**
+ * Đầu vào của nút "AI mô tả": text ngắn → phòng(s) có tường + nhãn + nội thất đặt đúng công năng.
+ * Chữ ký GIỮ NGUYÊN để CadEditor không phải đổi; thêm tham số tuỳ chọn `furnLayer` (mặc định
+ * 'l-furniture' — khớp DEFAULT_LAYERS) để nội thất KHÔNG còn nằm nhầm layer Tường.
+ */
 export function describeToEntities(
   text: string,
   origin: { x: number; y: number },
   wallLayer: string,
   textLayer: string,
   wallThickness = 110,
+  furnLayer = 'l-furniture',
 ): AiAssistResult {
-  const lower = text.toLowerCase();
-  const { w, h } = parseDims(lower);
-  const nameMatch = lower.match(/phòng\s+\S+/);
-  const name = (nameMatch?.[0] ?? 'PHÒNG').toUpperCase();
-
-  const { entities, areaM2 } = roomRect(origin, { x: origin.x + w, y: origin.y + h }, wallThickness, name, wallLayer, textLayer);
-
-  const found: string[] = [];
-  for (const [kw, blockId] of Object.entries(KEYWORD_TO_BLOCK)) {
-    if (lower.includes(kw) && BLOCKS.find((b) => b.id === blockId) && !found.includes(blockId)) found.push(blockId);
-  }
-  // đặt tối đa 3 món tìm thấy, dàn theo hàng ngang trong phòng, cách tường 1 khoảng an toàn
-  found.slice(0, 3).forEach((blockId, i) => {
-    const def = BLOCKS.find((b) => b.id === blockId)!;
-    const x = origin.x + wallThickness * 2 + def.w / 2 + i * (def.w + 300);
-    const y = origin.y + wallThickness * 2 + def.h / 2;
-    entities.push({ id: newId('e'), type: 'block', layer: wallLayer, block: blockId, at: { x, y }, rot: 0, sx: 1, sy: 1 });
-  });
-
-  return {
-    entities,
-    note: `Rule-based: ${name} ${(w / 1000).toFixed(1)}×${(h / 1000).toFixed(1)}m (${areaM2.toFixed(1)} m²)${found.length ? `, nội thất: ${found.join(', ')}` : ''}.`,
-  };
+  const spec = parseDescription(text);
+  return layoutToEntities(spec, origin, wallLayer, textLayer, furnLayer, wallThickness);
 }
