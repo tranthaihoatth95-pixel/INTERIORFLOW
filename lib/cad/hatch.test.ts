@@ -1,0 +1,119 @@
+/**
+ * lib/cad/hatch.test.ts — kiểm dò biên (boundary trace) + sinh pattern (Nấc 4). Chạy bằng:
+ *   node_modules/.bin/sucrase-node lib/cad/hatch.test.ts
+ */
+import {
+  pointInPolygon, polygonArea, traceHatchBoundary, findHatchBoundary, hatchLines, hatchDots,
+} from './hatch';
+import { emptyDoc } from './model';
+import type { Doc, LineEntity } from './model';
+import { newId } from './store';
+
+let pass = 0;
+let fail = 0;
+function ok(label: string, cond: boolean) {
+  if (cond) { pass += 1; console.log(`  ok  - ${label}`); }
+  else { fail += 1; console.log(`  FAIL - ${label}`); }
+}
+function approx(a: number, b: number, eps = 1): boolean { return Math.abs(a - b) <= eps; }
+
+function rectSegs(x0: number, y0: number, x1: number, y1: number): [{ x: number; y: number }, { x: number; y: number }][] {
+  const p = [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }];
+  return [[p[0], p[1]], [p[1], p[2]], [p[2], p[3]], [p[3], p[0]]];
+}
+
+function testPointInPolygon() {
+  console.log('\n[1] pointInPolygon');
+  const square = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }];
+  ok('điểm giữa hình vuông → true', pointInPolygon({ x: 50, y: 50 }, square));
+  ok('điểm ngoài hình vuông → false', !pointInPolygon({ x: 200, y: 50 }, square));
+  ok('polygonArea hình vuông 100x100 = 10000', approx(polygonArea(square), 10000));
+}
+
+/* ── 2) dò biên phòng chữ nhật đơn giản, ghép từ 4 LINE rời ── */
+function testSimpleRoom() {
+  console.log('\n[2] Boundary trace — phòng chữ nhật 4 LINE rời, click giữa phòng');
+  const segs = rectSegs(0, 0, 4000, 3000);
+  const poly = traceHatchBoundary(segs, { x: 2000, y: 1500 });
+  ok('dò được 1 vòng kín', !!poly);
+  if (poly) {
+    ok('diện tích ≈ 4000×3000 = 12,000,000 mm²', approx(polygonArea(poly), 12_000_000, 5000));
+    ok('điểm pick nằm trong vòng dò được', pointInPolygon({ x: 2000, y: 1500 }, poly));
+  }
+}
+
+/* ── 3) phòng lồng phòng — click ở vùng trong cùng phải ra vòng NHỎ NHẤT chứa nó ── */
+function testNestedRoom() {
+  console.log('\n[3] Boundary trace — 2 hình chữ nhật lồng nhau, click vùng trong → vòng nhỏ nhất');
+  const outer = rectSegs(0, 0, 10000, 8000);
+  const inner = rectSegs(2000, 2000, 5000, 5000); // hoàn toàn nằm trong outer, không giao nhau
+  const segs = [...outer, ...inner];
+  const poly = traceHatchBoundary(segs, { x: 3000, y: 3000 }); // pick nằm TRONG inner
+  ok('dò được vòng kín cho vùng trong cùng (inner)', !!poly);
+  if (poly) {
+    ok('diện tích khớp inner (3000×3000=9,000,000), KHÔNG phải outer', approx(polygonArea(poly), 9_000_000, 5000));
+  }
+  const polyOuterRegion = traceHatchBoundary(segs, { x: 500, y: 500 }); // pick nằm giữa outer và inner (vùng khung, không lồng)
+  ok('click vùng giữa outer/inner: dò thất bại hoặc không khớp diện tích inner (đúng vì đó là vùng hình khung phức tạp, không phải rect đơn)', !polyOuterRegion || !approx(polygonArea(polyOuterRegion), 9_000_000, 5000));
+}
+
+/* ── 4) không có gì để dò (đoạn hở, không khép kín) → null ── */
+function testOpenNoClose() {
+  console.log('\n[4] Boundary trace — đoạn hở (chữ U, không khép kín) → null');
+  const segs: [{ x: number; y: number }, { x: number; y: number }][] = [
+    [{ x: 0, y: 0 }, { x: 0, y: 1000 }],
+    [{ x: 0, y: 0 }, { x: 1000, y: 0 }],
+    [{ x: 1000, y: 0 }, { x: 1000, y: 1000 }],
+    // thiếu cạnh trên cùng → không khép kín
+  ];
+  const poly = traceHatchBoundary(segs, { x: 500, y: 500 });
+  ok('không khép được → null', poly === null);
+}
+
+/* ── 5) findHatchBoundary từ Doc thật (entity LINE) ── */
+function testFromDoc() {
+  console.log('\n[5] findHatchBoundary — trực tiếp từ Doc (4 LINE entity)');
+  const doc: Doc = emptyDoc();
+  const lay = doc.layers[0].id;
+  const pts = [{ x: 0, y: 0 }, { x: 5000, y: 0 }, { x: 5000, y: 4000 }, { x: 0, y: 4000 }];
+  for (let i = 0; i < 4; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % 4];
+    const line: LineEntity = { id: newId('e'), type: 'line', layer: lay, a, b };
+    doc.entities.push(line);
+  }
+  const poly = findHatchBoundary(doc, { x: 2500, y: 2000 });
+  ok('dò được biên từ Doc', !!poly);
+  if (poly) ok('diện tích ≈ 5000×4000=20,000,000', approx(polygonArea(poly), 20_000_000, 5000));
+}
+
+/* ── 6) sinh pattern ── */
+function testPatterns() {
+  console.log('\n[6] Sinh pattern ANSI31/ANSI32/ANSI37 + DOTS');
+  const square = [{ x: 0, y: 0 }, { x: 1000, y: 0 }, { x: 1000, y: 1000 }, { x: 0, y: 1000 }];
+  const a31 = hatchLines(square, 'ANSI31', 1, 0);
+  ok('ANSI31 sinh ra ít nhất vài đường', a31.length > 0);
+  ok('mọi đoạn ANSI31 nằm trong hình vuông (điểm giữa đoạn ở trong)', a31.every(([p, q]) => pointInPolygon({ x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 }, square)));
+
+  const a32 = hatchLines(square, 'ANSI32', 1, 0);
+  ok('ANSI32 thưa hơn ANSI31 (ít đường hơn, cùng scale)', a32.length < a31.length);
+
+  const a37 = hatchLines(square, 'ANSI37', 1, 0);
+  ok('ANSI37 (crosshatch 2 họ) nhiều đoạn hơn 1 họ đơn', a37.length > a31.length * 0.8);
+
+  const dots = hatchDots(square, 1);
+  ok('DOTS sinh ra điểm, mọi điểm nằm trong hình vuông', dots.length > 0 && dots.every((p) => pointInPolygon(p, square)));
+
+  const a31Scaled = hatchLines(square, 'ANSI31', 3, 0);
+  ok('scale lớn hơn → ít đường hơn (thưa hơn)', a31Scaled.length < a31.length);
+}
+
+testPointInPolygon();
+testSimpleRoom();
+testNestedRoom();
+testOpenNoClose();
+testFromDoc();
+testPatterns();
+
+console.log(`\n${pass} ok, ${fail} fail`);
+if (fail > 0) process.exit(1);

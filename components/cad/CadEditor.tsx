@@ -15,6 +15,7 @@ import {
   FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Plus, Trash2, X, Command, Sparkles, Wand2,
 } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
+import type { HatchPattern } from '@/lib/cad/model';
 import { parseDxf, exportDxf } from '@/lib/cad/dxf';
 import { renderDocToDataURL } from '@/lib/cad/render';
 import { BLOCKS } from '@/lib/cad/furniture';
@@ -286,6 +287,9 @@ function CommandLine({ status }: { status: string }) {
   const polarTracking = useCadStore((s) => s.polarTracking);
   const setPolarTracking = useCadStore((s) => s.setPolarTracking);
   const setPolarStep = useCadStore((s) => s.setPolarStep);
+  const setHatchPattern = useCadStore((s) => s.setHatchPattern);
+  const setHatchScale = useCadStore((s) => s.setHatchScale);
+  const setHatchAngle = useCadStore((s) => s.setHatchAngle);
 
   const run = () => {
     const raw = val.trim();
@@ -380,6 +384,17 @@ function CommandLine({ status }: { status: string }) {
       },
       DIMSCALE: () => {
         if (arg && Number.isFinite(parseFloat(arg))) setDimStyle({ dimScale: parseFloat(arg) });
+      },
+      H: () => {
+        const patterns: HatchPattern[] = ['SOLID', 'ANSI31', 'ANSI32', 'ANSI37', 'DOTS'];
+        const found = patterns.find((p) => p === arg?.toUpperCase());
+        if (found) setHatchPattern(found);
+        if (arg2 && Number.isFinite(parseFloat(arg2))) setHatchScale(parseFloat(arg2));
+        setTool('hatch');
+      },
+      HATCH: () => setTool('hatch'),
+      HANGLE: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) setHatchAngle(parseFloat(arg));
       },
       POLAR: () => {
         if (arg && Number.isFinite(parseFloat(arg))) {

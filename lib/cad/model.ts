@@ -125,11 +125,21 @@ export interface BlockEntity extends Base {
  * đủ cho quad tường do lệnh WALL sinh ra). Xuất DXF: tam-giác-hoá quạt từ đỉnh 0 thành các
  * entity SOLID (an toàn ở mọi bản DXF, không cần bảng BLOCK_RECORD như HATCH thật).
  */
+/** Pattern hatch (Nấc 4). Thiếu `pattern` (dữ liệu cũ — poché tường từ WALL) ⇒ coi như SOLID
+ * đặc, giữ đúng hành vi cũ (tô đặc, không đường gạch). */
+export type HatchPattern = 'SOLID' | 'ANSI31' | 'ANSI32' | 'ANSI37' | 'DOTS';
+
 export interface HatchEntity extends Base {
   type: 'hatch';
   points: Pt[];
-  /** true = tô đặc (mặc định). Để ngỏ cho pattern sau này. */
+  /** true = tô đặc. Khi có `pattern`, field này chỉ còn ý nghĩa lịch sử (giữ tương thích ngược
+   * với dữ liệu cũ); ưu tiên đọc `pattern` nếu có. */
   solid?: boolean;
+  pattern?: HatchPattern;
+  /** tỉ lệ khoảng cách nét gạch (1 = mặc định ~60mm/nét); chỉ áp dụng khi pattern != SOLID. */
+  patternScale?: number;
+  /** góc nét gạch, độ (0-360); chỉ áp dụng khi pattern != SOLID/DOTS. */
+  patternAngle?: number;
 }
 
 export type Entity =

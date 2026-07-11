@@ -20,7 +20,7 @@
  * DXF là chuỗi cặp (groupCode, value) mỗi cặp 2 dòng. Ta duyệt tuyến tính, gom ENTITIES.
  */
 
-import type { Doc, DimEntity, Entity, Layer, Pt } from './model';
+import type { Doc, DimEntity, Entity, HatchPattern, Layer, Pt } from './model';
 import { docBox } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 
@@ -214,6 +214,24 @@ function buildEntity(
         return { id: eid(), type: 'dim', kind: 'angular', layer, color, a: a13, b: b14, c: c15, off };
       }
       return null; // DIMENSION lạ (không phải do app này ghi) → bỏ qua an toàn
+    }
+    case 'HATCH': {
+      // group 10/20 xuất hiện 2 lần với ý nghĩa khác nhau: giá trị ĐẦU = điểm cao độ (elevation,
+      // luôn 0,0 — xem exportDxf), các giá trị SAU = đỉnh biên → bỏ giá trị đầu (slice(1)).
+      const xs = (g[10] ?? []).slice(1).map((v) => parseFloat(v));
+      const ys = (g[20] ?? []).slice(1).map((v) => parseFloat(v));
+      const pts: Pt[] = [];
+      for (let k = 0; k < Math.min(xs.length, ys.length); k++) pts.push({ x: xs[k], y: ys[k] });
+      if (pts.length < 3) return null;
+      const validPatterns: HatchPattern[] = ['SOLID', 'ANSI31', 'ANSI32', 'ANSI37', 'DOTS'];
+      const nameRaw = (g[2]?.[0] ?? 'SOLID').toUpperCase();
+      const pattern = validPatterns.find((p) => p === nameRaw) ?? 'ANSI31';
+      return {
+        id: eid(), type: 'hatch', layer, color, points: pts,
+        solid: pattern === 'SOLID', pattern,
+        patternScale: num(41, 0, 1) || 1,
+        patternAngle: num(52, 0, 0),
+      };
     }
     case 'LWPOLYLINE': {
       const xs = g[10] ?? [];
@@ -468,11 +486,34 @@ export function exportDxf(doc: Doc): string {
       case 'text':
         out.push(pair(0, 'TEXT'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, e.at.x), pair(20, e.at.y), pair(30, 0), pair(40, e.h), pair(1, e.text));
         break;
-      case 'hatch':
-        // Poché tường → xuất đường bao LWPOLYLINE khép kín (không tô — ưu tiên an toàn cấu
-        // trúc file hơn fill; app CAD nhận handoff có thể tự hatch lại theo đường bao này).
-        if (e.points.length >= 2) writePoly(e.points, true, lay, aci);
+      case 'hatch': {
+        if (e.points.length < 2) break;
+        if (!e.pattern) {
+          // Poché tường CŨ (WALL, không có `pattern`) → giữ nguyên hành vi cũ: đường bao
+          // LWPOLYLINE khép kín (không tô — ưu tiên an toàn cấu trúc file).
+          writePoly(e.points, true, lay, aci);
+          break;
+        }
+        // Nấc 4 — entity HATCH THẬT (tên pattern ANSI31/ANSI32/ANSI37/SOLID/DOTS đều là tên
+        // pattern chuẩn có sẵn trong thư viện acad.pat/ANSI.pat của AutoCAD).
+        const isSolid = e.pattern === 'SOLID';
+        out.push(
+          pair(0, 'HATCH'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []),
+          pair(10, 0), pair(20, 0), pair(30, 0),
+          pair(210, 0), pair(220, 0), pair(230, 1),
+          pair(2, e.pattern),
+          pair(70, isSolid ? 1 : 0),
+          pair(71, 0),
+          pair(91, 1),
+          pair(92, 7), pair(72, 0), pair(73, 1), pair(93, e.points.length),
+        );
+        for (const p of e.points) out.push(pair(10, p.x), pair(20, p.y));
+        out.push(pair(97, 0));
+        out.push(pair(75, 0), pair(76, 1));
+        if (!isSolid) out.push(pair(52, e.patternAngle ?? 0), pair(41, e.patternScale ?? 1));
+        out.push(pair(77, 0), pair(78, 0), pair(98, 0));
         break;
+      }
       case 'block': {
         const def = BLOCK_MAP[e.block];
         if (!def) break;

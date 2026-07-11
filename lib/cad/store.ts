@@ -9,7 +9,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Doc, Entity, Layer, Viewport } from './model';
+import type { Doc, Entity, Layer, Viewport, HatchPattern } from './model';
 import { emptyDoc } from './model';
 
 /** Dim style TỐI THIỂU (Nấc 3) — tương đương vài biến DIMSTYLE hay chỉnh nhất của AutoCAD.
@@ -56,7 +56,8 @@ export type Tool =
   | 'dimdiameter'
   | 'dimangular'
   | 'dimcontinue'
-  | 'dimbaseline';
+  | 'dimbaseline'
+  | 'hatch';
 
 export interface SnapSettings {
   enabled: boolean;
@@ -103,6 +104,10 @@ interface CadState {
   lengthenDelta: number;
   /** Nấc 3 — dim style tối thiểu */
   dimStyle: DimStyle;
+  /** Nấc 4 — pattern/scale/góc nhớ cho lệnh HATCH (H) */
+  hatchPattern: HatchPattern;
+  hatchScale: number;
+  hatchAngle: number;
   past: Doc[];
   future: Doc[];
   /** dòng lệnh mini + thông báo trạng thái */
@@ -141,6 +146,9 @@ interface CadState {
   setChamferDist: (d1: number, d2: number) => void;
   setLengthenDelta: (d: number) => void;
   setDimStyle: (patch: Partial<DimStyle>) => void;
+  setHatchPattern: (p: HatchPattern) => void;
+  setHatchScale: (n: number) => void;
+  setHatchAngle: (n: number) => void;
 
   importDoc: (d: Doc, mode: 'replace' | 'merge') => void;
   scaleAll: (factor: number) => void;
@@ -178,6 +186,9 @@ export const useCadStore = create<CadState>((set, get) => ({
   chamferD2: 100,
   lengthenDelta: 100,
   dimStyle: { textHeight: 120, arrowSize: 80, dimScale: 1 },
+  hatchPattern: 'ANSI31',
+  hatchScale: 1,
+  hatchAngle: 0,
   past: [],
   future: [],
   status: 'Sẵn sàng — chọn công cụ hoặc gõ lệnh (L, PL, REC, C…).',
@@ -280,6 +291,9 @@ export const useCadStore = create<CadState>((set, get) => ({
   setChamferDist: (chamferD1, chamferD2) => set({ chamferD1, chamferD2 }),
   setLengthenDelta: (lengthenDelta) => set({ lengthenDelta }),
   setDimStyle: (patch) => set((s) => ({ dimStyle: { ...s.dimStyle, ...patch } })),
+  setHatchPattern: (hatchPattern) => set({ hatchPattern }),
+  setHatchScale: (hatchScale) => set({ hatchScale }),
+  setHatchAngle: (hatchAngle) => set({ hatchAngle }),
 
   importDoc: (d, mode) => {
     get().snapshot();
@@ -375,6 +389,7 @@ function toolHint(t: Tool): string {
     dimangular: 'Dim Angular (DAN): click 2 đường LINE tạo góc → click vị trí đặt cung đo.',
     dimcontinue: 'Dim Continue (DCO): click điểm tiếp theo — nối từ điểm cuối của dim gần nhất, cùng đường kích thước.',
     dimbaseline: 'Dim Baseline (DBA): click điểm tiếp theo — đo từ gốc chung của dim gần nhất, xếp lớp ra ngoài.',
+    hatch: 'Hatch (H): click 1 điểm bên trong vùng kín cần tô. Gõ lệnh "H ANSI31/ANSI32/ANSI37/SOLID/DOTS" để đổi pattern.',
   };
   return H[t];
 }

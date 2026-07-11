@@ -6,6 +6,7 @@
 import type { Doc, Entity, Pt, Viewport, DimEntity } from './model';
 import { docBox, fitBox, worldToScreen } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
+import { hatchLines, hatchDots } from './hatch';
 
 /** Dim style tối thiểu dùng khi vẽ (mặc định nếu không truyền — xem store.ts DimStyle). */
 export interface DimStyle {
@@ -144,17 +145,42 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
     }
     case 'hatch': {
       if (e.points.length < 3) break;
-      ctx.beginPath();
-      e.points.forEach((p, i) => {
-        const s = S(p);
-        if (i === 0) ctx.moveTo(s.x, s.y);
-        else ctx.lineTo(s.x, s.y);
-      });
-      ctx.closePath();
-      ctx.fillStyle = layerColor(doc, e, style);
-      ctx.globalAlpha = 0.9;
-      ctx.fill();
-      ctx.globalAlpha = 1;
+      const pattern = e.pattern ?? (e.solid === false ? 'ANSI31' : 'SOLID');
+      const color = layerColor(doc, e, style);
+      if (pattern === 'SOLID') {
+        ctx.beginPath();
+        e.points.forEach((p, i) => {
+          const s = S(p);
+          if (i === 0) ctx.moveTo(s.x, s.y);
+          else ctx.lineTo(s.x, s.y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.9;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      } else if (pattern === 'DOTS') {
+        const dots = hatchDots(e.points, e.patternScale ?? 1);
+        ctx.fillStyle = color;
+        for (const p of dots) {
+          const s = S(p);
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        const lines = hatchLines(e.points, pattern, e.patternScale ?? 1, e.patternAngle ?? 0);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = Math.max(0.6, style.lineWidth * 0.6);
+        ctx.beginPath();
+        for (const [p, q] of lines) {
+          const sp = S(p);
+          const sq = S(q);
+          ctx.moveTo(sp.x, sp.y);
+          ctx.lineTo(sq.x, sq.y);
+        }
+        ctx.stroke();
+      }
       break;
     }
   }

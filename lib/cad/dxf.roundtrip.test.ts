@@ -117,9 +117,9 @@ function testDim() {
   ok('angular: off (bán kính cung đo) round-trip ≈ 600', !!angular && approx(angular.off, 600, 2));
 }
 
-/* ── 3) hatch (poché tường) → polyline biên khép kín ── */
+/* ── 3) hatch — poché tường CŨ (không pattern) vs HATCH thật (Nấc 4, có pattern) ── */
 function testHatch() {
-  console.log('\n[3] Hatch (poché tường) — xuất thành LWPOLYLINE biên (không tô)');
+  console.log('\n[3] Hatch — poché tường (không pattern) → LWPOLYLINE biên; pattern (Nấc 4) → HATCH entity thật');
   const doc: Doc = emptyDoc();
   const wall = doc.layers[0].id;
   doc.entities.push({
@@ -131,7 +131,21 @@ function testHatch() {
   });
   const dxf = exportDxf(doc);
   const back = parseDxf(dxf);
-  ok('1 hatch → 1 POLYLINE khép kín 4 đỉnh', back.entities.length === 1 && back.entities[0].type === 'polyline' && back.entities[0].closed && back.entities[0].points.length === 4);
+  ok('1 hatch (không pattern) → 1 POLYLINE khép kín 4 đỉnh (hành vi cũ giữ nguyên)', back.entities.length === 1 && back.entities[0].type === 'polyline' && back.entities[0].closed && back.entities[0].points.length === 4);
+
+  const doc2: Doc = emptyDoc();
+  const lay2 = doc2.layers[0].id;
+  doc2.entities.push({
+    id: newId('e'), type: 'hatch', layer: lay2, pattern: 'ANSI31', patternScale: 1.5, patternAngle: 30,
+    points: [{ x: 0, y: 0 }, { x: 2000, y: 0 }, { x: 2000, y: 1500 }, { x: 0, y: 1500 }],
+  });
+  const dxf2 = exportDxf(doc2);
+  ok('HATCH entity thật xuất hiện (group 0 HATCH)', (dxf2.match(/\nHATCH\n/g) ?? []).length === 1);
+  ok('tên pattern ANSI31 có trong file', dxf2.includes('ANSI31'));
+  const back2 = parseDxf(dxf2);
+  const h = back2.entities.find((e) => e.type === 'hatch');
+  ok('round-trip: 1 hatch với đúng 4 đỉnh biên', !!h && h.type === 'hatch' && h.points.length === 4);
+  ok('round-trip: pattern/scale/angle giữ nguyên', !!h && h.type === 'hatch' && h.pattern === 'ANSI31' && approx(h.patternScale ?? 0, 1.5, 0.01) && approx(h.patternAngle ?? -1, 30, 0.01));
 }
 
 /* ── 4) block furniture → phẳng hoá thành primitive thật ── */

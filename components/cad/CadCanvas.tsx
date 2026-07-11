@@ -43,6 +43,7 @@ import {
   infiniteLineIntersect,
 } from '@/lib/cad/modify';
 import { gripsOf, hitTestGrip, applyGripMove, type Grip } from '@/lib/cad/grips';
+import { findHatchBoundary } from '@/lib/cad/hatch';
 
 interface Ix {
   cursorScreen: Pt;
@@ -484,6 +485,9 @@ export default function CadCanvas() {
       case 'dimbaseline':
         handleDimChain(w, 'baseline');
         break;
+      case 'hatch':
+        handleHatch(w);
+        break;
       default:
         break;
     }
@@ -785,6 +789,27 @@ export default function CadCanvas() {
     const d: DimEntity = { id: newId('e'), type: 'dim', kind: 'aligned', layer: st.currentLayer, a, b: w, off };
     st.addEntity(d);
     ix.current.lastDim = d;
+  }
+
+  /** H — pick-point: dò biên vùng kín quanh w, tô theo pattern/scale/góc đang nhớ trong store. */
+  function handleHatch(w: Pt) {
+    const st = useCadStore.getState();
+    const poly = findHatchBoundary(st.doc, w);
+    if (!poly) {
+      st.setStatus('Hatch: không dò được vùng kín tại điểm này (cần biên khép kín từ line/polyline/rect/circle/arc).');
+      return;
+    }
+    st.addEntity({
+      id: newId('e'),
+      type: 'hatch',
+      layer: st.currentLayer,
+      points: poly,
+      solid: st.hatchPattern === 'SOLID',
+      pattern: st.hatchPattern,
+      patternScale: st.hatchScale,
+      patternAngle: st.hatchAngle,
+    });
+    st.setStatus(`Hatch: đã tô ${st.hatchPattern} (${poly.length} đỉnh biên).`);
   }
 
   function finishPolyline(closed: boolean) {

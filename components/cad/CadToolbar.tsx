@@ -12,7 +12,7 @@ import {
   Undo2, Redo2, Maximize, BrickWall, LayoutPanelTop, DoorOpen,
   Scissors, Expand, SquareRoundCorner, Slice, Grid3x3, LayoutGrid,
   ZoomIn, SplitSquareHorizontal, ScissorsLineDashed, Link2, Boxes, ArrowLeftRight, Compass,
-  Radius, Diameter, DraftingCompass, ChevronsRight, GitBranch,
+  Radius, Diameter, DraftingCompass, ChevronsRight, GitBranch, PaintBucket,
 } from 'lucide-react';
 import { useCadStore, type Tool } from '@/lib/cad/store';
 
@@ -34,6 +34,7 @@ const DRAW: ToolBtn[] = [
 const ARCH: ToolBtn[] = [
   { tool: 'wall', icon: BrickWall, label: 'Tường (chuỗi điểm tim tường)', key: 'W' },
   { tool: 'room', icon: LayoutPanelTop, label: 'Phòng chữ nhật + nhãn diện tích', key: 'ROOM' },
+  { tool: 'hatch', icon: PaintBucket, label: 'Hatch — pick-point tô vùng kín (H ANSI31/ANSI32/ANSI37/SOLID/DOTS)', key: 'H' },
 ];
 const EDIT: ToolBtn[] = [
   { tool: 'move', icon: Move, label: 'Move', key: 'M' },
