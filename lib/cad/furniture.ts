@@ -189,7 +189,9 @@ export const BLOCKS: BlockDef[] = [
   { id: 'lavabo', name: 'Lavabo', group: 'Vệ sinh', w: 600, h: 460, prims: lavabo() },
   { id: 'bathtub', name: 'Bồn tắm', group: 'Vệ sinh', w: 1700, h: 750, prims: bathtub() },
   { id: 'kitchenI', name: 'Bếp chữ I', group: 'Bếp', w: 3000, h: 600, prims: kitchenI() },
-  { id: 'door', name: 'Cửa mở', group: 'Kiến trúc', w: 900, h: 900, prims: door(900) },
+  { id: 'door', name: 'Cửa mở 900 (cửa chính)', group: 'Kiến trúc', w: 900, h: 900, prims: door(900) },
+  { id: 'doorRoom', name: 'Cửa mở 800 (cửa phòng)', group: 'Kiến trúc', w: 800, h: 800, prims: door(800) },
+  { id: 'doorWC', name: 'Cửa mở 700 (cửa WC)', group: 'Kiến trúc', w: 700, h: 700, prims: door(700) },
   { id: 'window', name: 'Cửa sổ', group: 'Kiến trúc', w: 1200, h: 100, prims: window2(1200) },
 ];
 
