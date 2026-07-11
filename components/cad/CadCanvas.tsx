@@ -57,6 +57,7 @@ interface Ix {
   panStart: { screen: Pt; vp: Viewport } | null;
   spaceHeld: boolean;
   ortho: boolean;
+  orthoLock: boolean;
   selDrag: { start: Pt; startScreen: Pt } | null; // world start cho rubber-band
   blockRot: number;
   redraw: boolean;
@@ -107,6 +108,7 @@ export default function CadCanvas() {
     panStart: null,
     spaceHeld: false,
     ortho: false,
+    orthoLock: false,
     selDrag: null,
     blockRot: 0,
     redraw: true,
@@ -284,6 +286,12 @@ export default function CadCanvas() {
       ix.current.panStart = { screen, vp: st.viewport };
       return;
     }
+    // chuột PHẢI = Enter/kết thúc lệnh (thói quen AutoCAD): chốt polyline/wall/tham số đang gõ.
+    if (e.button === 2) {
+      commitEnter(ev.shiftKey);
+      ix.current.redraw = true;
+      return;
+    }
     if (e.button !== 0) return;
 
     if (st.tool === 'select') {
@@ -308,7 +316,7 @@ export default function CadCanvas() {
 
   const onPointerMove = (ev: React.PointerEvent) => {
     const e = ev.nativeEvent;
-    ix.current.ortho = ev.shiftKey;
+    ix.current.ortho = ev.shiftKey || ix.current.orthoLock;
     const screen = toLocal(e);
     if (ix.current.panning && ix.current.panStart) {
       const { screen: s0, vp } = ix.current.panStart;
@@ -351,8 +359,9 @@ export default function CadCanvas() {
       if (moved) {
         const a = ix.current.selDrag.start;
         const b = ix.current.cursorWorld;
-        // kéo phải→trái = window (bao gọn), trái→phải = crossing (chạm)
-        const windowMode = b.x < a.x;
+        // ĐÚNG chuẩn AutoCAD: kéo TRÁI→PHẢI = window (chỉ bắt đối tượng nằm GỌN trong khung);
+        // kéo PHẢI→TRÁI = crossing (bắt cả đối tượng CHẠM khung).
+        const windowMode = b.x > a.x;
         const ids = idsInRect(st.doc, a, b, windowMode);
         st.select(ids, ev.shiftKey);
       } else {
@@ -377,6 +386,44 @@ export default function CadCanvas() {
     if (st.tool === 'polyline' && ix.current.pts.length >= 2) finishPolyline(false);
     else if (st.tool === 'wall' && ix.current.pts.length >= 2) finishWall(false);
   };
+
+  /**
+   * commitEnter — hành vi "Enter/xác nhận" của CAD, dùng CHUNG cho phím Enter VÀ chuột phải
+   * (thói quen AutoCAD: right-click = Enter/kết thúc lệnh). Chốt tham số fillet/chamfer/lengthen,
+   * kết thúc break/polyline/wall, hoặc chốt điểm khi đang gõ dynamic input.
+   */
+  function commitEnter(shift: boolean) {
+    const st = useCadStore.getState();
+    if (ix.current.dynBuf && (st.tool === 'fillet' || st.tool === 'chamfer' || st.tool === 'lengthen')) {
+      const n = parseFloat(ix.current.dynBuf);
+      if (Number.isFinite(n)) {
+        if (st.tool === 'fillet') st.setFilletRadius(n);
+        else if (st.tool === 'chamfer') st.setChamferDist(n, n);
+        else st.setLengthenDelta(n);
+        st.setStatus(`Đã đặt tham số = ${n}mm.`);
+      }
+      ix.current.dynBuf = '';
+      return;
+    }
+    if (st.tool === 'break' && ix.current.breakTarget) {
+      const { id, p1 } = ix.current.breakTarget;
+      ix.current.breakTarget = null;
+      const target = st.doc.entities.find((en) => en.id === id);
+      if (target) {
+        const result = breakEntity(target, p1, p1);
+        if (result) {
+          st.removeIds([target.id]);
+          st.addEntities(result);
+        }
+      }
+      return;
+    }
+    if (st.tool === 'polyline') finishPolyline(false);
+    else if (st.tool === 'wall') finishWall(false);
+    else if (ix.current.dynBuf && ix.current.pts.length) {
+      handleClick(effectivePoint(ix.current.pts[ix.current.pts.length - 1]), shift);
+    }
+  }
 
   /* ───────── xử lý click theo công cụ ───────── */
   function handleClick(w: Pt, shift: boolean) {
@@ -1002,37 +1049,14 @@ export default function CadCanvas() {
         return;
       }
       if (e.key === 'Enter') {
-        // fillet/chamfer/lengthen: số gõ trước khi click là THAM SỐ (bán kính/khoảng cách/delta),
-        // không phải điểm — chốt riêng, không đi qua handleClick.
-        if (ix.current.dynBuf && (st.tool === 'fillet' || st.tool === 'chamfer' || st.tool === 'lengthen')) {
-          const n = parseFloat(ix.current.dynBuf);
-          if (Number.isFinite(n)) {
-            if (st.tool === 'fillet') st.setFilletRadius(n);
-            else if (st.tool === 'chamfer') st.setChamferDist(n, n);
-            else st.setLengthenDelta(n);
-            st.setStatus(`Đã đặt tham số = ${n}mm.`);
-          }
-          ix.current.dynBuf = '';
-          return;
-        }
-        if (st.tool === 'break' && ix.current.breakTarget) {
-          const { id, p1 } = ix.current.breakTarget;
-          ix.current.breakTarget = null;
-          const target = st.doc.entities.find((en) => en.id === id);
-          if (target) {
-            const result = breakEntity(target, p1, p1);
-            if (result) {
-              st.removeIds([target.id]);
-              st.addEntities(result);
-            }
-          }
-          return;
-        }
-        if (st.tool === 'polyline') finishPolyline(false);
-        else if (st.tool === 'wall') finishWall(false);
-        else if (ix.current.dynBuf && ix.current.pts.length) {
-          handleClick(effectivePoint(ix.current.pts[ix.current.pts.length - 1]), e.shiftKey);
-        }
+        commitEnter(e.shiftKey);
+        return;
+      }
+      // F8 — bật/tắt Ortho khoá (thói quen AutoCAD). Giữ Shift vẫn là ortho tạm thời.
+      if (e.key === 'F8') {
+        e.preventDefault();
+        ix.current.orthoLock = !ix.current.orthoLock;
+        st.setStatus(`Ortho ${ix.current.orthoLock ? 'BẬT' : 'tắt'} (F8) — khoá hướng ngang/dọc khi vẽ.`);
         return;
       }
       if ((e.key === 'c' || e.key === 'C') && st.tool === 'polyline' && ix.current.pts.length >= 2) {
@@ -1346,14 +1370,17 @@ export default function CadCanvas() {
     if (!sd) return;
     const a = worldToScreen(v, sd.start);
     const b = ix.current.cursorScreen;
-    const windowMode = ix.current.cursorWorld.x < sd.start.x;
+    // TRÁI→PHẢI = window (nét liền); PHẢI→TRÁI = crossing (nét đứt). Màu phân biệt như AutoCAD:
+    // window = accent (lạnh), crossing = xanh lá.
+    const windowMode = ix.current.cursorWorld.x > sd.start.x;
+    const col = windowMode ? accent : '#4a9c6d';
     ctx.save();
-    ctx.strokeStyle = accent;
+    ctx.strokeStyle = col;
     ctx.setLineDash(windowMode ? [] : [5, 4]);
     ctx.globalAlpha = 0.9;
     ctx.strokeRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y));
     ctx.globalAlpha = 0.08;
-    ctx.fillStyle = accent;
+    ctx.fillStyle = col;
     ctx.fillRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y));
     ctx.restore();
   }
