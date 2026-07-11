@@ -9,7 +9,7 @@
  * trên canvas Render (useFlowStore) rồi router.push('/') — đúng pattern onDrop asset của FlowCanvas.
  */
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Plus, Trash2, X, Command, Sparkles, Wand2,
@@ -18,6 +18,7 @@ import { useCadStore } from '@/lib/cad/store';
 import { parseDxf, exportDxf } from '@/lib/cad/dxf';
 import { renderDocToDataURL } from '@/lib/cad/render';
 import { BLOCKS } from '@/lib/cad/furniture';
+import { loadManifest, groupByCategory, type LibraryManifest } from '@/lib/cad/block-library';
 import { buildDemoPlan } from '@/lib/cad/demo-plan';
 import { describeToEntities } from '@/lib/cad/ai-assist';
 import { docBox } from '@/lib/cad/model';
@@ -238,6 +239,23 @@ function FurniturePanel({ onClose }: { onClose: () => void }) {
   const setPendingBlock = useCadStore((s) => s.setPendingBlock);
   const pending = useCadStore((s) => s.pendingBlock);
   const groups = Array.from(new Set(BLOCKS.map((b) => b.group)));
+  // Tab 2 "Thư viện 46": block DXF từ public/cad-library (docs/CAD-LIBRARY.md §6 cách A) —
+  // pendingBlock = 'lib:<id>', CadCanvas tự tải + làm phẳng entity lúc đặt.
+  const [tab, setTab] = useState<'basic' | 'lib'>('basic');
+  const [manifest, setManifest] = useState<LibraryManifest | null>(null);
+  const [libErr, setLibErr] = useState('');
+  useEffect(() => {
+    if (tab !== 'lib' || manifest) return;
+    loadManifest()
+      .then(setManifest)
+      .catch((e) => setLibErr(e instanceof Error ? e.message : String(e)));
+  }, [tab, manifest]);
+
+  const itemBtn = (active: boolean): React.CSSProperties => ({
+    display: 'block', width: '100%', textAlign: 'left', padding: '5px 8px', borderRadius: 7, border: 'none',
+    fontSize: 12, background: active ? 'var(--accent)' : 'transparent', color: active ? '#fff' : 'var(--t2)', cursor: 'pointer',
+  });
+
   return (
     <div style={{ ...panel, left: 12, top: 70, width: 210 }}>
       <div style={panelHead}>
@@ -246,23 +264,62 @@ function FurniturePanel({ onClose }: { onClose: () => void }) {
           <X size={14} />
         </button>
       </div>
-      <div style={{ maxHeight: 420, overflowY: 'auto' }}>
-        {groups.map((g) => (
-          <div key={g} style={{ marginBottom: 6 }}>
-            <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--t4)', padding: '4px 6px' }}>{g}</div>
-            {BLOCKS.filter((b) => b.group === g).map((b) => (
-              <button
-                key={b.id}
-                type="button"
-                onClick={() => setPendingBlock(b.id)}
-                title={`${b.name} — ${b.w}×${b.h}mm. Click canvas để đặt, R xoay 90°.`}
-                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '5px 8px', borderRadius: 7, border: 'none', fontSize: 12, background: pending === b.id ? 'var(--accent)' : 'transparent', color: pending === b.id ? '#fff' : 'var(--t2)', cursor: 'pointer' }}
-              >
-                {b.name}
-              </button>
-            ))}
-          </div>
+      <div style={{ display: 'flex', gap: 4, padding: '0 4px 6px' }}>
+        {([['basic', `Cơ bản (${BLOCKS.length})`], ['lib', manifest ? `Thư viện (${manifest.count})` : 'Thư viện']] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setTab(id)}
+            style={{ flex: 1, padding: '4px 0', borderRadius: 7, border: '1px solid var(--border)', fontSize: 11, background: tab === id ? 'var(--accent)' : 'transparent', color: tab === id ? '#fff' : 'var(--t3)', cursor: 'pointer' }}
+          >
+            {label}
+          </button>
         ))}
+      </div>
+      <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+        {tab === 'basic' &&
+          groups.map((g) => (
+            <div key={g} style={{ marginBottom: 6 }}>
+              <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--t4)', padding: '4px 6px' }}>{g}</div>
+              {BLOCKS.filter((b) => b.group === g).map((b) => (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => setPendingBlock(b.id)}
+                  title={`${b.name} — ${b.w}×${b.h}mm. Click canvas để đặt, R xoay 90°.`}
+                  style={itemBtn(pending === b.id)}
+                >
+                  {b.name}
+                </button>
+              ))}
+            </div>
+          ))}
+        {tab === 'lib' && !manifest && (
+          <p style={{ fontSize: 11.5, color: libErr ? 'var(--danger, #c0604a)' : 'var(--t4)', padding: '6px 8px' }}>
+            {libErr ? `Không tải được thư viện: ${libErr}` : 'Đang tải thư viện…'}
+          </p>
+        )}
+        {tab === 'lib' && manifest &&
+          Array.from(groupByCategory(manifest)).map(([cat, blocks]) => (
+            <div key={cat} style={{ marginBottom: 6 }}>
+              <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--t4)', padding: '4px 6px' }}>
+                {blocks[0]?.categoryLabel ?? cat}
+              </div>
+              {blocks.map((b) => (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => setPendingBlock(`lib:${b.id}`)}
+                  title={`${b.name} — ${b.w}×${b.h}mm. Click canvas để đặt, R xoay 90°.`}
+                  style={{ ...itemBtn(pending === `lib:${b.id}`), display: 'flex', alignItems: 'center', gap: 8 }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={b.thumb} alt="" width={30} height={22} style={{ objectFit: 'contain', borderRadius: 3, background: '#f4f1ea', flexShrink: 0 }} loading="lazy" />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.name}</span>
+                </button>
+              ))}
+            </div>
+          ))}
       </div>
     </div>
   );

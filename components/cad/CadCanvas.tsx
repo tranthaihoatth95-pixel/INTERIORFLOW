@@ -27,6 +27,7 @@ import {
   withNewId,
 } from '@/lib/cad/geometry';
 import { wallChain, roomRect } from '@/lib/cad/commands';
+import { loadManifest, insertBlockById } from '@/lib/cad/block-library';
 
 interface Ix {
   cursorScreen: Pt;
@@ -47,6 +48,21 @@ function css(varName: string, fallback: string): string {
   if (typeof window === 'undefined') return fallback;
   const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
   return v || fallback;
+}
+
+/** Đặt 1 block thư viện DXF tại điểm click — async (manifest + file DXF cache theo phiên trang). */
+function placeLibraryBlock(id: string, at: Pt, rot: number, layer: string) {
+  void (async () => {
+    const st = useCadStore.getState();
+    try {
+      const manifest = await loadManifest();
+      const ents = await insertBlockById(manifest, id, at, { rot, layer });
+      st.addEntities(ents);
+      st.setStatus(`Đã đặt block thư viện (${ents.length} entity) — R xoay 90° trước khi đặt tiếp.`);
+    } catch (err) {
+      st.setStatus(`Lỗi đặt block thư viện: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  })();
 }
 
 export default function CadCanvas() {
@@ -344,7 +360,11 @@ export default function CadCanvas() {
         break;
       }
       case 'block': {
-        if (st.pendingBlock) {
+        // 'lib:<id>' = block THƯ VIỆN DXF (46 block, docs/CAD-LIBRARY.md §6 cách A):
+        // tải + làm phẳng entity rồi addEntities (1 bước undo). Còn lại = block vẽ tay cũ (BLOCK_MAP).
+        if (st.pendingBlock?.startsWith('lib:')) {
+          placeLibraryBlock(st.pendingBlock.slice(4), w, ix.current.blockRot, st.currentLayer);
+        } else if (st.pendingBlock) {
           st.addEntity({ id: newId('e'), type: 'block', layer: st.currentLayer, block: st.pendingBlock, at: w, rot: ix.current.blockRot, sx: 1, sy: 1 });
         }
         break; // giữ tool để đặt tiếp
