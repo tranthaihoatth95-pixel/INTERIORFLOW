@@ -8,7 +8,7 @@
  *
  * LUẬT: font SANS (fonts: 'Modern') — KHÔNG serif. Ảnh cục bộ, 0 AI, 0 mạng.
  */
-import { renderSlide, type SlideTheme, type SlideLayout } from '@/lib/slides';
+import { renderSlide, type SlideTheme, type SlideLayout, type FontPairing } from '@/lib/slides';
 import { composeBoard } from '@/lib/imaging';
 
 /* ---------- Palette đá ấm quiet-luxury (fallback, không phụ thuộc ảnh ref) ---------- */
@@ -51,6 +51,8 @@ export interface PresentDeck {
   brand: string;
   project: string;
   slides: DemoSlideSpec[];
+  /** bộ chữ render — mặc định 'Modern' (sans). Deck báo cáo dùng 'Editorial' (serif thanh). */
+  fonts?: FontPairing;
 }
 
 /* ---------- Deck mẫu: 6 slide, kể chuyện quiet-luxury ---------- */
@@ -133,7 +135,7 @@ export async function renderDeck(deck: PresentDeck): Promise<string[]> {
       content: { kicker: s.kicker, title: s.title, body: s.body },
       theme: s.theme,
       layout: s.layout,
-      fonts: 'Modern', // SANS — tuân luật font
+      fonts: deck.fonts ?? 'Modern',
       heroUrl,
       brand: deck.brand,
       pageNo: `${i + 1} / ${deck.slides.length}`,
