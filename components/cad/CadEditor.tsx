@@ -279,11 +279,14 @@ function CommandLine({ status }: { status: string }) {
   const setOffsetDist = useCadStore((s) => s.setOffsetDist);
   const setWallThickness = useCadStore((s) => s.setWallThickness);
   const setPendingBlock = useCadStore((s) => s.setPendingBlock);
+  const setFilletRadius = useCadStore((s) => s.setFilletRadius);
+  const setChamferDist = useCadStore((s) => s.setChamferDist);
+  const setLengthenDelta = useCadStore((s) => s.setLengthenDelta);
 
   const run = () => {
     const raw = val.trim();
     if (!raw) return;
-    const [cmd, arg] = raw.split(/\s+/);
+    const [cmd, arg, arg2] = raw.split(/\s+/);
     const c = cmd.toUpperCase();
     const map: Record<string, () => void> = {
       L: () => setTool('line'),
@@ -323,6 +326,42 @@ function CommandLine({ status }: { status: string }) {
       DOOR: () => setPendingBlock('door'),
       WIN: () => setPendingBlock('window'),
       WINDOW: () => setPendingBlock('window'),
+      // Nấc 1 — bộ chỉnh sửa (alias chuẩn AutoCAD)
+      TR: () => setTool('trim'),
+      TRIM: () => setTool('trim'),
+      EX: () => setTool('extend'),
+      EXTEND: () => setTool('extend'),
+      F: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) setFilletRadius(parseFloat(arg));
+        setTool('fillet');
+      },
+      FILLET: () => setTool('fillet'),
+      CHA: () => {
+        const d1 = arg && Number.isFinite(parseFloat(arg)) ? parseFloat(arg) : undefined;
+        const d2 = arg2 && Number.isFinite(parseFloat(arg2)) ? parseFloat(arg2) : d1;
+        if (d1 !== undefined) setChamferDist(d1, d2 ?? d1);
+        setTool('chamfer');
+      },
+      CHAMFER: () => setTool('chamfer'),
+      AR: () => setTool('arrayrect'),
+      ARRAY: () => setTool('arrayrect'),
+      ARP: () => setTool('arraypolar'),
+      ARRAYPOLAR: () => setTool('arraypolar'),
+      SC: () => setTool('scale'),
+      SCALE: () => setTool('scale'),
+      S: () => setTool('stretch'),
+      STRETCH: () => setTool('stretch'),
+      BR: () => setTool('break'),
+      BREAK: () => setTool('break'),
+      J: () => setTool('join'),
+      JOIN: () => setTool('join'),
+      X: () => setTool('explode'),
+      EXPLODE: () => setTool('explode'),
+      LEN: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) setLengthenDelta(parseFloat(arg));
+        setTool('lengthen');
+      },
+      LENGTHEN: () => setTool('lengthen'),
       E: () => deleteSelected(),
       DEL: () => deleteSelected(),
       ERASE: () => deleteSelected(),
@@ -330,8 +369,10 @@ function CommandLine({ status }: { status: string }) {
       UNDO: () => undo(),
       RE: () => redo(),
       REDO: () => redo(),
-      F: () => window.dispatchEvent(new CustomEvent('cad:zoom-extents')),
+      // Zoom Extents: KHÔNG dùng "F" ở dòng lệnh nữa (F = FILLET theo chuẩn AutoCAD, xem phía
+      // trên) — phím tắt trực tiếp 'f' trên canvas (ngoài dòng lệnh) vẫn còn (CadCanvas.tsx).
       EXT: () => window.dispatchEvent(new CustomEvent('cad:zoom-extents')),
+      Z: () => window.dispatchEvent(new CustomEvent('cad:zoom-extents')),
       SEL: () => setTool('select'),
     };
     const fn = map[c];

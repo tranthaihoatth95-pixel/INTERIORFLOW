@@ -10,6 +10,8 @@ import {
   Move, Copy, RotateCw, FlipHorizontal2, StretchHorizontal,
   Ruler, MoveDiagonal, Type, Sofa, Magnet, Grid2x2, Hand,
   Undo2, Redo2, Maximize, BrickWall, LayoutPanelTop, DoorOpen,
+  Scissors, Expand, SquareRoundCorner, Slice, Grid3x3, LayoutGrid,
+  ZoomIn, SplitSquareHorizontal, ScissorsLineDashed, Link2, Boxes, ArrowLeftRight,
 } from 'lucide-react';
 import { useCadStore, type Tool } from '@/lib/cad/store';
 
@@ -43,6 +45,21 @@ const MEASURE: ToolBtn[] = [
   { tool: 'dimension', icon: Ruler, label: 'Dimension', key: 'DIM' },
   { tool: 'measure', icon: MoveDiagonal, label: 'Đo nhanh', key: 'DI' },
   { tool: 'text', icon: Type, label: 'Text', key: 'T' },
+];
+/** Nấc 1 — bộ chỉnh sửa (tương đương AutoCAD LT). Dòng lệnh vẫn là cách chính (TR/EX/F/CHA/…). */
+const MODIFY: ToolBtn[] = [
+  { tool: 'trim', icon: Scissors, label: 'Trim — cắt tại giao điểm', key: 'TR' },
+  { tool: 'extend', icon: Expand, label: 'Extend — kéo dài tới biên', key: 'EX' },
+  { tool: 'fillet', icon: SquareRoundCorner, label: 'Fillet — bo góc (0 = vuông góc)', key: 'F' },
+  { tool: 'chamfer', icon: Slice, label: 'Chamfer — vát góc', key: 'CHA' },
+  { tool: 'arrayrect', icon: Grid3x3, label: 'Array chữ nhật', key: 'AR' },
+  { tool: 'arraypolar', icon: LayoutGrid, label: 'Array tròn', key: 'ARP' },
+  { tool: 'scale', icon: ZoomIn, label: 'Scale', key: 'SC' },
+  { tool: 'stretch', icon: SplitSquareHorizontal, label: 'Stretch — kéo dãn (crossing window)', key: 'S' },
+  { tool: 'break', icon: ScissorsLineDashed, label: 'Break — bẻ đối tượng', key: 'BR' },
+  { tool: 'join', icon: Link2, label: 'Join — nối 2 đối tượng', key: 'J' },
+  { tool: 'explode', icon: Boxes, label: 'Explode — rã block/polyline', key: 'X' },
+  { tool: 'lengthen', icon: ArrowLeftRight, label: 'Lengthen — đổi độ dài', key: 'LEN' },
 ];
 
 function fire(name: string) {
@@ -109,6 +126,8 @@ export default function CadToolbar({ onToggleFurniture }: { onToggleFurniture: (
       </button>
       <Divider />
       <Group items={EDIT} />
+      <Divider />
+      <Group items={MODIFY} />
       <Divider />
       <Group items={MEASURE} />
       <Divider />

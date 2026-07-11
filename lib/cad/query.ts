@@ -39,7 +39,9 @@ function entEndpoints(e: Entity): Pt[] {
   }
 }
 
-function entSegments(e: Entity): [Pt, Pt][] {
+/** Phân rã 1 entity thành các đoạn thẳng (line/dim/polyline/rect/hatch). circle/arc/text/block
+ * không phân rã được kiểu này (rỗng) — dùng riêng cho các phép biến đổi hình học (modify.ts). */
+export function entSegments(e: Entity): [Pt, Pt][] {
   switch (e.type) {
     case 'line':
     case 'dim':

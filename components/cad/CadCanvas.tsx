@@ -26,6 +26,21 @@ import {
   withNewId,
 } from '@/lib/cad/geometry';
 import { wallChain, roomRect } from '@/lib/cad/commands';
+import {
+  trimEntity,
+  extendEntity,
+  filletTwoLines,
+  chamferTwoLines,
+  arrayRect,
+  arrayPolar,
+  scaleEntitiesAbout,
+  stretchEntities,
+  breakEntity,
+  joinEntities,
+  explodeEntity,
+  lengthenLine,
+  lengthenArc,
+} from '@/lib/cad/modify';
 
 interface Ix {
   cursorScreen: Pt;
@@ -40,6 +55,11 @@ interface Ix {
   selDrag: { start: Pt; startScreen: Pt } | null; // world start cho rubber-band
   blockRot: number;
   redraw: boolean;
+  // trạng thái 2-click cho FILLET/CHAMFER/JOIN + 1-click "chờ điểm 2" cho BREAK
+  filletFirst: { id: string; pick: Pt } | null;
+  chamferFirst: { id: string; pick: Pt } | null;
+  joinFirst: string | null;
+  breakTarget: { id: string; p1: Pt } | null;
 }
 
 function css(varName: string, fallback: string): string {
@@ -64,6 +84,10 @@ export default function CadCanvas() {
     selDrag: null,
     blockRot: 0,
     redraw: true,
+    filletFirst: null,
+    chamferFirst: null,
+    joinFirst: null,
+    breakTarget: null,
   });
 
   // ── vòng vẽ rAF ──
@@ -352,10 +376,275 @@ export default function CadCanvas() {
       case 'offset':
         handleOffset(w);
         break;
+      case 'trim':
+        handleTrim(w);
+        break;
+      case 'extend':
+        handleExtend(w);
+        break;
+      case 'fillet':
+        handleFillet(w);
+        break;
+      case 'chamfer':
+        handleChamfer(w);
+        break;
+      case 'arrayrect':
+        handleArrayRect();
+        break;
+      case 'arraypolar':
+        handleArrayPolar(w);
+        break;
+      case 'scale':
+        handleScale(w);
+        break;
+      case 'stretch':
+        handleStretch(w);
+        break;
+      case 'break':
+        handleBreak(w);
+        break;
+      case 'join':
+        handleJoin(w);
+        break;
+      case 'explode':
+        handleExplode(w);
+        break;
+      case 'lengthen':
+        handleLengthen(w);
+        break;
       default:
         break;
     }
     ix.current.redraw = true;
+  }
+
+  /** Đối tượng đang chọn (nếu có) hoặc TOÀN BỘ bản vẽ — dùng làm biên cắt/kéo dài cho TRIM/EXTEND. */
+  function cuttersOrAll(): Entity[] {
+    const st = useCadStore.getState();
+    if (!st.selection.length) return st.doc.entities;
+    const sel = new Set(st.selection);
+    return st.doc.entities.filter((e) => sel.has(e.id));
+  }
+
+  function handleTrim(w: Pt) {
+    const st = useCadStore.getState();
+    const id = hitTest(st.doc, w, tolMm());
+    if (!id) return;
+    const target = st.doc.entities.find((e) => e.id === id);
+    if (!target) return;
+    const cutters = cuttersOrAll().filter((c) => c.id !== target.id);
+    const result = trimEntity(target, cutters, w);
+    if (result) {
+      st.removeIds([target.id]);
+      st.addEntities(result);
+    } else {
+      st.setStatus('Trim: không có giao điểm ở đây (dùng đối tượng đang chọn làm biên, hoặc bỏ chọn để cắt theo toàn bộ bản vẽ).');
+    }
+  }
+
+  function handleExtend(w: Pt) {
+    const st = useCadStore.getState();
+    const id = hitTest(st.doc, w, tolMm());
+    if (!id) return;
+    const target = st.doc.entities.find((e) => e.id === id);
+    if (!target) return;
+    const boundaries = cuttersOrAll().filter((c) => c.id !== target.id);
+    const result = extendEntity(target, boundaries, w);
+    if (result) st.updateEntities([result]);
+    else st.setStatus('Extend: không tìm thấy biên phía đầu kéo dài (chỉ hỗ trợ LINE/ARC).');
+  }
+
+  function handleFillet(w: Pt) {
+    const st = useCadStore.getState();
+    const id = hitTest(st.doc, w, tolMm());
+    if (!id) return;
+    const target = st.doc.entities.find((e) => e.id === id);
+    if (!target || target.type !== 'line') {
+      st.setStatus('Fillet: chỉ hỗ trợ 2 đường thẳng (LINE).');
+      return;
+    }
+    if (!ix.current.filletFirst) {
+      ix.current.filletFirst = { id, pick: w };
+      st.setStatus(`Fillet: đã chọn đường 1 — click đường thứ 2 (bán kính ${st.filletRadius}mm — gõ số + Enter để đổi).`);
+      return;
+    }
+    const first = ix.current.filletFirst;
+    ix.current.filletFirst = null;
+    if (first.id === id) return;
+    const l1 = st.doc.entities.find((e) => e.id === first.id);
+    if (!l1 || l1.type !== 'line') return;
+    const r = filletTwoLines(l1, target, st.filletRadius, first.pick, w);
+    if (r) {
+      st.updateEntities([r.line1, r.line2]);
+      if (r.arc) st.addEntity(r.arc);
+      st.setStatus('Fillet: đã bo góc.');
+    } else {
+      st.setStatus('Fillet: 2 đường song song/thẳng hàng — không bo được.');
+    }
+  }
+
+  function handleChamfer(w: Pt) {
+    const st = useCadStore.getState();
+    const id = hitTest(st.doc, w, tolMm());
+    if (!id) return;
+    const target = st.doc.entities.find((e) => e.id === id);
+    if (!target || target.type !== 'line') {
+      st.setStatus('Chamfer: chỉ hỗ trợ 2 đường thẳng (LINE).');
+      return;
+    }
+    if (!ix.current.chamferFirst) {
+      ix.current.chamferFirst = { id, pick: w };
+      st.setStatus(`Chamfer: đã chọn đường 1 — click đường thứ 2 (d1=${st.chamferD1}mm, d2=${st.chamferD2}mm).`);
+      return;
+    }
+    const first = ix.current.chamferFirst;
+    ix.current.chamferFirst = null;
+    if (first.id === id) return;
+    const l1 = st.doc.entities.find((e) => e.id === first.id);
+    if (!l1 || l1.type !== 'line') return;
+    const r = chamferTwoLines(l1, target, st.chamferD1, st.chamferD2, first.pick, w);
+    if (r) {
+      st.updateEntities([r.line1, r.line2]);
+      st.addEntity(r.connector);
+      st.setStatus('Chamfer: đã vát góc.');
+    } else {
+      st.setStatus('Chamfer: 2 đường song song/thẳng hàng — không vát được.');
+    }
+  }
+
+  function handleArrayRect() {
+    const st = useCadStore.getState();
+    const sel = needSelection();
+    if (!sel.length) return;
+    const rows = parseInt(window.prompt('Array chữ nhật — số hàng:', '2') ?? '', 10);
+    const cols = parseInt(window.prompt('Số cột:', '2') ?? '', 10);
+    const dx = parseFloat(window.prompt('Khoảng cách cột theo X (mm):', '1000') ?? '');
+    const dy = parseFloat(window.prompt('Khoảng cách hàng theo Y (mm):', '1000') ?? '');
+    if ([rows, cols, dx, dy].every((n) => Number.isFinite(n))) {
+      const targets = st.doc.entities.filter((e) => sel.includes(e.id));
+      st.addEntities(arrayRect(targets, rows, cols, dx, dy));
+    }
+  }
+
+  function handleArrayPolar(w: Pt) {
+    const st = useCadStore.getState();
+    const sel = needSelection();
+    if (!sel.length) return;
+    const count = parseInt(window.prompt('Array tròn — số bản (kể cả gốc):', '6') ?? '', 10);
+    const angle = parseFloat(window.prompt('Tổng góc quét (độ, 360 = đầy vòng):', '360') ?? '');
+    if (Number.isFinite(count) && count >= 2 && Number.isFinite(angle)) {
+      const targets = st.doc.entities.filter((e) => sel.includes(e.id));
+      st.addEntities(arrayPolar(targets, w, count, angle, true));
+    }
+  }
+
+  function handleScale(w: Pt) {
+    const st = useCadStore.getState();
+    const sel = needSelection();
+    if (!sel.length) return;
+    const f = parseFloat(window.prompt('Hệ số scale (VD 2, 0.5):', '1') ?? '');
+    if (Number.isFinite(f) && f > 0) {
+      const targets = st.doc.entities.filter((e) => sel.includes(e.id));
+      st.updateEntities(scaleEntitiesAbout(targets, w, f));
+    }
+  }
+
+  function handleStretch(w: Pt) {
+    const st = useCadStore.getState();
+    const P = ix.current.pts;
+    P.push(w);
+    if (P.length === 4) {
+      const dx = P[3].x - P[2].x;
+      const dy = P[3].y - P[2].y;
+      st.updateEntities(stretchEntities(st.doc.entities, { min: P[0], max: P[1] }, dx, dy));
+      ix.current.pts = [];
+      st.setStatus('Stretch: đã kéo dãn các điểm trong khung crossing.');
+    } else if (P.length === 1) {
+      st.setStatus('Stretch: click góc thứ 2 của khung crossing.');
+    } else if (P.length === 2) {
+      st.setStatus('Stretch: click điểm gốc (base point).');
+    } else if (P.length === 3) {
+      st.setStatus('Stretch: click điểm đích.');
+    }
+  }
+
+  function handleBreak(w: Pt) {
+    const st = useCadStore.getState();
+    if (!ix.current.breakTarget) {
+      const id = hitTest(st.doc, w, tolMm());
+      if (id) {
+        ix.current.breakTarget = { id, p1: w };
+        st.setStatus('Break: click điểm cắt thứ 2 (Enter = cắt tại đúng điểm vừa click, không hở).');
+      }
+      return;
+    }
+    const { id, p1 } = ix.current.breakTarget;
+    ix.current.breakTarget = null;
+    const target = st.doc.entities.find((e) => e.id === id);
+    if (!target) return;
+    const result = breakEntity(target, p1, w);
+    if (result) {
+      st.removeIds([target.id]);
+      st.addEntities(result);
+    } else {
+      st.setStatus('Break: chỉ hỗ trợ LINE/ARC.');
+    }
+  }
+
+  function handleJoin(w: Pt) {
+    const st = useCadStore.getState();
+    const id = hitTest(st.doc, w, tolMm());
+    if (!id) return;
+    if (!ix.current.joinFirst) {
+      ix.current.joinFirst = id;
+      st.setStatus('Join: click đối tượng thứ 2 cần nối.');
+      return;
+    }
+    const firstId = ix.current.joinFirst;
+    ix.current.joinFirst = null;
+    if (firstId === id) return;
+    const e1 = st.doc.entities.find((e) => e.id === firstId);
+    const e2 = st.doc.entities.find((e) => e.id === id);
+    if (!e1 || !e2) return;
+    const joined = joinEntities(e1, e2);
+    if (joined) {
+      st.removeIds([e1.id, e2.id]);
+      st.addEntity(joined);
+      st.setStatus('Join: đã nối 2 đối tượng.');
+    } else {
+      st.setStatus('Join: không nối được (không thẳng hàng / không cùng đường tròn tiếp giáp / không chung đầu mút).');
+    }
+  }
+
+  function handleExplode(w: Pt) {
+    const st = useCadStore.getState();
+    const id = hitTest(st.doc, w, tolMm());
+    if (!id) return;
+    const target = st.doc.entities.find((e) => e.id === id);
+    if (!target) return;
+    const result = explodeEntity(target);
+    if (result.length === 1 && result[0].id === target.id) {
+      st.setStatus('Explode: đối tượng này không thể rã thêm.');
+      return;
+    }
+    st.removeIds([target.id]);
+    st.addEntities(result);
+  }
+
+  function handleLengthen(w: Pt) {
+    const st = useCadStore.getState();
+    const id = hitTest(st.doc, w, tolMm());
+    if (!id) return;
+    const target = st.doc.entities.find((e) => e.id === id);
+    if (!target) return;
+    if (target.type === 'line') {
+      st.updateEntities([lengthenLine(target, st.lengthenDelta, w)]);
+    } else if (target.type === 'arc') {
+      const deltaRad = st.lengthenDelta / Math.max(1, target.r);
+      st.updateEntities([lengthenArc(target, deltaRad, w)]);
+    } else {
+      st.setStatus('Lengthen: chỉ hỗ trợ LINE/ARC.');
+    }
   }
 
   function finishPolyline(closed: boolean) {
@@ -490,12 +779,42 @@ export default function CadCanvas() {
       if (e.key === 'Escape') {
         ix.current.pts = [];
         ix.current.dynBuf = '';
+        ix.current.filletFirst = null;
+        ix.current.chamferFirst = null;
+        ix.current.joinFirst = null;
+        ix.current.breakTarget = null;
         st.clearSelection();
         st.setTool('select');
         ix.current.redraw = true;
         return;
       }
       if (e.key === 'Enter') {
+        // fillet/chamfer/lengthen: số gõ trước khi click là THAM SỐ (bán kính/khoảng cách/delta),
+        // không phải điểm — chốt riêng, không đi qua handleClick.
+        if (ix.current.dynBuf && (st.tool === 'fillet' || st.tool === 'chamfer' || st.tool === 'lengthen')) {
+          const n = parseFloat(ix.current.dynBuf);
+          if (Number.isFinite(n)) {
+            if (st.tool === 'fillet') st.setFilletRadius(n);
+            else if (st.tool === 'chamfer') st.setChamferDist(n, n);
+            else st.setLengthenDelta(n);
+            st.setStatus(`Đã đặt tham số = ${n}mm.`);
+          }
+          ix.current.dynBuf = '';
+          return;
+        }
+        if (st.tool === 'break' && ix.current.breakTarget) {
+          const { id, p1 } = ix.current.breakTarget;
+          ix.current.breakTarget = null;
+          const target = st.doc.entities.find((en) => en.id === id);
+          if (target) {
+            const result = breakEntity(target, p1, p1);
+            if (result) {
+              st.removeIds([target.id]);
+              st.addEntities(result);
+            }
+          }
+          return;
+        }
         if (st.tool === 'polyline') finishPolyline(false);
         else if (st.tool === 'wall') finishWall(false);
         else if (ix.current.dynBuf && ix.current.pts.length) {
@@ -703,6 +1022,48 @@ export default function CadCanvas() {
       case 'mirror':
         if (P.length === 1) line(P[0], cur);
         break;
+      case 'stretch': {
+        // P0,P1 = khung crossing; P2,P3 = base/đích (di dời)
+        if (P.length === 1) {
+          const a = S(P[0]);
+          const b = S(cur);
+          ctx.strokeRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y));
+        } else if (P.length >= 2) {
+          const a = S(P[0]);
+          const b = S(P[1]);
+          ctx.strokeRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y));
+          if (P.length === 3) line(P[2], cur);
+        }
+        break;
+      }
+      case 'fillet':
+      case 'chamfer': {
+        const first = st.tool === 'fillet' ? ix.current.filletFirst : ix.current.chamferFirst;
+        if (first) {
+          const p = S(first.pick);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'break': {
+        if (ix.current.breakTarget) {
+          const p = S(ix.current.breakTarget.p1);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+          ctx.stroke();
+          line(ix.current.breakTarget.p1, cur);
+        }
+        break;
+      }
+      case 'join': {
+        if (ix.current.joinFirst) {
+          const target = st.doc.entities.find((e) => e.id === ix.current.joinFirst);
+          if (target) drawEntity(ctx, v, st.doc, target, { stroke: accent, forceColor: accent, lineWidth: 2.6, text: false });
+        }
+        break;
+      }
       case 'block': {
         // ghost block theo con trỏ
         const bId = st.pendingBlock;

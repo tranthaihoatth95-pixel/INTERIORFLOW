@@ -30,7 +30,19 @@ export type Tool =
   | 'block'
   | 'wall'
   | 'room'
-  | 'pan';
+  | 'pan'
+  | 'trim'
+  | 'extend'
+  | 'fillet'
+  | 'chamfer'
+  | 'arrayrect'
+  | 'arraypolar'
+  | 'scale'
+  | 'stretch'
+  | 'break'
+  | 'join'
+  | 'explode'
+  | 'lengthen';
 
 export interface SnapSettings {
   enabled: boolean;
@@ -59,6 +71,13 @@ interface CadState {
   offsetDist: number;
   /** bề dày tường nhớ cho lệnh WALL (mm) */
   wallThickness: number;
+  /** bán kính nhớ cho lệnh FILLET (mm, 0 = vuông góc) */
+  filletRadius: number;
+  /** khoảng cách nhớ cho lệnh CHAMFER (mm) — d1 cạnh chọn trước, d2 cạnh chọn sau */
+  chamferD1: number;
+  chamferD2: number;
+  /** độ dài/góc nhớ cho lệnh LENGTHEN (mm cho line; quy đổi ra rad qua bán kính cho arc) */
+  lengthenDelta: number;
   past: Doc[];
   future: Doc[];
   /** dòng lệnh mini + thông báo trạng thái */
@@ -91,6 +110,9 @@ interface CadState {
   setPendingBlock: (b: string | null) => void;
   setOffsetDist: (d: number) => void;
   setWallThickness: (d: number) => void;
+  setFilletRadius: (d: number) => void;
+  setChamferDist: (d1: number, d2: number) => void;
+  setLengthenDelta: (d: number) => void;
 
   importDoc: (d: Doc, mode: 'replace' | 'merge') => void;
   scaleAll: (factor: number) => void;
@@ -118,6 +140,10 @@ export const useCadStore = create<CadState>((set, get) => ({
   pendingBlock: null,
   offsetDist: 100,
   wallThickness: 110,
+  filletRadius: 0,
+  chamferD1: 100,
+  chamferD2: 100,
+  lengthenDelta: 100,
   past: [],
   future: [],
   status: 'Sẵn sàng — chọn công cụ hoặc gõ lệnh (L, PL, REC, C…).',
@@ -214,6 +240,9 @@ export const useCadStore = create<CadState>((set, get) => ({
   setPendingBlock: (pendingBlock) => set({ pendingBlock, tool: pendingBlock ? 'block' : get().tool }),
   setOffsetDist: (offsetDist) => set({ offsetDist }),
   setWallThickness: (wallThickness) => set({ wallThickness }),
+  setFilletRadius: (filletRadius) => set({ filletRadius }),
+  setChamferDist: (chamferD1, chamferD2) => set({ chamferD1, chamferD2 }),
+  setLengthenDelta: (lengthenDelta) => set({ lengthenDelta }),
 
   importDoc: (d, mode) => {
     get().snapshot();
@@ -285,6 +314,18 @@ function toolHint(t: Tool): string {
     wall: 'Wall (W): click các điểm tim tường liên tiếp; Enter/double-click kết thúc. Gõ số + Enter = bề dày (mm).',
     room: 'Room: click 2 góc phòng → tự vẽ 4 tường + nhãn tên/diện tích.',
     pan: 'Pan: kéo để di chuyển khung nhìn.',
+    trim: 'Trim (TR): click phần đối tượng cần xoá (dùng đối tượng đang chọn làm biên cắt, hoặc toàn bộ bản vẽ nếu chưa chọn gì).',
+    extend: 'Extend (EX): click đầu đối tượng cần kéo dài tới biên gần nhất (biên = đối tượng đang chọn, hoặc toàn bộ bản vẽ).',
+    fillet: 'Fillet (F): click 2 đường cần bo góc. Gõ số + Enter = bán kính (mm, 0 = vuông góc).',
+    chamfer: 'Chamfer (CHA): click 2 đường cần vát góc. Gõ số + Enter = khoảng cách d1 (mm, dùng chung d2).',
+    arrayrect: 'Array chữ nhật (AR): chọn đối tượng trước → click để nhập số hàng/cột/khoảng cách.',
+    arraypolar: 'Array tròn (ARP): chọn đối tượng trước → click tâm mảng → nhập số bản/góc quét.',
+    scale: 'Scale (SC): chọn đối tượng trước → click điểm gốc (base) → nhập hệ số scale.',
+    stretch: 'Stretch (S): click 2 góc khung crossing bao phần cần kéo dãn → click điểm gốc → điểm đích.',
+    break: 'Break (BR): click đối tượng tại điểm cắt 1 → click điểm cắt 2 (Enter sau 1 click = cắt tại đúng điểm đó).',
+    join: 'Join (J): click đối tượng thứ nhất → click đối tượng thứ 2 cần nối.',
+    explode: 'Explode (X): click block/polyline/rect cần rã thành line/primitive rời.',
+    lengthen: 'Lengthen (LEN): click gần đầu đối tượng cần đổi độ dài. Gõ số + Enter = delta (mm, âm = rút ngắn).',
   };
   return H[t];
 }
