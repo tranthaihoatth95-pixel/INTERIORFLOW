@@ -20,6 +20,7 @@ import {
 import { NODE_DEFINITIONS } from '@/lib/nodes/registry';
 import { CATEGORY_META, type NodeCategory } from '@/lib/types';
 import { useFlowStore } from '@/lib/store';
+import { modKey, modShiftKey } from '@/lib/kbd';
 import { runFlow } from '@/lib/execution';
 
 interface Cmd {
@@ -84,8 +85,8 @@ export function CommandPalette() {
       { id: 'auto-layout', label: 'Tự sắp xếp graph', hint: 'auto-layout', group: 'Hành động', icon: LayoutGrid, keywords: 'arrange dagre tidy sắp xếp', run: run(() => s.autoLayout()) },
       { id: 'fit', label: 'Fit view', group: 'Hành động', icon: Maximize, keywords: 'zoom vừa màn hình', run: run(() => fitView({ padding: 0.2, duration: 300 })) },
       { id: 'snap', label: `Snap lưới: ${s.snapGrid ? 'TẮT' : 'BẬT'}`, group: 'Hành động', icon: Grid3x3, keywords: 'grid canh lề align', run: run(() => s.toggleSnap()) },
-      { id: 'undo', label: 'Undo', hint: '⌘Z', group: 'Hành động', icon: Undo2, keywords: 'hoàn tác', run: run(() => s.undo()) },
-      { id: 'redo', label: 'Redo', hint: '⌘⇧Z', group: 'Hành động', icon: Redo2, keywords: 'làm lại', run: run(() => s.redo()) },
+      { id: 'undo', label: 'Undo', hint: modKey('Z'), group: 'Hành động', icon: Undo2, keywords: 'hoàn tác', run: run(() => s.undo()) },
+      { id: 'redo', label: 'Redo', hint: modShiftKey('Z'), group: 'Hành động', icon: Redo2, keywords: 'làm lại', run: run(() => s.redo()) },
       { id: 'note', label: 'Thêm ghi chú (sticky)', group: 'Hành động', icon: StickyNote, keywords: 'note comment', run: run(() => s.addNote(centerPos())) },
       { id: 'lib', label: 'Mở Node Library', group: 'Hành động', icon: Boxes, keywords: 'panel node', run: run(() => s.setPanel('library')) },
       { id: 'gallery', label: 'Mở Gallery', group: 'Hành động', icon: Images, keywords: 'ảnh asset', run: run(() => s.setPanel('gallery')) },

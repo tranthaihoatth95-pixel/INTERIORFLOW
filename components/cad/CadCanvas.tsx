@@ -1021,11 +1021,17 @@ export default function CadCanvas() {
       if (tag === 'INPUT' || tag === 'TEXTAREA') return; // đang gõ command line / layer name
       const st = useCadStore.getState();
 
-      // undo/redo
+      // undo/redo — đồng bộ Mac (⌘Z / ⌘⇧Z) và Windows (Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y)
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         if (e.shiftKey) st.redo();
         else st.undo();
+        ix.current.redraw = true;
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        st.redo();
         ix.current.redraw = true;
         return;
       }

@@ -8,6 +8,7 @@ import { NODE_DEFINITIONS, NODE_REGISTRY } from '@/lib/nodes/registry';
 import { useFlowStore } from '@/lib/store';
 import { useSketchStore } from '@/lib/sketch/sketchStore';
 import { SketchStudioModal } from '@/components/sketch/SketchStudioModal';
+import { modKey } from '@/lib/kbd';
 import type { NodeDefinition } from '@/lib/types';
 import { TAG_ORDER, TAG_META, tagsFor, type NodeTag } from '@/lib/nodes/tags';
 import { PHASE_MAP, DEFAULT_PHASE } from '@/lib/phases';
@@ -186,7 +187,7 @@ export function NodeLibraryPanel() {
         >
           <Command size={11} className="shrink-0" />
           Tìm nhanh mọi thứ
-          <kbd className="ml-auto shrink-0 rounded border border-[var(--border)] bg-[var(--field)] px-1 py-0.5 text-[9px]">⌘K</kbd>
+          <kbd suppressHydrationWarning className="ml-auto shrink-0 rounded border border-[var(--border)] bg-[var(--field)] px-1 py-0.5 text-[9px]">{modKey('K')}</kbd>
         </button>
 
         {/* Sketch Studio — demo & lối vào nhanh cho cơ chế vẽ tay tự do */}

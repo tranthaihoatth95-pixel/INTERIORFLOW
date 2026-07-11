@@ -6,6 +6,7 @@ import { useReactFlow, useViewport } from '@xyflow/react';
 import { useFlowStore } from '@/lib/store';
 import { springSheet, easeApple } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { modKey, modShiftKey } from '@/lib/kbd';
 
 export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
   const tool = useFlowStore((s) => s.tool);
@@ -70,10 +71,10 @@ export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
         <StickyNote size={15} />
       </Btn>
       <div className="mx-1 h-5 w-px bg-[var(--border)]" />
-      <Btn title="Undo (⌘Z)" disabled={!canUndo} onClick={undo}>
+      <Btn title={`Undo (${modKey('Z')})`} disabled={!canUndo} onClick={undo}>
         <Undo2 size={15} />
       </Btn>
-      <Btn title="Redo (⌘⇧Z)" disabled={!canRedo} onClick={redo}>
+      <Btn title={`Redo (${modShiftKey('Z')})`} disabled={!canRedo} onClick={redo}>
         <Redo2 size={15} />
       </Btn>
       <div className="mx-1 h-5 w-px bg-[var(--border)]" />
@@ -96,7 +97,7 @@ export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
       <Btn title={`Snap lưới: ${snapGrid ? 'đang bật' : 'đang tắt'}`} active={snapGrid} onClick={() => toggleSnap()}>
         <Grid3x3 size={15} />
       </Btn>
-      <Btn title="Command palette (⌘K)" onClick={() => setPaletteOpen(true)}>
+      <Btn title={`Command palette (${modKey('K')})`} onClick={() => setPaletteOpen(true)}>
         <Command size={15} />
       </Btn>
     </motion.div>

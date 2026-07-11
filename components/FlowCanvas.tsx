@@ -188,7 +188,7 @@ export function FlowCanvas() {
     [screenToFlowPosition, addNode, setConnectError, setNotice],
   );
 
-  // Keyboard: Cmd+D duplicate, Cmd+Z / Cmd+Shift+Z undo-redo, Space giữ = pan tạm
+  // Keyboard (đồng bộ Mac ⌘ / Windows Ctrl): mod+D nhân bản, mod+Z undo, mod+⇧Z & mod+Y redo, Space giữ = pan tạm
   useEffect(() => {
     let spaceHeld = false;
     let toolBeforeSpace: 'select' | 'pan' = 'select';
@@ -205,6 +205,10 @@ export function FlowCanvas() {
         e.preventDefault();
         if (e.shiftKey) useFlowStore.getState().redo();
         else useFlowStore.getState().undo();
+      } else if (mod && e.key.toLowerCase() === 'y') {
+        // redo kiểu Windows (Ctrl+Y) — song song ⌘⇧Z của Mac
+        e.preventDefault();
+        useFlowStore.getState().redo();
       } else if (e.key === ' ' && !spaceHeld) {
         e.preventDefault();
         spaceHeld = true;

@@ -15,6 +15,7 @@ import {
   Radius, Diameter, DraftingCompass, ChevronsRight, GitBranch, PaintBucket,
 } from 'lucide-react';
 import { useCadStore, type Tool } from '@/lib/cad/store';
+import { modKey, modShiftKey } from '@/lib/kbd';
 
 interface ToolBtn {
   tool: Tool;
@@ -178,10 +179,10 @@ export default function CadToolbar({ onToggleFurniture }: { onToggleFurniture: (
         <Maximize size={16} />
       </button>
       <Divider />
-      <button type="button" onClick={undo} disabled={!past} title="Undo (⌘Z)" style={btn(false, !past)}>
+      <button type="button" onClick={undo} disabled={!past} title={`Undo (${modKey('Z')})`} style={btn(false, !past)}>
         <Undo2 size={16} />
       </button>
-      <button type="button" onClick={redo} disabled={!future} title="Redo (⌘⇧Z)" style={btn(false, !future)}>
+      <button type="button" onClick={redo} disabled={!future} title={`Redo (${modShiftKey('Z')})`} style={btn(false, !future)}>
         <Redo2 size={16} />
       </button>
     </div>
