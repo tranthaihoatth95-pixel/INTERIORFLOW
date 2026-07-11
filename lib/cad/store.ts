@@ -12,6 +12,14 @@ import { create } from 'zustand';
 import type { Doc, Entity, Layer, Viewport } from './model';
 import { emptyDoc } from './model';
 
+// Dev-only: expose store cho debugging (window.__cadStore) — cùng pattern với
+// window.__flowStore trong lib/store.ts, không lọt vào bản build production.
+declare global {
+  interface Window {
+    __cadStore?: unknown;
+  }
+}
+
 export type Tool =
   | 'select'
   | 'line'
@@ -244,6 +252,10 @@ export const useCadStore = create<CadState>((set, get) => ({
 
   reset: () => set({ doc: emptyDoc(), selection: [], past: [], future: [], currentLayer: 'l-wall' }),
 }));
+
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  window.__cadStore = useCadStore;
+}
 
 function mergeLayers(a: Layer[], b: Layer[]): Layer[] {
   const byName = new Map(a.map((l) => [l.name, l]));
