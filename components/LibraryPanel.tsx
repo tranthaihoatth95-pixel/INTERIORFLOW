@@ -9,6 +9,13 @@ import { cn } from '@/lib/utils';
 import { loadImage, extractPalette } from '@/lib/imaging';
 import { USAGES } from '@/lib/refingest';
 import { classifyImage } from '@/lib/classify';
+import {
+  searchAssets,
+  orderCategoriesByPhase,
+  phaseRelevance,
+  PHASE_CATEGORIES,
+  type RefPhase,
+} from '@/lib/ref-search';
 
 export const ASSET_MIME = 'application/interiorflow-asset-url';
 
@@ -28,15 +35,22 @@ interface ServerAsset {
   uploader: string;
   mine: boolean;
   url: string;
+  // ---- Gu Engine fields (API trả về; trước đây bị bỏ nên search không dùng được) ----
+  usage: string;
+  palette: string[];
+  caption: string;
 }
 
 export function LibraryPanel() {
   const panel = useFlowStore((s) => s.panel);
   const setPanel = useFlowStore((s) => s.setPanel);
   const setLightboxUrl = useFlowStore((s) => s.setLightboxUrl);
+  // Chặng hiện tại (Concept/Layout-CAD · Render · Present) → hiển thị theo ngữ cảnh.
+  const workspace = useFlowStore((s) => s.workspace) as RefPhase | null;
   const [items, setItems] = useState<ServerAsset[]>([]);
   const [cat, setCat] = useState<string>('Ref nội thất');
   const [query, setQuery] = useState('');
+  const [crossCat, setCrossCat] = useState(false); // tìm xuyên mọi category
   const [tags, setTags] = useState('');
   const [usage, setUsage] = useState<string>('auto');
   const [uploading, setUploading] = useState(false);
@@ -55,12 +69,17 @@ export function LibraryPanel() {
 
   if (panel !== 'assets') return null;
 
-  const q = query.trim().toLowerCase();
-  const filtered = items.filter(
-    (i) =>
-      i.category === cat &&
-      (!q || i.name.toLowerCase().includes(q) || i.tags.toLowerCase().includes(q)),
-  );
+  // Tìm kiếm NÂNG CẤP: caption + usage + fuzzy VI–EN + màu, có thể xuyên category.
+  // Khi không gõ gì: ưu tiên asset đúng nhu cầu CHẶNG hiện tại lên đầu (hiển thị theo ngữ cảnh).
+  const hasQuery = query.trim().length > 0;
+  const matched = searchAssets(query, items, { crossCategory: crossCat, category: cat });
+  const filtered = hasQuery
+    ? matched
+    : [...matched].sort((a, b) => phaseRelevance(workspace, b.usage) - phaseRelevance(workspace, a.usage));
+
+  // Thứ tự tab category: nhóm liên quan chặng lên trước; đánh dấu ★ để người dùng thấy gợi ý.
+  const orderedCats = orderCategoriesByPhase(LIBRARY_CATEGORIES, workspace);
+  const phaseCats = new Set(workspace ? PHASE_CATEGORIES[workspace] ?? [] : []);
 
   return (
     <AnimatePresence>
@@ -87,17 +106,19 @@ export function LibraryPanel() {
       </div>
 
       <div className="flex flex-wrap gap-1 px-2.5 pt-2.5">
-        {LIBRARY_CATEGORIES.map((c) => (
+        {orderedCats.map((c) => (
           <button
             key={c}
             onClick={() => setCat(c)}
+            title={phaseCats.has(c) ? 'Hợp với chặng đang làm' : undefined}
             className={cn(
               'rounded-md px-2 py-1 text-[10px] transition-colors',
-              cat === c
+              cat === c && !crossCat
                 ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
                 : 'text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t2)]',
             )}
           >
+            {phaseCats.has(c) && <span className="mr-0.5 text-[var(--accent)]">★</span>}
             {c}
           </button>
         ))}
@@ -106,10 +127,19 @@ export function LibraryPanel() {
       <div className="space-y-1.5 p-2.5">
         <input
           className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
-          placeholder="Tìm theo tên / tag…"
+          placeholder="Tìm: tên · tag · mô tả · màu (vd 'gỗ ấm', 'be tong', 'xanh')…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        <label className="flex cursor-pointer items-center gap-1.5 px-0.5 text-[10px] text-[var(--t4)]">
+          <input
+            type="checkbox"
+            checked={crossCat}
+            onChange={(e) => setCrossCat(e.target.checked)}
+            className="h-3 w-3 accent-[var(--accent)]"
+          />
+          Tìm xuyên mọi category
+        </label>
         <select
           value={usage}
           onChange={(e) => setUsage(e.target.value)}
