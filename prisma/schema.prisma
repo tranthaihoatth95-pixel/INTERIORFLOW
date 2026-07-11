@@ -26,6 +26,27 @@ model User {
   messages     ChatMessage[]
   assets       LibraryAsset[]
   projects     Project[]
+  integrations IntegrationAccount[]
+}
+
+// Token OAuth của user cho từng dịch vụ ngoài (google/ms365/zoom/zalo/spotify/youtube/team...).
+// accessToken/refreshToken LƯU DẠNG MÃ HOÁ (AES-256-GCM, xem lib/integrations/crypto.ts) —
+// SQLite là file trên đĩa, không lưu token thô. Mỗi user × provider chỉ 1 bản ghi.
+model IntegrationAccount {
+  id           String   @id @default(cuid())
+  userId       String
+  provider     String
+  accessToken  String // đã mã hoá
+  refreshToken String? // đã mã hoá
+  scope        String   @default("")
+  expiresAt    DateTime?
+  meta         String? // JSON tuỳ dịch vụ (account id, email, tenant...)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
 }
 
 model Project {

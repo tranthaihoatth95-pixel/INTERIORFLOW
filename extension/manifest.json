@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "InteriorFlow Clipper",
+  "version": "0.1.0",
+  "description": "Clip ảnh tham khảo từ web thẳng vào thư viện Reference của InteriorFlow.",
+  "permissions": ["contextMenus", "activeTab"],
+  "host_permissions": ["http://localhost:3000/*"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "Clip vào InteriorFlow" },
+  "icons": {}
+}
