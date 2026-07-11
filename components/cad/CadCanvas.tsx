@@ -41,6 +41,7 @@ import {
   lengthenLine,
   lengthenArc,
 } from '@/lib/cad/modify';
+import { gripsOf, hitTestGrip, applyGripMove, type Grip } from '@/lib/cad/grips';
 
 interface Ix {
   cursorScreen: Pt;
@@ -60,6 +61,9 @@ interface Ix {
   chamferFirst: { id: string; pick: Pt } | null;
   joinFirst: string | null;
   breakTarget: { id: string; p1: Pt } | null;
+  // Nấc 2 — grips: kéo trực tiếp điểm neo của entity đang chọn (chỉ khi chọn đúng 1)
+  gripDrag: { entityId: string; grip: Grip } | null;
+  gripPreview: Entity | null;
 }
 
 function css(varName: string, fallback: string): string {
@@ -88,6 +92,8 @@ export default function CadCanvas() {
     chamferFirst: null,
     joinFirst: null,
     breakTarget: null,
+    gripDrag: null,
+    gripPreview: null,
   });
 
   // ── vòng vẽ rAF ──
@@ -160,34 +166,44 @@ export default function CadCanvas() {
     return 10 / useCadStore.getState().viewport.scale;
   }
 
-  /** điểm hiệu dụng (snap + ortho + dynamic) so với base point (nếu có). */
-  function effectivePoint(base?: Pt): Pt {
+  /** Áp ràng buộc hướng (ortho ưu tiên nhất, rồi polar tracking) lên vector (dx,dy). Ortho khoá
+   * trục 90° tuyệt đối (giữ trục lớn hơn). Polar tracking bắt vào bội số `polarStep` độ CHỈ khi
+   * cách góc đó trong dung sai (giống "aperture" của AutoCAD) — ngoài dung sai thì tự do. */
+  function applyDirectionConstraint(dx: number, dy: number): { dx: number; dy: number } {
+    if (ix.current.ortho) {
+      return Math.abs(dx) >= Math.abs(dy) ? { dx, dy: 0 } : { dx: 0, dy };
+    }
     const st = useCadStore.getState();
+    if (st.polarTracking && (dx !== 0 || dy !== 0)) {
+      const d = Math.hypot(dx, dy);
+      const ang = Math.atan2(dy, dx);
+      const stepRad = (st.polarStep * Math.PI) / 180;
+      const nearest = Math.round(ang / stepRad) * stepRad;
+      const deltaDeg = Math.abs(((ang - nearest) * 180) / Math.PI);
+      if (deltaDeg <= 4) return { dx: Math.cos(nearest) * d, dy: Math.sin(nearest) * d };
+    }
+    return { dx, dy };
+  }
+
+  /** điểm hiệu dụng (snap + ortho/polar tracking + dynamic) so với base point (nếu có). */
+  function effectivePoint(base?: Pt): Pt {
     let p = ix.current.snap.pt;
     if (base) {
       // dynamic input: độ dài theo hướng con trỏ
       if (ix.current.dynBuf) {
         const len = parseFloat(ix.current.dynBuf);
         if (Number.isFinite(len)) {
-          let dx = ix.current.cursorWorld.x - base.x;
-          let dy = ix.current.cursorWorld.y - base.y;
-          if (ix.current.ortho) {
-            if (Math.abs(dx) >= Math.abs(dy)) dy = 0;
-            else dx = 0;
-          }
+          const dx0 = ix.current.cursorWorld.x - base.x;
+          const dy0 = ix.current.cursorWorld.y - base.y;
+          const { dx, dy } = applyDirectionConstraint(dx0, dy0);
           const d = Math.hypot(dx, dy) || 1;
           p = { x: base.x + (dx / d) * len, y: base.y + (dy / d) * len };
           return p;
         }
       }
-      if (ix.current.ortho) {
-        const dx = p.x - base.x;
-        const dy = p.y - base.y;
-        if (Math.abs(dx) >= Math.abs(dy)) p = { x: p.x, y: base.y };
-        else p = { x: base.x, y: p.y };
-      }
+      const { dx, dy } = applyDirectionConstraint(p.x - base.x, p.y - base.y);
+      p = { x: base.x + dx, y: base.y + dy };
     }
-    void st;
     return p;
   }
 
@@ -202,7 +218,8 @@ export default function CadCanvas() {
     const st = useCadStore.getState();
     ix.current.cursorScreen = screen;
     ix.current.cursorWorld = screenToWorld(st.viewport, screen);
-    ix.current.snap = findSnap(st.doc, ix.current.cursorWorld, tolMm(), st.gridStep, st.snap);
+    const from = ix.current.pts[ix.current.pts.length - 1]; // điểm gốc lệnh hiện tại (nếu có) — cho perpendicular/tangent
+    ix.current.snap = findSnap(st.doc, ix.current.cursorWorld, tolMm(), st.gridStep, st.snap, from);
     ix.current.redraw = true;
   }
 
@@ -222,6 +239,18 @@ export default function CadCanvas() {
     if (e.button !== 0) return;
 
     if (st.tool === 'select') {
+      // grip: nếu đang chọn ĐÚNG 1 entity, ưu tiên bắt grip trước khi quây khung
+      if (st.selection.length === 1) {
+        const ent = st.doc.entities.find((en) => en.id === st.selection[0]);
+        if (ent) {
+          const g = hitTestGrip(gripsOf(ent), ix.current.cursorWorld, tolMm());
+          if (g) {
+            ix.current.gripDrag = { entityId: ent.id, grip: g };
+            ix.current.gripPreview = ent;
+            return;
+          }
+        }
+      }
       // bắt đầu khả năng quây khung
       ix.current.selDrag = { start: ix.current.cursorWorld, startScreen: screen };
       return;
@@ -240,6 +269,14 @@ export default function CadCanvas() {
       return;
     }
     updateCursor(screen);
+    if (ix.current.gripDrag) {
+      const st = useCadStore.getState();
+      const ent = st.doc.entities.find((en) => en.id === ix.current.gripDrag!.entityId);
+      if (ent) {
+        ix.current.gripPreview = applyGripMove(ent, ix.current.gripDrag.grip, ix.current.snap.pt);
+        ix.current.redraw = true;
+      }
+    }
   };
 
   const onPointerUp = (ev: React.PointerEvent) => {
@@ -247,6 +284,17 @@ export default function CadCanvas() {
     if (ix.current.panning) {
       ix.current.panning = false;
       ix.current.panStart = null;
+      return;
+    }
+    if (ix.current.gripDrag) {
+      const ent = st.doc.entities.find((en) => en.id === ix.current.gripDrag!.entityId);
+      if (ent) {
+        const final = applyGripMove(ent, ix.current.gripDrag.grip, ix.current.snap.pt);
+        st.updateEntities([final]);
+      }
+      ix.current.gripDrag = null;
+      ix.current.gripPreview = null;
+      ix.current.redraw = true;
       return;
     }
     // hoàn tất chọn
@@ -783,6 +831,8 @@ export default function CadCanvas() {
         ix.current.chamferFirst = null;
         ix.current.joinFirst = null;
         ix.current.breakTarget = null;
+        ix.current.gripDrag = null;
+        ix.current.gripPreview = null;
         st.clearSelection();
         st.setTool('select');
         ix.current.redraw = true;
@@ -892,15 +942,24 @@ export default function CadCanvas() {
 
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
-    drawEntities(ctx, v, st.doc, { stroke: t3, lineWidth: 1.3, text: true });
+    // trong lúc kéo grip: vẽ bằng bản preview cục bộ (chưa commit store) thay cho bản gốc
+    const gp = ix.current.gripDrag && ix.current.gripPreview;
+    const docToDraw = gp ? { ...st.doc, entities: st.doc.entities.map((e) => (e.id === ix.current.gripDrag!.entityId ? ix.current.gripPreview! : e)) } : st.doc;
+    drawEntities(ctx, v, docToDraw, { stroke: t3, lineWidth: 1.3, text: true });
 
     // highlight selection
     if (st.selection.length) {
       const sel = new Set(st.selection);
-      for (const e of st.doc.entities) {
+      for (const e of docToDraw.entities) {
         if (!sel.has(e.id)) continue;
-        drawEntity(ctx, v, st.doc, e, { stroke: accent, forceColor: accent, lineWidth: 2.4, text: true });
+        drawEntity(ctx, v, docToDraw, e, { stroke: accent, forceColor: accent, lineWidth: 2.4, text: true });
       }
+    }
+
+    // grips: chỉ hiện khi tool=select và đang chọn ĐÚNG 1 entity
+    if (st.tool === 'select' && st.selection.length === 1) {
+      const ent = docToDraw.entities.find((e) => e.id === st.selection[0]);
+      if (ent) drawGrips(ctx, v, ent, accent);
     }
 
     drawPreview(ctx, v, accent);
@@ -909,6 +968,23 @@ export default function CadCanvas() {
     drawCrosshair(ctx, W, H, gridMinor, t3);
 
     ctx.restore();
+  }
+
+  function drawGrips(ctx: CanvasRenderingContext2D, v: Viewport, ent: Entity, accent: string) {
+    const grips = gripsOf(ent);
+    const activeGrip = ix.current.gripDrag?.grip;
+    for (const g of grips) {
+      const s = worldToScreen(v, g.pt);
+      const isActive = activeGrip && activeGrip.kind === g.kind && activeGrip.index === g.index;
+      const r = 5;
+      ctx.save();
+      ctx.fillStyle = isActive ? accent : css('--panel', '#1c1a17');
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 1.3;
+      ctx.fillRect(s.x - r, s.y - r, r * 2, r * 2);
+      ctx.strokeRect(s.x - r, s.y - r, r * 2, r * 2);
+      ctx.restore();
+    }
   }
 
   function drawGrid(ctx: CanvasRenderingContext2D, v: Viewport, W: number, H: number, step: number, color: string) {
@@ -1134,6 +1210,42 @@ export default function CadCanvas() {
       ctx.lineTo(s.x + r, s.y + r);
       ctx.moveTo(s.x + r, s.y - r);
       ctx.lineTo(s.x - r, s.y + r);
+      ctx.stroke();
+    } else if (sn.type === 'quadrant') {
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y - r);
+      ctx.lineTo(s.x + r, s.y + r);
+      ctx.lineTo(s.x - r, s.y + r);
+      ctx.closePath();
+      ctx.fillStyle = accent;
+      ctx.globalAlpha = 0.25;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.stroke();
+    } else if (sn.type === 'node') {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, r * 0.6, 0, Math.PI * 2);
+      ctx.fillStyle = accent;
+      ctx.fill();
+    } else if (sn.type === 'perpendicular') {
+      ctx.beginPath();
+      ctx.moveTo(s.x - r, s.y + r);
+      ctx.lineTo(s.x - r, s.y - r);
+      ctx.lineTo(s.x + r, s.y - r);
+      ctx.stroke();
+    } else if (sn.type === 'tangent') {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y - 2, r * 0.75, 0, Math.PI * 2);
+      ctx.moveTo(s.x - r, s.y + r);
+      ctx.lineTo(s.x + r, s.y + r);
+      ctx.stroke();
+    } else if (sn.type === 'nearest') {
+      ctx.beginPath();
+      ctx.moveTo(s.x - r, s.y - r);
+      ctx.lineTo(s.x + r, s.y - r);
+      ctx.lineTo(s.x - r, s.y + r);
+      ctx.lineTo(s.x + r, s.y + r);
+      ctx.closePath();
       ctx.stroke();
     } else {
       ctx.globalAlpha = 0.6;

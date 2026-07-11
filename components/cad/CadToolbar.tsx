@@ -11,7 +11,7 @@ import {
   Ruler, MoveDiagonal, Type, Sofa, Magnet, Grid2x2, Hand,
   Undo2, Redo2, Maximize, BrickWall, LayoutPanelTop, DoorOpen,
   Scissors, Expand, SquareRoundCorner, Slice, Grid3x3, LayoutGrid,
-  ZoomIn, SplitSquareHorizontal, ScissorsLineDashed, Link2, Boxes, ArrowLeftRight,
+  ZoomIn, SplitSquareHorizontal, ScissorsLineDashed, Link2, Boxes, ArrowLeftRight, Compass,
 } from 'lucide-react';
 import { useCadStore, type Tool } from '@/lib/cad/store';
 
@@ -73,6 +73,9 @@ export default function CadToolbar({ onToggleFurniture }: { onToggleFurniture: (
   const pendingBlock = useCadStore((s) => s.pendingBlock);
   const snap = useCadStore((s) => s.snap);
   const setSnap = useCadStore((s) => s.setSnap);
+  const polarTracking = useCadStore((s) => s.polarTracking);
+  const setPolarTracking = useCadStore((s) => s.setPolarTracking);
+  const polarStep = useCadStore((s) => s.polarStep);
   const undo = useCadStore((s) => s.undo);
   const redo = useCadStore((s) => s.redo);
   const past = useCadStore((s) => s.past.length);
@@ -139,7 +142,7 @@ export default function CadToolbar({ onToggleFurniture }: { onToggleFurniture: (
       <button
         type="button"
         onClick={() => setSnap({ enabled: !snap.enabled })}
-        title={`Bắt điểm (snap): ${snap.enabled ? 'BẬT' : 'tắt'} — endpoint/mid/center/giao/lưới`}
+        title={`Bắt điểm (snap): ${snap.enabled ? 'BẬT' : 'tắt'} — endpoint/mid/center/quadrant/node/giao/vuông góc/tiếp tuyến/lưới`}
         style={btn(snap.enabled)}
       >
         <Magnet size={16} />
@@ -151,6 +154,14 @@ export default function CadToolbar({ onToggleFurniture }: { onToggleFurniture: (
         style={btn(snap.grid)}
       >
         <Grid2x2 size={16} />
+      </button>
+      <button
+        type="button"
+        onClick={() => setPolarTracking(!polarTracking)}
+        title={`Polar tracking: ${polarTracking ? 'BẬT' : 'tắt'} — bắt góc ${polarStep}° (Shift = Ortho tuyệt đối, ưu tiên hơn)`}
+        style={btn(polarTracking)}
+      >
+        <Compass size={16} />
       </button>
       <Divider />
       <button type="button" onClick={() => setTool('pan')} title="Pan (space kéo)" style={btn(tool === 'pan')}>

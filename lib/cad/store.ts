@@ -51,6 +51,12 @@ export interface SnapSettings {
   center: boolean;
   intersection: boolean;
   grid: boolean;
+  /** Nấc 2 — bắt điểm bổ sung (chuẩn AutoCAD OSNAP) */
+  quadrant: boolean;
+  node: boolean;
+  nearest: boolean;
+  perpendicular: boolean;
+  tangent: boolean;
 }
 
 const MAX_HISTORY = 50;
@@ -64,6 +70,9 @@ interface CadState {
   snap: SnapSettings;
   /** bước lưới mm (mặc định 100mm, vạch đậm mỗi 1m) */
   gridStep: number;
+  /** Nấc 2 — polar tracking: bật/tắt + góc bước (độ, VD 15/30/45/90) */
+  polarTracking: boolean;
+  polarStep: number;
   viewport: Viewport;
   /** block furniture đang chờ click đặt (khi tool='block') */
   pendingBlock: string | null;
@@ -102,6 +111,8 @@ interface CadState {
   setViewport: (v: Viewport) => void;
   setSnap: (patch: Partial<SnapSettings>) => void;
   setGridStep: (n: number) => void;
+  setPolarTracking: (on: boolean) => void;
+  setPolarStep: (deg: number) => void;
   setCurrentLayer: (id: string) => void;
   addLayer: () => void;
   updateLayer: (id: string, patch: Partial<Layer>) => void;
@@ -134,8 +145,13 @@ export const useCadStore = create<CadState>((set, get) => ({
   selection: [],
   tool: 'select',
   currentLayer: 'l-wall',
-  snap: { enabled: true, endpoint: true, midpoint: true, center: true, intersection: true, grid: true },
+  snap: {
+    enabled: true, endpoint: true, midpoint: true, center: true, intersection: true, grid: true,
+    quadrant: true, node: true, nearest: false, perpendicular: true, tangent: true,
+  },
   gridStep: 100,
+  polarTracking: false,
+  polarStep: 15,
   viewport: { scale: 0.08, panX: 300, panY: 400 },
   pendingBlock: null,
   offsetDist: 100,
@@ -205,6 +221,8 @@ export const useCadStore = create<CadState>((set, get) => ({
   setViewport: (viewport) => set({ viewport }),
   setSnap: (patch) => set((s) => ({ snap: { ...s.snap, ...patch } })),
   setGridStep: (gridStep) => set({ gridStep }),
+  setPolarTracking: (polarTracking) => set({ polarTracking }),
+  setPolarStep: (polarStep) => set({ polarStep }),
   setCurrentLayer: (currentLayer) => set({ currentLayer }),
 
   addLayer: () => {

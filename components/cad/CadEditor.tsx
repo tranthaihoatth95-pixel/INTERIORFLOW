@@ -282,6 +282,9 @@ function CommandLine({ status }: { status: string }) {
   const setFilletRadius = useCadStore((s) => s.setFilletRadius);
   const setChamferDist = useCadStore((s) => s.setChamferDist);
   const setLengthenDelta = useCadStore((s) => s.setLengthenDelta);
+  const polarTracking = useCadStore((s) => s.polarTracking);
+  const setPolarTracking = useCadStore((s) => s.setPolarTracking);
+  const setPolarStep = useCadStore((s) => s.setPolarStep);
 
   const run = () => {
     const raw = val.trim();
@@ -362,6 +365,14 @@ function CommandLine({ status }: { status: string }) {
         setTool('lengthen');
       },
       LENGTHEN: () => setTool('lengthen'),
+      POLAR: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) {
+          setPolarStep(parseFloat(arg));
+          setPolarTracking(true);
+        } else {
+          setPolarTracking(!polarTracking);
+        }
+      },
       E: () => deleteSelected(),
       DEL: () => deleteSelected(),
       ERASE: () => deleteSelected(),
