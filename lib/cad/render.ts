@@ -3,7 +3,7 @@
  * Không phụ thuộc React. Toạ độ world mm, Y-up → screen px qua Viewport (lật Y).
  */
 
-import type { Doc, Entity, Pt, Viewport, DimEntity } from './model';
+import type { Doc, Entity, Pt, Viewport, DimEntity, LineType } from './model';
 import { docBox, fitBox, worldToScreen } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 import { hatchLines, hatchDots } from './hatch';
@@ -26,6 +26,13 @@ export interface DrawStyle {
   text: boolean;
   /** Nấc 3 — dim style (cỡ chữ/mũi tên/tỉ lệ); mặc định DEFAULT_DIM_STYLE nếu không truyền */
   dimStyle?: DimStyle;
+  /**
+   * BỔ SUNG (hệ nét ISO 128) — true: dùng lineweight/lineType THẬT của layer/entity (mm → px
+   * qua viewport.scale, tối thiểu 1px) thay vì `lineWidth` cố định. false/thiếu ⇒ hành vi CŨ
+   * (lineWidth cố định, dùng cho preview/selection-highlight/PNG export — nơi cần 1 độ dày
+   * đồng nhất bất kể layer, không phải bản vẽ "thật").
+   */
+  realLineweight?: boolean;
 }
 
 function layerColor(doc: Doc, e: Entity, style: DrawStyle): string {
@@ -33,6 +40,29 @@ function layerColor(doc: Doc, e: Entity, style: DrawStyle): string {
   if (e.color) return e.color;
   const lay = doc.layers.find((l) => l.id === e.layer);
   return lay?.color ?? style.stroke;
+}
+
+/** mm/px của nét — layer trước, override entity sau, mặc định 0.25mm (trung, chưa gán layer). */
+function effectiveLineWidthPx(doc: Doc, e: Entity, v: Viewport, style: DrawStyle): number {
+  if (!style.realLineweight) return style.lineWidth;
+  const lay = doc.layers.find((l) => l.id === e.layer);
+  const mm = e.lineweight ?? lay?.lineweight ?? 0.25;
+  return Math.max(1, mm * v.scale);
+}
+
+/** Dash pattern (px, đã nhân viewport.scale) theo lineType hiệu dụng của entity. [] = nét liền. */
+const LINE_DASH_MM: Record<LineType, number[]> = {
+  continuous: [],
+  hidden: [3, 2],
+  dashed: [6, 3],
+  center: [12, 3, 2, 3],
+  phantom: [12, 3, 2, 3, 2, 3],
+};
+function effectiveLineDashPx(doc: Doc, e: Entity, v: Viewport, style: DrawStyle): number[] {
+  if (!style.realLineweight) return [];
+  const lay = doc.layers.find((l) => l.id === e.layer);
+  const lt: LineType = e.lineType ?? lay?.lineType ?? 'continuous';
+  return LINE_DASH_MM[lt].map((mm) => Math.max(0.5, mm * v.scale));
 }
 
 /** local mm của block → world mm (áp translate/rotate/scale của instance). */
@@ -78,7 +108,8 @@ function drawPrim(ctx: CanvasRenderingContext2D, v: Viewport, prim: Prim, tf: (p
 /** Vẽ 1 entity. */
 export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc, e: Entity, style: DrawStyle) {
   ctx.strokeStyle = layerColor(doc, e, style);
-  ctx.lineWidth = style.lineWidth;
+  ctx.lineWidth = effectiveLineWidthPx(doc, e, v, style);
+  ctx.setLineDash(effectiveLineDashPx(doc, e, v, style));
   const S = (p: Pt) => worldToScreen(v, p);
 
   switch (e.type) {
@@ -171,7 +202,7 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
       } else {
         const lines = hatchLines(e.points, pattern, e.patternScale ?? 1, e.patternAngle ?? 0);
         ctx.strokeStyle = color;
-        ctx.lineWidth = Math.max(0.6, style.lineWidth * 0.6);
+        ctx.lineWidth = Math.max(0.6, ctx.lineWidth * 0.6); // mảnh hơn biên — dựa trên lineWidth hiệu dụng đã set ở đầu drawEntity
         ctx.beginPath();
         for (const [p, q] of lines) {
           const sp = S(p);
@@ -242,7 +273,6 @@ function drawDimAligned(ctx: CanvasRenderingContext2D, v: Viewport, e: DimEntity
   const sa0 = S(e.a);
   const sb0 = S(e.b);
   ctx.strokeStyle = color;
-  ctx.lineWidth = style.lineWidth;
   ctx.beginPath();
   ctx.moveTo(sa0.x, sa0.y);
   ctx.lineTo(sa.x, sa.y);
@@ -268,7 +298,6 @@ function drawDimRadial(ctx: CanvasRenderingContext2D, v: Viewport, e: DimEntity,
   const sFrom = S(from);
   const sTo = S(e.b);
   ctx.strokeStyle = color;
-  ctx.lineWidth = style.lineWidth;
   ctx.beginPath();
   ctx.moveTo(sFrom.x, sFrom.y);
   ctx.lineTo(sTo.x, sTo.y);
@@ -291,7 +320,6 @@ function drawDimAngular(ctx: CanvasRenderingContext2D, v: Viewport, e: DimEntity
   const p2 = { x: e.c.x + r * Math.cos(ang2), y: e.c.y + r * Math.sin(ang2) };
   const sc = S(e.c);
   ctx.strokeStyle = color;
-  ctx.lineWidth = style.lineWidth;
   // đường gióng từ đỉnh tới cung
   ctx.beginPath();
   ctx.moveTo(sc.x, sc.y);
@@ -359,6 +387,6 @@ export function renderDocToDataURL(doc: Doc, maxPx = 2000, pad = 80): string {
   const vp: Viewport = fitBox(box, W, H, pad);
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
-  drawEntities(ctx, vp, doc, { stroke: '#111111', forceColor: '#111111', lineWidth: 2, text: true });
+  drawEntities(ctx, vp, doc, { stroke: '#111111', forceColor: '#111111', lineWidth: 2, text: true, realLineweight: true });
   return canvas.toDataURL('image/png');
 }

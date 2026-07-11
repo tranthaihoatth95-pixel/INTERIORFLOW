@@ -1,26 +1,30 @@
 /**
  * lib/cad/dxf.ts — PARSER + EXPORTER DXF ASCII TỰ VIẾT (không dependency).
  *
- * PHẠM VI (chặng 1 = sơ phác DD — Design Development, KHÔNG phải hồ sơ CD): mục tiêu DUY
- * NHẤT của phần export là "mở SẠCH" ở AutoCAD/BricsCAD/LibreCAD để handoff sang app CAD
- * chuyên nghiệp khác (dự án EFC riêng) — không cố phủ hết mọi entity DXF (không BLOCK/INSERT
- * thật, không DIMENSION/HATCH gốc). Đổi lại: cấu trúc file ĐÚNG chuẩn tối thiểu — HEADER
- * ($ACADVER/$INSUNITS/$EXTMIN/$EXTMAX) + bảng LAYER trong TABLES + ENTITIES — để không rơi
- * vào lỗi kinh điển "thiếu HEADER/TABLES" khiến 1 số phần mềm từ chối hoặc phải "recover".
+ * Mục tiêu: mở SẠCH ở AutoCAD/BricsCAD/LibreCAD (không rơi vào lỗi "thiếu HEADER/TABLES" khiến
+ * phần mềm từ chối hoặc phải "recover"), phủ dần các entity DXF chuẩn khi app lên tới Nấc
+ * tương ứng (xem docs/CAD-LT.md):
+ *   - DIMENSION thật (Nấc 3): entity DIMENSION + block ẩn danh *Dn chứa hình vẽ (BLOCKS +
+ *     BLOCK_RECORD trong TABLES).
+ *   - HATCH thật (Nấc 4): entity HATCH khi có `pattern` (ANSI31/32/37/SOLID/DOTS — tên pattern
+ *     chuẩn acad.pat/ansi.pat); hatch KHÔNG có `pattern` (poché tường cũ từ WALL) vẫn xuất
+ *     đường bao LWPOLYLINE như trước — không phá hành vi cũ.
+ *   - Lineweight/linetype (hệ nét ISO 128): mỗi LAYER trong TABLES mang theo group 370
+ *     (lineweight, enum DXF chuẩn — hundredth mm) + group 6 (tên LTYPE, tra trong bảng LTYPE
+ *     mới cũng ở TABLES). Entity KHÔNG override riêng ⇒ dùng "ByLayer" mặc định của DXF (không
+ *     ghi 370/6 ở entity) — đúng quy ước AutoCAD, đơn giản & mạnh hơn ghi lặp ở từng entity.
+ *   - Block furniture vẫn PHẲNG HOÁ (line/circle/arc/lwpolyline ở world) — không cần
+ *     BLOCK_RECORD riêng cho chúng.
  *
- * Đọc: LINE, LWPOLYLINE (+closed), POLYLINE/VERTEX (biến thể cũ), CIRCLE, ARC, TEXT, MTEXT
+ * Đọc: LINE, LWPOLYLINE (+closed), POLYLINE/VERTEX (biến thể cũ), CIRCLE, ARC, TEXT, MTEXT,
+ * DIMENSION (đọc lại đúng encoding app tự ghi), HATCH (đọc boundary path + pattern/scale/góc)
  * + tên layer + màu ACI cơ bản → Doc (đơn vị mm giữ nguyên như file). Entity lạ → BỎ QUA,
  * không ném lỗi.
- * Ghi: HEADER + TABLES(LAYER) + ENTITIES. Block furniture → PHẲNG HOÁ thành LINE/CIRCLE/ARC/
- * LWPOLYLINE ở toạ độ world (không cần BLOCKS/BLOCK_RECORD). Hatch (poché tường) → xuất
- * đường bao LWPOLYLINE (không tô — an toàn cấu trúc, ưu tiên "mở sạch" hơn fill đẹp). Dim →
- * xuất như 1 LINE đơn giản (đã có từ trước) + TEXT ghi số đo, không dùng entity DIMENSION
- * thật (tránh rủi ro cấu trúc — DIMENSION cần khối ẩn danh phức tạp, không cần cho DD).
  *
  * DXF là chuỗi cặp (groupCode, value) mỗi cặp 2 dòng. Ta duyệt tuyến tính, gom ENTITIES.
  */
 
-import type { Doc, DimEntity, Entity, HatchPattern, Layer, Pt } from './model';
+import type { Doc, DimEntity, Entity, HatchPattern, Layer, LineType, Pt } from './model';
 import { docBox } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 
@@ -33,6 +37,39 @@ const ACI: Record<number, string> = {
 function aciToHex(i: number): string {
   return ACI[i] ?? '#c8c4bc';
 }
+
+/** Enum lineweight hợp lệ trong DXF (group 370, đơn vị: 1/100 mm). Map mm bất kỳ → giá trị gần nhất. */
+const DXF_LW_ENUM = [0, 5, 9, 13, 15, 18, 20, 25, 30, 35, 40, 50, 53, 60, 70, 80, 90, 100, 106, 120, 140, 158, 200, 211];
+function lineweightToDxfEnum(mm: number): number {
+  const v = Math.round(mm * 100);
+  let best = DXF_LW_ENUM[0];
+  let bestD = Infinity;
+  for (const e of DXF_LW_ENUM) {
+    const d = Math.abs(e - v);
+    if (d < bestD) { bestD = d; best = e; }
+  }
+  return best;
+}
+
+/** Tên LTYPE chuẩn AutoCAD (acad.lin) tương ứng với LineType nội bộ. */
+function linetypeToDxfName(lt: LineType | undefined): string {
+  switch (lt) {
+    case 'hidden': return 'HIDDEN';
+    case 'center': return 'CENTER';
+    case 'dashed': return 'DASHED';
+    case 'phantom': return 'PHANTOM';
+    default: return 'CONTINUOUS';
+  }
+}
+
+/** Định nghĩa dash pattern (mm) cho bảng LTYPE — khớp LINE_DASH_MM ở render.ts (nhất quán màn
+ * hình ↔ file). Dương = nét, âm = khoảng hở; [] = liền (CONTINUOUS không cần group 49). */
+const LTYPE_DASH_MM: Record<string, number[]> = {
+  HIDDEN: [3, -2],
+  CENTER: [12, -3, 2, -3],
+  DASHED: [6, -3],
+  PHANTOM: [12, -3, 2, -3, 2, -3],
+};
 
 /** hex '#rrggbb' → mã ACI gần nhất trong bảng trên (khoảng cách RGB). Mặc định 7 (trắng/đen). */
 function hexToAci(hex?: string): number {
@@ -85,6 +122,50 @@ function eid(): string {
   return `dxf-${Date.now().toString(36)}-${uid}`;
 }
 
+function dxfNameToLineType(name?: string): LineType | undefined {
+  switch (name) {
+    case 'HIDDEN': return 'hidden';
+    case 'CENTER': return 'center';
+    case 'DASHED': return 'dashed';
+    case 'PHANTOM': return 'phantom';
+    case 'CONTINUOUS': return 'continuous';
+    default: return undefined;
+  }
+}
+
+/** Đọc bảng TABLES/LAYER (nếu có) → màu/lineweight/linetype THẬT của từng layer theo tên. */
+function parseLayerDefs(pairs: Pair[]): Map<string, { color?: string; lineweight?: number; lineType?: LineType }> {
+  const defs = new Map<string, { color?: string; lineweight?: number; lineType?: LineType }>();
+  let tablesStart = -1;
+  for (let k = 0; k + 1 < pairs.length; k++) {
+    if (pairs[k].code === 2 && pairs[k].value.trim().toUpperCase() === 'TABLES') { tablesStart = k + 1; break; }
+  }
+  if (tablesStart === -1) return defs;
+  let tablesEnd = pairs.length;
+  for (let k = tablesStart; k < pairs.length; k++) {
+    if (pairs[k].code === 0 && pairs[k].value.trim().toUpperCase() === 'ENDSEC') { tablesEnd = k; break; }
+  }
+  for (let k = tablesStart; k < tablesEnd; k++) {
+    if (pairs[k].code === 0 && pairs[k].value.trim().toUpperCase() === 'LAYER') {
+      let j = k + 1;
+      const g: Record<number, string[]> = {};
+      while (j < tablesEnd && pairs[j].code !== 0) { (g[pairs[j].code] ||= []).push(pairs[j].value); j++; }
+      const name = g[2]?.[0]?.trim();
+      if (name) {
+        const colorIdx = g[62] ? parseInt(g[62][0], 10) : undefined;
+        const lwEnum = g[370] ? parseInt(g[370][0], 10) : undefined;
+        defs.set(name, {
+          color: colorIdx !== undefined ? aciToHex(colorIdx) : undefined,
+          lineweight: lwEnum !== undefined && lwEnum > 0 ? lwEnum / 100 : undefined,
+          lineType: dxfNameToLineType(g[6]?.[0]?.trim().toUpperCase()),
+        });
+      }
+      k = j - 1;
+    }
+  }
+  return defs;
+}
+
 /**
  * Parse text DXF → Doc. Không bao giờ throw: gặp lỗi cục bộ thì bỏ entity đó.
  *
@@ -102,6 +183,11 @@ export function parseDxf(text: string): Doc {
   let i = 0;
   const n = pairs.length;
 
+  // TABLES/LAYER — đọc trước để lấy màu/lineweight/linetype THẬT của layer (nếu file do chính
+  // app này ghi — xem exportDxf). File khác không có bảng này vẫn parse được bình thường
+  // (layerDefs rỗng → ensureLayer rơi về hành vi cũ, suy màu từ entity).
+  const layerDefs = parseLayerDefs(pairs);
+
   // tìm ENTITIES
   let start = 0;
   for (let k = 0; k + 1 < n; k++) {
@@ -116,7 +202,16 @@ export function parseDxf(text: string): Doc {
     const nm = name || '0';
     let lay = layerSet.get(nm);
     if (!lay) {
-      lay = { id: `l-${nm}-${uid}`, name: nm, color: aciToHex(colorIdx ?? 7), visible: true, locked: false };
+      const def = layerDefs.get(nm);
+      lay = {
+        id: `l-${nm}-${uid}`,
+        name: nm,
+        color: def?.color ?? aciToHex(colorIdx ?? 7),
+        visible: true,
+        locked: false,
+        lineweight: def?.lineweight,
+        lineType: def?.lineType,
+      };
       layerSet.set(nm, lay);
       doc.layers.push(lay);
     }
@@ -344,10 +439,25 @@ export function exportDxf(doc: Doc): string {
   // TABLES — LAYER + BLOCK_RECORD (chỉ khi có dimension cần block ẩn danh — furniture vẫn
   // phẳng hoá, KHÔNG cần BLOCK_RECORD, xem đầu file).
   out.push(pair(0, 'SECTION'), pair(2, 'TABLES'));
+  // LTYPE — 5 nét chuẩn (tên khớp acad.lin nên phần mềm khác nhận đúng ngay cả khi bỏ qua
+  // pattern group 49 của ta). Luôn ghi đủ 5, không phụ thuộc layer nào đang dùng gì.
+  out.push(pair(0, 'TABLE'), pair(2, 'LTYPE'), pair(70, 5));
+  out.push(pair(0, 'LTYPE'), pair(2, 'CONTINUOUS'), pair(70, 0), pair(3, 'Solid line'), pair(72, 65), pair(73, 0), pair(40, 0));
+  for (const [name, dashes] of Object.entries(LTYPE_DASH_MM)) {
+    const total = dashes.reduce((s, d) => s + Math.abs(d), 0);
+    out.push(pair(0, 'LTYPE'), pair(2, name), pair(70, 0), pair(3, ''), pair(72, 65), pair(73, dashes.length), pair(40, total));
+    for (const d of dashes) out.push(pair(49, d));
+  }
+  out.push(pair(0, 'ENDTAB'));
+  // LAYER — mỗi layer mang lineweight (370) + linetype (6) THẬT; entity không override riêng
+  // sẽ dùng "ByLayer" mặc định của DXF (không ghi 370/6 ở entity — xem writeLine/writePoly…).
   out.push(pair(0, 'TABLE'), pair(2, 'LAYER'), pair(70, doc.layers.length + 1));
-  out.push(pair(0, 'LAYER'), pair(2, '0'), pair(70, 0), pair(62, 7), pair(6, 'CONTINUOUS'));
+  out.push(pair(0, 'LAYER'), pair(2, '0'), pair(70, 0), pair(62, 7), pair(6, 'CONTINUOUS'), pair(370, 25));
   for (const l of doc.layers) {
-    out.push(pair(0, 'LAYER'), pair(2, sanitizeName(l.name)), pair(70, l.locked ? 4 : 0), pair(62, hexToAci(l.color)), pair(6, 'CONTINUOUS'));
+    out.push(
+      pair(0, 'LAYER'), pair(2, sanitizeName(l.name)), pair(70, l.locked ? 4 : 0), pair(62, hexToAci(l.color)),
+      pair(6, linetypeToDxfName(l.lineType)), pair(370, lineweightToDxfEnum(l.lineweight ?? 0.25)),
+    );
   }
   out.push(pair(0, 'ENDTAB'));
   if (dimEntities.length) {
@@ -379,12 +489,19 @@ export function exportDxf(doc: Doc): string {
   // ENTITIES
   out.push(pair(0, 'SECTION'), pair(2, 'ENTITIES'));
 
-  const writeLine = (a: Pt, b: Pt, lay: string, aci?: number) => {
-    out.push(pair(0, 'LINE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, a.x), pair(20, a.y), pair(30, 0), pair(11, b.x), pair(21, b.y), pair(31, 0));
+  const writeLine = (a: Pt, b: Pt, lay: string, aci?: number, ovr: string[] = []) => {
+    out.push(pair(0, 'LINE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(10, a.x), pair(20, a.y), pair(30, 0), pair(11, b.x), pair(21, b.y), pair(31, 0));
   };
-  const writePoly = (pts: Pt[], closed: boolean, lay: string, aci?: number) => {
-    out.push(pair(0, 'LWPOLYLINE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(90, pts.length), pair(70, closed ? 1 : 0));
+  const writePoly = (pts: Pt[], closed: boolean, lay: string, aci?: number, ovr: string[] = []) => {
+    out.push(pair(0, 'LWPOLYLINE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(90, pts.length), pair(70, closed ? 1 : 0));
     pts.forEach((p) => out.push(pair(10, p.x), pair(20, p.y)));
+  };
+  // Override lineweight/linetype RIÊNG của entity (hiếm — mặc định không có, dùng ByLayer).
+  const overridePairs = (e: Entity): string[] => {
+    const out2: string[] = [];
+    if (e.lineweight !== undefined) out2.push(pair(370, lineweightToDxfEnum(e.lineweight)));
+    if (e.lineType !== undefined) out2.push(pair(6, linetypeToDxfName(e.lineType)));
+    return out2;
   };
   const writePrim = (prim: Prim, tf: (p: Pt) => Pt, lay: string, aci?: number) => {
     if (prim.k === 'line') writeLine(tf(prim.a), tf(prim.b), lay, aci);
@@ -404,9 +521,10 @@ export function exportDxf(doc: Doc): string {
   for (const e of doc.entities) {
     const lay = layerName(e.layer);
     const aci = e.color ? hexToAci(e.color) : undefined;
+    const ovr = overridePairs(e);
     switch (e.type) {
       case 'line':
-        writeLine(e.a, e.b, lay, aci);
+        writeLine(e.a, e.b, lay, aci, ovr);
         break;
       case 'dim': {
         // Entity DIMENSION thật (Nấc 3) — tham chiếu block ẩn danh đã ghi ở BLOCKS phía trên.
@@ -464,7 +582,7 @@ export function exportDxf(doc: Doc): string {
         break;
       }
       case 'polyline':
-        writePoly(e.points, e.closed, lay, aci);
+        writePoly(e.points, e.closed, lay, aci, ovr);
         break;
       case 'rect':
         writePoly(
@@ -472,14 +590,15 @@ export function exportDxf(doc: Doc): string {
           true,
           lay,
           aci,
+          ovr,
         );
         break;
       case 'circle':
-        out.push(pair(0, 'CIRCLE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, e.c.x), pair(20, e.c.y), pair(30, 0), pair(40, e.r));
+        out.push(pair(0, 'CIRCLE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(10, e.c.x), pair(20, e.c.y), pair(30, 0), pair(40, e.r));
         break;
       case 'arc':
         out.push(
-          pair(0, 'ARC'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, e.c.x), pair(20, e.c.y), pair(30, 0), pair(40, e.r),
+          pair(0, 'ARC'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(10, e.c.x), pair(20, e.c.y), pair(30, 0), pair(40, e.r),
           pair(50, (e.a1 * 180) / Math.PI), pair(51, (e.a2 * 180) / Math.PI),
         );
         break;
@@ -491,7 +610,7 @@ export function exportDxf(doc: Doc): string {
         if (!e.pattern) {
           // Poché tường CŨ (WALL, không có `pattern`) → giữ nguyên hành vi cũ: đường bao
           // LWPOLYLINE khép kín (không tô — ưu tiên an toàn cấu trúc file).
-          writePoly(e.points, true, lay, aci);
+          writePoly(e.points, true, lay, aci, ovr);
           break;
         }
         // Nấc 4 — entity HATCH THẬT (tên pattern ANSI31/ANSI32/ANSI37/SOLID/DOTS đều là tên

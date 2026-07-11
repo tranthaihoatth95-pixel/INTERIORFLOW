@@ -222,7 +222,7 @@ export function dimensionChain(points: { x: number; y: number }[], off: number, 
 /** Thêm bộ tiện ích trình bày (lưới trục + khung tên + mũi tên Bắc + thước tỉ lệ) quanh 1 bản vẽ đã có. */
 export function addPresentationKit(doc: Doc, box: Box, info: TitleBlockInfo): Entity[] {
   const out: Entity[] = [];
-  out.push(...axesGrid(box, 3000, 'l-dim'));
+  out.push(...axesGrid(box, 3000, 'l-axis'));
   const tbAt = { x: box.maxX + 2600, y: box.minY - 400 };
   out.push(...titleBlock(tbAt, info, 'l-wall', 'l-text'));
   out.push(...northArrow({ x: box.maxX + 900, y: box.maxY - 300 }, 700, 'l-text'));

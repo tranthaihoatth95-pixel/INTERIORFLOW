@@ -12,6 +12,30 @@ export interface Pt {
   y: number;
 }
 
+/**
+ * Nét vẽ (linetype) — tối thiểu theo ISO 128: continuous (liền), hidden (khuất, gạch ngắn đều),
+ * center (trục, chain gạch dài-ngắn-dài), dashed (nét đứt trung), phantom (gạch dài-ngắn-ngắn).
+ */
+export type LineType = 'continuous' | 'hidden' | 'center' | 'dashed' | 'phantom';
+
+/**
+ * Bề dày nét (lineweight, mm) — thang chuẩn hay dùng trong DXF/AutoCAD (khớp enum group 370,
+ * xem dxf.ts). Phân cấp theo ISO 128 cho bản vẽ kiến trúc nội thất tỉ lệ 1:50-1:100:
+ *   0.13/0.18 — mảnh: kích thước, hatch, nét khuất, trục lưới
+ *   0.25/0.35 — trung: thiết bị/nội thất/cửa sổ/đường bao không cắt
+ *   0.50/0.70 — đậm: tường bị mặt phẳng cắt qua (mặt bằng) + khung tên/khung bao
+ */
+export const STANDARD_LINEWEIGHTS = [0.13, 0.18, 0.25, 0.35, 0.5, 0.7, 1.0] as const;
+
+/**
+ * Chiều cao chữ chuẩn ISO 3098 (mm, ĐO TRÊN GIẤY sau khi in — không phải mm world lưu trong
+ * TextEntity.h, vốn là kích thước THẬT ngoài đời ở tỉ lệ 1:1). Quy đổi: h_world = h_iso ×
+ * tỉ lệ bản vẽ (VD tỉ lệ 1:50 → muốn chữ cao 3.5mm trên giấy thì h_world = 3.5×50 = 175mm).
+ * Cần pipeline in ấn (Nấc 7 — paper space/tỉ lệ khổ giấy) để tự động hoá quy đổi này; hiện tại
+ * đây là hằng số THAM CHIẾU cho người vẽ tự chọn khi đặt TEXT/DIM (chưa có UI tự tính).
+ */
+export const ISO_TEXT_HEIGHTS_MM = [2.5, 3.5, 5, 7, 10] as const;
+
 /** Lớp (layer) — entity mới rơi vào layer hiện hành; ẩn/khoá theo cờ. */
 export interface Layer {
   id: string;
@@ -20,6 +44,11 @@ export interface Layer {
   color: string;
   visible: boolean;
   locked: boolean;
+  /** bề dày nét mặc định của layer (mm, khổ giấy in — xem STANDARD_LINEWEIGHTS). Thiếu ⇒ 0.25
+   * (tương thích ngược với layer cũ tạo trước khi có field này). */
+  lineweight?: number;
+  /** nét vẽ mặc định của layer. Thiếu ⇒ 'continuous' (tương thích ngược). */
+  lineType?: LineType;
 }
 
 export type EntityType =
@@ -39,6 +68,9 @@ interface Base {
   layer: string;
   /** override màu layer (hiếm dùng) */
   color?: string;
+  /** override lineweight/lineType của layer (hiếm dùng — giống cơ chế override màu ở trên). */
+  lineweight?: number;
+  lineType?: LineType;
 }
 
 export interface LineEntity extends Base {
@@ -159,10 +191,11 @@ export interface Doc {
 }
 
 export const DEFAULT_LAYERS: Layer[] = [
-  { id: 'l-wall', name: 'Tường', color: '#e8e4dc', visible: true, locked: false },
-  { id: 'l-furniture', name: 'Nội thất', color: '#c08a5a', visible: true, locked: false },
-  { id: 'l-dim', name: 'Kích thước', color: '#7aa2c4', visible: true, locked: false },
-  { id: 'l-text', name: 'Ghi chú', color: '#9a9488', visible: true, locked: false },
+  { id: 'l-wall', name: 'Tường', color: '#e8e4dc', visible: true, locked: false, lineweight: 0.6, lineType: 'continuous' },
+  { id: 'l-furniture', name: 'Nội thất', color: '#c08a5a', visible: true, locked: false, lineweight: 0.3, lineType: 'continuous' },
+  { id: 'l-dim', name: 'Kích thước', color: '#7aa2c4', visible: true, locked: false, lineweight: 0.15, lineType: 'continuous' },
+  { id: 'l-text', name: 'Ghi chú', color: '#9a9488', visible: true, locked: false, lineweight: 0.15, lineType: 'continuous' },
+  { id: 'l-axis', name: 'Trục', color: '#8a7a9a', visible: true, locked: false, lineweight: 0.13, lineType: 'center' },
 ];
 
 export function emptyDoc(): Doc {

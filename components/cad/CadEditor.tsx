@@ -202,30 +202,56 @@ function LayerPanel() {
           <Plus size={14} />
         </button>
       </div>
-      <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+      <div style={{ maxHeight: 380, overflowY: 'auto' }}>
         {doc.layers.map((l) => {
           const on = l.id === current;
           return (
-            <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 8, background: on ? 'var(--accent-soft)' : 'transparent' }}>
-              <input
-                type="color"
-                value={l.color}
-                onChange={(e) => updateLayer(l.id, { color: e.target.value })}
-                title="Màu lớp"
-                style={{ width: 18, height: 18, padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}
-              />
-              <button type="button" onClick={() => setCurrent(l.id)} title="Đặt lớp hiện hành" style={{ flex: 1, textAlign: 'left', border: 'none', background: 'none', color: on ? 'var(--accent)' : 'var(--t2)', fontSize: 12, fontWeight: on ? 600 : 400, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {l.name}
-              </button>
-              <button type="button" onClick={() => updateLayer(l.id, { visible: !l.visible })} title="Ẩn/hiện" style={miniBtn}>
-                {l.visible ? <Eye size={13} /> : <EyeOff size={13} />}
-              </button>
-              <button type="button" onClick={() => updateLayer(l.id, { locked: !l.locked })} title="Khoá/mở" style={miniBtn}>
-                {l.locked ? <Lock size={13} /> : <Unlock size={13} />}
-              </button>
-              <button type="button" onClick={() => removeLayer(l.id)} title="Xoá lớp" style={miniBtn}>
-                <Trash2 size={13} />
-              </button>
+            <div key={l.id} style={{ padding: '5px 8px', borderRadius: 8, background: on ? 'var(--accent-soft)' : 'transparent' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input
+                  type="color"
+                  value={l.color}
+                  onChange={(e) => updateLayer(l.id, { color: e.target.value })}
+                  title="Màu lớp"
+                  style={{ width: 18, height: 18, padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}
+                />
+                <button type="button" onClick={() => setCurrent(l.id)} title="Đặt lớp hiện hành" style={{ flex: 1, textAlign: 'left', border: 'none', background: 'none', color: on ? 'var(--accent)' : 'var(--t2)', fontSize: 12, fontWeight: on ? 600 : 400, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {l.name}
+                </button>
+                <button type="button" onClick={() => updateLayer(l.id, { visible: !l.visible })} title="Ẩn/hiện" style={miniBtn}>
+                  {l.visible ? <Eye size={13} /> : <EyeOff size={13} />}
+                </button>
+                <button type="button" onClick={() => updateLayer(l.id, { locked: !l.locked })} title="Khoá/mở" style={miniBtn}>
+                  {l.locked ? <Lock size={13} /> : <Unlock size={13} />}
+                </button>
+                <button type="button" onClick={() => removeLayer(l.id)} title="Xoá lớp" style={miniBtn}>
+                  <Trash2 size={13} />
+                </button>
+              </div>
+              <div style={{ display: 'flex', gap: 4, marginTop: 3, paddingLeft: 24 }}>
+                <select
+                  value={l.lineweight ?? 0.25}
+                  onChange={(e) => updateLayer(l.id, { lineweight: parseFloat(e.target.value) })}
+                  title="Bề dày nét (mm, ISO 128)"
+                  style={miniSelect}
+                >
+                  {[0.13, 0.18, 0.25, 0.35, 0.5, 0.7, 1.0].map((w) => (
+                    <option key={w} value={w}>{w.toFixed(2)}mm</option>
+                  ))}
+                </select>
+                <select
+                  value={l.lineType ?? 'continuous'}
+                  onChange={(e) => updateLayer(l.id, { lineType: e.target.value as typeof l.lineType })}
+                  title="Nét vẽ (linetype)"
+                  style={miniSelect}
+                >
+                  <option value="continuous">liền</option>
+                  <option value="hidden">khuất</option>
+                  <option value="center">trục</option>
+                  <option value="dashed">đứt</option>
+                  <option value="phantom">phantom</option>
+                </select>
+              </div>
             </div>
           );
         })}
@@ -501,5 +527,15 @@ const miniBtn: React.CSSProperties = {
   border: 'none',
   background: 'transparent',
   color: 'var(--t3)',
+  cursor: 'pointer',
+};
+const miniSelect: React.CSSProperties = {
+  flex: 1,
+  fontSize: 10.5,
+  color: 'var(--t3)',
+  background: 'var(--field)',
+  border: '1px solid var(--border)',
+  borderRadius: 5,
+  padding: '1px 3px',
   cursor: 'pointer',
 };

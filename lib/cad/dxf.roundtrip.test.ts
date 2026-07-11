@@ -181,7 +181,12 @@ function testStructure() {
     return c;
   };
   ok('SECTION/ENDSEC cân bằng (4 section: HEADER/TABLES/BLOCKS/ENTITIES)', countPair('0', 'SECTION') === 4 && countPair('0', 'ENDSEC') === 4);
-  ok('TABLE/ENDTAB cân bằng (1 bảng LAYER)', countPair('0', 'TABLE') === 1 && countPair('0', 'ENDTAB') === 1);
+  ok('TABLE/ENDTAB cân bằng (2 bảng: LTYPE + LAYER — hệ nét ISO 128)', countPair('0', 'TABLE') === 2 && countPair('0', 'ENDTAB') === 2);
+  ok('LTYPE table có đủ 5 nét chuẩn', ['CONTINUOUS', 'HIDDEN', 'CENTER', 'DASHED', 'PHANTOM'].every((n) => dxf.includes(n)));
+  // LAYER "Tuong" (lineweight mặc định 0.6mm ⇒ enum DXF gần nhất = 60) mang group 370 đúng giá trị.
+  const tuongIdx = lines.findIndex((l) => l.trim() === 'Tuong');
+  const next370 = tuongIdx >= 0 ? lines.slice(tuongIdx, tuongIdx + 8).findIndex((l) => l.trim() === '370') : -1;
+  ok('LAYER "Tuong" mang lineweight 370 = 60 (0.6mm)', next370 >= 0 && lines[tuongIdx + next370 + 1]?.trim() === '60');
   ok('có $ACADVER', dxf.includes('$ACADVER'));
   ok('có $INSUNITS', dxf.includes('$INSUNITS'));
   ok('có $EXTMIN/$EXTMAX', dxf.includes('$EXTMIN') && dxf.includes('$EXTMAX'));
@@ -210,11 +215,28 @@ function testLayerRouting() {
   ok('CIRCLE vẫn thuộc layer Noi_that', !!circBack && !!furnLayerBack && circBack.layer === furnLayerBack.id);
 }
 
+/* ── 7) hệ nét ISO 128 — lineweight/linetype của LAYER round-trip qua TABLES/LAYER ── */
+function testLineweightRoundtrip() {
+  console.log('\n[7] Hệ nét ISO 128 — lineweight/linetype của layer round-trip qua bảng LAYER');
+  const doc: Doc = emptyDoc(); // Tường=0.6/continuous, Trục=0.13/center theo DEFAULT_LAYERS
+  doc.entities.push({ id: newId('e'), type: 'line', layer: doc.layers[0].id, a: { x: 0, y: 0 }, b: { x: 100, y: 0 } });
+  const axisLayer = doc.layers.find((l) => l.name === 'Trục')!;
+  doc.entities.push({ id: newId('e'), type: 'line', layer: axisLayer.id, a: { x: 0, y: 0 }, b: { x: 100, y: 100 } });
+  const back = parseDxf(exportDxf(doc));
+  const wallBack = back.layers.find((l) => l.name === 'Tuong');
+  const axisBack = back.layers.find((l) => l.name === 'Truc');
+  ok('layer Tuong: lineweight round-trip ≈ 0.6mm', !!wallBack && approx(wallBack.lineweight ?? 0, 0.6, 0.01));
+  ok('layer Tuong: lineType round-trip = continuous', wallBack?.lineType === 'continuous');
+  ok('layer Truc: lineweight round-trip ≈ 0.13mm', !!axisBack && approx(axisBack.lineweight ?? 0, 0.13, 0.02));
+  ok('layer Truc: lineType round-trip = center', axisBack?.lineType === 'center');
+}
+
 testSimpleShapes();
 testDim();
 testHatch();
 testBlock();
 testStructure();
+testLineweightRoundtrip();
 testLayerRouting();
 
 console.log(`\n${pass} ok, ${fail} fail`);
