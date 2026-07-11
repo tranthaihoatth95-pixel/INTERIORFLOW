@@ -12,7 +12,8 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { useCadStore, type Tool } from '@/lib/cad/store';
+import { useCadStore } from '@/lib/cad/store';
+import { useFlowStore } from '@/lib/store';
 import type { Entity, Pt, Viewport } from '@/lib/cad/model';
 import { screenToWorld, worldToScreen, zoomAt, fitBox, docBox, dist } from '@/lib/cad/model';
 import { drawEntities, drawEntity } from '@/lib/cad/render';
@@ -25,6 +26,7 @@ import {
   offsetEntity,
   withNewId,
 } from '@/lib/cad/geometry';
+import { wallChain, roomRect } from '@/lib/cad/commands';
 
 interface Ix {
   cursorScreen: Pt;
@@ -87,6 +89,15 @@ export default function CadCanvas() {
     });
     return unsub;
   }, []);
+
+  // Canvas vẽ bằng màu đọc trực tiếp từ CSS var (--bg/--t1/...) mỗi lần draw(), nhưng
+  // useCadStore.subscribe ở trên không bắt được đổi theme (sống ở useFlowStore khác store)
+  // → bấm sáng/tối không tự vẽ lại, phải đợi thao tác khác (pan/zoom/vẽ) mới cập nhật màu.
+  // Theo dõi appliedTheme để ép vẽ lại ngay khi đổi giao diện.
+  const appliedTheme = useFlowStore((s) => s.appliedTheme);
+  useEffect(() => {
+    ix.current.redraw = true;
+  }, [appliedTheme]);
 
   // resize canvas theo khung + DPR
   useEffect(() => {
@@ -254,6 +265,7 @@ export default function CadCanvas() {
   const onDblClick = () => {
     const st = useCadStore.getState();
     if (st.tool === 'polyline' && ix.current.pts.length >= 2) finishPolyline(false);
+    else if (st.tool === 'wall' && ix.current.pts.length >= 2) finishWall(false);
   };
 
   /* ───────── xử lý click theo công cụ ───────── */
@@ -278,6 +290,19 @@ export default function CadCanvas() {
         break;
       case 'polyline':
         P.push(w);
+        break;
+      case 'wall':
+        P.push(w);
+        break;
+      case 'room':
+        P.push(w);
+        if (P.length === 2) {
+          const name = window.prompt('Tên phòng:', 'PHÒNG') ?? '';
+          const textLayer = st.doc.layers.find((l) => l.name === 'Ghi chú')?.id ?? st.currentLayer;
+          const { entities } = roomRect(P[0], P[1], st.wallThickness, name || 'PHÒNG', st.currentLayer, textLayer);
+          st.addEntities(entities);
+          ix.current.pts = [];
+        }
         break;
       case 'rect':
         P.push(w);
@@ -348,6 +373,16 @@ export default function CadCanvas() {
     const pts = ix.current.pts;
     if (pts.length >= 2) {
       st.addEntity({ id: newId('e'), type: 'polyline', layer: st.currentLayer, points: pts.slice(), closed });
+    }
+    ix.current.pts = [];
+    ix.current.redraw = true;
+  }
+
+  function finishWall(closed: boolean) {
+    const st = useCadStore.getState();
+    const pts = ix.current.pts;
+    if (pts.length >= 2) {
+      st.addEntities(wallChain(pts.slice(), st.wallThickness, st.currentLayer, closed));
     }
     ix.current.pts = [];
     ix.current.redraw = true;
@@ -472,6 +507,7 @@ export default function CadCanvas() {
       }
       if (e.key === 'Enter') {
         if (st.tool === 'polyline') finishPolyline(false);
+        else if (st.tool === 'wall') finishWall(false);
         else if (ix.current.dynBuf && ix.current.pts.length) {
           handleClick(effectivePoint(ix.current.pts[ix.current.pts.length - 1]), e.shiftKey);
         }
@@ -479,6 +515,10 @@ export default function CadCanvas() {
       }
       if ((e.key === 'c' || e.key === 'C') && st.tool === 'polyline' && ix.current.pts.length >= 2) {
         finishPolyline(true);
+        return;
+      }
+      if ((e.key === 'c' || e.key === 'C') && st.tool === 'wall' && ix.current.pts.length >= 2) {
+        finishWall(true);
         return;
       }
       if (e.key === 'Delete' || (e.key === 'e' && st.tool === 'select')) {
@@ -564,7 +604,7 @@ export default function CadCanvas() {
 
   function drawGrid(ctx: CanvasRenderingContext2D, v: Viewport, W: number, H: number, step: number, color: string) {
     const majorEvery = 10; // 10 × step (100mm) = 1m
-    let px = step * v.scale;
+    const px = step * v.scale;
     if (px < 6) return; // quá dày → bỏ lưới nhỏ
     // gốc world (0,0) trên màn:
     const origin = worldToScreen(v, { x: 0, y: 0 });
@@ -643,10 +683,12 @@ export default function CadCanvas() {
         }
         break;
       case 'polyline':
+      case 'wall':
         for (let i = 0; i < P.length - 1; i++) line(P[i], P[i + 1]);
         if (P.length) line(P[P.length - 1], cur);
         break;
       case 'rect':
+      case 'room':
         if (P.length === 1) {
           const a = S(P[0]);
           const b = S(cur);

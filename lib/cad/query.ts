@@ -34,6 +34,8 @@ function entEndpoints(e: Entity): Pt[] {
       return [e.at];
     case 'block':
       return [e.at];
+    case 'hatch':
+      return e.points;
   }
 }
 
@@ -56,6 +58,12 @@ function entSegments(e: Entity): [Pt, Pt][] {
         { x: e.x, y: e.y + e.h },
       ];
       return [[p[0], p[1]], [p[1], p[2]], [p[2], p[3]], [p[3], p[0]]];
+    }
+    case 'hatch': {
+      const p = e.points;
+      const segs: [Pt, Pt][] = [];
+      for (let i = 0; i < p.length; i++) segs.push([p[i], p[(i + 1) % p.length]]);
+      return segs;
     }
     default:
       return [];
@@ -136,6 +144,9 @@ export function hitTest(doc: Doc, world: Pt, tolMm: number): string | null {
         break;
       case 'block':
         if (dist(world, e.at) < 1000) consider(e.id, dist(world, e.at) * 0.5);
+        break;
+      case 'hatch':
+        for (const [a, b] of entSegments(e)) consider(e.id, nearestOnSeg(world, a, b).d);
         break;
     }
   }

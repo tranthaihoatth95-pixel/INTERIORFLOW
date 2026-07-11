@@ -12,6 +12,14 @@ import { create } from 'zustand';
 import type { Doc, Entity, Layer, Viewport } from './model';
 import { emptyDoc } from './model';
 
+// Dev-only: expose store cho debugging (window.__cadStore) — cùng pattern với
+// window.__flowStore trong lib/store.ts, không lọt vào bản build production.
+declare global {
+  interface Window {
+    __cadStore?: unknown;
+  }
+}
+
 export type Tool =
   | 'select'
   | 'line'
@@ -28,6 +36,8 @@ export type Tool =
   | 'measure'
   | 'text'
   | 'block'
+  | 'wall'
+  | 'room'
   | 'pan';
 
 export interface SnapSettings {
@@ -55,6 +65,8 @@ interface CadState {
   pendingBlock: string | null;
   /** offset distance nhớ cho lệnh Offset (mm) */
   offsetDist: number;
+  /** bề dày tường nhớ cho lệnh WALL (mm) */
+  wallThickness: number;
   past: Doc[];
   future: Doc[];
   /** dòng lệnh mini + thông báo trạng thái */
@@ -86,6 +98,7 @@ interface CadState {
 
   setPendingBlock: (b: string | null) => void;
   setOffsetDist: (d: number) => void;
+  setWallThickness: (d: number) => void;
 
   importDoc: (d: Doc, mode: 'replace' | 'merge') => void;
   scaleAll: (factor: number) => void;
@@ -112,6 +125,7 @@ export const useCadStore = create<CadState>((set, get) => ({
   viewport: { scale: 0.08, panX: 300, panY: 400 },
   pendingBlock: null,
   offsetDist: 100,
+  wallThickness: 110,
   past: [],
   future: [],
   status: 'Sẵn sàng — chọn công cụ hoặc gõ lệnh (L, PL, REC, C…).',
@@ -205,8 +219,18 @@ export const useCadStore = create<CadState>((set, get) => ({
       };
     }),
 
-  setPendingBlock: (pendingBlock) => set({ pendingBlock, tool: pendingBlock ? 'block' : get().tool }),
+  // Đặt cửa/cửa sổ/nội thất (toolbar D, lệnh D/WIN, hoặc chọn từ panel Nội thất) đều
+  // đi thẳng qua đây, KHÔNG qua setTool → thiếu status hint (thanh dưới đứng yên nội
+  // dung tool trước đó, người dùng không biết đang ở chế độ đặt block). Đồng bộ status
+  // giống setTool để luôn có phản hồi rõ ràng khi vào chế độ đặt block.
+  setPendingBlock: (pendingBlock) =>
+    set({
+      pendingBlock,
+      tool: pendingBlock ? 'block' : get().tool,
+      status: pendingBlock ? toolHint('block') : get().status,
+    }),
   setOffsetDist: (offsetDist) => set({ offsetDist }),
+  setWallThickness: (wallThickness) => set({ wallThickness }),
 
   importDoc: (d, mode) => {
     get().snapshot();
@@ -228,6 +252,10 @@ export const useCadStore = create<CadState>((set, get) => ({
 
   reset: () => set({ doc: emptyDoc(), selection: [], past: [], future: [], currentLayer: 'l-wall' }),
 }));
+
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  window.__cadStore = useCadStore;
+}
 
 function mergeLayers(a: Layer[], b: Layer[]): Layer[] {
   const byName = new Map(a.map((l) => [l.name, l]));
@@ -253,6 +281,8 @@ function scaleEntity(e: Entity, f: number): Entity {
       return { ...e, at: { x: e.at.x * f, y: e.at.y * f }, h: e.h * f };
     case 'block':
       return { ...e, at: { x: e.at.x * f, y: e.at.y * f }, sx: e.sx * f, sy: e.sy * f };
+    case 'hatch':
+      return { ...e, points: e.points.map((p) => ({ x: p.x * f, y: p.y * f })) };
   }
 }
 
@@ -273,6 +303,8 @@ function toolHint(t: Tool): string {
     measure: 'Measure: click 2 điểm để đo nhanh.',
     text: 'Text: click vị trí rồi gõ nội dung.',
     block: 'Đặt block: click để đặt. R = xoay 90°, gõ số + Enter cũng xoay.',
+    wall: 'Wall (W): click các điểm tim tường liên tiếp; Enter/double-click kết thúc. Gõ số + Enter = bề dày (mm).',
+    room: 'Room: click 2 góc phòng → tự vẽ 4 tường + nhãn tên/diện tích.',
     pan: 'Pan: kéo để di chuyển khung nhìn.',
   };
   return H[t];

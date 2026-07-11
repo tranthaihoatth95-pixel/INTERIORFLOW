@@ -19,6 +19,8 @@ export function friendlyAiError(raw: string): string {
     return 'Backend AI chưa chạy / không kết nối được. Bật ComfyUI (cổng 8188) rồi thử lại, hoặc đổi Mức AI ở góc phải header.';
   if (/text2img|workflow|not found.*json|\.json/.test(m))
     return 'Engine tự-host (ComfyUI) chưa có workflow cho tác vụ này. Dùng mức AI khác, hoặc bổ sung workflow tương ứng.';
+  if (/missing_node_type|custom node may not be installed/.test(m))
+    return 'Server ComfyUI tự-host thiếu custom node cần cho tác vụ này (chưa cài đủ). Cài custom node còn thiếu trên máy chạy ComfyUI, hoặc đổi sang mức AI khác ở header.';
   if (/provider_not_configured|not configured|chưa cấu hình/.test(m))
     return 'Chưa cấu hình nhà cung cấp AI cho mức này — chọn mức AI khác ở header.';
   if (/exhausted|balance|top up|top-up|quota|402|insufficient|payment required|user is locked|credit/.test(m))

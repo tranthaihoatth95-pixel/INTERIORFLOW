@@ -50,6 +50,8 @@ export function translateEntity(e: Entity, dx: number, dy: number): Entity {
       return { ...e, at: t(e.at) };
     case 'block':
       return { ...e, at: t(e.at) };
+    case 'hatch':
+      return { ...e, points: e.points.map(t) };
   }
 }
 
@@ -80,6 +82,8 @@ export function rotateEntity(e: Entity, c: Pt, ang: number): Entity {
       return { ...e, at: r(e.at) };
     case 'block':
       return { ...e, at: r(e.at), rot: e.rot + ang };
+    case 'hatch':
+      return { ...e, points: e.points.map(r) };
   }
 }
 
@@ -104,6 +108,8 @@ export function mirrorEntity(e: Entity, o: Pt, phi: number): Entity {
       return { ...e, at: m(e.at) };
     case 'block':
       return { ...e, at: m(e.at), rot: 2 * phi - e.rot, sx: -e.sx };
+    case 'hatch':
+      return { ...e, points: e.points.map(m) };
   }
 }
 
@@ -142,12 +148,16 @@ export function offsetEntity(e: Entity, d: number, side: Pt): Entity | null {
       const sh = Math.sign(e.h) || 1;
       return { ...e, id: newId('e'), x: e.x - sw * s, y: e.y - sh * s, w: e.w + 2 * sw * s, h: e.h + 2 * sh * s };
     }
-    case 'polyline': {
+    case 'polyline':
+    case 'hatch': {
       // xấp xỉ: dời mỗi đỉnh theo pháp tuyến trung bình các cạnh kề, phía gần `side`.
+      // hatch (poché tường do WALL/ROOM sinh ra) luôn là đa giác kín (quad), khác polyline
+      // chỉ có 'closed' khi người dùng bấm C — coi hatch như closed=true.
+      const closed = e.type === 'hatch' ? true : e.closed;
       const pts = e.points;
       const out: Pt[] = pts.map((p, i) => {
-        const prev = pts[i - 1] ?? (e.closed ? pts[pts.length - 1] : p);
-        const next = pts[i + 1] ?? (e.closed ? pts[0] : p);
+        const prev = pts[i - 1] ?? (closed ? pts[pts.length - 1] : p);
+        const next = pts[i + 1] ?? (closed ? pts[0] : p);
         let nx = -(next.y - prev.y);
         let ny = next.x - prev.x;
         const len = Math.hypot(nx, ny) || 1;

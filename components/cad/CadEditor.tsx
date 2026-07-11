@@ -9,15 +9,18 @@
  * trên canvas Render (useFlowStore) rồi router.push('/') — đúng pattern onDrop asset của FlowCanvas.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Plus, Trash2, X, Command,
+  FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Plus, Trash2, X, Command, Sparkles, Wand2,
 } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import { parseDxf, exportDxf } from '@/lib/cad/dxf';
 import { renderDocToDataURL } from '@/lib/cad/render';
 import { BLOCKS } from '@/lib/cad/furniture';
+import { buildDemoPlan } from '@/lib/cad/demo-plan';
+import { describeToEntities } from '@/lib/cad/ai-assist';
+import { docBox } from '@/lib/cad/model';
 import { useFlowStore } from '@/lib/store';
 import { stashCadHandoff } from '@/lib/cad/handoff';
 import CadCanvas from './CadCanvas';
@@ -43,6 +46,31 @@ export default function CadEditor() {
     const url = URL.createObjectURL(blob);
     downloadDataUrl(url, 'layout.dxf');
     setTimeout(() => URL.revokeObjectURL(url), 2000);
+  };
+
+  const openDemo = () => {
+    if (useCadStore.getState().doc.entities.length > 0) {
+      const ok = window.confirm('Mở bản demo sẽ THAY THẾ bản vẽ hiện tại. Tiếp tục?');
+      if (!ok) return;
+    }
+    useCadStore.getState().importDoc(buildDemoPlan(), 'replace');
+    useCadStore.getState().setStatus('Đã mở bản demo — căn hộ mẫu 1PN (sơ phác DD). Bấm F để Zoom Extents.');
+    window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+  };
+
+  // AI-assist rule-based (lib/cad/ai-assist.ts) — stub tối giản, xem chỗ cắm LLM thật trong file đó.
+  const aiAssist = () => {
+    const desc = window.prompt('Mô tả nhanh (VD: "phòng ngủ 4x3.5 có giường và tủ áo"):', '');
+    if (!desc) return;
+    const st = useCadStore.getState();
+    const box = docBox(st.doc);
+    const origin = box ? { x: box.maxX + 1000, y: box.minY } : { x: 0, y: 0 };
+    const wallLayer = st.doc.layers.find((l) => l.name === 'Tường')?.id ?? st.currentLayer;
+    const textLayer = st.doc.layers.find((l) => l.name === 'Ghi chú')?.id ?? st.currentLayer;
+    const { entities, note } = describeToEntities(desc, origin, wallLayer, textLayer, st.wallThickness);
+    st.addEntities(entities);
+    st.setStatus(note);
+    window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
   };
 
   const onImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,6 +126,12 @@ export default function CadEditor() {
           <FolderOpen size={14} /> Mở DXF
         </button>
         <input ref={fileRef} type="file" accept=".dxf" hidden onChange={onImportFile} />
+        <button type="button" onClick={openDemo} style={fileBtn} title="Nạp 1 mặt bằng căn hộ mẫu đầy đủ (tường/phòng/cửa/kích thước/nội thất)">
+          <Sparkles size={14} /> Mở bản demo
+        </button>
+        <button type="button" onClick={aiAssist} style={fileBtn} title="AI-assist (rule-based): mô tả nhanh 1 phòng → tự vẽ tường + đặt nội thất khớp từ khoá">
+          <Wand2 size={14} /> AI mô tả
+        </button>
         <ScaleButtons />
         <div style={{ flex: 1 }} />
         <button type="button" onClick={doExportPng} style={fileBtn} title="Xuất PNG nền trắng">
@@ -243,6 +277,8 @@ function CommandLine({ status }: { status: string }) {
   const undo = useCadStore((s) => s.undo);
   const redo = useCadStore((s) => s.redo);
   const setOffsetDist = useCadStore((s) => s.setOffsetDist);
+  const setWallThickness = useCadStore((s) => s.setWallThickness);
+  const setPendingBlock = useCadStore((s) => s.setPendingBlock);
 
   const run = () => {
     const raw = val.trim();
@@ -277,6 +313,16 @@ function CommandLine({ status }: { status: string }) {
       DI: () => setTool('measure'),
       T: () => setTool('text'),
       TEXT: () => setTool('text'),
+      W: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) setWallThickness(parseFloat(arg));
+        setTool('wall');
+      },
+      WALL: () => setTool('wall'),
+      ROOM: () => setTool('room'),
+      D: () => setPendingBlock('door'),
+      DOOR: () => setPendingBlock('door'),
+      WIN: () => setPendingBlock('window'),
+      WINDOW: () => setPendingBlock('window'),
       E: () => deleteSelected(),
       DEL: () => deleteSelected(),
       ERASE: () => deleteSelected(),
@@ -290,7 +336,7 @@ function CommandLine({ status }: { status: string }) {
     };
     const fn = map[c];
     if (fn) fn();
-    else setStatus(`Lệnh không rõ: "${raw}". Thử L, PL, REC, C, A, M, CO, RO, MI, O, DIM, T, E, U.`);
+    else setStatus(`Lệnh không rõ: "${raw}". Thử L, PL, REC, C, A, W, ROOM, D, WIN, M, CO, RO, MI, O, DIM, T, E, U.`);
     setVal('');
   };
 
@@ -303,7 +349,7 @@ function CommandLine({ status }: { status: string }) {
         onKeyDown={(e) => {
           if (e.key === 'Enter') run();
         }}
-        placeholder="Gõ lệnh: L · PL · REC · C · M · CO · RO · MI · O 150 · DIM · T · E · U…"
+        placeholder="Gõ lệnh: L · PL · REC · C · W 200 · ROOM · D · WIN · M · CO · RO · MI · O 150 · DIM · T · E · U…"
         style={{ width: 340, background: 'var(--field)', border: '1px solid var(--border)', borderRadius: 7, padding: '3px 8px', fontSize: 12, color: 'var(--t1)', outline: 'none', fontFamily: 'ui-monospace, monospace' }}
       />
       <span style={{ fontSize: 11.5, color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{status}</span>
