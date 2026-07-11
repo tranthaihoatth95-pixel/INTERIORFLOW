@@ -7,26 +7,29 @@
  *  1) Lấy mọi đoạn thẳng "có thể là biên" từ entity hiển thị (line/dim/polyline/rect/hatch lấy
  *     thẳng; circle/arc xấp xỉ đa giác — đủ mượt cho mục đích dò biên, KHÔNG cần chính xác từng
  *     độ cong).
- *  2) Cắt (split) mọi đoạn tại MỌI giao điểm với đoạn khác → tập đoạn "nguyên tử" không giao
- *     nhau (trừ tại đầu mút chung) — đây chính là 1 mặt phẳng phân hoạch (planar arrangement).
- *  3) Từ đoạn nguyên tử GẦN pick-point nhất, đi bộ theo quy tắc "luôn rẽ theo 1 chiều xoay cố
- *     định tại mỗi đỉnh" (half-edge face traversal — thuật toán kinh điển để lần ra 1 mặt của
- *     mặt phẳng phân hoạch) cho tới khi khép lại đúng đỉnh xuất phát. Thử cả 2 đầu đoạn × 2
- *     chiều xoay (cw/ccw) = 4 khả năng, giữ lại vòng nào KHÉP + chứa pick-point (point-in-polygon)
- *     + diện tích nhỏ nhất (ưu tiên vùng trong cùng khi có phòng lồng phòng).
+ *  2) Cắt (split) mọi đoạn tại MỌI giao điểm với đoạn khác — kể cả giao kiểu CHẠM ĐẦU MÚT
+ *     (đầu đoạn này đậu giữa đoạn kia, chính là đỉnh chữ T) và chồng lấn THẲNG HÀNG một phần —
+ *     rồi hút đỉnh về lưới 0.01mm + loại đoạn trùng lặp (mỗi wallSegment phát cả hatch lẫn
+ *     polyline cùng toạ độ → mọi cạnh tường bị nhân đôi nếu không lọc) → tập đoạn "nguyên tử"
+ *     tạo thành 1 mặt phẳng phân hoạch (planar arrangement) sạch.
+ *  3) Dựng DCEL toàn cục: mỗi đoạn nguyên tử → 2 nửa-cạnh (half-edge) ngược chiều; tại mỗi đỉnh
+ *     sắp các nửa-cạnh đi ra theo góc; con trỏ next của nửa-cạnh (u→v) = nửa-cạnh đứng NGAY
+ *     TRƯỚC twin (v→u) theo chiều ngược kim đồng hồ quanh v. Đi theo next liệt kê MỌI mặt của
+ *     phân hoạch đúng 1 lần (thuật toán textbook — khác bản cũ chỉ "rẽ góc nhỏ nhất" cục bộ
+ *     từng bước từ 1 cạnh xuất phát đoán mò, vốn lạc lối tại đỉnh chữ T bậc ≥4, xem git log).
+ *     Mặt HỮU HẠN có diện tích đại số dương (đi ngược kim đồng hồ); mặt vô hạn âm → loại.
+ *  4) Trong các mặt hữu hạn chứa pick-point (point-in-polygon), lấy mặt diện tích NHỎ NHẤT
+ *     (ưu tiên vùng trong cùng khi có phòng lồng phòng).
  *
- * GIỚI HẠN ĐÃ PHÁT HIỆN (qua debug thủ công khi xây lib/cad/standards/checker.ts — xem comment
- * đầu file đó): với phòng có tường bao bị 1 VÁCH KHÁC ĐÂM VÀO tạo góc chữ T (rất phổ biến trong
- * mặt bằng nhiều phòng), các quad tường độc lập không vát góc (wallChain/wallSegment trong
- * commands.ts) chồng lấn nhau tại góc/chữ T tạo khe hở hình học nhỏ khiến traceFace đôi khi bắt
- * nhầm vào khe hở đó thay vì đường bao phòng thật, dò biên trả về null (thất bại AN TOÀN, không
- * trả sai) thay vì đúng đa giác mong đợi. Phòng ĐƠN (chỉ tường bao khép kín, không vách khác
- * đâm vào) vẫn dò đúng bình thường (đã test). Cần thuật toán face-finding chắc hơn cho trường
- * hợp T-junction — để dành bản nâng cấp sau.
+ * Nhờ liệt kê mặt TOÀN CỤC (không phụ thuộc cạnh xuất phát), phòng có vách khác đâm vào tường
+ * bao tạo chữ T — trường hợp phổ biến của mặt bằng nhiều phòng, từng làm bản cũ trả null —
+ * giờ dò đúng đa giác phòng (test [7]/[8] trong hatch.test.ts khoá hành vi này). Các "khe hở"
+ * nhỏ nơi 2 quad tường không vát góc chồng lấn nhau vẫn là mặt thật của phân hoạch, nhưng chỉ
+ * được trả về khi pick-point nằm TRONG khe đó (đúng nghĩa hình học).
  */
 
 import type { Doc, Entity, Pt } from './model';
-import { dist, nearestOnSeg } from './model';
+import { dist } from './model';
 import { entSegments } from './query';
 import { infiniteLineIntersect } from './modify';
 
@@ -88,17 +91,43 @@ export function collectBoundarySegments(doc: Doc, arcSteps = 24): [Pt, Pt][] {
   return segs;
 }
 
-/** Cắt mọi đoạn tại giao điểm với đoạn khác → đoạn "nguyên tử" (mặt phẳng phân hoạch). */
+const EPS = 1e-6;
+
+/**
+ * Cắt mọi đoạn tại giao điểm với đoạn khác → đoạn "nguyên tử" (mặt phẳng phân hoạch).
+ * Cắt cả 3 kiểu giao:
+ *  - giao CHÉO thường (t, u đều nằm trong lòng 2 đoạn);
+ *  - giao CHẠM ĐẦU MÚT — đầu đoạn kia đậu giữa lòng đoạn này (đỉnh chữ T): vẫn phải cắt đoạn
+ *    này, nếu không đỉnh T nằm "chìm" giữa cạnh và DCEL không biết tới nó;
+ *  - chồng lấn THẲNG HÀNG một phần: chiếu đầu mút đoạn kia lên đoạn này để cắt (phần trùng
+ *    nhau sau đó bị loại bởi bước dedupe trong buildAtomicSegments).
+ */
 function splitAtIntersections(segs: [Pt, Pt][]): [Pt, Pt][] {
   const params: number[][] = segs.map(() => [0, 1]);
   for (let i = 0; i < segs.length; i++) {
+    const [a, b] = segs[i];
     for (let k = i + 1; k < segs.length; k++) {
-      const [a, b] = segs[i];
       const [c, d] = segs[k];
       const r = infiniteLineIntersect(a, b, c, d);
-      if (r && r.t > 1e-6 && r.t < 1 - 1e-6 && r.u > 1e-6 && r.u < 1 - 1e-6) {
-        params[i].push(r.t);
-        params[k].push(r.u);
+      if (r) {
+        if (r.t > EPS && r.t < 1 - EPS && r.u >= -EPS && r.u <= 1 + EPS) params[i].push(r.t);
+        if (r.u > EPS && r.u < 1 - EPS && r.t >= -EPS && r.t <= 1 + EPS) params[k].push(r.u);
+      } else {
+        // song song — chỉ quan tâm khi THẲNG HÀNG (điểm c nằm trên đường ab)
+        const abx = b.x - a.x;
+        const aby = b.y - a.y;
+        const ab2 = abx * abx + aby * aby;
+        if (ab2 < EPS) continue;
+        const perp = Math.abs(abx * (c.y - a.y) - aby * (c.x - a.x)) / Math.sqrt(ab2);
+        if (perp > 1e-4) continue;
+        const tOf = (p: Pt) => (abx * (p.x - a.x) + aby * (p.y - a.y)) / ab2;
+        for (const t of [tOf(c), tOf(d)]) if (t > EPS && t < 1 - EPS) params[i].push(t);
+        const cdx = d.x - c.x;
+        const cdy = d.y - c.y;
+        const cd2 = cdx * cdx + cdy * cdy;
+        if (cd2 < EPS) continue;
+        const uOf = (p: Pt) => (cdx * (p.x - c.x) + cdy * (p.y - c.y)) / cd2;
+        for (const u of [uOf(a), uOf(b)]) if (u > EPS && u < 1 - EPS) params[k].push(u);
       }
     }
   }
@@ -121,82 +150,105 @@ function keyOf(p: Pt): string {
   return `${Math.round(p.x * 100)}:${Math.round(p.y * 100)}`; // gộp đỉnh trùng trong sai số 0.01mm
 }
 
-interface Neighbor {
-  pt: Pt;
-  key: string;
+/** Hút toạ độ về đúng lưới 0.01mm của keyOf — để góc cạnh tính từ toạ độ khớp tuyệt đối với đỉnh đã gộp. */
+function snap(p: Pt): Pt {
+  return { x: Math.round(p.x * 100) / 100, y: Math.round(p.y * 100) / 100 };
 }
 
-function buildGraph(atomic: [Pt, Pt][]): Map<string, Neighbor[]> {
-  const adj = new Map<string, Neighbor[]>();
-  const add = (from: Pt, to: Pt) => {
-    const kf = keyOf(from);
-    const kt = keyOf(to);
-    if (!adj.has(kf)) adj.set(kf, []);
-    adj.get(kf)!.push({ pt: to, key: kt });
-  };
+/** splitAtIntersections + hút lưới + loại đoạn suy biến/TRÙNG LẶP (hatch và polyline của cùng 1
+ * wallSegment phát ra 2 bộ cạnh y hệt nhau — giữ cả 2 thì mỗi cạnh tường thành cạnh đôi, DCEL
+ * ghép twin sai). */
+function buildAtomicSegments(segs: [Pt, Pt][]): [Pt, Pt][] {
+  const out: [Pt, Pt][] = [];
+  const seen = new Set<string>();
+  for (const [a0, b0] of splitAtIntersections(segs)) {
+    const a = snap(a0);
+    const b = snap(b0);
+    const ka = keyOf(a);
+    const kb = keyOf(b);
+    if (ka === kb) continue;
+    const key = ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push([a, b]);
+  }
+  return out;
+}
+
+/** Diện tích ĐẠI SỐ (shoelace có dấu): >0 = đi ngược kim đồng hồ (mặt hữu hạn của DCEL bên dưới). */
+function signedArea(poly: Pt[]): number {
+  let a = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i];
+    const q = poly[(i + 1) % poly.length];
+    a += p.x * q.y - q.x * p.y;
+  }
+  return a / 2;
+}
+
+/**
+ * Liệt kê MỌI mặt hữu hạn của mặt phẳng phân hoạch (DCEL kinh điển):
+ * mỗi đoạn nguyên tử → 2 nửa-cạnh ngược chiều; tại mỗi đỉnh sắp nửa-cạnh đi ra theo góc tăng
+ * dần (ngược kim đồng hồ); next của (u→v) = nửa-cạnh đứng ngay TRƯỚC twin (v→u) trong vòng sắp
+ * đó. Mỗi nửa-cạnh thuộc đúng 1 mặt; mặt hữu hạn khép theo chiều ngược kim đồng hồ (diện tích
+ * đại số dương), mặt vô hạn âm — chỉ trả mặt hữu hạn.
+ */
+function enumerateFaces(atomic: [Pt, Pt][]): Pt[][] {
+  interface HalfEdge { from: Pt; fromKey: string; toKey: string; ang: number; twin: number; next: number }
+  const hes: HalfEdge[] = [];
   for (const [a, b] of atomic) {
-    add(a, b);
-    add(b, a);
+    const i = hes.length;
+    hes.push({ from: a, fromKey: keyOf(a), toKey: keyOf(b), ang: Math.atan2(b.y - a.y, b.x - a.x), twin: i + 1, next: -1 });
+    hes.push({ from: b, fromKey: keyOf(b), toKey: keyOf(a), ang: Math.atan2(a.y - b.y, a.x - b.x), twin: i, next: -1 });
   }
-  return adj;
-}
-
-/** Đi bộ half-edge từ (startPt→firstPt) theo 1 chiều xoay cố định tới khi khép lại startKey. */
-function traceFace(adj: Map<string, Neighbor[]>, startKey: string, startPt: Pt, firstKey: string, firstPt: Pt, mode: 'cw' | 'ccw', maxSteps = 4000): Pt[] | null {
-  const poly: Pt[] = [startPt];
-  let prevPt = startPt;
-  let curKey = firstKey;
-  let curPt = firstPt;
-  for (let step = 0; step < maxSteps; step++) {
-    poly.push(curPt);
-    if (curKey === startKey) return poly;
-    const neighbors = adj.get(curKey) ?? [];
-    const backAngle = Math.atan2(prevPt.y - curPt.y, prevPt.x - curPt.x);
-    let best: Neighbor | null = null;
-    let bestDelta = Infinity;
-    for (const n of neighbors) {
-      const isBack = Math.abs(n.pt.x - prevPt.x) < 1e-6 && Math.abs(n.pt.y - prevPt.y) < 1e-6;
-      if (isBack && neighbors.length > 1) continue; // tránh quay lại ngay trừ khi cụt (bậc 1)
-      const ang = Math.atan2(n.pt.y - curPt.y, n.pt.x - curPt.x);
-      let delta = norm2pi(ang - backAngle);
-      if (mode === 'ccw') delta = norm2pi(-delta);
-      if (delta < bestDelta) {
-        bestDelta = delta;
-        best = n;
-      }
+  const outgoing = new Map<string, number[]>();
+  hes.forEach((h, i) => {
+    if (!outgoing.has(h.fromKey)) outgoing.set(h.fromKey, []);
+    outgoing.get(h.fromKey)!.push(i);
+  });
+  const posInRing = new Array<number>(hes.length);
+  for (const ring of outgoing.values()) {
+    ring.sort((x, y) => hes[x].ang - hes[y].ang);
+    ring.forEach((he, pos) => { posInRing[he] = pos; });
+  }
+  for (let i = 0; i < hes.length; i++) {
+    const ring = outgoing.get(hes[i].toKey)!;
+    hes[i].next = ring[(posInRing[hes[i].twin] - 1 + ring.length) % ring.length];
+  }
+  const faces: Pt[][] = [];
+  const visited = new Array<boolean>(hes.length).fill(false);
+  for (let i = 0; i < hes.length; i++) {
+    if (visited[i]) continue;
+    const poly: Pt[] = [];
+    let cur = i;
+    let guard = hes.length + 1;
+    while (!visited[cur] && guard-- > 0) {
+      visited[cur] = true;
+      poly.push(hes[cur].from);
+      cur = hes[cur].next;
     }
-    if (!best) return null;
-    prevPt = curPt;
-    curPt = best.pt;
-    curKey = best.key;
+    if (cur !== i || poly.length < 3) continue; // vòng không khép về nửa-cạnh xuất phát — bỏ
+    if (signedArea(poly) > EPS) faces.push(poly);
   }
-  return null; // quá nhiều bước — không khép được, coi như thất bại
+  return faces;
 }
 
-/** Dò biên vùng kín chứa `pick` từ tập đoạn thẳng biên khả dĩ `segs`. null nếu không tìm ra. */
+/** Dò biên vùng kín chứa `pick` từ tập đoạn thẳng biên khả dĩ `segs`. null nếu không tìm ra.
+ * Trong mọi mặt hữu hạn chứa pick, trả mặt diện tích NHỎ NHẤT (vùng trong cùng). */
 export function traceHatchBoundary(segs: [Pt, Pt][], pick: Pt): Pt[] | null {
-  const atomic = splitAtIntersections(segs);
+  const atomic = buildAtomicSegments(segs);
   if (!atomic.length) return null;
-  const adj = buildGraph(atomic);
-
-  let nearest: { a: Pt; b: Pt; d: number } | null = null;
-  for (const [a, b] of atomic) {
-    const r = nearestOnSeg(pick, a, b);
-    if (!nearest || r.d < nearest.d) nearest = { a, b, d: r.d };
-  }
-  if (!nearest) return null;
-
-  const candidates: Pt[][] = [];
-  const starts: [Pt, Pt][] = [[nearest.a, nearest.b], [nearest.b, nearest.a]];
-  for (const [start, first] of starts) {
-    for (const mode of ['cw', 'ccw'] as const) {
-      const poly = traceFace(adj, keyOf(start), start, keyOf(first), first, mode);
-      if (poly && poly.length >= 3 && pointInPolygon(pick, poly)) candidates.push(poly);
+  let best: Pt[] | null = null;
+  let bestArea = Infinity;
+  for (const face of enumerateFaces(atomic)) {
+    if (!pointInPolygon(pick, face)) continue;
+    const area = polygonArea(face);
+    if (area < bestArea) {
+      bestArea = area;
+      best = face;
     }
   }
-  if (!candidates.length) return null;
-  candidates.sort((x, y) => polygonArea(x) - polygonArea(y));
-  return candidates[0];
+  return best;
 }
 
 /** Tiện ích 1-bước: dò biên trực tiếp từ Doc + pick-point (dùng cho lệnh H trong CadCanvas). */

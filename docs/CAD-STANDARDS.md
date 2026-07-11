@@ -73,14 +73,12 @@ phòng) làm pick-point, dò ra đa giác phòng thật, đo diện tích (chín
 "12.2 m²" có thể lệch nếu user sửa tường mà quên sửa nhãn) + bề rộng nhỏ nhất (xấp xỉ rotating-
 calipers, đủ cho phòng chữ nhật/gần chữ nhật).
 
-**Giới hạn đã biết (đã kiểm chứng bằng debug thủ công, không phải suy đoán):** dò biên đáng tin
-cậy cho phòng có tường bao là 1 vòng khép kín KHÔNG bị vách khác đâm vào giữa (chữ T). Với phòng
-có T-junction (rất phổ biến — VD phòng khách kề 1 vách dọc chia các phòng khác), thuật toán đôi
-khi thất bại (trả `null`, do các quad tường độc lập không vát góc trong `commands.ts` chồng lấn
-tạo khe hở hình học nhỏ ở góc/chữ T). Checker xử lý AN TOÀN: bỏ qua phòng không dò được biên
-(không đoán mò, không báo sai) — nghĩa là MỘT SỐ VI PHẠM THẬT Ở PHÒNG CÓ HÌNH HỌC PHỨC TẠP CÓ THỂ
-BỊ BỎ SÓT (false negative), không phải báo sai (false positive). Đã tạo task riêng theo dõi việc
-nâng cấp thuật toán face-finding này.
+**~~Giới hạn T-junction~~ — ĐÃ SỬA** (commit fix/hatch-t-junction): trước đây phòng có vách
+khác đâm chữ T vào tường bao dò biên thất bại (trả `null`) → phòng bị BỎ QUA khỏi phép đo (vi
+phạm thật có thể bị nuốt). `hatch.ts` đã thay bằng DCEL liệt kê mặt toàn cục (xem đầu file đó
+và docs/CAD-LT.md) — cả 5 phòng demo-plan (kể cả 2 phòng kề chữ T) giờ đo đúng, khoá bằng test
+[7]/[8] của `checker.test.ts`. Nguyên tắc an toàn giữ nguyên: nếu dò biên vẫn thất bại vì lý do
+khác (biên hở thật sự…) → bỏ qua phòng, không đoán mò.
 
 ## Trạng thái verified/chưa verified của từng rule (chốt tại lúc viết — 2026-07-11)
 
