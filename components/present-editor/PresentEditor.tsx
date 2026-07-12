@@ -41,7 +41,9 @@ import { exportDeckToPdf, exportDeckToPptxFromModel, exportDeckToPng } from '@/l
 import { useEditor } from './useEditor';
 import { slidesFromContent } from '@/lib/present-editor/content-deck';
 import { evaluateDeck } from '@/lib/present-editor/layout-check';
-import { slidesFromReference } from '@/lib/present-editor/reference-layout';
+import { slidesFromReference, detectGridFromUrl } from '@/lib/present-editor/reference-layout';
+import type { GridGeometryInput } from '@/lib/present-editor/suggest';
+import { consumePresentHandoff } from '@/lib/present-editor/handoff';
 import Toolbar from './Toolbar';
 import EditorCanvas from './EditorCanvas';
 import Inspector from './Inspector';
@@ -90,6 +92,9 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   const [localRefs, setLocalRefs] = useState<RefImage[]>([]);
   // Cảnh báo bố cục (chuẩn DECK_STANDARDS) sau khi dàn tự động — không thụ động, đóng được.
   const [layoutWarnings, setLayoutWarnings] = useState<ReturnType<typeof evaluateDeck>>([]);
+  // HOOK ML pha 1: hình học lưới của ảnh reference GẦN NHẤT (đính lúc Generate) — nuôi
+  // suggestTemplate chọn archetype sát ảnh mẫu. null = suggest theo heuristic cũ.
+  const [refGrid, setRefGrid] = useState<GridGeometryInput | null>(null);
 
   // Nạp thư viện Reference (layout/slide templates + gu). Không chặn UI nếu lỗi/empty.
   useEffect(() => {
@@ -128,6 +133,23 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     };
   }, []);
 
+  // A-4 (bridge Render→Present): consume-ONCE ảnh slide đã render theo user từ chặng Render
+  // (stash ở Header khi bấm pill Present). Vào rổ Reference local — human-in-loop kéo vào slide,
+  // KHÔNG tự chèn vào deck. Không có handoff ⇒ mảng rỗng ⇒ editor y hệt cũ.
+  useEffect(() => {
+    const imgs = consumePresentHandoff();
+    if (!imgs.length) return;
+    const items: RefImage[] = imgs.map((url, i) => ({
+      id: newId('ref'),
+      name: `Slide từ Render ${i + 1}`,
+      url,
+      tags: 'render-handoff',
+      source: 'local',
+      mine: true,
+    }));
+    setLocalRefs((prev) => [...items, ...prev]);
+  }, []);
+
   const templates: EditorTemplate[] = useMemo(
     () => [...BUILTIN_TEMPLATES, ...templatesFromLibrary(libAssets)],
     [libAssets],
@@ -156,8 +178,8 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     const body = texts.filter((t) => t.role === 'body').flatMap((t) => t.text.split('\n')).filter(Boolean);
     const images = s.elements.filter((e) => e.kind === 'image').map((e) => (e as { src: string }).src);
     if (s.backgroundImage) images.push(s.backgroundImage);
-    return suggestTemplate({ title, kicker, body, images, gu }, { isFirst: ed.currentSlide === 0 });
-  }, [ed.slide, ed.currentSlide, gu]);
+    return suggestTemplate({ title, kicker, body, images, gu, grid: refGrid }, { isFirst: ed.currentSlide === 0 });
+  }, [ed.slide, ed.currentSlide, gu, refGrid]);
 
   const palette = ed.deck.palette;
 
@@ -434,6 +456,11 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
           mine: true,
         }));
         setLocalRefs((prev) => [...items, ...prev]);
+      }
+      // HOOK ML pha 1: ảnh reference đính kèm → rút hình học lưới (gutter + ô) cho suggest.
+      // Chạy nền, lỗi/nghèo lưới → giữ null (suggest heuristic cũ). Không chặn dàn slide.
+      if (r.attachRefs?.length) {
+        detectGridFromUrl(r.attachRefs[0]).then((g) => setRefGrid(g)).catch(() => {});
       }
       // MỚI: có nội dung text → DÀN SLIDE tự động (cover + quote + content).
       // Ưu tiên: có ảnh reference → dàn theo LƯỚI ảnh (region-layout); nếu không ra

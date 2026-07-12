@@ -9,6 +9,16 @@
 import type { GuProfile } from '@/lib/gu';
 import type { FontPairing } from '@/lib/slides';
 import type { TemplateContext } from './templates';
+import type { RegionCell } from './detect-regions';
+import { patternIconHint } from './grid-geometry';
+
+/** HOOK ML pha 1 — hình học lưới rút từ ảnh reference (detectRegions) để chọn archetype sát hơn. */
+export interface GridGeometryInput {
+  cells: RegionCell[];
+  /** gutter đại diện theo % sân khấu (detectRegions.gutterXPct/YPct) — chỉ để giải thích. */
+  gutterXPct?: number;
+  gutterYPct?: number;
+}
 
 export interface SuggestInput {
   kicker?: string;
@@ -16,6 +26,8 @@ export interface SuggestInput {
   body?: string[];
   images?: string[];
   gu?: GuProfile | null;
+  /** Tuỳ chọn — KHÔNG truyền = heuristic #ảnh + độ dài chữ y hệt cũ. */
+  grid?: GridGeometryInput | null;
 }
 
 export interface Suggestion {
@@ -63,6 +75,25 @@ export function suggestTemplate(input: SuggestInput, opts?: { isFirst?: boolean 
 
   let templateId: string;
   let reason: string;
+
+  // HOOK ML pha 1: hình học lưới của ảnh reference (nếu có) — pattern/icon heuristic tất định
+  // (grid-geometry.patternIconHint) làm TIE-BREAKER TRƯỚC luật nội dung; không khớp hint nào
+  // → rơi xuống luật cũ NGUYÊN VẸN. Không truyền grid = hành vi cũ 100%.
+  const hint = input.grid?.cells?.length ? patternIconHint(input.grid.cells) : null;
+  const gutterNote =
+    input.grid && (input.grid.gutterXPct || input.grid.gutterYPct)
+      ? ` (gutter ≈${(input.grid.gutterXPct ?? 0).toFixed(0)}×${(input.grid.gutterYPct ?? 0).toFixed(0)}% sân khấu)`
+      : '';
+  if (hint?.suggestIconSet && nImg >= 2) {
+    templateId = 'grid';
+    reason = `Ảnh mẫu là lưới nhiều ô nhỏ đều${gutterNote} + ${nImg} ảnh → bố cục lưới. ${hint.reasons[0] ?? ''}`.trim();
+    return { templateId, reason, ctx, fonts };
+  }
+  if (hint?.suggestColorBlock && nImg >= 1 && totalTextLen < 120) {
+    templateId = 'full-bleed';
+    reason = `Ảnh mẫu có khối lớn chiếm ưu thế${gutterNote} → ảnh tràn viền. ${hint.reasons.find((r) => r.includes('khối màu')) ?? ''}`.trim();
+    return { templateId, reason, ctx, fonts };
+  }
 
   if (nImg >= 3) {
     templateId = 'grid';
