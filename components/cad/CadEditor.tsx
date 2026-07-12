@@ -28,6 +28,7 @@ import { useFlowStore } from '@/lib/store';
 import { stashCadHandoff } from '@/lib/cad/handoff';
 import { checkStandards, type Violation } from '@/lib/cad/standards/checker';
 import { getAllRules } from '@/lib/cad/standards/registry';
+import { classifyOperator, rulesForOperator, type OperatorType } from '@/lib/cad/operator-profile';
 import CadCanvas from './CadCanvas';
 import CadToolbar from './CadToolbar';
 
@@ -358,11 +359,55 @@ function FurniturePanel({ onClose }: { onClose: () => void }) {
 }
 
 /* ───────── Panel Kiểm chuẩn (standards checker) — CHỈ ĐỌC + ĐỀ XUẤT, không tự sửa ───────── */
+/** Nhãn operator hiển thị (proposal §1). '' = không lọc → dùng getAllRules() như cũ. */
+const OPERATOR_LABELS: { value: OperatorType | ''; label: string }[] = [
+  { value: '', label: 'Tất cả bộ quy chuẩn (mặc định)' },
+  { value: 'residential', label: 'Nhà ở / lưu trú' },
+  { value: 'office', label: 'Văn phòng' },
+  { value: 'f&b', label: 'F&B (café/nhà hàng)' },
+  { value: 'retail', label: 'Bán lẻ / showroom' },
+  { value: 'hospitality', label: 'Khách sạn / lounge' },
+  { value: 'clinic', label: 'Phòng khám / y tế' },
+  { value: 'generic', label: 'Chung (generic)' },
+];
+
 function StandardsPanel({ onClose }: { onClose: () => void }) {
   const doc = useCadStore((s) => s.doc);
   const [violations, setViolations] = useState<Violation[] | null>(null);
+  // HOOK ML pha 1: operator để LỌC bộ rule. '' (mặc định) ⇒ getAllRules() — hành vi CŨ nguyên vẹn.
+  const [operator, setOperator] = useState<OperatorType | ''>('');
+  const [detectMsg, setDetectMsg] = useState('');
 
-  const run = () => setViolations(checkStandards(doc, getAllRules()));
+  // Rule dùng để kiểm: CÓ operator ⇒ lọc theo rulesForOperator; KHÔNG ⇒ getAllRules() như cũ.
+  const rulesToUse = () =>
+    operator ? rulesForOperator(operator).flatMap((g) => g.rules) : getAllRules();
+
+  const run = () => setViolations(checkStandards(doc, rulesToUse()));
+
+  // Gợi ý operator từ bản vẽ hiện tại (đọc-only, TẤT ĐỊNH). Không tự áp — chỉ chọn sẵn để user duyệt.
+  const detect = () => {
+    const prof = classifyOperator({ doc });
+    setOperator(prof.operator);
+    const pct = Math.round(prof.confidence * 100);
+    setDetectMsg(
+      prof.confidence > 0
+        ? `Nhận diện: ${prof.operator} (${pct}%) — ${prof.evidence.slice(0, 2).map((e) => e.detail).join('; ') || 'theo tín hiệu bản vẽ'}`
+        : 'Chưa đủ tín hiệu (thiếu block/nhãn phòng) → generic. Giữ "Tất cả" nếu chưa chắc.',
+    );
+    setViolations(null); // bộ rule đổi → kết quả cũ hết hiệu lực, yêu cầu chạy lại (không hiển thị lệch)
+  };
+
+  // Đổi operator bằng tay: dọn kết quả cũ (tránh hiển thị vi phạm của bộ rule khác).
+  const pickOperator = (v: OperatorType | '') => {
+    setOperator(v);
+    setDetectMsg('');
+    setViolations(null);
+  };
+
+  // Explainable: operator đang chọn áp những NHÓM rule nào (đọc registry, không sửa).
+  const groupNote = operator
+    ? `Áp nhóm: ${rulesForOperator(operator).map((g) => g.name).join(' · ')}`
+    : '';
 
   const zoomTo = (v: Violation) => {
     if (!v.at) return;
@@ -391,6 +436,28 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
       <div style={{ fontSize: 10.5, color: 'var(--t4)', padding: '0 6px 6px' }}>
         Chỉ đọc bản vẽ và đề xuất — KHÔNG tự sửa. Bấm biểu tượng khiên để chạy/chạy lại sau khi sửa bản vẽ.
       </div>
+      {/* HOOK ML pha 1 — chọn LOẠI VẬN HÀNH để lọc bộ rule (mặc định = Tất cả, hành vi cũ nguyên vẹn). */}
+      <div style={{ display: 'flex', gap: 4, alignItems: 'center', padding: '0 6px 4px' }}>
+        <select
+          value={operator}
+          onChange={(e) => pickOperator(e.target.value as OperatorType | '')}
+          title="Lọc bộ quy chuẩn theo loại vận hành không gian (operator)"
+          style={{ flex: 1, minWidth: 0, fontSize: 11, padding: '4px 6px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)' }}
+        >
+          {OPERATOR_LABELS.map((o) => (
+            <option key={o.value || 'all'} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        <button type="button" onClick={detect} title="Nhận diện loại vận hành từ bản vẽ (block/nhãn phòng/text) — tất định, chỉ gợi ý, bạn duyệt" style={miniBtn}>
+          <Wand2 size={13} />
+        </button>
+      </div>
+      {(detectMsg || groupNote) && (
+        <div style={{ fontSize: 10, color: 'var(--t3)', padding: '0 6px 6px', lineHeight: 1.45 }}>
+          {detectMsg && <div>{detectMsg}</div>}
+          {groupNote && <div style={{ color: 'var(--t4)' }}>{groupNote}</div>}
+        </div>
+      )}
       <div style={{ overflowY: 'auto', flex: 1 }}>
         {violations === null && (
           <div style={{ padding: '10px 8px', fontSize: 12, color: 'var(--t3)' }}>Chưa chạy — bấm biểu tượng khiên phía trên.</div>

@@ -62,7 +62,7 @@ function polygonMinWidth(poly: Pt[]): number {
   return minW === Infinity ? 0 : minW;
 }
 
-interface RoomInfo {
+export interface RoomInfo {
   name: string;
   at: Pt;
   areaM2: number | null;
@@ -93,7 +93,9 @@ function wallLikeDoc(doc: Doc): Doc {
   };
 }
 
-function findRoomLabels(doc: Doc): RoomInfo[] {
+/** Dò ROOM-SET của bản vẽ: nhãn TEXT toàn-hoa (quy ước tên phòng) + biên phòng đo bằng
+ *  findHatchBoundary. Export cho operator-profile (QA D1) tái dùng — hành vi checker KHÔNG đổi. */
+export function findRoomLabels(doc: Doc): RoomInfo[] {
   const texts = doc.entities.filter((e): e is Extract<Entity, { type: 'text' }> => e.type === 'text');
   const boundaryDoc = wallLikeDoc(doc);
   const rooms: RoomInfo[] = [];

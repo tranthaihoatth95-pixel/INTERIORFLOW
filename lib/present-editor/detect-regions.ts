@@ -15,6 +15,11 @@
  * (tiêu đề/ảnh/body). Việc gán vai trò + đổ nội dung là tầng trên, chưa làm ở đây.
  */
 
+// grid-geometry chỉ import TYPE từ file này (import type — bị xoá khi compile) nên vòng
+// import dưới đây KHÔNG tạo chu trình runtime. gutterBands dùng CÙNG thuật toán ngưỡng với
+// findGaps → center khớp nhau (đã có test đối chiếu trong grid-geometry.test.ts).
+import { gutterBands, dominantGutter, type GutterBand } from './grid-geometry';
+
 /** Ô lưới — khung theo % sân khấu (0..100), khớp thẳng model.Frame (thiếu rotation). */
 export interface RegionCell {
   x: number; // 0..100 mép trái
@@ -32,6 +37,13 @@ export interface DetectResult {
   cells: RegionCell[];
   W: number;
   H: number;
+  /** HOOK ML pha 1 (proposal §3b) — khe DỌC {tâm, BỀ RỘNG} (đơn vị px downscale). */
+  colGutters: GutterBand[];
+  /** khe NGANG {tâm, bề rộng}. */
+  rowGutters: GutterBand[];
+  /** gutter đại diện theo trục X/Y, đổi sang % SÂN KHẤU (0..100) — 0 = không có khe trong. */
+  gutterXPct: number;
+  gutterYPct: number;
 }
 
 export const DOWNSCALE_W = 240; // đủ để thấy BỐ CỤC, rẻ.
@@ -173,5 +185,10 @@ export function detectRegions(img: HTMLImageElement): DetectResult {
   const cols = findGaps(col);
   const rows = findGaps(row);
   const cells = cellsFromCuts(cols, rows, W, H);
-  return { cols, rows, cells, W, H };
+  // HOOK ML pha 1: khe + bề rộng (gutter) — cùng profile, thêm thông tin, không đổi cols/rows/cells.
+  const colGutters = gutterBands(col);
+  const rowGutters = gutterBands(row);
+  const gutterXPct = (dominantGutter(colGutters, W) / W) * 100;
+  const gutterYPct = (dominantGutter(rowGutters, H) / H) * 100;
+  return { cols, rows, cells, W, H, colGutters, rowGutters, gutterXPct, gutterYPct };
 }

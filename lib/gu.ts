@@ -7,6 +7,10 @@
  * palette + tag/caption tay; VLM caption làm giàu sau.
  */
 
+import { mixPaletteLab, paletteMood, type MoodWeight } from './gu/color-psychology';
+
+export type { MoodWeight } from './gu/color-psychology';
+
 export interface GuAsset {
   id: string;
   name: string;
@@ -27,6 +31,9 @@ export interface GuProfile {
   sampleUrls: string[]; // vài ảnh đại diện (dùng làm style-ref / IP-Adapter)
   count: number; // số ref đã dùng
   usages: string[]; // các usage có mặt
+  /** HOOK ML pha 1 (proposal §2a.7) — tâm-lý-màu suy TẤT ĐỊNH từ palette (lib/gu/color-psychology).
+   *  Optional để caller/JSON cũ (thiếu field) vẫn hợp lệ; xếp giảm dần theo tỉ trọng. */
+  moods?: MoodWeight[];
 }
 
 /** Từ điển gợi ý — nhận diện vật liệu/phong cách trong tag + caption (VI + EN). */
@@ -56,18 +63,24 @@ function pickTerms(haystack: string, dict: string[]): string[] {
   return hit;
 }
 
-/** Gộp palette nhiều ref: đếm tần suất hex (chuẩn hoá #rrggbb), xếp giảm dần, lấy top N. */
+/**
+ * Gộp palette nhiều ref → top N màu chủ đạo.
+ *
+ * HOOK ML pha 1 (proposal §2e / bảng chốt mục 4): thay so-hex-khít (đếm tần suất chuỗi hex —
+ * '#8a5a3c' và '#8b5a3d' bị coi là 2 màu khác nhau dù mắt không phân biệt nổi) bằng GOM CỤM
+ * LAB (`mixPaletteLab`, ΔE*76): màu gần nhau về cảm quan gộp 1 cụm, trả CENTROID cụm, xếp
+ * giảm dần theo số màu trong cụm — tương đương "tần suất" cũ nhưng đúng cảm quan. Tất định.
+ */
 function mergePalette(assets: GuAsset[], topN = 6): string[] {
-  const freq = new Map<string, number>();
+  const all: string[] = [];
   for (const a of assets) {
     for (const raw of a.palette || []) {
       const hex = norm(raw).trim();
       if (!/^#?[0-9a-f]{6}$/.test(hex)) continue;
-      const key = hex.startsWith('#') ? hex : `#${hex}`;
-      freq.set(key, (freq.get(key) || 0) + 1);
+      all.push(hex.startsWith('#') ? hex : `#${hex}`);
     }
   }
-  return [...freq.entries()].sort((a, b) => b[1] - a[1]).slice(0, topN).map(([h]) => h);
+  return mixPaletteLab(all, { maxColors: topN });
 }
 
 /**
@@ -98,6 +111,8 @@ export function buildGuProfile(assets: GuAsset[], opts?: { usage?: string[] }): 
     sampleUrls: pool.slice(0, 4).map((a) => a.url),
     count: pool.length,
     usages: [...new Set(pool.map((a) => a.usage))],
+    // HOOK ML pha 1: tâm-lý-màu tất định từ palette đã gộp (giải thích "vì sao gu này hợp").
+    moods: paletteMood(palette).moods,
   };
 }
 
@@ -130,6 +145,12 @@ export function guToPrompt(p: GuProfile): string {
   if (p.styles.length) parts.push(p.styles.join(', '));
   if (p.materials.length) parts.push(`vật liệu: ${p.materials.join(', ')}`);
   if (p.palette.length) parts.push(`tông màu: ${p.palette.join(' ')}`);
+  // HOOK ML pha 1: nối tâm-lý-màu (top 2, kèm tỉ trọng) — nhãn tiếng Anh của ColorMood vốn là
+  // cụm mô tả cảm xúc (warm-inviting…) nên dùng thẳng cho prompt render. Thiếu moods = như cũ.
+  if (p.moods?.length) {
+    const top = p.moods.slice(0, 2).map((m) => `${m.mood} ${Math.round(m.weight * 100)}%`);
+    parts.push(`mood: ${top.join(', ')}`);
+  }
   return parts.join(' · ');
 }
 

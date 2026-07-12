@@ -26,8 +26,15 @@ Fix DCEL hatch-boundary trả `null` cho phòng giáp tường ở nút chữ T 
 - **SPRINT MODE (user GO)**: roadmap 4 sprint theo Master Directive (6 agent ảo). Quyết định đã khoá:
   Perceptron THẬT (learning-to-rank, degrade heuristic) · foldable Find N6 test on-device · installer cả 3 unsigned (.exe cần máy Win) · auth tái dùng + Remember Me · PWA host Vercel.
 - **AUTH ĐÃ CHỐT (user, 12/07)**: tài khoản = CHỈ Google OAuth domain @ttt.vn (ưu tiên) + admin cấp tay; register công khai KHOÁ. Quên mật khẩu = admin reset tay, KHÔNG build luồng email. Supabase = Agent 4 tự dựng Sprint 4 (user chưa có project).
-- **Sprint 0 XONG**: audit fixes A1/B1/C1 merged (`d9070d2`, 348 test pass) · dọn 4 worktree merged · WIP ml-hooks cứu vào `348908a` · khảo sát auth (cookie `if_session` 30d sẵn).
-- **Sprint 1 ĐANG CHẠY 2 agent**: `feat/ml-p1-hooks` (Agent 1: cắm hooks hết dead-code + neufert/room-set + bridge + pairwise-perceptron module) · `feat/access-journey` (Agent 5: gỡ intro, Remember Me, persistent-state resume, first-time routing, Smart Tour). Agent gặp chỗ không rõ PHẢI hỏi, không đoán.
+- **Sprint 0 XONG**: audit fixes A1/B1/C1 merged (`d9070d2`, 348 test pass) · dọn 4 worktree merged · WIP ml-hooks cứu vào `348908a`.
+- **Sprint 1 — Agent 1 `feat/ml-p1-hooks` ĐÃ MERGE** (integrator verify: 413 test/17 file, tsc 0, 21 caller hết dead-code, không đụng hatch/query):
+  · A-2 CAD `bfb219c`: operator vào LayoutSpec + panel Kiểm chuẩn (explainable; mặc định getAllRules() y cũ, Bếp 5.7m² vẫn bắt).
+  · A-3: D2 'neufert' → residential/hospitality/office; D1 fromDoc dò ROOM-SET qua findRoomLabels (checker hành vi không đổi).
+  · A-2 Render `9009d4e`: gu.ts mergePalette → gom cụm LAB, GuProfile.moods, guToPrompt nối mood.
+  · A-4 `d35474c`: bridge Render→Present (handoff.ts sessionStorage + mem fallback, consume-once).
+  · A-2 Present `ebc818a`: detectRegions trả gutter; suggestTemplate nhận grid; dây sống refGrid ở PresentEditor.
+  · A-5 `05db2b5`: pairwise-perceptron.ts (user duyệt learning-to-rank; degrade; serialize) — UI feedback Sprint 2.
+- **Sprint 1 — Agent 5 `feat/access-journey` XONG chờ merge** (2 commit c258855+519ea7e): gỡ intro (Login→Gallery), Remember-Me + chính sách @ttt.vn/khoá-register, resume theo user, routing first-time/returning, SmartTour. Integrator verify: tsc 0, test lõi pass, browser gallery-không-intro OK.
 - CHƯA làm: bỏ hardcode `'DETECH · CONCEPT'`; template tĩnh từ file thư viện; heavy-ML pha 2 (embedding/detector — báo rủi ro trước).
 - Docs: `DIAGNOSIS.md`, `ML-GU-ENGINE-PROPOSAL.md`, `MULTI-SHEET-PROPOSAL.md`, `LOGIC-AUDIT.md`.
 

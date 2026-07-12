@@ -65,6 +65,24 @@ function loadImage(url: string): Promise<HTMLImageElement> {
 }
 
 /**
+ * HOOK ML pha 1 — DOM/async: ảnh mẫu (url) → hình học lưới {cells, gutter} cho suggestTemplate
+ * (suggest.ts nhận `grid`). Trả null nếu ảnh lỗi/tainted/lưới nghèo — caller giữ heuristic cũ.
+ */
+export async function detectGridFromUrl(
+  refUrl: string,
+): Promise<{ cells: RegionCell[]; gutterXPct: number; gutterYPct: number } | null> {
+  if (typeof window === 'undefined') return null;
+  try {
+    const img = await loadImage(refUrl);
+    const { cells, gutterXPct, gutterYPct } = detectRegions(img);
+    if (cells.length < 2) return null;
+    return { cells, gutterXPct, gutterYPct };
+  } catch {
+    return null; // ảnh hỏng/CORS taint — im lặng degrade, không chặn suggest
+  }
+}
+
+/**
  * DOM/async: ảnh mẫu (url) + nội dung → deck theo lưới ảnh. Trả [] nếu ảnh lỗi/tainted
  * hoặc không dò được ô — để caller FALLBACK về slidesFromContent (không ném ra ngoài).
  */

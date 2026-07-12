@@ -18,6 +18,7 @@
 import type { Doc, Entity } from './model';
 import type { RuleGroup } from './standards/registry';
 import { BUILTIN_GROUPS } from './standards/registry';
+import { findRoomLabels } from './standards/checker';
 
 /* ═══════════════════════ NHÃN & KIỂU ═══════════════════════ */
 
@@ -69,13 +70,21 @@ export interface OperatorInput {
 
 /* ═══════════════════════ BẢNG TRA (dữ liệu, không hardcode con số quy chuẩn) ═══════════════════════ */
 
-/** operator → nhóm rule (id trong registry). Chỉ TRA tên nhóm, không định nghĩa lại rule. */
+/** operator → nhóm rule (id trong registry). Chỉ TRA tên nhóm, không định nghĩa lại rule.
+ *
+ * 'neufert' (QA D2): nhóm nhân trắc/tiện dụng Neufert (lưu thông, bếp, tủ áo, chỗ ngồi ăn,
+ * khổ cửa, trần phòng ở — xem neufert.ts) gắn cho các operator CÓ KHÔNG GIAN Ở/SINH HOẠT:
+ *   - residential + hospitality: giường/tủ áo/bếp/chỗ ăn là lõi của rule set → khớp trực tiếp.
+ *   - office: rule lưu thông 1-2 người (750/1400mm) áp cho lối đi giữa cụm bàn — thứ mà
+ *     intl-egress (thoát nạn PCCC) KHÔNG phủ; pantry văn phòng dùng được rule bếp.
+ *   - f&b/retail/clinic: KHÔNG gắn — lưu thông ở đó do quy chuẩn thoát nạn/ngành chi phối,
+ *     các rule Neufert còn lại (tủ áo, worktop gia đình, trần phòng Ở) không đúng bản chất. */
 const OPERATOR_RULE_GROUPS: Record<OperatorType, string[]> = {
-  residential: ['vn-residential', 'vn-fire', 'iso-drafting'],
-  office: ['vn-fire', 'intl-egress', 'iso-drafting'],
+  residential: ['vn-residential', 'vn-fire', 'iso-drafting', 'neufert'],
+  office: ['vn-fire', 'intl-egress', 'iso-drafting', 'neufert'],
   'f&b': ['vn-fire', 'intl-egress', 'iso-drafting'],
   retail: ['vn-fire', 'intl-egress', 'iso-drafting'],
-  hospitality: ['vn-residential', 'vn-fire', 'intl-egress', 'iso-drafting'],
+  hospitality: ['vn-residential', 'vn-fire', 'intl-egress', 'iso-drafting', 'neufert'],
   clinic: ['vn-fire', 'intl-egress', 'iso-drafting'],
   generic: ['iso-drafting'],
 };
@@ -149,15 +158,27 @@ function toCountMap(blocks?: string[] | Record<string, number>): Record<string, 
   return out;
 }
 
-/** Rút block-inventory + text từ 1 Doc (đọc-only). */
-function fromDoc(doc: Doc): { blocks: Record<string, number>; text: string } {
+/** Rút block-inventory + text + ROOM-SET từ 1 Doc (đọc-only).
+ *
+ * ROOM-SET (QA D1): tái dùng `findRoomLabels` của checker (nhãn TEXT toàn-hoa + dò biên
+ * findHatchBoundary — CHỈ import hatch.ts qua checker, không sửa). Chỉ nhận phòng có BIÊN KÍN
+ * (areaM2 !== null) làm tín hiệu 'room' — nhãn không dò được biên vẫn góp mặt trong `text`
+ * (mọi TEXT đều được join) nên không mất tín hiệu, chỉ không được cộng thêm trọng số phòng. */
+function fromDoc(doc: Doc): { blocks: Record<string, number>; text: string; rooms: string[] } {
   const blocks: Record<string, number> = {};
   const texts: string[] = [];
   for (const e of doc.entities as Entity[]) {
     if (e.type === 'block') blocks[e.block] = (blocks[e.block] ?? 0) + 1;
     else if (e.type === 'text') texts.push(e.text);
   }
-  return { blocks, text: texts.join(' ') };
+  let rooms: string[] = [];
+  try {
+    rooms = findRoomLabels(doc).filter((r) => r.areaM2 !== null).map((r) => r.name);
+  } catch {
+    // dò biên lỗi (hình học hở/bẩn) → bỏ tín hiệu room, KHÔNG chặn phân loại (block/text vẫn chạy)
+    rooms = [];
+  }
+  return { blocks, text: texts.join(' '), rooms };
 }
 
 /* ═══════════════════════ CHẤM ĐIỂM ═══════════════════════ */
@@ -241,14 +262,15 @@ export function classifyOperator(input: OperatorInput): OperatorProfile {
   const scores = emptyScores();
   const evidence: OperatorEvidence[] = [];
 
-  // gộp nguồn: doc (nếu có) + block/text rời truyền thẳng
-  const docPart = input.doc ? fromDoc(input.doc) : { blocks: {}, text: '' };
+  // gộp nguồn: doc (nếu có — block + text + ROOM-SET dò biên) + block/room/text rời truyền thẳng
+  const docPart = input.doc ? fromDoc(input.doc) : { blocks: {}, text: '', rooms: [] as string[] };
   const counts = { ...docPart.blocks };
   for (const [id, n] of Object.entries(toCountMap(input.blocks))) counts[id] = (counts[id] ?? 0) + n;
   const text = [docPart.text, input.text ?? ''].filter(Boolean).join(' ');
+  const rooms = [...docPart.rooms, ...(input.rooms ?? [])];
 
   scoreBlocks(counts, scores, evidence);
-  if (input.rooms?.length) scoreRooms(input.rooms, scores, evidence);
+  if (rooms.length) scoreRooms(rooms, scores, evidence);
   if (text.trim()) scoreText(text, scores, evidence);
 
   // argmax tất định theo thứ tự ALL_OPERATORS (bỏ 'generic' khỏi tranh chấp — nó là baseline)
