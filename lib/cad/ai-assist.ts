@@ -21,6 +21,7 @@ import type { Entity } from './model';
 import { roomRect } from './commands';
 import { newId } from './store';
 import { BLOCK_MAP } from './furniture';
+import { classifyOperator, type OperatorType } from './operator-profile';
 
 /* ═══════════════════════ JSON TRUNG GIAN (schema cho LLM) ═══════════════════════ */
 
@@ -49,6 +50,13 @@ export interface RoomSpec {
 
 export interface LayoutSpec {
   rooms: RoomSpec[];
+  /**
+   * HOOK ML pha 1 (proposal §1) — loại vận hành không gian suy từ block/room/text, TẤT ĐỊNH.
+   * PHỤ-THÊM, KHÔNG dùng bởi solver (`layoutToEntities` chỉ đọc `rooms`) ⇒ 0 tác động hình học.
+   * Panel Kiểm chuẩn có thể dùng nó để LỌC bộ rule theo operator (rulesForOperator). Thiếu tín
+   * hiệu ⇒ `'generic'`. Trường tuỳ chọn nên caller cũ không đặt vẫn hợp lệ.
+   */
+  operator?: OperatorType;
 }
 
 export interface AiAssistResult {
@@ -204,7 +212,15 @@ export function parseDescription(text: string): LayoutSpec {
       items: items.length ? items : [...DEFAULT_ITEMS[fn]],
     };
   });
-  return { rooms: rooms.length ? rooms : [{ name: DEFAULT_NAME.generic, fn: 'generic', ...DEFAULT_SIZE.generic, items: [] }] };
+  const finalRooms = rooms.length ? rooms : [{ name: DEFAULT_NAME.generic, fn: 'generic' as RoomFunction, ...DEFAULT_SIZE.generic, items: [] }];
+  // HOOK ML pha 1: phân loại operator (TẤT ĐỊNH, 0 key/GPU) từ text + công năng phòng + block đã
+  // rút. PHỤ-THÊM — chỉ gắn metadata `operator` vào spec, KHÔNG đổi `rooms`/toạ độ solver.
+  const operator = classifyOperator({
+    text,
+    rooms: finalRooms.map((r) => `${r.name} ${r.fn}`),
+    blocks: finalRooms.flatMap((r) => r.items),
+  }).operator;
+  return { rooms: finalRooms, operator };
 }
 
 /* ═══════════════════════ TẦNG 2 — SOLVER (tất định, hình học thuần) ═══════════════════════ */

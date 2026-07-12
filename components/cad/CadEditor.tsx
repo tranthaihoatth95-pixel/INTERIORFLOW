@@ -28,6 +28,7 @@ import { useFlowStore } from '@/lib/store';
 import { stashCadHandoff } from '@/lib/cad/handoff';
 import { checkStandards, type Violation } from '@/lib/cad/standards/checker';
 import { getAllRules } from '@/lib/cad/standards/registry';
+import { classifyOperator, rulesForOperator, type OperatorType } from '@/lib/cad/operator-profile';
 import CadCanvas from './CadCanvas';
 import CadToolbar from './CadToolbar';
 
@@ -362,11 +363,42 @@ function FurniturePanel({ onClose }: { onClose: () => void }) {
 }
 
 /* ───────── Panel Kiểm chuẩn (standards checker) — CHỈ ĐỌC + ĐỀ XUẤT, không tự sửa ───────── */
+/** Nhãn operator hiển thị (proposal §1). '' = không lọc → dùng getAllRules() như cũ. */
+const OPERATOR_LABELS: { value: OperatorType | ''; label: string }[] = [
+  { value: '', label: 'Tất cả bộ quy chuẩn (mặc định)' },
+  { value: 'residential', label: 'Nhà ở / lưu trú' },
+  { value: 'office', label: 'Văn phòng' },
+  { value: 'f&b', label: 'F&B (café/nhà hàng)' },
+  { value: 'retail', label: 'Bán lẻ / showroom' },
+  { value: 'hospitality', label: 'Khách sạn / lounge' },
+  { value: 'clinic', label: 'Phòng khám / y tế' },
+  { value: 'generic', label: 'Chung (generic)' },
+];
+
 function StandardsPanel({ onClose }: { onClose: () => void }) {
   const doc = useCadStore((s) => s.doc);
   const [violations, setViolations] = useState<Violation[] | null>(null);
+  // HOOK ML pha 1: operator để LỌC bộ rule. '' (mặc định) ⇒ getAllRules() — hành vi CŨ nguyên vẹn.
+  const [operator, setOperator] = useState<OperatorType | ''>('');
+  const [detectMsg, setDetectMsg] = useState('');
 
-  const run = () => setViolations(checkStandards(doc, getAllRules()));
+  // Rule dùng để kiểm: CÓ operator ⇒ lọc theo rulesForOperator; KHÔNG ⇒ getAllRules() như cũ.
+  const rulesToUse = () =>
+    operator ? rulesForOperator(operator).flatMap((g) => g.rules) : getAllRules();
+
+  const run = () => setViolations(checkStandards(doc, rulesToUse()));
+
+  // Gợi ý operator từ bản vẽ hiện tại (đọc-only, TẤT ĐỊNH). Không tự áp — chỉ chọn sẵn để user duyệt.
+  const detect = () => {
+    const prof = classifyOperator({ doc });
+    setOperator(prof.operator);
+    const pct = Math.round(prof.confidence * 100);
+    setDetectMsg(
+      prof.confidence > 0
+        ? `Nhận diện: ${prof.operator} (${pct}%) — ${prof.evidence.slice(0, 2).map((e) => e.detail).join('; ') || 'theo tín hiệu bản vẽ'}`
+        : 'Chưa đủ tín hiệu (thiếu block/nhãn phòng) → generic. Giữ "Tất cả" nếu chưa chắc.',
+    );
+  };
 
   const zoomTo = (v: Violation) => {
     if (!v.at) return;
