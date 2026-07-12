@@ -9,7 +9,14 @@ const secret = () => new TextEncoder().encode(process.env.AUTH_SECRET ?? 'dev-se
 export const hashPassword = (plain: string) => bcrypt.hash(plain, 10);
 export const verifyPassword = (plain: string, hash: string) => bcrypt.compare(plain, hash);
 
-export async function createSession(userId: string) {
+/**
+ * Tạo session cookie `if_session`.
+ * remember=true (mặc định — GIỮ hành vi cũ cho mọi caller hiện có: register, Google
+ * callback…): cookie persistent maxAge 30 ngày.
+ * remember=false ("Ghi nhớ đăng nhập" KHÔNG tick): cookie PHIÊN — không maxAge, trình
+ * duyệt đóng là hết. JWT bên trong vẫn exp 30d (backstop, giữ nguyên semantics token cũ).
+ */
+export async function createSession(userId: string, remember = true) {
   const token = await new SignJWT({ sub: userId })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -19,7 +26,7 @@ export async function createSession(userId: string) {
     httpOnly: true,
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24 * 30,
+    ...(remember ? { maxAge: 60 * 60 * 24 * 30 } : {}),
   });
 }
 
@@ -102,6 +109,20 @@ export async function findUserByIdentifier(raw: string) {
   return 'email' in id
     ? prisma.user.findUnique({ where: { email: id.email } })
     : prisma.user.findUnique({ where: { phone: id.phone } });
+}
+
+/* ============================================================================
+ * CHÍNH SÁCH TẠO TÀI KHOẢN (chủ dự án chốt Sprint 1):
+ *   · Google OAuth CHỈ cho email đuôi @ttt.vn (đổi qua env GOOGLE_ALLOWED_DOMAIN).
+ *   · Đăng ký tự do KHOÁ — tài khoản email/password do admin cấp (xem /api/auth/register).
+ *   · KHÔNG có luồng reset mật khẩu qua email — admin reset tay (app nội bộ).
+ * ==========================================================================*/
+
+/** Domain email được phép đăng nhập/tạo tài khoản qua Google. */
+export const GOOGLE_ALLOWED_DOMAIN = (process.env.GOOGLE_ALLOWED_DOMAIN ?? 'ttt.vn').toLowerCase();
+
+export function isAllowedGoogleEmail(email: string): boolean {
+  return email.trim().toLowerCase().endsWith(`@${GOOGLE_ALLOWED_DOMAIN}`);
 }
 
 /**
