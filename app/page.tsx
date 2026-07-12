@@ -92,8 +92,10 @@ export default function Home() {
         const body = await r.json();
         store.setUser(body.user);
         // Đã đăng nhập + trước đó đã qua ProjectSelect → bỏ qua, vào thẳng canvas.
+        // C1: cờ gắn theo user id (không phải '1' gắn máy) — trên máy dùng chung, user mới
+        // sẽ KHÔNG kế thừa dấu "đã qua ProjectSelect" của user trước.
         try {
-          if (localStorage.getItem('interiorflow.stageDone') === '1') {
+          if (localStorage.getItem('interiorflow.stageDone') === body.user?.id) {
             setStageDone(true);
             // ProjectSelect bị bỏ qua nên openFlow() không chạy → currentFlowId
             // sẽ null → autosave rơi xuống localStorage thay vì DB, và reload sau khôi phục
@@ -145,8 +147,9 @@ export default function Home() {
         onEnter={() => {
           setStageDone(true);
           // Ghi nhớ để lần quay về '/' vào thẳng canvas (thoát các studio route).
+          // C1: lưu user id để cờ chỉ đúng cho chính user này (không gắn máy).
           try {
-            localStorage.setItem('interiorflow.stageDone', '1');
+            localStorage.setItem('interiorflow.stageDone', user.id);
           } catch {
             /* bỏ qua */
           }
