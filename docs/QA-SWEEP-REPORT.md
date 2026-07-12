@@ -17,7 +17,7 @@ lái qua `window.__flowStore`/`__cadStore` + click thật + kiểm code. Ngày: 
 - *(Không phát hiện P0 mới trong luồng non-AI.)* Nghẽn lớn nhất là **AI cloud đang mock** (fal hết balance, ComfyUI tuỳ máy) → node sinh ảnh trả mock. Đây là hạ tầng, không phải bug code (xem Rủi ro).
 
 ## 🟠 P1 — khó chịu rõ, nên sửa trước khi polish
-1. **Khoá layer KHÔNG chặn sửa/xoá** (CAD). Tái hiện: mở demo → khoá layer "Tường" → click chọn 1 tường → Delete ⇒ **xoá được** (117→116). Chuẩn AutoCAD: layer khoá = thấy nhưng không chọn/sửa/xoá. Marquee (`idsInRect` trong `lib/cad/query.ts`) ĐÃ loại layer khoá, nhưng **click-chọn + `select()`/`deleteSelected()` chưa kiểm khoá**. Sửa ở `lib/cad/store.ts` (select/deleteSelected/updateEntities bỏ qua entity thuộc layer locked) + `hitTest` (`query.ts` — ⚠ file phiên hatchfix đang giữ, phối hợp). 
+1. ~~**Khoá layer KHÔNG chặn sửa/xoá** (CAD)~~ ✅ **ĐÃ FIX** (`5d6f49f`): helper `lockedLayerIds` (khoá HOẶC ẩn) chặn ở `select()` (selection rỗng → chặn luôn xoá/move/grip) + phòng thủ `deleteSelected`/`updateEntities` trong `lib/cad/store.ts`. Verify: khoá→chọn 0, ép-xoá 117→117 (chặn), mở khoá→chọn 1. (KHÔNG cần đụng `query.ts` của phiên hatchfix.)
 2. **"AI mô tả" quá thận trọng**: phòng 4×3.5 có "giường đôi + tủ áo" → solver đặt giường, **bỏ tủ** để tránh chồng (thực tế phòng này thừa chỗ cho cả hai). Cần cải packing (thử nhiều mặt tường trước khi bỏ). File `lib/cad/ai-assist.ts` (`layoutToEntities`/`placeFurniture`).
 3. **"Dự án mới" đôi khi phải bấm 2 lần** (doc CONTENT/handoff ghi) — cần xác nhận + fix ProjectSelect.
 
