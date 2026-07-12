@@ -552,7 +552,10 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 aria-label={item.kind === 'flow' ? item.flow.name : en ? 'New project' : 'Dự án mới'}
                 onClick={() => {
                   if (busy) return;
-                  if (isCenter) void choose(item);
+                  // Card giữa → mở luôn (giữ nguyên). Card "+ Dự án mới" → tạo+mở ngay dù đang ở
+                  // rìa (KHÔNG bắt bấm lần 1 để focus rồi lần 2 mới vào — đó là lỗi "bấm 2 lần").
+                  // Card dự án ở rìa vẫn chỉ FOCUS (giữ luồng duyệt gallery + đúng gợi ý dưới màn).
+                  if (isCenter || item.kind === 'new') void choose(item);
                   else setActive(i);
                 }}
                 className="col-start-1 row-start-1 cursor-pointer overflow-hidden text-left"
