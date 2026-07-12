@@ -112,18 +112,17 @@ export async function findUserByIdentifier(raw: string) {
 }
 
 /* ============================================================================
- * CHÍNH SÁCH TẠO TÀI KHOẢN (chủ dự án chốt Sprint 1):
- *   · Google OAuth CHỈ cho email đuôi @ttt.vn (đổi qua env GOOGLE_ALLOWED_DOMAIN).
+ * CHÍNH SÁCH TẠO TÀI KHOẢN (chủ dự án chốt Sprint 1 + 6-câu-treo 13/07):
+ *   · Google OAuth: chỉ @ttt.vn được TẠO MỚI; user cũ ngoài domain GRANDFATHER (vẫn vào).
  *   · Đăng ký tự do KHOÁ — tài khoản email/password do admin cấp (xem /api/auth/register).
+ *   · Bootstrap admin đầu tiên = scripts/seed-admin.ts (KHÔNG còn cửa register-DB-trống).
  *   · KHÔNG có luồng reset mật khẩu qua email — admin reset tay (app nội bộ).
+ * Logic thuần nằm ở lib/server/auth-policy.ts (pure — test được bằng sucrase-node);
+ * re-export tại đây để giữ import path cũ cho mọi caller.
  * ==========================================================================*/
 
-/** Domain email được phép đăng nhập/tạo tài khoản qua Google. */
-export const GOOGLE_ALLOWED_DOMAIN = (process.env.GOOGLE_ALLOWED_DOMAIN ?? 'ttt.vn').toLowerCase();
-
-export function isAllowedGoogleEmail(email: string): boolean {
-  return email.trim().toLowerCase().endsWith(`@${GOOGLE_ALLOWED_DOMAIN}`);
-}
+export { GOOGLE_ALLOWED_DOMAIN, isAllowedGoogleEmail, googleSignInGate } from './auth-policy';
+export type { GoogleGate } from './auth-policy';
 
 /**
  * passwordHash ngẫu nhiên cho tài khoản social (Google) — không ai biết plaintext,

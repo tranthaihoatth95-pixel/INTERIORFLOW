@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/server/db';
-import { createSession, randomPasswordHash, isAllowedGoogleEmail, GOOGLE_ALLOWED_DOMAIN } from '@/lib/server/auth';
+import { createSession, randomPasswordHash, googleSignInGate, GOOGLE_ALLOWED_DOMAIN } from '@/lib/server/auth';
 import { OAUTH_STATE_COOKIE, googleConfigured } from '@/lib/server/oauth';
 
 /**
@@ -71,15 +71,17 @@ export async function GET(req: Request) {
     const email = info.email?.trim().toLowerCase();
     if (!email) return fail(origin, 'Tài khoản Google không có email.');
 
-    // CHÍNH SÁCH (Sprint 1): chỉ email nội bộ @ttt.vn (env GOOGLE_ALLOWED_DOMAIN) được
-    // vào qua Google — cả tạo mới LẪN đăng nhập lại. Sai domain → từ chối rõ ràng.
-    if (!isAllowedGoogleEmail(email)) {
-      return fail(origin, `Chỉ email @${GOOGLE_ALLOWED_DOMAIN} được đăng nhập Google — cần tài khoản thì liên hệ admin.`);
+    // CHÍNH SÁCH (Sprint 2, quyết định #3 — GRANDFATHER): user ĐÃ TỒN TẠI trong DB
+    // (kể cả ngoài @ttt.vn, tạo trước khi siết) → đăng nhập tiếp bình thường.
+    // CHỈ chặn TẠO MỚI ngoài domain. Logic thuần ở lib/server/auth-policy.ts (có test).
+    let user = await prisma.user.findUnique({ where: { email } });
+    const gate = googleSignInGate(email, !!user);
+    if (gate === 'deny-new-outside-domain') {
+      return fail(origin, `Chỉ email @${GOOGLE_ALLOWED_DOMAIN} được tạo tài khoản mới qua Google — cần tài khoản thì liên hệ admin.`);
     }
 
-    // find-or-create — cùng luật với /api/auth/register (người đầu tiên = admin)
-    let user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
+      // gate === 'create' — người đầu tiên = admin (giữ luật cũ; bootstrap chuẩn là seed-admin)
       const isFirst = (await prisma.user.count()) === 0;
       user = await prisma.user.create({
         data: {
