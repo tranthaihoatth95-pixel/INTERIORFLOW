@@ -34,7 +34,9 @@ Fix DCEL hatch-boundary trả `null` cho phòng giáp tường ở nút chữ T 
   · A-4 `d35474c`: bridge Render→Present (handoff.ts sessionStorage + mem fallback, consume-once).
   · A-2 Present `ebc818a`: detectRegions trả gutter; suggestTemplate nhận grid; dây sống refGrid ở PresentEditor.
   · A-5 `05db2b5`: pairwise-perceptron.ts (user duyệt learning-to-rank; degrade; serialize) — UI feedback Sprint 2.
-- **Sprint 1 — Agent 5 `feat/access-journey` XONG chờ merge** (2 commit c258855+519ea7e): gỡ intro (Login→Gallery), Remember-Me + chính sách @ttt.vn/khoá-register, resume theo user, routing first-time/returning, SmartTour. Integrator verify: tsc 0, test lõi pass, browser gallery-không-intro OK.
+- **Sprint 1 — Agent 5 `feat/access-journey` ĐÃ MERGE** (c258855+519ea7e): gỡ intro (Login→Gallery), Remember-Me + chính sách @ttt.vn/khoá-register, resume theo user, routing first-time/returning, SmartTour.
+- **✅ CỔNG SPRINT 1 PASS (HEAD `bb31fbf`)**: 413 test/17 file pass · tsc 0 · browser E2E trên nhánh gộp: LoginScreen mới (Google nổi bật, @ttt.vn, Remember Me, không intro) + operator detect sống ("residential 59% — 1 giường → nhà ở") · 0 lỗi console mới. CHỜ USER REVIEW trước Sprint 2.
+- **❓ TREO chờ user (từ 2 agent)**: JWT exp khi remember=false (giữ 30d hay rút 24h?) · cửa bootstrap register khi DB trống (giữ hay seed script?) · user Google ngoài-ttt.vn có sẵn trong DB (chặn hẳn hay grandfather?) · nút stash tường minh "Đưa sang Present" (hiện auto-stash im lặng) · nơi cắm nút Nhận/Bỏ perceptron đầu tiên (Sprint 2) · resume sheet CAD cần persistence multi-sheet (ngoài scope S1).
 - CHƯA làm: bỏ hardcode `'DETECH · CONCEPT'`; template tĩnh từ file thư viện; heavy-ML pha 2 (embedding/detector — báo rủi ro trước).
 - Docs: `DIAGNOSIS.md`, `ML-GU-ENGINE-PROPOSAL.md`, `MULTI-SHEET-PROPOSAL.md`, `LOGIC-AUDIT.md`.
 
