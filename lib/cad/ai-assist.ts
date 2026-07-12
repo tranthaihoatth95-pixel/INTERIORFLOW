@@ -224,58 +224,108 @@ function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }
 
+interface Placement { at: { x: number; y: number }; ex: number; ey: number; rot: number }
+
 /**
- * Đặt nội thất 1 phòng theo công năng. Trả về các BlockEntity (đã đúng layer, đúng toạ độ, clamp,
- * không chồng). Cursor chạy dọc TỪNG tường ⇒ nhiều món cùng tường xếp nối tiếp, không tràn.
+ * Góc xoay để "lưng" món quay vào tường — DẪN XUẤT TẤT ĐỊNH từ mặt tường (N/S/C→0, W→+90°,
+ * E→−90°). Khớp đúng các trị đã tinh chỉnh trong bảng ANCHOR, nên món ở tường ưu tiên GIỮ NGUYÊN
+ * kết quả cũ; khi phải thử tường thay thế cũng dùng cùng quy tắc ⇒ không sinh block xoay sai.
+ */
+function rotForWall(wall: Wall): number {
+  if (wall === 'W') return Math.PI / 2;
+  if (wall === 'E') return -Math.PI / 2;
+  return 0; // N, S, C
+}
+
+/** Thứ tự tường THỬ cho 1 món: ưu tiên → đối diện → 2 tường vuông góc. Món 'C' luôn ở giữa. */
+function candidateWalls(wall: Wall): Wall[] {
+  if (wall === 'C') return ['C'];
+  const opp: Record<'N' | 'S' | 'E' | 'W', Wall> = { N: 'S', S: 'N', E: 'W', W: 'E' };
+  const perp: Wall[] = wall === 'N' || wall === 'S' ? ['E', 'W'] : ['N', 'S'];
+  return [wall, opp[wall], ...perp];
+}
+
+/**
+ * Tìm chỗ đặt món trên 1 mặt tường bằng cách QUÉT dọc theo tường (first-fit tất định): bắt đầu ở
+ * lề, nếu ô hiện tại đè món đã đặt thì nhảy con trỏ qua mép xa của món đó + khe rồi thử lại — chỉ
+ * trả null khi trượt hết chiều dài tường mà không còn ô đủ chỗ (hoặc món dài hơn tường). Nhờ vậy
+ * một món bị 1 tường chắn sẽ tự trượt sang ô khác / đổi tường thay vì bị bỏ oan.
+ */
+function tryPlaceOnWall(
+  def: { w: number; h: number },
+  wall: Wall,
+  flush: boolean,
+  interior: { ix0: number; iy0: number; ix1: number; iy1: number },
+  placed: Footprint[],
+): Placement | null {
+  const { ix0, iy0, ix1, iy1 } = interior;
+  const midY = (iy0 + iy1) / 2;
+  const quarter = wall === 'W' || wall === 'E';
+  const ex = quarter ? def.h : def.w; // extent X sau xoay
+  const ey = quarter ? def.w : def.h; // extent Y sau xoay
+  const back = flush ? WALL_KEEP : 0;
+  const horizontal = wall === 'N' || wall === 'S' || wall === 'C'; // trục tự do = X
+
+  // lề bắt đầu GAP_START cách tường vuông góc (giữ y hệt hành vi cũ ở tường ưu tiên)
+  const freeLo = horizontal ? ix0 + GAP_START + ex / 2 : iy0 + GAP_START + ey / 2;
+  const freeHi = horizontal ? ix1 - ex / 2 : iy1 - ey / 2;
+  const fixed = horizontal
+    ? wall === 'N' ? iy1 - ey / 2 - back : wall === 'S' ? iy0 + ey / 2 + back : midY
+    : wall === 'W' ? ix0 + ex / 2 + back : ix1 - ex / 2 - back;
+
+  if (freeLo > freeHi + 1) return null; // món dài hơn tường → tường này không chứa được
+
+  let pos = freeLo;
+  for (let guard = 0; guard < 128 && pos <= freeHi + 1; guard++) {
+    const at = horizontal ? { x: pos, y: fixed } : { x: fixed, y: pos };
+    const fp = footprintOf(at, ex, ey);
+    let advance = -Infinity;
+    for (const p of placed) {
+      if (aabbOverlap(p, fp)) {
+        const farEdge = horizontal ? p.x + p.ex / 2 : p.y + p.ey / 2;
+        const need = farEdge + GAP_BETWEEN + (horizontal ? ex / 2 : ey / 2);
+        if (need > advance) advance = need;
+      }
+    }
+    if (advance === -Infinity) {
+      // không đè ai — kẹp trong lòng phòng (an toàn khi món sâu hơn phòng) rồi tái kiểm chồng
+      const finalAt = horizontal
+        ? { x: clamp(pos, ix0 + ex / 2, ix1 - ex / 2), y: clamp(fixed, iy0 + ey / 2, iy1 - ey / 2) }
+        : { x: clamp(fixed, ix0 + ex / 2, ix1 - ex / 2), y: clamp(pos, iy0 + ey / 2, iy1 - ey / 2) };
+      if (placed.some((p) => aabbOverlap(p, footprintOf(finalAt, ex, ey)))) return null; // kẹp làm đè lại
+      return { at: finalAt, ex, ey, rot: rotForWall(wall) };
+    }
+    pos = advance;
+  }
+  return null;
+}
+
+/**
+ * Đặt nội thất 1 phòng theo công năng. Mỗi món THỬ LẦN LƯỢT các mặt tường hợp công năng (ưu tiên
+ * → đối diện → vuông góc) và các ô trống dọc mỗi tường; chỉ BỎ khi THẬT SỰ không còn chỗ đủ
+ * clearance ở mọi tường. Kết quả TẤT ĐỊNH, đúng layer nội thất, kẹp trong lòng phòng, không chồng.
  */
 function placeFurniture(
   items: string[],
   interior: { ix0: number; iy0: number; ix1: number; iy1: number },
   furnLayer: string,
 ): { entities: Entity[]; skipped: string[] } {
-  const { ix0, iy0, ix1, iy1 } = interior;
-  const midX = (ix0 + ix1) / 2;
-  const midY = (iy0 + iy1) / 2;
   const out: Entity[] = [];
   const skipped: string[] = [];
   const placed: Footprint[] = [];
-  // cursor cho mỗi rail (theo trục song song tường): N/S/C chạy theo X, W/E chạy theo Y
-  const cursor: Record<Wall, number> = {
-    N: ix0 + GAP_START, S: ix0 + GAP_START, C: ix0 + GAP_START,
-    W: iy0 + GAP_START, E: iy0 + GAP_START,
-  };
 
   for (const id of items) {
     const def = BLOCK_MAP[id];
     if (!def) continue;
     const a = ANCHOR[id] ?? { wall: 'C' as Wall, rot: 0, flush: false };
-    const quarter = Math.abs(Math.round((a.rot / (Math.PI / 2)) % 2)) === 1;
-    const ex = quarter ? def.h : def.w; // extent X sau xoay
-    const ey = quarter ? def.w : def.h; // extent Y sau xoay
-    const back = a.flush ? WALL_KEEP : 0;
-
-    let at: { x: number; y: number };
-    if (a.wall === 'N' || a.wall === 'S' || a.wall === 'C') {
-      // rail chạy theo X
-      const cx = cursor[a.wall] + ex / 2;
-      if (cx + ex / 2 > ix1 + 1) { skipped.push(def.name); continue; } // vượt mép trong phòng
-      const cy = a.wall === 'N' ? iy1 - ey / 2 - back : a.wall === 'S' ? iy0 + ey / 2 + back : midY;
-      at = { x: clamp(cx, ix0 + ex / 2, ix1 - ex / 2), y: clamp(cy, iy0 + ey / 2, iy1 - ey / 2) };
-      cursor[a.wall] = cx + ex / 2 + GAP_BETWEEN;
-    } else {
-      // rail chạy theo Y (W/E)
-      const cy = cursor[a.wall] + ey / 2;
-      if (cy + ey / 2 > iy1 + 1) { skipped.push(def.name); continue; }
-      const cx = a.wall === 'W' ? ix0 + ex / 2 + back : ix1 - ex / 2 - back;
-      at = { x: clamp(cx, ix0 + ex / 2, ix1 - ex / 2), y: clamp(cy, iy0 + ey / 2, iy1 - ey / 2) };
-      cursor[a.wall] = cy + ey / 2 + GAP_BETWEEN;
+    let placement: Placement | null = null;
+    for (const wall of candidateWalls(a.wall)) {
+      placement = tryPlaceOnWall(def, wall, a.flush, interior, placed);
+      if (placement) break;
     }
-
-    const fp = footprintOf(at, ex, ey);
-    if (placed.some((p) => aabbOverlap(p, fp))) { skipped.push(def.name); continue; } // chồng lấn → bỏ
-    placed.push(fp);
-    void midX;
-    out.push({ id: newId('e'), type: 'block', layer: furnLayer, block: id, at, rot: a.rot, sx: 1, sy: 1 });
+    if (!placement) { skipped.push(def.name); continue; } // hết chỗ ở MỌI tường → bỏ (báo note)
+    placed.push(footprintOf(placement.at, placement.ex, placement.ey));
+    out.push({ id: newId('e'), type: 'block', layer: furnLayer, block: id, at: placement.at, rot: placement.rot, sx: 1, sy: 1 });
   }
   return { entities: out, skipped };
 }
