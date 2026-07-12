@@ -20,6 +20,11 @@ declare global {
   }
 }
 
+/** Id các layer KHÔNG được thao tác (khoá HOẶC đang ẩn) — entity trên đó không chọn/sửa/xoá được. */
+function lockedLayerIds(doc: Doc): Set<string> {
+  return new Set(doc.layers.filter((l) => l.locked || !l.visible).map((l) => l.id));
+}
+
 /** Dim style TỐI THIỂU (Nấc 3) — tương đương vài biến DIMSTYLE hay chỉnh nhất của AutoCAD.
  * textHeight/arrowSize là mm ở tỉ lệ 1:1; dimScale nhân thêm (như DIMSCALE) để chữ/mũi tên
  * không tí hin khi in ở tỉ lệ nhỏ (1:50, 1:100…). Đơn vị hiển thị luôn là mm (khớp toàn app). */
@@ -234,15 +239,25 @@ export const useCadStore = create<CadState>((set, get) => ({
     set((s) => ({ doc: { ...s.doc, entities: [...s.doc.entities, ...es] } }));
   },
   updateEntities: (es) => {
+    // Không sửa entity thuộc layer đang KHOÁ (thói quen CAD: layer khoá = bất khả xâm phạm).
+    const locked = lockedLayerIds(get().doc);
+    const editable = es.filter((e) => !locked.has(e.layer));
+    if (!editable.length) return;
     get().snapshot();
-    const map = new Map(es.map((e) => [e.id, e]));
+    const map = new Map(editable.map((e) => [e.id, e]));
     set((s) => ({ doc: { ...s.doc, entities: s.doc.entities.map((e) => map.get(e.id) ?? e) } }));
   },
   deleteSelected: () => {
+    // Chỉ xoá entity KHÔNG thuộc layer khoá (phòng thủ — select() đã lọc, nhưng chắc chắn).
     const sel = new Set(get().selection);
     if (!sel.size) return;
+    const locked = lockedLayerIds(get().doc);
+    const removable = new Set(
+      get().doc.entities.filter((e) => sel.has(e.id) && !locked.has(e.layer)).map((e) => e.id),
+    );
+    if (!removable.size) return;
     get().snapshot();
-    set((s) => ({ doc: { ...s.doc, entities: s.doc.entities.filter((e) => !sel.has(e.id)) }, selection: [] }));
+    set((s) => ({ doc: { ...s.doc, entities: s.doc.entities.filter((e) => !removable.has(e.id)) }, selection: [] }));
   },
   removeIds: (ids) => {
     const set0 = new Set(ids);
@@ -252,7 +267,17 @@ export const useCadStore = create<CadState>((set, get) => ({
   },
 
   select: (ids, additive) =>
-    set((s) => ({ selection: additive ? Array.from(new Set([...s.selection, ...ids])) : ids })),
+    set((s) => {
+      // KHÔNG cho chọn entity thuộc layer KHOÁ hoặc ĐANG ẨN (thói quen AutoCAD) → chặn luôn
+      // mọi thao tác sửa/xoá/grip downstream vì selection rỗng.
+      const locked = lockedLayerIds(s.doc);
+      const byId = new Map(s.doc.entities.map((e) => [e.id, e]));
+      const allowed = ids.filter((id) => {
+        const e = byId.get(id);
+        return e ? !locked.has(e.layer) : false;
+      });
+      return { selection: additive ? Array.from(new Set([...s.selection, ...allowed])) : allowed };
+    }),
   clearSelection: () => set({ selection: [] }),
 
   setViewport: (viewport) => set({ viewport }),
