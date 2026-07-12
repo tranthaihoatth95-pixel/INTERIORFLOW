@@ -18,8 +18,8 @@ lái qua `window.__flowStore`/`__cadStore` + click thật + kiểm code. Ngày: 
 
 ## 🟠 P1 — khó chịu rõ, nên sửa trước khi polish
 1. ~~**Khoá layer KHÔNG chặn sửa/xoá** (CAD)~~ ✅ **ĐÃ FIX** (`5d6f49f`): helper `lockedLayerIds` (khoá HOẶC ẩn) chặn ở `select()` (selection rỗng → chặn luôn xoá/move/grip) + phòng thủ `deleteSelected`/`updateEntities` trong `lib/cad/store.ts`. Verify: khoá→chọn 0, ép-xoá 117→117 (chặn), mở khoá→chọn 1. (KHÔNG cần đụng `query.ts` của phiên hatchfix.)
-2. **"AI mô tả" quá thận trọng**: phòng 4×3.5 có "giường đôi + tủ áo" → solver đặt giường, **bỏ tủ** để tránh chồng (thực tế phòng này thừa chỗ cho cả hai). Cần cải packing (thử nhiều mặt tường trước khi bỏ). File `lib/cad/ai-assist.ts` (`layoutToEntities`/`placeFurniture`).
-3. **"Dự án mới" đôi khi phải bấm 2 lần** (doc CONTENT/handoff ghi) — cần xác nhận + fix ProjectSelect.
+2. ~~**"AI mô tả" quá thận trọng**~~ ✅ **ĐÃ FIX** (`83e8d38`): `placeFurniture` thử nhiều mặt tường (ưu tiên→đối diện→vuông góc) + quét ô trống first-fit trước khi bỏ. Verify: phòng 4×3.5 ra ĐỦ giường+tủ, đúng layer, 0 chồng.
+3. ~~**"Dự án mới" bấm 2 lần**~~ ✅ **ĐÃ FIX** (`83e8d38`): card "+ Dự án mới" ở rìa carousel trước chỉ focus (lần 1) → thêm guard `kind==='new'` mở ngay 1 click. `components/ProjectSelect.tsx`.
 
 ## 🟡 P2 — đánh bóng
 - `store.onConnect` **không tự validate dataType** (chỉ tầng UI `isValidConnection` chặn) → gọi store trực tiếp/edge-case tạo được dây sai. Defense-in-depth: validate trong `onConnect`.
