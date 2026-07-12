@@ -114,6 +114,41 @@ function testRulesForOperator() {
   ok('residential có vn-residential', rulesForOperator('residential').some((g) => g.id === 'vn-residential'));
 }
 
+/* helper (QA D1): tường bao chữ nhật để findHatchBoundary dò được biên phòng thật. */
+function rectWalls(d: Doc, x0: number, y0: number, x1: number, y1: number): void {
+  const p = [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }];
+  for (let i = 0; i < 4; i++) {
+    d.entities.push({ id: `w${x0}-${y0}-${i}`, type: 'line', layer: 'l-wall', a: p[i], b: p[(i + 1) % 4] });
+  }
+}
+
+function testRoomSetFromDoc() {
+  console.log('\n[10] QA D1 — ROOM-SET tự dò từ Doc (findHatchBoundary + nhãn TEXT toàn-hoa)');
+  // Phòng kín 4×3.5m nhãn "PHÒNG NGỦ" — classifier phải nhận tín hiệu ROOM (không chỉ text).
+  const d = emptyDoc();
+  rectWalls(d, 0, 0, 4000, 3500);
+  d.entities.push({ id: 'lbl', type: 'text', layer: 'l-text', at: { x: 2000, y: 1750 }, text: 'PHÒNG NGỦ', h: 200 });
+  const p = classifyOperator({ doc: d });
+  ok('operator = residential', p.operator === 'residential');
+  ok('có evidence signal room (dò từ Doc)', p.evidence.some((e) => e.signal === 'room' && e.operator === 'residential'));
+  // Nhãn KHÔNG có biên kín (không tường) → không có tín hiệu room, nhưng text vẫn bắt được.
+  const d2 = emptyDoc();
+  d2.entities.push({ id: 'lbl2', type: 'text', layer: 'l-text', at: { x: 0, y: 0 }, text: 'PHÒNG NGỦ', h: 200 });
+  const p2 = classifyOperator({ doc: d2 });
+  ok('không biên kín → KHÔNG có signal room', !p2.evidence.some((e) => e.signal === 'room'));
+  ok('nhưng text "phòng ngủ" vẫn cho residential', p2.operator === 'residential');
+}
+
+function testNeufertGroups() {
+  console.log('\n[11] QA D2 — nhóm neufert (nhân trắc) gắn đúng operator');
+  ok('residential có neufert', ruleGroupIdsForOperator('residential').includes('neufert'));
+  ok('hospitality có neufert', ruleGroupIdsForOperator('hospitality').includes('neufert'));
+  ok('office có neufert (lưu thông cụm bàn)', ruleGroupIdsForOperator('office').includes('neufert'));
+  ok('f&b KHÔNG có neufert', !ruleGroupIdsForOperator('f&b').includes('neufert'));
+  ok('generic KHÔNG có neufert', !ruleGroupIdsForOperator('generic').includes('neufert'));
+  ok('rulesForOperator residential trả được group neufert từ registry', rulesForOperator('residential').some((g) => g.id === 'neufert'));
+}
+
 testBlockCategory();
 testOfficeFromDoc();
 testResidentialFromDoc();
@@ -123,6 +158,8 @@ testRoomsSignal();
 testEmptyGeneric();
 testDeterministic();
 testRulesForOperator();
+testRoomSetFromDoc();
+testNeufertGroups();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

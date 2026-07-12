@@ -424,5 +424,11 @@ export function describeToEntities(
   furnLayer = 'l-furniture',
 ): AiAssistResult {
   const spec = parseDescription(text);
-  return layoutToEntities(spec, origin, wallLayer, textLayer, furnLayer, wallThickness);
+  const result = layoutToEntities(spec, origin, wallLayer, textLayer, furnLayer, wallThickness);
+  // HOOK ML pha 1 (explainable): báo operator suy được từ mô tả — CHỈ nối vào note trạng thái,
+  // không đổi hình học. 'generic' = chưa đủ tín hiệu → im lặng như cũ.
+  if (spec.operator && spec.operator !== 'generic') {
+    result.note += ` Nhận diện vận hành: ${spec.operator} — panel Kiểm chuẩn có thể lọc rule theo loại này.`;
+  }
+  return result;
 }
