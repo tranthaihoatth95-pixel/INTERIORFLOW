@@ -35,6 +35,8 @@ export interface GenerateResult {
   bodyText: string;
   /** template .pptx đã chọn từ thư viện (nếu có) — hiện chỉ ghi nhận tên. */
   pptxTemplate: string | null;
+  /** ảnh reference đã đính (≤5) — nếu có, container dàn theo LƯỚI ảnh (region-layout). */
+  attachRefs: string[];
 }
 
 interface Props {
@@ -100,7 +102,7 @@ export default function GenerateFlow({ refImages, onComplete }: Props) {
     // để hiệu ứng quét chạy đủ 1 nhịp cho "cảm giác học", rồi bàn giao.
     const delay = attachRefs.length ? 2100 : 1200;
     setTimeout(() => {
-      onComplete({ rules: r, contentImages, bodyText, pptxTemplate });
+      onComplete({ rules: r, contentImages, bodyText, pptxTemplate, attachRefs });
     }, delay);
   }
 

@@ -19,14 +19,14 @@ import type { FontPairing } from '@/lib/slides';
 
 const clean = (s: string) => s.replace(/\*\*/g, '').replace(/[*_`]/g, '').trim();
 
-interface Block {
+export interface Block {
   title: string;
   body: string[];
   quoteLines: number; // số dòng vốn là blockquote (>)
 }
 
 /** Tách text thành khối theo heading cấp 1–2 hoặc "CHƯƠNG/CAO TRÀO". Bỏ bảng/hr/trống. */
-function parseBlocks(text: string): Block[] {
+export function parseBlocks(text: string): Block[] {
   const blocks: Block[] = [];
   let cur: Block | null = null;
   const ensure = (): Block => (cur ??= { title: '', body: [], quoteLines: 0 });

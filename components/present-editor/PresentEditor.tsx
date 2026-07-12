@@ -40,6 +40,8 @@ import { buildGuProfile, type GuAsset, type GuProfile } from '@/lib/gu';
 import { exportDeckToPdf, exportDeckToPptxFromModel, exportDeckToPng } from '@/lib/present-editor/export';
 import { useEditor } from './useEditor';
 import { slidesFromContent } from '@/lib/present-editor/content-deck';
+import { evaluateDeck } from '@/lib/present-editor/layout-check';
+import { slidesFromReference } from '@/lib/present-editor/reference-layout';
 import Toolbar from './Toolbar';
 import EditorCanvas from './EditorCanvas';
 import Inspector from './Inspector';
@@ -75,6 +77,8 @@ export default function PresentEditor({ initialDeck }: Props) {
   const [spec, setSpec] = useState<LayoutSpec>(DEFAULT_SPEC);
   // ảnh reference LOCAL (phiên editor) — bổ sung cho server khi chưa đăng nhập.
   const [localRefs, setLocalRefs] = useState<RefImage[]>([]);
+  // Cảnh báo bố cục (chuẩn DECK_STANDARDS) sau khi dàn tự động — không thụ động, đóng được.
+  const [layoutWarnings, setLayoutWarnings] = useState<ReturnType<typeof evaluateDeck>>([]);
 
   // Nạp thư viện Reference (layout/slide templates + gu). Không chặn UI nếu lỗi/empty.
   useEffect(() => {
@@ -401,7 +405,7 @@ export default function PresentEditor({ initialDeck }: Props) {
   // Nhận kết quả từ flow Generate: nạp palette gu từ ảnh reference vào deck + đưa ảnh
   // nội dung vừa import vào rổ Reference (để kéo vào slide). Human-in-loop: chỉ điểm xuất phát.
   const onGenerated = useCallback(
-    (r: import('./GenerateFlow').GenerateResult) => {
+    async (r: import('./GenerateFlow').GenerateResult) => {
       const pal = r.rules?.palette?.length ? r.rules.palette : ed.deck.palette;
       if (r.rules?.palette?.length) {
         ed.update((d) => {
@@ -421,9 +425,13 @@ export default function PresentEditor({ initialDeck }: Props) {
         setLocalRefs((prev) => [...items, ...prev]);
       }
       // MỚI: có nội dung text → DÀN SLIDE tự động (cover + quote + content).
-      // KHÔNG âm thầm xoá việc user đang dàn: nếu deck đã có slide → HỎI Thay / Nối cuối.
+      // Ưu tiên: có ảnh reference → dàn theo LƯỚI ảnh (region-layout); nếu không ra
+      // được thì FALLBACK về template. KHÔNG âm thầm xoá: deck đã có slide → HỎI Thay/Nối.
       if (r.bodyText.trim()) {
-        const built = slidesFromContent(r.bodyText, r.contentImages, pal, ed.deck.fonts);
+        let built = r.attachRefs?.length
+          ? await slidesFromReference(r.attachRefs[0], r.bodyText, r.contentImages, pal, ed.deck.fonts).catch(() => [])
+          : [];
+        if (!built.length) built = slidesFromContent(r.bodyText, r.contentImages, pal, ed.deck.fonts);
         if (built.length) {
           const startIdx = ed.deck.slides.length;
           const replace =
@@ -435,6 +443,8 @@ export default function PresentEditor({ initialDeck }: Props) {
             d.slides = replace ? built : [...d.slides, ...built];
           });
           ed.selectSlide(replace ? 0 : startIdx);
+          // Chấm bố cục theo chuẩn → nổi cảnh báo "trống/chật/chữ tràn" (human-in-loop).
+          setLayoutWarnings(evaluateDeck(built));
         }
       }
     },
@@ -705,6 +715,37 @@ export default function PresentEditor({ initialDeck }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', color: 'var(--t1)' }}>
+      {layoutWarnings.length > 0 && (
+        <div
+          style={{
+            position: 'fixed', bottom: 16, right: 16, zIndex: 60, width: 320, maxHeight: 260, overflowY: 'auto',
+            background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: 12,
+            boxShadow: '0 12px 40px rgba(0,0,0,.35)', fontSize: 11.5, lineHeight: 1.45,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <strong style={{ fontSize: 12, color: 'var(--t1)' }}>
+              Bố cục: {layoutWarnings.length} slide cần chú ý
+            </strong>
+            <button
+              type="button"
+              onClick={() => setLayoutWarnings([])}
+              title="Đóng"
+              style={{ border: 'none', background: 'transparent', color: 'var(--t3)', cursor: 'pointer', fontSize: 14, lineHeight: 1 }}
+            >
+              ×
+            </button>
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 16, color: 'var(--t2)' }}>
+            {layoutWarnings.slice(0, 8).map(({ slide, report }) => (
+              <li key={slide} style={{ marginBottom: 4 }}>
+                <b>Slide {slide}:</b> {report.warnings[0].message}
+                {report.warnings.length > 1 ? ` (+${report.warnings.length - 1})` : ''}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <Toolbar
         onAddText={onAddText}
         onAddImageUrl={onAddImageUrl}
