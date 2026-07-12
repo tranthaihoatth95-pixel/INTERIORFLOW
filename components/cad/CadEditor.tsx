@@ -423,9 +423,109 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
+/* ───────── Danh mục lệnh (cho autocomplete Việc 2) — bám sát bảng alias trong run() ───────── */
+const CAD_COMMANDS: { cmd: string; label: string }[] = [
+  { cmd: 'L', label: 'Đường thẳng' },
+  { cmd: 'LINE', label: 'Đường thẳng' },
+  { cmd: 'PL', label: 'Polyline' },
+  { cmd: 'PLINE', label: 'Polyline' },
+  { cmd: 'REC', label: 'Chữ nhật' },
+  { cmd: 'RECT', label: 'Chữ nhật' },
+  { cmd: 'C', label: 'Đường tròn' },
+  { cmd: 'CIRCLE', label: 'Đường tròn' },
+  { cmd: 'A', label: 'Cung tròn' },
+  { cmd: 'ARC', label: 'Cung tròn' },
+  { cmd: 'M', label: 'Di chuyển' },
+  { cmd: 'MOVE', label: 'Di chuyển' },
+  { cmd: 'CO', label: 'Sao chép' },
+  { cmd: 'COPY', label: 'Sao chép' },
+  { cmd: 'RO', label: 'Xoay' },
+  { cmd: 'ROTATE', label: 'Xoay' },
+  { cmd: 'MI', label: 'Đối xứng' },
+  { cmd: 'MIRROR', label: 'Đối xứng' },
+  { cmd: 'O', label: 'Offset (O 150)' },
+  { cmd: 'OFFSET', label: 'Offset' },
+  { cmd: 'DIM', label: 'Ghi kích thước' },
+  { cmd: 'DAL', label: 'Kích thước thẳng' },
+  { cmd: 'DI', label: 'Đo khoảng cách' },
+  { cmd: 'DRA', label: 'Kích thước bán kính' },
+  { cmd: 'DDI', label: 'Kích thước đường kính' },
+  { cmd: 'DAN', label: 'Kích thước góc' },
+  { cmd: 'DCO', label: 'Kích thước nối tiếp' },
+  { cmd: 'DBA', label: 'Kích thước baseline' },
+  { cmd: 'T', label: 'Chữ' },
+  { cmd: 'TEXT', label: 'Chữ' },
+  { cmd: 'W', label: 'Tường (W 200)' },
+  { cmd: 'WALL', label: 'Tường' },
+  { cmd: 'ROOM', label: 'Phòng' },
+  { cmd: 'D', label: 'Cửa đi' },
+  { cmd: 'DOOR', label: 'Cửa đi' },
+  { cmd: 'WIN', label: 'Cửa sổ' },
+  { cmd: 'WINDOW', label: 'Cửa sổ' },
+  { cmd: 'TR', label: 'Cắt (trim)' },
+  { cmd: 'TRIM', label: 'Cắt (trim)' },
+  { cmd: 'EX', label: 'Kéo dài (extend)' },
+  { cmd: 'EXTEND', label: 'Kéo dài (extend)' },
+  { cmd: 'F', label: 'Bo góc (F 50)' },
+  { cmd: 'FILLET', label: 'Bo góc' },
+  { cmd: 'CHA', label: 'Vát góc (CHA 30 30)' },
+  { cmd: 'CHAMFER', label: 'Vát góc' },
+  { cmd: 'AR', label: 'Mảng chữ nhật' },
+  { cmd: 'ARRAY', label: 'Mảng chữ nhật' },
+  { cmd: 'ARP', label: 'Mảng tròn' },
+  { cmd: 'ARRAYPOLAR', label: 'Mảng tròn' },
+  { cmd: 'SC', label: 'Tỉ lệ (scale)' },
+  { cmd: 'SCALE', label: 'Tỉ lệ (scale)' },
+  { cmd: 'S', label: 'Kéo giãn (stretch)' },
+  { cmd: 'STRETCH', label: 'Kéo giãn (stretch)' },
+  { cmd: 'BR', label: 'Ngắt (break)' },
+  { cmd: 'BREAK', label: 'Ngắt (break)' },
+  { cmd: 'J', label: 'Nối (join)' },
+  { cmd: 'JOIN', label: 'Nối (join)' },
+  { cmd: 'X', label: 'Phá khối (explode)' },
+  { cmd: 'EXPLODE', label: 'Phá khối (explode)' },
+  { cmd: 'LEN', label: 'Đổi chiều dài (LEN 100)' },
+  { cmd: 'LENGTHEN', label: 'Đổi chiều dài' },
+  { cmd: 'DIMTXT', label: 'Cỡ chữ kích thước' },
+  { cmd: 'DIMASZ', label: 'Cỡ mũi tên' },
+  { cmd: 'DIMSCALE', label: 'Tỉ lệ dim' },
+  { cmd: 'H', label: 'Mặt cắt (H ANSI31 20)' },
+  { cmd: 'HATCH', label: 'Mặt cắt (hatch)' },
+  { cmd: 'HANGLE', label: 'Góc hatch' },
+  { cmd: 'POLAR', label: 'Polar tracking' },
+  { cmd: 'E', label: 'Xoá' },
+  { cmd: 'DEL', label: 'Xoá' },
+  { cmd: 'ERASE', label: 'Xoá' },
+  { cmd: 'U', label: 'Hoàn tác' },
+  { cmd: 'UNDO', label: 'Hoàn tác' },
+  { cmd: 'RE', label: 'Làm lại' },
+  { cmd: 'REDO', label: 'Làm lại' },
+  { cmd: 'EXT', label: 'Zoom Extents' },
+  { cmd: 'Z', label: 'Zoom Extents' },
+  { cmd: 'SEL', label: 'Chọn' },
+];
+
+/** Lọc gợi ý theo prefix (Việc 2). Sắp: khớp CHÍNH XÁC trước, rồi token ngắn hơn, rồi A→Z. */
+function matchCommands(input: string): { cmd: string; label: string }[] {
+  const q = input.trim().toUpperCase();
+  if (!q) return [];
+  return CAD_COMMANDS.filter((c) => c.cmd.startsWith(q))
+    .sort((a, b) => {
+      if (a.cmd === q) return -1;
+      if (b.cmd === q) return 1;
+      if (a.cmd.length !== b.cmd.length) return a.cmd.length - b.cmd.length;
+      return a.cmd.localeCompare(b.cmd);
+    })
+    .slice(0, 8);
+}
+
 /* ───────── Command line mini ───────── */
 function CommandLine({ status }: { status: string }) {
   const [val, setVal] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [acOpen, setAcOpen] = useState(false);
+  const [acIndex, setAcIndex] = useState(0);
+  const suggestions = acOpen ? matchCommands(val) : [];
   const setTool = useCadStore((s) => s.setTool);
   const setStatus = useCadStore((s) => s.setStatus);
   const deleteSelected = useCadStore((s) => s.deleteSelected);
@@ -445,8 +545,23 @@ function CommandLine({ status }: { status: string }) {
   const setHatchScale = useCadStore((s) => s.setHatchScale);
   const setHatchAngle = useCadStore((s) => s.setHatchAngle);
 
-  const run = () => {
-    const raw = val.trim();
+  // Việc 1 — Type-anywhere: canvas phát 'cad:cmd-key' khi gõ chữ lúc rảnh → focus ô lệnh + seed ký tự.
+  useEffect(() => {
+    const onCmdKey = (ev: Event) => {
+      const ch = (ev as CustomEvent<string>).detail;
+      if (typeof ch !== 'string') return;
+      setVal(ch.toUpperCase());
+      setAcOpen(true);
+      setAcIndex(0);
+      inputRef.current?.focus();
+    };
+    window.addEventListener('cad:cmd-key', onCmdKey);
+    return () => window.removeEventListener('cad:cmd-key', onCmdKey);
+  }, []);
+
+  const run = (override?: string) => {
+    const raw = (override ?? val).trim();
+    setAcOpen(false);
     if (!raw) return;
     const [cmd, arg, arg2] = raw.split(/\s+/);
     const c = cmd.toUpperCase();
@@ -577,18 +692,94 @@ function CommandLine({ status }: { status: string }) {
     setVal('');
   };
 
+  // chấp nhận gợi ý (fill token vào ô); optionally chạy ngay
+  const acceptSuggestion = (i: number, runNow: boolean) => {
+    const s = suggestions[i];
+    if (!s) return;
+    if (runNow) {
+      run(s.cmd);
+    } else {
+      setVal(s.cmd);
+      setAcOpen(false);
+      inputRef.current?.focus();
+    }
+  };
+
+  const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const list = matchCommands(val);
+    if (acOpen && list.length) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setAcIndex((i) => (i + 1) % list.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setAcIndex((i) => (i - 1 + list.length) % list.length);
+        return;
+      }
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        acceptSuggestion(Math.min(acIndex, list.length - 1), false);
+        return;
+      }
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // Việc 2: nếu đang mở gợi ý và có mục đang chọn → chạy đúng mục đó; nếu không, chạy raw.
+      if (acOpen && list.length) acceptSuggestion(Math.min(acIndex, list.length - 1), true);
+      else run();
+      return;
+    }
+    if (e.key === 'Escape') {
+      // Việc 1 + 2: Esc đóng gợi ý nếu đang mở; nếu đã đóng → rời focus + xoá.
+      if (acOpen) {
+        setAcOpen(false);
+      } else {
+        setVal('');
+        inputRef.current?.blur();
+      }
+    }
+  };
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 34, flex: '0 0 auto', padding: '0 12px', borderTop: '1px solid var(--border)', background: 'var(--panel)' }}>
       <Command size={14} style={{ color: 'var(--t4)' }} />
-      <input
-        value={val}
-        onChange={(e) => setVal(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') run();
-        }}
-        placeholder="Gõ lệnh: L · PL · REC · C · W 200 · ROOM · D · WIN · M · CO · RO · MI · O 150 · DIM · T · E · U…"
-        style={{ width: 340, background: 'var(--field)', border: '1px solid var(--border)', borderRadius: 7, padding: '3px 8px', fontSize: 12, color: 'var(--t1)', outline: 'none', fontFamily: 'ui-monospace, monospace' }}
-      />
+      <div style={{ position: 'relative', width: 340 }}>
+        {acOpen && suggestions.length > 0 && (
+          <div
+            style={{
+              position: 'absolute', bottom: 'calc(100% + 5px)', left: 0, width: '100%',
+              background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 8,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.28)', overflow: 'hidden', zIndex: 50,
+            }}
+          >
+            {suggestions.map((s, i) => (
+              <div
+                key={s.cmd}
+                onMouseDown={(e) => { e.preventDefault(); acceptSuggestion(i, true); }}
+                onMouseEnter={() => setAcIndex(i)}
+                style={{
+                  display: 'flex', alignItems: 'baseline', gap: 8, padding: '4px 9px', cursor: 'pointer',
+                  background: i === acIndex ? 'var(--field)' : 'transparent',
+                }}
+              >
+                <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12, color: 'var(--t1)', minWidth: 54 }}>{s.cmd}</span>
+                <span style={{ fontSize: 11, color: 'var(--t3)' }}>{s.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <input
+          ref={inputRef}
+          value={val}
+          onChange={(e) => { setVal(e.target.value); setAcOpen(true); setAcIndex(0); }}
+          onKeyDown={onInputKeyDown}
+          onBlur={() => setAcOpen(false)}
+          placeholder="Gõ lệnh: L · PL · REC · C · W 200 · ROOM · D · WIN · M · CO · RO · MI · O 150 · DIM · T · E · U…"
+          style={{ width: '100%', background: 'var(--field)', border: '1px solid var(--border)', borderRadius: 7, padding: '3px 8px', fontSize: 12, color: 'var(--t1)', outline: 'none', fontFamily: 'ui-monospace, monospace' }}
+        />
+      </div>
       <span style={{ fontSize: 11.5, color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{status}</span>
     </div>
   );

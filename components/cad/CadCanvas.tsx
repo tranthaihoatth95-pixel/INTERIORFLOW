@@ -13,6 +13,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useCadStore } from '@/lib/cad/store';
+import type { Tool } from '@/lib/cad/store';
 import { useFlowStore } from '@/lib/store';
 import type { Entity, Pt, Viewport, DimEntity, LineEntity } from '@/lib/cad/model';
 import { screenToWorld, worldToScreen, zoomAt, fitBox, docBox, dist } from '@/lib/cad/model';
@@ -72,6 +73,13 @@ interface Ix {
   // Nấc 3 — dimension: dim gần nhất tạo ra (cho DCO/DBA nối chuỗi) + đường 1 đang chờ cho DAN
   lastDim: DimEntity | null;
   angularFirst: LineEntity | null;
+  // Việc 3 — lặp lệnh: lệnh/tool "thật" vừa phát (không tính select/pan)
+  lastTool: Tool | null;
+  // Việc 3 — phân biệt Space TAP nhanh (lặp lệnh) với Space GIỮ để pan
+  spaceDownAt: number;
+  spaceDidPan: boolean;
+  // Việc 4 — Dynamic Input heads-up cạnh con trỏ (F12 bật/tắt, mặc định bật)
+  hud: boolean;
 }
 
 function css(varName: string, fallback: string): string {
@@ -120,6 +128,10 @@ export default function CadCanvas() {
     gripPreview: null,
     lastDim: null,
     angularFirst: null,
+    lastTool: null,
+    spaceDownAt: 0,
+    spaceDidPan: false,
+    hud: true,
   });
 
   // ── vòng vẽ rAF ──
@@ -141,6 +153,19 @@ export default function CadCanvas() {
   useEffect(() => {
     const unsub = useCadStore.subscribe(() => {
       ix.current.redraw = true;
+    });
+    return unsub;
+  }, []);
+
+  // Việc 3 — ghi nhớ lệnh/tool "thật" vừa phát để lặp lại (Space tap / chuột phải khi rảnh).
+  // Bỏ qua 'select' và 'pan' (đó là trạng thái nghỉ, không phải lệnh cần lặp).
+  useEffect(() => {
+    let prev = useCadStore.getState().tool;
+    const unsub = useCadStore.subscribe((s) => {
+      if (s.tool !== prev) {
+        prev = s.tool;
+        if (s.tool !== 'select' && s.tool !== 'pan') ix.current.lastTool = s.tool;
+      }
     });
     return unsub;
   }, []);
@@ -284,11 +309,14 @@ export default function CadCanvas() {
     if (e.button === 1 || ix.current.spaceHeld || st.tool === 'pan') {
       ix.current.panning = true;
       ix.current.panStart = { screen, vp: st.viewport };
+      if (ix.current.spaceHeld) ix.current.spaceDidPan = true; // Việc 3: đã dùng Space để pan → không lặp lệnh
       return;
     }
     // chuột PHẢI = Enter/kết thúc lệnh (thói quen AutoCAD): chốt polyline/wall/tham số đang gõ.
+    // Việc 3: nếu KHÔNG có gì để chốt (đang rảnh) → chuột phải = lặp lệnh vừa dùng.
     if (e.button === 2) {
-      commitEnter(ev.shiftKey);
+      if (isIdle()) repeatLastCommand();
+      else commitEnter(ev.shiftKey);
       ix.current.redraw = true;
       return;
     }
@@ -423,6 +451,34 @@ export default function CadCanvas() {
     else if (ix.current.dynBuf && ix.current.pts.length) {
       handleClick(effectivePoint(ix.current.pts[ix.current.pts.length - 1]), shift);
     }
+  }
+
+  /**
+   * isIdle — đang "rảnh": tool=select, không đang chờ điểm, không gõ số, không trong
+   * chuỗi fillet/chamfer/join/break/grip/góc. Dùng để quyết định có được phép mở lệnh
+   * bằng chữ (Việc 1) hoặc lặp lệnh (Việc 3) hay không — tránh phá luồng đang vẽ.
+   */
+  function isIdle(): boolean {
+    const st = useCadStore.getState();
+    return (
+      st.tool === 'select' &&
+      ix.current.pts.length === 0 &&
+      ix.current.dynBuf === '' &&
+      !ix.current.filletFirst &&
+      !ix.current.chamferFirst &&
+      !ix.current.joinFirst &&
+      !ix.current.breakTarget &&
+      !ix.current.gripDrag &&
+      !ix.current.angularFirst
+    );
+  }
+
+  /** Việc 3 — lặp lại lệnh/tool vừa phát (thói quen AutoCAD). */
+  function repeatLastCommand() {
+    const last = ix.current.lastTool;
+    if (!last) return;
+    useCadStore.getState().setTool(last);
+    ix.current.redraw = true;
   }
 
   /* ───────── xử lý click theo công cụ ───────── */
@@ -1036,6 +1092,11 @@ export default function CadCanvas() {
         return;
       }
       if (e.key === ' ') {
+        // Việc 3: đánh dấu thời điểm nhấn để phân biệt TAP nhanh (lặp lệnh) với GIỮ để pan.
+        if (!e.repeat) {
+          ix.current.spaceDownAt = performance.now();
+          ix.current.spaceDidPan = false;
+        }
         ix.current.spaceHeld = true;
         return;
       }
@@ -1065,6 +1126,14 @@ export default function CadCanvas() {
         st.setStatus(`Ortho ${ix.current.orthoLock ? 'BẬT' : 'tắt'} (F8) — khoá hướng ngang/dọc khi vẽ.`);
         return;
       }
+      // Việc 4 — F12: bật/tắt Dynamic Input heads-up cạnh con trỏ (thói quen AutoCAD).
+      if (e.key === 'F12') {
+        e.preventDefault();
+        ix.current.hud = !ix.current.hud;
+        st.setStatus(`Dynamic Input ${ix.current.hud ? 'BẬT' : 'tắt'} (F12) — hiện số/độ dài cạnh con trỏ.`);
+        ix.current.redraw = true;
+        return;
+      }
       if ((e.key === 'c' || e.key === 'C') && st.tool === 'polyline' && ix.current.pts.length >= 2) {
         finishPolyline(true);
         return;
@@ -1087,6 +1156,18 @@ export default function CadCanvas() {
         zoomExtents();
         return;
       }
+      // Việc 1 — Type-anywhere: khi RẢNH, gõ CHỮ CÁI bất kỳ trên vùng vẽ sẽ chảy vào
+      // dòng lệnh (chuẩn AutoCAD) mà KHÔNG cần click ô lệnh trước. Các hotkey 1 phím ngữ
+      // cảnh (c/r/f/e) đã xử lý phía trên nên không bị phá; số vẫn vào dynBuf như cũ.
+      if (
+        !e.ctrlKey && !e.metaKey && !e.altKey &&
+        /^[a-zA-Z]$/.test(e.key) &&
+        isIdle()
+      ) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('cad:cmd-key', { detail: e.key }));
+        return;
+      }
       // dynamic input số
       if (/[0-9.]/.test(e.key)) {
         ix.current.dynBuf += e.key;
@@ -1098,7 +1179,15 @@ export default function CadCanvas() {
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
-      if (e.key === ' ') ix.current.spaceHeld = false;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (e.key === ' ') {
+        ix.current.spaceHeld = false;
+        // Việc 3: TAP Space nhanh khi rảnh (không giữ để pan) = lặp lệnh vừa dùng.
+        // Bỏ qua nếu đang gõ trong ô nhập (command line / tên layer).
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        const dt = performance.now() - ix.current.spaceDownAt;
+        if (!ix.current.spaceDidPan && dt < 300 && isIdle()) repeatLastCommand();
+      }
     };
     window.addEventListener('keydown', onKey);
     window.addEventListener('keyup', onKeyUp);
@@ -1159,7 +1248,59 @@ export default function CadCanvas() {
     drawSelectionBox(ctx, v, accent);
     drawSnap(ctx, v, accent);
     drawCrosshair(ctx, W, H, gridMinor, t3);
+    drawDynInput(ctx, W, H);
 
+    ctx.restore();
+  }
+
+  /**
+   * Việc 4 — Dynamic Input heads-up: ô nhỏ NGAY CẠNH con trỏ hiện số đang gõ (dynBuf)
+   * và/hoặc độ dài + góc của đoạn đang vẽ (từ điểm chốt gần nhất tới con trỏ). Mắt không
+   * phải rời điểm vẽ để nhìn xuống thanh status. F12 bật/tắt (mặc định bật). Toạ độ live góc
+   * dưới + status bar vẫn giữ nguyên.
+   */
+  function drawDynInput(ctx: CanvasRenderingContext2D, W: number, H: number) {
+    if (!ix.current.hud) return;
+    const s = ix.current.cursorScreen;
+    const last = ix.current.pts[ix.current.pts.length - 1];
+    const lines: string[] = [];
+    if (ix.current.dynBuf) lines.push(`${ix.current.dynBuf} mm`);
+    if (last) {
+      const w = ix.current.cursorWorld;
+      const d = dist(last, w);
+      const ang = ((Math.atan2(w.y - last.y, w.x - last.x) * 180) / Math.PI + 360) % 360;
+      if (!ix.current.dynBuf) lines.push(`${Math.round(d)} mm`);
+      lines.push(`∠ ${ang.toFixed(1)}°`);
+    }
+    if (!lines.length) return;
+
+    const panel = css('--panel', '#1c1a17');
+    const t1 = css('--t1', '#efe9df');
+    const border = css('--border', '#2a2622');
+    ctx.save();
+    ctx.font = '11px ui-monospace, monospace';
+    const padX = 7;
+    const lineH = 14;
+    const textW = Math.max(...lines.map((t) => ctx.measureText(t).width));
+    const boxW = textW + padX * 2;
+    const boxH = lines.length * lineH + 6;
+    // đặt chéo dưới-phải con trỏ; nếu tràn mép thì lật sang trái/trên
+    let bx = s.x + 16;
+    let by = s.y + 16;
+    if (bx + boxW > W - 4) bx = s.x - 16 - boxW;
+    if (by + boxH > H - 4) by = s.y - 16 - boxH;
+    ctx.globalAlpha = 0.92;
+    ctx.fillStyle = panel;
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.rect(bx, by, boxW, boxH);
+    ctx.fill();
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = t1;
+    ctx.textBaseline = 'top';
+    lines.forEach((t, i) => ctx.fillText(t, bx + padX, by + 4 + i * lineH));
     ctx.restore();
   }
 
