@@ -1,31 +1,39 @@
 /**
- * lib/cad/standards/vn-residential.ts — TCVN/QCVN nhà ở dân dụng Việt Nam (diện tích tối
- * thiểu, tỉ lệ cửa sổ, quy mô căn hộ). Số liệu tra cứu qua tìm kiếm web 2026-07-11 từ nhiều
- * nguồn trích dẫn TCVN 4451:2012 (Nhà ở — Nguyên tắc cơ bản để thiết kế) — CHƯA đọc trực tiếp
- * bản PDF gốc (chỉ tổng hợp qua trang trích dẫn), nên mọi rule verified=true ở đây vẫn nên đối
- * chiếu lại bản gốc TCVN 4451:2012 trước khi dùng cho hồ sơ pháp lý/xin phép chính thức.
+ * lib/cad/standards/vn-residential.ts — TCVN/QCVN nhà ở dân dụng Việt Nam (diện tích tối thiểu,
+ * tỉ lệ cửa sổ, quy mô căn hộ, chiều cao thông thủy). Số liệu tra cứu & đối chiếu chéo qua nhiều
+ * nguồn trích TCVN 4451:2012 (Nhà ở — Nguyên tắc cơ bản để thiết kế) và QCVN 04:2021/BXD (Nhà
+ * chung cư) — 2026-07-12. CHƯA đọc trực tiếp bản PDF gốc từng điều khoản, nên trị số verified=true
+ * vẫn nên đối chiếu bản gốc trước khi dùng cho hồ sơ pháp lý/xin phép chính thức.
+ *
+ * ⚠️ Các trị số minAreaM2 của phòng ngủ (9), bếp+ăn (10), WC (2.5), khách (12) được checker.ts
+ * dùng trực tiếp để chấm — KHÔNG đổi giá trị khi chưa cập nhật checker.test.ts (case demo Bếp
+ * 5.7m² < 10m² đang là ca kiểm chứng cốt lõi).
  */
 import type { RuleGroup } from './registry';
 
 export const VN_RESIDENTIAL: RuleGroup = {
   id: 'vn-residential',
-  name: 'Nhà ở dân dụng Việt Nam (TCVN)',
+  name: 'Nhà ở dân dụng Việt Nam (TCVN 4451 / QCVN 04)',
   rules: [
     {
       id: 'vn-res-bedroom-min-area',
       source: 'TCVN 4451:2012 — Nhà ở, Nguyên tắc cơ bản để thiết kế',
       category: 'room-size',
       severity: 'warning',
+      region: 'VN',
+      binding: 'mandatory',
       description: 'Diện tích sử dụng phòng ngủ trong nhà chung cư không nhỏ hơn 9 m².',
       params: { minAreaM2: 9 },
       verified: true,
-      note: 'Tra qua tổng hợp web (nhiều trang trích dẫn TCVN 4451:2012), CHƯA đọc bản PDF gốc trực tiếp — nên đối chiếu lại trước khi dùng cho hồ sơ chính thức.',
+      note: 'Tra qua nhiều nguồn trích TCVN 4451:2012, CHƯA đọc bản PDF gốc trực tiếp — đối chiếu lại trước khi dùng cho hồ sơ chính thức. Trị số 9 m² đang được checker dùng trực tiếp.',
     },
     {
       id: 'vn-res-wc-min-area',
       source: 'TCVN 4451:2012 (khuyến nghị)',
       category: 'room-size',
       severity: 'info',
+      region: 'VN',
+      binding: 'adjustable',
       description: 'Diện tích sử dụng khuyến nghị cho phòng vệ sinh (WC) không nhỏ hơn 2.5 m².',
       params: { minAreaM2: 2.5 },
       verified: true,
@@ -36,6 +44,8 @@ export const VN_RESIDENTIAL: RuleGroup = {
       source: 'TCVN 4451:2012 (khuyến nghị)',
       category: 'room-size',
       severity: 'info',
+      region: 'VN',
+      binding: 'adjustable',
       description: 'Diện tích sử dụng khuyến nghị cho khu bếp + ăn KHÔNG TÁCH RỜI không nhỏ hơn 10 m² (nếu bếp và ăn là 2 khu riêng biệt, quy chuẩn này không áp dụng nguyên trạng — cần cộng gộp diện tích 2 khu để so sánh).',
       params: { minAreaM2: 10 },
       verified: true,
@@ -46,16 +56,32 @@ export const VN_RESIDENTIAL: RuleGroup = {
       source: 'TCVN 4451:2012',
       category: 'other',
       severity: 'info',
+      region: 'VN',
+      binding: 'adjustable',
       description: 'Tỉ lệ diện tích cửa sổ lấy sáng / diện tích sàn phòng khách & bếp: tối thiểu khoảng 1:8, không cần vượt quá 1:5 (chỉ số tham khảo, chưa đo tự động được từ hình học cửa sổ hiện tại).',
       params: { minRatioDenominator: 8, maxRatioDenominator: 5 },
       verified: true,
       note: 'Chưa có cơ chế đo diện tích kính thực tế của block cửa sổ (chỉ có chiều rộng danh nghĩa) — rule này hiện KHÔNG được checker.ts tự động kiểm (để dành, ghi nhận cho tương lai).',
     },
     {
+      id: 'vn-res-ceiling-height-min',
+      source: 'QCVN 04:2021/BXD (Nhà chung cư) / TCVN 4451:2012 — Chiều cao thông thủy',
+      category: 'other',
+      severity: 'info',
+      region: 'VN',
+      binding: 'mandatory',
+      description: 'Chiều cao thông thủy phòng ở nhà chung cư/nhà ở thường yêu cầu không nhỏ hơn ~2.6 m; khu phụ (bếp, WC, hành lang) có thể thấp hơn (~2.3–2.4 m).',
+      params: { minHeightHabitableMm: 2600, minHeightServiceMm: 2300 },
+      verified: false,
+      note: 'Trị số chiều cao thông thủy phụ thuộc loại công trình (chung cư theo QCVN 04:2021 vs nhà ở riêng lẻ) và các nguồn tra được không thống nhất chính xác (2.4–2.7 m) — CẦN đối chiếu QCVN 04:2021/BXD và TCVN 4451 bản gốc. Model 2D hiện không lưu chiều cao trần nên checker không đo được.',
+    },
+    {
       id: 'vn-res-apartment-min-area',
-      source: 'TCVN 4451:2012',
+      source: 'TCVN 4451:2012 / QCVN 04:2021/BXD',
       category: 'room-size',
       severity: 'info',
+      region: 'VN',
+      binding: 'mandatory',
       description: 'Diện tích căn hộ tối thiểu: 30 m² (nhà ở xã hội) / 45 m² (nhà ở thương mại).',
       params: { minAreaSocialM2: 30, minAreaCommercialM2: 45 },
       verified: true,
@@ -66,6 +92,8 @@ export const VN_RESIDENTIAL: RuleGroup = {
       source: 'Kinh nghiệm thiết kế phổ biến (CHƯA tra được số trong văn bản TCVN cụ thể)',
       category: 'room-size',
       severity: 'info',
+      region: 'VN',
+      binding: 'advisory',
       description: 'Phòng khách căn hộ 1-2PN thường thiết kế không nhỏ hơn 12-16 m² để đủ bố trí sofa + lối đi cơ bản.',
       params: { minAreaM2: 12 },
       verified: false,

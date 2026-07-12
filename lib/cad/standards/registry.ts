@@ -31,6 +31,25 @@ export type StandardCategory =
 
 export type Severity = 'error' | 'warning' | 'info';
 
+/**
+ * Vùng/hệ quy chuẩn áp dụng của 1 rule. Cho phép UI lọc bộ quy chuẩn theo dự án (VN dùng
+ * TCVN/QCVN, dự án tham chiếu Mỹ dùng NFPA/IBC…). 'INTL' = tham số nhân trắc/không gian phổ
+ * quát (Neufert) không gắn 1 quốc gia cụ thể — dùng chung, tinh chỉnh theo địa phương.
+ */
+export type StandardRegion = 'VN' | 'US' | 'EU' | 'INTL';
+
+/**
+ * Tính chất ràng buộc của 1 trị số:
+ *   - 'mandatory'  : trị số BẮT BUỘC theo văn bản pháp quy/quy chuẩn (VD chiều rộng thoát nạn
+ *                    QCVN 06) — vi phạm là không đạt, không được tự điều chỉnh.
+ *   - 'adjustable' : trị số nhân trắc/tiện dụng KHUYẾN NGHỊ (VD lối đi bếp Neufert) — thiết kế
+ *                    có thể chỉnh theo bối cảnh/địa phương, dưới ngưỡng chỉ là cảnh báo tiện nghi.
+ *   - 'advisory'   : chỉ mang tính tham khảo/thực hành tốt, không có ngưỡng cứng.
+ * Neufert khác nhau theo quốc gia chính là ở chỗ CÙNG một thông số có thể là 'mandatory' ở nước
+ * này (đưa vào luật xây dựng) nhưng 'adjustable' ở nước khác — field này ghi rõ để không áp cứng.
+ */
+export type RuleBinding = 'mandatory' | 'adjustable' | 'advisory';
+
 export interface StandardRule {
   /** slug duy nhất toàn cục, VD 'vn-res-bedroom-min-area'. Trùng id ⇒ rule sau ghi đè rule trước
    * (dùng để user override 1 rule built-in bằng rule tuỳ biến cùng id nếu muốn). */
@@ -46,6 +65,10 @@ export interface StandardRule {
   verified: boolean;
   /** Bắt buộc có nội dung khi verified=false — lý do chưa chắc + cần đối chiếu gì. */
   note?: string;
+  /** Vùng/hệ quy chuẩn áp dụng (tuỳ chọn — rule cũ không đặt = áp dụng chung). */
+  region?: StandardRegion;
+  /** Ràng buộc bắt buộc/tuỳ chỉnh (tuỳ chọn — rule cũ không đặt, coi như suy ra từ severity). */
+  binding?: RuleBinding;
 }
 
 export interface RuleGroup {
@@ -97,8 +120,9 @@ import { VN_RESIDENTIAL } from './vn-residential';
 import { VN_FIRE } from './vn-fire';
 import { INTL_EGRESS } from './intl-egress';
 import { ISO_DRAFTING } from './iso-drafting';
+import { NEUFERT } from './neufert';
 
-export const BUILTIN_GROUPS: RuleGroup[] = [VN_RESIDENTIAL, VN_FIRE, INTL_EGRESS, ISO_DRAFTING];
+export const BUILTIN_GROUPS: RuleGroup[] = [VN_RESIDENTIAL, VN_FIRE, INTL_EGRESS, ISO_DRAFTING, NEUFERT];
 
 /** Toàn bộ rule (built-in + tuỳ biến), trùng id thì rule tuỳ biến (thêm sau) ghi đè. */
 export function getAllRules(): StandardRule[] {
@@ -110,4 +134,16 @@ export function getAllRules(): StandardRule[] {
 
 export function getRulesByCategory(cat: StandardCategory): StandardRule[] {
   return getAllRules().filter((r) => r.category === cat);
+}
+
+/** Lọc rule theo vùng/hệ quy chuẩn. Rule KHÔNG đặt `region` (rule chung, VD ISO drafting) luôn
+ * được trả về cùng mọi vùng — chúng áp dụng bất kể dự án tham chiếu hệ nào. */
+export function getRulesByRegion(region: StandardRegion): StandardRule[] {
+  return getAllRules().filter((r) => r.region === undefined || r.region === region);
+}
+
+/** Chỉ lấy rule mang tính BẮT BUỘC (mandatory) — dùng khi cần bộ tối thiểu pháp lý cho hồ sơ. */
+export function getMandatoryRules(region?: StandardRegion): StandardRule[] {
+  const base = region ? getRulesByRegion(region) : getAllRules();
+  return base.filter((r) => r.binding === 'mandatory');
 }
