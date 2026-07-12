@@ -122,7 +122,8 @@ export default function SheetTabBar({
               padding: '0 8px 0 10px',
               borderRadius: 7,
               border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`,
-              borderLeft: isOver ? '2px solid var(--accent)' : undefined,
+              // chỉ báo kéo-thả bằng boxShadow inset (tránh trộn shorthand `border` + `borderLeft`)
+              boxShadow: isOver ? 'inset 2px 0 0 var(--accent)' : undefined,
               background: on ? 'var(--accent-soft)' : 'var(--field)',
               color: on ? 'var(--accent)' : 'var(--t2)',
               cursor: 'pointer',
