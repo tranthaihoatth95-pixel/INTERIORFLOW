@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/server/db';
-import { createSession, randomPasswordHash } from '@/lib/server/auth';
+import { createSession, randomPasswordHash, isAllowedGoogleEmail, GOOGLE_ALLOWED_DOMAIN } from '@/lib/server/auth';
 import { OAUTH_STATE_COOKIE, googleConfigured } from '@/lib/server/oauth';
 
 /**
@@ -70,6 +70,12 @@ export async function GET(req: Request) {
     const info: { email?: string; name?: string; email_verified?: boolean } = await infoRes.json();
     const email = info.email?.trim().toLowerCase();
     if (!email) return fail(origin, 'Tài khoản Google không có email.');
+
+    // CHÍNH SÁCH (Sprint 1): chỉ email nội bộ @ttt.vn (env GOOGLE_ALLOWED_DOMAIN) được
+    // vào qua Google — cả tạo mới LẪN đăng nhập lại. Sai domain → từ chối rõ ràng.
+    if (!isAllowedGoogleEmail(email)) {
+      return fail(origin, `Chỉ email @${GOOGLE_ALLOWED_DOMAIN} được đăng nhập Google — cần tài khoản thì liên hệ admin.`);
+    }
 
     // find-or-create — cùng luật với /api/auth/register (người đầu tiên = admin)
     let user = await prisma.user.findUnique({ where: { email } });

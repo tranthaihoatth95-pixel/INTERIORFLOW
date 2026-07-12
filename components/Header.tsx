@@ -72,8 +72,9 @@ export function Header() {
       )}
 
       {/* TRỤC ĐIỀU HƯỚNG DUY NHẤT — Concept · Render · Present.
-          Header chỉ render ở màn ≥600px (cover đã tách Dashboard riêng) nên luôn hiện. */}
-      <div className="shrink-0">
+          Header chỉ render ở màn ≥600px (cover đã tách Dashboard riêng) nên luôn hiện.
+          data-tour: neo highlight cho SmartTour (B-5). */}
+      <div className="shrink-0" data-tour="phase-switcher">
         <PhaseSwitcher />
       </div>
 
