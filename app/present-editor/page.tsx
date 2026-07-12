@@ -12,7 +12,7 @@
  */
 
 import { useState } from 'react';
-import PresentEditor from '@/components/present-editor/PresentEditor';
+import PresentSheets from '@/components/present-editor/PresentSheets';
 import { makeSampleDeck } from '@/lib/present-editor/sample';
 import StudioBar from '@/components/studio/StudioBar';
 import { CommentLayer } from '@/components/CommentLayer';
@@ -24,7 +24,8 @@ export default function PresentEditorPage() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
       <StudioBar active="present" />
       <div style={{ flex: 1, minHeight: 0 }}>
-        <PresentEditor initialDeck={deck} />
+        {/* Tầng multi-sheet (phụ-thêm): thanh tab + PresentEditor. 1 sheet ⇒ y hệt bản cũ. */}
+        <PresentSheets initialDeck={deck} />
       </div>
       <ChatPanel />
       <CommentLayer />

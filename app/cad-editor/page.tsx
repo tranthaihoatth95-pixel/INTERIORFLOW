@@ -7,13 +7,14 @@
  */
 
 import StudioBar from '@/components/studio/StudioBar';
-import CadEditor from '@/components/cad/CadEditor';
+import CadSheets from '@/components/cad/CadSheets';
 
 export default function CadEditorPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: 'var(--bg)' }}>
       <StudioBar active="cad" />
-      <CadEditor />
+      {/* Tầng multi-sheet (phụ-thêm): thanh tab + CadEditor. 1 sheet ⇒ y hệt bản cũ. */}
+      <CadSheets />
     </div>
   );
 }
