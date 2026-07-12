@@ -535,7 +535,8 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   /* ---------- Gallery 3D (desktop, không reduce-motion) ---------- */
 
   const gallery = (
-    <div className="relative w-full">
+    // data-tour: neo highlight cho SmartTour (B-5) — đổi/xoá thì tour tự fallback card giữa màn
+    <div className="relative w-full" data-tour="project-gallery">
       <div className="grid place-items-center px-4" style={{ perspective: 1400 }}>
         <div className="relative grid place-items-center" style={{ transformStyle: 'preserve-3d' }}>
           {items.map((item, i) => {
@@ -681,7 +682,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   /* ---------- Danh sách phẳng (mobile hẹp / reduce-motion) ---------- */
 
   const flatList = (
-    <div className="max-h-[62vh] w-full max-w-md overflow-y-auto px-1 py-1">
+    <div className="max-h-[62vh] w-full max-w-md overflow-y-auto px-1 py-1" data-tour="project-gallery">
       <div className="grid gap-3">
         {items.map((item) => {
           const key = item.kind === 'flow' ? item.flow.id : '__new__';

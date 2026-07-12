@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ReactFlowProvider } from '@xyflow/react';
 import { Loader2 } from 'lucide-react';
-import { IntroSequence } from '@/components/IntroSequence';
+import { useRouter } from 'next/navigation';
+import { LoginScreen } from '@/components/entry/LoginScreen';
+import { SmartTour } from '@/components/entry/SmartTour';
 import { Header } from '@/components/Header';
 import { LeftRail } from '@/components/LeftRail';
 import { NodeLibraryPanel } from '@/components/NodeLibraryPanel';
@@ -23,9 +25,10 @@ import PresentOverlay from '@/components/present/PresentOverlay';
 import { ProjectSelect } from '@/components/ProjectSelect';
 import { CommentLayer } from '@/components/CommentLayer';
 import { useFlowStore } from '@/lib/store';
-import { bootstrapWorkspace } from '@/lib/workspace';
+import { bootstrapWorkspace, openFlow } from '@/lib/workspace';
 import { applyCadHandoff } from '@/lib/cad/handoff';
 import { fade } from '@/lib/motion';
+import { loadResume, saveResume, setLastUserId, isTourDone, markTourDone } from '@/lib/resume';
 
 /**
  * Ngưỡng bề rộng phân biệt màn HẸP (cover foldable / điện thoại) vs màn ĐỦ RỘNG.
@@ -59,9 +62,15 @@ export default function Home() {
   // Persist để quay về '/' (vd thoát khỏi /present-editor hay /photo-editor) vào THẲNG
   // canvas, không rớt lại ProjectSelect. Khởi tạo false (hydration-safe) rồi khôi phục ở effect.
   const [stageDone, setStageDone] = useState(false);
+  // B-5: Smart Tour lần đầu — bật cho user CHƯA có dấu chân (không resume, không stageDone,
+  // chưa tourDone). Bỏ qua/hoàn tất → markTourDone theo user.id, không hiện lại.
+  const [tourOn, setTourOn] = useState(false);
   // Cover (màn ngoài Oppo) mặc định chỉ Dashboard; nút "Mở toàn bộ app" ép vào full app
   // để KHÔNG bị kẹt khi viewport hẹp (điện thoại thường / cửa sổ nhỏ).
   const [forceFullApp, setForceFullApp] = useState(false);
+  const router = useRouter();
+  const currentFlowId = useFlowStore((s) => s.currentFlowId);
+  const workspace = useFlowStore((s) => s.workspace);
   const panel = useFlowStore((s) => s.panel);
   const chatOpen = useFlowStore((s) => s.chatOpen);
   const setPanel = useFlowStore((s) => s.setPanel);
@@ -75,6 +84,69 @@ export default function Home() {
   // openFlow của chuỗi sau đè graph (mất node CAD-handoff vừa apply). Ref sống qua
   // simulated-remount nên chặn được lần 2; remount THẬT (điều hướng) ref mới → chạy lại.
   const bootRan = useRef(false);
+
+  /**
+   * Điều phối SAU-AUTH (B-3/B-4) — gọi khi có user (session cũ qua /api/auth/me
+   * hoặc vừa login qua LoginScreen):
+   *   · FIRST-TIME (không resume, chưa qua ProjectSelect): ở lại gallery + bật Smart
+   *     Tour (nếu user chưa từng xem/bỏ qua).
+   *   · RETURNING: khôi phục đúng chỗ đã thoát — route studio (/cad-editor…) thì
+   *     push sang; canvas '/' thì khôi phục chặng (workspace) + mở đúng flowId đã lưu
+   *     (fallback bootstrapWorkspace như hành vi C1 cũ nếu flow mở lỗi/không lưu id).
+   */
+  const enterAfterAuth = useCallback(
+    (userId: string) => {
+      setLastUserId(userId); // ResumeTracker ở route studio cần biết ghi resume cho ai
+      const resume = loadResume(userId);
+      let stageFlag = false;
+      try {
+        // C1: cờ "đã qua ProjectSelect" gắn theo user id (không phải '1' gắn máy).
+        stageFlag = localStorage.getItem('interiorflow.stageDone') === userId;
+      } catch {
+        /* localStorage chặn — coi như chưa */
+      }
+
+      // B-4 first-time → gallery (mặc định stageDone=false) + Smart Tour.
+      if (!resume && !stageFlag) {
+        if (!isTourDone(userId)) setTourOn(true);
+        return;
+      }
+
+      // B-3 returning — thoát ở route studio → quay lại đúng route đó, nhưng CHỈ
+      // 1 lần cho mỗi phiên trình duyệt (sessionStorage): lần đầu mở app thì
+      // auto-resume; sau đó user chủ động quay về '/' (StudioBar → canvas) thì
+      // KHÔNG bật ngược lại studio nữa — tránh kẹt vòng lặp không về được canvas.
+      let resumedThisSession = false;
+      try {
+        resumedThisSession = sessionStorage.getItem('interiorflow.sessionResumed') === '1';
+        sessionStorage.setItem('interiorflow.sessionResumed', '1');
+      } catch {
+        /* sessionStorage chặn — coi như đã resume, bỏ redirect */
+        resumedThisSession = true;
+      }
+      if (resume && resume.route !== '/' && !resumedThisSession) {
+        router.push(resume.route);
+        return;
+      }
+
+      // Returning trên canvas '/': khôi phục chặng + vào thẳng canvas với đúng flow.
+      if (resume?.phase) useFlowStore.getState().setWorkspace(resume.phase);
+      if (resume?.flowId || stageFlag) {
+        setStageDone(true);
+        // ProjectSelect bị bỏ qua nên openFlow() của nó không chạy → tự nạp ở đây để
+        // currentFlowId có giá trị (autosave vào DB thay vì rơi xuống localStorage).
+        if (!bootRan.current) {
+          bootRan.current = true;
+          const boot = resume?.flowId
+            ? openFlow(resume.flowId).catch(() => bootstrapWorkspace())
+            : bootstrapWorkspace();
+          void boot.then(() => applyCadHandoff());
+        }
+      }
+      // resume tồn tại nhưng không flowId & chưa stageFlag → rơi về gallery (an toàn).
+    },
+    [router],
+  );
 
   // theme + flow local trước, rồi check session.
   // KHÔNG bootstrap workspace ở đây — ProjectSelect tự openFlow khi user chọn dự án.
@@ -91,27 +163,30 @@ export default function Home() {
         }
         const body = await r.json();
         store.setUser(body.user);
-        // Đã đăng nhập + trước đó đã qua ProjectSelect → bỏ qua, vào thẳng canvas.
-        // C1: cờ gắn theo user id (không phải '1' gắn máy) — trên máy dùng chung, user mới
-        // sẽ KHÔNG kế thừa dấu "đã qua ProjectSelect" của user trước.
-        try {
-          if (localStorage.getItem('interiorflow.stageDone') === body.user?.id) {
-            setStageDone(true);
-            // ProjectSelect bị bỏ qua nên openFlow() không chạy → currentFlowId
-            // sẽ null → autosave rơi xuống localStorage thay vì DB, và reload sau khôi phục
-            // flow cũ. Bootstrap ở đây để nạp flow server mới nhất + đặt currentFlowId.
-            if (!bootRan.current) {
-              bootRan.current = true;
-              void bootstrapWorkspace().then(() => applyCadHandoff());
-            }
-          }
-        } catch {
-          /* localStorage chặn — bỏ qua */
-        }
+        if (body.user?.id) enterAfterAuth(body.user.id);
       })
       .catch(() => store.setUser(null));
 
     return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // B-3: đang làm việc trên canvas → ghi resume-state NHẸ (route + flowId + chặng,
+  // KHÔNG serialize graph) mỗi khi flow/chặng đổi. Login lại là về đúng đây.
+  useEffect(() => {
+    if (!user || !stageDone) return;
+    saveResume(user.id, {
+      route: '/',
+      flowId: currentFlowId ?? undefined,
+      phase: workspace ?? undefined,
+    });
+  }, [user, stageDone, currentFlowId, workspace]);
+
+  // B-5: kết thúc tour (hoàn tất hoặc bỏ qua) — không hiện lại cho user này.
+  const endTour = useCallback(() => {
+    setTourOn(false);
+    const u = useFlowStore.getState().user;
+    if (u) markTourDone(u.id);
   }, []);
 
   if (user === undefined) {
@@ -122,18 +197,16 @@ export default function Home() {
     );
   }
 
-  // Chưa đăng nhập → intro điện ảnh (ô đăng nhập nằm ở cảnh cuối).
-  // Đăng nhập thành công → LoginForm setUser → re-render sang màn chọn chặng.
+  // B-1: Chưa đăng nhập → MÀN ĐĂNG NHẬP đứng riêng (intro điện ảnh ĐÃ GỠ khỏi luồng —
+  // components/IntroSequence.tsx giữ nguyên file để khôi phục khi có hình/video).
+  // Đăng nhập thành công → enterAfterAuth quyết: first-time vào gallery (+tour),
+  // returning auto-resume đúng chỗ cũ.
   if (user === null) {
     return (
-      <IntroSequence
-        onDone={() => {
-          setStageDone(false);
-          try {
-            localStorage.removeItem('interiorflow.stageDone');
-          } catch {
-            /* bỏ qua */
-          }
+      <LoginScreen
+        onAuthed={() => {
+          const u = useFlowStore.getState().user;
+          if (u) enterAfterAuth(u.id);
         }}
       />
     );
@@ -143,18 +216,22 @@ export default function Home() {
   // ProjectSelect tự openFlow/createFlow trước khi gọi onEnter → không cần bootstrap.
   if (!stageDone) {
     return (
-      <ProjectSelect
-        onEnter={() => {
-          setStageDone(true);
-          // Ghi nhớ để lần quay về '/' vào thẳng canvas (thoát các studio route).
-          // C1: lưu user id để cờ chỉ đúng cho chính user này (không gắn máy).
-          try {
-            localStorage.setItem('interiorflow.stageDone', user.id);
-          } catch {
-            /* bỏ qua */
-          }
-        }}
-      />
+      <>
+        <ProjectSelect
+          onEnter={() => {
+            setStageDone(true);
+            // Ghi nhớ để lần quay về '/' vào thẳng canvas (thoát các studio route).
+            // C1: lưu user id để cờ chỉ đúng cho chính user này (không gắn máy).
+            try {
+              localStorage.setItem('interiorflow.stageDone', user.id);
+            } catch {
+              /* bỏ qua */
+            }
+          }}
+        />
+        {/* B-5: bước "chọn dự án" của Smart Tour — chỉ first-time user */}
+        {tourOn && <SmartTour screen="gallery" onFinish={endTour} onSkip={endTour} />}
+      </>
     );
   }
 
@@ -218,6 +295,8 @@ export default function Home() {
         {presentModeOpen && <PresentOverlay onClose={() => setPresentModeOpen(false)} />}
         <CommandPalette />
         <CommentLayer />
+        {/* B-5: các bước canvas của Smart Tour (3 chặng → dock) — nối tiếp từ gallery */}
+        {tourOn && <SmartTour screen="canvas" onFinish={endTour} onSkip={endTour} />}
       </motion.div>
     </ReactFlowProvider>
   );

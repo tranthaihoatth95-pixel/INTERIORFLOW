@@ -44,7 +44,8 @@ export function LeftRail() {
 
   return (
     // material blur — rail hoà vào nền như sidebar macOS
-    <nav className="mat-panel z-20 flex w-12 flex-col items-center gap-1 border-r border-[var(--border)] py-2">
+    // data-tour: neo highlight cho SmartTour (B-5) — đổi/xoá thì tour tự fallback card giữa màn
+    <nav className="mat-panel z-20 flex w-12 flex-col items-center gap-1 border-r border-[var(--border)] py-2" data-tour="dock">
       {/* Tổng quan — Dashboard project + team (overlay toàn màn) */}
       <motion.button
         {...pressableIcon}

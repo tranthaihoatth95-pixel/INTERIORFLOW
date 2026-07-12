@@ -4,6 +4,7 @@ import { Be_Vietnam_Pro } from 'next/font/google';
 import './globals.css';
 import './foldable.css';
 import { PWARegister } from '@/components/PWARegister';
+import { ResumeTracker } from '@/components/entry/ResumeTracker';
 
 // Font hệ thống TTT Design System — Be Vietnam Pro (hỗ trợ dấu tiếng Việt đầy đủ).
 const beVietnamPro = Be_Vietnam_Pro({
@@ -60,6 +61,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={`${beVietnamPro.variable} ${geistSans.variable} font-sans antialiased`}>
         {children}
         <PWARegister />
+        {/* B-3: ghi route đang đứng theo user (resume đúng chỗ khi login lại) — render null */}
+        <ResumeTracker />
       </body>
     </html>
   );
