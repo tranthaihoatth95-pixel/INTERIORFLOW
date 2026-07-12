@@ -23,7 +23,10 @@ Fix DCEL hatch-boundary trả `null` cho phòng giáp tường ở nút chữ T 
   · auto-layout refine (`cf02262`): kẹp 21→ít ô + biên độ min–max ảnh/tiêu đề/body (region-layout 20 test).
   · PCCC/Neufert (`107ffd2`): QCVN06:2022/2023 + NFPA/IBC + Neufert vào `lib/cad/standards/` (intl 22), checker 15 giữ.
   · multi-sheet (`050fdaf`+fix `c551d3d`): tab ≤5 sheet CAD+Present, verify browser (export còn nguyên); tôi tự vá 1 React warning SheetTabBar.
-- **Đang chạy 2 agent (tôi quản)**: `feat/ml-p1-hooks` (cắm hooks ML pha 1 vào app) · `feat/logic-audit-fixes` (A1 pill Present · B1 handoff CAD→Render · C1 stageDone theo user).
+- **SPRINT MODE (user GO)**: roadmap 4 sprint theo Master Directive (6 agent ảo). Quyết định đã khoá:
+  Perceptron THẬT (learning-to-rank, degrade heuristic) · foldable Find N6 test on-device · installer cả 3 unsigned (.exe cần máy Win) · auth tái dùng + Remember Me · PWA host Vercel · logic account/password USER CHỐT trong Sprint 1.
+- **Sprint 0 XONG**: audit fixes A1/B1/C1 merged (`d9070d2`, 348 test pass) · dọn 4 worktree merged · WIP ml-hooks cứu vào `348908a` · khảo sát auth (cookie `if_session` 30d sẵn).
+- **Sprint 1 ĐANG CHẠY 2 agent**: `feat/ml-p1-hooks` (Agent 1: cắm hooks hết dead-code + neufert/room-set + bridge + pairwise-perceptron module) · `feat/access-journey` (Agent 5: gỡ intro, Remember Me, persistent-state resume, first-time routing, Smart Tour). Agent gặp chỗ không rõ PHẢI hỏi, không đoán.
 - CHƯA làm: bỏ hardcode `'DETECH · CONCEPT'`; template tĩnh từ file thư viện; heavy-ML pha 2 (embedding/detector — báo rủi ro trước).
 - Docs: `DIAGNOSIS.md`, `ML-GU-ENGINE-PROPOSAL.md`, `MULTI-SHEET-PROPOSAL.md`, `LOGIC-AUDIT.md`.
 
