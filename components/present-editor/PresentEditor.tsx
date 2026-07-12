@@ -55,6 +55,11 @@ import { LayoutTemplate, Images, Wand2 } from 'lucide-react';
 
 interface Props {
   initialDeck: EditorDeck;
+  /**
+   * (Tuỳ chọn — multi-sheet) Báo deck "sống" ra ngoài mỗi khi đổi. Mặc định undefined =
+   * KHÔNG đổi hành vi. Tầng PresentSheets dùng để lưu nội dung sheet trước khi chuyển tab.
+   */
+  onDeckChange?: (deck: EditorDeck) => void;
 }
 
 type LeftTab = 'layout' | 'reference' | 'motion';
@@ -62,8 +67,14 @@ type LeftTab = 'layout' | 'reference' | 'motion';
 const MIN_PANEL = 220;
 const MAX_PANEL = 460;
 
-export default function PresentEditor({ initialDeck }: Props) {
+export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   const ed = useEditor(initialDeck);
+
+  // Multi-sheet: đẩy deck hiện tại ra wrapper (nếu có) để lưu khi đổi tab. Phụ-thêm, vô hại
+  // khi onDeckChange không truyền.
+  useEffect(() => {
+    onDeckChange?.(ed.deck);
+  }, [ed.deck, onDeckChange]);
   const [tab, setTab] = useState<LeftTab>('layout');
   const [panelOpen, setPanelOpen] = useState(true);
   const [panelW, setPanelW] = useState(288); // rộng cột trái (kéo dãn)
