@@ -16,19 +16,16 @@ Fix DCEL hatch-boundary trả `null` cho phòng giáp tường ở nút chữ T 
 - `origin/main` HEAD = **`fd4718d`** — `fix(cad): dò biên HATCH đúng cho phòng có vách chữ T` (đã push)
 - `c9b3961` = `merge feat/cad-type-anywhere` (việc TRƯỚC, đã có sẵn trên origin)
 
-## Đang làm — Present layout engine (CHƯA commit)
-- **5 module mới, phụ-thêm, KHÔNG đụng đường demo export** (46 test pass, tsc sạch):
-  `detect-regions.ts` (lưới từ ảnh, sửa bug findGaps — 13), `standards.ts` (`DECK_STANDARDS`),
-  `layout-check.ts` (`evaluateDeck` bắt trống/chật/chữ-tràn — 14), `region-layout.ts` (lưới→slide gán vai trò, kẹp chuẩn — 10),
-  `reference-layout.ts` (ảnh mẫu→deck theo lưới — 9). Export thêm `parseBlocks` từ content-deck.
-- **Đã cắm 2 chỗ** vào `PresentEditor.tsx` (+ `GenerateFlow.tsx` thêm `attachRefs`):
-  (1) guardrail toast cảnh báo bố cục sau khi dàn; (2) có ảnh reference → dàn theo LƯỚI ảnh (region), không có → fallback template.
-  **Verify browser OK**: toast hiện đúng, regression no-ref dàn 3 slide, ảnh thư viện thật→21 ô, 0 lỗi console (RSC prefetch warning của Next dev — không liên quan).
-- **TEST THỰC TẾ (theo ý user)**: ảnh moodboard bận → detectRegions ra **21 ô nhỏ** → region-layout đổ ít, dư ô rỗng.
-  → NỢ: `buildSlideFromRegions` cần **kẹp số ô về `budget.cells`** (gộp ô nhỏ vào ô lớn) để slide gọn. Chưa làm.
-- CHƯA làm: bỏ hardcode `'DETECH · CONCEPT'`; cơ chế template tĩnh từ file thư viện tải lên (user yêu cầu).
-- `docs/ML-GU-ENGINE-PROPOSAL.md` — đề xuất. **User DUYỆT build ý-3 (gồm ML nặng), quan sát rủi ro.**
-  Đang chạy **agent PHA 1 (tất định)** — chỉ thêm file mới. Heavy-ML (embedding/detector) pha sau, báo trước.
+## Đang làm — nhánh tích hợp `feat/present-layout-ml-p1` (local, CHƯA push/main)
+- **Foundation (commit `539c960`)**: Present engine 5 module (detect-regions/standards/layout-check/region-layout/reference-layout)
+  + guardrail toast + region path cắm PresentEditor; ML pha 1 tất định 3 module (operator-profile/color-psychology/grid-geometry).
+- **Đã MERGE 3 nhánh agent** (HEAD `25eae60`), verify từng nhánh + **chạy lại TOÀN BỘ 348 test sau merge = pass, tsc 0**:
+  · auto-layout refine (`cf02262`): kẹp 21→ít ô + biên độ min–max ảnh/tiêu đề/body (region-layout 20 test).
+  · PCCC/Neufert (`107ffd2`): QCVN06:2022/2023 + NFPA/IBC + Neufert vào `lib/cad/standards/` (intl 22), checker 15 giữ.
+  · multi-sheet (`050fdaf`+fix `c551d3d`): tab ≤5 sheet CAD+Present, verify browser (export còn nguyên); tôi tự vá 1 React warning SheetTabBar.
+- **Đang chạy 2 agent (tôi quản)**: `feat/ml-p1-hooks` (cắm hooks ML pha 1 vào app) · `feat/logic-audit-fixes` (A1 pill Present · B1 handoff CAD→Render · C1 stageDone theo user).
+- CHƯA làm: bỏ hardcode `'DETECH · CONCEPT'`; template tĩnh từ file thư viện; heavy-ML pha 2 (embedding/detector — báo rủi ro trước).
+- Docs: `DIAGNOSIS.md`, `ML-GU-ENGINE-PROPOSAL.md`, `MULTI-SHEET-PROPOSAL.md`, `LOGIC-AUDIT.md`.
 
 ## Nợ kỹ thuật
 - **Hydration warning** — `lib/kbd.ts:11` tính `IS_MAC` phía client (`navigator`). Tooltip Undo trong `components/cad/CadToolbar.tsx:182` render `Ctrl+Z` ở server nhưng `⌘Z` ở client Mac → lệch hydration. Chỉ nằm trong thuộc tính `title`, **cosmetic, chưa sửa.**
