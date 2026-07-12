@@ -114,14 +114,10 @@ export default function CadEditor() {
       /* ignore */
     }
     // Node add trực tiếp ở đây sẽ bị wipe khi '/' hydrate + bootstrap loadGraph đè
-    // → stash, page.tsx/ProjectSelect consume SAU khi graph nạp xong.
-    if (!stashCadHandoff(dataUrl)) {
-      // sessionStorage hỏng — fallback add trực tiếp (có thể mất nếu bootstrap đè)
-      const pos = { x: 220, y: 180 };
-      store.addNode('input.image', pos);
-      const newNode = useFlowStore.getState().nodes.at(-1);
-      if (newNode) store.updateParam(newNode.id, 'file', dataUrl);
-    }
+    // → stash (sessionStorage, hoặc fallback bộ nhớ nếu hỏng); page.tsx/ProjectSelect
+    //   consume qua applyCadHandoff() SAU khi graph nạp xong. (B1: KHÔNG addNode ngay,
+    //   tránh nhánh im lặng mất node.)
+    stashCadHandoff(dataUrl);
     router.push('/');
   };
 

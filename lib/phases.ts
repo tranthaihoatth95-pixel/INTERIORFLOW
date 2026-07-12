@@ -86,18 +86,18 @@ export function isPhase(v: unknown): v is Phase {
 
 /**
  * Suy chặng TRỘI của một flow từ danh sách node đang có — để khi MỞ flow, header
- * phase-switcher khớp nội dung trên canvas (tránh mở flow slide mà header vẫn báo Render).
- * Đếm node thuộc `featured` của từng chặng canvas (render/present); nhiều hơn thì thắng,
- * hoà/không có → null (giữ nguyên chặng hiện tại). Chặng 'concept' = Layout CAD ở route riêng,
- * không có node canvas nên không tính ở đây.
+ * phase-switcher khớp nội dung trên canvas (tránh mở flow render mà header vẫn lệch).
+ *
+ * A1: 'present' là ROUTE riêng (/present-editor), KHÔNG phải trạng thái workspace của
+ * canvas '/'. Header/StudioBar bấm Present đều route sang studio, không bao giờ hiện node
+ * slide.* như một chặng canvas. Vì vậy phần suy diễn CHỈ xét 'render': mở một flow (kể cả
+ * flow nhiều node slide.*) không bao giờ ép workspace='present' để pill Present sáng nhầm
+ * khi đang ở canvas. Có node render → 'render'; không có → null (giữ nguyên chặng hiện tại).
+ * Chặng 'concept' = Layout CAD ở route riêng, cũng không có node canvas nên không tính ở đây.
  */
 export function phaseFromNodes(defTypes: string[]): Phase | null {
   if (defTypes.length === 0) return null;
-  const count: Record<'render' | 'present', number> = { render: 0, present: 0 };
-  for (const p of ['render', 'present'] as const) {
-    const set = new Set(PHASE_MAP[p].featured);
-    count[p] = defTypes.filter((t) => set.has(t)).length;
-  }
-  if (count.render === 0 && count.present === 0) return null;
-  return count.present > count.render ? 'present' : 'render';
+  const renderSet = new Set(PHASE_MAP.render.featured);
+  const renderCount = defTypes.filter((t) => renderSet.has(t)).length;
+  return renderCount > 0 ? 'render' : null;
 }
