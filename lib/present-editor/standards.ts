@@ -17,7 +17,7 @@ export interface Range {
 
 /** Ngân sách cho 1 archetype layout. */
 export interface LayoutBudget {
-  cells: Range; // số ô lưới
+  cells: Range; // số ô lưới — dùng làm TRẦN kẹp khi ảnh mẫu dò ra quá nhiều ô vụn (region-layout)
   images: Range; // số hình
   textBlocks: Range; // số khối text
   imageAreaPct: Range; // % diện tích ảnh trên slide
@@ -47,6 +47,8 @@ export interface DeckStandards {
     lineHeightDisplay: Range;
     lineLenChars: Range;
     titleWordsMax: number;
+    /** ≤ số từ này → tiêu đề giữ cỡ lớn nhất trong dải; dài hơn thì co dần về min. */
+    titleWordsIdeal: number;
     bulletsMax: number;
     wordsPerBulletMax: number;
     bodyWordsMax: number;
@@ -85,6 +87,7 @@ export const DECK_STANDARDS: DeckStandards = {
     lineHeightDisplay: R(1.05, 1.25),
     lineLenChars: R(45, 60),
     titleWordsMax: 10,
+    titleWordsIdeal: 5,
     bulletsMax: 6,
     wordsPerBulletMax: 6,
     bodyWordsMax: 30,
@@ -97,10 +100,10 @@ export const DECK_STANDARDS: DeckStandards = {
     tooDenseBelowPct: 30,
   },
   byLayout: {
-    cover: { cells: R(2, 2), images: R(1, 1), textBlocks: R(2, 3), imageAreaPct: R(40, 50), whitespacePct: R(45, 58) },
-    'dark-cover': { cells: R(1, 1), images: R(1, 1), textBlocks: R(2, 3), imageAreaPct: R(40, 55), whitespacePct: R(45, 60) },
-    'content-image': { cells: R(2, 2), images: R(1, 1), textBlocks: R(2, 3), imageAreaPct: R(28, 40), whitespacePct: R(42, 55) },
-    'two-column': { cells: R(2, 2), images: R(0, 0), textBlocks: R(3, 4), imageAreaPct: R(0, 0), whitespacePct: R(40, 52) },
+    cover: { cells: R(2, 3), images: R(1, 1), textBlocks: R(2, 3), imageAreaPct: R(40, 50), whitespacePct: R(45, 58) },
+    'dark-cover': { cells: R(1, 2), images: R(1, 1), textBlocks: R(2, 3), imageAreaPct: R(40, 55), whitespacePct: R(45, 60) },
+    'content-image': { cells: R(2, 3), images: R(1, 1), textBlocks: R(2, 3), imageAreaPct: R(28, 40), whitespacePct: R(42, 55) },
+    'two-column': { cells: R(2, 3), images: R(0, 0), textBlocks: R(3, 4), imageAreaPct: R(0, 0), whitespacePct: R(40, 52) },
     grid: { cells: R(4, 4), images: R(3, 4), textBlocks: R(1, 1), imageAreaPct: R(55, 66), whitespacePct: R(28, 45) },
     quote: { cells: R(1, 1), images: R(0, 0), textBlocks: R(1, 2), imageAreaPct: R(0, 0), whitespacePct: R(60, 75) },
     'full-bleed': { cells: R(1, 1), images: R(1, 1), textBlocks: R(1, 2), imageAreaPct: R(90, 100), whitespacePct: R(0, 100), bleed: true },
