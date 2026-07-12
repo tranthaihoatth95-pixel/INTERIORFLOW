@@ -23,7 +23,14 @@ Fix DCEL hatch-boundary trả `null` cho phòng giáp tường ở nút chữ T 
   · auto-layout refine (`cf02262`): kẹp 21→ít ô + biên độ min–max ảnh/tiêu đề/body (region-layout 20 test).
   · PCCC/Neufert (`107ffd2`): QCVN06:2022/2023 + NFPA/IBC + Neufert vào `lib/cad/standards/` (intl 22), checker 15 giữ.
   · multi-sheet (`050fdaf`+fix `c551d3d`): tab ≤5 sheet CAD+Present, verify browser (export còn nguyên); tôi tự vá 1 React warning SheetTabBar.
-- **Đang chạy 2 agent (tôi quản)**: `feat/ml-p1-hooks` (cắm hooks ML pha 1 vào app) · `feat/logic-audit-fixes` (A1 pill Present · B1 handoff CAD→Render · C1 stageDone theo user).
+- **`feat/ml-p1-hooks` XONG (worktree interiorflow-wt-mlhooks, đã merge nền d9070d2 sạch)** — 3 module ML pha 1 hết dead-code + vá QA + bridge + perceptron; **413 test / 17 file pass, tsc 0, verify browser cả /cad-editor lẫn /present-editor**. CHƯA merge (chờ integrator):
+  · A-2 CAD `bfb219c`: operator vào LayoutSpec + panel Kiểm chuẩn (select + nhận diện, explainable; mặc định = getAllRules() y cũ, Bếp 5.7m² vẫn bắt) + note "AI mô tả".
+  · A-3 trong `bfb219c`: D2 'neufert' → residential/hospitality/office (có lý do); D1 fromDoc dò ROOM-SET qua findRoomLabels (checker export thêm, hành vi không đổi).
+  · A-2 Render `9009d4e`: gu.ts mergePalette → gom cụm LAB (mixPaletteLab), GuProfile.moods, guToPrompt nối mood.
+  · A-4 `d35474c`: bridge Render→Present (lib/present-editor/handoff.ts — sessionStorage + mem fallback, consume-once; Header stash → PresentEditor consume vào rổ Reference).
+  · A-2 Present `ebc818a`: detectRegions trả gutter; suggestTemplate nhận grid (patternIconHint tie-breaker, không grid = y cũ); dây sống detectGridFromUrl → refGrid ở PresentEditor.
+  · A-5 `05db2b5`: lib/gu/pairwise-perceptron.ts (margin update, clamp, degrade < minPairs, serialize localStorage/IDB-ready) — CHƯA cắm UI feedback (Sprint 2).
+- **Đang chạy agent**: `feat/logic-audit-fixes` (A1 pill Present · B1 handoff CAD→Render · C1 stageDone theo user) — ĐÃ MERGE vào nền d9070d2.
 - CHƯA làm: bỏ hardcode `'DETECH · CONCEPT'`; template tĩnh từ file thư viện; heavy-ML pha 2 (embedding/detector — báo rủi ro trước).
 - Docs: `DIAGNOSIS.md`, `ML-GU-ENGINE-PROPOSAL.md`, `MULTI-SHEET-PROPOSAL.md`, `LOGIC-AUDIT.md`.
 
