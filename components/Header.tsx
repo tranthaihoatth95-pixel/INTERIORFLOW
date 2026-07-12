@@ -19,6 +19,7 @@ import { TasksDropdown } from '@/components/TasksDropdown';
 import { MobileMenu } from '@/components/MobileMenu';
 import { LangToggle } from '@/components/LangToggle';
 import { pressable, pressableIcon, easeApple, fade } from '@/lib/motion';
+import { stashPresentHandoff, deckImagesFromNodes } from '@/lib/present-editor/handoff';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -367,6 +368,11 @@ function PhaseSwitcher() {
         onPick={(p) => {
           if (p === 'present') {
             setLeaving(true); // bật overlay fade trước, rồi mới điều hướng
+            // A-4 (bridge Render→Present): slide đã render trong flow (Export Deck / Slide
+            // Composer) theo người dùng sang /present-editor — stash consume-once; storage
+            // hỏng có fallback bộ nhớ. Flow không có slide ⇒ mảng rỗng, stash bỏ qua,
+            // luồng cũ nguyên vẹn.
+            stashPresentHandoff(deckImagesFromNodes(useFlowStore.getState().nodes));
             router.push('/present-editor');
           } else if (p === 'concept') {
             // Chặng 1 = Layout CAD → trình vẽ 2D ở route riêng (cùng pattern fade như Present).
