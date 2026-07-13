@@ -16,6 +16,7 @@ export async function GET() {
       select: {
         id: true,
         name: true,
+        userId: true, // owner — card gallery vẽ icon thành viên từ dữ liệu ĐANG CÓ (không thêm bảng)
         coverUrl: true,
         status: true,
         version: true,
