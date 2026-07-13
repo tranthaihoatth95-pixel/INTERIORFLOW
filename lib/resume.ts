@@ -29,6 +29,12 @@ export interface ResumeState {
   flowId?: string;
   /** chặng workspace (concept | render | present) */
   phase?: Phase;
+  /**
+   * sheet đang mở trên route studio multi-sheet (J-3 Sprint 2) — resume trỏ TẬN sheet.
+   * Chỉ là id ('cadsheet-2'…); nội dung sheet nằm ở IndexedDB (lib/sheets-persist).
+   * Caller khôi phục phải TỰ kiểm tra id còn tồn tại trong bộ sheet đã lưu.
+   */
+  sheetId?: string;
   /** thời điểm ghi — để debug / dọn sau này, chưa dùng làm expiry */
   ts: number;
 }
@@ -46,6 +52,7 @@ export function saveResume(userId: string, patch: Partial<Omit<ResumeState, 'ts'
       route: patch.route ?? prev?.route ?? '/',
       flowId: patch.flowId ?? prev?.flowId,
       phase: patch.phase ?? prev?.phase,
+      sheetId: patch.sheetId ?? prev?.sheetId,
       ts: Date.now(),
     };
     localStorage.setItem(RESUME_PREFIX + userId, JSON.stringify(next));
@@ -66,6 +73,7 @@ export function loadResume(userId: string): ResumeState | null {
       route: j.route,
       flowId: typeof j.flowId === 'string' && j.flowId ? j.flowId : undefined,
       phase: isPhase(j.phase) ? j.phase : undefined,
+      sheetId: typeof j.sheetId === 'string' && j.sheetId ? j.sheetId : undefined,
       ts: typeof j.ts === 'number' ? j.ts : 0,
     };
   } catch {
