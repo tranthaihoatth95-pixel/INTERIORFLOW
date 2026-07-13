@@ -181,6 +181,18 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     return suggestTemplate({ title, kicker, body, images, gu, grid: refGrid }, { isFirst: ed.currentSlide === 0 });
   }, [ed.slide, ed.currentSlide, gu, refGrid]);
 
+  // M-1 (perceptron feedback): thống kê nội dung slide hiện tại nuôi feature-dict ở LayoutShelf
+  // (#ảnh + độ dài chữ — cùng nguồn với suggestion ở trên, tách gọn để không đổi suggest cũ).
+  const contentStats = useMemo(() => {
+    const s = ed.slide;
+    if (!s) return null;
+    const texts = s.elements.filter((e) => e.kind === 'text') as Extract<SlideElement, { kind: 'text' }>[];
+    const textLen = texts.reduce((sum, t) => sum + (t.text?.length ?? 0), 0);
+    const nImages =
+      s.elements.filter((e) => e.kind === 'image').length + (s.backgroundImage ? 1 : 0);
+    return { nImages, textLen };
+  }, [ed.slide]);
+
   const palette = ed.deck.palette;
 
   // Element ảnh đang chỉnh (nếu overlay mở). Tự đóng nếu không còn tồn tại.
@@ -843,6 +855,9 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
                     onSpecChange={setSpec}
                     refImages={refImages}
                     onGenerated={onGenerated}
+                    gu={gu}
+                    refGrid={refGrid}
+                    content={contentStats}
                   />
                 )}
                 {tab === 'reference' && (

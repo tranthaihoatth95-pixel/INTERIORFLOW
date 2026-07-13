@@ -11,16 +11,27 @@
  * phù hợp. Human-in-loop: bấm = áp (build slide mới) rồi user sửa tự do.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { EditorTemplate, LayoutShelf as Shelf } from '@/lib/present-editor/templates';
 import { SHELF_LABEL, SHELF_ORDER, shelfOf, makeVariants } from '@/lib/present-editor/templates';
 import type { FontPairing } from '@/lib/slides';
 import type { LayoutSpec, ToneKey } from '@/lib/present-editor/spec';
 import { renderEditorSlide } from '@/lib/present-editor/render';
+import type { GuProfile } from '@/lib/gu';
+import type { GridGeometryInput } from '@/lib/present-editor/suggest';
+import { PairwisePerceptron } from '@/lib/gu/pairwise-perceptron';
+import {
+  PRESENT_TEMPLATE_MODEL_KEY,
+  templateTraits,
+  presentTemplateFeatures,
+  explainTemplateChoice,
+  type TemplateTraits,
+  type PresentFeatureContext,
+} from '@/lib/gu/feature-dict';
 import SpecForm from './SpecForm';
 import GenerateFlow, { type GenerateResult } from './GenerateFlow';
 import type { RefImage } from './LibraryBrowser';
-import { Sparkles, Search, Plus, Shuffle, SlidersHorizontal, ChevronDown, RefreshCw } from 'lucide-react';
+import { Sparkles, Search, Plus, Shuffle, SlidersHorizontal, ChevronDown, RefreshCw, ThumbsUp, ThumbsDown } from 'lucide-react';
 
 interface Props {
   templates: EditorTemplate[];
@@ -37,6 +48,12 @@ interface Props {
   refImages: RefImage[];
   /** máy đã học được quy tắc + ảnh nội dung/text → container tiếp nhận (palette, v.v.). */
   onGenerated?: (r: GenerateResult) => void;
+  /** (M-1, optional) gu hiện hành — nuôi feature ΔE palette. Thiếu = bỏ tín hiệu màu. */
+  gu?: GuProfile | null;
+  /** (M-1, optional) lưới ảnh mẫu (detectRegions) — nuôi feature archetype/gutter. */
+  refGrid?: GridGeometryInput | null;
+  /** (M-1, optional) thống kê nội dung slide hiện tại (#ảnh, độ dài chữ). */
+  content?: { nImages: number; textLen: number } | null;
 }
 
 const PREVIEW_CTX = {
@@ -58,6 +75,9 @@ export default function LayoutShelf({
   onSpecChange,
   refImages,
   onGenerated,
+  gu,
+  refGrid,
+  content,
 }: Props) {
   const [query, setQuery] = useState('');
   const [specOpen, setSpecOpen] = useState(false);
@@ -66,6 +86,95 @@ export default function LayoutShelf({
   // Flow generate: chỉ hiện kệ 4 cột SAU khi Generate (góp ý #1 & #12). Trước đó = GenerateFlow.
   const [generated, setGenerated] = useState(false);
   const [learnedNotes, setLearnedNotes] = useState<string[] | null>(null);
+
+  /* ─────────────── M-1: PERCEPTRON FEEDBACK (Nhận/Bỏ → learning-to-rank) ───────────────
+   * Model pairwise (lib/gu/pairwise-perceptron) nạp từ localStorage SAU mount (SSR-safe).
+   * - 👎 Bỏ: ghi nhớ trong phiên (mờ card), CHƯA update — chờ có "bên thắng".
+   * - 👍 Nhận / bấm áp bố cục: tạo CẶP (được-chọn ≻ từng-cái-bị-bỏ cùng kệ) → update → lưu.
+   * - Xếp hạng: model.rank() tự degrade về heuristic (thứ tự gốc + ghim gợi ý) khi < minPairs. */
+  const [model, setModel] = useState<PairwisePerceptron | null>(null);
+  const [modelTick, setModelTick] = useState(0); // model mutate tại chỗ — tick để re-rank/re-render
+  const [rejected, setRejected] = useState<Record<string, string[]>>({}); // shelf → id bị Bỏ (phiên này)
+  useEffect(() => {
+    setModel(PairwisePerceptron.loadFromLocalStorage(PRESENT_TEMPLATE_MODEL_KEY));
+  }, []);
+
+  const paletteKeyForTraits = (palette ?? []).join(',');
+  // traits tĩnh mỗi template (build thử 1 lần) — cache theo id + palette.
+  const traitsMap = useMemo(() => {
+    const m = new Map<string, TemplateTraits>();
+    for (const t of templates) m.set(t.id, templateTraits(t, palette));
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [templates, paletteKeyForTraits]);
+
+  const featCtx: PresentFeatureContext = useMemo(
+    () => ({
+      nImages: content?.nImages ?? 0,
+      textLen: content?.textLen ?? 0,
+      palette: gu?.palette?.length ? gu.palette : palette,
+      tone: spec.tone,
+      gridCells: refGrid?.cells?.length || undefined,
+      gutterPct: refGrid?.gutterXPct,
+    }),
+    [content?.nImages, content?.textLen, gu, palette, spec.tone, refGrid],
+  );
+
+  const traitsOf = useCallback(
+    (t: EditorTemplate): TemplateTraits => traitsMap.get(t.id) ?? templateTraits(t, palette),
+    [traitsMap, palette],
+  );
+  const featOf = useCallback(
+    (t: EditorTemplate) => presentTemplateFeatures(traitsOf(t), featCtx),
+    [traitsOf, featCtx],
+  );
+  /** tooltip explainable 2-3 lý do (dùng trọng số đã học khi có). */
+  const reasonsOf = useCallback(
+    (t: EditorTemplate): string[] =>
+      explainTemplateChoice(traitsOf(t), featCtx, model ? model.toState().weights : undefined),
+    [traitsOf, featCtx, model],
+  );
+
+  /** 👎 Bỏ — nhớ trong phiên theo kệ (tối đa 4 gần nhất), chờ ghép cặp với lựa chọn kế tiếp. */
+  const rejectTemplate = useCallback((t: EditorTemplate) => {
+    const shelf = shelfOf(t);
+    setRejected((prev) => {
+      const cur = prev[shelf] ?? [];
+      if (cur.includes(t.id)) return { ...prev, [shelf]: cur.filter((id) => id !== t.id) }; // bấm lại = bỏ Bỏ
+      return { ...prev, [shelf]: [...cur, t.id].slice(-4) };
+    });
+  }, []);
+
+  /** 👍 Nhận (hoặc áp bố cục) — ghép cặp với các template đã Bỏ CÙNG KỆ rồi update + lưu. */
+  const acceptTemplate = useCallback(
+    (t: EditorTemplate, all: EditorTemplate[]) => {
+      if (!model) return;
+      const shelf = shelfOf(t);
+      const rejIds = (rejected[shelf] ?? []).filter((id) => id !== t.id);
+      if (rejIds.length) {
+        const acceptedF = featOf(t);
+        for (const id of rejIds) {
+          const rej = all.find((x) => x.id === id);
+          if (rej) model.update(acceptedF, featOf(rej));
+        }
+        model.saveToLocalStorage(PRESENT_TEMPLATE_MODEL_KEY);
+        setRejected((prev) => ({ ...prev, [shelf]: [] }));
+        setModelTick((v) => v + 1);
+      }
+    },
+    [model, rejected, featOf],
+  );
+
+  /** Xếp lại 1 hàng kệ: model ĐỦ dữ liệu (≥ minPairs) → re-rank theo điểm học được; chưa đủ →
+   *  rank() degrade heuristic-0 + tie-break thứ tự vào = GIỮ NGUYÊN thứ tự gốc (y hành vi cũ). */
+  const rankRow = useCallback(
+    (items: EditorTemplate[]): EditorTemplate[] => {
+      void modelTick; // dependency tường minh — trọng số đổi thì rank lại
+      if (!model) return items;
+      return model.rank(items, featOf, () => 0);
+    },
+    [model, modelTick, featOf],
+  );
 
   function handleGenerated(r: GenerateResult) {
     // áp quy tắc rút được vào bảng hỏi số liệu (spec) — điểm xuất phát khớp gu ref.
@@ -227,8 +336,9 @@ export default function LayoutShelf({
       {/* 3 kệ cuộn ngang */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto', minHeight: 0 }}>
         {SHELF_ORDER.map((shelf) => {
-          const items = byShelf[shelf];
+          const items = rankRow(byShelf[shelf]);
           if (!items.length) return null;
+          const rejHere = rejected[shelf] ?? [];
           return (
             <section key={shelf}>
               <ShelfHead shelf={shelf} count={items.length} />
@@ -239,7 +349,13 @@ export default function LayoutShelf({
                     t={t}
                     highlight={t.id === suggestedId}
                     preview={previews[t.id]}
-                    onApply={() => onApply(t)}
+                    dimmed={rejHere.includes(t.id)}
+                    reasons={reasonsOf(t)}
+                    onApply={() => {
+                      acceptTemplate(t, allTemplates); // áp = Nhận (dạy máy nếu có cặp chờ)
+                      onApply(t);
+                    }}
+                    onReject={() => rejectTemplate(t)}
                     onVariant={() => genVariants(t)}
                   />
                 ))}
@@ -252,6 +368,12 @@ export default function LayoutShelf({
             </section>
           );
         })}
+        {/* trạng thái model — kín đáo, chỉ hiện khi đã học đủ cặp để cầm lái thứ tự */}
+        {model?.ready() && (
+          <p style={{ fontSize: 10, color: 'var(--t4)', margin: '0 2px', lineHeight: 1.4 }}>
+            Đã học {model.pairsSeen} cặp Nhận/Bỏ — thứ tự bố cục xếp theo gu của bạn.
+          </p>
+        )}
 
         {/* từ thư viện Reference (nếu có) */}
         {library.length > 0 && (
@@ -292,21 +414,30 @@ function ShelfCard({
   t,
   preview,
   highlight,
+  dimmed,
+  reasons,
   onApply,
+  onReject,
   onVariant,
 }: {
   t: EditorTemplate;
   preview?: string;
   highlight?: boolean;
+  /** đã bấm 👎 trong phiên — mờ đi chờ ghép cặp học. */
+  dimmed?: boolean;
+  /** 2-3 lý do explainable (tooltip). */
+  reasons?: string[];
   onApply: () => void;
+  onReject?: () => void;
   onVariant?: () => void;
 }) {
+  const tip = reasons?.length ? `\nVì sao hợp:\n• ${reasons.join('\n• ')}` : '';
   return (
-    <div className="pe-shelf-card" style={{ position: 'relative', flex: '0 0 auto', width: 140 }}>
+    <div className="pe-shelf-card" style={{ position: 'relative', flex: '0 0 auto', width: 140, opacity: dimmed ? 0.45 : 1, transition: 'opacity .15s' }}>
       <button
         type="button"
         onClick={onApply}
-        title={`Áp bố cục: ${t.name}`}
+        title={`Áp bố cục: ${t.name}${tip}`}
         style={{
           display: 'flex',
           flexDirection: 'column',
@@ -352,6 +483,28 @@ function ShelfCard({
         >
           <Shuffle size={11} />
         </button>
+      )}
+      {/* M-1: cặp nút Nhận/Bỏ kín đáo (hover mới hiện — quiet-luxury). Nhận = áp + dạy máy;
+          Bỏ = đánh dấu chờ ghép cặp với lựa chọn kế tiếp cùng kệ. */}
+      {onReject && (
+        <div className="pe-variant-btn" style={fbRow}>
+          <button
+            type="button"
+            onClick={onApply}
+            title={`Nhận gợi ý này (áp bố cục + dạy máy)${tip}`}
+            style={fbBtn}
+          >
+            <ThumbsUp size={10} />
+          </button>
+          <button
+            type="button"
+            onClick={onReject}
+            title={dimmed ? 'Bỏ đánh dấu' : 'Bỏ gợi ý này (dạy máy khi bạn chọn cái khác)'}
+            style={{ ...fbBtn, ...(dimmed ? fbBtnActive : null) }}
+          >
+            <ThumbsDown size={10} />
+          </button>
+        </div>
       )}
     </div>
   );
@@ -404,6 +557,34 @@ const badge: React.CSSProperties = {
   color: '#fff',
   fontSize: 8.5,
   fontWeight: 600,
+};
+
+/* cặp nút Nhận/Bỏ — góc dưới-phải preview, hover card mới hiện (class pe-variant-btn). */
+const fbRow: React.CSSProperties = {
+  position: 'absolute',
+  right: 10,
+  bottom: 40,
+  display: 'flex',
+  gap: 4,
+};
+
+const fbBtn: React.CSSProperties = {
+  width: 20,
+  height: 20,
+  display: 'grid',
+  placeItems: 'center',
+  borderRadius: 6,
+  border: '1px solid var(--border)',
+  background: 'rgba(20,20,24,.72)',
+  color: '#fff',
+  cursor: 'pointer',
+};
+
+const fbBtnActive: React.CSSProperties = {
+  background: 'var(--accent)',
+  // giữ NGUYÊN shorthand `border` (không dùng borderColor riêng) — trộn shorthand +
+  // longhand cùng thuộc tính giữa 2 lần render là warning của React.
+  border: '1px solid var(--accent)',
 };
 
 const variantBtn: React.CSSProperties = {
