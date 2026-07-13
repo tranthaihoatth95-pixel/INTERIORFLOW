@@ -582,6 +582,8 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   flex-direction: column;
 }
 .if-dualpane > .if-pane-secondary {
+  /* fallback màn rộng (cờ labs): pane phụ gọn — pane chính vẫn là sân khấu */
+  flex: 0 0 min(42%, 560px);
   min-height: 0;
   overflow: hidden;
   display: flex;
@@ -597,6 +599,8 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
     );
   }
   .if-dualpane > .if-pane-secondary {
+    /* pane phụ = đúng nửa màn bên kia bản lề */
+    flex: 0 0 env(viewport-segment-width 1 0, 50%);
     border-left: none;
   }
 }

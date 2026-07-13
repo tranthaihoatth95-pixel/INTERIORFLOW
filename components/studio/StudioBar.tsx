@@ -10,12 +10,13 @@
  * Chọn Present → /present-editor. Luôn có đường về app chính.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sun, Moon, SunMoon, MessageCircle } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
 import { useFlowStore } from '@/lib/store';
 import StageSwitcher from './StageSwitcher';
+import { StageVeil } from './StageTransition';
 
 export default function StudioBar({ active }: { active: 'present' | 'photo' | 'cad' }) {
   const router = useRouter();
@@ -25,6 +26,8 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
   const applyTheme = useFlowStore((s) => s.applyTheme);
   const setChatOpen = useFlowStore((s) => s.setChatOpen);
   const chatOpen = useFlowStore((s) => s.chatOpen);
+  // C-4: màn che lúc rời chặng (giống PhaseSwitcher ở Header).
+  const [leaving, setLeaving] = useState(false);
 
   // Route studio đứng riêng → tự áp theme lúc mở (page không gọi hydrate/applyTheme).
   // Prefetch sẵn đường VỀ app chính — bấm Concept/Render chuyển gần như tức thì.
@@ -39,6 +42,13 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
   const ThemeIcon = pref === 'auto' ? SunMoon : pref === 'light' ? Sun : Moon;
 
   const go = (p: Phase) => {
+    // Bấm lại đúng chặng đang mở → không làm gì (tránh push trùng route làm veil kẹt).
+    // photo KHÔNG tính: photo là công cụ con của Render, bấm Render phải VỀ '/' thật.
+    const samePane =
+      (active === 'cad' && p === 'concept') || (active === 'present' && p === 'present');
+    if (samePane) return;
+    // C-4: bật màn stageVeil che trước khi đổi route (nửa kia = StageEnter ở trang đích).
+    setLeaving(true);
     if (p === 'present') {
       router.push('/present-editor');
       return;
@@ -102,6 +112,7 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
       >
         <ThemeIcon size={16} />
       </button>
+      <StageVeil show={leaving} />
     </div>
   );
 }
