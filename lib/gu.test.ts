@@ -67,11 +67,43 @@ function testPickedPath() {
   ok('mood trung tính sang (luxe-neutral)', p.moods![0].mood === 'luxe-neutral');
 }
 
+function testSubject() {
+  console.log('\n[6] ROOM_TERMS → subject (Sprint 2, §2a.2) — VI + EN, xếp theo tần suất');
+  const p = buildGuProfile([
+    asset(['#8a5a3c'], 'phòng khách japandi', ''),
+    asset(['#8a5a3c'], '', 'a cozy living room with walnut'),
+    asset(['#8a5a3c'], 'bedroom', ''),
+  ]);
+  ok('nhận subject từ tag VI + caption EN', (p.subject ?? []).includes('living room') && (p.subject ?? []).includes('bedroom'));
+  ok('tần suất cao đứng đầu (living room 2 phiếu > bedroom 1)', p.subject![0] === 'living room');
+  ok('mỗi asset chỉ góp 1 phiếu/subject (không đếm trùng trong 1 chuỗi)',
+    buildGuProfile([asset(['#8a5a3c'], 'bedroom bedroom phòng ngủ', '')]).subject!.filter((s) => s === 'bedroom').length === 1);
+  ok('không nhận ra gì → subject rỗng (không bịa)', buildGuProfile([asset(['#8a5a3c'], 'abc', 'xyz')]).subject!.length === 0);
+  ok('tất định — chạy lại y hệt', JSON.stringify(buildGuProfile([
+    asset(['#8a5a3c'], 'phòng khách japandi', ''),
+    asset(['#8a5a3c'], '', 'a cozy living room with walnut'),
+    asset(['#8a5a3c'], 'bedroom', ''),
+  ]).subject) === JSON.stringify(p.subject));
+}
+
+function testSubjectPrompt() {
+  console.log('\n[7] guToPrompt nối subject — đứng ĐẦU prompt, thiếu subject giữ nguyên như cũ');
+  const p = buildGuProfile([asset(['#8a5a3c'], 'phòng ngủ walnut japandi', '')]);
+  const s = guToPrompt(p);
+  ok('subject đứng đầu prompt (bedroom interior)', s.startsWith('bedroom interior'));
+  ok('phần còn lại giữ nguyên (style/vật liệu/tông)', s.includes('japandi') && s.includes('vật liệu:'));
+  const legacy = guToPrompt({ ...p, subject: undefined }); // JSON cũ thiếu field
+  ok('thiếu subject → prompt y hệt trước (không đầu "interior" thừa)', !legacy.includes('interior'));
+  ok('tối đa 2 subject vào prompt', guToPrompt({ ...p, subject: ['bedroom', 'kitchen', 'lobby'] }).startsWith('bedroom, kitchen interior'));
+}
+
 testPaletteLabMerge();
 testTopNClamp();
 testMoods();
 testPrompt();
 testPickedPath();
+testSubject();
+testSubjectPrompt();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

@@ -149,6 +149,31 @@ function testNeufertGroups() {
   ok('rulesForOperator residential trả được group neufert từ registry', rulesForOperator('residential').some((g) => g.id === 'neufert'));
 }
 
+function testTypologySignal() {
+  console.log('\n[12] Sprint 2 M-3 — typology (gu-features) là tín hiệu BỔ SUNG additive');
+  // additive: KHÔNG truyền typology = kết quả y hệt cũ (từng điểm số)
+  const d = docWith(['desk', 'desk', 'desk']);
+  const base = classifyOperator({ doc: d });
+  const same = classifyOperator({ doc: d, typology: undefined });
+  ok('không truyền typology → scores y hệt cũ', JSON.stringify(base.scores) === JSON.stringify(same.scores));
+  ok('không truyền typology → không có evidence layout', !base.evidence.some((e) => e.signal === 'layout'));
+
+  // chỉ typology (không block/text) → nghiêng theo bảng affinity, có evidence layout
+  const only = classifyOperator({ typology: 'open-plan' });
+  ok("chỉ 'open-plan' → office", only.operator === 'office');
+  ok('evidence signal layout + detail đọc được', only.evidence.some((e) => e.signal === 'layout' && e.detail.includes('open-plan')));
+  ok("'perimeter' → retail", classifyOperator({ typology: 'perimeter' }).operator === 'retail');
+  ok("'island' → f&b", classifyOperator({ typology: 'island' }).operator === 'f&b');
+  ok("'cellular' → residential", classifyOperator({ typology: 'cellular' }).operator === 'residential');
+
+  // typology KHÔNG lật tín hiệu nội thất mạnh: 3 giường + open-plan vẫn residential
+  const beds = docWith(['bedD', 'bedD', 'bedD']);
+  const flip = classifyOperator({ doc: beds, typology: 'open-plan' });
+  ok('3 giường + open-plan → vẫn residential (layout chỉ bổ trợ)', flip.operator === 'residential');
+  ok('điểm office = cũ + 1.2 (đúng trọng số bảng affinity)',
+    Math.abs(flip.scores.office - (classifyOperator({ doc: beds }).scores.office + 1.2)) < 1e-9);
+}
+
 testBlockCategory();
 testOfficeFromDoc();
 testResidentialFromDoc();
@@ -160,6 +185,7 @@ testDeterministic();
 testRulesForOperator();
 testRoomSetFromDoc();
 testNeufertGroups();
+testTypologySignal();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);
