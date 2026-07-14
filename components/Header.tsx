@@ -18,7 +18,8 @@ import { toggleShare } from '@/lib/workspace';
 import { TasksDropdown } from '@/components/TasksDropdown';
 import { MobileMenu } from '@/components/MobileMenu';
 import { LangToggle } from '@/components/LangToggle';
-import { pressable, pressableIcon, easeApple, fade } from '@/lib/motion';
+import { pressable, pressableIcon, easeApple } from '@/lib/motion';
+import { StageVeil } from '@/components/studio/StageTransition';
 import { stashPresentHandoff, deckImagesFromNodes } from '@/lib/present-editor/handoff';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -382,18 +383,9 @@ function PhaseSwitcher() {
           } else setWorkspace(p);
         }}
       />
-      {/* Overlay che toàn màn khi rời trang: mắt thấy fade nhẹ thay vì giật route. */}
-      <AnimatePresence>
-        {leaving && (
-          <motion.div
-            variants={fade}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="fixed inset-0 z-[100] bg-[var(--bg)]"
-          />
-        )}
-      </AnimatePresence>
+      {/* C-4: màn `stageVeil` che lúc RỜI chặng — nửa kia (StageEnter/wallpaperIn)
+          nằm ở route đích. Dùng chung StageVeil với StudioBar cho nhất quán. */}
+      <StageVeil show={leaving} />
     </>
   );
 }

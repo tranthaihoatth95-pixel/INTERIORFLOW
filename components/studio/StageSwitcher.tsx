@@ -35,16 +35,9 @@ interface Props {
 export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div
-        style={{
-          display: 'flex',
-          gap: 2,
-          padding: 3,
-          borderRadius: 10,
-          background: 'var(--field)',
-          border: '1px solid var(--border)',
-        }}
-      >
+      {/* C-3 UNIFIED DOCK — vật liệu kính mờ (.if-dock, globals.css) dùng CHUNG
+          Header app chính + StudioBar → 3 chặng nhìn/đứng y hệt nhau ở mọi nơi. */}
+      <div className="if-dock" role="tablist" aria-label="Chặng làm việc">
         {PHASES.map((p) => {
           const Icon = ICON[p.id];
           const on = p.id === active;
@@ -52,6 +45,8 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
             <motion.button
               key={p.id}
               type="button"
+              role="tab"
+              aria-selected={on}
               {...pressable}
               onClick={() => onPick(p.id)}
               title={`${p.label} — ${p.tagline}`}
@@ -61,7 +56,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
                 alignItems: 'center',
                 gap: 6,
                 padding: '6px 12px',
-                borderRadius: 7,
+                borderRadius: 9,
                 border: 'none',
                 fontSize: 12.5,
                 fontWeight: on ? 600 : 500,
@@ -71,7 +66,8 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
                 whiteSpace: 'nowrap',
               }}
             >
-              {/* pill "active" trượt mượt giữa 3 chặng (shared layout) */}
+              {/* pill "active" trượt mượt giữa 3 chặng (shared layout) — active-state rõ:
+                  nền card + hairline viền + bóng 2 lớp nông (quiet-luxury, không neon). */}
               {on && (
                 <motion.span
                   layoutId="stage-active-pill"
@@ -79,15 +75,16 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
                   style={{
                     position: 'absolute',
                     inset: 0,
-                    borderRadius: 7,
+                    borderRadius: 9,
                     background: 'var(--card)',
-                    boxShadow: '0 1px 2px rgba(0,0,0,.08)',
+                    boxShadow:
+                      'inset 0 0 0 1px var(--border), 0 1px 2px rgba(0,0,0,.1), 0 3px 8px -2px rgba(0,0,0,.12)',
                     zIndex: 0,
                   }}
                 />
               )}
               <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Icon size={13} /> {p.label}
+                <Icon size={13} strokeWidth={on ? 2.2 : 2} /> {p.label}
               </span>
             </motion.button>
           );

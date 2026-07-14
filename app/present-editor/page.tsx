@@ -15,6 +15,7 @@ import { useState } from 'react';
 import PresentSheets from '@/components/present-editor/PresentSheets';
 import { makeSampleDeck } from '@/lib/present-editor/sample';
 import StudioBar from '@/components/studio/StudioBar';
+import { StageEnter } from '@/components/studio/StageTransition';
 import { CommentLayer } from '@/components/CommentLayer';
 import { ChatPanel } from '@/components/ChatPanel';
 
@@ -23,10 +24,11 @@ export default function PresentEditorPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
       <StudioBar active="present" />
-      <div style={{ flex: 1, minHeight: 0 }}>
+      {/* C-4: vào chặng bằng crossfade + scale "dynamic wallpaper" (StageEnter). */}
+      <StageEnter style={{ display: 'block' }}>
         {/* Tầng multi-sheet (phụ-thêm): thanh tab + PresentEditor. 1 sheet ⇒ y hệt bản cũ. */}
         <PresentSheets initialDeck={deck} />
-      </div>
+      </StageEnter>
       <ChatPanel />
       <CommentLayer />
     </div>

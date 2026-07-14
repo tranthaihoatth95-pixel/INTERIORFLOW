@@ -147,6 +147,50 @@ export const stageTransition: Variants = {
   exit: { opacity: 0, y: -8, scale: 0.99, transition: { duration: 0.24, ease: easeApple } },
 };
 
+/* ---------- C-4 Apple motion: "dynamic wallpaper" + adaptive amplitude ---------- */
+
+/**
+ * Chuyển CHẶNG kiểu hình nền động macOS: trang ĐẾN crossfade + thu scale rất nhẹ
+ * (1.012 → 1) — mắt thấy "lắng xuống" thay vì nhảy cứng. Dùng bọc nội dung
+ * studio route (cad-editor / present-editor) khi mount.
+ */
+export const wallpaperIn: Variants = {
+  hidden: { opacity: 0, scale: 1.012 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.45, ease: easeApple } },
+};
+
+/**
+ * Veil che lúc RỜI chặng (route change): crossfade nền — nửa kia của hiệu ứng
+ * dynamic-wallpaper. Thay cho `fade` phẳng ở overlay chuyển route.
+ */
+export const stageVeil: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.28, ease: easeApple } },
+  exit: { opacity: 0, transition: { duration: 0.3, ease: easeApple } },
+};
+
+/**
+ * Adaptive amplitude — element CÀNG TO bay biên độ CÀNG LỚN (hero title đi 28px,
+ * caption chỉ 8px) → cả màn vào nhịp như một khối vật lý, không đều tăm tắp.
+ *
+ * @param amplitude px dịch chuyển (to: 24–32 · vừa: 12–16 · nhỏ: 6–10)
+ * @param delay     trễ (giây) để xếp lớp hero → phụ
+ * @param blur      true = kèm blur-in (chỉ nên dùng cho 1–2 hero element)
+ */
+export const rise = (amplitude: number, delay = 0, blur = false): Variants => ({
+  hidden: {
+    opacity: 0,
+    y: amplitude,
+    ...(blur ? { filter: 'blur(8px)' } : {}),
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    ...(blur ? { filter: 'blur(0px)' } : {}),
+    transition: { duration: 0.55 + amplitude / 90, ease: easeApple, delay },
+  },
+});
+
 /** True nếu user bật Reduce Motion (SSR-safe). Bọc quanh animation nặng để tôn trọng. */
 export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined' || !window.matchMedia) return false;
