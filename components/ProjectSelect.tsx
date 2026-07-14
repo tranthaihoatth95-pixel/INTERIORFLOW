@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   ChevronLeft,
@@ -12,6 +12,8 @@ import {
   ImagePlus,
   Check,
   X,
+  Upload,
+  Search,
 } from 'lucide-react';
 import { easeApple, pressable, springStage } from '@/lib/motion';
 import { useLang } from '@/lib/i18n';
@@ -102,6 +104,8 @@ type TeamMember = { id: string; name: string; online: boolean };
 type FlowRow = {
   id: string;
   name: string;
+  /** owner của flow — nguồn DUY NHẤT về "thành viên" đang có trong schema (không có bảng membership). */
+  userId?: string;
   version: number;
   updatedAt: string;
   shareToken: string | null;
@@ -197,9 +201,16 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   // Đổi bìa
   const [pickerFor, setPickerFor] = useState<string | null>(null);
   const [libThumbs, setLibThumbs] = useState<string[] | null>(null);
+  // Upload bìa trực tiếp (J-4a)
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   // Sửa status
   const [statusFor, setStatusFor] = useState<string | null>(null);
   const [statusDraft, setStatusDraft] = useState('');
+  // Grid + tìm kiếm khi >8 dự án (J-4c)
+  const [query, setQuery] = useState('');
+  const [projFilter, setProjFilter] = useState<string>(''); // '' = tất cả, '__none__' = chưa gắn dự án
 
   const load = useCallback(() => {
     setLoadError(false);
@@ -221,6 +232,31 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
     [flows],
   );
   const n = items.length;
+
+  /* ---------- J-4c: >8 dự án thì carousel hết vừa → grid + tìm kiếm/lọc; ≤8 giữ carousel ---------- */
+
+  const manyMode = (flows?.length ?? 0) > 8;
+
+  const projOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const f of flows ?? []) if (f.project) map.set(f.project.id, f.project.name);
+    return [...map.entries()].map(([id, name]) => ({ id, name }));
+  }, [flows]);
+
+  const filteredFlows = useMemo(() => {
+    if (!flows) return [];
+    const q = query.trim().toLowerCase();
+    return flows.filter((f) => {
+      if (projFilter === '__none__' && f.project) return false;
+      if (projFilter && projFilter !== '__none__' && f.project?.id !== projFilter) return false;
+      if (!q) return true;
+      return (
+        f.name.toLowerCase().includes(q) ||
+        (f.status ?? '').toLowerCase().includes(q) ||
+        (f.project?.name ?? '').toLowerCase().includes(q)
+      );
+    });
+  }, [flows, query, projFilter]);
 
   /** Chọn card: flow → openFlow; new → createFlow rỗng rồi openFlow. Xong gọi onEnter. */
   const choose = useCallback(
@@ -285,6 +321,56 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
     }
   }, []);
 
+  /**
+   * Upload ảnh bìa TRỰC TIẾP (J-4a): file → dataURL → POST /api/library (tái dùng đường
+   * upload thư viện sẵn có, tags 'cover' để tìm lại được) → nhận url → set làm bìa luôn.
+   */
+  const uploadCover = useCallback(
+    async (file: File) => {
+      if (!pickerFor) return;
+      if (!file.type.startsWith('image/')) {
+        setUploadError(en ? 'Please pick an image file.' : 'Hãy chọn một file ảnh.');
+        return;
+      }
+      if (file.size > 25 * 1024 * 1024) {
+        setUploadError(en ? 'Image over 25MB.' : 'Ảnh quá 25MB.');
+        return;
+      }
+      setUploading(true);
+      setUploadError(null);
+      try {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result));
+          r.onerror = () => reject(new Error('read'));
+          r.readAsDataURL(file);
+        });
+        const res = await fetch('/api/library', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: file.name || 'Ảnh bìa',
+            category: 'Ref nội thất',
+            tags: 'cover',
+            dataUrl,
+          }),
+        });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok || typeof j?.url !== 'string') {
+          throw new Error(typeof j?.error === 'string' ? j.error : 'upload');
+        }
+        setLibThumbs((prev) => (prev ? [j.url, ...prev] : [j.url])); // thấy ngay trong "Từ thư viện"
+        await setCover(pickerFor, j.url); // đóng picker + PUT coverUrl (optimistic)
+      } catch {
+        setUploadError(en ? 'Upload failed — try again.' : 'Không tải được ảnh lên — thử lại.');
+      } finally {
+        setUploading(false);
+        if (fileInputRef.current) fileInputRef.current.value = ''; // chọn lại cùng file vẫn ăn
+      }
+    },
+    [pickerFor, en, setCover],
+  );
+
   /* ---------- Status: mở input + PUT optimistic ---------- */
 
   const beginStatus = useCallback((f: FlowRow) => {
@@ -311,9 +397,10 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   );
 
   // Phím ← → điều hướng, Enter mở card đang focus. Khoá khi đang sửa status/mở picker.
+  // Grid-mode (>8 dự án) không có carousel → nhường phím cho ô tìm kiếm.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (busy || n === 0 || statusFor || pickerFor) return;
+      if (busy || n === 0 || statusFor || pickerFor || manyMode) return;
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
         setActive((a) => Math.max(0, a - 1));
@@ -327,7 +414,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [busy, n, active, items, choose, statusFor, pickerFor]);
+  }, [busy, n, active, items, choose, statusFor, pickerFor, manyMode]);
 
   const step = (dir: 1 | -1) => setActive((a) => Math.min(n - 1, Math.max(0, a + dir)));
 
@@ -341,17 +428,31 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         filter: { duration: 0.55, ease: easeApple },
       };
 
-  /* ---------- Hàng memoji nhân sự (dùng chung gallery + list phẳng) ---------- */
+  /* ---------- Icon thành viên trên card (dùng chung gallery + list phẳng + grid) ----------
+   * Dữ liệu ĐANG CÓ: Flow chỉ có userId (owner) — KHÔNG có bảng membership per-flow.
+   * → mỗi card hiện OWNER (map qua roster team để lấy online); thiếu dữ liệu roster
+   * thì fallback user đang đăng nhập (flow trả về từ /api/flows luôn là của mình). */
 
-  const avatarRow = (opts?: { light?: boolean }) => {
-    if (team.length === 0) return null;
+  const membersOf = useCallback(
+    (f: FlowRow): TeamMember[] => {
+      const owner = f.userId ? team.find((m) => m.id === f.userId) : undefined;
+      if (owner) return [owner];
+      if (user) return [{ id: user.id, name: user.name, online: true }];
+      return [];
+    },
+    [team, user],
+  );
+
+  const avatarRow = (members: TeamMember[], opts?: { light?: boolean; ownerId?: string }) => {
+    if (members.length === 0) return null;
     const ring = opts?.light ? 'rgba(0,0,0,0.12)' : 'rgba(20,18,16,0.9)';
+    const ownerSuffix = en ? ' · owner' : ' · chủ dự án';
     return (
       <div className="flex items-center">
-        {team.slice(0, 7).map((m, idx) => (
+        {members.slice(0, 7).map((m, idx) => (
           <span
             key={m.id}
-            title={m.name}
+            title={opts?.ownerId && m.id === opts.ownerId ? `${m.name}${ownerSuffix}` : m.name}
             className="relative grid shrink-0 place-items-center rounded-full"
             style={{
               width: 28,
@@ -365,7 +466,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               border: `1.5px solid ${ring}`,
               filter: m.online ? undefined : 'grayscale(1)',
               opacity: m.online ? 1 : 0.55,
-              zIndex: team.length - idx,
+              zIndex: members.length - idx,
             }}
           >
             {initialOf(m.name)}
@@ -483,8 +584,8 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           )}
         </div>
 
-        {/* hàng memoji nhân sự — góc dưới card */}
-        <div className="mt-2.5">{avatarRow()}</div>
+        {/* icon thành viên (owner từ dữ liệu đang có) — góc dưới card */}
+        <div className="mt-2.5">{avatarRow(membersOf(f), { ownerId: f.userId })}</div>
       </>
     );
   };
@@ -735,7 +836,11 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       {item.flow.project ? `${item.flow.project.name} · ` : ''}
                       {timeAgo(item.flow.updatedAt, en)}
                     </span>
-                    {team.length > 0 && <span className="mt-1.5 block">{avatarRow({ light: true })}</span>}
+                    {membersOf(item.flow).length > 0 && (
+                      <span className="mt-1.5 block">
+                        {avatarRow(membersOf(item.flow), { light: true, ownerId: item.flow.userId })}
+                      </span>
+                    )}
                   </span>
                   <ArrowRight size={15} className="shrink-0 self-center text-[var(--t4)]" />
                 </>
@@ -761,6 +866,203 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           );
         })}
       </div>
+    </div>
+  );
+
+  /* ---------- Grid + tìm kiếm/lọc (J-4c — khi >8 dự án, mọi khổ màn hình) ---------- */
+
+  const searchGrid = flows && (
+    <div className="w-full" data-tour="project-gallery">
+      {/* thanh tìm kiếm + lọc theo dự án */}
+      <div className="mb-5 flex flex-wrap items-center justify-center gap-2.5">
+        <div className="flex items-center gap-2 rounded-full px-3.5 py-2" style={glass}>
+          <Search size={14} className="shrink-0 text-[var(--t4)]" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={en ? 'Search name, note, project…' : 'Tìm tên, ghi chú, dự án…'}
+            className="w-48 bg-transparent text-[13px] text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none sm:w-56"
+            style={{ fontFamily: SANS }}
+          />
+          {query && (
+            <button
+              type="button"
+              aria-label={en ? 'Clear search' : 'Xoá tìm kiếm'}
+              onClick={() => setQuery('')}
+              className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[var(--t4)] hover:text-[var(--t1)]"
+            >
+              <X size={12} />
+            </button>
+          )}
+        </div>
+        <select
+          value={projFilter}
+          onChange={(e) => setProjFilter(e.target.value)}
+          aria-label={en ? 'Filter by project' : 'Lọc theo dự án'}
+          className="cursor-pointer appearance-none rounded-full px-3.5 py-2 text-[12px] text-[var(--t1)] focus:outline-none"
+          style={{ ...glass, fontFamily: SANS }}
+        >
+          <option value="">{en ? 'All projects' : 'Tất cả dự án'}</option>
+          <option value="__none__">{en ? 'No project' : 'Chưa gắn dự án'}</option>
+          {projOptions.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <span className="text-[11px] text-[var(--t4)]" style={{ fontFamily: MONO }}>
+          {filteredFlows.length}/{flows.length}
+        </span>
+      </div>
+
+      <div className="grid max-h-[56vh] grid-cols-2 gap-4 overflow-y-auto px-1 pb-2 sm:grid-cols-3 lg:grid-cols-4">
+        {/* tile "+ Dự án mới" luôn đứng đầu — không lệ thuộc filter */}
+        <div
+          role="button"
+          tabIndex={0}
+          aria-disabled={busy}
+          onClick={() => {
+            if (!busy) void choose({ kind: 'new' });
+          }}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && !busy) {
+              e.preventDefault();
+              void choose({ kind: 'new' });
+            }
+          }}
+          className="grid cursor-pointer place-items-center"
+          style={{
+            aspectRatio: '4 / 4.1',
+            borderRadius: 'var(--radius-xl)',
+            border: `1.5px dashed ${COPPER}88`,
+            background: 'rgba(127,127,127,0.06)',
+            opacity: busy ? 0.6 : 1,
+          }}
+        >
+          <div className="flex flex-col items-center gap-2 px-3 text-center">
+            <span
+              className="grid h-10 w-10 place-items-center rounded-full"
+              style={{ border: `1.5px dashed ${COPPER}`, color: COPPER }}
+            >
+              <Plus size={17} />
+            </span>
+            <span className="text-[13px] font-semibold text-[var(--t1)]" style={{ fontFamily: SANS }}>
+              {en ? 'New project' : 'Dự án mới'}
+            </span>
+          </div>
+        </div>
+
+        {filteredFlows.map((f) => {
+          const editing = statusFor === f.id;
+          return (
+            <div
+              key={f.id}
+              role="button"
+              tabIndex={0}
+              aria-disabled={busy}
+              aria-label={f.name}
+              onClick={() => {
+                if (!busy) void choose({ kind: 'flow', flow: f });
+              }}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && !busy && !editing) {
+                  e.preventDefault();
+                  void choose({ kind: 'flow', flow: f });
+                }
+              }}
+              className="group cursor-pointer overflow-hidden text-left"
+              style={{
+                borderRadius: 'var(--radius-xl)',
+                border: '1px solid rgba(127,127,127,0.25)',
+                background: '#141210',
+                boxShadow: '0 18px 44px -20px rgba(0,0,0,0.55)',
+                opacity: busy ? 0.6 : 1,
+              }}
+            >
+              <div className="relative" style={{ aspectRatio: '4 / 3' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={coverOf(f)} alt="" draggable={false} className="h-full w-full object-cover" />
+                {/* Đổi bìa — hiện khi hover card (desktop) / luôn chạm được trên touch */}
+                <button
+                  type="button"
+                  aria-label={en ? 'Change cover' : 'Đổi bìa'}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openPicker(f.id);
+                  }}
+                  className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full text-white/90 opacity-100 transition-opacity hover:text-white sm:opacity-0 sm:group-hover:opacity-100"
+                  style={darkPill}
+                >
+                  <ImagePlus size={13} />
+                </button>
+              </div>
+              <div className="px-3 pb-2.5 pt-2">
+                <div className="truncate text-[13px] font-semibold text-white" style={{ fontFamily: SANS }}>
+                  {f.name}
+                </div>
+                {editing ? (
+                  <div
+                    className="mt-1 flex items-center gap-1.5 rounded-full px-2 py-1"
+                    style={darkPill}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+                    <input
+                      autoFocus
+                      value={statusDraft}
+                      maxLength={160}
+                      onChange={(e) => setStatusDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                        if (e.key === 'Enter') void saveStatus(f.id);
+                        else if (e.key === 'Escape') setStatusFor(null);
+                      }}
+                      placeholder={en ? 'Short status…' : 'Ghi chú ngắn…'}
+                      className="w-full bg-transparent text-[11px] text-white placeholder:text-white/40 focus:outline-none"
+                      style={{ fontFamily: SANS }}
+                    />
+                    <button
+                      type="button"
+                      aria-label={en ? 'Save' : 'Lưu'}
+                      onClick={() => void saveStatus(f.id)}
+                      className="grid h-5 w-5 shrink-0 place-items-center text-white/85 hover:text-white"
+                    >
+                      <Check size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      beginStatus(f);
+                    }}
+                    className="mt-0.5 block max-w-full truncate text-left text-[11px]"
+                    style={{
+                      fontFamily: SANS,
+                      color: f.status ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.4)',
+                    }}
+                  >
+                    {f.status ? f.status : en ? '· No note yet' : '· Chưa có ghi chú'}
+                  </button>
+                )}
+                <div className="mt-1.5 flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate text-[10px] text-white/50" style={{ fontFamily: SANS }}>
+                    {f.project ? f.project.name : timeAgo(f.updatedAt, en)}
+                  </span>
+                  {avatarRow(membersOf(f), { ownerId: f.userId })}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {filteredFlows.length === 0 && (
+        <p className="mt-4 text-center text-[12px] text-[var(--t4)]" style={{ fontFamily: SANS }}>
+          {en ? 'No project matches the search.' : 'Không có dự án nào khớp tìm kiếm.'}
+        </p>
+      )}
     </div>
   );
 
@@ -824,6 +1126,9 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           errorBlock
         ) : flows === null ? (
           loadingBlock
+        ) : manyMode ? (
+          // >8 dự án: carousel hết vừa → grid + tìm kiếm/lọc (mọi khổ màn, kể cả reduce-motion)
+          searchGrid
         ) : reduce ? (
           flatList
         ) : (
@@ -896,7 +1201,44 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               </div>
 
               <div className="overflow-y-auto px-5 py-4">
-                <p className="mb-2 text-[10px] uppercase tracking-[0.16em] text-[var(--t4)]" style={{ fontFamily: MONO }}>
+                {/* Upload trực tiếp (J-4a) — nút to đầu picker, không bắt đi đường thư viện */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void uploadCover(f);
+                  }}
+                />
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mb-1 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[13px] font-medium text-[var(--t1)] transition-opacity disabled:opacity-60"
+                  style={{ ...glass, border: `1.5px dashed ${COPPER}88` }}
+                >
+                  {uploading ? (
+                    <Loader2 size={15} className="animate-spin" style={{ color: COPPER }} />
+                  ) : (
+                    <Upload size={15} style={{ color: COPPER }} />
+                  )}
+                  {uploading
+                    ? en
+                      ? 'Uploading…'
+                      : 'Đang tải lên…'
+                    : en
+                      ? 'Upload an image from this device'
+                      : 'Tải ảnh từ máy lên làm bìa'}
+                </button>
+                {uploadError && (
+                  <p className="mb-1 text-[11px]" style={{ fontFamily: SANS, color: '#e5806b' }}>
+                    {uploadError}
+                  </p>
+                )}
+
+                <p className="mb-2 mt-3 text-[10px] uppercase tracking-[0.16em] text-[var(--t4)]" style={{ fontFamily: MONO }}>
                   {en ? 'Defaults' : 'Mặc định'}
                 </p>
                 <div className="grid grid-cols-3 gap-2.5">

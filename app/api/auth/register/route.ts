@@ -1,17 +1,18 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/db';
-import { hashPassword, createSession, publicUser, normalizeVNPhone, getSessionUser } from '@/lib/server/auth';
+import { hashPassword, publicUser, normalizeVNPhone, getSessionUser } from '@/lib/server/auth';
 
 /**
  * Tạo tài khoản email/SĐT + mật khẩu.
  *
- * CHÍNH SÁCH (chủ dự án chốt Sprint 1): ĐĂNG KÝ TỰ DO ĐÃ KHOÁ.
+ * CHÍNH SÁCH (chủ dự án chốt Sprint 1, siết tiếp Sprint 2 — quyết định #2):
+ * ĐĂNG KÝ TỰ DO ĐÃ KHOÁ HẲN — route công khai LUÔN 403, kể cả khi DB trống.
  *   · Người dùng thường vào bằng Google OAuth @ttt.vn (/api/auth/google).
- *   · Route này chỉ còn 2 cửa:
- *       1. BOOTSTRAP — DB chưa có user nào: cho phép tạo user đầu tiên (thành admin),
- *          nếu không thì hệ thống mới không bao giờ có admin.
- *       2. ADMIN CẤP — request có session của user isAdmin: admin tạo hộ tài khoản
- *          (KHÔNG đổi session của admin sang tài khoản mới).
+ *   · Cửa DUY NHẤT còn lại: ADMIN CẤP — request có session của user isAdmin:
+ *     admin tạo hộ tài khoản (KHÔNG đổi session của admin sang tài khoản mới).
+ *   · Admin ĐẦU TIÊN (bootstrap) tạo bằng `scripts/seed-admin.ts` chạy tay trên máy
+ *     chủ (idempotent, kiêm đường reset mật khẩu admin) — cửa "register khi DB
+ *     trống" cũ đã gỡ để không còn race ai-nhanh-tay-thành-admin lúc mới deploy.
  *   · TODO(admin-provisioning): UI quản lý tài khoản cho admin (cấp/reset mật khẩu tay)
  *     — chưa thiết kế hệ role mới, tận dụng cờ isAdmin sẵn có trong schema.
  *
@@ -21,10 +22,9 @@ import { hashPassword, createSession, publicUser, normalizeVNPhone, getSessionUs
 export async function POST(req: Request) {
   const { email, phone, name, password } = await req.json().catch(() => ({}));
 
-  // Cửa vào: bootstrap (DB trống) hoặc admin đã đăng nhập. Còn lại → 403.
-  const isFirst = (await prisma.user.count()) === 0;
-  const requester = isFirst ? null : await getSessionUser();
-  if (!isFirst && !requester?.isAdmin) {
+  // Cửa vào DUY NHẤT: admin đã đăng nhập. Còn lại → 403 (kể cả DB trống — seed-admin.ts lo bootstrap).
+  const requester = await getSessionUser();
+  if (!requester?.isAdmin) {
     return NextResponse.json(
       { error: 'Đăng ký tự do đã khoá — đăng nhập Google bằng email @ttt.vn, hoặc liên hệ admin để được cấp tài khoản.' },
       { status: 403 },
@@ -57,22 +57,20 @@ export async function POST(req: Request) {
     if (existing) return NextResponse.json({ error: 'Số điện thoại đã đăng ký.' }, { status: 409 });
   }
 
-  // người đầu tiên = admin, nhiều credits hơn
+  // Tài khoản admin-cấp-hộ = user thường (admin đầu tiên đã có từ seed-admin.ts).
   const user = await prisma.user.create({
     data: {
       email: normalizedEmail,
       phone: normalizedPhone,
       name: String(name).trim(),
       passwordHash: await hashPassword(String(password)),
-      isAdmin: isFirst,
-      credits: isFirst ? 500 : 200,
+      isAdmin: false,
+      credits: 200,
     },
   });
   await prisma.creditTransaction.create({
     data: { userId: user.id, amount: user.credits, reason: 'Tặng credits khởi tạo' },
   });
-  // Chỉ set session khi TỰ đăng ký (bootstrap). Admin cấp hộ → GIỮ session admin,
-  // không tự động đăng nhập vào tài khoản vừa tạo.
-  if (isFirst) await createSession(user.id);
+  // Admin cấp hộ → GIỮ session admin, KHÔNG tự động đăng nhập vào tài khoản vừa tạo.
   return NextResponse.json({ user: publicUser(user) });
 }
