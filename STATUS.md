@@ -13,9 +13,9 @@
 - Perceptron THẬT (learning-to-rank, degrade heuristic) · foldable Find N6 test on-device · installer cả 3 unsigned (.exe cần máy Win) · PWA host Vercel + Supabase (Agent 4 tự dựng, Sprint 4).
 
 ## Việc treo — chờ GO / đang chờ phóng agent
-1. **Bộ cài + hướng dẫn** (.dmg tại Mac, config .exe, PWA/Vercel+Supabase, HƯỚNG DẪN.md).
-2. **Sprint 3 QA stress** (tainted/overfill/offline, explainable đúng) + **Sprint 4 docs** (FINAL_ARCHITECTURE_REPORT + TECHNICAL_GLOSSARY).
-3. Dọn 2 file untracked: `lib/cad/commands (1).ts` + `prisma/test-journey2.db` (chờ user duyệt).
+1. ✅ 14/07 nhánh `feat/devops-docs` (chưa merge): **bộ cài + docs** — .dmg build thật (`dist/InteriorFlow-0.1.0-arm64.dmg`, 321MB, unsigned, Gatekeeper note trong hướng dẫn) · .exe: config sẵn + `docs/BUILD-WINDOWS.md` (build trên máy Win, SmartScreen note) · PWA: `vercel.json` + `docs/DEPLOY-VERCEL.md` (CHƯA deploy — cần tài khoản user; db push, KHÔNG reset) · `docs/HUONG-DAN-SU-DUNG.md` · **Sprint 4 docs**: `FINAL_ARCHITECTURE_REPORT.md` + `TECHNICAL_GLOSSARY.md`.
+2. **Sprint 3 QA stress** (tainted/overfill/offline, explainable đúng).
+3. ✅ 14/07 dọn 2 file untracked (user duyệt): xoá `lib/cad/commands (1).ts` (bản CŨ — mtime 11/07 14:20 < bản tracked 17:06, thiếu elevationMarker, layer l-dim cũ, không nội dung độc quyền) + `prisma/test-journey2.db`.
 4. CHƯA làm: bỏ hardcode 'DETECH · CONCEPT' · template tĩnh thư viện · heavy-ML pha 2 (embedding/detector — báo rủi ro trước) · membership per-flow (cần schema, chờ duyệt).
 
 ## Nợ kỹ thuật
