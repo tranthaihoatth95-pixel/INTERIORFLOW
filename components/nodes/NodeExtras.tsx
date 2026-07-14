@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Download, FileText, Film } from 'lucide-react';
+import { Download, FileText, Film, Presentation, Check } from 'lucide-react';
 import { tweenBase, prefersReducedMotion } from '@/lib/motion';
 import { useFlowStore } from '@/lib/store';
+import { stashPresentHandoff } from '@/lib/present-editor/handoff';
 import ExportPptxButton from '@/components/ExportPptxButton';
 import type { InteriorNodeData, PortValue } from '@/lib/types';
 
@@ -188,6 +190,59 @@ function DeckActions({ slidesJson, deckName }: { slidesJson: string; deckName: s
   );
 }
 
+/**
+ * Nút TƯỜNG MINH "Đưa sang Present →" trên node slide.* đã render (quyết định user #4 — Sprint 2).
+ * Bấm: stash ảnh (lib/present-editor/handoff, consume-once) → toast nhỏ "Đã gửi N ảnh…" →
+ * điều hướng /present-editor (delay ngắn để user kịp thấy xác nhận). Ảnh vào RỔ REFERENCE
+ * của Present (human-in-loop kéo vào slide), không tự chèn vào deck.
+ */
+function SendToPresent({ images }: { images: string[] }) {
+  const router = useRouter();
+  const [sent, setSent] = useState<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+  }, []);
+
+  if (!images.length) return null;
+
+  if (sent !== null) {
+    return (
+      <p className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 py-1.5 text-[11px] text-emerald-300">
+        <Check size={12} /> Đã gửi {sent} ảnh sang Present…
+      </p>
+    );
+  }
+  return (
+    <button
+      className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-[var(--border-strong)] py-1.5 text-[11px] text-[var(--t2)] transition-colors hover:border-[var(--accent)] hover:text-[var(--t1)]"
+      title="Đẩy ảnh slide đã render vào rổ Reference của trình dàn trang Present"
+      onClick={() => {
+        stashPresentHandoff(images);
+        setSent(images.length);
+        timerRef.current = setTimeout(() => router.push('/present-editor'), 650);
+      }}
+    >
+      <Presentation size={12} /> Đưa sang Present →
+    </button>
+  );
+}
+
+/** Rút danh sách ảnh slide của CHÍNH node này (deck → mảng _slides; composer → 1 ảnh). */
+function slideImagesOf(defType: string, outputs: Record<string, PortValue> | null | undefined): string[] {
+  if (!defType.startsWith('slide.') || !outputs) return [];
+  if (defType === 'slide.deck' && outputs._slides) {
+    try {
+      const slides = JSON.parse(String(outputs._slides.value)) as unknown;
+      if (Array.isArray(slides) && slides.length) return slides.map(String);
+    } catch {
+      /* JSON hỏng — rơi xuống ảnh đơn */
+    }
+  }
+  const img = Object.values(outputs).find((o: PortValue) => o.dataType === 'image');
+  return img ? [String(img.value)] : [];
+}
+
 /** Phần hiển thị đặc thù theo loại node (dưới params, trên/thay output mặc định). */
 export function NodeExtras({ nodeId, data }: { nodeId: string; data: InteriorNodeData }) {
   const { defType, run, params } = data;
@@ -241,6 +296,7 @@ export function NodeExtras({ nodeId, data }: { nodeId: string; data: InteriorNod
           {defType === 'slide.deck' && outputs._slides && (
             <DeckActions slidesJson={String(outputs._slides.value)} deckName={String(params.deckName ?? '')} />
           )}
+          {defType.startsWith('slide.') && <SendToPresent images={slideImagesOf(defType, outputs)} />}
         </div>
       );
     }

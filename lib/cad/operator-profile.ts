@@ -19,6 +19,9 @@ import type { Doc, Entity } from './model';
 import type { RuleGroup } from './standards/registry';
 import { BUILTIN_GROUPS } from './standards/registry';
 import { findRoomLabels } from './standards/checker';
+// CHỈ import type (bị xoá khi compile) — gu-features import HÀM classifyOperator từ file này,
+// nên import ngược chiều phải là type-only để không tạo chu trình runtime.
+import type { LayoutTypology } from './gu-features';
 
 /* ═══════════════════════ NHÃN & KIỂU ═══════════════════════ */
 
@@ -36,8 +39,8 @@ export type OperatorType =
 export type BlockCategory = 'bed' | 'desk' | 'dining' | 'kitchen' | 'sofa' | 'sanitary' | 'other';
 
 export interface OperatorEvidence {
-  /** loại tín hiệu: 'block' | 'room' | 'text' */
-  signal: 'block' | 'room' | 'text';
+  /** loại tín hiệu: 'block' | 'room' | 'text' | 'layout' (typology từ gu-features — Sprint 2) */
+  signal: 'block' | 'room' | 'text' | 'layout';
   /** operator được tín hiệu này cộng điểm */
   operator: OperatorType;
   weight: number;
@@ -66,6 +69,9 @@ export interface OperatorInput {
   rooms?: string[];
   /** text tự do: tên file + mô tả người dùng + nội dung TEXT/MTEXT. */
   text?: string;
+  /** TÍN HIỆU BỔ SUNG (Sprint 2, additive): typology bố cục từ lib/cad/gu-features.ts.
+   *  KHÔNG truyền = hành vi phân loại y hệt cũ (không đổi 1 điểm số nào). */
+  typology?: LayoutTypology;
 }
 
 /* ═══════════════════════ BẢNG TRA (dữ liệu, không hardcode con số quy chuẩn) ═══════════════════════ */
@@ -131,6 +137,17 @@ const ROOM_AFFINITY: [string, [OperatorType, number][]][] = [
   ['living', [['residential', 0.9], ['hospitality', 0.4]]],
   ['phòng khách', [['residential', 0.9], ['hospitality', 0.4]]],
 ];
+
+/** typology bố cục (gu-features) → [operator, weight]. Trọng số NHỎ HƠN block/room — bố cục là
+ *  tín hiệu phụ trợ (open-plan có thể là văn phòng LẪN căn hộ studio), không được lật tín hiệu
+ *  nội thất thật. Additive: chỉ chạy khi caller truyền `typology`. */
+const TYPOLOGY_AFFINITY: Record<LayoutTypology, [OperatorType, number][]> = {
+  cellular: [['residential', 1.2], ['hospitality', 0.8]], // chia nhiều phòng kín — nhà ở / dãy phòng khách sạn
+  'open-plan': [['office', 1.2], ['retail', 0.5]], // sàn mở — open office / sàn trưng bày
+  linear: [['hospitality', 0.7], ['office', 0.4]], // tuyến dài — hành lang phòng / dãy bàn
+  perimeter: [['retail', 1.0], ['office', 0.3]], // kệ/quầy bám chu vi — cửa hàng
+  island: [['f&b', 1.0], ['retail', 0.5]], // cụm đảo giữa sàn — đảo bếp/quầy bar
+};
 
 /* ═══════════════════════ RÚT ĐẶC TRƯNG (L0/L1) ═══════════════════════ */
 
@@ -252,6 +269,14 @@ function scoreText(text: string, scores: Record<OperatorType, number>, ev: Opera
   }
 }
 
+/** Tín hiệu typology (additive — Sprint 2). Chỉ được gọi khi caller truyền typology. */
+function scoreTypology(typo: LayoutTypology, scores: Record<OperatorType, number>, ev: OperatorEvidence[]): void {
+  for (const [op, w] of TYPOLOGY_AFFINITY[typo] ?? []) {
+    scores[op] += w;
+    ev.push({ signal: 'layout', operator: op, weight: w, detail: `bố cục ${typo} → ${op}` });
+  }
+}
+
 /* ═══════════════════════ HÀM CHÍNH ═══════════════════════ */
 
 /**
@@ -272,6 +297,7 @@ export function classifyOperator(input: OperatorInput): OperatorProfile {
   scoreBlocks(counts, scores, evidence);
   if (rooms.length) scoreRooms(rooms, scores, evidence);
   if (text.trim()) scoreText(text, scores, evidence);
+  if (input.typology) scoreTypology(input.typology, scores, evidence); // additive — thiếu = y cũ
 
   // argmax tất định theo thứ tự ALL_OPERATORS (bỏ 'generic' khỏi tranh chấp — nó là baseline)
   let best: OperatorType = 'generic';

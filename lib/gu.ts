@@ -34,6 +34,9 @@ export interface GuProfile {
   /** HOOK ML pha 1 (proposal §2a.7) — tâm-lý-màu suy TẤT ĐỊNH từ palette (lib/gu/color-psychology).
    *  Optional để caller/JSON cũ (thiếu field) vẫn hợp lệ; xếp giảm dần theo tỉ trọng. */
   moods?: MoodWeight[];
+  /** SUBJECT/ROOM (proposal §2a.2, Sprint 2) — loại không gian nhận từ ROOM_TERMS quét
+   *  name+tag+caption, xếp GIẢM DẦN theo tần suất. Optional — JSON cũ thiếu field vẫn hợp lệ. */
+  subject?: string[];
 }
 
 /** Từ điển gợi ý — nhận diện vật liệu/phong cách trong tag + caption (VI + EN). */
@@ -50,6 +53,35 @@ const STYLE_TERMS = [
   'neoclassic', 'tân cổ điển', 'corporate', 'hạng a', 'organic', 'moody', 'cinematic', 'điện ảnh',
 ];
 
+/**
+ * Từ điển PHÒNG/SUBJECT (proposal §2a.2) — VI + EN, dạng [cụm khớp → nhãn subject chuẩn EN].
+ * Cùng cơ chế substring như MATERIAL/STYLE_TERMS; cụm DÀI đặt trước cụm ngắn cùng nhóm để
+ * khớp cụ thể thắng khớp chung. Nhãn chuẩn tiếng Anh để nhồi thẳng prompt render.
+ */
+export const ROOM_TERMS: [string, string][] = [
+  // nhà ở
+  ['phòng khách', 'living room'], ['living room', 'living room'], ['livingroom', 'living room'],
+  ['phòng ngủ master', 'master bedroom'], ['master bedroom', 'master bedroom'],
+  ['phòng ngủ', 'bedroom'], ['bedroom', 'bedroom'],
+  ['phòng trẻ em', 'kids room'], ['kids room', 'kids room'],
+  ['phòng ăn', 'dining room'], ['dining room', 'dining room'], ['dining', 'dining room'],
+  ['bếp', 'kitchen'], ['kitchen', 'kitchen'], ['pantry', 'kitchen'],
+  ['phòng tắm', 'bathroom'], ['bathroom', 'bathroom'], ['vệ sinh', 'bathroom'], ['toilet', 'bathroom'],
+  ['ban công', 'balcony'], ['balcony', 'balcony'],
+  ['phòng thay đồ', 'walk-in closet'], ['walk-in', 'walk-in closet'],
+  // làm việc
+  ['phòng làm việc', 'home office'], ['home office', 'home office'],
+  ['phòng họp', 'meeting room'], ['meeting room', 'meeting room'],
+  ['văn phòng', 'office'], ['workspace', 'office'], ['office', 'office'],
+  // hospitality / thương mại
+  ['sảnh', 'lobby'], ['lobby', 'lobby'], ['lễ tân', 'lobby'], ['reception', 'lobby'],
+  ['hành lang', 'corridor'], ['corridor', 'corridor'],
+  ['nhà hàng', 'restaurant'], ['restaurant', 'restaurant'],
+  ['quầy bar', 'bar'], ['café', 'cafe'], ['cafe', 'cafe'], ['coffee', 'cafe'],
+  ['showroom', 'showroom'], ['cửa hàng', 'shop'],
+  ['spa', 'spa'], ['gym', 'gym'],
+];
+
 function norm(s: string): string {
   return (s || '').toLowerCase();
 }
@@ -59,6 +91,16 @@ function pickTerms(haystack: string, dict: string[]): string[] {
   const hit: string[] = [];
   for (const t of dict) {
     if (h.includes(t) && !hit.includes(t)) hit.push(t);
+  }
+  return hit;
+}
+
+/** Quét ROOM_TERMS trên 1 chuỗi → tập nhãn subject (unique, giữ thứ tự từ điển). */
+function pickSubjects(haystack: string): string[] {
+  const h = norm(haystack);
+  const hit: string[] = [];
+  for (const [term, label] of ROOM_TERMS) {
+    if (h.includes(term) && !hit.includes(label)) hit.push(label);
   }
   return hit;
 }
@@ -94,11 +136,16 @@ export function buildGuProfile(assets: GuAsset[], opts?: { usage?: string[] }): 
 
   const materials = new Set<string>();
   const styles = new Set<string>();
+  // subject đếm TẦN SUẤT (mỗi asset góp tối đa 1 phiếu/subject) — xếp giảm dần, tie-break
+  // theo thứ tự gặp đầu tiên → tất định.
+  const subjectCount = new Map<string, number>();
   for (const a of pool) {
     const text = `${a.name} ${a.tags} ${a.caption}`;
     pickTerms(text, MATERIAL_TERMS).forEach((t) => materials.add(t));
     pickTerms(text, STYLE_TERMS).forEach((t) => styles.add(t));
+    pickSubjects(text).forEach((s) => subjectCount.set(s, (subjectCount.get(s) ?? 0) + 1));
   }
+  const subject = [...subjectCount.entries()].sort((a, b) => b[1] - a[1]).map(([s]) => s);
 
   const palette = mergePalette(pool);
   const styleArr = [...styles];
@@ -113,6 +160,8 @@ export function buildGuProfile(assets: GuAsset[], opts?: { usage?: string[] }): 
     usages: [...new Set(pool.map((a) => a.usage))],
     // HOOK ML pha 1: tâm-lý-màu tất định từ palette đã gộp (giải thích "vì sao gu này hợp").
     moods: paletteMood(palette).moods,
+    // Sprint 2 (§2a.2): subject phòng từ ROOM_TERMS — mảng rỗng khi không nhận ra gì.
+    subject,
   };
 }
 
@@ -142,6 +191,9 @@ export function guProfileFromPicked(
 /** Hồ sơ gu → mẩu mô tả nhồi vào prompt AI (render/moodboard). */
 export function guToPrompt(p: GuProfile): string {
   const parts: string[] = [];
+  // Sprint 2 (§2a.2): subject ĐỨNG ĐẦU prompt — "bedroom interior, japandi…" đúng ngữ pháp
+  // prompt render. Thiếu subject (JSON cũ / không nhận ra) = prompt y hệt trước.
+  if (p.subject?.length) parts.push(`${p.subject.slice(0, 2).join(', ')} interior`);
   if (p.styles.length) parts.push(p.styles.join(', '));
   if (p.materials.length) parts.push(`vật liệu: ${p.materials.join(', ')}`);
   if (p.palette.length) parts.push(`tông màu: ${p.palette.join(' ')}`);
