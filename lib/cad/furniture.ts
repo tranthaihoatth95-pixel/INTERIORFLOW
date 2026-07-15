@@ -19,11 +19,54 @@ export interface BlockDef {
   id: string;
   name: string;
   /** nhóm để gom trong panel */
-  group: 'Phòng khách' | 'Phòng ăn' | 'Phòng ngủ' | 'Bếp' | 'Vệ sinh' | 'Làm việc' | 'Kiến trúc';
-  /** kích thước danh nghĩa (mm) — dùng cho preview & tỉ lệ */
+  group: BlockGroup;
+  /** kích thước danh nghĩa (mm) — dùng cho preview & tỉ lệ (variant mặc định) */
   w: number;
   h: number;
   prims: Prim[];
+
+  // ---- MỚI (Sprint 3 — SHAPE-SCHEMA.md) ----
+  /** B2.5 — nếu không có, shape chỉ có 1 dạng (dùng w/h/prims gốc) */
+  variants?: ShapeVariant[];
+  /** B2.2 — điểm neo để auto-snap vào tường */
+  anchors?: SnapAnchor[];
+  /** B2.7 — vùng trống bắt buộc quanh shape */
+  clearance?: ClearanceZone[];
+  /** B2.4 — info panel: giá, mã, nhà cung cấp */
+  meta?: ShapeMeta;
+}
+
+// Nhóm palette — 7 nhóm cũ + 2 nhóm mới cho B1.9/B1.10
+export type BlockGroup =
+  | 'Phòng khách' | 'Phòng ăn' | 'Phòng ngủ' | 'Bếp' | 'Vệ sinh'
+  | 'Làm việc' | 'Kiến trúc'
+  | 'Cầu thang' | 'Thiết bị';
+
+export interface ShapeVariant {
+  id: string;
+  name: string;
+  w: number;
+  h: number;
+  prims: Prim[];
+}
+
+/** Điểm neo dùng cho auto-snap-to-wall (B2.2). Toạ độ LOCAL mm, gốc tâm block. */
+export interface SnapAnchor {
+  kind: 'wall-back' | 'wall-side' | 'floor';
+  pt: Pt;
+  normal: { x: number; y: number };
+}
+
+/** Vùng chờ bắt buộc (B2.7) — hcn LOCAL mm, gốc tâm block, xoay theo block. */
+export interface ClearanceZone {
+  x: number; y: number; w: number; h: number;
+  reason: string;
+}
+
+export interface ShapeMeta {
+  price?: number;
+  vendor?: string;
+  sku?: string;
 }
 
 /* helper dựng hình trong local mm, gốc tâm */
@@ -174,6 +217,234 @@ function window2(w = 1200): Prim[] {
   ];
 }
 
+// ===== B1.3 — Bếp: tách thêm tủ lạnh / đảo bếp / hút mùi / lò vi sóng =====
+
+// Tủ lạnh — hộp + đường phân 2 cánh + tay nắm
+function refrigerator(): Prim[] {
+  const w = 700, d = 700;
+  return [
+    box(w, d),
+    { k: 'line', a: { x: -w / 2, y: 0 }, b: { x: w / 2, y: 0 } },
+    { k: 'line', a: { x: -60, y: -d / 2 + 60 }, b: { x: -60, y: -60 } },
+    { k: 'line', a: { x: 60, y: 60 }, b: { x: 60, y: d / 2 - 60 } },
+  ];
+}
+
+// Đảo bếp — mặt bàn + bồn rửa nhỏ + bếp đôi
+function kitchenIsland(): Prim[] {
+  const w = 1800, d = 900;
+  return [
+    box(w, d),
+    rect(-w / 2 + 150, -100, 500, 200),
+    { k: 'circle', c: { x: w / 2 - 500, y: 0 }, r: 130 },
+    { k: 'circle', c: { x: w / 2 - 220, y: 0 }, r: 130 },
+  ];
+}
+
+// Máy hút mùi — hình chữ nhật nhỏ áp tường trên bếp + nét chỉ hướng hút
+function rangeHood(): Prim[] {
+  const w = 800, d = 500;
+  return [
+    box(w, d),
+    rect(-w / 2 + 60, -d / 2 + 60, w - 120, d - 120),
+    { k: 'line', a: { x: -100, y: 0 }, b: { x: 100, y: 0 } },
+  ];
+}
+
+// Lò vi sóng — hộp nhỏ đặt trên mặt bếp/kệ
+function microwave(): Prim[] {
+  const w = 500, d = 400;
+  return [box(w, d), rect(-w / 2 + 40, -d / 2 + 40, w - 160, d - 80)];
+}
+
+// ===== B1.4 — Phòng tắm: vòi sen đứng + gương =====
+
+// Vòi sen đứng (shower stall) — khay vuông + thoát sàn tròn + ký hiệu vòi
+function showerStall(): Prim[] {
+  const w = 900, d = 900;
+  return [
+    box(w, d),
+    rect(-w / 2 + 40, -d / 2 + 40, w - 80, d - 80),
+    { k: 'circle', c: { x: 0, y: 0 }, r: 60 },
+    { k: 'circle', c: { x: -w / 2 + 100, y: d / 2 - 100 }, r: 30 },
+  ];
+}
+
+// Gương — 1 line đơn giản áp tường (theo gợi ý spec)
+function mirror(w = 700): Prim[] {
+  return [{ k: 'line', a: { x: -w / 2, y: 0 }, b: { x: w / 2, y: 0 } }];
+}
+
+// ===== B1.6 — Văn phòng: ghế văn phòng riêng + tủ hồ sơ + kệ sách =====
+
+// Ghế văn phòng (tách khỏi desk) — vòng tròn lưng + đế xoay
+function officeChair(): Prim[] {
+  const r = 220;
+  return [
+    { k: 'circle', c: { x: 0, y: 0 }, r },
+    { k: 'circle', c: { x: 0, y: 0 }, r: 40 },
+    { k: 'arc', c: { x: 0, y: 0 }, r: r - 30, a1: Math.PI * 0.15, a2: Math.PI * 0.85 },
+  ];
+}
+
+// Tủ hồ sơ — hộp + 2-3 ngăn kéo
+function filingCabinet(): Prim[] {
+  const w = 450, d = 600;
+  const prims: Prim[] = [box(w, d)];
+  for (let i = 1; i < 3; i++) {
+    const y = -d / 2 + (d / 3) * i;
+    prims.push({ k: 'line', a: { x: -w / 2 + 30, y }, b: { x: w / 2 - 30, y } });
+  }
+  return prims;
+}
+
+// Kệ sách — hộp áp tường + các ngăn ngang
+function bookshelf(): Prim[] {
+  const w = 900, d = 300;
+  const prims: Prim[] = [box(w, d)];
+  for (let i = 1; i < 4; i++) {
+    const x = -w / 2 + (w / 4) * i;
+    prims.push({ k: 'line', a: { x, y: -d / 2 }, b: { x, y: d / 2 } });
+  }
+  return prims;
+}
+
+// ===== B1.7 — Cửa: 2 cánh / trượt / kính =====
+
+// Cửa 2 cánh — 2 cánh swing đối xứng, mỗi cánh quét w/2
+function doubleDoor(w = 1600): Prim[] {
+  const hw = w / 2;
+  return [
+    { k: 'line', a: { x: -hw, y: 0 }, b: { x: 0, y: 0 } },
+    { k: 'line', a: { x: 0, y: 0 }, b: { x: hw, y: 0 } },
+    { k: 'line', a: { x: -hw, y: 0 }, b: { x: -hw, y: hw } },
+    { k: 'arc', c: { x: -hw, y: 0 }, r: hw, a1: 0, a2: Math.PI / 2 },
+    { k: 'line', a: { x: hw, y: 0 }, b: { x: hw, y: hw } },
+    { k: 'arc', c: { x: hw, y: 0 }, r: hw, a1: Math.PI / 2, a2: Math.PI },
+  ];
+}
+
+// Cửa trượt — khung + 2 tấm lùa chồng nhau, không có cung quét
+function slidingDoor(w = 1800): Prim[] {
+  const t = 80;
+  const half = w / 2;
+  return [
+    { k: 'line', a: { x: -half, y: 0 }, b: { x: half, y: 0 } },
+    rect(-half, -t / 2, half + half * 0.55, t),
+    rect(-half * 0.55, -t / 2 - t, half + half * 0.55, t),
+  ];
+}
+
+// Cửa kính — giống door 1 cánh nhưng nét đôi song song (ký hiệu kính) thay vì nét đơn
+function glassDoor(w = 900): Prim[] {
+  return [
+    { k: 'line', a: { x: -w / 2, y: 0 }, b: { x: -w / 2, y: w } },
+    { k: 'arc', c: { x: -w / 2, y: 0 }, r: w, a1: 0, a2: Math.PI / 2 },
+    { k: 'line', a: { x: -w / 2, y: 0 }, b: { x: w / 2, y: 0 } },
+    { k: 'line', a: { x: -w / 2, y: 40 }, b: { x: w / 2, y: 40 } },
+  ];
+}
+
+// ===== B1.8 — Cửa sổ: trượt / cố định =====
+
+// Cửa sổ trượt — 2 nét tường + 2 tấm kính lùa chồng mép (khác cửa sổ mở ở giữa)
+function slidingWindow(w = 1200): Prim[] {
+  const t = 100;
+  return [
+    { k: 'line', a: { x: -w / 2, y: t / 2 }, b: { x: w / 2, y: t / 2 } },
+    { k: 'line', a: { x: -w / 2, y: -t / 2 }, b: { x: w / 2, y: -t / 2 } },
+    { k: 'line', a: { x: -w / 2, y: t / 2 }, b: { x: -w / 2, y: -t / 2 } },
+    { k: 'line', a: { x: w / 2, y: t / 2 }, b: { x: w / 2, y: -t / 2 } },
+    { k: 'line', a: { x: -w * 0.05, y: t / 2 }, b: { x: -w * 0.05, y: -t / 2 } },
+  ];
+}
+
+// Cửa sổ cố định — không ký hiệu mở, chỉ khung + 1 nét kính giữa
+function fixedWindow(w = 1200): Prim[] {
+  const t = 100;
+  return [
+    { k: 'line', a: { x: -w / 2, y: t / 2 }, b: { x: w / 2, y: t / 2 } },
+    { k: 'line', a: { x: -w / 2, y: -t / 2 }, b: { x: w / 2, y: -t / 2 } },
+    { k: 'line', a: { x: -w / 2, y: t / 2 }, b: { x: -w / 2, y: -t / 2 } },
+    { k: 'line', a: { x: w / 2, y: t / 2 }, b: { x: w / 2, y: -t / 2 } },
+  ];
+}
+
+// ===== B1.9 — Cầu thang (nhóm mới 'Cầu thang') =====
+// Ghi chú: thang XOẮN bỏ qua theo gợi ý spec — hình xoắn ốc top-view cần
+// nhiều prim cung lồng nhau + số liệu bước chân phức tạp hơn `Prim` hiện có
+// hỗ trợ tốt (chỉ có line/poly/circle/arc, không có path xoắn ốc thật);
+// làm ẩu sẽ ra hình sai lệch tỉ lệ. Thẳng + chữ L đã đủ dùng cho sơ phác DD.
+
+// Thang thẳng — dãy bậc thang song song + mũi tên hướng lên
+function straightStairs(): Prim[] {
+  const w = 1000, d = 3000;
+  const steps = 12;
+  const prims: Prim[] = [box(w, d)];
+  const stepH = d / steps;
+  for (let i = 1; i < steps; i++) {
+    const y = -d / 2 + i * stepH;
+    prims.push({ k: 'line', a: { x: -w / 2, y }, b: { x: w / 2, y } });
+  }
+  // mũi tên hướng đi lên (từ chân → đỉnh)
+  prims.push({ k: 'line', a: { x: 0, y: -d / 2 + 200 }, b: { x: 0, y: d / 2 - 200 } });
+  prims.push({ k: 'line', a: { x: -80, y: d / 2 - 350 }, b: { x: 0, y: d / 2 - 200 } });
+  prims.push({ k: 'line', a: { x: 80, y: d / 2 - 350 }, b: { x: 0, y: d / 2 - 200 } });
+  return prims;
+}
+
+// Thang chữ L — 2 vế vuông góc quanh chiếu nghỉ (landing)
+function lStairs(): Prim[] {
+  const w = 1000;
+  const run1 = 2200, run2 = 1800;
+  const landing = 1000;
+  const prims: Prim[] = [];
+  // vế 1: chạy dọc trục Y (đi lên)
+  prims.push(rect(-w / 2, -run1 / 2 - landing / 2, w, run1));
+  const steps1 = 8;
+  for (let i = 1; i < steps1; i++) {
+    const y = -run1 / 2 - landing / 2 + (run1 / steps1) * i;
+    prims.push({ k: 'line', a: { x: -w / 2, y }, b: { x: w / 2, y } });
+  }
+  // chiếu nghỉ vuông
+  prims.push(rect(-w / 2, run1 / 2 - landing / 2, w, landing));
+  // vế 2: chạy ngang trục X (rẽ 90°) từ mép chiếu nghỉ
+  const landingTop = run1 / 2 + landing / 2;
+  prims.push(rect(w / 2, landingTop - w, run2, w));
+  const steps2 = 7;
+  for (let i = 1; i < steps2; i++) {
+    const x = w / 2 + (run2 / steps2) * i;
+    prims.push({ k: 'line', a: { x, y: landingTop - w }, b: { x, y: landingTop } });
+  }
+  return prims;
+}
+
+// ===== B1.10 — Thiết bị (nhóm mới 'Thiết bị') — đèn thuộc nhóm E, bỏ qua =====
+
+// Máy lạnh treo tường — hcn dẹt + vài đường chỉ cánh gió
+function acUnit(): Prim[] {
+  const w = 800, d = 200;
+  return [
+    box(w, d),
+    { k: 'line', a: { x: -w / 2 + 60, y: -d / 2 + 60 }, b: { x: w / 2 - 60, y: -d / 2 + 60 } },
+    { k: 'line', a: { x: -w / 2 + 60, y: 0 }, b: { x: w / 2 - 60, y: 0 } },
+  ];
+}
+
+// Quạt trần — vòng tròn thân + 4 cánh quạt đơn giản
+function ceilingFan(): Prim[] {
+  const r = 600;
+  const prims: Prim[] = [{ k: 'circle', c: { x: 0, y: 0 }, r: 80 }];
+  for (let i = 0; i < 4; i++) {
+    const ang = (Math.PI / 2) * i;
+    const x = Math.cos(ang) * r;
+    const y = Math.sin(ang) * r;
+    prims.push({ k: 'line', a: { x: 0, y: 0 }, b: { x, y } });
+  }
+  prims.push({ k: 'circle', c: { x: 0, y: 0 }, r });
+  return prims;
+}
+
 export const BLOCKS: BlockDef[] = [
   { id: 'sofa2', name: 'Sofa 2 chỗ', group: 'Phòng khách', w: 1600, h: 900, prims: sofa(1600, 900, 2) },
   { id: 'sofa3', name: 'Sofa 3 chỗ', group: 'Phòng khách', w: 2100, h: 900, prims: sofa(2100, 900, 3) },
@@ -189,10 +460,78 @@ export const BLOCKS: BlockDef[] = [
   { id: 'lavabo', name: 'Lavabo', group: 'Vệ sinh', w: 600, h: 460, prims: lavabo() },
   { id: 'bathtub', name: 'Bồn tắm', group: 'Vệ sinh', w: 1700, h: 750, prims: bathtub() },
   { id: 'kitchenI', name: 'Bếp chữ I', group: 'Bếp', w: 3000, h: 600, prims: kitchenI() },
-  { id: 'door', name: 'Cửa mở 900 (cửa chính)', group: 'Kiến trúc', w: 900, h: 900, prims: door(900) },
-  { id: 'doorRoom', name: 'Cửa mở 800 (cửa phòng)', group: 'Kiến trúc', w: 800, h: 800, prims: door(800) },
-  { id: 'doorWC', name: 'Cửa mở 700 (cửa WC)', group: 'Kiến trúc', w: 700, h: 700, prims: door(700) },
+  {
+    id: 'refrigerator', name: 'Tủ lạnh', group: 'Bếp', w: 700, h: 700, prims: refrigerator(),
+    anchors: [{ kind: 'wall-back', pt: { x: 0, y: -350 }, normal: { x: 0, y: -1 } }],
+  },
+  {
+    id: 'kitchenIsland', name: 'Đảo bếp', group: 'Bếp', w: 1800, h: 900, prims: kitchenIsland(),
+    clearance: [{ x: 0, y: 700, w: 1800, h: 900, reason: 'Lối đi thao tác quanh đảo bếp ≥900mm' }],
+  },
+  {
+    id: 'rangeHood', name: 'Máy hút mùi', group: 'Bếp', w: 800, h: 500, prims: rangeHood(),
+    anchors: [{ kind: 'wall-back', pt: { x: 0, y: -250 }, normal: { x: 0, y: -1 } }],
+  },
+  { id: 'microwave', name: 'Lò vi sóng', group: 'Bếp', w: 500, h: 400, prims: microwave() },
+  {
+    id: 'showerStall', name: 'Vòi sen đứng', group: 'Vệ sinh', w: 900, h: 900, prims: showerStall(),
+    anchors: [
+      { kind: 'wall-back', pt: { x: 0, y: -450 }, normal: { x: 0, y: -1 } },
+      { kind: 'wall-side', pt: { x: -450, y: 0 }, normal: { x: -1, y: 0 } },
+    ],
+    clearance: [{ x: 0, y: 500, w: 900, h: 700, reason: 'Vùng đứng ra vào vòi sen' }],
+  },
+  {
+    id: 'mirror', name: 'Gương', group: 'Vệ sinh', w: 700, h: 20, prims: mirror(700),
+    anchors: [{ kind: 'wall-back', pt: { x: 0, y: 0 }, normal: { x: 0, y: -1 } }],
+  },
+  { id: 'officeChair', name: 'Ghế văn phòng', group: 'Làm việc', w: 440, h: 440, prims: officeChair() },
+  {
+    id: 'filingCabinet', name: 'Tủ hồ sơ', group: 'Làm việc', w: 450, h: 600, prims: filingCabinet(),
+    anchors: [{ kind: 'wall-back', pt: { x: 0, y: -300 }, normal: { x: 0, y: -1 } }],
+    clearance: [{ x: 0, y: 400, w: 450, h: 400, reason: 'Bán kính mở ngăn kéo' }],
+  },
+  {
+    id: 'bookshelf', name: 'Kệ sách', group: 'Làm việc', w: 900, h: 300, prims: bookshelf(),
+    anchors: [{ kind: 'wall-back', pt: { x: 0, y: -150 }, normal: { x: 0, y: -1 } }],
+  },
+  {
+    id: 'door', name: 'Cửa mở 900 (cửa chính)', group: 'Kiến trúc', w: 900, h: 900, prims: door(900),
+    clearance: [{ x: 0, y: 450, w: 900, h: 900, reason: 'Vùng quét cánh cửa' }],
+  },
+  {
+    id: 'doorRoom', name: 'Cửa mở 800 (cửa phòng)', group: 'Kiến trúc', w: 800, h: 800, prims: door(800),
+    clearance: [{ x: 0, y: 400, w: 800, h: 800, reason: 'Vùng quét cánh cửa' }],
+  },
+  {
+    id: 'doorWC', name: 'Cửa mở 700 (cửa WC)', group: 'Kiến trúc', w: 700, h: 700, prims: door(700),
+    clearance: [{ x: 0, y: 350, w: 700, h: 700, reason: 'Vùng quét cánh cửa' }],
+  },
+  {
+    id: 'doubleDoor', name: 'Cửa 2 cánh', group: 'Kiến trúc', w: 1600, h: 800, prims: doubleDoor(1600),
+    clearance: [{ x: 0, y: 400, w: 1600, h: 800, reason: 'Vùng quét 2 cánh cửa' }],
+  },
+  { id: 'slidingDoor', name: 'Cửa trượt', group: 'Kiến trúc', w: 1800, h: 160, prims: slidingDoor(1800) },
+  {
+    id: 'glassDoor', name: 'Cửa kính', group: 'Kiến trúc', w: 900, h: 900, prims: glassDoor(900),
+    clearance: [{ x: 0, y: 450, w: 900, h: 900, reason: 'Vùng quét cánh cửa' }],
+  },
   { id: 'window', name: 'Cửa sổ', group: 'Kiến trúc', w: 1200, h: 100, prims: window2(1200) },
+  { id: 'slidingWindow', name: 'Cửa sổ trượt', group: 'Kiến trúc', w: 1200, h: 100, prims: slidingWindow(1200) },
+  { id: 'fixedWindow', name: 'Cửa sổ cố định', group: 'Kiến trúc', w: 1200, h: 100, prims: fixedWindow(1200) },
+  {
+    id: 'straightStairs', name: 'Thang thẳng', group: 'Cầu thang', w: 1000, h: 3000, prims: straightStairs(),
+    clearance: [{ x: 0, y: 1700, w: 1000, h: 400, reason: 'Chiều cao đầu (headroom) tối thiểu ở chiếu tới' }],
+  },
+  {
+    id: 'lStairs', name: 'Thang chữ L', group: 'Cầu thang', w: 3000, h: 3000, prims: lStairs(),
+    clearance: [{ x: 0, y: 0, w: 1000, h: 1000, reason: 'Chiếu nghỉ — chiều cao đầu tối thiểu' }],
+  },
+  {
+    id: 'acUnit', name: 'Máy lạnh treo tường', group: 'Thiết bị', w: 800, h: 200, prims: acUnit(),
+    anchors: [{ kind: 'wall-back', pt: { x: 0, y: -100 }, normal: { x: 0, y: -1 } }],
+  },
+  { id: 'ceilingFan', name: 'Quạt trần', group: 'Thiết bị', w: 1200, h: 1200, prims: ceilingFan() },
 ];
 
 export const BLOCK_MAP: Record<string, BlockDef> = Object.fromEntries(BLOCKS.map((b) => [b.id, b]));
