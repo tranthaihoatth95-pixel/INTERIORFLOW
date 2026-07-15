@@ -14,7 +14,10 @@
 export const GOOGLE_ALLOWED_DOMAIN = (process.env.GOOGLE_ALLOWED_DOMAIN ?? 'ttt.vn').toLowerCase();
 
 export function isAllowedGoogleEmail(email: string): boolean {
-  return email.trim().toLowerCase().endsWith(`@${GOOGLE_ALLOWED_DOMAIN}`);
+  const normalized = email.trim().toLowerCase();
+  // Reject emails with multiple @ signs (e.g. "user@gmail.com@ttt.vn")
+  if (normalized.split('@').length !== 2) return false;
+  return normalized.endsWith(`@${GOOGLE_ALLOWED_DOMAIN}`);
 }
 
 export type GoogleGate =
