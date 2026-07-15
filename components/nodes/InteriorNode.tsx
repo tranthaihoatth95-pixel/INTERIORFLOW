@@ -6,6 +6,7 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Play, Loader2, CircleAlert, CircleCheck, RotateCcw, ImagePlus, Paintbrush, X } from 'lucide-react';
 import { getDefinition } from '@/lib/nodes/registry';
 import { useFlowStore, type FlowNode } from '@/lib/store';
+import { nodeIconFor } from '@/components/nodes/NodeIcons';
 import { runNode } from '@/lib/execution';
 import { CATEGORY_META, DATA_TYPE_COLORS, type ParamDef } from '@/lib/types';
 import { NodeExtras } from '@/components/nodes/NodeExtras';
@@ -217,10 +218,15 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
         status === 'error' && 'border-red-500/60',
       )}
     >
-      {/* header */}
+      {/* header — icon flat + font mono low-tech */}
       <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2">
-        <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: meta.color }} />
-        <span className="flex-1 truncate text-xs font-medium text-[var(--t1)]">{def.title}</span>
+        {(() => { const Icon = nodeIconFor(data.defType); return <Icon size={14} className="shrink-0 text-[var(--t2)]" />; })()}
+        <span
+          className="flex-1 truncate text-[11px] font-medium text-[var(--t1)]"
+          style={{ fontFamily: 'ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace' }}
+        >
+          {def.title}
+        </span>
         {def.creditCost > 0 && (
           <span className="rounded bg-[var(--hover)] px-1.5 py-0.5 text-[10px] text-[var(--t3)]">
             {def.creditCost}cr
