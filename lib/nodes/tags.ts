@@ -57,6 +57,14 @@ export const NODE_TAGS: Record<string, NodeTag[]> = {
   'ai.text2video': ['ai-generate', 'video'],
   'render.compare': ['ai-generate'],
 
+  // ---- Render v2 (2 tầng — defs/render-v2.ts) ----
+  'ai.text2image': ['ai-generate'],
+  'three.camera': ['input'],
+  'three.cad2fbx': ['input', 'utility'],
+  'ai.idmask': ['edit', 'utility'],
+  'ai.furnitureextract': ['edit'],
+  'ai.localedit': ['edit', 'material'],
+
   // ---- AI Edit ----
   'ai.materialswap': ['edit', 'material'],
   'ai.furniture': ['edit'],

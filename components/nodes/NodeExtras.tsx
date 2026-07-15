@@ -228,6 +228,94 @@ function SendToPresent({ images }: { images: string[] }) {
   );
 }
 
+/**
+ * Badge "tầng đã chạy" cho bộ node render v2 (kiến trúc 2 tầng): node ghi output ẩn
+ * `_tier` (Tầng AI · … / Tầng lõi tất định …) — hiện rõ để KHÔNG BAO GIỜ mock-im-lặng.
+ */
+function TierBadge({ tier }: { tier: string }) {
+  const isAi = tier.startsWith('Tầng AI');
+  return (
+    <p
+      className={`nodrag rounded-md border px-2 py-1 text-[9.5px] leading-snug ${
+        isAi
+          ? 'border-violet-500/40 bg-violet-500/10 text-violet-300'
+          : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+      }`}
+      title={tier}
+    >
+      {tier}
+    </p>
+  );
+}
+
+function downloadText(content: string, filename: string, mime = 'text/plain') {
+  const url = URL.createObjectURL(new Blob([content], { type: mime }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Nút tải OBJ/MTL + convert FBX (Blender local qua /api/render/fbx) cho node Bản vẽ → 3D. */
+function ObjFbxActions({ obj, mtl, cam }: { obj: string; mtl: string; cam: string }) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  return (
+    <div className="space-y-1.5">
+      <div className="flex gap-1.5">
+        <button
+          className="nodrag flex flex-1 items-center justify-center gap-1 rounded-md border border-[var(--border-strong)] py-1.5 text-[11px] text-[var(--t2)] hover:border-sky-500/60"
+          onClick={() => {
+            // OBJ tham chiếu `mtllib scene.mtl` — giữ đúng tên để importer tự đọc vật liệu
+            downloadText(obj, 'scene.obj');
+            downloadText(mtl, 'scene.mtl');
+          }}
+        >
+          <Download size={12} /> OBJ + MTL
+        </button>
+        <button
+          disabled={busy}
+          className="nodrag flex flex-1 items-center justify-center gap-1 rounded-md border border-[var(--border-strong)] py-1.5 text-[11px] text-[var(--t2)] hover:border-sky-500/60 disabled:opacity-40"
+          onClick={async () => {
+            setBusy(true);
+            setMsg(null);
+            try {
+              const res = await fetch('/api/render/fbx', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ obj, mtl, camera: cam || undefined }),
+              });
+              const body = (await res.json().catch(() => ({}))) as { fbx?: string; error?: string };
+              if (!res.ok || !body.fbx) {
+                setMsg(body.error ?? `Convert FBX lỗi (HTTP ${res.status}).`);
+                return;
+              }
+              const bin = atob(body.fbx);
+              const bytes = new Uint8Array(bin.length);
+              for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+              const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'interiorflow-scene.fbx';
+              a.click();
+              URL.revokeObjectURL(url);
+              setMsg('Đã xuất FBX (Blender local) — import thẳng vào 3ds Max/Blender.');
+            } catch {
+              setMsg('Không gọi được server convert FBX.');
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <Download size={12} /> {busy ? 'Đang convert…' : 'FBX (Blender)'}
+        </button>
+      </div>
+      {msg && <p className="rounded-md bg-[var(--field)] px-2 py-1.5 text-[9.5px] leading-snug text-[var(--t3)]">{msg}</p>}
+    </div>
+  );
+}
+
 /** Rút danh sách ảnh slide của CHÍNH node này (deck → mảng _slides; composer → 1 ảnh). */
 function slideImagesOf(defType: string, outputs: Record<string, PortValue> | null | undefined): string[] {
   if (!defType.startsWith('slide.') || !outputs) return [];
@@ -247,8 +335,41 @@ function slideImagesOf(defType: string, outputs: Record<string, PortValue> | nul
 export function NodeExtras({ nodeId, data }: { nodeId: string; data: InteriorNodeData }) {
   const { defType, run, params } = data;
   const outputs = run.outputs;
+  // Bộ node render v2: output ẩn _tier = tầng đã chạy (AI / lõi tất định) — luôn hiện rõ.
+  const tier = run.status === 'done' && outputs?._tier ? String(outputs._tier.value) : null;
 
   if (defType === 'util.compare') return <CompareBody nodeId={nodeId} />;
+
+  // Bản vẽ → 3D: thông số scene + nút tải OBJ/MTL + convert FBX qua Blender local.
+  if (defType === 'three.cad2fbx' && run.status === 'done' && outputs?._obj) {
+    return (
+      <div className="space-y-1.5">
+        {outputs.text && (
+          <p className="whitespace-pre-line rounded-md bg-[var(--field)] px-2 py-1.5 text-[10px] leading-snug text-[var(--t3)]">
+            {String(outputs.text.value)}
+          </p>
+        )}
+        <ObjFbxActions
+          obj={String(outputs._obj.value)}
+          mtl={String(outputs._mtl?.value ?? '')}
+          cam={String(outputs._cam?.value ?? '')}
+        />
+        {tier && <TierBadge tier={tier} />}
+      </div>
+    );
+  }
+
+  // Góc máy ảnh: hiện mẩu prompt góc máy để user biết node đang phát gì.
+  if (defType === 'three.camera' && run.status === 'done' && outputs?.prompt) {
+    return (
+      <div className="space-y-1.5">
+        <p className="rounded-md bg-[var(--field)] px-2 py-1.5 text-[10px] leading-snug text-[var(--t3)]">
+          {String(outputs.prompt.value)}
+        </p>
+        {tier && <TierBadge tier={tier} />}
+      </div>
+    );
+  }
 
   if (defType === 'util.palette' && run.status === 'done' && outputs?.text) {
     const colors = String(outputs.text.value)
@@ -278,10 +399,13 @@ export function NodeExtras({ nodeId, data }: { nodeId: string; data: InteriorNod
     const images = Object.values(outputs).filter((o: PortValue) => o.dataType === 'image');
     if (images.length > 1) {
       return (
-        <div className="grid grid-cols-2 gap-1">
-          {images.map((img, i) => (
-            <OutputImage key={i} src={String(img.value)} className="h-16 w-full" />
-          ))}
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-2 gap-1">
+            {images.map((img, i) => (
+              <OutputImage key={i} src={String(img.value)} className="h-16 w-full" />
+            ))}
+          </div>
+          {tier && <TierBadge tier={tier} />}
         </div>
       );
     }
@@ -297,6 +421,7 @@ export function NodeExtras({ nodeId, data }: { nodeId: string; data: InteriorNod
             <DeckActions slidesJson={String(outputs._slides.value)} deckName={String(params.deckName ?? '')} />
           )}
           {defType.startsWith('slide.') && <SendToPresent images={slideImagesOf(defType, outputs)} />}
+          {tier && <TierBadge tier={tier} />}
         </div>
       );
     }
