@@ -167,6 +167,22 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
       if (r && room.minWidthMm !== null && room.minWidthMm < r.params.minWidthMm) {
         violations.push(mkViolation(r, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${r.params.minWidthMm}mm tối thiểu.`, room.at));
       }
+
+      // 2026-07-15: nối thêm 3 rule quốc tế/Neufert đo được bằng CHÍNH bề rộng hành lang đã đo
+      // ở trên (room.minWidthMm) — cùng dữ liệu hình học, chỉ khác ngưỡng/nguồn trích dẫn. Xem
+      // "SỔ TRẠNG THÁI NỐI DÂY" cuối file cho lý do các rule Neufert/NFPA/QCVN06 KHÁC chưa nối.
+      const rIntlEgress = byId('intl-egress-corridor-min-width');
+      if (rIntlEgress && room.minWidthMm !== null && room.minWidthMm < rIntlEgress.params.minWidthMmGeneral) {
+        violations.push(mkViolation(rIntlEgress, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rIntlEgress.params.minWidthMmGeneral}mm tối thiểu theo IBC 2021 §1020.2 (đường thoát nạn chung, chưa xét sprinkler/số người).`, room.at));
+      }
+      const rNeufert1 = byId('neufert-circulation-one-person');
+      if (rNeufert1 && room.minWidthMm !== null && room.minWidthMm < rNeufert1.params.minWidthMm) {
+        violations.push(mkViolation(rNeufert1, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rNeufert1.params.minWidthMm}mm — dưới mức tối thiểu cho 1 người đi qua thoải mái (Neufert/Metric Handbook).`, room.at));
+      }
+      const rNeufert2 = byId('neufert-circulation-two-persons');
+      if (rNeufert2 && room.minWidthMm !== null && room.minWidthMm < rNeufert2.params.minWidthMm) {
+        violations.push(mkViolation(rNeufert2, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rNeufert2.params.minWidthMm}mm — dưới mức tiện dụng cho 2 người tránh nhau (Neufert/Metric Handbook).`, room.at));
+      }
     }
   }
 
@@ -184,3 +200,46 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
 
   return violations;
 }
+
+/**
+ * SỔ TRẠNG THÁI NỐI DÂY (2026-07-15) — rule nào đã áp dụng thật trong checkStandards():
+ *
+ * ĐÃ NỐI (sinh violation thật khi đo hình học vi phạm):
+ *   vn-res-bedroom-min-area, vn-res-wc-min-area, vn-res-kitchen-dining-min-area,
+ *   vn-res-living-min-area, vn-fire-corridor-min-width-general, iso128-thick-thin-ratio,
+ *   intl-egress-corridor-min-width, neufert-circulation-one-person,
+ *   neufert-circulation-two-persons.
+ *   (3 rule cuối mới nối 2026-07-15 — dùng lại CHÍNH bề rộng hành lang room.minWidthMm đã đo
+ *   cho vn-fire-corridor-min-width-general, chỉ khác ngưỡng/nguồn: IBC 1118mm, Neufert 1
+ *   người 750mm, Neufert 2 người 1400mm.)
+ *
+ * CHƯA NỐI (lý do — thiếu dữ liệu hình học mà model 2D hiện tại không lưu):
+ *   - vn-fire-exit-clear-width-min / vn-fire-exit-clear-height-min: BlockEntity cửa (2D
+ *     top-view) không lưu chiều cao cửa; chiều rộng có nhưng chưa nối vì cần phân biệt cửa
+ *     thoát nạn khỏi cửa nội bộ — chưa có field đánh dấu "cửa thoát nạn" trong model.
+ *   - vn-fire-min-exits-count / intl-egress-min-exits-count: cần occupant load (số người) —
+ *     không có cách tính đáng tin từ diện tích phòng đơn thuần, cố tình không đoán mò.
+ *   - vn-fire-corridor-min-width-f1-over15: ngưỡng phụ thuộc PHÂN LOẠI công trình (nhóm F1,
+ *     >15 tầng) — model không lưu số tầng/nhóm nhà.
+ *   - vn-fire-stair-min-width: verified=false CỐ Ý (tác giả rule không thống nhất được trị số
+ *     giữa các nguồn) — KHÔNG được tự chọn 1 số rồi implement.
+ *   - vn-fire-travel-distance-appendix-g / intl-egress-travel-distance /
+ *     intl-egress-common-path-limit: cần mô phỏng đồ thị đường đi thoát nạn (travel distance) —
+ *     không có trong model, không phải phép đo hình học đơn giản.
+ *   - vn-fire-exit-door-double-leaf-rule: rule định tính, không có trị số mm; BlockEntity cửa
+ *     hiện chỉ mô hình 1 cánh.
+ *   - intl-egress-door-min-clear-width / intl-egress-max-door-width /
+ *     intl-egress-door-swing-encroachment: cần chiều rộng thông thủy thực đo của cửa (không
+ *     phải kích thước danh nghĩa BlockEntity) + hướng mở cánh — chưa có trong model.
+ *   - intl-egress-width-capacity-factor: cần occupant load, giống nhóm exits-count ở trên.
+ *   - intl-egress-min-ceiling-height: model 2D không lưu cao độ trần (không có trục Z).
+ *   - neufert-kitchen-working-aisle / neufert-kitchen-worktop-height /
+ *     neufert-clearance-front-of-storage / neufert-dining-space-per-person: CẦN liên kết vị
+ *     trí/clearance-zone của từng BlockEntity nội thất (tủ bếp, tủ quần áo, bàn ăn) với "khoảng
+ *     lưu thông" Neufert — đây là tính năng MỚI (liên kết clearance-zone Sprint 3 ↔ rule
+ *     Neufert), không phải nối dây đơn thuần. Xem AUDIT-2026-07-15.md mục D — KHÔNG tự ý làm
+ *     trong lần nối dây này, cần quyết định phạm vi riêng.
+ *   - neufert-interior-door-clear-width / neufert-ceiling-height-habitable: verified=false CỐ
+ *     Ý (nguồn không thống nhất 1 trị số, hoặc luật hoá khác nhau theo từng nước) — giữ nguyên
+ *     trạng thái chưa đo được, không tự chọn số.
+ */

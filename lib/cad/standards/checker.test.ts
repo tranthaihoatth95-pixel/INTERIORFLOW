@@ -68,6 +68,52 @@ function testCorridorNarrow() {
   ok('message có số đo bề rộng thật', !!v?.message.includes('900') || !!v?.message.match(/9\d\dmm/));
 }
 
+function testCorridorIntlEgressAndNeufertTwo() {
+  console.log('\n[4b] Hành lang 1050mm — vi phạm IBC (1118mm) + Neufert 2 người (1400mm), KHÔNG vi phạm TCVN (1000mm) hay Neufert 1 người (750mm)');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 1050, 4000));
+  doc.entities.push(label({ x: 525, y: 2000 }, 'HANH LANG'));
+  const violations = checkStandards(doc, getAllRules());
+  ok('có vi phạm intl-egress-corridor-min-width', violations.some((v) => v.ruleId === 'intl-egress-corridor-min-width'));
+  ok('có vi phạm neufert-circulation-two-persons', violations.some((v) => v.ruleId === 'neufert-circulation-two-persons'));
+  ok('KHÔNG vi phạm vn-fire-corridor-min-width-general (1050mm > 1000mm)', !violations.some((v) => v.ruleId === 'vn-fire-corridor-min-width-general'));
+  ok('KHÔNG vi phạm neufert-circulation-one-person (1050mm > 750mm)', !violations.some((v) => v.ruleId === 'neufert-circulation-one-person'));
+}
+
+function testCorridorNeufertTwoOnly() {
+  console.log('\n[4c] Hành lang 1200mm — CHỈ vi phạm Neufert 2 người (1400mm), đạt cả TCVN/IBC/Neufert 1 người');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 1200, 4000));
+  doc.entities.push(label({ x: 600, y: 2000 }, 'HANH LANG'));
+  const violations = checkStandards(doc, getAllRules());
+  ok('có vi phạm neufert-circulation-two-persons', violations.some((v) => v.ruleId === 'neufert-circulation-two-persons'));
+  ok('KHÔNG vi phạm intl-egress-corridor-min-width (1200mm > 1118mm)', !violations.some((v) => v.ruleId === 'intl-egress-corridor-min-width'));
+  ok('KHÔNG vi phạm vn-fire-corridor-min-width-general (1200mm > 1000mm)', !violations.some((v) => v.ruleId === 'vn-fire-corridor-min-width-general'));
+  ok('KHÔNG vi phạm neufert-circulation-one-person (1200mm > 750mm)', !violations.some((v) => v.ruleId === 'neufert-circulation-one-person'));
+}
+
+function testCorridorAllFourViolated() {
+  console.log('\n[4d] Hành lang rất hẹp (700mm < 750mm) — vi phạm CẢ 4 rule corridor (TCVN + IBC + Neufert 1 người + Neufert 2 người)');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 700, 4000));
+  doc.entities.push(label({ x: 350, y: 2000 }, 'HANH LANG'));
+  const violations = checkStandards(doc, getAllRules());
+  ok('vi phạm vn-fire-corridor-min-width-general', violations.some((v) => v.ruleId === 'vn-fire-corridor-min-width-general'));
+  ok('vi phạm intl-egress-corridor-min-width', violations.some((v) => v.ruleId === 'intl-egress-corridor-min-width'));
+  ok('vi phạm neufert-circulation-one-person', violations.some((v) => v.ruleId === 'neufert-circulation-one-person'));
+  ok('vi phạm neufert-circulation-two-persons', violations.some((v) => v.ruleId === 'neufert-circulation-two-persons'));
+}
+
+function testCorridorFullyCompliant() {
+  console.log('\n[4e] Hành lang rộng rãi (1500mm) — đạt cả 4 rule, không sinh violation corridor nào');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 1500, 4000));
+  doc.entities.push(label({ x: 750, y: 2000 }, 'HANH LANG'));
+  const violations = checkStandards(doc, getAllRules());
+  const corridorRuleIds = ['vn-fire-corridor-min-width-general', 'intl-egress-corridor-min-width', 'neufert-circulation-one-person', 'neufert-circulation-two-persons'];
+  ok('không có violation corridor nào khi đạt hết 4 ngưỡng', !violations.some((v) => corridorRuleIds.includes(v.ruleId)));
+}
+
 function testNoRoomNoViolation() {
   console.log('\n[5] Không có nhãn phòng nào → không sinh violation nào (không đoán mò)');
   const doc: Doc = emptyDoc();
@@ -109,12 +155,23 @@ function testDemoPlanMeasuresAllRooms() {
   // rule đã ghi rõ caveat này). Trước đây dò biên null nên vi phạm này bị NUỐT — giờ phải thấy.
   ok('đúng 1 violation phòng: bếp+ăn (caveat bếp tách ăn)', roomViolations.length === 1 && roomViolations[0].ruleId === 'vn-res-kitchen-dining-min-area');
   ok('diện tích bếp trong message là số đo thật 5.7m²', !!roomViolations[0]?.message.includes('5.7'));
+
+  // Hành lang demo-plan đo được 1100mm (XW-XP-PART = 1200-100): ĐẠT TCVN (≥1000mm) nhưng DƯỚI
+  // ngưỡng IBC (1118mm) và Neufert 2 người (1400mm) — 2 rule mới nối phải bắt được điều này,
+  // trong khi Neufert 1 người (750mm) vẫn đạt vì 1100mm > 750mm.
+  ok('hành lang demo-plan 1100mm sinh violation intl-egress-corridor-min-width (< 1118mm)', violations.some((v) => v.ruleId === 'intl-egress-corridor-min-width'));
+  ok('hành lang demo-plan 1100mm sinh violation neufert-circulation-two-persons (< 1400mm)', violations.some((v) => v.ruleId === 'neufert-circulation-two-persons'));
+  ok('hành lang demo-plan 1100mm KHÔNG sinh violation neufert-circulation-one-person (> 750mm)', !violations.some((v) => v.ruleId === 'neufert-circulation-one-person'));
 }
 
 testUndersizedBedroom();
 testOkBedroom();
 testWcUndersized();
 testCorridorNarrow();
+testCorridorIntlEgressAndNeufertTwo();
+testCorridorNeufertTwoOnly();
+testCorridorAllFourViolated();
+testCorridorFullyCompliant();
 testNoRoomNoViolation();
 testRegistryIntegrity();
 testTJunctionRoomMeasured();
