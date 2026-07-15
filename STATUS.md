@@ -12,11 +12,13 @@
 - **Auth**: chỉ Google OAuth @ttt.vn (mới) + admin cấp tay (`scripts/seed-admin.ts`); user cũ ngoài-domain grandfather; register công khai 403; quên mật khẩu = admin reset.
 - Perceptron THẬT (learning-to-rank, degrade heuristic) · foldable Find N6 test on-device · installer cả 3 unsigned (.exe cần máy Win) · PWA host Vercel + Supabase (Agent 4 tự dựng, Sprint 4).
 
-## Việc treo — chờ GO / đang chờ phóng agent
-1. **Bộ cài + hướng dẫn** (.dmg tại Mac, config .exe, PWA/Vercel+Supabase, HƯỚNG DẪN.md).
-2. **Sprint 3 QA stress** (tainted/overfill/offline, explainable đúng) + **Sprint 4 docs** (FINAL_ARCHITECTURE_REPORT + TECHNICAL_GLOSSARY).
-3. Dọn 2 file untracked: `lib/cad/commands (1).ts` + `prisma/test-journey2.db` (chờ user duyệt).
-4. CHƯA làm: bỏ hardcode 'DETECH · CONCEPT' · template tĩnh thư viện · heavy-ML pha 2 (embedding/detector — báo rủi ro trước) · membership per-flow (cần schema, chờ duyệt).
+## ĐIỂM RESUME (phiên đóng 15/07 — phiên mới đọc mục này TRƯỚC)
+- **2 worktree đang sống** (2/3 slot):
+  · `interiorflow-wt-devops-docs` [`feat/devops-docs` `a777979`] — Agent-A GẦN XONG: **.dmg 321MB đã build** (`dist/InteriorFlow-0.1.0-arm64.dmg`) + BUILD-WINDOWS.md + DEPLOY-VERCEL.md + vercel.json + HUONG-DAN-SU-DUNG.md + FINAL_ARCHITECTURE_REPORT.md + TECHNICAL_GLOSSARY.md + đã dọn 2 file untracked. **Còn thiếu: verify cuối (tsc + đọc lướt docs) → merge.**
+  · `interiorflow-wt-render-nodes-v2` [`feat/render-nodes-v2` `bd2e456`] — Agent-C mới xong NỀN: lib/three/ (cad-to-obj extrude + camera preset, **24/24 test, đã commit**). **Còn: 5/7 node (text2image · ID-mask · furniture-extract · import-FBX · chỉnh-cục-bộ) + adapter NVIDIA image-gen (nvidia.ts:84 TODO) + probe fal + Blender GLB/OBJ→FBX convert + node defs/UI. Kiến trúc 2 TẦNG bắt buộc: AI khi có key / LÕI tất định khi không — không mock-im-lặng.** Camera = phương án (a) user chốt.
+- **User chưa dán NVIDIA_API_KEY** vào .env.local (thử lưu bị lạc thành file .rtfd). File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
+- **Hàng đợi sau đó**: Agent-B đại tu UX canvas chặng 2 (màu dây nối, nhóm node, icon flat, chữ low-tech, review thao tác logic chặt) — chạy SAU khi render-nodes merge · Sprint 3 QA stress · deploy Vercel/Supabase thật (cần user đăng nhập).
+- CHƯA làm (backlog cũ): bỏ hardcode 'DETECH · CONCEPT' · template tĩnh thư viện · heavy-ML pha 2 (báo rủi ro trước) · membership per-flow (cần schema, chờ duyệt).
 
 ## Nợ kỹ thuật
 - Hydration ⌘Z/Ctrl+Z tooltip (lib/kbd.ts:11 + CadToolbar) — cosmetic.
