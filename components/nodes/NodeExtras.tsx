@@ -267,8 +267,9 @@ function ObjFbxActions({ obj, mtl, cam }: { obj: string; mtl: string; cam: strin
         <button
           className="nodrag flex flex-1 items-center justify-center gap-1 rounded-md border border-[var(--border-strong)] py-1.5 text-[11px] text-[var(--t2)] hover:border-sky-500/60"
           onClick={() => {
-            downloadText(obj, 'interiorflow-scene.obj');
-            downloadText(mtl, 'interiorflow-scene.mtl');
+            // OBJ tham chiếu `mtllib scene.mtl` — giữ đúng tên để importer tự đọc vật liệu
+            downloadText(obj, 'scene.obj');
+            downloadText(mtl, 'scene.mtl');
           }}
         >
           <Download size={12} /> OBJ + MTL
