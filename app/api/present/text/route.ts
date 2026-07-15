@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { completeText, nvidiaConfigured, NvidiaFreeExhausted } from '@/lib/ai/providers/nvidia';
+import { completeTextTiered, NvidiaFreeExhausted, NoTextProviderError } from '@/lib/ai/text-tier';
 
 /**
  * app/api/present/text — "✨ Tạo content" cho 1 text layer trên slide.
  *
  * Đề xuất nội dung theo VAI TRÒ (title/kicker/body/free) + ngữ cảnh deck (brand/project) +
- * nội dung hiện có. Dùng NVIDIA LLM free (giọng quiet-luxury editorial). "Chỉ báo, không tự
- * tụt": chưa cấu hình key hoặc hết free → trả code để UI hiện khung stub + báo (human-in-loop).
+ * nội dung hiện có. Giọng quiet-luxury editorial. Chọn tầng: Cloud (NVIDIA free) → Ollama local
+ * → (không tầng nào → UI hiện khung stub, human-in-loop). Kết quả kèm `_tier`/`_model` để badge.
  */
 const SYSTEM =
   'Bạn là copywriter của một studio nội thất quiet-luxury, viết tiếng Việt editorial: ' +
@@ -48,27 +48,28 @@ function buildPrompt(b: Body): string {
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as Body;
-  if (!nvidiaConfigured()) {
-    return NextResponse.json(
-      {
-        error: 'Chưa nối NVIDIA (NVIDIA_API_KEY). Tạo key free ở build.nvidia.com rồi thêm vào .env.local.',
-        code: 'NVIDIA_NOT_CONFIGURED',
-      },
-      { status: 503 },
-    );
-  }
   try {
-    const raw = await completeText(buildPrompt(body), SYSTEM);
+    const r = await completeTextTiered(buildPrompt(body), SYSTEM);
     // dọn: bỏ ``` và ngoặc kép bao ngoài nếu model lỡ thêm.
-    const text = raw
+    const text = r.text
       .replace(/```[\s\S]*?```/g, (m) => m.replace(/```/g, ''))
       .replace(/^["'\s]+|["'\s]+$/g, '')
       .trim();
-    return NextResponse.json({ text });
+    return NextResponse.json({ text, _tier: r.tier, _model: r.model });
   } catch (err) {
+    if (err instanceof NoTextProviderError) {
+      return NextResponse.json(
+        {
+          error:
+            'Chưa có nguồn AI chữ: thêm NVIDIA_API_KEY (build.nvidia.com) hoặc chạy Ollama local (ollama serve).',
+          code: 'NO_TEXT_PROVIDER',
+        },
+        { status: 503 },
+      );
+    }
     if (err instanceof NvidiaFreeExhausted) {
       return NextResponse.json(
-        { error: 'NVIDIA free đã hết lượt — thử lại sau hoặc đổi nguồn.', code: 'NVIDIA_FREE_EXHAUSTED' },
+        { error: 'NVIDIA free đã hết lượt và không thấy Ollama local — thử lại sau hoặc bật Ollama.', code: 'NVIDIA_FREE_EXHAUSTED' },
         { status: 429 },
       );
     }

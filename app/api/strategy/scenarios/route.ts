@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { completeText, nvidiaConfigured, NvidiaFreeExhausted } from '@/lib/ai/providers/nvidia';
+import { completeTextTiered, NvidiaFreeExhausted, NoTextProviderError } from '@/lib/ai/text-tier';
 
 /**
  * AI Content Strategist — từ đề bài + Q&A + reference → 3 kịch bản content trình khách,
  * theo NGUYÊN TẮC của user: khai thác để hiểu → hiểu để tư duy logic → biện luận để loại
  * phương án dở → ra 1 phương án TỐT NHẤT + 1 phương án PHÂN VÂN + 1 phương án ĐỂ LOẠI.
- * Dùng NVIDIA LLM free. "Chỉ báo, không tự tụt": hết free → code riêng để UI báo.
+ * Chọn tầng: Cloud (NVIDIA free) → Ollama local → (không tầng nào → code báo cho UI). Kết quả
+ * kèm `_tier`/`_model` để badge tầng nào chạy.
  */
 const SYSTEM =
   'Bạn là giám đốc sáng tạo một studio nội thất quiet-luxury, tư duy chiến lược sắc bén và ' +
@@ -45,12 +46,6 @@ export async function POST(req: Request) {
   const pdfContent = Array.isArray(references)
     ? references.map((r) => (r as { content?: string }).content).filter(Boolean).join('\n\n').slice(0, 6000)
     : '';
-  if (!nvidiaConfigured()) {
-    return NextResponse.json(
-      { error: 'Chưa nối NVIDIA (NVIDIA_API_KEY). Tạo key free ở build.nvidia.com.', code: 'NVIDIA_NOT_CONFIGURED' },
-      { status: 503 },
-    );
-  }
   const refText = Array.isArray(references)
     ? references
         .map((r) => {
@@ -62,15 +57,26 @@ export async function POST(req: Request) {
     : '';
   try {
     const fullBrief = [String(brief ?? ''), pdfContent ? `\n### TRÍCH HỒ SƠ PDF\n${pdfContent}` : ''].join('').trim();
-    const raw = await completeText(buildPrompt(fullBrief, String(qa ?? ''), refText), SYSTEM);
-    const m = raw.match(/\{[\s\S]*\}/);
-    let data: unknown;
-    try { data = JSON.parse(m ? m[0] : raw); } catch { data = { understanding: raw.slice(0, 500), scenarios: [] }; }
-    return NextResponse.json(data);
+    const r = await completeTextTiered(buildPrompt(fullBrief, String(qa ?? ''), refText), SYSTEM);
+    const m = r.text.match(/\{[\s\S]*\}/);
+    let data: Record<string, unknown>;
+    try { data = JSON.parse(m ? m[0] : r.text) as Record<string, unknown>; }
+    catch { data = { understanding: r.text.slice(0, 500), scenarios: [] }; }
+    return NextResponse.json({ ...data, _tier: r.tier, _model: r.model });
   } catch (err) {
+    if (err instanceof NoTextProviderError) {
+      return NextResponse.json(
+        {
+          error:
+            'Chưa có nguồn AI chữ: thêm NVIDIA_API_KEY (build.nvidia.com) hoặc chạy Ollama local (ollama serve).',
+          code: 'NO_TEXT_PROVIDER',
+        },
+        { status: 503 },
+      );
+    }
     if (err instanceof NvidiaFreeExhausted) {
       return NextResponse.json(
-        { error: 'NVIDIA free đã hết lượt — đổi nguồn thủ công.', code: 'NVIDIA_FREE_EXHAUSTED' },
+        { error: 'NVIDIA free đã hết lượt và không thấy Ollama local — đổi nguồn thủ công hoặc bật Ollama.', code: 'NVIDIA_FREE_EXHAUSTED' },
         { status: 429 },
       );
     }
