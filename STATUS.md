@@ -14,11 +14,13 @@
 - Perceptron THẬT (learning-to-rank, degrade heuristic) · foldable Find N6 test on-device · installer cả 3 unsigned (.exe cần máy Win) · PWA host Vercel + Supabase (Agent 4 tự dựng, Sprint 4).
 
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
-- **0 worktree đang sống** (0/3 slot) — tất cả đã merge & dọn.
+- **2 worktree đang sống** (2/3 slot): `interiorflow-wt-qa-stress` (feat/sprint3-qa-stress) · `interiorflow-wt-render-ux` (feat/render-ux-overhaul).
 - **✅ 15/07 merge `feat/render-nodes-v2`** (verify độc lập: tsc 0 · 25/25 test file · smoke browser 127.0.0.1:3700 render canvas load, node text2image + badge 2 tầng OK, không lỗi render-v2): **7 node chặng Render** (`lib/nodes/defs/render-v2.ts`): text2image · ID-mask · furniture-extract · cad2fbx(import-FBX) · local-edit · camera · (nền cad-to-obj) — **kiến trúc 2 tầng: Cloud AI khi có key / LÕI tất định khi không, mọi node ghi `_tier` + badge UI** · adapter NVIDIA `generateImage()` (model chốt `black-forest-labs/flux.1-dev` — SD3/SDXL trả 404 cho account free) + route `/api/render/nvidia-image` · probe fal (`scripts/probe-fal.ts` — **fal VẪN HẾT BALANCE**) · Blender OBJ→FBX (`scripts/blender/obj2fbx.py` + route `/api/render/fbx`, verify Blender 4.5 local OK; máy không có Blender → 501 kèm hướng dẫn). **110 test mới.** Nhánh render đã xoá.
 - File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
-- **✅ 15/07 merge `feat/ai-local-ollama`** (ff, tsc 0 · 27/27 test · 36 test mới): tầng AI local Ollama chữ (mô tả/concept/tóm tắt, KHÔNG ảnh): `lib/ai/providers/ollama.ts` (completeText, isOllamaAvailable dò 2s) + `lib/ai/text-tier.ts` (completeTextTiered Cloud→Ollama→lõi, kèm `_tier`/`_model`) + route present/text & strategy/scenarios dùng tầng mới. Model mặc định **llama3** (probe tiếng Việt nhanh hơn gemma4); override `OLLAMA_MODEL`. Worktree ollama đã xoá. Ghi chú: CAD quy chuẩn chưa nối Ollama (pipeline tất định thuần, cần task riêng nếu muốn giải thích lỗi bằng AI).
-- **Hàng đợi**: ① Agent-B đại tu UX canvas chặng 2 (màu dây nối, nhóm node, icon flat, chữ low-tech) · ② Sprint 3 QA stress · ③ deploy Vercel/Supabase thật (cần user đăng nhập).
+- **✅ 15/07 merge `feat/ai-local-ollama`** (ff, tsc 0 · 27/27 test · 36 test mới): tầng AI local Ollama chữ Cloud→Ollama→lõi. Worktree ollama đã xoá.
+- **✅ 15/07 merge `feat/render-ux-overhaul`** (edge colors, grouping, icons, mono font).
+- **✅ 15/07 merge `feat/sprint3-qa-stress`** (170 test mới, P1 auth fix).
+- **✅ 15/07 merge `feat/deploy-vercel-supabase`** (DEPLOY-CHECKLIST.md 214 dòng, build pass).
 - **NVIDIA_API_KEY đã có (15/07)**: user dán, đã lưu `.env.local` repo chính, probe HTTP 200 → tầng AI text2image chạy thật.
 - **fal**: khoá vì hết balance ("Exhausted balance") — nạp credit ở fal.ai/dashboard/billing rồi chạy `scripts/probe-fal.ts` kiểm lại.
 - CHƯA làm (backlog cũ): bỏ hardcode 'DETECH · CONCEPT' · template tĩnh thư viện · heavy-ML pha 2 (báo rủi ro trước) · membership per-flow (cần schema, chờ duyệt).
