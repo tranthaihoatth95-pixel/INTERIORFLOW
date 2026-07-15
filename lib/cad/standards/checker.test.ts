@@ -164,6 +164,60 @@ function testDemoPlanMeasuresAllRooms() {
   ok('hành lang demo-plan 1100mm KHÔNG sinh violation neufert-circulation-one-person (> 750mm)', !violations.some((v) => v.ruleId === 'neufert-circulation-one-person'));
 }
 
+function testAccessDoorWcTooNarrow() {
+  console.log('\n[9] D1.7 accessibility — cửa doorWC 700mm < 800mm ngưỡng cửa phòng chức năng (QCVN 10:2024) → violation');
+  const doc: Doc = emptyDoc();
+  doc.entities.push({ id: newId('e'), type: 'block', layer: 'l-wall', block: 'doorWC', at: { x: 1000, y: 0 }, rot: 0, sx: 1, sy: 1 });
+  const violations = checkStandards(doc, getAllRules());
+  const v = violations.find((v) => v.ruleId === 'vn-access-door-functional-room-min-width');
+  ok('phát hiện cửa doorWC 700mm hẹp hơn 800mm', !!v);
+  ok('message có số đo bề rộng thật 700', !!v?.message.includes('700'));
+}
+
+function testAccessDoorRoomMeetsThreshold() {
+  console.log('\n[10] D1.7 accessibility — cửa doorRoom 800mm ĐẠT ngưỡng 800mm → không violation');
+  const doc: Doc = emptyDoc();
+  doc.entities.push({ id: newId('e'), type: 'block', layer: 'l-wall', block: 'doorRoom', at: { x: 1000, y: 0 }, rot: 0, sx: 1, sy: 1 });
+  const violations = checkStandards(doc, getAllRules());
+  ok('không có violation khi cửa doorRoom đạt đúng 800mm', !violations.some((v) => v.ruleId === 'vn-access-door-functional-room-min-width'));
+}
+
+function testAccessMainDoorTooNarrow() {
+  console.log('\n[11] D1.7 accessibility — cửa chính scale xuống 700mm thật (900mm × sx=0.777...) < 900mm ngưỡng cửa chính → violation');
+  const doc: Doc = emptyDoc();
+  doc.entities.push({ id: newId('e'), type: 'block', layer: 'l-wall', block: 'door', at: { x: 1000, y: 0 }, rot: 0, sx: 800 / 900, sy: 1 });
+  const violations = checkStandards(doc, getAllRules());
+  const v = violations.find((v) => v.ruleId === 'vn-access-door-main-min-width');
+  ok('phát hiện cửa chính bị scale hẹp hơn 900mm', !!v);
+}
+
+function testAccessMainDoorMeetsThreshold() {
+  console.log('\n[12] D1.7 accessibility — cửa chính 900mm nguyên bản (sx=1) ĐẠT ngưỡng → không violation');
+  const doc: Doc = emptyDoc();
+  doc.entities.push({ id: newId('e'), type: 'block', layer: 'l-wall', block: 'door', at: { x: 1000, y: 0 }, rot: 0, sx: 1, sy: 1 });
+  const violations = checkStandards(doc, getAllRules());
+  ok('không có violation khi cửa chính đạt đúng 900mm', !violations.some((v) => v.ruleId === 'vn-access-door-main-min-width'));
+}
+
+function testAccessCorridorTwoWay() {
+  console.log('\n[13] D1.7 accessibility — hành lang 1400mm < 1500mm ngưỡng 2 chiều xe lăn (QCVN 10:2024) → violation, nhưng ĐẠT TCVN (1000mm)');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 1400, 4000));
+  doc.entities.push(label({ x: 700, y: 2000 }, 'HANH LANG'));
+  const violations = checkStandards(doc, getAllRules());
+  ok('vi phạm vn-access-corridor-two-way-min-width (1400mm < 1500mm)', violations.some((v) => v.ruleId === 'vn-access-corridor-two-way-min-width'));
+  ok('KHÔNG vi phạm vn-fire-corridor-min-width-general (1400mm > 1000mm)', !violations.some((v) => v.ruleId === 'vn-fire-corridor-min-width-general'));
+}
+
+function testAccessCorridorTwoWayCompliant() {
+  console.log('\n[14] D1.7 accessibility — hành lang 1500mm ĐẠT ngưỡng 2 chiều xe lăn → không violation');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 1500, 4000));
+  doc.entities.push(label({ x: 750, y: 2000 }, 'HANH LANG'));
+  const violations = checkStandards(doc, getAllRules());
+  ok('không có violation khi hành lang đạt đúng 1500mm', !violations.some((v) => v.ruleId === 'vn-access-corridor-two-way-min-width'));
+}
+
 testUndersizedBedroom();
 testOkBedroom();
 testWcUndersized();
@@ -176,6 +230,12 @@ testNoRoomNoViolation();
 testRegistryIntegrity();
 testTJunctionRoomMeasured();
 testDemoPlanMeasuresAllRooms();
+testAccessDoorWcTooNarrow();
+testAccessDoorRoomMeetsThreshold();
+testAccessMainDoorTooNarrow();
+testAccessMainDoorMeetsThreshold();
+testAccessCorridorTwoWay();
+testAccessCorridorTwoWayCompliant();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

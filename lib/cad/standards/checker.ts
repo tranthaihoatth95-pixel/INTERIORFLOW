@@ -24,6 +24,8 @@
 import type { Doc, Entity, Pt } from '../model';
 import { findHatchBoundary, polygonArea } from '../hatch';
 import type { StandardRule, Severity } from './registry';
+import { BLOCK_MAP } from '../furniture';
+import { effectiveBlockSize } from '../shape-interactions';
 
 export interface Violation {
   ruleId: string;
@@ -183,6 +185,40 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
       if (rNeufert2 && room.minWidthMm !== null && room.minWidthMm < rNeufert2.params.minWidthMm) {
         violations.push(mkViolation(rNeufert2, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rNeufert2.params.minWidthMm}mm — dưới mức tiện dụng cho 2 người tránh nhau (Neufert/Metric Handbook).`, room.at));
       }
+
+      // 2026-07-15: rule D1.7 accessibility (QCVN 10:2024/BXD) hành lang 2 chiều tránh xe lăn —
+      // cùng cơ chế room.minWidthMm đã đo ở trên, chỉ khác ngưỡng/nguồn.
+      const rAccessCorridor = byId('vn-access-corridor-two-way-min-width');
+      if (rAccessCorridor && room.minWidthMm !== null && room.minWidthMm < rAccessCorridor.params.minWidthMm) {
+        violations.push(mkViolation(rAccessCorridor, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rAccessCorridor.params.minWidthMm}mm tối thiểu để 2 người/xe lăn tránh nhau (QCVN 10:2024/BXD).`, room.at));
+      }
+    }
+  }
+
+  // D1.7 accessibility — chiều rộng thông thủy cửa (đo được từ BlockEntity vì chiều RỘNG cửa
+  // top-view 2D CÓ lưu, khác với chiều CAO không lưu). HEURISTIC theo id block, KHÔNG PHẢI phân
+  // loại ngữ nghĩa thật "cửa chính nhà" (app không có concept này tách biệt khỏi cửa phòng):
+  // id 'door' → coi là cửa chính (ngưỡng 900mm); các id cửa khác (doorRoom/doorWC/doubleDoor/
+  // slidingDoor/glassDoor) → coi là cửa phòng chức năng (ngưỡng 800mm). Bề rộng thật = w danh
+  // nghĩa/variant (effectiveBlockSize) nhân |sx| (scale áp dụng khi đặt block, xem blockToWorld).
+  const rDoorMain = byId('vn-access-door-main-min-width');
+  const rDoorRoom = byId('vn-access-door-functional-room-min-width');
+  if (rDoorMain || rDoorRoom) {
+    for (const e of doc.entities) {
+      if (e.type !== 'block') continue;
+      const def = BLOCK_MAP[e.block];
+      if (!def) continue;
+      const isDoor = ['door', 'doorRoom', 'doorWC', 'doubleDoor', 'slidingDoor', 'glassDoor'].includes(e.block);
+      if (!isDoor) continue;
+      const { w } = effectiveBlockSize(e, BLOCK_MAP);
+      const realWidthMm = w * Math.abs(e.sx || 1);
+      if (e.block === 'door') {
+        if (rDoorMain && realWidthMm < rDoorMain.params.minWidthMm) {
+          violations.push(mkViolation(rDoorMain, `Cửa chính (block "${e.block}"): bề rộng ≈${Math.round(realWidthMm)}mm < ${rDoorMain.params.minWidthMm}mm tối thiểu (QCVN 10:2024/BXD).`, e.at));
+        }
+      } else if (rDoorRoom && realWidthMm < rDoorRoom.params.minWidthMm) {
+        violations.push(mkViolation(rDoorRoom, `Cửa phòng chức năng (block "${e.block}"): bề rộng ≈${Math.round(realWidthMm)}mm < ${rDoorRoom.params.minWidthMm}mm tối thiểu (QCVN 10:2024/BXD).`, e.at));
+      }
     }
   }
 
@@ -209,9 +245,26 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
  *   vn-res-living-min-area, vn-fire-corridor-min-width-general, iso128-thick-thin-ratio,
  *   intl-egress-corridor-min-width, neufert-circulation-one-person,
  *   neufert-circulation-two-persons.
- *   (3 rule cuối mới nối 2026-07-15 — dùng lại CHÍNH bề rộng hành lang room.minWidthMm đã đo
+ *   (3 rule trên nối 2026-07-15 sáng — dùng lại CHÍNH bề rộng hành lang room.minWidthMm đã đo
  *   cho vn-fire-corridor-min-width-general, chỉ khác ngưỡng/nguồn: IBC 1118mm, Neufert 1
  *   người 750mm, Neufert 2 người 1400mm.)
+ *   vn-access-corridor-two-way-min-width (2026-07-15 chiều — D1.7 accessibility, cùng cơ chế
+ *   room.minWidthMm, ngưỡng 1500mm QCVN 10:2024/BXD).
+ *   vn-access-door-main-min-width, vn-access-door-functional-room-min-width (2026-07-15 chiều —
+ *   D1.7 accessibility, đo THẬT bằng cách lặp doc.entities lọc type==='block', tra BLOCK_MAP lấy
+ *   effectiveBlockSize (đọc đúng variant) × |sx|, phân loại cửa chính/cửa phòng theo HEURISTIC id
+ *   block 'door' vs {doorRoom,doorWC,doubleDoor,slidingDoor,glassDoor} — KHÔNG phải phân loại
+ *   ngữ nghĩa thật vì app không có concept "cửa chính nhà" tách biệt).
+ *
+ * CHƯA NỐI — registry-only, không có logic đo (D1.7 + nhóm chiếu sáng tham khảo mới):
+ *   - vn-access-door-clear-space (không gian trống 1400×1400 trước/sau cửa): field `clearance`
+ *     hiện có của BlockDef cửa (lib/cad/furniture.ts) là "vùng quét cánh cửa mở" (door swing
+ *     arc) — KHÁC Ý NGHĨA với "khoảng trống thao tác xe lăn 1400×1400" dù cùng nằm trước cửa.
+ *     Ép dùng chung sẽ báo sai; cần khái niệm "wheelchair maneuvering clearance" riêng nếu muốn
+ *     đo tự động — chưa làm trong lần nối dây này.
+ *   - vn-lighting-living-room-lux-reference: CHỦ Ý KHÔNG nối — đây là dữ liệu tĩnh tham khảo
+ *     (severity 'info', binding 'advisory'), không có cách đo lux từ model 2D (không phải
+ *     calculator), chỉ để tra cứu/hiển thị sau này khi nhóm E (MEP) được build.
  *
  * CHƯA NỐI (lý do — thiếu dữ liệu hình học mà model 2D hiện tại không lưu):
  *   - vn-fire-exit-clear-width-min / vn-fire-exit-clear-height-min: BlockEntity cửa (2D
@@ -239,7 +292,10 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
  *     lưu thông" Neufert — đây là tính năng MỚI (liên kết clearance-zone Sprint 3 ↔ rule
  *     Neufert), không phải nối dây đơn thuần. Xem AUDIT-2026-07-15.md mục D — KHÔNG tự ý làm
  *     trong lần nối dây này, cần quyết định phạm vi riêng.
- *   - neufert-interior-door-clear-width / neufert-ceiling-height-habitable: verified=false CỐ
- *     Ý (nguồn không thống nhất 1 trị số, hoặc luật hoá khác nhau theo từng nước) — giữ nguyên
- *     trạng thái chưa đo được, không tự chọn số.
+ *   - neufert-interior-door-clear-width: verified=false CỐ Ý (nguồn không thống nhất 1 trị số) —
+ *     giữ nguyên trạng thái chưa đo được, không tự chọn số.
+ *   - neufert-ceiling-height-habitable: nay ĐÃ CÓ số liệu VN cụ thể (QCVN 04:2021/BXD: phòng ở
+ *     ≥2.6m, bếp/vệ sinh ≥2.3m, cập nhật 2026-07-15 chiều) nhưng VẪN chưa đo được — lý do khác
+ *     với trước: không phải "chưa có số liệu VN" nữa, mà là model 2D không lưu trục Z/cao độ
+ *     trần nên không có cách đo hình học nào cho rule này dù có số liệu.
  */

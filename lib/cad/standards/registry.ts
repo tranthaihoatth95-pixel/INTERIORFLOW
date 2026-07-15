@@ -121,8 +121,10 @@ import { VN_FIRE } from './vn-fire';
 import { INTL_EGRESS } from './intl-egress';
 import { ISO_DRAFTING } from './iso-drafting';
 import { NEUFERT } from './neufert';
+import { VN_ACCESSIBILITY } from './vn-accessibility';
+import { VN_LIGHTING } from './vn-lighting';
 
-export const BUILTIN_GROUPS: RuleGroup[] = [VN_RESIDENTIAL, VN_FIRE, INTL_EGRESS, ISO_DRAFTING, NEUFERT];
+export const BUILTIN_GROUPS: RuleGroup[] = [VN_RESIDENTIAL, VN_FIRE, INTL_EGRESS, ISO_DRAFTING, NEUFERT, VN_ACCESSIBILITY, VN_LIGHTING];
 
 /** Toàn bộ rule (built-in + tuỳ biến), trùng id thì rule tuỳ biến (thêm sau) ghi đè. */
 export function getAllRules(): StandardRule[] {

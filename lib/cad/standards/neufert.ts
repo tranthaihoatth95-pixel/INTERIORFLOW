@@ -116,10 +116,10 @@ export const NEUFERT: RuleGroup = {
       severity: 'info',
       region: 'INTL',
       binding: 'adjustable',
-      description: 'Chiều cao thông thủy phòng ở: dải phổ biến 2400–2500 mm (Đức thường ≥ 2400 mm, nhiều nước ≥ 2500 mm). Đây là ví dụ điển hình về thông số ĐƯỢC LUẬT HÓA khác nhau theo quốc gia.',
-      params: { typicalMinMm: 2400, commonMinMm: 2500 },
+      description: 'Chiều cao thông thủy phòng ở: dải phổ biến quốc tế 2400–2500 mm (Đức thường ≥ 2400 mm, nhiều nước ≥ 2500 mm). Đây là ví dụ điển hình về thông số ĐƯỢC LUẬT HÓA khác nhau theo quốc gia. Việt Nam (QCVN 04:2021/BXD): phòng ở ≥ 2.6 m, bếp/vệ sinh ≥ 2.3 m — xem `vnResidentialMinMm`/`vnWetAreaMinMm`.',
+      params: { typicalMinMm: 2400, commonMinMm: 2500, vnResidentialMinMm: 2600, vnWetAreaMinMm: 2300 },
       verified: false,
-      note: 'Chiều cao trần tối thiểu là trị số ĐƯỢC LUẬT HÓA riêng theo từng nước (Đức 2.40 m, một số nơi 2.50 m; VN xem QCVN 04:2021 ~2.6 m) — Neufert chỉ nêu dải tham chiếu. BẮT BUỘC đối chiếu luật/quy chuẩn xây dựng địa phương. Model 2D chưa lưu cao độ trần.',
+      note: 'Chiều cao trần tối thiểu là trị số ĐƯỢC LUẬT HÓA riêng theo từng nước (Đức 2.40 m, một số nơi 2.50 m). Số liệu VN — QCVN 04:2021/BXD (số liệu do chủ dự án cung cấp): phòng ở ≥ 2.6 m (2600 mm), bếp/vệ sinh ≥ 2.3 m (2300 mm) — CHƯA đối chiếu chéo nguồn thứ 2 độc lập trong phiên này, cần xác nhận lại số hiệu mục khi có bản gốc. Model 2D chưa lưu cao độ trần (không có trục Z) nên rule này CHƯA đo được — có số liệu VN nhưng model 2D chưa lưu Z nên vẫn chưa đo được, giữ verified=false.',
     },
   ],
 };
