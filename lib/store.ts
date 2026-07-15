@@ -93,6 +93,8 @@ interface FlowState {
   paletteOpen: boolean;
   /** snap node vào lưới khi kéo */
   snapGrid: boolean;
+  /** nhóm node (grouping) — mỗi group gom nodeIds + label, có thể collapse */
+  groups: NodeGroup[];
   past: HistoryEntry[];
   future: HistoryEntry[];
 
@@ -151,9 +153,28 @@ interface FlowState {
   undo: () => void;
   redo: () => void;
   loadDemoFlow: (kind?: DemoKind) => void;
+
+  /** Gom các node đang chọn thành group mới */
+  groupSelected: (label?: string) => void;
+  /** Gỡ group (bung node ra, xoá group) */
+  ungroupById: (groupId: string) => void;
+  /** Đổi tên group */
+  renameGroup: (groupId: string, label: string) => void;
+  /** Thu gọn / mở rộng group */
+  toggleGroupCollapse: (groupId: string) => void;
 }
 
 export type DemoKind = 'sketch' | 'bedroom' | 'slide' | 'concept';
+
+/** Nhóm node trên canvas — gom nhiều node, label + collapse. */
+export interface NodeGroup {
+  id: string;
+  label: string;
+  nodeIds: string[];
+  collapsed: boolean;
+  /** Vị trí lưu khi collapse (tâm group) */
+  center?: { x: number; y: number };
+}
 
 // Dev-only: expose store cho debugging (window.__flowStore)
 declare global {
@@ -169,9 +190,22 @@ const MAX_HISTORY = 50;
 const SAVE_KEY = 'interiorflow.flow.v1';
 const THEME_KEY = 'interiorflow.theme';
 
+/**
+ * Edge style phân biệt 3 luồng bằng MÀU + ĐỘ DÀY:
+ *  - image/video (visual flow):  tím/hồng, dày 2px
+ *  - text/number (data flow):    xanh dương/xanh lá, 1.5px, dashed
+ *  - mask (control flow):        vàng cam, 1.5px
+ */
 export function edgeStyleFor(dataType: string | undefined) {
-  const color = DATA_TYPE_COLORS[(dataType ?? 'image') as keyof typeof DATA_TYPE_COLORS] ?? '#8b7cf7';
-  return { stroke: color, strokeWidth: 1.5 };
+  const dt = (dataType ?? 'image') as keyof typeof DATA_TYPE_COLORS;
+  const color = DATA_TYPE_COLORS[dt] ?? '#8b7cf7';
+  const isVisual = dt === 'image' || dt === 'video';
+  const isData = dt === 'text' || dt === 'number';
+  return {
+    stroke: color,
+    strokeWidth: isVisual ? 2 : 1.5,
+    ...(isData ? { strokeDasharray: '6 3' } : {}),
+  };
 }
 
 export const useFlowStore = create<FlowState>((set, get) => ({
@@ -206,6 +240,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   isRunningFlow: false,
   paletteOpen: false,
   snapGrid: false,
+  groups: [],
   past: [],
   future: [],
 
@@ -790,6 +825,68 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       nodes: next.nodes,
       edges: next.edges,
     }));
+  },
+
+  // ===== Grouping =====
+  groupSelected: (label) => {
+    const selected = get().nodes.filter((n) => n.selected && n.type !== 'note');
+    if (selected.length < 2) return;
+    get().snapshot();
+    const groupId = nextId('grp');
+    const nodeIds = selected.map((n) => n.id);
+    const cx = selected.reduce((s, n) => s + n.position.x, 0) / selected.length;
+    const cy = selected.reduce((s, n) => s + n.position.y, 0) / selected.length;
+    set((s) => ({
+      groups: [
+        ...s.groups,
+        { id: groupId, label: label ?? `Group ${s.groups.length + 1}`, nodeIds, collapsed: false, center: { x: cx, y: cy } },
+      ],
+    }));
+  },
+  ungroupById: (groupId) => {
+    get().snapshot();
+    set((s) => ({ groups: s.groups.filter((g) => g.id !== groupId) }));
+  },
+  renameGroup: (groupId, label) => {
+    set((s) => ({
+      groups: s.groups.map((g) => (g.id === groupId ? { ...g, label } : g)),
+    }));
+  },
+  toggleGroupCollapse: (groupId) => {
+    const { nodes, groups } = get();
+    const group = groups.find((g) => g.id === groupId);
+    if (!group) return;
+    get().snapshot();
+    if (!group.collapsed) {
+      // Collapse: ẩn node (đặt ra ngoài viewport xa), lưu vị trí gốc
+      const members = nodes.filter((n) => group.nodeIds.includes(n.id));
+      const cx = members.reduce((s, n) => s + n.position.x, 0) / (members.length || 1);
+      const cy = members.reduce((s, n) => s + n.position.y, 0) / (members.length || 1);
+      set((s) => ({
+        groups: s.groups.map((g) =>
+          g.id === groupId
+            ? { ...g, collapsed: true, center: { x: cx, y: cy } }
+            : g,
+        ),
+        nodes: s.nodes.map((n) =>
+          group.nodeIds.includes(n.id)
+            ? { ...n, hidden: true }
+            : n,
+        ),
+      }));
+    } else {
+      // Expand: hiện lại node
+      set((s) => ({
+        groups: s.groups.map((g) =>
+          g.id === groupId ? { ...g, collapsed: false } : g,
+        ),
+        nodes: s.nodes.map((n) =>
+          group.nodeIds.includes(n.id)
+            ? { ...n, hidden: false }
+            : n,
+        ),
+      }));
+    }
   },
 }));
 

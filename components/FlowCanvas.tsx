@@ -25,6 +25,7 @@ import { ASSET_MIME } from '@/components/LibraryPanel';
 import { CATEGORY_META } from '@/lib/types';
 import { LiveCursors } from '@/components/collab/LiveCursors';
 import { PresenceBar } from '@/components/collab/PresenceBar';
+import { GroupOverlay } from '@/components/nodes/GroupOverlay';
 import { useCollabStore } from '@/lib/collabStore';
 
 const nodeTypes = { interior: InteriorNode, note: NoteNode };
@@ -201,6 +202,9 @@ export function FlowCanvas() {
       if (mod && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         useFlowStore.getState().duplicateSelected();
+      } else if (mod && e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        useFlowStore.getState().groupSelected();
       } else if (mod && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         if (e.shiftKey) useFlowStore.getState().redo();
@@ -275,7 +279,7 @@ export function FlowCanvas() {
         fitView
         proOptions={{ hideAttribution: false }}
         defaultEdgeOptions={{ type: 'default' }}
-        connectionLineStyle={{ stroke: '#8b7cf7', strokeWidth: 1.5 }}
+        connectionLineStyle={{ stroke: '#8b7cf7', strokeWidth: 2 }}
         className={tool === 'pan' ? 'cursor-grab' : ''}
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="var(--dots)" />
@@ -296,6 +300,9 @@ export function FlowCanvas() {
           maskColor="var(--minimap-mask)"
         />
       </ReactFlow>
+
+      {/* Group overlay — vẽ khung bao quanh nhóm node */}
+      <GroupOverlay />
 
       {/* Collab: con trỏ live (flow-space) + thanh presence */}
       <LiveCursors />

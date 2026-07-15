@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useReactFlow } from '@xyflow/react';
 import { X, GripVertical, Star, Plus, Command, Paintbrush, Wand2 } from 'lucide-react';
 import { NODE_DEFINITIONS, NODE_REGISTRY } from '@/lib/nodes/registry';
+import { nodeIconFor } from '@/components/nodes/NodeIcons';
 import { useFlowStore } from '@/lib/store';
 import { useSketchStore } from '@/lib/sketch/sketchStore';
 import { SketchStudioModal } from '@/components/sketch/SketchStudioModal';
@@ -283,9 +284,9 @@ function NodeCard({ def, onAdd }: { def: NodeDefinition; onAdd: (type: string) =
       className="group flex cursor-pointer items-start gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 transition-transform hover:border-[var(--accent-ring)] hover:scale-[1.015] active:scale-[0.99]"
       title="Bấm để thêm vào giữa canvas · hoặc kéo thả để đặt đúng chỗ"
     >
-      <GripVertical size={13} className="mt-0.5 shrink-0 text-[var(--t5)] group-hover:text-[var(--t4)]" />
+      {(() => { const Icon = nodeIconFor(def.type); return <Icon size={14} className="mt-0.5 shrink-0 text-[var(--t3)]" />; })()}
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-[var(--t1)]">{def.title}</p>
+        <p className="text-[11px] font-medium text-[var(--t1)]" style={{ fontFamily: 'ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace' }}>{def.title}</p>
         <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-[var(--t4)]">{def.description}</p>
       </div>
       <div className="ml-auto flex shrink-0 flex-col items-end gap-1">
