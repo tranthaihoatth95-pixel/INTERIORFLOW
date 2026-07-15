@@ -19,7 +19,8 @@ import { useCadStore } from '@/lib/cad/store';
 import type { HatchPattern } from '@/lib/cad/model';
 import { parseDxf, exportDxf } from '@/lib/cad/dxf';
 import { renderDocToDataURL } from '@/lib/cad/render';
-import { BLOCKS } from '@/lib/cad/furniture';
+import { BLOCKS, BLOCK_MAP } from '@/lib/cad/furniture';
+import ShapePalette, { ShapeInfoPanel } from '@/components/ShapePalette';
 import { loadManifest, groupByCategory, type LibraryManifest } from '@/lib/cad/block-library';
 import { buildDemoPlan } from '@/lib/cad/demo-plan';
 import { describeToEntities } from '@/lib/cad/ai-assist';
@@ -159,6 +160,7 @@ export default function CadEditor() {
         {furnitureOpen && <FurniturePanel onClose={() => setFurnitureOpen(false)} />}
         {standardsOpen && <StandardsPanel onClose={() => setStandardsOpen(false)} />}
         <LayerPanel />
+        <SelectionInfoPanel />
         {handoffMsg && (
           <div style={{ position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 30, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 14px', fontSize: 12.5, color: 'var(--t2)' }}>
             {handoffMsg}
@@ -271,7 +273,6 @@ function LayerPanel() {
 function FurniturePanel({ onClose }: { onClose: () => void }) {
   const setPendingBlock = useCadStore((s) => s.setPendingBlock);
   const pending = useCadStore((s) => s.pendingBlock);
-  const groups = Array.from(new Set(BLOCKS.map((b) => b.group)));
   // Tab 2 "Thư viện 46": block DXF từ public/cad-library (docs/CAD-LIBRARY.md §6 cách A) —
   // pendingBlock = 'lib:<id>', CadCanvas tự tải + làm phẳng entity lúc đặt.
   const [tab, setTab] = useState<'basic' | 'lib'>('basic');
@@ -310,23 +311,9 @@ function FurniturePanel({ onClose }: { onClose: () => void }) {
         ))}
       </div>
       <div style={{ maxHeight: 420, overflowY: 'auto' }}>
-        {tab === 'basic' &&
-          groups.map((g) => (
-            <div key={g} style={{ marginBottom: 6 }}>
-              <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--t4)', padding: '4px 6px' }}>{g}</div>
-              {BLOCKS.filter((b) => b.group === g).map((b) => (
-                <button
-                  key={b.id}
-                  type="button"
-                  onClick={() => setPendingBlock(b.id)}
-                  title={`${b.name} — ${b.w}×${b.h}mm. Click canvas để đặt, R xoay 90°.`}
-                  style={itemBtn(pending === b.id)}
-                >
-                  {b.name}
-                </button>
-              ))}
-            </div>
-          ))}
+        {/* B2.1 kéo-thả + B2.8 tìm kiếm — ShapePalette (components/ShapePalette.tsx). Click vẫn
+           giữ hành vi cũ (setPendingBlock → click canvas để đặt, R xoay 90°). */}
+        {tab === 'basic' && <ShapePalette blocks={BLOCKS} pendingId={pending} onPick={setPendingBlock} />}
         {tab === 'lib' && !manifest && (
           <p style={{ fontSize: 11.5, color: libErr ? 'var(--danger, #c0604a)' : 'var(--t4)', padding: '6px 8px' }}>
             {libErr ? `Không tải được thư viện: ${libErr}` : 'Đang tải thư viện…'}
@@ -844,6 +831,30 @@ function CommandLine({ status }: { status: string }) {
         />
       </div>
       <span style={{ fontSize: 11.5, color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{status}</span>
+    </div>
+  );
+}
+
+/* ───────── B2.4 info panel + B2.5 variant switch — hiện khi chọn ĐÚNG 1 BlockEntity ───────── */
+function SelectionInfoPanel() {
+  const doc = useCadStore((s) => s.doc);
+  const selection = useCadStore((s) => s.selection);
+  const updateEntities = useCadStore((s) => s.updateEntities);
+  const clearSelection = useCadStore((s) => s.clearSelection);
+
+  if (selection.length !== 1) return null;
+  const entity = doc.entities.find((e) => e.id === selection[0]);
+  if (!entity || entity.type !== 'block') return null;
+  const def = BLOCK_MAP[entity.block];
+
+  return (
+    <div style={{ position: 'absolute', left: 12, bottom: 46, zIndex: 20 }}>
+      <ShapeInfoPanel
+        entity={entity}
+        def={def}
+        onVariantChange={(variantId) => updateEntities([{ ...entity, variant: variantId }])}
+        onClose={clearSelection}
+      />
     </div>
   );
 }

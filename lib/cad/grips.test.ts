@@ -83,12 +83,17 @@ function testArc() {
 }
 
 function testTextBlock() {
-  console.log('\n[6] TEXT/BLOCK — 1 grip điểm chèn');
+  console.log('\n[6] TEXT/BLOCK — grip điểm chèn + 4 góc resize (Sprint 3, B2.3)');
   const block: BlockEntity = { id: newId('e'), type: 'block', layer: LAY, block: 'sofa2', at: { x: 0, y: 0 }, rot: 0, sx: 1, sy: 1 };
   const grips = gripsOf(block);
-  ok('1 grip điểm chèn', grips.length === 1 && grips[0].kind === 'insertion');
+  // B2.3 — thêm 4 grip 'scale' (góc resize) cạnh grip 'insertion' cũ (vẫn ở index 0).
+  ok('5 grip: 1 insertion + 4 scale (góc resize)', grips.length === 5 && grips[0].kind === 'insertion');
+  ok('4 grip còn lại đều kind scale', grips.slice(1).every((g) => g.kind === 'scale'));
   const moved = applyGripMove(block, grips[0], { x: 500, y: 500 }) as BlockEntity;
-  ok('kéo grip → block dời tới điểm mới', ptApprox(moved.at, { x: 500, y: 500 }));
+  ok('kéo grip insertion → block dời tới điểm mới', ptApprox(moved.at, { x: 500, y: 500 }));
+  const gScale = grips.find((g) => g.kind === 'scale' && g.index === 2)!; // góc trên-phải (sofa2 1600x900)
+  const resized = applyGripMove(block, gScale, { x: gScale.pt.x * 2, y: gScale.pt.y * 2 }) as BlockEntity;
+  ok('kéo grip scale góc 2 ra 2x → sx/sy ≈ 2 (dời tâm, không đổi at)', approx(resized.sx, 2, 0.001) && approx(resized.sy, 2, 0.001) && ptApprox(resized.at, { x: 0, y: 0 }));
 }
 
 testLine();

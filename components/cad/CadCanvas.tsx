@@ -47,6 +47,15 @@ import {
 } from '@/lib/cad/modify';
 import { gripsOf, hitTestGrip, applyGripMove, type Grip } from '@/lib/cad/grips';
 import { findHatchBoundary } from '@/lib/cad/hatch';
+import { BLOCK_MAP } from '@/lib/cad/furniture';
+import {
+  autoSnapToWall,
+  detectCollisions,
+  blockWorldCorners,
+  clearanceWorldPolygons,
+} from '@/lib/cad/shape-interactions';
+import { SHAPE_DND_MIME } from '@/components/ShapePalette';
+import type { BlockEntity } from '@/lib/cad/model';
 
 interface Ix {
   cursorScreen: Pt;
@@ -407,6 +416,33 @@ export default function CadCanvas() {
     const factor = ev.deltaY < 0 ? 1.12 : 1 / 1.12;
     st.setViewport(zoomAt(st.viewport, screen, factor));
     updateCursor(screen);
+  };
+
+  /** B2.1 — thả 1 item kéo từ ShapePalette vào canvas: tạo BlockEntity tại điểm thả, tự áp
+   * auto-snap-to-wall (B2.2) nếu BlockDef có anchors và có tường gần đó. */
+  const onDragOver = (ev: React.DragEvent) => {
+    if (ev.dataTransfer.types.includes(SHAPE_DND_MIME)) {
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = 'copy';
+    }
+  };
+  const onDrop = (ev: React.DragEvent) => {
+    const blockId = ev.dataTransfer.getData(SHAPE_DND_MIME);
+    if (!blockId || !BLOCK_MAP[blockId]) return;
+    ev.preventDefault();
+    const c = canvasRef.current;
+    if (!c) return;
+    const r = c.getBoundingClientRect();
+    const screen: Pt = { x: ev.clientX - r.left, y: ev.clientY - r.top };
+    const st = useCadStore.getState();
+    const world = screenToWorld(st.viewport, screen);
+    let entity: BlockEntity = {
+      id: newId('e'), type: 'block', layer: st.currentLayer, block: blockId, at: world, rot: 0, sx: 1, sy: 1,
+    };
+    entity = autoSnapToWall(entity, st.doc);
+    st.addEntity(entity);
+    st.setStatus(`Đã thả "${BLOCK_MAP[blockId].name}" — kéo từ palette (R xoay 90° nếu vừa đặt lại bằng lệnh D/WIN).`);
+    ix.current.redraw = true;
   };
 
   const onDblClick = () => {
@@ -1242,7 +1278,13 @@ export default function CadCanvas() {
     if (st.tool === 'select' && st.selection.length === 1) {
       const ent = docToDraw.entities.find((e) => e.id === st.selection[0]);
       if (ent) drawGrips(ctx, v, ent, accent);
+      // B2.7 — clearance overlay quanh shape đang chọn
+      if (ent && ent.type === 'block') drawClearance(ctx, v, ent);
     }
+
+    // B2.6 — collision warning: viền đỏ quanh mọi BlockEntity đang chồng lấn (transient, KHÔNG
+    // lưu vào .idf — tính lại mỗi frame từ doc hiện tại).
+    drawCollisions(ctx, v, docToDraw.entities.filter((e): e is BlockEntity => e.type === 'block'));
 
     drawPreview(ctx, v, accent);
     drawSelectionBox(ctx, v, accent);
@@ -1319,6 +1361,50 @@ export default function CadCanvas() {
       ctx.strokeRect(s.x - r, s.y - r, r * 2, r * 2);
       ctx.restore();
     }
+  }
+
+  /** B2.6 — viền đỏ nhấp nháy quanh mọi BlockEntity đang chồng lấn nhau (SAT — lib/cad/shape-interactions.ts). */
+  function drawCollisions(ctx: CanvasRenderingContext2D, v: Viewport, blocks: BlockEntity[]) {
+    if (!blocks.length) return;
+    const collided = detectCollisions(blocks, BLOCK_MAP);
+    if (!collided.size) return;
+    const blink = 0.55 + 0.45 * Math.sin(performance.now() / 220); // "nhấp nháy" theo spec B2.6
+    ctx.save();
+    ctx.strokeStyle = '#e14a3a';
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = blink;
+    for (const e of blocks) {
+      if (!collided.has(e.id)) continue;
+      const corners = blockWorldCorners(e, BLOCK_MAP).map((p) => worldToScreen(v, p));
+      ctx.beginPath();
+      corners.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+      ctx.closePath();
+      ctx.stroke();
+    }
+    ctx.restore();
+    ix.current.redraw = true; // giữ vòng lặp vẽ chạy để hiệu ứng nhấp nháy tiếp diễn
+  }
+
+  /** B2.7 — overlay mờ vùng clearance (BlockDef.clearance) quanh BlockEntity đang chọn. */
+  function drawClearance(ctx: CanvasRenderingContext2D, v: Viewport, e: BlockEntity) {
+    const polys = clearanceWorldPolygons(e, BLOCK_MAP);
+    if (!polys.length) return;
+    ctx.save();
+    ctx.fillStyle = '#e0a83a';
+    ctx.strokeStyle = '#e0a83a';
+    ctx.setLineDash([4, 3]);
+    ctx.lineWidth = 1.2;
+    for (const poly of polys) {
+      const pts = poly.map((p) => worldToScreen(v, p));
+      ctx.beginPath();
+      pts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+      ctx.closePath();
+      ctx.globalAlpha = 0.12;
+      ctx.fill();
+      ctx.globalAlpha = 0.65;
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   function drawGrid(ctx: CanvasRenderingContext2D, v: Viewport, W: number, H: number, step: number, color: string) {
@@ -1635,6 +1721,8 @@ export default function CadCanvas() {
         onWheel={onWheel}
         onDoubleClick={onDblClick}
         onContextMenu={(e) => e.preventDefault()}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
         style={{ display: 'block', touchAction: 'none', cursor: 'crosshair' }}
       />
     </div>

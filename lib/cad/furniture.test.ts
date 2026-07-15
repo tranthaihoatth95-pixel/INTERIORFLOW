@@ -4,7 +4,8 @@
  * (cùng pattern modify.test.ts — không Jest/Vitest, không phải file production).
  */
 import { BLOCKS, BLOCK_MAP } from './furniture';
-import type { BlockDef, ShapeVariant, SnapAnchor, ClearanceZone } from './furniture';
+import type { BlockDef } from './furniture';
+import type { ShapeVariant, SnapAnchor, ClearanceZone } from './shared-types';
 
 let pass = 0;
 let fail = 0;
