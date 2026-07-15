@@ -72,9 +72,14 @@ export async function captionImage(imageDataUri: string): Promise<RefCaption> {
   }
 }
 
+/** Model LLM đang dùng (để lớp trên GHI NHÃN tầng nào chạy — badge "_tier"). */
+export function nvidiaLlmModel(): string {
+  return process.env.NVIDIA_LLM_MODEL ?? 'nvidia/llama-3.1-nemotron-70b-instruct';
+}
+
 /** LLM thuần (Concept-writer, tóm tắt brief…). */
 export async function completeText(prompt: string, system?: string): Promise<string> {
-  const model = process.env.NVIDIA_LLM_MODEL ?? 'nvidia/llama-3.1-nemotron-70b-instruct';
+  const model = nvidiaLlmModel();
   const msgs: Msg[] = [];
   if (system) msgs.push({ role: 'system', content: system });
   msgs.push({ role: 'user', content: prompt });
