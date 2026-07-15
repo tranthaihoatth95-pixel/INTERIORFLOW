@@ -16,8 +16,9 @@
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
 - **1 worktree đang sống** (1/3 slot):
   · `interiorflow-wt-render-nodes-v2` [`feat/render-nodes-v2` `bd2e456`] — Agent-C xong NỀN: lib/three/ (cad-to-obj extrude + camera preset, 24/24 test, đã commit). **Còn: 5/7 node (text2image · ID-mask · furniture-extract · import-FBX · chỉnh-cục-bộ) + adapter NVIDIA image-gen (nvidia.ts:84 TODO) + probe fal + Blender GLB/OBJ→FBX convert + node defs/UI. Kiến trúc 2 TẦNG bắt buộc: AI khi có key / LÕI tất định khi không — không mock-im-lặng.** Camera = phương án (a) user chốt.
-- **User chưa dán NVIDIA_API_KEY** vào .env.local (thử lưu bị lạc thành file .rtfd). File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
-- **Hàng đợi sau đó**: Agent-B đại tu UX canvas chặng 2 (màu dây nối, nhóm node, icon flat, chữ low-tech, review thao tác logic chặt) — chạy SAU khi render-nodes merge · Sprint 3 QA stress · deploy Vercel/Supabase thật (cần user đăng nhập).
+- File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
+- **Hàng đợi sau đó**: ① **AI local Ollama (user GO 15/07)** — thêm tầng giữa: Cloud AI → Ollama local → lõi tất định; viết `lib/ai/providers/ollama.ts` theo pattern nvidia.ts (API OpenAI-compat `localhost:11434`), app tự dò Ollama có/không (KHÔNG bundle model vào installer), model đề xuất Qwen 2.5 7B; CHỈ việc chữ (mô tả/concept/tóm tắt/giải thích quy chuẩn), KHÔNG sinh ảnh local — chạy SAU khi render-nodes merge (tránh giẫm lib/ai/providers) · ② Agent-B đại tu UX canvas chặng 2 (màu dây nối, nhóm node, icon flat, chữ low-tech, review thao tác logic chặt) · ③ Sprint 3 QA stress · ④ deploy Vercel/Supabase thật (cần user đăng nhập).
+- **NVIDIA_API_KEY đã có (15/07)**: user dán, đã lưu `.env.local` (repo chính + worktree render), probe HTTP 200.
 - CHƯA làm (backlog cũ): bỏ hardcode 'DETECH · CONCEPT' · template tĩnh thư viện · heavy-ML pha 2 (báo rủi ro trước) · membership per-flow (cần schema, chờ duyệt).
 
 ## Nợ kỹ thuật
