@@ -71,6 +71,58 @@ function videoUrls(data: unknown): string[] {
   return (d?.videos ?? []).map((v) => v.url).filter((u): u is string => Boolean(u));
 }
 
+/* ───────────────────────────── PROBE (chẩn đoán 403 hết balance) ─────────────────────────────
+ * fal từng trả 403 "Exhausted balance" — health check falConfigured() chỉ biết CÓ KEY,
+ * không biết key còn xài được không. probeFal(): submit 1 job flux/schnell tối thiểu rồi
+ * CANCEL NGAY (không chờ render → gần như 0 chi phí), phân loại lỗi submit.
+ * MỘT lần duy nhất, timeout cứng, KHÔNG retry. Chạy tay: sucrase-node scripts/probe-fal.ts
+ */
+
+export type FalProbeStatus = 'ok' | 'no-key' | 'exhausted' | 'bad-key' | 'error';
+
+export interface FalProbeResult {
+  status: FalProbeStatus;
+  /** thông điệp gốc từ fal (rút gọn) — để báo cáo cho user */
+  detail: string;
+}
+
+/** Phân loại message lỗi fal → trạng thái probe. Export để test tất định. */
+export function classifyFalError(msg: string): FalProbeStatus {
+  const m = msg.toLowerCase();
+  if (/balance|exhaust|locked|payment|billing|402/.test(m)) return 'exhausted';
+  if (/unauthorized|forbidden|invalid.*(key|credential|token)|401|403/.test(m)) return 'bad-key';
+  return 'error';
+}
+
+export async function probeFal(timeoutMs = 15000): Promise<FalProbeResult> {
+  if (!falConfigured()) {
+    return { status: 'no-key', detail: 'FAL_KEY chưa có trong .env.local.' };
+  }
+  ensureConfigured();
+  const modelId = 'fal-ai/flux/schnell';
+  const timeout = new Promise<never>((_, rej) =>
+    setTimeout(() => rej(new Error(`Probe timeout ${timeoutMs / 1000}s — mạng chậm hoặc fal treo.`)), timeoutMs),
+  );
+  try {
+    // Job rẻ nhất có thể; submit qua được = auth + balance OK. Cancel ngay để không tốn.
+    const { request_id } = await Promise.race([
+      fal.queue.submit(modelId, {
+        input: { prompt: 'probe', num_images: 1, num_inference_steps: 1, image_size: 'square' },
+      }),
+      timeout,
+    ]);
+    try {
+      await fal.queue.cancel(modelId, { requestId: request_id });
+    } catch {
+      // cancel trượt (job đã chạy) — schnell 1 step vẫn rẻ, bỏ qua
+    }
+    return { status: 'ok', detail: `Submit OK (request ${request_id.slice(0, 8)}…, đã cancel).` };
+  } catch (err) {
+    const detail = falErrorMessage(err).slice(0, 200);
+    return { status: classifyFalError(detail), detail };
+  }
+}
+
 export async function jobStatus(modelId: string, requestId: string): Promise<ProviderJobStatus> {
   ensureConfigured();
   try {
