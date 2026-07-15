@@ -1,5 +1,13 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 15/07 — 4 nhánh merge trước Sprint 3 (nhánh tích hợp `feat/present-layout-ml-p1`)
+- **`feat/render-nodes-v2`**: 7 node chặng Render (`lib/nodes/defs/render-v2.ts`) — text2image, ID-mask, furniture-extract, cad2fbx (import FBX), local-edit, camera, nền cad-to-obj. Kiến trúc 2 tầng Cloud AI (khi có key) / lõi tất định (khi không), mọi node ghi `_tier` + badge UI. Adapter NVIDIA `generateImage()` dùng model `black-forest-labs/flux.1-dev` (SD3/SDXL trả 404 cho account free) + route `/api/render/nvidia-image`. Probe fal (`scripts/probe-fal.ts`) — fal hết balance. Blender OBJ→FBX (`scripts/blender/obj2fbx.py` + route `/api/render/fbx`, verify Blender 4.5 local OK; máy không có Blender → 501 kèm hướng dẫn). 110 test mới. Verify độc lập: tsc 0, 25/25 test file, smoke browser 127.0.0.1:3700 OK.
+- **`feat/ai-local-ollama`**: tầng AI local Ollama chữ (mô tả/concept/tóm tắt, KHÔNG ảnh) — `lib/ai/providers/ollama.ts` + `lib/ai/text-tier.ts` (completeTextTiered Cloud→Ollama→lõi, kèm `_tier`/`_model`). Model mặc định llama3, override `OLLAMA_MODEL`. 36 test mới, ff merge, tsc 0.
+- **`feat/render-ux-overhaul`**: đại tu UX canvas chặng Render — màu edge theo loại data (image/data/mask), node grouping (Cmd+G, collapse/rename/ungroup, undo), 35+ icon SVG flat inline, font mono cho label node. 543 test pass, tsc 0.
+- **`feat/deploy-vercel-supabase`**: audit deploy readiness — `next build` PASS (31 static + 24 API route), liệt kê toàn bộ env var cần cho Vercel, xác nhận migration drift IntegrationAccount dùng `db push` an toàn, phát hiện `AUTH_SECRET` có fallback `dev-secret-change-me` cần set env thật. Output `DEPLOY-CHECKLIST.md`.
+- **`feat/sprint3-qa-stress`**: fix P1 auth bypass (email nhiều `@` bypass domain check, `lib/server/auth-policy.ts:17`) + `stress-auth.test.ts` 42 test. ⚠️ 4 file stress test khác (CAD/render/present/concurrency, ~128 test) agent từng báo tạo nhưng KHÔNG được commit trước khi worktree xoá — mất, không khôi phục được. Bài học: agent phải `git log -1` xác nhận đã commit trước khi báo done.
+
+
 ## 14/07 — Cổng Sprint 2 PASS (nhánh tích hợp `feat/present-layout-ml-p1`, HEAD `bcbbce1`)
 Merge `da49cf3` (ml-ui) → `b70ffa3` (ui-motion) → `bcbbce1` (docs). **492 test/20 file, tsc 0.**
 Verify browser (PORT 3700, host 127.0.0.1 tránh cookie phiên thật; admin seed `integrator@ttt.vn`): 7 PASS · 1 SKIP.

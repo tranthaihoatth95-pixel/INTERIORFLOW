@@ -5,30 +5,34 @@
 
 ## Hiện tại
 - Nhánh tích hợp **`feat/present-layout-ml-p1`** — local, **CHƯA push, CHƯA merge main** (main/origin vẫn `3265db1`).
-- **✅ 15/07 merge `feat/devops-docs`** (verify: tsc 0 + đọc lướt docs OK): bộ cài + docs Sprint 4 — `.dmg` đã copy về repo chính `dist/InteriorFlow-0.1.0-arm64.dmg` (321MB, unsigned) · `.exe` config sẵn + `docs/BUILD-WINDOWS.md` (build trên máy Win) · PWA `vercel.json` + `docs/DEPLOY-VERCEL.md` (CHƯA deploy — cần tài khoản user; **db push, KHÔNG reset**) · `docs/HUONG-DAN-SU-DUNG.md` · `FINAL_ARCHITECTURE_REPORT.md` + `TECHNICAL_GLOSSARY.md`. Worktree devops-docs đã xoá.
-- **✅ Cổng Sprint 2 PASS (14/07)**: 492 test/20 file · tsc 0 · verify browser 7 PASS + 1 SKIP (chi tiết CHANGELOG).
-- Test pattern: `node_modules/.bin/sucrase-node <path>.test.ts` (20 file).
+- **✅ 15/07 merge `feat/devops-docs`**: bộ cài .dmg (`dist/InteriorFlow-0.1.0-arm64.dmg`, unsigned) + docs build Win/deploy Vercel (chi tiết CHANGELOG).
+- **✅ Cổng Sprint 2 PASS (14/07)**: 492 test/20 file · tsc 0 (chi tiết CHANGELOG).
+- Test pattern: `node_modules/.bin/sucrase-node <path>.test.ts` (nay 29 file, xem Sprint 3 bên dưới).
 
 ## Quyết định user đã khoá
 - **Auth**: chỉ Google OAuth @ttt.vn (mới) + admin cấp tay (`scripts/seed-admin.ts`); user cũ ngoài-domain grandfather; register công khai 403; quên mật khẩu = admin reset.
 - Perceptron THẬT (learning-to-rank, degrade heuristic) · foldable Find N6 test on-device · installer cả 3 unsigned (.exe cần máy Win) · PWA host Vercel + Supabase (Agent 4 tự dựng, Sprint 4).
 
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
-- **2 worktree đang sống** (2/3 slot): `interiorflow-wt-qa-stress` (feat/sprint3-qa-stress) · `interiorflow-wt-render-ux` (feat/render-ux-overhaul).
-- **✅ 15/07 merge `feat/render-nodes-v2`** (verify độc lập: tsc 0 · 25/25 test file · smoke browser 127.0.0.1:3700 render canvas load, node text2image + badge 2 tầng OK, không lỗi render-v2): **7 node chặng Render** (`lib/nodes/defs/render-v2.ts`): text2image · ID-mask · furniture-extract · cad2fbx(import-FBX) · local-edit · camera · (nền cad-to-obj) — **kiến trúc 2 tầng: Cloud AI khi có key / LÕI tất định khi không, mọi node ghi `_tier` + badge UI** · adapter NVIDIA `generateImage()` (model chốt `black-forest-labs/flux.1-dev` — SD3/SDXL trả 404 cho account free) + route `/api/render/nvidia-image` · probe fal (`scripts/probe-fal.ts` — **fal VẪN HẾT BALANCE**) · Blender OBJ→FBX (`scripts/blender/obj2fbx.py` + route `/api/render/fbx`, verify Blender 4.5 local OK; máy không có Blender → 501 kèm hướng dẫn). **110 test mới.** Nhánh render đã xoá.
+- **0 worktree đang sống** (0/3 slot) — Sprint 3 B1+B2 vừa merge xong, tất cả đã dọn.
+- **✅ 15/07 Sprint 3 B1+B2 — Shape Library + tương tác** (3 agent song song A/B/C theo `SHAPE-SCHEMA.md`, merge tuần tự A→B→C vào `feat/present-layout-ml-p1`, verify tsc+test sau mỗi merge, PASS cả 3):
+  - **B1 (41→ shape, từ 18 gốc)**: `lib/cad/furniture.ts` — phòng ngủ (tủ đầu giường, bàn trang điểm), phòng khách (sofa góc, bàn trà, kệ TV), bếp (tủ lạnh, đảo bếp, hút mùi, lò vi sóng), tắm (vòi sen, gương), văn phòng (ghế, tủ hồ sơ, kệ sách), 3 loại cửa mới + 2 loại cửa sổ, cầu thang thẳng/chữ L (nhóm mới `Cầu thang`), máy lạnh/quạt trần (nhóm mới `Thiết bị`). Cầu thang xoắn BỎ QUA (Prim không vẽ được đường xoắn thật).
+  - **B2 (8/8 xong)**: drag-drop từ palette, auto-snap tường, resize góc, info panel, variant switch, collision (SAT), clearance overlay, search — file mới `lib/cad/shape-interactions.ts`, `components/ShapePalette.tsx`.
+  - **Schema chung**: `lib/cad/shared-types.ts` — tách 5 type (`BlockGroup/ShapeVariant/SnapAnchor/ClearanceZone/ShapeMeta`) ra khỏi `furniture.ts` sau khi 3 agent song song tự trùng định nghĩa gây conflict merge 2 lần liên tiếp. **Quy tắc mới cho lần chia agent sau**: tách schema chung + commit trước, agent chỉ import từ file chung, không tự định nghĩa lại.
+  - **Test**: 634 test (toàn bộ 29 file `*.test.ts` chạy qua `sucrase-node`) PASS 0 fail, tsc 0 lỗi.
+  - ⚠️ **Bài học quy trình**: 2/3 agent (Agent C ở đây, và trước đó agent merge QA-stress) đã LÀM XONG việc nhưng QUÊN COMMIT trước khi báo done — chỉ phát hiện lúc merge thấy branch không đổi HEAD. Từ nay: agent phải tự xác nhận `git log -1` sau khi code xong, trước khi báo cáo.
+- **⚠️ Phát hiện khi verify Sprint 3**: dòng "170 test mới" ghi trước đây cho `feat/sprint3-qa-stress` là SAI — thực tế merge chỉ có 42 test (`stress-auth.test.ts`), 4 file stress test khác đã mất do agent quên commit (chi tiết CHANGELOG.md).
+- **✅ 15/07 merge thêm 4 nhánh** (render-nodes-v2 7 node · ai-local-ollama · render-ux-overhaul · deploy-vercel-supabase) — chi tiết CHANGELOG.md.
 - File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
-- **✅ 15/07 merge `feat/ai-local-ollama`** (ff, tsc 0 · 27/27 test · 36 test mới): tầng AI local Ollama chữ Cloud→Ollama→lõi. Worktree ollama đã xoá.
-- **✅ 15/07 merge `feat/render-ux-overhaul`** (edge colors, grouping, icons, mono font).
-- **✅ 15/07 merge `feat/sprint3-qa-stress`** (170 test mới, P1 auth fix).
-- **✅ 15/07 merge `feat/deploy-vercel-supabase`** (DEPLOY-CHECKLIST.md 214 dòng, build pass).
-- **NVIDIA_API_KEY đã có (15/07)**: user dán, đã lưu `.env.local` repo chính, probe HTTP 200 → tầng AI text2image chạy thật.
-- **fal**: khoá vì hết balance ("Exhausted balance") — nạp credit ở fal.ai/dashboard/billing rồi chạy `scripts/probe-fal.ts` kiểm lại.
-- CHƯA làm (backlog cũ): bỏ hardcode 'DETECH · CONCEPT' · template tĩnh thư viện · heavy-ML pha 2 (báo rủi ro trước) · membership per-flow (cần schema, chờ duyệt).
+- **NVIDIA_API_KEY đã có**, probe HTTP 200. **fal**: hết balance, chờ nạp credit.
+- CHƯA làm (backlog cũ): bỏ hardcode 'DETECH · CONCEPT' · template tĩnh thư viện · heavy-ML pha 2 · membership per-flow.
 
 ## Nợ kỹ thuật
 - Hydration ⌘Z/Ctrl+Z tooltip (lib/kbd.ts:11 + CadToolbar) — cosmetic.
-- `window.prompt` crash trong webview nhúng — Dashboard.tsx:138 (nút Dự án mới), browser thật OK.
-- Migration Prisma drift (IntegrationAccount) — dùng `db push`, KHÔNG reset; schema change phải chờ duyệt.
+- `window.prompt` crash trong webview nhúng — Dashboard.tsx:138, browser thật OK.
+- Migration Prisma drift (IntegrationAccount) — dùng `db push`, KHÔNG reset.
+- 4 file stress test bị mất (xem ĐIỂM RESUME) — cần viết lại nếu muốn coverage edge-case CAD/render/present/concurrency.
+- Sprint 3 B1: `meta` (giá/vendor/sku) để trống toàn bộ — chưa có dữ liệu giá thật.
 
 ## Bị chặn — KHÔNG tự khởi động
 - Intro screen (chờ hình/video — flow hiện tại ĐÃ gỡ intro theo lệnh user) · ML Gu Engine heavy (chồng lấn 2 app khác) · "API team" spec.
