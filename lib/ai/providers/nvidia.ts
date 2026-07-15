@@ -85,16 +85,20 @@ export async function completeText(prompt: string, system?: string): Promise<str
  * Image-gen của NVIDIA KHÔNG đi qua `/v1/images/generations` OpenAI-compatible mà dùng
  * endpoint invoke riêng theo model: `https://ai.api.nvidia.com/v1/genai/{model}`.
  *
- * MODEL CHỐT: `stabilityai/stable-diffusion-3-medium` (free endpoint build.nvidia.com,
- * schema đơn giản: { prompt, negative_prompt, cfg_scale, aspect_ratio, seed, steps }
- * → { image: "<base64>" }). Đổi model qua env NVIDIA_IMAGE_MODEL (phần sau /genai/);
- * parser chấp nhận cả shape `artifacts[{base64}]` của SDXL nên swap model không vỡ.
+ * MODEL CHỐT: `black-forest-labs/flux.1-dev` — đã PROBE THẬT với key user (15/07):
+ * các endpoint stabilityai (SD3-medium/3.5/SDXL/sdxl-turbo) đều 404 cho account free này,
+ * flux.1-dev trả 200 (~2s). Schema FLUX (học từ validation error của chính endpoint):
+ *   body    { prompt, mode:'base'|'canny'|'depth', width, height ∈ {768..1344 bước 64},
+ *             cfg_scale ≤ 9, seed, steps } — KHÔNG nhận negative_prompt/aspect_ratio.
+ *   response{ artifacts:[{ base64 (JPEG), finishReason, seed }] }
+ * Đổi model qua env NVIDIA_IMAGE_MODEL; model 'stabilityai/*' tự chuyển body sang schema
+ * SD3 (aspect_ratio + negative_prompt); parser chịu cả 2 shape response nên swap không vỡ.
  *
  * Degrade khi CHƯA có NVIDIA_API_KEY: throw NvidiaError message rõ ràng (đúng cơ chế
  * "CHỈ BÁO, KHÔNG tự tụt" đầu file) — caller (node 2 tầng) bắt lỗi rồi chạy tầng lõi.
  */
 
-export const NVIDIA_IMAGE_MODEL_DEFAULT = 'stabilityai/stable-diffusion-3-medium';
+export const NVIDIA_IMAGE_MODEL_DEFAULT = 'black-forest-labs/flux.1-dev';
 
 const GENAI_BASE = () =>
   (process.env.NVIDIA_GENAI_BASE_URL ?? 'https://ai.api.nvidia.com/v1/genai').replace(/\/+$/, '');
@@ -107,6 +111,27 @@ export function nvidiaImageModel(): string {
 export function nvidiaAspect(ratio: string | undefined): string {
   const allowed = new Set(['1:1', '4:3', '3:4', '16:9', '9:16', '21:9', '9:21', '5:4', '4:5', '3:2', '2:3']);
   return ratio && allowed.has(ratio) ? ratio : '16:9';
+}
+
+/** Tỉ lệ khung → width/height hợp lệ của FLUX NIM (chỉ nhận 768…1344 bước 64). */
+export function nvidiaFluxDims(ratio: string | undefined): { width: number; height: number } {
+  switch (ratio) {
+    case '1:1':
+      return { width: 1024, height: 1024 };
+    case '4:3':
+      return { width: 1024, height: 768 };
+    case '3:4':
+      return { width: 768, height: 1024 };
+    case '9:16':
+      return { width: 768, height: 1344 };
+    default: // 16:9 (1344/768 = 1.75 — sát 16:9 nhất trong lưới 64px)
+      return { width: 1344, height: 768 };
+  }
+}
+
+/** Model thuộc họ FLUX NIM (schema width/height/mode) — còn lại coi như schema SD3. */
+export function isFluxModel(model: string): boolean {
+  return /flux/i.test(model);
 }
 
 /** base64 → data-URI, sniff magic bytes (PNG 'iVBOR' / JPEG '/9j/') — SD3 trả JPEG, SDXL PNG. */
@@ -149,26 +174,39 @@ export async function generateImage(opts: NvidiaImageOptions): Promise<NvidiaIma
     throw new NvidiaError('NVIDIA_API_KEY chưa cấu hình — tạo free ở build.nvidia.com rồi thêm vào .env.local.');
   }
   const model = nvidiaImageModel();
-  let res: Response;
-  try {
-    res = await fetch(`${GENAI_BASE()}/${model}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${process.env.NVIDIA_API_KEY}`,
-      },
-      body: JSON.stringify({
+  const steps = Math.min(50, Math.max(1, opts.steps ?? 25));
+  const seed = opts.seed ?? 0;
+  // Body theo họ model: FLUX (width/height/mode, cfg ≤ 9, KHÔNG negative) vs SD3 (aspect_ratio).
+  const body = isFluxModel(model)
+    ? { prompt: opts.prompt, mode: 'base', ...nvidiaFluxDims(opts.ratio), cfg_scale: Math.min(9, opts.cfgScale ?? 3.5), seed, steps }
+    : {
         prompt: opts.prompt,
         negative_prompt: opts.negativePrompt ?? '',
         cfg_scale: opts.cfgScale ?? 5,
         aspect_ratio: nvidiaAspect(opts.ratio),
-        seed: opts.seed ?? 0,
-        steps: Math.min(50, Math.max(1, opts.steps ?? 30)),
-      }),
-    });
-  } catch {
-    throw new NvidiaError('Mất kết nối tới NVIDIA API (ai.api.nvidia.com).');
+        seed,
+        steps,
+      };
+  const invoke = async (): Promise<Response> => {
+    try {
+      return await fetch(`${GENAI_BASE()}/${model}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${process.env.NVIDIA_API_KEY}`,
+        },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      throw new NvidiaError('Mất kết nối tới NVIDIA API (ai.api.nvidia.com).');
+    }
+  };
+  let res = await invoke();
+  // NIM free thỉnh thoảng 5xx transient (đo thật 15/07: 500 rồi 200 ngay sau) — retry ĐÚNG 1 lần.
+  if (res.status >= 500) res = await invoke();
+  if (res.status === 404) {
+    throw new NvidiaError(`Model "${model}" không có trên account này (404) — đổi NVIDIA_IMAGE_MODEL (đã probe OK: black-forest-labs/flux.1-dev).`);
   }
   if (res.status === 401 || res.status === 403) throw new NvidiaError('NVIDIA_API_KEY sai hoặc không đủ quyền.');
   if (res.status === 402 || res.status === 429) throw new NvidiaFreeExhausted('NVIDIA free hết lượt / rate-limit.');

@@ -7,6 +7,8 @@ import {
   b64ToDataUri,
   extractImageB64,
   nvidiaAspect,
+  nvidiaFluxDims,
+  isFluxModel,
   nvidiaImageModel,
   NVIDIA_IMAGE_MODEL_DEFAULT,
   generateImage,
@@ -49,12 +51,28 @@ async function main() {
   console.log('nvidiaImageModel — model chốt + override env');
   const prevModel = process.env.NVIDIA_IMAGE_MODEL;
   delete process.env.NVIDIA_IMAGE_MODEL;
-  ok('mặc định = SD3 medium', nvidiaImageModel() === NVIDIA_IMAGE_MODEL_DEFAULT);
-  ok('chốt đúng model', NVIDIA_IMAGE_MODEL_DEFAULT === 'stabilityai/stable-diffusion-3-medium');
-  process.env.NVIDIA_IMAGE_MODEL = 'black-forest-labs/flux.1-dev';
-  ok('env override ăn', nvidiaImageModel() === 'black-forest-labs/flux.1-dev');
+  ok('mặc định theo hằng chốt', nvidiaImageModel() === NVIDIA_IMAGE_MODEL_DEFAULT);
+  ok('chốt flux.1-dev (probe 15/07: stabilityai 404, flux 200)', NVIDIA_IMAGE_MODEL_DEFAULT === 'black-forest-labs/flux.1-dev');
+  process.env.NVIDIA_IMAGE_MODEL = 'stabilityai/stable-diffusion-3-medium';
+  ok('env override ăn', nvidiaImageModel() === 'stabilityai/stable-diffusion-3-medium');
   if (prevModel === undefined) delete process.env.NVIDIA_IMAGE_MODEL;
   else process.env.NVIDIA_IMAGE_MODEL = prevModel;
+
+  console.log('nvidiaFluxDims / isFluxModel — schema FLUX NIM');
+  ok('16:9 → 1344×768', nvidiaFluxDims('16:9').width === 1344 && nvidiaFluxDims('16:9').height === 768);
+  ok('9:16 → 768×1344 (dọc)', nvidiaFluxDims('9:16').width === 768 && nvidiaFluxDims('9:16').height === 1344);
+  ok('1:1 → 1024×1024', nvidiaFluxDims('1:1').width === 1024);
+  ok('4:3 → 1024×768', nvidiaFluxDims('4:3').height === 768);
+  const grid = new Set([768, 832, 896, 960, 1024, 1088, 1152, 1216, 1280, 1344]);
+  for (const r of ['16:9', '4:3', '1:1', '9:16', '3:4', undefined]) {
+    const d = nvidiaFluxDims(r);
+    if (!grid.has(d.width) || !grid.has(d.height)) {
+      ok(`dims '${r}' nằm trong lưới 64px NIM`, false);
+    }
+  }
+  ok('mọi dims nằm trong lưới hợp lệ NIM', true);
+  ok('flux.1-dev là họ FLUX', isFluxModel('black-forest-labs/flux.1-dev'));
+  ok('SD3 không phải họ FLUX', !isFluxModel('stabilityai/stable-diffusion-3-medium'));
 
   console.log('generateImage — degrade RÕ khi thiếu NVIDIA_API_KEY (không gọi mạng)');
   const prevKey = process.env.NVIDIA_API_KEY;
