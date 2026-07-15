@@ -15,15 +15,66 @@ export type Prim =
   | { k: 'circle'; c: Pt; r: number }
   | { k: 'arc'; c: Pt; r: number; a1: number; a2: number };
 
+// Nhóm palette — 7 nhóm cũ + 2 nhóm mới (Sprint 3, B1.9/B1.10).
+export type BlockGroup =
+  | 'Phòng khách' | 'Phòng ăn' | 'Phòng ngủ' | 'Bếp' | 'Vệ sinh'
+  | 'Làm việc' | 'Kiến trúc'
+  | 'Cầu thang' | 'Thiết bị';
+
+/** 1 biến thể hình dạng/kích thước khác của cùng 1 BlockDef (B2.5 — vd giường đơn/đôi). */
+export interface ShapeVariant {
+  /** duy nhất trong 1 BlockDef, vd 'single' | 'double' */
+  id: string;
+  name: string;
+  w: number;
+  h: number;
+  prims: Prim[];
+}
+
+/** Điểm neo dùng cho auto-snap-to-wall (B2.2). Toạ độ LOCAL mm, gốc tâm block — giống hệ prims. */
+export interface SnapAnchor {
+  kind: 'wall-back' | 'wall-side' | 'floor';
+  pt: Pt;
+  /** hướng "áp vào tường", vector đơn vị (LOCAL, trước khi áp rot của instance) */
+  normal: { x: number; y: number };
+}
+
+/** Vùng chờ bắt buộc (B2.7) — hcn LOCAL mm, gốc tâm block, KHÔNG xoay riêng (xoay theo block). */
+export interface ClearanceZone {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** vd "Bán kính mở cửa tủ", "Lối đi tối thiểu 900mm" */
+  reason: string;
+}
+
+export interface ShapeMeta {
+  /** VNĐ, optional — chưa có giá thật thì bỏ qua */
+  price?: number;
+  vendor?: string;
+  sku?: string;
+}
+
 export interface BlockDef {
   id: string;
   name: string;
   /** nhóm để gom trong panel */
-  group: 'Phòng khách' | 'Phòng ăn' | 'Phòng ngủ' | 'Bếp' | 'Vệ sinh' | 'Làm việc' | 'Kiến trúc';
-  /** kích thước danh nghĩa (mm) — dùng cho preview & tỉ lệ */
+  group: BlockGroup;
+  /** kích thước danh nghĩa (mm) — dùng cho preview & tỉ lệ (variant mặc định) */
   w: number;
   h: number;
   prims: Prim[];
+
+  // ---- MỚI (Sprint 3, B2 — xem SHAPE-SCHEMA.md) ----
+  /** B2.5 — nếu không có, shape chỉ có 1 dạng (dùng w/h/prims gốc) */
+  variants?: ShapeVariant[];
+  /** B2.2 — điểm neo để auto-snap vào tường */
+  anchors?: SnapAnchor[];
+  /** B2.7 — vùng trống bắt buộc quanh shape */
+  clearance?: ClearanceZone[];
+  /** B2.4 — info panel: giá, mã, nhà cung cấp */
+  meta?: ShapeMeta;
 }
 
 /* helper dựng hình trong local mm, gốc tâm */

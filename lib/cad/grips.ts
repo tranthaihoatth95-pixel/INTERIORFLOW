@@ -10,10 +10,33 @@
  *    phía bên kia) — không xoay thành hình bình hành.
  */
 
-import type { Entity, Pt, RectEntity } from './model';
+import type { Entity, Pt, RectEntity, BlockEntity } from './model';
 import { dist } from './model';
+import { effectiveBlockSize, resizeBlockCorner } from './shape-interactions';
 
-export type GripKind = 'endpoint' | 'midpoint' | 'vertex' | 'center' | 'radius' | 'insertion';
+// 'scale' — MỚI (Sprint 3, B2.3): 4 góc resize của BlockEntity (kéo để đổi sx/sy tỉ lệ).
+export type GripKind = 'endpoint' | 'midpoint' | 'vertex' | 'center' | 'radius' | 'insertion' | 'scale';
+
+/** 4 góc LOCAL của 1 BlockEntity theo w/h hiệu dụng (variant hiện tại) — dùng cho grip resize
+ * (B2.3). Thứ tự khớp `resizeBlockCorner` trong lib/cad/shape-interactions.ts. */
+function blockCornersWorld(e: BlockEntity): Pt[] {
+  const { w, h } = effectiveBlockSize(e);
+  const hw = w / 2;
+  const hh = h / 2;
+  const local: Pt[] = [
+    { x: -hw, y: -hh },
+    { x: hw, y: -hh },
+    { x: hw, y: hh },
+    { x: -hw, y: hh },
+  ];
+  const cos = Math.cos(e.rot);
+  const sin = Math.sin(e.rot);
+  return local.map((p) => {
+    const x = p.x * e.sx;
+    const y = p.y * e.sy;
+    return { x: e.at.x + x * cos - y * sin, y: e.at.y + x * sin + y * cos };
+  });
+}
 
 export interface Grip {
   entityId: string;
@@ -59,8 +82,16 @@ export function gripsOf(e: Entity): Grip[] {
         { entityId: e.id, kind: 'endpoint', index: 1, pt: { x: e.c.x + e.r * Math.cos(e.a2), y: e.c.y + e.r * Math.sin(e.a2) } },
       ];
     case 'text':
-    case 'block':
       return [{ entityId: e.id, kind: 'insertion', index: 0, pt: e.at }];
+    case 'block': {
+      // insertion (di chuyển) + 4 góc 'scale' (B2.3 — kéo góc để đổi sx/sy tỉ lệ, xem
+      // resizeBlockCorner trong lib/cad/shape-interactions.ts, dùng CHUNG bởi applyGripMove).
+      const corners = blockCornersWorld(e);
+      return [
+        { entityId: e.id, kind: 'insertion', index: 0, pt: e.at },
+        ...corners.map((pt, i): Grip => ({ entityId: e.id, kind: 'scale', index: i, pt })),
+      ];
+    }
     case 'hatch':
       return e.points.map((p, i) => ({ entityId: e.id, kind: 'vertex' as const, index: i, pt: p }));
   }
@@ -108,7 +139,12 @@ export function applyGripMove(e: Entity, grip: Grip, newPt: Pt): Entity {
       return grip.index === 0 ? { ...e, a1: ang } : { ...e, a2: ang };
     }
     case 'text':
+      return { ...e, at: newPt };
     case 'block':
+      // B2.3 — grip 'scale' (góc) đổi sx/sy tỉ lệ; grip 'insertion' (mặc định) di chuyển như cũ.
+      if (grip.kind === 'scale' && (grip.index === 0 || grip.index === 1 || grip.index === 2 || grip.index === 3)) {
+        return resizeBlockCorner(e, grip.index, newPt);
+      }
       return { ...e, at: newPt };
     case 'hatch': {
       const points = e.points.slice();

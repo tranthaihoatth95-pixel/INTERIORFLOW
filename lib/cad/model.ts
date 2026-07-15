@@ -150,6 +150,13 @@ export interface BlockEntity extends Base {
   /** tỉ lệ; sx<0 = lật gương ngang */
   sx: number;
   sy: number;
+
+  // ---- MỚI (Sprint 3, B2 — xem SHAPE-SCHEMA.md) ----
+  /** id của ShapeVariant (lib/cad/furniture.ts) đang chọn; thiếu = variant mặc định (w/h/prims gốc). */
+  variant?: string;
+  /** true khi overlap object khác — tính lại mỗi lần render/move (lib/cad/shape-interactions.ts),
+   * KHÔNG phải dữ liệu bền vững, KHÔNG serialize vào .idf/DXF. */
+  collision?: boolean;
 }
 
 /**
@@ -206,6 +213,19 @@ export function emptyDoc(): Doc {
 
 export function dist(a: Pt, b: Pt): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+/**
+ * Biến đổi 1 điểm LOCAL (mm, gốc tâm block) sang WORLD theo phép biến hình của BlockEntity:
+ * scale → rotate → translate (khớp `blockLocalToWorld` trong lib/cad/render.ts — dùng CHUNG
+ * công thức này ở lib/cad/grips.ts + lib/cad/shape-interactions.ts để không lệch nhau).
+ */
+export function blockToWorld(local: Pt, xf: { at: Pt; rot: number; sx: number; sy: number }): Pt {
+  const x = local.x * xf.sx;
+  const y = local.y * xf.sy;
+  const cos = Math.cos(xf.rot);
+  const sin = Math.sin(xf.rot);
+  return { x: xf.at.x + x * cos - y * sin, y: xf.at.y + x * sin + y * cos };
 }
 
 export function mid(a: Pt, b: Pt): Pt {
