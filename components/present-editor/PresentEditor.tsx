@@ -234,6 +234,11 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   // Kéo NHÓM: chụp frame lúc bắt đầu (ref) rồi cộng delta cho mọi phần tử chọn.
   const groupStartRef = useRef<Record<string, Frame> | null>(null);
   const groupLastDelta = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
+
+  /** vùng "còn liên quan tới selection" — canvas (stage + toolbar nổi) và Inspector (phải).
+   * Click ngoài CẢ HAI (vd sidebar Mẫu/Reference/Motion bên trái, header) = bỏ chọn. */
+  const canvasAreaRef = useRef<HTMLElement | null>(null);
+  const inspectorRef = useRef<HTMLElement | null>(null);
   const onFrameMany = useCallback(
     (dxPct: number, dyPct: number, live: boolean) => {
       const s = ed.slide;
@@ -758,6 +763,22 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [ed, onDuplicateSelected, onCopySelected, onPaste, onDeleteSelected, onNudge, onSelectNext, imageEditId, playing]);
 
+  /* ------- click ra ngoài canvas/Inspector = bỏ chọn (góp ý ảnh qab3/wzvd) -------
+   * Chỉ dispatch bỏ chọn (passive) — KHÔNG preventDefault/stopPropagation, để mọi click
+   * khác (menu export, đổi tab trái, nút trong sidebar...) vẫn hoạt động bình thường. */
+  useEffect(() => {
+    function onPointerDownCapture(e: PointerEvent) {
+      if (!ed.selectedIds.length) return;
+      const target = e.target as Node | null;
+      if (!target) return;
+      const inCanvas = !!canvasAreaRef.current?.contains(target);
+      const inInspector = !!inspectorRef.current?.contains(target);
+      if (!inCanvas && !inInspector) ed.select(null);
+    }
+    window.addEventListener('pointerdown', onPointerDownCapture);
+    return () => window.removeEventListener('pointerdown', onPointerDownCapture);
+  }, [ed]);
+
   // Mở /photo-editor (Photoshop-level) ở tab mới — hậu kỳ ảnh nâng cao.
   const openAdvancedEditor = useCallback(() => {
     if (typeof window !== 'undefined') window.open('/photo-editor', '_blank');
@@ -903,6 +924,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
 
         {/* giữa: canvas */}
         <main
+          ref={canvasAreaRef}
           style={{
             flex: 1,
             minWidth: 0,
@@ -967,6 +989,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
 
         {/* phải: inspector */}
         <aside
+          ref={inspectorRef}
           style={{
             width: 280,
             flex: '0 0 280px',

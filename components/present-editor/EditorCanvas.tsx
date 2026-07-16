@@ -177,6 +177,8 @@ export default function EditorCanvas({
   }
 
   return (
+    // Wrapper KHÔNG overflow:hidden — chỉ giữ kích thước 16:9 để lớp overlay (toolbar nổi)
+    // dùng chung hệ toạ độ % với stage mà không bị cắt ở mép slide (góp ý ảnh qab3/wzvd).
     <div
       style={{
         width: '100%',
@@ -184,6 +186,12 @@ export default function EditorCanvas({
         margin: '0 auto',
         aspectRatio: '16 / 9',
         position: 'relative',
+      }}
+    >
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
         background: slide.background,
         containerType: 'size',
         boxShadow: '0 10px 40px rgba(0,0,0,.35)',
@@ -368,23 +376,6 @@ export default function EditorCanvas({
         />
       ))}
 
-      {/* thanh chữ nổi (pill) — hiện khi chọn đúng 1 text layer, chưa sửa inline */}
-      {soleTextEl && onUpdateText && (
-        <TextToolbar
-          el={soleTextEl}
-          leftPct={Math.max(14, Math.min(86, soleTextEl.frame.x + soleTextEl.frame.w / 2))}
-          topPct={
-            soleTextEl.frame.y < 16
-              ? soleTextEl.frame.y + soleTextEl.frame.h
-              : soleTextEl.frame.y
-          }
-          below={soleTextEl.frame.y < 16}
-          onUpdate={(mutate, live) => onUpdateText(soleTextEl.id, mutate, live)}
-          brand={brand}
-          project={project}
-        />
-      )}
-
       {/* editor text inline */}
       {editing && editingEl && (
         <textarea
@@ -420,6 +411,28 @@ export default function EditorCanvas({
           }}
         />
       )}
+    </div>
+
+      {/* lớp overlay NGOÀI stage (overflow: visible) — cùng hệ toạ độ % vì cùng kích thước
+          với stage (position:absolute inset:0 trong wrapper). Tránh bị overflow:hidden của
+          stage cắt khi textbox sát mép slide (góp ý ảnh qab3/wzvd). */}
+      <div style={{ position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none' }}>
+        {soleTextEl && onUpdateText && (
+          <TextToolbar
+            el={soleTextEl}
+            leftPct={Math.max(14, Math.min(86, soleTextEl.frame.x + soleTextEl.frame.w / 2))}
+            topPct={
+              soleTextEl.frame.y < 16
+                ? soleTextEl.frame.y + soleTextEl.frame.h
+                : soleTextEl.frame.y
+            }
+            below={soleTextEl.frame.y < 16}
+            onUpdate={(mutate, live) => onUpdateText(soleTextEl.id, mutate, live)}
+            brand={brand}
+            project={project}
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -143,7 +143,7 @@ export default function TextToolbar({ el, leftPct, topPct, below, onUpdate, bran
         <button type="button" onClick={() => bumpSize(-0.4)} title="Giảm cỡ chữ" style={pillIcon}>
           <Minus size={13} />
         </button>
-        <span style={{ fontSize: 11, color: 'var(--t3)', minWidth: 26, textAlign: 'center' }}>
+        <span style={{ fontSize: 11, color: GLASS_TEXT_DIM, minWidth: 26, textAlign: 'center' }}>
           {size.toFixed(1)}
         </span>
         <button type="button" onClick={() => bumpSize(0.4)} title="Tăng cỡ chữ" style={pillIcon}>
@@ -251,7 +251,7 @@ function Toggle({
       style={{
         ...pillIcon,
         background: active ? 'var(--accent-soft)' : 'transparent',
-        color: active ? 'var(--accent)' : 'var(--t2)',
+        color: active ? 'var(--accent)' : GLASS_TEXT,
         boxShadow: active ? 'inset 0 0 0 1px var(--accent-ring)' : 'none',
       }}
     >
@@ -261,8 +261,15 @@ function Toggle({
 }
 
 function Sep() {
-  return <span style={{ width: 1, height: 18, background: 'var(--border)', margin: '0 1px', flexShrink: 0 }} />;
+  return <span style={{ width: 1, height: 18, background: 'rgba(255,255,255,.16)', margin: '0 1px', flexShrink: 0 }} />;
 }
+
+/* Vật liệu "kính mờ tối" (dark frosted glass) — CỐ Ý không dùng --panel/--t2 theo theme:
+ * pill nổi TRÊN slide có thể ở BẤT KỲ nền màu nào (be/kem quiet-luxury hay tối), nên chữ/icon
+ * cần tương phản CỐ ĐỊNH bất kể theme sáng/tối của app (giống cách LoginBackdrop.tsx và
+ * CadToolbar.tsx xử lý chrome nổi). Đã thử mắt qua browser vài mức blur/alpha trước khi chốt. */
+const GLASS_TEXT = 'rgba(245,242,236,0.95)'; // chữ/icon — ấm nhẹ, khớp gu quiet-luxury
+const GLASS_TEXT_DIM = 'rgba(245,242,236,0.62)';
 
 const pillWrap: React.CSSProperties = {
   display: 'flex',
@@ -270,9 +277,11 @@ const pillWrap: React.CSSProperties = {
   gap: 3,
   padding: '5px 8px',
   borderRadius: 999,
-  background: 'var(--panel)',
-  border: '1px solid var(--border)',
-  boxShadow: '0 8px 28px rgba(0,0,0,.32), 0 1px 0 rgba(255,255,255,.04) inset',
+  background: 'rgba(18,16,14,0.62)',
+  backdropFilter: 'blur(28px) saturate(150%)',
+  WebkitBackdropFilter: 'blur(28px) saturate(150%)',
+  border: '1px solid rgba(255,255,255,.14)',
+  boxShadow: '0 8px 28px rgba(0,0,0,.38), 0 1px 0 rgba(255,255,255,.06) inset',
   maxWidth: '92vw',
   overflowX: 'auto',
   scrollbarWidth: 'none',
@@ -286,7 +295,7 @@ const pillBtn: React.CSSProperties = {
   borderRadius: 999,
   border: 'none',
   background: 'transparent',
-  color: 'var(--t2)',
+  color: GLASS_TEXT,
   cursor: 'pointer',
   flexShrink: 0,
 };
@@ -305,7 +314,7 @@ const pillIcon: React.CSSProperties = {
   borderRadius: 999,
   border: 'none',
   background: 'transparent',
-  color: 'var(--t2)',
+  color: GLASS_TEXT,
   cursor: 'pointer',
   flexShrink: 0,
 };
@@ -314,9 +323,11 @@ const noteStyle: React.CSSProperties = {
   maxWidth: 320,
   padding: '6px 10px',
   borderRadius: 8,
-  background: 'var(--card)',
-  border: '1px solid var(--border)',
-  color: 'var(--t2)',
+  background: 'rgba(18,16,14,0.72)',
+  backdropFilter: 'blur(24px) saturate(150%)',
+  WebkitBackdropFilter: 'blur(24px) saturate(150%)',
+  border: '1px solid rgba(255,255,255,.14)',
+  color: GLASS_TEXT,
   fontSize: 11,
   lineHeight: 1.4,
   boxShadow: '0 6px 20px rgba(0,0,0,.3)',
