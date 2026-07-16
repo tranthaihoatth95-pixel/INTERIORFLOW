@@ -15,17 +15,13 @@
 
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
 - **0 worktree đang sống** (0/3 slot) — Sprint 3 B1+B2 vừa merge xong, tất cả đã dọn.
-- **✅ 15/07 Sprint 3 B1+B2 — Shape Library + tương tác** (3 agent song song A/B/C theo `SHAPE-SCHEMA.md`, merge tuần tự A→B→C vào `feat/present-layout-ml-p1`, verify tsc+test sau mỗi merge, PASS cả 3):
-  - **B1 (41→ shape, từ 18 gốc)**: `lib/cad/furniture.ts` — phòng ngủ (tủ đầu giường, bàn trang điểm), phòng khách (sofa góc, bàn trà, kệ TV), bếp (tủ lạnh, đảo bếp, hút mùi, lò vi sóng), tắm (vòi sen, gương), văn phòng (ghế, tủ hồ sơ, kệ sách), 3 loại cửa mới + 2 loại cửa sổ, cầu thang thẳng/chữ L (nhóm mới `Cầu thang`), máy lạnh/quạt trần (nhóm mới `Thiết bị`). Cầu thang xoắn BỎ QUA (Prim không vẽ được đường xoắn thật).
-  - **B2 (8/8 xong)**: drag-drop từ palette, auto-snap tường, resize góc, info panel, variant switch, collision (SAT), clearance overlay, search — file mới `lib/cad/shape-interactions.ts`, `components/ShapePalette.tsx`.
-  - **Schema chung**: `lib/cad/shared-types.ts` — tách 5 type (`BlockGroup/ShapeVariant/SnapAnchor/ClearanceZone/ShapeMeta`) ra khỏi `furniture.ts` sau khi 3 agent song song tự trùng định nghĩa gây conflict merge 2 lần liên tiếp. **Quy tắc mới cho lần chia agent sau**: tách schema chung + commit trước, agent chỉ import từ file chung, không tự định nghĩa lại.
-  - **Test**: 634 test (toàn bộ 29 file `*.test.ts` chạy qua `sucrase-node`) PASS 0 fail, tsc 0 lỗi.
-  - ⚠️ **Bài học quy trình**: 2/3 agent (Agent C ở đây, và trước đó agent merge QA-stress) đã LÀM XONG việc nhưng QUÊN COMMIT trước khi báo done — chỉ phát hiện lúc merge thấy branch không đổi HEAD. Từ nay: agent phải tự xác nhận `git log -1` sau khi code xong, trước khi báo cáo.
-- **⚠️ Phát hiện khi verify Sprint 3**: dòng "170 test mới" ghi trước đây cho `feat/sprint3-qa-stress` là SAI — thực tế merge chỉ có 42 test (`stress-auth.test.ts`), 4 file stress test khác đã mất do agent quên commit (chi tiết CHANGELOG.md).
+- **✅ 15/07 Sprint 3 B1+B2 — Shape Library + tương tác** (41 shape, drag-drop/snap/resize/collision/clearance, schema chung `lib/cad/shared-types.ts`; 634 test PASS, tsc 0 lỗi). Chi tiết + bài học quy trình (agent quên commit) → CHANGELOG.md.
 - **✅ 15/07 merge thêm 4 nhánh** (render-nodes-v2 7 node · ai-local-ollama · render-ux-overhaul · deploy-vercel-supabase) — chi tiết CHANGELOG.md.
 - File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
 - **NVIDIA_API_KEY đã có**, probe HTTP 200. **fal**: hết balance, chờ nạp credit.
 - CHƯA làm (backlog cũ): bỏ hardcode 'DETECH · CONCEPT' · template tĩnh thư viện · heavy-ML pha 2 · membership per-flow.
+- **✅ 16/07 verify UI chặng Render xong** (đăng nhập `integrator@ttt.vn`, flow mới, port 3940, KHÔNG đụng flow thật): 6 node render-v2 (text2image/ID-mask/furniture-extract/cad2fbx/local-edit/camera) hiện đúng tên trong Node Library. Chạy thật node "Tạo ảnh" (AI, NVIDIA NIM flux.1-dev) + "Góc máy ảnh" (tất định) → badge `_tier` đúng màu (tím AI / lục tất định). Cmd+G group: store tạo group đúng (`groupSelected` trong `lib/store.ts:831`) nhưng **overlay KHÔNG hiện** — xem bug bên dưới.
+- **Kiểm tra "1/5" ở Present**: KHÔNG phải bug — đó là số **sheet đang dùng / MAX_SHEETS=5** (`components/studio/SheetTabBar.tsx:212`, `PresentSheets.tsx:38`), không liên quan số slide trong 1 sheet. Verify UI: bấm "Thêm trang trình bày" → counter lên đúng "2/5". Audit trước hiểu nhầm, không cần sửa.
 
 ## Nợ kỹ thuật
 - Hydration ⌘Z/Ctrl+Z tooltip (lib/kbd.ts:11 + CadToolbar) — cosmetic.
@@ -33,6 +29,7 @@
 - Migration Prisma drift (IntegrationAccount) — dùng `db push`, KHÔNG reset.
 - 4 file stress test bị mất (xem ĐIỂM RESUME) — cần viết lại nếu muốn coverage edge-case CAD/render/present/concurrency.
 - Sprint 3 B1: `meta` (giá/vendor/sku) để trống toàn bộ — chưa có dữ liệu giá thật.
+- **BUG mới 16/07 — GroupOverlay vô hình** (`components/nodes/GroupOverlay.tsx` + `FlowCanvas.tsx:305`): `<GroupOverlay />` render là sibling của `<ReactFlow>` (không bọc `ViewportPortal`), dùng thẳng `node.position` (toạ độ flow-space) làm CSS `left/top` — KHÔNG cộng transform pan/zoom hiện tại của viewport, nên khung/label/nút collapse-rename-ungroup lệch vị trí thật. Thêm nữa `zIndex: -1` khiến nó luôn nằm SAU nền canvas (wrapper cha có `position: relative` → tạo stacking context riêng) → hoàn toàn không thấy được dù DOM vẫn có element + state group vẫn tạo đúng (confirm qua `window.__flowStore`). Cần: bọc bằng `ViewportPortal` (hoặc tự áp transform từ `useViewport()`) + bỏ `zIndex:-1`. CHƯA sửa — chờ user duyệt phạm vi.
 
 ## Bị chặn — KHÔNG tự khởi động
 - Intro screen (chờ hình/video — flow hiện tại ĐÃ gỡ intro theo lệnh user) · ML Gu Engine heavy (chồng lấn 2 app khác) · "API team" spec.
