@@ -60,7 +60,11 @@ export function buildDemoPlan(): Doc {
   const door = (blockId: string, at: { x: number; y: number }, rot: number) => push([{ id: newId('e'), type: 'block', layer: wall, block: blockId, at, rot, sx: 1, sy: 1 }]);
   door('door', { x: 1500, y: 0 }, 0); // cửa chính 900 — mở vào Khách
   door('doorRoom', { x: XP, y: 1300 }, -Math.PI / 2); // cửa Bếp 800 — CHỈ vào từ Khách (bếp là phòng cụt); y cao để cung mở không đụng bếp chữ I dọc tường Nam
-  door('doorRoom', { x: XP, y: 2200 }, -Math.PI / 2); // Khách → Hành lang 800
+  // Khách → Hành lang 800 — mở NGƯỢC vào Khách (rot +π/2), KHÔNG mở vào hành lang: hành lang
+  // thông thuỷ chỉ ~1100mm, nếu cửa này mở +x (vào hành lang) thì cung quét 800mm choán gần hết
+  // bề rộng, chặn lối đi kề ngay cửa WC (2 cung quét dồn 1 điểm y=2200 — đúng lỗi user phát hiện
+  // trên ảnh chụp). Khách là phòng lớn (36.7m²) nên mở vào đó không đụng gì.
+  door('doorRoom', { x: XP, y: 2200 }, Math.PI / 2); // Khách → Hành lang 800
   door('doorWC', { x: XW, y: 2200 }, -Math.PI / 2); // Hành lang → WC 700 (KHÔNG mở vào bếp/bàn ăn)
   door('doorRoom', { x: 6000, y: Y2 }, 0); // Hành lang → Ngủ 800 (không xuyên bếp, không xuyên WC)
 
