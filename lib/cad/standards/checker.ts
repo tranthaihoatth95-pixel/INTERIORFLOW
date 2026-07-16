@@ -117,8 +117,17 @@ export function findRoomLabels(doc: Doc): RoomInfo[] {
   return rooms;
 }
 
-type RoomKind = 'bedroom' | 'wc' | 'kitchen' | 'living' | 'corridor' | 'other';
+type RoomKind = 'bedroom' | 'wc' | 'kitchen' | 'living' | 'corridor' | 'office' | 'assembly' | 'other';
 
+/**
+ * 2026-07-16: MỞ RỘNG ra ngoài "chỉ nhà ở" — TTT Architects làm dự án MỌI quy mô
+ * (hospitality/office/residential hạng sang), KHÔNG chỉ căn hộ dân dụng như demo-plan.ts minh
+ * hoạ. Bản classifyRoom() này VẪN chỉ nhận diện được 1 tập từ khoá tiếng Việt hạn chế — đây là
+ * BƯỚC ĐẦU (thêm 'office'/'assembly'), CHƯA phủ hết các loại phòng office/hospitality khác:
+ * F&B (nhà hàng/bar), retail, spa, gym, ballroom, sảnh lễ tân/lobby, phòng hội thảo lớn... —
+ * các loại này sẽ rơi vào 'other' (không bị check sai, chỉ đơn giản là chưa có rule nối vào),
+ * để sprint sau tiếp tục nếu cần, không giả vờ đã bao phủ toàn bộ.
+ */
 function classifyRoom(name: string): RoomKind {
   const s = name.toUpperCase();
   if (s.includes('NGỦ')) return 'bedroom';
@@ -126,6 +135,8 @@ function classifyRoom(name: string): RoomKind {
   if (s.includes('BẾP')) return 'kitchen';
   if (s.includes('KHÁCH')) return 'living';
   if (s.includes('HÀNH LANG') || s.includes('H.LANG') || s.includes('LANG')) return 'corridor';
+  if (s.includes('VĂN PHÒNG') || s.includes('LÀM VIỆC') || s.includes('OPEN OFFICE')) return 'office';
+  if (s.includes('HỘI TRƯỜNG') || s.includes('HỘI NGHỊ') || s.includes('PHÒNG HỌP') || s.includes('MEETING')) return 'assembly';
   return 'other';
 }
 
@@ -165,18 +176,51 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
         violations.push(mkViolation(r, `Phòng khách "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² < ${r.params.minAreaM2}m² tham khảo (số liệu kinh nghiệm, chưa trích dẫn được điều khoản TCVN cụ thể).`, room.at));
       }
 
-      // 2026-07-16: occupant load ước tính (IBC/NFPA "Residential" 18.58 m²/người) — CHỈ
-      // rule DUY NHẤT trong nhóm intl-occupant-load khớp với 1 room kind mà classifyRoom() đã
-      // phân loại (living ≈ căn hộ/khách sạn); các loại khác (Business/Mercantile/Assembly/
-      // Educational…) KHÔNG có room kind tương ứng trong app này — cố tình KHÔNG ép thêm nhánh.
-      // Info-only, KHÔNG dùng để enforce số lối ra tối thiểu (checker không có cơ chế liên kết
-      // cửa↔phòng — xem SỔ TRẠNG THÁI NỐI DÂY cuối file).
+      // 2026-07-16: occupant load ước tính (IBC/NFPA "Residential" 18.58 m²/người) — nối cho
+      // 'living' (phòng khách căn hộ; IBC "Residential" cũng gộp chung khách sạn nên KHÔNG cần
+      // đổi khi operator là hotel). Nhóm intl-occupant-load nay ĐÃ có thêm 2 nhánh khác
+      // ('office' → Business-general, 'assembly' → Assembly bàn&ghế, xem 2 else-if bên dưới) —
+      // các loại còn lại (Mercantile/Educational/Institutional/Industrial/Storage/Day-care…) vẫn
+      // CHƯA có room kind tương ứng trong app này, cố tình KHÔNG ép thêm nhánh cho tới khi có
+      // nhu cầu/room kind thật. Info-only, KHÔNG dùng để enforce số lối ra tối thiểu (checker
+      // không có cơ chế liên kết cửa↔phòng — xem SỔ TRẠNG THÁI NỐI DÂY cuối file).
       const rOccupant = byId('intl-occupant-load-residential');
       if (rOccupant) {
         const estOccupants = room.areaM2 / rOccupant.params.m2PerOccupant;
         violations.push(mkViolation(
           rOccupant,
           `Phòng khách "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² → ước tính chứa được ~${estOccupants.toFixed(2)} người theo hệ số IBC/NFPA (Residential, ${rOccupant.params.m2PerOccupant} m²/người) — CHỈ mang tính tham khảo, KHÔNG dùng thay occupant load calc chính thức cho hồ sơ PCCC.`,
+          room.at,
+        ));
+      }
+    } else if (kind === 'office') {
+      // 2026-07-16: office là kind MỚI (mở rộng ra ngoài residential-only) — nối
+      // 'intl-occupant-load-business-general'. Rule này verified=false vì 2 nguồn (IBC vs bảng
+      // đối chiếu NFPA) cho ra 2 con số khác nhau (100 sqft/người ≈9.29 m² vs 150 sqft/người
+      // ≈13.94 m²) — KHÔNG tự chọn 1 số giữa dải rồi coi như chắc chắn, message phải nêu rõ cả
+      // 2 đầu dải + ghi chú mâu thuẫn nguồn.
+      const rOffice = byId('intl-occupant-load-business-general');
+      if (rOffice) {
+        const p = rOffice.params as { m2PerOccupantLow: number; m2PerOccupantHigh: number };
+        const estLow = room.areaM2 / p.m2PerOccupantHigh; // hệ số cao/người → ước tính SỐ NGƯỜI thấp nhất
+        const estHigh = room.areaM2 / p.m2PerOccupantLow; // hệ số thấp/người → ước tính SỐ NGƯỜI cao nhất
+        violations.push(mkViolation(
+          rOffice,
+          `Văn phòng "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² → ước tính chứa được ~${estLow.toFixed(2)}–${estHigh.toFixed(2)} người theo hệ số IBC/NFPA (Business – general, dải ${p.m2PerOccupantLow}–${p.m2PerOccupantHigh} m²/người) — SỐ LIỆU CHƯA THỐNG NHẤT giữa 2 nguồn IBC/NFPA, dùng cận trên/dưới để tham khảo, KHÔNG dùng thay occupant load calc chính thức cho hồ sơ PCCC.`,
+          room.at,
+        ));
+      }
+    } else if (kind === 'assembly') {
+      // 2026-07-16: assembly là kind MỚI — nối 'intl-occupant-load-assembly-tables-chairs' (1.39
+      // m²/người) làm MẶC ĐỊNH cho "phòng họp/hội trường" vì loại phòng này thường bố trí bàn
+      // & ghế (không phải chỗ đứng/ghế rời như hội trường lớn) — GIẢ ĐỊNH này có thể sai cho hội
+      // trường sức chứa lớn kiểu ghế cố định/đứng, cần rà lại khi có nhu cầu phân biệt kỹ hơn.
+      const rAssembly = byId('intl-occupant-load-assembly-tables-chairs');
+      if (rAssembly) {
+        const estOccupants = room.areaM2 / rAssembly.params.m2PerOccupant;
+        violations.push(mkViolation(
+          rAssembly,
+          `Phòng họp/hội trường "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² → ước tính chứa được ~${estOccupants.toFixed(2)} người theo hệ số IBC/NFPA (Assembly – bàn & ghế, ${rAssembly.params.m2PerOccupant} m²/người, giả định mặc định có bàn ghế) — CHỈ mang tính tham khảo, KHÔNG dùng thay occupant load calc chính thức cho hồ sơ PCCC.`,
           room.at,
         ));
       }
@@ -274,6 +318,19 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
  *   intl-occupant-load-residential (2026-07-16 — occupant load ước tính, INFO-ONLY, nhánh
  *   kind==='living': estOccupants = room.areaM2 / 18.58, KHÔNG enforce số lối ra, KHÔNG thay thế
  *   occupant load calc chính thức cho hồ sơ PCCC).
+ *   intl-occupant-load-business-general (2026-07-16 chiều — MỞ RỘNG scope ra ngoài
+ *   residential-only theo yêu cầu chủ dự án: TTT Architects làm dự án MỌI quy mô, không chỉ nhà
+ *   ở dân dụng. Room kind MỚI 'office' (classifyRoom nhận "VĂN PHÒNG"/"LÀM VIỆC"/"OPEN OFFICE")
+ *   → nối rule này, verified=false CỐ Ý vì 2 nguồn mâu thuẫn (9.29–13.94 m²/người) — message
+ *   hiển thị dải ước tính số người CẢ 2 đầu, không tự chọn 1 số giữa dải).
+ *   intl-occupant-load-assembly-tables-chairs (2026-07-16 chiều — room kind MỚI 'assembly'
+ *   (classifyRoom nhận "HỘI TRƯỜNG"/"HỘI NGHỊ"/"PHÒNG HỌP"/"MEETING") → nối rule Assembly – bàn
+ *   & ghế 1.39 m²/người làm MẶC ĐỊNH — GIẢ ĐỊNH phòng họp/hội trường thường có bàn ghế, có thể
+ *   sai cho hội trường sức chứa lớn kiểu ghế cố định/đứng, chưa phân biệt kỹ hơn trong lần nối
+ *   dây này).
+ *   ⚠️ Còn NHIỀU loại phòng office/hospitality khác CHƯA được classifyRoom() nhận diện: F&B (nhà
+ *   hàng/bar), retail, spa, gym, ballroom, sảnh lễ tân/lobby... — đây là BƯỚC ĐẦU mở rộng ra ngoài
+ *   residential-only, không phải bao phủ toàn bộ, để sprint sau tiếp tục nếu cần.
  *
  * CHƯA NỐI — registry-only, không có entity 2D tương ứng (D1.7 ramp/handrail/bãi đỗ xe NKT,
  * thêm 2026-07-16; + D1.7 cũ + nhóm chiếu sáng tham khảo):

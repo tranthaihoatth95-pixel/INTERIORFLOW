@@ -241,6 +241,34 @@ function testOccupantLoadCustomLivingRoom() {
   ok('message chứa số ước tính đúng ~1.00', !!v?.message.includes('1.00'));
 }
 
+function testOccupantLoadOfficeInfo() {
+  console.log('\n[17] Occupant load info — "VĂN PHÒNG" 6.0×5.0m=30.0m² → ước tính dải ~2.15–3.23 người (IBC/NFPA Business-general, verified=false)');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 6000, 5000)); // 6.0 x 5.0m = 30.0m²
+  doc.entities.push(label({ x: 3000, y: 2500 }, 'VĂN PHÒNG'));
+  const violations = checkStandards(doc, getAllRules());
+  const v = violations.find((v) => v.ruleId === 'intl-occupant-load-business-general');
+  ok('sinh violation info occupant-load cho phòng "VĂN PHÒNG"', !!v);
+  ok('severity là info', v?.severity === 'info');
+  ok('verified=false (2 nguồn mâu thuẫn, KHÔNG chọn đại 1 số)', v?.verified === false);
+  ok('message chứa cận dưới ước tính ~2.15', !!v?.message.includes('2.15'));
+  ok('message chứa cận trên ước tính ~3.23', !!v?.message.includes('3.23'));
+  ok('message nêu rõ số liệu chưa thống nhất giữa 2 nguồn IBC/NFPA', !!v?.message.includes('CHƯA THỐNG NHẤT giữa 2 nguồn IBC/NFPA'));
+}
+
+function testOccupantLoadAssemblyInfo() {
+  console.log('\n[18] Occupant load info — "PHÒNG HỌP" 5.0×2.0m=10.0m² → ước tính ~7.19 người (IBC/NFPA Assembly – bàn & ghế, mặc định)');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 5000, 2000)); // 5.0 x 2.0m = 10.0m²
+  doc.entities.push(label({ x: 2500, y: 1000 }, 'PHÒNG HỌP'));
+  const violations = checkStandards(doc, getAllRules());
+  const v = violations.find((v) => v.ruleId === 'intl-occupant-load-assembly-tables-chairs');
+  ok('sinh violation info occupant-load cho phòng "PHÒNG HỌP"', !!v);
+  ok('severity là info', v?.severity === 'info');
+  ok('message chứa số ước tính đúng ~7.19', !!v?.message.includes('7.19'));
+  ok('message chứa disclaimer không dùng thay occupant load chính thức', !!v?.message.includes('KHÔNG dùng thay occupant load calc chính thức'));
+}
+
 testUndersizedBedroom();
 testOkBedroom();
 testWcUndersized();
@@ -261,6 +289,8 @@ testAccessCorridorTwoWay();
 testAccessCorridorTwoWayCompliant();
 testOccupantLoadLivingRoomInfo();
 testOccupantLoadCustomLivingRoom();
+testOccupantLoadOfficeInfo();
+testOccupantLoadAssemblyInfo();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);
