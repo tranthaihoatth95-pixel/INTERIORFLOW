@@ -164,6 +164,22 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
       if (r && room.areaM2 < r.params.minAreaM2) {
         violations.push(mkViolation(r, `Phòng khách "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² < ${r.params.minAreaM2}m² tham khảo (số liệu kinh nghiệm, chưa trích dẫn được điều khoản TCVN cụ thể).`, room.at));
       }
+
+      // 2026-07-16: occupant load ước tính (IBC/NFPA "Residential" 18.58 m²/người) — CHỈ
+      // rule DUY NHẤT trong nhóm intl-occupant-load khớp với 1 room kind mà classifyRoom() đã
+      // phân loại (living ≈ căn hộ/khách sạn); các loại khác (Business/Mercantile/Assembly/
+      // Educational…) KHÔNG có room kind tương ứng trong app này — cố tình KHÔNG ép thêm nhánh.
+      // Info-only, KHÔNG dùng để enforce số lối ra tối thiểu (checker không có cơ chế liên kết
+      // cửa↔phòng — xem SỔ TRẠNG THÁI NỐI DÂY cuối file).
+      const rOccupant = byId('intl-occupant-load-residential');
+      if (rOccupant) {
+        const estOccupants = room.areaM2 / rOccupant.params.m2PerOccupant;
+        violations.push(mkViolation(
+          rOccupant,
+          `Phòng khách "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² → ước tính chứa được ~${estOccupants.toFixed(2)} người theo hệ số IBC/NFPA (Residential, ${rOccupant.params.m2PerOccupant} m²/người) — CHỈ mang tính tham khảo, KHÔNG dùng thay occupant load calc chính thức cho hồ sơ PCCC.`,
+          room.at,
+        ));
+      }
     } else if (kind === 'corridor') {
       const r = byId('vn-fire-corridor-min-width-general');
       if (r && room.minWidthMm !== null && room.minWidthMm < r.params.minWidthMm) {
@@ -255,8 +271,25 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
  *   effectiveBlockSize (đọc đúng variant) × |sx|, phân loại cửa chính/cửa phòng theo HEURISTIC id
  *   block 'door' vs {doorRoom,doorWC,doubleDoor,slidingDoor,glassDoor} — KHÔNG phải phân loại
  *   ngữ nghĩa thật vì app không có concept "cửa chính nhà" tách biệt).
+ *   intl-occupant-load-residential (2026-07-16 — occupant load ước tính, INFO-ONLY, nhánh
+ *   kind==='living': estOccupants = room.areaM2 / 18.58, KHÔNG enforce số lối ra, KHÔNG thay thế
+ *   occupant load calc chính thức cho hồ sơ PCCC).
  *
- * CHƯA NỐI — registry-only, không có logic đo (D1.7 + nhóm chiếu sáng tham khảo mới):
+ * CHƯA NỐI — registry-only, không có entity 2D tương ứng (D1.7 ramp/handrail/bãi đỗ xe NKT,
+ * thêm 2026-07-16; + D1.7 cũ + nhóm chiếu sáng tham khảo):
+ *   - vn-access-ramp-slope-max / vn-access-ramp-run-length-max / vn-access-ramp-clear-width-min /
+ *     vn-access-ramp-turning-space (ramp/dốc thoải QCVN 10:2024/BXD): model 2D InteriorFlow không
+ *     có entity ramp/dốc thoải — app thiết kế nội thất căn hộ, không có khái niệm ramp ngoài trời
+ *     trong scope. Registry-only, không nối đo hình học.
+ *   - vn-access-handrail-height / vn-access-handrail-extension / vn-access-handrail-wall-clearance
+ *     (tay vịn QCVN 10:2024/BXD): không có entity tay vịn trong model (đây là chi tiết mặt đứng/
+ *     elevation, model 2D chỉ lưu top-view). Registry-only, không nối đo hình học.
+ *   - vn-access-parking-min-spaces-51-100 / -101-150 / -over-200 / vn-access-parking-side-clearance
+ *     (bãi đỗ xe NKT QCVN 10:2024/BXD, verified=false — chỉ 1 nguồn tóm tắt): InteriorFlow không
+ *     có khái niệm bãi đỗ xe ngoài trời trong scope. Registry-only, không nối đo hình học.
+ *   - Neufert hospitality (D1.4) / Neufert office (D1.5) / QCVN 06 occupant load VN: CỐ TÌNH BỎ
+ *     QUA, không thêm rule — xác nhận không đủ nguồn tin cậy độc lập trong lần rà soát 2026-07-16,
+ *     không tự bịa số liệu.
  *   - vn-access-door-clear-space (không gian trống 1400×1400 trước/sau cửa): field `clearance`
  *     hiện có của BlockDef cửa (lib/cad/furniture.ts) là "vùng quét cánh cửa mở" (door swing
  *     arc) — KHÁC Ý NGHĨA với "khoảng trống thao tác xe lăn 1400×1400" dù cùng nằm trước cửa.

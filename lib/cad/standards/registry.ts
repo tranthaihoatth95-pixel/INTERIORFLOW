@@ -60,7 +60,11 @@ export interface StandardRule {
   severity: Severity;
   /** Mô tả tiếng Việt, hiển thị trực tiếp trong panel Kiểm chuẩn. */
   description: string;
-  /** Tham số số — mỗi rule tự định nghĩa field nào dùng (mm hoặc m², xem checker.ts). */
+  /** Tham số số — mỗi rule tự định nghĩa field nào dùng (mm hoặc m², xem checker.ts). Quy ước
+   * cho field boolean-như (VD gross/net area basis): dùng số 1/0 thay vì string, để giữ toàn bộ
+   * params thuần number (đơn giản hoá mọi phép so sánh `<`/`>` trong checker.ts) — ý nghĩa
+   * gross/net ghi rõ bằng lời trong `description`/`note` của rule (xem intl-occupant-load.ts,
+   * field `areaBasisGross`: 1 = gross, 0 = net). */
   params: Record<string, number>;
   verified: boolean;
   /** Bắt buộc có nội dung khi verified=false — lý do chưa chắc + cần đối chiếu gì. */
@@ -123,8 +127,9 @@ import { ISO_DRAFTING } from './iso-drafting';
 import { NEUFERT } from './neufert';
 import { VN_ACCESSIBILITY } from './vn-accessibility';
 import { VN_LIGHTING } from './vn-lighting';
+import { INTL_OCCUPANT_LOAD } from './intl-occupant-load';
 
-export const BUILTIN_GROUPS: RuleGroup[] = [VN_RESIDENTIAL, VN_FIRE, INTL_EGRESS, ISO_DRAFTING, NEUFERT, VN_ACCESSIBILITY, VN_LIGHTING];
+export const BUILTIN_GROUPS: RuleGroup[] = [VN_RESIDENTIAL, VN_FIRE, INTL_EGRESS, ISO_DRAFTING, NEUFERT, VN_ACCESSIBILITY, VN_LIGHTING, INTL_OCCUPANT_LOAD];
 
 /** Toàn bộ rule (built-in + tuỳ biến), trùng id thì rule tuỳ biến (thêm sau) ghi đè. */
 export function getAllRules(): StandardRule[] {

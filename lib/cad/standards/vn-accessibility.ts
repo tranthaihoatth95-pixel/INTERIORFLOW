@@ -2,14 +2,15 @@
  * lib/cad/standards/vn-accessibility.ts — Tiếp cận cho người khuyết tật/người cao tuổi
  * (QCVN 10:2024/BXD — công trình xây dựng đảm bảo người khuyết tật tiếp cận sử dụng).
  *
- * NGUỒN SỐ LIỆU (đọc kỹ trước khi dùng cho hồ sơ chính thức): 4 trị số dưới đây do CHỦ DỰ ÁN
- * cung cấp trực tiếp trong phiên làm việc 2026-07-15, KHÔNG PHẢI do agent tự tra cứu web. Số
- * liệu này CHƯA được đối chiếu chéo với nguồn thứ 2 độc lập trong phiên này (khác với vn-fire.ts/
- * neufert.ts — nơi mọi trị số verified=true đều đã tra ≥2 nguồn công bố độc lập). Vì vậy giữ
- * verified=false cho TẤT CẢ rule trong file này dù số liệu là số "chính thức" QCVN 10:2024 (thay
- * thế QCVN 10:2014/BXD cũ) — mức tin cậy ở đây là "chủ dự án khẳng định", chưa phải "agent tự xác
- * nhận qua ≥2 nguồn" theo đúng quy ước verified ở đầu registry.ts. Trước khi dùng cho hồ sơ thẩm
- * duyệt chính thức, BẮT BUỘC đối chiếu bản QCVN 10:2024/BXD gốc (moc.gov.vn) 1 lần nữa.
+ * NGUỒN SỐ LIỆU (đọc kỹ trước khi dùng cho hồ sơ chính thức):
+ *   - 4 rule ĐẦU (cửa/khoảng trống/hành lang) do CHỦ DỰ ÁN cung cấp trực tiếp trong phiên làm
+ *     việc 2026-07-15, KHÔNG PHẢI do agent tự tra cứu web, CHƯA đối chiếu chéo nguồn thứ 2 độc
+ *     lập trong phiên đó — verified=false cho cả 4 rule này dù số liệu là số "chính thức" QCVN
+ *     10:2024 (thay thế QCVN 10:2014/BXD cũ). Trước khi dùng cho hồ sơ thẩm duyệt chính thức,
+ *     BẮT BUỘC đối chiếu bản QCVN 10:2024/BXD gốc (moc.gov.vn) 1 lần nữa.
+ *   - 7 rule ramp + handrail (thêm 2026-07-16) đã đối chiếu ĐƯỢC 2 nguồn khớp nhau — verified=true.
+ *   - 4 rule bãi đỗ xe NKT (thêm 2026-07-16) chỉ có 1 nguồn tóm tắt, CHƯA đọc bảng gốc PDF —
+ *     verified=false, ghi rõ trong note từng rule.
  */
 import type { RuleGroup } from './registry';
 
@@ -64,6 +65,143 @@ export const VN_ACCESSIBILITY: RuleGroup = {
       params: { minWidthMm: 1500 },
       verified: false,
       note: 'Trị số do chủ dự án cung cấp từ QCVN 10:2024/BXD, CHƯA đối chiếu chéo nguồn thứ 2 độc lập trong phiên này. Đo được ngay bằng room.minWidthMm — đã nối vào nhánh corridor của checkStandards() (checker.ts), dùng lại đúng bề rộng hành lang đã đo cho các rule corridor khác.',
+    },
+
+    // 2026-07-16: 3 rule mới (ramp/handrail/bãi đỗ xe NKT) — QCVN 10:2024/BXD (Thông tư
+    // 06/2024/TT-BXD). KHÔNG có entity 2D tương ứng trong model InteriorFlow (app thiết kế nội
+    // thất căn hộ, không có khái niệm ramp/handrail/bãi đỗ xe ngoài trời) — registry-only, xem
+    // "SỔ TRẠNG THÁI NỐI DÂY" trong checker.ts.
+    {
+      id: 'vn-access-ramp-slope-max',
+      source: 'QCVN 10:2024/BXD (Thông tư 06/2024/TT-BXD) — Ramp/dốc thoải',
+      category: 'clearance',
+      severity: 'error',
+      region: 'VN',
+      binding: 'mandatory',
+      description: 'Ramp (dốc thoải) cho xe lăn: độ dốc tối đa 1/12 (≈8.33%).',
+      params: { maxSlopeRatioDenominator: 12, maxSlopePercent: 8.33 },
+      verified: true,
+      note: 'Đối chiếu 2 nguồn khớp nhau. Registry-only: model 2D InteriorFlow không có entity ramp/dốc thoải nên KHÔNG nối đo hình học tự động — xem SỔ TRẠNG THÁI NỐI DÂY trong checker.ts.',
+    },
+    {
+      id: 'vn-access-ramp-run-length-max',
+      source: 'QCVN 10:2024/BXD (Thông tư 06/2024/TT-BXD) — Ramp/dốc thoải',
+      category: 'clearance',
+      severity: 'error',
+      region: 'VN',
+      binding: 'mandatory',
+      description: 'Ramp (dốc thoải): chiều dài tối đa mỗi đoạn dốc 9.000mm; quá chiều dài này phải bố trí chiếu nghỉ (landing) rộng tối thiểu 1.400mm.',
+      params: { maxRunLengthMm: 9000, minLandingDepthMm: 1400 },
+      verified: true,
+      note: 'Đối chiếu 2 nguồn khớp nhau. Registry-only: model 2D InteriorFlow không có entity ramp/chiếu nghỉ nên KHÔNG nối đo hình học tự động — xem SỔ TRẠNG THÁI NỐI DÂY trong checker.ts.',
+    },
+    {
+      id: 'vn-access-ramp-clear-width-min',
+      source: 'QCVN 10:2024/BXD (Thông tư 06/2024/TT-BXD) — Ramp/dốc thoải',
+      category: 'clearance',
+      severity: 'error',
+      region: 'VN',
+      binding: 'mandatory',
+      description: 'Ramp (dốc thoải): chiều rộng thông thủy tối thiểu 1.200mm.',
+      params: { minClearWidthMm: 1200 },
+      verified: true,
+      note: 'Đối chiếu 2 nguồn khớp nhau. Registry-only: model 2D InteriorFlow không có entity ramp nên KHÔNG nối đo hình học tự động — xem SỔ TRẠNG THÁI NỐI DÂY trong checker.ts.',
+    },
+    {
+      id: 'vn-access-ramp-turning-space',
+      source: 'QCVN 10:2024/BXD (Thông tư 06/2024/TT-BXD) — Ramp/dốc thoải',
+      category: 'clearance',
+      severity: 'error',
+      region: 'VN',
+      binding: 'mandatory',
+      description: 'Ramp (dốc thoải): khoảng trống đầu và cuối dốc tối thiểu 1.400×1.400mm để xe lăn xoay trở.',
+      params: { minTurningWidthMm: 1400, minTurningDepthMm: 1400 },
+      verified: true,
+      note: 'Đối chiếu 2 nguồn khớp nhau. Registry-only: model 2D InteriorFlow không có entity ramp nên KHÔNG nối đo hình học tự động — xem SỔ TRẠNG THÁI NỐI DÂY trong checker.ts.',
+    },
+    {
+      id: 'vn-access-handrail-height',
+      source: 'QCVN 10:2024/BXD (Thông tư 06/2024/TT-BXD) — Handrail/tay vịn',
+      category: 'clearance',
+      severity: 'error',
+      region: 'VN',
+      binding: 'mandatory',
+      description: 'Tay vịn: cao 900mm nếu tay vịn đơn; nếu tay vịn đôi thì 900mm (cho người lớn) + 700mm (cho người dùng xe lăn/trẻ em).',
+      params: { singleRailHeightMm: 900, doubleRailUpperHeightMm: 900, doubleRailLowerHeightMm: 700 },
+      verified: true,
+      note: 'Đối chiếu 2 nguồn khớp nhau. Registry-only: model 2D InteriorFlow không có entity tay vịn (elevation/mặt đứng, không phải top-view) nên KHÔNG nối đo hình học tự động — xem SỔ TRẠNG THÁI NỐI DÂY trong checker.ts.',
+    },
+    {
+      id: 'vn-access-handrail-extension',
+      source: 'QCVN 10:2024/BXD (Thông tư 06/2024/TT-BXD) — Handrail/tay vịn',
+      category: 'clearance',
+      severity: 'warning',
+      region: 'VN',
+      binding: 'mandatory',
+      description: 'Tay vịn: nối dài thêm tối thiểu 300mm ở đầu và cuối đoạn dốc/bậc thang so với điểm bắt đầu/kết thúc.',
+      params: { extensionMm: 300 },
+      verified: true,
+      note: 'Đối chiếu 2 nguồn khớp nhau. Registry-only: model 2D InteriorFlow không có entity tay vịn nên KHÔNG nối đo hình học tự động — xem SỔ TRẠNG THÁI NỐI DÂY trong checker.ts.',
+    },
+    {
+      id: 'vn-access-handrail-wall-clearance',
+      source: 'QCVN 10:2024/BXD (Thông tư 06/2024/TT-BXD) — Handrail/tay vịn',
+      category: 'clearance',
+      severity: 'warning',
+      region: 'VN',
+      binding: 'mandatory',
+      description: 'Tay vịn: khoảng hở giữa tay vịn và tường tối thiểu 40mm (để tay nắm không cấn tường).',
+      params: { minWallClearanceMm: 40 },
+      verified: true,
+      note: 'Đối chiếu 2 nguồn khớp nhau. Registry-only: model 2D InteriorFlow không có entity tay vịn nên KHÔNG nối đo hình học tự động — xem SỔ TRẠNG THÁI NỐI DÂY trong checker.ts.',
+    },
+    {
+      id: 'vn-access-parking-min-spaces-51-100',
+      source: 'QCVN 10:2024/BXD (Thông tư 06/2024/TT-BXD) — Bãi đỗ xe người khuyết tật',
+      category: 'egress',
+      severity: 'warning',
+      region: 'VN',
+      binding: 'mandatory',
+      description: 'Bãi đỗ xe 51–100 chỗ: tối thiểu 2 chỗ dành cho người khuyết tật (NKT).',
+      params: { totalSpacesMin: 51, totalSpacesMax: 100, minAccessibleSpaces: 2 },
+      verified: false,
+      note: 'Chỉ 1 nguồn tóm tắt, chưa đọc trực tiếp bảng gốc PDF QCVN 10:2024/BXD — cần đối chiếu bản gốc (moc.gov.vn) trước khi dùng cho hồ sơ chính thức. Registry-only: InteriorFlow là app thiết kế nội thất căn hộ, không có khái niệm bãi đỗ xe ngoài trời trong scope — KHÔNG nối đo.',
+    },
+    {
+      id: 'vn-access-parking-min-spaces-101-150',
+      source: 'QCVN 10:2024/BXD (Thông tư 06/2024/TT-BXD) — Bãi đỗ xe người khuyết tật',
+      category: 'egress',
+      severity: 'warning',
+      region: 'VN',
+      binding: 'mandatory',
+      description: 'Bãi đỗ xe 101–150 chỗ: tối thiểu 3 chỗ dành cho người khuyết tật (NKT).',
+      params: { totalSpacesMin: 101, totalSpacesMax: 150, minAccessibleSpaces: 3 },
+      verified: false,
+      note: 'Chỉ 1 nguồn tóm tắt, chưa đọc trực tiếp bảng gốc PDF QCVN 10:2024/BXD — cần đối chiếu bản gốc (moc.gov.vn) trước khi dùng cho hồ sơ chính thức. Registry-only: InteriorFlow là app thiết kế nội thất căn hộ, không có khái niệm bãi đỗ xe ngoài trời trong scope — KHÔNG nối đo.',
+    },
+    {
+      id: 'vn-access-parking-min-spaces-over-200',
+      source: 'QCVN 10:2024/BXD (Thông tư 06/2024/TT-BXD) — Bãi đỗ xe người khuyết tật',
+      category: 'egress',
+      severity: 'warning',
+      region: 'VN',
+      binding: 'mandatory',
+      description: 'Bãi đỗ xe > 200 chỗ: tối thiểu 5 chỗ dành cho người khuyết tật (NKT), cộng thêm 1 chỗ cho mỗi 100 xe vượt quá 200.',
+      params: { totalSpacesThreshold: 200, minAccessibleSpaces: 5, additionalSpacePer100Over: 1 },
+      verified: false,
+      note: 'Chỉ 1 nguồn tóm tắt, chưa đọc trực tiếp bảng gốc PDF QCVN 10:2024/BXD — cần đối chiếu bản gốc (moc.gov.vn) trước khi dùng cho hồ sơ chính thức. Registry-only: InteriorFlow là app thiết kế nội thất căn hộ, không có khái niệm bãi đỗ xe ngoài trời trong scope — KHÔNG nối đo.',
+    },
+    {
+      id: 'vn-access-parking-side-clearance',
+      source: 'QCVN 10:2024/BXD (Thông tư 06/2024/TT-BXD) — Bãi đỗ xe người khuyết tật',
+      category: 'clearance',
+      severity: 'warning',
+      region: 'VN',
+      binding: 'mandatory',
+      description: 'Chỗ đỗ xe NKT: khoảng đệm bên xe lăn tối thiểu 1.200mm (bãi <24 chỗ) hoặc 2.500mm (bãi >24 chỗ).',
+      params: { sideClearanceMmSmallLot: 1200, sideClearanceMmLargeLot: 2500, lotSizeThreshold: 24 },
+      verified: false,
+      note: 'Chỉ 1 nguồn tóm tắt, chưa đọc trực tiếp bảng gốc PDF QCVN 10:2024/BXD. Riêng số 2.500mm (bãi >24 chỗ) nên đối chiếu lại — có thể model tóm tắt nhầm đơn vị/ngữ cảnh, chênh lệch bất thường so với 1.200mm. Registry-only: InteriorFlow là app thiết kế nội thất căn hộ, không có khái niệm bãi đỗ xe ngoài trời trong scope — KHÔNG nối đo.',
     },
   ],
 };

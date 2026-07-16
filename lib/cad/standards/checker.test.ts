@@ -218,6 +218,29 @@ function testAccessCorridorTwoWayCompliant() {
   ok('không có violation khi hành lang đạt đúng 1500mm', !violations.some((v) => v.ruleId === 'vn-access-corridor-two-way-min-width'));
 }
 
+function testOccupantLoadLivingRoomInfo() {
+  console.log('\n[15] Occupant load info — phòng khách demo-plan 36.7m² → ước tính ~1.97 người (IBC/NFPA Residential 18.58 m²/người)');
+  const violations = checkStandards(buildDemoPlan(), getAllRules());
+  const v = violations.find((v) => v.ruleId === 'intl-occupant-load-residential');
+  ok('sinh violation info occupant-load cho phòng khách', !!v);
+  ok('severity là info', v?.severity === 'info');
+  // Diện tích hiển thị làm tròn "36.7m²" nhưng số đo hình học thật hơi khác 36.700 chẵn nên kết
+  // quả chia thực tế ra 1.97 (không phải 1.98 nếu tính từ số làm tròn) — dùng đúng số checker in ra.
+  ok('message chứa số ước tính đúng ~1.97 (tính từ diện tích đo thật, không phải số làm tròn hiển thị)', !!v?.message.includes('1.97'));
+  ok('message chứa disclaimer không dùng thay occupant load chính thức', !!v?.message.includes('KHÔNG dùng thay occupant load calc chính thức'));
+}
+
+function testOccupantLoadCustomLivingRoom() {
+  console.log('\n[16] Occupant load info — phòng khách nhỏ 6×3.1m=18.6m² → ước tính ~1.00 người');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 6000, 3100)); // 6.0 x 3.1m = 18.6m²
+  doc.entities.push(label({ x: 3000, y: 1550 }, 'PHÒNG KHÁCH'));
+  const violations = checkStandards(doc, getAllRules());
+  const v = violations.find((v) => v.ruleId === 'intl-occupant-load-residential');
+  ok('sinh violation info occupant-load', !!v);
+  ok('message chứa số ước tính đúng ~1.00', !!v?.message.includes('1.00'));
+}
+
 testUndersizedBedroom();
 testOkBedroom();
 testWcUndersized();
@@ -236,6 +259,8 @@ testAccessMainDoorTooNarrow();
 testAccessMainDoorMeetsThreshold();
 testAccessCorridorTwoWay();
 testAccessCorridorTwoWayCompliant();
+testOccupantLoadLivingRoomInfo();
+testOccupantLoadCustomLivingRoom();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);
