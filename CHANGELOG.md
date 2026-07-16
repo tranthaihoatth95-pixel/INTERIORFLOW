@@ -1,5 +1,14 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 15/07 — Sprint 3 B1+B2 Shape Library + tương tác
+3 agent song song A/B/C theo `SHAPE-SCHEMA.md`, merge tuần tự A→B→C vào `feat/present-layout-ml-p1`, verify tsc+test sau mỗi merge, PASS cả 3.
+- **B1 (41 shape, từ 18 gốc)**: `lib/cad/furniture.ts` — phòng ngủ (tủ đầu giường, bàn trang điểm), phòng khách (sofa góc, bàn trà, kệ TV), bếp (tủ lạnh, đảo bếp, hút mùi, lò vi sóng), tắm (vòi sen, gương), văn phòng (ghế, tủ hồ sơ, kệ sách), 3 loại cửa mới + 2 loại cửa sổ, cầu thang thẳng/chữ L (nhóm mới `Cầu thang`), máy lạnh/quạt trần (nhóm mới `Thiết bị`). Cầu thang xoắn BỎ QUA (Prim không vẽ được đường xoắn thật).
+- **B2 (8/8 xong)**: drag-drop từ palette, auto-snap tường, resize góc, info panel, variant switch, collision (SAT), clearance overlay, search — file mới `lib/cad/shape-interactions.ts`, `components/ShapePalette.tsx`.
+- **Schema chung**: `lib/cad/shared-types.ts` — tách 5 type (`BlockGroup/ShapeVariant/SnapAnchor/ClearanceZone/ShapeMeta`) ra khỏi `furniture.ts` sau khi 3 agent song song tự trùng định nghĩa gây conflict merge 2 lần liên tiếp. Quy tắc rút ra: tách schema chung + commit trước, agent chỉ import từ file chung, không tự định nghĩa lại.
+- **Test**: 634 test (29 file `*.test.ts` qua `sucrase-node`) PASS 0 fail, tsc 0 lỗi.
+- ⚠️ Bài học quy trình: 2/3 agent (Agent C, và trước đó agent merge QA-stress) LÀM XONG việc nhưng QUÊN COMMIT trước khi báo done — chỉ phát hiện lúc merge thấy branch không đổi HEAD. Từ đó: agent phải tự xác nhận `git log -1` trước khi báo cáo.
+- ⚠️ Phát hiện khi verify: dòng "170 test mới" ghi trước đây cho `feat/sprint3-qa-stress` là SAI — thực tế merge chỉ có 42 test (`stress-auth.test.ts`), 4 file stress test khác đã mất do agent quên commit.
+
 ## 15/07 — 4 nhánh merge trước Sprint 3 (nhánh tích hợp `feat/present-layout-ml-p1`)
 - **`feat/render-nodes-v2`**: 7 node chặng Render (`lib/nodes/defs/render-v2.ts`) — text2image, ID-mask, furniture-extract, cad2fbx (import FBX), local-edit, camera, nền cad-to-obj. Kiến trúc 2 tầng Cloud AI (khi có key) / lõi tất định (khi không), mọi node ghi `_tier` + badge UI. Adapter NVIDIA `generateImage()` dùng model `black-forest-labs/flux.1-dev` (SD3/SDXL trả 404 cho account free) + route `/api/render/nvidia-image`. Probe fal (`scripts/probe-fal.ts`) — fal hết balance. Blender OBJ→FBX (`scripts/blender/obj2fbx.py` + route `/api/render/fbx`, verify Blender 4.5 local OK; máy không có Blender → 501 kèm hướng dẫn). 110 test mới. Verify độc lập: tsc 0, 25/25 test file, smoke browser 127.0.0.1:3700 OK.
 - **`feat/ai-local-ollama`**: tầng AI local Ollama chữ (mô tả/concept/tóm tắt, KHÔNG ảnh) — `lib/ai/providers/ollama.ts` + `lib/ai/text-tier.ts` (completeTextTiered Cloud→Ollama→lõi, kèm `_tier`/`_model`). Model mặc định llama3, override `OLLAMA_MODEL`. 36 test mới, ff merge, tsc 0.

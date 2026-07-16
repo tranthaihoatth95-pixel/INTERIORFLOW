@@ -14,14 +14,14 @@
 - Perceptron THẬT (learning-to-rank, degrade heuristic) · foldable Find N6 test on-device · installer cả 3 unsigned (.exe cần máy Win) · PWA host Vercel + Supabase (Agent 4 tự dựng, Sprint 4).
 
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
-- **0 worktree đang sống** (0/3 slot) — Sprint 3 B1+B2 vừa merge xong, tất cả đã dọn.
-- **✅ 15/07 Sprint 3 B1+B2 — Shape Library + tương tác** (41 shape, drag-drop/snap/resize/collision/clearance, schema chung `lib/cad/shared-types.ts`; 634 test PASS, tsc 0 lỗi). Chi tiết + bài học quy trình (agent quên commit) → CHANGELOG.md.
-- **✅ 15/07 merge thêm 4 nhánh** (render-nodes-v2 7 node · ai-local-ollama · render-ux-overhaul · deploy-vercel-supabase) — chi tiết CHANGELOG.md.
+- **0 worktree đang sống** (0/3 slot) — nhánh text-toolbar-ux vừa merge xong, đã dọn.
+- **✅ 15/07 Sprint 3 B1+B2 xong** (41 shape nội thất + drag-drop/snap/collision/variant, schema chung `lib/cad/shared-types.ts`, 634 test PASS) + **merge thêm 4 nhánh** (render-nodes-v2 7 node · ai-local-ollama · render-ux-overhaul · deploy-vercel-supabase) — chi tiết + bài học quy trình (agent quên commit, số test sai) → CHANGELOG.md.
 - File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
 - **NVIDIA_API_KEY đã có**, probe HTTP 200. **fal**: hết balance, chờ nạp credit.
 - CHƯA làm (backlog cũ): bỏ hardcode 'DETECH · CONCEPT' · template tĩnh thư viện · heavy-ML pha 2 · membership per-flow.
-- **✅ 16/07 verify UI chặng Render xong** (đăng nhập `integrator@ttt.vn`, flow mới, port 3940, KHÔNG đụng flow thật): 6 node render-v2 (text2image/ID-mask/furniture-extract/cad2fbx/local-edit/camera) hiện đúng tên trong Node Library. Chạy thật node "Tạo ảnh" (AI, NVIDIA NIM flux.1-dev) + "Góc máy ảnh" (tất định) → badge `_tier` đúng màu (tím AI / lục tất định). Cmd+G group: store tạo group đúng (`groupSelected` trong `lib/store.ts:831`) nhưng **overlay KHÔNG hiện** — xem bug bên dưới.
-- **Kiểm tra "1/5" ở Present**: KHÔNG phải bug — đó là số **sheet đang dùng / MAX_SHEETS=5** (`components/studio/SheetTabBar.tsx:212`, `PresentSheets.tsx:38`), không liên quan số slide trong 1 sheet. Verify UI: bấm "Thêm trang trình bày" → counter lên đúng "2/5". Audit trước hiểu nhầm, không cần sửa.
+- **✅ 16/07 verify UI chặng Render xong** (đăng nhập `integrator@ttt.vn`, flow mới, port 3940, KHÔNG đụng flow thật): 6 node render-v2 hiện đúng tên. Chạy thật "Tạo ảnh" (NVIDIA NIM) + "Góc máy ảnh" → badge `_tier` đúng màu. Cmd+G group: store tạo đúng nhưng **overlay KHÔNG hiện** — xem Nợ kỹ thuật.
+- **Kiểm tra "1/5" ở Present**: KHÔNG phải bug — số **sheet đang dùng / MAX_SHEETS=5**, không liên quan số slide. Audit trước hiểu nhầm, không cần sửa.
+- **✅ 17/07 merge `fix/text-toolbar-clip-and-deselect`**: TextToolbar hết bị cắt (mép trên/dưới/phải, kể cả khi zoom), click-ra-ngoài tự bỏ chọn, kính mờ tối. **Panel trái/phải giờ resize (splitter+localStorage) + ẩn/hiện được** (tham khảo Photoshop/Canva) + **zoom in/out canvas** (nút, Ctrl/Cmd+lăn chuột, Ctrl/Cmd+0 Fit). Verify browser thật: zoom + panel collapse xác nhận qua screenshot; riêng chấm màu clamp mới review code kỹ (chưa chụp ảnh riêng) — theo dõi nếu tái diễn.
 
 ## Nợ kỹ thuật
 - Hydration ⌘Z/Ctrl+Z tooltip (lib/kbd.ts:11 + CadToolbar) — cosmetic.
