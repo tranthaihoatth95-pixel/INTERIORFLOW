@@ -262,7 +262,8 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
  *     arc) — KHÁC Ý NGHĨA với "khoảng trống thao tác xe lăn 1400×1400" dù cùng nằm trước cửa.
  *     Ép dùng chung sẽ báo sai; cần khái niệm "wheelchair maneuvering clearance" riêng nếu muốn
  *     đo tự động — chưa làm trong lần nối dây này.
- *   - vn-lighting-living-room-lux-reference: CHỦ Ý KHÔNG nối — đây là dữ liệu tĩnh tham khảo
+ *   - vn-lighting-living-room-lux-reference, vn-lighting-bedroom-lux-reference,
+ *     vn-lighting-kitchen-lux-reference: CHỦ Ý KHÔNG nối — đây là dữ liệu tĩnh tham khảo
  *     (severity 'info', binding 'advisory'), không có cách đo lux từ model 2D (không phải
  *     calculator), chỉ để tra cứu/hiển thị sau này khi nhóm E (MEP) được build.
  *
