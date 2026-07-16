@@ -12,7 +12,7 @@
  * ngắn ngay trên pill (human-in-loop, không tự bịa).
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { TextElement, TextAlign, ListStyle } from '@/lib/present-editor/model';
 import { effectiveListStyle } from '@/lib/present-editor/model';
 import {
@@ -37,23 +37,74 @@ interface Props {
   topPct: number;
   /** true = đặt pill BÊN DƯỚI element (khi sát mép trên). */
   below?: boolean;
+  /** rộng sân khấu (px) hiện tại — CHỈ dùng để buộc đo lại clamp-viewport khi zoom đổi (leftPct/
+   * topPct không đổi lúc zoom vì vẫn là % sân khấu, nhưng vị trí PX thật thì đổi). */
+  stageWidthPx?: number;
   onUpdate: (mutate: (el: TextElement) => void, live?: boolean) => void;
   /** ngữ cảnh để AI viết đúng giọng. */
   brand?: string;
   project?: string;
 }
 
-export default function TextToolbar({ el, leftPct, topPct, below, onUpdate, brand, project }: Props) {
+export default function TextToolbar({
+  el,
+  leftPct,
+  topPct,
+  below,
+  stageWidthPx,
+  onUpdate,
+  brand,
+  project,
+}: Props) {
   const [aiBusy, setAiBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [colorOpen, setColorOpen] = useState(false);
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [dx, setDx] = useState(0);
 
   useEffect(() => {
     return () => {
       if (noteTimer.current) clearTimeout(noteTimer.current);
     };
   }, []);
+
+  /* Clamp trong VIEWPORT BROWSER thật (không chỉ trong slide) — nếu textbox nằm sát mép
+   * PHẢI/TRÁI slide, toolbar (canh giữa theo textbox bằng translate(-50%,...)) có thể tràn
+   * ra ngoài màn hình nhìn thấy được (không phải bị cha overflow:hidden cắt, mà đơn giản là
+   * ở ngoài viewport). Đo bằng getBoundingClientRect sau khi render rồi dịch lại bằng
+   * translateX(dx) nếu tràn (góp ý ảnh chụp thật: chấm màu cuối toolbar mất ở mép phải). */
+  useLayoutEffect(() => {
+    const node = wrapRef.current;
+    if (!node) return;
+    const margin = 8;
+
+    function recompute() {
+      if (!node) return;
+      const rect = node.getBoundingClientRect();
+      // rect đã bao gồm dx hiện tại — quy về vị trí "gốc" (dx=0) trước khi tính lại.
+      setDx((prevDx) => {
+        const baseLeft = rect.left - prevDx;
+        const baseRight = baseLeft + rect.width;
+        const minLeft = margin;
+        const maxRight = window.innerWidth - margin;
+        let next = prevDx;
+        if (baseLeft < minLeft) next = minLeft - baseLeft;
+        else if (baseRight > maxRight) next = maxRight - baseRight;
+        return Math.abs(next - prevDx) < 0.5 ? prevDx : next;
+      });
+    }
+
+    recompute();
+    const ro = new ResizeObserver(recompute);
+    ro.observe(node);
+    window.addEventListener('resize', recompute);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', recompute);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leftPct, topPct, below, el.id, stageWidthPx]);
 
   const flash = (msg: string) => {
     setNote(msg);
@@ -107,6 +158,7 @@ export default function TextToolbar({ el, leftPct, topPct, below, onUpdate, bran
 
   return (
     <div
+      ref={wrapRef}
       className="pe-textbar"
       // chặn pointerdown xuống canvas (tránh bỏ chọn / bắt đầu marquee).
       onPointerDown={(e) => e.stopPropagation()}
@@ -114,7 +166,7 @@ export default function TextToolbar({ el, leftPct, topPct, below, onUpdate, bran
         position: 'absolute',
         left: `${leftPct}%`,
         top: `${topPct}%`,
-        transform: `translate(-50%, ${below ? '0' : '-100%'})`,
+        transform: `translate(calc(-50% + ${dx}px), ${below ? '0' : '-100%'})`,
         marginTop: below ? 10 : -10,
         zIndex: 40,
         display: 'flex',

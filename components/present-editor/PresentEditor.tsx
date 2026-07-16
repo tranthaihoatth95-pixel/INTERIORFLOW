@@ -53,7 +53,7 @@ import LibraryBrowser, { type RefImage } from './LibraryBrowser';
 import MotionPanel from './MotionPanel';
 import SlidePlayer from './SlidePlayer';
 import ImageEditor from './ImageEditor';
-import { LayoutTemplate, Images, Wand2 } from 'lucide-react';
+import { LayoutTemplate, Images, Wand2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 
 interface Props {
   initialDeck: EditorDeck;
@@ -68,6 +68,19 @@ type LeftTab = 'layout' | 'reference' | 'motion';
 
 const MIN_PANEL = 220;
 const MAX_PANEL = 460;
+const MIN_INSPECTOR = 180;
+const MAX_INSPECTOR = 480;
+const LS_PANEL_W = 'pe-panelW';
+const LS_INSPECTOR_W = 'pe-inspectorW';
+const LS_INSPECTOR_OPEN = 'pe-inspectorOpen';
+
+/* Zoom canvas — tham khảo Figma/Photoshop: zoom=1 = "Fit" (vừa khung, giữ hành vi cũ khi
+ * chưa có zoom), Ctrl/Cmd+lăn chuột hoặc nút +/− đổi zoom, Ctrl/Cmd+0 về lại Fit. */
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 3;
+const ZOOM_STEP = 0.1;
+const STAGE_MAX_W = 1100; // rộng tối đa sân khấu ở zoom 100% (khớp giá trị cũ EditorCanvas).
+const STAGE_PAD = 48; // padding ngang của <main> (24px × 2).
 
 export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   const ed = useEditor(initialDeck);
@@ -80,6 +93,56 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   const [tab, setTab] = useState<LeftTab>('layout');
   const [panelOpen, setPanelOpen] = useState(true);
   const [panelW, setPanelW] = useState(288); // rộng cột trái (kéo dãn)
+  const [inspectorOpen, setInspectorOpen] = useState(true);
+  const [inspectorW, setInspectorW] = useState(280); // rộng cột phải "LỚP" (kéo dãn)
+
+  // Nạp độ rộng/ẩn-hiện panel đã lưu (localStorage) SAU mount — tránh lệch hydration SSR.
+  useEffect(() => {
+    try {
+      const pw = Number(localStorage.getItem(LS_PANEL_W));
+      if (pw && pw >= MIN_PANEL && pw <= MAX_PANEL) setPanelW(pw);
+      const iw = Number(localStorage.getItem(LS_INSPECTOR_W));
+      if (iw && iw >= MIN_INSPECTOR && iw <= MAX_INSPECTOR) setInspectorW(iw);
+      const io = localStorage.getItem(LS_INSPECTOR_OPEN);
+      if (io === '0') setInspectorOpen(false);
+    } catch {
+      /* private mode / SSR — bỏ qua, dùng mặc định */
+    }
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_PANEL_W, String(panelW));
+    } catch {
+      /* ignore */
+    }
+  }, [panelW]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_INSPECTOR_W, String(inspectorW));
+    } catch {
+      /* ignore */
+    }
+  }, [inspectorW]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_INSPECTOR_OPEN, inspectorOpen ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+  }, [inspectorOpen]);
+  const [zoom, setZoom] = useState(1); // 1 = "Fit" (vừa khung hiện có, hành vi mặc định cũ)
+  const [fitWidth, setFitWidth] = useState(STAGE_MAX_W);
+  const zoomIn = useCallback(
+    () => setZoom((z) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, +(z + ZOOM_STEP).toFixed(2)))),
+    [],
+  );
+  const zoomOut = useCallback(
+    () => setZoom((z) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, +(z - ZOOM_STEP).toFixed(2)))),
+    [],
+  );
+  const zoomReset = useCallback(() => setZoom(1), []);
+  const stageWidth = Math.round(Math.max(160, Math.min(fitWidth, STAGE_MAX_W) * zoom));
+
   const [busy, setBusy] = useState<string | null>(null);
   const [libAssets, setLibAssets] = useState<GuAsset[]>([]);
   const [libLoading, setLibLoading] = useState(true);
@@ -239,6 +302,38 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
    * Click ngoài CẢ HAI (vd sidebar Mẫu/Reference/Motion bên trái, header) = bỏ chọn. */
   const canvasAreaRef = useRef<HTMLElement | null>(null);
   const inspectorRef = useRef<HTMLElement | null>(null);
+
+  /* Đo bề rộng khả dụng của <main> (canvas area) để tính "Fit" (zoom=1) — cập nhật khi resize
+   * cửa sổ HOẶC khi panel trái/phải kéo dãn/ẩn-hiện (canvas area đổi kích thước). */
+  useEffect(() => {
+    const node = canvasAreaRef.current;
+    if (!node) return;
+    function recompute() {
+      if (!node) return;
+      setFitWidth(Math.max(160, node.clientWidth - STAGE_PAD));
+    }
+    recompute();
+    const ro = new ResizeObserver(recompute);
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, [panelOpen, inspectorOpen]);
+
+  /* Ctrl/Cmd + lăn chuột = zoom canvas (chuẩn Photoshop/Canva/Figma). Lăn chuột THƯỜNG (không
+   * giữ Ctrl/Cmd) giữ nguyên hành vi cuộn cũ. Gắn listener NATIVE (không dùng onWheel của React)
+   * để preventDefault thật sự chặn được zoom trang của trình duyệt — React 17+ đăng ký wheel
+   * handler ở chế độ passive nên preventDefault bên trong onWheel JSX sẽ KHÔNG có tác dụng. */
+  useEffect(() => {
+    const node = canvasAreaRef.current;
+    if (!node) return;
+    function onWheelNative(e: WheelEvent) {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      e.preventDefault();
+      const dir = e.deltaY > 0 ? -1 : 1;
+      setZoom((z) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, +(z + dir * ZOOM_STEP).toFixed(2))));
+    }
+    node.addEventListener('wheel', onWheelNative, { passive: false });
+    return () => node.removeEventListener('wheel', onWheelNative);
+  }, []);
   const onFrameMany = useCallback(
     (dxPct: number, dyPct: number, live: boolean) => {
       const s = ed.slide;
@@ -695,6 +790,34 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     }
   }, []);
 
+  /* ------------------------- splitter kéo dãn panel phải (Lớp) ------------------------- */
+  const dragStartR = useRef<{ x: number; w: number } | null>(null);
+  const onSplitDownR = useCallback(
+    (e: React.PointerEvent) => {
+      dragStartR.current = { x: e.clientX, w: inspectorW };
+      try {
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    },
+    [inspectorW],
+  );
+  const onSplitMoveR = useCallback((e: React.PointerEvent) => {
+    if (!dragStartR.current) return;
+    // panel phải: kéo splitter sang TRÁI mới tăng rộng (ngược hướng so panel trái).
+    const next = dragStartR.current.w - (e.clientX - dragStartR.current.x);
+    setInspectorW(Math.max(MIN_INSPECTOR, Math.min(MAX_INSPECTOR, next)));
+  }, []);
+  const onSplitUpR = useCallback((e: React.PointerEvent) => {
+    dragStartR.current = null;
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   /* ----------------------- phím tắt (cấp document) ----------------------- */
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -745,6 +868,22 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         onPaste();
         return;
       }
+      // zoom canvas: Ctrl/Cmd + '=' (phím '+' không Shift) / '-' / '0' (về Fit) — chuẩn Figma/PS.
+      if (mod && (e.key === '=' || e.key === '+')) {
+        e.preventDefault();
+        zoomIn();
+        return;
+      }
+      if (mod && e.key === '-') {
+        e.preventDefault();
+        zoomOut();
+        return;
+      }
+      if (mod && e.key === '0') {
+        e.preventDefault();
+        zoomReset();
+        return;
+      }
       if ((e.key === 'Delete' || e.key === 'Backspace') && ed.selectedIds.length) {
         e.preventDefault();
         onDeleteSelected();
@@ -761,7 +900,20 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [ed, onDuplicateSelected, onCopySelected, onPaste, onDeleteSelected, onNudge, onSelectNext, imageEditId, playing]);
+  }, [
+    ed,
+    onDuplicateSelected,
+    onCopySelected,
+    onPaste,
+    onDeleteSelected,
+    onNudge,
+    onSelectNext,
+    imageEditId,
+    playing,
+    zoomIn,
+    zoomOut,
+    zoomReset,
+  ]);
 
   /* ------- click ra ngoài canvas/Inspector = bỏ chọn (góp ý ảnh qab3/wzvd) -------
    * Chỉ dispatch bỏ chọn (passive) — KHÔNG preventDefault/stopPropagation, để mọi click
@@ -773,7 +925,9 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
       if (!target) return;
       const inCanvas = !!canvasAreaRef.current?.contains(target);
       const inInspector = !!inspectorRef.current?.contains(target);
-      if (!inCanvas && !inInspector) ed.select(null);
+      // splitter/nút ẩn-hiện panel không phải "click ra ngoài" (tránh mất chọn khi kéo dãn).
+      const onChrome = (target as HTMLElement).closest?.('.pe-splitter, .pe-panel-toggle');
+      if (!inCanvas && !inInspector && !onChrome) ed.select(null);
     }
     window.addEventListener('pointerdown', onPointerDownCapture);
     return () => window.removeEventListener('pointerdown', onPointerDownCapture);
@@ -835,8 +989,8 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
       />
 
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        {/* trái: panel 3 tab (kéo dãn) */}
-        {panelOpen && (
+        {/* trái: panel 3 tab (kéo dãn + ẩn/hiện — tham khảo Photoshop dock/Canva sidebar) */}
+        {panelOpen ? (
           <>
             <aside
               style={{
@@ -903,13 +1057,14 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
               </div>
             </aside>
 
-            {/* splitter kéo dãn */}
+            {/* splitter kéo dãn + nút ẩn panel (mép trong, kiểu Canva "double-click divider") */}
             <div
               className="pe-splitter"
               onPointerDown={onSplitDown}
               onPointerMove={onSplitMove}
               onPointerUp={onSplitUp}
-              title="Kéo để đổi rộng cột"
+              onDoubleClick={() => setPanelW(288)}
+              title="Kéo để đổi rộng cột · nhấp đúp để về mặc định"
               style={{
                 width: 6,
                 flex: '0 0 6px',
@@ -917,9 +1072,30 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
                 background: 'transparent',
                 marginLeft: -3,
                 zIndex: 5,
+                position: 'relative',
               }}
-            />
+            >
+              <button
+                type="button"
+                className="pe-panel-toggle"
+                onClick={() => setPanelOpen(false)}
+                title="Ẩn panel Mẫu/Reference/Motion"
+                style={panelToggleBtnStyle}
+              >
+                <ChevronLeft size={12} />
+              </button>
+            </div>
           </>
+        ) : (
+          <button
+            type="button"
+            className="pe-panel-toggle"
+            onClick={() => setPanelOpen(true)}
+            title="Hiện panel Mẫu/Reference/Motion"
+            style={panelEdgeStripStyle}
+          >
+            <ChevronRight size={12} />
+          </button>
         )}
 
         {/* giữa: canvas */}
@@ -933,11 +1109,13 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
             justifyContent: 'center',
             padding: 24,
             overflow: 'auto',
+            position: 'relative',
           }}
         >
           {ed.slide ? (
             <EditorCanvas
               slide={ed.slide}
+              widthPx={stageWidth}
               fonts={ed.deck.fonts}
               selectedIds={ed.selectedIds}
               onSelect={ed.select}
@@ -985,40 +1163,121 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
               </button>
             </div>
           )}
+
+          {/* zoom canvas — kiểu Photoshop/Figma: -/+ + % + Fit-to-view. */}
+          {ed.slide && (
+            <div
+              style={{
+                position: 'absolute',
+                left: '50%',
+                bottom: 12,
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                padding: 4,
+                borderRadius: 999,
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                boxShadow: '0 6px 20px rgba(0,0,0,.2)',
+                zIndex: 4,
+              }}
+            >
+              <button type="button" onClick={zoomOut} title="Thu nhỏ (Ctrl/Cmd −)" style={zoomBtnStyle}>
+                <ZoomOut size={14} />
+              </button>
+              <span style={{ fontSize: 11.5, color: 'var(--t2)', minWidth: 38, textAlign: 'center' }}>
+                {Math.round(zoom * 100)}%
+              </span>
+              <button type="button" onClick={zoomIn} title="Phóng to (Ctrl/Cmd +)" style={zoomBtnStyle}>
+                <ZoomIn size={14} />
+              </button>
+              <span style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 2px' }} />
+              <button
+                type="button"
+                onClick={zoomReset}
+                title="Vừa khung / 100% (Ctrl/Cmd 0)"
+                style={zoomBtnStyle}
+              >
+                <Maximize size={13} />
+              </button>
+            </div>
+          )}
         </main>
 
-        {/* phải: inspector */}
-        <aside
-          ref={inspectorRef}
-          style={{
-            width: 280,
-            flex: '0 0 280px',
-            borderLeft: '1px solid var(--border)',
-            background: 'var(--panel)',
-            padding: 14,
-            overflowY: 'auto',
-          }}
-        >
-          {ed.slide && (
-            <Inspector
-              slide={ed.slide}
-              selected={ed.selected}
-              palette={palette}
-              deckFonts={ed.deck.fonts}
-              onUpdateSelected={ed.updateSelected}
-              onUpdateSlide={ed.updateSlide}
-              onZOrder={onZOrder}
-              onAlign={onAlign}
-              onDuplicate={onDuplicateSelected}
-              onDelete={onDeleteSelected}
-              onOpenImageEditor={(id) => setImageEditId(id)}
-              onOpenAdvancedEditor={openAdvancedEditor}
-              selectedIds={ed.selectedIds}
-              onSelect={ed.select}
-              onReorderElement={onReorderElement}
-            />
-          )}
-        </aside>
+        {/* phải: inspector "LỚP" (kéo dãn + ẩn/hiện) */}
+        {inspectorOpen ? (
+          <>
+            <div
+              className="pe-splitter"
+              onPointerDown={onSplitDownR}
+              onPointerMove={onSplitMoveR}
+              onPointerUp={onSplitUpR}
+              onDoubleClick={() => setInspectorW(280)}
+              title="Kéo để đổi rộng cột · nhấp đúp để về mặc định"
+              style={{
+                width: 6,
+                flex: '0 0 6px',
+                cursor: 'col-resize',
+                background: 'transparent',
+                marginRight: -3,
+                zIndex: 5,
+                position: 'relative',
+              }}
+            >
+              <button
+                type="button"
+                className="pe-panel-toggle"
+                onClick={() => setInspectorOpen(false)}
+                title="Ẩn panel Lớp"
+                style={panelToggleBtnStyle}
+              >
+                <ChevronRight size={12} />
+              </button>
+            </div>
+            <aside
+              ref={inspectorRef}
+              style={{
+                width: inspectorW,
+                flex: `0 0 ${inspectorW}px`,
+                borderLeft: '1px solid var(--border)',
+                background: 'var(--panel)',
+                padding: 14,
+                overflowY: 'auto',
+              }}
+            >
+              {ed.slide && (
+                <Inspector
+                  slide={ed.slide}
+                  selected={ed.selected}
+                  palette={palette}
+                  deckFonts={ed.deck.fonts}
+                  onUpdateSelected={ed.updateSelected}
+                  onUpdateSlide={ed.updateSlide}
+                  onZOrder={onZOrder}
+                  onAlign={onAlign}
+                  onDuplicate={onDuplicateSelected}
+                  onDelete={onDeleteSelected}
+                  onOpenImageEditor={(id) => setImageEditId(id)}
+                  onOpenAdvancedEditor={openAdvancedEditor}
+                  selectedIds={ed.selectedIds}
+                  onSelect={ed.select}
+                  onReorderElement={onReorderElement}
+                />
+              )}
+            </aside>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="pe-panel-toggle"
+            onClick={() => setInspectorOpen(true)}
+            title="Hiện panel Lớp"
+            style={panelEdgeStripStyleR}
+          >
+            <ChevronLeft size={12} />
+          </button>
+        )}
       </div>
 
       <SlideStrip
@@ -1092,6 +1351,57 @@ function TabBtn({
     </button>
   );
 }
+
+/* Nút ẩn/hiện panel (mép trong splitter) — kiểu Photoshop "collapse to icons" / Canva
+ * "double-click divider". Đặt giữa chiều cao splitter, hiện rõ khi hover (.pe-panel-toggle
+ * trong globals.css). */
+const panelToggleBtnStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 20,
+  height: 36,
+  borderRadius: 6,
+  border: '1px solid var(--border)',
+  background: 'var(--card)',
+  color: 'var(--t3)',
+  display: 'grid',
+  placeItems: 'center',
+  cursor: 'pointer',
+  zIndex: 6,
+};
+
+/* Dải mảnh ở mép ngoài khi panel ĐANG ẨN — bấm để hiện lại (canvas giãn ra chiếm chỗ). */
+const panelEdgeStripStyle: React.CSSProperties = {
+  flex: '0 0 14px',
+  width: 14,
+  alignSelf: 'stretch',
+  border: 'none',
+  borderRight: '1px solid var(--border)',
+  background: 'var(--panel)',
+  color: 'var(--t3)',
+  display: 'grid',
+  placeItems: 'center',
+  cursor: 'pointer',
+};
+const panelEdgeStripStyleR: React.CSSProperties = {
+  ...panelEdgeStripStyle,
+  borderRight: 'none',
+  borderLeft: '1px solid var(--border)',
+};
+
+const zoomBtnStyle: React.CSSProperties = {
+  display: 'grid',
+  placeItems: 'center',
+  width: 26,
+  height: 26,
+  borderRadius: 999,
+  border: 'none',
+  background: 'transparent',
+  color: 'var(--t2)',
+  cursor: 'pointer',
+};
 
 function centered(w: number, h: number): Frame {
   return { x: (100 - w) / 2, y: (100 - h) / 2, w, h, rotation: 0 };

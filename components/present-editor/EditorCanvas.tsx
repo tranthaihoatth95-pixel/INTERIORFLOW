@@ -30,6 +30,10 @@ const CANVAS_FONT: Record<string, string> = {
 
 interface Props {
   slide: EditorSlide;
+  /** rộng sân khấu (px) — do PresentEditor tính (fit-to-view × zoom). aspect-ratio 16:9 tự
+   * suy ra chiều cao. Element vẫn định vị theo % nên KHÔNG cần đổi logic khi zoom (góp ý zoom
+   * canvas, tham khảo Photoshop/Figma). */
+  widthPx: number;
   fonts: string;
   selectedIds: string[];
   onSelect: (id: string | null) => void;
@@ -79,6 +83,7 @@ interface Marquee {
 
 export default function EditorCanvas({
   slide,
+  widthPx,
   fonts,
   selectedIds,
   onSelect,
@@ -181,8 +186,8 @@ export default function EditorCanvas({
     // dùng chung hệ toạ độ % với stage mà không bị cắt ở mép slide (góp ý ảnh qab3/wzvd).
     <div
       style={{
-        width: '100%',
-        maxWidth: 1100,
+        width: widthPx,
+        flex: `0 0 ${widthPx}px`,
         margin: '0 auto',
         aspectRatio: '16 / 9',
         position: 'relative',
@@ -427,6 +432,7 @@ export default function EditorCanvas({
                 : soleTextEl.frame.y
             }
             below={soleTextEl.frame.y < 16}
+            stageWidthPx={widthPx}
             onUpdate={(mutate, live) => onUpdateText(soleTextEl.id, mutate, live)}
             brand={brand}
             project={project}
