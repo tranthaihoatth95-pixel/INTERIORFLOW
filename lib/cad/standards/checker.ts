@@ -24,6 +24,8 @@
 import type { Doc, Entity, Pt } from '../model';
 import { findHatchBoundary, polygonArea } from '../hatch';
 import type { StandardRule, Severity } from './registry';
+import { BLOCK_MAP } from '../furniture';
+import { effectiveBlockSize } from '../shape-interactions';
 
 export interface Violation {
   ruleId: string;
@@ -115,8 +117,17 @@ export function findRoomLabels(doc: Doc): RoomInfo[] {
   return rooms;
 }
 
-type RoomKind = 'bedroom' | 'wc' | 'kitchen' | 'living' | 'corridor' | 'other';
+type RoomKind = 'bedroom' | 'wc' | 'kitchen' | 'living' | 'corridor' | 'office' | 'assembly' | 'other';
 
+/**
+ * 2026-07-16: MỞ RỘNG ra ngoài "chỉ nhà ở" — TTT Architects làm dự án MỌI quy mô
+ * (hospitality/office/residential hạng sang), KHÔNG chỉ căn hộ dân dụng như demo-plan.ts minh
+ * hoạ. Bản classifyRoom() này VẪN chỉ nhận diện được 1 tập từ khoá tiếng Việt hạn chế — đây là
+ * BƯỚC ĐẦU (thêm 'office'/'assembly'), CHƯA phủ hết các loại phòng office/hospitality khác:
+ * F&B (nhà hàng/bar), retail, spa, gym, ballroom, sảnh lễ tân/lobby, phòng hội thảo lớn... —
+ * các loại này sẽ rơi vào 'other' (không bị check sai, chỉ đơn giản là chưa có rule nối vào),
+ * để sprint sau tiếp tục nếu cần, không giả vờ đã bao phủ toàn bộ.
+ */
 function classifyRoom(name: string): RoomKind {
   const s = name.toUpperCase();
   if (s.includes('NGỦ')) return 'bedroom';
@@ -124,6 +135,8 @@ function classifyRoom(name: string): RoomKind {
   if (s.includes('BẾP')) return 'kitchen';
   if (s.includes('KHÁCH')) return 'living';
   if (s.includes('HÀNH LANG') || s.includes('H.LANG') || s.includes('LANG')) return 'corridor';
+  if (s.includes('VĂN PHÒNG') || s.includes('LÀM VIỆC') || s.includes('OPEN OFFICE')) return 'office';
+  if (s.includes('HỘI TRƯỜNG') || s.includes('HỘI NGHỊ') || s.includes('PHÒNG HỌP') || s.includes('MEETING')) return 'assembly';
   return 'other';
 }
 
@@ -162,10 +175,109 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
       if (r && room.areaM2 < r.params.minAreaM2) {
         violations.push(mkViolation(r, `Phòng khách "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² < ${r.params.minAreaM2}m² tham khảo (số liệu kinh nghiệm, chưa trích dẫn được điều khoản TCVN cụ thể).`, room.at));
       }
+
+      // 2026-07-16: occupant load ước tính (IBC/NFPA "Residential" 18.58 m²/người) — nối cho
+      // 'living' (phòng khách căn hộ; IBC "Residential" cũng gộp chung khách sạn nên KHÔNG cần
+      // đổi khi operator là hotel). Nhóm intl-occupant-load nay ĐÃ có thêm 2 nhánh khác
+      // ('office' → Business-general, 'assembly' → Assembly bàn&ghế, xem 2 else-if bên dưới) —
+      // các loại còn lại (Mercantile/Educational/Institutional/Industrial/Storage/Day-care…) vẫn
+      // CHƯA có room kind tương ứng trong app này, cố tình KHÔNG ép thêm nhánh cho tới khi có
+      // nhu cầu/room kind thật. Info-only, KHÔNG dùng để enforce số lối ra tối thiểu (checker
+      // không có cơ chế liên kết cửa↔phòng — xem SỔ TRẠNG THÁI NỐI DÂY cuối file).
+      const rOccupant = byId('intl-occupant-load-residential');
+      if (rOccupant) {
+        const estOccupants = room.areaM2 / rOccupant.params.m2PerOccupant;
+        violations.push(mkViolation(
+          rOccupant,
+          `Phòng khách "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² → ước tính chứa được ~${estOccupants.toFixed(2)} người theo hệ số IBC/NFPA (Residential, ${rOccupant.params.m2PerOccupant} m²/người) — CHỈ mang tính tham khảo, KHÔNG dùng thay occupant load calc chính thức cho hồ sơ PCCC.`,
+          room.at,
+        ));
+      }
+    } else if (kind === 'office') {
+      // 2026-07-16: office là kind MỚI (mở rộng ra ngoài residential-only) — nối
+      // 'intl-occupant-load-business-general'. Rule này verified=false vì 2 nguồn (IBC vs bảng
+      // đối chiếu NFPA) cho ra 2 con số khác nhau (100 sqft/người ≈9.29 m² vs 150 sqft/người
+      // ≈13.94 m²) — KHÔNG tự chọn 1 số giữa dải rồi coi như chắc chắn, message phải nêu rõ cả
+      // 2 đầu dải + ghi chú mâu thuẫn nguồn.
+      const rOffice = byId('intl-occupant-load-business-general');
+      if (rOffice) {
+        const p = rOffice.params as { m2PerOccupantLow: number; m2PerOccupantHigh: number };
+        const estLow = room.areaM2 / p.m2PerOccupantHigh; // hệ số cao/người → ước tính SỐ NGƯỜI thấp nhất
+        const estHigh = room.areaM2 / p.m2PerOccupantLow; // hệ số thấp/người → ước tính SỐ NGƯỜI cao nhất
+        violations.push(mkViolation(
+          rOffice,
+          `Văn phòng "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² → ước tính chứa được ~${estLow.toFixed(2)}–${estHigh.toFixed(2)} người theo hệ số IBC/NFPA (Business – general, dải ${p.m2PerOccupantLow}–${p.m2PerOccupantHigh} m²/người) — SỐ LIỆU CHƯA THỐNG NHẤT giữa 2 nguồn IBC/NFPA, dùng cận trên/dưới để tham khảo, KHÔNG dùng thay occupant load calc chính thức cho hồ sơ PCCC.`,
+          room.at,
+        ));
+      }
+    } else if (kind === 'assembly') {
+      // 2026-07-16: assembly là kind MỚI — nối 'intl-occupant-load-assembly-tables-chairs' (1.39
+      // m²/người) làm MẶC ĐỊNH cho "phòng họp/hội trường" vì loại phòng này thường bố trí bàn
+      // & ghế (không phải chỗ đứng/ghế rời như hội trường lớn) — GIẢ ĐỊNH này có thể sai cho hội
+      // trường sức chứa lớn kiểu ghế cố định/đứng, cần rà lại khi có nhu cầu phân biệt kỹ hơn.
+      const rAssembly = byId('intl-occupant-load-assembly-tables-chairs');
+      if (rAssembly) {
+        const estOccupants = room.areaM2 / rAssembly.params.m2PerOccupant;
+        violations.push(mkViolation(
+          rAssembly,
+          `Phòng họp/hội trường "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² → ước tính chứa được ~${estOccupants.toFixed(2)} người theo hệ số IBC/NFPA (Assembly – bàn & ghế, ${rAssembly.params.m2PerOccupant} m²/người, giả định mặc định có bàn ghế) — CHỈ mang tính tham khảo, KHÔNG dùng thay occupant load calc chính thức cho hồ sơ PCCC.`,
+          room.at,
+        ));
+      }
     } else if (kind === 'corridor') {
       const r = byId('vn-fire-corridor-min-width-general');
       if (r && room.minWidthMm !== null && room.minWidthMm < r.params.minWidthMm) {
         violations.push(mkViolation(r, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${r.params.minWidthMm}mm tối thiểu.`, room.at));
+      }
+
+      // 2026-07-15: nối thêm 3 rule quốc tế/Neufert đo được bằng CHÍNH bề rộng hành lang đã đo
+      // ở trên (room.minWidthMm) — cùng dữ liệu hình học, chỉ khác ngưỡng/nguồn trích dẫn. Xem
+      // "SỔ TRẠNG THÁI NỐI DÂY" cuối file cho lý do các rule Neufert/NFPA/QCVN06 KHÁC chưa nối.
+      const rIntlEgress = byId('intl-egress-corridor-min-width');
+      if (rIntlEgress && room.minWidthMm !== null && room.minWidthMm < rIntlEgress.params.minWidthMmGeneral) {
+        violations.push(mkViolation(rIntlEgress, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rIntlEgress.params.minWidthMmGeneral}mm tối thiểu theo IBC 2021 §1020.2 (đường thoát nạn chung, chưa xét sprinkler/số người).`, room.at));
+      }
+      const rNeufert1 = byId('neufert-circulation-one-person');
+      if (rNeufert1 && room.minWidthMm !== null && room.minWidthMm < rNeufert1.params.minWidthMm) {
+        violations.push(mkViolation(rNeufert1, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rNeufert1.params.minWidthMm}mm — dưới mức tối thiểu cho 1 người đi qua thoải mái (Neufert/Metric Handbook).`, room.at));
+      }
+      const rNeufert2 = byId('neufert-circulation-two-persons');
+      if (rNeufert2 && room.minWidthMm !== null && room.minWidthMm < rNeufert2.params.minWidthMm) {
+        violations.push(mkViolation(rNeufert2, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rNeufert2.params.minWidthMm}mm — dưới mức tiện dụng cho 2 người tránh nhau (Neufert/Metric Handbook).`, room.at));
+      }
+
+      // 2026-07-15: rule D1.7 accessibility (QCVN 10:2024/BXD) hành lang 2 chiều tránh xe lăn —
+      // cùng cơ chế room.minWidthMm đã đo ở trên, chỉ khác ngưỡng/nguồn.
+      const rAccessCorridor = byId('vn-access-corridor-two-way-min-width');
+      if (rAccessCorridor && room.minWidthMm !== null && room.minWidthMm < rAccessCorridor.params.minWidthMm) {
+        violations.push(mkViolation(rAccessCorridor, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rAccessCorridor.params.minWidthMm}mm tối thiểu để 2 người/xe lăn tránh nhau (QCVN 10:2024/BXD).`, room.at));
+      }
+    }
+  }
+
+  // D1.7 accessibility — chiều rộng thông thủy cửa (đo được từ BlockEntity vì chiều RỘNG cửa
+  // top-view 2D CÓ lưu, khác với chiều CAO không lưu). HEURISTIC theo id block, KHÔNG PHẢI phân
+  // loại ngữ nghĩa thật "cửa chính nhà" (app không có concept này tách biệt khỏi cửa phòng):
+  // id 'door' → coi là cửa chính (ngưỡng 900mm); các id cửa khác (doorRoom/doorWC/doubleDoor/
+  // slidingDoor/glassDoor) → coi là cửa phòng chức năng (ngưỡng 800mm). Bề rộng thật = w danh
+  // nghĩa/variant (effectiveBlockSize) nhân |sx| (scale áp dụng khi đặt block, xem blockToWorld).
+  const rDoorMain = byId('vn-access-door-main-min-width');
+  const rDoorRoom = byId('vn-access-door-functional-room-min-width');
+  if (rDoorMain || rDoorRoom) {
+    for (const e of doc.entities) {
+      if (e.type !== 'block') continue;
+      const def = BLOCK_MAP[e.block];
+      if (!def) continue;
+      const isDoor = ['door', 'doorRoom', 'doorWC', 'doubleDoor', 'slidingDoor', 'glassDoor'].includes(e.block);
+      if (!isDoor) continue;
+      const { w } = effectiveBlockSize(e, BLOCK_MAP);
+      const realWidthMm = w * Math.abs(e.sx || 1);
+      if (e.block === 'door') {
+        if (rDoorMain && realWidthMm < rDoorMain.params.minWidthMm) {
+          violations.push(mkViolation(rDoorMain, `Cửa chính (block "${e.block}"): bề rộng ≈${Math.round(realWidthMm)}mm < ${rDoorMain.params.minWidthMm}mm tối thiểu (QCVN 10:2024/BXD).`, e.at));
+        }
+      } else if (rDoorRoom && realWidthMm < rDoorRoom.params.minWidthMm) {
+        violations.push(mkViolation(rDoorRoom, `Cửa phòng chức năng (block "${e.block}"): bề rộng ≈${Math.round(realWidthMm)}mm < ${rDoorRoom.params.minWidthMm}mm tối thiểu (QCVN 10:2024/BXD).`, e.at));
       }
     }
   }
@@ -184,3 +296,97 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
 
   return violations;
 }
+
+/**
+ * SỔ TRẠNG THÁI NỐI DÂY (2026-07-15) — rule nào đã áp dụng thật trong checkStandards():
+ *
+ * ĐÃ NỐI (sinh violation thật khi đo hình học vi phạm):
+ *   vn-res-bedroom-min-area, vn-res-wc-min-area, vn-res-kitchen-dining-min-area,
+ *   vn-res-living-min-area, vn-fire-corridor-min-width-general, iso128-thick-thin-ratio,
+ *   intl-egress-corridor-min-width, neufert-circulation-one-person,
+ *   neufert-circulation-two-persons.
+ *   (3 rule trên nối 2026-07-15 sáng — dùng lại CHÍNH bề rộng hành lang room.minWidthMm đã đo
+ *   cho vn-fire-corridor-min-width-general, chỉ khác ngưỡng/nguồn: IBC 1118mm, Neufert 1
+ *   người 750mm, Neufert 2 người 1400mm.)
+ *   vn-access-corridor-two-way-min-width (2026-07-15 chiều — D1.7 accessibility, cùng cơ chế
+ *   room.minWidthMm, ngưỡng 1500mm QCVN 10:2024/BXD).
+ *   vn-access-door-main-min-width, vn-access-door-functional-room-min-width (2026-07-15 chiều —
+ *   D1.7 accessibility, đo THẬT bằng cách lặp doc.entities lọc type==='block', tra BLOCK_MAP lấy
+ *   effectiveBlockSize (đọc đúng variant) × |sx|, phân loại cửa chính/cửa phòng theo HEURISTIC id
+ *   block 'door' vs {doorRoom,doorWC,doubleDoor,slidingDoor,glassDoor} — KHÔNG phải phân loại
+ *   ngữ nghĩa thật vì app không có concept "cửa chính nhà" tách biệt).
+ *   intl-occupant-load-residential (2026-07-16 — occupant load ước tính, INFO-ONLY, nhánh
+ *   kind==='living': estOccupants = room.areaM2 / 18.58, KHÔNG enforce số lối ra, KHÔNG thay thế
+ *   occupant load calc chính thức cho hồ sơ PCCC).
+ *   intl-occupant-load-business-general (2026-07-16 chiều — MỞ RỘNG scope ra ngoài
+ *   residential-only theo yêu cầu chủ dự án: TTT Architects làm dự án MỌI quy mô, không chỉ nhà
+ *   ở dân dụng. Room kind MỚI 'office' (classifyRoom nhận "VĂN PHÒNG"/"LÀM VIỆC"/"OPEN OFFICE")
+ *   → nối rule này, verified=false CỐ Ý vì 2 nguồn mâu thuẫn (9.29–13.94 m²/người) — message
+ *   hiển thị dải ước tính số người CẢ 2 đầu, không tự chọn 1 số giữa dải).
+ *   intl-occupant-load-assembly-tables-chairs (2026-07-16 chiều — room kind MỚI 'assembly'
+ *   (classifyRoom nhận "HỘI TRƯỜNG"/"HỘI NGHỊ"/"PHÒNG HỌP"/"MEETING") → nối rule Assembly – bàn
+ *   & ghế 1.39 m²/người làm MẶC ĐỊNH — GIẢ ĐỊNH phòng họp/hội trường thường có bàn ghế, có thể
+ *   sai cho hội trường sức chứa lớn kiểu ghế cố định/đứng, chưa phân biệt kỹ hơn trong lần nối
+ *   dây này).
+ *   ⚠️ Còn NHIỀU loại phòng office/hospitality khác CHƯA được classifyRoom() nhận diện: F&B (nhà
+ *   hàng/bar), retail, spa, gym, ballroom, sảnh lễ tân/lobby... — đây là BƯỚC ĐẦU mở rộng ra ngoài
+ *   residential-only, không phải bao phủ toàn bộ, để sprint sau tiếp tục nếu cần.
+ *
+ * CHƯA NỐI — registry-only, không có entity 2D tương ứng (D1.7 ramp/handrail/bãi đỗ xe NKT,
+ * thêm 2026-07-16; + D1.7 cũ + nhóm chiếu sáng tham khảo):
+ *   - vn-access-ramp-slope-max / vn-access-ramp-run-length-max / vn-access-ramp-clear-width-min /
+ *     vn-access-ramp-turning-space (ramp/dốc thoải QCVN 10:2024/BXD): model 2D InteriorFlow không
+ *     có entity ramp/dốc thoải — app thiết kế nội thất căn hộ, không có khái niệm ramp ngoài trời
+ *     trong scope. Registry-only, không nối đo hình học.
+ *   - vn-access-handrail-height / vn-access-handrail-extension / vn-access-handrail-wall-clearance
+ *     (tay vịn QCVN 10:2024/BXD): không có entity tay vịn trong model (đây là chi tiết mặt đứng/
+ *     elevation, model 2D chỉ lưu top-view). Registry-only, không nối đo hình học.
+ *   - vn-access-parking-min-spaces-51-100 / -101-150 / -over-200 / vn-access-parking-side-clearance
+ *     (bãi đỗ xe NKT QCVN 10:2024/BXD, verified=false — chỉ 1 nguồn tóm tắt): InteriorFlow không
+ *     có khái niệm bãi đỗ xe ngoài trời trong scope. Registry-only, không nối đo hình học.
+ *   - Neufert hospitality (D1.4) / Neufert office (D1.5) / QCVN 06 occupant load VN: CỐ TÌNH BỎ
+ *     QUA, không thêm rule — xác nhận không đủ nguồn tin cậy độc lập trong lần rà soát 2026-07-16,
+ *     không tự bịa số liệu.
+ *   - vn-access-door-clear-space (không gian trống 1400×1400 trước/sau cửa): field `clearance`
+ *     hiện có của BlockDef cửa (lib/cad/furniture.ts) là "vùng quét cánh cửa mở" (door swing
+ *     arc) — KHÁC Ý NGHĨA với "khoảng trống thao tác xe lăn 1400×1400" dù cùng nằm trước cửa.
+ *     Ép dùng chung sẽ báo sai; cần khái niệm "wheelchair maneuvering clearance" riêng nếu muốn
+ *     đo tự động — chưa làm trong lần nối dây này.
+ *   - vn-lighting-living-room-lux-reference, vn-lighting-bedroom-lux-reference,
+ *     vn-lighting-kitchen-lux-reference: CHỦ Ý KHÔNG nối — đây là dữ liệu tĩnh tham khảo
+ *     (severity 'info', binding 'advisory'), không có cách đo lux từ model 2D (không phải
+ *     calculator), chỉ để tra cứu/hiển thị sau này khi nhóm E (MEP) được build.
+ *
+ * CHƯA NỐI (lý do — thiếu dữ liệu hình học mà model 2D hiện tại không lưu):
+ *   - vn-fire-exit-clear-width-min / vn-fire-exit-clear-height-min: BlockEntity cửa (2D
+ *     top-view) không lưu chiều cao cửa; chiều rộng có nhưng chưa nối vì cần phân biệt cửa
+ *     thoát nạn khỏi cửa nội bộ — chưa có field đánh dấu "cửa thoát nạn" trong model.
+ *   - vn-fire-min-exits-count / intl-egress-min-exits-count: cần occupant load (số người) —
+ *     không có cách tính đáng tin từ diện tích phòng đơn thuần, cố tình không đoán mò.
+ *   - vn-fire-corridor-min-width-f1-over15: ngưỡng phụ thuộc PHÂN LOẠI công trình (nhóm F1,
+ *     >15 tầng) — model không lưu số tầng/nhóm nhà.
+ *   - vn-fire-stair-min-width: verified=false CỐ Ý (tác giả rule không thống nhất được trị số
+ *     giữa các nguồn) — KHÔNG được tự chọn 1 số rồi implement.
+ *   - vn-fire-travel-distance-appendix-g / intl-egress-travel-distance /
+ *     intl-egress-common-path-limit: cần mô phỏng đồ thị đường đi thoát nạn (travel distance) —
+ *     không có trong model, không phải phép đo hình học đơn giản.
+ *   - vn-fire-exit-door-double-leaf-rule: rule định tính, không có trị số mm; BlockEntity cửa
+ *     hiện chỉ mô hình 1 cánh.
+ *   - intl-egress-door-min-clear-width / intl-egress-max-door-width /
+ *     intl-egress-door-swing-encroachment: cần chiều rộng thông thủy thực đo của cửa (không
+ *     phải kích thước danh nghĩa BlockEntity) + hướng mở cánh — chưa có trong model.
+ *   - intl-egress-width-capacity-factor: cần occupant load, giống nhóm exits-count ở trên.
+ *   - intl-egress-min-ceiling-height: model 2D không lưu cao độ trần (không có trục Z).
+ *   - neufert-kitchen-working-aisle / neufert-kitchen-worktop-height /
+ *     neufert-clearance-front-of-storage / neufert-dining-space-per-person: CẦN liên kết vị
+ *     trí/clearance-zone của từng BlockEntity nội thất (tủ bếp, tủ quần áo, bàn ăn) với "khoảng
+ *     lưu thông" Neufert — đây là tính năng MỚI (liên kết clearance-zone Sprint 3 ↔ rule
+ *     Neufert), không phải nối dây đơn thuần. Xem AUDIT-2026-07-15.md mục D — KHÔNG tự ý làm
+ *     trong lần nối dây này, cần quyết định phạm vi riêng.
+ *   - neufert-interior-door-clear-width: verified=false CỐ Ý (nguồn không thống nhất 1 trị số) —
+ *     giữ nguyên trạng thái chưa đo được, không tự chọn số.
+ *   - neufert-ceiling-height-habitable: nay ĐÃ CÓ số liệu VN cụ thể (QCVN 04:2021/BXD: phòng ở
+ *     ≥2.6m, bếp/vệ sinh ≥2.3m, cập nhật 2026-07-15 chiều) nhưng VẪN chưa đo được — lý do khác
+ *     với trước: không phải "chưa có số liệu VN" nữa, mà là model 2D không lưu trục Z/cao độ
+ *     trần nên không có cách đo hình học nào cho rule này dù có số liệu.
+ */

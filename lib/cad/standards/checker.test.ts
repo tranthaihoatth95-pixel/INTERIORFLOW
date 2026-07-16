@@ -68,6 +68,52 @@ function testCorridorNarrow() {
   ok('message có số đo bề rộng thật', !!v?.message.includes('900') || !!v?.message.match(/9\d\dmm/));
 }
 
+function testCorridorIntlEgressAndNeufertTwo() {
+  console.log('\n[4b] Hành lang 1050mm — vi phạm IBC (1118mm) + Neufert 2 người (1400mm), KHÔNG vi phạm TCVN (1000mm) hay Neufert 1 người (750mm)');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 1050, 4000));
+  doc.entities.push(label({ x: 525, y: 2000 }, 'HANH LANG'));
+  const violations = checkStandards(doc, getAllRules());
+  ok('có vi phạm intl-egress-corridor-min-width', violations.some((v) => v.ruleId === 'intl-egress-corridor-min-width'));
+  ok('có vi phạm neufert-circulation-two-persons', violations.some((v) => v.ruleId === 'neufert-circulation-two-persons'));
+  ok('KHÔNG vi phạm vn-fire-corridor-min-width-general (1050mm > 1000mm)', !violations.some((v) => v.ruleId === 'vn-fire-corridor-min-width-general'));
+  ok('KHÔNG vi phạm neufert-circulation-one-person (1050mm > 750mm)', !violations.some((v) => v.ruleId === 'neufert-circulation-one-person'));
+}
+
+function testCorridorNeufertTwoOnly() {
+  console.log('\n[4c] Hành lang 1200mm — CHỈ vi phạm Neufert 2 người (1400mm), đạt cả TCVN/IBC/Neufert 1 người');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 1200, 4000));
+  doc.entities.push(label({ x: 600, y: 2000 }, 'HANH LANG'));
+  const violations = checkStandards(doc, getAllRules());
+  ok('có vi phạm neufert-circulation-two-persons', violations.some((v) => v.ruleId === 'neufert-circulation-two-persons'));
+  ok('KHÔNG vi phạm intl-egress-corridor-min-width (1200mm > 1118mm)', !violations.some((v) => v.ruleId === 'intl-egress-corridor-min-width'));
+  ok('KHÔNG vi phạm vn-fire-corridor-min-width-general (1200mm > 1000mm)', !violations.some((v) => v.ruleId === 'vn-fire-corridor-min-width-general'));
+  ok('KHÔNG vi phạm neufert-circulation-one-person (1200mm > 750mm)', !violations.some((v) => v.ruleId === 'neufert-circulation-one-person'));
+}
+
+function testCorridorAllFourViolated() {
+  console.log('\n[4d] Hành lang rất hẹp (700mm < 750mm) — vi phạm CẢ 4 rule corridor (TCVN + IBC + Neufert 1 người + Neufert 2 người)');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 700, 4000));
+  doc.entities.push(label({ x: 350, y: 2000 }, 'HANH LANG'));
+  const violations = checkStandards(doc, getAllRules());
+  ok('vi phạm vn-fire-corridor-min-width-general', violations.some((v) => v.ruleId === 'vn-fire-corridor-min-width-general'));
+  ok('vi phạm intl-egress-corridor-min-width', violations.some((v) => v.ruleId === 'intl-egress-corridor-min-width'));
+  ok('vi phạm neufert-circulation-one-person', violations.some((v) => v.ruleId === 'neufert-circulation-one-person'));
+  ok('vi phạm neufert-circulation-two-persons', violations.some((v) => v.ruleId === 'neufert-circulation-two-persons'));
+}
+
+function testCorridorFullyCompliant() {
+  console.log('\n[4e] Hành lang rộng rãi (1500mm) — đạt cả 4 rule, không sinh violation corridor nào');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 1500, 4000));
+  doc.entities.push(label({ x: 750, y: 2000 }, 'HANH LANG'));
+  const violations = checkStandards(doc, getAllRules());
+  const corridorRuleIds = ['vn-fire-corridor-min-width-general', 'intl-egress-corridor-min-width', 'neufert-circulation-one-person', 'neufert-circulation-two-persons'];
+  ok('không có violation corridor nào khi đạt hết 4 ngưỡng', !violations.some((v) => corridorRuleIds.includes(v.ruleId)));
+}
+
 function testNoRoomNoViolation() {
   console.log('\n[5] Không có nhãn phòng nào → không sinh violation nào (không đoán mò)');
   const doc: Doc = emptyDoc();
@@ -109,16 +155,142 @@ function testDemoPlanMeasuresAllRooms() {
   // rule đã ghi rõ caveat này). Trước đây dò biên null nên vi phạm này bị NUỐT — giờ phải thấy.
   ok('đúng 1 violation phòng: bếp+ăn (caveat bếp tách ăn)', roomViolations.length === 1 && roomViolations[0].ruleId === 'vn-res-kitchen-dining-min-area');
   ok('diện tích bếp trong message là số đo thật 5.7m²', !!roomViolations[0]?.message.includes('5.7'));
+
+  // Hành lang demo-plan đo được 1100mm (XW-XP-PART = 1200-100): ĐẠT TCVN (≥1000mm) nhưng DƯỚI
+  // ngưỡng IBC (1118mm) và Neufert 2 người (1400mm) — 2 rule mới nối phải bắt được điều này,
+  // trong khi Neufert 1 người (750mm) vẫn đạt vì 1100mm > 750mm.
+  ok('hành lang demo-plan 1100mm sinh violation intl-egress-corridor-min-width (< 1118mm)', violations.some((v) => v.ruleId === 'intl-egress-corridor-min-width'));
+  ok('hành lang demo-plan 1100mm sinh violation neufert-circulation-two-persons (< 1400mm)', violations.some((v) => v.ruleId === 'neufert-circulation-two-persons'));
+  ok('hành lang demo-plan 1100mm KHÔNG sinh violation neufert-circulation-one-person (> 750mm)', !violations.some((v) => v.ruleId === 'neufert-circulation-one-person'));
+}
+
+function testAccessDoorWcTooNarrow() {
+  console.log('\n[9] D1.7 accessibility — cửa doorWC 700mm < 800mm ngưỡng cửa phòng chức năng (QCVN 10:2024) → violation');
+  const doc: Doc = emptyDoc();
+  doc.entities.push({ id: newId('e'), type: 'block', layer: 'l-wall', block: 'doorWC', at: { x: 1000, y: 0 }, rot: 0, sx: 1, sy: 1 });
+  const violations = checkStandards(doc, getAllRules());
+  const v = violations.find((v) => v.ruleId === 'vn-access-door-functional-room-min-width');
+  ok('phát hiện cửa doorWC 700mm hẹp hơn 800mm', !!v);
+  ok('message có số đo bề rộng thật 700', !!v?.message.includes('700'));
+}
+
+function testAccessDoorRoomMeetsThreshold() {
+  console.log('\n[10] D1.7 accessibility — cửa doorRoom 800mm ĐẠT ngưỡng 800mm → không violation');
+  const doc: Doc = emptyDoc();
+  doc.entities.push({ id: newId('e'), type: 'block', layer: 'l-wall', block: 'doorRoom', at: { x: 1000, y: 0 }, rot: 0, sx: 1, sy: 1 });
+  const violations = checkStandards(doc, getAllRules());
+  ok('không có violation khi cửa doorRoom đạt đúng 800mm', !violations.some((v) => v.ruleId === 'vn-access-door-functional-room-min-width'));
+}
+
+function testAccessMainDoorTooNarrow() {
+  console.log('\n[11] D1.7 accessibility — cửa chính scale xuống 700mm thật (900mm × sx=0.777...) < 900mm ngưỡng cửa chính → violation');
+  const doc: Doc = emptyDoc();
+  doc.entities.push({ id: newId('e'), type: 'block', layer: 'l-wall', block: 'door', at: { x: 1000, y: 0 }, rot: 0, sx: 800 / 900, sy: 1 });
+  const violations = checkStandards(doc, getAllRules());
+  const v = violations.find((v) => v.ruleId === 'vn-access-door-main-min-width');
+  ok('phát hiện cửa chính bị scale hẹp hơn 900mm', !!v);
+}
+
+function testAccessMainDoorMeetsThreshold() {
+  console.log('\n[12] D1.7 accessibility — cửa chính 900mm nguyên bản (sx=1) ĐẠT ngưỡng → không violation');
+  const doc: Doc = emptyDoc();
+  doc.entities.push({ id: newId('e'), type: 'block', layer: 'l-wall', block: 'door', at: { x: 1000, y: 0 }, rot: 0, sx: 1, sy: 1 });
+  const violations = checkStandards(doc, getAllRules());
+  ok('không có violation khi cửa chính đạt đúng 900mm', !violations.some((v) => v.ruleId === 'vn-access-door-main-min-width'));
+}
+
+function testAccessCorridorTwoWay() {
+  console.log('\n[13] D1.7 accessibility — hành lang 1400mm < 1500mm ngưỡng 2 chiều xe lăn (QCVN 10:2024) → violation, nhưng ĐẠT TCVN (1000mm)');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 1400, 4000));
+  doc.entities.push(label({ x: 700, y: 2000 }, 'HANH LANG'));
+  const violations = checkStandards(doc, getAllRules());
+  ok('vi phạm vn-access-corridor-two-way-min-width (1400mm < 1500mm)', violations.some((v) => v.ruleId === 'vn-access-corridor-two-way-min-width'));
+  ok('KHÔNG vi phạm vn-fire-corridor-min-width-general (1400mm > 1000mm)', !violations.some((v) => v.ruleId === 'vn-fire-corridor-min-width-general'));
+}
+
+function testAccessCorridorTwoWayCompliant() {
+  console.log('\n[14] D1.7 accessibility — hành lang 1500mm ĐẠT ngưỡng 2 chiều xe lăn → không violation');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 1500, 4000));
+  doc.entities.push(label({ x: 750, y: 2000 }, 'HANH LANG'));
+  const violations = checkStandards(doc, getAllRules());
+  ok('không có violation khi hành lang đạt đúng 1500mm', !violations.some((v) => v.ruleId === 'vn-access-corridor-two-way-min-width'));
+}
+
+function testOccupantLoadLivingRoomInfo() {
+  console.log('\n[15] Occupant load info — phòng khách demo-plan 36.7m² → ước tính ~1.97 người (IBC/NFPA Residential 18.58 m²/người)');
+  const violations = checkStandards(buildDemoPlan(), getAllRules());
+  const v = violations.find((v) => v.ruleId === 'intl-occupant-load-residential');
+  ok('sinh violation info occupant-load cho phòng khách', !!v);
+  ok('severity là info', v?.severity === 'info');
+  // Diện tích hiển thị làm tròn "36.7m²" nhưng số đo hình học thật hơi khác 36.700 chẵn nên kết
+  // quả chia thực tế ra 1.97 (không phải 1.98 nếu tính từ số làm tròn) — dùng đúng số checker in ra.
+  ok('message chứa số ước tính đúng ~1.97 (tính từ diện tích đo thật, không phải số làm tròn hiển thị)', !!v?.message.includes('1.97'));
+  ok('message chứa disclaimer không dùng thay occupant load chính thức', !!v?.message.includes('KHÔNG dùng thay occupant load calc chính thức'));
+}
+
+function testOccupantLoadCustomLivingRoom() {
+  console.log('\n[16] Occupant load info — phòng khách nhỏ 6×3.1m=18.6m² → ước tính ~1.00 người');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 6000, 3100)); // 6.0 x 3.1m = 18.6m²
+  doc.entities.push(label({ x: 3000, y: 1550 }, 'PHÒNG KHÁCH'));
+  const violations = checkStandards(doc, getAllRules());
+  const v = violations.find((v) => v.ruleId === 'intl-occupant-load-residential');
+  ok('sinh violation info occupant-load', !!v);
+  ok('message chứa số ước tính đúng ~1.00', !!v?.message.includes('1.00'));
+}
+
+function testOccupantLoadOfficeInfo() {
+  console.log('\n[17] Occupant load info — "VĂN PHÒNG" 6.0×5.0m=30.0m² → ước tính dải ~2.15–3.23 người (IBC/NFPA Business-general, verified=false)');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 6000, 5000)); // 6.0 x 5.0m = 30.0m²
+  doc.entities.push(label({ x: 3000, y: 2500 }, 'VĂN PHÒNG'));
+  const violations = checkStandards(doc, getAllRules());
+  const v = violations.find((v) => v.ruleId === 'intl-occupant-load-business-general');
+  ok('sinh violation info occupant-load cho phòng "VĂN PHÒNG"', !!v);
+  ok('severity là info', v?.severity === 'info');
+  ok('verified=false (2 nguồn mâu thuẫn, KHÔNG chọn đại 1 số)', v?.verified === false);
+  ok('message chứa cận dưới ước tính ~2.15', !!v?.message.includes('2.15'));
+  ok('message chứa cận trên ước tính ~3.23', !!v?.message.includes('3.23'));
+  ok('message nêu rõ số liệu chưa thống nhất giữa 2 nguồn IBC/NFPA', !!v?.message.includes('CHƯA THỐNG NHẤT giữa 2 nguồn IBC/NFPA'));
+}
+
+function testOccupantLoadAssemblyInfo() {
+  console.log('\n[18] Occupant load info — "PHÒNG HỌP" 5.0×2.0m=10.0m² → ước tính ~7.19 người (IBC/NFPA Assembly – bàn & ghế, mặc định)');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 5000, 2000)); // 5.0 x 2.0m = 10.0m²
+  doc.entities.push(label({ x: 2500, y: 1000 }, 'PHÒNG HỌP'));
+  const violations = checkStandards(doc, getAllRules());
+  const v = violations.find((v) => v.ruleId === 'intl-occupant-load-assembly-tables-chairs');
+  ok('sinh violation info occupant-load cho phòng "PHÒNG HỌP"', !!v);
+  ok('severity là info', v?.severity === 'info');
+  ok('message chứa số ước tính đúng ~7.19', !!v?.message.includes('7.19'));
+  ok('message chứa disclaimer không dùng thay occupant load chính thức', !!v?.message.includes('KHÔNG dùng thay occupant load calc chính thức'));
 }
 
 testUndersizedBedroom();
 testOkBedroom();
 testWcUndersized();
 testCorridorNarrow();
+testCorridorIntlEgressAndNeufertTwo();
+testCorridorNeufertTwoOnly();
+testCorridorAllFourViolated();
+testCorridorFullyCompliant();
 testNoRoomNoViolation();
 testRegistryIntegrity();
 testTJunctionRoomMeasured();
 testDemoPlanMeasuresAllRooms();
+testAccessDoorWcTooNarrow();
+testAccessDoorRoomMeetsThreshold();
+testAccessMainDoorTooNarrow();
+testAccessMainDoorMeetsThreshold();
+testAccessCorridorTwoWay();
+testAccessCorridorTwoWayCompliant();
+testOccupantLoadLivingRoomInfo();
+testOccupantLoadCustomLivingRoom();
+testOccupantLoadOfficeInfo();
+testOccupantLoadAssemblyInfo();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);
