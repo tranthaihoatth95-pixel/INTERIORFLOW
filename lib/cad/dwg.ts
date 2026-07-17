@@ -1,23 +1,27 @@
 /**
  * lib/cad/dwg.ts — CẦU NỐI DWG → Doc (code CHÍNH, KHÔNG GPL).
  *
- * InteriorFlow KHÔNG còn tự đọc file .dwg trong app (đã bỏ hướng network service — xem
- * docs/LICENSE-NOTES.md). Giờ đây `dwgRawDocToDoc()` export ở file này được dùng bởi
- * **~/Downloads/dwg2dxf** — CLI cá nhân chạy LOCAL (repo riêng, `require` trực tiếp file này qua
- * sucrase, xem `dwg2dxf/cli.js`) để convert .dwg → .dxf, rồi user tự mở bằng nút "Mở DXF" có sẵn
- * trong app. File này KHÔNG import bất kỳ package GPL nào — chỉ nhận JSON thô (hình dạng
- * DwgRawDoc, đồng bộ TAY với `dwg2dxf/cli.js`, không import lẫn nhau ngoài "hợp đồng" JSON) rồi
- * map sang `Doc`/`Entity` của app — TÁI DÙNG helper đã có ở lib/cad/dxf.ts (ensureLayer theo
- * tên, bảng màu ACI `aciToHex`, tra tên LTYPE `dxfNameToLineType`) thay vì viết lại từ đầu.
+ * File này KHÔNG import package `@mlightcad/libredwg-web` (GPL-3.0) — việc đó CHỈ xảy ra bên
+ * trong lib/cad/dwg-worker.ts (Web Worker riêng, xem đầu file đó). Ở đây chỉ nhận JSON thô (hình
+ * dạng DwgRawDoc) rồi map sang `Doc`/`Entity` của app — TÁI DÙNG helper đã có ở lib/cad/dxf.ts
+ * (ensureLayer theo tên, bảng màu ACI `aciToHex`, tra tên LTYPE `dxfNameToLineType`).
  *
- * ⚠️ ĐỔI SIGNATURE/HÌNH DẠNG DwgRawDoc Ở ĐÂY THÌ PHẢI ĐỔI CẢ `dwg2dxf/cli.js` — 2 file không có
- * cách nào type-check chéo vì ở 2 repo khác nhau.
+ * ⚠️ InteriorFlow là TOOL NỘI BỘ của TTT Architects (auth khoá @ttt.vn, register công khai 403,
+ * KHÔNG bán/phân phối ra ngoài công ty) — xem docs/LICENSE-NOTES.md để hiểu vì sao dependency GPL
+ * cô lập trong Worker được coi là chấp nhận được cho use-case này (khác hẳn 1 sản phẩm SaaS bán
+ * ra thị trường). Nếu SAU NÀY định phân phối/bán InteriorFlow ra ngoài công ty, ĐỌC LẠI
+ * LICENSE-NOTES.md trước.
+ *
+ * `dwgRawDocToDoc()` ở đây CÒN được dùng bởi **~/Downloads/dwg2dxf** — CLI cá nhân chạy local
+ * (repo riêng, `require` trực tiếp qua sucrase) cho trường hợp cần convert offline/không muốn
+ * dùng nút "Mở DWG" trong app (bản vẽ nhạy cảm chẳng hạn). Đổi hình dạng DwgRawDoc ở đây thì
+ * phải đổi cả `dwg2dxf/cli.js` — 2 file không type-check chéo được vì ở 2 repo khác nhau.
  */
 
 import type { Doc, Entity, HatchPattern, Layer } from './model';
 import { aciToHex, dxfNameToLineType } from './dxf';
 
-/* ─────────────── hợp đồng JSON với dwg2dxf/cli.js (LẶP LẠI có chủ đích — xem đầu file) ─────── */
+/* ─── hợp đồng JSON với dwg-worker.ts VÀ dwg2dxf/cli.js (LẶP LẠI có chủ đích — xem đầu file) ── */
 
 interface DwgRawPoint {
   x: number;
@@ -49,9 +53,11 @@ interface DwgRawDoc {
   totalEntityCount: number;
 }
 
+type DwgWorkerResponse = { ok: true; doc: DwgRawDoc } | { ok: false; error: string };
+
 /* ───────────────────────── mapping DwgRawDoc → Doc (giống pattern buildEntity/ensureLayer của
    dxf.ts, khác biệt DUY NHẤT đáng chú ý: góc ARC của libredwg-web đã là RADIAN sẵn — không nhân
-   π/180 như khi đọc DXF ASCII, xem ghi chú trong dwg2dxf/cli.js) ─────────────────────────────── */
+   π/180 như khi đọc DXF ASCII, xem ghi chú trong dwg-worker.ts) ───────────────────────────── */
 
 let uid = 0;
 function eid(): string {
@@ -163,4 +169,60 @@ export function dwgRawDocToDoc(raw: DwgRawDoc): Doc {
 
   if (doc.layers.length === 0) doc.layers.push({ id: `l-0-${eid()}`, name: '0', color: '#c8c4bc', visible: true, locked: false });
   return doc;
+}
+
+export interface OpenDwgResult {
+  doc: Doc;
+  /** số entity KHÔNG map được (INSERT/DIMENSION/… chưa hỗ trợ, hoặc HATCH boundary có cung) —
+   * hiện cho user biết bản vẽ vào app KHÔNG đầy đủ 100% so với file gốc. */
+  skippedEntityCount: number;
+  totalEntityCount: number;
+}
+
+/**
+ * Mở file .dwg qua Worker cô lập (dwg-worker.ts) → Doc. Không bao giờ throw ra "lỗi lạ" — mọi
+ * lỗi (sai định dạng/hỏng/phiên bản DWG chưa hỗ trợ/worker crash) đều reject với message tiếng
+ * Việt dễ hiểu để UI hiển thị trực tiếp cho user (xem onImportDwgFile ở CadEditor.tsx).
+ */
+export function openDwgFile(file: File): Promise<OpenDwgResult> {
+  return new Promise((resolve, reject) => {
+    let worker: Worker;
+    try {
+      worker = new Worker(new URL('./dwg-worker.ts', import.meta.url));
+    } catch (err) {
+      reject(new Error(`Không khởi tạo được worker đọc DWG: ${err instanceof Error ? err.message : String(err)}`));
+      return;
+    }
+
+    const cleanup = () => {
+      worker.terminate();
+    };
+
+    worker.onerror = (ev) => {
+      cleanup();
+      reject(new Error(`Worker đọc DWG lỗi: ${ev.message || 'không rõ nguyên nhân'}`));
+    };
+
+    worker.onmessage = (ev: MessageEvent<DwgWorkerResponse>) => {
+      cleanup();
+      const msg = ev.data;
+      if (!msg.ok) {
+        reject(new Error(msg.error));
+        return;
+      }
+      resolve({
+        doc: dwgRawDocToDoc(msg.doc),
+        skippedEntityCount: msg.doc.skippedEntityCount,
+        totalEntityCount: msg.doc.totalEntityCount,
+      });
+    };
+
+    file
+      .arrayBuffer()
+      .then((buffer) => worker.postMessage({ buffer }, [buffer]))
+      .catch((err) => {
+        cleanup();
+        reject(new Error(`Không đọc được nội dung file: ${err instanceof Error ? err.message : String(err)}`));
+      });
+  });
 }
