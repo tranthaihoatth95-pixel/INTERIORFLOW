@@ -10,9 +10,42 @@
  * CadEditor/CadCanvas không phình.
  */
 
-import type { Doc, Entity, Box } from './model';
+import type { Doc, Entity, Box, Pt } from './model';
 import { newId } from './store';
 import { BLOCK_MAP } from './furniture';
+
+/* ───────────────────────── Sprint 10 — Việc 1: nhập toạ độ chính xác ───────────────────────── */
+
+/**
+ * Kết quả gõ toạ độ kiểu AutoCAD trên dòng lệnh/dynamic input:
+ *  - 'abs' — toạ độ TUYỆT ĐỐI world (mm), gõ "X,Y" (VD "1500,2200").
+ *  - 'rel' — toạ độ TƯƠNG ĐỐI so điểm gốc vừa chốt, gõ "@dx,dy" (VD "@300,-150").
+ * Hàm THUẦN — không biết base point là gì (CadCanvas tự cộng base cho 'rel').
+ */
+export type CoordInput = { kind: 'abs'; pt: Pt } | { kind: 'rel'; dx: number; dy: number };
+
+/** Parse chuỗi đang gõ (dynBuf) thành toạ độ — null nếu không đúng định dạng "X,Y"/"@dx,dy"
+ * (VD chỉ là số đơn "500" — đó là ĐỘ DÀI, không phải toạ độ, xử lý riêng ở CadCanvas). */
+export function parseCoordInput(raw: string): CoordInput | null {
+  const s = raw.trim();
+  if (!s) return null;
+  const rel = s.startsWith('@');
+  const body = rel ? s.slice(1) : s;
+  const parts = body.split(',');
+  if (parts.length !== 2) return null;
+  const a = parseFloat(parts[0]);
+  const b = parseFloat(parts[1]);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  return rel ? { kind: 'rel', dx: a, dy: b } : { kind: 'abs', pt: { x: a, y: b } };
+}
+
+/** Áp dụng CoordInput lên điểm hiệu dụng — 'rel' cần `base` (điểm gốc vừa chốt); không có base
+ * thì 'rel' vô nghĩa → trả null (CadCanvas fallback về snap point như cũ). */
+export function resolveCoordInput(coord: CoordInput, base?: Pt): Pt | null {
+  if (coord.kind === 'abs') return coord.pt;
+  if (!base) return null;
+  return { x: base.x + coord.dx, y: base.y + coord.dy };
+}
 
 /* ───────────────────────── WALL — tường 2 nét + poché ───────────────────────── */
 

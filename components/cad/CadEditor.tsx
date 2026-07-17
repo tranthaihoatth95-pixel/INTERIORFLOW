@@ -1014,6 +1014,19 @@ const CAD_COMMANDS: { cmd: string; label: string }[] = [
   { cmd: 'EXT', label: 'Zoom Extents' },
   { cmd: 'Z', label: 'Zoom Extents' },
   { cmd: 'SEL', label: 'Chọn' },
+  // Sprint 10 — Việc 2/3: Polygon đều · Ellipse · Donut · Spline · Xline · Divide/Measure
+  { cmd: 'POL', label: 'Polygon đều (POL 8 = đổi 8 cạnh)' },
+  { cmd: 'POLYGON', label: 'Polygon đều' },
+  { cmd: 'EL', label: 'Ellipse' },
+  { cmd: 'ELLIPSE', label: 'Ellipse' },
+  { cmd: 'DO', label: 'Donut (DO 50 150 = trong/ngoài)' },
+  { cmd: 'DONUT', label: 'Donut' },
+  { cmd: 'SPL', label: 'Spline' },
+  { cmd: 'SPLINE', label: 'Spline' },
+  { cmd: 'XL', label: 'Xline — đường tham chiếu vô hạn' },
+  { cmd: 'XLINE', label: 'Xline' },
+  { cmd: 'DIV', label: 'Divide/Measure — click đối tượng rồi nhập' },
+  { cmd: 'DIVIDE', label: 'Divide/Measure' },
 ];
 
 /** Lọc gợi ý theo prefix (Việc 2). Sắp: khớp CHÍNH XÁC trước, rồi token ngắn hơn, rồi A→Z. */
@@ -1055,6 +1068,8 @@ function CommandLine({ status }: { status: string }) {
   const setHatchPattern = useCadStore((s) => s.setHatchPattern);
   const setHatchScale = useCadStore((s) => s.setHatchScale);
   const setHatchAngle = useCadStore((s) => s.setHatchAngle);
+  const setPolygonSides = useCadStore((s) => s.setPolygonSides);
+  const setDonutRadii = useCadStore((s) => s.setDonutRadii);
 
   // Việc 1 — Type-anywhere: canvas phát 'cad:cmd-key' khi gõ chữ lúc rảnh → focus ô lệnh + seed ký tự.
   useEffect(() => {
@@ -1200,6 +1215,27 @@ function CommandLine({ status }: { status: string }) {
       EXT: () => window.dispatchEvent(new CustomEvent('cad:zoom-extents')),
       Z: () => window.dispatchEvent(new CustomEvent('cad:zoom-extents')),
       SEL: () => setTool('select'),
+      // Sprint 10 — Việc 2/3
+      POL: () => {
+        if (arg && Number.isFinite(parseFloat(arg))) setPolygonSides(parseFloat(arg));
+        setTool('polygon');
+      },
+      POLYGON: () => setTool('polygon'),
+      EL: () => setTool('ellipse'),
+      ELLIPSE: () => setTool('ellipse'),
+      DO: () => {
+        const inner = arg && Number.isFinite(parseFloat(arg)) ? parseFloat(arg) : undefined;
+        const outer = arg2 && Number.isFinite(parseFloat(arg2)) ? parseFloat(arg2) : undefined;
+        if (inner !== undefined && outer !== undefined) setDonutRadii(inner, outer);
+        setTool('donut');
+      },
+      DONUT: () => setTool('donut'),
+      SPL: () => setTool('spline'),
+      SPLINE: () => setTool('spline'),
+      XL: () => setTool('xline'),
+      XLINE: () => setTool('xline'),
+      DIV: () => setTool('divide'),
+      DIVIDE: () => setTool('divide'),
     };
     const fn = map[c];
     if (fn) fn();

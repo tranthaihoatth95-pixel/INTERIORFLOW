@@ -14,6 +14,7 @@ import {
   ZoomIn, SplitSquareHorizontal, ScissorsLineDashed, Link2, Boxes, ArrowLeftRight, Compass,
   Radius, Diameter, DraftingCompass, ChevronsRight, GitBranch, PaintBucket,
   CircleDashed, LocateFixed, Palette, StickyNote,
+  Pentagon, Ellipse, Donut, SplinePointer, Slash, Divide,
 } from 'lucide-react';
 import { useCadStore, type Tool } from '@/lib/cad/store';
 import { modKey, modShiftKey } from '@/lib/kbd';
@@ -34,6 +35,15 @@ const DRAW: ToolBtn[] = [
   { tool: 'circle3p', icon: CircleDashed, label: 'Circle 3-điểm — click 3 điểm trên đường tròn', key: 'C3P' },
   { tool: 'arc', icon: Spline, label: 'Arc 3 điểm', key: 'A' },
   { tool: 'arccenter', icon: LocateFixed, label: 'Arc tâm+góc — click tâm → điểm đầu → điểm cuối', key: 'ARCC' },
+];
+/** Sprint 10 — Việc 2/3: Polygon đều · Ellipse · Donut · Spline · Xline — hình học chính xác mở rộng. */
+const SHAPES2: ToolBtn[] = [
+  { tool: 'polygon', icon: Pentagon, label: 'Polygon đều — click tâm → bán kính (POL <n> đổi số cạnh)', key: 'POL' },
+  { tool: 'ellipse', icon: Ellipse, label: 'Ellipse — click tâm → góc xác định 2 bán trục', key: 'EL' },
+  { tool: 'donut', icon: Donut, label: 'Donut — click tâm để đặt (DO <trong> <ngoài> đổi bán kính)', key: 'DO' },
+  { tool: 'spline', icon: SplinePointer, label: 'Spline — click các control point; Enter/double-click kết thúc', key: 'SPL' },
+  { tool: 'xline', icon: Slash, label: 'Xline — đường tham chiếu kéo dài vô hạn 2 đầu (layer "Tham chiếu")', key: 'XL' },
+  { tool: 'divide', icon: Divide, label: 'Divide/Measure — chia đều N đoạn hoặc đo khoảng cách cố định', key: 'DIV' },
 ];
 const ARCH: ToolBtn[] = [
   { tool: 'wall', icon: BrickWall, label: 'Tường (chuỗi điểm tim tường)', key: 'W' },
@@ -143,6 +153,8 @@ export default function CadToolbar({
       }}
     >
       <Group items={DRAW} />
+      <Divider />
+      <Group items={SHAPES2} />
       <Divider />
       <Group items={ARCH} />
       <button type="button" onClick={onToggleMaterial} title="Vật liệu (Sprint 5) — chọn preset gạch/gỗ/đá/sơn cho Hatch" style={btn(false)}>

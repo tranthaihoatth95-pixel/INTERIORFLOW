@@ -30,7 +30,8 @@ import {
   circumcircle,
   arcFromCenterStartEnd,
 } from '@/lib/cad/geometry';
-import { wallChain, roomRect } from '@/lib/cad/commands';
+import { wallChain, roomRect, parseCoordInput, resolveCoordInput } from '@/lib/cad/commands';
+import { polygonVertices, ellipsePoints, catmullRomSpline, divideEntity, measureEntity } from '@/lib/cad/geometry';
 import { loadManifest, insertBlockById } from '@/lib/cad/block-library';
 import {
   trimEntity,
@@ -284,17 +285,33 @@ export default function CadCanvas() {
     return { dx, dy };
   }
 
-  /** điểm hiệu dụng (snap + ortho/polar tracking + dynamic) so với base point (nếu có). */
+  /** điểm hiệu dụng (snap + ortho/polar tracking + dynamic) so với base point (nếu có).
+   * Việc 1 (Sprint 10) — nếu dynBuf đang gõ khớp định dạng toạ độ AutoCAD ("X,Y" tuyệt đối hoặc
+   * "@dx,dy" tương đối so `base`), ƯU TIÊN toạ độ đó hơn cách "độ dài theo hướng con trỏ" cũ —
+   * "X,Y" hoạt động NGAY CẢ khi chưa có base (điểm đầu tiên của lệnh). "@dx,dy" cần base, không
+   * có thì bỏ qua (coi như chưa gõ gì, rơi về logic cũ bên dưới). */
   function effectivePoint(base?: Pt): Pt {
     let p = ix.current.snap.pt;
+    if (ix.current.dynBuf) {
+      const coord = parseCoordInput(ix.current.dynBuf);
+      if (coord) {
+        const resolved = resolveCoordInput(coord, base);
+        if (resolved) return resolved;
+      }
+    }
     if (base) {
-      // dynamic input: độ dài theo hướng con trỏ
+      // dynamic input: độ dài theo hướng con trỏ (số đơn, không dấu phẩy — VD "500"). BUG Sprint
+      // 10 phát hiện + sửa: nếu con trỏ CHƯA di chuyển khỏi `base` (VD vừa click đặt tâm Circle
+      // rồi gõ số ngay, không rê chuột) thì (dx0,dy0)=(0,0) — hướng suy biến, "|| 1" cũ chỉ chặn
+      // chia 0 chứ KHÔNG khôi phục hướng, khiến điểm ra = chính `base` → bán kính/độ dài luôn = 0.
+      // Fallback hướng mặc định Đông (1,0) khi con trỏ trùng base — magnitude vẫn đúng như đã gõ.
       if (ix.current.dynBuf) {
         const len = parseFloat(ix.current.dynBuf);
         if (Number.isFinite(len)) {
           const dx0 = ix.current.cursorWorld.x - base.x;
           const dy0 = ix.current.cursorWorld.y - base.y;
-          const { dx, dy } = applyDirectionConstraint(dx0, dy0);
+          const hasDir = dx0 !== 0 || dy0 !== 0;
+          const { dx, dy } = applyDirectionConstraint(hasDir ? dx0 : 1, hasDir ? dy0 : 0);
           const d = Math.hypot(dx, dy) || 1;
           p = { x: base.x + (dx / d) * len, y: base.y + (dy / d) * len };
           return p;
@@ -490,6 +507,7 @@ export default function CadCanvas() {
     const st = useCadStore.getState();
     if (st.tool === 'polyline' && ix.current.pts.length >= 2) finishPolyline(false);
     else if (st.tool === 'wall' && ix.current.pts.length >= 2) finishWall(false);
+    else if (st.tool === 'spline' && ix.current.pts.length >= 2) finishSpline(false);
   };
 
   /**
@@ -499,11 +517,15 @@ export default function CadCanvas() {
    */
   function commitEnter(shift: boolean) {
     const st = useCadStore.getState();
-    if (ix.current.dynBuf && (st.tool === 'fillet' || st.tool === 'chamfer' || st.tool === 'lengthen')) {
+    // Việc 1.3 (Sprint 10) — Offset nhập số chính xác: gõ số + Enter đặt LẠI offsetDist (giống
+    // hệt pattern fillet/chamfer/lengthen) thay vì cố commit thành 1 điểm click (không hợp lý
+    // cho offset vì bước 2 là chọn PHÍA, không phải khoảng cách).
+    if (ix.current.dynBuf && (st.tool === 'fillet' || st.tool === 'chamfer' || st.tool === 'lengthen' || st.tool === 'offset')) {
       const n = parseFloat(ix.current.dynBuf);
       if (Number.isFinite(n)) {
         if (st.tool === 'fillet') st.setFilletRadius(n);
         else if (st.tool === 'chamfer') st.setChamferDist(n, n);
+        else if (st.tool === 'offset') st.setOffsetDist(n);
         else st.setLengthenDelta(n);
         st.setStatus(`Đã đặt tham số = ${n}mm.`);
       }
@@ -523,10 +545,25 @@ export default function CadCanvas() {
       }
       return;
     }
-    if (st.tool === 'polyline') finishPolyline(false);
-    else if (st.tool === 'wall') finishWall(false);
-    else if (ix.current.dynBuf && ix.current.pts.length) {
-      handleClick(effectivePoint(ix.current.pts[ix.current.pts.length - 1]), shift);
+    // Việc 1.1 (Sprint 10) — polyline/wall/spline là chuỗi NHIỀU điểm; Enter xưa nay = kết thúc
+    // chuỗi luôn. Nếu đang có dynBuf (vừa gõ toạ độ/độ dài cho ĐỈNH TIẾP THEO), Enter phải CHỐT
+    // đỉnh đó trước (như AutoCAD: Enter có nội dung = thêm điểm; Enter RỖNG mới thật sự kết thúc).
+    if (st.tool === 'polyline') {
+      if (ix.current.dynBuf) handleClick(effectivePoint(ix.current.pts[ix.current.pts.length - 1]), shift);
+      else finishPolyline(false);
+    } else if (st.tool === 'wall') {
+      if (ix.current.dynBuf) handleClick(effectivePoint(ix.current.pts[ix.current.pts.length - 1]), shift);
+      else finishWall(false);
+    } else if (st.tool === 'spline') {
+      if (ix.current.dynBuf) handleClick(effectivePoint(ix.current.pts[ix.current.pts.length - 1]), shift);
+      else finishSpline(false);
+    } else if (ix.current.dynBuf) {
+      // toạ độ TUYỆT ĐỐI ("X,Y") hợp lệ ngay cả khi CHƯA có base (điểm đầu tiên của lệnh, VD
+      // click tâm Circle/Polygon hoặc điểm đầu Line) — mọi trường hợp khác (độ dài đơn, "@dx,dy")
+      // cần base đã có (pts.length>0), giữ đúng hành vi cũ.
+      const coord = parseCoordInput(ix.current.dynBuf);
+      const canCommitFirst = ix.current.pts.length > 0 || coord?.kind === 'abs';
+      if (canCommitFirst) handleClick(effectivePoint(ix.current.pts[ix.current.pts.length - 1]), shift);
     }
   }
 
@@ -584,6 +621,11 @@ export default function CadCanvas() {
       case 'wall':
         P.push(w);
         break;
+      // Sprint 10 — Việc 3.1: Spline — chuỗi control point y hệt polyline (Enter/double-click/C
+      // kết thúc — xem finishSpline/onDblClick/phím C), CHỈ khác lúc chốt sẽ nội suy cong.
+      case 'spline':
+        P.push(w);
+        break;
       case 'room':
         P.push(w);
         if (P.length === 2) {
@@ -605,6 +647,72 @@ export default function CadCanvas() {
         if (P.length === 2) {
           commit({ id: newId('e'), type: 'circle', layer: st.currentLayer, c: P[0], r: dist(P[0], P[1]) });
         }
+        break;
+      // Sprint 10 — Việc 2: Polygon đều — click tâm → click bán kính (số cạnh = st.polygonSides,
+      // đổi bằng lệnh "POL <n>"). Gõ số chính xác dùng CHUNG cơ chế dynBuf như circle (base=P[0]).
+      // Lưu như PolylineEntity khép kín (model.ts không cần Entity type riêng cho polygon).
+      case 'polygon':
+        P.push(w);
+        if (P.length === 2) {
+          const verts = polygonVertices(P[0], P[1], st.polygonSides);
+          commit({ id: newId('e'), type: 'polyline', layer: st.currentLayer, points: verts, closed: true });
+        }
+        break;
+      // Sprint 10 — Việc 3.3: Ellipse ĐƠN GIẢN HOÁ — click tâm → click góc bounding-box xác định
+      // 2 bán trục THẲNG TRỤC (rx theo X, ry theo Y, không xoay — quyết định ưu tiên ít rủi ro,
+      // xem geometry.ts ellipsePoints). Xấp xỉ 48 điểm, lưu như PolylineEntity khép kín.
+      case 'ellipse':
+        P.push(w);
+        if (P.length === 2) {
+          const rx = Math.abs(P[1].x - P[0].x);
+          const ry = Math.abs(P[1].y - P[0].y);
+          if (rx > 0 && ry > 0) {
+            commit({ id: newId('e'), type: 'polyline', layer: st.currentLayer, points: ellipsePoints(P[0], rx, ry, 48), closed: true });
+          } else {
+            st.setStatus('Ellipse: 2 bán trục phải > 0 — chọn lại.');
+            ix.current.pts = [];
+          }
+        }
+        break;
+      // Sprint 10 — Việc 3.4: Donut — click tâm để đặt (bán kính trong/ngoài nhớ từ lệnh
+      // "DO <inner> <outer>"), GIỮ tool để đặt liên tiếp (giống 'block'). 2 CircleEntity đồng
+      // tâm — đơn giản hơn hatch vòng, đủ dùng cho DD (model.ts không cần Entity donut riêng).
+      case 'donut': {
+        const inner = st.donutInnerR;
+        const outer = Math.max(st.donutOuterR, inner + 1);
+        st.addEntities([
+          { id: newId('e'), type: 'circle', layer: st.currentLayer, c: w, r: outer },
+          { id: newId('e'), type: 'circle', layer: st.currentLayer, c: w, r: inner },
+        ]);
+        break; // giữ tool để đặt tiếp
+      }
+      // Sprint 10 — Việc 3.2: Construction line (Xline) — click 2 điểm xác định HƯỚNG, kéo dài
+      // rất xa 2 đầu (100m mỗi phía — đủ "vô hạn" thực tế). Đặt vào layer riêng 'Tham chiếu'
+      // (ensureLayerByName — không đổi currentLayer, không lẫn vào layer thi công thật).
+      case 'xline':
+        P.push(w);
+        if (P.length === 2) {
+          const dx = P[1].x - P[0].x;
+          const dy = P[1].y - P[0].y;
+          const len = Math.hypot(dx, dy) || 1;
+          const ux = dx / len;
+          const uy = dy / len;
+          const FAR = 100000; // mm — 100m mỗi phía, đủ "vô hạn" ở tỉ lệ nội thất
+          const xlineLayer = st.ensureLayerByName('Tham chiếu', '#5a7a9a', 'phantom');
+          st.addEntity({
+            id: newId('e'),
+            type: 'line',
+            layer: xlineLayer,
+            a: { x: P[0].x - ux * FAR, y: P[0].y - uy * FAR },
+            b: { x: P[0].x + ux * FAR, y: P[0].y + uy * FAR },
+          });
+          ix.current.pts = [];
+        }
+        break;
+      // Sprint 10 — Việc 3.5: Divide/Measure — click 1 đối tượng → handleDivide xử lý prompt
+      // chọn chế độ (giữ tool để làm tiếp trên đối tượng khác).
+      case 'divide':
+        handleDivide(w);
         break;
       // Sprint 5 — Việc 2: Circle 3-điểm (khác 'circle' tâm+bán kính ở trên). 3 click bất kỳ
       // trên đường tròn → circumcircle() suy ra tâm+bán kính (dùng chung công thức với arcFrom3).
@@ -1110,6 +1218,20 @@ export default function CadCanvas() {
     ix.current.redraw = true;
   }
 
+  /** Sprint 10 — Việc 3.1: kết thúc SPLINE — nội suy Catmull-Rom qua các control point đã click
+   * rồi lưu như PolylineEntity (nhiều đoạn ngắn xấp xỉ đường cong — xem geometry.ts). Cùng cặp
+   * tham số (closed) với finishPolyline/finishWall (Enter=hở, phím C=đóng vòng). */
+  function finishSpline(closed: boolean) {
+    const st = useCadStore.getState();
+    const pts = ix.current.pts;
+    if (pts.length >= 2) {
+      const curve = catmullRomSpline(pts.slice(), 12, closed);
+      st.addEntity({ id: newId('e'), type: 'polyline', layer: st.currentLayer, points: curve, closed });
+    }
+    ix.current.pts = [];
+    ix.current.redraw = true;
+  }
+
   function needSelection(): string[] {
     const st = useCadStore.getState();
     if (st.selection.length) return st.selection;
@@ -1198,6 +1320,61 @@ export default function CadCanvas() {
       if (off) st.addEntity(off);
     }
     ix.current.pts = [];
+  }
+
+  /**
+   * Sprint 10 — Việc 3.5: Divide/Measure — click 1 đối tượng (line/polyline/circle/arc) → prompt
+   * chọn chế độ: số nguyên = DIVIDE (chia đều N đoạn), "M <khoảng cách>" = MEASURE (đo cố định,
+   * hành vi/alias giống lệnh MEASURE thật của AutoCAD — KHÁC tool 'measure' có sẵn trong app này
+   * vốn là "đo nhanh khoảng cách 2 điểm click", không liên quan). Đặt marker CircleEntity nhỏ tại
+   * mỗi điểm chia (đủ đơn giản, không cần BlockDef riêng như mep.ts).
+   */
+  function handleDivide(w: Pt) {
+    const st = useCadStore.getState();
+    const id = hitTest(st.doc, w, tolMm());
+    if (!id) {
+      st.setStatus('Divide/Measure: click lên 1 Line/Polyline/Circle/Arc.');
+      return;
+    }
+    const target = st.doc.entities.find((e) => e.id === id);
+    if (!target || (target.type !== 'line' && target.type !== 'polyline' && target.type !== 'circle' && target.type !== 'arc')) {
+      st.setStatus('Divide/Measure: chỉ hỗ trợ Line/Polyline/Circle/Arc.');
+      return;
+    }
+    const raw = window.prompt(
+      'Divide/Measure — gõ SỐ ĐOẠN để chia đều (VD "5"), hoặc "M <khoảng cách mm>" để đo cố định (VD "M 300"):',
+      '5',
+    );
+    if (!raw || !raw.trim()) return;
+    const trimmed = raw.trim();
+    const measureMatch = /^m\s+([\d.]+)$/i.exec(trimmed);
+    let points: Pt[];
+    let label: string;
+    if (measureMatch) {
+      const segLen = parseFloat(measureMatch[1]);
+      if (!Number.isFinite(segLen) || segLen <= 0) {
+        st.setStatus('Measure: khoảng cách không hợp lệ.');
+        return;
+      }
+      points = measureEntity(target, segLen);
+      label = `Measure mỗi ${segLen}mm`;
+    } else {
+      const n = parseInt(trimmed, 10);
+      if (!Number.isFinite(n) || n < 2) {
+        st.setStatus('Divide: số đoạn phải là số nguyên ≥ 2.');
+        return;
+      }
+      points = divideEntity(target, n);
+      label = `Divide ${n} đoạn`;
+    }
+    if (!points.length) {
+      st.setStatus('Divide/Measure: không đặt được điểm chia (đối tượng quá ngắn so với tham số).');
+      return;
+    }
+    const markerR = 15; // mm — chấm nhỏ đánh dấu điểm chia (bán kính rất nhỏ, đủ thấy khi zoom)
+    const markers: Entity[] = points.map((p) => ({ id: newId('e'), type: 'circle', layer: st.currentLayer, c: p, r: markerR }));
+    st.addEntities(markers);
+    st.setStatus(`${label}: đã đặt ${markers.length} điểm chia.`);
   }
 
   /* ───────── keyboard ───────── */
@@ -1290,6 +1467,10 @@ export default function CadCanvas() {
         finishWall(true);
         return;
       }
+      if ((e.key === 'c' || e.key === 'C') && st.tool === 'spline' && ix.current.pts.length >= 2) {
+        finishSpline(true);
+        return;
+      }
       if (e.key === 'Delete' || (e.key === 'e' && st.tool === 'select')) {
         st.deleteSelected();
         ix.current.redraw = true;
@@ -1316,10 +1497,14 @@ export default function CadCanvas() {
         window.dispatchEvent(new CustomEvent('cad:cmd-key', { detail: e.key }));
         return;
       }
-      // dynamic input số
-      if (/[0-9.]/.test(e.key)) {
+      // dynamic input số — Việc 1 (Sprint 10): mở rộng ký tự cho phép gõ toạ độ kiểu AutoCAD
+      // "X,Y" (tuyệt đối) / "@dx,dy" (tương đối) bên cạnh số đơn (độ dài) như cũ.
+      if (/[0-9.,@-]/.test(e.key)) {
         ix.current.dynBuf += e.key;
-        st.setStatus(`Nhập độ dài: ${ix.current.dynBuf} mm (Enter để chốt)`);
+        const coord = parseCoordInput(ix.current.dynBuf);
+        if (coord?.kind === 'abs') st.setStatus(`Toạ độ tuyệt đối: ${ix.current.dynBuf} (Enter để chốt)`);
+        else if (coord?.kind === 'rel') st.setStatus(`Toạ độ tương đối: ${ix.current.dynBuf} (Enter để chốt)`);
+        else st.setStatus(`Nhập độ dài: ${ix.current.dynBuf} mm (Enter để chốt)`);
         return;
       }
       if (e.key === 'Backspace' && ix.current.dynBuf) {
@@ -1751,6 +1936,19 @@ export default function CadCanvas() {
         for (let i = 0; i < P.length - 1; i++) line(P[i], P[i + 1]);
         if (P.length) line(P[P.length - 1], cur);
         break;
+      // Sprint 10 — Việc 3.1: preview spline — nội suy sống các control point ĐÃ chốt + con trỏ
+      // (nhẹ vì stepsPerSpan thấp hơn bản final, đủ mượt cho preview).
+      case 'spline': {
+        const live = P.length ? catmullRomSpline([...P, cur], 8, false) : [];
+        for (let i = 0; i < live.length - 1; i++) line(live[i], live[i + 1]);
+        for (const p of P) {
+          const sp = S(p);
+          ctx.beginPath();
+          ctx.arc(sp.x, sp.y, 3, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        break;
+      }
       case 'rect':
       case 'room':
         if (P.length === 1) {
@@ -1759,12 +1957,62 @@ export default function CadCanvas() {
           ctx.strokeRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y));
         }
         break;
+      // Sprint 10 — Việc 3.3: preview ellipse — bounding box (rx=|dx|, ry=|dy|) giống rect, VẼ
+      // thêm hình ellipse thật bên trong để thấy ngay hình dạng cuối.
+      case 'ellipse':
+        if (P.length === 1) {
+          const rx = Math.abs(cur.x - P[0].x);
+          const ry = Math.abs(cur.y - P[0].y);
+          if (rx > 0 && ry > 0) {
+            const pts = ellipsePoints(P[0], rx, ry, 40).map(S);
+            ctx.beginPath();
+            pts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+            ctx.closePath();
+            ctx.stroke();
+          }
+        }
+        break;
       case 'circle':
         if (P.length === 1) {
           const c = S(P[0]);
           ctx.beginPath();
           ctx.arc(c.x, c.y, dist(P[0], cur) * v.scale, 0, Math.PI * 2);
           ctx.stroke();
+        }
+        break;
+      // Sprint 10 — Việc 2: preview polygon đều — N cạnh (st.polygonSides) nội tiếp bán kính
+      // đang kéo, góc bắt đầu theo hướng con trỏ (khớp handleClick).
+      case 'polygon':
+        if (P.length === 1) {
+          const verts = polygonVertices(P[0], cur, st.polygonSides).map(S);
+          ctx.beginPath();
+          verts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+          ctx.closePath();
+          ctx.stroke();
+        }
+        break;
+      // Sprint 10 — Việc 3.4: preview donut — 2 vòng tròn đồng tâm theo con trỏ.
+      case 'donut': {
+        const c = S(cur);
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, st.donutOuterR * v.scale, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, st.donutInnerR * v.scale, 0, Math.PI * 2);
+        ctx.stroke();
+        break;
+      }
+      // Sprint 10 — Việc 3.2: preview xline — đoạn dài xuyên suốt màn hình theo hướng đang chọn
+      // (chỉ preview trong viewport, bản final mới kéo dài 100m thật — xem handleClick 'xline').
+      case 'xline':
+        if (P.length === 1) {
+          const dx = cur.x - P[0].x;
+          const dy = cur.y - P[0].y;
+          const len = Math.hypot(dx, dy) || 1;
+          const ux = dx / len;
+          const uy = dy / len;
+          const FAR_PREVIEW = 20000; // mm — đủ dài để thấy hướng, không cần full 100m lúc preview
+          line({ x: P[0].x - ux * FAR_PREVIEW, y: P[0].y - uy * FAR_PREVIEW }, { x: P[0].x + ux * FAR_PREVIEW, y: P[0].y + uy * FAR_PREVIEW });
         }
         break;
       case 'circle3p':
