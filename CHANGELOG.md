@@ -1,5 +1,8 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 16/07 — BUG GroupOverlay vô hình (Render canvas Cmd+G), chi tiết kỹ thuật
+`components/nodes/GroupOverlay.tsx` + `FlowCanvas.tsx:305`: `<GroupOverlay />` render là sibling của `<ReactFlow>` (không bọc `ViewportPortal`), dùng thẳng `node.position` (toạ độ flow-space) làm CSS `left/top` — KHÔNG cộng transform pan/zoom hiện tại của viewport, nên khung/label/nút collapse-rename-ungroup lệch vị trí thật. Thêm nữa `zIndex: -1` khiến nó luôn nằm SAU nền canvas (wrapper cha có `position: relative` → tạo stacking context riêng) → hoàn toàn không thấy được dù DOM vẫn có element + state group vẫn tạo đúng (confirm qua `window.__flowStore`). Cần: bọc bằng `ViewportPortal` (hoặc tự áp transform từ `useViewport()`) + bỏ `zIndex:-1`.
+
 ## 15/07 — Sprint 3 B1+B2 Shape Library + tương tác
 3 agent song song A/B/C theo `SHAPE-SCHEMA.md`, merge tuần tự A→B→C vào `feat/present-layout-ml-p1`, verify tsc+test sau mỗi merge, PASS cả 3.
 - **B1 (41 shape, từ 18 gốc)**: `lib/cad/furniture.ts` — phòng ngủ (tủ đầu giường, bàn trang điểm), phòng khách (sofa góc, bàn trà, kệ TV), bếp (tủ lạnh, đảo bếp, hút mùi, lò vi sóng), tắm (vòi sen, gương), văn phòng (ghế, tủ hồ sơ, kệ sách), 3 loại cửa mới + 2 loại cửa sổ, cầu thang thẳng/chữ L (nhóm mới `Cầu thang`), máy lạnh/quạt trần (nhóm mới `Thiết bị`). Cầu thang xoắn BỎ QUA (Prim không vẽ được đường xoắn thật).
