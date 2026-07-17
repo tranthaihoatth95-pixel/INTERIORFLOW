@@ -37,7 +37,7 @@ export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
       for (const i of [idx, idx + 1, idx - 1]) {
         if (i < 0 || i >= deck.slides.length || imgs[i]) continue;
         try {
-          const url = await renderEditorSlide(deck.slides[i], deck.fonts);
+          const url = await renderEditorSlide(deck.slides[i], deck.fonts, deck.watermark);
           if (!alive) return;
           setImgs((p) => ({ ...p, [i]: url }));
         } catch {

@@ -27,6 +27,7 @@ import SheetTabBar, { type SheetTab } from '@/components/studio/SheetTabBar';
 import type { EditorDeck, EditorSlide } from '@/lib/present-editor/model';
 import { newId } from '@/lib/present-editor/model';
 import { getLastUserId, loadResume, saveResume } from '@/lib/resume';
+import { getActiveBrandKit, seedDeckWithBrandKit } from '@/lib/present-editor/brand-kit';
 import {
   createSheetsAutosaver,
   loadSheets,
@@ -60,7 +61,7 @@ function blankSlide(): EditorSlide {
 }
 
 function blankDeck(n: number): EditorDeck {
-  return {
+  const base: EditorDeck = {
     id: newId('deck'),
     brand: '',
     project: `Trang ${n}`,
@@ -68,6 +69,9 @@ function blankDeck(n: number): EditorDeck {
     palette: [...BLANK_PALETTE],
     slides: [blankSlide()],
   };
+  // PS-1 (G.5): deck MỚI tự nạp Brand Kit đang chọn (palette/font/watermark) thay vì mặc định cứng.
+  const kit = getActiveBrandKit();
+  return kit ? seedDeckWithBrandKit(base, kit) : base;
 }
 
 let seq = 1;

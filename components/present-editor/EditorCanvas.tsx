@@ -14,8 +14,8 @@
  * Sửa chữ: nhấp đúp → textarea phủ khung. Sửa ảnh: nhấp đúp → onEditImage.
  */
 
-import { useRef, useState } from 'react';
-import type { EditorSlide, Frame, TextElement, ShapeElement } from '@/lib/present-editor/model';
+import { useRef, useState, type CSSProperties } from 'react';
+import type { EditorSlide, Frame, TextElement, ShapeElement, DeckWatermark } from '@/lib/present-editor/model';
 import { adjustToCssFilter } from '@/lib/present-editor/model';
 import Element, { type Guides } from './Element';
 import TextToolbar from './TextToolbar';
@@ -61,6 +61,8 @@ interface Props {
   /** ngữ cảnh deck để AI "Tạo content" viết đúng giọng. */
   brand?: string;
   project?: string;
+  /** logo/watermark cấp deck (PS-1/G.7) — hiện xem-trước ở góc, không tương tác. */
+  watermark?: DeckWatermark;
 }
 
 /** Trạng thái menu chuột phải: vị trí (px trong khung stage) + id element. */
@@ -104,6 +106,7 @@ export default function EditorCanvas({
   onUpdateShape,
   brand,
   project,
+  watermark,
 }: Props) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [guides, setGuides] = useState<Guides | null>(null);
@@ -242,6 +245,24 @@ export default function EditorCanvas({
             backgroundPosition: 'center',
             filter: adjustToCssFilter(slide.backgroundAdjust),
             pointerEvents: 'none',
+          }}
+        />
+      )}
+
+      {/* logo/watermark cấp deck — xem-trước ở góc, trên element, không bắt sự kiện (G.7). */}
+      {watermark?.enabled && watermark.src && (
+        <img
+          src={watermark.src}
+          alt=""
+          aria-hidden
+          style={{
+            position: 'absolute',
+            width: `${watermark.sizePct}%`,
+            height: 'auto',
+            opacity: watermark.opacity,
+            pointerEvents: 'none',
+            zIndex: 3,
+            ...cornerStyle(watermark.corner, watermark.marginPct ?? 3),
           }}
         />
       )}
@@ -446,6 +467,24 @@ export default function EditorCanvas({
 /** Đường ngăn giữa nhóm mục trong menu chuột phải. */
 function MenuSep() {
   return <div style={{ height: 1, background: 'var(--border)', margin: '4px 6px' }} />;
+}
+
+/**
+ * Vị trí góc cho watermark. marginPct = % chiều RỘNG sân khấu (khớp render.ts). Trục dọc quy
+ * đổi sang % chiều cao (× 16/9) để lề trên/dưới bằng lề trái/phải theo mắt trên khung 16:9.
+ */
+function cornerStyle(
+  corner: 'tl' | 'tr' | 'bl' | 'br',
+  marginPct: number,
+): CSSProperties {
+  const mx = `${marginPct}%`;
+  const my = `${marginPct * (16 / 9)}%`;
+  const left = corner === 'tl' || corner === 'bl';
+  const top = corner === 'tl' || corner === 'tr';
+  return {
+    [left ? 'left' : 'right']: mx,
+    [top ? 'top' : 'bottom']: my,
+  } as CSSProperties;
 }
 
 /** 1 dòng trong menu chuột phải. */

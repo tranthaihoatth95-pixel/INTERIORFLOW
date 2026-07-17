@@ -53,6 +53,8 @@ import LibraryBrowser, { type RefImage } from './LibraryBrowser';
 import MotionPanel from './MotionPanel';
 import SlidePlayer from './SlidePlayer';
 import ImageEditor from './ImageEditor';
+import BrandKitPanel from './BrandKitPanel';
+import { applyBrandKitToDeck, type BrandKit } from '@/lib/present-editor/brand-kit';
 import { LayoutTemplate, Images, Wand2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 
 interface Props {
@@ -938,6 +940,26 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     if (typeof window !== 'undefined') window.open('/photo-editor', '_blank');
   }, []);
 
+  // Brand Kit (PS-1): mở panel Nhận diện + áp lại theme cho cả deck.
+  const [brandKitOpen, setBrandKitOpen] = useState(false);
+  const onApplyBrandKit = useCallback(
+    (kit: BrandKit, watermarkEnabled: boolean) => {
+      ed.update((d) => {
+        const next = applyBrandKitToDeck(d, kit);
+        d.palette = next.palette;
+        d.fonts = next.fonts;
+        d.slides = next.slides;
+        // cờ bật/tắt watermark do panel quyết định (kit có logo mới hiện được).
+        if (next.watermark) d.watermark = { ...next.watermark, enabled: watermarkEnabled && !!kit.logo };
+        else if (d.watermark) d.watermark = { ...d.watermark, enabled: false };
+      });
+      // Chấm lại bố cục sau khi nhuộm (màu đổi có thể ảnh hưởng tương phản chữ).
+      setLayoutWarnings(evaluateDeck(ed.deck.slides));
+      setBrandKitOpen(false);
+    },
+    [ed],
+  );
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', color: 'var(--t1)' }}>
       {layoutWarnings.length > 0 && (
@@ -985,6 +1007,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         onExportPptx={onExportPptx}
         onExportPng={onExportPng}
         onPlay={() => setPlaying(true)}
+        onBrandKit={() => setBrandKitOpen(true)}
         busy={busy}
       />
 
@@ -1136,6 +1159,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
               onUpdateShape={onUpdateShape}
               brand={ed.deck.brand}
               project={ed.deck.project}
+              watermark={ed.deck.watermark}
             />
           ) : (
             // Chưa có trang nào (deck rỗng) — KHÔNG để trống void, mời tạo trang trắng.
@@ -1308,6 +1332,11 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
 
       {/* Trình chiếu với hiệu ứng động. */}
       {playing && <SlidePlayer deck={ed.deck} startIndex={ed.currentSlide} onClose={() => setPlaying(false)} />}
+
+      {/* Brand Kit — Nhận diện (PS-1): logo · màu · font · watermark + áp lại theme cả deck. */}
+      {brandKitOpen && (
+        <BrandKitPanel deck={ed.deck} onClose={() => setBrandKitOpen(false)} onApply={onApplyBrandKit} />
+      )}
     </div>
   );
 }

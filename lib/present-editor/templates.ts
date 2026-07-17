@@ -14,6 +14,7 @@
 
 import type { FontPairing } from '@/lib/slides';
 import type { GuAsset } from '@/lib/gu';
+import { paletteRoles } from './theme-roles';
 import {
   type EditorSlide,
   type SlideElement,
@@ -98,30 +99,14 @@ export const CATEGORY_ORDER: TemplateCategory[] = [
 
 /* --------------------------- tiện ích màu --------------------------- */
 
-/** Lấy màu từ palette theo vai trò, có fallback quiet-luxury. */
+/**
+ * Lấy màu từ palette theo vai trò, có fallback quiet-luxury.
+ * Suy vai trò dùng CHUNG `paletteRoles` (theme-roles.ts) để 1 nguồn sự thật với hàm nhuộm lại
+ * deck (PS-1/G.6) — templates gán màu theo vai trò nào thì rethemeDeck nhuộm lại theo đúng vai
+ * trò ấy, không lệch thuật toán.
+ */
 function pal(p: string[] | undefined) {
-  const palette = p && p.length ? p : ['#f5f1ea', '#dad0c7', '#c7a397', '#8a6f4d', '#635c45', '#221f1a'];
-  const lum = (hex: string) => {
-    const c = hex.replace('#', '');
-    if (c.length < 6) return 128;
-    const n = parseInt(c, 16);
-    return 0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255);
-  };
-  const sorted = [...palette].sort((a, b) => lum(a) - lum(b));
-  const dark = sorted[0];
-  const light = sorted[sorted.length - 1];
-  const mids = sorted.slice(1, -1);
-  const sat = (hex: string) => {
-    const c = hex.replace('#', '');
-    if (c.length < 6) return 0;
-    const n = parseInt(c, 16);
-    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-    const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
-    return mx === 0 ? 0 : (mx - mn) / mx;
-  };
-  const accent = [...(mids.length ? mids : sorted)].sort((a, b) => sat(b) - sat(a))[0];
-  const muted = mids[Math.floor(mids.length / 2)] ?? dark;
-  return { dark, light, accent, muted, palette };
+  return paletteRoles(p);
 }
 
 function textBlocks(

@@ -25,7 +25,7 @@ export async function exportDeckToPdf(deck: EditorDeck): Promise<void> {
   const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1920, 1080] });
   for (let i = 0; i < deck.slides.length; i++) {
-    const img = await renderEditorSlide(deck.slides[i], deck.fonts);
+    const img = await renderEditorSlide(deck.slides[i], deck.fonts, deck.watermark);
     if (i > 0) doc.addPage([1920, 1080], 'landscape');
     doc.addImage(img, 'JPEG', 0, 0, 1920, 1080);
   }
@@ -44,7 +44,7 @@ export async function exportDeckToPng(deck: EditorDeck): Promise<void> {
   const base = safeName(deck.project || deck.brand || 'deck');
   for (let i = 0; i < deck.slides.length; i++) {
     // renderEditorSlide trả JPEG; ép sang PNG qua canvas để đúng định dạng yêu cầu.
-    const jpeg = await renderEditorSlide(deck.slides[i], deck.fonts);
+    const jpeg = await renderEditorSlide(deck.slides[i], deck.fonts, deck.watermark);
     const png = await jpegDataUrlToPng(jpeg);
     const a = document.createElement('a');
     a.href = png;
@@ -173,7 +173,7 @@ export async function exportDeckToPptxFromModel(deck: EditorDeck): Promise<void>
       });
     } else {
       // ảnh-first → render full-bleed
-      const imageDataUrl = await renderEditorSlide(slide, deck.fonts);
+      const imageDataUrl = await renderEditorSlide(slide, deck.fonts, deck.watermark);
       out.push({ kind: 'image', imageDataUrl });
     }
   }
