@@ -4,8 +4,8 @@
 > ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp **`feat/present-layout-ml-p1`** — local `e22ae9e`, **CHƯA push, CHƯA merge main** (main/origin vẫn `3265db1`). 0 worktree sống.
-- **`~/Downloads/dwg2dxf`** — CLI cá nhân riêng (repo/giấy phép riêng, GPL-3.0), convert `.dwg`→`.dxf` LOCAL (`node cli.js ban-ve.dwg`), không server/không tốn phí. App KHÔNG còn nút "Mở DWG" — dùng "Mở DXF" sau khi convert. Xem README ở đó.
+- Nhánh tích hợp **`feat/present-layout-ml-p1`** — local `5a51f98`, **CHƯA push, CHƯA merge main** (main/origin vẫn `3265db1`). 0 worktree sống.
+- **App có nút "Mở DWG" trực tiếp** (Web Worker cô lập, GPL isolated) — hoạt động ngay, không cần server/CLI gì thêm. `~/Downloads/dwg2dxf` (CLI local riêng) VẪN GIỮ làm phương án dự phòng offline/bản vẽ nhạy cảm — không bắt buộc dùng hằng ngày.
 - **✅ 15/07 merge `feat/devops-docs`**: bộ cài .dmg (`dist/InteriorFlow-0.1.0-arm64.dmg`, unsigned) + docs build Win/deploy Vercel (chi tiết CHANGELOG).
 - **✅ Cổng Sprint 2 PASS (14/07)**: 492 test/20 file · tsc 0 (chi tiết CHANGELOG).
 - Test pattern: `node_modules/.bin/sucrase-node <path>.test.ts` (nay 29 file, xem Sprint 3 bên dưới).
@@ -15,7 +15,7 @@
 - Perceptron THẬT (learning-to-rank, degrade heuristic) · foldable Find N6 test on-device · installer cả 3 unsigned (.exe cần máy Win) · PWA host Vercel + Supabase (Agent 4 tự dựng, Sprint 4).
 
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
-- **✅ 18/07 DWG: 3 kiến trúc thử, dừng ở CLI local** (`e22ae9e`): (1) Worker cô lập trong repo → (2) tách network service riêng (`dwg-parse-service`, user lo tốn phí hạ tầng khi deploy thật) → (3) **CLI cá nhân `dwg2dxf`** (chọn cuối, KHÔNG server, sạch GPL nhất vì là "sử dụng cá nhân" không phải "phân phối"). App giờ KHÔNG có nút "Mở DWG" — `package.json`/`node_modules` InteriorFlow sạch dependency GPL hoàn toàn (đã `npm install` xác nhận). `dwg2dxf/cli.js` require trực tiếp `lib/cad/dwg.ts`+`dxf.ts` của InteriorFlow (qua sucrase) để đảm bảo DXF xuất ra luôn khớp app đọc lại — verify round-trip file .dwg thật (305KB): 421 entity/21 layer khớp chính xác qua `parseDxf`. `docs/LICENSE-NOTES.md` viết lại lần 3 — checklist luật sư review CHƯA làm nếu sau này muốn đưa "Mở DWG" trở lại app cho khách hàng.
+- **✅ 18/07 DWG — 4 kiến trúc thử, CHỐT lại nút "Mở DWG" trong app** (`5a51f98`): (1) Worker cô lập → (2) network service riêng (lo phí hạ tầng) → (3) CLI cá nhân `dwg2dxf` (lo bất tiện convert tay mỗi file) → **quay lại (1)**. Lý do đảo ngược: **InteriorFlow là TOOL NỘI BỘ TTT Architects** (auth khoá @ttt.vn, register 403, KHÔNG phân phối ra ngoài) — rủi ro "phân phối" GPL không áp dụng như 1 SaaS bán ra thị trường; 2 lần đổi kiến trúc trước đã áp nhầm góc nhìn đó. `lib/cad/dwg-worker.ts` (Worker DUY NHẤT import GPL) khôi phục nguyên trạng từ git history, verify tsc+40 test PASS + browser không lỗi console mới. `dwg2dxf` VẪN GIỮ làm phương án offline/nhạy cảm (không xoá) — `docs/LICENSE-NOTES.md` viết lại lần 4, ghi rõ: nếu SAU NÀY định bán/phân phối InteriorFlow ra ngoài công ty thì phải review pháp lý lại từ đầu.
 - **✅ 18/07 Sprint 9 — toggle Sketch↔Pro** (Phương án A, mặc định Sketch): `useCadStore.cadMode`+`PRO_ONLY_TOOLS` ẩn ~30 công cụ CAD chính xác ở Sketch. Tự sửa 1 bug: toolbar Pro tràn viewport đẩy ModeSwitch ra mép → **giải quyết luôn nợ kỹ thuật "toolbar tràn màn hẹp"**.
 - **✅ 18/07 Sprint 10 — Pro mode P1+P2**: nhập toạ độ chính xác + Polygon/Ellipse/Donut/Spline/Xline/Divide (chi tiết → CHANGELOG).
 - File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
