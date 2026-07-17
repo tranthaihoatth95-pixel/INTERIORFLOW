@@ -4,8 +4,8 @@
 > ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp **`feat/present-layout-ml-p1`** — local `1a9361b`, **CHƯA push, CHƯA merge main** (main/origin vẫn `3265db1`). 0 worktree sống.
-- **`dwg-parse-service`** — repo RIÊNG cạnh `interiorflow/` (`~/Downloads/dwg-parse-service`, xem README ở đó): `npm start` (cổng 4500) để nút "Mở DWG" hoạt động; thiếu `DWG_SERVICE_URL` trong `.env.local` → lỗi rõ ràng, không chặn app.
+- Nhánh tích hợp **`feat/present-layout-ml-p1`** — local `e22ae9e`, **CHƯA push, CHƯA merge main** (main/origin vẫn `3265db1`). 0 worktree sống.
+- **`~/Downloads/dwg2dxf`** — CLI cá nhân riêng (repo/giấy phép riêng, GPL-3.0), convert `.dwg`→`.dxf` LOCAL (`node cli.js ban-ve.dwg`), không server/không tốn phí. App KHÔNG còn nút "Mở DWG" — dùng "Mở DXF" sau khi convert. Xem README ở đó.
 - **✅ 15/07 merge `feat/devops-docs`**: bộ cài .dmg (`dist/InteriorFlow-0.1.0-arm64.dmg`, unsigned) + docs build Win/deploy Vercel (chi tiết CHANGELOG).
 - **✅ Cổng Sprint 2 PASS (14/07)**: 492 test/20 file · tsc 0 (chi tiết CHANGELOG).
 - Test pattern: `node_modules/.bin/sucrase-node <path>.test.ts` (nay 29 file, xem Sprint 3 bên dưới).
@@ -15,9 +15,9 @@
 - Perceptron THẬT (learning-to-rank, degrade heuristic) · foldable Find N6 test on-device · installer cả 3 unsigned (.exe cần máy Win) · PWA host Vercel + Supabase (Agent 4 tự dựng, Sprint 4).
 
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
-- **✅ 18/07 tách DWG service riêng** (`1a9361b`): user chọn phương án (b) trong LICENSE-NOTES sau khi hỏi lại rõ ý — gỡ HẲN dependency GPL `@mlightcad/libredwg-web` khỏi `package.json`/`node_modules` InteriorFlow (đã `npm install` lại, xác nhận sạch). Parse DWG giờ chạy trong `dwg-parse-service` (repo/giấy phép riêng, xem mục Hiện tại) — InteriorFlow gọi qua `app/api/cad/dwg-import` (route server, env `DWG_SERVICE_URL`) như network service arms-length. Verify end-to-end qua HTTP thật (305KB DWG, sandbox preview không hỗ trợ file-picker OS): khớp chính xác kết quả cũ (421/497 entity, 25 layer) + test đường lỗi (service tắt → 502 rõ ràng). `docs/LICENSE-NOTES.md` viết lại — checklist luật sư review kiến trúc mới CHƯA làm, đọc trước khi release khách hàng thật.
-- **✅ 18/07 Sprint 9 — toggle Sketch↔Pro** (merge vào `feat/present-layout-ml-p1`): user duyệt mockup 2 phương án (Artifact tương tác) → chọn **Phương án A** (segmented switch cố định, mặc định Sketch). `useCadStore.cadMode` + `PRO_ONLY_TOOLS` — CadToolbar ẩn ~30 công cụ CAD chính xác ở Sketch, chỉ hiện 7 tool vẽ+edit cơ bản; nhớ lựa chọn qua localStorage. Tự tìm+sửa 1 bug thật: Pro mode làm toolbar rộng hơn viewport, pill canh giữa đẩy ModeSwitch ra ngoài mép trái → thêm maxWidth+overflowX:auto, **giải quyết luôn nợ kỹ thuật cũ "toolbar tràn màn hẹp"**. 49 test mới.
-- **✅ 18/07 Sprint 10 — Pro mode P1+P2** (chi tiết → CHANGELOG): nhập toạ độ chính xác + Polygon/Ellipse/Donut/Spline/Xline/Divide, tự tìm+sửa 1 bug (vector (0,0) làm dynBuf collapse). 62 test mới.
+- **✅ 18/07 DWG: 3 kiến trúc thử, dừng ở CLI local** (`e22ae9e`): (1) Worker cô lập trong repo → (2) tách network service riêng (`dwg-parse-service`, user lo tốn phí hạ tầng khi deploy thật) → (3) **CLI cá nhân `dwg2dxf`** (chọn cuối, KHÔNG server, sạch GPL nhất vì là "sử dụng cá nhân" không phải "phân phối"). App giờ KHÔNG có nút "Mở DWG" — `package.json`/`node_modules` InteriorFlow sạch dependency GPL hoàn toàn (đã `npm install` xác nhận). `dwg2dxf/cli.js` require trực tiếp `lib/cad/dwg.ts`+`dxf.ts` của InteriorFlow (qua sucrase) để đảm bảo DXF xuất ra luôn khớp app đọc lại — verify round-trip file .dwg thật (305KB): 421 entity/21 layer khớp chính xác qua `parseDxf`. `docs/LICENSE-NOTES.md` viết lại lần 3 — checklist luật sư review CHƯA làm nếu sau này muốn đưa "Mở DWG" trở lại app cho khách hàng.
+- **✅ 18/07 Sprint 9 — toggle Sketch↔Pro** (Phương án A, mặc định Sketch): `useCadStore.cadMode`+`PRO_ONLY_TOOLS` ẩn ~30 công cụ CAD chính xác ở Sketch. Tự sửa 1 bug: toolbar Pro tràn viewport đẩy ModeSwitch ra mép → **giải quyết luôn nợ kỹ thuật "toolbar tràn màn hẹp"**.
+- **✅ 18/07 Sprint 10 — Pro mode P1+P2**: nhập toạ độ chính xác + Polygon/Ellipse/Donut/Spline/Xline/Divide (chi tiết → CHANGELOG).
 - File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
 - **NVIDIA_API_KEY đã có**, probe HTTP 200. **fal**: hết balance, chờ nạp credit.
 - CHƯA làm (backlog cũ): bỏ hardcode 'DETECH · CONCEPT' · template tĩnh thư viện · heavy-ML pha 2 · membership per-flow.
