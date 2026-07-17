@@ -19,6 +19,7 @@ import {
 import { useCadStore } from '@/lib/cad/store';
 import type { HatchPattern } from '@/lib/cad/model';
 import { parseDxf, exportDxf } from '@/lib/cad/dxf';
+import { openDwgFile } from '@/lib/cad/dwg';
 import { renderDocToDataURL } from '@/lib/cad/render';
 import { exportCadToPdf } from '@/lib/cad/pdf';
 import { BLOCKS, BLOCK_MAP } from '@/lib/cad/furniture';
@@ -57,6 +58,7 @@ export default function CadEditor() {
   const [titleBlockOpen, setTitleBlockOpen] = useState(false);
   const [handoffMsg, setHandoffMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const dwgRef = useRef<HTMLInputElement>(null);
   const idfRef = useRef<HTMLInputElement>(null);
   const photoRef = useRef<HTMLInputElement>(null);
 
@@ -175,6 +177,26 @@ export default function CadEditor() {
     e.target.value = '';
   };
 
+  // Mở DWG — parse chạy trong Web Worker cô lập (lib/cad/dwg-worker.ts, chứa dependency GPL
+  // libredwg-web — xem docs/LICENSE-NOTES.md). Bất kể lỗi gì (sai định dạng/hỏng/phiên bản DWG
+  // chưa hỗ trợ) đều hiện thông báo, KHÔNG crash app — giống hành vi onImportFile (DXF) ở trên.
+  const onImportDwgFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    useCadStore.getState().setStatus(`Đang đọc ${f.name}…`);
+    openDwgFile(f)
+      .then(({ doc, skippedEntityCount, totalEntityCount }) => {
+        useCadStore.getState().importDoc(doc, 'replace');
+        const skipNote = skippedEntityCount > 0 ? ` (${skippedEntityCount}/${totalEntityCount} đối tượng chưa hỗ trợ đã bỏ qua — INSERT/DIMENSION/… xem docs/LICENSE-NOTES.md)` : '';
+        useCadStore.getState().setStatus(`Đã mở ${f.name} — ${doc.entities.length} đối tượng.${skipNote} Dùng scale nếu đơn vị lạ.`);
+        window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+      })
+      .catch((err: Error) => {
+        useCadStore.getState().setStatus(`Không đọc được "${f.name}": ${err.message}`);
+      });
+  };
+
   // "Đưa sang Render →"
   const toRender = () => {
     const doc = useCadStore.getState().doc;
@@ -206,6 +228,10 @@ export default function CadEditor() {
           <FolderOpen size={14} /> Mở DXF
         </button>
         <input ref={fileRef} type="file" accept=".dxf" hidden onChange={onImportFile} />
+        <button type="button" onClick={() => dwgRef.current?.click()} style={fileBtn} title="Mở file .dwg — parse chạy trong Web Worker riêng (thư viện GPL cô lập, xem docs/LICENSE-NOTES.md); chưa hỗ trợ block INSERT/DIMENSION">
+          <FolderOpen size={14} /> Mở DWG
+        </button>
+        <input ref={dwgRef} type="file" accept=".dwg" hidden onChange={onImportDwgFile} />
         <button type="button" onClick={openDemo} style={fileBtn} title="Nạp 1 mặt bằng căn hộ mẫu đầy đủ (tường/phòng/cửa/kích thước/nội thất)">
           <Sparkles size={14} /> Mở bản demo
         </button>

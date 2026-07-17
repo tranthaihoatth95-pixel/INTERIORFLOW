@@ -12,6 +12,22 @@ const nextConfig = {
   // Nếu về sau muốn gói GỌN hơn: output: 'standalone' (phải sửa electron/main.js
   // chạy .next/standalone/server.js + copy .next/static + public + lo Prisma engine).
 
+  // ── DWG import (Sprint DWG) ─────────────────────────────────────────────────
+  // lib/cad/dwg-worker.ts import `@mlightcad/libredwg-web` (GPL — xem docs/LICENSE-NOTES.md).
+  // Glue code Emscripten của thư viện có nhánh dành cho Node.js dùng `import("node:module")` +
+  // `require("node:fs"/"node:path"/"node:url")` — nhánh này chỉ CHẠY khi phát hiện môi trường
+  // Node (KHÔNG chạy trong Worker trình duyệt), nhưng webpack vẫn cố static-resolve các "node:"
+  // specifier này khi bundle cho Worker/browser → lỗi build "UnhandledSchemeError". Bỏ qua các
+  // import đó (IgnorePlugin) — an toàn vì code nhánh Node chết (dead code) trong ngữ cảnh Worker.
+  // CHỈ áp dụng cho bundle client/worker (isServer=false) — route API server (vd
+  // app/api/render/fbx dùng `child_process` thật) vẫn cần "node:*" hoạt động bình thường.
+  webpack: (config, { webpack, isServer }) => {
+    if (!isServer) {
+      config.plugins.push(new webpack.IgnorePlugin({ resourceRegExp: /^node:/ }));
+    }
+    return config;
+  },
+
   // ── PWA (iPad/Android "Add to Home Screen") ────────────────────────────────
   async headers() {
     return [

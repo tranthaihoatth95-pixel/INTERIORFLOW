@@ -70,6 +70,18 @@
       ],
       "port": 4020,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-sprint7"
+    },
+    {
+      "name": "dwg-4050",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4050"
+      ],
+      "port": 4050,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-dwg"
     }
   ]
 }

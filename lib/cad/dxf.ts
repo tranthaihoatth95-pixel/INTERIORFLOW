@@ -34,7 +34,8 @@ const ACI: Record<number, string> = {
   6: '#ff00ff', 7: '#e8e4dc', 8: '#808080', 9: '#c0c0c0',
   30: '#ff7f00', 40: '#c08a5a', 250: '#333333', 251: '#4d4d4d', 252: '#666666',
 };
-function aciToHex(i: number): string {
+/** Xuất để lib/cad/dwg.ts (mapping DWG → Doc) tái dùng — cùng bảng màu ACI, tránh viết lại. */
+export function aciToHex(i: number): string {
   return ACI[i] ?? '#c8c4bc';
 }
 
@@ -122,7 +123,8 @@ function eid(): string {
   return `dxf-${Date.now().toString(36)}-${uid}`;
 }
 
-function dxfNameToLineType(name?: string): LineType | undefined {
+/** Xuất để lib/cad/dwg.ts tái dùng (DWG cũng đặt tên LTYPE theo cùng quy ước AutoCAD). */
+export function dxfNameToLineType(name?: string): LineType | undefined {
   switch (name) {
     case 'HIDDEN': return 'hidden';
     case 'CENTER': return 'center';
