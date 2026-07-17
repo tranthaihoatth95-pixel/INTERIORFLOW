@@ -13,12 +13,13 @@ import type { Pt } from './model';
 import type { Prim } from './furniture';
 
 /**
- * Nhóm palette — 7 nhóm cũ + 2 nhóm mới (Sprint 3 — B1.9 Cầu thang, B1.10 Thiết bị).
+ * Nhóm palette — 7 nhóm cũ + 2 nhóm mới (Sprint 3 — B1.9 Cầu thang, B1.10 Thiết bị) + 1 nhóm mới
+ * (Sprint 6 — D1.3/D2.2 MEP sơ cấp: đèn + ổ cắm điện, xem lib/cad/mep.ts).
  */
 export type BlockGroup =
   | 'Phòng khách' | 'Phòng ăn' | 'Phòng ngủ' | 'Bếp' | 'Vệ sinh'
   | 'Làm việc' | 'Kiến trúc'
-  | 'Cầu thang' | 'Thiết bị';
+  | 'Cầu thang' | 'Thiết bị' | 'Điện';
 
 /** Dạng thay thế của 1 BlockDef (vd size/hình khác) — B2.5 UI switch trong palette. */
 export interface ShapeVariant {
