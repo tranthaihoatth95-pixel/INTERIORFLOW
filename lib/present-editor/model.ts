@@ -95,6 +95,12 @@ export interface ImageElement extends BaseElement {
   adjust: ImageAdjust;
   crop: CropRect;
   radius?: number; // bo góc, px @1920 quy đổi
+  /**
+   * Tài sản liên kết (PS-3) — element này là 1 "instance" của `deck.linkedAssets[assetId]`.
+   * Sửa nguồn (setLinkedAssetSrc, lib/present-editor/linked-assets.ts) 1 lần → mọi element
+   * cùng assetId (ở BẤT KỲ slide nào) đồng loạt cập nhật `src`. Bỏ trống = ảnh độc lập (cũ).
+   */
+  assetId?: string;
 }
 
 export interface TextElement extends BaseElement {
@@ -164,6 +170,22 @@ export interface DeckWatermark {
 }
 
 /**
+ * Tài sản liên kết (PS-3) — gộp "smart object" (Photoshop) + "component instance"
+ * (Figma) làm MỘT khái niệm: nhiều `ImageElement.assetId` (ở nhiều slide khác nhau) trỏ
+ * chung 1 bản ghi ở đây. Sửa `src` một lần (qua `setLinkedAssetSrc`, lib/present-editor/
+ * linked-assets.ts) → mọi element tham chiếu đồng loạt cập nhật. Registry sống ở cấp deck
+ * (giống `watermark`) — không phải element của 1 slide.
+ */
+export interface LinkedAsset {
+  id: string;
+  /** ảnh nguồn hiện tại (dataURL/URL) — mọi element cùng assetId hiển thị đúng ảnh này. */
+  src: string;
+  /** tên gợi nhớ để chọn lại trong panel (vd "Logo TTT", "Ảnh render sảnh"). */
+  name?: string;
+  updatedAt: number;
+}
+
+/**
  * Hiệu ứng chuyển động (motion) kiểu Apple — chọn cho từng slide.
  * CHỈ ảnh hưởng khi TRÌNH CHIẾU (preview động), KHÔNG đổi model tĩnh nên PDF/PPTX bỏ qua.
  * Giữ trong model để serialize được + lưu/khôi phục.
@@ -214,6 +236,8 @@ export interface EditorDeck {
   reveal?: ElementReveal;
   /** logo/watermark cấp deck (PS-1 / G.7) — hiện trên mọi slide, bật/tắt được. */
   watermark?: DeckWatermark;
+  /** registry tài sản liên kết (PS-3) — key = assetId, tham chiếu bởi ImageElement.assetId. */
+  linkedAssets?: Record<string, LinkedAsset>;
 }
 
 /* ------------------------------------------------------------------ */

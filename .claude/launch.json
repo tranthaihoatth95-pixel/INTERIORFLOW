@@ -82,6 +82,18 @@
       ],
       "port": 4050,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-dwg"
+    },
+    {
+      "name": "ps3-4043",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4043"
+      ],
+      "port": 4043,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-ps3"
     }
   ]
 }

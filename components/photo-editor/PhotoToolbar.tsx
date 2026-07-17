@@ -25,6 +25,8 @@ import {
   Link2,
   ImagePlus,
   Download,
+  CornerUpLeft,
+  Check,
 } from 'lucide-react';
 import type { Tool, BrushSettings } from '@/lib/photo-editor/tools';
 import { isPaintTool, TOOL_LABELS } from '@/lib/photo-editor/tools';
@@ -44,6 +46,10 @@ interface Props {
   onFit: () => void;
   onExport: (format: 'png' | 'jpeg') => void;
   busy: string | null;
+  /** PS-3: có truyền (ảnh đến từ /present-editor qua handoff) → hiện nút "Ghi về Present". */
+  onWriteBack?: () => void;
+  /** true 1 nhịp ngắn sau khi ghi về xong — đổi nhãn nút thành "Đã ghi". */
+  writeBackDone?: boolean;
 }
 
 const TOOLS: { t: Tool; icon: React.ReactNode }[] = [
@@ -131,6 +137,20 @@ export default function PhotoToolbar(p: Props) {
         <Btn onClick={() => p.onExport('jpeg')} title="Xuất JPEG" disabled={!!p.busy} primary>
           <Download size={15} /> {p.busy === 'jpeg' ? 'Đang xuất…' : 'JPEG'}
         </Btn>
+        {p.onWriteBack && (
+          <>
+            <Divider />
+            <Btn
+              onClick={p.onWriteBack}
+              title="Composite ảnh rồi ghi về đúng ảnh trên slide ở tab /present-editor"
+              disabled={!!p.busy}
+              primary
+            >
+              {p.writeBackDone ? <Check size={15} /> : <CornerUpLeft size={15} />}
+              {p.busy === 'writeback' ? 'Đang ghi…' : p.writeBackDone ? 'Đã ghi' : 'Ghi về Present'}
+            </Btn>
+          </>
+        )}
       </div>
 
       {/* hàng URL (bung xuống) */}

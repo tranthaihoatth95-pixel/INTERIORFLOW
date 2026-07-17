@@ -27,8 +27,8 @@ interface Props {
   /** ảnh thư viện Reference để "thay ảnh" nhanh. */
   libAssets: GuAsset[];
   onUpdate: (mutate: (el: ImageElement) => void, live?: boolean) => void;
-  /** mở trình chỉnh ảnh nâng cao (Photoshop-level, /photo-editor). */
-  onOpenAdvanced?: () => void;
+  /** mở trình chỉnh ảnh nâng cao (Photoshop-level, /photo-editor) cho đúng ảnh `el`. */
+  onOpenAdvanced?: (id: string) => void;
   onClose: () => void;
 }
 
@@ -205,7 +205,7 @@ export default function ImageEditor({ el, libAssets, onUpdate, onOpenAdvanced, o
         {onOpenAdvanced && (
           <button
             type="button"
-            onClick={onOpenAdvanced}
+            onClick={() => onOpenAdvanced(el.id)}
             style={iconBtn}
             title="Chỉnh ảnh nâng cao (layers · mask · clone — mở /photo-editor)"
           >

@@ -11,9 +11,15 @@
  * adjustment layer, ghép/blend nhiều lớp). Tông quiet-luxury, dùng đúng CSS token.
  *
  * Hydration-safe: nhận initialDoc từ trang (useState initializer). Đo ảnh trong handler/effect.
+ *
+ * PS-3 (round-trip): `onWriteBack` (tuỳ chọn) — có truyền = ảnh này đến từ /present-editor
+ * (handoff), hiện thêm nút "Ghi về Present" cạnh export PNG/JPEG. Bấm vào: composite tài liệu
+ * bằng ĐÚNG `exportDoc` engine đã dùng cho export (không dựng đường xuất riêng), rồi gọi
+ * `onWriteBack(dataUrl)` — trang cha ghi vào kênh trả về (localStorage), KHÔNG đụng gì bên
+ * trong PhotoEditor/useDoc. Không truyền `onWriteBack` = ẩn nút, hành vi cũ y nguyên.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { BlendMode, AdjustParams, AdjustPreset } from '@/lib/photo-editor/model';
 import {
   makeRasterLayer,
@@ -33,9 +39,11 @@ import LibraryPickerModal from './LibraryPickerModal';
 
 interface Props {
   initialDoc: PhotoDoc;
+  /** ảnh đến từ /present-editor (handoff) — có hàm này mới hiện nút "Ghi về Present". */
+  onWriteBack?: (dataUrl: string) => void;
 }
 
-export default function PhotoEditor({ initialDoc }: Props) {
+export default function PhotoEditor({ initialDoc, onWriteBack }: Props) {
   const ed = useDoc(initialDoc);
   const [tool, setTool] = useState<Tool>('move');
   const [brush, setBrush] = useState<BrushSettings>({ ...DEFAULT_BRUSH });
@@ -44,6 +52,12 @@ export default function PhotoEditor({ initialDoc }: Props) {
   const [libOpen, setLibOpen] = useState(false);
   const [selection, setSelection] = useState<{ x: number; y: number }[] | null>(null);
   const [fitSignal, setFitSignal] = useState(0);
+  // "Ghi về Present" (PS-3) — nhãn nút chớp "Đã ghi" 2s rồi về lại bình thường.
+  const [writeBackDone, setWriteBackDone] = useState(false);
+  const writeBackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (writeBackTimer.current) clearTimeout(writeBackTimer.current);
+  }, []);
   // đếm số lớp raster (để biết có phải ảnh đầu tiên → resize doc)
   const [hasFirst, setHasFirst] = useState(initialDoc.layers.some((l) => l.kind === 'raster'));
 
@@ -254,6 +268,24 @@ export default function PhotoEditor({ initialDoc }: Props) {
     [ed.doc],
   );
 
+  /** PS-3 — composite (exportDoc PNG, CÙNG engine export sẵn có) rồi giao lại cho trang cha. */
+  const onWriteBackClick = useCallback(async () => {
+    if (!onWriteBack) return;
+    setBusy('writeback');
+    try {
+      const url = await exportDoc(ed.doc, 'png');
+      onWriteBack(url);
+      setWriteBackDone(true);
+      if (writeBackTimer.current) clearTimeout(writeBackTimer.current);
+      writeBackTimer.current = setTimeout(() => setWriteBackDone(false), 2000);
+    } catch (e) {
+      console.error('[PhotoEditor] ghi về Present lỗi', e);
+      alert('Không ghi về được (có thể do CORS). Dùng ảnh tải lên.');
+    } finally {
+      setBusy(null);
+    }
+  }, [ed.doc, onWriteBack]);
+
   const selectedIsAdj = ed.selected?.kind === 'adjustment';
 
   return (
@@ -273,6 +305,8 @@ export default function PhotoEditor({ initialDoc }: Props) {
         onFit={() => setFitSignal((s) => s + 1)}
         onExport={onExport}
         busy={busy}
+        onWriteBack={onWriteBack ? onWriteBackClick : undefined}
+        writeBackDone={writeBackDone}
       />
 
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
