@@ -301,7 +301,7 @@ export function FlowCanvas() {
         />
       </ReactFlow>
 
-      {/* Group overlay — vẽ khung bao quanh nhóm node */}
+      {/* Group overlay — vẽ khung bao quanh nhóm node (tự bọc ViewportPortal bên trong) */}
       <GroupOverlay />
 
       {/* Collab: con trỏ live (flow-space) + thanh presence */}
