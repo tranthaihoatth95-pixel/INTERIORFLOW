@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import {
   FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Plus, Trash2, X, Command, Sparkles, Wand2,
   ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair, Tag, Check, Lightbulb, FileText, Save, Camera,
+  LayoutTemplate, FileSignature, Wrench,
 } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import type { HatchPattern } from '@/lib/cad/model';
@@ -24,12 +25,15 @@ import { BLOCKS, BLOCK_MAP } from '@/lib/cad/furniture';
 import ShapePalette, { ShapeInfoPanel } from '@/components/ShapePalette';
 import { loadManifest, groupByCategory, type LibraryManifest } from '@/lib/cad/block-library';
 import { buildDemoPlan } from '@/lib/cad/demo-plan';
+import { buildOfficeTemplate, buildHotelTemplate } from '@/lib/cad/templates';
+import { titleBlock, type TitleBlockInfo } from '@/lib/cad/commands';
 import { describeToEntities } from '@/lib/cad/ai-assist';
 import { docBox } from '@/lib/cad/model';
 import { useFlowStore } from '@/lib/store';
 import { stashCadHandoff } from '@/lib/cad/handoff';
 import { checkStandards, findRoomLabels, classifyRoom, type Violation, type RoomKind } from '@/lib/cad/standards/checker';
 import { getAllRules } from '@/lib/cad/standards/registry';
+import { suggestFix } from '@/lib/cad/standards/fix-suggest';
 import { classifyOperator, rulesForOperator, type OperatorType } from '@/lib/cad/operator-profile';
 import { suggestRoomNames, type RoomNameSuggestion } from '@/lib/cad/room-autolabel';
 import {
@@ -49,6 +53,8 @@ export default function CadEditor() {
   const [standardsOpen, setStandardsOpen] = useState(false);
   const [autoLabelOpen, setAutoLabelOpen] = useState(false);
   const [mepOpen, setMepOpen] = useState(false);
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [titleBlockOpen, setTitleBlockOpen] = useState(false);
   const [handoffMsg, setHandoffMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const idfRef = useRef<HTMLInputElement>(null);
@@ -203,6 +209,9 @@ export default function CadEditor() {
         <button type="button" onClick={openDemo} style={fileBtn} title="Nạp 1 mặt bằng căn hộ mẫu đầy đủ (tường/phòng/cửa/kích thước/nội thất)">
           <Sparkles size={14} /> Mở bản demo
         </button>
+        <button type="button" onClick={() => setTemplateOpen((o) => !o)} style={{ ...fileBtn, background: templateOpen ? 'var(--accent)' : undefined, color: templateOpen ? '#fff' : undefined }} title="Chọn mẫu khởi đầu (Căn hộ / Văn phòng / Khách sạn) — tường bao + 1-2 phòng cơ bản để bạn vẽ tiếp, KHÔNG phải bản vẽ hoàn chỉnh">
+          <LayoutTemplate size={14} /> Mẫu dự án
+        </button>
         <button type="button" onClick={aiAssist} style={fileBtn} title="AI-assist (rule-based): mô tả nhanh 1 phòng → tự vẽ tường + đặt nội thất khớp từ khoá">
           <Wand2 size={14} /> AI mô tả
         </button>
@@ -228,6 +237,9 @@ export default function CadEditor() {
           <Camera size={14} /> Ảnh hiện trường
         </button>
         <input ref={photoRef} type="file" accept="image/*" hidden onChange={onPickPhoto} />
+        <button type="button" onClick={() => setTitleBlockOpen((o) => !o)} style={{ ...fileBtn, background: titleBlockOpen ? 'var(--accent)' : undefined, color: titleBlockOpen ? '#fff' : undefined }} title="Chèn khung tên (cajetín) — nhập dự án/bản vẽ/tỉ lệ/người vẽ/ngày rồi chèn vào góc dưới-phải bản vẽ">
+          <FileSignature size={14} /> Khung tên
+        </button>
         <button type="button" onClick={() => setStandardsOpen((o) => !o)} style={{ ...fileBtn, background: standardsOpen ? 'var(--accent)' : undefined, color: standardsOpen ? '#fff' : undefined }} title="Kiểm chuẩn — đối chiếu bản vẽ với TCVN/QCVN/ISO (chỉ đọc & đề xuất, không tự sửa)">
           <ShieldCheck size={14} /> Kiểm chuẩn
         </button>
@@ -254,6 +266,8 @@ export default function CadEditor() {
         {standardsOpen && <StandardsPanel onClose={() => setStandardsOpen(false)} />}
         {autoLabelOpen && <AutoLabelPanel onClose={() => setAutoLabelOpen(false)} />}
         {mepOpen && <MepPanel onClose={() => setMepOpen(false)} />}
+        {templateOpen && <TemplatePanel onClose={() => setTemplateOpen(false)} />}
+        {titleBlockOpen && <TitleBlockPanel onClose={() => setTitleBlockOpen(false)} />}
         <LayerPanel />
         <SelectionInfoPanel />
         {handoffMsg && (
@@ -440,6 +454,123 @@ function FurniturePanel({ onClose }: { onClose: () => void }) {
   );
 }
 
+/* ───────── Panel Mẫu dự án (Sprint 8, H1.4) — chọn điểm khởi đầu khi bắt đầu vẽ mới ─────────
+ * 3 lựa chọn: Căn hộ (buildDemoPlan — nguyên trạng, KHÔNG sửa), Văn phòng, Khách sạn
+ * (buildOfficeTemplate/buildHotelTemplate — lib/cad/templates.ts, MỚI). Cả 3 đều THAY THẾ bản vẽ
+ * hiện tại (giống hệt hành vi openDemo() — hỏi xác nhận nếu doc không rỗng), khác nhau ở NỘI DUNG
+ * nạp vào. Đây là ĐIỂM BẮT ĐẦU (tường bao + 1-2 phòng cơ bản), không phải bản vẽ hoàn chỉnh. */
+function TemplatePanel({ onClose }: { onClose: () => void }) {
+  const load = (build: () => ReturnType<typeof buildDemoPlan>, label: string) => {
+    if (useCadStore.getState().doc.entities.length > 0) {
+      const ok = window.confirm(`Nạp mẫu "${label}" sẽ THAY THẾ bản vẽ hiện tại. Tiếp tục?`);
+      if (!ok) return;
+    }
+    useCadStore.getState().importDoc(build(), 'replace');
+    useCadStore.getState().setStatus(`Đã nạp mẫu "${label}" — tường bao + phòng cơ bản, tự vẽ tiếp từ đây.`);
+    window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+    onClose();
+  };
+
+  const items: { label: string; desc: string; build: () => ReturnType<typeof buildDemoPlan> }[] = [
+    { label: 'Căn hộ', desc: 'Căn hộ 1PN đầy đủ công năng (giống "Mở bản demo") — Khách/Bếp/Ngủ/WC + hành lang.', build: buildDemoPlan },
+    { label: 'Văn phòng', desc: 'Không gian mở (open office) + 2 phòng họp nhỏ.', build: buildOfficeTemplate },
+    { label: 'Khách sạn', desc: '2 phòng ngủ mẫu kiểu khách sạn + hành lang.', build: buildHotelTemplate },
+  ];
+
+  return (
+    <div style={{ ...panel, left: 12, top: 70, width: 280 }}>
+      <div style={panelHead}>
+        <span>Mẫu dự án — chọn điểm khởi đầu</span>
+        <button type="button" onClick={onClose} style={miniBtn} title="Đóng">
+          <X size={14} />
+        </button>
+      </div>
+      <div style={{ fontSize: 10.5, color: 'var(--t4)', padding: '0 6px 8px' }}>
+        Mỗi mẫu chỉ có tường bao + 1-2 phòng cơ bản — điểm bắt đầu để bạn vẽ tiếp, KHÔNG phải bản vẽ hoàn chỉnh.
+      </div>
+      {items.map((it) => (
+        <button
+          key={it.label}
+          type="button"
+          onClick={() => load(it.build, it.label)}
+          style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 8px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', cursor: 'pointer', marginBottom: 6 }}
+        >
+          <div style={{ fontSize: 12.5, fontWeight: 600 }}>{it.label}</div>
+          <div style={{ fontSize: 10.5, color: 'var(--t4)', marginTop: 2, lineHeight: 1.4 }}>{it.desc}</div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ───────── Panel Khung tên (Sprint 8, H1.5) — CHÈN THẬT khi user bấm nút, không phải đề xuất ─────────
+ * Khác panel Kiểm chuẩn/Gợi ý tên phòng/MEP (chỉ đề xuất): đây là 1 form nhập liệu — TÁI DÙNG
+ * titleBlock() có sẵn (lib/cad/commands.ts), vị trí góc dưới-phải bản vẽ theo đúng cách
+ * addPresentationKit() trong commands.ts đặt (tbAt = box.maxX+2600, box.minY-400). Doc rỗng
+ * (box=null) → neo tại gốc toạ độ (0,-400) làm fallback hợp lý. */
+function TitleBlockPanel({ onClose }: { onClose: () => void }) {
+  const doc = useCadStore((s) => s.doc);
+  const addEntities = useCadStore((s) => s.addEntities);
+  const today = new Date().toISOString().slice(0, 10);
+  const [project, setProject] = useState('');
+  const [drawing, setDrawing] = useState('MẶT BẰNG BỐ TRÍ NỘI THẤT — SƠ PHÁC DD');
+  const [scale, setScale] = useState('1:100');
+  const [author, setAuthor] = useState('');
+  const [date, setDate] = useState(today);
+  const [msg, setMsg] = useState('');
+
+  const insert = () => {
+    const box = docBox(doc);
+    const tbAt = box ? { x: box.maxX + 2600, y: box.minY - 400 } : { x: 0, y: -400 };
+    const wallLayer = doc.layers.find((l) => l.id === 'l-wall')?.id ?? doc.layers[0]?.id ?? 'l-wall';
+    const textLayer = doc.layers.find((l) => l.id === 'l-text')?.id ?? doc.layers[0]?.id ?? 'l-text';
+    const info: TitleBlockInfo = {
+      project: project.trim() || 'DỰ ÁN',
+      drawing: drawing.trim() || 'MẶT BẰNG BỐ TRÍ — SƠ PHÁC DD',
+      scale: scale.trim() || '1:100',
+      author: author.trim() || undefined,
+      date: date || undefined,
+    };
+    addEntities(titleBlock(tbAt, info, wallLayer, textLayer));
+    setMsg('Đã chèn khung tên vào bản vẽ.');
+    setTimeout(() => setMsg(''), 2500);
+    window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+  };
+
+  const field: React.CSSProperties = { width: '100%', fontSize: 12, padding: '5px 7px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', marginBottom: 8, boxSizing: 'border-box' };
+  const fieldLabel: React.CSSProperties = { fontSize: 10.5, color: 'var(--t3)', marginBottom: 3, display: 'block' };
+
+  return (
+    <div style={{ ...panel, left: 12, top: 70, width: 280 }}>
+      <div style={panelHead}>
+        <span>Khung tên (cajetín)</span>
+        <button type="button" onClick={onClose} style={miniBtn} title="Đóng">
+          <X size={14} />
+        </button>
+      </div>
+      <div style={{ fontSize: 10.5, color: 'var(--t4)', padding: '0 6px 8px' }}>
+        Chèn khung tên góc dưới-phải bản vẽ (tham chiếu ISO 7200) — điền thông tin rồi bấm Chèn.
+      </div>
+      <div style={{ padding: '0 2px' }}>
+        <label style={fieldLabel}>Tên dự án</label>
+        <input value={project} onChange={(e) => setProject(e.target.value)} placeholder="VD: Căn hộ Sunrise A1203" style={field} />
+        <label style={fieldLabel}>Tên bản vẽ</label>
+        <input value={drawing} onChange={(e) => setDrawing(e.target.value)} style={field} />
+        <label style={fieldLabel}>Tỉ lệ</label>
+        <input value={scale} onChange={(e) => setScale(e.target.value)} placeholder="1:100" style={field} />
+        <label style={fieldLabel}>Người vẽ</label>
+        <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="VD: Nguyễn Văn A" style={field} />
+        <label style={fieldLabel}>Ngày</label>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={field} />
+        <button type="button" onClick={insert} style={{ ...fileBtn, width: '100%', justifyContent: 'center', background: 'var(--accent)', color: '#fff', border: 'none' }}>
+          <FileSignature size={14} /> Chèn khung tên
+        </button>
+        {msg && <div style={{ fontSize: 11, color: 'var(--accent)', marginTop: 6 }}>{msg}</div>}
+      </div>
+    </div>
+  );
+}
+
 /* ───────── Panel Kiểm chuẩn (standards checker) — CHỈ ĐỌC + ĐỀ XUẤT, không tự sửa ───────── */
 /** Nhãn operator hiển thị (proposal §1). '' = không lọc → dùng getAllRules() như cũ. */
 const OPERATOR_LABELS: { value: OperatorType | ''; label: string }[] = [
@@ -547,22 +678,34 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
         {violations !== null && violations.length === 0 && (
           <div style={{ padding: '10px 8px', fontSize: 12, color: 'var(--t3)' }}>Không phát hiện vi phạm nào (trong phạm vi đo được tự động).</div>
         )}
-        {violations?.map((v, i) => (
-          <div key={`${v.ruleId}-${i}`} style={{ padding: '7px 8px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-            <span style={{ marginTop: 2 }}>{sevIcon(v.severity)}</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: 'var(--t1)', lineHeight: 1.4 }}>{v.message}</div>
-              <div style={{ fontSize: 10, color: 'var(--t4)', marginTop: 2 }}>
-                {v.source} {v.verified ? '' : '· CHƯA KIỂM CHỨNG (đối chiếu bản gốc trước khi dùng chính thức)'}
+        {violations?.map((v, i) => {
+          // Sprint 8, D2.3: gợi ý sửa CỤ THỂ (text + mm) — CHỈ hiển thị, KHÔNG tự sửa gì (xem
+          // "hiến pháp" ở đầu lib/cad/standards/fix-suggest.ts). null ⇒ loại vi phạm này chưa có
+          // cách tính gợi ý cụ thể, không hiển thị gì thêm (không ép viết gợi ý mơ hồ).
+          const fix = suggestFix(v, doc);
+          return (
+            <div key={`${v.ruleId}-${i}`} style={{ padding: '7px 8px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+              <span style={{ marginTop: 2 }}>{sevIcon(v.severity)}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, color: 'var(--t1)', lineHeight: 1.4 }}>{v.message}</div>
+                <div style={{ fontSize: 10, color: 'var(--t4)', marginTop: 2 }}>
+                  {v.source} {v.verified ? '' : '· CHƯA KIỂM CHỨNG (đối chiếu bản gốc trước khi dùng chính thức)'}
+                </div>
+                {fix && (
+                  <div style={{ fontSize: 10.5, color: 'var(--accent)', marginTop: 4, display: 'flex', gap: 4, alignItems: 'flex-start', lineHeight: 1.4 }}>
+                    <Wrench size={11} style={{ marginTop: 2, flexShrink: 0 }} />
+                    <span>{fix}</span>
+                  </div>
+                )}
               </div>
+              {v.at && (
+                <button type="button" onClick={() => zoomTo(v)} title="Zoom tới vị trí" style={miniBtn}>
+                  <Crosshair size={13} />
+                </button>
+              )}
             </div>
-            {v.at && (
-              <button type="button" onClick={() => zoomTo(v)} title="Zoom tới vị trí" style={miniBtn}>
-                <Crosshair size={13} />
-              </button>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
