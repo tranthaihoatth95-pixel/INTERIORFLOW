@@ -4,7 +4,7 @@
 > ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp **`feat/present-layout-ml-p1`** — local `5965e8b` (verify git; STATUS cũ ghi 4a73a5b — đã cập nhật), **CHƯA push, CHƯA merge main** (main/origin vẫn `3265db1`). 0 worktree sống.
+- Nhánh tích hợp **`feat/present-layout-ml-p1`** — local `db08340` (verify git), **CHƯA push, CHƯA merge main** (main/origin vẫn `3265db1`). 0 worktree sống.
 - **App có nút "Mở DWG" trực tiếp** (Web Worker cô lập GPL) — không cần server/CLI. `~/Downloads/dwg2dxf` giữ làm dự phòng offline/bản vẽ nhạy cảm.
 - **✅ 15/07 merge `feat/devops-docs`**: bộ cài .dmg (`dist/InteriorFlow-0.1.0-arm64.dmg`, unsigned) + docs build Win/deploy Vercel (chi tiết CHANGELOG).
 - **✅ Cổng Sprint 2 PASS (14/07)**: 492 test/20 file · tsc 0 (chi tiết CHANGELOG).
@@ -15,13 +15,10 @@
 - Perceptron THẬT (learning-to-rank) · installer cả 3 unsigned (.exe cần Win) · PWA host Vercel + Supabase (Sprint 4).
 
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
-- **✅ 17/07 E1.2 — swatch vật liệu PROCEDURAL, ĐÓNG gap cuối Phase 1** (`4a73a5b`): trụ "Vật liệu" Stage 4 → Pro (3/3 trụ). `lib/cad/material-texture.ts` vẽ hoạ tiết bằng thuật toán; `MaterialPalette.tsx` swatch+hover. Verify: tsc 0 · 30/30 test mới + 41 file PASS. Chi tiết → CHANGELOG.
-- **✅ 18/07 DWG — nút "Mở DWG" trong app** (Worker cô lập GPL); `dwg2dxf` giữ dự phòng. Chi tiết → CHANGELOG.
-- **✅ 17/07 PS-0 (Present, gate) — AUDIT xong, KHÔNG đổi code**:
-  - **D.9 = NỐI MỘT PHẦN.** `ImageEditor.tsx` (Canva, nhấp đúp): crop/chỉnh màu-CSS/thay ảnh/bo góc ghi THẲNG ImageElement → canvas+export đúng. Nhưng nút "Chỉnh ảnh nâng cao" = `window.open('/photo-editor')` (PresentEditor.tsx:937) — KHÔNG truyền src, KHÔNG đường về; `/photo-editor` mở doc MẪU trắng (makeSampleDoc), output duy nhất = TẢI file PNG/JPEG. ⇒ phần nặng (layer/mask/clone/adjustment) HOÀN TOÀN tách rời.
-  - **Khoá 16:9**: hardcode gom 3 file — `standards.ts:69` (stage 1920×1080+pxPerPct), `render.ts:28-29` (W/H RIÊNG, không đọc standards ⇒ 2 nguồn), `export.ts:26/29/30` (jsPDF format). Toạ độ element là % (0..100) ⇒ reflow gần free. 6 chỗ CSS `aspectRatio:'16/9'` chỉ hiển thị. Job PS-4: vừa-nhỏ.
-  - **Res render (chặng 2)**: `renderSlide` = 1920×1080; hero AI FLUX max 1344px cạnh dài. A3 300dpi cần ~3508×4961px ⇒ 1920px chỉ ~116dpi trên A3. **KHÔNG đủ in A3/A4 300dpi** — PS-4 chỉ xem màn hình.
-- **✅ 18/07 Sprint 9+10 — toggle Sketch↔Pro** (mặc định Sketch, `cadMode`+`PRO_ONLY_TOOLS` ẩn ~30 tool) **+ Pro P1+P2** (nhập toạ độ chính xác, Polygon/Ellipse/Donut/Spline/Xline/Divide). Chi tiết → CHANGELOG.
+- **✅ 17/07 PS-1 (Present) — Brand Kit bền vững + áp lại theme cả deck + logo/watermark** (`db08340`, đóng G.5/G.6/G.7): `lib/present-editor/brand-kit.ts` persist localStorage (pattern custom-fonts, 1–vài brand PHẲNG, KHÔNG kiểu Canva) — deck MỚI tự nạp (PresentSheets.blankDeck→seedDeckWithBrandKit). `theme-roles.ts` **rethemeDeck**: nhuộm lại MỌI slide theo VAI TRÒ màu (dark/light/accent/muted gần-nhất), xử lý đúng nền tối LẪN sáng (không đảo tương phản), KHÔNG find-replace hex; templates.pal() nay gọi paletteRoles (1 nguồn). `model.ts` **deck.watermark** cấp deck (render.ts+export+SlidePlayer+EditorCanvas overlay). UI: `BrandKitPanel.tsx` + nút "Nhận diện" (Toolbar). Verify: tsc 0 · 43/43 test (2 mới: theme-roles 25 ok, brand-kit 13 ok) · browser 127.0.0.1 tuần tự account riêng: nhuộm lại đúng slide tối+sáng, watermark mọi slide+toggle, deck mới auto-load kit (palette+logo). 0 lỗi console mới.
+- **✅ 17/07 E1.2 swatch vật liệu procedural** (`4a73a5b`) + **✅ 18/07 DWG nút "Mở DWG" trong app** — chi tiết → CHANGELOG.
+- **✅ 17/07 PS-0 (Present, gate) — AUDIT xong** (chi tiết đủ ở IF-PRESENT-SPRINT-PLAN mục PS-0 + Nợ kỹ thuật dưới): D.9=nối một phần (photo-editor nặng còn tách rời — job PS-3); khoá 16:9 nhẹ gom 3 file, reflow gần free (PS-4 vừa-nhỏ); res render 1920px chỉ ~116dpi/A3 ⇒ chưa in 300dpi.
+- **✅ 18/07 Sprint 9+10 — toggle Sketch↔Pro + Pro P1+P2**. Chi tiết → CHANGELOG.
 - File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
 - **NVIDIA_API_KEY đã có**, probe HTTP 200. **fal**: hết balance, chờ nạp credit.
 - CHƯA làm (backlog cũ): hardcode 'DETECH·CONCEPT' · template tĩnh · heavy-ML pha 2 · membership per-flow.
