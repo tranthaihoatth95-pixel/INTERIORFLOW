@@ -18,6 +18,7 @@ import {
   type TextElement,
   type ShapeElement,
   type OpacityGradient,
+  type DeckWatermark,
   adjustToCssFilter,
   decorateListText,
   effectiveListStyle,
@@ -372,10 +373,37 @@ const CANVAS_FONT: Record<string, string> = {
   Elegant: 'Optima, "Avenir Next", "Helvetica Neue", sans-serif',
 };
 
+/** Vẽ logo/watermark cấp deck ở 1 góc (giữ tỉ lệ ảnh, phủ theo bề rộng sizePct). */
+async function drawWatermark(
+  ctx: CanvasRenderingContext2D,
+  wm: DeckWatermark,
+): Promise<void> {
+  if (!wm.enabled || !wm.src) return;
+  let img: HTMLImageElement;
+  try {
+    img = await loadImage(wm.src);
+  } catch {
+    return;
+  }
+  const w = (Math.max(1, Math.min(wm.sizePct, 100)) / 100) * W;
+  const ratio = img.naturalHeight / (img.naturalWidth || 1);
+  const h = w * ratio;
+  const margin = ((wm.marginPct ?? 3) / 100) * W;
+  const left = wm.corner === 'tl' || wm.corner === 'bl';
+  const top = wm.corner === 'tl' || wm.corner === 'tr';
+  const x = left ? margin : W - margin - w;
+  const y = top ? margin : H - margin - h;
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, Math.min(wm.opacity, 1));
+  ctx.drawImage(img, x, y, w, h);
+  ctx.restore();
+}
+
 /** Vẽ toàn slide ra JPEG dataURL 1920×1080. */
 export async function renderEditorSlide(
   slide: EditorSlide,
   fonts: string = 'Editorial',
+  watermark?: DeckWatermark,
 ): Promise<string> {
   const canvas = document.createElement('canvas');
   canvas.width = W;
@@ -420,6 +448,9 @@ export async function renderEditorSlide(
     else if (el.kind === 'shape') drawShapeEl(ctx, el);
     else if (el.kind === 'text') drawTextEl(ctx, el, fontBody);
   }
+
+  // logo/watermark cấp deck — trên cùng, mọi slide (PS-1 / G.7).
+  if (watermark) await drawWatermark(ctx, watermark);
 
   return canvas.toDataURL('image/jpeg', 0.92);
 }

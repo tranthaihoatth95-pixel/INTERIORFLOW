@@ -20,6 +20,7 @@ import {
   Undo2,
   Redo2,
   Play,
+  Palette,
 } from 'lucide-react';
 import ExportMenu from './ExportMenu';
 import type { ShapeKind } from '@/lib/present-editor/model';
@@ -40,6 +41,8 @@ interface Props {
   onExportPng: () => void;
   /** mở trình chiếu (xem hiệu ứng động). */
   onPlay: () => void;
+  /** mở panel Brand Kit — Nhận diện (PS-1). */
+  onBrandKit: () => void;
   busy: string | null;
 }
 
@@ -122,6 +125,11 @@ export default function Toolbar(p: Props) {
       <IconOnly onClick={p.onRedo} title="Làm lại" disabled={!p.canRedo}>
         <Redo2 size={15} />
       </IconOnly>
+
+      <Divider />
+      <Btn onClick={p.onBrandKit} title="Brand Kit — Nhận diện (logo · màu · font · watermark). Lưu 1 lần, áp lại cho cả deck.">
+        <Palette size={15} /> Nhận diện
+      </Btn>
 
       <div style={{ flex: 1 }} />
 

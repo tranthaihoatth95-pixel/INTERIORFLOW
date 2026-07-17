@@ -143,6 +143,26 @@ export interface ShapeElement extends BaseElement {
 
 export type SlideElement = ImageElement | TextElement | ShapeElement;
 
+/** Góc đặt logo/watermark cấp deck. */
+export type WatermarkCorner = 'tl' | 'tr' | 'bl' | 'br';
+
+/**
+ * Logo/watermark CẤP DECK (PS-1 / G.7) — hiện trên MỌI slide ở 1 góc, bật/tắt được.
+ * Là tài sản dùng chung (không phải element của 1 slide) → không nằm trong `slide.elements`,
+ * render riêng sau lớp element ở canvas + export (render.ts). `src` = dataURL/URL logo.
+ */
+export interface DeckWatermark {
+  src: string;
+  corner: WatermarkCorner;
+  /** bề rộng logo tính theo % chiều RỘNG sân khấu (vd 12 = 12% × 1920). */
+  sizePct: number;
+  /** độ mờ 0..1. */
+  opacity: number;
+  /** khoảng lề từ mép sân khấu, % chiều rộng (mặc định ~3). */
+  marginPct?: number;
+  enabled: boolean;
+}
+
 /**
  * Hiệu ứng chuyển động (motion) kiểu Apple — chọn cho từng slide.
  * CHỈ ảnh hưởng khi TRÌNH CHIẾU (preview động), KHÔNG đổi model tĩnh nên PDF/PPTX bỏ qua.
@@ -192,6 +212,8 @@ export interface EditorDeck {
   transition?: SlideTransition;
   /** kiểu build-in phần tử mặc định cho cả deck. */
   reveal?: ElementReveal;
+  /** logo/watermark cấp deck (PS-1 / G.7) — hiện trên mọi slide, bật/tắt được. */
+  watermark?: DeckWatermark;
 }
 
 /* ------------------------------------------------------------------ */
