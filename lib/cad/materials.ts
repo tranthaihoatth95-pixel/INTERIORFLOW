@@ -7,15 +7,15 @@
  * applyMaterial() trong store set luôn hatchPattern/Scale/Angle/Color, người dùng vẫn chỉnh tay
  * được sau đó (MaterialPalette giữ cả 2 UI — chọn preset + chỉnh chi tiết).
  *
- * ⚠️ QUAN TRỌNG: preview mỗi vật liệu (`materialSwatchStyle`) là HOẠ TIẾT DỰNG BẰNG CSS
- * (linear/radial-gradient lặp), KHÔNG PHẢI ảnh chụp thật — repo này không có ảnh vật liệu thật
- * nào (đã grep xác nhận trước khi làm Sprint 5, và không tự tải ảnh từ internet vì rủi ro bản
- * quyền). Đây là giải pháp tạm thực tế: nhìn có vân/hoạ tiết gợi đúng cảm giác vật liệu, phân
- * biệt được với nhau, còn hơn hẳn chỉ hiện tên chữ như cũ. Khi có ảnh thật (chụp hoặc mua license)
- * — chỉ cần thêm field `photoUrl?: string` vào MaterialDef rồi ưu tiên nó trong MaterialPalette,
- * không cần đổi cấu trúc gì khác ở đây.
+ * ⚠️ PREVIEW (E1.2 — đã nâng lên Pro 2026-07-17): swatch vật liệu nay được VẼ BẰNG THUẬT TOÁN
+ * (procedural) — xem `material-texture.ts::generateTexturePixels`/`materialTextureDataUrl`. Vẫn
+ * KHÔNG phải ảnh chụp thật (repo chưa có bộ ảnh có license — ATLAS Vol.3 chưa nằm trên đĩa, và
+ * KHÔNG tự tải ảnh internet vì rủi ro bản quyền/nguỵ tạo), nhưng cũng KHÔNG còn là ô gradient CSS
+ * phẳng: vân gỗ/mắt gỗ, mạch gạch, vân đá, đốm granite, chip terrazzo… trông ra "chất" vật liệu.
+ * `materialSwatchStyle()` bên dưới GIỮ LẠI làm FALLBACK (SSR / canvas lỗi).
+ * Khi có ảnh thật: set `photoUrl` cho preset → materialTextureDataUrl() tự ưu tiên, không đổi code.
  *
- * Thuần dữ liệu — không đụng DOM, test được độc lập (materials.test.ts).
+ * Thuần dữ liệu — không đụng DOM, test được độc lập (materials.test.ts + material-texture.test.ts).
  */
 
 import type { HatchPattern } from './model';
@@ -36,8 +36,14 @@ export interface MaterialDef {
   /** màu chủ đạo — ghi vào entity.color (override màu layer, xem render.ts layerColor()) */
   color: string;
   texture: MaterialTexture;
-  /** 2-4 tông màu dùng để dựng preview CSS (đậm→nhạt hoặc các đốm màu) */
+  /** 2-4 tông màu dùng để sinh hoạ tiết (đậm→nhạt hoặc các đốm màu) — xem material-texture.ts */
   tones: string[];
+  /**
+   * ẢNH THẬT (nếu có). Bỏ trống ở mọi preset hiện tại vì CHƯA có bộ ảnh license (ATLAS Vol.3
+   * chưa nằm trên đĩa). Khi TTT cấp ảnh: chỉ cần set URL/data-URI vào đây — materialTextureDataUrl()
+   * (material-texture.ts) tự ưu tiên nó thay cho hoạ tiết procedural, KHÔNG cần đổi code khác.
+   */
+  photoUrl?: string;
 }
 
 export const MATERIALS: MaterialDef[] = [
