@@ -26,6 +26,8 @@ import {
   mirrorEntity,
   offsetEntity,
   withNewId,
+  circumcircle,
+  arcFromCenterStartEnd,
 } from '@/lib/cad/geometry';
 import { wallChain, roomRect } from '@/lib/cad/commands';
 import { loadManifest, insertBlockById } from '@/lib/cad/block-library';
@@ -309,7 +311,14 @@ export default function CadCanvas() {
 
   const onPointerDown = (ev: React.PointerEvent) => {
     const e = ev.nativeEvent;
-    (ev.target as HTMLElement).setPointerCapture?.(ev.pointerId);
+    // setPointerCapture có thể throw DOMException "No active pointer" (vd pointerId không còn
+    // hợp lệ khi đầu vào tổng hợp/tự động hoá) — bọc try/catch để không chặn luôn thao tác vẽ
+    // phía sau (bắt điểm/handleClick) chỉ vì capture thất bại, không ảnh hưởng hành vi chuột thật.
+    try {
+      (ev.target as HTMLElement).setPointerCapture?.(ev.pointerId);
+    } catch {
+      /* bỏ qua — không phải lỗi nghiêm trọng */
+    }
     const screen = toLocal(e);
     updateCursor(screen);
     const st = useCadStore.getState();
@@ -565,12 +574,39 @@ export default function CadCanvas() {
           commit({ id: newId('e'), type: 'circle', layer: st.currentLayer, c: P[0], r: dist(P[0], P[1]) });
         }
         break;
+      // Sprint 5 — Việc 2: Circle 3-điểm (khác 'circle' tâm+bán kính ở trên). 3 click bất kỳ
+      // trên đường tròn → circumcircle() suy ra tâm+bán kính (dùng chung công thức với arcFrom3).
+      case 'circle3p':
+        P.push(w);
+        if (P.length === 3) {
+          const cc = circumcircle(P[0], P[1], P[2]);
+          if (cc) commit({ id: newId('e'), type: 'circle', layer: st.currentLayer, c: cc.c, r: cc.r });
+          else {
+            st.setStatus('Circle 3-điểm: 3 điểm thẳng hàng, không tạo được đường tròn. Chọn lại.');
+            ix.current.pts = [];
+          }
+        }
+        break;
       case 'arc':
         P.push(w);
         if (P.length === 3) {
           const arc = arcFrom3(P[0], P[1], P[2]);
           if (arc) commit({ id: newId('e'), type: 'arc', layer: st.currentLayer, ...arc });
           else ix.current.pts = [];
+        }
+        break;
+      // Sprint 5 — Việc 3: Arc tâm+góc (khác 'arc' 3-điểm ở trên). Click tâm → điểm bắt đầu
+      // (bán kính + góc đầu) → điểm kết thúc (chỉ góc cuối, giữ nguyên bán kính) — kiểu lệnh
+      // ARC "Center, Start, End" của AutoCAD.
+      case 'arccenter':
+        P.push(w);
+        if (P.length === 3) {
+          const arc = arcFromCenterStartEnd(P[0], P[1], P[2]);
+          if (arc) commit({ id: newId('e'), type: 'arc', layer: st.currentLayer, ...arc });
+          else {
+            st.setStatus('Arc tâm+góc: điểm bắt đầu trùng tâm, bán kính = 0. Chọn lại.');
+            ix.current.pts = [];
+          }
         }
         break;
       case 'dimension':
@@ -992,8 +1028,12 @@ export default function CadCanvas() {
       pattern: st.hatchPattern,
       patternScale: st.hatchScale,
       patternAngle: st.hatchAngle,
+      // Sprint 5 — Việc 1: màu preset vật liệu (nếu đang chọn 1 vật liệu từ MaterialPalette);
+      // '' = không override, dùng màu layer như hành vi cũ (Nấc 4).
+      ...(st.hatchColor ? { color: st.hatchColor } : {}),
     });
-    st.setStatus(`Hatch: đã tô ${st.hatchPattern} (${poly.length} đỉnh biên).`);
+    const materialTxt = st.hatchMaterialId ? ` vật liệu "${st.hatchMaterialId}"` : ` ${st.hatchPattern}`;
+    st.setStatus(`Hatch: đã tô${materialTxt} (${poly.length} đỉnh biên).`);
   }
 
   function finishPolyline(closed: boolean) {
@@ -1537,6 +1577,37 @@ export default function CadCanvas() {
           ctx.stroke();
         }
         break;
+      case 'circle3p':
+        if (P.length === 1) {
+          line(P[0], cur);
+        } else if (P.length === 2) {
+          const cc = circumcircle(P[0], P[1], cur);
+          if (cc) {
+            const c = S(cc.c);
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, cc.r * v.scale, 0, Math.PI * 2);
+            ctx.stroke();
+          } else {
+            line(P[0], P[1]);
+          }
+        }
+        break;
+      case 'arccenter':
+        if (P.length === 1) {
+          const c = S(P[0]);
+          ctx.beginPath();
+          ctx.arc(c.x, c.y, dist(P[0], cur) * v.scale, 0, Math.PI * 2);
+          ctx.stroke();
+        } else if (P.length === 2) {
+          const arc = arcFromCenterStartEnd(P[0], P[1], cur);
+          if (arc) {
+            const c = S(arc.c);
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, arc.r * v.scale, -arc.a2, -arc.a1);
+            ctx.stroke();
+          }
+        }
+        break;
       case 'move':
       case 'copy':
         if (P.length === 1) line(P[0], cur);
@@ -1749,21 +1820,16 @@ export default function CadCanvas() {
 
 /** dựng cung tròn qua 3 điểm; null nếu thẳng hàng. */
 function arcFrom3(p1: Pt, p2: Pt, p3: Pt): { c: Pt; r: number; a1: number; a2: number } | null {
-  const ax = p1.x;
-  const ay = p1.y;
-  const bx = p2.x;
-  const by = p2.y;
-  const cx = p3.x;
-  const cy = p3.y;
-  const d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
-  if (Math.abs(d) < 1e-6) return null;
-  const ux = ((ax * ax + ay * ay) * (by - cy) + (bx * bx + by * by) * (cy - ay) + (cx * cx + cy * cy) * (ay - by)) / d;
-  const uy = ((ax * ax + ay * ay) * (cx - bx) + (bx * bx + by * by) * (ax - cx) + (cx * cx + cy * cy) * (bx - ax)) / d;
-  const c = { x: ux, y: uy };
-  const r = Math.hypot(ax - ux, ay - uy);
-  let a1 = Math.atan2(ay - uy, ax - ux);
-  const a2 = Math.atan2(cy - uy, cx - ux);
-  const am = Math.atan2(by - uy, bx - ux);
+  // circumcircle() (lib/cad/geometry.ts) tính tâm+bán kính — tách ra Sprint 5 để Circle
+  // 3-điểm (circle3p) dùng chung, tránh 2 bản công thức lệch nhau.
+  const cc = circumcircle(p1, p2, p3);
+  if (!cc) return null;
+  const { c, r } = cc;
+  const ux = c.x;
+  const uy = c.y;
+  let a1 = Math.atan2(p1.y - uy, p1.x - ux);
+  const a2 = Math.atan2(p3.y - uy, p3.x - ux);
+  const am = Math.atan2(p2.y - uy, p2.x - ux);
   // đảm bảo cung đi qua điểm giữa: nếu am không nằm trong [a1,a2] CCW thì đảo
   const norm = (x: number) => ((x % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
   const inRange = (s: number, m: number, e: number) => {

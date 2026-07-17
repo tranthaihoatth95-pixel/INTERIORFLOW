@@ -6,6 +6,38 @@
 import type { Entity, Pt } from './model';
 import { newId } from './store';
 
+/**
+ * Sprint 5 — Việc 2 (Circle 3-điểm) + Việc 3 (Arc tâm+góc): 2 hàm hình học THUẦN, tách riêng
+ * để test độc lập (không đụng store/canvas). `circumcircle` là tâm+bán kính đường tròn đi qua
+ * 3 điểm bất kỳ (công thức đường tròn ngoại tiếp chuẩn) — CadCanvas.tsx tái dùng cho cả
+ * Arc 3-điểm (arcFrom3) VÀ Circle 3-điểm (circle3p) để không trùng logic.
+ */
+export function circumcircle(p1: Pt, p2: Pt, p3: Pt): { c: Pt; r: number } | null {
+  const ax = p1.x, ay = p1.y;
+  const bx = p2.x, by = p2.y;
+  const cx = p3.x, cy = p3.y;
+  const d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
+  if (Math.abs(d) < 1e-6) return null; // 3 điểm thẳng hàng — không xác định được đường tròn
+  const ux = ((ax * ax + ay * ay) * (by - cy) + (bx * bx + by * by) * (cy - ay) + (cx * cx + cy * cy) * (ay - by)) / d;
+  const uy = ((ax * ax + ay * ay) * (cx - bx) + (bx * bx + by * by) * (ax - cx) + (cx * cx + cy * cy) * (bx - ax)) / d;
+  const c = { x: ux, y: uy };
+  const r = Math.hypot(ax - ux, ay - uy);
+  return { c, r };
+}
+
+/**
+ * Arc "tâm + góc" (Việc 3): click tâm `c` → click điểm `s` (xác định bán kính + góc bắt đầu)
+ * → click điểm `e` (chỉ xác định góc kết thúc, bán kính giữ nguyên theo `s` — đúng thói quen
+ * AutoCAD lệnh ARC "Center, Start, End"). Trả null nếu `s` trùng tâm (bán kính suy biến).
+ */
+export function arcFromCenterStartEnd(c: Pt, s: Pt, e: Pt): { c: Pt; r: number; a1: number; a2: number } | null {
+  const r = Math.hypot(s.x - c.x, s.y - c.y);
+  if (r < 1e-6) return null;
+  const a1 = Math.atan2(s.y - c.y, s.x - c.x);
+  const a2 = Math.atan2(e.y - c.y, e.x - c.x);
+  return { c, r, a1, a2 };
+}
+
 export function translatePt(p: Pt, dx: number, dy: number): Pt {
   return { x: p.x + dx, y: p.y + dy };
 }

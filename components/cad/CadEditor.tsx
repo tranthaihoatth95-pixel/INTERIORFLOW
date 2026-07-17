@@ -33,10 +33,12 @@ import { classifyOperator, rulesForOperator, type OperatorType } from '@/lib/cad
 import { suggestRoomNames, type RoomNameSuggestion } from '@/lib/cad/room-autolabel';
 import CadCanvas from './CadCanvas';
 import CadToolbar from './CadToolbar';
+import MaterialPalette from './MaterialPalette';
 
 export default function CadEditor() {
   const router = useRouter();
   const [furnitureOpen, setFurnitureOpen] = useState(false);
+  const [materialOpen, setMaterialOpen] = useState(false);
   const [standardsOpen, setStandardsOpen] = useState(false);
   const [autoLabelOpen, setAutoLabelOpen] = useState(false);
   const [handoffMsg, setHandoffMsg] = useState('');
@@ -161,8 +163,12 @@ export default function CadEditor() {
       {/* vùng canvas + panel */}
       <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
         <CadCanvas />
-        <CadToolbar onToggleFurniture={() => setFurnitureOpen((o) => !o)} />
+        <CadToolbar
+          onToggleFurniture={() => setFurnitureOpen((o) => !o)}
+          onToggleMaterial={() => setMaterialOpen((o) => !o)}
+        />
         {furnitureOpen && <FurniturePanel onClose={() => setFurnitureOpen(false)} />}
+        {materialOpen && <MaterialPalette onClose={() => setMaterialOpen(false)} />}
         {standardsOpen && <StandardsPanel onClose={() => setStandardsOpen(false)} />}
         {autoLabelOpen && <AutoLabelPanel onClose={() => setAutoLabelOpen(false)} />}
         <LayerPanel />
@@ -570,8 +576,12 @@ const CAD_COMMANDS: { cmd: string; label: string }[] = [
   { cmd: 'RECT', label: 'Chữ nhật' },
   { cmd: 'C', label: 'Đường tròn' },
   { cmd: 'CIRCLE', label: 'Đường tròn' },
-  { cmd: 'A', label: 'Cung tròn' },
-  { cmd: 'ARC', label: 'Cung tròn' },
+  { cmd: 'C3P', label: 'Đường tròn 3-điểm' },
+  { cmd: 'CIRCLE3P', label: 'Đường tròn 3-điểm' },
+  { cmd: 'A', label: 'Cung tròn (3 điểm)' },
+  { cmd: 'ARC', label: 'Cung tròn (3 điểm)' },
+  { cmd: 'ARCC', label: 'Cung tròn tâm+góc' },
+  { cmd: 'ARCCENTER', label: 'Cung tròn tâm+góc' },
   { cmd: 'M', label: 'Di chuyển' },
   { cmd: 'MOVE', label: 'Di chuyển' },
   { cmd: 'CO', label: 'Sao chép' },
@@ -711,8 +721,12 @@ function CommandLine({ status }: { status: string }) {
       RECT: () => setTool('rect'),
       C: () => setTool('circle'),
       CIRCLE: () => setTool('circle'),
+      C3P: () => setTool('circle3p'),
+      CIRCLE3P: () => setTool('circle3p'),
       A: () => setTool('arc'),
       ARC: () => setTool('arc'),
+      ARCC: () => setTool('arccenter'),
+      ARCCENTER: () => setTool('arccenter'),
       M: () => setTool('move'),
       MOVE: () => setTool('move'),
       CO: () => setTool('copy'),
