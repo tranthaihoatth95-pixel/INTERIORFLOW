@@ -75,8 +75,11 @@ export function shelfOf(t: EditorTemplate): LayoutShelf {
 export interface EditorTemplate {
   id: string;
   name: string;
-  /** nhóm để hiển thị: 'Bố cục' (builtin) hoặc 'Thư viện' (từ Reference). */
-  group: 'builtin' | 'library';
+  /**
+   * nhóm để hiển thị: 'Bố cục' (builtin) · 'Thư viện' (từ Reference) ·
+   * 'mine' (PS-2 — slide người dùng tự lưu thành template, xem custom-templates.ts).
+   */
+  group: 'builtin' | 'library' | 'mine';
   /** phân loại con (chỉ builtin) — picker gom theo đây. */
   category?: TemplateCategory;
   /** kệ 3 hàng (cuộn ngang). Bỏ trống = suy từ shelfOf(). */
@@ -180,8 +183,11 @@ function imgSlot(
   });
 }
 
-/** Lấy ảnh thứ i (vòng lại nếu thiếu), hoặc undefined nếu không có ảnh nào. */
-function imgAt(ctx: TemplateContext, i: number): string | undefined {
+/**
+ * Lấy ảnh thứ i (vòng lại nếu thiếu), hoặc undefined nếu không có ảnh nào.
+ * Export để custom-templates.ts (PS-2, template tự lưu) tái dùng đúng quy ước fill-ảnh-theo-thứ-tự.
+ */
+export function imgAt(ctx: TemplateContext, i: number): string | undefined {
   const imgs = ctx.images?.filter(Boolean) ?? [];
   if (!imgs.length) return undefined;
   return imgs[i % imgs.length];

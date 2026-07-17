@@ -82,6 +82,18 @@
       ],
       "port": 4050,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-dwg"
+    },
+    {
+      "name": "ps2-4042",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4042"
+      ],
+      "port": 4042,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-ps2"
     }
   ]
 }
