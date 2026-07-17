@@ -15,23 +15,27 @@
 - Perceptron THẬT (learning-to-rank) · installer cả 3 unsigned (.exe cần Win) · PWA host Vercel + Supabase (Sprint 4).
 
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
-- **✅ 17/07 PS-1 (Present) — Brand Kit bền vững + áp lại theme cả deck + logo/watermark** (`db08340`, đóng G.5/G.6/G.7): `lib/present-editor/brand-kit.ts` persist localStorage (pattern custom-fonts, 1–vài brand PHẲNG, KHÔNG kiểu Canva) — deck MỚI tự nạp (PresentSheets.blankDeck→seedDeckWithBrandKit). `theme-roles.ts` **rethemeDeck**: nhuộm lại MỌI slide theo VAI TRÒ màu (dark/light/accent/muted gần-nhất), xử lý đúng nền tối LẪN sáng (không đảo tương phản), KHÔNG find-replace hex; templates.pal() nay gọi paletteRoles (1 nguồn). `model.ts` **deck.watermark** cấp deck (render.ts+export+SlidePlayer+EditorCanvas overlay). UI: `BrandKitPanel.tsx` + nút "Nhận diện" (Toolbar). Verify: tsc 0 · 43/43 test (2 mới: theme-roles 25 ok, brand-kit 13 ok) · browser 127.0.0.1 tuần tự account riêng: nhuộm lại đúng slide tối+sáng, watermark mọi slide+toggle, deck mới auto-load kit (palette+logo). 0 lỗi console mới.
-- **✅ 17/07 E1.2 swatch vật liệu procedural** (`4a73a5b`) + **✅ 18/07 DWG nút "Mở DWG" trong app** — chi tiết → CHANGELOG.
-- **✅ 17/07 PS-0 (Present, gate) — AUDIT xong** (chi tiết đủ ở IF-PRESENT-SPRINT-PLAN mục PS-0 + Nợ kỹ thuật dưới): D.9=nối một phần (photo-editor nặng còn tách rời — job PS-3); khoá 16:9 nhẹ gom 3 file, reflow gần free (PS-4 vừa-nhỏ); res render 1920px chỉ ~116dpi/A3 ⇒ chưa in 300dpi.
-- **✅ 18/07 Sprint 9+10 — toggle Sketch↔Pro + Pro P1+P2**. Chi tiết → CHANGELOG.
+- **⏳ 17/07 tối — 5 nhánh MỚI, đã audit độc lập (tsc 0 + test pass từng nhánh), CHƯA merge vào `feat/present-layout-ml-p1`, chờ chủ dự án duyệt từng cái**. Mỗi nhánh build trên worktree riêng rồi xoá worktree (nhánh vẫn còn, không mất). Danh sách nhánh:
+  - `fix/groupoverlay-invisible` — sửa bug Nợ kỹ thuật cũ (xem CHANGELOG 16/07): bọc `ViewportPortal` + bỏ `zIndex:-1` trong `GroupOverlay.tsx`. Diff 9 dòng.
+  - `feat/present-ps2-templates` (PS-2) — "Lưu slide này thành template" → nhóm "Của tôi" trong picker, persist localStorage (pattern brand-kit.ts). `lib/present-editor/custom-templates.ts` mới.
+  - `feat/present-ps3-photoeditor-roundtrip` (PS-3) — nối `/photo-editor` ↔ slide: truyền ảnh vào (sessionStorage), composite ra (exportDoc), ghi về ImageElement (localStorage + sự kiện `storage`, 2 tab khác nhau) + "tài sản liên kết" (assetId dùng chung nhiều slide, sửa 1 nơi cập nhật mọi nơi). Gap: ảnh Render stage chưa có id ổn định nên chưa link được.
+  - `feat/present-ps4-multi-format` (PS-4) — gộp 2 nguồn khổ sân khấu về 1 (`stage-presets.ts`), thêm 16:9/A4/A3 ngang-dọc, reflow tự động khi đổi khổ (không mất nội dung), export PDF/PNG đúng khổ. PPTX CỐ Ý giữ 16:9 (ngoài phạm vi sprint). UI nhãn bắt buộc "khổ trình bày màn hình/chiếu — KHÔNG phải in 300dpi".
+  - `feat/present-ps7-photoeditor-ux` (PS-7) — phím tắt Photoshop trong `/photo-editor` (⌘/Ctrl+Z/Y, V/B/E/S/J/M/L chọn tool, `[`/`]` cỡ cọ), LayersPanel rõ hơn adjustment-vs-raster, thêm nhãn/gợi ý tool.
+  - **Gate PS-5/PS-6** (share deck khách + comment): chủ dự án chọn DỪNG — hạ tầng share/auth public-facing để sau.
+- Đã merge trước đó: PS-1 Brand Kit (`db08340`), E1.2 swatch vật liệu (`4a73a5b`), DWG mở trong app, PS-0 audit, Sprint 9+10 toggle Sketch↔Pro. Chi tiết → CHANGELOG.
 - File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
 - **NVIDIA_API_KEY đã có**, probe HTTP 200. **fal**: hết balance, chờ nạp credit.
 - CHƯA làm (backlog cũ): hardcode 'DETECH·CONCEPT' · template tĩnh · heavy-ML pha 2 · membership per-flow.
 - Sprint 3/6-8 (41 shape nội thất · MEP · Export PDF/.idf/markup · Template Office/Hotel) đã xong — chi tiết → CHANGELOG.md.
 
 ## Nợ kỹ thuật
-- Hydration ⌘Z/Ctrl+Z tooltip (lib/kbd.ts:11 + CadToolbar) — cosmetic.
+- Hydration ⌘Z/Ctrl+Z tooltip (lib/kbd.ts:11 + CadToolbar, nay cả PhotoToolbar) — cosmetic, đã biết từ trước.
 - `window.prompt` crash trong webview nhúng — Dashboard.tsx:138, browser thật OK.
 - Migration Prisma drift (IntegrationAccount) — dùng `db push`, KHÔNG reset.
-- 4 file stress test bị mất (xem ĐIỂM RESUME) — cần viết lại nếu muốn coverage edge-case CAD/render/present/concurrency.
+- 4 file stress test bị mất — cần viết lại nếu muốn coverage edge-case CAD/render/present/concurrency.
 - Sprint 3 B1: `meta` (giá/vendor/sku) để trống toàn bộ — chưa có dữ liệu giá thật.
-- Present stage-size CÓ 2 NGUỒN: `standards.ts:69` vs `render.ts:28-29` (W/H hardcode riêng) — PS-4 phải gộp về 1 nguồn khi tham số hoá khổ.
-- **BUG 16/07 — GroupOverlay vô hình** (Render canvas Cmd+G): `GroupOverlay.tsx` thiếu `ViewportPortal` + `zIndex:-1` sai → group tạo đúng trong store nhưng UI không hiện. Chi tiết kỹ thuật → CHANGELOG.md. CHƯA sửa — chờ duyệt phạm vi.
+- PS-3: linked-asset chưa nối được với ảnh Render stage (thiếu id ổn định ở `deckImagesFromNodes`) — theo dõi khi cần.
+- GroupOverlay + 2-nguồn-khổ-sân-khấu: đã sửa ở nhánh riêng (xem ĐIỂM RESUME) — hết là nợ SAU KHI merge.
 
 ## Bị chặn — KHÔNG tự khởi động
 - Intro screen (chờ hình/video — flow hiện tại ĐÃ gỡ intro theo lệnh user) · ML Gu Engine heavy (chồng lấn 2 app khác) · "API team" spec.
