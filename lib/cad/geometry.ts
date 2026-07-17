@@ -221,3 +221,165 @@ export function offsetEntity(e: Entity, d: number, side: Pt): Entity | null {
       return null;
   }
 }
+
+/* ───────────────────────── Sprint 10 — Việc 2/3: Polygon đều · Ellipse · Spline · Divide/Measure ─────────────────────────
+ * Toàn bộ hàm dưới đây THUẦN (không đụng store/canvas) — quyết định Sprint 10: polygon/spline
+ * lưu như PolylineEntity, ellipse xấp xỉ bằng PolylineEntity khép kín — KHÔNG thêm Entity type
+ * mới vào model.ts để tránh phải sửa dxf.ts/render.ts (rủi ro thấp nhất, polyline nhiều đỉnh đã
+ * render/export sẵn). Donut/Xline dùng thẳng CircleEntity/LineEntity có sẵn — xử lý ở CadCanvas. */
+
+function norm2piLocal(a: number): number {
+  return ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+}
+
+/** Đa giác đều N cạnh (3-12, kẹp biên) nội tiếp đường tròn tâm `center`, bán kính =
+ * dist(center, radiusPt); đỉnh ĐẦU TIÊN trùng `radiusPt` (góc bắt đầu = hướng vừa click, giống
+ * POLYGON "Inscribed" của AutoCAD đơn giản hoá). Trả N đỉnh theo chiều CCW (world Y-up). */
+export function polygonVertices(center: Pt, radiusPt: Pt, sides: number): Pt[] {
+  const n = Math.max(3, Math.min(12, Math.round(sides)));
+  const r = Math.hypot(radiusPt.x - center.x, radiusPt.y - center.y);
+  const a0 = Math.atan2(radiusPt.y - center.y, radiusPt.x - center.x);
+  const pts: Pt[] = [];
+  for (let i = 0; i < n; i++) {
+    const a = a0 + (i * Math.PI * 2) / n;
+    pts.push({ x: center.x + r * Math.cos(a), y: center.y + r * Math.sin(a) });
+  }
+  return pts;
+}
+
+/** Xấp xỉ ellipse (tâm + 2 bán trục THẲNG TRỤC, không xoay — đơn giản hoá tối đa cho DD) bằng N
+ * điểm quanh biên. `segments` càng lớn càng mượt (mặc định 48 đủ mịn ở tỉ lệ nội thất). */
+export function ellipsePoints(center: Pt, rx: number, ry: number, segments = 48): Pt[] {
+  const n = Math.max(12, segments);
+  const pts: Pt[] = [];
+  for (let i = 0; i < n; i++) {
+    const t = (i / n) * Math.PI * 2;
+    pts.push({ x: center.x + rx * Math.cos(t), y: center.y + ry * Math.sin(t) });
+  }
+  return pts;
+}
+
+/**
+ * Spline Catmull-Rom qua các control point (đi ĐÚNG qua từng điểm — khác Bézier chỉ chạm
+ * đầu/cuối). Xấp xỉ bằng `stepsPerSpan` đoạn thẳng ngắn/khoảng giữa 2 control point liên tiếp.
+ * < 3 control point → không đủ để nội suy cong, trả nguyên input (thoái hoá thành đoạn thẳng).
+ * `closed`=true nối vòng qua control point đầu (KHÔNG lặp lại điểm đầu ở cuối mảng — polyline
+ * closed:true tự nối đoạn cuối→đầu khi vẽ/export).
+ */
+export function catmullRomSpline(control: Pt[], stepsPerSpan = 12, closed = false): Pt[] {
+  const pts = control;
+  if (pts.length < 3) return pts.slice();
+  const get = (i: number): Pt => (closed ? pts[(i + pts.length) % pts.length] : pts[Math.max(0, Math.min(pts.length - 1, i))]);
+  const out: Pt[] = [];
+  const spanCount = closed ? pts.length : pts.length - 1;
+  for (let seg = 0; seg < spanCount; seg++) {
+    const p0 = get(seg - 1);
+    const p1 = get(seg);
+    const p2 = get(seg + 1);
+    const p3 = get(seg + 2);
+    const isLastOpenSpan = !closed && seg === spanCount - 1;
+    const steps = isLastOpenSpan ? stepsPerSpan + 1 : stepsPerSpan;
+    for (let s = 0; s < steps; s++) {
+      const t = s / stepsPerSpan;
+      const t2 = t * t;
+      const t3 = t2 * t;
+      const x = 0.5 * (2 * p1.x + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
+      const y = 0.5 * (2 * p1.y + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
+      out.push({ x, y });
+    }
+  }
+  return out;
+}
+
+/** Tổng chiều dài biên entity (line/polyline/circle/arc) — 0 nếu loại không có nghĩa "chia đều"
+ * (rect/hatch/text/dim/block, dùng cho Divide/Measure). */
+export function entityLength(e: Entity): number {
+  switch (e.type) {
+    case 'line':
+      return Math.hypot(e.b.x - e.a.x, e.b.y - e.a.y);
+    case 'polyline': {
+      let len = 0;
+      const pts = e.points;
+      for (let i = 0; i < pts.length - 1; i++) len += Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
+      if (e.closed && pts.length > 2) len += Math.hypot(pts[0].x - pts[pts.length - 1].x, pts[0].y - pts[pts.length - 1].y);
+      return len;
+    }
+    case 'circle':
+      return 2 * Math.PI * e.r;
+    case 'arc':
+      return e.r * (norm2piLocal(e.a2 - e.a1) || Math.PI * 2);
+    default:
+      return 0;
+  }
+}
+
+/** Điểm cách điểm đầu `s` mm dọc biên entity (kẹp trong [0, entityLength]) — null nếu loại
+ * không hỗ trợ hoặc entity suy biến (dài 0). Dùng cho Divide/Measure. */
+export function pointAtLength(e: Entity, s: number): Pt | null {
+  const total = entityLength(e);
+  if (total <= 0) return null;
+  const sc = Math.max(0, Math.min(total, s));
+  switch (e.type) {
+    case 'line': {
+      const t = sc / total;
+      return { x: e.a.x + (e.b.x - e.a.x) * t, y: e.a.y + (e.b.y - e.a.y) * t };
+    }
+    case 'polyline': {
+      const pts = e.points;
+      const segs: [Pt, Pt][] = [];
+      for (let i = 0; i < pts.length - 1; i++) segs.push([pts[i], pts[i + 1]]);
+      if (e.closed && pts.length > 2) segs.push([pts[pts.length - 1], pts[0]]);
+      let acc = 0;
+      for (let i = 0; i < segs.length; i++) {
+        const [a, b] = segs[i];
+        const segLen = Math.hypot(b.x - a.x, b.y - a.y);
+        const isLast = i === segs.length - 1;
+        if (sc <= acc + segLen + 1e-9 || isLast) {
+          const t = segLen > 0 ? Math.min(1, Math.max(0, (sc - acc) / segLen)) : 0;
+          return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+        }
+        acc += segLen;
+      }
+      return null;
+    }
+    case 'circle': {
+      const ang = sc / e.r;
+      return { x: e.c.x + e.r * Math.cos(ang), y: e.c.y + e.r * Math.sin(ang) };
+    }
+    case 'arc': {
+      const ang = e.a1 + sc / e.r;
+      return { x: e.c.x + e.r * Math.cos(ang), y: e.c.y + e.r * Math.sin(ang) };
+    }
+    default:
+      return null;
+  }
+}
+
+/** DIVIDE — chia entity thành `n` đoạn bằng nhau, trả các điểm chia (KHÔNG gồm 2 đầu mút của
+ * entity hở — line/polyline hở/arc chỉ có `n-1` điểm; entity KÍN — circle/polyline closed — có
+ * đủ `n` điểm vì không có "đầu mút"). n<2 hoặc entity suy biến → []. */
+export function divideEntity(e: Entity, n: number): Pt[] {
+  const total = entityLength(e);
+  if (total <= 0 || n < 2) return [];
+  const closed = e.type === 'circle' || (e.type === 'polyline' && e.closed);
+  const count = closed ? n : n - 1;
+  const pts: Pt[] = [];
+  for (let i = 1; i <= count; i++) {
+    const p = pointAtLength(e, (total * i) / n);
+    if (p) pts.push(p);
+  }
+  return pts;
+}
+
+/** MEASURE — đặt điểm mỗi `segLen` mm dọc entity tính từ đầu, KHÔNG đặt điểm ở phần dư cuối
+ * cùng (đúng hành vi lệnh MEASURE của AutoCAD). segLen<=0 hoặc entity suy biến → []. */
+export function measureEntity(e: Entity, segLen: number): Pt[] {
+  const total = entityLength(e);
+  if (total <= 0 || segLen <= 0) return [];
+  const pts: Pt[] = [];
+  for (let s = segLen; s < total - 1e-6; s += segLen) {
+    const p = pointAtLength(e, s);
+    if (p) pts.push(p);
+  }
+  return pts;
+}
