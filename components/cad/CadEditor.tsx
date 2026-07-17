@@ -13,12 +13,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Plus, Trash2, X, Command, Sparkles, Wand2,
-  ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair, Tag, Check, Lightbulb,
+  ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair, Tag, Check, Lightbulb, FileText, Save, Camera,
 } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import type { HatchPattern } from '@/lib/cad/model';
 import { parseDxf, exportDxf } from '@/lib/cad/dxf';
 import { renderDocToDataURL } from '@/lib/cad/render';
+import { exportCadToPdf } from '@/lib/cad/pdf';
 import { BLOCKS, BLOCK_MAP } from '@/lib/cad/furniture';
 import ShapePalette, { ShapeInfoPanel } from '@/components/ShapePalette';
 import { loadManifest, groupByCategory, type LibraryManifest } from '@/lib/cad/block-library';
@@ -50,6 +51,8 @@ export default function CadEditor() {
   const [mepOpen, setMepOpen] = useState(false);
   const [handoffMsg, setHandoffMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const idfRef = useRef<HTMLInputElement>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
 
   const status = useCadStore((s) => s.status);
 
@@ -65,6 +68,61 @@ export default function CadEditor() {
     const url = URL.createObjectURL(blob);
     downloadDataUrl(url, 'layout.dxf');
     setTimeout(() => URL.revokeObjectURL(url), 2000);
+  };
+  // Sprint 7 — Việc 1: PDF vector (bản vẽ ĐANG MỞ — giống hành vi PNG/DXF ở trên, không phải
+  // toàn bộ project nhiều sheet). Giới hạn OCG/layer ẩn-hiện: xem đầu file lib/cad/pdf.ts.
+  const doExportPdf = async () => {
+    const st = useCadStore.getState();
+    if (!st.doc.entities.length) {
+      st.setStatus('Bản vẽ trống — chưa có gì để xuất PDF.');
+      return;
+    }
+    st.setStatus('Đang dựng PDF vector…');
+    try {
+      await exportCadToPdf(st.doc, 'layout.pdf', { title: 'InteriorFlow — Layout CAD', dimStyle: st.dimStyle });
+      st.setStatus('Đã xuất layout.pdf (PDF vector — nét/text thật, không phải ảnh).');
+    } catch (err) {
+      st.setStatus(`Lỗi xuất PDF: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  // Sprint 7 — Việc 2: .idf gồm TẤT CẢ sheet (không chỉ bản đang mở) — CadEditor không giữ danh
+  // sách sheet (nằm trong CadSheets.tsx, phía trên trong cây component). Bắc cầu qua CustomEvent
+  // giống pattern 'cad:zoom-extents' đã dùng sẵn trong app, tránh prop-drilling xuyên nhiều tầng.
+  const doExportIdf = () => {
+    window.dispatchEvent(new CustomEvent('cad:idf-export-request'));
+  };
+  const onOpenIdfFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    // .idf THAY THẾ TOÀN BỘ project (mọi sheet) — luôn hỏi trước, không chỉ khi bản đang mở có
+    // dữ liệu (sheet khác có thể đang có nội dung mà CadEditor không thấy được).
+    const proceed = window.confirm(
+      `Mở "${f.name}" sẽ THAY THẾ TOÀN BỘ project hiện tại (mọi bản vẽ/sheet đang mở). Tiếp tục?`,
+    );
+    if (!proceed) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      window.dispatchEvent(new CustomEvent('cad:idf-import-request', { detail: { json: String(reader.result), fileName: f.name } }));
+    };
+    reader.onerror = () => useCadStore.getState().setStatus(`Không đọc được file "${f.name}".`);
+    reader.readAsText(f);
+  };
+
+  // Sprint 7 — Việc 4: chọn ảnh từ máy → data URL (pattern readAsDataURL đã dùng ở
+  // components/studio/UploadButton.tsx/CommentLayer.tsx — tái dùng nguyên xi, không viết lại).
+  // Sau khi chọn, tool tự chuyển 'photo' (setPendingPhoto) — click tiếp trên canvas để đặt.
+  const onPickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f || !f.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      useCadStore.getState().setPendingPhoto(String(reader.result));
+    };
+    reader.onerror = () => useCadStore.getState().setStatus(`Không đọc được ảnh "${f.name}".`);
+    reader.readAsDataURL(f);
   };
 
   const openDemo = () => {
@@ -156,6 +214,20 @@ export default function CadEditor() {
         <button type="button" onClick={doExportDxf} style={fileBtn} title="Xuất DXF">
           <Download size={14} /> DXF
         </button>
+        <button type="button" onClick={doExportPdf} style={fileBtn} title="Xuất PDF vector (nét/text thật — không phải ảnh; layer KHÔNG ẩn/hiện được trong PDF do giới hạn thư viện, xem báo cáo)">
+          <FileText size={14} /> PDF
+        </button>
+        <button type="button" onClick={doExportIdf} style={fileBtn} title="Xuất .idf — file project JSON (TẤT CẢ sheet + metadata), dùng để tải xuống/chia sẻ/backup, khác autosave nội bộ">
+          <Save size={14} /> .idf
+        </button>
+        <button type="button" onClick={() => idfRef.current?.click()} style={fileBtn} title="Mở .idf — THAY THẾ toàn bộ project hiện tại (mọi sheet), sẽ hỏi xác nhận trước">
+          <FolderOpen size={14} /> Mở .idf
+        </button>
+        <input ref={idfRef} type="file" accept=".idf,.json,application/json" hidden onChange={onOpenIdfFile} />
+        <button type="button" onClick={() => photoRef.current?.click()} style={fileBtn} title="Ảnh hiện trường — chọn ảnh rồi click vào vị trí trên bản vẽ để gắn">
+          <Camera size={14} /> Ảnh hiện trường
+        </button>
+        <input ref={photoRef} type="file" accept="image/*" hidden onChange={onPickPhoto} />
         <button type="button" onClick={() => setStandardsOpen((o) => !o)} style={{ ...fileBtn, background: standardsOpen ? 'var(--accent)' : undefined, color: standardsOpen ? '#fff' : undefined }} title="Kiểm chuẩn — đối chiếu bản vẽ với TCVN/QCVN/ISO (chỉ đọc & đề xuất, không tự sửa)">
           <ShieldCheck size={14} /> Kiểm chuẩn
         </button>
@@ -1171,6 +1243,10 @@ const fileBar: React.CSSProperties = {
   padding: '0 12px',
   borderBottom: '1px solid var(--border)',
   background: 'var(--panel)',
+  // Sprint 7 — thêm 4 nút (PDF/.idf x2/Ảnh hiện trường) khiến thanh dễ tràn ở màn hẹp — cuộn
+  // ngang thay vì đẩy vỡ layout (không đổi hành vi cũ khi đủ chỗ, chỉ thêm khi cần).
+  overflowX: 'auto',
+  scrollbarWidth: 'thin',
 };
 const fileBtn: React.CSSProperties = {
   display: 'flex',
@@ -1183,6 +1259,7 @@ const fileBtn: React.CSSProperties = {
   color: 'var(--t2)',
   fontSize: 12,
   cursor: 'pointer',
+  flexShrink: 0,
 };
 const panel: React.CSSProperties = {
   position: 'absolute',

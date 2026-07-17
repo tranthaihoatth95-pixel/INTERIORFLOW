@@ -192,9 +192,40 @@ export type Entity =
   | BlockEntity
   | HatchEntity;
 
+/**
+ * Sprint 7 — Việc 3 (Markup overlay): ghim ghi chú KH đặt trên bản vẽ. KHÔNG phải hình học
+ * (không vào Entity union) — annotation rời, không ảnh hưởng vẽ tường/phòng/hatch/DXF export.
+ * Toạ độ world mm giống entity khác nên pan/zoom/scale-all vẫn đúng vị trí ghim.
+ */
+export interface MarkupPin {
+  id: string;
+  at: Pt;
+  text: string;
+  /** màu ghim, hex '#rrggbb'. */
+  color: string;
+  /** epoch ms lúc tạo — hiện trong tooltip. */
+  ts: number;
+}
+
+/**
+ * Sprint 7 — Việc 4 (Photo embed): ảnh hiện trường gắn tại 1 điểm trên bản vẽ (thumbnail nhỏ,
+ * click xem full-size). Cũng là annotation rời như MarkupPin — KHÔNG vào Entity union.
+ * `src` là data URL (giống pattern ảnh khác trong app — xem components/studio/UploadButton.tsx).
+ */
+export interface PhotoEmbed {
+  id: string;
+  at: Pt;
+  src: string;
+  caption?: string;
+  ts: number;
+}
+
 export interface Doc {
   entities: Entity[];
   layers: Layer[];
+  /** Sprint 7 — annotation rời (markup + ảnh); optional để tương thích ngược dữ liệu cũ. */
+  markups?: MarkupPin[];
+  photos?: PhotoEmbed[];
 }
 
 export const DEFAULT_LAYERS: Layer[] = [
@@ -206,7 +237,7 @@ export const DEFAULT_LAYERS: Layer[] = [
 ];
 
 export function emptyDoc(): Doc {
-  return { entities: [], layers: DEFAULT_LAYERS.map((l) => ({ ...l })) };
+  return { entities: [], layers: DEFAULT_LAYERS.map((l) => ({ ...l })), markups: [], photos: [] };
 }
 
 /* ───────────────────────── hình học tiện ích ───────────────────────── */
