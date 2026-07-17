@@ -95,6 +95,21 @@ export type Tool =
    * hoặc khoảng cách cố định (đo), đặt marker tròn nhỏ tại mỗi điểm chia. */
   | 'divide';
 
+/** Sprint 9 — 2 chế độ UI cho cùng 1 editor (KHÔNG phải 2 app khác nhau, dữ liệu/Doc dùng
+ * chung): 'sketch' ẩn bớt công cụ vẽ-chính-xác-kiểu-AutoCAD để giữ đúng triết lý Phase 1
+ * ("Sketch, không phải Draft" — xem IF-FEATURE-SPEC-P1-v2.md), 'pro' hiện đủ (Sprint 10). */
+export type CadMode = 'sketch' | 'pro';
+
+/** Công cụ chỉ hiện khi cadMode='pro' (đối chiếu CadToolbar.tsx — nơi ẩn nút tương ứng).
+ * Dùng ở setCadMode() để tự trả `tool` về 'select' nếu đang ở 1 tool Pro mà chuyển về Sketch,
+ * tránh canvas vẫn "kẹt" hành vi của tool đã ẩn khỏi toolbar. */
+export const PRO_ONLY_TOOLS: ReadonlySet<Tool> = new Set<Tool>([
+  'polyline', 'circle3p', 'arc', 'arccenter', 'polygon', 'ellipse', 'donut', 'spline', 'xline', 'divide',
+  'offset', 'trim', 'extend', 'fillet', 'chamfer', 'arrayrect', 'arraypolar', 'scale', 'stretch',
+  'break', 'join', 'explode', 'lengthen',
+  'dimension', 'dimradius', 'dimdiameter', 'dimangular', 'dimcontinue', 'dimbaseline',
+]);
+
 export interface SnapSettings {
   enabled: boolean;
   endpoint: boolean;
@@ -116,6 +131,8 @@ interface CadState {
   doc: Doc;
   selection: string[];
   tool: Tool;
+  /** Sprint 9 — mặc định 'sketch' (đúng triết lý Phase 1, xem PRO_ONLY_TOOLS). */
+  cadMode: CadMode;
   /** layer nhận entity mới */
   currentLayer: string;
   snap: SnapSettings;
@@ -167,6 +184,9 @@ interface CadState {
 
   // actions
   setTool: (t: Tool) => void;
+  /** Sprint 9 — chuyển Sketch↔Pro. Nếu đang chuyển VỀ 'sketch' mà tool hiện tại là Pro-only,
+   * tự trả về 'select' (nút tool đó vừa biến mất khỏi toolbar, không để canvas kẹt hành vi cũ). */
+  setCadMode: (m: CadMode) => void;
   setStatus: (s: string) => void;
   snapshot: () => void;
   undo: () => void;
@@ -251,6 +271,7 @@ export const useCadStore = create<CadState>((set, get) => ({
   doc: emptyDoc(),
   selection: [],
   tool: 'select',
+  cadMode: 'sketch',
   currentLayer: 'l-wall',
   snap: {
     enabled: true, endpoint: true, midpoint: true, center: true, intersection: true, grid: true,
@@ -292,6 +313,12 @@ export const useCadStore = create<CadState>((set, get) => ({
       pendingPhotoSrc: tool === 'photo' ? get().pendingPhotoSrc : null,
     }),
   setStatus: (status) => set({ status }),
+
+  setCadMode: (cadMode) =>
+    set((s) => ({
+      cadMode,
+      tool: cadMode === 'sketch' && PRO_ONLY_TOOLS.has(s.tool) ? 'select' : s.tool,
+    })),
 
   snapshot: () =>
     set((s) => ({

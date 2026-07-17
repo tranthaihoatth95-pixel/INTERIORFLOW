@@ -5,6 +5,7 @@
  * liquid-glass, bo tròn, đơn sắc + 1 accent đồng). Mọi lệnh đều có nút; tooltip kèm phím tắt.
  */
 
+import { useEffect } from 'react';
 import {
   MousePointer2, Minus, Waypoints, Square, Circle, Spline,
   Move, Copy, RotateCw, FlipHorizontal2, StretchHorizontal,
@@ -16,8 +17,12 @@ import {
   CircleDashed, LocateFixed, Palette, StickyNote,
   Pentagon, Ellipse, Donut, SplinePointer, Slash, Divide,
 } from 'lucide-react';
-import { useCadStore, type Tool } from '@/lib/cad/store';
+import { useCadStore, type Tool, type CadMode } from '@/lib/cad/store';
 import { modKey, modShiftKey } from '@/lib/kbd';
+
+/** Sprint 9 — nhớ lựa chọn Sketch/Pro qua các phiên (mặc định 'sketch' nếu chưa từng chọn hoặc
+ * private mode/SSR chặn localStorage — xem pattern giống PresentEditor.tsx). */
+const LS_CAD_MODE = 'interiorflow.cad.mode';
 
 interface ToolBtn {
   tool: Tool;
@@ -26,17 +31,21 @@ interface ToolBtn {
   key: string;
 }
 
+/** Sprint 9 — Sketch: bộ vẽ tối thiểu đúng triết lý Phase 1 ("Sketch, không phải Draft"). */
 const DRAW: ToolBtn[] = [
   { tool: 'select', icon: MousePointer2, label: 'Chọn', key: 'Esc' },
   { tool: 'line', icon: Minus, label: 'Line', key: 'L' },
-  { tool: 'polyline', icon: Waypoints, label: 'Polyline', key: 'PL' },
   { tool: 'rect', icon: Square, label: 'Rect', key: 'REC' },
   { tool: 'circle', icon: Circle, label: 'Circle', key: 'C' },
+];
+/** Sprint 9 — Pro: biến thể vẽ chính xác hơn (Sprint 10 Việc 1 + phần còn lại của DRAW cũ). */
+const DRAW_PRO: ToolBtn[] = [
+  { tool: 'polyline', icon: Waypoints, label: 'Polyline', key: 'PL' },
   { tool: 'circle3p', icon: CircleDashed, label: 'Circle 3-điểm — click 3 điểm trên đường tròn', key: 'C3P' },
   { tool: 'arc', icon: Spline, label: 'Arc 3 điểm', key: 'A' },
   { tool: 'arccenter', icon: LocateFixed, label: 'Arc tâm+góc — click tâm → điểm đầu → điểm cuối', key: 'ARCC' },
 ];
-/** Sprint 10 — Việc 2/3: Polygon đều · Ellipse · Donut · Spline · Xline — hình học chính xác mở rộng. */
+/** Sprint 10 — Việc 2/3: Polygon đều · Ellipse · Donut · Spline · Xline — hình học chính xác mở rộng. Pro-only (Sprint 9). */
 const SHAPES2: ToolBtn[] = [
   { tool: 'polygon', icon: Pentagon, label: 'Polygon đều — click tâm → bán kính (POL <n> đổi số cạnh)', key: 'POL' },
   { tool: 'ellipse', icon: Ellipse, label: 'Ellipse — click tâm → góc xác định 2 bán trục', key: 'EL' },
@@ -55,24 +64,28 @@ const EDIT: ToolBtn[] = [
   { tool: 'copy', icon: Copy, label: 'Copy', key: 'CO' },
   { tool: 'rotate', icon: RotateCw, label: 'Rotate', key: 'RO' },
   { tool: 'mirror', icon: FlipHorizontal2, label: 'Mirror', key: 'MI' },
-  { tool: 'offset', icon: StretchHorizontal, label: 'Offset', key: 'O' },
 ];
 const MEASURE: ToolBtn[] = [
+  { tool: 'measure', icon: MoveDiagonal, label: 'Đo nhanh', key: 'DI' },
+  { tool: 'text', icon: Type, label: 'Text', key: 'T' },
+];
+/** Pro-only (Sprint 9) — 6 lệnh ghi kích thước kiểu bản vẽ kỹ thuật, không thuộc "sketch nhanh". */
+const DIMENSION: ToolBtn[] = [
   { tool: 'dimension', icon: Ruler, label: 'Dimension aligned', key: 'DAL' },
   { tool: 'dimradius', icon: Radius, label: 'Dimension radius', key: 'DRA' },
   { tool: 'dimdiameter', icon: Diameter, label: 'Dimension diameter', key: 'DDI' },
   { tool: 'dimangular', icon: DraftingCompass, label: 'Dimension angular', key: 'DAN' },
   { tool: 'dimcontinue', icon: ChevronsRight, label: 'Dimension continue', key: 'DCO' },
   { tool: 'dimbaseline', icon: GitBranch, label: 'Dimension baseline', key: 'DBA' },
-  { tool: 'measure', icon: MoveDiagonal, label: 'Đo nhanh', key: 'DI' },
-  { tool: 'text', icon: Type, label: 'Text', key: 'T' },
 ];
 /** Sprint 7 — Việc 3: ghim markup — annotation KH góp ý, tách riêng khỏi TEXT (hình học thật). */
 const ANNOTATE: ToolBtn[] = [
   { tool: 'markup', icon: StickyNote, label: 'Markup — ghim ghi chú phản hồi KH lên bản vẽ', key: 'MK' },
 ];
-/** Nấc 1 — bộ chỉnh sửa (tương đương AutoCAD LT). Dòng lệnh vẫn là cách chính (TR/EX/F/CHA/…). */
+/** Nấc 1 — bộ chỉnh sửa (tương đương AutoCAD LT). Pro-only (Sprint 9) — dòng lệnh vẫn là cách
+ * chính khi cần (TR/EX/F/CHA/…), nhưng nút toolbar chỉ hiện ở Pro để Sketch gọn. */
 const MODIFY: ToolBtn[] = [
+  { tool: 'offset', icon: StretchHorizontal, label: 'Offset', key: 'O' },
   { tool: 'trim', icon: Scissors, label: 'Trim — cắt tại giao điểm', key: 'TR' },
   { tool: 'extend', icon: Expand, label: 'Extend — kéo dài tới biên', key: 'EX' },
   { tool: 'fillet', icon: SquareRoundCorner, label: 'Fillet — bo góc (0 = vuông góc)', key: 'F' },
@@ -100,6 +113,8 @@ export default function CadToolbar({
 }) {
   const tool = useCadStore((s) => s.tool);
   const setTool = useCadStore((s) => s.setTool);
+  const cadMode = useCadStore((s) => s.cadMode);
+  const setCadMode = useCadStore((s) => s.setCadMode);
   const setPendingBlock = useCadStore((s) => s.setPendingBlock);
   const pendingBlock = useCadStore((s) => s.pendingBlock);
   const snap = useCadStore((s) => s.snap);
@@ -111,6 +126,26 @@ export default function CadToolbar({
   const redo = useCadStore((s) => s.redo);
   const past = useCadStore((s) => s.past.length);
   const future = useCadStore((s) => s.future.length);
+  const isPro = cadMode === 'pro';
+
+  // Nạp lựa chọn Sketch/Pro đã lưu SAU mount (tránh lệch hydration SSR — cùng pattern
+  // PresentEditor.tsx). Không có gì lưu (lần đầu/private mode) → giữ mặc định 'sketch' của store.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(LS_CAD_MODE);
+      if (saved === 'sketch' || saved === 'pro') setCadMode(saved as CadMode);
+    } catch {
+      /* private mode / SSR — bỏ qua, dùng mặc định */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_CAD_MODE, cadMode);
+    } catch {
+      /* ignore */
+    }
+  }, [cadMode]);
 
   const Group = ({ items }: { items: ToolBtn[] }) => (
     <>
@@ -140,10 +175,12 @@ export default function CadToolbar({
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 20,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 4,
-        padding: 6,
+        // Sprint 9 — Pro vẫn có thể rộng hơn viewport hẹp (nợ kỹ thuật cũ "toolbar tràn màn
+        // hẹp"). Thay vì để pill tràn 2 bên (đẩy ModeSwitch/Undo ra ngoài mép, không bấm được),
+        // giới hạn maxWidth + cuộn ngang — nội dung luôn bắt đầu từ trái (ModeSwitch/DRAW luôn
+        // thấy được ngay), phần Pro dài hơn thì cuộn thay vì vô hình.
+        maxWidth: 'calc(100vw - 32px)',
+        overflowX: 'auto',
         borderRadius: 999,
         background: 'color-mix(in srgb, var(--panel) 78%, transparent)',
         backdropFilter: 'blur(18px) saturate(1.4)',
@@ -152,9 +189,13 @@ export default function CadToolbar({
         boxShadow: '0 8px 30px rgba(0,0,0,.22)',
       }}
     >
-      <Group items={DRAW} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: 6, width: 'max-content' }}>
+      <ModeSwitch mode={cadMode} onChange={setCadMode} />
       <Divider />
-      <Group items={SHAPES2} />
+      <Group items={DRAW} />
+      {isPro && <Group items={DRAW_PRO} />}
+      {isPro && <Divider />}
+      {isPro && <Group items={SHAPES2} />}
       <Divider />
       <Group items={ARCH} />
       <button type="button" onClick={onToggleMaterial} title="Vật liệu (Sprint 5) — chọn preset gạch/gỗ/đá/sơn cho Hatch" style={btn(false)}>
@@ -165,10 +206,11 @@ export default function CadToolbar({
       </button>
       <Divider />
       <Group items={EDIT} />
-      <Divider />
-      <Group items={MODIFY} />
+      {isPro && <Divider />}
+      {isPro && <Group items={MODIFY} />}
       <Divider />
       <Group items={MEASURE} />
+      {isPro && <Group items={DIMENSION} />}
       <Divider />
       <Group items={ANNOTATE} />
       <Divider />
@@ -176,7 +218,8 @@ export default function CadToolbar({
         <Sofa size={17} />
       </button>
       <Divider />
-      {/* snap + grid toggle */}
+      {/* snap + grid toggle — auto-snap là hành vi mặc định của "Sketch" (IF tự chỉnh), giữ hiện
+          ở cả 2 mode. Polar tracking (bắt góc theo độ) là khái niệm CAD hơn → Pro-only. */}
       <button
         type="button"
         onClick={() => setSnap({ enabled: !snap.enabled })}
@@ -193,14 +236,16 @@ export default function CadToolbar({
       >
         <Grid2x2 size={16} />
       </button>
-      <button
-        type="button"
-        onClick={() => setPolarTracking(!polarTracking)}
-        title={`Polar tracking: ${polarTracking ? 'BẬT' : 'tắt'} — bắt góc ${polarStep}° (Shift = Ortho tuyệt đối, ưu tiên hơn)`}
-        style={btn(polarTracking)}
-      >
-        <Compass size={16} />
-      </button>
+      {isPro && (
+        <button
+          type="button"
+          onClick={() => setPolarTracking(!polarTracking)}
+          title={`Polar tracking: ${polarTracking ? 'BẬT' : 'tắt'} — bắt góc ${polarStep}° (Shift = Ortho tuyệt đối, ưu tiên hơn)`}
+          style={btn(polarTracking)}
+        >
+          <Compass size={16} />
+        </button>
+      )}
       <Divider />
       <button type="button" onClick={() => setTool('pan')} title="Pan (space kéo)" style={btn(tool === 'pan')}>
         <Hand size={16} />
@@ -216,11 +261,50 @@ export default function CadToolbar({
         <Redo2 size={16} />
       </button>
     </div>
+    </div>
   );
 }
 
 function Divider() {
   return <span style={{ width: 1, height: 22, background: 'var(--border)', margin: '0 2px' }} />;
+}
+
+/** Sprint 9 — công tắc 2 chiều Sketch↔Pro (Phương án A đã duyệt). Cùng ngôn ngữ pill/accent với
+ * phần còn lại của toolbar — KHÔNG thêm màu mới, "đang chọn" tô var(--accent) như mọi nút khác. */
+function ModeSwitch({ mode, onChange }: { mode: CadMode; onChange: (m: CadMode) => void }) {
+  const segBtn = (active: boolean): React.CSSProperties => ({
+    appearance: 'none',
+    border: 'none',
+    background: active ? 'var(--accent)' : 'transparent',
+    color: active ? '#fff' : 'var(--t2)',
+    fontFamily: 'inherit',
+    fontSize: 12,
+    fontWeight: 650,
+    padding: '6px 12px',
+    borderRadius: 999,
+    cursor: 'pointer',
+    transition: 'background .18s, color .18s',
+  });
+  return (
+    <div
+      style={{
+        display: 'flex',
+        background: 'var(--field)',
+        border: '1px solid var(--border)',
+        borderRadius: 999,
+        padding: 2,
+        gap: 1,
+      }}
+      title="Sketch: bộ vẽ tối giản, đúng nhịp phác thảo nhanh. Pro: thêm công cụ CAD chính xác (Sprint 10) — nhập toạ độ, Dimension, Fillet/Chamfer, Array…"
+    >
+      <button type="button" onClick={() => onChange('sketch')} style={segBtn(mode === 'sketch')}>
+        Sketch
+      </button>
+      <button type="button" onClick={() => onChange('pro')} style={segBtn(mode === 'pro')}>
+        Pro
+      </button>
+    </div>
+  );
 }
 
 function btn(active: boolean, disabled = false): React.CSSProperties {
