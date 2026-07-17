@@ -9,6 +9,11 @@
 
 import type { Pt } from './model';
 import type { BlockGroup, ShapeVariant, SnapAnchor, ClearanceZone, ShapeMeta } from './shared-types';
+// Sprint 6 — D1.3/D2.2: ký hiệu đèn + ổ cắm điện (nhóm mới 'Điện'), tách file riêng (mep.ts)
+// nhưng nối vào CHÍNH BLOCKS/BLOCK_MAP dưới đây để tương thích ShapePalette/snap/collision có
+// sẵn (spec Sprint 6). import type ở mep.ts trỏ ngược lại đây (BlockDef/Prim) là type-only nên
+// KHÔNG tạo phụ thuộc vòng lúc chạy (bị xoá khi biên dịch).
+import { MEP_BLOCKS } from './mep';
 
 export type Prim =
   | { k: 'line'; a: Pt; b: Pt }
@@ -627,6 +632,8 @@ export const BLOCKS: BlockDef[] = [
     anchors: [{ kind: 'wall-back', pt: { x: 0, y: -100 }, normal: { x: 0, y: -1 } }],
   },
   { id: 'ceilingFan', name: 'Quạt trần', group: 'Thiết bị', w: 1200, h: 1200, prims: ceilingFan() },
+  // Sprint 6 — D1.3/D2.2: đèn + ổ cắm điện (nhóm 'Điện'), định nghĩa ở lib/cad/mep.ts.
+  ...MEP_BLOCKS,
 ];
 
 export const BLOCK_MAP: Record<string, BlockDef> = Object.fromEntries(BLOCKS.map((b) => [b.id, b]));

@@ -13,7 +13,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Plus, Trash2, X, Command, Sparkles, Wand2,
-  ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair, Tag, Check,
+  ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair, Tag, Check, Lightbulb,
 } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import type { HatchPattern } from '@/lib/cad/model';
@@ -31,6 +31,12 @@ import { checkStandards, findRoomLabels, classifyRoom, type Violation, type Room
 import { getAllRules } from '@/lib/cad/standards/registry';
 import { classifyOperator, rulesForOperator, type OperatorType } from '@/lib/cad/operator-profile';
 import { suggestRoomNames, type RoomNameSuggestion } from '@/lib/cad/room-autolabel';
+import {
+  suggestRoomLightingPlans, suggestSwitchPositions, suggestCircuitGroups, suggestOutletPlacements,
+  checkAcUnitBedProximity,
+  type RoomLightingPlan, type SwitchPositionSuggestion, type CircuitGroupHint, type OutletPlacementSuggestion,
+  type AcUnitProximityCheck,
+} from '@/lib/cad/mep-suggest';
 import CadCanvas from './CadCanvas';
 import CadToolbar from './CadToolbar';
 import MaterialPalette from './MaterialPalette';
@@ -41,6 +47,7 @@ export default function CadEditor() {
   const [materialOpen, setMaterialOpen] = useState(false);
   const [standardsOpen, setStandardsOpen] = useState(false);
   const [autoLabelOpen, setAutoLabelOpen] = useState(false);
+  const [mepOpen, setMepOpen] = useState(false);
   const [handoffMsg, setHandoffMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -155,6 +162,9 @@ export default function CadEditor() {
         <button type="button" onClick={() => setAutoLabelOpen((o) => !o)} style={{ ...fileBtn, background: autoLabelOpen ? 'var(--accent)' : undefined, color: autoLabelOpen ? '#fff' : undefined }} title="Đề xuất tên phòng — dò phòng CHƯA có nhãn TEXT, đoán tên theo đồ nội thất/diện tích (chỉ đề xuất, KHÔNG tự chèn — bạn phải bấm Áp dụng)">
           <Tag size={14} /> Gợi ý tên phòng
         </button>
+        <button type="button" onClick={() => setMepOpen((o) => !o)} style={{ ...fileBtn, background: mepOpen ? 'var(--accent)' : undefined, color: mepOpen ? '#fff' : undefined }} title="MEP sơ cấp — gợi ý chiếu sáng/công tắc/ổ cắm/vị trí máy lạnh (chỉ đề xuất, KHÔNG tự chèn — bạn phải bấm nút Đặt)">
+          <Lightbulb size={14} /> MEP
+        </button>
         <button type="button" onClick={toRender} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Kết xuất layout thành node Import Image ở chặng Render">
           Đưa sang Render <ArrowRight size={14} />
         </button>
@@ -171,6 +181,7 @@ export default function CadEditor() {
         {materialOpen && <MaterialPalette onClose={() => setMaterialOpen(false)} />}
         {standardsOpen && <StandardsPanel onClose={() => setStandardsOpen(false)} />}
         {autoLabelOpen && <AutoLabelPanel onClose={() => setAutoLabelOpen(false)} />}
+        {mepOpen && <MepPanel onClose={() => setMepOpen(false)} />}
         <LayerPanel />
         <SelectionInfoPanel />
         {handoffMsg && (
@@ -561,6 +572,144 @@ function AutoLabelPanel({ onClose }: { onClose: () => void }) {
             </button>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* ───────── Panel MEP sơ cấp (Sprint 6, lib/cad/mep-suggest.ts) — CHỈ ĐỌC + ĐỀ XUẤT ─────────
+ * D1.1/D1.2 (lux+vị trí đèn), D1.4 (công tắc — chỉ hiển thị, KHÔNG có BlockDef công tắc riêng để
+ * chèn), D1.5 (gợi ý nhóm mạch — text), D2.1 (ổ cắm — có BlockDef 'outlet' để chèn thật), D2.6
+ * (khoảng cách máy lạnh↔đầu giường — chỉ cảnh báo). Mọi nút "Đặt" chỉ addEntity() sau khi user
+ * bấm — không có hành vi tự chèn hàng loạt khi mở panel/chạy gợi ý. */
+function MepPanel({ onClose }: { onClose: () => void }) {
+  const doc = useCadStore((s) => s.doc);
+  const addEntity = useCadStore((s) => s.addEntity);
+  const [lightingPlans, setLightingPlans] = useState<RoomLightingPlan[] | null>(null);
+  const [switches, setSwitches] = useState<SwitchPositionSuggestion[] | null>(null);
+  const [circuitHint, setCircuitHint] = useState<CircuitGroupHint | null>(null);
+  const [outlets, setOutlets] = useState<OutletPlacementSuggestion[] | null>(null);
+  const [acChecks, setAcChecks] = useState<AcUnitProximityCheck[] | null>(null);
+  const [msg, setMsg] = useState('');
+
+  const run = () => {
+    setLightingPlans(suggestRoomLightingPlans(doc));
+    setSwitches(suggestSwitchPositions(doc));
+    setCircuitHint(suggestCircuitGroups(doc));
+    setOutlets(suggestOutletPlacements(doc));
+    setAcChecks(checkAcUnitBedProximity(doc));
+  };
+
+  const zoomTo = (at: { x: number; y: number }) => window.dispatchEvent(new CustomEvent('cad:zoom-to', { detail: at }));
+  const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 2500); };
+  const furnLayer = doc.layers.find((l) => l.id === 'l-furniture')?.id ?? doc.layers[0]?.id ?? 'l-furniture';
+  const newEntId = (tag: string) => `e-mep-${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+  const placeLightsForRoom = (plan: RoomLightingPlan) => {
+    for (const pt of plan.positions) {
+      addEntity({ id: newEntId('light'), type: 'block', layer: furnLayer, block: 'lightDownlight', at: pt, rot: 0, sx: 1, sy: 1 });
+    }
+    setLightingPlans((prev) => (prev ? prev.filter((p) => p !== plan) : prev));
+    flash(`Đã đặt ${plan.positions.length} đèn downlight cho "${plan.roomName}".`);
+  };
+
+  const placeOutlet = (s: OutletPlacementSuggestion) => {
+    addEntity({ id: newEntId('outlet'), type: 'block', layer: furnLayer, block: 'outlet', at: s.at, rot: 0, sx: 1, sy: 1 });
+    setOutlets((prev) => (prev ? prev.filter((x) => x !== s) : prev));
+    flash('Đã đặt 1 ổ cắm.');
+  };
+
+  const rowStyle: React.CSSProperties = { padding: '7px 8px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 6, alignItems: 'flex-start' };
+  const sectionTitle: React.CSSProperties = { fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.4, color: 'var(--t3)', padding: '8px 8px 3px' };
+  const emptyStyle: React.CSSProperties = { padding: '4px 8px 8px', fontSize: 11.5, color: 'var(--t4)' };
+
+  const notRun = lightingPlans === null;
+
+  return (
+    <div style={{ ...panel, left: 12, top: 400, width: 380, maxHeight: '60vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={panelHead}>
+        <span>MEP sơ cấp — Chiếu sáng &amp; Điện</span>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button type="button" onClick={run} title="Chạy gợi ý (Sprint 6: D1.1/D1.2/D1.4/D1.5/D2.1/D2.6 — KHÔNG có gen kỹ thuật D2.3-D2.5, xem lib/cad/mep.ts)" style={miniBtn}>
+            <Lightbulb size={14} />
+          </button>
+          <button type="button" onClick={onClose} title="Đóng" style={miniBtn}>
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+      <div style={{ fontSize: 10.5, color: 'var(--t4)', padding: '0 6px 6px' }}>
+        Chỉ đề xuất — bấm nút để CHÈN thật vào bản vẽ. Lux tham khảo (KHÔNG phải TCVN 7114 chính thức) · 900lm/đèn là giả định thực hành phổ biến · công tắc/ổ cắm/máy lạnh là ước lệ, KHÔNG trích chuẩn cụ thể.
+      </div>
+      {msg && <div style={{ fontSize: 11, color: 'var(--accent)', padding: '0 6px 6px' }}>{msg}</div>}
+      <div style={{ overflowY: 'auto', flex: 1 }}>
+        {notRun && <div style={{ padding: '10px 8px', fontSize: 12, color: 'var(--t3)' }}>Chưa chạy — bấm biểu tượng bóng đèn phía trên.</div>}
+
+        {lightingPlans !== null && (
+          <>
+            <div style={sectionTitle}>D1.1/D1.2 — Chiếu sáng theo phòng ({lightingPlans.length})</div>
+            {lightingPlans.length === 0 && <div style={emptyStyle}>Không dò được phòng khách/ngủ/bếp nào có nhãn + biên kín.</div>}
+            {lightingPlans.map((p, i) => (
+              <div key={`light-${i}`} style={rowStyle}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: 'var(--t1)' }}>{p.roomName} — {p.areaM2.toFixed(1)}m²</div>
+                  <div style={{ fontSize: 10, color: 'var(--t4)', marginTop: 2, lineHeight: 1.4 }}>
+                    {p.lighting.minLux}–{p.lighting.maxLux} lux tham khảo → ~{Math.round(p.lighting.totalLumensTarget)} lumen → {p.lighting.recommendedDownlightCount} đèn downlight (900lm/đèn, giả định) · dò được {p.positions.length} vị trí đặt
+                  </div>
+                </div>
+                <button type="button" onClick={() => zoomTo(p.roomAt)} title="Zoom tới" style={miniBtn}><Crosshair size={13} /></button>
+                <button type="button" onClick={() => placeLightsForRoom(p)} disabled={p.positions.length === 0} title="Đặt đèn downlight vào bản vẽ" style={{ ...miniBtn, opacity: p.positions.length === 0 ? 0.4 : 1 }}><Check size={13} /></button>
+              </div>
+            ))}
+          </>
+        )}
+
+        {switches !== null && (
+          <>
+            <div style={sectionTitle}>D1.4 — Vị trí công tắc gợi ý ({switches.length})</div>
+            {switches.length === 0 && <div style={emptyStyle}>Không có cửa nào trong bản vẽ.</div>}
+            {switches.map((s, i) => (
+              <div key={`sw-${i}`} style={rowStyle}>
+                <div style={{ flex: 1, minWidth: 0, fontSize: 10.5, color: 'var(--t3)', lineHeight: 1.4 }}>{s.note}</div>
+                <button type="button" onClick={() => zoomTo(s.at)} title="Zoom tới vị trí gợi ý" style={miniBtn}><Crosshair size={13} /></button>
+              </div>
+            ))}
+          </>
+        )}
+
+        {circuitHint && (
+          <>
+            <div style={sectionTitle}>D1.5 — Gợi ý nhóm mạch</div>
+            <div style={{ ...emptyStyle, color: 'var(--t3)' }}>{circuitHint.note}</div>
+          </>
+        )}
+
+        {outlets !== null && (
+          <>
+            <div style={sectionTitle}>D2.1 — Vị trí ổ cắm gợi ý ({outlets.length})</div>
+            {outlets.length === 0 && <div style={emptyStyle}>Không có tủ đầu giường/bàn làm việc/bếp nào trong bản vẽ.</div>}
+            {outlets.map((o, i) => (
+              <div key={`ot-${i}`} style={rowStyle}>
+                <div style={{ flex: 1, minWidth: 0, fontSize: 10.5, color: 'var(--t3)', lineHeight: 1.4 }}>{o.note}</div>
+                <button type="button" onClick={() => zoomTo(o.at)} title="Zoom tới" style={miniBtn}><Crosshair size={13} /></button>
+                <button type="button" onClick={() => placeOutlet(o)} title="Đặt ổ cắm vào bản vẽ" style={miniBtn}><Check size={13} /></button>
+              </div>
+            ))}
+          </>
+        )}
+
+        {acChecks !== null && (
+          <>
+            <div style={sectionTitle}>D2.6 — Máy lạnh ↔ đầu giường ({acChecks.length})</div>
+            {acChecks.length === 0 && <div style={emptyStyle}>Không có cặp máy lạnh/giường nào để kiểm tra.</div>}
+            {acChecks.map((c, i) => (
+              <div key={`ac-${i}`} style={rowStyle}>
+                <span style={{ marginTop: 2 }}>{c.tooClose ? <AlertTriangle size={14} color="#d4a15a" /> : <Info size={14} color="var(--t3)" />}</span>
+                <div style={{ flex: 1, minWidth: 0, fontSize: 10.5, color: 'var(--t3)', lineHeight: 1.4 }}>{c.note}</div>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );

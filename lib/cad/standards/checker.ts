@@ -22,7 +22,7 @@
  */
 
 import type { Doc, Entity, Pt } from '../model';
-import { findHatchBoundary, polygonArea } from '../hatch';
+import { findHatchBoundary, polygonArea, pointInPolygon } from '../hatch';
 import type { StandardRule, Severity } from './registry';
 import { BLOCK_MAP } from '../furniture';
 import { effectiveBlockSize } from '../shape-interactions';
@@ -284,6 +284,37 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
     }
   }
 
+  // D2.2 (Sprint 6) — mật độ ổ cắm điện (TCVN 9206:2012, lib/cad/standards/vn-electrical.ts).
+  // Đếm BlockEntity block='outlet' (lib/cad/mep.ts) nằm TRONG biên từng phòng bedroom/living/
+  // kitchen đã phân loại ở trên — cùng cơ chế findHatchBoundary(boundaryDoc, room.at) +
+  // pointInPolygon đã dùng bởi room-autolabel.ts (pick-point = room.at, phòng này đã có nhãn TEXT
+  // nên biên chắc chắn dò được nếu room.areaM2 !== null). Chỉ cảnh báo khi THIẾU (< minOutlets) —
+  // KHÔNG cảnh báo khi thừa (> maxOutlets), vì thừa ổ cắm không phải vấn đề an toàn.
+  const rOutletRes = byId('vn-electrical-outlet-density-living-bedroom');
+  const rOutletKitchen = byId('vn-electrical-outlet-density-kitchen');
+  if (rOutletRes || rOutletKitchen) {
+    const boundaryDoc = wallLikeDoc(doc);
+    const outletEntities = doc.entities.filter((e) => e.type === 'block' && e.block === 'outlet');
+    for (const room of rooms) {
+      if (room.areaM2 === null) continue;
+      const kind = classifyRoom(room.name);
+      if (kind !== 'bedroom' && kind !== 'living' && kind !== 'kitchen') continue;
+      const rule = kind === 'kitchen' ? rOutletKitchen : rOutletRes;
+      if (!rule) continue;
+      const poly = findHatchBoundary(boundaryDoc, room.at);
+      if (!poly) continue; // không dò được biên — bỏ qua, không đoán mò (dù hiếm khi xảy ra ở đây)
+      const count = outletEntities.filter((e) => e.type === 'block' && pointInPolygon(e.at, poly)).length;
+      if (count < rule.params.minOutlets) {
+        const kindLabel = kind === 'kitchen' ? 'Bếp' : kind === 'bedroom' ? 'Phòng ngủ' : 'Phòng khách';
+        violations.push(mkViolation(
+          rule,
+          `${kindLabel} "${room.name}": đếm được ${count} ổ cắm điện < ${rule.params.minOutlets} khuyến nghị (TCVN 9206:2012, khoảng ${rule.params.minOutlets}-${rule.params.maxOutlets} ổ/phòng).`,
+          room.at,
+        ));
+      }
+    }
+  }
+
   // ISO 128 — tỉ lệ nét đậm/mảnh giữa các layer đang dùng.
   const rLw = byId('iso128-thick-thin-ratio');
   if (rLw) {
@@ -300,7 +331,14 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
 }
 
 /**
- * SỔ TRẠNG THÁI NỐI DÂY (2026-07-15) — rule nào đã áp dụng thật trong checkStandards():
+ * SỔ TRẠNG THÁI NỐI DÂY (2026-07-15, cập nhật 2026-07-17 Sprint 6) — rule nào đã áp dụng thật
+ * trong checkStandards():
+ *
+ * 2026-07-17 (Sprint 6, D2.2): vn-electrical-outlet-density-living-bedroom /
+ *   -kitchen (lib/cad/standards/vn-electrical.ts, TCVN 9206:2012) — đếm THẬT số BlockEntity
+ *   block='outlet' (lib/cad/mep.ts, mới thêm Sprint 6) nằm trong biên từng phòng bedroom/living/
+ *   kitchen, so với ngưỡng minOutlets=2 → warning nếu thiếu. Cùng cơ chế findHatchBoundary +
+ *   pointInPolygon dùng bởi room-autolabel.ts.
  *
  * ĐÃ NỐI (sinh violation thật khi đo hình học vi phạm):
  *   vn-res-bedroom-min-area, vn-res-wc-min-area, vn-res-kitchen-dining-min-area,
