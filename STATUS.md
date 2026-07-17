@@ -14,15 +14,13 @@
 - Perceptron THẬT (learning-to-rank, degrade heuristic) · foldable Find N6 test on-device · installer cả 3 unsigned (.exe cần máy Win) · PWA host Vercel + Supabase (Agent 4 tự dựng, Sprint 4).
 
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
-- **1 worktree đang sống** (1/3 slot): `interiorflow-wt-sprint10` nhánh `feat/sprint10-precision-geometry-snap` — đang chạy (nhập toạ độ chính xác + Polygon + Spline/Xline/Ellipse/Donut/Divide). **Sprint 9 (thiết kế toggle Sketch↔Pro) CHƯA làm** — nhảy thẳng sang Sprint 10 theo yêu cầu user, quay lại Sprint 9 sau nếu cần trước khi Pro mode thật sự cần toggle UI.
+- **1 worktree đang sống** (1/3 slot): `interiorflow-wt-dwg` nhánh `feat/dwg-import` — đang chạy (import DWG qua `@mlightcad/libredwg-web`, GPL, cô lập Web Worker — xem lý do ở CHANGELOG). **Sprint 9 (thiết kế toggle Sketch↔Pro) CHƯA làm** — nhảy sang Sprint 10 theo yêu cầu user, Sprint 10 đã xong, quay lại Sprint 9 trước khi Pro mode thật sự cần toggle UI.
+- **✅ 18/07 Sprint 10 — Pro mode P1+P2 + bổ sung**: P2 (snap 7 kiểu) xác nhận ĐÃ XONG từ trước qua verify tangent/nearest chính xác toạ độ — không code thêm. Nhập toạ độ tuyệt đối/tương đối (`X,Y`/`@dx,dy`) khi vẽ + Polygon/Ellipse/Donut/Spline/Xline/Divide-Measure mới, tất cả verify đúng hình học chính xác qua browser thật. **Tự tìm+sửa 1 bug thật**: vector hướng (0,0) khi chưa di chuột làm giá trị nhập số bị collapse về 0 — ảnh hưởng mọi tool dùng dynBuf (circle/polygon/line/rect...). 62 test mới, 37 file PASS, tsc 0 lỗi.
 - **✅ 15/07 Sprint 3 B1+B2** (41 shape nội thất, schema chung `lib/cad/shared-types.ts`) + merge 4 nhánh cũ (render-nodes-v2 · ai-local-ollama · render-ux-overhaul · deploy-vercel-supabase) — chi tiết → CHANGELOG.md.
 - File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
 - **NVIDIA_API_KEY đã có**, probe HTTP 200. **fal**: hết balance, chờ nạp credit.
 - CHƯA làm (backlog cũ): bỏ hardcode 'DETECH · CONCEPT' · template tĩnh thư viện · heavy-ML pha 2 · membership per-flow.
-- **✅ 16-17/07 verify Render/Present + text-toolbar-ux + Sprint 4 + Sprint 5** — chi tiết → CHANGELOG.md.
-- **✅ 17/07 Sprint 6 — MEP sơ cấp** (nhóm E: 0%→phần lớn): đèn+ổ cắm (`mep.ts`, `mep-suggest.ts`, chỉ đề xuất), rule TCVN 9206:2012 thật nối checker. Hộp gen (D2.3-5) BỎ QUA — không có quy ước DXF thật.
-- **✅ 17/07 Sprint 7 — Export nâng cao**: CAD PDF vector (`pdf.ts`, jsPDF không có OCG nên layer không ẩn/hiện lại — đã ghi rõ). `.idf` save/load (`idf.ts`, JSON versioned, round-trip verify khớp). Markup overlay + Photo embed (`Doc.markups`/`Doc.photos`, riêng khỏi Entity hình học). Share link/PWA đã có sẵn — không làm lại.
-- **✅ 18/07 Sprint 8 — Template/Title block/Fix suggestion**: Layer manager xác nhận ĐÃ CÓ SẴN — không làm lại. Title block UI (`titleBlock()` có sẵn, chỉ thêm form) + 2 template mới (Văn phòng, Khách sạn — `templates.ts`, cùng pattern `demo-plan.ts`) + Fix suggestion thật (`fix-suggest.ts`, gợi ý mm cụ thể cho vi phạm diện tích/hành lang, chỉ hiện text KHÔNG tự sửa — verify số khớp chính xác test). 38 file test PASS, tsc 0 lỗi.
+- **✅ 16-18/07 Sprint 6-8 xong** (MEP đèn/ổ cắm+TCVN9206 · Export PDF vector/.idf/markup/photo · Template Office+Hotel/Title block/Fix suggestion) — chi tiết đầy đủ → CHANGELOG.md.
 
 ## Nợ kỹ thuật
 - Hydration ⌘Z/Ctrl+Z tooltip (lib/kbd.ts:11 + CadToolbar) — cosmetic.
@@ -31,6 +29,7 @@
 - 4 file stress test bị mất (xem ĐIỂM RESUME) — cần viết lại nếu muốn coverage edge-case CAD/render/present/concurrency.
 - Sprint 3 B1: `meta` (giá/vendor/sku) để trống toàn bộ — chưa có dữ liệu giá thật.
 - **BUG 16/07 — GroupOverlay vô hình** (Render canvas Cmd+G): `GroupOverlay.tsx` thiếu `ViewportPortal` + `zIndex:-1` sai → group tạo đúng trong store nhưng UI không hiện. Chi tiết kỹ thuật → CHANGELOG.md. CHƯA sửa — chờ duyệt phạm vi.
+- **18/07 — CAD toolbar tràn ở màn hẹp**: sau Sprint 10 thêm 6 nút mới, toolbar CAD bắt đầu tràn/wrap xấu ở viewport hẹp — cosmetic, chưa sửa.
 
 ## Bị chặn — KHÔNG tự khởi động
 - Intro screen (chờ hình/video — flow hiện tại ĐÃ gỡ intro theo lệnh user) · ML Gu Engine heavy (chồng lấn 2 app khác) · "API team" spec.
