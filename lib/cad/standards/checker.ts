@@ -117,7 +117,9 @@ export function findRoomLabels(doc: Doc): RoomInfo[] {
   return rooms;
 }
 
-type RoomKind = 'bedroom' | 'wc' | 'kitchen' | 'living' | 'corridor' | 'office' | 'assembly' | 'other';
+/** Sprint 4: export để room-autolabel.ts (C1.5 room count) tái dùng đúng luật phân loại — không
+ * nhân bản logic classifyRoom(). Hành vi checkStandards() KHÔNG đổi. */
+export type RoomKind = 'bedroom' | 'wc' | 'kitchen' | 'living' | 'corridor' | 'office' | 'assembly' | 'other';
 
 /**
  * 2026-07-16: MỞ RỘNG ra ngoài "chỉ nhà ở" — TTT Architects làm dự án MỌI quy mô
@@ -128,7 +130,7 @@ type RoomKind = 'bedroom' | 'wc' | 'kitchen' | 'living' | 'corridor' | 'office' 
  * các loại này sẽ rơi vào 'other' (không bị check sai, chỉ đơn giản là chưa có rule nối vào),
  * để sprint sau tiếp tục nếu cần, không giả vờ đã bao phủ toàn bộ.
  */
-function classifyRoom(name: string): RoomKind {
+export function classifyRoom(name: string): RoomKind {
   const s = name.toUpperCase();
   if (s.includes('NGỦ')) return 'bedroom';
   if (s.includes('WC') || s.includes('VỆ SINH') || /\bVS\b/.test(s)) return 'wc';

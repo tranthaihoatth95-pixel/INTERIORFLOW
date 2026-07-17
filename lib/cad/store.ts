@@ -11,6 +11,7 @@
 import { create } from 'zustand';
 import type { Doc, Entity, Layer, Viewport, HatchPattern } from './model';
 import { emptyDoc } from './model';
+import { pasteEntities } from './geometry';
 
 // Dev-only: expose store cho debugging (window.__cadStore) — cùng pattern với
 // window.__flowStore trong lib/store.ts, không lọt vào bản build production.
@@ -125,6 +126,9 @@ interface CadState {
   future: Doc[];
   /** dòng lệnh mini + thông báo trạng thái */
   status: string;
+  /** Sprint 4 — clipboard nội bộ bàn phím (Ctrl+C/Ctrl+V), KHÔNG dùng Clipboard API của OS
+   * (tránh permission popup) — chỉ copy-paste được TRONG cùng bản vẽ này. */
+  clipboard: Entity[];
 
   // actions
   setTool: (t: Tool) => void;
@@ -141,6 +145,12 @@ interface CadState {
 
   select: (ids: string[], additive?: boolean) => void;
   clearSelection: () => void;
+
+  /** Sprint 4 — copy-paste bàn phím: copySelection() chép các entity ĐANG chọn vào clipboard
+   * nội bộ; pasteClipboard(dx?, dy?) dán bản sao id mới dịch (dx,dy) mm (mặc định +20/+20mm —
+   * đủ thấy lệch, không đè bản gốc), rồi tự chọn bản vừa dán. */
+  copySelection: () => void;
+  pasteClipboard: (dx?: number, dy?: number) => void;
 
   setViewport: (v: Viewport) => void;
   setSnap: (patch: Partial<SnapSettings>) => void;
@@ -205,6 +215,7 @@ export const useCadStore = create<CadState>((set, get) => ({
   past: [],
   future: [],
   status: 'Sẵn sàng — chọn công cụ hoặc gõ lệnh (L, PL, REC, C…).',
+  clipboard: [],
 
   setTool: (tool) => set({ tool, status: toolHint(tool), pendingBlock: tool === 'block' ? get().pendingBlock : null }),
   setStatus: (status) => set({ status }),
@@ -279,6 +290,21 @@ export const useCadStore = create<CadState>((set, get) => ({
       return { selection: additive ? Array.from(new Set([...s.selection, ...allowed])) : allowed };
     }),
   clearSelection: () => set({ selection: [] }),
+
+  copySelection: () => {
+    const sel = new Set(get().selection);
+    if (!sel.size) return;
+    const copied = get().doc.entities.filter((e) => sel.has(e.id)).map((e) => ({ ...e }));
+    if (!copied.length) return;
+    set({ clipboard: copied });
+  },
+  pasteClipboard: (dx = 20, dy = 20) => {
+    const clip = get().clipboard;
+    if (!clip.length) return;
+    const pasted = pasteEntities(clip, dx, dy);
+    get().addEntities(pasted);
+    set({ selection: pasted.map((e) => e.id) });
+  },
 
   setViewport: (viewport) => set({ viewport }),
   setSnap: (patch) => set((s) => ({ snap: { ...s.snap, ...patch } })),

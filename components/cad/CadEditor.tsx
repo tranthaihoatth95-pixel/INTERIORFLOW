@@ -9,11 +9,11 @@
  * trên canvas Render (useFlowStore) rồi router.push('/') — đúng pattern onDrop asset của FlowCanvas.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Plus, Trash2, X, Command, Sparkles, Wand2,
-  ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair,
+  ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair, Tag, Check,
 } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import type { HatchPattern } from '@/lib/cad/model';
@@ -27,9 +27,10 @@ import { describeToEntities } from '@/lib/cad/ai-assist';
 import { docBox } from '@/lib/cad/model';
 import { useFlowStore } from '@/lib/store';
 import { stashCadHandoff } from '@/lib/cad/handoff';
-import { checkStandards, type Violation } from '@/lib/cad/standards/checker';
+import { checkStandards, findRoomLabels, classifyRoom, type Violation, type RoomKind } from '@/lib/cad/standards/checker';
 import { getAllRules } from '@/lib/cad/standards/registry';
 import { classifyOperator, rulesForOperator, type OperatorType } from '@/lib/cad/operator-profile';
+import { suggestRoomNames, type RoomNameSuggestion } from '@/lib/cad/room-autolabel';
 import CadCanvas from './CadCanvas';
 import CadToolbar from './CadToolbar';
 
@@ -37,6 +38,7 @@ export default function CadEditor() {
   const router = useRouter();
   const [furnitureOpen, setFurnitureOpen] = useState(false);
   const [standardsOpen, setStandardsOpen] = useState(false);
+  const [autoLabelOpen, setAutoLabelOpen] = useState(false);
   const [handoffMsg, setHandoffMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -148,6 +150,9 @@ export default function CadEditor() {
         <button type="button" onClick={() => setStandardsOpen((o) => !o)} style={{ ...fileBtn, background: standardsOpen ? 'var(--accent)' : undefined, color: standardsOpen ? '#fff' : undefined }} title="Kiểm chuẩn — đối chiếu bản vẽ với TCVN/QCVN/ISO (chỉ đọc & đề xuất, không tự sửa)">
           <ShieldCheck size={14} /> Kiểm chuẩn
         </button>
+        <button type="button" onClick={() => setAutoLabelOpen((o) => !o)} style={{ ...fileBtn, background: autoLabelOpen ? 'var(--accent)' : undefined, color: autoLabelOpen ? '#fff' : undefined }} title="Đề xuất tên phòng — dò phòng CHƯA có nhãn TEXT, đoán tên theo đồ nội thất/diện tích (chỉ đề xuất, KHÔNG tự chèn — bạn phải bấm Áp dụng)">
+          <Tag size={14} /> Gợi ý tên phòng
+        </button>
         <button type="button" onClick={toRender} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Kết xuất layout thành node Import Image ở chặng Render">
           Đưa sang Render <ArrowRight size={14} />
         </button>
@@ -159,6 +164,7 @@ export default function CadEditor() {
         <CadToolbar onToggleFurniture={() => setFurnitureOpen((o) => !o)} />
         {furnitureOpen && <FurniturePanel onClose={() => setFurnitureOpen(false)} />}
         {standardsOpen && <StandardsPanel onClose={() => setStandardsOpen(false)} />}
+        {autoLabelOpen && <AutoLabelPanel onClose={() => setAutoLabelOpen(false)} />}
         <LayerPanel />
         <SelectionInfoPanel />
         {handoffMsg && (
@@ -466,6 +472,87 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
                 <Crosshair size={13} />
               </button>
             )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ───────── Panel Gợi ý tên phòng (Sprint 4, C1.1) — CHỈ ĐỌC + ĐỀ XUẤT, không tự chèn ─────────
+ * Dò các phòng CÓ BIÊN KÍN nhưng CHƯA có nhãn TEXT (room-autolabel.ts), đoán tên theo đồ nội
+ * thất bên trong (hoặc diện tích/tỉ lệ nếu không có đồ nội thất đặc trưng). User PHẢI bấm "Áp
+ * dụng" từng đề xuất thì mới thật sự addEntity() 1 TextEntity mới — không có nút "áp dụng tất
+ * cả" để tránh chèn hàng loạt TEXT mà user chưa kịp xem qua từng cái. */
+function AutoLabelPanel({ onClose }: { onClose: () => void }) {
+  const doc = useCadStore((s) => s.doc);
+  const addEntity = useCadStore((s) => s.addEntity);
+  const [suggestions, setSuggestions] = useState<RoomNameSuggestion[] | null>(null);
+  const [appliedMsg, setAppliedMsg] = useState('');
+
+  const run = () => setSuggestions(suggestRoomNames(doc));
+
+  const zoomTo = (s: RoomNameSuggestion) => {
+    window.dispatchEvent(new CustomEvent('cad:zoom-to', { detail: s.at }));
+  };
+
+  const apply = (s: RoomNameSuggestion) => {
+    const textLayer = doc.layers.find((l) => l.id === 'l-text')?.id ?? doc.layers[0]?.id ?? 'l-text';
+    // Cỡ chữ theo diện tích phòng — cùng công thức clamp 160..280mm dùng cho roomRect (commands.ts).
+    const h = Math.min(280, Math.max(160, Math.sqrt(Math.max(1, s.areaM2)) * 60));
+    const name = s.suggestedName;
+    addEntity({
+      id: `e-autolabel-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      type: 'text',
+      layer: textLayer,
+      at: { x: s.at.x - name.length * h * 0.3, y: s.at.y + h * 0.5 },
+      text: name,
+      h,
+    });
+    setSuggestions((prev) => (prev ? prev.filter((x) => x !== s) : prev));
+    setAppliedMsg(`Đã chèn nhãn "${name}".`);
+    setTimeout(() => setAppliedMsg(''), 2000);
+  };
+
+  return (
+    <div style={{ ...panel, left: 12, top: 400, width: 340, maxHeight: '50vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={panelHead}>
+        <span>Gợi ý tên phòng</span>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button type="button" onClick={run} title="Dò lại" style={miniBtn}>
+            <Tag size={14} />
+          </button>
+          <button type="button" onClick={onClose} title="Đóng" style={miniBtn}>
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+      <div style={{ fontSize: 10.5, color: 'var(--t4)', padding: '0 6px 6px' }}>
+        Chỉ đề xuất — bấm dấu ✓ để CHÈN nhãn TEXT thật vào bản vẽ (bạn tự quyết định từng phòng). Chỉ dò được phòng có ĐỒ NỘI THẤT (không tính cửa/cửa sổ) bên trong làm điểm mốc.
+      </div>
+      {appliedMsg && <div style={{ fontSize: 11, color: 'var(--accent)', padding: '0 6px 6px' }}>{appliedMsg}</div>}
+      <div style={{ overflowY: 'auto', flex: 1 }}>
+        {suggestions === null && (
+          <div style={{ padding: '10px 8px', fontSize: 12, color: 'var(--t3)' }}>Chưa dò — bấm biểu tượng thẻ tên phía trên.</div>
+        )}
+        {suggestions !== null && suggestions.length === 0 && (
+          <div style={{ padding: '10px 8px', fontSize: 12, color: 'var(--t3)' }}>Mọi phòng dò được đều đã có nhãn (hoặc không có phòng nào có đồ nội thất/cửa để dò).</div>
+        )}
+        {suggestions?.map((s, i) => (
+          <div key={`${s.at.x}-${s.at.y}-${i}`} style={{ padding: '7px 8px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+            <span style={{ marginTop: 2 }}><Tag size={14} color={s.basis === 'furniture' ? 'var(--accent)' : 'var(--t3)'} /></span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: 'var(--t1)', lineHeight: 1.4 }}>{s.suggestedName}</div>
+              <div style={{ fontSize: 10, color: 'var(--t4)', marginTop: 2 }}>
+                {s.areaM2.toFixed(1)} m² · {s.note}
+              </div>
+            </div>
+            <button type="button" onClick={() => zoomTo(s)} title="Zoom tới vị trí" style={miniBtn}>
+              <Crosshair size={13} />
+            </button>
+            <button type="button" onClick={() => apply(s)} title="Chèn nhãn này vào bản vẽ" style={miniBtn}>
+              <Check size={13} />
+            </button>
           </div>
         ))}
       </div>
@@ -830,8 +917,51 @@ function CommandLine({ status }: { status: string }) {
           style={{ width: '100%', background: 'var(--field)', border: '1px solid var(--border)', borderRadius: 7, padding: '3px 8px', fontSize: 12, color: 'var(--t1)', outline: 'none', fontFamily: 'ui-monospace, monospace' }}
         />
       </div>
-      <span style={{ fontSize: 11.5, color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{status}</span>
+      <span style={{ fontSize: 11.5, color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{status}</span>
+      <RoomStatsBadge />
     </div>
+  );
+}
+
+/** Sprint 4 — C1.4 Total GFA + C1.5 Room count: đọc lại CHÍNH `findRoomLabels`/`classifyRoom`
+ * của checker.ts (KHÔNG nhân bản logic phân loại) — chỉ tổng hợp từ các phòng ĐÃ CÓ NHÃN TEXT
+ * (không gộp các đề xuất auto-label chưa được user áp dụng). Đặt cạnh chỗ hiện toạ độ X/Y sống
+ * (vẽ trực tiếp trên canvas, góc dưới-trái) — đây là ô cạnh bên trong CÙNG thanh trạng thái đáy. */
+const ROOM_KIND_LABEL: Record<RoomKind, string> = {
+  bedroom: 'phòng ngủ', wc: 'WC', kitchen: 'bếp', living: 'phòng khách',
+  office: 'văn phòng', assembly: 'phòng họp', corridor: 'hành lang', other: 'khác',
+};
+const ROOM_KIND_ORDER: RoomKind[] = ['bedroom', 'wc', 'kitchen', 'living', 'office', 'assembly', 'corridor', 'other'];
+
+function RoomStatsBadge() {
+  const doc = useCadStore((s) => s.doc);
+
+  const stats = useMemo(() => {
+    const rooms = findRoomLabels(doc);
+    let totalM2 = 0;
+    const counts: Partial<Record<RoomKind, number>> = {};
+    for (const r of rooms) {
+      if (r.areaM2 !== null) totalM2 += r.areaM2;
+      const kind = classifyRoom(r.name);
+      counts[kind] = (counts[kind] ?? 0) + 1;
+    }
+    return { totalM2, counts, roomCount: rooms.length };
+  }, [doc]);
+
+  if (stats.roomCount === 0) return null;
+
+  const breakdown = ROOM_KIND_ORDER
+    .filter((k) => stats.counts[k])
+    .map((k) => `${stats.counts[k]} ${ROOM_KIND_LABEL[k]}`)
+    .join(' · ');
+
+  return (
+    <span
+      title="Tổng diện tích sàn (GFA) + số phòng — cộng từ các phòng ĐÃ có nhãn TEXT dò được (không tính đề xuất auto-label chưa áp dụng)"
+      style={{ fontSize: 11.5, color: 'var(--t2)', whiteSpace: 'nowrap', flex: '0 0 auto', paddingLeft: 10, borderLeft: '1px solid var(--border)' }}
+    >
+      GFA {stats.totalM2.toFixed(1)}m² · {stats.roomCount} phòng{breakdown ? ` (${breakdown})` : ''}
+    </span>
   );
 }
 
