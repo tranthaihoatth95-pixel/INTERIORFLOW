@@ -4,19 +4,20 @@
 > ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp **`feat/present-layout-ml-p1`** — local `5a51f98`, **CHƯA push, CHƯA merge main** (main/origin vẫn `3265db1`). 0 worktree sống.
+- Nhánh tích hợp **`feat/present-layout-ml-p1`** — local `4a73a5b`, **CHƯA push, CHƯA merge main** (main/origin vẫn `3265db1`). 0 worktree sống.
 - **App có nút "Mở DWG" trực tiếp** (Web Worker cô lập, GPL isolated) — hoạt động ngay, không cần server/CLI gì thêm. `~/Downloads/dwg2dxf` (CLI local riêng) VẪN GIỮ làm phương án dự phòng offline/bản vẽ nhạy cảm — không bắt buộc dùng hằng ngày.
 - **✅ 15/07 merge `feat/devops-docs`**: bộ cài .dmg (`dist/InteriorFlow-0.1.0-arm64.dmg`, unsigned) + docs build Win/deploy Vercel (chi tiết CHANGELOG).
 - **✅ Cổng Sprint 2 PASS (14/07)**: 492 test/20 file · tsc 0 (chi tiết CHANGELOG).
-- Test pattern: `node_modules/.bin/sucrase-node <path>.test.ts` (nay 29 file, xem Sprint 3 bên dưới).
+- Test pattern: `node_modules/.bin/sucrase-node <path>.test.ts` (nay 41 file — thêm material-texture.test.ts).
 
 ## Quyết định user đã khoá
 - **Auth**: chỉ Google OAuth @ttt.vn (mới) + admin cấp tay (`scripts/seed-admin.ts`); user cũ ngoài-domain grandfather; register công khai 403; quên mật khẩu = admin reset.
 - Perceptron THẬT (learning-to-rank, degrade heuristic) · foldable Find N6 test on-device · installer cả 3 unsigned (.exe cần máy Win) · PWA host Vercel + Supabase (Agent 4 tự dựng, Sprint 4).
 
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
-- **✅ 18/07 DWG — 4 kiến trúc thử, CHỐT lại nút "Mở DWG" trong app** (`5a51f98`): (1) Worker cô lập → (2) network service riêng (lo phí hạ tầng) → (3) CLI cá nhân `dwg2dxf` (lo bất tiện convert tay mỗi file) → **quay lại (1)**. Lý do đảo ngược: **InteriorFlow là TOOL NỘI BỘ TTT Architects** (auth khoá @ttt.vn, register 403, KHÔNG phân phối ra ngoài) — rủi ro "phân phối" GPL không áp dụng như 1 SaaS bán ra thị trường; 2 lần đổi kiến trúc trước đã áp nhầm góc nhìn đó. `lib/cad/dwg-worker.ts` (Worker DUY NHẤT import GPL) khôi phục nguyên trạng từ git history, verify tsc+40 test PASS + browser không lỗi console mới. `dwg2dxf` VẪN GIỮ làm phương án offline/nhạy cảm (không xoá) — `docs/LICENSE-NOTES.md` viết lại lần 4, ghi rõ: nếu SAU NÀY định bán/phân phối InteriorFlow ra ngoài công ty thì phải review pháp lý lại từ đầu.
-- **✅ 18/07 Sprint 9 — toggle Sketch↔Pro** (Phương án A, mặc định Sketch): `useCadStore.cadMode`+`PRO_ONLY_TOOLS` ẩn ~30 công cụ CAD chính xác ở Sketch. Tự sửa 1 bug: toolbar Pro tràn viewport đẩy ModeSwitch ra mép → **giải quyết luôn nợ kỹ thuật "toolbar tràn màn hẹp"**.
+- **✅ 17/07 E1.2 — swatch vật liệu PROCEDURAL, ĐÓNG gap cuối Phase 1** (`4a73a5b`): trụ "Vật liệu" Stage 4 Basic→Pro (nay đủ 3/3 trụ). `lib/cad/material-texture.ts` (MỚI): vẽ hoạ tiết bằng THUẬT TOÁN (không ảnh chụp — chưa có ATLAS Vol.3 license, không tự tải web/AI-gen tính phí): vân gỗ+mắt gỗ, mạch gạch, vân đá, đốm granite, chip terrazzo… Tách phần thuần (test) khỏi canvas data-URL cache. `materials.ts` thêm `photoUrl?` (future-proof: có ảnh chỉ set URL). `MaterialPalette.tsx`: swatch texture + hover preview. Verify: tsc 0 · 30/30 test mới + 41 file PASS · browser palette 13 swatch PNG (0 gradient sót), hover OK, không lỗi console mới. **ĐỂ LẠI**: hatch canvas CAD giữ vector pattern (gắn DXF round-trip) — E1.2 chỉ cần palette.
+- **✅ 18/07 DWG — CHỐT nút "Mở DWG" trong app** (Worker cô lập GPL, `lib/cad/dwg-worker.ts`): thử 4 kiến trúc (Worker→service→CLI `dwg2dxf`→quay lại Worker); lý do đảo ngược: IF là tool NỘI BỘ TTT (@ttt.vn, register 403, không phân phối) nên rủi ro "phân phối" GPL thấp. `dwg2dxf` giữ làm dự phòng offline/nhạy cảm; `docs/LICENSE-NOTES.md`: bán/phân phối ra ngoài thì phải review pháp lý lại. Chi tiết → CHANGELOG.
+- **✅ 18/07 Sprint 9 — toggle Sketch↔Pro** (mặc định Sketch): `cadMode`+`PRO_ONLY_TOOLS` ẩn ~30 công cụ Pro; sửa luôn nợ "toolbar tràn màn hẹp". Chi tiết → CHANGELOG.
 - **✅ 18/07 Sprint 10 — Pro mode P1+P2**: nhập toạ độ chính xác + Polygon/Ellipse/Donut/Spline/Xline/Divide (chi tiết → CHANGELOG).
 - File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
 - **NVIDIA_API_KEY đã có**, probe HTTP 200. **fal**: hết balance, chờ nạp credit.
