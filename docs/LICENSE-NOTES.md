@@ -1,4 +1,4 @@
-# LICENSE-NOTES — dependency GPL trong tính năng "Mở DWG"
+# LICENSE-NOTES — dependency GPL trong việc đọc file DWG
 
 > ⚠️ File này KHÔNG phải tư vấn pháp lý. Người viết là engineer, không phải luật sư. Mục đích:
 > ghi lại RÕ RÀNG dependency nào mang giấy phép copyleft, đã làm gì để giảm rủi ro, và việc gì
@@ -15,48 +15,53 @@
   `package.json`/repo có thể kéo theo nghĩa vụ copyleft tuỳ cách diễn giải GPL cho "linking" trong
   ngữ cảnh JS bundler — vùng xám pháp lý.
 
-## Biện pháp: TÁCH RIÊNG HOÀN TOÀN thành `dwg-parse-service`
+## Quyết định cuối: InteriorFlow KHÔNG tự đọc .dwg nữa — dùng CLI convert local
 
-**KHÔNG còn cô lập bằng Web Worker trong cùng repo** (cách làm ban đầu, Sprint đầu tiên) — đã
-**thay bằng tách service riêng hẳn** (theo lựa chọn của chủ dự án, sau khi cân nhắc 3 phương án ở
-mục "VIỆC CẦN LÀM" trước đây):
+Đã thử qua 2 kiến trúc trước khi dừng ở đây (lịch sử → CHANGELOG.md nếu cần):
+1. Cô lập bằng Web Worker trong cùng repo (Sprint đầu tiên).
+2. Tách thành network service riêng (`dwg-parse-service`, có API `POST /parse`).
 
-1. **`dwg-parse-service`** (thư mục riêng cạnh `interiorflow/`, xem `README.md` của nó): repo Git
-   riêng, `package.json` riêng khai `"license": "GPL-3.0"` — tự nó tuân thủ GPL vì không "giấu" gì
-   (mã nguồn service này công khai/sẵn sàng cung cấp theo yêu cầu GPL). Đây là nơi DUY NHẤT còn
-   `import @mlightcad/libredwg-web`.
-2. Service expose `POST /parse` (nhận bytes `.dwg` thô, trả JSON entities/layers) — chạy độc lập,
-   triển khai trên hạ tầng RIÊNG (không chung Vercel project/deploy với InteriorFlow).
-3. InteriorFlow gọi service này qua route server `app/api/cad/dwg-import/route.ts` (biến môi
-   trường `DWG_SERVICE_URL`, server-only) — **arms-length network call qua HTTP**, không
-   import/link code GPL vào bundle thương mại. `package.json` của InteriorFlow **không còn**
-   dependency GPL nào.
-4. Client (`lib/cad/dwg.ts`) chỉ `fetch('/api/cad/dwg-import')` rồi map JSON → `Doc` — code này
-   100% không GPL, không đổi từ trước.
+**Cả 2 đều bị bỏ** vì (2) phát sinh chi phí hạ tầng nếu triển khai thật (dù dev local miễn phí),
+và cả 2 vẫn giữ InteriorFlow phụ thuộc vào 1 thành phần chạy nền. Kiến trúc cuối — **CLI cá nhân
+chạy 1 lần, KHÔNG server**:
 
-⚠️ Đây là biện pháp GIẢM THIỂU RỦI RO ở mức kỹ thuật cao hơn hẳn cô lập Worker (network service
-thay vì cùng dependency tree), nhưng **vẫn KHÔNG PHẢI bảo đảm pháp lý tuyệt đối** — chưa có luật
-sư xác nhận chính thức.
+1. **`~/Downloads/dwg2dxf`** (repo riêng, `package.json` riêng khai `"license": "GPL-3.0"`) — CLI
+   `node cli.js ban-ve.dwg [output.dxf]` chạy LOCAL trên máy dev, đọc `.dwg` bằng
+   `@mlightcad/libredwg-web` rồi tự `require()` trực tiếp `lib/cad/dwg.ts` (`dwgRawDocToDoc`) +
+   `lib/cad/dxf.ts` (`exportDxf`) của CHÍNH repo InteriorFlow (qua sucrase, không cần build) để
+   xuất ra file `.dxf` — đảm bảo định dạng LUÔN khớp những gì InteriorFlow đọc lại được.
+2. User tự chạy CLI này TRƯỚC, rồi dùng nút **"Mở DXF"** có sẵn trong app (tự viết, không GPL,
+   không đổi) để import file `.dxf` vừa xuất.
+3. **InteriorFlow không còn nút "Mở DWG"**, không còn gọi network nào, không còn dependency GPL
+   trong `package.json`/`node_modules` — `lib/cad/dwg.ts` chỉ còn hàm mapping thuần (không GPL),
+   được `dwg2dxf` require dùng lại.
 
-## VIỆC CẦN LÀM TRƯỚC KHI PHÂN PHỐI CHO KHÁCH HÀNG THẬT
+**Vì sao đây là lựa chọn sạch pháp lý nhất**: chạy `dwg2dxf` là **sử dụng cá nhân/local**, không
+phải "phân phối" phần mềm theo nghĩa GPL (không đóng gói/bán/deploy kèm InteriorFlow cho khách
+hàng) → nghĩa vụ copyleft GPL không áp dụng cho cách dùng này. InteriorFlow — sản phẩm thật sự
+phân phối cho khách hàng — hoàn toàn sạch GPL.
 
-- [ ] **Luật sư/quản lý dự án review chính thức** kiến trúc tách service này trước khi tính năng
-      "Mở DWG" được bật cho khách hàng thật (kể cả bản demo/beta có khách ngoài xem).
-- [ ] Quyết định hạ tầng triển khai `dwg-parse-service` thật (server riêng/Railway/Render/Fly.io…
-      — KHÔNG chung project Vercel với InteriorFlow) + publish repo (GPL-3.0 đòi hỏi mã nguồn sẵn
-      sàng cung cấp nếu phân phối service — công khai lên GitHub là cách đơn giản nhất để tuân thủ).
-- [ ] Nếu giữ tính năng: cân nhắc thêm dòng ghi công/giấy phép hiển thị cho user cuối.
+⚠️ Vẫn KHÔNG PHẢI tư vấn pháp lý chính thức — nếu sau này có ý định **đóng gói/phân phối
+`dwg2dxf` cho khách hàng** (vd bundle vào bộ cài InteriorFlow) thì lại quay về vùng xám cũ, cần
+luật sư xác nhận trước.
 
-## Giới hạn kỹ thuật hiện tại (không đổi từ Sprint đầu tiên)
+## VIỆC CẦN LÀM (thấp ưu tiên hơn 2 phương án trước — không còn phân phối gì cả)
+
+- [ ] Nếu về sau muốn đưa "Mở DWG" trở lại vào app cho khách hàng dùng trực tiếp (không qua CLI
+      tay), quay lại 1 trong 2 phương án đã bỏ ở trên + luật sư review chính thức.
+- [ ] `dwg2dxf` hiện chỉ chạy được trên máy đã có sẵn checkout `interiorflow/` cạnh nó
+      (`INTERIORFLOW_DIR` env var nếu đặt chỗ khác) — chấp nhận được vì là tool nội bộ dev, không
+      phân phối cho ai khác.
+
+## Giới hạn kỹ thuật hiện tại
 
 - Chỉ map các entity: `LINE`, `CIRCLE`, `ARC`, `TEXT`, `MTEXT`, `LWPOLYLINE`, `HATCH` (boundary
   dạng polyline hoặc toàn cạnh thẳng). **CHƯA hỗ trợ**: `INSERT` (block), `DIMENSION`,
   `ATTRIB`/`ATTDEF`, `WIPEOUT`, `POINT`, HATCH có boundary cong — bị BỎ QUA an toàn, đếm vào
-  `skippedEntityCount` hiện trong status bar sau khi mở.
-- **Đã biết, CHƯA sửa**: thư viện không throw lỗi với file rác/không phải DWG thật — trả về
-  `ok:true` với 0 entity thay vì báo lỗi rõ ràng (chưa validate magic-header trước khi parse).
+  `skippedEntityCount` (CLI in ra khi convert xong).
+- **Đã biết, CHƯA sửa**: thư viện không throw lỗi với file rác/không phải DWG thật — CLI có check
+  best-effort (0 entity + totalEntityCount=0 → báo lỗi) nhưng chưa validate magic-header thật sự.
 - Lineweight (độ dày nét) đọc từ DWG dùng suy luận CHƯA XÁC NHẬN chính thức — chỉ ảnh hưởng thẩm
   mỹ, KHÔNG ảnh hưởng toạ độ/hình học.
-- Cần chạy `dwg-parse-service` (`npm start`, xem README của nó) + đặt `DWG_SERVICE_URL` trong
-  `.env.local` thì nút "Mở DWG" mới hoạt động — thiếu thì hiện lỗi rõ ràng, không chặn phần còn
-  lại của app.
+- Verify với file .dwg thật (305KB, kiến trúc căn hộ): round-trip CLI→DXF→`parseDxf` khớp chính
+  xác 421 entity/21 layer, không mất dữ liệu.
