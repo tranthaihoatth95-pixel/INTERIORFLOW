@@ -300,13 +300,18 @@ export default function CadCanvas() {
       }
     }
     if (base) {
-      // dynamic input: độ dài theo hướng con trỏ (số đơn, không dấu phẩy — VD "500")
+      // dynamic input: độ dài theo hướng con trỏ (số đơn, không dấu phẩy — VD "500"). BUG Sprint
+      // 10 phát hiện + sửa: nếu con trỏ CHƯA di chuyển khỏi `base` (VD vừa click đặt tâm Circle
+      // rồi gõ số ngay, không rê chuột) thì (dx0,dy0)=(0,0) — hướng suy biến, "|| 1" cũ chỉ chặn
+      // chia 0 chứ KHÔNG khôi phục hướng, khiến điểm ra = chính `base` → bán kính/độ dài luôn = 0.
+      // Fallback hướng mặc định Đông (1,0) khi con trỏ trùng base — magnitude vẫn đúng như đã gõ.
       if (ix.current.dynBuf) {
         const len = parseFloat(ix.current.dynBuf);
         if (Number.isFinite(len)) {
           const dx0 = ix.current.cursorWorld.x - base.x;
           const dy0 = ix.current.cursorWorld.y - base.y;
-          const { dx, dy } = applyDirectionConstraint(dx0, dy0);
+          const hasDir = dx0 !== 0 || dy0 !== 0;
+          const { dx, dy } = applyDirectionConstraint(hasDir ? dx0 : 1, hasDir ? dy0 : 0);
           const d = Math.hypot(dx, dy) || 1;
           p = { x: base.x + (dx / d) * len, y: base.y + (dy / d) * len };
           return p;
