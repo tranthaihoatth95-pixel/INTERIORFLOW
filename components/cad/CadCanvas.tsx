@@ -1127,6 +1127,24 @@ export default function CadCanvas() {
         ix.current.redraw = true;
         return;
       }
+      // Sprint 4 — Việc 1: Copy-paste bàn phím kiểu Office/Canva (Ctrl+C/Cmd+C, Ctrl+V/Cmd+V),
+      // KHÁC tool "Copy" AutoCAD hiện có (cần chọn base point). Dán lệch nhẹ (offset mặc định)
+      // để thấy được ngay là đã dán, không đè lên bản gốc.
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') {
+        if (!st.selection.length) return;
+        e.preventDefault();
+        st.copySelection();
+        st.setStatus(`Đã chép ${st.selection.length} đối tượng (Ctrl+V để dán).`);
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'v') {
+        if (!st.clipboard.length) return;
+        e.preventDefault();
+        st.pasteClipboard();
+        ix.current.redraw = true;
+        st.setStatus(`Đã dán ${st.clipboard.length} đối tượng (lệch +20mm).`);
+        return;
+      }
       if (e.key === ' ') {
         // Việc 3: đánh dấu thời điểm nhấn để phân biệt TAP nhanh (lặp lệnh) với GIỮ để pan.
         if (!e.repeat) {

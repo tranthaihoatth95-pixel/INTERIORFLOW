@@ -46,6 +46,18 @@
       ],
       "port": 3900,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-shapes-c"
+    },
+    {
+      "name": "sprint4-3980",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "3980"
+      ],
+      "port": 3980,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-sprint4"
     }
   ]
 }

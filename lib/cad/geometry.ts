@@ -121,6 +121,17 @@ export function withNewId(e: Entity): Entity {
   return { ...e, id: newId('e') };
 }
 
+/**
+ * Sprint 4 — Copy-paste bàn phím (Ctrl+C / Ctrl+V kiểu Office/Canva), KHÁC với tool "Copy"
+ * kiểu AutoCAD (geometry.ts không đổi, tool đó vẫn dùng withNewId trực tiếp + base point).
+ * Đây là hàm THUẦN: nhận danh sách entity đã "chép" (clipboard nội bộ, không phải Clipboard API
+ * của OS), trả về bản sao id mới dịch nhẹ (dx/dy mm, mặc định +20/+20 để thấy được là đã dán,
+ * không đè hệt lên bản gốc).
+ */
+export function pasteEntities(entities: Entity[], dx = 20, dy = 20): Entity[] {
+  return entities.map((e) => withNewId(translateEntity(e, dx, dy)));
+}
+
 /** Offset 1 entity một khoảng `d` về phía điểm `side`. Trả null nếu không hỗ trợ. */
 export function offsetEntity(e: Entity, d: number, side: Pt): Entity | null {
   switch (e.type) {
