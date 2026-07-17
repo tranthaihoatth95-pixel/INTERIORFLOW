@@ -14,14 +14,14 @@
 - Perceptron THẬT (learning-to-rank, degrade heuristic) · foldable Find N6 test on-device · installer cả 3 unsigned (.exe cần máy Win) · PWA host Vercel + Supabase (Agent 4 tự dựng, Sprint 4).
 
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
-- **1 worktree đang sống** (1/3 slot): `interiorflow-wt-dwg` nhánh `feat/dwg-import` — **agent đang chạy dở, CHƯA commit gì** (đọc `git status` trong worktree trước khi làm gì tiếp — có sửa `package.json`/`next.config.mjs` cho dependency `@mlightcad/libredwg-web` (GPL, cô lập Web Worker) + file mới `lib/cad/dwg-worker.ts`, `lib/cad/dwg.ts`, `docs/LICENSE-NOTES.md`, `public/wasm/`). KHÔNG tự tạo worktree mới cho việc này — nếu agent cũ đã dừng/mất, kiểm tra kỹ tiến độ trước khi quyết định resume hay làm lại. User đã cung cấp 1 file DWG thật để test: `/Users/tranben/Downloads/Mb bố trí tầng 2_ Phong ngu Master.dwg`.
-- **Sprint 9 (thiết kế toggle Sketch↔Pro) CHƯA làm** — nhảy sang Sprint 10 theo yêu cầu user, Sprint 10 đã xong, quay lại Sprint 9 trước khi Pro mode thật sự cần toggle UI (Sprint 11-12).
-- **✅ 18/07 Sprint 10 — Pro mode P1+P2 + bổ sung**: P2 (snap 7 kiểu) xác nhận ĐÃ XONG từ trước qua verify tangent/nearest chính xác toạ độ — không code thêm. Nhập toạ độ tuyệt đối/tương đối (`X,Y`/`@dx,dy`) khi vẽ + Polygon/Ellipse/Donut/Spline/Xline/Divide-Measure mới, tất cả verify đúng hình học chính xác qua browser thật. **Tự tìm+sửa 1 bug thật**: vector hướng (0,0) khi chưa di chuột làm giá trị nhập số bị collapse về 0 — ảnh hưởng mọi tool dùng dynBuf (circle/polygon/line/rect...). 62 test mới, 37 file PASS, tsc 0 lỗi.
-- **✅ 15/07 Sprint 3 B1+B2** (41 shape nội thất, schema chung `lib/cad/shared-types.ts`) + merge 4 nhánh cũ (render-nodes-v2 · ai-local-ollama · render-ux-overhaul · deploy-vercel-supabase) — chi tiết → CHANGELOG.md.
+- **⚠️ 17/07 phát hiện phiên chồng lấn trên `interiorflow-wt-dwg`**: `git commit` báo "nothing to commit" khi mình đang verify — reflog lộ 1 tiến trình KHÁC đã tự commit CÙNG bộ file (`b44fb65`, `a7eebe6`) trong lúc mình verify, kể cả file mình chủ động KHÔNG stage (`.claude/launch.json`, bị `.gitignore`). **User kiểm tra có phiên Claude Code nào khác đang mở `interiorflow-wt-dwg` không** trước khi thao tác tiếp (luật `1 folder = 1 phiên`).
+- **✅ 17/07 DWG import — xong + verify file thật, ĐÃ COMMIT `feat/dwg-import`** (`b44fb65`+`a7eebe6`): `dwg-worker.ts` (Worker cô lập, import GPL `@mlightcad/libredwg-web`) + `dwg.ts` (map→Doc) + nút "Mở DWG". Verify bằng script Node độc lập (preview sandbox không hỗ trợ native file-picker) với file thật 305KB: parse OK → 421/497 entity map hợp lệ (76 skip đúng tài liệu: INSERT/DIMENSION/ATTRIB/WIPEOUT/POINT chưa hỗ trợ). tsc 0 lỗi, 38/38 test PASS. `docs/LICENSE-NOTES.md`: checklist luật sư review GPL trước khi bật cho khách hàng thật CHƯA làm. **CHƯA merge vào `feat/present-layout-ml-p1`/main** — chờ duyệt.
+- **Sprint 9 (toggle Sketch↔Pro) CHƯA làm** — nhảy sang Sprint 10 theo yêu cầu user, quay lại trước khi Pro mode cần toggle UI thật (Sprint 11-12).
+- **✅ 18/07 Sprint 10 — Pro mode P1+P2 + bổ sung** (chi tiết → CHANGELOG): nhập toạ độ chính xác + Polygon/Ellipse/Donut/Spline/Xline/Divide, tự tìm+sửa 1 bug (vector (0,0) làm dynBuf collapse). 62 test mới, 37 file PASS.
 - File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
 - **NVIDIA_API_KEY đã có**, probe HTTP 200. **fal**: hết balance, chờ nạp credit.
 - CHƯA làm (backlog cũ): bỏ hardcode 'DETECH · CONCEPT' · template tĩnh thư viện · heavy-ML pha 2 · membership per-flow.
-- **✅ 16-18/07 Sprint 6-8 xong** (MEP đèn/ổ cắm+TCVN9206 · Export PDF vector/.idf/markup/photo · Template Office+Hotel/Title block/Fix suggestion) — chi tiết đầy đủ → CHANGELOG.md.
+- Sprint 3/6-8 (41 shape nội thất · MEP · Export PDF/.idf/markup · Template Office/Hotel) đã xong — chi tiết → CHANGELOG.md.
 
 ## Nợ kỹ thuật
 - Hydration ⌘Z/Ctrl+Z tooltip (lib/kbd.ts:11 + CadToolbar) — cosmetic.
