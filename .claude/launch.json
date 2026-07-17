@@ -82,6 +82,18 @@
       ],
       "port": 4050,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-dwg"
+    },
+    {
+      "name": "ps7-4046",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4046"
+      ],
+      "port": 4046,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-ps7"
     }
   ]
 }

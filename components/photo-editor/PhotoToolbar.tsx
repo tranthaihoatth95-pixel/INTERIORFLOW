@@ -27,7 +27,8 @@ import {
   Download,
 } from 'lucide-react';
 import type { Tool, BrushSettings } from '@/lib/photo-editor/tools';
-import { isPaintTool, TOOL_LABELS } from '@/lib/photo-editor/tools';
+import { isPaintTool, TOOL_LABELS, TOOL_HINTS, TOOL_KEYS } from '@/lib/photo-editor/tools';
+import { modKey, modShiftKey } from '@/lib/kbd';
 
 interface Props {
   tool: Tool;
@@ -46,16 +47,29 @@ interface Props {
   busy: string | null;
 }
 
-const TOOLS: { t: Tool; icon: React.ReactNode }[] = [
-  { t: 'move', icon: <MousePointer2 size={15} /> },
-  { t: 'brush', icon: <Brush size={15} /> },
-  { t: 'eraser', icon: <Eraser size={15} /> },
-  { t: 'clone', icon: <Stamp size={15} /> },
-  { t: 'heal', icon: <Bandage size={15} /> },
-  { t: 'mask', icon: <MaskIcon size={15} /> },
-  { t: 'marquee', icon: <SquareDashed size={15} /> },
-  { t: 'lasso', icon: <Lasso size={15} /> },
+/** Nhóm theo chức năng (giữ đúng thứ tự cũ), phân tách bằng Divider giữa các nhóm —
+ * mượn quy ước nhóm-công-cụ của CadToolbar, không đập lại bố cục hàng công cụ. */
+const TOOL_GROUPS: { t: Tool; icon: React.ReactNode }[][] = [
+  [{ t: 'move', icon: <MousePointer2 size={15} /> }],
+  [
+    { t: 'brush', icon: <Brush size={15} /> },
+    { t: 'eraser', icon: <Eraser size={15} /> },
+    { t: 'clone', icon: <Stamp size={15} /> },
+    { t: 'heal', icon: <Bandage size={15} /> },
+    { t: 'mask', icon: <MaskIcon size={15} /> },
+  ],
+  [
+    { t: 'marquee', icon: <SquareDashed size={15} /> },
+    { t: 'lasso', icon: <Lasso size={15} /> },
+  ],
 ];
+const TOOLS = TOOL_GROUPS.flat();
+
+/** Tooltip đủ 3 phần: nhãn · phím tắt · mô tả — vẫn hover-only nhưng thêm dòng luôn-thấy bên dưới. */
+function toolTitle(t: Tool): string {
+  const key = TOOL_KEYS[t];
+  return key ? `${TOOL_LABELS[t]} · phím ${key} — ${TOOL_HINTS[t]}` : `${TOOL_LABELS[t]} — ${TOOL_HINTS[t]}`;
+}
 
 export default function PhotoToolbar(p: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -95,10 +109,15 @@ export default function PhotoToolbar(p: Props) {
           <ArrowLeft size={15} /> Quay lại
         </Btn>
         <Divider />
-        {TOOLS.map(({ t, icon }) => (
-          <IconBtn key={t} title={TOOL_LABELS[t]} active={p.tool === t} onClick={() => p.onTool(t)}>
-            {icon}
-          </IconBtn>
+        {TOOL_GROUPS.map((group, gi) => (
+          <span key={gi} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            {gi > 0 && <Divider />}
+            {group.map(({ t, icon }) => (
+              <IconBtn key={t} title={toolTitle(t)} active={p.tool === t} onClick={() => p.onTool(t)}>
+                {icon}
+              </IconBtn>
+            ))}
+          </span>
         ))}
 
         <Divider />
@@ -114,13 +133,13 @@ export default function PhotoToolbar(p: Props) {
         </Btn>
 
         <Divider />
-        <IconBtn onClick={p.onUndo} title="Hoàn tác" disabled={!p.canUndo}>
+        <IconBtn onClick={p.onUndo} title={`Hoàn tác (${modKey('Z')})`} disabled={!p.canUndo}>
           <Undo2 size={15} />
         </IconBtn>
-        <IconBtn onClick={p.onRedo} title="Làm lại" disabled={!p.canRedo}>
+        <IconBtn onClick={p.onRedo} title={`Làm lại (${modShiftKey('Z')})`} disabled={!p.canRedo}>
           <Redo2 size={15} />
         </IconBtn>
-        <IconBtn onClick={p.onFit} title="Vừa khung">
+        <IconBtn onClick={p.onFit} title={`Vừa khung (${modKey('0')})`}>
           <Maximize size={15} />
         </IconBtn>
 
@@ -131,6 +150,23 @@ export default function PhotoToolbar(p: Props) {
         <Btn onClick={() => p.onExport('jpeg')} title="Xuất JPEG" disabled={!!p.busy} primary>
           <Download size={15} /> {p.busy === 'jpeg' ? 'Đang xuất…' : 'JPEG'}
         </Btn>
+      </div>
+
+      {/* dòng phát hiện công cụ — LUÔN THẤY (không chỉ hover), cho designer không rành PTS
+          biết ngay tool đang chọn làm gì + phím tắt, khớp mật độ/tông chữ nhỏ hiện có. */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '0 12px 6px',
+          fontSize: 11,
+          color: 'var(--t4)',
+        }}
+      >
+        <strong style={{ color: 'var(--t3)', fontWeight: 600 }}>{TOOL_LABELS[p.tool]}</strong>
+        {TOOL_KEYS[p.tool] && <span>· phím {TOOL_KEYS[p.tool]}</span>}
+        <span>— {TOOL_HINTS[p.tool]}</span>
       </div>
 
       {/* hàng URL (bung xuống) */}
@@ -180,6 +216,9 @@ export default function PhotoToolbar(p: Props) {
           }}
         >
           <MiniSlider label="Cỡ" min={1} max={400} value={p.brush.size} onChange={(v) => p.onBrush({ size: v })} suffix="px" />
+          <span style={{ fontSize: 10.5, color: 'var(--t4)' }} title="[ giảm cỡ cọ, ] tăng cỡ cọ">
+            [ / ] đổi cỡ
+          </span>
           <MiniSlider label="Độ cứng" min={0} max={100} value={Math.round(p.brush.hardness * 100)} onChange={(v) => p.onBrush({ hardness: v / 100 })} suffix="%" />
           <MiniSlider label="Đậm" min={1} max={100} value={Math.round(p.brush.opacity * 100)} onChange={(v) => p.onBrush({ opacity: v / 100 })} suffix="%" />
           {(p.tool === 'brush' || p.tool === 'mask') && (
