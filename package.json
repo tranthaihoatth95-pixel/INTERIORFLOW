@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@fal-ai/client": "^1.10.1",
+    "@mlightcad/libredwg-web": "^0.7.7",
     "@prisma/client": "^6.19.3",
     "@xyflow/react": "^12.11.1",
     "ag-psd": "^31.0.2",
@@ -40,6 +41,7 @@
     "utif": "^3.1.0",
     "zustand": "^5.0.14"
   },
+  "licenseNotes": "@mlightcad/libredwg-web (DWG import) is GPL-3.0 — usage isolated to lib/cad/dwg-worker.ts (Web Worker, not bundled into main app code). InteriorFlow is an INTERNAL TOOL for TTT Architects (auth locked to @ttt.vn, no public registration) — NOT distributed/sold externally. Re-review this before any external distribution. See docs/LICENSE-NOTES.md.",
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
