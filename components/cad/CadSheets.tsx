@@ -32,6 +32,7 @@ import {
   type SheetsAutosaver,
   type SheetsRecord,
 } from '@/lib/sheets-persist';
+import { exportIdf, importIdf } from '@/lib/cad/idf';
 
 const MAX_SHEETS = 5;
 const ROUTE = '/cad-editor' as const;
@@ -264,6 +265,76 @@ export default function CadSheets() {
       next.splice(to, 0, moved);
       return next;
     });
+
+  /**
+   * Sprint 7 — Việc 2 (.idf): CadEditor (nút "Xuất .idf"/"Mở .idf") không giữ danh sách sheet
+   * (chỉ CadSheets giữ, xem đầu file) → bắc cầu qua CustomEvent 'cad:idf-export-request' /
+   * 'cad:idf-import-request', cùng pattern 'cad:zoom-extents' đã dùng khắp app.
+   */
+  useEffect(() => {
+    const onExportIdf = () => {
+      snaps.current[activeIdRef.current] = captureStore(); // đồng bộ sheet đang mở trước khi gom
+      const idfSheets = sheetsRef.current.map((s) => {
+        const snap = snaps.current[s.id] ?? blankSnapshot();
+        return { id: s.id, name: s.name, doc: snap.doc };
+      });
+      const json = exportIdf(idfSheets);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'project.idf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      useCadStore.getState().setStatus(`Đã xuất project.idf — ${idfSheets.length} bản vẽ.`);
+    };
+
+    const onImportIdf = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ json: string; fileName: string }>).detail;
+      if (!detail) return;
+      const parsed = importIdf(detail.json);
+      if (!parsed) {
+        useCadStore.getState().setStatus(`Không mở được "${detail.fileName}" — file .idf hỏng hoặc sai định dạng.`);
+        return;
+      }
+      const kept = parsed.sheets.slice(0, MAX_SHEETS);
+      const dropped = parsed.sheets.length - kept.length;
+      snaps.current = {};
+      for (const s of kept) {
+        snaps.current[s.id] = {
+          doc: s.doc,
+          past: [],
+          future: [],
+          viewport: { ...DEFAULT_VIEWPORT },
+          currentLayer: s.doc.layers[0]?.id ?? 'l-wall',
+          selection: [],
+        };
+      }
+      seq = Math.max(seq, nextSeqFrom(kept.map((s) => s.id), 'cadsheet'));
+      const nextSheets = kept.map(({ id, name }) => ({ id, name }));
+      setSheets(nextSheets);
+      const firstId = nextSheets[0].id;
+      setActiveId(firstId);
+      applySnapshot(snaps.current[firstId]);
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+      saverRef.current?.touch(); // ghi ngay vào IDB, không đợi debounce thao tác kế tiếp
+      useCadStore
+        .getState()
+        .setStatus(
+          `Đã mở "${detail.fileName}" — ${kept.length} bản vẽ${dropped > 0 ? ` (bỏ ${dropped} sheet vượt trần ${MAX_SHEETS})` : ''}.`,
+        );
+    };
+
+    window.addEventListener('cad:idf-export-request', onExportIdf);
+    window.addEventListener('cad:idf-import-request', onImportIdf);
+    return () => {
+      window.removeEventListener('cad:idf-export-request', onExportIdf);
+      window.removeEventListener('cad:idf-import-request', onImportIdf);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
