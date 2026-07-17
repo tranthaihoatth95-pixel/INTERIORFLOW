@@ -20,6 +20,7 @@ import { X } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import type { HatchPattern } from '@/lib/cad/model';
 import { MATERIALS, materialSwatchStyle, type MaterialDef, type MaterialCategory } from '@/lib/cad/materials';
+import { materialTextureDataUrl } from '@/lib/cad/material-texture';
 
 const PATTERNS: HatchPattern[] = ['SOLID', 'ANSI31', 'ANSI32', 'ANSI37', 'DOTS'];
 
@@ -35,9 +36,26 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
   const setHatchColor = useCadStore((s) => s.setHatchColor);
   const setTool = useCadStore((s) => s.setTool);
   const [tab, setTab] = useState<'all' | MaterialCategory>('all');
+  const [hovered, setHovered] = useState<MaterialDef | null>(null);
 
   const categories = useMemo(() => Array.from(new Set(MATERIALS.map((m) => m.category))), []);
   const shown = tab === 'all' ? MATERIALS : MATERIALS.filter((m) => m.category === tab);
+
+  // Sinh 1 lần hoạ tiết procedural (data URL PNG) cho từng vật liệu, có cache — dùng cho cả swatch
+  // nhỏ lẫn preview hover. materialTextureDataUrl tự ưu tiên photoUrl nếu preset có ảnh thật.
+  const swatchUrls = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const m of MATERIALS) map[m.id] = materialTextureDataUrl(m, 96);
+    return map;
+  }, []);
+
+  // Style nền cho swatch: ảnh procedural nếu có, fallback gradient CSS cũ (SSR / canvas lỗi).
+  const swatchBg = (m: MaterialDef): React.CSSProperties => {
+    const url = swatchUrls[m.id];
+    return url
+      ? { backgroundImage: `url("${url}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
+      : (materialSwatchStyle(m) as React.CSSProperties);
+  };
 
   const pick = (m: MaterialDef) => {
     applyMaterial(m.name, m.hatchPattern, m.patternScale, m.patternAngle, m.color);
@@ -45,6 +63,19 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
 
   return (
     <div style={{ ...panel, right: 12, top: 400, width: 250, maxHeight: '58vh', display: 'flex', flexDirection: 'column' }}>
+      {hovered && (
+        <div style={hoverPreview} aria-hidden>
+          <span
+            style={{
+              width: 132, height: 132, borderRadius: 8, border: '1px solid rgba(0,0,0,.2)',
+              boxShadow: '0 6px 20px rgba(0,0,0,.22)',
+              ...swatchBg(hovered),
+            }}
+          />
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', textAlign: 'center' }}>{hovered.name}</span>
+          <span style={{ fontSize: 9.5, color: 'var(--t4)', textAlign: 'center' }}>{hovered.category}</span>
+        </div>
+      )}
       <div style={panelHead}>
         <span>Vật liệu (Hatch)</span>
         <button type="button" onClick={onClose} style={miniBtn} title="Đóng">
@@ -81,7 +112,11 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
               key={m.id}
               type="button"
               onClick={() => pick(m)}
-              title={`${m.name} — preview dựng bằng CSS/pattern, chưa có ảnh chụp thật`}
+              onMouseEnter={() => setHovered(m)}
+              onMouseLeave={() => setHovered((h) => (h === m ? null : h))}
+              onFocus={() => setHovered(m)}
+              onBlur={() => setHovered((h) => (h === m ? null : h))}
+              title={`${m.name} — hoạ tiết vẽ bằng thuật toán (procedural), chưa có ảnh chụp thật`}
               style={{
                 display: 'flex', flexDirection: 'column', gap: 3, padding: 4, borderRadius: 8,
                 border: active ? '2px solid var(--accent)' : '1px solid var(--border)',
@@ -91,7 +126,7 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
               <span
                 style={{
                   width: '100%', aspectRatio: '1 / 1', borderRadius: 5, border: '1px solid rgba(0,0,0,.15)',
-                  ...materialSwatchStyle(m),
+                  ...swatchBg(m),
                 }}
               />
               <span style={{ fontSize: 9.5, lineHeight: 1.2, color: 'var(--t2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -103,8 +138,8 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
       </div>
 
       <p style={{ fontSize: 9.5, color: 'var(--t4)', padding: '4px 4px 8px', lineHeight: 1.4 }}>
-        Preview dựng bằng CSS/hoạ tiết (chưa có ảnh chụp vật liệu thật) — chọn xong click 1 điểm
-        trong vùng kín cần tô (giống Hatch cũ).
+        Hoạ tiết vẽ bằng thuật toán (procedural, chưa phải ảnh chụp thật) — di chuột/chạm giữ để
+        xem lớn, chọn xong click 1 điểm trong vùng kín cần tô (giống Hatch cũ).
       </p>
 
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 6, marginTop: 2 }}>
@@ -177,6 +212,25 @@ const panel: React.CSSProperties = {
   borderRadius: 12,
   padding: 8,
   boxShadow: '0 8px 30px rgba(0,0,0,.18)',
+};
+const hoverPreview: React.CSSProperties = {
+  position: 'absolute',
+  right: 'calc(100% + 10px)',
+  top: 0,
+  width: 152,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: 6,
+  padding: 10,
+  background: 'color-mix(in srgb, var(--panel) 92%, transparent)',
+  backdropFilter: 'blur(16px)',
+  WebkitBackdropFilter: 'blur(16px)',
+  border: '1px solid var(--border)',
+  borderRadius: 12,
+  boxShadow: '0 8px 30px rgba(0,0,0,.24)',
+  pointerEvents: 'none',
+  zIndex: 16,
 };
 const panelHead: React.CSSProperties = {
   display: 'flex',
