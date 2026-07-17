@@ -58,6 +58,18 @@
       ],
       "port": 3980,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-sprint4"
+    },
+    {
+      "name": "sprint7-4020",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4020"
+      ],
+      "port": 4020,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-sprint7"
     }
   ]
 }
