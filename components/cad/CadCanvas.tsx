@@ -11,13 +11,14 @@
  * SSR-safe: 'use client' + mọi truy cập window/document nằm trong effect/handler.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCadStore } from '@/lib/cad/store';
 import type { Tool } from '@/lib/cad/store';
 import { useFlowStore } from '@/lib/store';
-import type { Entity, Pt, Viewport, DimEntity, LineEntity } from '@/lib/cad/model';
+import type { Entity, Pt, Viewport, DimEntity, LineEntity, MarkupPin, PhotoEmbed } from '@/lib/cad/model';
 import { screenToWorld, worldToScreen, zoomAt, fitBox, docBox, dist } from '@/lib/cad/model';
 import { drawEntities, drawEntity } from '@/lib/cad/render';
+import { createMarkupPin, createPhotoEmbed, nearestMarkup, nearestPhoto, formatMarkupTime } from '@/lib/cad/markup';
 import { findSnap, hitTest, idsInRect, type SnapResult } from '@/lib/cad/query';
 import { newId } from '@/lib/cad/store';
 import {
@@ -99,6 +100,12 @@ function css(varName: string, fallback: string): string {
   return v || fallback;
 }
 
+/** Sprint 7 — bán kính bắt (px màn hình, KHÔNG scale theo zoom) cho ghim markup/thumbnail ảnh —
+ * cả 2 vẽ ở kích thước cố định trên màn nên hitTest cũng phải cố định px, khác tolMm() (world). */
+const PIN_HIT_PX = 16;
+/** Kích thước thumbnail ảnh trên canvas (px màn hình, cố định). */
+const PHOTO_THUMB_PX = 44;
+
 /** Đặt 1 block thư viện DXF tại điểm click — async (manifest + file DXF cache theo phiên trang). */
 function placeLibraryBlock(id: string, at: Pt, rot: number, layer: string) {
   void (async () => {
@@ -117,6 +124,12 @@ function placeLibraryBlock(id: string, at: Pt, rot: number, layer: string) {
 export default function CadCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  // Sprint 7 — Việc 4: ảnh đang xem full-size (lightbox) — state React thật (hiếm đổi, click-only)
+  // khác mọi state tương tác khác của canvas vốn cố tình ở ref để không re-render mỗi rê chuột.
+  const [viewPhoto, setViewPhoto] = useState<PhotoEmbed | null>(null);
+  // cache <img> đã load theo src — vẽ thumbnail cần element ảnh thật cho ctx.drawImage; đang tải
+  // thì vẽ khung placeholder, load xong bật lại redraw (không polling, chỉ trigger đúng 1 lần/ảnh).
+  const photoImgCache = useRef<Map<string, HTMLImageElement | 'loading' | 'error'>>(new Map());
   const ix = useRef<Ix>({
     cursorScreen: { x: 0, y: 0 },
     cursorWorld: { x: 0, y: 0 },
@@ -341,6 +354,25 @@ export default function CadCanvas() {
     if (e.button !== 0) return;
 
     if (st.tool === 'select') {
+      // Sprint 7 — Việc 3/4: ghim markup/ảnh KHÔNG phải entity nên không vào hitTest/selection
+      // thường — kiểm riêng TRƯỚC, ưu tiên hơn chọn hình học (pin luôn ở trên cùng, nhỏ, dễ bắn
+      // trượt). Ảnh: click mở lightbox xem full-size. Markup: click hỏi xoá (annotation của
+      // user tự thêm — xoá không cần snapshot cảnh báo phức tạp, window.confirm là đủ).
+      const photoHit = nearestPhoto((st.doc.photos ?? []).map((p) => ({ ...p, at: worldToScreen(st.viewport, p.at) })), screen, PIN_HIT_PX);
+      if (photoHit) {
+        const real = (st.doc.photos ?? []).find((p) => p.id === photoHit.id) ?? null;
+        setViewPhoto(real);
+        return;
+      }
+      const markupHit = nearestMarkup((st.doc.markups ?? []).map((m) => ({ ...m, at: worldToScreen(st.viewport, m.at) })), screen, PIN_HIT_PX);
+      if (markupHit) {
+        const real = (st.doc.markups ?? []).find((m) => m.id === markupHit.id);
+        if (real && window.confirm(`Xoá ghim markup này?\n\n"${real.text}"`)) {
+          st.removeMarkup(real.id);
+          st.setStatus('Đã xoá ghim markup.');
+        }
+        return;
+      }
       // grip: nếu đang chọn ĐÚNG 1 entity, ưu tiên bắt grip trước khi quây khung
       if (st.selection.length === 1) {
         const ent = st.doc.entities.find((en) => en.id === st.selection[0]);
@@ -629,6 +661,28 @@ export default function CadCanvas() {
         const txt = window.prompt('Nội dung ghi chú:', '');
         if (txt) commit({ id: newId('e'), type: 'text', layer: st.currentLayer, at: w, text: txt, h: 250 });
         else ix.current.pts = [];
+        break;
+      }
+      // Sprint 7 — Việc 3: Markup — ghim ghi chú KH RỜI khỏi hình học (doc.markups, không phải
+      // Entity — xem lib/cad/model.ts). Giữ tool 'markup' sau khi đặt (đặt liên tiếp nhiều ghim).
+      case 'markup': {
+        const txt = window.prompt('Ghi chú markup (phản hồi của khách hàng):', '');
+        if (txt && txt.trim()) {
+          st.addMarkup(createMarkupPin(w, txt));
+          st.setStatus(`Đã đặt ghim markup — "${txt.trim().slice(0, 40)}"${txt.trim().length > 40 ? '…' : ''}`);
+        }
+        ix.current.pts = [];
+        break;
+      }
+      // Sprint 7 — Việc 4: đặt ảnh hiện trường đã chọn (pendingPhotoSrc) tại điểm click, rồi
+      // trả tool về 'select' (khác 'block' giữ tool để đặt tiếp — ảnh thường chỉ gắn 1 vị trí).
+      case 'photo': {
+        if (st.pendingPhotoSrc) {
+          st.addPhoto(createPhotoEmbed(w, st.pendingPhotoSrc));
+          st.setStatus('Đã gắn ảnh hiện trường vào bản vẽ — click vào thumbnail để xem full-size.');
+          st.setPendingPhoto(null);
+        }
+        ix.current.pts = [];
         break;
       }
       case 'block': {
@@ -1344,6 +1398,10 @@ export default function CadCanvas() {
     // lưu vào .idf — tính lại mỗi frame từ doc hiện tại).
     drawCollisions(ctx, v, docToDraw.entities.filter((e): e is BlockEntity => e.type === 'block'));
 
+    // Sprint 7 — Việc 3/4: markup pin + photo embed — LUÔN vẽ trên cùng (annotation KH, không
+    // phải hình học) để không bị tường/nội thất che mất.
+    drawAnnotations(ctx, v, W, H, accent);
+
     drawPreview(ctx, v, accent);
     drawSelectionBox(ctx, v, accent);
     drawSnap(ctx, v, accent);
@@ -1462,6 +1520,138 @@ export default function CadCanvas() {
       ctx.globalAlpha = 0.65;
       ctx.stroke();
     }
+    ctx.restore();
+  }
+
+  /** Lazy-load 1 ảnh theo src (cache trong Map) — trả HTMLImageElement nếu đã load xong, null
+   * nếu đang tải/lỗi (draw() vẽ placeholder cho các trường hợp đó). `onLoaded` bật lại redraw
+   * đúng 1 lần khi ảnh vừa tải xong (Sprint 7 — Việc 4). */
+  function getPhotoImage(src: string, onLoaded: () => void): HTMLImageElement | null {
+    const cache = photoImgCache.current;
+    const cached = cache.get(src);
+    if (cached === 'loading' || cached === 'error') return null;
+    if (cached) return cached;
+    cache.set(src, 'loading');
+    const img = new Image();
+    img.onload = () => {
+      cache.set(src, img);
+      onLoaded();
+    };
+    img.onerror = () => cache.set(src, 'error');
+    img.src = src;
+    return null;
+  }
+
+  /**
+   * Sprint 7 — Việc 3 (markup pin) + Việc 4 (photo embed thumbnail) — annotation rời khỏi hình
+   * học (doc.markups/doc.photos), vẽ kích thước CỐ ĐỊNH px màn hình (không scale theo zoom,
+   * giống grip/crosshair) để luôn dễ bấm dù đang zoom xa. Hover (theo cursorScreen hiện tại,
+   * fixed mỗi frame trong vòng lặp rAF — không cần listener chuột riêng) hiện tooltip.
+   */
+  function drawAnnotations(ctx: CanvasRenderingContext2D, v: Viewport, W: number, H: number, accent: string) {
+    const st = useCadStore.getState();
+    const cursor = ix.current.cursorScreen;
+    const panel = css('--panel', '#1c1a17');
+    const t1 = css('--t1', '#efe9df');
+    const border = css('--border', '#2a2622');
+
+    // ── Photo embeds ──
+    const photos = st.doc.photos ?? [];
+    let hoverPhotoCaption: { s: Pt; text: string } | null = null;
+    for (const p of photos) {
+      const s = worldToScreen(v, p.at);
+      if (s.x < -60 || s.x > W + 60 || s.y < -60 || s.y > H + 60) continue; // ngoài khung nhìn
+      const half = PHOTO_THUMB_PX / 2;
+      const hovered = Math.hypot(cursor.x - s.x, cursor.y - s.y) <= half + 4;
+      const img = getPhotoImage(p.src, () => (ix.current.redraw = true));
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(s.x - half, s.y - half, PHOTO_THUMB_PX, PHOTO_THUMB_PX);
+      ctx.clip();
+      if (img) {
+        // cover-fit: cắt phần thừa theo cạnh ngắn để lấp đầy khung vuông, không méo ảnh
+        const ir = img.naturalWidth / img.naturalHeight || 1;
+        let dw = PHOTO_THUMB_PX;
+        let dh = PHOTO_THUMB_PX;
+        if (ir > 1) dw = PHOTO_THUMB_PX * ir;
+        else dh = PHOTO_THUMB_PX / ir;
+        ctx.drawImage(img, s.x - dw / 2, s.y - dh / 2, dw, dh);
+      } else {
+        ctx.fillStyle = panel;
+        ctx.fillRect(s.x - half, s.y - half, PHOTO_THUMB_PX, PHOTO_THUMB_PX);
+        ctx.fillStyle = t1;
+        ctx.font = '9px ui-sans-serif, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('…', s.x, s.y + 3);
+        ctx.textAlign = 'left';
+      }
+      ctx.restore();
+      ctx.save();
+      ctx.strokeStyle = hovered ? accent : border;
+      ctx.lineWidth = hovered ? 2 : 1.3;
+      ctx.strokeRect(s.x - half, s.y - half, PHOTO_THUMB_PX, PHOTO_THUMB_PX);
+      ctx.restore();
+      if (hovered) hoverPhotoCaption = { s, text: p.caption ? p.caption : 'Ảnh hiện trường — click xem full-size' };
+    }
+
+    // ── Markup pins ──
+    const markups = st.doc.markups ?? [];
+    let hoverMarkup: { s: Pt; pin: MarkupPin } | null = null;
+    for (const m of markups) {
+      const s = worldToScreen(v, m.at);
+      if (s.x < -40 || s.x > W + 40 || s.y < -40 || s.y > H + 40) continue;
+      const hovered = Math.hypot(cursor.x - s.x, cursor.y - s.y) <= PIN_HIT_PX;
+      const r = hovered ? 9 : 7;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = m.color || '#e0603a';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#fff';
+      ctx.stroke();
+      ctx.restore();
+      if (hovered) hoverMarkup = { s, pin: m };
+    }
+
+    // tooltip: markup ưu tiên hơn ảnh nếu cả 2 đang hover trùng (hiếm — pin nhỏ hơn thumbnail)
+    if (hoverMarkup) {
+      const lines = [hoverMarkup.pin.text, formatMarkupTime(hoverMarkup.pin.ts)].filter(Boolean);
+      drawTooltip(ctx, hoverMarkup.s, lines, W, H, panel, t1, border);
+    } else if (hoverPhotoCaption) {
+      drawTooltip(ctx, hoverPhotoCaption.s, [hoverPhotoCaption.text], W, H, panel, t1, border);
+    }
+  }
+
+  /** Hộp tooltip nhỏ cạnh 1 điểm màn hình — dùng chung cho markup + photo hover. */
+  function drawTooltip(ctx: CanvasRenderingContext2D, at: Pt, lines: string[], W: number, H: number, panel: string, textColor: string, border: string) {
+    if (!lines.length) return;
+    ctx.save();
+    ctx.font = '11.5px ui-sans-serif, system-ui, sans-serif';
+    const padX = 8;
+    const lineH = 15;
+    const textW = Math.min(220, Math.max(...lines.map((t) => ctx.measureText(t).width)));
+    const boxW = textW + padX * 2;
+    const boxH = lines.length * lineH + 8;
+    let bx = at.x + 14;
+    let by = at.y - boxH - 10;
+    if (bx + boxW > W - 4) bx = at.x - 14 - boxW;
+    if (by < 4) by = at.y + 16;
+    ctx.globalAlpha = 0.96;
+    ctx.fillStyle = panel;
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.rect(bx, by, boxW, boxH);
+    ctx.fill();
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = textColor;
+    ctx.textBaseline = 'top';
+    lines.forEach((t, i) => {
+      const truncated = ctx.measureText(t).width > textW ? `${t.slice(0, 34)}…` : t;
+      ctx.fillText(truncated, bx + padX, by + 4 + i * lineH);
+    });
     ctx.restore();
   }
 
@@ -1814,6 +2004,55 @@ export default function CadCanvas() {
         onDrop={onDrop}
         style={{ display: 'block', touchAction: 'none', cursor: 'crosshair' }}
       />
+      {/* Sprint 7 — Việc 4: lightbox xem full-size ảnh hiện trường. */}
+      {viewPhoto && (
+        <div
+          onClick={() => setViewPhoto(null)}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 40,
+            background: 'rgba(0,0,0,.72)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+            cursor: 'zoom-out',
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={viewPhoto.src}
+            alt={viewPhoto.caption || 'Ảnh hiện trường'}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '86%', maxHeight: '76%', objectFit: 'contain', borderRadius: 10, boxShadow: '0 10px 40px rgba(0,0,0,.5)', background: 'var(--panel)' }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#fff', fontSize: 13 }} onClick={(e) => e.stopPropagation()}>
+            <span>{viewPhoto.caption || 'Ảnh hiện trường'}</span>
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm('Gỡ ảnh này khỏi bản vẽ?')) {
+                  useCadStore.getState().removePhoto(viewPhoto.id);
+                  useCadStore.getState().setStatus('Đã gỡ ảnh hiện trường.');
+                }
+                setViewPhoto(null);
+              }}
+              style={{ border: '1px solid rgba(255,255,255,.4)', background: 'transparent', color: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+            >
+              Gỡ ảnh
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewPhoto(null)}
+              style={{ border: '1px solid rgba(255,255,255,.4)', background: 'transparent', color: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

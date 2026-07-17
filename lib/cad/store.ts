@@ -253,7 +253,15 @@ export const useCadStore = create<CadState>((set, get) => ({
   clipboard: [],
   pendingPhotoSrc: null,
 
-  setTool: (tool) => set({ tool, status: toolHint(tool), pendingBlock: tool === 'block' ? get().pendingBlock : null }),
+  setTool: (tool) =>
+    set({
+      tool,
+      status: toolHint(tool),
+      pendingBlock: tool === 'block' ? get().pendingBlock : null,
+      // Sprint 7 — Esc/đổi tool tay trong lúc chờ đặt ảnh phải huỷ pendingPhotoSrc, không thì
+      // lần click canvas tiếp theo (dù đã đổi tool khác) vẫn "dính" ảnh cũ nếu quay lại 'photo'.
+      pendingPhotoSrc: tool === 'photo' ? get().pendingPhotoSrc : null,
+    }),
   setStatus: (status) => set({ status }),
 
   snapshot: () =>

@@ -13,7 +13,7 @@ import {
   Scissors, Expand, SquareRoundCorner, Slice, Grid3x3, LayoutGrid,
   ZoomIn, SplitSquareHorizontal, ScissorsLineDashed, Link2, Boxes, ArrowLeftRight, Compass,
   Radius, Diameter, DraftingCompass, ChevronsRight, GitBranch, PaintBucket,
-  CircleDashed, LocateFixed, Palette,
+  CircleDashed, LocateFixed, Palette, StickyNote,
 } from 'lucide-react';
 import { useCadStore, type Tool } from '@/lib/cad/store';
 import { modKey, modShiftKey } from '@/lib/kbd';
@@ -56,6 +56,10 @@ const MEASURE: ToolBtn[] = [
   { tool: 'dimbaseline', icon: GitBranch, label: 'Dimension baseline', key: 'DBA' },
   { tool: 'measure', icon: MoveDiagonal, label: 'Đo nhanh', key: 'DI' },
   { tool: 'text', icon: Type, label: 'Text', key: 'T' },
+];
+/** Sprint 7 — Việc 3: ghim markup — annotation KH góp ý, tách riêng khỏi TEXT (hình học thật). */
+const ANNOTATE: ToolBtn[] = [
+  { tool: 'markup', icon: StickyNote, label: 'Markup — ghim ghi chú phản hồi KH lên bản vẽ', key: 'MK' },
 ];
 /** Nấc 1 — bộ chỉnh sửa (tương đương AutoCAD LT). Dòng lệnh vẫn là cách chính (TR/EX/F/CHA/…). */
 const MODIFY: ToolBtn[] = [
@@ -153,6 +157,8 @@ export default function CadToolbar({
       <Group items={MODIFY} />
       <Divider />
       <Group items={MEASURE} />
+      <Divider />
+      <Group items={ANNOTATE} />
       <Divider />
       <button type="button" onClick={onToggleFurniture} title="Thư viện nội thất (block)" style={btn(tool === 'block')}>
         <Sofa size={17} />
