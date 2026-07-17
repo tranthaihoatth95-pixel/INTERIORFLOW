@@ -9,7 +9,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Doc, Entity, Layer, Viewport, HatchPattern } from './model';
+import type { Doc, Entity, Layer, Viewport, HatchPattern, MarkupPin, PhotoEmbed } from './model';
 import { emptyDoc } from './model';
 import { pasteEntities } from './geometry';
 
@@ -73,7 +73,12 @@ export type Tool =
   | 'dimangular'
   | 'dimcontinue'
   | 'dimbaseline'
-  | 'hatch';
+  | 'hatch'
+  /** Sprint 7 — Việc 3: đặt ghim markup (click → prompt text → ghim tại điểm click). */
+  | 'markup'
+  /** Sprint 7 — Việc 4: đặt ảnh hiện trường (chờ `pendingPhotoSrc` từ upload rồi click đặt —
+   * cùng pattern với 'block'+pendingBlock). */
+  | 'photo';
 
 export interface SnapSettings {
   enabled: boolean;
@@ -136,6 +141,9 @@ interface CadState {
   /** Sprint 4 — clipboard nội bộ bàn phím (Ctrl+C/Ctrl+V), KHÔNG dùng Clipboard API của OS
    * (tránh permission popup) — chỉ copy-paste được TRONG cùng bản vẽ này. */
   clipboard: Entity[];
+  /** Sprint 7 — Việc 4: data URL ảnh vừa chọn từ máy, CHỜ click trên canvas để đặt (tool='photo'
+   * tự bật khi set khác null — giống pendingBlock). null sau khi đặt xong hoặc Esc huỷ. */
+  pendingPhotoSrc: string | null;
 
   // actions
   setTool: (t: Tool) => void;
@@ -186,10 +194,25 @@ interface CadState {
   importDoc: (d: Doc, mode: 'replace' | 'merge') => void;
   scaleAll: (factor: number) => void;
   reset: () => void;
+
+  /** Sprint 7 — Việc 3 (markup) + Việc 4 (photo embed): annotation rời trong doc.markups/
+   * doc.photos (KHÔNG phải Entity — xem lib/cad/model.ts). Có snapshot() để Undo/Redo áp dụng
+   * luôn cho markup/photo, nhất quán với mọi mutation cấu trúc khác trong store này. */
+  addMarkup: (pin: MarkupPin) => void;
+  removeMarkup: (id: string) => void;
+  addPhoto: (photo: PhotoEmbed) => void;
+  removePhoto: (id: string) => void;
+  /** đặt/huỷ ảnh chờ đặt — truyền src bật tool='photo', truyền null trả tool về 'select'. */
+  setPendingPhoto: (src: string | null) => void;
 }
 
 function clone(d: Doc): Doc {
-  return { entities: d.entities.map((e) => ({ ...e })), layers: d.layers.map((l) => ({ ...l })) };
+  return {
+    entities: d.entities.map((e) => ({ ...e })),
+    layers: d.layers.map((l) => ({ ...l })),
+    markups: (d.markups ?? []).map((m) => ({ ...m })),
+    photos: (d.photos ?? []).map((p) => ({ ...p })),
+  };
 }
 
 let seq = 0;
@@ -228,6 +251,7 @@ export const useCadStore = create<CadState>((set, get) => ({
   future: [],
   status: 'Sẵn sàng — chọn công cụ hoặc gõ lệnh (L, PL, REC, C…).',
   clipboard: [],
+  pendingPhotoSrc: null,
 
   setTool: (tool) => set({ tool, status: toolHint(tool), pendingBlock: tool === 'block' ? get().pendingBlock : null }),
   setStatus: (status) => set({ status }),
@@ -387,16 +411,50 @@ export const useCadStore = create<CadState>((set, get) => ({
             doc: {
               entities: [...s.doc.entities, ...d.entities],
               layers: mergeLayers(s.doc.layers, d.layers),
+              // giữ markup/photo hiện có khi merge (nhánh 'replace' ở trên đã thay nguyên `d`,
+              // không qua đây) — DXF/import khác không mang markup/photo nên chỉ có phía `s.doc`.
+              markups: s.doc.markups ?? [],
+              photos: s.doc.photos ?? [],
             },
           },
     );
   },
   scaleAll: (factor) => {
     get().snapshot();
-    set((s) => ({ doc: { ...s.doc, entities: s.doc.entities.map((e) => scaleEntity(e, factor)) } }));
+    set((s) => ({
+      doc: {
+        ...s.doc,
+        entities: s.doc.entities.map((e) => scaleEntity(e, factor)),
+        markups: (s.doc.markups ?? []).map((m) => ({ ...m, at: { x: m.at.x * factor, y: m.at.y * factor } })),
+        photos: (s.doc.photos ?? []).map((p) => ({ ...p, at: { x: p.at.x * factor, y: p.at.y * factor } })),
+      },
+    }));
   },
 
-  reset: () => set({ doc: emptyDoc(), selection: [], past: [], future: [], currentLayer: 'l-wall' }),
+  reset: () => set({ doc: emptyDoc(), selection: [], past: [], future: [], currentLayer: 'l-wall', pendingPhotoSrc: null }),
+
+  addMarkup: (pin) => {
+    get().snapshot();
+    set((s) => ({ doc: { ...s.doc, markups: [...(s.doc.markups ?? []), pin] } }));
+  },
+  removeMarkup: (id) => {
+    get().snapshot();
+    set((s) => ({ doc: { ...s.doc, markups: (s.doc.markups ?? []).filter((m) => m.id !== id) } }));
+  },
+  addPhoto: (photo) => {
+    get().snapshot();
+    set((s) => ({ doc: { ...s.doc, photos: [...(s.doc.photos ?? []), photo] } }));
+  },
+  removePhoto: (id) => {
+    get().snapshot();
+    set((s) => ({ doc: { ...s.doc, photos: (s.doc.photos ?? []).filter((p) => p.id !== id) } }));
+  },
+  setPendingPhoto: (pendingPhotoSrc) =>
+    set({
+      pendingPhotoSrc,
+      tool: pendingPhotoSrc ? 'photo' : get().tool === 'photo' ? 'select' : get().tool,
+      status: pendingPhotoSrc ? toolHint('photo') : get().status,
+    }),
 }));
 
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
@@ -479,6 +537,8 @@ function toolHint(t: Tool): string {
     dimcontinue: 'Dim Continue (DCO): click điểm tiếp theo — nối từ điểm cuối của dim gần nhất, cùng đường kích thước.',
     dimbaseline: 'Dim Baseline (DBA): click điểm tiếp theo — đo từ gốc chung của dim gần nhất, xếp lớp ra ngoài.',
     hatch: 'Hatch (H): click 1 điểm bên trong vùng kín cần tô. Gõ lệnh "H ANSI31/ANSI32/ANSI37/SOLID/DOTS" để đổi pattern.',
+    markup: 'Markup (MK): click vào bản vẽ → gõ ghi chú phản hồi KH → Enter. Rê chuột qua ghim để xem lại, click ghim để xoá.',
+    photo: 'Ảnh hiện trường: click vào vị trí trên bản vẽ để gắn ảnh vừa chọn.',
   };
   return H[t];
 }
