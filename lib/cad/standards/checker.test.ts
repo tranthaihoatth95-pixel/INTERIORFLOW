@@ -269,6 +269,57 @@ function testOccupantLoadAssemblyInfo() {
   ok('message chứa disclaimer không dùng thay occupant load chính thức', !!v?.message.includes('KHÔNG dùng thay occupant load calc chính thức'));
 }
 
+function outletBlock(at: { x: number; y: number }): import('../model').BlockEntity {
+  return { id: newId('e'), type: 'block', layer: 'l-furniture', block: 'outlet', at, rot: 0, sx: 1, sy: 1 };
+}
+
+function testOutletDensityBedroomTooFew() {
+  console.log('\n[19] D2.2 — phòng ngủ 4×3.5m KHÔNG có ổ cắm nào (0 < 2 khuyến nghị TCVN 9206:2012) → warning');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 4000, 3500));
+  doc.entities.push(label({ x: 2000, y: 1750 }, 'PHÒNG NGỦ'));
+  const violations = checkStandards(doc, getAllRules());
+  const v = violations.find((v) => v.ruleId === 'vn-electrical-outlet-density-living-bedroom');
+  ok('phát hiện thiếu ổ cắm phòng ngủ', !!v);
+  ok('severity warning', v?.severity === 'warning');
+  ok('message có số đếm 0', !!v?.message.includes('0 ổ cắm'));
+}
+
+function testOutletDensityBedroomEnough() {
+  console.log('\n[20] D2.2 — phòng ngủ 4×3.5m có 2 ổ cắm bên trong → ĐẠT, không warning');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 4000, 3500));
+  doc.entities.push(label({ x: 2000, y: 1750 }, 'PHÒNG NGỦ'));
+  doc.entities.push(outletBlock({ x: 500, y: 500 }));
+  doc.entities.push(outletBlock({ x: 3500, y: 3000 }));
+  const violations = checkStandards(doc, getAllRules());
+  ok('không có warning khi đủ 2 ổ cắm', !violations.some((v) => v.ruleId === 'vn-electrical-outlet-density-living-bedroom'));
+}
+
+function testOutletDensityKitchenTooFew() {
+  console.log('\n[21] D2.2 — bếp 4×3m có 1 ổ cắm (1 < 2 khuyến nghị) → warning, rule bếp riêng');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 4000, 3000));
+  doc.entities.push(label({ x: 2000, y: 1500 }, 'BẾP'));
+  doc.entities.push(outletBlock({ x: 500, y: 500 }));
+  const violations = checkStandards(doc, getAllRules());
+  const v = violations.find((v) => v.ruleId === 'vn-electrical-outlet-density-kitchen');
+  ok('phát hiện thiếu ổ cắm bếp', !!v);
+  ok('message có số đếm 1', !!v?.message.includes('1 ổ cắm'));
+}
+
+function testOutletDensityOutsideRoomNotCounted() {
+  console.log('\n[22] D2.2 — ổ cắm đặt NGOÀI biên phòng ngủ không được tính vào phòng đó');
+  const doc: Doc = emptyDoc();
+  doc.entities.push(...rectWalls(0, 0, 4000, 3500));
+  doc.entities.push(label({ x: 2000, y: 1750 }, 'PHÒNG NGỦ'));
+  doc.entities.push(outletBlock({ x: 500, y: 500 }));
+  doc.entities.push(outletBlock({ x: 6000, y: 6000 })); // xa hẳn ngoài phòng — không được đếm
+  const violations = checkStandards(doc, getAllRules());
+  const v = violations.find((v) => v.ruleId === 'vn-electrical-outlet-density-living-bedroom');
+  ok('vẫn cảnh báo thiếu (chỉ đếm được 1 ổ cắm trong biên, ổ cắm ngoài phòng không tính)', !!v && v.message.includes('1 ổ cắm'));
+}
+
 testUndersizedBedroom();
 testOkBedroom();
 testWcUndersized();
@@ -291,6 +342,10 @@ testOccupantLoadLivingRoomInfo();
 testOccupantLoadCustomLivingRoom();
 testOccupantLoadOfficeInfo();
 testOccupantLoadAssemblyInfo();
+testOutletDensityBedroomTooFew();
+testOutletDensityBedroomEnough();
+testOutletDensityKitchenTooFew();
+testOutletDensityOutsideRoomNotCounted();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

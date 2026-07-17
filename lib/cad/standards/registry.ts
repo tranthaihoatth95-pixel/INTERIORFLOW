@@ -128,8 +128,9 @@ import { NEUFERT } from './neufert';
 import { VN_ACCESSIBILITY } from './vn-accessibility';
 import { VN_LIGHTING } from './vn-lighting';
 import { INTL_OCCUPANT_LOAD } from './intl-occupant-load';
+import { VN_ELECTRICAL } from './vn-electrical';
 
-export const BUILTIN_GROUPS: RuleGroup[] = [VN_RESIDENTIAL, VN_FIRE, INTL_EGRESS, ISO_DRAFTING, NEUFERT, VN_ACCESSIBILITY, VN_LIGHTING, INTL_OCCUPANT_LOAD];
+export const BUILTIN_GROUPS: RuleGroup[] = [VN_RESIDENTIAL, VN_FIRE, INTL_EGRESS, ISO_DRAFTING, NEUFERT, VN_ACCESSIBILITY, VN_LIGHTING, INTL_OCCUPANT_LOAD, VN_ELECTRICAL];
 
 /** Toàn bộ rule (built-in + tuỳ biến), trùng id thì rule tuỳ biến (thêm sau) ghi đè. */
 export function getAllRules(): StandardRule[] {
