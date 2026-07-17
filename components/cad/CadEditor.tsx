@@ -177,9 +177,10 @@ export default function CadEditor() {
     e.target.value = '';
   };
 
-  // Mở DWG — parse chạy trong Web Worker cô lập (lib/cad/dwg-worker.ts, chứa dependency GPL
-  // libredwg-web — xem docs/LICENSE-NOTES.md). Bất kể lỗi gì (sai định dạng/hỏng/phiên bản DWG
-  // chưa hỗ trợ) đều hiện thông báo, KHÔNG crash app — giống hành vi onImportFile (DXF) ở trên.
+  // Mở DWG — parse chạy trong dwg-parse-service (repo/giấy phép RIÊNG, chứa dependency GPL
+  // libredwg-web — xem docs/LICENSE-NOTES.md), gọi qua /api/cad/dwg-import (lib/cad/dwg.ts).
+  // Bất kể lỗi gì (sai định dạng/hỏng/phiên bản DWG chưa hỗ trợ/service chưa cấu hình) đều hiện
+  // thông báo, KHÔNG crash app — giống hành vi onImportFile (DXF) ở trên.
   const onImportDwgFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     e.target.value = '';
@@ -228,7 +229,7 @@ export default function CadEditor() {
           <FolderOpen size={14} /> Mở DXF
         </button>
         <input ref={fileRef} type="file" accept=".dxf" hidden onChange={onImportFile} />
-        <button type="button" onClick={() => dwgRef.current?.click()} style={fileBtn} title="Mở file .dwg — parse chạy trong Web Worker riêng (thư viện GPL cô lập, xem docs/LICENSE-NOTES.md); chưa hỗ trợ block INSERT/DIMENSION">
+        <button type="button" onClick={() => dwgRef.current?.click()} style={fileBtn} title="Mở file .dwg — parse chạy qua dịch vụ riêng (dwg-parse-service, thư viện GPL cô lập, xem docs/LICENSE-NOTES.md); chưa hỗ trợ block INSERT/DIMENSION">
           <FolderOpen size={14} /> Mở DWG
         </button>
         <input ref={dwgRef} type="file" accept=".dwg" hidden onChange={onImportDwgFile} />
