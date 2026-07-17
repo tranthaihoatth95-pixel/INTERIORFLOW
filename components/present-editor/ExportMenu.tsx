@@ -71,8 +71,8 @@ export default function ExportMenu({ onExportPdf, onExportPptx, onExportPng, bus
             boxShadow: '0 10px 30px rgba(0,0,0,.35)',
           }}
         >
-          <Item icon={<FileDown size={15} />} title="PDF" sub="1:1 với editor (WYSIWYG)" onClick={() => { setOpen(false); onExportPdf(); }} />
-          <Item icon={<FileText size={15} />} title="PowerPoint (.pptx)" sub="Chữ còn chỉnh được trong PPT" onClick={() => { setOpen(false); onExportPptx(); }} />
+          <Item icon={<FileDown size={15} />} title="PDF" sub="1:1 với editor · đúng khổ đã chọn (màn hình/chiếu)" onClick={() => { setOpen(false); onExportPdf(); }} />
+          <Item icon={<FileText size={15} />} title="PowerPoint (.pptx)" sub="Chữ còn chỉnh được trong PPT · luôn khổ 16:9" onClick={() => { setOpen(false); onExportPptx(); }} />
           <Item icon={<ImageIcon size={15} />} title="Ảnh PNG" sub="Mỗi slide 1 ảnh, tải lần lượt" onClick={() => { setOpen(false); onExportPng(); }} />
         </div>
       )}

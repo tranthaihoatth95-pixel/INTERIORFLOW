@@ -1,10 +1,11 @@
 'use client';
 
 /**
- * components/present-editor/EditorCanvas.tsx — Sân khấu 16:9 chứa các element.
+ * components/present-editor/EditorCanvas.tsx — Sân khấu chứa các element.
  *
- * Giữ tỉ lệ 16:9 bằng aspect-ratio + width 100%. `containerType:'size'` để cỡ chữ
- * dùng đơn vị cqh (co giãn theo sân khấu). Vẽ guide căn khi kéo.
+ * Giữ ĐÚNG tỉ lệ khổ trình bày đang chọn (PS-4 — mặc định 16:9, có thể là A4/A3 ngang/dọc)
+ * bằng aspect-ratio (CSS) + width 100%. `containerType:'size'` để cỡ chữ dùng đơn vị cqh
+ * (co giãn theo sân khấu). Vẽ guide căn khi kéo.
  *
  * Thao tác chọn kiểu Canva:
  *   - Click nền = bỏ chọn.
@@ -17,6 +18,7 @@
 import { useRef, useState, type CSSProperties } from 'react';
 import type { EditorSlide, Frame, TextElement, ShapeElement, DeckWatermark } from '@/lib/present-editor/model';
 import { adjustToCssFilter } from '@/lib/present-editor/model';
+import { STAGE_PRESETS, type StageSize } from '@/lib/present-editor/stage-presets';
 import Element, { type Guides } from './Element';
 import TextToolbar from './TextToolbar';
 import ShapeQuickPanel from './ShapeQuickPanel';
@@ -30,10 +32,12 @@ const CANVAS_FONT: Record<string, string> = {
 
 interface Props {
   slide: EditorSlide;
-  /** rộng sân khấu (px) — do PresentEditor tính (fit-to-view × zoom). aspect-ratio 16:9 tự
-   * suy ra chiều cao. Element vẫn định vị theo % nên KHÔNG cần đổi logic khi zoom (góp ý zoom
-   * canvas, tham khảo Photoshop/Figma). */
+  /** rộng sân khấu (px) — do PresentEditor tính (fit-to-view × zoom). aspect-ratio (theo
+   * `stage`) tự suy ra chiều cao. Element vẫn định vị theo % nên KHÔNG cần đổi logic khi
+   * zoom (góp ý zoom canvas, tham khảo Photoshop/Figma). */
   widthPx: number;
+  /** khổ trình bày đang chọn (PS-4) — quyết định tỉ lệ khung. Bỏ trống = 16:9 (mặc định cũ). */
+  stage?: StageSize;
   fonts: string;
   selectedIds: string[];
   onSelect: (id: string | null) => void;
@@ -86,6 +90,7 @@ interface Marquee {
 export default function EditorCanvas({
   slide,
   widthPx,
+  stage = STAGE_PRESETS['16:9'],
   fonts,
   selectedIds,
   onSelect,
@@ -185,14 +190,15 @@ export default function EditorCanvas({
   }
 
   return (
-    // Wrapper KHÔNG overflow:hidden — chỉ giữ kích thước 16:9 để lớp overlay (toolbar nổi)
-    // dùng chung hệ toạ độ % với stage mà không bị cắt ở mép slide (góp ý ảnh qab3/wzvd).
+    // Wrapper KHÔNG overflow:hidden — chỉ giữ kích thước theo khổ đang chọn để lớp overlay
+    // (toolbar nổi) dùng chung hệ toạ độ % với stage mà không bị cắt ở mép slide (góp ý ảnh
+    // qab3/wzvd).
     <div
       style={{
         width: widthPx,
         flex: `0 0 ${widthPx}px`,
         margin: '0 auto',
-        aspectRatio: '16 / 9',
+        aspectRatio: `${stage.w} / ${stage.h}`,
         position: 'relative',
       }}
     >

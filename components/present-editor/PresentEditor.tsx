@@ -55,6 +55,9 @@ import SlidePlayer from './SlidePlayer';
 import ImageEditor from './ImageEditor';
 import BrandKitPanel from './BrandKitPanel';
 import { applyBrandKitToDeck, type BrandKit } from '@/lib/present-editor/brand-kit';
+import StagePresetPanel from './StagePresetPanel';
+import { reflowDeckForStage } from '@/lib/present-editor/reflow';
+import { stageFor, type StagePresetId } from '@/lib/present-editor/stage-presets';
 import { LayoutTemplate, Images, Wand2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 
 interface Props {
@@ -259,6 +262,8 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   }, [ed.slide]);
 
   const palette = ed.deck.palette;
+  // Khổ trình bày đang chọn (PS-4) — mặc định 16:9, đọc 1 nguồn duy nhất (stage-presets.ts).
+  const stage = useMemo(() => stageFor(ed.deck.stagePreset), [ed.deck.stagePreset]);
 
   // Element ảnh đang chỉnh (nếu overlay mở). Tự đóng nếu không còn tồn tại.
   const imageEditEl = useMemo(() => {
@@ -960,6 +965,20 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     [ed],
   );
 
+  // Khổ trình bày (PS-4): mở panel + đổi khổ → DÀN LẠI (reflow) toàn deck cho khổ mới.
+  const [stagePresetOpen, setStagePresetOpen] = useState(false);
+  const onApplyStagePreset = useCallback(
+    (id: StagePresetId) => {
+      ed.update((d) => {
+        const next = reflowDeckForStage(d, id);
+        d.stagePreset = next.stagePreset;
+        d.slides = next.slides;
+      });
+      setStagePresetOpen(false);
+    },
+    [ed],
+  );
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', color: 'var(--t1)' }}>
       {layoutWarnings.length > 0 && (
@@ -1008,6 +1027,8 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         onExportPng={onExportPng}
         onPlay={() => setPlaying(true)}
         onBrandKit={() => setBrandKitOpen(true)}
+        onStagePreset={() => setStagePresetOpen(true)}
+        stageLabel={stage.label}
         busy={busy}
       />
 
@@ -1139,6 +1160,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
             <EditorCanvas
               slide={ed.slide}
               widthPx={stageWidth}
+              stage={stage}
               fonts={ed.deck.fonts}
               selectedIds={ed.selectedIds}
               onSelect={ed.select}
@@ -1336,6 +1358,15 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
       {/* Brand Kit — Nhận diện (PS-1): logo · màu · font · watermark + áp lại theme cả deck. */}
       {brandKitOpen && (
         <BrandKitPanel deck={ed.deck} onClose={() => setBrandKitOpen(false)} onApply={onApplyBrandKit} />
+      )}
+
+      {/* Khổ trình bày (PS-4): 16:9 · A4/A3 ngang/dọc — đổi khổ tự DÀN LẠI (reflow) cả deck. */}
+      {stagePresetOpen && (
+        <StagePresetPanel
+          current={ed.deck.stagePreset}
+          onClose={() => setStagePresetOpen(false)}
+          onApply={onApplyStagePreset}
+        />
       )}
     </div>
   );

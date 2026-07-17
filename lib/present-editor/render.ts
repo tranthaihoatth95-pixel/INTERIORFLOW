@@ -1,13 +1,16 @@
 /**
- * lib/present-editor/render.ts — Vẽ 1 EditorSlide (model) ra canvas 1920×1080.
+ * lib/present-editor/render.ts — Vẽ 1 EditorSlide (model) ra canvas.
  *
  * Dùng cho:
  *   - Xuất PDF (mỗi slide → 1 ảnh JPEG full-page, jsPDF).
  *   - Tạo data URI cho ảnh nền/hero khi xuất PPTX.
  *   - (Có thể) thumbnail.
  *
- * Toạ độ model là % của sân khấu → nhân W/H. CSS filter (adjust) được tái dựng bằng
- * ctx.filter (Canvas hỗ trợ cùng cú pháp filter với CSS). Crop áp bằng source-rect.
+ * Toạ độ model là % của sân khấu → nhân W/H. Kích thước sân khấu (W/H) đọc từ THAM SỐ
+ * `stage` (mặc định 16:9 = STAGE_PRESETS['16:9'], KHÔNG đổi hành vi so trước PS-4) — xem
+ * lib/present-editor/stage-presets.ts (nguồn duy nhất, gộp nợ kỹ thuật "2 nguồn stage-size").
+ * CSS filter (adjust) được tái dựng bằng ctx.filter (Canvas hỗ trợ cùng cú pháp filter với
+ * CSS). Crop áp bằng source-rect.
  *
  * Chỉ chạy ở client (cần document/canvas). Trả JPEG dataURL.
  */
@@ -25,21 +28,27 @@ import {
 } from './model';
 import { polygonPoints01, isPolygonShape } from './shape-geometry';
 import { loadImage } from '@/lib/imaging';
+import { STAGE_PRESETS, type StageSize } from './stage-presets';
 
-const W = 1920;
-const H = 1080;
-
-function px(pctW: number) {
-  return (pctW / 100) * W;
+/** Bộ quy đổi %→px CHO 1 LẦN vẽ — truyền qua tham số (KHÔNG dùng biến module-level dùng
+ * chung) để nhiều renderEditorSlide chạy song song (Promise.all ở TemplatePicker/LayoutShelf)
+ * không giẫm lên nhau. */
+interface Scale {
+  W: number;
+  H: number;
+  px: (pctW: number) => number;
+  py: (pctH: number) => number;
 }
-function py(pctH: number) {
-  return (pctH / 100) * H;
+function makeScale(stage: StageSize): Scale {
+  const { w: W, h: H } = stage;
+  return { W, H, px: (pctW) => (pctW / 100) * W, py: (pctH) => (pctH / 100) * H };
 }
 
 /** Vẽ ảnh có crop (theo tỉ lệ 0..1 của ảnh gốc) + filter, phủ khung dạng cover. */
 async function drawImageEl(
   ctx: CanvasRenderingContext2D,
   el: ImageElement,
+  sc: Scale,
 ): Promise<void> {
   let img: HTMLImageElement;
   try {
@@ -47,10 +56,10 @@ async function drawImageEl(
   } catch {
     return;
   }
-  const fx = px(el.frame.x);
-  const fy = py(el.frame.y);
-  const fw = px(el.frame.w);
-  const fh = py(el.frame.h);
+  const fx = sc.px(el.frame.x);
+  const fy = sc.py(el.frame.y);
+  const fw = sc.px(el.frame.w);
+  const fh = sc.py(el.frame.h);
   const crop = el.crop || { x: 0, y: 0, w: 1, h: 1 };
   const sx = crop.x * img.naturalWidth;
   const sy = crop.y * img.naturalHeight;
@@ -66,7 +75,7 @@ async function drawImageEl(
   ctx.save();
   ctx.globalAlpha = el.opacity ?? 1;
   ctx.filter = adjustToCssFilter(el.adjust);
-  applyRotation(ctx, el.frame);
+  applyRotation(ctx, el.frame, sc);
   // clip bo góc
   const r = ((el.radius ?? 0) / 100) * Math.min(fw, fh);
   roundRectPath(ctx, fx, fy, fw, fh, r);
@@ -140,15 +149,15 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
 }
 
-function drawShapeEl(ctx: CanvasRenderingContext2D, el: ShapeElement): void {
-  const fx = px(el.frame.x);
-  const fy = py(el.frame.y);
-  const fw = px(el.frame.w);
-  const fh = py(el.frame.h);
+function drawShapeEl(ctx: CanvasRenderingContext2D, el: ShapeElement, sc: Scale): void {
+  const fx = sc.px(el.frame.x);
+  const fy = sc.py(el.frame.y);
+  const fw = sc.px(el.frame.w);
+  const fh = sc.py(el.frame.h);
   ctx.save();
   ctx.globalAlpha = el.opacity ?? 1;
-  applyRotation(ctx, el.frame);
-  const strokePx = (el.strokeWidth / 100) * H; // strokeWidth tính @1080
+  applyRotation(ctx, el.frame, sc);
+  const strokePx = (el.strokeWidth / 100) * sc.H; // strokeWidth tính @ chiều cao sân khấu
   if (el.shape === 'line') {
     ctx.strokeStyle = el.stroke;
     ctx.lineWidth = Math.max(1, strokePx);
@@ -206,14 +215,14 @@ function drawShapeEl(ctx: CanvasRenderingContext2D, el: ShapeElement): void {
   ctx.restore();
 }
 
-function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontDeck: string): void {
-  const fx = px(el.frame.x);
-  const fy = py(el.frame.y);
-  const fw = px(el.frame.w);
-  const sizePx = (el.fontSize / 100) * H;
+function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontDeck: string, sc: Scale): void {
+  const fx = sc.px(el.frame.x);
+  const fy = sc.py(el.frame.y);
+  const fw = sc.px(el.frame.w);
+  const sizePx = (el.fontSize / 100) * sc.H;
   ctx.save();
   ctx.globalAlpha = el.opacity ?? 1;
-  applyRotation(ctx, el.frame);
+  applyRotation(ctx, el.frame, sc);
   const weight = el.bold ? '700' : '400';
   const style = el.italic ? 'italic ' : '';
   // Bộ chữ: ưu tiên fontFamily riêng của element (chuỗi CSS dùng thẳng được), không thì deck.
@@ -227,7 +236,7 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontDeck: st
   const anchorX = align === 'center' ? fx + fw / 2 : align === 'right' ? fx + fw : fx;
   let sizeDraw = sizePx;
   let lineH = sizePx * (el.lineHeight ?? 1.2);
-  let tracking = ((el.tracking ?? 0) / 100) * H;
+  let tracking = ((el.tracking ?? 0) / 100) * sc.H;
 
   // Kicker = nhãn 1 dòng (tracking rộng): TỰ CO để không rớt xuống 2 dòng khi chữ dài.
   if (el.role === 'kicker') {
@@ -335,10 +344,14 @@ function drawTracked(
   ctx.textAlign = prevAlign;
 }
 
-function applyRotation(ctx: CanvasRenderingContext2D, frame: { x: number; y: number; w: number; h: number; rotation: number }): void {
+function applyRotation(
+  ctx: CanvasRenderingContext2D,
+  frame: { x: number; y: number; w: number; h: number; rotation: number },
+  sc: Scale,
+): void {
   if (!frame.rotation) return;
-  const cx = px(frame.x) + px(frame.w) / 2;
-  const cy = py(frame.y) + py(frame.h) / 2;
+  const cx = sc.px(frame.x) + sc.px(frame.w) / 2;
+  const cy = sc.py(frame.y) + sc.py(frame.h) / 2;
   ctx.translate(cx, cy);
   ctx.rotate((frame.rotation * Math.PI) / 180);
   ctx.translate(-cx, -cy);
@@ -377,6 +390,7 @@ const CANVAS_FONT: Record<string, string> = {
 async function drawWatermark(
   ctx: CanvasRenderingContext2D,
   wm: DeckWatermark,
+  sc: Scale,
 ): Promise<void> {
   if (!wm.enabled || !wm.src) return;
   let img: HTMLImageElement;
@@ -385,43 +399,49 @@ async function drawWatermark(
   } catch {
     return;
   }
-  const w = (Math.max(1, Math.min(wm.sizePct, 100)) / 100) * W;
+  const w = (Math.max(1, Math.min(wm.sizePct, 100)) / 100) * sc.W;
   const ratio = img.naturalHeight / (img.naturalWidth || 1);
   const h = w * ratio;
-  const margin = ((wm.marginPct ?? 3) / 100) * W;
+  const margin = ((wm.marginPct ?? 3) / 100) * sc.W;
   const left = wm.corner === 'tl' || wm.corner === 'bl';
   const top = wm.corner === 'tl' || wm.corner === 'tr';
-  const x = left ? margin : W - margin - w;
-  const y = top ? margin : H - margin - h;
+  const x = left ? margin : sc.W - margin - w;
+  const y = top ? margin : sc.H - margin - h;
   ctx.save();
   ctx.globalAlpha = Math.max(0, Math.min(wm.opacity, 1));
   ctx.drawImage(img, x, y, w, h);
   ctx.restore();
 }
 
-/** Vẽ toàn slide ra JPEG dataURL 1920×1080. */
+/**
+ * Vẽ toàn slide ra JPEG dataURL. `stage` chọn kích thước sân khấu (mặc định 16:9 —
+ * STAGE_PRESETS['16:9'], HÀNH VI GIỮ NGUYÊN so với trước PS-4 khi gọi không truyền tham
+ * số này) — xem stage-presets.ts.
+ */
 export async function renderEditorSlide(
   slide: EditorSlide,
   fonts: string = 'Editorial',
   watermark?: DeckWatermark,
+  stage: StageSize = STAGE_PRESETS['16:9'],
 ): Promise<string> {
+  const sc = makeScale(stage);
   const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
+  canvas.width = sc.W;
+  canvas.height = sc.H;
   const ctx = canvas.getContext('2d')!;
   const fontBody = CANVAS_FONT[fonts] ?? CANVAS_FONT.Editorial;
 
   // nền màu
   ctx.fillStyle = slide.background || '#ffffff';
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillRect(0, 0, sc.W, sc.H);
 
   // ảnh nền full-bleed
   if (slide.backgroundImage) {
     try {
       const img = await loadImage(slide.backgroundImage);
-      const scale = Math.max(W / img.naturalWidth, H / img.naturalHeight);
-      const sw = W / scale;
-      const sh = H / scale;
+      const scale = Math.max(sc.W / img.naturalWidth, sc.H / img.naturalHeight);
+      const sw = sc.W / scale;
+      const sh = sc.H / scale;
       ctx.save();
       ctx.filter = adjustToCssFilter(slide.backgroundAdjust);
       ctx.drawImage(
@@ -432,8 +452,8 @@ export async function renderEditorSlide(
         sh,
         0,
         0,
-        W,
-        H,
+        sc.W,
+        sc.H,
       );
       ctx.restore();
     } catch {
@@ -444,13 +464,13 @@ export async function renderEditorSlide(
   // element theo thứ tự mảng (cuối = trên cùng); bỏ qua element ẩn (layer tắt).
   for (const el of slide.elements) {
     if (el.hidden) continue;
-    if (el.kind === 'image') await drawImageEl(ctx, el);
-    else if (el.kind === 'shape') drawShapeEl(ctx, el);
-    else if (el.kind === 'text') drawTextEl(ctx, el, fontBody);
+    if (el.kind === 'image') await drawImageEl(ctx, el, sc);
+    else if (el.kind === 'shape') drawShapeEl(ctx, el, sc);
+    else if (el.kind === 'text') drawTextEl(ctx, el, fontBody, sc);
   }
 
   // logo/watermark cấp deck — trên cùng, mọi slide (PS-1 / G.7).
-  if (watermark) await drawWatermark(ctx, watermark);
+  if (watermark) await drawWatermark(ctx, watermark, sc);
 
   return canvas.toDataURL('image/jpeg', 0.92);
 }

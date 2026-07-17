@@ -5,13 +5,16 @@
  *   - lưu/khôi phục dễ,
  *   - export sang PDF (jsPDF) và PPTX (lib/pptx) chỉ là phép ánh xạ thuần.
  *
- * Toạ độ = PHẦN TRĂM của sân khấu 16:9 (0..100). Nhờ vậy toán export không phụ thuộc
- * kích thước hiển thị: nhân với 1920×1080 (PDF) hoặc 13.333×7.5in (PPTX) là ra.
+ * Toạ độ = PHẦN TRĂM của sân khấu (0..100) — mặc định 16:9. Nhờ vậy toán export không phụ
+ * thuộc kích thước hiển thị: nhân với W×H sân khấu (PDF/PNG, xem stage-presets.ts) hoặc
+ * 13.333×7.5in (PPTX, luôn 16:9 — xem export.ts) là ra. PS-4: deck.stagePreset chọn khổ
+ * khác 16:9 (A4/A3 ngang/dọc) — W/H đổi theo, % KHÔNG đổi ý nghĩa.
  *
  * KHÔNG import gì từ store/registry để tránh circular import.
  */
 
 import type { FontPairing } from '@/lib/slides';
+import type { StagePresetId } from './stage-presets';
 
 /** Loại phần tử trên slide. */
 export type ElementKind = 'image' | 'text' | 'shape';
@@ -214,6 +217,12 @@ export interface EditorDeck {
   reveal?: ElementReveal;
   /** logo/watermark cấp deck (PS-1 / G.7) — hiện trên mọi slide, bật/tắt được. */
   watermark?: DeckWatermark;
+  /**
+   * Khổ trình bày (PS-4) — bỏ trống = '16:9' (deck cũ trước PS-4 không có field này, hành vi
+   * KHÔNG đổi). Xem lib/present-editor/stage-presets.ts (nguồn duy nhất kích thước sân khấu)
+   * + lib/present-editor/reflow.ts (dàn lại element khi đổi khổ).
+   */
+  stagePreset?: StagePresetId;
 }
 
 /* ------------------------------------------------------------------ */

@@ -7,7 +7,13 @@
  * Nguồn: quy ước ngành (12-col grid · 6×6 rule · safe-zone 5% · bento 6–9 ô · whitespace
  * ≥40%/hero ≥60%) quy sang % + đối chiếu ngược diện tích các template thật trong templates.ts.
  * KHÔNG phụ thuộc model — chỉ là dữ liệu, import ở đâu cũng được.
+ *
+ * PS-4: `stage` nay đọc từ `stage-presets.ts` (NGUỒN DUY NHẤT kích thước sân khấu — gộp
+ * nợ kỹ thuật "2 nguồn stage-size" ghi ở STATUS.md). `DECK_STANDARDS.stage` = khổ 16:9
+ * mặc định; 4 khổ A4/A3 còn lại xem `STAGE_PRESETS`/`stageFor()`.
  */
+
+import { STAGE_PRESETS } from './stage-presets';
 
 export interface Range {
   min: number;
@@ -66,7 +72,7 @@ export interface DeckStandards {
 const R = (min: number, max: number, ideal?: number): Range => ({ min, max, ...(ideal !== undefined ? { ideal } : {}) });
 
 export const DECK_STANDARDS: DeckStandards = {
-  stage: { w: 1920, h: 1080, pxPerPctW: 19.2, pxPerPctH: 10.8 },
+  stage: STAGE_PRESETS['16:9'], // nguồn duy nhất — xem stage-presets.ts (PS-4 gộp 2 nguồn cũ)
   grid: {
     columns: 12,
     marginPctW: R(5, 8, 6),

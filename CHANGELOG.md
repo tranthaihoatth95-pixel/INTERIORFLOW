@@ -1,5 +1,17 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 17/07 — PS-1 (Present) chi tiết đầy đủ (STATUS.md chỉ giữ 1 dòng tóm tắt)
+PS-1 Brand Kit bền vững + áp lại theme cả deck + logo/watermark (`db08340`, đóng G.5/G.6/G.7):
+`lib/present-editor/brand-kit.ts` persist localStorage (pattern custom-fonts, 1–vài brand PHẲNG,
+KHÔNG kiểu Canva) — deck MỚI tự nạp (PresentSheets.blankDeck→seedDeckWithBrandKit). `theme-roles.ts`
+**rethemeDeck**: nhuộm lại MỌI slide theo VAI TRÒ màu (dark/light/accent/muted gần-nhất), xử lý đúng
+nền tối LẪN sáng (không đảo tương phản), KHÔNG find-replace hex; templates.pal() nay gọi
+paletteRoles (1 nguồn). `model.ts` **deck.watermark** cấp deck (render.ts+export+SlidePlayer+
+EditorCanvas overlay). UI: `BrandKitPanel.tsx` + nút "Nhận diện" (Toolbar). Verify: tsc 0 · 43/43
+test (2 mới: theme-roles 25 ok, brand-kit 13 ok) · browser 127.0.0.1 tuần tự account riêng: nhuộm
+lại đúng slide tối+sáng, watermark mọi slide+toggle, deck mới auto-load kit (palette+logo). 0 lỗi
+console mới.
+
 ## 16-18/07 — Sprint 6, 7, 8
 - **Sprint 6 — MEP sơ cấp** (nhóm E: 0%→phần lớn): đèn+ổ cắm (`lib/cad/mep.ts` 5 BlockDef, nhóm mới `'Điện'`), `mep-suggest.ts` (lux→số đèn dùng số liệu `vn-lighting.ts` có sẵn, rải đèn đều, vị trí công tắc/ổ cắm, nhóm mạch, AC cách đầu giường — chỉ đề xuất, user bấm Apply mới chèn). Rule TCVN 9206:2012 thật (`vn-electrical.ts`, 2-4 ổ cắm/phòng, nối đo thật vào checker). Hộp gen (D2.3-5) BỎ QUA — không có quy ước DXF thật, tránh bịa logic an toàn thi công. Verify browser: đặt đèn/ổ cắm qua Apply, Kiểm chuẩn ra đúng 3 cảnh báo mật độ ổ cắm.
 - **Sprint 7 — Export nâng cao**: CAD PDF vector (`pdf.ts`, vẽ lại Entity bằng API hình học jsPDF — KHÔNG raster; jsPDF 4.2.1 không có OCG nên layer PDF không ẩn/hiện lại được, đã ghi rõ giới hạn). `.idf` save/load (`idf.ts`, JSON versioned toàn bộ sheet, verify round-trip 117 entity khớp). Markup overlay (`markup.ts`, ghim ghi chú riêng field `Doc.markups`). Photo embed (`Doc.photos`, upload+gắn ảnh, lightbox xem full). Share link/PWA đã có sẵn — không làm lại.

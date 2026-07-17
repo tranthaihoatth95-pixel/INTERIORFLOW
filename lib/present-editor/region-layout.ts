@@ -20,6 +20,10 @@
  *      - độ dài BODY: kẹp số dòng về bulletsMax (6×6) để không tràn.
  *
  * Đây là điểm xuất phát — người dùng chỉnh tiếp (human-in-the-loop). Thuần, không DOM.
+ *
+ * PS-4: `textFrameHeight`/`titleSize`/`fitImageFrame` được EXPORT thêm để `reflow.ts`
+ * (dàn lại slide khi đổi khổ trình bày) tái dùng đúng công thức "ôm chữ"/"co ảnh theo
+ * trần diện tích" — KHÔNG lặp lại các con số ma thuật ở nơi khác.
  */
 
 import { makeText, makeImage, newId } from './model';
@@ -106,7 +110,7 @@ function coarsenCells(cells: RegionCell[], cols: number, rows: number): RegionCe
  * Đo dòng CÙNG công thức layout-check.textOverflows → khung sinh ra không bị cảnh báo tràn,
  * và không phình coverage như khi lấy trọn ô cao.
  */
-function textFrameHeight(text: string, cell: RegionCell, fontSize: number, lineHeight: number): number {
+export function textFrameHeight(text: string, cell: RegionCell, fontSize: number, lineHeight: number): number {
   const chars = text.length || 1;
   const perLine = Math.max(1, cell.w * DECK_STANDARDS.type.charsPerPctWBody);
   const linesByWrap = Math.ceil(chars / perLine);
@@ -120,7 +124,7 @@ function textFrameHeight(text: string, cell: RegionCell, fontSize: number, lineH
  * Cỡ tiêu đề trong dải chuẩn, CO theo độ dài (Figma: kẹp trong biên min–max).
  * Tiêu đề ngắn (≤ titleWordsIdeal từ) giữ cỡ lớn nhất (ideal); dài dần → co về min.
  */
-function titleSize(hero: boolean, text?: string): number {
+export function titleSize(hero: boolean, text?: string): number {
   const band = hero ? DECK_STANDARDS.type.titleHeroPctH : DECK_STANDARDS.type.titlePctH;
   const ideal = band.ideal ?? (band.min + band.max) / 2;
   const words = text && text.trim() ? text.trim().split(/\s+/).length : 1;
@@ -136,7 +140,7 @@ function titleSize(hero: boolean, text?: string): number {
  * ảnh, đặt GIỮA ô (giữ căn lưới, phần dư thành khoảng trắng). Ô trong dải → giữ nguyên
  * (không đụng frame — giữ tương thích test cũ).
  */
-function fitImageFrame(c: RegionCell, maxAreaPct: number): Frame {
+export function fitImageFrame(c: RegionCell, maxAreaPct: number): Frame {
   const areaPct = cellAreaPct(c);
   if (!(maxAreaPct > 0) || areaPct <= maxAreaPct) return { x: c.x, y: c.y, w: c.w, h: c.h, rotation: 0 };
   const scale = Math.sqrt(maxAreaPct / areaPct);
