@@ -9,7 +9,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Doc, Entity, Layer, Viewport, HatchPattern, MarkupPin, PhotoEmbed } from './model';
+import type { Doc, Entity, Layer, LineType, Viewport, HatchPattern, MarkupPin, PhotoEmbed } from './model';
 import { emptyDoc } from './model';
 import { pasteEntities } from './geometry';
 
@@ -78,7 +78,22 @@ export type Tool =
   | 'markup'
   /** Sprint 7 — Việc 4: đặt ảnh hiện trường (chờ `pendingPhotoSrc` từ upload rồi click đặt —
    * cùng pattern với 'block'+pendingBlock). */
-  | 'photo';
+  | 'photo'
+  /** Sprint 10 — Việc 2: đa giác đều — click tâm → click bán kính (số cạnh = polygonSides). */
+  | 'polygon'
+  /** Sprint 10 — Việc 3.1: spline — click nhiều control point; Enter/double-click kết thúc. */
+  | 'spline'
+  /** Sprint 10 — Việc 3.2: construction line (Xline) — click 2 điểm xác định hướng, kéo dài
+   * rất xa 2 đầu, đặt vào layer riêng 'Tham chiếu' (không phải hình học thi công thật). */
+  | 'xline'
+  /** Sprint 10 — Việc 3.3: ellipse — click tâm → click góc xác định 2 bán trục (rx,ry). */
+  | 'ellipse'
+  /** Sprint 10 — Việc 3.4: donut — click tâm, đặt liên tiếp (giữ tool, giống 'block'); bán
+   * kính trong/ngoài = donutInnerR/donutOuterR. */
+  | 'donut'
+  /** Sprint 10 — Việc 3.5: Divide/Measure — click 1 đối tượng → prompt chọn N đoạn (chia đều)
+   * hoặc khoảng cách cố định (đo), đặt marker tròn nhỏ tại mỗi điểm chia. */
+  | 'divide';
 
 export interface SnapSettings {
   enabled: boolean;
@@ -144,6 +159,11 @@ interface CadState {
   /** Sprint 7 — Việc 4: data URL ảnh vừa chọn từ máy, CHỜ click trên canvas để đặt (tool='photo'
    * tự bật khi set khác null — giống pendingBlock). null sau khi đặt xong hoặc Esc huỷ. */
   pendingPhotoSrc: string | null;
+  /** Sprint 10 — Việc 2: số cạnh nhớ cho lệnh POLYGON (3-12, mặc định lục giác). */
+  polygonSides: number;
+  /** Sprint 10 — Việc 3.4: bán kính trong/ngoài nhớ cho lệnh DONUT (mm). */
+  donutInnerR: number;
+  donutOuterR: number;
 
   // actions
   setTool: (t: Tool) => void;
@@ -176,6 +196,9 @@ interface CadState {
   addLayer: () => void;
   updateLayer: (id: string, patch: Partial<Layer>) => void;
   removeLayer: (id: string) => void;
+  /** Sprint 10 — Việc 3.2 (Xline): tìm layer theo TÊN, tạo mới nếu chưa có (KHÔNG đổi
+   * currentLayer, khác addLayer() vốn dành cho nút "+ Lớp" trong panel). Trả về id layer. */
+  ensureLayerByName: (name: string, color: string, lineType?: LineType) => string;
 
   setPendingBlock: (b: string | null) => void;
   setOffsetDist: (d: number) => void;
@@ -204,6 +227,9 @@ interface CadState {
   removePhoto: (id: string) => void;
   /** đặt/huỷ ảnh chờ đặt — truyền src bật tool='photo', truyền null trả tool về 'select'. */
   setPendingPhoto: (src: string | null) => void;
+
+  setPolygonSides: (n: number) => void;
+  setDonutRadii: (inner: number, outer: number) => void;
 }
 
 function clone(d: Doc): Doc {
@@ -252,6 +278,9 @@ export const useCadStore = create<CadState>((set, get) => ({
   status: 'Sẵn sàng — chọn công cụ hoặc gõ lệnh (L, PL, REC, C…).',
   clipboard: [],
   pendingPhotoSrc: null,
+  polygonSides: 6,
+  donutInnerR: 50,
+  donutOuterR: 150,
 
   setTool: (tool) =>
     set({
@@ -374,6 +403,16 @@ export const useCadStore = create<CadState>((set, get) => ({
   },
   updateLayer: (id, patch) =>
     set((s) => ({ doc: { ...s.doc, layers: s.doc.layers.map((l) => (l.id === id ? { ...l, ...patch } : l)) } })),
+  ensureLayerByName: (name, color, lineType) => {
+    const existing = get().doc.layers.find((l) => l.name === name);
+    if (existing) return existing.id;
+    get().snapshot();
+    const id = newId('l');
+    set((s) => ({
+      doc: { ...s.doc, layers: [...s.doc.layers, { id, name, color, visible: true, locked: false, lineType }] },
+    }));
+    return id;
+  },
   removeLayer: (id) =>
     set((s) => {
       if (s.doc.layers.length <= 1) return s;
@@ -398,6 +437,8 @@ export const useCadStore = create<CadState>((set, get) => ({
       status: pendingBlock ? toolHint('block') : get().status,
     }),
   setOffsetDist: (offsetDist) => set({ offsetDist }),
+  setPolygonSides: (n) => set({ polygonSides: Math.max(3, Math.min(12, Math.round(n))) }),
+  setDonutRadii: (inner, outer) => set({ donutInnerR: Math.max(0, inner), donutOuterR: Math.max(1, outer) }),
   setWallThickness: (wallThickness) => set({ wallThickness }),
   setFilletRadius: (filletRadius) => set({ filletRadius }),
   setChamferDist: (chamferD1, chamferD2) => set({ chamferD1, chamferD2 }),
@@ -547,6 +588,12 @@ function toolHint(t: Tool): string {
     hatch: 'Hatch (H): click 1 điểm bên trong vùng kín cần tô. Gõ lệnh "H ANSI31/ANSI32/ANSI37/SOLID/DOTS" để đổi pattern.',
     markup: 'Markup (MK): click vào bản vẽ → gõ ghi chú phản hồi KH → Enter. Rê chuột qua ghim để xem lại, click ghim để xoá.',
     photo: 'Ảnh hiện trường: click vào vị trí trên bản vẽ để gắn ảnh vừa chọn.',
+    polygon: 'Polygon (POL): click tâm → click bán kính (hoặc gõ số). Gõ "POL 8" đổi số cạnh trước khi vẽ.',
+    spline: 'Spline (SPL): click các control point; Enter/double-click kết thúc; C đóng vòng.',
+    xline: 'Xline (XL): click 2 điểm xác định hướng — tạo đường tham chiếu kéo dài rất xa 2 đầu, nằm ở layer "Tham chiếu".',
+    ellipse: 'Ellipse (EL): click tâm → click góc xác định 2 bán trục (rx theo X, ry theo Y).',
+    donut: 'Donut (DO): click tâm để đặt (đặt liên tiếp). Gõ "DO 50 150" đổi bán kính trong/ngoài trước khi đặt.',
+    divide: 'Divide/Measure (DIV/MEA): click 1 line/polyline/circle/arc → nhập số đoạn (Divide) hoặc khoảng cách (Measure).',
   };
   return H[t];
 }
