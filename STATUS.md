@@ -4,24 +4,27 @@
 > ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp **`feat/present-layout-ml-p1`** — local `4a73a5b`, **CHƯA push, CHƯA merge main** (main/origin vẫn `3265db1`). 0 worktree sống.
-- **App có nút "Mở DWG" trực tiếp** (Web Worker cô lập, GPL isolated) — hoạt động ngay, không cần server/CLI gì thêm. `~/Downloads/dwg2dxf` (CLI local riêng) VẪN GIỮ làm phương án dự phòng offline/bản vẽ nhạy cảm — không bắt buộc dùng hằng ngày.
+- Nhánh tích hợp **`feat/present-layout-ml-p1`** — local `5965e8b` (verify git; STATUS cũ ghi 4a73a5b — đã cập nhật), **CHƯA push, CHƯA merge main** (main/origin vẫn `3265db1`). 0 worktree sống.
+- **App có nút "Mở DWG" trực tiếp** (Web Worker cô lập GPL) — không cần server/CLI. `~/Downloads/dwg2dxf` giữ làm dự phòng offline/bản vẽ nhạy cảm.
 - **✅ 15/07 merge `feat/devops-docs`**: bộ cài .dmg (`dist/InteriorFlow-0.1.0-arm64.dmg`, unsigned) + docs build Win/deploy Vercel (chi tiết CHANGELOG).
 - **✅ Cổng Sprint 2 PASS (14/07)**: 492 test/20 file · tsc 0 (chi tiết CHANGELOG).
 - Test pattern: `node_modules/.bin/sucrase-node <path>.test.ts` (nay 41 file — thêm material-texture.test.ts).
 
 ## Quyết định user đã khoá
 - **Auth**: chỉ Google OAuth @ttt.vn (mới) + admin cấp tay (`scripts/seed-admin.ts`); user cũ ngoài-domain grandfather; register công khai 403; quên mật khẩu = admin reset.
-- Perceptron THẬT (learning-to-rank, degrade heuristic) · foldable Find N6 test on-device · installer cả 3 unsigned (.exe cần máy Win) · PWA host Vercel + Supabase (Agent 4 tự dựng, Sprint 4).
+- Perceptron THẬT (learning-to-rank) · installer cả 3 unsigned (.exe cần Win) · PWA host Vercel + Supabase (Sprint 4).
 
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
-- **✅ 17/07 E1.2 — swatch vật liệu PROCEDURAL, ĐÓNG gap cuối Phase 1** (`4a73a5b`): trụ "Vật liệu" Stage 4 Basic→Pro (nay đủ 3/3 trụ). `lib/cad/material-texture.ts` (MỚI): vẽ hoạ tiết bằng THUẬT TOÁN (không ảnh chụp — chưa có ATLAS Vol.3 license, không tự tải web/AI-gen tính phí): vân gỗ+mắt gỗ, mạch gạch, vân đá, đốm granite, chip terrazzo… Tách phần thuần (test) khỏi canvas data-URL cache. `materials.ts` thêm `photoUrl?` (future-proof: có ảnh chỉ set URL). `MaterialPalette.tsx`: swatch texture + hover preview. Verify: tsc 0 · 30/30 test mới + 41 file PASS · browser palette 13 swatch PNG (0 gradient sót), hover OK, không lỗi console mới. **ĐỂ LẠI**: hatch canvas CAD giữ vector pattern (gắn DXF round-trip) — E1.2 chỉ cần palette.
-- **✅ 18/07 DWG — CHỐT nút "Mở DWG" trong app** (Worker cô lập GPL, `lib/cad/dwg-worker.ts`): thử 4 kiến trúc (Worker→service→CLI `dwg2dxf`→quay lại Worker); lý do đảo ngược: IF là tool NỘI BỘ TTT (@ttt.vn, register 403, không phân phối) nên rủi ro "phân phối" GPL thấp. `dwg2dxf` giữ làm dự phòng offline/nhạy cảm; `docs/LICENSE-NOTES.md`: bán/phân phối ra ngoài thì phải review pháp lý lại. Chi tiết → CHANGELOG.
-- **✅ 18/07 Sprint 9 — toggle Sketch↔Pro** (mặc định Sketch): `cadMode`+`PRO_ONLY_TOOLS` ẩn ~30 công cụ Pro; sửa luôn nợ "toolbar tràn màn hẹp". Chi tiết → CHANGELOG.
-- **✅ 18/07 Sprint 10 — Pro mode P1+P2**: nhập toạ độ chính xác + Polygon/Ellipse/Donut/Spline/Xline/Divide (chi tiết → CHANGELOG).
+- **✅ 17/07 E1.2 — swatch vật liệu PROCEDURAL, ĐÓNG gap cuối Phase 1** (`4a73a5b`): trụ "Vật liệu" Stage 4 → Pro (3/3 trụ). `lib/cad/material-texture.ts` vẽ hoạ tiết bằng thuật toán; `MaterialPalette.tsx` swatch+hover. Verify: tsc 0 · 30/30 test mới + 41 file PASS. Chi tiết → CHANGELOG.
+- **✅ 18/07 DWG — nút "Mở DWG" trong app** (Worker cô lập GPL); `dwg2dxf` giữ dự phòng. Chi tiết → CHANGELOG.
+- **✅ 17/07 PS-0 (Present, gate) — AUDIT xong, KHÔNG đổi code**:
+  - **D.9 = NỐI MỘT PHẦN.** `ImageEditor.tsx` (Canva, nhấp đúp): crop/chỉnh màu-CSS/thay ảnh/bo góc ghi THẲNG ImageElement → canvas+export đúng. Nhưng nút "Chỉnh ảnh nâng cao" = `window.open('/photo-editor')` (PresentEditor.tsx:937) — KHÔNG truyền src, KHÔNG đường về; `/photo-editor` mở doc MẪU trắng (makeSampleDoc), output duy nhất = TẢI file PNG/JPEG. ⇒ phần nặng (layer/mask/clone/adjustment) HOÀN TOÀN tách rời.
+  - **Khoá 16:9**: hardcode gom 3 file — `standards.ts:69` (stage 1920×1080+pxPerPct), `render.ts:28-29` (W/H RIÊNG, không đọc standards ⇒ 2 nguồn), `export.ts:26/29/30` (jsPDF format). Toạ độ element là % (0..100) ⇒ reflow gần free. 6 chỗ CSS `aspectRatio:'16/9'` chỉ hiển thị. Job PS-4: vừa-nhỏ.
+  - **Res render (chặng 2)**: `renderSlide` = 1920×1080; hero AI FLUX max 1344px cạnh dài. A3 300dpi cần ~3508×4961px ⇒ 1920px chỉ ~116dpi trên A3. **KHÔNG đủ in A3/A4 300dpi** — PS-4 chỉ xem màn hình.
+- **✅ 18/07 Sprint 9+10 — toggle Sketch↔Pro** (mặc định Sketch, `cadMode`+`PRO_ONLY_TOOLS` ẩn ~30 tool) **+ Pro P1+P2** (nhập toạ độ chính xác, Polygon/Ellipse/Donut/Spline/Xline/Divide). Chi tiết → CHANGELOG.
 - File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
 - **NVIDIA_API_KEY đã có**, probe HTTP 200. **fal**: hết balance, chờ nạp credit.
-- CHƯA làm (backlog cũ): bỏ hardcode 'DETECH · CONCEPT' · template tĩnh thư viện · heavy-ML pha 2 · membership per-flow.
+- CHƯA làm (backlog cũ): hardcode 'DETECH·CONCEPT' · template tĩnh · heavy-ML pha 2 · membership per-flow.
 - Sprint 3/6-8 (41 shape nội thất · MEP · Export PDF/.idf/markup · Template Office/Hotel) đã xong — chi tiết → CHANGELOG.md.
 
 ## Nợ kỹ thuật
@@ -30,6 +33,7 @@
 - Migration Prisma drift (IntegrationAccount) — dùng `db push`, KHÔNG reset.
 - 4 file stress test bị mất (xem ĐIỂM RESUME) — cần viết lại nếu muốn coverage edge-case CAD/render/present/concurrency.
 - Sprint 3 B1: `meta` (giá/vendor/sku) để trống toàn bộ — chưa có dữ liệu giá thật.
+- Present stage-size CÓ 2 NGUỒN: `standards.ts:69` vs `render.ts:28-29` (W/H hardcode riêng) — PS-4 phải gộp về 1 nguồn khi tham số hoá khổ.
 - **BUG 16/07 — GroupOverlay vô hình** (Render canvas Cmd+G): `GroupOverlay.tsx` thiếu `ViewportPortal` + `zIndex:-1` sai → group tạo đúng trong store nhưng UI không hiện. Chi tiết kỹ thuật → CHANGELOG.md. CHƯA sửa — chờ duyệt phạm vi.
 
 ## Bị chặn — KHÔNG tự khởi động
