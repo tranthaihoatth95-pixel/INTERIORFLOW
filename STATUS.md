@@ -14,14 +14,15 @@
 - Perceptron THẬT (learning-to-rank, degrade heuristic) · foldable Find N6 test on-device · installer cả 3 unsigned (.exe cần máy Win) · PWA host Vercel + Supabase (Agent 4 tự dựng, Sprint 4).
 
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
-- **0 worktree đang sống** (0/3 slot).
+- **1 worktree đang sống** (1/3 slot): `interiorflow-wt-sprint10` nhánh `feat/sprint10-precision-geometry-snap` — đang chạy (nhập toạ độ chính xác + Polygon + Spline/Xline/Ellipse/Donut/Divide). **Sprint 9 (thiết kế toggle Sketch↔Pro) CHƯA làm** — nhảy thẳng sang Sprint 10 theo yêu cầu user, quay lại Sprint 9 sau nếu cần trước khi Pro mode thật sự cần toggle UI.
 - **✅ 15/07 Sprint 3 B1+B2** (41 shape nội thất, schema chung `lib/cad/shared-types.ts`) + merge 4 nhánh cũ (render-nodes-v2 · ai-local-ollama · render-ux-overhaul · deploy-vercel-supabase) — chi tiết → CHANGELOG.md.
 - File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
 - **NVIDIA_API_KEY đã có**, probe HTTP 200. **fal**: hết balance, chờ nạp credit.
 - CHƯA làm (backlog cũ): bỏ hardcode 'DETECH · CONCEPT' · template tĩnh thư viện · heavy-ML pha 2 · membership per-flow.
 - **✅ 16-17/07 verify Render/Present + text-toolbar-ux + Sprint 4 + Sprint 5** — chi tiết → CHANGELOG.md.
 - **✅ 17/07 Sprint 6 — MEP sơ cấp** (nhóm E: 0%→phần lớn): đèn+ổ cắm (`mep.ts`, `mep-suggest.ts`, chỉ đề xuất), rule TCVN 9206:2012 thật nối checker. Hộp gen (D2.3-5) BỎ QUA — không có quy ước DXF thật.
-- **✅ 17/07 Sprint 7 — Export nâng cao**: **CAD PDF vector** (`lib/cad/pdf.ts`, vẽ lại Entity bằng API hình học jsPDF — KHÔNG raster; jsPDF 4.2.1 không có OCG nên layer PDF không ẩn/hiện lại được, đã ghi rõ giới hạn). **`.idf` save/load** (`idf.ts`, JSON versioned toàn bộ sheet, verify round-trip 117 entity khớp). **Markup overlay** (`markup.ts`, ghim ghi chú riêng field `Doc.markups`, không lẫn Entity hình học). **Photo embed** (`Doc.photos`, upload+gắn ảnh vào bản vẽ, lightbox xem full). Share link/PWA đã có sẵn — không làm lại. 36 file test PASS, tsc 0 lỗi.
+- **✅ 17/07 Sprint 7 — Export nâng cao**: CAD PDF vector (`pdf.ts`, jsPDF không có OCG nên layer không ẩn/hiện lại — đã ghi rõ). `.idf` save/load (`idf.ts`, JSON versioned, round-trip verify khớp). Markup overlay + Photo embed (`Doc.markups`/`Doc.photos`, riêng khỏi Entity hình học). Share link/PWA đã có sẵn — không làm lại.
+- **✅ 18/07 Sprint 8 — Template/Title block/Fix suggestion**: Layer manager xác nhận ĐÃ CÓ SẴN — không làm lại. Title block UI (`titleBlock()` có sẵn, chỉ thêm form) + 2 template mới (Văn phòng, Khách sạn — `templates.ts`, cùng pattern `demo-plan.ts`) + Fix suggestion thật (`fix-suggest.ts`, gợi ý mm cụ thể cho vi phạm diện tích/hành lang, chỉ hiện text KHÔNG tự sửa — verify số khớp chính xác test). 38 file test PASS, tsc 0 lỗi.
 
 ## Nợ kỹ thuật
 - Hydration ⌘Z/Ctrl+Z tooltip (lib/kbd.ts:11 + CadToolbar) — cosmetic.
