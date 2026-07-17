@@ -13,6 +13,7 @@ import {
   Scissors, Expand, SquareRoundCorner, Slice, Grid3x3, LayoutGrid,
   ZoomIn, SplitSquareHorizontal, ScissorsLineDashed, Link2, Boxes, ArrowLeftRight, Compass,
   Radius, Diameter, DraftingCompass, ChevronsRight, GitBranch, PaintBucket,
+  CircleDashed, LocateFixed, Palette,
 } from 'lucide-react';
 import { useCadStore, type Tool } from '@/lib/cad/store';
 import { modKey, modShiftKey } from '@/lib/kbd';
@@ -30,7 +31,9 @@ const DRAW: ToolBtn[] = [
   { tool: 'polyline', icon: Waypoints, label: 'Polyline', key: 'PL' },
   { tool: 'rect', icon: Square, label: 'Rect', key: 'REC' },
   { tool: 'circle', icon: Circle, label: 'Circle', key: 'C' },
+  { tool: 'circle3p', icon: CircleDashed, label: 'Circle 3-điểm — click 3 điểm trên đường tròn', key: 'C3P' },
   { tool: 'arc', icon: Spline, label: 'Arc 3 điểm', key: 'A' },
+  { tool: 'arccenter', icon: LocateFixed, label: 'Arc tâm+góc — click tâm → điểm đầu → điểm cuối', key: 'ARCC' },
 ];
 const ARCH: ToolBtn[] = [
   { tool: 'wall', icon: BrickWall, label: 'Tường (chuỗi điểm tim tường)', key: 'W' },
@@ -74,7 +77,13 @@ function fire(name: string) {
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(name));
 }
 
-export default function CadToolbar({ onToggleFurniture }: { onToggleFurniture: () => void }) {
+export default function CadToolbar({
+  onToggleFurniture,
+  onToggleMaterial,
+}: {
+  onToggleFurniture: () => void;
+  onToggleMaterial: () => void;
+}) {
   const tool = useCadStore((s) => s.tool);
   const setTool = useCadStore((s) => s.setTool);
   const setPendingBlock = useCadStore((s) => s.setPendingBlock);
@@ -132,6 +141,9 @@ export default function CadToolbar({ onToggleFurniture }: { onToggleFurniture: (
       <Group items={DRAW} />
       <Divider />
       <Group items={ARCH} />
+      <button type="button" onClick={onToggleMaterial} title="Vật liệu (Sprint 5) — chọn preset gạch/gỗ/đá/sơn cho Hatch" style={btn(false)}>
+        <Palette size={17} />
+      </button>
       <button type="button" onClick={() => setPendingBlock('door')} title="Đặt cửa đi (D) — dùng block cửa có sẵn" style={btn(pendingBlock === 'door')}>
         <DoorOpen size={17} />
       </button>

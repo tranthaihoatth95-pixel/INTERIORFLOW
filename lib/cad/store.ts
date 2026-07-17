@@ -41,7 +41,9 @@ export type Tool =
   | 'polyline'
   | 'rect'
   | 'circle'
+  | 'circle3p'
   | 'arc'
+  | 'arccenter'
   | 'move'
   | 'copy'
   | 'rotate'
@@ -122,6 +124,11 @@ interface CadState {
   hatchPattern: HatchPattern;
   hatchScale: number;
   hatchAngle: number;
+  /** Sprint 5 — Việc 1 (material palette): màu áp cho hatch tiếp theo khi chọn 1 "vật liệu"
+   * (preset pattern+scale+angle+màu, xem lib/cad/materials.ts). '' = dùng màu layer như cũ. */
+  hatchColor: string;
+  /** tên vật liệu đang chọn (chỉ để hiện status/tô sáng panel — không lưu vào entity). */
+  hatchMaterialId: string | null;
   past: Doc[];
   future: Doc[];
   /** dòng lệnh mini + thông báo trạng thái */
@@ -172,6 +179,9 @@ interface CadState {
   setHatchPattern: (p: HatchPattern) => void;
   setHatchScale: (n: number) => void;
   setHatchAngle: (n: number) => void;
+  setHatchColor: (hex: string) => void;
+  /** áp 1 preset vật liệu: đổi cả pattern/scale/angle/màu cùng lúc + chuyển sang tool Hatch. */
+  applyMaterial: (id: string, pattern: HatchPattern, scale: number, angle: number, color: string) => void;
 
   importDoc: (d: Doc, mode: 'replace' | 'merge') => void;
   scaleAll: (factor: number) => void;
@@ -212,6 +222,8 @@ export const useCadStore = create<CadState>((set, get) => ({
   hatchPattern: 'ANSI31',
   hatchScale: 1,
   hatchAngle: 0,
+  hatchColor: '',
+  hatchMaterialId: null,
   past: [],
   future: [],
   status: 'Sẵn sàng — chọn công cụ hoặc gõ lệnh (L, PL, REC, C…).',
@@ -359,9 +371,12 @@ export const useCadStore = create<CadState>((set, get) => ({
   setChamferDist: (chamferD1, chamferD2) => set({ chamferD1, chamferD2 }),
   setLengthenDelta: (lengthenDelta) => set({ lengthenDelta }),
   setDimStyle: (patch) => set((s) => ({ dimStyle: { ...s.dimStyle, ...patch } })),
-  setHatchPattern: (hatchPattern) => set({ hatchPattern }),
-  setHatchScale: (hatchScale) => set({ hatchScale }),
-  setHatchAngle: (hatchAngle) => set({ hatchAngle }),
+  setHatchPattern: (hatchPattern) => set({ hatchPattern, hatchMaterialId: null }),
+  setHatchScale: (hatchScale) => set({ hatchScale, hatchMaterialId: null }),
+  setHatchAngle: (hatchAngle) => set({ hatchAngle, hatchMaterialId: null }),
+  setHatchColor: (hatchColor) => set({ hatchColor, hatchMaterialId: null }),
+  applyMaterial: (hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor) =>
+    set({ hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor, tool: 'hatch', status: toolHint('hatch') }),
 
   importDoc: (d, mode) => {
     get().snapshot();
@@ -431,7 +446,9 @@ function toolHint(t: Tool): string {
     polyline: 'Polyline (PL): click các điểm; Enter/double-click kết thúc; C đóng.',
     rect: 'Rect (REC): click 2 góc đối diện.',
     circle: 'Circle (C): click tâm → điểm trên đường tròn (hoặc gõ bán kính).',
-    arc: 'Arc: click 3 điểm (đầu · giữa · cuối).',
+    circle3p: 'Circle 3-điểm: click 3 điểm bất kỳ nằm trên đường tròn cần vẽ.',
+    arc: 'Arc 3-điểm: click 3 điểm (đầu · giữa · cuối).',
+    arccenter: 'Arc tâm+góc: click tâm → điểm bắt đầu (bán kính+góc đầu) → điểm kết thúc (góc cuối).',
     move: 'Move (M): chọn đối tượng → click điểm gốc → điểm đích.',
     copy: 'Copy (CO): chọn đối tượng → điểm gốc → điểm đích (giữ nguyên bản gốc).',
     rotate: 'Rotate (RO): chọn → click tâm xoay → click hướng (Shift = bậc 90°).',
