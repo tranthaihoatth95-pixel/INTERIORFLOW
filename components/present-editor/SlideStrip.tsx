@@ -6,6 +6,7 @@
  */
 
 import type { EditorDeck } from '@/lib/present-editor/model';
+import { stageFor } from '@/lib/present-editor/stage-presets';
 import { Plus, Copy, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface Props {
@@ -27,6 +28,11 @@ export default function SlideStrip({
   onDelete,
   onMove,
 }: Props) {
+  // PS-4: khung thumbnail theo ĐÚNG tỉ lệ khổ trình bày đang chọn (mặc định 16:9).
+  const aspect = (() => {
+    const s = stageFor(deck.stagePreset);
+    return `${s.w} / ${s.h}`;
+  })();
   return (
     <div
       style={{
@@ -46,7 +52,7 @@ export default function SlideStrip({
             onClick={() => onSelect(i)}
             style={{
               width: '100%',
-              aspectRatio: '16 / 9',
+              aspectRatio: aspect,
               borderRadius: 6,
               border: i === current ? '2px solid var(--accent)' : '1px solid var(--border)',
               // dùng backgroundColor (không phải shorthand 'background') để không đụng

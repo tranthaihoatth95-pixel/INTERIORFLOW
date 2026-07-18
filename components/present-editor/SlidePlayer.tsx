@@ -3,15 +3,17 @@
 /**
  * components/present-editor/SlidePlayer.tsx — TRÌNH CHIẾU deck với hiệu ứng động.
  *
- * Overlay toàn màn 16:9 giữa nền tối. Mỗi slide render bằng renderEditorSlide (ảnh tĩnh
- * trung thực) rồi bọc trong motion để chạy transition/reveal (motion-present). Điều hướng:
- * ← → / Space / click phải-trái, Esc để thoát. Đây là kênh xem hiệu ứng — không sửa model.
+ * Overlay toàn màn, khung giữ ĐÚNG tỉ lệ khổ trình bày đang chọn (PS-4 — mặc định 16:9)
+ * giữa nền tối. Mỗi slide render bằng renderEditorSlide (ảnh tĩnh trung thực, đúng khổ)
+ * rồi bọc trong motion để chạy transition/reveal (motion-present). Điều hướng: ← → / Space
+ * / click phải-trái, Esc để thoát. Đây là kênh xem hiệu ứng — không sửa model.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { EditorDeck } from '@/lib/present-editor/model';
 import { renderEditorSlide } from '@/lib/present-editor/render';
+import { stageFor } from '@/lib/present-editor/stage-presets';
 import { slideVariants } from '@/lib/present-editor/motion-present';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -29,6 +31,7 @@ export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
 
   const slide = deck.slides[idx];
   const transition = slide?.transition ?? deck.transition ?? 'fade';
+  const stage = useMemo(() => stageFor(deck.stagePreset), [deck.stagePreset]);
 
   // render ảnh slide hiện tại (+ kế tiếp để prefetch mượt).
   useEffect(() => {
@@ -37,7 +40,7 @@ export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
       for (const i of [idx, idx + 1, idx - 1]) {
         if (i < 0 || i >= deck.slides.length || imgs[i]) continue;
         try {
-          const url = await renderEditorSlide(deck.slides[i], deck.fonts, deck.watermark);
+          const url = await renderEditorSlide(deck.slides[i], deck.fonts, deck.watermark, stage);
           if (!alive) return;
           setImgs((p) => ({ ...p, [i]: url }));
         } catch {
@@ -92,8 +95,18 @@ export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
         <X size={18} />
       </button>
 
-      {/* khung 16:9 */}
-      <div style={{ width: 'min(94vw, 166vh)', aspectRatio: '16 / 9', position: 'relative', overflow: 'hidden', borderRadius: 8 }}>
+      {/* khung theo khổ trình bày đang chọn (PS-4) — width = giải phương trình "khít 94vh
+          theo chiều cao" rồi kẹp trần 94vw, tổng quát hoá công thức 166vh cũ (vốn chỉ đúng
+          cho riêng tỉ lệ 16:9 = 94×16/9 ≈ 167). */}
+      <div
+        style={{
+          width: `min(94vw, calc(94vh * ${stage.w / stage.h}))`,
+          aspectRatio: `${stage.w} / ${stage.h}`,
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: 8,
+        }}
+      >
         <AnimatePresence custom={dir} mode="sync" initial={false}>
           <motion.div
             key={idx}

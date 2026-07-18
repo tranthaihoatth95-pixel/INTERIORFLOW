@@ -21,6 +21,7 @@ import {
   Redo2,
   Play,
   Palette,
+  Proportions,
 } from 'lucide-react';
 import ExportMenu from './ExportMenu';
 import type { ShapeKind } from '@/lib/present-editor/model';
@@ -43,6 +44,10 @@ interface Props {
   onPlay: () => void;
   /** mở panel Brand Kit — Nhận diện (PS-1). */
   onBrandKit: () => void;
+  /** mở panel Khổ trình bày — 16:9 · A4/A3 ngang/dọc (PS-4). */
+  onStagePreset: () => void;
+  /** nhãn khổ đang chọn (vd "16:9", "A4 dọc") hiện trên nút. */
+  stageLabel: string;
   busy: string | null;
 }
 
@@ -129,6 +134,12 @@ export default function Toolbar(p: Props) {
       <Divider />
       <Btn onClick={p.onBrandKit} title="Brand Kit — Nhận diện (logo · màu · font · watermark). Lưu 1 lần, áp lại cho cả deck.">
         <Palette size={15} /> Nhận diện
+      </Btn>
+      <Btn
+        onClick={p.onStagePreset}
+        title="Khổ trình bày (màn hình/chiếu) — 16:9 · A4 ngang/dọc · A3 ngang/dọc. Đổi khổ tự dàn lại bố cục."
+      >
+        <Proportions size={15} /> {p.stageLabel}
       </Btn>
 
       <div style={{ flex: 1 }} />
