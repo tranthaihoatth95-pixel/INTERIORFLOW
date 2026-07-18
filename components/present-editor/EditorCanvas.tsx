@@ -282,6 +282,7 @@ export default function EditorCanvas({
           selected={selectedIds.includes(el.id)}
           multi={multi && selectedIds.includes(el.id)}
           stageRef={stageRef}
+          others={slide.elements.filter((o) => o.id !== el.id && !o.hidden).map((o) => o.frame)}
           onSelect={() => onSelect(el.id)}
           onToggle={() => onToggleSelect(el.id)}
           onFrame={(frame, live) => onFrame(el.id, frame, live)}

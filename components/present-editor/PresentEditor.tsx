@@ -70,6 +70,7 @@ import BrandKitPanel from './BrandKitPanel';
 import { applyBrandKitToDeck, type BrandKit } from '@/lib/present-editor/brand-kit';
 import StagePresetPanel from './StagePresetPanel';
 import { reflowDeckForStage } from '@/lib/present-editor/reflow';
+import { alignFrames, distributeFrames, type AlignMode as GroupAlignMode, type DistributeAxis } from '@/lib/present-editor/align';
 import { stageFor, type StagePresetId } from '@/lib/present-editor/stage-presets';
 import { LayoutTemplate, Images, Wand2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 
@@ -532,6 +533,44 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         else if (mode === 'vcenter') f.y = (100 - f.h) / 2;
         else if (mode === 'bottom') f.y = 100 - f.h;
         el.frame = f;
+      });
+    },
+    [ed],
+  );
+
+  /**
+   * Căn NHIỀU element đã chọn theo bounding box CHUNG của chính chúng (lib/present-editor/
+   * align.ts — thuần) — khác `onAlign` ở trên (canh theo biên sân khấu, 1 phần tử). Bỏ qua
+   * phần tử khoá (như onNudge/onDeleteSelected). <2 phần tử mở khoá → không làm gì.
+   */
+  const onAlignSelection = useCallback(
+    (mode: GroupAlignMode) => {
+      if (ed.selectedIds.length < 2) return;
+      ed.updateSlide((s) => {
+        const ids = new Set(ed.selectedIds);
+        const targets = s.elements.filter((e) => ids.has(e.id) && !e.locked);
+        if (targets.length < 2) return;
+        const aligned = alignFrames(targets.map((e) => e.frame), mode);
+        targets.forEach((e, i) => {
+          e.frame = aligned[i];
+        });
+      });
+    },
+    [ed],
+  );
+
+  /** Phân bố đều khoảng cách giữa các element đã chọn (cần ≥3 phần tử mở khoá). */
+  const onDistributeSelection = useCallback(
+    (axis: DistributeAxis) => {
+      if (ed.selectedIds.length < 3) return;
+      ed.updateSlide((s) => {
+        const ids = new Set(ed.selectedIds);
+        const targets = s.elements.filter((e) => ids.has(e.id) && !e.locked);
+        if (targets.length < 3) return;
+        const distributed = distributeFrames(targets.map((e) => e.frame), axis);
+        targets.forEach((e, i) => {
+          e.frame = distributed[i];
+        });
       });
     },
     [ed],
@@ -1399,6 +1438,8 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
                   onUpdateSlide={ed.updateSlide}
                   onZOrder={onZOrder}
                   onAlign={onAlign}
+                  onAlignSelection={onAlignSelection}
+                  onDistributeSelection={onDistributeSelection}
                   onDuplicate={onDuplicateSelected}
                   onDelete={onDeleteSelected}
                   onOpenImageEditor={(id) => setImageEditId(id)}
