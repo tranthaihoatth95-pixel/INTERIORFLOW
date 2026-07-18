@@ -130,6 +130,18 @@
       ],
       "port": 4047,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-tooltips"
+    },
+    {
+      "name": "formatpainter-4054",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4054"
+      ],
+      "port": 4054,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-formatpainter"
     }
   ]
 }
