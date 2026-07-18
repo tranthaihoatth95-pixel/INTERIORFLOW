@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { EditorTemplate, LayoutShelf as Shelf } from '@/lib/present-editor/templates';
 import { SHELF_LABEL, SHELF_ORDER, shelfOf, makeVariants } from '@/lib/present-editor/templates';
+import type { EditorSlide } from '@/lib/present-editor/model';
 import type { FontPairing } from '@/lib/slides';
 import type { LayoutSpec, ToneKey } from '@/lib/present-editor/spec';
 import { renderEditorSlide } from '@/lib/present-editor/render';
@@ -28,10 +29,31 @@ import {
   type TemplateTraits,
   type PresentFeatureContext,
 } from '@/lib/gu/feature-dict';
+import {
+  getCustomTemplates,
+  saveCustomTemplate,
+  deleteCustomTemplate,
+  toEditorTemplate,
+  type CustomTemplate,
+} from '@/lib/present-editor/custom-templates';
 import SpecForm from './SpecForm';
 import GenerateFlow, { type GenerateResult } from './GenerateFlow';
 import type { RefImage } from './LibraryBrowser';
-import { Sparkles, Search, Plus, Shuffle, SlidersHorizontal, ChevronDown, RefreshCw, ThumbsUp, ThumbsDown } from 'lucide-react';
+import {
+  Sparkles,
+  Search,
+  Plus,
+  Shuffle,
+  SlidersHorizontal,
+  ChevronDown,
+  RefreshCw,
+  ThumbsUp,
+  ThumbsDown,
+  BookmarkPlus,
+  Trash2,
+  Check,
+  X,
+} from 'lucide-react';
 
 interface Props {
   templates: EditorTemplate[];
@@ -54,6 +76,8 @@ interface Props {
   refGrid?: GridGeometryInput | null;
   /** (M-1, optional) thống kê nội dung slide hiện tại (#ảnh, độ dài chữ). */
   content?: { nImages: number; textLen: number } | null;
+  /** (PS-2) slide đang hiển thị trên canvas — nguồn cho "Lưu slide này thành template". */
+  activeSlide?: EditorSlide | null;
 }
 
 const PREVIEW_CTX = {
@@ -78,9 +102,45 @@ export default function LayoutShelf({
   gu,
   refGrid,
   content,
+  activeSlide,
 }: Props) {
   const [query, setQuery] = useState('');
   const [specOpen, setSpecOpen] = useState(false);
+  // PS-2: template người dùng tự lưu ("Của tôi") — nạp trong effect (hydration-safe, cùng
+  // quy ước BrandKitPanel: không tự đọc localStorage lúc render).
+  const [customs, setCustoms] = useState<CustomTemplate[]>([]);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [saveBusy, setSaveBusy] = useState(false);
+  useEffect(() => {
+    setCustoms(getCustomTemplates());
+  }, []);
+
+  const handleSaveTemplate = useCallback(async () => {
+    if (!activeSlide || saveBusy) return;
+    setSaveBusy(true);
+    let thumb: string | null = null;
+    try {
+      thumb = await renderEditorSlide(activeSlide, fonts ?? 'Editorial');
+    } catch {
+      /* preview lỗi (ảnh hỏng…) — vẫn lưu template, chỉ thiếu thumb */
+    }
+    const ct = saveCustomTemplate({
+      name: saveName,
+      slide: activeSlide,
+      palette,
+      thumb,
+    });
+    setCustoms((prev) => [ct, ...prev]);
+    setSaveOpen(false);
+    setSaveName('');
+    setSaveBusy(false);
+  }, [activeSlide, saveBusy, saveName, palette, fonts]);
+
+  const handleDeleteCustom = useCallback((id: string) => {
+    deleteCustomTemplate(id);
+    setCustoms((prev) => prev.filter((c) => c.id !== id));
+  }, []);
   // biến thể sinh thêm theo template gốc (id gốc → danh sách biến thể).
   const [variants, setVariants] = useState<Record<string, EditorTemplate[]>>({});
   // Flow generate: chỉ hiện kệ 4 cột SAU khi Generate (góp ý #1 & #12). Trước đó = GenerateFlow.
@@ -299,7 +359,54 @@ export default function LayoutShelf({
         <button type="button" onClick={onCreateBlank} title="Tạo trang nội dung trắng để tự dàn" style={createBtn}>
           <Plus size={14} /> Tạo
         </button>
+        {activeSlide && (
+          <button
+            type="button"
+            onClick={() => setSaveOpen((v) => !v)}
+            title="Lưu slide này thành template — dùng lại được, gom vào mục Của tôi"
+            style={saveBtn}
+          >
+            <BookmarkPlus size={14} /> Lưu mẫu
+          </button>
+        )}
       </div>
+
+      {/* Lưu slide này thành template (PS-2 / B.8) — form gọn, đặt tên rồi Lưu. */}
+      {saveOpen && activeSlide && (
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <input
+            autoFocus
+            value={saveName}
+            onChange={(e) => setSaveName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSaveTemplate();
+              else if (e.key === 'Escape') setSaveOpen(false);
+            }}
+            placeholder="Tên template (VD: Bìa dự án khách sạn)"
+            style={{
+              flex: 1,
+              padding: '6px 8px',
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              background: 'var(--field)',
+              color: 'var(--t1)',
+              fontSize: 12,
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleSaveTemplate}
+            disabled={saveBusy}
+            title="Lưu template"
+            style={saveConfirmBtn}
+          >
+            <Check size={13} />
+          </button>
+          <button type="button" onClick={() => setSaveOpen(false)} title="Huỷ" style={saveCancelBtn}>
+            <X size={13} />
+          </button>
+        </div>
+      )}
 
       {/* bảng hỏi số liệu (thu gọn được) */}
       <div style={{ border: '1px solid var(--border)', borderRadius: 10, background: 'var(--card)' }}>
@@ -375,6 +482,24 @@ export default function LayoutShelf({
           </p>
         )}
 
+        {/* Của tôi (PS-2) — template người dùng tự lưu từ slide đã dàn. */}
+        {customs.length > 0 && (
+          <section>
+            <div style={headStyle}>Của tôi</div>
+            <div className="pe-shelf-row" style={rowScroll}>
+              {customs.map((ct) => (
+                <ShelfCard
+                  key={ct.id}
+                  t={toEditorTemplate(ct)}
+                  preview={ct.thumb ?? undefined}
+                  onApply={() => onApply(toEditorTemplate(ct))}
+                  onDelete={() => handleDeleteCustom(ct.id)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* từ thư viện Reference (nếu có) */}
         {library.length > 0 && (
           <section>
@@ -419,6 +544,7 @@ function ShelfCard({
   onApply,
   onReject,
   onVariant,
+  onDelete,
 }: {
   t: EditorTemplate;
   preview?: string;
@@ -430,6 +556,8 @@ function ShelfCard({
   onApply: () => void;
   onReject?: () => void;
   onVariant?: () => void;
+  /** (PS-2) xoá template tự lưu — chỉ mục "Của tôi" có nút này. */
+  onDelete?: () => void;
 }) {
   const tip = reasons?.length ? `\nVì sao hợp:\n• ${reasons.join('\n• ')}` : '';
   return (
@@ -482,6 +610,20 @@ function ShelfCard({
           style={variantBtn}
         >
           <Shuffle size={11} />
+        </button>
+      )}
+      {onDelete && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          title="Xoá template này"
+          className="pe-variant-btn"
+          style={variantBtn}
+        >
+          <Trash2 size={11} />
         </button>
       )}
       {/* M-1: cặp nút Nhận/Bỏ kín đáo (hover mới hiện — quiet-luxury). Nhận = áp + dạy máy;
@@ -540,6 +682,48 @@ const createBtn: React.CSSProperties = {
   background: 'var(--accent-soft)',
   color: 'var(--accent)',
   fontSize: 12,
+  cursor: 'pointer',
+  flexShrink: 0,
+};
+
+/* PS-2: "Lưu slide này thành template" — nút gọn cạnh "Tạo", mở form đặt tên inline. */
+const saveBtn: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 4,
+  padding: '6px 10px',
+  borderRadius: 8,
+  border: '1px solid var(--border)',
+  background: 'var(--card)',
+  color: 'var(--t2)',
+  fontSize: 12,
+  cursor: 'pointer',
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
+};
+
+const saveConfirmBtn: React.CSSProperties = {
+  width: 26,
+  height: 26,
+  display: 'grid',
+  placeItems: 'center',
+  borderRadius: 6,
+  border: '1px solid var(--accent)',
+  background: 'var(--accent)',
+  color: '#fff',
+  cursor: 'pointer',
+  flexShrink: 0,
+};
+
+const saveCancelBtn: React.CSSProperties = {
+  width: 26,
+  height: 26,
+  display: 'grid',
+  placeItems: 'center',
+  borderRadius: 6,
+  border: '1px solid var(--border)',
+  background: 'var(--card)',
+  color: 'var(--t3)',
   cursor: 'pointer',
   flexShrink: 0,
 };

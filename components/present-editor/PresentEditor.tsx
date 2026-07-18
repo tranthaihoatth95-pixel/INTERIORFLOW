@@ -1056,6 +1056,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
                     gu={gu}
                     refGrid={refGrid}
                     content={contentStats}
+                    activeSlide={ed.slide ?? null}
                   />
                 )}
                 {tab === 'reference' && (

@@ -15,13 +15,11 @@
 - Perceptron THẬT (learning-to-rank) · installer cả 3 unsigned (.exe cần Win) · PWA host Vercel + Supabase (Sprint 4).
 
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
-- **⏳ 17/07 tối — 5 nhánh MỚI, đã audit độc lập (tsc 0 + test pass từng nhánh), CHƯA merge vào `feat/present-layout-ml-p1`, chờ chủ dự án duyệt từng cái**. Mỗi nhánh build trên worktree riêng rồi xoá worktree (nhánh vẫn còn, không mất). Danh sách nhánh:
-  - `fix/groupoverlay-invisible` — sửa bug Nợ kỹ thuật cũ (xem CHANGELOG 16/07): bọc `ViewportPortal` + bỏ `zIndex:-1` trong `GroupOverlay.tsx`. Diff 9 dòng.
-  - `feat/present-ps2-templates` (PS-2) — "Lưu slide này thành template" → nhóm "Của tôi" trong picker, persist localStorage (pattern brand-kit.ts). `lib/present-editor/custom-templates.ts` mới.
-  - `feat/present-ps3-photoeditor-roundtrip` (PS-3) — nối `/photo-editor` ↔ slide: truyền ảnh vào (sessionStorage), composite ra (exportDoc), ghi về ImageElement (localStorage + sự kiện `storage`, 2 tab khác nhau) + "tài sản liên kết" (assetId dùng chung nhiều slide, sửa 1 nơi cập nhật mọi nơi). Gap: ảnh Render stage chưa có id ổn định nên chưa link được.
-  - `feat/present-ps4-multi-format` (PS-4) — gộp 2 nguồn khổ sân khấu về 1 (`stage-presets.ts`), thêm 16:9/A4/A3 ngang-dọc, reflow tự động khi đổi khổ (không mất nội dung), export PDF/PNG đúng khổ. PPTX CỐ Ý giữ 16:9 (ngoài phạm vi sprint). UI nhãn bắt buộc "khổ trình bày màn hình/chiếu — KHÔNG phải in 300dpi".
-  - `feat/present-ps7-photoeditor-ux` (PS-7) — phím tắt Photoshop trong `/photo-editor` (⌘/Ctrl+Z/Y, V/B/E/S/J/M/L chọn tool, `[`/`]` cỡ cọ), LayersPanel rõ hơn adjustment-vs-raster, thêm nhãn/gợi ý tool.
-  - **Gate PS-5/PS-6** (share deck khách + comment): chủ dự án chọn DỪNG — hạ tầng share/auth public-facing để sau.
+- **⏳ 18/07 — đang merge tuần tự 5 nhánh đã audit vào `feat/present-layout-ml-p1`** (user yêu cầu merge). Xong tới đâu cập nhật STATUS tới đó, tsc+test PASS sau mỗi merge mới đi tiếp:
+  - ✅ `fix/groupoverlay-invisible` — merge sạch, không conflict. ViewportPortal + bỏ zIndex:-1.
+  - ✅ `feat/present-ps2-templates` (PS-2) — merge, conflict CHỈ ở STATUS.md (đã resolve tay). "Lưu slide này thành template" → nhóm "Của tôi", `custom-templates.ts` mới.
+  - ⏳ Còn lại: `feat/present-ps3-photoeditor-roundtrip`, `feat/present-ps4-multi-format`, `feat/present-ps7-photoeditor-ux` — 3 nhánh này CÓ khả năng đụng file chung (PhotoEditor.tsx/PhotoToolbar.tsx giữa PS-3↔PS-7; PresentEditor.tsx/EditorCanvas.tsx giữa PS-2/3/4) vì build song song từ cùng base, chưa rebase lên nhau.
+- **Gate PS-5/PS-6** (share deck khách + comment): chủ dự án chọn DỪNG — hạ tầng share/auth public-facing để sau.
 - Đã merge trước đó: PS-1 Brand Kit (`db08340`), E1.2 swatch vật liệu (`4a73a5b`), DWG mở trong app, PS-0 audit, Sprint 9+10 toggle Sketch↔Pro. Chi tiết → CHANGELOG.
 - File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
 - **NVIDIA_API_KEY đã có**, probe HTTP 200. **fal**: hết balance, chờ nạp credit.

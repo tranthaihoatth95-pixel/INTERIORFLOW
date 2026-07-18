@@ -56,6 +56,8 @@ export default function TemplatePicker({
   const allBuiltin = templates.filter((t) => t.group === 'builtin');
   const builtin = allBuiltin.filter(match);
   const library = templates.filter((t) => t.group === 'library' && match(t));
+  // PS-2: template người dùng tự lưu ("Của tôi") — cùng nguồn `templates`, lọc theo group.
+  const mine = templates.filter((t) => t.group === 'mine' && match(t));
 
   // Render preview cho từng builtin template → dataURL (cache theo id + palette).
   // Render TẤT CẢ builtin (không phụ thuộc bộ lọc tìm kiếm) để gõ tìm không render lại.
@@ -100,7 +102,7 @@ export default function TemplatePicker({
     return CATEGORY_ORDER.filter((c) => map.has(c)).map((c) => ({ cat: c, items: map.get(c)! }));
   }, [builtin]);
 
-  const empty = !builtin.length && !library.length;
+  const empty = !builtin.length && !library.length && !mine.length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -155,6 +157,17 @@ export default function TemplatePicker({
           </Grid>
         </section>
       ))}
+
+      {mine.length > 0 && (
+        <section>
+          <Header>Của tôi</Header>
+          <Grid>
+            {mine.map((t) => (
+              <Card key={t.id} t={t} onApply={onApply} preview={t.thumb ?? undefined} />
+            ))}
+          </Grid>
+        </section>
+      )}
 
       {library.length > 0 && (
         <section>
