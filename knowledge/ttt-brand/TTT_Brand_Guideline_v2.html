@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TTT — Brand Guidelines v2</title>
+<template id="__bundler_thumbnail" data-bg-color="#FAF8F3">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#FAF8F3"/>
+    <text x="600" y="440" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="260" font-weight="600" letter-spacing="20" fill="#002850">TTT</text>
+    <rect x="530" y="480" width="140" height="6" fill="#E85C1E"/>
+  </svg>
+</template>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Global-minimal register: white ground, graphite ink, orange as a ≤5% signature stroke */
+    --paper:#FAF8F3; --paper-2:#F1EEE7; --plate:#FCFBF7;
+    --ink:#17191C;           /* graphite ink */
+    --navy:#002850;          /* logo / brand chip only */
+    --orange:#E85C1E;        /* signature — hairlines only */
+    --gray:#8C8C88; --gray-2:#5A5A56;
+    --line:rgba(23,25,28,.14); --line-soft:rgba(23,25,28,.08);
+    --font:'Be Vietnam Pro',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:#E9E6DF;font-family:var(--font);-webkit-font-smoothing:antialiased;color:var(--ink);}
+  .deck{display:flex;flex-direction:column;align-items:center;gap:36px;padding:44px 0 96px;min-width:fit-content;}
+  .board{width:1280px;height:720px;flex:none;position:relative;overflow:hidden;background:var(--paper);box-shadow:0 14px 50px rgba(23,25,28,.12);}
+  .board.dark{background:var(--ink);color:#F2F1EE;}
+  .pad{position:absolute;inset:0;padding:72px 88px;display:flex;flex-direction:column;z-index:2;}
+  .side{position:absolute;left:34px;top:50%;transform:translateY(-50%) rotate(180deg);writing-mode:vertical-rl;
+    font-size:9.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--gray);z-index:2;}
+  /* type */
+  .eyebrow{display:flex;align-items:baseline;gap:14px;font-size:11px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gray);}
+  .eyebrow .num{color:var(--ink);font-weight:500;}
+  .eyebrow .k{width:28px;height:1px;background:var(--ink);align-self:center;}
+  h1{font-weight:200;font-size:112px;line-height:.96;letter-spacing:-.03em;}
+  h2{font-weight:300;font-size:52px;line-height:1.04;letter-spacing:-.02em;}
+  h3{font-weight:500;font-size:17px;letter-spacing:-.005em;}
+  .lead{font-weight:300;font-size:19px;line-height:1.75;color:#3C3E42;max-width:58ch;}
+  p{font-weight:300;font-size:14px;line-height:1.75;color:#6E6F72;}
+  .light{font-weight:200;}
+  /* cover */
+  .cover-title{font-weight:150;font-size:124px;line-height:.95;letter-spacing:-.035em;}
+  .cover-title b{font-weight:450;}
+  .wm{font-weight:600;letter-spacing:.18em;font-size:26px;color:var(--navy);}
+  .wm .bar{height:2px;width:56px;background:var(--orange);margin-top:8px;}
+  .metarow{display:flex;justify-content:space-between;align-items:flex-end;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--gray);}
+  /* contents */
+  .toc{display:grid;grid-template-columns:1fr 1fr;gap:0 90px;}
+  .toc .row{display:flex;gap:22px;align-items:baseline;padding:16px 0;border-top:1px solid var(--line);}
+  .toc .row .n{font-weight:400;color:var(--gray);width:34px;font-size:14px;}
+  .toc .row .t{font-weight:400;font-size:17px;color:var(--ink);flex:1;}
+  .toc .row .p{font-size:10.5px;letter-spacing:.2em;color:var(--gray);}
+  /* swatches */
+  .sw{background:var(--plate);border:1px solid var(--line-soft);}
+  .sw .chip{height:132px;}
+  .sw .info{padding:14px 16px 16px;}
+  .sw .nm{font-weight:500;font-size:14px;color:var(--ink);}
+  .sw .vals{font-size:10.5px;line-height:1.8;color:var(--gray);margin-top:8px;letter-spacing:.02em;}
+  .sw .vals b{color:#3C3E42;font-weight:500;}
+  .scale{display:flex;border:1px solid var(--line-soft);}
+  .scale span{flex:1;height:56px;}
+  /* plates / panels */
+  .panel{background:var(--plate);border:1px solid var(--line-soft);display:flex;flex-direction:column;}
+  .panel .cap{padding:14px 18px;border-top:1px solid var(--line-soft);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--gray);}
+  .logo-plate{background:#FFFFFF;display:flex;align-items:center;justify-content:center;padding:26px;}
+  .logo-plate img{max-width:82%;max-height:98px;object-fit:contain;}
+  .imgph{background:var(--paper-2);display:flex;align-items:center;justify-content:center;color:var(--gray);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;position:relative;}
+  .imgph::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px var(--line-soft);}
+  /* stat */
+  .stat .v{font-weight:200;font-size:66px;line-height:.9;color:var(--ink);}
+  .stat .k{width:26px;height:1px;background:var(--ink);margin:12px 0;}
+  .stat .l{font-weight:500;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gray);}
+  /* misuse */
+  .dont{background:var(--plate);border:1px solid var(--line-soft);}
+  .dont .vis{height:104px;display:flex;align-items:center;justify-content:center;background:#FFFFFF;border-bottom:1px solid var(--line-soft);}
+  .dont .vis .g{font-weight:700;letter-spacing:.12em;font-size:30px;color:var(--navy);}
+  .dont .lab{padding:10px 14px;font-size:11px;color:#3C3E42;display:flex;align-items:center;gap:8px;}
+  .dont .lab::before{content:"✕";color:var(--gray);font-weight:600;}
+  /* proportion */
+  .prop{display:flex;height:46px;border:1px solid var(--line-soft);overflow:hidden;font-size:10px;letter-spacing:.16em;text-transform:uppercase;}
+  .prop div{display:flex;align-items:center;padding:0 16px;white-space:nowrap;}
+  /* mode */
+  .mode{background:var(--plate);border:1px solid var(--line-soft);padding:26px;}
+  .mode .tag{font-weight:500;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gray);}
+  .mode .bar{height:1px;width:56px;margin:16px 0;}
+  .mode .sw2{display:flex;gap:6px;}
+  .mode .sw2 span{width:28px;height:28px;border:1px solid var(--line-soft);}
+  .divider{height:1px;background:var(--line);}
+  .grid12{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;}
+  .grid12 span{background:rgba(23,25,28,.04);border-top:1px solid var(--ink);}
+  /* ── Page-transition motion — orange hairline sweep + staggered rise ── */
+  body.motion .board{opacity:.001;transform:translateY(26px) scale(.982);filter:blur(6px);transition:opacity 1.05s cubic-bezier(.16,1,.3,1),transform 1.15s cubic-bezier(.16,1,.3,1),filter 1s cubic-bezier(.16,1,.3,1);}
+  body.motion .board.in{opacity:1;transform:none;filter:blur(0);}
+  body.motion .board::after{content:"";position:absolute;inset:-1px 0 0 0;background:inherit;border-top:1px solid var(--orange);z-index:9;pointer-events:none;transition:transform 1.1s cubic-bezier(.16,1,.3,1) .08s,opacity .5s linear .95s;}
+  body.motion .board.in::after{transform:translateY(102%);opacity:0;}
+  body.motion .board .pad>*{opacity:0;transform:translateY(14px);filter:blur(3px);transition:opacity .85s cubic-bezier(.16,1,.3,1),transform .85s cubic-bezier(.16,1,.3,1),filter .7s cubic-bezier(.16,1,.3,1);}
+  body.motion .board.in .pad>*{opacity:1;transform:none;filter:blur(0);}
+  body.motion .board.in .pad>*:nth-child(1){transition-delay:.3s;}
+  body.motion .board.in .pad>*:nth-child(2){transition-delay:.38s;}
+  body.motion .board.in .pad>*:nth-child(3){transition-delay:.46s;}
+  body.motion .board.in .pad>*:nth-child(4){transition-delay:.54s;}
+  body.motion .board.in .pad>*:nth-child(5){transition-delay:.62s;}
+  body.motion .board.in .pad>*:nth-child(6){transition-delay:.7s;}
+  body.motion .board .side{opacity:0;transition:opacity 1s cubic-bezier(.16,1,.3,1) .75s;}
+  body.motion .board.in .side{opacity:1;}
+  @media print{ html,body{background:#fff;} .deck{gap:0;padding:0;} .board{box-shadow:none;page-break-after:always;} body.motion .board,body.motion .board .pad>*,body.motion .board .side{opacity:1 !important;transform:none !important;transition:none !important;} body.motion .board::after{display:none !important;} }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- 1 · COVER -->
+  <section class="board" data-screen-label="Cover">
+    <img src="assets/ttt-glyph.svg" alt="" style="position:absolute;right:-110px;bottom:-130px;width:540px;opacity:.05;z-index:1">
+    <div class="pad" style="justify-content:space-between">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start" data-comment-anchor="090dfec75e-div">
+        <div class="wm">TTT<div class="bar"></div></div>
+        <div style="text-align:right;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--gray);line-height:1.9">Architects · Corporation<br>Since 1992</div>
+      </div>
+      <div>
+        <div class="eyebrow"><span class="k"></span>Brand Identity Guidelines</div>
+        <div class="cover-title" style="margin-top:28px">Brand<br><b>Guidelines</b></div>
+        <div class="lead" style="margin-top:24px;font-size:21px;max-width:48ch" data-comment-anchor="508c79a8:22">The identity and editorial system for TTT — architecture, interior design and premium fit-out.</div>
+      </div>
+      <div class="metarow"><span>Version 2.0 · 2026</span><span>Ho Chi Minh City · Vietnam</span></div>
+    </div>
+  </section>
+
+  <!-- 2 · CONTENTS -->
+  <section class="board" data-screen-label="Contents">
+    <div class="pad" data-comment-anchor="508c79a8:27">
+      <div class="eyebrow"><span class="k"></span>Contents</div>
+      <h2 style="margin:20px 0 44px">In this document</h2>
+      <div class="toc">
+        <div>
+          <div class="row"><span class="n">01</span><span class="t">Introduction</span><span class="p">03</span></div>
+          <div class="row"><span class="n">02</span><span class="t">Brand architecture</span><span class="p">04</span></div>
+          <div class="row"><span class="n">03</span><span class="t">Logo &amp; usage</span><span class="p">05</span></div>
+          <div class="row"><span class="n">04</span><span class="t">Misuse</span><span class="p">07</span></div>
+        </div>
+        <div>
+          <div class="row"><span class="n">05</span><span class="t">Colour</span><span class="p">08</span></div>
+          <div class="row"><span class="n">06</span><span class="t">Typography</span><span class="p">10</span></div>
+          <div class="row"><span class="n">07</span><span class="t">Layout &amp; grid</span><span class="p">11</span></div>
+          <div class="row"><span class="n">08</span><span class="t">Imagery &amp; applications</span><span class="p">12</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · INTRODUCTION -->
+  <section class="board" data-screen-label="Introduction">
+    <div class="side">TTT · Brand Guidelines</div>
+    <div class="pad">
+      <div class="eyebrow"><span class="num">01</span><span class="k"></span>Introduction</div>
+      <h2 style="margin:24px 0 0;font-size:58px;max-width:20ch">Crafting spaces that <span style="font-weight:600">endure</span></h2>
+      <div class="lead" style="margin-top:28px">Founded in Ho Chi Minh City in 1992, TTT is one of Vietnam's leading firms in interior design, manufacturing and fit-out — specialising in luxury hospitality and premium workplaces.</div>
+      <div class="divider" style="margin-top:auto"></div>
+      <div style="margin-top:30px;display:flex;gap:64px">
+        <div class="stat"><div class="v">30+</div><div class="k"></div><div class="l">Years of practice</div></div>
+        <div class="stat"><div class="v">450</div><div class="k"></div><div class="l">Workshop artisans</div></div>
+        <div class="stat"><div class="v">☆☆☆☆☆</div><div class="k"></div><div class="l">5–6 star hotels</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · BRAND ARCHITECTURE -->
+  <section class="board" data-screen-label="Brand architecture">
+    <div class="side">TTT · Brand Guidelines</div>
+    <div class="pad">
+      <div class="eyebrow"><span class="num">02</span><span class="k"></span>Brand architecture</div>
+      <h2 style="margin:22px 0 0;font-size:44px">One group, two voices</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:34px;flex:1">
+        <div class="panel">
+          <div class="logo-plate" style="flex:1"><img src="assets/logo-official-white.jpg" alt="TTT Corporation" data-comment-anchor="83fca0a1ab-img"></div>
+          <div class="cap">TTT Corporation — construction · group</div>
+        </div>
+        <div class="panel">
+          <div class="logo-plate" style="flex:1"><img src="assets/ttt-architects.svg" alt="TTT Architects"></div>
+          <div class="cap">TTT Architects — design · architecture</div>
+        </div>
+      </div>
+      <p style="margin-top:22px;max-width:74ch">Both marks share the modular "T" mosaic glyph and speak the same quiet language. The difference lies in the dosage of the signature colour — never in volume.</p>
+    </div>
+  </section>
+
+  <!-- 5 · LOGO -->
+  <section class="board" data-screen-label="Logo">
+    <div class="side">TTT · Brand Guidelines</div>
+    <div class="pad">
+      <div class="eyebrow"><span class="num">03</span><span class="k"></span>Logo — The mark</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:34px;flex:1">
+        <div class="panel"><div class="logo-plate" style="flex:1"><img src="assets/logo-official-white.jpg" style="max-height:150px" alt="Primary lockup"></div><div class="cap">Vertical lockup · primary</div></div>
+        <div class="panel"><div class="logo-plate" style="flex:1"><img src="assets/ttt-architects.svg" style="max-height:110px" alt="Horizontal lockup"></div><div class="cap">Horizontal lockup</div></div>
+        <div class="panel"><div class="logo-plate" style="flex:1"><img src="assets/logo-official-orange.jpg" style="max-height:120px" alt="Square glyph"></div><div class="cap">Square glyph · avatar</div></div>
+      </div>
+      <p style="margin-top:22px">Always use master artwork. Place the logo on light grounds or photography with sufficient contrast; never redraw, re-proportion or recolour it.</p>
+    </div>
+  </section>
+
+  <!-- 6 · LOGO CLEAR SPACE -->
+  <section class="board" data-screen-label="Logo — clear space">
+    <div class="side">TTT · Brand Guidelines</div>
+    <div class="pad">
+      <div class="eyebrow"><span class="num">03</span><span class="k"></span>Logo — Clear space &amp; minimum size</div>
+      <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:44px;margin-top:32px;flex:1">
+        <div class="panel">
+          <div class="logo-plate" style="flex:1;position:relative">
+            <div style="position:absolute;inset:40px;border:1px dashed rgba(23,25,28,.25)"></div>
+            <img src="assets/logo-official-orange.jpg" style="max-height:120px;position:relative" alt="Clear space">
+          </div>
+          <div class="cap">Clear space = 1 glyph module</div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:center;gap:22px">
+          <div><h3>Clear space</h3><p style="margin-top:6px">Keep a margin around the logo of at least one square module of the glyph.</p></div>
+          <div class="divider"></div>
+          <div style="display:flex;gap:44px">
+            <div><h3>Print</h3><p style="margin-top:4px">≥ 15 mm</p></div>
+            <div><h3>Screen</h3><p style="margin-top:4px">≥ 40 px</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · MISUSE -->
+  <section class="board" data-screen-label="Misuse">
+    <div class="side">TTT · Brand Guidelines</div>
+    <div class="pad">
+      <div class="eyebrow"><span class="num">04</span><span class="k"></span>Misuse</div>
+      <h2 style="margin:20px 0 0;font-size:42px">Never</h2>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:auto">
+        <div class="dont"><div class="vis"><span class="g" style="transform:scaleX(1.5)">TTT</span></div><div class="lab">Stretch or distort</div></div>
+        <div class="dont"><div class="vis"><span class="g" style="color:#1E8A5B">TTT</span></div><div class="lab">Recolour arbitrarily</div></div>
+        <div class="dont"><div class="vis"><span class="g" style="transform:rotate(-12deg)">TTT</span></div><div class="lab">Rotate</div></div>
+        <div class="dont"><div class="vis"><span class="g" style="text-shadow:2px 3px 5px rgba(0,0,0,.4)">TTT</span></div><div class="lab">Add effects</div></div>
+        <div class="dont"><div class="vis" style="background:#7d7d7d"><span class="g" style="color:#8a8a8a">TTT</span></div><div class="lab">Low-contrast grounds</div></div>
+        <div class="dont"><div class="vis"><span class="g" style="-webkit-text-stroke:1px var(--navy);color:transparent">TTT</span></div><div class="lab">Outline the mark</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 · COLOUR PALETTE -->
+  <section class="board" data-screen-label="Colour">
+    <div class="side">TTT · Brand Guidelines</div>
+    <div class="pad">
+      <div class="eyebrow"><span class="num">05</span><span class="k"></span>Colour palette</div>
+      <h2 style="margin:20px 0 0;font-size:42px">Primary colours and their roles</h2>
+      <div style="display:flex;gap:16px;margin-top:30px">
+        <div class="sw" style="flex:1"><div class="chip" style="background:var(--paper);border-bottom:1px solid var(--line-soft)"></div><div class="info"><div class="nm">Cream</div><div class="vals"><b>HEX</b> #FAF8F3<br>Primary ground — gallery cream</div></div></div>
+        <div class="sw" style="flex:1"><div class="chip" style="background:var(--ink)"></div><div class="info"><div class="nm">Ink</div><div class="vals"><b>HEX</b> #17191C<br>Primary text &amp; rules</div></div></div>
+        <div class="sw" style="flex:1"><div class="chip" style="background:var(--navy)"></div><div class="info"><div class="nm">TTT Navy</div><div class="vals"><b>HEX</b> #002850<br>Logo artwork only</div></div></div>
+        <div class="sw" style="flex:1"><div class="chip" style="background:var(--orange)"></div><div class="info"><div class="nm">TTT Orange</div><div class="vals"><b>HEX</b> #E85C1E<br>Signature — ≤ 5%, thin strokes</div></div></div>
+      </div>
+      <div style="margin-top:32px">
+        <div class="eyebrow" style="margin-bottom:12px"><span style="width:20px;height:1px;background:var(--gray);align-self:center"></span>Neutral scale</div>
+        <div class="scale"><span style="background:var(--ink)"></span><span style="background:#33363B"></span><span style="background:#5A5D62"></span><span style="background:#8C8F93"></span><span style="background:#C2C3C1"></span><span style="background:#E4E4E1"></span><span style="background:var(--paper-2)"></span><span style="background:var(--paper)"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · COLOUR PROPORTION & MODES -->
+  <section class="board" data-screen-label="Colour — usage">
+    <div class="side">TTT · Brand Guidelines</div>
+    <div class="pad">
+      <div class="eyebrow"><span class="num">05</span><span class="k"></span>Colour — Usage &amp; modes</div>
+      <h3 style="margin-top:32px">Proportion of use</h3>
+      <div class="prop" style="margin-top:12px">
+        <div style="background:var(--paper);color:var(--gray);flex:none;width:66%;border-right:1px solid var(--line-soft)">Cream · 65%</div>
+        <div style="background:var(--ink);color:rgba(242,241,238,.7);flex:none;width:28%">Ink · 30%</div>
+        <div style="background:var(--orange);color:#fff;flex:1">5%</div>
+      </div>
+      <p style="margin-top:14px;max-width:76ch">The signature colour never floods a surface — it appears as a rule, an underline beneath the wordmark, one number worth emphasising. Presence comes from whitespace, not colour.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:auto">
+        <div class="mode">
+          <div class="tag">TTT Architects</div>
+          <h3 style="margin-top:12px;font-size:23px;font-weight:300">Monochrome</h3>
+          <div class="bar" style="background:var(--ink)"></div>
+          <div class="sw2"><span style="background:var(--ink)"></span><span style="background:#8C8F93"></span><span style="background:var(--paper)"></span></div>
+          <p style="margin-top:12px">Ink and paper only — the palette recedes so the design work can shine.</p>
+        </div>
+        <div class="mode">
+          <div class="tag">TTT Corporation</div>
+          <h3 style="margin-top:12px;font-size:23px;font-weight:300">With the signature stroke</h3>
+          <div class="bar" style="background:var(--orange)"></div>
+          <div class="sw2"><span style="background:var(--ink)"></span><span style="background:var(--orange)"></span><span style="background:var(--paper)"></span></div>
+          <p style="margin-top:12px">Orange appears as one deliberate thin stroke — never as a flood.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · TYPOGRAPHY -->
+  <section class="board" data-screen-label="Typography">
+    <div class="side">TTT · Brand Guidelines</div>
+    <div class="pad">
+      <div class="eyebrow"><span class="num">06</span><span class="k"></span>Typography</div>
+      <div style="display:flex;align-items:baseline;gap:22px;margin-top:28px">
+        <div style="font-weight:200;font-size:96px;line-height:1">Aa</div>
+        <div><div style="font-weight:500;font-size:28px">Be Vietnam Pro</div><div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gray);margin-top:6px">Global grotesque · full Vietnamese support</div></div>
+      </div>
+      <div class="divider" style="margin:28px 0"></div>
+      <div style="display:flex;gap:34px;flex-wrap:wrap">
+        <div><div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--gray);margin-bottom:4px">Thin 100</div><div style="font-weight:100;font-size:34px">Hà Nội</div></div>
+        <div><div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--gray);margin-bottom:4px">Light 200</div><div style="font-weight:200;font-size:34px">Hà Nội</div></div>
+        <div><div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--gray);margin-bottom:4px">Regular 400</div><div style="font-weight:400;font-size:34px">Hà Nội</div></div>
+        <div><div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--gray);margin-bottom:4px">Medium 500</div><div style="font-weight:500;font-size:34px">Hà Nội</div></div>
+      </div>
+      <div style="margin-top:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:30px">
+        <div><div style="font-weight:300;font-size:40px;letter-spacing:-.02em">Headline</div><p style="margin-top:6px">Display · 200–300 · light, airy</p></div>
+        <div><div style="font-weight:300;font-size:22px;color:#3C3E42">Body paragraph</div><p style="margin-top:6px">Body · 300 · generous leading</p></div>
+        <div><div style="font-weight:500;font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:var(--gray)">Label</div><p style="margin-top:6px">Uppercase · tracked</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 · LAYOUT & GRID -->
+  <section class="board" data-screen-label="Layout & grid">
+    <div class="side">TTT · Brand Guidelines</div>
+    <div class="pad">
+      <div class="eyebrow"><span class="num">07</span><span class="k"></span>Layout &amp; grid</div>
+      <h2 style="margin:20px 0 28px;font-size:42px">Twelve columns, generous air</h2>
+      <div class="grid12" style="height:150px">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:34px">
+        <div><h3>Grid</h3><p style="margin-top:4px">12 columns · 24px gutter</p></div>
+        <div><h3>Margins</h3><p style="margin-top:4px">64–88px</p></div>
+        <div><h3>Rhythm</h3><p style="margin-top:4px">Base 8px</p></div>
+        <div><h3>Measure</h3><p style="margin-top:4px">~60 characters</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 · IMAGERY & APPLICATIONS -->
+  <section class="board" data-screen-label="Imagery & applications">
+    <div class="side">TTT · Brand Guidelines</div>
+    <div class="pad">
+      <div class="eyebrow"><span class="num">08</span><span class="k"></span>Imagery &amp; applications</div>
+      <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:22px;margin-top:30px;flex:1">
+        <div class="imgph" style="position:relative">Interior photography · warm, cinematic, deep contrast
+          <div style="position:absolute;left:0;right:0;bottom:0;height:55%;background:linear-gradient(to top,rgba(23,25,28,.82),transparent)"></div>
+          <div style="position:absolute;left:24px;bottom:22px;text-align:left">
+            <div style="font-weight:400;font-size:28px;color:#FFFFFF;letter-spacing:-.01em">Fairmont Hanoi</div>
+            <div style="font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-top:5px">6-star hotel · fit-out</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-rows:1fr 1fr;gap:22px">
+          <div class="imgph">Portfolio · brochure</div>
+          <div class="imgph">Social 1080²</div>
+        </div>
+      </div>
+      <p style="margin-top:20px;max-width:80ch">Photography leads the layout: finished spaces, warm light, material detail. Captions sit over a dark scrim in light type — never in colour. No heavy filters, no tilted horizons.</p>
+    </div>
+  </section>
+
+  <!-- 13 · CLOSE -->
+  <section class="board dark" data-screen-label="Close">
+    <div class="pad" style="align-items:center;justify-content:center;text-align:center">
+      <div style="font-weight:600;letter-spacing:.18em;font-size:36px;color:#F2F1EE">TTT<div style="height:2px;width:56px;background:var(--orange);margin:12px auto 0"></div></div>
+      <div style="margin-top:30px;font-size:24px;font-weight:200;color:rgba(242,241,238,.85);line-height:1.6">Spreading values — creating success.</div>
+      <div style="margin-top:44px;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:rgba(242,241,238,.45)">36 Ly Tu Trong, HCMC · ttt.vn · Since 1992</div>
+    </div>
+  </section>
+
+</div>
+<script>
+(function(){
+  if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  // Enable motion only once the environment actually paints frames:
+  // rAF fires before the next paint in a live browser; in frozen capture
+  // sandboxes it never fires, leaving the page fully visible and static.
+  var dead = false;
+  requestAnimationFrame(function(){
+    if(dead) return;
+    document.body.classList.add('motion');
+    requestAnimationFrame(check);
+    setTimeout(check, 250);
+    setTimeout(check, 900);
+    // Watchdog: if the transition clock is frozen (opacity never rises),
+    // drop the motion class so the deck is fully visible.
+    setTimeout(function(){
+      var first = document.querySelector('.board.in');
+      if(!first) return;
+      var frozen = parseFloat(getComputedStyle(first).opacity) < .5;
+      // Curtain check: by 1400ms the ::after must have translated away
+      // (transition 1.05s + .1s delay). If its Y offset is still 0 the
+      // transition clock is frozen and the curtain is parked over content.
+      try{
+        var t = getComputedStyle(first, '::after').transform;
+        if(t === 'none' || new DOMMatrixReadOnly(t).m42 === 0) frozen = true;
+      }catch(e){}
+      if(frozen){
+        dead = true;
+        document.body.classList.remove('motion');
+        try{ document.getAnimations().forEach(function(a){ try{a.finish();}catch(e){ try{a.cancel();}catch(_){} } }); }catch(e){}
+      }
+    }, 1500);
+  });
+  var boards = Array.prototype.slice.call(document.querySelectorAll('.board'));
+  function check(){
+    if(!boards.length) return;
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    boards = boards.filter(function(b){
+      var r = b.getBoundingClientRect();
+      if(r.top < vh * .85 && r.bottom > 0){ b.classList.add('in'); return false; }
+      return true;
+    });
+  }
+  var raf = 0;
+  function queue(){ if(raf) return; raf = requestAnimationFrame(function(){ raf = 0; check(); }); }
+  window.addEventListener('scroll', queue, {passive:true});
+  window.addEventListener('resize', queue, {passive:true});
+  document.addEventListener('scroll', queue, true);
+  if('IntersectionObserver' in window){
+    try{
+      var io = new IntersectionObserver(function(es){
+        es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); } });
+      }, {threshold:.15});
+      boards.forEach(function(b){ io.observe(b); });
+    }catch(err){}
+  }
+  window.addEventListener('beforeprint', function(){
+    document.querySelectorAll('.board').forEach(function(b){ b.classList.add('in'); });
+  });
+})();
+</script>
+</body>
+</html>
