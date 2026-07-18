@@ -44,6 +44,7 @@ import { evaluateDeck } from '@/lib/present-editor/layout-check';
 import { slidesFromReference, detectGridFromUrl } from '@/lib/present-editor/reference-layout';
 import type { GridGeometryInput } from '@/lib/present-editor/suggest';
 import { consumePresentHandoff } from '@/lib/present-editor/handoff';
+import { consumeCadPresentHandoff } from '@/lib/cad/present-handoff';
 import {
   stashPhotoEditorIn,
   readPhotoEditorReturn,
@@ -229,6 +230,40 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
       mine: true,
     }));
     setLocalRefs((prev) => [...items, ...prev]);
+  }, []);
+
+  // Cầu nối CAD→Present (SONG SONG với A-4 Render→Present ở trên, KHÔNG thay thế): 1 ảnh
+  // snapshot bản vẽ CAD hiện tại (stash ở CadEditor.tsx khi bấm "Đưa sang Present") → CHÈN
+  // THẲNG vào 1 SLIDE MỚI ở cuối deck — không đè slide/deck có sẵn, giống hệt hành vi người
+  // dùng tự upload ảnh vào slide (onAddImageUrl). Consume-once: không có handoff ⇒ noop, editor
+  // y hệt cũ.
+  useEffect(() => {
+    const dataUrl = consumeCadPresentHandoff();
+    if (!dataUrl) return;
+    const insertAt = ed.deck.slides.length;
+    ed.update((d) => {
+      // Nền CỐ ĐỊNH beige ấm TTT (KHÔNG kế thừa slide[0] — slide đầu deck mẫu có thể là slide
+      // bìa nền TỐI, kế thừa mù sẽ làm chữ tối-trên-tối vô hình). Ink luôn tối vì nền luôn sáng.
+      d.slides.push({
+        id: newId('sld'),
+        background: '#F1ECE3',
+        backgroundImage: null,
+        elements: [
+          makeText({
+            text: 'Bản vẽ CAD · CAD Layout',
+            role: 'kicker',
+            frame: { x: 6, y: 4, w: 70, h: 6, rotation: 0 },
+            fontSize: 2.6,
+            bold: true,
+            color: '#221f1a',
+          }),
+          makeImage(dataUrl, { frame: { x: 5, y: 12, w: 90, h: 84, rotation: 0 } }),
+        ],
+        templateId: 'cad-handoff',
+      });
+    });
+    ed.selectSlide(insertAt);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const templates: EditorTemplate[] = useMemo(

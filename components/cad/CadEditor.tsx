@@ -3,10 +3,15 @@
 /**
  * components/cad/CadEditor.tsx — Khung trình CAD 2D (chặng 1 "Layout CAD").
  * Ghép: CadToolbar (nổi) + CadCanvas (nền) + panel Layer (phải) + panel Nội thất (trái, ẩn/hiện)
- * + command-line mini (đáy) + thanh file (import DXF · export PNG/DXF · scale · Đưa sang Render).
+ * + command-line mini (đáy) + thanh file (import DXF · export PNG/DXF · scale · Đưa sang Render ·
+ * Đưa sang Present).
  *
  * "Đưa sang Render →": render extents ra PNG dataURL (nền trắng nét đen) → tạo node Import Image
  * trên canvas Render (useFlowStore) rồi router.push('/') — đúng pattern onDrop asset của FlowCanvas.
+ *
+ * "Đưa sang Present →" (cầu nối CAD→Present, SONG SONG với CAD→Render ở trên, không thay thế):
+ * cùng hàm renderDocToDataURL snapshot bản vẽ → stash qua lib/cad/present-handoff.ts → router.push
+ * ('/present-editor'); PresentEditor tự consume và chèn ảnh vào 1 SLIDE MỚI (không đè deck cũ).
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -32,6 +37,7 @@ import { describeToEntities } from '@/lib/cad/ai-assist';
 import { docBox } from '@/lib/cad/model';
 import { useFlowStore } from '@/lib/store';
 import { stashCadHandoff } from '@/lib/cad/handoff';
+import { stashCadPresentHandoff } from '@/lib/cad/present-handoff';
 import { checkStandards, findRoomLabels, classifyRoom, type Violation, type RoomKind } from '@/lib/cad/standards/checker';
 import { getAllRules } from '@/lib/cad/standards/registry';
 import { suggestFix } from '@/lib/cad/standards/fix-suggest';
@@ -220,6 +226,22 @@ export default function CadEditor() {
     router.push('/');
   };
 
+  // "Đưa sang Present →" — SONG SONG với "Đưa sang Render →" (không đụng luồng đó).
+  // Snapshot bản vẽ hiện tại (TÁI DÙNG renderDocToDataURL — không viết lại thuật toán vẽ CAD ra
+  // ảnh) → stash qua lib/cad/present-handoff.ts (cùng pattern sessionStorage+fallback) →
+  // '/present-editor' tự consume và chèn vào 1 SLIDE MỚI (xem PresentEditor.tsx).
+  const toPresent = () => {
+    const doc = useCadStore.getState().doc;
+    if (!doc.entities.length) {
+      setHandoffMsg('Bản vẽ trống — vẽ hoặc import trước.');
+      setTimeout(() => setHandoffMsg(''), 2500);
+      return;
+    }
+    const dataUrl = renderDocToDataURL(doc, 2000);
+    stashCadPresentHandoff(dataUrl);
+    router.push('/present-editor');
+  };
+
   return (
     <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       {/* thanh file */}
@@ -277,6 +299,9 @@ export default function CadEditor() {
         </button>
         <button type="button" onClick={toRender} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Kết xuất layout thành node Import Image ở chặng Render">
           Đưa sang Render <ArrowRight size={14} />
+        </button>
+        <button type="button" onClick={toPresent} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Chụp bản vẽ hiện tại thành 1 slide mới ở chặng Present (không đè slide có sẵn)">
+          Đưa sang Present <ArrowRight size={14} />
         </button>
       </div>
 
