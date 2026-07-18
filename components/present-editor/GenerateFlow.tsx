@@ -43,11 +43,19 @@ interface Props {
   /** ảnh reference sẵn có (server + local) để "đính kèm" chọn nhanh. */
   refImages: RefImage[];
   onComplete: (r: GenerateResult) => void;
+  /**
+   * (Fix Phase 2b, audit 18/07) Bỏ qua bước generate, sang thẳng kệ mẫu builtin/"Của tôi".
+   * Trước đây LayoutShelf CHỈ hiện kệ (và nút "Lưu mẫu") SAU KHI generate xong ít nhất 1 lần
+   * trong phiên — nghĩa là ai chưa từng bấm Generate thì KHÔNG BAO GIỜ thấy được kệ mẫu hay
+   * nút lưu template, dù tính năng vẫn hoạt động đúng khi tới được đó. Thêm lối tắt này để
+   * kệ mẫu luôn với tới được, không bắt buộc phải generate trước.
+   */
+  onSkip?: () => void;
 }
 
 type Phase = 'idle' | 'scanning';
 
-export default function GenerateFlow({ refImages, onComplete }: Props) {
+export default function GenerateFlow({ refImages, onComplete, onSkip }: Props) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [contentImages, setContentImages] = useState<string[]>([]);
   const [bodyText, setBodyText] = useState('');
@@ -242,6 +250,23 @@ export default function GenerateFlow({ refImages, onComplete }: Props) {
       </button>
       {!canGenerate && (
         <p style={{ ...hintP, justifyContent: 'center' }}>Cần ít nhất 1 ảnh nội dung hoặc nội dung text.</p>
+      )}
+      {onSkip && (
+        <button
+          type="button"
+          onClick={onSkip}
+          style={{
+            alignSelf: 'center',
+            background: 'none',
+            border: 'none',
+            padding: '4px 8px',
+            fontSize: 11.5,
+            color: 'var(--accent)',
+            cursor: 'pointer',
+          }}
+        >
+          Bỏ qua, xem mẫu có sẵn →
+        </button>
       )}
     </div>
   );

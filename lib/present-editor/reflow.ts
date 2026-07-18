@@ -31,6 +31,7 @@ import {
   type SlideElement,
   type TextElement,
   type ImageElement,
+  type Frame,
 } from './model';
 import { DECK_STANDARDS, budgetFor } from './standards';
 import { fitImageFrame, textFrameHeight, titleSize } from './region-layout';
@@ -85,6 +86,36 @@ function clampToStage(el: SlideElement): SlideElement {
   const y = clamp(f.y, 0, 100 - h);
   if (x === f.x && y === f.y && w === f.w && h === f.h) return el;
   return { ...el, frame: { ...f, x, y, w, h } };
+}
+
+/** Tỉ lệ diện tích `a` bị `b` che (0..1) — dùng để phát hiện phần tử tự do bị ảnh mới đè kín. */
+function overlapAreaPct(a: Frame, b: Frame): number {
+  const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+  const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+  const aArea = a.w * a.h;
+  if (aArea <= 0) return 0;
+  return (ix * iy) / aArea;
+}
+
+/**
+ * (Fix Phase 2c, audit 18/07 — bug thật: "đổi khổ trình bày làm ảnh đè hoàn toàn lên
+ * tiêu đề vô hình") Phần tử TỰ DO (role 'free') chủ ý KHÔNG bị dàn lại theo lưới canonical
+ * — giữ đúng triết lý "tự do đặt vị trí" của người dùng. Nhưng chỉ CLAMP biên (như cũ)
+ * không đủ: nếu ảnh cấu trúc vừa được dàn lại vào ô MỚI đè kín > 50% diện tích phần tử tự
+ * do, người dùng sẽ thấy chữ/hình biến mất hoàn toàn dù dữ liệu còn nguyên — đây là bug
+ * thật cần né, KHÔNG phải đổi triết lý tự do đặt vị trí. Né bằng cách đẩy phần tử xuống
+ * ngay dưới ảnh che nó (hoặc lên trên nếu không đủ chỗ dưới), giữ nguyên x/w/h.
+ */
+function avoidImageOverlap(el: SlideElement, newImages: ImageElement[]): SlideElement {
+  const clamped = clampToStage(el);
+  const f = clamped.frame;
+  const covering = newImages.find((im) => overlapAreaPct(f, im.frame) > 0.5);
+  if (!covering) return clamped;
+  const imgF = covering.frame;
+  const belowY = imgF.y + imgF.h + 2;
+  const fitsBelow = belowY + f.h <= 100;
+  const y = fitsBelow ? belowY : Math.max(0, imgF.y - f.h - 2);
+  return { ...clamped, frame: { ...f, y: clamp(y, 0, 100 - f.h) } };
 }
 
 interface CanonicalLayout {
@@ -216,7 +247,9 @@ export function reflowSlideForStage(slide: EditorSlide, from: StageSize, to: Sta
 
   // Giữ đúng THỨ TỰ VẼ gốc (z-order): duyệt mảng elements GỐC, thay từng phần tử cấu trúc
   // bằng bản đã dàn lại (tra theo id); phần tự do chỉ kẹp biên, không đổi vị trí trong mảng.
-  const elements = slide.elements.map((el) => byId.get(el.id) ?? (freeformIds.has(el.id) ? clampToStage(el) : el));
+  const elements = slide.elements.map(
+    (el) => byId.get(el.id) ?? (freeformIds.has(el.id) ? avoidImageOverlap(el, newImages) : el),
+  );
 
   return { ...slide, elements };
 }

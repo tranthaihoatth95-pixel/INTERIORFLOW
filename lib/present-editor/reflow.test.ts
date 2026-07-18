@@ -178,5 +178,26 @@ console.log('[12] Template đòi hỏi ảnh (budget.images.min>0, vd "grid") nh
   ok('tiêu đề + thân bài vẫn còn đủ, không bị ô ảnh ảo chiếm mất', out.elements.length === 2);
 }
 
+console.log('[13] Fix Phase 2c (audit 18/07) — text TỰ DO (role free, vd thêm qua nút "Thêm chữ") bị ảnh dàn lại đè kín → phải né, KHÔNG được để vô hình');
+{
+  // "Thêm chữ" mặc định role:'free' (model.ts) — mô phỏng đúng kịch bản Tester phát hiện.
+  const freeText = makeText({
+    id: 'free1',
+    text: 'Test QA Slide',
+    role: 'free',
+    frame: { x: 10, y: 50, w: 20, h: 10, rotation: 0 },
+  });
+  const image = makeImage('https://x/y.jpg', { id: 'img1', frame: { x: 6, y: 6, w: 88, h: 88, rotation: 0 } });
+  const slide: EditorSlide = { id: 's', background: '#fff', backgroundImage: null, elements: [freeText, image], templateId: 'blank' };
+  const out = reflowSlideForStage(slide, P16_9, A4_PORTRAIT);
+  const outFree = out.elements.find((e) => e.id === 'free1') as TextElement;
+  const outImg = out.elements.find((e) => e.id === 'img1') as ImageElement;
+  ok('text tự do còn nguyên nội dung', outFree?.text === 'Test QA Slide');
+  const ix = Math.max(0, Math.min(outFree.frame.x + outFree.frame.w, outImg.frame.x + outImg.frame.w) - Math.max(outFree.frame.x, outImg.frame.x));
+  const iy = Math.max(0, Math.min(outFree.frame.y + outFree.frame.h, outImg.frame.y + outImg.frame.h) - Math.max(outFree.frame.y, outImg.frame.y));
+  const overlapPct = (ix * iy) / (outFree.frame.w * outFree.frame.h);
+  ok('KHÔNG còn bị ảnh đè >50% diện tích (trước fix: bị đè kín, vô hình)', overlapPct <= 0.5);
+}
+
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

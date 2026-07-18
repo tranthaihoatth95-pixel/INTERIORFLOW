@@ -310,7 +310,9 @@ export default function LayoutShelf({
 
   // Trước khi Generate: hiện flow mở đầu (import ảnh → text → reference → generate).
   if (!generated) {
-    return <GenerateFlow refImages={refImages} onComplete={handleGenerated} />;
+    return (
+      <GenerateFlow refImages={refImages} onComplete={handleGenerated} onSkip={() => setGenerated(true)} />
+    );
   }
 
   return (
