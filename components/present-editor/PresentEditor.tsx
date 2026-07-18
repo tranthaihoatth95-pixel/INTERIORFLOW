@@ -61,6 +61,8 @@ import Toolbar from './Toolbar';
 import EditorCanvas from './EditorCanvas';
 import Inspector from './Inspector';
 import SlideStrip from './SlideStrip';
+import SlideSorter from './SlideSorter';
+import { reorderArray } from '@/lib/present-editor/reorder';
 import LayoutShelf from './LayoutShelf';
 import LibraryBrowser, { type RefImage } from './LibraryBrowser';
 import MotionPanel from './MotionPanel';
@@ -167,6 +169,8 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   const [gu, setGu] = useState<GuProfile | null>(null);
   const [imageEditId, setImageEditId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
+  // "Xem lưới" (Slide Sorter) — overlay bổ sung cho SlideStrip, xem toàn deck dạng lưới.
+  const [sorterOpen, setSorterOpen] = useState(false);
   // bảng hỏi số liệu (áp vào bố cục sinh ra).
   const [spec, setSpec] = useState<LayoutSpec>(DEFAULT_SPEC);
   // ảnh reference LOCAL (phiên editor) — bổ sung cho server khi chưa đăng nhập.
@@ -691,6 +695,20 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     [ed],
   );
 
+  // Kéo-thả trong Slide Sorter: from → to bất kỳ (khác onMoveSlide chỉ ±1 bước). Logic mảng
+  // THUẦN ở lib/present-editor/reorder.ts (test riêng) — ở đây chỉ áp vào deck + chọn slide
+  // vừa kéo làm current (cùng hành vi onMoveSlide).
+  const onReorderSlide = useCallback(
+    (from: number, to: number) => {
+      if (from === to) return;
+      ed.update((d) => {
+        d.slides = reorderArray(d.slides, from, to);
+      });
+      ed.selectSlide(to);
+    },
+    [ed],
+  );
+
   /* ------------------------- Reference (ảnh tham khảo) ------------------------- */
   const onUploadLocalRefs = useCallback((files: { name: string; dataUrl: string }[], tags: string) => {
     const items: RefImage[] = files.map((f) => ({
@@ -847,7 +865,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         return;
       }
       if (typing) return;
-      if (imageEditId || playing) return;
+      if (imageEditId || playing || sorterOpen) return;
 
       const mod = e.metaKey || e.ctrlKey;
 
@@ -930,6 +948,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     onSelectNext,
     imageEditId,
     playing,
+    sorterOpen,
     zoomIn,
     zoomOut,
     zoomReset,
@@ -1125,6 +1144,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         onBrandKit={() => setBrandKitOpen(true)}
         onStagePreset={() => setStagePresetOpen(true)}
         stageLabel={stage.label}
+        onOpenSorter={() => setSorterOpen(true)}
         busy={busy}
       />
 
@@ -1455,6 +1475,23 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
 
       {/* Trình chiếu với hiệu ứng động. */}
       {playing && <SlidePlayer deck={ed.deck} startIndex={ed.currentSlide} onClose={() => setPlaying(false)} />}
+
+      {/* "Xem lưới" (Slide Sorter) — overlay bổ sung cho SlideStrip, xem toàn deck dạng lưới. */}
+      {sorterOpen && (
+        <SlideSorter
+          deck={ed.deck}
+          current={ed.currentSlide}
+          onSelect={(i) => {
+            ed.selectSlide(i);
+            setSorterOpen(false);
+          }}
+          onAdd={onAddSlide}
+          onDuplicate={onDuplicateSlide}
+          onDelete={onDeleteSlide}
+          onReorder={onReorderSlide}
+          onClose={() => setSorterOpen(false)}
+        />
+      )}
 
       {/* Brand Kit — Nhận diện (PS-1): logo · màu · font · watermark + áp lại theme cả deck. */}
       {brandKitOpen && (
