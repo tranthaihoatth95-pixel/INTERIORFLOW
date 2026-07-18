@@ -130,6 +130,18 @@
       ],
       "port": 4047,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-tooltips"
+    },
+    {
+      "name": "brandkit-4049",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4049"
+      ],
+      "port": 4049,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-brandkit"
     }
   ]
 }
