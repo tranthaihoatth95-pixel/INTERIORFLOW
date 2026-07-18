@@ -31,6 +31,7 @@ import {
 import type { Tool, BrushSettings } from '@/lib/photo-editor/tools';
 import { isPaintTool, TOOL_LABELS, TOOL_HINTS, TOOL_KEYS } from '@/lib/photo-editor/tools';
 import { modKey, modShiftKey } from '@/lib/kbd';
+import Tooltip from '@/components/ui/Tooltip';
 
 interface Props {
   tool: Tool;
@@ -333,6 +334,11 @@ function Btn({
   );
 }
 
+/** Rút gọn title (thường ghép "Nhãn · phím X — mô tả") thành nhãn ngắn cho tag hover. */
+function shortLabel(title: string): string {
+  return title.split(' · ')[0].split(' (')[0].split(' — ')[0].trim();
+}
+
 function IconBtn({
   children,
   onClick,
@@ -347,26 +353,28 @@ function IconBtn({
   disabled?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      title={title}
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        width: 36,
-        height: 34,
-        display: 'grid',
-        placeItems: 'center',
-        borderRadius: 8,
-        border: active ? '1px solid var(--accent)' : '1px solid var(--border)',
-        background: active ? 'var(--accent-soft)' : 'var(--field)',
-        color: active ? 'var(--accent)' : 'var(--t2)',
-        cursor: disabled ? 'default' : 'pointer',
-        opacity: disabled ? 0.4 : 1,
-      }}
-    >
-      {children}
-    </button>
+    <Tooltip label={shortLabel(title)}>
+      <button
+        type="button"
+        title={title}
+        onClick={onClick}
+        disabled={disabled}
+        style={{
+          width: 36,
+          height: 34,
+          display: 'grid',
+          placeItems: 'center',
+          borderRadius: 8,
+          border: active ? '1px solid var(--accent)' : '1px solid var(--border)',
+          background: active ? 'var(--accent-soft)' : 'var(--field)',
+          color: active ? 'var(--accent)' : 'var(--t2)',
+          cursor: disabled ? 'default' : 'pointer',
+          opacity: disabled ? 0.4 : 1,
+        }}
+      >
+        {children}
+      </button>
+    </Tooltip>
   );
 }
 

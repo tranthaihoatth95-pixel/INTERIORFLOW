@@ -604,3 +604,61 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
     border-left: none;
   }
 }
+
+/* ============================================================
+   Smart Tooltip dùng chung (components/ui/Tooltip.tsx)
+   Tag nhỏ hiện cạnh icon/nút khi hover/focus, thay title="" mặc định trình
+   duyệt. Hiện trễ ngắn ~150ms (transition-delay chỉ ở nhánh .if-tooltip-visible),
+   biến mất NGAY khi rời chuột (nhánh mặc định delay 0s).
+   Tag portal ra document.body + position:fixed (né bị CẮT bởi toolbar có
+   overflow-x:auto, xem chú thích trong Tooltip.tsx) — toạ độ left/top set
+   INLINE bằng JS (getBoundingClientRect), CSS chỉ lo hiện/ẩn + canh giữa.
+   Màu đảo --t1/--bg (giống tooltip hệ thống) — không thêm token mới.
+   ============================================================ */
+.if-tooltip-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.if-tooltip-tag {
+  --tt-offset: 0px;
+  position: fixed;
+  z-index: 1000;
+  padding: 4px 9px;
+  border-radius: var(--radius-sm);
+  background: var(--t1);
+  color: var(--bg);
+  border: 1px solid var(--border);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow: var(--shadow-pop);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  transition-delay: 0s;
+}
+/* side='top': neo (left,top) = mép TRÊN icon → tag đứng phía trên, cách 7px */
+.if-tooltip-tag.if-tooltip-top {
+  transform: translate(calc(-50% + var(--tt-offset)), calc(-100% - 4px));
+}
+/* side='bottom': neo (left,top) = mép DƯỚI icon → tag đứng phía dưới, cách 7px */
+.if-tooltip-tag.if-tooltip-bottom {
+  transform: translate(calc(-50% + var(--tt-offset)), 4px);
+}
+.if-tooltip-tag.if-tooltip-visible {
+  opacity: 1;
+  transition-delay: 0.15s;
+}
+.if-tooltip-tag.if-tooltip-visible.if-tooltip-top {
+  transform: translate(calc(-50% + var(--tt-offset)), calc(-100% - 7px));
+}
+.if-tooltip-tag.if-tooltip-visible.if-tooltip-bottom {
+  transform: translate(calc(-50% + var(--tt-offset)), 7px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .if-tooltip-tag {
+    transition-duration: 0.001ms !important;
+  }
+}

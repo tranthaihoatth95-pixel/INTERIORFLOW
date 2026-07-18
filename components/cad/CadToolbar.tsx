@@ -19,6 +19,12 @@ import {
 } from 'lucide-react';
 import { useCadStore, type Tool, type CadMode } from '@/lib/cad/store';
 import { modKey, modShiftKey } from '@/lib/kbd';
+import Tooltip from '@/components/ui/Tooltip';
+
+/** Rút gọn nhãn nút (bỏ mô tả dài sau " (" / " — ") thành nhãn ngắn cho tag hover. */
+function shortLabel(title: string): string {
+  return title.split(' (')[0].split(' — ')[0].trim();
+}
 
 /** Sprint 9 — nhớ lựa chọn Sketch/Pro qua các phiên (mặc định 'sketch' nếu chưa từng chọn hoặc
  * private mode/SSR chặn localStorage — xem pattern giống PresentEditor.tsx). */
@@ -153,15 +159,16 @@ export default function CadToolbar({
         const Icon = b.icon;
         const on = tool === b.tool;
         return (
-          <button
-            key={b.tool}
-            type="button"
-            onClick={() => setTool(b.tool)}
-            title={`${b.label} · ${b.key}`}
-            style={btn(on)}
-          >
-            <Icon size={17} />
-          </button>
+          <Tooltip key={b.tool} label={shortLabel(b.label)}>
+            <button
+              type="button"
+              onClick={() => setTool(b.tool)}
+              title={`${b.label} · ${b.key}`}
+              style={btn(on)}
+            >
+              <Icon size={17} />
+            </button>
+          </Tooltip>
         );
       })}
     </>
@@ -198,12 +205,16 @@ export default function CadToolbar({
       {isPro && <Group items={SHAPES2} />}
       <Divider />
       <Group items={ARCH} />
-      <button type="button" onClick={onToggleMaterial} title="Vật liệu (Sprint 5) — chọn preset gạch/gỗ/đá/sơn cho Hatch" style={btn(false)}>
-        <Palette size={17} />
-      </button>
-      <button type="button" onClick={() => setPendingBlock('door')} title="Đặt cửa đi (D) — dùng block cửa có sẵn" style={btn(pendingBlock === 'door')}>
-        <DoorOpen size={17} />
-      </button>
+      <Tooltip label="Vật liệu">
+        <button type="button" onClick={onToggleMaterial} title="Vật liệu (Sprint 5) — chọn preset gạch/gỗ/đá/sơn cho Hatch" style={btn(false)}>
+          <Palette size={17} />
+        </button>
+      </Tooltip>
+      <Tooltip label="Cửa đi">
+        <button type="button" onClick={() => setPendingBlock('door')} title="Đặt cửa đi (D) — dùng block cửa có sẵn" style={btn(pendingBlock === 'door')}>
+          <DoorOpen size={17} />
+        </button>
+      </Tooltip>
       <Divider />
       <Group items={EDIT} />
       {isPro && <Divider />}
@@ -214,52 +225,68 @@ export default function CadToolbar({
       <Divider />
       <Group items={ANNOTATE} />
       <Divider />
-      <button type="button" onClick={onToggleFurniture} title="Thư viện nội thất (block)" style={btn(tool === 'block')}>
-        <Sofa size={17} />
-      </button>
+      <Tooltip label="Nội thất">
+        <button type="button" onClick={onToggleFurniture} title="Thư viện nội thất (block)" style={btn(tool === 'block')}>
+          <Sofa size={17} />
+        </button>
+      </Tooltip>
       <Divider />
       {/* snap + grid toggle — auto-snap là hành vi mặc định của "Sketch" (IF tự chỉnh), giữ hiện
           ở cả 2 mode. Polar tracking (bắt góc theo độ) là khái niệm CAD hơn → Pro-only. */}
-      <button
-        type="button"
-        onClick={() => setSnap({ enabled: !snap.enabled })}
-        title={`Bắt điểm (snap): ${snap.enabled ? 'BẬT' : 'tắt'} — endpoint/mid/center/quadrant/node/giao/vuông góc/tiếp tuyến/lưới`}
-        style={btn(snap.enabled)}
-      >
-        <Magnet size={16} />
-      </button>
-      <button
-        type="button"
-        onClick={() => setSnap({ grid: !snap.grid })}
-        title={`Snap lưới: ${snap.grid ? 'BẬT' : 'tắt'}`}
-        style={btn(snap.grid)}
-      >
-        <Grid2x2 size={16} />
-      </button>
-      {isPro && (
+      <Tooltip label={`Bắt điểm: ${snap.enabled ? 'BẬT' : 'tắt'}`}>
         <button
           type="button"
-          onClick={() => setPolarTracking(!polarTracking)}
-          title={`Polar tracking: ${polarTracking ? 'BẬT' : 'tắt'} — bắt góc ${polarStep}° (Shift = Ortho tuyệt đối, ưu tiên hơn)`}
-          style={btn(polarTracking)}
+          onClick={() => setSnap({ enabled: !snap.enabled })}
+          title={`Bắt điểm (snap): ${snap.enabled ? 'BẬT' : 'tắt'} — endpoint/mid/center/quadrant/node/giao/vuông góc/tiếp tuyến/lưới`}
+          style={btn(snap.enabled)}
         >
-          <Compass size={16} />
+          <Magnet size={16} />
         </button>
+      </Tooltip>
+      <Tooltip label={`Snap lưới: ${snap.grid ? 'BẬT' : 'tắt'}`}>
+        <button
+          type="button"
+          onClick={() => setSnap({ grid: !snap.grid })}
+          title={`Snap lưới: ${snap.grid ? 'BẬT' : 'tắt'}`}
+          style={btn(snap.grid)}
+        >
+          <Grid2x2 size={16} />
+        </button>
+      </Tooltip>
+      {isPro && (
+        <Tooltip label={`Polar tracking: ${polarTracking ? 'BẬT' : 'tắt'}`}>
+          <button
+            type="button"
+            onClick={() => setPolarTracking(!polarTracking)}
+            title={`Polar tracking: ${polarTracking ? 'BẬT' : 'tắt'} — bắt góc ${polarStep}° (Shift = Ortho tuyệt đối, ưu tiên hơn)`}
+            style={btn(polarTracking)}
+          >
+            <Compass size={16} />
+          </button>
+        </Tooltip>
       )}
       <Divider />
-      <button type="button" onClick={() => setTool('pan')} title="Pan (space kéo)" style={btn(tool === 'pan')}>
-        <Hand size={16} />
-      </button>
-      <button type="button" onClick={() => fire('cad:zoom-extents')} title="Zoom Extents (F)" style={btn(false)}>
-        <Maximize size={16} />
-      </button>
+      <Tooltip label="Pan">
+        <button type="button" onClick={() => setTool('pan')} title="Pan (space kéo)" style={btn(tool === 'pan')}>
+          <Hand size={16} />
+        </button>
+      </Tooltip>
+      <Tooltip label="Zoom Extents">
+        <button type="button" onClick={() => fire('cad:zoom-extents')} title="Zoom Extents (F)" style={btn(false)}>
+          <Maximize size={16} />
+        </button>
+      </Tooltip>
       <Divider />
-      <button type="button" onClick={undo} disabled={!past} title={`Undo (${modKey('Z')})`} style={btn(false, !past)}>
-        <Undo2 size={16} />
-      </button>
-      <button type="button" onClick={redo} disabled={!future} title={`Redo (${modShiftKey('Z')})`} style={btn(false, !future)}>
-        <Redo2 size={16} />
-      </button>
+      <Tooltip label="Undo">
+        <button type="button" onClick={undo} disabled={!past} title={`Undo (${modKey('Z')})`} style={btn(false, !past)}>
+          <Undo2 size={16} />
+        </button>
+      </Tooltip>
+      <Tooltip label="Redo">
+        <button type="button" onClick={redo} disabled={!future} title={`Redo (${modShiftKey('Z')})`} style={btn(false, !future)}>
+          <Redo2 size={16} />
+        </button>
+      </Tooltip>
     </div>
     </div>
   );
