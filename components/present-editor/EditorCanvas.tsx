@@ -45,8 +45,8 @@ interface Props {
   onAltDrag: (id: string) => void;
   onEditTextCommit: (id: string, text: string) => void;
   onEditImage: (id: string) => void;
-  /** mở trình chỉnh ảnh nâng cao (Photoshop-level, /photo-editor). */
-  onEditImageAdvanced?: () => void;
+  /** mở trình chỉnh ảnh nâng cao (Photoshop-level, /photo-editor) cho đúng ảnh `id`. */
+  onEditImageAdvanced?: (id: string) => void;
   /** thả ảnh Reference (drag từ panel) lên sân khấu → thêm image element. */
   onDropRefImage?: (url: string) => void;
   /** thao tác cho menu chuột phải trên element. */
@@ -342,7 +342,7 @@ export default function EditorCanvas({
             <>
               <MenuItem onClick={() => { onEditImage(menu.id); setMenu(null); }}>Chỉnh ảnh (crop · lọc · thay)</MenuItem>
               {onEditImageAdvanced && (
-                <MenuItem onClick={() => { onEditImageAdvanced(); setMenu(null); }}>Chỉnh ảnh nâng cao (Photoshop)</MenuItem>
+                <MenuItem onClick={() => { onEditImageAdvanced(menu.id); setMenu(null); }}>Chỉnh ảnh nâng cao (Photoshop)</MenuItem>
               )}
               <MenuSep />
             </>

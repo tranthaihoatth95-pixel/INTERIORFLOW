@@ -44,6 +44,19 @@ import { evaluateDeck } from '@/lib/present-editor/layout-check';
 import { slidesFromReference, detectGridFromUrl } from '@/lib/present-editor/reference-layout';
 import type { GridGeometryInput } from '@/lib/present-editor/suggest';
 import { consumePresentHandoff } from '@/lib/present-editor/handoff';
+import {
+  stashPhotoEditorIn,
+  readPhotoEditorReturn,
+  clearPhotoEditorReturn,
+  PHOTO_EDITOR_RETURN_KEY,
+} from '@/lib/photo-editor/handoff';
+import {
+  createAssetFromElement,
+  attachElementToAsset,
+  detachElement,
+  setLinkedAssetSrc,
+  listLinkedAssets,
+} from '@/lib/present-editor/linked-assets';
 import Toolbar from './Toolbar';
 import EditorCanvas from './EditorCanvas';
 import Inspector from './Inspector';
@@ -935,10 +948,93 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     return () => window.removeEventListener('pointerdown', onPointerDownCapture);
   }, [ed]);
 
-  // Mở /photo-editor (Photoshop-level) ở tab mới — hậu kỳ ảnh nâng cao.
-  const openAdvancedEditor = useCallback(() => {
-    if (typeof window !== 'undefined') window.open('/photo-editor', '_blank');
-  }, []);
+  // Mở /photo-editor (Photoshop-level) ở tab mới — hậu kỳ ảnh nâng cao (PS-3, round-trip).
+  // Stash NGAY TRƯỚC window.open (sessionStorage được tab mới clone tại đúng lúc mở — xem
+  // lib/photo-editor/handoff.ts) rồi mở tab; /photo-editor tự consume để seed đúng ảnh.
+  const openAdvancedEditor = useCallback(
+    (elementId: string) => {
+      const el = ed.slide?.elements.find((e) => e.id === elementId);
+      if (el && el.kind === 'image' && ed.slide) {
+        stashPhotoEditorIn(el.src, { slideId: ed.slide.id, elementId, assetId: el.assetId });
+      }
+      if (typeof window !== 'undefined') window.open('/photo-editor', '_blank');
+    },
+    [ed.slide],
+  );
+
+  // PS-3 — CHIỀU VỀ: /photo-editor (tab khác) ghi ảnh đã edit vào localStorage
+  // (writePhotoEditorReturn); ở đây lắng nghe sự kiện `storage` (bắn tự động khi TAB KHÁC
+  // đổi giá trị) + kiểm lại khi tab này focus lại (phòng khi bỏ lỡ sự kiện lúc ẩn). Consume-once:
+  // áp xong dọn ngay (clearPhotoEditorReturn) + chặn double-apply bằng mốc thời gian đã áp.
+  const lastAppliedReturnTs = useRef(0);
+  useEffect(() => {
+    function applyPendingReturn() {
+      const ret = readPhotoEditorReturn();
+      if (!ret || ret.ts <= lastAppliedReturnTs.current) return;
+      lastAppliedReturnTs.current = ret.ts;
+      const { dataUrl, target } = ret;
+      ed.update((d) => {
+        if (target.assetId) {
+          const next = setLinkedAssetSrc(d, target.assetId, dataUrl);
+          d.linkedAssets = next.linkedAssets;
+          d.slides = next.slides;
+          return;
+        }
+        const slide = d.slides.find((s) => s.id === target.slideId);
+        const el = slide?.elements.find((e) => e.id === target.elementId);
+        if (el && el.kind === 'image') {
+          el.src = dataUrl;
+          el.crop = { x: 0, y: 0, w: 1, h: 1 }; // ảnh mới (đã composite) — crop cũ hết ý nghĩa
+        }
+      });
+      clearPhotoEditorReturn();
+    }
+    applyPendingReturn(); // phòng ảnh đã ghi về trong lúc tab này chưa mount / đang tải
+    function onStorage(e: StorageEvent) {
+      if (e.key === PHOTO_EDITOR_RETURN_KEY) applyPendingReturn();
+    }
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('focus', applyPendingReturn);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('focus', applyPendingReturn);
+    };
+  }, [ed]);
+
+  // Tài sản liên kết (PS-3) — panel Inspector chọn/gắn/gỡ; chỉnh nguồn thật xảy ra ở
+  // applyPendingReturn (ghi về từ /photo-editor) qua setLinkedAssetSrc.
+  const linkedAssets = useMemo(() => listLinkedAssets(ed.deck), [ed.deck]);
+  const onCreateAsset = useCallback(() => {
+    if (!ed.slide || !ed.selected || ed.selected.kind !== 'image') return;
+    const slideId = ed.slide.id;
+    const elementId = ed.selected.id;
+    ed.update((d) => {
+      const next = createAssetFromElement(d, slideId, elementId);
+      d.linkedAssets = next.linkedAssets;
+      d.slides = next.slides;
+    });
+  }, [ed]);
+  const onAttachAsset = useCallback(
+    (assetId: string) => {
+      if (!ed.slide || !ed.selected || ed.selected.kind !== 'image') return;
+      const slideId = ed.slide.id;
+      const elementId = ed.selected.id;
+      ed.update((d) => {
+        const next = attachElementToAsset(d, slideId, elementId, assetId);
+        d.slides = next.slides;
+      });
+    },
+    [ed],
+  );
+  const onDetachAsset = useCallback(() => {
+    if (!ed.slide || !ed.selected || ed.selected.kind !== 'image') return;
+    const slideId = ed.slide.id;
+    const elementId = ed.selected.id;
+    ed.update((d) => {
+      const next = detachElement(d, slideId, elementId);
+      d.slides = next.slides;
+    });
+  }, [ed]);
 
   // Brand Kit (PS-1): mở panel Nhận diện + áp lại theme cho cả deck.
   const [brandKitOpen, setBrandKitOpen] = useState(false);
@@ -1285,6 +1381,10 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
                   onDelete={onDeleteSelected}
                   onOpenImageEditor={(id) => setImageEditId(id)}
                   onOpenAdvancedEditor={openAdvancedEditor}
+                  linkedAssets={linkedAssets}
+                  onCreateAsset={onCreateAsset}
+                  onAttachAsset={onAttachAsset}
+                  onDetachAsset={onDetachAsset}
                   selectedIds={ed.selectedIds}
                   onSelect={ed.select}
                   onReorderElement={onReorderElement}

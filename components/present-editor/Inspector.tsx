@@ -19,6 +19,7 @@ import type {
   ListStyle,
 } from '@/lib/present-editor/model';
 import { effectiveListStyle } from '@/lib/present-editor/model';
+import type { LinkedAsset } from '@/lib/present-editor/model';
 import { useState, useEffect, useRef } from 'react';
 import { getCustomFonts, addCustomFont, registerAllCustom, type CustomFont } from '@/lib/present-editor/custom-fonts';
 import type { FontPairing } from '@/lib/slides';
@@ -53,6 +54,8 @@ import {
   RotateCcw,
   SlidersHorizontal,
   Wand2,
+  Link2,
+  Unlink,
 } from 'lucide-react';
 
 /** Kiểu căn element trong sân khấu. */
@@ -71,8 +74,13 @@ interface Props {
   onDelete: () => void;
   /** mở chế độ chỉnh ảnh (Canva-style) cho ảnh đang chọn. */
   onOpenImageEditor?: (id: string) => void;
-  /** mở trình chỉnh ảnh nâng cao (Photoshop-level, /photo-editor). */
-  onOpenAdvancedEditor?: () => void;
+  /** mở trình chỉnh ảnh nâng cao (Photoshop-level, /photo-editor) cho đúng ảnh `id`. */
+  onOpenAdvancedEditor?: (id: string) => void;
+  /* ---- tài sản liên kết (PS-3) — chỉ dùng khi selected.kind === 'image' ---- */
+  linkedAssets?: LinkedAsset[];
+  onCreateAsset?: () => void;
+  onAttachAsset?: (assetId: string) => void;
+  onDetachAsset?: () => void;
   /* ---- ô quản lý layer ---- */
   selectedIds: string[];
   onSelect: (id: string) => void;
@@ -92,6 +100,10 @@ export default function Inspector({
   onDelete,
   onOpenImageEditor,
   onOpenAdvancedEditor,
+  linkedAssets,
+  onCreateAsset,
+  onAttachAsset,
+  onDetachAsset,
   selectedIds,
   onSelect,
   onReorderElement,
@@ -196,6 +208,10 @@ export default function Inspector({
           onUpdate={onUpdateSelected as (m: (el: ImageElement) => void, live?: boolean) => void}
           onOpenEditor={onOpenImageEditor ? () => onOpenImageEditor(selected.id) : undefined}
           onOpenAdvanced={onOpenAdvancedEditor}
+          linkedAssets={linkedAssets ?? []}
+          onCreateAsset={onCreateAsset}
+          onAttachAsset={onAttachAsset}
+          onDetachAsset={onDetachAsset}
         />
       )}
       {selected.kind === 'shape' && (
@@ -495,13 +511,23 @@ function ImageInspector({
   onUpdate,
   onOpenEditor,
   onOpenAdvanced,
+  linkedAssets = [],
+  onCreateAsset,
+  onAttachAsset,
+  onDetachAsset,
 }: {
   el: ImageElement;
   onUpdate: (m: (el: ImageElement) => void, live?: boolean) => void;
   onOpenEditor?: () => void;
-  onOpenAdvanced?: () => void;
+  onOpenAdvanced?: (id: string) => void;
+  linkedAssets?: LinkedAsset[];
+  onCreateAsset?: () => void;
+  onAttachAsset?: (assetId: string) => void;
+  onDetachAsset?: () => void;
 }) {
   const crop = el.crop;
+  // asset khác (không phải asset chính ảnh này) — để gợi ý "dùng lại" trong dropdown.
+  const otherAssets = linkedAssets.filter((a) => a.id !== el.assetId);
   return (
     <Panel title="Ảnh">
       {onOpenEditor && (
@@ -528,9 +554,67 @@ function ImageInspector({
         </button>
       )}
       {onOpenAdvanced && (
-        <button type="button" onClick={onOpenAdvanced} style={ghostBtn} title="Layers · mask · clone (mở /photo-editor)">
+        <button type="button" onClick={() => onOpenAdvanced(el.id)} style={ghostBtn} title="Layers · mask · clone (mở /photo-editor)">
           <Wand2 size={12} /> Chỉnh ảnh nâng cao (Photoshop)
         </button>
+      )}
+      {(onCreateAsset || onAttachAsset || onDetachAsset) && (
+        <>
+          <Sub>Tài sản liên kết</Sub>
+          {el.assetId ? (
+            <>
+              <p style={{ fontSize: 10.5, color: 'var(--t4)', lineHeight: 1.4, margin: '0 0 6px' }}>
+                Ảnh này đang LIÊN KẾT — sửa qua &quot;Chỉnh ảnh nâng cao&quot; rồi ghi về sẽ cập
+                nhật MỌI slide dùng chung ảnh này.
+              </p>
+              {onDetachAsset && (
+                <button type="button" onClick={onDetachAsset} style={ghostBtn} title="Tách ảnh này ra khỏi tài sản chung">
+                  <Unlink size={12} /> Gỡ liên kết
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              {onCreateAsset && (
+                <button
+                  type="button"
+                  onClick={onCreateAsset}
+                  style={ghostBtn}
+                  title="Đặt ảnh này làm nguồn dùng chung — gắn thêm ảnh khác vào sẽ đồng bộ theo"
+                >
+                  <Link2 size={12} /> Đặt làm tài sản dùng chung
+                </button>
+              )}
+              {onAttachAsset && otherAssets.length > 0 && (
+                <select
+                  defaultValue=""
+                  onChange={(e) => {
+                    if (e.target.value) onAttachAsset(e.target.value);
+                  }}
+                  style={{
+                    width: '100%',
+                    marginTop: 6,
+                    fontSize: 11.5,
+                    padding: '6px 8px',
+                    borderRadius: 7,
+                    border: '1px solid var(--border)',
+                    background: 'var(--field)',
+                    color: 'var(--t2)',
+                  }}
+                >
+                  <option value="" disabled>
+                    Dùng ảnh liên kết có sẵn…
+                  </option>
+                  {otherAssets.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name || a.id}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </>
+          )}
+        </>
       )}
       <AdjustControls adjust={el.adjust} onChange={(a, live) => onUpdate((im) => (im.adjust = a), live)} />
       <Field label={`Bo góc ${el.radius ?? 0}%`}>
