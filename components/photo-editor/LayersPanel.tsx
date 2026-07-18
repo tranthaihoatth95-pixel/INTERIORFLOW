@@ -105,8 +105,24 @@ function LayerRow(props: {
         <IconBtn title={l.visible ? 'Ẩn lớp' : 'Hiện lớp'} onClick={props.onToggleVisible}>
           {l.visible ? <Eye size={14} /> : <EyeOff size={14} />}
         </IconBtn>
-        <span style={{ color: 'var(--t4)', display: 'grid', placeItems: 'center' }}>
-          {l.kind === 'adjustment' ? <SlidersHorizontal size={14} /> : <ImageIcon size={14} />}
+        <span
+          title={
+            l.kind === 'adjustment'
+              ? 'Lớp chỉnh màu — ảnh hưởng MỌI lớp bên dưới, không phá huỷ ảnh gốc'
+              : 'Lớp ảnh (raster) — chỉ chứa nội dung của riêng nó'
+          }
+          style={{
+            color: l.kind === 'adjustment' ? 'var(--accent)' : 'var(--t4)',
+            display: 'grid',
+            placeItems: 'center',
+            width: 20,
+            height: 20,
+            borderRadius: 5,
+            background: l.kind === 'adjustment' ? 'var(--accent-soft)' : 'transparent',
+            flex: '0 0 auto',
+          }}
+        >
+          {l.kind === 'adjustment' ? <SlidersHorizontal size={13} /> : <ImageIcon size={13} />}
         </span>
         {editing ? (
           <input
@@ -157,6 +173,14 @@ function LayerRow(props: {
           {l.locked ? <Lock size={13} /> : <Unlock size={13} />}
         </IconBtn>
       </div>
+
+      {/* gợi ý non-destructive — LUÔN THẤY (không chỉ hover) để phân biệt rõ adjustment
+          (ảnh hưởng mọi lớp bên dưới) với raster phẳng (chỉ nội dung riêng nó). */}
+      {l.kind === 'adjustment' && (
+        <div style={{ fontSize: 10.5, color: 'var(--accent)', paddingLeft: 26, marginTop: 2 }}>
+          ↓ ảnh hưởng mọi lớp bên dưới
+        </div>
+      )}
 
       {props.selected && (
         <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>

@@ -30,6 +30,7 @@ import {
 import { exportDoc, clearRenderCache } from '@/lib/photo-editor/render';
 import { loadImage } from '@/lib/photo-editor/imaging';
 import { DEFAULT_BRUSH, type Tool, type BrushSettings } from '@/lib/photo-editor/tools';
+import { toolForHotkey, nextBrushSize } from '@/lib/photo-editor/hotkeys';
 import { useDoc } from './useDoc';
 import PhotoToolbar from './PhotoToolbar';
 import DocCanvas from './DocCanvas';
@@ -63,6 +64,55 @@ export default function PhotoEditor({ initialDoc, onWriteBack }: Props) {
 
   // dọn cache render khi unmount
   useEffect(() => () => clearRenderCache(), []);
+
+  /**
+   * Phím tắt kiểu Photoshop (PS-7 Việc 1) — copy pattern keydown của CadCanvas
+   * (components/cad/CadCanvas.tsx ~1381-1411): 1 effect, 1 listener window, chặn khi đang
+   * gõ INPUT/TEXTAREA (rename lớp, dán URL ảnh…), nhận cả metaKey (Mac) lẫn ctrlKey (Win).
+   *  - ⌘/Ctrl+Z: undo · ⌘/Ctrl+⇧+Z hoặc ⌘/Ctrl+Y: redo · ⌘/Ctrl+0: vừa khung (fit).
+   *  - Phím chữ không kèm modifier: chọn tool (V/B/E/S/J/M/L — xem lib/photo-editor/hotkeys.ts).
+   *  - [ / ]: giảm/tăng cỡ cọ.
+   */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return; // đang gõ tên lớp / URL ảnh…
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) ed.redo();
+        else ed.undo();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        ed.redo();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === '0') {
+        e.preventDefault();
+        setFitSignal((s) => s + 1);
+        return;
+      }
+
+      // phím chọn tool / cỡ cọ — CHỈ khi không giữ modifier (tránh đụng phím tắt hệ thống).
+      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        const t = toolForHotkey(e.key);
+        if (t) {
+          e.preventDefault();
+          setTool(t);
+          return;
+        }
+        if (e.key === '[' || e.key === ']') {
+          e.preventDefault();
+          setBrush((b) => ({ ...b, size: nextBrushSize(b.size, e.key === ']' ? 1 : -1) }));
+          return;
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [ed.undo, ed.redo]);
 
   /* --------------------------- import ảnh --------------------------- */
   const importImage = useCallback(
