@@ -4,7 +4,7 @@
 > ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp **`feat/present-layout-ml-p1`** — local `44bcfb1` (verify git), **CHƯA push, CHƯA merge main** (main/origin vẫn `3265db1`). 0 worktree sống, 5 nhánh nguồn đã merge+xoá xong.
+- **✅ 18/07 — đã merge `feat/present-layout-ml-p1` vào `main` (fast-forward, 0 conflict) + push `origin/main`** — main/origin nay ở `1ce8674`, khớp `feat/present-layout-ml-p1`. tsc 0 · 49/49 test PASS trên `main` trước khi push. 0 worktree sống, 5 nhánh nguồn đã merge+xoá xong.
 - **App có nút "Mở DWG" trực tiếp** (Web Worker cô lập GPL) — không cần server/CLI.
 - **✅ 15/07 merge `feat/devops-docs`**: bộ cài .dmg unsigned + docs build Win/deploy Vercel (chi tiết CHANGELOG).
 - Test pattern: `node_modules/.bin/sucrase-node <path>.test.ts`.
@@ -15,7 +15,7 @@
 - Perceptron THẬT (learning-to-rank) · installer cả 3 unsigned (.exe cần Win) · PWA host Vercel + Supabase (Sprint 4).
 
 ## ĐIỂM RESUME (phiên mới đọc mục này TRƯỚC)
-- **✅ 18/07 — đã merge tuần tự 5 nhánh vào `feat/present-layout-ml-p1`** (`44bcfb1`), theo yêu cầu user. Mỗi merge verify tsc+test riêng trước khi đi tiếp; conflict chỉ ở doc (STATUS/CHANGELOG) + `.claude/launch.json` (dev-port entry, giữ cả 2) + `model.ts` (2 field mới cộng dồn) — KHÔNG có conflict logic thật, code tự auto-merge sạch mọi nơi khác. Sau merge: `npx tsc --noEmit` 0 lỗi, **49/49 file test PASS** (chạy lại toàn bộ trên nhánh đã merge, không chỉ từng nhánh riêng). 5 nhánh nguồn đã xoá (đã merge xong): `fix/groupoverlay-invisible`, `feat/present-ps2-templates`, `feat/present-ps3-photoeditor-roundtrip`, `feat/present-ps4-multi-format`, `feat/present-ps7-photoeditor-ux`. Nội dung: sửa bug GroupOverlay vô hình · lưu template tự tạo (PS-2) · round-trip photo-editor↔slide + tài sản liên kết (PS-3) · đa khổ A4/A3 + reflow + export (PS-4) · phím tắt Photoshop trong photo-editor (PS-7). **CHƯA push, CHƯA merge main — cần hỏi riêng.**
+- **✅ 18/07 — đã merge tuần tự 5 nhánh vào `feat/present-layout-ml-p1`** (`44bcfb1`), theo yêu cầu user. Mỗi merge verify tsc+test riêng trước khi đi tiếp; conflict chỉ ở doc (STATUS/CHANGELOG) + `.claude/launch.json` (dev-port entry, giữ cả 2) + `model.ts` (2 field mới cộng dồn) — KHÔNG có conflict logic thật, code tự auto-merge sạch mọi nơi khác. Sau merge: `npx tsc --noEmit` 0 lỗi, **49/49 file test PASS** (chạy lại toàn bộ trên nhánh đã merge, không chỉ từng nhánh riêng). 5 nhánh nguồn đã xoá (đã merge xong): `fix/groupoverlay-invisible`, `feat/present-ps2-templates`, `feat/present-ps3-photoeditor-roundtrip`, `feat/present-ps4-multi-format`, `feat/present-ps7-photoeditor-ux`. Nội dung: sửa bug GroupOverlay vô hình · lưu template tự tạo (PS-2) · round-trip photo-editor↔slide + tài sản liên kết (PS-3) · đa khổ A4/A3 + reflow + export (PS-4) · phím tắt Photoshop trong photo-editor (PS-7). **Đã merge main + push origin theo yêu cầu user (xem dòng "Hiện tại" trên).**
 - **Gate PS-5/PS-6** (share deck khách + comment): chủ dự án chọn DỪNG — hạ tầng share/auth public-facing để sau.
 - Đã merge trước đó: PS-1 Brand Kit (`db08340`), E1.2 swatch vật liệu (`4a73a5b`), DWG mở trong app, PS-0 audit, Sprint 9+10 toggle Sketch↔Pro. Chi tiết → CHANGELOG.
 - File rác `Bản sao Không có tiêu đề.rtfd/` ở repo chính — CHỜ user duyệt xoá.
