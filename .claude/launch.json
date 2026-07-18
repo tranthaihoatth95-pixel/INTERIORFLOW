@@ -118,6 +118,18 @@
       ],
       "port": 4046,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-ps7"
+    },
+    {
+      "name": "tooltips-4047",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4047"
+      ],
+      "port": 4047,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-tooltips"
     }
   ]
 }

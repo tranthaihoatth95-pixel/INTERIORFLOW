@@ -24,6 +24,7 @@ import {
   Proportions,
 } from 'lucide-react';
 import ExportMenu from './ExportMenu';
+import Tooltip from '@/components/ui/Tooltip';
 import type { ShapeKind } from '@/lib/present-editor/model';
 
 interface Props {
@@ -206,6 +207,11 @@ function Btn({
   );
 }
 
+/** Rút gọn title (thường có mô tả dài trong ngoặc/sau —) thành nhãn ngắn cho tag hover. */
+function shortLabel(title: string): string {
+  return title.split(' (')[0].split(' — ')[0].trim();
+}
+
 function IconOnly({
   children,
   onClick,
@@ -218,27 +224,29 @@ function IconOnly({
   disabled?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      title={title}
-      onClick={onClick}
-      disabled={disabled}
-      className="pe-tool-btn"
-      style={{
-        width: 38,
-        height: 36,
-        display: 'grid',
-        placeItems: 'center',
-        borderRadius: 8,
-        border: '1px solid var(--border)',
-        background: 'var(--field)',
-        color: 'var(--t2)',
-        cursor: disabled ? 'default' : 'pointer',
-        opacity: disabled ? 0.4 : 1,
-      }}
-    >
-      {children}
-    </button>
+    <Tooltip label={shortLabel(title)}>
+      <button
+        type="button"
+        title={title}
+        onClick={onClick}
+        disabled={disabled}
+        className="pe-tool-btn"
+        style={{
+          width: 38,
+          height: 36,
+          display: 'grid',
+          placeItems: 'center',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--field)',
+          color: 'var(--t2)',
+          cursor: disabled ? 'default' : 'pointer',
+          opacity: disabled ? 0.4 : 1,
+        }}
+      >
+        {children}
+      </button>
+    </Tooltip>
   );
 }
 

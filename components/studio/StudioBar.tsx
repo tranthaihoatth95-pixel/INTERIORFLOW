@@ -17,6 +17,7 @@ import type { Phase } from '@/lib/phases';
 import { useFlowStore } from '@/lib/store';
 import StageSwitcher from './StageSwitcher';
 import { StageVeil } from './StageTransition';
+import Tooltip from '@/components/ui/Tooltip';
 
 export default function StudioBar({ active }: { active: 'present' | 'photo' | 'cad' }) {
   const router = useRouter();
@@ -96,22 +97,26 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
       <div style={{ flex: 1 }} />
 
       {/* Chat team + toggle sáng/tối — khôi phục cho chặng Present/studio */}
-      <button
-        type="button"
-        onClick={() => setChatOpen(!chatOpen)}
-        title="Chat nhóm"
-        style={iconBtn(chatOpen)}
-      >
-        <MessageCircle size={16} />
-      </button>
-      <button
-        type="button"
-        onClick={() => setThemePref(nextTheme)}
-        title={`Giao diện: ${pref === 'auto' ? 'tự động' : pref === 'light' ? 'sáng' : 'tối'} — bấm để đổi`}
-        style={iconBtn(false)}
-      >
-        <ThemeIcon size={16} />
-      </button>
+      <Tooltip label="Chat nhóm" side="bottom">
+        <button
+          type="button"
+          onClick={() => setChatOpen(!chatOpen)}
+          title="Chat nhóm"
+          style={iconBtn(chatOpen)}
+        >
+          <MessageCircle size={16} />
+        </button>
+      </Tooltip>
+      <Tooltip label={`Giao diện: ${pref === 'auto' ? 'tự động' : pref === 'light' ? 'sáng' : 'tối'}`} side="bottom">
+        <button
+          type="button"
+          onClick={() => setThemePref(nextTheme)}
+          title={`Giao diện: ${pref === 'auto' ? 'tự động' : pref === 'light' ? 'sáng' : 'tối'} — bấm để đổi`}
+          style={iconBtn(false)}
+        >
+          <ThemeIcon size={16} />
+        </button>
+      </Tooltip>
       <StageVeil show={leaving} />
     </div>
   );
