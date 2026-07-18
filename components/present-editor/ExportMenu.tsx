@@ -15,9 +15,11 @@ interface Props {
   onExportPptx: () => void;
   onExportPng: () => void;
   busy: string | null;
+  /** kết quả export gần nhất (thành công/lỗi) — hiện toast ngắn dưới nút, tự tắt (do PresentEditor hẹn giờ). */
+  resultMsg?: { ok: boolean; text: string } | null;
 }
 
-export default function ExportMenu({ onExportPdf, onExportPptx, onExportPng, busy }: Props) {
+export default function ExportMenu({ onExportPdf, onExportPptx, onExportPng, busy, resultMsg }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -74,6 +76,27 @@ export default function ExportMenu({ onExportPdf, onExportPptx, onExportPng, bus
           <Item icon={<FileDown size={15} />} title="PDF" sub="1:1 với editor · đúng khổ đã chọn (màn hình/chiếu)" onClick={() => { setOpen(false); onExportPdf(); }} />
           <Item icon={<FileText size={15} />} title="PowerPoint (.pptx)" sub="Chữ còn chỉnh được trong PPT · luôn khổ 16:9" onClick={() => { setOpen(false); onExportPptx(); }} />
           <Item icon={<ImageIcon size={15} />} title="Ảnh PNG" sub="Mỗi slide 1 ảnh, tải lần lượt" onClick={() => { setOpen(false); onExportPng(); }} />
+        </div>
+      )}
+      {resultMsg && (
+        <div
+          role="status"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 6px)',
+            right: 0,
+            zIndex: 30,
+            whiteSpace: 'nowrap',
+            padding: '7px 12px',
+            borderRadius: 8,
+            fontSize: 12.5,
+            border: `1px solid ${resultMsg.ok ? 'var(--accent)' : '#c0392b'}`,
+            background: 'var(--panel)',
+            color: resultMsg.ok ? 'var(--t1)' : '#c0392b',
+            boxShadow: '0 10px 30px rgba(0,0,0,.25)',
+          }}
+        >
+          {resultMsg.text}
         </div>
       )}
     </div>

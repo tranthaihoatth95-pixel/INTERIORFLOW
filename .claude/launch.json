@@ -130,6 +130,18 @@
       ],
       "port": 4047,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-tooltips"
+    },
+    {
+      "name": "smallfixes-4052",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4052"
+      ],
+      "port": 4052,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-smallfixes"
     }
   ]
 }
