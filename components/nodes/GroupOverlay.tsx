@@ -3,12 +3,15 @@
  *
  * Mỗi group vẽ 1 khung bao quanh các node thành viên, có label + nút collapse/expand/ungroup.
  * Khi collapse: khung thu nhỏ thành 1 badge tại tâm group.
- * Overlay nằm TRONG ReactFlow viewport (dùng useReactFlow để project vị trí).
+ * Overlay được bọc trong <ViewportPortal> của React Flow — nhờ vậy nó dùng
+ * TRỰC TIẾP toạ độ flow-space (giống node/edge) và tự động ăn theo pan/zoom
+ * của viewport, không cần tự tính transform tay.
  */
 'use client';
 
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, X } from 'lucide-react';
+import { ViewportPortal } from '@xyflow/react';
 import { useFlowStore, type NodeGroup } from '@/lib/store';
 
 const PAD = 24;
@@ -73,7 +76,7 @@ function GroupRect({ group }: { group: NodeGroup }) {
         width: maxX - minX,
         height: maxY - minY,
         pointerEvents: 'none',
-        zIndex: -1,
+        zIndex: 5,
       }}
     >
       {/* Label bar — pointer-events on */}
@@ -126,15 +129,15 @@ function GroupRect({ group }: { group: NodeGroup }) {
   );
 }
 
-/** Render tất cả group overlay. Đặt bên trong ReactFlow viewport wrapper. */
+/** Render tất cả group overlay, bọc trong ViewportPortal để ăn theo pan/zoom. */
 export function GroupOverlay() {
   const groups = useFlowStore((s) => s.groups);
   if (!groups.length) return null;
   return (
-    <>
+    <ViewportPortal>
       {groups.map((g) => (
         <GroupRect key={g.id} group={g} />
       ))}
-    </>
+    </ViewportPortal>
   );
 }
