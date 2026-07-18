@@ -43,7 +43,7 @@ import { slidesFromContent } from '@/lib/present-editor/content-deck';
 import { evaluateDeck } from '@/lib/present-editor/layout-check';
 import { slidesFromReference, detectGridFromUrl } from '@/lib/present-editor/reference-layout';
 import type { GridGeometryInput } from '@/lib/present-editor/suggest';
-import { consumePresentHandoff } from '@/lib/present-editor/handoff';
+import { consumePresentHandoffWithIds } from '@/lib/present-editor/handoff';
 import {
   stashPhotoEditorIn,
   readPhotoEditorReturn,
@@ -176,6 +176,10 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   // HOOK ML pha 1: hình học lưới của ảnh reference GẦN NHẤT (đính lúc Generate) — nuôi
   // suggestTemplate chọn archetype sát ảnh mẫu. null = suggest theo heuristic cũ.
   const [refGrid, setRefGrid] = useState<GridGeometryInput | null>(null);
+  // PS-3: id ổn định (render:<nodeId>[:index]) của ảnh Reference đến từ chặng Render, theo
+  // `src` — tra khi chèn ảnh vào slide để gán assetId (xem onAddImageUrl). Không có ở đây =
+  // ảnh không có nguồn Render ổn định (upload tay/AI khác) → chèn như trước, không link.
+  const renderIdBySrcRef = useRef<Map<string, string>>(new Map());
 
   // Nạp thư viện Reference (layout/slide templates + gu). Không chặn UI nếu lỗi/empty.
   useEffect(() => {
@@ -218,12 +222,15 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   // (stash ở Header khi bấm pill Present). Vào rổ Reference local — human-in-loop kéo vào slide,
   // KHÔNG tự chèn vào deck. Không có handoff ⇒ mảng rỗng ⇒ editor y hệt cũ.
   useEffect(() => {
-    const imgs = consumePresentHandoff();
+    const imgs = consumePresentHandoffWithIds();
     if (!imgs.length) return;
-    const items: RefImage[] = imgs.map((url, i) => ({
+    for (const { src, id } of imgs) {
+      if (id) renderIdBySrcRef.current.set(src, id); // PS-3: nhớ id ổn định để link lúc chèn
+    }
+    const items: RefImage[] = imgs.map(({ src }, i) => ({
       id: newId('ref'),
       name: `Slide từ Render ${i + 1}`,
-      url,
+      url: src,
       tags: 'render-handoff',
       source: 'local',
       mine: true,
@@ -302,7 +309,36 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   const onAddText = () => addElement(makeText({ color: pickInk(palette), frame: centered(50, 12) }));
   const onAddShape = (shape: ShapeKind) =>
     addElement(makeShape(shape, { fill: palette[3] ?? '#8a6f4d', stroke: palette[3] ?? '#8a6f4d' }));
-  const onAddImageUrl = (src: string) => addElement(makeImage(src, { frame: centered(40, 45) }));
+  // Đưa ảnh reference vào slide đang dàn (thêm image element cỡ vừa, giữa) — dùng chung cho
+  // panel Reference (click "dùng") + kéo-thả vào canvas.
+  //
+  // PS-3: nếu `src` này đến từ chặng Render với id ổn định (renderIdBySrcRef, gán lúc consume
+  // handoff ở trên), gán luôn `assetId` = id đó. Chèn CÙNG ảnh (cùng node nguồn) vào nhiều slide
+  // ⇒ mọi element cùng assetId ⇒ tài sản liên kết (linked-assets.ts) coi là 1 nguồn, sửa 1 nơi
+  // (round-trip /photo-editor hoặc panel tài sản liên kết) cập nhật MỌI nơi. Đẩy element + gán
+  // assetId trong CÙNG 1 lượt `ed.update` để tránh đọc deck cũ (state React chưa kịp áp add).
+  // Không có id ổn định (ảnh upload tay/AI khác) → y hệt hành vi cũ, không link.
+  const onAddImageUrl = (src: string) => {
+    const el = makeImage(src, { frame: centered(40, 45) });
+    const renderId = renderIdBySrcRef.current.get(src);
+    ed.update((d) => {
+      const s = d.slides[ed.currentSlide];
+      if (!s) return;
+      s.elements.push(el);
+      if (!renderId) return;
+      const existing = d.linkedAssets?.[renderId];
+      if (existing) {
+        const next = attachElementToAsset(d, s.id, el.id, renderId);
+        d.slides = next.slides;
+      } else {
+        const next = setLinkedAssetSrc(d, renderId, src);
+        d.linkedAssets = next.linkedAssets;
+        const el2 = d.slides[ed.currentSlide]?.elements.find((e) => e.id === el.id);
+        if (el2 && el2.kind === 'image') el2.assetId = renderId;
+      }
+    });
+    ed.select(el.id);
+  };
 
   const onFrame = useCallback(
     (id: string, frame: Frame, live: boolean) => {
@@ -717,14 +753,6 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     }
     setLibAssets((prev) => prev.filter((a) => a.id !== img.id));
   }, []);
-
-  // Đưa ảnh reference vào slide đang dàn (thêm image element cỡ vừa, giữa).
-  const onUseRef = useCallback(
-    (url: string) => {
-      addElement(makeImage(url, { frame: centered(40, 45) }));
-    },
-    [addElement],
-  );
 
   /* ------------------------- Motion ------------------------- */
   const onSetSlideTransition = useCallback(
@@ -1180,7 +1208,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
                   <LibraryBrowser
                     images={refImages}
                     loading={libLoading}
-                    onUseImage={onUseRef}
+                    onUseImage={onAddImageUrl}
                     onDelete={onDeleteRef}
                     onUploadLocal={onUploadLocalRefs}
                   />

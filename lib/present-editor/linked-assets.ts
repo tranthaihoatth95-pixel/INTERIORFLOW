@@ -12,9 +12,12 @@
  *
  * Phạm vi đã chốt (IF-PRESENT-SPRINT-PLAN mục PS-3): hoạt động với BẤT KỲ ImageElement nào
  * đã có (hoặc được gán ở đây) 1 id ổn định — vd ảnh Brand Kit, ảnh vừa chỉnh qua /photo-editor.
- * Ảnh hand-off từ Render stage (`deckImagesFromNodes`, lib/present-editor/handoff.ts) hiện
- * CHỈ có dataURL, CHƯA có id ổn định — liên kết ảnh Render cần Render stage phát id trước
- * (điều kiện đã ghi trong spec); CHƯA giải quyết ở đây, chỉ chốt cho ảnh đã có id.
+ * Ảnh hand-off từ Render stage giờ CŨNG có id ổn định (`render:<nodeId>[:index]`, xem
+ * `deckImagesWithIdsFromNodes`/`renderImageId` ở lib/present-editor/handoff.ts): khi chèn ảnh
+ * này vào slide, `components/present-editor/PresentEditor.tsx::onAddImageUrl` dùng thẳng id đó
+ * làm `assetId` (qua `attachElementToAsset`/`setLinkedAssetSrc` ở dưới, KHÔNG mint id ngẫu
+ * nhiên) — chèn CÙNG ảnh (cùng node nguồn) vào nhiều slide tự hội tụ về CÙNG 1 asset, không cần
+ * bước "tạo asset" thủ công.
  */
 
 import type { EditorDeck, EditorSlide, ImageElement, LinkedAsset } from './model';
