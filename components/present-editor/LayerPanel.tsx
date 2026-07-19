@@ -146,14 +146,14 @@ export default function LayerPanel({
   );
 }
 
-function KindIcon({ kind }: { kind: SlideElement['kind'] }) {
+export function KindIcon({ kind }: { kind: SlideElement['kind'] }) {
   const c = 'var(--t3)';
   if (kind === 'text') return <Type size={12} style={{ color: c, flexShrink: 0 }} />;
   if (kind === 'image') return <ImageIcon size={12} style={{ color: c, flexShrink: 0 }} />;
   return <Square size={12} style={{ color: c, flexShrink: 0 }} />;
 }
 
-function displayName(el: SlideElement): string {
+export function displayName(el: SlideElement): string {
   if (el.name) return el.name;
   if (el.kind === 'text') return (el.text || 'Chữ').split('\n')[0].slice(0, 24) || 'Chữ';
   if (el.kind === 'image') return 'Ảnh';

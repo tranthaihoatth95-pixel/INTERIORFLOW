@@ -749,6 +749,43 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     [ed],
   );
 
+  // Animation Pane THEO OBJECT (mở rộng build-in slide-level ở trên) — mỗi dòng trong
+  // MotionPanel chỉnh 1 element BẤT KỲ của slide hiện tại, không cần đang chọn trên canvas.
+  const onSetElementReveal = useCallback(
+    (id: string, reveal: ElementReveal | undefined) =>
+      ed.updateElementById(id, (el) => {
+        el.elementReveal = reveal;
+      }),
+    [ed],
+  );
+  const onSetElementRevealOrder = useCallback(
+    (id: string, order: number | undefined) =>
+      ed.updateElementById(id, (el) => {
+        el.revealOrder = order;
+      }),
+    [ed],
+  );
+  const onSetElementRevealDelay = useCallback(
+    (id: string, delaySec: number | undefined) =>
+      ed.updateElementById(id, (el) => {
+        el.revealDelay = delaySec;
+      }),
+    [ed],
+  );
+  /** kéo-thả sắp lại thứ tự xuất hiện — ghi `revealOrder` = 0..n-1 theo thứ tự MỚI, KHÔNG đụng
+   * thứ tự z (`slide.elements`). */
+  const onReorderElementReveal = useCallback(
+    (orderedIds: string[]) => {
+      ed.updateSlide((s) => {
+        orderedIds.forEach((id, index) => {
+          const el = s.elements.find((e) => e.id === id);
+          if (el) el.revealOrder = index;
+        });
+      });
+    },
+    [ed],
+  );
+
   /* ------------------------------ export ----------------------------- */
   const onExportPdf = useCallback(async () => {
     setBusy('pdf');
@@ -1193,6 +1230,10 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
                     onSetSlideReveal={onSetSlideReveal}
                     onApplyDeck={onApplyDeckMotion}
                     onPlay={() => setPlaying(true)}
+                    onSetElementReveal={onSetElementReveal}
+                    onSetElementRevealOrder={onSetElementRevealOrder}
+                    onSetElementRevealDelay={onSetElementRevealDelay}
+                    onReorderElementReveal={onReorderElementReveal}
                   />
                 )}
               </div>
