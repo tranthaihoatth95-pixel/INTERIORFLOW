@@ -22,11 +22,11 @@
 - **Từ audit 19/07 — CHƯA sửa:**
   - **Bug user báo: CAD→Render văng màn đăng nhập.** ĐÃ SỬA PHẦN XÁC NHẬN ĐƯỢC (`dd60a8c`, đã merge): `/` gọi `/api/auth/me` 2 lần do StrictMode thiếu ref-guard — giờ còn đúng 1 (verify Network). NHƯNG chưa chắc là nguyên nhân gốc triệu chứng: có thể session hết hạn thật từ trước mà CAD không hề check auth nên user không biết, đến khi bấm Render mới lộ. **Nếu còn tái diễn** → user tự mở DevTools Network lúc bug xảy ra, xem request `/api/auth/me` có gửi cookie `if_session` không + status. Phương án dự phòng (chưa làm, chờ user quyết): thêm check session ngay ở CAD để báo mất đăng nhập tại chỗ.
   - [TRUNG] Không hỗ trợ cảm ứng thật ở CAD (gesture) · Slide Sorter dùng HTML5 DnD (không chạy trên touch) — 2 việc lớn, chưa giao.
-  - [THẤP] Property panel Render không undo được (có thể là chủ ý) · Escape không xoá ký tự gõ dở trong ô lệnh CAD · status hint chưa nhắc Backspace.
+  - [THẤP] Property panel Render không undo được (có thể là chủ ý) · ~~Escape không xoá ký tự gõ dở trong ô lệnh CAD~~ · ~~status hint chưa nhắc Backspace~~ — 2 mục sau ĐÃ SỬA trong nhánh `fix/cad-small-polish` (chưa merge).
 - Sprint 3 B1: `meta` (giá/vendor/sku) trống — chưa có dữ liệu giá thật.
 - In A3/A4 300dpi thật vẫn CHƯA khả dụng (giới hạn Render stage) — đúng phạm vi đã chốt.
 - `knowledge/project-references/` ~121MB PDF trong git — cân nhắc Git LFS. User chọn ĐỂ SAU (rewrite history rủi ro cao).
-- `CadCanvas.tsx` còn nhiều `window.prompt`/`confirm` khác cùng rủi ro treo webview (Text ~768, markup ~777, array ~977-1016, scale ~1027, title block ~1368).
+- ~~`CadCanvas.tsx` còn nhiều `window.prompt`/`confirm` khác cùng rủi ro treo webview~~ — ĐÃ SỬA HẾT trong nhánh `fix/cad-small-polish` (chưa merge): 0 `window.prompt`/`confirm` còn lại trong `components/cad/` (Text/Markup/Array/Scale/Divide → form nổi; xoá pin markup/gỡ ảnh/Mở demo/Mẫu dự án/Mở .idf → confirm nổi; AI mô tả → ô nhập nổi). Verify browser port 4084; riêng confirm Mở .idf + gỡ ảnh lightbox chỉ verify code (cần file picker thật).
 
 ## Bị chặn — KHÔNG tự khởi động
 - Intro screen (chờ hình/video — flow hiện tại ĐÃ gỡ intro theo lệnh user) · ML Gu Engine heavy (chồng lấn 2 app khác) · "API team" spec.

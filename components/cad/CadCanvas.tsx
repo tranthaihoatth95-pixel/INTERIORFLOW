@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { useCadStore } from '@/lib/cad/store';
+import { useCadStore, toolHint } from '@/lib/cad/store';
 import type { Tool } from '@/lib/cad/store';
 import { useFlowStore } from '@/lib/store';
 import type { Entity, Pt, Viewport, DimEntity, LineEntity, MarkupPin, PhotoEmbed } from '@/lib/cad/model';
@@ -136,6 +136,42 @@ export default function CadCanvas() {
   // Chốt 2 điểm góc xong lưu tạm ở đây thay vì addEntity ngay, hỏi tên xong mới addEntity.
   const [roomNamePrompt, setRoomNamePrompt] = useState<{ p0: Pt; p1: Pt; screenAt: Pt } | null>(null);
   const [roomNameValue, setRoomNameValue] = useState('PHÒNG');
+  // Batch 19/07 — thay TOÀN BỘ window.prompt/confirm còn lại bằng UI nổi non-blocking (cùng lớp
+  // bug room tool ở trên: native dialog chặn thread JS, treo webview nhúng + treo automation).
+  // 1 form dùng chung 1-N field (Text/Markup 1 field; Array rect 4 field; Array polar 2; Scale/
+  // Divide 1) + 1 hộp xác nhận dùng chung (xoá markup pin). Semantics giữ NGUYÊN dialog cũ:
+  // Enter/✓ = OK (giá trị được validate y hệt sau-prompt cũ), Escape/✕ = Cancel (như prompt trả
+  // null / confirm trả false → KHÔNG làm gì).
+  const [inlineForm, setInlineForm] = useState<{
+    title: string;
+    fields: { label: string; value: string }[];
+    screenAt: Pt;
+    onCommit: (values: string[]) => void;
+  } | null>(null);
+  const [inlineConfirm, setInlineConfirm] = useState<{
+    message: string;
+    screenAt: Pt;
+    okLabel: string;
+    onConfirm: () => void;
+  } | null>(null);
+  // Lightbox ảnh hiện trường — bước xác nhận "Gỡ ảnh" inline (thay window.confirm).
+  const [confirmRemovePhoto, setConfirmRemovePhoto] = useState(false);
+  useEffect(() => setConfirmRemovePhoto(false), [viewPhoto]);
+  // autoFocus không ăn ổn định khi form mount NGAY trong pointerdown trên canvas (thứ tự
+  // focus()/blur mặc định của browser trong cùng cú click không đảm bảo — quan sát được focus
+  // rơi về body/ô lệnh) → effect tự focus field đầu sau khi form mở. Guard "focus đã nằm TRONG
+  // panel" để KHÔNG cướp focus mỗi keystroke (mỗi onChange đổi state inlineForm → effect chạy lại).
+  const inlineFormPanelRef = useRef<HTMLDivElement>(null);
+  const inlineFormFirstInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (inlineForm && !inlineFormPanelRef.current?.contains(document.activeElement)) {
+      inlineFormFirstInputRef.current?.focus();
+    }
+  }, [inlineForm]);
+  const inlineConfirmOkRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (inlineConfirm) inlineConfirmOkRef.current?.focus();
+  }, [inlineConfirm]);
   const ix = useRef<Ix>({
     cursorScreen: { x: 0, y: 0 },
     cursorWorld: { x: 0, y: 0 },
@@ -379,7 +415,7 @@ export default function CadCanvas() {
       // Sprint 7 — Việc 3/4: ghim markup/ảnh KHÔNG phải entity nên không vào hitTest/selection
       // thường — kiểm riêng TRƯỚC, ưu tiên hơn chọn hình học (pin luôn ở trên cùng, nhỏ, dễ bắn
       // trượt). Ảnh: click mở lightbox xem full-size. Markup: click hỏi xoá (annotation của
-      // user tự thêm — xoá không cần snapshot cảnh báo phức tạp, window.confirm là đủ).
+      // user tự thêm — xoá không cần snapshot cảnh báo phức tạp, hộp xác nhận nổi là đủ).
       const photoHit = nearestPhoto((st.doc.photos ?? []).map((p) => ({ ...p, at: worldToScreen(st.viewport, p.at) })), screen, PIN_HIT_PX);
       if (photoHit) {
         const real = (st.doc.photos ?? []).find((p) => p.id === photoHit.id) ?? null;
@@ -389,9 +425,18 @@ export default function CadCanvas() {
       const markupHit = nearestMarkup((st.doc.markups ?? []).map((m) => ({ ...m, at: worldToScreen(st.viewport, m.at) })), screen, PIN_HIT_PX);
       if (markupHit) {
         const real = (st.doc.markups ?? []).find((m) => m.id === markupHit.id);
-        if (real && window.confirm(`Xoá ghim markup này?\n\n"${real.text}"`)) {
-          st.removeMarkup(real.id);
-          st.setStatus('Đã xoá ghim markup.');
+        if (real) {
+          // Hộp xác nhận nổi thay window.confirm (chặn thread JS, treo webview nhúng).
+          setInlineConfirm({
+            message: `Xoá ghim markup này? — "${real.text}"`,
+            screenAt: { ...screen },
+            okLabel: 'Xoá',
+            onConfirm: () => {
+              const s2 = useCadStore.getState();
+              s2.removeMarkup(real.id);
+              s2.setStatus('Đã xoá ghim markup.');
+            },
+          });
         }
         return;
       }
@@ -532,6 +577,27 @@ export default function CadCanvas() {
     // Cancel = tạo phòng với tên mặc định 'PHÒNG', BỎ QUA chữ đang gõ dở — đúng hành vi
     // window.prompt cũ (bấm Cancel trả null, không trả text đang gõ dở trong ô).
     confirmRoomName('');
+  }
+
+  /** Form nổi dùng chung — Enter/✓ chốt: đóng form rồi chạy onCommit với giá trị các field
+   * (validate nằm TRONG từng onCommit, y hệt code sau-window.prompt cũ). */
+  function commitInlineForm() {
+    if (!inlineForm) return;
+    const values = inlineForm.fields.map((f) => f.value);
+    setInlineForm(null);
+    inlineForm.onCommit(values);
+    ix.current.redraw = true;
+  }
+  /** Escape/✕ = Cancel — như window.prompt trả null: KHÔNG làm gì (khác cancelRoomName ở trên
+   * vốn phải tạo phòng tên mặc định vì đó là semantics riêng của room tool cũ). */
+  function cancelInlineForm() {
+    setInlineForm(null);
+  }
+  function commitInlineConfirm() {
+    if (!inlineConfirm) return;
+    setInlineConfirm(null);
+    inlineConfirm.onConfirm();
+    ix.current.redraw = true;
   }
 
   /**
@@ -790,19 +856,40 @@ export default function CadCanvas() {
         }
         break;
       case 'text': {
-        const txt = window.prompt('Nội dung ghi chú:', '');
-        if (txt) commit({ id: newId('e'), type: 'text', layer: st.currentLayer, at: w, text: txt, h: 250 });
-        else ix.current.pts = [];
+        // Không dùng window.prompt (chặn thread JS, treo webview nhúng) — form nổi non-blocking.
+        // Semantics cũ giữ nguyên: rỗng/Cancel → không tạo gì.
+        const at = { ...w };
+        setInlineForm({
+          title: 'Ghi chú',
+          fields: [{ label: 'Nội dung ghi chú', value: '' }],
+          screenAt: { ...ix.current.cursorScreen },
+          onCommit: ([txt]) => {
+            if (txt) {
+              const s2 = useCadStore.getState();
+              s2.addEntity({ id: newId('e'), type: 'text', layer: s2.currentLayer, at, text: txt, h: 250 });
+            }
+          },
+        });
+        ix.current.pts = [];
         break;
       }
       // Sprint 7 — Việc 3: Markup — ghim ghi chú KH RỜI khỏi hình học (doc.markups, không phải
       // Entity — xem lib/cad/model.ts). Giữ tool 'markup' sau khi đặt (đặt liên tiếp nhiều ghim).
       case 'markup': {
-        const txt = window.prompt('Ghi chú markup (phản hồi của khách hàng):', '');
-        if (txt && txt.trim()) {
-          st.addMarkup(createMarkupPin(w, txt));
-          st.setStatus(`Đã đặt ghim markup — "${txt.trim().slice(0, 40)}"${txt.trim().length > 40 ? '…' : ''}`);
-        }
+        // Form nổi thay window.prompt (chặn thread JS) — tool giữ 'markup' để đặt ghim tiếp.
+        const at = { ...w };
+        setInlineForm({
+          title: 'Markup — phản hồi của khách hàng',
+          fields: [{ label: 'Ghi chú markup', value: '' }],
+          screenAt: { ...ix.current.cursorScreen },
+          onCommit: ([txt]) => {
+            if (txt && txt.trim()) {
+              const s2 = useCadStore.getState();
+              s2.addMarkup(createMarkupPin(at, txt));
+              s2.setStatus(`Đã đặt ghim markup — "${txt.trim().slice(0, 40)}"${txt.trim().length > 40 ? '…' : ''}`);
+            }
+          },
+        });
         ix.current.pts = [];
         break;
       }
@@ -994,41 +1081,75 @@ export default function CadCanvas() {
     }
   }
 
+  // 3 lệnh dưới: trước đây hỏi bằng CHUỖI window.prompt nối nhau (2-4 hộp liên tiếp, chặn
+  // thread JS) — gộp thành 1 form nổi nhiều field, validate lúc chốt Y HỆT code sau-prompt cũ
+  // (giá trị không hợp lệ / Cancel → không làm gì, không báo lỗi — giữ nguyên semantics).
   function handleArrayRect() {
-    const st = useCadStore.getState();
     const sel = needSelection();
     if (!sel.length) return;
-    const rows = parseInt(window.prompt('Array chữ nhật — số hàng:', '2') ?? '', 10);
-    const cols = parseInt(window.prompt('Số cột:', '2') ?? '', 10);
-    const dx = parseFloat(window.prompt('Khoảng cách cột theo X (mm):', '1000') ?? '');
-    const dy = parseFloat(window.prompt('Khoảng cách hàng theo Y (mm):', '1000') ?? '');
-    if ([rows, cols, dx, dy].every((n) => Number.isFinite(n))) {
-      const targets = st.doc.entities.filter((e) => sel.includes(e.id));
-      st.addEntities(arrayRect(targets, rows, cols, dx, dy));
-    }
+    setInlineForm({
+      title: 'Array chữ nhật',
+      fields: [
+        { label: 'Số hàng', value: '2' },
+        { label: 'Số cột', value: '2' },
+        { label: 'Khoảng cách cột theo X (mm)', value: '1000' },
+        { label: 'Khoảng cách hàng theo Y (mm)', value: '1000' },
+      ],
+      screenAt: { ...ix.current.cursorScreen },
+      onCommit: ([vRows, vCols, vDx, vDy]) => {
+        const rows = parseInt(vRows, 10);
+        const cols = parseInt(vCols, 10);
+        const dx = parseFloat(vDx);
+        const dy = parseFloat(vDy);
+        if ([rows, cols, dx, dy].every((n) => Number.isFinite(n))) {
+          const s2 = useCadStore.getState();
+          const targets = s2.doc.entities.filter((e) => sel.includes(e.id));
+          s2.addEntities(arrayRect(targets, rows, cols, dx, dy));
+        }
+      },
+    });
   }
 
   function handleArrayPolar(w: Pt) {
-    const st = useCadStore.getState();
     const sel = needSelection();
     if (!sel.length) return;
-    const count = parseInt(window.prompt('Array tròn — số bản (kể cả gốc):', '6') ?? '', 10);
-    const angle = parseFloat(window.prompt('Tổng góc quét (độ, 360 = đầy vòng):', '360') ?? '');
-    if (Number.isFinite(count) && count >= 2 && Number.isFinite(angle)) {
-      const targets = st.doc.entities.filter((e) => sel.includes(e.id));
-      st.addEntities(arrayPolar(targets, w, count, angle, true));
-    }
+    const center = { ...w }; // tâm mảng = điểm click, chốt trước khi form mở
+    setInlineForm({
+      title: 'Array tròn',
+      fields: [
+        { label: 'Số bản (kể cả gốc)', value: '6' },
+        { label: 'Tổng góc quét (độ, 360 = đầy vòng)', value: '360' },
+      ],
+      screenAt: { ...ix.current.cursorScreen },
+      onCommit: ([vCount, vAngle]) => {
+        const count = parseInt(vCount, 10);
+        const angle = parseFloat(vAngle);
+        if (Number.isFinite(count) && count >= 2 && Number.isFinite(angle)) {
+          const s2 = useCadStore.getState();
+          const targets = s2.doc.entities.filter((e) => sel.includes(e.id));
+          s2.addEntities(arrayPolar(targets, center, count, angle, true));
+        }
+      },
+    });
   }
 
   function handleScale(w: Pt) {
-    const st = useCadStore.getState();
     const sel = needSelection();
     if (!sel.length) return;
-    const f = parseFloat(window.prompt('Hệ số scale (VD 2, 0.5):', '1') ?? '');
-    if (Number.isFinite(f) && f > 0) {
-      const targets = st.doc.entities.filter((e) => sel.includes(e.id));
-      st.updateEntities(scaleEntitiesAbout(targets, w, f));
-    }
+    const base = { ...w }; // điểm gốc scale = điểm click
+    setInlineForm({
+      title: 'Scale',
+      fields: [{ label: 'Hệ số scale (VD 2, 0.5)', value: '1' }],
+      screenAt: { ...ix.current.cursorScreen },
+      onCommit: ([vF]) => {
+        const f = parseFloat(vF);
+        if (Number.isFinite(f) && f > 0) {
+          const s2 = useCadStore.getState();
+          const targets = s2.doc.entities.filter((e) => sel.includes(e.id));
+          s2.updateEntities(scaleEntitiesAbout(targets, base, f));
+        }
+      },
+    });
   }
 
   function handleStretch(w: Pt) {
@@ -1365,40 +1486,47 @@ export default function CadCanvas() {
       st.setStatus('Divide/Measure: chỉ hỗ trợ Line/Polyline/Circle/Arc.');
       return;
     }
-    const raw = window.prompt(
-      'Divide/Measure — gõ SỐ ĐOẠN để chia đều (VD "5"), hoặc "M <khoảng cách mm>" để đo cố định (VD "M 300"):',
-      '5',
-    );
-    if (!raw || !raw.trim()) return;
-    const trimmed = raw.trim();
-    const measureMatch = /^m\s+([\d.]+)$/i.exec(trimmed);
-    let points: Pt[];
-    let label: string;
-    if (measureMatch) {
-      const segLen = parseFloat(measureMatch[1]);
-      if (!Number.isFinite(segLen) || segLen <= 0) {
-        st.setStatus('Measure: khoảng cách không hợp lệ.');
-        return;
-      }
-      points = measureEntity(target, segLen);
-      label = `Measure mỗi ${segLen}mm`;
-    } else {
-      const n = parseInt(trimmed, 10);
-      if (!Number.isFinite(n) || n < 2) {
-        st.setStatus('Divide: số đoạn phải là số nguyên ≥ 2.');
-        return;
-      }
-      points = divideEntity(target, n);
-      label = `Divide ${n} đoạn`;
-    }
-    if (!points.length) {
-      st.setStatus('Divide/Measure: không đặt được điểm chia (đối tượng quá ngắn so với tham số).');
-      return;
-    }
-    const markerR = 15; // mm — chấm nhỏ đánh dấu điểm chia (bán kính rất nhỏ, đủ thấy khi zoom)
-    const markers: Entity[] = points.map((p) => ({ id: newId('e'), type: 'circle', layer: st.currentLayer, c: p, r: markerR }));
-    st.addEntities(markers);
-    st.setStatus(`${label}: đã đặt ${markers.length} điểm chia.`);
+    // Form nổi thay window.prompt (chặn thread JS) — validate lúc chốt y hệt code sau-prompt cũ.
+    setInlineForm({
+      title: 'Divide/Measure',
+      fields: [{ label: 'Số đoạn chia đều (VD "5"), hoặc "M <khoảng cách mm>" (VD "M 300")', value: '5' }],
+      screenAt: { ...ix.current.cursorScreen },
+      onCommit: ([raw]) => {
+        if (!raw || !raw.trim()) return;
+        const s2 = useCadStore.getState();
+        // tìm lại đối tượng theo id từ doc HIỆN TẠI (form không chặn thread — doc có thể đã đổi)
+        const t2 = s2.doc.entities.find((e) => e.id === target.id) ?? target;
+        const trimmed = raw.trim();
+        const measureMatch = /^m\s+([\d.]+)$/i.exec(trimmed);
+        let points: Pt[];
+        let label: string;
+        if (measureMatch) {
+          const segLen = parseFloat(measureMatch[1]);
+          if (!Number.isFinite(segLen) || segLen <= 0) {
+            s2.setStatus('Measure: khoảng cách không hợp lệ.');
+            return;
+          }
+          points = measureEntity(t2, segLen);
+          label = `Measure mỗi ${segLen}mm`;
+        } else {
+          const n = parseInt(trimmed, 10);
+          if (!Number.isFinite(n) || n < 2) {
+            s2.setStatus('Divide: số đoạn phải là số nguyên ≥ 2.');
+            return;
+          }
+          points = divideEntity(t2, n);
+          label = `Divide ${n} đoạn`;
+        }
+        if (!points.length) {
+          s2.setStatus('Divide/Measure: không đặt được điểm chia (đối tượng quá ngắn so với tham số).');
+          return;
+        }
+        const markerR = 15; // mm — chấm nhỏ đánh dấu điểm chia (bán kính rất nhỏ, đủ thấy khi zoom)
+        const markers: Entity[] = points.map((p) => ({ id: newId('e'), type: 'circle', layer: s2.currentLayer, c: p, r: markerR }));
+        s2.addEntities(markers);
+        s2.setStatus(`${label}: đã đặt ${markers.length} điểm chia.`);
+      },
+    });
   }
 
   /* ───────── keyboard ───────── */
@@ -1450,6 +1578,11 @@ export default function CadCanvas() {
         return;
       }
       if (e.key === 'Escape') {
+        // Đóng luôn form/hộp xác nhận nổi nếu đang mở (khi focus còn trên canvas — focus trong
+        // ô input thì handler của input tự xử + stopPropagation). Cancel = không làm gì, đúng
+        // semantics prompt/confirm cũ. setState từ closure ổn: setter của useState là stable.
+        setInlineForm(null);
+        setInlineConfirm(null);
         ix.current.pts = [];
         ix.current.dynBuf = '';
         ix.current.filletFirst = null;
@@ -1535,6 +1668,17 @@ export default function CadCanvas() {
         if (ix.current.dynBuf) {
           // Đang gõ buffer nhập số/toạ độ động → Backspace chỉ xoá ký tự cuối, KHÔNG đụng selection.
           ix.current.dynBuf = ix.current.dynBuf.slice(0, -1);
+          // Cập nhật status theo buffer CÒN LẠI (trước đây status giữ nguyên thông báo cũ dù
+          // buffer đã đổi); xoá hết → trả status về hint của tool hiện tại.
+          if (ix.current.dynBuf) {
+            const coord = parseCoordInput(ix.current.dynBuf);
+            if (coord?.kind === 'abs') st.setStatus(`Toạ độ tuyệt đối: ${ix.current.dynBuf} (Enter để chốt)`);
+            else if (coord?.kind === 'rel') st.setStatus(`Toạ độ tương đối: ${ix.current.dynBuf} (Enter để chốt)`);
+            else st.setStatus(`Nhập độ dài: ${ix.current.dynBuf} mm (Enter để chốt)`);
+          } else {
+            st.setStatus(toolHint(st.tool));
+          }
+          ix.current.redraw = true; // HUD cạnh con trỏ (F12) cũng đang hiện buffer — vẽ lại
         } else if (st.selection.length) {
           // Bàn phím Mac không numpad gửi 'Backspace' cho phím "delete" vật lý (không phải 'Delete').
           // Buffer rỗng + có đối tượng đang chọn → coi như phím xoá, đồng bộ hành vi với nhánh 'Delete'.
@@ -2309,29 +2453,51 @@ export default function CadCanvas() {
             onClick={(e) => e.stopPropagation()}
             style={{ maxWidth: '86%', maxHeight: '76%', objectFit: 'contain', borderRadius: 10, boxShadow: '0 10px 40px rgba(0,0,0,.5)', background: 'var(--panel)' }}
           />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#fff', fontSize: 13 }} onClick={(e) => e.stopPropagation()}>
-            <span>{viewPhoto.caption || 'Ảnh hiện trường'}</span>
-            <button
-              type="button"
-              onClick={() => {
-                if (window.confirm('Gỡ ảnh này khỏi bản vẽ?')) {
+          {/* Xác nhận "Gỡ ảnh" 2 bước inline thay window.confirm (chặn thread JS, treo webview
+              nhúng). Giữ semantics cũ: xác nhận → gỡ + đóng lightbox; từ chối → chỉ đóng lightbox
+              (window.confirm cũ bấm Cancel cũng đóng). */}
+          {confirmRemovePhoto ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#fff', fontSize: 13 }} onClick={(e) => e.stopPropagation()}>
+              <span>Gỡ ảnh này khỏi bản vẽ?</span>
+              <button
+                type="button"
+                autoFocus
+                onClick={() => {
                   useCadStore.getState().removePhoto(viewPhoto.id);
                   useCadStore.getState().setStatus('Đã gỡ ảnh hiện trường.');
-                }
-                setViewPhoto(null);
-              }}
-              style={{ border: '1px solid rgba(255,255,255,.4)', background: 'transparent', color: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
-            >
-              Gỡ ảnh
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewPhoto(null)}
-              style={{ border: '1px solid rgba(255,255,255,.4)', background: 'transparent', color: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
-            >
-              Đóng
-            </button>
-          </div>
+                  setViewPhoto(null);
+                }}
+                style={{ border: 'none', background: 'var(--accent-strong)', color: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+              >
+                Gỡ ảnh
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewPhoto(null)}
+                style={{ border: '1px solid rgba(255,255,255,.4)', background: 'transparent', color: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+              >
+                Không
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#fff', fontSize: 13 }} onClick={(e) => e.stopPropagation()}>
+              <span>{viewPhoto.caption || 'Ảnh hiện trường'}</span>
+              <button
+                type="button"
+                onClick={() => setConfirmRemovePhoto(true)}
+                style={{ border: '1px solid rgba(255,255,255,.4)', background: 'transparent', color: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+              >
+                Gỡ ảnh
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewPhoto(null)}
+                style={{ border: '1px solid rgba(255,255,255,.4)', background: 'transparent', color: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+              >
+                Đóng
+              </button>
+            </div>
+          )}
         </div>
       )}
       {/* Room tool — ô nhập tên phòng inline, thay window.prompt (đứng thread JS trong webview
@@ -2386,6 +2552,117 @@ export default function CadCanvas() {
           >
             ✕
           </button>
+        </div>
+      )}
+      {/* Form nổi dùng chung (Text/Markup/Array rect/Array polar/Scale/Divide) — thay các
+          window.prompt cũ. Cùng pattern room tool: neo gần con trỏ, kẹp trong khung canvas;
+          Enter/✓ chốt, Escape/✕ huỷ (= prompt trả null, không làm gì). */}
+      {inlineForm && (
+        <div
+          ref={inlineFormPanelRef}
+          style={{
+            position: 'absolute',
+            left: Math.min(Math.max(inlineForm.screenAt.x, 8), (wrapRef.current?.clientWidth ?? 800) - 260),
+            top: Math.min(Math.max(inlineForm.screenAt.y, 8), (wrapRef.current?.clientHeight ?? 600) - (70 + inlineForm.fields.length * 46)),
+            zIndex: 30,
+            width: 248,
+            background: 'var(--panel)',
+            border: '1px solid var(--border)',
+            borderRadius: 10,
+            padding: 10,
+            boxShadow: '0 8px 24px rgba(0,0,0,.18)',
+          }}
+        >
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t1)', marginBottom: 6 }}>{inlineForm.title}</div>
+          {inlineForm.fields.map((f, i) => (
+            <label key={f.label} style={{ display: 'block', marginBottom: 6 }}>
+              <span style={{ display: 'block', fontSize: 10.5, color: 'var(--t3)', marginBottom: 2 }}>{f.label}</span>
+              <input
+                ref={i === 0 ? inlineFormFirstInputRef : undefined}
+                autoFocus={i === 0}
+                value={f.value}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setInlineForm((prev) =>
+                    prev ? { ...prev, fields: prev.fields.map((fd, j) => (j === i ? { ...fd, value: v } : fd)) } : prev,
+                  );
+                }}
+                onFocus={(e) => e.currentTarget.select()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.stopPropagation();
+                    commitInlineForm();
+                  } else if (e.key === 'Escape') {
+                    e.stopPropagation();
+                    cancelInlineForm();
+                  }
+                }}
+                className="text-xs text-[var(--t1)]"
+                style={{ width: '100%', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', padding: '5px 8px', outline: 'none' }}
+              />
+            </label>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+            <button
+              type="button"
+              onClick={cancelInlineForm}
+              title="Huỷ (Esc)"
+              style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 8, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
+            >
+              ✕
+            </button>
+            <button
+              type="button"
+              onClick={commitInlineForm}
+              title="Xác nhận (Enter)"
+              style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 8, background: 'var(--accent-strong)', color: '#fff', border: 'none', cursor: 'pointer' }}
+            >
+              ✓
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Hộp xác nhận nổi (xoá ghim markup) — thay window.confirm. */}
+      {inlineConfirm && (
+        <div
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              e.stopPropagation();
+              setInlineConfirm(null);
+            }
+          }}
+          style={{
+            position: 'absolute',
+            left: Math.min(Math.max(inlineConfirm.screenAt.x, 8), (wrapRef.current?.clientWidth ?? 800) - 280),
+            top: Math.min(Math.max(inlineConfirm.screenAt.y, 8), (wrapRef.current?.clientHeight ?? 600) - 100),
+            zIndex: 30,
+            maxWidth: 268,
+            background: 'var(--panel)',
+            border: '1px solid var(--border)',
+            borderRadius: 10,
+            padding: 10,
+            boxShadow: '0 8px 24px rgba(0,0,0,.18)',
+          }}
+        >
+          <div style={{ fontSize: 11.5, color: 'var(--t1)', marginBottom: 8, wordBreak: 'break-word' }}>{inlineConfirm.message}</div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+            <button
+              type="button"
+              onClick={() => setInlineConfirm(null)}
+              style={{ borderRadius: 8, padding: '4px 10px', fontSize: 11.5, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
+            >
+              Huỷ
+            </button>
+            <button
+              type="button"
+              ref={inlineConfirmOkRef}
+              autoFocus
+              onClick={commitInlineConfirm}
+              style={{ borderRadius: 8, padding: '4px 10px', fontSize: 11.5, background: 'var(--accent-strong)', color: '#fff', border: 'none', cursor: 'pointer' }}
+            >
+              {inlineConfirm.okLabel}
+            </button>
+          </div>
         </div>
       )}
     </div>

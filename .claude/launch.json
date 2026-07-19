@@ -310,6 +310,18 @@
       ],
       "port": 4083,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-fix-cad-render-login-bug"
+    },
+    {
+      "name": "cad-polish-4084",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4084"
+      ],
+      "port": 4084,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-cad-small-polish"
     }
   ]
 }
