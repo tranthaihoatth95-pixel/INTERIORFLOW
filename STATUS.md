@@ -42,7 +42,8 @@
 - Sprint 3 B1: `meta` (giá/vendor/sku) trống — chưa có dữ liệu giá thật.
 - In A3/A4 300dpi thật vẫn CHƯA khả dụng (giới hạn Render stage) — PS-4 chỉ làm khổ màn hình/chiếu, đúng phạm vi đã chốt.
 - `knowledge/project-references/` ~121MB PDF trong git — **GitHub đã cảnh báo lúc push** (1 file 73MB vượt khuyến nghị 50MB) — cân nhắc Git LFS.
-- CAD Room tool (vẽ tay) không phản hồi thao tác chuột tự động lúc agent test — cần verify lại bằng chuột thật, chưa chắc là bug code.
+- ~~CAD Room tool không phản hồi thao tác chuột tự động~~ ĐÃ SỬA (`fix/cad-room-tool-mouse`, `0c294cd`, chưa merge): KHÔNG phải bug pointer — browser thật xác nhận click 2 góc tạo phòng đúng. Nguyên nhân: `window.prompt` sau click 2 chặn thread JS (như bug Dashboard cũ). Đã thay bằng ô nhập tên nổi không chặn trong `CadCanvas.tsx`, giữ hành vi Cancel cũ. tsc sạch.
+  Nợ còn lại (chưa sửa, ngoài phạm vi): `CadCanvas.tsx` còn nhiều `window.prompt`/`confirm` khác (Text ~768, markup ~777, array ~977-992, scale ~1003, khung tên ~1344) — cùng rủi ro, dọn dần sau.
 
 ## Bị chặn — KHÔNG tự khởi động
 - Intro screen (chờ hình/video — flow hiện tại ĐÃ gỡ intro theo lệnh user) · ML Gu Engine heavy (chồng lấn 2 app khác) · "API team" spec.
