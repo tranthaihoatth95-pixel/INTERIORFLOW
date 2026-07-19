@@ -4,7 +4,7 @@
 > ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp `feat/present-layout-ml-p1` = `main`/`origin/main` (`ae90a3c`, verify git) — **đã merge main + push xong**. **19/07: 2 agent nền ĐÃ XONG, cả 2 chờ user duyệt merge** — `fix/hydration-tooltip` (`988e0e0`) + `fix/cad-room-tool-mouse` (`0c294cd`, `87e260c`). 2 worktree vẫn còn sống (`interiorflow-wt-fix-hydration-tooltip`, `interiorflow-wt-fix-cad-room-tool`) — XOÁ NGAY sau khi merge.
+- Nhánh tích hợp `feat/present-layout-ml-p1` (`2273350`, verify git) — **đã merge 2 nhánh fix (hydration tooltip + CAD Room tool) 19/07, tsc pass, 0 worktree sống**. `origin/main` vẫn ở `ae90a3c` — **CHƯA push** (chờ user OK).
 - **19/07: đã xử lý 2 nợ kỹ thuật nhỏ trực tiếp (không qua agent):** Prisma `db push` đồng bộ schema `IntegrationAccount` (đã backup `dev.db` trước khi push) · dọn file rác `Bản sao Không có tiêu đề.rtfd/` + `CLAUDE.md.bak` (đã diff xác nhận bản cũ, không mất nội dung).
 - **App có nút "Mở DWG" trực tiếp** (Web Worker cô lập GPL) — không cần server/CLI.
 - Test pattern: `node_modules/.bin/sucrase-node <path>.test.ts` (59 file). KHÔNG có vitest/jest — bỏ qua chỉ dẫn nào ghi `npm test`.
