@@ -4,7 +4,8 @@
 > ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp `feat/present-layout-ml-p1` (`2273350`, verify git) — **đã merge 2 nhánh fix (hydration tooltip + CAD Room tool) 19/07, tsc pass, 0 worktree sống**. `origin/main` vẫn ở `ae90a3c` — **CHƯA push** (chờ user OK).
+- Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (`a98799c`, verify git) — đã push xong.
+- **19/07 chiều: 3 agent nền chạy song song** — audit toàn diện chuột/bàn phím/cảm ứng 3 chặng CAD/Render/Present+Login+Gallery, mỗi agent 1 host riêng (localhost/127.0.0.1/[::1], cùng server :3000) để không đụng cookie. Agent CAD kèm sửa bug đã xác nhận: `Backspace` không xoá được đối tượng (phím delete Mac gửi `Backspace` không phải `Delete`) — worktree `interiorflow-wt-fix-cad-delete-key`, branch `fix/cad-delete-key`, CHỜ merge. 2 agent Render/Present chỉ audit, không sửa code — kết quả là danh sách bất tiện chờ user lọc việc cần giao sửa tiếp.
 - **19/07: đã xử lý 2 nợ kỹ thuật nhỏ trực tiếp (không qua agent):** Prisma `db push` đồng bộ schema `IntegrationAccount` (đã backup `dev.db` trước khi push) · dọn file rác `Bản sao Không có tiêu đề.rtfd/` + `CLAUDE.md.bak` (đã diff xác nhận bản cũ, không mất nội dung).
 - **App có nút "Mở DWG" trực tiếp** (Web Worker cô lập GPL) — không cần server/CLI.
 - Test pattern: `node_modules/.bin/sucrase-node <path>.test.ts` (59 file). KHÔNG có vitest/jest — bỏ qua chỉ dẫn nào ghi `npm test`.
