@@ -10,6 +10,7 @@ import {
   LoginBackdropPicker,
   useLoginBackdrop,
 } from '@/components/entry/LoginBackdrop';
+import { IFLogo } from '@/components/entry/IFLogo';
 
 /**
  * LoginScreen — màn đăng nhập ĐỨNG RIÊNG, thay cho IntroSequence trong luồng chính
@@ -17,7 +18,8 @@ import {
  *
  * Sprint 2 (C-1/C-2/C-4):
  * - Nền ĐỘNG user tự đổi (LoginBackdrop): preset gradient trôi chậm / ảnh riêng
- *   Ken Burns, lưu localStorage; mặc định giữ "đêm ấm" quầng đồng của intro cũ.
+ *   Ken Burns, lưu localStorage; 19/07 login-minimal — MẶC ĐỊNH (chưa lưu lựa chọn)
+ *   là TRÌNH CHIẾU bộ 30 ảnh TTT ("như vậy trước để thấy độ đẹp").
  * - data-login-tone: nền tối/sáng ép bộ biến chữ tương ứng (globals.css) — chữ
  *   luôn đọc được bất kể theme app.
  * - Hero vào màn theo ADAPTIVE AMPLITUDE (lib/motion.ts rise()): tít lớn bay 28px,
@@ -53,12 +55,15 @@ export function LoginScreen({ onAuthed }: { onAuthed: () => void }) {
 
       <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-center px-6 py-16">
         <motion.div initial="hidden" animate="visible" className="flex w-full flex-col items-center text-center">
-          {/* logo + kicker — element nhỏ, biên độ nhỏ */}
+          {/* logo + kicker — element nhỏ, biên độ nhỏ.
+              19/07 login-minimal: monogram IF mới (IFLogo, đơn sắc hairline) thay badge
+              tím-hồng cũ — CHỈ ở màn login; Header/MobileMenu/share vẫn badge cũ, chờ user chốt. */}
           <motion.div
             variants={rise(amp(12), 0.05)}
-            className="mb-5 grid h-11 w-11 place-items-center rounded-[14px] bg-gradient-to-br from-violet-500 to-fuchsia-600 text-[17px] font-bold text-white shadow-sm"
+            className="mb-5 text-[var(--t1)]"
+            style={{ filter: 'drop-shadow(0 1px 10px rgba(0,0,0,0.28))' }}
           >
-            IF
+            <IFLogo size={46} variant="framed" />
           </motion.div>
           <motion.div
             variants={rise(amp(10), 0.1)}

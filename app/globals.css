@@ -554,17 +554,19 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   animation: if-bg-drift 32s ease-in-out infinite alternate;
 }
 
-/* Ken Burns nhẹ cho ảnh user upload — zoom 1.05→1.12 + trôi chéo, 40s */
+/* Ken Burns RẤT nhẹ (chỉ đạo 19/07: scale ~1.0→1.06 chậm ĐỀU suốt chu kỳ, pan tinh tế,
+   không giật) — linear để tốc độ không đổi giữa chừng, alternate để không snap khi lặp.
+   scale khởi đầu 1.03 (margin an toàn cho pan, không lộ mép ảnh). */
 @keyframes if-kenburns {
   0% {
-    transform: scale(1.05) translate(0%, 0%);
+    transform: scale(1.03) translate(0%, 0%);
   }
   100% {
-    transform: scale(1.13) translate(-1.6%, -1.1%);
+    transform: scale(1.085) translate(-0.8%, -0.5%);
   }
 }
 .if-login-kenburns {
-  animation: if-kenburns 42s ease-in-out infinite alternate;
+  animation: if-kenburns 44s linear infinite alternate;
   will-change: transform;
 }
 
@@ -572,14 +574,14 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
    2 ảnh liên tiếp không trôi cùng chiều → cảm giác "live wallpaper" tự nhiên hơn) */
 @keyframes if-kenburns-b {
   0% {
-    transform: scale(1.06) translate(-1.4%, -1%);
+    transform: scale(1.03) translate(0%, 0%);
   }
   100% {
-    transform: scale(1.13) translate(0.6%, 0.8%);
+    transform: scale(1.085) translate(0.8%, 0.5%);
   }
 }
 .if-login-kenburns-b {
-  animation: if-kenburns-b 42s ease-in-out infinite alternate;
+  animation: if-kenburns-b 44s linear infinite alternate;
   will-change: transform;
 }
 

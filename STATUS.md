@@ -5,6 +5,7 @@
 
 ## Hiện tại
 - Nhánh tích hợp `feat/present-layout-ml-p1` — 19/07 tối: đã merge thêm `fix/cad-small-polish` (sạch window.prompt/confirm CAD) + `feat/login-v2` (auth đa provider + UI kính lỏng + dynamic wallpaper). tsc pass, auth test 17+36 pass, 0 worktree sống. Verify SHA hiện tại bằng git.
+- **19/07 khuya: `feat/login-minimal` (worktree wt-login-minimal, CHƯA merge)** — theo chỉ đạo trực tiếp user: mặc định nền = trình chiếu TTT (user chưa lưu lựa chọn), card login tối giản (bỏ 2 note, input gạch dưới, OAuth logo trần cuối card), logo IF mới `IFLogo.tsx` (3 phương án, dùng `framed`), slideshow crossfade 1.8s + Ken Burns 1.03→1.085 linear + preload ảnh đầu. Verify browser 127.0.0.1:4086 + tsc pass.
 - **19/07 chiều: audit toàn diện chuột/bàn phím/cảm ứng 3 chặng CAD/Render/Present+Login+Gallery** (4 agent, mỗi agent 1 host riêng để không đụng cookie/IndexedDB). Kết quả → mục Nợ kỹ thuật bên dưới. Danh sách đầy đủ (kèm dòng code) nằm trong lịch sử chat, chưa chép hết vào STATUS để giữ &lt;800 từ — hỏi lại nếu cần.
 - **19/07: đã xử lý 2 nợ kỹ thuật nhỏ trực tiếp (không qua agent):** Prisma `db push` đồng bộ schema `IntegrationAccount` · dọn file rác `Bản sao Không có tiêu đề.rtfd/` + `CLAUDE.md.bak`.
 - **App có nút "Mở DWG" trực tiếp** (Web Worker cô lập GPL) — không cần server/CLI.

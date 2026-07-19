@@ -7,7 +7,8 @@
  * 19/07 (login-v2) — DYNAMIC WALLPAPER mở rộng:
  * - Thư viện ảnh TTT: 30 render thật ở public/wallpapers/ttt-01..30.jpg (1920px, ≤~350KB).
  * - Chế độ TĨNH: preset gradient / 1 ảnh thư viện / ảnh upload (như cũ).
- * - Chế độ TRÌNH CHIẾU (Photo Shuffle): tự chuyển ảnh ~22s, crossfade 1.2s,
+ * - Chế độ TRÌNH CHIẾU (Photo Shuffle) — MẶC ĐỊNH cho user chưa lưu lựa chọn
+ *   (19/07): tự chuyển ảnh ~22s, crossfade 1.8s ease-in-out,
  *   Ken Burns zoom/pan rất nhẹ (2 hướng xen kẽ) — cảm giác "live wallpaper".
  *   User chọn ảnh nào tham gia + thứ tự ngẫu nhiên/tuần tự. Preload ảnh KẾ TIẾP
  *   trước khi crossfade (không giật); KHÔNG tải cả 30 ảnh khi mở login.
@@ -25,9 +26,10 @@ import type { Lang } from '@/lib/i18n';
 
 const LS_KEY = 'interiorflow.login-bg';
 
-/** Nhịp trình chiếu: đổi ảnh mỗi 22s, crossfade 1.2s. */
+/** Nhịp trình chiếu: đổi ảnh mỗi 22s, crossfade 1.8s ease mềm (chỉ đạo 19/07:
+ *  "phải mượt, đẹp, không gây khó chịu" — fade 1.5–2s, chu kỳ ~20–25s). */
 const SLIDESHOW_INTERVAL_MS = 22_000;
-const CROSSFADE_S = 1.2;
+const CROSSFADE_S = 1.8;
 
 export type LoginTone = 'auto' | 'dark' | 'light';
 
@@ -109,7 +111,9 @@ function loadChoice(): BgChoice {
   } catch {
     /* hỏng thì về mặc định */
   }
-  return { kind: 'preset', id: 'ember' };
+  // MẶC ĐỊNH (chỉ đạo 19/07): user CHƯA từng chọn nền → TRÌNH CHIẾU bộ 30 ảnh TTT
+  // ("như vậy trước để thấy độ đẹp"). User đã lưu lựa chọn thì tôn trọng như cũ (trên).
+  return { kind: 'slideshow', ids: WALLPAPERS.map((w) => w.id), order: 'shuffle' };
 }
 
 function saveChoice(c: BgChoice) {
@@ -185,17 +189,32 @@ function SlideshowLayer({ ids, order, reduce }: { ids: string[]; order: 'shuffle
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [ids.join(','), order],
   );
-  const [idx, setIdx] = useState(0);
+  // idx = null → ảnh ĐẦU chưa preload xong: chưa mount layer nào (nền --bg phía dưới),
+  // load xong mới fade-in 1 nhịp crossfade — không pop ảnh nửa chừng, không nháy trắng.
+  const [idx, setIdx] = useState<number | null>(null);
   // tick: chỉ để RE-ARM hẹn giờ khi lượt trước bị bỏ qua (tab ẩn) mà idx không đổi
   const [tick, setTick] = useState(0);
-  useEffect(() => setIdx(0), [playlist]);
+  useEffect(() => {
+    let cancelled = false;
+    setIdx(null);
+    const img = new window.Image();
+    const show = () => {
+      if (!cancelled) setIdx(0);
+    };
+    img.onload = show;
+    img.onerror = show; // ảnh đầu hỏng vẫn hiện layer (browser tự lo alt) — không kẹt nền đen
+    img.src = wallSrc(playlist[0]);
+    return () => {
+      cancelled = true;
+    };
+  }, [playlist]);
 
   // Autoplay: hẹn giờ → PRELOAD ảnh kế tiếp → khi ảnh sẵn sàng mới crossfade (không giật).
   // reduce-motion hoặc chỉ 1 ảnh → không autoplay.
   // Tab ẨN (document.hidden) → KHÔNG advance: rAF của framer bị pause khi tab nền,
   // nếu cứ đổi idx thì layer chồng đống opacity 0 không exit được — chỉ re-arm chờ lượt sau.
   useEffect(() => {
-    if (reduce || playlist.length < 2) return;
+    if (idx === null || reduce || playlist.length < 2) return;
     let cancelled = false;
     const timer = window.setTimeout(() => {
       if (document.hidden) {
@@ -218,29 +237,32 @@ function SlideshowLayer({ ids, order, reduce }: { ids: string[]; order: 'shuffle
     };
   }, [idx, tick, playlist, reduce]);
 
-  const current = playlist[idx % playlist.length];
-  if (!current) return null;
+  const current = idx === null ? null : playlist[idx % playlist.length];
 
   return (
     <div className="absolute inset-0">
-      <AnimatePresence mode="sync" initial={false}>
-        <motion.div
-          key={current}
-          className="absolute inset-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: CROSSFADE_S, ease: 'easeInOut' }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={wallSrc(current)}
-            alt=""
-            // Ken Burns 2 hướng xen kẽ theo vị trí trong playlist — "live wallpaper" rất nhẹ
-            className={`h-full w-full object-cover ${reduce ? '' : idx % 2 === 0 ? 'if-login-kenburns' : 'if-login-kenburns-b'}`}
-            draggable={false}
-          />
-        </motion.div>
+      {/* initial KHÔNG tắt: ảnh đầu (đã preload xong) cũng fade-in mềm từ nền tối */}
+      <AnimatePresence mode="sync">
+        {current && (
+          <motion.div
+            key={current}
+            className="absolute inset-0"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: CROSSFADE_S, ease: 'easeInOut' }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={wallSrc(current)}
+              alt=""
+              // Ken Burns 2 hướng xen kẽ theo vị trí trong playlist — "live wallpaper" rất nhẹ.
+              // Layer cũ giữ nguyên animation của nó trong lúc fade-out → không khựng.
+              className={`h-full w-full object-cover ${reduce ? '' : (idx ?? 0) % 2 === 0 ? 'if-login-kenburns' : 'if-login-kenburns-b'}`}
+              draggable={false}
+            />
+          </motion.div>
+        )}
       </AnimatePresence>
       <PhotoScrim />
     </div>
