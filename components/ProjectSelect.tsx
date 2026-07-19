@@ -408,6 +408,17 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         e.preventDefault();
         setActive((a) => Math.min(n - 1, a + 1));
       } else if (e.key === 'Enter') {
+        // Guard: card gallery KHÔNG dùng focus DOM thật (tabIndex=-1) — "đang chọn" là
+        // state `active`, không phải document.activeElement. Nhưng các nút khác quanh
+        // gallery (‹ ›, Đổi bìa, Thử lại, đổi ngôn ngữ...) LÀ <button> focus được thật —
+        // Enter trên chúng đã có hành vi riêng (click nút đó) → KHÔNG được double-fire
+        // choose() ở đây, kẻo mở nhầm dự án đang active cùng lúc. Chỉ cho global Enter
+        // chạy khi focus không nằm trên 1 control tương tác khác.
+        const target = e.target as HTMLElement | null;
+        const tag = target?.tagName;
+        const isOtherControl =
+          !!tag && ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT'].includes(tag);
+        if (isOtherControl || target?.isContentEditable || e.defaultPrevented) return;
         e.preventDefault();
         void choose(items[active]);
       }
@@ -650,7 +661,10 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               <motion.div
                 key={key}
                 role="button"
-                tabIndex={-1}
+                // roving tabindex: chỉ card ĐANG ACTIVE (giữa) tới được bằng Tab — các card
+                // khác giữ -1. Khi `active` đổi (mũi tên/click), card mới trở thành tabIndex=0
+                // nên người dùng chỉ biết Tab (không biết ← →) vẫn vào được gallery.
+                tabIndex={isCenter ? 0 : -1}
                 aria-label={item.kind === 'flow' ? item.flow.name : en ? 'New project' : 'Dự án mới'}
                 onClick={() => {
                   if (busy) return;
