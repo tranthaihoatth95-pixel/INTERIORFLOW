@@ -1,42 +1,37 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/db';
-import { hashPassword, publicUser, normalizeVNPhone, getSessionUser } from '@/lib/server/auth';
+import { hashPassword, publicUser, normalizeVNPhone, getSessionUser, createSession, isValidAccountEmail } from '@/lib/server/auth';
 
 /**
  * Tạo tài khoản email/SĐT + mật khẩu.
  *
- * CHÍNH SÁCH (chủ dự án chốt Sprint 1, siết tiếp Sprint 2 — quyết định #2):
- * ĐĂNG KÝ TỰ DO ĐÃ KHOÁ HẲN — route công khai LUÔN 403, kể cả khi DB trống.
- *   · Người dùng thường vào bằng Google OAuth @ttt.vn (/api/auth/google).
- *   · Cửa DUY NHẤT còn lại: ADMIN CẤP — request có session của user isAdmin:
- *     admin tạo hộ tài khoản (KHÔNG đổi session của admin sang tài khoản mới).
- *   · Admin ĐẦU TIÊN (bootstrap) tạo bằng `scripts/seed-admin.ts` chạy tay trên máy
- *     chủ (idempotent, kiêm đường reset mật khẩu admin) — cửa "register khi DB
- *     trống" cũ đã gỡ để không còn race ai-nhanh-tay-thành-admin lúc mới deploy.
- *   · TODO(admin-provisioning): UI quản lý tài khoản cho admin (cấp/reset mật khẩu tay)
- *     — chưa thiết kế hệ role mới, tận dụng cờ isAdmin sẵn có trong schema.
+ * CHÍNH SÁCH MỚI (chủ dự án chốt 19/07 — THAY quyết định "register 403" Sprint 1/2):
+ * ĐĂNG KÝ CÔNG KHAI ĐÃ MỞ LẠI — email BẤT KỲ domain nào (@ttt.vn, gmail, domain
+ * công ty khác…) đều đăng ký được. Lý do: đề phòng sau này rời công ty, sản phẩm
+ * không bị trói vào mail @ttt.vn.
+ *   · Mật khẩu ≥ 6 ký tự + bcrypt (giữ như cũ).
+ *   · Đăng ký công khai → TỰ ĐĂNG NHẬP luôn (set cookie session) như flow register cổ điển.
+ *   · Admin đã đăng nhập vẫn CẤP HỘ được tài khoản — trường hợp đó GIỮ session admin,
+ *     KHÔNG đổi sang tài khoản mới (hành vi cấp-hộ cũ).
+ *   · Bootstrap admin đầu tiên vẫn = `scripts/seed-admin.ts` (user đăng ký công khai
+ *     KHÔNG BAO GIỜ tự thành admin — kể cả khi DB trống, tránh race cũ).
  *
  * Body: { name, password, email?, phone? } — cần ít nhất email hoặc SĐT.
- * KHÔNG có OTP xác minh SĐT — app nội bộ/LAN, SĐT chỉ là định danh đăng nhập.
+ * KHÔNG có OTP xác minh SĐT — SĐT chỉ là định danh đăng nhập.
  */
 export async function POST(req: Request) {
   const { email, phone, name, password } = await req.json().catch(() => ({}));
 
-  // Cửa vào DUY NHẤT: admin đã đăng nhập. Còn lại → 403 (kể cả DB trống — seed-admin.ts lo bootstrap).
+  // Ai đang gọi? — admin cấp hộ (giữ session admin) hay tự đăng ký công khai (auto-login).
   const requester = await getSessionUser();
-  if (!requester?.isAdmin) {
-    return NextResponse.json(
-      { error: 'Đăng ký tự do đã khoá — đăng nhập Google bằng email @ttt.vn, hoặc liên hệ admin để được cấp tài khoản.' },
-      { status: 403 },
-    );
-  }
+  const adminProvisioning = !!requester?.isAdmin;
 
   if (!name || !password || String(password).length < 6) {
     return NextResponse.json({ error: 'Cần tên và mật khẩu ≥ 6 ký tự.' }, { status: 400 });
   }
 
   const normalizedEmail = email ? String(email).trim().toLowerCase() : null;
-  if (normalizedEmail && !normalizedEmail.includes('@')) {
+  if (normalizedEmail && !isValidAccountEmail(normalizedEmail)) {
     return NextResponse.json({ error: 'Email không hợp lệ.' }, { status: 400 });
   }
   const normalizedPhone = phone ? normalizeVNPhone(String(phone)) : null;
@@ -57,7 +52,7 @@ export async function POST(req: Request) {
     if (existing) return NextResponse.json({ error: 'Số điện thoại đã đăng ký.' }, { status: 409 });
   }
 
-  // Tài khoản admin-cấp-hộ = user thường (admin đầu tiên đã có từ seed-admin.ts).
+  // User mới LUÔN là user thường (admin đầu tiên đã có từ seed-admin.ts).
   const user = await prisma.user.create({
     data: {
       email: normalizedEmail,
@@ -71,6 +66,11 @@ export async function POST(req: Request) {
   await prisma.creditTransaction.create({
     data: { userId: user.id, amount: user.credits, reason: 'Tặng credits khởi tạo' },
   });
+
+  if (!adminProvisioning) {
+    // Tự đăng ký công khai → đăng nhập luôn (cookie 30 ngày như flow social).
+    await createSession(user.id);
+  }
   // Admin cấp hộ → GIỮ session admin, KHÔNG tự động đăng nhập vào tài khoản vừa tạo.
   return NextResponse.json({ user: publicUser(user) });
 }

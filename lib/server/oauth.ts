@@ -13,3 +13,19 @@ export const googleConfigured = () =>
 /** Apple cần tài khoản Apple Developer trả phí + key .p8 — hiện chỉ dựng khung, gate bằng env. */
 export const appleConfigured = () =>
   Boolean(process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPLE_KEY_ID && process.env.APPLE_PRIVATE_KEY);
+
+/* ============================================================================
+ * Microsoft identity platform (Entra ID) — Sign in with Microsoft (19/07).
+ * DÙNG CHUNG bộ env MS365_* với tầng tích hợp (docs/INTEGRATIONS.md) — cùng một
+ * Azure App Registration phục vụ cả login lẫn Outlook/Teams/Calendar về sau.
+ * ==========================================================================*/
+
+/** Cookie state riêng cho luồng Microsoft — tách khỏi Google để 2 luồng không đè nhau. */
+export const MS_OAUTH_STATE_COOKIE = 'if_oauth_state_ms';
+
+/** Microsoft đã cấu hình chưa — thiếu key thì API trả 503, UI hiện nút disabled "chưa cấu hình". */
+export const microsoftConfigured = () =>
+  Boolean(process.env.MS365_CLIENT_ID && process.env.MS365_CLIENT_SECRET);
+
+/** Tenant Entra ID — 'common' cho phép cả tài khoản tổ chức lẫn cá nhân. */
+export const msTenant = () => process.env.MS365_TENANT || 'common';
