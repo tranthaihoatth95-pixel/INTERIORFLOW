@@ -1591,7 +1591,7 @@ export default function CadCanvas() {
       const sel = new Set(st.selection);
       for (const e of docToDraw.entities) {
         if (!sel.has(e.id)) continue;
-        drawEntity(ctx, v, docToDraw, e, { stroke: accent, forceColor: accent, lineWidth: 2.4, text: true, dimStyle: st.dimStyle });
+        drawEntity(ctx, v, docToDraw, e, { stroke: accent, forceColor: accent, lineWidth: 2.4, text: true, dimStyle: st.dimStyle, outlineOnly: true });
       }
     }
 
@@ -1951,7 +1951,7 @@ export default function CadCanvas() {
         break;
       case 'dimangular': {
         if (ix.current.angularFirst) {
-          drawEntity(ctx, v, st.doc, ix.current.angularFirst, { stroke: accent, forceColor: accent, lineWidth: 2.6, text: false });
+          drawEntity(ctx, v, st.doc, ix.current.angularFirst, { stroke: accent, forceColor: accent, lineWidth: 2.6, text: false, outlineOnly: true });
         }
         break;
       }
@@ -2118,7 +2118,7 @@ export default function CadCanvas() {
       case 'join': {
         if (ix.current.joinFirst) {
           const target = st.doc.entities.find((e) => e.id === ix.current.joinFirst);
-          if (target) drawEntity(ctx, v, st.doc, target, { stroke: accent, forceColor: accent, lineWidth: 2.6, text: false });
+          if (target) drawEntity(ctx, v, st.doc, target, { stroke: accent, forceColor: accent, lineWidth: 2.6, text: false, outlineOnly: true });
         }
         break;
       }
