@@ -25,6 +25,7 @@ import { useRef } from 'react';
 import type { SlideElement, ImageElement, TextElement, ShapeElement, Frame } from '@/lib/present-editor/model';
 import { adjustToCssFilter, decorateListText, effectiveListStyle } from '@/lib/present-editor/model';
 import { shapeClipPath, gradientOverlayCss } from '@/lib/present-editor/shape-geometry';
+import { framesOverlap, planFallback, toneForColor } from '@/lib/adaptive-contrast';
 
 const CANVAS_FONT: Record<string, string> = {
   Editorial: '"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
@@ -62,6 +63,8 @@ interface Props {
   onEditText?: (id: string) => void;
   /** double-click image → mở chế độ chỉnh ảnh. */
   onEditImage?: (id: string) => void;
+  /** chữ đang đè lên ảnh → bật tương phản thích ứng (xem `textOverImage`). */
+  overImage?: boolean;
   /** chuột phải trên element → mở menu ngữ cảnh. */
   onContextMenu?: (e: React.MouseEvent) => void;
 }
@@ -107,6 +110,7 @@ export default function Element({
   onGuides,
   onEditText,
   onEditImage,
+  overImage,
   onContextMenu,
 }: Props) {
   const dragState = useRef<{
@@ -296,7 +300,7 @@ export default function Element({
       }}
       onContextMenu={onContextMenu}
     >
-      <Inner el={el} fonts={fonts} />
+      <Inner el={el} fonts={fonts} overImage={overImage} />
 
       {selected && (
         <div
@@ -377,10 +381,41 @@ function handleStyle(h: Handle): React.CSSProperties {
  * KHÔNG cần khung kéo/resize/xoay (vd PlayerElements.tsx — trình chiếu, mỗi element build-in
  * độc lập). Giữ 1 nguồn vẽ text/ảnh/shape duy nhất cho canvas chỉnh sửa.
  */
-export function Inner({ el, fonts }: { el: SlideElement; fonts: string }) {
+export function Inner({
+  el,
+  fonts,
+  overImage,
+}: {
+  el: SlideElement;
+  fonts: string;
+  /** chữ này có nằm CHỒNG lên một ảnh phía dưới không (xem `textOverImage`). */
+  overImage?: boolean;
+}) {
   if (el.kind === 'image') return <ImageInner el={el} />;
   if (el.kind === 'shape') return <ShapeInner el={el} />;
-  return <TextInner el={el} fonts={fonts} />;
+  return <TextInner el={el} fonts={fonts} overImage={overImage} />;
+}
+
+/**
+ * Chữ có đè lên ẢNH không? Phần tử vẽ theo THỨ TỰ MẢNG (sau = nằm trên), nên chỉ tính
+ * các ảnh đứng TRƯỚC nó trong mảng và có khung giao nhau. Chữ trên nền phẳng (không ảnh
+ * nào bên dưới) KHÔNG cần scrim — giữ nguyên như cũ, đúng chỉ đạo.
+ */
+export function textOverImage(
+  el: SlideElement,
+  elements: SlideElement[],
+  /** slide có ảnh nền full-bleed → MỌI chữ đều đang nằm trên ảnh. */
+  hasBackgroundImage = false,
+): boolean {
+  if (el.kind !== 'text') return false;
+  if (hasBackgroundImage) return true;
+  const i = elements.findIndex((e) => e.id === el.id);
+  if (i < 0) return false;
+  for (let k = 0; k < i; k++) {
+    const below = elements[k];
+    if (below.kind === 'image' && !below.hidden && framesOverlap(el.frame, below.frame)) return true;
+  }
+  return false;
 }
 
 function ImageInner({ el }: { el: ImageElement }) {
@@ -437,15 +472,26 @@ function ShapeInner({ el }: { el: ShapeElement }) {
   return <div style={fillLayer} />;
 }
 
-function TextInner({ el, fonts }: { el: TextElement; fonts: string }) {
+function TextInner({ el, fonts, overImage }: { el: TextElement; fonts: string; overImage?: boolean }) {
   // Danh sách: bullet "•  " hoặc số "1.  " đầu mỗi dòng logic (khớp render.ts khi export).
   const shown = decorateListText(el.text, effectiveListStyle(el));
-  return (
+
+  /* Tương phản thích ứng — CHỈ khi chữ nằm CHỒNG lên ảnh.
+     Khác 3 chỗ kia ở một điểm quan trọng: ở Present, MÀU CHỮ LÀ QUYẾT ĐỊNH THIẾT KẾ của
+     người dùng (họ tự chọn trong Inspector) — tuyệt đối KHÔNG tự đổi màu chữ của họ.
+     Vì vậy chỉ suy tone TỪ chính màu họ đã chọn rồi đắp thêm sương + bóng đổ ngược tone
+     để chữ tách khỏi ảnh. Cũng vì thế dùng tầng CSS thuần, không đo pixel: ảnh dưới có thể
+     bị crop/xoay/lọc màu/chồng nhiều lớp, đo ra số không đáng tin bằng. */
+  const plan = overImage ? planFallback(toneForColor(el.color), { shape: 'halo', baseAlpha: 0.3 }) : null;
+
+  const body = (
     <div
       style={{
+        position: 'relative',
         width: '100%',
         height: '100%',
         color: el.color,
+        textShadow: plan?.textShadow,
         // ưu tiên bộ chữ riêng của element (chuỗi CSS), không thì dùng bộ chữ của deck
         fontFamily: el.fontFamily || CANVAS_FONT[fonts] || CANVAS_FONT.Editorial,
         fontSize: `${el.fontSize}cqh`,
@@ -461,6 +507,24 @@ function TextInner({ el, fonts }: { el: TextElement; fonts: string }) {
       }}
     >
       {shown}
+    </div>
+  );
+
+  if (!plan) return body;
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {/* sương mềm toả rộng hơn khung chữ, tan hẳn ở mép — không tạo khối nền nhìn thấy được */}
+      <span
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: '-8% -6%',
+          background: plan.scrim,
+          pointerEvents: 'none',
+        }}
+      />
+      {body}
     </div>
   );
 }

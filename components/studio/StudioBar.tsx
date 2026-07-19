@@ -19,6 +19,7 @@ import StageSwitcher from './StageSwitcher';
 import { StageVeil } from './StageTransition';
 import SessionWatch from './SessionWatch';
 import Tooltip from '@/components/ui/Tooltip';
+import { IFLogo } from '@/components/entry/IFLogo';
 
 export default function StudioBar({ active }: { active: 'present' | 'photo' | 'cad' }) {
   const router = useRouter();
@@ -82,11 +83,8 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
         background: 'var(--panel)',
       }}
     >
-      <span
-        style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1, color: 'var(--t2)', userSelect: 'none' }}
-      >
-        IF
-      </span>
+      {/* Logo IF phương án "có khung" — đồng bộ với Header/share/login (19/07). */}
+      <IFLogo size={22} variant="framed" style={{ color: 'var(--t2)', flex: '0 0 auto' }} />
       <span style={{ width: 1, height: 20, background: 'var(--border)' }} />
 
       <StageSwitcher

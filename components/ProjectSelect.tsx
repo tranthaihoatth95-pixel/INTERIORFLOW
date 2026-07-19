@@ -21,6 +21,8 @@ import { useFlowStore } from '@/lib/store';
 import { createFlow, openFlow } from '@/lib/workspace';
 import { applyCadHandoff } from '@/lib/cad/handoff';
 import { LangToggle } from '@/components/LangToggle';
+import { adaptiveTextStyle, useAdaptiveContrast } from '@/components/ui/AdaptiveContrast';
+import type { ContrastPlan } from '@/lib/adaptive-contrast';
 
 /**
  * ProjectSelect — MÀN CHỌN DỰ ÁN sau đăng nhập, THAY cho StageSelect cũ.
@@ -165,15 +167,56 @@ const glass: React.CSSProperties = {
   border: '1px solid rgba(127,127,127,0.2)',
 };
 
-/** Caption kính TỐI đè lên ảnh — ảnh cover luôn tối nên chữ trắng an toàn mọi theme. */
-const captionGlass: React.CSSProperties = {
-  background: 'linear-gradient(180deg, transparent 0%, rgba(14,12,10,0.45) 34%, rgba(14,12,10,0.7) 100%)',
+/**
+ * Caption kính đè lên ảnh bìa — 19/07 (login-contrast) chuyển sang TƯƠNG PHẢN THÍCH ỨNG:
+ * đo độ sáng + độ rối của DẢI ĐÁY ảnh bìa (lib/adaptive-contrast.ts) rồi mới quyết định
+ * chữ kem hay chữ mực và sương đậm bao nhiêu. Ảnh bìa không còn "luôn tối" như giả định cũ
+ * (user đổi bìa được, upload được), nên bảng cứng dưới đây chỉ còn là nền chất liệu.
+ */
+const captionGlassBase: React.CSSProperties = {
   backdropFilter: 'blur(14px) saturate(160%)',
   WebkitBackdropFilter: 'blur(14px) saturate(160%)',
-  borderTop: '1px solid rgba(255,255,255,0.1)',
   maskImage: 'linear-gradient(180deg, transparent 0%, black 26%)',
   WebkitMaskImage: 'linear-gradient(180deg, transparent 0%, black 26%)',
 };
+
+/** Dải đáy ảnh bìa — đúng chỗ caption nằm. */
+const CAPTION_REGION = { x: 0, y: 0.6, w: 1, h: 0.4 };
+
+/**
+ * Vỏ caption của một card — hook đo tương phản phải nằm trong component RIÊNG vì các card
+ * được render trong vòng lặp (không gọi hook trong map được).
+ */
+function AdaptiveCaption({
+  src,
+  isCenter,
+  reduce,
+  render,
+}: {
+  src: string;
+  isCenter: boolean;
+  reduce: boolean;
+  render: (plan: ContrastPlan) => React.ReactNode;
+}) {
+  const plan = useAdaptiveContrast({ src, region: CAPTION_REGION, shape: 'bottom', baseAlpha: 0.3 });
+  return (
+    <motion.div
+      className="absolute inset-x-0 bottom-0 px-4 pb-3.5 pt-8 sm:px-5 sm:pb-4"
+      // caption chỉ nhận tương tác ở card focus (tránh bấm nhầm nút ở card mờ)
+      style={{
+        ...captionGlassBase,
+        background: plan.scrim,
+        borderTop: `1px solid ${plan.tone === 'light' ? 'rgba(255,255,255,0.1)' : 'rgba(20,17,13,0.12)'}`,
+        pointerEvents: isCenter ? 'auto' : 'none',
+      }}
+      initial={false}
+      animate={{ opacity: isCenter ? 1 : 0 }}
+      transition={{ duration: reduce ? 0 : 0.45, ease: easeApple }}
+    >
+      {render(plan)}
+    </motion.div>
+  );
+}
 
 /** Pill kính nhỏ tối trên ảnh (nút Đổi bìa / status). */
 const darkPill: React.CSSProperties = {
@@ -495,15 +538,16 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
 
   /* ---------- Caption card (gallery) — tên + status + Đổi bìa + memoji ---------- */
 
-  const flowCaption = (f: FlowRow, isCenter: boolean) => {
+  const flowCaption = (f: FlowRow, isCenter: boolean, plan: ContrastPlan) => {
     const editing = statusFor === f.id;
+    const strong = adaptiveTextStyle(plan);
     return (
       <>
         <div className="flex items-start justify-between gap-2.5">
           <div className="min-w-0 flex-1">
             <div
-              className="truncate text-[15px] font-semibold leading-tight text-white sm:text-[17px]"
-              style={{ fontFamily: SANS }}
+              className="truncate text-[15px] font-semibold leading-tight sm:text-[17px]"
+              style={{ fontFamily: SANS, ...strong }}
             >
               {f.name}
             </div>
@@ -558,7 +602,8 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 className="mt-1 block max-w-full truncate text-left text-[12px] transition-colors disabled:cursor-default"
                 style={{
                   fontFamily: SANS,
-                  color: f.status ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.45)',
+                  ...adaptiveTextStyle(plan, true),
+                  opacity: f.status ? 1 : 0.62,
                 }}
               >
                 {f.status ? f.status : en ? '· No note yet' : '· Chưa có ghi chú'}
@@ -566,12 +611,19 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             )}
 
             <div className="mt-1.5 flex items-center gap-2">
-              <span className="truncate text-[11px] text-white/55" style={{ fontFamily: SANS }}>
+              <span
+                className="truncate text-[11px]"
+                style={{ fontFamily: SANS, ...adaptiveTextStyle(plan, true), opacity: 0.78 }}
+              >
                 {f.project ? f.project.name : en ? 'No project' : 'Chưa gắn dự án'}
               </span>
               <span
-                className="shrink-0 rounded-full px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] text-white/65"
-                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)' }}
+                className="shrink-0 rounded-full px-2 py-0.5 text-[9px] uppercase tracking-[0.14em]"
+                style={{
+                  ...adaptiveTextStyle(plan, true),
+                  background: plan.tone === 'light' ? 'rgba(255,255,255,0.1)' : 'rgba(20,17,13,0.08)',
+                  border: `1px solid ${plan.tone === 'light' ? 'rgba(255,255,255,0.14)' : 'rgba(20,17,13,0.16)'}`,
+                }}
               >
                 {timeAgo(f.updatedAt, en)}
               </span>
@@ -710,17 +762,14 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       draggable={false}
                       className="h-full w-full object-cover"
                     />
-                    {/* caption kính — rõ ở card trung tâm (gu TitleSequence) */}
-                    <motion.div
-                      className="absolute inset-x-0 bottom-0 px-4 pb-3.5 pt-8 sm:px-5 sm:pb-4"
-                      // caption chỉ nhận tương tác ở card focus (tránh bấm nhầm nút ở card mờ)
-                      style={{ ...captionGlass, pointerEvents: isCenter ? 'auto' : 'none' }}
-                      initial={false}
-                      animate={{ opacity: isCenter ? 1 : 0 }}
-                      transition={{ duration: reduce ? 0 : 0.45, ease: easeApple }}
-                    >
-                      {flowCaption(item.flow, isCenter)}
-                    </motion.div>
+                    {/* caption kính — rõ ở card trung tâm (gu TitleSequence).
+                        Tông chữ/sương do AdaptiveCaption đo từ chính ảnh bìa card này. */}
+                    <AdaptiveCaption
+                      src={coverOf(item.flow)}
+                      isCenter={isCenter}
+                      reduce={!!reduce}
+                      render={(plan) => flowCaption(item.flow, isCenter, plan)}
+                    />
                   </>
                 ) : (
                   <div className="grid h-full w-full place-items-center">

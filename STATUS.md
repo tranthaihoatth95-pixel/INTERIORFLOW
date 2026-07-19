@@ -5,9 +5,11 @@
 
 ## Hiện tại
 - Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main`. **19/07 XONG cảm ứng CAD (pinch-zoom/pan + nút Xoá nổi) & Slide Sorter (DnD→Pointer Events)** — chi tiết → CHANGELOG. Verify SHA bằng git.
-- **19/07 khuya — ĐỢT MỚI user giao (2 đợt agent):**
-  - **Đợt 1 ĐANG CHẠY (3 worktree):** `feat/login-contrast` (bỏ 2 dòng chữ login "Bắt đầu dòng chảy…"/"Đăng nhập để mở dự án…" · cơ chế tương phản thích ứng DÙNG CHUNG áp 4 chỗ: login/thẻ Gallery/chữ slide Present đè ảnh/nhãn ảnh Render · logo IF **chốt phương án CÓ KHUNG**, đồng bộ Header+MobileMenu+share) · `feat/toolbar-io-sync` (gom gọn toolbar CAD · sửa scrollbar thô ở Pro mode · **component Nhập/Xuất dùng chung cả 3 chặng**: cùng cách thể hiện, bấm mới xổ định dạng riêng từng chặng) · ~~`fix/login-bounce-root`~~ (XONG, đã merge — xem Nợ kỹ thuật).
-  - **Đợt 2 CHƯA giao:** ① Sketch mode = cảm ứng kiểu ArcSite · Pro mode = tối ưu chuột/phím · chuyển 3 chặng mượt + phân định rõ (gộp luôn UI cảm ứng cho F8/F12/gõ lệnh/Space — CAD hiện vẫn cần bàn phím vật lý cho mấy cái này). ② Present font: tải font từ máy · edit chữ tiêu đề kiểu text-effects/typography illustration · sửa lỗi hiện chữ ở dải thumbnail deck mẫu.
+- **19/07 khuya — ĐỢT MỚI user giao:**
+  - **Đã merge:** `fix/login-bounce-root` + `feat/login-contrast` (gỡ 2 dòng chữ login · **tương phản thích ứng dùng chung** áp 4 chỗ · **logo IF `framed` đồng bộ toàn app**) — chi tiết → CHANGELOG. 17 test mới pass. Verify mắt: chỉ màn login (Gallery/Present/Render cần đăng nhập).
+  - **Đang chạy:** `feat/toolbar-io-sync` (gom gọn toolbar CAD · sửa scrollbar thô Pro mode · **component Nhập/Xuất dùng chung cả 3 chặng**: cùng cách thể hiện, bấm mới xổ định dạng riêng từng chặng).
+  - **Đợt 2 CHƯA giao:** ① Sketch mode = cảm ứng kiểu ArcSite · Pro mode = tối ưu chuột/phím · chuyển 3 chặng mượt + phân định rõ (gộp luôn UI cảm ứng cho F8/F12/gõ lệnh/Space — CAD hiện vẫn cần bàn phím vật lý). ② Present font: tải font từ máy · edit chữ tiêu đề kiểu text-effects/typography illustration · sửa lỗi hiện chữ ở dải thumbnail deck mẫu.
+- ⚠️ `MobileMenu:129` badge tím-hồng **không phải logo IF** mà là avatar chữ cái user → GIỮ NGUYÊN. `components/LoginScreen.tsx` (gốc `components/`, khác `entry/`) là **code chết**, không ai import, còn badge "IF" cũ — chưa xoá.
 - Có nút **Mở DWG** trực tiếp (Web Worker cô lập GPL).
 - Test pattern: `node_modules/.bin/sucrase-node <path>.test.ts` (59 file). KHÔNG có vitest/jest — bỏ qua chỉ dẫn nào ghi `npm test`.
 
@@ -17,14 +19,10 @@
 - Perceptron THẬT (learning-to-rank) · installer cả 3 unsigned (.exe cần Win) · PWA host Vercel + Supabase (Sprint 4).
 
 ## Nợ kỹ thuật
-- Audit 19/07 (chuột/phím/cảm ứng 3 chặng) đã sửa gần hết, chi tiết → CHANGELOG.md mục "19/07 — Audit...".
-- ~~**CAD→Render văng đăng nhập**~~ — **ĐÃ TÌM RA GỐC + sửa** (nhánh `fix/login-bounce-root`, chưa merge). Gốc: cookie định danh theo HOST **không theo PORT** → mọi dev server worktree trên `localhost:<port>` dùng chung lọ cookie với `localhost:3000`; worktree KHÔNG có `.env` nên thiếu AUTH_SECRET/DATABASE_URL, và DELETE /api/auth/me ở đó phát `Set-Cookie: if_session=; Expires=1970` → **xoá phiên thật của :3000**. CAD không kiểm tra phiên nên user vẫn vẽ, tới lúc bấm Render mới lộ. Sửa: server thiếu AUTH_SECRET dùng cookie riêng `if_session_noenv` + cảnh báo log · `getSession()` phân biệt anonymous/stale/error (DB lỗi → 503, KHÔNG đá về login) · cookie chết bị xoá + báo lý do · `SessionWatch` cảnh báo mất phiên ngay tại chặng studio.
-- ⚠️ **Việc cần làm ngay:** hai dev server worktree đang chạy ở `localhost:4090`/`4091` vẫn là code CŨ — còn khả năng xoá phiên đăng nhập thật. Tắt hoặc merge nhánh fix trước khi dùng tiếp.
-- ~~[TRUNG] Cảm ứng CAD + Slide Sorter~~ — ĐÃ LÀM XONG + merge (xem mục Hiện tại); còn phần shortcut bàn phím CAD chưa có UI cảm ứng.
-- [THẤP] Property panel Render không undo được (có thể chủ ý, chưa hỏi).
-- Sprint 3 B1: `meta` (giá/vendor/sku) trống — chưa có dữ liệu giá thật.
-- In A3/A4 300dpi thật CHƯA khả dụng (giới hạn Render stage) — đúng phạm vi đã chốt.
-- `knowledge/project-references/` ~121MB PDF trong git — Git LFS, user chọn ĐỂ SAU (rủi ro rewrite history).
+- Audit 19/07 (chuột/phím/cảm ứng 3 chặng) đã sửa gần hết → CHANGELOG.
+- ~~**CAD→Render văng đăng nhập**~~ — **ĐÃ TÌM RA GỐC + SỬA + MERGE** (nguyên nhân: dev server worktree của agent xoá phiên thật vì cookie chung host — xem luật 3 + CHANGELOG).
+- ~~[TRUNG] Cảm ứng CAD + Slide Sorter~~ — XONG + merge; còn shortcut bàn phím CAD chưa có UI cảm ứng (đợt 2).
+- [THẤP] Property panel Render không undo được (có thể chủ ý) · Sprint 3 B1 `meta` giá/vendor/sku trống (chờ dữ liệu) · in A3/A4 300dpi thật chưa khả dụng (đúng phạm vi đã chốt) · `knowledge/` ~121MB PDF cân nhắc Git LFS (user chọn ĐỂ SAU).
 
 ## Bị chặn — KHÔNG tự khởi động
 - Intro screen (chờ hình/video — flow hiện tại ĐÃ gỡ intro theo lệnh user) · ML Gu Engine heavy (chồng lấn 2 app khác) · "API team" spec.
