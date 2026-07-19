@@ -1531,8 +1531,17 @@ export default function CadCanvas() {
         else st.setStatus(`Nhập độ dài: ${ix.current.dynBuf} mm (Enter để chốt)`);
         return;
       }
-      if (e.key === 'Backspace' && ix.current.dynBuf) {
-        ix.current.dynBuf = ix.current.dynBuf.slice(0, -1);
+      if (e.key === 'Backspace') {
+        if (ix.current.dynBuf) {
+          // Đang gõ buffer nhập số/toạ độ động → Backspace chỉ xoá ký tự cuối, KHÔNG đụng selection.
+          ix.current.dynBuf = ix.current.dynBuf.slice(0, -1);
+        } else if (st.selection.length) {
+          // Bàn phím Mac không numpad gửi 'Backspace' cho phím "delete" vật lý (không phải 'Delete').
+          // Buffer rỗng + có đối tượng đang chọn → coi như phím xoá, đồng bộ hành vi với nhánh 'Delete'.
+          st.deleteSelected();
+          ix.current.redraw = true;
+        }
+        return;
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
