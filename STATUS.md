@@ -18,16 +18,13 @@
 - Perceptron THẬT (learning-to-rank) · installer cả 3 unsigned (.exe cần Win) · PWA host Vercel + Supabase (Sprint 4).
 
 ## Nợ kỹ thuật
-- ~~Hydration tooltip CadToolbar/PhotoToolbar~~ · ~~window.prompt Dashboard/PS-3/Brand Kit~~ · ~~Migration Prisma drift~~ · ~~CAD Room tool chuột~~ · ~~CAD Backspace không xoá được~~ · ~~Demo render: thanh tím đè nhãn phòng (hatch SOLID bị force-highlight tô đặc thay vì chỉ viền, đã thêm `DrawStyle.outlineOnly`)~~ — ĐÃ SỬA, đã merge, **demo render user đã tự verify mắt qua tunnel 19/07, OK**.
-- **Từ audit 19/07 — ĐÃ SỬA + MERGE (`977f32d`):** ~~màu layer Tường trùng nền (đổi `#47423a`, sửa luôn palette `addLayer()`)~~ · ~~handle xoay Present (lỗi commit frame stale từ prop trong `onPointerUp`, không phải công thức atan2 — vá luôn move/resize cùng race)~~ · ~~Enter toàn cục Gallery (guard e.target)~~ · ~~groups Render không lưu (thêm `groups` vào `graphJson` + auto-unhide node mồ côi)~~ · ~~Escape mất nét vẽ Mask/Annotate (cờ dirty + banner)~~ · ~~hydration Tooltip.tsx (mounted-gate)~~ · ~~tab-order Login~~ · ~~card carousel roving tabindex~~. Lưu ý: Enter-guard + tabindex Gallery chỉ verify bằng đọc code (cần login thật) — user dùng thật là verify cuối.
-- **Từ audit 19/07 — CHƯA sửa:**
-  - **Bug user báo: CAD→Render văng màn đăng nhập.** ĐÃ SỬA PHẦN XÁC NHẬN ĐƯỢC (`dd60a8c`, đã merge): `/` gọi `/api/auth/me` 2 lần do StrictMode thiếu ref-guard — giờ còn đúng 1 (verify Network). NHƯNG chưa chắc là nguyên nhân gốc triệu chứng: có thể session hết hạn thật từ trước mà CAD không hề check auth nên user không biết, đến khi bấm Render mới lộ. **Nếu còn tái diễn** → user tự mở DevTools Network lúc bug xảy ra, xem request `/api/auth/me` có gửi cookie `if_session` không + status. Phương án dự phòng (chưa làm, chờ user quyết): thêm check session ngay ở CAD để báo mất đăng nhập tại chỗ.
-  - [TRUNG] Không hỗ trợ cảm ứng thật ở CAD (gesture) · Slide Sorter dùng HTML5 DnD (không chạy trên touch) — 2 việc lớn, chưa giao.
-  - [THẤP] Property panel Render không undo được (có thể là chủ ý) · ~~Escape không xoá ký tự gõ dở trong ô lệnh CAD~~ · ~~status hint chưa nhắc Backspace~~ — 2 mục sau ĐÃ SỬA + merge.
+- Audit 19/07 (chuột/phím/cảm ứng 3 chặng) đã sửa gần hết, chi tiết → CHANGELOG.md mục "19/07 — Audit...".
+- **CAD→Render văng đăng nhập** — đã sửa double-fetch StrictMode, chưa chắc hết root cause. Nếu tái diễn: user mở DevTools Network xem cookie `if_session` + status lúc bug xảy ra.
+- **[TRUNG] Cảm ứng** — CAD đang làm (`feat/cad-touch-support`, xem mục Hiện tại) · Slide Sorter (Present) chưa giao, tới lượt sau.
+- [THẤP] Property panel Render không undo được (có thể chủ ý, chưa hỏi).
 - Sprint 3 B1: `meta` (giá/vendor/sku) trống — chưa có dữ liệu giá thật.
-- In A3/A4 300dpi thật vẫn CHƯA khả dụng (giới hạn Render stage) — đúng phạm vi đã chốt.
-- `knowledge/project-references/` ~121MB PDF trong git — cân nhắc Git LFS. User chọn ĐỂ SAU (rewrite history rủi ro cao).
-- ~~`CadCanvas.tsx` còn nhiều `window.prompt`/`confirm` khác cùng rủi ro treo webview~~ — ĐÃ SỬA HẾT + merge: 0 `window.prompt`/`confirm` còn lại trong `components/cad/` (Text/Markup/Array/Scale/Divide → form nổi; xoá pin markup/gỡ ảnh/Mở demo/Mẫu dự án/Mở .idf → confirm nổi; AI mô tả → ô nhập nổi). Verify browser port 4084; riêng confirm Mở .idf + gỡ ảnh lightbox chỉ verify code (cần file picker thật).
+- In A3/A4 300dpi thật CHƯA khả dụng (giới hạn Render stage) — đúng phạm vi đã chốt.
+- `knowledge/project-references/` ~121MB PDF trong git — Git LFS, user chọn ĐỂ SAU (rủi ro rewrite history).
 
 ## Bị chặn — KHÔNG tự khởi động
 - Intro screen (chờ hình/video — flow hiện tại ĐÃ gỡ intro theo lệnh user) · ML Gu Engine heavy (chồng lấn 2 app khác) · "API team" spec.

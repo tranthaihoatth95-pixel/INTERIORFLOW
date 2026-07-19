@@ -99,3 +99,12 @@ Xem git log (`fd4718d` fix hatch T-junction · `c9b3961` type-anywhere · các m
 - Trước đó: PS-1 Brand Kit (`db08340`), E1.2 swatch vật liệu, DWG mở trong app, PS-0 audit, Sprint 9+10 toggle Sketch↔Pro.
 - NVIDIA_API_KEY có, probe 200. fal hết balance chờ nạp.
 - Backlog cũ chưa làm: hardcode 'DETECH·CONCEPT' · template tĩnh · heavy-ML pha 2 · membership per-flow.
+
+## 19/07 — Audit tương tác chuột/bàn phím/cảm ứng + đợt fix lớn
+4 agent audit song song 3 chặng CAD/Render/Present+Login+Gallery (mỗi agent 1 host riêng: localhost/127.0.0.1/[::1]/IP LAN — tránh đụng cookie/IndexedDB). Đã sửa + merge hết vào `feat/present-layout-ml-p1`:
+- Hydration tooltip CadToolbar/PhotoToolbar (`988e0e0`) · CAD Room tool window.prompt chặn thread (`0c294cd`) · demo render thanh tím đè nhãn (hatch SOLID force-highlight tô đặc, thêm `DrawStyle.outlineOnly`) · CAD Backspace không xoá được đối tượng (`e8994a1`).
+- Màu layer Tường `#e8e4dc` trùng nền → `#47423a` · handle xoay Present (frame stale trong `onPointerUp`, vá luôn move/resize) · Enter toàn cục Gallery (guard e.target) · groups Render không lưu (`groups` vào `graphJson` + auto-unhide node mồ côi) · Escape mất nét vẽ Mask/Annotate (cờ dirty + banner) · hydration `Tooltip.tsx` (mounted-gate) · tab-order Login · card carousel roving tabindex. Merge `977f32d`.
+- CAD→Render văng đăng nhập: `/` gọi `/api/auth/me` 2 lần do StrictMode thiếu ref-guard, đã thêm guard (`dd60a8c`) — chưa chắc hết root cause (CAD không check session, có thể session hết hạn từ trước mà không biết).
+- Sạch 100% `window.prompt`/`confirm` trong `components/cad/` → form/confirm nổi (Text/Markup/Array/Scale/Divide/Mở demo/Mẫu dự án/Mở .idf/AI mô tả). Escape ô lệnh xoá ký tự gõ dở, status hint đủ Backspace.
+- **Login v2 + minimal**: đăng ký/đăng nhập mọi domain (bỏ giới hạn @ttt.vn), Google mở, Microsoft OAuth mới (Entra ID, chờ Azure app), toggle xem mật khẩu, card kính lỏng tối giản, logo IF monogram mới (`IFLogo.tsx`, 3 phương án, dùng B/`framed`), dynamic wallpaper 30 ảnh TTT mặc định slideshow.
+- Dọn `launch.json` ~25 entry worktree chết, chỉ giữ server thật.
