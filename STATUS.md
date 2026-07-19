@@ -4,7 +4,7 @@
 > ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp `feat/present-layout-ml-p1` — local `0a734e5` (verify git), **CHƯA merge main/push** (main/origin vẫn `1ce8674`). 0 worktree sống, 9 nhánh "đợt mở rộng" đã merge+xoá xong.
+- Nhánh tích hợp `feat/present-layout-ml-p1` = `main`/`origin/main` (`9cc1301`, verify git) — **đã merge main + push xong**. 0 worktree sống, 9 nhánh "đợt mở rộng" đã merge+xoá.
 - **App có nút "Mở DWG" trực tiếp** (Web Worker cô lập GPL) — không cần server/CLI.
 - Test pattern: `node_modules/.bin/sucrase-node <path>.test.ts` (59 file). KHÔNG có vitest/jest — bỏ qua chỉ dẫn nào ghi `npm test`.
 - ✅ 18/07 sửa bug môi trường: `DATABASE_URL` sai path khiến mọi login 500 — đã fix.
@@ -25,7 +25,7 @@
   test tự tay) trước khi merge tuần tự — conflict hầu hết chỉ ở `.claude/launch.json` (dev-port, giữ
   cả 2) + vài import trùng trong `PresentEditor.tsx`/`EditorCanvas.tsx` (gộp giữ cả 2 phía, không mất
   logic). Verify cuối: tsc 0 · 59/59 file test PASS · browser thật xác nhận toolbar đủ tính năng mới,
-  Motion tab render đúng. **CHƯA merge main/push — cần hỏi riêng.**
+  Motion tab render đúng. Đã merge main + push origin (`9cc1301`).
   Từ audit trước còn treo: bug slider "Chỉnh màu" xác nhận KHÔNG PHẢI bug thật (3 lần verify độc lập).
 - **✅ 18/07 — đã merge tuần tự 5 nhánh vào `feat/present-layout-ml-p1`** rồi merge main + push origin (`1ce8674`): fix GroupOverlay vô hình · lưu template tự tạo PS-2 gốc · round-trip photo-editor↔slide + tài sản liên kết PS-3 · đa khổ A4/A3+reflow+export PS-4 · phím tắt Photoshop PS-7. Chi tiết → CHANGELOG.
 - **Gate PS-5/PS-6** (share deck khách + comment): chủ dự án chọn DỪNG.
