@@ -37,14 +37,14 @@
 - Sprint 3/6-8 đã xong — chi tiết → CHANGELOG.md.
 
 ## Nợ kỹ thuật
-- ~~Hydration ⌘Z/Ctrl+Z tooltip (CadToolbar/PhotoToolbar)~~ ĐÃ SỬA 19/07 (`988e0e0`, branch `fix/hydration-tooltip`, worktree `interiorflow-wt-fix-hydration-tooltip`) — thêm `useModKey`/`useModShiftKey` mount-based vào `lib/kbd.ts`. **tsc pass. CHỜ user duyệt merge.** Lưu ý: `BottomToolbar.tsx` + `CommandPalette.tsx` cũng gọi `modKey`/`modShiftKey` trực tiếp trong `title` → có thể dính cùng lỗi, CHƯA sửa (ngoài phạm vi khoanh ban đầu, cần user quyết).
+- ~~Hydration ⌘Z/Ctrl+Z tooltip (CadToolbar/PhotoToolbar)~~ ĐÃ SỬA 19/07 (`988e0e0`) — thêm `useModKey`/`useModShiftKey` mount-based vào `lib/kbd.ts`. tsc pass. Lưu ý: `BottomToolbar.tsx` + `CommandPalette.tsx` cũng gọi `modKey`/`modShiftKey` trực tiếp trong `title` → có thể dính cùng lỗi, CHƯA sửa (ngoài phạm vi khoanh ban đầu, cần user quyết).
 - ~~window.prompt crash webview~~ ~~PS-3 linked-asset chưa nối Render~~ ~~Brand Kit áp 1 slide/tương phản~~ ĐÃ SỬA — tất cả đã merge (`0a734e5`).
 - ~~Migration Prisma drift (IntegrationAccount)~~ ĐÃ SỬA 19/07 — chạy `db push` trực tiếp trên `dev.db` (đã backup trước khi chạy).
 - Sprint 3 B1: `meta` (giá/vendor/sku) trống — chưa có dữ liệu giá thật.
 - In A3/A4 300dpi thật vẫn CHƯA khả dụng (giới hạn Render stage) — PS-4 chỉ làm khổ màn hình/chiếu, đúng phạm vi đã chốt.
 - `knowledge/project-references/` ~121MB PDF trong git — **GitHub đã cảnh báo lúc push** (1 file 73MB vượt khuyến nghị 50MB) — cân nhắc Git LFS. **19/07: user chọn ĐỂ SAU** (rewrite history nhánh đã push, rủi ro cao, cần làm riêng cẩn thận có backup).
-- ~~CAD Room tool không phản hồi chuột~~ ĐÃ SỬA 19/07 (`0c294cd`, branch `fix/cad-room-tool-mouse`, worktree `interiorflow-wt-fix-cad-room-tool`) — **là bug thật**: `window.prompt()` chặn đồng bộ lúc đặt tên phòng (cùng loại bug đã sửa ở Dashboard.tsx trước đây), thay bằng ô nhập tên inline. Verify browser thật OK, tsc pass. **CHỜ user duyệt merge.**
-- **Mới phát hiện 19/07 (từ agent B, chưa sửa):** `CadCanvas.tsx` còn nhiều chỗ khác dùng `window.prompt`/`window.confirm` cùng rủi ro treo webview — Text tool (~768), markup (~777), array rect/polar (~977-992), scale (~1003), title block (~1344).
+- ~~CAD Room tool không phản hồi chuột~~ ĐÃ SỬA 19/07 (`0c294cd`, branch `fix/cad-room-tool-mouse`) — KHÔNG phải bug pointer: browser thật xác nhận click 2 góc tạo phòng đúng. Nguyên nhân: `window.prompt` sau click 2 chặn thread JS (cùng loại bug Dashboard cũ). Đã thay bằng ô nhập tên nổi không chặn trong `CadCanvas.tsx`, giữ hành vi Cancel cũ (huỷ vẫn tạo phòng tên mặc định). Verify browser thật OK, tsc pass.
+- **Chưa sửa (ngoài phạm vi, ghi nhận từ agent B):** `CadCanvas.tsx` còn nhiều `window.prompt`/`confirm` khác cùng rủi ro treo webview — Text tool (~768), markup (~777), array rect/polar (~977-992), scale (~1003), title block (~1344).
 
 ## Bị chặn — KHÔNG tự khởi động
 - Intro screen (chờ hình/video — flow hiện tại ĐÃ gỡ intro theo lệnh user) · ML Gu Engine heavy (chồng lấn 2 app khác) · "API team" spec.
