@@ -229,7 +229,7 @@ export interface Doc {
 }
 
 export const DEFAULT_LAYERS: Layer[] = [
-  { id: 'l-wall', name: 'Tường', color: '#e8e4dc', visible: true, locked: false, lineweight: 0.6, lineType: 'continuous' },
+  { id: 'l-wall', name: 'Tường', color: '#47423a', visible: true, locked: false, lineweight: 0.6, lineType: 'continuous' },
   { id: 'l-furniture', name: 'Nội thất', color: '#c08a5a', visible: true, locked: false, lineweight: 0.3, lineType: 'continuous' },
   { id: 'l-dim', name: 'Kích thước', color: '#7aa2c4', visible: true, locked: false, lineweight: 0.15, lineType: 'continuous' },
   { id: 'l-text', name: 'Ghi chú', color: '#9a9488', visible: true, locked: false, lineweight: 0.15, lineType: 'continuous' },

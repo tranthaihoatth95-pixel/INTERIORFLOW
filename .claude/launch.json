@@ -262,6 +262,18 @@
       ],
       "port": 4070,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-fix-demo-render-overlap"
+    },
+    {
+      "name": "cad-wallcolor-4080",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4080"
+      ],
+      "port": 4080,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-fix-cad-wall-color"
     }
   ]
 }

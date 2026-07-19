@@ -416,7 +416,7 @@ export const useCadStore = create<CadState>((set, get) => ({
   addLayer: () => {
     get().snapshot();
     const id = newId('l');
-    const palette = ['#e8e4dc', '#c08a5a', '#7aa2c4', '#8fae7a', '#c47a9a', '#b0a07a'];
+    const palette = ['#47423a', '#c08a5a', '#7aa2c4', '#8fae7a', '#c47a9a', '#b0a07a'];
     set((s) => ({
       doc: {
         ...s.doc,
