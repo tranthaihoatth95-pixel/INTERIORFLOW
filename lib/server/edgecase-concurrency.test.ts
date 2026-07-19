@@ -16,13 +16,13 @@
  * chain đụng tới `node_modules/jose/dist/webapi/index.js` (đã thử nghiệm trực tiếp, xác
  * nhận lỗi). `lib/server/credits.ts` import `@/lib/server/db` (Prisma, alias không resolve
  * qua sucrase-node). Vì vậy:
- *   - Phần [1] dùng CODE THẬT 100% — `lib/server/auth-policy.ts` (isAllowedGoogleEmail,
- *     googleSignInGate) THUẦN, không import gì, resolve bình thường.
+ *   - Phần [1] dùng CODE THẬT 100% — `lib/server/auth-policy.ts` (isValidAccountEmail,
+ *     oauthSignInGate — CẬP NHẬT 19/07 theo chính sách đa domain) THUẦN, không import gì.
  *   - Phần [2]/[3] SAO CHÉP NGUYÊN VĂN 1-2 dòng biểu thức thuần từ nguồn thật (ghi rõ số
  *     dòng) — đúng tiền lệ đã có ở stress-auth.test.ts mục [4] ("Giả lập logic kiểm tra
  *     token expiry — pure, không cần jose", dòng 73-89 file đó).
  */
-import { isAllowedGoogleEmail, googleSignInGate, GOOGLE_ALLOWED_DOMAIN, type GoogleGate } from './auth-policy';
+import { oauthSignInGate, type OAuthGate } from './auth-policy';
 
 let pass = 0;
 let fail = 0;
@@ -32,36 +32,37 @@ function ok(label: string, cond: boolean) {
 }
 
 /* ══════════════════ [1] Race condition mô phỏng — CODE THẬT (auth-policy.ts) ══════════════════ */
-console.log(`[1] Race condition — 2 "request" cùng lúc tạo user cùng email @${GOOGLE_ALLOWED_DOMAIN} (googleSignInGate thật)`);
+console.log('[1] Race condition — 2 "request" cùng lúc tạo user cùng email (oauthSignInGate thật, chính sách đa domain 19/07)');
 {
   // Kịch bản race kinh điển (TOCTOU — time-of-check-to-time-of-use): request A và request B
   // CÙNG LÚC nhận Google callback cho CÙNG 1 email chưa từng đăng ký. Cả 2 đều query DB
   // "user đã tồn tại chưa?" TRƯỚC KHI bất kỳ request nào commit insert — cả 2 đều thấy
   // userExists=false (dữ liệu CŨ, chưa có request nào ghi xong).
   const email = 'race-new-user@ttt.vn';
-  const decisionA = googleSignInGate(email, false); // request A đọc DB: chưa có user
-  const decisionB = googleSignInGate(email, false); // request B đọc DB CÙNG THỜI ĐIỂM: cũng chưa có
+  const decisionA = oauthSignInGate(email, false); // request A đọc DB: chưa có user
+  const decisionB = oauthSignInGate(email, false); // request B đọc DB CÙNG THỜI ĐIỂM: cũng chưa có
   ok('cả 2 request race cùng thấy userExists=false → CẢ 2 đều quyết định "create" (hàm thuần không tự biết về request kia)', decisionA === 'create' && decisionB === 'create');
-  // → Đây CHÍNH LÀ lý do DB (Prisma) PHẢI có unique constraint trên email — googleSignInGate
+  // → Đây CHÍNH LÀ lý do DB (Prisma) PHẢI có unique constraint trên email — oauthSignInGate
   // chỉ là quyết định THUẦN dựa trên input nó nhận, không tự chống race. Ghi nhận rõ: bảo vệ
   // thật nằm ở tầng DB (email unique index), KHÔNG nằm ở hàm này — test khoá đúng giới hạn
   // của lớp pure-logic để không ai lầm tưởng gọi lại hàm này nhiều lần là đủ an toàn.
 
   // Kịch bản AN TOÀN (serialized, không race): A thắng và COMMIT xong trước khi B query DB.
-  const decisionA2 = googleSignInGate(email, false); // A: chưa có → tạo
-  const decisionB2 = googleSignInGate(email, true); // B: đọc SAU khi A đã commit → thấy user đã tồn tại
+  const decisionA2 = oauthSignInGate(email, false); // A: chưa có → tạo
+  const decisionB2 = oauthSignInGate(email, true); // B: đọc SAU khi A đã commit → thấy user đã tồn tại
   ok('thứ tự an toàn (A commit xong rồi B mới đọc) → A "create", B "login-existing" (KHÔNG tạo trùng)', decisionA2 === 'create' && decisionB2 === 'login-existing');
 
-  // Race với email NGOÀI domain — an toàn tự nhiên vì kết quả không phụ thuộc thứ tự (luôn deny).
-  const outsideEmail = 'race-outside@gmail.com';
-  const d1 = googleSignInGate(outsideEmail, false);
-  const d2 = googleSignInGate(outsideEmail, false);
-  ok('race với email NGOÀI domain (chưa tồn tại) → CẢ 2 lần đều "deny" như nhau, race vô hại (không có nhánh nào tạo được để trùng)', d1 === 'deny-new-outside-domain' && d2 === 'deny-new-outside-domain');
+  // Race với email DỊ DẠNG (chính sách mới không còn chặn theo domain — nhánh deny duy nhất
+  // còn lại là email không hợp lệ) — an toàn tự nhiên vì kết quả không phụ thuộc thứ tự.
+  const invalidEmail = 'race@gmail.com@ttt.vn';
+  const d1 = oauthSignInGate(invalidEmail, false);
+  const d2 = oauthSignInGate(invalidEmail, false);
+  ok('race với email DỊ DẠNG (chưa tồn tại) → CẢ 2 lần đều "deny-invalid-email" như nhau, race vô hại (không có nhánh nào tạo được để trùng)', d1 === 'deny-invalid-email' && d2 === 'deny-invalid-email');
 
   // 50 "request" đồng thời mô phỏng (mảng gọi liên tiếp cùng input) — quyết định phải NHẤT
   // QUÁN 100% (hàm thuần, không side-effect, không có state ẩn rò rỉ giữa các lần gọi).
-  const results: GoogleGate[] = [];
-  for (let i = 0; i < 50; i++) results.push(googleSignInGate('race-batch@ttt.vn', false));
+  const results: OAuthGate[] = [];
+  for (let i = 0; i < 50; i++) results.push(oauthSignInGate('race-batch@ttt.vn', false));
   ok('50 lần gọi "đồng thời" (input giống hệt) → 100% nhất quán "create", không có lần nào lệch (hàm thuần, không rò rỉ state)', results.every((r) => r === 'create') && results.length === 50);
 }
 

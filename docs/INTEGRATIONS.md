@@ -30,6 +30,29 @@ Redirect URI mỗi provider: `<origin>/api/integrations/<provider>/callback`
 - **Apple Music**: Apple Developer ($99) → MusicKit key `.p8` + Team ID + Key ID. Chưa dựng ký JWT.
 - **INTEGRATION_ENC_KEY** (bắt buộc cho OAuth): `openssl rand -base64 32`.
 
+## Đăng nhập Microsoft (Sign in with Microsoft — 19/07, login-v2)
+Nút "Đăng nhập với Microsoft" ở màn login (`app/api/auth/microsoft/*`) DÙNG CHUNG bộ env
+`MS365_CLIENT_ID/MS365_CLIENT_SECRET/MS365_TENANT` với tầng tích hợp MS365 — cùng MỘT Azure App
+Registration phục vụ cả login lẫn Outlook/Teams/Calendar về sau. Callback login còn best-effort lưu
+token (mã hoá) vào `IntegrationAccount` provider `ms365` — có `INTEGRATION_ENC_KEY` là các tích hợp
+Graph dùng lại luôn identity này, khỏi connect lần hai. Thiếu env → nút Microsoft hiện DISABLED kèm
+tooltip "chưa cấu hình" (route `/api/auth/providers` trả `microsoft:false`), app không crash.
+
+**Tạo Azure App Registration (từng bước):**
+1. [portal.azure.com](https://portal.azure.com) → **Microsoft Entra ID → App registrations → New registration**.
+2. Name tuỳ ý (vd `InteriorFlow`). **Supported account types**: chọn *"Accounts in any organizational
+   directory and personal Microsoft accounts"* (multitenant + personal — khớp `MS365_TENANT=common`).
+   Nếu chỉ cần tài khoản tổ chức của 1 tenant thì chọn single-tenant và đặt `MS365_TENANT=<tenant-id>`.
+3. **Redirect URI**: platform **Web**, thêm CẢ HAI:
+   - `http://localhost:3000/api/auth/microsoft/callback` (login — đổi host/port theo origin thật)
+   - `http://localhost:3000/api/integrations/ms365/callback` (tầng tích hợp)
+4. Sau khi tạo: **Overview → Application (client) ID** → `MS365_CLIENT_ID`.
+5. **Certificates & secrets → New client secret** → copy **Value** (chỉ hiện 1 lần) → `MS365_CLIENT_SECRET`.
+6. **API permissions** (Microsoft Graph, delegated): login chỉ cần `openid profile email User.Read offline_access`
+   (mặc định gần đủ — thêm `offline_access` + `User.Read` nếu thiếu). Tích hợp sau thêm `Calendars.Read`, `Mail.Read`.
+7. `.env.local`: `MS365_CLIENT_ID=... MS365_CLIENT_SECRET=... MS365_TENANT=common` → restart dev server
+   → nút Microsoft tự chuyển enabled.
+
 ## 🔐 Rủi ro bảo mật (bắt buộc đọc)
 1. **Secret server-only** — mọi khoá ở `.env.local` (đã gitignore), KHÔNG `NEXT_PUBLIC_`, không commit. Mọi gọi API ở route handler (server), không lộ token ra client.
 2. **Token mã hoá at-rest** — access/refresh token lưu AES-256-GCM (`crypto.ts`), khoá `INTEGRATION_ENC_KEY` tách khỏi DB. SQLite `dev.db` là file → không lưu token thô.

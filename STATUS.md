@@ -13,7 +13,7 @@
 - ✅ 18/07 sửa bug môi trường: `DATABASE_URL` sai path khiến mọi login 500 — đã fix.
 
 ## Quyết định user đã khoá
-- **Auth**: chỉ Google OAuth @ttt.vn (mới) + admin cấp tay (`scripts/seed-admin.ts`); user cũ ngoài-domain grandfather; register công khai 403; quên mật khẩu = admin reset.
+- **Auth (MỚI 19/07 — THAY quyết định "chỉ @ttt.vn" cũ)**: đăng ký + đăng nhập email MỌI domain (register công khai đã MỞ lại, mật khẩu ≥6 + bcrypt) · Google OAuth nhận mọi tài khoản · **Microsoft OAuth mới** (Entra ID, env `MS365_*` dùng chung tầng tích hợp — user CHƯA có Azure app, nút disabled + hướng dẫn trong `docs/INTEGRATIONS.md`) · admin seed giữ nguyên (`scripts/seed-admin.ts`); quên mật khẩu = admin reset. Đã build trên nhánh `feat/login-v2` (worktree riêng, kèm UI login kính lỏng + dynamic wallpaper 30 ảnh TTT `public/wallpapers/`) — CHƯA merge.
 - Perceptron THẬT (learning-to-rank) · installer cả 3 unsigned (.exe cần Win) · PWA host Vercel + Supabase (Sprint 4).
 
 ## Nợ kỹ thuật

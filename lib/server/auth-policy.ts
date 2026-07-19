@@ -3,35 +3,41 @@
  * — tách khỏi lib/server/auth.ts để test được bằng sucrase-node (auth.ts kéo
  * next/headers nên không chạy ngoài Next).
  *
- * CHÍNH SÁCH (chủ dự án chốt Sprint 1 + 6-câu-treo 13/07):
- *   · Google OAuth: chỉ email đuôi @ttt.vn (env GOOGLE_ALLOWED_DOMAIN) được TẠO MỚI.
- *   · GRANDFATHER (quyết định #3): user Google NGOÀI domain nhưng ĐÃ TỒN TẠI trong DB
- *     (tạo trước khi siết chính sách) → vẫn đăng nhập tiếp; CHỈ chặn tạo mới.
- *   · Đăng ký tự do KHOÁ; bootstrap admin = scripts/seed-admin.ts (quyết định #2).
+ * CHÍNH SÁCH MỚI (chủ dự án chốt 19/07 — THAY quyết định cũ "chỉ Google @ttt.vn"):
+ *   · Đăng ký + đăng nhập bằng email MỌI domain (@ttt.vn, gmail, domain công ty khác…)
+ *     — đề phòng sau này rời công ty, sản phẩm không bị trói vào mail @ttt.vn.
+ *   · OAuth (Google + Microsoft): chấp nhận MỌI tài khoản — workspace lẫn cá nhân.
+ *     Gate chỉ còn chặn email dị dạng (nhiều @, thiếu domain) phòng provider trả rác.
+ *   · Bootstrap admin vẫn = scripts/seed-admin.ts (giữ nguyên).
+ *   · KHÔNG có luồng reset mật khẩu qua email — admin reset tay (app nội bộ).
  */
-
-/** Domain email được phép TẠO tài khoản qua Google. */
-export const GOOGLE_ALLOWED_DOMAIN = (process.env.GOOGLE_ALLOWED_DOMAIN ?? 'ttt.vn').toLowerCase();
-
-export function isAllowedGoogleEmail(email: string): boolean {
-  const normalized = email.trim().toLowerCase();
-  // Reject emails with multiple @ signs (e.g. "user@gmail.com@ttt.vn")
-  if (normalized.split('@').length !== 2) return false;
-  return normalized.endsWith(`@${GOOGLE_ALLOWED_DOMAIN}`);
-}
-
-export type GoogleGate =
-  | 'login-existing' // user đã có trong DB → cho vào (kể cả ngoài domain — grandfather)
-  | 'create' // chưa có + đúng domain → tạo mới rồi vào
-  | 'deny-new-outside-domain'; // chưa có + sai domain → từ chối
 
 /**
- * Cổng quyết định cho Google callback — 3 ca (quyết định #3):
- *   1. cũ-ngoài-domain  → 'login-existing' (grandfather, vào được)
- *   2. mới-ngoài-domain → 'deny-new-outside-domain' (chặn)
- *   3. mới-đúng-domain  → 'create' (tạo được)
+ * Email đủ hình dạng để tạo tài khoản: đúng 1 dấu @, local khác rỗng,
+ * domain có ít nhất 1 dấu chấm. KHÔNG validate RFC đầy đủ — provider OAuth
+ * đã xác minh email thật; đây chỉ là lưới chắn dữ liệu dị dạng.
  */
-export function googleSignInGate(email: string, userExists: boolean): GoogleGate {
+export function isValidAccountEmail(email: string): boolean {
+  const s = String(email).trim().toLowerCase();
+  const parts = s.split('@');
+  if (parts.length !== 2) return false; // chặn "user@gmail.com@ttt.vn" (bypass cũ)
+  const [local, domain] = parts;
+  if (!local) return false;
+  return /^[^\s@]+\.[^\s@]+$/.test(domain);
+}
+
+export type OAuthGate =
+  | 'login-existing' // user đã có trong DB → cho vào
+  | 'create' // chưa có + email hợp lệ → tạo mới rồi vào (MỌI domain)
+  | 'deny-invalid-email'; // email dị dạng → từ chối (không phân biệt domain)
+
+/**
+ * Cổng quyết định cho OAuth callback (Google + Microsoft dùng chung):
+ *   1. đã tồn tại      → 'login-existing'
+ *   2. mới + hợp lệ    → 'create' (KHÔNG còn chặn theo domain)
+ *   3. mới + dị dạng   → 'deny-invalid-email'
+ */
+export function oauthSignInGate(email: string, userExists: boolean): OAuthGate {
   if (userExists) return 'login-existing';
-  return isAllowedGoogleEmail(email) ? 'create' : 'deny-new-outside-domain';
+  return isValidAccountEmail(email) ? 'create' : 'deny-invalid-email';
 }
