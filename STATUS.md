@@ -4,7 +4,8 @@
 > ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp `feat/present-layout-ml-p1` = `main`/`origin/main` (`9cc1301`, verify git) — **đã merge main + push xong**. 0 worktree sống, 9 nhánh "đợt mở rộng" đã merge+xoá.
+- Nhánh tích hợp `feat/present-layout-ml-p1` = `main`/`origin/main` (`ae90a3c`, verify git) — **đã merge main + push xong**. **19/07: 2 agent nền ĐÃ XONG, cả 2 chờ user duyệt merge** — `fix/hydration-tooltip` (`988e0e0`) + `fix/cad-room-tool-mouse` (`0c294cd`, `87e260c`). 2 worktree vẫn còn sống (`interiorflow-wt-fix-hydration-tooltip`, `interiorflow-wt-fix-cad-room-tool`) — XOÁ NGAY sau khi merge.
+- **19/07: đã xử lý 2 nợ kỹ thuật nhỏ trực tiếp (không qua agent):** Prisma `db push` đồng bộ schema `IntegrationAccount` (đã backup `dev.db` trước khi push) · dọn file rác `Bản sao Không có tiêu đề.rtfd/` + `CLAUDE.md.bak` (đã diff xác nhận bản cũ, không mất nội dung).
 - **App có nút "Mở DWG" trực tiếp** (Web Worker cô lập GPL) — không cần server/CLI.
 - Test pattern: `node_modules/.bin/sucrase-node <path>.test.ts` (59 file). KHÔNG có vitest/jest — bỏ qua chỉ dẫn nào ghi `npm test`.
 - ✅ 18/07 sửa bug môi trường: `DATABASE_URL` sai path khiến mọi login 500 — đã fix.
@@ -36,13 +37,14 @@
 - Sprint 3/6-8 đã xong — chi tiết → CHANGELOG.md.
 
 ## Nợ kỹ thuật
-- Hydration ⌘Z/Ctrl+Z tooltip (lib/kbd.ts:11 + CadToolbar/PhotoToolbar) — cosmetic, đã biết từ trước.
+- ~~Hydration ⌘Z/Ctrl+Z tooltip (CadToolbar/PhotoToolbar)~~ ĐÃ SỬA 19/07 (`988e0e0`, branch `fix/hydration-tooltip`, worktree `interiorflow-wt-fix-hydration-tooltip`) — thêm `useModKey`/`useModShiftKey` mount-based vào `lib/kbd.ts`. **tsc pass. CHỜ user duyệt merge.** Lưu ý: `BottomToolbar.tsx` + `CommandPalette.tsx` cũng gọi `modKey`/`modShiftKey` trực tiếp trong `title` → có thể dính cùng lỗi, CHƯA sửa (ngoài phạm vi khoanh ban đầu, cần user quyết).
 - ~~window.prompt crash webview~~ ~~PS-3 linked-asset chưa nối Render~~ ~~Brand Kit áp 1 slide/tương phản~~ ĐÃ SỬA — tất cả đã merge (`0a734e5`).
-- Migration Prisma drift (IntegrationAccount) — dùng `db push`, KHÔNG reset.
+- ~~Migration Prisma drift (IntegrationAccount)~~ ĐÃ SỬA 19/07 — chạy `db push` trực tiếp trên `dev.db` (đã backup trước khi chạy).
 - Sprint 3 B1: `meta` (giá/vendor/sku) trống — chưa có dữ liệu giá thật.
 - In A3/A4 300dpi thật vẫn CHƯA khả dụng (giới hạn Render stage) — PS-4 chỉ làm khổ màn hình/chiếu, đúng phạm vi đã chốt.
-- `knowledge/project-references/` ~121MB PDF trong git — **GitHub đã cảnh báo lúc push** (1 file 73MB vượt khuyến nghị 50MB) — cân nhắc Git LFS.
-- CAD Room tool (vẽ tay) không phản hồi thao tác chuột tự động lúc agent test — cần verify lại bằng chuột thật, chưa chắc là bug code.
+- `knowledge/project-references/` ~121MB PDF trong git — **GitHub đã cảnh báo lúc push** (1 file 73MB vượt khuyến nghị 50MB) — cân nhắc Git LFS. **19/07: user chọn ĐỂ SAU** (rewrite history nhánh đã push, rủi ro cao, cần làm riêng cẩn thận có backup).
+- ~~CAD Room tool không phản hồi chuột~~ ĐÃ SỬA 19/07 (`0c294cd`, branch `fix/cad-room-tool-mouse`, worktree `interiorflow-wt-fix-cad-room-tool`) — **là bug thật**: `window.prompt()` chặn đồng bộ lúc đặt tên phòng (cùng loại bug đã sửa ở Dashboard.tsx trước đây), thay bằng ô nhập tên inline. Verify browser thật OK, tsc pass. **CHỜ user duyệt merge.**
+- **Mới phát hiện 19/07 (từ agent B, chưa sửa):** `CadCanvas.tsx` còn nhiều chỗ khác dùng `window.prompt`/`window.confirm` cùng rủi ro treo webview — Text tool (~768), markup (~777), array rect/polar (~977-992), scale (~1003), title block (~1344).
 
 ## Bị chặn — KHÔNG tự khởi động
 - Intro screen (chờ hình/video — flow hiện tại ĐÃ gỡ intro theo lệnh user) · ML Gu Engine heavy (chồng lấn 2 app khác) · "API team" spec.
