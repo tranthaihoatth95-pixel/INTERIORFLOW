@@ -23,8 +23,12 @@ import {
   Play,
   Palette,
   Proportions,
+  FileDown,
+  FileText,
+  FileUp,
+  Printer,
 } from 'lucide-react';
-import ExportMenu from './ExportMenu';
+import IOMenu from '@/components/ui/IOMenu';
 import Tooltip from '@/components/ui/Tooltip';
 import type { ShapeKind } from '@/lib/present-editor/model';
 
@@ -93,6 +97,54 @@ export default function Toolbar(p: Props) {
         <ArrowLeft size={15} /> Quay lại
       </Btn>
       <Divider />
+      {/* 19/07 — cặp Nhập/Xuất DÙNG CHUNG với chặng Layout CAD & Render (components/ui/IOMenu.tsx):
+       *  cùng icon, cùng vị trí (đầu thanh công cụ), cùng cách xổ menu; chỉ khác danh sách định
+       *  dạng. Logic xuất PDF/PPTX/PNG giữ NGUYÊN — vẫn gọi đúng p.onExportPdf/Pptx/Png cũ. */}
+      <IOMenu
+        kind="import"
+        size="md"
+        title="Nhập file vào chặng Present"
+        items={[
+          {
+            id: 'image',
+            label: 'Ảnh vào slide',
+            sub: 'Ảnh NỘI DUNG — đưa thẳng vào slide đang dàn',
+            icon: <ImageIcon size={15} />,
+            onSelect: () => fileRef.current?.click(),
+          },
+          {
+            id: 'deck',
+            label: 'Mở deck (.pptx / .pdf)',
+            icon: <FileUp size={15} />,
+            onSelect: () => {},
+            disabled: true,
+            disabledReason: 'Chưa hỗ trợ mở lại file deck — Present hiện chỉ nhập ảnh',
+          },
+        ]}
+      />
+      <IOMenu
+        kind="export"
+        size="md"
+        align="left"
+        variant="accent"
+        title="Xuất file từ chặng Present"
+        busy={p.busy}
+        resultMsg={p.exportMsg}
+        items={[
+          { id: 'pdf', label: 'PDF', sub: '1:1 với editor · đúng khổ đã chọn (màn hình/chiếu)', icon: <FileDown size={15} />, onSelect: p.onExportPdf },
+          { id: 'pptx', label: 'PowerPoint (.pptx)', sub: 'Chữ còn chỉnh được trong PPT · luôn khổ 16:9', icon: <FileText size={15} />, onSelect: p.onExportPptx },
+          { id: 'png', label: 'Ảnh PNG', sub: 'Mỗi slide 1 ảnh, tải lần lượt', icon: <ImageIcon size={15} />, onSelect: p.onExportPng },
+          {
+            id: 'print300',
+            label: 'PDF in 300dpi (A3/A4)',
+            icon: <Printer size={15} />,
+            onSelect: () => {},
+            disabled: true,
+            disabledReason: 'Chưa khả dụng — ảnh render hiện ~116dpi ở khổ A3 (giới hạn chặng Render)',
+          },
+        ]}
+      />
+      <Divider />
       <Btn onClick={p.onAddText} title="Thêm chữ">
         <Type size={15} /> Chữ
       </Btn>
@@ -156,15 +208,6 @@ export default function Toolbar(p: Props) {
       <Btn onClick={p.onPlay} title="Trình chiếu (xem hiệu ứng động)">
         <Play size={15} /> Trình chiếu
       </Btn>
-      <Divider />
-      {/* Export gộp: PDF · PowerPoint · PNG trong 1 menu (góp ý #7). */}
-      <ExportMenu
-        onExportPdf={p.onExportPdf}
-        onExportPptx={p.onExportPptx}
-        onExportPng={p.onExportPng}
-        busy={p.busy}
-        resultMsg={p.exportMsg}
-      />
 
       {/* nút ẩn giữ chỗ cho lib open state (tránh unused) */}
       {libOpen && <span hidden onClick={() => setLibOpen(false)} />}

@@ -137,6 +137,26 @@ body {
   display: none;
 }
 
+/* Thanh công cụ CAD nổi (pill bo tròn) — mode Pro có nhiều nút hơn Sketch nên vẫn có thể rộng
+ * hơn viewport hẹp và phải cuộn ngang. Trước đây scrollbar mặc định của trình duyệt hiện ra
+ * NGAY TRONG pill (dày, vuông, cắt ngang bo góc — user báo "thanh trượt thô dã man" 19/07).
+ * Ẩn hẳn scrollbar + fade 2 mép để vẫn thấy được là còn nội dung bên ngoài. */
+.cad-pill-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.cad-pill-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+/* fade mép chỉ bật khi thực sự tràn — .is-overflowing do CadToolbar tự gắn sau khi đo. */
+.cad-pill-scroll.is-overflowing {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+}
+
 /* Canvas React Flow: pinch/pan nằm trong canvas, không zoom cả trang */
 .react-flow__pane,
 .react-flow__renderer,

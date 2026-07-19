@@ -14,6 +14,28 @@ import { useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { useT } from '@/lib/i18n';
 
+/**
+ * Chọn ảnh từ máy → mỗi ảnh 1 node Import Image gắn sẵn ảnh (chặng Render).
+ * TÁCH RA (19/07) để menu "Nhập" dùng chung (components/ui/IOMenu.tsx qua RenderIOMenus) gọi lại
+ * ĐÚNG logic này thay vì chép lại — hành vi giữ nguyên 100% so với nút "Tải lên" cũ.
+ */
+export async function addImageNodesFromFiles(files: File[]) {
+  const store = useFlowStore.getState();
+  let x = 80;
+  for (const f of files) {
+    const dataUrl = await new Promise<string>((res, rej) => {
+      const reader = new FileReader();
+      reader.onload = () => res(String(reader.result));
+      reader.onerror = () => rej(reader.error);
+      reader.readAsDataURL(f);
+    });
+    store.addNode('input.image', { x, y: 80 });
+    const n = useFlowStore.getState().nodes.at(-1);
+    if (n) store.updateParam(n.id, 'file', dataUrl);
+    x += 40;
+  }
+}
+
 export function UploadButton() {
   const workspace = useFlowStore((s) => s.workspace);
   const setMoodboardOpen = useFlowStore((s) => s.setMoodboardOpen);
@@ -37,20 +59,7 @@ export function UploadButton() {
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = '';
-    const store = useFlowStore.getState();
-    let x = 80;
-    for (const f of files) {
-      const dataUrl = await new Promise<string>((res, rej) => {
-        const reader = new FileReader();
-        reader.onload = () => res(String(reader.result));
-        reader.onerror = () => rej(reader.error);
-        reader.readAsDataURL(f);
-      });
-      store.addNode('input.image', { x, y: 80 });
-      const n = useFlowStore.getState().nodes.at(-1);
-      if (n) store.updateParam(n.id, 'file', dataUrl);
-      x += 40;
-    }
+    await addImageNodesFromFiles(files);
   };
 
   const label =

@@ -4,6 +4,7 @@
 > ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
+- **19/07 — nhánh `feat/toolbar-io-sync` (CHƯA merge):** gọn toolbar CAD (18 nút ngang → 5 menu xổ + 2 nút chuyển chặng) · sửa bug scrollbar thô ở mode Pro (ẩn scrollbar + fade mép, `.cad-pill-scroll`) · **đồng bộ Nhập/Xuất 3 chặng** qua component dùng chung `components/ui/IOMenu.tsx` (+ `MenuButton.tsx`). Logic xuất/nhập giữ nguyên 100%, chỉ đổi lớp UI. `ExportMenu.tsx` (Present) đã bị thay và xoá. tsc pass, test 49/49 + 20/20. **Render CHƯA verify bằng mắt** (chặn đăng nhập — chỉ đọc code).
 - Nhánh tích hợp `feat/present-layout-ml-p1` — **19/07 khuya: XONG backlog cảm ứng (2/2)**, đã merge `feat/cad-touch-support` (pinch-zoom/pan 2 ngón + nút Xoá nổi CAD) + `feat/slidesorter-touch` (Slide Sorter thay HTML5 DnD → Pointer Events, chạy cả chuột lẫn cảm ứng; nút Lên/Xuống giữ nguyên). tsc pass, reorder test 9/9, 0 worktree sống. Verify SHA bằng git.
 - **CÒN THIẾU cho cảm ứng (chưa giao):** CAD vẫn cần bàn phím vật lý cho F8 Ortho · F12 Dynamic Input · type-anywhere gõ lệnh · Space giữ-để-pan — chưa có UI cảm ứng thay thế.
 - **Chưa quyết:** phương án logo IF (đang dùng `framed`/B — còn A không-khung, C wordmark) có áp đồng bộ sang Header/MobileMenu/trang share (đang dùng badge tím-hồng cũ) không.

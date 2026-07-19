@@ -19,8 +19,10 @@ import { useRouter } from 'next/navigation';
 import {
   FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Plus, Trash2, X, Command, Sparkles, Wand2,
   ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair, Tag, Check, Lightbulb, FileText, Save, Camera,
-  LayoutTemplate, FileSignature, Wrench,
+  LayoutTemplate, FileSignature, Wrench, Ruler,
 } from 'lucide-react';
+import IOMenu from '@/components/ui/IOMenu';
+import MenuButton from '@/components/ui/MenuButton';
 import { useCadStore } from '@/lib/cad/store';
 import type { HatchPattern } from '@/lib/cad/model';
 import { parseDxf, exportDxf } from '@/lib/cad/dxf';
@@ -260,65 +262,70 @@ export default function CadEditor() {
 
   return (
     <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
-      {/* thanh file */}
+      {/* thanh file — 19/07: GOM NHÓM (yêu cầu user "toolbar tràn ngang, rối mắt").
+       *  18 nút bày ngang → 5 nút xổ menu + 2 nút chuyển chặng. Không đổi 1 dòng logic nào:
+       *  mỗi item chỉ gọi lại ĐÚNG handler cũ (doExportPng/doExportDxf/… , setXxxOpen).
+       *  Nhập/Xuất dùng components/ui/IOMenu.tsx — CÙNG component với chặng Render & Present. */}
       <div style={fileBar}>
-        <button type="button" onClick={() => fileRef.current?.click()} style={fileBtn} title="Mở file .dxf">
-          <FolderOpen size={14} /> Mở DXF
-        </button>
+        <IOMenu
+          kind="import"
+          size="sm"
+          title="Nhập / mở file vào chặng Layout CAD"
+          items={[
+            { id: 'dxf', label: 'Mở DXF', sub: 'Bản vẽ AutoCAD trao đổi (.dxf)', icon: <FolderOpen size={15} />, onSelect: () => fileRef.current?.click() },
+            { id: 'dwg', label: 'Mở DWG', sub: 'Parse trong Web Worker riêng — chưa hỗ trợ block INSERT/DIMENSION', icon: <FolderOpen size={15} />, onSelect: () => dwgRef.current?.click() },
+            { id: 'idf', label: 'Mở .idf', sub: 'File project InteriorFlow — THAY THẾ toàn bộ project (mọi sheet)', icon: <FolderOpen size={15} />, onSelect: () => idfRef.current?.click() },
+            { id: 'photo', label: 'Ảnh hiện trường', sub: 'Chọn ảnh rồi click vị trí trên bản vẽ để gắn', icon: <Camera size={15} />, onSelect: () => photoRef.current?.click() },
+          ]}
+        />
+        <IOMenu
+          kind="export"
+          size="sm"
+          align="left"
+          title="Xuất file từ chặng Layout CAD"
+          items={[
+            { id: 'png', label: 'PNG', sub: 'Ảnh raster nền trắng — bản vẽ đang mở', icon: <Download size={15} />, onSelect: doExportPng },
+            { id: 'dxf', label: 'DXF', sub: 'Trao đổi với AutoCAD — bản vẽ đang mở', icon: <Download size={15} />, onSelect: doExportDxf },
+            { id: 'pdf', label: 'PDF', sub: 'PDF vector (nét/text thật) — layer chưa ẩn/hiện được trong PDF', icon: <FileText size={15} />, onSelect: doExportPdf },
+            { id: 'idf', label: '.idf', sub: 'File project JSON — TẤT CẢ sheet + metadata, để backup/chia sẻ', icon: <Save size={15} />, onSelect: doExportIdf },
+          ]}
+        />
+        <MenuButton
+          label="Bắt đầu"
+          icon={<Sparkles size={14} />}
+          title="Điểm khởi đầu nhanh — bản demo · mẫu dự án · AI mô tả"
+          items={[
+            { id: 'demo', label: 'Mở bản demo', sub: 'Mặt bằng căn hộ mẫu đầy đủ (tường/phòng/cửa/kích thước/nội thất)', icon: <Sparkles size={15} />, onSelect: openDemo },
+            { id: 'template', label: 'Mẫu dự án', sub: 'Căn hộ / Văn phòng / Khách sạn — tường bao + 1-2 phòng để vẽ tiếp', icon: <LayoutTemplate size={15} />, onSelect: () => setTemplateOpen((o) => !o), active: templateOpen },
+            { id: 'ai', label: 'AI mô tả', sub: 'Mô tả nhanh 1 phòng → tự vẽ tường + đặt nội thất khớp từ khoá', icon: <Wand2 size={15} />, onSelect: aiAssist },
+          ]}
+        />
+        <MenuButton
+          label="Công cụ bản vẽ"
+          icon={<ShieldCheck size={14} />}
+          title="Khung tên · Kiểm chuẩn · Gợi ý tên phòng · MEP"
+          items={[
+            { id: 'titleblock', label: 'Khung tên', sub: 'Chèn cajetín vào góc dưới-phải bản vẽ', icon: <FileSignature size={15} />, onSelect: () => setTitleBlockOpen((o) => !o), active: titleBlockOpen },
+            { id: 'standards', label: 'Kiểm chuẩn', sub: 'Đối chiếu TCVN/QCVN/ISO — chỉ đọc & đề xuất, không tự sửa', icon: <ShieldCheck size={15} />, onSelect: () => setStandardsOpen((o) => !o), active: standardsOpen },
+            { id: 'autolabel', label: 'Gợi ý tên phòng', sub: 'Đoán tên phòng chưa có nhãn — chỉ đề xuất, bạn bấm Áp dụng', icon: <Tag size={15} />, onSelect: () => setAutoLabelOpen((o) => !o), active: autoLabelOpen },
+            { id: 'mep', label: 'MEP sơ cấp', sub: 'Gợi ý chiếu sáng/công tắc/ổ cắm/máy lạnh — chỉ đề xuất', icon: <Lightbulb size={15} />, onSelect: () => setMepOpen((o) => !o), active: mepOpen },
+          ]}
+        />
+        <ScaleMenu />
         <input ref={fileRef} type="file" accept=".dxf" hidden onChange={onImportFile} />
-        <button type="button" onClick={() => dwgRef.current?.click()} style={fileBtn} title="Mở file .dwg — parse chạy trong Web Worker riêng (thư viện GPL cô lập, xem docs/LICENSE-NOTES.md); chưa hỗ trợ block INSERT/DIMENSION. Cần offline/riêng tư tuyệt đối? Dùng CLI dwg2dxf (~/Downloads/dwg2dxf) rồi mở qua nút Mở DXF.">
-          <FolderOpen size={14} /> Mở DWG
-        </button>
         <input ref={dwgRef} type="file" accept=".dwg" hidden onChange={onImportDwgFile} />
-        <button type="button" onClick={openDemo} style={fileBtn} title="Nạp 1 mặt bằng căn hộ mẫu đầy đủ (tường/phòng/cửa/kích thước/nội thất)">
-          <Sparkles size={14} /> Mở bản demo
-        </button>
-        <button type="button" onClick={() => setTemplateOpen((o) => !o)} style={{ ...fileBtn, background: templateOpen ? 'var(--accent)' : undefined, color: templateOpen ? '#fff' : undefined }} title="Chọn mẫu khởi đầu (Căn hộ / Văn phòng / Khách sạn) — tường bao + 1-2 phòng cơ bản để bạn vẽ tiếp, KHÔNG phải bản vẽ hoàn chỉnh">
-          <LayoutTemplate size={14} /> Mẫu dự án
-        </button>
-        <button type="button" onClick={aiAssist} style={fileBtn} title="AI-assist (rule-based): mô tả nhanh 1 phòng → tự vẽ tường + đặt nội thất khớp từ khoá">
-          <Wand2 size={14} /> AI mô tả
-        </button>
-        <ScaleButtons />
-        <div style={{ flex: 1 }} />
-        <button type="button" onClick={doExportPng} style={fileBtn} title="Xuất PNG nền trắng">
-          <Download size={14} /> PNG
-        </button>
-        <button type="button" onClick={doExportDxf} style={fileBtn} title="Xuất DXF">
-          <Download size={14} /> DXF
-        </button>
-        <button type="button" onClick={doExportPdf} style={fileBtn} title="Xuất PDF vector (nét/text thật — không phải ảnh; layer KHÔNG ẩn/hiện được trong PDF do giới hạn thư viện, xem báo cáo)">
-          <FileText size={14} /> PDF
-        </button>
-        <button type="button" onClick={doExportIdf} style={fileBtn} title="Xuất .idf — file project JSON (TẤT CẢ sheet + metadata), dùng để tải xuống/chia sẻ/backup, khác autosave nội bộ">
-          <Save size={14} /> .idf
-        </button>
-        <button type="button" onClick={() => idfRef.current?.click()} style={fileBtn} title="Mở .idf — THAY THẾ toàn bộ project hiện tại (mọi sheet), sẽ hỏi xác nhận trước">
-          <FolderOpen size={14} /> Mở .idf
-        </button>
         <input ref={idfRef} type="file" accept=".idf,.json,application/json" hidden onChange={onOpenIdfFile} />
-        <button type="button" onClick={() => photoRef.current?.click()} style={fileBtn} title="Ảnh hiện trường — chọn ảnh rồi click vào vị trí trên bản vẽ để gắn">
-          <Camera size={14} /> Ảnh hiện trường
-        </button>
         <input ref={photoRef} type="file" accept="image/*" hidden onChange={onPickPhoto} />
-        <button type="button" onClick={() => setTitleBlockOpen((o) => !o)} style={{ ...fileBtn, background: titleBlockOpen ? 'var(--accent)' : undefined, color: titleBlockOpen ? '#fff' : undefined }} title="Chèn khung tên (cajetín) — nhập dự án/bản vẽ/tỉ lệ/người vẽ/ngày rồi chèn vào góc dưới-phải bản vẽ">
-          <FileSignature size={14} /> Khung tên
-        </button>
-        <button type="button" onClick={() => setStandardsOpen((o) => !o)} style={{ ...fileBtn, background: standardsOpen ? 'var(--accent)' : undefined, color: standardsOpen ? '#fff' : undefined }} title="Kiểm chuẩn — đối chiếu bản vẽ với TCVN/QCVN/ISO (chỉ đọc & đề xuất, không tự sửa)">
-          <ShieldCheck size={14} /> Kiểm chuẩn
-        </button>
-        <button type="button" onClick={() => setAutoLabelOpen((o) => !o)} style={{ ...fileBtn, background: autoLabelOpen ? 'var(--accent)' : undefined, color: autoLabelOpen ? '#fff' : undefined }} title="Đề xuất tên phòng — dò phòng CHƯA có nhãn TEXT, đoán tên theo đồ nội thất/diện tích (chỉ đề xuất, KHÔNG tự chèn — bạn phải bấm Áp dụng)">
-          <Tag size={14} /> Gợi ý tên phòng
-        </button>
-        <button type="button" onClick={() => setMepOpen((o) => !o)} style={{ ...fileBtn, background: mepOpen ? 'var(--accent)' : undefined, color: mepOpen ? '#fff' : undefined }} title="MEP sơ cấp — gợi ý chiếu sáng/công tắc/ổ cắm/vị trí máy lạnh (chỉ đề xuất, KHÔNG tự chèn — bạn phải bấm nút Đặt)">
-          <Lightbulb size={14} /> MEP
-        </button>
-        <button type="button" onClick={toRender} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Kết xuất layout thành node Import Image ở chặng Render">
-          Đưa sang Render <ArrowRight size={14} />
-        </button>
-        <button type="button" onClick={toPresent} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Chụp bản vẽ hiện tại thành 1 slide mới ở chặng Present (không đè slide có sẵn)">
-          Đưa sang Present <ArrowRight size={14} />
-        </button>
+        {/* 2 nút chuyển chặng luôn đi CÙNG NHAU và dạt về phải (marginLeft:auto thay cho spacer
+         *  flex:1 — với flexWrap, spacer sẽ nuốt hết chỗ và đẩy nút thứ 2 xuống dòng). */}
+        <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexShrink: 0 }}>
+          <button type="button" onClick={toRender} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Kết xuất layout thành node Import Image ở chặng Render">
+            Đưa sang Render <ArrowRight size={14} />
+          </button>
+          <button type="button" onClick={toPresent} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Chụp bản vẽ hiện tại thành 1 slide mới ở chặng Present (không đè slide có sẵn)">
+            Đưa sang Present <ArrowRight size={14} />
+          </button>
+        </div>
       </div>
 
       {/* vùng canvas + panel */}
@@ -438,23 +445,27 @@ function ConfirmBar({ message, onOk, onCancel }: { message: string; onOk: () => 
   );
 }
 
-/* ───────── Scale nhanh ───────── */
-function ScaleButtons() {
+/* ───────── Scale nhanh — 19/07: 3 nút rời (×0.1/×10/×25.4) gom vào 1 menu xổ, cùng ngôn ngữ
+ * với các nhóm khác trên thanh file. Hành vi giữ nguyên: bấm 1 nấc → scaleAll(hệ số). ───────── */
+function ScaleMenu() {
   const scaleAll = useCadStore((s) => s.scaleAll);
-  const opts: [string, number][] = [
-    ['×0.1', 0.1],
-    ['×10', 10],
-    ['×25.4', 25.4],
+  const opts: [string, number, string][] = [
+    ['×0.1', 0.1, 'File nhập đang lớn gấp 10 (vd cm → dm)'],
+    ['×10', 10, 'File nhập đang nhỏ đi 10 lần'],
+    ['×25.4', 25.4, 'Đổi từ inch sang mm'],
   ];
   return (
-    <div style={{ display: 'flex', gap: 4, marginLeft: 4 }}>
-      <span style={{ fontSize: 11, color: 'var(--t4)', alignSelf: 'center' }}>Scale:</span>
-      {opts.map(([lbl, f]) => (
-        <button key={lbl} type="button" onClick={() => scaleAll(f)} style={{ ...fileBtn, padding: '4px 8px' }} title={`Nhân toàn bộ ×${f} (khi đơn vị import lạ)`}>
-          {lbl}
-        </button>
-      ))}
-    </div>
+    <MenuButton
+      label="Tỉ lệ"
+      icon={<Ruler size={14} />}
+      title="Nhân toàn bộ bản vẽ theo hệ số — dùng khi đơn vị file nhập vào bị lạ"
+      items={opts.map(([lbl, f, sub]) => ({
+        id: lbl,
+        label: `Nhân toàn bộ ${lbl}`,
+        sub,
+        onSelect: () => scaleAll(f),
+      }))}
+    />
   );
 }
 
@@ -1608,15 +1619,18 @@ const fileBar: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: 8,
-  height: 44,
+  minHeight: 44,
   flex: '0 0 auto',
-  padding: '0 12px',
+  padding: '5px 12px',
   borderBottom: '1px solid var(--border)',
   background: 'var(--panel)',
-  // Sprint 7 — thêm 4 nút (PDF/.idf x2/Ảnh hiện trường) khiến thanh dễ tràn ở màn hẹp — cuộn
-  // ngang thay vì đẩy vỡ layout (không đổi hành vi cũ khi đủ chỗ, chỉ thêm khi cần).
-  overflowX: 'auto',
-  scrollbarWidth: 'thin',
+  // 19/07 — TRƯỚC: 18 nút bày ngang ⇒ tràn ⇒ `overflowX: 'auto'` (cuộn + scrollbar).
+  // NAY: gom còn 5 menu + 2 nút chuyển chặng nên gần như không bao giờ tràn; màn rất hẹp thì
+  // XUỐNG DÒNG thay vì cuộn. Bắt buộc bỏ overflowX ở đây: scroll container sẽ CẮT CỤT menu xổ
+  // của IOMenu/MenuButton (position:absolute rơi xuống dưới thanh).
+  flexWrap: 'wrap',
+  rowGap: 6,
+  overflow: 'visible',
 };
 const fileBtn: React.CSSProperties = {
   display: 'flex',
