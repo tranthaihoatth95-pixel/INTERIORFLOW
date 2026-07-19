@@ -117,6 +117,13 @@ export default function Element({
     group: boolean; // dời cả nhóm
     alt: boolean; // đã nhân bản (Alt)
     moved: boolean; // đã vượt ngưỡng để coi là "kéo"
+    /** frame MỚI NHẤT tính trong onPointerMove (live) — pointerUp commit từ đây, KHÔNG
+     * đọc `el.frame` (prop): prop chỉ chắc chắn phản ánh live-update cuối cùng SAU khi
+     * React re-render xong; nếu pointerup tới trước khi re-render kịp chạy (kéo/thả rất
+     * nhanh, hoặc nhiều pointermove dồn trong cùng 1 tick), `el.frame` vẫn là snapshot
+     * TRƯỚC lúc kéo → commit đè lại giá trị cũ, xoá mất thao tác vừa làm (xoay là dễ thấy
+     * nhất vì mỗi lần chỉ đổi 1 trường, nhưng lỗi tương tự có thể ảnh hưởng move/resize). */
+    lastFrame: Frame | null;
   } | null>(null);
 
   function stageRect() {
@@ -148,6 +155,7 @@ export default function Element({
       group: handle === 'move' && !!multi && !!onFrameMany && !e.altKey,
       alt,
       moved: false,
+      lastFrame: null,
     };
   }
 
@@ -241,6 +249,7 @@ export default function Element({
       f.w = w;
       f.h = h;
     }
+    st.lastFrame = f;
     onFrame(f, true);
   }
 
@@ -253,8 +262,12 @@ export default function Element({
       /* ignore */
     }
     // commit lần cuối (không live). Nhóm: commit delta 0 để chốt snapshot.
+    // Dùng st.lastFrame (frame MỚI NHẤT vừa tính trong onPointerMove) thay vì el.frame —
+    // el.frame là prop, chỉ chắc chắn cập nhật SAU khi React re-render xong; pointerup có
+    // thể tới trước đó (kéo/thả nhanh) khiến el.frame vẫn là snapshot cũ và đè mất thao
+    // tác vừa làm. Không có lastFrame (chưa từng move, vd chỉ click) → fallback el.frame.
     if (st.group) onFrameMany!(0, 0, false);
-    else onFrame({ ...el.frame }, false);
+    else onFrame(st.lastFrame ?? { ...el.frame }, false);
     dragState.current = null;
     onGuides(null);
   }

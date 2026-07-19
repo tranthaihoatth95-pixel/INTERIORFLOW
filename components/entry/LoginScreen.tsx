@@ -51,9 +51,6 @@ export function LoginScreen({ onAuthed }: { onAuthed: () => void }) {
         <LangToggle variant="ghost" />
       </div>
 
-      {/* C-2: nút đổi nền — góc phải dưới */}
-      <LoginBackdropPicker choice={choice} onPick={pick} lang={lang} />
-
       <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-center px-6 py-16">
         <motion.div initial="hidden" animate="visible" className="flex w-full flex-col items-center text-center">
           {/* logo + kicker — element nhỏ, biên độ nhỏ */}
@@ -97,6 +94,12 @@ export function LoginScreen({ onAuthed }: { onAuthed: () => void }) {
           </motion.div>
         </motion.div>
       </div>
+
+      {/* C-2: nút đổi nền — góc phải dưới. Đặt SAU form đăng nhập trong DOM (dù vị trí
+          nhìn thấy vẫn là góc phải-dưới nhờ `position: absolute`) để Tab đi qua form
+          đăng nhập chính (Google/Apple/email) TRƯỚC, nút phụ trợ này sau — trước đây
+          nằm trước form nên Tab nhảy ra góc màn hình rồi mới quay lại form. */}
+      <LoginBackdropPicker choice={choice} onPick={pick} lang={lang} />
     </div>
   );
 }
