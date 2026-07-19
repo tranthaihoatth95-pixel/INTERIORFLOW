@@ -190,6 +190,18 @@
       ],
       "port": 4054,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-formatpainter"
+    },
+    {
+      "name": "slidesorter-4056",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4056"
+      ],
+      "port": 4056,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-slidesorter"
     }
   ]
 }

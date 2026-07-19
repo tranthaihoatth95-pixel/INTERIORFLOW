@@ -17,6 +17,7 @@ import {
   Pentagon,
   MoveRight,
   LayoutTemplate,
+  LayoutGrid,
   Undo2,
   Redo2,
   Play,
@@ -49,6 +50,8 @@ interface Props {
   onStagePreset: () => void;
   /** nhãn khổ đang chọn (vd "16:9", "A4 dọc") hiện trên nút. */
   stageLabel: string;
+  /** mở "Xem lưới" (Slide Sorter) — xem toàn deck dạng lưới thu nhỏ. */
+  onOpenSorter: () => void;
   busy: string | null;
   /** kết quả export gần nhất (thành công/lỗi) — hiện toast ngắn cạnh nút Export. */
   exportMsg?: { ok: boolean; text: string } | null;
@@ -147,6 +150,9 @@ export default function Toolbar(p: Props) {
 
       <div style={{ flex: 1 }} />
 
+      <Btn onClick={p.onOpenSorter} title="Xem lưới toàn bộ slide (Slide Sorter) — chọn/kéo-thả đổi thứ tự/xoá/nhân bản">
+        <LayoutGrid size={15} /> Xem lưới
+      </Btn>
       <Btn onClick={p.onPlay} title="Trình chiếu (xem hiệu ứng động)">
         <Play size={15} /> Trình chiếu
       </Btn>
