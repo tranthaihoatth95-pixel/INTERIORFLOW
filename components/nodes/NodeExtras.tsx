@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { Download, FileText, Film, Presentation, Check } from 'lucide-react';
 import { tweenBase, prefersReducedMotion } from '@/lib/motion';
 import { useFlowStore } from '@/lib/store';
-import { stashPresentHandoff } from '@/lib/present-editor/handoff';
+import { stashPresentHandoffWithIds, renderImageId } from '@/lib/present-editor/handoff';
 import ExportPptxButton from '@/components/ExportPptxButton';
 import type { InteriorNodeData, PortValue } from '@/lib/types';
 
@@ -195,8 +195,13 @@ function DeckActions({ slidesJson, deckName }: { slidesJson: string; deckName: s
  * Bấm: stash ảnh (lib/present-editor/handoff, consume-once) → toast nhỏ "Đã gửi N ảnh…" →
  * điều hướng /present-editor (delay ngắn để user kịp thấy xác nhận). Ảnh vào RỔ REFERENCE
  * của Present (human-in-loop kéo vào slide), không tự chèn vào deck.
+ *
+ * PS-3: kèm id ổn định `render:<nodeId>[:index]` theo CÙNG công thức `deckImagesFromNodes`
+ * (handoff.ts) — chèn ảnh này vào slide ở Present sẽ nhận đúng assetId đó, nên dù người dùng
+ * đưa ảnh sang bằng nút này hay bằng pill "Present" trên header, ảnh gốc cùng 1 node vẫn hội tụ
+ * về cùng 1 tài sản liên kết.
  */
-function SendToPresent({ images }: { images: string[] }) {
+function SendToPresent({ images, nodeId }: { images: string[]; nodeId: string }) {
   const router = useRouter();
   const [sent, setSent] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -218,7 +223,9 @@ function SendToPresent({ images }: { images: string[] }) {
       className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-[var(--border-strong)] py-1.5 text-[11px] text-[var(--t2)] transition-colors hover:border-[var(--accent)] hover:text-[var(--t1)]"
       title="Đẩy ảnh slide đã render vào rổ Reference của trình dàn trang Present"
       onClick={() => {
-        stashPresentHandoff(images);
+        stashPresentHandoffWithIds(
+          images.map((src, i) => ({ src, id: renderImageId(nodeId, i, images.length) })),
+        );
         setSent(images.length);
         timerRef.current = setTimeout(() => router.push('/present-editor'), 650);
       }}
@@ -420,7 +427,9 @@ export function NodeExtras({ nodeId, data }: { nodeId: string; data: InteriorNod
           {defType === 'slide.deck' && outputs._slides && (
             <DeckActions slidesJson={String(outputs._slides.value)} deckName={String(params.deckName ?? '')} />
           )}
-          {defType.startsWith('slide.') && <SendToPresent images={slideImagesOf(defType, outputs)} />}
+          {defType.startsWith('slide.') && (
+            <SendToPresent images={slideImagesOf(defType, outputs)} nodeId={nodeId} />
+          )}
           {tier && <TierBadge tier={tier} />}
         </div>
       );

@@ -14,6 +14,15 @@
  *
  * Phần RÚT ẢNH từ flow (`deckImagesFromNodes`) tách THUẦN để test không cần DOM — cùng thứ tự
  * ưu tiên với PresentOverlay.useFlowDeck (slide.deck đã Run → slide.composer theo pageNo/vị trí).
+ *
+ * PS-3 (id ổn định — nợ kỹ thuật đã ghi ở STATUS.md): mỗi ảnh rút ra giờ có kèm 1 `id` ổn định
+ * dựa trên `node.id` (React Flow node id — ổn định suốt vòng đời flow, KHÔNG đổi giữa các lần
+ * Run). Format: `render:<nodeId>` (node xuất đúng 1 ảnh, vd slide.composer) hoặc
+ * `render:<nodeId>:<index>` (1 node xuất nhiều ảnh, vd slide.deck nhiều slide). Present dùng id
+ * này làm `assetId` (lib/present-editor/linked-assets.ts) — chèn CÙNG ảnh (cùng node nguồn) vào
+ * nhiều slide ⇒ cùng assetId ⇒ sửa 1 nơi (round-trip /photo-editor hoặc panel tài sản liên kết)
+ * cập nhật MỌI nơi. `deckImagesFromNodes` (string[], không id) GIỮ NGUYÊN cho tương thích ngược
+ * — chỗ nào chưa cần link cứ dùng như cũ; `deckImagesWithIdsFromNodes` là bản mới kèm id.
  */
 
 const KEY = 'interiorflow.presentHandoff';
@@ -21,8 +30,10 @@ const KEY = 'interiorflow.presentHandoff';
 /** Trần số ảnh chuyển 1 lần — deck 6 slide + dư; tránh nhét cả thư viện vào storage. */
 const MAX_IMAGES = 8;
 
-/** Node "giống FlowNode" tối thiểu — structural type để hàm thuần không dính reactflow. */
+/** Node "giống FlowNode" tối thiểu — structural type để hàm thuần không dính reactflow.
+ *  `id` bắt buộc: mọi FlowNode thật (React Flow) luôn có id ổn định do store quản lý. */
 export interface HandoffNodeLike {
+  id: string;
   position?: { x: number; y: number };
   data?: {
     defType?: string;
@@ -31,13 +42,28 @@ export interface HandoffNodeLike {
   };
 }
 
+/** 1 ảnh rút từ flow kèm id ổn định (xem PS-3 ở đầu file). */
+export interface DeckImageItem {
+  src: string;
+  id: string;
+}
+
 /**
- * THUẦN: rút mảng ảnh slide từ flow hiện tại (ưu tiên như PresentOverlay):
- *  1) node `slide.deck` đã Run — outputs._slides = JSON mảng dataURL;
- *  2) các `slide.composer` đã render — sắp theo pageNo rồi vị trí trái→phải, trên→dưới.
+ * id ổn định cho 1 ảnh xuất từ node `nodeId` — `total` = tổng số ảnh node đó xuất ra trong lần
+ * rút này. Node xuất đúng 1 ảnh → dùng thẳng id node (dễ đọc, ổn định tuyệt đối); node xuất
+ * nhiều ảnh (slide.deck nhiều slide) → thêm chỉ số để mỗi ảnh có 1 id riêng.
+ */
+export function renderImageId(nodeId: string, index: number, total: number): string {
+  return total > 1 ? `render:${nodeId}:${index}` : `render:${nodeId}`;
+}
+
+/**
+ * THUẦN: rút mảng {src,id} từ flow hiện tại (ưu tiên như PresentOverlay):
+ *  1) node `slide.deck` đã Run — outputs._slides = JSON mảng dataURL (nhiều ảnh, 1 node);
+ *  2) các `slide.composer` đã render — sắp theo pageNo rồi vị trí trái→phải, trên→dưới (1 node/ảnh).
  * Không có gì → []. Tất định.
  */
-export function deckImagesFromNodes(nodes: HandoffNodeLike[]): string[] {
+function extractDeckImages(nodes: HandoffNodeLike[]): DeckImageItem[] {
   const decks = nodes.filter(
     (n) => n.data?.defType === 'slide.deck' && n.data.run?.outputs?._slides?.value,
   );
@@ -46,7 +72,8 @@ export function deckImagesFromNodes(nodes: HandoffNodeLike[]): string[] {
     try {
       const slides = JSON.parse(String(lastDeck.data!.run!.outputs!._slides!.value)) as unknown;
       if (Array.isArray(slides) && slides.length > 0) {
-        return slides.map(String).slice(0, MAX_IMAGES);
+        const capped = slides.map(String).slice(0, MAX_IMAGES);
+        return capped.map((src, i) => ({ src, id: renderImageId(lastDeck.id, i, capped.length) }));
       }
     } catch {
       /* JSON hỏng — rơi xuống composer */
@@ -60,6 +87,7 @@ export function deckImagesFromNodes(nodes: HandoffNodeLike[]): string[] {
         typeof n.data.run?.outputs?.image?.value === 'string',
     )
     .map((n) => ({
+      nodeId: n.id,
       url: String(n.data!.run!.outputs!.image!.value),
       page: parseInt(String(n.data!.params?.pageNo ?? ''), 10),
       x: n.position?.x ?? 0,
@@ -72,15 +100,32 @@ export function deckImagesFromNodes(nodes: HandoffNodeLike[]): string[] {
       if (a.x !== b.x) return a.x - b.x;
       return a.y - b.y;
     });
-  return composed.map((c) => c.url).slice(0, MAX_IMAGES);
+  return composed
+    .slice(0, MAX_IMAGES)
+    .map((c) => ({ src: c.url, id: renderImageId(c.nodeId, 0, 1) }));
+}
+
+/** Bản CŨ — string[] không id, giữ nguyên chữ ký cho nơi gọi chưa cần link (tương thích ngược). */
+export function deckImagesFromNodes(nodes: HandoffNodeLike[]): string[] {
+  return extractDeckImages(nodes).map((i) => i.src);
+}
+
+/** Bản MỚI (PS-3) — kèm id ổn định để Present gán `assetId` (linked-assets.ts). */
+export function deckImagesWithIdsFromNodes(nodes: HandoffNodeLike[]): DeckImageItem[] {
+  return extractDeckImages(nodes);
+}
+
+/** Item lưu trong handoff — `id` optional: nguồn cũ (stashPresentHandoff, string[]) không có id. */
+interface StashedItem {
+  src: string;
+  id?: string;
 }
 
 /** Fallback bộ nhớ khi sessionStorage hỏng/đầy (pattern B1 của lib/cad/handoff.ts). */
-let memHandoff: string[] | null = null;
+let memHandoff: StashedItem[] | null = null;
 
-/** Stash ảnh chuyển sang Present. Trả true nếu vào được sessionStorage (false = dùng mem). */
-export function stashPresentHandoff(images: string[]): boolean {
-  const trimmed = images.filter(Boolean).slice(0, MAX_IMAGES);
+function stashItems(items: StashedItem[]): boolean {
+  const trimmed = items.filter((it) => it.src).slice(0, MAX_IMAGES);
   if (!trimmed.length) return false;
   try {
     sessionStorage.setItem(KEY, JSON.stringify(trimmed));
@@ -92,20 +137,49 @@ export function stashPresentHandoff(images: string[]): boolean {
   }
 }
 
-/** Consume-ONCE: trả ảnh đã stash rồi dọn cả 2 nguồn. Không có gì → []. */
-export function consumePresentHandoff(): string[] {
-  let images: string[] = [];
+function consumeItems(): StashedItem[] {
+  let items: StashedItem[] = [];
   try {
     const raw = sessionStorage.getItem(KEY);
     if (raw) {
       sessionStorage.removeItem(KEY);
       const parsed = JSON.parse(raw) as unknown;
-      if (Array.isArray(parsed)) images = parsed.map(String).filter(Boolean);
+      if (Array.isArray(parsed)) {
+        items = parsed
+          .map((p): StashedItem | null => {
+            if (p && typeof p === 'object' && typeof (p as StashedItem).src === 'string') {
+              return p as StashedItem;
+            }
+            if (typeof p === 'string') return { src: p };
+            return null;
+          })
+          .filter((it): it is StashedItem => !!it && !!it.src);
+      }
     }
   } catch {
     /* storage hỏng lúc đọc / JSON hỏng — thử fallback bộ nhớ bên dưới */
   }
-  if (!images.length && memHandoff) images = memHandoff;
+  if (!items.length && memHandoff) items = memHandoff;
   memHandoff = null; // dọn ngay — tránh double-consume
-  return images;
+  return items;
+}
+
+/** Stash ảnh chuyển sang Present (bản CŨ, không id). Trả true nếu vào được sessionStorage. */
+export function stashPresentHandoff(images: string[]): boolean {
+  return stashItems(images.map((src) => ({ src })));
+}
+
+/** Stash ảnh kèm id ổn định (PS-3) — dùng khi nguồn có id (deckImagesWithIdsFromNodes). */
+export function stashPresentHandoffWithIds(items: DeckImageItem[]): boolean {
+  return stashItems(items);
+}
+
+/** Consume-ONCE: trả ảnh đã stash rồi dọn cả 2 nguồn (bản CŨ, chỉ src). Không có gì → []. */
+export function consumePresentHandoff(): string[] {
+  return consumeItems().map((i) => i.src);
+}
+
+/** Consume-ONCE kèm id (nếu nguồn có) — PS-3. `id` vắng mặt = ảnh không có nguồn Render ổn định. */
+export function consumePresentHandoffWithIds(): StashedItem[] {
+  return consumeItems();
 }

@@ -20,7 +20,7 @@ import { MobileMenu } from '@/components/MobileMenu';
 import { LangToggle } from '@/components/LangToggle';
 import { pressable, pressableIcon, easeApple } from '@/lib/motion';
 import { StageVeil } from '@/components/studio/StageTransition';
-import { stashPresentHandoff, deckImagesFromNodes } from '@/lib/present-editor/handoff';
+import { stashPresentHandoffWithIds, deckImagesWithIdsFromNodes } from '@/lib/present-editor/handoff';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -374,7 +374,7 @@ function PhaseSwitcher() {
             // Composer) theo người dùng sang /present-editor — stash consume-once; storage
             // hỏng có fallback bộ nhớ. Flow không có slide ⇒ mảng rỗng, stash bỏ qua,
             // luồng cũ nguyên vẹn.
-            stashPresentHandoff(deckImagesFromNodes(useFlowStore.getState().nodes));
+            stashPresentHandoffWithIds(deckImagesWithIdsFromNodes(useFlowStore.getState().nodes));
             router.push('/present-editor');
           } else if (p === 'concept') {
             // Chặng 1 = Layout CAD → trình vẽ 2D ở route riêng (cùng pattern fade như Present).

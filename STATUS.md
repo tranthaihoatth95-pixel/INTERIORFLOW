@@ -43,7 +43,7 @@
 - Migration Prisma drift (IntegrationAccount) — dùng `db push`, KHÔNG reset.
 - 4 file stress test bị mất — cần viết lại nếu muốn coverage edge-case.
 - Sprint 3 B1: `meta` (giá/vendor/sku) trống — chưa có dữ liệu giá thật.
-- PS-3: linked-asset chưa nối được với ảnh Render stage (thiếu id ổn định ở `deckImagesFromNodes`).
+- ~~PS-3: linked-asset chưa nối được với ảnh Render stage~~ ĐÃ SỬA (nhánh `feat/ps3-linked-asset-render-id`, chờ merge) — ảnh Render giờ có id ổn định `render:<nodeId>[:index]` (handoff.ts), chèn vào slide tự gán làm `assetId`.
 - ~~Brand Kit áp 1 slide/bug tương phản~~ ĐÃ SỬA (nhánh `fix/brand-kit-apply-contrast`, chờ merge).
 - In A3/A4 300dpi thật vẫn CHƯA khả dụng (giới hạn Render stage) — PS-4 chỉ làm khổ màn hình/chiếu, đúng phạm vi đã chốt.
 - `knowledge/project-references/` ~121MB PDF trong git — cân nhắc Git LFS nếu repo phình to.

@@ -122,10 +122,65 @@ function testListOrder() {
   ok('deck không linkedAssets → danh sách rỗng', listLinkedAssets(makeDeck()).length === 0);
 }
 
+/**
+ * PS-3 (nợ kỹ thuật STATUS.md, đã vá ở lib/present-editor/handoff.ts +
+ * components/present-editor/PresentEditor.tsx::onAddImageUrl): ảnh hand-off từ chặng Render giờ
+ * có id ổn định `render:<nodeId>[:index]` (xem handoff.ts). Test này mô phỏng ĐÚNG thuật toán
+ * onAddImageUrl (không dựng DOM/React) để chứng minh: dùng renderId làm `assetId` trực tiếp (thay
+ * vì `newAssetId()` ngẫu nhiên) khiến 2 lần chèn CÙNG ảnh (cùng node nguồn Render) vào 2 slide
+ * khác nhau tự động hội tụ về CÙNG 1 tài sản liên kết — không cần thao tác "tạo asset" thủ công.
+ */
+function testRenderHandoffStableId() {
+  console.log('\n[5] PS-3 — id ổn định từ Render (render:<nodeId>) làm assetId ⇒ 2 lần chèn cùng nguồn = CÙNG asset');
+  const renderId = 'render:node-42';
+  let deck: EditorDeck = {
+    id: 'd2',
+    brand: 'B',
+    project: 'P',
+    fonts: { heading: 'a', body: 'b' } as any,
+    palette: ['#000'],
+    slides: [slide('s1', [img('e1', 'render-out.png')]), slide('s2', [])],
+  };
+
+  // Lần 1 (nhánh "else" của onAddImageUrl): renderId CHƯA có trong registry → setLinkedAssetSrc
+  // tạo asset mới với đúng id đó, rồi gán assetId thẳng vào element vừa chèn.
+  deck = setLinkedAssetSrc(deck, renderId, 'render-out.png');
+  deck = {
+    ...deck,
+    slides: deck.slides.map((s) =>
+      s.id !== 's1' ? s : { ...s, elements: s.elements.map((e) => (e.id === 'e1' ? { ...e, assetId: renderId } : e)) },
+    ),
+  };
+  ok('lần 1: đăng ký asset mới đúng bằng renderId (không phải id ngẫu nhiên)', deck.linkedAssets?.[renderId]?.src === 'render-out.png');
+  ok('lần 1: element gắn đúng assetId', (deck.slides[0].elements[0] as ImageElement).assetId === renderId);
+
+  // Lần 2 (nhánh "existing" của onAddImageUrl): chèn CÙNG ảnh vào slide KHÁC (e2/s2) — renderId
+  // ĐÃ có trong registry → attachElementToAsset (không tạo asset trùng).
+  deck = {
+    ...deck,
+    slides: deck.slides.map((s) => (s.id !== 's2' ? s : { ...s, elements: [...s.elements, img('e2', 'render-out.png')] })),
+  };
+  deck = attachElementToAsset(deck, 's2', 'e2', renderId);
+
+  ok('lần 2: KHÔNG tạo asset trùng — vẫn đúng 1 asset trong registry', Object.keys(deck.linkedAssets ?? {}).length === 1);
+  const e2 = deck.slides[1].elements[0] as ImageElement;
+  ok('lần 2: element ở slide khác gắn CÙNG assetId (= renderId)', e2.assetId === renderId);
+  ok('usage đếm đúng 2 chỗ dùng (2 slide, 1 nguồn Render)', countAssetUsage(deck, renderId) === 2);
+
+  // Mục tiêu cuối (spec PS-3): sửa nguồn 1 lần (mô phỏng round-trip /photo-editor) → CẢ 2 nơi
+  // (2 lần chèn khác nhau, KHÔNG có thao tác "gắn" thủ công lần 2) cùng cập nhật.
+  deck = setLinkedAssetSrc(deck, renderId, 'render-out-edited.png');
+  const e1After = deck.slides[0].elements[0] as ImageElement;
+  const e2After = deck.slides[1].elements[0] as ImageElement;
+  ok('sửa 1 lần → slide 1 cập nhật', e1After.src === 'render-out-edited.png');
+  ok('sửa 1 lần → slide 2 (chèn ở lượt khác, cùng renderId) CŨNG cập nhật', e2After.src === 'render-out-edited.png');
+}
+
 testCreateAsset();
 testAttachAndSync();
 testDetach();
 testListOrder();
+testRenderHandoffStableId();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);
