@@ -4,8 +4,8 @@
 > ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp `feat/present-layout-ml-p1` (`8c05ace`, verify git) — đã merge thêm fix CAD wall-color + Render groups/tooltip, tsc pass. `origin/main` ở `600523c` — CHƯA push (còn agent present-gallery chạy, đợi xong push 1 lượt).
-- **1 worktree sống:** `interiorflow-wt-fix-present-gallery` (branch `fix/present-gallery-interactions`, agent đang chạy).
+- Nhánh tích hợp `feat/present-layout-ml-p1` (`977f32d`, verify git) — đã merge 3 nhánh fix từ audit (CAD wall-color · Render groups/tooltip · Present rotate+Gallery Enter/tab-order), tsc pass. `origin/main` ở `600523c` — CHƯA push (đợi agent login-bug xong, push 1 lượt).
+- **1 worktree sống:** `interiorflow-wt-fix-cad-render-login-bug` (branch `fix/cad-render-login-bug`, agent đang sửa double-fetch `/api/auth/me`).
 - **Bug MỚI user báo (chưa sửa):** chuyển từ chặng CAD → Render bị văng ra màn hình đăng nhập dù đang đăng nhập, lặp lại nhiều lần, tồn tại lâu. Nghi vấn đã xác nhận 1 phần: `CadEditor.tsx` (chặng CAD) KHÔNG hề kiểm tra session (không gọi `/api/auth/me`, không đọc `user`), trong khi `app/page.tsx` (chặng Render, route `/`) gọi lại `/api/auth/me` MỖI LẦN mount và hiện `LoginScreen` nếu response không `ok`. Đang giao agent điều tra sâu bằng browser thật (worktree `interiorflow-wt-fix-cad-render-login-bug`).
 - **19/07 chiều: audit toàn diện chuột/bàn phím/cảm ứng 3 chặng CAD/Render/Present+Login+Gallery** (4 agent, mỗi agent 1 host riêng để không đụng cookie/IndexedDB). Kết quả → mục Nợ kỹ thuật bên dưới. Danh sách đầy đủ (kèm dòng code) nằm trong lịch sử chat, chưa chép hết vào STATUS để giữ &lt;800 từ — hỏi lại nếu cần.
 - **19/07: đã xử lý 2 nợ kỹ thuật nhỏ trực tiếp (không qua agent):** Prisma `db push` đồng bộ schema `IntegrationAccount` · dọn file rác `Bản sao Không có tiêu đề.rtfd/` + `CLAUDE.md.bak`.
@@ -19,15 +19,11 @@
 
 ## Nợ kỹ thuật
 - ~~Hydration tooltip CadToolbar/PhotoToolbar~~ · ~~window.prompt Dashboard/PS-3/Brand Kit~~ · ~~Migration Prisma drift~~ · ~~CAD Room tool chuột~~ · ~~CAD Backspace không xoá được~~ · ~~Demo render: thanh tím đè nhãn phòng (hatch SOLID bị force-highlight tô đặc thay vì chỉ viền, đã thêm `DrawStyle.outlineOnly`)~~ — ĐÃ SỬA, đã merge, **demo render user đã tự verify mắt qua tunnel 19/07, OK**.
-- **Mới phát hiện 19/07 (audit 4 agent), CHƯA sửa — ưu tiên theo mức độ:**
-  - ~~[CAO] Màu layer "Tường" `#e8e4dc` trùng nền canvas~~ — **ĐÃ SỬA**, nhánh `fix/cad-wall-layer-color` (`1079a22`, worktree `interiorflow-wt-fix-cad-wall-color`, tsc pass). Đổi sang `#47423a` (= `--t2` theme sáng, cân bằng cả nền sáng/tối); sửa luôn `addLayer()` palette trong `store.ts` (cùng bug). Verify browser port 4080 + pixel-sample OK. **CHƯA merge** — worktree còn sống.
-  - [CAO] Handle xoay (rotate) ở Present không hoạt động — `components/present-editor/Element.tsx:206-210`.
-  - [CAO] Phím Enter toàn cục ở Gallery (`ProjectSelect.tsx:401-417`) không check `e.target` → bấm Enter cho nút bất kỳ vô tình mở/tạo nhầm flow.
-  - [CAO] Group bị collapse ở Render rồi reload → node ẩn vĩnh viễn, `groups` state không lưu (`lib/store.ts`).
-  - [TRUNG] Bug hydration mismatch MỚI ở `components/ui/Tooltip.tsx:83` (khác bug đã sửa) — ảnh hưởng cả 3 chặng qua `StudioBar`.
-  - [TRUNG] Không hỗ trợ cảm ứng thật ở CAD (chỉ chặn scroll, không xử lý gesture) · Slide Sorter dùng HTML5 DnD (không chạy trên touch) · Escape trong Mask/Annotate editor mất nét vẽ chưa lưu, không cảnh báo.
-  - [THẤP-TRUNG] Tab-order sai ở LoginScreen · card gallery carousel 3D không tới được bằng Tab · property panel Render không undo được.
-  - Chi tiết đầy đủ (dòng code, cách tái hiện) nằm trong lịch sử chat phiên 19/07 — hỏi lại nếu cần trích.
+- **Từ audit 19/07 — ĐÃ SỬA + MERGE (`977f32d`):** ~~màu layer Tường trùng nền (đổi `#47423a`, sửa luôn palette `addLayer()`)~~ · ~~handle xoay Present (lỗi commit frame stale từ prop trong `onPointerUp`, không phải công thức atan2 — vá luôn move/resize cùng race)~~ · ~~Enter toàn cục Gallery (guard e.target)~~ · ~~groups Render không lưu (thêm `groups` vào `graphJson` + auto-unhide node mồ côi)~~ · ~~Escape mất nét vẽ Mask/Annotate (cờ dirty + banner)~~ · ~~hydration Tooltip.tsx (mounted-gate)~~ · ~~tab-order Login~~ · ~~card carousel roving tabindex~~. Lưu ý: Enter-guard + tabindex Gallery chỉ verify bằng đọc code (cần login thật) — user dùng thật là verify cuối.
+- **Từ audit 19/07 — CHƯA sửa:**
+  - **Bug user báo: CAD→Render văng màn đăng nhập.** Điều tra xong: `/` gọi `/api/auth/me` 2 lần (StrictMode, thiếu ref-guard) — agent đang sửa phần này. Nguyên nhân sâu hơn CHƯA chốt được (agent không có session hợp lệ để tái hiện "đang đăng nhập mà bị văng"): có thể session hết hạn thật từ trước nhưng CAD không hề check auth nên user không biết, đến khi bấm Render mới lộ. Nếu còn tái diễn sau fix → cần user tự mở DevTools Network lúc bug xảy ra, xem request `/api/auth/me` có gửi cookie `if_session` không + status trả về.
+  - [TRUNG] Không hỗ trợ cảm ứng thật ở CAD (gesture) · Slide Sorter dùng HTML5 DnD (không chạy trên touch) — 2 việc lớn, chưa giao.
+  - [THẤP] Property panel Render không undo được (có thể là chủ ý) · Escape không xoá ký tự gõ dở trong ô lệnh CAD · status hint chưa nhắc Backspace.
 - Sprint 3 B1: `meta` (giá/vendor/sku) trống — chưa có dữ liệu giá thật.
 - In A3/A4 300dpi thật vẫn CHƯA khả dụng (giới hạn Render stage) — đúng phạm vi đã chốt.
 - `knowledge/project-references/` ~121MB PDF trong git — cân nhắc Git LFS. User chọn ĐỂ SAU (rewrite history rủi ro cao).
