@@ -4,7 +4,9 @@
 > ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp `feat/present-layout-ml-p1` (`f13be94`, verify git) — đã merge 2 fix (delete-key + demo-render-overlap), tsc pass, 0 worktree sống. `origin/main` vẫn ở `a98799c` — **CHƯA push**.
+- Nhánh tích hợp `feat/present-layout-ml-p1` (`8c05ace`, verify git) — đã merge thêm fix CAD wall-color + Render groups/tooltip, tsc pass. `origin/main` ở `600523c` — CHƯA push (còn agent present-gallery chạy, đợi xong push 1 lượt).
+- **1 worktree sống:** `interiorflow-wt-fix-present-gallery` (branch `fix/present-gallery-interactions`, agent đang chạy).
+- **Bug MỚI user báo (chưa sửa):** chuyển từ chặng CAD → Render bị văng ra màn hình đăng nhập dù đang đăng nhập, lặp lại nhiều lần, tồn tại lâu. Nghi vấn đã xác nhận 1 phần: `CadEditor.tsx` (chặng CAD) KHÔNG hề kiểm tra session (không gọi `/api/auth/me`, không đọc `user`), trong khi `app/page.tsx` (chặng Render, route `/`) gọi lại `/api/auth/me` MỖI LẦN mount và hiện `LoginScreen` nếu response không `ok`. Đang giao agent điều tra sâu bằng browser thật (worktree `interiorflow-wt-fix-cad-render-login-bug`).
 - **19/07 chiều: audit toàn diện chuột/bàn phím/cảm ứng 3 chặng CAD/Render/Present+Login+Gallery** (4 agent, mỗi agent 1 host riêng để không đụng cookie/IndexedDB). Kết quả → mục Nợ kỹ thuật bên dưới. Danh sách đầy đủ (kèm dòng code) nằm trong lịch sử chat, chưa chép hết vào STATUS để giữ &lt;800 từ — hỏi lại nếu cần.
 - **19/07: đã xử lý 2 nợ kỹ thuật nhỏ trực tiếp (không qua agent):** Prisma `db push` đồng bộ schema `IntegrationAccount` · dọn file rác `Bản sao Không có tiêu đề.rtfd/` + `CLAUDE.md.bak`.
 - **App có nút "Mở DWG" trực tiếp** (Web Worker cô lập GPL) — không cần server/CLI.
