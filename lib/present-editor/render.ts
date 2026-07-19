@@ -27,6 +27,7 @@ import {
   effectiveListStyle,
 } from './model';
 import { polygonPoints01, isPolygonShape } from './shape-geometry';
+import { applyTransform, gradientLine, isCurved } from './text-fx';
 import { loadImage } from '@/lib/imaging';
 import { STAGE_PRESETS, type StageSize } from './stage-presets';
 
@@ -219,6 +220,7 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontDeck: st
   const fx = sc.px(el.frame.x);
   const fy = sc.py(el.frame.y);
   const fw = sc.px(el.frame.w);
+  const fh = sc.py(el.frame.h);
   const sizePx = (el.fontSize / 100) * sc.H;
   ctx.save();
   ctx.globalAlpha = el.opacity ?? 1;
@@ -228,8 +230,14 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontDeck: st
   // Bộ chữ: ưu tiên fontFamily riêng của element (chuỗi CSS dùng thẳng được), không thì deck.
   const fontBody = el.fontFamily || fontDeck;
   ctx.font = `${style}${weight} ${sizePx}px ${fontBody}`;
-  ctx.fillStyle = el.color;
-  ctx.strokeStyle = el.color;
+
+  /* Hiệu ứng chữ (#2) — quy mọi khoảng cách % sân khấu sang px, rồi gói thành `paint` để
+     các hàm vẽ dòng dùng chung. Không có fx → paint "trơn", đường vẽ y hệt trước. */
+  const paint = buildTextPaint(ctx, el, sc, { x: fx, y: fy, w: fw, h: fh });
+  if (paint.blend) ctx.globalCompositeOperation = paint.blend;
+
+  ctx.fillStyle = paint.fill;
+  ctx.strokeStyle = paint.strokeColor;
   ctx.textBaseline = 'top';
   const align = el.align || 'left';
   ctx.textAlign = align === 'center' ? 'center' : align === 'right' ? 'right' : 'left';
@@ -238,10 +246,17 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontDeck: st
   let lineH = sizePx * (el.lineHeight ?? 1.2);
   let tracking = ((el.tracking ?? 0) / 100) * sc.H;
 
+  // Chữ uốn cung đi đường riêng (một dòng, vẽ từng ký tự quay quanh tâm cung).
+  if (isCurved(el.fx)) {
+    drawCurvedText(ctx, el, paint, { x: fx, y: fy, w: fw, h: fh }, sizePx, tracking);
+    ctx.restore();
+    return;
+  }
+
   // Kicker = nhãn 1 dòng (tracking rộng): TỰ CO để không rớt xuống 2 dòng khi chữ dài.
   if (el.role === 'kicker') {
     let maxW = 0;
-    for (const p of decorateListText(el.text || '', effectiveListStyle(el)).split('\n'))
+    for (const p of textOf(el).split('\n'))
       maxW = Math.max(maxW, measureTracked(ctx, p, tracking));
     if (maxW > fw && fw > 0) {
       const s = (fw * 0.98) / maxW;
@@ -254,7 +269,7 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontDeck: st
 
   // wrap theo từng dòng logic (\n) rồi wrap theo bề rộng.
   // Danh sách (bullet/số) → decorate tiền tố CHUNG với canvas UI (1 nguồn sự thật).
-  const decorated = decorateListText(el.text || '', effectiveListStyle(el));
+  const decorated = textOf(el);
   const paragraphs = decorated.split('\n');
   let y = fy;
   for (const para of paragraphs) {
@@ -269,7 +284,7 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontDeck: st
       const test = line ? `${line} ${word}` : word;
       const wWidth = measureTracked(ctx, test, tracking);
       if (wWidth > fw && line) {
-        drawLineText(ctx, line, anchorX, y, tracking, align, el.underline, sizeDraw);
+        drawLineText(ctx, line, anchorX, y, tracking, align, el.underline, sizeDraw, paint);
         line = word;
         y += lineH;
       } else {
@@ -277,14 +292,172 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontDeck: st
       }
     }
     if (line) {
-      drawLineText(ctx, line, anchorX, y, tracking, align, el.underline, sizeDraw);
+      drawLineText(ctx, line, anchorX, y, tracking, align, el.underline, sizeDraw, paint);
       y += lineH;
     }
   }
   ctx.restore();
 }
 
-/** Vẽ 1 dòng chữ (có tracking) + gạch chân nếu bật. */
+/** Nội dung chữ ĐÃ decorate danh sách + áp hoa/thường — khớp Element.tsx (DOM). */
+function textOf(el: TextElement): string {
+  return applyTransform(decorateListText(el.text || '', effectiveListStyle(el)), el.fx);
+}
+
+/* ------------------------------------------------------------------ */
+/* Hiệu ứng chữ trên canvas                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Mô tả cách "tô" một dòng chữ. Gom lại một chỗ vì canvas 2D không có khái niệm hiệu ứng
+ * chữ như CSS: mỗi thứ phải tự dựng — gradient thành CanvasGradient, viền thành strokeText,
+ * và BÓNG NHIỀU LỚP thành nhiều lượt vẽ (canvas chỉ giữ ĐƯỢC MỘT shadow tại một thời điểm).
+ */
+interface TextPaint {
+  fill: string | CanvasGradient;
+  strokeColor: string;
+  strokeWidth: number;
+  outlineOnly: boolean;
+  wordSpacing: number;
+  shadows: { x: number; y: number; blur: number; color: string }[];
+  blend?: GlobalCompositeOperation;
+}
+
+function buildTextPaint(
+  ctx: CanvasRenderingContext2D,
+  el: TextElement,
+  sc: Scale,
+  box: { x: number; y: number; w: number; h: number },
+): TextPaint {
+  const fx = el.fx;
+  const toPx = (v: number) => (v / 100) * sc.H;
+
+  let fill: string | CanvasGradient = el.color;
+  if (fx?.gradient) {
+    const { x0, y0, x1, y1 } = gradientLine(fx.gradient.angle, box);
+    const g = ctx.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, fx.gradient.from);
+    g.addColorStop(1, fx.gradient.to);
+    fill = g;
+  }
+
+  return {
+    fill,
+    strokeColor: fx?.strokeColor ?? el.color,
+    strokeWidth: fx?.strokeWidth ? toPx(fx.strokeWidth) : 0,
+    outlineOnly: Boolean(fx?.outlineOnly),
+    wordSpacing: fx?.wordSpacing ? toPx(fx.wordSpacing) : 0,
+    shadows: (fx?.shadows ?? []).map((s) => ({
+      x: toPx(s.x),
+      y: toPx(s.y),
+      blur: Math.max(0, toPx(s.blur)),
+      color: s.color,
+    })),
+    blend:
+      fx?.blend && fx.blend !== 'normal' ? (fx.blend as GlobalCompositeOperation) : undefined,
+  };
+}
+
+/**
+ * Vẽ chữ theo `paint`: các lớp bóng trước (mỗi lớp một lượt, vì canvas chỉ giữ 1 shadow),
+ * rồi lượt cuối vẽ chữ thật không bóng. `emit` là hàm vẽ nguyên văn (fill/stroke) do caller
+ * cấp — dùng chung cho cả chữ thẳng lẫn chữ uốn.
+ */
+function paintWithFx(ctx: CanvasRenderingContext2D, paint: TextPaint, emit: () => void): void {
+  // MẢNG BÓNG vẽ từ lớp CUỐI về lớp ĐẦU để lớp đầu nằm trên cùng (khớp thứ tự CSS text-shadow)
+  for (let i = paint.shadows.length - 1; i >= 0; i--) {
+    const s = paint.shadows[i];
+    ctx.save();
+    ctx.shadowColor = s.color;
+    ctx.shadowOffsetX = s.x;
+    ctx.shadowOffsetY = s.y;
+    ctx.shadowBlur = s.blur;
+    emit();
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  emit();
+  ctx.restore();
+}
+
+/** Một lượt vẽ chữ: ruột (nếu không phải chữ rỗng) + viền (nếu có). */
+function emitGlyph(
+  ctx: CanvasRenderingContext2D,
+  paint: TextPaint,
+  draw: (mode: 'fill' | 'stroke') => void,
+): void {
+  if (!paint.outlineOnly) draw('fill');
+  if (paint.strokeWidth > 0) {
+    ctx.save();
+    ctx.lineWidth = paint.strokeWidth;
+    ctx.strokeStyle = paint.strokeColor;
+    ctx.lineJoin = 'round';
+    draw('stroke');
+    ctx.restore();
+  }
+}
+
+/**
+ * CHỮ UỐN CUNG trên canvas — vẽ từng ký tự, mỗi ký tự xoay theo tiếp tuyến của cung.
+ * Cùng công thức hình học với CurvedText (DOM) ở Element.tsx: dây cung = 92% bề ngang khung,
+ * góc ở tâm = |curve| độ, R = (dây/2)/sin(góc/2). Xuống dòng bị bỏ (cung chỉ có một đường).
+ */
+function drawCurvedText(
+  ctx: CanvasRenderingContext2D,
+  el: TextElement,
+  paint: TextPaint,
+  box: { x: number; y: number; w: number; h: number },
+  sizePx: number,
+  tracking: number,
+): void {
+  const line = textOf(el).replace(/\s*\n\s*/g, ' ');
+  if (!line) return;
+
+  const deg = Math.max(-350, Math.min(350, el.fx?.curve ?? 0));
+  const up = deg > 0;
+  const rad = (Math.abs(deg) * Math.PI) / 180;
+  const chord = Math.max(1, box.w * 0.92);
+  const R = chord / 2 / Math.max(0.0001, Math.sin(rad / 2));
+  const sagitta = R - Math.sqrt(Math.max(0, R * R - (chord / 2) ** 2));
+  const cx = box.x + box.w / 2;
+  // tâm cung: nằm dưới khung khi cong lên, trên khung khi cong xuống
+  const midY = box.y + box.h / 2 + (up ? sagitta / 2 : -sagitta / 2);
+  const centerY = up ? midY + R : midY - R;
+
+  // bề rộng cung chữ → góc mỗi ký tự (góc = cung/bán kính)
+  const widths = [...line].map((ch) => ctx.measureText(ch).width + tracking + (ch === ' ' ? paint.wordSpacing : 0));
+  const totalW = widths.reduce((a, b) => a + b, 0);
+  const totalAngle = totalW / R;
+
+  const align = el.align || 'left';
+  // góc bắt đầu: 0 = đỉnh cung (thẳng trên/dưới tâm)
+  let angle =
+    align === 'center' ? -totalAngle / 2 : align === 'right' ? rad / 2 - totalAngle : -rad / 2;
+
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = paint.fill;
+
+  for (let i = 0; i < widths.length; i++) {
+    const ch = [...line][i];
+    const step = widths[i] / R;
+    const a = angle + step / 2;
+    ctx.save();
+    ctx.translate(cx + Math.sin(a) * R, centerY + (up ? -1 : 1) * Math.cos(a) * R);
+    ctx.rotate(up ? a : -a);
+    paintWithFx(ctx, paint, () =>
+      emitGlyph(ctx, paint, (mode) => (mode === 'fill' ? ctx.fillText(ch, 0, 0) : ctx.strokeText(ch, 0, 0))),
+    );
+    ctx.restore();
+    angle += step;
+  }
+  ctx.restore();
+}
+
+/** Vẽ 1 dòng chữ (có tracking + hiệu ứng) + gạch chân nếu bật. */
 function drawLineText(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -294,10 +467,11 @@ function drawLineText(
   align: string,
   underline: boolean | undefined,
   sizePx: number,
+  paint: TextPaint,
 ): void {
-  drawTracked(ctx, text, anchorX, y, tracking, align);
+  drawTracked(ctx, text, anchorX, y, tracking, align, paint);
   if (underline) {
-    const width = measureTracked(ctx, text, tracking);
+    const width = measureTracked(ctx, text, tracking, paint.wordSpacing);
     let x0 = anchorX;
     if (align === 'center') x0 = anchorX - width / 2;
     else if (align === 'right') x0 = anchorX - width;
@@ -312,9 +486,16 @@ function drawLineText(
   }
 }
 
-function measureTracked(ctx: CanvasRenderingContext2D, text: string, tracking: number): number {
-  if (!tracking) return ctx.measureText(text).width;
-  return ctx.measureText(text).width + tracking * Math.max(0, text.length - 1);
+function measureTracked(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  tracking: number,
+  wordSpacing = 0,
+): number {
+  const base = ctx.measureText(text).width;
+  if (!tracking && !wordSpacing) return base;
+  const spaces = wordSpacing ? (text.match(/ /g)?.length ?? 0) : 0;
+  return base + tracking * Math.max(0, text.length - 1) + wordSpacing * spaces;
 }
 
 function drawTracked(
@@ -324,13 +505,21 @@ function drawTracked(
   y: number,
   tracking: number,
   align: string,
+  paint: TextPaint,
 ): void {
-  if (!tracking) {
-    ctx.fillText(text, anchorX, y);
+  const perChar = Boolean(tracking || paint.wordSpacing);
+
+  if (!perChar) {
+    paintWithFx(ctx, paint, () =>
+      emitGlyph(ctx, paint, (mode) =>
+        mode === 'fill' ? ctx.fillText(text, anchorX, y) : ctx.strokeText(text, anchorX, y),
+      ),
+    );
     return;
   }
-  // vẽ từng ký tự để áp letter-spacing (căn trái để đơn giản; căn giữa/phải bù offset)
-  const total = measureTracked(ctx, text, tracking);
+
+  // vẽ từng ký tự để áp letter-spacing / word-spacing (căn trái; căn giữa-phải bù offset)
+  const total = measureTracked(ctx, text, tracking, paint.wordSpacing);
   let startX = anchorX;
   if (align === 'center') startX = anchorX - total / 2;
   else if (align === 'right') startX = anchorX - total;
@@ -338,8 +527,11 @@ function drawTracked(
   ctx.textAlign = 'left';
   let cx = startX;
   for (const ch of text) {
-    ctx.fillText(ch, cx, y);
-    cx += ctx.measureText(ch).width + tracking;
+    const x = cx;
+    paintWithFx(ctx, paint, () =>
+      emitGlyph(ctx, paint, (mode) => (mode === 'fill' ? ctx.fillText(ch, x, y) : ctx.strokeText(ch, x, y))),
+    );
+    cx += ctx.measureText(ch).width + tracking + (ch === ' ' ? paint.wordSpacing : 0);
   }
   ctx.textAlign = prevAlign;
 }

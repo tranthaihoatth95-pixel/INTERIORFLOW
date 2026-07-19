@@ -28,6 +28,8 @@ import type {
   ElementReveal,
 } from '@/lib/present-editor/model';
 import { makeText, makeImage, makeShape, newId, duplicateElement } from '@/lib/present-editor/model';
+import type { EmbeddedFont } from '@/lib/present-editor/model';
+import { registerFonts } from '@/lib/present-editor/custom-fonts';
 import {
   BUILTIN_TEMPLATES,
   templatesFromLibrary,
@@ -112,6 +114,26 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   useEffect(() => {
     onDeckChange?.(ed.deck);
   }, [ed.deck, onDeckChange]);
+
+  /* FONT TẢI LÊN (#1) — nhúng theo deck. Đăng ký lại vào document mỗi khi mở/đổi deck để
+     chữ hiện ĐÚNG font ngay lần vẽ đầu (canvas render cho PDF cũng cần font đã sẵn sàng).
+     Chỉ phụ thuộc `customFonts` — không phải cả deck — để không chạy lại mỗi lần gõ phím. */
+  const deckCustomFonts = ed.deck.customFonts;
+  useEffect(() => {
+    registerFonts(deckCustomFonts);
+  }, [deckCustomFonts]);
+
+  const onAddDeckFont = useCallback(
+    (f: EmbeddedFont) => {
+      ed.update((d) => {
+        const list = d.customFonts ?? [];
+        if (list.some((x) => x.stack === f.stack)) return; // đã có → khỏi nhúng trùng
+        d.customFonts = [...list, f];
+      });
+    },
+    [ed],
+  );
+
   const [tab, setTab] = useState<LeftTab>('layout');
   const [panelOpen, setPanelOpen] = useState(true);
   const [panelW, setPanelW] = useState(288); // rộng cột trái (kéo dãn)
@@ -1573,6 +1595,8 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
                   selected={ed.selected}
                   palette={palette}
                   deckFonts={ed.deck.fonts}
+                  deckCustomFonts={ed.deck.customFonts}
+                  onAddDeckFont={onAddDeckFont}
                   onUpdateSelected={ed.updateSelected}
                   onUpdateSlide={ed.updateSlide}
                   onZOrder={onZOrder}

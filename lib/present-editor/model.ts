@@ -41,6 +41,71 @@ export interface OpacityGradient {
 /** Kiểu danh sách của text element. */
 export type ListStyle = 'none' | 'bullet' | 'number';
 
+/* ------------------------------------------------------------------ */
+/* HIỆU ỨNG CHỮ (text effects / typography illustration)               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Một lớp bóng đổ của chữ. Toạ độ/độ nhoè tính theo % CHIỀU CAO sân khấu (giống fontSize)
+ * để bóng co giãn ĐÚNG tỉ lệ ở mọi khổ + mọi cỡ preview (thumbnail, player, export).
+ * Nhiều lớp xếp chồng: phần tử ĐẦU mảng nằm TRÊN (khớp thứ tự CSS text-shadow).
+ */
+export interface TextShadowLayer {
+  /** dịch ngang, % chiều cao sân khấu (âm = sang trái). */
+  x: number;
+  /** dịch dọc, % chiều cao sân khấu (âm = lên trên). */
+  y: number;
+  /** độ nhoè, % chiều cao sân khấu (0 = nét cứng). */
+  blur: number;
+  color: string;
+}
+
+/** Hướng chuyển sắc của gradient đổ vào lòng chữ (góc, độ — 0 = trái→phải). */
+export interface TextGradient {
+  from: string;
+  to: string;
+  /** góc, độ. 0 = trái→phải, 90 = trên→dưới. */
+  angle: number;
+}
+
+/**
+ * Bộ hiệu ứng typography nâng cao cho MỘT text element (#2 "text effects & typography
+ * illustration"). TOÀN BỘ field là tuỳ chọn và `fx` tự nó cũng tuỳ chọn ⇒ deck cũ (không có
+ * field này) render Y HỆT như trước — không có đường nào đổi hành vi mặc định.
+ *
+ * Gu quiet-luxury: mặc định của MỌI hiệu ứng là "tắt"; preset dựng sẵn ở
+ * lib/present-editor/text-fx.ts đều tiết chế (bóng mảnh, viền mỏng, gradient cùng tông).
+ *
+ * Phản chiếu ở BA nơi vẽ chữ — phải sửa đồng bộ cả ba:
+ *   1. components/present-editor/Element.tsx  (DOM: editor canvas + player + thumbnail)
+ *   2. lib/present-editor/render.ts           (canvas 2D: PDF / PNG / PPTX-ảnh)
+ *   3. lib/present-editor/text-fx.ts          (nguồn chung: CSS builder + preset)
+ */
+export interface TextFx {
+  /** giãn/nén khoảng cách TỪ (word-spacing), % chiều cao sân khấu. */
+  wordSpacing?: number;
+  /** viền chữ (stroke) — bề dày % chiều cao sân khấu, 0/bỏ trống = không viền. */
+  strokeWidth?: number;
+  strokeColor?: string;
+  /** chữ RỖNG: chỉ giữ viền, bỏ ruột. Cần strokeWidth > 0 mới thấy gì. */
+  outlineOnly?: boolean;
+  /** các lớp bóng đổ (tối đa vài lớp — UI giới hạn 3). */
+  shadows?: TextShadowLayer[];
+  /** đổ gradient vào lòng chữ (ghi đè `color` khi bật). Không dùng chung outlineOnly. */
+  gradient?: TextGradient;
+  /** biến đổi hoa/thường. */
+  transform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  /** chế độ hoà trộn với lớp dưới (CSS mix-blend-mode / canvas globalCompositeOperation). */
+  blend?: 'normal' | 'multiply' | 'screen' | 'overlay' | 'difference' | 'luminosity';
+  /**
+   * Uốn chữ theo cung tròn — độ cong tính bằng ĐỘ của cung chứa cả dòng chữ.
+   * 0/bỏ trống = chữ thẳng (mặc định). Dương = cong lên (nụ cười), âm = cong xuống.
+   * GIỚI HẠN CÓ CHỦ Ý: chỉ áp cho text MỘT DÒNG (xuống dòng bị bỏ qua khi uốn) — chữ uốn
+   * là chi tiết trang trí tiêu đề, không phải khối body.
+   */
+  curve?: number;
+}
+
 /** Căn chữ ngang. */
 export type TextAlign = 'left' | 'center' | 'right';
 
@@ -153,6 +218,11 @@ export interface TextElement extends BaseElement {
   fontFamily?: string;
   /** vai trò ngữ nghĩa để export PPTX map về SlideContent (title/body/kicker). */
   role?: 'title' | 'kicker' | 'body' | 'free';
+  /**
+   * Hiệu ứng typography nâng cao (viền/bóng/gradient/uốn…). Bỏ trống = chữ phẳng như cũ.
+   * Xem `TextFx` phía trên + lib/present-editor/text-fx.ts.
+   */
+  fx?: TextFx;
 }
 
 export interface ShapeElement extends BaseElement {
@@ -265,6 +335,30 @@ export interface EditorDeck {
    * + lib/present-editor/reflow.ts (dàn lại element khi đổi khổ).
    */
   stagePreset?: StagePresetId;
+  /**
+   * FONT NGƯỜI DÙNG TẢI LÊN, NHÚNG THEO DECK (#1). Giữ ngay trong model để font đi THEO
+   * dự án: đóng/mở lại, đổi máy, xuất/nhập JSON deck đều còn font — khác hẳn thư viện font
+   * cấp trình duyệt (chỉ sống trên đúng máy đó). Xem lib/present-editor/custom-fonts.ts.
+   * Bỏ trống = deck không dùng font tải lên (mọi deck cũ).
+   */
+  customFonts?: EmbeddedFont[];
+}
+
+/**
+ * Font người dùng tải lên, đã nhúng dataURL — serialize được nên đi kèm deck qua IndexedDB
+ * (lib/sheets-persist.ts) và qua xuất/nhập JSON.
+ */
+export interface EmbeddedFont {
+  /** tên hiển thị trong dropdown, vd "Söhne (tải lên)". */
+  label: string;
+  /** chuỗi font-family CSS dùng thẳng cho `TextElement.fontFamily` + ctx.font. */
+  stack: string;
+  /** tên face đơn (không dấu nháy) — dùng cho fontFace khi xuất PPTX. */
+  face: string;
+  /** dữ liệu font base64 (data:font/...). */
+  dataUrl: string;
+  /** cỡ file gốc (byte) — hiện trong UI để user biết deck đang nặng bao nhiêu. */
+  bytes: number;
 }
 
 /* ------------------------------------------------------------------ */

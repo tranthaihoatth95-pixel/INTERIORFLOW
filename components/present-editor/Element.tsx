@@ -21,10 +21,11 @@
  * dời cả nhóm cố tình KHÔNG snap để giữ tương quan, xem nhánh `st.group` bên dưới).
  */
 
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { SlideElement, ImageElement, TextElement, ShapeElement, Frame } from '@/lib/present-editor/model';
 import { adjustToCssFilter, decorateListText, effectiveListStyle } from '@/lib/present-editor/model';
 import { shapeClipPath, gradientOverlayCss } from '@/lib/present-editor/shape-geometry';
+import { applyTransform, gradientCss, isCurved, shadowCss } from '@/lib/present-editor/text-fx';
 import { framesOverlap, planFallback, toneForColor } from '@/lib/adaptive-contrast';
 
 const CANVAS_FONT: Record<string, string> = {
@@ -474,7 +475,13 @@ function ShapeInner({ el }: { el: ShapeElement }) {
 
 function TextInner({ el, fonts, overImage }: { el: TextElement; fonts: string; overImage?: boolean }) {
   // Danh sách: bullet "•  " hoặc số "1.  " đầu mỗi dòng logic (khớp render.ts khi export).
-  const shown = decorateListText(el.text, effectiveListStyle(el));
+  // Hiệu ứng `transform` (hoa/thường) áp ở TẦNG CHUỖI — không dùng CSS text-transform — để
+  // DOM và canvas (render.ts) chắc chắn ra cùng một chuỗi khi export.
+  const shown = applyTransform(decorateListText(el.text, effectiveListStyle(el)), el.fx);
+  const fx = el.fx;
+
+  // Chữ uốn cung đi ĐƯỜNG RIÊNG (SVG textPath) — xem CurvedText. Chỉ 1 dòng, có chủ ý.
+  if (isCurved(fx)) return <CurvedText el={el} fonts={fonts} text={shown} />;
 
   /* Tương phản thích ứng — CHỈ khi chữ nằm CHỒNG lên ảnh.
      Khác 3 chỗ kia ở một điểm quan trọng: ở Present, MÀU CHỮ LÀ QUYẾT ĐỊNH THIẾT KẾ của
@@ -484,14 +491,40 @@ function TextInner({ el, fonts, overImage }: { el: TextElement; fonts: string; o
      bị crop/xoay/lọc màu/chồng nhiều lớp, đo ra số không đáng tin bằng. */
   const plan = overImage ? planFallback(toneForColor(el.color), { shape: 'halo', baseAlpha: 0.3 }) : null;
 
+  /* Hiệu ứng chữ (#2). Mọi khoảng cách của TextFx tính theo % chiều cao sân khấu, mà `cqh`
+     CHÍNH LÀ đơn vị đó (khung sân khấu đặt containerType:'size') ⇒ dùng thẳng, không quy đổi.
+     Nhờ vậy cùng một đoạn style chạy đúng ở editor, player VÀ thumbnail 150px. */
+  const fxShadow = shadowCss(fx?.shadows, { unit: 'cqh' });
+  // bóng của hiệu ứng nằm TRƯỚC (trên) bóng tương phản tự động khi chữ đè ảnh
+  const textShadow = [fxShadow, plan?.textShadow].filter(Boolean).join(', ') || undefined;
+  const hasStroke = Boolean(fx?.strokeWidth && fx.strokeWidth > 0);
+  const gradFill = fx?.gradient;
+
   const body = (
     <div
       style={{
         position: 'relative',
         width: '100%',
         height: '100%',
-        color: el.color,
-        textShadow: plan?.textShadow,
+        // Chữ rỗng = ruột trong suốt, chỉ còn viền. Gradient = tô chuyển sắc vào lòng chữ
+        // bằng background-clip:text (ruột phải trong suốt để lộ nền gradient bên dưới).
+        color: fx?.outlineOnly || gradFill ? 'transparent' : el.color,
+        ...(gradFill
+          ? {
+              backgroundImage: gradientCss(gradFill),
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+            }
+          : {}),
+        ...(hasStroke
+          ? {
+              WebkitTextStrokeWidth: `${fx!.strokeWidth}cqh`,
+              WebkitTextStrokeColor: fx!.strokeColor ?? el.color,
+            }
+          : {}),
+        wordSpacing: fx?.wordSpacing ? `${fx.wordSpacing}cqh` : undefined,
+        mixBlendMode: fx?.blend && fx.blend !== 'normal' ? fx.blend : undefined,
+        textShadow,
         // ưu tiên bộ chữ riêng của element (chuỗi CSS), không thì dùng bộ chữ của deck
         fontFamily: el.fontFamily || CANVAS_FONT[fonts] || CANVAS_FONT.Editorial,
         fontSize: `${el.fontSize}cqh`,
@@ -525,6 +558,102 @@ function TextInner({ el, fonts, overImage }: { el: TextElement; fonts: string; o
         }}
       />
       {body}
+    </div>
+  );
+}
+
+/**
+ * CHỮ UỐN CUNG (TextFx.curve) — dựng bằng SVG <textPath> trên một cung tròn.
+ *
+ * Vì sao phải đo px thật (ResizeObserver) thay vì dùng `cqh` như phần chữ phẳng: dữ liệu
+ * `d` của <path> KHÔNG nhận đơn vị tương đối — cung phải viết bằng số user-unit cụ thể. Nên
+ * ở đây quy ra px: đo chiều cao px của chính element rồi suy ngược chiều cao sân khấu
+ * (frame.h là % của sân khấu) ⇒ fontSize px = fontSize% × chiều cao sân khấu. Cách suy này
+ * giữ đúng tỉ lệ ở MỌI cỡ hiển thị (thumbnail 150px hay canvas full) mà không cần biết
+ * sân khấu là ai.
+ *
+ * Xuống dòng bị bỏ (thay bằng dấu cách): cung tròn chỉ có một đường.
+ */
+function CurvedText({ el, fonts, text }: { el: TextElement; fonts: string; text: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(([entry]) => {
+      const r = entry.contentRect;
+      setBox({ w: r.width, h: r.height });
+    });
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, []);
+
+  const fx = el.fx!;
+  const line = text.replace(/\s*\n\s*/g, ' ');
+  const pathId = `arc-${el.id}`;
+
+  // chiều cao sân khấu suy từ chiều cao px của element (frame.h = % sân khấu)
+  const stageH = el.frame.h > 0 ? box.h / (el.frame.h / 100) : 0;
+  const fontPx = (el.fontSize / 100) * stageH;
+
+  /* Cung tròn: dây cung = bề ngang element, góc ở tâm = |curve| độ.
+     R = (dây/2) / sin(góc/2). Dương = cong lên (tâm nằm DƯỚI), âm = cong xuống. */
+  const deg = Math.max(-350, Math.min(350, fx.curve ?? 0));
+  const up = deg > 0;
+  const rad = (Math.abs(deg) * Math.PI) / 180;
+  const chord = Math.max(1, box.w * 0.92);
+  const R = chord / 2 / Math.max(0.0001, Math.sin(rad / 2));
+  const sagitta = R - Math.sqrt(Math.max(0, R * R - (chord / 2) ** 2)); // độ vồng của cung
+  const cx = box.w / 2;
+  const midY = box.h / 2 + (up ? sagitta / 2 : -sagitta / 2);
+  const x0 = cx - chord / 2;
+  const x1 = cx + chord / 2;
+  const yEnd = up ? midY + sagitta : midY - sagitta;
+  // sweep 1 = cung uốn LÊN khi đi từ trái sang phải (hệ toạ độ SVG y hướng xuống)
+  const d = `M ${x0} ${yEnd} A ${R} ${R} 0 0 ${up ? 1 : 0} ${x1} ${yEnd}`;
+
+  const anchor = el.align === 'left' ? 'start' : el.align === 'right' ? 'end' : 'middle';
+  const offset = el.align === 'left' ? '2%' : el.align === 'right' ? '98%' : '50%';
+
+  return (
+    <div ref={ref} style={{ position: 'relative', width: '100%', height: '100%', overflow: 'visible' }}>
+      {box.w > 0 && box.h > 0 && fontPx > 0 && (
+        <svg
+          width={box.w}
+          height={box.h}
+          viewBox={`0 0 ${box.w} ${box.h}`}
+          style={{ position: 'absolute', inset: 0, overflow: 'visible' }}
+        >
+          <defs>
+            <path id={pathId} d={d} fill="none" />
+            {fx.gradient && (
+              <linearGradient id={`${pathId}-g`} gradientTransform={`rotate(${fx.gradient.angle})`}>
+                <stop offset="0%" stopColor={fx.gradient.from} />
+                <stop offset="100%" stopColor={fx.gradient.to} />
+              </linearGradient>
+            )}
+          </defs>
+          <text
+            textAnchor={anchor}
+            style={{
+              fontFamily: el.fontFamily || CANVAS_FONT[fonts] || CANVAS_FONT.Editorial,
+              fontSize: `${fontPx}px`,
+              fontWeight: el.bold ? 700 : 400,
+              fontStyle: el.italic ? 'italic' : 'normal',
+              letterSpacing: el.tracking ? `${(el.tracking / 100) * stageH}px` : undefined,
+              wordSpacing: fx.wordSpacing ? `${(fx.wordSpacing / 100) * stageH}px` : undefined,
+            }}
+            fill={fx.outlineOnly ? 'none' : fx.gradient ? `url(#${pathId}-g)` : el.color}
+            stroke={fx.strokeWidth ? (fx.strokeColor ?? el.color) : undefined}
+            strokeWidth={fx.strokeWidth ? (fx.strokeWidth / 100) * stageH : undefined}
+          >
+            <textPath href={`#${pathId}`} startOffset={offset}>
+              {line}
+            </textPath>
+          </text>
+        </svg>
+      )}
     </div>
   );
 }
