@@ -148,6 +148,11 @@ export default function Home() {
     [router],
   );
 
+  // StrictMode dev chạy effect mount 2 lần → không guard sẽ bắn 2 request
+  // /api/auth/me gần như đồng thời. Ref riêng (không dùng chung bootRan — khác
+  // mục đích) chỉ chặn phần fetch; hydrate()/setInterval bên dưới vẫn chạy như cũ.
+  const authCheckRan = useRef(false);
+
   // theme + flow local trước, rồi check session.
   // KHÔNG bootstrap workspace ở đây — ProjectSelect tự openFlow khi user chọn dự án.
   useEffect(() => {
@@ -155,17 +160,20 @@ export default function Home() {
     store.hydrate();
     const t = setInterval(() => useFlowStore.getState().applyTheme(), 60_000);
 
-    fetch('/api/auth/me')
-      .then(async (r) => {
-        if (!r.ok) {
-          store.setUser(null);
-          return;
-        }
-        const body = await r.json();
-        store.setUser(body.user);
-        if (body.user?.id) enterAfterAuth(body.user.id);
-      })
-      .catch(() => store.setUser(null));
+    if (!authCheckRan.current) {
+      authCheckRan.current = true;
+      fetch('/api/auth/me')
+        .then(async (r) => {
+          if (!r.ok) {
+            store.setUser(null);
+            return;
+          }
+          const body = await r.json();
+          store.setUser(body.user);
+          if (body.user?.id) enterAfterAuth(body.user.id);
+        })
+        .catch(() => store.setUser(null));
+    }
 
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
