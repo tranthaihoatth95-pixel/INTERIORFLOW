@@ -10,8 +10,10 @@ import {
   nearestRole,
   remapColor,
   rethemeDeck,
+  luminance,
 } from './theme-roles';
-import { makeText, makeShape, type EditorDeck } from './model';
+import { makeText, makeShape, type EditorDeck, type TextElement } from './model';
+import { BUILTIN_TEMPLATES } from './templates';
 
 let pass = 0;
 let fail = 0;
@@ -116,10 +118,51 @@ function testRethemeDeck() {
   ok('số slide/element giữ nguyên', out.slides.length === 2 && out.slides[0].elements.length === 3);
 }
 
+/**
+ * [5] Bug thật (audit 18/07): template 'dark-cover'/'full-bleed'/'closing' từng hardcode màu
+ * tiêu đề bằng hex cố định ('#f3efe8'/'#ffffff') thay vì lấy theo VAI TRÒ (colors.light) như
+ * kicker/số thứ tự/gạch chân (colors.accent/colors.muted). Vì màu KHÔNG PHẢI thành viên thật
+ * của palette cũ, nearestRole phải suy đoán bằng khoảng cách RGB — với 1 palette cũ có "light"
+ * ngả màu (không trung tính) + có màu mid gần-trắng-xám, hex cố định gần-trắng có thể bị suy
+ * NHẦM sang vai trò khác (vd 'muted') → sau khi rethemeDeck, tiêu đề nhận màu SAI vai trò, có
+ * thể tương phản kém/gần như vô hình trên nền mới. Test dựng đúng palette "bẫy" đó để CHỨNG
+ * MINH lỗi (phải sửa templates.ts dùng colors.light thay vì hex cố định để pass).
+ */
+function testTemplateTitleUsesRoleNotHardcode() {
+  console.log('\n[5] BUILTIN_TEMPLATES — tiêu đề PHẢI theo vai trò light, không hardcode hex');
+  // "light" ngả xanh lục nhạt (không trung tính) + 1 mid gần-trắng-xám (dễ bị nhầm là "light"
+  // nếu so bằng mắt, nhưng nearestRole so khoảng cách RGB thật nên phân loại khác đi).
+  const OLD = ['#111111', '#3a2f28', '#5a4636', '#e6e6e6', '#ececec', '#c8ffc8'];
+  const NEW = ['#0b1016', '#132230', '#1c3444', '#274158', '#7fb0d9', '#eef4f9'];
+  const to = paletteRoles(NEW);
+
+  ['dark-cover', 'closing'].forEach((id) => {
+    const tpl = BUILTIN_TEMPLATES.find((t) => t.id === id);
+    if (!tpl) {
+      ok(`template ${id} tồn tại`, false);
+      return;
+    }
+    const slide = tpl.build({ title: 'IKI VILLAGE', kicker: 'kicker', palette: OLD });
+    const deck: EditorDeck = {
+      id: 'd-tpl', brand: 'b', project: 'p', fonts: 'Editorial', palette: OLD, slides: [slide],
+    };
+    const out = rethemeDeck(deck, NEW);
+    const title = out.slides[0].elements.find((e) => e.kind === 'text' && e.role === 'title') as
+      | TextElement
+      | undefined;
+    ok(`[${id}] tiêu đề nhuộm đúng vai trò light (không lệch sang vai trò khác)`, !!title && title.color === to.light);
+    // Tương phản thật: nền mới (dark) và tiêu đề (phải = light) phải cách xa độ sáng.
+    const bgLum = luminance(out.slides[0].background);
+    const titleLum = title ? luminance(title.color) : 0;
+    ok(`[${id}] tương phản nền/tiêu đề đủ lớn sau khi nhuộm (không gần-vô-hình)`, Math.abs(titleLum - bgLum) > 150);
+  });
+}
+
 testRoles();
 testNearest();
 testRemapColor();
 testRethemeDeck();
+testTemplateTitleUsesRoleNotHardcode();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);
