@@ -18,7 +18,7 @@
 ## Nợ kỹ thuật
 - ~~Hydration tooltip CadToolbar/PhotoToolbar~~ · ~~window.prompt Dashboard/PS-3/Brand Kit~~ · ~~Migration Prisma drift~~ · ~~CAD Room tool chuột~~ · ~~CAD Backspace không xoá được~~ · ~~Demo render: thanh tím đè nhãn phòng (hatch SOLID bị force-highlight tô đặc thay vì chỉ viền, đã thêm `DrawStyle.outlineOnly`)~~ — ĐÃ SỬA, đã merge, **demo render user đã tự verify mắt qua tunnel 19/07, OK**.
 - **Mới phát hiện 19/07 (audit 4 agent), CHƯA sửa — ưu tiên theo mức độ:**
-  - [CAO] Màu layer "Tường" mặc định `#e8e4dc` gần như trùng nền canvas — nét vẽ gần như vô hình.
+  - ~~[CAO] Màu layer "Tường" `#e8e4dc` trùng nền canvas~~ — **ĐÃ SỬA**, nhánh `fix/cad-wall-layer-color` (`1079a22`, worktree `interiorflow-wt-fix-cad-wall-color`, tsc pass). Đổi sang `#47423a` (= `--t2` theme sáng, cân bằng cả nền sáng/tối); sửa luôn `addLayer()` palette trong `store.ts` (cùng bug). Verify browser port 4080 + pixel-sample OK. **CHƯA merge** — worktree còn sống.
   - [CAO] Handle xoay (rotate) ở Present không hoạt động — `components/present-editor/Element.tsx:206-210`.
   - [CAO] Phím Enter toàn cục ở Gallery (`ProjectSelect.tsx:401-417`) không check `e.target` → bấm Enter cho nút bất kỳ vô tình mở/tạo nhầm flow.
   - [CAO] Group bị collapse ở Render rồi reload → node ẩn vĩnh viễn, `groups` state không lưu (`lib/store.ts`).
