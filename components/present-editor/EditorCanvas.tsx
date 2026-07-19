@@ -20,7 +20,7 @@ import type { EditorSlide, Frame, TextElement, ShapeElement, SlideElement, DeckW
 import { adjustToCssFilter } from '@/lib/present-editor/model';
 import { STAGE_PRESETS, type StageSize } from '@/lib/present-editor/stage-presets';
 import { extractTextFormat, applyTextFormat, type TextFormat } from '@/lib/present-editor/format-painter';
-import Element, { type Guides } from './Element';
+import Element, { textOverImage, type Guides } from './Element';
 import TextToolbar from './TextToolbar';
 import ShapeQuickPanel from './ShapeQuickPanel';
 
@@ -320,6 +320,7 @@ export default function EditorCanvas({
           multi={multi && selectedIds.includes(el.id)}
           stageRef={stageRef}
           others={slide.elements.filter((o) => o.id !== el.id && !o.hidden).map((o) => o.frame)}
+          overImage={textOverImage(el, slide.elements, !!slide.backgroundImage)}
           onSelect={() => selectOrPaint(el)}
           onToggle={() => onToggleSelect(el.id)}
           onFrame={(frame, live) => onFrame(el.id, frame, live)}

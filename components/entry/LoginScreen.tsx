@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { rise } from '@/lib/motion';
+import { AdaptiveScrim, adaptiveTextStyle, useAdaptiveContrast } from '@/components/ui/AdaptiveContrast';
 import { useLang } from '@/lib/i18n';
 import { LangToggle } from '@/components/LangToggle';
 import { LoginForm } from '@/components/entry/LoginForm';
@@ -24,17 +26,39 @@ import { IFLogo } from '@/components/entry/IFLogo';
  *   luôn đọc được bất kể theme app.
  * - Hero vào màn theo ADAPTIVE AMPLITUDE (lib/motion.ts rise()): tít lớn bay 28px,
  *   kicker nhỏ chỉ 10px — cả màn lắng xuống như một khối, không đều tăm tắp.
+ *
+ * 19/07 (login-contrast) — chỉ đạo chủ dự án:
+ * - GỠ tiêu đề "Bắt đầu dòng chảy của bạn." + dòng phụ. Còn logo + nhãn + card;
+ *   cụm logo/nhãn vì thế nằm sát ngay trên card, cả khối tự cân giữa màn.
+ * - TƯƠNG PHẢN THÍCH ỨNG: đo độ sáng vùng ảnh ngay dưới cụm logo+nhãn mỗi khi
+ *   trình chiếu đổi ảnh → nền sáng thì logo/chữ chuyển mực, nền tối thì chuyển kem,
+ *   kèm quầng sương mềm (không viền, không khối đục). Xem lib/adaptive-contrast.ts.
  */
 
-const COPPER = '#c79a63';
-const SANS = '-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue","Space Grotesk",system-ui,sans-serif';
 const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
+
+/** Vùng ảnh nằm ngay dưới cụm logo + nhãn (tỉ lệ khung hình) — dải giữa, hơi lệch trên. */
+const LOGO_REGION = { x: 0.28, y: 0.26, w: 0.44, h: 0.3 };
 
 export function LoginScreen({ onAuthed }: { onAuthed: () => void }) {
   const reduce = useReducedMotion();
   const lang = useLang();
-  const en = lang === 'en';
   const { choice, pick, tone } = useLoginBackdrop();
+
+  // Ảnh nền ĐANG hiện (null = nền gradient) → đo tương phản 1 lần mỗi lần ảnh đổi.
+  const [bgSrc, setBgSrc] = useState<string | null>(null);
+  const plan = useAdaptiveContrast({
+    src: bgSrc,
+    region: LOGO_REGION,
+    shape: 'halo',
+    // nền gradient preset đều tối/đủ tương phản sẵn → chỉ cần sương mỏng
+    baseAlpha: bgSrc ? 0.2 : 0.1,
+    fallbackTone: tone === 'light' ? 'dark' : 'light',
+    // LoginBackdrop đã đắp sẵn PhotoScrim (đen, ~0.34 ở tâm → ~0.62 ở mép). Vùng logo nằm
+    // gần tâm nên gộp ~0.40; không gộp thì ảnh sáng bị đọc là "nền sáng" trong khi mắt
+    // đang thấy nền đã tối đi, và chữ sẽ đảo sang màu mực trên nền tối.
+    overlay: bgSrc ? { luminance: 0, alpha: 0.4 } : undefined,
+  });
 
   // reduce motion → mọi rise() về amplitude 0 (chỉ còn fade)
   const amp = (px: number) => (reduce ? 0 : px);
@@ -46,7 +70,7 @@ export function LoginScreen({ onAuthed }: { onAuthed: () => void }) {
       data-login-tone={tone === 'auto' ? undefined : tone}
     >
       {/* C-2: nền động (preset / ảnh riêng) — thay khối quầng đồng hardcode cũ */}
-      <LoginBackdropLayer choice={choice} reduce={!!reduce} />
+      <LoginBackdropLayer choice={choice} reduce={!!reduce} onSrc={setBgSrc} />
 
       {/* đổi ngôn ngữ — góc phải trên, ghost để hoà nền */}
       <div className="absolute right-6 top-6 z-30">
@@ -55,43 +79,35 @@ export function LoginScreen({ onAuthed }: { onAuthed: () => void }) {
 
       <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-center px-6 py-16">
         <motion.div initial="hidden" animate="visible" className="flex w-full flex-col items-center text-center">
-          {/* logo + kicker — element nhỏ, biên độ nhỏ.
-              19/07 login-minimal: monogram IF mới (IFLogo, đơn sắc hairline) thay badge
-              tím-hồng cũ — CHỈ ở màn login; Header/MobileMenu/share vẫn badge cũ, chờ user chốt. */}
+          {/* Cụm LOGO + NHÃN — nay là toàn bộ phần chữ của màn (đã gỡ tít + dòng phụ),
+              nằm sát ngay trên card đăng nhập, cả khối cùng nhau cân giữa màn hình.
+              Quầng sương thích ứng bọc quanh cụm: tan hẳn ở mép nên không thấy khối nền. */}
           <motion.div
             variants={rise(amp(12), 0.05)}
-            className="mb-5 text-[var(--t1)]"
-            style={{ filter: 'drop-shadow(0 1px 10px rgba(0,0,0,0.28))' }}
+            className="relative mb-9 flex flex-col items-center"
           >
-            <IFLogo size={46} variant="framed" />
+            {/* scrim toả rộng hơn cụm chữ để biên gradient nằm ngoài vùng mắt nhìn */}
+            <AdaptiveScrim plan={plan} style={{ inset: '-46px -72px' }} />
+            <div
+              className="relative"
+              style={{ color: plan.color, filter: plan.logoShadow, transition: 'color 900ms ease, filter 900ms ease' }}
+            >
+              <IFLogo size={46} variant="framed" />
+            </div>
+            <div
+              className="relative mt-4 flex items-center gap-3 text-[11px] uppercase"
+              style={{
+                fontFamily: MONO,
+                letterSpacing: '0.26em',
+                ...adaptiveTextStyle(plan),
+                transition: 'color 900ms ease',
+              }}
+            >
+              <span className="h-px w-6" style={{ background: 'currentColor', opacity: 0.4 }} />
+              <span>InteriorFlow</span>
+              <span className="h-px w-6" style={{ background: 'currentColor', opacity: 0.4 }} />
+            </div>
           </motion.div>
-          <motion.div
-            variants={rise(amp(10), 0.1)}
-            className="flex items-center gap-3 text-[11px] uppercase text-[var(--t4)]"
-            style={{ fontFamily: MONO, letterSpacing: '0.26em' }}
-          >
-            <span className="h-px w-6" style={{ background: 'var(--border)' }} />
-            <span style={{ color: COPPER }}>InteriorFlow</span>
-            <span className="h-px w-6" style={{ background: 'var(--border)' }} />
-          </motion.div>
-
-          {/* hero title — element to nhất, biên độ lớn nhất + blur-in */}
-          <motion.h1
-            variants={rise(amp(28), 0, !reduce)}
-            className="mt-4 text-[32px] font-semibold leading-[1.06] text-[var(--t1)] sm:text-[38px]"
-            style={{ fontFamily: SANS, letterSpacing: '-0.028em' }}
-          >
-            {en ? 'Begin your flow.' : 'Bắt đầu dòng chảy của bạn.'}
-          </motion.h1>
-          <motion.p
-            variants={rise(amp(16), 0.08)}
-            className="mt-3 max-w-sm text-[14px] leading-relaxed text-[var(--t3)]"
-            style={{ fontFamily: SANS }}
-          >
-            {en
-              ? 'Sign in to open your projects — Layout CAD · Render · Present, one canvas.'
-              : 'Đăng nhập để mở dự án của bạn — Layout CAD · Render · Present, một dòng chảy.'}
-          </motion.p>
 
           {/* form kính (C-1) — element vừa, biên độ vừa */}
           <motion.div variants={rise(amp(18), 0.14)} className="flex w-full justify-center text-left">

@@ -30,7 +30,7 @@ import { motion } from 'framer-motion';
 import type { EditorSlide, DeckWatermark, ElementReveal } from '@/lib/present-editor/model';
 import { adjustToCssFilter } from '@/lib/present-editor/model';
 import { cornerStyle } from './EditorCanvas';
-import { Inner } from './Element';
+import { Inner, textOverImage } from './Element';
 import { computeElementRevealTimings, revealItem } from '@/lib/present-editor/motion-present';
 
 interface Props {
@@ -78,7 +78,11 @@ export default function PlayerElements({ slide, fonts, watermark, deckReveal }: 
             }}
           >
             <RevealItem reveal={timing?.reveal} delaySec={timing?.delaySec ?? 0}>
-              <Inner el={el} fonts={fonts} />
+              <Inner
+                el={el}
+                fonts={fonts}
+                overImage={textOverImage(el, slide.elements, !!slide.backgroundImage)}
+              />
             </RevealItem>
           </div>
         );

@@ -182,7 +182,17 @@ function shuffled<T>(arr: T[]): T[] {
   return a;
 }
 
-function SlideshowLayer({ ids, order, reduce }: { ids: string[]; order: 'shuffle' | 'seq'; reduce: boolean }) {
+function SlideshowLayer({
+  ids,
+  order,
+  reduce,
+  onSrc,
+}: {
+  ids: string[];
+  order: 'shuffle' | 'seq';
+  reduce: boolean;
+  onSrc?: (src: string | null) => void;
+}) {
   // playlist cố định theo (ids, order) — shuffle trộn 1 lần lúc mount/đổi bộ ảnh
   const playlist = useMemo(
     () => (order === 'shuffle' ? shuffled(ids) : [...ids].sort()),
@@ -239,6 +249,13 @@ function SlideshowLayer({ ids, order, reduce }: { ids: string[]; order: 'shuffle
 
   const current = idx === null ? null : playlist[idx % playlist.length];
 
+  // Báo ảnh ĐANG hiện lên trên (LoginScreen) để đo tương phản — chỉ chạy khi ảnh ĐỔI,
+  // đúng 1 lần mỗi lượt trình chiếu, không phải mỗi frame.
+  useEffect(() => {
+    onSrc?.(current ? wallSrc(current) : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current]);
+
   return (
     <div className="absolute inset-0">
       {/* initial KHÔNG tắt: ảnh đầu (đã preload xong) cũng fade-in mềm từ nền tối */}
@@ -271,12 +288,31 @@ function SlideshowLayer({ ids, order, reduce }: { ids: string[]; order: 'shuffle
 
 /* ---------- Lớp NỀN (đặt dưới cùng, pointer-events none) ---------- */
 
-export function LoginBackdropLayer({ choice, reduce }: { choice: BgChoice; reduce: boolean }) {
+export function LoginBackdropLayer({
+  choice,
+  reduce,
+  onSrc,
+}: {
+  choice: BgChoice;
+  reduce: boolean;
+  /** src ảnh nền đang hiện ('' / null nếu nền là gradient) — để đo tương phản thích ứng. */
+  onSrc?: (src: string | null) => void;
+}) {
   const preset = choice.kind === 'preset' ? BG_PRESETS.find((p) => p.id === choice.id) : null;
+
+  // Nền TĨNH (ảnh thư viện / ảnh upload / preset gradient): báo src một lần mỗi khi đổi.
+  // Nhánh trình chiếu tự báo bên trong SlideshowLayer (ảnh đổi liên tục).
+  const staticSrc =
+    choice.kind === 'image' ? choice.data : choice.kind === 'wall' ? wallSrc(choice.id) : null;
+  useEffect(() => {
+    if (choice.kind !== 'slideshow') onSrc?.(staticSrc);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [choice.kind, staticSrc]);
+
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
       {choice.kind === 'slideshow' ? (
-        <SlideshowLayer ids={choice.ids} order={choice.order} reduce={reduce} />
+        <SlideshowLayer ids={choice.ids} order={choice.order} reduce={reduce} onSrc={onSrc} />
       ) : (
         <AnimatePresence mode="sync" initial={false}>
           {choice.kind === 'image' || choice.kind === 'wall' ? (

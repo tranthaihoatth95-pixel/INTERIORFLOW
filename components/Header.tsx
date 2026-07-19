@@ -23,6 +23,7 @@ import { StageVeil } from '@/components/studio/StageTransition';
 import { stashPresentHandoffWithIds, deckImagesWithIdsFromNodes } from '@/lib/present-editor/handoff';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import { IFLogo } from '@/components/entry/IFLogo';
 
 export function Header() {
   const flowName = useFlowStore((s) => s.flowName);
@@ -41,9 +42,10 @@ export function Header() {
     <header className="mat-header relative z-30 flex h-12 items-center gap-2 border-b border-[var(--border)] px-2 sm:gap-3 sm:px-3">
       {/* logo */}
       <div className="flex shrink-0 items-center gap-2">
-        <div className="grid h-7 w-7 place-items-center rounded-[10px] bg-gradient-to-br from-violet-500 to-fuchsia-600 text-[13px] font-bold text-white shadow-sm">
-          IF
-        </div>
+        {/* Logo IF chốt phương án "có khung" (IFLogo variant="framed") — 19/07 chủ dự án
+            duyệt, thay badge gradient tím-hồng cũ. Đơn sắc currentColor nên tự ăn theo
+            theme sáng/tối của app. */}
+        <IFLogo size={26} variant="framed" className="shrink-0 text-[var(--t1)]" />
         <span className="hidden text-sm font-semibold tracking-tight text-[var(--t1)] lg:block">
           InteriorFlow
         </span>

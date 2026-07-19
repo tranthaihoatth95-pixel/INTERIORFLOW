@@ -6,10 +6,12 @@
 ## Hiện tại
 - Nhánh tích hợp `feat/present-layout-ml-p1` — **19/07 khuya: XONG backlog cảm ứng (2/2)**, đã merge `feat/cad-touch-support` (pinch-zoom/pan 2 ngón + nút Xoá nổi CAD) + `feat/slidesorter-touch` (Slide Sorter thay HTML5 DnD → Pointer Events, chạy cả chuột lẫn cảm ứng; nút Lên/Xuống giữ nguyên). tsc pass, reorder test 9/9, 0 worktree sống. Verify SHA bằng git.
 - **CÒN THIẾU cho cảm ứng (chưa giao):** CAD vẫn cần bàn phím vật lý cho F8 Ortho · F12 Dynamic Input · type-anywhere gõ lệnh · Space giữ-để-pan — chưa có UI cảm ứng thay thế.
-- **Chưa quyết:** phương án logo IF (đang dùng `framed`/B — còn A không-khung, C wordmark) có áp đồng bộ sang Header/MobileMenu/trang share (đang dùng badge tím-hồng cũ) không.
-- **19/07 chiều: audit toàn diện chuột/bàn phím/cảm ứng 3 chặng CAD/Render/Present+Login+Gallery** (4 agent, mỗi agent 1 host riêng để không đụng cookie/IndexedDB). Kết quả → mục Nợ kỹ thuật bên dưới. Danh sách đầy đủ (kèm dòng code) nằm trong lịch sử chat, chưa chép hết vào STATUS để giữ &lt;800 từ — hỏi lại nếu cần.
-- **19/07: đã xử lý 2 nợ kỹ thuật nhỏ trực tiếp (không qua agent):** Prisma `db push` đồng bộ schema `IntegrationAccount` · dọn file rác `Bản sao Không có tiêu đề.rtfd/` + `CLAUDE.md.bak`.
-- **App có nút "Mở DWG" trực tiếp** (Web Worker cô lập GPL) — không cần server/CLI.
+- **19/07 nhánh `feat/login-contrast` (CHƯA merge):** (1) gỡ tít "Bắt đầu dòng chảy…" + dòng phụ ở login, cân lại cụm logo/nhãn sát card; (2) **tương phản thích ứng dùng chung** `lib/adaptive-contrast.ts` + `components/ui/AdaptiveContrast.tsx` — đo luminance/độ-rối vùng ảnh dưới chữ → đảo tone kem/mực + sương mềm, áp 4 chỗ (login · caption thẻ Gallery · chữ Present đè ảnh · nhãn A/B node Render); (3) **logo IF `framed` đã đồng bộ toàn app** (Header · trang share · StudioBar) — CHỐT, gỡ mục "chưa quyết" cũ. 17 test mới pass, tsc pass. Verify mắt: chỉ màn login (Gallery/Present/Render cần đăng nhập — worktree KHÔNG có `.env`).
+- ⚠️ MobileMenu:129 badge tím-hồng **không phải logo IF** mà là avatar chữ cái user → cố ý GIỮ NGUYÊN.
+- ⚠️ `components/LoginScreen.tsx` (bản cũ ở gốc `components/`, khác `components/entry/LoginScreen.tsx`) là **code chết**, không nơi nào import — còn chứa badge "IF" đồng cũ. Chưa xoá (ngoài phạm vi).
+- **19/07 chiều: audit chuột/phím/cảm ứng 3 chặng + Login/Gallery** (4 agent, mỗi agent 1 host riêng). Kết quả → Nợ kỹ thuật; danh sách đầy đủ trong lịch sử chat.
+- **19/07: 2 nợ kỹ thuật nhỏ đã xử lý:** Prisma `db push` schema `IntegrationAccount` · dọn file rác.
+- **Nút "Mở DWG" trực tiếp** (Web Worker cô lập GPL) — không cần server/CLI.
 - Test pattern: `node_modules/.bin/sucrase-node <path>.test.ts` (59 file). KHÔNG có vitest/jest — bỏ qua chỉ dẫn nào ghi `npm test`.
 - ✅ 18/07 sửa bug môi trường: `DATABASE_URL` sai path khiến mọi login 500 — đã fix.
 
@@ -20,7 +22,7 @@
 ## Nợ kỹ thuật
 - Audit 19/07 (chuột/phím/cảm ứng 3 chặng) đã sửa gần hết, chi tiết → CHANGELOG.md mục "19/07 — Audit...".
 - **CAD→Render văng đăng nhập** — đã sửa double-fetch StrictMode, chưa chắc hết root cause. Nếu tái diễn: user mở DevTools Network xem cookie `if_session` + status lúc bug xảy ra.
-- ~~[TRUNG] Cảm ứng CAD + Slide Sorter~~ — ĐÃ LÀM XONG + merge (xem mục Hiện tại); còn phần shortcut bàn phím CAD chưa có UI cảm ứng.
+- ~~[TRUNG] Cảm ứng CAD + Slide Sorter~~ — XONG + merge; còn shortcut bàn phím CAD chưa có UI cảm ứng.
 - [THẤP] Property panel Render không undo được (có thể chủ ý, chưa hỏi).
 - Sprint 3 B1: `meta` (giá/vendor/sku) trống — chưa có dữ liệu giá thật.
 - In A3/A4 300dpi thật CHƯA khả dụng (giới hạn Render stage) — đúng phạm vi đã chốt.

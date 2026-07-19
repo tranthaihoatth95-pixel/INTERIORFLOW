@@ -5,6 +5,7 @@ import { ReactFlow, ReactFlowProvider, Background, BackgroundVariant, type Edge 
 import '@xyflow/react/dist/style.css';
 import { InteriorNode } from '@/components/nodes/InteriorNode';
 import { NoteNode } from '@/components/nodes/NoteNode';
+import { IFLogo } from '@/components/entry/IFLogo';
 import type { FlowNode } from '@/lib/store';
 
 const nodeTypes = { interior: InteriorNode, note: NoteNode };
@@ -37,9 +38,8 @@ export default function SharePage({ params }: { params: { token: string } }) {
   return (
     <div className="flex h-screen flex-col bg-[var(--bg)]">
       <header className="flex h-12 items-center gap-3 border-b border-[var(--border)] bg-[var(--panel)] px-4">
-        <div className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-600 text-[13px] font-bold text-white">
-          IF
-        </div>
+        {/* Logo IF phương án "có khung" — đồng bộ với Header/MobileMenu/login (19/07). */}
+        <IFLogo size={26} variant="framed" className="shrink-0 text-[var(--t1)]" />
         <span className="text-sm font-medium text-[var(--t1)]">{data.name}</span>
         <span className="text-xs text-[var(--t4)]">· chia sẻ bởi {data.owner}</span>
         <div className="flex-1" />

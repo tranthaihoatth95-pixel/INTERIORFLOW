@@ -8,7 +8,31 @@ import { tweenBase, prefersReducedMotion } from '@/lib/motion';
 import { useFlowStore } from '@/lib/store';
 import { stashPresentHandoffWithIds, renderImageId } from '@/lib/present-editor/handoff';
 import ExportPptxButton from '@/components/ExportPptxButton';
+import { adaptiveTextStyle, useAdaptiveContrast } from '@/components/ui/AdaptiveContrast';
 import type { InteriorNodeData, PortValue } from '@/lib/types';
+
+/**
+ * Nhãn nhỏ đè lên thumbnail ảnh (A/B của node so sánh). Đo đúng GÓC ảnh mà nhãn nằm lên
+ * → nhãn tự chuyển kem/mực và dày/mỏng sương theo góc ảnh đó. Ảnh render là dataURL hoặc
+ * cùng origin nên đọc pixel được; nếu không (ảnh ngoài) tự rơi về sương CSS.
+ */
+function ImageLabel({ src, corner, label }: { src: string; corner: 'tl' | 'tr'; label: string }) {
+  const plan = useAdaptiveContrast({
+    src,
+    // góc trên-trái / trên-phải của ảnh, đúng ô nhãn đậu lên
+    region: corner === 'tl' ? { x: 0, y: 0, w: 0.3, h: 0.28 } : { x: 0.7, y: 0, w: 0.3, h: 0.28 },
+    shape: 'chip',
+    baseAlpha: 0.42,
+  });
+  return (
+    <span
+      className={`absolute top-1.5 rounded px-1 text-[9px] font-medium ${corner === 'tl' ? 'left-1.5' : 'right-1.5'}`}
+      style={{ background: plan.scrim, ...adaptiveTextStyle(plan) }}
+    >
+      {label}
+    </span>
+  );
+}
 
 function downloadDataUrl(url: string, filename: string) {
   const a = document.createElement('a');
@@ -110,8 +134,10 @@ function CompareBody({ nodeId }: { nodeId: string }) {
           />
         </div>
         <div className="absolute bottom-0 top-0 w-0.5 bg-violet-400" style={{ left: `${pos}%` }} />
-        <span className="absolute left-1.5 top-1.5 rounded bg-black/60 px-1 text-[9px] text-white">A</span>
-        <span className="absolute right-1.5 top-1.5 rounded bg-black/60 px-1 text-[9px] text-white">B</span>
+        {/* Nhãn A/B đè thẳng lên ảnh render — tương phản thích ứng theo chính góc ảnh nằm
+            dưới nhãn (trước đây là chip đen 60% cứng, chìm nghỉm trên ảnh tối). */}
+        <ImageLabel src={a} corner="tl" label="A" />
+        <ImageLabel src={b} corner="tr" label="B" />
       </div>
       <input
         type="range"
