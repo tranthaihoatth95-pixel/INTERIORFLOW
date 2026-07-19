@@ -3,10 +3,27 @@
 /**
  * components/present-editor/SlideStrip.tsx — Dải thumbnail nhiều slide.
  * Thêm / xoá / nhân bản / đổi thứ tự (mũi tên) + chọn slide hiện tại.
+ *
+ * LỖI CŨ ĐÃ SỬA (#3 — "chữ ở dải thumbnail hiện thành thanh xám/be"):
+ * bản trước KHÔNG hề vẽ chữ. Nó lọc 2 text element đầu rồi vẽ mỗi cái thành một <div>
+ * `height: 3px` tô đặc `background: currentColor` — tức placeholder kiểu skeleton, cố ý
+ * dựng như vậy từ đầu chứ không phải chữ bị co nhỏ hay font chưa tải. Vì thế deck nào cũng
+ * ra hai thanh ngang, và chúng ăn màu chữ của element (chữ be → thanh be) đúng như ảnh user
+ * gửi. Ảnh nền/shape cũng không được vẽ.
+ *
+ * Cách sửa: dựng thumbnail bằng CHÍNH `Inner` của Element.tsx — cùng một bộ code vẽ với
+ * editor canvas và player. Mấu chốt là `containerType: 'size'` trên khung thumbnail: cỡ chữ
+ * trong Element.tsx dùng đơn vị `cqh` (% chiều cao container), nên đặt container ở đây là
+ * chữ tự co đúng tỉ lệ trong ô 150px mà không cần đường code riêng nào cho thumbnail.
+ *
+ * Vì sao KHÔNG rasterize như SlideSorter (renderEditorSlide → dataURL): dải này cập nhật
+ * theo TỪNG thao tác sửa; render canvas lại toàn bộ mỗi keystroke sẽ giật. DOM tái dựng rẻ
+ * hơn nhiều và luôn đồng bộ tức thì.
  */
 
 import type { EditorDeck } from '@/lib/present-editor/model';
 import { stageFor } from '@/lib/present-editor/stage-presets';
+import { Inner, textOverImage } from './Element';
 import { Plus, Copy, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface Props {
@@ -67,26 +84,40 @@ export default function SlideStrip({
             }}
             title={`Slide ${i + 1}`}
           >
-            {/* mini preview element chữ */}
-            {s.elements
-              .filter((e) => e.kind === 'text')
-              .slice(0, 2)
-              .map((e) => (
-                <div
-                  key={e.id}
-                  style={{
-                    position: 'absolute',
-                    left: `${e.frame.x}%`,
-                    top: `${e.frame.y}%`,
-                    width: `${e.frame.w}%`,
-                    height: 3,
-                    background: 'currentColor',
-                    color: (e as { color?: string }).color ?? '#000',
-                    opacity: 0.5,
-                    borderRadius: 2,
-                  }}
-                />
-              ))}
+            {/* Bản thu nhỏ THẬT của slide — xem ghi chú "LỖI CŨ" ở đầu file. */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                // container-query: cho phép `fontSize: Ncqh` trong Element.tsx quy chiếu vào
+                // CHÍNH khung thumbnail này ⇒ chữ tự co đúng tỉ lệ, không cần code riêng.
+                containerType: 'size',
+                pointerEvents: 'none',
+              }}
+            >
+              {s.elements
+                .filter((e) => !e.hidden)
+                .map((e) => (
+                  <div
+                    key={e.id}
+                    style={{
+                      position: 'absolute',
+                      left: `${e.frame.x}%`,
+                      top: `${e.frame.y}%`,
+                      width: `${e.frame.w}%`,
+                      height: `${e.frame.h}%`,
+                      transform: e.frame.rotation ? `rotate(${e.frame.rotation}deg)` : undefined,
+                      opacity: e.opacity ?? 1,
+                    }}
+                  >
+                    <Inner
+                      el={e}
+                      fonts={deck.fonts}
+                      overImage={textOverImage(e, s.elements, !!s.backgroundImage)}
+                    />
+                  </div>
+                ))}
+            </div>
             <span
               style={{
                 position: 'absolute',

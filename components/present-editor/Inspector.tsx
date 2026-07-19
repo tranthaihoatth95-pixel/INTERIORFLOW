@@ -17,11 +17,24 @@ import type {
   ImageAdjust,
   CropRect,
   ListStyle,
+  EmbeddedFont,
+  TextFx,
+  TextShadowLayer,
 } from '@/lib/present-editor/model';
 import { effectiveListStyle } from '@/lib/present-editor/model';
 import type { LinkedAsset } from '@/lib/present-editor/model';
 import { useState, useEffect, useRef } from 'react';
-import { getCustomFonts, addCustomFont, registerAllCustom, type CustomFont } from '@/lib/present-editor/custom-fonts';
+import {
+  addCustomFont,
+  getLibraryFonts,
+  registerFonts,
+  registerLibraryFonts,
+  mergeFontLists,
+  isCustomStack,
+  FontError,
+  type CustomFont,
+} from '@/lib/present-editor/custom-fonts';
+import { FX_PRESETS, applyPreset } from '@/lib/present-editor/text-fx';
 import type { FontPairing } from '@/lib/slides';
 import { DEFAULT_ADJUST } from '@/lib/present-editor/model';
 import { CURATED_FONTS } from '@/lib/present-editor/fonts';
@@ -69,6 +82,10 @@ interface Props {
   selected: SlideElement | null;
   palette: string[];
   deckFonts: FontPairing;
+  /** Font tải lên đã NHÚNG trong deck (#1) — nguồn để dựng dropdown + biết font nào là custom. */
+  deckCustomFonts?: EmbeddedFont[];
+  /** Nhúng font vừa tải vào deck (PresentEditor ghi vào `deck.customFonts`). */
+  onAddDeckFont?: (f: EmbeddedFont) => void;
   onUpdateSelected: (mutate: (el: SlideElement) => void, live?: boolean) => void;
   onUpdateSlide: (mutate: (s: EditorSlide) => void, live?: boolean) => void;
   onZOrder: (dir: 'front' | 'back' | 'forward' | 'backward') => void;
@@ -100,6 +117,8 @@ export default function Inspector({
   selected,
   palette,
   deckFonts,
+  deckCustomFonts,
+  onAddDeckFont,
   onUpdateSelected,
   onUpdateSlide,
   onZOrder,
@@ -262,6 +281,8 @@ export default function Inspector({
           el={selected}
           palette={palette}
           deckFonts={deckFonts}
+          deckCustomFonts={deckCustomFonts}
+          onAddDeckFont={onAddDeckFont}
           onUpdate={onUpdateSelected as (m: (el: TextElement) => void, live?: boolean) => void}
         />
       )}
@@ -382,35 +403,61 @@ function TextInspector({
   el,
   palette,
   deckFonts,
+  deckCustomFonts,
+  onAddDeckFont,
   onUpdate,
 }: {
   el: TextElement;
   palette: string[];
   deckFonts: FontPairing;
+  deckCustomFonts?: EmbeddedFont[];
+  onAddDeckFont?: (f: EmbeddedFont) => void;
   onUpdate: (m: (el: TextElement) => void, live?: boolean) => void;
 }) {
-  // Font người dùng tải lên (#13): nạp lại font đã lưu + cho thêm font mới.
-  const [customFonts, setCustomFonts] = useState<CustomFont[]>([]);
+  /* Font tải lên (#1). Dropdown gộp HAI nguồn: font nhúng trong deck (đi theo dự án) +
+     thư viện font của máy (tiện dùng lại ở deck khác). Xem lib/present-editor/custom-fonts.ts. */
+  const [libFonts, setLibFonts] = useState<CustomFont[]>([]);
+  const [fontErr, setFontErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const fontFileRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
-    setCustomFonts(getCustomFonts());
-    registerAllCustom();
+    let alive = true;
+    registerLibraryFonts().then((list) => alive && setLibFonts(list));
+    return () => {
+      alive = false;
+    };
   }, []);
+
+  // font của deck phải được đăng ký lại mỗi khi deck đổi (mở deck khác / nạp từ IndexedDB)
+  useEffect(() => {
+    registerFonts(deckCustomFonts);
+  }, [deckCustomFonts]);
+
+  const allCustom = mergeFontLists(deckCustomFonts, libFonts);
+  const usingCustom = isCustomStack(el.fontFamily, allCustom);
 
   async function onUploadFont(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f) return;
+    setFontErr(null);
+    setBusy(true);
     try {
       const cf = await addCustomFont(f);
-      setCustomFonts(getCustomFonts());
+      setLibFonts(await getLibraryFonts());
+      onAddDeckFont?.(cf); // nhúng vào deck → mở lại dự án vẫn còn font
       onUpdate((t) => (t.fontFamily = cf.stack)); // áp luôn cho text đang chọn
-    } catch {
-      /* font lỗi — bỏ qua */
+    } catch (err) {
+      // Lỗi font PHẢI hiện ra: bản trước nuốt im lặng, user tưởng app hỏng.
+      setFontErr(err instanceof FontError ? err.message : 'Không tải được font này.');
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
+    <>
     <Panel title="Chữ">
       <Field label="Nội dung">
         <textarea
@@ -440,9 +487,9 @@ function TextInspector({
                 {f.label}
               </option>
             ))}
-            {customFonts.length > 0 && (
+            {allCustom.length > 0 && (
               <optgroup label="Đã tải lên">
-                {customFonts.map((f) => (
+                {allCustom.map((f) => (
                   <option key={f.stack} value={f.stack}>
                     {f.label}
                   </option>
@@ -453,10 +500,11 @@ function TextInspector({
           <button
             type="button"
             onClick={() => fontFileRef.current?.click()}
-            title="Tải font lên (.ttf/.otf/.woff)"
-            style={{ ...input, width: 34, cursor: 'pointer', padding: 0 }}
+            disabled={busy}
+            title="Tải font lên (.ttf/.otf/.woff/.woff2)"
+            style={{ ...input, width: 34, cursor: busy ? 'default' : 'pointer', padding: 0, opacity: busy ? 0.5 : 1 }}
           >
-            ＋
+            {busy ? '…' : '＋'}
           </button>
           <input
             ref={fontFileRef}
@@ -466,6 +514,20 @@ function TextInspector({
             onChange={onUploadFont}
           />
         </div>
+        {fontErr && (
+          <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.45, color: 'var(--danger, #B4462A)' }}>
+            {fontErr}
+          </p>
+        )}
+        {usingCustom && (
+          /* Cảnh báo NHẸ, đúng chỗ — nêu giới hạn TRƯỚC khi user xuất file rồi mới ngạc nhiên.
+             PDF/PNG: canvas tự vẽ chữ bằng font đã nạp ⇒ ĐÚNG font, không phụ thuộc máy người xem.
+             PPTX: file .pptx chỉ ghi TÊN font, không nhúng file font ⇒ máy khác không có font
+             sẽ rơi về font thay thế. Xem lib/present-editor/export.ts. */
+          <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.45, color: 'var(--t3)' }}>
+            Font tải lên · Xuất PDF/PNG giữ đúng font. Xuất PPTX chỉ ghi tên font — máy chưa cài sẽ hiện font thay thế.
+          </p>
+        )}
       </Field>
       <Field label={`Cỡ chữ ${el.fontSize.toFixed(1)}`}>
         <input
@@ -564,6 +626,329 @@ function TextInspector({
       <Field label="Màu chữ">
         <ColorRow value={el.color} palette={palette} onChange={(c) => onUpdate((t) => (t.color = c))} />
       </Field>
+      </Panel>
+      <TextFxPanel el={el} palette={palette} onUpdate={onUpdate} />
+    </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* HIỆU ỨNG CHỮ (#2) — text effects & typography illustration          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Bảng chỉnh hiệu ứng cho chữ tiêu đề. Gu TTT (CLAUDE.md): keyline mảnh, whitespace rộng,
+ * nhãn tracked uppercase, KHÔNG loè loẹt — nên bảng MẶC ĐỊNH THU GỌN, chỉ hiện hàng preset;
+ * muốn chỉnh sâu thì mở "Tinh chỉnh". Người dùng thường chỉ cần bấm 1 preset là xong.
+ */
+function TextFxPanel({
+  el,
+  palette,
+  onUpdate,
+}: {
+  el: TextElement;
+  palette: string[];
+  onUpdate: (m: (el: TextElement) => void, live?: boolean) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const fx = el.fx;
+
+  /** Sửa một field của fx (tạo object nếu chưa có). */
+  function setFx(mut: (f: TextFx) => void, live?: boolean) {
+    onUpdate((t) => {
+      t.fx = { ...(t.fx ?? {}) };
+      mut(t.fx);
+    }, live);
+  }
+
+  const shadows = fx?.shadows ?? [];
+
+  function setShadow(i: number, mut: (s: TextShadowLayer) => void, live?: boolean) {
+    setFx((f) => {
+      const list = [...(f.shadows ?? [])];
+      const next = { ...list[i] };
+      mut(next);
+      list[i] = next;
+      f.shadows = list;
+    }, live);
+  }
+
+  return (
+    <Panel title="Hiệu ứng chữ">
+      {/* --- Preset: bấm phát dùng ngay --- */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+        {FX_PRESETS.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            title={p.hint}
+            onClick={() => onUpdate((t) => (t.fx = applyPreset(t.fx, p)))}
+            style={{
+              padding: '5px 9px',
+              fontSize: 11,
+              letterSpacing: '0.04em',
+              borderRadius: 3,
+              border: '1px solid var(--border)',
+              background: 'var(--field)',
+              color: 'var(--t2)',
+              cursor: 'pointer',
+            }}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          width: '100%',
+          padding: '5px 0',
+          fontSize: 11,
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          borderRadius: 3,
+          border: '1px solid var(--border)',
+          background: 'transparent',
+          color: 'var(--t3)',
+          cursor: 'pointer',
+        }}
+      >
+        {open ? 'Thu gọn' : 'Tinh chỉnh · Fine-tune'}
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Field label="Hoa / thường">
+            <select
+              value={fx?.transform ?? 'none'}
+              onChange={(e) => setFx((f) => (f.transform = e.target.value as TextFx['transform']))}
+              style={input}
+            >
+              <option value="none">Giữ nguyên</option>
+              <option value="uppercase">CHỮ HOA</option>
+              <option value="lowercase">chữ thường</option>
+              <option value="capitalize">Hoa Đầu Từ</option>
+            </select>
+          </Field>
+
+          <Field label={`Giãn từ ${(fx?.wordSpacing ?? 0).toFixed(1)}`}>
+            <input
+              type="range"
+              min={-1}
+              max={6}
+              step={0.1}
+              value={fx?.wordSpacing ?? 0}
+              onChange={(e) => setFx((f) => (f.wordSpacing = +e.target.value), true)}
+              onPointerUp={(e) => setFx((f) => (f.wordSpacing = +(e.target as HTMLInputElement).value))}
+              style={{ width: '100%' }}
+            />
+          </Field>
+
+          {/* --- Viền chữ --- */}
+          <Field label={`Viền chữ ${(fx?.strokeWidth ?? 0).toFixed(2)}`}>
+            <input
+              type="range"
+              min={0}
+              max={0.8}
+              step={0.01}
+              value={fx?.strokeWidth ?? 0}
+              onChange={(e) => setFx((f) => (f.strokeWidth = +e.target.value), true)}
+              onPointerUp={(e) => setFx((f) => (f.strokeWidth = +(e.target as HTMLInputElement).value))}
+              style={{ width: '100%' }}
+            />
+          </Field>
+          {(fx?.strokeWidth ?? 0) > 0 && (
+            <>
+              <Field label="Màu viền">
+                <ColorRow
+                  value={fx?.strokeColor ?? el.color}
+                  palette={palette}
+                  onChange={(c) => setFx((f) => (f.strokeColor = c))}
+                />
+              </Field>
+              <Row>
+                <Toggle
+                  active={Boolean(fx?.outlineOnly)}
+                  onClick={() => setFx((f) => (f.outlineOnly = !f.outlineOnly))}
+                  title="Chữ rỗng — chỉ giữ nét viền"
+                >
+                  <span style={{ fontSize: 11 }}>Chữ rỗng</span>
+                </Toggle>
+              </Row>
+            </>
+          )}
+
+          {/* --- Gradient đổ vào lòng chữ --- */}
+          <Row>
+            <Toggle
+              active={Boolean(fx?.gradient)}
+              onClick={() =>
+                setFx((f) => {
+                  f.gradient = f.gradient ? undefined : { from: '#C89B62', to: '#7A5A2E', angle: 100 };
+                })
+              }
+              title="Đổ chuyển sắc vào lòng chữ"
+            >
+              <span style={{ fontSize: 11 }}>Chuyển sắc</span>
+            </Toggle>
+          </Row>
+          {fx?.gradient && (
+            <>
+              <Field label="Màu đầu">
+                <ColorRow
+                  value={fx.gradient.from}
+                  palette={palette}
+                  onChange={(c) => setFx((f) => (f.gradient = { ...f.gradient!, from: c }))}
+                />
+              </Field>
+              <Field label="Màu cuối">
+                <ColorRow
+                  value={fx.gradient.to}
+                  palette={palette}
+                  onChange={(c) => setFx((f) => (f.gradient = { ...f.gradient!, to: c }))}
+                />
+              </Field>
+              <Field label={`Góc ${fx.gradient.angle}°`}>
+                <input
+                  type="range"
+                  min={0}
+                  max={360}
+                  step={5}
+                  value={fx.gradient.angle}
+                  onChange={(e) => setFx((f) => (f.gradient = { ...f.gradient!, angle: +e.target.value }), true)}
+                  onPointerUp={(e) =>
+                    setFx((f) => (f.gradient = { ...f.gradient!, angle: +(e.target as HTMLInputElement).value }))
+                  }
+                  style={{ width: '100%' }}
+                />
+              </Field>
+            </>
+          )}
+
+          {/* --- Bóng đổ nhiều lớp --- */}
+          <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--t3)' }}>
+              Bóng đổ
+            </span>
+            {shadows.length < 3 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFx((f) => {
+                    f.shadows = [...(f.shadows ?? []), { x: 0, y: 0.3, blur: 1, color: 'rgba(20,16,12,0.4)' }];
+                  })
+                }
+                style={{ ...input, width: 'auto', padding: '2px 8px', fontSize: 11, cursor: 'pointer' }}
+              >
+                + Lớp
+              </button>
+            )}
+          </div>
+          {shadows.map((s, i) => (
+            <div
+              key={i}
+              style={{ border: '1px solid var(--border)', borderRadius: 3, padding: 8, marginTop: 6 }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 11, color: 'var(--t3)' }}>Lớp {i + 1}</span>
+                <button
+                  type="button"
+                  title="Xoá lớp bóng"
+                  onClick={() =>
+                    setFx((f) => {
+                      f.shadows = (f.shadows ?? []).filter((_, k) => k !== i);
+                    })
+                  }
+                  style={{ ...input, width: 'auto', padding: '1px 7px', fontSize: 11, cursor: 'pointer' }}
+                >
+                  ✕
+                </button>
+              </div>
+              <Field label={`Ngang ${s.x.toFixed(2)}`}>
+                <input
+                  type="range"
+                  min={-3}
+                  max={3}
+                  step={0.02}
+                  value={s.x}
+                  onChange={(e) => setShadow(i, (v) => (v.x = +e.target.value), true)}
+                  onPointerUp={(e) => setShadow(i, (v) => (v.x = +(e.target as HTMLInputElement).value))}
+                  style={{ width: '100%' }}
+                />
+              </Field>
+              <Field label={`Dọc ${s.y.toFixed(2)}`}>
+                <input
+                  type="range"
+                  min={-3}
+                  max={3}
+                  step={0.02}
+                  value={s.y}
+                  onChange={(e) => setShadow(i, (v) => (v.y = +e.target.value), true)}
+                  onPointerUp={(e) => setShadow(i, (v) => (v.y = +(e.target as HTMLInputElement).value))}
+                  style={{ width: '100%' }}
+                />
+              </Field>
+              <Field label={`Nhoè ${s.blur.toFixed(2)}`}>
+                <input
+                  type="range"
+                  min={0}
+                  max={6}
+                  step={0.05}
+                  value={s.blur}
+                  onChange={(e) => setShadow(i, (v) => (v.blur = +e.target.value), true)}
+                  onPointerUp={(e) => setShadow(i, (v) => (v.blur = +(e.target as HTMLInputElement).value))}
+                  style={{ width: '100%' }}
+                />
+              </Field>
+              <Field label="Màu bóng">
+                <ColorRow value={s.color} palette={palette} onChange={(c) => setShadow(i, (v) => (v.color = c))} />
+              </Field>
+            </div>
+          ))}
+
+          {/* --- Uốn cung --- */}
+          <Field label={`Uốn cung ${fx?.curve ?? 0}°`}>
+            <input
+              type="range"
+              min={-180}
+              max={180}
+              step={2}
+              value={fx?.curve ?? 0}
+              onChange={(e) => setFx((f) => (f.curve = +e.target.value), true)}
+              onPointerUp={(e) => setFx((f) => (f.curve = +(e.target as HTMLInputElement).value))}
+              style={{ width: '100%' }}
+            />
+          </Field>
+          {Boolean(fx?.curve) && (
+            <p style={{ margin: '2px 0 6px', fontSize: 11, lineHeight: 1.45, color: 'var(--t3)' }}>
+              Chữ uốn chỉ nhận MỘT dòng — xuống dòng sẽ được nối lại thành một dòng.
+            </p>
+          )}
+
+          {/* --- Hoà trộn --- */}
+          <Field label="Hoà trộn">
+            <select
+              value={fx?.blend ?? 'normal'}
+              onChange={(e) => setFx((f) => (f.blend = e.target.value as TextFx['blend']))}
+              style={input}
+            >
+              <option value="normal">Bình thường</option>
+              <option value="multiply">Nhân (đậm lại)</option>
+              <option value="screen">Màn (sáng lên)</option>
+              <option value="overlay">Phủ</option>
+              <option value="difference">Khác biệt</option>
+              <option value="luminosity">Độ sáng</option>
+            </select>
+          </Field>
+
+          <p style={{ margin: '8px 0 0', fontSize: 11, lineHeight: 1.45, color: 'var(--t3)' }}>
+            Hiệu ứng giữ nguyên khi xuất PDF/PNG. Xuất PPTX chỉ giữ chữ và màu — viền, bóng,
+            chuyển sắc và uốn cung sẽ phẳng lại.
+          </p>
+        </div>
+      )}
     </Panel>
   );
 }
