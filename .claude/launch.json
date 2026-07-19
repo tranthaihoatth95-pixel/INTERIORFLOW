@@ -154,6 +154,18 @@
       ],
       "port": 4052,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-smallfixes"
+    },
+    {
+      "name": "cad-present-4051",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4051"
+      ],
+      "port": 4051,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-cad-present"
     }
   ]
 }
