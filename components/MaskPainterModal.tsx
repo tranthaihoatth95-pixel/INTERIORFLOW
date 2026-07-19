@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Paintbrush, Eraser, Trash2, Check } from 'lucide-react';
+import { X, Paintbrush, Eraser, Trash2, Check, AlertTriangle } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { fade, modalScale, pressable, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -41,6 +41,9 @@ export function MaskPainterModal() {
   const [brush, setBrush] = useState(48);
   const [eraser, setEraser] = useState(false);
   const [ready, setReady] = useState(false);
+  /** có nét vẽ chưa lưu kể từ lần mở/save gần nhất — chặn Escape/X đóng mất dữ liệu im lặng */
+  const [dirty, setDirty] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
 
   const redraw = useCallback(() => {
     const display = displayRef.current;
@@ -84,6 +87,8 @@ export function MaskPainterModal() {
 
       const finish = () => {
         setReady(true);
+        setDirty(false);
+        setConfirmClose(false);
         redraw();
       };
       // load mask cũ (đen/trắng) → chuyển thành alpha strokes trắng
@@ -136,10 +141,25 @@ export function MaskPainterModal() {
     ctx.moveTo(from.x, from.y);
     ctx.lineTo(to.x, to.y);
     ctx.stroke();
+    setDirty(true);
     redraw();
   };
 
-  const close = () => setMaskEditorNodeId(null);
+  /** Đóng thẳng, bỏ nét vẽ chưa lưu (nếu có) — dùng khi user đã xác nhận. */
+  const forceClose = () => {
+    setConfirmClose(false);
+    setDirty(false);
+    setMaskEditorNodeId(null);
+  };
+
+  // X / click ra ngoài: còn thay đổi chưa lưu → chỉ hiện cảnh báo, không đóng ngay.
+  const close = () => {
+    if (dirty) {
+      setConfirmClose(true);
+      return;
+    }
+    forceClose();
+  };
 
   const save = () => {
     const mask = maskRef.current;
@@ -153,17 +173,25 @@ export function MaskPainterModal() {
     octx.fillRect(0, 0, out.width, out.height);
     octx.drawImage(mask, 0, 0);
     updateParam(nodeId, 'mask', out.toDataURL('image/png'));
-    close();
+    forceClose();
   };
 
-  // Esc để đóng
+  // Esc: còn thay đổi chưa lưu → lần đầu chỉ cảnh báo, Escape LẦN 2 mới thật sự đóng
+  // (bỏ nét vẽ). Không có gì để mất → đóng thẳng như cũ.
   useEffect(() => {
     if (!nodeId) return;
-    const handler = (e: KeyboardEvent) => e.key === 'Escape' && close();
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (dirty && !confirmClose) {
+        setConfirmClose(true);
+        return;
+      }
+      forceClose();
+    };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeId]);
+  }, [nodeId, dirty, confirmClose]);
 
   return (
     <AnimatePresence>
@@ -187,6 +215,26 @@ export function MaskPainterModal() {
             <X size={15} />
           </motion.button>
         </div>
+
+        {/* cảnh báo còn nét vẽ chưa lưu — chỉ hiện sau lần Escape/X đầu tiên khi dirty */}
+        {confirmClose && (
+          <div className="flex items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-600 dark:text-amber-400">
+            <AlertTriangle size={13} className="shrink-0" />
+            <span className="flex-1">Còn nét vẽ chưa lưu — nhấn Escape lần nữa để thoát, hoặc chọn bên dưới.</span>
+            <button
+              onClick={save}
+              className="rounded-[8px] bg-[var(--accent-strong)] px-2.5 py-1 text-[11px] font-medium text-white transition-colors hover:bg-[var(--accent)]"
+            >
+              Lưu &amp; đóng
+            </button>
+            <button
+              onClick={forceClose}
+              className="rounded-[8px] border border-[var(--border)] px-2.5 py-1 text-[11px] text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
+            >
+              Bỏ nét vẽ
+            </button>
+          </div>
+        )}
 
         {/* canvas */}
         <div className="grid flex-1 place-items-center overflow-auto bg-[var(--bg)] p-4">
@@ -263,6 +311,7 @@ export function MaskPainterModal() {
               const mask = maskRef.current;
               if (!mask) return;
               mask.getContext('2d')!.clearRect(0, 0, mask.width, mask.height);
+              setDirty(true);
               redraw();
             }}
             className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"

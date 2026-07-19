@@ -23,7 +23,7 @@
  * sẵn có trong globals.css — KHÔNG bịa màu mới.
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { clampHorizontalOffset } from '@/lib/ui/tooltip-position';
 
@@ -53,6 +53,13 @@ export default function Tooltip({ label, children, side = 'top', disabled, style
   const tagRef = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<Anchor>({ left: 0, y: 0, offset: 0 });
+  // mounted-gate chuẩn: server luôn render false, client vẫn render false ở lần
+  // hydrate ĐẦU TIÊN (khớp cây DOM server) — chỉ bật true trong useEffect (chạy
+  // SAU khi mount xong), từ đó mới cho phép createPortal ra document.body. Tránh
+  // dùng thẳng `typeof document !== 'undefined'` — biểu thức đó true NGAY ở lần
+  // render client đầu tiên (trước cả khi hydrate xong) → lệch cây DOM server/client.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const reposition = useCallback(() => {
     const wrap = wrapRef.current;
@@ -80,7 +87,7 @@ export default function Tooltip({ label, children, side = 'top', disabled, style
       onBlur={close}
     >
       {children}
-      {typeof document !== 'undefined' &&
+      {mounted &&
         createPortal(
           <span
             role="tooltip"
