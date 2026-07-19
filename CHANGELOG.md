@@ -1,5 +1,29 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 20/07 — Present — Nhúng font THẬT vào PPTX (nhánh `feat/pptx-font-embed`, CHƯA merge)
+
+**Khảo sát trước khi code (kết luận: KHẢ THI).**
+- `pptxgenjs` v3.12 **không có API nhúng font** — grep `node_modules/pptxgenjs/dist` + `types/index.d.ts` cho `embed|fntdata|embeddedFont`: 0 kết quả. Nó chỉ ghi tên vào `fontFace`.
+- Chuẩn OOXML có chỗ nhúng: `/ppt/fonts/font{N}.fntdata` + `<p:embeddedFontLst>` + relationship + content-type.
+- **Định dạng bắt buộc là EOT, KHÔNG phải TTF thô.** Nguồn: W3C EOT Submission; Andreas Beeker (Apache POI) — "Fonts are stored under /ppt/fonts/*.fntdata in the pptx, always in EOT format". PowerPoint nhận 2 biến thể: MTX (nén, có bằng sáng chế) và **non-MTX (không nén)** — ta dùng non-MTX nên làm được thuần JS client, không cần nén.
+- **KHÔNG cần obfuscate.** Việc XOR 32 byte đầu bằng GUID là của **.docx** (`w:fontKey`); `p:embeddedFont` của PPTX trong ECMA-376 không có fontKey.
+- Zip: dùng `jszip` (đã có sẵn trong cây phụ thuộc của pptxgenjs, nay khai báo thẳng ở `package.json`), không thêm gói mới.
+
+**Cài đặt.**
+- `lib/pptx-font-embed.ts` (mới) — đọc bảng sfnt (`name`/`OS/2`/`head`), dựng header **EOT v1 không nén** (`Flags=0`, magic `0x504C`), nối nguyên vẹn sfnt gốc phía sau.
+- `lib/pptx-zip-fonts.ts` (mới) — mở lại .pptx sau khi pptxgenjs xuất, chèn đủ **4 mảnh** (thiếu content-type là PowerPoint đòi "repair" — đúng lỗi pandoc #11492), cấp `rId` không đụng id pptxgenjs đã dùng. Đặt `<p:embeddedFontLst>` ngay sau `<p:notesSz/>` vì thứ tự con của `<p:presentation>` theo ECMA-376 là bắt buộc.
+- `lib/pptx.ts` — thêm `embedFonts` + `fontFaces` theo vai trò chữ; thôi dùng `writeFile()` (nó tải xuống luôn, không chen vào giữa được) → `write({outputType:'arraybuffer'})` → chèn font → tự tải. Trả `PptxExportResult` để UI báo font nào nhúng được/bị bỏ.
+- `lib/present-editor/export.ts` — chỉ gom font ĐANG DÙNG ở nhánh text-editable (không nhúng cả `deck.customFonts`, càng không nhúng thư viện máy).
+- **Bí danh → tên họ thật.** App đặt tên riêng cho mỗi font tải lên (vd `Georgia-0eht`) để `@font-face` không đụng nhau; nhưng PowerPoint ghép font nhúng với chữ bằng tên họ nằm TRONG file font. Ghi bí danh vào XML là font nhúng thành vô dụng — nên cả `<p:embeddedFont>` lẫn `fontFace` từng đoạn chữ đều đổi sang tên thật (`realFamilyName`).
+- **Giấy phép font.** Đọc cờ `fsType` (OS/2): `0x0002` Restricted → **từ chối nhúng**, kèm lý do tiếng Việt (restricted thắng cả khi đi kèm bit khác). Preview&Print / Editable / Installable → cho nhúng, có ghi nhận mức quyền. WOFF/WOFF2 (đã nén) và TTC cũng từ chối kèm lý do. Font lỗi chỉ bị BỎ QUA — file .pptx vẫn xuất được.
+- UI: gỡ cảnh báo cũ "PPTX chỉ ghi tên font"; toast báo số font đã nhúng hoặc lý do bỏ qua.
+
+**🐛 Bug nền phải sửa vì nó chặn tính năng này.** `useEditor.update()` clone `state.deck` bắt được lúc render ⇒ gọi 2 lần trong CÙNG một tick thì lần dispatch sau ghi đè lần trước. Tải font lên gọi liên tiếp `onAddDeckFont()` rồi `onUpdateSelected()`, nên `customFonts` vừa ghi bị xoá sạch — **tầng "nhúng font theo deck" thực ra chưa bao giờ chạy** (đã xác nhận trên máy: `deckCustomFonts === undefined` sau khi tải font). Nay clone TRONG reducer (action `mutate`), luôn dựa trên state mới nhất; gỡ 2 action `commit`/`live` thành ra chết.
+
+**Verify.** tsc 0 lỗi · test mới 30 + 29 assertion (dùng font thật của macOS, chỉ đọc) · 19/19 suite `lib/present-editor/` vẫn pass · **xuất PPTX thật qua `/present-editor`** (127.0.0.1:4094) rồi giải nén: có `ppt/fonts/font1.fntdata` 379.762 byte (magic EOT `0x504C` đúng offset 34), `[Content_Types].xml` khai `application/x-fontdata`, rels `rId15 → fonts/font1.fntdata`, `<p:embeddedFont typeface="Georgia">` khớp `typeface="Georgia"` trong slide1, `unzip -t` sạch. Toast hiện "Đã xuất PowerPoint — nhúng kèm 1 font (Georgia)".
+
+**⚠️ CHƯA verify được:** file chưa mở bằng PowerPoint thật. QuickLook macOS render được file (chứng tỏ gói không hỏng) nhưng **bỏ qua font nhúng** — thử A/B cùng một tên face bịa, bản có nhúng và bản không nhúng render giống hệt nhau, nên KHÔNG dùng làm bằng chứng. Muốn chốt: mở bằng PowerPoint trên máy CHƯA cài font đó. Cũng chưa xử lý bold/italic riêng (chỉ nhúng `<p:regular>`, PowerPoint tự làm giả kiểu).
+
 ## 17/07 — PS-4 (Present) — Đa khổ 16:9/A4/A3 + reflow + export (nhánh `feat/present-ps4-multi-format`)
 Gộp 2 nguồn stage-size cũ (`standards.ts` vs `render.ts`) về 1 nguồn duy nhất `lib/present-editor/stage-presets.ts` (`STAGE_PRESETS`/`stageFor()`); `render.ts`/`export.ts` nhận W/H qua tham số (mặc định 16:9 = KHÔNG đổi hành vi cũ). 5 preset đúng tỉ lệ ISO 216 (A3 = A4 × √2, gấp đôi diện tích). `model.ts` thêm `deck.stagePreset?` (optional, an toàn ngược). `reflow.ts` (mới) — dàn lại compact (KHÔNG AI) tiêu đề/kicker/ảnh/thân bài theo hướng khổ mới, tái dùng `region-layout.ts`; KHÔNG BAO GIỜ xoá phần tử, chỉ đổi frame. UI: nút "Khổ trình bày" (Toolbar) → `StagePresetPanel.tsx`, nhãn bắt buộc "màn hình/chiếu", không hứa in 300dpi. PDF/PNG theo đúng khổ; **PPTX luôn giữ 16:9** (quyết định phạm vi — `lib/pptx.ts` định vị bằng inch tuyệt đối, đổi khổ dọc sẽ lệch nặng, ngoài phạm vi PS-4). Verify: tsc 0 · 45/45 test (stage-presets 42 ok, reflow 23 ok) · browser tuần tự (account test riêng, SQLite riêng đã xoá): reflow đúng (đo DOM %), PDF MediaBox đúng tỉ lệ, 16:9 export khớp y hệt cũ, 0 lỗi console. Nợ nhỏ: moodboard nhiều ảnh+caption riêng → dồn caption thành danh sách dọc (không mất chữ, chưa pixel-perfect).
 

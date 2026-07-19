@@ -952,8 +952,24 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   const onExportPptx = useCallback(async () => {
     setBusy('pptx');
     try {
-      await exportDeckToPptxFromModel(ed.deck);
-      setExportMsg({ ok: true, text: 'Đã xuất PowerPoint xong.' });
+      const res = await exportDeckToPptxFromModel(ed.deck);
+      // Font bị bỏ qua là chuyện NGƯỜI DÙNG CẦN BIẾT (file vẫn xuất được, nhưng chữ sẽ đổi font
+      // trên máy chưa cài) — báo kèm lý do thay vì im lặng "xong".
+      if (res.skipped.length) {
+        setExportMsg({
+          ok: false,
+          text: `Đã xuất, nhưng chưa nhúng được ${res.skipped.length} font: ${res.skipped
+            .map((s) => s.reason)
+            .join(' · ')}`,
+        });
+      } else if (res.embedded.length) {
+        setExportMsg({
+          ok: true,
+          text: `Đã xuất PowerPoint — nhúng kèm ${res.embedded.length} font (${res.embedded.join(', ')}).`,
+        });
+      } else {
+        setExportMsg({ ok: true, text: 'Đã xuất PowerPoint xong.' });
+      }
     } catch (err) {
       console.error('[PresentEditor] PPTX export failed', err);
       setExportMsg({ ok: false, text: 'Xuất PowerPoint lỗi — thử lại.' });

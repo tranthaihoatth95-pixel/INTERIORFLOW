@@ -520,12 +520,14 @@ function TextInspector({
           </p>
         )}
         {usingCustom && (
-          /* Cảnh báo NHẸ, đúng chỗ — nêu giới hạn TRƯỚC khi user xuất file rồi mới ngạc nhiên.
+          /* Ghi chú NHẸ, đúng chỗ — nói rõ mức bảo toàn font TRƯỚC khi user xuất file.
              PDF/PNG: canvas tự vẽ chữ bằng font đã nạp ⇒ ĐÚNG font, không phụ thuộc máy người xem.
-             PPTX: file .pptx chỉ ghi TÊN font, không nhúng file font ⇒ máy khác không có font
-             sẽ rơi về font thay thế. Xem lib/present-editor/export.ts. */
+             PPTX: file font được NHÚNG THẬT vào .pptx (dạng EOT, chuẩn OOXML) ⇒ máy chưa cài font
+             vẫn hiển thị đúng. Ngoại lệ đã chặn có báo: font .woff/.woff2 (dữ liệu đã nén) và font
+             bị nhà phát hành cấm nhúng (cờ fsType). Xem lib/pptx-font-embed.ts. */
           <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.45, color: 'var(--t3)' }}>
-            Font tải lên · Xuất PDF/PNG giữ đúng font. Xuất PPTX chỉ ghi tên font — máy chưa cài sẽ hiện font thay thế.
+            Font tải lên · Xuất PDF/PNG giữ đúng font. Xuất PPTX nhúng luôn file font (.ttf/.otf) nên
+            máy chưa cài vẫn đúng — trừ font .woff/.woff2 hoặc font có giấy phép cấm nhúng.
           </p>
         )}
       </Field>
