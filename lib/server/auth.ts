@@ -21,7 +21,8 @@ import { prisma } from '@/lib/server/db';
  */
 const HAS_AUTH_SECRET = !!process.env.AUTH_SECRET;
 const COOKIE = HAS_AUTH_SECRET ? 'if_session' : 'if_session_noenv';
-const secret = () => new TextEncoder().encode(process.env.AUTH_SECRET ?? 'dev-secret-change-me');
+// `||` chứ không `??`: AUTH_SECRET= rỗng phải rơi về fallback, khớp với HAS_AUTH_SECRET ở trên.
+const secret = () => new TextEncoder().encode(process.env.AUTH_SECRET || 'dev-secret-change-me');
 
 if (!HAS_AUTH_SECRET && process.env.NODE_ENV !== 'production') {
   console.warn(
