@@ -91,3 +91,11 @@ Verify browser (PORT 3700, host 127.0.0.1 tránh cookie phiên thật; admin see
 
 ## Trước 12/07
 Xem git log (`fd4718d` fix hatch T-junction · `c9b3961` type-anywhere · các merge trước đó) — main/origin đứng ở `3265db1`.
+
+## 18/07 — "đợt mở rộng" + PS-2..PS-7
+- 9 nhánh merge vào `feat/present-layout-ml-p1` (`0a734e5`): Brand Kit tiêu đề vô hình · cầu nối CAD→Present (`lib/cad/present-handoff.ts`) · toast Export · bỏ `window.prompt` Dashboard + sửa doc CAD-ROADMAP · viết lại 4 stress test (edgecase-stress, 59 file) · smart guide kéo + căn chỉnh/phân bố multi-select (`lib/present-editor/align.ts`) · Format Painter + bảng màu chữ nhanh · PS-3 linked-asset nối id ổn định Render (`render:<nodeId>[:index]`) · Slide Sorter · Animation Pane theo object (SlidePlayer đổi từ raster sang render DOM thật). Verify: tsc 0 · 59/59 test PASS · browser xác nhận. Merge main + push (`9cc1301`). Bug slider "Chỉnh màu" xác nhận KHÔNG PHẢI bug thật (3 lần verify).
+- 5 nhánh merge tiếp rồi push (`1ce8674`): fix GroupOverlay vô hình · lưu template tự tạo PS-2 · round-trip photo-editor↔slide + linked-asset PS-3 · đa khổ A4/A3+reflow+export PS-4 · phím tắt Photoshop PS-7.
+- Gate PS-5/PS-6 (share deck khách + comment): chủ dự án chọn DỪNG.
+- Trước đó: PS-1 Brand Kit (`db08340`), E1.2 swatch vật liệu, DWG mở trong app, PS-0 audit, Sprint 9+10 toggle Sketch↔Pro.
+- NVIDIA_API_KEY có, probe 200. fal hết balance chờ nạp.
+- Backlog cũ chưa làm: hardcode 'DETECH·CONCEPT' · template tĩnh · heavy-ML pha 2 · membership per-flow.
