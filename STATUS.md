@@ -7,7 +7,7 @@
 ## Hiện tại
 - Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main`. **19/07 XONG cảm ứng CAD (pinch-zoom/pan + nút Xoá) & Slide Sorter (Pointer Events)** → CHANGELOG. Verify SHA bằng git.
 - **19/07 khuya — ĐỢT MỚI user giao:**
-  - **Đã merge cả 7:** `fix/login-bounce-root` · `feat/login-contrast` (gỡ 2 dòng chữ login · tương phản thích ứng áp 4 chỗ · logo IF `framed` toàn app) · `feat/toolbar-io-sync` (toolbar CAD → 5 menu xổ · hết scrollbar thô Pro mode · **Nhập/Xuất 3 chặng đồng bộ**) · `feat/sketch-pro-modes` (Sketch = cảm ứng kiểu ArcSite + `CadTouchDock` 6 nút · Pro = chuột/phím · `StageVeil` + phân định `STAGE_TINT`) · `feat/present-typography` (font tải từ máy · **Hiệu ứng chữ** 8 preset · sửa lỗi thumbnail: `SlideStrip` xưa vẽ chữ thành thanh skeleton CỐ Ý, không phải lỗi font) · `feat/stage-rename` (đổi nhãn 3 chặng) · `feat/pptx-font-embed` (**PPTX nhúng font THẬT** dạng EOT, hậu xử lý ZIP, chặn font cấm nhúng theo cờ `fsType`). Chi tiết → CHANGELOG.
+  - **Đã merge cả 7 nhánh** (login/contrast · toolbar+IO đồng bộ · Sketch-Pro + chuyển chặng · Present typography · đổi tên chặng · PPTX nhúng font · fix bug login) — chi tiết từng nhánh → CHANGELOG.
   - ✅ User CHỐT GIỮ: menu Xuất chặng Rendering có PDF/PPTX ở mức cả flow (năng lực mới ở tầng chặng, dùng hàm cũ) — để 3 chặng đồng bộ.
   - ✅ Hairline tông chặng ĐÃ verify mắt đủ 3 (đo trên session thật của user): Drafting CAD `srgb(.311,.376,.445)` xanh thép · Rendering `srgb(.465,.337,.255)` đồng ấm · Presenting `srgb(.348,.378,.345)` xanh rêu.
   - 🐛 Bug nền đã sửa kèm: `useEditor.update()` clone `state.deck` bắt lúc render ⇒ gọi 2 lần/tick thì ghi đè nhau ⇒ **`deck.customFonts` chưa bao giờ lưu được** (tầng nhúng font theo deck thực ra chưa từng chạy). Nay clone TRONG reducer.
@@ -22,7 +22,6 @@
 - Perceptron THẬT (learning-to-rank) · 3 installer unsigned (.exe cần Win) · PWA Vercel + Supabase (Sprint 4).
 
 ## Nợ kỹ thuật
-- Audit 19/07 (chuột/phím/cảm ứng) đã sửa gần hết → CHANGELOG.
 - ~~CAD→Render văng đăng nhập~~ · ~~Cảm ứng CAD + Slide Sorter~~ — XONG + merge (gốc lỗi văng đăng nhập: cookie chung host, xem luật 3 + CHANGELOG). Shortcut bàn phím CAD nay đã có UI cảm ứng (`CadTouchDock`, nhánh `feat/sketch-pro-modes`).
 - [THẤP] Property panel Render không undo được (có thể chủ ý) · Sprint 3 B1 `meta` giá/vendor/sku trống (chờ dữ liệu) · in A3/A4 300dpi chưa khả dụng (đúng phạm vi) · `knowledge/` 121MB PDF cân nhắc Git LFS (ĐỂ SAU).
 
