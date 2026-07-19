@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import type { Tool, BrushSettings } from '@/lib/photo-editor/tools';
 import { isPaintTool, TOOL_LABELS, TOOL_HINTS, TOOL_KEYS } from '@/lib/photo-editor/tools';
-import { modKey, modShiftKey } from '@/lib/kbd';
+import { useModKey, useModShiftKey } from '@/lib/kbd';
 import Tooltip from '@/components/ui/Tooltip';
 
 interface Props {
@@ -82,6 +82,9 @@ export default function PhotoToolbar(p: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [urlOpen, setUrlOpen] = useState(false);
   const [url, setUrl] = useState('');
+  const undoLabel = useModKey('Z');
+  const redoLabel = useModShiftKey('Z');
+  const fitLabel = useModKey('0');
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -140,13 +143,13 @@ export default function PhotoToolbar(p: Props) {
         </Btn>
 
         <Divider />
-        <IconBtn onClick={p.onUndo} title={`Hoàn tác (${modKey('Z')})`} disabled={!p.canUndo}>
+        <IconBtn onClick={p.onUndo} title={`Hoàn tác (${undoLabel})`} disabled={!p.canUndo}>
           <Undo2 size={15} />
         </IconBtn>
-        <IconBtn onClick={p.onRedo} title={`Làm lại (${modShiftKey('Z')})`} disabled={!p.canRedo}>
+        <IconBtn onClick={p.onRedo} title={`Làm lại (${redoLabel})`} disabled={!p.canRedo}>
           <Redo2 size={15} />
         </IconBtn>
-        <IconBtn onClick={p.onFit} title={`Vừa khung (${modKey('0')})`}>
+        <IconBtn onClick={p.onFit} title={`Vừa khung (${fitLabel})`}>
           <Maximize size={15} />
         </IconBtn>
 
