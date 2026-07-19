@@ -4,8 +4,8 @@
 > ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp `feat/present-layout-ml-p1` (`ba4803c`) — đã merge thêm `feat/cad-touch-support` (pinch-zoom/pan 2 ngón verify bằng toán học + nút Xoá nổi cho CAD). tsc pass. **CHƯA push origin** (đợi xong Slide Sorter, push 1 lượt).
-- **19/07 khuya: TUẦN TỰ backlog cảm ứng — đang làm bước 2/2** `feat/slidesorter-touch` (worktree `interiorflow-wt-slidesorter-touch`, agent đang chạy): thay HTML5 native DnD (không chạy trên touch) bằng Pointer Events tự viết, giữ nguyên nút Lên/Xuống dự phòng.
+- Nhánh tích hợp `feat/present-layout-ml-p1` — **19/07 khuya: XONG backlog cảm ứng (2/2)**, đã merge `feat/cad-touch-support` (pinch-zoom/pan 2 ngón + nút Xoá nổi CAD) + `feat/slidesorter-touch` (Slide Sorter thay HTML5 DnD → Pointer Events, chạy cả chuột lẫn cảm ứng; nút Lên/Xuống giữ nguyên). tsc pass, reorder test 9/9, 0 worktree sống. Verify SHA bằng git.
+- **CÒN THIẾU cho cảm ứng (chưa giao):** CAD vẫn cần bàn phím vật lý cho F8 Ortho · F12 Dynamic Input · type-anywhere gõ lệnh · Space giữ-để-pan — chưa có UI cảm ứng thay thế.
 - **Chưa quyết:** phương án logo IF (đang dùng `framed`/B — còn A không-khung, C wordmark) có áp đồng bộ sang Header/MobileMenu/trang share (đang dùng badge tím-hồng cũ) không.
 - **19/07 chiều: audit toàn diện chuột/bàn phím/cảm ứng 3 chặng CAD/Render/Present+Login+Gallery** (4 agent, mỗi agent 1 host riêng để không đụng cookie/IndexedDB). Kết quả → mục Nợ kỹ thuật bên dưới. Danh sách đầy đủ (kèm dòng code) nằm trong lịch sử chat, chưa chép hết vào STATUS để giữ &lt;800 từ — hỏi lại nếu cần.
 - **19/07: đã xử lý 2 nợ kỹ thuật nhỏ trực tiếp (không qua agent):** Prisma `db push` đồng bộ schema `IntegrationAccount` · dọn file rác `Bản sao Không có tiêu đề.rtfd/` + `CLAUDE.md.bak`.
@@ -20,7 +20,7 @@
 ## Nợ kỹ thuật
 - Audit 19/07 (chuột/phím/cảm ứng 3 chặng) đã sửa gần hết, chi tiết → CHANGELOG.md mục "19/07 — Audit...".
 - **CAD→Render văng đăng nhập** — đã sửa double-fetch StrictMode, chưa chắc hết root cause. Nếu tái diễn: user mở DevTools Network xem cookie `if_session` + status lúc bug xảy ra.
-- **[TRUNG] Cảm ứng** — CAD đang làm (`feat/cad-touch-support`, xem mục Hiện tại) · Slide Sorter (Present) chưa giao, tới lượt sau.
+- ~~[TRUNG] Cảm ứng CAD + Slide Sorter~~ — ĐÃ LÀM XONG + merge (xem mục Hiện tại); còn phần shortcut bàn phím CAD chưa có UI cảm ứng.
 - [THẤP] Property panel Render không undo được (có thể chủ ý, chưa hỏi).
 - Sprint 3 B1: `meta` (giá/vendor/sku) trống — chưa có dữ liệu giá thật.
 - In A3/A4 300dpi thật CHƯA khả dụng (giới hạn Render stage) — đúng phạm vi đã chốt.
