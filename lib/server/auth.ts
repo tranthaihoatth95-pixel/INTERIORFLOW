@@ -3,8 +3,33 @@ import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/server/db';
 
-const COOKIE = 'if_session';
+/**
+ * ⚠️ CÁCH LY COOKIE THEO MÔI TRƯỜNG — sửa bug "CAD → Render văng ra màn đăng nhập".
+ *
+ * Cookie trình duyệt định danh theo HOST, **KHÔNG theo PORT**: `localhost:3000`,
+ * `localhost:4090`, `localhost:4091` DÙNG CHUNG một lọ cookie. Repo này chạy nhiều
+ * dev server song song (mỗi git worktree một port) và **worktree KHÔNG có `.env`**
+ * → server đó thiếu AUTH_SECRET (rơi về `dev-secret-change-me`) lẫn DATABASE_URL.
+ * Hệ quả trước khi sửa: mở app worktree trên `localhost:<port>` rồi bấm Đăng xuất
+ * (hoặc bất kỳ đường nào gọi DELETE /api/auth/me) sẽ XOÁ `if_session` của host
+ * `localhost` — tức xoá luôn phiên đăng nhập thật ở `localhost:3000`. Người dùng
+ * không hề hay biết vì chặng CAD không kiểm tra phiên; mãi tới lúc bấm Render mới
+ * lộ ra dưới dạng "tự nhiên bị văng ra đăng nhập".
+ *
+ * Cách ly: server KHÔNG cấu hình AUTH_SECRET là môi trường tạm → dùng TÊN COOKIE
+ * KHÁC, nên không bao giờ đọc/ghi/xoá đè cookie của môi trường thật.
+ */
+const HAS_AUTH_SECRET = !!process.env.AUTH_SECRET;
+const COOKIE = HAS_AUTH_SECRET ? 'if_session' : 'if_session_noenv';
 const secret = () => new TextEncoder().encode(process.env.AUTH_SECRET ?? 'dev-secret-change-me');
+
+if (!HAS_AUTH_SECRET && process.env.NODE_ENV !== 'production') {
+  console.warn(
+    `[auth] KHÔNG thấy AUTH_SECRET (thiếu .env ở thư mục chạy?). Đang dùng secret dự phòng + ` +
+      `cookie "${COOKIE}" để KHÔNG đụng phiên đăng nhập thật ở cùng host localhost. ` +
+      `Muốn đăng nhập thật trên server này: copy .env từ repo chính sang.`,
+  );
+}
 
 export const hashPassword = (plain: string) => bcrypt.hash(plain, 10);
 export const verifyPassword = (plain: string, hash: string) => bcrypt.compare(plain, hash);
@@ -34,23 +59,72 @@ export function clearSession() {
   cookies().delete(COOKIE);
 }
 
-/** User hiện tại từ cookie — null nếu chưa đăng nhập. Đồng thời cập nhật lastSeenAt (presence). */
-export async function getSessionUser() {
+/**
+ * Kết quả đọc phiên — PHÂN BIỆT RÕ các trạng thái, không gộp hết thành `null`.
+ *
+ * Bản cũ `catch { return null }` nuốt chung 5 nguyên nhân rất khác nhau (không có
+ * cookie · chữ ký sai · hết hạn · user không còn · DB lỗi). Client chỉ thấy 401 nên
+ * luôn hiển thị màn đăng nhập, kể cả khi thật ra CHỈ LÀ DB trục trặc — và cookie chết
+ * thì nằm lì trong trình duyệt nên user kẹt vòng lặp im lặng, đăng nhập lại cũng
+ * không hiểu vì sao vừa nãy bị văng.
+ *
+ *   · `authenticated` — hợp lệ.
+ *   · `anonymous`     — chưa từng đăng nhập (không có cookie). Hiện màn đăng nhập là ĐÚNG.
+ *   · `stale`         — CÓ cookie nhưng đã chết (sai chữ ký / hết hạn / user không còn).
+ *                       Phải XOÁ cookie + nói rõ cho người dùng, đừng im lặng.
+ *   · `error`         — hạ tầng (DB) lỗi. TUYỆT ĐỐI không coi là "chưa đăng nhập" và
+ *                       KHÔNG được xoá cookie — người dùng vẫn đang đăng nhập hợp lệ.
+ */
+export type SessionState =
+  | { state: 'authenticated'; user: NonNullable<Awaited<ReturnType<typeof findUserById>>> }
+  | { state: 'anonymous' }
+  | { state: 'stale'; reason: 'invalid' | 'expired' | 'user-gone' }
+  | { state: 'error' };
+
+const findUserById = (id: string) => prisma.user.findUnique({ where: { id } });
+
+/** Đọc phiên hiện tại kèm LÝ DO. Đồng thời cập nhật lastSeenAt (presence). */
+export async function getSession(): Promise<SessionState> {
   const token = cookies().get(COOKIE)?.value;
-  if (!token) return null;
+  if (!token) return { state: 'anonymous' };
+
+  // ── Tầng 1: xác thực token (thuần CPU, không đụng DB) ───────────────────────
+  let userId: string;
   try {
     const { payload } = await jwtVerify(token, secret());
-    const userId = String(payload.sub);
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) return null;
-    // presence: chỉ ghi khi đã cũ >20s để tránh spam write
-    if (Date.now() - user.lastSeenAt.getTime() > 20_000) {
-      await prisma.user.update({ where: { id: userId }, data: { lastSeenAt: new Date() } });
-    }
-    return user;
-  } catch {
-    return null;
+    if (!payload.sub) return { state: 'stale', reason: 'invalid' };
+    userId = String(payload.sub);
+  } catch (e) {
+    // Hết hạn ≠ chữ ký sai. "Chữ ký sai" thường là cookie do server KHÁC cùng host
+    // localhost phát hành (worktree thiếu .env → secret dự phòng) — xem ghi chú COOKIE.
+    const expired = (e as { code?: string })?.code === 'ERR_JWT_EXPIRED';
+    return { state: 'stale', reason: expired ? 'expired' : 'invalid' };
   }
+
+  // ── Tầng 2: tra DB. Lỗi ở đây là lỗi HẠ TẦNG, không phải "chưa đăng nhập" ────
+  try {
+    const user = await findUserById(userId);
+    if (!user) return { state: 'stale', reason: 'user-gone' };
+    // presence chỉ là thông tin PHỤ: ghi hỏng thì bỏ qua, KHÔNG được làm rớt phiên
+    // (bản cũ để lỗi ghi này rơi vào catch chung → đá người dùng về màn đăng nhập).
+    if (Date.now() - user.lastSeenAt.getTime() > 20_000) {
+      await prisma.user
+        .update({ where: { id: userId }, data: { lastSeenAt: new Date() } })
+        .catch(() => {});
+    }
+    return { state: 'authenticated', user };
+  } catch {
+    return { state: 'error' };
+  }
+}
+
+/**
+ * User hiện tại từ cookie — null nếu không đăng nhập được.
+ * Giữ NGUYÊN chữ ký cũ cho ~22 route đang dùng; muốn biết lý do thì gọi `getSession()`.
+ */
+export async function getSessionUser() {
+  const s = await getSession();
+  return s.state === 'authenticated' ? s.user : null;
 }
 
 /**

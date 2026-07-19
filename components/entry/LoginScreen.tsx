@@ -30,7 +30,12 @@ const COPPER = '#c79a63';
 const SANS = '-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue","Space Grotesk",system-ui,sans-serif';
 const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
 
-export function LoginScreen({ onAuthed }: { onAuthed: () => void }) {
+/**
+ * `notice` — lý do người dùng bị đưa về đây (phiên hết hạn / cookie không còn hiệu
+ * lực). Bỏ trống khi vào lần đầu. Có nó thì người dùng không còn cảm giác "tự nhiên
+ * bị văng ra" mà biết chính xác chuyện gì vừa xảy ra.
+ */
+export function LoginScreen({ onAuthed, notice }: { onAuthed: () => void; notice?: string | null }) {
   const reduce = useReducedMotion();
   const lang = useLang();
   const en = lang === 'en';
@@ -92,6 +97,23 @@ export function LoginScreen({ onAuthed }: { onAuthed: () => void }) {
               ? 'Sign in to open your projects — Layout CAD · Render · Present, one canvas.'
               : 'Đăng nhập để mở dự án của bạn — Layout CAD · Render · Present, một dòng chảy.'}
           </motion.p>
+
+          {/* Phiên vừa đứt — nói rõ lý do thay vì im lặng đá về đây */}
+          {notice && (
+            <motion.p
+              variants={rise(amp(12), 0.12)}
+              role="status"
+              className="mt-4 w-full max-w-sm rounded-[10px] border px-3 py-2 text-[12.5px] leading-relaxed"
+              style={{
+                fontFamily: SANS,
+                borderColor: 'var(--border)',
+                background: 'rgba(240,96,32,0.08)',
+                color: 'var(--t2)',
+              }}
+            >
+              {notice}
+            </motion.p>
+          )}
 
           {/* form kính (C-1) — element vừa, biên độ vừa */}
           <motion.div variants={rise(amp(18), 0.14)} className="flex w-full justify-center text-left">

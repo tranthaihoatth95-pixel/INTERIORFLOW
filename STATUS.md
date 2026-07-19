@@ -20,7 +20,8 @@
 
 ## Nợ kỹ thuật
 - Audit 19/07 (chuột/phím/cảm ứng 3 chặng) đã sửa gần hết, chi tiết → CHANGELOG.md mục "19/07 — Audit...".
-- **CAD→Render văng đăng nhập** — đã sửa double-fetch StrictMode, chưa chắc hết root cause. Nếu tái diễn: user mở DevTools Network xem cookie `if_session` + status lúc bug xảy ra.
+- ~~**CAD→Render văng đăng nhập**~~ — **ĐÃ TÌM RA GỐC + sửa** (nhánh `fix/login-bounce-root`, chưa merge). Gốc: cookie định danh theo HOST **không theo PORT** → mọi dev server worktree trên `localhost:<port>` dùng chung lọ cookie với `localhost:3000`; worktree KHÔNG có `.env` nên thiếu AUTH_SECRET/DATABASE_URL, và DELETE /api/auth/me ở đó phát `Set-Cookie: if_session=; Expires=1970` → **xoá phiên thật của :3000**. CAD không kiểm tra phiên nên user vẫn vẽ, tới lúc bấm Render mới lộ. Sửa: server thiếu AUTH_SECRET dùng cookie riêng `if_session_noenv` + cảnh báo log · `getSession()` phân biệt anonymous/stale/error (DB lỗi → 503, KHÔNG đá về login) · cookie chết bị xoá + báo lý do · `SessionWatch` cảnh báo mất phiên ngay tại chặng studio.
+- ⚠️ **Việc cần làm ngay:** hai dev server worktree đang chạy ở `localhost:4090`/`4091` vẫn là code CŨ — còn khả năng xoá phiên đăng nhập thật. Tắt hoặc merge nhánh fix trước khi dùng tiếp.
 - ~~[TRUNG] Cảm ứng CAD + Slide Sorter~~ — ĐÃ LÀM XONG + merge (xem mục Hiện tại); còn phần shortcut bàn phím CAD chưa có UI cảm ứng.
 - [THẤP] Property panel Render không undo được (có thể chủ ý, chưa hỏi).
 - Sprint 3 B1: `meta` (giá/vendor/sku) trống — chưa có dữ liệu giá thật.
