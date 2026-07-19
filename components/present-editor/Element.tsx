@@ -14,7 +14,11 @@
  *   - Shift khi resize góc: GIỮ TỈ LỆ.
  *   - Nhấp đúp ẢNH: mở chế độ chỉnh ảnh (onEditImage). Nhấp đúp CHỮ: sửa nội dung.
  *
- * Snap/căn: phát ra guide khi mép/tâm gần mốc sân khấu (0/25/50/75/100).
+ * Snap/căn: phát ra guide khi mép/tâm gần mốc sân khấu (0/25/50/75/100) HOẶC gần mép/tâm của
+ * element KHÁC trên cùng slide (smart guide kiểu PowerPoint/Figma — góp ý "khoảng cách rõ so
+ * với PowerPoint/Figma"). Mốc "element khác" nhận qua prop `others` (mảng Frame, EditorCanvas
+ * lọc sẵn — loại chính nó + phần tử ẩn). Chỉ áp khi kéo ĐƠN (handle 'move', không phải group —
+ * dời cả nhóm cố tình KHÔNG snap để giữ tương quan, xem nhánh `st.group` bên dưới).
  */
 
 import { useRef } from 'react';
@@ -40,6 +44,9 @@ interface Props {
   /** có nhiều hơn 1 phần tử đang chọn → kéo = dời cả nhóm. */
   multi?: boolean;
   stageRef: React.RefObject<HTMLDivElement>;
+  /** frame của các element KHÁC trên cùng slide (đã loại chính nó + phần tử ẩn) — dùng để tính
+   * smart guide khi kéo (canh mép/tâm với element khác, không chỉ mốc sân khấu cố định). */
+  others?: Frame[];
   /** click thường: chọn riêng. */
   onSelect: () => void;
   /** shift/cmd-click: thêm/bớt khỏi nhóm chọn. */
@@ -69,6 +76,20 @@ function snap(val: number, targets: number[]): { v: number; hit: number | null }
   return { v: val, hit: null };
 }
 
+/** Mốc mép/tâm (dọc = x, ngang = y) rút ra từ frame của các element KHÁC trên slide. */
+function edgeTargets(others: Frame[] | undefined, axis: 'x' | 'y'): number[] {
+  if (!others?.length) return [];
+  const out: number[] = [];
+  for (const o of others) {
+    if (axis === 'x') {
+      out.push(o.x, o.x + o.w, o.x + o.w / 2);
+    } else {
+      out.push(o.y, o.y + o.h, o.y + o.h / 2);
+    }
+  }
+  return out;
+}
+
 type Handle = 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'e' | 'w' | 'rot' | 'move';
 
 export default function Element({
@@ -77,6 +98,7 @@ export default function Element({
   selected,
   multi,
   stageRef,
+  others,
   onSelect,
   onToggle,
   onFrame,
@@ -149,9 +171,12 @@ export default function Element({
       let nx = st.frame.x + dxPct;
       let ny = st.frame.y + dyPct;
       const guides: Guides = { v: [], h: [] };
-      const sxL = snap(nx, TARGETS);
-      const sxC = snap(nx + f.w / 2, TARGETS);
-      const sxR = snap(nx + f.w, TARGETS);
+      // mốc sân khấu cố định (0/25/50/75/100) + mốc mép/tâm của element KHÁC (smart guide).
+      const xTargets = [...TARGETS, ...edgeTargets(others, 'x')];
+      const yTargets = [...TARGETS, ...edgeTargets(others, 'y')];
+      const sxL = snap(nx, xTargets);
+      const sxC = snap(nx + f.w / 2, xTargets);
+      const sxR = snap(nx + f.w, xTargets);
       if (sxL.hit != null) {
         nx = sxL.v;
         guides.v.push(sxL.hit);
@@ -162,9 +187,9 @@ export default function Element({
         nx = sxR.v - f.w;
         guides.v.push(sxR.hit);
       }
-      const syT = snap(ny, TARGETS);
-      const syC = snap(ny + f.h / 2, TARGETS);
-      const syB = snap(ny + f.h, TARGETS);
+      const syT = snap(ny, yTargets);
+      const syC = snap(ny + f.h / 2, yTargets);
+      const syB = snap(ny + f.h, yTargets);
       if (syT.hit != null) {
         ny = syT.v;
         guides.h.push(syT.hit);

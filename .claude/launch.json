@@ -166,6 +166,18 @@
       ],
       "port": 4051,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-cad-present"
+    },
+    {
+      "name": "smartguide-4053",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4053"
+      ],
+      "port": 4053,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-smartguide"
     }
   ]
 }

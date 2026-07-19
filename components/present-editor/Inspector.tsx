@@ -51,14 +51,17 @@ import {
   AlignStartHorizontal,
   AlignCenterHorizontal,
   AlignEndHorizontal,
+  AlignHorizontalDistributeCenter,
+  AlignVerticalDistributeCenter,
   RotateCcw,
   SlidersHorizontal,
   Wand2,
   Link2,
   Unlink,
 } from 'lucide-react';
+import type { AlignMode as GroupAlignMode, DistributeAxis } from '@/lib/present-editor/align';
 
-/** Kiểu căn element trong sân khấu. */
+/** Kiểu căn element trong sân khấu (canh theo BIÊN SÂN KHẤU — nút "Căn trong slide" cũ, 1 phần tử). */
 type AlignMode = 'left' | 'hcenter' | 'right' | 'top' | 'vcenter' | 'bottom';
 
 interface Props {
@@ -70,6 +73,11 @@ interface Props {
   onUpdateSlide: (mutate: (s: EditorSlide) => void, live?: boolean) => void;
   onZOrder: (dir: 'front' | 'back' | 'forward' | 'backward') => void;
   onAlign: (mode: AlignMode) => void;
+  /** Căn NHIỀU element đã chọn theo bounding box CHUNG của chính chúng (khác `onAlign` canh
+   * theo biên slide) — chỉ hiện cụm nút khi `selectedIds.length > 1` (xem lib/present-editor/align.ts). */
+  onAlignSelection?: (mode: GroupAlignMode) => void;
+  /** Phân bố đều khoảng cách giữa các element đã chọn (cần ≥3). */
+  onDistributeSelection?: (axis: DistributeAxis) => void;
   onDuplicate: () => void;
   onDelete: () => void;
   /** mở chế độ chỉnh ảnh (Canva-style) cho ảnh đang chọn. */
@@ -96,6 +104,8 @@ export default function Inspector({
   onUpdateSlide,
   onZOrder,
   onAlign,
+  onAlignSelection,
+  onDistributeSelection,
   onDuplicate,
   onDelete,
   onOpenImageEditor,
@@ -152,10 +162,62 @@ export default function Inspector({
     </div>
   );
 
+  // Cụm căn chỉnh + phân bố đều NHIỀU element đã chọn (≥2) — canh theo bounding box CHUNG
+  // của chính các phần tử đã chọn, KHÁC "Căn trong slide" bên dưới (canh theo biên sân khấu,
+  // chỉ áp cho 1 phần tử). Phân bố đều cần ≥3 phần tử — nút vẫn hiện nhưng disabled khi <3
+  // để người dùng biết tính năng có tồn tại (không ẩn hẳn).
+  const multiCount = selectedIds.length;
+  const multiBlock =
+    multiCount > 1 && onAlignSelection ? (
+      <Panel title={`Căn & phân bố (${multiCount} đối tượng)`}>
+        <Sub>Căn theo nhau</Sub>
+        <Row>
+          <Toggle onClick={() => onAlignSelection('left')} title="Căn trái">
+            <AlignStartVertical size={14} />
+          </Toggle>
+          <Toggle onClick={() => onAlignSelection('hcenter')} title="Căn giữa ngang">
+            <AlignCenterVertical size={14} />
+          </Toggle>
+          <Toggle onClick={() => onAlignSelection('right')} title="Căn phải">
+            <AlignEndVertical size={14} />
+          </Toggle>
+          <Toggle onClick={() => onAlignSelection('top')} title="Căn trên">
+            <AlignStartHorizontal size={14} />
+          </Toggle>
+          <Toggle onClick={() => onAlignSelection('vcenter')} title="Căn giữa dọc">
+            <AlignCenterHorizontal size={14} />
+          </Toggle>
+          <Toggle onClick={() => onAlignSelection('bottom')} title="Căn dưới">
+            <AlignEndHorizontal size={14} />
+          </Toggle>
+        </Row>
+        {onDistributeSelection && (
+          <>
+            <Sub>Phân bố đều {multiCount < 3 ? '(cần ≥3 đối tượng)' : ''}</Sub>
+            <Row>
+              <ActionBtn
+                onClick={() => onDistributeSelection('horizontal')}
+                title="Phân bố đều theo chiều ngang"
+              >
+                <AlignHorizontalDistributeCenter size={14} /> Ngang
+              </ActionBtn>
+              <ActionBtn
+                onClick={() => onDistributeSelection('vertical')}
+                title="Phân bố đều theo chiều dọc"
+              >
+                <AlignVerticalDistributeCenter size={14} /> Dọc
+              </ActionBtn>
+            </Row>
+          </>
+        )}
+      </Panel>
+    ) : null;
+
   if (!selected) {
     return (
       <>
       {layerBlock}
+      {multiBlock}
       <Panel title="Nền slide">
         <Field label="Màu nền">
           <ColorRow
@@ -194,6 +256,7 @@ export default function Inspector({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {layerBlock}
+      {multiBlock}
       {selected.kind === 'text' && (
         <TextInspector
           el={selected}
