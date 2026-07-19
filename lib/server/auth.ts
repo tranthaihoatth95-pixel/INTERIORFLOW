@@ -20,15 +20,36 @@ import { prisma } from '@/lib/server/db';
  * KHÁC, nên không bao giờ đọc/ghi/xoá đè cookie của môi trường thật.
  */
 const HAS_AUTH_SECRET = !!process.env.AUTH_SECRET;
-const COOKIE = HAS_AUTH_SECRET ? 'if_session' : 'if_session_noenv';
+
+/**
+ * Chạy từ git WORKTREE hay từ repo chính? Worktree có `.git` là FILE (trỏ về gitdir
+ * chung); repo chính có `.git` là THƯ MỤC. Đây là dấu hiệu chắc chắn, không phụ thuộc
+ * đường dẫn cụ thể của máy nào.
+ *
+ * Vì sao cần: cách ly theo AUTH_SECRET ở trên CHỈ chặn được khi worktree thiếu `.env`.
+ * Nếu ai đó copy `.env` của repo chính sang worktree (để đăng nhập thật mà test) thì
+ * AUTH_SECRET trùng → chữ ký cookie thật vẫn hợp lệ → server worktree lại có quyền
+ * xoá đè cookie thật. Chốt chặn này khoá luôn trường hợp đó.
+ */
+const IS_WORKTREE = (() => {
+  if (process.env.NODE_ENV === 'production') return false;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require('fs').statSync(require('path').join(process.cwd(), '.git')).isFile();
+  } catch {
+    return false; // không phải repo git / không đọc được → coi như môi trường thật
+  }
+})();
+
+const COOKIE = !HAS_AUTH_SECRET ? 'if_session_noenv' : IS_WORKTREE ? 'if_session_wt' : 'if_session';
 // `||` chứ không `??`: AUTH_SECRET= rỗng phải rơi về fallback, khớp với HAS_AUTH_SECRET ở trên.
 const secret = () => new TextEncoder().encode(process.env.AUTH_SECRET || 'dev-secret-change-me');
 
-if (!HAS_AUTH_SECRET && process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production' && COOKIE !== 'if_session') {
   console.warn(
-    `[auth] KHÔNG thấy AUTH_SECRET (thiếu .env ở thư mục chạy?). Đang dùng secret dự phòng + ` +
+    `[auth] Môi trường tạm (${!HAS_AUTH_SECRET ? 'thiếu AUTH_SECRET' : 'git worktree'}) → dùng ` +
       `cookie "${COOKIE}" để KHÔNG đụng phiên đăng nhập thật ở cùng host localhost. ` +
-      `Muốn đăng nhập thật trên server này: copy .env từ repo chính sang.`,
+      `Đăng nhập trên server này là một phiên riêng, độc lập với repo chính.`,
   );
 }
 
