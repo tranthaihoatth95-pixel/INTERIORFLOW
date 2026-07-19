@@ -1728,18 +1728,17 @@ export default function CadCanvas() {
         return;
       }
       // F8 — bật/tắt Ortho khoá (thói quen AutoCAD). Giữ Shift vẫn là ortho tạm thời.
+      // Nguồn sự thật giờ là store (st.orthoLock) để nút cảm ứng ở CadTouchDock bật/tắt CÙNG
+      // trạng thái; effect đồng bộ phía dưới đẩy giá trị mới xuống ix.current cho vòng vẽ.
       if (e.key === 'F8') {
         e.preventDefault();
-        ix.current.orthoLock = !ix.current.orthoLock;
-        st.setStatus(`Ortho ${ix.current.orthoLock ? 'BẬT' : 'tắt'} (F8) — khoá hướng ngang/dọc khi vẽ.`);
+        st.setOrthoLock(!st.orthoLock);
         return;
       }
       // Việc 4 — F12: bật/tắt Dynamic Input heads-up cạnh con trỏ (thói quen AutoCAD).
       if (e.key === 'F12') {
         e.preventDefault();
-        ix.current.hud = !ix.current.hud;
-        st.setStatus(`Dynamic Input ${ix.current.hud ? 'BẬT' : 'tắt'} (F12) — hiện số/độ dài cạnh con trỏ.`);
-        ix.current.redraw = true;
+        st.setDynInput(!st.dynInput);
         return;
       }
       if ((e.key === 'c' || e.key === 'C') && st.tool === 'polyline' && ix.current.pts.length >= 2) {
@@ -1825,14 +1824,47 @@ export default function CadCanvas() {
         if (!ix.current.spaceDidPan && dt < 300 && isIdle()) repeatLastCommand();
       }
     };
+    // Cảm ứng (Sketch mode) — cầu nối "nút = phím". CadTouchDock phát `cad:synth-key` với tên
+    // phím; ta gọi THẲNG onKey bằng một KeyboardEvent dựng sẵn nên nút đi qua ĐÚNG nhánh logic
+    // của phím thật, không có bản sao logic thứ hai để lệch nhau về sau. Event chỉ được dựng
+    // (không dispatch) → e.target = null → guard INPUT/TEXTAREA ở đầu onKey bỏ qua, đúng ý:
+    // bấm nút cảm ứng vẫn ăn kể cả khi con trỏ text đang nằm trong ô lệnh.
+    const onSynthKey = (ev: Event) => {
+      const key = (ev as CustomEvent<string>).detail;
+      if (typeof key !== 'string' || !key) return;
+      onKey(new KeyboardEvent('keydown', { key }));
+    };
     window.addEventListener('keydown', onKey);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('cad:synth-key', onSynthKey);
     return () => {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('cad:synth-key', onSynthKey);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Ortho (F8) / Dynamic Input (F12) sống ở store để cụm nút cảm ứng và phím tắt dùng CHUNG một
+  // trạng thái. Vòng vẽ + hit-test đọc ix.current (hot path, không qua React), nên effect này là
+  // chỗ duy nhất đẩy store → ix; status bar cũng cập nhật ở đây để 2 đường vào (phím & nút) đều
+  // báo giống hệt nhau. Bỏ qua lần chạy đầu để không đè status hint của tool lúc mới mở trang.
+  const orthoLock = useCadStore((s) => s.orthoLock);
+  const dynInput = useCadStore((s) => s.dynInput);
+  const modeFlagsFirstRun = useRef(true);
+  useEffect(() => {
+    ix.current.orthoLock = orthoLock;
+    ix.current.hud = dynInput;
+    ix.current.redraw = true;
+    if (modeFlagsFirstRun.current) {
+      modeFlagsFirstRun.current = false;
+      return;
+    }
+    const st = useCadStore.getState();
+    st.setStatus(
+      `Ortho ${orthoLock ? 'BẬT' : 'tắt'} (F8) · Dynamic Input ${dynInput ? 'BẬT' : 'tắt'} (F12).`,
+    );
+  }, [orthoLock, dynInput]);
 
   /* ───────── vẽ ───────── */
   function draw() {

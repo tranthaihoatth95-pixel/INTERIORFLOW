@@ -77,6 +77,28 @@ export const PHASE_MAP: Record<Phase, PhaseMeta> = Object.fromEntries(PHASES.map
   PhaseMeta
 >;
 
+/**
+ * Dấu nhận diện THỊ GIÁC của từng chặng — trước đây 3 chặng nhìn y hệt nhau nên người dùng
+ * hay quên mình đang đứng ở đâu. Ba tông ĐỀU đã giảm bão hoà (quiet-luxury, không loè loẹt),
+ * chỉ dùng ở 2 chỗ rất mảnh: hairline đáy thanh đầu + chấm 4px trên pill chặng đang mở.
+ * KHÔNG thay `--accent` của app (accent vẫn là màu hành động dùng chung).
+ *   concept — xanh thép, gu bản vẽ kỹ thuật
+ *   render  — đồng ấm, gu "lò" sản xuất hình ảnh
+ *   present — xanh rêu trầm, gu hồ sơ trình khách
+ */
+export const STAGE_TINT: Record<Phase, string> = {
+  concept: '#6e8ca6',
+  render: '#b57a4e',
+  present: '#7f8d78',
+};
+
+/** Số thứ tự chặng trong pipeline — hiện ở nhãn micro "01 · LAYOUT CAD" trên thanh đầu. */
+export const STAGE_INDEX: Record<Phase, string> = {
+  concept: '01',
+  render: '02',
+  present: '03',
+};
+
 /** default khi chưa chọn chặng (session cũ / vào thẳng app) — Render là chặng dùng nhiều nhất. */
 export const DEFAULT_PHASE: Phase = 'render';
 

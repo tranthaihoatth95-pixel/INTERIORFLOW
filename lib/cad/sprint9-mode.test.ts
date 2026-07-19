@@ -56,10 +56,39 @@ function testProOnlyToolsSet() {
   }
 }
 
+/** Ortho (F8) / Dynamic Input (F12) đã dời từ ref nội bộ CadCanvas LÊN STORE, để cụm nút cảm ứng
+ * của Sketch (CadTouchDock) bật/tắt CÙNG trạng thái với phím tắt — trước đó chỉ bàn phím vật lý
+ * mới chạm tới được 2 công tắc này. Test khoá đúng phần hợp đồng đó. */
+function testTouchToggles() {
+  console.log('\n[5] Ortho/Dynamic Input nằm ở store (nút cảm ứng + phím tắt dùng chung trạng thái)');
+  const s = useCadStore.getState();
+  ok('orthoLock mặc định = tắt (giống thói quen AutoCAD mới mở)', s.orthoLock === false);
+  ok('dynInput mặc định = BẬT (HUD số cạnh con trỏ)', s.dynInput === true);
+
+  useCadStore.getState().setOrthoLock(true);
+  ok('setOrthoLock(true) → orthoLock bật', useCadStore.getState().orthoLock === true);
+  useCadStore.getState().setOrthoLock(false);
+  ok('setOrthoLock(false) → orthoLock tắt', useCadStore.getState().orthoLock === false);
+
+  useCadStore.getState().setDynInput(false);
+  ok('setDynInput(false) → dynInput tắt', useCadStore.getState().dynInput === false);
+  useCadStore.getState().setDynInput(true);
+  ok('setDynInput(true) → dynInput bật lại', useCadStore.getState().dynInput === true);
+
+  // 2 công tắc này là thiết lập vẽ, KHÔNG phải công cụ → phải sống qua mọi lần đổi mode,
+  // nếu không thì mỗi lần bấm Sketch↔Pro người dùng lại mất trạng thái Ortho đang bật.
+  useCadStore.getState().setOrthoLock(true);
+  useCadStore.getState().setCadMode('pro');
+  useCadStore.getState().setCadMode('sketch');
+  ok('orthoLock giữ nguyên khi chuyển Sketch↔Pro', useCadStore.getState().orthoLock === true);
+  useCadStore.getState().setOrthoLock(false);
+}
+
 testDefaultMode();
 testToggle();
 testProToolResetOnSwitchToSketch();
 testProOnlyToolsSet();
+testTouchToggles();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

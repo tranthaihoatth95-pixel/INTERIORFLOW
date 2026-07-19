@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sun, Moon, SunMoon, MessageCircle } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
+import { PHASE_MAP, STAGE_TINT } from '@/lib/phases';
 import { useFlowStore } from '@/lib/store';
 import StageSwitcher from './StageSwitcher';
 import { StageVeil } from './StageTransition';
@@ -29,8 +30,11 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
   const applyTheme = useFlowStore((s) => s.applyTheme);
   const setChatOpen = useFlowStore((s) => s.setChatOpen);
   const chatOpen = useFlowStore((s) => s.chatOpen);
-  // C-4: màn che lúc rời chặng (giống PhaseSwitcher ở Header).
-  const [leaving, setLeaving] = useState(false);
+  // C-4: màn che lúc rời chặng (giống PhaseSwitcher ở Header). `leaving` giữ luôn chặng ĐÍCH để
+  // màn che nói được "Đang mở Render…" — chặng đích tải nặng (canvas node / deck) thì người dùng
+  // biết app đang làm việc chứ không phải treo.
+  const [leaving, setLeaving] = useState<Phase | null>(null);
+  const stage: Phase = active === 'photo' ? 'render' : active === 'cad' ? 'concept' : 'present';
 
   // Route studio đứng riêng → tự áp theme lúc mở (page không gọi hydrate/applyTheme).
   // Prefetch sẵn đường VỀ app chính — bấm Concept/Render chuyển gần như tức thì.
@@ -38,6 +42,8 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
     applyTheme();
     router.prefetch('/');
     router.prefetch('/cad-editor');
+    // Thiếu prefetch route Present là lý do bấm Present hay khựng lâu nhất trong 3 chặng.
+    router.prefetch('/present-editor');
   }, [applyTheme, router]);
 
   const nextTheme: 'auto' | 'light' | 'dark' =
@@ -51,7 +57,7 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
       (active === 'cad' && p === 'concept') || (active === 'present' && p === 'present');
     if (samePane) return;
     // C-4: bật màn stageVeil che trước khi đổi route (nửa kia = StageEnter ở trang đích).
-    setLeaving(true);
+    setLeaving(p);
     if (p === 'present') {
       router.push('/present-editor');
       return;
@@ -79,7 +85,9 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
         height: 46,
         flex: '0 0 auto',
         padding: '0 12px',
-        borderBottom: '1px solid var(--border)',
+        // Phân định chặng — hairline đáy thanh đầu mang TÔNG CỦA CHẶNG (pha loãng vào --border
+        // để vẫn là đường 1px trầm, không thành vạch màu). Đổi chặng là đổi luôn đường này.
+        borderBottom: `1px solid color-mix(in srgb, ${STAGE_TINT[stage]} 55%, var(--border))`,
         background: 'var(--panel)',
       }}
     >
@@ -116,7 +124,7 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
           <ThemeIcon size={16} />
         </button>
       </Tooltip>
-      <StageVeil show={leaving} />
+      <StageVeil show={!!leaving} label={leaving ? PHASE_MAP[leaving].label : undefined} />
       {/* Mất phiên giữa chừng → báo ngay tại chặng, không đợi tới lúc bấm Render mới
           bị đá về màn đăng nhập. Dải báo fixed ở đáy, không chặn thao tác vẽ. */}
       <SessionWatch />

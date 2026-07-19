@@ -141,6 +141,13 @@ interface CadState {
   /** Nấc 2 — polar tracking: bật/tắt + góc bước (độ, VD 15/30/45/90) */
   polarTracking: boolean;
   polarStep: number;
+  /** Ortho khoá hướng ngang/dọc khi vẽ — phím F8 (giữ Shift vẫn là ortho TẠM THỜI, xử lý riêng
+   * trong CadCanvas). Đưa lên store (trước đây nằm trong ref nội bộ CadCanvas) để cụm nút cảm
+   * ứng ở chế độ Sketch bật/tắt được mà không cần bàn phím vật lý. */
+  orthoLock: boolean;
+  /** Dynamic Input — HUD số/độ dài cạnh con trỏ, phím F12 (mặc định BẬT). Lên store cùng lý do
+   * với orthoLock: thiết bị cảm ứng không có dãy phím F. */
+  dynInput: boolean;
   viewport: Viewport;
   /** block furniture đang chờ click đặt (khi tool='block') */
   pendingBlock: string | null;
@@ -212,6 +219,10 @@ interface CadState {
   setGridStep: (n: number) => void;
   setPolarTracking: (on: boolean) => void;
   setPolarStep: (deg: number) => void;
+  /** F8 — bật/tắt Ortho khoá (hoặc nút cảm ứng tương đương ở CadTouchDock). */
+  setOrthoLock: (on: boolean) => void;
+  /** F12 — bật/tắt Dynamic Input HUD (hoặc nút cảm ứng tương đương). */
+  setDynInput: (on: boolean) => void;
   setCurrentLayer: (id: string) => void;
   addLayer: () => void;
   updateLayer: (id: string, patch: Partial<Layer>) => void;
@@ -280,6 +291,8 @@ export const useCadStore = create<CadState>((set, get) => ({
   gridStep: 100,
   polarTracking: false,
   polarStep: 15,
+  orthoLock: false,
+  dynInput: true,
   viewport: { scale: 0.08, panX: 300, panY: 400 },
   pendingBlock: null,
   offsetDist: 100,
@@ -411,6 +424,8 @@ export const useCadStore = create<CadState>((set, get) => ({
   setGridStep: (gridStep) => set({ gridStep }),
   setPolarTracking: (polarTracking) => set({ polarTracking }),
   setPolarStep: (polarStep) => set({ polarStep }),
+  setOrthoLock: (orthoLock) => set({ orthoLock }),
+  setDynInput: (dynInput) => set({ dynInput }),
   setCurrentLayer: (currentLayer) => set({ currentLayer }),
 
   addLayer: () => {

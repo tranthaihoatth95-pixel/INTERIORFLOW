@@ -11,7 +11,7 @@ import {
   TIERS, TIER_ORDER, type AiTier, providerForTier,
   type OneAiEngine, ONE_AI_ENGINES, ONE_AI_RUNTIMES,
 } from '@/lib/ai/tiers';
-import { DEFAULT_PHASE, type Phase } from '@/lib/phases';
+import { DEFAULT_PHASE, PHASE_MAP, STAGE_TINT, type Phase } from '@/lib/phases';
 import StageSwitcher from '@/components/studio/StageSwitcher';
 import { UploadButton } from '@/components/studio/UploadButton';
 import { RenderIOMenus } from '@/components/studio/RenderIOMenus';
@@ -41,7 +41,15 @@ export function Header() {
 
   return (
     // material blur (vibrancy) — header trong suốt, hairline mảnh
-    <header className="mat-header relative z-30 flex h-12 items-center gap-2 border-b border-[var(--border)] px-2 sm:gap-3 sm:px-3">
+    <header
+      className="mat-header relative z-30 flex h-12 items-center gap-2 border-b border-[var(--border)] px-2 sm:gap-3 sm:px-3"
+      // Phân định chặng — hairline đáy header mang tông chặng đang mở (cùng cách làm với
+      // StudioBar ở 2 route studio, để app chính và studio đọc giống nhau). Pha loãng vào
+      // --border nên vẫn là đường 1px trầm, không thành vạch màu.
+      style={{
+        borderBottomColor: `color-mix(in srgb, ${STAGE_TINT[workspace ?? DEFAULT_PHASE]} 55%, var(--border))`,
+      }}
+    >
       {/* logo */}
       <div className="flex shrink-0 items-center gap-2">
         {/* Logo IF chốt phương án "có khung" (IFLogo variant="framed") — 19/07 chủ dự án
@@ -368,7 +376,9 @@ function PhaseSwitcher() {
   const router = useRouter();
   const current: Phase = workspace ?? DEFAULT_PHASE;
   // Lớp phủ fade khi rời sang /present-editor — mask cú "nhảy" route (khựng).
-  const [leaving, setLeaving] = useState(false);
+  // Giữ luôn chặng ĐÍCH (không chỉ true/false) để màn che nói được "Đang mở Present…" khi route
+  // đích tải lâu — xem StageVeil. Cùng cách làm với StudioBar.
+  const [leaving, setLeaving] = useState<Phase | null>(null);
 
   // Prefetch sớm route studio ngay khi switcher mount → chuyển gần như tức thì, bớt khựng.
   useEffect(() => {
@@ -382,7 +392,7 @@ function PhaseSwitcher() {
         active={current}
         onPick={(p) => {
           if (p === 'present') {
-            setLeaving(true); // bật overlay fade trước, rồi mới điều hướng
+            setLeaving('present'); // bật overlay fade trước, rồi mới điều hướng
             // A-4 (bridge Render→Present): slide đã render trong flow (Export Deck / Slide
             // Composer) theo người dùng sang /present-editor — stash consume-once; storage
             // hỏng có fallback bộ nhớ. Flow không có slide ⇒ mảng rỗng, stash bỏ qua,
@@ -391,14 +401,14 @@ function PhaseSwitcher() {
             router.push('/present-editor');
           } else if (p === 'concept') {
             // Chặng 1 = Layout CAD → trình vẽ 2D ở route riêng (cùng pattern fade như Present).
-            setLeaving(true);
+            setLeaving('concept');
             router.push('/cad-editor');
           } else setWorkspace(p);
         }}
       />
       {/* C-4: màn `stageVeil` che lúc RỜI chặng — nửa kia (StageEnter/wallpaperIn)
           nằm ở route đích. Dùng chung StageVeil với StudioBar cho nhất quán. */}
-      <StageVeil show={leaving} />
+      <StageVeil show={!!leaving} label={leaving ? PHASE_MAP[leaving].label : undefined} />
     </>
   );
 }

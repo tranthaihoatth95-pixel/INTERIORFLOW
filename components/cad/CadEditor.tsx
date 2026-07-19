@@ -53,6 +53,7 @@ import {
 } from '@/lib/cad/mep-suggest';
 import CadCanvas from './CadCanvas';
 import CadToolbar from './CadToolbar';
+import CadTouchDock from './CadTouchDock';
 import MaterialPalette from './MaterialPalette';
 
 export default function CadEditor() {
@@ -335,6 +336,9 @@ export default function CadEditor() {
           onToggleFurniture={() => setFurnitureOpen((o) => !o)}
           onToggleMaterial={() => setMaterialOpen((o) => !o)}
         />
+        {/* Sketch = chế độ cảm ứng (ArcSite): cụm nút thay 4 phím chỉ có trên bàn phím vật lý
+            (F8 Ortho · F12 Dynamic Input · gõ-lệnh · Space pan). Pro tự ẩn — xem CadTouchDock. */}
+        <CadTouchDock />
         {furnitureOpen && <FurniturePanel onClose={() => setFurnitureOpen(false)} />}
         {materialOpen && <MaterialPalette onClose={() => setMaterialOpen(false)} />}
         {standardsOpen && <StandardsPanel onClose={() => setStandardsOpen(false)} />}
@@ -1280,8 +1284,19 @@ function CommandLine({ status }: { status: string }) {
       setAcIndex(0);
       inputRef.current?.focus();
     };
+    // Cảm ứng (Sketch) — nút "Lệnh" ở CadTouchDock: KHÔNG seed ký tự, chỉ focus ô lệnh và mở
+    // gợi ý để bàn phím ảo bật lên. Đây là bản thay thế cho type-anywhere (vốn cần bàn phím thật).
+    const onCmdFocus = () => {
+      setAcOpen(true);
+      setAcIndex(0);
+      inputRef.current?.focus();
+    };
     window.addEventListener('cad:cmd-key', onCmdKey);
-    return () => window.removeEventListener('cad:cmd-key', onCmdKey);
+    window.addEventListener('cad:cmd-focus', onCmdFocus);
+    return () => {
+      window.removeEventListener('cad:cmd-key', onCmdKey);
+      window.removeEventListener('cad:cmd-focus', onCmdFocus);
+    };
   }, []);
 
   const run = (override?: string) => {

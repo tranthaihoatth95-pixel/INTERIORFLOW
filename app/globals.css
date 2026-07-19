@@ -715,3 +715,14 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Nhãn micro chặng ("01 · LAYOUT CAD") trên StageSwitcher — vế phân định chặng. Thanh đầu đã
+   khá chật ở laptop nhỏ, nên ẩn nhãn dưới 1100px; pill + chấm tông chặng vẫn còn nguyên. */
+.if-stage-label {
+  display: flex;
+}
+@media (max-width: 1100px) {
+  .if-stage-label {
+    display: none !important;
+  }
+}

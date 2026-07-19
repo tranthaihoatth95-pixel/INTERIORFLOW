@@ -17,7 +17,7 @@
 import { motion } from 'framer-motion';
 import { PencilRuler, Box, Presentation } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
-import { PHASES } from '@/lib/phases';
+import { PHASES, STAGE_TINT, STAGE_INDEX } from '@/lib/phases';
 import { springSheet, pressable } from '@/lib/motion';
 
 // Chặng 1 = Layout CAD → icon thước-bút; Render = khối; Present = trình chiếu.
@@ -85,11 +85,46 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
               )}
               <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Icon size={13} strokeWidth={on ? 2.2 : 2} /> {p.label}
+                {/* Phân định chặng: chấm 4px tông riêng của chặng, CHỈ hiện ở chặng đang mở —
+                    đủ để mắt bắt ngay "mình đang ở đâu" mà không thành trang trí. Cùng tông với
+                    hairline đáy thanh đầu (StageBar/Header). */}
+                {on && (
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 4,
+                      height: 4,
+                      borderRadius: 4,
+                      background: STAGE_TINT[p.id],
+                      marginLeft: 1,
+                    }}
+                  />
+                )}
               </span>
             </motion.button>
           );
         })}
       </div>
+      {/* Nhãn micro "01 · LAYOUT CAD" — label tracked uppercase theo gu TTT. Vế thứ hai của việc
+          phân định chặng: pill cho biết chọn được gì, nhãn này khẳng định đang ĐỨNG ở đâu.
+          Ẩn trên màn hẹp (media query .if-stage-label trong globals.css) để không chen thanh đầu. */}
+      <span
+        className="if-stage-label"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          fontSize: 9.5,
+          fontWeight: 600,
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color: 'var(--t4)',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <span style={{ width: 14, height: 1, background: STAGE_TINT[active] }} />
+        {STAGE_INDEX[active]} · {PHASES.find((p) => p.id === active)?.label}
+      </span>
       {photoContext && (
         <span
           style={{
