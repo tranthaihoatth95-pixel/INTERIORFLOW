@@ -63,6 +63,12 @@ export default function CadEditor() {
   const [templateOpen, setTemplateOpen] = useState(false);
   const [titleBlockOpen, setTitleBlockOpen] = useState(false);
   const [handoffMsg, setHandoffMsg] = useState('');
+  // Batch 19/07 — thay window.confirm/prompt (chặn thread JS, treo webview nhúng — cùng lớp bug
+  // room tool ở CadCanvas) bằng UI nổi non-blocking. Semantics giữ nguyên: OK chạy hành động,
+  // Huỷ/Escape không làm gì.
+  const [confirmAsk, setConfirmAsk] = useState<{ message: string; onOk: () => void } | null>(null);
+  const [aiAskOpen, setAiAskOpen] = useState(false);
+  const [aiDesc, setAiDesc] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const dwgRef = useRef<HTMLInputElement>(null);
   const idfRef = useRef<HTMLInputElement>(null);
@@ -111,17 +117,19 @@ export default function CadEditor() {
     e.target.value = '';
     if (!f) return;
     // .idf THAY THẾ TOÀN BỘ project (mọi sheet) — luôn hỏi trước, không chỉ khi bản đang mở có
-    // dữ liệu (sheet khác có thể đang có nội dung mà CadEditor không thấy được).
-    const proceed = window.confirm(
-      `Mở "${f.name}" sẽ THAY THẾ TOÀN BỘ project hiện tại (mọi bản vẽ/sheet đang mở). Tiếp tục?`,
-    );
-    if (!proceed) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      window.dispatchEvent(new CustomEvent('cad:idf-import-request', { detail: { json: String(reader.result), fileName: f.name } }));
-    };
-    reader.onerror = () => useCadStore.getState().setStatus(`Không đọc được file "${f.name}".`);
-    reader.readAsText(f);
+    // dữ liệu (sheet khác có thể đang có nội dung mà CadEditor không thấy được). Hỏi bằng hộp
+    // xác nhận nổi non-blocking (file giữ trong closure, chỉ đọc khi user bấm Tiếp tục).
+    setConfirmAsk({
+      message: `Mở "${f.name}" sẽ THAY THẾ TOÀN BỘ project hiện tại (mọi bản vẽ/sheet đang mở). Tiếp tục?`,
+      onOk: () => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          window.dispatchEvent(new CustomEvent('cad:idf-import-request', { detail: { json: String(reader.result), fileName: f.name } }));
+        };
+        reader.onerror = () => useCadStore.getState().setStatus(`Không đọc được file "${f.name}".`);
+        reader.readAsText(f);
+      },
+    });
   };
 
   // Sprint 7 — Việc 4: chọn ảnh từ máy → data URL (pattern readAsDataURL đã dùng ở
@@ -140,18 +148,26 @@ export default function CadEditor() {
   };
 
   const openDemo = () => {
+    const run = () => {
+      useCadStore.getState().importDoc(buildDemoPlan(), 'replace');
+      useCadStore.getState().setStatus('Đã mở bản demo — căn hộ mẫu 1PN (sơ phác DD). Bấm F để Zoom Extents.');
+      window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+    };
+    // Hộp xác nhận nổi non-blocking thay window.confirm — chỉ hỏi khi bản vẽ có dữ liệu (như cũ).
     if (useCadStore.getState().doc.entities.length > 0) {
-      const ok = window.confirm('Mở bản demo sẽ THAY THẾ bản vẽ hiện tại. Tiếp tục?');
-      if (!ok) return;
+      setConfirmAsk({ message: 'Mở bản demo sẽ THAY THẾ bản vẽ hiện tại. Tiếp tục?', onOk: run });
+    } else {
+      run();
     }
-    useCadStore.getState().importDoc(buildDemoPlan(), 'replace');
-    useCadStore.getState().setStatus('Đã mở bản demo — căn hộ mẫu 1PN (sơ phác DD). Bấm F để Zoom Extents.');
-    window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
   };
 
   // AI-assist rule-based (lib/cad/ai-assist.ts) — stub tối giản, xem chỗ cắm LLM thật trong file đó.
+  // Mô tả hỏi qua ô nhập nổi non-blocking (aiAskOpen) thay window.prompt; rỗng/Escape = không làm gì.
   const aiAssist = () => {
-    const desc = window.prompt('Mô tả nhanh (VD: "phòng ngủ 4x3.5 có giường và tủ áo"):', '');
+    setAiDesc('');
+    setAiAskOpen(true);
+  };
+  const runAiAssist = (desc: string) => {
     if (!desc) return;
     const st = useCadStore.getState();
     const box = docBox(st.doc);
@@ -326,10 +342,98 @@ export default function CadEditor() {
             {handoffMsg}
           </div>
         )}
+        {/* Hộp xác nhận nổi non-blocking (Mở bản demo / Mở .idf) — thay window.confirm. */}
+        {confirmAsk && (
+          <ConfirmBar
+            message={confirmAsk.message}
+            onOk={() => {
+              setConfirmAsk(null);
+              confirmAsk.onOk();
+            }}
+            onCancel={() => setConfirmAsk(null)}
+          />
+        )}
+        {/* Ô nhập mô tả AI-assist nổi — thay window.prompt. Enter/✓ chạy, Escape/✕ huỷ. */}
+        {aiAskOpen && (
+          <div style={{ position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 40, display: 'flex', alignItems: 'center', gap: 6, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 10, padding: 8, boxShadow: '0 8px 24px rgba(0,0,0,.18)' }}>
+            <input
+              autoFocus
+              value={aiDesc}
+              onChange={(e) => setAiDesc(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.stopPropagation();
+                  setAiAskOpen(false);
+                  runAiAssist(aiDesc);
+                } else if (e.key === 'Escape') {
+                  e.stopPropagation();
+                  setAiAskOpen(false);
+                }
+              }}
+              placeholder='Mô tả nhanh (VD: "phòng ngủ 4x3.5 có giường và tủ áo")'
+              style={{ width: 340, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', padding: '5px 8px', outline: 'none', fontSize: 12, color: 'var(--t1)' }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setAiAskOpen(false);
+                runAiAssist(aiDesc);
+              }}
+              title="Vẽ theo mô tả (Enter)"
+              style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 8, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer' }}
+            >
+              ✓
+            </button>
+            <button
+              type="button"
+              onClick={() => setAiAskOpen(false)}
+              title="Huỷ (Esc)"
+              style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 8, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
       </div>
 
       {/* command line + status */}
       <CommandLine status={status} />
+    </div>
+  );
+}
+
+/* ───────── Hộp xác nhận nổi non-blocking (thay window.confirm — chặn thread JS, treo webview
+ * nhúng + treo automation, cùng lớp bug room tool ở CadCanvas). Neo giữa-trên vùng canvas (cùng
+ * vị trí handoffMsg). Enter (nút OK autoFocus) = Tiếp tục, Escape = Huỷ. ───────── */
+function ConfirmBar({ message, onOk, onCancel }: { message: string; onOk: () => void; onCancel: () => void }) {
+  return (
+    <div
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          onCancel();
+        }
+      }}
+      style={{ position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 40, maxWidth: 460, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', boxShadow: '0 8px 24px rgba(0,0,0,.18)' }}
+    >
+      <div style={{ fontSize: 12.5, color: 'var(--t1)', marginBottom: 8 }}>{message}</div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+        <button
+          type="button"
+          onClick={onCancel}
+          style={{ borderRadius: 8, padding: '4px 12px', fontSize: 12, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
+        >
+          Huỷ
+        </button>
+        <button
+          type="button"
+          autoFocus
+          onClick={onOk}
+          style={{ borderRadius: 8, padding: '4px 12px', fontSize: 12, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer' }}
+        >
+          Tiếp tục
+        </button>
+      </div>
     </div>
   );
 }
@@ -511,15 +615,20 @@ function FurniturePanel({ onClose }: { onClose: () => void }) {
  * hiện tại (giống hệt hành vi openDemo() — hỏi xác nhận nếu doc không rỗng), khác nhau ở NỘI DUNG
  * nạp vào. Đây là ĐIỂM BẮT ĐẦU (tường bao + 1-2 phòng cơ bản), không phải bản vẽ hoàn chỉnh. */
 function TemplatePanel({ onClose }: { onClose: () => void }) {
-  const load = (build: () => ReturnType<typeof buildDemoPlan>, label: string) => {
-    if (useCadStore.getState().doc.entities.length > 0) {
-      const ok = window.confirm(`Nạp mẫu "${label}" sẽ THAY THẾ bản vẽ hiện tại. Tiếp tục?`);
-      if (!ok) return;
-    }
+  // Xác nhận nạp-đè bằng 2 nút inline trong panel (thay window.confirm chặn thread JS).
+  const [confirmTpl, setConfirmTpl] = useState<{ label: string; build: () => ReturnType<typeof buildDemoPlan> } | null>(null);
+  const doLoad = (build: () => ReturnType<typeof buildDemoPlan>, label: string) => {
     useCadStore.getState().importDoc(build(), 'replace');
     useCadStore.getState().setStatus(`Đã nạp mẫu "${label}" — tường bao + phòng cơ bản, tự vẽ tiếp từ đây.`);
     window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
     onClose();
+  };
+  const load = (build: () => ReturnType<typeof buildDemoPlan>, label: string) => {
+    if (useCadStore.getState().doc.entities.length > 0) {
+      setConfirmTpl({ label, build }); // hỏi trước (như cũ) — chỉ khi bản vẽ có dữ liệu
+      return;
+    }
+    doLoad(build, label);
   };
 
   const items: { label: string; desc: string; build: () => ReturnType<typeof buildDemoPlan> }[] = [
@@ -550,6 +659,34 @@ function TemplatePanel({ onClose }: { onClose: () => void }) {
           <div style={{ fontSize: 10.5, color: 'var(--t4)', marginTop: 2, lineHeight: 1.4 }}>{it.desc}</div>
         </button>
       ))}
+      {confirmTpl && (
+        <div style={{ marginTop: 2, padding: '8px 6px 2px', borderTop: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 11.5, color: 'var(--t1)', marginBottom: 8 }}>
+            Nạp mẫu &quot;{confirmTpl.label}&quot; sẽ THAY THẾ bản vẽ hiện tại. Tiếp tục?
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+            <button
+              type="button"
+              onClick={() => setConfirmTpl(null)}
+              style={{ borderRadius: 8, padding: '4px 10px', fontSize: 11.5, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
+            >
+              Huỷ
+            </button>
+            <button
+              type="button"
+              autoFocus
+              onClick={() => {
+                const c = confirmTpl;
+                setConfirmTpl(null);
+                doLoad(c.build, c.label);
+              }}
+              style={{ borderRadius: 8, padding: '4px 10px', fontSize: 11.5, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer' }}
+            >
+              Tiếp tục
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1334,9 +1471,12 @@ function CommandLine({ status }: { status: string }) {
       return;
     }
     if (e.key === 'Escape') {
-      // Việc 1 + 2: Esc đóng gợi ý nếu đang mở; nếu đã đóng → rời focus + xoá.
+      // Việc 1 + 2: Esc đóng gợi ý nếu đang mở VÀ XOÁ luôn text gõ dở (trước đây chỉ đóng
+      // dropdown, để sót ký tự trong ô → lệnh gõ tiếp theo bị dính đuôi cũ); đã đóng → rời
+      // focus + xoá.
       if (acOpen) {
         setAcOpen(false);
+        setVal('');
       } else {
         setVal('');
         inputRef.current?.blur();

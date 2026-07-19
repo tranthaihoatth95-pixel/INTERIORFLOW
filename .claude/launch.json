@@ -322,6 +322,18 @@
       ],
       "port": 4085,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-login-v2"
+    },
+    {
+      "name": "cad-polish-4084",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4084"
+      ],
+      "port": 4084,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-cad-small-polish"
     }
   ]
 }

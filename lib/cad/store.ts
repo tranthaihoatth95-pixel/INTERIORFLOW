@@ -573,9 +573,11 @@ function scaleEntity(e: Entity, f: number): Entity {
   }
 }
 
-function toolHint(t: Tool): string {
+// export để CadCanvas reset status bar về hint của tool hiện tại khi Backspace xoá hết
+// dynBuf (không thì status còn hiển thị "Nhập độ dài: …" cũ dù buffer đã rỗng).
+export function toolHint(t: Tool): string {
   const H: Record<Tool, string> = {
-    select: 'Chọn: click vào đối tượng, hoặc quây khung. Xoá = Delete/E.',
+    select: 'Chọn: click vào đối tượng, hoặc quây khung. Xoá = Delete/Backspace/E.',
     line: 'Line (L): click điểm đầu → điểm cuối. Gõ số + Enter = độ dài. Esc huỷ.',
     polyline: 'Polyline (PL): click các điểm; Enter/double-click kết thúc; C đóng.',
     rect: 'Rect (REC): click 2 góc đối diện.',
