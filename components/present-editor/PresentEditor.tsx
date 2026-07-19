@@ -1366,6 +1366,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
               onUpdateShape={onUpdateShape}
               brand={ed.deck.brand}
               project={ed.deck.project}
+              palette={ed.deck.palette}
               watermark={ed.deck.watermark}
             />
           ) : (

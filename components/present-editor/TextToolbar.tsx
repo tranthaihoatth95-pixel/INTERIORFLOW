@@ -28,6 +28,7 @@ import {
   Loader2,
   Minus,
   Plus,
+  Paintbrush,
 } from 'lucide-react';
 
 interface Props {
@@ -44,6 +45,12 @@ interface Props {
   /** ngữ cảnh để AI viết đúng giọng. */
   brand?: string;
   project?: string;
+  /** palette gu của deck (6 màu, `EditorDeck.palette`) — cho bảng màu chữ nhanh. */
+  palette?: string[];
+  /** Format Painter (sao chép định dạng) — trạng thái + toggle do EditorCanvas quản lý vì cần
+   * biết click TIẾP THEO rơi vào element nào (áp định dạng) trước khi tới lượt TextToolbar. */
+  paintActive?: boolean;
+  onTogglePaint?: () => void;
 }
 
 export default function TextToolbar({
@@ -55,6 +62,9 @@ export default function TextToolbar({
   onUpdate,
   brand,
   project,
+  palette,
+  paintActive,
+  onTogglePaint,
 }: Props) {
   const [aiBusy, setAiBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -68,6 +78,28 @@ export default function TextToolbar({
       if (noteTimer.current) clearTimeout(noteTimer.current);
     };
   }, []);
+
+  // Đóng popover màu khi bấm ra ngoài TOÀN BỘ toolbar (nền/element khác) hoặc Esc. Dùng
+  // wrapRef (cả pill) chứ không phải riêng nút màu — popover render NGOÀI `.pe-pill` (là
+  // container cuộn ngang overflowX:auto, mà CSS quy đổi overflowY thành 'auto' theo — sẽ CẮT
+  // mất popover nếu lồng bên trong, xem ColorPopover bên dưới).
+  useEffect(() => {
+    if (!colorOpen) return;
+    function onDocPointerDown(e: PointerEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setColorOpen(false);
+      }
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setColorOpen(false);
+    }
+    window.addEventListener('pointerdown', onDocPointerDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('pointerdown', onDocPointerDown);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [colorOpen]);
 
   /* Clamp trong VIEWPORT BROWSER thật (không chỉ trong slide) — nếu textbox nằm sát mép
    * PHẢI/TRÁI slide, toolbar (canh giữa theo textbox bằng translate(-50%,...)) có thể tràn
@@ -240,12 +272,12 @@ export default function TextToolbar({
 
         <Sep />
 
-        {/* màu chữ trực tiếp */}
+        {/* màu chữ — bấm mở bảng màu nhanh (palette gu deck + đen/trắng + tuỳ chỉnh) */}
         <button
           type="button"
           onClick={() => setColorOpen((v) => !v)}
           title="Màu chữ"
-          style={{ ...pillIcon, position: 'relative' }}
+          style={pillIcon}
         >
           <span
             style={{
@@ -257,22 +289,35 @@ export default function TextToolbar({
               boxShadow: '0 0 0 1px var(--border)',
             }}
           />
-          <input
-            type="color"
-            value={/^#[0-9a-fA-F]{6}$/.test(el.color) ? el.color : '#221f1a'}
-            onChange={(e) => onUpdate((t) => (t.color = e.target.value))}
-            aria-label="Chọn màu chữ"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              opacity: 0,
-              cursor: 'pointer',
-              // giữ open khi bấm swatch (một số trình duyệt cần click input)
-              pointerEvents: colorOpen ? 'auto' : 'auto',
-            }}
-          />
         </button>
+
+        {onTogglePaint && (
+          <>
+            <Sep />
+            {/* Format Painter — copy định dạng (font/cỡ/màu/đậm/nghiêng/gạch chân/căn lề/
+                tracking/lineHeight/bullet) của element này để áp sang element khác. Bấm lại
+                hoặc Esc để huỷ (xử lý ở EditorCanvas — cần biết click TIẾP THEO). */}
+            <Toggle active={!!paintActive} onClick={onTogglePaint} title="Format Painter — sao chép định dạng">
+              <Paintbrush size={14} />
+            </Toggle>
+          </>
+        )}
       </div>
+
+      {/* Bảng màu chữ nhanh — render NGOÀI `.pe-pill` (sibling, dòng chảy bình thường như
+          `note` bên dưới), KHÔNG lồng absolute bên trong pill: pill cuộn ngang (overflowX:
+          auto) khiến CSS tự quy overflowY thành 'auto' luôn → sẽ CẮT MẤT popover nếu đặt absolute
+          bên trong nó. */}
+      {colorOpen && (
+        <ColorPopover
+          color={el.color}
+          palette={palette}
+          onPick={(c) => {
+            onUpdate((t) => (t.color = c));
+            setColorOpen(false);
+          }}
+        />
+      )}
 
       {note && <div style={noteStyle}>{note}</div>}
     </div>
@@ -281,6 +326,78 @@ export default function TextToolbar({
   function setAlign(a: TextAlign) {
     onUpdate((t) => (t.align = a));
   }
+}
+
+/** Lưới màu nhanh: palette gu deck (tối đa 6) + đen + trắng + 1 ô "màu tuỳ chỉnh" — tái dùng
+ * đúng pattern `input[type=color]` của `ColorRow` (Inspector.tsx/BrandKitPanel.tsx), chỉ đổi
+ * vỏ ngoài cho khớp pill kính mờ tối của TextToolbar. */
+function ColorPopover({
+  color,
+  palette,
+  onPick,
+}: {
+  color: string;
+  palette?: string[];
+  onPick: (c: string) => void;
+}) {
+  const swatches = [...new Set([...(palette || []), '#ffffff', '#000000'])].slice(0, 8);
+  const customValue = /^#[0-9a-fA-F]{6}$/.test(color) ? color : '#221f1a';
+  return (
+    <div
+      onPointerDown={(e) => e.stopPropagation()}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 22px)',
+        gap: 6,
+        padding: 8,
+        borderRadius: 10,
+        background: 'rgba(18,16,14,0.86)',
+        backdropFilter: 'blur(28px) saturate(150%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(150%)',
+        border: '1px solid rgba(255,255,255,.14)',
+        boxShadow: '0 8px 28px rgba(0,0,0,.38)',
+      }}
+    >
+      {swatches.map((c) => (
+        <button
+          key={c}
+          type="button"
+          onClick={() => onPick(c)}
+          title={c}
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: 5,
+            background: c,
+            border:
+              color.toLowerCase() === c.toLowerCase()
+                ? '2px solid var(--accent)'
+                : '1px solid rgba(255,255,255,.3)',
+            cursor: 'pointer',
+            padding: 0,
+          }}
+        />
+      ))}
+      {/* ô "màu tuỳ chỉnh" — ĐÚNG pattern input[type=color] của ColorRow (Inspector.tsx/
+          BrandKitPanel.tsx), chỉ thu nhỏ cho khớp lưới 22px của popover này. */}
+      <input
+        type="color"
+        title="Màu tuỳ chỉnh"
+        value={customValue}
+        onChange={(e) => onPick(e.target.value)}
+        aria-label="Chọn màu chữ tuỳ chỉnh"
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: 5,
+          border: '1px solid rgba(255,255,255,.3)',
+          background: 'none',
+          padding: 0,
+          cursor: 'pointer',
+        }}
+      />
+    </div>
+  );
 }
 
 /* ------------------------------- UI bits ------------------------------- */

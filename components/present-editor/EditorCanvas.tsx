@@ -15,10 +15,11 @@
  * Sửa chữ: nhấp đúp → textarea phủ khung. Sửa ảnh: nhấp đúp → onEditImage.
  */
 
-import { useRef, useState, type CSSProperties } from 'react';
-import type { EditorSlide, Frame, TextElement, ShapeElement, DeckWatermark } from '@/lib/present-editor/model';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import type { EditorSlide, Frame, TextElement, ShapeElement, SlideElement, DeckWatermark } from '@/lib/present-editor/model';
 import { adjustToCssFilter } from '@/lib/present-editor/model';
 import { STAGE_PRESETS, type StageSize } from '@/lib/present-editor/stage-presets';
+import { extractTextFormat, applyTextFormat, type TextFormat } from '@/lib/present-editor/format-painter';
 import Element, { type Guides } from './Element';
 import TextToolbar from './TextToolbar';
 import ShapeQuickPanel from './ShapeQuickPanel';
@@ -65,6 +66,8 @@ interface Props {
   /** ngữ cảnh deck để AI "Tạo content" viết đúng giọng. */
   brand?: string;
   project?: string;
+  /** palette gu của deck (6 màu) — cho bảng màu chữ nhanh của TextToolbar. */
+  palette?: string[];
   /** logo/watermark cấp deck (PS-1/G.7) — hiện xem-trước ở góc, không tương tác. */
   watermark?: DeckWatermark;
 }
@@ -111,6 +114,7 @@ export default function EditorCanvas({
   onUpdateShape,
   brand,
   project,
+  palette,
   watermark,
 }: Props) {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -121,6 +125,37 @@ export default function EditorCanvas({
   const marqueeRef = useRef<{ x0: number; y0: number } | null>(null);
   // giữ khung marquee mới nhất (không lệ thuộc re-render) để pointerup đọc chính xác.
   const lastMarquee = useRef<Marquee | null>(null);
+
+  // Format Painter (Việc 1) — định dạng đã "sao chép" từ 1 text element, chờ áp vào element
+  // KHÁC khi click tiếp theo. Sống ở đây (không phải PresentEditor/useEditor) vì đây là trạng
+  // thái tạm thời của thao tác chuột trên canvas, không phải dữ liệu deck cần lưu/khôi phục.
+  const [paintFormat, setPaintFormat] = useState<TextFormat | null>(null);
+
+  // Esc → huỷ Format Painter đang bật.
+  useEffect(() => {
+    if (!paintFormat) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setPaintFormat(null);
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [paintFormat]);
+
+  /** Bấm nút Format Painter trên TextToolbar: bật (copy định dạng của element đang chọn) hoặc
+   * tắt (đang bật → bấm lại = huỷ). */
+  function toggleFormatPainter(source: TextElement) {
+    setPaintFormat((cur) => (cur ? null : extractTextFormat(source)));
+  }
+
+  /** Chọn 1 element — nếu Format Painter đang bật VÀ element là text (chưa khoá) thì áp định
+   * dạng đã copy vào đó thay vì chọn thường (Việc 1: "click text khác → áp định dạng"). Vẫn
+   * chọn lại element sau khi áp để thấy toolbar cập nhật theo — luồng tự nhiên như Canva. */
+  function selectOrPaint(el: SlideElement) {
+    if (paintFormat && el.kind === 'text' && !el.locked && onUpdateText) {
+      onUpdateText(el.id, (t) => applyTextFormat(t, paintFormat));
+    }
+    onSelect(el.id);
+  }
 
   const editingEl =
     editing && (slide.elements.find((e) => e.id === editing.id) as TextElement | undefined);
@@ -212,6 +247,8 @@ export default function EditorCanvas({
         borderRadius: 8,
         overflow: 'hidden',
         userSelect: 'none',
+        // Format Painter đang bật (Việc 1) — báo con trỏ "đang có định dạng để dán".
+        cursor: paintFormat ? 'copy' : undefined,
       }}
       ref={stageRef}
       onPointerDown={onStageDown}
@@ -283,7 +320,7 @@ export default function EditorCanvas({
           multi={multi && selectedIds.includes(el.id)}
           stageRef={stageRef}
           others={slide.elements.filter((o) => o.id !== el.id && !o.hidden).map((o) => o.frame)}
-          onSelect={() => onSelect(el.id)}
+          onSelect={() => selectOrPaint(el)}
           onToggle={() => onToggleSelect(el.id)}
           onFrame={(frame, live) => onFrame(el.id, frame, live)}
           onFrameMany={onFrameMany}
@@ -464,6 +501,9 @@ export default function EditorCanvas({
             onUpdate={(mutate, live) => onUpdateText(soleTextEl.id, mutate, live)}
             brand={brand}
             project={project}
+            palette={palette}
+            paintActive={!!paintFormat}
+            onTogglePaint={() => toggleFormatPainter(soleTextEl)}
           />
         )}
       </div>
