@@ -355,7 +355,11 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 
   loadGraph: (graphJson, name, flowId, shareToken) => {
     try {
-      const graph = JSON.parse(graphJson) as { nodes?: FlowNode[]; edges?: Edge[] };
+      const graph = JSON.parse(graphJson) as {
+        nodes?: FlowNode[];
+        edges?: Edge[];
+        groups?: NodeGroup[];
+      };
       const nodes = (graph.nodes ?? []).map((n) => ({
         ...n,
         data: {
@@ -366,15 +370,26 @@ export const useFlowStore = create<FlowState>((set, get) => ({
               : n.data.run ?? { status: 'idle' as const, progress: 0 },
         },
       }));
+      const groups = Array.isArray(graph.groups) ? graph.groups : [];
+      // An toàn dữ liệu cũ: node hidden=true nhưng KHÔNG thuộc group đang collapsed nào
+      // (flow lưu từ trước khi `groups` được persist, hoặc dữ liệu đã kẹt do bug cũ)
+      // → hiện lại, tránh node biến mất vĩnh viễn không cách nào lấy lại qua UI.
+      const hiddenInGroup = new Set(
+        groups.filter((g) => g.collapsed).flatMap((g) => g.nodeIds),
+      );
+      const visibleNodes = nodes.map((n) =>
+        n.hidden && !hiddenInGroup.has(n.id) ? { ...n, hidden: false } : n,
+      );
       // Đồng bộ chặng theo nội dung flow: mở flow toàn slide → header nhảy về Present,
       // flow render → Render. Giữ nguyên nếu không đoán được (concept/CAD hoặc flow trống).
-      const inferred = phaseFromNodes(nodes.map((n) => n.data.defType));
+      const inferred = phaseFromNodes(visibleNodes.map((n) => n.data.defType));
       set({
-        nodes,
+        nodes: visibleNodes,
         edges: graph.edges ?? [],
         flowName: name,
         currentFlowId: flowId,
         shareToken,
+        groups,
         past: [],
         future: [],
         ...(inferred ? { workspace: inferred } : {}),
@@ -446,6 +461,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         credits?: number;
         nodes?: FlowNode[];
         edges?: Edge[];
+        groups?: NodeGroup[];
       };
       if (!Array.isArray(saved.nodes) || !saved.nodes.length) return;
       // node đang chạy dở lúc reload → về idle
@@ -459,11 +475,22 @@ export const useFlowStore = create<FlowState>((set, get) => ({
               : n.data.run ?? { status: 'idle' as const, progress: 0 },
         },
       }));
+      const groups = Array.isArray(saved.groups) ? saved.groups : [];
+      // An toàn dữ liệu cũ: node hidden=true nhưng KHÔNG thuộc group đang collapsed nào
+      // (bản lưu từ trước khi `groups` được persist, hoặc dữ liệu đã kẹt do bug cũ)
+      // → hiện lại, tránh node biến mất vĩnh viễn không cách nào lấy lại qua UI.
+      const hiddenInGroup = new Set(
+        groups.filter((g) => g.collapsed).flatMap((g) => g.nodeIds),
+      );
+      const visibleNodes = nodes.map((n) =>
+        n.hidden && !hiddenInGroup.has(n.id) ? { ...n, hidden: false } : n,
+      );
       set({
-        nodes,
+        nodes: visibleNodes,
         edges: saved.edges ?? [],
         flowName: saved.flowName ?? 'Untitled flow',
         credits: typeof saved.credits === 'number' ? saved.credits : 120,
+        groups,
       });
     } catch {
       // save hỏng → bỏ qua, bắt đầu flow trống
@@ -895,14 +922,14 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let quotaWarned = false;
 
 function persistNow() {
-  const { flowName, credits, nodes, edges, user, currentFlowId } = useFlowStore.getState();
+  const { flowName, credits, nodes, edges, groups, user, currentFlowId } = useFlowStore.getState();
 
   // Đã đăng nhập + có flow server → autosave lên DB
   if (user && currentFlowId) {
     fetch(`/api/flows/${currentFlowId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ graphJson: JSON.stringify({ nodes, edges }), name: flowName }),
+      body: JSON.stringify({ graphJson: JSON.stringify({ nodes, edges, groups }), name: flowName }),
     }).catch(() => {});
     return;
   }
@@ -919,7 +946,7 @@ function persistNow() {
       owner = 'anon';
     }
   }
-  const payload = { version: 1, owner, flowName, credits, nodes, edges };
+  const payload = { version: 1, owner, flowName, credits, nodes, edges, groups };
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
   } catch {
@@ -950,7 +977,8 @@ if (typeof window !== 'undefined') {
       state.nodes === prev.nodes &&
       state.edges === prev.edges &&
       state.flowName === prev.flowName &&
-      state.credits === prev.credits
+      state.credits === prev.credits &&
+      state.groups === prev.groups
     )
       return;
     if (saveTimer) clearTimeout(saveTimer);

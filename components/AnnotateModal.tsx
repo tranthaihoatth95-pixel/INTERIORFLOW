@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Paintbrush, Type, Trash2, Check } from 'lucide-react';
+import { X, Paintbrush, Type, Trash2, Check, AlertTriangle } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { fade, modalScale, pressable, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -41,6 +41,9 @@ export function AnnotateModal() {
   const [brush, setBrush] = useState(8);
   const [text, setText] = useState('');
   const [ready, setReady] = useState(false);
+  /** có nét vẽ/chú thích chưa lưu kể từ lần mở/save gần nhất */
+  const [dirty, setDirty] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
 
   const redraw = useCallback(() => {
     const display = displayRef.current;
@@ -69,6 +72,8 @@ export function AnnotateModal() {
       layer.height = img.naturalHeight;
       drawRef.current = layer;
       setReady(true);
+      setDirty(false);
+      setConfirmClose(false);
       redraw();
     };
     img.src = sourceImage;
@@ -84,26 +89,49 @@ export function AnnotateModal() {
     };
   };
 
-  const close = () => setAnnotateNodeId(null);
+  /** Đóng thẳng, bỏ nét vẽ/chú thích chưa lưu (nếu có) — dùng khi user đã xác nhận. */
+  const forceClose = () => {
+    setConfirmClose(false);
+    setDirty(false);
+    setAnnotateNodeId(null);
+  };
+
+  // X / click ra ngoài: còn thay đổi chưa lưu → chỉ hiện cảnh báo, không đóng ngay.
+  const close = () => {
+    if (dirty) {
+      setConfirmClose(true);
+      return;
+    }
+    forceClose();
+  };
 
   const save = () => {
     const display = displayRef.current;
     if (!display || !nodeId) return;
     try {
       updateParam(nodeId, 'annotated', display.toDataURL('image/jpeg', 0.92));
-      close();
+      forceClose();
     } catch {
       useFlowStore.getState().setConnectError('Ảnh bị chặn CORS — không export được. Dùng ảnh upload/output AI.');
     }
   };
 
+  // Esc: còn thay đổi chưa lưu → lần đầu chỉ cảnh báo, Escape LẦN 2 mới thật sự đóng
+  // (bỏ nét vẽ/chú thích). Không có gì để mất → đóng thẳng như cũ.
   useEffect(() => {
     if (!nodeId) return;
-    const handler = (e: KeyboardEvent) => e.key === 'Escape' && close();
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (dirty && !confirmClose) {
+        setConfirmClose(true);
+        return;
+      }
+      forceClose();
+    };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeId]);
+  }, [nodeId, dirty, confirmClose]);
 
   return (
     <AnimatePresence>
@@ -127,6 +155,26 @@ export function AnnotateModal() {
           </motion.button>
         </div>
 
+        {/* cảnh báo còn thay đổi chưa lưu — chỉ hiện sau lần Escape/X đầu tiên khi dirty */}
+        {confirmClose && (
+          <div className="flex items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-600 dark:text-amber-400">
+            <AlertTriangle size={13} className="shrink-0" />
+            <span className="flex-1">Còn thay đổi chưa lưu — nhấn Escape lần nữa để thoát, hoặc chọn bên dưới.</span>
+            <button
+              onClick={save}
+              className="rounded-[8px] bg-[var(--accent-strong)] px-2.5 py-1 text-[11px] font-medium text-white transition-colors hover:bg-[var(--accent)]"
+            >
+              Lưu &amp; đóng
+            </button>
+            <button
+              onClick={forceClose}
+              className="rounded-[8px] border border-[var(--border)] px-2.5 py-1 text-[11px] text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
+            >
+              Bỏ thay đổi
+            </button>
+          </div>
+        )}
+
         <div className="grid flex-1 place-items-center overflow-auto bg-[var(--bg)] p-4">
           {sourceImage ? (
             <canvas
@@ -148,6 +196,7 @@ export function AnnotateModal() {
                   ctx.shadowBlur = 6;
                   ctx.fillText(text, p.x, p.y);
                   ctx.shadowBlur = 0;
+                  setDirty(true);
                   redraw();
                   return;
                 }
@@ -161,6 +210,7 @@ export function AnnotateModal() {
                 ctx.moveTo(p.x, p.y);
                 ctx.lineTo(p.x, p.y);
                 ctx.stroke();
+                setDirty(true);
                 redraw();
                 e.currentTarget.setPointerCapture?.(e.pointerId);
               }}
@@ -239,6 +289,7 @@ export function AnnotateModal() {
               const layer = drawRef.current;
               if (!layer) return;
               layer.getContext('2d')!.clearRect(0, 0, layer.width, layer.height);
+              setDirty(true);
               redraw();
             }}
             className="flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--t3)] transition-colors hover:bg-[var(--hover)]"
