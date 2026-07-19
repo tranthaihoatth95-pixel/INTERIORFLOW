@@ -28,7 +28,7 @@
 import type { EditorDeck, EditorSlide, TextElement, ImageElement } from './model';
 import { renderEditorSlide } from './render';
 import { stageFor, type StageSize } from './stage-presets';
-import { exportDeckToPptx, type PptxSlide } from '@/lib/pptx';
+import { exportDeckToPptx, type PptxSlide, type PptxExportResult } from '@/lib/pptx';
 import type { SlideContent, SlideTheme, SlideLayout } from '@/lib/slides';
 
 /* --------------------------------- PDF --------------------------------- */
@@ -118,7 +118,13 @@ function pickHero(slide: EditorSlide): string | null {
 function toContentSlide(
   slide: EditorSlide,
   deck: EditorDeck,
-): { content: SlideContent; layout: SlideLayout; theme: SlideTheme } | null {
+): {
+  content: SlideContent;
+  layout: SlideLayout;
+  theme: SlideTheme;
+  fontFaces: { title?: string; body?: string; kicker?: string };
+  usedFaces: string[];
+} | null {
   const titleEl = firstByRole(slide, 'title');
   const bodyEls = allByRole(slide, 'body');
   const kickerEl = firstByRole(slide, 'kicker');
@@ -140,9 +146,19 @@ function toContentSlide(
     body,
   };
 
-  // Lưu ý: font riêng theo element (el.fontFamily) + kiểu đậm/nghiêng/gạch chân KHÔNG map được
-  // xuống nhánh PPTX text-editable này vì lib/pptx style theo ROLE cấp deck, không theo run.
-  // Trung thực về font/kiểu chữ được bảo toàn ở PDF và nhánh PPTX-ảnh (render.ts đọc fontFamily).
+  // Font TẢI LÊN theo element: map được xuống PPTX ở mức VAI TRÒ (title/body/kicker) — đủ để
+  // dùng font đã nhúng, xem `fontFaces` ở lib/pptx.ts. Kiểu đậm/nghiêng/gạch chân THEO RUN thì
+  // vẫn không map được (lib/pptx style theo role, không theo run); PDF và nhánh PPTX-ảnh giữ đúng.
+  const faceOf = (el: TextElement | undefined): string | undefined =>
+    el ? customFaceFor(el.fontFamily, deck) : undefined;
+  const fontFaces = {
+    title: faceOf(titleEl),
+    body: faceOf(bodyEls[0]),
+    kicker: faceOf(kickerEl),
+  };
+  const usedFaces = [fontFaces.title, fontFaces.body, fontFaces.kicker].filter(
+    (f): f is string => Boolean(f),
+  );
 
   // Layout heuristic cho PPTX (chỉ có Cover / Nội dung + ảnh / Quote).
   let layout: SlideLayout = 'Nội dung + ảnh';
@@ -158,7 +174,17 @@ function toContentSlide(
     palette: deck.palette,
   };
 
-  return { content, layout, theme };
+  return { content, layout, theme, fontFaces, usedFaces };
+}
+
+/**
+ * `TextElement.fontFamily` là một CSS font stack. Nếu nó khớp một font user đã tải lên
+ * (`deck.customFonts[].stack`) thì trả về tên face đơn để ghi vào PPTX; font hệ thống/curated
+ * trả `undefined` để lib/pptx giữ nguyên đường cũ.
+ */
+function customFaceFor(fontFamily: string | undefined, deck: EditorDeck): string | undefined {
+  if (!fontFamily) return undefined;
+  return deck.customFonts?.find((f) => f.stack === fontFamily)?.face;
 }
 
 /**
@@ -167,17 +193,21 @@ function toContentSlide(
  *   - Không → render cả slide thành ảnh (PptxSlideImage full-bleed).
  * Ảnh hero được nạp thành data URI để nhúng (PPTX cần base64, không nhận URL /api).
  */
-export async function exportDeckToPptxFromModel(deck: EditorDeck): Promise<void> {
-  if (typeof window === 'undefined') return;
+export async function exportDeckToPptxFromModel(deck: EditorDeck): Promise<PptxExportResult> {
+  if (typeof window === 'undefined') return { embedded: [], skipped: [], licenses: [] };
   if (!deck.slides.length) throw new Error('Deck rỗng — cần ít nhất 1 slide.');
 
   const out: PptxSlide[] = [];
+  /** Tên face của font tải lên THỰC SỰ xuất hiện ở nhánh text-editable. */
+  const usedFaces = new Set<string>();
+
   for (let i = 0; i < deck.slides.length; i++) {
     const slide = deck.slides[i];
     const mapped = toContentSlide(slide, deck);
     if (mapped) {
       const heroSrc = pickHero(slide);
       const heroDataUrl = heroSrc ? await toDataUri(heroSrc) : null;
+      mapped.usedFaces.forEach((f) => usedFaces.add(f));
       out.push({
         kind: 'content',
         content: mapped.content,
@@ -187,6 +217,7 @@ export async function exportDeckToPptxFromModel(deck: EditorDeck): Promise<void>
         heroDataUrl,
         brand: deck.brand,
         pageNo: `${i + 1} / ${deck.slides.length}`,
+        fontFaces: mapped.fontFaces,
       });
     } else {
       // ảnh-first → render full-bleed. CHỦ Ý dùng stage MẶC ĐỊNH (16:9) — KHÔNG truyền
@@ -196,10 +227,17 @@ export async function exportDeckToPptxFromModel(deck: EditorDeck): Promise<void>
     }
   }
 
-  await exportDeckToPptx(out, {
+  // Chỉ nhúng font ĐANG DÙNG ở nhánh text-editable — không nhúng cả `deck.customFonts`, càng
+  // không nhúng thư viện máy. Slide đi đường ảnh đã rasterize sẵn chữ nên không cần font.
+  const embedFonts = (deck.customFonts ?? [])
+    .filter((f) => usedFaces.has(f.face))
+    .map((f) => ({ face: f.face, dataUrl: f.dataUrl }));
+
+  return exportDeckToPptx(out, {
     fileName: deck.project || deck.brand || 'deck',
     title: deck.project || deck.brand || 'deck',
     author: deck.brand,
+    embedFonts,
   });
 }
 

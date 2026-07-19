@@ -14,6 +14,8 @@
  */
 
 import type { SlideContent, SlideTheme, SlideLayout, FontPairing } from '@/lib/slides';
+import { injectEmbeddedFonts, type EmbedFontInput, type EmbedFontsResult } from '@/lib/pptx-zip-fonts';
+import { realFamilyName } from '@/lib/pptx-font-embed';
 
 /** Khung 16:9 chuẩn PowerPoint (inch). 13.333×7.5 = 1920×1080. */
 const SLIDE_W = 13.333;
@@ -37,6 +39,11 @@ export interface PptxSlideContent {
   heroDataUrl?: string | null;
   brand?: string;
   pageNo?: string;
+  /**
+   * Ghi đè tên font theo VAI TRÒ chữ. Dùng cho font user tự tải lên: `fonts` (FontPairing) chỉ
+   * chọn được trong 3 bộ curated, không diễn tả nổi font ngoài. Bỏ trống → dùng PPTX_FONT như cũ.
+   */
+  fontFaces?: { title?: string; body?: string; kicker?: string };
 }
 
 /** Một slide chỉ có ảnh đã render (fallback) — nhúng full-bleed. */
@@ -54,7 +61,16 @@ export interface ExportPptxOptions {
   /** Tiêu đề metadata của deck. */
   title?: string;
   author?: string;
+  /**
+   * Font user tải lên cần NHÚNG THẬT vào file .pptx (không chỉ ghi tên).
+   * Xem `lib/pptx-zip-fonts.ts`. Chỉ truyền font đang thực sự dùng trong deck — nhúng cả thư
+   * viện sẽ làm file phình vô ích.
+   */
+  embedFonts?: EmbedFontInput[];
 }
+
+/** Kết quả xuất — cho biết font nào đã nhúng thật, font nào bị bỏ và vì sao. */
+export type PptxExportResult = EmbedFontsResult;
 
 /** Bỏ dấu '#' của hex để pptxgenjs dùng (nó nhận 'RRGGBB'). */
 function hex(color: string | undefined, fallback: string): string {
@@ -75,12 +91,28 @@ function safeFileName(name: string | undefined): string {
 export async function exportDeckToPptx(
   slides: PptxSlide[],
   opts: ExportPptxOptions = {},
-): Promise<void> {
-  if (typeof window === 'undefined') return; // an toàn SSR
+): Promise<PptxExportResult> {
+  const empty: PptxExportResult = { embedded: [], skipped: [], licenses: [] };
+  if (typeof window === 'undefined') return empty; // an toàn SSR
   if (!slides.length) throw new Error('Deck rỗng — cần ít nhất 1 slide.');
 
   const PptxGen = (await import('pptxgenjs')).default;
   const pptx = new PptxGen();
+
+  /**
+   * Bí danh font của app → TÊN HỌ THẬT trong file font.
+   *
+   * App đặt tên riêng cho mỗi font tải lên (vd `Georgia-0eht`) để `@font-face` trong trình duyệt
+   * không đụng nhau. PowerPoint thì ghép font nhúng với chữ bằng tên họ thật nằm trong file font,
+   * nên slide XML phải ghi tên THẬT — xem chú thích ở `prepareFontForEmbed`.
+   */
+  const aliasToReal = new Map<string, string>();
+  for (const f of opts.embedFonts ?? []) {
+    const real = realFamilyName(f.dataUrl);
+    if (real) aliasToReal.set(f.face, real);
+  }
+  const resolveFace = (name: string | undefined): string | undefined =>
+    name ? aliasToReal.get(name) ?? name : undefined;
 
   // Khung 16:9 tùy chỉnh đúng 1920×1080.
   pptx.defineLayout({ name: 'IF_16x9', width: SLIDE_W, height: SLIDE_H });
@@ -107,7 +139,12 @@ export async function exportDeckToPptx(
 
     // ---- Slide nội dung chỉnh sửa được ----
     const { content, theme, layout, fonts } = s;
+    // Font mặc định theo bộ curated; `fontFaces` (nếu có) ghi đè theo vai trò chữ để font user
+    // tải lên được dùng đúng chỗ — nếu không thì nhúng font vào file cũng chẳng ai gọi tới.
     const font = PPTX_FONT[fonts] ?? 'Arial';
+    const fontTitle = resolveFace(s.fontFaces?.title) || font;
+    const fontBody = resolveFace(s.fontFaces?.body) || font;
+    const fontKicker = resolveFace(s.fontFaces?.kicker) || font;
     const bg = hex(theme.bg, 'F5F1EA');
     const textCol = hex(theme.text, '221F1A');
     const mutedCol = hex(theme.muted, '8A8378');
@@ -124,7 +161,7 @@ export async function exportDeckToPptx(
         w: SLIDE_W,
         h: 2,
         align: 'center',
-        fontFace: font,
+        fontFace: fontTitle,
         fontSize: 140,
         color: accentCol,
         bold: false,
@@ -136,7 +173,7 @@ export async function exportDeckToPptx(
         h: 2.4,
         align: 'center',
         valign: 'middle',
-        fontFace: font,
+        fontFace: fontTitle,
         fontSize: 32,
         italic: true,
         color: textCol,
@@ -148,7 +185,7 @@ export async function exportDeckToPptx(
           w: SLIDE_W - 3,
           h: 0.6,
           align: 'center',
-          fontFace: font,
+          fontFace: fontBody,
           fontSize: 16,
           color: mutedCol,
         });
@@ -167,7 +204,7 @@ export async function exportDeckToPptx(
           y: cursorY,
           w: textBoxW,
           h: 0.4,
-          fontFace: font,
+          fontFace: fontKicker,
           fontSize: 13,
           bold: true,
           color: accentCol,
@@ -181,7 +218,7 @@ export async function exportDeckToPptx(
         y: cursorY,
         w: textBoxW,
         h: isCover ? 1.8 : 1.3,
-        fontFace: font,
+        fontFace: fontTitle,
         fontSize: isCover ? 44 : 30,
         bold: true,
         color: textCol,
@@ -215,7 +252,7 @@ export async function exportDeckToPptx(
             y: cursorY,
             w: textBoxW,
             h: SLIDE_H - cursorY - 0.9,
-            fontFace: font,
+            fontFace: fontBody,
             fontSize: isCover ? 16 : 15,
             color: isCover ? mutedCol : textCol,
             valign: 'top',
@@ -270,5 +307,27 @@ export async function exportDeckToPptx(
     }
   }
 
-  await pptx.writeFile({ fileName: `${safeFileName(opts.fileName ?? opts.title)}.pptx` });
+  const fileName = `${safeFileName(opts.fileName ?? opts.title)}.pptx`;
+  const embedFonts = opts.embedFonts ?? [];
+
+  // KHÔNG dùng pptx.writeFile() nữa khi cần nhúng font: nó tự tải file xuống luôn, không cho ta
+  // chen vào giữa. Lấy buffer → chèn font → tự tải. Không có font cần nhúng thì đường đi vẫn y
+  // hệt cũ về mặt kết quả (injectEmbeddedFonts trả thẳng buffer gốc, không đụng ZIP).
+  const data = (await pptx.write({ outputType: 'arraybuffer' })) as ArrayBuffer;
+  const { blob, result } = await injectEmbeddedFonts(data, embedFonts);
+
+  const url = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    // Nhả sau một nhịp — thu hồi ngay có thể huỷ lượt tải ở vài trình duyệt.
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  }
+
+  return result;
 }

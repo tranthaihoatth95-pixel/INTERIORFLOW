@@ -31,8 +31,16 @@ interface State {
 }
 
 type Action =
-  | { type: 'commit'; deck: EditorDeck } // ghi có undo
-  | { type: 'live'; deck: EditorDeck } // ghi KHÔNG snapshot (khi đang kéo)
+  /**
+   * Ghi bằng HÀM MUTATE, clone deck NGAY TRONG reducer.
+   *
+   * Vì sao cần: `update()` bản cũ clone `state.deck` bắt được lúc render. Gọi update() HAI LẦN
+   * trong cùng một tick ⇒ cả hai cùng clone một bản deck cũ, lần dispatch sau ghi đè lần trước.
+   * Lỗi thật đã gặp: tải font lên gọi liên tiếp `onAddDeckFont()` rồi `onUpdateSelected()`;
+   * `customFonts` vừa ghi bị lần thứ hai xoá sạch, nên font không bao giờ đi theo deck (và PPTX
+   * không có gì để nhúng). Clone trong reducer thì mỗi lần luôn dựa trên state MỚI NHẤT.
+   */
+  | { type: 'mutate'; mutate: (d: EditorDeck) => void; live: boolean }
   | { type: 'selectSlide'; index: number }
   | { type: 'select'; id: string | null } // đặt lại selection = 1 (hoặc rỗng)
   | { type: 'selectMany'; ids: string[] } // đặt lại cả mảng (marquee)
@@ -44,15 +52,14 @@ const MAX_HISTORY = 60;
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
-    case 'commit':
-      return {
-        ...state,
-        deck: action.deck,
-        past: [...state.past, state.deck].slice(-MAX_HISTORY),
-        future: [],
-      };
-    case 'live':
-      return { ...state, deck: action.deck };
+    case 'mutate': {
+      // Clone rồi mới mutate ⇒ reducer vẫn thuần, an toàn với StrictMode gọi 2 lần.
+      const next = cloneDeck(state.deck);
+      action.mutate(next);
+      return action.live
+        ? { ...state, deck: next }
+        : { ...state, deck: next, past: [...state.past, state.deck].slice(-MAX_HISTORY), future: [] };
+    }
     case 'selectSlide':
       return {
         ...state,
@@ -119,14 +126,11 @@ export function useEditor(initial: EditorDeck) {
     (slide?.elements.find((e) => e.id === selectedId) as SlideElement | undefined) ?? null;
 
   /** Cập nhật deck bằng một hàm mutate trên bản clone. `live` = không tạo bước undo. */
-  const update = useCallback(
-    (mutate: (d: EditorDeck) => void, live = false) => {
-      const next = cloneDeck(state.deck);
-      mutate(next);
-      dispatch({ type: live ? 'live' : 'commit', deck: next });
-    },
-    [state.deck],
-  );
+  const update = useCallback((mutate: (d: EditorDeck) => void, live = false) => {
+    // KHÔNG clone ở đây — xem chú thích action 'mutate'. Clone tại chỗ sẽ dùng phải deck cũ khi
+    // có hai lần update trong cùng một tick. Không phụ thuộc state ⇒ callback này cũng ổn định.
+    dispatch({ type: 'mutate', mutate, live });
+  }, []);
 
   /** Cập nhật slide hiện tại. */
   const updateSlide = useCallback(
