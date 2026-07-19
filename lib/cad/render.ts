@@ -33,6 +33,16 @@ export interface DrawStyle {
    * đồng nhất bất kể layer, không phải bản vẽ "thật").
    */
   realLineweight?: boolean;
+  /**
+   * FIX (demo render overlap) — true: entity 'hatch' (tường/poché SOLID) chỉ vẽ VIỀN, KHÔNG
+   * tô đặc. Dùng cho các lớp overlay accent (highlight selection đang chọn, preview ghost khi
+   * offset/trim/mirror, leg đầu dimension góc) — những lớp này vẽ ĐÈ SAU CÙNG lên toàn bộ bản
+   * vẽ (kể cả text/nhãn phòng bên dưới); nếu để tô đặc như bản vẽ THẬT, 1 mảng tường (hatch
+   * SOLID dày theo bề dày tường) sẽ thành 1 thanh màu accent ĐẶC che kín chữ bên dưới nó —
+   * đúng bug user báo cáo (screenshot: thanh tím dày đè chữ nhãn phòng). KHÔNG áp dụng cho
+   * export PNG đen-trắng (renderDocToDataURL) — export vẫn cần tô đặc poché tường như bản in.
+   */
+  outlineOnly?: boolean;
 }
 
 function layerColor(doc: Doc, e: Entity, style: DrawStyle): string {
@@ -178,6 +188,19 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
       if (e.points.length < 3) break;
       const pattern = e.pattern ?? (e.solid === false ? 'ANSI31' : 'SOLID');
       const color = layerColor(doc, e, style);
+      if (style.outlineOnly) {
+        // chỉ viền — xem giải thích ở khai báo DrawStyle.outlineOnly (tránh tô đặc đè chữ).
+        ctx.beginPath();
+        e.points.forEach((p, i) => {
+          const s = S(p);
+          if (i === 0) ctx.moveTo(s.x, s.y);
+          else ctx.lineTo(s.x, s.y);
+        });
+        ctx.closePath();
+        ctx.strokeStyle = color;
+        ctx.stroke();
+        break;
+      }
       if (pattern === 'SOLID') {
         ctx.beginPath();
         e.points.forEach((p, i) => {

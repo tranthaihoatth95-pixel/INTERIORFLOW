@@ -250,6 +250,18 @@
       ],
       "port": 4060,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-fix-cad-delete-key"
+    },
+    {
+      "name": "demo-render-overlap-4070",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4070"
+      ],
+      "port": 4070,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-fix-demo-render-overlap"
     }
   ]
 }
