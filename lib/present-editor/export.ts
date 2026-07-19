@@ -20,7 +20,7 @@
  *      tinh chỉnh RIÊNG cho tỉ lệ ngang rộng — sửa đúng cho mọi khổ cần viết lại toàn bộ
  *      hệ toạ độ của lib/pptx.ts (ngoài phạm vi PS-4). "Giữ 16:9" là lựa chọn AN TOÀN hơn
  *      trong 2 lựa chọn spec cho phép ("giữ 16:9 HOẶC map khổ gần nhất") — UI nhắc rõ điều
- *      này ở StagePresetPanel + ExportMenu.
+ *      này ở StagePresetPanel + menu Xuất (components/ui/IOMenu.tsx).
  *
  * Cả ba đọc EditorDeck. jsPDF/pptx import động (client-only).
  */

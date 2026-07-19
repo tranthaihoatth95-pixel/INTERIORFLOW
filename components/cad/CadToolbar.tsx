@@ -5,7 +5,7 @@
  * liquid-glass, bo tròn, đơn sắc + 1 accent đồng). Mọi lệnh đều có nút; tooltip kèm phím tắt.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   MousePointer2, Minus, Waypoints, Square, Circle, Spline,
   Move, Copy, RotateCw, FlipHorizontal2, StretchHorizontal,
@@ -155,6 +155,29 @@ export default function CadToolbar({
     }
   }, [cadMode]);
 
+  // 19/07 — bug user báo: ở mode Pro thanh công cụ tràn và lòi scrollbar thô của trình duyệt ra
+  // giữa pill. Scrollbar giờ ẩn hẳn (.cad-pill-scroll trong globals.css); để user vẫn biết là còn
+  // nút bên ngoài, gắn thêm .is-overflowing (fade 2 mép) CHỈ khi thực sự tràn. Đo lại khi đổi
+  // mode (Pro có nhiều nút hơn) và khi resize cửa sổ.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [overflowing, setOverflowing] = useState(false);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const measure = () => setOverflowing(el.scrollWidth > el.clientWidth + 1);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    // Quan trọng: quan sát CẢ hàng nút bên trong. Chỉ observe container thì lúc font/icon nạp
+    // xong làm nội dung dài ra, container KHÔNG đổi kích thước ⇒ RO không bắn ⇒ đo hụt.
+    if (el.firstElementChild) ro.observe(el.firstElementChild);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [cadMode]);
+
   const Group = ({ items }: { items: ToolBtn[] }) => (
     <>
       {items.map((b) => {
@@ -178,6 +201,8 @@ export default function CadToolbar({
 
   return (
     <div
+      ref={scrollRef}
+      className={`cad-pill-scroll${overflowing ? ' is-overflowing' : ''}`}
       style={{
         position: 'absolute',
         top: 14,
@@ -188,8 +213,10 @@ export default function CadToolbar({
         // hẹp"). Thay vì để pill tràn 2 bên (đẩy ModeSwitch/Undo ra ngoài mép, không bấm được),
         // giới hạn maxWidth + cuộn ngang — nội dung luôn bắt đầu từ trái (ModeSwitch/DRAW luôn
         // thấy được ngay), phần Pro dài hơn thì cuộn thay vì vô hình.
+        // 19/07 — scrollbar mặc định thô nằm giữa pill đã ẩn qua .cad-pill-scroll (globals.css).
         maxWidth: 'calc(100vw - 32px)',
         overflowX: 'auto',
+        overflowY: 'hidden',
         borderRadius: 999,
         background: 'color-mix(in srgb, var(--panel) 78%, transparent)',
         backdropFilter: 'blur(18px) saturate(1.4)',

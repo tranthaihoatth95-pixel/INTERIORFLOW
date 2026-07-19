@@ -14,6 +14,7 @@ import {
 import { DEFAULT_PHASE, type Phase } from '@/lib/phases';
 import StageSwitcher from '@/components/studio/StageSwitcher';
 import { UploadButton } from '@/components/studio/UploadButton';
+import { RenderIOMenus } from '@/components/studio/RenderIOMenus';
 import { toggleShare } from '@/lib/workspace';
 import { TasksDropdown } from '@/components/TasksDropdown';
 import { MobileMenu } from '@/components/MobileMenu';
@@ -27,6 +28,7 @@ import { IFLogo } from '@/components/entry/IFLogo';
 
 export function Header() {
   const flowName = useFlowStore((s) => s.flowName);
+  const workspace = useFlowStore((s) => s.workspace);
   const setFlowName = useFlowStore((s) => s.setFlowName);
   const isRunningFlow = useFlowStore((s) => s.isRunningFlow);
   const tasksOpen = useFlowStore((s) => s.tasksOpen);
@@ -83,6 +85,15 @@ export function Header() {
 
       {/* Nút Tải lên — hành vi theo chặng (Concept: moodboard · Render: import node · Present: studio) */}
       <UploadButton />
+
+      {/* 19/07 — cặp Nhập/Xuất dùng chung 3 chặng (components/ui/IOMenu.tsx). Chỉ hiện ở chặng
+          Render: chặng Layout CAD có cặp này trên thanh file của CadEditor, chặng Present có
+          trên thanh công cụ của present-editor. Ẩn ở màn hẹp (<lg) cho khỏi chật header. */}
+      {(workspace ?? 'render') === 'render' && (
+        <div className="hidden items-center gap-2 lg:flex">
+          <RenderIOMenus />
+        </div>
+      )}
 
       {/* Núm chọn mức phụ thuộc AI (4 mức) — mobile gom vào ⋯ */}
       <div className="hidden sm:block">

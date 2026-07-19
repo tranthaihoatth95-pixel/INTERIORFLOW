@@ -6,10 +6,10 @@
 ## Hiện tại
 - Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main`. **19/07 XONG cảm ứng CAD (pinch-zoom/pan + nút Xoá nổi) & Slide Sorter (DnD→Pointer Events)** — chi tiết → CHANGELOG. Verify SHA bằng git.
 - **19/07 khuya — ĐỢT MỚI user giao:**
-  - **Đã merge:** `fix/login-bounce-root` + `feat/login-contrast` (gỡ 2 dòng chữ login · **tương phản thích ứng dùng chung** áp 4 chỗ · **logo IF `framed` đồng bộ toàn app**) — chi tiết → CHANGELOG. 17 test mới pass. Verify mắt: chỉ màn login (Gallery/Present/Render cần đăng nhập).
-  - **Đang chạy:** `feat/toolbar-io-sync` (gom gọn toolbar CAD · sửa scrollbar thô Pro mode · **component Nhập/Xuất dùng chung cả 3 chặng**: cùng cách thể hiện, bấm mới xổ định dạng riêng từng chặng).
+  - **Đã merge cả 3:** `fix/login-bounce-root` · `feat/login-contrast` (gỡ 2 dòng chữ login · **tương phản thích ứng dùng chung** áp 4 chỗ · **logo IF `framed` đồng bộ toàn app**) · `feat/toolbar-io-sync` (toolbar CAD 18 nút → **5 menu xổ + 2 nút chuyển chặng** · sửa scrollbar thô Pro mode bằng `.cad-pill-scroll` ẩn scrollbar + fade mép · **đồng bộ Nhập/Xuất 3 chặng** qua `components/ui/IOMenu.tsx`, logic xuất/nhập giữ nguyên 100%, `ExportMenu.tsx` cũ đã xoá). Chi tiết → CHANGELOG.
+  - ⚠️ **CẦN USER XÁC NHẬN:** menu Xuất của chặng **Render** giờ có PDF/PPTX ở mức CẢ FLOW (trước đây chỉ có trên node `slide.deck`) — dùng đúng bộ hàm cũ, nhưng là **năng lực mới ở tầng chặng**. Muốn giữ nguyên trạng thì gỡ 2 mục đó.
   - **Đợt 2 CHƯA giao:** ① Sketch mode = cảm ứng kiểu ArcSite · Pro mode = tối ưu chuột/phím · chuyển 3 chặng mượt + phân định rõ (gộp luôn UI cảm ứng cho F8/F12/gõ lệnh/Space — CAD hiện vẫn cần bàn phím vật lý). ② Present font: tải font từ máy · edit chữ tiêu đề kiểu text-effects/typography illustration · sửa lỗi hiện chữ ở dải thumbnail deck mẫu.
-- ⚠️ `MobileMenu:129` badge tím-hồng **không phải logo IF** mà là avatar chữ cái user → GIỮ NGUYÊN. `components/LoginScreen.tsx` (gốc `components/`, khác `entry/`) là **code chết**, không ai import, còn badge "IF" cũ — chưa xoá.
+- ⚠️ `MobileMenu:129` badge tím-hồng **không phải logo IF** mà là avatar chữ cái user → GIỮ NGUYÊN. `components/LoginScreen.tsx` (gốc `components/`, khác `entry/`) là **code chết**, không ai import — chưa xoá.
 - Có nút **Mở DWG** trực tiếp (Web Worker cô lập GPL).
 - Test pattern: `node_modules/.bin/sucrase-node <path>.test.ts` (59 file). KHÔNG có vitest/jest — bỏ qua chỉ dẫn nào ghi `npm test`.
 
