@@ -4,8 +4,8 @@
 > ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (`41976b3`) — đã merge `fix/cad-small-polish` + `feat/login-v2` + `feat/login-minimal` (login tối giản, logo IF mới `IFLogo.tsx` 3 phương án dùng `framed`, slideshow mặc định). launch.json đã dọn sạch ~25 entry chết, chỉ còn server thật. tsc pass, 0 worktree sống.
-- **19/07 khuya: đang làm TUẦN TỰ backlog cảm ứng** — bắt đầu `feat/cad-touch-support` (worktree `interiorflow-wt-cad-touch`, agent đang chạy): pinch-zoom/pan 2 ngón + nút Xoá nổi cho CAD. Xong sẽ merge rồi tới lượt Slide Sorter cảm ứng (Present).
+- Nhánh tích hợp `feat/present-layout-ml-p1` (`ba4803c`) — đã merge thêm `feat/cad-touch-support` (pinch-zoom/pan 2 ngón verify bằng toán học + nút Xoá nổi cho CAD). tsc pass. **CHƯA push origin** (đợi xong Slide Sorter, push 1 lượt).
+- **19/07 khuya: TUẦN TỰ backlog cảm ứng — đang làm bước 2/2** `feat/slidesorter-touch` (worktree `interiorflow-wt-slidesorter-touch`, agent đang chạy): thay HTML5 native DnD (không chạy trên touch) bằng Pointer Events tự viết, giữ nguyên nút Lên/Xuống dự phòng.
 - **Chưa quyết:** phương án logo IF (đang dùng `framed`/B — còn A không-khung, C wordmark) có áp đồng bộ sang Header/MobileMenu/trang share (đang dùng badge tím-hồng cũ) không.
 - **19/07 chiều: audit toàn diện chuột/bàn phím/cảm ứng 3 chặng CAD/Render/Present+Login+Gallery** (4 agent, mỗi agent 1 host riêng để không đụng cookie/IndexedDB). Kết quả → mục Nợ kỹ thuật bên dưới. Danh sách đầy đủ (kèm dòng code) nằm trong lịch sử chat, chưa chép hết vào STATUS để giữ &lt;800 từ — hỏi lại nếu cần.
 - **19/07: đã xử lý 2 nợ kỹ thuật nhỏ trực tiếp (không qua agent):** Prisma `db push` đồng bộ schema `IntegrationAccount` · dọn file rác `Bản sao Không có tiêu đề.rtfd/` + `CLAUDE.md.bak`.
