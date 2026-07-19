@@ -17,6 +17,7 @@ import type { Phase } from '@/lib/phases';
 import { useFlowStore } from '@/lib/store';
 import StageSwitcher from './StageSwitcher';
 import { StageVeil } from './StageTransition';
+import SessionWatch from './SessionWatch';
 import Tooltip from '@/components/ui/Tooltip';
 
 export default function StudioBar({ active }: { active: 'present' | 'photo' | 'cad' }) {
@@ -118,6 +119,9 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
         </button>
       </Tooltip>
       <StageVeil show={leaving} />
+      {/* Mất phiên giữa chừng → báo ngay tại chặng, không đợi tới lúc bấm Render mới
+          bị đá về màn đăng nhập. Dải báo fixed ở đáy, không chặn thao tác vẽ. */}
+      <SessionWatch />
     </div>
   );
 }

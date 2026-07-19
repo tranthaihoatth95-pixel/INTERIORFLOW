@@ -153,6 +153,53 @@ export default function Home() {
   // mục đích) chỉ chặn phần fetch; hydrate()/setInterval bên dưới vẫn chạy như cũ.
   const authCheckRan = useRef(false);
 
+  /**
+   * Lý do phiên đứt, hiện kèm màn đăng nhập. Trước đây mọi thất bại đều im lặng đá
+   * về đăng nhập nên người dùng tưởng "bấm Render là bị văng" — thật ra phiên đã
+   * chết từ trước, chặng CAD không kiểm tra nên không ai biết.
+   */
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
+  /** Server không trả lời được (503/mạng) — KHÁC "chưa đăng nhập", không được đá về login. */
+  const [authOffline, setAuthOffline] = useState(false);
+
+  const checkAuth = useCallback(async () => {
+    const store = useFlowStore.getState();
+    try {
+      const r = await fetch('/api/auth/me');
+
+      // 503 = DB/hạ tầng lỗi. Phiên VẪN hợp lệ → giữ nguyên, cho thử lại.
+      if (r.status === 503) {
+        setAuthOffline(true);
+        return;
+      }
+
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        // Chỉ giải thích khi CÓ cookie mà cookie đã chết; 'anonymous' là vào lần đầu,
+        // hiện màn đăng nhập trơn là đúng, không cần cảnh báo gì.
+        if (body?.reason && body.reason !== 'anonymous') {
+          setAuthNotice(
+            body.reason === 'expired'
+              ? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
+              : 'Phiên đăng nhập không còn hiệu lực. Vui lòng đăng nhập lại.',
+          );
+        }
+        setAuthOffline(false);
+        store.setUser(null);
+        return;
+      }
+
+      const body = await r.json();
+      setAuthOffline(false);
+      setAuthNotice(null);
+      store.setUser(body.user);
+      if (body.user?.id) enterAfterAuth(body.user.id);
+    } catch {
+      // Mạng đứt — cũng KHÔNG phải "chưa đăng nhập".
+      setAuthOffline(true);
+    }
+  }, [enterAfterAuth]);
+
   // theme + flow local trước, rồi check session.
   // KHÔNG bootstrap workspace ở đây — ProjectSelect tự openFlow khi user chọn dự án.
   useEffect(() => {
@@ -162,17 +209,7 @@ export default function Home() {
 
     if (!authCheckRan.current) {
       authCheckRan.current = true;
-      fetch('/api/auth/me')
-        .then(async (r) => {
-          if (!r.ok) {
-            store.setUser(null);
-            return;
-          }
-          const body = await r.json();
-          store.setUser(body.user);
-          if (body.user?.id) enterAfterAuth(body.user.id);
-        })
-        .catch(() => store.setUser(null));
+      void checkAuth();
     }
 
     return () => clearInterval(t);
@@ -197,6 +234,30 @@ export default function Home() {
     if (u) markTourDone(u.id);
   }, []);
 
+  // Server không trả lời (503 / mất mạng) — KHÔNG đá về đăng nhập: phiên vẫn còn,
+  // chỉ là chưa hỏi được. Cho thử lại tại chỗ để không mất việc đang làm dở.
+  if (authOffline) {
+    return (
+      <div className="grid h-[100dvh] place-items-center bg-[var(--bg)] px-6 text-center">
+        <div className="max-w-sm">
+          <p className="text-sm text-[var(--t2)]">Chưa kết nối được máy chủ · Server unreachable</p>
+          <p className="mt-2 text-xs text-[var(--t4)]">
+            Phiên đăng nhập của bạn vẫn còn — không cần đăng nhập lại.
+          </p>
+          <button
+            onClick={() => {
+              setAuthOffline(false);
+              void checkAuth();
+            }}
+            className="mt-4 rounded-[10px] border border-[var(--border)] px-4 py-2 text-xs text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (user === undefined) {
     return (
       <div className="grid h-[100dvh] place-items-center bg-[var(--bg)]">
@@ -212,7 +273,9 @@ export default function Home() {
   if (user === null) {
     return (
       <LoginScreen
+        notice={authNotice}
         onAuthed={() => {
+          setAuthNotice(null);
           const u = useFlowStore.getState().user;
           if (u) enterAfterAuth(u.id);
         }}
