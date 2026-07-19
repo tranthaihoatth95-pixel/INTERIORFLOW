@@ -18,7 +18,7 @@ import {
   Pentagon, Ellipse, Donut, SplinePointer, Slash, Divide,
 } from 'lucide-react';
 import { useCadStore, type Tool, type CadMode } from '@/lib/cad/store';
-import { modKey, modShiftKey } from '@/lib/kbd';
+import { useModKey, useModShiftKey } from '@/lib/kbd';
 import Tooltip from '@/components/ui/Tooltip';
 
 /** Rút gọn nhãn nút (bỏ mô tả dài sau " (" / " — ") thành nhãn ngắn cho tag hover. */
@@ -133,6 +133,8 @@ export default function CadToolbar({
   const past = useCadStore((s) => s.past.length);
   const future = useCadStore((s) => s.future.length);
   const isPro = cadMode === 'pro';
+  const undoLabel = useModKey('Z');
+  const redoLabel = useModShiftKey('Z');
 
   // Nạp lựa chọn Sketch/Pro đã lưu SAU mount (tránh lệch hydration SSR — cùng pattern
   // PresentEditor.tsx). Không có gì lưu (lần đầu/private mode) → giữ mặc định 'sketch' của store.
@@ -278,12 +280,12 @@ export default function CadToolbar({
       </Tooltip>
       <Divider />
       <Tooltip label="Undo">
-        <button type="button" onClick={undo} disabled={!past} title={`Undo (${modKey('Z')})`} style={btn(false, !past)}>
+        <button type="button" onClick={undo} disabled={!past} title={`Undo (${undoLabel})`} style={btn(false, !past)}>
           <Undo2 size={16} />
         </button>
       </Tooltip>
       <Tooltip label="Redo">
-        <button type="button" onClick={redo} disabled={!future} title={`Redo (${modShiftKey('Z')})`} style={btn(false, !future)}>
+        <button type="button" onClick={redo} disabled={!future} title={`Redo (${redoLabel})`} style={btn(false, !future)}>
           <Redo2 size={16} />
         </button>
       </Tooltip>
