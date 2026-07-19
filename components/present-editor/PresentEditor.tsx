@@ -162,6 +162,13 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   const stageWidth = Math.round(Math.max(160, Math.min(fitWidth, STAGE_MAX_W) * zoom));
 
   const [busy, setBusy] = useState<string | null>(null);
+  // Toast kết quả export (thành công/lỗi) — tự tắt sau vài giây (cùng pattern FlowCanvas.tsx).
+  const [exportMsg, setExportMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  useEffect(() => {
+    if (!exportMsg) return;
+    const t = setTimeout(() => setExportMsg(null), exportMsg.ok ? 3000 : 4500);
+    return () => clearTimeout(t);
+  }, [exportMsg]);
   const [libAssets, setLibAssets] = useState<GuAsset[]>([]);
   const [libLoading, setLibLoading] = useState(true);
   const [gu, setGu] = useState<GuProfile | null>(null);
@@ -754,8 +761,10 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     setBusy('pdf');
     try {
       await exportDeckToPdf(ed.deck);
+      setExportMsg({ ok: true, text: 'Đã xuất PDF xong.' });
     } catch (err) {
       console.error('[PresentEditor] PDF export failed', err);
+      setExportMsg({ ok: false, text: 'Xuất PDF lỗi — thử lại.' });
     } finally {
       setBusy(null);
     }
@@ -765,8 +774,10 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     setBusy('pptx');
     try {
       await exportDeckToPptxFromModel(ed.deck);
+      setExportMsg({ ok: true, text: 'Đã xuất PowerPoint xong.' });
     } catch (err) {
       console.error('[PresentEditor] PPTX export failed', err);
+      setExportMsg({ ok: false, text: 'Xuất PowerPoint lỗi — thử lại.' });
     } finally {
       setBusy(null);
     }
@@ -776,8 +787,10 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     setBusy('png');
     try {
       await exportDeckToPng(ed.deck);
+      setExportMsg({ ok: true, text: 'Đã xuất ảnh PNG xong.' });
     } catch (err) {
       console.error('[PresentEditor] PNG export failed', err);
+      setExportMsg({ ok: false, text: 'Xuất PNG lỗi — thử lại.' });
     } finally {
       setBusy(null);
     }
@@ -1126,6 +1139,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         onStagePreset={() => setStagePresetOpen(true)}
         stageLabel={stage.label}
         busy={busy}
+        exportMsg={exportMsg}
       />
 
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>

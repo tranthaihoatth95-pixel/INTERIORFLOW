@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  X, FolderKanban, Workflow, Users, Coins, Plus, Loader2, Share2, Clock, Crown, Circle,
+  X, FolderKanban, Workflow, Users, Coins, Plus, Loader2, Share2, Clock, Crown, Circle, Check,
 } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { openFlow, createProject } from '@/lib/workspace';
@@ -103,6 +103,9 @@ export function Dashboard({
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
+  // Ô nhập tên dự án mới — thay cho window.prompt (crash trong webview nhúng, vd Electron).
+  const [newProjectOpen, setNewProjectOpen] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
 
   // Ở cover luôn coi như "mở" để nạp dữ liệu + hiển thị inline.
   const shown = coverMode || open;
@@ -134,17 +137,29 @@ export function Dashboard({
     setOpen(false);
   };
 
-  const onNewProject = async () => {
-    const name = window.prompt('Tên dự án mới:');
-    if (!name?.trim()) return;
+  const onNewProject = () => {
+    setNewProjectName('');
+    setNewProjectOpen(true);
+  };
+
+  const cancelNewProject = useCallback(() => {
+    setNewProjectOpen(false);
+    setNewProjectName('');
+  }, []);
+
+  const confirmNewProject = useCallback(async () => {
+    const name = newProjectName.trim();
+    if (!name) return;
     setCreating(true);
     try {
-      await createProject(name.trim());
+      await createProject(name);
       load();
+      setNewProjectOpen(false);
+      setNewProjectName('');
     } finally {
       setCreating(false);
     }
-  };
+  }, [newProjectName, load]);
 
   // Nội dung dùng chung cho cả overlay lẫn cover-mode.
   const inner = (
@@ -158,6 +173,42 @@ export function Dashboard({
         {/* Cover (màn ngoài) = CHỈ XEM → ẩn nút thao tác, thay bằng gợi ý mở màn trong. */}
         {coverMode ? (
           <span className="text-[11px] text-[var(--t4)]">Mở màn hình trong để thao tác</span>
+        ) : newProjectOpen ? (
+          <>
+            {/* Đặt tên dự án — input inline thay window.prompt (không hoạt động trong webview nhúng). */}
+            <input
+              autoFocus
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') confirmNewProject();
+                else if (e.key === 'Escape') {
+                  e.stopPropagation();
+                  cancelNewProject();
+                }
+              }}
+              placeholder="Tên dự án mới…"
+              className="w-48 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] outline-none focus:border-[var(--accent)]"
+            />
+            <motion.button
+              {...pressableIcon}
+              onClick={confirmNewProject}
+              disabled={creating || !newProjectName.trim()}
+              title="Tạo dự án"
+              className="grid h-8 w-8 place-items-center rounded-[10px] bg-[var(--accent-strong)] text-white transition-colors hover:bg-[var(--accent)] disabled:opacity-50"
+            >
+              {creating ? <Loader2 size={13} className="animate-spin" /> : <Check size={14} />}
+            </motion.button>
+            <motion.button
+              {...pressableIcon}
+              onClick={cancelNewProject}
+              disabled={creating}
+              title="Huỷ (Esc)"
+              className="grid h-8 w-8 place-items-center rounded-[10px] border border-[var(--border)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)] disabled:opacity-50"
+            >
+              <X size={14} />
+            </motion.button>
+          </>
         ) : (
           <>
             <motion.button

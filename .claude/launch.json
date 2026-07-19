@@ -142,6 +142,18 @@
       ],
       "port": 4049,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-brandkit"
+    },
+    {
+      "name": "smallfixes-4052",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "4052"
+      ],
+      "port": 4052,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-smallfixes"
     }
   ]
 }

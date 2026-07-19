@@ -50,6 +50,8 @@ interface Props {
   /** nhãn khổ đang chọn (vd "16:9", "A4 dọc") hiện trên nút. */
   stageLabel: string;
   busy: string | null;
+  /** kết quả export gần nhất (thành công/lỗi) — hiện toast ngắn cạnh nút Export. */
+  exportMsg?: { ok: boolean; text: string } | null;
 }
 
 export default function Toolbar(p: Props) {
@@ -155,6 +157,7 @@ export default function Toolbar(p: Props) {
         onExportPptx={p.onExportPptx}
         onExportPng={p.onExportPng}
         busy={p.busy}
+        resultMsg={p.exportMsg}
       />
 
       {/* nút ẩn giữ chỗ cho lib open state (tránh unused) */}
