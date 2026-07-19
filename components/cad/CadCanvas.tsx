@@ -131,6 +131,11 @@ export default function CadCanvas() {
   // cache <img> đã load theo src — vẽ thumbnail cần element ảnh thật cho ctx.drawImage; đang tải
   // thì vẽ khung placeholder, load xong bật lại redraw (không polling, chỉ trigger đúng 1 lần/ảnh).
   const photoImgCache = useRef<Map<string, HTMLImageElement | 'loading' | 'error'>>(new Map());
+  // Room tool — ô nhập tên phòng inline, thay window.prompt (chặn thread JS, treo ứng dụng
+  // trong webview nhúng — cùng lớp bug đã sửa ở Dashboard "Đặt tên dự án", xem components/Dashboard.tsx).
+  // Chốt 2 điểm góc xong lưu tạm ở đây thay vì addEntity ngay, hỏi tên xong mới addEntity.
+  const [roomNamePrompt, setRoomNamePrompt] = useState<{ p0: Pt; p1: Pt; screenAt: Pt } | null>(null);
+  const [roomNameValue, setRoomNameValue] = useState('PHÒNG');
   const ix = useRef<Ix>({
     cursorScreen: { x: 0, y: 0 },
     cursorWorld: { x: 0, y: 0 },
@@ -510,6 +515,25 @@ export default function CadCanvas() {
     else if (st.tool === 'spline' && ix.current.pts.length >= 2) finishSpline(false);
   };
 
+  /** Room tool — chốt ô nhập tên inline (thay window.prompt). Giữ ĐÚNG hành vi cũ: tên rỗng
+   * (Enter/Xác nhận không gõ gì, hoặc bấm Huỷ) vẫn tạo phòng, chỉ rơi về tên mặc định 'PHÒNG'
+   * — y hệt window.prompt cũ (Cancel trả null → name || 'PHÒNG' cũng ra 'PHÒNG'). */
+  function confirmRoomName(nameOverride?: string) {
+    if (!roomNamePrompt) return;
+    const st = useCadStore.getState();
+    const name = (nameOverride ?? roomNameValue).trim();
+    const textLayer = st.doc.layers.find((l) => l.name === 'Ghi chú')?.id ?? st.currentLayer;
+    const { entities } = roomRect(roomNamePrompt.p0, roomNamePrompt.p1, st.wallThickness, name || 'PHÒNG', st.currentLayer, textLayer);
+    st.addEntities(entities);
+    setRoomNamePrompt(null);
+    ix.current.redraw = true;
+  }
+  function cancelRoomName() {
+    // Cancel = tạo phòng với tên mặc định 'PHÒNG', BỎ QUA chữ đang gõ dở — đúng hành vi
+    // window.prompt cũ (bấm Cancel trả null, không trả text đang gõ dở trong ô).
+    confirmRoomName('');
+  }
+
   /**
    * commitEnter — hành vi "Enter/xác nhận" của CAD, dùng CHUNG cho phím Enter VÀ chuột phải
    * (thói quen AutoCAD: right-click = Enter/kết thúc lệnh). Chốt tham số fillet/chamfer/lengthen,
@@ -629,10 +653,10 @@ export default function CadCanvas() {
       case 'room':
         P.push(w);
         if (P.length === 2) {
-          const name = window.prompt('Tên phòng:', 'PHÒNG') ?? '';
-          const textLayer = st.doc.layers.find((l) => l.name === 'Ghi chú')?.id ?? st.currentLayer;
-          const { entities } = roomRect(P[0], P[1], st.wallThickness, name || 'PHÒNG', st.currentLayer, textLayer);
-          st.addEntities(entities);
+          // Không dùng window.prompt (đứng thread JS, treo trong webview nhúng) — mở ô nhập
+          // inline (roomNamePrompt), addEntities thật sự chỉ chạy khi confirmRoomName() chốt.
+          setRoomNamePrompt({ p0: P[0], p1: P[1], screenAt: ix.current.cursorScreen });
+          setRoomNameValue('PHÒNG');
           ix.current.pts = [];
         }
         break;
@@ -2299,6 +2323,60 @@ export default function CadCanvas() {
               Đóng
             </button>
           </div>
+        </div>
+      )}
+      {/* Room tool — ô nhập tên phòng inline, thay window.prompt (đứng thread JS trong webview
+          nhúng — cùng lớp bug đã sửa ở Dashboard "Đặt tên dự án"). Neo gần điểm click góc thứ 2,
+          kẹp trong khung canvas để không tràn ra ngoài. */}
+      {roomNamePrompt && (
+        <div
+          style={{
+            position: 'absolute',
+            left: Math.min(Math.max(roomNamePrompt.screenAt.x, 8), (wrapRef.current?.clientWidth ?? 800) - 220),
+            top: Math.min(Math.max(roomNamePrompt.screenAt.y, 8), (wrapRef.current?.clientHeight ?? 600) - 90),
+            zIndex: 30,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            background: 'var(--panel)',
+            border: '1px solid var(--border)',
+            borderRadius: 10,
+            padding: 8,
+            boxShadow: '0 8px 24px rgba(0,0,0,.18)',
+          }}
+        >
+          <input
+            autoFocus
+            value={roomNameValue}
+            onChange={(e) => setRoomNameValue(e.target.value)}
+            onFocus={(e) => e.currentTarget.select()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') confirmRoomName();
+              else if (e.key === 'Escape') {
+                e.stopPropagation();
+                cancelRoomName();
+              }
+            }}
+            placeholder="Tên phòng…"
+            className="text-xs text-[var(--t1)]"
+            style={{ width: 140, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', padding: '5px 8px', outline: 'none' }}
+          />
+          <button
+            type="button"
+            onClick={() => confirmRoomName()}
+            title="Tạo phòng (Enter)"
+            style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 8, background: 'var(--accent-strong)', color: '#fff', border: 'none', cursor: 'pointer' }}
+          >
+            ✓
+          </button>
+          <button
+            type="button"
+            onClick={cancelRoomName}
+            title="Dùng tên mặc định (Esc)"
+            style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 8, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
+          >
+            ✕
+          </button>
         </div>
       )}
     </div>
