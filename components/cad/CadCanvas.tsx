@@ -11,12 +11,12 @@
  * SSR-safe: 'use client' + mọi truy cập window/document nằm trong effect/handler.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useCadStore, toolHint } from '@/lib/cad/store';
 import type { Tool } from '@/lib/cad/store';
 import { useFlowStore } from '@/lib/store';
-import type { Entity, Pt, Viewport, DimEntity, LineEntity, MarkupPin, PhotoEmbed } from '@/lib/cad/model';
-import { screenToWorld, worldToScreen, zoomAt, fitBox, docBox, dist } from '@/lib/cad/model';
+import type { Entity, Pt, Viewport, DimEntity, LineEntity, MarkupPin, PhotoEmbed, Box } from '@/lib/cad/model';
+import { screenToWorld, worldToScreen, zoomAt, fitBox, docBox, dist, entityBox } from '@/lib/cad/model';
 import { drawEntities, drawEntity } from '@/lib/cad/render';
 import { createMarkupPin, createPhotoEmbed, nearestMarkup, nearestPhoto, formatMarkupTime } from '@/lib/cad/markup';
 import { findSnap, hitTest, idsInRect, type SnapResult } from '@/lib/cad/query';
@@ -93,6 +93,15 @@ interface Ix {
   spaceDidPan: boolean;
   // Việc 4 — Dynamic Input heads-up cạnh con trỏ (F12 bật/tắt, mặc định bật)
   hud: boolean;
+  // Cảm ứng — pinch-zoom/pan 2 ngón: theo dõi MỌI pointer đang active (không chỉ touch, để
+  // logic dọn dẹp trên up/cancel đơn giản — nhưng chỉ pointer type 'touch' mới tính vào pinch).
+  pointers: Map<number, { x: number; y: number; type: string }>;
+  // non-null khi ĐANG có gesture pinch 2 ngón chạy; startDist/startScale chốt lúc bắt đầu để tính
+  // tỉ lệ zoom so với GESTURE START (không phải incremental) — tránh trôi dạt tích luỹ sai số.
+  pinch: { startDist: number; startScale: number; lastMid: Pt } | null;
+  // Cảm ứng — cờ "pointer gần nhất là ngón tay" cập nhật ở pointerdown/up, dùng để quyết định
+  // hiện nút Xoá nổi (thiết bị không có bàn phím vật lý thì không dùng được phím Delete/Backspace).
+  lastPointerWasTouch: boolean;
 }
 
 function css(varName: string, fallback: string): string {
@@ -157,6 +166,28 @@ export default function CadCanvas() {
   // Lightbox ảnh hiện trường — bước xác nhận "Gỡ ảnh" inline (thay window.confirm).
   const [confirmRemovePhoto, setConfirmRemovePhoto] = useState(false);
   useEffect(() => setConfirmRemovePhoto(false), [viewPhoto]);
+
+  // Cảm ứng — nút Xoá nổi: chỉ cần re-render khi selection/tool đổi (selector zustand, KHÔNG
+  // đọc viewport ở đây — viewport đổi liên tục lúc pan/zoom và được xử lý riêng, imperative,
+  // trong draw()/updateDeleteFabPosition() để không ép React re-render mỗi frame pan/zoom).
+  const selection = useCadStore((s) => s.selection);
+  const cadTool = useCadStore((s) => s.tool);
+  // cập nhật ở pointerdown/up (KHÔNG ở pointermove — tần suất cao, tránh re-render mỗi lần rê
+  // chuột/ngón tay, đúng tinh thần kiến trúc file này: React state chỉ đổi khi cần hiện UI).
+  const [isTouchInput, setIsTouchInput] = useState(false);
+  const deleteBtnRef = useRef<HTMLButtonElement>(null);
+  const showDeleteFab = cadTool === 'select' && selection.length > 0 && isTouchInput;
+  // draw() (vòng rAF) mới là nơi cập nhật vị trí nút mỗi frame (xem updateDeleteFabPosition) —
+  // NHƯNG nút chỉ mount vào DOM sau khi React commit (sau khi rAF-tick hiện tại đã trôi qua nếu
+  // ref còn null lúc đó), nên có thể "trễ 1 nhịp" và tạm nằm ở vị trí fallback cho tới lần redraw
+  // kế tiếp — nhất là khi rAF không chạy liên tục (tab nền/công cụ tự động hoá). Đặt vị trí ĐÚNG
+  // ngay khi nút vừa hiện (trước khi trình duyệt paint) để không có 1 frame nào lộ vị trí sai.
+  useLayoutEffect(() => {
+    if (!showDeleteFab) return;
+    const st = useCadStore.getState();
+    const { W, H } = screenSize();
+    updateDeleteFabPosition(st, st.viewport, W, H);
+  }, [showDeleteFab]);
   // autoFocus không ăn ổn định khi form mount NGAY trong pointerdown trên canvas (thứ tự
   // focus()/blur mặc định của browser trong cùng cú click không đảm bảo — quan sát được focus
   // rơi về body/ô lệnh) → effect tự focus field đầu sau khi form mở. Guard "focus đã nằm TRONG
@@ -198,6 +229,9 @@ export default function CadCanvas() {
     spaceDownAt: 0,
     spaceDidPan: false,
     hud: true,
+    pointers: new Map(),
+    pinch: null,
+    lastPointerWasTouch: false,
   });
 
   // ── vòng vẽ rAF ──
@@ -394,6 +428,38 @@ export default function CadCanvas() {
     updateCursor(screen);
     const st = useCadStore.getState();
 
+    // Cảm ứng — theo dõi MỌI pointer đang active (map theo pointerId) để phát hiện gesture 2 ngón.
+    ix.current.lastPointerWasTouch = ev.pointerType === 'touch';
+    setIsTouchInput(ev.pointerType === 'touch');
+    ix.current.pointers.set(ev.pointerId, { x: screen.x, y: screen.y, type: ev.pointerType });
+    if (ev.pointerType === 'touch') {
+      const touchPts = [...ix.current.pointers.values()].filter((p) => p.type === 'touch');
+      if (!ix.current.pinch && touchPts.length === 2) {
+        // Đúng 2 ngón chạm cùng lúc → bắt đầu pinch-zoom/pan, HUỶ mọi trạng thái đơn-pointer mà
+        // ngón đầu tiên có thể đã lỡ khởi tạo (quây khung chọn / kéo grip / pan) để không xung
+        // đột với gesture 2 ngón sắp chạy. (Giới hạn đã biết: nếu ngón đầu rơi đúng vào 1 điểm vẽ
+        // của lệnh đang chạy — vd Line/Polyline — điểm đó đã được chốt trước khi ngón 2 chạm tới,
+        // pinch không thể "undo" lại điểm đó; nằm ngoài phạm vi việc này, ghi vào báo cáo.)
+        ix.current.selDrag = null;
+        ix.current.gripDrag = null;
+        ix.current.gripPreview = null;
+        ix.current.panning = false;
+        ix.current.panStart = null;
+        const [p1, p2] = touchPts;
+        ix.current.pinch = {
+          startDist: Math.max(1, dist(p1, p2)),
+          startScale: st.viewport.scale,
+          lastMid: { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 },
+        };
+        ix.current.redraw = true;
+        return;
+      }
+      if (ix.current.pinch) {
+        // Đã có pinch chạy (vd ngón thứ 3 chạm thêm) — bỏ qua, KHÔNG phá gesture 2 ngón gốc.
+        return;
+      }
+    }
+
     // pan: chuột giữa, hoặc space, hoặc tool pan
     if (e.button === 1 || ix.current.spaceHeld || st.tool === 'pan') {
       ix.current.panning = true;
@@ -463,6 +529,38 @@ export default function CadCanvas() {
     const e = ev.nativeEvent;
     ix.current.ortho = ev.shiftKey || ix.current.orthoLock;
     const screen = toLocal(e);
+    if (ix.current.pointers.has(ev.pointerId)) {
+      ix.current.pointers.set(ev.pointerId, { x: screen.x, y: screen.y, type: ev.pointerType });
+    }
+    // Cảm ứng — 2 ngón đang active + gesture pinch đã bắt đầu → tính zoom (so với khoảng cách
+    // LÚC BẮT ĐẦU gesture, tránh trôi dạt) + pan (theo dịch chuyển điểm giữa 2 ngón so với lần
+    // move trước), rồi trả sớm — KHÔNG chạy tiếp logic pan/vẽ/chọn 1-pointer bên dưới.
+    if (ix.current.pinch) {
+      const touchPts = [...ix.current.pointers.values()].filter((p) => p.type === 'touch');
+      if (touchPts.length >= 2) {
+        const [p1, p2] = touchPts;
+        const newMid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+        const newDist = Math.max(1, dist(p1, p2));
+        const pinch = ix.current.pinch;
+        const stNow = useCadStore.getState();
+        // (1) pan: dịch view đúng bằng chuyển động của điểm giữa 2 ngón kể từ lần move trước —
+        // giữ nguyên cơ chế pan đã có (cộng thẳng vào panX/panY, giống nhánh panning ở trên).
+        const panned: Viewport = {
+          ...stNow.viewport,
+          panX: stNow.viewport.panX + (newMid.x - pinch.lastMid.x),
+          panY: stNow.viewport.panY + (newMid.y - pinch.lastMid.y),
+        };
+        // (2) zoom: tỉ lệ so với LÚC BẮT ĐẦU gesture (startDist/startScale), tâm ĐÚNG tại điểm
+        // giữa 2 ngón hiện tại — tái dùng zoomAt() sẵn có (cơ chế zoom duy nhất trong file), chỉ
+        // truyền factor tương đối so với scale sau bước pan ở trên.
+        const targetScale = pinch.startScale * (newDist / pinch.startDist);
+        const zoomed = zoomAt(panned, newMid, targetScale / panned.scale);
+        stNow.setViewport(zoomed);
+        pinch.lastMid = newMid;
+        ix.current.redraw = true;
+        return;
+      }
+    }
     if (ix.current.panning && ix.current.panStart) {
       const { screen: s0, vp } = ix.current.panStart;
       useCadStore.getState().setViewport({ ...vp, panX: vp.panX + (screen.x - s0.x), panY: vp.panY + (screen.y - s0.y) });
@@ -482,6 +580,19 @@ export default function CadCanvas() {
 
   const onPointerUp = (ev: React.PointerEvent) => {
     const st = useCadStore.getState();
+    ix.current.lastPointerWasTouch = ev.pointerType === 'touch';
+    setIsTouchInput(ev.pointerType === 'touch');
+    ix.current.pointers.delete(ev.pointerId);
+    if (ix.current.pinch) {
+      // Số pointer touch đổi từ 2 xuống 1/0 (nhấc 1 hoặc cả 2 ngón) → thoát pinch, quay lại xử lý
+      // pointer đơn bình thường. Pointerup của MỘT trong 2 ngón pinch không được rơi vào logic
+      // select/pan bên dưới (selDrag/gripDrag/panning đã bị huỷ lúc bắt đầu pinch nên vốn dĩ
+      // cũng vô hại, nhưng return sớm cho rõ ràng + tránh phụ thuộc ẩn vào thứ tự dọn state).
+      const touchLeft = [...ix.current.pointers.values()].filter((p) => p.type === 'touch').length;
+      if (touchLeft < 2) ix.current.pinch = null;
+      ix.current.redraw = true;
+      return;
+    }
     if (ix.current.panning) {
       ix.current.panning = false;
       ix.current.panStart = null;
@@ -516,6 +627,21 @@ export default function CadCanvas() {
       ix.current.selDrag = null;
       ix.current.redraw = true;
     }
+  };
+
+  /** pointercancel (OS ngắt gesture giữa chừng — vd hệ thống chen ngang, cuộn trang, cảnh báo…):
+   * dọn sạch MỌI trạng thái tương tác ephemeral để không kẹt UI (khác onPointerUp — không giả
+   * định gesture kết thúc "sạch", nên reset rộng tay hơn thay vì chỉ xử lý đúng nhánh đang chạy). */
+  const onPointerCancel = (ev: React.PointerEvent) => {
+    ix.current.pointers.delete(ev.pointerId);
+    const touchLeft = [...ix.current.pointers.values()].filter((p) => p.type === 'touch').length;
+    if (touchLeft < 2) ix.current.pinch = null;
+    ix.current.panning = false;
+    ix.current.panStart = null;
+    ix.current.selDrag = null;
+    ix.current.gripDrag = null;
+    ix.current.gripPreview = null;
+    ix.current.redraw = true;
   };
 
   const onWheel = (ev: React.WheelEvent) => {
@@ -1771,6 +1897,52 @@ export default function CadCanvas() {
     drawDynInput(ctx, W, H);
 
     ctx.restore();
+    updateDeleteFabPosition(st, v, W, H);
+  }
+
+  /** Cảm ứng — nút Xoá nổi: neo cạnh trên-phải bao hình (bbox) của selection, tính lại mỗi frame
+   * (viewport đổi liên tục lúc pan/zoom nên KHÔNG thể dựa vào React re-render — xem ghi chú ở
+   * chỗ khai báo `selection`/`cadTool` phía trên). Không dùng React state cho vị trí, chỉ set
+   * trực tiếp style của node DOM qua ref, giữ đúng tinh thần "không re-render vì tương tác chuột/
+   * cảm ứng" của toàn file. Việc hiện/ẩn nút vẫn do React (showDeleteFab) quyết định. */
+  function updateDeleteFabPosition(st: ReturnType<typeof useCadStore.getState>, v: Viewport, W: number, H: number) {
+    const btn = deleteBtnRef.current;
+    if (!btn || st.tool !== 'select' || st.selection.length === 0) return;
+    const sel = new Set(st.selection);
+    const box: Box = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+    for (const e of st.doc.entities) {
+      if (!sel.has(e.id)) continue;
+      const b = entityBox(e);
+      if (!Number.isFinite(b.minX)) continue;
+      box.minX = Math.min(box.minX, b.minX);
+      box.minY = Math.min(box.minY, b.minY);
+      box.maxX = Math.max(box.maxX, b.maxX);
+      box.maxY = Math.max(box.maxY, b.maxY);
+    }
+    const BTN = 40;
+    let left: number;
+    let top: number;
+    if (Number.isFinite(box.minX)) {
+      const c1 = worldToScreen(v, { x: box.minX, y: box.minY });
+      const c2 = worldToScreen(v, { x: box.maxX, y: box.maxY });
+      // trục Y màn hình bị lật so với world (worldToScreen) → lấy min/max riêng từng trục, không
+      // giả định c1 là góc trên-trái.
+      const right = Math.max(c1.x, c2.x);
+      const topY = Math.min(c1.y, c2.y);
+      left = right + 14;
+      top = topY - BTN - 14;
+      // tràn mép phải/trên → gập vào trong thay vì để nút khuất ngoài canvas.
+      if (left + BTN > W - 8) left = Math.max(c1.x, c2.x) - BTN; // áp sát mép phải bbox, vào trong
+      if (top < 8) top = Math.min(c1.y, c2.y) + 8; // áp sát mép trên bbox, vào trong (dưới đỉnh)
+      left = Math.min(Math.max(left, 8), W - BTN - 8);
+      top = Math.min(Math.max(top, 8), H - BTN - 8);
+    } else {
+      // fallback hiếm gặp (entity không có bbox hữu hạn) — góc dưới-phải màn hình, không che toolbar.
+      left = W - BTN - 16;
+      top = H - BTN - 16;
+    }
+    btn.style.left = `${left}px`;
+    btn.style.top = `${top}px`;
   }
 
   /**
@@ -2422,6 +2594,7 @@ export default function CadCanvas() {
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
         onWheel={onWheel}
         onDoubleClick={onDblClick}
         onContextMenu={(e) => e.preventDefault()}
@@ -2664,6 +2837,46 @@ export default function CadCanvas() {
             </button>
           </div>
         </div>
+      )}
+      {/* Cảm ứng — nút Xoá nổi: thiết bị không có bàn phím (tablet) không dùng được phím Delete/
+          Backspace. Vị trí (left/top) do updateDeleteFabPosition() trong draw() set trực tiếp mỗi
+          frame — không qua React state (xem ghi chú ở chỗ khai báo showDeleteFab phía trên). */}
+      {showDeleteFab && (
+        <button
+          ref={deleteBtnRef}
+          type="button"
+          onClick={() => {
+            const s2 = useCadStore.getState();
+            s2.deleteSelected();
+            s2.setStatus('Đã xoá đối tượng đã chọn.');
+          }}
+          title="Xoá đối tượng đã chọn"
+          aria-label="Xoá đối tượng đã chọn"
+          style={{
+            position: 'absolute',
+            left: `calc(100% - 56px)`,
+            top: `calc(100% - 56px)`,
+            zIndex: 32,
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            display: 'grid',
+            placeItems: 'center',
+            background: 'var(--accent-strong)',
+            color: '#fff',
+            border: 'none',
+            boxShadow: '0 8px 20px rgba(0,0,0,.28)',
+            cursor: 'pointer',
+            touchAction: 'manipulation',
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6M14 11v6" />
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+          </svg>
+        </button>
       )}
     </div>
   );
