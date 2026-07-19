@@ -117,7 +117,7 @@ export const DEMO_DECK: PresentDeck = {
       theme: PRESENT_DARK,
       kicker: 'DETECH · 2026',
       title: 'Cảm ơn đã lắng nghe',
-      body: ['Sẵn sàng trao đổi phương án chi tiết', 'InteriorFlow — chặng Present'],
+      body: ['Sẵn sàng trao đổi phương án chi tiết', 'InteriorFlow — chặng Presenting'],
       hero: 4,
     },
   ],

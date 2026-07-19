@@ -98,7 +98,7 @@ export default function PresentDeck({ deck, imageSlides, title, withMoodboard = 
         <div style={{ textAlign: 'center', padding: 24 }}>
           <p style={{ fontSize: 14 }}>{tr('Chưa có nội dung để trình chiếu', 'Nothing to present yet')}</p>
           <p style={{ marginTop: 6, fontSize: 12, color: 'var(--t5)' }}>
-            {tr('Dàn slide ở chặng Present, rồi mở Present mode lại.', 'Lay out slides in the Present stage, then reopen Present mode.')}
+            {tr('Dàn slide ở chặng Presenting, rồi mở trình chiếu lại.', 'Lay out slides in the Presenting stage, then reopen present mode.')}
           </p>
           {onClose && (
             <button

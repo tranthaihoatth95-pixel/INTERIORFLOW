@@ -1,14 +1,15 @@
 # STATUS — InteriorFlow
 
 > ⚠️ Mọi SHA/trạng thái phải verify bằng git, không chép từ brief/memory. **Git là sự thật duy nhất.**
-> ⚠️ Sản phẩm thật = 3 chặng **Layout CAD (TCVN checker) · Render (node canvas) · Present (dàn trang)** + login/gallery. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
+> ⚠️ Sản phẩm thật = 3 chặng **Drafting CAD (TCVN checker) · Rendering (node canvas) · Presenting (dàn trang)** + login/gallery.
+> ⚠️ Nhãn hiển thị đổi 20/07 (Layout CAD→Drafting CAD · Render→Rendering · Present→Presenting). **ID nội bộ GIỮ NGUYÊN** `concept`/`render`/`present` — mọi khoá localStorage/route/tên file không đổi. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
 - Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main`. **19/07 XONG cảm ứng CAD (pinch-zoom/pan + nút Xoá) & Slide Sorter (Pointer Events)** → CHANGELOG. Verify SHA bằng git.
 - **19/07 khuya — ĐỢT MỚI user giao:**
   - **Đã merge cả 5:** `fix/login-bounce-root` · `feat/login-contrast` (login gỡ 2 dòng chữ · tương phản thích ứng dùng chung áp 4 chỗ · logo IF `framed` toàn app) · `feat/toolbar-io-sync` (toolbar CAD 18 nút → **5 menu xổ + 2 nút chuyển chặng** · `.cad-pill-scroll` hết scrollbar thô Pro mode · **Nhập/Xuất 3 chặng đồng bộ** qua `components/ui/IOMenu.tsx`) · `feat/sketch-pro-modes` (Sketch = cảm ứng kiểu ArcSite: nút 44px + `CadTouchDock` 6 nút thay F8/F12/gõ-lệnh/Space + Enter/Esc, phát lại phím qua `cad:synth-key` nên chỉ 1 nhánh logic · Pro = chuột/phím, tag hover kèm phím tắt · `StageVeil` chỉ hiện sau 400ms + prefetch · phân định chặng bằng `STAGE_TINT` hairline + chấm + nhãn micro) · `feat/present-typography` (font tải từ máy: nhúng theo deck + thư viện IDB, validate magic-number, cảnh báo giới hạn PPTX · bảng **Hiệu ứng chữ** 8 preset + tinh chỉnh sâu, áp cả DOM lẫn canvas export · **lỗi thumbnail**: `SlideStrip` xưa vẽ chữ thành thanh 3px `background:currentColor` — placeholder skeleton CỐ Ý từ đầu, không phải lỗi font/scale — nay dựng bằng chính `Inner` của `Element.tsx`). Chi tiết → CHANGELOG.
   - ⚠️ **CẦN USER XÁC NHẬN:** menu Xuất chặng **Render** giờ có PDF/PPTX ở mức CẢ FLOW (trước chỉ trên node `slide.deck`) — dùng đúng bộ hàm cũ, nhưng là **năng lực mới ở tầng chặng**. Không muốn thì gỡ 2 mục.
-  - ⚠️ CHƯA verify mắt: hairline tông chặng ở **Header app chính (Render)** — route `/` cần đăng nhập, agent không tạo tài khoản. Cùng code path StudioBar (đã verify Layout CAD + Present).
+  - ⚠️ CHƯA verify mắt: hairline tông chặng ở **Header app chính (Render)** — route `/` cần đăng nhập, agent không tạo tài khoản. Cùng code path StudioBar (đã verify Drafting CAD + Presenting).
   - ⚠️ Ghi nhận: PPTX map font qua `deck.fonts` + danh sách curated → font tự tải KHÔNG được thread vào `exportDeckToPptxFromModel` (chỉ ghi tên font). Đã che bằng cảnh báo UI; muốn nhúng thật thì cần làm thêm.
 - ⚠️ `MobileMenu:129` là avatar chữ cái user, KHÔNG phải logo IF → giữ nguyên. `components/LoginScreen.tsx` (gốc, khác `entry/`) là code chết, chưa xoá.
 - Có nút **Mở DWG** trực tiếp (Web Worker cô lập GPL).

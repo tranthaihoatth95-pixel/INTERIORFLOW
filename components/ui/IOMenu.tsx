@@ -2,7 +2,7 @@
 
 /**
  * components/ui/IOMenu.tsx — cặp nút "Nhập"/"Xuất" DÙNG CHUNG cho CẢ 3 CHẶNG
- * (Layout CAD · Render · Present).
+ * (Drafting CAD · Rendering · Presenting).
  *
  * Yêu cầu user (19/07): "đồng bộ import và export 3 chặng có cách thể hiện giống nhau, khi bấm
  * vào thì mới xổ ra đuôi file tương ứng của mỗi chặng" — nghĩa là:

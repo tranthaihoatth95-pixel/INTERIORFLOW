@@ -45,8 +45,8 @@ const STEPS: Record<TourScreen, TourStep[]> = {
       target: '[data-tour="phase-switcher"]',
       title: { vi: '3 chặng — một dòng chảy', en: '3 stages — one flow' },
       body: {
-        vi: 'Layout CAD · Render · Present. Đây là trục điều hướng duy nhất: vẽ mặt bằng, dựng phối cảnh AI, rồi đóng gói trình khách — đi lại tự do giữa các chặng.',
-        en: 'Layout CAD · Render · Present. Your single navigation axis: draft the plan, produce AI renders, then package the client deck — move freely between stages.',
+        vi: 'Drafting CAD · Rendering · Presenting. Đây là trục điều hướng duy nhất: vẽ mặt bằng, dựng phối cảnh AI, rồi đóng gói trình khách — đi lại tự do giữa các chặng.',
+        en: 'Drafting CAD · Rendering · Presenting. Your single navigation axis: draft the plan, produce AI renders, then package the client deck — move freely between stages.',
       },
     },
     {

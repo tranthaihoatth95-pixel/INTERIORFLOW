@@ -23,12 +23,14 @@ export interface PhaseMeta {
 export const PHASES: PhaseMeta[] = [
   {
     // NB: giữ id 'concept' để KHÔNG vỡ store/localStorage cũ, nhưng chặng 1 đã đổi
-    // bản chất → "Layout CAD" (trình vẽ mặt bằng 2D ở /cad-editor, không phải canvas node).
+    // bản chất → "Drafting CAD" (trình vẽ mặt bằng 2D ở /cad-editor, không phải canvas node).
+    // 20/07: nhãn hiển thị đổi Layout CAD → Drafting CAD (bộ 3 cùng dạng V-ing; giữ chữ "CAD"
+    // làm từ neo cho người dùng Việt trong nghề). ID GIỮ NGUYÊN.
     id: 'concept',
     icon: 'concept',
-    label: 'Layout CAD',
+    label: 'Drafting CAD',
     tagline: 'Import CAD 2D · vẽ sơ phác · bố trí furniture',
-    blurb: 'Dựng mặt bằng 2D: mở/vẽ CAD, bố trí nội thất, rồi đưa layout sang Render tô vật liệu.',
+    blurb: 'Dựng mặt bằng 2D: mở/vẽ CAD, bố trí nội thất, rồi đưa layout sang Rendering tô vật liệu.',
     // Chặng này chạy ở route riêng (/cad-editor), không có node ưu tiên trên canvas.
     featured: [],
     demo: 'concept',
@@ -36,7 +38,7 @@ export const PHASES: PhaseMeta[] = [
   {
     id: 'render',
     icon: 'render',
-    label: 'Render',
+    label: 'Rendering',
     tagline: 'Clay → photoreal · chỉnh cục bộ',
     blurb: 'Sản xuất phối cảnh: clay/sketch → AI photoreal, đổi vật liệu, ánh sáng, upscale.',
     featured: [
@@ -64,7 +66,7 @@ export const PHASES: PhaseMeta[] = [
   {
     id: 'present',
     icon: 'present',
-    label: 'Present',
+    label: 'Presenting',
     tagline: 'Slide · board · spec vật liệu',
     blurb: 'Đóng gói cho khách: dàn slide 16:9, board, xuất deck PDF, chú thích vật liệu.',
     featured: ['slide.concept', 'slide.composer', 'slide.deck', 'out.board', 'out.gallery', 'util.annotate'],
@@ -92,7 +94,7 @@ export const STAGE_TINT: Record<Phase, string> = {
   present: '#7f8d78',
 };
 
-/** Số thứ tự chặng trong pipeline — hiện ở nhãn micro "01 · LAYOUT CAD" trên thanh đầu. */
+/** Số thứ tự chặng trong pipeline — hiện ở nhãn micro "01 · DRAFTING CAD" trên thanh đầu. */
 export const STAGE_INDEX: Record<Phase, string> = {
   concept: '01',
   render: '02',
@@ -115,7 +117,7 @@ export function isPhase(v: unknown): v is Phase {
  * slide.* như một chặng canvas. Vì vậy phần suy diễn CHỈ xét 'render': mở một flow (kể cả
  * flow nhiều node slide.*) không bao giờ ép workspace='present' để pill Present sáng nhầm
  * khi đang ở canvas. Có node render → 'render'; không có → null (giữ nguyên chặng hiện tại).
- * Chặng 'concept' = Layout CAD ở route riêng, cũng không có node canvas nên không tính ở đây.
+ * Chặng 'concept' = Drafting CAD ở route riêng, cũng không có node canvas nên không tính ở đây.
  */
 export function phaseFromNodes(defTypes: string[]): Phase | null {
   if (defTypes.length === 0) return null;

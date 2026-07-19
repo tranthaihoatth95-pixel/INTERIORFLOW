@@ -82,7 +82,7 @@ export function RenderIOMenus() {
       <IOMenu
         kind="import"
         size="sm"
-        title="Nhập file vào chặng Render"
+        title="Nhập file vào chặng Rendering"
         items={[
           {
             id: 'image',
@@ -105,7 +105,7 @@ export function RenderIOMenus() {
         kind="export"
         size="sm"
         align="left"
-        title="Xuất file từ chặng Render"
+        title="Xuất file từ chặng Rendering"
         busy={busy}
         resultMsg={msg}
         items={[

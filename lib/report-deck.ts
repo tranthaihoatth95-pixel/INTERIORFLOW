@@ -153,7 +153,7 @@ export const RESEARCH_DECK: PresentDeck = {
       theme: PRESENT_DARK,
       kicker: 'InteriorFlow · 2026',
       title: 'Đánh giá độc lập, để quyết định tỉnh táo',
-      body: ['51 nguồn tham khảo · SWOT · lộ trình ưu tiên', 'Dựng bằng chặng Present của InteriorFlow'],
+      body: ['51 nguồn tham khảo · SWOT · lộ trình ưu tiên', 'Dựng bằng chặng Presenting của InteriorFlow'],
     },
   ],
 };

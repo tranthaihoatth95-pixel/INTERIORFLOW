@@ -66,7 +66,7 @@ export default function StagePresetPanel({ current, onClose, onApply }: Props) {
         <p style={{ fontSize: 11.5, color: 'var(--t4)', lineHeight: 1.55, marginBottom: 14 }}>
           Khổ trình bày (màn hình/chiếu) — dùng để xem trên màn hình/máy chiếu hoặc xuất
           PDF·PNG độ phân giải màn hình. KHÔNG phải khổ in production 300dpi — in nét thật cần
-          chặng Render nâng độ phân giải, chưa làm ở bản này.
+          chặng Rendering nâng độ phân giải, chưa làm ở bản này.
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>

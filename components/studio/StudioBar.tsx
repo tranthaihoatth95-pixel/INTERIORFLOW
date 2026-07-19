@@ -62,7 +62,7 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
       router.push('/present-editor');
       return;
     }
-    // Chặng 1 (id 'concept') = Layout CAD → trình vẽ 2D ở route riêng.
+    // Chặng 1 (id 'concept') = Drafting CAD → trình vẽ 2D ở route riêng.
     if (p === 'concept') {
       router.push('/cad-editor');
       return;

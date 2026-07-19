@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * components/cad/CadEditor.tsx — Khung trình CAD 2D (chặng 1 "Layout CAD").
+ * components/cad/CadEditor.tsx — Khung trình CAD 2D (chặng 1 "Drafting CAD").
  * Ghép: CadToolbar (nổi) + CadCanvas (nền) + panel Layer (phải) + panel Nội thất (trái, ẩn/hiện)
  * + command-line mini (đáy) + thanh file (import DXF · export PNG/DXF · scale · Đưa sang Render ·
  * Đưa sang Present).
@@ -102,7 +102,7 @@ export default function CadEditor() {
     }
     st.setStatus('Đang dựng PDF vector…');
     try {
-      await exportCadToPdf(st.doc, 'layout.pdf', { title: 'InteriorFlow — Layout CAD', dimStyle: st.dimStyle });
+      await exportCadToPdf(st.doc, 'layout.pdf', { title: 'InteriorFlow — Drafting CAD', dimStyle: st.dimStyle });
       st.setStatus('Đã xuất layout.pdf (PDF vector — nét/text thật, không phải ảnh).');
     } catch (err) {
       st.setStatus(`Lỗi xuất PDF: ${err instanceof Error ? err.message : String(err)}`);
@@ -271,7 +271,7 @@ export default function CadEditor() {
         <IOMenu
           kind="import"
           size="sm"
-          title="Nhập / mở file vào chặng Layout CAD"
+          title="Nhập / mở file vào chặng Drafting CAD"
           items={[
             { id: 'dxf', label: 'Mở DXF', sub: 'Bản vẽ AutoCAD trao đổi (.dxf)', icon: <FolderOpen size={15} />, onSelect: () => fileRef.current?.click() },
             { id: 'dwg', label: 'Mở DWG', sub: 'Parse trong Web Worker riêng — chưa hỗ trợ block INSERT/DIMENSION', icon: <FolderOpen size={15} />, onSelect: () => dwgRef.current?.click() },
@@ -283,7 +283,7 @@ export default function CadEditor() {
           kind="export"
           size="sm"
           align="left"
-          title="Xuất file từ chặng Layout CAD"
+          title="Xuất file từ chặng Drafting CAD"
           items={[
             { id: 'png', label: 'PNG', sub: 'Ảnh raster nền trắng — bản vẽ đang mở', icon: <Download size={15} />, onSelect: doExportPng },
             { id: 'dxf', label: 'DXF', sub: 'Trao đổi với AutoCAD — bản vẽ đang mở', icon: <Download size={15} />, onSelect: doExportDxf },
@@ -320,11 +320,11 @@ export default function CadEditor() {
         {/* 2 nút chuyển chặng luôn đi CÙNG NHAU và dạt về phải (marginLeft:auto thay cho spacer
          *  flex:1 — với flexWrap, spacer sẽ nuốt hết chỗ và đẩy nút thứ 2 xuống dòng). */}
         <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexShrink: 0 }}>
-          <button type="button" onClick={toRender} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Kết xuất layout thành node Import Image ở chặng Render">
-            Đưa sang Render <ArrowRight size={14} />
+          <button type="button" onClick={toRender} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Kết xuất layout thành node Import Image ở chặng Rendering">
+            Đưa sang Rendering <ArrowRight size={14} />
           </button>
-          <button type="button" onClick={toPresent} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Chụp bản vẽ hiện tại thành 1 slide mới ở chặng Present (không đè slide có sẵn)">
-            Đưa sang Present <ArrowRight size={14} />
+          <button type="button" onClick={toPresent} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Chụp bản vẽ hiện tại thành 1 slide mới ở chặng Presenting (không đè slide có sẵn)">
+            Đưa sang Presenting <ArrowRight size={14} />
           </button>
         </div>
       </div>

@@ -103,7 +103,7 @@ export default function Toolbar(p: Props) {
       <IOMenu
         kind="import"
         size="md"
-        title="Nhập file vào chặng Present"
+        title="Nhập file vào chặng Presenting"
         items={[
           {
             id: 'image',
@@ -127,7 +127,7 @@ export default function Toolbar(p: Props) {
         size="md"
         align="left"
         variant="accent"
-        title="Xuất file từ chặng Present"
+        title="Xuất file từ chặng Presenting"
         busy={p.busy}
         resultMsg={p.exportMsg}
         items={[
@@ -140,7 +140,7 @@ export default function Toolbar(p: Props) {
             icon: <Printer size={15} />,
             onSelect: () => {},
             disabled: true,
-            disabledReason: 'Chưa khả dụng — ảnh render hiện ~116dpi ở khổ A3 (giới hạn chặng Render)',
+            disabledReason: 'Chưa khả dụng — ảnh render hiện ~116dpi ở khổ A3 (giới hạn chặng Rendering)',
           },
         ]}
       />

@@ -20,7 +20,7 @@ import type { Phase } from '@/lib/phases';
 import { PHASES, STAGE_TINT, STAGE_INDEX } from '@/lib/phases';
 import { springSheet, pressable } from '@/lib/motion';
 
-// Chặng 1 = Layout CAD → icon thước-bút; Render = khối; Present = trình chiếu.
+// Chặng 1 = Drafting CAD → icon thước-bút; Rendering = khối; Presenting = trình chiếu.
 const ICON: Record<Phase, typeof PencilRuler> = { concept: PencilRuler, render: Box, present: Presentation };
 
 interface Props {
@@ -105,7 +105,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
           );
         })}
       </div>
-      {/* Nhãn micro "01 · LAYOUT CAD" — label tracked uppercase theo gu TTT. Vế thứ hai của việc
+      {/* Nhãn micro "01 · DRAFTING CAD" — label tracked uppercase theo gu TTT. Vế thứ hai của việc
           phân định chặng: pill cho biết chọn được gì, nhãn này khẳng định đang ĐỨNG ở đâu.
           Ẩn trên màn hẹp (media query .if-stage-label trong globals.css) để không chen thanh đầu. */}
       <span
