@@ -359,8 +359,12 @@ function handleStyle(h: Handle): React.CSSProperties {
   return { ...base, ...map[h] };
 }
 
-/** Nội dung hiển thị của từng loại element. */
-function Inner({ el, fonts }: { el: SlideElement; fonts: string }) {
+/**
+ * Nội dung hiển thị của từng loại element — XUẤT để dùng lại ở nơi khác cần vẽ 1 element
+ * KHÔNG cần khung kéo/resize/xoay (vd PlayerElements.tsx — trình chiếu, mỗi element build-in
+ * độc lập). Giữ 1 nguồn vẽ text/ảnh/shape duy nhất cho canvas chỉnh sửa.
+ */
+export function Inner({ el, fonts }: { el: SlideElement; fonts: string }) {
   if (el.kind === 'image') return <ImageInner el={el} />;
   if (el.kind === 'shape') return <ShapeInner el={el} />;
   return <TextInner el={el} fonts={fonts} />;

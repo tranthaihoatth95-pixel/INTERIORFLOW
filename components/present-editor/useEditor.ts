@@ -151,6 +151,21 @@ export function useEditor(initial: EditorDeck) {
     [updateSlide, selectedId],
   );
 
+  /**
+   * Cập nhật 1 element BẤT KỲ của slide hiện tại theo id — KHÔNG cần đang chọn (khác
+   * `updateSelected`). Dùng cho Animation Pane theo object (MotionPanel liệt kê mọi phần tử,
+   * chỉnh reveal/order/delay của từng dòng dù element đó không phải đang được chọn trên canvas).
+   */
+  const updateElementById = useCallback(
+    (id: string, mutate: (el: SlideElement) => void, live = false) => {
+      updateSlide((s) => {
+        const el = s.elements.find((e) => e.id === id);
+        if (el) mutate(el);
+      }, live);
+    },
+    [updateSlide],
+  );
+
   const actions = useMemo(
     () => ({
       selectSlide: (index: number) => dispatch({ type: 'selectSlide', index }),
@@ -175,6 +190,7 @@ export function useEditor(initial: EditorDeck) {
     update,
     updateSlide,
     updateSelected,
+    updateElementById,
     ...actions,
   };
 }

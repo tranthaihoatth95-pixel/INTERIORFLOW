@@ -3,18 +3,23 @@
 /**
  * components/present-editor/SlidePlayer.tsx — TRÌNH CHIẾU deck với hiệu ứng động.
  *
- * Overlay toàn màn, khung giữ ĐÚNG tỉ lệ khổ trình bày đang chọn (PS-4 — mặc định 16:9)
- * giữa nền tối. Mỗi slide render bằng renderEditorSlide (ảnh tĩnh trung thực, đúng khổ)
- * rồi bọc trong motion để chạy transition/reveal (motion-present). Điều hướng: ← → / Space
- * / click phải-trái, Esc để thoát. Đây là kênh xem hiệu ứng — không sửa model.
+ * Overlay toàn màn, khung giữ ĐÚNG tỉ lệ khổ trình bày đang chọn (PS-4 — mặc định 16:9) giữa
+ * nền tối. Mỗi slide render DOM THẬT qua PlayerElements (KHÔNG raster hoá bằng renderEditorSlide
+ * như trước — raster gộp mọi phần tử vào 1 ảnh nên không thể build-in TỪNG phần tử độc lập, xem
+ * PlayerElements.tsx) rồi bọc trong motion để chạy transition CẢ SLIDE (motion-present). Điều
+ * hướng: ← → / Space / click phải-trái, Esc để thoát. Đây là kênh xem hiệu ứng — không sửa model.
+ *
+ * `containerType: 'size'` đặt ở khung khổ trình bày (ngoài AnimatePresence) để đơn vị `cqh` của
+ * TextInner (Element.tsx) tính đúng — trước đây không cần vì render.ts (canvas) không dùng CSS
+ * container query units.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { EditorDeck } from '@/lib/present-editor/model';
-import { renderEditorSlide } from '@/lib/present-editor/render';
 import { stageFor } from '@/lib/present-editor/stage-presets';
 import { slideVariants } from '@/lib/present-editor/motion-present';
+import PlayerElements from './PlayerElements';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Props {
@@ -26,33 +31,11 @@ interface Props {
 export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
   const [idx, setIdx] = useState(Math.min(startIndex, deck.slides.length - 1));
   const [dir, setDir] = useState(1);
-  const [imgs, setImgs] = useState<Record<number, string>>({});
   const busyRef = useRef(false);
 
   const slide = deck.slides[idx];
   const transition = slide?.transition ?? deck.transition ?? 'fade';
   const stage = useMemo(() => stageFor(deck.stagePreset), [deck.stagePreset]);
-
-  // render ảnh slide hiện tại (+ kế tiếp để prefetch mượt).
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      for (const i of [idx, idx + 1, idx - 1]) {
-        if (i < 0 || i >= deck.slides.length || imgs[i]) continue;
-        try {
-          const url = await renderEditorSlide(deck.slides[i], deck.fonts, deck.watermark, stage);
-          if (!alive) return;
-          setImgs((p) => ({ ...p, [i]: url }));
-        } catch {
-          /* bỏ qua */
-        }
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, deck]);
 
   const go = useCallback(
     (d: 1 | -1) => {
@@ -76,7 +59,6 @@ export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
   }, [go, onClose]);
 
   const variants = useMemo(() => slideVariants(transition), [transition]);
-  const cur = imgs[idx];
 
   return (
     <div
@@ -105,6 +87,7 @@ export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
           position: 'relative',
           overflow: 'hidden',
           borderRadius: 8,
+          containerType: 'size',
         }}
       >
         <AnimatePresence custom={dir} mode="sync" initial={false}>
@@ -119,9 +102,13 @@ export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
             onAnimationComplete={() => (busyRef.current = false)}
             style={{ position: 'absolute', inset: 0, background: slide?.background || '#000' }}
           >
-            {cur ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={cur} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+            {slide ? (
+              <PlayerElements
+                slide={slide}
+                fonts={deck.fonts}
+                watermark={deck.watermark}
+                deckReveal={deck.reveal}
+              />
             ) : (
               <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: '#666', fontSize: 13 }}>
                 Đang dựng…

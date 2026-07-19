@@ -90,6 +90,24 @@ interface BaseElement {
   hidden?: boolean;
   /** tên hiển thị trong ô quản lý layer (đổi được). Bỏ trống = tự đặt theo loại/nội dung. */
   name?: string;
+  /**
+   * Animation Pane theo object (mở rộng build-in slide-level cũ, xem `EditorSlide.reveal`):
+   * ghi đè kiểu build-in RIÊNG cho phần tử này. Bỏ trống = kế thừa `slide.reveal ?? deck.reveal`
+   * (HÀNH VI CŨ — mọi phần tử chung 1 kiểu, deck cũ trước tính năng này không có field → chạy
+   * y hệt trước). Xem lib/present-editor/motion-present.ts#computeElementRevealTimings.
+   */
+  elementReveal?: ElementReveal;
+  /**
+   * Thứ tự xuất hiện khi trình chiếu (số nhỏ hơn = xuất hiện trước). Bỏ trống = suy theo CHỈ SỐ
+   * trong mảng `elements` (đúng thứ tự vẽ/HÀNH VI CŨ). Trùng số → giữ nguyên thứ tự mảng gốc
+   * (sắp ổn định).
+   */
+  revealOrder?: number;
+  /**
+   * Độ trễ RIÊNG (giây) trước khi phần tử này bắt đầu build-in, tính từ lúc slide xuất hiện.
+   * Có giá trị → GHI ĐÈ mức trễ tự suy từ `revealOrder` (stagger mặc định). Bỏ trống = tự tính.
+   */
+  revealDelay?: number;
 }
 
 export interface ImageElement extends BaseElement {

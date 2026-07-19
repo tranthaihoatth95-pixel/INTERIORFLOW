@@ -520,7 +520,7 @@ function MenuSep() {
  * Vị trí góc cho watermark. marginPct = % chiều RỘNG sân khấu (khớp render.ts). Trục dọc quy
  * đổi sang % chiều cao (× 16/9) để lề trên/dưới bằng lề trái/phải theo mắt trên khung 16:9.
  */
-function cornerStyle(
+export function cornerStyle(
   corner: 'tl' | 'tr' | 'bl' | 'br',
   marginPct: number,
 ): CSSProperties {
