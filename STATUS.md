@@ -6,7 +6,7 @@
 
 ## Hiện tại
 - Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (local vượt origin — chưa push đợt 20/07, chờ user OK). Verify SHA bằng git. Đợt 19-20/07 (login/contrast · toolbar+IO · Sketch-Pro · Present typography · đổi tên chặng · PPTX font · input · motion · fix-api-auth-p0 · login-glass+fix "Ghi nhớ đăng nhập" · **3 báo cáo nghiên cứu mới** · **CAD demo mặt bằng thứ 2** · **CAD "AI mô tả" v2**) ĐÃ MERGE hết → chi tiết CHANGELOG.
-  - ⚠️ **CHỜ USER VERIFY:** .pptx nhúng font chưa mở bằng PowerPoint thật · frame-timing chuyển chặng chưa đo được — cần xem bằng mắt thật.
+  - ⚠️ **CHỜ USER VERIFY bằng mắt:** .pptx nhúng font (PowerPoint thật) · frame-timing chuyển chặng.
 - **6 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (đọc thẳng từng file, đừng chép lại vào đây):
   - `RESEARCH-ACCESS-CONTROL.md` — phân quyền `ProjectMember` 5 role, 10 câu hỏi §8.
   - `RESEARCH-MOBILE-DISTRIBUTION.md` — bộ cài iOS/macOS/Android.
