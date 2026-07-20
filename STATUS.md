@@ -6,15 +6,14 @@
 
 ## Hiện tại
 - Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main`. **19/07 XONG cảm ứng CAD (pinch-zoom/pan + nút Xoá) & Slide Sorter (Pointer Events)** → CHANGELOG. Verify SHA bằng git.
-- **19/07 khuya — ĐỢT MỚI user giao:**
-  - **Đã merge cả 7 nhánh** (login/contrast · toolbar+IO đồng bộ · Sketch-Pro + chuyển chặng · Present typography · đổi tên chặng · PPTX nhúng font · fix bug login) — chi tiết từng nhánh → CHANGELOG.
-  - ✅ User CHỐT GIỮ: menu Xuất chặng Rendering có PDF/PPTX ở mức cả flow (năng lực mới ở tầng chặng, dùng hàm cũ) — để 3 chặng đồng bộ.
-  - ✅ Hairline tông chặng ĐÃ verify mắt đủ 3 (đo trên session thật của user): Drafting CAD `srgb(.311,.376,.445)` xanh thép · Rendering `srgb(.465,.337,.255)` đồng ấm · Presenting `srgb(.348,.378,.345)` xanh rêu.
-  - 🐛 Bug nền đã sửa kèm: `useEditor.update()` clone `state.deck` bắt lúc render ⇒ gọi 2 lần/tick thì ghi đè nhau ⇒ **`deck.customFonts` chưa bao giờ lưu được** (tầng nhúng font theo deck thực ra chưa từng chạy). Nay clone TRONG reducer.
-  - ⚠️ **CHỜ USER VERIFY:** file .pptx nhúng font **chưa mở bằng PowerPoint thật**. QuickLook macOS render OK nhưng BỎ QUA font nhúng (A/B hai bản có/không nhúng ra ảnh giống hệt) → không dùng làm bằng chứng. Cần mở bằng PowerPoint trên máy CHƯA cài font đó. Cũng chưa nhúng bold/italic riêng (chỉ `<p:regular>`).
+- **19/07 khuya — 7 nhánh ĐÃ MERGE + PUSH** (login/contrast · toolbar+IO đồng bộ · Sketch-Pro · Present typography · đổi tên chặng · PPTX nhúng font · fix bug login) → chi tiết CHANGELOG. Đã tự verify trên máy user: 3 tông hairline, thumbnail Present, toolbar 5 menu, layer Tường `#47423a`, Sketch/Pro dock.
+  - ⚠️ **CHỜ USER VERIFY:** .pptx nhúng font chưa mở bằng PowerPoint thật (QuickLook BỎ QUA font nhúng → không dùng làm bằng chứng). Cần máy CHƯA cài font đó. Chưa nhúng bold/italic riêng.
+  - 🐛 Đã sửa kèm: `useEditor.update()` clone deck lúc render ⇒ 2 lần/tick ghi đè nhau ⇒ `deck.customFonts` chưa bao giờ lưu được.
+- **20/07 — ĐỢT ĐANG CHẠY (3 agent):** `feat/login-glass` (sửa tương phản chữ card — đã ĐO: "Quên mật khẩu?" 1.37 · "Ghi nhớ đăng nhập" 2.15 · "HOẶC TIẾP TỤC VỚI" 1.12, chuẩn AA cần 4.5; nâng kính lỏng theo công thức user gửi: gradient 20% lấy màu từ ảnh nền + 3 inner-shadow trắng 20% + refraction/frost; **thêm 5 nền ĐỘNG sinh bằng code**) · `feat/input-optimization` (**bug user báo: cuộn chuột không zoom ở Pro mode**; + vấn đề hệ thống: `onWheel` coi MỌI cuộn = zoom → sai với trackpad, vì cuộn 2 ngón phải PAN còn pinch trackpad đến dưới dạng wheel + `ctrlKey`; áp cho cả 3 chặng + rà phím tắt Mac/Win) · `feat/motion-audit` (rà toàn bộ chuyển động, đo frame-timing, trọng tâm chuyển chặng).
+- **ĐỢT SAU (chưa giao, cần NGHIÊN CỨU trước):** Chat/cộng tác nhóm. User phân định rõ: **CAD + Rendering = cộng tác bất đồng bộ** (để lại comment/ghim góp ý chỉnh sửa, kiểu lên ý tưởng của Miro) · **Presenting = sửa real-time nhiều người**. Lưu ý kiến trúc: real-time co-editing cần CRDT/Yjs — memory cũ đã ghi "mỗi flow hiện 1 người sửa, chưa detect conflict". Phải có agent nghiên cứu ra phương án trước khi code.
 - ⚠️ `MobileMenu:129` là avatar chữ cái user, KHÔNG phải logo IF → giữ nguyên. `components/LoginScreen.tsx` (gốc, khác `entry/`) là code chết, chưa xoá.
 - Có nút **Mở DWG** trực tiếp (Web Worker cô lập GPL).
-- Test: `node_modules/.bin/sucrase-node <path>.test.ts` (61 file). KHÔNG có vitest/jest — bỏ qua chỉ dẫn ghi `npm test`.
+- Test: `node_modules/.bin/sucrase-node <path>.test.ts` (63 file). KHÔNG có vitest/jest — bỏ qua chỉ dẫn ghi `npm test`.
 
 ## Quyết định user đã khoá
 - **Auth (19/07 THAY "chỉ @ttt.vn")**: email MỌI domain · Google OAuth mọi tài khoản · **Microsoft OAuth** (Entra ID, `MS365_*`) — **user CHƯA tạo Azure app**, nút disabled, xem `docs/INTEGRATIONS.md` · quên mật khẩu = admin reset.
