@@ -105,6 +105,23 @@ const DEFAULT_NAME: Record<RoomFunction, string> = {
 type Wall = 'N' | 'S' | 'E' | 'W' | 'C';
 
 /**
+ * BIẾN THỂ TƯỜNG (20/07, "nhiều option layout") — 0=mặc định (ANCHOR gốc), 1=đối diện (mỗi món
+ * bật sang mặt tường ĐỐI DIỆN mặt ưu tiên gốc), 2=xoay 90° (N→E→S→W→N). Món 'C' (giữa phòng,
+ * VD bàn ăn) không đổi ở mọi biến thể — xoay/đổi tường không có ý nghĩa với món không áp tường.
+ * CHỈ đổi MẶT TƯỜNG ưu tiên đưa vào `candidateWalls` — thuật toán quét/first-fit/clamp bên dưới
+ * giữ NGUYÊN, nên vẫn tất định + vẫn tự trượt sang tường khác nếu tường ưu tiên hết chỗ.
+ */
+export type WallVariant = 0 | 1 | 2;
+
+const WALL_OPPOSITE: Record<Exclude<Wall, 'C'>, Wall> = { N: 'S', S: 'N', E: 'W', W: 'E' };
+const WALL_ROTATE90: Record<Exclude<Wall, 'C'>, Wall> = { N: 'E', E: 'S', S: 'W', W: 'N' };
+
+function transformWall(wall: Wall, variant: WallVariant): Wall {
+  if (wall === 'C' || variant === 0) return wall;
+  return variant === 1 ? WALL_OPPOSITE[wall] : WALL_ROTATE90[wall];
+}
+
+/**
  * Quy tắc đặt THEO CÔNG NĂNG cho từng block: áp tường nào, góc xoay để "lưng" quay vào tường.
  *  - flush=true: món áp sát tường (giường/tủ/sofa/bếp/WC) — chừa khe nhỏ tránh đè poché tường.
  *  - wall='C': đặt giữa phòng theo 1 hàng (bàn ăn, ghế bành) — hướng tâm.
@@ -325,6 +342,7 @@ function placeFurniture(
   items: string[],
   interior: { ix0: number; iy0: number; ix1: number; iy1: number },
   furnLayer: string,
+  variant: WallVariant = 0,
 ): { entities: Entity[]; skipped: string[] } {
   const out: Entity[] = [];
   const skipped: string[] = [];
@@ -333,7 +351,8 @@ function placeFurniture(
   for (const id of items) {
     const def = BLOCK_MAP[id];
     if (!def) continue;
-    const a = ANCHOR[id] ?? { wall: 'C' as Wall, rot: 0, flush: false };
+    const a0 = ANCHOR[id] ?? { wall: 'C' as Wall, rot: 0, flush: false };
+    const a = { ...a0, wall: transformWall(a0.wall, variant) };
     let placement: Placement | null = null;
     for (const wall of candidateWalls(a.wall)) {
       placement = tryPlaceOnWall(def, wall, a.flush, interior, placed);
@@ -357,6 +376,7 @@ export function layoutToEntities(
   textLayer: string,
   furnLayer: string,
   wallThickness = 110,
+  variant: WallVariant = 0,
 ): AiAssistResult {
   const entities: Entity[] = [];
   const ROOM_GAP = Math.max(300, wallThickness * 2); // khe giữa 2 phòng để tường không đè nhau
@@ -390,7 +410,7 @@ export function layoutToEntities(
       ix1: p1.x - wallThickness / 2,
       iy1: p1.y - wallThickness / 2,
     };
-    const fr = placeFurniture(room.items, interior, furnLayer);
+    const fr = placeFurniture(room.items, interior, furnLayer, variant);
     entities.push(...fr.entities);
     if (fr.skipped.length) skippedAll.push(`${room.name}: ${fr.skipped.join(', ')}`);
 
@@ -431,4 +451,72 @@ export function describeToEntities(
     result.note += ` Nhận diện vận hành: ${spec.operator} — panel Kiểm chuẩn có thể lọc rule theo loại này.`;
   }
   return result;
+}
+
+/* ═══════════════════════ NHIỀU OPTION (20/07 "bảng đề bài" — panel Kiểm chuẩn chấm điểm) ═══════════════════════ */
+
+export interface LayoutOption {
+  id: string;
+  /** Nhãn hiển thị cho card — mô tả NGẮN biến thể đặt nội thất, không phải tên phòng. */
+  label: string;
+  entities: Entity[];
+  note: string;
+  operator?: OperatorType;
+  /** Biến thể tường đã dùng để sinh option này — caller (UI feedback) đọc trực tiếp, KHÔNG cần
+   * parse lại từ `id`. */
+  variant: WallVariant;
+}
+
+/**
+ * ĐỀ BÀI CHI TIẾT (form "brief" chủ đầu tư) → NHIỀU option layout, PHẠM VI ĐÃ THU HẸP (xem
+ * STATUS.md/báo cáo cuối task 20/07): sinh lại TOÀN BỘ kiến trúc tường/phòng khác nhau cho mỗi
+ * option là quá lớn cho 1 lượt build — thay vào đó 3 option ở đây dùng CHUNG 1 hình bao phòng
+ * (spec.rooms từ parseDescription, TẤT ĐỊNH như describeToEntities) và chỉ khác NHAU ở tham số
+ * `WallVariant` truyền cho `placeFurniture` (mặc định / đối diện / xoay 90°) — tức 3 PHƯƠNG ÁN
+ * ĐẶT NỘI THẤT khác nhau trong cùng 1 mặt bằng tường. Panel gọi checkStandards() (KHÔNG viết
+ * checker mới) trên từng option để gắn nhãn đạt/vi phạm chuẩn cho UI chọn.
+ *
+ * `scaleFactor` = DIỄN GIẢI "tỉ lệ custom đơn giản" (xem báo cáo cuối task): hệ số nhân ĐƠN GIẢN
+ * áp lên kích thước phòng ĐÃ PARSE từ đề bài (mm), KHÁC HẲN 2 cơ chế "scale" khác trong app —
+ * không đụng `ScaleMenu`/`scaleAll` (hệ số nhân TOÀN BỘ doc, sửa đơn vị file nhập) và KHÔNG đụng
+ * `titleBlock()` scale text (thuộc phạm vi RESEARCH-TECHNICAL-DRAWING-PIPELINE.md, chờ quyết
+ * riêng). Cho phép KTS phóng to/thu nhỏ nhanh cả cụm phòng vừa sinh (VD site thực tế lớn/nhỏ hơn
+ * kích thước mặc định) mà không phải gõ lại từng "AxB" trong đề bài.
+ */
+export function generateLayoutOptions(
+  text: string,
+  origin: { x: number; y: number },
+  wallLayer: string,
+  textLayer: string,
+  wallThickness = 110,
+  furnLayer = 'l-furniture',
+  opts?: { scaleFactor?: number },
+): LayoutOption[] {
+  const scaleFactor = opts?.scaleFactor && Number.isFinite(opts.scaleFactor) && opts.scaleFactor > 0 ? opts.scaleFactor : 1;
+  const parsed = parseDescription(text);
+  const spec: LayoutSpec = scaleFactor === 1
+    ? parsed
+    : {
+        ...parsed,
+        rooms: parsed.rooms.map((r) => ({
+          ...r,
+          w: Math.max(1000, Math.round(r.w * scaleFactor)),
+          h: Math.max(1000, Math.round(r.h * scaleFactor)),
+        })),
+      };
+
+  const VARIANTS: { variant: WallVariant; label: string }[] = [
+    { variant: 0, label: 'Mặc định — nội thất áp tường ưu tiên' },
+    { variant: 1, label: 'Đối diện — nội thất áp tường ngược lại' },
+    { variant: 2, label: 'Xoay 90° — nội thất áp tường bên cạnh' },
+  ];
+
+  return VARIANTS.map(({ variant, label }, i) => {
+    const result = layoutToEntities(spec, origin, wallLayer, textLayer, furnLayer, wallThickness, variant);
+    let note = result.note;
+    if (spec.operator && spec.operator !== 'generic') {
+      note += ` Nhận diện vận hành: ${spec.operator}.`;
+    }
+    return { id: `opt-${i}-v${variant}`, label, entities: result.entities, note, operator: spec.operator, variant };
+  });
 }
