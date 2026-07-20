@@ -22,9 +22,9 @@
 - Perceptron THẬT (learning-to-rank, đã verify wired vào Presenting `LayoutShelf` + mới thêm CAD `AiBriefPanel`) · 3 installer unsigned · PWA Vercel + Supabase (Sprint 4).
 
 ## Nợ kỹ thuật
-- 🐛 **MỚI 21/07 — Presenting chữ tiêu đề rối, VẪN CÒN, kết luận cũ SAI:** user tái hiện với tiêu đề MỚI "VILLAGE" — field Nội dung + layer panel đều SẠCH nhưng canvas vẫn vẽ chữ chồng/echo lệch pixel. Kết luận trước (dữ liệu IndexedDB hỏng) SAI. Nghi vấn mới: agent trước test bằng dựng deck object (`akh-sample.ts`), CHƯA test đúng luồng tay thật (chọn template "Trang phân mục" → gõ vào Inspector) — nghi cơ chế tải font tuỳ chỉnh (`EditorDeck.customFonts`) swap DOM khi font chưa load xong.
-- 🐛 `/cad-editor` warning React `Cannot update a component...` (`CadCanvas`/`StudioBar`) — điều tra sâu (tĩnh + hook console.error trước hydrate + StrictMode ép double-render + mọi luồng thao tác) nhưng KHÔNG tái hiện được, chưa sửa. Chi tiết đã thử → CHANGELOG (để agent sau không lặp lại).
-- ✅ **FIX M0 tỉ lệ khung tên CAD:** khoá lỗi tỉ lệ gõ tay không khớp `fitBox()` thật (`RESEARCH-TECHNICAL-DRAWING-PIPELINE.md` §1.6). `lib/cad/model.ts` (`fitScaleLabel`) + `lib/cad/pdf.ts` (ghi đè tỉ lệ thật lúc xuất) + `CadEditor.tsx` (ô Tỉ lệ nay read-only tự tính). Verify PDF thật (đọc byte: "1:47" đúng, "1:100" gõ tay cũ hết còn).
+- ✅ **FIX Presenting — chữ tiêu đề chồng/echo:** root cause = sửa chữ TRÊN CANVAS (double-click) mở `<textarea>` nổi đè đúng khung `frame`, nhưng `EditorCanvas.tsx` vẫn vẽ `<Element>` tĩnh (chữ CŨ, chưa commit) bên dưới → 2 lớp gần trùng vị trí, lệch vài pixel do khác box-model = "echo". Sửa qua Inspector không qua overlay này nên luôn sạch (đúng manh mối user chỉ ra). Sửa: `EditorCanvas.tsx` ~dòng 313, bỏ vẽ `<Element>` khi `editing?.id === el.id`. Verify: tsc sạch · test pass · browser thật — double-click, gõ chữ, không còn ghost, blur commit đúng.
+- 🐛 `/cad-editor` warning React `Cannot update a component...` (`CadCanvas`/`StudioBar`) — điều tra sâu nhưng KHÔNG tái hiện được, chưa sửa. Chi tiết → CHANGELOG.
+- ✅ **FIX M0 tỉ lệ khung tên CAD:** khoá lỗi tỉ lệ gõ tay không khớp `fitBox()` thật (`RESEARCH-TECHNICAL-DRAWING-PIPELINE.md` §1.6). Verify PDF thật (đọc byte: "1:47" đúng, "1:100" gõ tay cũ hết còn).
 - [THẤP] Property panel Render không undo được · Sprint 3 B1 `meta` giá/vendor/sku trống · `knowledge/` 121MB cân nhắc Git LFS.
 
 ## Bị chặn — KHÔNG tự khởi động
