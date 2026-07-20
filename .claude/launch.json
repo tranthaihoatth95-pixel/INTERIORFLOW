@@ -10,19 +10,6 @@
       ],
       "port": 3000,
       "cwd": "/Users/tranben/Downloads/interiorflow"
-    },
-    {
-      "name": "if-wt-a417b93",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev",
-        "--",
-        "-p",
-        "4097"
-      ],
-      "port": 4097,
-      "cwd": "/Users/tranben/Downloads/interiorflow/.claude/worktrees/agent-a417b93d74e5cbb99"
     }
   ]
 }
