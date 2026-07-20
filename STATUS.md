@@ -23,7 +23,8 @@
 
 ## Nợ kỹ thuật
 - 🐛 **MỚI 20/07 — user báo trực tiếp, CHƯA ĐIỀU TRA:** Presenting, slide mẫu "Trang phân mục" (deck IKI VILLAGE) — layer text tiêu đề **render CHỒNG/RỐI CHỮ trên canvas** (đọc như "IKDEMOAGE"). Nghi 2 layer text đè cùng vị trí, hoặc double-render kiểu warning React đã biết ở CAD, hoặc lỗi `TextFx`/font-fit tự-co giãn. Cần mở Presenting slide 1, xem DOM layer thật trước khi sửa.
-- 🐛 `/cad-editor` ném warning React `Cannot update a component while rendering a different component` (`CadCanvas`/`StudioBar`). Chưa truy.
+- 🐛 `/cad-editor` warning React `Cannot update a component...` (`CadCanvas`/`StudioBar`) — điều tra sâu (tĩnh + hook console.error trước hydrate + StrictMode ép double-render + mọi luồng thao tác) nhưng KHÔNG tái hiện được, chưa sửa. Chi tiết đã thử → CHANGELOG (để agent sau không lặp lại).
+- ✅ **FIX M0 tỉ lệ khung tên CAD:** khoá lỗi tỉ lệ gõ tay không khớp `fitBox()` thật (`RESEARCH-TECHNICAL-DRAWING-PIPELINE.md` §1.6). `lib/cad/model.ts` (`fitScaleLabel`) + `lib/cad/pdf.ts` (ghi đè tỉ lệ thật lúc xuất) + `CadEditor.tsx` (ô Tỉ lệ nay read-only tự tính). Verify PDF thật (đọc byte: "1:47" đúng, "1:100" gõ tay cũ hết còn).
 - [THẤP] Property panel Render không undo được · Sprint 3 B1 `meta` giá/vendor/sku trống · `knowledge/` 121MB cân nhắc Git LFS.
 
 ## Bị chặn — KHÔNG tự khởi động

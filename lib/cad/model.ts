@@ -390,3 +390,19 @@ export function fitBox(box: Box, width: number, height: number, pad = 60): Viewp
   const cy = (box.minY + box.maxY) / 2;
   return { scale, panX: width / 2 - cx * scale, panY: height / 2 + cy * scale };
 }
+
+/**
+ * M0 fix (docs/RESEARCH-TECHNICAL-DRAWING-PIPELINE.md §1.6/§4) — tỉ lệ "1:N" THẬT suy ra từ
+ * `fitBox()` cho 1 khổ giấy cụ thể, dùng để khoá lỗi khung tên ghi tỉ lệ gõ tay không khớp tỉ lệ
+ * in thật. N làm tròn: nguyên nếu ≥10, 1 chữ số thập phân nếu <10 (bản vẽ rất nhỏ/khổ rất lớn).
+ * KHÔNG phải `suggestScale()` kiến trúc chuẩn của M1 (chưa duyệt, xem §2.2) — đây chỉ là con số
+ * auto-fit thật đúng với những gì `fitBox()` sẽ dùng khi xuất PDF, không neo vào tập 1:20/50/100/…
+ */
+export function fitScaleLabel(box: Box | null, paperMm: [number, number], margin: number): string {
+  const b = box ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
+  const { scale } = fitBox(b, paperMm[0], paperMm[1], margin);
+  if (!Number.isFinite(scale) || scale <= 0) return '1:100';
+  const n = 1 / scale;
+  const rounded = n >= 10 ? Math.round(n) : Math.round(n * 10) / 10;
+  return `1:${rounded}`;
+}
