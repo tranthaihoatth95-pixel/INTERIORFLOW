@@ -21,6 +21,7 @@
 - Perceptron THẬT (learning-to-rank) · 3 installer unsigned (.exe cần Win) · PWA Vercel + Supabase (Sprint 4).
 
 ## Nợ kỹ thuật
+- 🐛 **Presenting — chữ tiêu đề chồng/echo, ĐỢT 2 (v2) VẪN KHÔNG TÁI HIỆN ĐƯỢC**, dù làm ĐÚNG thao tác tay thật lần này (khác lỗi `akh-sample.ts` của đợt 1) và loại trừ được 5 giả thuyết bằng bằng chứng DOM/console cụ thể (font swap, DOM lặp, TextFx auto-shadow, React key trùng, motion/slideshow). Nghi vấn còn lại CHƯA XÁC NHẬN: `cqh` (container query units, `EditorCanvas.tsx`) + resize/zoom repaint trên đúng máy Mac thật (agent chạy Linux headless, không có font Optima thật để soi). Chi tiết đầy đủ + đề xuất bước tiếp theo → CHANGELOG "21/07 — Presenting chữ chồng, đợt điều tra 2".
 - 🐛 **MỚI (có TRƯỚC đợt này, 2 agent độc lập cùng thấy, 1 agent xác nhận trên mã gốc):** `/cad-editor` ném warning React `Cannot update a component while rendering a different component` (`CadCanvas`/`StudioBar`) làm error boundary dựng lại cây. Chưa truy.
 - [THẤP] Property panel Render không undo được (có thể chủ ý) · Sprint 3 B1 `meta` giá/vendor/sku trống (chờ dữ liệu) · in A3/A4 300dpi chưa khả dụng (đúng phạm vi) · `knowledge/` 121MB PDF cân nhắc Git LFS (ĐỂ SAU).
 
