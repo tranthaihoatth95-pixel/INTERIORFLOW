@@ -32,7 +32,7 @@ import { exportCadToPdf } from '@/lib/cad/pdf';
 import { BLOCKS, BLOCK_MAP } from '@/lib/cad/furniture';
 import ShapePalette, { ShapeInfoPanel } from '@/components/ShapePalette';
 import { loadManifest, groupByCategory, type LibraryManifest } from '@/lib/cad/block-library';
-import { buildDemoPlan } from '@/lib/cad/demo-plan';
+import { buildDemoPlan, buildDemoPlanApartment74 } from '@/lib/cad/demo-plan';
 import { buildOfficeTemplate, buildHotelTemplate } from '@/lib/cad/templates';
 import { titleBlock, type TitleBlockInfo } from '@/lib/cad/commands';
 import { describeToEntities } from '@/lib/cad/ai-assist';
@@ -625,10 +625,13 @@ function FurniturePanel({ onClose }: { onClose: () => void }) {
 }
 
 /* ───────── Panel Mẫu dự án (Sprint 8, H1.4) — chọn điểm khởi đầu khi bắt đầu vẽ mới ─────────
- * 3 lựa chọn: Căn hộ (buildDemoPlan — nguyên trạng, KHÔNG sửa), Văn phòng, Khách sạn
- * (buildOfficeTemplate/buildHotelTemplate — lib/cad/templates.ts, MỚI). Cả 3 đều THAY THẾ bản vẽ
- * hiện tại (giống hệt hành vi openDemo() — hỏi xác nhận nếu doc không rỗng), khác nhau ở NỘI DUNG
- * nạp vào. Đây là ĐIỂM BẮT ĐẦU (tường bao + 1-2 phòng cơ bản), không phải bản vẽ hoàn chỉnh. */
+ * 4 lựa chọn: Căn hộ (buildDemoPlan — nguyên trạng, KHÔNG sửa), Căn hộ 1 — 74m² (5B)
+ * (buildDemoPlanApartment74 — lib/cad/demo-plan.ts, MỚI, đọc từ ảnh chụp bản vẽ gốc — demo THỨ
+ * HAI đầy đủ tường/phòng/cửa/kích thước/nội thất, KHÔNG phải điểm-bắt-đầu-trống như 2 mẫu dưới),
+ * Văn phòng, Khách sạn (buildOfficeTemplate/buildHotelTemplate — lib/cad/templates.ts). Cả 4 đều
+ * THAY THẾ bản vẽ hiện tại (giống hệt hành vi openDemo() — hỏi xác nhận nếu doc không rỗng), khác
+ * nhau ở NỘI DUNG nạp vào. 2 mẫu Văn phòng/Khách sạn là ĐIỂM BẮT ĐẦU (tường bao + 1-2 phòng cơ
+ * bản), không phải bản vẽ hoàn chỉnh — khác với 2 "Căn hộ" (đầy đủ). */
 function TemplatePanel({ onClose }: { onClose: () => void }) {
   // Xác nhận nạp-đè bằng 2 nút inline trong panel (thay window.confirm chặn thread JS).
   const [confirmTpl, setConfirmTpl] = useState<{ label: string; build: () => ReturnType<typeof buildDemoPlan> } | null>(null);
@@ -648,6 +651,7 @@ function TemplatePanel({ onClose }: { onClose: () => void }) {
 
   const items: { label: string; desc: string; build: () => ReturnType<typeof buildDemoPlan> }[] = [
     { label: 'Căn hộ', desc: 'Căn hộ 1PN đầy đủ công năng (giống "Mở bản demo") — Khách/Bếp/Ngủ/WC + hành lang.', build: buildDemoPlan },
+    { label: 'Căn hộ 1 — 74m² (5B)', desc: '2PN đầy đủ công năng, đọc từ ảnh chụp bản vẽ gốc — PN1/PN2/Tắm chung/WC/Bếp/T.G/Khách+Ăn, trục I–F.', build: buildDemoPlanApartment74 },
     { label: 'Văn phòng', desc: 'Không gian mở (open office) + 2 phòng họp nhỏ.', build: buildOfficeTemplate },
     { label: 'Khách sạn', desc: '2 phòng ngủ mẫu kiểu khách sạn + hành lang.', build: buildHotelTemplate },
   ];
