@@ -12,9 +12,7 @@
   - `RESEARCH-ACCESS-CONTROL.md` — chọn `ProjectMember` 5 role + GATE, ~9 ngày công, 10 câu hỏi §8 chờ user (Q2 brief NDA · Q5 role · Q8 GATE quay ngược).
   - `RESEARCH-MOBILE-DISTRIBUTION.md` — iOS: Custom App/ABM · macOS: bỏ MAS giữ `.dmg` notarize · Android: Managed Google Play Private App (đính chính quy mô không giới hạn) · PWA client đã có sẵn, thiếu HTTPS cố định.
   - `RESEARCH-COMFYUI-LESS.md` — tier "oneAI" mở chuỗi LAN→RunPod serverless→model-API, ~2.5-3 ngày công.
-- **ĐỢT SAU (chưa giao, cần NGHIÊN CỨU trước):** Chat/cộng tác nhóm. User phân định rõ: **CAD + Rendering = cộng tác bất đồng bộ** (để lại comment/ghim góp ý chỉnh sửa, kiểu lên ý tưởng của Miro) · **Presenting = sửa real-time nhiều người**. Lưu ý kiến trúc: real-time co-editing cần CRDT/Yjs — memory cũ đã ghi "mỗi flow hiện 1 người sửa, chưa detect conflict". Phải có agent nghiên cứu ra phương án trước khi code.
-- ⚠️ `MobileMenu:129` là avatar chữ cái user, KHÔNG phải logo IF → giữ nguyên. `components/LoginScreen.tsx` (gốc, khác `entry/`) là code chết, chưa xoá.
-- Có nút **Mở DWG** trực tiếp (Web Worker cô lập GPL).
+- **ĐỢT SAU (chưa giao, cần nghiên cứu trước):** Chat/cộng tác — CAD+Rendering = comment/ghim bất đồng bộ kiểu Miro · Presenting = real-time (đã chốt dùng CRDT/Yjs, ngược tài liệu IF1_IF2_BIGPICTURE cũ).
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (63 file). KHÔNG có vitest/jest — bỏ qua chỉ dẫn ghi `npm test`.
 
 ## Quyết định user đã khoá
@@ -23,7 +21,6 @@
 - Perceptron THẬT (learning-to-rank) · 3 installer unsigned (.exe cần Win) · PWA Vercel + Supabase (Sprint 4).
 
 ## Nợ kỹ thuật
-- ~~CAD→Render văng đăng nhập~~ · ~~Cảm ứng CAD + Slide Sorter~~ — XONG + merge (gốc lỗi văng đăng nhập: cookie chung host, xem luật 3 + CHANGELOG). Shortcut bàn phím CAD nay đã có UI cảm ứng (`CadTouchDock`, nhánh `feat/sketch-pro-modes`).
 - 🐛 **MỚI (có TRƯỚC đợt này, 2 agent độc lập cùng thấy, 1 agent xác nhận trên mã gốc):** `/cad-editor` ném warning React `Cannot update a component while rendering a different component` (`CadCanvas`/`StudioBar`) làm error boundary dựng lại cây. Chưa truy.
 - [THẤP] Property panel Render không undo được (có thể chủ ý) · Sprint 3 B1 `meta` giá/vendor/sku trống (chờ dữ liệu) · in A3/A4 300dpi chưa khả dụng (đúng phạm vi) · `knowledge/` 121MB PDF cân nhắc Git LFS (ĐỂ SAU).
 
