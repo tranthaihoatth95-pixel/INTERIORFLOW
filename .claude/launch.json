@@ -24,6 +24,20 @@
       "port": 4098,
       "autoPort": false,
       "cwd": "/Users/tranben/Downloads/interiorflow-wt-motion-audit"
+    },
+    {
+      "name": "login-glass-4096",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "-p",
+        "4096"
+      ],
+      "port": 4096,
+      "autoPort": false,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-login-glass"
     }
   ]
 }

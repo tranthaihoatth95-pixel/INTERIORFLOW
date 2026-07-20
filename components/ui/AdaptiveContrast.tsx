@@ -17,9 +17,12 @@
 import { useEffect, useState } from 'react';
 import {
   compositeOver,
+  planCardText,
   planFallback,
   planFromReading,
   readImageRegion,
+  type CardTextPlan,
+  type CardTextOptions,
   type ContrastPlan,
   type ContrastTone,
   type PlanOptions,
@@ -80,6 +83,93 @@ export function useAdaptiveContrast({
   }, [src, regionKey, optsKey, overlayKey, fallbackTone, enabled]);
 
   return plan;
+}
+
+/* ============================================================================
+ * useCardText — TƯƠNG PHẢN CHỮ TRONG CARD KÍNH (Việc 1, login-glass).
+ *
+ * Khác `useAdaptiveContrast` (lo chữ ĐÈ THẲNG ảnh): hook này lo bộ chữ nhiều BẬC nằm
+ * TRONG card kính. Đo độ sáng ảnh ở vùng CARD → `planCardText` giải ra 5 bậc chữ cùng
+ * một tông, mọi bậc ≥ 4.5, kèm lớp sương nội bộ nếu nền quá sáng.
+ *
+ * Nền KHÔNG phải ảnh (gradient preset / nền động sinh bằng code) → truyền
+ * `fallbackLuminance` (độ sáng đại diện của nền trong vùng card) + `tone`.
+ * ========================================================================== */
+export interface UseCardTextArgs extends CardTextOptions {
+  /** Ảnh nền đang hiện. `null`/rỗng → dùng `fallbackLuminance`. */
+  src: string | null | undefined;
+  /** Vùng ảnh phủ bởi card (tỉ lệ 0..1). */
+  region: SampleRegion;
+  /** Độ sáng dùng khi không đo được ảnh (nền gradient/động). Mặc định 0.08 (nền tối). */
+  fallbackLuminance?: number;
+  enabled?: boolean;
+}
+
+export interface CardTextResult {
+  plan: CardTextPlan;
+  /** Tint kính (Việc 2 · ①) ở dạng "R G B" cho `rgba(var(--lq-tint)/0.2)`. */
+  tint: string;
+}
+
+/** Tint mặc định khi không có ảnh — greige ẤM theo tone (dark: nâu trầm · light: kem). */
+function fallbackTint(lum: number): string {
+  return lum > 0.42 ? '232 224 210' : '58 48 38';
+}
+
+export function useCardText({
+  src,
+  region,
+  fallbackLuminance = 0.08,
+  enabled = true,
+  ...opts
+}: UseCardTextArgs): CardTextResult {
+  const [result, setResult] = useState<CardTextResult>(() => ({
+    plan: planCardText(fallbackLuminance, opts),
+    tint: fallbackTint(fallbackLuminance),
+  }));
+
+  const regionKey = `${region.x},${region.y},${region.w},${region.h}`;
+  const optsKey = `${opts.ratio ?? ''}|${opts.tone ?? ''}`;
+
+  useEffect(() => {
+    if (!enabled || !src) {
+      setResult({
+        plan: planCardText(fallbackLuminance, opts),
+        tint: fallbackTint(fallbackLuminance),
+      });
+      return;
+    }
+    let cancelled = false;
+    void readImageRegion(src, region).then((raw) => {
+      if (cancelled) return;
+      const lum = raw ? raw.luminance : fallbackLuminance;
+      const tint = raw?.avg ? raw.avg.join(' ') : fallbackTint(lum);
+      setResult({ plan: planCardText(lum, opts), tint });
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src, regionKey, optsKey, fallbackLuminance, enabled]);
+
+  return result;
+}
+
+/**
+ * CardTextPlan → CSS variables đặt trên phần tử `.lq-card`. Remap thẳng bộ `--t1..--t5`
+ * (+ viền/hover/ô nhập) mà LoginForm vốn đã dùng, nên KHÔNG phải sửa từng chỗ text —
+ * chỉ cần trải style này lên card là toàn bộ chữ về đúng hệ tông đạt ngưỡng.
+ */
+export function cardTextVars(plan: CardTextPlan): React.CSSProperties {
+  return {
+    ['--t1' as string]: plan.tokens.t1,
+    ['--t2' as string]: plan.tokens.t2,
+    ['--t3' as string]: plan.tokens.t3,
+    ['--t4' as string]: plan.tokens.t4,
+    ['--t5' as string]: plan.tokens.t5,
+    ['--border' as string]: plan.border,
+    ['--hover' as string]: plan.hover,
+  };
 }
 
 /** Style chữ theo plan — trải vào `style` của phần tử chứa chữ. */

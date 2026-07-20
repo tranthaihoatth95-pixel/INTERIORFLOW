@@ -462,25 +462,44 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
    bóng sâu; KHÔNG neon, KHÔNG gradient loè.
    ============================================================ */
 
-/* ---------- C-1 · Liquid glass card ---------- */
+/* ---------- C-1 · Liquid glass card (20/07 login-glass — theo công thức 4 bước) ----------
+   Công thức user gửi, dịch sang CSS tương đương:
+   ① linear-gradient LẤY MÀU từ ảnh nền đang hiện, opacity ~20% — biến `--lq-tint`
+      (rgb đo bằng lib/adaptive-contrast) do LoginScreen bơm vào; mặc định trung tính.
+   ② 3 inner shadow TRẮNG 20% dựng khối kính dày:
+        inset  4px  4px 12px 2px · inset -2px -2px 15px 1px · inset 0 0 15px 2px
+   ③ refraction/depth/dispersion/frost: backdrop blur+saturate (frost) + viền specular
+      ở mép (dispersion/rìa sáng) + gradient trong suốt mô phỏng khúc xạ mép.
+   ④ nội dung.
+   Card RẤT TRONG (thấy ảnh xuyên qua) — độ đọc do TẦNG chữ (Việc 1) lo, không nhờ đục card. */
 .lq-card {
   position: relative;
-  background: linear-gradient(
-    168deg,
-    rgba(255, 255, 255, 0.085) 0%,
-    rgba(255, 255, 255, 0.045) 38%,
-    rgba(255, 255, 255, 0.028) 100%
-  );
-  backdrop-filter: blur(30px) saturate(170%);
-  -webkit-backdrop-filter: blur(30px) saturate(170%);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  /* ① tint lấy từ ảnh nền (≈20%) chồng trên lớp kính trắng rất mỏng — trong, có hồn màu */
+  background:
+    linear-gradient(
+      168deg,
+      rgba(var(--lq-tint, 255 255 255) / 0.2) 0%,
+      rgba(var(--lq-tint, 255 255 255) / 0.1) 100%
+    ),
+    linear-gradient(
+      168deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0.03) 100%
+    );
+  /* ③ frost — làm mờ + tăng bão hoà nền phía sau (cảm giác kính dày) */
+  backdrop-filter: blur(22px) saturate(155%);
+  -webkit-backdrop-filter: blur(22px) saturate(155%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  /* ② 3 inner shadow trắng 20% (khối kính) + bóng ngoài giữ card nổi khỏi ảnh */
   box-shadow:
-    0 24px 70px -18px rgba(0, 0, 0, 0.65),
-    0 4px 18px -6px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    inset 4px 4px 12px 2px rgba(255, 255, 255, 0.2),
+    inset -2px -2px 15px 1px rgba(255, 255, 255, 0.2),
+    inset 0 0 15px 2px rgba(255, 255, 255, 0.2),
+    0 24px 70px -18px rgba(0, 0, 0, 0.55),
+    0 4px 18px -6px rgba(0, 0, 0, 0.34);
   will-change: transform;
 }
-/* viền specular trên đỉnh — tia sáng mảnh kiểu kính Apple */
+/* ③ viền specular trên đỉnh — tia sáng mảnh kiểu kính Apple (chấm sáng theo con trỏ) */
 .lq-card::before {
   content: '';
   position: absolute;
@@ -488,15 +507,15 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   border-radius: inherit;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 18%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 18%),
     radial-gradient(
       420px 260px at var(--lq-mx, 50%) var(--lq-my, -20%),
-      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.09),
       transparent 62%
     );
 }
-/* 19/07 login-v2 — KHÚC XẠ giả lập ở mép kính: rim-light mảnh chạy quanh viền trong
-   (trên sáng → dưới thoáng ấm), như ánh nền bẻ cong qua cạnh card. Pointer-events none. */
+/* ③ KHÚC XẠ giả lập ở mép kính: rim-light mảnh quanh viền trong + tán sắc nhẹ ở 2 mép
+   (đỏ ấm góc trên · lam lạnh góc dưới = gợi ý dispersion), tan hẳn vào giữa. */
 .lq-card::after {
   content: '';
   position: absolute;
@@ -504,35 +523,56 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   border-radius: inherit;
   pointer-events: none;
   background:
-    linear-gradient(350deg, rgba(199, 154, 99, 0.07), transparent 24%),
-    linear-gradient(180deg, transparent 82%, rgba(255, 255, 255, 0.045) 100%);
+    linear-gradient(145deg, rgba(255, 180, 140, 0.05), transparent 20%),
+    linear-gradient(325deg, rgba(150, 190, 255, 0.045), transparent 20%),
+    linear-gradient(180deg, transparent 80%, rgba(255, 255, 255, 0.05) 100%);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
-    inset 0 -12px 24px -18px rgba(255, 255, 255, 0.35);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 -12px 24px -18px rgba(255, 255, 255, 0.4);
 }
 
-/* theme sáng: kính trắng sữa, bóng ấm nhẹ hơn */
+/* theme sáng / nền linen: kính trắng sữa hơi dày (chữ mực cần nền sáng để đạt ngưỡng) */
 :root[data-theme='light'] .lq-card,
 [data-login-tone='light'] .lq-card {
-  background: linear-gradient(
-    168deg,
-    rgba(255, 255, 255, 0.6) 0%,
-    rgba(255, 255, 255, 0.42) 100%
-  );
-  border-color: rgba(255, 255, 255, 0.75);
+  background:
+    linear-gradient(
+      168deg,
+      rgba(var(--lq-tint, 255 255 255) / 0.28) 0%,
+      rgba(var(--lq-tint, 255 255 255) / 0.16) 100%
+    ),
+    linear-gradient(168deg, rgba(255, 255, 255, 0.62) 0%, rgba(255, 255, 255, 0.48) 100%);
+  border-color: rgba(255, 255, 255, 0.8);
   box-shadow:
-    0 24px 60px -18px rgba(60, 52, 40, 0.35),
-    0 4px 16px -6px rgba(60, 52, 40, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    inset 4px 4px 12px 2px rgba(255, 255, 255, 0.5),
+    inset -2px -2px 15px 1px rgba(255, 255, 255, 0.45),
+    inset 0 0 15px 2px rgba(255, 255, 255, 0.4),
+    0 24px 60px -18px rgba(60, 52, 40, 0.32),
+    0 4px 16px -6px rgba(60, 52, 40, 0.16);
 }
-/* nền ẢNH user (tone dark cưỡng bức): card kính luôn theo bản tối dù theme sáng */
+/* nền ẢNH (tone dark cưỡng bức): card kính bản tối, VẪN rất trong */
 [data-login-tone='dark'] .lq-card {
-  background: linear-gradient(
-    168deg,
-    rgba(20, 20, 24, 0.38) 0%,
-    rgba(20, 20, 24, 0.26) 100%
-  );
-  border-color: rgba(255, 255, 255, 0.16);
+  background:
+    linear-gradient(
+      168deg,
+      rgba(var(--lq-tint, 255 255 255) / 0.2) 0%,
+      rgba(var(--lq-tint, 255 255 255) / 0.1) 100%
+    ),
+    linear-gradient(168deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.03) 100%);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Lớp sương NỘI BỘ trong card (Việc 1 · chỉ khi nền quá sáng, ưu tiên đọc được) —
+   đặt SAU chữ, đậm giữa/tan rìa nên viền card vẫn nhìn xuyên ảnh. */
+.lq-card > .lq-scrim {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+.lq-card > .lq-content {
+  position: relative;
+  z-index: 1;
 }
 
 /* input trong card kính — trong mờ, không đục như field thường */
@@ -621,6 +661,200 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
 .if-login-kenburns-b {
   animation: if-kenburns-b 44s linear infinite alternate;
   will-change: transform;
+}
+
+/* ============================================================
+   20/07 login-glass · Việc 3 — 5 NỀN ĐỘNG sinh bằng CODE (không phải ảnh)
+   Bảng màu: thang greige ấm + cam TTT #F06020 / navy TTT #002850. KHÔNG neon lạnh.
+   Chuyển động RẤT chậm, êm (màn đăng nhập, không screensaver). Ưu tiên CSS thuần
+   (GPU-cheap: chỉ animate background-position / transform / opacity). prefers-reduced-
+   motion → đứng yên. Canvas (chỉ 'dust') tự dừng khi document.hidden + cap FPS.
+   ============================================================ */
+
+/* nền tối chung cho các preset động (phòng lúc gradient chưa phủ hết) */
+.if-dyn {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #16130f;
+}
+
+/* ① AURORA — mesh cam/navy/greige trôi & thở rất chậm, blur mềm như cực quang ấm */
+.if-dyn-aurora {
+  background:
+    radial-gradient(42% 46% at 22% 30%, rgba(240, 96, 32, 0.28), transparent 70%),
+    radial-gradient(48% 52% at 78% 26%, rgba(0, 40, 80, 0.42), transparent 72%),
+    radial-gradient(56% 60% at 60% 84%, rgba(199, 154, 99, 0.24), transparent 74%),
+    radial-gradient(50% 54% at 30% 78%, rgba(0, 40, 80, 0.34), transparent 74%),
+    linear-gradient(160deg, #171310 0%, #1c1712 50%, #12100d 100%);
+  background-size: 200% 200%, 220% 220%, 240% 240%, 200% 200%, 100% 100%;
+  filter: blur(6px) saturate(120%);
+  animation: if-dyn-aurora 46s ease-in-out infinite alternate;
+}
+@keyframes if-dyn-aurora {
+  0% {
+    background-position: 0% 20%, 100% 0%, 40% 100%, 0% 100%, 0 0;
+  }
+  100% {
+    background-position: 40% 60%, 60% 40%, 70% 60%, 30% 70%, 0 0;
+  }
+}
+
+/* ② DOTS — lưới chấm greige thở nhẹ; nhích RẤT nhẹ theo con trỏ (biến --mx/--my do JS set) */
+.if-dyn-dots {
+  background:
+    radial-gradient(circle at center, rgba(199, 154, 99, 0.5) 1.1px, transparent 1.4px),
+    linear-gradient(160deg, #16130f 0%, #1b1610 55%, #131009 100%);
+  background-size:
+    26px 26px,
+    100% 100%;
+  background-position:
+    calc(var(--mx, 0.5) * -16px) calc(var(--my, 0.5) * -16px),
+    0 0;
+  animation: if-dyn-dots-breathe 11s ease-in-out infinite;
+}
+@keyframes if-dyn-dots-breathe {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+/* quầng sáng ấm bám con trỏ — làm lưới có chiều sâu, rất tiết chế */
+.if-dyn-dots::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    30% 34% at calc(var(--mx, 0.5) * 100%) calc(var(--my, 0.5) * 100%),
+    rgba(240, 96, 32, 0.14),
+    transparent 70%
+  );
+  transition: background-position 0.6s ease;
+}
+
+/* ③ CONTOUR — đường bình độ ấm trôi ngang chậm (repeating-radial, mask mềm) */
+.if-dyn-contour {
+  background:
+    repeating-radial-gradient(
+      circle at 30% 120%,
+      rgba(199, 154, 99, 0.16) 0 2px,
+      transparent 2px 46px
+    ),
+    repeating-radial-gradient(
+      circle at 80% -20%,
+      rgba(0, 40, 80, 0.2) 0 2px,
+      transparent 2px 54px
+    ),
+    linear-gradient(155deg, #17130f 0%, #1a1611 60%, #120f0b 100%);
+  background-size:
+    170% 170%,
+    180% 180%,
+    100% 100%;
+  animation: if-dyn-contour 60s linear infinite alternate;
+}
+@keyframes if-dyn-contour {
+  0% {
+    background-position: 0% 0%, 100% 100%, 0 0;
+  }
+  100% {
+    background-position: 18% 10%, 82% 88%, 0 0;
+  }
+}
+
+/* ⑤ SILK — sọc lụa chuyển sắc greige↔cam, trôi & đổi tông rất chậm (hue nhẹ) */
+.if-dyn-silk {
+  background:
+    repeating-linear-gradient(
+      115deg,
+      rgba(199, 154, 99, 0.16) 0 12px,
+      rgba(240, 96, 32, 0.06) 12px 24px,
+      rgba(0, 40, 80, 0.12) 24px 40px,
+      transparent 40px 66px
+    ),
+    linear-gradient(150deg, #191410 0%, #201812 52%, #14100c 100%);
+  background-size:
+    240% 240%,
+    100% 100%;
+  filter: blur(3px) saturate(115%);
+  animation:
+    if-dyn-silk 54s ease-in-out infinite alternate,
+    if-dyn-silk-hue 90s ease-in-out infinite alternate;
+}
+@keyframes if-dyn-silk {
+  0% {
+    background-position: 0% 40%, 0 0;
+  }
+  100% {
+    background-position: 100% 60%, 0 0;
+  }
+}
+@keyframes if-dyn-silk-hue {
+  0% {
+    filter: blur(3px) saturate(110%) hue-rotate(-6deg);
+  }
+  100% {
+    filter: blur(3px) saturate(125%) hue-rotate(8deg);
+  }
+}
+
+/* prefers-reduced-motion: mọi nền động ĐỨNG YÊN (giữ khung tĩnh đẹp) */
+@media (prefers-reduced-motion: reduce) {
+  .if-dyn-aurora,
+  .if-dyn-dots,
+  .if-dyn-contour,
+  .if-dyn-silk {
+    animation: none !important;
+  }
+}
+
+/* swatch TĨNH trong popover đổi nền (ảnh snapshot, không animate — nhẹ, không xao nhãng) */
+.if-dyn-swatch-aurora {
+  background:
+    radial-gradient(50% 54% at 26% 32%, rgba(240, 96, 32, 0.5), transparent 70%),
+    radial-gradient(56% 60% at 76% 30%, rgba(0, 40, 80, 0.6), transparent 72%),
+    radial-gradient(60% 64% at 60% 82%, rgba(199, 154, 99, 0.4), transparent 74%),
+    linear-gradient(160deg, #171310, #12100d);
+}
+.if-dyn-swatch-dots {
+  background:
+    radial-gradient(circle at center, rgba(199, 154, 99, 0.6) 1px, transparent 1.4px),
+    linear-gradient(160deg, #17130f, #131009);
+  background-size:
+    9px 9px,
+    100% 100%;
+}
+.if-dyn-swatch-contour {
+  background:
+    repeating-radial-gradient(circle at 30% 130%, rgba(199, 154, 99, 0.4) 0 1px, transparent 1px 8px),
+    repeating-radial-gradient(circle at 80% -30%, rgba(0, 40, 80, 0.5) 0 1px, transparent 1px 9px),
+    linear-gradient(155deg, #17130f, #120f0b);
+}
+.if-dyn-swatch-dust {
+  background:
+    radial-gradient(circle at 30% 40%, rgba(233, 214, 184, 0.6) 0.8px, transparent 1.2px),
+    radial-gradient(circle at 70% 66%, rgba(233, 214, 184, 0.5) 0.8px, transparent 1.2px),
+    radial-gradient(circle at 52% 22%, rgba(233, 214, 184, 0.45) 0.7px, transparent 1.1px),
+    linear-gradient(160deg, #141009, #100d08);
+  background-size:
+    40px 40px,
+    52px 52px,
+    30px 30px,
+    100% 100%;
+}
+.if-dyn-swatch-silk {
+  background:
+    repeating-linear-gradient(
+      115deg,
+      rgba(199, 154, 99, 0.4) 0 5px,
+      rgba(240, 96, 32, 0.16) 5px 9px,
+      rgba(0, 40, 80, 0.3) 9px 15px,
+      transparent 15px 24px
+    ),
+    linear-gradient(150deg, #191410, #14100c);
 }
 
 /* ============================================================
