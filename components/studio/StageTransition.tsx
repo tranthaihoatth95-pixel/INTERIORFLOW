@@ -16,8 +16,20 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { wallpaperIn, stageVeil, fade } from '@/lib/motion';
+import { PHASE_MAP, type Phase } from '@/lib/phases';
+import { useStageTransition } from './StageTransitionProvider';
 
-/** Bọc nội dung chính của route studio — chạy `wallpaperIn` khi mount. */
+/**
+ * Bọc nội dung chính của route studio.
+ *
+ * - Vào thẳng bằng URL (không có màn che): chạy `wallpaperIn` — crossfade + thu scale rất nhẹ.
+ * - Đến từ một chặng khác (đang có veil che): KHÔNG fade nữa. Veil đã lo phần chuyển cảnh; nếu
+ *   fade thêm ở đây thì thành fade chồng fade và người dùng thấy một khoảng nền phẳng ở giữa.
+ *   Nội dung render sẵn ở opacity 1 để veil kéo ra là thấy ngay trang hoàn chỉnh.
+ *
+ * Ghi chú hiệu năng: `wallpaperIn` có `scale`, mà cây con ở đây là cả canvas CAD / deck slide.
+ * Bỏ được scale ở nhánh "đến từ chặng khác" cũng là bỏ luôn một lần rasterise layer rất to.
+ */
 export function StageEnter({
   children,
   style,
@@ -27,12 +39,26 @@ export function StageEnter({
   style?: CSSProperties;
 }) {
   const reduce = useReducedMotion();
+  const { arriving } = useStageTransition();
+  // Chốt MỘT LẦN lúc mount: veil tắt sau đó không được kích hoạt lại animation vào.
+  const [underVeil] = useState(arriving);
+
+  const layout: CSSProperties = {
+    flex: 1,
+    minHeight: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    ...style,
+  };
+
+  if (underVeil) return <div style={layout}>{children}</div>;
+
   return (
     <motion.div
       variants={reduce ? fade : wallpaperIn}
       initial="hidden"
       animate="visible"
-      style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', ...style }}
+      style={layout}
     >
       {children}
     </motion.div>
@@ -49,9 +75,10 @@ export function StageEnter({
  */
 const SLOW_NAV_MS = 400;
 
-export function StageVeil({ show, label }: { show: boolean; label?: string }) {
+export function StageVeil({ show, target }: { show: boolean; target?: Phase | null }) {
   const reduce = useReducedMotion();
   const [slow, setSlow] = useState(false);
+  const label = target ? PHASE_MAP[target].label : undefined;
 
   useEffect(() => {
     if (!show) {
@@ -66,6 +93,8 @@ export function StageVeil({ show, label }: { show: boolean; label?: string }) {
     <AnimatePresence>
       {show && (
         <motion.div
+          // Mốc ổn định để đo/kiểm chuyển cảnh (audit motion 20/07) — đừng đổi tên.
+          data-stage-veil=""
           variants={stageVeil}
           initial="hidden"
           animate="visible"

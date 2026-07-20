@@ -20,6 +20,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePageVisible } from '@/lib/usePageVisible';
 import { Image as ImageIcon, Check, Trash2, Upload, Play, Shuffle, ListOrdered } from 'lucide-react';
 import { easeApple, pressableIcon } from '@/lib/motion';
 import type { Lang } from '@/lib/i18n';
@@ -299,6 +300,9 @@ export function LoginBackdropLayer({
   onSrc?: (src: string | null) => void;
 }) {
   const preset = choice.kind === 'preset' ? BG_PRESETS.find((p) => p.id === choice.id) : null;
+  // Tab ẩn → dừng quầng sáng lặp vô hạn. Slideshow đã tự kiểm `document.hidden` từ trước;
+  // vòng lặp quầng sáng thì chưa, nay theo cùng một luật (xem lib/usePageVisible.ts).
+  const visible = usePageVisible();
 
   // Nền TĨNH (ảnh thư viện / ảnh upload / preset gradient): báo src một lần mỗi khi đổi.
   // Nhánh trình chiếu tự báo bên trong SlideshowLayer (ảnh đổi liên tục).
@@ -359,7 +363,7 @@ export function LoginBackdropLayer({
                 className="absolute left-1/2 top-1/2 h-[54rem] w-[54rem] -translate-x-1/2 -translate-y-1/2 rounded-full"
                 style={{ background: 'radial-gradient(circle, #c79a63 0%, transparent 62%)', filter: 'blur(90px)' }}
                 initial={{ opacity: 0.06 }}
-                animate={reduce ? { opacity: 0.08 } : { opacity: [0.05, 0.11, 0.05], scale: [1, 1.06, 1] }}
+                animate={reduce || !visible ? { opacity: 0.08 } : { opacity: [0.05, 0.11, 0.05], scale: [1, 1.06, 1] }}
                 transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
               />
             </motion.div>

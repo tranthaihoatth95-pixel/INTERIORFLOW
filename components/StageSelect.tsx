@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { usePageVisible } from '@/lib/usePageVisible';
 import { Loader2, Presentation, Box, Palette, ArrowRight } from 'lucide-react';
 import { useFlowStore, type WorkspaceMode } from '@/lib/store';
 import { PHASE_MAP } from '@/lib/phases';
@@ -75,6 +76,8 @@ export function StageSelect({ onEnter }: { onEnter: () => void }) {
   const user = useFlowStore((s) => s.user);
   const setWorkspace = useFlowStore((s) => s.setWorkspace);
   const reduce = useReducedMotion();
+  // Tab ẩn → dừng quầng sáng lặp vô hạn (xem lib/usePageVisible.ts).
+  const visible = usePageVisible();
   const lang = useLang();
   const en = lang === 'en';
   const [chosen, setChosen] = useState<WorkspaceMode>('render');
@@ -108,7 +111,7 @@ export function StageSelect({ onEnter }: { onEnter: () => void }) {
           className="absolute -left-40 -top-32 h-[34rem] w-[34rem] rounded-full"
           style={{ background: `radial-gradient(circle, ${COPPER} 0%, transparent 64%)`, filter: 'blur(90px)' }}
           initial={{ opacity: 0.1 }}
-          animate={reduce ? { opacity: 0.1 } : { opacity: [0.08, 0.13, 0.08], x: [0, 24, 0] }}
+          animate={reduce || !visible ? { opacity: 0.1 } : { opacity: [0.08, 0.13, 0.08], x: [0, 24, 0] }}
           transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
         />
         <div

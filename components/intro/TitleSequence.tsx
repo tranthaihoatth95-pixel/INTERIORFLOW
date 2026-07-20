@@ -357,7 +357,7 @@ export function TitleSequence({ onFinish }: { onFinish: () => void }) {
           {WORKS.map((_, i) => (
             <span
               key={i}
-              className="h-[5px] rounded-full transition-all duration-500"
+              className="h-[5px] rounded-full transition-[width,background-color] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
               style={{
                 width: i === active ? 22 : 5,
                 background: i === active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)',

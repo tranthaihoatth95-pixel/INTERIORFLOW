@@ -27,6 +27,7 @@ import type {
   SlideTransition,
   ElementReveal,
 } from '@/lib/present-editor/model';
+import { AnimatePresence } from 'framer-motion';
 import { makeText, makeImage, makeShape, newId, duplicateElement } from '@/lib/present-editor/model';
 import type { EmbeddedFont } from '@/lib/present-editor/model';
 import { registerFonts } from '@/lib/present-editor/custom-fonts';
@@ -1676,22 +1677,25 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
       {/* Trình chiếu với hiệu ứng động. */}
       {playing && <SlidePlayer deck={ed.deck} startIndex={ed.currentSlide} onClose={() => setPlaying(false)} />}
 
-      {/* "Xem lưới" (Slide Sorter) — overlay bổ sung cho SlideStrip, xem toàn deck dạng lưới. */}
-      {sorterOpen && (
-        <SlideSorter
-          deck={ed.deck}
-          current={ed.currentSlide}
-          onSelect={(i) => {
-            ed.selectSlide(i);
-            setSorterOpen(false);
-          }}
-          onAdd={onAddSlide}
-          onDuplicate={onDuplicateSlide}
-          onDelete={onDeleteSlide}
-          onReorder={onReorderSlide}
-          onClose={() => setSorterOpen(false)}
-        />
-      )}
+      {/* "Xem lưới" (Slide Sorter) — overlay bổ sung cho SlideStrip, xem toàn deck dạng lưới.
+          AnimatePresence để lưới còn chạy được `exit` lúc đóng (trước đây tắt phựt). */}
+      <AnimatePresence>
+        {sorterOpen && (
+          <SlideSorter
+            deck={ed.deck}
+            current={ed.currentSlide}
+            onSelect={(i) => {
+              ed.selectSlide(i);
+              setSorterOpen(false);
+            }}
+            onAdd={onAddSlide}
+            onDuplicate={onDuplicateSlide}
+            onDelete={onDeleteSlide}
+            onReorder={onReorderSlide}
+            onClose={() => setSorterOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Brand Kit — Nhận diện (PS-1): logo · màu · font · watermark + áp lại theme cả deck. */}
       {brandKitOpen && (

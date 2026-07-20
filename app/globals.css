@@ -164,14 +164,22 @@ body {
   touch-action: none;
 }
 
-/* Tôn trọng người dùng tắt hiệu ứng */
+/* Tôn trọng người dùng tắt hiệu ứng.
+   Rà soát 20/07: bản cũ chỉ reset DURATION mà quên DELAY, nên dưới reduced-motion tooltip vẫn
+   phải chờ `transition-delay: .15s` mới hiện (cảm giác "đơ" chứ không phải "tắt hiệu ứng").
+   Thêm reset delay + scroll-behavior cho trọn. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
+  }
+  html {
+    scroll-behavior: auto !important;
   }
 }
 
@@ -327,10 +335,17 @@ body {
   display: none;
 }
 
-/* Hiệu ứng "quét tài liệu" khi Generate deck (góp ý #1, ảnh c_mrcqc6hk). */
+/* Hiệu ứng "quét tài liệu" khi Generate deck (góp ý #1, ảnh c_mrcqc6hk).
+   Rà soát motion 20/07: trước đây chạy bằng `top: 6% → 92%` — animate thuộc tính LAYOUT nên mỗi
+   khung hình trình duyệt phải reflow lại, mà đây là animation VÔ HẠN nằm cạnh một box-shadow
+   blur 14px rộng gần hết khung. Đổi sang `transform: translateY()` (chỉ chạy ở tầng composite,
+   không đụng layout) — hình ảnh y hệt, chi phí gần như bằng 0.
+   Quãng đường: khung quét (`scanDocFrame` trong GenerateFlow.tsx) cao CỐ ĐỊNH 170px, đường quét
+   đi từ `top:6%` (10.2px) tới `top:92%` (156.4px) ⇒ 146px. Khung nào khác chiều cao thì đặt lại
+   `--pe-scan-travel` trên phần tử bọc. */
 @keyframes pe-scan-sweep {
   0% {
-    top: 6%;
+    transform: translateY(0);
     opacity: 0;
   }
   12% {
@@ -340,12 +355,13 @@ body {
     opacity: 1;
   }
   100% {
-    top: 92%;
+    transform: translateY(var(--pe-scan-travel, 146px));
     opacity: 0;
   }
 }
 .pe-scan-line {
   position: absolute;
+  top: 6%;
   left: 8%;
   right: 8%;
   height: 3px;
@@ -353,6 +369,8 @@ body {
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
   box-shadow: 0 0 14px 2px var(--accent-ring);
   animation: pe-scan-sweep 1.9s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  /* Báo trước cho compositor: phần tử này chỉ đổi transform/opacity. */
+  will-change: transform, opacity;
 }
 @keyframes pe-fade-up {
   from {
@@ -710,11 +728,8 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
 .if-tooltip-tag.if-tooltip-visible.if-tooltip-bottom {
   transform: translate(calc(-50% + var(--tt-offset)), 7px);
 }
-@media (prefers-reduced-motion: reduce) {
-  .if-tooltip-tag {
-    transition-duration: 0.001ms !important;
-  }
-}
+/* (Khối reduced-motion riêng cho .if-tooltip-tag đã bỏ 20/07: khối `*` ở đầu file đã phủ
+   duration LẪN delay, khối này không thêm gì mà còn gây hiểu nhầm là tooltip cần luật riêng.) */
 
 /* Nhãn micro chặng ("01 · DRAFTING CAD") trên StageSwitcher — vế phân định chặng. Thanh đầu đã
    khá chật ở laptop nhỏ, nên ẩn nhãn dưới 1100px; pill + chấm tông chặng vẫn còn nguyên. */

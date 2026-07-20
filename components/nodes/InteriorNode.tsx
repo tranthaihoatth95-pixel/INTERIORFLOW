@@ -264,9 +264,12 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
 
         {status === 'running' && (
           <div className="h-1 overflow-hidden rounded-full bg-[var(--hover)]">
+            {/* Rà soát motion 20/07: trước dùng `transition-all` + `width: n%` — animate width là
+                animate LAYOUT, mà thanh này chạy trên TỪNG node của canvas trong suốt lúc render.
+                Đổi sang scaleX (chỉ composite): thanh đặc bo tròn nên nhìn y hệt. */}
             <div
-              className="h-full rounded-full bg-[var(--accent)] transition-all duration-200"
-              style={{ width: `${Math.round(progress * 100)}%` }}
+              className="h-full w-full origin-left rounded-full bg-[var(--accent)] transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
+              style={{ transform: `scaleX(${progress})` }}
             />
           </div>
         )}
