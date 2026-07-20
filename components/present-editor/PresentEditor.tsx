@@ -38,6 +38,7 @@ import {
 } from '@/lib/present-editor/templates';
 import { suggestTemplate } from '@/lib/present-editor/suggest';
 import { DEFAULT_SPEC, applySpecToSlide, type LayoutSpec } from '@/lib/present-editor/spec';
+import { classifyWheel } from '@/lib/input/wheel';
 import { buildGuProfile, type GuAsset, type GuProfile } from '@/lib/gu';
 import { exportDeckToPdf, exportDeckToPptxFromModel, exportDeckToPng } from '@/lib/present-editor/export';
 import { useEditor } from './useEditor';
@@ -443,18 +444,25 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     return () => ro.disconnect();
   }, [panelOpen, inspectorOpen]);
 
-  /* Ctrl/Cmd + lăn chuột = zoom canvas (chuẩn Photoshop/Canva/Figma). Lăn chuột THƯỜNG (không
-   * giữ Ctrl/Cmd) giữ nguyên hành vi cuộn cũ. Gắn listener NATIVE (không dùng onWheel của React)
-   * để preventDefault thật sự chặn được zoom trang của trình duyệt — React 17+ đăng ký wheel
-   * handler ở chế độ passive nên preventDefault bên trong onWheel JSX sẽ KHÔNG có tác dụng. */
+  /* Ctrl/Cmd + lăn chuột HOẶC chụm 2 ngón trên trackpad = zoom canvas (chuẩn Photoshop/Canva/
+   * Figma). Cuộn THƯỜNG (chuột lẫn trackpad) giữ nguyên hành vi cuộn trang cũ — đúng cho trình dàn
+   * trang, nên truyền `zoomOnPlainWheel: false` cho bộ phân loại.
+   *
+   * Gắn listener NATIVE (không dùng onWheel của React) để preventDefault thật sự chặn được zoom
+   * trang của trình duyệt — React 17+ đăng ký wheel handler ở chế độ passive nên preventDefault
+   * bên trong onWheel JSX sẽ KHÔNG có tác dụng.
+   *
+   * Đổi 19/07: trước đây cộng/trừ ZOOM_STEP cố định mỗi sự kiện ⇒ chụm trackpad (bắn hàng chục sự
+   * kiện nhỏ/giây) zoom giật cục, và Firefox gửi deltaMode=1 (dòng) thì bước lại sai cỡ. Nay dùng
+   * hệ số NHÂN theo độ lớn delta đã quy đổi về px, mượt và đồng nhất giữa các trình duyệt. */
   useEffect(() => {
     const node = canvasAreaRef.current;
     if (!node) return;
     function onWheelNative(e: WheelEvent) {
-      if (!(e.ctrlKey || e.metaKey)) return;
+      const intent = classifyWheel(e, { zoomOnPlainWheel: false });
+      if (intent.kind !== 'zoom') return; // cuộn thường → để trình duyệt cuộn khung như cũ
       e.preventDefault();
-      const dir = e.deltaY > 0 ? -1 : 1;
-      setZoom((z) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, +(z + dir * ZOOM_STEP).toFixed(2))));
+      setZoom((z) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, +(z * intent.factor).toFixed(2))));
     }
     node.addEventListener('wheel', onWheelNative, { passive: false });
     return () => node.removeEventListener('wheel', onWheelNative);

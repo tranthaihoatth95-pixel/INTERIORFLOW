@@ -20,6 +20,7 @@ import { renderDoc, invalidate, layerToCanvas } from '@/lib/photo-editor/render'
 import { makeCanvas, healSpot } from '@/lib/photo-editor/imaging';
 import type { Tool, BrushSettings } from '@/lib/photo-editor/tools';
 import { isPaintTool } from '@/lib/photo-editor/tools';
+import { classifyWheel } from '@/lib/input/wheel';
 
 interface Props {
   doc: PhotoDoc;
@@ -47,6 +48,10 @@ interface CloneSource {
 
 export default function DocCanvas(p: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
+  /* Listener wheel gắn native 1 lần (xem effect zoom bên dưới) nên không "thấy" props mới qua
+   * closure — giữ props hiện tại trong ref để nó luôn đọc `zoom`/`onZoom` mới nhất. */
+  const pRef = useRef(p);
+  pRef.current = p;
   const displayRef = useRef<HTMLCanvasElement>(null);
   // canvas offscreen của lớp đang vẽ (raster hoặc mask) — nguồn thực khi tô.
   const workRef = useRef<HTMLCanvasElement | null>(null);
@@ -377,16 +382,27 @@ export default function DocCanvas(p: Props) {
     ctx.restore();
   }, [p.selection, p.doc]);
 
-  /* --------------- zoom bằng bánh xe --------------- */
-  const onWheel = useCallback(
-    (e: React.WheelEvent) => {
-      if (!e.ctrlKey && !e.metaKey) return; // chỉ zoom khi giữ Ctrl/Cmd (giữ scroll pan)
+  /* --------------- zoom bằng bánh xe ---------------
+   * Giữ đúng quy ước cũ: CHỈ zoom khi giữ Ctrl/⌘ (hoặc chụm 2 ngón trackpad — trình duyệt cũng báo
+   * ctrlKey), còn cuộn thường vẫn để khung tự cuộn/pan.
+   *
+   * Hai lỗi đã sửa: (1) dùng `onWheel` của React thì listener là PASSIVE ⇒ `preventDefault()` bị bỏ
+   * qua ⇒ Ctrl+lăn vẫn kích hoạt zoom-cả-trang của trình duyệt; nay gắn native `{passive:false}`.
+   * (2) hệ số cố định 1.1/0.9 không quy đổi deltaMode ⇒ Firefox (đơn vị dòng) zoom sai cỡ; nay
+   * dùng bộ phân loại chung. */
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    function onWheelNative(e: WheelEvent) {
+      const intent = classifyWheel(e, { zoomOnPlainWheel: false });
+      if (intent.kind !== 'zoom') return;
       e.preventDefault();
-      const factor = e.deltaY < 0 ? 1.1 : 0.9;
-      p.onZoom(Math.max(0.05, Math.min(8, p.zoom * factor)));
-    },
-    [p],
-  );
+      const st = pRef.current;
+      st.onZoom(Math.max(0.05, Math.min(8, st.zoom * intent.factor)));
+    }
+    el.addEventListener('wheel', onWheelNative, { passive: false });
+    return () => el.removeEventListener('wheel', onWheelNative);
+  }, []);
 
   /* --------------- Space để pan --------------- */
   useEffect(() => {
@@ -410,7 +426,6 @@ export default function DocCanvas(p: Props) {
   return (
     <div
       ref={wrapRef}
-      onWheel={onWheel}
       style={{
         flex: 1,
         minWidth: 0,
