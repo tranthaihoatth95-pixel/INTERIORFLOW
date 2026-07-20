@@ -22,6 +22,7 @@
 
 ## Nợ kỹ thuật
 - 🐛 **MỚI (có TRƯỚC đợt này, 2 agent độc lập cùng thấy, 1 agent xác nhận trên mã gốc):** `/cad-editor` ném warning React `Cannot update a component while rendering a different component` (`CadCanvas`/`StudioBar`) làm error boundary dựng lại cây. Chưa truy.
+- **20/07 — nhánh `feat/cad-floorplan-demo` (worktree agent-adc80bc2052728aa6), CHỜ REVIEW/MERGE:** demo thứ 2 `buildDemoPlanApartment74()` (`lib/cad/demo-plan.ts`, KHÔNG đụng `buildDemoPlan` cũ) — "CĂN HỘ 1" 74m² đọc từ ảnh chụp (không có file CAD gốc), 8 phòng ≈73.9m² thông thuỷ. Nối vào picker Bắt đầu→Mẫu dự án (`CadEditor.tsx`). Kiểm chuẩn 8 violation — cùng loại demo cũ, không false-positive mới; 0 va chạm nội thất/cửa. tsc sạch, 64/64 test pass, verify browser `127.0.0.1:4094`.
 - [THẤP] Property panel Render không undo được (có thể chủ ý) · Sprint 3 B1 `meta` giá/vendor/sku trống (chờ dữ liệu) · in A3/A4 300dpi chưa khả dụng (đúng phạm vi) · `knowledge/` 121MB PDF cân nhắc Git LFS (ĐỂ SAU).
 
 ## Bị chặn — KHÔNG tự khởi động
