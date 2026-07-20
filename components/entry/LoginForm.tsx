@@ -263,12 +263,15 @@ export function LoginForm({
       {/* B-2: Ghi nhớ đăng nhập + quên mật khẩu (chỉ hướng dẫn — không có luồng reset) */}
       {mode === 'login' && (
         <div className="flex items-center justify-between pt-0.5">
-          <label className="flex cursor-pointer select-none items-center gap-2">
+          <label className="relative flex cursor-pointer select-none items-center gap-2">
             <input
               type="checkbox"
               checked={remember}
               onChange={(e) => setRemember(e.target.checked)}
-              className="peer sr-only"
+              /* Vùng bấm phủ kín cả label (trước là sr-only 1×1px — quá nhỏ để bấm trúng
+               * bằng chuột/ngón tay thật, dù forward-click từ <label> đúng chuẩn HTML.
+               * Ẩn thị giác bằng opacity:0 thay vì clip về 1px, giữ nguyên kích thước. */
+              className="absolute inset-0 z-10 m-0 h-full w-full cursor-pointer appearance-none opacity-0"
             />
             <span
               aria-hidden
