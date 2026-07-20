@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { usePageVisible } from '@/lib/usePageVisible';
 import {
   ChevronLeft,
   ChevronRight,
@@ -231,6 +232,8 @@ type CardItem = { kind: 'flow'; flow: FlowRow } | { kind: 'new' };
 export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   const user = useFlowStore((s) => s.user);
   const reduce = useReducedMotion();
+  // Tab ẩn → dừng quầng sáng lặp vô hạn (xem lib/usePageVisible.ts).
+  const visible = usePageVisible();
   const lang = useLang();
   const en = lang === 'en';
 
@@ -828,7 +831,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         {items.map((_, i) => (
           <span
             key={i}
-            className="h-[5px] rounded-full transition-all duration-500"
+            className="h-[5px] rounded-full transition-[width,background-color] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
             style={{
               width: i === active ? 22 : 5,
               background: i === active ? COPPER : 'rgba(127,127,127,0.35)',
@@ -1145,7 +1148,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           className="absolute -left-40 -top-32 h-[34rem] w-[34rem] rounded-full"
           style={{ background: `radial-gradient(circle, ${COPPER} 0%, transparent 64%)`, filter: 'blur(90px)' }}
           initial={{ opacity: 0.1 }}
-          animate={reduce ? { opacity: 0.1 } : { opacity: [0.08, 0.13, 0.08], x: [0, 24, 0] }}
+          animate={reduce || !visible ? { opacity: 0.1 } : { opacity: [0.08, 0.13, 0.08], x: [0, 24, 0] }}
           transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
         />
         <div

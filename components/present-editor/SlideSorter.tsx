@@ -21,6 +21,8 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import { modalScale } from '@/lib/motion';
 import type { EditorDeck } from '@/lib/present-editor/model';
 import { renderEditorSlide } from '@/lib/present-editor/render';
 import { stageFor } from '@/lib/present-editor/stage-presets';
@@ -204,7 +206,14 @@ export default function SlideSorter({
   }
 
   return (
-    <div
+    // Rà soát motion 20/07: trước đây lưới này là <div> trần — mở/đóng CẮT CỨNG, không hề có
+    // chuyển động, lạc lõng giữa các overlay khác (Lightbox/modal đều dùng `modalScale`).
+    // Nay dùng chung token `modalScale`; AnimatePresence bọc ở PresentEditor lo phần `exit`.
+    <motion.div
+      variants={modalScale}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
       style={{
         position: 'fixed',
         inset: 0,
@@ -401,7 +410,7 @@ export default function SlideSorter({
             />
           );
         })()}
-    </div>
+    </motion.div>
   );
 }
 

@@ -20,7 +20,7 @@ import { TasksDropdown } from '@/components/TasksDropdown';
 import { MobileMenu } from '@/components/MobileMenu';
 import { LangToggle } from '@/components/LangToggle';
 import { pressable, pressableIcon, easeApple } from '@/lib/motion';
-import { StageVeil } from '@/components/studio/StageTransition';
+import { useStageTransition } from '@/components/studio/StageTransitionProvider';
 import { stashPresentHandoffWithIds, deckImagesWithIdsFromNodes } from '@/lib/present-editor/handoff';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -375,10 +375,9 @@ function PhaseSwitcher() {
   const setWorkspace = useFlowStore((s) => s.setWorkspace);
   const router = useRouter();
   const current: Phase = workspace ?? DEFAULT_PHASE;
-  // Lớp phủ fade khi rời sang /present-editor — mask cú "nhảy" route (khựng).
-  // Giữ luôn chặng ĐÍCH (không chỉ true/false) để màn che nói được "Đang mở Present…" khi route
-  // đích tải lâu — xem StageVeil. Cùng cách làm với StudioBar.
-  const [leaving, setLeaving] = useState<Phase | null>(null);
+  // Màn che khi rời chặng do StageTransitionProvider (root layout) giữ, KHÔNG còn state cục bộ:
+  // veil nằm trong route cũ thì bị unmount ngay giữa lúc chuyển, sinh ra cú "chớp" nền phẳng.
+  const { begin } = useStageTransition();
 
   // Prefetch sớm route studio ngay khi switcher mount → chuyển gần như tức thì, bớt khựng.
   useEffect(() => {
@@ -392,7 +391,7 @@ function PhaseSwitcher() {
         active={current}
         onPick={(p) => {
           if (p === 'present') {
-            setLeaving('present'); // bật overlay fade trước, rồi mới điều hướng
+            begin('present'); // bật màn che trước, rồi mới điều hướng
             // A-4 (bridge Render→Present): slide đã render trong flow (Export Deck / Slide
             // Composer) theo người dùng sang /present-editor — stash consume-once; storage
             // hỏng có fallback bộ nhớ. Flow không có slide ⇒ mảng rỗng, stash bỏ qua,
@@ -401,14 +400,11 @@ function PhaseSwitcher() {
             router.push('/present-editor');
           } else if (p === 'concept') {
             // Chặng 1 = Layout CAD → trình vẽ 2D ở route riêng (cùng pattern fade như Present).
-            setLeaving('concept');
+            begin('concept');
             router.push('/cad-editor');
           } else setWorkspace(p);
         }}
       />
-      {/* C-4: màn `stageVeil` che lúc RỜI chặng — nửa kia (StageEnter/wallpaperIn)
-          nằm ở route đích. Dùng chung StageVeil với StudioBar cho nhất quán. */}
-      <StageVeil show={!!leaving} label={leaving ? PHASE_MAP[leaving].label : undefined} />
     </>
   );
 }

@@ -161,12 +161,18 @@ export function SmartTour({
     <div className="fixed inset-0 z-[90]" style={{ fontFamily: SANS }} data-tour-overlay>
       {/* lỗ sáng quanh target — box-shadow phủ tối phần còn lại. Không target → màn tối đều. */}
       {rect ? (
+        // Rà soát motion 20/07: trước đây animate CẢ BỐN `top/left/width/height` — bốn thuộc
+        // tính layout cùng lúc, kèm box-shadow spread 9999px phải vẽ lại mỗi khung. Nay vị trí
+        // chạy bằng transform (`x`/`y`, chỉ composite); chỉ còn width/height là layout, và
+        // chúng thường đổi ít hơn vị trí khi tour nhảy giữa các target.
         <motion.div
           className="absolute rounded-[14px]"
           initial={false}
-          animate={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height }}
+          animate={{ x: rect.left, y: rect.top, width: rect.width, height: rect.height }}
           transition={{ duration: 0.4, ease: easeApple }}
           style={{
+            top: 0,
+            left: 0,
             boxShadow: `0 0 0 9999px rgba(8,7,6,0.62), 0 0 0 1.5px ${COPPER}`,
             pointerEvents: 'none',
           }}

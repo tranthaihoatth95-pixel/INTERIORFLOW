@@ -166,7 +166,7 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
             key={idx}
             onClick={() => setI(idx)}
             aria-label={lang === 'en' ? `Scene ${idx + 1}` : `Cảnh ${idx + 1}`}
-            className="h-[3px] overflow-hidden rounded-full transition-all duration-500"
+            className="h-[3px] overflow-hidden rounded-full transition-[width,background-color] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
             style={{ width: idx === i ? 32 : 16, background: 'rgba(199,154,99,0.18)' }}
           >
             {idx === i && (

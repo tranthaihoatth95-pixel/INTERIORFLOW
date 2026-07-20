@@ -5,6 +5,7 @@ import './globals.css';
 import './foldable.css';
 import { PWARegister } from '@/components/PWARegister';
 import { ResumeTracker } from '@/components/entry/ResumeTracker';
+import StageTransitionProvider from '@/components/studio/StageTransitionProvider';
 
 // Font hệ thống TTT Design System — Be Vietnam Pro (hỗ trợ dấu tiếng Việt đầy đủ).
 const beVietnamPro = Be_Vietnam_Pro({
@@ -59,7 +60,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="vi" className="dark">
       <body className={`${beVietnamPro.variable} ${geistSans.variable} font-sans antialiased`}>
-        {children}
+        {/* Màn che chuyển chặng + MotionConfig reducedMotion="user" đặt TRÊN route: veil phải
+            sống xuyên qua `router.push`, nếu nằm trong route thì bị unmount giữa chừng và sinh
+            ra cú "chớp" nền phẳng. Xem StageTransitionProvider. */}
+        <StageTransitionProvider>{children}</StageTransitionProvider>
         <PWARegister />
         {/* B-3: ghi route đang đứng theo user (resume đúng chỗ khi login lại) — render null */}
         <ResumeTracker />

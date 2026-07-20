@@ -17,6 +17,29 @@ import type { Transition, Variants } from 'framer-motion';
 /** Đường cong Apple chuẩn (dùng cho tween fade/scale). */
 export const easeApple = [0.32, 0.72, 0, 1] as const;
 
+/**
+ * THANG THỜI LƯỢNG CHUẨN (giây) — MỘT bộ duy nhất cho toàn app.
+ *
+ * Trước đợt rà soát 20/07 app dùng 11 giá trị rời rạc (120/150/180/200/250/300/320/400/500/900ms)
+ * và phần lớn class `transition-*` của Tailwind KHÔNG kèm `duration-` nên rơi về mặc định 150ms —
+ * không khớp `--dur-fast` (180ms) lẫn `--dur-base` (320ms). Bảng dưới là thang duy nhất được duyệt;
+ * chỗ nào cần thời lượng mới thì THÊM vào đây, KHÔNG viết số rời trong component.
+ *
+ * Gu quiet-luxury: êm, chậm vừa phải, KHÔNG nảy.
+ */
+export const DUR = {
+  /** hover/press trên nút — phải gần như tức thì mới thấy "dính tay". */
+  hover: 0.12,
+  /** micro-interaction, tooltip, toggle nhỏ. */
+  micro: 0.18,
+  /** panel/sheet/dropdown trượt vào. */
+  panel: 0.22,
+  /** modal/lightbox/overlay lớn. */
+  modal: 0.28,
+  /** chuyển CHẶNG (veil crossfade) — chậm nhất, để mắt kịp "lắng". */
+  stage: 0.36,
+} as const;
+
 /** Spring cho panel trượt kiểu iOS sheet — chắc tay, gần như không nảy. */
 export const springSheet: Transition = {
   type: 'spring',
@@ -90,10 +113,16 @@ export const paletteDrop: Variants = {
   exit: { opacity: 0, scale: 0.98, y: -6, transition: tweenFast },
 };
 
-/** Node trên canvas: scale nhẹ khi xuất hiện. */
+/**
+ * Node trên canvas: scale nhẹ khi xuất hiện.
+ *
+ * `exit` bổ sung 20/07: trước đây variant này THIẾU `exit` (mọi variant anh em đều có) nên node
+ * hiện ra thì mềm mà xoá đi thì biến mất phựt. Cần AnimatePresence bọc danh sách node mới chạy.
+ */
 export const nodePop: Variants = {
   hidden: { opacity: 0, scale: 0.9 },
   visible: { opacity: 1, scale: 1, transition: springNode },
+  exit: { opacity: 0, scale: 0.92, transition: tweenFast },
 };
 
 /**
@@ -157,6 +186,7 @@ export const stageTransition: Variants = {
 export const wallpaperIn: Variants = {
   hidden: { opacity: 0, scale: 1.012 },
   visible: { opacity: 1, scale: 1, transition: { duration: 0.45, ease: easeApple } },
+  exit: { opacity: 0, transition: { duration: DUR.micro, ease: easeApple } },
 };
 
 /**

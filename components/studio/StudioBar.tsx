@@ -10,14 +10,14 @@
  * Chọn Present → /present-editor. Luôn có đường về app chính.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sun, Moon, SunMoon, MessageCircle } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
-import { PHASE_MAP, STAGE_TINT } from '@/lib/phases';
+import { STAGE_TINT } from '@/lib/phases';
 import { useFlowStore } from '@/lib/store';
 import StageSwitcher from './StageSwitcher';
-import { StageVeil } from './StageTransition';
+import { useStageTransition } from './StageTransitionProvider';
 import SessionWatch from './SessionWatch';
 import Tooltip from '@/components/ui/Tooltip';
 import { IFLogo } from '@/components/entry/IFLogo';
@@ -30,10 +30,9 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
   const applyTheme = useFlowStore((s) => s.applyTheme);
   const setChatOpen = useFlowStore((s) => s.setChatOpen);
   const chatOpen = useFlowStore((s) => s.chatOpen);
-  // C-4: màn che lúc rời chặng (giống PhaseSwitcher ở Header). `leaving` giữ luôn chặng ĐÍCH để
-  // màn che nói được "Đang mở Render…" — chặng đích tải nặng (canvas node / deck) thì người dùng
-  // biết app đang làm việc chứ không phải treo.
-  const [leaving, setLeaving] = useState<Phase | null>(null);
+  // Màn che lúc rời chặng nay do StageTransitionProvider (root layout) giữ — veil phải sống
+  // xuyên qua `router.push`, không được unmount cùng route cũ. Ở đây chỉ ra lệnh "bắt đầu".
+  const { begin } = useStageTransition();
   const stage: Phase = active === 'photo' ? 'render' : active === 'cad' ? 'concept' : 'present';
 
   // Route studio đứng riêng → tự áp theme lúc mở (page không gọi hydrate/applyTheme).
@@ -56,8 +55,8 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
     const samePane =
       (active === 'cad' && p === 'concept') || (active === 'present' && p === 'present');
     if (samePane) return;
-    // C-4: bật màn stageVeil che trước khi đổi route (nửa kia = StageEnter ở trang đích).
-    setLeaving(p);
+    // Bật màn che trước khi đổi route; provider tự kéo màn ra khi trang đích đã vẽ xong.
+    begin(p);
     if (p === 'present') {
       router.push('/present-editor');
       return;
@@ -82,7 +81,10 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
         display: 'flex',
         alignItems: 'center',
         gap: 10,
-        height: 46,
+        // 48px = đúng `h-12` của <Header> ở app chính. Trước là 46px nên mỗi lần đổi chặng
+        // giữa '/' và route studio toàn bộ nội dung bên dưới nhảy 2px — layout shift nhỏ nhưng
+        // mắt bắt được, đúng kiểu "nhảy vị trí" khi chuyển cảnh.
+        height: 48,
         flex: '0 0 auto',
         padding: '0 12px',
         // Phân định chặng — hairline đáy thanh đầu mang TÔNG CỦA CHẶNG (pha loãng vào --border
@@ -124,7 +126,6 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
           <ThemeIcon size={16} />
         </button>
       </Tooltip>
-      <StageVeil show={!!leaving} label={leaving ? PHASE_MAP[leaving].label : undefined} />
       {/* Mất phiên giữa chừng → báo ngay tại chặng, không đợi tới lúc bấm Render mới
           bị đá về màn đăng nhập. Dải báo fixed ở đáy, không chặn thao tác vẽ. */}
       <SessionWatch />
