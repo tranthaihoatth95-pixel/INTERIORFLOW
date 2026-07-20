@@ -21,7 +21,8 @@
 - Perceptron THẬT (learning-to-rank) · 3 installer unsigned (.exe cần Win) · PWA Vercel + Supabase (Sprint 4).
 
 ## Nợ kỹ thuật
-- 🐛 **MỚI (có TRƯỚC đợt này, 2 agent độc lập cùng thấy, 1 agent xác nhận trên mã gốc):** `/cad-editor` ném warning React `Cannot update a component while rendering a different component` (`CadCanvas`/`StudioBar`) làm error boundary dựng lại cây. Chưa truy.
+- 🐛 **CAD warning React `Cannot update a component...` (`CadCanvas`/`StudioBar`)** — nhánh `fix/cad-warning-and-scale-m0`: điều tra sâu (tĩnh + hook console.error trước hydrate + StrictMode ép double-render + mọi luồng thao tác) nhưng KHÔNG tái hiện được, chưa sửa. Chi tiết đã thử → CHANGELOG.
+- ✅ **FIX (nhánh trên) — M0 tỉ lệ khung tên CAD:** khoá lỗi tỉ lệ gõ tay không khớp `fitBox()` thật (`RESEARCH-TECHNICAL-DRAWING-PIPELINE.md` §1.6). `lib/cad/model.ts` (`fitScaleLabel`) + `lib/cad/pdf.ts` (ghi đè tỉ lệ thật lúc xuất) + `CadEditor.tsx` (ô Tỉ lệ nay read-only tự tính). Test `pdf-scale.test.ts` + verify PDF thật (đọc byte: "1:47" đúng, "1:100" gõ tay cũ hết còn). Chi tiết → CHANGELOG.
 - [THẤP] Property panel Render không undo được (có thể chủ ý) · Sprint 3 B1 `meta` giá/vendor/sku trống (chờ dữ liệu) · in A3/A4 300dpi chưa khả dụng (đúng phạm vi) · `knowledge/` 121MB PDF cân nhắc Git LFS (ĐỂ SAU).
 
 ## Bị chặn — KHÔNG tự khởi động

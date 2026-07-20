@@ -28,7 +28,7 @@ import type { HatchPattern } from '@/lib/cad/model';
 import { parseDxf, exportDxf } from '@/lib/cad/dxf';
 import { openDwgFile } from '@/lib/cad/dwg';
 import { renderDocToDataURL } from '@/lib/cad/render';
-import { exportCadToPdf } from '@/lib/cad/pdf';
+import { exportCadToPdf, DEFAULT_PDF_PAPER_MM, DEFAULT_PDF_MARGIN_MM } from '@/lib/cad/pdf';
 import { BLOCKS, BLOCK_MAP } from '@/lib/cad/furniture';
 import ShapePalette, { ShapeInfoPanel } from '@/components/ShapePalette';
 import { loadManifest, groupByCategory, type LibraryManifest } from '@/lib/cad/block-library';
@@ -36,7 +36,7 @@ import { buildDemoPlan } from '@/lib/cad/demo-plan';
 import { buildOfficeTemplate, buildHotelTemplate } from '@/lib/cad/templates';
 import { titleBlock, type TitleBlockInfo } from '@/lib/cad/commands';
 import { describeToEntities } from '@/lib/cad/ai-assist';
-import { docBox } from '@/lib/cad/model';
+import { docBox, fitScaleLabel } from '@/lib/cad/model';
 import { useFlowStore } from '@/lib/store';
 import { stashCadHandoff } from '@/lib/cad/handoff';
 import { stashCadPresentHandoff } from '@/lib/cad/present-handoff';
@@ -710,14 +710,23 @@ function TemplatePanel({ onClose }: { onClose: () => void }) {
  * Khác panel Kiểm chuẩn/Gợi ý tên phòng/MEP (chỉ đề xuất): đây là 1 form nhập liệu — TÁI DÙNG
  * titleBlock() có sẵn (lib/cad/commands.ts), vị trí góc dưới-phải bản vẽ theo đúng cách
  * addPresentationKit() trong commands.ts đặt (tbAt = box.maxX+2600, box.minY-400). Doc rỗng
- * (box=null) → neo tại gốc toạ độ (0,-400) làm fallback hợp lý. */
+ * (box=null) → neo tại gốc toạ độ (0,-400) làm fallback hợp lý.
+ *
+ * M0 fix (docs/RESEARCH-TECHNICAL-DRAWING-PIPELINE.md §1.6/§4) — ô "Tỉ lệ" TRƯỚC là input tự gõ
+ * tay, không liên hệ gì với tỉ lệ THẬT mà `fitBox()` tính lúc xuất PDF (lib/cad/pdf.ts) → khung
+ * tên có thể ghi sai tỉ lệ so với đo thước trên bản in. NAY: đổi thành hiển thị READ-ONLY, TỰ TÍNH
+ * từ kích thước bản vẽ hiện tại + khổ giấy mặc định (`DEFAULT_PDF_PAPER_MM`, TẠM hardcode A3 ngang
+ * cho tới khi M1 — dropdown chọn khổ giấy, CHƯA duyệt) — CÙNG công thức `fitBox()` mà PDF export
+ * dùng nên 2 con số luôn khớp nhau. `lib/cad/pdf.ts` (`applyRealScaleToTitleBlock`) còn ghi đè lại
+ * lần nữa ngay lúc xuất (phòng trường hợp bản vẽ đổi sau khi đã chèn khung tên) — 2 lớp chốt cho
+ * cùng 1 lỗi, không lớp nào phá lớp kia. */
 function TitleBlockPanel({ onClose }: { onClose: () => void }) {
   const doc = useCadStore((s) => s.doc);
   const addEntities = useCadStore((s) => s.addEntities);
   const today = new Date().toISOString().slice(0, 10);
   const [project, setProject] = useState('');
   const [drawing, setDrawing] = useState('MẶT BẰNG BỐ TRÍ NỘI THẤT — SƠ PHÁC DD');
-  const [scale, setScale] = useState('1:100');
+  const scaleLabel = fitScaleLabel(docBox(doc), DEFAULT_PDF_PAPER_MM, DEFAULT_PDF_MARGIN_MM);
   const [author, setAuthor] = useState('');
   const [date, setDate] = useState(today);
   const [msg, setMsg] = useState('');
@@ -730,7 +739,7 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
     const info: TitleBlockInfo = {
       project: project.trim() || 'DỰ ÁN',
       drawing: drawing.trim() || 'MẶT BẰNG BỐ TRÍ — SƠ PHÁC DD',
-      scale: scale.trim() || '1:100',
+      scale: scaleLabel,
       author: author.trim() || undefined,
       date: date || undefined,
     };
@@ -742,6 +751,7 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
 
   const field: React.CSSProperties = { width: '100%', fontSize: 12, padding: '5px 7px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', marginBottom: 8, boxSizing: 'border-box' };
   const fieldLabel: React.CSSProperties = { fontSize: 10.5, color: 'var(--t3)', marginBottom: 3, display: 'block' };
+  const readonlyField: React.CSSProperties = { ...field, color: 'var(--t3)', cursor: 'default', display: 'flex', alignItems: 'center' };
 
   return (
     <div style={{ ...panel, left: 12, top: 70, width: 280 }}>
@@ -759,8 +769,10 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
         <input value={project} onChange={(e) => setProject(e.target.value)} placeholder="VD: Căn hộ Sunrise A1203" style={field} />
         <label style={fieldLabel}>Tên bản vẽ</label>
         <input value={drawing} onChange={(e) => setDrawing(e.target.value)} style={field} />
-        <label style={fieldLabel}>Tỉ lệ</label>
-        <input value={scale} onChange={(e) => setScale(e.target.value)} placeholder="1:100" style={field} />
+        <label style={fieldLabel}>Tỉ lệ (tự tính từ khổ A3 — chưa chọn khổ giấy khác)</label>
+        <div style={readonlyField} title="Tự tính từ kích thước bản vẽ hiện tại + khổ A3 ngang mặc định — khoá gõ tay để không lệch với tỉ lệ in thật (xem docs/RESEARCH-TECHNICAL-DRAWING-PIPELINE.md §1.6).">
+          {scaleLabel}
+        </div>
         <label style={fieldLabel}>Người vẽ</label>
         <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="VD: Nguyễn Văn A" style={field} />
         <label style={fieldLabel}>Ngày</label>
