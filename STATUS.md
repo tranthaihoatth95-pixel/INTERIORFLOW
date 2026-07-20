@@ -8,10 +8,11 @@
 - Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main`. Verify SHA bằng git. Đợt 19-20/07 (login/contrast · toolbar+IO · Sketch-Pro · Present typography · đổi tên chặng · PPTX font · input · motion · fix-api-auth-p0 · **login-glass**) ĐÃ MERGE hết → chi tiết CHANGELOG.
   - ⚠️ **CHỜ USER VERIFY:** .pptx nhúng font chưa mở bằng PowerPoint thật (QuickLook bỏ qua font nhúng, không dùng làm bằng chứng) · frame-timing chuyển chặng chưa đo được (browser tự động luôn `hidden`) — cần xem bằng mắt thật.
   - 🐛 **20/07 chiều — user báo "Ghi nhớ đăng nhập chưa hoạt động", ĐÃ SỬA:** checkbox dùng `sr-only` co về đúng 1×1px (kỹ thuật ẩn chuẩn nhưng quá nhỏ để chuột thật bấm trúng) — logic React/server đều đúng sẵn (verify bằng curl: `remember:false`→cookie phiên không Max-Age, `remember:true`→Max-Age 30 ngày). Sửa: input phủ `absolute inset-0` kín cả label (125×16px). Verify lại bằng chuột giả lập thật, cả 2 chiều đúng.
-- **3 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (chi tiết đầy đủ trong từng file, đừng chép lại vào đây):
+- **4 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (chi tiết đầy đủ trong từng file, đừng chép lại vào đây):
   - `RESEARCH-ACCESS-CONTROL.md` — chọn `ProjectMember` 5 role + GATE, ~9 ngày công, 10 câu hỏi §8 chờ user (Q2 brief NDA · Q5 role · Q8 GATE quay ngược).
   - `RESEARCH-MOBILE-DISTRIBUTION.md` — iOS: Custom App/ABM · macOS: bỏ MAS giữ `.dmg` notarize · Android: Managed Google Play Private App (đính chính quy mô không giới hạn) · PWA client đã có sẵn, thiếu HTTPS cố định.
   - `RESEARCH-COMFYUI-LESS.md` — tier "oneAI" mở chuỗi LAN→RunPod serverless→model-API, ~2.5-3 ngày công.
+  - `RESEARCH-OFFICE-FILE-INTEROP.md` (nhánh `feat/research-office-file-interop`) — mở PPTX/Word/Keynote để chỉnh tiếp + bảng tính Excel thật: tách 4 mảng A (PPTX, khả thi, UI đã stub sẵn `Toolbar.tsx:115-122`) · B (Keynote, KHÔNG khả thi trực tiếp, đi vòng qua PPTX) · C (Word, rẻ nhất, tái dùng `content-deck.ts`) · D (bảng tính, tính năng MỚI hoàn toàn, 0 code sẵn kể cả ở skill `du-toan-noi-that` — skill đó chỉ tồn tại ngoài repo, Python). 6 câu hỏi §6 chờ user.
 - **ĐỢT SAU (chưa giao, cần nghiên cứu trước):** Chat/cộng tác — CAD+Rendering = comment/ghim bất đồng bộ kiểu Miro · Presenting = real-time (đã chốt dùng CRDT/Yjs, ngược tài liệu IF1_IF2_BIGPICTURE cũ).
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (63 file). KHÔNG có vitest/jest — bỏ qua chỉ dẫn ghi `npm test`.
 
