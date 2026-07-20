@@ -11,11 +11,11 @@
   - `RESEARCH-ACCESS-CONTROL.md` — phân quyền `ProjectMember` 5 role, 10 câu hỏi §8.
   - `RESEARCH-MOBILE-DISTRIBUTION.md` — bộ cài iOS/macOS/Android.
   - `RESEARCH-COMFYUI-LESS.md` — chạy không cần ComfyUI local.
-  - `RESEARCH-MATERIAL-BRIDGE.md` — cầu nối Larkbase↔hatch↔Rendering; 🔴 **Larkbase đang sai workspace** (không có bảng vật liệu, Q1 §10).
+  - `RESEARCH-MATERIAL-BRIDGE.md` — cầu nối Larkbase↔hatch↔Rendering; 🔴 sai workspace (không có bảng vật liệu, Q1 §10).
   - `RESEARCH-TECHNICAL-DRAWING-PIPELINE.md` — khung tên/tỉ lệ/PDF in kỹ thuật CAD→Presenting (M0 tỉ lệ ĐÃ SỬA, còn M1+ chờ quyết).
   - `RESEARCH-TEAM-COLLABORATION.md` — chat/cộng tác: Phần A (comment CAD+Rendering) rẻ, làm ngay được. Phần B (Presenting real-time) 🔴 Presenting KHÔNG có server source-of-truth cho deck — phải dựng trước khi bàn CRDT/Yjs.
   - `RESEARCH-OFFICE-FILE-INTEROP.md` — mở PPTX/Word/Keynote chỉnh tiếp + bảng tính Excel thật (A/PPTX khả thi · B/Keynote KHÔNG khả thi trực tiếp · C/Word rẻ nhất · D/bảng tính MỚI hoàn toàn). 6 câu hỏi §6.
-  - `RESEARCH-HOME-GALLERY-DASHBOARD.md` — Gallery (`ProjectSelect.tsx`, ĐÃ có sẵn, `StageSelect.tsx` là code chết) + Larkbase (`LarkTaskRef` mirror, field thật đã tra, phát hiện `Mã DA="Khác"` cần lọc). ĐÃ CHỐT: phân quyền tách biệt Larkbase (`ProjectMember`) · tạo dự án cục bộ, liên kết Larkbase tuỳ chọn, KHÔNG ghi ngược. Còn hỏi mở §5.2 (lối vào Gallery cho returning-user, vị trí kanban).
+  - `RESEARCH-HOME-GALLERY-DASHBOARD.md` — Gallery (`ProjectSelect.tsx`, đã có sẵn, `StageSelect.tsx` là code chết) + Larkbase (`LarkTaskRef` mirror, phát hiện `Mã DA="Khác"` cần lọc). ĐÃ CHỐT: phân quyền tách Larkbase (`ProjectMember`) · tạo dự án cục bộ, liên kết tuỳ chọn, KHÔNG ghi ngược. Hỏi mở §5.2 (lối vào Gallery returning-user, vị trí kanban).
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (66 file). KHÔNG có vitest/jest.
 
 ## Quyết định user đã khoá
