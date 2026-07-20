@@ -27,6 +27,7 @@ import { LiveCursors } from '@/components/collab/LiveCursors';
 import { PresenceBar } from '@/components/collab/PresenceBar';
 import { GroupOverlay } from '@/components/nodes/GroupOverlay';
 import { useCollabStore } from '@/lib/collabStore';
+import { classifyWheel, findScrollableAncestor, normalizeWheelDelta, zoomAtPoint } from '@/lib/input/wheel';
 
 const nodeTypes = { interior: InteriorNode, note: NoteNode };
 
@@ -45,8 +46,42 @@ export function FlowCanvas() {
   const snapshot = useFlowStore((s) => s.snapshot);
   const workspace = useFlowStore((s) => s.workspace);
 
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, getViewport, setViewport } = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  /* Chuột lăn = ZOOM trên canvas node (đồng bộ với chặng CAD).
+   *
+   * React Flow đang bật `panOnScroll` + `zoomOnPinch` — đúng cho trackpad (cuộn 2 ngón = pan, chụm
+   * = zoom) nhưng người dùng CHUỘT thì lăn chỉ pan, muốn zoom phải giữ Ctrl. Ở đây chặn riêng cú
+   * lăn chuột thật (phân loại bằng `lib/input/wheel.ts`) và tự zoom quanh con trỏ; trackpad/pinch
+   * vẫn để React Flow xử lý nguyên vẹn.
+   *
+   * `capture: true` + `stopPropagation()` để cú lăn chuột KHÔNG lọt xuống pane của React Flow
+   * (nếu lọt, nó vừa zoom vừa pan một lúc). `passive: false` để `preventDefault()` có tác dụng. */
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    function onWheelNative(e: WheelEvent) {
+      const { dx, dy } = normalizeWheelDelta(e);
+      // Panel/danh sách bên trong canvas cuộn được thì nhường cho nó.
+      if (findScrollableAncestor(e.target as Element, dx, dy, el)) return;
+
+      const intent = classifyWheel(e);
+      // Chỉ giành lấy cú LĂN CHUỘT. Pinch (source 'pinch') và trackpad pan để React Flow lo.
+      if (intent.kind !== 'zoom' || intent.source !== 'mouse') return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      const pane = el!.querySelector('.react-flow__pane') ?? el!;
+      const r = pane.getBoundingClientRect();
+      // minZoom/maxZoom phải khớp props đặt trên <ReactFlow> bên dưới.
+      setViewport(zoomAtPoint(getViewport(), e.clientX - r.left, e.clientY - r.top, intent.factor, 0.15, 2.5));
+    }
+
+    el.addEventListener('wheel', onWheelNative, { passive: false, capture: true });
+    return () => el.removeEventListener('wheel', onWheelNative, { capture: true });
+  }, [getViewport, setViewport]);
 
   // ===== Collab thời-gian-thực (presence + live cursor, KHÔNG AI) =====
   const user = useFlowStore((s) => s.user);

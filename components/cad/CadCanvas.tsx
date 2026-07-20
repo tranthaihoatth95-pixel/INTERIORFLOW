@@ -58,6 +58,7 @@ import {
   blockWorldCorners,
   clearanceWorldPolygons,
 } from '@/lib/cad/shape-interactions';
+import { classifyWheel, findScrollableAncestor, normalizeWheelDelta } from '@/lib/input/wheel';
 import { SHAPE_DND_MIME } from '@/components/ShapePalette';
 import type { BlockEntity } from '@/lib/cad/model';
 
@@ -644,13 +645,42 @@ export default function CadCanvas() {
     ix.current.redraw = true;
   };
 
-  const onWheel = (ev: React.WheelEvent) => {
-    const st = useCadStore.getState();
-    const screen = toLocal(ev.nativeEvent);
-    const factor = ev.deltaY < 0 ? 1.12 : 1 / 1.12;
-    st.setViewport(zoomAt(st.viewport, screen, factor));
-    updateCursor(screen);
-  };
+  /* Cuộn/zoom — xem `lib/input/wheel.ts` để biết vì sao phải phân loại thiết bị.
+   *
+   * Gắn listener NATIVE với `{ passive: false }` chứ KHÔNG dùng `onWheel` của React: từ React 17
+   * handler wheel được đăng ký ở chế độ passive, `preventDefault()` bên trong sẽ bị bỏ qua ⇒ trang
+   * vẫn cuộn / trình duyệt vẫn zoom / trackpad vẫn kích hoạt vuốt-lùi (back-swipe).
+   *
+   * Gắn ở phần tử CHA của wrapper (vùng canvas của CadEditor) với `capture: true` để bắt được cả
+   * cú cuộn rơi trên các lớp nổi bên trên canvas — chính là thanh công cụ pill từng nuốt cuộn ở
+   * mode Pro. `findScrollableAncestor` lo phần "nhường cho panel/pill khi chúng cuộn được thật". */
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const root = wrap.parentElement ?? wrap;
+
+    function onWheelNative(e: WheelEvent) {
+      const st = useCadStore.getState();
+      const { dx, dy } = normalizeWheelDelta(e);
+      // Con trỏ đang trên panel Lớp/Nội thất (cuộn dọc) hay pill đang vuốt ngang ⇒ nhường.
+      if (findScrollableAncestor(e.target as Element, dx, dy, root)) return;
+
+      e.preventDefault();
+      const screen = toLocal(e);
+      const intent = classifyWheel(e);
+      if (intent.kind === 'zoom') {
+        st.setViewport(zoomAt(st.viewport, screen, intent.factor));
+      } else {
+        // pan: `panX/panY` là vị trí px của gốc world trên canvas ⇒ trừ delta để nội dung đi theo
+        // chiều cuộn (cuộn xuống = nhìn xuống dưới bản vẽ).
+        st.setViewport({ ...st.viewport, panX: st.viewport.panX - intent.dx, panY: st.viewport.panY - intent.dy });
+      }
+      updateCursor(screen);
+    }
+
+    root.addEventListener('wheel', onWheelNative, { passive: false, capture: true });
+    return () => root.removeEventListener('wheel', onWheelNative, { capture: true });
+  }, []);
 
   /** B2.1 — thả 1 item kéo từ ShapePalette vào canvas: tạo BlockEntity tại điểm thả, tự áp
    * auto-snap-to-wall (B2.2) nếu BlockDef có anchors và có tường gần đó. */
@@ -2627,7 +2657,6 @@ export default function CadCanvas() {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
-        onWheel={onWheel}
         onDoubleClick={onDblClick}
         onContextMenu={(e) => e.preventDefault()}
         onDragOver={onDragOver}
