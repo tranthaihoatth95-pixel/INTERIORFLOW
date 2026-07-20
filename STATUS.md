@@ -21,6 +21,7 @@
 - Perceptron THẬT (learning-to-rank) · 3 installer unsigned (.exe cần Win) · PWA Vercel + Supabase (Sprint 4).
 
 ## Nợ kỹ thuật
+- 🐛 **MỚI 20/07 — user báo trực tiếp, CHƯA ĐIỀU TRA:** Presenting, slide mẫu "Trang phân mục" (deck IKI VILLAGE) — layer text tiêu đề (nội dung field đúng "IKI VILLAGE") **render CHỒNG/RỐI CHỮ trên canvas** (đọc như "IKDEMOAGE", như 2 dòng chữ đè lên nhau cùng vị trí). 3 layer trên slide: text tiêu đề (lỗi) + text "DESIGN FRAMEWORK · DRAFT MOODBOARD" (bên trên, có vẻ ổn) + Ảnh. Nghi: 2 layer text đè đúng 1 vị trí, hoặc double-render kiểu warning React đã biết ở CAD (xem dòng dưới), hoặc lỗi đo `TextFx`/font-fit tự-co giãn. Cần mở `/cad-editor`→Presenting, slide 1, xem DOM layer thật trước khi sửa.
 - 🐛 **MỚI (có TRƯỚC đợt này, 2 agent độc lập cùng thấy, 1 agent xác nhận trên mã gốc):** `/cad-editor` ném warning React `Cannot update a component while rendering a different component` (`CadCanvas`/`StudioBar`) làm error boundary dựng lại cây. Chưa truy.
 - [THẤP] Property panel Render không undo được (có thể chủ ý) · Sprint 3 B1 `meta` giá/vendor/sku trống (chờ dữ liệu) · in A3/A4 300dpi chưa khả dụng (đúng phạm vi) · `knowledge/` 121MB PDF cân nhắc Git LFS (ĐỂ SAU).
 
