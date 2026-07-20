@@ -5,15 +5,15 @@
 > ⚠️ Nhãn hiển thị đổi 20/07 (Layout CAD→Drafting CAD · Render→Rendering · Present→Presenting). **ID nội bộ GIỮ NGUYÊN** `concept`/`render`/`present` — mọi khoá localStorage/route/tên file không đổi. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (local vượt origin — chưa push đợt 20/07, chờ user OK). Verify SHA bằng git. Đợt 19-20/07 (login/contrast · toolbar+IO · Sketch-Pro · Present typography · đổi tên chặng · PPTX font · input · motion · fix-api-auth-p0 · login-glass+fix "Ghi nhớ đăng nhập" · **2 báo cáo nghiên cứu mới** · **CAD demo mặt bằng thứ 2** · **CAD "AI mô tả" v2**) ĐÃ MERGE hết → chi tiết CHANGELOG.
+- Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (local vượt origin — chưa push đợt 20/07, chờ user OK). Verify SHA bằng git. Đợt 19-20/07 (login/contrast · toolbar+IO · Sketch-Pro · Present typography · đổi tên chặng · PPTX font · input · motion · fix-api-auth-p0 · login-glass+fix "Ghi nhớ đăng nhập" · **3 báo cáo nghiên cứu mới** · **CAD demo mặt bằng thứ 2** · **CAD "AI mô tả" v2**) ĐÃ MERGE hết → chi tiết CHANGELOG.
   - ⚠️ **CHỜ USER VERIFY:** .pptx nhúng font chưa mở bằng PowerPoint thật · frame-timing chuyển chặng chưa đo được — cần xem bằng mắt thật.
-- **5 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (đọc thẳng từng file, đừng chép lại vào đây):
+- **6 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (đọc thẳng từng file, đừng chép lại vào đây):
   - `RESEARCH-ACCESS-CONTROL.md` — phân quyền `ProjectMember` 5 role, 10 câu hỏi §8.
   - `RESEARCH-MOBILE-DISTRIBUTION.md` — bộ cài iOS/macOS/Android.
   - `RESEARCH-COMFYUI-LESS.md` — chạy không cần ComfyUI local.
   - `RESEARCH-MATERIAL-BRIDGE.md` — cầu nối Larkbase↔hatch↔Rendering; 🔴 **Larkbase đang sai workspace** (không có bảng vật liệu, Q1 §10).
   - `RESEARCH-TECHNICAL-DRAWING-PIPELINE.md` — khung tên/tỉ lệ/PDF in kỹ thuật CAD→Presenting; 🔴 **bug cụ thể nên sửa ngay**: tỉ lệ khung tên GÕ TAY không khớp `fitBox()` thật khi xuất PDF (đo thước sẽ sai) — M0 §4.
-- **ĐỢT SAU (chưa giao, cần nghiên cứu trước):** Chat/cộng tác — CAD+Rendering = comment/ghim bất đồng bộ kiểu Miro · Presenting = real-time (CRDT/Yjs).
+  - `RESEARCH-TEAM-COLLABORATION.md` — chat/cộng tác: Phần A (comment CAD+Rendering bất đồng bộ) rẻ, làm ngay được. Phần B (Presenting real-time) 🔴 **Presenting hiện KHÔNG có server source-of-truth cho deck** (chỉ IndexedDB client, không có `Deck` model) — phải dựng cái đó TRƯỚC khi bàn CRDT/Yjs.
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (65 file). KHÔNG có vitest/jest.
 
 ## Quyết định user đã khoá
