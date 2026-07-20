@@ -14,7 +14,7 @@
   - `RESEARCH-MATERIAL-BRIDGE.md` — cầu nối Larkbase↔hatch↔Rendering; 🔴 **Larkbase đang sai workspace** (không có bảng vật liệu, Q1 §10).
   - `RESEARCH-TECHNICAL-DRAWING-PIPELINE.md` — khung tên/tỉ lệ/PDF in kỹ thuật CAD→Presenting (M0 tỉ lệ ĐÃ SỬA, còn M1+ chờ quyết).
   - `RESEARCH-TEAM-COLLABORATION.md` — chat/cộng tác: Phần A (comment CAD+Rendering) rẻ, làm ngay được. Phần B (Presenting real-time) 🔴 Presenting KHÔNG có server source-of-truth cho deck — phải dựng trước khi bàn CRDT/Yjs.
-  - `RESEARCH-OFFICE-FILE-INTEROP.md` — mở PPTX/Word/Keynote để chỉnh tiếp + bảng tính Excel thật: A (PPTX, khả thi, UI đã stub sẵn `Toolbar.tsx:115-122`) · B (Keynote, KHÔNG khả thi trực tiếp) · C (Word, rẻ nhất) · D (bảng tính, tính năng MỚI hoàn toàn). 6 câu hỏi §6.
+  - `RESEARCH-OFFICE-FILE-INTEROP.md` — mở PPTX/Word/Keynote chỉnh tiếp + bảng tính Excel thật (A/PPTX khả thi · B/Keynote KHÔNG khả thi trực tiếp · C/Word rẻ nhất · D/bảng tính MỚI hoàn toàn). 6 câu hỏi §6.
 - **ĐANG CHẠY:** agent nghiên cứu Home/Gallery/Dashboard + Larkbase (gộp vào Gallery hiện có, không trang mới; nút "Chi tiết" xổ bảng project; phân quyền `ProjectMember` tách khỏi Larkbase; tạo dự án không tự ghi ngược Larkbase).
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (66 file). KHÔNG có vitest/jest.
 
