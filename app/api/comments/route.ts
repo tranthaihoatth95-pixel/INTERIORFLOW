@@ -12,6 +12,7 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { getSessionUser } from '@/lib/server/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,10 +59,14 @@ async function writeAll(list: Comment[]): Promise<void> {
 }
 
 export async function GET() {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   return NextResponse.json({ comments: await readAll() });
 }
 
 export async function POST(req: Request) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   const text = String(body.text ?? '').trim();
   if (!text) return NextResponse.json({ error: 'Trống' }, { status: 400 });
@@ -92,6 +97,8 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   const id = String(body.id ?? '');
   if (!id) return NextResponse.json({ error: 'Thiếu id' }, { status: 400 });
@@ -104,8 +111,12 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const url = new URL(req.url);
   if (url.searchParams.get('all')) {
+    // Xoá sạch là hành động huỷ diệt — chỉ admin (không phải cứ đăng nhập là được).
+    if (!user.isAdmin) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     await writeAll([]);
     return NextResponse.json({ ok: true, count: 0 });
   }
