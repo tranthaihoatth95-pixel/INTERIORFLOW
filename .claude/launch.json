@@ -2,17 +2,14 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "cad-ai-description-v2",
+      "name": "interiorflow-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",
-        "dev",
-        "--",
-        "-p",
-        "4095"
+        "dev"
       ],
-      "port": 4095,
-      "cwd": "/Users/tranben/Downloads/interiorflow/.claude/worktrees/agent-a146c14b03b11516d"
+      "port": 3000,
+      "cwd": "/Users/tranben/Downloads/interiorflow"
     }
   ]
 }
