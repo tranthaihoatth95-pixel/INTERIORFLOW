@@ -12,6 +12,7 @@
   - `RESEARCH-ACCESS-CONTROL.md` — chọn `ProjectMember` 5 role + GATE, ~9 ngày công, 10 câu hỏi §8 chờ user (Q2 brief NDA · Q5 role · Q8 GATE quay ngược).
   - `RESEARCH-MOBILE-DISTRIBUTION.md` — iOS: Custom App/ABM · macOS: bỏ MAS giữ `.dmg` notarize · Android: Managed Google Play Private App (đính chính quy mô không giới hạn) · PWA client đã có sẵn, thiếu HTTPS cố định.
   - `RESEARCH-COMFYUI-LESS.md` — tier "oneAI" mở chuỗi LAN→RunPod serverless→model-API, ~2.5-3 ngày công.
+  - `RESEARCH-MATERIAL-BRIDGE.md` (nhánh `feat/research-material-bridge`) — cầu nối Larkbase↔hatch↔Rendering; Larkbase MCP nối được nhưng sai base (Q1 §10).
 - **ĐỢT SAU (chưa giao, cần nghiên cứu trước):** Chat/cộng tác — CAD+Rendering = comment/ghim bất đồng bộ kiểu Miro · Presenting = real-time (đã chốt dùng CRDT/Yjs, ngược tài liệu IF1_IF2_BIGPICTURE cũ).
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (63 file). KHÔNG có vitest/jest — bỏ qua chỉ dẫn ghi `npm test`.
 
