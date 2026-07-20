@@ -5,15 +5,17 @@
 > ⚠️ Nhãn hiển thị đổi 20/07 (Layout CAD→Drafting CAD · Render→Rendering · Present→Presenting). **ID nội bộ GIỮ NGUYÊN** `concept`/`render`/`present` — mọi khoá localStorage/route/tên file không đổi. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (local vượt origin, chưa push). Verify SHA bằng git. Đợt 19-21/07 (login/contrast · toolbar+IO · Sketch-Pro · Present typography · đổi tên chặng · PPTX font · input · motion · fix-api-auth-p0 · login-glass+fix "Ghi nhớ đăng nhập" · 3 báo cáo nghiên cứu · CAD demo mặt bằng thứ 2 · CAD "AI mô tả" v2 · M0 tỉ lệ khung tên) ĐÃ MERGE hết → chi tiết CHANGELOG.
+- Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (local vượt origin, chưa push). Verify SHA bằng git. Đợt 19-21/07 (login/contrast · toolbar+IO · Sketch-Pro · Present typography · đổi tên chặng · PPTX font · input · motion · fix-api-auth-p0 · login-glass+fix "Ghi nhớ đăng nhập" · báo cáo nghiên cứu · CAD demo mặt bằng thứ 2 · CAD "AI mô tả" v2 · M0 tỉ lệ khung tên · fix text chồng chữ Presenting) ĐÃ MERGE hết → chi tiết CHANGELOG.
   - ⚠️ **CHỜ USER VERIFY bằng mắt:** .pptx nhúng font (PowerPoint thật) · frame-timing chuyển chặng.
-- **6 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (đọc thẳng từng file, đừng chép lại vào đây):
+- **7 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (đọc thẳng từng file, đừng chép lại vào đây):
   - `RESEARCH-ACCESS-CONTROL.md` — phân quyền `ProjectMember` 5 role, 10 câu hỏi §8.
   - `RESEARCH-MOBILE-DISTRIBUTION.md` — bộ cài iOS/macOS/Android.
   - `RESEARCH-COMFYUI-LESS.md` — chạy không cần ComfyUI local.
   - `RESEARCH-MATERIAL-BRIDGE.md` — cầu nối Larkbase↔hatch↔Rendering; 🔴 **Larkbase đang sai workspace** (không có bảng vật liệu, Q1 §10).
-  - `RESEARCH-TECHNICAL-DRAWING-PIPELINE.md` — khung tên/tỉ lệ/PDF in kỹ thuật CAD→Presenting; 🔴 **bug cụ thể nên sửa ngay**: tỉ lệ khung tên GÕ TAY không khớp `fitBox()` thật khi xuất PDF (đo thước sẽ sai) — M0 §4.
-  - `RESEARCH-TEAM-COLLABORATION.md` — chat/cộng tác: Phần A (comment CAD+Rendering bất đồng bộ) rẻ, làm ngay được. Phần B (Presenting real-time) 🔴 **Presenting hiện KHÔNG có server source-of-truth cho deck** (chỉ IndexedDB client, không có `Deck` model) — phải dựng cái đó TRƯỚC khi bàn CRDT/Yjs.
+  - `RESEARCH-TECHNICAL-DRAWING-PIPELINE.md` — khung tên/tỉ lệ/PDF in kỹ thuật CAD→Presenting; 🔴 **bug cụ thể nên sửa ngay**: tỉ lệ khung tên GÕ TAY không khớp `fitBox()` thật khi xuất PDF (đo thước sẽ sai) — M0 §4 ĐÃ SỬA.
+  - `RESEARCH-TEAM-COLLABORATION.md` — chat/cộng tác: Phần A (comment CAD+Rendering) rẻ, làm ngay được. Phần B (Presenting real-time) 🔴 Presenting KHÔNG có server source-of-truth cho deck — phải dựng trước khi bàn CRDT/Yjs.
+  - `RESEARCH-OFFICE-FILE-INTEROP.md` — mở PPTX/Word/Keynote để chỉnh tiếp + bảng tính Excel thật: A (PPTX, khả thi, UI đã stub sẵn `Toolbar.tsx:115-122`) · B (Keynote, KHÔNG khả thi trực tiếp) · C (Word, rẻ nhất) · D (bảng tính, tính năng MỚI hoàn toàn). 6 câu hỏi §6.
+- **ĐANG CHẠY:** agent nghiên cứu Home/Gallery/Dashboard + Larkbase (gộp vào Gallery hiện có, không trang mới; nút "Chi tiết" xổ bảng project; phân quyền `ProjectMember` tách khỏi Larkbase; tạo dự án không tự ghi ngược Larkbase).
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (66 file). KHÔNG có vitest/jest.
 
 ## Quyết định user đã khoá
