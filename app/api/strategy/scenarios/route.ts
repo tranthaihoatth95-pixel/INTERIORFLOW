@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getSessionUser } from '@/lib/server/auth';
 import { completeTextTiered, NvidiaFreeExhausted, NoTextProviderError } from '@/lib/ai/text-tier';
 
 /**
@@ -39,6 +40,9 @@ function buildPrompt(brief: string, qa: string, refs: string): string {
 }
 
 export async function POST(req: Request) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
   const { brief, qa, references } = (await req.json().catch(() => ({}))) as {
     brief?: string; qa?: string; references?: unknown[];
   };

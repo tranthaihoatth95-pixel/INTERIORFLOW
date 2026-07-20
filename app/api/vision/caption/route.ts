@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
+import { getSessionUser } from '@/lib/server/auth';
 import { captionImage, nvidiaConfigured, NvidiaFreeExhausted } from '@/lib/ai/providers/nvidia';
 
 // Auto-caption ảnh ref bằng NVIDIA VLM free. "Chỉ báo, không tự tụt": hết free → code riêng
 // để UI hiện thông báo, KHÔNG tự chuyển sang provider khác.
 export async function POST(req: Request) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
   const { image } = (await req.json().catch(() => ({}))) as { image?: string };
   if (!image) return NextResponse.json({ error: 'Thiếu image.' }, { status: 400 });
   if (!nvidiaConfigured()) {
