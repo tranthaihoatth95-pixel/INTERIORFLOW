@@ -3,6 +3,12 @@
 > Ngày truy cập toàn bộ nguồn: **2026-07-20**. Chính sách store đổi liên tục — trước khi hành động thật, verify lại link.
 > Nhiệm vụ này CHỈ nghiên cứu. Không code, không cài dependency.
 
+> ## ⚠️ ĐÍNH CHÍNH 20/07 (chủ dự án): BỎ giả định quy mô ~30 người → thiết kế cho SỐ NGƯỜI DÙNG KHÔNG GIỚI HẠN
+> Hai kết luận bên dưới thay đổi theo:
+> 1. **Android — Internal Testing track (trần 100 tester) KHÔNG còn là kênh chính.** Kênh đúng cho "admin phát hành nội bộ, không public, không giới hạn người": **Managed Google Play → Private app** — publish từ Play Console dạng private, chỉ tổ chức được chỉ định thấy (tối đa 1000 tổ chức), trong tổ chức chọn "Entire organization" là **toàn bộ user cài được, không trần số lượng**, phát qua managed Play/EMM. App private không bao giờ chuyển thành public được (tách bản build nếu sau này muốn public). Nguồn: [Distribute private apps — Managed Google Play Help](https://support.google.com/googleplay/work/answer/9495634) · [Publish private apps — Play Console Help](https://support.google.com/googleplay/android-developer/answer/9874937) (truy cập 2026-07-20). Internal Testing giáng xuống vai trò làn thử nghiệm trước khi đẩy bản private.
+> 2. **iOS — lý do loại Enterprise Program "vì công ty ~30 người" hết hiệu lực**, nhưng khuyến nghị KHÔNG đổi: **Custom App qua Apple Business Manager vẫn là đường đúng** — bản thân nó đã phân phối **không giới hạn số người** trong tổ chức (mã quy đổi/MDM), không hết hạn, và không chịu các điều kiện audit ngặt nghèo + rủi ro thu hồi chứng chỉ của Enterprise Program. Enterprise chỉ đáng cân nhắc nếu sau này cần né App Review hoàn toàn.
+> 3. macOS (.dmg notarize) và chặn cứng server HTTPS: **không đổi** theo quy mô.
+
 ## Tóm tắt 1 phút (nếu chỉ đọc 1 đoạn)
 
 Yêu cầu gốc — *"iOS/iPadOS/macOS tải từ App Store, Android tải từ CH Play, ban đầu chỉ admin tải, không public"* — **khả thi kỹ thuật cho cả 4 nền tảng, nhưng "App Store/CH Play" theo đúng nghĩa đen (tức app phải qua App Review công khai) là SAI CÔNG CỤ cho yêu cầu "không public, chỉ admin"**. Cơ chế đúng của từng kho cho nhu cầu nội bộ không phải "đăng app lên store rồi giới hạn ai tải" — nó là một kênh phân phối **riêng biệt, không niêm yết**:
