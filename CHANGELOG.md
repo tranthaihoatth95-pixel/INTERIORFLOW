@@ -1,6 +1,26 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
-## 21/07 — Presenting chữ chồng/echo, đợt điều tra 2 (nhánh `fix/presenting-text-overlap-v2`) — KHÔNG SỬA, không tái hiện được
+## 21/07 — Presenting chữ chồng/echo — TÌM RA + SỬA XONG (tiếp ngay sau đợt điều tra 2 ở dưới)
+
+**Đầu mối quyết định:** user báo thêm 1 chi tiết mà 2 đợt điều tra trước chưa thử tách bạch: **gõ trực tiếp vào text TRÊN CANVAS (double-click để sửa tại chỗ) → chồng chữ; gõ qua ô "Nội dung" ở Inspector bên phải → luôn sạch.** Hai đường sửa chữ này đi qua 2 code path khác nhau trong `components/present-editor/EditorCanvas.tsx` — đầu mối đó trỏ thẳng vào đúng chỗ.
+
+**Root cause (đọc code xác nhận, không suy đoán):** `EditorCanvas.tsx` có 2 cơ chế vẽ text tại cùng vị trí khi đang sửa tại chỗ:
+1. Dòng ~313 — `slide.elements.map((el) => el.hidden ? null : <Element .../>)` — vẽ TẤT CẢ element, kể cả element đang được sửa tại chỗ (`editing.id`). `<Element>` (qua `Inner`/`TextInner`, `components/present-editor/Element.tsx`) đọc `el.text` từ `slide.elements` — giá trị này CHƯA đổi cho tới khi commit (chỉ cập nhật lúc `onBlur`).
+2. Dòng ~451 — `{editing && editingEl && <textarea ... style={{position:'absolute', left:`${frame.x}%`, top:`${frame.y}%`, width:..., height:..., fontSize:`${fontSize}cqh`, ...}} />}` — textarea nổi đè ĐÚNG khung `frame` của element đang sửa, hiện giá trị `editing.text` (cập nhật sống theo từng phím gõ qua state cục bộ, KHÔNG ghi vào `slide.elements`).
+
+Không có logic nào ẩn (1) khi (2) đang mở → trong lúc gõ, người dùng thấy ĐỒNG THỜI: chữ CŨ (chưa đổi) của `<Element>` tĩnh + chữ ĐANG GÕ của `<textarea>` nổi, cả hai gần như cùng vị trí/cỡ chữ nhưng khác box-model (div thường vs phần tử form `<textarea>`) → lệch vài pixel, đúng hiện tượng "mỗi ký tự như bị nhân đôi/lệch ngang" user mô tả. Sửa qua Inspector (`Inspector.tsx`, textarea "Nội dung") ghi thẳng vào `slide.elements` qua `onUpdateText`, không đụng tới overlay này — luôn chỉ có 1 lớp vẽ nên luôn sạch, đúng như user quan sát và dùng để bác bỏ kết luận sai của đợt 1.
+
+**Sửa:** `EditorCanvas.tsx` dòng ~313 — thêm điều kiện bỏ qua `<Element>` khi phần tử đó đang được sửa tại chỗ:
+```
+el.hidden || editing?.id === el.id ? null : (<Element .../>)
+```
+Chỉ 1 dòng, đúng gốc — không đụng `Element.tsx`, `Inspector.tsx`, hay cơ chế commit/undo hiện có. Khi đang sửa, chỉ còn textarea (khung nét đứt) hiển thị; lúc `onBlur` gọi `onEditTextCommit` → `setEditing(null)` → textarea gỡ, `<Element>` vẽ lại BÌNH THƯỜNG với text đã commit — 1 lớp duy nhất, khớp Inspector/layer panel.
+
+**Verify thật (không đoán):** `npx tsc --noEmit` sạch · 64/64 `*.test.ts` pass (`sucrase-node`) · browser thật (`127.0.0.1:4097`, tài khoản test riêng, worktree DB riêng — không đụng phiên user thật): double-click tiêu đề slide `dark-cover` demo, gõ đè "VILLAGE LIVE TEST" — trong lúc gõ chỉ 1 dòng chữ hiện trong khung nét đứt, không ghost; kiểm DOM trực tiếp lúc đang gõ: đúng 1 `<textarea>` mang giá trị, KHÔNG còn `<div>` tĩnh trùng vị trí trên canvas chính (trước khi sửa: có cả `<textarea>` VÀ `<div>` tĩnh cùng vị trí). Blur → commit đúng, layer panel + Inspector + canvas đều khớp "VILLAGE LIVE TEST", quay lại vẽ 1 lớp bình thường có khung chọn + toolbar chữ nổi.
+
+**Bài học cho lần sau:** khi user báo "field/data sạch nhưng RENDER lỗi", luôn tách 2 code path NHẬP LIỆU khác nhau nếu UI có nhiều chỗ sửa cùng 1 giá trị (ở đây: canvas inline-edit vs Inspector) — đầu mối "chỗ nào sạch, chỗ nào lỗi" thường trỏ thẳng gốc, không cần đoán qua font/motion/CSS units như 2 đợt điều tra trước.
+
+## 21/07 — Presenting chữ chồng/echo, đợt điều tra 2 (nhánh `fix/presenting-text-overlap-v2`) — log giữ lại để tham khảo phương pháp loại trừ (đã TÌM RA + SỬA ở mục ngay trên, mục này ghi lại 5 giả thuyết đã loại trừ bằng bằng chứng cụ thể trước khi có đầu mối quyết định từ user)
 
 **Bối cảnh:** đợt 1 (agent khác, ~7 tiếng, 233 tool call) tái hiện bug bằng cách nạp thẳng `lib/present-editor/akh-sample.ts` (`makeAkhIkiDeck()`) qua code vào editor — KHÔNG phải thao tác tay — rồi kết luận "field text đã hỏng sẵn trong IndexedDB, không phải bug render". User bác bỏ kết luận này: gõ tiêu đề MỚI "VILLAGE" qua UI thật vẫn thấy hiện tượng, trong khi field Inspector + layer panel đều sạch — chứng minh bug ở tầng RENDER, không phải data.
 

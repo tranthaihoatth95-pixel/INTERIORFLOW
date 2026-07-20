@@ -311,7 +311,12 @@ export default function EditorCanvas({
       )}
 
       {slide.elements.map((el) =>
-        el.hidden ? null : (
+        // Đang sửa TEXT này tại chỗ (textarea nổi bên dưới đè đúng khung `frame`) →
+        // KHÔNG vẽ Element tĩnh nữa, nếu không chữ cũ (chưa commit) và chữ đang gõ trong
+        // textarea sẽ chồng lên nhau (2 lớp gần như cùng vị trí/cỡ chữ, lệch vài pixel do
+        // khác box-model div/textarea) → đúng hiện tượng "chữ chồng/echo" user báo khi sửa
+        // TRÊN CANVAS (khác đường Inspector — Inspector chỉ có 1 lớp nên luôn sạch).
+        el.hidden || editing?.id === el.id ? null : (
         <Element
           key={el.id}
           el={el}
