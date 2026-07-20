@@ -2,17 +2,14 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "interiorflow-wt-fix-present",
+      "name": "interiorflow-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",
-        "dev",
-        "--",
-        "-p",
-        "4096"
+        "dev"
       ],
-      "port": 4096,
-      "cwd": "/Users/tranben/Downloads/interiorflow/.claude/worktrees/agent-a38f98c0c27f78f82"
+      "port": 3000,
+      "cwd": "/Users/tranben/Downloads/interiorflow"
     }
   ]
 }
