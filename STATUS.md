@@ -7,7 +7,7 @@
 ## Hiện tại
 - Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (local vượt origin, chưa push). Verify SHA bằng git. Đợt 19-21/07 (chi tiết đầy đủ → CHANGELOG) ĐÃ MERGE hết: login/contrast, toolbar+IO, Sketch-Pro, Present typography, đổi tên chặng, PPTX font, input, motion, fix-api-auth-p0, login-glass+fix login, báo cáo nghiên cứu, CAD demo mặt bằng 2, CAD "AI mô tả" v2, M0 tỉ lệ khung tên, fix text chồng chữ Presenting.
   - ⚠️ **CHỜ USER VERIFY bằng mắt:** .pptx nhúng font (PowerPoint thật) · frame-timing chuyển chặng.
-- **7 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (đọc thẳng từng file, đừng chép lại vào đây):
+- **8 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (đọc thẳng từng file, đừng chép lại vào đây):
   - `RESEARCH-ACCESS-CONTROL.md` — phân quyền `ProjectMember` 5 role, 10 câu hỏi §8.
   - `RESEARCH-MOBILE-DISTRIBUTION.md` — bộ cài iOS/macOS/Android.
   - `RESEARCH-COMFYUI-LESS.md` — chạy không cần ComfyUI local.
@@ -15,7 +15,7 @@
   - `RESEARCH-TECHNICAL-DRAWING-PIPELINE.md` — khung tên/tỉ lệ/PDF in kỹ thuật CAD→Presenting (M0 tỉ lệ ĐÃ SỬA, còn M1+ chờ quyết).
   - `RESEARCH-TEAM-COLLABORATION.md` — chat/cộng tác: Phần A (comment CAD+Rendering) rẻ, làm ngay được. Phần B (Presenting real-time) 🔴 Presenting KHÔNG có server source-of-truth cho deck — phải dựng trước khi bàn CRDT/Yjs.
   - `RESEARCH-OFFICE-FILE-INTEROP.md` — mở PPTX/Word/Keynote chỉnh tiếp + bảng tính Excel thật (A/PPTX khả thi · B/Keynote KHÔNG khả thi trực tiếp · C/Word rẻ nhất · D/bảng tính MỚI hoàn toàn). 6 câu hỏi §6.
-- **ĐANG CHẠY:** agent nghiên cứu Home/Gallery/Dashboard + Larkbase (gộp vào Gallery hiện có, không trang mới; nút "Chi tiết" xổ bảng project; phân quyền `ProjectMember` tách khỏi Larkbase; tạo dự án không tự ghi ngược Larkbase).
+  - `RESEARCH-HOME-GALLERY-DASHBOARD.md` — Gallery (`ProjectSelect.tsx`, ĐÃ có sẵn, `StageSelect.tsx` là code chết) + Larkbase (`LarkTaskRef` mirror, field thật đã tra, phát hiện `Mã DA="Khác"` cần lọc). ĐÃ CHỐT: phân quyền tách biệt Larkbase (`ProjectMember`) · tạo dự án cục bộ, liên kết Larkbase tuỳ chọn, KHÔNG ghi ngược. Còn hỏi mở §5.2 (lối vào Gallery cho returning-user, vị trí kanban).
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (66 file). KHÔNG có vitest/jest.
 
 ## Quyết định user đã khoá
