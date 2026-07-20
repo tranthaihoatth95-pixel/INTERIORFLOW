@@ -6,6 +6,8 @@ import { ArrowRight, Check, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { easeApple, pressable } from '@/lib/motion';
 import type { Lang } from '@/lib/i18n';
 import { setLastUserId } from '@/lib/resume';
+import { cardTextVars } from '@/components/ui/AdaptiveContrast';
+import type { CardTextPlan } from '@/lib/adaptive-contrast';
 
 /**
  * LoginForm — card đăng nhập/đăng ký kính lỏng (TÁCH từ IntroSequence Sprint 1,
@@ -38,7 +40,21 @@ const SANS = '-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue","Spa
 type Mode = 'login' | 'register';
 type Providers = { google: boolean; apple: boolean; microsoft: boolean };
 
-export function LoginForm({ onAuthed, reduce, lang }: { onAuthed: () => void; reduce: boolean; lang: Lang }) {
+export function LoginForm({
+  onAuthed,
+  reduce,
+  lang,
+  cardPlan,
+  cardTint,
+}: {
+  onAuthed: () => void;
+  reduce: boolean;
+  lang: Lang;
+  /** Việc 1 — bộ chữ trong card đã giải đạt ngưỡng 4.5 (remap --t1..--t5 + sương nội bộ). */
+  cardPlan?: CardTextPlan;
+  /** Việc 2 · ① — tint kính lấy từ ảnh nền ("R G B"). */
+  cardTint?: string;
+}) {
   const [mode, setMode] = useState<Mode>('login');
   const [identifier, setIdentifier] = useState(''); // email hoặc SĐT
   const [password, setPassword] = useState('');
@@ -165,9 +181,19 @@ export function LoginForm({ onAuthed, reduce, lang }: { onAuthed: () => void; re
       initial={{ opacity: 0, y: reduce ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: easeApple, delay: 0.12 }}
-      style={{ ['--fc' as string]: 'rgba(199,154,99,0.6)' }}
-      className="lq-card mt-7 w-full max-w-sm space-y-4 rounded-[24px] p-7"
+      style={{
+        ['--fc' as string]: 'rgba(199,154,99,0.6)',
+        // Việc 2 · ① — tint kính lấy từ chính ảnh nền (≈20%)
+        ...(cardTint ? { ['--lq-tint' as string]: cardTint } : {}),
+        // Việc 1 — remap bộ chữ về hệ tông đạt ngưỡng (mọi var(--t*) trong card ăn theo)
+        ...(cardPlan ? cardTextVars(cardPlan) : {}),
+      }}
+      className="lq-card mt-7 w-full max-w-sm rounded-[24px] p-7"
     >
+      {/* Việc 1 — sương NỘI BỘ trong card (chỉ khi nền quá sáng): đặt SAU chữ, đậm giữa/
+          tan rìa nên card vẫn trong ở viền. plan.scrim='' khi không cần → không render. */}
+      {cardPlan?.scrim && <span className="lq-scrim" style={{ background: cardPlan.scrim }} />}
+      <div className="lq-content space-y-4">
       {/* ————— tab ĐĂNG NHẬP / ĐĂNG KÝ — gạch chân đồng (tinh thần ref SIGN IN/SIGN UP) ————— */}
       <div className="flex items-center justify-center gap-6 pb-1" role="tablist" style={{ fontFamily: SANS }}>
         {(['login', 'register'] as Mode[]).map((m) => {
@@ -237,12 +263,15 @@ export function LoginForm({ onAuthed, reduce, lang }: { onAuthed: () => void; re
       {/* B-2: Ghi nhớ đăng nhập + quên mật khẩu (chỉ hướng dẫn — không có luồng reset) */}
       {mode === 'login' && (
         <div className="flex items-center justify-between pt-0.5">
-          <label className="flex cursor-pointer select-none items-center gap-2">
+          <label className="relative flex cursor-pointer select-none items-center gap-2">
             <input
               type="checkbox"
               checked={remember}
               onChange={(e) => setRemember(e.target.checked)}
-              className="peer sr-only"
+              /* Vùng bấm phủ kín cả label (trước là sr-only 1×1px — quá nhỏ để bấm trúng
+               * bằng chuột/ngón tay thật, dù forward-click từ <label> đúng chuẩn HTML.
+               * Ẩn thị giác bằng opacity:0 thay vì clip về 1px, giữ nguyên kích thước. */
+              className="absolute inset-0 z-10 m-0 h-full w-full cursor-pointer appearance-none opacity-0"
             />
             <span
               aria-hidden
@@ -315,7 +344,7 @@ export function LoginForm({ onAuthed, reduce, lang }: { onAuthed: () => void; re
       {/* ————— OAuth ở CUỐI, logo TRẦN không khung (chỉ đạo 19/07) ————— */}
       <div className="pt-2">
         <p
-          className="mb-3 text-center text-[9.5px] uppercase tracking-[0.24em] text-[var(--t5)]"
+          className="mb-3 text-center text-[11px] uppercase tracking-[0.24em] text-[var(--t5)]"
           style={{ fontFamily: SANS }}
         >
           {en ? 'or continue with' : 'hoặc tiếp tục với'}
@@ -369,6 +398,7 @@ export function LoginForm({ onAuthed, reduce, lang }: { onAuthed: () => void; re
             <AppleMark size={22} />
           </button>
         </div>
+      </div>
       </div>
     </motion.form>
   );

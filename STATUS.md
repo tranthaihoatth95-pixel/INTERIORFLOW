@@ -5,9 +5,9 @@
 > ⚠️ Nhãn hiển thị đổi 20/07 (Layout CAD→Drafting CAD · Render→Rendering · Present→Presenting). **ID nội bộ GIỮ NGUYÊN** `concept`/`render`/`present` — mọi khoá localStorage/route/tên file không đổi. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main`. Verify SHA bằng git. Đợt 19-20/07 (10 nhánh: login/contrast · toolbar+IO · Sketch-Pro · Present typography · đổi tên chặng · PPTX font · input · motion · fix-api-auth-p0) ĐÃ MERGE + PUSH hết → chi tiết CHANGELOG.
+- Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main`. Verify SHA bằng git. Đợt 19-20/07 (login/contrast · toolbar+IO · Sketch-Pro · Present typography · đổi tên chặng · PPTX font · input · motion · fix-api-auth-p0 · **login-glass**) ĐÃ MERGE hết → chi tiết CHANGELOG.
   - ⚠️ **CHỜ USER VERIFY:** .pptx nhúng font chưa mở bằng PowerPoint thật (QuickLook bỏ qua font nhúng, không dùng làm bằng chứng) · frame-timing chuyển chặng chưa đo được (browser tự động luôn `hidden`) — cần xem bằng mắt thật.
-- ⏳ Còn chạy: `feat/login-glass` — agent trước bị dừng giữa chừng (hết giới hạn phiên API, ~1115 dòng chưa commit nhưng tsc sạch + 64/64 test), đã phóng agent tiếp nối hoàn tất verify+commit thay vì làm lại.
+  - 🐛 **20/07 chiều — user báo "Ghi nhớ đăng nhập chưa hoạt động", ĐÃ SỬA:** checkbox dùng `sr-only` co về đúng 1×1px (kỹ thuật ẩn chuẩn nhưng quá nhỏ để chuột thật bấm trúng) — logic React/server đều đúng sẵn (verify bằng curl: `remember:false`→cookie phiên không Max-Age, `remember:true`→Max-Age 30 ngày). Sửa: input phủ `absolute inset-0` kín cả label (125×16px). Verify lại bằng chuột giả lập thật, cả 2 chiều đúng.
 - **3 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (chi tiết đầy đủ trong từng file, đừng chép lại vào đây):
   - `RESEARCH-ACCESS-CONTROL.md` — chọn `ProjectMember` 5 role + GATE, ~9 ngày công, 10 câu hỏi §8 chờ user (Q2 brief NDA · Q5 role · Q8 GATE quay ngược).
   - `RESEARCH-MOBILE-DISTRIBUTION.md` — iOS: Custom App/ABM · macOS: bỏ MAS giữ `.dmg` notarize · Android: Managed Google Play Private App (đính chính quy mô không giới hạn) · PWA client đã có sẵn, thiếu HTTPS cố định.

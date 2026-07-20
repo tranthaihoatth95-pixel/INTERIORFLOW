@@ -21,7 +21,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePageVisible } from '@/lib/usePageVisible';
-import { Image as ImageIcon, Check, Trash2, Upload, Play, Shuffle, ListOrdered } from 'lucide-react';
+import {
+  Image as ImageIcon,
+  Check,
+  Trash2,
+  Upload,
+  Play,
+  Shuffle,
+  ListOrdered,
+  Sparkles,
+} from 'lucide-react';
 import { easeApple, pressableIcon } from '@/lib/motion';
 import type { Lang } from '@/lib/i18n';
 
@@ -92,7 +101,39 @@ export type BgChoice =
   | { kind: 'preset'; id: string }
   | { kind: 'image'; data: string } // ảnh user upload (dataURL)
   | { kind: 'wall'; id: string } // 1 ảnh thư viện TTT, tĩnh
-  | { kind: 'slideshow'; ids: string[]; order: 'shuffle' | 'seq' };
+  | { kind: 'slideshow'; ids: string[]; order: 'shuffle' | 'seq' }
+  | { kind: 'dynamic'; id: string }; // 20/07 — nền sinh bằng code (không phải ảnh)
+
+/* ---------- Việc 3 · 5 nền ĐỘNG sinh bằng code ----------
+ * Mỗi preset: tone chữ + `lum` = độ sáng ĐẠI DIỆN vùng card (0..1) để tầng tương phản
+ * chữ (lib/adaptive-contrast · planCardText) giải bộ chữ đạt ngưỡng mà KHÔNG cần đo pixel
+ * (nền là CSS, không có ảnh). Bảng màu greige ấm + cam/navy TTT, KHÔNG neon lạnh. */
+export interface DynamicBg {
+  id: string;
+  vi: string;
+  en: string;
+  tone: LoginTone;
+  /** độ sáng đại diện vùng card (đo từ chính bảng màu CSS ở trên) — nền tối, ~0.09–0.15. */
+  lum: number;
+}
+export const DYNAMIC_BGS: DynamicBg[] = [
+  { id: 'aurora', vi: 'Cực quang ấm', en: 'Warm aurora', tone: 'dark', lum: 0.11 },
+  { id: 'dots', vi: 'Lưới thở', en: 'Breathing grid', tone: 'dark', lum: 0.09 },
+  { id: 'contour', vi: 'Bình độ', en: 'Contours', tone: 'dark', lum: 0.09 },
+  { id: 'dust', vi: 'Bụi sáng', en: 'Light dust', tone: 'dark', lum: 0.08 },
+  { id: 'silk', vi: 'Lụa chuyển sắc', en: 'Shifting silk', tone: 'dark', lum: 0.13 },
+];
+const DYNAMIC_IDS = new Set(DYNAMIC_BGS.map((d) => d.id));
+
+/** Độ sáng vùng card cho nền KHÔNG phải ảnh (gradient preset / nền động). null = ảnh → phải đo. */
+export function cardLuminanceFor(choice: BgChoice): number | null {
+  if (choice.kind === 'dynamic') return DYNAMIC_BGS.find((d) => d.id === choice.id)?.lum ?? 0.1;
+  if (choice.kind === 'preset') {
+    const p = BG_PRESETS.find((x) => x.id === choice.id);
+    return p?.tone === 'light' ? 0.86 : 0.06; // linen sáng, còn lại tối
+  }
+  return null; // image / wall / slideshow → đo bằng readImageRegion
+}
 
 function loadChoice(): BgChoice {
   try {
@@ -108,6 +149,7 @@ function loadChoice(): BgChoice {
           return { kind: 'slideshow', ids, order: parsed.order === 'seq' ? 'seq' : 'shuffle' };
         }
       }
+      if (parsed.kind === 'dynamic' && DYNAMIC_IDS.has(parsed.id)) return parsed;
     }
   } catch {
     /* hỏng thì về mặc định */
@@ -153,7 +195,9 @@ export function useLoginBackdrop() {
   const tone: LoginTone =
     choice.kind === 'image' || choice.kind === 'wall' || choice.kind === 'slideshow'
       ? 'dark' // ảnh tự do → scrim tối + chữ sáng (an toàn đọc)
-      : (BG_PRESETS.find((p) => p.id === choice.id)?.tone ?? 'auto');
+      : choice.kind === 'dynamic'
+        ? (DYNAMIC_BGS.find((d) => d.id === choice.id)?.tone ?? 'dark')
+        : (BG_PRESETS.find((p) => p.id === choice.id)?.tone ?? 'auto');
   return { choice, pick, tone };
 }
 
@@ -287,6 +331,137 @@ function SlideshowLayer({
   );
 }
 
+/* ---------- Việc 3 · Lớp nền ĐỘNG (CSS thuần cho 4 preset + canvas cho 'dust') ---------- */
+
+/** Canvas bụi sáng: hạt trôi rất chậm. Cap ~30fps, DỪNG khi tab ẩn hoặc reduced-motion. */
+function DustCanvas({ reduce }: { reduce: boolean }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const visible = usePageVisible();
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    let raf = 0;
+    let w = 0;
+    let h = 0;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    // ~1 hạt / 14k px², trần 90 hạt — nhẹ CPU/GPU
+    type P = { x: number; y: number; r: number; a: number; vx: number; vy: number; ph: number };
+    let parts: P[] = [];
+    const resize = () => {
+      w = canvas.clientWidth;
+      h = canvas.clientHeight;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const n = Math.min(90, Math.round((w * h) / 14000));
+      parts = Array.from({ length: n }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: 0.6 + Math.random() * 1.6,
+        a: 0.15 + Math.random() * 0.4,
+        vx: (Math.random() - 0.5) * 0.06, // rất chậm
+        vy: -0.05 - Math.random() * 0.08, // trôi lên nhẹ
+        ph: Math.random() * Math.PI * 2,
+      }));
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const drawStatic = () => {
+      ctx.clearRect(0, 0, w, h);
+      for (const p of parts) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(233,214,184,${p.a})`; // greige ấm sáng
+        ctx.fill();
+      }
+    };
+
+    if (reduce) {
+      drawStatic();
+      return () => {
+        window.removeEventListener('resize', resize);
+      };
+    }
+
+    let last = 0;
+    const FRAME = 1000 / 30; // cap 30fps
+    let t = 0;
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      if (now - last < FRAME) return;
+      last = now;
+      t += 1;
+      ctx.clearRect(0, 0, w, h);
+      for (const p of parts) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.y < -4) {
+          p.y = h + 4;
+          p.x = Math.random() * w;
+        }
+        if (p.x < -4) p.x = w + 4;
+        if (p.x > w + 4) p.x = -4;
+        const tw = 0.6 + 0.4 * Math.sin(t * 0.02 + p.ph); // lấp lánh rất nhẹ
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(233,214,184,${(p.a * tw).toFixed(3)})`;
+        ctx.fill();
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', resize);
+    };
+    // visible đổi → re-run (dừng vẽ khi tab ẩn)
+  }, [reduce, visible]);
+
+  return (
+    <canvas
+      ref={ref}
+      className="absolute inset-0 h-full w-full"
+      style={{ background: 'linear-gradient(160deg,#141009,#1a140e 55%,#100d08)' }}
+    />
+  );
+}
+
+function DynamicLayer({ id, reduce }: { id: string; reduce: boolean }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  // DOTS: bám con trỏ rất nhẹ (set --mx/--my), tắt khi reduced-motion
+  useEffect(() => {
+    if (id !== 'dots' || reduce) return;
+    const el = rootRef.current;
+    if (!el) return;
+    let raf = 0;
+    const onMove = (e: PointerEvent) => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const r = el.getBoundingClientRect();
+        el.style.setProperty('--mx', String((e.clientX - r.left) / Math.max(1, r.width)));
+        el.style.setProperty('--my', String((e.clientY - r.top) / Math.max(1, r.height)));
+      });
+    };
+    window.addEventListener('pointermove', onMove, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [id, reduce]);
+
+  if (id === 'dust') {
+    return (
+      <div className="if-dyn">
+        <DustCanvas reduce={reduce} />
+      </div>
+    );
+  }
+  return <div ref={rootRef} className={`if-dyn if-dyn-${id}`} />;
+}
+
 /* ---------- Lớp NỀN (đặt dưới cùng, pointer-events none) ---------- */
 
 export function LoginBackdropLayer({
@@ -317,6 +492,19 @@ export function LoginBackdropLayer({
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
       {choice.kind === 'slideshow' ? (
         <SlideshowLayer ids={choice.ids} order={choice.order} reduce={reduce} onSrc={onSrc} />
+      ) : choice.kind === 'dynamic' ? (
+        <AnimatePresence mode="sync" initial={false}>
+          <motion.div
+            key={`dyn:${choice.id}`}
+            className="absolute inset-0"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6, ease: easeApple }}
+          >
+            <DynamicLayer id={choice.id} reduce={reduce} />
+          </motion.div>
+        </AnimatePresence>
       ) : (
         <AnimatePresence mode="sync" initial={false}>
           {choice.kind === 'image' || choice.kind === 'wall' ? (
@@ -371,7 +559,7 @@ export function LoginBackdropLayer({
         </AnimatePresence>
       )}
       {/* vignette điện ảnh chung cho các nền KHÔNG phải ảnh (ảnh có scrim riêng) */}
-      {choice.kind === 'preset' && (
+      {(choice.kind === 'preset' || choice.kind === 'dynamic') && (
         <div
           className="absolute inset-0"
           style={{
@@ -401,6 +589,8 @@ export function LoginBackdropPicker({
   const en = lang === 'en';
 
   const isSlideshow = choice.kind === 'slideshow';
+  const isDynamic = choice.kind === 'dynamic';
+  const isStill = !isSlideshow && !isDynamic;
   const slideshowIds = isSlideshow ? choice.ids : WALLPAPERS.map((w) => w.id);
   const slideshowOrder = isSlideshow ? choice.order : 'shuffle';
 
@@ -444,15 +634,15 @@ export function LoginBackdropPicker({
                 {en ? 'Backdrop' : 'Nền đăng nhập'}
               </p>
 
-              {/* ————— chọn CHẾ ĐỘ: tĩnh / trình chiếu ————— */}
+              {/* ————— chọn CHẾ ĐỘ: tĩnh / trình chiếu / động ————— */}
               <div className="mb-2.5 flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => onPick({ kind: 'preset', id: 'ember' })}
                   className={modeBtn}
                   style={{
-                    borderColor: !isSlideshow ? '#c79a63' : 'var(--border)',
-                    color: !isSlideshow ? '#c79a63' : 'var(--t3)',
+                    borderColor: isStill ? '#c79a63' : 'var(--border)',
+                    color: isStill ? '#c79a63' : 'var(--t3)',
                   }}
                 >
                   <ImageIcon size={11} />
@@ -472,9 +662,72 @@ export function LoginBackdropPicker({
                   <Play size={11} />
                   {en ? 'Slideshow' : 'Trình chiếu'}
                 </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    onPick({ kind: 'dynamic', id: isDynamic ? choice.id : DYNAMIC_BGS[0].id })
+                  }
+                  className={modeBtn}
+                  style={{
+                    borderColor: isDynamic ? '#c79a63' : 'var(--border)',
+                    color: isDynamic ? '#c79a63' : 'var(--t3)',
+                  }}
+                >
+                  <Sparkles size={11} />
+                  {en ? 'Live' : 'Động'}
+                </button>
               </div>
 
-              {!isSlideshow && (
+              {/* ————— nền ĐỘNG (sinh bằng code) ————— */}
+              {isDynamic && choice.kind === 'dynamic' && (
+                <>
+                  <p className="mb-1.5 text-[10px] uppercase tracking-[0.14em] text-[var(--t5)]">
+                    {en ? 'Generated · code' : 'Sinh bằng code'}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {DYNAMIC_BGS.map((d) => {
+                      const on = choice.id === d.id;
+                      return (
+                        <button
+                          key={d.id}
+                          type="button"
+                          onClick={() => onPick({ kind: 'dynamic', id: d.id })}
+                          title={en ? d.en : d.vi}
+                          className="group flex flex-col items-center gap-1"
+                        >
+                          <span
+                            className={`relative h-12 w-full overflow-hidden rounded-[9px] border transition-transform group-hover:scale-[1.03] if-dyn-swatch-${d.id}`}
+                            style={{
+                              borderColor: on ? '#c79a63' : 'var(--border)',
+                              boxShadow: on ? '0 0 0 1px #c79a63' : undefined,
+                            }}
+                          >
+                            {on && (
+                              <span className="absolute inset-0 grid place-items-center">
+                                <Check
+                                  size={13}
+                                  strokeWidth={3}
+                                  style={{ color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,.6))' }}
+                                />
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-[9.5px] leading-none text-[var(--t4)]">
+                            {en ? d.en : d.vi}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-2 text-[9.5px] leading-snug text-[var(--t5)]">
+                    {en
+                      ? 'Very slow, GPU-light. Respects reduced-motion.'
+                      : 'Rất chậm, nhẹ GPU. Tôn trọng reduced-motion.'}
+                  </p>
+                </>
+              )}
+
+              {isStill && (
                 <>
                   {/* preset gradient */}
                   <div className="grid grid-cols-4 gap-2">

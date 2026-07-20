@@ -3,11 +3,17 @@
 import { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { rise } from '@/lib/motion';
-import { AdaptiveScrim, adaptiveTextStyle, useAdaptiveContrast } from '@/components/ui/AdaptiveContrast';
+import {
+  AdaptiveScrim,
+  adaptiveTextStyle,
+  useAdaptiveContrast,
+  useCardText,
+} from '@/components/ui/AdaptiveContrast';
 import { useLang } from '@/lib/i18n';
 import { LangToggle } from '@/components/LangToggle';
 import { LoginForm } from '@/components/entry/LoginForm';
 import {
+  cardLuminanceFor,
   LoginBackdropLayer,
   LoginBackdropPicker,
   useLoginBackdrop,
@@ -40,6 +46,9 @@ const SANS = '-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue","Spa
 
 /** Vùng ảnh nằm ngay dưới cụm logo + nhãn (tỉ lệ khung hình) — dải giữa, hơi lệch trên. */
 const LOGO_REGION = { x: 0.28, y: 0.26, w: 0.44, h: 0.3 };
+/** Vùng ảnh mà CARD đăng nhập phủ lên (tỉ lệ khung) — giữa màn, hơi dưới tâm. Khớp với
+ *  vùng chủ dự án đã đo trên ttt-05 (hiệu dụng 0.152). */
+const CARD_REGION = { x: 0.34, y: 0.38, w: 0.32, h: 0.48 };
 
 /**
  * `notice` — lý do người dùng bị đưa về đây (phiên hết hạn / cookie không còn hiệu
@@ -64,6 +73,15 @@ export function LoginScreen({ onAuthed, notice }: { onAuthed: () => void; notice
     // gần tâm nên gộp ~0.40; không gộp thì ảnh sáng bị đọc là "nền sáng" trong khi mắt
     // đang thấy nền đã tối đi, và chữ sẽ đảo sang màu mực trên nền tối.
     overlay: bgSrc ? { luminance: 0, alpha: 0.4 } : undefined,
+  });
+
+  // Việc 1 — TƯƠNG PHẢN CHỮ TRONG CARD: đo vùng card (ảnh) hoặc dùng độ sáng đại diện
+  // (gradient preset / nền động) → bộ 5 bậc chữ cùng tông, mọi bậc ≥ 4.5. Trải vào card
+  // qua CSS vars (cardTextVars) + tint kính + lớp sương nội bộ nếu nền quá sáng.
+  const { plan: cardPlan, tint: cardTint } = useCardText({
+    src: bgSrc,
+    region: CARD_REGION,
+    fallbackLuminance: cardLuminanceFor(choice) ?? 0.1,
   });
 
   // reduce motion → mọi rise() về amplitude 0 (chỉ còn fade)
@@ -134,7 +152,7 @@ export function LoginScreen({ onAuthed, notice }: { onAuthed: () => void; notice
 
           {/* form kính (C-1) — element vừa, biên độ vừa */}
           <motion.div variants={rise(amp(18), 0.14)} className="flex w-full justify-center text-left">
-            <LoginForm onAuthed={onAuthed} reduce={!!reduce} lang={lang} />
+            <LoginForm onAuthed={onAuthed} reduce={!!reduce} lang={lang} cardPlan={cardPlan} cardTint={cardTint} />
           </motion.div>
         </motion.div>
       </div>

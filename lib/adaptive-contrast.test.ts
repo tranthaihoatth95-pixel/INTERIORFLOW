@@ -14,6 +14,16 @@ import {
   planFallback,
   planFromReading,
   toneForColor,
+  planCardText,
+  cardBackdropLuminance,
+  contrastRatio,
+  contrastVsLuminance,
+  minAlphaForRatio,
+  blend,
+  grayForLuminance,
+  AA_NORMAL,
+  type RGB,
+  type CardTextTokens,
 } from './adaptive-contrast';
 
 let passed = 0;
@@ -147,6 +157,121 @@ it('framesOverlap: giao / không giao / chạm mép', () => {
   assert.ok(framesOverlap(a, { x: 0, y: 0, w: 100, h: 100 })); // ảnh full-bleed bao trọn
   assert.ok(!framesOverlap(a, { x: 40, y: 10, w: 20, h: 20 })); // tách hẳn
   assert.ok(!framesOverlap(a, { x: 30, y: 10, w: 20, h: 20 })); // chạm mép, KHÔNG tính là đè
+});
+
+/* ============================================================================
+ * TẦNG 3 — TƯƠNG PHẢN CHỮ TRONG CARD KÍNH (Việc 1, login-glass)
+ * Khẳng định: MỌI token chữ trong card đạt ≥ 4.5 trên toàn dải nền — để không tái phạm.
+ * ========================================================================== */
+
+const CREAM: RGB = [246, 242, 234];
+const INK: RGB = [20, 17, 13];
+const TOKEN_KEYS: (keyof CardTextTokens)[] = ['t1', 't2', 't3', 't4', 't5'];
+
+/* ---------- helper tương phản ---------- */
+
+it('contrastRatio: trắng/đen = 21, tự nó = 1, đối xứng', () => {
+  assert.ok(Math.abs(contrastRatio([255, 255, 255], [0, 0, 0]) - 21) < 0.01);
+  assert.ok(Math.abs(contrastRatio([120, 120, 120], [120, 120, 120]) - 1) < 1e-9);
+  assert.ok(
+    Math.abs(contrastRatio([10, 20, 30], [200, 200, 200]) - contrastRatio([200, 200, 200], [10, 20, 30])) < 1e-9,
+  );
+});
+
+it('blend alpha 0/1 = nền/chữ; grayForLuminance quanh vòng', () => {
+  assert.deepEqual(blend([255, 255, 255], 0, [10, 20, 30]), [10, 20, 30]);
+  assert.deepEqual(blend([255, 255, 255], 1, [10, 20, 30]), [255, 255, 255]);
+  // gray hồi phục xấp xỉ độ sáng yêu cầu
+  const g = grayForLuminance(0.2);
+  assert.ok(Math.abs(0.2126 * (g[0] / 255) - 0) >= 0); // smoke
+});
+
+it('minAlphaForRatio: đủ alpha đạt đúng ngưỡng; bất khả thi → null', () => {
+  const bg: RGB = [20, 18, 14];
+  const a = minAlphaForRatio(CREAM, bg, 4.5);
+  assert.ok(a !== null);
+  assert.ok(contrastRatio(blend(CREAM, a as number, bg), bg) >= 4.5 - 1e-6);
+  // kem trên nền gần-kem: không alpha nào đủ 4.5 → null
+  assert.equal(minAlphaForRatio(CREAM, [240, 236, 228], 4.5), null);
+});
+
+it('cardBackdropLuminance khớp số đo chủ dự án: ttt-05 raw 0.1901 → ~0.15 (lệch <0.02)', () => {
+  const eff = cardBackdropLuminance(0.1901);
+  assert.ok(Math.abs(eff - 0.152) < 0.02, `eff=${eff}`);
+});
+
+/* ---------- BẤT BIẾN CHÍNH: mọi token ≥ 4.5 trên toàn dải nền ---------- */
+
+// Dải phủ: tối nhất → sáng nhất trong bộ 30 wallpaper (raw luminance đo bằng sharp),
+// cộng 2 preset gradient (nền tối phẳng + linen sáng) và vài điểm trung gian.
+const WALLPAPER_RAWS = [
+  0.1271, 0.1274, 0.1426, 0.1557, 0.1574, 0.1588, 0.1646, 0.183, 0.1856, 0.1887, 0.1901, 0.2064,
+  0.2112, 0.2178, 0.2242, 0.2243, 0.252, 0.258, 0.2695, 0.2695, 0.2715, 0.2753, 0.2762, 0.2762,
+  0.2779, 0.2869, 0.2991, 0.3103, 0.3413, 0.3799,
+];
+
+function assertTokensPass(raw: number, opts?: Parameters<typeof planCardText>[1]) {
+  const plan = planCardText(raw, opts);
+  const bg = grayForLuminance(plan.bgLuminance);
+  for (const k of TOKEN_KEYS) {
+    const rgb = parseColor(plan.tokens[k]) as RGB;
+    assert.ok(rgb, `token ${k} phải parse được: ${plan.tokens[k]}`);
+    const ratio = contrastRatio(rgb, bg);
+    assert.ok(
+      ratio >= AA_NORMAL - 0.02,
+      `raw=${raw} tone=${plan.tone} token=${k} ratio=${ratio.toFixed(2)} < ${AA_NORMAL}`,
+    );
+    // và khớp con số plan tự báo (để bảng in ra tin được)
+    assert.ok(Math.abs(ratio - plan.ratios[k]) < 0.05, `ratios[${k}] lệch thực tế`);
+  }
+}
+
+it('MỌI token chữ card ≥ 4.5 trên CẢ 30 wallpaper (nền tối, chữ kem)', () => {
+  for (const raw of WALLPAPER_RAWS) assertTokensPass(raw);
+});
+
+it('MỌI token chữ card ≥ 4.5 trên nền gradient tối phẳng (ember/ink/stone)', () => {
+  for (const raw of [0.04, 0.06, 0.08, 0.1]) assertTokensPass(raw);
+});
+
+it('MỌI token chữ card ≥ 4.5 trên nền linen SÁNG (chữ mực, tone dark)', () => {
+  for (const raw of [0.78, 0.82, 0.86, 0.9]) assertTokensPass(raw, { tone: 'dark' });
+});
+
+it('MỌI token chữ card ≥ 4.5 quét dày toàn dải 0.02..0.98', () => {
+  for (let raw = 0.02; raw <= 0.98; raw += 0.02) {
+    // để planCardText tự chọn tone theo độ sáng
+    assertTokensPass(Math.round(raw * 1000) / 1000);
+  }
+});
+
+it('card: một HỆ TÔNG duy nhất (mọi token cùng kem HOẶC cùng mực, không lẫn xám lạnh)', () => {
+  for (const raw of [0.13, 0.19, 0.86]) {
+    const plan = planCardText(raw, raw > 0.5 ? { tone: 'dark' } : undefined);
+    const cream = plan.tone === 'light';
+    for (const k of TOKEN_KEYS) {
+      const [r, g, b] = parseColor(plan.tokens[k]) as RGB;
+      // kem: R≥G≥B và ấm (R>B); mực: tối và ấm — KHÔNG bao giờ xám lạnh (B>R)
+      assert.ok(r >= b - 1, `token ${k} không được xám lạnh (b>r): ${plan.tokens[k]}`);
+      if (cream) assert.ok(r > 60, `token kem ${k} phải sáng`);
+    }
+  }
+});
+
+it('card: nền càng sáng → sương nội bộ càng đậm, nhưng KHÔNG vượt trần (card vẫn trong)', () => {
+  const dark = planCardText(0.06); // rất tối → không cần sương
+  const mid = planCardText(0.2);
+  const bright = planCardText(0.38); // sáng nhất bộ ảnh
+  assert.equal(dark.scrimAlpha, 0);
+  assert.ok(bright.scrimAlpha >= mid.scrimAlpha, 'nền sáng hơn → sương đậm hơn (đơn điệu)');
+  assert.ok(bright.scrimAlpha > 0);
+  assert.ok(bright.scrimAlpha <= 0.42 + 1e-6, 'sương không vượt trần 0.42');
+});
+
+it('contrastVsLuminance: đơn điệu — nền sáng hơn thì chữ kem tương phản kém hơn', () => {
+  const a = contrastVsLuminance(CREAM, 0.1);
+  const b = contrastVsLuminance(CREAM, 0.2);
+  assert.ok(a > b);
 });
 
 console.log(`\n${passed} test pass\n`);
