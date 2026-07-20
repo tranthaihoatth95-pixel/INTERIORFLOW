@@ -22,6 +22,13 @@
 - **Logo IF: chốt phương án CÓ KHUNG** (`framed`). Wallpaper: 30 ảnh TTT ở `public/wallpapers/` — **user sẽ lọc bộ cuối sau**.
 - Perceptron THẬT (learning-to-rank) · 3 installer unsigned (.exe cần Win) · PWA Vercel + Supabase (Sprint 4).
 
+## Worktree này (agent-a146c14b03b11516d) — `feat/cad-ai-description-v2`
+- Base `db0193c`. Mở rộng "AI mô tả" CAD (bảng đề bài + nhiều option + tỉ lệ custom, yêu cầu KTS).
+- `lib/cad/ai-assist.ts`: thêm `WallVariant` (0 mặc định/1 đối diện/2 xoay 90°, optional, hành vi cũ KHÔNG đổi) + `generateLayoutOptions()` — 3 phương án đặt nội thất trong CÙNG 1 hình bao phòng (KHÔNG sinh lại tường — phạm vi thu hẹp, xem docstring).
+- `components/cad/AiBriefPanel.tsx` (mới): thay ô 1 dòng cũ — giữ "Vẽ nhanh" cũ + textarea đề bài nhiều đoạn + "Tỉ lệ tuỳ chỉnh (hệ số)" + "Tạo 3 phương án" chạy qua `checkStandards` (tái dùng) + Nhận/Bỏ tái dùng pattern LayoutShelf (`PairwisePerceptron`, key riêng `lib/cad/ai-layout-feedback.ts`, không đụng `feature-dict.ts`).
+- **"Tỉ lệ custom"** = hệ số nhân kích thước phòng đã parse (mm) — KHÁC `ScaleMenu`/`scaleAll` và khác `titleBlock()` scale text (2 cái đó KHÔNG đụng). **"Hiện trạng"** = anchor origin theo bbox bản vẽ hiện tại (như cũ), DXF/DWG import có sẵn dùng làm "mở hiện trạng".
+- Verify: `tsc --noEmit` sạch · 65/65 test PASS (gồm `ai-assist.test.ts` mới) · browser `127.0.0.1:4095` — click qua UI thật: đề bài 2 phòng → 3 option (3 thumbnail khác nhau, đều đạt chuẩn) → Nhận → áp đúng canvas, không lỗi console.
+
 ## Nợ kỹ thuật
 - 🐛 **MỚI 20/07 — user báo trực tiếp, CHƯA ĐIỀU TRA:** Presenting, slide mẫu "Trang phân mục" (deck IKI VILLAGE) — layer text tiêu đề (nội dung field đúng "IKI VILLAGE") **render CHỒNG/RỐI CHỮ trên canvas** (đọc như "IKDEMOAGE", như 2 dòng chữ đè lên nhau cùng vị trí). 3 layer trên slide: text tiêu đề (lỗi) + text "DESIGN FRAMEWORK · DRAFT MOODBOARD" (bên trên, có vẻ ổn) + Ảnh. Nghi: 2 layer text đè đúng 1 vị trí, hoặc double-render kiểu warning React đã biết ở CAD (xem dòng dưới), hoặc lỗi đo `TextFx`/font-fit tự-co giãn. Cần mở `/cad-editor`→Presenting, slide 1, xem DOM layer thật trước khi sửa.
 - 🐛 **MỚI (có TRƯỚC đợt này, 2 agent độc lập cùng thấy, 1 agent xác nhận trên mã gốc):** `/cad-editor` ném warning React `Cannot update a component while rendering a different component` (`CadCanvas`/`StudioBar`) làm error boundary dựng lại cây. Chưa truy.

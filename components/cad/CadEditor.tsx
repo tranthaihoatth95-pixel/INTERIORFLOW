@@ -35,7 +35,6 @@ import { loadManifest, groupByCategory, type LibraryManifest } from '@/lib/cad/b
 import { buildDemoPlan } from '@/lib/cad/demo-plan';
 import { buildOfficeTemplate, buildHotelTemplate } from '@/lib/cad/templates';
 import { titleBlock, type TitleBlockInfo } from '@/lib/cad/commands';
-import { describeToEntities } from '@/lib/cad/ai-assist';
 import { docBox } from '@/lib/cad/model';
 import { useFlowStore } from '@/lib/store';
 import { stashCadHandoff } from '@/lib/cad/handoff';
@@ -55,6 +54,7 @@ import CadCanvas from './CadCanvas';
 import CadToolbar from './CadToolbar';
 import CadTouchDock from './CadTouchDock';
 import MaterialPalette from './MaterialPalette';
+import AiBriefPanel from './AiBriefPanel';
 
 export default function CadEditor() {
   const router = useRouter();
@@ -70,8 +70,9 @@ export default function CadEditor() {
   // room tool ở CadCanvas) bằng UI nổi non-blocking. Semantics giữ nguyên: OK chạy hành động,
   // Huỷ/Escape không làm gì.
   const [confirmAsk, setConfirmAsk] = useState<{ message: string; onOk: () => void } | null>(null);
-  const [aiAskOpen, setAiAskOpen] = useState(false);
-  const [aiDesc, setAiDesc] = useState('');
+  // 20/07: ô 1 dòng cũ (aiAskOpen/aiDesc/runAiAssist) THAY bằng AiBriefPanel (đề bài chi tiết +
+  // nhiều option + Kiểm chuẩn) — panel giữ nguyên đường "Vẽ nhanh" 1 dòng bên trong, xem file đó.
+  const [aiBriefOpen, setAiBriefOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const dwgRef = useRef<HTMLInputElement>(null);
   const idfRef = useRef<HTMLInputElement>(null);
@@ -165,24 +166,9 @@ export default function CadEditor() {
   };
 
   // AI-assist rule-based (lib/cad/ai-assist.ts) — stub tối giản, xem chỗ cắm LLM thật trong file đó.
-  // Mô tả hỏi qua ô nhập nổi non-blocking (aiAskOpen) thay window.prompt; rỗng/Escape = không làm gì.
-  const aiAssist = () => {
-    setAiDesc('');
-    setAiAskOpen(true);
-  };
-  const runAiAssist = (desc: string) => {
-    if (!desc) return;
-    const st = useCadStore.getState();
-    const box = docBox(st.doc);
-    const origin = box ? { x: box.maxX + 1000, y: box.minY } : { x: 0, y: 0 };
-    const wallLayer = st.doc.layers.find((l) => l.name === 'Tường')?.id ?? st.currentLayer;
-    const textLayer = st.doc.layers.find((l) => l.name === 'Ghi chú')?.id ?? st.currentLayer;
-    const furnLayer = st.doc.layers.find((l) => l.name === 'Nội thất')?.id ?? 'l-furniture';
-    const { entities, note } = describeToEntities(desc, origin, wallLayer, textLayer, st.wallThickness, furnLayer);
-    st.addEntities(entities);
-    st.setStatus(note);
-    window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
-  };
+  // 20/07: mở AiBriefPanel (đề bài chi tiết + nhiều option + Kiểm chuẩn) thay ô 1 dòng cũ — panel
+  // tự giữ đường "Vẽ nhanh" 1 dòng bên trong cho hành vi cũ, xem components/cad/AiBriefPanel.tsx.
+  const aiAssist = () => setAiBriefOpen(true);
 
   const onImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -364,47 +350,8 @@ export default function CadEditor() {
             onCancel={() => setConfirmAsk(null)}
           />
         )}
-        {/* Ô nhập mô tả AI-assist nổi — thay window.prompt. Enter/✓ chạy, Escape/✕ huỷ. */}
-        {aiAskOpen && (
-          <div style={{ position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 40, display: 'flex', alignItems: 'center', gap: 6, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 10, padding: 8, boxShadow: '0 8px 24px rgba(0,0,0,.18)' }}>
-            <input
-              autoFocus
-              value={aiDesc}
-              onChange={(e) => setAiDesc(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.stopPropagation();
-                  setAiAskOpen(false);
-                  runAiAssist(aiDesc);
-                } else if (e.key === 'Escape') {
-                  e.stopPropagation();
-                  setAiAskOpen(false);
-                }
-              }}
-              placeholder='Mô tả nhanh (VD: "phòng ngủ 4x3.5 có giường và tủ áo")'
-              style={{ width: 340, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', padding: '5px 8px', outline: 'none', fontSize: 12, color: 'var(--t1)' }}
-            />
-            <button
-              type="button"
-              onClick={() => {
-                setAiAskOpen(false);
-                runAiAssist(aiDesc);
-              }}
-              title="Vẽ theo mô tả (Enter)"
-              style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 8, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer' }}
-            >
-              ✓
-            </button>
-            <button
-              type="button"
-              onClick={() => setAiAskOpen(false)}
-              title="Huỷ (Esc)"
-              style={{ display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 8, background: 'transparent', color: 'var(--t3)', border: '1px solid var(--border)', cursor: 'pointer' }}
-            >
-              ✕
-            </button>
-          </div>
-        )}
+        {/* 20/07: panel "AI mô tả — Đề bài chi tiết" thay ô nhập 1 dòng cũ — xem AiBriefPanel.tsx. */}
+        {aiBriefOpen && <AiBriefPanel onClose={() => setAiBriefOpen(false)} />}
       </div>
 
       {/* command line + status */}
