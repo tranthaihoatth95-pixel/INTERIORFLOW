@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getSessionUser } from '@/lib/server/auth';
 
 /**
  * Illustration Picker — thác 3 nguồn cho hình minh hoạ moodboard (theo chốt user):
@@ -23,6 +24,9 @@ interface OvResult {
 }
 
 export async function POST(req: Request) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
   const { query, references, count = 6, allowSearch = true, allowGenerate = false } =
     (await req.json().catch(() => ({}))) as {
       query?: string; references?: RefLite[]; count?: number; allowSearch?: boolean; allowGenerate?: boolean;

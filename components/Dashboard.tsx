@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 
 /* ---------- kiểu dữ liệu trả về từ /api/dashboard ---------- */
 interface Member {
-  id: string; name: string; email: string; credits: number; isAdmin: boolean;
+  id: string; name: string; credits: number; isAdmin: boolean;
   lastSeenAt: string; online: boolean; flowCount: number; projectCount: number;
 }
 interface ProjectRow {
@@ -20,7 +20,7 @@ interface ProjectRow {
   user: { id: string; name: string }; _count: { flows: number };
 }
 interface FlowRow {
-  id: string; name: string; version: number; updatedAt: string; shareToken: string | null;
+  id: string; name: string; version: number; updatedAt: string; shared: boolean;
   user: { id: string; name: string }; project: { id: string; name: string } | null;
 }
 interface DashboardData {
@@ -360,7 +360,7 @@ export function Dashboard({
                               {f.project ? `${f.project.name} · ` : ''}{f.user.name} · v{f.version} · {timeAgo(f.updatedAt)}
                             </div>
                           </div>
-                          {f.shareToken && <Share2 size={13} className="shrink-0 text-emerald-400" />}
+                          {f.shared && <Share2 size={13} className="shrink-0 text-emerald-400" />}
                           <Circle size={5} className="shrink-0 fill-[var(--accent)] text-[var(--accent)]" />
                         </button>
                       ))}

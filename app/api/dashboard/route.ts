@@ -16,11 +16,10 @@ export async function GET() {
   const [users, projects, flows, spend] = await Promise.all([
     prisma.user.findMany({
       orderBy: { lastSeenAt: 'desc' },
+      // KHÔNG select email/phone — PII, client không hiển thị (chỉ tên + avatar chữ cái).
       select: {
         id: true,
         name: true,
-        email: true,
-        phone: true,
         credits: true,
         isAdmin: true,
         lastSeenAt: true,
@@ -61,7 +60,6 @@ export async function GET() {
   const team = users.map((u) => ({
     id: u.id,
     name: u.name,
-    email: u.email ?? u.phone ?? '', // user đăng ký bằng SĐT → hiện SĐT thay email
     credits: u.credits,
     isAdmin: u.isAdmin,
     lastSeenAt: u.lastSeenAt,
@@ -79,5 +77,9 @@ export async function GET() {
     creditsRemaining: users.reduce((s, u) => s + u.credits, 0),
   };
 
-  return NextResponse.json({ me: user.id, stats, team, projects, flows });
+  // ⚠️ KHÔNG trả shareToken thô ra ngoài: đó là chìa của endpoint PUBLIC /api/share/[token].
+  // Dashboard chỉ cần biết flow "có đang share hay không" (icon) → thay bằng boolean.
+  const safeFlows = flows.map(({ shareToken, ...f }) => ({ ...f, shared: !!shareToken }));
+
+  return NextResponse.json({ me: user.id, stats, team, projects, flows: safeFlows });
 }

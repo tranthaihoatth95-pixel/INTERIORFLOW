@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getSessionUser } from '@/lib/server/auth';
 
 /**
  * Ephemeral live-cursor / presence endpoint (Canva-style collab).
@@ -31,21 +32,27 @@ function prune(now: number) {
   }
 }
 
-/** POST — upsert cursor + presence của người gọi. */
+/**
+ * POST — upsert cursor + presence của người gọi.
+ * ⚠️ Danh tính (userId + name) lấy từ SESSION, KHÔNG tin client — chặn giả danh presence.
+ */
 export async function POST(req: Request) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
+
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== 'object') {
     return NextResponse.json({ ok: false, error: 'empty body' }, { status: 400 });
   }
-  const { userId, name, color, x, y, flowId } = body as Partial<CursorEntry>;
-  if (!userId || !flowId) {
-    return NextResponse.json({ ok: false, error: 'missing userId/flowId' }, { status: 400 });
+  const { color, x, y, flowId } = body as Partial<CursorEntry>;
+  if (!flowId) {
+    return NextResponse.json({ ok: false, error: 'missing flowId' }, { status: 400 });
   }
   const now = Date.now();
-  cursors.set(String(userId), {
-    userId: String(userId),
-    name: String(name ?? 'Khách'),
-    color: String(color ?? '#8b7cf7'),
+  cursors.set(user.id, {
+    userId: user.id,
+    name: user.name,
+    color: String(color ?? '#8b7cf7'), // màu chỉ là cosmetic — nhận từ client được
     x: Number.isFinite(x) ? Number(x) : 0,
     y: Number.isFinite(y) ? Number(y) : 0,
     flowId: String(flowId),
@@ -56,13 +63,15 @@ export async function POST(req: Request) {
 }
 
 /**
- * GET ?flowId=… [&me=userId] — trả mọi cursor còn "tươi" (ts < STALE_MS)
- * cùng flowId, LOẠI người gọi nếu có ?me.
+ * GET ?flowId=… — trả mọi cursor còn "tươi" (ts < STALE_MS) cùng flowId,
+ * LOẠI người gọi (theo SESSION — tham số ?me cũ bị bỏ qua, không tin client).
  */
 export async function GET(req: Request) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ cursors: [], error: 'unauthorized' }, { status: 401 });
+
   const url = new URL(req.url);
   const flowId = url.searchParams.get('flowId');
-  const me = url.searchParams.get('me');
   const now = Date.now();
   prune(now);
 
@@ -71,7 +80,7 @@ export async function GET(req: Request) {
   const list: CursorEntry[] = [];
   for (const c of cursors.values()) {
     if (c.flowId !== flowId) continue;
-    if (me && c.userId === me) continue;
+    if (c.userId === user.id) continue;
     if (now - c.ts > STALE_MS) continue;
     list.push(c);
   }

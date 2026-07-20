@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
+import { getSessionUser } from '@/lib/server/auth';
 import { extractText, getDocumentProxy } from 'unpdf';
 
 // Bóc chữ PDF (đề bài/hồ sơ dự án) để AI đọc được. Chạy Node (unpdf, không cần native deps).
 export async function POST(req: Request) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
   const form = await req.formData().catch(() => null);
   const file = form?.get('file');
   if (!(file instanceof File)) return NextResponse.json({ error: 'Thiếu file PDF.' }, { status: 400 });
