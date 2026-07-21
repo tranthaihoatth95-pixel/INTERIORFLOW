@@ -4,8 +4,16 @@
 ## Quy tắc worktree & context
 
 ### Giới hạn cứng
-- **Tối đa 3 worktree cùng lúc** (= 3 agent song song). Nếu đã có 3, KHÔNG tạo thêm — hỏi chủ dự án worktree nào dọn trước.
+- **Tối đa 5 worktree cùng lúc** (= 5 agent song song, tăng từ 3 lên 5 sau 21/07). Nếu đã có 5, KHÔNG tạo thêm — hỏi chủ dự án worktree nào dọn trước.
 - Mỗi worktree PHẢI đặt tên theo pattern: `interiorflow-wt-{tên-nhánh}` (vd: `interiorflow-wt-ui-motion`).
+
+### Dọn cuối phiên — CƠ CHẾ AN TOÀN (21/07 rule mới)
+Cuối mỗi phiên (hoặc khi chủ dự án bảo dọn), tự động dọn worktree nhưng CHỈ khi đủ MỌI điều kiện an toàn dưới đây — thiếu 1 điều là DỪNG lại, báo chủ dự án, KHÔNG dùng force:
+1. Nhánh của worktree đã MERGE vào nhánh tích hợp (`git branch --merged feat/present-layout-ml-p1` liệt kê).
+2. `git -C <worktree> status --short` SẠCH (không có file dirty/untracked ngoài `IF1_IF2_BIGPICTURE.md` gitignore).
+3. Không có dev server nào còn chạy trong thư mục worktree (`lsof` check).
+4. Không có branch nào chỉ tồn tại ở worktree đó mà chưa push/merge (mất commit là mất luôn).
+Nếu 4 điều kiện đủ: `git worktree remove <path>` (KHÔNG `--force`) + `git branch -d <branch>` (KHÔNG `-D`) + gỡ entry trong `.claude/launch.json` nếu có. Nếu 1 điều kiện thiếu: giữ nguyên worktree, ghi rõ lý do vào STATUS.md phần "Worktree đang mở", để chủ dự án quyết.
 
 ### Sau khi merge nhánh vào main
 1. Chạy test + tsc trên main — PASS mới tiếp.
