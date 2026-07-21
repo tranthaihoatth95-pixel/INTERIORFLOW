@@ -5,7 +5,7 @@
 > ⚠️ Nhãn hiển thị đổi 20/07 (Layout CAD→Drafting CAD · Render→Rendering · Present→Presenting). **ID nội bộ GIỮ NGUYÊN** `concept`/`render`/`present` — mọi khoá localStorage/route/tên file không đổi. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (local vượt origin, chưa push). Verify SHA bằng git. Toàn bộ đợt 19-21/07 ĐÃ MERGE hết (danh sách đầy đủ → CHANGELOG); mới nhất: **M1 Home/Gallery↔Larkbase · ambient cover glow · gesture audit · Vitas AI · card kính trong hơn+khúc xạ** (tint 0.20→0.14, rim bất đối xứng + vệt chéo 115°, tương phản 28/28 pass).
+- Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (local vượt origin, chưa push). Verify SHA bằng git. Toàn bộ đợt 19-21/07 ĐÃ MERGE hết (danh sách đầy đủ → CHANGELOG); mới nhất: **M1 Home/Gallery↔Larkbase · ambient cover glow · gesture audit · Vitas AI (Gallery + giọt kính ở chặng) · card kính trong hơn+khúc xạ · CAD workflow thực tế** (import hiện trạng → dossier-check ✓/⚠️/✗ · option đặt VÀO phòng thật · ML học layout được dùng · click-outside/Esc + draft cache).
   - ⚠️ **CHỜ USER VERIFY bằng mắt:** .pptx nhúng font (PowerPoint thật) · frame-timing chuyển chặng.
   - **M1 Larkbase**: `LarkTaskRef`/`LarkPersonRef`/`LarkUserMap` + `Project.larkProjectCode` · provider `lib/integrations/providers/lark.ts` · Gallery pill cảnh báo/nút "Chi tiết"(3 tab)/"Đồng bộ"/liên kết tuỳ chọn · Home+logo về `/`. **CHỜ USER cấp `LARK_APP_ID/SECRET/LARK_BASE_APP_TOKEN`** (`docs/INTEGRATIONS.md`). Nợ: chưa link-picker grid >8.
   - **Ambient cover glow**: nền Gallery đổi theo ảnh bìa card focus (carousel only).
@@ -13,10 +13,10 @@
   - **Vitas AI**: thanh chat Gallery + giọt kính ở CHẶNG (kéo tab ≥28px xuống → panel `.lq-card` không backdrop, click/trượt ngang chuyển chặng y hệt cũ; fallback ⌘J + tooltip). Route `app/api/ai-assist-chat` (auth) dùng `completeTextTiered` (NVIDIA→Ollama); v1 không lưu DB. KHÁC "Chat nhóm".
   - ⚠️ **RÒ RỈ KHÓA**: verify Vitas lỡ in `NVIDIA_API_KEY` ra transcript agent — **USER NÊN ROTATE KEY** ở build.nvidia.com rồi thay `.env.local`.
 - **8 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** — đọc thẳng từng file (`RESEARCH-ACCESS-CONTROL/MOBILE-DISTRIBUTION/COMFYUI-LESS/MATERIAL-BRIDGE/TECHNICAL-DRAWING-PIPELINE/TEAM-COLLABORATION/OFFICE-FILE-INTEROP/HOME-GALLERY-DASHBOARD`), đừng chép lại vào đây.
-- Test: `node_modules/.bin/sucrase-node <path>.test.ts` (68 file). KHÔNG có vitest/jest.
+- Test: `node_modules/.bin/sucrase-node <path>.test.ts` (70 file). KHÔNG có vitest/jest.
 
 ## Worktree đang mở
-- `interiorflow-wt-cad-workflow` (`feat/cad-real-workflow`) — agent CAD đang chạy (hoàn tất dossier-check + click-outside/Esc đóng panel).
+- (Không có — dọn sạch 21/07 chiều theo rule an toàn mới CLAUDE.md.)
 
 ## Quyết định user đã khoá
 - **Auth**: email MỌI domain · Google OAuth mọi tài khoản · Microsoft OAuth (Entra ID) — user CHƯA tạo Azure app, nút disabled · quên mật khẩu = admin reset.
@@ -36,4 +36,4 @@
 2. Không tự merge/push lên main. Hạng mục bị chặn không tự khởi động. Sửa đúng phạm vi; bug ngoài phạm vi ghi Nợ kỹ thuật.
 3. **An toàn verify browser — LUẬT MÁU:** cookie định danh theo HOST không theo PORT → dev server worktree PHẢI verify qua **`127.0.0.1:<port>`** (KHÔNG `localhost`); TUYỆT ĐỐI KHÔNG logout/`DELETE /api/auth/me`/xoá cookie. Code đã tự cách ly 2 lớp (`lib/server/auth.ts`): thiếu `AUTH_SECRET` → cookie `if_session_noenv`; chạy từ worktree (`.git` là file) → cookie `if_session_wt`. Cần đăng nhập thật: cấp worktree `.env` + DB riêng (`cp prisma/dev.db prisma/dev.db.wt`, sửa `DATABASE_URL`).
 
-4. Quy tắc worktree & context: xem CLAUDE.md (tối đa 3 worktree; merge xong xoá ngay; STATUS <800 từ, lịch sử → CHANGELOG).
+4. Quy tắc worktree & context: xem CLAUDE.md (tối đa **5** worktree; **cơ chế an toàn tự dọn cuối phiên** — 4 điều kiện đủ mới xoá, không force; STATUS <800 từ, lịch sử → CHANGELOG).
