@@ -373,6 +373,20 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
 
   const manyMode = (flows?.length ?? 0) > 8;
 
+  /* ---------- Ambient cover glow (tvOS-style) — nền trang "lan toả" theo ảnh bìa card đang focus ----------
+   * Chỉ có ý nghĩa ở carousel 3D (desktop, ≤8 flow, không reduce-motion) — đây là NƠI DUY NHẤT có khái
+   * niệm "1 card đang focus" (`active`). Grid tìm kiếm (manyMode) và danh sách phẳng (mobile/reduce) không
+   * có khái niệm đó → không ép ambient vào, giữ nền tĩnh var(--bg) như cũ (đúng gợi ý trong brief).
+   * Card "+ Dự án mới" không có ảnh bìa → GIỮ NGUYÊN ambient của flow gần nhất thay vì tắt đột ngột,
+   * tránh nền chớp tắt khi user lướt hết carousel sang card cuối.
+   */
+  const [ambientSrc, setAmbientSrc] = useState<string | null>(null);
+  useEffect(() => {
+    const focused = items[active];
+    if (focused && focused.kind === 'flow') setAmbientSrc(coverOf(focused.flow));
+  }, [active, items]);
+  const showAmbient = !loadError && flows !== null && !manyMode && !reduce;
+
   const projOptions = useMemo(() => {
     const map = new Map<string, string>();
     for (const f of flows ?? []) if (f.project) map.set(f.project.id, f.project.name);
@@ -1314,6 +1328,38 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
       className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-4 py-12 sm:px-6"
       style={{ background: 'var(--bg)' }}
     >
+      {/* Ambient cover glow — LỚP DƯỚI CÙNG (z thấp nhất), đặt TRƯỚC quầng đồng để không đè lên nó.
+          Ảnh bìa card đang focus, blur rất mạnh + tối đi, crossfade mượt khi đổi card (gu tvOS). */}
+      {showAmbient && ambientSrc && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+          <AnimatePresence mode="sync" initial={false}>
+            <motion.div
+              key={ambientSrc}
+              className="absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.7, ease: easeApple }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={ambientSrc}
+                alt=""
+                draggable={false}
+                className="h-full w-full object-cover"
+                style={{
+                  transform: 'scale(1.2)',
+                  filter: 'blur(80px) saturate(120%) brightness(0.5)',
+                }}
+              />
+              {/* phủ tối thêm — giữ đúng gu quiet-luxury tối, không chói, không giảm tương phản chữ
+                  (chữ/card nằm ở lớp z cao hơn nhiều, không đứng trên lớp này). */}
+              <div className="absolute inset-0" style={{ background: 'rgba(8,7,5,0.55)' }} />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      )}
+
       {/* đổi ngôn ngữ — góc phải trên (giữ ngữ nghĩa StageSelect cũ) */}
       <div className="absolute right-6 top-6 z-20">
         <LangToggle variant="ghost" />
