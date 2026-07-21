@@ -673,7 +673,10 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         const tag = target?.tagName;
         const isOtherControl =
           !!tag && ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT'].includes(tag);
-        if (isOtherControl || target?.isContentEditable || e.defaultPrevented) return;
+        // Guard bổ sung 21/07: khi input Vitals bị disabled (chatSending) focus rơi về body →
+        // Enter kế tiếp lọt qua isOtherControl. Chặn nếu bất kỳ tổ tiên nào là khu chat Vitals.
+        const inVitalsChat = !!target?.closest?.('[data-vitals-chat]');
+        if (isOtherControl || inVitalsChat || target?.isContentEditable || e.defaultPrevented) return;
         e.preventDefault();
         void choose(items[active]);
       }
@@ -1549,7 +1552,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             KHÁC "Chat nhóm" (Header, người-với-người). Nền trong suốt (chỉ hairline + blur),
             placeholder xoay vòng mô tả khả năng. Vùng tin nhắn khi nở ra là OVERLAY kính lỏng
             (.lq-card) ĐÈ LÊN card — KHÔNG chèn vào flow đẩy card xuống (spec bổ sung). */}
-        <div className="relative mb-7 w-full max-w-xl">
+        <div className="relative mb-7 w-full max-w-xl" data-vitals-chat="">
           <div
             className="flex items-center gap-2.5 rounded-full py-2 pl-4 pr-2"
             style={{
@@ -1573,7 +1576,13 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 onKeyDown={(e) => {
                   // stopPropagation: KHÔNG cho ← → / Enter lọt xuống listener điều hướng
                   // gallery toàn cục (đúng pattern input status đã có).
+                  // stopImmediatePropagation trên nativeEvent: chặn LUÔN native
+                  // window.addEventListener('keydown') — React synthetic stopPropagation
+                  // KHÔNG chặn được window listener (React 17+ delegate ở root, không phải window).
+                  // Nếu không có, Enter → sendChat + choose(items[active]) cùng lúc → "vào chặng
+                  // trước khi Vitals trả lời".
                   e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
                   if (e.key === 'Enter') {
                     e.preventDefault();
                     void sendChat();
