@@ -5,10 +5,11 @@
 > ⚠️ Nhãn hiển thị đổi 20/07 (Layout CAD→Drafting CAD · Render→Rendering · Present→Presenting). **ID nội bộ GIỮ NGUYÊN** `concept`/`render`/`present` — mọi khoá localStorage/route/tên file không đổi. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (local vượt origin, chưa push). Verify SHA bằng git. Đợt 19-21/07 (chi tiết đầy đủ → CHANGELOG) ĐÃ MERGE hết: login/contrast, toolbar+IO, Sketch-Pro, Present typography, đổi tên chặng, PPTX font, input, motion, fix-api-auth-p0, login-glass+fix login, báo cáo nghiên cứu, CAD demo mặt bằng 2, CAD "AI mô tả" v2, M0 tỉ lệ khung tên, fix text chồng chữ Presenting, **M1 Home/Gallery↔Larkbase**, **Gallery ambient cover glow**.
+- Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (local vượt origin, chưa push). Verify SHA bằng git. Đợt 19-21/07 (chi tiết đầy đủ → CHANGELOG) ĐÃ MERGE hết: login/contrast, toolbar+IO, Sketch-Pro, Present typography, đổi tên chặng, PPTX font, input, motion, fix-api-auth-p0, login-glass+fix login, báo cáo nghiên cứu, CAD demo mặt bằng 2, CAD "AI mô tả" v2, M0 tỉ lệ khung tên, fix text chồng chữ Presenting, **M1 Home/Gallery↔Larkbase**, **Gallery ambient cover glow**, **gesture audit CAD**.
   - ⚠️ **CHỜ USER VERIFY bằng mắt:** .pptx nhúng font (PowerPoint thật) · frame-timing chuyển chặng.
   - **M1 Larkbase**: `LarkTaskRef`/`LarkPersonRef`/`LarkUserMap` + `Project.larkProjectCode` · provider thật `lib/integrations/providers/lark.ts` · sync/status route · Gallery pill cảnh báo/tooltip chức danh/nút "Chi tiết"(3 tab Bảng·Kanban·Nhân sự)/"Đồng bộ"/liên kết Larkbase tuỳ chọn · Home+logo điều hướng `/`. **CHỜ USER cấp `LARK_APP_ID/SECRET/LARK_BASE_APP_TOKEN`** (xem `docs/INTEGRATIONS.md`). Nợ: chưa link-picker ở grid >8 dự án.
   - **Ambient cover glow**: nền Gallery đổi theo ảnh bìa card đang focus (carousel only, z dưới quầng đồng).
+  - **Gesture audit** (`docs/AUDIT-GESTURES-INPUT.md`): 0 P0, 1 P1 ĐÃ SỬA (phím `E` trên canvas CAD xoá nhầm selection + chặn lệnh gõ tắt EX/EL — `CadCanvas.tsx`), 7 đề xuất P2 chưa làm (Presenting chưa pinch-zoom cảm ứng thật, chưa long-press context menu, Gallery carousel chưa swipe...).
 - **8 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (đọc thẳng từng file, đừng chép lại vào đây):
   - `RESEARCH-ACCESS-CONTROL.md` — phân quyền `ProjectMember` 5 role, 10 câu hỏi §8.
   - `RESEARCH-MOBILE-DISTRIBUTION.md` — bộ cài iOS/macOS/Android.
@@ -18,6 +19,7 @@
   - `RESEARCH-TEAM-COLLABORATION.md` — chat/cộng tác: Phần A (comment CAD+Rendering) rẻ, làm ngay được. Phần B (Presenting real-time) 🔴 Presenting KHÔNG có server source-of-truth cho deck — phải dựng trước khi bàn CRDT/Yjs.
   - `RESEARCH-OFFICE-FILE-INTEROP.md` — mở PPTX/Word/Keynote chỉnh tiếp + bảng tính Excel thật (A/PPTX khả thi · B/Keynote KHÔNG khả thi trực tiếp · C/Word rẻ nhất · D/bảng tính MỚI hoàn toàn). 6 câu hỏi §6.
   - `RESEARCH-HOME-GALLERY-DASHBOARD.md` — M1 ĐÃ XÂY (xem mục "Hiện tại" trên). M2 còn lại: `ProjectMember` pre-fill + cron sync (chờ `RESEARCH-ACCESS-CONTROL.md` build trước).
+- **ĐANG CHẠY:** agent build "Vitas AI" (chat AI tư vấn ở Gallery, khung trong suốt phía trên card + placeholder động).
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (67 file). KHÔNG có vitest/jest.
 
 ## Quyết định user đã khoá

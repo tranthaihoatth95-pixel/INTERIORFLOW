@@ -1783,7 +1783,17 @@ export default function CadCanvas() {
         finishSpline(true);
         return;
       }
-      if (e.key === 'Delete' || (e.key === 'e' && st.tool === 'select')) {
+      // CHỈ phím Delete vật lý xoá tức thì. TRƯỚC ĐÂY phím chữ 'e' (khi tool='select') cũng
+      // xoá tức thì — mô phỏng AutoCAD "gõ E = Erase", NHƯNG bắt phím này TRƯỚC nhánh
+      // type-anywhere bên dưới nên nuốt mất mọi lệnh 2+ chữ bắt đầu bằng E (EX=Extend,
+      // EL=Ellipse, ERASE) — gõ "EX" định vào lệnh Kéo dài lại xoá luôn vật đang chọn ngay ở
+      // phím đầu tiên rồi phím 'x' sau đó rơi vào buffer rỗng, KHÔNG BAO GIỜ gõ được EX/EL/
+      // ERASE qua type-anywhere, và tệ hơn — xoá nhầm dữ liệu đang chọn ngoài ý muốn. Bỏ nhánh
+      // phím 'e' này: type-anywhere bên dưới (isIdle()) đã tự đưa 'e' vào ô lệnh (seed "E",
+      // focus input) — gõ tiếp "x" đúng như input bình thường ⇒ "EX"+Enter vẫn chạy ERASE/
+      // EXTEND đúng lệnh, không mất khả năng gõ tắt, chỉ bỏ phát bắn tức thì gây xung đột.
+      // Backspace vật lý vẫn xoá được khi buffer rỗng (nhánh riêng bên dưới).
+      if (e.key === 'Delete') {
         st.deleteSelected();
         ix.current.redraw = true;
         return;
