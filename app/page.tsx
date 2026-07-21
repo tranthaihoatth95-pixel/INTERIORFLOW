@@ -67,9 +67,28 @@ export default function Home() {
   const isCover = useIsCoverScreen();
   // Sau khi auth thành công → hiện màn CHỌN DỰ ÁN (ProjectSelect) trước canvas.
   // stageDone bật khi người dùng đã chọn dự án & vào canvas.
-  // Persist để quay về '/' (vd thoát khỏi /present-editor hay /photo-editor) vào THẲNG
-  // canvas, không rớt lại ProjectSelect. Khởi tạo false (hydration-safe) rồi khôi phục ở effect.
-  const [stageDone, setStageDone] = useState(false);
+  //
+  // 🔴 Bug chặng CAD↔Rendering (21/07): trước đây khởi tạo `false` rồi chỉ chuyển thành
+  //    `true` sau khi enterAfterAuth() chạy XONG (async, sau /api/auth/me). Mỗi lần
+  //    Home mount lại (vd bấm Render từ /cad-editor → router.push('/')), giữa khoảng mount
+  //    và fetch xong (~50-300ms) return của component rơi vào nhánh `!stageDone` → render
+  //    ProjectSelect (Gallery) BÊN DƯỚI StageVeil. Veil kéo ra sau 2 rAF (~32ms) tiết lộ
+  //    Gallery → dăm milli-giây sau enterAfterAuth setStageDone(true) → flash sang canvas.
+  //    Cảm giác đúng là "chuyển chặng lag/nhảy/văng về đăng nhập" user báo.
+  //    Fix: đọc cờ đồng bộ ngay lúc init state; nếu localStorage stageDone === user.id đã
+  //    có trong store (returning từ studio route) → stageDone=true NGAY từ render đầu.
+  //    Không đụng flow cold-start (user chưa có → false → ProjectSelect như cũ).
+  const [stageDone, setStageDone] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const flag = localStorage.getItem('interiorflow.stageDone');
+      if (!flag) return false;
+      const u = useFlowStore.getState().user;
+      return !!(u && u.id === flag);
+    } catch {
+      return false;
+    }
+  });
   // B-5: Smart Tour lần đầu — bật cho user CHƯA có dấu chân (không resume, không stageDone,
   // chưa tourDone). Bỏ qua/hoàn tất → markTourDone theo user.id, không hiện lại.
   const [tourOn, setTourOn] = useState(false);

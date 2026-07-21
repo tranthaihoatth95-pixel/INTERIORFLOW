@@ -14,7 +14,7 @@
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (70 file). KHÔNG có vitest/jest.
 
 ## Worktree đang mở
-- (Không có — đã dọn sạch theo rule an toàn.)
+- `interiorflow-wt-fix-stage-transition` (nhánh `feat/fix-stage-transition`) — fix bug chặng + dời Home. Chờ merge.
 
 ## Quyết định user đã khoá
 - **Auth**: email MỌI domain · Google OAuth mọi tài khoản · Microsoft OAuth (Entra ID) — user CHƯA tạo Azure app, nút disabled · quên mật khẩu = admin reset.
@@ -22,16 +22,16 @@
 - Perceptron THẬT (learning-to-rank, đã verify wired vào Presenting `LayoutShelf` + mới thêm CAD `AiBriefPanel`) · 3 installer unsigned · PWA Vercel + Supabase (Sprint 4).
 
 ## Nợ kỹ thuật
-- 🔴 **BUG chuyển chặng CAD↔Rendering — user báo VẪN CÒN** (21/07 chiều): lag/nhảy/có lúc văng về màn đăng nhập. Đã fix nhiều lần (motion-audit, cookie isolation) nhưng chưa triệt tiêu. Có 3 nghi vấn cần agent điều tra: HomeButton mới push('/') race auth, Vitas stage-drop pointer handler chặn router, `<Dashboard/>` mount Gallery gây delay/fetch. → phóng agent điều tra + reproduce + 20 vòng test.
+- ✅ **BUG chuyển chặng CAD↔Rendering — FIX 21/07 tối** (nhánh `feat/fix-stage-transition`, worktree `interiorflow-wt-fix-stage-transition`). **Root cause**: `stageDone` state ở `app/page.tsx` khởi tạo `false` rồi chỉ thành `true` sau khi `enterAfterAuth()` chạy xong (async, sau `/api/auth/me` ~50-300ms). Mỗi lần Home mount lại (bấm Render từ `/cad-editor` → `router.push('/')`), giữa khoảng mount và fetch xong, return của component rơi vào nhánh `!stageDone` → render `ProjectSelect` BÊN DƯỚI StageVeil. Veil kéo ra sau 2 rAF (~32ms) → lộ ProjectSelect chớp nhoáng → dăm ms sau setStageDone(true) → flash sang canvas. Người dùng cảm nhận đúng như "lag/nhảy/văng về đăng nhập" (thực ra là ProjectSelect, chớp giữa 2 lần render). **Fix**: `useState(() => {...})` đọc `localStorage.getItem('interiorflow.stageDone')` đồng bộ ngay lúc init, so với `useFlowStore.getState().user?.id` (store persist xuyên route → user đã set từ lần visit trước) → stageDone=true NGAY render đầu, không có khoảng ProjectSelect flash. Nghi vấn 2 (Vitas pointer handler) & 3 (`<Dashboard/>` mount fetch) loại: Vitas onPointerDown chỉ attach window listener trong lúc drag, không đụng router; Dashboard chỉ fetch khi `shown` (dashboardOpen && !coverMode), mount không tốn gì. **Test 20 vòng CAD↔Render**: 0 lỗi, không login, không ProjectSelect. **CHỜ USER VERIFY mắt** frame-timing thật.
+- ✅ **Dời Home cạnh Tin nhắn** (cùng nhánh): trước ở đầu thanh (trước Drafting CAD), nay đặt ngay trước nút Chat (MessageCircle trong StudioBar · MoreMenu ⋯ trong Header).
 - 🔴 **Vitas giọt kính kéo xuống chuyển remotion CHƯA MƯỢT** (21/07 tối, user báo): "khưng 1 chút mới mờ" — motion mở panel còn khựng giữa drag → transform mount. Cùng agent Vitas polish trước cũng đã sửa SVG teardrop mượt hơn nhưng đây là motion **transition** giữa drag-active → panel-open, chưa mượt. Cần sửa: dùng shared layoutId, hoặc pre-mount panel với opacity 0, hoặc easing eases khớp tốt hơn.
 - 🐛 `/cad-editor` warning React `Cannot update a component...` (`CadCanvas`/`StudioBar`) — điều tra sâu nhưng KHÔNG tái hiện được, chưa sửa. Chi tiết → CHANGELOG.
 - ⚠️ **RÒ RỈ NVIDIA_API_KEY** (21/07 sáng): lỡ in trong transcript agent — USER NÊN ROTATE key ở build.nvidia.com rồi thay `.env.local`.
 - [THẤP] Property panel Render không undo được · Sprint 3 B1 `meta` giá/vendor/sku trống · `knowledge/` 121MB cân nhắc Git LFS · M1 Larkbase: chưa link-picker grid >8 dự án.
 
 ## Việc chờ USER DUYỆT (đề xuất đã gửi, chưa phóng agent)
-1. **Bug chặng + dời Home cạnh Tin nhắn** — agent A: điều tra 3 nghi vấn ở Nợ kỹ thuật trên + gộp việc dời Home.
-2. **Chat mở rộng (kiểu Zalo)** — 3 loại kênh (`project`/`direct`/`group`), Prisma model `Channel/ChannelMember/Message` thay `ChatMessage` cũ. 3 câu hỏi cần user quyết trước: (a) ai tạo group, (b) direct cross-project không, (c) thông báo real-time cơ chế gì.
-3. **Vitas roadmap 5 tầng** — Tầng 3 CAD (giải thích Kiểm chuẩn, chuyển chat→AiBriefPanel) làm trước sau khi bug chặng dứt điểm.
+1. **Chat mở rộng (kiểu Zalo)** — 3 loại kênh (`project`/`direct`/`group`), Prisma model `Channel/ChannelMember/Message` thay `ChatMessage` cũ. 3 câu hỏi cần user quyết trước: (a) ai tạo group, (b) direct cross-project không, (c) thông báo real-time cơ chế gì.
+2. **Vitas roadmap 5 tầng** — Tầng 3 CAD (giải thích Kiểm chuẩn, chuyển chat→AiBriefPanel) làm trước sau khi bug chặng dứt điểm.
 
 ## Bị chặn — KHÔNG tự khởi động
 - Intro screen (chờ hình/video — flow hiện tại ĐÃ gỡ intro theo lệnh user) · ML Gu Engine heavy (chồng lấn 2 app khác) · "API team" spec.
