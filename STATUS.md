@@ -7,11 +7,11 @@
 ## Hiện tại
 - Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (local vượt origin, chưa push). Verify SHA bằng git. Đợt 19-21/07 (chi tiết đầy đủ → CHANGELOG) ĐÃ MERGE hết: login/contrast, toolbar+IO, Sketch-Pro, Present typography, đổi tên chặng, PPTX font, input, motion, fix-api-auth-p0, login-glass+fix login, báo cáo nghiên cứu, CAD demo mặt bằng 2, CAD "AI mô tả" v2, M0 tỉ lệ khung tên, fix text chồng chữ Presenting, **M1 Home/Gallery↔Larkbase**, **Gallery ambient cover glow**, **gesture audit CAD**.
   - ⚠️ **CHỜ USER VERIFY bằng mắt:** .pptx nhúng font (PowerPoint thật) · frame-timing chuyển chặng.
-  - **M1 Larkbase**: `LarkTaskRef`/`LarkPersonRef`/`LarkUserMap` + `Project.larkProjectCode` · provider thật `lib/integrations/providers/lark.ts` · sync/status route · Gallery pill cảnh báo/tooltip chức danh/nút "Chi tiết"(3 tab Bảng·Kanban·Nhân sự)/"Đồng bộ"/liên kết Larkbase tuỳ chọn · Home+logo điều hướng `/`. **CHỜ USER cấp `LARK_APP_ID/SECRET/LARK_BASE_APP_TOKEN`** (xem `docs/INTEGRATIONS.md`). Nợ: chưa link-picker ở grid >8 dự án.
-  - **Ambient cover glow**: nền Gallery đổi theo ảnh bìa card đang focus (carousel only, z dưới quầng đồng).
-  - **Gesture audit** (`docs/AUDIT-GESTURES-INPUT.md`): 0 P0, 1 P1 ĐÃ SỬA (phím `E` canvas CAD xoá nhầm selection, chặn lệnh EX/EL), 7 đề xuất P2 chưa làm.
-  - **Vitas AI** (Gallery): thanh chat mảnh trong suốt LUÔN HIỆN trên thẻ dự án, placeholder động xoay vòng, panel hội thoại = overlay kính lỏng `.lq-card` đè lên card (zero layout shift). Route `app/api/ai-assist-chat` (auth dòng đầu) dùng `completeTextTiered` (NVIDIA→Ollama); v1 không lưu DB. KHÁC "Chat nhóm" người-với-người.
-  - ⚠️ **RÒ RỈ KHÓA**: lúc verify Vitas, 1 lệnh `grep` lỡ in nguyên giá trị `NVIDIA_API_KEY` ra transcript agent — **USER NÊN ROTATE KEY ở build.nvidia.com** rồi thay `.env.local`.
+  - **M1 Larkbase**: `LarkTaskRef`/`LarkPersonRef`/`LarkUserMap` + `Project.larkProjectCode` · provider `lib/integrations/providers/lark.ts` · Gallery pill cảnh báo/nút "Chi tiết"(3 tab)/"Đồng bộ"/liên kết tuỳ chọn · Home+logo về `/`. **CHỜ USER cấp `LARK_APP_ID/SECRET/LARK_BASE_APP_TOKEN`** (`docs/INTEGRATIONS.md`). Nợ: chưa link-picker grid >8.
+  - **Ambient cover glow**: nền Gallery đổi theo ảnh bìa card focus (carousel only).
+  - **Gesture audit** (`docs/AUDIT-GESTURES-INPUT.md`): 1 P1 ĐÃ SỬA (phím `E` CAD xoá nhầm selection), 7 P2 chưa làm.
+  - **Vitas AI** (Gallery): thanh chat trong suốt LUÔN HIỆN trên thẻ dự án, placeholder động, hội thoại = overlay `.lq-card` đè lên card (zero layout shift). Route `app/api/ai-assist-chat` (auth) dùng `completeTextTiered` (NVIDIA→Ollama); v1 không lưu DB. KHÁC "Chat nhóm".
+  - ⚠️ **RÒ RỈ KHÓA**: verify Vitas lỡ in `NVIDIA_API_KEY` ra transcript agent — **USER NÊN ROTATE KEY** ở build.nvidia.com rồi thay `.env.local`.
 - **8 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (đọc thẳng từng file, đừng chép lại vào đây):
   - `RESEARCH-ACCESS-CONTROL.md` — phân quyền `ProjectMember` 5 role, 10 câu hỏi §8.
   - `RESEARCH-MOBILE-DISTRIBUTION.md` — bộ cài iOS/macOS/Android.
