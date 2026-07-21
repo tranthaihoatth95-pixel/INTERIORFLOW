@@ -59,11 +59,20 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   const [dragging, setDragging] = useState(false);
   const [hintShown, setHintShown] = useState(false);
   const [hover, setHover] = useState(false);
-  /** 21/07 — onboarding first-time: hiện 5s bong bóng "Bấm để hỏi Vitals · Ask Vitals" lần đầu
-   *  user vào bất kỳ chặng nào, key localStorage `interiorflow.vitals.hint_seen`. Không cần hover. */
+  /** 21/07 v2 — onboarding rõ hơn (user báo "ai mà biết"): key mới `hint_seen_v2` reset cho
+   *  mọi user cũ. Lần đầu vào bất kỳ chặng: sau 1s giọt kính "chào" bằng 1 drip rõ + tooltip
+   *  6s "Kéo xuống để hỏi Vitals · Drag down to ask" có mũi tên chỉ xuống. */
   const [onboardingHint, setOnboardingHint] = useState(false);
+  /** Reminder tooltip cho user chưa từng drag: hiện 3s mỗi 60s, tối đa 3 lần/session. */
+  const [reminderHint, setReminderHint] = useState(false);
+  /** true khi cần chạy 1 drip "chào" đầu tiên (biên độ lớn hơn drip hint thường). */
+  const [greetingDrip, setGreetingDrip] = useState(false);
+  /** true khi drip hint chu kỳ chạy (idle 8-12s / lần). */
+  const [dripHint, setDripHint] = useState(false);
   const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onboardingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dripTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reminderTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   /** true = cử chỉ kéo vừa bắn Vitals → nuốt click kế tiếp, KHÔNG cho chuyển chặng nhầm. */
   const suppressClick = useRef(false);
   /** px giọt đang bị kéo dãn (0..threshold+8) — motion value để không re-render 60fps. */
@@ -80,6 +89,15 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   const openVitals = () => {
     markVitalsUsed();
     setHintShown(false);
+    setReminderHint(false);
+    // Lần drag đầu tiên → khoá reminder loop v2 vĩnh viễn.
+    try {
+      localStorage.setItem('interiorflow.vitals.first_drag_done', '1');
+    } catch {}
+    if (reminderTimer.current) {
+      clearInterval(reminderTimer.current);
+      reminderTimer.current = null;
+    }
     setVitalsOpen(true);
   };
 
@@ -103,27 +121,89 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   useEffect(() => () => {
     if (hintTimer.current) clearTimeout(hintTimer.current);
     if (onboardingTimer.current) clearTimeout(onboardingTimer.current);
+    if (dripTimer.current) clearTimeout(dripTimer.current);
+    if (reminderTimer.current) clearInterval(reminderTimer.current);
   }, []);
 
-  // Onboarding first-time — 5s. Chỉ đọc/ghi localStorage client-side (SSR-safe check).
+  // Onboarding v2 — 6s + greeting drip. Key mới `hint_seen_v2` reset cho tất cả user cũ.
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    let seen = false;
     try {
-      if (localStorage.getItem('interiorflow.vitals.hint_seen') === '1') return;
+      seen = localStorage.getItem('interiorflow.vitals.hint_seen_v2') === '1';
     } catch {
       return;
     }
-    setOnboardingHint(true);
+    if (seen) return;
+    // Sau 1s: giọt kính "chào" bằng 1 drip biên độ lớn + tooltip 6s có mũi tên chỉ xuống.
+    const greetTimer = setTimeout(() => {
+      setGreetingDrip(true);
+      setOnboardingHint(true);
+      setTimeout(() => setGreetingDrip(false), 900);
+    }, 1000);
     onboardingTimer.current = setTimeout(() => {
       setOnboardingHint(false);
       try {
-        localStorage.setItem('interiorflow.vitals.hint_seen', '1');
+        localStorage.setItem('interiorflow.vitals.hint_seen_v2', '1');
       } catch {}
-    }, 5000);
+    }, 7000);
     return () => {
+      clearTimeout(greetTimer);
       if (onboardingTimer.current) clearTimeout(onboardingTimer.current);
     };
   }, []);
+
+  // Drip hint chu kỳ 8-12s (randomize để tự nhiên) — motion "giọt sắp rơi" 800ms.
+  // Không chạy khi đang drag/hover/vitalsOpen/reduce-motion/greetingDrip đang chạy.
+  useEffect(() => {
+    if (reduce) return;
+    if (dragging || vitalsOpen) return;
+    let alive = true;
+    const schedule = () => {
+      if (!alive) return;
+      const delay = 8000 + Math.random() * 4000; // 8-12s
+      dripTimer.current = setTimeout(() => {
+        if (!alive) return;
+        setDripHint(true);
+        setTimeout(() => {
+          if (!alive) return;
+          setDripHint(false);
+          schedule();
+        }, 800);
+      }, delay);
+    };
+    schedule();
+    return () => {
+      alive = false;
+      if (dripTimer.current) clearTimeout(dripTimer.current);
+    };
+  }, [reduce, dragging, vitalsOpen]);
+
+  // Reminder loop — user chưa từng drag: mỗi 60s hiện 3s tooltip nhắc, tối đa 3 lần/session.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    let done = false;
+    try {
+      done = localStorage.getItem('interiorflow.vitals.first_drag_done') === '1';
+    } catch {
+      return;
+    }
+    if (done) return;
+    let count = 0;
+    reminderTimer.current = setInterval(() => {
+      if (count >= 3 || vitalsOpen) return;
+      count += 1;
+      setReminderHint(true);
+      setTimeout(() => setReminderHint(false), 3000);
+      if (count >= 3 && reminderTimer.current) {
+        clearInterval(reminderTimer.current);
+        reminderTimer.current = null;
+      }
+    }, 60000);
+    return () => {
+      if (reminderTimer.current) clearInterval(reminderTimer.current);
+    };
+  }, [vitalsOpen]);
 
   // Nhấn xuống trên thanh → theo dõi cử chỉ ở mức window (KHÔNG setPointerCapture:
   // capture sẽ cướp click khỏi tab và phá chuyển chặng). Tracker thuần quyết định:
@@ -280,43 +360,99 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         })}
       </div>
 
-      {/* ---------- Vitals — giọt kính ẩn ở mép dưới thanh ---------- */}
-      {/* Gợn kính TĨNH: chỉ hé ra khi hover (visual hint tinh tế, không phải nút).
-          Đứng yên giữa thanh, như một giọt sắp đọng ở mép kính. */}
+      {/* ---------- Vitals — GIỌT KÍNH LỎNG (Apple Vision Pro style) ---------- */}
+      {/* Chồm 6px dưới thanh: nhấn mạnh "kéo xuống" + không lấn tab. Teardrop SVG bezier
+          (24×32 default), inner highlight specular, hairline border gradient cam→navy,
+          subtle drop-shadow cam. Motion 3 lớp: idle 4s breathing · drip hint 8-12s /
+          800ms · hover -2px scale 1.08. Onboarding v2 chạy 1 greeting drip biên độ lớn. */}
       {!reduce && (
-        <motion.span
+        <motion.div
           aria-hidden
           animate={
-            hover && !dragging && !vitalsOpen
-              ? { opacity: 0.75, scale: 1.06 }
-              : !dragging && !vitalsOpen
-                ? { opacity: [0.85, 1, 0.85], scale: 1 }
-                : { opacity: 0, scale: 1 }
+            vitalsOpen || dragging
+              ? { opacity: 0, y: 0, scale: 1 }
+              : greetingDrip
+                ? { opacity: [1, 0.85, 1], y: [0, 4, 0], scaleY: [1, 1.1, 1] }
+                : dripHint
+                  ? { opacity: [1, 0.85, 1], y: [0, 2, 0, -1, 0], scaleY: [1, 1.05, 1, 1, 1] }
+                  : hover
+                    ? { opacity: 1, y: -2, scale: 1.08 }
+                    : { opacity: [0.9, 1, 0.9], y: 0, scale: 1, scaleY: 1 }
           }
           transition={
-            hover
-              ? { duration: 0.25, ease: easeApple }
-              : { opacity: { duration: 3, repeat: Infinity, ease: 'easeInOut' }, scale: { duration: 0.25 } }
+            greetingDrip
+              ? { duration: 0.9, ease: easeApple }
+              : dripHint
+                ? { duration: 0.8, ease: easeApple }
+                : hover
+                  ? { duration: 0.25, ease: easeApple }
+                  : { opacity: { duration: 4, repeat: Infinity, ease: 'easeInOut' } }
           }
           style={{
             position: 'absolute',
             left: '50%',
-            bottom: -2.5,
-            width: 18,
-            height: 3,
-            borderRadius: '0 0 9px 9px',
-            background: 'linear-gradient(rgba(255,255,255,0.3), rgba(255,255,255,0.12))',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.18), inset 0 0 2px rgba(255,255,255,0.35)',
+            bottom: -6,
+            width: 24,
+            height: 32,
+            transform: 'translateX(-50%)',
             transformOrigin: '50% 0%',
-            x: '-50%',
             pointerEvents: 'none',
+            filter: hover
+              ? 'drop-shadow(0 6px 14px rgba(240,96,32,0.38))'
+              : 'drop-shadow(0 4px 10px rgba(240,96,32,0.22))',
           }}
-        />
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="32"
+            viewBox="0 0 40 56"
+            aria-hidden="true"
+          >
+            <defs>
+              <linearGradient id="vitals-teardrop-stroke" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#F06020" stopOpacity="0.55" />
+                <stop offset="100%" stopColor="#002850" stopOpacity="0.5" />
+              </linearGradient>
+              <linearGradient id="vitals-teardrop-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="rgba(255,255,255,0.28)" />
+                <stop offset="60%" stopColor="rgba(240,96,32,0.10)" />
+                <stop offset="100%" stopColor="rgba(0,40,80,0.14)" />
+              </linearGradient>
+              <filter id="vitals-teardrop-blur" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="0.4" />
+              </filter>
+            </defs>
+            {/* Teardrop path: đỉnh nhọn thuôn (20,2), phình tròn đáy — tỉ lệ ~1:1.4.
+                Bezier đối xứng 2 bên. */}
+            <path
+              d="M 20 2
+                 C 20 12, 6 22, 6 34
+                 A 14 14 0 0 0 34 34
+                 C 34 22, 20 12, 20 2 Z"
+              fill="url(#vitals-teardrop-fill)"
+              stroke="url(#vitals-teardrop-stroke)"
+              strokeWidth="1"
+              filter="url(#vitals-teardrop-blur)"
+            />
+            {/* Specular highlight — giọt nước thật: ellipse trắng nhỏ lệch đỉnh phải. */}
+            <ellipse
+              cx="15"
+              cy="18"
+              rx="3.2"
+              ry="5.4"
+              fill="rgba(255,255,255,0.55)"
+              transform="rotate(-18 15 18)"
+            />
+          </svg>
+        </motion.div>
       )}
 
-      {/* Onboarding first-time bong bóng — 5s lần đầu vào bất cứ chặng nào. */}
+      {/* Onboarding v2 + reminder loop — bong bóng dưới giọt kính, có mũi tên chỉ xuống
+          để user hiểu ngay "kéo cái này xuống". Onboarding hiện 6s lần đầu; reminder
+          hiện 3s mỗi 60s (max 3 lần/session) khi user chưa từng drag. */}
       <AnimatePresence>
-        {onboardingHint && !vitalsOpen && !dragging && (
+        {(onboardingHint || reminderHint) && !vitalsOpen && !dragging && (
           <motion.div
             key="vitals-onboarding"
             initial={{ opacity: 0, y: reduce ? 0 : -4 }}
@@ -324,22 +460,26 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
             exit={{ opacity: 0, transition: { duration: 0.2, ease: easeApple } }}
             style={{
               position: 'absolute',
-              top: 'calc(100% + 10px)',
+              top: 'calc(100% + 34px)',
               left: '50%',
               transform: 'translateX(-50%)',
               zIndex: 56,
-              padding: '5px 11px',
+              padding: '6px 12px',
               borderRadius: 8,
               border: '1px solid var(--border)',
               background: 'var(--card)',
               boxShadow: '0 6px 18px -6px rgba(0,0,0,0.28)',
               fontSize: 11,
-              color: 'var(--t3)',
+              color: 'var(--t2)',
               whiteSpace: 'nowrap',
               pointerEvents: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
             }}
           >
-            Bấm để hỏi Vitals · Ask Vitals
+            <span aria-hidden style={{ fontSize: 13, lineHeight: 1, color: '#F06020' }}>↓</span>
+            Kéo xuống để hỏi Vitals · Drag down to ask
           </motion.div>
         )}
       </AnimatePresence>
