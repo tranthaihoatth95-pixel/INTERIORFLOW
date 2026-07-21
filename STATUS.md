@@ -10,13 +10,13 @@
   - **M1 Larkbase**: `LarkTaskRef`/`LarkPersonRef`/`LarkUserMap` + `Project.larkProjectCode` · provider `lib/integrations/providers/lark.ts` · Gallery pill cảnh báo/nút "Chi tiết"(3 tab)/"Đồng bộ"/liên kết tuỳ chọn · Home+logo về `/`. **CHỜ USER cấp `LARK_APP_ID/SECRET/LARK_BASE_APP_TOKEN`** (`docs/INTEGRATIONS.md`). Nợ: chưa link-picker grid >8.
   - **Ambient cover glow**: nền Gallery đổi theo ảnh bìa card focus (carousel only).
   - **Gesture audit** (`docs/AUDIT-GESTURES-INPUT.md`): 1 P1 ĐÃ SỬA (phím `E` CAD xoá nhầm selection), 7 P2 chưa làm.
-  - **Vitas AI**: thanh chat Gallery + giọt kính ở CHẶNG (kéo tab ≥28px xuống → panel `.lq-card` không backdrop, click/trượt ngang chuyển chặng y hệt cũ; fallback ⌘J + tooltip). Route `app/api/ai-assist-chat` (auth) dùng `completeTextTiered` (NVIDIA→Ollama); v1 không lưu DB. KHÁC "Chat nhóm".
+  - **Vitas AI**: thanh chat Gallery + giọt kính ở CHẶNG (kéo tab ≥28px xuống → panel `.lq-card` không backdrop; ⌘J fallback). Bong bóng chat iMessage-style, typing 3-chấm, `VitasIcon` giọt+chữ V. Backend `app/api/ai-assist-chat` (auth) + `completeTextTiered` (NVIDIA→Ollama), v1 không DB. KHÁC "Chat nhóm".
   - ⚠️ **RÒ RỈ KHÓA**: verify Vitas lỡ in `NVIDIA_API_KEY` ra transcript agent — **USER NÊN ROTATE KEY** ở build.nvidia.com rồi thay `.env.local`.
 - **8 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** — đọc thẳng từng file (`RESEARCH-ACCESS-CONTROL/MOBILE-DISTRIBUTION/COMFYUI-LESS/MATERIAL-BRIDGE/TECHNICAL-DRAWING-PIPELINE/TEAM-COLLABORATION/OFFICE-FILE-INTEROP/HOME-GALLERY-DASHBOARD`), đừng chép lại vào đây.
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (70 file). KHÔNG có vitest/jest.
 
 ## Worktree đang mở
-- `interiorflow-wt-vitas-polish` (feat/vitas-ui-polish, 21/07 tối) — Vitas UI polish theo 2 ảnh user chê: (1) SVG teardrop + feGaussianBlur thay div-borderRadius để giọt kính mượt hoá; (2) `VitasChatBubble.tsx` bong bóng iMessage bo tròn không đối xứng + typing 3-chấm CSS (fallback reduce-motion → text); (3) `VitasIcon.tsx` glyph giọt+chữ V thay Lucide Sparkles. Áp cả `VitasStageDrop` (giọt chặng) + `ProjectSelect` (Gallery chat). tsc sạch · 70 test cũ pass · verify browser 127.0.0.1:3010 (DB riêng `dev.db.wt`). Chưa merge/push, đợi user OK.
+- (Không có — đã dọn sạch theo rule an toàn.)
 
 ## Quyết định user đã khoá
 - **Auth**: email MỌI domain · Google OAuth mọi tài khoản · Microsoft OAuth (Entra ID) — user CHƯA tạo Azure app, nút disabled · quên mật khẩu = admin reset.
