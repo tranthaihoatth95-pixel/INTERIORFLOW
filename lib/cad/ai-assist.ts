@@ -157,6 +157,8 @@ const KEYWORD_TO_BLOCK: Record<string, string> = {
   'sofa 3': 'sofa3', 'sofa 2': 'sofa2', 'ghế sofa': 'sofa3', 'sofa': 'sofa3',
   'ghế bành': 'armchair',
   'bàn ăn 8': 'dining8', 'bàn ăn 6': 'dining6', 'bàn ăn 4': 'dining4', 'bàn ăn': 'dining4',
+  'bàn trà': 'coffeeTable', // 21/07: block coffeeTable ĐÃ có sẵn trong furniture.ts, chỉ thiếu từ khoá
+
   'bàn làm việc': 'desk', 'bàn học': 'desk',
   'bồn cầu': 'toilet', 'lavabo': 'lavabo', 'chậu rửa': 'lavabo', 'bồn tắm': 'bathtub',
   'bếp': 'kitchenI',
@@ -217,18 +219,30 @@ export function parseDescription(text: string): LayoutSpec {
   // tách thô theo dấu mạnh, rồi gộp lại các mảnh không phải "phòng" vào phòng trước đó
   const raw = lower.split(/\n|;|(?:,|\bvà\b)(?=[^,]*(?:phòng|bếp|wc|vệ sinh|hành lang))/);
   const clauses = raw.map((s) => s.trim()).filter(Boolean);
-  const rooms: RoomSpec[] = clauses.map((clause) => {
+  const rooms: RoomSpec[] = [];
+  for (const clause of clauses) {
     const fn = detectFunction(clause);
-    const dims = parseDims(clause) ?? DEFAULT_SIZE[fn];
+    const dimsParsed = parseDims(clause);
     const items = extractItems(clause);
-    return {
+    // 21/07: THỰC HIỆN đúng lời hứa "gộp mảnh không phải phòng vào phòng trước đó" (comment cũ
+    // hứa nhưng code cũ chưa làm): mảnh chỉ liệt kê nội thất — không công năng, không từ khoá
+    // phòng, không kích thước (VD "..., bàn trà" bị lookahead cắt rời vì vế SAU NỮA có "phòng")
+    // → nối items vào phòng đứng trước thay vì sinh 1 phòng generic rỗng thừa.
+    const hasRoomWord = /phòng|bếp|wc|vệ sinh|toilet|nhà tắm|hành lang|văn phòng/.test(clause);
+    if (rooms.length && fn === 'generic' && !hasRoomWord && !dimsParsed) {
+      const prev = rooms[rooms.length - 1];
+      for (const id of items) if (!prev.items.includes(id)) prev.items.push(id);
+      continue;
+    }
+    const dims = dimsParsed ?? DEFAULT_SIZE[fn];
+    rooms.push({
       name: detectName(clause, fn),
       fn,
       w: dims.w,
       h: dims.h,
       items: items.length ? items : [...DEFAULT_ITEMS[fn]],
-    };
-  });
+    });
+  }
   const finalRooms = rooms.length ? rooms : [{ name: DEFAULT_NAME.generic, fn: 'generic' as RoomFunction, ...DEFAULT_SIZE.generic, items: [] }];
   // HOOK ML pha 1: phân loại operator (TẤT ĐỊNH, 0 key/GPU) từ text + công năng phòng + block đã
   // rút. PHỤ-THÊM — chỉ gắn metadata `operator` vào spec, KHÔNG đổi `rooms`/toạ độ solver.
@@ -343,10 +357,11 @@ function placeFurniture(
   interior: { ix0: number; iy0: number; ix1: number; iy1: number },
   furnLayer: string,
   variant: WallVariant = 0,
+  preOccupied: Footprint[] = [], // 21/07: đồ CÓ SẴN trong phòng hiện trạng — né như món đã đặt
 ): { entities: Entity[]; skipped: string[] } {
   const out: Entity[] = [];
   const skipped: string[] = [];
-  const placed: Footprint[] = [];
+  const placed: Footprint[] = [...preOccupied];
 
   for (const id of items) {
     const def = BLOCK_MAP[id];
@@ -465,6 +480,51 @@ export interface LayoutOption {
   /** Biến thể tường đã dùng để sinh option này — caller (UI feedback) đọc trực tiếp, KHÔNG cần
    * parse lại từ `id`. */
   variant: WallVariant;
+  /** 21/07 (quy trình CAD thực tế): tên các phòng HIỆN TRẠNG mà option này đã đặt nội thất VÀO
+   * (map từ đề bài qua matchBriefToRooms). undefined/rỗng = option vẽ phòng mới (hành vi cũ). */
+  placedInto?: string[];
+}
+
+/* ═══════════════════════ BỐ TRÍ VÀO HIỆN TRẠNG (21/07 — quy trình CAD thực tế) ═══════════════════════ */
+
+/** 1 phòng THẬT của hiện trạng — cung cấp bởi dossier-check (ExistingRoomTarget), ai-assist chỉ
+ * cần tên (để map đề bài) + hình bao lòng phòng (feed placeFurniture). */
+export interface TargetRoom {
+  name: string;
+  interior: { ix0: number; iy0: number; ix1: number; iy1: number };
+  /** AABB đồ đạc ĐÃ CÓ SẴN trong phòng hiện trạng ({x,y}=tâm, ex/ey=kích thước đầy đủ, mm) —
+   * solver coi như "món đã đặt" và né ra (khác flow phòng-tự-sinh vốn luôn trống). Không truyền
+   * ⇒ coi phòng trống (hành vi cũ). */
+  obstacles?: { x: number; y: number; ex: number; ey: number }[];
+}
+
+/** Chuẩn hoá tên phòng để so khớp gần đúng: thường hoá + đổi dấu chấm/gạch thành khoảng trắng
+ * ("P.NGỦ" → "p ngủ", "PHÒNG NGỦ 1" → "phòng ngủ 1"). */
+function normRoomName(s: string): string {
+  return s.toLowerCase().replace(/[.\-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Map từng phòng ĐỀ BÀI → phòng HIỆN TRẠNG theo tên gần đúng, TẤT ĐỊNH, mỗi phòng hiện trạng
+ * dùng tối đa 1 lần (2 phòng ngủ trong đề bài ăn lần lượt "PHÒNG NGỦ 1"/"PHÒNG NGỦ 2").
+ * Thứ tự ưu tiên mỗi phòng đề bài:
+ *   1) tên chuẩn hoá TRÙNG hẳn hoặc chứa nhau ("phòng ngủ" ↔ "phòng ngủ 1");
+ *   2) cùng CÔNG NĂNG — detectFunction trên tên hiện trạng ("P.NGỦ" chứa 'ngủ' → bedroom).
+ * Không khớp được → null (caller giữ hành vi cũ: sinh phòng mới cạnh bản vẽ + ghi chú rõ).
+ */
+export function matchBriefToRooms(specRooms: RoomSpec[], targets: TargetRoom[]): (number | null)[] {
+  const used = new Set<number>();
+  const normTargets = targets.map((t) => normRoomName(t.name));
+  return specRooms.map((spec) => {
+    const sName = normRoomName(spec.name);
+    let idx = normTargets.findIndex((tn, i) => !used.has(i) && (tn === sName || tn.includes(sName) || sName.includes(tn)));
+    if (idx < 0 && spec.fn !== 'generic') {
+      idx = normTargets.findIndex((tn, i) => !used.has(i) && detectFunction(tn) === spec.fn);
+    }
+    if (idx < 0) return null;
+    used.add(idx);
+    return idx;
+  });
 }
 
 /**
@@ -490,7 +550,14 @@ export function generateLayoutOptions(
   textLayer: string,
   wallThickness = 110,
   furnLayer = 'l-furniture',
-  opts?: { scaleFactor?: number },
+  opts?: {
+    scaleFactor?: number;
+    /** 21/07 (quy trình CAD thực tế): danh sách phòng THẬT của hiện trạng (từ dossier-check).
+     * Có ⇒ option đặt nội thất VÀO phòng thật (map tên qua matchBriefToRooms, KHÔNG vẽ tường/
+     * nhãn mới cho phòng khớp); phòng đề bài không khớp được ⇒ hành vi cũ (sinh phòng mới tại
+     * `origin` cạnh bản vẽ) + ghi chú rõ trong note. Không truyền/rỗng ⇒ hành vi cũ nguyên vẹn. */
+    targetRooms?: TargetRoom[];
+  },
 ): LayoutOption[] {
   const scaleFactor = opts?.scaleFactor && Number.isFinite(opts.scaleFactor) && opts.scaleFactor > 0 ? opts.scaleFactor : 1;
   const parsed = parseDescription(text);
@@ -510,6 +577,43 @@ export function generateLayoutOptions(
     { variant: 1, label: 'Đối diện — nội thất áp tường ngược lại' },
     { variant: 2, label: 'Xoay 90° — nội thất áp tường bên cạnh' },
   ];
+
+  // ── Đường MỚI 21/07: có hiện trạng → đặt nội thất VÀO phòng thật (map 1 lần, TẤT ĐỊNH —
+  // 3 variant chỉ đổi mặt tường ưu tiên trong CÙNG phòng đã map). Không có target → đường cũ
+  // bên dưới chạy NGUYÊN VẸN.
+  const targets = opts?.targetRooms ?? [];
+  if (targets.length) {
+    const matches = matchBriefToRooms(spec.rooms, targets);
+    return VARIANTS.map(({ variant, label }, i) => {
+      const entities: Entity[] = [];
+      const placedInto: string[] = [];
+      const placedDesc: string[] = [];
+      const skippedAll: string[] = [];
+      const unmatched: RoomSpec[] = [];
+      spec.rooms.forEach((room, ri) => {
+        const ti = matches[ri];
+        if (ti === null) { unmatched.push(room); return; }
+        const t = targets[ti];
+        const fr = placeFurniture(room.items, t.interior, furnLayer, variant, t.obstacles ?? []);
+        entities.push(...fr.entities);
+        if (fr.skipped.length) skippedAll.push(`${t.name}: ${fr.skipped.join(', ')}`);
+        placedInto.push(t.name);
+        placedDesc.push(`${room.name} → ${t.name} (${fr.entities.length} món)`);
+      });
+      let note = placedDesc.length
+        ? `Bố trí VÀO hiện trạng: ${placedDesc.join(' · ')}.`
+        : 'Không map được phòng nào của đề bài vào hiện trạng.';
+      if (unmatched.length) {
+        // hành vi cũ cho phần không khớp: sinh phòng mới cạnh bản vẽ + ghi chú rõ
+        const sub = layoutToEntities({ rooms: unmatched }, origin, wallLayer, textLayer, furnLayer, wallThickness, variant);
+        entities.push(...sub.entities);
+        note += ` KHÔNG khớp phòng hiện trạng — vẽ phòng MỚI cạnh bản vẽ: ${unmatched.map((r) => r.name).join(', ')}. ${sub.note}`;
+      }
+      if (skippedAll.length) note += ` — CHƯA đủ chỗ (đã bỏ để tránh chồng lấn): ${skippedAll.join('; ')}.`;
+      if (spec.operator && spec.operator !== 'generic') note += ` Nhận diện vận hành: ${spec.operator}.`;
+      return { id: `opt-${i}-v${variant}`, label, entities, note, operator: spec.operator, variant, placedInto };
+    });
+  }
 
   return VARIANTS.map(({ variant, label }, i) => {
     const result = layoutToEntities(spec, origin, wallLayer, textLayer, furnLayer, wallThickness, variant);

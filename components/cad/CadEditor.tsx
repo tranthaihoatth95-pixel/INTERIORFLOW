@@ -80,6 +80,19 @@ export default function CadEditor() {
 
   const status = useCadStore((s) => s.status);
 
+  // 21/07 (quy trình CAD thực tế): AiBriefPanel bước 1 "Import hồ sơ CAD" TÁI DÙNG đúng 2 input
+  // file + handler DXF/DWG ở dưới (onImportFile/onImportDwgFile) — panel không có ref tới input
+  // nên bắc cầu bằng CustomEvent, cùng pattern 'cad:idf-export-request' đã dùng trong file này.
+  useEffect(() => {
+    const onImportRequest = (e: Event) => {
+      const kind = (e as CustomEvent<{ kind?: string }>).detail?.kind;
+      if (kind === 'dwg') dwgRef.current?.click();
+      else fileRef.current?.click();
+    };
+    window.addEventListener('cad:import-request', onImportRequest);
+    return () => window.removeEventListener('cad:import-request', onImportRequest);
+  }, []);
+
   // export/handoff nghe từ toolbar? Ở đây làm nút riêng trên thanh file.
   const doExportPng = () => {
     const doc = useCadStore.getState().doc;

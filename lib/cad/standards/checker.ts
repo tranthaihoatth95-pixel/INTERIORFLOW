@@ -69,6 +69,11 @@ export interface RoomInfo {
   at: Pt;
   areaM2: number | null;
   minWidthMm: number | null;
+  /** 21/07 (quy trình CAD thực tế — lib/cad/dossier-check.ts): biên phòng ĐÃ dò được bằng
+   * findHatchBoundary — vốn được tính sẵn bên trong findRoomLabels() nhưng trước đây vứt đi sau
+   * khi đo areaM2/minWidthMm. Trả thêm ra (optional, ADDITIVE) để dossier-check/AiBriefPanel lấy
+   * hình bao lòng phòng thật mà KHÔNG phải chạy lại DCEL lần 2. undefined = không dò được biên. */
+  poly?: Pt[];
 }
 
 // TOÀN chữ hoa Unicode (khớp cả chữ Việt có dấu hoa)/số/khoảng trắng/dấu chấm/dấu cộng — lọc
@@ -112,6 +117,7 @@ export function findRoomLabels(doc: Doc): RoomInfo[] {
       at: t.at,
       areaM2: poly ? polygonArea(poly) / 1e6 : null,
       minWidthMm: poly ? polygonMinWidth(poly) : null,
+      poly: poly ?? undefined,
     });
   }
   return rooms;
