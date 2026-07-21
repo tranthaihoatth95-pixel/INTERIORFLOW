@@ -10,6 +10,8 @@
   - **M1 Larkbase**: `LarkTaskRef`/`LarkPersonRef`/`LarkUserMap` + `Project.larkProjectCode` · provider thật `lib/integrations/providers/lark.ts` · sync/status route · Gallery pill cảnh báo/tooltip chức danh/nút "Chi tiết"(3 tab Bảng·Kanban·Nhân sự)/"Đồng bộ"/liên kết Larkbase tuỳ chọn · Home+logo điều hướng `/`. **CHỜ USER cấp `LARK_APP_ID/SECRET/LARK_BASE_APP_TOKEN`** (xem `docs/INTEGRATIONS.md`). Nợ: chưa link-picker ở grid >8 dự án.
   - **Ambient cover glow**: nền Gallery đổi theo ảnh bìa card đang focus (carousel only, z dưới quầng đồng).
   - **Gesture audit** (`docs/AUDIT-GESTURES-INPUT.md`): 0 P0, 1 P1 ĐÃ SỬA (phím `E` canvas CAD xoá nhầm selection, chặn lệnh EX/EL), 7 đề xuất P2 chưa làm.
+  - **Vitas AI** (Gallery): thanh chat mảnh trong suốt LUÔN HIỆN trên thẻ dự án, placeholder động xoay vòng, panel hội thoại = overlay kính lỏng `.lq-card` đè lên card (zero layout shift). Route `app/api/ai-assist-chat` (auth dòng đầu) dùng `completeTextTiered` (NVIDIA→Ollama); v1 không lưu DB. KHÁC "Chat nhóm" người-với-người.
+  - ⚠️ **RÒ RỈ KHÓA**: lúc verify Vitas, 1 lệnh `grep` lỡ in nguyên giá trị `NVIDIA_API_KEY` ra transcript agent — **USER NÊN ROTATE KEY ở build.nvidia.com** rồi thay `.env.local`.
 - **8 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (đọc thẳng từng file, đừng chép lại vào đây):
   - `RESEARCH-ACCESS-CONTROL.md` — phân quyền `ProjectMember` 5 role, 10 câu hỏi §8.
   - `RESEARCH-MOBILE-DISTRIBUTION.md` — bộ cài iOS/macOS/Android.
@@ -19,8 +21,7 @@
   - `RESEARCH-TEAM-COLLABORATION.md` — chat/cộng tác: Phần A (comment CAD+Rendering) rẻ, làm ngay được. Phần B (Presenting real-time) 🔴 Presenting KHÔNG có server source-of-truth cho deck — phải dựng trước khi bàn CRDT/Yjs.
   - `RESEARCH-OFFICE-FILE-INTEROP.md` — mở PPTX/Word/Keynote chỉnh tiếp + bảng tính Excel thật (A/PPTX khả thi · B/Keynote KHÔNG khả thi trực tiếp · C/Word rẻ nhất · D/bảng tính MỚI hoàn toàn). 6 câu hỏi §6.
   - `RESEARCH-HOME-GALLERY-DASHBOARD.md` — M1 ĐÃ XÂY (xem mục "Hiện tại" trên). M2 còn lại: `ProjectMember` pre-fill + cron sync (chờ `RESEARCH-ACCESS-CONTROL.md` build trước).
-- **ĐANG CHẠY:** agent build "Vitas AI" (chat AI ở Gallery, khung trong suốt trên card).
-- Test: `node_modules/.bin/sucrase-node <path>.test.ts` (67 file). KHÔNG có vitest/jest.
+- Test: `node_modules/.bin/sucrase-node <path>.test.ts` (68 file). KHÔNG có vitest/jest.
 
 ## Quyết định user đã khoá
 - **Auth**: email MỌI domain · Google OAuth mọi tài khoản · Microsoft OAuth (Entra ID) — user CHƯA tạo Azure app, nút disabled · quên mật khẩu = admin reset.

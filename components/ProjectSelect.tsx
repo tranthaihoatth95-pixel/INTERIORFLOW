@@ -17,6 +17,8 @@ import {
   Search,
   Info,
   Link2,
+  Sparkles,
+  Send,
 } from 'lucide-react';
 import { easeApple, pressable, springStage } from '@/lib/motion';
 import { useLang } from '@/lib/i18n';
@@ -279,6 +281,9 @@ const darkPill: React.CSSProperties = {
 
 type CardItem = { kind: 'flow'; flow: FlowRow } | { kind: 'new' };
 
+/** Lượt chat "Trợ lý AI" — cùng shape với payload app/api/ai-assist-chat mong đợi. */
+type ChatTurn = { role: 'user' | 'assistant'; content: string };
+
 export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   const user = useFlowStore((s) => s.user);
   const openDashboardTab = useFlowStore((s) => s.openDashboardTab);
@@ -347,6 +352,97 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   // KHÔNG chèn dialog chắn luồng 1-click hiện có (mặc định '' = "Chưa liên kết", hành vi hôm
   // nay giữ nguyên y hệt nếu bỏ qua bước này).
   const [pendingLarkCode, setPendingLarkCode] = useState<string>('');
+
+  /* ---------- Vitas AI (chat 1-người-với-AI, KHÁC "Chat nhóm" người-với-người) ----------
+   * Spec Vitas AI: khung chat LUÔN HIỆN — 1 thanh nhập mảnh nền trong suốt đặt PHÍA TRÊN các
+   * thẻ dự án (không phải nút nổi góc màn), placeholder động xoay vòng mô tả khả năng; panel
+   * hội thoại chỉ bung ra sau tin nhắn đầu tiên (thu gọn được, lịch sử giữ trong state).
+   * v1: KHÔNG lưu DB — lịch sử chỉ sống trong state này, mất khi reload (chấp nhận được,
+   * đơn giản hoá). Mỗi lần gửi, POST kèm TOÀN BỘ lịch sử ngắn tới app/api/ai-assist-chat. */
+  const [chatMessages, setChatMessages] = useState<ChatTurn[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatSending, setChatSending] = useState(false);
+  const [chatError, setChatError] = useState<{ message: string; code?: string } | null>(null);
+  const [chatCollapsed, setChatCollapsed] = useState(false); // thu gọn panel, giữ lịch sử
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  // Placeholder động xoay vòng — mô tả khả năng của Vitas khi ô nhập còn trống.
+  const vitasHints = useMemo(
+    () =>
+      en
+        ? [
+            'Ask Vitas — materials & interior style advice…',
+            'How do Drafting CAD · Rendering · Presenting work?',
+            'Quiet-luxury layout ideas for your space…',
+          ]
+        : [
+            'Hỏi Vitas — tư vấn vật liệu, phong cách nội thất…',
+            'Cách dùng Drafting CAD · Rendering · Presenting?',
+            'Gợi ý bố cục quiet-luxury cho không gian của bạn…',
+          ],
+    [en],
+  );
+  const [hintIdx, setHintIdx] = useState(0);
+  useEffect(() => {
+    if (chatInput) return; // đang gõ thì đứng yên
+    const t = setInterval(() => setHintIdx((i) => i + 1), 3600);
+    return () => clearInterval(t);
+  }, [chatInput]);
+
+  const chatThreadShown = !chatCollapsed && (chatMessages.length > 0 || chatSending || !!chatError);
+
+  useEffect(() => {
+    if (!chatThreadShown) return;
+    chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, [chatThreadShown, chatMessages, chatSending]);
+
+  // Esc → thu gọn overlay hội thoại (cùng bộ với bấm ra ngoài / nút X).
+  useEffect(() => {
+    if (!chatThreadShown) return;
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setChatCollapsed(true);
+    };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [chatThreadShown]);
+
+  const sendChat = useCallback(async () => {
+    const text = chatInput.trim();
+    if (!text || chatSending) return;
+    const next: ChatTurn[] = [...chatMessages, { role: 'user', content: text }];
+    setChatMessages(next);
+    setChatInput('');
+    setChatSending(true);
+    setChatError(null);
+    setChatCollapsed(false); // gửi tin mới → panel bung lại nếu đang thu gọn
+    try {
+      const res = await fetch('/api/ai-assist-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: next }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setChatError({
+          message:
+            typeof j?.error === 'string'
+              ? j.error
+              : en
+                ? 'Something went wrong — try again.'
+                : 'Có lỗi xảy ra — thử lại.',
+          code: typeof j?.code === 'string' ? j.code : undefined,
+        });
+        return;
+      }
+      setChatMessages((prev) => [...prev, { role: 'assistant', content: String(j?.reply ?? '').trim() }]);
+    } catch {
+      setChatError({
+        message: en ? 'Connection failed — try again.' : 'Mất kết nối — thử lại.',
+      });
+    } finally {
+      setChatSending(false);
+    }
+  }, [chatInput, chatSending, chatMessages, en]);
 
   const load = useCallback(() => {
     setLoadError(false);
@@ -1448,6 +1544,170 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           )}
         </div>
 
+        {/* ---------- Vitas AI — thanh chat LUÔN HIỆN phía trên thẻ dự án ----------
+            KHÁC "Chat nhóm" (Header, người-với-người). Nền trong suốt (chỉ hairline + blur),
+            placeholder xoay vòng mô tả khả năng. Vùng tin nhắn khi nở ra là OVERLAY kính lỏng
+            (.lq-card) ĐÈ LÊN card — KHÔNG chèn vào flow đẩy card xuống (spec bổ sung). */}
+        <div className="relative mb-7 w-full max-w-xl">
+          <div
+            className="flex items-center gap-2.5 rounded-full py-2 pl-4 pr-2"
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(127,127,127,0.32)',
+              backdropFilter: 'blur(var(--blur-strong)) saturate(150%)',
+              WebkitBackdropFilter: 'blur(var(--blur-strong)) saturate(150%)',
+            }}
+          >
+            <Sparkles size={15} className="shrink-0" style={{ color: COPPER }} />
+            <span
+              className="shrink-0 text-[9px] uppercase text-[var(--t4)]"
+              style={{ fontFamily: MONO, letterSpacing: '0.22em' }}
+            >
+              Vitas AI
+            </span>
+            <div className="relative min-w-0 flex-1">
+              <input
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  // stopPropagation: KHÔNG cho ← → / Enter lọt xuống listener điều hướng
+                  // gallery toàn cục (đúng pattern input status đã có).
+                  e.stopPropagation();
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    void sendChat();
+                  }
+                }}
+                disabled={chatSending}
+                aria-label="Vitas AI"
+                placeholder=""
+                className="w-full bg-transparent text-[13px] text-[var(--t1)] focus:outline-none disabled:opacity-60"
+                style={{ fontFamily: SANS }}
+              />
+              {/* placeholder động xoay vòng — chỉ hiện khi ô trống */}
+              {chatInput === '' && (
+                <div className="pointer-events-none absolute inset-0 flex items-center overflow-hidden" aria-hidden>
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={hintIdx % vitasHints.length}
+                      initial={{ opacity: 0, y: reduce ? 0 : 7 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: reduce ? 0 : -7 }}
+                      transition={{ duration: reduce ? 0 : 0.35, ease: easeApple }}
+                      className="truncate text-[13px] text-[var(--t4)]"
+                      style={{ fontFamily: SANS }}
+                    >
+                      {vitasHints[hintIdx % vitasHints.length]}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              aria-label={en ? 'Send to Vitas' : 'Gửi cho Vitas'}
+              onClick={() => void sendChat()}
+              disabled={chatSending || !chatInput.trim()}
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#1c1409] transition-opacity disabled:cursor-not-allowed disabled:opacity-35"
+              style={{ background: COPPER }}
+            >
+              {chatSending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+            </button>
+          </div>
+
+          {/* panel hội thoại — chỉ bung sau tin nhắn đầu tiên; thu gọn giữ lịch sử.
+              OVERLAY tuyệt đối neo dưới thanh nhập, ĐÈ LÊN card (không reflow layout khi
+              mở/đóng). Kính lỏng .lq-card (globals.css, đợt login-glass) + backdrop mờ nhẹ
+              phía sau để card lu mờ dịu, bấm ra ngoài / X / Esc để thu gọn.
+              z: backdrop z-20 < panel z-30 < Dashboard overlay z-50 (Chi tiết mở thì
+              Dashboard tự phủ lên — không tranh chấp). */}
+          <AnimatePresence initial={false}>
+            {chatThreadShown && (
+              <motion.div
+                key="vitas-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: reduce ? 0 : 0.3, ease: easeApple }}
+                className="fixed inset-0 z-20"
+                style={{ background: 'rgba(10,8,6,0.2)' }}
+                onClick={() => setChatCollapsed(true)}
+                aria-hidden
+              />
+            )}
+            {chatThreadShown && (
+              <motion.div
+                key="vitas-thread"
+                initial={{ opacity: 0, y: reduce ? 0 : 8, scale: reduce ? 1 : 0.985 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: reduce ? 0 : 6, scale: reduce ? 1 : 0.99 }}
+                transition={{ duration: reduce ? 0 : 0.35, ease: easeApple }}
+                className="absolute left-0 right-0 top-full z-30 mt-3"
+              >
+                <div className="lq-card overflow-hidden rounded-[var(--radius-xl)]">
+                  <div className="flex items-center justify-between border-b border-[rgba(127,127,127,0.2)] px-4 py-2">
+                    <span
+                      className="text-[9px] uppercase text-[var(--t4)]"
+                      style={{ fontFamily: MONO, letterSpacing: '0.22em' }}
+                    >
+                      {en ? 'Vitas · conversation' : 'Vitas · hội thoại'}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={en ? 'Collapse' : 'Thu gọn'}
+                      onClick={() => setChatCollapsed(true)}
+                      className="grid h-6 w-6 place-items-center rounded-full text-[var(--t4)] hover:text-[var(--t1)]"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                  <div ref={chatScrollRef} className="max-h-[34vh] space-y-2.5 overflow-y-auto px-3.5 py-3.5">
+                    {chatMessages.map((m, i) => (
+                      <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div
+                          className="max-w-[86%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-left text-[12.5px] leading-relaxed text-[var(--t1)]"
+                          style={
+                            m.role === 'user'
+                              ? { background: 'rgba(199,154,99,0.2)', border: `1px solid ${COPPER}55`, fontFamily: SANS }
+                              : { background: 'rgba(127,127,127,0.1)', border: '1px solid rgba(127,127,127,0.22)', fontFamily: SANS }
+                          }
+                        >
+                          {m.content}
+                        </div>
+                      </div>
+                    ))}
+                    {chatSending && (
+                      <div className="flex justify-start">
+                        <div
+                          className="flex items-center gap-1.5 rounded-2xl px-3 py-2"
+                          style={{ background: 'rgba(127,127,127,0.1)', border: '1px solid rgba(127,127,127,0.22)' }}
+                        >
+                          <Loader2 size={12} className="animate-spin" style={{ color: COPPER }} />
+                          <span className="text-[11px] text-[var(--t4)]" style={{ fontFamily: SANS }}>
+                            {en ? 'Vitas is thinking…' : 'Vitas đang suy nghĩ…'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {chatError && (
+                      <div
+                        className="rounded-xl px-3 py-2.5 text-left text-[11.5px] leading-relaxed text-[var(--t1)]"
+                        style={{ background: 'rgba(200,64,40,0.12)', border: '1px solid rgba(200,64,40,0.3)', fontFamily: SANS }}
+                      >
+                        {chatError.code === 'NO_TEXT_PROVIDER'
+                          ? (en ? 'AI not configured yet — ' : 'AI chưa được cấu hình — ') + chatError.message
+                          : chatError.code === 'NVIDIA_FREE_EXHAUSTED'
+                            ? (en ? 'Free AI quota used up — ' : 'AI tạm hết lượt miễn phí — ') + chatError.message
+                            : chatError.message}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         {/* thân màn theo trạng thái */}
         {loadError ? (
           errorBlock
@@ -1638,6 +1898,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           </div>
         </motion.div>
       )}
+
     </div>
   );
 }
