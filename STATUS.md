@@ -5,13 +5,11 @@
 > ⚠️ Nhãn hiển thị đổi 20/07 (Layout CAD→Drafting CAD · Render→Rendering · Present→Presenting). **ID nội bộ GIỮ NGUYÊN** `concept`/`render`/`present` — mọi khoá localStorage/route/tên file không đổi. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
+- **21/07 — `feat/gesture-audit`:** audit input (chuột/phím/trackpad/cảm ứng) 4 bề mặt. Chi tiết: `docs/AUDIT-GESTURES-INPUT.md`. 0 P0, 1 P1 ĐÃ SỬA (phím `E` trên canvas CAD xoá nhầm selection + chặn lệnh gõ tắt EX/EL/ERASE — `CadCanvas.tsx`), 7 đề xuất P2 chưa làm. tsc sạch, 64/64 test, verify browser thật. ⚠️ Worktree rẽ nhánh cũ hơn main (thiếu Larkbase/Dashboard 3-tab) — xem mục 6 báo cáo.
 - Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main`. Verify SHA bằng git. Đợt 19-20/07 (login/contrast · toolbar+IO · Sketch-Pro · Present typography · đổi tên chặng · PPTX font · input · motion · fix-api-auth-p0 · **login-glass**) ĐÃ MERGE hết → chi tiết CHANGELOG.
   - ⚠️ **CHỜ USER VERIFY:** .pptx nhúng font chưa mở bằng PowerPoint thật (QuickLook bỏ qua font nhúng, không dùng làm bằng chứng) · frame-timing chuyển chặng chưa đo được (browser tự động luôn `hidden`) — cần xem bằng mắt thật.
   - 🐛 **20/07 chiều — user báo "Ghi nhớ đăng nhập chưa hoạt động", ĐÃ SỬA:** checkbox dùng `sr-only` co về đúng 1×1px (kỹ thuật ẩn chuẩn nhưng quá nhỏ để chuột thật bấm trúng) — logic React/server đều đúng sẵn (verify bằng curl: `remember:false`→cookie phiên không Max-Age, `remember:true`→Max-Age 30 ngày). Sửa: input phủ `absolute inset-0` kín cả label (125×16px). Verify lại bằng chuột giả lập thật, cả 2 chiều đúng.
-- **3 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (chi tiết đầy đủ trong từng file, đừng chép lại vào đây):
-  - `RESEARCH-ACCESS-CONTROL.md` — chọn `ProjectMember` 5 role + GATE, ~9 ngày công, 10 câu hỏi §8 chờ user (Q2 brief NDA · Q5 role · Q8 GATE quay ngược).
-  - `RESEARCH-MOBILE-DISTRIBUTION.md` — iOS: Custom App/ABM · macOS: bỏ MAS giữ `.dmg` notarize · Android: Managed Google Play Private App (đính chính quy mô không giới hạn) · PWA client đã có sẵn, thiếu HTTPS cố định.
-  - `RESEARCH-COMFYUI-LESS.md` — tier "oneAI" mở chuỗi LAN→RunPod serverless→model-API, ~2.5-3 ngày công.
+- **3 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (đọc thẳng từng file, đừng chép lại vào đây): `RESEARCH-ACCESS-CONTROL.md` (role+GATE, câu hỏi §8) · `RESEARCH-MOBILE-DISTRIBUTION.md` (iOS/macOS/Android) · `RESEARCH-COMFYUI-LESS.md` (tier "oneAI").
 - **ĐỢT SAU (chưa giao, cần nghiên cứu trước):** Chat/cộng tác — CAD+Rendering = comment/ghim bất đồng bộ kiểu Miro · Presenting = real-time (đã chốt dùng CRDT/Yjs, ngược tài liệu IF1_IF2_BIGPICTURE cũ).
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (63 file). KHÔNG có vitest/jest — bỏ qua chỉ dẫn ghi `npm test`.
 
