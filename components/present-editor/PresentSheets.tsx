@@ -22,8 +22,37 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import PresentEditor from './PresentEditor';
+import dynamic from 'next/dynamic';
 import SheetTabBar, { type SheetTab } from '@/components/studio/SheetTabBar';
+
+/**
+ * 21/07 (A) — PresentEditor rất nặng (registerFonts + templates + suggest + layout-check +
+ * export + brand-kit + reflow + Toolbar/Inspector/LayerPanel…). Mount đồng bộ khi vào chặng
+ * Presenting làm StageVeil kéo ra rồi mà chuyển cảnh vẫn khựng vài trăm ms (2 chặng CAD/Render
+ * OK với 100/140ms). Tách CHUNK riêng bằng next/dynamic + ssr:false + skeleton nhẹ → veil kéo
+ * ra là thấy khung sheet + skeleton (không trắng), heavy code stream về sau. Giữ y hệt hành vi
+ * export/undo (chỉ 1 instance mount tại 1 thời điểm, re-key theo activeId).
+ */
+const PresentEditor = dynamic(() => import('./PresentEditor'), {
+  ssr: false,
+  loading: () => (
+    <div
+      style={{
+        flex: 1,
+        minHeight: 0,
+        display: 'grid',
+        placeItems: 'center',
+        background: 'var(--bg)',
+        color: 'var(--t4)',
+        fontSize: 10,
+        letterSpacing: '0.24em',
+        textTransform: 'uppercase',
+      }}
+    >
+      Đang mở dàn trang…
+    </div>
+  ),
+});
 import type { EditorDeck, EditorSlide } from '@/lib/present-editor/model';
 import { newId } from '@/lib/present-editor/model';
 import { getLastUserId, loadResume, saveResume } from '@/lib/resume';
