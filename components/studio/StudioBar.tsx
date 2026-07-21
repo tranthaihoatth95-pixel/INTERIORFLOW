@@ -79,6 +79,7 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
 
   return (
     <div
+      data-if-deselect-zone="true"
       style={{
         display: 'flex',
         alignItems: 'center',

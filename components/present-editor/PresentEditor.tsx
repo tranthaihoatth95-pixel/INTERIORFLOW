@@ -468,6 +468,45 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     node.addEventListener('wheel', onWheelNative, { passive: false });
     return () => node.removeEventListener('wheel', onWheelNative);
   }, []);
+
+  /* Click ngoài canvas / Escape → deselect toàn bộ element.
+   * Ý user (21/07): "click chuột ngoài vùng canvas thì tự thoát chọn".
+   * Cơ chế opt-in: chỉ vùng đánh `data-if-deselect-zone` mới trigger — canvas padding (<main>) +
+   * thanh chặng (StudioBar). Toolbar/Inspector/LayerPanel KHÔNG có attr này → click vẫn giữ selection.
+   * Escape: nếu không có editing text (contenteditable) và không có input focus, thì deselect. */
+  useEffect(() => {
+    function onWinPointer(e: PointerEvent) {
+      if (!ed.selectedIds.length) return;
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      // Nếu click nằm trong canvas area (canvasAreaRef) → để onStageDown của EditorCanvas xử lý.
+      if (canvasAreaRef.current && canvasAreaRef.current.contains(target)) {
+        // Nhưng nếu click chính vào padding của <main> (target=main) → deselect.
+        if (target === canvasAreaRef.current) ed.select(null);
+        return;
+      }
+      // Ngoài canvas: chỉ deselect nếu closest có [data-if-deselect-zone].
+      const zone = target.closest('[data-if-deselect-zone]');
+      if (zone) ed.select(null);
+    }
+    function onWinKey(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return;
+      if (!ed.selectedIds.length) return;
+      const a = document.activeElement as HTMLElement | null;
+      if (a) {
+        const tag = a.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || a.isContentEditable) return;
+      }
+      ed.select(null);
+    }
+    window.addEventListener('pointerdown', onWinPointer, true);
+    window.addEventListener('keydown', onWinKey);
+    return () => {
+      window.removeEventListener('pointerdown', onWinPointer, true);
+      window.removeEventListener('keydown', onWinKey);
+    };
+  }, [ed]);
+
   const onFrameMany = useCallback(
     (dxPct: number, dyPct: number, live: boolean) => {
       const s = ed.slide;
@@ -1466,6 +1505,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         {/* giữa: canvas */}
         <main
           ref={canvasAreaRef}
+          data-if-deselect-zone="true"
           style={{
             flex: 1,
             minWidth: 0,
