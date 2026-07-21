@@ -1,6 +1,6 @@
 /**
  * lib/input/stage-drop.ts — phân loại cử chỉ KÉO trên thanh chặng (StageSwitcher):
- * "lôi tab xuống" để gọi Vitas AI, KHÔNG được nhầm với click/trượt ngang chuyển chặng.
+ * "lôi tab xuống" để gọi Vitals AI, KHÔNG được nhầm với click/trượt ngang chuyển chặng.
  *
  * Cùng triết lý với lib/input/wheel.ts: logic phân biệt trục để THUẦN, test được,
  * component chỉ nối sự kiện. Quy ước:
@@ -9,15 +9,15 @@
  *   ────────────────────────────────────────────────────────────────────────
  *   nhấn-thả tại chỗ (< slop)    'pending'    click thường → onPick chuyển chặng như cũ
  *   trượt NGANG vượt slop        'locked'     hành vi ngang là của thanh chặng — nhường hẳn
- *   kéo XUỐNG vượt ngưỡng 28px   'vitas'      giọt kính tách ra → mở panel chat
+ *   kéo XUỐNG vượt ngưỡng 28px   'vitals'      giọt kính tách ra → mở panel chat
  *   kéo LÊN vượt slop            'locked'     không có nghĩa — khoá để khỏi giật giọt
  *
  * Tracker CÓ TRẠNG THÁI: một khi đã 'locked' thì khoá tới hết cử chỉ (không nhả nửa chừng
- * rồi bật 'vitas' — tránh drag chéo run tay kích hoạt nhầm); một khi 'vitas' thì xong.
+ * rồi bật 'vitals' — tránh drag chéo run tay kích hoạt nhầm); một khi 'vitals' thì xong.
  */
 
-/** Kéo xuống vượt ngưỡng này (px) → gọi Vitas. 28px: đủ xa để click run tay không dính. */
-export const VITAS_DROP_THRESHOLD_PX = 28;
+/** Kéo xuống vượt ngưỡng này (px) → gọi Vitals. 28px: đủ xa để click run tay không dính. */
+export const VITALS_DROP_THRESHOLD_PX = 28;
 
 /** Dưới slop này (px) chưa kết luận gì — vẫn là click tiềm năng. */
 export const DRAG_SLOP_PX = 6;
@@ -28,7 +28,7 @@ export const DRAG_SLOP_PX = 6;
  */
 export const VERTICAL_DOMINANCE_RATIO = 1.2;
 
-export type StageDragVerdict = 'pending' | 'vitas' | 'locked';
+export type StageDragVerdict = 'pending' | 'vitals' | 'locked';
 
 export interface StageDragTracker {
   /** Gọi mỗi pointermove với delta so với điểm nhấn. Trả kết luận hiện tại. */
@@ -38,7 +38,7 @@ export interface StageDragTracker {
 }
 
 export function createStageDragTracker(
-  threshold: number = VITAS_DROP_THRESHOLD_PX,
+  threshold: number = VITALS_DROP_THRESHOLD_PX,
   slop: number = DRAG_SLOP_PX,
   ratio: number = VERTICAL_DOMINANCE_RATIO,
 ): StageDragTracker {
@@ -48,7 +48,7 @@ export function createStageDragTracker(
 
   return {
     move(dx: number, dy: number): StageDragVerdict {
-      if (fired) return 'vitas';
+      if (fired) return 'vitals';
       if (locked) return 'locked';
 
       const ax = Math.abs(dx);
@@ -67,11 +67,11 @@ export function createStageDragTracker(
         return 'locked';
       }
 
-      // Kéo XUỐNG đủ xa + trục dọc thắng rõ → Vitas.
+      // Kéo XUỐNG đủ xa + trục dọc thắng rõ → Vitals.
       if (dy >= threshold && dy > ax * ratio) {
         fired = true;
         prog = 1;
-        return 'vitas';
+        return 'vitals';
       }
 
       prog = dy > 0 && dy > ax ? Math.min(1, dy / threshold) : 0;

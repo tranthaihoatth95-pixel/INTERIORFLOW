@@ -19,8 +19,8 @@ import {
   Link2,
   Send,
 } from 'lucide-react';
-import VitasIcon from '@/components/studio/VitasIcon';
-import { VitasBubble, VitasTyping } from '@/components/studio/VitasChatBubble';
+import VitalsIcon from '@/components/studio/VitalsIcon';
+import { VitalsBubble, VitalsTyping } from '@/components/studio/VitalsChatBubble';
 import { easeApple, pressable, springStage } from '@/lib/motion';
 import { useLang } from '@/lib/i18n';
 import { useFlowStore } from '@/lib/store';
@@ -354,8 +354,8 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   // nay giữ nguyên y hệt nếu bỏ qua bước này).
   const [pendingLarkCode, setPendingLarkCode] = useState<string>('');
 
-  /* ---------- Vitas AI (chat 1-người-với-AI, KHÁC "Chat nhóm" người-với-người) ----------
-   * Spec Vitas AI: khung chat LUÔN HIỆN — 1 thanh nhập mảnh nền trong suốt đặt PHÍA TRÊN các
+  /* ---------- Vitals AI (chat 1-người-với-AI, KHÁC "Chat nhóm" người-với-người) ----------
+   * Spec Vitals AI: khung chat LUÔN HIỆN — 1 thanh nhập mảnh nền trong suốt đặt PHÍA TRÊN các
    * thẻ dự án (không phải nút nổi góc màn), placeholder động xoay vòng mô tả khả năng; panel
    * hội thoại chỉ bung ra sau tin nhắn đầu tiên (thu gọn được, lịch sử giữ trong state).
    * v1: KHÔNG lưu DB — lịch sử chỉ sống trong state này, mất khi reload (chấp nhận được,
@@ -367,17 +367,17 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   const [chatCollapsed, setChatCollapsed] = useState(false); // thu gọn panel, giữ lịch sử
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
-  // Placeholder động xoay vòng — mô tả khả năng của Vitas khi ô nhập còn trống.
-  const vitasHints = useMemo(
+  // Placeholder động xoay vòng — mô tả khả năng của Vitals khi ô nhập còn trống.
+  const vitalsHints = useMemo(
     () =>
       en
         ? [
-            'Ask Vitas — materials & interior style advice…',
+            'Ask Vitals — materials & interior style advice…',
             'How do Drafting CAD · Rendering · Presenting work?',
             'Quiet-luxury layout ideas for your space…',
           ]
         : [
-            'Hỏi Vitas — tư vấn vật liệu, phong cách nội thất…',
+            'Hỏi Vitals — tư vấn vật liệu, phong cách nội thất…',
             'Cách dùng Drafting CAD · Rendering · Presenting?',
             'Gợi ý bố cục quiet-luxury cho không gian của bạn…',
           ],
@@ -1545,7 +1545,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           )}
         </div>
 
-        {/* ---------- Vitas AI — thanh chat LUÔN HIỆN phía trên thẻ dự án ----------
+        {/* ---------- Vitals AI — thanh chat LUÔN HIỆN phía trên thẻ dự án ----------
             KHÁC "Chat nhóm" (Header, người-với-người). Nền trong suốt (chỉ hairline + blur),
             placeholder xoay vòng mô tả khả năng. Vùng tin nhắn khi nở ra là OVERLAY kính lỏng
             (.lq-card) ĐÈ LÊN card — KHÔNG chèn vào flow đẩy card xuống (spec bổ sung). */}
@@ -1559,12 +1559,12 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               WebkitBackdropFilter: 'blur(var(--blur-strong)) saturate(150%)',
             }}
           >
-            <VitasIcon size={15} className="shrink-0" style={{ color: COPPER }} />
+            <VitalsIcon size={15} className="shrink-0" style={{ color: COPPER }} />
             <span
               className="shrink-0 text-[9px] uppercase text-[var(--t4)]"
               style={{ fontFamily: MONO, letterSpacing: '0.22em' }}
             >
-              Vitas AI
+              Vitals AI
             </span>
             <div className="relative min-w-0 flex-1">
               <input
@@ -1580,7 +1580,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   }
                 }}
                 disabled={chatSending}
-                aria-label="Vitas AI"
+                aria-label="Vitals AI"
                 placeholder=""
                 className="w-full bg-transparent text-[13px] text-[var(--t1)] focus:outline-none disabled:opacity-60"
                 style={{ fontFamily: SANS }}
@@ -1590,7 +1590,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 <div className="pointer-events-none absolute inset-0 flex items-center overflow-hidden" aria-hidden>
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.span
-                      key={hintIdx % vitasHints.length}
+                      key={hintIdx % vitalsHints.length}
                       initial={{ opacity: 0, y: reduce ? 0 : 7 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: reduce ? 0 : -7 }}
@@ -1598,7 +1598,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       className="truncate text-[13px] text-[var(--t4)]"
                       style={{ fontFamily: SANS }}
                     >
-                      {vitasHints[hintIdx % vitasHints.length]}
+                      {vitalsHints[hintIdx % vitalsHints.length]}
                     </motion.span>
                   </AnimatePresence>
                 </div>
@@ -1606,7 +1606,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             </div>
             <button
               type="button"
-              aria-label={en ? 'Send to Vitas' : 'Gửi cho Vitas'}
+              aria-label={en ? 'Send to Vitals' : 'Gửi cho Vitals'}
               onClick={() => void sendChat()}
               disabled={chatSending || !chatInput.trim()}
               className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#1c1409] transition-opacity disabled:cursor-not-allowed disabled:opacity-35"
@@ -1625,7 +1625,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           <AnimatePresence initial={false}>
             {chatThreadShown && (
               <motion.div
-                key="vitas-backdrop"
+                key="vitals-backdrop"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -1638,7 +1638,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             )}
             {chatThreadShown && (
               <motion.div
-                key="vitas-thread"
+                key="vitals-thread"
                 initial={{ opacity: 0, y: reduce ? 0 : 8, scale: reduce ? 1 : 0.985 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: reduce ? 0 : 6, scale: reduce ? 1 : 0.99 }}
@@ -1651,7 +1651,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       className="text-[9px] uppercase text-[var(--t4)]"
                       style={{ fontFamily: MONO, letterSpacing: '0.22em' }}
                     >
-                      {en ? 'Vitas · conversation' : 'Vitas · hội thoại'}
+                      {en ? 'Vitals · conversation' : 'Vitals · hội thoại'}
                     </span>
                     <button
                       type="button"
@@ -1664,12 +1664,12 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   </div>
                   <div ref={chatScrollRef} className="max-h-[34vh] space-y-2.5 overflow-y-auto px-3.5 py-3.5">
                     {chatMessages.map((m, i) => (
-                      <VitasBubble key={i} role={m.role}>
+                      <VitalsBubble key={i} role={m.role}>
                         {m.content}
-                      </VitasBubble>
+                      </VitalsBubble>
                     ))}
                     {chatSending && (
-                      <VitasTyping label={en ? 'Vitas is replying…' : 'Vitas đang trả lời…'} />
+                      <VitalsTyping label={en ? 'Vitals is replying…' : 'Vitals đang trả lời…'} />
                     )}
                     {chatError && (
                       <div

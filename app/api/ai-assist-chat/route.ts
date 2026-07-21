@@ -4,7 +4,7 @@ import { completeTextTiered, NvidiaFreeExhausted, NoTextProviderError } from '@/
 import { sanitizeChatMessages, buildChatPrompt, CHAT_SYSTEM_PROMPT } from '@/lib/ai/chat-assist';
 
 /**
- * app/api/ai-assist-chat — "Vitas AI" trên Gallery (thanh chat luôn hiện phía trên thẻ dự án):
+ * app/api/ai-assist-chat — "Vitals AI" trên Gallery (thanh chat luôn hiện phía trên thẻ dự án):
  * hỏi đáp nhanh/tư vấn nội thất + hướng dẫn dùng app.
  * KHÁC "Chat nhóm" (app/api/chat, ChatMessage — chat người-với-người).
  *

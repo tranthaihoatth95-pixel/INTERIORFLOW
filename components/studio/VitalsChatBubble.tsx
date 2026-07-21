@@ -1,22 +1,22 @@
 'use client';
 
 /**
- * components/studio/VitasChatBubble.tsx — bong bóng tin nhắn + typing indicator dùng CHUNG
- * cho cả 2 nơi có chat Vitas: giọt kính ở chặng (VitasStageDrop) + thanh Gallery (ProjectSelect).
+ * components/studio/VitalsChatBubble.tsx — bong bóng tin nhắn + typing indicator dùng CHUNG
+ * cho cả 2 nơi có chat Vitals: giọt kính ở chặng (VitalsStageDrop) + thanh Gallery (ProjectSelect).
  *
  * Phong cách iMessage/ChatGPT modern: bo tròn KHÔNG đối xứng, không viền cứng,
  * dùng CSS token (KHÔNG hardcode màu) — user dùng `--accent-soft`/`--card`, assistant dùng
  * `--panel`/nền neutral. Font-size 13.5px, line-height 1.55, max-width 75%.
  *
  * Typing indicator: 3 chấm nhấp nháy lệch pha (giống iMessage). prefers-reduced-motion:
- * hiện text tĩnh "Vitas đang trả lời…" thay vì animation.
+ * hiện text tĩnh "Vitals đang trả lời…" thay vì animation.
  */
 
 import type { CSSProperties, ReactNode } from 'react';
 
 type Role = 'user' | 'assistant';
 
-export function VitasBubble({
+export function VitalsBubble({
   role,
   children,
   size = 'md',
@@ -59,10 +59,10 @@ export function VitasBubble({
 }
 
 /**
- * VitasTyping — 3 chấm nhấp nháy lệch pha (0s / 0.2s / 0.4s).
- * prefers-reduced-motion: thay bằng text tĩnh "Vitas đang trả lời…".
+ * VitalsTyping — 3 chấm nhấp nháy lệch pha (0s / 0.2s / 0.4s).
+ * prefers-reduced-motion: thay bằng text tĩnh "Vitals đang trả lời…".
  */
-export function VitasTyping({ label = 'Vitas đang trả lời…' }: { label?: string }) {
+export function VitalsTyping({ label = 'Vitals đang trả lời…' }: { label?: string }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
       <div
@@ -78,10 +78,10 @@ export function VitasTyping({ label = 'Vitas đang trả lời…' }: { label?: 
         aria-label={label}
         role="status"
       >
-        <span className="vitas-typing-dot" style={{ animationDelay: '0s' }} />
-        <span className="vitas-typing-dot" style={{ animationDelay: '0.16s' }} />
-        <span className="vitas-typing-dot" style={{ animationDelay: '0.32s' }} />
-        <span className="vitas-typing-fallback">{label}</span>
+        <span className="vitals-typing-dot" style={{ animationDelay: '0s' }} />
+        <span className="vitals-typing-dot" style={{ animationDelay: '0.16s' }} />
+        <span className="vitals-typing-dot" style={{ animationDelay: '0.32s' }} />
+        <span className="vitals-typing-fallback">{label}</span>
       </div>
     </div>
   );

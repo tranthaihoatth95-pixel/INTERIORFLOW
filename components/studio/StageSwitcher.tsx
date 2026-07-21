@@ -13,12 +13,12 @@
  * Thuần presentational: parent quyết hành vi qua onPick (Header đổi workspace / studio
  * điều hướng route). Cùng 1 giao diện ở mọi nơi → app liền một mạch.
  *
- * 21/07 — VITAS Ở CHẶNG (giọt kính lỏng): Vitas AI "ẩn mình" trong chính thanh này.
+ * 21/07 — VITALS Ở CHẶNG (giọt kính lỏng): Vitals AI "ẩn mình" trong chính thanh này.
  *   - Click/trượt ngang các tab = chuyển chặng Y HỆT cũ (không đổi 1 li).
  *   - TRỎ vào tab rồi KÉO XUỐNG vượt ngưỡng 28px (lib/input/stage-drop.ts — phân biệt
  *     trục như wheel.ts) → giọt kính kéo dãn dưới thanh rồi TÁCH thành panel chat nhỏ
- *     (VitasStageDrop.tsx, tái dùng route ai-assist-chat của bản Gallery).
- *   - Fallback khám phá: hover thanh ~0.9s hiện tooltip "Kéo xuống để hỏi Vitas · ⌘J",
+ *     (VitalsStageDrop.tsx, tái dùng route ai-assist-chat của bản Gallery).
+ *   - Fallback khám phá: hover thanh ~0.9s hiện tooltip "Kéo xuống để hỏi Vitals · ⌘J",
  *     và phím tắt ⌘J / Ctrl+J mở-đóng trực tiếp (quan trọng cho cảm ứng + người mới).
  *   - prefers-reduced-motion: bỏ giọt kéo dãn, panel fade đơn giản.
  * Gesture nằm TRONG component này nên Header ('/') lẫn StudioBar (3 route studio) tự có
@@ -31,13 +31,13 @@ import { PencilRuler, Box, Presentation } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
 import { PHASES, STAGE_TINT, STAGE_INDEX } from '@/lib/phases';
 import { springSheet, pressable, easeApple } from '@/lib/motion';
-import { createStageDragTracker, VITAS_DROP_THRESHOLD_PX } from '@/lib/input/stage-drop';
-import VitasDropPanel, { markVitasUsed, wasVitasUsed } from './VitasStageDrop';
+import { createStageDragTracker, VITALS_DROP_THRESHOLD_PX } from '@/lib/input/stage-drop';
+import VitalsDropPanel, { markVitalsUsed, wasVitalsUsed } from './VitalsStageDrop';
 
 // Chặng 1 = Drafting CAD → icon thước-bút; Rendering = khối; Presenting = trình chiếu.
 const ICON: Record<Phase, typeof PencilRuler> = { concept: PencilRuler, render: Box, present: Presentation };
 
-// Copper — chữ ký thị giác Vitas (đồng bộ VitasStageDrop/Gallery).
+// Copper — chữ ký thị giác Vitals (đồng bộ VitalsStageDrop/Gallery).
 const COPPER_LIGHT = '#e3b98a';
 const COPPER_DEEP = '#c79a63';
 
@@ -53,14 +53,14 @@ interface Props {
 export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   const reduce = useReducedMotion();
 
-  /* ---------- Vitas giọt kính lỏng — state cử chỉ ---------- */
+  /* ---------- Vitals giọt kính lỏng — state cử chỉ ---------- */
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [vitasOpen, setVitasOpen] = useState(false);
+  const [vitalsOpen, setVitalsOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [hintShown, setHintShown] = useState(false);
   const [hover, setHover] = useState(false);
   const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** true = cử chỉ kéo vừa bắn Vitas → nuốt click kế tiếp, KHÔNG cho chuyển chặng nhầm. */
+  /** true = cử chỉ kéo vừa bắn Vitals → nuốt click kế tiếp, KHÔNG cho chuyển chặng nhầm. */
   const suppressClick = useRef(false);
   /** px giọt đang bị kéo dãn (0..threshold+8) — motion value để không re-render 60fps. */
   const dragY = useMotionValue(0);
@@ -70,13 +70,13 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   const [originPx, setOriginPx] = useState<number | null>(null);
 
   // Opacity giọt: hiện dần theo dragY (rõ như giọt sắp rơi).
-  const dropletO = useTransform(dragY, [0, 8, VITAS_DROP_THRESHOLD_PX], [0, 0.55, 0.95]);
-  const dropletScaleY = useTransform(dragY, [0, VITAS_DROP_THRESHOLD_PX], [0.25, 1]);
+  const dropletO = useTransform(dragY, [0, 8, VITALS_DROP_THRESHOLD_PX], [0, 0.55, 0.95]);
+  const dropletScaleY = useTransform(dragY, [0, VITALS_DROP_THRESHOLD_PX], [0.25, 1]);
 
-  const openVitas = () => {
-    markVitasUsed();
+  const openVitals = () => {
+    markVitalsUsed();
     setHintShown(false);
-    setVitasOpen(true);
+    setVitalsOpen(true);
   };
 
   // Fallback 1 — phím tắt ⌘J / Ctrl+J mở-đóng panel (không đụng cử chỉ nào của canvas).
@@ -85,8 +85,8 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
       if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'j') {
         e.preventDefault();
         setOriginPx(null); // mở bằng phím → panel nở từ giữa
-        setVitasOpen((o) => {
-          if (!o) markVitasUsed();
+        setVitalsOpen((o) => {
+          if (!o) markVitalsUsed();
           return !o;
         });
         setHintShown(false);
@@ -102,10 +102,10 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
 
   // Nhấn xuống trên thanh → theo dõi cử chỉ ở mức window (KHÔNG setPointerCapture:
   // capture sẽ cướp click khỏi tab và phá chuyển chặng). Tracker thuần quyết định:
-  // ngang/click = như cũ · dọc xuống vượt ngưỡng = Vitas.
+  // ngang/click = như cũ · dọc xuống vượt ngưỡng = Vitals.
   const onDockPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    if (vitasOpen) return;
+    if (vitalsOpen) return;
     const rect = wrapRef.current?.getBoundingClientRect();
     const startX = e.clientX;
     const startY = e.clientY;
@@ -130,17 +130,17 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         finish();
         return;
       }
-      if (v === 'vitas') {
+      if (v === 'vitals') {
         suppressClick.current = true; // pointerup có thể vẫn rơi trong tab → nuốt click
         finish();
         setOriginPx(px); // panel nở từ đúng điểm giọt được kéo ra
-        openVitas();
+        openVitals();
         return;
       }
       const dy = ev.clientY - startY;
       if (dy > 2) {
         setDragging(true);
-        dragY.set(Math.min(Math.max(dy, 0), VITAS_DROP_THRESHOLD_PX + 8));
+        dragY.set(Math.min(Math.max(dy, 0), VITALS_DROP_THRESHOLD_PX + 8));
       }
     };
     const onUp = () => finish();
@@ -151,7 +151,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      {/* wrapper relative: neo giọt kính + panel Vitas ngay dưới thanh — overlay tuyệt đối,
+      {/* wrapper relative: neo giọt kính + panel Vitals ngay dưới thanh — overlay tuyệt đối,
           KHÔNG chiếm layout nên thanh/canvas không xê dịch 1px nào. */}
       <div ref={wrapRef} style={{ position: 'relative' }}>
       {/* C-3 UNIFIED DOCK — vật liệu kính mờ (.if-dock, globals.css) dùng CHUNG
@@ -160,12 +160,12 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         className="if-dock"
         role="tablist"
         aria-label="Chặng làm việc"
-        // touch-action pan-x: giữ trượt ngang hệ thống, nhường kéo DỌC cho cử chỉ Vitas
+        // touch-action pan-x: giữ trượt ngang hệ thống, nhường kéo DỌC cho cử chỉ Vitals
         // (không có nó, trình duyệt cảm ứng nuốt pointermove dọc thành scroll).
         style={{ touchAction: 'pan-x' }}
         onPointerDown={onDockPointerDown}
         onClickCapture={(e) => {
-          // Cử chỉ kéo vừa bắn Vitas → click sinh ra sau pointerup KHÔNG được chuyển chặng.
+          // Cử chỉ kéo vừa bắn Vitals → click sinh ra sau pointerup KHÔNG được chuyển chặng.
           if (suppressClick.current) {
             suppressClick.current = false;
             e.preventDefault();
@@ -175,8 +175,8 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         onMouseEnter={() => {
           setHover(true);
           // Fallback 2 — khả năng khám phá: hover đủ lâu (0.9s) mới thì thầm gợi ý cử chỉ;
-          // thôi hiện sau lần đầu user đã gọi Vitas trong phiên tab.
-          if (!wasVitasUsed() && !vitasOpen) {
+          // thôi hiện sau lần đầu user đã gọi Vitals trong phiên tab.
+          if (!wasVitalsUsed() && !vitalsOpen) {
             if (hintTimer.current) clearTimeout(hintTimer.current);
             hintTimer.current = setTimeout(() => setHintShown(true), 900);
           }
@@ -255,7 +255,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         })}
       </div>
 
-      {/* ---------- Vitas — giọt kính ẩn ở mép dưới thanh ---------- */}
+      {/* ---------- Vitals — giọt kính ẩn ở mép dưới thanh ---------- */}
       {/* Gợn kính TĨNH: chỉ hé ra khi hover (visual hint tinh tế, không phải nút).
           Đứng yên giữa thanh, như một giọt sắp đọng ở mép kính. */}
       {!reduce && (
@@ -271,7 +271,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
             borderRadius: '0 0 9px 9px',
             background: 'linear-gradient(rgba(255,255,255,0.3), rgba(255,255,255,0.12))',
             boxShadow: '0 1px 3px rgba(0,0,0,0.18), inset 0 0 2px rgba(255,255,255,0.35)',
-            opacity: hover && !dragging && !vitasOpen ? 0.75 : 0,
+            opacity: hover && !dragging && !vitalsOpen ? 0.75 : 0,
             transition: 'opacity 0.25s',
             pointerEvents: 'none',
           }}
@@ -284,12 +284,12 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
       <AnimatePresence>
         {dragging && !reduce && (
           <motion.svg
-            key="vitas-droplet"
+            key="vitals-droplet"
             aria-hidden
-            className="vitas-droplet-svg"
+            className="vitals-droplet-svg"
             width={26}
-            height={VITAS_DROP_THRESHOLD_PX + 12}
-            viewBox={`0 0 26 ${VITAS_DROP_THRESHOLD_PX + 12}`}
+            height={VITALS_DROP_THRESHOLD_PX + 12}
+            viewBox={`0 0 26 ${VITALS_DROP_THRESHOLD_PX + 12}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, transition: { duration: 0.12, ease: easeApple } }}
@@ -306,10 +306,10 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
             }}
           >
             <defs>
-              <filter id="vitas-drop-blur" x="-20%" y="-20%" width="140%" height="140%">
+              <filter id="vitals-drop-blur" x="-20%" y="-20%" width="140%" height="140%">
                 <feGaussianBlur stdDeviation="0.35" />
               </filter>
-              <linearGradient id="vitas-drop-fill" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="vitals-drop-fill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={COPPER_LIGHT} stopOpacity="0.28" />
                 <stop offset="100%" stopColor={COPPER_DEEP} stopOpacity="0.42" />
               </linearGradient>
@@ -318,11 +318,11 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
                 Bezier đối xứng 2 bên → không seam giữa. */}
             <path
               d={`M 6 0
-                  C 6 6, 3 ${VITAS_DROP_THRESHOLD_PX * 0.35}, 3 ${VITAS_DROP_THRESHOLD_PX * 0.65}
-                  A 10 ${VITAS_DROP_THRESHOLD_PX * 0.35} 0 0 0 23 ${VITAS_DROP_THRESHOLD_PX * 0.65}
-                  C 23 ${VITAS_DROP_THRESHOLD_PX * 0.35}, 20 6, 20 0 Z`}
-              fill="url(#vitas-drop-fill)"
-              filter="url(#vitas-drop-blur)"
+                  C 6 6, 3 ${VITALS_DROP_THRESHOLD_PX * 0.35}, 3 ${VITALS_DROP_THRESHOLD_PX * 0.65}
+                  A 10 ${VITALS_DROP_THRESHOLD_PX * 0.35} 0 0 0 23 ${VITALS_DROP_THRESHOLD_PX * 0.65}
+                  C 23 ${VITALS_DROP_THRESHOLD_PX * 0.35}, 20 6, 20 0 Z`}
+              fill="url(#vitals-drop-fill)"
+              filter="url(#vitals-drop-blur)"
               stroke="rgba(255,255,255,0.35)"
               strokeWidth="0.5"
             />
@@ -330,11 +330,11 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         )}
       </AnimatePresence>
 
-      {/* Tooltip gợi ý cử chỉ — hover đủ lâu mới hiện, mất hẳn sau lần đầu dùng Vitas. */}
+      {/* Tooltip gợi ý cử chỉ — hover đủ lâu mới hiện, mất hẳn sau lần đầu dùng Vitals. */}
       <AnimatePresence>
-        {hintShown && !vitasOpen && !dragging && (
+        {hintShown && !vitalsOpen && !dragging && (
           <motion.div
-            key="vitas-hint"
+            key="vitals-hint"
             initial={{ opacity: 0, y: reduce ? 0 : -4 }}
             animate={{ opacity: 1, y: 0, transition: { duration: 0.22, ease: easeApple } }}
             exit={{ opacity: 0, transition: { duration: 0.14, ease: easeApple } }}
@@ -355,15 +355,15 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
               pointerEvents: 'none',
             }}
           >
-            Kéo xuống để hỏi Vitas · ⌘J
+            Kéo xuống để hỏi Vitals · ⌘J
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Panel chat nhỏ — neo dưới thanh, đè lên canvas KHÔNG backdrop, không layout shift. */}
       <AnimatePresence>
-        {vitasOpen && (
-          <VitasDropPanel key="vitas-panel" originPx={originPx} onClose={() => setVitasOpen(false)} />
+        {vitalsOpen && (
+          <VitalsDropPanel key="vitals-panel" originPx={originPx} onClose={() => setVitalsOpen(false)} />
         )}
       </AnimatePresence>
       </div>

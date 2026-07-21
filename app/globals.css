@@ -589,37 +589,37 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   z-index: 1;
 }
 
-/* ---------- Vitas typing indicator (3 chấm iMessage) ----------
+/* ---------- Vitals typing indicator (3 chấm iMessage) ----------
    Chấm nhấp nháy lệch pha; prefers-reduced-motion: ẩn chấm, hiện text tĩnh (fallback).
 */
-.vitas-typing-dot {
+.vitals-typing-dot {
   display: inline-block;
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--t3);
   opacity: 0.35;
-  animation: vitas-typing-blink 1.2s infinite ease-in-out;
+  animation: vitals-typing-blink 1.2s infinite ease-in-out;
   will-change: transform, opacity;
 }
-.vitas-typing-fallback {
+.vitals-typing-fallback {
   display: none;
   font-size: 11.5px;
   color: var(--t4);
   padding: 0 2px;
 }
-@keyframes vitas-typing-blink {
+@keyframes vitals-typing-blink {
   0%, 60%, 100% { opacity: 0.28; transform: translateY(0); }
   30%           { opacity: 0.95; transform: translateY(-2px); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .vitas-typing-dot { display: none; }
-  .vitas-typing-fallback { display: inline; }
+  .vitals-typing-dot { display: none; }
+  .vitals-typing-fallback { display: inline; }
 }
 
-/* Giọt kính Vitas: SVG teardrop dùng feGaussianBlur — GPU compose + subpixel mượt,
+/* Giọt kính Vitals: SVG teardrop dùng feGaussianBlur — GPU compose + subpixel mượt,
    không còn seam/aliasing như div với border-radius + backdrop-filter. */
-.vitas-droplet-svg {
+.vitals-droplet-svg {
   display: block;
   transform: translateZ(0);
   will-change: transform, opacity;

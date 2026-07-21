@@ -1,13 +1,13 @@
 'use client';
 
 /**
- * components/studio/VitasStageDrop.tsx — khung chat NHỎ của Vitas AI "chảy ra" từ thanh chặng.
+ * components/studio/VitalsStageDrop.tsx — khung chat NHỎ của Vitals AI "chảy ra" từ thanh chặng.
  *
- * Vitas ở các chặng = GIỌT KÍNH LỎNG ẩn trong chính thanh chuyển chặng (StageSwitcher):
+ * Vitals ở các chặng = GIỌT KÍNH LỎNG ẩn trong chính thanh chuyển chặng (StageSwitcher):
  * bình thường thanh trông + hoạt động y hệt cũ; TRỎ vào tab rồi KÉO XUỐNG vượt ngưỡng
  * (lib/input/stage-drop.ts) → panel này tách ra như giọt nước, neo ngay dưới thanh.
  *
- * KHÁC bản Vitas Gallery (ProjectSelect.tsx — thanh nhập luôn hiện + overlay lớn):
+ * KHÁC bản Vitals Gallery (ProjectSelect.tsx — thanh nhập luôn hiện + overlay lớn):
  * đây là panel gọn ~380px, overlay tuyệt đối KHÔNG đè backdrop lên canvas — luồng việc
  * bên dưới vẫn thao tác được, chỉ click ra ngoài/Esc/X là panel thu về.
  *
@@ -21,27 +21,27 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Loader2, Send, X } from 'lucide-react';
 import type { ChatTurn } from '@/lib/ai/chat-assist';
 import { easeApple, springSheet } from '@/lib/motion';
-import VitasIcon from './VitasIcon';
-import { VitasBubble, VitasTyping } from './VitasChatBubble';
+import VitalsIcon from './VitalsIcon';
+import { VitalsBubble, VitalsTyping } from './VitalsChatBubble';
 
-/** Màu đồng — chữ ký thị giác của Vitas (đồng bộ bản Gallery/Login). */
+/** Màu đồng — chữ ký thị giác của Vitals (đồng bộ bản Gallery/Login). */
 const COPPER = '#c79a63';
 const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
 
 /* Lịch sử hội thoại sống ở mức MODULE — panel unmount (đóng/chuyển chặng) không mất,
    reload tab mới mất (đúng phạm vi v1 "state client" như bản Gallery). */
-let vitasSession: ChatTurn[] = [];
-/** Đã từng gọi Vitas trong phiên tab này chưa — để thôi hiện tooltip gợi ý cử chỉ. */
-let vitasUsed = false;
+let vitalsSession: ChatTurn[] = [];
+/** Đã từng gọi Vitals trong phiên tab này chưa — để thôi hiện tooltip gợi ý cử chỉ. */
+let vitalsUsed = false;
 
-export function markVitasUsed() {
-  vitasUsed = true;
+export function markVitalsUsed() {
+  vitalsUsed = true;
 }
-export function wasVitasUsed() {
-  return vitasUsed;
+export function wasVitalsUsed() {
+  return vitalsUsed;
 }
 
-export default function VitasDropPanel({
+export default function VitalsDropPanel({
   originPx,
   onClose,
 }: {
@@ -53,13 +53,13 @@ export default function VitasDropPanel({
   const rootRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const [messages, setMessages] = useState<ChatTurn[]>(() => vitasSession);
+  const [messages, setMessages] = useState<ChatTurn[]>(() => vitalsSession);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<{ message: string; code?: string } | null>(null);
 
   useEffect(() => {
-    vitasSession = messages;
+    vitalsSession = messages;
   }, [messages]);
 
   // Đóng: Esc + click/tap ra ngoài panel (canvas bên dưới KHÔNG bị backdrop chặn).
@@ -121,7 +121,7 @@ export default function VitasDropPanel({
     <motion.div
       ref={rootRef}
       role="dialog"
-      aria-label="Vitas AI"
+      aria-label="Vitals AI"
       // Giọt kính tách khỏi thanh: mọc từ ĐÚNG điểm kéo (originX), scaleY dãn ra rồi
       // lắng lại theo springSheet. Reduce-motion: fade đơn giản, không kéo dãn.
       initial={reduce ? { opacity: 0 } : { opacity: 0, scaleY: 0.55, scaleX: 0.9, y: -10 }}
@@ -169,12 +169,12 @@ export default function VitasDropPanel({
                 color: 'var(--t4)',
               }}
             >
-              <VitasIcon size={12} style={{ color: COPPER }} />
-              Vitas · hỏi nhanh
+              <VitalsIcon size={12} style={{ color: COPPER }} />
+              Vitals · hỏi nhanh
             </span>
             <button
               type="button"
-              aria-label="Đóng Vitas"
+              aria-label="Đóng Vitals"
               onClick={onClose}
               style={{
                 display: 'grid',
@@ -206,11 +206,11 @@ export default function VitasDropPanel({
               }}
             >
               {messages.map((m, i) => (
-                <VitasBubble key={i} role={m.role} size="sm">
+                <VitalsBubble key={i} role={m.role} size="sm">
                   {m.content}
-                </VitasBubble>
+                </VitalsBubble>
               ))}
-              {sending && <VitasTyping label="Vitas đang trả lời…" />}
+              {sending && <VitalsTyping label="Vitals đang trả lời…" />}
               {error && (
                 <div
                   style={{
@@ -257,8 +257,8 @@ export default function VitasDropPanel({
                 if (e.key === 'Escape') onClose();
               }}
               disabled={sending}
-              aria-label="Hỏi Vitas"
-              placeholder="Hỏi Vitas — vật liệu, phong cách, cách dùng app…"
+              aria-label="Hỏi Vitals"
+              placeholder="Hỏi Vitals — vật liệu, phong cách, cách dùng app…"
               style={{
                 flex: 1,
                 minWidth: 0,
@@ -271,7 +271,7 @@ export default function VitasDropPanel({
             />
             <button
               type="button"
-              aria-label="Gửi cho Vitas"
+              aria-label="Gửi cho Vitals"
               onClick={() => void send()}
               disabled={sending || !input.trim()}
               style={{
