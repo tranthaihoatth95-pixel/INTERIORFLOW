@@ -566,10 +566,19 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         )}
       </AnimatePresence>
 
-      {/* Panel chat nhỏ — neo dưới thanh, đè lên canvas KHÔNG backdrop, không layout shift. */}
+      {/* Panel chat nhỏ — neo dưới thanh, đè lên canvas KHÔNG backdrop, không layout shift.
+          21/07 tối — pre-mount fix motion khưng: mount NGAY khi drag bắt đầu (dragging=true),
+          giữ opacity 0/pointer-events none, để React commit + effect setup chạy TRONG lúc
+          user còn kéo. Khi threshold hit → open=true → chỉ tween opacity/scale 220ms
+          easeApple (thay springSheet ~300ms) → thấy panel mượt ngay, không cold-mount. */}
       <AnimatePresence>
-        {vitalsOpen && (
-          <VitalsDropPanel key="vitals-panel" originPx={originPx} onClose={() => setVitalsOpen(false)} />
+        {(dragging || vitalsOpen) && (
+          <VitalsDropPanel
+            key="vitals-panel"
+            originPx={originPx}
+            open={vitalsOpen}
+            onClose={() => setVitalsOpen(false)}
+          />
         )}
       </AnimatePresence>
       </div>

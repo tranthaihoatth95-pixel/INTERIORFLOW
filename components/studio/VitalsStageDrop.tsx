@@ -20,7 +20,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Loader2, Send, X } from 'lucide-react';
 import type { ChatTurn } from '@/lib/ai/chat-assist';
-import { easeApple, springSheet } from '@/lib/motion';
+import { easeApple } from '@/lib/motion';
 import VitalsIcon from './VitalsIcon';
 import { VitalsBubble, VitalsTyping } from './VitalsChatBubble';
 
@@ -43,15 +43,24 @@ export function wasVitalsUsed() {
 
 export default function VitalsDropPanel({
   originPx,
+  open,
   onClose,
 }: {
   /** px ngang (trên panel) nơi giọt được kéo ra làm transform-origin · null = giữa (⌘J). */
   originPx: number | null;
+  /**
+   * 21/07 tối — pre-mount fix motion khưng drag→panel: parent (StageSwitcher) mount panel
+   * NGAY khi drag bắt đầu (dragging=true) với `open=false` → React commit + effect setup
+   * chạy TRONG lúc user còn kéo, không gộp vào 1 tick với drop-release. Khi threshold hit
+   * → parent set `open=true` → chỉ toggle opacity/scale, không phải cold-mount.
+   */
+  open: boolean;
   onClose: () => void;
 }) {
   const reduce = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const [messages, setMessages] = useState<ChatTurn[]>(() => vitalsSession);
   const [input, setInput] = useState('');
@@ -62,8 +71,17 @@ export default function VitalsDropPanel({
     vitalsSession = messages;
   }, [messages]);
 
-  // Đóng: Esc + click/tap ra ngoài panel (canvas bên dưới KHÔNG bị backdrop chặn).
+  // Focus vào input khi PANEL THẬT SỰ MỞ (không phải lúc pre-mount trong drag) — tránh
+  // steal focus khi user còn đang thao tác thanh chặng.
   useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
+
+  // Đóng: Esc + click/tap ra ngoài panel (canvas bên dưới KHÔNG bị backdrop chặn).
+  // CHỈ gắn listener khi panel THỰC SỰ mở — pre-mount lúc drag không được nghe pointerdown,
+  // vì mọi pointer sự kiện trong drag sẽ khớp "ngoài panel" và đóng panel trước khi mở.
+  useEffect(() => {
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -78,7 +96,7 @@ export default function VitalsDropPanel({
       window.removeEventListener('keydown', onKey);
       document.removeEventListener('pointerdown', onDown, true);
     };
-  }, [onClose]);
+  }, [open, onClose]);
 
   // Tin mới → cuộn xuống đáy.
   useEffect(() => {
@@ -122,13 +140,17 @@ export default function VitalsDropPanel({
       ref={rootRef}
       role="dialog"
       aria-label="Vitals AI"
-      // Giọt kính tách khỏi thanh: mọc từ ĐÚNG điểm kéo (originX), scaleY dãn ra rồi
-      // lắng lại theo springSheet. Reduce-motion: fade đơn giản, không kéo dãn.
-      initial={reduce ? { opacity: 0 } : { opacity: 0, scaleY: 0.55, scaleX: 0.9, y: -10 }}
+      aria-hidden={!open}
+      // 21/07 tối — motion khưng fix: KHÔNG dùng springSheet (settle ~300ms) nữa. Pre-mount
+      // với opacity 0 trong lúc drag → khi open bật, chỉ tween 220ms easeApple (khớp nhịp
+      // với droplet exit 120ms). Giọt kính tách khỏi thanh: mọc từ ĐÚNG điểm kéo (originX).
+      initial={reduce ? { opacity: 0 } : { opacity: 0, scaleY: 0.7, scaleX: 0.95, y: -6 }}
       animate={
         reduce
-          ? { opacity: 1, transition: { duration: 0.15 } }
-          : { opacity: 1, scaleY: 1, scaleX: 1, y: 0, transition: springSheet }
+          ? { opacity: open ? 1 : 0, transition: { duration: 0.15 } }
+          : open
+            ? { opacity: 1, scaleY: 1, scaleX: 1, y: 0, transition: { duration: 0.22, ease: easeApple } }
+            : { opacity: 0, scaleY: 0.7, scaleX: 0.95, y: -6, transition: { duration: 0.14, ease: easeApple } }
       }
       exit={
         reduce
@@ -143,6 +165,7 @@ export default function VitalsDropPanel({
         zIndex: 60,
         originX: originPx == null ? 0.5 : `${originPx}px`,
         originY: 0,
+        pointerEvents: open ? 'auto' : 'none',
       }}
     >
       <div className="lq-card" style={{ borderRadius: 16, overflow: 'hidden' }}>
@@ -237,7 +260,7 @@ export default function VitalsDropPanel({
           {/* ô nhập + gửi */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 8px 8px 12px' }}>
             <input
-              autoFocus
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
