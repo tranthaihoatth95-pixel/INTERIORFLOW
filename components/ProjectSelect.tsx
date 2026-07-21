@@ -15,15 +15,65 @@ import {
   X,
   Upload,
   Search,
+  Info,
+  Link2,
 } from 'lucide-react';
 import { easeApple, pressable, springStage } from '@/lib/motion';
 import { useLang } from '@/lib/i18n';
 import { useFlowStore } from '@/lib/store';
-import { createFlow, openFlow } from '@/lib/workspace';
+import { createFlow, openFlow, createProject, assignProject } from '@/lib/workspace';
 import { applyCadHandoff } from '@/lib/cad/handoff';
 import { LangToggle } from '@/components/LangToggle';
 import { adaptiveTextStyle, useAdaptiveContrast } from '@/components/ui/AdaptiveContrast';
 import type { ContrastPlan } from '@/lib/adaptive-contrast';
+
+/**
+ * Home/Gallery ↔ Larkbase (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md, M1) — BỔ SUNG dữ liệu vào
+ * ĐÚNG VỊ TRÍ card đang có (§2.2(a)), KHÔNG vẽ lại layout. 3 điểm chạm mới trong file này:
+ *   1. Pill "Cảnh báo" Larkbase cạnh tên dự án (nếu Project đã gán larkProjectCode + đã sync).
+ *   2. Tooltip avatar owner nối thêm Chức danh/Phòng ban (đối chiếu LarkUserMap → LarkPersonRef).
+ *   3. Nút "Chi tiết" (mỗi card + 1 nút cố định đầu trang) + "Đồng bộ tiến độ" — mở lại
+ *      Dashboard.tsx overlay đã có sẵn, KHÔNG modal mới (openDashboardTab, lib/store.ts).
+ * Toàn bộ BEST-EFFORT: fetch lỗi/Lark chưa cấu hình → im lặng bỏ qua, Gallery hiện y hệt hôm
+ * nay (không có card cũ nào regression, đúng yêu cầu verify bắt buộc).
+ */
+interface LarkSummary {
+  byCode: Map<string, string>; // larkProjectCode -> cảnh báo đại diện (worst-case, nguyên chuỗi Larkbase)
+  personByAccount: Map<string, { fullName: string; title: string | null; department: string | null }>;
+  mapByUser: Map<string, string>; // User.id -> larkAccount
+  distinctCodes: { code: string; name: string }[];
+}
+
+function useLarkSummary(): LarkSummary | null {
+  const [summary, setSummary] = useState<LarkSummary | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/lark-tasks')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancelled || !j) return;
+        // import động tránh vòng phụ thuộc — worstWarningByCode thuần hàm, không I/O.
+        import('@/lib/lark/task-utils').then(({ worstWarningByCode }) => {
+          if (cancelled) return;
+          const byCode = worstWarningByCode(
+            (j.tasks ?? []).map((t: { larkProjectCode: string | null; status: string; warningLabel: string | null; daysLeft: number | null }) => t),
+          );
+          const personByAccount = new Map<string, { fullName: string; title: string | null; department: string | null }>();
+          for (const p of j.persons ?? []) personByAccount.set(p.larkAccount, { fullName: p.fullName, title: p.title, department: p.department });
+          const mapByUser = new Map<string, string>();
+          for (const m of j.userMap ?? []) mapByUser.set(m.userId, m.larkAccount);
+          setSummary({ byCode, personByAccount, mapByUser, distinctCodes: j.distinctCodes ?? [] });
+        });
+      })
+      .catch(() => {
+        /* best-effort — Lark chưa cấu hình/chưa sync/mạng lỗi → Gallery vẫn hiện bình thường */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return summary;
+}
 
 /**
  * ProjectSelect — MÀN CHỌN DỰ ÁN sau đăng nhập, THAY cho StageSelect cũ.
@@ -112,7 +162,7 @@ type FlowRow = {
   version: number;
   updatedAt: string;
   shareToken: string | null;
-  project: { id: string; name: string } | null;
+  project: { id: string; name: string; larkProjectCode?: string | null } | null;
   coverUrl?: string;
   status?: string;
 };
@@ -231,11 +281,47 @@ type CardItem = { kind: 'flow'; flow: FlowRow } | { kind: 'new' };
 
 export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   const user = useFlowStore((s) => s.user);
+  const openDashboardTab = useFlowStore((s) => s.openDashboardTab);
   const reduce = useReducedMotion();
   // Tab ẩn → dừng quầng sáng lặp vô hạn (xem lib/usePageVisible.ts).
   const visible = usePageVisible();
   const lang = useLang();
   const en = lang === 'en';
+
+  /* ---------- Larkbase (M1) — best-effort, KHÔNG chặn/làm chậm Gallery ---------- */
+  const larkSummary = useLarkSummary();
+  const [larkConfigured, setLarkConfigured] = useState<boolean | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/integrations/lark/status')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setLarkConfigured(!!j?.configured))
+      .catch(() => setLarkConfigured(false));
+  }, []);
+
+  const runLarkSync = useCallback(async () => {
+    setSyncing(true);
+    setSyncMsg(null);
+    try {
+      const res = await fetch('/api/lark-tasks/sync', { method: 'POST' });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSyncMsg(typeof j?.error === 'string' ? j.error : (en ? 'Sync failed.' : 'Đồng bộ thất bại.'));
+        return;
+      }
+      setSyncMsg(
+        en
+          ? `Synced ${j.taskCount ?? 0} tasks, ${j.personCount ?? 0} people.`
+          : `Đã đồng bộ ${j.taskCount ?? 0} công việc, ${j.personCount ?? 0} nhân sự.`,
+      );
+    } catch {
+      setSyncMsg(en ? 'Sync failed — check connection.' : 'Đồng bộ thất bại — kiểm tra kết nối.');
+    } finally {
+      setSyncing(false);
+    }
+  }, [en]);
 
   const [flows, setFlows] = useState<FlowRow[] | null>(null); // null = đang tải
   const [team, setTeam] = useState<TeamMember[]>([]);
@@ -257,6 +343,10 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   // Grid + tìm kiếm khi >8 dự án (J-4c)
   const [query, setQuery] = useState('');
   const [projFilter, setProjFilter] = useState<string>(''); // '' = tất cả, '__none__' = chưa gắn dự án
+  // Liên kết Larkbase TUỲ CHỌN lúc "+ Dự án mới" (§2.4/§2.6 M1) — chọn TRƯỚC khi bấm tạo,
+  // KHÔNG chèn dialog chắn luồng 1-click hiện có (mặc định '' = "Chưa liên kết", hành vi hôm
+  // nay giữ nguyên y hệt nếu bỏ qua bước này).
+  const [pendingLarkCode, setPendingLarkCode] = useState<string>('');
 
   const load = useCallback(() => {
     setLoadError(false);
@@ -315,6 +405,14 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           item.kind === 'new'
             ? await createFlow('Untitled flow', JSON.stringify({ nodes: [], edges: [] }))
             : item.flow.id;
+        // Liên kết Larkbase TUỲ CHỌN (§2.4/§2.6) — chỉ chạy khi user đã CHỌN 1 mã trước khi
+        // bấm tạo (pendingLarkCode !== ''); bỏ qua hoàn toàn (giữ hành vi hôm nay) nếu để trống.
+        if (item.kind === 'new' && pendingLarkCode) {
+          const codeInfo = larkSummary?.distinctCodes.find((c) => c.code === pendingLarkCode);
+          const project = await createProject(codeInfo?.name ?? `Dự án ${pendingLarkCode}`, pendingLarkCode).catch(() => null);
+          if (project?.id) await assignProject(id, project.id).catch(() => {});
+          setPendingLarkCode('');
+        }
         await openFlow(id); // nạp graph vào store + set currentFlowId
         applyCadHandoff(); // bản vẽ CAD chờ handoff (nếu có) — consume sau khi graph nạp
         onEnter();
@@ -327,7 +425,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         );
       }
     },
-    [busy, en, onEnter],
+    [busy, en, onEnter, pendingLarkCode, larkSummary],
   );
 
   /* ---------- Đổi bìa: mở picker + PUT optimistic ---------- */
@@ -500,6 +598,24 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
     [team, user],
   );
 
+  /**
+   * Tooltip avatar owner — nối thêm Chức danh/Phòng ban Larkbase nếu đối chiếu được qua
+   * LarkUserMap (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2(a) bullet 3). Không tìm được
+   * (chưa sync/chưa gán ánh xạ) → giữ NGUYÊN tooltip cũ, không lỗi (best-effort đúng brief).
+   */
+  const larkTitleSuffix = useCallback(
+    (userId: string): string => {
+      if (!larkSummary) return '';
+      const account = larkSummary.mapByUser.get(userId);
+      if (!account) return '';
+      const person = larkSummary.personByAccount.get(account);
+      if (!person) return '';
+      const bits = [person.title, person.department].filter(Boolean);
+      return bits.length ? ` · ${bits.join(' · ')}` : '';
+    },
+    [larkSummary],
+  );
+
   const avatarRow = (members: TeamMember[], opts?: { light?: boolean; ownerId?: string }) => {
     if (members.length === 0) return null;
     const ring = opts?.light ? 'rgba(0,0,0,0.12)' : 'rgba(20,18,16,0.9)';
@@ -509,7 +625,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         {members.slice(0, 7).map((m, idx) => (
           <span
             key={m.id}
-            title={opts?.ownerId && m.id === opts.ownerId ? `${m.name}${ownerSuffix}` : m.name}
+            title={`${m.name}${opts?.ownerId && m.id === opts.ownerId ? ownerSuffix : ''}${larkTitleSuffix(m.id)}`}
             className="relative grid shrink-0 place-items-center rounded-full"
             style={{
               width: 28,
@@ -620,6 +736,17 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               >
                 {f.project ? f.project.name : en ? 'No project' : 'Chưa gắn dự án'}
               </span>
+              {/* Pill "Cảnh báo" Larkbase — CHỈ hiện nếu Project đã gán larkProjectCode VÀ đã
+                  đồng bộ có dữ liệu; hiện NGUYÊN chuỗi Larkbase đã tính sẵn, không tự suy diễn
+                  (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2(a)/§2.1). */}
+              {f.project?.larkProjectCode && larkSummary?.byCode.get(f.project.larkProjectCode) && (
+                <span
+                  className="shrink-0 rounded-full px-2 py-0.5 text-[10px]"
+                  style={{ ...adaptiveTextStyle(plan, true), background: 'rgba(240,96,32,0.16)', border: '1px solid rgba(240,96,32,0.32)' }}
+                >
+                  {larkSummary.byCode.get(f.project.larkProjectCode)}
+                </span>
+              )}
               <span
                 className="shrink-0 rounded-full px-2 py-0.5 text-[9px] uppercase tracking-[0.14em]"
                 style={{
@@ -633,20 +760,35 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             </div>
           </div>
 
-          {/* nút Đổi bìa — chỉ card focus */}
+          {/* nút Đổi bìa + Chi tiết — chỉ card focus */}
           {isCenter && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                openPicker(f.id);
-              }}
-              className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-white/90 hover:text-white"
-              style={darkPill}
-            >
-              <ImagePlus size={13} />
-              {en ? 'Cover' : 'Đổi bìa'}
-            </button>
+            <div className="flex shrink-0 flex-col items-end gap-1.5">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openPicker(f.id);
+                }}
+                className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-white/90 hover:text-white"
+                style={darkPill}
+              >
+                <ImagePlus size={13} />
+                {en ? 'Cover' : 'Đổi bìa'}
+              </button>
+              {/* "Chi tiết" — mở panel Dashboard, lọc sẵn theo project của card này (§2.2(b)) */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openDashboardTab('board', f.project?.id ?? null);
+                }}
+                className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-white/90 hover:text-white"
+                style={darkPill}
+              >
+                <Info size={13} />
+                {en ? 'Details' : 'Chi tiết'}
+              </button>
+            </div>
           )}
         </div>
 
@@ -795,6 +937,27 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       <span className="max-w-[14rem] text-center text-[11px] leading-relaxed text-[var(--t4)]" style={{ fontFamily: SANS }}>
                         {en ? 'Start from an empty canvas' : 'Bắt đầu từ một canvas trống'}
                       </span>
+                      {/* Liên kết Larkbase TUỲ CHỌN (§2.4/§2.6 M1) — chỉ hiện khi có mã đã
+                          sync + card đang focus; chọn xong bấm card như bình thường để tạo.
+                          stopPropagation để không kích hoạt choose() khi thao tác dropdown. */}
+                      {isCenter && !!larkSummary?.distinctCodes.length && (
+                        <div onClick={(e) => e.stopPropagation()} className="mt-1">
+                          <select
+                            value={pendingLarkCode}
+                            onChange={(e) => setPendingLarkCode(e.target.value)}
+                            className="cursor-pointer appearance-none rounded-full border border-[rgba(127,127,127,0.35)] bg-transparent px-2.5 py-1 text-[10px]"
+                            style={{ fontFamily: SANS, color: pendingLarkCode ? COPPER : 'var(--t4)' }}
+                            title={en ? 'Optionally link a Larkbase project code' : 'Tuỳ chọn liên kết mã dự án Larkbase'}
+                          >
+                            <option value="">{en ? 'Link Larkbase (optional)' : 'Liên kết Larkbase (tuỳ chọn)'}</option>
+                            {larkSummary.distinctCodes.map((c) => (
+                              <option key={c.code} value={c.code}>
+                                {c.code} · {c.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1048,19 +1211,33 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               <div className="relative" style={{ aspectRatio: '4 / 3' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={coverOf(f)} alt="" draggable={false} className="h-full w-full object-cover" />
-                {/* Đổi bìa — hiện khi hover card (desktop) / luôn chạm được trên touch */}
-                <button
-                  type="button"
-                  aria-label={en ? 'Change cover' : 'Đổi bìa'}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openPicker(f.id);
-                  }}
-                  className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full text-white/90 opacity-100 transition-opacity hover:text-white sm:opacity-0 sm:group-hover:opacity-100"
-                  style={darkPill}
-                >
-                  <ImagePlus size={13} />
-                </button>
+                {/* Đổi bìa + Chi tiết — hiện khi hover card (desktop) / luôn chạm được trên touch */}
+                <div className="absolute right-2 top-2 flex flex-col items-end gap-1.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+                  <button
+                    type="button"
+                    aria-label={en ? 'Change cover' : 'Đổi bìa'}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openPicker(f.id);
+                    }}
+                    className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
+                    style={darkPill}
+                  >
+                    <ImagePlus size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={en ? 'Details' : 'Chi tiết'}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openDashboardTab('board', f.project?.id ?? null);
+                    }}
+                    className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
+                    style={darkPill}
+                  >
+                    <Info size={13} />
+                  </button>
+                </div>
               </div>
               <div className="px-3 pb-2.5 pt-2">
                 <div className="truncate text-[13px] font-semibold text-white" style={{ fontFamily: SANS }}>
@@ -1185,6 +1362,44 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               ? 'Open a flow and land straight on the canvas — Concept · Render · Present live in the header.'
               : 'Mở một flow là vào thẳng canvas — Concept · Render · Present nằm sẵn trên thanh Header.'}
           </p>
+
+          {/* "Chi tiết" (toàn bộ, không lọc) + "Đồng bộ tiến độ" — 2 điểm neo cố định đầu
+              Gallery (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2(b)/§2.5). Nút Đồng bộ
+              disabled + tooltip rõ khi Lark chưa cấu hình (health-check qua registry, KHÔNG
+              throw lỗi khó hiểu — đúng pattern các integration khác đã có). */}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => openDashboardTab('board', null)}
+              className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)]"
+              style={glass}
+            >
+              <Info size={13} />
+              {en ? 'Details' : 'Chi tiết'}
+            </button>
+            <button
+              type="button"
+              onClick={runLarkSync}
+              disabled={syncing || larkConfigured === false}
+              title={
+                larkConfigured === false
+                  ? en
+                    ? 'Lark not configured — LARK_APP_ID/LARK_APP_SECRET/LARK_BASE_APP_TOKEN missing. See docs/INTEGRATIONS.md.'
+                    : 'Chưa cấu hình Lark — thiếu LARK_APP_ID/LARK_APP_SECRET/LARK_BASE_APP_TOKEN. Xem docs/INTEGRATIONS.md.'
+                  : undefined
+              }
+              className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-45"
+              style={glass}
+            >
+              {syncing ? <Loader2 size={13} className="animate-spin" /> : <Link2 size={13} />}
+              {en ? 'Sync progress' : 'Đồng bộ tiến độ'}
+            </button>
+          </div>
+          {syncMsg && (
+            <p className="mt-2 text-[11px] text-[var(--t4)]" style={{ fontFamily: SANS }}>
+              {syncMsg}
+            </p>
+          )}
         </div>
 
         {/* thân màn theo trạng thái */}

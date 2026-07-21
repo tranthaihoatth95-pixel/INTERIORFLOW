@@ -147,6 +147,9 @@ function clientId(p: IntegrationProvider): string {
     youtube: 'YOUTUBE_CLIENT_ID',
     team: 'TEAM_API_TOKEN',
     applemusic: 'APPLE_MUSIC_KEY_ID',
+    // lark: kind='apikey', KHÔNG đi qua flow OAuth này (/connect chặn cfg.kind!=='oauth')
+    // — chỉ điền cho đủ Record, thật sự dùng bởi lib/integrations/providers/lark.ts riêng.
+    lark: 'LARK_APP_ID',
   };
   return (process.env[map[p]] ?? '').trim();
 }
@@ -160,6 +163,7 @@ function clientSecret(p: IntegrationProvider): string {
     youtube: 'YOUTUBE_CLIENT_SECRET',
     team: 'TEAM_API_TOKEN',
     applemusic: 'APPLE_MUSIC_PRIVATE_KEY',
+    lark: 'LARK_APP_SECRET',
   };
   return (process.env[map[p]] ?? '').trim();
 }

@@ -13,7 +13,8 @@ export type IntegrationProvider =
   | 'zalo'
   | 'spotify'
   | 'youtube'
-  | 'applemusic';
+  | 'applemusic'
+  | 'lark';
 
 export interface ProviderConfig {
   id: IntegrationProvider;
@@ -116,6 +117,19 @@ export const REGISTRY: Record<IntegrationProvider, ProviderConfig> = {
     kind: 'stub',
     configured: () => has('APPLE_MUSIC_TEAM_ID', 'APPLE_MUSIC_KEY_ID', 'APPLE_MUSIC_PRIVATE_KEY'),
     note: 'Cần Apple Developer + MusicKit + JWT ký .p8; playback chỉ trong SDK Apple → hiện STUB.',
+  },
+  lark: {
+    id: 'lark',
+    label: 'Lark/Feishu Base',
+    tier: 1,
+    // KHÔNG phải OAuth per-user — server-to-server (tenant_access_token từ App ID/Secret),
+    // đọc 1 base dùng chung công ty (Home/Gallery §5.1 quyết định 2). 'apikey' đúng ngữ nghĩa
+    // hơn 'oauth' ở đây: /connect, /callback (oauth-core) không áp dụng cho provider này —
+    // route status vẫn dùng được nguyên (chỉ đọc configured(), connected() luôn false cho
+    // kind !== 'oauth', xem lib/integrations/index.ts).
+    kind: 'apikey',
+    configured: () => has('LARK_APP_ID', 'LARK_APP_SECRET', 'LARK_BASE_APP_TOKEN'),
+    note: 'Đọc "Chi tiết công việc" + "Nhân sự" — PULL-ONLY tuyệt đối, không bao giờ ghi ngược Larkbase.',
   },
 };
 

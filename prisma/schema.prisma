@@ -27,6 +27,7 @@ model User {
   assets       LibraryAsset[]
   projects     Project[]
   integrations IntegrationAccount[]
+  larkUserMaps LarkUserMap[]
 }
 
 // Token OAuth của user cho từng dịch vụ ngoài (google/ms365/zoom/zalo/spotify/youtube/team...).
@@ -55,9 +56,15 @@ model Project {
   name       String
   clientName String?
   createdAt  DateTime @default(now())
+  // ══ MỚI (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.1) ══ — "Mã DA" bên Larkbase, gán TUỲ
+  // CHỌN lúc tạo/sửa dự án ("Liên kết Larkbase"). Optional — không phải Project nào cũng có
+  // mã Larkbase (dự án mới trong IF trước khi phòng dự án tạo task tương ứng bên Larkbase).
+  larkProjectCode String?
 
   user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   flows Flow[]
+
+  @@index([larkProjectCode])
 }
 
 model Flow {
@@ -126,6 +133,65 @@ model LibraryAsset {
   w         Int      @default(0)
   h         Int      @default(0)
   createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Home/Gallery ↔ Larkbase (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md) — M1.
+// PULL-ONLY tuyệt đối: Larkbase là nguồn chân lý, IF chỉ đọc/mirror, KHÔNG BAO GIỜ ghi ngược
+// (không create_record/update_record tự động — xem §2.4 báo cáo). Cùng mẫu hình MaterialRef
+// đã đề xuất ở RESEARCH-MATERIAL-BRIDGE.md §2: bảng mirror cache đọc + field `raw` JSON giữ
+// nguyên toàn bộ dữ liệu gốc (tương lai-proof, Larkbase thêm cột không cần migrate).
+// ══════════════════════════════════════════════════════════════════════════
+
+// Mirror bảng "Chi tiết công việc" (tblnjLehkr6DRMJN mặc định, xem LARK_TASK_TABLE_ID).
+model LarkTaskRef {
+  id              String    @id @default(cuid())
+  larkRecordId    String    @unique // record_id thật — khoá đối chiếu khi sync lại (idempotent)
+  task            String                      // Công việc (fldwbtnkvV)
+  larkProjectName String                      // Dự án — TEXT TỰ DO bên Larkbase (fldJtylsyv)
+  larkProjectCode String?                     // Mã DA (fldhMYuiEN) — "Khác"/rỗng/không phải số → null
+  ownerAccount    String?                     // Chủ trì — Tài khoản Lark (fldgKYaap5), CHƯA map User.id
+  status          String                      // Trạng thái: 'Đang làm'|'Hoàn thành'|'Ghi nhận' (fldfhchOp2)
+  deadline        DateTime?                   // fldhG7EqAa
+  daysLeft        Int?                        // Số ngày còn lại — ĐỌC TỪ FORMULA CÓ SẴN (fldKUidfNt)
+  warningLabel    String?                     // Cảnh báo — ĐỌC TỪ FORMULA CÓ SẴN (fldz1WLW4y), giữ emoji
+  raw             String                      // JSON toàn bộ field gốc Larkbase
+  syncedAt        DateTime  @default(now())
+
+  @@index([larkProjectCode])
+  @@index([status])
+}
+
+// Mirror bảng "Nhân sự" (tblUvVYG5j70FCTn mặc định, xem LARK_HR_TABLE_ID). BỔ SUNG so với
+// danh sách model gốc trong báo cáo (chỉ liệt LarkTaskRef/LarkUserMap) — cần 1 nơi lưu roster
+// cho tab "Nhân sự" của panel "Chi tiết" (không có field nhạy cảm, xem báo cáo §1.5/§3: chỉ
+// Tài khoản/Họ tên/Chức danh/Phòng ban/checkbox Team Crea, an toàn hiện công khai nội bộ).
+// Cùng mẫu pull-only/idempotent như LarkTaskRef — KHÔNG phải "phát minh cơ chế lưu token mới",
+// đây là mirror DỮ LIỆU, không phải lưu credential.
+model LarkPersonRef {
+  id           String   @id @default(cuid())
+  larkRecordId String   @unique
+  larkAccount  String   @unique // Tài khoản (fldRj0Rxqj, primary) — vd "An.LNT"
+  fullName     String                       // Họ tên (fldrqrWgRL)
+  title        String?                      // Chức danh (fldk6eUee1)
+  department   String?                      // Phòng ban (fldtdBj7Vw)
+  isCrea       Boolean  @default(false)      // Team Crea (fldvno5ztZ, checkbox)
+  raw          String
+  syncedAt     DateTime @default(now())
+}
+
+// Ánh xạ TAY 1 lần: "Tài khoản" Larkbase (vd "An.LNT") ↔ User.id nội bộ IF — Larkbase KHÔNG
+// dùng cùng định danh (tên đầy đủ/email) nên không tự suy đoán được (báo cáo §3, câu hỏi (f)).
+// Phân quyền app KHÔNG phụ thuộc bảng này (đã chốt tách biệt hoàn toàn — ProjectMember riêng,
+// xem RESEARCH-ACCESS-CONTROL.md); đây chỉ để HIỂN THỊ (tooltip chức danh/phòng ban, cột
+// "Chủ trì" trong bảng phẳng) và pre-fill gợi ý sau này, không quyết quyền truy cập.
+model LarkUserMap {
+  id          String   @id @default(cuid())
+  larkAccount String   @unique
+  userId      String
+  createdAt   DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

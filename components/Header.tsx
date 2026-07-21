@@ -25,6 +25,8 @@ import { stashPresentHandoffWithIds, deckImagesWithIdsFromNodes } from '@/lib/pr
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { IFLogo } from '@/components/entry/IFLogo';
+import { HomeButton } from '@/components/studio/HomeButton';
+import { requestGallery } from '@/lib/resume';
 
 export function Header() {
   const flowName = useFlowStore((s) => s.flowName);
@@ -50,8 +52,15 @@ export function Header() {
         borderBottomColor: `color-mix(in srgb, ${STAGE_TINT[workspace ?? DEFAULT_PHASE]} 55%, var(--border))`,
       }}
     >
-      {/* logo */}
-      <div className="flex shrink-0 items-center gap-2">
+      {/* logo — bấm điều hướng về Gallery (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §5.1
+          quyết định 3). Đã ở route '/' nên requestGallery() dùng CustomEvent (nghe ở
+          app/page.tsx) thay vì round-trip router.push('/') (không remount cùng route). */}
+      <button
+        type="button"
+        onClick={() => requestGallery()}
+        title="Về Gallery — InteriorFlow"
+        className="flex shrink-0 items-center gap-2 border-none bg-transparent p-0"
+      >
         {/* Logo IF chốt phương án "có khung" (IFLogo variant="framed") — 19/07 chủ dự án
             duyệt, thay badge gradient tím-hồng cũ. Đơn sắc currentColor nên tự ăn theo
             theme sáng/tối của app. */}
@@ -59,7 +68,10 @@ export function Header() {
         <span className="hidden text-sm font-semibold tracking-tight text-[var(--t1)] lg:block">
           InteriorFlow
         </span>
-      </div>
+      </button>
+
+      {/* Home — TRƯỚC trục Concept·Render·Present (đúng thứ tự đã chốt) */}
+      <HomeButton compact />
 
       <div className="mx-1 hidden h-5 w-px bg-[var(--border)] sm:block" />
 

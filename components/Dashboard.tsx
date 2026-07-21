@@ -1,14 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, FolderKanban, Workflow, Users, Coins, Plus, Loader2, Share2, Clock, Crown, Circle, Check,
+  LayoutGrid, KanbanSquare, Contact,
 } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { openFlow, createProject } from '@/lib/workspace';
 import { fade, pressable, pressableIcon, staggerList, staggerItem } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { useLarkData, LarkBoardTab, LarkKanbanTab, LarkRosterTab, LarkSyncBar } from '@/components/dashboard/LarkPanels';
 
 /* ---------- kiểu dữ liệu trả về từ /api/dashboard ---------- */
 interface Member {
@@ -17,6 +19,7 @@ interface Member {
 }
 interface ProjectRow {
   id: string; name: string; clientName: string | null; createdAt: string;
+  larkProjectCode?: string | null;
   user: { id: string; name: string }; _count: { flows: number };
 }
 interface FlowRow {
@@ -109,6 +112,42 @@ export function Dashboard({
 
   // Ở cover luôn coi như "mở" để nạp dữ liệu + hiển thị inline.
   const shown = coverMode || open;
+
+  /**
+   * 3 tab Larkbase (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2/§5.1 quyết định 4) — THÊM
+   * vào panel "Tổng quan" hiện có, KHÔNG THAY THẾ: entry point cũ (LeftRail/MobileMenu →
+   * setDashboardOpen(true) trực tiếp) phải giữ nguyên hành vi y hệt hôm nay (mở thẳng "Tổng
+   * quan"). Chỉ 2 điểm neo MỚI từ Gallery (nút "Chi tiết" trên card / đầu trang) gọi
+   * `openDashboardTab()` mới nhảy thẳng vào 1 trong 3 tab Larkbase, có thể kèm lọc theo project.
+   */
+  type PanelTab = 'overview' | 'board' | 'kanban' | 'roster';
+  const [tab, setTab] = useState<PanelTab>('overview');
+  const [filterProjectId, setFilterProjectId] = useState<string | null>(null);
+  const dashboardEntry = useFlowStore((s) => s.dashboardEntry);
+
+  // Đọc điểm neo 1 LẦN mỗi khi panel mở, rồi xoá ngay khỏi store (consume-once) — mở lại kiểu
+  // CŨ sau đó (không qua openDashboardTab) phải rơi về "Tổng quan" mặc định, không dính tab
+  // Larkbase còn sót lại từ lần mở trước.
+  useEffect(() => {
+    if (!shown) return;
+    if (dashboardEntry) {
+      setTab(dashboardEntry.tab);
+      setFilterProjectId(dashboardEntry.projectId ?? null);
+      useFlowStore.setState({ dashboardEntry: null });
+    } else if (!coverMode) {
+      setTab('overview');
+      setFilterProjectId(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shown]);
+
+  const larkEnabled = shown && !coverMode && tab !== 'overview';
+  const { data: larkData, loading: larkLoading, error: larkError, reload: reloadLark } = useLarkData(larkEnabled);
+  const teamById = useMemo(() => new Map((data?.team ?? []).map((u) => [u.id, u.name])), [data]);
+  const larkFilterCode = useMemo(
+    () => (filterProjectId ? (data?.projects.find((p) => p.id === filterProjectId)?.larkProjectCode ?? null) : null),
+    [filterProjectId, data],
+  );
 
   const load = useCallback(() => {
     setLoading(true);
@@ -233,6 +272,44 @@ export function Dashboard({
         )}
       </div>
 
+      {/* Tab bar — Tổng quan (gốc, không đổi) · Bảng/Kanban/Nhân sự (Larkbase, MỚI). Ẩn ở
+          cover-mode (màn ngoài read-only giữ nguyên "Tổng quan" duy nhất như hôm nay). */}
+      {!coverMode && (
+        <div className="flex shrink-0 items-center gap-1 border-b border-[var(--border)] px-4 pt-2 sm:px-6">
+          {(
+            [
+              { id: 'overview' as const, label: 'Tổng quan', icon: FolderKanban },
+              { id: 'board' as const, label: 'Bảng', icon: LayoutGrid },
+              { id: 'kanban' as const, label: 'Kanban', icon: KanbanSquare },
+              { id: 'roster' as const, label: 'Nhân sự', icon: Contact },
+            ]
+          ).map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={cn(
+                'flex items-center gap-1.5 rounded-t-[10px] border-b-2 px-3 py-2 text-xs font-medium transition-colors',
+                tab === t.id
+                  ? 'border-[var(--accent)] text-[var(--t1)]'
+                  : 'border-transparent text-[var(--t4)] hover:text-[var(--t2)]',
+              )}
+            >
+              <t.icon size={13} />
+              {t.label}
+            </button>
+          ))}
+          {filterProjectId && tab !== 'overview' && (
+            <span className="ml-2 flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] text-[var(--accent)]">
+              Đang lọc 1 dự án
+              <button type="button" onClick={() => setFilterProjectId(null)} className="hover:opacity-70">
+                <X size={10} />
+              </button>
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Gợi ý mở màn trong — dải mảnh dưới thanh trên (chỉ cover). */}
       {coverMode && (
         <div className="flex shrink-0 flex-wrap items-center justify-center gap-x-3 gap-y-1.5 border-b border-[var(--border)] bg-[var(--accent-soft)] px-4 py-2 text-[12px] text-[var(--accent)]">
@@ -251,7 +328,43 @@ export function Dashboard({
 
       {/* nội dung cuộn */}
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-            {loading && !data ? (
+            {tab !== 'overview' ? (
+              // 3 tab Larkbase — dữ liệu/loading TÁCH RIÊNG khỏi "Tổng quan" (larkData, không
+              // phải `data` team/project Prisma) — panel gốc không bị đụng khi Lark lỗi/rỗng.
+              <div className="mx-auto max-w-6xl">
+                <LarkSyncBar data={larkData} loading={larkLoading} onReload={reloadLark} />
+                {larkError && (
+                  <p className="mb-3 rounded-[10px] border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                    {larkError}
+                  </p>
+                )}
+                {!larkData && larkLoading ? (
+                  <div className="grid h-64 place-items-center text-[var(--t4)]">
+                    <Loader2 size={22} className="animate-spin" />
+                  </div>
+                ) : !larkData ? (
+                  <div className="grid h-64 place-items-center text-sm text-[var(--t4)]">
+                    Chưa tải được dữ liệu Larkbase.
+                  </div>
+                ) : tab === 'board' ? (
+                  <LarkBoardTab
+                    data={larkData}
+                    filterCode={larkFilterCode}
+                    persons={larkData.persons}
+                    userMap={larkData.userMap}
+                    teamById={teamById}
+                  />
+                ) : tab === 'kanban' ? (
+                  <LarkKanbanTab data={larkData} filterCode={larkFilterCode} />
+                ) : (
+                  <LarkRosterTab
+                    data={larkData}
+                    teamUsers={(data?.team ?? []).map((u) => ({ id: u.id, name: u.name }))}
+                    onMapped={reloadLark}
+                  />
+                )}
+              </div>
+            ) : loading && !data ? (
               <div className="grid h-64 place-items-center text-[var(--t4)]">
                 <Loader2 size={22} className="animate-spin" />
               </div>

@@ -33,6 +33,9 @@ export async function GET() {
         name: true,
         clientName: true,
         createdAt: true,
+        // larkProjectCode: panel "Chi tiết" cần đối chiếu Project.id → Mã DA để lọc bảng/kanban
+        // Larkbase theo đúng project của card (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2(b)).
+        larkProjectCode: true,
         user: { select: { id: true, name: true } },
         _count: { select: { flows: true } },
       },

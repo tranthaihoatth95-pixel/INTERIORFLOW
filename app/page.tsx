@@ -28,7 +28,15 @@ import { useFlowStore } from '@/lib/store';
 import { bootstrapWorkspace, openFlow } from '@/lib/workspace';
 import { applyCadHandoff } from '@/lib/cad/handoff';
 import { fade } from '@/lib/motion';
-import { loadResume, saveResume, setLastUserId, isTourDone, markTourDone } from '@/lib/resume';
+import {
+  loadResume,
+  saveResume,
+  setLastUserId,
+  isTourDone,
+  markTourDone,
+  consumeForceGallery,
+  GO_HOME_EVENT,
+} from '@/lib/resume';
 
 /**
  * Ngưỡng bề rộng phân biệt màn HẸP (cover foldable / điện thoại) vs màn ĐỦ RỘNG.
@@ -97,6 +105,16 @@ export default function Home() {
   const enterAfterAuth = useCallback(
     (userId: string) => {
       setLastUserId(userId); // ResumeTracker ở route studio cần biết ghi resume cho ai
+
+      // Lối vào Home chủ động (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §5.1 quyết định 3):
+      // nút "Home"/logo IF ở StudioBar gọi requestGallery() rồi router.push('/') — route '/'
+      // remount, enterAfterAuth chạy lại. Cờ này có nghĩa "user VỪA CHỦ ĐỘNG bấm về Gallery"
+      // → bỏ qua toàn bộ auto-resume bên dưới, luôn dừng ở ProjectSelect, dù có resume/stageFlag.
+      if (consumeForceGallery()) {
+        setStageDone(false);
+        return;
+      }
+
       const resume = loadResume(userId);
       let stageFlag = false;
       try {
@@ -227,6 +245,15 @@ export default function Home() {
     });
   }, [user, stageDone, currentFlowId, workspace]);
 
+  // "Home"/logo IF bấm trong khi ĐÃ đứng ở route '/' (canvas) — router.push('/') không remount
+  // (cùng route) nên consumeForceGallery() trong enterAfterAuth không có dịp chạy lại. Nghe
+  // trực tiếp CustomEvent để quay về Gallery ngay, không cần round-trip qua route.
+  useEffect(() => {
+    const onGoHome = () => setStageDone(false);
+    window.addEventListener(GO_HOME_EVENT, onGoHome);
+    return () => window.removeEventListener(GO_HOME_EVENT, onGoHome);
+  }, []);
+
   // B-5: kết thúc tour (hoàn tất hoặc bỏ qua) — không hiện lại cho user này.
   const endTour = useCallback(() => {
     setTourOn(false);
@@ -302,6 +329,14 @@ export default function Home() {
         />
         {/* B-5: bước "chọn dự án" của Smart Tour — chỉ first-time user */}
         {tourOn && <SmartTour screen="gallery" onFinish={endTour} onSkip={endTour} />}
+        {/* Panel "Chi tiết" (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2(b)) — Dashboard.tsx
+            overlay đã có sẵn (fixed inset-0 z-50), gated bởi store dashboardOpen. TRƯỚC ĐÂY
+            chỉ mount ở nhánh canvas bên dưới → 2 nút "Chi tiết"/"Đồng bộ tiến độ" mới thêm
+            trên Gallery gọi openDashboardTab() cập nhật store nhưng KHÔNG CÓ GÌ render, vì
+            Gallery (nhánh !stageDone) chưa từng mount <Dashboard/>. Mount thêm ở đây — mutually
+            exclusive với nhánh canvas (chỉ 1 trong 2 return chạy tại 1 thời điểm), không tạo 2
+            overlay chồng nhau. */}
+        <Dashboard />
       </>
     );
   }

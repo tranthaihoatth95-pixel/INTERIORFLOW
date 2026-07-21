@@ -127,3 +127,41 @@ export function markTourDone(userId: string): void {
     /* bỏ qua */
   }
 }
+
+/* ---------- "Về Home" (Gallery) — nút Home + logo IF (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md
+   §5.1 quyết định 3) ----------
+ * Vấn đề: route '/' KHÔNG luôn hiện Gallery — returning-user có `stageFlag`/`resume` đã lưu
+ * thì `enterAfterAuth()` (app/page.tsx) tự resume THẲNG vào canvas, bỏ qua ProjectSelect
+ * (đúng phát hiện §1.6 điểm 2 báo cáo). Bấm "Home" cần MỘT LẦN bỏ qua auto-resume đó, dù bấm
+ * từ route studio (StudioBar → cần router.push('/') rồi remount đọc lại) hay từ chính route
+ * '/' (Header → component Home đã mount sẵn, không remount nếu push cùng route).
+ *
+ * `requestGallery()` xử lý CẢ HAI: ghi cờ sessionStorage (đọc lại sau khi remount) VÀ bắn 1
+ * CustomEvent (nghe được ngay nếu đang cùng trang, không cần đợi remount).
+ */
+const FORCE_GALLERY_KEY = 'interiorflow.forceGallery';
+export const GO_HOME_EVENT = 'if:go-home';
+
+export function requestGallery(): void {
+  try {
+    sessionStorage.setItem(FORCE_GALLERY_KEY, '1');
+  } catch {
+    /* bỏ qua */
+  }
+  try {
+    window.dispatchEvent(new Event(GO_HOME_EVENT));
+  } catch {
+    /* bỏ qua (SSR/no window) */
+  }
+}
+
+/** Đọc + XOÁ cờ (dùng 1 lần) — gọi trong enterAfterAuth() lúc route '/' vừa mount. */
+export function consumeForceGallery(): boolean {
+  try {
+    const v = sessionStorage.getItem(FORCE_GALLERY_KEY) === '1';
+    if (v) sessionStorage.removeItem(FORCE_GALLERY_KEY);
+    return v;
+  } catch {
+    return false;
+  }
+}

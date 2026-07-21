@@ -56,6 +56,13 @@ interface FlowState {
   tasksOpen: boolean;
   /** Dashboard tổng quan project + team (overlay toàn màn) */
   dashboardOpen: boolean;
+  /**
+   * Điểm neo mở panel "Chi tiết" từ Gallery (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2(b)) —
+   * null = mở kiểu CŨ (Header/LeftRail, nút "Tổng quan" nguyên trạng, KHÔNG đổi hành vi hiện có).
+   * Có giá trị = Dashboard.tsx mở sẵn tab Larkbase tương ứng, lọc theo projectId nếu có (card
+   * "Chi tiết" trên từng flow) hoặc null = xem toàn bộ (nút "Chi tiết" cố định đầu Gallery).
+   */
+  dashboardEntry: { tab: 'board' | 'kanban' | 'roster'; projectId?: string | null } | null;
   /** Present mode — trình chiếu deck/board toàn màn (overlay) */
   presentModeOpen: boolean;
   /** Moodboard maker (chặng Concept) — overlay chọn ảnh + style → moodboard */
@@ -107,6 +114,8 @@ interface FlowState {
   setPanel: (panel: Panel) => void;
   setTasksOpen: (open: boolean) => void;
   setDashboardOpen: (open: boolean) => void;
+  /** Mở panel "Chi tiết" đúng tab Larkbase (Gallery — card hoặc nút cố định đầu trang). */
+  openDashboardTab: (tab: 'board' | 'kanban' | 'roster', projectId?: string | null) => void;
   setPresentModeOpen: (open: boolean) => void;
   setMoodboardOpen: (open: boolean) => void;
   setConnectError: (msg: string | null) => void;
@@ -218,6 +227,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   panel: null,
   tasksOpen: false,
   dashboardOpen: false,
+  dashboardEntry: null,
   presentModeOpen: false,
   moodboardOpen: false,
   connectError: null,
@@ -313,6 +323,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   setPanel: (panel) => set((s) => ({ panel: s.panel === panel ? null : panel })),
   setTasksOpen: (tasksOpen) => set({ tasksOpen }),
   setDashboardOpen: (dashboardOpen) => set({ dashboardOpen }),
+  openDashboardTab: (tab, projectId) => set({ dashboardOpen: true, dashboardEntry: { tab, projectId: projectId ?? null } }),
   setPresentModeOpen: (presentModeOpen) => set({ presentModeOpen }),
   setMoodboardOpen: (moodboardOpen) => set({ moodboardOpen }),
   setConnectError: (connectError) => set({ connectError }),

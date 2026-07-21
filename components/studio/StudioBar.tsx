@@ -21,6 +21,8 @@ import { useStageTransition } from './StageTransitionProvider';
 import SessionWatch from './SessionWatch';
 import Tooltip from '@/components/ui/Tooltip';
 import { IFLogo } from '@/components/entry/IFLogo';
+import { HomeButton } from './HomeButton';
+import { requestGallery } from '@/lib/resume';
 
 export default function StudioBar({ active }: { active: 'present' | 'photo' | 'cad' }) {
   const router = useRouter();
@@ -93,8 +95,24 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
         background: 'var(--panel)',
       }}
     >
-      {/* Logo IF phương án "có khung" — đồng bộ với Header/share/login (19/07). */}
-      <IFLogo size={22} variant="framed" style={{ color: 'var(--t2)', flex: '0 0 auto' }} />
+      {/* Logo IF phương án "có khung" — đồng bộ với Header/share/login (19/07). Bấm logo cũng
+          điều hướng về Gallery (§5.1 quyết định 3) — cùng cơ chế requestGallery() với HomeButton. */}
+      <button
+        type="button"
+        onClick={() => {
+          requestGallery();
+          router.push('/');
+        }}
+        title="Về Gallery — InteriorFlow"
+        aria-label="InteriorFlow — Home"
+        style={{ display: 'flex', flex: '0 0 auto', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+      >
+        <IFLogo size={22} variant="framed" style={{ color: 'var(--t2)' }} />
+      </button>
+      <span style={{ width: 1, height: 20, background: 'var(--border)' }} />
+
+      {/* Home — TRƯỚC Drafting CAD (đúng thứ tự đã chốt) */}
+      <HomeButton compact />
       <span style={{ width: 1, height: 20, background: 'var(--border)' }} />
 
       <StageSwitcher

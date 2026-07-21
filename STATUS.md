@@ -7,6 +7,7 @@
 ## Hiện tại
 - Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (local vượt origin, chưa push). Verify SHA bằng git. Đợt 19-21/07 (chi tiết đầy đủ → CHANGELOG) ĐÃ MERGE hết: login/contrast, toolbar+IO, Sketch-Pro, Present typography, đổi tên chặng, PPTX font, input, motion, fix-api-auth-p0, login-glass+fix login, báo cáo nghiên cứu, CAD demo mặt bằng 2, CAD "AI mô tả" v2, M0 tỉ lệ khung tên, fix text chồng chữ Presenting.
   - ⚠️ **CHỜ USER VERIFY bằng mắt:** .pptx nhúng font (PowerPoint thật) · frame-timing chuyển chặng.
+- **21/07 — M1 Home/Gallery ↔ Larkbase XÂY XONG** (nhánh `feat/home-gallery-larkbase-m1`, CHƯA merge): `LarkTaskRef`/`LarkPersonRef`(mới, roster)/`LarkUserMap` + `Project.larkProjectCode` (additive) · provider thật `lib/integrations/providers/lark.ts` (token cache-bộ-nhớ, KHÔNG `IntegrationAccount` — lý do ở `docs/INTEGRATIONS.md`) · `POST /api/lark-tasks/sync` + `GET /api/lark-tasks` + `POST /api/lark-user-map` · Gallery thêm pill cảnh báo/tooltip chức danh/nút "Chi tiết"+"Đồng bộ tiến độ"/liên kết Larkbase tuỳ chọn lúc tạo dự án · Dashboard.tsx thêm 3 tab Bảng/Kanban/Nhân sự cạnh "Tổng quan" gốc (không đổi) · Home+logo điều hướng `/`. **CHỜ USER cấp `LARK_APP_ID/SECRET/LARK_BASE_APP_TOKEN`**. Verify: tsc sạch, 67 test pass, browser thật (mock seed DB xác nhận pill/sort/%tiến độ/owner-resolve đúng, không regression Gallery). Nợ: chưa thêm link-picker ở grid >8 dự án.
 - **8 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (đọc thẳng từng file, đừng chép lại vào đây):
   - `RESEARCH-ACCESS-CONTROL.md` — phân quyền `ProjectMember` 5 role, 10 câu hỏi §8.
   - `RESEARCH-MOBILE-DISTRIBUTION.md` — bộ cài iOS/macOS/Android.
@@ -15,8 +16,8 @@
   - `RESEARCH-TECHNICAL-DRAWING-PIPELINE.md` — khung tên/tỉ lệ/PDF in kỹ thuật CAD→Presenting (M0 tỉ lệ ĐÃ SỬA, còn M1+ chờ quyết).
   - `RESEARCH-TEAM-COLLABORATION.md` — chat/cộng tác: Phần A (comment CAD+Rendering) rẻ, làm ngay được. Phần B (Presenting real-time) 🔴 Presenting KHÔNG có server source-of-truth cho deck — phải dựng trước khi bàn CRDT/Yjs.
   - `RESEARCH-OFFICE-FILE-INTEROP.md` — mở PPTX/Word/Keynote chỉnh tiếp + bảng tính Excel thật (A/PPTX khả thi · B/Keynote KHÔNG khả thi trực tiếp · C/Word rẻ nhất · D/bảng tính MỚI hoàn toàn). 6 câu hỏi §6.
-  - `RESEARCH-HOME-GALLERY-DASHBOARD.md` — Gallery (`ProjectSelect.tsx`, đã có sẵn, `StageSelect.tsx` là code chết) + Larkbase (`LarkTaskRef` mirror, phát hiện `Mã DA="Khác"` cần lọc). ĐÃ CHỐT: phân quyền tách Larkbase (`ProjectMember`) · tạo dự án cục bộ, liên kết tuỳ chọn, KHÔNG ghi ngược. Hỏi mở §5.2 (lối vào Gallery returning-user, vị trí kanban).
-- Test: `node_modules/.bin/sucrase-node <path>.test.ts` (66 file). KHÔNG có vitest/jest.
+  - `RESEARCH-HOME-GALLERY-DASHBOARD.md` — M1 ĐÃ XÂY (xem mục "Hiện tại" trên). M2 còn lại: `ProjectMember` pre-fill + cron sync (chờ `RESEARCH-ACCESS-CONTROL.md` build trước).
+- Test: `node_modules/.bin/sucrase-node <path>.test.ts` (67 file). KHÔNG có vitest/jest.
 
 ## Quyết định user đã khoá
 - **Auth**: email MỌI domain · Google OAuth mọi tài khoản · Microsoft OAuth (Entra ID) — user CHƯA tạo Azure app, nút disabled · quên mật khẩu = admin reset.
@@ -24,10 +25,9 @@
 - Perceptron THẬT (learning-to-rank, đã verify wired vào Presenting `LayoutShelf` + mới thêm CAD `AiBriefPanel`) · 3 installer unsigned · PWA Vercel + Supabase (Sprint 4).
 
 ## Nợ kỹ thuật
-- ✅ **FIX Presenting — chữ tiêu đề chồng/echo:** root cause = sửa chữ TRÊN CANVAS (double-click) mở `<textarea>` nổi đè đúng khung `frame`, nhưng `EditorCanvas.tsx` vẫn vẽ `<Element>` tĩnh (chữ CŨ, chưa commit) bên dưới → 2 lớp gần trùng vị trí, lệch vài pixel do khác box-model = "echo". Sửa qua Inspector không qua overlay này nên luôn sạch (đúng manh mối user chỉ ra). Sửa: `EditorCanvas.tsx` ~dòng 313, bỏ vẽ `<Element>` khi `editing?.id === el.id`. Verify: tsc sạch · test pass · browser thật — double-click, gõ chữ, không còn ghost, blur commit đúng.
+- ✅ FIX Presenting chữ chồng/echo · ✅ FIX M0 tỉ lệ khung tên CAD — chi tiết → CHANGELOG.
 - 🐛 `/cad-editor` warning React `Cannot update a component...` (`CadCanvas`/`StudioBar`) — điều tra sâu nhưng KHÔNG tái hiện được, chưa sửa. Chi tiết → CHANGELOG.
-- ✅ **FIX M0 tỉ lệ khung tên CAD:** khoá lỗi tỉ lệ gõ tay không khớp `fitBox()` thật (`RESEARCH-TECHNICAL-DRAWING-PIPELINE.md` §1.6). Verify PDF thật (đọc byte: "1:47" đúng, "1:100" gõ tay cũ hết còn).
-- [THẤP] Property panel Render không undo được · Sprint 3 B1 `meta` giá/vendor/sku trống · `knowledge/` 121MB cân nhắc Git LFS.
+- [THẤP] Property panel Render không undo được · Sprint 3 B1 `meta` giá/vendor/sku trống · `knowledge/` 121MB cân nhắc Git LFS · M1 Larkbase: chưa link-picker grid >8 dự án.
 
 ## Bị chặn — KHÔNG tự khởi động
 - Intro screen (chờ hình/video — flow hiện tại ĐÃ gỡ intro theo lệnh user) · ML Gu Engine heavy (chồng lấn 2 app khác) · "API team" spec.

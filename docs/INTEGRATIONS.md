@@ -19,6 +19,7 @@ Redirect URI mỗi provider: `<origin>/api/integrations/<provider>/callback`
 | YouTube | 2 | API key | **Khung** (search+nhúng) | Video tham khảo |
 | Apple Music | 3 | — | **STUB** (503) | (sau) |
 | Chrome Clipper | — | — | **Khung extension** + `POST /api/library/clip` | Clip ảnh web → Reference |
+| Lark/Feishu Base | 1 | API key (server-to-server, KHÔNG OAuth) | **Thật** (đọc "Chi tiết công việc" + "Nhân sự", pull-only) | Home/Gallery — tiến độ dự án + roster |
 
 ## Lấy khoá (tóm tắt)
 - **Google**: Cloud Console → OAuth client (Web) → thêm redirect URI ở trên → bật Gmail/Calendar/Drive API. Dùng `GOOGLE_CLIENT_ID/SECRET`.
@@ -53,6 +54,61 @@ tooltip "chưa cấu hình" (route `/api/auth/providers` trả `microsoft:false`
 7. `.env.local`: `MS365_CLIENT_ID=... MS365_CLIENT_SECRET=... MS365_TENANT=common` → restart dev server
    → nút Microsoft tự chuyển enabled.
 
+## Lark/Feishu Base — Home/Gallery đọc tiến độ dự án (M1, 21/07)
+
+`components/ProjectSelect.tsx` (nút "Đồng bộ tiến độ" + "Chi tiết") kéo dữ liệu từ 1 Base
+Larkbase DÙNG CHUNG CẢ CÔNG TY (bảng "Chi tiết công việc" + "Nhân sự") — xem
+`docs/RESEARCH-HOME-GALLERY-DASHBOARD.md` cho đầy đủ field_id/quyết định kiến trúc. **KHÁC MỌI
+provider khác trong bảng trên**: đây là **server-to-server**, KHÔNG phải OAuth per-user — không
+có nút "kết nối tài khoản Lark của bạn" nào, vì không có khái niệm "tài khoản Lark của user IF"
+— app đọc thẳng 1 Base bằng App ID/Secret cấp server, đổi lấy `tenant_access_token`.
+
+**PULL-ONLY TUYỆT ĐỐI — không có ngoại lệ.** `lib/integrations/providers/lark.ts` chỉ có
+`list_records` (GET). Không có route nào gọi `create_record`/`update_record` lên Larkbase, dù
+là tính năng tương lai — bảng "Chi tiết công việc" là công cụ vận hành CHUNG cả công ty (nhiều
+phòng ban), IF ghi nhầm sẽ làm loạn task tracker của người không liên quan.
+
+**Tạo Lark/Feishu Open Platform app (từng bước):**
+1. Lark quốc tế: [open.larksuite.com](https://open.larksuite.com/app) → **Create app** → *Custom App*.
+   Feishu (Trung Quốc): [open.feishu.cn](https://open.feishu.cn/app) tương tự → đặt `LARK_API_BASE=https://open.feishu.cn`.
+2. **Credentials & Basic Info** → `App ID` → `LARK_APP_ID`; `App Secret` → `LARK_APP_SECRET`.
+3. **Permissions & Scopes** → thêm scope đọc Base: `bitable:app` (đọc) là đủ cho M1 (KHÔNG cần
+   `bitable:app:readonly` hay quyền ghi nào khác — chỉ `list_records`/`list_fields`).
+4. **App published/enabled trong tổ chức** — hoặc thêm app vào ĐÚNG Base cần đọc: mở Base trên
+   Lark/Feishu → **···** (góc phải) → **Advanced permissions** / **Add collaborator** → mời app
+   vừa tạo (theo App ID) làm collaborator có quyền đọc. Thiếu bước này → API trả lỗi permission
+   dù token đổi thành công.
+5. **Lấy `LARK_BASE_APP_TOKEN`** — mở Base trên trình duyệt, nhìn URL dạng
+   `https://open.larksuite.com/base/<app_token>?table=<table_id>` — phần `<app_token>` (KHÔNG
+   phải `<table_id>`) chính là `LARK_BASE_APP_TOKEN`. Bắt buộc — không đoán được từ App ID/Secret.
+6. `LARK_TASK_TABLE_ID`/`LARK_HR_TABLE_ID` — đã có mặc định đúng theo báo cáo đã verify bằng MCP
+   thật (`tblnjLehkr6DRMJN`/`tblUvVYG5j70FCTn`) — chỉ đổi nếu Larkbase tái cấu trúc bảng.
+7. `.env.local`: điền `LARK_APP_ID/LARK_APP_SECRET/LARK_BASE_APP_TOKEN` → restart dev server →
+   nút "Đồng bộ tiến độ" ở Gallery tự chuyển enabled (health-check `GET /api/integrations/lark/status`,
+   cùng cơ chế `configured()` các provider khác — không phát minh cơ chế status riêng).
+
+**Vì sao KHÔNG dùng `IntegrationAccount` để lưu `tenant_access_token`:** bảng đó khoá theo
+`(userId, provider)` với ngữ nghĩa "user X đã consent kết nối tài khoản cá nhân của họ" (đúng
+với Google/MS365/Zoom — mỗi user bấm connect riêng). Lark ở đây KHÔNG có user nào "kết nối" cả —
+1 credential cấp App, dùng chung mọi user IF. Ép vào `IntegrationAccount` sẽ phải chọn bừa 1
+userId "đại diện" (sai ngữ nghĩa, vỡ khi user đó bị xoá — cascade delete). Token cache **trong
+bộ nhớ** (module-scope, TTL ~7200s theo Lark cấp) — mất qua restart/cold-start thì refetch lại,
+rẻ, không phải sự cố. Đây KHÔNG phải "phát minh cơ chế lưu token mới": không có gì được LƯU
+(persist) — chỉ cache tạm trong tiến trình, y hệt tinh thần các cache trong-bộ-nhớ khác của app.
+
+**Field value chưa verify được 100% (cần token thật):** `lib/integrations/providers/lark.ts` có
+các hàm `textOf/numberOf/dateOf/userAccountOf` cố xử lý NHIỀU shape API khác nhau (Bitable trả
+Text/SingleSelect thẳng string đã verify qua MCP thật, nhưng User/Formula/DateTime CHƯA có bằng
+chứng thật vì chưa có token thật để gọi REST trực tiếp — MCP server dùng cơ chế nội bộ riêng,
+không lộ ra shape JSON thô cấp field). Khi có `LARK_APP_ID/SECRET` thật: chạy thử
+`POST /api/lark-tasks/sync` MỘT LẦN, so `raw` JSON đã lưu trên `LarkTaskRef`/`LarkPersonRef` với
+kỳ vọng — nếu `ownerAccount`/`deadline`/`daysLeft` sai shape, sửa các hàm normalizer trong
+`lark.ts`, KHÔNG cần đổi schema (field `raw` đã giữ nguyên bản gốc để dò lại).
+
+**Env cần** (mẫu ở `.env.example`): `LARK_APP_ID`, `LARK_APP_SECRET`, `LARK_BASE_APP_TOKEN`
+(bắt buộc cả 3, thiếu 1 → "chưa cấu hình"), `LARK_API_BASE` (tuỳ chọn, mặc định
+`https://open.larksuite.com`), `LARK_TASK_TABLE_ID`/`LARK_HR_TABLE_ID` (có default đúng).
+
 ## 🔐 Rủi ro bảo mật (bắt buộc đọc)
 1. **Secret server-only** — mọi khoá ở `.env.local` (đã gitignore), KHÔNG `NEXT_PUBLIC_`, không commit. Mọi gọi API ở route handler (server), không lộ token ra client.
 2. **Token mã hoá at-rest** — access/refresh token lưu AES-256-GCM (`crypto.ts`), khoá `INTEGRATION_ENC_KEY` tách khỏi DB. SQLite `dev.db` là file → không lưu token thô.
@@ -68,6 +124,11 @@ Model `IntegrationAccount` đã thêm vào `prisma/schema.prisma` + `prisma gene
 migration** vì `dev.db` có drift (do `db push` login-social trước đó) — chạy `migrate dev` sẽ đòi RESET
 (mất data team). Khi triển khai: dùng `npx prisma db push` (additive, thêm bảng, KHÔNG mất data) hoặc xử
 lý drift rồi `migrate`. **TUYỆT ĐỐI không `migrate reset`** trên máy có data thật.
+
+21/07 (M1 Home/Gallery ↔ Larkbase): thêm additive `LarkTaskRef`, `LarkPersonRef`, `LarkUserMap`
++ `Project.larkProjectCode` (optional) — cũng `npx prisma db push`, không đụng bảng cũ. Verify
+trên `dev.db.wt` cách ly (worktree riêng), CHƯA push lên `dev.db` thật — chạy lại `db push` khi
+merge lên nhánh chính.
 
 ## Kiểm tra nhanh (không cần khoá thật)
 `GET /api/integrations/<provider>/status` → `{configured:false, connected:false}` khi chưa cấu hình.

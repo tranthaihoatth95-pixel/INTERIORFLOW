@@ -22,13 +22,15 @@ export async function GET() {
         version: true,
         updatedAt: true,
         shareToken: true,
-        project: { select: { id: true, name: true } },
+        // larkProjectCode: Home/Gallery card đọc để hiện pill cảnh báo Larkbase khi đã liên
+        // kết (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2(a)) — additive, không đổi field cũ.
+        project: { select: { id: true, name: true, larkProjectCode: true } },
       },
     }),
     prisma.project.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
-      select: { id: true, name: true, clientName: true },
+      select: { id: true, name: true, clientName: true, larkProjectCode: true },
     }),
     // roster cả team (app nội bộ LAN) — hàng avatar memoji trên card
     prisma.user.findMany({
@@ -54,8 +56,18 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
 
   if (body.type === 'project') {
+    // larkProjectCode: bước TUỲ CHỌN "Liên kết Larkbase" (§2.4/§2.6 M1) — chỉ nhận chuỗi
+    // toàn số (đúng quy tắc lọc "Mã DA" đã áp khi sync, lib/lark/task-utils.ts). Giá trị
+    // KHÔNG khớp → bỏ qua lặng lẽ (coi như "chưa liên kết"), không lỗi khó hiểu.
+    const rawCode = typeof body.larkProjectCode === 'string' ? body.larkProjectCode.trim() : '';
+    const larkProjectCode = /^\d+$/.test(rawCode) ? rawCode : null;
     const project = await prisma.project.create({
-      data: { userId: user.id, name: String(body.name ?? 'Dự án mới'), clientName: body.clientName ?? null },
+      data: {
+        userId: user.id,
+        name: String(body.name ?? 'Dự án mới'),
+        clientName: body.clientName ?? null,
+        larkProjectCode,
+      },
     });
     return NextResponse.json({ project });
   }

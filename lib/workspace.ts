@@ -8,12 +8,13 @@ export interface FlowMeta {
   version: number;
   updatedAt: string;
   shareToken: string | null;
-  project: { id: string; name: string } | null;
+  project: { id: string; name: string; larkProjectCode?: string | null } | null;
 }
 export interface ProjectMeta {
   id: string;
   name: string;
   clientName: string | null;
+  larkProjectCode?: string | null;
 }
 
 export async function fetchFlows(): Promise<{ flows: FlowMeta[]; projects: ProjectMeta[] }> {
@@ -40,12 +41,15 @@ export async function createFlow(name: string, graphJson?: string): Promise<stri
   return body.flow.id;
 }
 
-export async function createProject(name: string): Promise<void> {
-  await fetch('/api/flows', {
+/** larkProjectCode: bước tuỳ chọn "Liên kết Larkbase" (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.4). */
+export async function createProject(name: string, larkProjectCode?: string | null): Promise<{ id: string } | null> {
+  const res = await fetch('/api/flows', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type: 'project', name }),
+    body: JSON.stringify({ type: 'project', name, larkProjectCode: larkProjectCode ?? undefined }),
   });
+  const body = await res.json().catch(() => null);
+  return body?.project?.id ? { id: body.project.id as string } : null;
 }
 
 export async function deleteFlow(id: string): Promise<void> {
