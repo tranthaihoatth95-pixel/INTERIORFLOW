@@ -183,7 +183,7 @@ export function LoginForm({
       transition={{ duration: 0.5, ease: easeApple, delay: 0.12 }}
       style={{
         ['--fc' as string]: 'rgba(199,154,99,0.6)',
-        // Việc 2 · ① — tint kính lấy từ chính ảnh nền (≈20%)
+        // Việc 2 · ① — tint kính lấy từ chính ảnh nền (≈14%, hạ từ 20% đợt glass-polish 21/07)
         ...(cardTint ? { ['--lq-tint' as string]: cardTint } : {}),
         // Việc 1 — remap bộ chữ về hệ tông đạt ngưỡng (mọi var(--t*) trong card ăn theo)
         ...(cardPlan ? cardTextVars(cardPlan) : {}),

@@ -453,10 +453,18 @@ export const CARD_STACK = {
    * ĐƯƠNG khi gộp cả kính, để một con số suy ra đúng cái mắt thấy.
    */
   photoScrimAlpha: 0.25,
-  /** Màng kính `.lq-card` — trắng rất mỏng, trung bình trên toàn mặt card. */
-  glassFilmAlpha: 0.055,
-  /** 3 inner-shadow trắng 20% (Việc 2) đọng lại ở giữa card một chút. */
-  innerGlowAlpha: 0.045,
+  /**
+   * Màng kính `.lq-card` — trắng rất mỏng, trung bình trên toàn mặt card.
+   * 21/07 glass-polish: CSS hạ film 0.06/0.03 → 0.04/0.02 và tint 0.20 → 0.14 (card
+   * trong hơn). Hằng số hạ 0.055 → 0.045 nhưng CỐ Ý giữ CAO hơn trung bình CSS thật
+   * (~0.03): mô hình coi nền SÁNG hơn thực → giải chữ kem đậm hơn cần → nghiêng an toàn.
+   */
+  glassFilmAlpha: 0.045,
+  /**
+   * Inner-shadow trắng 20% + (21/07) vệt phản chiếu chéo 115° mới ở ::before —
+   * nhích 0.045 → 0.05 để mô hình ôm cả lớp sheen mới (cũng nghiêng phía sáng/an toàn).
+   */
+  innerGlowAlpha: 0.05,
 } as const;
 
 /**
@@ -560,8 +568,10 @@ export function planCardText(rawLuminance: number, opts: CardTextOptions = {}): 
 
   const backdrop = isCream
     ? cardBackdropLuminance(raw)
-    : // tone sáng: card là màng sữa dày, nền hiệu dụng gần như chỉ còn màu màng
-      relLuminance(blend([255, 255, 255], 0.62, grayForLuminance(raw)));
+    : // tone sáng: card là màng sữa dày, nền hiệu dụng gần như chỉ còn màu màng.
+      // 21/07 glass-polish: CSS hạ màng sữa 0.62/0.48 → 0.55/0.42 → hằng số 0.62 → 0.55
+      // (giữ đúng stop ĐẬM nhất; nền mô hình TỐI hơn thực một nhịp = an toàn cho chữ mực).
+      relLuminance(blend([255, 255, 255], 0.55, grayForLuminance(raw)));
 
   // ——— Lever 1: sương nội bộ, chỉ dùng ĐÚNG LƯỢNG CẦN, thường là 0 ———
   let scrimAlpha = 0;

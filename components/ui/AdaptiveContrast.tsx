@@ -107,7 +107,7 @@ export interface UseCardTextArgs extends CardTextOptions {
 
 export interface CardTextResult {
   plan: CardTextPlan;
-  /** Tint kính (Việc 2 · ①) ở dạng "R G B" cho `rgba(var(--lq-tint)/0.2)`. */
+  /** Tint kính (Việc 2 · ①) ở dạng "R G B" cho `rgba(var(--lq-tint)/0.14)`. */
   tint: string;
 }
 

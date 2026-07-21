@@ -23,6 +23,9 @@
   - `RESEARCH-HOME-GALLERY-DASHBOARD.md` — M1 ĐÃ XÂY (xem mục "Hiện tại" trên). M2 còn lại: `ProjectMember` pre-fill + cron sync (chờ `RESEARCH-ACCESS-CONTROL.md` build trước).
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (68 file). KHÔNG có vitest/jest.
 
+## Worktree đang mở
+- `interiorflow-wt-glass-polish` / nhánh `feat/glass-refraction-polish` (21/07, agent UI polish): card kính `.lq-card` TRONG hơn (tint 0.20→0.14, film trắng 0.06/0.03→0.04/0.02, màng sữa light 0.62→0.55) + khúc xạ tinh tế hơn (rim bất đối xứng sáng trên-trái/tối dưới-phải + vệt phản chiếu chéo 115°). Mô hình `CARD_STACK`/`planCardText` cập nhật khớp, 68 test pass. **CHỜ USER duyệt → merge → xoá worktree.**
+
 ## Quyết định user đã khoá
 - **Auth**: email MỌI domain · Google OAuth mọi tài khoản · Microsoft OAuth (Entra ID) — user CHƯA tạo Azure app, nút disabled · quên mật khẩu = admin reset.
 - **Logo IF: CÓ KHUNG** (`framed`). Wallpaper: 30 ảnh TTT ở `public/wallpapers/`.

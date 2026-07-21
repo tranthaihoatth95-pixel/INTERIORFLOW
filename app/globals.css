@@ -464,7 +464,7 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
 
 /* ---------- C-1 · Liquid glass card (20/07 login-glass — theo công thức 4 bước) ----------
    Công thức user gửi, dịch sang CSS tương đương:
-   ① linear-gradient LẤY MÀU từ ảnh nền đang hiện, opacity ~20% — biến `--lq-tint`
+   ① linear-gradient LẤY MÀU từ ảnh nền đang hiện, opacity ~14% (hạ từ 20%, 21/07) — biến `--lq-tint`
       (rgb đo bằng lib/adaptive-contrast) do LoginScreen bơm vào; mặc định trung tính.
    ② 3 inner shadow TRẮNG 20% dựng khối kính dày:
         inset  4px  4px 12px 2px · inset -2px -2px 15px 1px · inset 0 0 15px 2px
@@ -474,17 +474,18 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
    Card RẤT TRONG (thấy ảnh xuyên qua) — độ đọc do TẦNG chữ (Việc 1) lo, không nhờ đục card. */
 .lq-card {
   position: relative;
-  /* ① tint lấy từ ảnh nền (≈20%) chồng trên lớp kính trắng rất mỏng — trong, có hồn màu */
+  /* ① tint lấy từ ảnh nền (hạ 0.20→0.14, 21/07 glass-polish: card TRONG hơn theo yêu cầu
+     chủ dự án — mô hình chữ lib/adaptive-contrast CARD_STACK đã cập nhật theo) */
   background:
     linear-gradient(
       168deg,
-      rgba(var(--lq-tint, 255 255 255) / 0.2) 0%,
-      rgba(var(--lq-tint, 255 255 255) / 0.1) 100%
+      rgba(var(--lq-tint, 255 255 255) / 0.14) 0%,
+      rgba(var(--lq-tint, 255 255 255) / 0.07) 100%
     ),
     linear-gradient(
       168deg,
-      rgba(255, 255, 255, 0.06) 0%,
-      rgba(255, 255, 255, 0.03) 100%
+      rgba(255, 255, 255, 0.04) 0%,
+      rgba(255, 255, 255, 0.02) 100%
     );
   /* ③ frost — làm mờ + tăng bão hoà nền phía sau (cảm giác kính dày) */
   backdrop-filter: blur(22px) saturate(155%);
@@ -499,7 +500,9 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
     0 4px 18px -6px rgba(0, 0, 0, 0.34);
   will-change: transform;
 }
-/* ③ viền specular trên đỉnh — tia sáng mảnh kiểu kính Apple (chấm sáng theo con trỏ) */
+/* ③ viền specular trên đỉnh — tia sáng mảnh kiểu kính Apple (chấm sáng theo con trỏ)
+   + (21/07 glass-polish) vệt PHẢN CHIẾU chéo rất nhẹ 115° — như ánh đèn lướt qua mặt
+   kính nghiêng, tan hẳn hai đầu nên không thành "dải sáng" lộ liễu. */
 .lq-card::before {
   content: '';
   position: absolute;
@@ -507,7 +510,14 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   border-radius: inherit;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 18%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 16%),
+    linear-gradient(
+      115deg,
+      transparent 32%,
+      rgba(255, 255, 255, 0.05) 44%,
+      rgba(255, 255, 255, 0.02) 52%,
+      transparent 60%
+    ),
     radial-gradient(
       420px 260px at var(--lq-mx, 50%) var(--lq-my, -20%),
       rgba(255, 255, 255, 0.09),
@@ -526,8 +536,12 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
     linear-gradient(145deg, rgba(255, 180, 140, 0.05), transparent 20%),
     linear-gradient(325deg, rgba(150, 190, 255, 0.045), transparent 20%),
     linear-gradient(180deg, transparent 80%, rgba(255, 255, 255, 0.05) 100%);
+  /* (21/07 glass-polish) rim BẤT ĐỐI XỨNG — ánh sáng đi qua mép kính: mép trên/trái
+     bắt sáng, mép dưới/phải ngả tối rất nhẹ. Kính có "chiều dày" mà không cần viền đậm. */
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 1.5px 1.5px 1px -1px rgba(255, 255, 255, 0.16),
+    inset -1.5px -1.5px 1px -1px rgba(0, 0, 0, 0.1),
     inset 0 -12px 24px -18px rgba(255, 255, 255, 0.4);
 }
 
@@ -537,10 +551,10 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   background:
     linear-gradient(
       168deg,
-      rgba(var(--lq-tint, 255 255 255) / 0.28) 0%,
-      rgba(var(--lq-tint, 255 255 255) / 0.16) 100%
+      rgba(var(--lq-tint, 255 255 255) / 0.24) 0%,
+      rgba(var(--lq-tint, 255 255 255) / 0.13) 100%
     ),
-    linear-gradient(168deg, rgba(255, 255, 255, 0.62) 0%, rgba(255, 255, 255, 0.48) 100%);
+    linear-gradient(168deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.42) 100%);
   border-color: rgba(255, 255, 255, 0.8);
   box-shadow:
     inset 4px 4px 12px 2px rgba(255, 255, 255, 0.5),
@@ -554,10 +568,10 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   background:
     linear-gradient(
       168deg,
-      rgba(var(--lq-tint, 255 255 255) / 0.2) 0%,
-      rgba(var(--lq-tint, 255 255 255) / 0.1) 100%
+      rgba(var(--lq-tint, 255 255 255) / 0.14) 0%,
+      rgba(var(--lq-tint, 255 255 255) / 0.07) 100%
     ),
-    linear-gradient(168deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.03) 100%);
+    linear-gradient(168deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
   border-color: rgba(255, 255, 255, 0.18);
 }
 
