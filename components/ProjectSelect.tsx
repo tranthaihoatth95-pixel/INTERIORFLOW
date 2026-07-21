@@ -662,6 +662,12 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
         setActive((a) => Math.min(n - 1, a + 1));
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        setActive(0);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        setActive(n - 1);
       } else if (e.key === 'Enter') {
         // Guard: card gallery KHÔNG dùng focus DOM thật (tabIndex=-1) — "đang chọn" là
         // state `active`, không phải document.activeElement. Nhưng các nút khác quanh
@@ -686,6 +692,37 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   }, [busy, n, active, items, choose, statusFor, pickerFor, manyMode]);
 
   const step = (dir: 1 | -1) => setActive((a) => Math.min(n - 1, Math.max(0, a + dir)));
+
+  /* ---------- Wheel / trackpad swipe ngang qua carousel (21/07 D) ----------
+   * User feedback: "cử chỉ, phím, chuột, bàn di đều ko hoạt động để trượt card". Phím ← →/Home/End
+   * đã có (useEffect trên). Ở đây thêm cử chỉ CHUỘT/TRACKPAD:
+   *   - Wheel dọc trên carousel (chuột thường) → convert sang trượt ngang.
+   *   - deltaX (trackpad macOS 2-ngón trái/phải) → step trực tiếp.
+   * Tích luỹ delta qua ref rồi step khi vượt ngưỡng — tránh 1 nhịp wheel bắn 5 card.
+   * Guard busy/statusFor/pickerFor/manyMode y luồng phím. */
+  const wheelAccumRef = useRef(0);
+  const wheelLastRef = useRef(0);
+  const WHEEL_STEP_PX = 60; // trackpad macOS 1 flick ~ 40–80px; chuột 1 nấc ~ 100px
+  const onGalleryWheel = useCallback(
+    (e: React.WheelEvent<HTMLDivElement>) => {
+      if (busy || n === 0 || statusFor || pickerFor || manyMode) return;
+      // deltaX ưu tiên (trackpad ngang); fallback deltaY (chuột dọc → convert).
+      const dominant = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (!dominant) return;
+      // reset accumulator nếu cách nhịp trước >300ms — tránh giữ nợ giữa 2 flick riêng biệt.
+      const now = Date.now();
+      if (now - wheelLastRef.current > 300) wheelAccumRef.current = 0;
+      wheelLastRef.current = now;
+      wheelAccumRef.current += dominant;
+      const acc = wheelAccumRef.current;
+      if (Math.abs(acc) < WHEEL_STEP_PX) return;
+      const dir: 1 | -1 = acc > 0 ? 1 : -1;
+      wheelAccumRef.current = 0; // 1 step / lần vượt ngưỡng — không cuộn tràn
+      e.preventDefault();
+      setActive((a) => Math.min(n - 1, Math.max(0, a + dir)));
+    },
+    [busy, n, statusFor, pickerFor, manyMode],
+  );
 
   const firstName = user?.name?.split(' ').slice(-1)[0] ?? null;
 
@@ -959,7 +996,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
 
   const gallery = (
     // data-tour: neo highlight cho SmartTour (B-5) — đổi/xoá thì tour tự fallback card giữa màn
-    <div className="relative w-full" data-tour="project-gallery">
+    <div className="relative w-full" data-tour="project-gallery" onWheel={onGalleryWheel}>
       <div className="grid place-items-center px-4" style={{ perspective: 1400 }}>
         <div className="relative grid place-items-center" style={{ transformStyle: 'preserve-3d' }}>
           {items.map((item, i) => {
@@ -1118,7 +1155,9 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
       </div>
 
       <p className="mt-3 text-center text-[11px] text-[var(--t5,var(--t4))]" style={{ fontFamily: SANS }}>
-        {en ? 'Click the focused card or press Enter to open · ← →' : 'Bấm thẻ đang chọn hoặc Enter để mở · ← →'}
+        {en
+          ? 'Click focused card or Enter to open · ← → · Home/End · wheel/2-finger swipe'
+          : 'Bấm thẻ đang chọn hoặc Enter để mở · ← → · Home/End · lăn chuột / trượt 2 ngón'}
       </p>
     </div>
   );
