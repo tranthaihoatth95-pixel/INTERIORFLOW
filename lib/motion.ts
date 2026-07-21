@@ -195,8 +195,8 @@ export const wallpaperIn: Variants = {
  */
 export const stageVeil: Variants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.28, ease: easeApple } },
-  exit: { opacity: 0, transition: { duration: 0.3, ease: easeApple } },
+  visible: { opacity: 1, transition: { duration: 0.10, ease: easeApple } },
+  exit: { opacity: 0, transition: { duration: 0.14, ease: easeApple } },
 };
 
 /**
