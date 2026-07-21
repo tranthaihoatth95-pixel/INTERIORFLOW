@@ -16,7 +16,7 @@
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (70 file). KHÔNG có vitest/jest.
 
 ## Worktree đang mở
-- (Không có — dọn sạch 21/07 chiều theo rule an toàn mới CLAUDE.md.)
+- `interiorflow-wt-vitas-polish` (feat/vitas-ui-polish, 21/07 tối) — Vitas UI polish theo 2 ảnh user chê: (1) SVG teardrop + feGaussianBlur thay div-borderRadius để giọt kính mượt hoá; (2) `VitasChatBubble.tsx` bong bóng iMessage bo tròn không đối xứng + typing 3-chấm CSS (fallback reduce-motion → text); (3) `VitasIcon.tsx` glyph giọt+chữ V thay Lucide Sparkles. Áp cả `VitasStageDrop` (giọt chặng) + `ProjectSelect` (Gallery chat). tsc sạch · 70 test cũ pass · verify browser 127.0.0.1:3010 (DB riêng `dev.db.wt`). Chưa merge/push, đợi user OK.
 
 ## Quyết định user đã khoá
 - **Auth**: email MỌI domain · Google OAuth mọi tài khoản · Microsoft OAuth (Entra ID) — user CHƯA tạo Azure app, nút disabled · quên mật khẩu = admin reset.

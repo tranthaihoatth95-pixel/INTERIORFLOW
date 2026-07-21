@@ -589,6 +589,43 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   z-index: 1;
 }
 
+/* ---------- Vitas typing indicator (3 chấm iMessage) ----------
+   Chấm nhấp nháy lệch pha; prefers-reduced-motion: ẩn chấm, hiện text tĩnh (fallback).
+*/
+.vitas-typing-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--t3);
+  opacity: 0.35;
+  animation: vitas-typing-blink 1.2s infinite ease-in-out;
+  will-change: transform, opacity;
+}
+.vitas-typing-fallback {
+  display: none;
+  font-size: 11.5px;
+  color: var(--t4);
+  padding: 0 2px;
+}
+@keyframes vitas-typing-blink {
+  0%, 60%, 100% { opacity: 0.28; transform: translateY(0); }
+  30%           { opacity: 0.95; transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vitas-typing-dot { display: none; }
+  .vitas-typing-fallback { display: inline; }
+}
+
+/* Giọt kính Vitas: SVG teardrop dùng feGaussianBlur — GPU compose + subpixel mượt,
+   không còn seam/aliasing như div với border-radius + backdrop-filter. */
+.vitas-droplet-svg {
+  display: block;
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
 /* input trong card kính — trong mờ, không đục như field thường */
 .lq-field {
   background: rgba(255, 255, 255, 0.06) !important;

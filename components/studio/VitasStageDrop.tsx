@@ -18,9 +18,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Loader2, Send, Sparkles, X } from 'lucide-react';
+import { Loader2, Send, X } from 'lucide-react';
 import type { ChatTurn } from '@/lib/ai/chat-assist';
 import { easeApple, springSheet } from '@/lib/motion';
+import VitasIcon from './VitasIcon';
+import { VitasBubble, VitasTyping } from './VitasChatBubble';
 
 /** Màu đồng — chữ ký thị giác của Vitas (đồng bộ bản Gallery/Login). */
 const COPPER = '#c79a63';
@@ -167,7 +169,7 @@ export default function VitasDropPanel({
                 color: 'var(--t4)',
               }}
             >
-              <Sparkles size={11} style={{ color: COPPER }} />
+              <VitasIcon size={12} style={{ color: COPPER }} />
               Vitas · hỏi nhanh
             </span>
             <button
@@ -204,32 +206,11 @@ export default function VitasDropPanel({
               }}
             >
               {messages.map((m, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                  <div
-                    style={{
-                      maxWidth: '88%',
-                      whiteSpace: 'pre-wrap',
-                      borderRadius: 12,
-                      padding: '6px 10px',
-                      fontSize: 12,
-                      lineHeight: 1.55,
-                      color: 'var(--t1)',
-                      textAlign: 'left',
-                      ...(m.role === 'user'
-                        ? { background: 'rgba(199,154,99,0.2)', border: `1px solid ${COPPER}55` }
-                        : { background: 'rgba(127,127,127,0.1)', border: '1px solid rgba(127,127,127,0.22)' }),
-                    }}
-                  >
-                    {m.content}
-                  </div>
-                </div>
+                <VitasBubble key={i} role={m.role} size="sm">
+                  {m.content}
+                </VitasBubble>
               ))}
-              {sending && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Loader2 size={11} className="animate-spin" style={{ color: COPPER }} />
-                  <span style={{ fontSize: 11, color: 'var(--t4)' }}>Vitas đang suy nghĩ…</span>
-                </div>
-              )}
+              {sending && <VitasTyping label="Vitas đang trả lời…" />}
               {error && (
                 <div
                   style={{

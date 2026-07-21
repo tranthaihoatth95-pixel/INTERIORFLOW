@@ -37,6 +37,10 @@ import VitasDropPanel, { markVitasUsed, wasVitasUsed } from './VitasStageDrop';
 // Chặng 1 = Drafting CAD → icon thước-bút; Rendering = khối; Presenting = trình chiếu.
 const ICON: Record<Phase, typeof PencilRuler> = { concept: PencilRuler, render: Box, present: Presentation };
 
+// Copper — chữ ký thị giác Vitas (đồng bộ VitasStageDrop/Gallery).
+const COPPER_LIGHT = '#e3b98a';
+const COPPER_DEEP = '#c79a63';
+
 interface Props {
   /** chặng đang sáng. */
   active: Phase;
@@ -65,10 +69,9 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   /** origin panel: px điểm kéo (mở bằng cử chỉ) · null = giữa (mở bằng ⌘J). */
   const [originPx, setOriginPx] = useState<number | null>(null);
 
-  // Hình giọt: kéo càng xa càng dài ra + thắt ngang lại + rõ dần (như giọt nước sắp rơi).
-  const dropletH = useTransform(dragY, [0, VITAS_DROP_THRESHOLD_PX], [0, VITAS_DROP_THRESHOLD_PX]);
-  const dropletW = useTransform(dragY, [0, VITAS_DROP_THRESHOLD_PX], [26, 15]);
+  // Opacity giọt: hiện dần theo dragY (rõ như giọt sắp rơi).
   const dropletO = useTransform(dragY, [0, 8, VITAS_DROP_THRESHOLD_PX], [0, 0.55, 0.95]);
+  const dropletScaleY = useTransform(dragY, [0, VITAS_DROP_THRESHOLD_PX], [0.25, 1]);
 
   const openVitas = () => {
     markVitasUsed();
@@ -275,13 +278,18 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         />
       )}
 
-      {/* Giọt ĐANG KÉO: dài ra + thắt lại theo dragY (motion value, không re-render 60fps).
-          Vượt ngưỡng → giọt "tách" thành panel. Reduce-motion: bỏ hẳn, panel fade. */}
+      {/* Giọt ĐANG KÉO — SVG teardrop bezier + feGaussianBlur (không còn seam/aliasing
+          như div với border-radius + backdrop-filter). Dài ra theo dragY qua scaleY;
+          feGaussianBlur mượt hoá cạnh ở GPU nên đường cong không có "răng cưa". */}
       <AnimatePresence>
         {dragging && !reduce && (
-          <motion.div
+          <motion.svg
             key="vitas-droplet"
             aria-hidden
+            className="vitas-droplet-svg"
+            width={26}
+            height={VITAS_DROP_THRESHOLD_PX + 12}
+            viewBox={`0 0 26 ${VITAS_DROP_THRESHOLD_PX + 12}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, transition: { duration: 0.12, ease: easeApple } }}
@@ -290,19 +298,35 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
               top: '100%',
               left: dropX,
               x: '-50%',
-              height: dropletH,
-              width: dropletW,
               opacity: dropletO,
-              borderRadius: '0 0 999px 999px',
-              background:
-                'linear-gradient(rgba(255,255,255,0.22), rgba(199,154,99,0.28))',
-              backdropFilter: 'blur(6px)',
-              WebkitBackdropFilter: 'blur(6px)',
-              boxShadow:
-                'inset 0 0 4px rgba(255,255,255,0.4), 0 2px 6px rgba(0,0,0,0.2)',
-              pointerEvents: 'none',
+              // scaleY dãn giọt theo dragY (0..1), origin=top để giọt "chảy xuống" khỏi thanh
+              scaleY: dropletScaleY,
+              originY: 0,
+              originX: 0.5,
             }}
-          />
+          >
+            <defs>
+              <filter id="vitas-drop-blur" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="0.35" />
+              </filter>
+              <linearGradient id="vitas-drop-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={COPPER_LIGHT} stopOpacity="0.28" />
+                <stop offset="100%" stopColor={COPPER_DEEP} stopOpacity="0.42" />
+              </linearGradient>
+            </defs>
+            {/* Teardrop path — đỉnh chạm mép thanh (y=0), thắt eo (13,10), bo tròn đáy.
+                Bezier đối xứng 2 bên → không seam giữa. */}
+            <path
+              d={`M 6 0
+                  C 6 6, 3 ${VITAS_DROP_THRESHOLD_PX * 0.35}, 3 ${VITAS_DROP_THRESHOLD_PX * 0.65}
+                  A 10 ${VITAS_DROP_THRESHOLD_PX * 0.35} 0 0 0 23 ${VITAS_DROP_THRESHOLD_PX * 0.65}
+                  C 23 ${VITAS_DROP_THRESHOLD_PX * 0.35}, 20 6, 20 0 Z`}
+              fill="url(#vitas-drop-fill)"
+              filter="url(#vitas-drop-blur)"
+              stroke="rgba(255,255,255,0.35)"
+              strokeWidth="0.5"
+            />
+          </motion.svg>
         )}
       </AnimatePresence>
 

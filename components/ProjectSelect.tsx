@@ -17,9 +17,10 @@ import {
   Search,
   Info,
   Link2,
-  Sparkles,
   Send,
 } from 'lucide-react';
+import VitasIcon from '@/components/studio/VitasIcon';
+import { VitasBubble, VitasTyping } from '@/components/studio/VitasChatBubble';
 import { easeApple, pressable, springStage } from '@/lib/motion';
 import { useLang } from '@/lib/i18n';
 import { useFlowStore } from '@/lib/store';
@@ -1558,7 +1559,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               WebkitBackdropFilter: 'blur(var(--blur-strong)) saturate(150%)',
             }}
           >
-            <Sparkles size={15} className="shrink-0" style={{ color: COPPER }} />
+            <VitasIcon size={15} className="shrink-0" style={{ color: COPPER }} />
             <span
               className="shrink-0 text-[9px] uppercase text-[var(--t4)]"
               style={{ fontFamily: MONO, letterSpacing: '0.22em' }}
@@ -1663,31 +1664,12 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   </div>
                   <div ref={chatScrollRef} className="max-h-[34vh] space-y-2.5 overflow-y-auto px-3.5 py-3.5">
                     {chatMessages.map((m, i) => (
-                      <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div
-                          className="max-w-[86%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-left text-[12.5px] leading-relaxed text-[var(--t1)]"
-                          style={
-                            m.role === 'user'
-                              ? { background: 'rgba(199,154,99,0.2)', border: `1px solid ${COPPER}55`, fontFamily: SANS }
-                              : { background: 'rgba(127,127,127,0.1)', border: '1px solid rgba(127,127,127,0.22)', fontFamily: SANS }
-                          }
-                        >
-                          {m.content}
-                        </div>
-                      </div>
+                      <VitasBubble key={i} role={m.role}>
+                        {m.content}
+                      </VitasBubble>
                     ))}
                     {chatSending && (
-                      <div className="flex justify-start">
-                        <div
-                          className="flex items-center gap-1.5 rounded-2xl px-3 py-2"
-                          style={{ background: 'rgba(127,127,127,0.1)', border: '1px solid rgba(127,127,127,0.22)' }}
-                        >
-                          <Loader2 size={12} className="animate-spin" style={{ color: COPPER }} />
-                          <span className="text-[11px] text-[var(--t4)]" style={{ fontFamily: SANS }}>
-                            {en ? 'Vitas is thinking…' : 'Vitas đang suy nghĩ…'}
-                          </span>
-                        </div>
-                      </div>
+                      <VitasTyping label={en ? 'Vitas is replying…' : 'Vitas đang trả lời…'} />
                     )}
                     {chatError && (
                       <div
