@@ -9,6 +9,8 @@
   - ⚠️ **CHỜ USER VERIFY bằng mắt:** .pptx nhúng font (PowerPoint thật) · frame-timing chuyển chặng.
   - **M1 Larkbase**: `LarkTaskRef`/`LarkPersonRef`/`LarkUserMap` + `Project.larkProjectCode` · provider thật `lib/integrations/providers/lark.ts` · sync/status route · Gallery pill cảnh báo/tooltip chức danh/nút "Chi tiết"(3 tab Bảng·Kanban·Nhân sự)/"Đồng bộ"/liên kết Larkbase tuỳ chọn · Home+logo điều hướng `/`. **CHỜ USER cấp `LARK_APP_ID/SECRET/LARK_BASE_APP_TOKEN`** (xem `docs/INTEGRATIONS.md`). Nợ: chưa link-picker ở grid >8 dự án.
   - **Ambient cover glow**: nền Gallery đổi theo ảnh bìa card đang focus (carousel only, z dưới quầng đồng).
+- **Nhánh `feat/gallery-ai-chat` (worktree riêng, CHƯA MERGE)**: thêm **"Vitas AI"** trên Gallery — thanh chat mảnh nền trong suốt LUÔN HIỆN phía trên thẻ dự án (theo spec Vitas, KHÔNG phải nút nổi góc), placeholder động xoay vòng mô tả khả năng, panel hội thoại bung sau tin đầu tiên (thu gọn được, lịch sử giữ trong state). KHÁC "Chat nhóm" người-với-người (`ChatMessage`). Route `app/api/ai-assist-chat` (`getSessionUser` dòng đầu) dùng `completeTextTiered` (cloud NVIDIA → Ollama local, đúng pattern `present/text`/`strategy/scenarios`); v1 KHÔNG lưu DB. Logic validate/build-prompt tách `lib/ai/chat-assist.ts` (test riêng). Verify thật trên browser (127.0.0.1, DB riêng): NVIDIA trả lời đúng; tắt NVIDIA_API_KEY → tự tụt Ollama local thay vì lỗi.
+  - ⚠️ **RÒ RỈ KHÓA**: lúc verify, lệnh `grep` lỡ in NGUYÊN GIÁ TRỊ `NVIDIA_API_KEY` ra transcript agent — **nên rotate key ở build.nvidia.com**.
 - **8 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (đọc thẳng từng file, đừng chép lại vào đây):
   - `RESEARCH-ACCESS-CONTROL.md` — phân quyền `ProjectMember` 5 role, 10 câu hỏi §8.
   - `RESEARCH-MOBILE-DISTRIBUTION.md` — bộ cài iOS/macOS/Android.
@@ -18,7 +20,7 @@
   - `RESEARCH-TEAM-COLLABORATION.md` — chat/cộng tác: Phần A (comment CAD+Rendering) rẻ, làm ngay được. Phần B (Presenting real-time) 🔴 Presenting KHÔNG có server source-of-truth cho deck — phải dựng trước khi bàn CRDT/Yjs.
   - `RESEARCH-OFFICE-FILE-INTEROP.md` — mở PPTX/Word/Keynote chỉnh tiếp + bảng tính Excel thật (A/PPTX khả thi · B/Keynote KHÔNG khả thi trực tiếp · C/Word rẻ nhất · D/bảng tính MỚI hoàn toàn). 6 câu hỏi §6.
   - `RESEARCH-HOME-GALLERY-DASHBOARD.md` — M1 ĐÃ XÂY (xem mục "Hiện tại" trên). M2 còn lại: `ProjectMember` pre-fill + cron sync (chờ `RESEARCH-ACCESS-CONTROL.md` build trước).
-- Test: `node_modules/.bin/sucrase-node <path>.test.ts` (67 file). KHÔNG có vitest/jest.
+- Test: `node_modules/.bin/sucrase-node <path>.test.ts` (68 file). KHÔNG có vitest/jest.
 
 ## Quyết định user đã khoá
 - **Auth**: email MỌI domain · Google OAuth mọi tài khoản · Microsoft OAuth (Entra ID) — user CHƯA tạo Azure app, nút disabled · quên mật khẩu = admin reset.
