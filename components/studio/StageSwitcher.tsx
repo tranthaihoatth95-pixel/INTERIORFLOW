@@ -59,7 +59,11 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   const [dragging, setDragging] = useState(false);
   const [hintShown, setHintShown] = useState(false);
   const [hover, setHover] = useState(false);
+  /** 21/07 — onboarding first-time: hiện 5s bong bóng "Bấm để hỏi Vitals · Ask Vitals" lần đầu
+   *  user vào bất kỳ chặng nào, key localStorage `interiorflow.vitals.hint_seen`. Không cần hover. */
+  const [onboardingHint, setOnboardingHint] = useState(false);
   const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onboardingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** true = cử chỉ kéo vừa bắn Vitals → nuốt click kế tiếp, KHÔNG cho chuyển chặng nhầm. */
   const suppressClick = useRef(false);
   /** px giọt đang bị kéo dãn (0..threshold+8) — motion value để không re-render 60fps. */
@@ -98,6 +102,27 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
 
   useEffect(() => () => {
     if (hintTimer.current) clearTimeout(hintTimer.current);
+    if (onboardingTimer.current) clearTimeout(onboardingTimer.current);
+  }, []);
+
+  // Onboarding first-time — 5s. Chỉ đọc/ghi localStorage client-side (SSR-safe check).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (localStorage.getItem('interiorflow.vitals.hint_seen') === '1') return;
+    } catch {
+      return;
+    }
+    setOnboardingHint(true);
+    onboardingTimer.current = setTimeout(() => {
+      setOnboardingHint(false);
+      try {
+        localStorage.setItem('interiorflow.vitals.hint_seen', '1');
+      } catch {}
+    }, 5000);
+    return () => {
+      if (onboardingTimer.current) clearTimeout(onboardingTimer.current);
+    };
   }, []);
 
   // Nhấn xuống trên thanh → theo dõi cử chỉ ở mức window (KHÔNG setPointerCapture:
@@ -259,24 +284,65 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
       {/* Gợn kính TĨNH: chỉ hé ra khi hover (visual hint tinh tế, không phải nút).
           Đứng yên giữa thanh, như một giọt sắp đọng ở mép kính. */}
       {!reduce && (
-        <span
+        <motion.span
           aria-hidden
+          animate={
+            hover && !dragging && !vitalsOpen
+              ? { opacity: 0.75, scale: 1.06 }
+              : !dragging && !vitalsOpen
+                ? { opacity: [0.85, 1, 0.85], scale: 1 }
+                : { opacity: 0, scale: 1 }
+          }
+          transition={
+            hover
+              ? { duration: 0.25, ease: easeApple }
+              : { opacity: { duration: 3, repeat: Infinity, ease: 'easeInOut' }, scale: { duration: 0.25 } }
+          }
           style={{
             position: 'absolute',
             left: '50%',
             bottom: -2.5,
-            transform: 'translateX(-50%)',
             width: 18,
             height: 3,
             borderRadius: '0 0 9px 9px',
             background: 'linear-gradient(rgba(255,255,255,0.3), rgba(255,255,255,0.12))',
             boxShadow: '0 1px 3px rgba(0,0,0,0.18), inset 0 0 2px rgba(255,255,255,0.35)',
-            opacity: hover && !dragging && !vitalsOpen ? 0.75 : 0,
-            transition: 'opacity 0.25s',
+            transformOrigin: '50% 0%',
+            x: '-50%',
             pointerEvents: 'none',
           }}
         />
       )}
+
+      {/* Onboarding first-time bong bóng — 5s lần đầu vào bất cứ chặng nào. */}
+      <AnimatePresence>
+        {onboardingHint && !vitalsOpen && !dragging && (
+          <motion.div
+            key="vitals-onboarding"
+            initial={{ opacity: 0, y: reduce ? 0 : -4 }}
+            animate={{ opacity: 1, y: 0, transition: { duration: 0.28, ease: easeApple } }}
+            exit={{ opacity: 0, transition: { duration: 0.2, ease: easeApple } }}
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 10px)',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 56,
+              padding: '5px 11px',
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              background: 'var(--card)',
+              boxShadow: '0 6px 18px -6px rgba(0,0,0,0.28)',
+              fontSize: 11,
+              color: 'var(--t3)',
+              whiteSpace: 'nowrap',
+              pointerEvents: 'none',
+            }}
+          >
+            Bấm để hỏi Vitals · Ask Vitals
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Giọt ĐANG KÉO — SVG teardrop bezier + feGaussianBlur (không còn seam/aliasing
           như div với border-radius + backdrop-filter). Dài ra theo dragY qua scaleY;
