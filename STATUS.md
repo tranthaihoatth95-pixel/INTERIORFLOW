@@ -14,7 +14,19 @@
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (70 file). KHÔNG có vitest/jest.
 
 ## Worktree đang mở
-- `interiorflow-wt-fix-stage-transition` (nhánh `feat/fix-stage-transition`) — fix bug chặng + dời Home. Chờ merge.
+- `interiorflow-wt-fix-stage-transition` (nhánh `feat/fix-stage-transition`) — fix bug chặng + dời Home + **Intro 60s + Avatar Builder MVP (21/07 khuya)**. Chờ merge. HEAD `500f462`.
+
+## Việc mới 21/07 khuya (worktree `fix-stage-transition`)
+- **Intro Sequence 60s** (`/intro`, public, redirect `/login` nếu `if_intro_seen_v1=1`). 4 cảnh useReducer state machine + AnimatePresence mode=wait, auto-advance 15/10/25/10s. Skip button sau 3s (buffer 1s chống mis-click). 11 SVG stylized tự vẽ trong `components/intro/svgs/`: Desk isometric · Monitor · Blueprint · Ruler · Mouse · Clock · Pencil · Architect chibi (KTS Pixar-style) · LogoIF hairline · WaveFlow · VitalsDrop. Cảnh 1 tint xám lạnh + copy song ngữ; cảnh 2 KTS+bàn+logo grid-paper; cảnh 3 ba màn hình + wave cam + KTS+VitalsDrop; cảnh 4 VitalsDrop phóng to (`layoutId="hero-glass"`) + CTA. Route `/login` (thin wrapper `LoginScreen` entry + layoutId marker).
+- **Avatar Builder MVP** (`/settings/avatar` + API `GET/PATCH /api/user/avatar`). 5 slot: base (4 tone da) · hair (8 kiểu × 5 màu) · glasses (6) · hat/headphone (6) · shirt (6 × 5 màu). Tổng ~172k combo. `AvatarRenderer` SVG portrait 200×240 hoàn toàn tự vẽ (không asset ngoài), gradient depth + circle frame hairline TTT. `AvatarBuilder` preview realtime + Randomize + Save/Skip.
+- **Prisma `User.avatar` (String? JSON)** + `lib/avatar.ts` (types, normalize clamp, `randomAvatarFromId` djb2 deterministic) + test `lib/avatar.test.ts` (5 assertion, PASS via sucrase-node). Schema đẩy `prisma db push --accept-data-loss` cho `dev.db.wt` — **migration chính thức `add_user_avatar` sẽ generate lúc merge về main** (`prisma migrate dev` sẽ reset dev DB, tránh trong worktree).
+- **CHỜ USER VERIFY mắt**: (a) chất lượng visual intro có "cinematic" đủ chưa hay còn xấu — SVG tự vẽ, không AI-gen, không mua asset; nếu chưa đạt gu quiet-luxury có thể tăng độ tinh xảo path/gradient; (b) avatar Pixar-look có ổn không; (c) morph login từ cảnh 4 — hiện tại chỉ FADE (cross-page `layoutId` Framer Motion không bảo đảm mượt qua `router.push`), nếu muốn morph thật cần refactor sang `LayoutGroup` + context persist state (chưa làm — Nợ kỹ thuật bên dưới).
+
+## Nợ kỹ thuật đợt intro/avatar
+- 🟡 **Morph login chưa thật** — cần `LayoutGroup` + context persist thay `layoutId` cross-page nếu muốn giọt kính morph → card login (hiện: intro fade → login mount).
+- 🟡 **Signup flow chưa gọi avatar picker** — user register xong hiện chưa auto-open `/settings/avatar`; fallback deterministic-random đủ dùng (không có avatar rỗng), nhưng ưu tiên polish sau: hook `LoginForm` sau `POST /api/auth/register` → `router.push('/settings/avatar?first=1')`.
+- 🟡 **Avatar `PATCH` route** — lấy `avatar` từ `getSessionUser()` bằng cast `(user as {avatar?}).avatar`; nên mở rộng `publicUser()` trả `avatar` để type-safe.
+
 
 ## Quyết định user đã khoá
 - **Auth**: email MỌI domain · Google OAuth mọi tài khoản · Microsoft OAuth (Entra ID) — user CHƯA tạo Azure app, nút disabled · quên mật khẩu = admin reset.
