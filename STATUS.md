@@ -11,16 +11,9 @@
   - **Ambient cover glow**: nền Gallery đổi theo ảnh bìa card focus (carousel only).
   - **Gesture audit** (`docs/AUDIT-GESTURES-INPUT.md`): 1 P1 ĐÃ SỬA (phím `E` CAD xoá nhầm selection), 7 P2 chưa làm.
   - **Vitas AI** (Gallery): thanh chat trong suốt LUÔN HIỆN trên thẻ dự án, placeholder động, hội thoại = overlay `.lq-card` đè lên card (zero layout shift). Route `app/api/ai-assist-chat` (auth) dùng `completeTextTiered` (NVIDIA→Ollama); v1 không lưu DB. KHÁC "Chat nhóm".
+  - **Vitas ở CHẶNG** (nhánh `feat/vitas-stage-drop`, chưa merge): giọt kính ẩn trong `StageSwitcher` — click/trượt ngang chuyển chặng Y HỆT cũ; KÉO XUỐNG ≥28px → panel chat nhỏ `.lq-card` mọc ra (overlay không backdrop, canvas dưới thao tác được). Fallback: ⌘J toggle + tooltip khi hover 0.9s (tắt sau lần đầu dùng). Logic phân biệt trục ở `lib/input/stage-drop.ts` (18 test case). Tái dùng route `ai-assist-chat` + `chat-assist.ts`, không route/model mới.
   - ⚠️ **RÒ RỈ KHÓA**: verify Vitas lỡ in `NVIDIA_API_KEY` ra transcript agent — **USER NÊN ROTATE KEY** ở build.nvidia.com rồi thay `.env.local`.
-- **8 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (đọc thẳng từng file, đừng chép lại vào đây):
-  - `RESEARCH-ACCESS-CONTROL.md` — phân quyền `ProjectMember` 5 role, 10 câu hỏi §8.
-  - `RESEARCH-MOBILE-DISTRIBUTION.md` — bộ cài iOS/macOS/Android.
-  - `RESEARCH-COMFYUI-LESS.md` — chạy không cần ComfyUI local.
-  - `RESEARCH-MATERIAL-BRIDGE.md` — cầu nối Larkbase↔hatch↔Rendering; 🔴 sai workspace (không có bảng vật liệu, Q1 §10).
-  - `RESEARCH-TECHNICAL-DRAWING-PIPELINE.md` — khung tên/tỉ lệ/PDF in kỹ thuật CAD→Presenting (M0 tỉ lệ ĐÃ SỬA, còn M1+ chờ quyết).
-  - `RESEARCH-TEAM-COLLABORATION.md` — chat/cộng tác: Phần A (comment CAD+Rendering) rẻ, làm ngay được. Phần B (Presenting real-time) 🔴 Presenting KHÔNG có server source-of-truth cho deck — phải dựng trước khi bàn CRDT/Yjs.
-  - `RESEARCH-OFFICE-FILE-INTEROP.md` — mở PPTX/Word/Keynote + bảng tính Excel (A khả thi · B không trực tiếp · C rẻ nhất · D mới hoàn toàn). 6 câu hỏi §6.
-  - `RESEARCH-HOME-GALLERY-DASHBOARD.md` — M1 ĐÃ XÂY (xem mục "Hiện tại" trên). M2 còn lại: `ProjectMember` pre-fill + cron sync (chờ `RESEARCH-ACCESS-CONTROL.md` build trước).
+- **8 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** — đọc thẳng từng file (`RESEARCH-ACCESS-CONTROL/MOBILE-DISTRIBUTION/COMFYUI-LESS/MATERIAL-BRIDGE/TECHNICAL-DRAWING-PIPELINE/TEAM-COLLABORATION/OFFICE-FILE-INTEROP/HOME-GALLERY-DASHBOARD`), đừng chép lại vào đây.
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (68 file). KHÔNG có vitest/jest.
 
 ## Quyết định user đã khoá
