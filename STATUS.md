@@ -10,14 +10,13 @@
   - **M1 Larkbase**: `LarkTaskRef`/`LarkPersonRef`/`LarkUserMap` + `Project.larkProjectCode` · provider `lib/integrations/providers/lark.ts` · Gallery pill cảnh báo/nút "Chi tiết"(3 tab)/"Đồng bộ"/liên kết tuỳ chọn · Home+logo về `/`. **CHỜ USER cấp `LARK_APP_ID/SECRET/LARK_BASE_APP_TOKEN`** (`docs/INTEGRATIONS.md`). Nợ: chưa link-picker grid >8.
   - **Ambient cover glow**: nền Gallery đổi theo ảnh bìa card focus (carousel only).
   - **Gesture audit** (`docs/AUDIT-GESTURES-INPUT.md`): 1 P1 ĐÃ SỬA (phím `E` CAD xoá nhầm selection), 7 P2 chưa làm.
-  - **Vitas AI** (Gallery): thanh chat trong suốt LUÔN HIỆN trên thẻ dự án, placeholder động, hội thoại = overlay `.lq-card` đè lên card (zero layout shift). Route `app/api/ai-assist-chat` (auth) dùng `completeTextTiered` (NVIDIA→Ollama); v1 không lưu DB. KHÁC "Chat nhóm".
-  - **Vitas ở CHẶNG** (nhánh `feat/vitas-stage-drop`, chưa merge): giọt kính ẩn trong `StageSwitcher` — click/trượt ngang chuyển chặng Y HỆT cũ; KÉO XUỐNG ≥28px → panel chat nhỏ `.lq-card` mọc ra (overlay không backdrop, canvas dưới thao tác được). Fallback: ⌘J toggle + tooltip khi hover 0.9s (tắt sau lần đầu dùng). Logic phân biệt trục ở `lib/input/stage-drop.ts` (18 test case). Tái dùng route `ai-assist-chat` + `chat-assist.ts`, không route/model mới.
+  - **Vitas AI**: thanh chat Gallery + giọt kính ở CHẶNG (kéo tab ≥28px xuống → panel `.lq-card` không backdrop, click/trượt ngang chuyển chặng y hệt cũ; fallback ⌘J + tooltip). Route `app/api/ai-assist-chat` (auth) dùng `completeTextTiered` (NVIDIA→Ollama); v1 không lưu DB. KHÁC "Chat nhóm".
   - ⚠️ **RÒ RỈ KHÓA**: verify Vitas lỡ in `NVIDIA_API_KEY` ra transcript agent — **USER NÊN ROTATE KEY** ở build.nvidia.com rồi thay `.env.local`.
 - **8 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** — đọc thẳng từng file (`RESEARCH-ACCESS-CONTROL/MOBILE-DISTRIBUTION/COMFYUI-LESS/MATERIAL-BRIDGE/TECHNICAL-DRAWING-PIPELINE/TEAM-COLLABORATION/OFFICE-FILE-INTEROP/HOME-GALLERY-DASHBOARD`), đừng chép lại vào đây.
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (68 file). KHÔNG có vitest/jest.
 
 ## Worktree đang mở
-- `interiorflow-wt-cad-workflow` (`feat/cad-real-workflow`) + agent Vitas stage-drop (`feat/vitas-stage-drop`) — 2 agent đang chạy.
+- `interiorflow-wt-cad-workflow` (`feat/cad-real-workflow`) — agent CAD đang chạy (hoàn tất dossier-check + click-outside/Esc đóng panel).
 
 ## Quyết định user đã khoá
 - **Auth**: email MỌI domain · Google OAuth mọi tài khoản · Microsoft OAuth (Entra ID) — user CHƯA tạo Azure app, nút disabled · quên mật khẩu = admin reset.
