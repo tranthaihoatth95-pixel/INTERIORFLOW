@@ -9,7 +9,7 @@
   - ⚠️ **CHỜ USER VERIFY bằng mắt:** .pptx nhúng font (PowerPoint thật) · frame-timing chuyển chặng.
   - **M1 Larkbase**: `LarkTaskRef`/`LarkPersonRef`/`LarkUserMap` + `Project.larkProjectCode` · provider thật `lib/integrations/providers/lark.ts` · sync/status route · Gallery pill cảnh báo/tooltip chức danh/nút "Chi tiết"(3 tab Bảng·Kanban·Nhân sự)/"Đồng bộ"/liên kết Larkbase tuỳ chọn · Home+logo điều hướng `/`. **CHỜ USER cấp `LARK_APP_ID/SECRET/LARK_BASE_APP_TOKEN`** (xem `docs/INTEGRATIONS.md`). Nợ: chưa link-picker ở grid >8 dự án.
   - **Ambient cover glow**: nền Gallery đổi theo ảnh bìa card đang focus (carousel only, z dưới quầng đồng).
-  - **Gesture audit** (`docs/AUDIT-GESTURES-INPUT.md`): 0 P0, 1 P1 ĐÃ SỬA (phím `E` trên canvas CAD xoá nhầm selection + chặn lệnh gõ tắt EX/EL — `CadCanvas.tsx`), 7 đề xuất P2 chưa làm (Presenting chưa pinch-zoom cảm ứng thật, chưa long-press context menu, Gallery carousel chưa swipe...).
+  - **Gesture audit** (`docs/AUDIT-GESTURES-INPUT.md`): 0 P0, 1 P1 ĐÃ SỬA (phím `E` canvas CAD xoá nhầm selection, chặn lệnh EX/EL), 7 đề xuất P2 chưa làm.
 - **8 BÁO CÁO NGHIÊN CỨU trong `docs/`, CHỜ USER QUYẾT** (đọc thẳng từng file, đừng chép lại vào đây):
   - `RESEARCH-ACCESS-CONTROL.md` — phân quyền `ProjectMember` 5 role, 10 câu hỏi §8.
   - `RESEARCH-MOBILE-DISTRIBUTION.md` — bộ cài iOS/macOS/Android.
