@@ -5,7 +5,7 @@
 > ⚠️ Nhãn hiển thị đổi 20/07 (Layout CAD→Drafting CAD · Render→Rendering · Present→Presenting). **ID nội bộ GIỮ NGUYÊN** `concept`/`render`/`present` — mọi khoá localStorage/route/tên file không đổi. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi đầu phiên).
 
 ## Hiện tại
-- Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (local vượt origin, chưa push). Verify SHA bằng git. Toàn bộ đợt 19-21/07 ĐÃ MERGE hết (danh sách đầy đủ → CHANGELOG); các mảng mới nhất: **M1 Home/Gallery↔Larkbase · Gallery ambient cover glow · gesture audit CAD · Vitas AI**.
+- Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main` (local vượt origin, chưa push). Verify SHA bằng git. Toàn bộ đợt 19-21/07 ĐÃ MERGE hết (danh sách đầy đủ → CHANGELOG); mới nhất: **M1 Home/Gallery↔Larkbase · ambient cover glow · gesture audit · Vitas AI · card kính trong hơn+khúc xạ** (tint 0.20→0.14, rim bất đối xứng + vệt chéo 115°, tương phản 28/28 pass).
   - ⚠️ **CHỜ USER VERIFY bằng mắt:** .pptx nhúng font (PowerPoint thật) · frame-timing chuyển chặng.
   - **M1 Larkbase**: `LarkTaskRef`/`LarkPersonRef`/`LarkUserMap` + `Project.larkProjectCode` · provider `lib/integrations/providers/lark.ts` · Gallery pill cảnh báo/nút "Chi tiết"(3 tab)/"Đồng bộ"/liên kết tuỳ chọn · Home+logo về `/`. **CHỜ USER cấp `LARK_APP_ID/SECRET/LARK_BASE_APP_TOKEN`** (`docs/INTEGRATIONS.md`). Nợ: chưa link-picker grid >8.
   - **Ambient cover glow**: nền Gallery đổi theo ảnh bìa card focus (carousel only).
@@ -24,7 +24,7 @@
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (68 file). KHÔNG có vitest/jest.
 
 ## Worktree đang mở
-- `interiorflow-wt-glass-polish` / nhánh `feat/glass-refraction-polish` (21/07, agent UI polish): card kính `.lq-card` TRONG hơn (tint 0.20→0.14, film trắng 0.06/0.03→0.04/0.02, màng sữa light 0.62→0.55) + khúc xạ tinh tế hơn (rim bất đối xứng sáng trên-trái/tối dưới-phải + vệt phản chiếu chéo 115°). Mô hình `CARD_STACK`/`planCardText` cập nhật khớp, 68 test pass. **CHỜ USER duyệt → merge → xoá worktree.**
+- `interiorflow-wt-cad-workflow` (`feat/cad-real-workflow`) + agent Vitas stage-drop (`feat/vitas-stage-drop`) — 2 agent đang chạy.
 
 ## Quyết định user đã khoá
 - **Auth**: email MỌI domain · Google OAuth mọi tài khoản · Microsoft OAuth (Entra ID) — user CHƯA tạo Azure app, nút disabled · quên mật khẩu = admin reset.
