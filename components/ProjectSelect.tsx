@@ -420,7 +420,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
       const res = await fetch('/api/ai-assist-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next }),
+        body: JSON.stringify({ messages: next, stage: 'gallery' }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {

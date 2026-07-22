@@ -27,6 +27,52 @@ export const CHAT_SYSTEM_PROMPT =
   'giọng điệu tự tin, tiết chế, không sến, không emoji.';
 
 /**
+ * System prompt tuỳ CHẶNG — Vitals gọi từ gesture drag-down ở StageSwitcher gửi kèm
+ * `stage` để backend chọn prompt "biết mình đang ở đâu". ID nội bộ giữ nguyên
+ * `concept/render/present`; `gallery` cho VitalsChatBubble ở ProjectSelect.
+ *
+ * Giữ cùng bộ khung (danh tính Vitals + tinh thần quiet-luxury + Việt/Anh + KHÔNG
+ * emoji) nhưng khoanh vùng chuyên môn theo chặng để câu trả lời tập trung, tối đa
+ * ~3 câu.
+ */
+export type ChatStage = 'concept' | 'render' | 'present' | 'gallery';
+
+const STAGE_BRIEF: Record<ChatStage, string> = {
+  concept:
+    'Người dùng đang ở chặng DRAFTING CAD. Ưu tiên trả lời về: quy chuẩn TCVN, kỹ thuật vẽ mặt bằng, ' +
+    'dossier check (✓/⚠️/✗), layout phòng, kích thước tối thiểu (lối đi/bàn ghế/vệ sinh), tỉ lệ 1:100. ' +
+    'Nếu câu hỏi lệch chặng, trả lời ngắn rồi gợi ý về Drafting CAD.',
+  render:
+    'Người dùng đang ở chặng RENDERING. Ưu tiên trả lời về: materials (đá/gỗ/vải/kim loại), lighting ' +
+    '(nguồn sáng chính/phụ/accent, nhiệt độ màu), camera angle (chiều cao mắt, tiêu cự), mood, style ' +
+    'photorealism, workflow node canvas ghép ảnh.',
+  present:
+    'Người dùng đang ở chặng PRESENTING. Ưu tiên trả lời về: brand guideline TTT (cam #F06020 + navy ' +
+    '#002850 trên beige #F1ECE3, Archivo + Archivo Expanded, hairline 1px, tracked uppercase), ' +
+    'typography, layout slide, cách kể chuyện với khách, dàn trang song ngữ Việt–Anh.',
+  gallery:
+    'Người dùng đang ở GALLERY (chọn dự án). Trả lời về: workflow, quản lý dự án, chọn chặng phù hợp ' +
+    'tiếp theo, tư vấn tổng quan phong cách/vật liệu ở mức bàn phương án.',
+};
+
+/** Trả về system prompt hoàn chỉnh cho 1 stage (base prompt + brief chặng + giới hạn 3 câu). */
+export function chatSystemPromptFor(stage: ChatStage | undefined): string {
+  const s: ChatStage = stage ?? 'gallery';
+  return (
+    CHAT_SYSTEM_PROMPT +
+    '\n\nNGỮ CẢNH CHẶNG: ' +
+    STAGE_BRIEF[s] +
+    '\n\nGIỚI HẠN: tối đa 3 câu, đi thẳng vào vấn đề, không lan man.'
+  );
+}
+
+/** Validate `stage` từ payload — không hợp lệ → mặc định 'gallery' (an toàn nhất). */
+export function normalizeChatStage(input: unknown): ChatStage {
+  if (input === 'concept' || input === 'render' || input === 'present' || input === 'gallery') return input;
+  return 'gallery';
+}
+
+/**
  * Validate + chuẩn hoá payload `messages` từ client. Trả `null` nếu input không hợp lệ
  * (route → 400). Yêu cầu: mảng khác rỗng, mỗi phần tử có role hợp lệ + content khác rỗng,
  * và LƯỢT CUỐI phải là 'user' (đây là câu hỏi mới cần trả lời).

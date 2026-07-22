@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/server/auth';
 import { completeTextTiered, NvidiaFreeExhausted, NoTextProviderError } from '@/lib/ai/text-tier';
-import { sanitizeChatMessages, buildChatPrompt, CHAT_SYSTEM_PROMPT } from '@/lib/ai/chat-assist';
+import {
+  sanitizeChatMessages,
+  buildChatPrompt,
+  chatSystemPromptFor,
+  normalizeChatStage,
+} from '@/lib/ai/chat-assist';
 
 /**
  * app/api/ai-assist-chat — "Vitals AI" trên Gallery (thanh chat luôn hiện phía trên thẻ dự án):
@@ -19,7 +24,7 @@ export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-  const body = (await req.json().catch(() => ({}))) as { messages?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { messages?: unknown; stage?: unknown };
   const messages = sanitizeChatMessages(body?.messages);
   if (!messages) {
     return NextResponse.json(
@@ -27,9 +32,10 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
+  const stage = normalizeChatStage(body?.stage);
 
   try {
-    const r = await completeTextTiered(buildChatPrompt(messages), CHAT_SYSTEM_PROMPT, { maxTokens: 500 });
+    const r = await completeTextTiered(buildChatPrompt(messages), chatSystemPromptFor(stage), { maxTokens: 500 });
     const reply = r.text.trim();
     return NextResponse.json({ reply, _tier: r.tier, _model: r.model });
   } catch (err) {
