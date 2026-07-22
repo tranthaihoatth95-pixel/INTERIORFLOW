@@ -60,6 +60,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="vi" className="dark">
       <body className={`${beVietnamPro.variable} ${geistSans.variable} font-sans antialiased`}>
+        {/* Migration 21/07: đổi tên `Vitas` → `Vitals`. Đọc mọi key `interiorflow.vitas.*` cũ
+            trong localStorage, ghi sang `interiorflow.vitals.*` mới rồi xoá cũ. Chạy 1 lần đầu
+            phiên; guard bằng key sentinel để tránh chạy lại nhiều lần. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(!localStorage.getItem('interiorflow.vitals.migrated_from_vitas')){var moved=0;for(var i=localStorage.length-1;i>=0;i--){var k=localStorage.key(i);if(k&&k.indexOf('interiorflow.vitas.')===0){var v=localStorage.getItem(k);var nk='interiorflow.vitals.'+k.slice('interiorflow.vitas.'.length);if(v!==null&&localStorage.getItem(nk)===null){localStorage.setItem(nk,v);moved++;}localStorage.removeItem(k);}}localStorage.setItem('interiorflow.vitals.migrated_from_vitas','1');}}catch(e){}`,
+          }}
+        />
         {/* Màn che chuyển chặng + MotionConfig reducedMotion="user" đặt TRÊN route: veil phải
             sống xuyên qua `router.push`, nếu nằm trong route thì bị unmount giữa chừng và sinh
             ra cú "chớp" nền phẳng. Xem StageTransitionProvider. */}

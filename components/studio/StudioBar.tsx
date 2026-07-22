@@ -79,6 +79,7 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
 
   return (
     <div
+      data-if-deselect-zone="true"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -111,10 +112,6 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
       </button>
       <span style={{ width: 1, height: 20, background: 'var(--border)' }} />
 
-      {/* Home — TRƯỚC Drafting CAD (đúng thứ tự đã chốt) */}
-      <HomeButton compact />
-      <span style={{ width: 1, height: 20, background: 'var(--border)' }} />
-
       <StageSwitcher
         active={active === 'photo' ? 'render' : active === 'cad' ? 'concept' : 'present'}
         photoContext={active === 'photo'}
@@ -122,6 +119,10 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
       />
 
       <div style={{ flex: 1 }} />
+
+      {/* Home — CẠNH Tin nhắn (dời 21/07 theo yêu cầu user, khỏi vị trí "trước Drafting CAD"
+          cũ ở đầu thanh). Về Gallery, dùng chung requestGallery(). */}
+      <HomeButton compact />
 
       {/* Chat team + toggle sáng/tối — khôi phục cho chặng Present/studio */}
       <Tooltip label="Chat nhóm" side="bottom">

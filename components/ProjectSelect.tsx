@@ -19,8 +19,8 @@ import {
   Link2,
   Send,
 } from 'lucide-react';
-import VitasIcon from '@/components/studio/VitasIcon';
-import { VitasBubble, VitasTyping } from '@/components/studio/VitasChatBubble';
+import VitalsIcon from '@/components/studio/VitalsIcon';
+import { VitalsBubble, VitalsTyping } from '@/components/studio/VitalsChatBubble';
 import { easeApple, pressable, springStage } from '@/lib/motion';
 import { useLang } from '@/lib/i18n';
 import { useFlowStore } from '@/lib/store';
@@ -354,8 +354,8 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   // nay giữ nguyên y hệt nếu bỏ qua bước này).
   const [pendingLarkCode, setPendingLarkCode] = useState<string>('');
 
-  /* ---------- Vitas AI (chat 1-người-với-AI, KHÁC "Chat nhóm" người-với-người) ----------
-   * Spec Vitas AI: khung chat LUÔN HIỆN — 1 thanh nhập mảnh nền trong suốt đặt PHÍA TRÊN các
+  /* ---------- Vitals AI (chat 1-người-với-AI, KHÁC "Chat nhóm" người-với-người) ----------
+   * Spec Vitals AI: khung chat LUÔN HIỆN — 1 thanh nhập mảnh nền trong suốt đặt PHÍA TRÊN các
    * thẻ dự án (không phải nút nổi góc màn), placeholder động xoay vòng mô tả khả năng; panel
    * hội thoại chỉ bung ra sau tin nhắn đầu tiên (thu gọn được, lịch sử giữ trong state).
    * v1: KHÔNG lưu DB — lịch sử chỉ sống trong state này, mất khi reload (chấp nhận được,
@@ -367,17 +367,17 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   const [chatCollapsed, setChatCollapsed] = useState(false); // thu gọn panel, giữ lịch sử
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
-  // Placeholder động xoay vòng — mô tả khả năng của Vitas khi ô nhập còn trống.
-  const vitasHints = useMemo(
+  // Placeholder động xoay vòng — mô tả khả năng của Vitals khi ô nhập còn trống.
+  const vitalsHints = useMemo(
     () =>
       en
         ? [
-            'Ask Vitas — materials & interior style advice…',
+            'Ask Vitals — materials & interior style advice…',
             'How do Drafting CAD · Rendering · Presenting work?',
             'Quiet-luxury layout ideas for your space…',
           ]
         : [
-            'Hỏi Vitas — tư vấn vật liệu, phong cách nội thất…',
+            'Hỏi Vitals — tư vấn vật liệu, phong cách nội thất…',
             'Cách dùng Drafting CAD · Rendering · Presenting?',
             'Gợi ý bố cục quiet-luxury cho không gian của bạn…',
           ],
@@ -662,6 +662,12 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
         setActive((a) => Math.min(n - 1, a + 1));
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        setActive(0);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        setActive(n - 1);
       } else if (e.key === 'Enter') {
         // Guard: card gallery KHÔNG dùng focus DOM thật (tabIndex=-1) — "đang chọn" là
         // state `active`, không phải document.activeElement. Nhưng các nút khác quanh
@@ -673,7 +679,10 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         const tag = target?.tagName;
         const isOtherControl =
           !!tag && ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT'].includes(tag);
-        if (isOtherControl || target?.isContentEditable || e.defaultPrevented) return;
+        // Guard bổ sung 21/07: khi input Vitals bị disabled (chatSending) focus rơi về body →
+        // Enter kế tiếp lọt qua isOtherControl. Chặn nếu bất kỳ tổ tiên nào là khu chat Vitals.
+        const inVitalsChat = !!target?.closest?.('[data-vitals-chat]');
+        if (isOtherControl || inVitalsChat || target?.isContentEditable || e.defaultPrevented) return;
         e.preventDefault();
         void choose(items[active]);
       }
@@ -683,6 +692,37 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   }, [busy, n, active, items, choose, statusFor, pickerFor, manyMode]);
 
   const step = (dir: 1 | -1) => setActive((a) => Math.min(n - 1, Math.max(0, a + dir)));
+
+  /* ---------- Wheel / trackpad swipe ngang qua carousel (21/07 D) ----------
+   * User feedback: "cử chỉ, phím, chuột, bàn di đều ko hoạt động để trượt card". Phím ← →/Home/End
+   * đã có (useEffect trên). Ở đây thêm cử chỉ CHUỘT/TRACKPAD:
+   *   - Wheel dọc trên carousel (chuột thường) → convert sang trượt ngang.
+   *   - deltaX (trackpad macOS 2-ngón trái/phải) → step trực tiếp.
+   * Tích luỹ delta qua ref rồi step khi vượt ngưỡng — tránh 1 nhịp wheel bắn 5 card.
+   * Guard busy/statusFor/pickerFor/manyMode y luồng phím. */
+  const wheelAccumRef = useRef(0);
+  const wheelLastRef = useRef(0);
+  const WHEEL_STEP_PX = 60; // trackpad macOS 1 flick ~ 40–80px; chuột 1 nấc ~ 100px
+  const onGalleryWheel = useCallback(
+    (e: React.WheelEvent<HTMLDivElement>) => {
+      if (busy || n === 0 || statusFor || pickerFor || manyMode) return;
+      // deltaX ưu tiên (trackpad ngang); fallback deltaY (chuột dọc → convert).
+      const dominant = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (!dominant) return;
+      // reset accumulator nếu cách nhịp trước >300ms — tránh giữ nợ giữa 2 flick riêng biệt.
+      const now = Date.now();
+      if (now - wheelLastRef.current > 300) wheelAccumRef.current = 0;
+      wheelLastRef.current = now;
+      wheelAccumRef.current += dominant;
+      const acc = wheelAccumRef.current;
+      if (Math.abs(acc) < WHEEL_STEP_PX) return;
+      const dir: 1 | -1 = acc > 0 ? 1 : -1;
+      wheelAccumRef.current = 0; // 1 step / lần vượt ngưỡng — không cuộn tràn
+      e.preventDefault();
+      setActive((a) => Math.min(n - 1, Math.max(0, a + dir)));
+    },
+    [busy, n, statusFor, pickerFor, manyMode],
+  );
 
   const firstName = user?.name?.split(' ').slice(-1)[0] ?? null;
 
@@ -956,7 +996,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
 
   const gallery = (
     // data-tour: neo highlight cho SmartTour (B-5) — đổi/xoá thì tour tự fallback card giữa màn
-    <div className="relative w-full" data-tour="project-gallery">
+    <div className="relative w-full" data-tour="project-gallery" onWheel={onGalleryWheel}>
       <div className="grid place-items-center px-4" style={{ perspective: 1400 }}>
         <div className="relative grid place-items-center" style={{ transformStyle: 'preserve-3d' }}>
           {items.map((item, i) => {
@@ -1115,7 +1155,9 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
       </div>
 
       <p className="mt-3 text-center text-[11px] text-[var(--t5,var(--t4))]" style={{ fontFamily: SANS }}>
-        {en ? 'Click the focused card or press Enter to open · ← →' : 'Bấm thẻ đang chọn hoặc Enter để mở · ← →'}
+        {en
+          ? 'Click focused card or Enter to open · ← → · Home/End · wheel/2-finger swipe'
+          : 'Bấm thẻ đang chọn hoặc Enter để mở · ← → · Home/End · lăn chuột / trượt 2 ngón'}
       </p>
     </div>
   );
@@ -1545,11 +1587,11 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           )}
         </div>
 
-        {/* ---------- Vitas AI — thanh chat LUÔN HIỆN phía trên thẻ dự án ----------
+        {/* ---------- Vitals AI — thanh chat LUÔN HIỆN phía trên thẻ dự án ----------
             KHÁC "Chat nhóm" (Header, người-với-người). Nền trong suốt (chỉ hairline + blur),
             placeholder xoay vòng mô tả khả năng. Vùng tin nhắn khi nở ra là OVERLAY kính lỏng
             (.lq-card) ĐÈ LÊN card — KHÔNG chèn vào flow đẩy card xuống (spec bổ sung). */}
-        <div className="relative mb-7 w-full max-w-xl">
+        <div className="relative mb-7 w-full max-w-xl" data-vitals-chat="">
           <div
             className="flex items-center gap-2.5 rounded-full py-2 pl-4 pr-2"
             style={{
@@ -1559,12 +1601,12 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               WebkitBackdropFilter: 'blur(var(--blur-strong)) saturate(150%)',
             }}
           >
-            <VitasIcon size={15} className="shrink-0" style={{ color: COPPER }} />
+            <VitalsIcon size={15} className="shrink-0" style={{ color: COPPER }} />
             <span
               className="shrink-0 text-[9px] uppercase text-[var(--t4)]"
               style={{ fontFamily: MONO, letterSpacing: '0.22em' }}
             >
-              Vitas AI
+              Vitals AI
             </span>
             <div className="relative min-w-0 flex-1">
               <input
@@ -1573,14 +1615,20 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 onKeyDown={(e) => {
                   // stopPropagation: KHÔNG cho ← → / Enter lọt xuống listener điều hướng
                   // gallery toàn cục (đúng pattern input status đã có).
+                  // stopImmediatePropagation trên nativeEvent: chặn LUÔN native
+                  // window.addEventListener('keydown') — React synthetic stopPropagation
+                  // KHÔNG chặn được window listener (React 17+ delegate ở root, không phải window).
+                  // Nếu không có, Enter → sendChat + choose(items[active]) cùng lúc → "vào chặng
+                  // trước khi Vitals trả lời".
                   e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
                   if (e.key === 'Enter') {
                     e.preventDefault();
                     void sendChat();
                   }
                 }}
                 disabled={chatSending}
-                aria-label="Vitas AI"
+                aria-label="Vitals AI"
                 placeholder=""
                 className="w-full bg-transparent text-[13px] text-[var(--t1)] focus:outline-none disabled:opacity-60"
                 style={{ fontFamily: SANS }}
@@ -1590,7 +1638,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 <div className="pointer-events-none absolute inset-0 flex items-center overflow-hidden" aria-hidden>
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.span
-                      key={hintIdx % vitasHints.length}
+                      key={hintIdx % vitalsHints.length}
                       initial={{ opacity: 0, y: reduce ? 0 : 7 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: reduce ? 0 : -7 }}
@@ -1598,7 +1646,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       className="truncate text-[13px] text-[var(--t4)]"
                       style={{ fontFamily: SANS }}
                     >
-                      {vitasHints[hintIdx % vitasHints.length]}
+                      {vitalsHints[hintIdx % vitalsHints.length]}
                     </motion.span>
                   </AnimatePresence>
                 </div>
@@ -1606,7 +1654,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             </div>
             <button
               type="button"
-              aria-label={en ? 'Send to Vitas' : 'Gửi cho Vitas'}
+              aria-label={en ? 'Send to Vitals' : 'Gửi cho Vitals'}
               onClick={() => void sendChat()}
               disabled={chatSending || !chatInput.trim()}
               className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#1c1409] transition-opacity disabled:cursor-not-allowed disabled:opacity-35"
@@ -1625,7 +1673,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           <AnimatePresence initial={false}>
             {chatThreadShown && (
               <motion.div
-                key="vitas-backdrop"
+                key="vitals-backdrop"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -1638,7 +1686,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             )}
             {chatThreadShown && (
               <motion.div
-                key="vitas-thread"
+                key="vitals-thread"
                 initial={{ opacity: 0, y: reduce ? 0 : 8, scale: reduce ? 1 : 0.985 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: reduce ? 0 : 6, scale: reduce ? 1 : 0.99 }}
@@ -1651,7 +1699,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       className="text-[9px] uppercase text-[var(--t4)]"
                       style={{ fontFamily: MONO, letterSpacing: '0.22em' }}
                     >
-                      {en ? 'Vitas · conversation' : 'Vitas · hội thoại'}
+                      {en ? 'Vitals · conversation' : 'Vitals · hội thoại'}
                     </span>
                     <button
                       type="button"
@@ -1664,12 +1712,12 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   </div>
                   <div ref={chatScrollRef} className="max-h-[34vh] space-y-2.5 overflow-y-auto px-3.5 py-3.5">
                     {chatMessages.map((m, i) => (
-                      <VitasBubble key={i} role={m.role}>
+                      <VitalsBubble key={i} role={m.role}>
                         {m.content}
-                      </VitasBubble>
+                      </VitalsBubble>
                     ))}
                     {chatSending && (
-                      <VitasTyping label={en ? 'Vitas is replying…' : 'Vitas đang trả lời…'} />
+                      <VitalsTyping label={en ? 'Vitals is replying…' : 'Vitals đang trả lời…'} />
                     )}
                     {chatError && (
                       <div

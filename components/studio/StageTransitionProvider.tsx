@@ -97,14 +97,11 @@ export default function StageTransitionProvider({ children }: { children: ReactN
       fromPath.current = null;
       setTarget(null);
     };
-    let raf2 = 0;
-    const raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(finish);
-    });
+    // 1 rAF là đủ để tránh chớp — 2 rAF cộng dồn với duration veil gây lag rõ (21/07).
+    const raf1 = requestAnimationFrame(finish);
     const fallback = setTimeout(finish, 120);
     return () => {
       cancelAnimationFrame(raf1);
-      cancelAnimationFrame(raf2);
       clearTimeout(fallback);
     };
   }, [pathname, target]);

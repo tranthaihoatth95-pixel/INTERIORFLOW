@@ -1,5 +1,5 @@
 /**
- * lib/ai/chat-assist.ts — logic THUẦN cho "Vitas AI" trên Gallery (app/api/ai-assist-chat).
+ * lib/ai/chat-assist.ts — logic THUẦN cho "Vitals AI" trên Gallery (app/api/ai-assist-chat).
  * Tách riêng khỏi route để test được mà không cần mock Next.js Request/Response.
  *
  * KHÁC "Chat nhóm" (`ChatMessage`, app/api/chat) — đây là chat 1-người-với-AI để hỏi đáp
@@ -19,7 +19,7 @@ export const MAX_CHAT_TURNS = 16;
 export const MAX_CHAT_MSG_LEN = 4000;
 
 export const CHAT_SYSTEM_PROMPT =
-  'Bạn là Vitas — trợ lý AI của InteriorFlow (IF), công cụ vẽ mặt bằng CAD + kiểm tra quy chuẩn nội thất, ' +
+  'Bạn là Vitals — trợ lý AI của InteriorFlow (IF), công cụ vẽ mặt bằng CAD + kiểm tra quy chuẩn nội thất, ' +
   'gồm 3 chặng Drafting CAD (vẽ + kiểm TCVN) · Rendering (ghép ảnh render bằng node) · Presenting (dàn ' +
   'slide trình bày khách), theo gu quiet-luxury của TTT. Vai trò của bạn: (1) tư vấn nội thất nhanh — ' +
   'phong cách, vật liệu, bố cục — súc tích và thực tế; (2) hướng dẫn dùng app khi được hỏi, dựa ĐÚNG mô tả ' +

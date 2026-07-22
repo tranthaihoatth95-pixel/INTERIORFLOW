@@ -20,6 +20,11 @@ model User {
   isAdmin      Boolean  @default(false)
   lastSeenAt   DateTime @default(now())
   createdAt    DateTime @default(now())
+  // Avatar config JSON — schema: { base:1..4, hair:1..8, hairColor:'black|brown|blonde|red|silver',
+  // glasses:'none|round|square|aviator|rimless|cateye', hat:'none|fedora|beanie|cap|headphone|hairband',
+  // shirt:'hoodie|sweater|blazer|tshirt|turtleneck|dress', shirtColor:'navy|orange|beige|gray|white' }.
+  // Null = chưa chọn → fallback deterministic từ id.
+  avatar       String?
 
   flows        Flow[]
   transactions CreditTransaction[]

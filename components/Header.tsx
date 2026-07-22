@@ -70,9 +70,6 @@ export function Header() {
         </span>
       </button>
 
-      {/* Home — TRƯỚC trục Concept·Render·Present (đúng thứ tự đã chốt) */}
-      <HomeButton compact />
-
       <div className="mx-1 hidden h-5 w-px bg-[var(--border)] sm:block" />
 
       {/* flow name — editable (co giãn mượt, không đè lên cụm nút phải) */}
@@ -160,6 +157,10 @@ export function Header() {
           </motion.button>
           <AnimatePresence>{tasksOpen && <TasksDropdown />}</AnimatePresence>
         </div>
+
+        {/* Home — CẠNH cụm Tin nhắn (chat toggle nằm trong MoreMenu ⋯). Dời 21/07 theo
+            yêu cầu user, khỏi vị trí "trước trục Concept·Render·Present" cũ. */}
+        <HomeButton compact />
 
         {/* ⋯ More — gom control phụ, chỉ xổ khi bấm (progressive disclosure) */}
         <MoreMenu />

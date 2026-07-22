@@ -2,15 +2,17 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "interiorflow-dev",
+      "name": "interiorflow-wt-fix-stage-transition",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",
-        "dev"
+        "dev",
+        "--",
+        "-p",
+        "3011"
       ],
-      "port": 3000,
-      "cwd": "/Users/tranben/Downloads/interiorflow"
+      "port": 3011,
+      "cwd": "/Users/tranben/Downloads/interiorflow-wt-fix-stage-transition"
     }
   ]
 }
-
