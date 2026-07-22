@@ -14,7 +14,7 @@
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (70 file). KHÔNG có vitest/jest.
 
 ## Worktree đang mở
-- `interiorflow-wt-fix-stage-transition` (nhánh `feat/fix-stage-transition`) — fix bug chặng + dời Home + **Intro 60s + Avatar Builder MVP (21/07 khuya)**. Chờ merge. HEAD `500f462`.
+- (Không có — worktree `fix-stage-transition` merge xong 21/07 khuya, dọn theo rule an toàn.)
 
 ## Việc mới 21/07 khuya (worktree `fix-stage-transition`)
 - **Intro Sequence 60s** (`/intro`, public, redirect `/login` nếu `if_intro_seen_v1=1`). 4 cảnh useReducer state machine + AnimatePresence mode=wait, auto-advance 15/10/25/10s. Skip button sau 3s (buffer 1s chống mis-click). 11 SVG stylized tự vẽ trong `components/intro/svgs/`: Desk isometric · Monitor · Blueprint · Ruler · Mouse · Clock · Pencil · Architect chibi (KTS Pixar-style) · LogoIF hairline · WaveFlow · VitalsDrop. Cảnh 1 tint xám lạnh + copy song ngữ; cảnh 2 KTS+bàn+logo grid-paper; cảnh 3 ba màn hình + wave cam + KTS+VitalsDrop; cảnh 4 VitalsDrop phóng to (`layoutId="hero-glass"`) + CTA. Route `/login` (thin wrapper `LoginScreen` entry + layoutId marker).
@@ -46,15 +46,19 @@
 - ✅ **Gallery gesture trượt card — FIX 21/07 tối** (`feat(gallery)`): user báo "cử chỉ/phím/chuột/bàn di đều ko hoạt động". ← → Enter đã có, THÊM Home/End + onWheel accumulator (deltaX trackpad ưu tiên, deltaY chuột convert ngang, ngưỡng 60px, reset sau 300ms). Caption hint mới: '← → · Home/End · lăn chuột / trượt 2 ngón'.
 - ✅ **Vitals giọt kính drag → panel transition — FIX 21/07 khuya** (`perf(vitals)`, cùng worktree): pre-mount `VitalsDropPanel` NGAY khi `dragging=true` với `open=false`/opacity 0/pointer-events none → React commit + effect setup chạy TRONG lúc user còn kéo. Threshold hit → `open=true` → chỉ tween opacity+scale 220ms easeApple (thay `springSheet` stiffness 380/damping 42 settle ~300ms) → khớp nhịp droplet exit 120ms, không cold-mount. Guard: click-outside/Esc listener + autoFocus input chỉ chạy khi `open=true` để pre-mount không nuốt drag hoặc steal focus. 18/18 stage-drop test PASS, tsc PASS.
 - 🐛 `/cad-editor` warning React `Cannot update a component...` (`CadCanvas`/`StudioBar`) — điều tra sâu nhưng KHÔNG tái hiện được, chưa sửa. Chi tiết → CHANGELOG.
-- ⚠️ **RÒ RỈ NVIDIA_API_KEY** (21/07 sáng): lỡ in trong transcript agent — USER NÊN ROTATE key ở build.nvidia.com rồi thay `.env.local`.
+- ✅ **NVIDIA_API_KEY rotate xong 21/07 tối** — user đã revoke key cũ, tạo key mới `Rebw...zv-e` trong `.env.local` (verify HTTP 200 với llama-3.1-8b). File `.env.local` dọn sạch (backup `.env.local.bak-20260721-164537`). 3 key model dự phòng comment `#` để dành.
 - [THẤP] Property panel Render không undo được · Sprint 3 B1 `meta` giá/vendor/sku trống · `knowledge/` 121MB cân nhắc Git LFS · M1 Larkbase: chưa link-picker grid >8 dự án.
 
 ## Việc chờ USER DUYỆT (đề xuất đã gửi, chưa phóng agent)
-1. **Chat mở rộng (kiểu Zalo)** — 3 loại kênh (`project`/`direct`/`group`), Prisma model `Channel/ChannelMember/Message` thay `ChatMessage` cũ. 3 câu hỏi cần user quyết trước: (a) ai tạo group, (b) direct cross-project không, (c) thông báo real-time cơ chế gì.
-2. **Vitas roadmap 5 tầng** — Tầng 3 CAD (giải thích Kiểm chuẩn, chuyển chat→AiBriefPanel) làm trước sau khi bug chặng dứt điểm.
+1. **Chat mở rộng (kiểu Zalo)** — user chốt 21/07 tối: (a) **A3** bất cứ member tạo group, (b) **B1** direct cross-project OK, (c) **C1** Supabase Realtime. **Còn chờ scope MVP (Nhẹ/Đầy/Full)** trước khi phóng agent.
+2. **Intro screen Phase 2 (Figma)** — user đăng ký Figma Pro + authorize `plugin:brand-voice:figma` MCP + vẽ scene draft → phóng Agent G swap SVG tạm bằng chất lượng cao.
+3. **Vitals merge hoàn toàn từ SyncWork** — user chọn phương án C (SyncWork banh, gộp vào IF). Chưa làm; cần plan scope.
+4. **Archinote handoff** — chưa quyết A/B/cả 2 (lưu path folder / memory / cả 2).
+5. **ML Gu Engine** (bỏ chặn) — user chưa chọn bắt đầu từ đâu.
+6. **MS Teams integration** (bỏ chặn) — user chưa chọn scope (notification/task sync/meeting).
 
 ## Bị chặn — KHÔNG tự khởi động
-- Intro screen (chờ hình/video — flow hiện tại ĐÃ gỡ intro theo lệnh user) · ML Gu Engine heavy (chồng lấn 2 app khác) · "API team" spec.
+- (Trống — Intro/ML Gu/MS Teams đã bỏ chặn 21/07 tối, chuyển sang mục "Chờ USER DUYỆT" trên.)
 
 ## Quy tắc session
 1. Đọc STATUS.md trước tiên; xong task cập nhật STATUS **trước** khi báo cáo.
