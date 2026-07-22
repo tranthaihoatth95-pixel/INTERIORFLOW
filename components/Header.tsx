@@ -26,6 +26,7 @@ import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { IFLogo } from '@/components/entry/IFLogo';
 import { HomeButton } from '@/components/studio/HomeButton';
+import { NotebookButton } from '@/components/notebook/NotebookButton';
 import { requestGallery } from '@/lib/resume';
 
 export function Header() {
@@ -161,6 +162,9 @@ export function Header() {
         {/* Home — CẠNH cụm Tin nhắn (chat toggle nằm trong MoreMenu ⋯). Dời 21/07 theo
             yêu cầu user, khỏi vị trí "trước trục Concept·Render·Present" cũ. */}
         <HomeButton compact />
+
+        {/* Notebook — Project Notebook (RAG sources + Vitals chat, Phase 1 MVP) */}
+        <NotebookButton compact />
 
         {/* ⋯ More — gom control phụ, chỉ xổ khi bấm (progressive disclosure) */}
         <MoreMenu />
