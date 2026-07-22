@@ -65,7 +65,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             phiên; guard bằng key sentinel để tránh chạy lại nhiều lần. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{if(!localStorage.getItem('interiorflow.vitals.migrated_from_vitas')){var moved=0;for(var i=localStorage.length-1;i>=0;i--){var k=localStorage.key(i);if(k&&k.indexOf('interiorflow.vitas.')===0){var v=localStorage.getItem(k);var nk='interiorflow.vitals.'+k.slice('interiorflow.vitas.'.length);if(v!==null&&localStorage.getItem(nk)===null){localStorage.setItem(nk,v);moved++;}localStorage.removeItem(k);}}localStorage.setItem('interiorflow.vitals.migrated_from_vitas','1');}}catch(e){}`,
+            __html: `try{if(!localStorage.getItem('interiorflow.vitals.migrated_from_vitas')){var moved=0;for(var i=localStorage.length-1;i>=0;i--){var k=localStorage.key(i);if(k&&k.indexOf('interiorflow.vitas.')===0){var v=localStorage.getItem(k);var nk='interiorflow.vitals.'+k.slice('interiorflow.vitas.'.length);if(v!==null&&localStorage.getItem(nk)===null){localStorage.setItem(nk,v);moved++;}localStorage.removeItem(k);}}localStorage.setItem('interiorflow.vitals.migrated_from_vitas','1');}}catch(e){}
+try{if(!localStorage.getItem('interiorflow.vitals.stage_drop_cleaned_v1')){localStorage.removeItem('interiorflow.vitals.hint_seen_v2');localStorage.removeItem('interiorflow.vitals.first_drag_done');localStorage.removeItem('interiorflow.vitals.hint_seen');localStorage.setItem('interiorflow.vitals.stage_drop_cleaned_v1','1');}}catch(e){}`,
           }}
         />
         {/* Màn che chuyển chặng + MotionConfig reducedMotion="user" đặt TRÊN route: veil phải
