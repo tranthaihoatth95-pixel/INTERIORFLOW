@@ -339,21 +339,9 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
               )}
               <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Icon size={13} strokeWidth={on ? 2.2 : 2} /> {p.label}
-                {/* Phân định chặng: chấm 4px tông riêng của chặng, CHỈ hiện ở chặng đang mở —
-                    đủ để mắt bắt ngay "mình đang ở đâu" mà không thành trang trí. Cùng tông với
-                    hairline đáy thanh đầu (StageBar/Header). */}
-                {on && (
-                  <span
-                    aria-hidden
-                    style={{
-                      width: 4,
-                      height: 4,
-                      borderRadius: 4,
-                      background: STAGE_TINT[p.id],
-                      marginLeft: 1,
-                    }}
-                  />
-                )}
+                {/* Active-stage marker chấm màu đã bỏ 21/07 (user chê xấu). Chặng active
+                    đã đủ phân biệt bằng: pill nền card (var(--card)) + hairline viền +
+                    font-weight 600 (vs 500) + color var(--t1) (vs var(--t4)). */}
               </span>
             </motion.button>
           );
