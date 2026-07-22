@@ -4,43 +4,158 @@
  * components/studio/StageSwitcher.tsx — TRỤC ĐIỀU HƯỚNG DUY NHẤT của app: 3 chặng
  * Concept · Render · Present.
  *
- * Thuần presentational: parent quyết hành vi qua onPick (Header đổi workspace / studio
- * điều hướng route). Cùng 1 giao diện ở mọi nơi → app liền một mạch.
- *
- * 22/07 — BỎ VISUAL GIỌT KÍNH VITALS: user quyết chỉ giữ Vitals chat ở Gallery. Ở
- * StageSwitcher không còn giọt kính teardrop / motion drip / tooltip onboarding /
- * reminder loop / gesture kéo xuống mở panel / phím tắt ⌘J. Backend `/api/ai-assist-chat`
- * và VitalsChatBubble giữ nguyên cho Gallery. StageSwitcher trở lại vai trò gốc: 3 tab
- * chuyển chặng sạch, không marker thêm.
+ * 23/07 — RESTORE GESTURE, KHÔNG VISUAL GIỌT KÍNH: user chốt "bỏ hiệu ứng giọt
+ * kính nhưng phải chừa lại cho người ra cử chỉ kéo xuống hiện ô chat được tối
+ * ưu trả lời cho từng chặng". Cách làm:
+ *   - Handle line hairline 24×1px ở giữa-dưới dock (dạng iOS bottom sheet
+ *     handle). Idle 1px opacity 0.4; hover/active 3px opacity 0.9. Rất subtle,
+ *     hint cử chỉ mà không cầu kỳ (tinh thần quiet-luxury TTT).
+ *   - Pointer-down trên handle → `createStageDragTracker` phân biệt click/trượt
+ *     ngang/kéo xuống (lib/input/stage-drop.ts). Kéo xuống vượt 28px → mở
+ *     `VitalsGesturePanel`, chat với backend context-aware theo `active` chặng.
+ *   - Pre-mount panel khi drag bắt đầu (fix motion khưng 8d3b6a4 vẫn giữ):
+ *     mount opacity 0 → threshold hit set open=true, không cold-mount.
+ *   - Onboarding subtle: lần đầu vào 1 trong 3 chặng, handle line hiện active
+ *     3s + tooltip "↓ Kéo xuống để hỏi Vitals" 4s (key `gesture_hint_seen`).
+ *     Sau lần drag đầu (`gesture_first_done`) không hiện lại tooltip.
  */
 
-import { motion } from 'framer-motion';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { PencilRuler, Box, Presentation } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
 import { PHASES, STAGE_TINT, STAGE_INDEX } from '@/lib/phases';
-import { springSheet, pressable } from '@/lib/motion';
+import { springSheet, pressable, easeApple } from '@/lib/motion';
+import { createStageDragTracker } from '@/lib/input/stage-drop';
+import VitalsGesturePanel, { markVitalsUsed, wasVitalsUsed } from './VitalsGesture';
 
-// Chặng 1 = Drafting CAD → icon thước-bút; Rendering = khối; Presenting = trình chiếu.
 const ICON: Record<Phase, typeof PencilRuler> = { concept: PencilRuler, render: Box, present: Presentation };
 
+const HINT_SEEN_KEY = 'interiorflow.vitals.gesture_hint_seen';
+const FIRST_DONE_KEY = 'interiorflow.vitals.gesture_first_done';
+
 interface Props {
-  /** chặng đang sáng. */
   active: Phase;
-  /** click 1 chặng. */
   onPick: (p: Phase) => void;
-  /** true khi đang ở photo-editor (active=render + hiện nhãn "Chỉnh ảnh"). */
   photoContext?: boolean;
 }
 
 export default function StageSwitcher({ active, onPick, photoContext }: Props) {
+  const dockRef = useRef<HTMLDivElement>(null);
+  const handleRef = useRef<HTMLDivElement>(null);
+
+  const [dragging, setDragging] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [originPx, setOriginPx] = useState<number | null>(null);
+  const [handleActive, setHandleActive] = useState(false); // hover HOẶC onboarding highlight
+  const [hintTooltip, setHintTooltip] = useState(false);
+
+  // Onboarding lần đầu — chỉ chạy client, đọc localStorage đồng bộ.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (localStorage.getItem(HINT_SEEN_KEY) === '1') return;
+      // Handle line active 3s + tooltip 4s.
+      setHandleActive(true);
+      setHintTooltip(true);
+      const t1 = window.setTimeout(() => setHandleActive(false), 3000);
+      const t2 = window.setTimeout(() => setHintTooltip(false), 4000);
+      localStorage.setItem(HINT_SEEN_KEY, '1');
+      return () => {
+        window.clearTimeout(t1);
+        window.clearTimeout(t2);
+      };
+    } catch {}
+  }, []);
+
+  const onHandlePointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (e.button !== 0) return;
+      const el = handleRef.current;
+      const dock = dockRef.current;
+      if (!el || !dock) return;
+
+      const dockRect = dock.getBoundingClientRect();
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const tracker = createStageDragTracker();
+
+      // Origin panel: nơi ngón tay bắt đầu, tính từ mép trái dock.
+      setOriginPx(Math.max(0, Math.min(dockRect.width, startX - dockRect.left)));
+      setDragging(true); // → pre-mount panel với open=false (fix motion khưng)
+
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {}
+
+      const onMove = (ev: PointerEvent) => {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        const v = tracker.move(dx, dy);
+        if (v === 'vitals') {
+          setPanelOpen(true);
+          markVitalsUsed();
+          try {
+            localStorage.setItem(FIRST_DONE_KEY, '1');
+          } catch {}
+          cleanup();
+        } else if (v === 'locked') {
+          setDragging(false);
+          cleanup();
+        }
+      };
+      const onUp = () => {
+        // Thả tay chưa đủ ngưỡng → không mở panel, dọn pre-mount.
+        if (!panelOpen) setDragging(false);
+        cleanup();
+      };
+      const cleanup = () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onUp);
+        try {
+          el.releasePointerCapture(e.pointerId);
+        } catch {}
+      };
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onUp);
+    },
+    [panelOpen],
+  );
+
+  // Khi panel đóng, dọn dragging để lần drag tiếp không dính state cũ.
+  useEffect(() => {
+    if (!panelOpen && !dragging) return;
+    if (!panelOpen) return; // vẫn đang drag nhưng chưa mở
+    return () => {
+      // panel unmount hoặc onClose → reset dragging
+      setDragging(false);
+    };
+  }, [panelOpen, dragging]);
+
+  const shouldMountPanel = dragging || panelOpen;
+
+  // Ẩn tooltip khi user đã drag lần đầu (dù chưa hết 4s).
+  useEffect(() => {
+    if (!hintTooltip) return;
+    try {
+      if (localStorage.getItem(FIRST_DONE_KEY) === '1') setHintTooltip(false);
+    } catch {}
+  }, [hintTooltip, dragging]);
+
+  const handleWidth = 24;
+  const handleHeight = handleActive ? 3 : 1;
+  const handleOpacity = handleActive ? 0.9 : 0.4;
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      {/* C-3 UNIFIED DOCK — vật liệu kính mờ (.if-dock, globals.css) dùng CHUNG
-          Header app chính + StudioBar → 3 chặng nhìn/đứng y hệt nhau ở mọi nơi. */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
       <div
+        ref={dockRef}
         className="if-dock"
         role="tablist"
         aria-label="Chặng làm việc"
+        style={{ position: 'relative' }}
       >
         {PHASES.map((p) => {
           const Icon = ICON[p.id];
@@ -70,8 +185,6 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
                 whiteSpace: 'nowrap',
               }}
             >
-              {/* pill "active" trượt mượt giữa 3 chặng (shared layout) — active-state rõ:
-                  nền card + hairline viền + bóng 2 lớp nông (quiet-luxury, không neon). */}
               {on && (
                 <motion.span
                   layoutId="stage-active-pill"
@@ -93,10 +206,96 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
             </motion.button>
           );
         })}
+
+        {/* Handle line hairline — subtle drag hint, KHÔNG teardrop giọt kính. Idle 24×1px
+            opacity 0.4; hover/active 24×3px opacity 0.9. Vùng bắt pointer 40×12px lớn
+            hơn phần vẽ để không phải "chạm chuẩn" mới drag được. */}
+        <div
+          ref={handleRef}
+          data-vitals-gesture-handle
+          onPointerDown={onHandlePointerDown}
+          onMouseEnter={() => setHandleActive(true)}
+          onMouseLeave={() => {
+            if (!hintTooltip) setHandleActive(false);
+          }}
+          aria-label="Kéo xuống để hỏi Vitals"
+          role="button"
+          tabIndex={-1}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '100%',
+            transform: 'translateX(-50%)',
+            width: 40,
+            height: 12,
+            display: 'grid',
+            placeItems: 'center',
+            cursor: 'grab',
+            touchAction: 'none',
+            zIndex: 5,
+          }}
+        >
+          <motion.span
+            aria-hidden
+            animate={{
+              width: handleWidth,
+              height: handleHeight,
+              opacity: handleOpacity,
+            }}
+            transition={{ duration: 0.18, ease: easeApple }}
+            style={{
+              display: 'block',
+              borderRadius: 2,
+              background: 'var(--t4)',
+              pointerEvents: 'none',
+            }}
+          />
+        </div>
+
+        {/* Tooltip onboarding — chỉ hiện lần đầu, 4s, có mũi tên nhỏ. */}
+        <AnimatePresence>
+          {hintTooltip && !wasVitalsUsed() && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4, transition: { duration: 0.18 } }}
+              transition={{ duration: 0.22, ease: easeApple }}
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: 'calc(100% + 18px)',
+                transform: 'translateX(-50%)',
+                whiteSpace: 'nowrap',
+                fontSize: 10.5,
+                letterSpacing: '0.02em',
+                color: 'var(--t2)',
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                padding: '4px 8px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                zIndex: 10,
+                pointerEvents: 'none',
+              }}
+            >
+              ↓ Kéo xuống để hỏi Vitals
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Panel chat Vitals — pre-mount khi dragging, chỉ open khi threshold hit. */}
+        {shouldMountPanel && (
+          <VitalsGesturePanel
+            originPx={originPx}
+            open={panelOpen}
+            onClose={() => {
+              setPanelOpen(false);
+              setDragging(false);
+            }}
+            stage={active}
+          />
+        )}
       </div>
-      {/* Nhãn micro "01 · DRAFTING CAD" — label tracked uppercase theo gu TTT. Vế thứ hai của việc
-          phân định chặng: pill cho biết chọn được gì, nhãn này khẳng định đang ĐỨNG ở đâu.
-          Ẩn trên màn hẹp (media query .if-stage-label trong globals.css) để không chen thanh đầu. */}
       <span
         className="if-stage-label"
         style={{
