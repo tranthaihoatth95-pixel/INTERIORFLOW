@@ -66,10 +66,63 @@ model Project {
   // mã Larkbase (dự án mới trong IF trước khi phòng dự án tạo task tương ứng bên Larkbase).
   larkProjectCode String?
 
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  flows Flow[]
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flows    Flow[]
+  notebook ProjectNotebook?
 
   @@index([larkProjectCode])
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Project Notebook (Phase 1) — "NotebookLM riêng cho mỗi project".
+// User upload PDF/ảnh/note → extract → chunk → embed (NVIDIA) → cosine retrieve
+// tại chỗ (JSON blob) → RAG cho Vitals chat. Không thêm pgvector/sqlite-vss
+// (option 🅐: đơn giản, không dependency mới; hàng nghìn chunk vẫn nhanh trong Node).
+// ══════════════════════════════════════════════════════════════════════════
+model ProjectNotebook {
+  id        String   @id @default(cuid())
+  projectId String   @unique
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sources NotebookSource[]
+  chunks  NotebookChunk[]
+}
+
+model NotebookSource {
+  id          String   @id @default(cuid())
+  notebookId  String
+  notebook    ProjectNotebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  kind        String   // "pdf" | "image" | "text" | "url" | "meeting-note"
+  title       String
+  originalUrl String?
+  filePath    String?  // path lưu local (uploads/notebook/{projectId}/{sourceId}.{ext})
+  mimeType    String?
+  sizeBytes   Int?
+  status      String   @default("processing") // "processing" | "ready" | "error"
+  errorMsg    String?
+  createdAt   DateTime @default(now())
+
+  chunks NotebookChunk[]
+
+  @@index([notebookId])
+}
+
+model NotebookChunk {
+  id         String   @id @default(cuid())
+  notebookId String
+  notebook   ProjectNotebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  sourceId   String
+  source     NotebookSource  @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  page       Int?
+  content    String
+  embedding  String // JSON array float32[]
+  tokens     Int?
+  createdAt  DateTime @default(now())
+
+  @@index([notebookId])
+  @@index([sourceId])
 }
 
 model Flow {
