@@ -141,6 +141,7 @@ export default function VitalsDropPanel({
       role="dialog"
       aria-label="Vitals AI"
       aria-hidden={!open}
+      data-vitals-chat=""
       // 21/07 tối — motion khưng fix: KHÔNG dùng springSheet (settle ~300ms) nữa. Pre-mount
       // với opacity 0 trong lúc drag → khi open bật, chỉ tween 220ms easeApple (khớp nhịp
       // với droplet exit 120ms). Giọt kính tách khỏi thanh: mọc từ ĐÚNG điểm kéo (originX).

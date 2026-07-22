@@ -682,14 +682,39 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         // Guard bổ sung 21/07: khi input Vitals bị disabled (chatSending) focus rơi về body →
         // Enter kế tiếp lọt qua isOtherControl. Chặn nếu bất kỳ tổ tiên nào là khu chat Vitals.
         const inVitalsChat = !!target?.closest?.('[data-vitals-chat]');
-        if (isOtherControl || inVitalsChat || target?.isContentEditable || e.defaultPrevented) return;
+        // Guard bổ sung 22/07 — regression sau Agent E/G: khi Vitals chat "đang hoạt động"
+        // (thread mở HOẶC đang gửi HOẶC còn chữ trong ô), CHẶN Enter global bất kể target.
+        // Lý do: (a) input disabled trong chatSending → focus rơi về body, closest() không
+        // bắt được; (b) target có thể là nút X/backdrop/scroll — không nằm trong wrapper
+        // data-vitals-chat của các phần mount qua portal/AnimatePresence.
+        const vitalsActive = chatThreadShown || chatSending || chatInput.length > 0;
+        if (
+          isOtherControl ||
+          inVitalsChat ||
+          vitalsActive ||
+          target?.isContentEditable ||
+          e.defaultPrevented
+        )
+          return;
         e.preventDefault();
         void choose(items[active]);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [busy, n, active, items, choose, statusFor, pickerFor, manyMode]);
+  }, [
+    busy,
+    n,
+    active,
+    items,
+    choose,
+    statusFor,
+    pickerFor,
+    manyMode,
+    chatThreadShown,
+    chatSending,
+    chatInput,
+  ]);
 
   const step = (dir: 1 | -1) => setActive((a) => Math.min(n - 1, Math.max(0, a + dir)));
 
