@@ -1,0 +1,68 @@
+{
+  "//": "Template config electron-builder Windows — MERGE vào package.json build.win khi Sprint 2/3 chạy. Đừng dùng thẳng file này — electron-builder đọc từ package.json.",
+
+  "unsigned": {
+    "//": "Mặc định hiện tại — build ra .exe unsigned, SmartScreen warn 'Publisher unknown'.",
+    "target": [
+      { "target": "nsis", "arch": ["x64"] }
+    ],
+    "icon": "electron/icons/icon.png"
+  },
+
+  "signed_ov": {
+    "//": "Sau khi user mua Sectigo/DigiCert OV cert (~$150-250/năm) + có USB token hoặc HSM cloud. Cần build reputation vài tuần trước khi SmartScreen hết warn.",
+    "target": [
+      { "target": "nsis", "arch": ["x64"] }
+    ],
+    "icon": "electron/icons/icon.png",
+    "certificateSubjectName": "TTT Architects Co., Ltd",
+    "signAndEditExecutable": true,
+    "signingHashAlgorithms": ["sha256"],
+    "rfc3161TimeStampServer": "http://timestamp.digicert.com"
+  },
+
+  "signed_ev": {
+    "//": "EV cert (~$300-500/năm) — SmartScreen instant OK, không cần build reputation. Bắt buộc HSM/USB token.",
+    "target": [
+      { "target": "nsis", "arch": ["x64"] }
+    ],
+    "icon": "electron/icons/icon.png",
+    "certificateSubjectName": "TTT Architects Co., Ltd",
+    "signAndEditExecutable": true,
+    "signingHashAlgorithms": ["sha256"],
+    "rfc3161TimeStampServer": "http://timestamp.digicert.com",
+    "//sign": "Với EV cert HSM cloud (DigiCert KeyLocker), dùng biến env SM_HOST + SM_API_KEY + SM_CLIENT_CERT_FILE thay vì certificateSubjectName"
+  },
+
+  "nsis_config": {
+    "//": "Giữ nguyên như package.json hiện tại — user-level install, không cần admin.",
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "InteriorFlow"
+  },
+
+  "checklist_pre_build": [
+    "Máy Windows thật (Windows 10/11 x64) — KHÔNG cross-build được từ Mac",
+    "Node.js LTS installed",
+    "Git clone repo mới nhất, git pull",
+    "npm install (postinstall tự chạy prisma generate)",
+    "Nếu signed: USB token cắm + password sẵn / DigiCert KeyLocker SM_* env vars set"
+  ],
+
+  "checklist_post_build": [
+    "dist/InteriorFlow Setup {version}.exe tồn tại",
+    "Cài thử trên máy Windows sạch (VM tốt nhất)",
+    "Test tự chạy: mở app từ Start Menu → server nội bộ khởi động → cửa sổ Electron load",
+    "Test đăng ký tài khoản đầu (=admin) qua email",
+    "Test OTA: đổi version 0.1.0 → 0.1.1, publish qua electron:publish, mở app cũ → verify tự update"
+  ],
+
+  "checklist_signed_extra": [
+    "Verify chữ ký: signtool.exe verify /pa /v \"dist\\InteriorFlow Setup {version}.exe\"",
+    "Kỳ vọng: 'Successfully verified' + tên TTT Architects Co., Ltd",
+    "Test SmartScreen: cài trên máy Windows CLEAN (mới format), warn hết chưa"
+  ]
+}
