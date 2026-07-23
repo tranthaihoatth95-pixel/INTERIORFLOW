@@ -14,11 +14,10 @@
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (70 file). KHÔNG có vitest/jest.
 
 ## Worktree đang mở
-- **`interiorflow-wt-fix-p1`** (nhánh `fix/auth-leak-notebook-mismatch`) — CHỜ USER VERIFY + merge.
-  - Fix Bug 2 (notebook 404 slug↔cuid mismatch): 5 route `/api/notebook/[projectId]/*` wire vào `resolveNotebookProjectId(userId, paramId)`. Approach C: nếu param là Project.id thật của user → dùng; ngược lại (slug từ `NotebookButton`) → tự tạo bucket ẩn `__nb:<slug>` per-user (idempotent). Đã test dev server 127.0.0.1:4210: GET sources 200 (trước 404), upload text 202, RAG query trả lời đúng "Ngân sách 500 triệu" với 1 citation, tier=local model=llama3.
-  - Fix Bug 1 (nghi vấn "/api/flows leak") — code đã filter `where:{userId:user.id}` đúng, KHÔNG tái hiện được bằng probe (T1 tạo flow, T2 register mới, GET /api/flows trả `flows:[] projects:[]`). Kết luận: report agent verify trước sai attribution. Tuy vậy tăng cường defensive: `/api/flows` + `/api/dashboard` project list thêm filter `NOT { name startsWith '__nb:' }` để bucket ẩn KHÔNG lộ ra Gallery/Dashboard. Test dev server: T2 tạo hidden bucket qua notebook → GET /api/flows projects vẫn `[]`.
-  - Test mới: `lib/notebook/resolveProject.test.ts` (5 assert, PASS via sucrase-node) — invariant HIDDEN_NOTEBOOK_PREFIX + naming + predicate shape.
-  - Verify: `npx tsc --noEmit` sạch · 75/75 test PASS · dev server verify xong, port 4210 dọn.
+- (Không có — cơ chế an toàn tự dọn.)
+
+## Đã merge 23/07 chiều tối (song song)
+- **fix/auth-leak-notebook-mismatch** (`8d7246f`): fix Notebook 404 slug↔cuid mismatch (approach C — `resolveNotebookProjectId` accept cả slug/cuid, auto find-or-create bucket ẩn `__nb:<slug>` per-user); defensive filter `NOT { name startsWith '__nb:' }` cho `/api/flows` + `/api/dashboard` project list. Bug 1 auth leak `/api/flows` — NHẦM attribution (code đã filter đúng, verify probe 2 account không tái hiện được leak). 75/75 test.
 
 ## Việc mới 21/07 khuya (worktree `fix-stage-transition`)
 - **Intro Sequence 60s** (`/intro`, public, redirect `/login` nếu `if_intro_seen_v1=1`). 4 cảnh useReducer state machine + AnimatePresence mode=wait, auto-advance 15/10/25/10s. Skip button sau 3s (buffer 1s chống mis-click). 11 SVG stylized tự vẽ trong `components/intro/svgs/`: Desk isometric · Monitor · Blueprint · Ruler · Mouse · Clock · Pencil · Architect chibi (KTS Pixar-style) · LogoIF hairline · WaveFlow · VitalsDrop. Cảnh 1 tint xám lạnh + copy song ngữ; cảnh 2 KTS+bàn+logo grid-paper; cảnh 3 ba màn hình + wave cam + KTS+VitalsDrop; cảnh 4 VitalsDrop phóng to (`layoutId="hero-glass"`) + CTA. Route `/login` (thin wrapper `LoginScreen` entry + layoutId marker).
