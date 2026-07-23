@@ -11,18 +11,13 @@ import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
 import { ragAnswer } from '@/lib/notebook/rag';
 import { normalizeChatStage } from '@/lib/ai/chat-assist';
+import { resolveNotebookProjectId } from '@/lib/notebook/resolveProject';
 
 export async function POST(req: Request, { params }: { params: { projectId: string } }) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-  const project = await prisma.project.findUnique({
-    where: { id: params.projectId },
-    select: { id: true, userId: true },
-  });
-  if (!project || project.userId !== user.id) {
-    return NextResponse.json({ error: 'Không tìm thấy project.' }, { status: 404 });
-  }
+  const projectId = await resolveNotebookProjectId(user.id, params.projectId);
 
   const body = (await req.json().catch(() => ({}))) as {
     question?: string;
@@ -34,8 +29,8 @@ export async function POST(req: Request, { params }: { params: { projectId: stri
   if (question.length > 4000) return NextResponse.json({ error: 'Question quá dài (>4000).' }, { status: 400 });
 
   const notebook = await prisma.projectNotebook.upsert({
-    where: { projectId: params.projectId },
-    create: { projectId: params.projectId },
+    where: { projectId },
+    create: { projectId },
     update: {},
     select: { id: true },
   });

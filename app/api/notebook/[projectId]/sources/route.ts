@@ -5,21 +5,18 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
+import { resolveNotebookProjectId } from '@/lib/notebook/resolveProject';
 
 export async function GET(_: Request, { params }: { params: { projectId: string } }) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-  const project = await prisma.project.findUnique({
-    where: { id: params.projectId },
-    select: { id: true, userId: true },
-  });
-  if (!project || project.userId !== user.id) {
-    return NextResponse.json({ error: 'Không tìm thấy project.' }, { status: 404 });
-  }
+  // Resolve param → real Project.id owned by user (auto-provision bucket ẩn nếu
+  // client truyền slug tên flow như NotebookButton hiện tại). Không còn 404 giả.
+  const projectId = await resolveNotebookProjectId(user.id, params.projectId);
 
   const notebook = await prisma.projectNotebook.findUnique({
-    where: { projectId: params.projectId },
+    where: { projectId },
     select: { id: true, createdAt: true, updatedAt: true },
   });
   if (!notebook) {

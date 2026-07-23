@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
+import { HIDDEN_NOTEBOOK_PREFIX } from '@/lib/notebook/resolveProject';
 
 /** Danh sách flow của user (kèm project). Card dự án cần thêm coverUrl + status + roster team. */
 export async function GET() {
@@ -28,7 +29,8 @@ export async function GET() {
       },
     }),
     prisma.project.findMany({
-      where: { userId: user.id },
+      // Loại project ẩn (bucket notebook per-user, name '__nb:<slug>') khỏi Gallery.
+      where: { userId: user.id, NOT: { name: { startsWith: HIDDEN_NOTEBOOK_PREFIX } } },
       orderBy: { createdAt: 'desc' },
       select: { id: true, name: true, clientName: true, larkProjectCode: true },
     }),

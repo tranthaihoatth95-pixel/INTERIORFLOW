@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
+import { HIDDEN_NOTEBOOK_PREFIX } from '@/lib/notebook/resolveProject';
 
 /**
  * Tổng quan cho Dashboard: team + projects + hoạt động gần đây + thống kê.
@@ -27,6 +28,7 @@ export async function GET() {
       },
     }),
     prisma.project.findMany({
+      where: { NOT: { name: { startsWith: HIDDEN_NOTEBOOK_PREFIX } } },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,

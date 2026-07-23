@@ -21,6 +21,7 @@ import { getSessionUser } from '@/lib/server/auth';
 import { extractPdf, extractImage, extractPlain, type ExtractResult } from '@/lib/notebook/extract';
 import { chunkPages, chunkText } from '@/lib/notebook/chunk';
 import { embedTexts, NoEmbedProviderError } from '@/lib/notebook/embed';
+import { resolveNotebookProjectId } from '@/lib/notebook/resolveProject';
 
 const MAX_PDF = 20 * 1024 * 1024;
 const MAX_IMG = 5 * 1024 * 1024;
@@ -29,20 +30,19 @@ const UPLOAD_ROOT = path.join(process.cwd(), 'uploads', 'notebook');
 type Kind = 'pdf' | 'image' | 'text' | 'url' | 'meeting-note';
 const KINDS: Kind[] = ['pdf', 'image', 'text', 'url', 'meeting-note'];
 
-/** Check ownership + upsert ProjectNotebook lazy. Trả notebookId. */
-async function ownProjectNotebook(projectId: string, userId: string): Promise<string | null> {
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    select: { id: true, userId: true },
-  });
-  if (!project || project.userId !== userId) return null;
+/** Resolve param → real Project.id owned by user (auto-provision bucket ẩn), rồi upsert ProjectNotebook. */
+async function ownProjectNotebook(
+  paramProjectId: string,
+  userId: string,
+): Promise<{ notebookId: string; projectId: string } | null> {
+  const projectId = await resolveNotebookProjectId(userId, paramProjectId);
   const nb = await prisma.projectNotebook.upsert({
     where: { projectId },
     create: { projectId },
     update: {},
     select: { id: true },
   });
-  return nb.id;
+  return { notebookId: nb.id, projectId };
 }
 
 function extForMime(mime: string | null | undefined, fallback = 'bin'): string {
@@ -127,8 +127,9 @@ export async function POST(req: Request, { params }: { params: { projectId: stri
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-  const notebookId = await ownProjectNotebook(params.projectId, user.id);
-  if (!notebookId) return NextResponse.json({ error: 'Không tìm thấy project.' }, { status: 404 });
+  const owned = await ownProjectNotebook(params.projectId, user.id);
+  if (!owned) return NextResponse.json({ error: 'Không tìm thấy project.' }, { status: 404 });
+  const { notebookId, projectId: resolvedProjectId } = owned;
 
   const contentType = req.headers.get('content-type') ?? '';
 
@@ -202,7 +203,7 @@ export async function POST(req: Request, { params }: { params: { projectId: stri
   });
 
   if (fileBuf) {
-    const dir = path.join(UPLOAD_ROOT, params.projectId);
+    const dir = path.join(UPLOAD_ROOT, resolvedProjectId);
     await fs.mkdir(dir, { recursive: true });
     const ext = extForMime(mimeType, kind === 'pdf' ? 'pdf' : 'bin');
     filePath = path.join(dir, `${source.id}.${ext}`);
