@@ -24,7 +24,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PencilRuler, Box, Presentation } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
-import { PHASES, STAGE_TINT, STAGE_INDEX } from '@/lib/phases';
+import { PHASES, STAGE_TINT, STAGE_INDEX, phaseLabel } from '@/lib/phases';
+import { useCadStore } from '@/lib/cad/store';
 import { springSheet, pressable, easeApple } from '@/lib/motion';
 import { createStageDragTracker } from '@/lib/input/stage-drop';
 import VitalsGesturePanel, { markVitalsUsed, wasVitalsUsed } from './VitalsGesture';
@@ -41,6 +42,10 @@ interface Props {
 }
 
 export default function StageSwitcher({ active, onPick, photoContext }: Props) {
+  // IF2-nền — nhãn pill CAD tự đổi theo `store.stage` ('sketch' | 'technical' | 'bim').
+  // Selector này KHÔNG trigger re-render nào ngoài lúc stage thật sự đổi (Zustand shallow-eq).
+  const cadStage = useCadStore((s) => s.stage);
+
   const dockRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HTMLDivElement>(null);
 
@@ -168,7 +173,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
               aria-selected={on}
               {...pressable}
               onClick={() => onPick(p.id)}
-              title={`${p.label} — ${p.tagline}`}
+              title={`${phaseLabel(p.id, p.id === 'concept' ? cadStage : undefined)} — ${p.tagline}`}
               style={{
                 position: 'relative',
                 display: 'flex',
@@ -201,7 +206,31 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
                 />
               )}
               <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Icon size={13} strokeWidth={on ? 2.2 : 2} /> {p.label}
+                <Icon size={13} strokeWidth={on ? 2.2 : 2} /> {phaseLabel(p.id, p.id === 'concept' ? cadStage : undefined)}
+                {/* IF2-nền — badge "Coming soon · IF2" khi CAD ở chặng kỹ thuật/BIM mà tính năng
+                    thật (BIM viewer/IFC/clash) chưa build. Đặt ngay cạnh nhãn pill để hoạ viên/
+                    khách demo hiểu là tính năng sắp có, không phải lỗi. Class chấm bé xíu, không
+                    phá layout thanh pill. */}
+                {p.id === 'concept' && (cadStage === 'technical' || cadStage === 'bim') && (
+                  <span
+                    aria-label="Coming soon · IF2"
+                    title="Chặng kỹ thuật/BIM · Sắp có · Coming soon · IF2"
+                    style={{
+                      fontSize: 9,
+                      fontWeight: 600,
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
+                      padding: '1px 5px',
+                      borderRadius: 3,
+                      background: 'var(--warn, #b57a4e)',
+                      color: '#fff',
+                      whiteSpace: 'nowrap',
+                      opacity: 0.85,
+                    }}
+                  >
+                    Soon
+                  </span>
+                )}
               </span>
             </motion.button>
           );

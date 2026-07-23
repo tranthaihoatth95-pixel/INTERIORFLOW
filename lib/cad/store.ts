@@ -100,6 +100,34 @@ export type Tool =
  * ("Sketch, không phải Draft" — xem IF-FEATURE-SPEC-P1-v2.md), 'pro' hiện đủ (Sprint 10). */
 export type CadMode = 'sketch' | 'pro';
 
+/**
+ * IF2-nền — VAI TRÒ đang đăng nhập (relay pipeline theo IF1_IF2_BIGPICTURE.md §2). Không phải
+ * "chức danh nhân sự" mà là VAI TRÒ tại thời điểm mở file: cùng 1 người có thể đổi vai qua nút
+ * chuyển vai/impersonation về sau. 'crea' = sáng tạo (mặc định, tương thích user IF1 cũ chưa có
+ * role), 'drafter' = hoạ viên kỹ thuật, 'bim' = team triển khai BIM, 'viewer' = chỉ xem (khách/
+ * BGĐ demo). Union này là tối thiểu — mở rộng khi có role mới, KHÔNG rename giá trị cũ.
+ */
+export type CadRole = 'crea' | 'drafter' | 'bim' | 'viewer';
+
+/**
+ * IF2-nền — CHẶNG bàn giao dự án theo relay pipeline (IF1_IF2_BIGPICTURE.md §2). Mặc định
+ * 'sketch' cho project mới (user IF1 cũ chưa có stage). Chuyển tiếp CHỈ qua `handoff` (bàn
+ * giao snapshot version — xem lib/cad/handoff.ts) để chống mất dữ liệu; setStage() thủ công
+ * chỉ dùng cho debug/dev.
+ */
+export type CadStage = 'sketch' | 'technical' | 'bim';
+
+/**
+ * IF2-nền — điều kiện HIỂN THỊ tool Pro theo role + stage (mở rộng gate cũ vốn chỉ theo cadMode).
+ * Đúng nguyên tắc BIGPICTURE §1: hoạ viên (drafter) hoặc team BIM ở chặng kỹ thuật/BIM mới thấy
+ * bộ công cụ Pro; CREA ở chặng sketch chỉ thấy sketch tool. `cadMode='pro'` là OVERRIDE thủ công
+ * (backward-compat với UI Sketch/Pro cũ) — kể cả CREA vẫn có thể bật Pro override để mượn tool.
+ */
+export function shouldShowProTools(role: CadRole, stage: CadStage, cadMode: CadMode): boolean {
+  if (cadMode === 'pro') return true; // override thủ công (backward-compat)
+  return (role === 'drafter' || role === 'bim') && (stage === 'technical' || stage === 'bim');
+}
+
 /** Công cụ chỉ hiện khi cadMode='pro' (đối chiếu CadToolbar.tsx — nơi ẩn nút tương ứng).
  * Dùng ở setCadMode() để tự trả `tool` về 'select' nếu đang ở 1 tool Pro mà chuyển về Sketch,
  * tránh canvas vẫn "kẹt" hành vi của tool đã ẩn khỏi toolbar. */
@@ -133,6 +161,10 @@ interface CadState {
   tool: Tool;
   /** Sprint 9 — mặc định 'sketch' (đúng triết lý Phase 1, xem PRO_ONLY_TOOLS). */
   cadMode: CadMode;
+  /** IF2-nền — vai trò user đang mở file (relay pipeline). Mặc định 'crea' cho user IF1 cũ. */
+  role: CadRole;
+  /** IF2-nền — chặng dự án hiện tại. Mặc định 'sketch'. */
+  stage: CadStage;
   /** layer nhận entity mới */
   currentLayer: string;
   snap: SnapSettings;
@@ -194,6 +226,11 @@ interface CadState {
   /** Sprint 9 — chuyển Sketch↔Pro. Nếu đang chuyển VỀ 'sketch' mà tool hiện tại là Pro-only,
    * tự trả về 'select' (nút tool đó vừa biến mất khỏi toolbar, không để canvas kẹt hành vi cũ). */
   setCadMode: (m: CadMode) => void;
+  /** IF2-nền — đổi vai trò (debug/impersonate). Sau khi đổi, nếu Pro tools không còn được bật
+   * theo shouldShowProTools() mà tool hiện tại thuộc PRO_ONLY_TOOLS, tự trả tool về 'select'. */
+  setRole: (r: CadRole) => void;
+  /** IF2-nền — đổi chặng (debug/dev — sản xuất phải đi qua handoff). Auto-reset tool như setRole. */
+  setStage: (s: CadStage) => void;
   setStatus: (s: string) => void;
   snapshot: () => void;
   undo: () => void;
@@ -283,6 +320,8 @@ export const useCadStore = create<CadState>((set, get) => ({
   selection: [],
   tool: 'select',
   cadMode: 'sketch',
+  role: 'crea',
+  stage: 'sketch',
   currentLayer: 'l-wall',
   snap: {
     enabled: true, endpoint: true, midpoint: true, center: true, intersection: true, grid: true,
@@ -330,7 +369,19 @@ export const useCadStore = create<CadState>((set, get) => ({
   setCadMode: (cadMode) =>
     set((s) => ({
       cadMode,
-      tool: cadMode === 'sketch' && PRO_ONLY_TOOLS.has(s.tool) ? 'select' : s.tool,
+      tool: !shouldShowProTools(s.role, s.stage, cadMode) && PRO_ONLY_TOOLS.has(s.tool) ? 'select' : s.tool,
+    })),
+
+  setRole: (role) =>
+    set((s) => ({
+      role,
+      tool: !shouldShowProTools(role, s.stage, s.cadMode) && PRO_ONLY_TOOLS.has(s.tool) ? 'select' : s.tool,
+    })),
+
+  setStage: (stage) =>
+    set((s) => ({
+      stage,
+      tool: !shouldShowProTools(s.role, stage, s.cadMode) && PRO_ONLY_TOOLS.has(s.tool) ? 'select' : s.tool,
     })),
 
   snapshot: () =>

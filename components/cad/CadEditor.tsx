@@ -240,7 +240,15 @@ export default function CadEditor() {
     // → stash (sessionStorage, hoặc fallback bộ nhớ nếu hỏng); page.tsx/ProjectSelect
     //   consume qua applyCadHandoff() SAU khi graph nạp xong. (B1: KHÔNG addNode ngay,
     //   tránh nhánh im lặng mất node.)
-    stashCadHandoff(dataUrl);
+    // IF2-nền — kèm snapshot Doc (stringify) + role hiện tại để đóng băng dữ liệu bàn giao,
+    // chống mất khi team đích sửa parallel (xem lib/cad/handoff.ts). Payload cũ (dataURL trần)
+    // vẫn parse được → backward-compat.
+    const cadSt = useCadStore.getState();
+    stashCadHandoff(dataUrl, {
+      snapshot: JSON.stringify(doc),
+      fromRole: cadSt.role,
+      toRole: null,
+    });
     router.push('/');
   };
 
@@ -256,7 +264,12 @@ export default function CadEditor() {
       return;
     }
     const dataUrl = renderDocToDataURL(doc, 2000);
-    stashCadPresentHandoff(dataUrl);
+    // IF2-nền — kèm snapshot Doc + role hiện tại (xem lib/cad/present-handoff.ts).
+    stashCadPresentHandoff(dataUrl, {
+      snapshot: JSON.stringify(doc),
+      fromRole: useCadStore.getState().role,
+      toRole: null,
+    });
     router.push('/present-editor');
   };
 
