@@ -49,6 +49,10 @@
 - ✅ **NVIDIA_API_KEY rotate xong 21/07 tối** — user đã revoke key cũ, tạo key mới `Rebw...zv-e` trong `.env.local` (verify HTTP 200 với llama-3.1-8b). File `.env.local` dọn sạch (backup `.env.local.bak-20260721-164537`). 3 key model dự phòng comment `#` để dành.
 - [THẤP] Property panel Render không undo được · Sprint 3 B1 `meta` giá/vendor/sku trống · `knowledge/` 121MB cân nhắc Git LFS · M1 Larkbase: chưa link-picker grid >8 dự án.
 
+## Đã merge 23/07 chiều (song song)
+- **IF2-A nền non-breaking** (`feat/if2-nen` merged): PRO_ONLY_TOOLS gate `role+stage` (`crea/drafter/bim/viewer` × `sketch/technical/bim`) · 1 nav CAD nhãn tự đổi "Phác thảo/Kỹ thuật/BIM" · handoff+present-handoff version+snapshot đóng băng chống mất data · badge "SOON · Coming soon · IF2" trên pill CAD khi stage≠sketch · model.ts thêm `storey?`+`elementType?` optional. 74/74 test pass.
+- **RESEARCH-CHAT-FULL.md** merged (`docs/`): Supabase hybrid architecture, 4 model mới, 12 câu hỏi mở cần user duyệt. 🔴 **Q1 chặn**: `ProjectMember` chưa build → phải build ACCESS-CONTROL M1 TRƯỚC khi Chat.
+
 ## Chốt scope 23/07 (user quyết trực tiếp)
 - **Chat mở rộng: Full** — project + direct + group Zalo + Supabase Realtime (phóng Agent CHAT-R nghiên cứu chi tiết trước khi build vì Supabase = external service, cần thẻ + schema đúng).
 - **IF2 song song IF1** — không đợi dùng thử IF1 xong, bắt đầu ngay từ IF2-A (nền không breaking).
