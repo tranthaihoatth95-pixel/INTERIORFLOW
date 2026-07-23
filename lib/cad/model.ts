@@ -62,6 +62,24 @@ export type EntityType =
   | 'block'
   | 'hatch';
 
+/**
+ * IF2-nền — phân loại phần tử BIM/IFC 4.0 (Quyết định 258/QĐ-TTg). Optional để `.idf` cũ
+ * KHÔNG breaking — entity không có `elementType` vẫn parse/render bình thường, chỉ là chưa gán
+ * ngữ nghĩa BIM. Union này khớp tập entity IFC hay dùng nhất cho nội thất/kiến trúc phổ thông
+ * (IfcWall / IfcSlab / IfcColumn / IfcBeam / IfcDoor / IfcWindow / IfcFurnishingElement); giá trị
+ * null CÓ Ý NGHĨA riêng — "đã kiểm và xác định không phải phần tử BIM" (phân biệt với `undefined`
+ * = "chưa gán, dữ liệu cũ chưa migrate"). Xem IF1_IF2_BIGPICTURE.md §3, mở rộng khi cần.
+ */
+export type ElementType =
+  | 'wall'
+  | 'slab'
+  | 'column'
+  | 'beam'
+  | 'door'
+  | 'window'
+  | 'furniture'
+  | null;
+
 interface Base {
   id: string;
   type: EntityType;
@@ -71,6 +89,11 @@ interface Base {
   /** override lineweight/lineType của layer (hiếm dùng — giống cơ chế override màu ở trên). */
   lineweight?: number;
   lineType?: LineType;
+  /** IF2-nền — tầng chứa entity (BIM storey), VD 'GF' / 'L1' / 'L2'. Optional, `.idf` cũ không
+   * có field này vẫn parse bình thường. Chưa có UI gán ở IF1; hiện chỉ nền dữ liệu cho IF2-C. */
+  storey?: string;
+  /** IF2-nền — phân loại BIM/IFC 4.0 (xem `ElementType`). Optional, backward-compatible. */
+  elementType?: ElementType;
 }
 
 export interface LineEntity extends Base {

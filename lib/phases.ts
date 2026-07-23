@@ -109,6 +109,21 @@ export function isPhase(v: unknown): v is Phase {
 }
 
 /**
+ * IF2-nền — nhãn hiển thị của chặng, TỰ ĐỔI theo CAD stage cho phase 'concept':
+ *   stage='sketch'    → 'CAD · Phác thảo'
+ *   stage='technical' → 'CAD · Kỹ thuật'
+ *   stage='bim'       → 'CAD · BIM'
+ * Các phase khác giữ nguyên label tĩnh trong PHASES. `cadStage` optional để không phá caller cũ
+ * (thiếu ⇒ fallback về `PHASE_MAP[id].label` như trước).
+ */
+export function phaseLabel(id: Phase, cadStage?: 'sketch' | 'technical' | 'bim'): string {
+  if (id !== 'concept' || !cadStage) return PHASE_MAP[id].label;
+  if (cadStage === 'technical') return 'CAD · Kỹ thuật';
+  if (cadStage === 'bim') return 'CAD · BIM';
+  return 'CAD · Phác thảo';
+}
+
+/**
  * Suy chặng TRỘI của một flow từ danh sách node đang có — để khi MỞ flow, header
  * phase-switcher khớp nội dung trên canvas (tránh mở flow render mà header vẫn lệch).
  *
