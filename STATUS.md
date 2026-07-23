@@ -49,13 +49,16 @@
 - ✅ **NVIDIA_API_KEY rotate xong 21/07 tối** — user đã revoke key cũ, tạo key mới `Rebw...zv-e` trong `.env.local` (verify HTTP 200 với llama-3.1-8b). File `.env.local` dọn sạch (backup `.env.local.bak-20260721-164537`). 3 key model dự phòng comment `#` để dành.
 - [THẤP] Property panel Render không undo được · Sprint 3 B1 `meta` giá/vendor/sku trống · `knowledge/` 121MB cân nhắc Git LFS · M1 Larkbase: chưa link-picker grid >8 dự án.
 
-## Việc chờ USER DUYỆT (đề xuất đã gửi, chưa phóng agent)
-1. **Chat mở rộng (kiểu Zalo)** — user chốt 21/07 tối: (a) **A3** bất cứ member tạo group, (b) **B1** direct cross-project OK, (c) **C1** Supabase Realtime. **Còn chờ scope MVP (Nhẹ/Đầy/Full)** trước khi phóng agent.
-2. **Intro screen Phase 2 (Figma)** — user đăng ký Figma Pro + authorize `plugin:brand-voice:figma` MCP + vẽ scene draft → phóng Agent G swap SVG tạm bằng chất lượng cao.
-3. **Vitals merge hoàn toàn từ SyncWork** — user chọn phương án C (SyncWork banh, gộp vào IF). Chưa làm; cần plan scope.
-4. **Archinote handoff** — chưa quyết A/B/cả 2 (lưu path folder / memory / cả 2).
-5. **ML Gu Engine** (bỏ chặn) — user chưa chọn bắt đầu từ đâu.
-6. **MS Teams integration** (bỏ chặn) — user chưa chọn scope (notification/task sync/meeting).
+## Chốt scope 23/07 (user quyết trực tiếp)
+- **Chat mở rộng: Full** — project + direct + group Zalo + Supabase Realtime (phóng Agent CHAT-R nghiên cứu chi tiết trước khi build vì Supabase = external service, cần thẻ + schema đúng).
+- **IF2 song song IF1** — không đợi dùng thử IF1 xong, bắt đầu ngay từ IF2-A (nền không breaking).
+- **4 bộ cài**: Windows · Mac · Android · iOS/iPadOS. Thứ tự khả thi theo phụ thuộc thanh toán (xem plan riêng). Cần user chuẩn bị: Apple Developer $99/năm · Google Play Console $25 one-time · Supabase Free tier đủ dùng thử ban đầu.
+
+## Việc chờ USER DUYỆT (đề xuất đã gửi, chưa phóng)
+1. Intro Phase 2 Figma — user cần authorize `plugin:brand-voice:figma` MCP + vẽ scene draft.
+2. Archinote handoff — chưa quyết A/B/cả 2.
+3. ML Gu Engine — chưa chọn bắt đầu từ đâu.
+4. MS Teams — chưa chọn scope.
 
 ## Bị chặn — KHÔNG tự khởi động
 - (Trống — Intro/ML Gu/MS Teams đã bỏ chặn 21/07 tối, chuyển sang mục "Chờ USER DUYỆT" trên.)
