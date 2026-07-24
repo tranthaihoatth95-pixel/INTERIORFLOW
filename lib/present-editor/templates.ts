@@ -1014,7 +1014,7 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
       );
       els.push(
         makeText({
-          text: (ctx.title || 'IKI VILLAGE — MOODBOARD').toUpperCase(),
+          text: (ctx.title || 'LUMEN VILLA — MOODBOARD').toUpperCase(),
           role: 'free',
           frame: { x: 55, y: 3.5, w: 43, h: 5, rotation: 0 },
           fontSize: 1.8,

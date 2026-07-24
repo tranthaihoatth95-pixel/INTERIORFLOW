@@ -142,7 +142,7 @@ function testTemplateTitleUsesRoleNotHardcode() {
       ok(`template ${id} tồn tại`, false);
       return;
     }
-    const slide = tpl.build({ title: 'IKI VILLAGE', kicker: 'kicker', palette: OLD });
+    const slide = tpl.build({ title: 'LUMEN VILLA', kicker: 'kicker', palette: OLD });
     const deck: EditorDeck = {
       id: 'd-tpl', brand: 'b', project: 'p', fonts: 'Editorial', palette: OLD, slides: [slide],
     };

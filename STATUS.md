@@ -29,6 +29,12 @@
 - **4 bộ cài Win/Mac/Android/iOS** — Sprint 1 (Windows unsigned + PWA iOS/Android + LAN QR, KHÔNG cần credential) có thể phóng ngay. Sprint 2 chờ user cấp Apple Dev $99 + Google Play $25.
 - **NVIDIA_API_KEY rotate xong** — key mới `Rebw...zv-e` verify OK.
 
+## Dặn dò user 24/07 tối (backlog, làm sau installer)
+1. **Video editor** — chặng/công cụ dựng video (walkthrough từ render + Kling) — scope lớn, cần đề xuất riêng.
+2. **CAD 3-option mặt bằng** — logic thao tác tạo 3 phương án chưa tối ưu (flow bấm/chờ/so sánh) — cần audit UX + redesign luồng.
+3. **Presenting: tách luồng AI vs thủ công chưa rõ** — cần **cây thư mục kiểu InDesign** (pages/layers tree) quản lý slide/layer/asset; máy học (LayoutShelf) và AI generate phải là 2 nhánh rõ ràng trong cây.
+→ ƯU TIÊN HIỆN TẠI: merge 7 nhánh → INSTALLER Windows hoàn chỉnh (user tự tải về cài) → mới đến 3 mục trên + Vitals Figma (chờ bộ hình giao diện user gửi).
+
 ## Việc chờ USER DUYỆT (đã đề xuất, chưa phóng agent)
 1. **A** — Sprint 1 installer (Win unsigned + PWA polish + LAN QR).
 2. **B** — Agent AC-M1 build ACCESS-CONTROL M1 (nếu Q1=A + Q3 không VN + Q7 giữ mãi).

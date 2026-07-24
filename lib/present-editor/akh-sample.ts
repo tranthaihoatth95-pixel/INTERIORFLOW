@@ -53,7 +53,7 @@ export function makeAkhIkiDeck(): EditorDeck {
   const slides = [
     tpl('dark-cover').build({
       kicker: 'Design Framework · Draft Moodboard',
-      title: 'IKI VILLAGE',
+      title: 'LUMEN VILLA',
       images: [DEMO.hero1],
       palette: P,
     }),
@@ -74,7 +74,7 @@ export function makeAkhIkiDeck(): EditorDeck {
     }),
     tpl('grid4-philosophy').build({
       kicker: 'Triết lý thiết kế',
-      title: 'IKI VILLAGE — Moodboard',
+      title: 'LUMEN VILLA — Moodboard',
       body: ['Mang lại giá trị', 'Cá nhân trong cộng đồng', 'Cân bằng & bền vững', 'Phát triển theo tầng sống'],
       images: [DEMO.mood1, DEMO.mood2, DEMO.mood3, DEMO.mood4],
       palette: P,
@@ -114,7 +114,7 @@ export function makeAkhIkiDeck(): EditorDeck {
 
   return {
     id: 'akh-iki',
-    brand: 'AKH · IKI VILLAGE',
+    brand: 'TTT · LUMEN VILLA',
     project: 'IKI Village — Show Unit Moodboard',
     fonts: 'Elegant',
     palette: P,
