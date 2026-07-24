@@ -20,6 +20,7 @@
 - `interiorflow-wt-dwg-block-flatten` — A3 flatten INSERT/BLOCK_RECORD (ĐANG CHẠY, port 3013)
 - `interiorflow-wt-clay2img-audit` @510b71c — audit + demo clay FAIL-PROVIDER (fal hết balance, script run-demo.mjs sẵn); merge sau khi user nạp fal chạy lại HOẶC merge luôn docs
 - `interiorflow-wt-floorplan-color-fill` @2efce34 — spec GAP-COLOR-FILL (nguồn cho A2, merge/xoá sau khi A2 xong)
+- `interiorflow-wt-de-ttt` @7f099f1 — Task #15 GỠ THƯƠNG HIỆU TTT khỏi sản phẩm: khung tên CAD `titleBlockPro` đọc tên studio từ Brand Kit dự án (`Doc.studioName`, ô nhập mới ở TitleBlockPanel) · brand mặc định/placeholder generic · chip intro → tagline sản phẩm · deck mẫu dùng studio hư cấu "Atelier Nord" · sửa comment "tool nội bộ TTT". XONG, tsc + 75 test PASS, chờ merge.
 
 Đã merge 24/07 sáng: vitals-drag-nb-general · dwg-import-verify · 4stages-catalog (3 worktree đã dọn, user đã push).
 
