@@ -19,7 +19,7 @@ import { useRouter } from 'next/navigation';
 import {
   FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Plus, Trash2, X, Command, Sparkles, Wand2,
   ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair, Tag, Check, Lightbulb, FileText, Save, Camera,
-  LayoutTemplate, FileSignature, Wrench, Ruler,
+  LayoutTemplate, FileSignature, Wrench, Ruler, ListOrdered,
 } from 'lucide-react';
 import IOMenu from '@/components/ui/IOMenu';
 import MenuButton from '@/components/ui/MenuButton';
@@ -55,6 +55,8 @@ import CadToolbar from './CadToolbar';
 import CadTouchDock from './CadTouchDock';
 import MaterialPalette from './MaterialPalette';
 import AiBriefPanel from './AiBriefPanel';
+// Hệ Legend C1+C2 (docs/PROPOSAL-LEGEND-SYSTEM.md) — panel Thống kê · Schedule + Chú giải.
+import SchedulePanel from './SchedulePanel';
 
 export default function CadEditor() {
   const router = useRouter();
@@ -65,6 +67,7 @@ export default function CadEditor() {
   const [mepOpen, setMepOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [titleBlockOpen, setTitleBlockOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [handoffMsg, setHandoffMsg] = useState('');
   // Batch 19/07 — thay window.confirm/prompt (chặn thread JS, treo webview nhúng — cùng lớp bug
   // room tool ở CadCanvas) bằng UI nổi non-blocking. Semantics giữ nguyên: OK chạy hành động,
@@ -319,6 +322,7 @@ export default function CadEditor() {
           title="Khung tên · Kiểm chuẩn · Gợi ý tên phòng · MEP"
           items={[
             { id: 'titleblock', label: 'Khung tên', sub: 'Chèn cajetín vào góc dưới-phải bản vẽ', icon: <FileSignature size={15} />, onSelect: () => setTitleBlockOpen((o) => !o), active: titleBlockOpen },
+            { id: 'schedule', label: 'Thống kê · Legend', sub: 'Bảng schedule tự đếm + khung chú giải ký hiệu — đóng dấu lên bản vẽ được', icon: <ListOrdered size={15} />, onSelect: () => setScheduleOpen((o) => !o), active: scheduleOpen },
             { id: 'standards', label: 'Kiểm chuẩn', sub: 'Đối chiếu TCVN/QCVN/ISO — chỉ đọc & đề xuất, không tự sửa', icon: <ShieldCheck size={15} />, onSelect: () => setStandardsOpen((o) => !o), active: standardsOpen },
             { id: 'autolabel', label: 'Gợi ý tên phòng', sub: 'Đoán tên phòng chưa có nhãn — chỉ đề xuất, bạn bấm Áp dụng', icon: <Tag size={15} />, onSelect: () => setAutoLabelOpen((o) => !o), active: autoLabelOpen },
             { id: 'mep', label: 'MEP sơ cấp', sub: 'Gợi ý chiếu sáng/công tắc/ổ cắm/máy lạnh — chỉ đề xuất', icon: <Lightbulb size={15} />, onSelect: () => setMepOpen((o) => !o), active: mepOpen },
@@ -358,6 +362,7 @@ export default function CadEditor() {
         {mepOpen && <MepPanel onClose={() => setMepOpen(false)} />}
         {templateOpen && <TemplatePanel onClose={() => setTemplateOpen(false)} />}
         {titleBlockOpen && <TitleBlockPanel onClose={() => setTitleBlockOpen(false)} />}
+        {scheduleOpen && <SchedulePanel onClose={() => setScheduleOpen(false)} />}
         <LayerPanel />
         <SelectionInfoPanel />
         {handoffMsg && (
