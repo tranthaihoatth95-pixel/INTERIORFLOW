@@ -204,6 +204,12 @@ export interface BlockEntity extends Base {
   /** true khi overlap object khác — tính lại mỗi lần render/move (lib/cad/shape-interactions.ts),
    * KHÔNG phải dữ liệu bền vững, KHÔNG serialize vào .idf/DXF. */
   collision?: boolean;
+
+  // ---- MỚI (Hệ Legend X1 — docs/PROPOSAL-LEGEND-SYSTEM.md §2.2) ----
+  /** FK mềm ProductSpec.id (bảng Prisma) — schedule/legend/spec-sheet đọc sku/brand/giá qua id
+   * này. Optional + chỉ là chuỗi id ⇒ `.idf` cũ không có field vẫn parse bình thường (nguyên
+   * tắc additive như elementType/storey); DXF export bỏ qua (không phá round-trip). */
+  specId?: string;
 }
 
 /**

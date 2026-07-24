@@ -265,6 +265,42 @@ model LarkPersonRef {
   syncedAt     DateTime @default(now())
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// Hệ Legend (docs/PROPOSAL-LEGEND-SYSTEM.md §2, X1) — spec sản phẩm/vật liệu THỐNG NHẤT,
+// nguồn dữ liệu cho MỌI legend/schedule/spec-sheet ở cả 3 chặng. Quyết định Q-L2 đã chốt:
+// GỘP MaterialRef (RESEARCH-MATERIAL-BRIDGE) vào đây với kind='material' — 1 bảng duy nhất.
+// Giá mirror Larkbase pull-only (mẫu LarkTaskRef) nhưng ĐỂ TRỐNG được — Q1 bridge chưa chốt.
+// ══════════════════════════════════════════════════════════════════════════
+model ProductSpec {
+  id           String    @id @default(cuid())
+  kind         String                       // 'furniture' | 'material' | 'lighting' | 'millwork' | 'fixture'
+  name         String                       // "Ghế Volumen Lounge"
+  nameEn       String?                      // song ngữ TTT: "Volumen Lounge Chair"
+  brand        String?
+  sku          String?
+  vendor       String?
+  // kích thước danh nghĩa mm (khớp BlockDef.w/h; d = sâu, hUp = cao thật 3D cho spec sheet)
+  w            Int?
+  d            Int?
+  hUp          Int?
+  materials    String    @default("")       // JSON string[] — ['oak','linen']
+  finishes     String    @default("")       // JSON string[] — fabric/finish options
+  colorHex     String?                      // swatch chính
+  imageAssetId String?                      // FK mềm LibraryAsset — lưu-theo-tham-chiếu
+  drawingBlock String?                      // key BlockDef/manifest id — line drawing top-view có sẵn
+  priceNote    String?                      // text tự do "1.250.000đ/cái" — chưa chuẩn hoá số
+  currency     String?                      // 'VND' | 'USD' | 'EUR'
+  larkRecordId String?   @unique            // khoá sync nếu record đến từ Larkbase
+  raw          String?                      // JSON field gốc Larkbase (mẫu LarkTaskRef)
+  note         String?
+  createdAt    DateTime  @default(now())
+  syncedAt     DateTime?
+
+  @@index([kind])
+  @@index([sku])
+  @@index([drawingBlock])
+}
+
 // Ánh xạ TAY 1 lần: "Tài khoản" Larkbase (vd "An.LNT") ↔ User.id nội bộ IF — Larkbase KHÔNG
 // dùng cùng định danh (tên đầy đủ/email) nên không tự suy đoán được (báo cáo §3, câu hỏi (f)).
 // Phân quyền app KHÔNG phụ thuộc bảng này (đã chốt tách biệt hoàn toàn — ProjectMember riêng,
