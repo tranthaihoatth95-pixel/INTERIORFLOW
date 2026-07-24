@@ -34,6 +34,13 @@ export interface RagResult {
   model: string;
   /** Prompt system tổng hợp đã dùng — trả về cho UI debug/badge. */
   stagePrompt: string;
+  /**
+   * Mode trả lời:
+   *  - 'grounded': có hits từ RAG, trả lời với trích dẫn [n].
+   *  - 'general' : notebook rỗng hoặc retrieve không hit → fallback tri thức chung, prefix
+   *                "[General mode · không có nguồn]" để UI biết + user không nhầm.
+   */
+  mode: 'grounded' | 'general';
 }
 
 export interface RagOpts {
@@ -114,9 +121,12 @@ export async function ragAnswer(
     }
   }
 
-  // 2. Build system prompt = stage prompt + RAG context block
+  // 2. Build system prompt = stage prompt + RAG context block (nếu có hits) hoặc
+  //    fallback GENERAL MODE (khi notebook rỗng / retrieve không hit) — Vitals trả lời
+  //    bằng tri thức chung; UI thêm prefix để user không nhầm là "đã đọc nguồn".
+  const mode: 'grounded' | 'general' = hits.length > 0 ? 'grounded' : 'general';
   let systemPrompt = stagePrompt;
-  if (hits.length > 0) {
+  if (mode === 'grounded') {
     const ctxBlock = hits
       .map(
         (h, i) =>
@@ -133,17 +143,31 @@ export async function ragAnswer(
       '- Ưu tiên dùng thông tin từ TÀI LIỆU DỰ ÁN ở trên.\n' +
       '- Trích nguồn bằng dấu [số] khớp với đoạn (vd "…theo [1]"). KHÔNG bịa số ngoài phạm vi trên.\n' +
       '- Nếu tài liệu không đủ để trả lời, nói rõ "Tài liệu dự án chưa đề cập" trước khi đưa hiểu biết chung.';
+  } else {
+    // General mode: bỏ ràng buộc trích dẫn, cho phép trả lời đa lĩnh vực bằng kiến thức chung.
+    systemPrompt =
+      stagePrompt +
+      '\n\n' +
+      '════ CHẾ ĐỘ CHUNG · KHÔNG CÓ NGUỒN ════\n' +
+      '- Notebook dự án hiện chưa có tài liệu (hoặc retrieve không hit).\n' +
+      '- Trả lời bằng hiểu biết chung, đa lĩnh vực (không giới hạn nội thất).\n' +
+      '- KHÔNG bịa trích dẫn [n]. Nếu không chắc, nói thẳng "Không chắc".';
   }
+
+  const GENERAL_PREFIX = '[General mode · không có nguồn]\n\n';
 
   // 3. LLM
   try {
     const r = await completeTextTiered(question, systemPrompt, { maxTokens: 600 });
+    const raw = r.text.trim();
+    const answer = mode === 'general' ? GENERAL_PREFIX + raw : raw;
     return {
-      answer: r.text.trim(),
+      answer,
       sources: hits,
       tier: r.tier,
       model: r.model,
       stagePrompt,
+      mode,
     };
   } catch (err) {
     if (err instanceof NoTextProviderError) {
@@ -153,6 +177,7 @@ export async function ragAnswer(
         tier: 'none',
         model: 'none',
         stagePrompt,
+        mode,
       };
     }
     if (err instanceof NvidiaFreeExhausted) {
@@ -162,6 +187,7 @@ export async function ragAnswer(
         tier: 'none',
         model: 'none',
         stagePrompt,
+        mode,
       };
     }
     throw err;

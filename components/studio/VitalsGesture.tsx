@@ -18,13 +18,33 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Loader2, Send, X } from 'lucide-react';
+import { Loader2, Maximize2, Send, X } from 'lucide-react';
 import type { ChatTurn } from '@/lib/ai/chat-assist';
 import type { Phase } from '@/lib/phases';
 import { easeApple } from '@/lib/motion';
+import { useFlowStore } from '@/lib/store';
 import VitalsIcon from './VitalsIcon';
 import { VitalsBubble, VitalsTyping } from './VitalsChatBubble';
+
+/**
+ * Slugify tên flow → id project cho `/projects/[id]/notebook`.
+ * Cùng công thức với `components/notebook/NotebookButton.tsx` (nay đã bỏ khỏi
+ * Header — Vitals là entry point AI duy nhất, state machine: kéo lần 1 = popover
+ * compact này, bấm "Mở rộng" hoặc kéo dài quá `LONG_DRAG_THRESHOLD` = full modal).
+ */
+function slugifyFlow(s: string) {
+  return (
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40) || 'default'
+  );
+}
 
 const COPPER = '#c79a63';
 const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
@@ -66,6 +86,8 @@ export default function VitalsGesturePanel({
   stage: Phase;
 }) {
   const reduce = useReducedMotion();
+  const router = useRouter();
+  const flowName = useFlowStore((s) => s.flowName);
   const rootRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -133,6 +155,19 @@ export default function VitalsGesturePanel({
     }
   }, [input, sending, messages, stage]);
 
+  /**
+   * Mở NotebookLM full — điểm dừng thứ 2 của state machine kéo giọt Vitals.
+   * Reachable qua: (a) bấm nút Mở rộng ở header popover này; (b) kéo dài
+   * `LONG_DRAG_THRESHOLD_PX` ở StageSwitcher (fast-path, không cần dừng ở popover).
+   * Điều hướng thay vì portal modal để tận dụng route hiện có (mobile tab, deep
+   * link, back button đều hoạt động sẵn).
+   */
+  const openFullNotebook = useCallback(() => {
+    const id = slugifyFlow(flowName || 'default');
+    onClose();
+    router.push(`/projects/${id}/notebook`);
+  }, [flowName, router, onClose]);
+
   const hasThread = messages.length > 0 || sending || !!error;
 
   return (
@@ -192,10 +227,31 @@ export default function VitalsGesturePanel({
               <VitalsIcon size={12} style={{ color: COPPER }} />
               Vitals · {STAGE_LABEL[stage]}
             </span>
-            <button
-              type="button"
-              aria-label="Đóng Vitals"
-              onClick={onClose}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button
+                type="button"
+                aria-label="Mở NotebookLM đầy đủ · Full"
+                title="Mở NotebookLM đầy đủ (kéo dài xuống cũng có tác dụng)"
+                onClick={openFullNotebook}
+                data-vitals-expand=""
+                style={{
+                  display: 'grid',
+                  placeItems: 'center',
+                  width: 22,
+                  height: 22,
+                  borderRadius: 11,
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--t4)',
+                  cursor: 'pointer',
+                }}
+              >
+                <Maximize2 size={11} />
+              </button>
+              <button
+                type="button"
+                aria-label="Đóng Vitals"
+                onClick={onClose}
               style={{
                 display: 'grid',
                 placeItems: 'center',
@@ -210,6 +266,7 @@ export default function VitalsGesturePanel({
             >
               <X size={12} />
             </button>
+            </div>
           </div>
 
           {hasThread && (

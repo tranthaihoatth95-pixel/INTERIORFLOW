@@ -247,6 +247,20 @@ export function NotebookChatPanel({ messages, querying, onAsk, onCitationClick, 
             >
               {m.pending ? <TypingDots /> : renderAnswerWithCitations(m.content, m.citations, onCitationClick)}
             </div>
+            {m.role === 'assistant' && !m.pending && m.mode === 'general' && (
+              <div
+                title="Notebook chưa có nguồn — Vitals trả lời bằng kiến thức chung, không trích dẫn."
+                style={{
+                  marginTop: 4,
+                  fontSize: 10,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--t3)',
+                }}
+              >
+                General mode · không có nguồn
+              </div>
+            )}
           </div>
         ))}
       </div>
