@@ -468,18 +468,18 @@ function ConfirmBar({ message, onOk, onCancel }: { message: string; onOk: () => 
 function ScaleMenu() {
   const scaleAll = useCadStore((s) => s.scaleAll);
   const opts: [string, number, string][] = [
-    ['×0.1', 0.1, 'File nhập đang lớn gấp 10 (vd cm → dm)'],
-    ['×10', 10, 'File nhập đang nhỏ đi 10 lần'],
-    ['×25.4', 25.4, 'Đổi từ inch sang mm'],
+    ['Thu nhỏ 10 lần', 0.1, 'Bản vẽ nhập vào đang to gấp 10'],
+    ['Phóng to 10 lần', 10, 'Bản vẽ nhập vào đang nhỏ 10 lần'],
+    ['Đổi inch → mm', 25.4, 'File vẽ bằng inch'],
   ];
   return (
     <MenuButton
       label="Tỉ lệ"
       icon={<Ruler size={14} />}
-      title="Nhân toàn bộ bản vẽ theo hệ số — dùng khi đơn vị file nhập vào bị lạ"
+      title="Sửa kích thước khi bản vẽ nhập vào sai đơn vị"
       items={opts.map(([lbl, f, sub]) => ({
         id: lbl,
-        label: `Nhân toàn bộ ${lbl}`,
+        label: lbl,
         sub,
         onSelect: () => scaleAll(f),
       }))}
