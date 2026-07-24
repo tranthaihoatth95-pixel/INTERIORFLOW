@@ -2469,7 +2469,9 @@ export default function CadCanvas() {
           if (rx > 0 && ry > 0) {
             const c = S(P[0]);
             ctx.beginPath();
-            ctx.ellipse(c.x, c.y, rx * v.scale, ry * v.scale, 0, 0, Math.PI * 2);
+            // Math.abs phòng thủ: 1 lần thấy IndexSizeError radius âm (không tái hiện được) —
+            // ctx.ellipse ném lỗi cứng nếu radius < 0, abs ở đây triệt tiêu mọi đường vào.
+            ctx.ellipse(c.x, c.y, Math.abs(rx * v.scale), Math.abs(ry * v.scale), 0, 0, Math.PI * 2);
             ctx.fillStyle = zc;
             ctx.globalAlpha = Math.min(0.35, st.zoneOpacity);
             ctx.fill();

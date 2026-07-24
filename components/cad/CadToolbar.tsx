@@ -92,7 +92,7 @@ const ANNOTATE: ToolBtn[] = [
 /** Zone tool (24/07) — nhóm "Diagram": tô vùng chức năng mặt bằng + mũi tên circulation.
  * Hiện ở CẢ 2 mode (Sketch/Pro) — diagram là ngôn ngữ trình bày, không phải vẽ chính xác. */
 const DIAGRAM: ToolBtn[] = [
-  { tool: 'zone', icon: Blend, label: 'Zone — tô vùng chức năng (oval/polygon, 6 nhóm màu, legend tự sinh)', key: 'Z' },
+  { tool: 'zone', icon: Blend, label: 'Zone — tô vùng chức năng (oval/polygon, 6 nhóm màu, legend tự sinh)', key: 'ZONE' },
   { tool: 'arrow', icon: MoveUpRight, label: 'Arrow — mũi tên luồng giao thông nét đứt', key: 'AW' },
 ];
 /** Nấc 1 — bộ chỉnh sửa (tương đương AutoCAD LT). Pro-only (Sprint 9) — dòng lệnh vẫn là cách

@@ -1251,6 +1251,10 @@ const CAD_COMMANDS: { cmd: string; label: string }[] = [
   { cmd: 'XLINE', label: 'Xline' },
   { cmd: 'DIV', label: 'Divide/Measure — click đối tượng rồi nhập' },
   { cmd: 'DIVIDE', label: 'Divide/Measure' },
+  // Zone tool (24/07 — GAP-COLOR-FILL N3). KHÔNG dùng 'Z' (Z = Zoom Extents theo thói quen cũ).
+  { cmd: 'ZONE', label: 'Zone — tô vùng chức năng mặt bằng' },
+  { cmd: 'AW', label: 'Arrow — mũi tên luồng giao thông' },
+  { cmd: 'ARROW', label: 'Arrow — mũi tên luồng giao thông' },
 ];
 
 /** Lọc gợi ý theo prefix (Việc 2). Sắp: khớp CHÍNH XÁC trước, rồi token ngắn hơn, rồi A→Z. */
@@ -1471,6 +1475,10 @@ function CommandLine({ status }: { status: string }) {
       XLINE: () => setTool('xline'),
       DIV: () => setTool('divide'),
       DIVIDE: () => setTool('divide'),
+      // Zone tool (24/07): alias dòng lệnh cho 2 tool diagram — 'Z' GIỮ nguyên = Zoom Extents.
+      ZONE: () => setTool('zone'),
+      AW: () => setTool('arrow'),
+      ARROW: () => setTool('arrow'),
     };
     const fn = map[c];
     if (fn) fn();

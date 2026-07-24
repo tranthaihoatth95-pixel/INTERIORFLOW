@@ -753,7 +753,7 @@ export function toolHint(t: Tool): string {
     ellipse: 'Ellipse (EL): click tâm → click góc xác định 2 bán trục (rx theo X, ry theo Y).',
     donut: 'Donut (DO): click tâm để đặt (đặt liên tiếp). Gõ "DO 50 150" đổi bán kính trong/ngoài trước khi đặt.',
     divide: 'Divide/Measure (DIV/MEA): click 1 line/polyline/circle/arc → nhập số đoạn (Divide) hoặc khoảng cách (Measure).',
-    zone: 'Zone (Z): OVAL — click tâm → click góc; POLYGON — click chuỗi điểm, Enter/double-click kết thúc → nhập nhãn. Đổi nhóm/kiểu biên/opacity ở panel Zone.',
+    zone: 'Zone (ZONE): OVAL — click tâm → click góc; POLYGON — click chuỗi điểm, Enter/double-click kết thúc → nhập nhãn. Đổi nhóm/kiểu biên/opacity ở panel Zone.',
     arrow: 'Arrow (AW): click chuỗi điểm luồng giao thông; Enter/double-click kết thúc — nét đứt + đầu mũi tên tự động.',
   };
   return H[t];
