@@ -1,0 +1,20 @@
+[
+  {
+    "name": "case1-lobby",
+    "file": "/Users/tranben/Downloads/interiorflow/2407-Test/cgi-clay-render.webp",
+    "mime": "image/webp",
+    "prompt": "modern hotel lobby, warm quiet-luxury interior, walnut wood slats, travertine reception desk, warm beige palette, soft daylight, photorealistic, keep exact same geometry, layout and camera, only add realistic materials, lighting and atmosphere",
+    "verdict": "FAIL-SUBMIT",
+    "error": "{\"error\":\"User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing\"}",
+    "httpStatus": 502
+  },
+  {
+    "name": "case2-livingroom",
+    "file": "/Users/tranben/Downloads/interiorflow/2407-Test/model-3dsmax-noi-that-1.jpg",
+    "mime": "image/jpeg",
+    "prompt": "scandinavian living room, warm oak floor, linen sofa, rattan armchair, warm afternoon sunlight through window, photorealistic interior photography, keep exact same geometry, layout and camera, only add realistic materials, lighting and atmosphere",
+    "verdict": "FAIL-SUBMIT",
+    "error": "{\"error\":\"User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing\"}",
+    "httpStatus": 502
+  }
+]
