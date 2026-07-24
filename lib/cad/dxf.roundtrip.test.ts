@@ -181,7 +181,8 @@ function testStructure() {
     return c;
   };
   ok('SECTION/ENDSEC cân bằng (4 section: HEADER/TABLES/BLOCKS/ENTITIES)', countPair('0', 'SECTION') === 4 && countPair('0', 'ENDSEC') === 4);
-  ok('TABLE/ENDTAB cân bằng (2 bảng: LTYPE + LAYER — hệ nét ISO 128)', countPair('0', 'TABLE') === 2 && countPair('0', 'ENDTAB') === 2);
+  // B1 (24/07): +1 bảng APPID (đăng ký app name cho XDATA IF2-nền storey/elementType) → 3 bảng.
+  ok('TABLE/ENDTAB cân bằng (3 bảng: LTYPE + LAYER + APPID)', countPair('0', 'TABLE') === 3 && countPair('0', 'ENDTAB') === 3);
   ok('LTYPE table có đủ 5 nét chuẩn', ['CONTINUOUS', 'HIDDEN', 'CENTER', 'DASHED', 'PHANTOM'].every((n) => dxf.includes(n)));
   // LAYER "Tuong" (lineweight mặc định 0.6mm ⇒ enum DXF gần nhất = 60) mang group 370 đúng giá trị.
   const tuongIdx = lines.findIndex((l) => l.trim() === 'Tuong');

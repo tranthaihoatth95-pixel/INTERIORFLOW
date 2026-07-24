@@ -62,6 +62,9 @@ export interface LayoutSpec {
 export interface AiAssistResult {
   entities: Entity[];
   note: string;
+  /** B1 (24/07) — tên các món BỎ vì hết chỗ (đã có trong note dạng chữ; đây là dữ liệu máy đọc
+   * được để tính placedRatio thật). Optional — caller cũ không đọc vẫn nguyên. */
+  skippedItems?: string[];
 }
 
 /* ═══════════════════════ THAM SỐ CÔNG NĂNG (nguồn: xem doc) ═══════════════════════ */
@@ -402,6 +405,7 @@ export function layoutToEntities(
   let rowH = 0;
   const summary: string[] = [];
   const skippedAll: string[] = [];
+  const skippedFlat: string[] = []; // B1 — tên từng MÓN bị bỏ (máy đọc, đếm placedRatio)
 
   for (const room of spec.rooms) {
     const w = Math.max(1000, room.w);
@@ -427,7 +431,10 @@ export function layoutToEntities(
     };
     const fr = placeFurniture(room.items, interior, furnLayer, variant);
     entities.push(...fr.entities);
-    if (fr.skipped.length) skippedAll.push(`${room.name}: ${fr.skipped.join(', ')}`);
+    if (fr.skipped.length) {
+      skippedAll.push(`${room.name}: ${fr.skipped.join(', ')}`);
+      skippedFlat.push(...fr.skipped);
+    }
 
     summary.push(`${room.name} ${(w / 1000).toFixed(1)}×${(h / 1000).toFixed(1)}m (${areaM2.toFixed(1)} m²)`);
     cx += w + ROOM_GAP;
@@ -440,6 +447,7 @@ export function layoutToEntities(
   return {
     entities,
     note: `Solver bố cục: ${spec.rooms.length} phòng — ${summary.join(' · ')}.${skipNote}`,
+    skippedItems: skippedFlat,
   };
 }
 
@@ -483,6 +491,11 @@ export interface LayoutOption {
   /** 21/07 (quy trình CAD thực tế): tên các phòng HIỆN TRẠNG mà option này đã đặt nội thất VÀO
    * (map từ đề bài qua matchBriefToRooms). undefined/rỗng = option vẽ phòng mới (hành vi cũ). */
   placedInto?: string[];
+  /** B1 (24/07) — số món nội thất ĐẶT ĐƯỢC / tổng món đề bài yêu cầu. Trước đây UI đoán
+   * placedRatio thô (0.5) từ chuỗi note — nay là số ĐO THẬT từ solver, feed Perceptron chính
+   * xác. Optional để caller cũ không vỡ. */
+  placedCount?: number;
+  requestedCount?: number;
 }
 
 /* ═══════════════════════ BỐ TRÍ VÀO HIỆN TRẠNG (21/07 — quy trình CAD thực tế) ═══════════════════════ */
@@ -582,6 +595,7 @@ export function generateLayoutOptions(
   // 3 variant chỉ đổi mặt tường ưu tiên trong CÙNG phòng đã map). Không có target → đường cũ
   // bên dưới chạy NGUYÊN VẸN.
   const targets = opts?.targetRooms ?? [];
+  const requestedCount = spec.rooms.reduce((s, r) => s + r.items.length, 0);
   if (targets.length) {
     const matches = matchBriefToRooms(spec.rooms, targets);
     return VARIANTS.map(({ variant, label }, i) => {
@@ -590,13 +604,17 @@ export function generateLayoutOptions(
       const placedDesc: string[] = [];
       const skippedAll: string[] = [];
       const unmatched: RoomSpec[] = [];
+      let skippedCount = 0;
       spec.rooms.forEach((room, ri) => {
         const ti = matches[ri];
         if (ti === null) { unmatched.push(room); return; }
         const t = targets[ti];
         const fr = placeFurniture(room.items, t.interior, furnLayer, variant, t.obstacles ?? []);
         entities.push(...fr.entities);
-        if (fr.skipped.length) skippedAll.push(`${t.name}: ${fr.skipped.join(', ')}`);
+        if (fr.skipped.length) {
+          skippedAll.push(`${t.name}: ${fr.skipped.join(', ')}`);
+          skippedCount += fr.skipped.length;
+        }
         placedInto.push(t.name);
         placedDesc.push(`${room.name} → ${t.name} (${fr.entities.length} món)`);
       });
@@ -607,11 +625,15 @@ export function generateLayoutOptions(
         // hành vi cũ cho phần không khớp: sinh phòng mới cạnh bản vẽ + ghi chú rõ
         const sub = layoutToEntities({ rooms: unmatched }, origin, wallLayer, textLayer, furnLayer, wallThickness, variant);
         entities.push(...sub.entities);
+        skippedCount += sub.skippedItems?.length ?? 0;
         note += ` KHÔNG khớp phòng hiện trạng — vẽ phòng MỚI cạnh bản vẽ: ${unmatched.map((r) => r.name).join(', ')}. ${sub.note}`;
       }
       if (skippedAll.length) note += ` — CHƯA đủ chỗ (đã bỏ để tránh chồng lấn): ${skippedAll.join('; ')}.`;
       if (spec.operator && spec.operator !== 'generic') note += ` Nhận diện vận hành: ${spec.operator}.`;
-      return { id: `opt-${i}-v${variant}`, label, entities, note, operator: spec.operator, variant, placedInto };
+      return {
+        id: `opt-${i}-v${variant}`, label, entities, note, operator: spec.operator, variant, placedInto,
+        placedCount: Math.max(0, requestedCount - skippedCount), requestedCount,
+      };
     });
   }
 
@@ -621,6 +643,10 @@ export function generateLayoutOptions(
     if (spec.operator && spec.operator !== 'generic') {
       note += ` Nhận diện vận hành: ${spec.operator}.`;
     }
-    return { id: `opt-${i}-v${variant}`, label, entities: result.entities, note, operator: spec.operator, variant };
+    const skippedCount = result.skippedItems?.length ?? 0;
+    return {
+      id: `opt-${i}-v${variant}`, label, entities: result.entities, note, operator: spec.operator, variant,
+      placedCount: Math.max(0, requestedCount - skippedCount), requestedCount,
+    };
   });
 }

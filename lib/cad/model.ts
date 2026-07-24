@@ -83,7 +83,26 @@ export type ElementType =
   | 'door'
   | 'window'
   | 'furniture'
+  /** B1 (24/07) — IfcSpace: vùng không gian/phòng (nhãn phòng, zone). Additive, không breaking. */
+  | 'space'
   | null;
+
+/**
+ * B1 (24/07) — danh mục ElementType cho UI gán (property panel). `null` có nghĩa riêng
+ * "đã kiểm, KHÔNG phải phần tử BIM"; undefined (không có trong list này) = chưa gán.
+ * Nhãn song ngữ Việt dẫn trước theo quy ước TTT.
+ */
+export const ELEMENT_TYPE_OPTIONS: { value: Exclude<ElementType, null> | 'null'; label: string }[] = [
+  { value: 'wall', label: 'Tường · IfcWall' },
+  { value: 'slab', label: 'Sàn · IfcSlab' },
+  { value: 'column', label: 'Cột · IfcColumn' },
+  { value: 'beam', label: 'Dầm · IfcBeam' },
+  { value: 'door', label: 'Cửa đi · IfcDoor' },
+  { value: 'window', label: 'Cửa sổ · IfcWindow' },
+  { value: 'furniture', label: 'Nội thất · IfcFurnishingElement' },
+  { value: 'space', label: 'Không gian · IfcSpace' },
+  { value: 'null', label: 'Không phải phần tử BIM' },
+];
 
 interface Base {
   id: string;
@@ -383,6 +402,78 @@ export interface Doc {
   photos?: PhotoEmbed[];
   /** Zone tool — ảnh aerial nền (optional, backward-compat). */
   siteImage?: SiteImage | null;
+  /**
+   * B1 (24/07) — TỈ LỆ IN per-sheet: N của "1:N" (20/25/50/100/200…). undefined = auto-fit
+   * (hành vi cũ nguyên vẹn — fitBox/fitScaleLabel). Lưu trong Doc nên tự per-sheet (mỗi sheet
+   * giữ Doc riêng) + tự vào .idf (JSON). Xem STANDARD_SCALES/fixedScaleViewport bên dưới.
+   */
+  printScale?: number;
+  /** B1 (24/07) — khổ giấy in per-sheet (A3/A2/A1, ngang). undefined = A3 (mặc định cũ). */
+  paperKey?: PaperKey;
+}
+
+/* ───────────────────────── B1 — tỉ lệ bản vẽ chuẩn + khổ giấy (paper-space cơ bản) ───────────────────────── */
+
+export type PaperKey = 'A3' | 'A2' | 'A1';
+
+/** Khổ giấy ISO 216 NGANG (mm) — A3 khớp DEFAULT_PDF_PAPER_MM cũ của pdf.ts. */
+export const PAPER_SIZES_MM: Record<PaperKey, [number, number]> = {
+  A3: [420, 297],
+  A2: [594, 420],
+  A1: [841, 594],
+};
+
+/** Thang tỉ lệ kiến trúc chuẩn (1:N) — ISO 5455 / thực hành hồ sơ nội thất. */
+export const STANDARD_SCALES = [10, 20, 25, 50, 100, 200, 500] as const;
+
+/**
+ * Gợi ý tỉ lệ CHUẨN nhỏ nhất (chi tiết nhất) mà bản vẽ vẫn lọt khổ giấy: N chuẩn đầu tiên
+ * ≥ 1/fitScale. Vượt cả 1:500 → trả 500 (bản vẽ cực lớn, người dùng tự cân nhắc).
+ */
+export function suggestStandardScale(box: Box | null, paperMm: [number, number], margin: number): number {
+  const b = box ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
+  const { scale } = fitBox(b, paperMm[0], paperMm[1], margin);
+  if (!Number.isFinite(scale) || scale <= 0) return 100;
+  const need = 1 / scale;
+  for (const n of STANDARD_SCALES) if (n >= need - 1e-9) return n;
+  return STANDARD_SCALES[STANDARD_SCALES.length - 1];
+}
+
+/**
+ * Viewport in Ở TỈ LỆ CỐ ĐỊNH 1:N ("plot to scale" thay vì "fit to paper"): scale = 1/N
+ * (mm-giấy trên mỗi mm-world), bản vẽ căn GIỮA khổ giấy. Cùng hệ toạ độ worldToScreen như
+ * fitBox nên pdf.ts dùng thẳng, dimension/text nhân v.scale tự đúng cỡ giấy.
+ */
+export function fixedScaleViewport(box: Box | null, paperMm: [number, number], scaleN: number): Viewport {
+  const b = box ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
+  const scale = 1 / Math.max(1, scaleN);
+  const cx = (b.minX + b.maxX) / 2;
+  const cy = (b.minY + b.maxY) / 2;
+  return { scale, panX: paperMm[0] / 2 - cx * scale, panY: paperMm[1] / 2 + cy * scale };
+}
+
+/** Bản vẽ có LỌT khổ giấy ở tỉ lệ 1:N không (trừ lề)? Dùng để pdf.ts fallback auto-fit an toàn. */
+export function fitsAtScale(box: Box | null, paperMm: [number, number], margin: number, scaleN: number): boolean {
+  const b = box ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
+  const bw = (b.maxX - b.minX) / Math.max(1, scaleN);
+  const bh = (b.maxY - b.minY) / Math.max(1, scaleN);
+  return bw <= paperMm[0] - margin * 2 && bh <= paperMm[1] - margin * 2;
+}
+
+/**
+ * Nhãn tỉ lệ HIỆU DỤNG của 1 Doc: printScale đã chọn (và còn lọt giấy) → "1:N" chuẩn;
+ * chưa chọn/không lọt → fitScaleLabel (auto-fit, hành vi cũ). UI khung tên + pdf.ts dùng CHUNG
+ * hàm này nên 2 con số không bao giờ lệch nhau.
+ */
+export function docScaleLabel(doc: Doc, paperMm: [number, number], margin: number): string {
+  const box = docBox(doc);
+  if (doc.printScale && fitsAtScale(box, paperMm, margin, doc.printScale)) return `1:${doc.printScale}`;
+  return fitScaleLabel(box, paperMm, margin);
+}
+
+/** Khổ giấy hiệu dụng của Doc (mm) — paperKey per-sheet, mặc định A3 (khớp hành vi cũ). */
+export function docPaperMm(doc: Doc): [number, number] {
+  return PAPER_SIZES_MM[doc.paperKey ?? 'A3'];
 }
 
 export const DEFAULT_LAYERS: Layer[] = [
