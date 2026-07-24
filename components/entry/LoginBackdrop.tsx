@@ -249,9 +249,20 @@ function SlideshowLayer({
   const [idx, setIdx] = useState<number | null>(null);
   // tick: chỉ để RE-ARM hẹn giờ khi lượt trước bị bỏ qua (tab ẩn) mà idx không đổi
   const [tick, setTick] = useState(0);
+  // 🔴 FIX nền ĐEN ở bản đóng gói (Electron/next start): ảnh ĐẦU sau mỗi lần đổi playlist
+  // phải hiện NGAY ở opacity 1 (KHÔNG fade vào). Lý do: dưới ảnh đầu chỉ là nền tối, không
+  // có ảnh nào đỡ; nếu để framer fade 0→1 mà requestAnimationFrame bị PAUSE (cửa sổ Electron
+  // tạo với show:false rồi mới show, hoặc mở ở tab nền → document.hidden) thì tween KẸT ở
+  // opacity:0 = màn ĐEN dù ảnh đã tải (card kính trong suốt nên nhìn như đen tuyền). Ở
+  // `next dev` tab luôn được focus nên rAF chạy, không lộ lỗi. framer đặt `initial` thành
+  // inline-style NGAY lúc mount (không cần rAF) nên opacity:1 hiện tức thì, mọi môi trường.
+  // Các ảnh SAU vẫn crossfade bình thường: chúng luôn có ảnh trước (opacity 1) nằm dưới
+  // trong lúc fade, nên dù rAF pause cũng chỉ thấy ảnh cũ — KHÔNG bao giờ đen.
+  const firstShownRef = useRef(false);
   useEffect(() => {
     let cancelled = false;
     setIdx(null);
+    firstShownRef.current = false; // đổi playlist → ảnh đầu bộ mới lại hiện ngay, không fade
     const img = new window.Image();
     const show = () => {
       if (!cancelled) setIdx(0);
@@ -263,6 +274,11 @@ function SlideshowLayer({
       cancelled = true;
     };
   }, [playlist]);
+
+  // Sau khi ảnh đầu đã mount → các lượt sau dùng crossfade fade-in bình thường.
+  useEffect(() => {
+    if (idx !== null) firstShownRef.current = true;
+  }, [idx]);
 
   // Autoplay: hẹn giờ → PRELOAD ảnh kế tiếp → khi ảnh sẵn sàng mới crossfade (không giật).
   // reduce-motion hoặc chỉ 1 ảnh → không autoplay.
@@ -303,13 +319,14 @@ function SlideshowLayer({
 
   return (
     <div className="absolute inset-0">
-      {/* initial KHÔNG tắt: ảnh đầu (đã preload xong) cũng fade-in mềm từ nền tối */}
+      {/* Ảnh ĐẦU (firstShownRef=false): initial opacity 1 → hiện NGAY, không phụ thuộc rAF
+          (tránh nền đen khi trang mount lúc ẩn). Ảnh sau: fade-in mềm crossfade như cũ. */}
       <AnimatePresence mode="sync">
         {current && (
           <motion.div
             key={current}
             className="absolute inset-0"
-            initial={{ opacity: 0 }}
+            initial={{ opacity: firstShownRef.current ? 0 : 1 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: CROSSFADE_S, ease: 'easeInOut' }}
