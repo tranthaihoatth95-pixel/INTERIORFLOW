@@ -46,11 +46,14 @@ Tài liệu tham chiếu đã load vào `knowledge/` (copy từ `~/Downloads/kno
 
 **`knowledge/ttt-brand/`** — TTT Brand Guideline (5 biến thể: gốc/in/VI/VI-Dark/VI-EN).
 
-## TTT Design System Rules
-Mọi output visual XUẤT RA của IF (slide/deck/PDF export cho khách xem) PHẢI tuân theo `knowledge/ttt-design-system/`. UI thao tác nội bộ (toolbar/panel) áp dụng theo TINH THẦN, không cứng nhắc 1:1. Đọc `SKILL.md` + `readme.md` trước khi tạo layout/slide/export mới.
+## ⛔ LUẬT NỀN TẢNG — IF là SẢN PHẨM ĐỘC LẬP, GLOBAL (rule hardcore 24/07)
+**InteriorFlow KHÔNG phải tool nội bộ TTT. Đây là sản phẩm độc lập, bán/dùng toàn cầu, KHÔNG dính thương hiệu TTT.**
 
-1. **Brand mode.** Class ở phần tử ngoài cùng — `.ttt-architects` (trung tính, navy dẫn dắt, cam gần vắng mặt) hoặc `.ttt-corporation` (cam tự tin, brand-forward).
-2. **Màu.** Cam TTT `#F06020` + Navy TTT `#002850`, tiết chế, trên nền beige ấm `#F1ECE3` — KHÔNG BAO GIỜ trắng/xám lạnh.
-3. **Font.** CHỈ Archivo (thân/UI) + Archivo Expanded (tiêu đề). KHÔNG serif, KHÔNG underline. Tiêu đề UPPERCASE tracking nhẹ; label tracked uppercase 0.24em.
-4. **Song ngữ Việt–Anh.** Tiếng Việt dẫn trước, tiếng Anh bổ trợ nhẹ, nối bằng `·`.
-5. **Hairline keyline + whitespace.** Đường viền 1px mảnh, whitespace rộng rãi, bo góc gần vuông (0–4px).
+1. **TUYỆT ĐỐI KHÔNG nhúng cứng thương hiệu TTT (hay bất kỳ studio nào) vào sản phẩm** — không logo, tên, màu, font TTT trong khung tên CAD, intro, brand mặc định, placeholder, deck mẫu. TTT chỉ là MỘT người dùng như mọi studio khác.
+2. **Brand Kit = nhận diện riêng của TỪNG DỰ ÁN** (logo · màu · font · watermark của khách hàng/dự án đó). Mọi chỗ cần thương hiệu (khung tên bản vẽ, footer slide, watermark, export) PHẢI đọc từ Brand Kit của dự án đang mở, KHÔNG hardcode.
+3. **Không áp đặt ngôn ngữ thiết kế nào lên nội dung người dùng.** App phải cho chọn tự do — serif/sans/mọi bộ font, mọi palette. 3 bộ FontPairing (Editorial/Modern/Elegant) là ĐÚNG cho sản phẩm global, serif KHÔNG phải lỗi.
+4. **UI của chính app** có nhận diện riêng của InteriorFlow (trung tính, quốc tế), tách khỏi nội dung dự án người dùng tạo.
+5. **Song ngữ**: giao diện hỗ trợ VI/EN (đã có switcher) — không mặc định chỉ tiếng Việt.
+
+> `knowledge/ttt-design-system/` + `knowledge/ttt-brand/` chỉ dùng khi làm **tài liệu/báo cáo CHO TTT** (vd báo cáo BGĐ), KHÔNG áp vào sản phẩm.
+> Nợ cần dọn: `titleBlockTTT()` (lib/cad/commands.ts) in "TTT ARCHITECTS" lên mọi bản vẽ · brand mặc định trong `lib/store.ts`/`lib/nodes/registry.ts` · chip "TTT · Creative Studio" ở intro · deck mẫu · comment mô tả IF là "tool nội bộ TTT".
