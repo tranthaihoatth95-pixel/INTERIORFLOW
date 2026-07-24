@@ -28,14 +28,18 @@ import type { HatchPattern } from '@/lib/cad/model';
 import { parseDxf, exportDxf } from '@/lib/cad/dxf';
 import { openDwgFile } from '@/lib/cad/dwg';
 import { renderDocToDataURL } from '@/lib/cad/render';
-import { exportCadToPdf, DEFAULT_PDF_PAPER_MM, DEFAULT_PDF_MARGIN_MM } from '@/lib/cad/pdf';
+import { exportCadToPdf, DEFAULT_PDF_MARGIN_MM } from '@/lib/cad/pdf';
 import { BLOCKS, BLOCK_MAP } from '@/lib/cad/furniture';
 import ShapePalette, { ShapeInfoPanel } from '@/components/ShapePalette';
 import { loadManifest, groupByCategory, type LibraryManifest } from '@/lib/cad/block-library';
 import { buildDemoPlan, buildDemoPlanApartment74 } from '@/lib/cad/demo-plan';
 import { buildOfficeTemplate, buildHotelTemplate } from '@/lib/cad/templates';
-import { titleBlock, type TitleBlockInfo } from '@/lib/cad/commands';
-import { docBox, fitScaleLabel } from '@/lib/cad/model';
+import { titleBlockTTT, type TitleBlockInfoTTT } from '@/lib/cad/commands';
+import {
+  docBox, docScaleLabel, docPaperMm, suggestStandardScale, fitsAtScale,
+  STANDARD_SCALES, PAPER_SIZES_MM, ELEMENT_TYPE_OPTIONS,
+  type PaperKey, type ElementType, type Entity,
+} from '@/lib/cad/model';
 import { useFlowStore } from '@/lib/store';
 import { stashCadHandoff } from '@/lib/cad/handoff';
 import { stashCadPresentHandoff } from '@/lib/cad/present-handoff';
@@ -700,28 +704,41 @@ function TemplatePanel({ onClose }: { onClose: () => void }) {
 function TitleBlockPanel({ onClose }: { onClose: () => void }) {
   const doc = useCadStore((s) => s.doc);
   const addEntities = useCadStore((s) => s.addEntities);
+  const setPrintSettings = useCadStore((s) => s.setPrintSettings);
   const today = new Date().toISOString().slice(0, 10);
   const [project, setProject] = useState('');
   const [drawing, setDrawing] = useState('MẶT BẰNG BỐ TRÍ NỘI THẤT — SƠ PHÁC DD');
-  const scaleLabel = fitScaleLabel(docBox(doc), DEFAULT_PDF_PAPER_MM, DEFAULT_PDF_MARGIN_MM);
+  const [drawingNo, setDrawingNo] = useState('IF-01');
   const [author, setAuthor] = useState('');
+  const [checker, setChecker] = useState('');
   const [date, setDate] = useState(today);
   const [msg, setMsg] = useState('');
 
+  // B1 (24/07) — khổ giấy + tỉ lệ chuẩn per-sheet (lưu trong Doc → .idf/PDF dùng chung nguồn).
+  const paperKey: PaperKey = doc.paperKey ?? 'A3';
+  const paperMm = docPaperMm(doc);
+  const box = docBox(doc);
+  const suggestedN = suggestStandardScale(box, paperMm, DEFAULT_PDF_MARGIN_MM);
+  const scaleLabel = docScaleLabel(doc, paperMm, DEFAULT_PDF_MARGIN_MM);
+  const scaleFits = !doc.printScale || fitsAtScale(box, paperMm, DEFAULT_PDF_MARGIN_MM, doc.printScale);
+
   const insert = () => {
-    const box = docBox(doc);
-    const tbAt = box ? { x: box.maxX + 2600, y: box.minY - 400 } : { x: 0, y: -400 };
+    // Khung tên TTT rộng 180mm-giấy × N — neo MÉP PHẢI cách bản vẽ 500mm, không đè hình.
+    const k = doc.printScale ?? suggestedN;
+    const tbAt = box ? { x: box.maxX + 500 + 180 * k, y: box.minY } : { x: 180 * k, y: 0 };
     const wallLayer = doc.layers.find((l) => l.id === 'l-wall')?.id ?? doc.layers[0]?.id ?? 'l-wall';
     const textLayer = doc.layers.find((l) => l.id === 'l-text')?.id ?? doc.layers[0]?.id ?? 'l-text';
-    const info: TitleBlockInfo = {
+    const info: TitleBlockInfoTTT = {
       project: project.trim() || 'DỰ ÁN',
       drawing: drawing.trim() || 'MẶT BẰNG BỐ TRÍ — SƠ PHÁC DD',
       scale: scaleLabel,
+      drawingNo: drawingNo.trim() || 'IF-01',
       author: author.trim() || undefined,
+      checker: checker.trim() || undefined,
       date: date || undefined,
     };
-    addEntities(titleBlock(tbAt, info, wallLayer, textLayer));
-    setMsg('Đã chèn khung tên vào bản vẽ.');
+    addEntities(titleBlockTTT(tbAt, info, wallLayer, textLayer, k));
+    setMsg('Đã chèn khung tên TTT vào bản vẽ.');
     setTimeout(() => setMsg(''), 2500);
     window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
   };
@@ -731,7 +748,9 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
   const readonlyField: React.CSSProperties = { ...field, color: 'var(--t3)', cursor: 'default', display: 'flex', alignItems: 'center' };
 
   return (
-    <div style={{ ...panel, left: 12, top: 70, width: 280 }}>
+    // B1: panel dài hơn (khổ giấy/tỉ lệ/số bản vẽ/người kiểm) → maxHeight + cuộn để nút Chèn
+    // không chui xuống dưới CadTouchDock/status bar (dock từng nuốt click nút này khi verify).
+    <div style={{ ...panel, left: 12, top: 70, width: 280, maxHeight: 'calc(100% - 130px)', overflowY: 'auto' }}>
       <div style={panelHead}>
         <span>Khung tên (cajetín)</span>
         <button type="button" onClick={onClose} style={miniBtn} title="Đóng">
@@ -739,23 +758,72 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
         </button>
       </div>
       <div style={{ fontSize: 10.5, color: 'var(--t4)', padding: '0 6px 8px' }}>
-        Chèn khung tên góc dưới-phải bản vẽ (tham chiếu ISO 7200) — điền thông tin rồi bấm Chèn.
+        Khung tên chuẩn TTT song ngữ (tham chiếu ISO 7200) — chọn khổ giấy + tỉ lệ, điền thông tin rồi bấm Chèn.
       </div>
       <div style={{ padding: '0 2px' }}>
-        <label style={fieldLabel}>Tên dự án</label>
-        <input value={project} onChange={(e) => setProject(e.target.value)} placeholder="VD: Căn hộ Sunrise A1203" style={field} />
-        <label style={fieldLabel}>Tên bản vẽ</label>
-        <input value={drawing} onChange={(e) => setDrawing(e.target.value)} style={field} />
-        <label style={fieldLabel}>Tỉ lệ (tự tính từ khổ A3 — chưa chọn khổ giấy khác)</label>
-        <div style={readonlyField} title="Tự tính từ kích thước bản vẽ hiện tại + khổ A3 ngang mặc định — khoá gõ tay để không lệch với tỉ lệ in thật (xem docs/RESEARCH-TECHNICAL-DRAWING-PIPELINE.md §1.6).">
-          {scaleLabel}
+        <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ flex: 1 }}>
+            <label style={fieldLabel}>Khổ giấy</label>
+            <select
+              value={paperKey}
+              onChange={(e) => setPrintSettings({ paperKey: e.target.value as PaperKey })}
+              title="Khổ giấy in (ISO 216, ngang) — lưu theo từng sheet, PDF xuất đúng khổ này"
+              style={field}
+            >
+              {(Object.keys(PAPER_SIZES_MM) as PaperKey[]).map((k) => (
+                <option key={k} value={k}>{k} ({PAPER_SIZES_MM[k][0]}×{PAPER_SIZES_MM[k][1]}mm)</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={fieldLabel}>Tỉ lệ bản vẽ</label>
+            <select
+              value={doc.printScale ?? 0}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
+                setPrintSettings({ printScale: v > 0 ? v : null });
+              }}
+              title="Tỉ lệ in chuẩn 1:N — lưu theo từng sheet; PDF xuất 'plot to scale' đúng 1:N (đo thước trên bản in đúng). Tự động = fit khổ giấy (hành vi cũ)."
+              style={field}
+            >
+              <option value={0}>Tự động (fit)</option>
+              {STANDARD_SCALES.map((n) => (
+                <option key={n} value={n}>1:{n}{n === suggestedN ? ' — gợi ý' : ''}</option>
+              ))}
+            </select>
+          </div>
         </div>
-        <label style={fieldLabel}>Người vẽ</label>
-        <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="VD: Nguyễn Văn A" style={field} />
-        <label style={fieldLabel}>Ngày</label>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={field} />
+        <div style={{ fontSize: 10, color: scaleFits ? 'var(--t4)' : '#d4a15a', margin: '-2px 0 8px' }}>
+          {scaleFits
+            ? <>Tỉ lệ hiệu dụng: <b>{scaleLabel}</b> — khung tên + PDF dùng CÙNG con số này.</>
+            : <>1:{doc.printScale} KHÔNG lọt khổ {paperKey} — PDF sẽ tự fit ({scaleLabel}). Chọn tỉ lệ lớn hơn (gợi ý 1:{suggestedN}) hoặc khổ giấy to hơn.</>}
+        </div>
+        <label style={fieldLabel}>Tên dự án · Project</label>
+        <input value={project} onChange={(e) => setProject(e.target.value)} placeholder="VD: Căn hộ Sunrise A1203" style={field} />
+        <label style={fieldLabel}>Tên bản vẽ · Drawing</label>
+        <input value={drawing} onChange={(e) => setDrawing(e.target.value)} style={field} />
+        <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ flex: 1 }}>
+            <label style={fieldLabel}>Số bản vẽ · No</label>
+            <input value={drawingNo} onChange={(e) => setDrawingNo(e.target.value)} placeholder="IF-01" style={field} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={fieldLabel}>Ngày · Date</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={field} />
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ flex: 1 }}>
+            <label style={fieldLabel}>Người vẽ · Drawn</label>
+            <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="VD: Nguyễn Văn A" style={field} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={fieldLabel}>Người kiểm · Checked</label>
+            <input value={checker} onChange={(e) => setChecker(e.target.value)} placeholder="VD: Trần Thị B" style={field} />
+          </div>
+        </div>
         <button type="button" onClick={insert} style={{ ...fileBtn, width: '100%', justifyContent: 'center', background: 'var(--accent)', color: '#fff', border: 'none' }}>
-          <FileSignature size={14} /> Chèn khung tên
+          <FileSignature size={14} /> Chèn khung tên TTT
         </button>
         {msg && <div style={{ fontSize: 11, color: 'var(--accent)', marginTop: 6 }}>{msg}</div>}
       </div>
@@ -1585,26 +1653,91 @@ function RoomStatsBadge() {
   );
 }
 
-/* ───────── B2.4 info panel + B2.5 variant switch — hiện khi chọn ĐÚNG 1 BlockEntity ───────── */
+/* ───────── B2.4 info panel + B2.5 variant switch — hiện khi chọn ĐÚNG 1 BlockEntity ─────────
+ * B1 (24/07, IF2-nền): thêm ô gán BIM (storey + elementType) cho MỌI selection (1 hay nhiều
+ * entity, mọi type) — trước đây schema có field nhưng CHƯA có UI gán ở IF1. */
 function SelectionInfoPanel() {
   const doc = useCadStore((s) => s.doc);
   const selection = useCadStore((s) => s.selection);
   const updateEntities = useCadStore((s) => s.updateEntities);
   const clearSelection = useCadStore((s) => s.clearSelection);
 
-  if (selection.length !== 1) return null;
-  const entity = doc.entities.find((e) => e.id === selection[0]);
-  if (!entity || entity.type !== 'block') return null;
-  const def = BLOCK_MAP[entity.block];
+  if (selection.length === 0) return null;
+  const selected = doc.entities.filter((e) => selection.includes(e.id));
+  if (!selected.length) return null;
+  const single = selection.length === 1 ? selected[0] : null;
+  const blockEntity = single && single.type === 'block' ? single : null;
 
   return (
-    <div style={{ position: 'absolute', left: 12, bottom: 46, zIndex: 20 }}>
-      <ShapeInfoPanel
-        entity={entity}
-        def={def}
-        onVariantChange={(variantId) => updateEntities([{ ...entity, variant: variantId }])}
-        onClose={clearSelection}
-      />
+    // bottom 110 (thay 46 cũ): tránh CadTouchDock (chế độ Sketch) đè lên ô BIM/ShapeInfo.
+    <div style={{ position: 'absolute', left: 12, bottom: 110, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <BimAssignBox key={selection.join('|')} selected={selected} onApply={updateEntities} />
+      {blockEntity && (
+        <ShapeInfoPanel
+          entity={blockEntity}
+          def={BLOCK_MAP[blockEntity.block]}
+          onVariantChange={(variantId) => updateEntities([{ ...blockEntity, variant: variantId }])}
+          onClose={clearSelection}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ───────── B1 (24/07) — ô gán BIM: storey (tầng) + elementType (IfcElementType) ─────────
+ * Gán cho TẤT CẢ entity đang chọn qua updateEntities (đã snapshot → Undo được, tôn trọng layer
+ * khoá). 'null' = "đã kiểm, KHÔNG phải phần tử BIM"; bỏ chọn = xoá về undefined (chưa gán) —
+ * đúng ngữ nghĩa 3 trạng thái của model.ts. */
+function BimAssignBox({ selected, onApply }: { selected: Entity[]; onApply: (es: Entity[]) => void }) {
+  const commonStorey = selected.every((e) => e.storey === selected[0].storey) ? selected[0].storey ?? '' : '';
+  const sameType = selected.every((e) => e.elementType === selected[0].elementType);
+  const commonType = sameType ? selected[0].elementType : undefined;
+  const [storey, setStorey] = useState(commonStorey);
+
+  const applyStorey = () => {
+    const v = storey.trim();
+    onApply(selected.map((e) => ({ ...e, storey: v || undefined })));
+  };
+  const applyType = (raw: string) => {
+    let elementType: ElementType | undefined;
+    if (raw === '') elementType = undefined;
+    else if (raw === 'null') elementType = null;
+    else elementType = raw as ElementType;
+    onApply(selected.map((e) => ({ ...e, elementType })));
+  };
+  const typeValue = commonType === undefined ? (sameType ? '' : '') : commonType === null ? 'null' : commonType;
+
+  return (
+    <div style={{ ...panel, position: 'relative', width: 230, padding: '8px 10px' }}>
+      <div style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--t3)', letterSpacing: 0.4, marginBottom: 6 }}>
+        BIM · IFC — {selected.length} đối tượng
+      </div>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+        <label style={{ fontSize: 10.5, color: 'var(--t3)', width: 56, flexShrink: 0 }}>Tầng</label>
+        <input
+          value={storey}
+          onChange={(e) => setStorey(e.target.value)}
+          onBlur={applyStorey}
+          onKeyDown={(e) => { if (e.key === 'Enter') applyStorey(); }}
+          placeholder="VD: GF · L1 · L2"
+          title="BIM storey — tầng chứa đối tượng (Enter/blur để gán). Để trống = xoá gán."
+          style={{ flex: 1, fontSize: 11.5, padding: '4px 7px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', minWidth: 0 }}
+        />
+      </div>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        <label style={{ fontSize: 10.5, color: 'var(--t3)', width: 56, flexShrink: 0 }}>Loại IFC</label>
+        <select
+          value={typeValue}
+          onChange={(e) => applyType(e.target.value)}
+          title="Phân loại BIM/IFC 4.0 — nền dữ liệu cho IF2 (chưa export IFC full). '— chưa gán —' = xoá về trạng thái chưa kiểm."
+          style={{ flex: 1, fontSize: 11.5, padding: '4px 5px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', minWidth: 0 }}
+        >
+          <option value="">— chưa gán —</option>
+          {ELEMENT_TYPE_OPTIONS.map((o) => (
+            <option key={String(o.value)} value={String(o.value)}>{o.label}</option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }

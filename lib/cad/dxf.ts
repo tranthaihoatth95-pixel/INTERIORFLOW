@@ -24,7 +24,7 @@
  * DXF là chuỗi cặp (groupCode, value) mỗi cặp 2 dòng. Ta duyệt tuyến tính, gom ENTITIES.
  */
 
-import type { Doc, DimEntity, Entity, HatchPattern, Layer, LineType, Pt } from './model';
+import type { Doc, DimEntity, ElementType, Entity, HatchPattern, Layer, LineType, Pt } from './model';
 import { docBox } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 
@@ -245,7 +245,12 @@ export function parseDxf(text: string): Doc {
 
       try {
         const ent = buildEntity(kind, g, num, layerId, color);
-        if (ent) doc.entities.push(ent);
+        if (ent) {
+          // B1 (24/07, IF2-nền) — đọc lại XDATA storey/elementType do chính app ghi (xem
+          // xdataPairs ở exportDxf). File ngoài không có group 1000 → bỏ qua, 0 tác động.
+          applyIfXdata(ent, g[1000]);
+          doc.entities.push(ent);
+        }
       } catch {
         /* entity hỏng → bỏ qua, không crash */
       }
@@ -348,6 +353,31 @@ function buildEntity(
       return null;
     default:
       return null; // entity lạ (INSERT/HATCH/DIMENSION/SOLID thật…) → bỏ qua, không crash
+  }
+}
+
+/* ───────────────────────── XDATA IF2-nền (B1 24/07) ───────────────────────── */
+
+/** Tập ElementType hợp lệ để validate khi đọc lại từ XDATA (file có thể bị sửa tay). */
+const VALID_ELEMENT_TYPES = new Set(['wall', 'slab', 'column', 'beam', 'door', 'window', 'furniture', 'space']);
+
+/**
+ * Đọc các chuỗi group 1000 (XDATA) → gán storey/elementType vào entity vừa parse. Chỉ nhận
+ * đúng 2 khoá app tự ghi (IF_STOREY=/IF_ELEMTYPE=) — chuỗi 1000 khác (app ngoài) bỏ qua.
+ * 'null' = "đã kiểm, không phải phần tử BIM" (phân biệt undefined — xem model.ts).
+ */
+function applyIfXdata(ent: Entity, xd?: string[]): void {
+  if (!xd?.length) return;
+  for (const raw of xd) {
+    const s = raw.trim();
+    if (s.startsWith('IF_STOREY=')) {
+      const v = s.slice('IF_STOREY='.length).trim();
+      if (v) ent.storey = v;
+    } else if (s.startsWith('IF_ELEMTYPE=')) {
+      const v = s.slice('IF_ELEMTYPE='.length).trim();
+      if (v === 'null') ent.elementType = null;
+      else if (VALID_ELEMENT_TYPES.has(v)) ent.elementType = v as ElementType;
+    }
   }
 }
 
@@ -462,6 +492,12 @@ export function exportDxf(doc: Doc): string {
     );
   }
   out.push(pair(0, 'ENDTAB'));
+  // APPID — đăng ký app name cho XDATA IF2-nền (AutoCAD yêu cầu APPID tồn tại khi entity mang
+  // group 1001). Luôn ghi (2 entry chuẩn ACAD + INTERIORFLOW) — vô hại với file không có XDATA.
+  out.push(pair(0, 'TABLE'), pair(2, 'APPID'), pair(70, 2));
+  out.push(pair(0, 'APPID'), pair(2, 'ACAD'), pair(70, 0));
+  out.push(pair(0, 'APPID'), pair(2, 'INTERIORFLOW'), pair(70, 0));
+  out.push(pair(0, 'ENDTAB'));
   if (dimEntities.length) {
     out.push(pair(0, 'TABLE'), pair(2, 'BLOCK_RECORD'), pair(70, dimEntities.length + 2));
     out.push(pair(0, 'BLOCK_RECORD'), pair(2, '*Model_Space'));
@@ -491,12 +527,23 @@ export function exportDxf(doc: Doc): string {
   // ENTITIES
   out.push(pair(0, 'SECTION'), pair(2, 'ENTITIES'));
 
-  const writeLine = (a: Pt, b: Pt, lay: string, aci?: number, ovr: string[] = []) => {
-    out.push(pair(0, 'LINE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(10, a.x), pair(20, a.y), pair(30, 0), pair(11, b.x), pair(21, b.y), pair(31, 0));
+  const writeLine = (a: Pt, b: Pt, lay: string, aci?: number, ovr: string[] = [], xd: string[] = []) => {
+    out.push(pair(0, 'LINE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(10, a.x), pair(20, a.y), pair(30, 0), pair(11, b.x), pair(21, b.y), pair(31, 0), ...xd);
   };
-  const writePoly = (pts: Pt[], closed: boolean, lay: string, aci?: number, ovr: string[] = []) => {
+  const writePoly = (pts: Pt[], closed: boolean, lay: string, aci?: number, ovr: string[] = [], xd: string[] = []) => {
     out.push(pair(0, 'LWPOLYLINE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(90, pts.length), pair(70, closed ? 1 : 0));
     pts.forEach((p) => out.push(pair(10, p.x), pair(20, p.y)));
+    out.push(...xd);
+  };
+  // B1 (24/07, IF2-nền) — XDATA storey/elementType (đặt CUỐI record entity, chuẩn DXF). Chỉ ghi
+  // khi entity CÓ dữ liệu — file không dùng IF2 giữ nguyên từng byte như cũ (backward-safe).
+  const xdataPairs = (e: Entity): string[] => {
+    const has = e.storey !== undefined || e.elementType !== undefined;
+    if (!has) return [];
+    const xd: string[] = [pair(1001, 'INTERIORFLOW')];
+    if (e.storey !== undefined) xd.push(pair(1000, `IF_STOREY=${e.storey}`));
+    if (e.elementType !== undefined) xd.push(pair(1000, `IF_ELEMTYPE=${e.elementType === null ? 'null' : e.elementType}`));
+    return xd;
   };
   // Override lineweight/linetype RIÊNG của entity (hiếm — mặc định không có, dùng ByLayer).
   const overridePairs = (e: Entity): string[] => {
@@ -524,9 +571,10 @@ export function exportDxf(doc: Doc): string {
     const lay = layerName(e.layer);
     const aci = e.color ? hexToAci(e.color) : undefined;
     const ovr = overridePairs(e);
+    const xd = xdataPairs(e);
     switch (e.type) {
       case 'line':
-        writeLine(e.a, e.b, lay, aci, ovr);
+        writeLine(e.a, e.b, lay, aci, ovr, xd);
         break;
       case 'dim': {
         // Entity DIMENSION thật (Nấc 3) — tham chiếu block ẩn danh đã ghi ở BLOCKS phía trên.
@@ -584,7 +632,7 @@ export function exportDxf(doc: Doc): string {
         break;
       }
       case 'polyline':
-        writePoly(e.points, e.closed, lay, aci, ovr);
+        writePoly(e.points, e.closed, lay, aci, ovr, xd);
         break;
       case 'rect':
         writePoly(
@@ -593,19 +641,20 @@ export function exportDxf(doc: Doc): string {
           lay,
           aci,
           ovr,
+          xd,
         );
         break;
       case 'circle':
-        out.push(pair(0, 'CIRCLE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(10, e.c.x), pair(20, e.c.y), pair(30, 0), pair(40, e.r));
+        out.push(pair(0, 'CIRCLE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(10, e.c.x), pair(20, e.c.y), pair(30, 0), pair(40, e.r), ...xd);
         break;
       case 'arc':
         out.push(
           pair(0, 'ARC'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(10, e.c.x), pair(20, e.c.y), pair(30, 0), pair(40, e.r),
-          pair(50, (e.a1 * 180) / Math.PI), pair(51, (e.a2 * 180) / Math.PI),
+          pair(50, (e.a1 * 180) / Math.PI), pair(51, (e.a2 * 180) / Math.PI), ...xd,
         );
         break;
       case 'text':
-        out.push(pair(0, 'TEXT'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, e.at.x), pair(20, e.at.y), pair(30, 0), pair(40, e.h), pair(1, e.text));
+        out.push(pair(0, 'TEXT'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, e.at.x), pair(20, e.at.y), pair(30, 0), pair(40, e.h), pair(1, e.text), ...xd);
         break;
       case 'hatch': {
         if (e.points.length < 2) break;

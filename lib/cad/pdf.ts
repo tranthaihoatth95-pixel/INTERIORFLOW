@@ -29,7 +29,7 @@
  */
 
 import type { Doc, Entity, Pt, Viewport, DimEntity } from './model';
-import { docBox, fitBox, fitScaleLabel, worldToScreen } from './model';
+import { docBox, fitBox, fitScaleLabel, worldToScreen, fixedScaleViewport, fitsAtScale, docPaperMm } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 import { hatchLines, hatchDots } from './hatch';
 
@@ -54,9 +54,14 @@ const TITLE_BLOCK_SCALE_PREFIX = 'Tỷ lệ ';
  * `doc.entities` gốc (chỉ áp cho bản vẽ ra PDF), giữ nguyên field `scale` gõ tay trong app như cũ.
  * Entity không khớp tiền tố trả về NGUYÊN VẸN (giữ reference, không clone thừa).
  */
+/** B1 fix (24/07): tiền tố suông "Tỷ lệ " bắt NHẦM cả nhãn thước tỉ lệ "Tỷ lệ (m)" (scaleBar,
+ * commands.ts) → xuất PDF biến caption thước thành "Tỷ lệ 1:N". Nay yêu cầu sau tiền tố phải là
+ * CHỮ SỐ (ô tỉ lệ khung tên luôn dạng "Tỷ lệ 1:100"). */
+const TITLE_BLOCK_SCALE_RE = /^Tỷ lệ \d/;
+
 export function applyRealScaleToTitleBlock(entities: Entity[], scaleLabel: string): Entity[] {
   return entities.map((e) =>
-    e.type === 'text' && e.text.startsWith(TITLE_BLOCK_SCALE_PREFIX)
+    e.type === 'text' && TITLE_BLOCK_SCALE_RE.test(e.text)
       ? { ...e, text: `${TITLE_BLOCK_SCALE_PREFIX}${scaleLabel}` }
       : e,
   );
@@ -313,17 +318,24 @@ function drawEntityPdf(pdf: JsPdf, v: Viewport, doc: Doc, e: Entity, ds: CadPdfD
  */
 export async function buildCadPdf(doc: Doc, opts: CadPdfOptions = {}) {
   const { jsPDF } = await import('jspdf');
-  const [pw, ph] = opts.paper ?? DEFAULT_PDF_PAPER_MM;
+  // B1 (24/07) — khổ giấy: opts.paper (caller ép) > doc.paperKey (per-sheet) > A3 mặc định cũ.
+  const [pw, ph] = opts.paper ?? docPaperMm(doc);
   const margin = opts.margin ?? DEFAULT_PDF_MARGIN_MM;
   const ds = opts.dimStyle ?? DEFAULT_DIM_STYLE;
   const pdf = new jsPDF({ unit: 'mm', format: [pw, ph] });
 
   const box = docBox(doc) ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
-  const v: Viewport = fitBox(box, pw, ph, margin);
+  // B1 (24/07) — "plot to scale": doc.printScale (1:N chuẩn, per-sheet) + bản vẽ LỌT giấy ở tỉ
+  // lệ đó → viewport tỉ lệ CỐ ĐỊNH (đo thước trên bản in ra đúng 1:N). Không đặt/không lọt →
+  // auto-fit như cũ (fitBox — hành vi cũ nguyên vẹn, test pdf-scale.test.ts giữ pass).
+  const useFixed = !!doc.printScale && fitsAtScale(box, [pw, ph], margin, doc.printScale);
+  const v: Viewport = useFixed
+    ? fixedScaleViewport(box, [pw, ph], doc.printScale!)
+    : fitBox(box, pw, ph, margin);
   // M0 fix (§1.6) — khoá lỗi tỉ lệ khung tên gõ tay không khớp tỉ lệ in thật: TÍNH LẠI "1:N" thật
-  // từ chính v.scale (đã fitBox cho ĐÚNG khổ giấy pw×ph/lề margin của lần xuất này) rồi ghi đè vào
-  // entity text khung tên trước khi vẽ — entity gốc trong doc/app KHÔNG đổi.
-  const scaleLabel = fitScaleLabel(box, [pw, ph], margin);
+  // từ ĐÚNG viewport sẽ vẽ (fixed 1:N chuẩn hoặc auto-fit) rồi ghi đè vào entity text khung tên
+  // trước khi vẽ — entity gốc trong doc/app KHÔNG đổi.
+  const scaleLabel = useFixed ? `1:${doc.printScale}` : fitScaleLabel(box, [pw, ph], margin);
   const entities = applyRealScaleToTitleBlock(doc.entities, scaleLabel);
 
   pdf.setLineCap?.(1); // 1 = round — nét nối mượt hơn (không bắt buộc, jsPDF fallback im lặng nếu thiếu)

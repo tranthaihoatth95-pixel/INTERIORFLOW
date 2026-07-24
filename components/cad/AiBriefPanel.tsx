@@ -53,6 +53,49 @@ const draftCache: { brief: string; quickDesc: string; scaleText: string; baselin
   baselineOn: false,
 };
 
+/* B1 (24/07) — audit AI Brief: draft trước đây CHỈ sống trong module cache (reload tab = mất đề
+ * bài dài user vừa soạn). Nay persist localStorage (đề bài là text nhỏ, vô hại) + ghi LỊCH SỬ
+ * lượt "Nhận" (brief → variant đã chọn + note) để brief VÀ kết quả đều lưu lại được — đúng yêu
+ * cầu "layout được sử dụng thì ghi nhớ" ở tầng dữ liệu, song song với Perceptron ở tầng học. */
+const DRAFT_KEY = 'interiorflow.cad.aibrief.draft.v1';
+const HISTORY_KEY = 'interiorflow.cad.aibrief.history.v1';
+const HISTORY_MAX = 20;
+
+let draftLoaded = false;
+function loadDraftOnce() {
+  if (draftLoaded || typeof window === 'undefined') return;
+  draftLoaded = true;
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw) as Partial<typeof draftCache>;
+    if (typeof d.brief === 'string') draftCache.brief = d.brief;
+    if (typeof d.quickDesc === 'string') draftCache.quickDesc = d.quickDesc;
+    if (typeof d.scaleText === 'string') draftCache.scaleText = d.scaleText;
+    if (typeof d.baselineOn === 'boolean') draftCache.baselineOn = d.baselineOn;
+  } catch { /* hỏng → dùng mặc định, không crash */ }
+}
+function saveDraft() {
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draftCache)); } catch { /* quota → bỏ qua */ }
+}
+
+interface BriefHistoryEntry {
+  ts: number;
+  brief: string;
+  variant: number;
+  label: string;
+  note: string;
+  placedInto?: string[];
+}
+function appendHistory(entry: BriefHistoryEntry) {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    const arr: BriefHistoryEntry[] = raw ? JSON.parse(raw) : [];
+    arr.push(entry);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(-HISTORY_MAX)));
+  } catch { /* bỏ qua an toàn */ }
+}
+
 interface ScoredOption {
   opt: LayoutOption;
   violations: Violation[];
@@ -61,6 +104,7 @@ interface ScoredOption {
 }
 
 export default function AiBriefPanel({ onClose }: Props) {
+  loadDraftOnce(); // nạp draft đã persist TRƯỚC khi useState đọc draftCache (client component)
   const doc = useCadStore((s) => s.doc);
   const [quickDesc, setQuickDesc] = useState(draftCache.quickDesc);
   const [brief, setBrief] = useState(draftCache.brief);
@@ -79,11 +123,11 @@ export default function AiBriefPanel({ onClose }: Props) {
     setModel(PairwisePerceptron.loadFromLocalStorage(CAD_LAYOUT_OPTION_MODEL_KEY));
   }, []);
 
-  // Đồng bộ state → cache mỗi khi user gõ (draft giữ nguyên sau khi đóng).
-  useEffect(() => { draftCache.brief = brief; }, [brief]);
-  useEffect(() => { draftCache.quickDesc = quickDesc; }, [quickDesc]);
-  useEffect(() => { draftCache.scaleText = scaleText; }, [scaleText]);
-  useEffect(() => { draftCache.baselineOn = baselineOn; }, [baselineOn]);
+  // Đồng bộ state → cache + localStorage mỗi khi user gõ (draft sống qua cả reload — B1 24/07).
+  useEffect(() => { draftCache.brief = brief; saveDraft(); }, [brief]);
+  useEffect(() => { draftCache.quickDesc = quickDesc; saveDraft(); }, [quickDesc]);
+  useEffect(() => { draftCache.scaleText = scaleText; saveDraft(); }, [scaleText]);
+  useEffect(() => { draftCache.baselineOn = baselineOn; saveDraft(); }, [baselineOn]);
 
   // Click ngoài panel = đóng · phím Esc = đóng. Không đè lên các dialog khác vì aiBriefOpen chỉ
   // mount 1 panel duy nhất; nút mở panel nằm trong menu "Bắt đầu" đã đóng lại khi bấm chọn AI mô
@@ -157,8 +201,10 @@ export default function AiBriefPanel({ onClose }: Props) {
   const generate = () => {
     const text = brief.trim() || quickDesc.trim();
     if (!text) return;
+    // B1 fix (audit): TRUYỀN CẢ obstacles — dossier đã đo AABB đồ có sẵn trong từng phòng nhưng
+    // map cũ làm rơi field này ⇒ solver đặt nội thất ĐÈ LÊN đồ hiện trạng. Nay solver né đúng.
     const targetRooms: TargetRoom[] | undefined = dossier?.canLayoutInSitu
-      ? dossier.rooms.map((r) => ({ name: r.name, interior: r.interior }))
+      ? dossier.rooms.map((r) => ({ name: r.name, interior: r.interior, obstacles: r.obstacles }))
       : undefined;
     const options = generateLayoutOptions(text, origin, wallLayer, textLayer, wallThickness, furnLayer, { scaleFactor, targetRooms });
     const rules = options[0]?.operator && options[0].operator !== 'generic'
@@ -175,9 +221,12 @@ export default function AiBriefPanel({ onClose }: Props) {
         ? trialDoc
         : { layers: doc.layers, entities: opt.entities };
       const preview = opt.entities.length ? renderDocToDataURL(previewDoc, 260) : '';
-      // note đã ghi rõ "CHƯA đủ chỗ" khi solver phải BỎ món do hết chỗ mọi tường (cả 2 đường
-      // cũ/mới của generateLayoutOptions đều dùng cùng cụm từ) — tín hiệu placedRatio thô (0.5).
-      const placedRatio = opt.note.includes('CHƯA đủ chỗ') ? 0.5 : 1;
+      // B1 fix (audit): placedRatio ĐO THẬT từ solver (placedCount/requestedCount — feed
+      // Perceptron chính xác), fallback heuristic chuỗi cũ chỉ khi option không mang số liệu.
+      const placedRatio =
+        opt.requestedCount && opt.requestedCount > 0 && opt.placedCount !== undefined
+          ? opt.placedCount / opt.requestedCount
+          : opt.note.includes('CHƯA đủ chỗ') ? 0.5 : 1;
       return { opt, violations, preview, placedRatio };
     });
     setResults(scored);
@@ -205,6 +254,16 @@ export default function AiBriefPanel({ onClose }: Props) {
     st.setStatus(s.opt.note);
     window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
     setApplied(true);
+    // B1 (24/07) — lưu LỊCH SỬ lượt dùng (brief + option đã chọn) vào localStorage: brief và kết
+    // quả không còn bay hơi theo phiên tab; Perceptron học riêng ở dưới như cũ.
+    appendHistory({
+      ts: Date.now(),
+      brief: (brief.trim() || quickDesc.trim()).slice(0, 2000),
+      variant: s.opt.variant,
+      label: s.opt.label,
+      note: s.opt.note.slice(0, 500),
+      placedInto: s.opt.placedInto,
+    });
 
     if (model) {
       const others = all.filter((x) => x.opt.id !== s.opt.id);

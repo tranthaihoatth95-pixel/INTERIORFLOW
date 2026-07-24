@@ -9,7 +9,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Doc, Entity, Layer, LineType, Viewport, HatchPattern, MarkupPin, PhotoEmbed } from './model';
+import type { Doc, Entity, Layer, LineType, Viewport, HatchPattern, MarkupPin, PhotoEmbed, PaperKey } from './model';
 import { emptyDoc } from './model';
 import { pasteEntities } from './geometry';
 
@@ -284,6 +284,10 @@ interface CadState {
 
   importDoc: (d: Doc, mode: 'replace' | 'merge') => void;
   scaleAll: (factor: number) => void;
+  /** B1 (24/07) — tỉ lệ in 1:N + khổ giấy per-sheet (lưu trong Doc → tự vào .idf/per-sheet).
+   * null = xoá field (về auto-fit / A3 mặc định). KHÔNG snapshot — thiết lập in ấn, không phải
+   * hình học (giống viewport, không nên chiếm 1 nấc Undo). */
+  setPrintSettings: (patch: { printScale?: number | null; paperKey?: PaperKey | null }) => void;
   reset: () => void;
 
   /** Sprint 7 — Việc 3 (markup) + Việc 4 (photo embed): annotation rời trong doc.markups/
@@ -302,6 +306,9 @@ interface CadState {
 
 function clone(d: Doc): Doc {
   return {
+    // ...d TRƯỚC: giữ mọi field scalar optional của Doc (printScale/paperKey B1 + field tương lai)
+    // qua undo/redo — trước đây clone chỉ chép 4 field list nên field mới sẽ MẤT khi Undo.
+    ...d,
     entities: d.entities.map((e) => ({ ...e })),
     layers: d.layers.map((l) => ({ ...l })),
     markups: (d.markups ?? []).map((m) => ({ ...m })),
@@ -572,6 +579,20 @@ export const useCadStore = create<CadState>((set, get) => ({
       },
     }));
   },
+
+  setPrintSettings: (patch) =>
+    set((s) => {
+      const doc: Doc = { ...s.doc };
+      if (patch.printScale !== undefined) {
+        if (patch.printScale === null) delete doc.printScale;
+        else doc.printScale = patch.printScale;
+      }
+      if (patch.paperKey !== undefined) {
+        if (patch.paperKey === null) delete doc.paperKey;
+        else doc.paperKey = patch.paperKey;
+      }
+      return { doc };
+    }),
 
   reset: () => set({ doc: emptyDoc(), selection: [], past: [], future: [], currentLayer: 'l-wall', pendingPhotoSrc: null }),
 

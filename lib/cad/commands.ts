@@ -187,6 +187,77 @@ export function titleBlock(at: { x: number; y: number }, info: TitleBlockInfo, w
   return out;
 }
 
+/* ───────────────────────── KHUNG TÊN TTT (B1 24/07 — song ngữ, theo khổ giấy) ───────────────────────── */
+
+/** Thông tin khung tên TTT — mở rộng TitleBlockInfo (số bản vẽ + người kiểm), additive. */
+export interface TitleBlockInfoTTT extends TitleBlockInfo {
+  /** số bản vẽ, VD "IF-01". */
+  drawingNo?: string;
+  /** người kiểm (checked by). */
+  checker?: string;
+}
+
+/**
+ * Khung tên chuẩn TTT — song ngữ Việt·Anh, wordmark TTT ARCHITECTS · INTERIORFLOW, đủ trường
+ * ISO 7200 tối thiểu (dự án/bản vẽ/số/tỉ lệ/ngày/vẽ/kiểm). KHÁC titleBlock() cũ (giữ nguyên,
+ * backward-compat): kích thước đặt theo KHỔ GIẤY — template 180×42mm TRÊN GIẤY, nhân scaleN
+ * (tỉ lệ 1:N) ra mm world, nên in ra ở tỉ lệ đã chọn thì khung tên luôn đúng cỡ 180×42mm bất kể
+ * khổ A3/A2/A1. Text tỉ lệ giữ ĐÚNG tiền tố "Tỷ lệ " để applyRealScaleToTitleBlock (pdf.ts)
+ * vẫn ghi đè được lúc xuất. `at` = góc phải-dưới của khung (cùng quy ước titleBlock cũ).
+ */
+export function titleBlockTTT(
+  at: { x: number; y: number },
+  info: TitleBlockInfoTTT,
+  wallLayer: string,
+  textLayer: string,
+  scaleN = 100,
+): Entity[] {
+  const k = Math.max(1, scaleN); // mm-giấy → mm-world
+  const W = 180 * k;
+  const H = 42 * k;
+  const x0 = at.x - W;
+  const y0 = at.y;
+  const x1 = at.x;
+  const y1 = at.y + H;
+  // 2 vạch dọc chia 3 cột: brand | dự án/bản vẽ | số/tỉ lệ/ngày
+  const cA = x0 + 52 * k;
+  const cB = x0 + 130 * k;
+  // vạch ngang chia hàng trong cột giữa + phải
+  const rMid = y0 + 22 * k; // trên: dự án · dưới: bản vẽ (cột giữa)
+  const rBot = y0 + 11 * k; // đáy cột giữa: vẽ/kiểm
+  const out: Entity[] = [];
+  const ln = (a: Pt, b: Pt) => out.push({ id: newId('e'), type: 'line', layer: wallLayer, a, b });
+  const tx = (x: number, y: number, text: string, h: number) =>
+    out.push({ id: newId('e'), type: 'text', layer: textLayer, at: { x, y }, text, h: h * k });
+
+  out.push({ id: newId('e'), type: 'rect', layer: wallLayer, x: x0, y: y0, w: W, h: H });
+  ln({ x: cA, y: y0 }, { x: cA, y: y1 });
+  ln({ x: cB, y: y0 }, { x: cB, y: y1 });
+  ln({ x: cA, y: rMid }, { x: x1, y: rMid });
+  ln({ x: cA, y: rBot }, { x: cB, y: rBot });
+  // hàng cột phải: 3 ô (số · tỉ lệ · ngày) — chia đều dưới rMid… dùng rMid và thêm 1 vạch
+  const rR2 = y0 + 11 * k;
+  ln({ x: cB, y: rR2 }, { x: x1, y: rR2 });
+
+  const pad = 3 * k;
+  // ── cột trái: wordmark TTT (hairline + uppercase, tinh thần TTT design system) ──
+  tx(x0 + pad, y0 + H - 12 * k, 'TTT ARCHITECTS', 5);
+  tx(x0 + pad, y0 + H - 18 * k, 'INTERIORFLOW · DRAFTING CAD', 2.6);
+  tx(x0 + pad, y0 + 3 * k, 'Hồ sơ sơ phác · Design Development', 2.4);
+  // ── cột giữa: dự án (trên) · bản vẽ (giữa) · vẽ/kiểm (đáy) ──
+  tx(cA + pad, rMid + 14 * k, 'DỰ ÁN · PROJECT', 2.4);
+  tx(cA + pad, rMid + 4 * k, (info.project || 'DỰ ÁN').toUpperCase(), 5);
+  tx(cA + pad, rBot + 7 * k, 'BẢN VẼ · DRAWING', 2.4);
+  tx(cA + pad, rBot + 2 * k, info.drawing || 'MẶT BẰNG BỐ TRÍ — SƠ PHÁC DD', 3.2);
+  tx(cA + pad, y0 + 2.5 * k, `Vẽ · Drawn: ${info.author || '—'}    Kiểm · Checked: ${info.checker || '—'}`, 2.6);
+  // ── cột phải: số bản vẽ (trên) · tỉ lệ + ngày (dưới) ──
+  tx(cB + pad, rMid + 14 * k, 'SỐ · NO', 2.4);
+  tx(cB + pad, rMid + 4 * k, info.drawingNo || 'IF-01', 6);
+  tx(cB + pad, rR2 + 6 * k, `Tỷ lệ ${info.scale}`, 3.6);
+  tx(cB + pad, y0 + 3 * k, info.date ? `Ngày · Date ${info.date}` : 'Ngày · Date —', 2.6);
+  return out;
+}
+
 /* ───────────────────────── MŨI TÊN BẮC ───────────────────────── */
 
 export function northArrow(at: { x: number; y: number }, size = 700, layer = 'l-text'): Entity[] {
