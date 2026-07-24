@@ -9,7 +9,7 @@
  */
 
 import type { Doc, Entity, Pt } from './model';
-import { dist, mid, nearestOnSeg, segIntersect } from './model';
+import { dist, mid, nearestOnSeg, segIntersect, zoneBoundaryPoints, ellipseBoundaryPoints } from './model';
 import type { SnapSettings } from './store';
 
 export type SnapType =
@@ -56,6 +56,13 @@ function entEndpoints(e: Entity): Pt[] {
       return [e.at];
     case 'hatch':
       return e.points;
+    case 'ellipse':
+      // 4 "quadrant" theo trục local (đã xoay) — đủ cho test khung chọn window/crossing.
+      return ellipseBoundaryPoints(e.c, e.rx, e.ry, e.rot ?? 0, 8);
+    case 'arrow':
+      return e.path;
+    case 'zone':
+      return zoneBoundaryPoints(e, 16);
   }
 }
 
@@ -168,6 +175,17 @@ export function entSegments(e: Entity): [Pt, Pt][] {
       for (let i = 0; i < p.length; i++) segs.push([p[i], p[(i + 1) % p.length]]);
       return segs;
     }
+    case 'arrow': {
+      const segs: [Pt, Pt][] = [];
+      for (let i = 0; i < e.path.length - 1; i++) segs.push([e.path[i], e.path[i + 1]]);
+      return segs;
+    }
+    case 'zone': {
+      const p = zoneBoundaryPoints(e);
+      const segs: [Pt, Pt][] = [];
+      for (let i = 0; i < p.length; i++) segs.push([p[i], p[(i + 1) % p.length]]);
+      return segs;
+    }
     default:
       return [];
   }
@@ -236,6 +254,13 @@ export function findSnap(doc: Doc, world: Pt, tolMm: number, gridStep: number, s
   return { pt: world, type: 'none' };
 }
 
+/** Nối mảng điểm thành các đoạn khép kín (loop) — helper cho hit-test ellipse. */
+function segsOfLoop(p: Pt[]): [Pt, Pt][] {
+  const segs: [Pt, Pt][] = [];
+  for (let i = 0; i < p.length; i++) segs.push([p[i], p[(i + 1) % p.length]]);
+  return segs;
+}
+
 /** Đối tượng dưới con trỏ (id) trong dung sai px→mm. null nếu không có. */
 export function hitTest(doc: Doc, world: Pt, tolMm: number): string | null {
   let bestId: string | null = null;
@@ -271,6 +296,15 @@ export function hitTest(doc: Doc, world: Pt, tolMm: number): string | null {
         if (dist(world, e.at) < 1000) consider(e.id, dist(world, e.at) * 0.5);
         break;
       case 'hatch':
+        for (const [a, b] of entSegments(e)) consider(e.id, nearestOnSeg(world, a, b).d);
+        break;
+      case 'ellipse':
+        // xấp xỉ theo polygon 32 điểm (đủ mịn cho hit-test, không cần nghiệm giải tích).
+        for (const [a, b] of segsOfLoop(ellipseBoundaryPoints(e.c, e.rx, e.ry, e.rot ?? 0, 32)))
+          consider(e.id, nearestOnSeg(world, a, b).d);
+        break;
+      case 'arrow':
+      case 'zone':
         for (const [a, b] of entSegments(e)) consider(e.id, nearestOnSeg(world, a, b).d);
         break;
     }

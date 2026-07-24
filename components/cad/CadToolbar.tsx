@@ -16,6 +16,7 @@ import {
   Radius, Diameter, DraftingCompass, ChevronsRight, GitBranch, PaintBucket,
   CircleDashed, LocateFixed, Palette, StickyNote,
   Pentagon, Ellipse, Donut, SplinePointer, Slash, Divide,
+  Blend, MoveUpRight,
 } from 'lucide-react';
 import { useCadStore, type Tool, type CadMode } from '@/lib/cad/store';
 import { useModKey, useModShiftKey } from '@/lib/kbd';
@@ -87,6 +88,12 @@ const DIMENSION: ToolBtn[] = [
 /** Sprint 7 — Việc 3: ghim markup — annotation KH góp ý, tách riêng khỏi TEXT (hình học thật). */
 const ANNOTATE: ToolBtn[] = [
   { tool: 'markup', icon: StickyNote, label: 'Markup — ghim ghi chú phản hồi KH lên bản vẽ', key: 'MK' },
+];
+/** Zone tool (24/07) — nhóm "Diagram": tô vùng chức năng mặt bằng + mũi tên circulation.
+ * Hiện ở CẢ 2 mode (Sketch/Pro) — diagram là ngôn ngữ trình bày, không phải vẽ chính xác. */
+const DIAGRAM: ToolBtn[] = [
+  { tool: 'zone', icon: Blend, label: 'Zone — tô vùng chức năng (oval/polygon, 6 nhóm màu, legend tự sinh)', key: 'ZONE' },
+  { tool: 'arrow', icon: MoveUpRight, label: 'Arrow — mũi tên luồng giao thông nét đứt', key: 'AW' },
 ];
 /** Nấc 1 — bộ chỉnh sửa (tương đương AutoCAD LT). Pro-only (Sprint 9) — dòng lệnh vẫn là cách
  * chính khi cần (TR/EX/F/CHA/…), nhưng nút toolbar chỉ hiện ở Pro để Sketch gọn. */
@@ -260,6 +267,7 @@ export default function CadToolbar({
       {isPro && <Group items={DIMENSION} />}
       <Divider />
       <Group items={ANNOTATE} />
+      <Group items={DIAGRAM} />
       <Divider />
       <Tooltip label="Nội thất">
         <button type="button" onClick={onToggleFurniture} title="Thư viện nội thất (block)" style={b(tool === 'block')}>

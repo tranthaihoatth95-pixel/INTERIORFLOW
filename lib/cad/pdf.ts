@@ -29,7 +29,7 @@
  */
 
 import type { Doc, Entity, Pt, Viewport, DimEntity } from './model';
-import { docBox, fitBox, fitScaleLabel, worldToScreen } from './model';
+import { docBox, fitBox, fitScaleLabel, worldToScreen, ellipseBoundaryPoints, zoneBoundaryPoints, zoneCentroid, ZONE_GROUP_META } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 import { hatchLines, hatchDots } from './hatch';
 
@@ -304,6 +304,60 @@ function drawEntityPdf(pdf: JsPdf, v: Viewport, doc: Doc, e: Entity, ds: CadPdfD
     case 'hatch':
       drawHatchPdf(pdf, v, e, color);
       break;
+    // Zone tool (N2) — hỗ trợ tối thiểu trong PDF vector: ellipse/zone → polyline xấp xỉ,
+    // arrow → polyline + 2 đoạn đầu mũi tên. Zone fill nhạt qua GState opacity (jsPDF hỗ trợ);
+    // môi trường không hỗ trợ GState → chỉ vẽ viền + nhãn (không crash).
+    case 'ellipse':
+      polylinePdf(pdf, ellipseBoundaryPoints(e.c, e.rx, e.ry, e.rot ?? 0, 32).map(S), true);
+      break;
+    case 'arrow': {
+      if (e.path.length < 2) break;
+      pdf.setLineDashPattern?.([1.5, 1.2], 0);
+      polylinePdf(pdf, e.path.map(S), false);
+      pdf.setLineDashPattern?.([], 0);
+      const head = (from: Pt, tip: Pt) => {
+        const size = e.headSize ?? 250;
+        const dx = tip.x - from.x;
+        const dy = tip.y - from.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len;
+        const uy = dy / len;
+        const back = { x: tip.x - ux * size, y: tip.y - uy * size };
+        const t = S(tip);
+        const b1 = S({ x: back.x - uy * size * 0.4, y: back.y + ux * size * 0.4 });
+        const b2 = S({ x: back.x + uy * size * 0.4, y: back.y - ux * size * 0.4 });
+        pdf.line(b1.x, b1.y, t.x, t.y);
+        pdf.line(b2.x, b2.y, t.x, t.y);
+      };
+      if (e.headEnd !== false) head(e.path[e.path.length - 2], e.path[e.path.length - 1]);
+      if (e.headStart) head(e.path[1], e.path[0]);
+      break;
+    }
+    case 'zone': {
+      const pts = zoneBoundaryPoints(e, 32).map(S);
+      if (pts.length < 3) break;
+      const zColor = e.color ?? ZONE_GROUP_META[e.group]?.color ?? '#9a9488';
+      setStroke(pdf, zColor, widthMm);
+      try {
+        const P = pdf as unknown as { GState?: new (o: { opacity: number }) => unknown; setGState?: (g: unknown) => void; setFillColor: (c: string) => void };
+        if (P.GState && P.setGState) {
+          P.setFillColor(zColor);
+          P.setGState(new P.GState({ opacity: Math.max(0, Math.min(1, e.opacity ?? 0.4)) }));
+          fillPolygonPdf(pdf, pts);
+          P.setGState(new P.GState({ opacity: 1 }));
+        }
+      } catch {
+        /* fallback: chỉ viền */
+      }
+      polylinePdf(pdf, pts, true);
+      if (e.label) {
+        const at = S(e.labelPos ?? zoneCentroid(e));
+        pdf.setTextColor('#1E1B16');
+        pdf.setFontSize(mmToPt(Math.max(2, 260 * v.scale)));
+        pdf.text(e.label.toUpperCase(), at.x, at.y, { align: 'center' });
+      }
+      break;
+    }
   }
 }
 

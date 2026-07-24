@@ -3,8 +3,8 @@
  * Không phụ thuộc React. Toạ độ world mm, Y-up → screen px qua Viewport (lật Y).
  */
 
-import type { Doc, Entity, Pt, Viewport, DimEntity, LineType } from './model';
-import { docBox, fitBox, worldToScreen } from './model';
+import type { Doc, Entity, Pt, Viewport, DimEntity, LineType, ZoneEntity } from './model';
+import { docBox, fitBox, worldToScreen, ZONE_GROUP_META, ZONE_GROUPS, zoneBoundaryPoints, zoneCentroid } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 import { hatchLines, hatchDots } from './hatch';
 
@@ -210,18 +210,21 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
         });
         ctx.closePath();
         ctx.fillStyle = color;
-        ctx.globalAlpha = 0.9;
+        // Zone tool (N1) — opacity per-entity; thiếu ⇒ 0.9 GIỮ hành vi cũ (poché tường).
+        ctx.globalAlpha = e.opacity ?? 0.9;
         ctx.fill();
         ctx.globalAlpha = 1;
       } else if (pattern === 'DOTS') {
         const dots = hatchDots(e.points, e.patternScale ?? 1);
         ctx.fillStyle = color;
+        if (e.opacity !== undefined) ctx.globalAlpha = e.opacity;
         for (const p of dots) {
           const s = S(p);
           ctx.beginPath();
           ctx.arc(s.x, s.y, 1.2, 0, Math.PI * 2);
           ctx.fill();
         }
+        ctx.globalAlpha = 1;
       } else {
         const lines = hatchLines(e.points, pattern, e.patternScale ?? 1, e.patternAngle ?? 0);
         ctx.strokeStyle = color;
@@ -237,7 +240,116 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
       }
       break;
     }
+    // Zone tool (N2) — 3 entity mới. Ellipse: đường cong THẬT của canvas (không xấp xỉ).
+    case 'ellipse': {
+      const c = S(e.c);
+      ctx.beginPath();
+      // Y màn hình lật so với world ⇒ góc xoay đổi dấu (cùng quy ước arc ở trên).
+      ctx.ellipse(c.x, c.y, Math.abs(e.rx * v.scale), Math.abs(e.ry * v.scale), -(e.rot ?? 0), 0, Math.PI * 2);
+      ctx.stroke();
+      break;
+    }
+    case 'arrow': {
+      if (e.path.length < 2) break;
+      const color = layerColor(doc, e, style);
+      ctx.strokeStyle = color;
+      // nét đứt mặc định cho circulation flow nếu entity không tự khai lineType (kể cả khi
+      // style không bật realLineweight — arrow là diagram, luôn cần thấy nét đứt).
+      const lt: LineType = e.lineType ?? 'dashed';
+      ctx.setLineDash(LINE_DASH_MM[lt].map((mm) => Math.max(0.5, mm * v.scale * 2)));
+      ctx.beginPath();
+      e.path.forEach((p, i) => {
+        const s = S(p);
+        if (i === 0) ctx.moveTo(s.x, s.y);
+        else ctx.lineTo(s.x, s.y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // đầu mũi tên (px màn hình từ headSize mm).
+      const headPx = Math.max(6, (e.headSize ?? 250) * v.scale);
+      if (e.headEnd !== false) {
+        const tip = S(e.path[e.path.length - 1]);
+        const from = S(e.path[e.path.length - 2]);
+        drawArrowHead(ctx, from, tip, headPx);
+      }
+      if (e.headStart) {
+        const tip = S(e.path[0]);
+        const from = S(e.path[1]);
+        drawArrowHead(ctx, from, tip, headPx);
+      }
+      break;
+    }
+    case 'zone': {
+      drawZone(ctx, v, e, style);
+      break;
+    }
   }
+}
+
+/** Màu fill của zone: override entity.color nếu có, không thì theo nhóm chức năng. */
+export function zoneColor(z: ZoneEntity): string {
+  return z.color ?? ZONE_GROUP_META[z.group]?.color ?? '#9a9488';
+}
+
+/** Vẽ 1 zone: fill bán trong suốt theo nhóm + viền mảnh + nhãn UPPERCASE in đậm có halo. */
+function drawZone(ctx: CanvasRenderingContext2D, v: Viewport, z: ZoneEntity, style: DrawStyle) {
+  const S = (p: Pt) => worldToScreen(v, p);
+  const color = style.forceColor ?? zoneColor(z);
+  const path = () => {
+    ctx.beginPath();
+    if (z.ellipse) {
+      const c = S(z.ellipse.c);
+      ctx.ellipse(c.x, c.y, Math.abs(z.ellipse.rx * v.scale), Math.abs(z.ellipse.ry * v.scale), -(z.ellipse.rot ?? 0), 0, Math.PI * 2);
+    } else {
+      const pts = zoneBoundaryPoints(z);
+      if (pts.length < 3) return false;
+      pts.forEach((p, i) => {
+        const s = S(p);
+        if (i === 0) ctx.moveTo(s.x, s.y);
+        else ctx.lineTo(s.x, s.y);
+      });
+      ctx.closePath();
+    }
+    return true;
+  };
+  if (!path()) return;
+  if (style.outlineOnly) {
+    ctx.strokeStyle = color;
+    ctx.stroke();
+    return;
+  }
+  ctx.fillStyle = color;
+  ctx.globalAlpha = Math.max(0, Math.min(1, z.opacity ?? 0.4));
+  ctx.fill();
+  ctx.globalAlpha = 0.8;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  if (!style.text) return;
+  // nhãn: UPPERCASE in đậm tại labelPos ?? centroid, halo trắng để đọc được trên mọi nền.
+  const at = S(z.labelPos ?? zoneCentroid(z));
+  const px = Math.max(10, Math.min(26, 260 * v.scale));
+  ctx.font = `700 ${px}px Archivo, ui-sans-serif, system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+  ctx.lineWidth = Math.max(2, px * 0.22);
+  const label = (z.label || '').toUpperCase();
+  ctx.strokeText(label, at.x, at.y);
+  ctx.fillStyle = '#1E1B16';
+  ctx.fillText(label, at.x, at.y);
+  if (z.labelEn) {
+    const px2 = px * 0.62;
+    ctx.font = `600 ${px2}px Archivo, ui-sans-serif, system-ui, sans-serif`;
+    ctx.lineWidth = Math.max(1.5, px2 * 0.22);
+    ctx.strokeText(z.labelEn, at.x, at.y + px * 0.95);
+    ctx.fillStyle = 'rgba(30,27,22,0.72)';
+    ctx.fillText(z.labelEn, at.x, at.y + px * 0.95);
+  }
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
 }
 
 function dimText(ctx: CanvasRenderingContext2D, v: Viewport, color: string, text: string, at: Pt, ds: DimStyle) {
@@ -372,13 +484,107 @@ function drawDimension(ctx: CanvasRenderingContext2D, v: Viewport, e: DimEntity,
   else drawDimAligned(ctx, v, e, color, style, ds);
 }
 
-/** Vẽ toàn bộ entity (bỏ layer ẩn). */
+/**
+ * Vẽ toàn bộ entity (bỏ layer ẩn) — Zone tool (N2): z-order 3 lượt để zone/arrow phủ ĐÈ hình
+ * học nhưng nằm DƯỚI dimension/text (nhãn kích thước/ghi chú không bao giờ bị màng màu che):
+ *   1) hình học (line/wall/hatch/block/…)  2) zone + arrow  3) dim + text.
+ * Doc không có zone/arrow ⇒ lượt 2 rỗng, thứ tự 1→3 giữ nguyên insertion-order cũ trong từng lượt.
+ */
 export function drawEntities(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc, style: DrawStyle) {
+  const overlay: Entity[] = [];
+  const annot: Entity[] = [];
+  const geom: Entity[] = [];
   for (const e of doc.entities) {
     const lay = doc.layers.find((l) => l.id === e.layer);
     if (lay && !lay.visible) continue;
-    drawEntity(ctx, v, doc, e, style);
+    if (e.type === 'zone' || e.type === 'arrow') overlay.push(e);
+    else if (e.type === 'dim' || e.type === 'text') annot.push(e);
+    else geom.push(e);
   }
+  for (const e of geom) drawEntity(ctx, v, doc, e, style);
+  for (const e of overlay) drawEntity(ctx, v, doc, e, style);
+  for (const e of annot) drawEntity(ctx, v, doc, e, style);
+}
+
+/**
+ * Zone tool (N3) — legend chấm màu vẽ THẲNG vào canvas export (góc dưới-trái): gom nhóm từ các
+ * ZoneEntity đang có trong doc. Dùng cho "Xuất Presenting" (slide zone map có chú giải như bản
+ * Brazil tham chiếu). KHÔNG dùng cho canvas live (đã có panel ZonesLegend DOM riêng, kéo được).
+ */
+export function drawZoneLegend(ctx: CanvasRenderingContext2D, doc: Doc, W: number, H: number) {
+  const zones = doc.entities.filter((e): e is ZoneEntity => e.type === 'zone');
+  if (!zones.length) return;
+  const used = ZONE_GROUPS.filter((g) => zones.some((z) => z.group === g));
+  const hasArrow = doc.entities.some((e) => e.type === 'arrow');
+  const rows: { color: string; vi: string; en: string }[] = used.map((g) => ({ ...ZONE_GROUP_META[g], color: ZONE_GROUP_META[g].color }));
+  if (hasArrow) rows.push({ color: '#6B7280', vi: 'Luồng giao thông', en: 'Circulation' });
+  const pad = Math.round(W * 0.012) + 8;
+  const lineH = Math.max(16, Math.round(W * 0.011));
+  const fontPx = Math.max(10, Math.round(lineH * 0.62));
+  const titlePx = Math.max(9, Math.round(fontPx * 0.82));
+  ctx.save();
+  ctx.font = `600 ${fontPx}px Archivo, ui-sans-serif, system-ui, sans-serif`;
+  let maxW = 0;
+  for (const r of rows) maxW = Math.max(maxW, ctx.measureText(`${r.vi.toUpperCase()} · ${r.en}`).width);
+  const boxW = maxW + lineH + pad * 2 + 8;
+  const boxH = rows.length * lineH + pad * 2 + titlePx + 8;
+  const bx = pad;
+  const by = H - boxH - pad;
+  ctx.globalAlpha = 0.94;
+  ctx.fillStyle = '#FAF7F1';
+  ctx.strokeStyle = 'rgba(30,27,22,0.18)';
+  ctx.lineWidth = 1;
+  ctx.fillRect(bx, by, boxW, boxH);
+  ctx.strokeRect(bx, by, boxW, boxH);
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = 'rgba(30,27,22,0.55)';
+  ctx.font = `600 ${titlePx}px Archivo, ui-sans-serif, system-ui, sans-serif`;
+  ctx.textBaseline = 'top';
+  ctx.fillText('NHÓM CHỨC NĂNG · FUNCTION GROUPS', bx + pad, by + pad * 0.7);
+  rows.forEach((r, i) => {
+    const cy = by + pad * 0.7 + titlePx + 8 + i * lineH + lineH / 2;
+    ctx.beginPath();
+    ctx.arc(bx + pad + lineH * 0.28, cy, lineH * 0.26, 0, Math.PI * 2);
+    ctx.fillStyle = r.color;
+    ctx.globalAlpha = 0.75;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.font = `600 ${fontPx}px Archivo, ui-sans-serif, system-ui, sans-serif`;
+    ctx.fillStyle = '#1E1B16';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(r.vi.toUpperCase(), bx + pad + lineH * 0.28 * 2 + 8, cy);
+    const w1 = ctx.measureText(r.vi.toUpperCase()).width;
+    ctx.fillStyle = 'rgba(30,27,22,0.55)';
+    ctx.fillText(` · ${r.en}`, bx + pad + lineH * 0.28 * 2 + 8 + w1, cy);
+  });
+  ctx.restore();
+}
+
+/**
+ * Zone tool (N3) — render zone map → PNG dataURL kèm LEGEND (khác renderDocToDataURL thuần):
+ * nền beige TTT, giữ MÀU thật của zone/layer (không ép đen-trắng). Dùng cho nút "Xuất Presenting".
+ */
+export function renderZoneMapToDataURL(doc: Doc, maxPx = 2000, pad = 80): string {
+  if (typeof document === 'undefined') return '';
+  const box = docBox(doc) ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
+  const bw = Math.max(1, box.maxX - box.minX);
+  const bh = Math.max(1, box.maxY - box.minY);
+  const aspect = bw / bh;
+  const W = aspect >= 1 ? maxPx : Math.round(maxPx * aspect);
+  const H = aspect >= 1 ? Math.round(maxPx / aspect) : maxPx;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+  ctx.fillStyle = '#FAF7F1';
+  ctx.fillRect(0, 0, W, H);
+  const vp: Viewport = fitBox(box, W, H, pad);
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  drawEntities(ctx, vp, doc, { stroke: '#47423a', lineWidth: 1.6, text: true, realLineweight: true });
+  drawZoneLegend(ctx, doc, W, H);
+  return canvas.toDataURL('image/png');
 }
 
 /**

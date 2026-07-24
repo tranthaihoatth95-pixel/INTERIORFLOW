@@ -415,6 +415,17 @@ export function scaleEntityAbout(e: Entity, base: Pt, f: number): Entity {
       return { ...e, at: s(e.at), sx: e.sx * f, sy: e.sy * f };
     case 'hatch':
       return { ...e, points: e.points.map(s) };
+    case 'ellipse':
+      return { ...e, c: s(e.c), rx: e.rx * f, ry: e.ry * f };
+    case 'arrow':
+      return { ...e, path: e.path.map(s), ...(e.headSize !== undefined ? { headSize: e.headSize * f } : {}) };
+    case 'zone':
+      return {
+        ...e,
+        ...(e.polygon ? { polygon: e.polygon.map(s) } : {}),
+        ...(e.ellipse ? { ellipse: { ...e.ellipse, c: s(e.ellipse.c), rx: e.ellipse.rx * f, ry: e.ellipse.ry * f } } : {}),
+        ...(e.labelPos ? { labelPos: s(e.labelPos) } : {}),
+      };
   }
 }
 
@@ -472,6 +483,18 @@ export function stretchEntity(e: Entity, w: StretchWindow, dx: number, dy: numbe
       return { ...e, at: mv(e.at) };
     case 'hatch':
       return { ...e, points: e.points.map(mv) };
+    case 'ellipse':
+      // 1 điểm neo (tâm) — dời cả khối nếu tâm trong khung (như circle/text/block).
+      return { ...e, c: mv(e.c) };
+    case 'arrow':
+      return { ...e, path: e.path.map(mv) };
+    case 'zone':
+      return {
+        ...e,
+        ...(e.polygon ? { polygon: e.polygon.map(mv) } : {}),
+        ...(e.ellipse ? { ellipse: { ...e.ellipse, c: mv(e.ellipse.c) } } : {}),
+        ...(e.labelPos ? { labelPos: mv(e.labelPos) } : {}),
+      };
   }
 }
 

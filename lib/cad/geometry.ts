@@ -85,6 +85,17 @@ export function translateEntity(e: Entity, dx: number, dy: number): Entity {
       return { ...e, at: t(e.at) };
     case 'hatch':
       return { ...e, points: e.points.map(t) };
+    case 'ellipse':
+      return { ...e, c: t(e.c) };
+    case 'arrow':
+      return { ...e, path: e.path.map(t) };
+    case 'zone':
+      return {
+        ...e,
+        ...(e.polygon ? { polygon: e.polygon.map(t) } : {}),
+        ...(e.ellipse ? { ellipse: { ...e.ellipse, c: t(e.ellipse.c) } } : {}),
+        ...(e.labelPos ? { labelPos: t(e.labelPos) } : {}),
+      };
   }
 }
 
@@ -118,6 +129,17 @@ export function rotateEntity(e: Entity, c: Pt, ang: number): Entity {
       return { ...e, at: r(e.at), rot: e.rot + ang };
     case 'hatch':
       return { ...e, points: e.points.map(r) };
+    case 'ellipse':
+      return { ...e, c: r(e.c), rot: (e.rot ?? 0) + ang };
+    case 'arrow':
+      return { ...e, path: e.path.map(r) };
+    case 'zone':
+      return {
+        ...e,
+        ...(e.polygon ? { polygon: e.polygon.map(r) } : {}),
+        ...(e.ellipse ? { ellipse: { ...e.ellipse, c: r(e.ellipse.c), rot: (e.ellipse.rot ?? 0) + ang } } : {}),
+        ...(e.labelPos ? { labelPos: r(e.labelPos) } : {}),
+      };
   }
 }
 
@@ -145,6 +167,18 @@ export function mirrorEntity(e: Entity, o: Pt, phi: number): Entity {
       return { ...e, at: m(e.at), rot: 2 * phi - e.rot, sx: -e.sx };
     case 'hatch':
       return { ...e, points: e.points.map(m) };
+    case 'ellipse':
+      // phản chiếu đảo chiều xoay quanh trục phi (giống block: rot' = 2phi - rot).
+      return { ...e, c: m(e.c), rot: 2 * phi - (e.rot ?? 0) };
+    case 'arrow':
+      return { ...e, path: e.path.map(m) };
+    case 'zone':
+      return {
+        ...e,
+        ...(e.polygon ? { polygon: e.polygon.map(m) } : {}),
+        ...(e.ellipse ? { ellipse: { ...e.ellipse, c: m(e.ellipse.c), rot: 2 * phi - (e.ellipse.rot ?? 0) } } : {}),
+        ...(e.labelPos ? { labelPos: m(e.labelPos) } : {}),
+      };
   }
 }
 

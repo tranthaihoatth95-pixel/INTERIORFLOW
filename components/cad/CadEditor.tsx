@@ -27,7 +27,7 @@ import { useCadStore } from '@/lib/cad/store';
 import type { HatchPattern } from '@/lib/cad/model';
 import { parseDxf, exportDxf } from '@/lib/cad/dxf';
 import { openDwgFile } from '@/lib/cad/dwg';
-import { renderDocToDataURL } from '@/lib/cad/render';
+import { renderDocToDataURL, renderZoneMapToDataURL } from '@/lib/cad/render';
 import { exportCadToPdf, DEFAULT_PDF_PAPER_MM, DEFAULT_PDF_MARGIN_MM } from '@/lib/cad/pdf';
 import { BLOCKS, BLOCK_MAP } from '@/lib/cad/furniture';
 import ShapePalette, { ShapeInfoPanel } from '@/components/ShapePalette';
@@ -55,6 +55,7 @@ import CadToolbar from './CadToolbar';
 import CadTouchDock from './CadTouchDock';
 import MaterialPalette from './MaterialPalette';
 import AiBriefPanel from './AiBriefPanel';
+import { ZonePanel, ZonesLegend } from './ZonePanel';
 
 export default function CadEditor() {
   const router = useRouter();
@@ -79,6 +80,13 @@ export default function CadEditor() {
   const photoRef = useRef<HTMLInputElement>(null);
 
   const status = useCadStore((s) => s.status);
+  // Zone tool (24/07) — panel cấu hình hiện khi đang ở tool zone/arrow (đóng được bằng ✕,
+  // tự mở lại khi chọn lại tool). ZonesLegend tự ẩn/hiện theo doc (≥1 zone).
+  const cadTool = useCadStore((s) => s.tool);
+  const [zonePanelClosed, setZonePanelClosed] = useState(false);
+  useEffect(() => {
+    if (cadTool === 'zone' || cadTool === 'arrow') setZonePanelClosed(false);
+  }, [cadTool]);
 
   // 21/07 (quy trình CAD thực tế): AiBriefPanel bước 1 "Import hồ sơ CAD" TÁI DÙNG đúng 2 input
   // file + handler DXF/DWG ở dưới (onImportFile/onImportDwgFile) — panel không có ref tới input
@@ -273,6 +281,25 @@ export default function CadEditor() {
     router.push('/present-editor');
   };
 
+  // Zone tool (24/07) — "Xuất Presenting" từ panel Zone: KHÁC toPresent ở chỗ dùng
+  // renderZoneMapToDataURL (nền beige + GIỮ MÀU zone + legend chấm màu vẽ thẳng vào ảnh)
+  // thay vì bản đen-trắng kỹ thuật. Cùng đường stash present-handoff → 1 slide mới.
+  const exportZoneMapToPresent = () => {
+    const doc = useCadStore.getState().doc;
+    if (!doc.entities.length) {
+      setHandoffMsg('Bản vẽ trống — vẽ hoặc import trước.');
+      setTimeout(() => setHandoffMsg(''), 2500);
+      return;
+    }
+    const dataUrl = renderZoneMapToDataURL(doc, 2000);
+    stashCadPresentHandoff(dataUrl, {
+      snapshot: JSON.stringify(doc),
+      fromRole: useCadStore.getState().role,
+      toRole: null,
+    });
+    router.push('/present-editor');
+  };
+
   return (
     <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       {/* thanh file — 19/07: GOM NHÓM (yêu cầu user "toolbar tràn ngang, rối mắt").
@@ -358,6 +385,11 @@ export default function CadEditor() {
         {mepOpen && <MepPanel onClose={() => setMepOpen(false)} />}
         {templateOpen && <TemplatePanel onClose={() => setTemplateOpen(false)} />}
         {titleBlockOpen && <TitleBlockPanel onClose={() => setTitleBlockOpen(false)} />}
+        {/* Zone tool (24/07) — panel cấu hình zone/arrow + aerial + Xuất Presenting; legend tự sinh. */}
+        {(cadTool === 'zone' || cadTool === 'arrow') && !zonePanelClosed && (
+          <ZonePanel onClose={() => setZonePanelClosed(true)} onExportPresent={exportZoneMapToPresent} />
+        )}
+        <ZonesLegend />
         <LayerPanel />
         <SelectionInfoPanel />
         {handoffMsg && (
@@ -1219,6 +1251,10 @@ const CAD_COMMANDS: { cmd: string; label: string }[] = [
   { cmd: 'XLINE', label: 'Xline' },
   { cmd: 'DIV', label: 'Divide/Measure — click đối tượng rồi nhập' },
   { cmd: 'DIVIDE', label: 'Divide/Measure' },
+  // Zone tool (24/07 — GAP-COLOR-FILL N3). KHÔNG dùng 'Z' (Z = Zoom Extents theo thói quen cũ).
+  { cmd: 'ZONE', label: 'Zone — tô vùng chức năng mặt bằng' },
+  { cmd: 'AW', label: 'Arrow — mũi tên luồng giao thông' },
+  { cmd: 'ARROW', label: 'Arrow — mũi tên luồng giao thông' },
 ];
 
 /** Lọc gợi ý theo prefix (Việc 2). Sắp: khớp CHÍNH XÁC trước, rồi token ngắn hơn, rồi A→Z. */
@@ -1439,6 +1475,10 @@ function CommandLine({ status }: { status: string }) {
       XLINE: () => setTool('xline'),
       DIV: () => setTool('divide'),
       DIVIDE: () => setTool('divide'),
+      // Zone tool (24/07): alias dòng lệnh cho 2 tool diagram — 'Z' GIỮ nguyên = Zoom Extents.
+      ZONE: () => setTool('zone'),
+      AW: () => setTool('arrow'),
+      ARROW: () => setTool('arrow'),
     };
     const fn = map[c];
     if (fn) fn();

@@ -60,7 +60,12 @@ export type EntityType =
   | 'text'
   | 'dim'
   | 'block'
-  | 'hatch';
+  | 'hatch'
+  // Zone tool (24/07 — docs GAP-COLOR-FILL, N1 additive): 3 loại mới, `.idf` cũ KHÔNG có
+  // các type này nên parse/render như cũ, không breaking.
+  | 'ellipse'
+  | 'arrow'
+  | 'zone';
 
 /**
  * IF2-nền — phân loại phần tử BIM/IFC 4.0 (Quyết định 258/QĐ-TTg). Optional để `.idf` cũ
@@ -202,6 +207,112 @@ export interface HatchEntity extends Base {
   patternScale?: number;
   /** góc nét gạch, độ (0-360); chỉ áp dụng khi pattern != SOLID/DOTS. */
   patternAngle?: number;
+  /** Zone tool (N1) — độ mờ per-entity 0–1, thay hardcode globalAlpha 0.9 trong render.ts.
+   * Thiếu ⇒ 0.9 (GIỮ NGUYÊN hành vi cũ, backward-compat). Chỉ áp cho SOLID/DOTS. */
+  opacity?: number;
+}
+
+/* ───────── Zone tool (N1 — GAP-COLOR-FILL) — entity ellipse/arrow/zone ───────── */
+
+/** Ellipse THẬT (khác tool 'ellipse' cũ vốn xấp xỉ PolylineEntity 48 điểm): tâm + 2 bán trục
+ * (mm) + góc xoay quanh tâm (rad, optional). Dùng làm biên zone oval + hình học độc lập. */
+export interface EllipseEntity extends Base {
+  type: 'ellipse';
+  c: Pt;
+  rx: number;
+  ry: number;
+  rot?: number;
+}
+
+/** Mũi tên tự do (circulation flow) — polyline 2+ điểm, đầu mũi tên tam giác ở đầu/cuối path.
+ * Nét đứt: đặt `lineType: 'dashed'` (kế thừa Base) như mọi entity khác. */
+export interface ArrowEntity extends Base {
+  type: 'arrow';
+  path: Pt[];
+  /** mũi tên ở ĐIỂM ĐẦU path (mặc định false). */
+  headStart?: boolean;
+  /** mũi tên ở ĐIỂM CUỐI path (mặc định true). */
+  headEnd?: boolean;
+  /** kích thước đầu mũi tên (mm, mặc định 250). */
+  headSize?: number;
+}
+
+/** 6 nhóm chức năng VN hoá (chốt 24/07): Khu ướt · Khu sinh hoạt chung · Khu riêng tư ·
+ * Khu làm việc · Ban công/loggia · Phụ trợ/kỹ thuật. */
+export type ZoneGroup = 'wet' | 'social' | 'private' | 'work' | 'balcony' | 'service';
+
+/** Metadata hiển thị của từng nhóm zone — nguồn sự thật CHUNG cho render (màu fill), legend
+ * panel và DXF export. Màu pastel hài hoà trên cả nền sáng/tối, opacity mặc định 0.4. */
+export const ZONE_GROUP_META: Record<ZoneGroup, { vi: string; en: string; color: string }> = {
+  wet: { vi: 'Khu ướt', en: 'Wet area', color: '#6FB5DC' },
+  social: { vi: 'Khu sinh hoạt chung', en: 'Social', color: '#E9C46A' },
+  private: { vi: 'Khu riêng tư', en: 'Private', color: '#E39A80' },
+  work: { vi: 'Khu làm việc', en: 'Work', color: '#95BF7B' },
+  balcony: { vi: 'Ban công / loggia', en: 'Balcony · Loggia', color: '#7FC9B4' },
+  service: { vi: 'Phụ trợ / kỹ thuật', en: 'Service · MEP', color: '#A695C9' },
+};
+
+export const ZONE_GROUPS: ZoneGroup[] = ['wet', 'social', 'private', 'work', 'balcony', 'service'];
+
+/** mặc định opacity zone (chốt 24/07: 40%). */
+export const ZONE_DEFAULT_OPACITY = 0.4;
+
+/**
+ * Zone = vùng chức năng phủ đè mặt bằng ("mapa de zonas"). Biên là ellipse HOẶC polygon
+ * (đúng 1 field được set — hỗ trợ CẢ 2, chốt 24/07). Màu lấy theo `group` qua ZONE_GROUP_META
+ * (entity.color vẫn override được như mọi entity). Zone KHÔNG phải hình học thi công — render
+ * ĐÈ TRÊN geometry, DƯỚI dimension/text (xem drawEntities trong render.ts).
+ */
+export interface ZoneEntity extends Base {
+  type: 'zone';
+  polygon?: Pt[];
+  ellipse?: { c: Pt; rx: number; ry: number; rot?: number };
+  /** nhãn chức năng in trên zone, VD "PHÒNG KHÁCH". */
+  label: string;
+  /** nhãn phụ tiếng Anh (optional, in nhỏ dưới label chính). */
+  labelEn?: string;
+  group: ZoneGroup;
+  /** 0–1, mặc định ZONE_DEFAULT_OPACITY. */
+  opacity: number;
+  /** override vị trí nhãn; thiếu = centroid biên. */
+  labelPos?: Pt;
+}
+
+/** Xấp xỉ biên zone thành polygon (ellipse → N điểm, có xoay). Dùng chung cho hit-test/bbox/
+ * DXF export/centroid — 1 công thức duy nhất, không lệch nhau. */
+export function zoneBoundaryPoints(z: ZoneEntity, segments = 32): Pt[] {
+  if (z.polygon && z.polygon.length >= 3) return z.polygon;
+  if (z.ellipse) return ellipseBoundaryPoints(z.ellipse.c, z.ellipse.rx, z.ellipse.ry, z.ellipse.rot ?? 0, segments);
+  return [];
+}
+
+/** N điểm trên biên ellipse tâm c, bán trục rx/ry, xoay `rot` rad quanh tâm. */
+export function ellipseBoundaryPoints(c: Pt, rx: number, ry: number, rot = 0, segments = 32): Pt[] {
+  const n = Math.max(8, segments);
+  const cos = Math.cos(rot);
+  const sin = Math.sin(rot);
+  const pts: Pt[] = [];
+  for (let i = 0; i < n; i++) {
+    const t = (i / n) * Math.PI * 2;
+    const x = rx * Math.cos(t);
+    const y = ry * Math.sin(t);
+    pts.push({ x: c.x + x * cos - y * sin, y: c.y + x * sin + y * cos });
+  }
+  return pts;
+}
+
+/** Trọng tâm (centroid trung bình đỉnh — đủ cho vị trí nhãn) của biên zone. */
+export function zoneCentroid(z: ZoneEntity): Pt {
+  if (z.ellipse) return { ...z.ellipse.c };
+  const pts = z.polygon ?? [];
+  if (!pts.length) return { x: 0, y: 0 };
+  let sx = 0;
+  let sy = 0;
+  for (const p of pts) {
+    sx += p.x;
+    sy += p.y;
+  }
+  return { x: sx / pts.length, y: sy / pts.length };
 }
 
 export type Entity =
@@ -213,7 +324,10 @@ export type Entity =
   | TextEntity
   | DimEntity
   | BlockEntity
-  | HatchEntity;
+  | HatchEntity
+  | EllipseEntity
+  | ArrowEntity
+  | ZoneEntity;
 
 /**
  * Sprint 7 — Việc 3 (Markup overlay): ghim ghi chú KH đặt trên bản vẽ. KHÔNG phải hình học
@@ -243,12 +357,32 @@ export interface PhotoEmbed {
   ts: number;
 }
 
+/**
+ * Zone tool (N3) — lớp ảnh site/aerial do user tự upload, TRẢI THEO WORLD BOUNDS (mm) nên
+ * pan/zoom/scale-all đúng vị trí (khác PhotoEmbed vốn là thumbnail cố định px tại 1 điểm).
+ * Render TRƯỚC mọi entity (nền dưới cùng). Optional — `.idf` cũ không có field này.
+ */
+export interface SiteImage {
+  src: string; // data URL
+  /** góc dưới-trái theo world mm (Y-up). */
+  x: number;
+  y: number;
+  /** kích thước world mm. */
+  w: number;
+  h: number;
+  /** 0–1, mặc định 0.6. */
+  opacity: number;
+  visible: boolean;
+}
+
 export interface Doc {
   entities: Entity[];
   layers: Layer[];
   /** Sprint 7 — annotation rời (markup + ảnh); optional để tương thích ngược dữ liệu cũ. */
   markups?: MarkupPin[];
   photos?: PhotoEmbed[];
+  /** Zone tool — ảnh aerial nền (optional, backward-compat). */
+  siteImage?: SiteImage | null;
 }
 
 export const DEFAULT_LAYERS: Layer[] = [
@@ -359,6 +493,23 @@ export function entityBox(e: Entity): Box {
       break;
     case 'hatch':
       e.points.forEach((p) => growBox(box, p));
+      break;
+    case 'ellipse': {
+      // bao hình chặt của ellipse xoay: nửa-rộng = √(rx²cos²θ + ry²sin²θ), nửa-cao tương tự.
+      const rot = e.rot ?? 0;
+      const cos = Math.cos(rot);
+      const sin = Math.sin(rot);
+      const hw = Math.hypot(e.rx * cos, e.ry * sin);
+      const hh = Math.hypot(e.rx * sin, e.ry * cos);
+      growBox(box, { x: e.c.x - hw, y: e.c.y - hh });
+      growBox(box, { x: e.c.x + hw, y: e.c.y + hh });
+      break;
+    }
+    case 'arrow':
+      e.path.forEach((p) => growBox(box, p));
+      break;
+    case 'zone':
+      zoneBoundaryPoints(e).forEach((p) => growBox(box, p));
       break;
   }
   return box;
