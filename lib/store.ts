@@ -672,11 +672,11 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         '- Sàn gỗ sồi ghép xương cá, tường vữa mịn tông kem\n- Rèm 2 lớp: voan + linen chắn sáng\n- Đèn: 2700K, wall-wash quanh đầu giường\n- Đầu giường gỗ óc chó bo cong, nệm bọc bouclé';
       const s1 = mk('slide.composer', 460, 200);
       s1.data.params.layout = 'Cover';
-      s1.data.params.brand = 'TTT Architects';
+      s1.data.params.brand = '';
       s1.data.params.pageNo = '01';
       const s2 = mk('slide.composer', 460, 700);
       s2.data.params.layout = 'Nội dung + ảnh';
-      s2.data.params.brand = 'TTT Architects';
+      s2.data.params.brand = '';
       s2.data.params.pageNo = '02';
       const deck = mk('slide.deck', 900, 450);
       deck.data.params.deckName = 'Concept-SERENE-bedroom';

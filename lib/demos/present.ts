@@ -43,7 +43,7 @@ const C3 = {
 const C4 = {
   kicker: '',
   title: 'Sảnh không phải điểm đi qua — mà là ấn tượng đầu tiên được giữ lại.',
-  body: ['Định hướng thiết kế · TTT Architects'],
+  body: ['Định hướng thiết kế · Atelier Nord'],
 };
 
 function build(): Seed {
@@ -83,7 +83,7 @@ function build(): Seed {
     n.data.params.layout = layout;
     n.data.params.fonts = 'Editorial';
     n.data.params.mode = 'Sáng';
-    n.data.params.brand = 'TTT ARCHITECTS';
+    n.data.params.brand = 'ATELIER NORD';
     n.data.params.pageNo = page;
     return n;
   }

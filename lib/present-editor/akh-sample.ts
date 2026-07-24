@@ -114,7 +114,7 @@ export function makeAkhIkiDeck(): EditorDeck {
 
   return {
     id: 'akh-iki',
-    brand: 'TTT · LUMEN VILLA',
+    brand: 'ATELIER NORD · LUMEN VILLA',
     project: 'IKI Village — Show Unit Moodboard',
     fonts: 'Elegant',
     palette: P,

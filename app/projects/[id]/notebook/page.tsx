@@ -34,7 +34,6 @@ export default function ProjectNotebookPage() {
 
   return (
     <div
-      className="ttt-architects"
       style={{
         display: 'flex',
         flexDirection: 'column',

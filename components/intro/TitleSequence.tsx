@@ -13,7 +13,9 @@ import { useLang } from '@/lib/i18n';
  * không gian chứa ảnh render nội thất thật + caption kính, các card hai bên
  * xếp lớp 3D (rotateY, mờ + tối dần vào chiều sâu), nền phòng gallery blur
  * sâu như DOF. Thanh kính trên cùng (kiểu thanh URL visionOS) mang brand
- * "InteriorFlow" + tagline; chip pill kính dưới ghi "TTT · Creative Studio".
+ * "InteriorFlow" + tagline; chip pill kính dưới ghi tagline sản phẩm
+ * ("Thiết kế · Render · Trình bày") — TRUNG TÍNH, không gắn studio nào
+ * (luật nền tảng: IF là sản phẩm độc lập, thương hiệu studio đọc từ Brand Kit).
  *
  * Carousel tự trôi mỗi ~2.5s (spring xoay lớp + crossfade caption). Tự kết
  * thúc sau ~7s hoặc bấm bất kỳ / nút "Bỏ qua" — fade mượt rồi gọi onFinish()
@@ -330,7 +332,7 @@ export function TitleSequence({ onFinish }: { onFinish: () => void }) {
         </div>
       </motion.div>
 
-      {/* ===== CHIP PILL DƯỚI — "TTT · Creative Studio" (gu thẻ Notes) + dots ===== */}
+      {/* ===== CHIP PILL DƯỚI — tagline sản phẩm (gu thẻ Notes) + dots ===== */}
       <motion.div
         className="absolute inset-x-0 bottom-5 z-20 flex flex-col items-center gap-3 px-4 sm:bottom-7"
         initial={{ opacity: 0, y: reduce ? 0 : 14 }}
@@ -342,10 +344,12 @@ export function TitleSequence({ onFinish }: { onFinish: () => void }) {
             className="rounded-full px-2.5 py-1 text-[10px] font-bold tracking-[0.12em]"
             style={{ background: `linear-gradient(135deg, ${COPPER}, #a87b45)`, color: '#1c1409' }}
           >
-            TTT
+            IF
           </span>
           <span className="flex flex-col leading-tight">
-            <span className="text-[12px] font-medium text-white/90">Creative Studio</span>
+            <span className="text-[12px] font-medium text-white/90">
+              {en ? 'Design · Render · Present' : 'Thiết kế · Render · Trình bày'}
+            </span>
             <span className="text-[10px] text-white/50">
               {en ? 'Interior · Architecture' : 'Nội thất · Kiến trúc'}
             </span>

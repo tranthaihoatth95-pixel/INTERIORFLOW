@@ -6,7 +6,7 @@
  * Modal gọn: logo · bộ màu (6) · cặp font · watermark. Thao tác:
  *   - "Lưu Brand Kit"           → persist localStorage (lib/present-editor/brand-kit), đặt active.
  *   - "Áp lại theme cho cả deck" → NHUỘM LẠI mọi slide theo palette + font + watermark của kit.
- *   - chọn/xoá kit đã lưu (danh sách phẳng — TTT chỉ cần 1–vài brand, KHÔNG kiểu Canva 100 brand).
+ *   - chọn/xoá kit đã lưu (danh sách phẳng — mỗi user chỉ cần 1–vài brand, KHÔNG kiểu Canva 100 brand).
  *
  * Panel KHÔNG tự đọc localStorage lúc render (hydration-safe): nạp danh sách kit trong effect khi mở.
  */
@@ -47,7 +47,7 @@ function normHex(v: string): string {
 
 export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
   // giá trị đang chỉnh trên panel (khởi từ deck để "áp lại" trực quan với gu hiện tại).
-  const [name, setName] = useState(deck.brand || 'TTT');
+  const [name, setName] = useState(deck.brand || '');
   const [logo, setLogo] = useState<string | null>(deck.watermark?.src ?? null);
   const [palette, setPalette] = useState<string[]>(() => {
     const p = [...deck.palette];
@@ -214,7 +214,7 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
         {/* Tên */}
         <div style={{ marginBottom: 14 }}>
           <Label>Tên Brand Kit</Label>
-          <input value={name} onChange={(e) => setName(e.target.value)} style={input} placeholder="TTT Architects" />
+          <input value={name} onChange={(e) => setName(e.target.value)} style={input} placeholder="Tên studio của bạn · Your studio" />
         </div>
 
         {/* Logo */}

@@ -184,7 +184,7 @@ export default function DemoAmanoi() {
       setPdf(pdfUri); push('PDF present dựng xong');
       // 4) moodboard vật liệu (composeBoard — pipeline app; board 2×2 = 4 vật liệu tiêu biểu)
       const swatches = scene.materials.slice(0, 4).map(makeSwatch);
-      const board = await composeBoard({ images: swatches, projectName: scene.project, studioName: 'TTT — Quiet Luxury' });
+      const board = await composeBoard({ images: swatches, projectName: scene.project, studioName: 'Atelier Nord — Quiet Luxury' });
       setMoodboard(board); push('Moodboard vật liệu dựng xong');
       push('Xong — bấm ⬇ để tải PDF / PNG');
       (window as unknown as { __amanoiDemo?: unknown }).__amanoiDemo = { done: true, scene: scene.key, slides: out.length };
