@@ -106,8 +106,10 @@ export type CadMode = 'sketch' | 'pro';
  * chuyển vai/impersonation về sau. 'crea' = sáng tạo (mặc định, tương thích user IF1 cũ chưa có
  * role), 'drafter' = hoạ viên kỹ thuật, 'bim' = team triển khai BIM, 'viewer' = chỉ xem (khách/
  * BGĐ demo). Union này là tối thiểu — mở rộng khi có role mới, KHÔNG rename giá trị cũ.
+ * ACCESS-CONTROL M1: thêm 'owner' (chủ dự án — full quyền mọi chặng, khớp ProjectMember.role
+ * server-side, lib/server/access.ts).
  */
-export type CadRole = 'crea' | 'drafter' | 'bim' | 'viewer';
+export type CadRole = 'owner' | 'crea' | 'drafter' | 'bim' | 'viewer';
 
 /**
  * IF2-nền — CHẶNG bàn giao dự án theo relay pipeline (IF1_IF2_BIGPICTURE.md §2). Mặc định
@@ -125,7 +127,27 @@ export type CadStage = 'sketch' | 'technical' | 'bim';
  */
 export function shouldShowProTools(role: CadRole, stage: CadStage, cadMode: CadMode): boolean {
   if (cadMode === 'pro') return true; // override thủ công (backward-compat)
+  if (role === 'owner') return true; // ACCESS-CONTROL M1: owner full quyền mọi chặng
   return (role === 'drafter' || role === 'bim') && (stage === 'technical' || stage === 'bim');
+}
+
+/* ══ ACCESS-CONTROL M1 — cầu nối ProjectMember (server) → store (client) ══════════════════
+ * Server lưu ProjectMember.role ('owner'|'crea'|'drafter'|'bim'|'viewer') + Project.currentStage
+ * ('concept'|'render'|'present'). 2 hàm thuần dưới đây map về union client; giá trị lạ / null
+ * (flow không gắn projectId — nháp cá nhân) → mặc định IF1 cũ ('crea'/'sketch') = backward-
+ * compatible: không có membership thì hành vi y hệt hôm nay, gate vẫn theo cadMode thủ công. */
+
+/** ProjectMember.role → CadRole. null/undefined/lạ → 'crea' (mặc định IF1 cũ). */
+export function cadRoleFromProjectRole(r: string | null | undefined): CadRole {
+  return r === 'owner' || r === 'crea' || r === 'drafter' || r === 'bim' || r === 'viewer' ? r : 'crea';
+}
+
+/** Project.currentStage → CadStage ("đã-bàn-giao-chưa": stage tiến lên = GATE trước đã qua).
+ * concept→sketch · render→technical · present→bim. null/lạ → 'sketch'. */
+export function cadStageFromProjectStage(s: string | null | undefined): CadStage {
+  if (s === 'render') return 'technical';
+  if (s === 'present') return 'bim';
+  return 'sketch'; // 'concept' | null | giá trị lạ
 }
 
 /** Công cụ chỉ hiện khi cadMode='pro' (đối chiếu CadToolbar.tsx — nơi ẩn nút tương ứng).
@@ -231,6 +253,10 @@ interface CadState {
   setRole: (r: CadRole) => void;
   /** IF2-nền — đổi chặng (debug/dev — sản xuất phải đi qua handoff). Auto-reset tool như setRole. */
   setStage: (s: CadStage) => void;
+  /** ACCESS-CONTROL M1 — áp role+stage từ ProjectMember/Project server (GET /api/projects/[id]/
+   * members trả myRole + currentStage). Gọi khi mở flow CÓ projectId; flow nháp (không project)
+   * thì KHÔNG gọi → giữ mặc định 'crea'/'sketch' như IF1 cũ (backward-compatible). */
+  applyProjectAccess: (memberRole: string | null, currentStage: string | null) => void;
   setStatus: (s: string) => void;
   snapshot: () => void;
   undo: () => void;
@@ -383,6 +409,17 @@ export const useCadStore = create<CadState>((set, get) => ({
       stage,
       tool: !shouldShowProTools(s.role, stage, s.cadMode) && PRO_ONLY_TOOLS.has(s.tool) ? 'select' : s.tool,
     })),
+
+  applyProjectAccess: (memberRole, currentStage) =>
+    set((s) => {
+      const role = cadRoleFromProjectRole(memberRole);
+      const stage = cadStageFromProjectStage(currentStage);
+      return {
+        role,
+        stage,
+        tool: !shouldShowProTools(role, stage, s.cadMode) && PRO_ONLY_TOOLS.has(s.tool) ? 'select' : s.tool,
+      };
+    }),
 
   snapshot: () =>
     set((s) => ({

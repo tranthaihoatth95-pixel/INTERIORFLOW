@@ -53,7 +53,9 @@ export async function resolveNotebookProjectId(userId: string, paramId: string):
   if (existing) return existing.id;
 
   const created = await prisma.project.create({
-    data: { userId, name: bucketName },
+    // ACCESS-CONTROL M1: bucket ẩn cũng có owner membership — nhất quán luật "mọi Project
+    // có đúng ≥1 owner" (backfill script), dù bucket không hiện ở Gallery/panel Members.
+    data: { userId, name: bucketName, members: { create: { userId, role: 'owner' } } },
     select: { id: true },
   });
   return created.id;
