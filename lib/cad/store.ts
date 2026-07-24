@@ -9,8 +9,8 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Doc, Entity, Layer, LineType, Viewport, HatchPattern, MarkupPin, PhotoEmbed } from './model';
-import { emptyDoc } from './model';
+import type { Doc, Entity, Layer, LineType, Viewport, HatchPattern, MarkupPin, PhotoEmbed, SiteImage, ZoneGroup } from './model';
+import { emptyDoc, ZONE_DEFAULT_OPACITY } from './model';
 import { pasteEntities } from './geometry';
 
 // Dev-only: expose store cho debugging (window.__cadStore) — cùng pattern với
@@ -93,7 +93,13 @@ export type Tool =
   | 'donut'
   /** Sprint 10 — Việc 3.5: Divide/Measure — click 1 đối tượng → prompt chọn N đoạn (chia đều)
    * hoặc khoảng cách cố định (đo), đặt marker tròn nhỏ tại mỗi điểm chia. */
-  | 'divide';
+  | 'divide'
+  /** Zone tool (24/07) — vẽ vùng chức năng ("mapa de zonas"): oval = click tâm→góc; polygon =
+   * chuỗi điểm, Enter/double-click kết thúc. Nhóm/opacity/kiểu biên lấy từ zoneGroup/zoneOpacity/
+   * zoneBoundaryMode. */
+  | 'zone'
+  /** Zone tool (24/07) — mũi tên circulation nét đứt: chuỗi điểm, Enter/double-click kết thúc. */
+  | 'arrow';
 
 /** Sprint 9 — 2 chế độ UI cho cùng 1 editor (KHÔNG phải 2 app khác nhau, dữ liệu/Doc dùng
  * chung): 'sketch' ẩn bớt công cụ vẽ-chính-xác-kiểu-AutoCAD để giữ đúng triết lý Phase 1
@@ -221,6 +227,15 @@ interface CadState {
   donutInnerR: number;
   donutOuterR: number;
 
+  /** Zone tool (24/07) — nhóm chức năng đang chọn cho zone tiếp theo. */
+  zoneGroup: ZoneGroup;
+  /** Zone tool — opacity cho zone tiếp theo (0–1, mặc định 0.4). */
+  zoneOpacity: number;
+  /** Zone tool — kiểu biên đang chọn: oval (tâm→góc) hay polygon (chuỗi điểm). */
+  zoneBoundaryMode: 'ellipse' | 'polygon';
+  /** Zone tool — mũi tên 2 đầu (song hướng) cho arrow tiếp theo. */
+  arrowBothHeads: boolean;
+
   // actions
   setTool: (t: Tool) => void;
   /** Sprint 9 — chuyển Sketch↔Pro. Nếu đang chuyển VỀ 'sketch' mà tool hiện tại là Pro-only,
@@ -298,6 +313,16 @@ interface CadState {
 
   setPolygonSides: (n: number) => void;
   setDonutRadii: (inner: number, outer: number) => void;
+
+  /** Zone tool — setters cấu hình + ảnh aerial nền (doc.siteImage, có snapshot để Undo). */
+  setZoneGroup: (g: ZoneGroup) => void;
+  setZoneOpacity: (o: number) => void;
+  setZoneBoundaryMode: (m: 'ellipse' | 'polygon') => void;
+  setArrowBothHeads: (on: boolean) => void;
+  /** đặt/thay ảnh aerial (snapshot). null = gỡ ảnh. */
+  setSiteImage: (img: SiteImage | null) => void;
+  /** chỉnh vị trí/kích thước/opacity/ẩn-hiện ảnh aerial (KHÔNG snapshot — kéo slider mượt). */
+  updateSiteImage: (patch: Partial<SiteImage>) => void;
 }
 
 function clone(d: Doc): Doc {
@@ -306,6 +331,8 @@ function clone(d: Doc): Doc {
     layers: d.layers.map((l) => ({ ...l })),
     markups: (d.markups ?? []).map((m) => ({ ...m })),
     photos: (d.photos ?? []).map((p) => ({ ...p })),
+    // Zone tool — ảnh aerial nền cũng vào snapshot Undo/Redo (shallow copy đủ — field thuần).
+    siteImage: d.siteImage ? { ...d.siteImage } : d.siteImage ?? undefined,
   };
 }
 
@@ -354,6 +381,10 @@ export const useCadStore = create<CadState>((set, get) => ({
   polygonSides: 6,
   donutInnerR: 50,
   donutOuterR: 150,
+  zoneGroup: 'social',
+  zoneOpacity: ZONE_DEFAULT_OPACITY,
+  zoneBoundaryMode: 'ellipse',
+  arrowBothHeads: false,
 
   setTool: (tool) =>
     set({
@@ -532,6 +563,16 @@ export const useCadStore = create<CadState>((set, get) => ({
   setOffsetDist: (offsetDist) => set({ offsetDist }),
   setPolygonSides: (n) => set({ polygonSides: Math.max(3, Math.min(12, Math.round(n))) }),
   setDonutRadii: (inner, outer) => set({ donutInnerR: Math.max(0, inner), donutOuterR: Math.max(1, outer) }),
+  setZoneGroup: (zoneGroup) => set({ zoneGroup }),
+  setZoneOpacity: (o) => set({ zoneOpacity: Math.max(0.05, Math.min(1, o)) }),
+  setZoneBoundaryMode: (zoneBoundaryMode) => set({ zoneBoundaryMode }),
+  setArrowBothHeads: (arrowBothHeads) => set({ arrowBothHeads }),
+  setSiteImage: (img) => {
+    get().snapshot();
+    set((s) => ({ doc: { ...s.doc, siteImage: img } }));
+  },
+  updateSiteImage: (patch) =>
+    set((s) => (s.doc.siteImage ? { doc: { ...s.doc, siteImage: { ...s.doc.siteImage, ...patch } } } : s)),
   setWallThickness: (wallThickness) => set({ wallThickness }),
   setFilletRadius: (filletRadius) => set({ filletRadius }),
   setChamferDist: (chamferD1, chamferD2) => set({ chamferD1, chamferD2 }),
@@ -557,6 +598,8 @@ export const useCadStore = create<CadState>((set, get) => ({
               // không qua đây) — DXF/import khác không mang markup/photo nên chỉ có phía `s.doc`.
               markups: s.doc.markups ?? [],
               photos: s.doc.photos ?? [],
+              // Zone tool — giữ ảnh aerial hiện có khi merge (giống markup/photo).
+              siteImage: s.doc.siteImage,
             },
           },
     );
@@ -569,6 +612,10 @@ export const useCadStore = create<CadState>((set, get) => ({
         entities: s.doc.entities.map((e) => scaleEntity(e, factor)),
         markups: (s.doc.markups ?? []).map((m) => ({ ...m, at: { x: m.at.x * factor, y: m.at.y * factor } })),
         photos: (s.doc.photos ?? []).map((p) => ({ ...p, at: { x: p.at.x * factor, y: p.at.y * factor } })),
+        // Zone tool — ảnh aerial trải theo world bounds nên cũng scale cùng bản vẽ.
+        siteImage: s.doc.siteImage
+          ? { ...s.doc.siteImage, x: s.doc.siteImage.x * factor, y: s.doc.siteImage.y * factor, w: s.doc.siteImage.w * factor, h: s.doc.siteImage.h * factor }
+          : s.doc.siteImage,
       },
     }));
   },
@@ -636,6 +683,23 @@ function scaleEntity(e: Entity, f: number): Entity {
       return { ...e, at: { x: e.at.x * f, y: e.at.y * f }, sx: e.sx * f, sy: e.sy * f };
     case 'hatch':
       return { ...e, points: e.points.map((p) => ({ x: p.x * f, y: p.y * f })) };
+    case 'ellipse':
+      return { ...e, c: { x: e.c.x * f, y: e.c.y * f }, rx: e.rx * f, ry: e.ry * f };
+    case 'arrow':
+      return {
+        ...e,
+        path: e.path.map((p) => ({ x: p.x * f, y: p.y * f })),
+        ...(e.headSize !== undefined ? { headSize: e.headSize * f } : {}),
+      };
+    case 'zone':
+      return {
+        ...e,
+        ...(e.polygon ? { polygon: e.polygon.map((p) => ({ x: p.x * f, y: p.y * f })) } : {}),
+        ...(e.ellipse
+          ? { ellipse: { ...e.ellipse, c: { x: e.ellipse.c.x * f, y: e.ellipse.c.y * f }, rx: e.ellipse.rx * f, ry: e.ellipse.ry * f } }
+          : {}),
+        ...(e.labelPos ? { labelPos: { x: e.labelPos.x * f, y: e.labelPos.y * f } } : {}),
+      };
   }
 }
 
@@ -689,6 +753,8 @@ export function toolHint(t: Tool): string {
     ellipse: 'Ellipse (EL): click tâm → click góc xác định 2 bán trục (rx theo X, ry theo Y).',
     donut: 'Donut (DO): click tâm để đặt (đặt liên tiếp). Gõ "DO 50 150" đổi bán kính trong/ngoài trước khi đặt.',
     divide: 'Divide/Measure (DIV/MEA): click 1 line/polyline/circle/arc → nhập số đoạn (Divide) hoặc khoảng cách (Measure).',
+    zone: 'Zone (Z): OVAL — click tâm → click góc; POLYGON — click chuỗi điểm, Enter/double-click kết thúc → nhập nhãn. Đổi nhóm/kiểu biên/opacity ở panel Zone.',
+    arrow: 'Arrow (AW): click chuỗi điểm luồng giao thông; Enter/double-click kết thúc — nét đứt + đầu mũi tên tự động.',
   };
   return H[t];
 }

@@ -2,17 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "interiorflow-wt-fix-stage-transition",
+      "name": "zone-tool-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev",
-        "--",
-        "-p",
-        "3011"
-      ],
-      "port": 3011,
-      "cwd": "/Users/tranben/Downloads/interiorflow-wt-fix-stage-transition"
+      "runtimeArgs": ["run", "dev", "--", "-p", "3012", "-H", "127.0.0.1"],
+      "port": 3012
     }
   ]
 }

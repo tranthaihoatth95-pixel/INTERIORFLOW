@@ -25,7 +25,7 @@
  */
 
 import type { Doc, DimEntity, Entity, HatchPattern, Layer, LineType, Pt } from './model';
-import { docBox } from './model';
+import { docBox, ellipseBoundaryPoints, zoneBoundaryPoints, zoneCentroid, ZONE_GROUP_META } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 
 // Bảng màu ACI cơ bản (index → hex). Đủ 1..9 + vài mã hay gặp; ngoài bảng → xám.
@@ -640,6 +640,54 @@ export function exportDxf(doc: Doc): string {
         if (!def) break;
         const tf = (p: Pt) => blockLocalToWorld(p, e.at, e.rot, e.sx, e.sy);
         for (const prim of def.prims) writePrim(prim, tf, lay, aci);
+        break;
+      }
+      // Zone tool (N2) — DXF tương đương: ellipse → LWPOLYLINE 32 điểm (an toàn mọi bản DXF,
+      // không cần entity ELLIPSE thật); arrow → LWPOLYLINE + 2 LINE đầu mũi tên; zone → HATCH
+      // SOLID (tái dùng cấu trúc HATCH ở case trên) + TEXT nhãn tại centroid.
+      case 'ellipse':
+        writePoly(ellipseBoundaryPoints(e.c, e.rx, e.ry, e.rot ?? 0, 32), true, lay, aci, ovr);
+        break;
+      case 'arrow': {
+        if (e.path.length < 2) break;
+        writePoly(e.path, false, lay, aci, ovr.length ? ovr : [pair(6, linetypeToDxfName(e.lineType ?? 'dashed'))]);
+        const head = (from: Pt, tip: Pt) => {
+          const size = e.headSize ?? 250;
+          const dx = tip.x - from.x;
+          const dy = tip.y - from.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const ux = dx / len;
+          const uy = dy / len;
+          const back = { x: tip.x - ux * size, y: tip.y - uy * size };
+          writeLine({ x: back.x - uy * size * 0.4, y: back.y + ux * size * 0.4 }, tip, lay, aci);
+          writeLine({ x: back.x + uy * size * 0.4, y: back.y - ux * size * 0.4 }, tip, lay, aci);
+        };
+        if (e.headEnd !== false) head(e.path[e.path.length - 2], e.path[e.path.length - 1]);
+        if (e.headStart) head(e.path[1], e.path[0]);
+        break;
+      }
+      case 'zone': {
+        const pts = zoneBoundaryPoints(e, 32);
+        if (pts.length < 3) break;
+        const zoneAci = hexToAci(e.color ?? ZONE_GROUP_META[e.group]?.color ?? '#9a9488');
+        out.push(
+          pair(0, 'HATCH'), pair(8, lay), pair(62, zoneAci),
+          pair(10, 0), pair(20, 0), pair(30, 0),
+          pair(210, 0), pair(220, 0), pair(230, 1),
+          pair(2, 'SOLID'),
+          pair(70, 1),
+          pair(71, 0),
+          pair(91, 1),
+          pair(92, 7), pair(72, 0), pair(73, 1), pair(93, pts.length),
+        );
+        for (const p of pts) out.push(pair(10, p.x), pair(20, p.y));
+        out.push(pair(97, 0));
+        out.push(pair(75, 0), pair(76, 1));
+        out.push(pair(77, 0), pair(78, 0), pair(98, 0));
+        const at = e.labelPos ?? zoneCentroid(e);
+        if (e.label) {
+          out.push(pair(0, 'TEXT'), pair(8, lay), pair(62, zoneAci), pair(10, at.x), pair(20, at.y), pair(30, 0), pair(40, 250), pair(1, e.label.toUpperCase()), pair(72, 1), pair(11, at.x), pair(21, at.y), pair(31, 0));
+        }
         break;
       }
     }

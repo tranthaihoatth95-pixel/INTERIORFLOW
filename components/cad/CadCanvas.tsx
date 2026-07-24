@@ -15,8 +15,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useCadStore, toolHint } from '@/lib/cad/store';
 import type { Tool } from '@/lib/cad/store';
 import { useFlowStore } from '@/lib/store';
-import type { Entity, Pt, Viewport, DimEntity, LineEntity, MarkupPin, PhotoEmbed, Box } from '@/lib/cad/model';
-import { screenToWorld, worldToScreen, zoomAt, fitBox, docBox, dist, entityBox } from '@/lib/cad/model';
+import type { Entity, Pt, Viewport, DimEntity, LineEntity, MarkupPin, PhotoEmbed, Box, ZoneEntity } from '@/lib/cad/model';
+import { screenToWorld, worldToScreen, zoomAt, fitBox, docBox, dist, entityBox, ZONE_GROUP_META } from '@/lib/cad/model';
 import { drawEntities, drawEntity } from '@/lib/cad/render';
 import { createMarkupPin, createPhotoEmbed, nearestMarkup, nearestPhoto, formatMarkupTime } from '@/lib/cad/markup';
 import { findSnap, hitTest, idsInRect, type SnapResult } from '@/lib/cad/query';
@@ -714,6 +714,9 @@ export default function CadCanvas() {
     if (st.tool === 'polyline' && ix.current.pts.length >= 2) finishPolyline(false);
     else if (st.tool === 'wall' && ix.current.pts.length >= 2) finishWall(false);
     else if (st.tool === 'spline' && ix.current.pts.length >= 2) finishSpline(false);
+    // Zone tool — polygon mode + arrow: double-click kết thúc chuỗi điểm (giống polyline/wall).
+    else if (st.tool === 'zone' && st.zoneBoundaryMode === 'polygon' && ix.current.pts.length >= 3) finishZonePolygon();
+    else if (st.tool === 'arrow' && ix.current.pts.length >= 2) finishArrow();
   };
 
   /** Room tool — chốt ô nhập tên inline (thay window.prompt). Giữ ĐÚNG hành vi cũ: tên rỗng
@@ -803,6 +806,13 @@ export default function CadCanvas() {
     } else if (st.tool === 'spline') {
       if (ix.current.dynBuf) handleClick(effectivePoint(ix.current.pts[ix.current.pts.length - 1]), shift);
       else finishSpline(false);
+    } else if (st.tool === 'zone' && st.zoneBoundaryMode === 'polygon') {
+      // Zone polygon — Enter có dynBuf = chốt đỉnh; Enter rỗng = kết thúc (như polyline).
+      if (ix.current.dynBuf) handleClick(effectivePoint(ix.current.pts[ix.current.pts.length - 1]), shift);
+      else finishZonePolygon();
+    } else if (st.tool === 'arrow') {
+      if (ix.current.dynBuf) handleClick(effectivePoint(ix.current.pts[ix.current.pts.length - 1]), shift);
+      else finishArrow();
     } else if (ix.current.dynBuf) {
       // toạ độ TUYỆT ĐỐI ("X,Y") hợp lệ ngay cả khi CHƯA có base (điểm đầu tiên của lệnh, VD
       // click tâm Circle/Polygon hoặc điểm đầu Line) — mọi trường hợp khác (độ dài đơn, "@dx,dy")
@@ -1137,9 +1147,84 @@ export default function CadCanvas() {
       case 'hatch':
         handleHatch(w);
         break;
+      // Zone tool (24/07) — oval: click tâm → click góc xác định 2 bán trục (giống tool ellipse
+      // cũ) rồi hỏi nhãn; polygon: chuỗi điểm, Enter/double-click kết thúc (finishZonePolygon).
+      case 'zone': {
+        P.push(w);
+        if (st.zoneBoundaryMode === 'ellipse' && P.length === 2) {
+          const rx = Math.abs(P[1].x - P[0].x);
+          const ry = Math.abs(P[1].y - P[0].y);
+          const c = P[0];
+          ix.current.pts = [];
+          if (rx > 0 && ry > 0) openZoneLabelForm({ ellipse: { c, rx, ry } });
+          else st.setStatus('Zone oval: 2 bán trục phải > 0 — chọn lại.');
+        }
+        break;
+      }
+      case 'arrow':
+        P.push(w);
+        break;
       default:
         break;
     }
+    ix.current.redraw = true;
+  }
+
+  /** Zone tool — mở form nhãn (VI + EN optional) rồi mới addEntity (không dùng window.prompt —
+   * cùng lớp bug đã sửa ở room tool). GIỮ tool 'zone' sau khi tạo để vẽ zone tiếp. */
+  function openZoneLabelForm(boundary: Pick<ZoneEntity, 'polygon' | 'ellipse'>) {
+    const st = useCadStore.getState();
+    setInlineForm({
+      title: `Zone — ${ZONE_GROUP_META[st.zoneGroup].vi} · ${ZONE_GROUP_META[st.zoneGroup].en}`,
+      fields: [
+        { label: 'Nhãn zone (VD "PHÒNG KHÁCH")', value: '' },
+        { label: 'Nhãn tiếng Anh (tuỳ chọn)', value: '' },
+      ],
+      screenAt: { ...ix.current.cursorScreen },
+      onCommit: ([label, labelEn]) => {
+        const s2 = useCadStore.getState();
+        const entity: ZoneEntity = {
+          id: newId('e'),
+          type: 'zone',
+          layer: s2.currentLayer,
+          ...boundary,
+          label: (label || ZONE_GROUP_META[s2.zoneGroup].vi).trim().toUpperCase(),
+          ...(labelEn && labelEn.trim() ? { labelEn: labelEn.trim() } : {}),
+          group: s2.zoneGroup,
+          opacity: s2.zoneOpacity,
+        };
+        s2.addEntity(entity);
+        s2.setStatus(`Đã tạo zone "${entity.label}" (${ZONE_GROUP_META[entity.group].vi}) — vẽ zone tiếp hoặc Esc.`);
+      },
+    });
+  }
+
+  /** Zone polygon — kết thúc chuỗi điểm (Enter/double-click) → hỏi nhãn → tạo ZoneEntity. */
+  function finishZonePolygon() {
+    const pts = ix.current.pts;
+    if (pts.length >= 3) openZoneLabelForm({ polygon: pts.slice() });
+    else useCadStore.getState().setStatus('Zone polygon: cần ít nhất 3 điểm.');
+    ix.current.pts = [];
+    ix.current.redraw = true;
+  }
+
+  /** Arrow — kết thúc chuỗi điểm → ArrowEntity nét đứt, đầu mũi tên cuối (2 đầu nếu bật). */
+  function finishArrow() {
+    const st = useCadStore.getState();
+    const pts = ix.current.pts;
+    if (pts.length >= 2) {
+      st.addEntity({
+        id: newId('e'),
+        type: 'arrow',
+        layer: st.currentLayer,
+        path: pts.slice(),
+        lineType: 'dashed',
+        headEnd: true,
+        ...(st.arrowBothHeads ? { headStart: true } : {}),
+      });
+      st.setStatus('Đã tạo mũi tên circulation — vẽ tiếp hoặc Esc.');
+    }
+    ix.current.pts = [];
     ix.current.redraw = true;
   }
 
@@ -1930,6 +2015,21 @@ export default function CadCanvas() {
 
     drawGrid(ctx, v, W, H, st.gridStep, gridMinor);
 
+    // Zone tool (N3) — lớp ảnh aerial site TRẢI THEO WORLD BOUNDS, vẽ TRƯỚC mọi entity
+    // (nền dưới cùng, sau grid). Tái dùng cache ảnh của photo embed (getPhotoImage).
+    const site = st.doc.siteImage;
+    if (site && site.visible && site.w > 0 && site.h > 0) {
+      const img = getPhotoImage(site.src, () => (ix.current.redraw = true));
+      if (img) {
+        // world (x, y+h) = góc TRÊN-TRÁI trên màn hình (Y màn lật so với world Y-up).
+        const tl = worldToScreen(v, { x: site.x, y: site.y + site.h });
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, Math.min(1, site.opacity));
+        ctx.drawImage(img, tl.x, tl.y, site.w * v.scale, site.h * v.scale);
+        ctx.restore();
+      }
+    }
+
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     // trong lúc kéo grip: vẽ bằng bản preview cục bộ (chưa commit store) thay cho bản gốc
@@ -2354,9 +2454,37 @@ export default function CadCanvas() {
       }
       case 'polyline':
       case 'wall':
+      case 'arrow':
         for (let i = 0; i < P.length - 1; i++) line(P[i], P[i + 1]);
         if (P.length) line(P[P.length - 1], cur);
         break;
+      // Zone tool — preview theo kiểu biên đang chọn: oval (ellipse thật của canvas, tô mờ màu
+      // nhóm) hoặc polygon (chuỗi đoạn như polyline).
+      case 'zone': {
+        const mode = st.zoneBoundaryMode;
+        const zc = ZONE_GROUP_META[st.zoneGroup]?.color ?? accent;
+        if (mode === 'ellipse' && P.length === 1) {
+          const rx = Math.abs(cur.x - P[0].x);
+          const ry = Math.abs(cur.y - P[0].y);
+          if (rx > 0 && ry > 0) {
+            const c = S(P[0]);
+            ctx.beginPath();
+            ctx.ellipse(c.x, c.y, rx * v.scale, ry * v.scale, 0, 0, Math.PI * 2);
+            ctx.fillStyle = zc;
+            ctx.globalAlpha = Math.min(0.35, st.zoneOpacity);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = zc;
+            ctx.stroke();
+          }
+        } else if (mode === 'polygon' && P.length) {
+          ctx.strokeStyle = zc;
+          for (let i = 0; i < P.length - 1; i++) line(P[i], P[i + 1]);
+          line(P[P.length - 1], cur);
+          if (P.length >= 2) line(cur, P[0]);
+        }
+        break;
+      }
       // Sprint 10 — Việc 3.1: preview spline — nội suy sống các control point ĐÃ chốt + con trỏ
       // (nhẹ vì stepsPerSpan thấp hơn bản final, đủ mượt cho preview).
       case 'spline': {

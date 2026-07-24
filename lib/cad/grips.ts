@@ -94,6 +94,34 @@ export function gripsOf(e: Entity): Grip[] {
     }
     case 'hatch':
       return e.points.map((p, i) => ({ entityId: e.id, kind: 'vertex' as const, index: i, pt: p }));
+    case 'ellipse': {
+      // tâm (di chuyển) + 2 grip bán trục (đổi rx/ry) theo hướng trục đã xoay.
+      const rot = e.rot ?? 0;
+      const cos = Math.cos(rot);
+      const sin = Math.sin(rot);
+      return [
+        { entityId: e.id, kind: 'center', index: -1, pt: e.c },
+        { entityId: e.id, kind: 'radius', index: 0, pt: { x: e.c.x + e.rx * cos, y: e.c.y + e.rx * sin } },
+        { entityId: e.id, kind: 'radius', index: 1, pt: { x: e.c.x - e.ry * sin, y: e.c.y + e.ry * cos } },
+      ];
+    }
+    case 'arrow':
+      return e.path.map((p, i) => ({ entityId: e.id, kind: 'vertex' as const, index: i, pt: p }));
+    case 'zone': {
+      if (e.polygon) return e.polygon.map((p, i) => ({ entityId: e.id, kind: 'vertex' as const, index: i, pt: p }));
+      if (e.ellipse) {
+        const el = e.ellipse;
+        const rot = el.rot ?? 0;
+        const cos = Math.cos(rot);
+        const sin = Math.sin(rot);
+        return [
+          { entityId: e.id, kind: 'center', index: -1, pt: el.c },
+          { entityId: e.id, kind: 'radius', index: 0, pt: { x: el.c.x + el.rx * cos, y: el.c.y + el.rx * sin } },
+          { entityId: e.id, kind: 'radius', index: 1, pt: { x: el.c.x - el.ry * sin, y: el.c.y + el.ry * cos } },
+        ];
+      }
+      return [];
+    }
   }
 }
 
@@ -150,6 +178,37 @@ export function applyGripMove(e: Entity, grip: Grip, newPt: Pt): Entity {
       const points = e.points.slice();
       points[grip.index] = newPt;
       return { ...e, points };
+    }
+    case 'ellipse': {
+      if (grip.kind === 'center') return { ...e, c: newPt };
+      // grip bán trục: index 0 = rx (chiếu lên trục local X), 1 = ry.
+      const rot = e.rot ?? 0;
+      const dx = newPt.x - e.c.x;
+      const dy = newPt.y - e.c.y;
+      if (grip.index === 0) return { ...e, rx: Math.max(1, Math.abs(dx * Math.cos(rot) + dy * Math.sin(rot))) };
+      return { ...e, ry: Math.max(1, Math.abs(-dx * Math.sin(rot) + dy * Math.cos(rot))) };
+    }
+    case 'arrow': {
+      const path = e.path.slice();
+      path[grip.index] = newPt;
+      return { ...e, path };
+    }
+    case 'zone': {
+      if (e.polygon && grip.kind === 'vertex') {
+        const polygon = e.polygon.slice();
+        polygon[grip.index] = newPt;
+        return { ...e, polygon };
+      }
+      if (e.ellipse) {
+        const el = e.ellipse;
+        if (grip.kind === 'center') return { ...e, ellipse: { ...el, c: newPt } };
+        const rot = el.rot ?? 0;
+        const dx = newPt.x - el.c.x;
+        const dy = newPt.y - el.c.y;
+        if (grip.index === 0) return { ...e, ellipse: { ...el, rx: Math.max(1, Math.abs(dx * Math.cos(rot) + dy * Math.sin(rot))) } };
+        return { ...e, ellipse: { ...el, ry: Math.max(1, Math.abs(-dx * Math.sin(rot) + dy * Math.cos(rot))) } };
+      }
+      return e;
     }
     default:
       return e;
