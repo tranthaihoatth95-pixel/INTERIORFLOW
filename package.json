@@ -82,6 +82,8 @@
       "prisma/**/*",
       "public/**/*",
       "node_modules/**/*",
+      "node_modules/.prisma/**/*",
+      "node_modules/@prisma/engines/**/*",
       "next.config.mjs",
       "package.json",
       "!**/node_modules/.cache/**",
