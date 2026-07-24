@@ -11,6 +11,7 @@ import { openFlow, createProject } from '@/lib/workspace';
 import { fade, pressable, pressableIcon, staggerList, staggerItem } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useLarkData, LarkBoardTab, LarkKanbanTab, LarkRosterTab, LarkSyncBar } from '@/components/dashboard/LarkPanels';
+import { ProjectMembersPanel } from '@/components/dashboard/ProjectMembersPanel';
 
 /* ---------- kiểu dữ liệu trả về từ /api/dashboard ---------- */
 interface Member {
@@ -357,11 +358,21 @@ export function Dashboard({
                 ) : tab === 'kanban' ? (
                   <LarkKanbanTab data={larkData} filterCode={larkFilterCode} />
                 ) : (
-                  <LarkRosterTab
-                    data={larkData}
-                    teamUsers={(data?.team ?? []).map((u) => ({ id: u.id, name: u.name }))}
-                    onMapped={reloadLark}
-                  />
+                  <>
+                    {/* ACCESS-CONTROL M1 — quyền nội bộ IF (ProjectMember), tách khỏi roster
+                        Larkbase chỉ-đọc bên dưới. Lọc theo dự án đang chọn nếu có. */}
+                    <ProjectMembersPanel
+                      projects={(data?.projects ?? [])
+                        .filter((p) => !filterProjectId || p.id === filterProjectId)
+                        .map((p) => ({ id: p.id, name: p.name }))}
+                      teamUsers={(data?.team ?? []).map((u) => ({ id: u.id, name: u.name }))}
+                    />
+                    <LarkRosterTab
+                      data={larkData}
+                      teamUsers={(data?.team ?? []).map((u) => ({ id: u.id, name: u.name }))}
+                      onMapped={reloadLark}
+                    />
+                  </>
                 )}
               </div>
             ) : loading && !data ? (

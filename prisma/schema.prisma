@@ -33,6 +33,7 @@ model User {
   projects     Project[]
   integrations IntegrationAccount[]
   larkUserMaps LarkUserMap[]
+  memberships  ProjectMember[]
 }
 
 // Token OAuth của user cho từng dịch vụ ngoài (google/ms365/zoom/zalo/spotify/youtube/team...).
@@ -66,11 +67,35 @@ model Project {
   // mã Larkbase (dự án mới trong IF trước khi phòng dự án tạo task tương ứng bên Larkbase).
   larkProjectCode String?
 
+  // ══ MỚI (ACCESS-CONTROL M1, docs/RESEARCH-ACCESS-CONTROL.md §2.3) — additive, có default
+  // → DB/row cũ không vỡ. currentStage trùng bộ ID nội bộ lib/phases.ts ('concept'|'render'|
+  // 'present'); stageLocked = true khi chặng trước đã qua GATE (đóng băng snapshot).
+  currentStage String  @default("concept")
+  stageLocked  Boolean @default(false)
+
   user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   flows    Flow[]
   notebook ProjectNotebook?
+  members  ProjectMember[]
 
   @@index([larkProjectCode])
+}
+
+// ══ MỚI (ACCESS-CONTROL M1) ══ Thành viên dự án — nguồn chân lý DUY NHẤT cho "ai thấy/sửa
+// dự án nào". role là String vì SQLite không có enum (RESEARCH-ACCESS-CONTROL.md §2.3);
+// ràng buộc 5 giá trị 'owner'|'crea'|'drafter'|'bim'|'viewer' nằm ở lib/server/access.ts.
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  role      String // 'owner' | 'crea' | 'drafter' | 'bim' | 'viewer'
+  joinedAt  DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId]) // 1 người 1 vai / 1 dự án (Q6 RESEARCH — chốt giữ unique)
+  @@index([userId]) // truy vấn nóng: "dự án của tôi"
 }
 
 // ══════════════════════════════════════════════════════════════════════════

@@ -63,12 +63,15 @@ export async function POST(req: Request) {
     // KHÔNG khớp → bỏ qua lặng lẽ (coi như "chưa liên kết"), không lỗi khó hiểu.
     const rawCode = typeof body.larkProjectCode === 'string' ? body.larkProjectCode.trim() : '';
     const larkProjectCode = /^\d+$/.test(rawCode) ? rawCode : null;
+    // ACCESS-CONTROL M1: tạo Project + ProjectMember owner trong CÙNG transaction — quên
+    // member là người tạo không thấy chính dự án mình khi bật lọc quyền (RESEARCH §6.5).
     const project = await prisma.project.create({
       data: {
         userId: user.id,
         name: String(body.name ?? 'Dự án mới'),
         clientName: body.clientName ?? null,
         larkProjectCode,
+        members: { create: { userId: user.id, role: 'owner' } },
       },
     });
     return NextResponse.json({ project });
