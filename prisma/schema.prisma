@@ -1,5 +1,10 @@
 generator client {
   provider = "prisma-client-js"
+  // binaryTargets: "native" = engine cho HĐH đang build (Mac/Linux dev); "windows" = engine
+  // Query cho bản đóng gói .exe chạy trên Windows. Bắt buộc để bản cài Windows có
+  // libquery_engine-windows.dll.node. Build .exe CHUẨN vẫn nên chạy NATIVE trên máy Windows
+  // (npm ci ở đó tự lấy cả schema-engine-windows.exe cho `prisma db push` lúc app khởi động).
+  binaryTargets = ["native", "windows"]
 }
 
 // SQLite cho bản chạy nội bộ / LAN — lên cloud chỉ cần đổi provider sang postgresql (Supabase)

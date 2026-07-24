@@ -35,12 +35,12 @@ npm ci
 npm run electron:build
 ```
 
-Kết quả trong thư mục **`dist/`**:
+Kết quả trong thư mục **`dist-installer/`**:
 
 | File | Vai trò |
 |---|---|
-| `dist/InteriorFlow Setup 0.1.0.exe` | **Bộ cài NSIS** — file mang đi cài trên các máy khác. |
-| `dist/win-unpacked/InteriorFlow.exe` | Bản chạy thử không cần cài (test nhanh trước khi phát hành). |
+| `dist-installer/InteriorFlow Setup 0.1.0.exe` | **Bộ cài NSIS** — file mang đi cài trên các máy khác. |
+| `dist-installer/win-unpacked/InteriorFlow.exe` | Bản chạy thử không cần cài (test nhanh trước khi phát hành). |
 
 Máy đích để **chạy** app không cần Node/Git — chỉ cần file Setup.
 
@@ -73,11 +73,13 @@ không phải virus.
   (chạy từ thư mục mã nguồn, `DATABASE_URL` trỏ tới file `dev.db` trong AppData nếu muốn seed
   vào DB của bản đã cài: `set DATABASE_URL=file:C:\Users\<user>\AppData\Roaming\InteriorFlow\dev.db`).
 
-## 6. Biến môi trường nhúng (tuỳ chọn, trước khi build)
+## 6. API key & secret — KHÔNG nhúng vào bộ cài (cập nhật 24/07)
 
-`.env` không được đóng gói. Muốn bản cài có sẵn `AUTH_SECRET` cố định (giữ đăng nhập qua các
-lần mở app) và `FAL_KEY` (render AI cloud): mở `electron/main.js`, thêm vào object `serverEnv`
-trong hàm `startNextServer` rồi mới build — xem `README-electron.md` mục 5.
+`.env` không được đóng gói và **không hardcode key nào vào .exe**. Bản cài đọc cấu hình từ
+`%APPDATA%\InteriorFlow\config.json` (app tự tạo lần chạy đầu từ `electron/config.example.json`,
+`AUTH_SECRET` tự sinh ngẫu nhiên + lưu lại để giữ đăng nhập). Người dùng điền `FAL_KEY`,
+`NVIDIA_API_KEY`, `COMFYUI_URL`… qua menu **Tệp → "Mở file cấu hình (API key)…"** rồi mở lại app.
+Chi tiết: `installers/windows/HUONG-DAN-CAI.md`.
 
 ## 7. Lỗi thường gặp
 

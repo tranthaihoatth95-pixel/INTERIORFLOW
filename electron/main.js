@@ -34,6 +34,7 @@ const path = require('path');
 const fs = require('fs');
 const http = require('http');
 const net = require('net');
+const crypto = require('crypto');
 const { spawn } = require('child_process');
 
 // true khi chạy bản đã đóng gói (.exe cài đặt), false khi `electron .` lúc dev.
@@ -128,36 +129,105 @@ function prepareWritablePaths() {
   return { userDataDir, dbUrl, dbPath };
 }
 
-// ── Chạy prisma migrate deploy lần đầu để tạo schema vào dev.db (chỉ khi đóng gói) ──
-// Lúc dev ta đã có sẵn prisma/dev.db + `npx prisma migrate dev`, nên bỏ qua.
-function runMigrations(appRoot, env) {
+// ── Cấu hình người dùng: <userData>/config.json ──────────────────────────────
+// KHÔNG hardcode API key vào bộ cài. Lần đầu chạy, app tự tạo config.json từ
+// electron/config.example.json (AUTH_SECRET sinh ngẫu nhiên + persist để giữ
+// đăng nhập qua các lần mở). User điền FAL_KEY / NVIDIA_API_KEY... vào file này
+// (menu Tệp → "Mở file cấu hình…"), lưu, rồi mở lại app.
+const CONFIG_KEYS = [
+  'AUTH_SECRET',
+  'FAL_KEY',
+  'NVIDIA_API_KEY',
+  'COMFYUI_URL',
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET',
+];
+let configJsonPath = null; // giữ để menu "Mở file cấu hình…" dùng
+
+function loadUserConfig(userDataDir) {
+  configJsonPath = path.join(userDataDir, 'config.json');
+  let cfg = {};
+  if (fs.existsSync(configJsonPath)) {
+    try {
+      cfg = JSON.parse(fs.readFileSync(configJsonPath, 'utf8'));
+    } catch (e) {
+      dialog.showErrorBox(
+        'InteriorFlow — config.json lỗi',
+        `File cấu hình ${configJsonPath} không phải JSON hợp lệ:\n${e.message}\n\nApp vẫn chạy nhưng bỏ qua cấu hình này.`
+      );
+      cfg = {};
+    }
+  } else {
+    // Lần đầu: tạo từ file mẫu đóng gói kèm app.
+    const examplePath = path.join(__dirname, 'config.example.json');
+    try {
+      cfg = JSON.parse(fs.readFileSync(examplePath, 'utf8'));
+    } catch {
+      cfg = {};
+    }
+    // (giữ nguyên dòng "//" chú thích của file mẫu để user đọc hướng dẫn ngay trong config.json)
+  }
+  // AUTH_SECRET bắt buộc để cookie đăng nhập sống qua các lần mở app:
+  // thiếu/để trống → sinh ngẫu nhiên 1 lần rồi persist.
+  if (!cfg.AUTH_SECRET || typeof cfg.AUTH_SECRET !== 'string' || cfg.AUTH_SECRET.trim() === '') {
+    cfg.AUTH_SECRET = crypto.randomBytes(32).toString('hex');
+  }
+  try {
+    fs.writeFileSync(configJsonPath, JSON.stringify(cfg, null, 2) + '\n', 'utf8');
+  } catch {
+    /* ổ đĩa read-only? — vẫn chạy tiếp với cfg trong RAM */
+  }
+  // Chỉ nhặt các key hợp lệ, giá trị chuỗi khác rỗng.
+  const env = {};
+  for (const k of CONFIG_KEYS) {
+    if (typeof cfg[k] === 'string' && cfg[k].trim() !== '') env[k] = cfg[k].trim();
+  }
+  return env;
+}
+
+// ── Đồng bộ schema vào dev.db bằng `prisma db push` ──────────────────────────
+// Dùng `db push --skip-generate` thay vì `migrate deploy` vì repo quản lý schema
+// bằng db push (prisma/migrations ĐÃ CŨ hơn schema.prisma — deploy sẽ tạo schema
+// thiếu bảng). db push idempotent: lần đầu tạo đủ bảng, các lần sau chỉ diff.
+function runDbPush(appRoot, env, userDataDir) {
   return new Promise((resolve) => {
     // Prisma CLI có sẵn trong node_modules được đóng gói.
-    const prismaBin = path.join(
-      appRoot,
-      'node_modules',
-      'prisma',
-      'build',
-      'index.js'
-    );
+    const prismaBin = path.join(appRoot, 'node_modules', 'prisma', 'build', 'index.js');
     if (!fs.existsSync(prismaBin)) {
-      // Không tìm thấy CLI -> bỏ qua migrate, server vẫn chạy (DB có thể đã tồn tại).
-      console.warn('[migrate] Không thấy Prisma CLI, bỏ qua migrate deploy.');
+      console.warn('[db push] Không thấy Prisma CLI, bỏ qua.');
       resolve();
       return;
     }
-    const child = spawn(process.execPath, [prismaBin, 'migrate', 'deploy'], {
-      cwd: appRoot, // chạy ở appRoot để thấy prisma/schema.prisma + prisma/migrations
-      env: {
-        ...env,
-        // ELECTRON_RUN_AS_NODE: chạy binary electron như Node thuần để exec Prisma CLI.
-        ELECTRON_RUN_AS_NODE: '1',
-      },
-      stdio: 'ignore',
-      windowsHide: true,
-    });
-    child.on('exit', () => resolve()); // dù thành/bại đều tiếp tục; server sẽ báo lỗi rõ hơn nếu DB hỏng
-    child.on('error', () => resolve());
+    // Log ra userData để debug được khi máy user lỗi (không có console).
+    let logFd = null;
+    try {
+      logFd = fs.openSync(path.join(userDataDir, 'db-push.log'), 'a');
+    } catch {
+      /* không ghi được log — vẫn chạy */
+    }
+    const child = spawn(
+      process.execPath,
+      [prismaBin, 'db', 'push', '--skip-generate', '--schema', path.join(appRoot, 'prisma', 'schema.prisma')],
+      {
+        cwd: appRoot,
+        env: {
+          ...env,
+          // ELECTRON_RUN_AS_NODE: chạy binary electron như Node thuần để exec Prisma CLI.
+          ELECTRON_RUN_AS_NODE: '1',
+        },
+        stdio: logFd !== null ? ['ignore', logFd, logFd] : 'ignore',
+        windowsHide: true,
+      }
+    );
+    const done = () => {
+      if (logFd !== null) {
+        try { fs.closeSync(logFd); } catch { /* bỏ qua */ }
+        logFd = null;
+      }
+      resolve(); // dù thành/bại đều tiếp tục; server sẽ báo lỗi rõ hơn nếu DB hỏng
+    };
+    child.on('exit', done);
+    child.on('error', done);
   });
 }
 
@@ -167,9 +237,14 @@ async function startNextServer() {
   const { userDataDir, dbUrl } = prepareWritablePaths();
   resolvedPort = await findFreePort(PREFERRED_PORT);
 
-  // Env truyền cho server: production + DB trỏ userData + cổng đã dò.
+  // Cấu hình user (API key, AUTH_SECRET…) đọc từ <userData>/config.json —
+  // KHÔNG có key nào hardcode trong bộ cài. Xem loadUserConfig() phía trên.
+  const userConfigEnv = loadUserConfig(userDataDir);
+
+  // Env truyền cho server: production + DB trỏ userData + cổng đã dò + config user.
   const serverEnv = {
     ...process.env,
+    ...userConfigEnv, // AUTH_SECRET (auto-gen persist) + FAL_KEY/NVIDIA_API_KEY… nếu user điền
     NODE_ENV: 'production',
     DATABASE_URL: dbUrl, // ghi đè file:./dev.db bằng path tuyệt đối trong userData
     PORT: String(resolvedPort),
@@ -177,16 +252,12 @@ async function startNextServer() {
     // (dùng làm "hub" cho Oppo). Cửa sổ app vẫn load qua 127.0.0.1 (cục bộ).
     HOSTNAME: '0.0.0.0',
     ELECTRON_RUN_AS_NODE: '1', // để dùng binary electron như node chạy next start
-    // ── Gắn secret/key cố định trước khi build (xem README-electron.md mục 5) ──
-    // Bỏ comment và điền giá trị nếu muốn nhúng sẵn vào bản .exe nội bộ:
-    // AUTH_SECRET: 'chuoi-bi-mat-co-dinh-cua-team',
-    // FAL_KEY: 'fal-key-neu-muon-gan-san',
   };
 
-  if (isPackaged) {
-    // Lần đầu: tạo/nâng cấp schema vào <userData>/dev.db.
-    await runMigrations(appRoot, serverEnv);
-  }
+  // Lần đầu: tạo/nâng cấp schema vào <userData>/dev.db (db push idempotent —
+  // chạy cả khi dev `electron .` vì DATABASE_URL luôn trỏ userData, không phải
+  // prisma/dev.db của repo).
+  await runDbPush(appRoot, serverEnv, userDataDir);
 
   // Đường tới CLI `next` trong node_modules đóng gói.
   const nextBin = path.join(appRoot, 'node_modules', 'next', 'dist', 'bin', 'next');
@@ -257,7 +328,28 @@ function buildMenu() {
     ...(isMac ? [{ role: 'appMenu' }] : []),
     {
       label: 'Tệp',
-      submenu: [isMac ? { role: 'close' } : { role: 'quit', label: 'Thoát' }],
+      submenu: [
+        {
+          label: 'Mở file cấu hình (API key)…',
+          click: () => {
+            // config.json nằm trong userData; tạo sẵn ở loadUserConfig(). Nếu chưa
+            // chạy server (dev mode) thì suy ra path trực tiếp.
+            const p = configJsonPath || path.join(app.getPath('userData'), 'config.json');
+            if (!fs.existsSync(p)) {
+              try {
+                fs.writeFileSync(p, '{\n}\n', 'utf8');
+              } catch { /* bỏ qua */ }
+            }
+            shell.openPath(p); // mở bằng editor mặc định (Notepad…)
+          },
+        },
+        {
+          label: 'Mở thư mục dữ liệu (DB + uploads)',
+          click: () => shell.openPath(app.getPath('userData')),
+        },
+        { type: 'separator' },
+        isMac ? { role: 'close' } : { role: 'quit', label: 'Thoát' },
+      ],
     },
     {
       label: 'Chỉnh sửa',
