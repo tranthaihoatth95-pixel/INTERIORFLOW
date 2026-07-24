@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="vi" class="ttt-architects">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440" />
+<title>IF1 · Bốn chặng · Trạng thái sản phẩm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@85..125,300;85..125,400;85..125,500;85..125,600&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  :root{
+    --orange:#F06020;
+    --navy:#002850;
+    --beige:#F1ECE3;
+    --paper:#FAF7F1;
+    --ink-90:#1E1B16;
+    --ink-70:#3E3931;
+    --ink-50:#7A7367;
+    --ink-30:#BFB8AC;
+    --keyline:#C9C1B3;
+    --font-sans:'Archivo', system-ui, sans-serif;
+    --font-wide:'Archivo', system-ui, sans-serif; /* variable width — used with font-stretch */
+    --accent:var(--navy);
+  }
+  .ttt-architects{ --accent:var(--navy); }
+  .ttt-corporation{ --accent:var(--orange); }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--beige); color:var(--ink-90); font-family:var(--font-sans); font-weight:300; -webkit-font-smoothing:antialiased; }
+  body{ padding:56px 64px 64px; max-width:1440px; margin:0 auto; }
+  .wide{ font-family:var(--font-wide); font-stretch:125%; font-weight:400; text-transform:uppercase; letter-spacing:0.01em; }
+  .label{ font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0.24em; color:var(--ink-50); }
+  .rule{ height:1px; background:var(--keyline); border:0; margin:0; }
+  a{ color:inherit; }
+
+  header.masthead{ display:grid; grid-template-columns: 96px 1fr auto; align-items:end; gap:24px; padding-bottom:20px; border-bottom:1px solid var(--keyline); }
+  .wordmark{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:72px; height:72px; border:1px solid var(--navy); color:var(--navy);
+    font-family:var(--font-wide); font-stretch:125%; font-weight:500; font-size:36px; letter-spacing:0.02em;
+  }
+  .masthead h1{ margin:0; font-family:var(--font-wide); font-stretch:125%; font-weight:400; font-size:44px; line-height:1.05; letter-spacing:0.01em; text-transform:uppercase; color:var(--ink-90); }
+  .masthead h1 small{ display:block; font-size:12px; letter-spacing:0.24em; color:var(--ink-50); margin-bottom:8px; font-weight:500; }
+  .masthead .meta{ text-align:right; font-size:11px; letter-spacing:0.24em; text-transform:uppercase; color:var(--ink-50); line-height:1.7; }
+
+  .intro{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:24px; padding:28px 0 32px; border-bottom:1px solid var(--keyline); }
+  .intro p{ margin:0; font-size:13px; line-height:1.6; color:var(--ink-70); }
+  .intro p b{ font-weight:500; color:var(--ink-90); }
+
+  .stages{ display:grid; grid-template-columns: repeat(4, 1fr); gap:0; margin-top:32px; border-top:1px solid var(--keyline); }
+  .stage{ padding:28px 20px 24px; border-right:1px solid var(--keyline); display:flex; flex-direction:column; gap:14px; }
+  .stage:last-child{ border-right:0; }
+  .stage .num{ font-family:var(--font-wide); font-stretch:125%; font-weight:400; font-size:44px; line-height:1; color:var(--accent); letter-spacing:0.02em; }
+  .stage .num .barcode{ display:inline-block; margin-left:8px; font-size:11px; letter-spacing:0.24em; color:var(--ink-50); vertical-align:middle; }
+  .stage h2{ margin:0; font-family:var(--font-wide); font-stretch:118%; font-weight:400; font-size:20px; line-height:1.15; letter-spacing:0.01em; text-transform:uppercase; color:var(--ink-90); }
+  .stage h2 em{ font-style:normal; color:var(--ink-50); font-weight:400; }
+  .thumb{ aspect-ratio: 16/10; background:#241f18; overflow:hidden; border:1px solid var(--keyline); position:relative; }
+  .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .thumb .cap{ position:absolute; left:8px; bottom:6px; font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:#EFE7D6; opacity:.85; }
+  .thumb-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .thumb-row .thumb{ aspect-ratio:16/11; }
+
+  .stage section{ display:flex; flex-direction:column; gap:6px; }
+  .stage section h3{ margin:0; font-size:11px; text-transform:uppercase; letter-spacing:0.24em; font-weight:500; color:var(--ink-50); }
+  ul.feat{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px; }
+  ul.feat li{ font-size:12.5px; line-height:1.45; color:var(--ink-90); display:grid; grid-template-columns: 20px 1fr; gap:6px; }
+  ul.feat li .st{ font-size:11px; }
+  .st.ok{ color:#3A6E3A; }   /* running green tone, still muted */
+  .st.wip{ color:#B57318; }  /* mustard */
+  .st.bug{ color:#B23A2B; }  /* muted rust */
+  .stage p.deliv{ margin:0; font-size:12px; color:var(--ink-70); line-height:1.5; }
+  .rating{ display:flex; align-items:center; gap:8px; padding-top:6px; border-top:1px solid var(--keyline); }
+  .rating .stars{ letter-spacing:2px; font-size:14px; color:var(--accent); font-family:var(--font-wide); }
+  .rating .num{ font-size:11px; letter-spacing:0.24em; text-transform:uppercase; color:var(--ink-50); }
+
+  footer.foot{ display:grid; grid-template-columns: 1fr auto; gap:24px; padding-top:20px; margin-top:28px; border-top:1px solid var(--keyline); font-size:10px; letter-spacing:0.24em; text-transform:uppercase; color:var(--ink-50); }
+  footer .legend{ display:flex; gap:14px; }
+  footer .legend span{ display:inline-flex; gap:6px; align-items:center; }
+  footer .legend b{ font-weight:500; }
+  .brandline{ text-align:right; font-family:var(--font-wide); font-stretch:118%; letter-spacing:0.02em; }
+
+  /* print */
+  @media print{
+    body{ padding:32px 40px; }
+    .stages{ page-break-inside:avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wordmark">IF</div>
+  <h1>
+    <small>Interior Flow · Sản phẩm hiện tại · Product snapshot</small>
+    IF1 · Bốn chặng · Trạng thái sản phẩm
+  </h1>
+  <div class="meta">
+    Bản audit · Audit sheet<br/>
+    24 · 07 · 2026<br/>
+    Nhánh · <span style="color:var(--accent)">feat/4stages-catalog</span>
+  </div>
+</header>
+
+<section class="intro">
+  <p><b>Bức tranh · The frame.</b> InteriorFlow là canvas ba chặng nội thất — <b>Drafting CAD · Rendering · Presenting</b> — nằm trên nền Home/Gallery/Vitals AI/NotebookLM. Poster này chốt trạng thái từng chặng ở thời điểm audit, không mở thêm scope.</p>
+  <p><b>Cách đọc · How to read.</b> Mỗi khối là một chặng: (1) tính năng chạy được, (2) sản phẩm output, (3) chất lượng 1–5 sao. Ký hiệu trạng thái ✓ = chạy · ~ = đang tinh · ! = còn nợ.</p>
+  <p><b>Nguồn · Source.</b> Screenshots chụp trực tiếp tại <span style="color:var(--accent)">127.0.0.1:3015</span>, tài khoản <span style="color:var(--accent)">demo@if.local</span> · commit <span style="color:var(--accent)">7737ab0</span>. Nợ kỹ thuật trích từ <b>STATUS.md</b> cùng phiên.</p>
+</section>
+
+<div class="stages">
+
+  <!-- STAGE 0 -->
+  <article class="stage">
+    <div class="num">00<span class="barcode">Nền · Shell</span></div>
+    <h2>Gallery · Notebook · Vitals <em>· Home shell</em></h2>
+
+    <div class="thumb-row">
+      <div class="thumb"><img src="img/00-login.png" alt="Login screen"><span class="cap">Login · Vào xưởng</span></div>
+      <div class="thumb"><img src="img/10-home-gallery.png" alt="Gallery"><span class="cap">Gallery · Chọn dự án</span></div>
+    </div>
+
+    <section>
+      <h3>Tính năng · Features</h3>
+      <ul class="feat">
+        <li><span class="st ok">✓</span>Login điện ảnh (Việt/Anh, Google/MS/Apple, Remember, Quên MK)</li>
+        <li><span class="st ok">✓</span>Gallery card‑deck ngang, arrow/Enter/Home‑End · thẻ cuối = Dự án mới</li>
+        <li><span class="st ok">✓</span>Vitals AI overlay giọt kính v2 · SmartTour onboarding</li>
+        <li><span class="st ok">✓</span>NotebookLM 3 cột (source · chat · studio) · fix 404 slug↔cuid 23/07</li>
+        <li><span class="st wip">~</span>Drag‑to‑panel pre‑mount, ⌘K CommandPalette</li>
+        <li><span class="st bug">!</span>⌘J Vitals chưa hook code · Morph login mới fade</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>Output · Deliverable</h3>
+      <p class="deliv">Workspace shell: `.env` + `dev.db.wt` cô lập worktree, session cookie <code>if_session_wt</code>, Perceptron learning‑to‑rank wired vào Vitals/LayoutShelf.</p>
+    </section>
+
+    <div class="rating">
+      <span class="stars">★★★★☆</span>
+      <span class="num">4 / 5 · Ổn định, chờ polish motion</span>
+    </div>
+  </article>
+
+  <!-- STAGE 1 -->
+  <article class="stage">
+    <div class="num">01<span class="barcode">Drafting · CAD</span></div>
+    <h2>Drafting CAD <em>· phác thảo hồ sơ DD</em></h2>
+
+    <div class="thumb-row">
+      <div class="thumb"><img src="img/20-cad-drafting.png" alt="CAD editor"><span class="cap">Toolbar Sketch/Pro · Layers</span></div>
+      <div class="thumb"><img src="img/21-cad-library.png" alt="CAD library"><span class="cap">Thư viện block</span></div>
+    </div>
+
+    <section>
+      <h3>Tính năng · Features</h3>
+      <ul class="feat">
+        <li><span class="st ok">✓</span>Command line CAD (L · PL · REC · C · W · ROOM · D)</li>
+        <li><span class="st ok">✓</span>5 layer khoá lineweight: Tường · Nội thất · Kích thước · Ghi chú · Trục</li>
+        <li><span class="st ok">✓</span>DXF import · DCEL half‑edge · Ortho/Snap/Dynamic Input</li>
+        <li><span class="st ok">✓</span>2 mode Sketch / Pro · Xuất · Nhập · Bắt đầu · Tỉ lệ · Khung tên</li>
+        <li><span class="st ok">✓</span>Cầu chuyển chặng "Đưa sang Rendering / Presenting"</li>
+        <li><span class="st bug">!</span>Warning React "Cannot update a component…" điều tra không tái hiện</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>Output · Deliverable</h3>
+      <p class="deliv">Bản vẽ hồ sơ DD: khung tên TTT · tỉ lệ 1:100 · layer chuẩn A‑WALL/A‑FURN/A‑DIMS/A‑TEXT · handoff sang Rendering giữ toạ độ.</p>
+    </section>
+
+    <div class="rating">
+      <span class="stars">★★★★☆</span>
+      <span class="num">4 / 5 · Đủ dùng DD, chưa CAD pro</span>
+    </div>
+  </article>
+
+  <!-- STAGE 2 -->
+  <article class="stage">
+    <div class="num">02<span class="barcode">Rendering</span></div>
+    <h2>Rendering <em>· canvas node AI</em></h2>
+
+    <div class="thumb-row">
+      <div class="thumb"><img src="img/31-photo-editor.png" alt="Photo editor"><span class="cap">Photo editor · Mask</span></div>
+      <div class="thumb"><img src="img/42-demo-amanoi.png" alt="Demo Amanoi output"><span class="cap">Demo Amanoi · output</span></div>
+    </div>
+
+    <section>
+      <h3>Tính năng · Features</h3>
+      <ul class="feat">
+        <li><span class="st ok">✓</span>Canvas React‑Flow node‑based · Concept / Sketch / Clay</li>
+        <li><span class="st ok">✓</span>4 mức phụ thuộc AI (fal · Gemini · NVIDIA · local)</li>
+        <li><span class="st ok">✓</span>Mask Painter · Annotate · Moodboard modal · Lightbox</li>
+        <li><span class="st ok">✓</span>NVIDIA_API_KEY đã rotate 23/07, verify OK</li>
+        <li><span class="st wip">~</span>Property Render chưa Undo · meta giá/vendor/sku trống</li>
+        <li><span class="st wip">~</span>Z‑Image 6B local không kham trên Mac 16GB (đã note)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>Output · Deliverable</h3>
+      <p class="deliv">Ảnh render nội thất chất lượng ref (SCDA / Aman / quiet‑luxury) · stack node có thể replay · brief AI được Perceptron gợi ý layout.</p>
+    </section>
+
+    <div class="rating">
+      <span class="stars">★★★☆☆</span>
+      <span class="num">3 / 5 · Cần undo + meta + polish node</span>
+    </div>
+  </article>
+
+  <!-- STAGE 3 -->
+  <article class="stage">
+    <div class="num">03<span class="barcode">Presenting</span></div>
+    <h2>Presenting <em>· dàn slide · PDF</em></h2>
+
+    <div class="thumb-row">
+      <div class="thumb"><img src="img/40-presenting.png" alt="Presenting mode"><span class="cap">Present mode · Detech</span></div>
+      <div class="thumb"><img src="img/41-present-editor.png" alt="Present editor"><span class="cap">Editor · Mẫu · Reference · Motion</span></div>
+    </div>
+
+    <section>
+      <h3>Tính năng · Features</h3>
+      <ul class="feat">
+        <li><span class="st ok">✓</span>Editor 3 tab: Mẫu · Reference · Motion · lớp Text/Ảnh/Shape</li>
+        <li><span class="st ok">✓</span>Filmstrip 8+ slide · thêm/nhân bản/xoá · sort tại chỗ</li>
+        <li><span class="st ok">✓</span>Present Mode toàn màn · 16:9 · nền beige/navy/orange</li>
+        <li><span class="st ok">✓</span>Brand kit TTT · Xuất PDF present · Xuất Moodboard PNG</li>
+        <li><span class="st ok">✓</span>ML Layout Shelf: học từ chọn tay (learning‑to‑rank)</li>
+        <li><span class="st wip">~</span>Motion tab đơn giản, chưa keyframe timeline</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>Output · Deliverable</h3>
+      <p class="deliv">Bộ deck 5–20 slide + PDF present + moodboard PNG · font Archivo · brand mode kép · đủ chuẩn trình khách hospitality/office.</p>
+    </section>
+
+    <div class="rating">
+      <span class="stars">★★★★★</span>
+      <span class="num">5 / 5 · Chặng chín nhất, xuất được ngay</span>
+    </div>
+  </article>
+
+</div>
+
+<footer class="foot">
+  <div class="legend">
+    <span><b style="color:#3A6E3A">✓</b> Chạy được</span>
+    <span><b style="color:#B57318">~</b> Đang tinh</span>
+    <span><b style="color:#B23A2B">!</b> Còn nợ</span>
+    <span>·</span>
+    <span>Nguồn: STATUS.md · commit 7737ab0</span>
+  </div>
+  <div class="brandline">InteriorFlow · IF1 · 07/2026</div>
+</footer>
+
+</body>
+</html>
