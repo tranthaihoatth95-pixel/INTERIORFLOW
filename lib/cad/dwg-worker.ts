@@ -20,12 +20,14 @@
  * nghĩa cấu trúc TƯƠNG ỨNG riêng, không phụ thuộc lẫn nhau ngoài hình dạng JSON) → trả về qua
  * postMessage. KHÔNG map sang Doc/Entity của app ở đây — việc đó thuộc lib/cad/dwg.ts.
  *
- * Phạm vi entity map (Nấc 1 — an toàn, đã verify với file .dwg thật, xem báo cáo Sprint):
+ * Phạm vi entity map (Nấc 2 — block-flatten, xem docs/DEMO-DWG-IMPORT.md):
  * LINE, CIRCLE, ARC, TEXT, MTEXT, LWPOLYLINE, HATCH (chỉ boundary dạng polyline/toàn cạnh
- * thẳng — bỏ qua boundary có cung/spline để tránh suy đoán hình học sai). CHƯA hỗ trợ: INSERT
- * (block — cần dựng lại từ BLOCK_RECORD, để dành đợt sau), DIMENSION, ATTRIB/ATTDEF, WIPEOUT,
- * POINT — các entity lạ/chưa hỗ trợ được BỎ QUA an toàn (đếm vào unknownEntityCount), không
- * đoán mò cấu trúc chưa verify.
+ * thẳng — bỏ qua boundary có cung/spline để tránh suy đoán hình học sai), INSERT/MINSERT
+ * (block reference — worker CHỈ trích dữ liệu thô: tên block + insertion/scale/rotation +
+ * bảng BLOCK_RECORD kèm entity con; việc GIẢI NÉN (flatten) về world space nằm ở
+ * lib/cad/dwg.ts — ngoài ranh giới GPL), ATTRIB đi kèm INSERT (→ TEXT, toạ độ đã là world),
+ * DIMENSION (trích block ẩn danh *D chứa hình vẽ sẵn + measurement/text để fallback).
+ * CHƯA hỗ trợ: WIPEOUT, POINT, SPLINE, ELLIPSE — bỏ qua an toàn (đếm skippedEntityCount).
  */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,7 +45,26 @@ export type DwgRawEntity =
   | { type: 'ARC'; layer: string; colorIndex?: number; lineweight?: number; c: DwgRawPoint; r: number; a1: number; a2: number }
   | { type: 'TEXT'; layer: string; colorIndex?: number; at: DwgRawPoint; text: string; h: number }
   | { type: 'LWPOLYLINE'; layer: string; colorIndex?: number; lineweight?: number; points: DwgRawPoint[]; closed: boolean }
-  | { type: 'HATCH'; layer: string; colorIndex?: number; points: DwgRawPoint[]; pattern: string; solid: boolean; patternAngle?: number; patternScale?: number };
+  | { type: 'HATCH'; layer: string; colorIndex?: number; points: DwgRawPoint[]; pattern: string; solid: boolean; patternAngle?: number; patternScale?: number }
+  | {
+      /** Block reference (kể cả MINSERT khi cols/rows > 1). Worker KHÔNG flatten — chỉ chuyển dữ
+       * liệu thô, dwg.ts resolve qua DwgRawDoc.blocks. */
+      type: 'INSERT'; layer: string; colorIndex?: number; name: string; at: DwgRawPoint;
+      sx: number; sy: number; rot: number;
+      cols: number; rows: number; colSpacing: number; rowSpacing: number;
+    }
+  | {
+      /** Dimension: ưu tiên render qua block ẩn danh (blockName, tra DwgRawDoc.blocks); thiếu
+       * block thì dwg.ts fallback text đo + đường gióng từ p1/p2/defPoint. kind = dimensionType&7. */
+      type: 'DIMENSION'; layer: string; colorIndex?: number; blockName?: string;
+      textPoint: DwgRawPoint; text?: string; measurement?: number; kind: number;
+      p1?: DwgRawPoint; p2?: DwgRawPoint; defPoint?: DwgRawPoint;
+    };
+
+export interface DwgRawBlock {
+  basePoint: DwgRawPoint;
+  entities: DwgRawEntity[];
+}
 
 export interface DwgRawLayer {
   name: string;
@@ -59,6 +80,9 @@ export interface DwgRawLayer {
 export interface DwgRawDoc {
   entities: DwgRawEntity[];
   layers: DwgRawLayer[];
+  /** Bảng block: tên → { basePoint, entities } — dwg.ts dùng để flatten INSERT/DIMENSION.
+   * OPTIONAL để giữ tương thích JSON với caller cũ (dwg2dxf/cli.js) chưa gửi field này. */
+  blocks?: Record<string, DwgRawBlock>;
   /** Số entity KHÔNG map được (lạ/chưa hỗ trợ) — dùng để báo trạng thái cho user, không throw. */
   skippedEntityCount: number;
   totalEntityCount: number;
@@ -124,9 +148,67 @@ function mapEntity(e: any): DwgRawEntity | null {
         patternAngle: e.patternAngle, patternScale: e.patternScale,
       };
     }
+    case 'INSERT':
+    case 'MINSERT':
+      if (!e.name || !e.insertionPoint) return null;
+      return {
+        type: 'INSERT', layer: e.layer, colorIndex: e.colorIndex, name: e.name,
+        at: { x: e.insertionPoint.x, y: e.insertionPoint.y },
+        // xScale/yScale mặc định 1 (0 hoặc thiếu = dữ liệu hỏng → coi như 1, tránh hình co về 0)
+        sx: typeof e.xScale === 'number' && e.xScale !== 0 ? e.xScale : 1,
+        sy: typeof e.yScale === 'number' && e.yScale !== 0 ? e.yScale : 1,
+        rot: typeof e.rotation === 'number' ? e.rotation : 0, // radian (giống ARC — libredwg-web)
+        cols: Math.max(1, Math.trunc(e.columnCount || 1)),
+        rows: Math.max(1, Math.trunc(e.rowCount || 1)),
+        colSpacing: e.columnSpacing || 0,
+        rowSpacing: e.rowSpacing || 0,
+      };
+    case 'DIMENSION': {
+      const tp = e.textPoint ?? e.definitionPoint;
+      if (!tp) return null;
+      return {
+        type: 'DIMENSION', layer: e.layer, colorIndex: e.colorIndex,
+        blockName: typeof e.name === 'string' && e.name ? e.name : undefined,
+        textPoint: { x: tp.x, y: tp.y },
+        text: typeof e.text === 'string' ? e.text : undefined,
+        measurement: typeof e.measurement === 'number' ? e.measurement : undefined,
+        kind: (e.dimensionType ?? 0) & 7,
+        p1: e.subDefinitionPoint1 ? { x: e.subDefinitionPoint1.x, y: e.subDefinitionPoint1.y } : undefined,
+        p2: e.subDefinitionPoint2 ? { x: e.subDefinitionPoint2.x, y: e.subDefinitionPoint2.y } : undefined,
+        defPoint: e.definitionPoint ? { x: e.definitionPoint.x, y: e.definitionPoint.y } : undefined,
+      };
+    }
     default:
-      return null; // INSERT/DIMENSION/ATTRIB/WIPEOUT/POINT/… — chưa hỗ trợ, bỏ qua an toàn
+      return null; // WIPEOUT/POINT/SPLINE/ELLIPSE/… — chưa hỗ trợ, bỏ qua an toàn
   }
+}
+
+/** ATTRIB đi kèm INSERT → TEXT (toạ độ ATTRIB đã là world space, KHÔNG cần transform theo block).
+ * Bỏ attribute ẩn (flags bit 1 = invisible). libredwg-web gói text vào field `text: DwgTextBase`;
+ * phòng cả trường hợp field nằm phẳng trên entity (khác version). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapAttrib(a: any): DwgRawEntity | null {
+  if (!a || (typeof a.flags === 'number' && (a.flags & 1) === 1)) return null;
+  const tb = a.text && typeof a.text === 'object' ? a.text : a;
+  const at = tb.startPoint ?? tb.insertionPoint;
+  const txt = typeof tb.text === 'string' ? tb.text : '';
+  if (!at || !txt) return null;
+  return { type: 'TEXT', layer: a.layer, colorIndex: a.colorIndex, at: { x: at.x, y: at.y }, text: txt, h: tb.textHeight || 250 };
+}
+
+/** mapEntity + ATTRIB con của INSERT (1 entity nguồn có thể sinh >1 entity thô). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapEntityMulti(e: any): DwgRawEntity[] {
+  const out: DwgRawEntity[] = [];
+  const mapped = mapEntity(e);
+  if (mapped) out.push(mapped);
+  if ((e.type === 'INSERT' || e.type === 'MINSERT') && Array.isArray(e.attribs)) {
+    for (const a of e.attribs) {
+      const t = mapAttrib(a);
+      if (t) out.push(t);
+    }
+  }
+  return out;
 }
 
 /** Mọi phiên bản DWG bắt đầu bằng chữ ký "AC" + 4 chữ số (vd AC1015=2000, AC1032=2018…) — kiểm
@@ -173,16 +255,29 @@ async function parseDwg(buffer: ArrayBuffer): Promise<DwgWorkerResponse> {
       frozen: !!l.frozen,
       locked: !!l.locked,
     }));
+    // Bảng block: BLOCK_RECORD → { basePoint, entities } cho dwg.ts flatten INSERT/DIMENSION.
+    // Bỏ *Model_Space/*Paper_Space (entity model space đã nằm ở database.entities — đưa vào
+    // blocks sẽ nhân đôi hình nếu file có INSERT tự tham chiếu bất thường).
+    const blocks: Record<string, DwgRawBlock> = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const br of (database.tables?.BLOCK_RECORD?.entries ?? []) as any[]) {
+      if (!br?.name || /^\*(Model_Space|Paper_Space)/i.test(br.name)) continue;
+      const bp = br.basePoint ?? { x: 0, y: 0 };
+      const kids: DwgRawEntity[] = [];
+      for (const e of br.entities ?? []) kids.push(...mapEntityMulti(e));
+      if (kids.length > 0) blocks[br.name] = { basePoint: { x: bp.x || 0, y: bp.y || 0 }, entities: kids };
+    }
+
     const entities: DwgRawEntity[] = [];
     let skipped = stats.unknownEntityCount ?? 0;
     for (const e of database.entities) {
-      const mapped = mapEntity(e);
-      if (mapped) entities.push(mapped);
+      const mapped = mapEntityMulti(e);
+      if (mapped.length > 0) entities.push(...mapped);
       else skipped += 1;
     }
     return {
       ok: true,
-      doc: { entities, layers, skippedEntityCount: skipped, totalEntityCount: database.entities.length },
+      doc: { entities, layers, blocks, skippedEntityCount: skipped, totalEntityCount: database.entities.length },
     };
   } catch (err) {
     return { ok: false, error: `Lỗi khi chuyển đổi dữ liệu DWG đã đọc: ${err instanceof Error ? err.message : String(err)}` };
