@@ -4,13 +4,24 @@
 > ⚠️ Sản phẩm = 3 chặng **Drafting CAD · Rendering · Presenting** + login/Gallery/Vitals AI/NotebookLM.
 > ⚠️ Nhãn UI 20/07: Layout CAD→Drafting CAD · Render→Rendering · Present→Presenting. **ID nội bộ GIỮ** `concept`/`render`/`present`. Lịch sử chi tiết: `CHANGELOG.md` (KHÔNG đọc mỗi phiên).
 
-## Hiện tại (23/07 tối, chuẩn bị chuyển phiên)
+## Hiện tại (24/07 — đợt demo 5 agent XONG, chờ user verify + merge)
+- 5 nhánh demo đã commit trên 5 worktree (xem mục Worktree). Verdict: Vitals drag ✅ · Zone tô màu = GAP report (chờ chốt 4 câu) · DWG import OK (thiếu block-flatten) · Rendering 30 node fal+comfy live · Catalog poster HTML xong.
+- ⚠️ CLAUDE.md lệnh test stale: repo KHÔNG có vitest — test chạy `node_modules/.bin/sucrase-node <path>.test.ts`. Cần sửa CLAUDE.md sau merge.
+- ⚠️ Luật mới đề xuất: worktree dùng ABSOLUTE path cho `DATABASE_URL` (relative gây Prisma P2021).
+
+## Phiên trước (23/07 tối)
 - Nhánh tích hợp `feat/present-layout-ml-p1` = `origin/main`. Local `637aa4b` vượt origin `db08b4f` **3 commit** (INSTALLER-R + LIB-R + STATUS trước) — auto mode block push, user cần chạy tay: `cd ~/Downloads/interiorflow && git push origin feat/present-layout-ml-p1:main`.
 - Toàn bộ đợt 19-23/07 ĐÃ MERGE (chi tiết → CHANGELOG). Mới nhất 23/07 chiều tối: **IF2-A nền + A1 fix Notebook P1 + INSTALLER-R docs + CHAT-R docs + LIB-R docs + V verify** (6 agent song song, xem 4 báo cáo `RESEARCH-*` mới: CHAT-FULL, INSTALLER-4-PLATFORMS, LIBRARY-UPGRADE + folder `installers/` scaffold).
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (**75 file** cuối phiên). tsc sạch.
 
-## Worktree đang mở
-- (Không có — 5 slot sẵn sàng.)
+## Worktree đang mở (5/5 — Phase A 24/07 đang chạy 3 agent)
+- `interiorflow-wt-access-control-m1` — A1 ProjectMember+5 role+GATE (ĐANG CHẠY, port 3011)
+- `interiorflow-wt-zone-tool` — A2 zone/ellipse/arrow/legend/aerial (ĐANG CHẠY, port 3012)
+- `interiorflow-wt-dwg-block-flatten` — A3 flatten INSERT/BLOCK_RECORD (ĐANG CHẠY, port 3013)
+- `interiorflow-wt-clay2img-audit` @510b71c — audit + demo clay FAIL-PROVIDER (fal hết balance, script run-demo.mjs sẵn); merge sau khi user nạp fal chạy lại HOẶC merge luôn docs
+- `interiorflow-wt-floorplan-color-fill` @2efce34 — spec GAP-COLOR-FILL (nguồn cho A2, merge/xoá sau khi A2 xong)
+
+Đã merge 24/07 sáng: vitals-drag-nb-general · dwg-import-verify · 4stages-catalog (3 worktree đã dọn, user đã push).
 
 ## Chốt user 23/07
 - **Chat mở rộng: FULL** (project + direct + group Zalo + Supabase Realtime). 🔴 chặn Q1 = build ACCESS-CONTROL M1 (`ProjectMember`+5 role+GATE) TRƯỚC khi Chat M1.
