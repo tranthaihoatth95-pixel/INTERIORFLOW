@@ -8,7 +8,7 @@ echo ==================================================================
 echo.
 echo  File nay chay 1 lan tren may Windows de tao ra bo cai .exe.
 echo  Sau khi xong, ban chi can double-click file Setup trong thu muc
-echo  "dist" de cai nhu mot phan mem binh thuong (co icon, Start Menu,
+echo  "dist-installer" de cai nhu mot phan mem binh thuong (co icon, Start Menu,
 echo  khong can trinh duyet, khong can go lenh gi nua).
 echo.
 
@@ -36,10 +36,10 @@ if errorlevel 1 ( echo. & echo  [X] Build that bai. Chup man hinh loi gui lai. &
 echo.
 
 echo ==================================================================
-echo    XONG! Bo cai nam trong thu muc  dist\
+echo    XONG! Bo cai nam trong thu muc  dist-installer\
 echo ==================================================================
-if exist dist (dir /b dist\*.exe)
+if exist dist-installer (dir /b dist-installer\*.exe)
 echo.
-echo  -^> Double-click file  "InteriorFlow Setup x.x.x.exe"  trong dist de CAI.
+echo  -^> Double-click file  "InteriorFlow Setup x.x.x.exe"  trong dist-installer de CAI.
 echo.
 pause

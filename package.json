@@ -13,9 +13,11 @@
     "postinstall": "prisma generate",
     "electron": "electron .",
     "electron:dev": "cross-env ELECTRON_START_URL=http://localhost:3000 concurrently -k -n NEXT,ELECTRON -c blue,magenta \"next dev\" \"wait-on tcp:3000 && electron .\"",
-    "electron:build": "next build && electron-builder --win",
+    "electron:build": "next build && electron-builder --win --x64",
+    "electron:build:win": "next build && electron-builder --win --x64",
+    "electron:pack:win": "electron-builder --win --x64",
     "electron:build:mac": "next build && electron-builder --mac",
-    "electron:publish": "next build && electron-builder --win --publish always"
+    "electron:publish": "next build && electron-builder --win --x64 --publish always"
   },
   "dependencies": {
     "@fal-ai/client": "^1.10.1",
@@ -71,19 +73,21 @@
       }
     ],
     "directories": {
-      "output": "dist",
+      "output": "dist-installer",
       "buildResources": "electron/icons"
     },
     "files": [
       "electron/**/*",
       ".next/**/*",
       "prisma/**/*",
+      "public/**/*",
       "node_modules/**/*",
       "next.config.mjs",
       "package.json",
       "!**/node_modules/.cache/**",
       "!.next/cache/**",
       "!node_modules/.bin/**",
+      "!prisma/*.db*",
       "!**/*.map"
     ],
     "asar": false,

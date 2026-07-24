@@ -1,0 +1,9 @@
+{
+  "//": "InteriorFlow — file cấu hình · Config file. Bản thật nằm ở %APPDATA%/InteriorFlow/config.json (menu Tệp → 'Mở file cấu hình (API key)…'). Điền key vào giữa 2 dấu nháy, lưu file, rồi THOÁT app mở lại. Để trống = tính năng AI cloud tương ứng tắt, app vẫn chạy bình thường. KHÔNG chia sẻ file này sau khi đã điền key.",
+  "AUTH_SECRET": "",
+  "FAL_KEY": "",
+  "NVIDIA_API_KEY": "",
+  "COMFYUI_URL": "",
+  "GOOGLE_CLIENT_ID": "",
+  "GOOGLE_CLIENT_SECRET": ""
+}

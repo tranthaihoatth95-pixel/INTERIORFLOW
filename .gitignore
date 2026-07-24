@@ -10,6 +10,7 @@ build.log
 
 # Electron — output đóng gói (.exe/nsis) do electron-builder tạo
 dist/
+dist-installer/
 
 # TypeScript incremental build cache
 tsconfig.tsbuildinfo

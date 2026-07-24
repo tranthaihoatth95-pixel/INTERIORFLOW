@@ -57,3 +57,12 @@ InteriorFlow — đổi shape `DwgRawDoc` ở 1 bên thì phải đổi cả bê
   mỹ, KHÔNG ảnh hưởng toạ độ/hình học.
 - Verify với file .dwg thật (305KB, kiến trúc căn hộ): 421/497 entity map hợp lệ, 25 layer giữ
   tên, render đúng hình phòng ngủ (verify browser thật trước đó).
+
+## Phân phối nội bộ TTT — bộ cài Windows (bổ sung 24/07)
+
+Bộ cài `InteriorFlow Setup x.x.x.exe` (Electron + NSIS, unsigned) chỉ dùng để **phân phối NỘI BỘ
+trong TTT Architects** (cài lên máy nhân viên/máy công ty, chia sẻ qua LAN/Zalo nội bộ). Vì bộ cài
+đóng gói kèm `@mlightcad/libredwg-web` (GPL-3.0) trong `node_modules`, **KHÔNG phát hành công khai**
+(website public, khách hàng, đối tác ngoài, store) **trước khi review pháp lý** — phát hành ra ngoài
+có thể kích hoạt nghĩa vụ GPL đối với mã đóng gói kèm. Nội bộ một pháp nhân = không phải
+"conveying" theo GPL, rủi ro thấp; ra ngoài = dừng lại, hỏi pháp lý trước.
