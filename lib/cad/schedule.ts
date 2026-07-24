@@ -39,6 +39,7 @@ export const ELEMENT_TYPE_LABELS: Record<Exclude<ElementType, null>, string> = {
   door: 'Cửa đi · Door',
   window: 'Cửa sổ · Window',
   furniture: 'Nội thất · Furniture',
+  space: 'Không gian · Space',
 };
 
 export type ScheduleFilter = Exclude<ElementType, null> | 'all';
