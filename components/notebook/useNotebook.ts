@@ -226,8 +226,14 @@ export function useNotebook(projectId: string) {
           });
           const data = await res.json();
           const cits: Citation[] = Array.isArray(data?.sources) ? data.sources : [];
+          const mode: 'grounded' | 'general' | undefined =
+            data?.mode === 'grounded' || data?.mode === 'general' ? data.mode : undefined;
           setMessages((prev) =>
-            prev.map((m) => (m.id === pending.id ? { ...m, content: data?.answer ?? '', citations: cits, pending: false } : m)),
+            prev.map((m) =>
+              m.id === pending.id
+                ? { ...m, content: data?.answer ?? '', citations: cits, pending: false, mode }
+                : m,
+            ),
           );
         } else {
           // Mock: câu trả lời placeholder + chỉ vào source đầu tiên nếu có

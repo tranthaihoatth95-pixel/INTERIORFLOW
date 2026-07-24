@@ -26,7 +26,6 @@ import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { IFLogo } from '@/components/entry/IFLogo';
 import { HomeButton } from '@/components/studio/HomeButton';
-import { NotebookButton } from '@/components/notebook/NotebookButton';
 import { requestGallery } from '@/lib/resume';
 
 export function Header() {
@@ -163,8 +162,12 @@ export function Header() {
             yêu cầu user, khỏi vị trí "trước trục Concept·Render·Present" cũ. */}
         <HomeButton compact />
 
-        {/* Notebook — Project Notebook (RAG sources + Vitals chat, Phase 1 MVP) */}
-        <NotebookButton compact />
+        {/*
+         * Notebook button đã BỎ khỏi Header — Vitals là entry point AI duy nhất
+         * (state machine kéo giọt Vitals ở StageSwitcher: kéo lần 1 = popover
+         * compact, kéo lần 2 hoặc bấm "Mở rộng" = mở /projects/[id]/notebook).
+         * Chi tiết: components/studio/StageSwitcher.tsx + VitalsGesture.tsx.
+         */}
 
         {/* ⋯ More — gom control phụ, chỉ xổ khi bấm (progressive disclosure) */}
         <MoreMenu />

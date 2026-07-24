@@ -41,6 +41,12 @@ export interface ChatMessage {
   citations?: Citation[];
   createdAt: string;
   pending?: boolean;
+  /**
+   * Mode trả lời: 'grounded' = trích từ nguồn (có citations),
+   * 'general'  = tri thức chung (khi notebook chưa có source hoặc retrieve rỗng).
+   * UI hiển thị badge nhỏ để user biết Vitals đang nói theo tài liệu hay tự luận.
+   */
+  mode?: 'grounded' | 'general';
 }
 
 export const SOURCE_KIND_LABEL: Record<SourceKind, { vi: string; en: string }> = {

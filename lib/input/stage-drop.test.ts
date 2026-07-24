@@ -6,6 +6,7 @@
 import {
   createStageDragTracker,
   VITALS_DROP_THRESHOLD_PX,
+  VITALS_FULL_THRESHOLD_PX,
   DRAG_SLOP_PX,
 } from './stage-drop';
 
@@ -69,6 +70,21 @@ console.log('Run tay dọc nhẹ rồi thả (không tới ngưỡng) → pendin
   const t = createStageDragTracker();
   ok('5px xuống → pending', t.move(0, 5) === 'pending');
   ok('quay về 0 → pending', t.move(0, 0) === 'pending');
+}
+
+console.log('Kéo LẦN 2 (dài > VITALS_FULL_THRESHOLD_PX) → notebook-full');
+{
+  const t = createStageDragTracker();
+  ok('30px xuống → vitals popover', t.move(0, 30) === 'vitals');
+  ok('80px xuống vẫn vitals (chưa quá ngưỡng full)', t.move(0, 80) === 'vitals');
+  ok(`${VITALS_FULL_THRESHOLD_PX}px xuống → notebook-full`, t.move(0, VITALS_FULL_THRESHOLD_PX) === 'notebook-full');
+  ok('sau full giữ nguyên notebook-full', t.move(0, 200) === 'notebook-full');
+}
+
+console.log('Kéo THẲNG một hơi qua ngưỡng full (không dừng ở vitals) → notebook-full luôn');
+{
+  const t = createStageDragTracker();
+  ok(`kéo ${VITALS_FULL_THRESHOLD_PX + 20}px 1 phát → notebook-full`, t.move(2, VITALS_FULL_THRESHOLD_PX + 20) === 'notebook-full');
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);

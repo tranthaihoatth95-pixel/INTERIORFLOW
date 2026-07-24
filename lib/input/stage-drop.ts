@@ -16,8 +16,15 @@
  * rồi bật 'vitals' — tránh drag chéo run tay kích hoạt nhầm); một khi 'vitals' thì xong.
  */
 
-/** Kéo xuống vượt ngưỡng này (px) → gọi Vitals. 28px: đủ xa để click run tay không dính. */
+/** Kéo xuống vượt ngưỡng này (px) → gọi Vitals popover (kéo lần 1). */
 export const VITALS_DROP_THRESHOLD_PX = 28;
+
+/**
+ * Kéo TIẾP tục xuống vượt ngưỡng này (px) — coi là "kéo lần 2" — mở thẳng
+ * NotebookLM full modal, bỏ qua popover. Fast-path cho power user; user thường
+ * vẫn có nút "Mở rộng" trên popover khi thả tay ở ngưỡng đầu.
+ */
+export const VITALS_FULL_THRESHOLD_PX = 120;
 
 /** Dưới slop này (px) chưa kết luận gì — vẫn là click tiềm năng. */
 export const DRAG_SLOP_PX = 6;
@@ -28,7 +35,18 @@ export const DRAG_SLOP_PX = 6;
  */
 export const VERTICAL_DOMINANCE_RATIO = 1.2;
 
-export type StageDragVerdict = 'pending' | 'vitals' | 'locked';
+/**
+ * Verdict:
+ *  - 'pending'       : chưa đủ ngưỡng, tiếp tục theo dõi.
+ *  - 'vitals'        : chạm ngưỡng lần 1 → mở popover Vitals compact.
+ *  - 'notebook-full' : chạm ngưỡng lần 2 (kéo dài) → mở NotebookLM full modal, popover đóng nếu đang mở.
+ *  - 'locked'        : bỏ cử chỉ (trượt ngang/lên).
+ *
+ * Sau khi trả 'vitals', tracker vẫn theo dõi thêm dy; nếu vượt
+ * `VITALS_FULL_THRESHOLD_PX` sẽ nâng cấp thành 'notebook-full'. Một khi đã
+ * 'notebook-full' hoặc 'locked' thì đứng yên.
+ */
+export type StageDragVerdict = 'pending' | 'vitals' | 'notebook-full' | 'locked';
 
 export interface StageDragTracker {
   /** Gọi mỗi pointermove với delta so với điểm nhấn. Trả kết luận hiện tại. */
@@ -41,14 +59,16 @@ export function createStageDragTracker(
   threshold: number = VITALS_DROP_THRESHOLD_PX,
   slop: number = DRAG_SLOP_PX,
   ratio: number = VERTICAL_DOMINANCE_RATIO,
+  fullThreshold: number = VITALS_FULL_THRESHOLD_PX,
 ): StageDragTracker {
   let locked = false;
-  let fired = false;
+  let firedVitals = false;
+  let firedFull = false;
   let prog = 0;
 
   return {
     move(dx: number, dy: number): StageDragVerdict {
-      if (fired) return 'vitals';
+      if (firedFull) return 'notebook-full';
       if (locked) return 'locked';
 
       const ax = Math.abs(dx);
@@ -67,9 +87,23 @@ export function createStageDragTracker(
         return 'locked';
       }
 
-      // Kéo XUỐNG đủ xa + trục dọc thắng rõ → Vitals.
-      if (dy >= threshold && dy > ax * ratio) {
-        fired = true;
+      // Kéo dài quá `fullThreshold` (và trục dọc vẫn thắng) → nâng cấp thẳng lên full.
+      if (dy >= fullThreshold && dy > ax * ratio) {
+        firedFull = true;
+        firedVitals = true;
+        prog = 1;
+        return 'notebook-full';
+      }
+
+      // Kéo XUỐNG đủ xa + trục dọc thắng rõ → Vitals popover (chưa full).
+      if (!firedVitals && dy >= threshold && dy > ax * ratio) {
+        firedVitals = true;
+        prog = 1;
+        return 'vitals';
+      }
+
+      if (firedVitals) {
+        // Đã mở popover — tiếp tục theo dõi để nhận `notebook-full`.
         prog = 1;
         return 'vitals';
       }

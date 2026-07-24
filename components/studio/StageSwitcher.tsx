@@ -21,14 +21,29 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PencilRuler, Box, Presentation } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
 import { PHASES, STAGE_TINT, STAGE_INDEX, phaseLabel } from '@/lib/phases';
 import { useCadStore } from '@/lib/cad/store';
+import { useFlowStore } from '@/lib/store';
 import { springSheet, pressable, easeApple } from '@/lib/motion';
 import { createStageDragTracker } from '@/lib/input/stage-drop';
 import VitalsGesturePanel, { markVitalsUsed, wasVitalsUsed } from './VitalsGesture';
+
+/** Cùng công thức slug của NotebookButton cũ (đã bỏ khỏi Header). */
+function slugifyFlow(s: string) {
+  return (
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40) || 'default'
+  );
+}
 
 const ICON: Record<Phase, typeof PencilRuler> = { concept: PencilRuler, render: Box, present: Presentation };
 
@@ -45,6 +60,8 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   // IF2-nền — nhãn pill CAD tự đổi theo `store.stage` ('sketch' | 'technical' | 'bim').
   // Selector này KHÔNG trigger re-render nào ngoài lúc stage thật sự đổi (Zustand shallow-eq).
   const cadStage = useCadStore((s) => s.stage);
+  const flowName = useFlowStore((s) => s.flowName);
+  const router = useRouter();
 
   const dockRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HTMLDivElement>(null);
@@ -98,11 +115,23 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         const dy = ev.clientY - startY;
         const v = tracker.move(dx, dy);
         if (v === 'vitals') {
-          setPanelOpen(true);
+          // Không cleanup — vẫn theo dõi để nâng cấp thành 'notebook-full' nếu user
+          // kéo tiếp. Pointer capture giữ nguyên; nếu thả tay ở đây, `onUp` dọn.
+          if (!panelOpen) setPanelOpen(true);
           markVitalsUsed();
           try {
             localStorage.setItem(FIRST_DONE_KEY, '1');
           } catch {}
+        } else if (v === 'notebook-full') {
+          // Kéo lần 2 — bỏ popover, mở NotebookLM full modal (route hiện có).
+          setPanelOpen(false);
+          setDragging(false);
+          markVitalsUsed();
+          try {
+            localStorage.setItem(FIRST_DONE_KEY, '1');
+          } catch {}
+          const id = slugifyFlow(flowName || 'default');
+          router.push(`/projects/${id}/notebook`);
           cleanup();
         } else if (v === 'locked') {
           setDragging(false);
@@ -126,7 +155,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
       window.addEventListener('pointerup', onUp);
       window.addEventListener('pointercancel', onUp);
     },
-    [panelOpen],
+    [panelOpen, flowName, router],
   );
 
   // Khi panel đóng, dọn dragging để lần drag tiếp không dính state cũ.
