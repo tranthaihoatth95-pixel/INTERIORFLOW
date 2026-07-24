@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Mapa de Zonas — Mock · InteriorFlow</title>
+<style>
+  :root {
+    --beige: #F1ECE3;
+    --ink: #1E1B16;
+    --keyline: rgba(30,27,22,0.18);
+    --navy: #002850;
+    --orange: #F06020;
+    --wet: #4FB3E8;
+    --social: #F5C542;
+    --private: #E88A6B;
+    --work: #7EC46E;
+    --circulation: #6B7280;
+    --service: #8E7CC3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--beige);
+    color: var(--ink);
+    font-family: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+    padding: 56px 64px;
+  }
+  h1 {
+    font-family: 'Archivo Expanded', 'Archivo', ui-sans-serif, sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    margin: 0 0 6px;
+  }
+  .subtitle {
+    font-size: 12px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(30,27,22,0.55);
+    margin-bottom: 32px;
+  }
+  .stage {
+    position: relative;
+    background: #FAF7F1;
+    border: 1px solid var(--keyline);
+    border-radius: 2px;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+  }
+  .stage svg { width: 100%; height: 100%; display: block; }
+
+  .zone-label {
+    font-family: 'Archivo Expanded','Archivo',sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    text-transform: uppercase;
+    fill: var(--ink);
+    paint-order: stroke;
+    stroke: rgba(255,255,255,0.85);
+    stroke-width: 3px;
+  }
+
+  .legend {
+    position: absolute;
+    left: 24px;
+    bottom: 24px;
+    background: rgba(250,247,241,0.94);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--keyline);
+    padding: 16px 20px;
+    min-width: 260px;
+  }
+  .legend h3 {
+    margin: 0 0 12px;
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(30,27,22,0.55);
+    font-weight: 600;
+  }
+  .legend ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .legend li { display: flex; align-items: center; gap: 12px; font-size: 12px; }
+  .swatch { width: 14px; height: 14px; border-radius: 50%; opacity: 0.55; flex: 0 0 auto; }
+  .legend .vn { font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 11px; }
+  .legend .en { color: rgba(30,27,22,0.55); font-size: 11px; letter-spacing: 0.06em; }
+
+  .corner-mark {
+    position: absolute;
+    top: 20px; right: 24px;
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(30,27,22,0.55);
+  }
+  .caption {
+    margin-top: 20px;
+    font-size: 12px;
+    color: rgba(30,27,22,0.6);
+    max-width: 780px;
+    line-height: 1.55;
+  }
+</style>
+</head>
+<body>
+  <h1>Mapa de Zonas · Bản đồ chức năng</h1>
+  <div class="subtitle">Mock visual · InteriorFlow · demo cho task color-fill zones</div>
+
+  <div class="stage">
+    <!-- Floorplan + zone overlay -->
+    <svg viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg">
+      <!-- Faint plan lines (walls) as backdrop -->
+      <g stroke="#8B8577" stroke-width="2" fill="none" opacity="0.55">
+        <rect x="120" y="140" width="1360" height="720" />
+        <line x1="640" y1="140" x2="640" y2="500" />
+        <line x1="640" y1="500" x2="120" y2="500" />
+        <line x1="960" y1="500" x2="960" y2="860" />
+        <line x1="960" y1="500" x2="1480" y2="500" />
+        <line x1="1240" y1="500" x2="1240" y2="860" />
+        <line x1="640" y1="700" x2="960" y2="700" />
+      </g>
+
+      <!-- Zones: soft ellipses, opacity 0.35, colored by group -->
+      <g opacity="0.85">
+        <!-- Varanda (Social) -->
+        <ellipse cx="320" cy="820" rx="200" ry="80" fill="var(--social)" opacity="0.38" />
+        <text class="zone-label" x="320" y="820">Varanda</text>
+
+        <!-- Sala (Social) -->
+        <ellipse cx="380" cy="320" rx="240" ry="150" fill="var(--social)" opacity="0.38" />
+        <text class="zone-label" x="380" y="320">Sala</text>
+
+        <!-- Sala de Jantar (Social) -->
+        <ellipse cx="820" cy="330" rx="180" ry="120" fill="var(--social)" opacity="0.38" />
+        <text class="zone-label" x="820" y="330">Sala Jantar</text>
+
+        <!-- Cozinha (Wet) -->
+        <ellipse cx="1200" cy="320" rx="220" ry="130" fill="var(--wet)" opacity="0.38" />
+        <text class="zone-label" x="1200" y="320">Cozinha</text>
+
+        <!-- Banheiro (Wet) -->
+        <ellipse cx="1100" cy="700" rx="120" ry="90" fill="var(--wet)" opacity="0.4" />
+        <text class="zone-label" x="1100" y="700">Banheiro</text>
+
+        <!-- Suite Master (Private) -->
+        <ellipse cx="1360" cy="700" rx="180" ry="140" fill="var(--private)" opacity="0.38" />
+        <text class="zone-label" x="1360" y="700">Suíte</text>
+
+        <!-- Quarto (Private) -->
+        <ellipse cx="780" cy="800" rx="180" ry="90" fill="var(--private)" opacity="0.38" />
+        <text class="zone-label" x="780" y="800">Quarto</text>
+
+        <!-- Home office (Work) -->
+        <ellipse cx="380" cy="600" rx="150" ry="80" fill="var(--work)" opacity="0.38" />
+        <text class="zone-label" x="380" y="600">Escritório</text>
+      </g>
+
+      <!-- Circulation arrows (dashed, group=circulation) -->
+      <defs>
+        <marker id="arrowhead" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto">
+          <path d="M0,0 L12,6 L0,12 z" fill="var(--circulation)" />
+        </marker>
+      </defs>
+      <g stroke="var(--circulation)" stroke-width="3" stroke-dasharray="10 8" fill="none" marker-end="url(#arrowhead)" opacity="0.75">
+        <path d="M 300 720 Q 500 550 720 400" />
+        <path d="M 720 400 Q 900 380 1080 360" />
+        <path d="M 900 500 Q 950 620 1080 700" />
+        <path d="M 700 500 Q 750 650 780 780" />
+        <path d="M 1200 500 Q 1280 600 1340 680" />
+      </g>
+    </svg>
+
+    <div class="corner-mark">Mapa de Zonas · v1</div>
+
+    <div class="legend">
+      <h3>Nhóm chức năng · Function Groups</h3>
+      <ul>
+        <li><span class="swatch" style="background:var(--wet)"></span>
+          <span><span class="vn">Khối ướt</span> <span class="en">· Área Molhada</span></span>
+        </li>
+        <li><span class="swatch" style="background:var(--social)"></span>
+          <span><span class="vn">Sinh hoạt</span> <span class="en">· Social</span></span>
+        </li>
+        <li><span class="swatch" style="background:var(--private)"></span>
+          <span><span class="vn">Riêng tư</span> <span class="en">· Íntima</span></span>
+        </li>
+        <li><span class="swatch" style="background:var(--work)"></span>
+          <span><span class="vn">Làm việc</span> <span class="en">· Trabalho</span></span>
+        </li>
+        <li><span class="swatch" style="background:var(--circulation); opacity:0.75"></span>
+          <span><span class="vn">Giao thông</span> <span class="en">· Circulação (mũi tên đứt)</span></span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="caption">
+    Mock độc lập, KHÔNG hardcode vào CAD engine. Xem <code>docs/GAP-COLOR-FILL.md</code>
+    để biết 6 gap kỹ thuật (ellipse entity · zone entity · opacity per-entity · arrow entity ·
+    legend panel · aerial site layer) và schema đề xuất cho sprint tiếp theo.
+  </p>
+</body>
+</html>
