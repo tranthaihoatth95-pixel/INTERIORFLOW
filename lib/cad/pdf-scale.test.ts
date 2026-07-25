@@ -10,8 +10,8 @@
  *
  * Chạy: node_modules/.bin/sucrase-node lib/cad/pdf-scale.test.ts
  */
-import { emptyDoc, fitBox, fitScaleLabel, docBox } from './model';
-import type { Doc } from './model';
+import { emptyDoc, fitBox, fitScaleLabel, docBox, PAPER_SIZES_MM } from './model';
+import type { Doc, PaperKey } from './model';
 import { newId } from './store';
 import { titleBlock } from './commands';
 import {
@@ -119,10 +119,34 @@ async function testBuildCadPdfUsesRealScaleEndToEnd() {
   ok('buildCadPdf() không throw', !threw);
 }
 
+/* ── 4) khổ giấy PDF thật khớp [pw, ph] đã dùng dựng viewport (bug 26/07: thiếu orientation) ── */
+async function testPaperOrientationMatchesViewport() {
+  console.log('\n[4] khổ giấy PDF thật = khổ NGANG dùng dựng viewport (A3/A2/A1)');
+  for (const key of ['A3', 'A2', 'A1'] as PaperKey[]) {
+    const [pw, ph] = PAPER_SIZES_MM[key];
+    const doc: Doc = emptyDoc();
+    doc.paperKey = key;
+    const wall = doc.layers[0].id;
+    doc.entities.push({ id: newId('e'), type: 'line', layer: wall, a: { x: 0, y: 0 }, b: { x: 3200, y: 0 } });
+
+    const pdf = await buildCadPdf(doc, {});
+    // Đo TRANG THẬT jsPDF sẽ ghi ra, không tin tham số truyền vào: jsPDF tự đảo format khi
+    // orientation không khớp cạnh dài — đúng cơ chế đã gây bug cắt mép phải.
+    const size = (pdf as unknown as { internal: { pageSize: { getWidth(): number; getHeight(): number } } }).internal.pageSize;
+    const w = size.getWidth();
+    const h = size.getHeight();
+    console.log(`    ${key}: mong đợi ${pw}×${ph}mm — trang thật ${w.toFixed(1)}×${h.toFixed(1)}mm`);
+    ok(`${key} — bề rộng trang = ${pw}mm (không bị đảo dọc)`, Math.abs(w - pw) < 0.5);
+    ok(`${key} — bề cao trang = ${ph}mm`, Math.abs(h - ph) < 0.5);
+    ok(`${key} — trang NGANG (w > h)`, w > h);
+  }
+}
+
 async function main() {
   testFitScaleLabelMatchesManualFitBox();
   testApplyRealScaleOverridesOnlyTitleBlockText();
   await testBuildCadPdfUsesRealScaleEndToEnd();
+  await testPaperOrientationMatchesViewport();
   console.log(`\n${pass} ok, ${fail} fail`);
   if (fail > 0) process.exit(1);
 }

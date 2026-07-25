@@ -376,7 +376,12 @@ export async function buildCadPdf(doc: Doc, opts: CadPdfOptions = {}) {
   const [pw, ph] = opts.paper ?? docPaperMm(doc);
   const margin = opts.margin ?? DEFAULT_PDF_MARGIN_MM;
   const ds = opts.dimStyle ?? DEFAULT_DIM_STYLE;
-  const pdf = new jsPDF({ unit: 'mm', format: [pw, ph] });
+  // Khổ giấy CAD (PAPER_SIZES_MM) khai báo NGANG — [420,297] cho A3. jsPDF mặc định
+  // orientation 'portrait' và khi đó nó TỰ ĐẢO format cho cạnh ngắn thành bề rộng, nên
+  // `format:[420,297]` không có orientation ⇒ trang thật ra 297×420 DỌC, trong khi viewport
+  // bên dưới tính theo pw=420 ⇒ mất ~30% mép phải, đúng chỗ khung tên neo. Suy orientation
+  // từ chính khổ giấy để trang PDF luôn khớp [pw, ph] đã dùng để dựng viewport.
+  const pdf = new jsPDF({ orientation: pw >= ph ? 'landscape' : 'portrait', unit: 'mm', format: [pw, ph] });
 
   const box = docBox(doc) ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
   // B1 (24/07) — "plot to scale": doc.printScale (1:N chuẩn, per-sheet) + bản vẽ LỌT giấy ở tỉ
