@@ -416,6 +416,13 @@ export interface Doc {
   printScale?: number;
   /** B1 (24/07) — khổ giấy in per-sheet (A3/A2/A1, ngang). undefined = A3 (mặc định cũ). */
   paperKey?: PaperKey;
+  /**
+   * Tên studio/công ty in ở khung tên — NHẬN DIỆN CỦA DỰ ÁN, không phải của app (luật nền
+   * tảng: IF là sản phẩm độc lập, không nhúng cứng studio nào). Nguồn: Brand Kit dự án
+   * (`getActiveBrandKit().name`) hoặc user gõ tay ở TitleBlockPanel. undefined/'' = để trống.
+   * Lưu trong Doc ⇒ tự vào .idf, per-sheet. .idf cũ không có field này ⇒ khung tên trống, hợp lệ.
+   */
+  studioName?: string;
 }
 
 /* ───────────────────────── B1 — tỉ lệ bản vẽ chuẩn + khổ giấy (paper-space cơ bản) ───────────────────────── */

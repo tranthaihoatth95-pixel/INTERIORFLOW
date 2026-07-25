@@ -1,11 +1,11 @@
 /**
- * lib/present-editor/brand-kit.ts — BRAND KIT bền vững của TTT (PS-1 / G.5).
+ * lib/present-editor/brand-kit.ts — BRAND KIT: nhận diện riêng của TỪNG DỰ ÁN (PS-1 / G.5).
  *
  * Lưu logo · bộ màu · cặp font MỘT LẦN → tái dùng cho mọi deck. Persist localStorage,
  * tái dùng ĐÚNG pattern `custom-fonts.ts` (read/write JSON, guard `window`, im lặng khi lỗi).
  *
- * Ranh giới (chốt ở IF-PRESENT-SPRINT-PLAN PS-1): KHÔNG dựng "100 brand kiểu Canva". TTT chỉ
- * cần 1–vài brand → lưu 1 DANH SÁCH PHẲNG + 1 kit "đang chọn" (activeId). Không multi-tenant,
+ * Ranh giới (chốt ở IF-PRESENT-SPRINT-PLAN PS-1): KHÔNG dựng "100 brand kiểu Canva". Mỗi user
+ * chỉ cần 1–vài brand → lưu 1 DANH SÁCH PHẲNG + 1 kit "đang chọn" (activeId). Không multi-tenant,
  * không server (localStorage-first như custom-fonts). Auth có `getSessionUser()` nhưng Brand Kit
  * gọn + chỉ ở client → không cần gắn userId cho v1 (ghi chú: nếu sau này cần chia theo người,
  * đổi KEY theo userId là đủ, không đổi cấu trúc).
@@ -169,7 +169,7 @@ export function seedDeckWithBrandKit(deck: EditorDeck, kit: BrandKit): EditorDec
 }
 
 /** Dựng 1 Brand Kit "nháp" từ deck hiện tại (để mở panel với giá trị đang dùng). */
-export function draftKitFromDeck(deck: EditorDeck, name = 'TTT'): Omit<BrandKit, 'updatedAt'> {
+export function draftKitFromDeck(deck: EditorDeck, name = ''): Omit<BrandKit, 'updatedAt'> {
   return {
     id: '',
     name,

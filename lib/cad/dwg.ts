@@ -7,11 +7,9 @@
  * block-flatten nằm ở lib/cad/dwg-map.ts (tách riêng để unit test được dưới sucrase-node,
  * file này chứa `import.meta` nên không require trực tiếp được).
  *
- * ⚠️ InteriorFlow là TOOL NỘI BỘ của TTT Architects (auth khoá @ttt.vn, register công khai 403,
- * KHÔNG bán/phân phối ra ngoài công ty) — xem docs/LICENSE-NOTES.md để hiểu vì sao dependency GPL
- * cô lập trong Worker được coi là chấp nhận được cho use-case này (khác hẳn 1 sản phẩm SaaS bán
- * ra thị trường). Nếu SAU NÀY định phân phối/bán InteriorFlow ra ngoài công ty, ĐỌC LẠI
- * LICENSE-NOTES.md trước.
+ * ⚠️ LICENSE: InteriorFlow là SẢN PHẨM ĐỘC LẬP, dùng cho MỌI studio (không phải tool nội bộ của
+ * riêng công ty nào). Vì vậy dependency GPL cô lập trong Worker CẦN được rà lại trước khi phân
+ * phối/bán — ĐỌC docs/LICENSE-NOTES.md trước mỗi lần đóng gói phát hành.
  *
  * `dwgRawDocToDoc()` (dwg-map.ts, re-export ở đây) CÒN được dùng bởi **~/Downloads/dwg2dxf** —
  * CLI cá nhân chạy local: từ nay require `lib/cad/dwg-map.ts` thay vì file này.

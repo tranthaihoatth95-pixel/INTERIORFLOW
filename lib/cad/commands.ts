@@ -187,27 +187,40 @@ export function titleBlock(at: { x: number; y: number }, info: TitleBlockInfo, w
   return out;
 }
 
-/* ───────────────────────── KHUNG TÊN TTT (B1 24/07 — song ngữ, theo khổ giấy) ───────────────────────── */
+/* ─────────────── KHUNG TÊN CHUYÊN NGHIỆP (B1 24/07 — song ngữ, theo khổ giấy) ─────────────── */
 
-/** Thông tin khung tên TTT — mở rộng TitleBlockInfo (số bản vẽ + người kiểm), additive. */
-export interface TitleBlockInfoTTT extends TitleBlockInfo {
+/**
+ * Thông tin khung tên — mở rộng TitleBlockInfo (số bản vẽ + người kiểm + tên studio), additive.
+ *
+ * ⛔ LUẬT NỀN TẢNG: InteriorFlow là sản phẩm ĐỘC LẬP, dùng cho MỌI studio. Tên studio in trên
+ * bản vẽ KHÔNG hardcode — đọc từ Brand Kit / trường "Tên studio" của dự án đang mở (UI:
+ * `TitleBlockPanel` trong components/cad/CadEditor.tsx, lưu ở `Doc.studioName` → vào .idf).
+ */
+export interface TitleBlockInfoPro extends TitleBlockInfo {
   /** số bản vẽ, VD "IF-01". */
   drawingNo?: string;
   /** người kiểm (checked by). */
   checker?: string;
+  /** tên studio/công ty của DỰ ÁN (Brand Kit). Rỗng/undefined ⇒ ô wordmark để TRỐNG. */
+  studio?: string;
 }
 
+/** @deprecated tên cũ (khi khung tên còn hardcode 1 studio) — giữ cho code/.idf cũ. */
+export type TitleBlockInfoTTT = TitleBlockInfoPro;
+
 /**
- * Khung tên chuẩn TTT — song ngữ Việt·Anh, wordmark TTT ARCHITECTS · INTERIORFLOW, đủ trường
- * ISO 7200 tối thiểu (dự án/bản vẽ/số/tỉ lệ/ngày/vẽ/kiểm). KHÁC titleBlock() cũ (giữ nguyên,
- * backward-compat): kích thước đặt theo KHỔ GIẤY — template 180×42mm TRÊN GIẤY, nhân scaleN
- * (tỉ lệ 1:N) ra mm world, nên in ra ở tỉ lệ đã chọn thì khung tên luôn đúng cỡ 180×42mm bất kể
- * khổ A3/A2/A1. Text tỉ lệ giữ ĐÚNG tiền tố "Tỷ lệ " để applyRealScaleToTitleBlock (pdf.ts)
- * vẫn ghi đè được lúc xuất. `at` = góc phải-dưới của khung (cùng quy ước titleBlock cũ).
+ * Khung tên chuyên nghiệp — song ngữ Việt·Anh, đủ trường ISO 7200 tối thiểu (dự án/bản vẽ/số/
+ * tỉ lệ/ngày/vẽ/kiểm). Wordmark cột trái lấy từ `info.studio` (Brand Kit của dự án); KHÔNG in
+ * thương hiệu nào của app hay của studio nào — bản vẽ thuộc về DỰ ÁN, không phải quảng cáo app.
+ * KHÁC titleBlock() cũ (giữ nguyên, backward-compat): kích thước đặt theo KHỔ GIẤY — template
+ * 180×42mm TRÊN GIẤY, nhân scaleN (tỉ lệ 1:N) ra mm world, nên in ra ở tỉ lệ đã chọn thì khung
+ * tên luôn đúng cỡ 180×42mm bất kể khổ A3/A2/A1. Text tỉ lệ giữ ĐÚNG tiền tố "Tỷ lệ " để
+ * applyRealScaleToTitleBlock (pdf.ts) vẫn ghi đè được lúc xuất. `at` = góc phải-dưới của khung
+ * (cùng quy ước titleBlock cũ).
  */
-export function titleBlockTTT(
+export function titleBlockPro(
   at: { x: number; y: number },
-  info: TitleBlockInfoTTT,
+  info: TitleBlockInfoPro,
   wallLayer: string,
   textLayer: string,
   scaleN = 100,
@@ -240,9 +253,9 @@ export function titleBlockTTT(
   ln({ x: cB, y: rR2 }, { x: x1, y: rR2 });
 
   const pad = 3 * k;
-  // ── cột trái: wordmark TTT (hairline + uppercase, tinh thần TTT design system) ──
-  tx(x0 + pad, y0 + H - 12 * k, 'TTT ARCHITECTS', 5);
-  tx(x0 + pad, y0 + H - 18 * k, 'INTERIORFLOW · DRAFTING CAD', 2.6);
+  // ── cột trái: wordmark studio của DỰ ÁN (Brand Kit) — trống nếu user chưa nhập ──
+  const studio = (info.studio || '').trim();
+  if (studio) tx(x0 + pad, y0 + H - 12 * k, studio.toUpperCase(), 5);
   tx(x0 + pad, y0 + 3 * k, 'Hồ sơ sơ phác · Design Development', 2.4);
   // ── cột giữa: dự án (trên) · bản vẽ (giữa) · vẽ/kiểm (đáy) ──
   tx(cA + pad, rMid + 14 * k, 'DỰ ÁN · PROJECT', 2.4);
@@ -257,6 +270,13 @@ export function titleBlockTTT(
   tx(cB + pad, y0 + 3 * k, info.date ? `Ngày · Date ${info.date}` : 'Ngày · Date —', 2.6);
   return out;
 }
+
+/**
+ * @deprecated tên cũ của `titleBlockPro` (thời khung tên còn hardcode wordmark 1 studio).
+ * Giữ export để code/test cũ không vỡ — hành vi y hệt titleBlockPro (không in studio nào
+ * trừ khi truyền `info.studio`).
+ */
+export const titleBlockTTT = titleBlockPro;
 
 /* ───────────────────────── MŨI TÊN BẮC ───────────────────────── */
 

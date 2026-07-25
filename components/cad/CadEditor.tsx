@@ -34,7 +34,8 @@ import ShapePalette, { ShapeInfoPanel } from '@/components/ShapePalette';
 import { loadManifest, groupByCategory, type LibraryManifest } from '@/lib/cad/block-library';
 import { buildDemoPlan, buildDemoPlanApartment74 } from '@/lib/cad/demo-plan';
 import { buildOfficeTemplate, buildHotelTemplate } from '@/lib/cad/templates';
-import { titleBlockTTT, type TitleBlockInfoTTT } from '@/lib/cad/commands';
+import { titleBlockPro, type TitleBlockInfoPro } from '@/lib/cad/commands';
+import { getActiveBrandKit } from '@/lib/present-editor/brand-kit';
 import {
   docBox, docScaleLabel, docPaperMm, suggestStandardScale, fitsAtScale,
   STANDARD_SCALES, PAPER_SIZES_MM, ELEMENT_TYPE_OPTIONS,
@@ -746,12 +747,24 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
   const setPrintSettings = useCadStore((s) => s.setPrintSettings);
   const today = new Date().toISOString().slice(0, 10);
   const [project, setProject] = useState('');
+  // Tên studio in ở khung tên — nhận diện của DỰ ÁN, KHÔNG hardcode studio nào (luật nền tảng).
+  // Nguồn ưu tiên: Doc.studioName đã lưu (per-sheet, vào .idf) → Brand Kit đang chọn → trống.
+  const [studio, setStudio] = useState('');
   const [drawing, setDrawing] = useState('MẶT BẰNG BỐ TRÍ NỘI THẤT — SƠ PHÁC DD');
   const [drawingNo, setDrawingNo] = useState('IF-01');
   const [author, setAuthor] = useState('');
   const [checker, setChecker] = useState('');
   const [date, setDate] = useState(today);
   const [msg, setMsg] = useState('');
+
+  // Nạp tên studio 1 lần khi mở panel: Doc.studioName (đã lưu theo sheet) → tên Brand Kit đang
+  // chọn (nhận diện dự án) → trống. KHÔNG ghi đè khi user đang gõ (chỉ chạy lúc mount).
+  useEffect(() => {
+    if (doc.studioName) { setStudio(doc.studioName); return; }
+    const kit = getActiveBrandKit();
+    if (kit?.name) setStudio(kit.name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // B1 (24/07) — khổ giấy + tỉ lệ chuẩn per-sheet (lưu trong Doc → .idf/PDF dùng chung nguồn).
   const paperKey: PaperKey = doc.paperKey ?? 'A3';
@@ -767,7 +780,8 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
     const tbAt = box ? { x: box.maxX + 500 + 180 * k, y: box.minY } : { x: 180 * k, y: 0 };
     const wallLayer = doc.layers.find((l) => l.id === 'l-wall')?.id ?? doc.layers[0]?.id ?? 'l-wall';
     const textLayer = doc.layers.find((l) => l.id === 'l-text')?.id ?? doc.layers[0]?.id ?? 'l-text';
-    const info: TitleBlockInfoTTT = {
+    const studioName = studio.trim();
+    const info: TitleBlockInfoPro = {
       project: project.trim() || 'DỰ ÁN',
       drawing: drawing.trim() || 'MẶT BẰNG BỐ TRÍ — SƠ PHÁC DD',
       scale: scaleLabel,
@@ -775,9 +789,12 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
       author: author.trim() || undefined,
       checker: checker.trim() || undefined,
       date: date || undefined,
+      studio: studioName || undefined,
     };
-    addEntities(titleBlockTTT(tbAt, info, wallLayer, textLayer, k));
-    setMsg('Đã chèn khung tên TTT vào bản vẽ.');
+    // Nhớ tên studio theo sheet (vào .idf) để lần chèn sau + PDF dùng lại, không phải gõ lại.
+    setPrintSettings({ studioName: studioName || null });
+    addEntities(titleBlockPro(tbAt, info, wallLayer, textLayer, k));
+    setMsg('Đã chèn khung tên vào bản vẽ.');
     setTimeout(() => setMsg(''), 2500);
     window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
   };
@@ -797,7 +814,7 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
         </button>
       </div>
       <div style={{ fontSize: 10.5, color: 'var(--t4)', padding: '0 6px 8px' }}>
-        Khung tên chuẩn TTT song ngữ (tham chiếu ISO 7200) — chọn khổ giấy + tỉ lệ, điền thông tin rồi bấm Chèn.
+        Khung tên song ngữ (tham chiếu ISO 7200) — chọn khổ giấy + tỉ lệ, điền thông tin rồi bấm Chèn.
       </div>
       <div style={{ padding: '0 2px' }}>
         <div style={{ display: 'flex', gap: 6 }}>
@@ -837,6 +854,14 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
             ? <>Tỉ lệ hiệu dụng: <b>{scaleLabel}</b> — khung tên + PDF dùng CÙNG con số này.</>
             : <>1:{doc.printScale} KHÔNG lọt khổ {paperKey} — PDF sẽ tự fit ({scaleLabel}). Chọn tỉ lệ lớn hơn (gợi ý 1:{suggestedN}) hoặc khổ giấy to hơn.</>}
         </div>
+        <label style={fieldLabel}>Tên studio · Studio</label>
+        <input
+          value={studio}
+          onChange={(e) => setStudio(e.target.value)}
+          placeholder="Tên studio của bạn · Your studio"
+          title="Tên studio in ở góc trái khung tên — lấy sẵn từ Brand Kit đang chọn, sửa được. Để trống thì khung tên không in tên studio nào."
+          style={field}
+        />
         <label style={fieldLabel}>Tên dự án · Project</label>
         <input value={project} onChange={(e) => setProject(e.target.value)} placeholder="VD: Căn hộ Sunrise A1203" style={field} />
         <label style={fieldLabel}>Tên bản vẽ · Drawing</label>
@@ -862,7 +887,7 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
           </div>
         </div>
         <button type="button" onClick={insert} style={{ ...fileBtn, width: '100%', justifyContent: 'center', background: 'var(--accent)', color: '#fff', border: 'none' }}>
-          <FileSignature size={14} /> Chèn khung tên TTT
+          <FileSignature size={14} /> Chèn khung tên
         </button>
         {msg && <div style={{ fontSize: 11, color: 'var(--accent)', marginTop: 6 }}>{msg}</div>}
       </div>

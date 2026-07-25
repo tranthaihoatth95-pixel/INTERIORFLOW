@@ -105,7 +105,7 @@ export function gradientLine(
 
 export interface FxPreset {
   id: string;
-  /** tên song ngữ Việt · English theo gu TTT. */
+  /** tên song ngữ Việt · English. */
   label: string;
   hint: string;
   /** `null` = trả chữ về phẳng (gỡ mọi hiệu ứng). */
@@ -161,7 +161,7 @@ export const FX_PRESETS: FxPreset[] = [
   {
     id: 'navy-fade',
     label: 'Chuyển sắc navy · Navy fade',
-    hint: 'Navy TTT nhạt dần — tiêu đề chương trên nền beige.',
+    hint: 'Navy nhạt dần — tiêu đề chương trên nền sáng.',
     fx: { gradient: { from: '#002850', to: '#4A6C86', angle: 90 } },
   },
   {

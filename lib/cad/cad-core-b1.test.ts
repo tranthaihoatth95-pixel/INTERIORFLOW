@@ -1,7 +1,8 @@
 /**
  * lib/cad/cad-core-b1.test.ts — B1 (24/07) củng cố logic lõi chặng CAD:
  *  [1] Tỉ lệ chuẩn: suggestStandardScale / fixedScaleViewport / docScaleLabel / fitsAtScale.
- *  [2] Khung tên TTT: titleBlockTTT — kích thước theo khổ giấy × N, tiền tố "Tỷ lệ " giữ nguyên
+ *  [2] Khung tên: titleBlockPro — kích thước theo khổ giấy × N, tiền tố "Tỷ lệ " giữ nguyên,
+ *      wordmark studio ĐỌC TỪ info.studio (Brand Kit dự án), KHÔNG hardcode studio nào
  *      (applyRealScaleToTitleBlock của pdf.ts vẫn ghi đè được), đủ trường song ngữ.
  *  [3] Nền IFC: DXF round-trip storey/elementType qua XDATA (+ APPID), file cũ không XDATA vẫn
  *      parse với field undefined; .idf round-trip printScale/paperKey.
@@ -17,7 +18,7 @@ import {
 } from './model';
 import type { Doc, Entity, TextEntity } from './model';
 import { newId, useCadStore } from './store';
-import { titleBlockTTT } from './commands';
+import { titleBlockPro, titleBlockTTT } from './commands';
 import { applyRealScaleToTitleBlock } from './pdf';
 import { exportDxf, parseDxf } from './dxf';
 import { exportIdf, importIdf } from './idf';
@@ -67,19 +68,25 @@ function testScales() {
   ok('docPaperMm mặc định A3 (backward)', docPaperMm(plain)[0] === 420);
 }
 
-/* ── [2] Khung tên TTT ── */
-function testTitleBlockTTT() {
-  console.log('\n[2] Khung tên TTT — theo khổ giấy × N, song ngữ, tiền tố "Tỷ lệ " giữ nguyên');
-  const ents = titleBlockTTT({ x: 0, y: 0 }, {
+/* ── [2] Khung tên ── */
+function testTitleBlockPro() {
+  console.log('\n[2] Khung tên — theo khổ giấy × N, song ngữ, studio đọc từ Brand Kit, tiền tố "Tỷ lệ " giữ nguyên');
+  const ents = titleBlockPro({ x: 0, y: 0 }, {
     project: 'Căn hộ Sunrise', drawing: 'MẶT BẰNG BỐ TRÍ', scale: '1:50',
-    drawingNo: 'IF-07', author: 'A', checker: 'B', date: '2026-07-24',
+    drawingNo: 'IF-07', author: 'A', checker: 'B', date: '2026-07-24', studio: 'Atelier Nord',
   }, 'l-wall', 'l-text', 50);
   const rect = ents.find((e) => e.type === 'rect') as Extract<Entity, { type: 'rect' }>;
   ok('có khung bao rect', !!rect);
   ok('rộng khung = 180mm giấy × 50 = 9000mm world', Math.abs(rect.w - 180 * 50) < 1e-9);
   ok('cao khung = 42mm giấy × 50 = 2100mm world', Math.abs(rect.h - 42 * 50) < 1e-9);
   const texts = ents.filter((e): e is TextEntity => e.type === 'text').map((t) => t.text);
-  ok('có wordmark TTT ARCHITECTS', texts.includes('TTT ARCHITECTS'));
+  ok('wordmark = tên studio truyền vào (Brand Kit), viết hoa', texts.includes('ATELIER NORD'));
+  ok('KHÔNG hardcode thương hiệu nào trong khung tên', !texts.some((t) => /TTT|INTERIORFLOW/i.test(t)));
+  // studio rỗng ⇒ ô wordmark để TRỐNG, không rơi về tên mặc định nào
+  const noStudio = titleBlockPro({ x: 0, y: 0 }, { project: 'P', drawing: 'D', scale: '1:50' }, 'l-wall', 'l-text', 50)
+    .filter((e): e is TextEntity => e.type === 'text').map((t) => t.text);
+  ok('không truyền studio ⇒ khung tên không in tên studio nào', !noStudio.some((t) => /ARCHITECT|STUDIO|INTERIORFLOW/i.test(t)));
+  ok('alias cũ titleBlockTTT vẫn export (backward-compat)', typeof titleBlockTTT === 'function');
   ok('có nhãn song ngữ DỰ ÁN · PROJECT', texts.includes('DỰ ÁN · PROJECT'));
   ok('có số bản vẽ IF-07', texts.includes('IF-07'));
   ok('có text "Tỷ lệ 1:50" (đúng tiền tố cho pdf.ts ghi đè)', texts.includes('Tỷ lệ 1:50'));
@@ -177,7 +184,7 @@ function testStoreClone() {
 }
 
 testScales();
-testTitleBlockTTT();
+testTitleBlockPro();
 testIfcSerialization();
 testAiBrief();
 testStoreClone();

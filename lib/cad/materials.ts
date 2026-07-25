@@ -40,7 +40,7 @@ export interface MaterialDef {
   tones: string[];
   /**
    * ẢNH THẬT (nếu có). Bỏ trống ở mọi preset hiện tại vì CHƯA có bộ ảnh license (ATLAS Vol.3
-   * chưa nằm trên đĩa). Khi TTT cấp ảnh: chỉ cần set URL/data-URI vào đây — materialTextureDataUrl()
+   * chưa nằm trên đĩa). Khi có bộ ảnh license: chỉ cần set URL/data-URI vào đây — materialTextureDataUrl()
    * (material-texture.ts) tự ưu tiên nó thay cho hoạ tiết procedural, KHÔNG cần đổi code khác.
    */
   photoUrl?: string;

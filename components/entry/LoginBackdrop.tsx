@@ -776,7 +776,7 @@ export function LoginBackdropPicker({
 
                   {/* thư viện TTT — chọn 1 ảnh làm nền tĩnh */}
                   <p className="mb-1.5 mt-2.5 text-[10px] uppercase tracking-[0.14em] text-[var(--t5)]">
-                    {en ? 'TTT library' : 'Thư viện TTT'}
+                    {en ? 'Image library' : 'Thư viện ảnh'}
                   </p>
                   <div className="grid max-h-40 grid-cols-4 gap-1.5 overflow-y-auto pr-0.5">
                     {WALLPAPERS.map((w) => {

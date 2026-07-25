@@ -5,9 +5,8 @@
  * không phải tên code".
  *
  * VÌ SAO PROCEDURAL, KHÔNG DÙNG ẢNH CHỤP:
- *   InteriorFlow là tool NỘI BỘ TTT Architects. Chưa có thư viện ảnh vật liệu có license
- *   (ATLAS Vol.3 chưa nằm trên đĩa). Lấy ảnh bừa trên web rồi trưng như thư viện vật liệu của
- *   công ty là rủi ro bản quyền/nguỵ tạo — KHÔNG làm. Thay vào đó vẽ hoạ tiết bằng thuật toán:
+ *   Sản phẩm chưa có thư viện ảnh vật liệu có license đi kèm. Lấy ảnh bừa trên web rồi trưng
+ *   như thư viện vật liệu của sản phẩm là rủi ro bản quyền/nguỵ tạo — KHÔNG làm. Thay vào đó vẽ hoạ tiết bằng thuật toán:
  *   vân gỗ nhiều lớp + mắt gỗ, mạch gạch + nhiễu từng viên, vân đá midpoint-displacement, đốm
  *   granite, chip terrazzo… — trông ra "chất" vật liệu, phân biệt rõ giữa các preset, KHÔNG phải
  *   ảnh nhưng cũng KHÔNG phải ô màu phẳng. Đây là kỹ thuật CAD/design tool dùng phổ biến đúng vì
@@ -17,7 +16,7 @@
  * test được bằng sucrase-node) khỏi PHẦN TRÌNH DUYỆT (materialTextureDataUrl — bọc buffer vào
  * <canvas> → data URL, có cache). Nhờ vậy thuật toán kiểm thử độc lập (material-texture.test.ts).
  *
- * FUTURE-PROOF: nếu SAU NÀY TTT cấp bộ ảnh thật (ATLAS Vol.3), chỉ cần set `photoUrl` cho preset
+ * FUTURE-PROOF: khi có bộ ảnh vật liệu có license, chỉ cần set `photoUrl` cho preset
  * trong materials.ts — materialTextureDataUrl() tự ưu tiên ảnh đó, KHÔNG cần đổi code ở đây nữa.
  */
 

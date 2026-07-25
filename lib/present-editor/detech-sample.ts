@@ -3,7 +3,8 @@
  * chặng Present bằng NỘI DUNG THẬT của dự án (căn hộ dịch vụ 5 sao, concept ENSŌ, Japandi-wellness).
  *
  * Nguồn nội dung: deck Detech gốc (~/Downloads/detech-builder) — ý niệm 円相 ENSŌ, SERENE,
- * bốn nguyên lý Nhật (Wabi-sabi/Ma/Shakkei/Omotenashi). CHỈ phần chính Detech (bỏ About-TTT).
+ * bốn nguyên lý Nhật (Wabi-sabi/Ma/Shakkei/Omotenashi). CHỈ phần chính Detech (bỏ trang giới thiệu
+ * studio). Tên studio trong deck mẫu là HƯ CẤU ("Atelier Nord") — deck mẫu KHÔNG gắn brand thật.
  * Ảnh: /public/detech/* (render concept sạch trích từ PPTX + phối cảnh tháp).
  *
  * Tông ENSŌ: navy #0B1622 nền tối · cam #E85C1E accent · cloudwhite #EDEFEC · xanh rêu.
@@ -45,7 +46,7 @@ function tpl(id: string) {
 }
 
 /**
- * Deck 9 slide — mạch chính Detech (bỏ About-TTT), 2 trang ĐẬM CHẤT ENSŌ:
+ * Deck 9 slide — mạch chính Detech (bỏ trang giới thiệu studio), 2 trang ĐẬM CHẤT ENSŌ:
  *   1. dark-cover        — bìa ENSŌ (vườn thiền moss/void).
  *   2. full-bleed        — 円相 · ENSŌ: ý niệm chủ đạo (vòng tròn thiền). ★ ẤN TƯỢNG
  *   3. grid4-philosophy  — Từ một vòng tròn: bốn giá trị · bốn giác quan · bốn lời giải.
@@ -60,7 +61,7 @@ export function makeDetechEnsoDeck(): EditorDeck {
   const P = DETECH_PALETTE;
   const slides = [
     tpl('dark-cover').build({
-      kicker: 'Khối căn hộ dịch vụ lưu trú 5 sao · TTT Architects',
+      kicker: 'Khối căn hộ dịch vụ lưu trú 5 sao · Atelier Nord',
       title: 'DETECH COMPLEX',
       images: [IMG.ensoGarden],
       palette: P,
@@ -122,7 +123,7 @@ export function makeDetechEnsoDeck(): EditorDeck {
       palette: P,
     }),
     tpl('closing-thanks').build({
-      kicker: 'DETECH COMPLEX · TTT ARCHITECTS',
+      kicker: 'DETECH COMPLEX · ATELIER NORD',
       title: 'Trân trọng cảm ơn',
       images: [IMG.towerDusk],
       palette: P,

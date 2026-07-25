@@ -128,7 +128,7 @@ export function findRoomLabels(doc: Doc): RoomInfo[] {
 export type RoomKind = 'bedroom' | 'wc' | 'kitchen' | 'living' | 'corridor' | 'office' | 'assembly' | 'other';
 
 /**
- * 2026-07-16: MỞ RỘNG ra ngoài "chỉ nhà ở" — TTT Architects làm dự án MỌI quy mô
+ * 2026-07-16: MỞ RỘNG ra ngoài "chỉ nhà ở" — sản phẩm phục vụ dự án MỌI quy mô
  * (hospitality/office/residential hạng sang), KHÔNG chỉ căn hộ dân dụng như demo-plan.ts minh
  * hoạ. Bản classifyRoom() này VẪN chỉ nhận diện được 1 tập từ khoá tiếng Việt hạn chế — đây là
  * BƯỚC ĐẦU (thêm 'office'/'assembly'), CHƯA phủ hết các loại phòng office/hospitality khác:
@@ -365,7 +365,7 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
  *   kind==='living': estOccupants = room.areaM2 / 18.58, KHÔNG enforce số lối ra, KHÔNG thay thế
  *   occupant load calc chính thức cho hồ sơ PCCC).
  *   intl-occupant-load-business-general (2026-07-16 chiều — MỞ RỘNG scope ra ngoài
- *   residential-only theo yêu cầu chủ dự án: TTT Architects làm dự án MỌI quy mô, không chỉ nhà
+ *   residential-only theo yêu cầu chủ dự án: studio dùng app làm dự án MỌI quy mô, không chỉ nhà
  *   ở dân dụng. Room kind MỚI 'office' (classifyRoom nhận "VĂN PHÒNG"/"LÀM VIỆC"/"OPEN OFFICE")
  *   → nối rule này, verified=false CỐ Ý vì 2 nguồn mâu thuẫn (9.29–13.94 m²/người) — message
  *   hiển thị dải ước tính số người CẢ 2 đầu, không tự chọn 1 số giữa dải).

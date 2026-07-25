@@ -754,7 +754,7 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
       { kind: 'select', id: 'layout', label: 'Layout', options: ['Cover', 'Nội dung + ảnh', 'Quote'] },
       { kind: 'select', id: 'fonts', label: 'Bộ chữ', options: ['Editorial', 'Modern', 'Elegant'] },
       { kind: 'select', id: 'mode', label: 'Nền', options: ['Sáng', 'Tối'] },
-      { kind: 'text', id: 'brand', label: 'Brand (footer)', placeholder: 'TTT Architects' },
+      { kind: 'text', id: 'brand', label: 'Brand (footer)', placeholder: 'Tên studio của bạn · Your studio' },
       { kind: 'text', id: 'pageNo', label: 'Số trang', placeholder: '01' },
     ],
     creditCost: 0,
@@ -961,8 +961,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
     ],
     outputs: [{ id: 'image', label: 'Board', dataType: 'image' }],
     params: [
-      { kind: 'text', id: 'projectName', label: 'Tên dự án', placeholder: 'HVH Office L30' },
-      { kind: 'text', id: 'studioName', label: 'Tên studio', placeholder: 'TTT Architects' },
+      { kind: 'text', id: 'projectName', label: 'Tên dự án', placeholder: 'VD: Riverside Office L30' },
+      { kind: 'text', id: 'studioName', label: 'Tên studio', placeholder: 'Tên studio của bạn · Your studio' },
     ],
     creditCost: 0,
     async execute({ inputs, params, onProgress }) {
