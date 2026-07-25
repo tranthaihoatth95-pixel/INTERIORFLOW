@@ -33,18 +33,16 @@ Nếu 4 điều kiện đủ: `git worktree remove <path>` (KHÔNG `--force`) + 
 ## Project Knowledge
 Tài liệu tham chiếu đã load vào `knowledge/` (copy từ `~/Downloads/knowledge/`, 18/07):
 
-**`knowledge/ttt-design-system/`** — nguồn sự thật cho mọi output visual của IF (Present, slide, PDF export).
-- [SKILL.md](knowledge/ttt-design-system/SKILL.md)
-- [readme.md](knowledge/ttt-design-system/readme.md)
-- [styles.css](knowledge/ttt-design-system/styles.css)
+**`knowledge/ttt-design-system/`** — hệ thiết kế TTT. ⚠️ CHỈ dùng khi làm **tài liệu/báo cáo CHO TTT**, KHÔNG áp vào sản phẩm (xem LUẬT NỀN TẢNG bên dưới).
 
-**`knowledge/project-references/`** — hồ sơ dự án tham khảo (PDF, ~121MB — nặng, cân nhắc Git LFS nếu repo phình to sau này).
-- 260320_Sungroup-Beach-Club-Phu-Quoc_mood.pdf
-- 2600403_Sungroup-Beach-Club-Phu-Quoc_ConceptID_REV01.pdf
-- 260623_8324_HV_Office.pdf
-- 260710_DETECH_COMPLEX__1_.pdf
+### 📦 Dữ liệu tham khảo đã TÁCH RA NGOÀI repo (24/07)
+Theo Luật trung tính, các thư mục sau **không còn trong repo** (đã chuyển, KHÔNG xoá) — nằm ở **`~/Downloads/interiorflow-reference/`**:
+- `project-references/` — 4 PDF hồ sơ dự án khách thật (Sungroup Beach Club, HV Office, Detech Complex), 121MB
+- `ttt-brand/` — TTT Brand Guideline 5 biến thể
+- `san pham dau ra/` — 51 ảnh sản phẩm tham khảo
+- `dev.db.bak-*` — 2 bản sao DB cũ, 274MB
 
-**`knowledge/ttt-brand/`** — TTT Brand Guideline (5 biến thể: gốc/in/VI/VI-Dark/VI-EN).
+→ Cần tra tài liệu tham khảo thì đọc từ đường dẫn ngoài repo đó. **Không copy trở lại vào repo.**
 
 ## ⛔ LUẬT NỀN TẢNG — IF là SẢN PHẨM ĐỘC LẬP, GLOBAL (rule hardcore 24/07)
 **InteriorFlow KHÔNG phải tool nội bộ TTT. Đây là sản phẩm độc lập, bán/dùng toàn cầu, KHÔNG dính thương hiệu TTT.**
@@ -55,5 +53,7 @@ Tài liệu tham chiếu đã load vào `knowledge/` (copy từ `~/Downloads/kno
 4. **UI của chính app** có nhận diện riêng của InteriorFlow (trung tính, quốc tế), tách khỏi nội dung dự án người dùng tạo.
 5. **Song ngữ**: giao diện hỗ trợ VI/EN (đã có switcher) — không mặc định chỉ tiếng Việt.
 
-> `knowledge/ttt-design-system/` + `knowledge/ttt-brand/` chỉ dùng khi làm **tài liệu/báo cáo CHO TTT** (vd báo cáo BGĐ), KHÔNG áp vào sản phẩm.
-> Nợ cần dọn: `titleBlockTTT()` (lib/cad/commands.ts) in "TTT ARCHITECTS" lên mọi bản vẽ · brand mặc định trong `lib/store.ts`/`lib/nodes/registry.ts` · chip "TTT · Creative Studio" ở intro · deck mẫu · comment mô tả IF là "tool nội bộ TTT".
+> `knowledge/ttt-design-system/` chỉ dùng khi làm **tài liệu/báo cáo CHO TTT** (vd báo cáo BGĐ), KHÔNG áp vào sản phẩm. (`ttt-brand/` đã tách ra ngoài repo — xem trên.)
+> ✅ ĐÃ DỌN 24/07 (nhánh `fix/de-ttt` merged): khung tên CAD `titleBlockPro()` đọc Brand Kit dự án · brand mặc định rỗng · intro bỏ chip TTT · deck mẫu "Atelier Nord" · **system prompt Vitals** không còn ép gu TTT · comment định vị sửa.
+> 🔴 CÒN SÓT (bảng đầy đủ ở `docs/AUDIT-BRAND-PII.md`): `content-deck.ts:113` hardcode `DETECH · CONCEPT` lên mọi deck user sinh · 53 ảnh mặt tiền là render khách (`public/wallpapers/ttt-*`, `covers/`, `detech/`) · `package.json` author/appId `com.ttt.*` · installers cert + Android package `com.tttarchitects.*` · mật khẩu test trong comment (`IntroSequence.tsx:21`) · 3 route mẫu công khai (`/present`, `/demo-amanoi`, deck `IKI Village`).
+> ⚖️ RỦI RO PHÁP LÝ: `docs/LICENSE-NOTES.md` miễn trừ GPL-3.0 của `libredwg-web` dựa trên "tool nội bộ, không bán" — lập luận này CHẾT với định vị global. Xem `docs/RESEARCH-DWG-LICENSE.md`.
