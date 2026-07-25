@@ -21,6 +21,7 @@ import { guReferenceNodes } from './gu-reference';
 import { batchVariantNodes } from './batch-variants';
 import { sketchNodes } from './sketch-node';
 import { renderV2Nodes } from './render-v2';
+import { patternWarpNodes } from './pattern-warp';
 
 export const EXTRA_NODES: NodeDefinition[] = [
   ...watermarkNodes,
@@ -31,4 +32,5 @@ export const EXTRA_NODES: NodeDefinition[] = [
   ...batchVariantNodes,
   ...sketchNodes,
   ...renderV2Nodes,
+  ...patternWarpNodes,
 ];

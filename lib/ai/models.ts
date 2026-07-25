@@ -58,6 +58,21 @@ export const AI_TASKS = {
     comfy: 'text2img',
     typicalMs: 10000,
   },
+  // ===== PATTERN / HOA VĂN (node ai.pattern) =====
+  // Text → hoa văn: cần chi tiết hơn moodboard nên dùng flux/dev (mức Cao), schnell cho mức Vừa.
+  pattern: {
+    falModel: 'fal-ai/flux/dev',
+    falFast: 'fal-ai/flux/schnell',
+    comfy: 'text2img',
+    typicalMs: 18000,
+  },
+  // Hoa văn CÓ ẢNH MẪU → img2img. Đây là đường chính: text-to-image không neo nổi motif
+  // bản địa (16 lần thử của người dùng: "hoa văn Chăm" ra mandala Ấn Độ), phải có reference.
+  patternRef: {
+    falModel: 'fal-ai/flux/dev/image-to-image',
+    comfy: 'img2img',
+    typicalMs: 20000,
+  },
   upscale: {
     falModel: 'fal-ai/esrgan',
     comfy: 'upscale',
@@ -80,6 +95,13 @@ export const AI_TASKS = {
   removeBg: {
     falModel: 'fal-ai/birefnet/v2',
     typicalMs: 10000,
+  },
+  // Chọn vùng thông minh (node ai.smartselect): SAM 2 — click điểm / kéo hộp → mask đúng biên
+  // vật thể. Thay cho việc bắt người dùng vẽ tay biên vách cong bằng brush.
+  // ⚠️ CHƯA có workflow tự-host (comfy) → mức oneAI báo lỗi rõ thay vì đoán. Ghi nợ ở STATUS.
+  segment: {
+    falModel: 'fal-ai/sam2/image',
+    typicalMs: 9000,
   },
 
   // ===== VIDEO (image/text → video) =====

@@ -15,7 +15,14 @@ export type ParamDef =
   | { kind: 'annotate'; id: string; label: string }
   /** Vẽ tay tự do (brush/eraser/line/shape + palette màu) — mở Sketch Studio modal.
    *  Thêm OPTIONAL (union mới, không đổi field cũ) — xem lib/sketch/**, components/sketch/**. */
-  | { kind: 'sketch'; id: string; label: string };
+  | { kind: 'sketch'; id: string; label: string }
+  /** Chọn vùng thông minh (SAM 2 + brush tinh chỉnh) — mở Smart Select modal.
+   *  Giá trị lưu GIỐNG `kind: 'mask'` (data-URI PNG trắng/đen) nên downstream không phân biệt;
+   *  khác nhau chỉ ở modal mở ra. Xem lib/smartselect/**, components/smartselect/**. */
+  | { kind: 'smartmask'; id: string; label: string }
+  /** 4 điểm góc phối cảnh (kéo trên modal canvas) — giá trị lưu JSON `[{x,y}×4]` theo TỈ LỆ 0–1
+   *  của ảnh nền. Dùng cho `util.warp`; xem lib/warp/**, components/warp/**. */
+  | { kind: 'corners'; id: string; label: string };
 
 export type NodeCategory = 'INPUT' | 'AI_GENERATE' | 'AI_EDIT' | 'SLIDE' | 'UTILITY' | 'OUTPUT';
 
@@ -46,6 +53,12 @@ export interface NodeDefinition {
   outputs: PortDef[];
   params: ParamDef[];
   creditCost: number;
+  /**
+   * Từ khoá tìm kiếm VI + EN theo CÁCH NGƯỜI DÙNG GÕ ("vách", "tách nền", "phóng to"),
+   * không phải tên kỹ thuật. OPTIONAL — node không khai thì lấy từ `lib/nodes/keywords.ts`
+   * (bảng trung tâm, xem `keywordsFor()`). Tìm kiếm bỏ dấu nên gõ "vach" cũng khớp "vách".
+   */
+  keywords?: string[];
   execute: (ctx: ExecContext) => Promise<Record<string, PortValue>>;
 }
 
