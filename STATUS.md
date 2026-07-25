@@ -13,8 +13,11 @@
 
 ## Worktree đang mở (2)
 1. **`interiorflow-wt-pdf-font`** — nhánh `fix/vn-pdf-font` @ `a65daaf`, **sạch, XONG, đã verify, CHỜ MERGE**.
-2. **`interiorflow-wt-avatar`** — nhánh `feat/avatar-plush`, **agent ĐANG CHẠY lúc đóng phiên ⇒ RẤT CÓ THỂ DỞ DANG**.
-   → Phiên sau **việc đầu tiên**: `git -C ~/Downloads/interiorflow-wt-avatar status --short` + `git -C ~/Downloads/interiorflow-wt-avatar log --oneline feat/present-layout-ml-p1..HEAD`. Dirty chưa commit thì checkpoint (`wip(avatar): …`) rồi mới quyết làm tiếp hay bỏ.
+2. **`interiorflow-wt-avatar`** — nhánh `feat/avatar-plush`. ⛔ **AGENT VẪN ĐANG CHẠY Ở PHIÊN KHÁC** (phiên mở từ `~/TTT Design system`, 26/07 khuya) — **worktree này ĐANG CÓ CHỦ, chưa bỏ hoang.**
+   - **CHỈ ĐƯỢC ĐỌC**: `status --short` / `log` / `diff --stat` — và nhớ kết quả là **mục tiêu di động**, đọc xong có thể đổi ngay.
+   - ⛔ **TUYỆT ĐỐI KHÔNG** commit `wip(avatar)`, không merge `feat/avatar-plush`, không `git worktree remove`, không `git branch -d` khi agent chưa xong ⇒ đè lên file agent đang ghi = cuốn commit/mất edit (memory `syncwork-concurrent-sessions`).
+   - Chỉ khi chủ dự án XÁC NHẬN agent đã dừng/đã xong thì mới checkpoint (`wip(avatar): …`) hoặc dọn.
+   - Việc AN TOÀN làm song song: mọi thứ trên cây chính — merge `fix/vn-pdf-font`, sửa bug orientation… (nhánh avatar rebase/merge lại sau, không sao).
 
 ## ✅ #25 — PDF hết mất dấu tiếng Việt (nhánh `fix/vn-pdf-font`, 4 commit)
 `b2af06a` font · `57c256f` `lib/pdf-font.ts` + test · `02a1ae7` nối vào `standards-report.ts`/`pdf.ts`/`CadEditor` · `a65daaf` khung tên hết tràn ô + `⌀`→`Ø`.
