@@ -440,7 +440,8 @@ function drawDimRadial(ctx: CanvasRenderingContext2D, v: Viewport, e: DimEntity,
   const arrowPx = Math.max(3, ds.arrowSize * ds.dimScale * v.scale);
   drawArrowHead(ctx, sFrom, sTo, arrowPx);
   if (diameter) drawArrowHead(ctx, sTo, sFrom, arrowPx);
-  const label = diameter ? `⌀${Math.round(r * 2)}` : `R${Math.round(r)}`;
+  // 'Ø' (U+00D8) chứ KHÔNG phải '⌀' (U+2300) — giữ khớp với lib/cad/pdf.ts, xem lý do ở đó.
+  const label = diameter ? `Ø${Math.round(r * 2)}` : `R${Math.round(r)}`;
   dimText(ctx, v, color, label, { x: (sFrom.x + sTo.x) / 2, y: (sFrom.y + sTo.y) / 2 }, ds);
 }
 

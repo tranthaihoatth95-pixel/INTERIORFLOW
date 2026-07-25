@@ -218,6 +218,36 @@ export type TitleBlockInfoTTT = TitleBlockInfoPro;
  * applyRealScaleToTitleBlock (pdf.ts) vẫn ghi đè được lúc xuất. `at` = góc phải-dưới của khung
  * (cùng quy ước titleBlock cũ).
  */
+/**
+ * Ước lượng bề rộng chuỗi TRÊN GIẤY (mm) khi in ở chiều cao chữ `hMm`.
+ *
+ * Vì sao ƯỚC LƯỢNG chứ không đo thật: tầng này là hình học thuần (sinh `Entity[]`, dùng chung
+ * cho canvas/DXF/IDF/PDF) — không có font metrics, jsPDF chỉ xuất hiện ở `lib/cad/pdf.ts`.
+ * Hệ số advance trung bình đo THẬT bằng `jsPDF.getTextWidth` trên chính các chuỗi khung tên với
+ * font đang nhúng (Be Vietnam Pro, xem lib/pdf-font.ts): ~0.52 × h cho chữ hỗn hợp, ~0.62 × h
+ * cho chuỗi TOÀN HOA (chữ hoa rộng hơn). Helvetica hẹp hơn ~5-8% nên ước lượng này là phía AN
+ * TOÀN cho cả 2 font.
+ */
+function estTextWidthMm(text: string, hMm: number): number {
+  const allCaps = text === text.toUpperCase();
+  return text.length * (allCaps ? 0.62 : 0.52) * hMm;
+}
+
+/**
+ * Co chiều cao chữ VỪA ĐỦ để chuỗi lọt lòng ô khung tên. KHÔNG phóng to (chuỗi ngắn giữ nguyên
+ * cỡ thiết kế), và có sàn 60% để chữ không co tới mức không đọc nổi — quá sàn thì chấp nhận
+ * tràn nhẹ, coi như tín hiệu cho người dùng rút gọn tên dự án/tên người.
+ *
+ * Trước fix #25 khung tên dùng chiều cao CỐ ĐỊNH: "KIẾN TRÚC ĐƯỜNG NÉT" (58.6mm) và dòng
+ * "Vẽ · Drawn: … Kiểm · Checked: …" (86.0mm) đã tràn ô 46mm/72mm SẴN TỪ TRƯỚC (helvetica cũng
+ * tràn: 54.4mm/80.9mm) — đổi font chỉ làm rõ thêm. Nay co lại nên hết tràn ở cả 2 font.
+ */
+function fitTextHeightMm(text: string, hMm: number, cellWmm: number): number {
+  const w = estTextWidthMm(text, hMm);
+  if (w <= cellWmm || w <= 0) return hMm;
+  return Math.max(hMm * 0.6, hMm * (cellWmm / w));
+}
+
 export function titleBlockPro(
   at: { x: number; y: number },
   info: TitleBlockInfoPro,
@@ -253,21 +283,29 @@ export function titleBlockPro(
   ln({ x: cB, y: rR2 }, { x: x1, y: rR2 });
 
   const pad = 3 * k;
+  // Bề rộng LÒNG Ô (mm giấy) của 3 cột — trừ pad hai bên. Dùng để co chữ cho khỏi tràn.
+  const cellL = 52 - 6;
+  const cellM = 78 - 6;
+  const cellR = 50 - 6;
+  /** Như `tx` nhưng CO chiều cao chữ nếu chuỗi ước lượng dài hơn lòng ô (xem fitTextHeightMm). */
+  const txFit = (x: number, y: number, text: string, h: number, cellWmm: number) =>
+    tx(x, y, text, fitTextHeightMm(text, h, cellWmm));
+
   // ── cột trái: wordmark studio của DỰ ÁN (Brand Kit) — trống nếu user chưa nhập ──
   const studio = (info.studio || '').trim();
-  if (studio) tx(x0 + pad, y0 + H - 12 * k, studio.toUpperCase(), 5);
-  tx(x0 + pad, y0 + 3 * k, 'Hồ sơ sơ phác · Design Development', 2.4);
+  if (studio) txFit(x0 + pad, y0 + H - 12 * k, studio.toUpperCase(), 5, cellL);
+  txFit(x0 + pad, y0 + 3 * k, 'Hồ sơ sơ phác · Design Development', 2.4, cellL);
   // ── cột giữa: dự án (trên) · bản vẽ (giữa) · vẽ/kiểm (đáy) ──
-  tx(cA + pad, rMid + 14 * k, 'DỰ ÁN · PROJECT', 2.4);
-  tx(cA + pad, rMid + 4 * k, (info.project || 'DỰ ÁN').toUpperCase(), 5);
-  tx(cA + pad, rBot + 7 * k, 'BẢN VẼ · DRAWING', 2.4);
-  tx(cA + pad, rBot + 2 * k, info.drawing || 'MẶT BẰNG BỐ TRÍ — SƠ PHÁC DD', 3.2);
-  tx(cA + pad, y0 + 2.5 * k, `Vẽ · Drawn: ${info.author || '—'}    Kiểm · Checked: ${info.checker || '—'}`, 2.6);
+  txFit(cA + pad, rMid + 14 * k, 'DỰ ÁN · PROJECT', 2.4, cellM);
+  txFit(cA + pad, rMid + 4 * k, (info.project || 'DỰ ÁN').toUpperCase(), 5, cellM);
+  txFit(cA + pad, rBot + 7 * k, 'BẢN VẼ · DRAWING', 2.4, cellM);
+  txFit(cA + pad, rBot + 2 * k, info.drawing || 'MẶT BẰNG BỐ TRÍ — SƠ PHÁC DD', 3.2, cellM);
+  txFit(cA + pad, y0 + 2.5 * k, `Vẽ · Drawn: ${info.author || '—'}    Kiểm · Checked: ${info.checker || '—'}`, 2.6, cellM);
   // ── cột phải: số bản vẽ (trên) · tỉ lệ + ngày (dưới) ──
-  tx(cB + pad, rMid + 14 * k, 'SỐ · NO', 2.4);
-  tx(cB + pad, rMid + 4 * k, info.drawingNo || 'IF-01', 6);
-  tx(cB + pad, rR2 + 6 * k, `Tỷ lệ ${info.scale}`, 3.6);
-  tx(cB + pad, y0 + 3 * k, info.date ? `Ngày · Date ${info.date}` : 'Ngày · Date —', 2.6);
+  txFit(cB + pad, rMid + 14 * k, 'SỐ · NO', 2.4, cellR);
+  txFit(cB + pad, rMid + 4 * k, info.drawingNo || 'IF-01', 6, cellR);
+  txFit(cB + pad, rR2 + 6 * k, `Tỷ lệ ${info.scale}`, 3.6, cellR);
+  txFit(cB + pad, y0 + 3 * k, info.date ? `Ngày · Date ${info.date}` : 'Ngày · Date —', 2.6, cellR);
   return out;
 }
 
