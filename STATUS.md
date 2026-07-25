@@ -6,7 +6,7 @@
 > Lịch sử chi tiết → `CHANGELOG.md` (KHÔNG đọc mỗi phiên).
 
 ## Hiện tại (26/07 — phiên khuya)
-- Nhánh tích hợp `feat/present-layout-ml-p1` @ `73d4f5d`. **0 commit vượt `origin/main`** — không nợ push.
+- Nhánh tích hợp `feat/present-layout-ml-p1` @ `488e57c`. **2 commit vượt `origin/main`** (`b5ca821` fix orientation + `488e57c` docs) — cần push tay.
 - tsc PASS · **93/93 file test** (`node_modules/.bin/sucrase-node <path>.test.ts` — repo KHÔNG có vitest).
 - ⚠️ Phiên này chạy nhầm gốc (`~/TTT Design system`) → memory rơi vào bộ nhớ TTT, `.claude/launch.json` phải dùng `npm --prefix`. **Phiên sau mở bằng `cd ~/Downloads/interiorflow && claude`.**
 - ⚠️ Có thể còn **dev server :3000** chạy nền (mở qua preview_start) — kiểm `lsof -ti:3000`, tắt nếu thừa.
@@ -23,11 +23,18 @@
 - Verify độc lập (không chép báo cáo agent): tsc 0 · 93/93 test · PNG soi tận mắt (`/tmp/if-pdf-verify/`) · font phục vụ qua HTTP `127.0.0.1` trả 200 + sha256 khớp file repo.
 - Chỉ 2/6 file jsPDF thật sự dính lỗi; 4 file kia chỉ `addImage` JPEG → cố ý KHÔNG nối font (khỏi cõng 273KB vô ích).
 
-## 🔴 BUG MỚI PHÁT HIỆN 26/07 — CAD xuất PDF ra GIẤY DỌC
+## ✅ ĐÃ SỬA 26/07 (`b5ca821`) — CAD xuất PDF ra GIẤY DỌC
+`lib/cad/pdf.ts:384` nay là `new jsPDF({ orientation: pw >= ph ? 'landscape' : 'portrait', unit:'mm', format:[pw,ph] })`. Test `[4]` trong `pdf-scale.test.ts` đo **trang THẬT qua `internal.pageSize`** cho A3/A2/A1 (không tin tham số truyền vào, vì chính jsPDF là bên đảo khổ) — 20 ok / 0 fail, tsc sạch.
+Verify độc lập (chủ dự án, dựng PDF thật rồi đọc `MediaBox`): A3 `1190.55×841.89pt` = 420×297mm NGANG · A2 `1683.78×1190.55` · A1 `2383.94×1683.78`. Trước khi sửa cả 3 đều dọc.
+⚠️ Bài học giữ lại: bản sửa này từng **bay mất một lần** vì chạy kiểm chứng "gỡ fix xem test có bắt không" khi file CHƯA commit. Muốn làm phép thử đó thì **commit trước**, rồi khôi phục bằng `git checkout -- <file>`, đừng dựa vào bản copy trong `/tmp`.
+
+<details><summary>Bối cảnh gốc của bug (giữ để tra cứu)</summary>
 `lib/cad/pdf.ts:391` — `new jsPDF({ unit:'mm', format:[pw,ph] })` **thiếu `orientation`** ⇒ jsPDF mặc định portrait rồi đảo khổ. Đọc `MediaBox` file thật: A3 ra `841.9×1190.6pt` = **297×420mm DỌC**, trong khi viewport tính cho 420×297 ngang. A2/A1 sai y hệt ⇒ **cắt ~30% mép phải, đúng chỗ `titleBlockPro` neo** ⇒ khung tên cụt ở MỌI lần xuất.
 - **LỖI CÓ SẴN TỪ TRƯỚC**, không do đợt font: dòng tương ứng trên nhánh tích hợp (`pdf.ts:379`) y hệt.
 - Củng cố: 5 chỗ dựng jsPDF khác trong repo đều truyền `orientation: 'landscape'` — riêng CAD sót. Không test nào kiểm khổ/hướng giấy CAD.
 - **Sửa**: suy `orientation` từ `pw > ph` + test khoá khổ giấy cho A3/A2/A1. Đề xuất làm luôn trong `fix/vn-pdf-font` TRƯỚC khi merge (merge trước thì PDF có dấu đẹp nhưng khung tên vẫn cụt).
+
+</details>
 
 ## 🎭 Hệ avatar — ĐÃ LÀM XONG ĐỢT 1 (nhánh `feat/avatar-plush`, 3 commit, CHỜ MERGE)
 `e0f19cd` schema 13 hạng mục + tương thích ngược + test · `22050c2` vẽ lại phong cách búp bê nỉ + builder 13 slot · `64eba00` gắn vào Header/MobileMenu.
@@ -46,7 +53,7 @@ User chốt: (1) nâng SVG lên **chất búp bê nỉ 3D** (ref: chibi lông x�
 ⚠️ Ràng buộc đã dặn agent: `User.avatar` đã có dữ liệu thật ⇒ field mới phải optional + có mặc định, config cũ/giá trị lạ vẫn render được, có test khoá.
 
 ## Chờ USER quyết
-- **Merge `fix/vn-pdf-font`**: sửa bug orientation trước rồi merge, hay merge trước?
+- **Merge 2 nhánh đang chờ**: `fix/vn-pdf-font` (4 commit, #25) và `feat/avatar-plush` (3 commit, avatar đợt 1). Bug orientation đã sửa THẲNG trên nhánh tích hợp (`b5ca821`) nên không còn chặn.
 - **Figma**: user chọn **tạo file mới trung tính**, nhưng Figma MCP trả `net::ERR_FAILED` 2 lần ⇒ chưa tạo được. Đường vòng: tự tạo file trống rồi chạy `docs/figma-bootstrap.js` (bước 1→4, idempotent, dựng 14 page + Variables 2 mode).
 - **DWG**: sửa tuân thủ GPL ngay (0đ)? · đường A server-side (mất offline)? · ODA khi bán? → `docs/RESEARCH-DWG-LICENSE.md`
 - Còn treo: **VIỆC 4** GuProfile=dữ liệu · **VIỆC 7** demo+onboarding · **#14** cụm Mẫu Presenting.
