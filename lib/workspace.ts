@@ -27,7 +27,18 @@ export async function openFlow(id: string) {
   const res = await fetch(`/api/flows/${id}`);
   const body = await res.json();
   if (!res.ok) throw new Error(body.error ?? 'Không mở được flow.');
-  useFlowStore.getState().loadGraph(body.flow.graphJson, body.flow.name, body.flow.id, body.flow.shareToken);
+  // SCOPE (Task #18): thread `projectId` của flow vào store để các chặng biết mình
+  // thuộc dự án nào (nguồn sự thật scope 'project'). Flow row luôn có field projectId
+  // (nullable) — xem GET /api/flows/[id].
+  useFlowStore
+    .getState()
+    .loadGraph(
+      body.flow.graphJson,
+      body.flow.name,
+      body.flow.id,
+      body.flow.shareToken,
+      body.flow.projectId ?? null,
+    );
 }
 
 export async function createFlow(name: string, graphJson?: string): Promise<string> {

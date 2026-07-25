@@ -10,24 +10,15 @@
 
 import { BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useFlowStore } from '@/lib/store';
-
-function slugify(s: string) {
-  return s
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40) || 'default';
-}
+import { useActiveProjectRouteId } from '@/lib/scope';
 
 export function NotebookButton({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
-  const flowName = useFlowStore((s) => s.flowName);
+  // SCOPE FIX (Task #18): dùng id ổn định (Project.id thật, hoặc Flow.id) — KHÔNG
+  // slug tên flow (trùng tên → 2 dự án khác nhau chung 1 notebook = rò dữ liệu chéo).
+  const routeId = useActiveProjectRouteId();
   const goNotebook = () => {
-    const id = slugify(flowName || 'default');
-    router.push(`/projects/${id}/notebook`);
+    router.push(`/projects/${routeId}/notebook`);
   };
   return (
     <button

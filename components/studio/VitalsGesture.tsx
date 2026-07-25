@@ -28,24 +28,6 @@ import { useFlowStore } from '@/lib/store';
 import VitalsIcon from './VitalsIcon';
 import { VitalsBubble, VitalsTyping } from './VitalsChatBubble';
 
-/**
- * Slugify tên flow → id project cho `/projects/[id]/notebook`.
- * Cùng công thức với `components/notebook/NotebookButton.tsx` (nay đã bỏ khỏi
- * Header — Vitals là entry point AI duy nhất, state machine: kéo lần 1 = popover
- * compact này, bấm "Mở rộng" hoặc kéo dài quá `LONG_DRAG_THRESHOLD` = full modal).
- */
-function slugifyFlow(s: string) {
-  return (
-    s
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 40) || 'default'
-  );
-}
-
 const COPPER = '#c79a63';
 const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
 
@@ -87,7 +69,10 @@ export default function VitalsGesturePanel({
 }) {
   const reduce = useReducedMotion();
   const router = useRouter();
-  const flowName = useFlowStore((s) => s.flowName);
+  // SCOPE FIX (Task #18): điều hướng Notebook bằng id ổn định (Project.id thật hoặc
+  // Flow.id) thay cho slug tên flow — tránh 2 dự án khác nhau chung notebook.
+  const currentProjectId = useFlowStore((s) => s.currentProjectId);
+  const currentFlowId = useFlowStore((s) => s.currentFlowId);
   const rootRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -163,10 +148,10 @@ export default function VitalsGesturePanel({
    * link, back button đều hoạt động sẵn).
    */
   const openFullNotebook = useCallback(() => {
-    const id = slugifyFlow(flowName || 'default');
+    const id = currentProjectId || currentFlowId || 'default';
     onClose();
     router.push(`/projects/${id}/notebook`);
-  }, [flowName, router, onClose]);
+  }, [currentProjectId, currentFlowId, router, onClose]);
 
   const hasThread = messages.length > 0 || sending || !!error;
 
