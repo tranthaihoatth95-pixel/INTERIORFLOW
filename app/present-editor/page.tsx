@@ -1,36 +1,21 @@
 'use client';
 
 /**
- * app/present-editor/page.tsx — Route standalone `/present-editor`.
+ * app/present-editor/page.tsx — ROUTE CŨ của chặng 3 "Presenting", nay là REDIRECT
+ * (Task #21 · ĐỔ NỀN 1B).
  *
- * Mở thẳng trình dàn trang "Present" (Canva-level) với deck MẪU để phát triển & test
- * biệt lập. Editor tự nạp template từ thư viện Reference (/api/library) nếu có; nếu
- * trống thì dùng template builtin + ảnh /public/covers.
+ * Chặng đã dời xuống `/projects/[id]/present` (URL = nguồn sự thật). Route này GIỮ LẠI để
+ * không phá bookmark / link cũ / resume-state cũ: đọc dự án đang hoạt động (store →
+ * resume-state) rồi `replace` sang `/projects/[id]/present`. Chưa có dự án nào → render thẳng
+ * trình dàn trang như trước (deck MẪU) để phát triển/test biệt lập vẫn được.
  *
- * StudioBar ở đầu để chuyển Node ↔ Dàn trang ↔ Chỉnh ảnh + luôn có đường về app chính.
- * Hydration-safe: deck mẫu dựng trong useState initializer (chạy 1 lần ở client).
+ * Nội dung màn nằm ở `components/present-editor/PresentStageScreen.tsx` (dùng chung với
+ * route scope).
  */
 
-import { useState } from 'react';
-import PresentSheets from '@/components/present-editor/PresentSheets';
-import { makeSampleDeck } from '@/lib/present-editor/sample';
-import StudioBar from '@/components/studio/StudioBar';
-import { StageEnter } from '@/components/studio/StageTransition';
-import { CommentLayer } from '@/components/CommentLayer';
-import { ChatPanel } from '@/components/ChatPanel';
+import PresentStageScreen from '@/components/present-editor/PresentStageScreen';
+import LegacyStageRedirect from '@/components/studio/LegacyStageRedirect';
 
 export default function PresentEditorPage() {
-  const [deck] = useState(makeSampleDeck);
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
-      <StudioBar active="present" />
-      {/* C-4: vào chặng bằng crossfade + scale "dynamic wallpaper" (StageEnter). */}
-      <StageEnter style={{ display: 'block' }}>
-        {/* Tầng multi-sheet (phụ-thêm): thanh tab + PresentEditor. 1 sheet ⇒ y hệt bản cũ. */}
-        <PresentSheets initialDeck={deck} />
-      </StageEnter>
-      <ChatPanel />
-      <CommentLayer />
-    </div>
-  );
+  return <LegacyStageRedirect stage="present" fallback={<PresentStageScreen />} />;
 }

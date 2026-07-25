@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { pressable, springNode, prefersReducedMotion } from '@/lib/motion';
+import { parseStageRoute } from '@/lib/scope-core';
 
 interface Comment {
   id: string;
@@ -68,6 +69,10 @@ export function CommentLayer() {
   }, [load]);
 
   function currentStage(): string {
+    // Task #21: chặng có thể ở route scope dự án (`/projects/[id]/present`) hoặc route toàn
+    // cục cũ (`/present-editor`) — nhận cả hai.
+    const scoped = parseStageRoute(route);
+    if (scoped) return scoped.stage === 'cad' ? 'concept' : scoped.stage;
     if (route.includes('present-editor')) return 'present';
     if (route.includes('photo-editor')) return 'photo';
     try {

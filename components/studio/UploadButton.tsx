@@ -10,7 +10,8 @@
 
 import { useRef } from 'react';
 import { Upload } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { stageHrefFrom } from '@/lib/project-scope';
 import { useFlowStore } from '@/lib/store';
 import { useT } from '@/lib/i18n';
 
@@ -40,6 +41,7 @@ export function UploadButton() {
   const workspace = useFlowStore((s) => s.workspace);
   const setMoodboardOpen = useFlowStore((s) => s.setMoodboardOpen);
   const router = useRouter();
+  const pathname = usePathname();
   const fileRef = useRef<HTMLInputElement>(null);
   const tr = useT();
 
@@ -49,7 +51,8 @@ export function UploadButton() {
     if (phase === 'concept') {
       setMoodboardOpen(true);
     } else if (phase === 'present') {
-      router.push('/present-editor');
+      // Task #21: sang chặng Present TRONG dự án đang mở (`/projects/[id]/present`).
+      router.push(stageHrefFrom(pathname, 'present'));
     } else {
       // render → chọn ảnh tạo node Import Image
       fileRef.current?.click();

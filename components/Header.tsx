@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Coins, Share2, Play, Loader2, ChevronDown, Cloud, Zap, Cpu, ShieldCheck, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, MoreHorizontal } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { runFlow } from '@/lib/execution';
 import { checkProviders, type ProviderStatus } from '@/lib/ai/client';
@@ -22,6 +22,7 @@ import { LangToggle } from '@/components/LangToggle';
 import { pressable, pressableIcon, easeApple } from '@/lib/motion';
 import { useStageTransition } from '@/components/studio/StageTransitionProvider';
 import { stashPresentHandoffWithIds, deckImagesWithIdsFromNodes } from '@/lib/present-editor/handoff';
+import { stageHrefFrom } from '@/lib/project-scope';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { IFLogo } from '@/components/entry/IFLogo';
@@ -394,6 +395,9 @@ function PhaseSwitcher() {
   const workspace = useFlowStore((s) => s.workspace);
   const setWorkspace = useFlowStore((s) => s.setWorkspace);
   const router = useRouter();
+  // Task #21: 3 chặng nằm dưới `/projects/[id]/…` — id lấy từ URL đang đứng để chuyển chặng
+  // không rời dự án. Chưa xác định được dự án → stageHrefFrom trả route toàn cục cũ.
+  const pathname = usePathname();
   const current: Phase = workspace ?? DEFAULT_PHASE;
   // Màn che khi rời chặng do StageTransitionProvider (root layout) giữ, KHÔNG còn state cục bộ:
   // veil nằm trong route cũ thì bị unmount ngay giữa lúc chuyển, sinh ra cú "chớp" nền phẳng.
@@ -401,9 +405,9 @@ function PhaseSwitcher() {
 
   // Prefetch sớm route studio ngay khi switcher mount → chuyển gần như tức thì, bớt khựng.
   useEffect(() => {
-    router.prefetch('/present-editor');
-    router.prefetch('/cad-editor');
-  }, [router]);
+    router.prefetch(stageHrefFrom(pathname, 'present'));
+    router.prefetch(stageHrefFrom(pathname, 'cad'));
+  }, [router, pathname]);
 
   return (
     <>
@@ -417,11 +421,11 @@ function PhaseSwitcher() {
             // hỏng có fallback bộ nhớ. Flow không có slide ⇒ mảng rỗng, stash bỏ qua,
             // luồng cũ nguyên vẹn.
             stashPresentHandoffWithIds(deckImagesWithIdsFromNodes(useFlowStore.getState().nodes));
-            router.push('/present-editor');
+            router.push(stageHrefFrom(pathname, 'present'));
           } else if (p === 'concept') {
             // Chặng 1 = Layout CAD → trình vẽ 2D ở route riêng (cùng pattern fade như Present).
             begin('concept');
-            router.push('/cad-editor');
+            router.push(stageHrefFrom(pathname, 'cad'));
           } else setWorkspace(p);
         }}
       />
