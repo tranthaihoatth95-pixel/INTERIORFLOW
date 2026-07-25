@@ -184,8 +184,8 @@ Lấy trực tiếp từ VLM output (`captionImage` đã trả `{style, material
 
 **Trả lời: ảnh này gắn với dự án cụ thể nào?**
 
-Optional foreign key `Project.id` (bảng đã có). Nếu ảnh là hiện trạng "Detech Complex" hay
-concept "Villa Anh Vinh" → gắn `projectId`. Nếu là ảnh reference chung → null.
+Optional foreign key `Project.id` (bảng đã có). Nếu ảnh là hiện trạng "Atelier Nord — Dự án
+mẫu" (`prj_nord01`) hay concept "Villa Nord" → gắn `projectId`. Nếu là ảnh reference chung → null.
 
 ### Tầng 5 — `userTags[]` (fallback tự do)
 
@@ -349,7 +349,7 @@ Rendering là chặng dùng ref NHIỀU nhất → tách tab con:
 Trong mỗi chặng, thêm hàng chip filter:
 - `roomType`: [Tất cả] [Bedroom] [Living] [Kitchen] [Office] ...
 - `style`: [Tất cả] [Japandi] [Wabi-sabi] [Quiet-luxury] ...
-- `project`: [Tất cả] [Detech Complex] [Villa Anh Vinh] ...
+- `project`: [Tất cả] [Atelier Nord — Dự án mẫu] [Villa Nord] ...
 
 Chip active AND với nhau (roomType=bedroom AND style=japandi).
 
@@ -433,7 +433,7 @@ cần route mới `/api/office/extract` gọi markitdown.
 **Phase C — User bulk edit:**
 - Trang `/library/admin` (chỉ user creator role) — bảng phẳng 1515 dòng, cột `kind`,
   `stageUsage`, `domain.style`, `projectId`, `userTags`, filter/sort/bulk-edit inline.
-- Cho phép fix batch: "Chọn 200 ảnh gán projectId=Detech Complex".
+- Cho phép fix batch: "Chọn 200 ảnh gán projectId=`prj_nord01`".
 
 ### 6.2 Rollback plan
 
