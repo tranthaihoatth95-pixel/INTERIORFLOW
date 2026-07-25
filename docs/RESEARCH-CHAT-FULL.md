@@ -521,9 +521,9 @@ Thay `ChatPanel.tsx` hiện tại (panel phải 288px). Layout mới:
 │ [🔍 Tìm channel/người...]                         │
 ├────────────────────────────────────────────────────┤
 │ DỰ ÁN · Projects                                   │
-│  # Sungroup Beach Club           2   ← unread    │
-│  # HVH Office                                     │
-│  # Detech Complex                                 │
+│  # Nord Beach Club               2   ← unread    │
+│  # Nord Office                                    │
+│  # Nord Complex                                   │
 ├────────────────────────────────────────────────────┤
 │ NHẮN RIÊNG · Direct                    [+]       │
 │  @ Hoà                          1   ← unread    │
