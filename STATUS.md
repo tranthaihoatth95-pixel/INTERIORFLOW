@@ -13,11 +13,7 @@
 
 ## Worktree đang mở (2)
 1. **`interiorflow-wt-pdf-font`** — nhánh `fix/vn-pdf-font` @ `a65daaf`, **sạch, XONG, đã verify, CHỜ MERGE**.
-2. **`interiorflow-wt-avatar`** — nhánh `feat/avatar-plush`. ⛔ **AGENT VẪN ĐANG CHẠY Ở PHIÊN KHÁC** (phiên mở từ `~/TTT Design system`, 26/07 khuya) — **worktree này ĐANG CÓ CHỦ, chưa bỏ hoang.**
-   - **CHỈ ĐƯỢC ĐỌC**: `status --short` / `log` / `diff --stat` — và nhớ kết quả là **mục tiêu di động**, đọc xong có thể đổi ngay.
-   - ⛔ **TUYỆT ĐỐI KHÔNG** commit `wip(avatar)`, không merge `feat/avatar-plush`, không `git worktree remove`, không `git branch -d` khi agent chưa xong ⇒ đè lên file agent đang ghi = cuốn commit/mất edit (memory `syncwork-concurrent-sessions`).
-   - Chỉ khi chủ dự án XÁC NHẬN agent đã dừng/đã xong thì mới checkpoint (`wip(avatar): …`) hoặc dọn.
-   - Việc AN TOÀN làm song song: mọi thứ trên cây chính — merge `fix/vn-pdf-font`, sửa bug orientation… (nhánh avatar rebase/merge lại sau, không sao).
+2. **`interiorflow-wt-avatar`** — nhánh `feat/avatar-plush` @ `64eba00`. ✅ **AGENT ĐÃ XONG, worktree SẠCH, không còn ai giữ.** Tự do đọc/ghi/merge.
 
 ## ✅ #25 — PDF hết mất dấu tiếng Việt (nhánh `fix/vn-pdf-font`, 4 commit)
 `b2af06a` font · `57c256f` `lib/pdf-font.ts` + test · `02a1ae7` nối vào `standards-report.ts`/`pdf.ts`/`CadEditor` · `a65daaf` khung tên hết tràn ô + `⌀`→`Ø`.
@@ -33,7 +29,18 @@
 - Củng cố: 5 chỗ dựng jsPDF khác trong repo đều truyền `orientation: 'landscape'` — riêng CAD sót. Không test nào kiểm khổ/hướng giấy CAD.
 - **Sửa**: suy `orientation` từ `pw > ph` + test khoá khổ giấy cho A3/A2/A1. Đề xuất làm luôn trong `fix/vn-pdf-font` TRƯỚC khi merge (merge trước thì PDF có dấu đẹp nhưng khung tên vẫn cụt).
 
-## 🎭 Hệ avatar — đã có nhưng MỒ CÔI (nhánh `feat/avatar-plush`)
+## 🎭 Hệ avatar — ĐÃ LÀM XONG ĐỢT 1 (nhánh `feat/avatar-plush`, 3 commit, CHỜ MERGE)
+`e0f19cd` schema 13 hạng mục + tương thích ngược + test · `22050c2` vẽ lại phong cách búp bê nỉ + builder 13 slot · `64eba00` gắn vào Header/MobileMenu.
+- tsc 0 · `lib/avatar.test.ts` PASS 57 assertion · cả 9 file `lib/*.test.ts` PASS · worktree sạch. Tổ hợp **172.800 → 42.152.140.800**.
+- Nối vào `Header.tsx > UserChip` (24px) + `MobileMenu.tsx > AccountRow` (36px), cả hai dẫn `/settings/avatar`. Component mới `components/avatar/UserAvatar.tsx` lo parse/normalize/fallback.
+- 🔑 Mắt xích ẩn đã sửa: `SessionUser` + `publicUser()` (`lib/server/auth.ts`, `lib/store.ts`) **chưa từng trả cột `avatar`** về client ⇒ trước đây không có dữ liệu để vẽ.
+- Tương thích ngược: key cũ giữ nguyên nghĩa, danh sách chỉ nối thêm cuối, field thiếu → `LEGACY_DEFAULTS` (không random) ⇒ ai đã lưu avatar thì mặt KHÔNG đổi. Test khoá: 12 input rác, 300 seed, round-trip 13 field.
+- ⚠️ **Thay đổi hành vi**: user CHƯA từng lưu avatar sẽ nhận mặt khác trước, do sửa bug `randomAvatarFromId` cũ (dùng chung 1 hash chia hằng số ⇒ id gần nhau ra avatar gần giống hệt).
+- Hiệu năng: filter (feTurbulence + 3 gaussian blur) **chỉ bật khi `size > 48`**, nhỏ hơn dùng bản phẳng; có prop `detail` ép tay; id `<defs>` gắn `useId()`.
+- 🔴 **THẨM MỸ CHƯA ĐẠT — cần đợt 2** (chủ dự án soi ảnh `/tmp/avatar-preview/grid-a|b|c.svg.png`): chưa ra chất **nỉ/lông** (vẫn gradient vector mượt, ref có xơ vải rõ ở tóc + áo len) · **tóc mỏng dán sát đầu** như mũ lưỡi trai, hair 1/2/7/8/14 gần như trùng nhau · **kính quá khổ, tụt thấp**, đọc ra "hai cục đen" hơn là mắt mèo · màu tóc `silver`/`ash`/`platinum` gần trùng.
+- Chưa đụng PresenceBar / LiveCursors / ProjectSelect / Chat / Dashboard (cố ý, để đợt sau).
+
+## 🎭 Bối cảnh gốc — vì sao avatar từng MỒ CÔI
 Phát hiện: `lib/avatar.ts` + `AvatarRenderer` (SVG 200×240) + `AvatarBuilder` + `/settings/avatar` + `/api/user/avatar` + cột `User.avatar` **đã tồn tại**, nhưng `AvatarRenderer` **chỉ được dùng bên trong chính `AvatarBuilder`**. Ra ngoài app mọi người vẫn là chữ cái: `PresenceBar.tsx:72` initials · `ProjectSelect.tsx:144` gradient hash + chữ đầu · `LiveCursors.tsx:61` tên trơn · `api/dashboard/route.ts:20` không trả config avatar.
 User chốt: (1) nâng SVG lên **chất búp bê nỉ 3D** (ref: chibi lông xù, kính cateye bản dày đuôi hếch, áo cổ lọ, bóng studio mềm, má ửng) · (2) **NHIỀU BIẾN THỂ để lựa** (mở rộng hạng mục cũ + thêm biểu cảm/khuyên tai/tàn nhang/màu nền/phụ kiện) · (3) nối vào **header/menu tài khoản THÔI** (chưa đụng PresenceBar/cursor/card dự án — để dành đợt sau).
 ⚠️ Ràng buộc đã dặn agent: `User.avatar` đã có dữ liệu thật ⇒ field mới phải optional + có mặc định, config cũ/giá trị lạ vẫn render được, có test khoá.
