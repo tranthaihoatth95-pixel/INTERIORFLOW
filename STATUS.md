@@ -9,9 +9,8 @@
 - HEAD `4cfb240` nhánh `feat/present-layout-ml-p1`. **~28 commit local vượt origin — CHƯA PUSH:** `git push origin feat/present-layout-ml-p1:main`
 - tsc PASS · **91/91 test** (`node_modules/.bin/sucrase-node <path>.test.ts` — repo KHÔNG có vitest).
 
-## Worktree đang mở (2)
-- `interiorflow-wt-pattern-nodes` (`feat/pattern-nodes`) — agent **R-NODES #28 XONG cả 4 việc, commit `b2b8615`, CHỜ MERGE**. tsc PASS · 89/89 file test PASS. Verify thật trên 127.0.0.1:3035 + fal: SAM chọn đúng vách cong 1 click · hoa văn Chăm từ ảnh mẫu → pattern phẳng 2 màu · warp→composite dán lên phối cảnh. Node mới: `ai.smartselect` · `ai.pattern` · `util.warp`. Nợ: chưa có workflow tự-host cho `segment` (mức oneAI báo lỗi rõ) · tile seamless còn là mirror 4 chiều (chưa offset+feather) · param màu vẫn là text hex (chưa có `kind:'color'`).
-- `interiorflow-wt-audit-fix` (`fix/audit-approved`) — agent **#27 TREO, 45 file dirty CHƯA COMMIT**. Phiên sau: commit checkpoint NGAY rồi làm nốt.
+## Worktree đang mở
+- (Không có — đã dọn sạch, cả R-NODES và AUDIT-FIX đều đã merge.)
 
 ## ĐÃ MERGE 25/07 (đợt lớn nhất)
 **R-NODES**: Smart Select (SAM 2, click 1 điểm → mask theo biên) · search node **tiếng Việt bỏ dấu** (43 node có keywords) · **Pattern Studio** (img2img từ reference + dẹt stencil client-side) · **Perspective Warp** 4 góc · fix UX nút modal disabled khi chưa nối input. ⚠️ Phát hiện: **fal FLUX BỎ QUA `negative_prompt`** → phải dùng prompt dương.
