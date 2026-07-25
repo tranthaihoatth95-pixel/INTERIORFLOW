@@ -55,6 +55,7 @@ import {
   clearPhotoEditorReturn,
   PHOTO_EDITOR_RETURN_KEY,
 } from '@/lib/photo-editor/handoff';
+import { stageHrefFrom } from '@/lib/project-scope';
 import {
   createAssetFromElement,
   attachElementToAsset,
@@ -1219,7 +1220,11 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
       if (el && el.kind === 'image' && ed.slide) {
         stashPhotoEditorIn(el.src, { slideId: ed.slide.id, elementId, assetId: el.assetId });
       }
-      if (typeof window !== 'undefined') window.open('/photo-editor', '_blank');
+      // Task #21: mở công cụ Chỉnh ảnh TRONG dự án đang mở (`/projects/[id]/photo`) — tab
+      // mới có store rỗng nên URL phải tự mang dự án, không để nó đoán từ localStorage.
+      if (typeof window !== 'undefined') {
+        window.open(stageHrefFrom(window.location.pathname, 'photo'), '_blank');
+      }
     },
     [ed.slide],
   );

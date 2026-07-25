@@ -11,7 +11,7 @@ Mọi màn hình thuộc đúng MỘT trong hai phạm vi (`lib/scope.ts`, `AppS
 | Scope | Nghĩa | Ví dụ màn |
 |-------|-------|-----------|
 | `global` | Toàn cục, không gắn 1 dự án | Gallery/chọn dự án (`/`), Login, Settings, Thư viện chung, route showcase demo (`/present`, `/report`) |
-| `project` | Thuộc-1-dự-án `[id]` | `/projects/[id]/overview`, `/projects/[id]/notebook`, và (đích đến) các chặng CAD/Render/Present khi làm việc trong dự án |
+| `project` | Thuộc-1-dự-án `[id]` | `/projects/[id]/overview`, `/projects/[id]/notebook`, và **3 chặng + Chỉnh ảnh**: `/projects/[id]/cad`, `/render`, `/present`, `/photo` (Task #21) |
 
 Luật scope `project`: **mọi truy vấn/hiển thị lọc chặt theo `[id]`** — không rò dữ
 liệu dự án khác (flows, thành viên, notebook…). API `/api/projects/[id]/overview`
@@ -19,8 +19,10 @@ là mẫu tham chiếu: `where.projectId === id`.
 
 Nguồn "tôi đang ở dự án nào?":
 1. **URL** — trên `/projects/[id]/…` thì `[id]` là chân lý (`parseScope`/`useScope`).
-2. **Store** — các chặng còn chạy trên route toàn cục đọc `currentProjectId` /
-   `currentFlowId` (flow đang mở gắn dự án nào). KHÔNG suy ra từ `flowName`.
+2. **Store** — CHỈ là cache. Từ Task #21, 3 chặng đã nằm dưới `/projects/[id]/…` nên
+   URL luôn có `[id]`; store dùng để (a) biết "dự án đang hoạt động" khi đứng ở route
+   toàn cục (Gallery, cầu redirect cũ), (b) tránh nạp lại khi đã đúng dự án. KHÔNG suy
+   ra từ `flowName`.
 
 ## 1B. Quy ước route: `/prj/` là KÝ HIỆU LOGIC — route THỰC TẾ là `/projects/`
 
@@ -42,6 +44,30 @@ Nguồn "tôi đang ở dự án nào?":
   chặng toàn cục dùng `currentProjectId ?? currentFlowId` (`lib/scope.ts`).
 - `resolveNotebookProjectId` (server) hiểu cả hai: `Project.id` của user → dùng
   thẳng; cuid khác (Flow.id) → bucket ẩn `__nb:<id>` duy nhất theo id đó.
+
+## 1C. Chặng nằm dưới scope dự án (Task #21 · ĐỔ NỀN 1B)
+
+**URL là nguồn sự thật, store chỉ là cache.** 4 route chặng:
+
+| Route | Component | Route TOÀN CỤC cũ (giữ làm redirect) |
+|---|---|---|
+| `/projects/[id]/cad` | `components/studio/CadStageScreen` | `/cad-editor` |
+| `/projects/[id]/render` | `components/home/HomeScreen` (canvas node) | `/` |
+| `/projects/[id]/present` | `components/present-editor/PresentStageScreen` | `/present-editor` |
+| `/projects/[id]/photo` | `components/photo-editor/PhotoEditorScreen` | `/photo-editor` |
+
+- Trang chặng đọc `[id]` bằng `useParams()` rồi `useProjectScopeSync` (`lib/project-scope.ts`)
+  ép store nạp đúng flow của `[id]`. Không tìm được flow nào thuộc `[id]` ⇒ **DỌN canvas**
+  (không bao giờ để graph dự án A hiện dưới URL dự án B).
+- **Route cũ KHÔNG bị xoá** (bookmark, `window.open('/photo-editor')`, resume-state cũ):
+  `LegacyStageRedirect` tra dự án đang hoạt động (store → resume-state) rồi `router.replace()`
+  sang route scope. Chưa có dự án nào (user mới) ⇒ render thẳng màn cũ, không kẹt.
+- `/` giữ nguyên vai trò Gallery/đăng nhập. Khi đã biết dự án (chọn ở ProjectSelect hoặc
+  auto-resume) → `replace` sang `/projects/[id]/render`.
+- Điều hướng chặng (StudioBar, Header, UploadButton) dùng `stageHrefFrom(pathname, stage)` —
+  lấy `[id]` TỪ URL trước, nên chuyển chặng không bao giờ rời dự án.
+- Resume-state vẫn ghi TÊN ROUTE CŨ (`/cad-editor`…) cho gọn kiểu `ResumableRoute`; auto-resume
+  đi qua cầu redirect nên vẫn về đúng chặng + đúng dự án.
 
 ## 2. Mô hình dữ liệu lõi (tóm tắt — chi tiết ở `prisma/schema.prisma`)
 

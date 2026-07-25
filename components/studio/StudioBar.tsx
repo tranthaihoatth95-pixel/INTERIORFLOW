@@ -6,12 +6,15 @@
  * Trục điều hướng duy nhất: Concept · Render · Present (giống hệt header app chính).
  *   - present-editor: active = Present.
  *   - photo-editor: active = Render + nhãn "Chỉnh ảnh" (photo là công cụ con của Render).
- * Chọn Concept/Render → về '/' đúng chặng (ghi localStorage workspace, store.hydrate đọc lại).
- * Chọn Present → /present-editor. Luôn có đường về app chính.
+ * Task #21 (ĐỔ NỀN 1B): điều hướng chặng đi tới `/projects/[id]/(cad|render|present)` — `[id]`
+ * lấy TỪ URL đang đứng (nguồn sự thật) nên chuyển chặng không bao giờ rời dự án. Chưa xác
+ * định được dự án nào (user mới) → `stageHrefFrom` rơi về route toàn cục cũ ('/cad-editor',
+ * '/present-editor', '/') = đúng hành vi trước đây. Vẫn ghi localStorage workspace để
+ * store.hydrate khôi phục chặng. Luôn có đường về app chính (Home/logo → Gallery).
  */
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Sun, Moon, SunMoon, MessageCircle } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
 import { STAGE_TINT } from '@/lib/phases';
@@ -23,9 +26,13 @@ import Tooltip from '@/components/ui/Tooltip';
 import { IFLogo } from '@/components/entry/IFLogo';
 import { HomeButton } from './HomeButton';
 import { requestGallery } from '@/lib/resume';
+import { stageHrefFrom } from '@/lib/project-scope';
+import { stageSegmentForPhase } from '@/lib/scope-core';
 
 export default function StudioBar({ active }: { active: 'present' | 'photo' | 'cad' }) {
   const router = useRouter();
+  // Task #21: chuyển chặng phải Ở TRONG dự án đang mở → lấy `[id]` từ URL hiện tại.
+  const pathname = usePathname();
   // Khôi phục chat + sáng/tối cho studio (trước bị thiếu so với app chính).
   const pref = useFlowStore((s) => s.themePref);
   const setThemePref = useFlowStore((s) => s.setThemePref);
@@ -41,11 +48,13 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
   // Prefetch sẵn đường VỀ app chính — bấm Concept/Render chuyển gần như tức thì.
   useEffect(() => {
     applyTheme();
-    router.prefetch('/');
-    router.prefetch('/cad-editor');
+    // Prefetch ĐÚNG route scope dự án sẽ được push (route toàn cục cũ giờ chỉ là cầu
+    // redirect — prefetch nó không giúp gì cho lượt chuyển chặng thật).
+    router.prefetch(stageHrefFrom(pathname, 'render'));
+    router.prefetch(stageHrefFrom(pathname, 'cad'));
     // Thiếu prefetch route Present là lý do bấm Present hay khựng lâu nhất trong 3 chặng.
-    router.prefetch('/present-editor');
-  }, [applyTheme, router]);
+    router.prefetch(stageHrefFrom(pathname, 'present'));
+  }, [applyTheme, router, pathname]);
 
   const nextTheme: 'auto' | 'light' | 'dark' =
     pref === 'auto' ? 'light' : pref === 'light' ? 'dark' : 'auto';
@@ -59,22 +68,17 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
     if (samePane) return;
     // Bật màn che trước khi đổi route; provider tự kéo màn ra khi trang đích đã vẽ xong.
     begin(p);
-    if (p === 'present') {
-      router.push('/present-editor');
-      return;
-    }
-    // Chặng 1 (id 'concept') = Drafting CAD → trình vẽ 2D ở route riêng.
-    if (p === 'concept') {
-      router.push('/cad-editor');
-      return;
-    }
-    // Render = canvas node ở app chính (ghi chặng, store.hydrate khôi phục).
+    // Ghi chặng cho store.hydrate (route đích đọc lại) — giữ nguyên hành vi cũ, và cũng là
+    // đường dự phòng khi rơi về route toàn cục (chưa xác định được dự án nào).
     try {
       localStorage.setItem('interiorflow.workspace', p);
     } catch {
       /* bỏ qua */
     }
-    router.push('/');
+    // Task #21: 3 chặng đều nằm dưới `/projects/[id]/…` — id lấy TỪ URL đang đứng, nên
+    // chuyển chặng luôn ở lại đúng dự án. Chưa có dự án nào → stageHrefFrom trả route
+    // toàn cục cũ ('/cad-editor', '/present-editor', '/') = hành vi trước đây.
+    router.push(stageHrefFrom(pathname, stageSegmentForPhase(p)));
   };
 
   return (
