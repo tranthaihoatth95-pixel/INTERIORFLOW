@@ -25,3 +25,19 @@ public/comments-images/
 # macOS
 .DS_Store
 public/test-assets/
+
+# Secrets backup — KHÔNG commit (chứa FAL_KEY/GOOGLE_SECRET/NVIDIA_API_KEY)
+.env*.bak*
+.env.local.bak*
+
+# Serena tool cache
+.serena/
+
+# Test render outputs (nặng, không commit)
+2407-Test/
+
+# Tài liệu/báo cáo RIÊNG cho TTT — KHÔNG commit vào sản phẩm global (Luật trung tính)
+docs/BAO-CAO-BGD-GD1.html
+
+# Demo render outputs (dữ liệu dự án thật, ảnh nặng) — chuyển ra ngoài repo / seed trung tính
+docs/DEMO-CLAY-2407/

@@ -14,14 +14,20 @@
 - Toàn bộ đợt 19-23/07 ĐÃ MERGE (chi tiết → CHANGELOG). Mới nhất 23/07 chiều tối: **IF2-A nền + A1 fix Notebook P1 + INSTALLER-R docs + CHAT-R docs + LIB-R docs + V verify** (6 agent song song, xem 4 báo cáo `RESEARCH-*` mới: CHAT-FULL, INSTALLER-4-PLATFORMS, LIBRARY-UPGRADE + folder `installers/` scaffold).
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (**75 file** cuối phiên). tsc sạch.
 
-## Worktree đang mở (5/5 — Phase A 24/07 đang chạy 3 agent)
-- `interiorflow-wt-access-control-m1` — A1 ProjectMember+5 role+GATE (ĐANG CHẠY, port 3011)
-- `interiorflow-wt-zone-tool` — A2 zone/ellipse/arrow/legend/aerial (ĐANG CHẠY, port 3012)
-- `interiorflow-wt-dwg-block-flatten` — A3 flatten INSERT/BLOCK_RECORD (ĐANG CHẠY, port 3013)
-- `interiorflow-wt-clay2img-audit` @510b71c — audit + demo clay FAIL-PROVIDER (fal hết balance, script run-demo.mjs sẵn); merge sau khi user nạp fal chạy lại HOẶC merge luôn docs
-- `interiorflow-wt-floorplan-color-fill` @2efce34 — spec GAP-COLOR-FILL (nguồn cho A2, merge/xoá sau khi A2 xong)
+## Worktree đang mở
+- (Không có — sạch, 0 worktree.)
 
-Đã merge 24/07 sáng: vitals-drag-nb-general · dwg-import-verify · 4stages-catalog (3 worktree đã dọn, user đã push).
+## CỘT MỐC 24/07: IF1 feature-complete + bộ cài Windows XONG
+- **9 nhánh + bộ cài đã merge** (HEAD `d1ffbc4`), tsc sạch, 81 test/0 fail. Đợt: zone-tool · dwg-block-flatten · access-control-m1 · cad-core-logic · legend-wave1 · legend-research · floorplan-color-fill · clay2img-audit · installer-win. Tất cả worktree đã dọn.
+- **Bộ cài**: `next build` PASS, electron chạy OK trên Mac, `InteriorFlow.exe` win-unpacked build được. NSIS `Setup.exe` PHẢI build native trên Windows: nhấp `build-windows-native.bat` → `dist-installer\InteriorFlow Setup 0.1.0.exe`. Điền key qua menu Tệp→config.json. (docs/BUILD-WINDOWS.md)
+- **fal đã hoạt động** (nạp balance OK) — render clay→photoreal sống, ảnh mẫu ở 2407-Test/.
+- **Báo cáo BGĐ** HTML (TTT DS) publish artifact: docs/BAO-CAO-BGD-GD1.html.
+- **Local vượt origin — push khi tiện:** `git push origin feat/present-layout-ml-p1:main`.
+
+## BATCH CẬP NHẬT SAU (chưa làm — gom 1 đợt khi user chốt)
+- **Lock overlay** ⌘⇧L/Ctrl⇧L: che kính mờ GIỮ PHIÊN + nhập lại mở khoá, KHÔNG logout (user đã chốt hướng).
+- **ControlNet render**: clay2render(Depth) sai khối với model SketchUp → chuyển sketch2render(Canny fal-ai/flux-pro/v1/canny) + thêm nút control strength. Batch render 6 góc sảnh (chờ file vào 2407-Test/render-batch/).
+- Vitals mở rộng (Figma, spec MIA) · CAD 3-option UX · Presenting cây thư mục InDesign · Video editor M1 · Chat FULL · Library auto-classify · Archinote.
 
 ## Chốt user 23/07
 - **Chat mở rộng: FULL** (project + direct + group Zalo + Supabase Realtime). 🔴 chặn Q1 = build ACCESS-CONTROL M1 (`ProjectMember`+5 role+GATE) TRƯỚC khi Chat M1.
