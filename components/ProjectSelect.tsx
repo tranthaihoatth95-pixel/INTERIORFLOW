@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { usePageVisible } from '@/lib/usePageVisible';
 import {
   ChevronLeft,
@@ -288,6 +289,7 @@ type ChatTurn = { role: 'user' | 'assistant'; content: string };
 export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   const user = useFlowStore((s) => s.user);
   const openDashboardTab = useFlowStore((s) => s.openDashboardTab);
+  const router = useRouter();
   const reduce = useReducedMotion();
   // Tab ẩn → dừng quầng sáng lặp vô hạn (xem lib/usePageVisible.ts).
   const visible = usePageVisible();
@@ -964,6 +966,22 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 <Info size={13} />
                 {en ? 'Details' : 'Chi tiết'}
               </button>
+              {/* "Tổng quan" — mở trang /projects/[id]/overview của ĐÚNG dự án được click.
+                  id ổn định = Project.id thật (f.project?.id) hoặc Flow.id (flow tự do) —
+                  KHÔNG slug tên (fix bug card mở nhầm/chung dự án · Task #18). */}
+              <button
+                type="button"
+                aria-label={en ? 'Open project overview' : 'Mở tổng quan dự án'}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/projects/${f.project?.id ?? f.id}/overview`);
+                }}
+                className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-white/90 hover:text-white"
+                style={darkPill}
+              >
+                <ArrowRight size={13} />
+                {en ? 'Overview' : 'Tổng quan'}
+              </button>
             </div>
           )}
         </div>
@@ -1414,6 +1432,19 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                     style={darkPill}
                   >
                     <Info size={13} />
+                  </button>
+                  {/* "Tổng quan" — /projects/[id]/overview của ĐÚNG dự án (id ổn định, Task #18) */}
+                  <button
+                    type="button"
+                    aria-label={en ? 'Open project overview' : 'Mở tổng quan dự án'}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/projects/${f.project?.id ?? f.id}/overview`);
+                    }}
+                    className="grid h-7 w-7 place-items-center rounded-full text-white/90 hover:text-white"
+                    style={darkPill}
+                  >
+                    <ArrowRight size={13} />
                   </button>
                 </div>
               </div>

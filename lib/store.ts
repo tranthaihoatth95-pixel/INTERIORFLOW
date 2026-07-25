@@ -80,6 +80,15 @@ interface FlowState {
   /** undefined = đang check session, null = chưa đăng nhập */
   user: SessionUser | null | undefined;
   currentFlowId: string | null;
+  /**
+   * SCOPE (Task #18) — id DỰ ÁN của flow đang mở. `null` = flow chưa gán Project
+   * (dự án tự do). Đây là NGUỒN SỰ THẬT về scope 'project' khi làm việc ở các chặng
+   * chạy trên route toàn cục (`/`, `/cad-editor`, `/present-editor`): các chặng đó
+   * "thuộc dự án nào" đọc từ đây, KHÔNG suy ra từ `flowName` (mutable, trùng tên →
+   * rò dữ liệu chéo). Điều hướng sang `/projects/[id]/…` dùng `currentProjectId ??
+   * currentFlowId` (id ỔN ĐỊNH, duy nhất) — xem lib/scope.ts.
+   */
+  currentProjectId: string | null;
   shareToken: string | null;
   chatOpen: boolean;
   /** lối làm việc đã chọn ở login (Presentation | 3D Render) */
@@ -138,8 +147,15 @@ interface FlowState {
   setAiTier: (tier: AiTier) => void;
   setOneAiEngine: (engine: OneAiEngine) => void;
   setOneAiRuntime: (runtime: OneAiRuntime) => void;
+  setCurrentProjectId: (projectId: string | null) => void;
   /** nạp graph từ server vào canvas, reset history */
-  loadGraph: (graphJson: string, name: string, flowId: string, shareToken: string | null) => void;
+  loadGraph: (
+    graphJson: string,
+    name: string,
+    flowId: string,
+    shareToken: string | null,
+    projectId?: string | null,
+  ) => void;
 
   onNodesChange: (changes: NodeChange<FlowNode>[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
@@ -240,6 +256,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   lang: DEFAULT_LANG,
   user: undefined,
   currentFlowId: null,
+  currentProjectId: null,
   shareToken: null,
   chatOpen: false,
   workspace: null,
@@ -336,6 +353,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   setCredits: (credits) =>
     set((s) => ({ credits, user: s.user ? { ...s.user, credits } : s.user })),
   setCurrentFlowId: (currentFlowId) => set({ currentFlowId }),
+  setCurrentProjectId: (currentProjectId) => set({ currentProjectId }),
   setShareToken: (shareToken) => set({ shareToken }),
   setChatOpen: (chatOpen) => set({ chatOpen }),
   setWorkspace: (workspace) => {
@@ -364,7 +382,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     } catch {}
   },
 
-  loadGraph: (graphJson, name, flowId, shareToken) => {
+  loadGraph: (graphJson, name, flowId, shareToken, projectId) => {
     try {
       const graph = JSON.parse(graphJson) as {
         nodes?: FlowNode[];
@@ -399,6 +417,9 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         edges: graph.edges ?? [],
         flowName: name,
         currentFlowId: flowId,
+        // undefined (call-site cũ chưa truyền) → giữ nguyên scope hiện tại, không xoá nhầm.
+        // Truyền tường minh (kể cả null = flow không gán dự án) → cập nhật scope.
+        ...(projectId !== undefined ? { currentProjectId: projectId } : {}),
         shareToken,
         groups,
         past: [],

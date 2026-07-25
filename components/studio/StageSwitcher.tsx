@@ -33,18 +33,6 @@ import { createStageDragTracker } from '@/lib/input/stage-drop';
 import VitalsGesturePanel, { markVitalsUsed, wasVitalsUsed } from './VitalsGesture';
 
 /** Cùng công thức slug của NotebookButton cũ (đã bỏ khỏi Header). */
-function slugifyFlow(s: string) {
-  return (
-    s
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 40) || 'default'
-  );
-}
-
 const ICON: Record<Phase, typeof PencilRuler> = { concept: PencilRuler, render: Box, present: Presentation };
 
 const HINT_SEEN_KEY = 'interiorflow.vitals.gesture_hint_seen';
@@ -60,7 +48,10 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   // IF2-nền — nhãn pill CAD tự đổi theo `store.stage` ('sketch' | 'technical' | 'bim').
   // Selector này KHÔNG trigger re-render nào ngoài lúc stage thật sự đổi (Zustand shallow-eq).
   const cadStage = useCadStore((s) => s.stage);
-  const flowName = useFlowStore((s) => s.flowName);
+  // SCOPE FIX (Task #18): id ổn định cho `/projects/[id]/notebook` (Project.id thật
+  // hoặc Flow.id) — không slug tên flow (trùng tên → rò dữ liệu chéo giữa dự án).
+  const currentProjectId = useFlowStore((s) => s.currentProjectId);
+  const currentFlowId = useFlowStore((s) => s.currentFlowId);
   const router = useRouter();
 
   const dockRef = useRef<HTMLDivElement>(null);
@@ -130,7 +121,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
           try {
             localStorage.setItem(FIRST_DONE_KEY, '1');
           } catch {}
-          const id = slugifyFlow(flowName || 'default');
+          const id = currentProjectId || currentFlowId || 'default';
           router.push(`/projects/${id}/notebook`);
           cleanup();
         } else if (v === 'locked') {
@@ -155,7 +146,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
       window.addEventListener('pointerup', onUp);
       window.addEventListener('pointercancel', onUp);
     },
-    [panelOpen, flowName, router],
+    [panelOpen, currentProjectId, currentFlowId, router],
   );
 
   // Khi panel đóng, dọn dragging để lần drag tiếp không dính state cũ.
