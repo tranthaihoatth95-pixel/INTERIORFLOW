@@ -15,10 +15,7 @@
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (**75 file** cuối phiên). tsc sạch.
 
 ## Worktree đang mở
-- `interiorflow-wt-scope-t0` (nhánh `feat/scope-t0`, từ `feat/present-layout-ml-p1`) —
-  Task #18 nền T0: khái niệm scope global|project + route `/projects/[id]/overview` +
-  fix bug card mở nhầm dự án. tsc PASS · test `lib/scope-core.test.ts` 6/6 · verify
-  browser 127.0.0.1:3030 OK (2 overview khác nhau, không rò dữ liệu chéo). CHƯA merge.
+- Đợt ĐỔ NỀN 24/07 đang merge: T1 img_id · T0 scope+fix-card · T3 checker-PDF · de-ttt. STATUS sẽ viết lại sạch sau khi merge + dọn worktree xong.
 
 ## CỘT MỐC 24/07: IF1 feature-complete + bộ cài Windows XONG
 - **9 nhánh + bộ cài đã merge** (HEAD `d1ffbc4`), tsc sạch, 81 test/0 fail. Đợt: zone-tool · dwg-block-flatten · access-control-m1 · cad-core-logic · legend-wave1 · legend-research · floorplan-color-fill · clay2img-audit · installer-win. Tất cả worktree đã dọn.

@@ -46,6 +46,8 @@ import { stashCadPresentHandoff } from '@/lib/cad/present-handoff';
 import { checkStandards, findRoomLabels, classifyRoom, type Violation, type RoomKind } from '@/lib/cad/standards/checker';
 import { getAllRules } from '@/lib/cad/standards/registry';
 import { suggestFix } from '@/lib/cad/standards/fix-suggest';
+import { exportStandardsReportPdf, extractProjectName, extractDrawnBy } from '@/lib/cad/standards-report';
+import { getActiveBrandKit } from '@/lib/present-editor/brand-kit';
 import { classifyOperator, rulesForOperator, type OperatorType } from '@/lib/cad/operator-profile';
 import { suggestRoomNames, type RoomNameSuggestion } from '@/lib/cad/room-autolabel';
 import {
@@ -894,6 +896,59 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
 
   const run = () => setViolations(checkStandards(doc, rulesToUse()));
 
+  // ── Xuất PDF báo cáo quy chuẩn (TRUNG TÍNH) — tên studio/dự án ĐỌC TỪ DỮ LIỆU, không hardcode.
+  // studio ← Brand Kit dự án đang mở (getActiveBrandKit); dự án ← khung tên bản vẽ (extractProjectName).
+  // Cho phép sửa trước khi xuất (dữ liệu là mặc định, không ép). Panel mount client → đọc localStorage OK.
+  const [reportOpen, setReportOpen] = useState(false);
+  const [studioName, setStudioName] = useState('');
+  const [projectName, setProjectName] = useState('');
+  const [preparedBy, setPreparedBy] = useState('');
+  const [reportDate, setReportDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [includeDrawing, setIncludeDrawing] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const brandRef = useRef<ReturnType<typeof getActiveBrandKit>>(null);
+
+  const openReport = () => {
+    // Nạp lại mặc định TỪ DỮ LIỆU mỗi lần mở (bản vẽ/Brand Kit có thể đã đổi).
+    const kit = getActiveBrandKit();
+    brandRef.current = kit;
+    setStudioName(kit?.name?.trim() || '');
+    setProjectName(extractProjectName(doc));
+    setPreparedBy(extractDrawnBy(doc));
+    if (violations === null) setViolations(checkStandards(doc, rulesToUse())); // đảm bảo có kết quả để xuất
+    setReportOpen(true);
+  };
+
+  const doExportReport = async () => {
+    const vlist = violations ?? checkStandards(doc, rulesToUse());
+    setExporting(true);
+    try {
+      const kit = brandRef.current;
+      const scopeLabel = OPERATOR_LABELS.find((o) => o.value === operator)?.label;
+      await exportStandardsReportPdf(
+        doc,
+        vlist,
+        rulesToUse(),
+        {
+          brand: {
+            studioName: studioName.trim() || undefined,
+            logo: kit?.logo ?? null,
+            accent: kit?.palette?.[0] ?? null,
+          },
+          projectName: projectName.trim(),
+          date: reportDate.trim(),
+          preparedBy: preparedBy.trim() || undefined,
+          scopeLabel,
+          includeDrawing,
+        },
+        `bao-cao-quy-chuan${projectName.trim() ? '-' + projectName.trim().replace(/\s+/g, '-') : ''}.pdf`,
+      );
+      setReportOpen(false);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // Gợi ý operator từ bản vẽ hiện tại (đọc-only, TẤT ĐỊNH). Không tự áp — chỉ chọn sẵn để user duyệt.
   const detect = () => {
     const prof = classifyOperator({ doc });
@@ -937,6 +992,9 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
         <div style={{ display: 'flex', gap: 4 }}>
           <button type="button" onClick={run} title="Chạy kiểm tra" style={miniBtn}>
             <ShieldCheck size={14} />
+          </button>
+          <button type="button" onClick={openReport} title="Xuất PDF báo cáo quy chuẩn" style={miniBtn}>
+            <FileText size={14} />
           </button>
           <button type="button" onClick={onClose} title="Đóng" style={miniBtn}>
             <X size={14} />
@@ -1004,9 +1062,48 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
           );
         })}
       </div>
+      {/* ── Khối xuất PDF báo cáo quy chuẩn (trung tính) ── */}
+      {reportOpen && (
+        <div style={{ borderTop: '1px solid var(--border)', padding: '8px 8px 10px', background: 'var(--panel)' }}>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t1)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <FileText size={13} /> Xuất PDF báo cáo quy chuẩn
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--t4)', marginBottom: 8, lineHeight: 1.45 }}>
+            Tên studio &amp; dự án lấy sẵn từ Brand Kit + khung tên bản vẽ — sửa nếu cần. Báo cáo TRUNG TÍNH, không nhúng thương hiệu mặc định.
+          </div>
+          <label style={reportLabel}>Studio · Đơn vị lập</label>
+          <input value={studioName} onChange={(e) => setStudioName(e.target.value)} placeholder="(từ Brand Kit — có thể để trống)" style={reportField} />
+          <label style={reportLabel}>Dự án · Project</label>
+          <input value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="(từ khung tên bản vẽ)" style={reportField} />
+          <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ flex: 1 }}>
+              <label style={reportLabel}>Ngày · Date</label>
+              <input value={reportDate} onChange={(e) => setReportDate(e.target.value)} style={reportField} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={reportLabel}>Người lập</label>
+              <input value={preparedBy} onChange={(e) => setPreparedBy(e.target.value)} placeholder="(tuỳ chọn)" style={reportField} />
+            </div>
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--t2)', margin: '8px 0 2px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={includeDrawing} onChange={(e) => setIncludeDrawing(e.target.checked)} />
+            Kèm ảnh bản vẽ (trang cuối)
+          </label>
+          <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+            <button type="button" onClick={doExportReport} disabled={exporting} style={{ ...reportBtn, flex: 1, opacity: exporting ? 0.6 : 1, background: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Download size={13} /> {exporting ? 'Đang xuất…' : 'Xuất PDF'}
+            </button>
+            <button type="button" onClick={() => setReportOpen(false)} style={{ ...reportBtn, width: 72 }}>Huỷ</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const reportLabel: React.CSSProperties = { display: 'block', fontSize: 9.5, color: 'var(--t4)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '4px 0 2px' };
+const reportField: React.CSSProperties = { width: '100%', boxSizing: 'border-box', fontSize: 11.5, padding: '5px 7px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)' };
+const reportBtn: React.CSSProperties = { fontSize: 11.5, padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)', cursor: 'pointer' };
 
 /* ───────── Panel Gợi ý tên phòng (Sprint 4, C1.1) — CHỈ ĐỌC + ĐỀ XUẤT, không tự chèn ─────────
  * Dò các phòng CÓ BIÊN KÍN nhưng CHƯA có nhãn TEXT (room-autolabel.ts), đoán tên theo đồ nội
