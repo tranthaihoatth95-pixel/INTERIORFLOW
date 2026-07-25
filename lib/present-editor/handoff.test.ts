@@ -80,8 +80,8 @@ function testEmptyStashNoop() {
 
 function testRenderImageId() {
   console.log('\n[6] renderImageId — 1 ảnh/node dùng thẳng id node, nhiều ảnh/node thêm chỉ số');
-  ok('total=1 → render:<nodeId>', renderImageId('abc', 0, 1) === 'render:abc');
-  ok('total>1 → render:<nodeId>:<index>', renderImageId('abc', 2, 5) === 'render:abc:2');
+  ok('total=1 → img_render:<nodeId>', renderImageId('abc', 0, 1) === 'img_render:abc');
+  ok('total>1 → img_render:<nodeId>:<index>', renderImageId('abc', 2, 5) === 'img_render:abc:2');
 }
 
 function testDeckImagesWithIds() {
@@ -92,9 +92,9 @@ function testDeckImagesWithIds() {
   };
   const items = deckImagesWithIdsFromNodes([deckNode]);
   ok('3 ảnh từ 1 node slide.deck → 3 id khác nhau, cùng gốc node', JSON.stringify(items) === JSON.stringify([
-    { src: 's1', id: 'render:node-deck-1:0' },
-    { src: 's2', id: 'render:node-deck-1:1' },
-    { src: 's3', id: 'render:node-deck-1:2' },
+    { src: 's1', id: 'img_render:node-deck-1:0' },
+    { src: 's2', id: 'img_render:node-deck-1:1' },
+    { src: 's3', id: 'img_render:node-deck-1:2' },
   ]));
   // Rút LẦN 2 từ CÙNG node (vd user bấm "Đưa sang Present" lại sau khi thêm slide khác) → cùng id.
   const items2 = deckImagesWithIdsFromNodes([deckNode]);
@@ -106,10 +106,10 @@ function testDeckImagesWithIds() {
   ];
   const composedItems = deckImagesWithIdsFromNodes(composerNodes);
   ok(
-    'slide.composer — mỗi node 1 ảnh, id = render:<nodeId> (không suffix)',
+    'slide.composer — mỗi node 1 ảnh, id = img_render:<nodeId> (không suffix)',
     JSON.stringify(composedItems) === JSON.stringify([
-      { src: 'imgA', id: 'render:node-comp-A' },
-      { src: 'imgB', id: 'render:node-comp-B' },
+      { src: 'imgA', id: 'img_render:node-comp-A' },
+      { src: 'imgB', id: 'img_render:node-comp-B' },
     ]),
   );
 

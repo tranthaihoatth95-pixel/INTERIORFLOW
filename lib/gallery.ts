@@ -1,5 +1,7 @@
 'use client';
 
+import { newImgId } from '@/lib/img-id';
+
 export interface GalleryItem {
   id: string;
   name: string;
@@ -20,7 +22,9 @@ export function listGallery(): GalleryItem[] {
 export function saveToGallery(item: Omit<GalleryItem, 'id' | 'savedAt'>): GalleryItem {
   const entry: GalleryItem = {
     ...item,
-    id: `asset_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+    // Task #19: id ảnh chuẩn `img_…` (nguồn chân lý lib/img-id.ts), độc lập URL/tên file.
+    // Backward-compat: entry cũ trong localStorage mang id `asset_…` vẫn list/remove được (id là khoá thuần).
+    id: newImgId(),
     savedAt: Date.now(),
   };
   const items = [entry, ...listGallery()].slice(0, 200);

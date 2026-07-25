@@ -25,6 +25,8 @@
  * — chỗ nào chưa cần link cứ dùng như cũ; `deckImagesWithIdsFromNodes` là bản mới kèm id.
  */
 
+import { renderImgId } from '../img-id';
+
 const KEY = 'interiorflow.presentHandoff';
 
 /** Trần số ảnh chuyển 1 lần — deck 6 slide + dư; tránh nhét cả thư viện vào storage. */
@@ -54,7 +56,9 @@ export interface DeckImageItem {
  * nhiều ảnh (slide.deck nhiều slide) → thêm chỉ số để mỗi ảnh có 1 id riêng.
  */
 export function renderImageId(nodeId: string, index: number, total: number): string {
-  return total > 1 ? `render:${nodeId}:${index}` : `render:${nodeId}`;
+  // Task #19: id ảnh render giờ mang tiền tố `img_` chuẩn (lib/img-id.ts) — vẫn TẤT ĐỊNH theo
+  // nodeId nên giữ nguyên tính hội tụ (cùng node → cùng assetId qua nhiều slide/nhiều lần Run).
+  return renderImgId(nodeId, index, total);
 }
 
 /**

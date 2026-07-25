@@ -21,12 +21,16 @@
  */
 
 import type { EditorDeck, EditorSlide, ImageElement, LinkedAsset } from './model';
+import { newImgId } from '../img-id';
 
-let _seq = 0;
-/** id ổn định — KHÔNG gọi ở render body (chỉ trong handler), cùng khuôn `newId` của model.ts. */
+/**
+ * id ổn định cho asset liên kết — KHÔNG gọi ở render body (chỉ trong handler).
+ * Task #19: mint id ảnh chuẩn `img_…` (lib/img-id.ts) thay cho `asset_…` cũ. `assetId` là KHOÁ
+ * thuần trong `deck.linkedAssets`, không nơi nào parse tiền tố → deck cũ (assetId `asset_…`/`render:…`)
+ * vẫn hoạt động y nguyên (backward-compat).
+ */
 export function newAssetId(): string {
-  _seq += 1;
-  return `asset_${Date.now().toString(36)}_${_seq.toString(36)}`;
+  return newImgId();
 }
 
 function findImageElement(deck: EditorDeck, slideId: string, elementId: string): ImageElement | null {
