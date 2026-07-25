@@ -8,10 +8,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AvatarBuilder } from '@/components/avatar/AvatarBuilder';
-import { AvatarConfig, DEFAULT_AVATAR } from '@/lib/avatar';
+import { AvatarConfig, DEFAULT_AVATAR, serializeAvatar } from '@/lib/avatar';
+import { useFlowStore } from '@/lib/store';
 
 export default function AvatarSettingsPage() {
   const router = useRouter();
+  const user = useFlowStore((s) => s.user);
+  const setUser = useFlowStore((s) => s.setUser);
   const [config, setConfig] = useState<AvatarConfig | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -30,6 +33,8 @@ export default function AvatarSettingsPage() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(a),
       });
+      // Đồng bộ ngay vào store để avatar trên header đổi liền, khỏi chờ reload phiên.
+      if (user) setUser({ ...user, avatar: serializeAvatar(a) });
       router.push('/');
     } finally {
       setSaving(false);

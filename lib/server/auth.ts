@@ -160,6 +160,7 @@ export function publicUser(u: {
   name: string;
   credits: number;
   isAdmin: boolean;
+  avatar?: string | null;
 }) {
   return {
     id: u.id,
@@ -168,6 +169,8 @@ export function publicUser(u: {
     name: u.name,
     credits: u.credits,
     isAdmin: u.isAdmin,
+    // avatar: JSON string (hoặc null nếu user chưa chọn — client tự random theo id).
+    avatar: u.avatar ?? null,
   };
 }
 

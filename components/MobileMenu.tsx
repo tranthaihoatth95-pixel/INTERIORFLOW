@@ -20,6 +20,7 @@ import { pressable, pressableIcon, springSheet, easeApple } from '@/lib/motion';
 import { useT } from '@/lib/i18n';
 import { LangToggle } from '@/components/LangToggle';
 import { cn } from '@/lib/utils';
+import { UserAvatar } from '@/components/avatar/UserAvatar';
 
 const PHASE_ICON: Record<Phase, typeof Palette> = { concept: Palette, render: Box, present: Presentation };
 const TIER_ICON: Record<AiTier, typeof Cloud> = { 4: Cloud, 3: Zap, 2: Cpu, 1: ShieldCheck };
@@ -126,9 +127,15 @@ function AccountRow() {
   const credits = useFlowStore((s) => s.credits);
   return (
     <div className="flex items-center gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--field)] p-3">
-      <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 text-sm font-semibold text-white">
-        {(user?.name ?? '?').slice(0, 1).toUpperCase()}
-      </div>
+      {/* Avatar — bấm mở /settings/avatar. Khách (chưa đăng nhập) vẫn có avatar
+          random deterministic, không để trống ô. */}
+      <a
+        href="/settings/avatar"
+        title="Đổi avatar"
+        className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full"
+      >
+        <UserAvatar id={user?.id} avatar={user?.avatar} name={user?.name} size={36} frame={false} />
+      </a>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-[var(--t1)]">
           {user?.name ?? 'Khách'}

@@ -26,6 +26,7 @@ import { stageHrefFrom } from '@/lib/project-scope';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { IFLogo } from '@/components/entry/IFLogo';
+import { UserAvatar } from '@/components/avatar/UserAvatar';
 import { HomeButton } from '@/components/studio/HomeButton';
 import { requestGallery } from '@/lib/resume';
 
@@ -327,10 +328,21 @@ function ChatToggle() {
 function UserChip() {
   const user = useFlowStore((s) => s.user);
   const setUser = useFlowStore((s) => s.setUser);
+  const router = useRouter();
   const tr = useT();
   if (!user) return null;
   return (
-    <div className="flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--border)] py-1 pl-2 pr-1 text-xs text-[var(--t2)]">
+    <div className="flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--border)] py-1 pl-1 pr-1 text-xs text-[var(--t2)]">
+      {/* Avatar — bấm vào mở /settings/avatar. Chưa lưu config thì UserAvatar tự dựng
+          bản random deterministic theo user.id, không bao giờ để trống. */}
+      <motion.button
+        {...pressableIcon}
+        onClick={() => router.push('/settings/avatar')}
+        title={tr('Đổi avatar', 'Change avatar')}
+        className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full"
+      >
+        <UserAvatar id={user.id} avatar={user.avatar} name={user.name} size={24} frame={false} />
+      </motion.button>
       <span className="hidden max-w-24 truncate sm:inline" title={`${user.name} · ${user.email}${user.isAdmin ? ' · admin' : ''}`}>
         {user.name}
       </span>
