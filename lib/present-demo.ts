@@ -2,11 +2,14 @@
  * lib/present-demo.ts — Dữ liệu + helper cho môi trường DEMO của chặng Present.
  *
  * KHÔNG đụng các file dùng chung (lib/slides, lib/imaging, lib/store). Chỉ khai báo
- * dữ liệu deck mẫu (dùng ảnh render Detech sẵn trong public/covers) + wrapper mỏng
+ * dữ liệu deck mẫu (dùng ảnh render sẵn trong public/covers) + wrapper mỏng
  * bọc renderSlide / composeBoard / jsPDF để cả route /present lẫn Present mode trong
  * app cùng gọi.
  *
  * LUẬT: font SANS (fonts: 'Modern') — KHÔNG serif. Ảnh cục bộ, 0 AI, 0 mạng.
+ *
+ * ⛔ LUẬT TRUNG TÍNH (CLAUDE.md · docs/CONTENT-RULES.md): studio + dự án trong deck mẫu là
+ * HƯ CẤU ("Atelier Nord" · "Nord Residence"). KHÔNG đưa tên khách thật vào nội dung demo.
  */
 import { renderSlide, type SlideTheme, type SlideLayout, type FontPairing } from '@/lib/slides';
 import { composeBoard } from '@/lib/imaging';
@@ -27,7 +30,8 @@ export const PRESENT_LIGHT: SlideTheme = {
   palette: ['#C2AD86', '#6E4A2E', '#D9CFBE', '#8A6A3A', '#A8794B', '#28211A'],
 };
 
-/** Ảnh render Detech sẵn có trong /public/covers (đường dẫn tuyệt đối từ web root). */
+/** Ảnh render mẫu sẵn có trong /public/covers (đường dẫn tuyệt đối từ web root).
+ *  Bộ ảnh dùng TẠM cho demo (xem docs/AUDIT-BRAND-PII.md) — giữ nguyên đường dẫn. */
 export const COVER_IMAGES = [
   '/covers/render_00.jpeg',
   '/covers/render_03.jpeg',
@@ -57,14 +61,14 @@ export interface PresentDeck {
 
 /* ---------- Deck mẫu: 6 slide, kể chuyện quiet-luxury ---------- */
 export const DEMO_DECK: PresentDeck = {
-  id: 'detech',
-  brand: 'DETECH · NỘI THẤT',
-  project: 'Detech — Không gian trưng bày',
+  id: 'demo-nord',
+  brand: 'ATELIER NORD · NỘI THẤT',
+  project: 'Nord Residence — Không gian trưng bày',
   slides: [
     {
       layout: 'Cover',
       theme: PRESENT_DARK,
-      kicker: 'DETECH — CONCEPT 2026',
+      kicker: 'ATELIER NORD — CONCEPT 2026',
       title: 'Không gian sống, kể theo ánh sáng',
       body: ['Bộ trình bày concept nội thất', 'Ngôn ngữ quiet-luxury, vật liệu ấm'],
       hero: 0,
@@ -115,7 +119,7 @@ export const DEMO_DECK: PresentDeck = {
     {
       layout: 'Cover',
       theme: PRESENT_DARK,
-      kicker: 'DETECH · 2026',
+      kicker: 'ATELIER NORD · 2026',
       title: 'Cảm ơn đã lắng nghe',
       body: ['Sẵn sàng trao đổi phương án chi tiết', 'InteriorFlow — chặng Presenting'],
       hero: 4,

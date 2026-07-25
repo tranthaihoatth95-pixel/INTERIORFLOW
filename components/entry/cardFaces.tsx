@@ -22,7 +22,7 @@ function Card({ children, bg }: { children: React.ReactNode; bg: string }) {
 }
 
 /**
- * CoverPhoto — mặt thẻ ẢNH RENDER THẬT (Detech), phủ đầy khung + nhãn chặng nhỏ.
+ * CoverPhoto — mặt thẻ ẢNH RENDER mẫu, phủ đầy khung + nhãn chặng nhỏ.
  * Ảnh nằm ở public/covers/ → Next serve tại "/covers/render_XX.jpeg".
  */
 function CoverPhoto({ src, label }: { src: string; label: string }) {

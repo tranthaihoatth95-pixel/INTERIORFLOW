@@ -1,5 +1,12 @@
 # LICENSE-NOTES — dependency GPL trong tính năng "Mở DWG"
 
+> 🔴 **LẬP LUẬN BÊN DƯỚI ĐÃ HẾT HIỆU LỰC (25/07).** Toàn bộ phần "chấp nhận được vì là tool
+> NỘI BỘ, không bán" dựa trên định vị cũ. InteriorFlow nay là **sản phẩm ĐỘC LẬP, GLOBAL**
+> (xem `CLAUDE.md` · LUẬT NỀN TẢNG) → nghĩa vụ copyleft của GPL-3.0 **sẽ** phát sinh khi phân
+> phối. Đường DWG import **phải** được đổi hướng (thay lib / tách hẳn process-service /
+> bỏ tính năng) **TRƯỚC** khi phát hành hoặc bán. Xem `docs/RESEARCH-DWG-LICENSE.md`.
+> Văn bản dưới đây giữ lại làm **lịch sử quyết định**, KHÔNG dùng làm căn cứ hiện hành.
+
 > ⚠️ File này KHÔNG phải tư vấn pháp lý. Người viết là engineer, không phải luật sư. Mục đích:
 > ghi lại RÕ RÀNG dependency nào mang giấy phép copyleft, đã làm gì để giảm rủi ro, và việc gì
 > CẦN người có thẩm quyền pháp lý xác nhận trước khi dùng cho khách hàng thật.

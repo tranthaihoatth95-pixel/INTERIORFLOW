@@ -7,7 +7,7 @@
  * Present xuất được bản trình bày quiet-luxury editorial. Font 'Editorial' (serif thanh),
  * text-forward (không ảnh), tông đá ấm. 0 AI, 0 mạng.
  *
- * Đây là nội dung SHOWCASE nội bộ (về chính sản phẩm), tách khỏi deck khách (Detech).
+ * Đây là nội dung SHOWCASE về chính sản phẩm, tách khỏi deck mẫu dự án (DEMO_DECK).
  */
 import type { PresentDeck } from '@/lib/present-demo';
 import { PRESENT_DARK, PRESENT_LIGHT } from '@/lib/present-demo';

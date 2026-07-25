@@ -11,7 +11,7 @@
  *       {presentModeOpen && <PresentOverlay onClose={() => setPresentModeOpen(false)} />}
  *   - Cần thêm 1 cờ store `presentModeOpen` + setter, và 1 nút kích hoạt ở Header
  *     (chỉ hiện khi phase === 'present'). Xem báo cáo agent để biết đề xuất chi tiết.
- *   - Mặc định trình chiếu deck Detech mẫu (DEMO_DECK). Khi pipeline Present của app
+ *   - Mặc định trình chiếu deck DEMO mẫu (DEMO_DECK, studio hư cấu). Khi pipeline Present của app
  *     xuất được mảng slide thật, truyền vào PresentDeck qua prop `deck`.
  */
 import { useEffect, useMemo } from 'react';

@@ -109,7 +109,7 @@ npx prisma db push
 
 ### 2.4 Seed admin
 ```bash
-SEED_ADMIN_EMAIL=admin@ttt.vn SEED_ADMIN_PASSWORD=<matkhau6+> \
+SEED_ADMIN_EMAIL=<email-admin> SEED_ADMIN_PASSWORD=<mật-khẩu-của-bạn> \
   npx sucrase-node scripts/seed-admin.ts
 ```
 

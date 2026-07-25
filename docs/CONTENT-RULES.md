@@ -9,7 +9,7 @@
 |------|-------|-------|---------------------------|
 | **APP** (thật) | Câu chữ hệ thống của sản phẩm: nhãn, nút, empty state, toast, tooltip | `lib/i18n.ts` (EN+VI) | ✅ luôn |
 | **DEMO** (mẫu) | Flow mẫu, deck mẫu, seed để trình diễn tính năng | `lib/demo-*.ts`, `components/demo/*`, route `app/demo/*` | ❌ chỉ trong khu demo, KHÔNG lẫn màn app thật |
-| **DỰ ÁN** (khách) | Nội dung Detech / Amanoi / … (deck, moodboard, số liệu) | Sản phẩm giao khách (file/scratchpad), route showcase riêng | ❌ tuyệt đối không nằm trong product UI |
+| **DỰ ÁN** (khách) | Nội dung dự án khách THẬT (deck, moodboard, số liệu) | Sản phẩm giao khách (file/scratchpad), route showcase riêng | ❌ tuyệt đối không nằm trong product UI |
 
 ## 2. Luật câu chữ (chống "loạn câu chữ")
 - **Mọi chuỗi hệ thống người dùng thấy PHẢI đi qua `lib/i18n.ts`** — có đủ **EN + VI**, key ổn định. Không hardcode chuỗi UI rải rác trong component.
@@ -24,7 +24,7 @@
 - Đặt tên rõ: file/route demo có tiền tố `demo` (vd `app/demo/`, `lib/demo-seeds.ts`). Route showcase (vd `/present` bản Detech) phải tự nhận là demo, và **truyền nội dung mẫu tường minh** (không để component app mặc định nạp nội dung mẫu).
 
 ## 4. Luật nội dung dự án khách
-- Detech, Amanoi… là **sản phẩm giao khách**, không phải nội dung sản phẩm app. Không nhét vào `lib/` của app như dữ liệu mặc định.
+- Nội dung dự án khách THẬT là **sản phẩm giao khách**, không phải nội dung sản phẩm app. Không nhét vào `lib/` của app như dữ liệu mặc định, và KHÔNG đặt tên khách vào tên file/route/tên file tải về.
 - Ảnh/nội dung dự án nạp qua đúng đường: **Reference (thư viện) → JSON chưng cất** (palette/vật liệu/style/usage-tag), không hardcode.
 
 ## 5. Checklist trước khi merge nội dung
@@ -34,4 +34,12 @@
 - [ ] Cùng một câu có bị lặp ở nhiều nơi (nên gộp 1 key) không?
 
 ---
-*Áp dụng từ 07/07. Đã tách: empty-state canvas (bỏ flow mẫu + DemoLauncher), Present mode in-app (mặc định rỗng, không còn deck Detech). `/present` giữ vai showcase demo, truyền `DEMO_DECK` tường minh.*
+*Áp dụng từ 07/07. Đã tách: empty-state canvas (bỏ flow mẫu + DemoLauncher), Present mode in-app (mặc định rỗng). `/present` giữ vai showcase demo, truyền `DEMO_DECK` tường minh.*
+
+*Cập nhật 25/07 (task #27) — 3 route/deck mẫu công khai đã TRUNG TÍNH HOÁ, studio + dự án đều HƯ CẤU:*
+- `/present` → `lib/present-demo.ts` `DEMO_DECK`: **Atelier Nord · Nord Residence**.
+- `/demo-amanoi` → **đổi tên route thành `/demo-resort`**: **Atelier Nord · Nord Bay**; tên file tải về `demo-<scene>-present.pdf` (trước lộ tên khách).
+- Deck mặc định `/present-editor` → `lib/present-editor/akh-sample.ts`: **Lumen Villa** (trước: `IKI Village`).
+- `lib/present-editor/detech-sample.ts` → **`demo-enso-sample.ts`**, `makeDetechEnsoDeck()` → `makeEnsoDemoDeck()`, dự án **Nord Complex**. `makeDetechDeck()` → `makeShortDemoDeck()`.
+- Kicker slide Cover khi dàn tự động từ text: **lấy từ Brand Kit/tên dự án đang mở** (`coverKickerFromDeck()`), rỗng thì bỏ dải kicker — KHÔNG hardcode tên nào.
+- ⚠️ Còn lại: ảnh mẫu vẫn nằm ở `public/covers/`, `public/detech/`, `public/wallpapers/ttt-*` (user cho phép dùng tạm) — chỉ ĐƯỜNG DẪN lộ, nhãn UI đã trung tính.

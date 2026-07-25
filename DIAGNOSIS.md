@@ -12,7 +12,7 @@
 | `/` | 200 | Node canvas chính. DB hoạt động (`/api/flows`, `/api/auth/me`, `/api/health` 200). Không lỗi console. |
 | `/cad-editor` | 200 | ⚠️ **Có 1 console warning** (hydration — xem §3). Trang vẫn render đủ. |
 | `/cad-library-demo` | 200 | Sạch |
-| `/demo-amanoi` | 200 | Sạch |
+| `/demo-resort` | 200 | Sạch |
 | `/library/ingest` | 200 | Sạch |
 | `/photo-editor` | 200 | Sạch |
 | `/present-editor` | 200 | Deck mẫu dựng client-side (`app/present-editor/page.tsx:22` `makeSampleDeck`). **Không cần DB/key.** |

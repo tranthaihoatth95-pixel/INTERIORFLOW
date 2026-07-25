@@ -18,7 +18,8 @@ import { LoginForm } from '@/components/entry/LoginForm';
  * app chuyển sang màn CHỌN 3 CHẶNG (StageSelect) do gate app/page.tsx điều phối.
  *
  * GIỮ NGUYÊN logic auth: gọi /api/auth/{login|register}, chỉ setUser (KHÔNG chọn
- * workspace ở đây — việc chọn chặng diễn ra ở màn sau). Test hoa@ttt.vn/matkhau123.
+ * workspace ở đây — việc chọn chặng diễn ra ở màn sau). Tài khoản test: dùng tài khoản
+ * seed của máy dev (xem scripts/seed-admin.ts) — KHÔNG ghi thông tin đăng nhập vào code.
  *
  * LUẬT: KHÔNG serif. Chỉ sans hệ thống hiện đại. Không webfont ngoài (CSP).
  */

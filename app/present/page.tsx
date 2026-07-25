@@ -12,7 +12,7 @@ import PresentDeck from '@/components/present/PresentDeck';
 import { DEMO_DECK } from '@/lib/present-demo';
 
 /**
- * `/present` = route SHOWCASE demo (deck Detech mẫu), TÁCH khỏi app thật.
+ * `/present` = route SHOWCASE demo (deck mẫu Atelier Nord, nội dung hư cấu), TÁCH khỏi app thật.
  * App thật (Present mode trong app) KHÔNG dùng deck này — mặc định rỗng.
  * Xem docs/CONTENT-RULES.md.
  */

@@ -80,7 +80,7 @@ export async function webgpuGenerate(
 
 ## 5. Test
 
-1. `npm run dev`, đăng nhập (hoa@ttt.vn / matkhau123).
+1. `npm run dev`, đăng nhập bằng tài khoản seed trên máy dev (xem `scripts/seed-admin.ts`).
 2. Header → núm AI → **oneAI** → engine **SD-portable** → runtime **WebGPU**.
 3. Kéo node **Moodboard** (hoặc Sketch→Render), nhập prompt, Run → ảnh phải sinh THẬT trong
    trình duyệt (không phải placeholder mock). Kiểm `navigator.gpu` có (Chrome/Edge/Safari TP).

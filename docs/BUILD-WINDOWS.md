@@ -67,7 +67,7 @@ không phải virus.
 - Tạo admin đầu tiên (register công khai đã khoá):
   ```powershell
   set SEED_ADMIN_EMAIL=admin@ttt.vn
-  set SEED_ADMIN_PASSWORD=matkhau6+
+  set SEED_ADMIN_PASSWORD=<mật-khẩu-của-bạn>
   node_modules\.bin\sucrase-node scripts\seed-admin.ts
   ```
   (chạy từ thư mục mã nguồn, `DATABASE_URL` trỏ tới file `dev.db` trong AppData nếu muốn seed

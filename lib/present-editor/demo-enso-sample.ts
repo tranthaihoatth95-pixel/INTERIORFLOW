@@ -1,11 +1,15 @@
 /**
- * lib/present-editor/detech-sample.ts — Deck THỬ NGHIỆM "Detech Complex — ENSŌ" để TEST
- * chặng Present bằng NỘI DUNG THẬT của dự án (căn hộ dịch vụ 5 sao, concept ENSŌ, Japandi-wellness).
+ * lib/present-editor/demo-enso-sample.ts — Deck DEMO "Nord Complex — ENSŌ" để TEST chặng
+ * Present bằng một bộ nội dung dài, thật-như-thật (khối căn hộ dịch vụ 5 sao, concept ENSŌ,
+ * Japandi-wellness).
  *
- * Nguồn nội dung: deck Detech gốc (~/Downloads/detech-builder) — ý niệm 円相 ENSŌ, SERENE,
- * bốn nguyên lý Nhật (Wabi-sabi/Ma/Shakkei/Omotenashi). CHỈ phần chính Detech (bỏ trang giới thiệu
- * studio). Tên studio trong deck mẫu là HƯ CẤU ("Atelier Nord") — deck mẫu KHÔNG gắn brand thật.
- * Ảnh: /public/detech/* (render concept sạch trích từ PPTX + phối cảnh tháp).
+ * ⛔ LUẬT TRUNG TÍNH (CLAUDE.md · docs/CONTENT-RULES.md §4): đây là nội dung DEMO — studio và
+ * dự án đều HƯ CẤU ("Atelier Nord" · "Nord Complex"). KHÔNG đưa tên khách hàng thật vào `lib/`
+ * của sản phẩm. Ý niệm 円相 ENSŌ + bốn nguyên lý mỹ học Nhật (Wabi-sabi/Ma/Shakkei/Omotenashi)
+ * là khái niệm thiết kế công cộng, không phải nhận diện của bên nào.
+ *
+ * Ảnh: /public/detech/* — bộ ảnh render dùng TẠM cho demo (user đã cho phép giữ; đổi bộ ảnh
+ * là việc riêng, xem docs/AUDIT-BRAND-PII.md). Đường dẫn giữ nguyên để không phá ảnh cũ.
  *
  * Tông ENSŌ: navy #0B1622 nền tối · cam #E85C1E accent · cloudwhite #EDEFEC · xanh rêu.
  * pal() tự chọn accent = màu bão hoà nhất → cam thành accent; navy = dark; cloudwhite = light.
@@ -15,9 +19,9 @@ import type { EditorDeck } from './model';
 import { BUILTIN_TEMPLATES } from './templates';
 
 /** Palette ENSŌ: mực navy → navy → xanh rêu trầm → CAM accent → sage → cloudwhite. */
-export const DETECH_PALETTE = ['#0B1622', '#12202A', '#3A4A44', '#E85C1E', '#A9B5A0', '#EDEFEC'];
+export const ENSO_DEMO_PALETTE = ['#0B1622', '#12202A', '#3A4A44', '#E85C1E', '#A9B5A0', '#EDEFEC'];
 
-/** Ảnh Detech phục vụ tại /detech/* (public/detech/*). */
+/** Ảnh demo phục vụ tại /detech/* (public/detech/*) — giữ đường dẫn cũ, không di chuyển ảnh. */
 const IMG = {
   towerNight: '/detech/tower-night.png',
   towerDusk: '/detech/tower-dusk.png',
@@ -46,7 +50,7 @@ function tpl(id: string) {
 }
 
 /**
- * Deck 9 slide — mạch chính Detech (bỏ trang giới thiệu studio), 2 trang ĐẬM CHẤT ENSŌ:
+ * Deck 9 slide — mạch chính demo (bỏ trang giới thiệu studio), 2 trang ĐẬM CHẤT ENSŌ:
  *   1. dark-cover        — bìa ENSŌ (vườn thiền moss/void).
  *   2. full-bleed        — 円相 · ENSŌ: ý niệm chủ đạo (vòng tròn thiền). ★ ẤN TƯỢNG
  *   3. grid4-philosophy  — Từ một vòng tròn: bốn giá trị · bốn giác quan · bốn lời giải.
@@ -57,12 +61,12 @@ function tpl(id: string) {
  *   8. full-bleed        — Ánh sáng khuếch tán (lounge/atrium xanh).
  *   9. closing-thanks    — Trang kết.
  */
-export function makeDetechEnsoDeck(): EditorDeck {
-  const P = DETECH_PALETTE;
+export function makeEnsoDemoDeck(): EditorDeck {
+  const P = ENSO_DEMO_PALETTE;
   const slides = [
     tpl('dark-cover').build({
       kicker: 'Khối căn hộ dịch vụ lưu trú 5 sao · Atelier Nord',
-      title: 'DETECH COMPLEX',
+      title: 'NORD COMPLEX',
       images: [IMG.ensoGarden],
       palette: P,
     }),
@@ -123,7 +127,7 @@ export function makeDetechEnsoDeck(): EditorDeck {
       palette: P,
     }),
     tpl('closing-thanks').build({
-      kicker: 'DETECH COMPLEX · ATELIER NORD',
+      kicker: 'NORD COMPLEX · ATELIER NORD',
       title: 'Trân trọng cảm ơn',
       images: [IMG.towerDusk],
       palette: P,
@@ -131,9 +135,9 @@ export function makeDetechEnsoDeck(): EditorDeck {
   ];
 
   return {
-    id: 'detech-enso',
-    brand: 'DETECH · ENSŌ',
-    project: 'Detech Complex — Khối căn hộ dịch vụ 5 sao',
+    id: 'demo-enso',
+    brand: 'ATELIER NORD · ENSŌ',
+    project: 'Nord Complex — Khối căn hộ dịch vụ 5 sao',
     fonts: 'Modern',
     palette: P,
     slides,

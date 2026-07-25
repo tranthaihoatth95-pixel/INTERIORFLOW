@@ -5,7 +5,7 @@
 ## Prerequisites
 
 - [ ] Google Play Console account ($25 one-time) — user đăng ký tại https://play.google.com/console
-- [ ] Vercel deploy đã xong (Prisma SQLite → Postgres) → có HTTPS domain ổn định (VD `interiorflow.vercel.app` hoặc `app.tttarchitects.vn`)
+- [ ] Vercel deploy đã xong (Prisma SQLite → Postgres) → có HTTPS domain ổn định (VD `interiorflow.vercel.app` hoặc domain riêng của bạn)
 - [ ] JDK 17 installed (Bubblewrap dùng): `brew install openjdk@17` (Mac) hoặc từ https://adoptium.net
 - [ ] Node 18+ (đã có nếu dev IF)
 - [ ] Android SDK: Bubblewrap tự tải nếu thiếu, hoặc `brew install --cask android-commandlinetools`
@@ -24,7 +24,7 @@ cd /tmp/interiorflow-twa  # Thư mục riêng, KHÔNG trong repo IF
 bubblewrap init --manifest https://<vercel-url>/manifest.webmanifest
 ```
 Trả lời prompts:
-- **Application ID**: `com.tttarchitects.interiorflow` (reverse domain, KHÔNG ĐỔI SAU KHI PUBLISH)
+- **Application ID**: `com.interiorflow.app` (reverse domain). ⚠️ **CHỐT TRƯỚC KHI PUBLISH** — Google Play KHÔNG cho đổi package name sau khi publish; muốn đổi = phải submit app MỚI, mất toàn bộ rating/cài đặt. Nếu phát hành dưới pháp nhân khác, đổi ID ở đây TRƯỚC lần publish đầu tiên.
 - **App name**: `InteriorFlow`
 - **Launcher name**: `InteriorFlow`
 - **Display mode**: `standalone` (từ manifest)
@@ -67,7 +67,7 @@ Trong repo IF, tạo `public/.well-known/assetlinks.json`:
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "com.tttarchitects.interiorflow",
+    "package_name": "com.interiorflow.app",
     "sha256_cert_fingerprints": ["3E:C4:97:...:AB:CD"]
   }
 }]
@@ -86,7 +86,7 @@ adb install app-release-signed.apk
 2. **Release → Internal testing → Create new release**.
 3. Upload `app-release-bundle.aab`.
 4. Release notes: "Bản đầu InteriorFlow — canvas AI cho pipeline nội thất."
-5. **Testers**: tạo email list nội bộ TTT (tối đa 100 email).
+5. **Testers**: tạo email list nhóm test nội bộ của bạn (tối đa 100 email).
 6. **Review release → Rollout**.
 7. Sau ~vài phút → tester nhận email link opt-in → cài từ Play Store.
 
@@ -94,7 +94,7 @@ adb install app-release-signed.apk
 
 ## Rủi ro & lưu ý
 
-- **Package name KHÔNG ĐỔI được** sau publish. Chọn `com.tttarchitects.interiorflow` NGAY từ đầu.
+- **Package name KHÔNG ĐỔI được** sau publish. Chốt `com.interiorflow.app` (hoặc reverse-domain của pháp nhân phát hành) NGAY từ đầu, TRƯỚC lần publish đầu tiên.
 - **Play App Signing**: Play Console mặc định BẬT — Google giữ signing key, bạn giữ upload key. Nếu upload key mất, có thể request reset qua support (khoảng 1 tuần).
 - **Data safety form**: Internal testing KHÔNG bắt buộc; closed/production BẮT BUỘC. Chuẩn bị sẵn declaration nếu chuyển production.
 - **Quy tắc 12 tester/14 ngày**: chỉ áp dụng khi chuyển sang production access (Play Console 2023+ requirement cho tài khoản cá nhân). Internal testing né được.

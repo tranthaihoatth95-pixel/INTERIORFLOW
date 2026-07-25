@@ -1,7 +1,7 @@
 // lib/demos/present.ts — demo CHẶNG PRESENT ("thực tế").
 //
 // Luồng trình khách 1 bộ slide 16:9: 4 nội dung concept (slide.concept) + 4 ảnh nguồn
-// (input.image, nướng thật từ /public/detech) → 4 Slide Composer (Cover · Nội dung + ảnh
+// (input.image, nướng thật từ /public/detech — bộ ảnh mẫu) → 4 Slide Composer (Cover · Nội dung + ảnh
 // ×2 · Quote), cùng lấy palette từ 1 ảnh style-ref → gom vào Export Deck.
 // Thể loại: "Concept Sảnh Khách sạn 5 sao" — sát mảng khách sạn–resort của user.
 //
