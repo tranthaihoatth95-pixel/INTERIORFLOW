@@ -958,6 +958,7 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
             studioName: studioName.trim() || undefined,
             logo: kit?.logo ?? null,
             accent: kit?.palette?.[0] ?? null,
+            fonts: kit?.fonts, // → bước (2) chuỗi resolve font PDF (lib/pdf-font.ts)
           },
           projectName: projectName.trim(),
           date: reportDate.trim(),

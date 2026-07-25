@@ -19,12 +19,20 @@
  *
  * TÁI DÙNG jsPDF (import động) như lib/cad/pdf.ts — KHÔNG thêm dependency mới. Ảnh bản vẽ dùng
  * renderDocToDataURL (lib/cad/render.ts) → addImage, đúng pattern export PNG hiện có.
+ *
+ * FONT (#25): báo cáo này gần như 100% tiếng Việt nên BẮT BUỘC nhúng font có dấu qua
+ * `ensureVietnameseFont` (lib/pdf-font.ts) — font dựng sẵn của jsPDF mã hoá WinAnsi, không có
+ * glyph tiếng Việt. Mọi `setFont` dùng biến `FONT` do hàm đó trả về ('BeVietnamPro' mặc định,
+ * hoặc 'helvetica' nếu nạp font hỏng) — KHÔNG hardcode tên font lại nữa. `meta.brand` được
+ * chuyển tiếp xuống resolver để sau này Brand Kit mang font riêng thì tự khớp.
  */
 
 import type { Doc, Entity } from './model';
 import type { Violation } from './standards/checker';
 import type { StandardRule } from './standards/registry';
 import { renderDocToDataURL } from './render';
+import { ensureVietnameseFont } from '../pdf-font';
+import type { FontPairing } from '../slides';
 
 /** Nhận diện thương hiệu để in lên báo cáo — LẤY TỪ DỮ LIỆU (Brand Kit dự án), không hardcode. */
 export interface ReportBrand {
@@ -34,6 +42,12 @@ export interface ReportBrand {
   logo?: string | null;
   /** Màu nhấn (Brand Kit.palette[0]) — hex '#RRGGBB'. Không hợp lệ → dùng navy trung tính. */
   accent?: string | null;
+  /**
+   * Bộ chữ của Brand Kit (`BrandKit.fonts`) — chuyển thẳng xuống `ensureVietnameseFont` làm
+   * bước (2) của chuỗi resolve font. HIỆN chưa preset nào ánh xạ được sang font nhúng (3 preset
+   * chỉ là CSS stack hệ thống, không có .ttf) ⇒ luôn rơi về mặc định; xem lib/pdf-font.ts.
+   */
+  fonts?: FontPairing;
 }
 
 export interface StandardsReportMeta {
@@ -132,6 +146,9 @@ export async function buildStandardsReportPdf(
 ) {
   const { jsPDF } = await import('jspdf');
   const pdf = new jsPDF({ unit: 'mm', format: 'a4' }); // 210 × 297
+  // PHẢI await TRƯỚC mọi lệnh vẽ chữ: nếu để promise trôi, jsPDF ghi trang bằng helvetica
+  // rồi mới đăng ký font ⇒ PDF vẫn mất dấu.
+  const FONT = await ensureVietnameseFont(pdf, { brandFonts: meta.brand?.fonts });
   const PW = 210;
   const PH = 297;
   const M = 16; // lề
@@ -155,6 +172,9 @@ export async function buildStandardsReportPdf(
     pdf.setDrawColor(HAIR);
     pdf.setLineWidth(0.2);
     pdf.line(M, PH - 12, PW - M, PH - 12);
+    // setFont TƯỜNG MINH: footer() được gọi ở nhiều điểm với kiểu chữ đang dở dang khác nhau
+    // (có chỗ đang 'bold') — không đặt lại thì chân trang lúc đậm lúc thường.
+    pdf.setFont(FONT, 'normal');
     pdf.setFontSize(7.5);
     pdf.setTextColor(MUTED);
     pdf.text('InteriorFlow · Kiểm quy chuẩn · Standards Checker', M, PH - 8);
@@ -175,11 +195,11 @@ export async function buildStandardsReportPdf(
     }
   }
   if (studio) {
-    pdf.setFont('helvetica', 'bold');
+    pdf.setFont(FONT, 'bold');
     pdf.setFontSize(13);
     pdf.setTextColor(INK);
     pdf.text(studio, M + logoW, M + 7);
-    pdf.setFont('helvetica', 'normal');
+    pdf.setFont(FONT, 'normal');
     pdf.setFontSize(8.5);
     pdf.setTextColor(MUTED);
     pdf.text('Đơn vị lập hồ sơ · Prepared by', M + logoW, M + 12);
@@ -196,12 +216,12 @@ export async function buildStandardsReportPdf(
 
   // ── Tiêu đề báo cáo (song ngữ) ──
   let y = headerBottom + 12;
-  pdf.setFont('helvetica', 'bold');
+  pdf.setFont(FONT, 'bold');
   pdf.setFontSize(17);
   pdf.setTextColor(INK);
   pdf.text('BÁO CÁO KIỂM TRA QUY CHUẨN', M, y);
   y += 6.5;
-  pdf.setFont('helvetica', 'normal');
+  pdf.setFont(FONT, 'normal');
   pdf.setFontSize(10.5);
   pdf.setTextColor(MUTED);
   pdf.text('Standards Compliance Report — TCVN · QCVN · Neufert · IBC/NFPA · ISO', M, y);
@@ -217,16 +237,23 @@ export async function buildStandardsReportPdf(
   metaRows.push(['Ngày lập · Date', date || '—']);
   if (preparedBy) metaRows.push(['Người lập · Prepared by', preparedBy]);
   if (meta.scopeLabel?.trim()) metaRows.push(['Phạm vi rule · Scope', meta.scopeLabel.trim()]);
+  /** Cột nhãn rộng 52mm (đo thật: nhãn dài nhất "Người lập · Prepared by" = 34.2mm ở 8.5pt
+   *  Be Vietnam Pro — còn dư). Giá trị bắt đầu từ đây tới lề phải. */
+  const META_GUTTER = 52;
   for (const [k, v] of metaRows) {
-    pdf.setFont('helvetica', 'normal');
+    pdf.setFont(FONT, 'normal');
     pdf.setFontSize(8.5);
     pdf.setTextColor(MUTED);
     pdf.text(k, M, y);
-    pdf.setFont('helvetica', 'bold');
+    pdf.setFont(FONT, 'bold');
     pdf.setFontSize(10);
     pdf.setTextColor(INK);
-    pdf.text(v, M + 52, y);
-    y += 6;
+    // GIÁ TRỊ là dữ liệu người dùng (tên dự án có thể rất dài) → NGẮT DÒNG theo bề rộng còn
+    // lại thay vì để chạy tràn ra ngoài lề phải. splitTextToSize đo theo font/cỡ vừa set ở
+    // trên nên tự đúng với mọi font được resolve, không phụ thuộc con số hardcode nào.
+    const vLines = pdf.splitTextToSize(v, PW - M - (M + META_GUTTER)) as string[];
+    vLines.forEach((ln, i) => pdf.text(ln, M + META_GUTTER, y + i * 5));
+    y += 6 + (vLines.length - 1) * 5;
   }
 
   // ── Tổng quan: 4 ô đếm (tổng / lỗi / cảnh báo / gợi ý) ──
@@ -244,11 +271,11 @@ export async function buildStandardsReportPdf(
     pdf.setDrawColor(HAIR);
     pdf.setLineWidth(0.3);
     pdf.roundedRect(x, y, tileW, 18, 1.5, 1.5, 'S');
-    pdf.setFont('helvetica', 'bold');
+    pdf.setFont(FONT, 'bold');
     pdf.setFontSize(18);
     pdf.setTextColor(col);
     pdf.text(String(n), x + 4, y + 10);
-    pdf.setFont('helvetica', 'normal');
+    pdf.setFont(FONT, 'normal');
     pdf.setFontSize(8);
     pdf.setTextColor(MUTED);
     pdf.text(`${vi} · ${en}`, x + 4, y + 15);
@@ -256,7 +283,7 @@ export async function buildStandardsReportPdf(
   y += 18 + 8;
 
   // ── Bảng danh sách vi phạm ──
-  pdf.setFont('helvetica', 'bold');
+  pdf.setFont(FONT, 'bold');
   pdf.setFontSize(11);
   pdf.setTextColor(INK);
   pdf.text('Danh sách vi phạm · Findings', M, y);
@@ -275,7 +302,7 @@ export async function buildStandardsReportPdf(
   };
 
   if (sorted.length === 0) {
-    pdf.setFont('helvetica', 'normal');
+    pdf.setFont(FONT, 'normal');
     pdf.setFontSize(10);
     pdf.setTextColor(MUTED);
     pdf.text(
@@ -292,6 +319,10 @@ export async function buildStandardsReportPdf(
     const desc = rule?.description ? ` (${rule.description})` : '';
     const sev = SEV[v.severity];
     // Ước lượng chiều cao dòng để ngắt trang trước khi vẽ (message wrap + meta 2 dòng).
+    // splitTextToSize đo theo FONT ĐANG SET → phải set ĐÚNG font/kiểu sẽ vẽ (normal), nếu không
+    // dòng đầu bị đo bằng 'bold' của tiêu đề phía trên (Noto Bold rộng hơn Regular ~8%) còn các
+    // dòng sau đo bằng 'normal' ⇒ ngắt dòng không đồng nhất giữa các hàng.
+    pdf.setFont(FONT, 'normal');
     pdf.setFontSize(9.5);
     const msgLines = pdf.splitTextToSize(v.message, PW - 2 * M - 8) as string[];
     const srcText = `${v.source}${desc}${v.verified ? '' : '  ·  CHƯA KIỂM CHỨNG — đối chiếu bản gốc trước khi dùng chính thức'}`;
@@ -306,7 +337,7 @@ export async function buildStandardsReportPdf(
     pdf.line(M, y, M, y + rowH - 4);
 
     // badge mức + số thứ tự
-    pdf.setFont('helvetica', 'bold');
+    pdf.setFont(FONT, 'bold');
     pdf.setFontSize(7.5);
     pdf.setTextColor(sev.color);
     pdf.text(`${sev.label} · ${sev.en}`.toUpperCase(), M + 4, y + 3.5);
@@ -314,7 +345,7 @@ export async function buildStandardsReportPdf(
     pdf.text(`#${i + 1}`, PW - M, y + 3.5, { align: 'right' });
 
     // message
-    pdf.setFont('helvetica', 'normal');
+    pdf.setFont(FONT, 'normal');
     pdf.setFontSize(9.5);
     pdf.setTextColor(INK);
     let ly = y + 8;
@@ -343,7 +374,7 @@ export async function buildStandardsReportPdf(
       const img = renderDocToDataURL(doc, 2000, 80);
       if (img && img.startsWith('data:image')) {
         newPage();
-        pdf.setFont('helvetica', 'bold');
+        pdf.setFont(FONT, 'bold');
         pdf.setFontSize(11);
         pdf.setTextColor(INK);
         pdf.text('Bản vẽ tham chiếu · Reference drawing', M, y + 2);

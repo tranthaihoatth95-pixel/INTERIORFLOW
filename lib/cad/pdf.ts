@@ -26,12 +26,20 @@
  * theo zoom, còn đây là mm giấy cố định bất kể tỉ lệ bản vẽ, đúng nghĩa "Plot to PDF").
  * Ngược lại TextEntity.h/DimStyle.textHeight/arrowSize là mm THẬT ngoài đời (tỉ lệ 1:1) nên
  * VẪN nhân v.scale để ra đúng cỡ trên giấy ở tỉ lệ bản vẽ đã chọn.
+ *
+ * FONT (#25): `buildCadPdf` gọi `ensureVietnameseFont(pdf)` (lib/pdf-font.ts) NGAY sau khi tạo
+ * instance, TRƯỚC vòng vẽ entity — nếu không, mọi TEXT tiếng Việt (nhãn phòng, khung tên
+ * `titleBlockPro`, nhãn zone) bị jsPDF mã hoá WinAnsi và mất dấu. Font mặc định (Be Vietnam
+ * Pro) RỘNG hơn helvetica ~5-8%; file này KHÔNG đo/cắt chuỗi theo bề rộng ở đâu cả (cỡ chữ suy
+ * từ TextEntity.h, không có ô nào bị clip), nên đổi font không làm lệch bố cục — ô khung tên
+ * chật là do dữ liệu người dùng nhập dài, không phải do bước xuất.
  */
 
 import type { Doc, Entity, Pt, Viewport, DimEntity } from './model';
 import { docBox, fitBox, fitScaleLabel, worldToScreen, ellipseBoundaryPoints, zoneBoundaryPoints, zoneCentroid, ZONE_GROUP_META, fixedScaleViewport, fitsAtScale, docPaperMm } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 import { hatchLines, hatchDots } from './hatch';
+import { ensureVietnameseFont } from '../pdf-font';
 
 /**
  * M0 fix (docs/RESEARCH-TECHNICAL-DRAWING-PIPELINE.md §1.6/§4) — khổ giấy/lề mặc định dùng khi
@@ -220,7 +228,11 @@ function drawDimPdf(pdf: JsPdf, v: Viewport, e: DimEntity, color: string, ds: Ca
     pdf.line(sFrom.x, sFrom.y, sTo.x, sTo.y);
     drawArrowPdf(pdf, sFrom, sTo, color, arrowMm);
     if (diameter) drawArrowPdf(pdf, sTo, sFrom, color, arrowMm);
-    const label = diameter ? `⌀${Math.round(r * 2)}` : `R${Math.round(r)}`;
+    // #25 — dùng 'Ø' (U+00D8, ký hiệu đường kính chuẩn ISO 129 trên bản vẽ) THAY '⌀' (U+2300):
+    // U+2300 gần như không có trong font chữ thường (không có trong Be Vietnam Pro, Noto Sans,
+    // lẫn bảng WinAnsi của jsPDF) ⇒ in ra là ô rỗng .notdef. Đổi cả ở render.ts (canvas) để
+    // màn hình và bản in khớp nhau.
+    const label = diameter ? `Ø${Math.round(r * 2)}` : `R${Math.round(r)}`;
     pdf.text(label, (sFrom.x + sTo.x) / 2, (sFrom.y + sTo.y) / 2 - 1);
   } else if (kind === 'angular' && e.c) {
     const ang1 = Math.atan2(e.a.y - e.c.y, e.a.x - e.c.x);
@@ -377,6 +389,10 @@ export async function buildCadPdf(doc: Doc, opts: CadPdfOptions = {}) {
   const margin = opts.margin ?? DEFAULT_PDF_MARGIN_MM;
   const ds = opts.dimStyle ?? DEFAULT_DIM_STYLE;
   const pdf = new jsPDF({ unit: 'mm', format: [pw, ph] });
+  // #25 — nhúng font có dấu TRƯỚC vòng vẽ entity: nhãn phòng, khung tên ("DỰ ÁN · PROJECT",
+  // "Tỷ lệ 1:100"), nhãn zone… đều là tiếng Việt. Phải `await` ở đây, KHÔNG để promise trôi —
+  // pdf.text() chạy trước khi font đăng ký xong thì vẫn ra helvetica/WinAnsi (mất dấu).
+  await ensureVietnameseFont(pdf);
 
   const box = docBox(doc) ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
   // B1 (24/07) — "plot to scale": doc.printScale (1:N chuẩn, per-sheet) + bản vẽ LỌT giấy ở tỉ
