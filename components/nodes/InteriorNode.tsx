@@ -3,7 +3,7 @@
 import { memo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Play, Loader2, CircleAlert, CircleCheck, RotateCcw, ImagePlus, Paintbrush, X } from 'lucide-react';
+import { Play, Loader2, CircleAlert, CircleCheck, RotateCcw, ImagePlus, Paintbrush, X, Wand2, Frame } from 'lucide-react';
 import { getDefinition } from '@/lib/nodes/registry';
 import { useFlowStore, type FlowNode } from '@/lib/store';
 import { nodeIconFor } from '@/components/nodes/NodeIcons';
@@ -14,6 +14,9 @@ import { nodePop, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { smartImportImage, SmartImportError } from '@/lib/images/smart-ingest';
 import { useSketchStore } from '@/lib/sketch/sketchStore';
+import { useSmartSelectStore } from '@/lib/smartselect/smartSelectStore';
+import { useWarpStore } from '@/lib/warp/warpStore';
+import { useSourceImage } from '@/lib/nodes/source-image';
 
 const PORT_GAP = 26;
 const PORT_TOP = 46;
@@ -31,6 +34,8 @@ function ParamField({
   const setConnectError = useFlowStore((s) => s.setConnectError);
   const setNotice = useFlowStore((s) => s.setNotice);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Có ảnh ở input 'image' chưa — quyết định enable nút mở modal (mask / smart select / warp).
+  const hasSourceImage = Boolean(useSourceImage(nodeId));
 
   if (param.kind === 'text') {
     return (
@@ -97,9 +102,31 @@ function ParamField({
     );
   }
 
-  if (param.kind === 'mask' || param.kind === 'annotate') {
+  if (param.kind === 'mask' || param.kind === 'annotate' || param.kind === 'smartmask') {
     const isMask = param.kind === 'mask';
+    const isSmart = param.kind === 'smartmask';
     const has = typeof value === 'string' && value.startsWith('data:');
+    // Modal cần ảnh nguồn ở input 'image'. Trước đây modal MỞ ĐƯỢC khi chưa nối input rồi
+    // mới báo "chưa có ảnh nguồn" — user gặp thật, rất khó hiểu. Giờ chặn ngay ở nút.
+    const needsSource = isMask || isSmart || param.kind === 'annotate';
+    const disabled = needsSource && !hasSourceImage;
+    const open = () => {
+      if (disabled) return;
+      if (isSmart) useSmartSelectStore.getState().open(nodeId);
+      else if (isMask) useFlowStore.getState().setMaskEditorNodeId(nodeId);
+      else useFlowStore.getState().setAnnotateNodeId(nodeId);
+    };
+    const label = isSmart
+      ? has
+        ? 'Sửa vùng chọn'
+        : 'Chọn vùng thông minh'
+      : isMask
+        ? has
+          ? 'Sửa mask'
+          : 'Vẽ mask'
+        : has
+          ? 'Sửa chú thích'
+          : 'Chú thích lên ảnh';
     return (
       <div>
         {has && (
@@ -107,15 +134,31 @@ function ParamField({
           <img src={String(value)} alt={param.kind} className="mb-1.5 h-20 w-full rounded-md object-cover" loading="lazy" />
         )}
         <button
-          className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--border-strong)] py-2 text-[11px] text-[var(--t3)] transition hover:border-[var(--accent-ring)] hover:text-[var(--t1)]"
-          onClick={() =>
-            isMask
-              ? useFlowStore.getState().setMaskEditorNodeId(nodeId)
-              : useFlowStore.getState().setAnnotateNodeId(nodeId)
-          }
+          disabled={disabled}
+          title={disabled ? 'Nối ảnh vào input Image trước' : undefined}
+          className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--border-strong)] py-2 text-[11px] text-[var(--t3)] transition hover:border-[var(--accent-ring)] hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--border-strong)] disabled:hover:text-[var(--t3)]"
+          onClick={open}
         >
-          <Paintbrush size={13} />
-          {isMask ? (has ? 'Sửa mask' : 'Vẽ mask') : has ? 'Sửa chú thích' : 'Chú thích lên ảnh'}
+          {isSmart ? <Wand2 size={13} /> : <Paintbrush size={13} />}
+          {disabled ? 'Nối ảnh vào input Image trước' : label}
+        </button>
+      </div>
+    );
+  }
+
+  // 4 góc phối cảnh (util.warp) — mở modal kéo góc, xem trước ngay trên ảnh phối cảnh.
+  if (param.kind === 'corners') {
+    const set = typeof value === 'string' && value.trim().startsWith('[');
+    return (
+      <div>
+        <button
+          disabled={!hasSourceImage}
+          title={!hasSourceImage ? 'Nối ảnh vào input Image trước' : undefined}
+          className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--border-strong)] py-2 text-[11px] text-[var(--t3)] transition hover:border-[var(--accent-ring)] hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-40"
+          onClick={() => hasSourceImage && useWarpStore.getState().open(nodeId)}
+        >
+          <Frame size={13} />
+          {!hasSourceImage ? 'Nối ảnh vào input Image trước' : set ? 'Sửa 4 góc' : 'Kéo 4 góc phối cảnh'}
         </button>
       </div>
     );

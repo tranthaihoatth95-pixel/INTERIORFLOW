@@ -9,6 +9,9 @@ import { nodeIconFor } from '@/components/nodes/NodeIcons';
 import { useFlowStore } from '@/lib/store';
 import { useSketchStore } from '@/lib/sketch/sketchStore';
 import { SketchStudioModal } from '@/components/sketch/SketchStudioModal';
+import { SmartSelectModal } from '@/components/smartselect/SmartSelectModal';
+import { WarpCornersModal } from '@/components/warp/WarpCornersModal';
+import { nodeMatches } from '@/lib/nodes/search';
 import { modKey } from '@/lib/kbd';
 import type { NodeDefinition } from '@/lib/types';
 import { TAG_ORDER, TAG_META, tagsFor, type NodeTag } from '@/lib/nodes/tags';
@@ -88,11 +91,9 @@ export function NodeLibraryPanel() {
   const noAi = aiTier === 1;
   const phase = PHASE_MAP[workspace ?? DEFAULT_PHASE];
 
-  const matchesQuery = (d: NodeDefinition, q: string) =>
-    !q ||
-    d.title.toLowerCase().includes(q) ||
-    d.description.toLowerCase().includes(q) ||
-    d.type.includes(q);
+  // Khớp qua helper dùng chung (lib/nodes/search.ts): bỏ dấu tiếng Việt + khớp cả `keywords`
+  // VI/EN, nên gõ "vách", "vach", "tach nen", "hoa văn" đều ra đúng node.
+  const matchesQuery = (d: NodeDefinition, q: string) => !q || nodeMatches(d, q);
   const hiddenByTier = (d: NodeDefinition) => noAi && (d.category === 'AI_GENERATE' || d.category === 'AI_EDIT');
 
   // Nhóm ★ node ưu tiên của chặng hiện tại (chỉ khi không tìm kiếm — soft focus, không lọc bỏ phần khác).
@@ -256,6 +257,10 @@ export function NodeLibraryPanel() {
         gắn Sketch Studio ở đây để không phải sửa app/page.tsx (ngoài phạm vi commit).
         Modal tự portal ra document.body nên vị trí gọi không ảnh hưởng layout/transform. */}
     <SketchStudioModal />
+    {/* Cùng lý do như SketchStudioModal: mount ở đây (panel luôn được mount) để không phải
+        sửa app/page.tsx; modal tự portal ra body nên không ảnh hưởng layout. */}
+    <SmartSelectModal />
+    <WarpCornersModal />
     </>
   );
 }

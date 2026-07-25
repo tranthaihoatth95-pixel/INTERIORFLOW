@@ -88,6 +88,11 @@ export const NODE_TAGS: Record<string, NodeTag[]> = {
   'util.crop': ['utility', 'edit'],
   'util.composite': ['utility', 'edit'],
   'util.materialnote': ['material', 'layout-present'],
+  'util.warp': ['utility', 'edit', 'material'],
+
+  // ---- Pattern / chọn vùng (defs/pattern-warp.ts) ----
+  'ai.pattern': ['ai-generate', 'material'],
+  'ai.smartselect': ['edit', 'utility'],
 
   // ---- Output ----
   'out.moodboard': ['layout-present', 'material'],

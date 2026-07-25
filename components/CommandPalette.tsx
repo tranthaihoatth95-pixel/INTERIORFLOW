@@ -18,6 +18,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { NODE_DEFINITIONS } from '@/lib/nodes/registry';
+import { keywordsFor } from '@/lib/nodes/keywords';
+import { textScore } from '@/lib/nodes/search';
 import { CATEGORY_META, type NodeCategory } from '@/lib/types';
 import { useFlowStore } from '@/lib/store';
 import { modKey, modShiftKey } from '@/lib/kbd';
@@ -108,7 +110,9 @@ export function CommandPalette() {
       hint: d.creditCost > 0 ? `${d.creditCost}cr` : undefined,
       group: CATEGORY_META[d.category].label,
       icon: Boxes,
-      keywords: `${d.description} ${d.type} thêm node add`,
+      // keywords VI/EN của node (lib/nodes/keywords.ts) vào kho chữ tìm kiếm — gõ "vách",
+      // "tách nền", "hoa văn"… ra đúng node thay vì 0 kết quả.
+      keywords: `${d.description} ${d.type} ${keywordsFor(d.type, d.keywords).join(' ')} thêm node add`,
       run: run(() => s.addNode(d.type, centerPos())),
     }));
 
@@ -118,18 +122,12 @@ export function CommandPalette() {
   }, [centerPos, fitView, open]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     if (!q) return commands;
+    // textScore (lib/nodes/search.ts): bỏ dấu tiếng Việt + khớp AND nhiều từ, dùng CHUNG
+    // thang điểm với Node Library nên 2 chỗ tìm ra cùng một kết quả.
     const scored = commands
-      .map((c) => {
-        const label = c.label.toLowerCase();
-        const kw = (c.keywords ?? '').toLowerCase();
-        let score = -1;
-        if (label.startsWith(q)) score = 3;
-        else if (label.includes(q)) score = 2;
-        else if (kw.includes(q)) score = 1;
-        return { c, score };
-      })
+      .map((c) => ({ c, score: textScore(c.label, c.keywords ?? '', q) }))
       .filter((x) => x.score >= 0)
       .sort((a, b) => b.score - a.score);
     return scored.map((x) => x.c);

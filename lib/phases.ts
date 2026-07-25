@@ -54,6 +54,11 @@ export const PHASES: PhaseMeta[] = [
       'ai.styletransfer',
       'ai.emptystaging',
       'ai.materialswap',
+      // Chọn vùng thông minh đứng ngay trước Material Swap: đó là thứ tự làm việc thật
+      // (chọn đúng vách → đổi vật liệu), và là lý do node này ra đời.
+      'ai.smartselect',
+      'ai.pattern',
+      'util.warp',
       'ai.furniture',
       'ai.relight',
       'ai.upscale',

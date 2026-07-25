@@ -4,24 +4,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Paintbrush, Eraser, Trash2, Check, AlertTriangle } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
+// Bộ tìm ảnh nguồn đã tách ra dùng chung (SmartSelect/Warp/InteriorNode cũng cần) —
+// xem lib/nodes/source-image.ts.
+import { useSourceImage } from '@/lib/nodes/source-image';
 import { fade, modalScale, pressable, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
-
-/** Lấy ảnh nguồn cho node mask painter: output của upstream, hoặc file của Import Image chưa chạy. */
-function useSourceImage(nodeId: string | null): string | null {
-  const nodes = useFlowStore((s) => s.nodes);
-  const edges = useFlowStore((s) => s.edges);
-  if (!nodeId) return null;
-  const edge = edges.find((e) => e.target === nodeId && e.targetHandle === 'image');
-  if (!edge) return null;
-  const source = nodes.find((n) => n.id === edge.source);
-  if (!source) return null;
-  const fromRun = source.data.run.outputs?.[edge.sourceHandle ?? ''];
-  if (fromRun && fromRun.dataType === 'image') return String(fromRun.value);
-  if (source.data.defType === 'input.image' && source.data.params.file)
-    return String(source.data.params.file);
-  return null;
-}
 
 export function MaskPainterModal() {
   const nodeId = useFlowStore((s) => s.maskEditorNodeId);
