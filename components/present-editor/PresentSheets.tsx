@@ -64,6 +64,7 @@ import {
   type SheetsAutosaver,
   type SheetsRecord,
 } from '@/lib/sheets-persist';
+import { useSheetsBucketId } from '@/lib/scope';
 
 const MAX_SHEETS = 5;
 const ROUTE = '/present-editor' as const;
@@ -119,18 +120,36 @@ export default function PresentSheets({ initialDeck }: Props) {
   const sheetsRef = useRef(sheets);
   const activeIdRef = useRef(activeId);
   const saverRef = useRef<SheetsAutosaver | null>(null);
-  const [hydrated, setHydrated] = useState(false);
+  /**
+   * BUCKET THEO DỰ ÁN (sửa rò chéo 25/07): deck lưu theo `userId::route::projectId`.
+   * `hydratedFor` giữ bucket ĐÃ hydrate (không phải cờ boolean) → ngay khung hình đổi dự án,
+   * `hydrated` đã false nên autosaver không kịp ghi deck dự án cũ sang bucket dự án mới.
+   */
+  const bucketId = useSheetsBucketId();
+  const [hydratedFor, setHydratedFor] = useState<string | null>(null);
+  const hydrated = hydratedFor === bucketId;
+  const prevBucketRef = useRef<string | null>(null);
 
   /** KHÔI PHỤC 1 lần lúc mount: IDB → bộ sheet + sheet active (ưu tiên resume.sheetId). */
   useEffect(() => {
     const userId = getLastUserId();
     userIdRef.current = userId;
+    // ĐỔI DỰ ÁN giữa phiên (component KHÔNG remount khi client-nav): dọn tab + deck sống
+    // trước khi nạp bộ sheet dự án mới, để deck dự án cũ không nằm lại dưới URL dự án mới.
+    // Lần mount đầu KHÔNG dọn — giữ `initialDeck` mà trang truyền vào.
+    if (prevBucketRef.current !== null && prevBucketRef.current !== bucketId) {
+      const fresh = blankDeck(1);
+      setSheets([{ id: 'presheet-0', name: 'Trang 1', deck: fresh }]);
+      setActiveId('presheet-0');
+      liveDeck.current = fresh;
+    }
+    prevBucketRef.current = bucketId;
     if (!userId) {
-      setHydrated(true); // chưa đăng nhập → thuần in-memory (y bản cũ)
+      setHydratedFor(bucketId); // chưa đăng nhập → thuần in-memory (y bản cũ)
       return;
     }
     let cancelled = false;
-    void loadSheets<PersistedPresentSheet>(userId, ROUTE).then((rec) => {
+    void loadSheets<PersistedPresentSheet>(userId, ROUTE, bucketId).then((rec) => {
       if (cancelled) return;
       const valid =
         rec?.sheets.filter((s) => s.deck && Array.isArray(s.deck.slides)).slice(0, MAX_SHEETS) ?? [];
@@ -146,12 +165,12 @@ export default function PresentSheets({ initialDeck }: Props) {
         setActiveId(wantId);
         liveDeck.current = restored.find((s) => s.id === wantId)?.deck ?? restored[0].deck;
       }
-      setHydrated(true);
+      setHydratedFor(bucketId);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [bucketId]);
 
   /** AUTOSAVE debounce ≥1s — deck sống + cấu trúc tab, chỉ sau khi hydrate. */
   useEffect(() => {
@@ -169,6 +188,7 @@ export default function PresentSheets({ initialDeck }: Props) {
       })),
     });
     const saver = createSheetsAutosaver(userId, ROUTE, getRecord, {
+      projectId: bucketId, // chốt bucket lúc tạo → nhịp flush cuối luôn về đúng dự án này
       onSaved: (bytes) => console.debug(`[present-sheets] IDB ghi ${(bytes / 1024).toFixed(1)} KB`),
     });
     saverRef.current = saver;
@@ -185,7 +205,7 @@ export default function PresentSheets({ initialDeck }: Props) {
       saver.dispose();
       saverRef.current = null;
     };
-  }, [hydrated]);
+  }, [hydrated, bucketId]);
 
   /** Cấu trúc tab đổi (thêm/xoá/đổi tên/reorder/đổi active) → gương ref + đánh dấu lưu. */
   useEffect(() => {

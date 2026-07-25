@@ -7,8 +7,9 @@
 
 ## Hiện tại (25/07 — phiên tối)
 - Nhánh `feat/present-layout-ml-p1`. **Đã push `0c6afe0` → `origin/main`** (998e1e0..0c6afe0) — hết nợ push.
-- tsc PASS · **91/91 file test** (`node_modules/.bin/sucrase-node <path>.test.ts` — repo KHÔNG có vitest).
+- tsc PASS · **92/92 file test** (`node_modules/.bin/sucrase-node <path>.test.ts` — repo KHÔNG có vitest).
 - **VIỆC 4 xong phần Brand Kit**: Vitals hết mù thương hiệu (xem 🔴 mục 1).
+- **Sheets gắn dự án xong**: hết rò chéo IndexedDB (xem Nợ kỹ thuật).
 
 ## Worktree đang mở
 - (Không có — đã dọn sạch, cả R-NODES và AUDIT-FIX đều đã merge.)
@@ -31,8 +32,8 @@
 - Còn treo: **VIỆC 4** GuProfile=dữ liệu · **VIỆC 7** demo+onboarding · **#25** PDF font Việt · **#14** cụm Mẫu Presenting (thumbnail + import PPTX).
 
 ## Nợ kỹ thuật (mới phát hiện 25/07)
-- 🔴 **CAD sheets lưu IndexedDB theo trình duyệt, CHƯA gắn theo `[id]` dự án** — mảnh cuối bug rò chéo. Xếp Đổ Nền 2 cùng PDF font Việt.
-- 🟡 `resume-state` chỉ lưu `flowId`, không `projectId`.
+- ✅ **XONG 25/07 — CAD/Present sheets đã gắn `[id]` dự án.** Khoá IDB `userId::route::projectId` (`sheetsKey()`), bucket lấy từ URL trước rồi tới store (`useSheetsBucketId()`); đổi dự án giữa phiên ⇒ dọn tab/canvas + hydrate lại bucket mới, autosaver chốt bucket lúc tạo nên nhịp flush cuối không đè sang dự án khác. Bản ghi cũ (khoá 2 phần) DI TRÚ 1 lần sang dự án mở đầu tiên rồi xoá bucket chung → dự án thứ hai không thấy nữa. 18 test mới (`lib/sheets-persist.test.ts`, fake IDB).
+  🟡 Còn: `resume-state` vẫn chỉ lưu `flowId` + `sheetId` (id dạng `cadsheet-N` có thể trùng giữa các dự án — chỉ chọn nhầm TAB, không rò dữ liệu).
 - 🟡 Audit CATALOG-STAGE2 kê node KHÔNG tồn tại (`ai.localedit`/`idmask`/`furnitureextract`) — registry thật chỉ 5 node AI_EDIT.
 - 🐛 `/cad-editor` React warning không tái hiện · ⌘J Vitals grep 0 kết quả · morph login chỉ fade · cursor polling idle.
 

@@ -33,6 +33,7 @@ import {
   type SheetsRecord,
 } from '@/lib/sheets-persist';
 import { exportIdf, importIdf } from '@/lib/cad/idf';
+import { useSheetsBucketId } from '@/lib/scope';
 
 const MAX_SHEETS = 5;
 const ROUTE = '/cad-editor' as const;
@@ -120,18 +121,37 @@ export default function CadSheets() {
   const sheetsRef = useRef(sheets);
   const activeIdRef = useRef(activeId);
   const saverRef = useRef<SheetsAutosaver | null>(null);
-  const [hydrated, setHydrated] = useState(false);
+  /**
+   * BUCKET THEO DỰ ÁN (sửa rò chéo 25/07): bộ sheet lưu theo `userId::route::projectId`.
+   * Đổi dự án ⇒ `bucketId` đổi ⇒ hydrate lại từ bucket mới. `hydratedFor` giữ bucket ĐÃ
+   * hydrate (không phải cờ boolean) để ngay khung hình đổi dự án, `hydrated` đã là false —
+   * autosaver không kịp ghi bản vẽ dự án cũ sang bucket dự án mới.
+   */
+  const bucketId = useSheetsBucketId();
+  const [hydratedFor, setHydratedFor] = useState<string | null>(null);
+  const hydrated = hydratedFor === bucketId;
+  const prevBucketRef = useRef<string | null>(null);
 
   /** KHÔI PHỤC 1 lần lúc mount: IDB → bộ sheet + sheet active (ưu tiên resume.sheetId). */
   useEffect(() => {
     const userId = getLastUserId();
     userIdRef.current = userId;
+    // ĐỔI DỰ ÁN giữa phiên (client-nav /projects/A/cad → /projects/B/cad, component KHÔNG
+    // remount): dọn tab + snapshot + canvas trước, để bản vẽ dự án cũ không nằm lại dưới URL
+    // dự án mới. Lần mount đầu KHÔNG dọn — giữ nguyên bản demo/blank store đang mở.
+    if (prevBucketRef.current !== null && prevBucketRef.current !== bucketId) {
+      snaps.current = {};
+      setSheets([{ id: 'cadsheet-0', name: 'Bản vẽ 1' }]);
+      setActiveId('cadsheet-0');
+      applySnapshot(blankSnapshot());
+    }
+    prevBucketRef.current = bucketId;
     if (!userId) {
-      setHydrated(true); // chưa đăng nhập → thuần in-memory (y bản cũ)
+      setHydratedFor(bucketId); // chưa đăng nhập → thuần in-memory (y bản cũ)
       return;
     }
     let cancelled = false;
-    void loadSheets<PersistedCadSheet>(userId, ROUTE).then((rec) => {
+    void loadSheets<PersistedCadSheet>(userId, ROUTE, bucketId).then((rec) => {
       if (cancelled) return;
       const valid = rec?.sheets.filter((s) => s.doc && s.viewport).slice(0, MAX_SHEETS) ?? [];
       if (rec && valid.length > 0) {
@@ -148,12 +168,12 @@ export default function CadSheets() {
         applySnapshot(snaps.current[wantId]);
         window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
       }
-      setHydrated(true);
+      setHydratedFor(bucketId);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [bucketId]);
 
   /** AUTOSAVE debounce ≥1s: nghe store CAD (vẽ/pan/zoom) — chỉ sau khi đã hydrate. */
   useEffect(() => {
@@ -172,6 +192,7 @@ export default function CadSheets() {
       };
     };
     const saver = createSheetsAutosaver(userId, ROUTE, getRecord, {
+      projectId: bucketId, // chốt bucket lúc tạo → nhịp flush cuối luôn về đúng dự án này
       onSaved: (bytes) => console.debug(`[cad-sheets] IDB ghi ${(bytes / 1024).toFixed(1)} KB`),
     });
     saverRef.current = saver;
@@ -196,7 +217,7 @@ export default function CadSheets() {
       saver.dispose();
       saverRef.current = null;
     };
-  }, [hydrated]);
+  }, [hydrated, bucketId]);
 
   /** Cấu trúc tab đổi (thêm/xoá/đổi tên/reorder/đổi active) → gương ref + đánh dấu lưu. */
   useEffect(() => {

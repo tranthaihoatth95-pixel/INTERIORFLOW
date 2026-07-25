@@ -4,7 +4,14 @@
  * Quyết định #6 (user 13/07): "nhớ CHÍNH XÁC từng sheet" — CadSheets/PresentSheets
  * trước đây giữ snapshot trong ref ⇒ reload là mất sạch trừ sheet đang mở.
  * Module này serialize CẢ BỘ sheet (tối đa 5) vào IndexedDB, khoá theo
- * `userId::route` — mỗi user mỗi bộ, mỗi chặng (CAD / Present) một bản ghi riêng.
+ * `userId::route::projectId` — mỗi user, mỗi chặng (CAD / Present), **mỗi DỰ ÁN**
+ * một bản ghi riêng.
+ *
+ * ⚠️ SỬA RÒ CHÉO DỰ ÁN (25/07): khoá cũ là `userId::route` — KHÔNG có dự án, nên bản vẽ
+ * dự án A hiện lại khi mở dự án B trên cùng trình duyệt. Nay `projectId` vào khoá; thiếu
+ * `projectId` (route toàn cục cũ `/cad-editor`) vẫn dùng khoá cũ để không đổi hành vi.
+ * Bản ghi cũ được DI TRÚ 1 lần sang dự án mở đầu tiên (xem `loadSheets`) — không mất việc,
+ * và sau khi di trú thì bucket chung biến mất nên dự án thứ hai không thấy nữa.
  *
  * Vì sao IndexedDB (không phải localStorage): deck Present có thể chứa ảnh dataURL
  * hàng MB — localStorage trần ~5MB là vỡ; IDB trần theo đĩa (hàng trăm MB).
@@ -37,7 +44,15 @@ export interface SheetsRecord<S extends PersistedSheet = PersistedSheet> {
   ts: number;
 }
 
-const key = (userId: string, route: string) => `${userId}::${route}`;
+/**
+ * Khoá bản ghi. Có `projectId` → `userId::route::projectId` (bộ sheet RIÊNG của dự án).
+ * Không có → khoá cũ `userId::route` (bucket chung, chỉ còn dùng cho route toàn cục cũ
+ * và cho bản ghi trước 25/07 chờ di trú). Hàm THUẦN — test được không cần IndexedDB.
+ */
+export function sheetsKey(userId: string, route: string, projectId?: string | null): string {
+  const p = typeof projectId === 'string' ? projectId.trim() : '';
+  return p ? `${userId}::${route}::${p}` : `${userId}::${route}`;
+}
 
 function openDb(): Promise<IDBDatabase | null> {
   if (typeof indexedDB === 'undefined') return Promise.resolve(null);
@@ -56,39 +71,77 @@ function openDb(): Promise<IDBDatabase | null> {
   });
 }
 
-/** Đọc bộ sheet đã lưu — null nếu chưa có / hỏng / IDB bị chặn. */
+/** Bản ghi hợp lệ? (v=1, có ít nhất 1 sheet, mỗi sheet có id+name). */
+function isValidRecord(r: unknown): r is SheetsRecord {
+  const rec = r as SheetsRecord | undefined;
+  return (
+    !!rec &&
+    rec.v === 1 &&
+    Array.isArray(rec.sheets) &&
+    rec.sheets.length > 0 &&
+    rec.sheets.every((s) => s && typeof s.id === 'string' && typeof s.name === 'string')
+  );
+}
+
+/** GET thô theo khoá — null khi thiếu/hỏng/IDB bị chặn. */
+function idbGet(db: IDBDatabase, k: string): Promise<unknown> {
+  return new Promise((resolve) => {
+    try {
+      const req = db.transaction(STORE, 'readonly').objectStore(STORE).get(k);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(undefined);
+    } catch {
+      resolve(undefined);
+    }
+  });
+}
+
+/** PUT + DELETE trong CÙNG 1 transaction — di trú không bao giờ để mất bản ghi giữa chừng. */
+function idbMove(db: IDBDatabase, from: string, to: string, value: unknown): Promise<void> {
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).put(value, to);
+      tx.objectStore(STORE).delete(from);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}
+
+/**
+ * Đọc bộ sheet đã lưu của (user, route, DỰ ÁN) — null nếu chưa có / hỏng / IDB bị chặn.
+ *
+ * DI TRÚ 1 LẦN: có `projectId` mà bucket dự án còn trống, trong khi bucket chung cũ
+ * (`userId::route`, tồn tại từ trước 25/07) có dữ liệu ⇒ DỜI bản ghi cũ sang bucket dự án
+ * này rồi xoá bucket chung. Nhờ vậy việc đang làm dở không mất, mà dự án mở sau đó không
+ * còn thấy bản vẽ của dự án khác nữa.
+ */
 export async function loadSheets<S extends PersistedSheet>(
   userId: string,
   route: string,
+  projectId?: string | null,
 ): Promise<SheetsRecord<S> | null> {
   if (!userId || !route) return null;
   const db = await openDb();
   if (!db) return null;
-  return new Promise((resolve) => {
-    try {
-      const req = db.transaction(STORE, 'readonly').objectStore(STORE).get(key(userId, route));
-      req.onsuccess = () => {
-        db.close();
-        const r = req.result as SheetsRecord<S> | undefined;
-        if (
-          r &&
-          r.v === 1 &&
-          Array.isArray(r.sheets) &&
-          r.sheets.length > 0 &&
-          r.sheets.every((s) => s && typeof s.id === 'string' && typeof s.name === 'string')
-        ) {
-          resolve(r);
-        } else resolve(null);
-      };
-      req.onerror = () => {
-        db.close();
-        resolve(null);
-      };
-    } catch {
-      db.close();
-      resolve(null);
-    }
-  });
+  try {
+    const scopedKey = sheetsKey(userId, route, projectId);
+    const scoped = await idbGet(db, scopedKey);
+    if (isValidRecord(scoped)) return scoped as SheetsRecord<S>;
+
+    const legacyKey = sheetsKey(userId, route);
+    if (scopedKey === legacyKey) return null; // không có projectId → chỉ có bucket chung
+
+    const legacy = await idbGet(db, legacyKey);
+    if (!isValidRecord(legacy)) return null;
+    await idbMove(db, legacyKey, scopedKey, legacy);
+    return legacy as SheetsRecord<S>;
+  } finally {
+    db.close();
+  }
 }
 
 /**
@@ -99,6 +152,7 @@ export async function saveSheets(
   userId: string,
   route: string,
   record: SheetsRecord,
+  projectId?: string | null,
 ): Promise<number> {
   if (!userId || !route) return 0;
   let json: string;
@@ -113,7 +167,7 @@ export async function saveSheets(
   return new Promise((resolve) => {
     try {
       const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(clean, key(userId, route));
+      tx.objectStore(STORE).put(clean, sheetsKey(userId, route, projectId));
       tx.oncomplete = () => {
         db.close();
         resolve(json.length);
@@ -129,14 +183,18 @@ export async function saveSheets(
   });
 }
 
-/** Xoá bộ sheet của (user, route) — dùng khi cần reset (chưa có UI gọi). */
-export async function clearSheets(userId: string, route: string): Promise<void> {
+/** Xoá bộ sheet của (user, route, dự án) — dùng khi cần reset (chưa có UI gọi). */
+export async function clearSheets(
+  userId: string,
+  route: string,
+  projectId?: string | null,
+): Promise<void> {
   const db = await openDb();
   if (!db) return;
   await new Promise<void>((resolve) => {
     try {
       const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).delete(key(userId, route));
+      tx.objectStore(STORE).delete(sheetsKey(userId, route, projectId));
       tx.oncomplete = () => resolve();
       tx.onerror = () => resolve();
     } catch {
@@ -166,7 +224,7 @@ export function createSheetsAutosaver(
   userId: string,
   route: string,
   getRecord: () => SheetsRecord | null,
-  opts?: { delay?: number; onSaved?: (bytes: number) => void },
+  opts?: { delay?: number; onSaved?: (bytes: number) => void; projectId?: string | null },
 ): SheetsAutosaver {
   const delay = Math.max(1000, opts?.delay ?? 1200);
   let timer: ReturnType<typeof setTimeout> | null = null;
@@ -178,7 +236,9 @@ export function createSheetsAutosaver(
     dirty = false;
     const record = getRecord();
     if (!record) return;
-    void saveSheets(userId, route, record).then((bytes) => {
+    // Ghi vào ĐÚNG bucket dự án đã chốt lúc tạo autosaver — dù store có đổi dự án giữa
+    // chừng thì nhịp ghi cuối vẫn về đúng chỗ cũ, không đè lên dự án khác.
+    void saveSheets(userId, route, record, opts?.projectId).then((bytes) => {
       if (bytes > 0) opts?.onSaved?.(bytes);
     });
   };

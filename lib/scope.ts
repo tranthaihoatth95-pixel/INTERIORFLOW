@@ -64,3 +64,17 @@ export function useActiveProjectRouteId(fallback = 'default'): string {
   const flowId = useFlowStore((s) => s.currentFlowId);
   return pickStableRouteId(projectId, flowId, fallback);
 }
+
+/**
+ * id dự án làm BUCKET cho persistence phía trình duyệt (bộ sheet CAD/Present trong
+ * IndexedDB — `lib/sheets-persist.ts`). URL là nguồn sự thật; đứng trên route toàn cục cũ
+ * (`/cad-editor`, `/present-editor`) thì lấy dự án đang mở trong store.
+ *
+ * Rỗng = chưa xác định được dự án ⇒ caller dùng bucket chung như trước (không đổi hành vi,
+ * và bản ghi đó sẽ được di trú vào dự án đầu tiên mở sau này).
+ */
+export function useSheetsBucketId(): string {
+  const fromUrl = useScope().projectId ?? '';
+  const fromStore = useActiveProjectRouteId('');
+  return fromUrl || fromStore;
+}
