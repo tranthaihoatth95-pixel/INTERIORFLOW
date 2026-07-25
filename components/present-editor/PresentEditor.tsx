@@ -43,7 +43,7 @@ import { classifyWheel } from '@/lib/input/wheel';
 import { buildGuProfile, type GuAsset, type GuProfile } from '@/lib/gu';
 import { exportDeckToPdf, exportDeckToPptxFromModel, exportDeckToPng } from '@/lib/present-editor/export';
 import { useEditor } from './useEditor';
-import { slidesFromContent } from '@/lib/present-editor/content-deck';
+import { slidesFromContent, coverKickerFromDeck } from '@/lib/present-editor/content-deck';
 import { evaluateDeck } from '@/lib/present-editor/layout-check';
 import { slidesFromReference, detectGridFromUrl } from '@/lib/present-editor/reference-layout';
 import type { GridGeometryInput } from '@/lib/present-editor/suggest';
@@ -793,7 +793,17 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         let built = r.attachRefs?.length
           ? await slidesFromReference(r.attachRefs[0], r.bodyText, r.contentImages, pal, ed.deck.fonts).catch(() => [])
           : [];
-        if (!built.length) built = slidesFromContent(r.bodyText, r.contentImages, pal, ed.deck.fonts);
+        if (!built.length) {
+          // Kicker Cover = DỮ LIỆU của deck đang mở (Brand Kit / tên dự án), rỗng thì bỏ dải
+          // kicker. KHÔNG hardcode tên studio/khách (CLAUDE.md · LUẬT NỀN TẢNG).
+          built = slidesFromContent(
+            r.bodyText,
+            r.contentImages,
+            pal,
+            ed.deck.fonts,
+            coverKickerFromDeck(ed.deck),
+          );
+        }
         if (built.length) {
           const startIdx = ed.deck.slides.length;
           const replace =

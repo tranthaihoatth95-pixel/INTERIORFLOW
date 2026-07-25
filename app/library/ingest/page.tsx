@@ -16,7 +16,7 @@ const TYPE_BADGE: Record<string, string> = { pdf: 'PDF', excel: 'XLS', cad: 'CAD
 interface Scenario { rank: string; title: string; angle: string; why: string; outline?: string[] }
 interface Strategy { understanding?: string; scenarios?: Scenario[] }
 interface Pick {
-  source: 'reference' | 'openverse';
+  source: 'reference' | 'openverse' | 'unsplash';
   refId?: string; url?: string; thumb?: string; title?: string;
   credit?: string; license?: string; landing?: string;
 }
@@ -114,7 +114,7 @@ export default function IngestPage() {
     } finally { setThinking(false); }
   };
 
-  // Illustration Picker — thác 3 nguồn: Reference → Openverse (CC) → cờ generate.
+  // Illustration Picker — thác nguồn: Reference → Openverse (CC) → Unsplash (nếu có key) → cờ generate.
   const pickIllustrations = async () => {
     if (!illusQuery.trim()) return;
     setPicking(true); setNotice(null);
@@ -160,7 +160,7 @@ export default function IngestPage() {
           <span style={{ fontSize: 11.5, color: '#8B887F' }}>khai thác → hiểu → biện luận → tốt nhất · phân vân · loại</span>
         </div>
         <textarea value={brief} onChange={(e) => setBrief(e.target.value)} rows={2}
-          placeholder="Đề bài / input dự án Detech: khách là ai, mục tiêu, ràng buộc, mong muốn… (càng rõ, kịch bản càng sắc)"
+          placeholder="Đề bài / input dự án: khách là ai, mục tiêu, ràng buộc, mong muốn… (càng rõ, kịch bản càng sắc)"
           style={{ width: '100%', boxSizing: 'border-box', background: '#1B1712', color: '#EFE9DC', border: '1px solid #33302a', borderRadius: 8, padding: '9px 11px', fontSize: 13, resize: 'vertical' }} />
         <button onClick={suggestStrategy} disabled={thinking}
           style={{ ...btnPrimary, marginTop: 10 }}>{thinking ? 'Đang tư duy…' : '◆ Đề xuất 3 kịch bản content'}</button>
@@ -190,11 +190,11 @@ export default function IngestPage() {
         )}
       </div>
 
-      {/* Illustration Picker — thác 3 nguồn */}
+      {/* Illustration Picker — thác nguồn ảnh */}
       <div style={{ border: '1px solid #2A261F', borderRadius: 12, background: 'linear-gradient(180deg,#100D14,transparent)', padding: 18, margin: '0 0 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: '"SF Mono",monospace', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: '#6B84A8' }}>Hình minh hoạ · 3 nguồn</span>
-          <span style={{ fontSize: 11.5, color: '#8B887F' }}>Reference → Openverse (không bản quyền) → sinh khi cần</span>
+          <span style={{ fontFamily: '"SF Mono",monospace', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: '#6B84A8' }}>Hình minh hoạ · thác nguồn</span>
+          <span style={{ fontSize: 11.5, color: '#8B887F' }}>Reference → Openverse (CC) → Unsplash → sinh khi cần</span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <input value={illusQuery} onChange={(e) => setIllusQuery(e.target.value)}
@@ -209,7 +209,7 @@ export default function IngestPage() {
             {picks.map((p, i) => {
               const ref = p.source === 'reference' ? assets.find((a) => a.id === p.refId) : null;
               const src = p.source === 'reference' ? ref?.thumb : p.thumb;
-              const tone = p.source === 'reference' ? '#7C9A6B' : '#6B84A8';
+              const tone = p.source === 'reference' ? '#7C9A6B' : p.source === 'unsplash' ? '#A88A5B' : '#6B84A8';
               return (
                 <div key={i} style={{ border: `1px solid ${tone}55`, borderRadius: 9, overflow: 'hidden', background: '#0B0906' }}>
                   <div style={{ height: 104, background: '#0B0906' }}>
@@ -217,9 +217,14 @@ export default function IngestPage() {
                   </div>
                   <div style={{ padding: '7px 8px' }}>
                     <span style={{ fontFamily: '"SF Mono",monospace', fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase', color: tone }}>
-                      {p.source === 'reference' ? 'Reference' : `Openverse · ${p.license || 'CC'}`}
+                      {p.source === 'reference'
+                        ? 'Reference'
+                        : p.source === 'unsplash'
+                          ? `Unsplash · ${p.license || 'Unsplash License'}`
+                          : `Openverse · ${p.license || 'CC'}`}
                     </span>
-                    {p.source === 'openverse' && p.credit && (
+                    {/* GHI CÔNG — Unsplash/CC đều bắt buộc hiện tên tác giả. */}
+                    {p.source !== 'reference' && p.credit && (
                       <p style={{ fontSize: 9.5, color: '#8B887F', margin: '3px 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`© ${p.credit}`}>© {p.credit}</p>
                     )}
                   </div>

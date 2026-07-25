@@ -152,7 +152,7 @@ User chốt 23/07: **làm cả 4 bộ cài** — Windows · Mac · Android · iO
 6. **Mua Windows code-sign cert** (nếu quyết ký) — tự KYC, tự cắm USB token nếu OV, hoặc setup DigiCert KeyLocker cloud nếu HSM cloud.
 7. **Chấp nhận review Apple** (Custom App qua App Review, 24-48h).
 8. **Chuẩn bị Privacy Policy URL công khai** (bắt buộc Play Store closed/production, khuyến nghị cho Apple Custom App).
-9. **Quyết Bundle ID** cho iOS/Android (khuyến nghị `com.tttarchitects.interiorflow` — reverse domain).
+9. **Quyết Bundle ID** cho iOS/Android — đã chốt `com.interiorflow.app` (reverse domain, trung tính).
 
 ### B. Việc AGENT làm sau khi có credential
 
@@ -233,13 +233,13 @@ User chốt 23/07: **làm cả 4 bộ cài** — Windows · Mac · Android · iO
 
 ## 6. Câu hỏi cần user quyết trước Sprint 2
 
-1. **Apple Developer Account** — cá nhân (nhanh, không cần D-U-N-S, in-app appears as "Individual Name") hay tổ chức (cần D-U-N-S ~30 ngày, hiện appears as "TTT Architects")?
+1. **Apple Developer Account** — cá nhân (nhanh, không cần D-U-N-S, in-app appears as "Individual Name") hay tổ chức (cần D-U-N-S ~30 ngày, hiện tên pháp nhân đứng tên tài khoản)?
 2. **Google Play publish** — Private (chỉ team TTT, cần Managed Google Play + tối đa 1000 tổ chức) hay Unlisted (chia sẻ link, không search được, dùng Internal Testing 100 slot)? Hay chấp nhận Public listed (ai search cũng thấy)?
 3. **Windows code-sign** — mua NGAY (~$200/năm) để bỏ SmartScreen warn, hay để sau vài tháng khi có nhiều user hơn?
-4. **Bundle ID iOS/Android** — đặt gì? Đề xuất `com.tttarchitects.interiorflow` (reverse domain). Đổi sau = phải submit app mới, không rollback được.
+4. **Bundle ID iOS/Android** — ĐÃ CHỐT `com.interiorflow.app` (reverse domain, trung tính). ⚠️ Đổi sau khi publish = phải submit app mới, không rollback được → chốt TRƯỚC lần publish đầu.
 5. **Auto-update** — tự host GitHub Releases (đã có, free) hay setup Vercel/S3 riêng?
 6. **Crash reporting** — có cài Sentry (free 5k events/tháng) đóng vào installer không? Ảnh hưởng size + privacy.
-7. **Privacy Policy URL** — TTT Architects đã có website + privacy policy công khai chưa? Nếu chưa, cần dựng 1 trang tĩnh trên Vercel trước Sprint 2.
+7. **Privacy Policy URL** — pháp nhân phát hành đã có website + privacy policy công khai chưa? Nếu chưa, cần dựng 1 trang tĩnh trên Vercel trước Sprint 2.
 8. **Vercel + Supabase deploy** — chốt làm SPRINT ĐẦU (blocker cho Sprint 2 mobile) hay đợi thêm nghiên cứu về chi phí gói trả phí cho >30 user?
 9. **iOS Sprint 3 có làm không?** — nếu PWA iOS đủ dùng (Sprint 1+2), skip Capacitor. Nếu bắt buộc có mặt App Store hoặc cần push notification native, phải làm.
 10. **Ai giữ Account Holder** — App Store Connect + Play Console đều chỉ có 1 Account Holder (không transfer nhanh được). Đề xuất user chính (chủ dự án) giữ, agent chỉ dùng service account.

@@ -34,7 +34,7 @@ type Work = {
   meta: { vi: string; en: string };
 };
 
-// 6 "bức tranh" — ảnh render THẬT trong public/detech, quiet-luxury.
+// 6 "bức tranh" — ảnh render mẫu trong public/detech (bộ ảnh dùng tạm), quiet-luxury.
 const WORKS: Work[] = [
   {
     src: '/detech/lobby-water.png',

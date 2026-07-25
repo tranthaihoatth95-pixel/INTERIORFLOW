@@ -1,6 +1,6 @@
 # Hướng dẫn cài InteriorFlow trên Windows · Windows Install Guide
 
-> Bộ cài **unsigned** dùng nội bộ TTT Architects. Máy đích: Windows 10/11 x64 (đã test nhắm tới PC-TTTA-008 — i7-10700 · 32GB · GTX 1660). KHÔNG cần cài Node/Git để chạy app.
+> Bộ cài **unsigned** (chưa ký số) — dùng để phân phối thử trong nhóm. Máy đích: Windows 10/11 x64 (cấu hình tham chiếu đã test: i7 8 lõi · 32GB RAM · GPU rời ~6GB VRAM). KHÔNG cần cài Node/Git để chạy app.
 
 ## 1 · Cài đặt · Install
 
@@ -45,4 +45,4 @@ Bộ cài **không kèm key nào**. Lần đầu mở app, app tự tạo file c
 | Đăng nhập bị văng sau khi cập nhật | `AUTH_SECRET` trong `config.json` bị đổi/xoá — không đụng vào dòng này. |
 
 ---
-*Bộ cài build bằng electron-builder (NSIS, x64, unsigned). Build lại: xem `docs/BUILD-WINDOWS.md` — chạy `build-windows-native.bat` trên máy Windows. Phân phối NỘI BỘ TTT — không phát hành công khai (xem `docs/LICENSE-NOTES.md`).*
+*Bộ cài build bằng electron-builder (NSIS, x64, unsigned). Build lại: xem `docs/BUILD-WINDOWS.md` — chạy `build-windows-native.bat` trên máy Windows. Trước khi phát hành công khai: soát lại giấy phép phụ thuộc (xem `docs/LICENSE-NOTES.md` + `docs/RESEARCH-DWG-LICENSE.md`).*

@@ -5,9 +5,12 @@
  * admin đầu tiên (hoặc cấp lại quyền/mật khẩu admin) tạo bằng script này, chạy tay
  * trên máy chủ — không còn đường tự đăng ký nào từ ngoài.
  *
- * CÁCH CHẠY (từ gốc repo):
- *   SEED_ADMIN_EMAIL=admin@ttt.vn SEED_ADMIN_PASSWORD=matkhau6+ \
+ * CÁCH CHẠY (từ gốc repo) — điền email + mật khẩu THẬT của bạn, KHÔNG lưu vào file/git:
+ *   SEED_ADMIN_EMAIL='<email-admin>' SEED_ADMIN_PASSWORD='<mật-khẩu-≥6-ký-tự>' \
  *     node_modules/.bin/sucrase-node scripts/seed-admin.ts
+ *
+ * ⚠️ BẢO MẬT: không hardcode mật khẩu ở đây hay trong bất kỳ comment/script nào. Truyền
+ *    qua env lúc chạy (dùng khoảng trắng đầu dòng để lệnh không vào shell history).
  *
  * · Đọc env SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD (mật khẩu ≥ 6 ký tự).
  * · Tự nạp .env / .env.local ở gốc repo (DATABASE_URL…) nếu biến chưa có sẵn
@@ -49,7 +52,7 @@ async function main() {
   const password = process.env.SEED_ADMIN_PASSWORD ?? '';
 
   if (!email || !email.includes('@')) {
-    console.error('✗ Cần SEED_ADMIN_EMAIL hợp lệ (vd: admin@ttt.vn).');
+    console.error('✗ Cần SEED_ADMIN_EMAIL hợp lệ (vd: admin@your-studio.com).');
     process.exit(1);
   }
   if (password.length < 6) {

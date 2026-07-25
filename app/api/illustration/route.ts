@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/server/auth';
+import { normalizeUnsplash } from '@/lib/stock-photos';
 
 /**
- * Illustration Picker — thác 3 nguồn cho hình minh hoạ moodboard (theo chốt user):
- *   ① Reference anh đã tải (match theo caption/tag) → ② search ảnh KHÔNG bản quyền (Openverse,
- *   CC, dùng thương mại được) → ③ cờ generate (chỉ khi thực sự cần, app tự route sang SD/NVIDIA).
- * Openverse là API công khai, không cần key. CC yêu cầu ghi công → trả kèm creator + license.
+ * Illustration Picker — thác nguồn cho hình minh hoạ moodboard (theo chốt user):
+ *   ① Reference anh đã tải (match theo caption/tag)
+ *   → ② search ảnh dùng được thương mại: **Openverse (CC)** + **Unsplash** (25/07)
+ *   → ③ cờ generate (chỉ khi thực sự cần, app tự route sang SD/NVIDIA).
+ *
+ * Openverse là API công khai, không cần key. Unsplash cần `UNSPLASH_ACCESS_KEY` — THIẾU KEY
+ * thì tầng đó tự bỏ qua, KHÔNG lỗi. Cả hai yêu cầu ghi công → trả kèm creator + license.
+ * Nguồn Pinterest KHÔNG khả thi bằng API (xem lib/stock-photos.ts + docs/IMAGE-SOURCES.md):
+ * user dán URL ảnh / upload qua StockPhotoPicker thay vì tự động lấy.
  */
 interface RefLite { id: string; name?: string; caption?: string; tags?: string[]; usage?: string }
 
@@ -70,13 +76,51 @@ export async function POST(req: Request) {
     }
   }
 
+  // ②b Unsplash (miễn phí kể cả thương mại, PHẢI ghi công) — chỉ khi có key và vẫn thiếu ảnh.
+  if (picks.length < count && allowSearch) {
+    const key = (process.env.UNSPLASH_ACCESS_KEY ?? '').trim();
+    if (key) {
+      const need = count - picks.length;
+      try {
+        const url =
+          `https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}` +
+          `&per_page=${need}&content_filter=high&orientation=landscape`;
+        const res = await fetch(url, {
+          headers: { 'User-Agent': 'InteriorFlow/1.0', Authorization: `Client-ID ${key}` },
+        });
+        if (res.ok) {
+          const j = (await res.json()) as { results?: unknown };
+          for (const p of normalizeUnsplash(j.results)) {
+            picks.push({
+              source: 'unsplash',
+              url: p.full,
+              thumb: p.thumb,
+              title: p.title,
+              credit: p.creditName,
+              license: p.license,
+              licenseUrl: p.licenseUrl,
+              landing: p.landing,
+              downloadLocation: p.downloadLocation,
+            });
+          }
+        } else if (!searchError) searchError = `Unsplash HTTP ${res.status}`;
+      } catch {
+        if (!searchError) searchError = 'Không kết nối được Unsplash.';
+      }
+    }
+  }
+
   // ③ cờ generate — chỉ gợi ý khi vẫn thiếu và user cho phép
   const generate = picks.length < count && allowGenerate;
 
   return NextResponse.json({
     picks,
     generate,
-    sources: { reference: picks.filter((p) => p.source === 'reference').length, openverse: picks.filter((p) => p.source === 'openverse').length },
+    sources: {
+      reference: picks.filter((p) => p.source === 'reference').length,
+      openverse: picks.filter((p) => p.source === 'openverse').length,
+      unsplash: picks.filter((p) => p.source === 'unsplash').length,
+    },
     searchError,
   });
 }

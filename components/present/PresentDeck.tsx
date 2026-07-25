@@ -19,7 +19,7 @@ import {
 } from '@/lib/present-demo';
 
 export interface PresentDeckProps {
-  /** deck để trình chiếu; mặc định deck Detech mẫu. */
+  /** deck để trình chiếu; mặc định deck DEMO mẫu (Atelier Nord, hư cấu). */
   deck?: PresentDeckData;
   /** slide ĐÃ render sẵn (dataURL) — vd từ node Export Deck của flow thật; ưu tiên hơn `deck`. */
   imageSlides?: string[];

@@ -59,7 +59,7 @@
 **Cần agent làm** (SAU KHI có Apple Developer):
 
 1. `npm i -D @capacitor/core @capacitor/cli @capacitor/ios`.
-2. `npx cap init "InteriorFlow" "com.tttarchitects.interiorflow" --web-dir=public`.
+2. `npx cap init "InteriorFlow" "com.interiorflow.app" --web-dir=public`.
 3. Chỉnh `capacitor.config.ts` trỏ `server.url` sang Vercel URL (giữ codebase web, chỉ wrap).
 4. `npx cap add ios` → sinh thư mục `ios/App/` với Xcode project.
 5. Mở Xcode → chọn team + bundle ID → archive → upload App Store Connect.

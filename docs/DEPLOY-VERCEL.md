@@ -81,7 +81,7 @@ Thấy `Your database is now in sync with your Prisma schema` là xong.
 Tạo tài khoản admin đầu tiên (register công khai đã khoá):
 
 ```bash
-SEED_ADMIN_EMAIL=admin@ttt.vn SEED_ADMIN_PASSWORD=matkhau6+ \
+SEED_ADMIN_EMAIL=<email-admin> SEED_ADMIN_PASSWORD=<mật-khẩu-của-bạn> \
   node_modules/.bin/sucrase-node scripts/seed-admin.ts
 ```
 

@@ -13,12 +13,16 @@
  *   - SERVER Reference (/api/library) — thư viện team, có thật khi đăng nhập. Xoá = DELETE.
  *   - LOCAL (phiên editor) — user tải ảnh tham khảo tại chỗ (khi chưa đăng nhập / muốn
  *     dùng nhanh). Lưu trong state cha, xoá tại chỗ. Giúp tính năng chạy & test được ngay.
+ *   - NGUỒN NGOÀI (25/07) — Unsplash · Openverse · dán URL (Pinterest) qua
+ *     components/common/StockPhotoPicker. Ảnh chọn vào rổ LOCAL, tag ghi kèm ghi công
+ *     tác giả/giấy phép. Giới hạn Pinterest: xem docs/IMAGE-SOURCES.md.
  *
  * Nhóm: theo "project" (chuỗi trước dấu — / _ trong tên hoặc tag đầu) HOẶC theo "tag".
  */
 
 import { useMemo, useRef, useState } from 'react';
-import { Trash2, Upload, FolderTree, Tag as TagIcon, ImagePlus, Loader2 } from 'lucide-react';
+import { Trash2, Upload, FolderTree, Tag as TagIcon, ImagePlus, Loader2, Globe } from 'lucide-react';
+import StockPhotoPicker from '@/components/common/StockPhotoPicker';
 
 /** Ảnh reference chuẩn hoá (server + local). */
 export interface RefImage {
@@ -63,6 +67,8 @@ export default function LibraryBrowser({ images, loading, onUseImage, onDelete, 
   const [query, setQuery] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [uploading, setUploading] = useState(false);
+  // panel nguồn ảnh ngoài — mở theo yêu cầu (không gọi API khi chưa cần).
+  const [webOpen, setWebOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const q = query.trim().toLowerCase();
@@ -124,7 +130,31 @@ export default function LibraryBrowser({ images, loading, onUseImage, onDelete, 
             {uploading ? <Loader2 size={13} className="pe-spin" /> : <Upload size={13} />} Tải ảnh tham khảo
           </button>
           <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => handleFiles(e.target.files)} />
+          <button
+            type="button"
+            onClick={() => setWebOpen((o) => !o)}
+            style={{ ...uploadBtn, flex: 'none', width: 34, gap: 0 }}
+            title="Ảnh trên mạng (Unsplash · Openverse · dán URL/Pinterest)"
+          >
+            <Globe size={13} />
+          </button>
         </div>
+        {webOpen && (
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 7 }}>
+            <StockPhotoPicker
+              initialQuery={tagInput.trim()}
+              maxGridHeight={200}
+              onPick={({ photo, credit }) => {
+                // Vào rổ LOCAL như ảnh tải lên; GHI CÔNG đi kèm trong tag để không mất
+                // dấu tác giả/giấy phép khi ảnh được dùng trong slide.
+                onUploadLocal(
+                  [{ name: photo.title || photo.source, dataUrl: photo.full }],
+                  [tagInput.trim(), credit].filter(Boolean).join(', '),
+                );
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* tìm + chọn cách gom nhóm */}

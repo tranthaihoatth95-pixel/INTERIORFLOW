@@ -1,6 +1,8 @@
 /**
- * lib/present-editor/akh-sample.ts — Deck MẪU chuẩn "AKH-IKI showunit" để CHỨNG MINH
- * chất lượng trình dàn trang Present (quiet-luxury editorial nội thất).
+ * lib/present-editor/akh-sample.ts — Deck MẪU chuẩn "Atelier Nord · Lumen Villa — show unit"
+ * để CHỨNG MINH chất lượng trình dàn trang Present (quiet-luxury editorial nội thất).
+ *
+ * ⛔ LUẬT TRUNG TÍNH: studio + dự án trong deck mẫu là HƯ CẤU. KHÔNG dùng tên khách thật.
  *
  * Bám sát 2 deck tham khảo thật (test-input/4. Present tham khao):
  *   - MOODBOARD: bìa tối điện ảnh + serif mảnh, tab-label header + breadcrumb, lưới 4 cột
@@ -38,7 +40,7 @@ function tpl(id: string) {
 }
 
 /**
- * Deck 8 slide theo mạch AKH-IKI:
+ * Deck 8 slide theo mạch show-unit moodboard:
  *   1. dark-cover        — bìa tối điện ảnh, hero + serif mảnh căn giữa.
  *   2. section-divider   — trang phân mục (số lớn "01" + tiêu đề).
  *   3. full-bleed        — hero phối cảnh 3D tràn viền + caption dưới.
@@ -113,9 +115,9 @@ export function makeAkhIkiDeck(): EditorDeck {
   ];
 
   return {
-    id: 'akh-iki',
+    id: 'demo-lumen-villa',
     brand: 'ATELIER NORD · LUMEN VILLA',
-    project: 'IKI Village — Show Unit Moodboard',
+    project: 'Lumen Villa — Show Unit Moodboard',
     fonts: 'Elegant',
     palette: P,
     slides,

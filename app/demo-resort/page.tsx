@@ -1,17 +1,20 @@
 'use client';
 /**
  * Demo THẬT chạy trên máy — dùng CHÍNH pipeline Present của app (lib/slides + lib/imaging):
- *   /demo-amanoi?scene=bedroom  → Pavilion Phòng ngủ Amanoi
- *   /demo-amanoi?scene=lobby    → Sảnh (Central Pavilion) Amanoi
+ *   /demo-resort?scene=bedroom  → Pavilion Phòng ngủ (Nord Bay)
+ *   /demo-resort?scene=lobby    → Sảnh Central Pavilion (Nord Bay)
  * Sinh: (1) deck present PDF 16:9 có nội dung + hình, (2) moodboard vật liệu PNG.
- * Hình ảnh sinh cục bộ (canvas, palette đá ấm Amanoi) — stand-in cho render SD; khi bật
+ * Hình ảnh sinh cục bộ (canvas, palette đá ấm) — stand-in cho render SD; khi bật
  * Draw Things (oneAI) sẽ thay bằng ảnh photoreal. 0 AI, 0đ, chạy thẳng trong trình duyệt.
+ *
+ * ⛔ LUẬT TRUNG TÍNH (CLAUDE.md · docs/CONTENT-RULES.md): resort + studio trong demo là HƯ CẤU
+ * ("Nord Bay" · "Atelier Nord"). KHÔNG dùng tên khách/khu nghỉ thật — kể cả trong tên file tải về.
  */
 import { useEffect, useRef, useState } from 'react';
 import { renderSlide, type SlideTheme, type SlideOptions } from '@/lib/slides';
 import { composeBoard } from '@/lib/imaging';
 
-// ---------- Palette đá ấm Amanoi ----------
+// ---------- Palette đá ấm (resort hư cấu Nord Bay) ----------
 const DARK: SlideTheme = { bg: '#151109', text: '#F2ECDF', muted: '#A2937A', accent: '#C79A63', palette: ['#C79A63', '#8A6A3A', '#D8C7A8', '#3B352F'] };
 const LIGHT: SlideTheme = { bg: '#EBE4D6', text: '#28211A', muted: '#7A6C58', accent: '#A8794B', palette: ['#C2AD86', '#6E4A2E', '#D9CFBE', '#8A6A3A'] };
 
@@ -44,12 +47,12 @@ interface Scene {
 const SCENES: Record<string, Scene> = {
   bedroom: {
     key: 'bedroom',
-    brand: 'AMANOI · NÚI CHÚA',
-    project: 'Amanoi — Pavilion Phòng Ngủ',
+    brand: 'ATELIER NORD · NORD BAY',
+    project: 'Nord Bay — Pavilion Phòng Ngủ',
     materials: MATERIALS_BEDROOM,
     slides: [
-      { layout: 'Cover', theme: DARK, kicker: 'AMANOI — NÚI CHÚA, NINH THUẬN', title: 'Pavilion Phòng Ngủ', body: ['Nơi đá núi gặp biển Đông', 'Concept không gian nghỉ — 2026'], hero: 'landscape' },
-      { layout: 'Nội dung + ảnh', theme: LIGHT, kicker: '01 — Ý NIỆM', title: 'Tĩnh tại giữa thiên nhiên hoang sơ', body: ['Không gian nghỉ mở về phía núi và vịnh, giữ sự trầm mặc của Aman.', 'Đường nét tối giản, khối đá thô đối thoại với ánh sáng tự nhiên.', 'Mỗi pavilion là một ẩn thất riêng tư, ôm trọn cảnh quan.'], hero: 'room' },
+      { layout: 'Cover', theme: DARK, kicker: 'NORD BAY — KHU NGHỈ VEN BIỂN', title: 'Pavilion Phòng Ngủ', body: ['Nơi đá núi gặp mặt biển', 'Concept không gian nghỉ — 2026'], hero: 'landscape' },
+      { layout: 'Nội dung + ảnh', theme: LIGHT, kicker: '01 — Ý NIỆM', title: 'Tĩnh tại giữa thiên nhiên hoang sơ', body: ['Không gian nghỉ mở về phía núi và vịnh, giữ sự trầm mặc của một khu nghỉ ẩn.', 'Đường nét tối giản, khối đá thô đối thoại với ánh sáng tự nhiên.', 'Mỗi pavilion là một ẩn thất riêng tư, ôm trọn cảnh quan.'], hero: 'room' },
       { layout: 'Nội dung + ảnh', theme: LIGHT, kicker: '02 — VẬT LIỆU', title: 'Travertine, tếch, lanh và đồng hun', body: ['Bảng vật liệu ấm, mộc — chạm vào thấy thiên nhiên.', 'Đá travertine cho tường và sàn; gỗ tếch cho trần và đồ rời.', 'Vải lanh mộc, chi tiết đồng hun tạo chiều sâu quiet-luxury.'], hero: 'material' },
       { layout: 'Quote', theme: DARK, kicker: '', title: '“Xa xỉ là sự tĩnh lặng — được thiên nhiên bao bọc, không gì thừa.”', body: [] },
       { layout: 'Nội dung + ảnh', theme: LIGHT, kicker: '03 — ÁNH SÁNG & BỐ CỤC', title: 'Ánh sáng dẫn lối, bố cục buông lỏng', body: ['Giường hướng ra khung cảnh; ánh nắng sớm vào trực tiếp.', 'Đèn gián tiếp ấm 2700K, nhấn khối đá và thớ gỗ về đêm.', 'Bồn tắm đá bên hiên — ranh giới trong/ngoài tan biến.'], hero: 'room' },
@@ -57,12 +60,12 @@ const SCENES: Record<string, Scene> = {
   },
   lobby: {
     key: 'lobby',
-    brand: 'AMANOI · NÚI CHÚA',
-    project: 'Amanoi — Sảnh Central Pavilion',
+    brand: 'ATELIER NORD · NORD BAY',
+    project: 'Nord Bay — Sảnh Central Pavilion',
     materials: MATERIALS_LOBBY,
     slides: [
-      { layout: 'Cover', theme: DARK, kicker: 'AMANOI — NÚI CHÚA, NINH THUẬN', title: 'Sảnh Central Pavilion', body: ['Ngưỡng cửa của một hành trình tĩnh', 'Concept không gian đón — 2026'], hero: 'landscape' },
-      { layout: 'Nội dung + ảnh', theme: LIGHT, kicker: '01 — Ý NIỆM', title: 'Sảnh mở như một đền đài giữa núi', body: ['Mái lớn, cột đá bazan — khung nhìn thẳng ra vịnh Vĩnh Hy.', 'Không gian đón trầm mặc, dẫn khách từ ồn ào vào tĩnh lặng.', 'Tỉ lệ cao thoáng, vật liệu thô ráp mà sang trọng.'], hero: 'room' },
+      { layout: 'Cover', theme: DARK, kicker: 'NORD BAY — KHU NGHỈ VEN BIỂN', title: 'Sảnh Central Pavilion', body: ['Ngưỡng cửa của một hành trình tĩnh', 'Concept không gian đón — 2026'], hero: 'landscape' },
+      { layout: 'Nội dung + ảnh', theme: LIGHT, kicker: '01 — Ý NIỆM', title: 'Sảnh mở như một đền đài giữa núi', body: ['Mái lớn, cột đá bazan — khung nhìn thẳng ra vịnh.', 'Không gian đón trầm mặc, dẫn khách từ ồn ào vào tĩnh lặng.', 'Tỉ lệ cao thoáng, vật liệu thô ráp mà sang trọng.'], hero: 'room' },
       { layout: 'Nội dung + ảnh', theme: LIGHT, kicker: '02 — VẬT LIỆU', title: 'Bazan, travertine, gỗ lim và đồng đỏ', body: ['Đá bazan địa phương cho cột và nền — vững chãi, nguyên bản.', 'Travertine ấm làm dịu khối; gỗ lim cho quầy và trần.', 'Đồng đỏ, mây tre điểm xuyết hơi ấm thủ công.'], hero: 'material' },
       { layout: 'Quote', theme: DARK, kicker: '', title: '“Sảnh không phô trương — nó khiến ta hạ giọng và ngẩng nhìn.”', body: [] },
       { layout: 'Nội dung + ảnh', theme: LIGHT, kicker: '03 — TRẢI NGHIỆM ĐÓN', title: 'Hành trình từ bóng râm ra ánh sáng', body: ['Lối vào nén thấp, mở dần ra sảnh cao ngập sáng và gió biển.', 'Nước phản chiếu chạy suốt trục nhìn tới đường chân trời.', 'Chỗ ngồi chờ ấm cúng, nhìn ra bậc đá xuống vườn.'], hero: 'room' },
@@ -143,7 +146,7 @@ function download(name: string, dataUri: string) {
   const a = document.createElement('a'); a.href = dataUri; a.download = name; a.click();
 }
 
-export default function DemoAmanoi() {
+export default function DemoResort() {
   const [log, setLog] = useState<string[]>([]);
   const [slides, setSlides] = useState<string[]>([]);
   const [moodboard, setMoodboard] = useState<string>('');
@@ -187,7 +190,7 @@ export default function DemoAmanoi() {
       const board = await composeBoard({ images: swatches, projectName: scene.project, studioName: 'Atelier Nord — Quiet Luxury' });
       setMoodboard(board); push('Moodboard vật liệu dựng xong');
       push('Xong — bấm ⬇ để tải PDF / PNG');
-      (window as unknown as { __amanoiDemo?: unknown }).__amanoiDemo = { done: true, scene: scene.key, slides: out.length };
+      (window as unknown as { __resortDemo?: unknown }).__resortDemo = { done: true, scene: scene.key, slides: out.length };
     })();
   }, []);
 
@@ -195,13 +198,13 @@ export default function DemoAmanoi() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0E0C09', color: '#EFE9DC', fontFamily: 'system-ui', padding: 32 }}>
-      <h1 style={{ fontSize: 22, letterSpacing: 1 }}>{scene?.project ?? 'Đang tải demo Amanoi…'}</h1>
+      <h1 style={{ fontSize: 22, letterSpacing: 1 }}>{scene?.project ?? 'Đang tải demo…'}</h1>
       <p style={{ opacity: 0.6, fontSize: 13 }}>{log.join('  ·  ')}</p>
       {scene && (
         <div style={{ display: 'flex', gap: 12, margin: '16px 0' }}>
-          {pdf && <button onClick={() => download(`Amanoi-${scene.key}-present.pdf`, pdf)} style={btn}>⬇ Tải PDF present</button>}
-          {moodboard && <button onClick={() => download(`Amanoi-${scene.key}-moodboard.png`, moodboard)} style={btn}>⬇ Tải moodboard PNG</button>}
-          <a href={`/demo-amanoi?scene=${scene.key === 'bedroom' ? 'lobby' : 'bedroom'}`} style={{ ...btn, textDecoration: 'none' }}>↻ Đổi cảnh</a>
+          {pdf && <button onClick={() => download(`demo-${scene.key}-present.pdf`, pdf)} style={btn}>⬇ Tải PDF present</button>}
+          {moodboard && <button onClick={() => download(`demo-${scene.key}-moodboard.png`, moodboard)} style={btn}>⬇ Tải moodboard PNG</button>}
+          <a href={`/demo-resort?scene=${scene.key === 'bedroom' ? 'lobby' : 'bedroom'}`} style={{ ...btn, textDecoration: 'none' }}>↻ Đổi cảnh</a>
         </div>
       )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(360px,1fr))', gap: 12 }}>

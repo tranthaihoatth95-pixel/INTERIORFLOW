@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "InteriorFlow — canvas node AI cho pipeline nội thất (desktop native qua Electron).",
-  "author": "TTT Architects",
+  "author": "InteriorFlow",
   "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
@@ -44,7 +44,7 @@
     "utif": "^3.1.0",
     "zustand": "^5.0.14"
   },
-  "licenseNotes": "@mlightcad/libredwg-web (DWG import) is GPL-3.0 — usage isolated to lib/cad/dwg-worker.ts (Web Worker, not bundled into main app code). InteriorFlow is an INTERNAL TOOL for TTT Architects (auth locked to @ttt.vn, no public registration) — NOT distributed/sold externally. Re-review this before any external distribution. See docs/LICENSE-NOTES.md.",
+  "licenseNotes": "@mlightcad/libredwg-web (DWG import) is GPL-3.0 — usage isolated to lib/cad/dwg-worker.ts (Web Worker, not bundled into main app code). ⚠️ UNRESOLVED: InteriorFlow is positioned as an INDEPENDENT, GLOBAL product, so the previous 'internal tool, not distributed' rationale for the GPL-3.0 dependency NO LONGER APPLIES. The DWG import path MUST be re-licensed, replaced, or fully isolated (separate process/service) BEFORE any external distribution or sale. See docs/LICENSE-NOTES.md and docs/RESEARCH-DWG-LICENSE.md.",
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
@@ -62,9 +62,9 @@
     "wait-on": "^8.0.1"
   },
   "build": {
-    "appId": "com.ttt.interiorflow",
+    "appId": "com.interiorflow.app",
     "productName": "InteriorFlow",
-    "copyright": "TTT Architects",
+    "copyright": "InteriorFlow",
     "publish": [
       {
         "provider": "github",

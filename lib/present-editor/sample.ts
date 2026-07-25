@@ -1,16 +1,19 @@
 /**
  * lib/present-editor/sample.ts — Deck MẪU để mở /present-editor phát triển & test.
  *
- * `makeSampleDeck()` giờ trả về deck AKH-IKI 8 slide (chuẩn quiet-luxury editorial, ảnh
+ * `makeSampleDeck()` trả về deck Atelier Nord · Lumen Villa 8 slide (quiet-luxury editorial, ảnh
  * /demo/*) — dùng để CHỨNG MINH chất lượng trình dàn trang. Định nghĩa ở ./akh-sample.
  *
- * Deck DETECH cũ (ảnh /public/covers) vẫn giữ ở `makeDetechDeck()` để tiện đối chiếu.
+ * Deck 4 slide gọn (ảnh /public/covers) vẫn giữ ở `makeShortDemoDeck()` để dev nhanh.
+ *
+ * ⛔ LUẬT TRUNG TÍNH: mọi deck mẫu trong file này dùng studio/dự án HƯ CẤU (Atelier Nord ·
+ * Lumen Villa · Nord Complex). KHÔNG đưa tên khách thật vào deck mẫu của sản phẩm.
  */
 
 import type { EditorDeck } from './model';
 import { BUILTIN_TEMPLATES } from './templates';
 import { makeAkhIkiDeck } from './akh-sample';
-export { makeDetechEnsoDeck } from './detech-sample';
+export { makeEnsoDemoDeck } from './demo-enso-sample';
 
 const PALETTE = ['#EFE9DC', '#C2AD86', '#8A6A3A', '#6E4A2E', '#3B352F', '#28211A'];
 const COVERS = [
@@ -24,18 +27,18 @@ function tpl(id: string) {
   return BUILTIN_TEMPLATES.find((t) => t.id === id)!;
 }
 
-/** Deck mặc định editor = AKH-IKI generic (proof quiet-luxury, ảnh /demo).
- *  KHÔNG để deck khách (Detech) làm mặc định — docs/CONTENT-RULES.md: data dự án khách
- *  chỉ mở tường minh khi cần đối chiếu (makeDetechEnsoDeck/makeDetechDeck vẫn giữ). */
+/** Deck mặc định editor = Atelier Nord generic (proof quiet-luxury, ảnh /demo).
+ *  Deck dài hơn (makeEnsoDemoDeck) / gọn hơn (makeShortDemoDeck) chỉ mở TƯỜNG MINH khi cần
+ *  — xem docs/CONTENT-RULES.md §3. */
 export function makeSampleDeck(): EditorDeck {
   return makeAkhIkiDeck();
 }
 
-/** Deck DETECH 4 slide cũ (giữ để đối chiếu / dev nhanh). */
-export function makeDetechDeck(): EditorDeck {
+/** Deck DEMO 4 slide gọn (giữ để đối chiếu / dev nhanh). Studio + dự án hư cấu. */
+export function makeShortDemoDeck(): EditorDeck {
   const slides = [
     tpl('cover').build({
-      kicker: 'DETECH — CONCEPT 2026',
+      kicker: 'ATELIER NORD — CONCEPT 2026',
       title: 'Không gian sống, kể theo ánh sáng',
       body: ['Bộ trình bày concept nội thất', 'Ngôn ngữ quiet-luxury, vật liệu ấm'],
       images: [COVERS[0]],
@@ -66,8 +69,8 @@ export function makeDetechDeck(): EditorDeck {
 
   return {
     id: 'sample',
-    brand: 'DETECH · NỘI THẤT',
-    project: 'Detech — Không gian trưng bày',
+    brand: 'ATELIER NORD · NỘI THẤT',
+    project: 'Nord Residence — Không gian trưng bày',
     fonts: 'Editorial',
     palette: PALETTE,
     slides,

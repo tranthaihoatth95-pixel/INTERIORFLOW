@@ -15,7 +15,8 @@
       { "target": "nsis", "arch": ["x64"] }
     ],
     "icon": "electron/icons/icon.png",
-    "certificateSubjectName": "TTT Architects Co., Ltd",
+    "//cert": "ĐẶT TÊN PHÁP NHÂN ĐỨNG TÊN CERT khi mua — phải KHỚP CHÍNH XÁC subject trên cert. Không hardcode ở đây: truyền qua env CSC_SUBJECT_NAME trong CI, hoặc điền lúc build.",
+    "certificateSubjectName": "${env.CSC_SUBJECT_NAME}",
     "signAndEditExecutable": true,
     "signingHashAlgorithms": ["sha256"],
     "rfc3161TimeStampServer": "http://timestamp.digicert.com"
@@ -27,7 +28,8 @@
       { "target": "nsis", "arch": ["x64"] }
     ],
     "icon": "electron/icons/icon.png",
-    "certificateSubjectName": "TTT Architects Co., Ltd",
+    "//cert": "ĐẶT TÊN PHÁP NHÂN ĐỨNG TÊN CERT khi mua — phải KHỚP CHÍNH XÁC subject trên cert. Không hardcode ở đây: truyền qua env CSC_SUBJECT_NAME trong CI, hoặc điền lúc build.",
+    "certificateSubjectName": "${env.CSC_SUBJECT_NAME}",
     "signAndEditExecutable": true,
     "signingHashAlgorithms": ["sha256"],
     "rfc3161TimeStampServer": "http://timestamp.digicert.com",
@@ -62,7 +64,7 @@
 
   "checklist_signed_extra": [
     "Verify chữ ký: signtool.exe verify /pa /v \"dist\\InteriorFlow Setup {version}.exe\"",
-    "Kỳ vọng: 'Successfully verified' + tên TTT Architects Co., Ltd",
+    "Kỳ vọng: 'Successfully verified' + đúng tên pháp nhân đứng tên cert (CSC_SUBJECT_NAME)",
     "Test SmartScreen: cài trên máy Windows CLEAN (mới format), warn hết chưa"
   ]
 }

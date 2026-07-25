@@ -21,7 +21,7 @@
     "node": "slide.composer",
     "label": "Composer Cover — content thường (không JSON), không ref/hero",
     "inputs": { "content": "Sảnh khách sạn 5 sao\nĐịnh hướng quiet-luxury" },
-    "params": { "layout": "Cover", "fonts": "Editorial", "mode": "Sáng", "brand": "TTT ARCHITECTS", "pageNo": "01" },
+    "params": { "layout": "Cover", "fonts": "Editorial", "mode": "Sáng", "brand": "ATELIER NORD", "pageNo": "01" },
     "expect": { "expectNoJob": true, "expectOutputKeys": ["image"] }
   },
   {
@@ -39,7 +39,7 @@
     "node": "slide.composer",
     "label": "Composer Quote — nền Tối, có styleref",
     "inputs": {
-      "content": "{\"title\":\"Sảnh là ấn tượng đầu tiên được giữ lại.\",\"body\":\"TTT Architects\"}",
+      "content": "{\"title\":\"Sảnh là ấn tượng đầu tiên được giữ lại.\",\"body\":\"Atelier Nord\"}",
       "styleref": "/demo/mood1.jpg"
     },
     "params": { "layout": "Quote", "fonts": "Elegant", "mode": "Tối", "pageNo": "04" },

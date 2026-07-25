@@ -5,7 +5,10 @@
  *
  * Sprint 2 · C-2 (gốc): preset gradient trôi chậm + ảnh riêng upload, lưu localStorage.
  * 19/07 (login-v2) — DYNAMIC WALLPAPER mở rộng:
- * - Thư viện ảnh TTT: 30 render thật ở public/wallpapers/ttt-01..30.jpg (1920px, ≤~350KB).
+ * - Thư viện ảnh sẵn: 30 render mẫu ở public/wallpapers/ttt-01..30.jpg (1920px, ≤~350KB)
+ *   — bộ ảnh dùng TẠM, nhãn UI đã trung tính (xem docs/AUDIT-BRAND-PII.md).
+ * - 25/07: thêm NGUỒN ẢNH NGOÀI (Unsplash · Openverse · dán URL/Pinterest) qua
+ *   components/common/StockPhotoPicker — xem docs/IMAGE-SOURCES.md.
  * - Chế độ TĨNH: preset gradient / 1 ảnh thư viện / ảnh upload (như cũ).
  * - Chế độ TRÌNH CHIẾU (Photo Shuffle) — MẶC ĐỊNH cho user chưa lưu lựa chọn
  *   (19/07): tự chuyển ảnh ~22s, crossfade 1.8s ease-in-out,
@@ -30,9 +33,11 @@ import {
   Shuffle,
   ListOrdered,
   Sparkles,
+  Globe,
 } from 'lucide-react';
 import { easeApple, pressableIcon } from '@/lib/motion';
 import type { Lang } from '@/lib/i18n';
+import StockPhotoPicker from '@/components/common/StockPhotoPicker';
 
 const LS_KEY = 'interiorflow.login-bg';
 
@@ -89,7 +94,7 @@ export const BG_PRESETS: BgPreset[] = [
   },
 ];
 
-/** Thư viện ảnh nền TTT (demo 30 render — user lọc bộ cuối sau, sắp theo tên). */
+/** Thư viện ảnh nền sẵn có (30 render mẫu — sắp theo tên). */
 export const WALLPAPERS: { id: string; src: string }[] = Array.from({ length: 30 }, (_, i) => {
   const id = `ttt-${String(i + 1).padStart(2, '0')}`;
   return { id, src: `/wallpapers/${id}.jpg` };
@@ -100,14 +105,14 @@ const wallSrc = (id: string) => `/wallpapers/${id}.jpg`;
 export type BgChoice =
   | { kind: 'preset'; id: string }
   | { kind: 'image'; data: string } // ảnh user upload (dataURL)
-  | { kind: 'wall'; id: string } // 1 ảnh thư viện TTT, tĩnh
+  | { kind: 'wall'; id: string } // 1 ảnh thư viện sẵn có, tĩnh
   | { kind: 'slideshow'; ids: string[]; order: 'shuffle' | 'seq' }
   | { kind: 'dynamic'; id: string }; // 20/07 — nền sinh bằng code (không phải ảnh)
 
 /* ---------- Việc 3 · 5 nền ĐỘNG sinh bằng code ----------
  * Mỗi preset: tone chữ + `lum` = độ sáng ĐẠI DIỆN vùng card (0..1) để tầng tương phản
  * chữ (lib/adaptive-contrast · planCardText) giải bộ chữ đạt ngưỡng mà KHÔNG cần đo pixel
- * (nền là CSS, không có ảnh). Bảng màu greige ấm + cam/navy TTT, KHÔNG neon lạnh. */
+ * (nền là CSS, không có ảnh). Bảng màu greige ấm + cam/navy trầm, KHÔNG neon lạnh. */
 export interface DynamicBg {
   id: string;
   vi: string;
@@ -154,7 +159,7 @@ function loadChoice(): BgChoice {
   } catch {
     /* hỏng thì về mặc định */
   }
-  // MẶC ĐỊNH (chỉ đạo 19/07): user CHƯA từng chọn nền → TRÌNH CHIẾU bộ 30 ảnh TTT
+  // MẶC ĐỊNH (chỉ đạo 19/07): user CHƯA từng chọn nền → TRÌNH CHIẾU bộ 30 ảnh sẵn có
   // ("như vậy trước để thấy độ đẹp"). User đã lưu lựa chọn thì tôn trọng như cũ (trên).
   return { kind: 'slideshow', ids: WALLPAPERS.map((w) => w.id), order: 'shuffle' };
 }
@@ -169,7 +174,21 @@ function saveChoice(c: BgChoice) {
 
 /** Resize ảnh về ≤1600px cạnh dài, JPEG 0.82 — vừa nét vừa lọt quota localStorage. */
 async function fileToDataUrl(file: File): Promise<string> {
-  const bitmap = await createImageBitmap(file);
+  return blobToDataUrl(await createImageBitmap(file));
+}
+
+/**
+ * Ảnh TỪ MẠNG (Unsplash/Openverse/URL dán) → dataURL để lưu localStorage như ảnh upload.
+ * Đi qua `/api/stock-photos/proxy` để ảnh về CÙNG ORIGIN — nếu tải trực tiếp cross-origin
+ * thì canvas bị taint và `toDataURL()` ném SecurityError.
+ */
+async function remoteUrlToDataUrl(url: string): Promise<string> {
+  const res = await fetch(`/api/stock-photos/proxy?url=${encodeURIComponent(url)}`);
+  if (!res.ok) throw new Error('proxy');
+  return blobToDataUrl(await createImageBitmap(await res.blob()));
+}
+
+async function blobToDataUrl(bitmap: ImageBitmap): Promise<string> {
   const MAX = 1600;
   const scale = Math.min(1, MAX / Math.max(bitmap.width, bitmap.height));
   const w = Math.round(bitmap.width * scale);
@@ -602,6 +621,9 @@ export function LoginBackdropPicker({
 }) {
   const [open, setOpen] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // 25/07 — panel nguồn ảnh ngoài (Unsplash/Openverse/URL) mở theo yêu cầu, không nạp sẵn.
+  const [onlineOpen, setOnlineOpen] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const en = lang === 'en';
 
@@ -774,7 +796,7 @@ export function LoginBackdropPicker({
                     })}
                   </div>
 
-                  {/* thư viện TTT — chọn 1 ảnh làm nền tĩnh */}
+                  {/* thư viện ảnh sẵn có — chọn 1 ảnh làm nền tĩnh */}
                   <p className="mb-1.5 mt-2.5 text-[10px] uppercase tracking-[0.14em] text-[var(--t5)]">
                     {en ? 'Image library' : 'Thư viện ảnh'}
                   </p>
@@ -836,6 +858,42 @@ export function LoginBackdropPicker({
                       e.target.value = '';
                     }}
                   />
+
+                  {/* ————— NGUỒN ẢNH NGOÀI (25/07): Unsplash · Openverse · dán URL/Pinterest —————
+                      Ảnh chọn được nạp về qua proxy → dataURL, lưu như ảnh upload. */}
+                  <button
+                    type="button"
+                    onClick={() => setOnlineOpen((o) => !o)}
+                    className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-[9px] border border-[var(--border)] text-[11px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+                  >
+                    <Globe size={11} />
+                    {en ? 'From the web' : 'Ảnh trên mạng'}
+                  </button>
+                  {onlineOpen && (
+                    <div className="mt-2 border-t border-[var(--border)] pt-2">
+                      <StockPhotoPicker
+                        lang={lang}
+                        initialQuery={en ? 'warm stone interior' : 'nội thất đá ấm'}
+                        maxGridHeight={180}
+                        onPick={async ({ photo }) => {
+                          setErr(null);
+                          setFetching(true);
+                          try {
+                            onPick({ kind: 'image', data: await remoteUrlToDataUrl(photo.full) });
+                          } catch {
+                            setErr(en ? 'Could not load that image.' : 'Không tải được ảnh đó.');
+                          } finally {
+                            setFetching(false);
+                          }
+                        }}
+                      />
+                      {fetching && (
+                        <p className="mt-1 text-[9.5px] text-[var(--t5)]">
+                          {en ? 'Applying photo…' : 'Đang áp ảnh…'}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
 

@@ -61,8 +61,8 @@ Adapter đã sẵn. Cần thêm:
 - Nạp 1 trong 2 là chạy AI thật ngay. Flow mẫu "Phòng ngủ hoàn chỉnh" đã tune prompt sẵn để nghiệm thu.
 
 ## 5. Tài khoản test
-- `hoa@ttt.vn` / `matkhau123` (admin, 500cr)
-- `thong@ttt.vn` / `matkhau123` (member, 200cr)
+> ⚠️ KHÔNG ghi mật khẩu vào repo. Tài khoản test tạo tay trên máy dev bằng
+> `scripts/seed-admin.ts` (admin) — xem hướng dẫn trong file đó.
 
 ## 6. Lệnh hay dùng
 ```bash
