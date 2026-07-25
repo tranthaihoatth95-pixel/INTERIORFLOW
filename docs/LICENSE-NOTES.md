@@ -73,3 +73,39 @@ trong TTT Architects** (cài lên máy nhân viên/máy công ty, chia sẻ qua 
 (website public, khách hàng, đối tác ngoài, store) **trước khi review pháp lý** — phát hành ra ngoài
 có thể kích hoạt nghĩa vụ GPL đối với mã đóng gói kèm. Nội bộ một pháp nhân = không phải
 "conveying" theo GPL, rủi ro thấp; ra ngoài = dừng lại, hỏi pháp lý trước.
+
+## Font nhúng vào PDF: Be Vietnam Pro (OFL — AN TOÀN, khác hẳn ca GPL ở trên)
+
+**Bổ sung 26/07 — fix #25 (PDF mất dấu tiếng Việt).** jsPDF chỉ có font dựng sẵn mã hoá WinAnsi,
+không có glyph tiếng Việt, nên mọi PDF app xuất ra đều mất dấu. Cách chữa duy nhất là **nhúng một
+file TrueType thật** vào PDF (`lib/pdf-font.ts`).
+
+| Mục | Giá trị |
+| --- | --- |
+| Font | **Be Vietnam Pro** — Regular (400) + Bold (700) |
+| Giấy phép | **SIL Open Font License 1.1** (bản đầy đủ: `public/fonts/OFL.txt`) |
+| Bản quyền | Copyright 2021 The Be Vietnam Pro Project Authors — https://github.com/bettergui/BeVietnamPro |
+| Nguồn tải | `https://raw.githubusercontent.com/google/fonts/main/ofl/bevietnampro/BeVietnamPro-{Regular,Bold}.ttf` (kho Google Fonts chính thức) |
+| Dung lượng | 132.9 KB + 140.3 KB = **273 KB** trong `public/fonts/` |
+| Sửa đổi | **KHÔNG** — giữ nguyên bản upstream, không subset, không đổi tên |
+
+**Vì sao OFL an toàn cho InteriorFlow (khác GPL của libredwg):** OFL 1.1 cho phép dùng, nhúng và
+phân phối lại font kèm phần mềm, **kể cả sản phẩm thương mại**, và **KHÔNG** lây nhiễm giấy phép
+sang mã nguồn của sản phẩm. Điều kiện thực tế cần giữ:
+
+1. **Giữ file `public/fonts/OFL.txt`** cạnh font — đây chính là "copyright notice + license" mà
+   OFL §2 bắt buộc đi kèm mọi bản phân phối. ⛔ KHÔNG xoá khi dọn `public/`.
+2. **Không bán font tách riêng** (OFL §4 cấm bán font đứng một mình; bán *phần mềm có nhúng font*
+   thì được).
+3. **Không đổi tên font** trừ khi có sửa file — Be Vietnam Pro **không khai Reserved Font Name**
+   nên kể cả có sửa cũng không bắt buộc đổi tên; hiện ta không sửa gì nên không phát sinh.
+4. Font nhúng trong PDF xuất ra: OFL cho phép rõ ràng ("embedding"), file PDF khách nhận **không**
+   vì thế mà dính ràng buộc giấy phép nào.
+
+**Vì sao chọn Be Vietnam Pro:** phủ đủ tiếng Việt và CÙNG hệ chữ với UI app
+(`docs/FIGMA-HANDOFF.md`) ⇒ một mạch UI → bản vẽ → PDF → deck.
+
+**Muốn thêm font khác về sau:** thêm 1 mục vào `EMBEDDABLE_PDF_FONTS` (`lib/pdf-font.ts`), đặt
+.ttf + file giấy phép vào `public/fonts/`, và **thêm một hàng vào bảng trên**. Chỉ nhận font
+OFL/Apache/giấy phép cho phép nhúng — KHÔNG lấy font hệ thống (Georgia, Helvetica, SF Pro…) vì
+không có quyền phân phối.
