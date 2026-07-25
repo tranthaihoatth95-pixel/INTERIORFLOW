@@ -55,13 +55,93 @@ const STAGE_BRIEF: Record<ChatStage, string> = {
     'tiếp theo, tư vấn tổng quan phong cách/vật liệu ở mức bàn phương án.',
 };
 
-/** Trả về system prompt hoàn chỉnh cho 1 stage (base prompt + brief chặng + giới hạn 3 câu). */
-export function chatSystemPromptFor(stage: ChatStage | undefined): string {
+/* ------------------ NHẬN DIỆN DỰ ÁN bơm vào prompt (VIỆC 4) ------------------ */
+
+/**
+ * Ngữ cảnh thương hiệu Vitals nhận từ client mỗi lượt chat. Nguồn DUY NHẤT hợp lệ:
+ * `lib/present-editor/brand-kit.ts getActiveBrandKit()` (Brand Kit = nhận diện của TỪNG dự án,
+ * lưu localStorage phía client → backend không tự đọc được, buộc client gửi kèm).
+ *
+ * LUẬT (docs/SPEC-VITALS-AI.md §2): KHÔNG hardcode giá trị thương hiệu vào prompt — mọi hex
+ * màu / tên font ở đây đều đến từ dữ liệu user, không có giá trị mặc định nào. Rỗng ⇒ để rỗng.
+ */
+export interface VitalsBrandContext {
+  /** tên Brand Kit user đặt (có thể rỗng). */
+  name: string;
+  /** bộ màu hex `#rrggbb` do user lưu. */
+  palette: string[];
+  /** tên cặp font của kit (giữ kiểu string để lib/ai không phụ thuộc lib/slides). */
+  fonts: string;
+  /** có logo hay chưa — KHÔNG gửi dataURL logo (phình payload, vô nghĩa với model text). */
+  hasLogo: boolean;
+}
+
+const MAX_BRAND_COLORS = 12;
+
+/**
+ * Validate ngữ cảnh thương hiệu từ payload client. Trả `null` khi không có gì dùng được
+ * (dự án chưa có Brand Kit) — route KHÔNG lỗi, prompt sẽ nói thẳng là chưa có.
+ */
+export function sanitizeBrandContext(input: unknown): VitalsBrandContext | null {
+  if (!input || typeof input !== 'object') return null;
+  const raw = input as Record<string, unknown>;
+
+  const name = typeof raw.name === 'string' ? raw.name.trim().slice(0, 80) : '';
+  const fonts = typeof raw.fonts === 'string' ? raw.fonts.trim().slice(0, 40) : '';
+  const hasLogo = raw.hasLogo === true;
+  const palette = Array.isArray(raw.palette)
+    ? raw.palette
+        .filter((c): c is string => typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c.trim()))
+        .map((c) => c.trim().toLowerCase())
+        .slice(0, MAX_BRAND_COLORS)
+    : [];
+
+  // Không một mẩu nhận diện nào → coi như chưa có kit.
+  if (!name && !fonts && !hasLogo && palette.length === 0) return null;
+  return { name, palette, fonts, hasLogo };
+}
+
+/**
+ * Khối "NHẬN DIỆN DỰ ÁN" nhồi vào system prompt. Chưa có kit ⇒ nói rõ là chưa có và CẤM bịa —
+ * đúng luật "rỗng thì để rỗng" (như khung tên CAD: studio rỗng thì in trống).
+ */
+export function brandPromptBlock(brand: VitalsBrandContext | null): string {
+  if (!brand) {
+    return (
+      'NHẬN DIỆN DỰ ÁN: dự án này CHƯA có Brand Kit. Nếu người dùng hỏi về màu/font/logo nhận diện, ' +
+      'nói thẳng là dự án chưa có Brand Kit và có thể tạo ở chặng Presenting. TUYỆT ĐỐI KHÔNG bịa ' +
+      'bộ màu, tên font hay gu của bất kỳ studio nào.'
+    );
+  }
+  const parts: string[] = [];
+  if (brand.name) parts.push(`tên "${brand.name}"`);
+  if (brand.palette.length) parts.push(`bộ màu ${brand.palette.join(' ')}`);
+  if (brand.fonts) parts.push(`cặp font ${brand.fonts}`);
+  parts.push(brand.hasLogo ? 'đã có logo' : 'chưa có logo');
+  return (
+    'NHẬN DIỆN DỰ ÁN (Brand Kit user đã lưu): ' +
+    parts.join(' · ') +
+    '. Mọi tư vấn về màu/font/nhận diện phải bám ĐÚNG các giá trị này; thiếu thứ gì thì nói là ' +
+    'chưa có, không tự bịa thêm và không áp gu của studio khác.'
+  );
+}
+
+/**
+ * Trả về system prompt hoàn chỉnh cho 1 stage (base prompt + brief chặng + nhận diện dự án +
+ * giới hạn 3 câu). `brand` là Brand Kit đang chọn do client gửi kèm — không có thì prompt tự nói
+ * là dự án chưa có nhận diện.
+ */
+export function chatSystemPromptFor(
+  stage: ChatStage | undefined,
+  brand?: VitalsBrandContext | null,
+): string {
   const s: ChatStage = stage ?? 'gallery';
   return (
     CHAT_SYSTEM_PROMPT +
     '\n\nNGỮ CẢNH CHẶNG: ' +
     STAGE_BRIEF[s] +
+    '\n\n' +
+    brandPromptBlock(brand ?? null) +
     '\n\nGIỚI HẠN: tối đa 3 câu, đi thẳng vào vấn đề, không lan man.'
   );
 }

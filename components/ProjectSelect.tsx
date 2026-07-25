@@ -27,6 +27,7 @@ import { useLang } from '@/lib/i18n';
 import { useFlowStore } from '@/lib/store';
 import { createFlow, openFlow, createProject, assignProject } from '@/lib/workspace';
 import { applyCadHandoff } from '@/lib/cad/handoff';
+import { brandContextForVitals } from '@/lib/present-editor/brand-kit';
 import { LangToggle } from '@/components/LangToggle';
 import { adaptiveTextStyle, useAdaptiveContrast } from '@/components/ui/AdaptiveContrast';
 import type { ContrastPlan } from '@/lib/adaptive-contrast';
@@ -422,7 +423,9 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
       const res = await fetch('/api/ai-assist-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next, stage: 'gallery' }),
+        // `brand`: Brand Kit đang chọn (localStorage — backend không đọc được). Chưa có kit →
+        // null, Vitals nói thẳng là chưa có nhận diện thay vì bịa màu/font (VIỆC 4).
+        body: JSON.stringify({ messages: next, stage: 'gallery', brand: brandContextForVitals() }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {

@@ -2,7 +2,15 @@
  * lib/ai/chat-assist.test.ts — kiểm validate input + build prompt cho "Trợ lý AI" Gallery.
  * Chạy: node_modules/.bin/sucrase-node lib/ai/chat-assist.test.ts
  */
-import { sanitizeChatMessages, buildChatPrompt, MAX_CHAT_TURNS, MAX_CHAT_MSG_LEN } from './chat-assist';
+import {
+  sanitizeChatMessages,
+  buildChatPrompt,
+  MAX_CHAT_TURNS,
+  MAX_CHAT_MSG_LEN,
+  sanitizeBrandContext,
+  brandPromptBlock,
+  chatSystemPromptFor,
+} from './chat-assist';
 
 let pass = 0;
 let fail = 0;
@@ -96,6 +104,62 @@ console.log('buildChatPrompt');
   ok('có mục LỊCH SỬ khi >1 lượt', p.includes('LỊCH SỬ HỘI THOẠI'));
   ok('giữ nội dung lượt trước', p.includes('Tông be ấm, điểm nhấn đồng.'));
   ok('câu hỏi mới nhất nằm cuối prompt', p.trim().endsWith('Còn ánh sáng thì sao?'));
+}
+
+console.log('\nsanitizeBrandContext + brandPromptBlock (VIỆC 4 — nhận diện dự án)');
+
+ok('không phải object → null', sanitizeBrandContext('x') === null);
+ok('object rỗng → null', sanitizeBrandContext({}) === null);
+ok('kit rỗng hoàn toàn → null', sanitizeBrandContext({ name: '', palette: [], fonts: '', hasLogo: false }) === null);
+
+{
+  const b = sanitizeBrandContext({
+    name: '  Nhà Bên Sông  ',
+    palette: ['#A1B2C3', 'không-phải-màu', '#fff', '#0d0d0d'],
+    fonts: 'Editorial',
+    hasLogo: true,
+  });
+  ok('giữ kit hợp lệ', !!b);
+  ok('trim tên', b!.name === 'Nhà Bên Sông');
+  ok('lọc hex sai + hex 3 ký tự', b!.palette.length === 2);
+  ok('hạ chữ thường hex', b!.palette[0] === '#a1b2c3');
+  ok('hasLogo chỉ nhận true thật', b!.hasLogo === true);
+}
+
+{
+  const b = sanitizeBrandContext({ palette: Array(30).fill('#112233') });
+  ok('cắt bảng màu tối đa 12', !!b && b.palette.length === 12);
+}
+
+{
+  const b = sanitizeBrandContext({ hasLogo: 'yes' });
+  ok('hasLogo không phải boolean true → không tính là có kit', b === null);
+}
+
+{
+  const empty = brandPromptBlock(null);
+  ok('chưa có kit → prompt nói CHƯA có Brand Kit', empty.includes('CHƯA có Brand Kit'));
+  ok('chưa có kit → cấm bịa', empty.includes('KHÔNG bịa'));
+  ok('chưa có kit → KHÔNG chứa hex màu nào', !/#[0-9a-f]{6}/i.test(empty));
+}
+
+{
+  const b = sanitizeBrandContext({ name: 'Atelier X', palette: ['#123456'], fonts: 'Modern', hasLogo: false });
+  const block = brandPromptBlock(b);
+  ok('có kit → nêu tên', block.includes('Atelier X'));
+  ok('có kit → nêu màu user lưu', block.includes('#123456'));
+  ok('có kit → nêu font', block.includes('Modern'));
+  ok('không logo → nói chưa có logo', block.includes('chưa có logo'));
+}
+
+{
+  const withKit = chatSystemPromptFor('present', sanitizeBrandContext({ palette: ['#abcdef'] }));
+  const without = chatSystemPromptFor('present');
+  ok('system prompt nhồi màu của kit', withKit.includes('#abcdef'));
+  ok('không truyền brand → vẫn nói chưa có kit', without.includes('CHƯA có Brand Kit'));
+  ok('vẫn giữ brief chặng', withKit.includes('PRESENTING'));
+  ok('vẫn giữ giới hạn 3 câu', withKit.includes('tối đa 3 câu'));
+  ok('prompt gốc KHÔNG hardcode thương hiệu nào', !/TTT|#f06020|#002850/i.test(without));
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);

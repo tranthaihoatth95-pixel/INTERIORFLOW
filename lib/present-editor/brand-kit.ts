@@ -89,6 +89,27 @@ export function getActiveBrandKit(): BrandKit | null {
   return kits.find((k) => k.id === activeId) ?? kits[0];
 }
 
+/**
+ * Ngữ cảnh thương hiệu gửi kèm mỗi lượt chat Vitals (VIỆC 4). Brand Kit ở localStorage nên
+ * backend không đọc được — client phải bơm. KHÔNG gửi dataURL logo (phình payload, model text
+ * không dùng được), chỉ gửi `hasLogo`. Chưa có kit → `null` ⇒ Vitals nói thẳng là chưa có.
+ */
+export function brandContextForVitals(): {
+  name: string;
+  palette: string[];
+  fonts: string;
+  hasLogo: boolean;
+} | null {
+  const kit = getActiveBrandKit();
+  if (!kit) return null;
+  return {
+    name: kit.name || '',
+    palette: Array.isArray(kit.palette) ? kit.palette : [],
+    fonts: kit.fonts,
+    hasLogo: !!kit.logo,
+  };
+}
+
 export function setActiveBrandKit(id: string): void {
   const s = read();
   if (!s.kits.some((k) => k.id === id)) return;

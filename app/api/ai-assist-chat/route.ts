@@ -6,6 +6,7 @@ import {
   buildChatPrompt,
   chatSystemPromptFor,
   normalizeChatStage,
+  sanitizeBrandContext,
 } from '@/lib/ai/chat-assist';
 
 /**
@@ -24,7 +25,11 @@ export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-  const body = (await req.json().catch(() => ({}))) as { messages?: unknown; stage?: unknown };
+  const body = (await req.json().catch(() => ({}))) as {
+    messages?: unknown;
+    stage?: unknown;
+    brand?: unknown;
+  };
   const messages = sanitizeChatMessages(body?.messages);
   if (!messages) {
     return NextResponse.json(
@@ -33,9 +38,12 @@ export async function POST(req: Request) {
     );
   }
   const stage = normalizeChatStage(body?.stage);
+  // Brand Kit sống ở localStorage client → client gửi kèm mỗi lượt. Không có = prompt tự nói
+  // "dự án chưa có Brand Kit" (VIỆC 4 · docs/SPEC-VITALS-AI.md §2).
+  const brand = sanitizeBrandContext(body?.brand);
 
   try {
-    const r = await completeTextTiered(buildChatPrompt(messages), chatSystemPromptFor(stage), { maxTokens: 500 });
+    const r = await completeTextTiered(buildChatPrompt(messages), chatSystemPromptFor(stage, brand), { maxTokens: 500 });
     const reply = r.text.trim();
     return NextResponse.json({ reply, _tier: r.tier, _model: r.model });
   } catch (err) {

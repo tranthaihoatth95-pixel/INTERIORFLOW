@@ -204,10 +204,21 @@ Diff thật trên `lib/ai/chat-assist.ts`:
 
 ### Lỗ hổng còn lại của nguyên tắc trung tính
 
-⚠️ Hiện prompt chỉ **nói bằng chữ** là "áp Brand Kit của dự án", nhưng **không có dòng code
-nào bơm giá trị Brand Kit/GuProfile thật vào prompt Vitals** — grep `getActiveBrandKit`
-không hề xuất hiện trong `lib/ai/*` hay `app/api/ai-assist-chat/*`. Nghĩa là Vitals đang
-tư vấn brand **mù**. Đây là việc P của Nhóm 2.
+~~⚠️ Hiện prompt chỉ **nói bằng chữ** là "áp Brand Kit của dự án", nhưng **không có dòng code
+nào bơm giá trị Brand Kit/GuProfile thật vào prompt Vitals**.~~
+
+**CẬP NHẬT 25/07 — đã bơm Brand Kit (VIỆC 4).** Đường đi: `brandContextForVitals()`
+(`lib/present-editor/brand-kit.ts`, bọc `getActiveBrandKit()`) → client gửi kèm trường `brand`
+mỗi lượt (`components/studio/VitalsGesture.tsx`, `components/ProjectSelect.tsx`) → route
+`app/api/ai-assist-chat/route.ts` gọi `sanitizeBrandContext()` → `brandPromptBlock()` nhồi
+tên · bộ màu · cặp font · có-hay-chưa logo vào system prompt (`lib/ai/chat-assist.ts`).
+Giữ đúng 3 luật §2: không hardcode giá trị nào (mọi hex đến từ user), rỗng-để-rỗng (chưa có kit
+⇒ prompt nói "dự án CHƯA có Brand Kit" + cấm bịa), không gửi dataURL logo.
+
+⬜ **GuProfile vẫn chưa bơm — cố ý.** `fetchGuProfile()` đọc `/api/library`, mà thư viện là
+**dùng chung cả team, không scope theo dự án** (`app/api/library/route.ts:10`). Bơm vào sẽ trộn
+gu của dự án khác — trái §2 mục 2 và `docs/CONTENT-RULES.md` §1. Mở lại khi Reference có
+`projectId`.
 
 ---
 

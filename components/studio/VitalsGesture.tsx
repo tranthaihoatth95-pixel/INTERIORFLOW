@@ -25,6 +25,7 @@ import type { ChatTurn } from '@/lib/ai/chat-assist';
 import type { Phase } from '@/lib/phases';
 import { easeApple } from '@/lib/motion';
 import { useFlowStore } from '@/lib/store';
+import { brandContextForVitals } from '@/lib/present-editor/brand-kit';
 import VitalsIcon from './VitalsIcon';
 import { VitalsBubble, VitalsTyping } from './VitalsChatBubble';
 
@@ -122,7 +123,9 @@ export default function VitalsGesturePanel({
       const res = await fetch('/api/ai-assist-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next, stage }),
+        // `brand`: Brand Kit đang chọn (localStorage — backend không đọc được). Chưa có kit →
+        // null, Vitals sẽ nói thẳng là dự án chưa có nhận diện thay vì bịa màu/font.
+        body: JSON.stringify({ messages: next, stage, brand: brandContextForVitals() }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
