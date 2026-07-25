@@ -48,7 +48,6 @@ import { checkStandards, findRoomLabels, classifyRoom, type Violation, type Room
 import { getAllRules } from '@/lib/cad/standards/registry';
 import { suggestFix } from '@/lib/cad/standards/fix-suggest';
 import { exportStandardsReportPdf, extractProjectName, extractDrawnBy } from '@/lib/cad/standards-report';
-import { getActiveBrandKit } from '@/lib/present-editor/brand-kit';
 import { classifyOperator, rulesForOperator, type OperatorType } from '@/lib/cad/operator-profile';
 import { suggestRoomNames, type RoomNameSuggestion } from '@/lib/cad/room-autolabel';
 import {
