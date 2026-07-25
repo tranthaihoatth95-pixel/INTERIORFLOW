@@ -15,7 +15,7 @@
 - Test: `node_modules/.bin/sucrase-node <path>.test.ts` (**75 file** cuối phiên). tsc sạch.
 
 ## Worktree đang mở
-- (Không có — sạch, 0 worktree.)
+- **`interiorflow-wt-checker-pdf`** (nhánh `feat/checker-pdf-t3`, từ `feat/present-layout-ml-p1`) — Task #20 T3: nút "Xuất PDF báo cáo quy chuẩn" TRUNG TÍNH trong panel Kiểm chuẩn. Mới: `lib/cad/standards-report.ts` (+test). Panel Kiểm chuẩn (list lỗi/cảnh báo/gợi ý + click-zoom) ĐÃ có sẵn. tsc PASS, test report 5/5. CHƯA merge — chờ user. Nợ: jsPDF helvetica không render dấu tiếng Việt (limit chung cả `pdf.ts`).
 
 ## CỘT MỐC 24/07: IF1 feature-complete + bộ cài Windows XONG
 - **9 nhánh + bộ cài đã merge** (HEAD `d1ffbc4`), tsc sạch, 81 test/0 fail. Đợt: zone-tool · dwg-block-flatten · access-control-m1 · cad-core-logic · legend-wave1 · legend-research · floorplan-color-fill · clay2img-audit · installer-win. Tất cả worktree đã dọn.
