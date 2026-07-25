@@ -206,6 +206,12 @@ model ChatMessage {
 
 // thư viện dùng chung cả team — file lưu ./uploads, DB giữ metadata
 model LibraryAsset {
+  // Task #19 (id ảnh chuẩn `img_…`): KHÔNG thêm cột DB cho LibraryAsset — `id` cuid dưới đây ĐÃ là
+  // định danh ổn định, độc lập tên file random (`path`); tham chiếu đã đi qua id (URL /api/library/{id}/file),
+  // nên đổi tên/di chuyển file KHÔNG vỡ liên kết. App phủ id này vào không gian `img_` bằng cách DẪN XUẤT
+  // tất định (`imgIdFromKey(id)` = `img_<cuid>`, xem lib/img-id.ts) ở ranh giới API — không migrate, không
+  // regenerate Prisma client (node_modules dùng CHUNG với main + worktree khác qua symlink: thêm cột rồi
+  // regenerate sẽ khiến phiên main đang chạy lỗi P2022 khi SELECT cột dev.db của nó chưa có). Least-disruptive.
   id        String   @id @default(cuid())
   userId    String
   name      String

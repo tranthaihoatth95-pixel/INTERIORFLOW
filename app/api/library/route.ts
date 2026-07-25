@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
+import { imgIdFromKey } from '@/lib/img-id';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
@@ -17,6 +18,9 @@ export async function GET() {
   return NextResponse.json({
     assets: assets.map((a) => ({
       id: a.id,
+      // Task #19: id ảnh chuẩn `img_…` DẪN XUẤT tất định từ cuid ổn định — độc lập tên file, chung
+      // không gian với gallery/linked-asset/handoff. Áp cho MỌI hàng (cũ lẫn mới), không cột DB mới.
+      imgId: imgIdFromKey(a.id),
       name: a.name,
       category: a.category,
       tags: a.tags,
@@ -83,5 +87,5 @@ export async function POST(req: Request) {
       h: Number.isFinite(h) ? Math.round(h) : 0,
     },
   });
-  return NextResponse.json({ id: asset.id, url: `/api/library/${asset.id}/file` });
+  return NextResponse.json({ id: asset.id, imgId: imgIdFromKey(asset.id), url: `/api/library/${asset.id}/file` });
 }
