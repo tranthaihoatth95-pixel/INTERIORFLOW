@@ -12,7 +12,7 @@ export async function GET() {
 
   const [flows, projects, members] = await Promise.all([
     prisma.flow.findMany({
-      where: { userId: user.id },
+      where: { userId: user.id, deletedAt: null },
       orderBy: { updatedAt: 'desc' },
       select: {
         id: true,
@@ -30,7 +30,11 @@ export async function GET() {
     }),
     prisma.project.findMany({
       // Loại project ẩn (bucket notebook per-user, name '__nb:<slug>') khỏi Gallery.
-      where: { userId: user.id, NOT: { name: { startsWith: HIDDEN_NOTEBOOK_PREFIX } } },
+      where: {
+        userId: user.id,
+        deletedAt: null,
+        NOT: { name: { startsWith: HIDDEN_NOTEBOOK_PREFIX } },
+      },
       orderBy: { createdAt: 'desc' },
       select: { id: true, name: true, clientName: true, larkProjectCode: true },
     }),
@@ -71,7 +75,8 @@ export async function POST(req: Request) {
         name: String(body.name ?? 'Dự án mới'),
         clientName: body.clientName ?? null,
         larkProjectCode,
-        members: { create: { userId: user.id, role: 'owner' } },
+        lastEditedBy: user.id,
+        members: { create: { userId: user.id, role: 'owner', lastEditedBy: user.id } },
       },
     });
     return NextResponse.json({ project });
@@ -83,6 +88,7 @@ export async function POST(req: Request) {
       name: String(body.name ?? 'Untitled flow'),
       projectId: body.projectId ?? null,
       graphJson: typeof body.graphJson === 'string' ? body.graphJson : '{"nodes":[],"edges":[]}',
+      lastEditedBy: user.id,
     },
   });
   return NextResponse.json({ flow: { id: flow.id, name: flow.name, version: flow.version } });

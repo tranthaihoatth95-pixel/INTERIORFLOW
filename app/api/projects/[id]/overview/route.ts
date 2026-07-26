@@ -30,7 +30,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
     const myRole = await assertProjectAccess(user.id, id, 'viewer');
     const [project, flows, memberCount] = await Promise.all([
       prisma.project.findUnique({
-        where: { id },
+        where: { id, deletedAt: null },
         select: {
           id: true,
           name: true,
@@ -42,7 +42,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
         },
       }),
       prisma.flow.findMany({
-        where: { projectId: id }, // ← lọc chặt theo dự án: KHÔNG lấy flow dự án khác
+        where: { projectId: id, deletedAt: null }, // ← lọc chặt theo dự án: KHÔNG lấy flow dự án khác
         orderBy: { updatedAt: 'desc' },
         select: {
           id: true,
@@ -53,7 +53,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
           version: true,
         },
       }),
-      prisma.projectMember.count({ where: { projectId: id } }),
+      prisma.projectMember.count({ where: { projectId: id, deletedAt: null } }),
     ]);
     // Project ẩn của Notebook (__nb:) không phải dự án thật — không cho xem như dự án.
     if (project && project.name.startsWith(HIDDEN_NOTEBOOK_PREFIX)) {
@@ -80,7 +80,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 
   // ── Trường hợp 2: [id] là Flow.id của user (flow chưa gán dự án) ─────────────
   const flow = await prisma.flow.findUnique({
-    where: { id },
+    where: { id, deletedAt: null },
     select: {
       id: true,
       userId: true,

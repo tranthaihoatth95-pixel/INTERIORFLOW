@@ -34,13 +34,18 @@ export async function assertProjectAccess(
   projectId: string,
   minRole: ProjectRole = 'viewer',
 ): Promise<ProjectRole> {
-  const [m, u] = await Promise.all([
+  const [m, u, p] = await Promise.all([
+    // 26/07 local-first (docs/IF-CORE-SCHEMA.md §2C): deletedAt: null BẮT BUỘC — member đã bị
+    // gỡ (soft-delete) không được coi là còn quyền, dù hàng vẫn nằm trong DB.
     prisma.projectMember.findUnique({
-      where: { projectId_userId: { projectId, userId } },
+      where: { projectId_userId: { projectId, userId }, deletedAt: null },
       select: { role: true },
     }),
     prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } }),
+    // Project bị xoá mềm cũng không còn truy cập được, kể cả admin coi như owner ở nhánh trên.
+    prisma.project.findUnique({ where: { id: projectId }, select: { deletedAt: true } }),
   ]);
+  if (!p || p.deletedAt) throw new AccessError(404, 'Không tìm thấy dự án.');
   if (u?.isAdmin) return 'owner';
   if (!m || !isProjectRole(m.role)) throw new AccessError(404, 'Không tìm thấy dự án.');
   const role = m.role;
@@ -69,7 +74,8 @@ export async function canAccessStage(
 /** Danh sách projectId user được thấy — dùng cho truy vấn dạng list (bật lọc ở wave sau). */
 export async function visibleProjectIds(userId: string): Promise<string[]> {
   const rows = await prisma.projectMember.findMany({
-    where: { userId },
+    // deletedAt: null — member đã bị gỡ khỏi dự án không còn thấy dự án đó trong list.
+    where: { userId, deletedAt: null },
     select: { projectId: true },
   });
   return rows.map((r) => r.projectId);

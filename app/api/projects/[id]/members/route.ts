@@ -26,7 +26,7 @@ function errResponse(e: unknown) {
 }
 
 async function ownerCount(projectId: string) {
-  return prisma.projectMember.count({ where: { projectId, role: 'owner' } });
+  return prisma.projectMember.count({ where: { projectId, role: 'owner', deletedAt: null } });
 }
 
 export async function GET(_: Request, { params }: { params: { id: string } }) {
@@ -36,7 +36,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
     const myRole = await assertProjectAccess(user.id, params.id, 'viewer');
     const [members, project] = await Promise.all([
       prisma.projectMember.findMany({
-        where: { projectId: params.id },
+        where: { projectId: params.id, deletedAt: null },
         orderBy: { joinedAt: 'asc' },
         select: {
           userId: true,
@@ -83,16 +83,32 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     await assertProjectAccess(user.id, params.id, 'owner');
     const target = await prisma.user.findUnique({ where: { id: targetId }, select: { id: true } });
     if (!target) return NextResponse.json({ error: 'User không tồn tại.' }, { status: 400 });
+    // 26/07 local-first: tra CẢ hàng đã xoá mềm — deletedAt KHÔNG nằm trong @@unique nên
+    // create() mới sẽ đụng constraint nếu hàng cũ (đã gỡ) còn tồn tại. Có hàng cũ + còn hiệu
+    // lực (deletedAt null) → 409 như cũ; có hàng cũ ĐÃ xoá mềm → "hồi sinh" bằng update thay
+    // vì create.
     const existed = await prisma.projectMember.findUnique({
       where: { projectId_userId: { projectId: params.id, userId: targetId } },
-      select: { id: true },
+      select: { id: true, deletedAt: true },
     });
-    if (existed)
+    if (existed && !existed.deletedAt)
       return NextResponse.json({ error: 'Đã là thành viên — dùng đổi vai (PATCH).' }, { status: 409 });
-    const member = await prisma.projectMember.create({
-      data: { projectId: params.id, userId: targetId, role },
-      select: { userId: true, role: true, joinedAt: true },
-    });
+    const member = existed
+      ? await prisma.projectMember.update({
+          where: { id: existed.id },
+          data: {
+            role,
+            deletedAt: null,
+            joinedAt: new Date(),
+            rev: { increment: 1 },
+            lastEditedBy: user.id,
+          },
+          select: { userId: true, role: true, joinedAt: true },
+        })
+      : await prisma.projectMember.create({
+          data: { projectId: params.id, userId: targetId, role, lastEditedBy: user.id },
+          select: { userId: true, role: true, joinedAt: true },
+        });
     return NextResponse.json({ member });
   } catch (e) {
     return errResponse(e);
@@ -114,7 +130,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   try {
     await assertProjectAccess(user.id, params.id, 'owner');
     const m = await prisma.projectMember.findUnique({
-      where: { projectId_userId: { projectId: params.id, userId: targetId } },
+      where: { projectId_userId: { projectId: params.id, userId: targetId }, deletedAt: null },
       select: { role: true },
     });
     if (!m) return NextResponse.json({ error: 'Chưa phải thành viên.' }, { status: 404 });
@@ -125,7 +141,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       );
     const member = await prisma.projectMember.update({
       where: { projectId_userId: { projectId: params.id, userId: targetId } },
-      data: { role },
+      data: { role, rev: { increment: 1 }, lastEditedBy: user.id },
       select: { userId: true, role: true },
     });
     return NextResponse.json({ member });
@@ -147,7 +163,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     // self-leave chỉ cần là member; gỡ người khác cần owner.
     await assertProjectAccess(user.id, params.id, targetId === user.id ? 'viewer' : 'owner');
     const m = await prisma.projectMember.findUnique({
-      where: { projectId_userId: { projectId: params.id, userId: targetId } },
+      where: { projectId_userId: { projectId: params.id, userId: targetId }, deletedAt: null },
       select: { role: true },
     });
     if (!m) return NextResponse.json({ error: 'Chưa phải thành viên.' }, { status: 404 });
@@ -156,8 +172,10 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
         { error: 'Không thể gỡ owner cuối cùng — chuyển quyền owner trước.' },
         { status: 400 },
       );
-    await prisma.projectMember.delete({
+    // 26/07 local-first: xoá MỀM — set deletedAt thay vì delete() thật (chuẩn bị Pha 2/3 đồng bộ).
+    await prisma.projectMember.update({
       where: { projectId_userId: { projectId: params.id, userId: targetId } },
+      data: { deletedAt: new Date(), rev: { increment: 1 }, lastEditedBy: user.id },
     });
     return NextResponse.json({ ok: true });
   } catch (e) {

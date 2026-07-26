@@ -32,7 +32,7 @@ export async function resolveNotebookProjectId(userId: string, paramId: string):
   const clean = String(paramId ?? '').trim();
   if (clean) {
     const real = await prisma.project.findUnique({
-      where: { id: clean },
+      where: { id: clean, deletedAt: null },
       select: { id: true, userId: true },
     });
     if (real) {
@@ -47,7 +47,7 @@ export async function resolveNotebookProjectId(userId: string, paramId: string):
 
   const bucketName = hiddenNotebookProjectName(clean || 'default');
   const existing = await prisma.project.findFirst({
-    where: { userId, name: bucketName },
+    where: { userId, name: bucketName, deletedAt: null },
     select: { id: true },
   });
   if (existing) return existing.id;
@@ -55,7 +55,12 @@ export async function resolveNotebookProjectId(userId: string, paramId: string):
   const created = await prisma.project.create({
     // ACCESS-CONTROL M1: bucket ẩn cũng có owner membership — nhất quán luật "mọi Project
     // có đúng ≥1 owner" (backfill script), dù bucket không hiện ở Gallery/panel Members.
-    data: { userId, name: bucketName, members: { create: { userId, role: 'owner' } } },
+    data: {
+      userId,
+      name: bucketName,
+      lastEditedBy: userId,
+      members: { create: { userId, role: 'owner', lastEditedBy: userId } },
+    },
     select: { id: true },
   });
   return created.id;

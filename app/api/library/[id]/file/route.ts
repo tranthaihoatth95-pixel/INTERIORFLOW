@@ -7,7 +7,7 @@ import { getSessionUser } from '@/lib/server/auth';
 export async function GET(_: Request, { params }: { params: { id: string } }) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  const asset = await prisma.libraryAsset.findUnique({ where: { id: params.id } });
+  const asset = await prisma.libraryAsset.findUnique({ where: { id: params.id, deletedAt: null } });
   if (!asset) return NextResponse.json({ error: 'Không tìm thấy.' }, { status: 404 });
   try {
     const buf = await readFile(path.join(process.cwd(), 'uploads', asset.path));

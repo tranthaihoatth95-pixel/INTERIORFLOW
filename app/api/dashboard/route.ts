@@ -24,11 +24,16 @@ export async function GET() {
         credits: true,
         isAdmin: true,
         lastSeenAt: true,
-        _count: { select: { flows: true, projects: true } },
+        _count: {
+          select: {
+            flows: { where: { deletedAt: null } },
+            projects: { where: { deletedAt: null } },
+          },
+        },
       },
     }),
     prisma.project.findMany({
-      where: { NOT: { name: { startsWith: HIDDEN_NOTEBOOK_PREFIX } } },
+      where: { deletedAt: null, NOT: { name: { startsWith: HIDDEN_NOTEBOOK_PREFIX } } },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -39,10 +44,11 @@ export async function GET() {
         // Larkbase theo đúng project của card (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2(b)).
         larkProjectCode: true,
         user: { select: { id: true, name: true } },
-        _count: { select: { flows: true } },
+        _count: { select: { flows: { where: { deletedAt: null } } } },
       },
     }),
     prisma.flow.findMany({
+      where: { deletedAt: null },
       orderBy: { updatedAt: 'desc' },
       take: 12,
       select: {
@@ -75,7 +81,7 @@ export async function GET() {
 
   const stats = {
     projects: projects.length,
-    flows: await prisma.flow.count(),
+    flows: await prisma.flow.count({ where: { deletedAt: null } }),
     members: users.length,
     online: team.filter((t) => t.online).length,
     creditsSpent30d: Math.abs(spend._sum.amount ?? 0),

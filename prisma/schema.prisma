@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   // binaryTargets: "native" = engine cho HĐH đang build (Mac/Linux dev); "windows" = engine
   // Query cho bản đóng gói .exe chạy trên Windows. Bắt buộc để bản cài Windows có
   // libquery_engine-windows.dll.node. Build .exe CHUẨN vẫn nên chạy NATIVE trên máy Windows
@@ -45,16 +45,16 @@ model User {
 // accessToken/refreshToken LƯU DẠNG MÃ HOÁ (AES-256-GCM, xem lib/integrations/crypto.ts) —
 // SQLite là file trên đĩa, không lưu token thô. Mỗi user × provider chỉ 1 bản ghi.
 model IntegrationAccount {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   userId       String
   provider     String
   accessToken  String // đã mã hoá
   refreshToken String? // đã mã hoá
-  scope        String   @default("")
+  scope        String    @default("")
   expiresAt    DateTime?
   meta         String? // JSON tuỳ dịch vụ (account id, email, tenant...)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -62,11 +62,11 @@ model IntegrationAccount {
 }
 
 model Project {
-  id         String   @id @default(cuid())
-  userId     String
-  name       String
-  clientName String?
-  createdAt  DateTime @default(now())
+  id              String   @id @default(cuid())
+  userId          String
+  name            String
+  clientName      String?
+  createdAt       DateTime @default(now())
   // ══ MỚI (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.1) ══ — "Mã DA" bên Larkbase, gán TUỲ
   // CHỌN lúc tạo/sửa dự án ("Liên kết Larkbase"). Optional — không phải Project nào cũng có
   // mã Larkbase (dự án mới trong IF trước khi phòng dự án tạo task tương ứng bên Larkbase).
@@ -78,12 +78,24 @@ model Project {
   currentStage String  @default("concept")
   stageLocked  Boolean @default(false)
 
+  // ══ MỚI (26/07, local-first · docs/IF-CORE-SCHEMA.md §1D/§2C) — chuẩn bị Pha 2/3 đồng bộ.
+  // rev tăng mỗi lần sửa (hoà giải xung đột); deletedAt = xoá mềm (mọi query PHẢI lọc
+  // deletedAt: null, xem lib/server/access.ts); lastEditedBy/lastEditedDevice = truy vết ai/
+  // máy nào sửa gần nhất (lastEditedDevice CHƯA có cơ chế deviceId thật — luôn null tới khi
+  // Pha 2 dựng cơ chế đó, cột có sẵn để khỏi migrate lại).
+  updatedAt        DateTime  @default(now()) @updatedAt
+  rev              Int       @default(0)
+  deletedAt        DateTime?
+  lastEditedBy     String?
+  lastEditedDevice String?
+
   user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   flows    Flow[]
   notebook ProjectNotebook?
   members  ProjectMember[]
 
   @@index([larkProjectCode])
+  @@index([deletedAt])
 }
 
 // ══ MỚI (ACCESS-CONTROL M1) ══ Thành viên dự án — nguồn chân lý DUY NHẤT cho "ai thấy/sửa
@@ -96,11 +108,23 @@ model ProjectMember {
   role      String // 'owner' | 'crea' | 'drafter' | 'bim' | 'viewer'
   joinedAt  DateTime @default(now())
 
+  // ══ MỚI (26/07, local-first · docs/IF-CORE-SCHEMA.md §1D/§2C) ══ — xem ghi chú ở Project.
+  // ⚠️ deletedAt KHÔNG nằm trong @@unique([projectId,userId]) — gỡ rồi mời lại CÙNG user thì
+  // hàng cũ (đã set deletedAt) vẫn còn đó và sẽ đụng unique constraint khi tạo mới. Chỗ gọi
+  // (app/api/projects/[id]/members/route.ts POST) phải "hồi sinh" hàng cũ (deletedAt: null)
+  // thay vì create mới — xem comment tại đó.
+  updatedAt        DateTime  @default(now()) @updatedAt
+  rev              Int       @default(0)
+  deletedAt        DateTime?
+  lastEditedBy     String?
+  lastEditedDevice String?
+
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, userId]) // 1 người 1 vai / 1 dự án (Q6 RESEARCH — chốt giữ unique)
   @@index([userId]) // truy vấn nóng: "dự án của tôi"
+  @@index([deletedAt])
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -121,18 +145,18 @@ model ProjectNotebook {
 }
 
 model NotebookSource {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   notebookId  String
   notebook    ProjectNotebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
-  kind        String   // "pdf" | "image" | "text" | "url" | "meeting-note"
+  kind        String // "pdf" | "image" | "text" | "url" | "meeting-note"
   title       String
   originalUrl String?
-  filePath    String?  // path lưu local (uploads/notebook/{projectId}/{sourceId}.{ext})
+  filePath    String? // path lưu local (uploads/notebook/{projectId}/{sourceId}.{ext})
   mimeType    String?
   sizeBytes   Int?
-  status      String   @default("processing") // "processing" | "ready" | "error"
+  status      String          @default("processing") // "processing" | "ready" | "error"
   errorMsg    String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime        @default(now())
 
   chunks NotebookChunk[]
 
@@ -140,7 +164,7 @@ model NotebookSource {
 }
 
 model NotebookChunk {
-  id         String   @id @default(cuid())
+  id         String          @id @default(cuid())
   notebookId String
   notebook   ProjectNotebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
   sourceId   String
@@ -149,7 +173,7 @@ model NotebookChunk {
   content    String
   embedding  String // JSON array float32[]
   tokens     Int?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime        @default(now())
 
   @@index([notebookId])
   @@index([sourceId])
@@ -168,9 +192,20 @@ model Flow {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  // ══ MỚI (26/07, local-first · docs/IF-CORE-SCHEMA.md §1D/§2C) ══ — xem ghi chú ở Project.
+  // `rev` KHÁC `version` phía trên: `version`/`FlowVersion` là snapshot NGHIỆP VỤ (tăng khi
+  // user bấm Run — nội dung khác nhau từng bản); `rev` là bộ đếm THUẦN KỸ THUẬT cho hoà giải
+  // xung đột đồng bộ (tăng ở MỌI lần ghi, kể cả autosave không snapshot).
+  rev              Int       @default(0)
+  deletedAt        DateTime?
+  lastEditedBy     String?
+  lastEditedDevice String?
+
   user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   project  Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
   versions FlowVersion[]
+
+  @@index([deletedAt])
 }
 
 // snapshot khi Run flow — version không ghi đè
@@ -221,14 +256,26 @@ model LibraryAsset {
   path      String
   // ---- Gu Engine: chưng cất gu từ ref (07/07) ----
   usage     String   @default("ref-render") // RefUsage: ref-render | slide | material | layout | cad | brief
-  palette   String   @default("")           // JSON string[] hex — màu chủ đạo trích từ ảnh
-  caption   String   @default("")           // mô tả gu (VLM hoặc tay)
-  content   String?                         // chữ bóc từ PDF (đề bài/hồ sơ) cho AI đọc
+  palette   String   @default("") // JSON string[] hex — màu chủ đạo trích từ ảnh
+  caption   String   @default("") // mô tả gu (VLM hoặc tay)
+  content   String? // chữ bóc từ PDF (đề bài/hồ sơ) cho AI đọc
   w         Int      @default(0)
   h         Int      @default(0)
   createdAt DateTime @default(now())
 
+  // ══ MỚI (26/07, local-first · docs/IF-CORE-SCHEMA.md §1D/§2C) ══ — xem ghi chú ở Project.
+  // Soft-delete ở đây KHÔNG xoá file vật lý trong ./uploads (route DELETE đã sửa để chỉ set
+  // deletedAt) — xoá file thật là việc của job dọn dẹp SAU NÀY, chưa làm ở đây (mục đích xoá
+  // mềm là còn khôi phục được).
+  updatedAt        DateTime  @default(now()) @updatedAt
+  rev              Int       @default(0)
+  deletedAt        DateTime?
+  lastEditedBy     String?
+  lastEditedDevice String?
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([deletedAt])
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -243,15 +290,15 @@ model LibraryAsset {
 model LarkTaskRef {
   id              String    @id @default(cuid())
   larkRecordId    String    @unique // record_id thật — khoá đối chiếu khi sync lại (idempotent)
-  task            String                      // Công việc (fldwbtnkvV)
-  larkProjectName String                      // Dự án — TEXT TỰ DO bên Larkbase (fldJtylsyv)
-  larkProjectCode String?                     // Mã DA (fldhMYuiEN) — "Khác"/rỗng/không phải số → null
-  ownerAccount    String?                     // Chủ trì — Tài khoản Lark (fldgKYaap5), CHƯA map User.id
-  status          String                      // Trạng thái: 'Đang làm'|'Hoàn thành'|'Ghi nhận' (fldfhchOp2)
-  deadline        DateTime?                   // fldhG7EqAa
-  daysLeft        Int?                        // Số ngày còn lại — ĐỌC TỪ FORMULA CÓ SẴN (fldKUidfNt)
-  warningLabel    String?                     // Cảnh báo — ĐỌC TỪ FORMULA CÓ SẴN (fldz1WLW4y), giữ emoji
-  raw             String                      // JSON toàn bộ field gốc Larkbase
+  task            String // Công việc (fldwbtnkvV)
+  larkProjectName String // Dự án — TEXT TỰ DO bên Larkbase (fldJtylsyv)
+  larkProjectCode String? // Mã DA (fldhMYuiEN) — "Khác"/rỗng/không phải số → null
+  ownerAccount    String? // Chủ trì — Tài khoản Lark (fldgKYaap5), CHƯA map User.id
+  status          String // Trạng thái: 'Đang làm'|'Hoàn thành'|'Ghi nhận' (fldfhchOp2)
+  deadline        DateTime? // fldhG7EqAa
+  daysLeft        Int? // Số ngày còn lại — ĐỌC TỪ FORMULA CÓ SẴN (fldKUidfNt)
+  warningLabel    String? // Cảnh báo — ĐỌC TỪ FORMULA CÓ SẴN (fldz1WLW4y), giữ emoji
+  raw             String // JSON toàn bộ field gốc Larkbase
   syncedAt        DateTime  @default(now())
 
   @@index([larkProjectCode])
@@ -268,10 +315,10 @@ model LarkPersonRef {
   id           String   @id @default(cuid())
   larkRecordId String   @unique
   larkAccount  String   @unique // Tài khoản (fldRj0Rxqj, primary) — vd "An.LNT"
-  fullName     String                       // Họ tên (fldrqrWgRL)
-  title        String?                      // Chức danh (fldk6eUee1)
-  department   String?                      // Phòng ban (fldtdBj7Vw)
-  isCrea       Boolean  @default(false)      // Team Crea (fldvno5ztZ, checkbox)
+  fullName     String // Họ tên (fldrqrWgRL)
+  title        String? // Chức danh (fldk6eUee1)
+  department   String? // Phòng ban (fldtdBj7Vw)
+  isCrea       Boolean  @default(false) // Team Crea (fldvno5ztZ, checkbox)
   raw          String
   syncedAt     DateTime @default(now())
 }
@@ -284,9 +331,9 @@ model LarkPersonRef {
 // ══════════════════════════════════════════════════════════════════════════
 model ProductSpec {
   id           String    @id @default(cuid())
-  kind         String                       // 'furniture' | 'material' | 'lighting' | 'millwork' | 'fixture'
-  name         String                       // "Ghế Volumen Lounge"
-  nameEn       String?                      // song ngữ TTT: "Volumen Lounge Chair"
+  kind         String // 'furniture' | 'material' | 'lighting' | 'millwork' | 'fixture'
+  name         String // "Ghế Volumen Lounge"
+  nameEn       String? // song ngữ TTT: "Volumen Lounge Chair"
   brand        String?
   sku          String?
   vendor       String?
@@ -294,15 +341,15 @@ model ProductSpec {
   w            Int?
   d            Int?
   hUp          Int?
-  materials    String    @default("")       // JSON string[] — ['oak','linen']
-  finishes     String    @default("")       // JSON string[] — fabric/finish options
-  colorHex     String?                      // swatch chính
-  imageAssetId String?                      // FK mềm LibraryAsset — lưu-theo-tham-chiếu
-  drawingBlock String?                      // key BlockDef/manifest id — line drawing top-view có sẵn
-  priceNote    String?                      // text tự do "1.250.000đ/cái" — chưa chuẩn hoá số
-  currency     String?                      // 'VND' | 'USD' | 'EUR'
-  larkRecordId String?   @unique            // khoá sync nếu record đến từ Larkbase
-  raw          String?                      // JSON field gốc Larkbase (mẫu LarkTaskRef)
+  materials    String    @default("") // JSON string[] — ['oak','linen']
+  finishes     String    @default("") // JSON string[] — fabric/finish options
+  colorHex     String? // swatch chính
+  imageAssetId String? // FK mềm LibraryAsset — lưu-theo-tham-chiếu
+  drawingBlock String? // key BlockDef/manifest id — line drawing top-view có sẵn
+  priceNote    String? // text tự do "1.250.000đ/cái" — chưa chuẩn hoá số
+  currency     String? // 'VND' | 'USD' | 'EUR'
+  larkRecordId String?   @unique // khoá sync nếu record đến từ Larkbase
+  raw          String? // JSON field gốc Larkbase (mẫu LarkTaskRef)
   note         String?
   createdAt    DateTime  @default(now())
   syncedAt     DateTime?

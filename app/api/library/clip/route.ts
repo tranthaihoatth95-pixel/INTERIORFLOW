@@ -58,6 +58,7 @@ export async function POST(req: Request) {
       content: null,
       w: 0,
       h: 0,
+      lastEditedBy: user.id,
     },
   });
   return NextResponse.json({ id: asset.id, url: `/api/library/${asset.id}/file` });

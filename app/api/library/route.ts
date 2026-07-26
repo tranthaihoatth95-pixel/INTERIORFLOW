@@ -12,6 +12,7 @@ export async function GET() {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const assets = await prisma.libraryAsset.findMany({
+    where: { deletedAt: null },
     orderBy: { createdAt: 'desc' },
     include: { user: { select: { name: true } } },
   });
@@ -85,6 +86,7 @@ export async function POST(req: Request) {
       content: typeof content === 'string' ? content.slice(0, 20000) : null,
       w: Number.isFinite(w) ? Math.round(w) : 0,
       h: Number.isFinite(h) ? Math.round(h) : 0,
+      lastEditedBy: user.id,
     },
   });
   return NextResponse.json({ id: asset.id, imgId: imgIdFromKey(asset.id), url: `/api/library/${asset.id}/file` });

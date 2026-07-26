@@ -234,50 +234,58 @@ not exist)** giữa chừng, không báo trước.
 4. Phát hiện thấy `P2022` bất thường ở một phiên đang chạy → nghi ngay worktree khác vừa
    regenerate client qua symlink chung, đừng debug theo hướng dữ liệu hỏng trước.
 
-## 2C. Audit 16 model so với 5 ràng buộc local-first (26/07 — báo cáo, CHƯA sửa)
+## 2C. Audit 16 model so với 5 ràng buộc local-first — ĐÃ ÁP DỤNG cho 4 model (26/07)
 
-Đọc trực tiếp `prisma/schema.prisma` (327 dòng), không suy đoán. **CHỈ báo cáo — chưa đổi
-schema**, vì mỗi cột thêm cần cân nhắc riêng (mirror table Lark vs bảng user tự sửa có ý
-nghĩa "rev/deletedAt" khác nhau, xem ghi chú cuối bảng).
+Đọc trực tiếp `prisma/schema.prisma`. Bản đầu (26/07 sáng) chỉ audit + báo cáo; bản này ghi
+lại sau khi đã **thêm cột thật + sửa code thật** cho đúng 4 model user tự tay sửa trực tiếp:
+**Project, Flow, LibraryAsset, ProjectMember**. `npx prisma db push` đã chạy trên `main` (đúng
+luật §2B — không phải worktree symlink); dữ liệu cũ verify còn nguyên (Project 3, LibraryAsset
+1515, Flow 12 dòng trước/sau khớp nhau).
 
-| Model | id cuid | updatedAt | rev | deletedAt | Ghi chú |
-|---|---|---|---|---|---|
-| User | ✅ | ❌ | ❌ | ❌ | có `lastSeenAt`, `createdAt` — không có updatedAt |
-| IntegrationAccount | ✅ | ✅ | ❌ | ❌ | |
-| Project | ✅ | ❌ | ❌ | ❌ | |
-| ProjectMember | ✅ | ❌ | ❌ | ❌ | có `joinedAt` thay updatedAt |
-| ProjectNotebook | ✅ | ✅ | ❌ | ❌ | |
-| NotebookSource | ✅ | ❌ | ❌ | ❌ | |
-| NotebookChunk | ✅ | ❌ | ❌ | ❌ | |
-| Flow | ✅ | ✅ | ⚠️ | ❌ | có `version` Int nhưng là version SNAPSHOT app-logic (khớp `FlowVersion`), không phải rev đồng bộ chung |
-| FlowVersion | ✅ | ❌ | ⚠️ | ❌ | snapshot bất biến theo thiết kế (mỗi lần Run tạo bản mới) — không cần updatedAt/deletedAt |
-| CreditTransaction | ✅ | ❌ | ❌ | ❌ | sổ cái append-only theo thiết kế — không nên có deletedAt (xoá giao dịch = sai bản chất kế toán) |
-| ChatMessage | ✅ | ❌ | ❌ | ❌ | |
-| LibraryAsset | ✅ | ❌ | ❌ | ❌ | |
-| LarkTaskRef | ✅ | ❌ | ❌ | ❌ | mirror PULL-ONLY từ Larkbase, có `syncedAt` — Larkbase mới là nguồn chân lý, sync 2 chiều của IF không áp dụng cho bảng này |
-| LarkPersonRef | ✅ | ❌ | ❌ | ❌ | mirror, cùng lý do trên |
-| ProductSpec | ✅ | ❌ | ❌ | ❌ | `syncedAt` nullable (có thể nhập tay, không chỉ từ Lark) |
-| LarkUserMap | ✅ | ❌ | ❌ | ❌ | ánh xạ tay 1 lần, ít khi đổi |
+| Model | id cuid | updatedAt | rev | deletedAt | lastEditedBy/Device | Trạng thái |
+|---|---|---|---|---|---|---|
+| **Project** | ✅ | ✅ | ✅ | ✅ | ✅/🕳️ | **ĐÃ THÊM** 26/07 |
+| **Flow** | ✅ | ✅ (có sẵn) | ✅ | ✅ | ✅/🕳️ | **ĐÃ THÊM** 26/07 (giữ nguyên `version` cũ — khác nghĩa `rev`, xem comment trong schema) |
+| **LibraryAsset** | ✅ | ✅ | ✅ | ✅ | ✅/🕳️ | **ĐÃ THÊM** 26/07 |
+| **ProjectMember** | ✅ | ✅ | ✅ | ✅ | ✅/🕳️ | **ĐÃ THÊM** 26/07 |
+| User | ✅ | ❌ | ❌ | ❌ | — | chưa áp — không phải 1 trong 4 model chốt |
+| IntegrationAccount | ✅ | ✅ | ❌ | ❌ | — | chưa áp |
+| ProjectNotebook | ✅ | ✅ | ❌ | ❌ | — | chưa áp |
+| NotebookSource | ✅ | ❌ | ❌ | ❌ | — | chưa áp |
+| NotebookChunk | ✅ | ❌ | ❌ | ❌ | — | chưa áp |
+| FlowVersion | ✅ | ❌ | ❌ | ❌ | — | **LOẠI TRỪ có chủ đích**, xem lý do bên dưới |
+| CreditTransaction | ✅ | ❌ | ❌ | ❌ | — | **LOẠI TRỪ có chủ đích**, xem lý do bên dưới |
+| ChatMessage | ✅ | ❌ | ❌ | ❌ | — | chưa áp |
+| LarkTaskRef | ✅ | ❌ | ❌ | ❌ | — | **LOẠI TRỪ có chủ đích**, xem lý do bên dưới |
+| LarkPersonRef | ✅ | ❌ | ❌ | ❌ | — | **LOẠI TRỪ có chủ đích**, cùng lý do LarkTaskRef |
+| ProductSpec | ✅ | ❌ | ❌ | ❌ | — | chưa áp (chưa phải model user tự sửa trực tiếp qua UI) |
+| LarkUserMap | ✅ | ❌ | ❌ | ❌ | — | **LOẠI TRỪ có chủ đích**, cùng lý do LarkTaskRef |
 
-**Tóm tắt:**
-- **(1) id ngẫu nhiên: 16/16 — ĐẠT TUYỆT ĐỐI.** Mọi model đều `String @id @default(cuid())`,
-  không model nào autoincrement. Không cần sửa gì cho ràng buộc này.
-- **(2) updatedAt: 3/16** (`IntegrationAccount`, `ProjectNotebook`, `Flow`). **rev: 0/16**
-  theo đúng nghĩa "số hiệu bản sửa dùng cho đồng bộ" — `Flow.version`/`FlowVersion.version`
-  là version snapshot ứng dụng, không thiết kế cho conflict resolution đa thiết bị.
-- **(3) deletedAt: 0/16.** Mọi quan hệ xoá hiện là `onDelete: Cascade` hoặc `SetNull` — xoá
-  cứng thật sự ở tầng DB.
-- **(4) deviceId/người sửa: 0/16.**
-- **(5) tách file khỏi DB: ĐẠT** — `LibraryAsset.path` + `NotebookSource.filePath` đều lưu
-  đường dẫn, không lưu blob.
+🕳️ = cột `lastEditedDevice` đã có trong schema (kiểu `String?`) nhưng **luôn ghi `null`** —
+chưa có cơ chế `deviceId` thật trong repo (không cookie, không header, đã grep xác nhận 0 kết
+quả). Cột tồn tại để KHỎI phải migrate lại lúc Pha 2 dựng cơ chế deviceId (vd UUID cài đặt lưu
+trong Electron `userData`, gửi qua header mỗi request) — chưa wire, không phải bug.
 
-**Việc này chưa cần làm ở Pha 1** (không đồng bộ thì chưa cần rev/deletedAt/deviceId để hoà
-giải xung đột) — nhưng phải làm **trước khi bắt đầu Pha 2**, vì lúc đó bắt đầu có dữ liệu
-rời máy (đẩy deck lên) và việc thêm cột vào bảng đã có hàng triệu bản ghi thật sẽ tốn hơn
-nhiều so với thêm ngay bây giờ khi DB còn nhỏ. Đề xuất phạm vi tối thiểu cho Pha 2: các
-model User tự tay sửa trực tiếp — `Project`, `Flow`, `LibraryAsset`, `ProjectMember` —
-chưa cần áp cho các bảng mirror Lark (đã có `syncedAt` + Larkbase là nguồn chân lý) hay
-`CreditTransaction`/`FlowVersion` (immutable theo thiết kế, xoá mềm sai bản chất).
+**Lý do LOẠI TRỪ (không áp 5 ràng buộc), theo đúng yêu cầu ghi rõ lý do:**
+- **`LarkTaskRef` / `LarkPersonRef` / `LarkUserMap`** — đây là bảng **mirror PULL-ONLY** từ
+  Larkbase (`syncedAt` đã có sẵn đúng vai trò này). **Larkbase mới là nguồn chân lý**, IF chỉ
+  đọc/cache — không có khái niệm "user tự sửa trực tiếp trên IF rồi cần hoà giải xung đột với
+  máy khác", vì IF không bao giờ ghi ngược lên Larkbase. `rev`/`deletedAt`/`lastEditedBy` vô
+  nghĩa ở đây: bản ghi "xoá" đơn giản là lần sync sau không thấy nữa (đã xử lý bằng cách xoá
+  cứng + tạo lại theo `larkRecordId` — không phải state cần đồng bộ đa thiết bị của IF).
+- **`CreditTransaction`** — sổ cái (ledger) **append-only theo thiết kế**: mỗi dòng là 1 giao
+  dịch tín dụng đã xảy ra (nạp/trừ). Thêm `deletedAt` sẽ SAI bản chất kế toán — một giao dịch
+  không "xoá mềm", nó hoặc tồn tại hoặc phải có giao dịch NGƯỢC DẤU để đảo (đúng chuẩn kế toán
+  double-entry), không phải soft-delete. `rev` cũng vô nghĩa vì dòng không bao giờ update sau
+  khi tạo.
+- **`FlowVersion`** — snapshot **bất biến theo thiết kế**: mỗi lần user bấm "Run" tạo 1 bản mới
+  (không update bản cũ, không xoá bản cũ trong vòng đời bình thường). `updatedAt` vô nghĩa (nó
+  không bao giờ update); `deletedAt` sai mục đích (nếu cần dọn snapshot cũ, đó là retention
+  policy — xoá cứng theo tuổi, không phải xoá mềm cho đồng bộ).
+
+**Việc còn lại trước khi bắt đầu Pha 2:** dựng cơ chế `deviceId` thật (hiện `lastEditedDevice`
+luôn null) — không chặn Pha 1 vì Pha 1 không đồng bộ, chỉ cần xong TRƯỚC khi Pha 2 (đẩy deck
+lên) cần biết dữ liệu tới từ máy nào.
 
 ---
 
