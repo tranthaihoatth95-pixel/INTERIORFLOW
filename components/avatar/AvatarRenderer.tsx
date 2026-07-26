@@ -916,13 +916,21 @@ function EarringShape({ kind }: { kind: AvatarConfig['earring'] }) {
 /* ═══════════════════════ Kính ═══════════════════════ */
 
 /**
- * Mắt kính CATEYE — dáng đinh theo ảnh tham chiếu: bản DÀY, đuôi trên-ngoài HẾCH
- * nhọn lên, mặt kính tối che kín mắt, có phản chiếu cửa sổ mờ.
+ * Mắt kính CATEYE — bản DÀY, đuôi trên-ngoài HẾCH nhọn lên, ngồi ĐÚNG tầm mắt.
  * Vẽ 1 bên rồi lật gương qua matrix(-1 0 0 1 200 0).
+ *
+ * ⚠️ Bản cũ đọc ra "hai cục đen" chứ không ra kính: mắt kính rộng 70 đơn vị (x 30→100,
+ * tức nửa khuôn mặt), trọng tâm buông xuống tận y=131 (thấp hơn tâm mắt 19 đơn vị, tràn
+ * xuống má), và mặt kính TÔ ĐẶC nên nuốt mất hai con mắt vẽ bên dưới.
+ * Nay: 51×34 đơn vị, tâm (73,112) trùng tầm mắt (EYE_Y=112, tâm mắt trái x=77), mặt kính
+ * trong mờ để vẫn đọc được mắt, và đuôi ngoài hếch hẳn lên bằng một cánh nhọn riêng.
  */
 const CATEYE_LENS =
-  // đỉnh nhọn HẾCH ở góc trên-NGOÀI (34,91) → mép trên thoải nhẹ xuống phía trong (94,103)
-  'M34 91 C50 93 74 96 94 101 C100 104 98 116 90 122 C76 131 52 130 43 121 C36 112 30 101 34 91 Z';
+  // (52,95) đuôi trên-NGOÀI hếch → mép trên THOẢI XUỐNG phía mũi (96,106): đó là dáng mắt mèo
+  'M52 95 C64 97 84 101 96 106 C100 109 98 118 92 122 C80 129 62 128 55 119 C50 112 48 99 52 95 Z';
+
+/** Cánh nhọn ở đuôi kính — nét đọc ra "mắt mèo" ngay ở cỡ nhỏ. */
+const CATEYE_FLICK = 'M54 94 L41 86 L50 100 Z';
 
 function GlassesShape({
   glasses,
@@ -945,27 +953,30 @@ function GlassesShape({
   if (glasses === 'cateye') {
     const one = (
       <g>
-        <path d={CATEYE_LENS} fill={lens} />
+        {/* mặt kính TRONG MỜ — để hai con mắt vẽ bên dưới vẫn đọc được */}
+        <path d={CATEYE_LENS} fill={lens} opacity="0.45" />
         {/* phản chiếu cửa sổ mờ (2 vệt chéo) */}
-        <g clipPath={lensClip} opacity={hi ? 0.22 : 0.16}>
-          <path d="M30 132 L58 92 L70 92 L42 136 Z" fill="#FFFFFF" />
-          <path d="M74 94 L82 94 L56 130 L48 130 Z" fill="#FFFFFF" opacity="0.65" />
+        <g clipPath={lensClip} opacity={hi ? 0.16 : 0.12}>
+          <path d="M50 132 L70 92 L76 92 L56 134 Z" fill="#FFFFFF" />
+          <path d="M84 94 L88 94 L68 130 L64 130 Z" fill="#FFFFFF" opacity="0.6" />
         </g>
+        {/* cánh nhọn đuôi ngoài — vẽ TRƯỚC khung để khung liền mạch với nó */}
+        <path d={CATEYE_FLICK} fill={frameFill} />
         {/* khung bản DÀY, mối nối nhọn ở đuôi hếch */}
-        <path d={CATEYE_LENS} fill="none" stroke={frameFill} strokeWidth="7" strokeLinejoin="miter" strokeMiterlimit="6" />
+        <path d={CATEYE_LENS} fill="none" stroke={frameFill} strokeWidth="6.5" strokeLinejoin="miter" strokeMiterlimit="6" />
         {/* mép trên dày thêm — đặc trưng gọng mắt mèo */}
-        <path d="M34 91 C50 93 74 96 94 101" stroke={frameFill} strokeWidth="9" fill="none" strokeLinecap="round" />
+        <path d="M52 95 C64 97 84 101 96 106" stroke={frameFill} strokeWidth="9" fill="none" strokeLinecap="round" />
         {/* highlight chất nhựa bóng dọc mép trên */}
-        <path d="M40 94 C54 96 74 99 91 103" stroke="#AFB5C0" strokeWidth="1.8" fill="none" opacity="0.5" strokeLinecap="round" />
+        <path d="M57 97 C68 99 84 103 94 107" stroke="#AFB5C0" strokeWidth="1.8" fill="none" opacity="0.5" strokeLinecap="round" />
         {/* càng kính về phía tai */}
-        <path d="M35 92 L23 96" stroke={frameFill} strokeWidth="6" strokeLinecap="round" />
+        <path d="M50 106 L35 108" stroke={frameFill} strokeWidth="5" strokeLinecap="round" />
       </g>
     );
     return (
       <g>
         {one}
         <g transform={mirror}>{one}</g>
-        <path d="M94 108 Q100 102 106 108" stroke={frameFill} strokeWidth="6" fill="none" strokeLinecap="round" />
+        <path d="M96 110 Q100 105 104 110" stroke={frameFill} strokeWidth="5.5" fill="none" strokeLinecap="round" />
       </g>
     );
   }
@@ -973,17 +984,17 @@ function GlassesShape({
   if (glasses === 'oversized') {
     const one = (
       <g>
-        <rect x="40" y="90" width="52" height="40" rx="17" fill={lens} />
-        <rect x="40" y="90" width="52" height="40" rx="17" fill="none" stroke={frameFill} strokeWidth="6.5" />
-        <path d="M48 126 L72 94" stroke="#FFFFFF" strokeWidth="6" opacity="0.15" strokeLinecap="round" />
-        <path d="M40 98 L26 104" stroke={frameFill} strokeWidth="6" strokeLinecap="round" />
+        <rect x="46" y="92" width="50" height="34" rx="15" fill={lens} opacity="0.5" />
+        <rect x="46" y="92" width="50" height="34" rx="15" fill="none" stroke={frameFill} strokeWidth="6.5" />
+        <path d="M53 122 L76 96" stroke="#FFFFFF" strokeWidth="6" opacity="0.2" strokeLinecap="round" />
+        <path d="M46 100 L32 105" stroke={frameFill} strokeWidth="6" strokeLinecap="round" />
       </g>
     );
     return (
       <g>
         {one}
         <g transform={mirror}>{one}</g>
-        <path d="M92 106 L108 106" stroke={frameFill} strokeWidth="6" strokeLinecap="round" />
+        <path d="M96 109 L104 109" stroke={frameFill} strokeWidth="6" strokeLinecap="round" />
       </g>
     );
   }
@@ -991,7 +1002,7 @@ function GlassesShape({
   if (glasses === 'shield') {
     return (
       <g>
-        <path d="M40 98 Q100 86 160 98 Q162 124 132 130 Q100 135 68 130 Q38 124 40 98 Z" fill={lens} />
+        <path d="M40 98 Q100 86 160 98 Q162 124 132 130 Q100 135 68 130 Q38 124 40 98 Z" fill={lens} opacity="0.6" />
         <path d="M40 98 Q100 86 160 98 Q162 124 132 130 Q100 135 68 130 Q38 124 40 98 Z" fill="none" stroke={frameFill} strokeWidth="6" strokeLinejoin="round" />
         {/* gọng vắt qua sống mũi + phản chiếu chéo */}
         <path d="M96 92 Q100 89 104 92" stroke={frameFill} strokeWidth="4" fill="none" strokeLinecap="round" />
@@ -1004,7 +1015,7 @@ function GlassesShape({
   if (glasses === 'aviator') {
     const one = (
       <g>
-        <path d="M40 96 L92 96 Q93 120 74 128 Q50 131 43 112 Z" fill={lens} />
+        <path d="M40 96 L92 96 Q93 120 74 128 Q50 131 43 112 Z" fill={lens} opacity="0.55" />
         <path d="M40 96 L92 96 Q93 120 74 128 Q50 131 43 112 Z" fill="none" stroke={frameFill} strokeWidth="4" />
         <path d="M50 120 L76 98" stroke="#FFFFFF" strokeWidth="5" opacity="0.17" strokeLinecap="round" />
         <path d="M40 96 L26 100" stroke={frameFill} strokeWidth="4" strokeLinecap="round" />
