@@ -28,6 +28,7 @@
 | [`CAD-ROADMAP.md`](CAD-ROADMAP.md) | Phạm vi & roadmap chặng CAD `/cad-editor` — ranh giới với app EFC (CAD chuyên nghiệp tách rời). |
 | [`TECHNICAL_GLOSSARY.md`](TECHNICAL_GLOSSARY.md) | Từ điển thuật ngữ kỹ thuật dùng trong code/docs — tra khi gặp thuật ngữ lạ. |
 | [`FIGMA-HANDOFF.md`](FIGMA-HANDOFF.md) | Design token THẬT đang chạy (xuất 25/07 từ code) — dùng để dựng Design System/Figma. |
+| [`DESIGN-TOKENS.md`](DESIGN-TOKENS.md) | Audit MỨC ĐỘ TUÂN THỦ token (27/07) — khác `FIGMA-HANDOFF.md` (khai báo token): file này đo bao nhiêu chỗ code THẬT SỰ dùng token vs bypass bằng hex/Tailwind rời rạc. ~190 màu chrome sống (mục tiêu 9), font-size 0% qua token, 2 hệ font song song. |
 | [`RESEARCH-DWG-LICENSE.md`](RESEARCH-DWG-LICENSE.md) | Phân tích kỹ thuật đường ra cho nghĩa vụ GPL-3.0 của thư viện đọc DWG — nguồn hiện hành thay cho `LICENSE-NOTES.md` (đã lỗi thời). |
 | [`INDEX-AI-SPECS.md`](INDEX-AI-SPECS.md) | Chỉ mục lọc mọi tài liệu spec AI rải rác trong repo theo nhóm + trạng thái. |
 | [`INTEGRATIONS.md`](INTEGRATIONS.md) | Kiến trúc tầng tích hợp dịch vụ ngoài (OAuth, adapter) + trạng thái từng provider — đọc khi thêm provider mới. |
