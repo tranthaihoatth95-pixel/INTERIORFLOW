@@ -30,7 +30,7 @@ export function LangToggle({
       className={cn(
         'inline-flex shrink-0 items-center gap-0.5 rounded-[10px] border p-0.5',
         ghost
-          ? 'border-[color:rgba(199,154,99,0.28)] bg-[rgba(199,154,99,0.06)]'
+          ? 'border-[color:rgba(106,87,245,0.28)] bg-[rgba(106,87,245,0.06)]'
           : 'border-[var(--border)] bg-[var(--field)]',
         className,
       )}
@@ -50,7 +50,7 @@ export function LangToggle({
               'rounded-[7px] px-2 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors',
               on
                 ? ghost
-                  ? 'bg-[rgba(199,154,99,0.16)] text-[#c79a63]'
+                  ? 'bg-[rgba(106,87,245,0.16)] text-[var(--accent)]'
                   : 'bg-[var(--card)] text-[var(--t1)] shadow-sm'
                 : ghost
                   ? 'text-[color:rgba(233,224,210,0.5)] hover:text-[color:rgba(233,224,210,0.85)]'

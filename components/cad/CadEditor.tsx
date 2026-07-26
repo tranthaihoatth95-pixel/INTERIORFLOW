@@ -632,7 +632,7 @@ function FurniturePanel({ onClose }: { onClose: () => void }) {
            giữ hành vi cũ (setPendingBlock → click canvas để đặt, R xoay 90°). */}
         {tab === 'basic' && <ShapePalette blocks={BLOCKS} pendingId={pending} onPick={setPendingBlock} />}
         {tab === 'lib' && !manifest && (
-          <p style={{ fontSize: 11.5, color: libErr ? 'var(--danger, #c0604a)' : 'var(--t4)', padding: '6px 8px' }}>
+          <p style={{ fontSize: 11.5, color: libErr ? 'var(--danger)' : 'var(--t4)', padding: '6px 8px' }}>
             {libErr ? `Không tải được thư viện: ${libErr}` : 'Đang tải thư viện…'}
           </p>
         )}
@@ -870,7 +870,7 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
             </select>
           </div>
         </div>
-        <div style={{ fontSize: 10, color: scaleFits ? 'var(--t4)' : '#d4a15a', margin: '-2px 0 8px' }}>
+        <div style={{ fontSize: 10, color: scaleFits ? 'var(--t4)' : 'var(--warning)', margin: '-2px 0 8px' }}>
           {scaleFits
             ? <>Tỉ lệ hiệu dụng: <b>{scaleLabel}</b> — khung tên + PDF dùng CÙNG con số này.</>
             : <>1:{doc.printScale} KHÔNG lọt khổ {paperKey} — PDF sẽ tự fit ({scaleLabel}). Chọn tỉ lệ lớn hơn (gợi ý 1:{suggestedN}) hoặc khổ giấy to hơn.</>}
@@ -1027,8 +1027,8 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
   };
 
   const sevIcon = (s: Violation['severity']) => {
-    if (s === 'error') return <ShieldAlert size={14} color="#d4645a" />;
-    if (s === 'warning') return <AlertTriangle size={14} color="#d4a15a" />;
+    if (s === 'error') return <ShieldAlert size={14} color="var(--danger)" />;
+    if (s === 'warning') return <AlertTriangle size={14} color="var(--warning)" />;
     return <Info size={14} color="var(--t3)" />;
   };
 
@@ -1360,7 +1360,7 @@ function MepPanel({ onClose }: { onClose: () => void }) {
             {acChecks.length === 0 && <div style={emptyStyle}>Không có cặp máy lạnh/giường nào để kiểm tra.</div>}
             {acChecks.map((c, i) => (
               <div key={`ac-${i}`} style={rowStyle}>
-                <span style={{ marginTop: 2 }}>{c.tooClose ? <AlertTriangle size={14} color="#d4a15a" /> : <Info size={14} color="var(--t3)" />}</span>
+                <span style={{ marginTop: 2 }}>{c.tooClose ? <AlertTriangle size={14} color="var(--warning)" /> : <Info size={14} color="var(--t3)" />}</span>
                 <div style={{ flex: 1, minWidth: 0, fontSize: 10.5, color: 'var(--t3)', lineHeight: 1.4 }}>{c.note}</div>
               </div>
             ))}

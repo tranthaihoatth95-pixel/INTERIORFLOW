@@ -515,7 +515,7 @@ function TextInspector({
           />
         </div>
         {fontErr && (
-          <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.45, color: 'var(--danger, #B4462A)' }}>
+          <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.45, color: 'var(--danger)' }}>
             {fontErr}
           </p>
         )}

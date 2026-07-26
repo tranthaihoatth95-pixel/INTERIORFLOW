@@ -108,9 +108,10 @@ function useLarkSummary(): LarkSummary | null {
  * (cũng hiện status + avatars).
  */
 
-const COPPER = '#c79a63';
-const SANS = '-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue","Space Grotesk",system-ui,sans-serif';
-const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
+// 27/07 chốt design tokens: --accent (tím) là accent CHÍNH THỨC toàn app — không
+// còn ngoại lệ vàng đồng nào trong màn dashboard này (khác LoginForm.tsx, nơi nút
+// submit vẫn giữ --accent-warm).
+const ACCENT = 'var(--accent)';
 
 /** 3 cover mặc định — cũng dùng làm fallback hash-cover khi flow chưa có coverUrl. */
 const COVERS = ['/covers/render_00.jpeg', '/covers/render_04.jpeg', '/covers/render_10.jpeg'];
@@ -812,7 +813,6 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               width: 28,
               height: 28,
               marginLeft: idx === 0 ? 0 : -8,
-              fontFamily: SANS,
               fontSize: 11,
               fontWeight: 600,
               color: '#fff',
@@ -847,7 +847,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           <div className="min-w-0 flex-1">
             <div
               className="truncate text-[15px] font-semibold leading-tight sm:text-[17px]"
-              style={{ fontFamily: SANS, ...strong }}
+              style={{ ...strong }}
             >
               {f.name}
             </div>
@@ -872,7 +872,6 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   }}
                   placeholder={en ? 'Short status…' : 'Ghi chú ngắn…'}
                   className="w-full bg-transparent text-[12px] text-white placeholder:text-white/40 focus:outline-none"
-                  style={{ fontFamily: SANS }}
                 />
                 <button
                   type="button"
@@ -901,7 +900,6 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 }}
                 className="mt-1 block max-w-full truncate text-left text-[12px] transition-colors disabled:cursor-default"
                 style={{
-                  fontFamily: SANS,
                   ...adaptiveTextStyle(plan, true),
                   opacity: f.status ? 1 : 0.62,
                 }}
@@ -913,7 +911,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             <div className="mt-1.5 flex items-center gap-2">
               <span
                 className="truncate text-[11px]"
-                style={{ fontFamily: SANS, ...adaptiveTextStyle(plan, true), opacity: 0.78 }}
+                style={{ ...adaptiveTextStyle(plan, true), opacity: 0.78 }}
               >
                 {f.project ? f.project.name : en ? 'No project' : 'Chưa gắn dự án'}
               </span>
@@ -999,8 +997,8 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
 
   const loadingBlock = (
     <div className="flex items-center gap-2.5 rounded-full px-5 py-3" style={glass}>
-      <Loader2 size={15} className="animate-spin" style={{ color: COPPER }} />
-      <span className="text-[13px] text-[var(--t3,var(--t4))]" style={{ fontFamily: SANS }}>
+      <Loader2 size={15} className="animate-spin" style={{ color: ACCENT }} />
+      <span className="text-[13px] text-[var(--t3,var(--t4))]">
         {en ? 'Loading your projects…' : 'Đang tải dự án…'}
       </span>
     </div>
@@ -1008,7 +1006,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
 
   const errorBlock = (
     <div className="flex max-w-sm flex-col items-center gap-4 rounded-[var(--radius-xl)] px-7 py-7 text-center" style={glass}>
-      <p className="text-[13px] leading-relaxed text-[var(--t4)]" style={{ fontFamily: SANS }}>
+      <p className="text-[13px] leading-relaxed text-[var(--t4)]">
         {en
           ? 'Could not load your projects — check the connection and try again.'
           : 'Không tải được danh sách dự án — kiểm tra kết nối rồi thử lại.'}
@@ -1029,7 +1027,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           type="button"
           onClick={onEnter}
           className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-semibold"
-          style={{ background: COPPER, color: '#1c1409', fontFamily: SANS }}
+          style={{ background: ACCENT, color: '#fff' }}
         >
           {en ? 'Enter empty canvas' : 'Vào canvas trống'}
           <ArrowRight size={13} />
@@ -1075,9 +1073,9 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   borderRadius: 'var(--radius-xl)',
                   border:
                     item.kind === 'new'
-                      ? `1.5px dashed ${isCenter ? COPPER : 'rgba(127,127,127,0.4)'}`
+                      ? `1.5px dashed ${isCenter ? ACCENT : 'rgba(127,127,127,0.4)'}`
                       : isCenter
-                        ? `1px solid ${COPPER}66`
+                        ? '1px solid rgba(106,87,245,0.4)'
                         : '1px solid rgba(255,255,255,0.16)',
                   boxShadow: '0 30px 70px -24px rgba(0,0,0,0.6)',
                   zIndex: pose.zIndex,
@@ -1119,19 +1117,19 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       <span
                         className="grid h-12 w-12 place-items-center rounded-full"
                         style={{
-                          border: `1.5px dashed ${isCenter ? COPPER : 'rgba(127,127,127,0.5)'}`,
-                          color: isCenter ? COPPER : 'var(--t4)',
+                          border: `1.5px dashed ${isCenter ? ACCENT : 'rgba(127,127,127,0.5)'}`,
+                          color: isCenter ? ACCENT : 'var(--t4)',
                         }}
                       >
                         <Plus size={20} />
                       </span>
                       <span
                         className="text-[14px] font-semibold"
-                        style={{ fontFamily: SANS, color: isCenter ? 'var(--t1)' : 'var(--t4)' }}
+                        style={{ color: isCenter ? 'var(--t1)' : 'var(--t4)' }}
                       >
                         {en ? 'New project' : 'Dự án mới'}
                       </span>
-                      <span className="max-w-[14rem] text-center text-[11px] leading-relaxed text-[var(--t4)]" style={{ fontFamily: SANS }}>
+                      <span className="max-w-[14rem] text-center text-[11px] leading-relaxed text-[var(--t4)]">
                         {en ? 'Start from an empty canvas' : 'Bắt đầu từ một canvas trống'}
                       </span>
                       {/* Liên kết Larkbase TUỲ CHỌN (§2.4/§2.6 M1) — chỉ hiện khi có mã đã
@@ -1143,7 +1141,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                             value={pendingLarkCode}
                             onChange={(e) => setPendingLarkCode(e.target.value)}
                             className="cursor-pointer appearance-none rounded-full border border-[rgba(127,127,127,0.35)] bg-transparent px-2.5 py-1 text-[10px]"
-                            style={{ fontFamily: SANS, color: pendingLarkCode ? COPPER : 'var(--t4)' }}
+                            style={{ color: pendingLarkCode ? ACCENT : 'var(--t4)' }}
                             title={en ? 'Optionally link a Larkbase project code' : 'Tuỳ chọn liên kết mã dự án Larkbase'}
                           >
                             <option value="">{en ? 'Link Larkbase (optional)' : 'Liên kết Larkbase (tuỳ chọn)'}</option>
@@ -1194,13 +1192,13 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             className="h-[5px] rounded-full transition-[width,background-color] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
             style={{
               width: i === active ? 22 : 5,
-              background: i === active ? COPPER : 'rgba(127,127,127,0.35)',
+              background: i === active ? ACCENT : 'rgba(127,127,127,0.35)',
             }}
           />
         ))}
       </div>
 
-      <p className="mt-3 text-center text-[11px] text-[var(--t5,var(--t4))]" style={{ fontFamily: SANS }}>
+      <p className="mt-3 text-center text-[11px] text-[var(--t5,var(--t4))]">
         {en
           ? 'Click focused card or Enter to open · ← → · Home/End · wheel/2-finger swipe'
           : 'Bấm thẻ đang chọn hoặc Enter để mở · ← → · Home/End · lăn chuột / trượt 2 ngón'}
@@ -1248,19 +1246,18 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                     className="h-14 w-[74px] shrink-0 rounded-lg object-cover"
                   />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[14px] font-semibold text-[var(--t1)]" style={{ fontFamily: SANS }}>
+                    <span className="block truncate text-[14px] font-semibold text-[var(--t1)]">
                       {item.flow.name}
                     </span>
                     <span
                       className="mt-0.5 block truncate text-[11px]"
                       style={{
-                        fontFamily: SANS,
                         color: item.flow.status ? 'var(--t3,var(--t4))' : 'var(--t5,var(--t4))',
                       }}
                     >
                       {item.flow.status ? item.flow.status : en ? '· No note yet' : '· Chưa có ghi chú'}
                     </span>
-                    <span className="mt-0.5 block truncate text-[11px] text-[var(--t4)]" style={{ fontFamily: SANS }}>
+                    <span className="mt-0.5 block truncate text-[11px] text-[var(--t4)]">
                       {item.flow.project ? `${item.flow.project.name} · ` : ''}
                       {timeAgo(item.flow.updatedAt, en)}
                     </span>
@@ -1276,15 +1273,15 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 <>
                   <span
                     className="grid h-14 w-[74px] shrink-0 place-items-center rounded-lg"
-                    style={{ border: `1.5px dashed ${COPPER}`, color: COPPER }}
+                    style={{ border: `1.5px dashed ${ACCENT}`, color: ACCENT }}
                   >
                     <Plus size={18} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[14px] font-semibold text-[var(--t1)]" style={{ fontFamily: SANS }}>
+                    <span className="block text-[14px] font-semibold text-[var(--t1)]">
                       {en ? 'New project' : 'Dự án mới'}
                     </span>
-                    <span className="mt-0.5 block text-[11px] text-[var(--t4)]" style={{ fontFamily: SANS }}>
+                    <span className="mt-0.5 block text-[11px] text-[var(--t4)]">
                       {en ? 'Start from an empty canvas' : 'Bắt đầu từ một canvas trống'}
                     </span>
                   </span>
@@ -1310,7 +1307,6 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={en ? 'Search name, note, project…' : 'Tìm tên, ghi chú, dự án…'}
             className="w-48 bg-transparent text-[13px] text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none sm:w-56"
-            style={{ fontFamily: SANS }}
           />
           {query && (
             <button
@@ -1328,7 +1324,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           onChange={(e) => setProjFilter(e.target.value)}
           aria-label={en ? 'Filter by project' : 'Lọc theo dự án'}
           className="cursor-pointer appearance-none rounded-full px-3.5 py-2 text-[12px] text-[var(--t1)] focus:outline-none"
-          style={{ ...glass, fontFamily: SANS }}
+          style={{ ...glass}}
         >
           <option value="">{en ? 'All projects' : 'Tất cả dự án'}</option>
           <option value="__none__">{en ? 'No project' : 'Chưa gắn dự án'}</option>
@@ -1338,7 +1334,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             </option>
           ))}
         </select>
-        <span className="text-[11px] text-[var(--t4)]" style={{ fontFamily: MONO }}>
+        <span className="text-[11px] text-[var(--t4)]">
           {filteredFlows.length}/{flows.length}
         </span>
       </div>
@@ -1362,7 +1358,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           style={{
             aspectRatio: '4 / 4.1',
             borderRadius: 'var(--radius-xl)',
-            border: `1.5px dashed ${COPPER}88`,
+            border: '1.5px dashed rgba(106,87,245,0.53)',
             background: 'rgba(127,127,127,0.06)',
             opacity: busy ? 0.6 : 1,
           }}
@@ -1370,11 +1366,11 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           <div className="flex flex-col items-center gap-2 px-3 text-center">
             <span
               className="grid h-10 w-10 place-items-center rounded-full"
-              style={{ border: `1.5px dashed ${COPPER}`, color: COPPER }}
+              style={{ border: `1.5px dashed ${ACCENT}`, color: ACCENT }}
             >
               <Plus size={17} />
             </span>
-            <span className="text-[13px] font-semibold text-[var(--t1)]" style={{ fontFamily: SANS }}>
+            <span className="text-[13px] font-semibold text-[var(--t1)]">
               {en ? 'New project' : 'Dự án mới'}
             </span>
           </div>
@@ -1452,7 +1448,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 </div>
               </div>
               <div className="px-3 pb-2.5 pt-2">
-                <div className="truncate text-[13px] font-semibold text-white" style={{ fontFamily: SANS }}>
+                <div className="truncate text-[13px] font-semibold text-white">
                   {f.name}
                 </div>
                 {editing ? (
@@ -1474,7 +1470,6 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       }}
                       placeholder={en ? 'Short status…' : 'Ghi chú ngắn…'}
                       className="w-full bg-transparent text-[11px] text-white placeholder:text-white/40 focus:outline-none"
-                      style={{ fontFamily: SANS }}
                     />
                     <button
                       type="button"
@@ -1494,7 +1489,6 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                     }}
                     className="mt-0.5 block max-w-full truncate text-left text-[11px]"
                     style={{
-                      fontFamily: SANS,
                       color: f.status ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.4)',
                     }}
                   >
@@ -1502,7 +1496,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   </button>
                 )}
                 <div className="mt-1.5 flex items-center justify-between gap-2">
-                  <span className="min-w-0 truncate text-[10px] text-white/50" style={{ fontFamily: SANS }}>
+                  <span className="min-w-0 truncate text-[10px] text-white/50">
                     {f.project ? f.project.name : timeAgo(f.updatedAt, en)}
                   </span>
                   {avatarRow(membersOf(f), { ownerId: f.userId })}
@@ -1514,7 +1508,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
       </div>
 
       {filteredFlows.length === 0 && (
-        <p className="mt-4 text-center text-[12px] text-[var(--t4)]" style={{ fontFamily: SANS }}>
+        <p className="mt-4 text-center text-[12px] text-[var(--t4)]">
           {en ? 'No project matches the search.' : 'Không có dự án nào khớp tìm kiếm.'}
         </p>
       )}
@@ -1567,7 +1561,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <motion.div
           className="absolute -left-40 -top-32 h-[34rem] w-[34rem] rounded-full"
-          style={{ background: `radial-gradient(circle, ${COPPER} 0%, transparent 64%)`, filter: 'blur(90px)' }}
+          style={{ background: `radial-gradient(circle, ${ACCENT} 0%, transparent 64%)`, filter: 'blur(90px)' }}
           initial={{ opacity: 0.1 }}
           animate={reduce || !visible ? { opacity: 0.1 } : { opacity: [0.08, 0.13, 0.08], x: [0, 24, 0] }}
           transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
@@ -1587,21 +1581,21 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         {/* pill kính chào user + tiêu đề (kiểu thanh kính TitleSequence) */}
         <div className="mb-8 flex flex-col items-center text-center sm:mb-10">
           <div className="flex items-center gap-2 rounded-full px-4 py-1.5" style={glass}>
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: COPPER }} />
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: ACCENT }} />
             <span
               className="text-[10px] uppercase text-[var(--t4)]"
-              style={{ fontFamily: MONO, letterSpacing: '0.28em' }}
+              style={{ letterSpacing: '0.28em' }}
             >
               {firstName ? (en ? `Hi ${firstName}` : `Chào ${firstName}`) : 'InteriorFlow'}
             </span>
           </div>
           <h1
             className="mt-4 text-[26px] font-semibold leading-tight text-[var(--t1)] sm:text-[34px]"
-            style={{ fontFamily: SANS, letterSpacing: '-0.028em' }}
+            style={{ letterSpacing: '-0.028em' }}
           >
             {en ? 'Pick a project to begin' : 'Chọn dự án để bắt đầu'}
           </h1>
-          <p className="mt-2.5 max-w-md text-[13px] leading-relaxed text-[var(--t4)]" style={{ fontFamily: SANS }}>
+          <p className="mt-2.5 max-w-md text-[13px] leading-relaxed text-[var(--t4)]">
             {en
               ? 'Open a flow and land straight on the canvas — Concept · Render · Present live in the header.'
               : 'Mở một flow là vào thẳng canvas — Concept · Render · Present nằm sẵn trên thanh Header.'}
@@ -1640,7 +1634,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             </button>
           </div>
           {syncMsg && (
-            <p className="mt-2 text-[11px] text-[var(--t4)]" style={{ fontFamily: SANS }}>
+            <p className="mt-2 text-[11px] text-[var(--t4)]">
               {syncMsg}
             </p>
           )}
@@ -1660,10 +1654,10 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               WebkitBackdropFilter: 'blur(var(--blur-strong)) saturate(150%)',
             }}
           >
-            <VitalsIcon size={15} className="shrink-0" style={{ color: COPPER }} />
+            <VitalsIcon size={15} className="shrink-0" style={{ color: ACCENT }} />
             <span
               className="shrink-0 text-[9px] uppercase text-[var(--t4)]"
-              style={{ fontFamily: MONO, letterSpacing: '0.22em' }}
+              style={{ letterSpacing: '0.22em' }}
             >
               Vitals AI
             </span>
@@ -1690,7 +1684,6 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 aria-label="Vitals AI"
                 placeholder=""
                 className="w-full bg-transparent text-[13px] text-[var(--t1)] focus:outline-none disabled:opacity-60"
-                style={{ fontFamily: SANS }}
               />
               {/* placeholder động xoay vòng — chỉ hiện khi ô trống */}
               {chatInput === '' && (
@@ -1703,7 +1696,6 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       exit={{ opacity: 0, y: reduce ? 0 : -7 }}
                       transition={{ duration: reduce ? 0 : 0.35, ease: easeApple }}
                       className="truncate text-[13px] text-[var(--t4)]"
-                      style={{ fontFamily: SANS }}
                     >
                       {vitalsHints[hintIdx % vitalsHints.length]}
                     </motion.span>
@@ -1716,8 +1708,8 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               aria-label={en ? 'Send to Vitals' : 'Gửi cho Vitals'}
               onClick={() => void sendChat()}
               disabled={chatSending || !chatInput.trim()}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#1c1409] transition-opacity disabled:cursor-not-allowed disabled:opacity-35"
-              style={{ background: COPPER }}
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-35"
+              style={{ background: ACCENT }}
             >
               {chatSending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
             </button>
@@ -1756,7 +1748,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   <div className="flex items-center justify-between border-b border-[rgba(127,127,127,0.2)] px-4 py-2">
                     <span
                       className="text-[9px] uppercase text-[var(--t4)]"
-                      style={{ fontFamily: MONO, letterSpacing: '0.22em' }}
+                      style={{ letterSpacing: '0.22em' }}
                     >
                       {en ? 'Vitals · conversation' : 'Vitals · hội thoại'}
                     </span>
@@ -1781,7 +1773,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                     {chatError && (
                       <div
                         className="rounded-xl px-3 py-2.5 text-left text-[11.5px] leading-relaxed text-[var(--t1)]"
-                        style={{ background: 'rgba(200,64,40,0.12)', border: '1px solid rgba(200,64,40,0.3)', fontFamily: SANS }}
+                        style={{ background: 'rgba(200,64,40,0.12)', border: '1px solid rgba(200,64,40,0.3)'}}
                       >
                         {chatError.code === 'NO_TEXT_PROVIDER'
                           ? (en ? 'AI not configured yet — ' : 'AI chưa được cấu hình — ') + chatError.message
@@ -1825,14 +1817,14 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             className="mt-5 flex flex-wrap items-center justify-center gap-3 rounded-full px-5 py-2.5"
             style={glass}
           >
-            <span className="text-[12px] text-[var(--t4)]" style={{ fontFamily: SANS }}>
+            <span className="text-[12px] text-[var(--t4)]">
               {openError}
             </span>
             <button
               type="button"
               onClick={onEnter}
               className="text-[12px] font-semibold underline-offset-2 hover:underline"
-              style={{ color: COPPER, fontFamily: SANS }}
+              style={{ color: ACCENT}}
             >
               {en ? 'Enter empty canvas' : 'Vào canvas trống'}
             </button>
@@ -1862,7 +1854,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               style={{ ...glass, background: 'rgba(20,18,16,0.72)' }}
             >
               <div className="flex items-center justify-between border-b border-white/10 px-5 py-3.5">
-                <span className="text-[14px] font-semibold text-[var(--t1)]" style={{ fontFamily: SANS }}>
+                <span className="text-[14px] font-semibold text-[var(--t1)]">
                   {en ? 'Choose a cover' : 'Chọn ảnh bìa'}
                 </span>
                 <button
@@ -1893,12 +1885,12 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   disabled={uploading}
                   onClick={() => fileInputRef.current?.click()}
                   className="mb-1 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[13px] font-medium text-[var(--t1)] transition-opacity disabled:opacity-60"
-                  style={{ ...glass, border: `1.5px dashed ${COPPER}88` }}
+                  style={{ ...glass, border: '1.5px dashed rgba(106,87,245,0.53)' }}
                 >
                   {uploading ? (
-                    <Loader2 size={15} className="animate-spin" style={{ color: COPPER }} />
+                    <Loader2 size={15} className="animate-spin" style={{ color: ACCENT }} />
                   ) : (
-                    <Upload size={15} style={{ color: COPPER }} />
+                    <Upload size={15} style={{ color: ACCENT }} />
                   )}
                   {uploading
                     ? en
@@ -1909,12 +1901,12 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       : 'Tải ảnh từ máy lên làm bìa'}
                 </button>
                 {uploadError && (
-                  <p className="mb-1 text-[11px]" style={{ fontFamily: SANS, color: '#e5806b' }}>
+                  <p className="mb-1 text-[11px]" style={{ color: '#e5806b' }}>
                     {uploadError}
                   </p>
                 )}
 
-                <p className="mb-2 mt-3 text-[10px] uppercase tracking-[0.16em] text-[var(--t4)]" style={{ fontFamily: MONO }}>
+                <p className="mb-2 mt-3 text-[10px] uppercase tracking-[0.16em] text-[var(--t4)]">
                   {en ? 'Defaults' : 'Mặc định'}
                 </p>
                 <div className="grid grid-cols-3 gap-2.5">
@@ -1932,16 +1924,16 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   ))}
                 </div>
 
-                <p className="mb-2 mt-4 text-[10px] uppercase tracking-[0.16em] text-[var(--t4)]" style={{ fontFamily: MONO }}>
+                <p className="mb-2 mt-4 text-[10px] uppercase tracking-[0.16em] text-[var(--t4)]">
                   {en ? 'From library' : 'Từ thư viện'}
                 </p>
                 {libThumbs === null ? (
-                  <div className="flex items-center gap-2 py-3 text-[12px] text-[var(--t4)]" style={{ fontFamily: SANS }}>
-                    <Loader2 size={14} className="animate-spin" style={{ color: COPPER }} />
+                  <div className="flex items-center gap-2 py-3 text-[12px] text-[var(--t4)]">
+                    <Loader2 size={14} className="animate-spin" style={{ color: ACCENT }} />
                     {en ? 'Loading library…' : 'Đang tải thư viện…'}
                   </div>
                 ) : libThumbs.length === 0 ? (
-                  <p className="py-3 text-[12px] text-[var(--t4)]" style={{ fontFamily: SANS }}>
+                  <p className="py-3 text-[12px] text-[var(--t4)]">
                     {en ? 'No images in the library yet.' : 'Thư viện chưa có ảnh nào.'}
                   </p>
                 ) : (
@@ -1980,8 +1972,8 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           }}
         >
           <div className="flex items-center gap-2.5 rounded-full px-5 py-3" style={glass}>
-            <Loader2 size={15} className="animate-spin" style={{ color: COPPER }} />
-            <span className="text-[13px] text-[var(--t1)]" style={{ fontFamily: SANS }}>
+            <Loader2 size={15} className="animate-spin" style={{ color: ACCENT }} />
+            <span className="text-[13px] text-[var(--t1)]">
               {en ? 'Opening project…' : 'Đang mở dự án…'}
             </span>
           </div>

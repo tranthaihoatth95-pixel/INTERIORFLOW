@@ -167,8 +167,8 @@ export default function StockPhotoPicker({
               }}
               style={{
                 ...tab,
-                borderColor: on ? '#c79a63' : 'var(--border)',
-                color: on ? '#c79a63' : 'var(--t3)',
+                borderColor: on ? 'var(--accent)' : 'var(--border)',
+                color: on ? 'var(--accent)' : 'var(--t3)',
               }}
             >
               {en ? s.en : s.vi}
@@ -234,7 +234,7 @@ export default function StockPhotoPicker({
                 style={{
                   position: 'relative',
                   padding: 0,
-                  border: `1px solid ${picked === p.id ? '#c79a63' : 'var(--border)'}`,
+                  border: `1px solid ${picked === p.id ? 'var(--accent)' : 'var(--border)'}`,
                   borderRadius: 7,
                   overflow: 'hidden',
                   background: 'transparent',

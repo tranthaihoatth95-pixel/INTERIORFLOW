@@ -279,9 +279,9 @@ export default function AiBriefPanel({ onClose }: Props) {
   };
 
   const statusGlyph = (st: DossierItem['status']) => {
-    if (st === 'ok') return <Check size={12} color="var(--accent)" />;
-    if (st === 'warn') return <AlertTriangle size={12} color="#d4a15a" />;
-    return <X size={12} color="#d4645a" />;
+    if (st === 'ok') return <Check size={12} color="var(--success)" />;
+    if (st === 'warn') return <AlertTriangle size={12} color="var(--warning)" />;
+    return <X size={12} color="var(--danger)" />;
   };
 
   return (
@@ -341,7 +341,7 @@ export default function AiBriefPanel({ onClose }: Props) {
               </div>
             ))}
             {dossier && (
-              <div style={{ fontSize: 10, color: dossier.canLayoutInSitu ? 'var(--accent)' : '#d4a15a', marginTop: 4, lineHeight: 1.45 }}>
+              <div style={{ fontSize: 10, color: dossier.canLayoutInSitu ? 'var(--success)' : 'var(--warning)', marginTop: 4, lineHeight: 1.45 }}>
                 {dossier.canLayoutInSitu
                   ? `→ ${dossier.rooms.length} phòng thật dò được — option ở bước 3 sẽ đặt nội thất VÀO các phòng này.`
                   : '→ Chưa dò được phòng kín CÓ NHÃN — option sẽ vẽ phòng mới cạnh bản vẽ (hành vi cũ). Gắn nhãn phòng rồi mở lại panel.'}
@@ -411,7 +411,7 @@ export default function AiBriefPanel({ onClose }: Props) {
                         Vào hiện trạng: {s.opt.placedInto.join(' · ')}
                       </div>
                     )}
-                    <div style={{ fontSize: 10.5, color: s.violations.length ? '#d4a15a' : 'var(--accent)', marginTop: 2 }}>
+                    <div style={{ fontSize: 10.5, color: s.violations.length ? 'var(--warning)' : 'var(--success)', marginTop: 2 }}>
                       {s.violations.length ? `${s.violations.length} vi phạm chuẩn` : 'Đạt Kiểm chuẩn (phạm vi đo được)'}
                     </div>
                     {reasons.length > 0 && (

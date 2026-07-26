@@ -3169,7 +3169,7 @@ export default function CadCanvas() {
             fontWeight: 500,
             color: '#fff',
             background: 'rgba(24,21,18,0.92)',
-            border: '1px solid rgba(199,154,99,0.35)',
+            border: '1px solid var(--accent-ring)',
             borderRadius: 8,
             padding: '5px 9px',
             boxShadow: '0 8px 20px -6px rgba(0,0,0,.4)',

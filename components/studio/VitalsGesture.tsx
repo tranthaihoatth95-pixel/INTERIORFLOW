@@ -29,8 +29,8 @@ import { brandContextForVitals } from '@/lib/present-editor/brand-kit';
 import VitalsIcon from './VitalsIcon';
 import { VitalsBubble, VitalsTyping } from './VitalsChatBubble';
 
-const COPPER = '#c79a63';
-const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
+// 27/07 chốt design tokens: --accent (tím) là accent CHÍNH THỨC toàn app.
+const ACCENT = 'var(--accent)';
 
 /** Lịch sử hội thoại sống ở mức MODULE — panel unmount không mất, reload mới mất. */
 let vitalsSession: ChatTurn[] = [];
@@ -205,14 +205,13 @@ export default function VitalsGesturePanel({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
-                fontFamily: MONO,
                 fontSize: 9,
                 letterSpacing: '0.22em',
                 textTransform: 'uppercase',
                 color: 'var(--t4)',
               }}
             >
-              <VitalsIcon size={12} style={{ color: COPPER }} />
+              <VitalsIcon size={12} style={{ color: ACCENT }} />
               Vitals · {STAGE_LABEL[stage]}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -336,8 +335,8 @@ export default function VitalsGesturePanel({
                 height: 28,
                 borderRadius: 14,
                 border: 'none',
-                background: COPPER,
-                color: '#1c1409',
+                background: ACCENT,
+                color: '#fff',
                 cursor: sending || !input.trim() ? 'not-allowed' : 'pointer',
                 opacity: sending || !input.trim() ? 0.35 : 1,
                 flex: '0 0 auto',

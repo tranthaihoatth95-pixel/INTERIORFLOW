@@ -12,11 +12,18 @@
 
 /* ---------- Token dùng chung cho cả 2 theme ---------- */
 :root {
-  /* Accent — tím quiet-luxury, giữ #8b7cf7 làm gốc, biến để tái sử dụng */
-  --accent: #8b7cf7;
-  --accent-strong: #7c6cf0;
-  --accent-soft: rgba(139, 124, 247, 0.14);
-  --accent-ring: rgba(139, 124, 247, 0.55);
+  /* Accent CHÍNH THỨC — tím, dùng NHẤT QUÁN toàn app (27/07 chốt design tokens).
+     Trước là #8b7cf7 nhưng chữ trắng trên nền accent chỉ đạt 3.32:1 (dưới WCAG AA
+     4.5:1) — hạ độ sáng HSL 72.7%→65% (giữ nguyên hue/saturation 247°/88.5%) →
+     4.89:1. accent-strong (hover) hạ tương ứng, accent-soft/-ring đổi theo RGB mới. */
+  --accent: #6a57f5;
+  --accent-strong: #553ff3;
+  --accent-soft: rgba(106, 87, 245, 0.14);
+  --accent-ring: rgba(106, 87, 245, 0.55);
+  /* Accent ẤM — NGOẠI LỆ DUY NHẤT được giữ vàng đồng, CHỈ dùng cho nút hành động
+     chính trên nền ẢNH (login) — vd nút "Vào xưởng". KHÔNG dùng ở bất kỳ chỗ nào
+     khác (mọi accent khác trong app dùng --accent tím ở trên). */
+  --accent-warm: #c79a63;
 
   /* Bo góc kiểu Apple (nhịp 10 / 14 / 20 / 28) */
   --radius-sm: 10px;
@@ -64,6 +71,13 @@
   --shadow-sheet: 0 12px 40px -12px rgba(0, 0, 0, 0.7);
   --shadow-pop: 0 8px 30px -8px rgba(0, 0, 0, 0.65);
   --shadow-node: 0 6px 20px -8px rgba(0, 0, 0, 0.6);
+
+  /* Trạng thái (27/07 chốt design tokens) — trước đây KHÔNG tồn tại (checker/Inspector
+     tự tham chiếu var(--danger, #fallback) với 2 fallback khác nhau cho biến chưa từng
+     khai báo). Giá trị dưới đạt ≥4.5:1 trên --panel (#141417) và --card (#1a1a1e). */
+  --danger: #e5674f;
+  --warning: #d9a34a;
+  --success: #46b876;
 }
 
 /* ---------- Light — kem ấm sạch (quiet luxury) ---------- */
@@ -92,6 +106,12 @@
   --shadow-sheet: 0 12px 40px -14px rgba(60, 52, 40, 0.28);
   --shadow-pop: 0 10px 30px -10px rgba(60, 52, 40, 0.22);
   --shadow-node: 0 6px 18px -8px rgba(60, 52, 40, 0.2);
+
+  /* Trạng thái — bản SÁNG cần đậm hơn hẳn để đạt ≥4.5:1 trên --panel (#faf8f4)/
+     --card (#ffffff) gần trắng; cùng hue với bản tối, chỉ hạ lightness. */
+  --danger: #c9341d;
+  --warning: #9a6304;
+  --success: #107043;
 }
 
 html,

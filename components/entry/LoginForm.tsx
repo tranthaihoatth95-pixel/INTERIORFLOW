@@ -34,8 +34,10 @@ import type { CardTextPlan } from '@/lib/adaptive-contrast';
  * GIỮ NGUYÊN logic auth lõi: POST /api/auth/{login,register} → setUser(body.user).
  */
 
-const COPPER = '#c79a63';
-const SANS = '-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue","Space Grotesk",system-ui,sans-serif';
+// 27/07 chốt design tokens: --accent (tím) là accent CHÍNH THỨC toàn app. Vàng đồng
+// chỉ còn NGOẠI LỆ ở nút submit "Vào xưởng"/"Enter the studio" — điểm nhấn duy nhất
+// trên nền ảnh gỗ, xem --accent-warm trong app/globals.css.
+const ACCENT_WARM = 'var(--accent-warm)';
 
 type Mode = 'login' | 'register';
 type Providers = { google: boolean; apple: boolean; microsoft: boolean };
@@ -182,7 +184,7 @@ export function LoginForm({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: easeApple, delay: 0.12 }}
       style={{
-        ['--fc' as string]: 'rgba(199,154,99,0.6)',
+        ['--fc' as string]: 'var(--accent-ring)',
         // Việc 2 · ① — tint kính lấy từ chính ảnh nền (≈14%, hạ từ 20% đợt glass-polish 21/07)
         ...(cardTint ? { ['--lq-tint' as string]: cardTint } : {}),
         // Việc 1 — remap bộ chữ về hệ tông đạt ngưỡng (mọi var(--t*) trong card ăn theo)
@@ -195,7 +197,7 @@ export function LoginForm({
       {cardPlan?.scrim && <span className="lq-scrim" style={{ background: cardPlan.scrim }} />}
       <div className="lq-content space-y-4">
       {/* ————— tab ĐĂNG NHẬP / ĐĂNG KÝ — gạch chân đồng (tinh thần ref SIGN IN/SIGN UP) ————— */}
-      <div className="flex items-center justify-center gap-6 pb-1" role="tablist" style={{ fontFamily: SANS }}>
+      <div className="flex items-center justify-center gap-6 pb-1" role="tablist">
         {(['login', 'register'] as Mode[]).map((m) => {
           const on = mode === m;
           return (
@@ -212,7 +214,7 @@ export function LoginForm({
               <span
                 aria-hidden
                 className="absolute -bottom-px left-0 h-[2px] w-full rounded-full transition-opacity"
-                style={{ background: COPPER, opacity: on ? 1 : 0 }}
+                style={{ background: 'var(--accent)', opacity: on ? 1 : 0 }}
               />
             </button>
           );
@@ -277,13 +279,13 @@ export function LoginForm({
               aria-hidden
               className="grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border transition-colors"
               style={{
-                borderColor: remember ? COPPER : 'var(--border)',
-                background: remember ? COPPER : 'transparent',
+                borderColor: remember ? 'var(--accent)' : 'var(--border)',
+                background: remember ? 'var(--accent)' : 'transparent',
               }}
             >
               {remember && <Check size={11} strokeWidth={3} style={{ color: 'var(--bg)' }} />}
             </span>
-            <span className="text-xs text-[var(--t3)]" style={{ fontFamily: SANS }}>
+            <span className="text-xs text-[var(--t3)]">
               {en ? 'Keep me signed in' : 'Ghi nhớ đăng nhập'}
             </span>
           </label>
@@ -297,7 +299,6 @@ export function LoginForm({
               )
             }
             className="text-xs text-[var(--t4)] transition-colors hover:text-[var(--t2)]"
-            style={{ fontFamily: SANS }}
           >
             {en ? 'Forgot password?' : 'Quên mật khẩu?'}
           </button>
@@ -318,7 +319,7 @@ export function LoginForm({
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
           className="rounded-[var(--radius-sm)] px-3 py-2 text-xs"
-          style={{ background: 'rgba(199,154,99,0.12)', color: COPPER }}
+          style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
         >
           {info}
         </motion.p>
@@ -329,7 +330,7 @@ export function LoginForm({
         type="submit"
         disabled={busy}
         className="flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-[var(--bg)] shadow-sm transition-opacity disabled:opacity-50"
-        style={{ background: COPPER, fontFamily: SANS }}
+        style={{ background: ACCENT_WARM }}
       >
         {busy ? (
           <Loader2 size={14} className="animate-spin" />
@@ -345,7 +346,6 @@ export function LoginForm({
       <div className="pt-2">
         <p
           className="mb-3 text-center text-[11px] uppercase tracking-[0.24em] text-[var(--t5)]"
-          style={{ fontFamily: SANS }}
         >
           {en ? 'or continue with' : 'hoặc tiếp tục với'}
         </p>

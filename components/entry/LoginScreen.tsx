@@ -41,8 +41,6 @@ import { IFLogo } from '@/components/entry/IFLogo';
  *   kèm quầng sương mềm (không viền, không khối đục). Xem lib/adaptive-contrast.ts.
  */
 
-const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
-const SANS = '-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue","Space Grotesk",system-ui,sans-serif';
 
 /** Vùng ảnh nằm ngay dưới cụm logo + nhãn (tỉ lệ khung hình) — dải giữa, hơi lệch trên. */
 const LOGO_REGION = { x: 0.28, y: 0.26, w: 0.44, h: 0.3 };
@@ -121,7 +119,6 @@ export function LoginScreen({ onAuthed, notice }: { onAuthed: () => void; notice
             <div
               className="relative mt-4 flex items-center gap-3 text-[11px] uppercase"
               style={{
-                fontFamily: MONO,
                 letterSpacing: '0.26em',
                 ...adaptiveTextStyle(plan),
                 transition: 'color 900ms ease',
@@ -140,7 +137,6 @@ export function LoginScreen({ onAuthed, notice }: { onAuthed: () => void; notice
               role="status"
               className="mt-4 w-full max-w-sm rounded-[10px] border px-3 py-2 text-[12.5px] leading-relaxed"
               style={{
-                fontFamily: SANS,
                 borderColor: 'var(--border)',
                 background: 'rgba(240,96,32,0.08)',
                 color: 'var(--t2)',

@@ -680,8 +680,8 @@ export function LoginBackdropPicker({
                   onClick={() => onPick({ kind: 'preset', id: 'ember' })}
                   className={modeBtn}
                   style={{
-                    borderColor: isStill ? '#c79a63' : 'var(--border)',
-                    color: isStill ? '#c79a63' : 'var(--t3)',
+                    borderColor: isStill ? 'var(--accent)' : 'var(--border)',
+                    color: isStill ? 'var(--accent)' : 'var(--t3)',
                   }}
                 >
                   <ImageIcon size={11} />
@@ -694,8 +694,8 @@ export function LoginBackdropPicker({
                   }
                   className={modeBtn}
                   style={{
-                    borderColor: isSlideshow ? '#c79a63' : 'var(--border)',
-                    color: isSlideshow ? '#c79a63' : 'var(--t3)',
+                    borderColor: isSlideshow ? 'var(--accent)' : 'var(--border)',
+                    color: isSlideshow ? 'var(--accent)' : 'var(--t3)',
                   }}
                 >
                   <Play size={11} />
@@ -708,8 +708,8 @@ export function LoginBackdropPicker({
                   }
                   className={modeBtn}
                   style={{
-                    borderColor: isDynamic ? '#c79a63' : 'var(--border)',
-                    color: isDynamic ? '#c79a63' : 'var(--t3)',
+                    borderColor: isDynamic ? 'var(--accent)' : 'var(--border)',
+                    color: isDynamic ? 'var(--accent)' : 'var(--t3)',
                   }}
                 >
                   <Sparkles size={11} />
@@ -737,8 +737,8 @@ export function LoginBackdropPicker({
                           <span
                             className={`relative h-12 w-full overflow-hidden rounded-[9px] border transition-transform group-hover:scale-[1.03] if-dyn-swatch-${d.id}`}
                             style={{
-                              borderColor: on ? '#c79a63' : 'var(--border)',
-                              boxShadow: on ? '0 0 0 1px #c79a63' : undefined,
+                              borderColor: on ? 'var(--accent)' : 'var(--border)',
+                              boxShadow: on ? '0 0 0 1px var(--accent)' : undefined,
                             }}
                           >
                             {on && (
@@ -784,8 +784,8 @@ export function LoginBackdropPicker({
                             className="relative grid h-10 w-full place-items-center rounded-[9px] border transition-transform group-hover:scale-[1.04]"
                             style={{
                               background: p.swatch,
-                              borderColor: on ? '#c79a63' : 'var(--border)',
-                              boxShadow: on ? '0 0 0 1px #c79a63' : undefined,
+                              borderColor: on ? 'var(--accent)' : 'var(--border)',
+                              boxShadow: on ? '0 0 0 1px var(--accent)' : undefined,
                             }}
                           >
                             {on && <Check size={12} strokeWidth={3} style={{ color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,.6))' }} />}
@@ -811,8 +811,8 @@ export function LoginBackdropPicker({
                           title={w.id}
                           className="relative overflow-hidden rounded-[7px] border transition-transform hover:scale-[1.04]"
                           style={{
-                            borderColor: on ? '#c79a63' : 'var(--border)',
-                            boxShadow: on ? '0 0 0 1px #c79a63' : undefined,
+                            borderColor: on ? 'var(--accent)' : 'var(--border)',
+                            boxShadow: on ? '0 0 0 1px var(--accent)' : undefined,
                           }}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -906,8 +906,8 @@ export function LoginBackdropPicker({
                       onClick={() => onPick({ ...choice, order: 'shuffle' })}
                       className={modeBtn}
                       style={{
-                        borderColor: choice.order === 'shuffle' ? '#c79a63' : 'var(--border)',
-                        color: choice.order === 'shuffle' ? '#c79a63' : 'var(--t3)',
+                        borderColor: choice.order === 'shuffle' ? 'var(--accent)' : 'var(--border)',
+                        color: choice.order === 'shuffle' ? 'var(--accent)' : 'var(--t3)',
                       }}
                     >
                       <Shuffle size={11} />
@@ -918,8 +918,8 @@ export function LoginBackdropPicker({
                       onClick={() => onPick({ ...choice, order: 'seq' })}
                       className={modeBtn}
                       style={{
-                        borderColor: choice.order === 'seq' ? '#c79a63' : 'var(--border)',
-                        color: choice.order === 'seq' ? '#c79a63' : 'var(--t3)',
+                        borderColor: choice.order === 'seq' ? 'var(--accent)' : 'var(--border)',
+                        color: choice.order === 'seq' ? 'var(--accent)' : 'var(--t3)',
                       }}
                     >
                       <ListOrdered size={11} />
@@ -944,15 +944,15 @@ export function LoginBackdropPicker({
                           title={w.id}
                           className="relative overflow-hidden rounded-[7px] border transition-transform hover:scale-[1.04]"
                           style={{
-                            borderColor: on ? '#c79a63' : 'var(--border)',
-                            boxShadow: on ? '0 0 0 1px #c79a63' : undefined,
+                            borderColor: on ? 'var(--accent)' : 'var(--border)',
+                            boxShadow: on ? '0 0 0 1px var(--accent)' : undefined,
                             opacity: on ? 1 : 0.45,
                           }}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={w.src} alt="" loading="lazy" className="aspect-[4/3] w-full object-cover" draggable={false} />
                           {on && (
-                            <span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-[#c79a63]">
+                            <span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-[var(--accent)]">
                               <Check size={10} strokeWidth={3.5} style={{ color: '#17130e' }} />
                             </span>
                           )}
