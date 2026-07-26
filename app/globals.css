@@ -1016,6 +1016,50 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
 /* (Khối reduced-motion riêng cho .if-tooltip-tag đã bỏ 20/07: khối `*` ở đầu file đã phủ
    duration LẪN delay, khối này không thêm gì mà còn gây hiểu nhầm là tooltip cần luật riêng.) */
 
+/* ------------------------------------------------------------
+   VIỆC 3 phần B (26/07) — nhãn TĨNH cho thiết bị cảm ứng thật.
+   Tag nổi ở trên chỉ kích hoạt bằng mouseenter/focus — trên iPad/điện thoại (không có "hover"
+   thật) nó KHÔNG BAO GIỜ hiện. `(hover: none) and (pointer: coarse)` là cách CHUẨN phát hiện
+   cảm ứng thật (KHÔNG dùng viewport width — tablet có thể rất rộng, laptop cảm ứng có thể vẫn
+   báo hover:hover). Trên chế độ này: ẩn hẳn tag nổi (vô dụng), hiện thay bằng 1 nhãn chữ nhỏ
+   NẰM DƯỚI icon, LUÔN HIỂN THỊ — kiểu tab bar iOS (icon + label xếp dọc).
+   Nhãn này KHÔNG portal (khác tag nổi) — render thẳng trong .if-tooltip-wrap nên không dính bug
+   "overflow-x:auto kẹp overflow-y" đã ghi trong Tooltip.tsx (bug đó chỉ ảnh hưởng phần tử
+   position:absolute bên trong container cuộn; đây là phần tử nằm trong flow bình thường).
+   ------------------------------------------------------------ */
+.if-tooltip-static {
+  display: none;
+}
+@media (hover: none) and (pointer: coarse) {
+  /* tag nổi vô dụng trên cảm ứng (không có hover) — ẩn hẳn để khỏi giữ chỗ/nhấp nháy lạc. */
+  .if-tooltip-tag {
+    display: none;
+  }
+  .if-tooltip-wrap {
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .if-tooltip-static {
+    display: block;
+    max-width: 44px;
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1.15;
+    text-align: center;
+    color: var(--t3);
+    white-space: normal;
+    overflow-wrap: break-word;
+    pointer-events: none;
+  }
+  /* LeftRail (chặng Render, dọc) — nhãn dưới mỗi icon làm rail CAO hơn, có thể vượt viewport
+     trên iPad portrait ⇒ cho phép cuộn dọc thay vì tràn/cắt. */
+  .if-rail-touch-scroll {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 /* Nhãn micro chặng ("01 · DRAFTING CAD") trên StageSwitcher — vế phân định chặng. Thanh đầu đã
    khá chật ở laptop nhỏ, nên ẩn nhãn dưới 1100px; pill + chấm tông chặng vẫn còn nguyên. */
 .if-stage-label {

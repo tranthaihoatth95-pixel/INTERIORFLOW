@@ -37,6 +37,13 @@ interface TooltipProps {
   disabled?: boolean;
   /** style bổ sung cho span bọc ngoài (hiếm khi cần — component vốn chỉ display:inline-flex). */
   style?: React.CSSProperties;
+  /**
+   * VIỆC 3 phần B (26/07) — nhãn RÚT GỌN dành riêng cho nhãn chữ TĨNH hiện trên thiết bị
+   * cảm ứng thật (xem `.if-tooltip-static` trong globals.css, kích hoạt bằng
+   * `@media (hover:none) and (pointer:coarse)`). Mặc định dùng luôn `label` — chỉ cần truyền
+   * khi `label` gốc quá dài (vd "Reference — ảnh / vật liệu") và rail hẹp không đủ chỗ.
+   */
+  touchLabel?: string;
 }
 
 interface Anchor {
@@ -48,7 +55,7 @@ interface Anchor {
   offset: number;
 }
 
-export default function Tooltip({ label, children, side = 'top', disabled, style }: TooltipProps) {
+export default function Tooltip({ label, children, side = 'top', disabled, style, touchLabel }: TooltipProps) {
   const wrapRef = useRef<HTMLSpanElement>(null);
   const tagRef = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
@@ -87,6 +94,12 @@ export default function Tooltip({ label, children, side = 'top', disabled, style
       onBlur={close}
     >
       {children}
+      {/* Nhãn TĨNH cho cảm ứng thật — render bình thường trong flow (KHÔNG portal), ẩn hẳn bằng
+          CSS mặc định (chuột), chỉ hiện qua @media (hover:none) and (pointer:coarse). Không cần
+          mounted-gate vì đây là span thường, không đụng document.body → hydrate khớp ngay từ đầu. */}
+      <span className="if-tooltip-static" aria-hidden="true">
+        {touchLabel ?? label}
+      </span>
       {mounted &&
         createPortal(
           <span
