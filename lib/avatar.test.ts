@@ -18,6 +18,7 @@ import {
   EXPRESSION_STYLES,
   GLASSES_STYLES,
   HAIR_COLORS,
+  HairColor,
   HAIR_COLOR_KEYS,
   HAIR_STYLES,
   HAT_STYLES,
@@ -186,5 +187,75 @@ assert(Object.keys(future).length === KEYS.length, `config chuẩn hoá đúng $
 
 /* ─── 13. Tổng số tổ hợp ─── */
 assert(TOTAL_COMBOS > 4e10, `tổng tổ hợp = ${TOTAL_COMBOS.toLocaleString('en-US')}`);
+
+/* ─── 14. Màu tóc phải TÁCH BẠCH khi nhìn cạnh nhau (đo bằng ΔE, không bằng mắt) ───
+ *
+ * Chủ dự án bắt lỗi `silver` / `ash` / `platinum` gần trùng nhau. Nguyên nhân: cả ba cũ
+ * đều nằm trên MỘT trục xám ngả vàng (#B7B1AA · #6B6560 · #E3DDD2), chỉ khác độ sáng, mà
+ * gradient tóc trong renderer còn kéo sáng đỉnh nên khoảng cách bị nén thêm.
+ * Khoá bằng CIE76 ΔE trong không gian Lab (sRGB → XYZ D65 → Lab).
+ */
+function labOf(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
+  const lin = (v: number) => {
+    const c = v / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  const r = lin((n >> 16) & 255);
+  const g = lin((n >> 8) & 255);
+  const b = lin(n & 255);
+  const X = (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047;
+  const Y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  const Z = (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883;
+  const f = (t: number) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+  const [fx, fy, fz] = [f(X), f(Y), f(Z)];
+  return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+}
+function deltaE(a: string, b: string): number {
+  const [l1, a1, b1] = labOf(a);
+  const [l2, a2, b2] = labOf(b);
+  return Math.hypot(l1 - l2, a1 - a2, b1 - b2);
+}
+
+// (a) Ba màu bạc: ΔE ≥ 24 ⇒ khác nhau rõ ở khoảng cách nhìn thường.
+const GREYS: HairColor[] = ['silver', 'ash', 'platinum'];
+for (let i = 0; i < GREYS.length; i++) {
+  for (let j = i + 1; j < GREYS.length; j++) {
+    const d = deltaE(HAIR_COLORS[GREYS[i]], HAIR_COLORS[GREYS[j]]);
+    assert(d >= 24, `ΔE(${GREYS[i]}, ${GREYS[j]}) = ${d.toFixed(1)} ≥ 24`);
+  }
+}
+
+// (b) Tách cả trên trục ĐỘ SÁNG, đúng thứ tự nghĩa: ash tối · silver giữa · platinum sáng.
+const lAsh = labOf(HAIR_COLORS.ash)[0];
+const lSilver = labOf(HAIR_COLORS.silver)[0];
+const lPlat = labOf(HAIR_COLORS.platinum)[0];
+assert(lSilver - lAsh >= 18, `L*(silver) − L*(ash) = ${(lSilver - lAsh).toFixed(1)} ≥ 18`);
+assert(lPlat - lSilver >= 18, `L*(platinum) − L*(silver) = ${(lPlat - lSilver).toFixed(1)} ≥ 18`);
+
+// (c) Không cặp nào trong 11 màu tóc bị trùng. Ngưỡng thấp hơn (a) vì red/auburn cùng họ là cố ý.
+let minPair = Infinity;
+let minName = '';
+for (let i = 0; i < HAIR_COLOR_KEYS.length; i++) {
+  for (let j = i + 1; j < HAIR_COLOR_KEYS.length; j++) {
+    const d = deltaE(HAIR_COLORS[HAIR_COLOR_KEYS[i]], HAIR_COLORS[HAIR_COLOR_KEYS[j]]);
+    if (d < minPair) {
+      minPair = d;
+      minName = `${HAIR_COLOR_KEYS[i]}/${HAIR_COLOR_KEYS[j]}`;
+    }
+  }
+}
+assert(minPair >= 14, `cặp màu tóc gần nhất ${minName} có ΔE = ${minPair.toFixed(1)} ≥ 14`);
+
+/* ─── 15. TƯƠNG THÍCH NGƯỢC bảng màu tóc: đúng 11 key, ĐÚNG thứ tự cũ (không chèn giữa/xoá) ─── */
+assert(
+  JSON.stringify(HAIR_COLOR_KEYS) ===
+    JSON.stringify([
+      'black', 'brown', 'blonde', 'red', 'silver',
+      'auburn', 'ash', 'platinum', 'teal', 'pink', 'lilac',
+    ]),
+  'HAIR_COLOR_KEYS giữ nguyên tên + thứ tự ⇒ avatar đã lưu không nhảy sang màu khác',
+);
 
 console.log('PASS avatar tests');
