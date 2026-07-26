@@ -50,13 +50,22 @@ Giao diện Pro hiện tại **không có Layout / Paper Space** — mà đó ch
 
 | Món | Trạng thái |
 |---|---|
-| **Layout / paper space** — nhiều tờ in, mỗi tờ nhiều viewport tỉ lệ khác nhau | ⬜ **thiếu** |
-| **Khung tên** *(title block)* — tự điền tên dự án · ngày · người vẽ · số tờ · tỉ lệ | ⬜ **thiếu** |
+| **Khung tên** *(title block)* | ✅ **ĐÃ CÓ**: `titleBlockPro()` ở `lib/cad/commands.ts`, dùng Brand Kit per-project |
 | **Tỉ lệ viewport** 1:50 · 1:100 — in ra đúng tỉ lệ | 🟡 có nút "Tỉ lệ", chưa rõ mức nào |
 | **Xuất bộ hồ sơ** — nhiều tờ thành 1 PDF, đánh số, mục lục | ⬜ |
 | Xuất DXF/DWG gửi công trường | 🟡 |
 
-> Không có 5 dòng này thì **Pro không phải Pro** — chỉ là canvas vẽ nét.
+**Layout / Paper Space — phân biệt với multi-sheet đang có (26/07, sửa lại sau khi đối chiếu code thật):**
+
+| | Multi-sheet dạng tab (ĐANG CÓ) | Layout/Paper Space (THẬT SỰ THIẾU) |
+|---|---|---|
+| Mỗi tờ là gì | **1 Doc riêng biệt** | **Một khung nhìn vào CÙNG model** |
+| Sửa bản vẽ ở tab A | Tab B không đổi | **Mọi tờ tự cập nhật** |
+| Nhiều tỉ lệ trên 1 tờ | ❌ | ✅ MB 1:100 + chi tiết 1:20 cùng tờ |
+
+⇒ Lỗ hổng thật KHÔNG phải khung tên, mà là các tờ không nhìn vào cùng một
+model — sửa một chi tiết phải sửa lại từng tab bằng tay. Xem `docs/MULTI-SHEET-PROPOSAL.md`.
+
 > Đây là bậc N thiếu của Pro, **ngang tầm quan trọng với "cảm giác tay"**.
 
 ## 5. Thứ tự đề xuất

@@ -27,7 +27,7 @@ Preset **không phải cái lồng** — là điểm khởi hành; chọn thẻ 
 | Lỗi | Bằng chứng |
 |---|---|
 | **1 · Node là giao diện MẶC ĐỊNH** | Mở Rendering ra là canvas + node rời → người không biết ComfyUI đứng hình ngay |
-| **2 · Rail trái ~10 icon KHÔNG NHÃN** | Người dùng phải tự đánh số 1–7 để nói chuyện về chúng — bằng chứng UX hỏng |
+| **2 · Rail trái có `title=` nhưng không đủ** | Kiểm code (26/07): mỗi icon CÓ `title=` (tooltip mặc định trình duyệt) — nhưng trễ 1–2s · không style được · **KHÔNG hiện trên cảm ứng** ⇒ cần nhãn luôn hiện hoặc tooltip tuỳ biến delay ≤200ms |
 | **3 · Không có ĐIỂM BẮT ĐẦU** | Không flow mẫu · Gallery trống · trình chiếu báo "chưa có nội dung" mà không chỉ đường |
 
 ### Tool mode — giao diện MẶC ĐỊNH của chặng Render
