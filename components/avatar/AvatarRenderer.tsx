@@ -595,7 +595,10 @@ function HairFront({
       return (
         <>
           <path d="M50 112 C40 46 66 24 100 24 C134 24 160 46 150 112 C136 76 126 66 100 66 C74 66 64 76 50 112 Z" fill={fill} />
-          <path d="M44 110 Q100 96 156 110 L156 124 Q100 108 44 124 Z" fill={shade} opacity="0.5" />
+          {/* Vệt cạo hai bên thái dương — CHỈ nằm trong dải tóc sát mép đầu.
+              Bản cũ là một dải vắt NGANG cả mặt ở y110–124, ĐÚNG TẦM MẮT ⇒ đọc ra như bịt mắt. */}
+          <path d="M50 112 C48 88 56 72 68 62 C60 76 57 92 58 112 Z" fill={shade} opacity="0.5" />
+          <path d="M150 112 C152 88 144 72 132 62 C140 76 143 92 142 112 Z" fill={shade} opacity="0.5" />
           {sheen}
         </>
       );
@@ -665,7 +668,9 @@ function HairFront({
       return (
         <>
           <path d="M44 114 C46 90 58 80 72 74 C62 40 100 18 100 18 C100 18 138 40 128 74 C142 80 154 90 156 114 C140 84 128 74 100 72 C72 74 60 84 44 114 Z" fill={fill} />
-          <path d="M44 112 Q100 100 156 112 L156 126 Q100 110 44 126 Z" fill={shade} opacity="0.5" />
+          {/* Hai bên cạo sát — cùng lỗi cũ như kiểu 8: dải ngang y112–126 phủ kín hai mắt. */}
+          <path d="M44 114 C44 94 52 82 64 76 C56 88 51 100 52 114 Z" fill={shade} opacity="0.5" />
+          <path d="M156 114 C156 94 148 82 136 76 C144 88 149 100 148 114 Z" fill={shade} opacity="0.5" />
           <path d="M84 34 Q100 26 116 36" stroke={glow} strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.45" />
         </>
       );
