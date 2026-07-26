@@ -74,6 +74,7 @@ export function AvatarRenderer({
   const id = (k: string) => `${k}-${uid}`;
   const url = (k: string) => `url(#${id(k)})`;
   const feltF = hi ? url('felt') : undefined;
+  const fuzzF = hi ? url('fuzz') : undefined;
   const softF = hi ? url('soft') : undefined;
   const blushF = hi ? url('blush') : undefined;
 
@@ -94,9 +95,9 @@ export function AvatarRenderer({
       <defs>
         {/* Phông studio: sáng ở giữa-trên, tối dần ra rìa. */}
         <radialGradient id={id('bg')} cx="0.44" cy="0.28" r="0.88">
-          <stop offset="0%" stopColor={lighten(bg, 0.55)} />
+          <stop offset="0%" stopColor={lighten(bg, 0.32)} />
           <stop offset="55%" stopColor={bg} />
-          <stop offset="100%" stopColor={dark ? lighten(bg, 0.16) : darken(bg, 0.14)} />
+          <stop offset="100%" stopColor={dark ? lighten(bg, 0.16) : darken(bg, 0.19)} />
         </radialGradient>
 
         {/* Da: khối cầu — sáng trên-trái, 5 chặng, tối sâu dưới-phải. */}
@@ -110,21 +111,21 @@ export function AvatarRenderer({
 
         {/* Highlight chuyên dụng cho khối cầu (specular mềm). */}
         <radialGradient id={id('spec')} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.5" />
-          <stop offset="52%" stopColor="#FFFFFF" stopOpacity="0.16" />
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.32" />
+          <stop offset="52%" stopColor="#FFFFFF" stopOpacity="0.1" />
           <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
         </radialGradient>
 
         {/* Rim light hắt từ dưới-phải — tách khối khỏi nền. */}
         <linearGradient id={id('rim')} x1="1" y1="0.95" x2="0.25" y2="0.15">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.3" />
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.18" />
           <stop offset="40%" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
 
         {/* Tóc nỉ: sáng đỉnh, tối gáy. */}
         <radialGradient id={id('hair')} cx="0.32" cy="0.14" r="0.95">
-          <stop offset="0%" stopColor={lighten(hair, 0.44)} />
-          <stop offset="28%" stopColor={lighten(hair, 0.16)} />
+          <stop offset="0%" stopColor={lighten(hair, 0.28)} />
+          <stop offset="28%" stopColor={lighten(hair, 0.1)} />
           <stop offset="62%" stopColor={hair} />
           <stop offset="100%" stopColor={darken(hair, 0.45)} />
         </radialGradient>
@@ -150,10 +151,42 @@ export function AvatarRenderer({
 
         {hi && (
           <>
-            {/* Nỉ/lông xù — biên độ nhỏ, chỉ làm rối viền chứ không phá hình. */}
-            <filter id={id('felt')} x="-14%" y="-14%" width="128%" height="128%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="11" result="n" />
-              <feDisplacementMap in="SourceGraphic" in2="n" scale="2.8" xChannelSelector="R" yChannelSelector="G" />
+            {/*
+             * NỈ — làm hai việc cùng lúc, thiếu một trong hai là ra "icon vector mượt":
+             *  1. mép vải lởm chởm: feDisplacementMap với nhiễu KÉO DỌC (baseFrequency
+             *     "0.42 0.85" — tần số ngang thấp, dọc cao) nên biên gợn thành túm sợi.
+             *     Bản cũ dùng nhiễu ĐẲNG HƯỚNG 0.9 ⇒ chỉ ra hạt lăn tăn như noise ảnh.
+             *  2. mặt vải có nap: feDiffuseLighting trên nhiễu tần số cao → bản đồ gồ ghề,
+             *     cắt vào trong hình rồi blend `overlay` nên vùng trung tính giữ nguyên
+             *     màu, chỉ nhấn sáng/tối theo thớ. Đây mới là thứ đọc ra "xơ vải".
+             */}
+            <filter id={id('felt')} x="-16%" y="-16%" width="132%" height="132%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.42 0.85" numOctaves="2" seed="11" result="warp" />
+              <feDisplacementMap in="SourceGraphic" in2="warp" scale="3.2" xChannelSelector="R" yChannelSelector="G" result="edge" />
+              <feTurbulence type="fractalNoise" baseFrequency="2.1" numOctaves="4" seed="5" result="nap" />
+              <feDiffuseLighting in="nap" lightingColor="#FFFFFF" surfaceScale="1.6" diffuseConstant="1" result="litRaw">
+                <feDistantLight azimuth="225" elevation="55" />
+              </feDiffuseLighting>
+              {/* Nén bản đồ sáng về quanh mức trung tính 0.5. KHÔNG có bước này thì
+                  feDiffuseLighting ra gần TRẮNG, blend `overlay` kéo bạc hết màu bên dưới
+                  (đo thật: tóc đen ra xám bê tông). Đo trên 4 nền (đen · bạc · kem · nâu) chọn slope 0.9. */}
+              <feComponentTransfer in="litRaw" result="lit">
+                <feFuncR type="linear" slope="0.9" intercept="0.05" />
+                <feFuncG type="linear" slope="0.9" intercept="0.05" />
+                <feFuncB type="linear" slope="0.9" intercept="0.05" />
+              </feComponentTransfer>
+              <feComposite in="lit" in2="edge" operator="in" result="litIn" />
+              <feBlend in="litIn" in2="edge" mode="overlay" result="tex" />
+              <feComposite in="tex" in2="edge" operator="in" />
+            </filter>
+
+            {/* XƠ VẢI ở viền: bản sao tóc/áo vẽ LÓT BÊN DƯỚI, méo mạnh (scale 9) + nhoè
+                nhẹ ⇒ quầng sợi lởm chởm nhô ra ngoài mép — thứ ảnh tham chiếu có rõ ở
+                tóc và áo len. Chỉ dựng khi `hi` nên cỡ nhỏ không tốn gì. */}
+            <filter id={id('fuzz')} x="-26%" y="-26%" width="152%" height="152%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.26 0.72" numOctaves="3" seed="23" result="w" />
+              <feDisplacementMap in="SourceGraphic" in2="w" scale="6" xChannelSelector="R" yChannelSelector="G" result="d" />
+              <feGaussianBlur in="d" stdDeviation="0.7" />
             </filter>
             <filter id={id('soft')} x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="5" />
@@ -189,13 +222,18 @@ export function AvatarRenderer({
           filter={softF}
         />
 
-        {/* Tóc lớp sau (tóc dài, đuôi, búi phía sau đầu) */}
+        {/* Tóc lớp sau (tóc dài, đuôi, búi phía sau đầu) — quầng xơ lót dưới rồi khối nỉ */}
+        {hi && (
+          <g filter={fuzzF} stroke={hair} strokeWidth="3.5" strokeLinejoin="round" opacity="0.8">
+            <HairBack hair={config.hair} fill={hair} shade={hair} />
+          </g>
+        )}
         <g filter={feltF}>
           <HairBack hair={config.hair} fill={url('hair')} shade={darken(hair, 0.45)} />
         </g>
 
         {/* Thân + áo + phụ kiện */}
-        <Torso shirt={config.shirt} fill={url('shirt')} base={shirt} feltF={feltF} softF={softF} hi={hi} />
+        <Torso shirt={config.shirt} fill={url('shirt')} base={shirt} feltF={feltF} fuzzF={fuzzF} softF={softF} hi={hi} />
         <Accessory kind={config.accessory} feltF={feltF} />
 
         {/* Contact shadow: đầu đổ bóng xuống ngực (dịu, lệch phải) */}
@@ -246,9 +284,14 @@ export function AvatarRenderer({
         <ellipse cx="97.6" cy="127.2" rx="2.8" ry="2" fill="#FFFFFF" opacity="0.32" />
         <Mouth expression={config.expression} lip={lip} ink={ink} />
 
-        {/* Tóc lớp trước */}
+        {/* Tóc lớp trước — quầng xơ lót dưới rồi khối nỉ */}
+        {hi && (
+          <g filter={fuzzF} stroke={hair} strokeWidth="3.5" strokeLinejoin="round" opacity="0.8">
+            <HairFront hair={config.hair} fill={hair} shade={hair} glow={hair} />
+          </g>
+        )}
         <g filter={feltF}>
-          <HairFront hair={config.hair} fill={url('hair')} shade={darken(hair, 0.45)} glow={lighten(hair, 0.55)} />
+          <HairFront hair={config.hair} fill={url('hair')} shade={darken(hair, 0.45)} glow={lighten(hair, 0.4)} />
         </g>
 
         {/* Mũ / headwear */}
@@ -289,6 +332,7 @@ function Torso({
   fill,
   base,
   feltF,
+  fuzzF,
   softF,
   hi,
 }: {
@@ -296,6 +340,7 @@ function Torso({
   fill: string;
   base: string;
   feltF?: string;
+  fuzzF?: string;
   softF?: string;
   hi: boolean;
 }) {
@@ -304,6 +349,12 @@ function Torso({
   const soft = shirt === 'sweater' || shirt === 'hoodie' || shirt === 'turtleneck';
   return (
     <g>
+      {/* Áo len/nỉ: quầng xơ lót dưới cổ và vai — vải dệt không có mép cắt trơn */}
+      {soft && hi && (
+        <g filter={fuzzF} stroke={base} strokeWidth="4" strokeLinejoin="round" opacity="0.9">
+          <path d={TORSO} fill={base} />
+        </g>
+      )}
       <g filter={soft ? feltF : undefined}>
         <path d={TORSO} fill={fill} />
       </g>
@@ -547,7 +598,7 @@ function HairFront({
   glow: string;
 }) {
   const sheen = (
-    <path d="M58 54 Q84 34 116 42" stroke={glow} strokeWidth="7" fill="none" strokeLinecap="round" opacity="0.45" />
+    <path d="M58 54 Q84 34 116 42" stroke={glow} strokeWidth="7" fill="none" strokeLinecap="round" opacity="0.26" />
   );
 
   switch (hair) {

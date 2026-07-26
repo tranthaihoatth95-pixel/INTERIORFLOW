@@ -100,7 +100,7 @@ export const HAIR_COLORS: Record<HairColor, string> = {
   silver: '#9AA3AB',
   auburn: '#7A2F1E',
   ash: '#57534E',
-  platinum: '#EFEAE0',
+  platinum: '#E4DCCC',
   teal: '#2E5F5B',
   pink: '#C86A85',
   lilac: '#9A86C4',
