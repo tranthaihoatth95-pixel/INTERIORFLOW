@@ -5,22 +5,20 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (27/07 — onboarding + glass fix + luật 8, chi tiết đầy đủ → CHANGELOG)
-- ✅ **`origin/main`** = `1ec4dde` (audit IF1 + docs/ phân loại + gói đợt 4-11 + T1/T2 Semantic
-  Room). Nhánh tích hợp `feat/present-layout-ml-p1` giờ thêm: onboarding 3 tầng (`9539fbd`),
-  thẻ kính login sửa blur, luật vận hành 8 + `SPEC-SEMANTIC-MODEL.md` §8 — **các commit này
-  CHƯA push**, xem "Chờ USER quyết".
-- ✅ **`docs/IF1-COMPLETION-AUDIT.md`**: CAD 81% · Present 64% · Render ~65-70% (độ tin cậy thấp).
-- ✅ **Onboarding 3 tầng** (`9539fbd`) thay `SmartTour` — WelcomeIntro + StageIntroCard (ảnh
-  Trước/Sau, Render thật/CAD-Present SVG placeholder) + coachmark chọn đối tượng + "Xem lại
-  hướng dẫn". Verify browser thật cả 2 tầng.
-- ✅ **Thẻ kính login** (`app/globals.css`) — blur 22px→14px, bỏ rim `::before`/`::after` dày.
-  KHÔNG kiểm được Safari thật (môi trường không có công cụ Safari desktop).
-- ✅ **Luật vận hành thứ 8** — AI không ghi trực tiếp x/y vào hình học. Audit xác nhận
-  `lib/cad/ai-assist.ts` CHƯA VI PHẠM (chưa có LLM thật cắm vào) — chi tiết ở Nợ kỹ thuật.
+## Hiện tại (27/07 — chốt design tokens: accent tím + gộp font + token trạng thái)
+- ✅ **`origin/main`** = `c350a55` — gồm audit IF1, docs/ phân loại, gói đợt 4-11, T1/T2 Semantic
+  Room, onboarding 3 tầng, thẻ kính login, luật vận hành 8, audit design tokens, và chốt tokens
+  (mới nhất). Chi tiết đầy đủ từng phần → `CHANGELOG.md`.
+- ✅ **Chốt design tokens** (`c350a55`) — `--accent` tím hạ còn `#6a57f5` (đạt WCAG AA 4.89:1,
+  bản cũ #8b7cf7 chỉ 3.32:1); thay ~40 chỗ vàng ấm `#c79a63` bằng `--accent` khắp login/dashboard/
+  CAD/Present, giữ ĐÚNG 2 ngoại lệ (preset "ember" là màu định danh, không phải accent) +
+  `--accent-warm` cho riêng nút "Vào xưởng"; gộp font — xoá SF-Pro/Space-Grotesk cục bộ khỏi 4
+  file thật sự sống (đã verify import trace, không phải 7 file như brief đoán — 6 file khác chứa
+  cùng hằng số là CODE CHẾT, không đụng); thêm `--danger`/`--warning`/`--success` (≥4.5:1 cả 2
+  theme) nối vào standards checker. Verify: tsc 0 · 97/97 test · build sạch · browser thật cả 4
+  màn (login/dashboard/CAD/Present) xác nhận accent nhất quán.
 - ⏸️ **T3/T4 (Semantic Room)** vẫn CHƯA LÀM — để phiên sau, đọc `docs/IF1-COMPLETION-AUDIT.md`
   §3 (a)/(d) trước.
-- tsc 0 · **97/97 file test PASS** · build sạch.
 
 ## Worktree đang mở
 Không có.

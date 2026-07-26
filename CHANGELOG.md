@@ -1,5 +1,42 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 27/07 — Chốt design tokens: accent tím, gộp font, token trạng thái (`c350a55`)
+
+Thực thi 3 việc từ báo cáo audit `docs/DESIGN-TOKENS.md` (trước đó cùng ngày).
+
+**1) Accent chính thức** — giữ tím `#8b7cf7` làm gốc nhưng HẠ ĐỘ SÁNG (HSL 72.7%→65%, giữ
+nguyên hue/saturation 247°/88.5%) → `#6a57f5`, vì chữ trắng trên bản cũ chỉ đạt 3.32:1 (dưới
+WCAG AA 4.5:1); bản mới đạt 4.89:1 — tính bằng công thức luminance thật (script Node), không
+đoán. `--accent-strong`/`-soft`/`-ring` đổi theo RGB mới. Thay ~40 chỗ vàng ấm `#c79a63` bằng
+`--accent` khắp login (LoginForm/LoginBackdrop/LoginScreen)/dashboard (ProjectSelect/WelcomeIntro)
+/CAD (coachmark)/Present (qua StockPhotoPicker dùng chung) + VitalsGesture/LangToggle. GIỮ ĐÚNG
+2 ngoại lệ trong LoginBackdrop.tsx (swatch + glow của preset nền "ember"/Đêm ấm — đó là màu ĐỊNH
+DANH riêng của 1 preset trong danh sách chọn nền, đổi thành tím sẽ khiến preset "ấm" hoá lạnh vô
+lý, cùng logic với việc không đổi màu vật liệu/furniture). Token mới `--accent-warm` CHỈ dùng cho
+nút submit "Vào xưởng" (LoginForm.tsx) — ngoại lệ duy nhất user yêu cầu giữ nguyên.
+
+**2) Gộp font** — brief đoán "7 file" nhưng verify import trace thật cho thấy chỉ 4 file THỰC SỰ
+sống có hằng số `SANS`/`MONO`/`DISPLAY` cục bộ (ProjectSelect.tsx, entry/LoginScreen.tsx,
+entry/LoginForm.tsx, studio/VitalsGesture.tsx) — 6 file khác cùng khai báo hằng số này
+(`components/IntroSequence.tsx`, root `LoginScreen.tsx`, `StageSelect.tsx`, `entry/cardFaces.tsx`,
+`entry/StackedCards.tsx`, `intro/TitleSequence.tsx`) là CODE CHẾT, xác nhận 0 nơi import — không
+sửa, tránh làm việc vô ích trên code không chạy. Xoá sạch ~60 lệnh `fontFamily: SANS/MONO/DISPLAY`
+ở 4 file sống, để kế thừa `--font-sans` (Be Vietnam Pro) từ `body` mặc định.
+
+**3) Token trạng thái** — `--danger`/`--warning`/`--success` mới, cả 2 theme (dark:
+`#e5674f`/`#d9a34a`/`#46b876`, light: `#c9341d`/`#9a6304`/`#107043`), mỗi giá trị verify ≥4.5:1
+trên `--panel`/`--card` tương ứng bằng script tính luminance thật. Nối vào `CadEditor.tsx`
+`sevIcon()` (severity error/warning của standards checker) + cảnh báo tỉ lệ in không lọt khổ +
+cảnh báo máy lạnh/giường quá gần; `AiBriefPanel.tsx` `statusGlyph()` + 2 chỗ khác từng dùng tạm
+`var(--accent)` làm màu "success" (giờ đổi đúng sang `--success`). Dọn 2 chỗ
+`var(--danger, #fallback-khác-nhau)` (Inspector.tsx/CadEditor.tsx — biến chưa từng khai báo, 2
+fallback khác nhau cho cùng ý nghĩa) — giờ khai báo `--danger` thật, xoá fallback.
+
+**Verify**: tsc 0 · 97/97 test PASS · `npm run build` sạch · browser thật (127.0.0.1:3000, phải
+restart dev server + xoá `.next` giữa chừng vì cache HMR hỏng sau phiên rất dài) xác nhận cả 4
+màn nghiệm thu (login → dashboard → CAD → Present) đều dùng accent tím nhất quán, riêng nút "Vào
+xưởng" đúng như yêu cầu vẫn vàng ấm.
+
 ## 27/07 — Onboarding 3 tầng + sửa thẻ kính login + Luật vận hành 8 (LLM↔Hình học)
 
 **Onboarding** (`9539fbd`) — thay hẳn `SmartTour` (spotlight chỉ dạy phím bấm/vị trí UI, có bug
