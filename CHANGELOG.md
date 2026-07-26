@@ -1,5 +1,50 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 26/07 khuya — Audit IF1 + phân loại docs/ + Sprint Semantic Room (T1/T2)
+
+**Audit** (`da310d9`) — `docs/IF1-COMPLETION-AUDIT.md` mới: đối soát 101 item spec + PS-0..11
+với code thật (4 agent song song grep/đọc, tôi tự chốt trạng thái), không chép nhãn tự khai
+17/07. Kết quả: 79/98 item (loại non-goal) ≈ 81% (số cũ tự nhận 89%, sai lên). Group C (TCVN
+checker) từng tự nhận "đã Pro" — thực tế 5/7 item chỉ registry-only, chưa có wizard Apply. Bảng
+4 điều kiện M1 cho IF2: `.idf` có version nhưng chưa migration path · semantic model chỉ Zone có
+ngữ nghĩa thật (Room/Wall thì không, tới trước sprint này) · chuỗi matId→BOQ **0 kết quả** toàn
+repo · RBAC tốt hơn kỳ vọng nhưng thiếu backup thật + onboarding wizard.
+
+**Phân loại docs/** (`aff9b15`) — 79 file + `docs/archive/` gắn đủ 4 nhóm (🟢/🔵/🟡/🔴) trong
+`docs/README.md`, dựa bằng chứng thật (header + git log + cross-reference), không đoán theo tuổi
+file. 2 file archive: `LICENSE-NOTES.md` (tự khai hết hiệu lực) · `DEPLOY-VERCEL.md` (giả định
+cloud, bị local-first ghi đè).
+
+**VIỆC 1 — gói tài liệu đợt 4-11** (`74c3fe5`) — 8 file `IF-DOCS-BATCH-4..11.md` không tìm thấy ở
+repo root/`~/Downloads`; nội dung xuất hiện gộp giữa phiên trong `docs/IF-FINAL-2607-ALL.md` (file
+ngoài git, tự tái tạo — có thể là cơ chế đồng bộ ngoài, không rõ nguồn), xử lý từ đó. 9 phần: 6 bổ
+sung vào file sống (`SPEC-RENDER-STUDIO`, `SPEC-EDITOR-TOOLKIT`, `SPEC-VITALS-AI`,
+`SPEC-PRESENT-FLOW`, `SPEC-MATERIAL-PIPELINE`, `SPEC-ARCHINOTE-IF-BOUNDARY`) + 2 file mới
+(`SPEC-BRIEF-INTAKE.md`, `SPEC-STAGE-0-IDEATION.md`) — file mới giải quyết luôn dẫn chiếu ⚠️ đã
+ghi ở VIỆC 2.
+
+**VIỆC 2 — Chặng 0 + dọn framing cũ** (`c8c7d0f`) — blueprint thêm CHẶNG 0 · Ý TƯỞNG (Ý tưởng →
+CAD → Render → Present) vào hộ chiếu tính năng + bảng audit theo chặng. `FINAL_ARCHITECTURE_REPORT.md`
++ `HUONG-DAN-SU-DUNG.md` gắn cảnh báo framing cũ "nội bộ TTT" (nợ: viết lại đợt de-TTT 2).
+`DEPLOY-VERCEL.md` đã archive từ trước, chỉ xác nhận.
+
+**VIỆC 3 — Sprint Semantic Room, T1+T2** (T3/T4 hoãn sang phiên sau theo lệnh dừng):
+- **T1 roomType** (`709f6d6`) — audit phát hiện Room không lưu trữ, `RoomKind` suy luận lại từ
+  text label mỗi lần checker chạy. Thêm `roomType?: RoomKind` persisted trên `TextEntity` +
+  `backfillRoomTypes()` (gán 1 lần cho phòng cũ, nối cả đường autosave-restore lẫn `.idf` import)
+  + UI chọn công năng phòng (`RoomTypeBox`). Nghiệm thu: đổi label không mất công năng — verify
+  bằng test thật.
+- **T2 wallKind** (`1ec4dde`) — không có `WallEntity` riêng (tường = Line/Polyline/Hatch tuỳ cách
+  vẽ) nên field đặt ở `Base`: `wallKind`/`wallStructural`/`wallThicknessMm`. Consumer:
+  `wallKindSummary()` (đếm exterior/interior/unclassified) + `WallStatsBadge`. **LỆCH có chủ ý**:
+  KHÔNG backfill/suy đoán wallKind từ hình học cho tường cũ (không có DCEL outer-boundary utility
+  đáng tin cậy — khác T1 vốn suy luận được từ text), và KHÔNG bịa trích dẫn quy chuẩn độ dày tường
+  (registry.ts đòi verified thật hoặc note trung thực).
+
+Verify mỗi bước: tsc 0 + full test suite chạy lại độc lập (không tin báo cáo agent) — 96/96 sau T1,
+97/97 sau T2. Merge `feat/present-layout-ml-p1` → `main`, `npm run build` sạch, push `origin/main`
+@ `1ec4dde`.
+
 ## 26/07 tối — Batch 5 việc: sửa docs, merge avatar đợt 2, 3 route, rail tooltip, CAD sprint
 
 Chạy tuần tự theo lệnh user "CHẠY TUẦN TỰ, KHÔNG HỎI LẠI", mỗi việc 1 commit, agent Sonnet cho
