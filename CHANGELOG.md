@@ -1,5 +1,27 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 26/07 — MERGE avatar đợt 1 + PDF font tiếng Việt (#25) vào `feat/present-layout-ml-p1`
+
+**`54b4b31`** merge `feat/avatar-plush` (3 commit, sạch, 0 conflict) · **`96c046a`** merge `fix/vn-pdf-font` (4 commit).
+
+**#25 — PDF hết mất dấu tiếng Việt.** `b2af06a` font · `57c256f` `lib/pdf-font.ts` + test · `02a1ae7` nối `standards-report.ts`/`pdf.ts`/`CadEditor` · `a65daaf` khung tên hết tràn ô + `⌀`→`Ø`.
+- Nhúng **Be Vietnam Pro** Regular+Bold (SIL OFL 1.1, 273KB, `public/fonts/` + `OFL.txt` + attribution `docs/LICENSE-NOTES.md`) — một hệ chữ xuyên UI → bản vẽ → PDF → deck.
+- `lib/pdf-font.ts` resolve **caller → Brand Kit → Be Vietnam Pro → helvetica**; .ttf nạp lúc xuất (KHÔNG nhồi base64 vào bundle); chạy cả browser (`fetch`) lẫn Node (`fs`).
+- Chỉ 2/6 file jsPDF thật sự dính lỗi; 4 file kia chỉ `addImage` JPEG → cố ý KHÔNG nối font (khỏi cõng 273KB vô ích).
+
+**Conflict merge — `lib/cad/pdf.ts`, file DUY NHẤT, đúng dòng `new jsPDF(...)`.** HEAD thêm `orientation` (fix `b5ca821`), nhánh thêm `await ensureVietnameseFont(pdf)` ngay dưới. Hai bên **bổ sung nhau chứ không đối nghịch** ⇒ gộp giữ CẢ HAI, không mất fix nào.
+
+**Verify độc lập sau merge** — dựng PDF THẬT bằng `buildCadPdf()` rồi đọc BYTE THÔ của file (không tin test, không tin báo cáo agent): **21 ok / 0 fail**.
+- MediaBox: A3 `1190.55×841.89pt` = 420×297mm **NGANG** · A2 `1683.78×1190.55` · A1 `2383.94×1683.78` — khớp đúng `PAPER_SIZES_MM`, không bị jsPDF đảo dọc.
+- Cùng file đó có `/FontFile2` + `/BaseFont /BeVietnamPro` ⇒ font TTF **thật sự nhúng**, không rơi về helvetica.
+- tsc 0 lỗi · **93/93 file test PASS** (đếm thật bằng `git ls-files '*.test.ts' '*.test.tsx'` — trước merge là 92, nhánh font thêm `lib/pdf-font.test.ts`).
+
+**Dọn worktree** (đủ cả 4 điều kiện an toàn `CLAUDE.md`): gỡ `interiorflow-wt-avatar` + `interiorflow-wt-pdf-font` bằng `git worktree remove` (KHÔNG `--force`), xoá nhánh bằng `git branch -d` (KHÔNG `-D`).
+
+**Bug CAD xuất giấy DỌC (`b5ca821`) — bối cảnh gốc.** `new jsPDF({unit:'mm', format:[pw,ph]})` **thiếu `orientation`** ⇒ jsPDF mặc định portrait rồi TỰ ĐẢO khổ ⇒ trang ra 297×420 DỌC trong khi viewport tính cho 420×297 ⇒ **cắt ~30% mép phải, đúng chỗ `titleBlockPro` neo** ⇒ khung tên cụt ở MỌI lần xuất. Lỗi CÓ SẴN TỪ TRƯỚC, không do đợt font. 5 chỗ dựng jsPDF khác trong repo đều truyền `orientation: 'landscape'` — riêng CAD sót, và không test nào kiểm khổ giấy CAD. Test `[4]` trong `pdf-scale.test.ts` nay khoá khổ A3/A2/A1.
+⚠️ Bài học: bản sửa này từng **bay mất một lần** vì chạy phép thử "gỡ fix xem test có bắt không" khi file CHƯA commit. Muốn thử thì **commit trước**, khôi phục bằng `git checkout -- <file>`.
+
+
 ## 20/07 — CAD: fix M0 tỉ lệ khung tên + điều tra warning React (nhánh `fix/cad-warning-and-scale-m0`)
 
 **Việc 1 — warning React `Cannot update a component while rendering a different component` (`CadCanvas`/`StudioBar`) — KHÔNG tái hiện được, chưa sửa.**
