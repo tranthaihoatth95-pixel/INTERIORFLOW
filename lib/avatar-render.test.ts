@@ -208,6 +208,18 @@ const hatShapes = collect(HATS, 'hat');
 assert(frontShapes.length > 30, `bóc được ${frontShapes.length} mảng tóc lớp trước từ nguồn`);
 assert(hatShapes.length > 10, `bóc được ${hatShapes.length} mảng mũ từ nguồn`);
 
+// Chặn "thoát kiểm âm thầm": nếu ai đó viết toạ độ bằng biểu thức JSX (`cx={x}`) thay vì
+// số literal thì bộ bóc trả NaN và mọi phép thử bên dưới sẽ lặng lẽ luôn-đúng.
+for (const s of [...frontShapes, ...hatShapes]) {
+  for (const [x, y] of s.rings.flat()) {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      console.error(`FAIL: ${s.kind} của kiểu ${s.style} có toạ độ không phải số literal`);
+      process.exit(1);
+    }
+  }
+}
+assert(true, 'mọi mảng bóc được đều có toạ độ số literal (không mảng nào thoát kiểm)');
+
 /* ─────────── 1. Không mảng nào phủ mắt ─────────── */
 
 const EYE_Y = 112;
@@ -237,5 +249,82 @@ assert(
 
 const styles = new Set(frontShapes.map((s) => s.style));
 assert(styles.size === 16, `đủ 16 kiểu tóc có hình (thấy ${styles.size})`);
+
+/* ─────────── 2. Tóc phải CÓ KHỐI, và không bị khung cắt cụt đỉnh ─────────── */
+
+const HEAD_M = SRC.match(/const HEAD = \{ cx: (\d+), cy: (\d+), rx: (\d+), ry: (\d+) \}/);
+if (!HEAD_M) throw new Error('không đọc được HEAD');
+const headTop = Number(HEAD_M[2]) - Number(HEAD_M[4]);
+const FRAME_TOP = 120 - 96; // khung tròn cx100 cy120 r96 → trần y=24
+const BUZZ = 2; // kiểu "cạo sát" cố ý ôm sát sọ ⇒ miễn ngưỡng khối
+
+assert(headTop === 45, `đỉnh hộp sọ ở y=${headTop} (đủ ${headTop - FRAME_TOP}px cho tóc)`);
+
+const topByStyle = new Map<number, number>();
+for (const s of frontShapes) {
+  const cur = topByStyle.get(s.style);
+  if (cur === undefined || s.top < cur) topByStyle.set(s.style, s.top);
+}
+
+for (const style of [...topByStyle.keys()].sort((x, y) => x - y)) {
+  const top = topByStyle.get(style) as number;
+  const lift = headTop - top;
+  if (style === BUZZ) {
+    assert(lift >= -2 && lift < 8, `kiểu ${style} (cạo sát) ôm sát sọ — nhô ${lift.toFixed(1)}px`);
+  } else {
+    assert(lift >= 12, `kiểu ${style} CÓ KHỐI — nhô ${lift.toFixed(1)}px trên hộp sọ (≥12)`);
+  }
+  assert(
+    top >= FRAME_TOP - 0.5,
+    `kiểu ${style} không bị khung cắt cụt đỉnh (đỉnh tóc y=${top.toFixed(1)} ≥ ${FRAME_TOP})`,
+  );
+}
+
+/* ─────────── 3. Nhóm 1/2/7/8/14 phải PHÂN BIỆT được nhau ───────────
+ * Chủ dự án soi ảnh: năm kiểu này trước đây "gần như trùng nhau". Đo bằng số:
+ * mỗi cặp phải khác nhau ở ÍT NHẤT một trong ba chỉ số — đỉnh tóc, bề rộng silhouette,
+ * hoặc độ bất đối xứng (lệch tâm) — quá ngưỡng cảm nhận được.
+ */
+interface Metric { top: number; width: number; skew: number }
+function metricOf(style: number): Metric {
+  const pts = frontShapes.filter((s) => s.style === style).flatMap((s) => s.rings.flat());
+  const xs = pts.map((p) => p[0]);
+  const ys = pts.map((p) => p[1]);
+
+  // Bất đối xứng: so ĐỘ BUÔNG của tóc ở x và ở điểm đối xứng 200−x. Trọng tâm không dùng
+  // được — vòm tóc phía trên đối xứng nên nó nuốt mất phần mái lệch bên dưới.
+  const bins = new Map<number, number>();
+  for (const [x, y] of pts) {
+    const k = Math.round(x / 10) * 10;
+    bins.set(k, Math.max(bins.get(k) ?? -Infinity, y));
+  }
+  let skew = 0;
+  for (const [k, v] of bins) {
+    const m = bins.get(200 - k);
+    if (m !== undefined) skew = Math.max(skew, Math.abs(v - m));
+  }
+  return { top: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), skew };
+}
+const GROUP = [1, 2, 7, 8, 14];
+const metrics = new Map(GROUP.map((s) => [s, metricOf(s)]));
+for (const s of GROUP) {
+  const m = metrics.get(s) as Metric;
+  console.log(
+    `  · kiểu ${s}: đỉnh y=${m.top.toFixed(1)} · rộng ${m.width.toFixed(1)} · lệch ${m.skew.toFixed(1)}`,
+  );
+}
+for (let i = 0; i < GROUP.length; i++) {
+  for (let j = i + 1; j < GROUP.length; j++) {
+    const a = metrics.get(GROUP[i]) as Metric;
+    const b = metrics.get(GROUP[j]) as Metric;
+    const dTop = Math.abs(a.top - b.top);
+    const dWidth = Math.abs(a.width - b.width);
+    const dSkew = Math.abs(a.skew - b.skew);
+    assert(
+      dTop >= 6 || dWidth >= 8 || dSkew >= 8,
+      `kiểu ${GROUP[i]} ≠ ${GROUP[j]} (Δđỉnh ${dTop.toFixed(1)} · Δrộng ${dWidth.toFixed(1)} · Δlệch ${dSkew.toFixed(1)})`,
+    );
+  }
+}
 
 console.log('PASS avatar renderer geometry tests');
