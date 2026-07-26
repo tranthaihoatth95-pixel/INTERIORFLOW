@@ -20,6 +20,47 @@
 
 Preset **không phải cái lồng** — là điểm khởi hành; chọn thẻ xong vẫn vẽ, mask, thêm reference.
 
+## 1B. CHẨN ĐOÁN HIỆN TRẠNG & TOOL MODE *(soi giao diện thật 26/07)*
+
+### Ba lỗi gốc thấy trong app đang chạy
+
+| Lỗi | Bằng chứng |
+|---|---|
+| **1 · Node là giao diện MẶC ĐỊNH** | Mở Rendering ra là canvas + node rời → người không biết ComfyUI đứng hình ngay |
+| **2 · Rail trái ~10 icon KHÔNG NHÃN** | Người dùng phải tự đánh số 1–7 để nói chuyện về chúng — bằng chứng UX hỏng |
+| **3 · Không có ĐIỂM BẮT ĐẦU** | Không flow mẫu · Gallery trống · trình chiếu báo "chưa có nội dung" mà không chỉ đường |
+
+### Tool mode — giao diện MẶC ĐỊNH của chặng Render
+
+```
+┌─ Chọn việc muốn làm ─────────────────────────────┐
+│  [Sketch→Ảnh thật] [Đổi vật liệu] [Đổi ánh sáng] │  ← thẻ có ảnh Trước/Sau
+│  [Sửa một mảng]   [Đổi phong cách] [Phóng to in] │
+└──────────────────────────────────────────────────┘
+        ↓ chọn 1 thẻ
+┌──────────────────────────────────────────────────┐
+│  ẢNH GỐC                    │  KẾT QUẢ           │
+│  [thả ảnh vào]              │                    │
+│  Bám bản vẽ     ▓▓▓▓▓░░ 0.8 │                    │
+│  Tự do sáng tạo ▓▓░░░░░ 0.4 │                    │
+│  [+ Ảnh tham chiếu]         │                    │
+│        [ ▶ Render ]         │  [Mở nâng cao ▾]   │ ← lối xuống node graph
+└──────────────────────────────────────────────────┘
+```
+
+Hai cột · một nút · hai thanh trượt. **Không dây, không node.**
+Node graph giữ nguyên — nằm SAU nút "Mở nâng cao".
+
+### Ngưỡng thiết bị
+
+Màn **≤7 inch → ÉP Tool mode**, ẩn hẳn lối vào node graph.
+Canvas dây trên màn nhỏ là **bất khả thi**, không phải bất tiện.
+
+### Rail trái — sửa ngay
+
+Mỗi icon phải có **nhãn chữ** (hoặc tooltip hiện ngay khi rê). Icon không nhãn = người dùng
+phải đoán = không dùng.
+
 ## 2. Sáu công đoạn — chỉ 3 cái cần người dùng chạm
 
 | # | Công đoạn | Node tiêu biểu | Lộ ra? |
@@ -162,5 +203,5 @@ onboarding, landing page, tài liệu bán hàng. Một công bốn việc.
 
 ---
 
-*v1.0 · 2026-07-24 · Ben soạn theo ý Hoà.*
+*v1.1 (thêm §1B chẩn đoán hiện trạng + Tool mode) · 2026-07-24 · Ben soạn theo ý Hoà.*
 

@@ -37,6 +37,54 @@ nguyên liệu  → 3 phương án khác   →  canvas tự do   →  deck · PD
 | 3 | **Sửa tay không mất đề xuất** ⭐ | "Đề xuất lại" chỉ đổi phần **chưa động tay**; chỗ đã sửa được **khoá giữ** *(pin)*. Thiếu luật này là lý do hầu hết công cụ AI làm slide bị bỏ — sửa xong generate lại là mất hết công |
 | 4 | **Nói rõ máy vừa làm gì** | 1 dòng: *"Đã dàn 5 trang theo lưới 12 cột, ảnh ngang lên đầu"* — không im lặng |
 
+## 2B. CÂY DÀN BÀI + TẠO SINH CÓ RÀNG BUỘC *(lấy từ Figma & Canva, bỏ điểm yếu của cả hai)*
+
+| | **Figma** giỏi | **Canva** giỏi |
+|---|---|---|
+| Giải bài toán | **Kiểm soát cấu trúc** — thấy toàn bộ, sắp xếp lại được | **Khởi động** — không đối mặt trang trắng |
+| Điểm yếu | Trang trắng, tự dựng từ đầu | ⚠️ **Không đồng nhất thẩm mỹ** |
+
+**Vì sao Canva rời rạc**: sinh từng slide độc lập, không có hệ thống ràng buộc.
+**IF khác**: đã có `DECK_STANDARDS` (lưới 12 cột) · Brand Kit · 25 template · Perceptron học gu.
+
+> ⭐ **LUẬT: AI chỉ được CHỌN trong bộ template đã duyệt — KHÔNG được tự sáng tác bố cục.**
+> *(constrained generation)* → nhanh như Canva nhưng **đồng nhất thẩm mỹ**, vì mọi trang
+> sinh ra từ cùng một hệ thống. Thắng cả hai không nhờ AI mạnh hơn, mà nhờ **có hệ thống
+> thiết kế để ràng buộc AI**.
+
+### Cây cấu trúc 3 cấp (panel trái) — cấp bậc của DECK, không phải của layer
+
+```
+▾ 00 · Về chúng tôi          ← CHƯƠNG (kéo thả đổi thứ tự cả chương)
+    ▸ Trang bìa
+    ▸ Hồ sơ năng lực
+▾ 01 · Hiểu về dự án
+    ▸ Tổng quan               ← TRANG (kéo đổi vị trí · nhân bản · ẩn)
+    ▸ Bối cảnh · khí hậu
+▾ 02 · Ý tưởng
+```
+
+### Dàn bài mẫu theo loại hồ sơ — thứ Figma/Canva KHÔNG có
+
+| Loại deck | Dàn bài mẫu |
+|---|---|
+| Concept proposal | Về chúng tôi → Hiểu dự án → Nghiên cứu → Ý tưởng lớn → Định hướng → Layout → Vật liệu |
+| Design development | Layout chi tiết → Từng không gian → Vật liệu → Chi tiết → Khối lượng |
+| Material board | Tổng quan palette → Từng khu vực → Bảng vật liệu → Nguồn cung |
+
+### Luồng Present mới
+
+```
+① Chọn loại hồ sơ   → ra CÂY DÀN BÀI mẫu (sửa được: thêm/bớt/đổi tên chương)
+② Nạp nguyên liệu   → ảnh · bản vẽ từ CAD · text · reference
+③ Máy phân vào chỗ  → mỗi trang tự CHỌN template phù hợp trong 25 mẫu (không sáng tác)
+④ Cây bên trái      → kéo thả sắp xếp, thấy trang nào còn trống
+⑤ Sửa trên canvas   → chỗ đã sửa được KHOÁ GIỮ (luật 6c)
+⑥ Xuất              → PDF · PPTX · HTML · video
+```
+
+**Bước ① và ④ hiện HOÀN TOÀN THIẾU** — chính chúng gây cảm giác "không biết bấm gì tiếp".
+
 ## 3. Nhánh video — tách 4 thứ, chỉ 2 dùng được ngay
 
 ⚠️ **Video đắt hơn ảnh rất nhiều** (mỗi giây 24–30 khung). Đây là chỗ phá ngân sách 0-credit
@@ -71,5 +119,5 @@ Vài ngày công, **0 credit vận hành**.
 
 ---
 
-*v1.0 · 2026-07-24 · Ben soạn theo ý Hoà.*
+*v1.1 (thêm §2B cây dàn bài + tạo sinh có ràng buộc) · 2026-07-24 · Ben soạn theo ý Hoà.*
 

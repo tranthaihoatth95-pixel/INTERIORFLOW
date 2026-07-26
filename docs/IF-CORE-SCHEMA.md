@@ -120,6 +120,15 @@ Nguồn "tôi đang ở dự án nào?":
 - `resolveNotebookProjectId` (server) hiểu cả hai: `Project.id` của user → dùng
   thẳng; cuid khác (Flow.id) → bucket ẩn `__nb:<id>` duy nhất theo id đó.
 
+### Ngoại lệ có chủ đích của luật phạm vi
+
+| Route | Vì sao KHÔNG chuyển thành redirect |
+|---|---|
+| `/present` | **Deck demo zero-auth** — cho khách xem không cần tài khoản, 0 AI, 0 mạng. Biến thành redirect sẽ **phá đúng tính năng nó sinh ra để làm**. Khác hẳn `/present-editor` (editor thật, cần đăng nhập + project). |
+
+**Bài học ghi lại**: trước khi gom/xoá một route trùng tên, **đọc code xác định bản chất** —
+tên giống nhau KHÔNG có nghĩa là chức năng giống nhau.
+
 ## 1C. Chặng nằm dưới scope dự án (Task #21 · ĐỔ NỀN 1B)
 
 **URL là nguồn sự thật, store chỉ là cache.** 4 route chặng:

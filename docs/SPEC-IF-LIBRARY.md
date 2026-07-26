@@ -5,6 +5,12 @@
 > local-first). Việc còn lại là **mở rộng**, không xây mới.
 > Đọc cùng `IF-CORE-SCHEMA.md`, `SPEC-MATERIAL-PIPELINE.md`, `SPEC-RENDER-STUDIO.md`.
 
+> ⚠️ **ĐÍNH CHÍNH HIỆN TRẠNG (26/07)**: Library **chưa có route riêng**. Hiện là
+> `components/LibraryPanel.tsx` nhúng thẳng trong `HomeScreen` (chặng Rendering), mở bằng panel
+> toggle. Route `/library/ingest` là trang nạp riêng, **chưa có đường vào từ UI**.
+> ⇒ Việc pha 1: dựng trang duyệt `/library` · nối đường vào cho `/library/ingest` ·
+> tách `LibraryPanel` thành **panel dùng chung cho cả 3 chặng** (hiện chỉ Rendering có).
+
 ---
 
 ## 1. Vì sao quan trọng — một thư viện nuôi 5 nơi
@@ -59,6 +65,51 @@ Kỹ thuật: **bộ lọc mặt** *(faceted search)* + xếp hạng theo **ng�
 ```
 10.000 ảnh tag một lần rồi thôi. Đúng công thức chưng cất *(distillation)*.
 
+## 5B. Cơ chế TỰ PHÂN LOẠI — ba tầng
+
+| Tầng | Cách làm | Chi phí | Chính xác |
+|---|---|---|---|
+| **1 · Suy từ ngữ cảnh** | Nơi đến của file: dự án/chặng đang mở · đuôi file · EXIF (ngày, GPS, máy) | **0 credit, tức thì** | ~100% cho dự án, loại, ngày, nơi chụp |
+| **2 · Đọc nội dung bằng AI** | Vision đọc 1 lần → phòng · phong cách · vật liệu · ánh sáng · palette → thẻ + vector | **Tốn 1 lần duy nhất** | ~85% |
+| **3 · Học từ hành vi** | Món nào được **dùng thật** trong dự án gu nào → tự gom, tự đề xuất | **0 credit** | Tăng dần |
+
+> ⭐ **Tầng 1 giải ~60% việc phân loại mà không tốn một xu.** Đa số app bỏ qua tầng này rồi gọi
+> AI cho mọi thứ — đó là lãng phí.
+
+### Tầng 1 — thu hoạch miễn phí (làm trước)
+
+| Nạp từ đâu | Máy tự biết |
+|---|---|
+| Đang mở dự án X, chặng Render | `projectId` + nhóm "ảnh tham chiếu" |
+| File `.dwg`/`.dxf` | Nhóm Block CAD |
+| Ảnh có EXIF GPS trùng toạ độ công trình | **Ảnh hiện trạng** của đúng dự án đó |
+| Ảnh từ ArchiNote | Có sẵn dự án · phòng · người chụp · giờ |
+| **Xuất ra từ chính IF** | Biết là render, của phòng nào — **tự phân loại 100%** |
+
+### Tầng 2 — chưng cất, tốn đúng một lần
+
+```
+Nhập ảnh → AI vision đọc 1 lần   ← TỐN CREDIT DUY NHẤT LẦN NÀY
+         → thẻ + vector đặc trưng (embedding)
+         → tìm kiếm · gợi ý · chấm gu = SO VECTOR, 0 credit mãi mãi
+```
+
+Chạy nền theo lô lúc rảnh, không chặn người dùng.
+
+⚠️ **Luật bắt buộc — máy đoán phải NÓI LÀ ĐOÁN**: thẻ do AI gắn hiện khác thẻ người gắn (nhạt
+màu / dấu ✨) và **sửa được bằng 1 chạm**. Thiếu luật này, một thẻ sai lan âm thầm khắp kho và
+người dùng mất lòng tin vào toàn bộ thư viện.
+
+### Tầng 3 — học từ hành vi (moat)
+
+- Ảnh dùng trong dự án gu **+2 ấm / −2 kín** → lần sau dự án gu tương tự tự đẩy lên
+- Vật liệu luôn đi cùng nhau → **gợi ý bộ đôi**
+- Bị bỏ qua 20 lần → tự chìm
+- Deck **thắng thầu** dùng gì → nhóm "đồ đã thắng"
+
+⚠️ **Vô dụng khi kho còn ít** — cần vài chục dự án thật mới đủ tín hiệu. Đừng xây sớm, NHƯNG
+**phải ghi lại hành vi từ hôm nay** (món nào chèn vào dự án nào): dữ liệu quá khứ không thu hồi được.
+
 ## 6. Nguồn & giấy phép — ⚠️ chặn rủi ro pháp lý
 
 App global mà kéo ảnh Pinterest/Google về làm thư viện = **rủi ro chết người**, chặn đứng
@@ -103,5 +154,5 @@ File ở `uploads/` trên ổ đĩa · DB giữ `path` (✅ đã đúng) · Pha 
 
 ---
 
-*v1.0 · 2026-07-24 · Ben soạn theo ý Hoà.*
+*v1.1 (thêm §5B cơ chế tự phân loại 3 tầng) · 2026-07-24 · Ben soạn theo ý Hoà.*
 

@@ -266,7 +266,7 @@ Present giữ nguyên lộ trình PS: PS-2 → PS-3 → gate → PS-5/6/9 (khôn
 
 ---
 
-## 8. LUẬT VẬN HÀNH — 6 điều chống loạn
+## 8. LUẬT VẬN HÀNH — 7 điều chống loạn
 
 1. **Không xây L khi N chặng đó chưa ✅.** Muốn phá lệ → RIN trình lý do, VŨ duyệt.
 2. **Mọi task code phải có hộ chiếu 6 trường** (mục 3). Không hộ chiếu = không code.
@@ -282,6 +282,12 @@ Present giữ nguyên lộ trình PS: PS-2 → PS-3 → gate → PS-5/6/9 (khôn
    - **6c · Sửa tay không mất đề xuất** ⭐ — "đề xuất lại" chỉ đổi phần **chưa động tay**; chỗ đã
      sửa được **khoá giữ** *(pin)*. Thiếu luật này là lý do người dùng bỏ công cụ AI.
    - **6d · Nói rõ máy vừa làm gì** — 1 dòng giải thích quyết định, không im lặng.
+7. **Không có nút thì không có AI.** Mọi việc AI làm được phải tồn tại TRƯỚC dưới dạng **hàm có
+   tên** mà UI cũng gọi được (tầng năng lực dùng chung). Ô chat AI không có năng lực bên dưới =
+   **hứa hão, cấm ship**. Thứ tự bắt buộc: **năng lực → nút → AI gọi hàm**, không được đảo.
+   Vòng lặp chết cần tránh: *công cụ tay thiếu → người dùng quay sang AI → AI cũng không có gì
+   để gọi → bế tắc cả hai lối → bỏ app.*
+   Chi tiết: `docs/SPEC-EDITOR-TOOLKIT.md` §1.
 
 ---
 

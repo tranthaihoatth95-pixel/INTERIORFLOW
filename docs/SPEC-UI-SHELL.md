@@ -35,6 +35,46 @@
 ComfyUI không có khái niệm dự án nên không thể có breadcrumb — và đó chính là bug scope
 đã sửa ở Task 0. Điều hướng và giao diện là **một chuyện, không phải hai**.
 
+## 2B. LUẬT CANVAS — 4 trạng thái *(áp cho CAD · Render · Present)*
+
+> **Khi tay người đang thao tác, mọi thứ khác phải biến mất.**
+> *(get out of the way during direct manipulation)* — chi tiết phân biệt app pro với nghiệp dư.
+
+| Trạng thái | Hiện gì | Ẩn gì |
+|---|---|---|
+| **Rảnh** (chưa chọn) | Không gì nổi | — |
+| **Đã chọn** (click 1) | Khung chọn + 8 tay nắm + **thanh công cụ nổi** | — |
+| **Đang kéo/resize/xoay** ⭐ | Chỉ: vật đang di chuyển · **đường căn** *(alignment guides)* · **số đo real-time** (x,y hoặc w×h) | **Toàn bộ toolbar · panel · tay nắm không liên quan** |
+| **Đang sửa chữ** (click đúp) | Con trỏ nhấp nháy + toolbar **chữ** | Toolbar vật thể |
+
+### Quy ước click chuẩn
+
+| Thao tác | Kết quả |
+|---|---|
+| Click 1 lần | **Chọn** để di chuyển/resize — KHÔNG vào sửa chữ |
+| Click đúp | Vào **sửa chữ** |
+| Esc | Thoát sửa chữ → đã chọn · Esc lần nữa → bỏ chọn |
+
+*(Lỗi hiện tại ở Present: chọn chữ để dời mà toolbar vẫn nằm đè — vi phạm trạng thái 3.)*
+
+## 2C. BẢNG LỆNH `Cmd/Ctrl + K` — thay cho nhiều ô tìm kiếm rời
+
+Một ô duy nhất, gõ gì cũng ra: dự án · deck · bản vẽ · vật liệu · ảnh thư viện · **lệnh**
+(vd "xuất pdf" → chạy luôn) · công cụ vẽ · tra quy chuẩn.
+
+Rẻ hơn làm ô tìm kiếm riêng từng màn, mạnh hơn hẳn — người dùng chỉ nhớ **một phím**.
+
+## 2D. GỢI Ý THEO NGỮ CẢNH — ba mức
+
+| Mức | Cách | Khi nào |
+|---|---|---|
+| **1 · Lọc sẵn** | Panel thư viện tự lọc theo chặng đang mở + gu dự án | Làm ngay, rủi ro 0 |
+| **2 · Gợi ý tại chỗ** | Chọn tường → hiện vật liệu tường hợp gu · slide trống → 3 bố cục | Sau |
+| **3 · Chủ động nhắc** | "Phòng này chưa có vật liệu sàn" · "3 slide đang trống" | ⚠️ Cẩn thận |
+
+**Ba luật chống phiền**: ① không chặn màn hình — gợi ý trong panel, không popup ·
+② xuất hiện ở nơi mắt đang nhìn · ③ tắt được và **nhớ đã tắt**.
+
 ## 3. Ba chỗ ComfyUI làm dở — LUẬT không chép
 
 | Lỗi của họ | Luật cho IF |
@@ -51,5 +91,5 @@ ComfyUI không có khái niệm dự án nên không thể có breadcrumb — v�
 
 ---
 
-*v1.0 · 2026-07-24 · Ben soạn theo ý Hoà.*
+*v1.1 (thêm §2B luật canvas 4 trạng thái, §2C bảng lệnh Cmd+K, §2D gợi ý ngữ cảnh) · 2026-07-24 · Ben soạn theo ý Hoà.*
 
