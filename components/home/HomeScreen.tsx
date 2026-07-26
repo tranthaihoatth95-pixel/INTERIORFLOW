@@ -258,6 +258,20 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   /** Server không trả lời được (503/mạng) — KHÁC "chưa đăng nhập", không được đá về login. */
   const [authOffline, setAuthOffline] = useState(false);
+  /**
+   * Sprint "ĐỔ NỀN 1B — dọn route song song" (26/07): banner "Chọn dự án trước" khi
+   * `LegacyStageRedirect` đá về đây vì không có dự án đang hoạt động (route cũ /cad-editor,
+   * /present-editor, /photo-editor). Đọc query param bằng `URLSearchParams(location.search)`
+   * trong effect (client-only) — CÙNG mẫu `app/demo-resort/page.tsx` đọc `?scene=`, tránh
+   * dùng hook `useSearchParams()` của Next (cần bọc <Suspense>, repo chưa có tiền lệ đó).
+   * Đọc xong dọn ngay query khỏi URL (`router.replace('/')`) để F5 không lặp lại banner.
+   */
+  const [chooseProjectNotice, setChooseProjectNotice] = useState(false);
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('notice') !== 'choose-project') return;
+    setChooseProjectNotice(true);
+    router.replace('/', { scroll: false });
+  }, [router]);
 
   const checkAuth = useCallback(async () => {
     const store = useFlowStore.getState();
@@ -398,6 +412,41 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
   if (!stageDone) {
     return (
       <>
+        {chooseProjectNotice && (
+          <div
+            role="status"
+            style={{
+              position: 'fixed',
+              top: 16,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 60,
+              padding: '10px 18px',
+              borderRadius: 10,
+              background: 'var(--panel)',
+              border: '1px solid var(--border)',
+              color: 'var(--t2)',
+              fontSize: 13,
+              boxShadow: '0 8px 24px rgba(0,0,0,.16)',
+            }}
+          >
+            Chọn dự án trước · Choose a project first
+            <button
+              type="button"
+              onClick={() => setChooseProjectNotice(false)}
+              style={{
+                marginLeft: 10,
+                background: 'none',
+                border: 'none',
+                color: 'var(--t4)',
+                cursor: 'pointer',
+                fontSize: 13,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
         <ProjectSelect
           onEnter={() => {
             setStageDone(true);
