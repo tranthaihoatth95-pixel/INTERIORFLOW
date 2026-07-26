@@ -104,6 +104,28 @@ export const ELEMENT_TYPE_OPTIONS: { value: Exclude<ElementType, null> | 'null';
   { value: 'null', label: 'Không phải phần tử BIM' },
 ];
 
+/** Công năng phòng — persisted trên TextEntity đóng vai trò nhãn phòng (xem checker.ts
+ * ROOM_NAME_RE/classifyRoom). Additive + optional: `.idf` cũ không có field này vẫn parse
+ * bình thường; undefined = chưa gán / chưa backfill — dùng classifyRoom(text) làm fallback. */
+export type RoomKind =
+  | 'bedroom' | 'wc' | 'kitchen' | 'living' | 'corridor' | 'office' | 'assembly'
+  | 'technical' | 'boh' | 'other';
+
+/** Danh mục RoomKind cho UI gán (panel chọn công năng phòng). Nhãn song ngữ Việt dẫn trước
+ * theo quy ước TTT. */
+export const ROOM_KIND_OPTIONS: { value: RoomKind; label: string }[] = [
+  { value: 'bedroom', label: 'Phòng ngủ' },
+  { value: 'wc', label: 'WC · Vệ sinh' },
+  { value: 'kitchen', label: 'Bếp' },
+  { value: 'living', label: 'Phòng khách' },
+  { value: 'corridor', label: 'Hành lang' },
+  { value: 'office', label: 'Văn phòng' },
+  { value: 'assembly', label: 'Hội trường · Hội nghị' },
+  { value: 'technical', label: 'Kỹ thuật' },
+  { value: 'boh', label: 'BOH · Hậu cần' },
+  { value: 'other', label: 'Khác' },
+];
+
 interface Base {
   id: string;
   type: EntityType;
@@ -162,6 +184,10 @@ export interface TextEntity extends Base {
   text: string;
   /** chiều cao chữ (mm) */
   h: number;
+  /** Công năng phòng đã CHỐT (persisted) — đối tác lưu bền của classifyRoom(text) suy luận từ
+   * chuỗi text. Optional: undefined = chưa gán/chưa backfill, checker.ts fallback classifyRoom().
+   * Chỉ có ý nghĩa khi entity này ĐÓNG VAI TRÒ nhãn phòng (xem ROOM_NAME_RE trong checker.ts). */
+  roomType?: RoomKind;
 }
 
 /** Loại dimension (Nấc 3). Thiếu `kind` (dữ liệu cũ) ⇒ coi như 'aligned' (tương thích ngược). */

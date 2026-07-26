@@ -38,13 +38,13 @@ import { titleBlockPro, type TitleBlockInfoPro } from '@/lib/cad/commands';
 import { getActiveBrandKit } from '@/lib/present-editor/brand-kit';
 import {
   docBox, docScaleLabel, docPaperMm, suggestStandardScale, fitsAtScale,
-  STANDARD_SCALES, PAPER_SIZES_MM, ELEMENT_TYPE_OPTIONS,
-  type PaperKey, type ElementType, type Entity,
+  STANDARD_SCALES, PAPER_SIZES_MM, ELEMENT_TYPE_OPTIONS, ROOM_KIND_OPTIONS,
+  type PaperKey, type ElementType, type Entity, type TextEntity,
 } from '@/lib/cad/model';
 import { useFlowStore } from '@/lib/store';
 import { stashCadHandoff } from '@/lib/cad/handoff';
 import { stashCadPresentHandoff } from '@/lib/cad/present-handoff';
-import { checkStandards, findRoomLabels, classifyRoom, type Violation, type RoomKind } from '@/lib/cad/standards/checker';
+import { checkStandards, findRoomLabels, classifyRoom, ROOM_NAME_RE, type Violation, type RoomKind } from '@/lib/cad/standards/checker';
 import { getAllRules } from '@/lib/cad/standards/registry';
 import { suggestFix } from '@/lib/cad/standards/fix-suggest';
 import { exportStandardsReportPdf, extractProjectName, extractDrawnBy } from '@/lib/cad/standards-report';
@@ -1789,9 +1789,12 @@ function CommandLine({ status }: { status: string }) {
  * (vẽ trực tiếp trên canvas, góc dưới-trái) — đây là ô cạnh bên trong CÙNG thanh trạng thái đáy. */
 const ROOM_KIND_LABEL: Record<RoomKind, string> = {
   bedroom: 'phòng ngủ', wc: 'WC', kitchen: 'bếp', living: 'phòng khách',
-  office: 'văn phòng', assembly: 'phòng họp', corridor: 'hành lang', other: 'khác',
+  office: 'văn phòng', assembly: 'phòng họp', corridor: 'hành lang',
+  technical: 'kỹ thuật', boh: 'BOH', other: 'khác',
 };
-const ROOM_KIND_ORDER: RoomKind[] = ['bedroom', 'wc', 'kitchen', 'living', 'office', 'assembly', 'corridor', 'other'];
+const ROOM_KIND_ORDER: RoomKind[] = [
+  'bedroom', 'wc', 'kitchen', 'living', 'office', 'assembly', 'corridor', 'technical', 'boh', 'other',
+];
 
 function RoomStatsBadge() {
   const doc = useCadStore((s) => s.doc);
@@ -1802,7 +1805,7 @@ function RoomStatsBadge() {
     const counts: Partial<Record<RoomKind, number>> = {};
     for (const r of rooms) {
       if (r.areaM2 !== null) totalM2 += r.areaM2;
-      const kind = classifyRoom(r.name);
+      const kind = r.kind;
       counts[kind] = (counts[kind] ?? 0) + 1;
     }
     return { totalM2, counts, roomCount: rooms.length };
@@ -1839,11 +1842,19 @@ function SelectionInfoPanel() {
   if (!selected.length) return null;
   const single = selection.length === 1 ? selected[0] : null;
   const blockEntity = single && single.type === 'block' ? single : null;
+  const roomLabelEntity = single && single.type === 'text' && ROOM_NAME_RE.test(single.text.trim()) ? single : null;
 
   return (
     // bottom 110 (thay 46 cũ): tránh CadTouchDock (chế độ Sketch) đè lên ô BIM/ShapeInfo.
     <div style={{ position: 'absolute', left: 12, bottom: 110, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <BimAssignBox key={selection.join('|')} selected={selected} onApply={updateEntities} />
+      {roomLabelEntity && (
+        <RoomTypeBox
+          key={`room-${roomLabelEntity.id}`}
+          entity={roomLabelEntity}
+          onApply={updateEntities}
+        />
+      )}
       {blockEntity && (
         <ShapeInfoPanel
           entity={blockEntity}
@@ -1909,6 +1920,46 @@ function BimAssignBox({ selected, onApply }: { selected: Entity[]; onApply: (es:
             <option key={String(o.value)} value={String(o.value)}>{o.label}</option>
           ))}
         </select>
+      </div>
+    </div>
+  );
+}
+
+/* ───────── Room kind picker — v1 (IF1-COMPLETION-AUDIT §3b) ─────────
+ * Hiện khi selection = ĐÚNG 1 TextEntity đóng vai trò nhãn phòng (ROOM_NAME_RE khớp). Gán
+ * roomType lên entity qua updateEntities (đã snapshot → Undo được, tôn trọng layer khoá) — từ
+ * đây đổi text label KHÔNG còn làm mất công năng phòng (trước đây classifyRoom() suy luận lại
+ * từ text MỖI LẦN checker chạy, không có gì được lưu bền). Pill list đơn giản, chưa cần cầu kỳ. */
+function RoomTypeBox({ entity, onApply }: { entity: TextEntity; onApply: (es: Entity[]) => void }) {
+  const current = entity.roomType ?? classifyRoom(entity.text.trim());
+  return (
+    <div style={{ ...panel, position: 'relative', width: 230, padding: '8px 10px' }}>
+      <div style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--t3)', letterSpacing: 0.4, marginBottom: 6 }}>
+        Công năng phòng · Room type
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+        {ROOM_KIND_OPTIONS.map((o) => {
+          const active = o.value === current;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              title={entity.roomType === undefined ? `Suy luận tự động từ nhãn "${entity.text}" — bấm để CHỐT lại (lưu bền, không mất khi đổi text).` : undefined}
+              onClick={() => onApply([{ ...entity, roomType: o.value }])}
+              style={{
+                fontSize: 10.5,
+                padding: '4px 8px',
+                borderRadius: 999,
+                border: active ? '1px solid var(--accent)' : '1px solid var(--border)',
+                background: active ? 'color-mix(in srgb, var(--accent) 16%, transparent)' : 'var(--field)',
+                color: active ? 'var(--t1)' : 'var(--t2)',
+                cursor: 'pointer',
+              }}
+            >
+              {o.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

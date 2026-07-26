@@ -33,6 +33,7 @@ import {
   type SheetsRecord,
 } from '@/lib/sheets-persist';
 import { exportIdf, importIdf } from '@/lib/cad/idf';
+import { backfillRoomTypes } from '@/lib/cad/standards/checker';
 import { useSheetsBucketId } from '@/lib/scope';
 
 const MAX_SHEETS = 5;
@@ -83,10 +84,12 @@ function blankSnapshot(): CadSnapshot {
   };
 }
 
-/** Snapshot dựng lại từ bản ghi IDB — undo-history + selection bắt đầu mới. */
+/** Snapshot dựng lại từ bản ghi IDB — undo-history + selection bắt đầu mới.
+ * backfillRoomTypes(): choke point DUY NHẤT của đường autosave-restore — gán 1 LẦN roomType cho
+ * nhãn phòng cũ chưa có field này (xem checker.ts). Idempotent, no-op nếu đã backfill trước đó. */
 function snapshotFromPersisted(p: PersistedCadSheet): CadSnapshot {
   return {
-    doc: p.doc,
+    doc: backfillRoomTypes(p.doc),
     past: [],
     future: [],
     viewport: p.viewport,
@@ -324,12 +327,15 @@ export default function CadSheets() {
       const dropped = parsed.sheets.length - kept.length;
       snaps.current = {};
       for (const s of kept) {
+        // backfillRoomTypes(): file .idf cũ (trước khi roomType tồn tại) — gán 1 LẦN roomType
+        // cho nhãn phòng chưa có field này, để sau đó đổi text label không mất công năng phòng.
+        const doc = backfillRoomTypes(s.doc);
         snaps.current[s.id] = {
-          doc: s.doc,
+          doc,
           past: [],
           future: [],
           viewport: { ...DEFAULT_VIEWPORT },
-          currentLayer: s.doc.layers[0]?.id ?? 'l-wall',
+          currentLayer: doc.layers[0]?.id ?? 'l-wall',
           selection: [],
         };
       }

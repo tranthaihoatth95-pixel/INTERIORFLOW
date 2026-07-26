@@ -21,7 +21,7 @@
  * checker giữ nguyên nguyên tắc an toàn: bỏ qua phòng đó, không đoán mò.
  */
 
-import type { Doc, Entity, Pt } from '../model';
+import type { Doc, Entity, Pt, RoomKind } from '../model';
 import { findHatchBoundary, polygonArea, pointInPolygon } from '../hatch';
 import type { StandardRule, Severity } from './registry';
 import { BLOCK_MAP } from '../furniture';
@@ -74,11 +74,15 @@ export interface RoomInfo {
    * khi đo areaM2/minWidthMm. Trả thêm ra (optional, ADDITIVE) để dossier-check/AiBriefPanel lấy
    * hình bao lòng phòng thật mà KHÔNG phải chạy lại DCEL lần 2. undefined = không dò được biên. */
   poly?: Pt[];
+  /** Công năng phòng — ưu tiên `roomType` đã lưu trên entity, fallback `classifyRoom(name)` khi
+   * chưa gán (dữ liệu cũ/chưa backfill). Tính 1 lần trong `findRoomLabels()`, mọi nơi gọi PHẢI
+   * dùng field này thay vì tự gọi lại `classifyRoom()`. */
+  kind: RoomKind;
 }
 
 // TOÀN chữ hoa Unicode (khớp cả chữ Việt có dấu hoa)/số/khoảng trắng/dấu chấm/dấu cộng — lọc
 // nhãn TÊN PHÒNG ra khỏi các TEXT khác (tiêu đề, chú thích có chữ thường, số đo "12.2 m²"…).
-const ROOM_NAME_RE = /^[\p{Lu}0-9\s.+]+$/u;
+export const ROOM_NAME_RE = /^[\p{Lu}0-9\s.+]+$/u;
 
 /**
  * Doc chỉ giữ hình học "tường thật" cho mục đích dò biên phòng — loại bỏ 2 nguồn nhiễu:
@@ -112,20 +116,24 @@ export function findRoomLabels(doc: Doc): RoomInfo[] {
     if (/M2|M²/i.test(s)) continue; // loại text diện tích "12.2 m²"
     if (!ROOM_NAME_RE.test(s)) continue;
     const poly = findHatchBoundary(boundaryDoc, t.at);
+    const kind = t.roomType ?? classifyRoom(s);
     rooms.push({
       name: s,
       at: t.at,
       areaM2: poly ? polygonArea(poly) / 1e6 : null,
       minWidthMm: poly ? polygonMinWidth(poly) : null,
       poly: poly ?? undefined,
+      kind,
     });
   }
   return rooms;
 }
 
 /** Sprint 4: export để room-autolabel.ts (C1.5 room count) tái dùng đúng luật phân loại — không
- * nhân bản logic classifyRoom(). Hành vi checkStandards() KHÔNG đổi. */
-export type RoomKind = 'bedroom' | 'wc' | 'kitchen' | 'living' | 'corridor' | 'office' | 'assembly' | 'other';
+ * nhân bản logic classifyRoom(). Hành vi checkStandards() KHÔNG đổi.
+ * `RoomKind` nay ĐỊNH NGHĨA ở model.ts (persisted trên TextEntity.roomType) — import + re-export
+ * lại đây để mep-suggest.ts/CadEditor.tsx không phải đổi đường import. */
+export type { RoomKind };
 
 /**
  * 2026-07-16: MỞ RỘNG ra ngoài "chỉ nhà ở" — sản phẩm phục vụ dự án MỌI quy mô
@@ -148,6 +156,27 @@ export function classifyRoom(name: string): RoomKind {
   return 'other';
 }
 
+/** Tương thích ngược: gán roomType 1 LẦN cho mọi TextEntity nhãn phòng chưa có field này
+ * (dữ liệu cũ trước khi roomType tồn tại). Trả về Doc MỚI (immutable, cùng convention với
+ * store.ts) — không mutate input. Idempotent: entity đã có roomType thì giữ nguyên, không
+ * ghi đè (tôn trọng lựa chọn UI của user nếu khác classifyRoom()). Lọc y hệt findRoomLabels()
+ * (length/M2/ROOM_NAME_RE) để backfill ĐÚNG tập text mà checker coi là nhãn phòng — không tự
+ * suy diễn lại tập lọc riêng. */
+export function backfillRoomTypes(doc: Doc): Doc {
+  let changed = false;
+  const entities = doc.entities.map((e) => {
+    if (e.type !== 'text') return e;
+    if (e.roomType !== undefined) return e;
+    const s = e.text.trim();
+    if (s.length < 2) return e; // loại số bong bóng trục "1".."9"/"A".."Z" đơn ký tự
+    if (/M2|M²/i.test(s)) return e; // loại text diện tích "12.2 m²"
+    if (!ROOM_NAME_RE.test(s)) return e;
+    changed = true;
+    return { ...e, roomType: classifyRoom(s) };
+  });
+  return changed ? { ...doc, entities } : doc;
+}
+
 function mkViolation(r: StandardRule, message: string, at?: Pt): Violation {
   return { ruleId: r.id, source: r.source, severity: r.severity, category: r.category, message, verified: r.verified, at };
 }
@@ -161,7 +190,7 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
 
   for (const room of rooms) {
     if (room.areaM2 === null) continue; // không dò được biên kín — bỏ qua, không đoán mò
-    const kind = classifyRoom(room.name);
+    const kind = room.kind;
 
     if (kind === 'bedroom') {
       const r = byId('vn-res-bedroom-min-area');
@@ -303,7 +332,7 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
     const outletEntities = doc.entities.filter((e) => e.type === 'block' && e.block === 'outlet');
     for (const room of rooms) {
       if (room.areaM2 === null) continue;
-      const kind = classifyRoom(room.name);
+      const kind = room.kind;
       if (kind !== 'bedroom' && kind !== 'living' && kind !== 'kitchen') continue;
       const rule = kind === 'kitchen' ? rOutletKitchen : rOutletRes;
       if (!rule) continue;

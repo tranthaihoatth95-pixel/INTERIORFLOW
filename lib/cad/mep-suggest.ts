@@ -29,7 +29,7 @@ import { findHatchBoundary, pointInPolygon } from './hatch';
 import { BLOCK_MAP } from './furniture';
 import type { BlockDef } from './furniture';
 import { effectiveBlockSize } from './shape-interactions';
-import { findRoomLabels, classifyRoom, type RoomKind, type RoomInfo } from './standards/checker';
+import { findRoomLabels, type RoomKind, type RoomInfo } from './standards/checker';
 import { VN_LIGHTING } from './standards/vn-lighting';
 
 /* ═══════════════════════════ D1.1 — lux suggest ═══════════════════════════ */
@@ -162,7 +162,7 @@ function wallLikeDocForMep(doc: Doc): Doc {
  * suggestRoomLightingPlans, cũng export riêng để test/tái dùng có mục tiêu. */
 export function suggestRoomLightingPlan(doc: Doc, room: RoomInfo): RoomLightingPlan | null {
   if (room.areaM2 === null) return null;
-  const kind = toLightingRoomKind(classifyRoom(room.name));
+  const kind = toLightingRoomKind(room.kind);
   if (!kind) return null;
   const lighting = estimateLightingSuggestion(room.areaM2, kind);
   if (!lighting) return null;
