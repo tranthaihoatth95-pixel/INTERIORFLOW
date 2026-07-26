@@ -144,39 +144,58 @@ Nguồn "tôi đang ở dự án nào?":
 - Resume-state vẫn ghi TÊN ROUTE CŨ (`/cad-editor`…) cho gọn kiểu `ResumableRoute`; auto-resume
   đi qua cầu redirect nên vẫn về đúng chặng + đúng dự án.
 
-## 1D. Mô hình phát hành — CHỐT: **C — Đa nền tảng đóng gói** (26/07)
+## 1D. Mô hình phát hành — CHỐT: **LOCAL-FIRST + ĐỒNG BỘ theo pha** (26/07, đã sửa lại)
 
-> Quyết định kinh doanh, không phải kỹ thuật — user chốt sau khi được trình bày 3 phương
-> án đối chiếu bằng chứng thật trong repo (không suy đoán).
+> Quyết định kinh doanh, không phải kỹ thuật. ⚠️ Bản CHỐT THẬT SỰ nằm ở đây — **KHÔNG phải
+> "C — Đa nền tảng"** như một bản ghi trước đó của mục này từng viết (commit `7ccb024`).
+> User đã sửa lại ngay sau đó: mô hình thật **không nằm gọn trong A/B/C** đã trình bày ban
+> đầu, mà là local-first có lộ trình đồng bộ 3 pha. Giữ lại 3 phương án A/B/C bên dưới làm
+> ngữ cảnh đối chiếu — pha 1 trùng B, nhưng KHÔNG dừng ở B.
 
-**Repo từng giữ 2 tài liệu MÂU THUẪN nhau về hướng phát hành:**
-- `DEPLOY-CHECKLIST.md` (15/07, nhánh `feat/deploy-vercel-supabase`) — giả định **cloud
-  SaaS**: 1 server dùng chung nhiều user, Postgres qua Supabase, Vercel hosting.
-- `README-electron.md` + `docs/RESEARCH-INSTALLER-4-PLATFORMS.md` (23/07, mới hơn, còn ghi
-  "CHỜ USER DUYỆT") — giả định **desktop đóng gói**: mỗi máy 1 instance riêng, SQLite +
-  `uploads/` trên đĩa máy đó, Electron nhúng sẵn Next.js server.
+**Bối cảnh (không đổi):** repo từng giữ 2 tài liệu mâu thuẫn nhau — `DEPLOY-CHECKLIST.md`
+(15/07) giả định cloud SaaS Vercel+Supabase; `README-electron.md` + `docs/RESEARCH-
+INSTALLER-4-PLATFORMS.md` (23/07) giả định desktop đóng gói. 3 phương án A (cloud) / B
+(desktop 1 nền) / C (desktop đa nền, không sync) đã đối chiếu — xem lịch sử git nếu cần bảng
+so sánh gốc.
 
-**3 phương án đối chiếu:**
+**Mô hình thật, theo 3 pha:**
 
-| | Mô hình | Hạ tầng cần | Trạng thái so với code thật |
-|---|---|---|---|
-| A | Cloud SaaS (Vercel + Supabase) | Đổi Prisma sang `postgresql`, thêm S3/Redis, NextAuth hoặc tương đương | **NGƯỢC** hoàn toàn — sẽ biến SQLite/local-disk/auth-tự-viết hiện tại thành nợ kỹ thuật thật, phải migrate |
-| B | Desktop đơn nền (chỉ Windows `.exe`) | Không đổi gì | Khớp code thật, nhưng hẹp hơn phạm vi đã research |
-| **C** | **Đa nền tảng đóng gói** (Windows · Mac · Android · iOS, mỗi máy 1 instance) | Không đổi tầng dữ liệu; chỉ thêm công đoạn đóng gói/ký từng nền tảng (`docs/RESEARCH-INSTALLER-4-PLATFORMS.md`) | **ĐÃ chọn** |
+| Pha | Nội dung | Hạ tầng |
+|---|---|---|
+| **1 (nay)** | Desktop đóng gói, **KHÔNG đồng bộ**. Trùng phương án B nhưng **chỉ Windows + macOS** (không Android/iOS ở pha này) | SQLite + `uploads/` trên đĩa máy đó, y hệt hiện tại — **không đổi gì** |
+| **2** | Đồng bộ **MỘT CHIỀU**: đẩy lên để khách xem deck qua link (push-only, không kéo dữ liệu về máy) | Cần 1 điểm đặt để host bản deck đã xuất — chưa thiết kế, việc của lúc đó |
+| **3** | Đồng bộ **HAI CHIỀU** (nhiều máy/nhiều người cùng 1 dự án) | Dùng thư viện có sẵn — **Turso embedded replica** hoặc **PowerSync**. **KHÔNG tự viết engine sync** |
 
-**Hệ quả:**
-- **`DATABASE_URL` = SQLite local, `./uploads` = đĩa local, auth tự viết JWT (`jose` +
-  cookie `if_session`) là ĐÚNG HƯỚNG cho mô hình C — KHÔNG được liệt vào "Nợ kỹ thuật"
-  trong STATUS.md.** Đừng migrate sang Postgres/S3/NextAuth nếu không có quyết định MỚI
-  đảo ngược mục này.
-- **`DEPLOY-CHECKLIST.md` coi như DEPRECATED** — là sản phẩm của một nhánh audit đã khảo
-  sát xong (15/07), không phải hướng đang theo. Giữ lại làm tài liệu tham khảo nếu SAU
-  NÀY đổi sang mô hình A, không xoá.
-- Việc build tiếp theo cho mô hình C: bám `docs/RESEARCH-INSTALLER-4-PLATFORMS.md` mục
-  "Thứ tự triển khai đề xuất (Sprint 1/2/3)" — tài liệu đó đang ở trạng thái "chờ duyệt",
-  nay coi như **đã duyệt hướng**, chi tiết sprint vẫn theo đúng thứ tự đã đề xuất.
-- `README-electron.md` (Windows) là bản THAM CHIẾU cho 3 nền tảng còn lại — cùng nguyên lý
-  "nhúng sẵn backend, mỗi máy 1 instance", khác công cụ đóng gói theo OS.
+**Hệ quả — ghi đè lại đúng những gì bản trước đã ghi sai phạm vi:**
+- **`DATABASE_URL` = SQLite local (qua Prisma), `./uploads` = đĩa local, auth tự viết JWT
+  (`jose` + cookie `if_session`) là ĐÚNG HƯỚNG cho Pha 1 — KHÔNG liệt vào "Nợ kỹ thuật"
+  trong STATUS.md.** Đừng migrate sang Postgres/S3/NextAuth chỉ vì "sau này sẽ cần cloud" —
+  Pha 3 dùng Turso/PowerSync (vẫn SQLite-based), không phải Postgres.
+- **`DEPLOY-CHECKLIST.md` → DEPRECATED**, gắn nhãn ngay trong file (không xoá). Lý do: giả
+  định sai cả tầng lưu trữ (Postgres/Supabase) lẫn mô hình vận hành (1 server dùng chung)
+  so với hướng local-first đã chốt. Có thể hữu ích một phần nếu Pha 2/3 sau này cần một
+  server nhỏ để host deck — nhưng phải viết lại, không dùng nguyên trạng.
+- **`docs/RESEARCH-INSTALLER-4-PLATFORMS.md` → THU HẸP còn Windows + macOS** cho app CAD
+  đầy đủ. Android/iOS **lùi lại, đổi mục đích**: không đóng gói app CAD đầy đủ, mà chỉ để
+  **xem/duyệt deck qua web** (đúng khớp Pha 2 — đẩy deck lên cho khách xem, khách có thể
+  đang cầm điện thoại). Gắn ghi chú này thẳng vào file đó.
+- **5 ràng buộc schema local-first phải áp NGAY ở Pha 1** (đắt nếu để dồn tới Pha 3 mới sửa
+  — lúc đó dữ liệu thật đã sinh ra không có các cột này, phải backfill):
+  1. `id` = chuỗi ngẫu nhiên (cuid/uuid/ULID), KHÔNG autoincrement — tránh đụng id khi hợp
+     nhất dữ liệu từ nhiều máy.
+  2. Mọi bảng có `updatedAt` + `rev` (số hiệu bản sửa) — nền cho conflict resolution.
+  3. Xoá mềm `deletedAt`, không xoá cứng — một bản ghi bị xoá trên máy A phải "biến mất"
+     một cách có thể đồng bộ sang máy B, không phải biến mất khỏi DB luôn.
+  4. Ghi `deviceId`/người sửa vào mỗi thay đổi — cần khi 2 máy sửa cùng 1 bản ghi.
+  5. Tách file khỏi DB — **ĐÃ ĐÚNG**: `LibraryAsset` giữ `path`, ảnh nằm ở `uploads/`, DB
+     không nhồi blob.
+  → **Kết quả audit 16 model thật** (không suy đoán, đọc trực tiếp `prisma/schema.prisma`):
+  xem bảng ở mục **2C** ngay dưới `2B`. Tóm tắt: (1) đạt 16/16 · (2) **updatedAt chỉ 3/16,
+  rev 0/16** · (3) **deletedAt 0/16 — mọi xoá đều là `onDelete: Cascade` cứng** · (4) **0/16
+  có deviceId** · (5) đạt.
+- `README-electron.md` là bản THAM CHIẾU cho macOS (electron-builder có sẵn target `--mac`,
+  script `electron:build:mac` đã có trong `package.json`) — cùng nguyên lý "nhúng sẵn
+  backend, mỗi máy 1 instance".
 
 ## 2. Mô hình dữ liệu lõi (tóm tắt — chi tiết ở `prisma/schema.prisma`)
 
@@ -214,6 +233,51 @@ not exist)** giữa chừng, không báo trước.
    26/07 đã tránh được — chỉ sửa `.ts`/`.tsx`, không đụng schema).
 4. Phát hiện thấy `P2022` bất thường ở một phiên đang chạy → nghi ngay worktree khác vừa
    regenerate client qua symlink chung, đừng debug theo hướng dữ liệu hỏng trước.
+
+## 2C. Audit 16 model so với 5 ràng buộc local-first (26/07 — báo cáo, CHƯA sửa)
+
+Đọc trực tiếp `prisma/schema.prisma` (327 dòng), không suy đoán. **CHỈ báo cáo — chưa đổi
+schema**, vì mỗi cột thêm cần cân nhắc riêng (mirror table Lark vs bảng user tự sửa có ý
+nghĩa "rev/deletedAt" khác nhau, xem ghi chú cuối bảng).
+
+| Model | id cuid | updatedAt | rev | deletedAt | Ghi chú |
+|---|---|---|---|---|---|
+| User | ✅ | ❌ | ❌ | ❌ | có `lastSeenAt`, `createdAt` — không có updatedAt |
+| IntegrationAccount | ✅ | ✅ | ❌ | ❌ | |
+| Project | ✅ | ❌ | ❌ | ❌ | |
+| ProjectMember | ✅ | ❌ | ❌ | ❌ | có `joinedAt` thay updatedAt |
+| ProjectNotebook | ✅ | ✅ | ❌ | ❌ | |
+| NotebookSource | ✅ | ❌ | ❌ | ❌ | |
+| NotebookChunk | ✅ | ❌ | ❌ | ❌ | |
+| Flow | ✅ | ✅ | ⚠️ | ❌ | có `version` Int nhưng là version SNAPSHOT app-logic (khớp `FlowVersion`), không phải rev đồng bộ chung |
+| FlowVersion | ✅ | ❌ | ⚠️ | ❌ | snapshot bất biến theo thiết kế (mỗi lần Run tạo bản mới) — không cần updatedAt/deletedAt |
+| CreditTransaction | ✅ | ❌ | ❌ | ❌ | sổ cái append-only theo thiết kế — không nên có deletedAt (xoá giao dịch = sai bản chất kế toán) |
+| ChatMessage | ✅ | ❌ | ❌ | ❌ | |
+| LibraryAsset | ✅ | ❌ | ❌ | ❌ | |
+| LarkTaskRef | ✅ | ❌ | ❌ | ❌ | mirror PULL-ONLY từ Larkbase, có `syncedAt` — Larkbase mới là nguồn chân lý, sync 2 chiều của IF không áp dụng cho bảng này |
+| LarkPersonRef | ✅ | ❌ | ❌ | ❌ | mirror, cùng lý do trên |
+| ProductSpec | ✅ | ❌ | ❌ | ❌ | `syncedAt` nullable (có thể nhập tay, không chỉ từ Lark) |
+| LarkUserMap | ✅ | ❌ | ❌ | ❌ | ánh xạ tay 1 lần, ít khi đổi |
+
+**Tóm tắt:**
+- **(1) id ngẫu nhiên: 16/16 — ĐẠT TUYỆT ĐỐI.** Mọi model đều `String @id @default(cuid())`,
+  không model nào autoincrement. Không cần sửa gì cho ràng buộc này.
+- **(2) updatedAt: 3/16** (`IntegrationAccount`, `ProjectNotebook`, `Flow`). **rev: 0/16**
+  theo đúng nghĩa "số hiệu bản sửa dùng cho đồng bộ" — `Flow.version`/`FlowVersion.version`
+  là version snapshot ứng dụng, không thiết kế cho conflict resolution đa thiết bị.
+- **(3) deletedAt: 0/16.** Mọi quan hệ xoá hiện là `onDelete: Cascade` hoặc `SetNull` — xoá
+  cứng thật sự ở tầng DB.
+- **(4) deviceId/người sửa: 0/16.**
+- **(5) tách file khỏi DB: ĐẠT** — `LibraryAsset.path` + `NotebookSource.filePath` đều lưu
+  đường dẫn, không lưu blob.
+
+**Việc này chưa cần làm ở Pha 1** (không đồng bộ thì chưa cần rev/deletedAt/deviceId để hoà
+giải xung đột) — nhưng phải làm **trước khi bắt đầu Pha 2**, vì lúc đó bắt đầu có dữ liệu
+rời máy (đẩy deck lên) và việc thêm cột vào bảng đã có hàng triệu bản ghi thật sẽ tốn hơn
+nhiều so với thêm ngay bây giờ khi DB còn nhỏ. Đề xuất phạm vi tối thiểu cho Pha 2: các
+model User tự tay sửa trực tiếp — `Project`, `Flow`, `LibraryAsset`, `ProjectMember` —
+chưa cần áp cho các bảng mirror Lark (đã có `syncedAt` + Larkbase là nguồn chân lý) hay
+`CreditTransaction`/`FlowVersion` (immutable theo thiết kế, xoá mềm sai bản chất).
 
 ---
 

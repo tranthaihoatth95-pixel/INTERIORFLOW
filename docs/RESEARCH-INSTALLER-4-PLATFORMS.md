@@ -1,5 +1,12 @@
 # NGHIÊN CỨU — Kế hoạch triển khai 4 bộ cài InteriorFlow (Windows · Mac · Android · iOS/iPadOS)
 
+> ⚠️ **THU HẸP PHẠM VI (26/07/2026)** — Mô hình phát hành đã CHỐT (`docs/IF-CORE-SCHEMA.md`
+> mục 1D): app CAD đầy đủ (đóng gói, local-first) **chỉ Windows + macOS**. **Android/iOS
+> KHÔNG đóng gói app đầy đủ** ở giai đoạn này — lùi lại, đổi mục đích thành **chỉ xem/duyệt
+> deck qua web** (khớp Pha 2 — đồng bộ một chiều đẩy deck lên cho khách xem trên điện
+> thoại). Đọc phần Android/iOS bên dưới với tinh thần đó: hữu ích cho tương lai xa, KHÔNG
+> phải việc build tiếp theo. Việc build tiếp theo là Sprint Windows + macOS.
+>
 > Ngày lập: **2026-07-23** · Người lập: Agent nghiên cứu · Trạng thái: **CHỜ USER DUYỆT trước khi phóng Sprint build**.
 > Cập nhật báo cáo trước: [docs/RESEARCH-MOBILE-DISTRIBUTION.md](RESEARCH-MOBILE-DISTRIBUTION.md) (2026-07-20 — vẫn còn hiệu lực cho phần chính sách store).
 > Nhiệm vụ này CHỈ nghiên cứu + scaffold checklist. **Không cài dep mới, không sửa app code.**

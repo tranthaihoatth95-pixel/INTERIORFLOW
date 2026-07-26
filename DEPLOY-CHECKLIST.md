@@ -1,5 +1,13 @@
 # DEPLOY-CHECKLIST — InteriorFlow on Vercel + Supabase
 
+> ⛔ **DEPRECATED (26/07/2026)** — Mô hình phát hành đã CHỐT là **local-first + đồng bộ theo
+> pha** (`docs/IF-CORE-SCHEMA.md` mục 1D), KHÔNG phải cloud SaaS. File này giả định sai cả
+> tầng lưu trữ (Postgres/Supabase — thật ra là SQLite local qua Prisma) lẫn mô hình vận hành
+> (1 server dùng chung nhiều user — thật ra mỗi máy 1 instance, đóng gói bằng Electron). Xem
+> `README-electron.md` cho hướng đang theo. KHÔNG làm theo checklist này.
+> Giữ lại không xoá — có thể còn hữu ích một phần nếu Pha 2/3 (đồng bộ deck) cần một server
+> nhỏ để host, nhưng phải viết lại cho khớp mô hình local-first, không dùng nguyên trạng.
+
 > Ngay 15/07/2026 — tu nhanh `feat/deploy-vercel-supabase`
 > Build status: **PASS** (Next.js 14.2.35, 31 static + 24 dynamic routes, 0 type error)
 
