@@ -38,6 +38,8 @@ export interface SessionUser {
   name: string;
   credits: number;
   isAdmin: boolean;
+  /** JSON string cấu hình avatar (User.avatar). Thiếu → render random deterministic từ id. */
+  avatar?: string | null;
 }
 
 interface HistoryEntry {
