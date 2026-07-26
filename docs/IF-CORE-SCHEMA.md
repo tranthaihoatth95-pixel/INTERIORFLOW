@@ -300,7 +300,9 @@ lên) cần biết dữ liệu tới từ máy nào.
 
 ## 3. Hiến pháp dữ liệu tri thức T1 (bổ sung từ bundle Ben, 26/07)
 
-> Nguồn: `docs/IF-DOCS-BUNDLE-v1.md` chunk `docs/IF-CORE-SCHEMA.md` (*v1.0 · 2026-07-24 · Ben
+> Nguồn: `docs/IF-DOCS-BUNDLE-v1.md` (⚠️ tên file này KHÔNG còn trong repo — KHÔNG PHẢI mất nội
+> dung: đã XOÁ CÓ CHỦ ĐÍCH sau khi tách hết 11 chunk vào docs/ 26/07, xem `CHANGELOG.md` 26/07;
+> ghi lại tên cũ ở đây chỉ để tra nguồn gốc đoạn dưới) chunk `docs/IF-CORE-SCHEMA.md` (*v1.0 · 2026-07-24 · Ben
 > soạn theo blueprint v1.2 mục 5B–5C*). Chunk đó TRÙNG TÊN với file này nhưng là tài liệu KHÁC
 > hẳn (tầng "não tri thức" T5 — GuProfile/MaterialRef/FeedbackRecord/KnowledgePack — không phải
 > Prisma DB đang chạy ở §2). Đã đối chiếu: phần LUẬT TRUNG TÍNH/LUẬT DEMO/route tree của chunk

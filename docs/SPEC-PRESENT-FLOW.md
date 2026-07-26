@@ -2,7 +2,10 @@
 
 > **[CẦN HOÀ DUYỆT]** · Chẩn đoán gốc (Hoà, 24/07): *"thông minh chưa tới mà human-in-loop
 > cũng chưa tới"* — Present đang **kẹt giữa** hai mô hình.
-> Đọc cùng `SPEC-UI-SHELL.md`, `SPEC-SEMANTIC-MODEL.md`, `IF-PRESENT-SPRINT-PLAN.md`.
+> Đọc cùng `SPEC-UI-SHELL.md`, `SPEC-SEMANTIC-MODEL.md`, `IF-PRESENT-SPRINT-PLAN.md` (⚠️ FILE
+> KHÔNG CÓ TRONG REPO, 26/07 — lộ trình PS đầy đủ không còn ở đâu, chỉ còn mảnh rải rác nhắc số
+> PS trong `docs/IF-ARCHITECTURE-BLUEPRINT-v1.md` + `docs/SPEC-RENDER-STUDIO.md` +
+> `docs/RESEARCH-TEAM-COLLABORATION.md` — cần Hoà upload lại bản đầy đủ nếu còn cần).
 
 ---
 

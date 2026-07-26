@@ -2,8 +2,10 @@
 
 > **Vai trò file**: Hiến pháp kiến trúc — đứng TRÊN mọi spec/sprint plan. Trả lời 4 câu:
 > đâu là kiến trúc app · đâu là tri thức · đâu là input/output · tính năng nào thuộc bậc nào.
-> KHÔNG thay thế `IF-MASTER-ARCHITECTURE.md` (roadmap) hay `IF-FEATURE-SPEC-P1-v2.md` (chi tiết
-> 101 item) — file này là LƯỚI PHÂN LOẠI đặt lên trên chúng.
+> KHÔNG thay thế **`docs/IF1_IF2_BIGPICTURE.md`** (roadmap — sửa dẫn chiếu 26/07: đây chính là
+> file trước gọi "IF-MASTER-ARCHITECTURE.md", đã có sẵn trong repo dưới tên khác) hay
+> `IF-FEATURE-SPEC-P1-v2.md` (chi tiết 101 item · ⚠️ **FILE KHÔNG CÓ TRONG REPO — cần Hoà upload
+> lại nếu còn cần**) — file này là LƯỚI PHÂN LOẠI đặt lên trên chúng.
 >
 > **Luật đọc cho Claude Code**: nhận task mới → tra hộ chiếu tính năng (mục 3) trước khi code.
 > Task không khai được hộ chiếu = task chưa đủ rõ, trả lại hỏi.
@@ -271,8 +273,8 @@ Present giữ nguyên lộ trình PS: PS-2 → PS-3 → gate → PS-5/6/9 (khôn
 1. **Không xây L khi N chặng đó chưa ✅.** Muốn phá lệ → RIN trình lý do, VŨ duyệt.
 2. **Mọi task code phải có hộ chiếu 6 trường** (mục 3). Không hộ chiếu = không code.
 3. **Mỗi sprint một bậc**: sprint-N (backfill) tách khỏi sprint-L (sáng tạo). Không trộn.
-4. **Thừa thì cắt, ghi sổ**: ⛔ list trong `IF-PRESENT-SPRINT-PLAN.md` là mẫu — mỗi chặng
-   giữ mục "Đã cân nhắc & LOẠI" để không đề xuất lại.
+4. **Thừa thì cắt, ghi sổ**: ⛔ list trong `IF-PRESENT-SPRINT-PLAN.md` (⚠️ FILE KHÔNG CÓ TRONG
+   REPO — xem §9) là mẫu — mỗi chặng giữ mục "Đã cân nhắc & LOẠI" để không đề xuất lại.
 5. **Output mồ côi không được ship**: mọi đầu ra có id + metadata theo T1, nạp được về T5.
 6. **Luật human-in-the-loop — áp cho MỌI tính năng AI** *(gợi ý layout CAD · vật liệu · Present ·
    Vitals)*. Chẩn đoán gốc: *"thông minh chưa tới mà human-in-loop cũng chưa tới"* = kẹt giữa.
@@ -293,13 +295,23 @@ Present giữ nguyên lộ trình PS: PS-2 → PS-3 → gate → PS-5/6/9 (khôn
 
 ## 9. QUAN HỆ VỚI CÁC FILE KHÁC
 
+> ⚠️ **Vá dẫn chiếu file ma (26/07)** — quét toàn `docs/` thấy 4/6 nhánh dưới đây trỏ tới file
+> KHÔNG tồn tại trong repo. Đã sửa 2 (nội dung thật ra nằm sẵn dưới tên khác), đánh dấu 2 THẬT SỰ
+> MẤT (không thấy nội dung thay thế ở đâu trong repo — cần Hoà upload lại nếu còn cần).
+
 ```
 IF-ARCHITECTURE-BLUEPRINT-v1  ← file này (lưới phân loại, đứng trên)
-├── IF-MASTER-ARCHITECTURE     (roadmap IF1/IF2 — không đổi)
-├── IF-CORE-SCHEMA (sắp viết)  (chi tiết kỹ thuật T1: id, GuProfile, feedback record)
-├── IF-FEATURE-SPEC-P1-v2      (101 item — sẽ gắn nhãn bậc N/P/L dần)
-├── IF-FEATURE-UPGRADES        (nguồn danh sách backfill N — mục 7)
-└── IF-PRESENT-SPRINT-PLAN     (lộ trình PS — giữ nguyên)
+├── docs/IF1_IF2_BIGPICTURE.md    (roadmap IF1/IF2 — ĐÃ CÓ, chỉ đổi tên so với "IF-MASTER-
+│                                  ARCHITECTURE" ghi trước đây, sửa dẫn chiếu 26/07)
+├── docs/IF-CORE-SCHEMA.md        (chi tiết kỹ thuật T1 — ĐÃ VIẾT, không còn "sắp viết")
+├── IF-FEATURE-SPEC-P1-v2         ⚠️ FILE KHÔNG CÓ TRONG REPO (101 item — bậc N/P/L)
+├── IF-FEATURE-UPGRADES           ⚠️ FILE KHÔNG CÓ TRONG REPO (nguồn backfill N — mục 7 file
+│                                  này đang liệt kê TRỰC TIẾP danh sách A5.1…A4.1, coi như đã
+│                                  chép lại phần cần dùng — xem Sprint ĐỔ NỀN 2, CHANGELOG 26/07)
+└── IF-PRESENT-SPRINT-PLAN        ⚠️ FILE KHÔNG CÓ TRONG REPO — lộ trình PS đầy đủ không còn ở
+                                   đâu; chỉ còn MẢNH rải rác nhắc số PS (PS-2/3/5/6/9…) trong
+                                   chính file này + `SPEC-RENDER-STUDIO.md` +
+                                   `RESEARCH-TEAM-COLLABORATION.md`, không đủ thay thế toàn bộ.
 ```
 
 *v1.2 · 2026-07-24 · Ben soạn, chờ Hoà duyệt: luật số 1 · 5 moat · thứ tự backfill · adapter

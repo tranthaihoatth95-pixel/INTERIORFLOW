@@ -3,7 +3,8 @@
 > **[CẦN HOÀ DUYỆT]** · Chẩn đoán 26/07: giao diện Sketch và Pro hiện **chỉ khác số lượng icon**
 > — đó là **phân biệt giả**. Bằng chứng: đưa bản Sketch hiện tại lên iPad vẫn không dùng được
 > (nút nhỏ như cho chuột, không cử chỉ, không nhận bút).
-> Đọc cùng `IF-FEATURE-SPEC-P1-v2.md`, `SPEC-UI-SHELL.md`.
+> Đọc cùng `IF-FEATURE-SPEC-P1-v2.md` (⚠️ FILE KHÔNG CÓ TRONG REPO — cần Hoà upload lại nếu còn
+> cần, xem `docs/IF-ARCHITECTURE-BLUEPRINT-v1.md` §9), `SPEC-UI-SHELL.md`.
 
 ---
 

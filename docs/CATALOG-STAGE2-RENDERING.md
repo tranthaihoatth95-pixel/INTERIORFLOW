@@ -158,7 +158,8 @@ Mức 1 (Không AI): các node UTILITY + `three.cad2fbx` + tầng lõi của `te
 
 - `docs/STRATEGY-ai-tiers-and-safety.md` — triết lý 4 mức AI.
 - `docs/CAD-AI-MECHANISM.md` — cơ chế clay → AI tổng thể.
-- `IF-FEATURE-SPEC-P1.md` — spec sprint P1 (chặng 2 nằm trong M2).
+- `IF-FEATURE-SPEC-P1.md` — spec sprint P1 (chặng 2 nằm trong M2). ⚠️ FILE KHÔNG CÓ TRONG REPO
+  (26/07, vá dẫn chiếu) — cần Hoà upload lại nếu còn cần đối chiếu.
 - `lib/nodes/registry.ts` (1037 dòng) — CORE nodes.
 - `lib/nodes/defs/render-v2.ts` (513 dòng) — 6 node "V2" (text2image · camera · cad2fbx · idmask · furnitureextract · localedit).
 - `lib/ai/models.ts` — task ↔ model map.

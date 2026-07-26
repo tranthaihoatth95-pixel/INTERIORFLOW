@@ -22,7 +22,7 @@ Bạn phụ trách **polish giao diện** cho InteriorFlow (Next.js 14 + Tailwin
    - `components/Header.tsx`, `components/NodeLibraryPanel.tsx`, các `*Panel.tsx`, `components/LeftRail.tsx` — **chỉ className/responsive**, giữ nguyên logic + các component con (PhaseSwitcher, AiTierMenu, ViewToggle) và `data-testid`.
    - `app/globals.css` — **chỉ thêm** trong block đánh dấu `/* === MIA UI === */ ... /* === /MIA UI === */`, không sửa token/biến sẵn có.
    - `lib/motion.ts` — thêm variant mới, không đổi cái đang dùng.
-3. **TUYỆT ĐỐI KHÔNG đụng**: `lib/store.ts`, `lib/execution.ts`, `lib/nodes/registry.ts`, `lib/ai/**`, `lib/phases.ts`, `lib/types.ts`, `app/api/**`, `prisma/**`, `next.config.mjs`. Cần đổi gì ở đây → ghi vào `docs/MIA-requests.md` để phiên kia làm.
+3. **TUYỆT ĐỐI KHÔNG đụng**: `lib/store.ts`, `lib/execution.ts`, `lib/nodes/registry.ts`, `lib/ai/**`, `lib/phases.ts`, `lib/types.ts`, `app/api/**`, `prisma/**`, `next.config.mjs`. Cần đổi gì ở đây → ghi vào `docs/MIA-requests.md` để phiên kia làm. ⚠️ Vá dẫn chiếu 26/07: `docs/MIA-requests.md` **KHÔNG tồn tại** — khác bản chất 6 file ma còn lại trong đợt vá này (đây là file ĐÍCH để GHI, không phải nguồn đọc bị mất). File cả 2 (`PROMPT-MIA-*`) đề ngày đầu tháng 7, worktree `interiorflow-mia` không còn tồn tại, không có nhắc "Mia" nào trong CHANGELOG/STATUS hiện tại ⇒ nhiều khả năng workflow này đã XONG/BỎ từ lâu, chưa từng cần ghi gì vào `MIA-requests.md`, không phải mất dữ liệu.
 4. **Commit path-scoped**, message tiền tố `ui:` — `git add components/ app/globals.css && git commit -m "ui: ..."`. Đừng `git add -A`.
 5. Sau mỗi cụm việc: `npx tsc --noEmit` phải exit 0.
 
