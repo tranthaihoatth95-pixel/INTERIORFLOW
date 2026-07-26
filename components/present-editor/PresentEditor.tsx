@@ -1517,7 +1517,9 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
           </button>
         )}
 
-        {/* giữa: canvas */}
+        {/* giữa: canvas — nền TỐI HƠN trang (docs/SPEC-UI-SHELL.md §3B "giấy vuông, vỏ bo") để
+            trang slide (vuông góc, box-shadow nổi + viền 1px sáng) tách bạch rõ khỏi vỏ canvas,
+            không cần bo góc trang để phân biệt. */}
         <main
           ref={canvasAreaRef}
           data-if-deselect-zone="true"
@@ -1530,6 +1532,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
             padding: 24,
             overflow: 'auto',
             position: 'relative',
+            background: 'var(--bg)',
           }}
         >
           {ed.slide ? (

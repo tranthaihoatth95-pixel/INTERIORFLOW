@@ -83,6 +83,24 @@ Rẻ hơn làm ô tìm kiếm riêng từng màn, mạnh hơn hẳn — người
 | Canvas trống trơn, không biết bắt đầu | **Empty state** bắt buộc: 2 nút mời gọi + tour (xem Luật demo) |
 | Phân nhóm theo kỹ thuật (model/experimental/advanced/utilities) | Phân theo **việc thiết kế**, không theo kiến trúc phần mềm |
 
+## 3B. GIẤY VUÔNG, VỎ BO — quy tắc bo góc *(chốt 27/07)*
+
+> **Luật**: mọi bề mặt đại diện cho đầu ra in/xuất phải giữ đúng hình dạng thật của đầu ra đó.
+> Giấy thì vuông, vỏ thì bo.
+
+- **"Giấy"** = trang slide/trang in ở chặng Presenting — bề mặt đại diện trực tiếp cho PDF/PPTX/
+  ảnh xuất ra. PDF/PPTX/in **luôn luôn vuông góc** ⇒ trang trong editor phải `border-radius: 0`.
+  Bo góc ở đây là **nói dối WYSIWYG**: người dùng thấy góc bo trong editor nhưng file xuất ra vẫn
+  vuông — hai kết quả khác nhau. Bug cụ thể đã sửa: bo góc trang cắt mất góc ảnh full-bleed dù
+  ảnh xuất ra không hề bị cắt.
+  - Tách trang khỏi canvas bằng **box-shadow nổi + viền 1px sáng nhẹ + nền canvas tối hơn
+    trang** — KHÔNG dùng bo góc để phân biệt "đây là 1 tờ giấy khác với nền sau nó".
+- **"Vỏ"** = mọi thứ KHÔNG đại diện cho đầu ra in/xuất: panel · toolbar · nút · thẻ kính (`lq-card`)
+  · thumbnail ở dải slide dưới cùng (thẻ ĐIỀU HƯỚNG, không phải giấy) — GIỮ NGUYÊN bo góc như hiện
+  tại (`--radius-sm/md/lg/xl`, hoặc 6–8px riêng cho thumbnail).
+- Áp dụng: `components/present-editor/EditorCanvas.tsx` (bề mặt trang) — không áp cho
+  `components/present-editor/SlideStrip.tsx` (dải thumbnail, vẫn bo 6px).
+
 ## 4. Ghi chú
 
 - Khung này áp cho cả 3 chặng → mọi panel mới phải nằm trong khung, không tự chế layout riêng.
@@ -91,5 +109,6 @@ Rẻ hơn làm ô tìm kiếm riêng từng màn, mạnh hơn hẳn — người
 
 ---
 
+*v1.2 (thêm §3B "giấy vuông, vỏ bo" — quy tắc bo góc trang Present) · 2026-07-27 · Ben soạn theo ý Hoà.*
 *v1.1 (thêm §2B luật canvas 4 trạng thái, §2C bảng lệnh Cmd+K, §2D gợi ý ngữ cảnh) · 2026-07-24 · Ben soạn theo ý Hoà.*
 

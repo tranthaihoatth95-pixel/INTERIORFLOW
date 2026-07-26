@@ -243,8 +243,13 @@ export default function EditorCanvas({
         inset: 0,
         background: slide.background,
         containerType: 'size',
-        boxShadow: '0 10px 40px rgba(0,0,0,.35)',
-        borderRadius: 8,
+        // "Giấy thì vuông, vỏ thì bo" (docs/SPEC-UI-SHELL.md §3B) — trang slide đại diện cho
+        // PDF/PPTX/in thật, PHẢI vuông góc (borderRadius: 0). Bo góc ở đây từng làm ảnh
+        // full-bleed bị cắt góc giả (WYSIWYG sai — xuất ra vẫn vuông). Tách trang khỏi canvas
+        // bằng box-shadow nổi + viền 1px sáng nhẹ thay vì bo góc.
+        borderRadius: 0,
+        border: '1px solid rgba(255,255,255,0.08)',
+        boxShadow: '0 20px 60px -12px rgba(0,0,0,.5), 0 4px 16px rgba(0,0,0,.25)',
         overflow: 'hidden',
         userSelect: 'none',
         // Format Painter đang bật (Việc 1) — báo con trỏ "đang có định dạng để dán".

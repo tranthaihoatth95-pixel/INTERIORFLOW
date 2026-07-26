@@ -86,7 +86,10 @@ export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
           aspectRatio: `${stage.w} / ${stage.h}`,
           position: 'relative',
           overflow: 'hidden',
-          borderRadius: 8,
+          // "Giấy thì vuông, vỏ thì bo" (docs/SPEC-UI-SHELL.md §3B) — đây là mô phỏng đúng
+          // khung trình chiếu thật, PHẢI vuông góc như PDF/PPTX xuất ra.
+          borderRadius: 0,
+          border: '1px solid rgba(255,255,255,0.08)',
           containerType: 'size',
         }}
       >
