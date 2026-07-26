@@ -144,6 +144,40 @@ Nguồn "tôi đang ở dự án nào?":
 - Resume-state vẫn ghi TÊN ROUTE CŨ (`/cad-editor`…) cho gọn kiểu `ResumableRoute`; auto-resume
   đi qua cầu redirect nên vẫn về đúng chặng + đúng dự án.
 
+## 1D. Mô hình phát hành — CHỐT: **C — Đa nền tảng đóng gói** (26/07)
+
+> Quyết định kinh doanh, không phải kỹ thuật — user chốt sau khi được trình bày 3 phương
+> án đối chiếu bằng chứng thật trong repo (không suy đoán).
+
+**Repo từng giữ 2 tài liệu MÂU THUẪN nhau về hướng phát hành:**
+- `DEPLOY-CHECKLIST.md` (15/07, nhánh `feat/deploy-vercel-supabase`) — giả định **cloud
+  SaaS**: 1 server dùng chung nhiều user, Postgres qua Supabase, Vercel hosting.
+- `README-electron.md` + `docs/RESEARCH-INSTALLER-4-PLATFORMS.md` (23/07, mới hơn, còn ghi
+  "CHỜ USER DUYỆT") — giả định **desktop đóng gói**: mỗi máy 1 instance riêng, SQLite +
+  `uploads/` trên đĩa máy đó, Electron nhúng sẵn Next.js server.
+
+**3 phương án đối chiếu:**
+
+| | Mô hình | Hạ tầng cần | Trạng thái so với code thật |
+|---|---|---|---|
+| A | Cloud SaaS (Vercel + Supabase) | Đổi Prisma sang `postgresql`, thêm S3/Redis, NextAuth hoặc tương đương | **NGƯỢC** hoàn toàn — sẽ biến SQLite/local-disk/auth-tự-viết hiện tại thành nợ kỹ thuật thật, phải migrate |
+| B | Desktop đơn nền (chỉ Windows `.exe`) | Không đổi gì | Khớp code thật, nhưng hẹp hơn phạm vi đã research |
+| **C** | **Đa nền tảng đóng gói** (Windows · Mac · Android · iOS, mỗi máy 1 instance) | Không đổi tầng dữ liệu; chỉ thêm công đoạn đóng gói/ký từng nền tảng (`docs/RESEARCH-INSTALLER-4-PLATFORMS.md`) | **ĐÃ chọn** |
+
+**Hệ quả:**
+- **`DATABASE_URL` = SQLite local, `./uploads` = đĩa local, auth tự viết JWT (`jose` +
+  cookie `if_session`) là ĐÚNG HƯỚNG cho mô hình C — KHÔNG được liệt vào "Nợ kỹ thuật"
+  trong STATUS.md.** Đừng migrate sang Postgres/S3/NextAuth nếu không có quyết định MỚI
+  đảo ngược mục này.
+- **`DEPLOY-CHECKLIST.md` coi như DEPRECATED** — là sản phẩm của một nhánh audit đã khảo
+  sát xong (15/07), không phải hướng đang theo. Giữ lại làm tài liệu tham khảo nếu SAU
+  NÀY đổi sang mô hình A, không xoá.
+- Việc build tiếp theo cho mô hình C: bám `docs/RESEARCH-INSTALLER-4-PLATFORMS.md` mục
+  "Thứ tự triển khai đề xuất (Sprint 1/2/3)" — tài liệu đó đang ở trạng thái "chờ duyệt",
+  nay coi như **đã duyệt hướng**, chi tiết sprint vẫn theo đúng thứ tự đã đề xuất.
+- `README-electron.md` (Windows) là bản THAM CHIẾU cho 3 nền tảng còn lại — cùng nguyên lý
+  "nhúng sẵn backend, mỗi máy 1 instance", khác công cụ đóng gói theo OS.
+
 ## 2. Mô hình dữ liệu lõi (tóm tắt — chi tiết ở `prisma/schema.prisma`)
 
 - **Project** `{ id, userId, name, clientName?, larkProjectCode?, currentStage,
@@ -155,6 +189,31 @@ Nguồn "tôi đang ở dự án nào?":
 
 Cửa quyền DUY NHẤT: `lib/server/access.ts` (`assertProjectAccess`) — route không
 tự query `ProjectMember` rải rác.
+
+## 2B. Luật worktree & Prisma — KHÔNG sửa `schema.prisma` khi `node_modules` symlink chung (26/07)
+
+Worktree thường được dựng bằng `ln -s .../interiorflow/node_modules` sang worktree mới để
+đỡ cài lại — nhanh nhưng **`@prisma/client` sinh ra bên trong `node_modules` đó là DÙNG
+CHUNG cho mọi worktree trỏ vào**.
+
+**Vì sao nguy hiểm:** `prisma generate` (chạy tay hoặc tự động sau khi sửa `schema.prisma`)
+ghi đè client đã sinh — nếu một worktree sửa schema (thêm/bớt cột) rồi regenerate, client
+mới đó lập tức áp dụng cho **TẤT CẢ** worktree khác đang symlink chung, kể cả worktree/máy
+chủ (`main`) đang có phiên khác chạy dở. Phiên đó gọi `SELECT` cột mà `dev.db` của nó
+CHƯA có (vì DB mỗi worktree tách riêng, `dev.db.wt` khác `dev.db`) ⇒ **`P2022` (column does
+not exist)** giữa chừng, không báo trước.
+
+**Luật:**
+1. **Sửa `schema.prisma` CHỈ làm trên nhánh tích hợp (`main`/`feat/present-layout-ml-p1`)**,
+   không làm trong worktree phụ.
+2. Nếu BẮT BUỘC phải sửa schema trong worktree (ví dụ agent code chạy song song cần thêm
+   cột) → worktree đó phải **cài `node_modules` riêng** (`npm install`, không symlink),
+   để `prisma generate` chỉ ảnh hưởng chính nó.
+3. Trước khi giao việc cho agent vào worktree symlink chung: nói rõ trong prompt "KHÔNG
+   sửa `prisma/schema.prisma`" nếu việc đó không cần đổi schema (đúng cách avatar đợt 2
+   26/07 đã tránh được — chỉ sửa `.ts`/`.tsx`, không đụng schema).
+4. Phát hiện thấy `P2022` bất thường ở một phiên đang chạy → nghi ngay worktree khác vừa
+   regenerate client qua symlink chung, đừng debug theo hướng dữ liệu hỏng trước.
 
 ---
 
