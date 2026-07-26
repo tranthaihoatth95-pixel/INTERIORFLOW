@@ -9,8 +9,14 @@
  *
  * ⛔ LUẬT TRUNG TÍNH (CLAUDE.md · docs/CONTENT-RULES.md): resort + studio trong demo là HƯ CẤU
  * ("Nord Bay" · "Atelier Nord"). KHÔNG dùng tên khách/khu nghỉ thật — kể cả trong tên file tải về.
+ *
+ * ⚠️ Gắn cờ demo (Sprint "ĐỔ NỀN 1B — dọn route song song", T2, 26/07): route dev-only,
+ * không có entry UI (docs/APP-MAP.md §2) — CHỈ vào được khi `NEXT_PUBLIC_DEMO=true`. Build
+ * production → `router.replace('/')` ngay khi mount, cùng mẫu LegacyStageRedirect (client
+ * component nên dùng router.replace trong effect, không dùng `redirect()` server-side).
  */
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { renderSlide, type SlideTheme, type SlideOptions } from '@/lib/slides';
 import { composeBoard } from '@/lib/imaging';
 
@@ -146,7 +152,24 @@ function download(name: string, dataUri: string) {
   const a = document.createElement('a'); a.href = dataUri; a.download = name; a.click();
 }
 
+/**
+ * Gate demo (T2) — component RIÊNG, không gộp vào `DemoResortInner`: Rules of Hooks cấm
+ * return sớm TRƯỚC khi gọi hết hook, nên tách hẳn ra ngoài để off-flag KHÔNG chạy bất kỳ
+ * effect sinh ảnh/PDF nào của bản demo (không chỉ redirect, mà còn tránh lãng phí compute).
+ */
 export default function DemoResort() {
+  const router = useRouter();
+  const enabled = process.env.NEXT_PUBLIC_DEMO === 'true';
+
+  useEffect(() => {
+    if (!enabled) router.replace('/');
+  }, [enabled, router]);
+
+  if (!enabled) return null;
+  return <DemoResortInner />;
+}
+
+function DemoResortInner() {
   const [log, setLog] = useState<string[]>([]);
   const [slides, setSlides] = useState<string[]>([]);
   const [moodboard, setMoodboard] = useState<string>('');
