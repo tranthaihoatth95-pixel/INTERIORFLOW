@@ -145,6 +145,58 @@ render pipeline). Dù dùng Remotion, bản N tử tế vẫn cỡ **6–10 tu�
 **Thứ tự bắt buộc**: ① nền CAD cảm giác tay → ② bộ công cụ deck (nhóm 1) → ③ video timeline.
 Làm video trước khi deck có mask/gradient thì chỉ ghép được ảnh thô — không hơn CapCut mà tốn gấp đôi.
 
+### Phim kiến trúc — thị trường thật, nhưng IF đứng ở đâu?
+
+> **Đính chính**: bản v1.0 xếp Storyboard/kịch bản vào "làm phim, không lấy" — **SAI**.
+> Phim kiến trúc nội thất là **nghề riêng có giá**, và tập đoàn BĐS chuộng phim có câu chuyện
+> gắn marketing hơn ảnh tĩnh.
+
+| Loại phim | Giá VN | Làm bằng gì | IF cạnh tranh? |
+|---|---|---|---|
+| **Cao cấp** 60–90s CGI | 200–500tr+ | 3ds Max/Corona · **Unreal** · After Effects | ❌ **Không** — cần ray tracing, camera chuẩn |
+| **Trung** 30–60s | 30–100tr | D5 animation + dựng | 🟡 một phần |
+| **Clip social** 15–30s | 5–20tr | Ảnh render + Ken Burns + chữ + nhạc | ✅ **Có** |
+
+> ⭐ **IF KHÔNG đua dựng phim thay Unreal.** IF làm **XƯỞNG TIỀN KỲ** — nửa đầu quy trình,
+> nơi tốn thời gian nhất mà hầu như không có công cụ.
+
+| Bước tiền kỳ | Hiện làm sao | IF làm được gì |
+|---|---|---|
+| **Kịch bản gắn marketing** | Viết tay, hên xui | Brief + gu CĐT + local DNA → LLM sinh narrative |
+| **Storyboard** ⭐ | Vẽ tay / ghép ảnh | **Sinh từ dự án THẬT** — đúng phòng, đúng vật liệu, đúng gu |
+| **Camera path** ⭐ | Bàn miệng rồi dựng lại trong Max | **Vẽ đường đi trên mặt bằng CAD** → xuất D5/Unreal |
+| **Animatic** (phim nháp có nhịp) | Hiếm ai làm | Ảnh render + Ken Burns + nhạc + lời → duyệt nhịp TRƯỚC khi tốn tiền dựng |
+
+**Moat ở 2 dòng có ⭐**: Storyboard Studio của Google *bịa cảnh*; storyboard IF **đọc từ mặt bằng
+thật**. Camera path vẽ trên mặt bằng thì **chỉ IF làm được** — vì chỉ IF có mặt bằng.
+
+### Chuỗi
+```
+Brief + gu CĐT ─→ ① KỊCH BẢN (LLM)
+                        ↓
+Mặt bằng CAD ───→ ② STORYBOARD (cảnh nào · phòng nào · nói gì)
+                        ↓
+                  ③ CAMERA PATH vẽ trên mặt bằng
+                        ↓
+              ┌─────────┴─────────┐
+   ④a ANIMATIC nháp          ④b XUẤT sang D5/Unreal
+   (ảnh + nhịp + nhạc)          (studio dựng phim thật)
+              └─────────┬─────────┘
+                  ⑤ HẬU KỲ NHẸ: ghép · chữ · nhạc · đổi tỉ lệ social
+```
+
+**④b là mấu chốt**: IF **không dựng phim, IF giao việc cho phần mềm dựng phim** — kèm camera path,
+danh sách cảnh, kịch bản, vật liệu. Studio dựng tiết kiệm nửa thời gian tiền kỳ. **Đó là thứ bán được.**
+
+**⑤ chính là timeline CapCut-like** ở trên — lý do tồn tại rõ hơn: không phải để làm phim,
+mà để **hoàn thiện phim đã dựng + cắt bản social**.
+
+### Thứ tự (sau nền CAD + deck toolkit)
+1. Kịch bản + storyboard *(chỉ LLM + dữ liệu dự án, KHÔNG cần video engine — rẻ nhất)*
+2. Animatic từ ảnh render (Ken Burns + nhạc + lời)
+3. Camera path trên mặt bằng → xuất D5/Unreal
+4. Timeline hậu kỳ CapCut-like
+
 ## 4. ⚠️ ĐỪNG TỰ VIẾT ENGINE
 
 Viết canvas editor từ đầu = **6–12 tháng**. Dùng thư viện mã nguồn mở:
@@ -172,4 +224,4 @@ dựng timeline riêng. Đúng nguyên tắc "một bộ vẽ, nhiều chế đ�
 
 ---
 
-*v1.1 · 2026-07-26 · Ben soạn theo ý Hoà. (v1.1: nâng nhóm 4 Video lên mức CapCut-like + kiến trúc timeline-as-data)*
+*v1.2 · 2026-07-26 · Ben soạn theo ý Hoà. (v1.1: nâng nhóm 4 Video lên mức CapCut-like + kiến trúc timeline-as-data. v1.2: thêm "Phim kiến trúc" — đính chính ⛔ cũ, XƯỞNG TIỀN KỲ.)*

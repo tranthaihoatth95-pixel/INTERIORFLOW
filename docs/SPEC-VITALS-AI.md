@@ -298,4 +298,24 @@ gu của dự án khác — trái §2 mục 2 và `docs/CONTENT-RULES.md` §1. M
 
 ---
 
+## Gom AI về một cửa — một trợ lý, nhiều điểm gọi
+
+**Hiện trạng**: AI **rơi rớt 4 chỗ** — "AI mô tả" ở CAD · node AI ở Render · PS-8 ở Present ·
+Vitals riêng. Mỗi chỗ một kiểu, người dùng không biết chỗ nào làm được gì.
+
+**Gom KHÔNG phải dồn hết vào một ô chat.** Mà là **một trợ lý, nhiều điểm gọi**
+*(one assistant, many entry points)*:
+
+| Gọi ở đâu | Vitals biết gì | Làm gì |
+|---|---|---|
+| CAD | Đang mở bản vẽ nào, phòng nào | Đề bài → phương án · tra quy chuẩn · tô vật liệu |
+| Render | Ảnh nào đang chọn, thẻ nào đang chạy | Gợi ý thẻ · viết prompt · đọc gu từ ảnh |
+| Present | Deck nào, slide nào | Khởi thảo nội dung · chọn bố cục · viết narrative |
+| Library | Đang lọc gì | Tìm bằng câu chữ · gắn thẻ |
+
+**Luật**: cùng một bộ não (T5), khác ngữ cảnh. **Không nhân bản 4 trợ lý.**
+Áp luật 7 blueprint: mọi việc Vitals làm phải có **hàm có tên** mà UI cũng gọi được.
+
+---
+
 *File này là DRAFT. Không code Nhóm 4/5/6 trước khi Hoà duyệt spec + trả lời §5.*

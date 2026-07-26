@@ -83,6 +83,37 @@ chưa.** Không app 2D nào làm được.
 > Ghi chú thiết kế: trong render, "đẹp" phân bổ khoảng **ánh sáng 40% · góc máy 25% · vật liệu
 > 20% · hậu kỳ 15%**. Muốn đẹp nhanh thì **preset ánh sáng + preset camera** lãi hơn dồn sức vào maps.
 
+### Mặt bằng chiếu sáng *(lighting plan)* — 3 mức, một nguồn dữ liệu
+
+> **KHÔNG phải mô phỏng ánh sáng vật lý** — là hiệu ứng đồ hoạ 2D thuần.
+> SVG/Canvas: **0 credit, hiển thị tức thì, không AI, không GPU.**
+
+| Thành phần | Kỹ thuật |
+|---|---|
+| Nền tối, nét sáng | Đảo màu mặt bằng vector |
+| Quầng sáng tròn ở đèn | **Radial gradient** tại toạ độ đèn |
+| Vệt sáng dài (LED hắt) | **Linear gradient** dọc theo đường |
+| Hai đèn chồng nhau sáng hơn | **Blend mode** screen/add |
+
+**Nguyên liệu IF đã có**: mặt bằng vector + layer ✅ · blend/gradient 🟡 *(nhóm 1 editor toolkit)*
+· **đối tượng "đèn" có ngữ nghĩa** (vị trí · loại · quang thông) ⬜ **CHƯA — đây là thứ chặn**
+⇒ chính là **Pha 2 mô hình ngữ nghĩa** (`SPEC-SEMANTIC-MODEL.md` §3). Không phải việc mới,
+giờ có thêm lý do rất cụ thể để làm.
+
+| Mức | Ra cái gì | Chi phí | Dùng để |
+|---|---|---|---|
+| **1 · Trang trí** | Quầng sáng đều, đẹp mắt | Rẻ nhất | **Social · deck** — format này viral thật (2.1k likes) |
+| **2 · Có căn cứ** | Quầng to nhỏ **theo quang thông + góc chiếu thật** của từng loại đèn | Rẻ | Trình bày CĐT — nhìn là biết đèn nào mạnh |
+| **3 · Tính lux** | **Con số** lux từng phòng, so QCVN | Rẻ (lumen method) | Kiểm tra kỹ thuật — **moat L6** |
+
+⭐ **Cùng một layer đèn nuôi cả ba.** Studio khác phải vẽ tay mặt bằng đẹp *rồi lại* tính lux
+riêng bằng Dialux. IF làm một lần.
+Mức 2 hơn hẳn cách vẽ tay: quầng sáng **theo đèn thật đã chọn trong ATLAS** ⇒ nhìn ra chỗ thiếu
+sáng mà chưa cần tính.
+
+**Nối tiếp**: mặt bằng chiếu sáng + Animated Layout loại 5 (ngày↔đêm) = một trong những nội dung
+social mạnh nhất của studio nội thất.
+
 ## 5. Chuẩn chung để dùng được cả V-Ray lẫn D5
 
 **PBR** *(Physically Based Rendering)* là ngôn ngữ chung mọi engine hiện đại. Lưu ATLAS theo
@@ -131,5 +162,5 @@ không phải graph.
 
 ---
 
-*v1.0 · 2026-07-24 · Ben soạn theo ý Hoà.*
+*v1.1 (thêm §4 Mặt bằng chiếu sáng — 3 mức, một nguồn dữ liệu) · 2026-07-26 · Ben soạn theo ý Hoà.*
 

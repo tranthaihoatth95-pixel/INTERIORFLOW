@@ -185,6 +185,63 @@ onboarding, landing page, tài liệu bán hàng. Một công bốn việc.
 | Update là vỡ workflow | **Khoá phiên bản** *(pin version)* trong manifest |
 | Thiếu model | Thẻ tự kiểm `requires` → báo thiếu gì, tải ở đâu |
 
+## 6B. HỆ TOOL — học mô hình Google Flow *(khảo sát 26/07)*
+
+### Ba khái niệm, đừng lẫn
+| | Là gì | Ví dụ |
+|---|---|---|
+| **Node** | Một công đoạn | ControlNet Apply |
+| **Thẻ / Tool** | **Một việc hoàn chỉnh** — gói sẵn node + prompt + núm + preview + tác giả | "Sketch → Ảnh thật" |
+| **Flow** | Chuỗi nhiều tool | Sketch → render → dàn deck |
+
+### Ba tab như Google Flow — mở rộng gần như 0 chi phí
+`Của IF` · `Cộng đồng` · `Của tôi`
+⇒ Không phải làm hết 20 tool: làm **8 tool nền**, để studio tự đẻ thêm và chia sẻ.
+Khớp với luật §6: master dựng workflow → "Lưu thành thẻ" → cả team dùng.
+
+### Ánh xạ — chọn lọc theo nghề, KHÔNG copy hết
+Google Flow là app **làm phim**. Chỉ lấy cái ánh xạ được sang nội thất/kiến trúc.
+
+| Tool Google | → Tool IF | Ưu tiên |
+|---|---|---|
+| **Style Writer** (moodboard → style prompt) | **Đọc gu từ ảnh khách** | ⭐⭐⭐ |
+| **Shot Explorer** (xem cảnh góc mới) | **Đổi góc phối cảnh** | ⭐⭐⭐ |
+| **Grid Architect** (lưới ảnh + tách rời) | **Bảng vật liệu / moodboard** | ⭐⭐⭐ |
+| Converge (render sketch) | Sketch → Ảnh thật | ✅ đã có trong 6 thẻ N |
+| Mask Magic (segmentation) | Sửa một mảng | ✅ đã có |
+| Mockup (ghép vào bối cảnh) | Đặt món nội thất vào phòng | ⭐⭐ |
+| Poster Designer | Trang bìa deck có chuyển động | ⭐⭐ |
+| Stringout Creator | Ghép clip → video deck | ⭐⭐ |
+| Storyboard Studio | Kịch bản video thuyết trình | ⭐ |
+| Character X-Ray · Weirdcore · Video Granulator · pixelBento · Shader Effects | ❌ **KHÔNG lấy** — làm phim, không phải kiến trúc |
+
+### Ba tool đắt nhất — vì sao
+
+**1 · Đọc gu từ ảnh khách** — CHÍNH LÀ Gu Engine đã có, **thiếu mặt tiền**. Khách đưa 5 ảnh
+Pinterest → máy ra prompt + **chấm 10 trục gu**. Google chỉ ra prompt chữ; IF ra **vector gu có
+cấu trúc ngành**, dùng lại được cho CAD · Present · thư viện. ⇒ IF **mạnh hơn** Google ở đây,
+không phải bắt chước.
+
+**2 · Đổi góc phối cảnh** — CĐT nào cũng hỏi "cho xem góc khác", hiện phải quay lại 3ds Max.
+Nếu có **model 3D thô từ pull tường** (extrude — §7 chuỗi 2D→3D) thì đổi góc là **hình học thuần,
+không phải AI đoán** ⇒ chính xác hơn Google. **Moat thật.**
+
+**3 · Lưới ảnh có cấu trúc** — material board & moodboard là deliverable hằng ngày. Google làm
+cho ảnh chung; IF gắn được **mã vật liệu + giá + NCC** vào từng ô (chuỗi L5).
+
+### ⭐ Khác biệt cốt lõi phải giữ
+> Tool của Google **tự do sáng tác**. Tool của IF **ràng buộc bởi dữ liệu dự án** —
+> gu khách · bản vẽ thật · mã vật liệu có giá. Đó là lý do tồn tại của IF.
+
+### Thứ tự
+| Pha | Tool |
+|---|---|
+| 1 | 6 thẻ N đã chốt (§6) |
+| 2 | **Đọc gu từ ảnh** (nối Gu Engine sẵn có — rẻ nhất trong 3 tool ⭐⭐⭐) |
+| 3 | **Lưới vật liệu / moodboard** (nối ATLAS) |
+| 4 | **Đổi góc phối cảnh** (chờ chuỗi 2D→3D extrude) |
+| 5 | Ba tab Của IF / Cộng đồng / Của tôi — khi kho thẻ đủ nhiều |
+
 ## 7. Chuỗi 2D → 3D → Render (tham vọng, mổ ra 4 khúc)
 
 | Khúc | Bản chất | Ai làm |
@@ -203,5 +260,5 @@ onboarding, landing page, tài liệu bán hàng. Một công bốn việc.
 
 ---
 
-*v1.1 (thêm §1B chẩn đoán hiện trạng + Tool mode) · 2026-07-24 · Ben soạn theo ý Hoà.*
+*v1.2 (thêm §6B hệ tool — học mô hình Google Flow) · 2026-07-26 · Ben soạn theo ý Hoà.*
 

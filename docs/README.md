@@ -88,6 +88,7 @@
 | [`RESEARCH-TEAM-COLLABORATION.md`](RESEARCH-TEAM-COLLABORATION.md) | Cộng tác nhóm — comment bất đồng bộ & real-time — đề xuất, chưa thực thi. |
 | [`RESEARCH-TECHNICAL-DRAWING-PIPELINE.md`](RESEARCH-TECHNICAL-DRAWING-PIPELINE.md) | Dàn trang bản vẽ kỹ thuật + cầu nối CAD→Presenting — đề xuất, chưa thực thi. |
 | [`SPEC-ARCHINOTE-IF-BOUNDARY.md`](SPEC-ARCHINOTE-IF-BOUNDARY.md) | Ranh giới ArchiNote ↔ InteriorFlow — [CẦN HOÀ DUYỆT]. |
+| [`SPEC-BRIEF-INTAKE.md`](SPEC-BRIEF-INTAKE.md) | Đề bài → Phương án (brief intake) + chuẩn vận hành thương hiệu (Accor/Marriott…) — [CẦN HOÀ DUYỆT]. |
 | [`SPEC-CAD-MODES.md`](SPEC-CAD-MODES.md) | CAD hai chế độ (Sketch↔Pro) — [CẦN HOÀ DUYỆT]. |
 | [`SPEC-COLLABORATION.md`](SPEC-COLLABORATION.md) | Cộng tác nhóm (bình luận ngữ cảnh) — [CẦN HOÀ DUYỆT]. |
 | [`SPEC-EDITOR-TOOLKIT.md`](SPEC-EDITOR-TOOLKIT.md) | Bộ công cụ editor (deck·graphic·photo·video) — [CẦN HOÀ DUYỆT]. |
@@ -99,6 +100,7 @@
 | [`SPEC-PRODUCT-INFRA.md`](SPEC-PRODUCT-INFRA.md) | Hạ tầng sản phẩm — [CẦN HOÀ DUYỆT]. |
 | [`SPEC-RENDER-STUDIO.md`](SPEC-RENDER-STUDIO.md) | Render Studio (canvas+node+template) — [CẦN HOÀ DUYỆT]. |
 | [`SPEC-SEMANTIC-MODEL.md`](SPEC-SEMANTIC-MODEL.md) | Mô hình ngữ nghĩa 2D (BIM-lite) — [CẦN HOÀ DUYỆT]. |
+| [`SPEC-STAGE-0-IDEATION.md`](SPEC-STAGE-0-IDEATION.md) | CHẶNG 0 · Ý tưởng & moodboard — chặng mới phát hiện thiếu 26/07 — [CẦN HOÀ DUYỆT]. |
 | [`SPEC-UI-SHELL.md`](SPEC-UI-SHELL.md) | Khung giao diện chung — [CẦN HOÀ DUYỆT]. |
 | [`SPEC-VITALS-AI.md`](SPEC-VITALS-AI.md) | Vitals AI — trợ lý AI trong IF — DRAFT v0.1, [CẦN HOÀ DUYỆT]. |
 

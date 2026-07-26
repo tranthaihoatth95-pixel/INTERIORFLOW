@@ -175,5 +175,63 @@ mục đích, cho phép rút lại. Bán ra nước ngoài thì GDPR chặt hơn
 
 ---
 
-*v1.1 · 2026-07-24 · Ben soạn theo ý Hoà.*
+## 9. THU THẬP HIỆN TRƯỜNG NÂNG CAO — panorama · ghi âm · phân tích từ toạ độ
+
+### 9.1 ⭐ Phân tích hiện trạng từ TOẠ ĐỘ — toán thuần, 0 credit *(giá trị cao nhất)*
+
+| Suy ra được | Bằng gì | Chi phí |
+|---|---|---|
+| **Hướng nắng · quỹ đạo mặt trời** theo mùa/giờ | Thuật toán vị trí mặt trời từ vĩ độ + ngày *(SunCalc)* | **0đ, chính xác 100%** |
+| **Bóng đổ** theo giờ | Cùng phép toán | 0đ |
+| **Hướng gió chủ đạo** *(windrose)* | Khí tượng lịch sử (Open-Meteo) hoặc **QCVN 02:2022** số liệu khí hậu VN | Gần 0đ |
+| Nhiệt độ · độ ẩm · mưa theo tháng | Cùng nguồn | 0đ |
+| **Hướng view đẹp** (biển/núi/đường/công trình) | Bản đồ + độ cao + hướng | Rẻ |
+| Bối cảnh xung quanh | Ảnh vệ tinh + street view | Rẻ |
+
+⇒ Đây chính là trang **"SITE & CONTEXT"** trong deck concept thật (địa hình · khí hậu · giá trị
+bối cảnh). Hiện làm tay: tìm ảnh, tra số liệu, viết chữ. Sinh tự động từ toạ độ ⇒ **một chương
+hồ sơ ra trong 30 giây**.
+
+⚠️ **Giới hạn giữ**: chỉ làm **diagram 2D** (sun path · hướng gió · bóng đổ đơn giản).
+Mô phỏng bóng đổ 3D theo giờ là việc của Rhino/Grasshopper — **không đua**.
+
+### 9.2 Ghi âm thay gõ — đã chín, làm được ngay
+
+Nhu cầu thật: ngoài công trường tay cầm thước/máy đo, **không gõ được**.
+```
+Bấm ghi → nói → thả tay
+  → chuyển thành chữ tự động (STT, tiếng Việt tốt)
+  → gắn vào: ảnh vừa chụp · vị trí trên mặt bằng · toạ độ GPS
+  → GIỮ CẢ file âm thanh gốc
+```
+**Giữ file gốc là bắt buộc** — chữ hoá sai thì còn bản gốc nghe lại; ngữ điệu và chi tiết bị chữ
+hoá bỏ sót vẫn còn.
+
+### 9.3 Panorama — giá trị ở chỗ GẮN VÀO MẶT BẰNG
+
+Chụp panorama không mới. Cái đắt: **click một điểm trên mặt bằng → xem panorama chụp tại đúng
+điểm đó** (Street View nội bộ của công trình).
+
+| Bậc | Cách |
+|---|---|
+| **N** | Panorama camera điện thoại + **ghim toạ độ trên mặt bằng** |
+| P | Camera 360 rời (Insta360 · Ricoh Theta) qua Bluetooth |
+| L | Nhiều điểm → đi lại giữa các điểm như Street View |
+
+**Lợi ích thật**: không phải quay lại công trường. Ba tháng sau cần kiểm chiều cao dầm — mở
+panorama ra xem, khỏi đi 300km.
+
+### 9.4 Cả ba nuôi CHẶNG 0
+```
+ArchiNote hiện trường
+  ├─ toạ độ   → nắng · gió · view · khí hậu ─┐
+  ├─ panorama ghim trên mặt bằng ────────────┤→ CHẶNG 0 Ý TƯỞNG
+  ├─ ghi âm → chữ ───────────────────────────┤   (trang Site & Context TỰ SINH)
+  └─ ảnh + số đo laser ──────────────────────┘        ↓
+                                               CAD dựng từ số thật
+```
+
+---
+
+*v1.2 (thêm §9 thu thập hiện trường nâng cao — panorama · ghi âm · phân tích toạ độ) · 2026-07-26 · Ben soạn theo ý Hoà.*
 

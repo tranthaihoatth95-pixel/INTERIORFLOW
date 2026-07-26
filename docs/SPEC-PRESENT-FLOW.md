@@ -114,6 +114,33 @@ Vài ngày công, **0 credit vận hành**.
 | **P** | TTS thuyết minh (đọc speaker notes) · Ken Burns/parallax từ ảnh render · ghép b-roll |
 | **L** | Camera path lấy từ **semantic model** (CAD) → video có cấu trúc, không phải AI đoán |
 
+### Animated Layout — mặt bằng biết chuyển động
+
+> **IF làm rẻ hơn mọi app khác** vì 3 thứ đã có sẵn:
+> mặt bằng là **vector** (không phải ảnh) · **layer chia sẵn** (Tường·Nội thất·Kích thước·Ghi
+> chú·Trục) ⇒ **thứ tự animation có sẵn, không phải tách tay** · **semantic model** (biết cửa,
+> phòng, luồng) ⇒ animate có nghĩa.
+> Canva/Illustrator animate được nhưng phải tách lớp thủ công. Với IF, layer là **dữ liệu**.
+
+| # | Loại | Cách làm | Công |
+|---|---|---|---|
+| **1** | **Vẽ dần theo lớp** — tường → cửa → nội thất → vật liệu → kích thước | Animate stroke SVG theo thứ tự layer | ⭐ **Rẻ nhất** |
+| 2 | Zoom vào từng khu vực | Camera path 2D trên mặt bằng | Rẻ |
+| 3 | **Luồng giao thông** — người/mũi tên theo lối đi | Cần cửa + không gian (semantic) | Vừa — **moat**, là *phân tích* không chỉ *đẹp* |
+| 4 | Chuyển phương án A ↔ B | Morph 2 layout cùng cấu trúc | Vừa |
+| 5 | Ngày ↔ đêm | Đổi màu + reflectance theo giờ (nối L6) | Vừa |
+
+**Làm loại 1 trước**: gần như không tốn công (layer đã có, chỉ thêm delay giữa các lớp), hiệu quả
+thị giác cao nhất, và đúng format đang chạy tốt trên Instagram/TikTok của giới studio nội thất.
+
+### Ba đường ra, một nguồn
+```
+Mặt bằng CAD (vector + layer)
+   ├─→ Xuất GIF/MP4 → social · gửi khách qua Zalo
+   ├─→ Slide động trong deck — trang layout TỰ VẼ RA khi trình chiếu
+   └─→ Clip trong video dự án (timeline hậu kỳ)
+```
+
 ## 4. Việc kế tiếp (khớp sprint PS đang có)
 
 - Luật 1–4 áp vào **PS-8 AI khởi thảo nội dung** — đây chính là chỗ "kẹt giữa" hiện tại.
@@ -122,5 +149,5 @@ Vài ngày công, **0 credit vận hành**.
 
 ---
 
-*v1.1 (thêm §2B cây dàn bài + tạo sinh có ràng buộc) · 2026-07-24 · Ben soạn theo ý Hoà.*
+*v1.2 (thêm §3 Animated Layout — mặt bằng biết chuyển động) · 2026-07-26 · Ben soạn theo ý Hoà.*
 
