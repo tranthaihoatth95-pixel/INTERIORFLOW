@@ -1,5 +1,7 @@
 # DEPLOY-VERCEL — Đưa InteriorFlow lên web (PWA) bằng Vercel + Supabase
 
+> ⚠️ LỖI THỜI — giả định mô hình cloud SaaS (Postgres/Supabase, 1 server dùng chung nhiều user), bị `docs/IF-CORE-SCHEMA.md` §1D ghi đè bằng quyết định **local-first + đồng bộ theo pha** (SQLite local Pha 1, Windows+macOS, không cloud). Cùng nhóm với `DEPLOY-CHECKLIST.md` (root, đã DEPRECATED). Xem: `IF-CORE-SCHEMA.md`.
+
 > Làm theo từng bước, **theo đúng thứ tự**. Không cần biết code — chỉ cần trình duyệt + Terminal.
 > Kết quả: app chạy ở địa chỉ `https://<tên>.vercel.app`, mở được trên mọi máy/iPad/điện thoại,
 > "Add to Home Screen" thành app (PWA — manifest + service worker đã có sẵn trong repo:
