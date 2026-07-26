@@ -274,7 +274,7 @@ Present giữ nguyên lộ trình PS: PS-2 → PS-3 → gate → PS-5/6/9 (khôn
 
 ---
 
-## 8. LUẬT VẬN HÀNH — 7 điều chống loạn
+## 8. LUẬT VẬN HÀNH — 8 điều chống loạn
 
 1. **Không xây L khi N chặng đó chưa ✅.** Muốn phá lệ → RIN trình lý do, VŨ duyệt.
 2. **Mọi task code phải có hộ chiếu 6 trường** (mục 3). Không hộ chiếu = không code.
@@ -296,6 +296,15 @@ Present giữ nguyên lộ trình PS: PS-2 → PS-3 → gate → PS-5/6/9 (khôn
    Vòng lặp chết cần tránh: *công cụ tay thiếu → người dùng quay sang AI → AI cũng không có gì
    để gọi → bế tắc cả hai lối → bỏ app.*
    Chi tiết: `docs/SPEC-EDITOR-TOOLKIT.md` §1.
+8. **AI KHÔNG ĐƯỢC GHI TRỰC TIẾP VÀO HÌNH HỌC.** LLM sinh ra chữ, không sinh ra hình — nó đoán
+   toạ độ theo thói quen ngôn ngữ, không tính toán, nên **luôn sai và chồng lấn**.
+   Bắt buộc: (a) AI ra **ý định có cấu trúc**, CODE tính toạ độ — AI không viết ra số x/y ·
+   (b) bố cục mô tả bằng **ràng buộc** (dựa tường · giữa 2 vật · lối đi ≥900mm · không chồng),
+   máy giải · (c) sinh xong **luôn kiểm** (chồng lấn · lối đi · ranh phòng · tổng kích thước),
+   sai thì tự đẩy ra tối đa 3 vòng, vẫn sai thì **báo lỗi, không ship bản lỗi**.
+   Hệ quả tốt: 0 credit phần tính · kết quả lặp lại được · người sửa tay xong AI vẫn hiểu.
+   Là hệ quả trực tiếp của **luật 7** (AI gọi hàm, không tự làm).
+   Chi tiết: `docs/SPEC-SEMANTIC-MODEL.md` §8.
 
 ---
 

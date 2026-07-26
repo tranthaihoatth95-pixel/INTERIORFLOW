@@ -76,5 +76,60 @@ Cùng lúc: callout trên bản vẽ · legend tự sinh · prompt AI · xuất 
 
 ---
 
-*v1.0 · 2026-07-24 · Ben soạn theo ý Hoà. Thuộc T1 — sửa phải qua duyệt.*
+## 8. LLM ↔ HÌNH HỌC — phân vai bắt buộc
+
+### Bằng chứng lỗi (ảnh layout AI sinh, 26/07)
+- Đồ nội thất **đè lên tường** bếp
+- **Tổng chuỗi kích thước sai**: 1850 + 3700 + 1850 = 7400 ≠ **7200** ghi bên cạnh
+- **Nhãn chồng nhau** ("PHÒNG NGỦ 12.1m²" đè ghi chú; 1700/850/1290 chồng)
+- Thiết bị **tràn ra ngoài ranh phòng** (bếp 5.7m²)
+- Vạch **thang tỉ lệ không đều**
+
+⇒ Đây là **lỗi TOÁN HỌC**, không phải lỗi thẩm mỹ. Chứng minh: **LLM không tính — nó chỉ viết ra
+số nhìn "hợp lý"**. LLM sinh ra chữ, không sinh ra hình; nó đọc `x: 3200` như một chuỗi ký tự.
+
+### Phân vai
+
+| Việc | Ai làm |
+|---|---|
+| Hiểu đề bài ("căn hộ 2PN, bếp mở, ưu tiên view") | **LLM** ✅ |
+| Suy luận công năng ("phòng ngủ nên nằm phía đông") | **LLM** ✅ |
+| Chọn ý định ("sofa dựa tường bắc, bàn trà ở giữa") | **LLM** ✅ |
+| **Tính toạ độ x/y** | **CODE** — LLM **tuyệt đối không** viết ra số toạ độ |
+| **Kiểm chồng lấn · lối đi · ranh phòng** | **CODE** |
+| **Đặt nhãn tránh đè** | **CODE** |
+| **Cộng chuỗi kích thước** | **CODE** |
+
+> ⭐ **LLM là kiến trúc sư trưởng ra quyết định. CODE là hoạ viên cầm bút.**
+> Kiến trúc sư trưởng không tự đo từng milimet.
+
+### Bốn lớp bắt buộc
+
+```
+① LLM → Ý ĐỊNH có cấu trúc (JSON, KHÔNG có số x/y)
+   { phòng: "ngủ", vị_trí: "đông-bắc", diện_tích_mong_muốn: 12,
+     đồ: [{ loại: "giường đôi", dựa_tường: "bắc", cách_mm: 0 }] }
+        ↓
+② SOLVER — chia ô + đặt đồ theo RÀNG BUỘC, TÍNH toạ độ
+   (dựa tường · giữa 2 vật · lối đi ≥900mm · không chồng)
+        ↓
+③ VALIDATOR — kiểm: chồng lấn (SAT đã có) · lối đi · trong ranh phòng · tổng kích thước khớp
+   Sai → tự đẩy ra, tối đa 3 vòng. Vẫn sai → **BÁO LỖI, KHÔNG vẽ ra bản sai.**
+        ↓
+④ RENDERER — vẽ nét · đặt nhãn **tránh đè** (label collision avoidance)
+   · chuỗi kích thước **TỰ CỘNG TỪ HÌNH HỌC**, không bao giờ nhận số gõ tay
+```
+
+**Lớp ②③④ là code thuần**: 0 credit · chạy tức thì · kết quả **lặp lại được** (cùng đầu vào ra
+cùng kết quả). **~90% chất lượng bản vẽ nằm ở ba lớp này, không nằm ở LLM.**
+
+⚠️ **Luật kích thước liên kết** *(associative dimension)*: chuỗi kích thước **tự cộng từ hình học**,
+vẽ ra bao nhiêu ghi bấy nhiêu ⇒ không bao giờ có chuyện 7400 ≠ 7200.
+
+**Từ khoá**: constraint solver · space partitioning · label placement algorithm ·
+associative dimensions · generate-then-verify · rectangle packing.
+
+---
+
+*v1.1 (thêm §8 LLM ↔ Hình học — phân vai bắt buộc) · 2026-07-26 · Ben soạn theo ý Hoà. Thuộc T1 — sửa phải qua duyệt.*
 

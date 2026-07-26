@@ -1,5 +1,31 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 27/07 — Onboarding 3 tầng + sửa thẻ kính login + Luật vận hành 8 (LLM↔Hình học)
+
+**Onboarding** (`9539fbd`) — thay hẳn `SmartTour` (spotlight chỉ dạy phím bấm/vị trí UI, có bug
+định vị đè lên mô tả phía sau) bằng 3 tầng just-in-time: Tầng 1 `WelcomeIntro.tsx` (modal căn
+giữa dạy "bức tranh lớn" CAD→Render→Present dùng chung dữ liệu + 2 nút hành động thật) · Tầng 2
+`StageIntroCard.tsx` (thẻ góc màn hình, 1 lần/chặng, 3 dòng + ảnh Trước/Sau — Render dùng ảnh
+thật `sketch-in.jpg→sketch-out.png`; CAD/Present dùng SVG line-art tối giản 8px-grid/≤12 phần
+tử/đơn sắc chờ ảnh thật, KHÔNG để AI vẽ minh hoạ cầu kỳ) · Tầng 3 coachmark chọn đối tượng CAD
+lần đầu. Thêm "Xem lại hướng dẫn" (Header/MobileMenu) reset toàn bộ cờ. `lib/resume.ts` thêm
+`effectiveUserId()` (route studio không nạp `user` khi hard-reload, rơi về `lastUserId`).
+Verify: tsc 0 · 97/97 test · browser thật xác nhận cả 2 tầng hiện đúng vị trí/đúng 1 lần.
+
+**Thẻ kính login** (`app/globals.css`) — chẩn đoán đúng: blur 22px quá mạnh làm nhoè hình nền,
+không phải lỗi alpha. Hạ xuống 14px + saturate 160%, bỏ hẳn `::before`/`::after` (rim/specular
+nhiều lớp — nguồn gốc cảm giác "khối nhựa"), border 1px sáng + box-shadow 2 lớp đơn giản, thêm
+text-shadow giữ chữ đọc được. Verify trước/sau bằng browser thật (Chrome-based) + theme sáng/tối;
+KHÔNG kiểm được Safari thật (môi trường không có công cụ điều khiển Safari desktop).
+
+**Luật vận hành thứ 8** (`docs/IF-ARCHITECTURE-BLUEPRINT-v1.md` §8 + `docs/SPEC-SEMANTIC-MODEL.md`
+§8 mới) — AI không được ghi trực tiếp toạ độ x/y vào hình học; bắt buộc ý định có cấu trúc → code
+tính toạ độ → validator kiểm (chồng lấn/lối đi/ranh phòng/tổng kích thước) → sai thì tự sửa tối
+đa 3 vòng, vẫn sai thì báo lỗi không ship. Audit code (`lib/cad/ai-assist.ts`) xác nhận **hiện
+CHƯA vi phạm** — kiến trúc 2 tầng (parse rule-based → solver tất định) đã đúng, `RoomSpec` không
+có trường toạ độ — nhưng chưa có LLM thật cắm vào layout (chỉ là rủi ro phòng ngừa, ghi vào Nợ
+kỹ thuật cho lúc cắm LLM thật).
+
 ## 26/07 khuya — Audit IF1 + phân loại docs/ + Sprint Semantic Room (T1/T2)
 
 **Audit** (`da310d9`) — `docs/IF1-COMPLETION-AUDIT.md` mới: đối soát 101 item spec + PS-0..11

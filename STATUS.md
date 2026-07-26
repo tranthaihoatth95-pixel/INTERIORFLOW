@@ -5,30 +5,22 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (26/07 khuya — sau audit IF1 + Sprint Semantic Room T1/T2, dừng giữa chừng)
-- ✅ **`origin/main` đã push** = `1ec4dde` (fast-forward 4 commit từ `da310d9`, `npm run build` +
-  tsc sạch, verify độc lập không tin báo cáo agent). Chi tiết đầy đủ → CHANGELOG 26/07 khuya.
-- ✅ **`docs/IF1-COMPLETION-AUDIT.md`** (mới) — đối soát code thật 101 item spec + PS-0..11:
-  CAD 81% · Present 64% · Render ~65-70% (độ tin cậy thấp). 4 điều kiện M1 cho IF2: `.idf`
-  version có nhưng chưa migration · semantic model chỉ Zone có ngữ nghĩa thật (trước T1/T2) ·
-  matId→BOQ **0 kết quả** toàn repo · RBAC tốt, thiếu backup thật + onboarding wizard.
-- ✅ **docs/ phân loại đầy đủ** — 79 file + `docs/archive/` (2 file: `LICENSE-NOTES.md`,
-  `DEPLOY-VERCEL.md`) gắn nhãn 🟢/🔵/🟡/🔴 trong `docs/README.md`.
-- ✅ **Gói tài liệu đợt 4-11** — 9 phần (6 bổ sung + 2 file mới: `SPEC-BRIEF-INTAKE.md`,
-  `SPEC-STAGE-0-IDEATION.md`) đã tách vào `docs/`, không ghi đè file sống. Blueprint thêm
-  CHẶNG 0 · Ý TƯỞNG (Ý tưởng → CAD → Render → Present).
-- ✅ **T1 — roomType persisted** (`709f6d6`) — Room không còn suy luận lại công năng từ text
-  label mỗi lần checker chạy; `roomType?: RoomKind` lưu thật trên `TextEntity` + backfill 1 lần
-  cho phòng cũ (cả autosave-restore lẫn `.idf` import) + UI chọn công năng. Nghiệm thu đạt: đổi
-  label không mất công năng, có test khoá lại.
-- ✅ **T2 — wallKind/wallStructural/wallThicknessMm** (`1ec4dde`) — field ở `Base` (không có
-  `WallEntity` riêng) + `wallKindSummary()` (đếm exterior/interior/unclassified). **LỆCH có chủ
-  ý (ghi rõ trong commit)**: KHÔNG backfill wallKind từ hình học cho tường cũ (không có DCEL
-  outer-boundary utility đáng tin cậy) và KHÔNG bịa trích dẫn quy chuẩn độ dày tường.
-- ⏸️ **T3 (.idf migration path) và T4 (backup .ifpack) CHƯA LÀM** — dừng theo lệnh user (hạn mức
-  tuần sắp hết), để phiên sau. Đọc trước khi làm: `docs/IF1-COMPLETION-AUDIT.md` §3 mục (a)/(d).
-- tsc 0 · **97/97 file test PASS** (`node_modules/.bin/sucrase-node <path>.test.ts`) · build sạch.
-- Không dev server nào chiếm :3000 ngoài phiên đang test.
+## Hiện tại (27/07 — onboarding + glass fix + luật 8, chi tiết đầy đủ → CHANGELOG)
+- ✅ **`origin/main`** = `1ec4dde` (audit IF1 + docs/ phân loại + gói đợt 4-11 + T1/T2 Semantic
+  Room). Nhánh tích hợp `feat/present-layout-ml-p1` giờ thêm: onboarding 3 tầng (`9539fbd`),
+  thẻ kính login sửa blur, luật vận hành 8 + `SPEC-SEMANTIC-MODEL.md` §8 — **các commit này
+  CHƯA push**, xem "Chờ USER quyết".
+- ✅ **`docs/IF1-COMPLETION-AUDIT.md`**: CAD 81% · Present 64% · Render ~65-70% (độ tin cậy thấp).
+- ✅ **Onboarding 3 tầng** (`9539fbd`) thay `SmartTour` — WelcomeIntro + StageIntroCard (ảnh
+  Trước/Sau, Render thật/CAD-Present SVG placeholder) + coachmark chọn đối tượng + "Xem lại
+  hướng dẫn". Verify browser thật cả 2 tầng.
+- ✅ **Thẻ kính login** (`app/globals.css`) — blur 22px→14px, bỏ rim `::before`/`::after` dày.
+  KHÔNG kiểm được Safari thật (môi trường không có công cụ Safari desktop).
+- ✅ **Luật vận hành thứ 8** — AI không ghi trực tiếp x/y vào hình học. Audit xác nhận
+  `lib/cad/ai-assist.ts` CHƯA VI PHẠM (chưa có LLM thật cắm vào) — chi tiết ở Nợ kỹ thuật.
+- ⏸️ **T3/T4 (Semantic Room)** vẫn CHƯA LÀM — để phiên sau, đọc `docs/IF1-COMPLETION-AUDIT.md`
+  §3 (a)/(d) trước.
+- tsc 0 · **97/97 file test PASS** · build sạch.
 
 ## Worktree đang mở
 Không có.
@@ -55,6 +47,13 @@ Không có.
 - 🟡 `FINAL_ARCHITECTURE_REPORT.md` + `HUONG-DAN-SU-DUNG.md` framing cũ "nội bộ TTT" — đã gắn ⚠️ đầu file, cần viết lại (đợt de-TTT 2).
 - 🟡 Wall cũ (trước T2) không có `wallKind` — báo "chưa phân loại", KHÔNG tự gán; cần UI bulk-assign nếu muốn phủ hết (không phải bug).
 - 🟡 `.idf` chưa có migration path thật (version lệch = từ chối thẳng) — T3 sẽ giải quyết.
+- 🟡 **Luật 8 (blueprint §8) — LLM↔Hình học**: audit 4 tầng (parse/solver/validator/render) xác
+  nhận `lib/cad/ai-assist.ts` ĐÃ ĐÚNG kiến trúc (LLM không viết x/y, `RoomSpec` không có trường
+  toạ độ) — nhưng chưa có LLM thật nào cắm vào (`parseDescription` vẫn rule-based, comment dòng
+  7 mời "cắm LLM thật sau"); khi cắm cần: (a) schema validation cứng (zod) chặn AI trả field
+  toạ độ lạ, (b) nối `checker.ts` thành vòng lặp tự-sửa tối đa 3 lần/tự-chặn-ship như
+  `SPEC-SEMANTIC-MODEL.md` §8 mô tả — hiện `layoutToEntities` chỉ skip món quá chật + ghi note,
+  không phải reject-và-báo-lỗi.
 - 🐛 `/cad-editor` React warning không tái hiện · ⌘J Vitals grep 0 · morph login chỉ fade · cursor polling idle.
 - 53 ảnh `public/wallpapers/ttt-*` giữ tạm theo ý user.
 
