@@ -40,10 +40,17 @@ interface Props {
 }
 
 /* ── Hình học chung (đầu to kiểu chibi, bust lấp đầy khung tròn) ──
- * khung tròn: cx100 cy120 r96 → y 24..216
- * đầu:  x 37..163 · y 35..161
- * mắt y112 · mũi y128 · miệng y142 · vai y166 */
-const HEAD = { cx: 100, cy: 98, rx: 63, ry: 63 };
+ * khung tròn: cx100 cy120 r96 → y 24..216 (đỉnh khung y=24 là TRẦN CỨNG: mọi thứ
+ *   vẽ cao hơn đều bị clipPath cắt phẳng)
+ * đầu:  x 42..158 · y 45..161
+ * mắt y112 · mũi y128 · miệng y142 · vai y166
+ *
+ * ⚠️ Hộp sọ ĐÃ THU NHỎ (rx/ry 63→58, cy 98→103) để lấy chỗ cho KHỐI TÓC.
+ * Trước đây đỉnh sọ ở y=35 mà trần khung là y=24 ⇒ chỉ còn 11px cho tóc, nên mọi kiểu
+ * đều mỏng dính "dán sát đầu" và đỉnh còn bị khung cắt phẳng. Nay đỉnh sọ y=45 ⇒ tóc có
+ * 21px để nhô. Đáy cằm GIỮ NGUYÊN y=161 (cy+ry = 103+58 = 98+63) nên cổ, vai, áo và
+ * toàn bộ mắt/mũi/miệng/kính không phải dịch một pixel nào. */
+const HEAD = { cx: 100, cy: 103, rx: 58, ry: 58 };
 const EYE_Y = 112;
 const EYE_DX = 23;
 
@@ -67,6 +74,7 @@ export function AvatarRenderer({
   const id = (k: string) => `${k}-${uid}`;
   const url = (k: string) => `url(#${id(k)})`;
   const feltF = hi ? url('felt') : undefined;
+  const fuzzF = hi ? url('fuzz') : undefined;
   const softF = hi ? url('soft') : undefined;
   const blushF = hi ? url('blush') : undefined;
 
@@ -87,9 +95,9 @@ export function AvatarRenderer({
       <defs>
         {/* Phông studio: sáng ở giữa-trên, tối dần ra rìa. */}
         <radialGradient id={id('bg')} cx="0.44" cy="0.28" r="0.88">
-          <stop offset="0%" stopColor={lighten(bg, 0.55)} />
+          <stop offset="0%" stopColor={lighten(bg, 0.32)} />
           <stop offset="55%" stopColor={bg} />
-          <stop offset="100%" stopColor={dark ? lighten(bg, 0.16) : darken(bg, 0.14)} />
+          <stop offset="100%" stopColor={dark ? lighten(bg, 0.16) : darken(bg, 0.19)} />
         </radialGradient>
 
         {/* Da: khối cầu — sáng trên-trái, 5 chặng, tối sâu dưới-phải. */}
@@ -103,21 +111,21 @@ export function AvatarRenderer({
 
         {/* Highlight chuyên dụng cho khối cầu (specular mềm). */}
         <radialGradient id={id('spec')} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.5" />
-          <stop offset="52%" stopColor="#FFFFFF" stopOpacity="0.16" />
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.32" />
+          <stop offset="52%" stopColor="#FFFFFF" stopOpacity="0.1" />
           <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
         </radialGradient>
 
         {/* Rim light hắt từ dưới-phải — tách khối khỏi nền. */}
         <linearGradient id={id('rim')} x1="1" y1="0.95" x2="0.25" y2="0.15">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.3" />
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.18" />
           <stop offset="40%" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
 
         {/* Tóc nỉ: sáng đỉnh, tối gáy. */}
         <radialGradient id={id('hair')} cx="0.32" cy="0.14" r="0.95">
-          <stop offset="0%" stopColor={lighten(hair, 0.44)} />
-          <stop offset="28%" stopColor={lighten(hair, 0.16)} />
+          <stop offset="0%" stopColor={lighten(hair, 0.28)} />
+          <stop offset="28%" stopColor={lighten(hair, 0.1)} />
           <stop offset="62%" stopColor={hair} />
           <stop offset="100%" stopColor={darken(hair, 0.45)} />
         </radialGradient>
@@ -143,10 +151,42 @@ export function AvatarRenderer({
 
         {hi && (
           <>
-            {/* Nỉ/lông xù — biên độ nhỏ, chỉ làm rối viền chứ không phá hình. */}
-            <filter id={id('felt')} x="-14%" y="-14%" width="128%" height="128%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="11" result="n" />
-              <feDisplacementMap in="SourceGraphic" in2="n" scale="2.8" xChannelSelector="R" yChannelSelector="G" />
+            {/*
+             * NỈ — làm hai việc cùng lúc, thiếu một trong hai là ra "icon vector mượt":
+             *  1. mép vải lởm chởm: feDisplacementMap với nhiễu KÉO DỌC (baseFrequency
+             *     "0.42 0.85" — tần số ngang thấp, dọc cao) nên biên gợn thành túm sợi.
+             *     Bản cũ dùng nhiễu ĐẲNG HƯỚNG 0.9 ⇒ chỉ ra hạt lăn tăn như noise ảnh.
+             *  2. mặt vải có nap: feDiffuseLighting trên nhiễu tần số cao → bản đồ gồ ghề,
+             *     cắt vào trong hình rồi blend `overlay` nên vùng trung tính giữ nguyên
+             *     màu, chỉ nhấn sáng/tối theo thớ. Đây mới là thứ đọc ra "xơ vải".
+             */}
+            <filter id={id('felt')} x="-16%" y="-16%" width="132%" height="132%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.42 0.85" numOctaves="2" seed="11" result="warp" />
+              <feDisplacementMap in="SourceGraphic" in2="warp" scale="3.2" xChannelSelector="R" yChannelSelector="G" result="edge" />
+              <feTurbulence type="fractalNoise" baseFrequency="2.1" numOctaves="4" seed="5" result="nap" />
+              <feDiffuseLighting in="nap" lightingColor="#FFFFFF" surfaceScale="1.6" diffuseConstant="1" result="litRaw">
+                <feDistantLight azimuth="225" elevation="55" />
+              </feDiffuseLighting>
+              {/* Nén bản đồ sáng về quanh mức trung tính 0.5. KHÔNG có bước này thì
+                  feDiffuseLighting ra gần TRẮNG, blend `overlay` kéo bạc hết màu bên dưới
+                  (đo thật: tóc đen ra xám bê tông). Đo trên 4 nền (đen · bạc · kem · nâu) chọn slope 0.9. */}
+              <feComponentTransfer in="litRaw" result="lit">
+                <feFuncR type="linear" slope="0.9" intercept="0.05" />
+                <feFuncG type="linear" slope="0.9" intercept="0.05" />
+                <feFuncB type="linear" slope="0.9" intercept="0.05" />
+              </feComponentTransfer>
+              <feComposite in="lit" in2="edge" operator="in" result="litIn" />
+              <feBlend in="litIn" in2="edge" mode="overlay" result="tex" />
+              <feComposite in="tex" in2="edge" operator="in" />
+            </filter>
+
+            {/* XƠ VẢI ở viền: bản sao tóc/áo vẽ LÓT BÊN DƯỚI, méo mạnh (scale 9) + nhoè
+                nhẹ ⇒ quầng sợi lởm chởm nhô ra ngoài mép — thứ ảnh tham chiếu có rõ ở
+                tóc và áo len. Chỉ dựng khi `hi` nên cỡ nhỏ không tốn gì. */}
+            <filter id={id('fuzz')} x="-26%" y="-26%" width="152%" height="152%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.26 0.72" numOctaves="3" seed="23" result="w" />
+              <feDisplacementMap in="SourceGraphic" in2="w" scale="6" xChannelSelector="R" yChannelSelector="G" result="d" />
+              <feGaussianBlur in="d" stdDeviation="0.7" />
             </filter>
             <filter id={id('soft')} x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="5" />
@@ -182,13 +222,18 @@ export function AvatarRenderer({
           filter={softF}
         />
 
-        {/* Tóc lớp sau (tóc dài, đuôi, búi phía sau đầu) */}
+        {/* Tóc lớp sau (tóc dài, đuôi, búi phía sau đầu) — quầng xơ lót dưới rồi khối nỉ */}
+        {hi && (
+          <g filter={fuzzF} stroke={hair} strokeWidth="3.5" strokeLinejoin="round" opacity="0.8">
+            <HairBack hair={config.hair} fill={hair} shade={hair} />
+          </g>
+        )}
         <g filter={feltF}>
           <HairBack hair={config.hair} fill={url('hair')} shade={darken(hair, 0.45)} />
         </g>
 
         {/* Thân + áo + phụ kiện */}
-        <Torso shirt={config.shirt} fill={url('shirt')} base={shirt} feltF={feltF} softF={softF} hi={hi} />
+        <Torso shirt={config.shirt} fill={url('shirt')} base={shirt} feltF={feltF} fuzzF={fuzzF} softF={softF} hi={hi} />
         <Accessory kind={config.accessory} feltF={feltF} />
 
         {/* Contact shadow: đầu đổ bóng xuống ngực (dịu, lệch phải) */}
@@ -209,19 +254,20 @@ export function AvatarRenderer({
         {/* Đầu — khối cầu chính */}
         <ellipse cx={HEAD.cx} cy={HEAD.cy} rx={HEAD.rx} ry={HEAD.ry} fill={url('skin')} />
 
-        {/* Tai + khuyên — tựa sát mép đầu, chỉ nhô ra một chút */}
-        <ellipse cx="42" cy="116" rx="9" ry="12.5" fill={darken(skin, 0.04)} />
-        <ellipse cx="158" cy="116" rx="9" ry="12.5" fill={darken(skin, 0.2)} />
-        <ellipse cx="42" cy="116" rx="3.6" ry="6" fill={darken(skin, 0.24)} opacity="0.4" />
-        <ellipse cx="158" cy="116" rx="3.6" ry="6" fill={darken(skin, 0.3)} opacity="0.4" />
+        {/* Tai + khuyên — tựa ĐÚNG mép đầu (mép sọ mới ở x 42/158) nên nhô ra nửa vành,
+            thay vì lọt vào trong má như khi sọ còn rộng tới x 37/163 */}
+        <ellipse cx="41" cy="117" rx="9" ry="12.5" fill={darken(skin, 0.04)} />
+        <ellipse cx="159" cy="117" rx="9" ry="12.5" fill={darken(skin, 0.2)} />
+        <ellipse cx="41" cy="117" rx="3.6" ry="6" fill={darken(skin, 0.24)} opacity="0.4" />
+        <ellipse cx="159" cy="117" rx="3.6" ry="6" fill={darken(skin, 0.3)} opacity="0.4" />
         <EarringShape kind={config.earring} />
 
         {/* Ánh sáng + bóng trên khối cầu đầu */}
         <g clipPath={`url(#${id('head')})`}>
-          <ellipse cx="70" cy="62" rx="36" ry="27" fill={url('spec')} transform="rotate(-22 70 62)" />
+          <ellipse cx="72" cy="72" rx="33" ry="25" fill={url('spec')} transform="rotate(-22 72 72)" />
           <ellipse cx={HEAD.cx} cy={HEAD.cy} rx={HEAD.rx} ry={HEAD.ry} fill={url('rim')} />
           {/* bóng chìm mép phải + dưới */}
-          <ellipse cx="164" cy="116" rx="26" ry="52" fill={darken(skin, 0.5)} opacity="0.2" filter={softF} />
+          <ellipse cx="158" cy="116" rx="24" ry="48" fill={darken(skin, 0.5)} opacity="0.2" filter={softF} />
           <ellipse cx="100" cy="170" rx="52" ry="18" fill={darken(skin, 0.5)} opacity="0.22" filter={softF} />
           {/* bóng chân tóc hắt xuống trán — mấu chốt cảm giác 3D */}
           <HairShadow hair={config.hair} filter={softF} skin={skin} />
@@ -238,9 +284,14 @@ export function AvatarRenderer({
         <ellipse cx="97.6" cy="127.2" rx="2.8" ry="2" fill="#FFFFFF" opacity="0.32" />
         <Mouth expression={config.expression} lip={lip} ink={ink} />
 
-        {/* Tóc lớp trước */}
+        {/* Tóc lớp trước — quầng xơ lót dưới rồi khối nỉ */}
+        {hi && (
+          <g filter={fuzzF} stroke={hair} strokeWidth="3.5" strokeLinejoin="round" opacity="0.8">
+            <HairFront hair={config.hair} fill={hair} shade={hair} glow={hair} />
+          </g>
+        )}
         <g filter={feltF}>
-          <HairFront hair={config.hair} fill={url('hair')} shade={darken(hair, 0.45)} glow={lighten(hair, 0.55)} />
+          <HairFront hair={config.hair} fill={url('hair')} shade={darken(hair, 0.45)} glow={lighten(hair, 0.4)} />
         </g>
 
         {/* Mũ / headwear */}
@@ -281,6 +332,7 @@ function Torso({
   fill,
   base,
   feltF,
+  fuzzF,
   softF,
   hi,
 }: {
@@ -288,6 +340,7 @@ function Torso({
   fill: string;
   base: string;
   feltF?: string;
+  fuzzF?: string;
   softF?: string;
   hi: boolean;
 }) {
@@ -296,6 +349,12 @@ function Torso({
   const soft = shirt === 'sweater' || shirt === 'hoodie' || shirt === 'turtleneck';
   return (
     <g>
+      {/* Áo len/nỉ: quầng xơ lót dưới cổ và vai — vải dệt không có mép cắt trơn */}
+      {soft && hi && (
+        <g filter={fuzzF} stroke={base} strokeWidth="4" strokeLinejoin="round" opacity="0.9">
+          <path d={TORSO} fill={base} />
+        </g>
+      )}
       <g filter={soft ? feltF : undefined}>
         <path d={TORSO} fill={fill} />
       </g>
@@ -447,14 +506,14 @@ function Accessory({ kind, feltF }: { kind: AvatarConfig['accessory']; feltF?: s
 
 /** Bóng chân tóc hắt xuống trán — chiều cao đổ bóng theo độ dày mái. */
 function HairShadow({ hair, filter, skin }: { hair: AvatarConfig['hair']; filter?: string; skin: string }) {
-  // y của đường chân tóc theo từng kiểu (khớp HairFront bên dưới)
+  // y của đường chân tóc giữa trán theo từng kiểu (khớp HairFront bên dưới)
   const line: Record<number, number> = {
-    1: 66, 2: 60, 3: 56, 4: 76, 5: 56, 6: 74, 7: 64, 8: 66,
-    9: 56, 10: 58, 11: 64, 12: 56, 13: 64, 14: 64, 15: 74, 16: 62,
+    1: 70, 2: 72, 3: 60, 4: 76, 5: 58, 6: 78, 7: 70, 8: 68,
+    9: 58, 10: 60, 11: 68, 12: 58, 13: 68, 14: 64, 15: 74, 16: 72,
   };
-  const y = line[hair] ?? 66;
+  const y = line[hair] ?? 70;
   return (
-    <ellipse cx="100" cy={y + 6} rx="60" ry="16" fill={darken(skin, 0.55)} opacity="0.3" filter={filter} />
+    <ellipse cx="100" cy={y + 5} rx="55" ry="14" fill={darken(skin, 0.55)} opacity="0.3" filter={filter} />
   );
 }
 
@@ -464,21 +523,21 @@ function HairBack({ hair, fill, shade }: { hair: AvatarConfig['hair']; fill: str
     case 4: // dài thẳng
       return (
         <path
-          d="M16 220 Q10 80 100 20 Q190 80 184 220 L152 220 Q160 138 154 98 Q144 60 100 56 Q56 60 46 98 Q40 138 48 220 Z"
+          d="M14 220 C8 158 8 86 46 46 C60 32 80 26 100 26 C120 26 140 32 154 46 C192 86 192 158 186 220 L152 220 Q158 138 152 96 Q142 58 100 54 Q58 58 48 96 Q42 138 48 220 Z"
           fill={fill}
         />
       );
     case 5: // bob ngang cằm
       return (
         <path
-          d="M18 156 Q12 74 100 22 Q188 74 182 156 Q174 174 150 164 Q160 120 152 94 Q142 58 100 54 Q58 58 48 94 Q40 120 50 164 Q26 174 18 156 Z"
+          d="M18 158 C10 102 14 58 48 36 C62 28 80 26 100 26 C120 26 138 28 152 36 C186 58 190 102 182 158 Q174 176 150 166 Q160 120 152 92 Q142 56 100 52 Q58 56 48 92 Q40 120 50 166 Q26 176 18 158 Z"
           fill={fill}
         />
       );
     case 9: // bob ngang vai, cụp vào trong (dáng ref)
       return (
         <path
-          d="M18 182 Q12 76 100 20 Q188 76 182 182 Q172 202 146 186 Q160 134 152 96 Q142 58 100 54 Q58 58 48 96 Q40 134 54 186 Q28 202 18 182 Z"
+          d="M18 184 C10 112 12 62 48 38 C62 29 80 26 100 26 C120 26 138 29 152 38 C188 62 190 112 182 184 Q172 204 146 188 Q160 134 152 94 Q142 56 100 52 Q58 56 48 94 Q40 134 54 188 Q28 204 18 184 Z"
           fill={fill}
         />
       );
@@ -486,7 +545,7 @@ function HairBack({ hair, fill, shade }: { hair: AvatarConfig['hair']; fill: str
       return (
         <>
           <path
-            d="M14 220 Q6 80 100 20 Q194 80 186 220 L154 220 Q172 184 158 158 Q172 126 152 96 Q142 58 100 54 Q58 58 48 96 Q28 126 42 158 Q28 184 46 220 Z"
+            d="M12 220 C6 152 8 84 46 44 C60 31 80 26 100 26 C120 26 140 31 154 44 C192 84 194 152 188 220 L154 220 Q172 184 158 156 Q172 124 152 94 Q142 56 100 52 Q58 56 48 94 Q28 124 42 156 Q28 184 46 220 Z"
             fill={fill}
           />
           <path d="M38 116 Q24 152 40 182" stroke={shade} strokeWidth="2.6" fill="none" opacity="0.35" />
@@ -497,7 +556,7 @@ function HairBack({ hair, fill, shade }: { hair: AvatarConfig['hair']; fill: str
       return (
         <>
           <path
-            d="M24 148 Q18 74 100 22 Q182 74 176 148 Q164 106 152 94 Q126 58 100 56 Q74 56 48 94 Q36 106 24 148 Z"
+            d="M24 152 C16 98 20 58 50 38 C64 29 82 26 100 26 C118 26 136 29 150 38 C180 58 184 98 176 152 Q164 106 152 92 Q126 56 100 54 Q74 54 48 92 Q36 106 24 152 Z"
             fill={fill}
           />
           <path d="M162 88 Q198 110 190 162 Q182 200 158 208 Q180 172 174 140 Q166 106 150 100 Z" fill={fill} />
@@ -507,7 +566,7 @@ function HairBack({ hair, fill, shade }: { hair: AvatarConfig['hair']; fill: str
     case 15: // hime — hai lọn dài hai bên
       return (
         <path
-          d="M16 220 Q10 78 100 20 Q190 78 184 220 L152 220 Q158 138 152 96 Q142 58 100 54 Q58 58 48 96 Q42 138 48 220 Z"
+          d="M14 220 C8 152 8 84 46 44 C60 31 80 26 100 26 C120 26 140 31 154 44 C192 84 192 152 186 220 L152 220 Q158 136 152 94 Q142 56 100 52 Q58 56 48 94 Q42 136 48 220 Z"
           fill={fill}
         />
       );
@@ -516,7 +575,17 @@ function HairBack({ hair, fill, shade }: { hair: AvatarConfig['hair']; fill: str
   }
 }
 
-/** Phần tóc nằm TRƯỚC/TRÊN mặt — khối nỉ dày, phủ đỉnh đầu. */
+/**
+ * Phần tóc nằm TRƯỚC/TRÊN mặt — khối nỉ dày, phủ đỉnh đầu.
+ *
+ * ⚠️ Luật hình học phải giữ (có `lib/avatar-render.test.ts` khoá bằng số):
+ *  · Đỉnh sọ y=45, trần khung tròn y=24 ⇒ đỉnh tóc nằm trong 26..33 để CÓ KHỐI mà
+ *    KHÔNG bị khung cắt phẳng. Riêng kiểu 2 (cạo sát) cố ý ôm sát sọ.
+ *  · Không mảng nào được phủ vùng mắt (tâm 77/123, y 106..118) — tóc lớp trước vẽ SAU
+ *    mắt nên mọi vệt cạo/đổ bóng phải nằm ở mép đầu, tuyệt đối không vắt ngang mặt.
+ *  · Mỗi kiểu phải có DẤU HIỆU RIÊNG đọc được ở cỡ nhỏ (khối, đường ngôi, búi, độ bất
+ *    đối xứng) — nhóm 1/2/7/8/14 trước đây gần như trùng nhau vì đều là "mũ lưỡi trai mỏng".
+ */
 function HairFront({
   hair,
   fill,
@@ -529,144 +598,177 @@ function HairFront({
   glow: string;
 }) {
   const sheen = (
-    <path d="M60 52 Q84 34 114 40" stroke={glow} strokeWidth="7" fill="none" strokeLinecap="round" opacity="0.45" />
+    <path d="M58 54 Q84 34 116 42" stroke={glow} strokeWidth="7" fill="none" strokeLinecap="round" opacity="0.26" />
   );
 
   switch (hair) {
-    case 1: // cắt ngắn gọn
+    case 1: // cắt ngắn gọn — khối tròn đều, chân tóc cong, tông "gọn gàng"
       return (
         <>
-          <path d="M34 104 C32 46 60 26 100 26 C140 26 168 46 166 104 C158 76 136 64 100 64 C64 64 42 76 34 104 Z" fill={fill} />
+          <path d="M32 116 C30 54 58 28 100 28 C142 28 170 54 168 116 C158 84 136 70 100 70 C64 70 42 84 32 116 Z" fill={fill} />
+          <path d="M40 104 C42 74 62 60 100 60" stroke={shade} strokeWidth="2.2" fill="none" opacity="0.3" />
           {sheen}
         </>
       );
-    case 2: // cạo sát (buzz)
+    case 2: // cạo sát (buzz) — CỐ Ý mỏng, ôm sát sọ, chân tóc thẳng, có hạt lăn tăn tông đơ
       return (
         <>
-          <path d="M40 92 C40 54 66 36 100 36 C134 36 160 54 160 92 C152 70 130 58 100 58 C70 58 48 70 40 92 Z" fill={fill} opacity="0.94" />
-          <path d="M52 70 Q100 50 148 70" stroke={shade} strokeWidth="2.4" fill="none" opacity="0.3" />
+          <path d="M42 108 C42 60 68 43 100 43 C132 43 158 60 158 108 C150 84 128 73 100 73 C72 73 50 84 42 108 Z" fill={fill} opacity="0.9" />
+          {/* chân tóc THẲNG — dấu hiệu tông đơ, khác hẳn chân tóc cong của kiểu 1 */}
+          <path d="M56 73 L144 73" stroke={shade} strokeWidth="2.6" opacity="0.45" />
+          {/* Hạt lăn tăn = vết tông đơ. Toạ độ viết THẲNG (không `.map`) để
+              `lib/avatar-render.test.ts` đọc và kiểm được — nó chỉ hiểu số literal. */}
+          <circle cx="62" cy="62" r="2.2" fill={shade} opacity="0.34" />
+          <circle cx="76" cy="56" r="2.2" fill={shade} opacity="0.34" />
+          <circle cx="92" cy="52" r="2.2" fill={shade} opacity="0.34" />
+          <circle cx="108" cy="52" r="2.2" fill={shade} opacity="0.34" />
+          <circle cx="124" cy="56" r="2.2" fill={shade} opacity="0.34" />
+          <circle cx="138" cy="62" r="2.2" fill={shade} opacity="0.34" />
+          <circle cx="54" cy="78" r="2.2" fill={shade} opacity="0.34" />
+          <circle cx="70" cy="68" r="2.2" fill={shade} opacity="0.34" />
+          <circle cx="86" cy="60" r="2.2" fill={shade} opacity="0.34" />
+          <circle cx="114" cy="60" r="2.2" fill={shade} opacity="0.34" />
+          <circle cx="130" cy="68" r="2.2" fill={shade} opacity="0.34" />
+          <circle cx="146" cy="78" r="2.2" fill={shade} opacity="0.34" />
         </>
       );
-    case 3: // rẽ ngôi lệch, mái vuốt sang phải
+    case 3: // rẽ ngôi lệch — mái vuốt hẳn sang phải, hai bên dài không đều
       return (
         <>
-          <path d="M36 110 C34 44 60 22 100 22 C148 22 172 48 170 126 C164 74 148 52 116 50 C88 48 70 68 56 90 C46 104 40 104 36 110 Z" fill={fill} />
+          <path d="M30 118 C26 50 56 26 100 26 C148 26 174 52 170 128 C162 78 146 58 116 56 C92 54 72 76 56 96 C44 110 38 112 30 118 Z" fill={fill} />
+          <path d="M104 30 C96 44 84 58 66 72" stroke={shade} strokeWidth="2.6" fill="none" opacity="0.35" />
           {sheen}
         </>
       );
-    case 4: // dài thẳng — mái thẳng ngang
+    case 4: // dài thẳng — mái ngang phẳng (blunt), khối vuông vức
       return (
         <>
-          <path d="M16 196 C12 60 52 18 100 18 C148 18 188 60 184 196 C176 176 170 148 168 124 C168 108 170 90 168 76 L32 76 C30 90 32 108 32 124 C30 148 24 176 16 196 Z" fill={fill} />
-                    {sheen}
-        </>
-      );
-    case 5: // bob — mái cong
-      return (
-        <>
-          <path d="M20 150 C16 58 54 20 100 20 C146 20 184 58 180 150 C172 138 166 124 164 108 C164 78 142 54 100 54 C58 54 36 78 36 108 C34 124 28 138 20 150 Z" fill={fill} />
+          <path d="M16 196 C12 60 50 26 100 26 C150 26 188 60 184 196 C176 176 170 148 168 124 C168 108 170 90 168 76 L32 76 C30 90 32 108 32 124 C30 148 24 176 16 196 Z" fill={fill} />
+          <path d="M34 76 L166 76" stroke={shade} strokeWidth="2" opacity="0.28" />
           {sheen}
         </>
       );
-    case 6: // xù afro
+    case 5: // bob — mái cong ôm trán, khối phồng hai bên
       return (
         <>
-          <ellipse cx="100" cy="58" rx="72" ry="44" fill={fill} />
-          <circle cx="40" cy="82" r="22" fill={fill} />
-          <circle cx="160" cy="82" r="22" fill={fill} />
-          <circle cx="30" cy="106" r="17" fill={fill} />
-          <circle cx="170" cy="106" r="17" fill={fill} />
-          <circle cx="70" cy="34" r="21" fill={fill} />
-          <circle cx="130" cy="34" r="21" fill={fill} />
-          <circle cx="100" cy="26" r="20" fill={fill} />
-          <ellipse cx="70" cy="42" rx="24" ry="14" fill={glow} opacity="0.3" />
-        </>
-      );
-    case 7: // búi cao
-      return (
-        <>
-          <path d="M36 110 C36 50 64 30 100 30 C136 30 164 50 164 110 C154 76 132 64 100 64 C68 64 46 76 36 110 Z" fill={fill} />
-          <ellipse cx="100" cy="24" rx="20" ry="17" fill={fill} />
-          <ellipse cx="92" cy="17" rx="9" ry="5.5" fill={glow} opacity="0.42" />
-          <rect x="82" y="38" width="36" height="7" rx="3.5" fill={shade} />
-        </>
-      );
-    case 8: // undercut — đỉnh dày vuốt ngược
-      return (
-        <>
-          <path d="M50 112 C40 46 66 24 100 24 C134 24 160 46 150 112 C136 76 126 66 100 66 C74 66 64 76 50 112 Z" fill={fill} />
-          <path d="M44 110 Q100 96 156 110 L156 124 Q100 108 44 124 Z" fill={shade} opacity="0.5" />
+          <path d="M20 150 C16 58 52 26 100 26 C148 26 184 58 180 150 C172 138 166 124 164 108 C164 76 142 58 100 58 C58 58 36 76 36 108 C34 124 28 138 20 150 Z" fill={fill} />
           {sheen}
         </>
       );
-    case 9: // bob ngang vai — mái dày ngang (dáng ref)
+    case 6: // xù afro — khối cầu lớn ghép từ nhiều múi
       return (
         <>
-          <path d="M18 182 C14 62 54 18 100 18 C146 18 186 62 182 182 C172 166 166 146 164 122 C164 88 142 54 100 54 C58 54 36 88 36 122 C34 146 28 166 18 182 Z" fill={fill} />
-          <path d="M40 96 Q62 56 100 54 Q138 56 160 96 L162 74 Q136 44 100 44 Q64 44 38 74 Z" fill={shade} opacity="0.22" />
-          <path d="M56 44 Q86 28 116 34" stroke={glow} strokeWidth="8" fill="none" strokeLinecap="round" opacity="0.42" />
+          <ellipse cx="100" cy="64" rx="72" ry="38" fill={fill} />
+          <circle cx="38" cy="86" r="22" fill={fill} />
+          <circle cx="162" cy="86" r="22" fill={fill} />
+          <circle cx="28" cy="110" r="17" fill={fill} />
+          <circle cx="172" cy="110" r="17" fill={fill} />
+          <circle cx="70" cy="48" r="18" fill={fill} />
+          <circle cx="130" cy="48" r="18" fill={fill} />
+          <circle cx="100" cy="46" r="19" fill={fill} />
+          <ellipse cx="70" cy="52" rx="23" ry="13" fill={glow} opacity="0.3" />
         </>
       );
-    case 10: // dài gợn sóng — rẽ giữa
+    case 7: // búi cao — DẤU HIỆU: quả búi to tròn hẳn trên đỉnh + vòng buộc
       return (
         <>
-          <path d="M18 190 C14 60 54 18 100 18 C146 18 186 60 182 190 C174 172 168 148 166 124 C166 96 148 62 112 56 Q100 54 100 74 Q100 54 88 56 C52 62 34 96 34 124 C32 148 26 172 18 190 Z" fill={fill} />
+          <path d="M38 112 C38 56 66 40 100 40 C134 40 162 56 162 112 C152 82 130 70 100 70 C70 70 48 82 38 112 Z" fill={fill} />
+          {/* các lọn vuốt ngược hội tụ về búi */}
+          <path d="M56 76 C70 58 86 50 100 48" stroke={shade} strokeWidth="2.4" fill="none" opacity="0.35" />
+          <path d="M144 76 C130 58 114 50 100 48" stroke={shade} strokeWidth="2.4" fill="none" opacity="0.35" />
+          <ellipse cx="100" cy="45" rx="27" ry="19" fill={fill} />
+          <ellipse cx="90" cy="36" rx="11" ry="6" fill={glow} opacity="0.45" />
+          <rect x="82" y="60" width="36" height="9" rx="4.5" fill={shade} />
+        </>
+      );
+    case 8: // undercut — DẤU HIỆU: đỉnh CAO dựng ngược, hai bên cạo hẹp lộ mép đầu
+      return (
+        <>
+          <path d="M48 112 C42 52 64 26 100 26 C136 26 158 52 152 112 C140 78 126 68 100 68 C74 68 60 78 48 112 Z" fill={fill} />
+          {/* Vệt cạo hai bên thái dương — CHỈ nằm trong dải tóc sát mép đầu.
+              Bản cũ là một dải vắt NGANG cả mặt ở y110–124, ĐÚNG TẦM MẮT ⇒ đọc ra như bịt mắt. */}
+          <path d="M48 112 C46 88 54 72 66 62 C58 76 55 92 56 112 Z" fill={shade} opacity="0.5" />
+          <path d="M152 112 C154 88 146 72 134 62 C142 76 145 92 144 112 Z" fill={shade} opacity="0.5" />
+          {/* sống tóc dựng ngược — nét đặc trưng của undercut */}
+          <path d="M70 60 C78 38 92 30 104 28" stroke={glow} strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.42" />
+          <path d="M100 28 C112 32 124 44 132 62" stroke={shade} strokeWidth="2.6" fill="none" opacity="0.3" />
+        </>
+      );
+    case 9: // bob ngang vai — mái dày ngang, hai má ôm kín (dáng ref)
+      return (
+        <>
+          <path d="M18 182 C14 62 52 26 100 26 C148 26 186 62 182 182 C172 166 166 146 164 122 C164 88 142 58 100 58 C58 58 36 88 36 122 C34 146 28 166 18 182 Z" fill={fill} />
+          <path d="M40 100 Q62 60 100 58 Q138 60 160 100 L162 78 Q136 48 100 48 Q64 48 38 78 Z" fill={shade} opacity="0.22" />
+          <path d="M56 48 Q86 32 116 38" stroke={glow} strokeWidth="8" fill="none" strokeLinecap="round" opacity="0.42" />
+        </>
+      );
+    case 10: // dài gợn sóng — rẽ giữa, hai lọn ôm má
+      return (
+        <>
+          <path d="M18 190 C14 60 52 26 100 26 C148 26 186 60 182 190 C174 172 168 148 166 124 C166 96 148 62 112 58 Q100 56 100 78 Q100 56 88 58 C52 62 34 96 34 124 C32 148 26 172 18 190 Z" fill={fill} />
           {sheen}
         </>
       );
-    case 11: // xoăn ngắn
+    case 11: // xoăn ngắn — viền ngoài ghép cụm xoăn tròn nhỏ
       return (
         <>
-          <path d="M36 110 C36 50 64 30 100 30 C136 30 164 50 164 110 C154 76 132 64 100 64 C68 64 46 76 36 110 Z" fill={fill} />
-          <circle cx="48" cy="72" r="15" fill={fill} />
-          <circle cx="70" cy="46" r="17" fill={fill} />
-          <circle cx="100" cy="34" r="17" fill={fill} />
-          <circle cx="130" cy="46" r="17" fill={fill} />
-          <circle cx="152" cy="72" r="15" fill={fill} />
-          <circle cx="38" cy="96" r="12" fill={fill} />
-          <circle cx="162" cy="96" r="12" fill={fill} />
-          <circle cx="68" cy="42" r="7" fill={glow} opacity="0.35" />
-          <circle cx="96" cy="30" r="6" fill={glow} opacity="0.3" />
+          <path d="M34 112 C34 54 62 30 100 30 C138 30 166 54 166 112 C156 80 134 68 100 68 C66 68 44 80 34 112 Z" fill={fill} />
+          <circle cx="46" cy="76" r="15" fill={fill} />
+          <circle cx="68" cy="50" r="17" fill={fill} />
+          <circle cx="100" cy="44" r="18" fill={fill} />
+          <circle cx="132" cy="50" r="17" fill={fill} />
+          <circle cx="154" cy="76" r="15" fill={fill} />
+          <circle cx="36" cy="98" r="12" fill={fill} />
+          <circle cx="164" cy="98" r="12" fill={fill} />
+          <circle cx="66" cy="46" r="7" fill={glow} opacity="0.35" />
+          <circle cx="96" cy="40" r="6" fill={glow} opacity="0.3" />
         </>
       );
-    case 12: // đuôi ngựa — mái gọn vuốt
+    case 12: // đuôi ngựa — mái gọn vuốt hết sang trái, thái dương lộ
       return (
         <>
-          <path d="M26 114 C26 44 58 24 100 24 C142 24 174 44 174 114 C164 72 138 56 110 54 C84 52 60 70 44 92 C36 100 30 106 26 114 Z" fill={fill} />
+          <path d="M26 114 C24 48 56 26 100 26 C144 26 176 48 174 114 C164 74 138 58 110 56 C84 54 60 72 44 94 C36 102 30 106 26 114 Z" fill={fill} />
           {sheen}
         </>
       );
-    case 13: // hai búi (space buns)
+    case 13: // hai búi — DẤU HIỆU: hai quả búi hai bên đỉnh
       return (
         <>
-          <path d="M36 110 C36 50 64 30 100 30 C136 30 164 50 164 110 C154 76 132 64 100 64 C68 64 46 76 36 110 Z" fill={fill} />
-          <circle cx="42" cy="38" r="19" fill={fill} />
-          <circle cx="158" cy="38" r="19" fill={fill} />
-          <ellipse cx="35" cy="31" rx="8" ry="5" fill={glow} opacity="0.42" />
-          <ellipse cx="151" cy="31" rx="8" ry="5" fill={glow} opacity="0.42" />
+          <path d="M34 112 C34 54 62 30 100 30 C138 30 166 54 166 112 C156 80 134 68 100 68 C66 68 44 80 34 112 Z" fill={fill} />
+          <circle cx="58" cy="54" r="19" fill={fill} />
+          <circle cx="142" cy="54" r="19" fill={fill} />
+          <ellipse cx="51" cy="46" rx="8" ry="5" fill={glow} opacity="0.45" />
+          <ellipse cx="135" cy="46" rx="8" ry="5" fill={glow} opacity="0.45" />
+          <path d="M76 62 Q100 52 124 62" stroke={shade} strokeWidth="2.4" fill="none" opacity="0.3" />
         </>
       );
-    case 14: // pixie — mái vuốt xéo, gáy cao
+    case 14: // pixie — DẤU HIỆU: BẤT ĐỐI XỨNG rõ, mái dài vắt chéo xuống thái dương trái
       return (
         <>
-          <path d="M26 116 C24 46 58 22 100 22 C144 22 176 46 174 116 C164 84 144 78 138 78 C128 56 100 52 100 52 C72 54 52 72 42 88 C34 98 30 106 26 116 Z" fill={fill} />
-          <path d="M50 86 Q74 62 104 60" stroke={glow} strokeWidth="6" fill="none" opacity="0.4" strokeLinecap="round" />
+          <path d="M30 110 C26 54 56 26 104 26 C152 26 178 58 174 126 C168 90 152 68 132 64 C120 84 96 98 70 98 C52 98 38 102 30 110 Z" fill={fill} />
+          {/* đường ngôi lệch hẳn sang phải + mũi mái nhọn buông xuống thái dương trái */}
+          <path d="M128 34 C118 56 100 76 76 88" stroke={shade} strokeWidth="2.8" fill="none" opacity="0.38" />
+          <path d="M132 64 C118 86 94 98 68 98 C88 90 112 78 124 60 Z" fill={shade} opacity="0.28" />
+          <path d="M52 60 Q78 40 108 40" stroke={glow} strokeWidth="6" fill="none" opacity="0.4" strokeLinecap="round" />
         </>
       );
     case 15: // hime — mái ngang phẳng + hai lọn cắt ngang má
       return (
         <>
-          <path d="M18 168 C14 58 54 18 100 18 C146 18 186 58 182 168 C174 152 170 130 168 110 C168 92 170 82 168 74 L32 74 C30 82 32 92 32 110 C30 130 26 152 18 168 Z" fill={fill} />
-                    <path d="M24 92 Q16 132 26 156 L50 156 Q40 124 44 92 Z" fill={fill} />
+          <path d="M18 168 C14 58 52 26 100 26 C148 26 186 58 182 168 C174 152 170 130 168 110 C168 92 170 82 168 74 L32 74 C30 82 32 92 32 110 C30 130 26 152 18 168 Z" fill={fill} />
+          <path d="M24 92 Q16 132 26 156 L50 156 Q40 124 44 92 Z" fill={fill} />
           <path d="M176 92 Q184 132 174 156 L150 156 Q160 124 156 92 Z" fill={fill} />
         </>
       );
-    case 16: // faux hawk
+    case 16: // faux hawk — DẤU HIỆU: chóp giữa nhô cao hình mũi thuyền
       return (
         <>
-          <path d="M44 114 C46 90 58 80 72 74 C62 40 100 18 100 18 C100 18 138 40 128 74 C142 80 154 90 156 114 C140 84 128 74 100 72 C72 74 60 84 44 114 Z" fill={fill} />
-          <path d="M44 112 Q100 100 156 112 L156 126 Q100 110 44 126 Z" fill={shade} opacity="0.5" />
-          <path d="M84 34 Q100 26 116 36" stroke={glow} strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.45" />
+          <path d="M44 116 C46 92 54 82 68 76 C50 44 74 26 100 26 C126 26 150 44 132 76 C146 82 154 92 156 116 C142 88 128 78 100 76 C72 78 58 88 44 116 Z" fill={fill} />
+          {/* Hai bên cạo sát — cùng lỗi cũ như kiểu 8: dải ngang y112–126 phủ kín hai mắt. */}
+          <path d="M44 114 C44 94 52 82 64 76 C56 88 51 100 52 114 Z" fill={shade} opacity="0.5" />
+          <path d="M156 114 C156 94 148 82 136 76 C144 88 149 100 148 114 Z" fill={shade} opacity="0.5" />
+          <path d="M100 28 C100 44 100 60 100 76" stroke={glow} strokeWidth="7" fill="none" strokeLinecap="round" opacity="0.3" />
+          <path d="M86 40 Q100 30 114 42" stroke={glow} strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.4" />
         </>
       );
     default:
@@ -866,13 +968,21 @@ function EarringShape({ kind }: { kind: AvatarConfig['earring'] }) {
 /* ═══════════════════════ Kính ═══════════════════════ */
 
 /**
- * Mắt kính CATEYE — dáng đinh theo ảnh tham chiếu: bản DÀY, đuôi trên-ngoài HẾCH
- * nhọn lên, mặt kính tối che kín mắt, có phản chiếu cửa sổ mờ.
+ * Mắt kính CATEYE — bản DÀY, đuôi trên-ngoài HẾCH nhọn lên, ngồi ĐÚNG tầm mắt.
  * Vẽ 1 bên rồi lật gương qua matrix(-1 0 0 1 200 0).
+ *
+ * ⚠️ Bản cũ đọc ra "hai cục đen" chứ không ra kính: mắt kính rộng 70 đơn vị (x 30→100,
+ * tức nửa khuôn mặt), trọng tâm buông xuống tận y=131 (thấp hơn tâm mắt 19 đơn vị, tràn
+ * xuống má), và mặt kính TÔ ĐẶC nên nuốt mất hai con mắt vẽ bên dưới.
+ * Nay: 51×34 đơn vị, tâm (73,112) trùng tầm mắt (EYE_Y=112, tâm mắt trái x=77), mặt kính
+ * trong mờ để vẫn đọc được mắt, và đuôi ngoài hếch hẳn lên bằng một cánh nhọn riêng.
  */
 const CATEYE_LENS =
-  // đỉnh nhọn HẾCH ở góc trên-NGOÀI (34,91) → mép trên thoải nhẹ xuống phía trong (94,103)
-  'M34 91 C50 93 74 96 94 101 C100 104 98 116 90 122 C76 131 52 130 43 121 C36 112 30 101 34 91 Z';
+  // (52,95) đuôi trên-NGOÀI hếch → mép trên THOẢI XUỐNG phía mũi (96,106): đó là dáng mắt mèo
+  'M52 95 C64 97 84 101 96 106 C100 109 98 118 92 122 C80 129 62 128 55 119 C50 112 48 99 52 95 Z';
+
+/** Cánh nhọn ở đuôi kính — nét đọc ra "mắt mèo" ngay ở cỡ nhỏ. */
+const CATEYE_FLICK = 'M54 94 L41 86 L50 100 Z';
 
 function GlassesShape({
   glasses,
@@ -895,27 +1005,30 @@ function GlassesShape({
   if (glasses === 'cateye') {
     const one = (
       <g>
-        <path d={CATEYE_LENS} fill={lens} />
+        {/* mặt kính TRONG MỜ — để hai con mắt vẽ bên dưới vẫn đọc được */}
+        <path d={CATEYE_LENS} fill={lens} opacity="0.45" />
         {/* phản chiếu cửa sổ mờ (2 vệt chéo) */}
-        <g clipPath={lensClip} opacity={hi ? 0.22 : 0.16}>
-          <path d="M30 132 L58 92 L70 92 L42 136 Z" fill="#FFFFFF" />
-          <path d="M74 94 L82 94 L56 130 L48 130 Z" fill="#FFFFFF" opacity="0.65" />
+        <g clipPath={lensClip} opacity={hi ? 0.16 : 0.12}>
+          <path d="M50 132 L70 92 L76 92 L56 134 Z" fill="#FFFFFF" />
+          <path d="M84 94 L88 94 L68 130 L64 130 Z" fill="#FFFFFF" opacity="0.6" />
         </g>
+        {/* cánh nhọn đuôi ngoài — vẽ TRƯỚC khung để khung liền mạch với nó */}
+        <path d={CATEYE_FLICK} fill={frameFill} />
         {/* khung bản DÀY, mối nối nhọn ở đuôi hếch */}
-        <path d={CATEYE_LENS} fill="none" stroke={frameFill} strokeWidth="7" strokeLinejoin="miter" strokeMiterlimit="6" />
+        <path d={CATEYE_LENS} fill="none" stroke={frameFill} strokeWidth="6.5" strokeLinejoin="miter" strokeMiterlimit="6" />
         {/* mép trên dày thêm — đặc trưng gọng mắt mèo */}
-        <path d="M34 91 C50 93 74 96 94 101" stroke={frameFill} strokeWidth="9" fill="none" strokeLinecap="round" />
+        <path d="M52 95 C64 97 84 101 96 106" stroke={frameFill} strokeWidth="9" fill="none" strokeLinecap="round" />
         {/* highlight chất nhựa bóng dọc mép trên */}
-        <path d="M40 94 C54 96 74 99 91 103" stroke="#AFB5C0" strokeWidth="1.8" fill="none" opacity="0.5" strokeLinecap="round" />
+        <path d="M57 97 C68 99 84 103 94 107" stroke="#AFB5C0" strokeWidth="1.8" fill="none" opacity="0.5" strokeLinecap="round" />
         {/* càng kính về phía tai */}
-        <path d="M35 92 L23 96" stroke={frameFill} strokeWidth="6" strokeLinecap="round" />
+        <path d="M50 106 L35 108" stroke={frameFill} strokeWidth="5" strokeLinecap="round" />
       </g>
     );
     return (
       <g>
         {one}
         <g transform={mirror}>{one}</g>
-        <path d="M94 108 Q100 102 106 108" stroke={frameFill} strokeWidth="6" fill="none" strokeLinecap="round" />
+        <path d="M96 110 Q100 105 104 110" stroke={frameFill} strokeWidth="5.5" fill="none" strokeLinecap="round" />
       </g>
     );
   }
@@ -923,17 +1036,17 @@ function GlassesShape({
   if (glasses === 'oversized') {
     const one = (
       <g>
-        <rect x="40" y="90" width="52" height="40" rx="17" fill={lens} />
-        <rect x="40" y="90" width="52" height="40" rx="17" fill="none" stroke={frameFill} strokeWidth="6.5" />
-        <path d="M48 126 L72 94" stroke="#FFFFFF" strokeWidth="6" opacity="0.15" strokeLinecap="round" />
-        <path d="M40 98 L26 104" stroke={frameFill} strokeWidth="6" strokeLinecap="round" />
+        <rect x="46" y="92" width="50" height="34" rx="15" fill={lens} opacity="0.5" />
+        <rect x="46" y="92" width="50" height="34" rx="15" fill="none" stroke={frameFill} strokeWidth="6.5" />
+        <path d="M53 122 L76 96" stroke="#FFFFFF" strokeWidth="6" opacity="0.2" strokeLinecap="round" />
+        <path d="M46 100 L32 105" stroke={frameFill} strokeWidth="6" strokeLinecap="round" />
       </g>
     );
     return (
       <g>
         {one}
         <g transform={mirror}>{one}</g>
-        <path d="M92 106 L108 106" stroke={frameFill} strokeWidth="6" strokeLinecap="round" />
+        <path d="M96 109 L104 109" stroke={frameFill} strokeWidth="6" strokeLinecap="round" />
       </g>
     );
   }
@@ -941,7 +1054,7 @@ function GlassesShape({
   if (glasses === 'shield') {
     return (
       <g>
-        <path d="M40 98 Q100 86 160 98 Q162 124 132 130 Q100 135 68 130 Q38 124 40 98 Z" fill={lens} />
+        <path d="M40 98 Q100 86 160 98 Q162 124 132 130 Q100 135 68 130 Q38 124 40 98 Z" fill={lens} opacity="0.6" />
         <path d="M40 98 Q100 86 160 98 Q162 124 132 130 Q100 135 68 130 Q38 124 40 98 Z" fill="none" stroke={frameFill} strokeWidth="6" strokeLinejoin="round" />
         {/* gọng vắt qua sống mũi + phản chiếu chéo */}
         <path d="M96 92 Q100 89 104 92" stroke={frameFill} strokeWidth="4" fill="none" strokeLinecap="round" />
@@ -954,7 +1067,7 @@ function GlassesShape({
   if (glasses === 'aviator') {
     const one = (
       <g>
-        <path d="M40 96 L92 96 Q93 120 74 128 Q50 131 43 112 Z" fill={lens} />
+        <path d="M40 96 L92 96 Q93 120 74 128 Q50 131 43 112 Z" fill={lens} opacity="0.55" />
         <path d="M40 96 L92 96 Q93 120 74 128 Q50 131 43 112 Z" fill="none" stroke={frameFill} strokeWidth="4" />
         <path d="M50 120 L76 98" stroke="#FFFFFF" strokeWidth="5" opacity="0.17" strokeLinecap="round" />
         <path d="M40 96 L26 100" stroke={frameFill} strokeWidth="4" strokeLinecap="round" />

@@ -82,15 +82,25 @@ export const BASE_TONES: Record<SkinTone, string> = {
   6: '#8A5A34', // bronze     (mới)
 };
 
+/**
+ * ⚠️ Ba màu bạc `silver` · `ash` · `platinum` TRƯỚC ĐÂY gần trùng nhau (#B7B1AA · #6B6560 ·
+ * #E3DDD2 — cùng một trục xám ngả vàng, chỉ khác độ sáng, mà gradient tóc lại kéo sáng đỉnh
+ * nên nhìn cạnh nhau không phân biệt được). Nay tách theo CẢ HAI trục:
+ *  · `silver`   — xám ánh kim, ngả LẠNH (xanh) · sáng trung bình.
+ *  · `ash`      — tro ẤM, TỐI hẳn (đậm nhất trong ba).
+ *  · `platinum` — gần trắng ngà, SÁNG hẳn.
+ * `lib/avatar.test.ts` khoá khoảng cách này bằng ΔE (CIE76) — sửa hex phải chạy lại test.
+ * Key không đổi ⇒ avatar đã lưu vẫn là "silver", chỉ đổi sắc độ.
+ */
 export const HAIR_COLORS: Record<HairColor, string> = {
   black: '#1B1512',
   brown: '#4E2E1A',
   blonde: '#C9A65E',
   red: '#9C3B1B',
-  silver: '#B7B1AA',
+  silver: '#9AA3AB',
   auburn: '#7A2F1E',
-  ash: '#6B6560',
-  platinum: '#E3DDD2',
+  ash: '#57534E',
+  platinum: '#E4DCCC',
   teal: '#2E5F5B',
   pink: '#C86A85',
   lilac: '#9A86C4',
