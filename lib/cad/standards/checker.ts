@@ -21,11 +21,11 @@
  * checker giữ nguyên nguyên tắc an toàn: bỏ qua phòng đó, không đoán mò.
  */
 
-import type { Doc, Entity, Pt, RoomKind } from '../model';
+import type { Doc, Entity, Pt, RoomKind, WallKind } from '../model';
 import { findHatchBoundary, polygonArea, pointInPolygon } from '../hatch';
 import type { StandardRule, Severity } from './registry';
 import { BLOCK_MAP } from '../furniture';
-import { effectiveBlockSize } from '../shape-interactions';
+import { effectiveBlockSize, WALL_LAYER_ID } from '../shape-interactions';
 
 export interface Violation {
   ruleId: string;
@@ -175,6 +175,43 @@ export function backfillRoomTypes(doc: Doc): Doc {
     return { ...e, roomType: classifyRoom(s) };
   });
   return changed ? { ...doc, entities } : doc;
+}
+
+/** T2 (Semantic Room sprint) — "wall-like" cho MỘT entity: LineEntity bất kỳ layer, hoặc
+ * PolylineEntity/HatchEntity trên layer tường (WALL_LAYER_ID — xem shape-interactions.ts, đúng
+ * cặp hatch+polyline do lệnh WALL sinh ra, cùng layer). Đây là điều kiện DUY NHẤT quyết định
+ * "entity này có đóng vai trò tường không" — dùng CHUNG bởi wallKindSummary() (đếm) VÀ
+ * CadEditor.tsx (điều kiện hiện WallTypePanel) để 2 nơi không lệch nhau.
+ * KHÁC `wallLikeDoc()` ở trên: hàm đó lọc CẢ Doc cho mục đích dò biên phòng (giữ lại mọi entity
+ * KHÔNG PHẢI dim/text/trục — kể cả polyline/hatch KHÔNG nằm trên layer tường, VD hatch màu vật
+ * liệu) nên không dùng được làm "entity này CÓ PHẢI tường không" — 2 hàm phục vụ 2 mục đích khác
+ * nhau, cố tình tách riêng thay vì tái dùng nhầm. */
+export function isWallLikeEntity(e: Entity): boolean {
+  if (e.type === 'line') return true;
+  if (e.type === 'polyline' && e.layer === WALL_LAYER_ID) return true;
+  if (e.type === 'hatch' && e.layer === WALL_LAYER_ID) return true;
+  return false;
+}
+
+/** T2 — đếm entity wall-like (isWallLikeEntity) theo `wallKind` đã gán: exterior/interior/
+ * unclassified (undefined — KHÔNG BAO GIỜ suy đoán thành 'interior', xem lý do "không đoán mò"
+ * ở doc-comment `wallKind` trong model.ts). Đây là "nơi tiêu thụ" (consumer) của wallKind, thoả
+ * luật chống mô hình hoá quá mức (docs/SPEC-SEMANTIC-MODEL.md §3: chỉ thêm ngữ nghĩa khi đã có
+ * nơi tiêu thụ) — phục vụ nghiệm thu T2 "checker phân biệt được tường ngoài với vách ngăn".
+ * Info-only, KHÔNG sinh Violation: không có nguồn quy chuẩn xác thực cho ngưỡng "tường ngoài
+ * phải dày ≥X mm" để implement như 1 rule thật — cố tình KHÔNG bịa trích dẫn (xem registry.ts
+ * nguyên tắc verified/note). */
+export function wallKindSummary(doc: Doc): Record<WallKind, number> & { unclassified: number } {
+  let exterior = 0;
+  let interior = 0;
+  let unclassified = 0;
+  for (const e of doc.entities) {
+    if (!isWallLikeEntity(e)) continue;
+    if (e.wallKind === 'exterior') exterior += 1;
+    else if (e.wallKind === 'interior') interior += 1;
+    else unclassified += 1;
+  }
+  return { exterior, interior, unclassified };
 }
 
 function mkViolation(r: StandardRule, message: string, at?: Pt): Violation {

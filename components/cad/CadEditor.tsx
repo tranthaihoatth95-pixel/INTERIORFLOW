@@ -38,13 +38,16 @@ import { titleBlockPro, type TitleBlockInfoPro } from '@/lib/cad/commands';
 import { getActiveBrandKit } from '@/lib/present-editor/brand-kit';
 import {
   docBox, docScaleLabel, docPaperMm, suggestStandardScale, fitsAtScale,
-  STANDARD_SCALES, PAPER_SIZES_MM, ELEMENT_TYPE_OPTIONS, ROOM_KIND_OPTIONS,
+  STANDARD_SCALES, PAPER_SIZES_MM, ELEMENT_TYPE_OPTIONS, ROOM_KIND_OPTIONS, WALL_KIND_OPTIONS,
   type PaperKey, type ElementType, type Entity, type TextEntity,
 } from '@/lib/cad/model';
 import { useFlowStore } from '@/lib/store';
 import { stashCadHandoff } from '@/lib/cad/handoff';
 import { stashCadPresentHandoff } from '@/lib/cad/present-handoff';
-import { checkStandards, findRoomLabels, classifyRoom, ROOM_NAME_RE, type Violation, type RoomKind } from '@/lib/cad/standards/checker';
+import {
+  checkStandards, findRoomLabels, classifyRoom, ROOM_NAME_RE, isWallLikeEntity, wallKindSummary,
+  type Violation, type RoomKind,
+} from '@/lib/cad/standards/checker';
 import { getAllRules } from '@/lib/cad/standards/registry';
 import { suggestFix } from '@/lib/cad/standards/fix-suggest';
 import { exportStandardsReportPdf, extractProjectName, extractDrawnBy } from '@/lib/cad/standards-report';
@@ -1779,6 +1782,7 @@ function CommandLine({ status }: { status: string }) {
       </div>
       <span style={{ fontSize: 11.5, color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{status}</span>
       <RoomStatsBadge />
+      <WallStatsBadge />
     </div>
   );
 }
@@ -1828,6 +1832,26 @@ function RoomStatsBadge() {
   );
 }
 
+/** T2 (Semantic Room sprint) — sibling badge của RoomStatsBadge, đọc `wallKindSummary()`
+ * (checker.ts) — "nơi tiêu thụ" chứng minh checker phân biệt được tường ngoài với vách ngăn.
+ * CHỈ hiện khi có ÍT NHẤT 1 tường đã phân loại (exterior/interior > 0) — tránh badge trống/gây
+ * nhiễu cho bản vẽ chưa ai gán wallKind (mọi tường cũ đều 'unclassified', không có gì mới để báo). */
+function WallStatsBadge() {
+  const doc = useCadStore((s) => s.doc);
+  const summary = useMemo(() => wallKindSummary(doc), [doc]);
+
+  if (summary.exterior === 0 && summary.interior === 0) return null;
+
+  return (
+    <span
+      title="Phân loại tường ngoài/vách ngăn (wallKind đã gán qua WallTypePanel) — 'chưa phân loại' là tường cũ hoặc chưa gán, KHÔNG suy đoán."
+      style={{ fontSize: 11.5, color: 'var(--t2)', whiteSpace: 'nowrap', flex: '0 0 auto', paddingLeft: 10, borderLeft: '1px solid var(--border)' }}
+    >
+      {summary.exterior} tường ngoài · {summary.interior} vách ngăn{summary.unclassified ? ` · ${summary.unclassified} chưa phân loại` : ''}
+    </span>
+  );
+}
+
 /* ───────── B2.4 info panel + B2.5 variant switch — hiện khi chọn ĐÚNG 1 BlockEntity ─────────
  * B1 (24/07, IF2-nền): thêm ô gán BIM (storey + elementType) cho MỌI selection (1 hay nhiều
  * entity, mọi type) — trước đây schema có field nhưng CHƯA có UI gán ở IF1. */
@@ -1843,6 +1867,7 @@ function SelectionInfoPanel() {
   const single = selection.length === 1 ? selected[0] : null;
   const blockEntity = single && single.type === 'block' ? single : null;
   const roomLabelEntity = single && single.type === 'text' && ROOM_NAME_RE.test(single.text.trim()) ? single : null;
+  const wallLikeEntity = single && isWallLikeEntity(single) ? single : null;
 
   return (
     // bottom 110 (thay 46 cũ): tránh CadTouchDock (chế độ Sketch) đè lên ô BIM/ShapeInfo.
@@ -1852,6 +1877,13 @@ function SelectionInfoPanel() {
         <RoomTypeBox
           key={`room-${roomLabelEntity.id}`}
           entity={roomLabelEntity}
+          onApply={updateEntities}
+        />
+      )}
+      {wallLikeEntity && (
+        <WallTypePanel
+          key={`wall-${wallLikeEntity.id}`}
+          entity={wallLikeEntity}
           onApply={updateEntities}
         />
       )}
@@ -1960,6 +1992,78 @@ function RoomTypeBox({ entity, onApply }: { entity: TextEntity; onApply: (es: En
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/* ───────── Wall type picker — T2 (Semantic Room sprint) ─────────
+ * Hiện khi selection = ĐÚNG 1 entity "wall-like" (isWallLikeEntity — LineEntity bất kỳ layer,
+ * hoặc PolylineEntity/HatchEntity trên layer tường, xem checker.ts). KHÁC RoomTypeBox: KHÔNG có
+ * fallback suy luận (roomType có classifyRoom(text) làm fallback hiển thị; wallKind KHÔNG — chưa
+ * gán hiện rõ "chưa phân loại", không đoán mò từ hình học vì không có DCEL outer-boundary utility
+ * nào trong app này để suy luận tường ngoài đáng tin cậy). Gán qua updateEntities (đã snapshot →
+ * Undo được, tôn trọng layer khoá) — cùng pattern RoomTypeBox/BimAssignBox. */
+function WallTypePanel({ entity, onApply }: { entity: Entity; onApply: (es: Entity[]) => void }) {
+  const kind = entity.wallKind;
+  const structural = entity.wallStructural ?? false;
+  const [thickness, setThickness] = useState(entity.wallThicknessMm != null ? String(entity.wallThicknessMm) : '');
+
+  const applyThickness = () => {
+    const v = thickness.trim();
+    const n = v === '' ? undefined : Number(v);
+    onApply([{ ...entity, wallThicknessMm: n !== undefined && Number.isFinite(n) && n > 0 ? n : undefined }]);
+  };
+
+  return (
+    <div style={{ ...panel, position: 'relative', width: 230, padding: '8px 10px' }}>
+      <div style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--t3)', letterSpacing: 0.4, marginBottom: 6 }}>
+        Loại tường · Wall type
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
+        {WALL_KIND_OPTIONS.map((o) => {
+          const active = o.value === kind;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              title={kind === undefined ? 'Chưa phân loại — bấm để CHỐT (không tự suy đoán từ hình học).' : undefined}
+              onClick={() => onApply([{ ...entity, wallKind: o.value }])}
+              style={{
+                fontSize: 10.5,
+                padding: '4px 8px',
+                borderRadius: 999,
+                border: active ? '1px solid var(--accent)' : '1px solid var(--border)',
+                background: active ? 'color-mix(in srgb, var(--accent) 16%, transparent)' : 'var(--field)',
+                color: active ? 'var(--t1)' : 'var(--t2)',
+                cursor: 'pointer',
+              }}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10.5, color: 'var(--t2)', marginBottom: 6, cursor: 'pointer' }}>
+        <input
+          type="checkbox"
+          checked={structural}
+          onChange={(e) => onApply([{ ...entity, wallStructural: e.target.checked || undefined }])}
+        />
+        Chịu lực · Structural
+      </label>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        <label style={{ fontSize: 10.5, color: 'var(--t3)', width: 56, flexShrink: 0 }}>Dày (mm)</label>
+        <input
+          type="number"
+          min={0}
+          value={thickness}
+          onChange={(e) => setThickness(e.target.value)}
+          onBlur={applyThickness}
+          onKeyDown={(e) => { if (e.key === 'Enter') applyThickness(); }}
+          title="Độ dày tường khai báo (mm) — KHÔNG tự đo lại từ hình học (xem model.ts wallThicknessMm). Để trống = xoá gán."
+          style={{ flex: 1, fontSize: 11.5, padding: '4px 7px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', minWidth: 0 }}
+        />
       </div>
     </div>
   );

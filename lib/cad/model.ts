@@ -126,6 +126,28 @@ export const ROOM_KIND_OPTIONS: { value: RoomKind; label: string }[] = [
   { value: 'other', label: 'Khác' },
 ];
 
+/** T2 (Semantic Room sprint) — phân loại tường: trong/ngoài. KHÔNG có `WallEntity` riêng trong
+ * codebase này — "tường" thể hiện qua 3 kiểu entity khác nhau tuỳ đường vẽ (xem checker.ts
+ * `isWallLikeEntity`/`wallLikeDoc` + shape-interactions.ts `extractWallSegments`):
+ *   - `LineEntity` bất kỳ layer nào (vẽ tay bằng lệnh LINE — app không ép layer).
+ *   - `PolylineEntity` trên layer tường (`WALL_LAYER_ID` — biên nét mảnh do lệnh WALL sinh ra).
+ *   - `HatchEntity` trên layer tường (nửa tô đặc/poché do lệnh WALL sinh ra CÙNG lúc với polyline
+ *     biên ở trên — 1 đoạn tường WALL-tool = 1 cặp hatch+polyline).
+ * Vì vậy field wallKind/wallStructural/wallThicknessMm đặt ở `Base` (không phải field riêng của
+ * 1 type) — giống lý do `storey`/`elementType` cũng ở Base: ngữ nghĩa CHỈ có ý nghĩa khi entity
+ * đang đóng vai trò tường, không phải mọi entity. Optional, additive: `.idf` cũ không có field
+ * vẫn parse bình thường; undefined = chưa phân loại — KHÔNG suy đoán từ hình học (xem lý do
+ * "không đoán mò" trong checker.ts: không có DCEL/outer-boundary utility nào trong app này để
+ * suy luận tường ngoài từ hình học một cách đáng tin cậy). */
+export type WallKind = 'exterior' | 'interior';
+
+/** Danh mục WallKind cho UI gán (panel chọn loại tường). Nhãn song ngữ Việt dẫn trước theo quy
+ * ước TTT, cùng mẫu ROOM_KIND_OPTIONS. */
+export const WALL_KIND_OPTIONS: { value: WallKind; label: string }[] = [
+  { value: 'exterior', label: 'Tường ngoài · Exterior' },
+  { value: 'interior', label: 'Vách ngăn · Interior' },
+];
+
 interface Base {
   id: string;
   type: EntityType;
@@ -140,6 +162,19 @@ interface Base {
   storey?: string;
   /** IF2-nền — phân loại BIM/IFC 4.0 (xem `ElementType`). Optional, backward-compatible. */
   elementType?: ElementType;
+  /** T2 — phân loại tường trong/ngoài (xem `WallKind` phía trên). Chỉ có ý nghĩa khi entity đóng
+   * vai trò tường. undefined = chưa phân loại; KHÔNG bao giờ tự suy đoán/mặc định thành
+   * 'interior' — xem checker.ts `wallKindSummary` (đếm undefined riêng thành 'unclassified'). */
+  wallKind?: WallKind;
+  /** T2 — true = tường chịu lực, false/undefined = vách ngăn không chịu lực. Chỉ có ý nghĩa cùng
+   * `wallKind` (đã phân loại là tường). */
+  wallStructural?: boolean;
+  /** T2 — độ dày tường THẬT (mm), khai báo bởi user. Với tường vẽ bằng LINE đơn: hình học
+   * KHÔNG mang độ dày nên field này là nguồn duy nhất. Với tường do lệnh WALL sinh (hatch+
+   * polyline): độ dày đã BAKED sẵn vào hình học (tham số `t` lúc vẽ, xem commands.ts
+   * wallSegment/wallChain) — field này là metadata KHAI BÁO thêm, KHÔNG tự động đo lại/đối
+   * chiếu với hình học, có thể lệch nếu user chỉnh geometry sau mà quên cập nhật số này. */
+  wallThicknessMm?: number;
 }
 
 export interface LineEntity extends Base {

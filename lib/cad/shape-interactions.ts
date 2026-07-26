@@ -57,8 +57,11 @@ export interface WallSegment {
 
 /** Id layer tường mặc định (lib/cad/model.ts DEFAULT_LAYERS) — dùng để lọc polyline tường
  * (do lệnh WALL sinh ra, xem lib/cad/commands.ts wallChain). Entity LINE được coi là tường
- * bất kể layer nào (người dùng có thể vẽ tường tay bằng lệnh LINE). */
-const WALL_LAYER_ID = 'l-wall';
+ * bất kể layer nào (người dùng có thể vẽ tường tay bằng lệnh LINE).
+ * Export (T2, Semantic Room sprint): checker.ts `isWallLikeEntity`/`wallKindSummary` +
+ * CadEditor.tsx (điều kiện hiện WallTypePanel) tái dùng CÙNG hằng số này — không định nghĩa lại
+ * 'l-wall' rải rác ở nhiều nơi. */
+export const WALL_LAYER_ID = 'l-wall';
 
 /** Trích các đoạn thẳng "tường" từ Doc — nguồn cho auto-snap (B2.2). */
 export function extractWallSegments(doc: Doc): WallSegment[] {
