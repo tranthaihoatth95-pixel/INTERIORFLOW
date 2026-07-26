@@ -5,18 +5,22 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (27/07 — chốt design tokens: accent tím + gộp font + token trạng thái)
-- ✅ **`origin/main`** = `c350a55` — gồm audit IF1, docs/ phân loại, gói đợt 4-11, T1/T2 Semantic
-  Room, onboarding 3 tầng, thẻ kính login, luật vận hành 8, audit design tokens, và chốt tokens
-  (mới nhất). Chi tiết đầy đủ từng phần → `CHANGELOG.md`.
+## Hiện tại (27/07 — chốt design tokens + "giấy vuông vỏ bo" ở Present)
+- ✅ **`origin/main`** = `ee66bf0` — gồm audit IF1, docs/ phân loại, gói đợt 4-11, T1/T2 Semantic
+  Room, onboarding 3 tầng, thẻ kính login, luật vận hành 8, audit + chốt design tokens, và bo
+  góc Present (mới nhất). Chi tiết đầy đủ từng phần → `CHANGELOG.md`.
+- ✅ **"Giấy vuông, vỏ bo"** (`ee66bf0`) — trang slide Present hết bo góc (từng cắt góc ảnh
+  full-bleed dù PDF/PPTX xuất ra vẫn vuông — thuần lỗi hiển thị editor, verify render.ts/export.ts
+  không hề bo). Tách trang khỏi canvas bằng viền 1px + box-shadow nổi thay vì bo góc; áp cùng cho
+  khung "Trình chiếu" (SlidePlayer). Dải thumbnail + mọi panel/nút giữ nguyên bo góc. Luật ghi vào
+  `docs/SPEC-UI-SHELL.md` §3B. **Lưu ý dev server**: `.next` cache hỏng nhiều lần phiên này sau
+  git stash/nhiều HMR — nếu trang trắng/lỗi "Cannot find module vendor-chunks", xoá `.next` rồi
+  khởi động lại, không phải bug code.
 - ✅ **Chốt design tokens** (`c350a55`) — `--accent` tím hạ còn `#6a57f5` (đạt WCAG AA 4.89:1,
-  bản cũ #8b7cf7 chỉ 3.32:1); thay ~40 chỗ vàng ấm `#c79a63` bằng `--accent` khắp login/dashboard/
-  CAD/Present, giữ ĐÚNG 2 ngoại lệ (preset "ember" là màu định danh, không phải accent) +
-  `--accent-warm` cho riêng nút "Vào xưởng"; gộp font — xoá SF-Pro/Space-Grotesk cục bộ khỏi 4
-  file thật sự sống (đã verify import trace, không phải 7 file như brief đoán — 6 file khác chứa
-  cùng hằng số là CODE CHẾT, không đụng); thêm `--danger`/`--warning`/`--success` (≥4.5:1 cả 2
-  theme) nối vào standards checker. Verify: tsc 0 · 97/97 test · build sạch · browser thật cả 4
-  màn (login/dashboard/CAD/Present) xác nhận accent nhất quán.
+  bản cũ chỉ 3.32:1); thay ~40 chỗ vàng ấm bằng `--accent` khắp login/dashboard/CAD/Present (giữ
+  2 ngoại lệ nội dung + `--accent-warm` riêng nút "Vào xưởng"); gộp font về Be Vietnam Pro (4 file
+  sống, verify import trace — không phải 7 như brief đoán); thêm `--danger`/`--warning`/`--success`
+  nối vào standards checker. Verify: tsc 0 · 97/97 test · build sạch · browser thật cả 4 màn.
 - ⏸️ **T3/T4 (Semantic Room)** vẫn CHƯA LÀM — để phiên sau, đọc `docs/IF1-COMPLETION-AUDIT.md`
   §3 (a)/(d) trước.
 
@@ -45,13 +49,9 @@ Không có.
 - 🟡 `FINAL_ARCHITECTURE_REPORT.md` + `HUONG-DAN-SU-DUNG.md` framing cũ "nội bộ TTT" — đã gắn ⚠️ đầu file, cần viết lại (đợt de-TTT 2).
 - 🟡 Wall cũ (trước T2) không có `wallKind` — báo "chưa phân loại", KHÔNG tự gán; cần UI bulk-assign nếu muốn phủ hết (không phải bug).
 - 🟡 `.idf` chưa có migration path thật (version lệch = từ chối thẳng) — T3 sẽ giải quyết.
-- 🟡 **Luật 8 (blueprint §8) — LLM↔Hình học**: audit 4 tầng (parse/solver/validator/render) xác
-  nhận `lib/cad/ai-assist.ts` ĐÃ ĐÚNG kiến trúc (LLM không viết x/y, `RoomSpec` không có trường
-  toạ độ) — nhưng chưa có LLM thật nào cắm vào (`parseDescription` vẫn rule-based, comment dòng
-  7 mời "cắm LLM thật sau"); khi cắm cần: (a) schema validation cứng (zod) chặn AI trả field
-  toạ độ lạ, (b) nối `checker.ts` thành vòng lặp tự-sửa tối đa 3 lần/tự-chặn-ship như
-  `SPEC-SEMANTIC-MODEL.md` §8 mô tả — hiện `layoutToEntities` chỉ skip món quá chật + ghi note,
-  không phải reject-và-báo-lỗi.
+- 🟡 **Luật 8 — LLM↔Hình học**: `lib/cad/ai-assist.ts` ĐÃ ĐÚNG kiến trúc nhưng chưa có LLM thật
+  cắm vào; khi cắm cần zod validate chặn AI trả toạ độ lạ + nối `checker.ts` thành vòng lặp
+  tự-sửa/tự-chặn-ship thật (hiện chỉ skip-and-note) như `SPEC-SEMANTIC-MODEL.md` §8 mô tả.
 - 🐛 `/cad-editor` React warning không tái hiện · ⌘J Vitals grep 0 · morph login chỉ fade · cursor polling idle.
 - 53 ảnh `public/wallpapers/ttt-*` giữ tạm theo ý user.
 
