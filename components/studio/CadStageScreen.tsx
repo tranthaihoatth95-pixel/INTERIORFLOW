@@ -18,8 +18,16 @@ import CadSheets from '@/components/cad/CadSheets';
 import { StageEnter } from '@/components/studio/StageTransition';
 import FoldableDualPane from '@/components/studio/FoldableDualPane';
 import ReferencePane from '@/components/studio/ReferencePane';
+import { StageIntroCard } from '@/components/onboarding/StageIntroCard';
+import { useFlowStore } from '@/lib/store';
+import { effectiveUserId } from '@/lib/resume';
 
 export default function CadStageScreen() {
+  // Route studio KHÔNG nạp `user` vào store khi vào bằng hard-reload/URL trực tiếp — rơi về
+  // lastUserId (cùng pattern CadSheets.tsx/ResumeTracker), nếu không StageIntroCard im lặng
+  // không bao giờ hiện cho user mở thẳng `/projects/[id]/cad` (F5, bookmark, tab mới).
+  const storeUserId = useFlowStore((s) => s.user?.id);
+  const userId = effectiveUserId(storeUserId);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: 'var(--bg)' }}>
       <StudioBar active="cad" />
@@ -27,6 +35,8 @@ export default function CadStageScreen() {
         {/* Tầng multi-sheet (phụ-thêm): thanh tab + CadEditor. 1 sheet ⇒ y hệt bản cũ. */}
         <FoldableDualPane primary={<CadSheets />} secondary={<ReferencePane />} />
       </StageEnter>
+      {/* Tầng 2 onboarding — thẻ giới thiệu lần đầu chặng CAD (góc màn, không chặn thao tác). */}
+      <StageIntroCard stage="cad" userId={userId} />
     </div>
   );
 }

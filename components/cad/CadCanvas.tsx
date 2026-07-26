@@ -33,6 +33,8 @@ import {
 import { wallChain, roomRect, parseCoordInput, resolveCoordInput } from '@/lib/cad/commands';
 import { polygonVertices, ellipsePoints, catmullRomSpline, divideEntity, measureEntity } from '@/lib/cad/geometry';
 import { loadManifest, insertBlockById } from '@/lib/cad/block-library';
+import { isCoachmarkSeen, markCoachmarkSeen, effectiveUserId } from '@/lib/resume';
+import { useT } from '@/lib/i18n';
 import {
   trimEntity,
   extendEntity,
@@ -184,6 +186,55 @@ export default function CadCanvas() {
   // trong draw()/updateDeleteFabPosition() để không ép React re-render mỗi frame pan/zoom).
   const selection = useCadStore((s) => s.selection);
   const cadTool = useCadStore((s) => s.tool);
+
+  /**
+   * Tầng 3 onboarding (coachmark) — "Kéo để di chuyển, bấm đúp để sửa" hiện ĐÚNG 1 LẦN,
+   * lần đầu tiên user chọn CHÍNH XÁC 1 đối tượng (selection 0→1). Vị trí tính 1 LẦN lúc
+   * xuất hiện (KHÔNG bám theo pan/zoom liên tục như nút Xoá nổi ở trên — coachmark tự ẩn
+   * ngay khi có tương tác kế tiếp nên không cần theo dõi mỗi frame).
+   */
+  // Route studio (/projects/[id]/cad) KHÔNG nạp `user` vào store khi vào bằng hard-reload/URL
+  // trực tiếp — rơi về lastUserId (cùng pattern CadSheets.tsx/ResumeTracker), nếu không
+  // coachmark im lặng không bao giờ hiện cho user mở thẳng route (F5, bookmark, tab mới).
+  const storeUserId = useFlowStore((s) => s.user?.id);
+  const userId = effectiveUserId(storeUserId);
+  const trCoachmark = useT();
+  const prevSelLenRef = useRef(0);
+  const [coachmark, setCoachmark] = useState<{ left: number; top: number } | null>(null);
+
+  useEffect(() => {
+    const prevLen = prevSelLenRef.current;
+    prevSelLenRef.current = selection.length;
+    // Bất kỳ đổi selection nào (chọn khác/bỏ chọn/chọn thêm) cũng tính là "tương tác kế
+    // tiếp" — ẩn coachmark đang hiện trước khi xét có mở coachmark MỚI hay không.
+    setCoachmark((cur) => (cur ? null : cur));
+    if (prevLen !== 0 || selection.length !== 1 || !userId || isCoachmarkSeen('selectMove', userId)) return;
+    const st = useCadStore.getState();
+    const ent = st.doc.entities.find((e) => e.id === selection[0]);
+    if (!ent) return;
+    const b = entityBox(ent);
+    if (!Number.isFinite(b.minX)) return;
+    const c1 = worldToScreen(st.viewport, { x: b.minX, y: b.minY });
+    const c2 = worldToScreen(st.viewport, { x: b.maxX, y: b.maxY });
+    const right = Math.max(c1.x, c2.x);
+    const topY = Math.min(c1.y, c2.y);
+    setCoachmark({ left: right + 12, top: Math.max(8, topY) });
+    markCoachmarkSeen('selectMove', userId);
+  }, [selection, userId]);
+
+  // Tự ẩn: timeout ngắn HOẶC tương tác tiếp theo (bất kỳ pointerdown nào trên trang, kể cả
+  // bắt đầu kéo) — CÁI NÀO TỚI TRƯỚC. Đăng ký listener SAU khi coachmark đã hiện (effect
+  // chạy sau commit) nên không bắt trúng chính cú click vừa tạo ra selection.
+  useEffect(() => {
+    if (!coachmark) return;
+    const dismiss = () => setCoachmark(null);
+    window.addEventListener('pointerdown', dismiss, { capture: true });
+    const t = window.setTimeout(dismiss, 4200);
+    return () => {
+      window.removeEventListener('pointerdown', dismiss, { capture: true });
+      window.clearTimeout(t);
+    };
+  }, [coachmark]);
   // cập nhật ở pointerdown/up (KHÔNG ở pointermove — tần suất cao, tránh re-render mỗi lần rê
   // chuột/ngón tay, đúng tinh thần kiến trúc file này: React state chỉ đổi khi cần hiện UI).
   const [isTouchInput, setIsTouchInput] = useState(false);
@@ -3099,6 +3150,33 @@ export default function CadCanvas() {
             <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
           </svg>
         </button>
+      )}
+      {/* Tầng 3 onboarding — coachmark chọn/di chuyển, hiện đúng 1 lần (xem effect khai báo
+          `coachmark` phía trên). Neo cạnh trên-phải bbox đối tượng, không chặn thao tác
+          (pointerEvents none — bấm xuyên qua để không cản click tiếp theo). */}
+      {coachmark && (
+        <div
+          role="status"
+          style={{
+            position: 'absolute',
+            left: coachmark.left,
+            top: coachmark.top,
+            zIndex: 33,
+            pointerEvents: 'none',
+            transform: 'translateY(-100%)',
+            whiteSpace: 'nowrap',
+            fontSize: 11.5,
+            fontWeight: 500,
+            color: '#fff',
+            background: 'rgba(24,21,18,0.92)',
+            border: '1px solid rgba(199,154,99,0.35)',
+            borderRadius: 8,
+            padding: '5px 9px',
+            boxShadow: '0 8px 20px -6px rgba(0,0,0,.4)',
+          }}
+        >
+          {trCoachmark('Kéo để di chuyển, bấm đúp để sửa', 'Drag to move, double-click to edit')}
+        </div>
       )}
     </div>
   );

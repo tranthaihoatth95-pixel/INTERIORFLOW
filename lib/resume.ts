@@ -108,6 +108,19 @@ export function getLastUserId(): string | null {
   }
 }
 
+/**
+ * userId "tốt nhất có được" cho onboarding Tầng 2/3 — CÁC ROUTE STUDIO (`/projects/[id]/cad`,
+ * `/present`, hay `/cad-editor`/`/present-editor` cũ) KHÔNG nạp `user` vào store khi vào bằng
+ * hard-reload/URL trực tiếp (xem ghi chú `lastUserId` phía trên + components/entry/ResumeTracker.tsx
+ * + components/cad/CadSheets.tsx/PresentSheets.tsx — cùng 1 pattern rơi về `lastUserId`).
+ * Thiếu bước này thì StageIntroCard/coachmark IM LẶNG không bao giờ hiện khi user mở thẳng
+ * route studio (F5, bookmark, mở tab mới) thay vì điều hướng qua Gallery trong cùng phiên SPA.
+ */
+export function effectiveUserId(storeUserId: string | null | undefined): string | null {
+  if (storeUserId) return storeUserId;
+  return getLastUserId();
+}
+
 /* ---------- Smart Tour (B-5) — cờ "đã xem/bỏ qua" theo user ---------- */
 
 export function isTourDone(userId: string): boolean {
@@ -123,6 +136,76 @@ export function markTourDone(userId: string): void {
   if (!userId) return;
   try {
     localStorage.setItem(TOUR_PREFIX + userId, '1');
+  } catch {
+    /* bỏ qua */
+  }
+}
+
+/** Xoá cờ tourDone — dùng cho "Xem lại hướng dẫn" (help menu) để Tầng 1 hiện lại từ đầu. */
+export function resetTourDone(userId: string): void {
+  if (!userId) return;
+  try {
+    localStorage.removeItem(TOUR_PREFIX + userId);
+  } catch {
+    /* bỏ qua */
+  }
+}
+
+/* ---------- Onboarding Tầng 2 — thẻ giới thiệu LẦN ĐẦU mỗi chặng (thay 3 bước 'canvas'
+   cũ của SmartTour) — cờ theo (chặng, user), key `interiorflow.stageIntro.<stage>.<userId>`. */
+
+export type OnboardingStage = 'cad' | 'render' | 'present';
+
+const STAGE_INTRO_PREFIX = 'interiorflow.stageIntro.';
+
+export function isStageIntroSeen(stage: OnboardingStage, userId: string): boolean {
+  if (!userId) return true; // không xác định user → đừng làm phiền
+  try {
+    return localStorage.getItem(STAGE_INTRO_PREFIX + stage + '.' + userId) === '1';
+  } catch {
+    return true;
+  }
+}
+
+export function markStageIntroSeen(stage: OnboardingStage, userId: string): void {
+  if (!userId) return;
+  try {
+    localStorage.setItem(STAGE_INTRO_PREFIX + stage + '.' + userId, '1');
+  } catch {
+    /* bỏ qua */
+  }
+}
+
+/** Xoá cờ 1 chặng — dùng bởi "Xem lại hướng dẫn" (loop cả 3 chặng). */
+export function resetStageIntroSeen(stage: OnboardingStage, userId: string): void {
+  if (!userId) return;
+  try {
+    localStorage.removeItem(STAGE_INTRO_PREFIX + stage + '.' + userId);
+  } catch {
+    /* bỏ qua */
+  }
+}
+
+export const ONBOARDING_STAGES: readonly OnboardingStage[] = ['cad', 'render', 'present'];
+
+/* ---------- Onboarding Tầng 3 — coachmark tương tác vi mô (vd chọn 1 đối tượng CAD lần
+   đầu), cờ theo (tên coachmark, user), key `interiorflow.coachmark.<name>.<userId>`. */
+
+const COACHMARK_PREFIX = 'interiorflow.coachmark.';
+
+export function isCoachmarkSeen(name: string, userId: string): boolean {
+  if (!userId) return true;
+  try {
+    return localStorage.getItem(COACHMARK_PREFIX + name + '.' + userId) === '1';
+  } catch {
+    return true;
+  }
+}
+
+export function markCoachmarkSeen(name: string, userId: string): void {
+  if (!userId) return;
+  try {
+    localStorage.setItem(COACHMARK_PREFIX + name + '.' + userId, '1');
   } catch {
     /* bỏ qua */
   }

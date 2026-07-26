@@ -6,9 +6,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   MoreHorizontal, X, Coins, Share2, Check, MessageCircle, LogOut, Sun, Moon, SunMoon,
   LayoutDashboard, Palette, Box, Presentation, Cloud, Zap, Cpu, ShieldCheck,
-  Loader2, Clock3, CircleCheck, CircleAlert,
+  Loader2, Clock3, CircleCheck, CircleAlert, RotateCcw,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
+import { requestGallery, resetTourDone, resetStageIntroSeen, ONBOARDING_STAGES } from '@/lib/resume';
 import { checkProviders, type ProviderStatus } from '@/lib/ai/client';
 import {
   TIERS, TIER_ORDER, type AiTier, providerForTier,
@@ -310,6 +312,20 @@ function ActionsRow({ close }: { close: () => void }) {
   const setChatOpen = useFlowStore((s) => s.setChatOpen);
   const setDashboardOpen = useFlowStore((s) => s.setDashboardOpen);
   const tr = useT();
+  const router = useRouter();
+
+  /** "Xem lại hướng dẫn" — cùng logic với MoreMenu (Header.tsx) desktop: xoá cờ Tầng 1 +
+   * cả 3 cờ Tầng 2 của user hiện tại rồi về Gallery, cho onboarding chạy lại từ đầu. */
+  const replayOnboarding = () => {
+    const u = useFlowStore.getState().user;
+    if (u) {
+      resetTourDone(u.id);
+      for (const stage of ONBOARDING_STAGES) resetStageIntroSeen(stage, u.id);
+    }
+    close();
+    requestGallery();
+    router.push('/');
+  };
 
   return (
     <Section label={tr('Công cụ', 'Tools')}>
@@ -332,6 +348,11 @@ function ActionsRow({ close }: { close: () => void }) {
         />
         <ShareTile />
         <ThemeTile />
+        <Tile
+          icon={<RotateCcw size={16} />}
+          label={tr('Xem lại hướng dẫn', 'Replay tutorial')}
+          onClick={replayOnboarding}
+        />
       </div>
     </Section>
   );

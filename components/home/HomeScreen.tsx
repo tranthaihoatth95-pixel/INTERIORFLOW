@@ -19,7 +19,8 @@ import { ReactFlowProvider } from '@xyflow/react';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { LoginScreen } from '@/components/entry/LoginScreen';
-import { SmartTour } from '@/components/entry/SmartTour';
+import { WelcomeIntro } from '@/components/entry/WelcomeIntro';
+import { StageIntroCard } from '@/components/onboarding/StageIntroCard';
 import { Header } from '@/components/Header';
 import { LeftRail } from '@/components/LeftRail';
 import { NodeLibraryPanel } from '@/components/NodeLibraryPanel';
@@ -121,9 +122,10 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
       return false;
     }
   });
-  // B-5: Smart Tour lần đầu — bật cho user CHƯA có dấu chân (không resume, không stageDone,
-  // chưa tourDone). Bỏ qua/hoàn tất → markTourDone theo user.id, không hiện lại.
-  const [tourOn, setTourOn] = useState(false);
+  // Onboarding Tầng 1 (thay Smart Tour cũ) — WelcomeIntro bật cho user CHƯA có dấu chân
+  // (không resume, không stageDone, chưa tourDone). Bỏ qua/hoàn tất → markTourDone theo
+  // user.id, không hiện lại (help menu "Xem lại hướng dẫn" là cách DUY NHẤT hiện lại).
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
   // Cover (màn ngoài Oppo) mặc định chỉ Dashboard; nút "Mở toàn bộ app" ép vào full app
   // để KHÔNG bị kẹt khi viewport hẹp (điện thoại thường / cửa sổ nhỏ).
   const [forceFullApp, setForceFullApp] = useState(false);
@@ -196,6 +198,11 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
       // → bỏ qua toàn bộ auto-resume bên dưới, luôn dừng ở ProjectSelect, dù có resume/stageFlag.
       if (consumeForceGallery()) {
         setStageDone(false);
+        // "Xem lại hướng dẫn" (help menu) xoá tourDone RỒI mới requestGallery() — kiểm tra lại
+        // ở đây để WelcomeIntro hiện ngay, không chỉ dừng ở Gallery trơn. Người dùng bấm "Home"
+        // bình thường thì tourDone luôn đã '1' từ trước (đã qua onboarding) nên nhánh này không
+        // đổi hành vi cũ cho họ.
+        if (!isTourDone(userId)) setWelcomeOpen(true);
         return;
       }
 
@@ -208,9 +215,9 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
         /* localStorage chặn — coi như chưa */
       }
 
-      // B-4 first-time → gallery (mặc định stageDone=false) + Smart Tour.
+      // B-4 first-time → gallery (mặc định stageDone=false) + WelcomeIntro (Tầng 1).
       if (!resume && !stageFlag) {
-        if (!isTourDone(userId)) setTourOn(true);
+        if (!isTourDone(userId)) setWelcomeOpen(true);
         return;
       }
 
@@ -365,14 +372,21 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
   // phải đổi state tại chỗ — bỏ qua event để không nháy ProjectSelect dưới URL dự án.
   useEffect(() => {
     if (projectRouteId) return;
-    const onGoHome = () => setStageDone(false);
+    const onGoHome = () => {
+      setStageDone(false);
+      // Cùng lý do nhánh consumeForceGallery() ở enterAfterAuth: "Xem lại hướng dẫn" bấm
+      // trong khi ĐÃ đứng ở route '/' (không remount) chỉ đi qua đường CustomEvent này.
+      const u = useFlowStore.getState().user;
+      if (u && !isTourDone(u.id)) setWelcomeOpen(true);
+    };
     window.addEventListener(GO_HOME_EVENT, onGoHome);
     return () => window.removeEventListener(GO_HOME_EVENT, onGoHome);
   }, [projectRouteId]);
 
-  // B-5: kết thúc tour (hoàn tất hoặc bỏ qua) — không hiện lại cho user này.
-  const endTour = useCallback(() => {
-    setTourOn(false);
+  // Đóng WelcomeIntro (bỏ qua bằng nút "Bỏ qua", HOẶC sau khi 1 trong 2 nút hành động
+  // chính đã tạo/mở xong dự án) — không hiện lại cho user này (trừ "Xem lại hướng dẫn").
+  const closeWelcome = useCallback(() => {
+    setWelcomeOpen(false);
     const u = useFlowStore.getState().user;
     if (u) markTourDone(u.id);
   }, []);
@@ -490,8 +504,24 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
             toProjectRender();
           }}
         />
-        {/* B-5: bước "chọn dự án" của Smart Tour — chỉ first-time user */}
-        {tourOn && <SmartTour screen="gallery" onFinish={endTour} onSkip={endTour} />}
+        {/* Onboarding Tầng 1 — modal căn giữa TRÊN gallery, thay bước 'gallery' cũ của
+            SmartTour. onEnter dùng CHUNG callback đưa cho ProjectSelect ở trên (nút
+            "Tạo dự án của tôi" đi đúng đường "+ Dự án mới" cũ đi). */}
+        {welcomeOpen && (
+          <WelcomeIntro
+            userId={user.id}
+            onEnter={() => {
+              setStageDone(true);
+              try {
+                localStorage.setItem('interiorflow.stageDone', user.id);
+              } catch {
+                /* bỏ qua */
+              }
+              toProjectRender();
+            }}
+            onDismiss={closeWelcome}
+          />
+        )}
         {/* Panel "Chi tiết" (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2(b)) — Dashboard.tsx
             overlay đã có sẵn (fixed inset-0 z-50), gated bởi store dashboardOpen. TRƯỚC ĐÂY
             chỉ mount ở nhánh canvas bên dưới → 2 nút "Chi tiết"/"Đồng bộ tiến độ" mới thêm
@@ -564,8 +594,9 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
         {presentModeOpen && <PresentOverlay onClose={() => setPresentModeOpen(false)} />}
         <CommandPalette />
         <CommentLayer />
-        {/* B-5: các bước canvas của Smart Tour (3 chặng → dock) — nối tiếp từ gallery */}
-        {tourOn && <SmartTour screen="canvas" onFinish={endTour} onSkip={endTour} />}
+        {/* Onboarding Tầng 2 — thẻ giới thiệu lần đầu chặng Rendering (thay 3 bước 'canvas'
+            cũ của SmartTour, vốn chỉ trỏ "phase-switcher"/"dock" mà không dạy cách làm việc). */}
+        <StageIntroCard stage="render" userId={user?.id} />
       </motion.div>
     </ReactFlowProvider>
   );

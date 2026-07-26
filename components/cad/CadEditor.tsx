@@ -33,6 +33,7 @@ import { BLOCKS, BLOCK_MAP } from '@/lib/cad/furniture';
 import ShapePalette, { ShapeInfoPanel } from '@/components/ShapePalette';
 import { loadManifest, groupByCategory, type LibraryManifest } from '@/lib/cad/block-library';
 import { buildDemoPlan, buildDemoPlanApartment74 } from '@/lib/cad/demo-plan';
+import { consumeCadDemoSeedRequest } from '@/lib/cad/seed-demo-flag';
 import { buildOfficeTemplate, buildHotelTemplate } from '@/lib/cad/templates';
 import { titleBlockPro, type TitleBlockInfoPro } from '@/lib/cad/commands';
 import { getActiveBrandKit } from '@/lib/present-editor/brand-kit';
@@ -102,6 +103,19 @@ export default function CadEditor() {
   useEffect(() => {
     if (cadTool === 'zone' || cadTool === 'arrow') setZonePanelClosed(false);
   }, [cadTool]);
+
+  // Tầng 1 onboarding — "Mở dự án mẫu để xem thử" (WelcomeIntro) tạo 1 flow trống rồi điều
+  // hướng thẳng sang đây kèm cờ sessionStorage (lib/cad/seed-demo-flag.ts). Nạp mặt bằng demo
+  // NGAY MỘT LẦN nếu bản vẽ đang trống — giống hệt openDemo() bên dưới, chỉ khác điểm gọi.
+  // Bản vẽ KHÔNG trống (vd F5 vào lại dự án đã vẽ) → bỏ qua, không đè dữ liệu thật của user.
+  useEffect(() => {
+    if (!consumeCadDemoSeedRequest()) return;
+    if (useCadStore.getState().doc.entities.length > 0) return;
+    useCadStore.getState().importDoc(buildDemoPlan(), 'replace');
+    useCadStore.getState().setStatus('Đã nạp mặt bằng mẫu — bấm F để Zoom Extents, thử vẽ/sửa tự do.');
+    window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 21/07 (quy trình CAD thực tế): AiBriefPanel bước 1 "Import hồ sơ CAD" TÁI DÙNG đúng 2 input
   // file + handler DXF/DWG ở dưới (onImportFile/onImportDwgFile) — panel không có ref tới input

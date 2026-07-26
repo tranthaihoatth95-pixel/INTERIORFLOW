@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Share2, Play, Loader2, ChevronDown, Cloud, Zap, Cpu, ShieldCheck, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, MoreHorizontal } from 'lucide-react';
+import { Coins, Share2, Play, Loader2, ChevronDown, Cloud, Zap, Cpu, ShieldCheck, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, MoreHorizontal, RotateCcw } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { runFlow } from '@/lib/execution';
@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 import { IFLogo } from '@/components/entry/IFLogo';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
 import { HomeButton } from '@/components/studio/HomeButton';
-import { requestGallery } from '@/lib/resume';
+import { requestGallery, resetTourDone, resetStageIntroSeen, ONBOARDING_STAGES } from '@/lib/resume';
 
 export function Header() {
   const flowName = useFlowStore((s) => s.flowName);
@@ -192,6 +192,21 @@ function MoreMenu() {
   const tr = useT();
   const credits = useFlowStore((s) => s.credits);
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  /** "Xem lại hướng dẫn" — xoá cờ Tầng 1 (tourDone) + cả 3 cờ Tầng 2 (stageIntro) của user
+   * hiện tại rồi về Gallery, để toàn bộ chuỗi onboarding chạy lại từ đầu (WelcomeIntro trước,
+   * StageIntroCard hiện lại lần lượt khi vào từng chặng). */
+  const replayOnboarding = () => {
+    const u = useFlowStore.getState().user;
+    if (u) {
+      resetTourDone(u.id);
+      for (const stage of ONBOARDING_STAGES) resetStageIntroSeen(stage, u.id);
+    }
+    setOpen(false);
+    requestGallery();
+    router.push('/');
+  };
 
   return (
     <div className="relative shrink-0">
@@ -242,6 +257,16 @@ function MoreMenu() {
                 <span className="pl-0.5 text-[11px] text-[var(--t4)]">{tr('Ngôn ngữ', 'Language')}</span>
                 <LangToggle />
               </div>
+
+              {/* Xem lại hướng dẫn — replay toàn bộ onboarding Tầng 1+2 từ đầu */}
+              <button
+                type="button"
+                onClick={replayOnboarding}
+                className="mt-2 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-0.5 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
+              >
+                <RotateCcw size={13} />
+                {tr('Xem lại hướng dẫn', 'Replay tutorial')}
+              </button>
             </motion.div>
           </>
         )}

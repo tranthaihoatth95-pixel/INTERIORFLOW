@@ -21,9 +21,17 @@ import StudioBar from '@/components/studio/StudioBar';
 import { StageEnter } from '@/components/studio/StageTransition';
 import { CommentLayer } from '@/components/CommentLayer';
 import { ChatPanel } from '@/components/ChatPanel';
+import { StageIntroCard } from '@/components/onboarding/StageIntroCard';
+import { useFlowStore } from '@/lib/store';
+import { effectiveUserId } from '@/lib/resume';
 
 export default function PresentStageScreen() {
   const [deck] = useState(makeSampleDeck);
+  // Route studio KHÔNG nạp `user` vào store khi vào bằng hard-reload/URL trực tiếp — rơi về
+  // lastUserId (cùng pattern PresentSheets.tsx/ResumeTracker), nếu không StageIntroCard im
+  // lặng không bao giờ hiện cho user mở thẳng `/projects/[id]/present`.
+  const storeUserId = useFlowStore((s) => s.user?.id);
+  const userId = effectiveUserId(storeUserId);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
       <StudioBar active="present" />
@@ -34,6 +42,8 @@ export default function PresentStageScreen() {
       </StageEnter>
       <ChatPanel />
       <CommentLayer />
+      {/* Tầng 2 onboarding — thẻ giới thiệu lần đầu chặng Presenting. */}
+      <StageIntroCard stage="present" userId={userId} />
     </div>
   );
 }
