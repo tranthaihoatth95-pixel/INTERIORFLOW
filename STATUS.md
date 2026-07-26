@@ -6,7 +6,7 @@
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
 ## Hiện tại (26/07 — sau merge)
-- Nhánh tích hợp `feat/present-layout-ml-p1` @ `111655a`, **3 commit vượt `origin/main`** — chờ user push tay.
+- Nhánh tích hợp `feat/present-layout-ml-p1` @ `cfef409`, **12 commit vượt `origin/main`** — chờ user push tay.
 - ✅ **ĐÃ MERGE cả 2 nhánh chờ** (user OK): `54b4b31` ← `feat/avatar-plush` · `96c046a` ← `fix/vn-pdf-font` (#25). Chi tiết → `CHANGELOG.md` 26/07.
 - tsc 0 · **93/93 file test PASS** (`node_modules/.bin/sucrase-node <path>.test.ts` — repo KHÔNG có vitest). Không dev server nào chiếm :3000.
 - Verify độc lập (dựng PDF THẬT, đọc byte thô): MediaBox A3 = 420×297mm NGANG **và** cùng file có `/FontFile2` + `/BaseFont /BeVietnamPro` — 21 ok / 0 fail. **Hai fix cùng sống.**
@@ -32,7 +32,7 @@ Tổ hợp **172.800 → 42.152.140.800**. Nối `Header.tsx > UserChip` (24px) 
 - Chưa đụng PresenceBar / LiveCursors / ProjectSelect / Chat / Dashboard (cố ý — vẫn hiện chữ cái).
 
 ## Chờ USER quyết
-- **Push `111655a`** lên `origin/main` (3 commit) — Claude không tự push.
+- **Push `cfef409`** lên `origin/main` (12 commit) — Claude không tự push.
 - **Gỡ chặn Agent tool** để làm avatar đợt 2.
 - **Figma**: chọn tạo file mới trung tính; MCP trả `net::ERR_FAILED` 2 lần. Đường vòng: file trống + `docs/figma-bootstrap.js` (idempotent).
 - **DWG**: sửa tuân thủ GPL ngay (0đ)? · đường A server-side (mất offline)? · ODA khi bán? → `docs/RESEARCH-DWG-LICENSE.md`
