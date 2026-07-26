@@ -5,8 +5,10 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (26/07 tối — sau batch 5 việc + avatar merge)
-- Nhánh tích hợp `feat/present-layout-ml-p1` @ `a25cb22`, **~21 commit vượt `origin/main`** — chờ user push tay.
+## Hiện tại (26/07 khuya — sau push + vá dẫn chiếu)
+- ✅ **`origin/main` đã push** = `e96272b` (fast-forward, 24 commit; local `main` từng lệch 283 commit, ghi đè bằng `git branch -f main HEAD` — KHÔNG động file nào).
+- Nhánh tích hợp `feat/present-layout-ml-p1` @ `b158398` — **1 commit CHƯA PUSH** (vá dẫn chiếu, làm sau lần push trên).
+- ✅ Vá 7 dẫn chiếu file .md ma trong `docs/`: 4 SỬA (nội dung thật nằm dưới tên khác, vd `IF1_IF2_BIGPICTURE.md`) · 3 THẬT SỰ MẤT đánh dấu ⚠️ tại chỗ (cần Hoà upload lại nếu còn cần — xem Nợ kỹ thuật).
 - tsc 0 · **95/95 file test PASS** (`node_modules/.bin/sucrase-node <path>.test.ts` — repo KHÔNG có vitest).
 - ✅ **Avatar đợt 2 ĐÃ MERGE** (`a83e943`) — hết mồ côi worktree, xong cả 5 lỗi thẩm mỹ.
 - ✅ **6 route 🔴 xử xong toàn bộ** (`docs/APP-MAP.md` §2): 3 route redirect cũ sửa fallback (Sprint ĐỔ NỀN 1B) · demo gắn `NEXT_PUBLIC_DEMO` · `/library/ingest` có entry · `/intro` nối first-run · `/report` xoá (nội dung meta, hết vòng đời). Chi tiết → CHANGELOG 26/07 tối.
@@ -20,7 +22,7 @@
 Không còn — `interiorflow-wt-avatar-2` đã gỡ sau merge.
 
 ## Chờ USER quyết
-- **Push `a25cb22`** lên `origin/main` (~21 commit).
+- **Push `b158398`** lên `origin/main` (1 commit, docs only).
 - **Figma**: MCP trả `net::ERR_FAILED` 2 lần. Đường vòng: file trống + `docs/figma-bootstrap.js`.
 - **DWG**: sửa tuân thủ GPL ngay (0đ)? · server-side (mất offline)? · ODA khi bán? → `docs/RESEARCH-DWG-LICENSE.md`.
 - Treo: **VIỆC 4 cũ** GuProfile=dữ liệu · **VIỆC 7** demo+onboarding · **#14** cụm Mẫu Presenting.
@@ -28,7 +30,7 @@ Không còn — `interiorflow-wt-avatar-2` đã gỡ sau merge.
 
 ## Nợ kỹ thuật
 - 🟡 `lib/cad/pdf.ts:383` nhắc `lib/cad/pdf.node-check.mjs` — **file KHÔNG tồn tại**.
-- 🟡 `docs/IF-FEATURE-UPGRADES.md` + `IF-FEATURE-SPEC-P1*.md` được `CLAUDE.md`/blueprint dẫn chiếu nhưng **KHÔNG tồn tại trong repo** — phát hiện khi làm Sprint ĐỔ NỀN 2, phải suy tiêu chí nghiệm thu trực tiếp từ user thay vì đọc spec gốc.
+- 🟡 3 file spec ma (`IF-FEATURE-UPGRADES.md`, `IF-FEATURE-SPEC-P1*.md`, `IF-PRESENT-SPRINT-PLAN.md`) — xem dòng "Vá xong 7 dẫn chiếu" ở trên, đã đánh dấu ⚠️ tại chỗ trong docs.
 - 🟡 Brand Kit chưa cho upload font ⇒ nhánh "Brand Kit" của `lib/pdf-font.ts` LUÔN rơi về mặc định.
 - 🟡 `resume-state` chỉ lưu `flowId`+`sheetId` (trùng giữa dự án — chọn nhầm TAB, không rò dữ liệu).
 - 🟡 Audit CATALOG-STAGE2 kê node ma (`ai.localedit`/`idmask`/`furnitureextract`) — registry thật 5 node AI_EDIT.
@@ -39,9 +41,7 @@ Không còn — `interiorflow-wt-avatar-2` đã gỡ sau merge.
 - 53 ảnh `public/wallpapers/ttt-*` giữ tạm theo ý user.
 
 ## Quy tắc session
-*(worktree/context/LUẬT NỀN TẢNG → `CLAUDE.md`, tự nạp mỗi phiên. Đây chỉ là phần KHÔNG có ở đó.)*
-1. Không tự merge/push **main**; merge vào nhánh tích hợp phải có user OK. Bug ngoài phạm vi → ghi Nợ.
+*(worktree/LUẬT NỀN TẢNG → `CLAUDE.md`. Chi tiết đầy đủ → memory: `feedback-docs-never-overwrite`, `feedback-verify-before-trust`, `project-ben-doc-bundle-workflow`.)*
+1. Không tự merge/push **main** nếu chưa hỏi; đã hỏi rồi thì tự làm (đã push xong lần này).
 2. **LUẬT MÁU verify browser**: qua `127.0.0.1:<port>` (KHÔNG `localhost`); KHÔNG logout/xoá cookie.
-3. **Docs là nguồn chân lý** — file đã sống trong `docs/` KHÔNG BAO GIỜ ghi đè bằng bản dán từ ngoài, chỉ bổ sung phần thiếu (memory `feedback-docs-never-overwrite`).
-4. **Batch nhiều việc "chạy tuần tự"**: mỗi agent (Sonnet) chạy XONG + verify độc lập (tsc/test/browser thật) MỚI qua việc kế — không song song dù không có worktree riêng.
-5. Login demo: `demo@if.local` / `demo1234`.
+3. Login demo: `demo@if.local` / `demo1234`.
