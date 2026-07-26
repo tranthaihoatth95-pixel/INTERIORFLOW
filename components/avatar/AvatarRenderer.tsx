@@ -763,11 +763,12 @@ function HairFront({
     case 16: // faux hawk — DẤU HIỆU: chóp giữa nhô cao hình mũi thuyền
       return (
         <>
-          <path d="M44 114 C46 88 58 78 72 72 C60 40 100 26 100 26 C100 26 140 40 128 72 C142 78 154 88 156 114 C140 84 128 74 100 72 C72 74 60 84 44 114 Z" fill={fill} />
+          <path d="M44 116 C46 92 54 82 68 76 C50 44 74 26 100 26 C126 26 150 44 132 76 C146 82 154 92 156 116 C142 88 128 78 100 76 C72 78 58 88 44 116 Z" fill={fill} />
           {/* Hai bên cạo sát — cùng lỗi cũ như kiểu 8: dải ngang y112–126 phủ kín hai mắt. */}
           <path d="M44 114 C44 94 52 82 64 76 C56 88 51 100 52 114 Z" fill={shade} opacity="0.5" />
           <path d="M156 114 C156 94 148 82 136 76 C144 88 149 100 148 114 Z" fill={shade} opacity="0.5" />
-          <path d="M86 40 Q100 30 114 42" stroke={glow} strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.45" />
+          <path d="M100 28 C100 44 100 60 100 76" stroke={glow} strokeWidth="7" fill="none" strokeLinecap="round" opacity="0.3" />
+          <path d="M86 40 Q100 30 114 42" stroke={glow} strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.4" />
         </>
       );
     default:
