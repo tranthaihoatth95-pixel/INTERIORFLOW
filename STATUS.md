@@ -13,10 +13,11 @@
 - 🗑️ 6 folder `~/Downloads/interiorflow-wt-*` cũ = **rác mồ côi chỉ chứa `.next`**, không commit lạc. Xoá được — chờ user.
 
 ## Worktree đang mở (1)
-1. **`interiorflow-wt-avatar-2`** — `feat/avatar-plush-2` @ `96c046a`, chưa có commit. Đã copy `.env` + `DATABASE_URL` tuyệt đối + symlink `node_modules`. Dựng cho avatar đợt 2, **chưa agent nào chạy**.
+1. **`interiorflow-wt-avatar-2`** — `feat/avatar-plush-2` @ `96c046a`. Đã copy `.env` + `DATABASE_URL` tuyệt đối + symlink `node_modules`. 🏃 **CÓ AGENT ĐANG CHẠY** (avatar đợt 2) — phiên khác không được đụng.
 
-## ⛔ CHẶN — `Agent` bị auto-mode classifier chặn (26/07)
-Phóng agent code cho avatar đợt 2 → **"Blocked by classifier"**. User quyết: (a) cấp quyền `Agent` · (b) chạy phiên interactive · (c) cho Claude tự code (phá memory `role-agentic-not-hands-on`).
+## 🏃 ĐANG CHẠY — agent avatar đợt 2
+Agent đang sửa 4 lỗi thẩm mỹ trong `interiorflow-wt-avatar-2`. **Phiên khác ĐỪNG đụng worktree/nhánh đó.**
+⚠️ Lần đầu phóng bị auto-mode classifier chặn (`Blocked by classifier`); user cấp quyền `Agent` xong thì thông.
 
 ## 🎭 Avatar — đợt 1 ĐÃ MERGE (`54b4b31`), đợt 2 THẨM MỸ chưa làm
 Tổ hợp **172.800 → 42.152.140.800**. Nối `Header.tsx > UserChip` (24px) + `MobileMenu.tsx > AccountRow` (36px).
@@ -33,7 +34,6 @@ Tổ hợp **172.800 → 42.152.140.800**. Nối `Header.tsx > UserChip` (24px) 
 
 ## Chờ USER quyết
 - **Push `cfef409`** lên `origin/main` (12 commit) — Claude không tự push.
-- **Gỡ chặn Agent tool** để làm avatar đợt 2.
 - **Figma**: chọn tạo file mới trung tính; MCP trả `net::ERR_FAILED` 2 lần. Đường vòng: file trống + `docs/figma-bootstrap.js` (idempotent).
 - **DWG**: sửa tuân thủ GPL ngay (0đ)? · đường A server-side (mất offline)? · ODA khi bán? → `docs/RESEARCH-DWG-LICENSE.md`
 - Treo: **VIỆC 4** GuProfile=dữ liệu · **VIỆC 7** demo+onboarding · **#14** cụm Mẫu Presenting.
