@@ -1,5 +1,58 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 26/07 tối — Batch 5 việc: sửa docs, merge avatar đợt 2, 3 route, rail tooltip, CAD sprint
+
+Chạy tuần tự theo lệnh user "CHẠY TUẦN TỰ, KHÔNG HỎI LẠI", mỗi việc 1 commit, agent Sonnet cho
+phần code (VIỆC 2/3/4), verify độc lập bằng browser thật sau MỖI agent trước khi qua việc kế.
+
+**VIỆC 0** (`e35d49a`) — sửa 2 claim sai tôi tự phát hiện trước đó: `SPEC-CAD-MODES.md` §4 đổi
+"khung tên ⬜ thiếu" → "✅ đã có `titleBlockPro()`", tách bảng phân biệt multi-sheet-tab (đang có)
+vs Layout/Paper Space thật (vẫn thiếu); `SPEC-RENDER-STUDIO.md` §1B sửa "rail không nhãn" →
+"có `title=` nhưng trễ/không style/không hiện trên cảm ứng". Xoá `docs/files.zip` (file user tải).
+
+**VIỆC 1** (`a83e943`) — merge `feat/avatar-plush-2` (7 commit, 0 conflict) vào nhánh tích hợp.
+Verify: tsc 0 · `npm run build` sạch · 94/94 test PASS. Gỡ worktree + nhánh (đủ 4 điều kiện an toàn).
+
+**VIỆC 2** (`db9d83b`) — 3 route 🔴: `/library/ingest` thêm nút "Nạp vào thư viện" trong
+`LibraryPanel` (verify browser: điều hướng đúng, không lỗi console) · `/intro` nối vào nhánh
+`user === null` của `HomeScreen.tsx` (lazy `useState` đọc `if_intro_seen_v1`, cùng mẫu `stageDone`
+— tránh hydration mismatch) · `/report` + `lib/report-deck.ts` **xoá** (deck nội dung cứng là báo
+cáo nghiên cứu NỘI BỘ .idf/EFC, không phải tính năng khách hàng, đã hết mục đích chứng minh kỹ
+thuật; grep xác nhận 0 import khác trước khi xoá). Verify: tsc 0 · 94/94 test · `/report` → 404
+thật · nút mới điều hướng đúng qua browser thật (127.0.0.1:3000).
+
+**VIỆC 3** (`503d273`) — tooltip tuỳ biến (`components/ui/Tooltip.tsx`, đã có sẵn từ trước, delay
+~150ms) thay `title=` thô ở `LeftRail.tsx` (11 nút, 2/3 rail còn lại — CAD/Present — đã dùng sẵn).
+Thêm chế độ THỨ HAI cho cảm ứng thật: `@media (hover:none) and (pointer:coarse)` ẩn tag nổi, hiện
+nhãn chữ tĩnh dưới icon (kiểu tab bar iOS) — áp dụng tự động cho CẢ 3 rail vì dùng chung 1
+component. Verify: tự mắt xác nhận bằng cách inject CSS mô phỏng touch tạm thời rồi gỡ — icon+nhãn
+xếp dọc đúng, không vỡ layout, gỡ CSS khôi phục nguyên trạng desktop.
+
+**VIỆC 4** (`a25cb22`) — Sprint ĐỔ NỀN 2 (blueprint mục 7, item 2-5, chỉ backfill N):
+- T1 snap indicator: `drawSnap()` **đã có sẵn** từ `b3eafba` — sửa thật là `findSnap()`
+  (`lib/cad/query.ts`) trộn sai thứ tự ưu tiên OSNAP (intersection bị đẩy xuống rất thấp), viết
+  lại thành cascade đúng chuẩn AutoCAD (endpoint > intersection > center > midpoint >
+  perp/tangent > quadrant > node > nearest > grid). Test mới `snap-priority.test.ts` (6 case, cố
+  ý dựng tình huống "gần hơn" và "ưu tiên cao hơn" mâu thuẫn để test có răng). Thêm Alt = tắt tạm
+  toàn bộ OSNAP (cùng mẫu Shift→ortho tạm thời có sẵn).
+- T2 F8 Ortho: **phát hiện bug thật ngược hướng nghi ngờ ban đầu** — không phải "rect thiếu
+  ortho" mà "rect bị áp ortho sai" (dùng chung `applyDirectionConstraint` với line, ép trục làm
+  rect SẬP thành 1 đường khi F8 bật — đúng bug AutoCAD RECTANG né bằng cách bỏ qua ORTHO cho góc
+  đối diện). Sửa bằng `BOX_CORNER_TOOLS` loại trừ `rect`/`room` khỏi constraint.
+- T3 dimension tooltip: **đã có sẵn** (`drawDynInput()`, phím F12) — brief ban đầu grep sai tên
+  hàm nên báo nhầm thiếu.
+- T4 undo history panel: cơ chế `past`/`future`/`undo`/`redo` giữ nguyên (đã đúng, không đụng).
+  Panel mới `components/cad/HistoryPanel.tsx` liệt kê từng bước, click nhảy tới đúng bước. CỐ Ý
+  không đụng `LeftRail.tsx` (mục "History/Versions" ở đó là history CỦA CHẶNG RENDER/FLOW, khác
+  hẳn `past`/`future` của CAD — brief ban đầu nhầm 2 hệ thống này là một).
+- Verify: tsc 0 · 95/95 test (94 cũ + `snap-priority.test.ts`) · **tự tay verify browser thật**
+  từng T bằng cách dispatch `PointerEvent` trực tiếp (không qua `computer` tool — lệch tỉ lệ
+  toạ độ 1.6x giữa screenshot 800px và viewport 1280px thật): rect+ortho ra hình chữ nhật thật
+  (không sập), tooltip "1165 mm ∠ 315.0°" hiện đúng cạnh con trỏ, panel History đúng số bước +
+  click "Bước 1" undo về đúng 3 đối tượng.
+
+---
+
 ## 26/07 — MERGE avatar đợt 1 + PDF font tiếng Việt (#25) vào `feat/present-layout-ml-p1`
 
 **`54b4b31`** merge `feat/avatar-plush` (3 commit, sạch, 0 conflict) · **`96c046a`** merge `fix/vn-pdf-font` (4 commit).
