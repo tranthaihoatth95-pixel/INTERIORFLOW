@@ -192,51 +192,110 @@ export function entSegments(e: Entity): [Pt, Pt][] {
 }
 
 /** Tìm điểm snap tốt nhất trong bán kính `tolMm` (mm). `from` = điểm gốc của lệnh đang thực
- * hiện (nếu có) — cần cho perpendicular/tangent (không có 2 loại này nếu thiếu `from`). */
+ * hiện (nếu có) — cần cho perpendicular/tangent (không có 2 loại này nếu thiếu `from`).
+ *
+ * T1 (Sprint ĐỔ NỀN 2) — priority THẬT theo từng NẤC (tier), chuẩn AutoCAD OSNAP:
+ *   endpoint > intersection > center > midpoint > perpendicular/tangent > quadrant > node > nearest > grid.
+ * Trước đây endpoint/quadrant/node/center/midpoint/perpendicular/tangent bị gộp chung 1 vòng
+ * "ai gần con trỏ hơn thắng" (chỉ lệch nhau chút weight tie-break) và intersection lại bị đẩy
+ * xuống RẤT THẤP (chỉ tính khi cả nhóm trên không ra kết quả) — sai thứ tự chuẩn. Giờ MỖI nấc
+ * là 1 lượt quét riêng, trả về NGAY khi nấc đó có ứng viên trong dung sai (nấc cao hơn luôn
+ * thắng nấc thấp hơn dù xa con trỏ hơn một chút) — nấc thấp chỉ được xét khi nấc cao hơn rỗng. */
 export function findSnap(doc: Doc, world: Pt, tolMm: number, gridStep: number, snap: SnapSettings, from?: Pt): SnapResult {
   if (!snap.enabled) return { pt: world, type: 'none' };
-  let best: SnapResult | null = null;
-  const consider = (pt: Pt, type: SnapType, weight = 0) => {
-    const d = dist(world, pt) + weight;
-    if (d <= tolMm && (!best || d < dist(world, best.pt))) best = { pt, type };
-  };
 
   const visible = doc.entities.filter((e) => {
     const lay = doc.layers.find((l) => l.id === e.layer);
     return !lay || lay.visible;
   });
 
-  // ưu tiên: endpoint/quadrant/node > center > midpoint > perpendicular/tangent > intersection > nearest > grid
-  if (snap.endpoint) for (const e of visible) for (const p of trueEndpoints(e)) consider(p, 'endpoint');
-  if (snap.quadrant) for (const e of visible) for (const p of quadrantPoints(e)) consider(p, 'quadrant');
-  if (snap.node) for (const e of visible) for (const p of nodePoints(e)) consider(p, 'node');
-  if (snap.center) for (const e of visible) if (e.type === 'circle' || e.type === 'arc') consider(e.c, 'center');
-  if (snap.midpoint) for (const e of visible) for (const [a, b] of entSegments(e)) consider(mid(a, b), 'midpoint', 0.5);
-
-  if (from && snap.perpendicular) {
-    for (const e of visible) {
-      const p = perpendicularPoint(e, from);
-      if (p) consider(p, 'perpendicular', 0.4);
+  /** Điểm gần nhất trong `pts` còn trong dung sai — null nếu rỗng. */
+  const nearestOf = (pts: Pt[]): Pt | null => {
+    let best: { pt: Pt; d: number } | null = null;
+    for (const p of pts) {
+      const d = dist(world, p);
+      if (d <= tolMm && (!best || d < best.d)) best = { pt: p, d };
     }
-  }
-  if (from && snap.tangent) {
-    for (const e of visible) for (const p of tangentPoints(e, from)) consider(p, 'tangent', 0.4);
+    return best?.pt ?? null;
+  };
+
+  // Nấc 1 — endpoint
+  if (snap.endpoint) {
+    const pts: Pt[] = [];
+    for (const e of visible) pts.push(...trueEndpoints(e));
+    const p = nearestOf(pts);
+    if (p) return { pt: p, type: 'endpoint' };
   }
 
-  if (snap.intersection && !best) {
+  // Nấc 2 — intersection (chỉ xét cặp segment gần con trỏ để nhẹ)
+  if (snap.intersection) {
     const segs: [Pt, Pt][] = [];
     for (const e of visible) segs.push(...entSegments(e));
-    // chỉ xét cặp segment gần con trỏ để nhẹ
     const near = segs.filter(([a, b]) => nearestOnSeg(world, a, b).d < tolMm * 4);
+    const xs: Pt[] = [];
     for (let i = 0; i < near.length; i++)
       for (let k = i + 1; k < near.length; k++) {
         const x = segIntersect(near[i][0], near[i][1], near[k][0], near[k][1]);
-        if (x) consider(x, 'intersection', 0.6);
+        if (x) xs.push(x);
       }
+    const p = nearestOf(xs);
+    if (p) return { pt: p, type: 'intersection' };
   }
 
-  if (best) return best;
+  // Nấc 3 — center
+  if (snap.center) {
+    const pts: Pt[] = [];
+    for (const e of visible) if (e.type === 'circle' || e.type === 'arc') pts.push(e.c);
+    const p = nearestOf(pts);
+    if (p) return { pt: p, type: 'center' };
+  }
 
+  // Nấc 4 — midpoint
+  if (snap.midpoint) {
+    const pts: Pt[] = [];
+    for (const e of visible) for (const [a, b] of entSegments(e)) pts.push(mid(a, b));
+    const p = nearestOf(pts);
+    if (p) return { pt: p, type: 'midpoint' };
+  }
+
+  // Nấc 5 — perpendicular/tangent (cùng nấc, nearest trong nhóm 2 loại thắng — cả 2 đều cần `from`)
+  if (from && (snap.perpendicular || snap.tangent)) {
+    let best: { pt: Pt; type: SnapType; d: number } | null = null;
+    if (snap.perpendicular) {
+      for (const e of visible) {
+        const p = perpendicularPoint(e, from);
+        if (!p) continue;
+        const d = dist(world, p);
+        if (d <= tolMm && (!best || d < best.d)) best = { pt: p, type: 'perpendicular', d };
+      }
+    }
+    if (snap.tangent) {
+      for (const e of visible)
+        for (const p of tangentPoints(e, from)) {
+          const d = dist(world, p);
+          if (d <= tolMm && (!best || d < best.d)) best = { pt: p, type: 'tangent', d };
+        }
+    }
+    if (best) return { pt: best.pt, type: best.type };
+  }
+
+  // Nấc 6 — quadrant
+  if (snap.quadrant) {
+    const pts: Pt[] = [];
+    for (const e of visible) pts.push(...quadrantPoints(e));
+    const p = nearestOf(pts);
+    if (p) return { pt: p, type: 'quadrant' };
+  }
+
+  // Nấc 7 — node
+  if (snap.node) {
+    const pts: Pt[] = [];
+    for (const e of visible) pts.push(...nodePoints(e));
+    const p = nearestOf(pts);
+    if (p) return { pt: p, type: 'node' };
+  }
+
+  // Nấc 8 — nearest (điểm gần nhất trên biên bất kỳ entity)
   if (snap.nearest) {
     let bn: { pt: Pt; d: number } | null = null;
     for (const e of visible) {
@@ -246,6 +305,7 @@ export function findSnap(doc: Doc, world: Pt, tolMm: number, gridStep: number, s
     if (bn && bn.d <= tolMm) return { pt: bn.pt, type: 'nearest' };
   }
 
+  // Nấc 9 — grid (thấp nhất)
   if (snap.grid) {
     const gp = { x: Math.round(world.x / gridStep) * gridStep, y: Math.round(world.y / gridStep) * gridStep };
     if (dist(world, gp) <= tolMm) return { pt: gp, type: 'grid' };

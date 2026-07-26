@@ -73,6 +73,9 @@ interface Ix {
   spaceHeld: boolean;
   ortho: boolean;
   orthoLock: boolean;
+  /** T1 (Sprint ĐỔ NỀN 2) — giữ Alt override TẠM THỜI tắt toàn bộ OSNAP (không đụng st.snap
+   * persistent), giống cơ chế `ortho` (ev.shiftKey) ở trên — cập nhật mỗi pointermove. */
+  snapAltOff: boolean;
   selDrag: { start: Pt; startScreen: Pt } | null; // world start cho rubber-band
   blockRot: number;
   redraw: boolean;
@@ -116,6 +119,14 @@ function css(varName: string, fallback: string): string {
 const PIN_HIT_PX = 16;
 /** Kích thước thumbnail ảnh trên canvas (px màn hình, cố định). */
 const PHOTO_THUMB_PX = 44;
+
+/** T2 (Sprint ĐỔ NỀN 2) — tool "khung 2 góc" (rect/room): entity lưu bằng x,y,w,h, đã LUÔN vuông
+ * góc theo định nghĩa, không phải vector hướng tự do như line/wall/polyline. Ortho/polar tracking
+ * ép trục (applyDirectionConstraint) là khái niệm cho VECTOR HƯỚNG — áp lên 2 điểm góc đối diện
+ * của rect sẽ ép dx hoặc dy về 0, làm hình chữ nhật SẬP thành 1 đường thẳng (bug thật, xem
+ * effectivePoint()). AutoCAD thật: RECTANG bỏ qua ORTHO khi chọn góc đối diện — giữ đúng hành vi
+ * đó bằng cách bỏ qua constraint cho 2 tool này. */
+const BOX_CORNER_TOOLS: ReadonlySet<Tool> = new Set<Tool>(['rect', 'room']);
 
 /** Đặt 1 block thư viện DXF tại điểm click — async (manifest + file DXF cache theo phiên trang). */
 function placeLibraryBlock(id: string, at: Pt, rot: number, layer: string) {
@@ -215,6 +226,7 @@ export default function CadCanvas() {
     spaceHeld: false,
     ortho: false,
     orthoLock: false,
+    snapAltOff: false,
     selDrag: null,
     blockRot: 0,
     redraw: true,
@@ -393,8 +405,11 @@ export default function CadCanvas() {
           return p;
         }
       }
-      const { dx, dy } = applyDirectionConstraint(p.x - base.x, p.y - base.y);
-      p = { x: base.x + dx, y: base.y + dy };
+      // T2 — tool rect/room: giữ nguyên điểm snap thô, KHÔNG ép trục (xem BOX_CORNER_TOOLS).
+      if (!BOX_CORNER_TOOLS.has(useCadStore.getState().tool)) {
+        const { dx, dy } = applyDirectionConstraint(p.x - base.x, p.y - base.y);
+        p = { x: base.x + dx, y: base.y + dy };
+      }
     }
     return p;
   }
@@ -411,7 +426,10 @@ export default function CadCanvas() {
     ix.current.cursorScreen = screen;
     ix.current.cursorWorld = screenToWorld(st.viewport, screen);
     const from = ix.current.pts[ix.current.pts.length - 1]; // điểm gốc lệnh hiện tại (nếu có) — cho perpendicular/tangent
-    ix.current.snap = findSnap(st.doc, ix.current.cursorWorld, tolMm(), st.gridStep, st.snap, from);
+    // T1 — giữ Alt override tạm thời: KHÔNG đụng st.snap (setting persistent), chỉ tắt cho lượt
+    // tính snap này (giống ortho tạm thời qua ix.current.ortho, không qua store).
+    const effSnap = ix.current.snapAltOff ? { ...st.snap, enabled: false } : st.snap;
+    ix.current.snap = findSnap(st.doc, ix.current.cursorWorld, tolMm(), st.gridStep, effSnap, from);
     ix.current.redraw = true;
   }
 
@@ -529,6 +547,9 @@ export default function CadCanvas() {
   const onPointerMove = (ev: React.PointerEvent) => {
     const e = ev.nativeEvent;
     ix.current.ortho = ev.shiftKey || ix.current.orthoLock;
+    // T1 — giữ Alt = tắt tạm toàn bộ OSNAP (đọc trực tiếp modifier của pointer event, CÙNG
+    // pattern với ortho/shiftKey ở trên — không cần theo dõi keydown/keyup riêng).
+    ix.current.snapAltOff = ev.altKey;
     const screen = toLocal(e);
     if (ix.current.pointers.has(ev.pointerId)) {
       ix.current.pointers.set(ev.pointerId, { x: screen.x, y: screen.y, type: ev.pointerType });

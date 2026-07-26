@@ -19,7 +19,7 @@ import { useRouter } from 'next/navigation';
 import {
   FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Plus, Trash2, X, Command, Sparkles, Wand2,
   ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair, Tag, Check, Lightbulb, FileText, Save, Camera,
-  LayoutTemplate, FileSignature, Wrench, Ruler, ListOrdered,
+  LayoutTemplate, FileSignature, Wrench, Ruler, ListOrdered, History,
 } from 'lucide-react';
 import IOMenu from '@/components/ui/IOMenu';
 import MenuButton from '@/components/ui/MenuButton';
@@ -64,6 +64,8 @@ import AiBriefPanel from './AiBriefPanel';
 import { ZonePanel, ZonesLegend } from './ZonePanel';
 // Hệ Legend C1+C2 (docs/PROPOSAL-LEGEND-SYSTEM.md) — panel Thống kê · Schedule + Chú giải.
 import SchedulePanel from './SchedulePanel';
+// VIỆC 4 (Sprint ĐỔ NỀN 2) — T4: panel lịch sử Undo/Redo (past/future đã có sẵn ở lib/cad/store.ts).
+import HistoryPanel from './HistoryPanel';
 
 export default function CadEditor() {
   const router = useRouter();
@@ -75,6 +77,7 @@ export default function CadEditor() {
   const [templateOpen, setTemplateOpen] = useState(false);
   const [titleBlockOpen, setTitleBlockOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [handoffMsg, setHandoffMsg] = useState('');
   // Batch 19/07 — thay window.confirm/prompt (chặn thread JS, treo webview nhúng — cùng lớp bug
   // room tool ở CadCanvas) bằng UI nổi non-blocking. Semantics giữ nguyên: OK chạy hành động,
@@ -359,6 +362,7 @@ export default function CadEditor() {
             { id: 'standards', label: 'Kiểm chuẩn', sub: 'Đối chiếu TCVN/QCVN/ISO — chỉ đọc & đề xuất, không tự sửa', icon: <ShieldCheck size={15} />, onSelect: () => setStandardsOpen((o) => !o), active: standardsOpen },
             { id: 'autolabel', label: 'Gợi ý tên phòng', sub: 'Đoán tên phòng chưa có nhãn — chỉ đề xuất, bạn bấm Áp dụng', icon: <Tag size={15} />, onSelect: () => setAutoLabelOpen((o) => !o), active: autoLabelOpen },
             { id: 'mep', label: 'MEP sơ cấp', sub: 'Gợi ý chiếu sáng/công tắc/ổ cắm/máy lạnh — chỉ đề xuất', icon: <Lightbulb size={15} />, onSelect: () => setMepOpen((o) => !o), active: mepOpen },
+            { id: 'history', label: 'Lịch sử vẽ', sub: 'Xem lại các bước đã vẽ — click 1 bước để Undo/Redo tới đó', icon: <History size={15} />, onSelect: () => setHistoryOpen((o) => !o), active: historyOpen },
           ]}
         />
         <ScaleMenu />
@@ -401,6 +405,7 @@ export default function CadEditor() {
         )}
         <ZonesLegend />
         {scheduleOpen && <SchedulePanel onClose={() => setScheduleOpen(false)} />}
+        {historyOpen && <HistoryPanel onClose={() => setHistoryOpen(false)} />}
         <LayerPanel />
         <SelectionInfoPanel />
         {handoffMsg && (
