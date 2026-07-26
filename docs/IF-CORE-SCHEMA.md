@@ -296,13 +296,47 @@ lên) cần biết dữ liệu tới từ máy nào.
 > hẳn (tầng "não tri thức" T5 — GuProfile/MaterialRef/FeedbackRecord/KnowledgePack — không phải
 > Prisma DB đang chạy ở §2). Đã đối chiếu: phần LUẬT TRUNG TÍNH/LUẬT DEMO/route tree của chunk
 > đó ĐÃ có ở §0/§0B/§1B/§1C trên — không chèn lại. Chỉ 7 mục dưới đây là THẬT SỰ MỚI, chèn
-> nguyên văn, không sửa chữ. ⚠️ Các tiền tố `prj_/room_/deck_/mat_/gu_/fb_/kp_` là ĐỀ XUẤT CHƯA
-> CÀI (0 kết quả grep trong code, 26/07) — riêng `img_` đã có thật (`lib/img-id.ts`).
+> nguyên văn, không sửa chữ — TRỪ §3.1 (xem sửa lại 26/07 ngay dưới, Ben viết bảng đó TRƯỚC khi
+> biết `id` DB thật là cuid Prisma; không phải code sai, chỉ là viết trước khi biết code).
 
 **Luật gốc** (nguyên văn từ chunk): output không có `id` = mồ côi, không ship. Mọi bản ghi có
 `v: 1` (version).
 
-### 3.1 Quy ước ID — chuỗi ngắn, tiền tố nói nghĩa
+### 3.1 Quy ước ID — SỬA LẠI 26/07 cho khớp code thật (bản gốc Ben ở dưới, giữ để đối chiếu)
+
+⚠️ **2 TẦNG ID KHÁC NHAU — đừng lẫn:**
+
+1. **id trong DB** — mọi model Prisma (16 model, §2/§2C) dùng **cuid do Prisma tự sinh**
+   (`String @id @default(cuid())`), vd `cmrqo009h0003w9ddwcuxaki6`. Đây là **ĐÚNG CHUẨN cho
+   local-first** (ngẫu nhiên, không đụng nhau khi hợp nhất dữ liệu từ nhiều máy ở Pha 3 — xem
+   §1D ràng buộc (1)). **KHÔNG đổi, KHÔNG migrate 16 model** sang tiền tố bên dưới.
+2. **id XUẤT RA NGOÀI hệ** *("mã hiển thị" / display-public id)* — nơi CON NGƯỜI nhìn thấy: tên
+   file ảnh export, mã in trên deck, mã trong BOQ/schedule, tên gói tri thức đóng dự án. Tầng
+   này KHÔNG thay thế cuid trong DB — nó là một trường/giá trị PHÁI SINH TỪ cuid, chỉ tồn tại
+   ở biên xuất dữ liệu (API response, file tải xuống, bản in), giữ DB sạch không phải đổi gì.
+
+Bảng tiền tố bên dưới áp cho **tầng 2 (id xuất ra ngoài)**, KHÔNG phải khoá chính DB:
+
+| Tiền tố | Dùng cho id xuất ra ngoài của | Trạng thái |
+|---|---|---|
+| `img_` | Ảnh render/photo-edit | ✅ **Đã cài** — `imgIdFromKey(id)` (`lib/img-id.ts`), dẫn xuất tất định từ cuid, dùng ở 5 file |
+| `prj_` | Dự án | ⬜ Chưa cài — chỉ làm khi có nhu cầu xuất ra ngoài thật (vd mã dự án in trên hồ sơ) |
+| `room_` | Phòng/không gian trong .idf | ⬜ Chưa cài |
+| `deck_` | Deck Present | ⬜ Chưa cài |
+| `mat_` | Vật liệu (trỏ ATLAS) | ⬜ Chưa cài |
+| `gu_` | Hồ sơ gu | ⬜ Chưa cài |
+| `fb_` | Bản ghi phản hồi | ⬜ Chưa cài |
+| `kp_` | Gói tri thức dự án | ⬜ Chưa cài |
+
+**Không cài trước** 7 tiền tố còn ⬜ — chỉ dựng khi module tương ứng THẬT SỰ cần xuất id đó ra
+ngoài (đúng tinh thần "không xây trước khi cần" của repo). Ảnh render **phải** nhận `img_` id
+ngay khi sinh ra (hiện đang truyền dataURL không id — vá đầu tiên) — đây là ví dụ CỤ THỂ của
+tầng 2, không áp dụng ngược lại cho cuid trong DB.
+
+<details><summary>Bản gốc Ben (24/07, trước khi biết code) — giữ để đối chiếu, KHÔNG dùng</summary>
+
+Ben viết bảng này như thể tiền tố LÀ khoá chính trong DB (vd coi `prj_nord01` là `Project.id`
+thật). Không phải code sai — Ben viết TRƯỚC khi đọc `prisma/schema.prisma`. Bản gốc:
 
 | Tiền tố | Đối tượng | Ví dụ |
 |---|---|---|
@@ -315,7 +349,7 @@ lên) cần biết dữ liệu tới từ máy nào.
 | `fb_` | Bản ghi phản hồi | `fb_20260724_001` |
 | `kp_` | Gói tri thức dự án | `kp_nord01` |
 
-Ảnh render **phải** nhận `img_` id ngay khi sinh ra (hiện đang truyền dataURL không id — vá đầu tiên).
+</details>
 
 ### 3.2 GuProfile — hồ sơ gu 10 trục (theo Tập 2 Design DNA)
 
