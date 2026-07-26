@@ -289,6 +289,88 @@ lên) cần biết dữ liệu tới từ máy nào.
 
 ---
 
+## 3. Hiến pháp dữ liệu tri thức T1 (bổ sung từ bundle Ben, 26/07)
+
+> Nguồn: `docs/IF-DOCS-BUNDLE-v1.md` chunk `docs/IF-CORE-SCHEMA.md` (*v1.0 · 2026-07-24 · Ben
+> soạn theo blueprint v1.2 mục 5B–5C*). Chunk đó TRÙNG TÊN với file này nhưng là tài liệu KHÁC
+> hẳn (tầng "não tri thức" T5 — GuProfile/MaterialRef/FeedbackRecord/KnowledgePack — không phải
+> Prisma DB đang chạy ở §2). Đã đối chiếu: phần LUẬT TRUNG TÍNH/LUẬT DEMO/route tree của chunk
+> đó ĐÃ có ở §0/§0B/§1B/§1C trên — không chèn lại. Chỉ 7 mục dưới đây là THẬT SỰ MỚI, chèn
+> nguyên văn, không sửa chữ. ⚠️ Các tiền tố `prj_/room_/deck_/mat_/gu_/fb_/kp_` là ĐỀ XUẤT CHƯA
+> CÀI (0 kết quả grep trong code, 26/07) — riêng `img_` đã có thật (`lib/img-id.ts`).
+
+**Luật gốc** (nguyên văn từ chunk): output không có `id` = mồ côi, không ship. Mọi bản ghi có
+`v: 1` (version).
+
+### 3.1 Quy ước ID — chuỗi ngắn, tiền tố nói nghĩa
+
+| Tiền tố | Đối tượng | Ví dụ |
+|---|---|---|
+| `prj_` | Dự án | `prj_nord01` |
+| `room_` | Phòng/không gian trong .idf | `prj_nord01/room_living` |
+| `img_` | Ảnh render/photo-edit | `img_a8k2f` |
+| `deck_` | Deck Present | `deck_nord_v3` |
+| `mat_` | Vật liệu (trỏ ATLAS) | `mat_oak_natural` |
+| `gu_` | Hồ sơ gu | `gu_nord_client` |
+| `fb_` | Bản ghi phản hồi | `fb_20260724_001` |
+| `kp_` | Gói tri thức dự án | `kp_nord01` |
+
+Ảnh render **phải** nhận `img_` id ngay khi sinh ra (hiện đang truyền dataURL không id — vá đầu tiên).
+
+### 3.2 GuProfile — hồ sơ gu 10 trục (theo Tập 2 Design DNA)
+
+| Trường | Kiểu | Ghi chú |
+|---|---|---|
+| `id` | `gu_*` | |
+| `axes` | 10 số nguyên –3…+3 | Trang trí · Nhiệt độ · Trọng lượng · Tự nhiên↔Nhân tạo · Đối xứng · Ồn↔Kín · Toàn cầu↔Bản địa · Trật tự↔Kể chuyện · Bền vững · Tốc độ |
+| `subject` | `client` \| `developer` \| `project` | Gu của ai |
+| `confidence` | 0–1 | Chấm tay = 0.6; đã kiểm 2 chiều = 0.9 |
+| `evidence` | text[] | Bằng chứng chấm điểm (link, ghi chú họp) |
+
+### 3.3 MaterialRef — vật liệu một nguồn
+
+| Trường | Kiểu | Ghi chú |
+|---|---|---|
+| `matId` | `mat_*` | Khoá chính, trỏ bảng MATERIAL trên ATLAS (Lark Base Vol.3) |
+| `preset` | 1 trong 13 preset | Fallback procedural texture (`material-texture.ts`) khi chưa có ảnh |
+| `photoUrl?` | url | Hook chờ ATLAS — có ảnh thật thì thay preset |
+
+### 3.4 FeedbackRecord — viên gạch của bánh đà
+
+| Trường | Kiểu | Ghi chú |
+|---|---|---|
+| `id` | `fb_*` | |
+| `targetId` | id bất kỳ | Ảnh, deck, layout… được chấm |
+| `verdict` | `accept` \| `reject` \| `approve` \| `revise` | Nhận/Bỏ (Perceptron) · duyệt/sửa (khách) |
+| `source` | **`real`** \| **`synthetic`** | ⚠️ Luật buồng vang: synthetic chỉ veto, không train |
+| `guProfileId` | `gu_*` | Ai chấm — gu nào |
+| `note?` | text | Lý do, trích lời khách |
+| `ts` | timestamp | |
+
+### 3.5 Hai trường thời gian — gắn cho MỌI bản ghi tri thức & hộ chiếu tính năng
+
+| Trường | Giá trị | Máy đọc thế nào |
+|---|---|---|
+| `trendStatus` | 🟢 đang lên · 🟡 bão hoà · 🔴 lỗi thời | 🔴 → hạ trọng số gợi ý; UI hiện nhãn |
+| `reviewBy` | ngày | Quá hạn chưa quét lại → tự rơi về 🟡 |
+
+Tần suất quét *(trend scout)*: **STYLE_DNA quý/lần · TREND_WATCH tháng/lần**.
+
+### 3.6 Metadata 2 lớp — mọi bản ghi qua Gateway
+
+- **Lớp chung** *(shared)*: `id` · `projectId` · `guProfileId` · `ts` · `v` — module nào cũng đọc.
+- **Lớp trội** *(salient)*: cờ máy tự gắn — vi phạm quy chuẩn 🔴 · vật liệu chủ đạo · trục gu
+  lệch ≥±2 · ảnh khách đã duyệt. Xử lý trước, UI highlight, não ưu tiên nạp.
+
+### 3.7 KnowledgePack (O11) — đóng dự án là tự đóng gói
+
+```
+kp_<prj> = { guProfile cuối · .idf ref · danh sách img_ id · verdict pitch (thắng/thua/lý do)
+             · vật liệu dùng thật (mat_ ids) · bài học 3 dòng }  →  nạp Não T5
+```
+
+---
+
 ## Phụ lục A. Kiểm kê chuỗi `detech` toàn repo (Task #24 · 25/07)
 
 Lệnh: `grep -rniI --exclude-dir=node_modules --exclude-dir=.git -e 'detech' .`
