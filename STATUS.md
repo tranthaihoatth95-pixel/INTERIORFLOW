@@ -36,6 +36,7 @@ Không còn — `interiorflow-wt-avatar-2` đã gỡ sau merge.
 - 🟡 `lastEditedDevice` (4 model local-first) luôn null — chưa có cơ chế `deviceId` thật, cần dựng TRƯỚC Pha 2.
 - 🟡 `components/present-editor/Toolbar.tsx` — component `Btn` (nút có chữ, khác `IconOnly`) chưa dùng `Tooltip.tsx`, còn `title=` thô (phát hiện khi làm VIỆC 3, ít cấp thiết vì đã có label chữ sẵn).
 - 🟡 `CadToolbar.tsx` giữ cả `title=` LẪN `<Tooltip>` trên cùng nút (dư, có sẵn từ trước) — có thể gây tooltip đúp tuỳ trình duyệt.
+- 🟡 `FINAL_ARCHITECTURE_REPORT.md` + `HUONG-DAN-SU-DUNG.md` (`docs/`) framing cũ "công cụ nội bộ TTT" — đã gắn cảnh báo ⚠️ đầu file, cần viết lại theo định vị global (đợt de-TTT 2).
 - 🐛 `/cad-editor` React warning không tái hiện · ⌘J Vitals grep 0 · morph login chỉ fade · cursor polling idle.
 - 53 ảnh `public/wallpapers/ttt-*` giữ tạm theo ý user.
 

@@ -108,8 +108,8 @@ ràng tuần tự" chống loạn xạ:
 
 ```
 ┌─ HỘ CHIẾU TÍNH NĂNG ─────────────────────────────┐
-│ 1. Chặng      : CAD-Sketch / CAD-Pro / Render /   │
-│                 Present / Photo                    │
+│ 1. Chặng      : Ý tưởng / CAD-Sketch / CAD-Pro /  │
+│                 Render / Present / Photo           │
 │ 2. Bậc        : N / P / L                          │
 │ 3. Gen nguồn  : app tham khảo nào, tính năng nào   │
 │ 4. Input      : nhận gì, từ đâu (định dạng T1)     │
@@ -132,8 +132,14 @@ N còn thủng → kim tự tháp ngược. Không đập L đi — chỉ **đ�
 
 ### Bảng audit theo chặng
 
+> **Chặng 0 · Ý tưởng** — **CHẶNG MỚI, phát hiện thiếu 26/07** (sơ đồ đầy đủ giờ là **Ý tưởng →
+> CAD → Render → Present**, không phải chỉ 3 chặng như trước). Chi tiết ở
+> `docs/SPEC-STAGE-0-IDEATION.md` — ⚠️ **FILE CHƯA CÓ TRONG REPO** tại thời điểm ghi dòng này
+> (26/07); dòng dẫn chiếu này giữ nguyên để không mất chỗ, cần Hoà cấp nội dung file đó.
+
 | Chặng | N (nền) | P (pro) | L (lai trội) | Việc phải làm trước |
 |---|---|---|---|---|
+| **0 · Ý tưởng** | ⬜ chưa audit — xem `docs/SPEC-STAGE-0-IDEATION.md` khi có | — | — | Cấp nội dung spec trước khi phân bậc N/P/L |
 | **CAD Sketch/Pro** | 🟡 THỦNG: dynamic input khi kéo tường (A1.1), snap indicator + priority (A5.1), F8 ortho (A5.7), undo history (A4.11), rubber-band preview (A2), label diện tích luôn hiện (A1.3) | ⏳ hầu hết chưa (theo tracker) | ✅ MẠNH: checker+fix wizard, DCEL auto-heal, Gu, coordinate input | **Backfill N** — gói "CAD cảm giác tay" (danh sách mục 7) |
 | **Render** | 🟡 nghẽn HẠ TẦNG: hero AI max 1344px, không đủ A3 300dpi; chưa có id ổn định cho ảnh | — | ✅ khung ControlNet giữ layout | Chờ compute; làm **id ảnh** ngay (rẻ, thuộc T1) |
 | **Present** | ✅ khá đủ: editor, 25 template, export PDF/PPTX/PNG, Brand Kit (PS-1 xong) | 🟡 đúng lộ trình PS-2/3/5/6/9 | ✅ suggest + Perceptron + DECK_STANDARDS; PS-8 sắp | Chạy tiếp sprint plan hiện có — KHÔNG đổi |

@@ -1,5 +1,8 @@
 # HƯỚNG DẪN SỬ DỤNG — InteriorFlow
 
+> ⚠️ Framing cũ: mô tả IF như công cụ nội bộ TTT. Định vị hiện tại là sản phẩm GLOBAL,
+> TTT chỉ là tenant đầu tiên. Xem IF-CORE-SCHEMA.md — Luật trung tính.
+
 > Dành cho người dùng trong team TTT — **không cần biết kỹ thuật**. Đọc lần lượt từ trên xuống;
 > mỗi mục là một việc cụ thể, làm theo từng bước là được.
 

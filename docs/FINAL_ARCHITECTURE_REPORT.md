@@ -1,5 +1,8 @@
 # FINAL ARCHITECTURE REPORT — InteriorFlow
 
+> ⚠️ Framing cũ: mô tả IF như công cụ nội bộ TTT. Định vị hiện tại là sản phẩm GLOBAL,
+> TTT chỉ là tenant đầu tiên. Xem IF-CORE-SCHEMA.md — Luật trung tính.
+
 > Sprint 4 · 14/07/2026 · nhánh `feat/devops-docs` (nền `feat/present-layout-ml-p1`).
 > **Phần I đọc được bởi người không code**; Phần II trở đi dành cho dev (kèm đường dẫn file).
 > Thuật ngữ in nghiêng có giải nghĩa trong `TECHNICAL_GLOSSARY.md`.
