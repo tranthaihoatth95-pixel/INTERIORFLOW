@@ -1,0 +1,61 @@
+%% APP-MAP — cây route InteriorFlow (26/07, dựng từ code thật)
+%% Xem chi tiết + nguồn đối chiếu ở docs/APP-MAP.md mục 2
+flowchart TD
+    subgraph GLOBAL["Global scope"]
+        ROOT["/  ·  Dashboard/Gallery<br/>app/page.tsx → HomeScreen"]
+        LOGIN["/login<br/>form đăng nhập độc lập"]
+        INTRO["/intro<br/>intro điện ảnh"]
+        AVATAR["/settings/avatar<br/>trình dựng avatar"]
+        SHARE["/share/[token]<br/>xem flow public"]
+        PRESENT_DEMO["/present<br/>deck demo zero-setup"]
+        REPORT["/report<br/>deck báo cáo chiến lược"]
+        RESORT["/demo-resort<br/>demo Pavilion/Sảnh"]
+        CADLIB["/cad-library-demo<br/>demo thư viện block"]
+        INGEST["/library/ingest<br/>nạp ảnh tham khảo"]
+        LEGACY_CAD["/cad-editor<br/>⚙️ redirect"]
+        LEGACY_PRESENT["/present-editor<br/>⚙️ redirect"]
+        LEGACY_PHOTO["/photo-editor<br/>⚙️ redirect"]
+    end
+
+    subgraph PROJECT["Project scope — /projects/[id]/..."]
+        OVERVIEW["overview<br/>tổng quan dự án"]
+        NOTEBOOK["notebook<br/>RAG per-project"]
+        CAD["cad · CHẶNG 1<br/>Drafting CAD"]
+        RENDER["render · CHẶNG 2<br/>Rendering (node-graph)"]
+        PHOTO["photo<br/>Chỉnh ảnh nâng cao"]
+        PRES["present · CHẶNG 3<br/>Presenting"]
+    end
+
+    %% Entry points thật (đã grep xác nhận)
+    ROOT -->|"user === null → LoginScreen nhúng"| LOGIN_EMBED["LoginScreen (component, KHÔNG phải route /login)"]
+    INTRO -.->|"router.push (duy nhất)"| LOGIN
+    ROOT -->|"ProjectSelect chọn dự án"| OVERVIEW
+    ROOT -->|"auto-resume sau login"| RENDER
+    HEADER["Header.tsx / MobileMenu.tsx"] --> AVATAR
+    HEADER --> NOTEBOOK
+    HEADER -->|"copy link vào clipboard"| SHARE
+    STAGESWITCHER["StageSwitcher (StudioBar/Header)"] --> CAD
+    STAGESWITCHER --> RENDER
+    STAGESWITCHER --> PRES
+    NOTEBOOKBTN["NotebookButton"] --> NOTEBOOK
+    PRESENT_EDITOR_UI["nút &quot;Chỉnh ảnh nâng cao&quot; (Inspector/ImageEditor)"] --> LEGACY_PHOTO
+
+    %% Redirect chain (route cũ → route scope)
+    LEGACY_CAD -.->|"replace"| CAD
+    LEGACY_PRESENT -.->|"replace"| PRES
+    LEGACY_PHOTO -.->|"replace"| PHOTO
+
+    %% Handoff giữa 3 chặng (sessionStorage, xem §3)
+    CAD ==>|"handoff.ts<br/>{version,dataUrl,snapshot}"| RENDER
+    RENDER ==>|"present-editor/handoff.ts<br/>deckImagesFromNodes()"| PRES
+    CAD -.->|"present-handoff.ts<br/>&quot;Đưa sang Present&quot; (song song)"| PRES
+
+    %% Orphan — không entry UI (đánh dấu rõ, không phải bug ẩn)
+    classDef orphan fill:#fff3cd,stroke:#d97706,stroke-width:2px,stroke-dasharray: 4 3
+    class INTRO,PRESENT_DEMO,REPORT,RESORT,CADLIB,INGEST orphan
+
+    classDef legacy fill:#f1f5f9,stroke:#94a3b8,stroke-dasharray: 2 2
+    class LEGACY_CAD,LEGACY_PRESENT,LEGACY_PHOTO legacy
+
+    classDef stage fill:#dbeafe,stroke:#2563eb,stroke-width:2px
+    class CAD,RENDER,PRES stage
