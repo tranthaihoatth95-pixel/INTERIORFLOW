@@ -98,6 +98,17 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
   //    Task #21: đứng trên `/projects/[id]/render` thì URL ĐÃ nói rõ dự án nào → không có
   //    khái niệm "chưa chọn dự án", stageDone = true ngay từ render đầu (không bao giờ
   //    nháy qua ProjectSelect).
+  // B-1: cờ "đã xem /intro" — đọc lazy trong useState(() => ...) giống mẫu stageDone bên
+  // dưới để tránh hydration mismatch (SSR không có localStorage). true = đã xem/bỏ qua,
+  // false = chưa từng thấy (kể cả lỗi đọc localStorage — coi như chưa xem, an toàn hơn).
+  const [introSeen] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      return localStorage.getItem('if_intro_seen_v1') === '1';
+    } catch {
+      return true;
+    }
+  });
   const [stageDone, setStageDone] = useState(() => {
     if (projectRouteId) return true;
     if (typeof window === 'undefined') return false;
@@ -273,6 +284,14 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
     router.replace('/', { scroll: false });
   }, [router]);
 
+  // B-1: user chưa đăng nhập & CHƯA từng xem `/intro` → nối vào luồng first-run trước
+  // màn đăng nhập. `/intro` (components/intro/IntroSequence.tsx) tự set
+  // `if_intro_seen_v1=1` rồi router.push('/login') khi xong/bỏ qua — không lặp lại nếu
+  // quay về '/' sau đó (introSeen đã đọc '1' từ lazy useState ở trên).
+  useEffect(() => {
+    if (user === null && !introSeen) router.replace('/intro');
+  }, [user, introSeen, router]);
+
   const checkAuth = useCallback(async () => {
     const store = useFlowStore.getState();
     try {
@@ -390,10 +409,19 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
     );
   }
 
-  // B-1: Chưa đăng nhập → MÀN ĐĂNG NHẬP đứng riêng (intro điện ảnh ĐÃ GỠ khỏi luồng —
-  // components/IntroSequence.tsx giữ nguyên file để khôi phục khi có hình/video).
+  // B-1: Chưa đăng nhập, ĐÃ xem `/intro` (hoặc bỏ qua) → MÀN ĐĂNG NHẬP đứng riêng.
+  // Chưa từng xem `/intro` → effect ở trên đã router.replace('/intro'); ở đây chỉ hiện
+  // loader chờ điều hướng xong, tránh nháy LoginScreen một khung hình trước khi rời trang.
   // Đăng nhập thành công → enterAfterAuth quyết: first-time vào gallery (+tour),
   // returning auto-resume đúng chỗ cũ.
+  if (user === null && !introSeen) {
+    return (
+      <div className="grid h-[100dvh] place-items-center bg-[var(--bg)]">
+        <Loader2 size={22} className="animate-spin text-[var(--t4)]" />
+      </div>
+    );
+  }
+
   if (user === null) {
     return (
       <LoginScreen

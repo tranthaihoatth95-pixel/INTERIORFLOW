@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Trash2, Loader2 } from 'lucide-react';
+import { X, Upload, FolderInput, Trash2, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { sheetSlide, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,7 @@ interface ServerAsset {
 }
 
 export function LibraryPanel() {
+  const router = useRouter();
   const panel = useFlowStore((s) => s.panel);
   const setPanel = useFlowStore((s) => s.setPanel);
   const setLightboxUrl = useFlowStore((s) => s.setLightboxUrl);
@@ -229,6 +231,14 @@ export function LibraryPanel() {
             {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />} Upload
           </motion.button>
         </div>
+        <motion.button
+          {...pressableIcon}
+          onClick={() => router.push('/library/ingest')}
+          title="Nạp hàng loạt ảnh/file lớn — chưng cất thumbnail + palette + tag"
+          className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+        >
+          <FolderInput size={12} /> Nạp vào thư viện
+        </motion.button>
       </div>
 
       <div className="grid flex-1 auto-rows-min grid-cols-2 gap-2 overflow-y-auto px-2.5 pb-4">

@@ -14,6 +14,7 @@
   - T1 (`a678acd`): `/cad-editor`, `/present-editor`, `/photo-editor` ĐÃ LÀ redirect từ trước (Task #21) — sửa đúng chỗ sai: không có project active thì KHÔNG còn render màn cũ tại chỗ (vi phạm scope:'project' bắt buộc projectId), nay `router.replace('/?notice=choose-project')` + banner dismissible ở ProjectSelect.
   - T2 (`fce61cb`): `/cad-library-demo` + `/demo-resort` gắn cờ `NEXT_PUBLIC_DEMO` — production build redirect `/`.
   - T3 (báo cáo, xem CHANGELOG 26/07 để đọc lại): `/present` **KHÁC HẲN** `/present-editor` — deck demo dựng sẵn 0 auth/0 mạng, KHÔNG đọc project từ store, cố ý KHÔNG gộp vào T1. Library không có route riêng — là `LibraryPanel` nhúng trong `HomeScreen` (chặng Render).
+  - VIỆC 2: 3 route còn lại xử xong. `/library/ingest` thêm nút "Nạp vào thư viện" cạnh Upload trong `LibraryPanel`. `/intro` nối vào nhánh `user === null` của `HomeScreen` — chưa xem (`if_intro_seen_v1` != '1') thì `router.replace('/intro')` trước LoginScreen, xem/bỏ qua rồi không lặp lại. **`/report` + `lib/report-deck.ts` đã XOÁ** — deck là báo cáo nghiên cứu NỘI BỘ về .idf/EFC, không phải tính năng khách hàng, đã xong mục đích chứng minh kỹ thuật (Present render font Editorial), không nơi nào khác import.
 - Không dev server nào chiếm :3000 ngoài phiên đang test.
 
 ## Worktree đang mở (1)
@@ -25,7 +26,6 @@
 - **Figma**: MCP trả `net::ERR_FAILED` 2 lần. Đường vòng: file trống + `docs/figma-bootstrap.js`.
 - **DWG**: sửa tuân thủ GPL ngay (0đ)? · server-side (mất offline)? · ODA khi bán? → `docs/RESEARCH-DWG-LICENSE.md`.
 - Treo: **VIỆC 4** GuProfile=dữ liệu · **VIỆC 7** demo+onboarding · **#14** cụm Mẫu Presenting.
-- **6 route không entry UI** (`docs/APP-MAP.md` §2): T1/T2 xử 3 route redirect + 2 route demo; còn `/report`, `/library/ingest`, `/intro` — quyết xoá hẳn / giữ demo có watermark / khôi phục vào luồng.
 
 ## Nợ kỹ thuật
 - 🟡 `lib/cad/pdf.ts:383` nhắc `lib/cad/pdf.node-check.mjs` — **file KHÔNG tồn tại**.
