@@ -8,7 +8,7 @@
 ## Hiện tại (26/07 khuya — sau push + vá dẫn chiếu)
 - ✅ **`origin/main` đã push** = `e96272b` (fast-forward, 24 commit; local `main` từng lệch 283 commit, ghi đè bằng `git branch -f main HEAD` — KHÔNG động file nào).
 - Nhánh tích hợp `feat/present-layout-ml-p1` @ `b158398` — **1 commit CHƯA PUSH** (vá dẫn chiếu, làm sau lần push trên).
-- ✅ Vá 7 dẫn chiếu file .md ma trong `docs/`: 4 SỬA (nội dung thật nằm dưới tên khác, vd `IF1_IF2_BIGPICTURE.md`) · 3 THẬT SỰ MẤT đánh dấu ⚠️ tại chỗ (cần Hoà upload lại nếu còn cần — xem Nợ kỹ thuật).
+- ✅ Vá 7 dẫn chiếu file .md ma trong `docs/`: 4 SỬA (nội dung thật nằm dưới tên khác, vd `IF1_IF2_BIGPICTURE.md`) · 3 file tưởng mất hoá ra nằm ở `~/Downloads/` — Hoà trỏ lại, đã copy vào `docs/` (`IF-FEATURE-SPEC-P1-v2.md`, `IF-FEATURE-SPEC-P1.md` bản cũ giữ lịch sử, `IF-FEATURE-UPGRADES.md`, `IF-PRESENT-SPRINT-PLAN.md`) + gỡ ⚠️ trong blueprint §9. Hết cả 7.
 - tsc 0 · **95/95 file test PASS** (`node_modules/.bin/sucrase-node <path>.test.ts` — repo KHÔNG có vitest).
 - ✅ **Avatar đợt 2 ĐÃ MERGE** (`a83e943`) — hết mồ côi worktree, xong cả 5 lỗi thẩm mỹ.
 - ✅ **6 route 🔴 xử xong toàn bộ** (`docs/APP-MAP.md` §2): 3 route redirect cũ sửa fallback (Sprint ĐỔ NỀN 1B) · demo gắn `NEXT_PUBLIC_DEMO` · `/library/ingest` có entry · `/intro` nối first-run · `/report` xoá (nội dung meta, hết vòng đời). Chi tiết → CHANGELOG 26/07 tối.
@@ -30,7 +30,6 @@ Không còn — `interiorflow-wt-avatar-2` đã gỡ sau merge.
 
 ## Nợ kỹ thuật
 - 🟡 `lib/cad/pdf.ts:383` nhắc `lib/cad/pdf.node-check.mjs` — **file KHÔNG tồn tại**.
-- 🟡 3 file spec ma (`IF-FEATURE-UPGRADES.md`, `IF-FEATURE-SPEC-P1*.md`, `IF-PRESENT-SPRINT-PLAN.md`) — xem dòng "Vá xong 7 dẫn chiếu" ở trên, đã đánh dấu ⚠️ tại chỗ trong docs.
 - 🟡 Brand Kit chưa cho upload font ⇒ nhánh "Brand Kit" của `lib/pdf-font.ts` LUÔN rơi về mặc định.
 - 🟡 `resume-state` chỉ lưu `flowId`+`sheetId` (trùng giữa dự án — chọn nhầm TAB, không rò dữ liệu).
 - 🟡 Audit CATALOG-STAGE2 kê node ma (`ai.localedit`/`idmask`/`furnitureextract`) — registry thật 5 node AI_EDIT.
