@@ -64,6 +64,15 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   const [originPx, setOriginPx] = useState<number | null>(null);
   const [handleActive, setHandleActive] = useState(false); // hover HOẶC onboarding highlight
   const [hintTooltip, setHintTooltip] = useState(false);
+  // Nút Vitals nổi (VIỆC 3) portal ra document.body — `typeof document !== 'undefined'` một
+  // mình KHÔNG đủ: server không có `document` nên render rỗng, nhưng lượt render ĐẦU TIÊN ở
+  // client (khớp hydration) đã có `document` → lệch với server, React báo lỗi hydration mismatch
+  // (bắt được qua console thật, không phải suy đoán). Chờ `mounted` set true SAU khi hydrate
+  // xong (useEffect) — lượt render đầu ở client vẫn khớp server (cả hai đều chưa mount).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Onboarding lần đầu — chỉ chạy client, đọc localStorage đồng bộ.
   useEffect(() => {
@@ -419,7 +428,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
           BrandKitPanel, ImageEditor, SlideSorter…) đều z-index ≥60, cao hơn z-index 45 của nút
           này → tự nhiên bị đè/che khi mở, không cần state riêng theo dõi "có modal nào đang mở". */}
       {!panelOpen &&
-        typeof document !== 'undefined' &&
+        mounted &&
         createPortal(
           <button
             type="button"

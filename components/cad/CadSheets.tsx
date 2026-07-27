@@ -33,8 +33,13 @@ import {
   type SheetsRecord,
 } from '@/lib/sheets-persist';
 import { exportIdf, importIdf, lastImportIdfError } from '@/lib/cad/idf';
+import { buildIfpack, restoreIfpack } from '@/lib/cad/ifpack';
 import { backfillRoomTypes } from '@/lib/cad/standards/checker';
 import { useSheetsBucketId } from '@/lib/scope';
+import { useFlowStore } from '@/lib/store';
+import { createProject } from '@/lib/workspace';
+import { saveSheets } from '@/lib/sheets-persist';
+import { useRouter } from 'next/navigation';
 
 const MAX_SHEETS = 5;
 const ROUTE = '/cad-editor' as const;
@@ -113,6 +118,7 @@ let seq = 1;
 const nextId = () => `cadsheet-${seq++}`;
 
 export default function CadSheets() {
+  const router = useRouter();
   // Sheet 1 = trạng thái store hiện có (giữ nguyên bản demo/blank đang mở).
   const [sheets, setSheets] = useState<SheetTab[]>([{ id: 'cadsheet-0', name: 'Bản vẽ 1' }]);
   const [activeId, setActiveId] = useState('cadsheet-0');
@@ -131,6 +137,10 @@ export default function CadSheets() {
    * autosaver không kịp ghi bản vẽ dự án cũ sang bucket dự án mới.
    */
   const bucketId = useSheetsBucketId();
+  const bucketIdRef = useRef(bucketId);
+  useEffect(() => {
+    bucketIdRef.current = bucketId;
+  }, [bucketId]);
   const [hydratedFor, setHydratedFor] = useState<string | null>(null);
   const hydrated = hydratedFor === bucketId;
   const prevBucketRef = useRef<string | null>(null);
@@ -357,11 +367,92 @@ export default function CadSheets() {
         );
     };
 
+    /**
+     * T4 (VIỆC 5, 28/07) — backup ".ifpack": cùng cầu CustomEvent như .idf ở trên.
+     * Xuất: gói TẤT CẢ sheet + ảnh markup hiện trường (rút từ base64 ra file rời) vào 1 ZIP.
+     * Phục hồi: KHÔNG ghi đè dự án đang mở — luôn tạo DỰ ÁN MỚI (tên gốc + " (phục hồi)"),
+     * ghi sheet đã phục hồi thẳng vào bucket IndexedDB của dự án mới rồi điều hướng sang đó,
+     * để trang CAD dự án mới tự nạp qua đúng đường `loadSheets()` bình thường (không cần state
+     * "đang import" đặc biệt nào ở CadEditor).
+     */
+    const onExportIfpack = () => {
+      snaps.current[activeIdRef.current] = captureStore();
+      const idfSheets = sheetsRef.current.map((s) => {
+        const snap = snaps.current[s.id] ?? blankSnapshot();
+        return { id: s.id, name: s.name, doc: snap.doc };
+      });
+      const projectId = bucketIdRef.current || userIdRef.current || 'local';
+      const projectName = useFlowStore.getState().flowName || 'InteriorFlow project';
+      void buildIfpack(idfSheets, { id: projectId, name: projectName })
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'project.ifpack';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+          useCadStore.getState().setStatus(`Đã xuất project.ifpack — ${idfSheets.length} bản vẽ + ảnh markup.`);
+        })
+        .catch(() => {
+          useCadStore.getState().setStatus('Xuất .ifpack thất bại — thử lại.');
+        });
+    };
+
+    const onRestoreIfpack = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ buffer: ArrayBuffer; fileName: string }>).detail;
+      if (!detail) return;
+      const userId = userIdRef.current;
+      if (!userId) {
+        useCadStore.getState().setStatus('Cần đăng nhập để phục hồi .ifpack thành dự án mới.');
+        return;
+      }
+      useCadStore.getState().setStatus(`Đang phục hồi "${detail.fileName}"…`);
+      void (async () => {
+        const restored = await restoreIfpack(detail.buffer);
+        if (!restored) {
+          useCadStore.getState().setStatus(`Không phục hồi được "${detail.fileName}" — file .ifpack hỏng hoặc sai định dạng.`);
+          return;
+        }
+        const newName = `${restored.meta.name || 'Dự án'} (phục hồi)`;
+        const created = await createProject(newName);
+        if (!created) {
+          useCadStore.getState().setStatus('Không tạo được dự án mới để phục hồi — thử lại.');
+          return;
+        }
+        const kept = restored.sheets.slice(0, MAX_SHEETS);
+        const record: SheetsRecord<PersistedCadSheet> = {
+          v: 1,
+          activeId: kept[0]?.id ?? 'cadsheet-0',
+          ts: Date.now(),
+          sheets: kept.map((s) => {
+            const doc = backfillRoomTypes(s.doc);
+            return {
+              id: s.id,
+              name: s.name,
+              doc,
+              viewport: { ...DEFAULT_VIEWPORT },
+              currentLayer: doc.layers[0]?.id ?? 'l-wall',
+            };
+          }),
+        };
+        await saveSheets(userId, ROUTE, record, created.id);
+        const warn = restored.integrityWarnings.length ? ` (⚠ ${restored.integrityWarnings.length} cảnh báo toàn vẹn)` : '';
+        useCadStore.getState().setStatus(`Đã phục hồi thành dự án mới "${newName}"${warn} — đang chuyển…`);
+        router.push(`/projects/${created.id}/cad`);
+      })();
+    };
+
     window.addEventListener('cad:idf-export-request', onExportIdf);
     window.addEventListener('cad:idf-import-request', onImportIdf);
+    window.addEventListener('cad:ifpack-export-request', onExportIfpack);
+    window.addEventListener('cad:ifpack-import-request', onRestoreIfpack);
     return () => {
       window.removeEventListener('cad:idf-export-request', onExportIdf);
       window.removeEventListener('cad:idf-import-request', onImportIdf);
+      window.removeEventListener('cad:ifpack-export-request', onExportIfpack);
+      window.removeEventListener('cad:ifpack-import-request', onRestoreIfpack);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

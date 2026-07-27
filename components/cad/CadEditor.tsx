@@ -94,6 +94,7 @@ export default function CadEditor() {
   const dwgRef = useRef<HTMLInputElement>(null);
   const idfRef = useRef<HTMLInputElement>(null);
   const photoRef = useRef<HTMLInputElement>(null);
+  const ifpackRef = useRef<HTMLInputElement>(null);
 
   const status = useCadStore((s) => s.status);
   // Zone tool (24/07) — panel cấu hình hiện khi đang ở tool zone/arrow (đóng được bằng ✕,
@@ -184,6 +185,25 @@ export default function CadEditor() {
         reader.readAsText(f);
       },
     });
+  };
+
+  // T4 (VIỆC 5) — "Sao lưu dự án": bắc cầu CustomEvent giống .idf ở trên (CadSheets giữ sheet thật).
+  const doExportIfpack = () => {
+    window.dispatchEvent(new CustomEvent('cad:ifpack-export-request'));
+  };
+  // "Phục hồi từ .ifpack" — KHÔNG thay thế project hiện tại (khác .idf) nên KHÔNG cần hộp xác
+  // nhận "sẽ ghi đè" — CadSheets tự tạo dự án MỚI để phục hồi vào, dự án đang mở không đổi gì.
+  const onOpenIfpackFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const buffer = reader.result as ArrayBuffer;
+      window.dispatchEvent(new CustomEvent('cad:ifpack-import-request', { detail: { buffer, fileName: f.name } }));
+    };
+    reader.onerror = () => useCadStore.getState().setStatus(`Không đọc được file "${f.name}".`);
+    reader.readAsArrayBuffer(f);
   };
 
   // Sprint 7 — Việc 4: chọn ảnh từ máy → data URL (pattern readAsDataURL đã dùng ở
@@ -344,6 +364,7 @@ export default function CadEditor() {
             { id: 'dxf', label: 'Mở DXF', sub: 'Bản vẽ AutoCAD trao đổi (.dxf)', icon: <FolderOpen size={15} />, onSelect: () => fileRef.current?.click() },
             { id: 'dwg', label: 'Mở DWG', sub: 'Parse trong Web Worker riêng — chưa hỗ trợ block INSERT/DIMENSION', icon: <FolderOpen size={15} />, onSelect: () => dwgRef.current?.click() },
             { id: 'idf', label: 'Mở .idf', sub: 'File project InteriorFlow — THAY THẾ toàn bộ project (mọi sheet)', icon: <FolderOpen size={15} />, onSelect: () => idfRef.current?.click() },
+            { id: 'ifpack', label: 'Phục hồi từ .ifpack', sub: 'Bản sao lưu đầy đủ (bản vẽ + ảnh) — luôn tạo DỰ ÁN MỚI, không đè dự án đang mở', icon: <FolderOpen size={15} />, onSelect: () => ifpackRef.current?.click() },
             { id: 'photo', label: 'Ảnh hiện trường', sub: 'Chọn ảnh rồi click vị trí trên bản vẽ để gắn', icon: <Camera size={15} />, onSelect: () => photoRef.current?.click() },
           ]}
         />
@@ -357,6 +378,7 @@ export default function CadEditor() {
             { id: 'dxf', label: 'DXF', sub: 'Trao đổi với AutoCAD — bản vẽ đang mở', icon: <Download size={15} />, onSelect: doExportDxf },
             { id: 'pdf', label: 'PDF', sub: 'PDF vector (nét/text thật) — layer chưa ẩn/hiện được trong PDF', icon: <FileText size={15} />, onSelect: doExportPdf },
             { id: 'idf', label: '.idf', sub: 'File project JSON — TẤT CẢ sheet + metadata, để backup/chia sẻ', icon: <Save size={15} />, onSelect: doExportIdf },
+            { id: 'ifpack', label: 'Sao lưu dự án (.ifpack)', sub: 'ZIP đầy đủ — bản vẽ + ảnh markup hiện trường, phục hồi lại được', icon: <Save size={15} />, onSelect: doExportIfpack },
           ]}
         />
         <MenuButton
@@ -386,6 +408,7 @@ export default function CadEditor() {
         <input ref={fileRef} type="file" accept=".dxf" hidden onChange={onImportFile} />
         <input ref={dwgRef} type="file" accept=".dwg" hidden onChange={onImportDwgFile} />
         <input ref={idfRef} type="file" accept=".idf,.json,application/json" hidden onChange={onOpenIdfFile} />
+        <input ref={ifpackRef} type="file" accept=".ifpack,.zip,application/zip" hidden onChange={onOpenIfpackFile} />
         <input ref={photoRef} type="file" accept="image/*" hidden onChange={onPickPhoto} />
         {/* 2 nút chuyển chặng luôn đi CÙNG NHAU và dạt về phải (marginLeft:auto thay cho spacer
          *  flex:1 — với flexWrap, spacer sẽ nuốt hết chỗ và đẩy nút thứ 2 xuống dòng). */}
