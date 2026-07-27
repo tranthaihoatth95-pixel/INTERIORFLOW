@@ -32,7 +32,7 @@ import {
   type SheetsAutosaver,
   type SheetsRecord,
 } from '@/lib/sheets-persist';
-import { exportIdf, importIdf } from '@/lib/cad/idf';
+import { exportIdf, importIdf, lastImportIdfError } from '@/lib/cad/idf';
 import { backfillRoomTypes } from '@/lib/cad/standards/checker';
 import { useSheetsBucketId } from '@/lib/scope';
 
@@ -320,7 +320,10 @@ export default function CadSheets() {
       if (!detail) return;
       const parsed = importIdf(detail.json);
       if (!parsed) {
-        useCadStore.getState().setStatus(`Không mở được "${detail.fileName}" — file .idf hỏng hoặc sai định dạng.`);
+        // T3 (VIỆC 4) — lastImportIdfError() có lý do CỤ THỂ (vd "file mới hơn app") khi có;
+        // generic "hỏng/sai định dạng" chỉ còn dùng cho JSON vỡ/cấu trúc sai thật sự.
+        const reason = lastImportIdfError();
+        useCadStore.getState().setStatus(reason ?? `Không mở được "${detail.fileName}" — file .idf hỏng hoặc sai định dạng.`);
         return;
       }
       const kept = parsed.sheets.slice(0, MAX_SHEETS);

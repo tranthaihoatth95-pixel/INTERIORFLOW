@@ -2,7 +2,7 @@
  * lib/cad/idf.test.ts — round-trip exportIdf/importIdf (Sprint 7 Việc 2), theo pattern
  * lib/cad/dxf.roundtrip.test.ts. Chạy: node_modules/.bin/sucrase-node lib/cad/idf.test.ts
  */
-import { exportIdf, importIdf, IDF_VERSION } from './idf';
+import { exportIdf, importIdf, IDF_VERSION, migrateIdf, lastImportIdfError, __setCurrentIdfVersionForTest } from './idf';
 import type { IdfSheetData } from './idf';
 import { emptyDoc } from './model';
 import type { Doc } from './model';
@@ -142,11 +142,46 @@ function testDefaultMeta() {
   ok('modifiedAt là ISO string hợp lệ', !!parsed && !Number.isNaN(new Date(parsed.meta.modifiedAt).getTime()));
 }
 
+/* ── 6) T3 migration path (VIỆC 4, 28/07) — file .idf cũ vẫn mở được sau khi app bump version ── */
+function testMigrationPath() {
+  console.log('\n[6] Migration path — file idfVersion cũ vẫn parse được khi app "bump" version (giả lập, không đổi hằng số thật)');
+
+  // migrateIdf thô — kiểm dispatcher độc lập với importIdf.
+  const up = migrateIdf({ idfVersion: 1, meta: {}, sheets: [] }, 1, 2);
+  ok('migrateIdf nâng 1→2 thành công (khung identity)', up !== null && (up as unknown as { idfVersion: number }).idfVersion === 2);
+
+  ok('migrateIdf: fromVersion CAO HƠN toVersion → null (không "hạ cấp")', migrateIdf({ idfVersion: 3 }, 3, 1) === null);
+  ok('migrateIdf: đứt gãy giữa đường (thiếu bậc nâng) → null', migrateIdf({ idfVersion: 5 }, 5, 7) === null);
+  ok('migrateIdf: không phải object → null', migrateIdf('not-an-object', 1, 2) === null);
+
+  // importIdf thật — file v1 export bình thường, rồi GIẢ LẬP app đang ở version 2 (test tự
+  // set/restore qua __setCurrentIdfVersionForTest, KHÔNG đổi hằng số IDF_VERSION thật trong code).
+  const doc = buildDoc(0);
+  const json = exportIdf([{ id: 'cadsheet-0', name: 'Bản vẽ cũ', doc }]);
+  ok('(sanity) file export ở đúng IDF_VERSION thật', JSON.parse(json).idfVersion === IDF_VERSION);
+
+  __setCurrentIdfVersionForTest(2);
+  try {
+    const parsed = importIdf(json);
+    ok('file idfVersion=1 VẪN PARSE ĐƯỢC khi app giả lập ở version 2 (không còn từ chối thẳng)', parsed !== null);
+    ok('dữ liệu sheet giữ nguyên sau khi migrate', parsed?.sheets[0]?.doc.entities.length === 3);
+  } finally {
+    __setCurrentIdfVersionForTest(IDF_VERSION); // reset — KHÔNG để rò sang test khác
+  }
+
+  // File CAO HƠN version app (99 > IDF_VERSION thật) — vẫn `null` (không có đường hạ cấp), nhưng
+  // KHÔNG còn im lặng: lastImportIdfError() phải có lý do cụ thể, không phải câu chung chung.
+  const tooNew = importIdf(JSON.stringify({ idfVersion: 99, sheets: [] }));
+  ok('file version CAO HƠN app → vẫn null', tooNew === null);
+  ok('nhưng KHÔNG còn im lặng — lastImportIdfError() có lý do cụ thể', (lastImportIdfError() ?? '').includes('mới hơn'));
+}
+
 testSingleSheetRoundtrip();
 testMultiSheetRoundtrip();
 testDeleteThenReimport();
 testInvalidInput();
 testDefaultMeta();
+testMigrationPath();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);
