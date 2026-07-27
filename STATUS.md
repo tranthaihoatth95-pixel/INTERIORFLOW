@@ -5,26 +5,23 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (27/07 tối — sửa 4 lỗi giao diện chặng Rendering, CHƯA commit/push)
-- ✅ **3 lỗi UI Rendering đã sửa + verify browser thật** (tsc 0 · 97/97 test PASS · build sạch):
-  (1) [`ingest/page.tsx`](app/library/ingest/page.tsx) thêm nút "← Quay lại" (`router.back()` +
-  fallback `/`). (2) [`LibraryPanel.tsx`](components/LibraryPanel.tsx) — panel Reference theo
-  "THẤY ẢNH TRƯỚC, LỌC SAU": hàng 1 ô tìm + nút `[+]`, hàng 2 = 1 dropdown lọc gộp (thay 5 tab +
-  checkbox), còn lại = lưới ảnh. Ẩn sau `[+]`: auto-classify, tag, nút Upload + "Nạp vào thư viện"
-  (2 nút CHƯA gộp — xem dưới). (3) [`FlowCanvas.tsx`](components/FlowCanvas.tsx) — `<MiniMap>`
-  chỉ hiện khi `nodes.length >= 3`.
-- ✅ **Gom nút trùng nghĩa (đổi tên theo ĐÍCH ĐẾN)**: `IOMenu.tsx` `'Nhập'`→`'Mở tệp'` (3 chặng) ·
-  `UploadButton.tsx` chặng Render `'Tải lên'`→`'Thêm vào canvas'`.
+## Hiện tại (27/07 tối — nhánh Rendering-fix đã MERGE vào main)
+- ✅ **`origin/main`** = `6ebb196` (merge commit, no-ff) — gồm nhánh `feat/present-layout-ml-p1`
+  (`c258450`, đã xoá cả local + remote sau merge). tsc 0 · `npm run build` sạch trên main trước
+  khi push. 3 lỗi UI Rendering + gom nút trùng nghĩa + docs SPEC-FILE-MANAGER §7 — chi tiết đầy
+  đủ → `CHANGELOG.md` mục "27/07 tối".
+- ✅ **3 lỗi UI Rendering đã sửa + verify browser thật**: (1) [`ingest/page.tsx`](app/library/ingest/page.tsx)
+  thêm nút "← Quay lại". (2) [`LibraryPanel.tsx`](components/LibraryPanel.tsx) — panel Reference
+  theo "THẤY ẢNH TRƯỚC, LỌC SAU" (hàng tìm + `[+]`, 1 dropdown lọc gộp, còn lại là lưới ảnh). (3)
+  [`FlowCanvas.tsx`](components/FlowCanvas.tsx) — `<MiniMap>` chỉ hiện khi `nodes.length >= 3`.
+- ✅ **Gom nút trùng nghĩa**: `IOMenu.tsx` `'Nhập'`→`'Mở tệp'` (3 chặng) · `UploadButton.tsx`
+  chặng Render `'Tải lên'`→`'Thêm vào canvas'`.
 - ⏸️ **CHƯA gộp "Upload" + "Nạp vào thư viện"** — KHÁC chức năng thật, không phải trùng UI: Upload
   = thêm nhanh vài ảnh thẳng vào thư viện team. "Nạp vào thư viện" = mở `/library/ingest`, trang
   riêng dàn cả bộ reference dự án (PDF/Excel/CAD, không chỉ ảnh) + "AI Content Strategist" sinh
   kịch bản content. Đã báo Hoà, chờ quyết định.
-- ⏸️ **Chưa commit/push** — chờ Hoà xác nhận (nhánh `feat/present-layout-ml-p1`, không phải main).
-- ✅ **`origin/main`** = `ee66bf0` — audit IF1, docs/ phân loại, gói đợt 4-11, T1/T2 Semantic Room,
-  onboarding 3 tầng, thẻ kính login, chốt design tokens, "giấy vuông vỏ bo" Present. Chi tiết đầy
-  đủ từng phần → `CHANGELOG.md`. **Lưu ý dev server**: `.next` cache hay hỏng sau nhiều HMR/git
-  stash — trang trắng/lỗi "Cannot find module vendor-chunks" → xoá `.next` rồi khởi động lại,
-  không phải bug code (gặp lại đúng pattern này khi build lần này, đã xoá `.next` xong).
+- **Lưu ý dev server**: `.next` cache hay hỏng sau nhiều HMR/git stash — trang trắng/lỗi "Cannot
+  find module vendor-chunks" → xoá `.next` rồi khởi động lại, không phải bug code.
 - ⏸️ **T3/T4 (Semantic Room)** vẫn CHƯA LÀM — để phiên sau, đọc `docs/IF1-COMPLETION-AUDIT.md`
   §3 (a)/(d) trước.
 
