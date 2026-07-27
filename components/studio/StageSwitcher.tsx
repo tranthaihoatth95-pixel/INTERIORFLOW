@@ -21,6 +21,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PencilRuler, Box, Presentation } from 'lucide-react';
@@ -31,6 +32,7 @@ import { useFlowStore } from '@/lib/store';
 import { springSheet, pressable, easeApple } from '@/lib/motion';
 import { createStageDragTracker } from '@/lib/input/stage-drop';
 import VitalsGesturePanel, { markVitalsUsed, wasVitalsUsed } from './VitalsGesture';
+import VitalsIcon from './VitalsIcon';
 
 /** Cùng công thức slug của NotebookButton cũ (đã bỏ khỏi Header). */
 const ICON: Record<Phase, typeof PencilRuler> = { concept: PencilRuler, render: Box, present: Presentation };
@@ -160,6 +162,38 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   }, [panelOpen, dragging]);
 
   const shouldMountPanel = dragging || panelOpen;
+
+  // Lối vào tường minh (VIỆC 3, 28/07) — trước đây CHỈ mở được bằng cử chỉ kéo ẩn (handle
+  // hairline trên), không hiện rõ, dễ bỏ sót. Nút nổi + phím tắt gọi lại ĐÚNG state/handler có
+  // sẵn (panelOpen/setDragging) — không viết luồng mở mới, không đổi cử chỉ kéo (giữ nguyên).
+  const toggleVitals = useCallback(() => {
+    setPanelOpen((v) => {
+      const next = !v;
+      if (next) {
+        setDragging(true);
+        markVitalsUsed();
+        try {
+          localStorage.setItem(FIRST_DONE_KEY, '1');
+        } catch {}
+      } else {
+        setDragging(false);
+      }
+      return next;
+    });
+  }, []);
+
+  // ⌘J (Mac) / Ctrl+J (Win) — mở/đóng Vitals, cả 3 chặng (StageSwitcher mount ở cả 3).
+  // Đã grep trước: repo chưa dùng phím 'j' ở đâu khác — không đè phím tắt sẵn có.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'j' || e.key === 'J')) {
+        e.preventDefault();
+        toggleVitals();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [toggleVitals]);
 
   // Ẩn tooltip khi user đã drag lần đầu (dù chưa hết 4s).
   useEffect(() => {
@@ -377,6 +411,44 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
           Chỉnh ảnh
         </span>
       )}
+
+      {/* Nút Vitals nổi — lối vào TƯỜNG MINH (VIỆC 3), thay vì chỉ cử chỉ kéo ẩn. Portal ra
+          document.body để luôn neo góc phải-dưới VIEWPORT bất kể StageSwitcher nằm ở đâu trong
+          layout (header hay thanh dưới), không đụng vị trí dock/label phía trên.
+          Ẩn khi Vitals đã mở (đỡ chồng lên popover) — modal/overlay KHÁC (StagePresetPanel,
+          BrandKitPanel, ImageEditor, SlideSorter…) đều z-index ≥60, cao hơn z-index 45 của nút
+          này → tự nhiên bị đè/che khi mở, không cần state riêng theo dõi "có modal nào đang mở". */}
+      {!panelOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <button
+            type="button"
+            onClick={toggleVitals}
+            title="Vitals — hỏi trợ lý (⌘J / Ctrl+J)"
+            style={{
+              position: 'fixed',
+              right: 24,
+              bottom: 24,
+              zIndex: 45,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+              padding: '9px 16px 9px 10px',
+              borderRadius: 999,
+              border: '1px solid var(--accent)',
+              background: 'var(--panel)',
+              color: 'var(--accent)',
+              fontSize: 12.5,
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 8px 24px rgba(0,0,0,.28)',
+            }}
+          >
+            <VitalsIcon size={18} />
+            Vitals
+          </button>,
+          document.body,
+        )}
     </div>
   );
 }
