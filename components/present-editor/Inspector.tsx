@@ -71,6 +71,8 @@ import {
   Wand2,
   Link2,
   Unlink,
+  RefreshCw,
+  AlertTriangle,
 } from 'lucide-react';
 import type { AlignMode as GroupAlignMode, DistributeAxis } from '@/lib/present-editor/align';
 
@@ -978,8 +980,32 @@ function ImageInspector({
   const crop = el.crop;
   // asset khác (không phải asset chính ảnh này) — để gợi ý "dùng lại" trong dropdown.
   const otherAssets = linkedAssets.filter((a) => a.id !== el.assetId);
+  const diskPathInputRef = useRef<HTMLInputElement>(null);
+  const onPickUpdatedFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // cho chọn lại đúng cùng 1 file lần sau nếu cần
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      if (typeof dataUrl !== 'string') return;
+      onUpdate((im) => {
+        im.src = dataUrl;
+        im.diskPath = file.name;
+        im.diskPathMissing = false;
+      });
+    };
+    reader.readAsDataURL(file);
+  };
   return (
     <Panel title="Ảnh">
+      <input
+        ref={diskPathInputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={onPickUpdatedFile}
+      />
       {onOpenEditor && (
         <button
           type="button"
@@ -1008,6 +1034,25 @@ function ImageInspector({
           <Wand2 size={12} /> Chỉnh ảnh nâng cao (Photoshop)
         </button>
       )}
+      <Sub>Liên kết file trên máy</Sub>
+      {el.diskPathMissing && (
+        <p style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: '#c0392b', lineHeight: 1.4, margin: '0 0 6px' }}>
+          <AlertTriangle size={12} /> Lần cập nhật gần nhất không đúng file — kiểm tra lại.
+        </p>
+      )}
+      {el.diskPath && (
+        <p style={{ fontSize: 10.5, color: 'var(--t4)', lineHeight: 1.4, margin: '0 0 6px', wordBreak: 'break-all' }}>
+          Đang liên kết: <strong style={{ color: 'var(--t2)' }}>{el.diskPath}</strong>
+        </p>
+      )}
+      <button
+        type="button"
+        onClick={() => diskPathInputRef.current?.click()}
+        style={ghostBtn}
+        title="Chọn lại file thật trên máy — cập nhật ảnh này theo file vừa chọn (thủ công, không tự động)"
+      >
+        <RefreshCw size={12} /> {el.diskPath ? 'Cập nhật liên kết' : 'Liên kết với file trên máy'}
+      </button>
       {(onCreateAsset || onAttachAsset || onDetachAsset) && (
         <>
           <Sub>Tài sản liên kết</Sub>

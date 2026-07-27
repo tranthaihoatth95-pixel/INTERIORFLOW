@@ -187,6 +187,16 @@ export interface ImageElement extends BaseElement {
    * cùng assetId (ở BẤT KỲ slide nào) đồng loạt cập nhật `src`. Bỏ trống = ảnh độc lập (cũ).
    */
   assetId?: string;
+  /**
+   * NT4 pha 1 (VIỆC ③, 28/07, PLAN-LIBRARY-GATEWAY.md §4) — tên file THẬT trên máy user, để
+   * hiển thị/đối chiếu (KHÔNG phải path hệ điều hành đầy đủ — trình duyệt không cho JS đọc path
+   * thật vì lý do bảo mật, giới hạn chung mọi web app). Bỏ trống = ảnh cũ/paste, hoạt động y
+   * nguyên như trước khi có field này. Cập nhật qua nút "Cập nhật liên kết" (Inspector.tsx) —
+   * user tự chọn lại file, KHÔNG watch nền tự động (pha 2, đợi Electron — xem PLAN §4c).
+   */
+  diskPath?: string;
+  /** true = lần "Cập nhật liên kết" gần nhất user không chọn lại (huỷ) hoặc chọn nhầm file khác. */
+  diskPathMissing?: boolean;
 }
 
 export interface TextElement extends BaseElement {
