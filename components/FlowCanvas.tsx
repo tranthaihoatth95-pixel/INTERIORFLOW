@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ReactFlow,
@@ -28,8 +28,24 @@ import { PresenceBar } from '@/components/collab/PresenceBar';
 import { GroupOverlay } from '@/components/nodes/GroupOverlay';
 import { useCollabStore } from '@/lib/collabStore';
 import { classifyWheel, findScrollableAncestor, normalizeWheelDelta, zoomAtPoint } from '@/lib/input/wheel';
+import Popover from '@/components/ui/Popover';
 
 const nodeTypes = { interior: InteriorNode, note: NoteNode };
+
+/** Style item menu nạp nhanh — cùng nhịp cỡ với MenuItem trong EditorCanvas.tsx (VIỆC 2). */
+const quickLoadItemStyle: React.CSSProperties = {
+  display: 'block',
+  width: '100%',
+  height: 34,
+  textAlign: 'left',
+  padding: '0 12px',
+  borderRadius: 8,
+  border: 'none',
+  background: 'transparent',
+  color: 'var(--t2)',
+  fontSize: 13,
+  cursor: 'pointer',
+};
 
 export function FlowCanvas() {
   const nodes = useFlowStore((s) => s.nodes);
@@ -45,9 +61,67 @@ export function FlowCanvas() {
   const addNote = useFlowStore((s) => s.addNote);
   const snapshot = useFlowStore((s) => s.snapshot);
   const workspace = useFlowStore((s) => s.workspace);
+  const setPanel = useFlowStore((s) => s.setPanel);
+  const updateParam = useFlowStore((s) => s.updateParam);
 
   const { screenToFlowPosition, getViewport, setViewport } = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  /* NT3 (VIỆC ①, 28/07) — chuột phải trên NỀN canvas (không phải trên node) → menu nạp nhanh
+   * tại chỗ con trỏ: Thêm ảnh từ máy · Từ thư viện · Dán URL. Tái dùng Popover.tsx (VIỆC 2) —
+   * không viết lại logic lật hướng/viewport. `quickLoadPos` giữ TOẠ ĐỘ FLOW (không phải màn
+   * hình) quy đổi ngay lúc mở menu, để node mới luôn rơi đúng chỗ vừa chuột phải dù panel/zoom
+   * đổi trong lúc menu đang mở. */
+  const [quickLoadMenu, setQuickLoadMenu] = useState<{ clientX: number; clientY: number; flowPos: { x: number; y: number } } | null>(null);
+  const [pasteUrl, setPasteUrl] = useState('');
+  const quickLoadFileRef = useRef<HTMLInputElement>(null);
+
+  const onPaneContextMenu = useCallback(
+    (e: React.MouseEvent | MouseEvent) => {
+      e.preventDefault();
+      const flowPos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+      setQuickLoadMenu({ clientX: e.clientX, clientY: e.clientY, flowPos });
+      setPasteUrl('');
+    },
+    [screenToFlowPosition],
+  );
+
+  const addImageNodeAt = useCallback(
+    (dataUrl: string, flowPos: { x: number; y: number }) => {
+      addNode('input.image', flowPos);
+      const node = useFlowStore.getState().nodes.at(-1);
+      if (node) updateParam(node.id, 'file', dataUrl);
+    },
+    [addNode, updateParam],
+  );
+
+  const onQuickLoadFiles = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files ?? []);
+      e.target.value = '';
+      const at = quickLoadMenu?.flowPos ?? { x: 0, y: 0 };
+      setQuickLoadMenu(null);
+      let i = 0;
+      for (const f of files) {
+        const dataUrl = await new Promise<string>((res, rej) => {
+          const reader = new FileReader();
+          reader.onload = () => res(String(reader.result));
+          reader.onerror = () => rej(reader.error);
+          reader.readAsDataURL(f);
+        });
+        addImageNodeAt(dataUrl, { x: at.x + i * 40, y: at.y + i * 40 });
+        i++;
+      }
+    },
+    [quickLoadMenu, addImageNodeAt],
+  );
+
+  const onQuickLoadPasteUrl = useCallback(() => {
+    const url = pasteUrl.trim();
+    if (!url || !quickLoadMenu) return;
+    addImageNodeAt(url, quickLoadMenu.flowPos);
+    setQuickLoadMenu(null);
+  }, [pasteUrl, quickLoadMenu, addImageNodeAt]);
 
   /* Chuột lăn = ZOOM trên canvas node (đồng bộ với chặng CAD).
    *
@@ -294,6 +368,7 @@ export function FlowCanvas() {
         onConnect={onConnect}
         isValidConnection={isValidConnection}
         onNodeDragStart={() => snapshot()}
+        onPaneContextMenu={onPaneContextMenu}
         onDrop={onDrop}
         onDragOver={(e) => {
           e.preventDefault();
@@ -347,6 +422,86 @@ export function FlowCanvas() {
       <PresenceBar />
 
       <BottomToolbar onAddNote={handleAddNote} />
+
+      {/* NT3 (VIỆC ①) — menu nạp nhanh khi chuột phải trên nền canvas. */}
+      <input ref={quickLoadFileRef} type="file" accept="image/*" multiple hidden onChange={onQuickLoadFiles} />
+      {quickLoadMenu && (
+        <Popover
+          anchorX={quickLoadMenu.clientX}
+          anchorY={quickLoadMenu.clientY}
+          style={{
+            width: 220,
+            background: 'var(--panel)',
+            border: '1px solid var(--border)',
+            borderRadius: 12,
+            padding: 4,
+            boxShadow: '0 8px 24px rgba(0,0,0,.35)',
+            userSelect: 'none',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => quickLoadFileRef.current?.click()}
+            style={quickLoadItemStyle}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--field)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+          >
+            Thêm ảnh từ máy
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPanel('assets');
+              setQuickLoadMenu(null);
+            }}
+            style={quickLoadItemStyle}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--field)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+          >
+            Từ thư viện
+          </button>
+          <div style={{ display: 'flex', gap: 6, padding: '6px 8px 4px' }}>
+            <input
+              autoFocus
+              value={pasteUrl}
+              onChange={(e) => setPasteUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') onQuickLoadPasteUrl();
+                if (e.key === 'Escape') setQuickLoadMenu(null);
+              }}
+              placeholder="Dán URL ảnh…"
+              style={{
+                flex: 1,
+                minWidth: 0,
+                padding: '5px 8px',
+                borderRadius: 7,
+                border: '1px solid var(--border)',
+                background: 'var(--field)',
+                color: 'var(--t1)',
+                fontSize: 12,
+                outline: 'none',
+              }}
+            />
+            <button
+              type="button"
+              onClick={onQuickLoadPasteUrl}
+              disabled={!pasteUrl.trim()}
+              style={{
+                padding: '5px 10px',
+                borderRadius: 7,
+                border: '1px solid var(--accent)',
+                background: 'var(--accent-soft)',
+                color: 'var(--accent)',
+                fontSize: 12,
+                cursor: pasteUrl.trim() ? 'pointer' : 'default',
+                opacity: pasteUrl.trim() ? 1 : 0.5,
+              }}
+            >
+              Dán
+            </button>
+          </div>
+        </Popover>
+      )}
 
       {/* toast lỗi nối edge / lỗi flow */}
       {connectError && (

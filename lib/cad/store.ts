@@ -626,8 +626,25 @@ export const useCadStore = create<CadState>((set, get) => ({
   setHatchScale: (hatchScale) => set({ hatchScale, hatchMaterialId: null }),
   setHatchAngle: (hatchAngle) => set({ hatchAngle, hatchMaterialId: null }),
   setHatchColor: (hatchColor) => set({ hatchColor, hatchMaterialId: null }),
-  applyMaterial: (hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor) =>
-    set({ hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor, tool: 'hatch', status: toolHint('hatch') }),
+  applyMaterial: (hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor) => {
+    // "Đổi vật liệu" trên đối tượng ĐÃ CHỌN (menu chuột phải, VIỆC ①, 28/07) — nếu đang có vùng
+    // tô (hatch) trong selection, áp pattern/scale/angle NGAY lên entity đã vẽ, không chỉ đổi
+    // "vật liệu đang cầm để vẽ tiếp" như hành vi applyMaterial cũ. KHÔNG đổi `color` — đó không
+    // phải field per-entity trên HatchEntity (màu đọc theo layer), tránh bịa field không tồn tại.
+    const st = get();
+    const selectedHatches = st.doc.entities.filter(
+      (e): e is Extract<Entity, { type: 'hatch' }> => e.type === 'hatch' && st.selection.includes(e.id),
+    );
+    if (selectedHatches.length) {
+      st.updateEntities(
+        selectedHatches.map((e) => ({ ...e, pattern: hatchPattern, patternScale: hatchScale, patternAngle: hatchAngle })),
+      );
+      // Giữ nguyên tool/selection — user đang sửa vùng tô đã chọn, không phải bắt đầu vẽ mới.
+      set({ hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor });
+      return;
+    }
+    set({ hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor, tool: 'hatch', status: toolHint('hatch') });
+  },
 
   importDoc: (d, mode) => {
     get().snapshot();

@@ -63,6 +63,7 @@ import {
 import { classifyWheel, findScrollableAncestor, normalizeWheelDelta } from '@/lib/input/wheel';
 import { SHAPE_DND_MIME } from '@/components/ShapePalette';
 import type { BlockEntity } from '@/lib/cad/model';
+import Popover from '@/components/ui/Popover';
 
 interface Ix {
   cursorScreen: Pt;
@@ -180,6 +181,15 @@ export default function CadCanvas() {
   // Lightbox ảnh hiện trường — bước xác nhận "Gỡ ảnh" inline (thay window.confirm).
   const [confirmRemovePhoto, setConfirmRemovePhoto] = useState(false);
   useEffect(() => setConfirmRemovePhoto(false), [viewPhoto]);
+
+  /* NT3 (VIỆC ①, 28/07) — chuột phải mở menu ngữ cảnh (quy ước hệ điều hành, Q2 đã chốt áp
+   * cho CẢ CAD, không chỉ Render). THAY THẾ `repeatLastCommand()` cũ khi rảnh (xem `isIdle()`
+   * dưới) — ĐÁNH ĐỔI đã ghi rõ trong báo cáo cuối: lặp lệnh qua chuột phải mất, nhưng phím tắt
+   * Space-tap nhanh (dòng "Việc 3: TAP Space nhanh") vẫn y nguyên, không mất hẳn tính năng.
+   * `worldAt` chốt NGAY lúc mở menu — "Nhập tệp vào đây" dùng đúng điểm này để đặt ảnh, không
+   * phải vị trí con trỏ lúc file đã chọn xong (có thể lệch nếu tay run trong lúc chờ hộp thoại). */
+  const [cadMenu, setCadMenu] = useState<{ clientX: number; clientY: number; hasSelection: boolean; worldAt: Pt } | null>(null);
+  const cadQuickPhotoRef = useRef<HTMLInputElement>(null);
 
   // Cảm ứng — nút Xoá nổi: chỉ cần re-render khi selection/tool đổi (selector zustand, KHÔNG
   // đọc viewport ở đây — viewport đổi liên tục lúc pan/zoom và được xử lý riêng, imperative,
@@ -538,10 +548,19 @@ export default function CadCanvas() {
       return;
     }
     // chuột PHẢI = Enter/kết thúc lệnh (thói quen AutoCAD): chốt polyline/wall/tham số đang gõ.
-    // Việc 3: nếu KHÔNG có gì để chốt (đang rảnh) → chuột phải = lặp lệnh vừa dùng.
+    // NT3 (VIỆC ①, 28/07): nếu KHÔNG có gì để chốt (đang rảnh) → mở menu ngữ cảnh (Q2) thay vì
+    // lặp lệnh cũ (xem ghi chú ĐÁNH ĐỔI ở khai báo `cadMenu` phía trên).
     if (e.button === 2) {
-      if (isIdle()) repeatLastCommand();
-      else commitEnter(ev.shiftKey);
+      if (isIdle()) {
+        setCadMenu({
+          clientX: e.clientX,
+          clientY: e.clientY,
+          hasSelection: st.selection.length > 0,
+          worldAt: ix.current.cursorWorld,
+        });
+      } else {
+        commitEnter(ev.shiftKey);
+      }
       ix.current.redraw = true;
       return;
     }
@@ -829,6 +848,64 @@ export default function CadCanvas() {
     setInlineConfirm(null);
     inlineConfirm.onConfirm();
     ix.current.redraw = true;
+  }
+
+  /* ── Menu ngữ cảnh chuột phải (NT3, VIỆC ①, 28/07) — hành động thật cho từng mục Q2 ── */
+  function cadMenuPaste() {
+    const st = useCadStore.getState();
+    if (!st.clipboard.length) return;
+    st.pasteClipboard();
+    st.setStatus(`Đã dán ${st.clipboard.length} đối tượng (lệch +20mm).`);
+    ix.current.redraw = true;
+    setCadMenu(null);
+  }
+  function cadMenuOpenFileHere() {
+    cadQuickPhotoRef.current?.click();
+    // KHÔNG đóng menu ở đây — đóng SAU khi chọn xong file (onCadQuickPhotoFile), để nếu user
+    // bấm Huỷ ở hộp thoại chọn file thì menu vẫn còn, không mất `worldAt` đã chốt.
+  }
+  async function onCadQuickPhotoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    const at = cadMenu?.worldAt;
+    setCadMenu(null);
+    if (!f || !at) return;
+    const dataUrl = await new Promise<string>((res, rej) => {
+      const reader = new FileReader();
+      reader.onload = () => res(String(reader.result));
+      reader.onerror = () => rej(reader.error);
+      reader.readAsDataURL(f);
+    });
+    useCadStore.getState().addPhoto(createPhotoEmbed(at, dataUrl));
+    ix.current.redraw = true;
+  }
+  function cadMenuAddBlock() {
+    setCadMenu(null);
+    window.dispatchEvent(new CustomEvent('cad:open-furniture-panel'));
+  }
+  function cadMenuEdit() {
+    // CAD sửa hình học bằng kéo GRIP trực tiếp trên canvas (không có form thuộc tính riêng biệt
+    // trong app này) — đối tượng ĐÃ chọn sẵn (điều kiện để menu này hiện) nghĩa là grip đã sẵn
+    // sàng kéo ngay khi đóng menu; "Sửa" ở đây chỉ đóng menu, không có hành động nào khác để giả.
+    setCadMenu(null);
+  }
+  function cadMenuDuplicate() {
+    const st = useCadStore.getState();
+    if (!st.selection.length) return;
+    st.copySelection();
+    st.pasteClipboard();
+    st.setStatus(`Đã nhân bản ${st.selection.length} đối tượng.`);
+    ix.current.redraw = true;
+    setCadMenu(null);
+  }
+  function cadMenuDelete() {
+    useCadStore.getState().deleteSelected();
+    ix.current.redraw = true;
+    setCadMenu(null);
+  }
+  function cadMenuChangeMaterial() {
+    setCadMenu(null);
+    window.dispatchEvent(new CustomEvent('cad:open-material-palette'));
   }
 
   /**
@@ -3111,6 +3188,39 @@ export default function CadCanvas() {
           </div>
         </div>
       )}
+      {/* Menu ngữ cảnh chuột phải (NT3, VIỆC ①, 28/07) — thay repeatLastCommand() cũ khi rảnh. */}
+      <input ref={cadQuickPhotoRef} type="file" accept="image/*" hidden onChange={onCadQuickPhotoFile} />
+      {cadMenu && (
+        <Popover
+          anchorX={cadMenu.clientX}
+          anchorY={cadMenu.clientY}
+          style={{
+            width: 200,
+            background: 'var(--panel)',
+            border: '1px solid var(--border)',
+            borderRadius: 12,
+            padding: 4,
+            boxShadow: '0 8px 24px rgba(0,0,0,.35)',
+            userSelect: 'none',
+          }}
+        >
+          {cadMenu.hasSelection ? (
+            <>
+              <CadMenuItem onClick={cadMenuEdit}>Sửa</CadMenuItem>
+              <CadMenuItem onClick={cadMenuDuplicate}>Nhân bản</CadMenuItem>
+              <CadMenuItem onClick={cadMenuDelete} danger>Xoá</CadMenuItem>
+              <CadMenuItem onClick={cadMenuChangeMaterial}>Đổi vật liệu</CadMenuItem>
+            </>
+          ) : (
+            <>
+              <CadMenuItem onClick={cadMenuPaste} disabled={!useCadStore.getState().clipboard.length}>Dán</CadMenuItem>
+              <CadMenuItem onClick={cadMenuOpenFileHere}>Nhập tệp vào đây</CadMenuItem>
+              <CadMenuItem onClick={cadMenuAddBlock}>Thêm block</CadMenuItem>
+            </>
+          )}
+        </Popover>
+      )}
+
       {/* Cảm ứng — nút Xoá nổi: thiết bị không có bàn phím (tablet) không dùng được phím Delete/
           Backspace. Vị trí (left/top) do updateDeleteFabPosition() trong draw() set trực tiếp mỗi
           frame — không qua React state (xem ghi chú ở chỗ khai báo showDeleteFab phía trên). */}
@@ -3209,4 +3319,46 @@ function arcFrom3(p1: Pt, p2: Pt, p3: Pt): { c: Pt; r: number; a1: number; a2: n
     return { c, r, a1, a2: tmp };
   }
   return { c, r, a1, a2 };
+}
+
+/** Item menu ngữ cảnh chuột phải CAD (NT3, VIỆC ①) — cùng nhịp cỡ MenuItem trong
+ * EditorCanvas.tsx (VIỆC 2): cao 34px, font 13px, padding ngang 12px. */
+function CadMenuItem({
+  children,
+  onClick,
+  danger,
+  disabled,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  danger?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        display: 'block',
+        width: '100%',
+        height: 34,
+        textAlign: 'left',
+        padding: '0 12px',
+        borderRadius: 8,
+        border: 'none',
+        background: 'transparent',
+        color: disabled ? 'var(--t4)' : danger ? '#e5674f' : 'var(--t2)',
+        fontSize: 13,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.55 : 1,
+      }}
+      onMouseEnter={(e) => {
+        if (!disabled) e.currentTarget.style.background = 'var(--field)';
+      }}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+    >
+      {children}
+    </button>
+  );
 }

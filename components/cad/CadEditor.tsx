@@ -131,6 +131,20 @@ export default function CadEditor() {
     return () => window.removeEventListener('cad:import-request', onImportRequest);
   }, []);
 
+  // NT3 (VIỆC ①, 28/07) — menu chuột phải CadCanvas.tsx mở panel Block/Vật liệu (2 panel này
+  // vốn chỉ có state cục bộ furnitureOpen/materialOpen ở đây, CadCanvas không với tới trực
+  // tiếp) — bắc cầu CustomEvent, cùng pattern 'cad:idf-export-request' đã dùng trong file này.
+  useEffect(() => {
+    const onOpenFurniture = () => setFurnitureOpen(true);
+    const onOpenMaterial = () => setMaterialOpen(true);
+    window.addEventListener('cad:open-furniture-panel', onOpenFurniture);
+    window.addEventListener('cad:open-material-palette', onOpenMaterial);
+    return () => {
+      window.removeEventListener('cad:open-furniture-panel', onOpenFurniture);
+      window.removeEventListener('cad:open-material-palette', onOpenMaterial);
+    };
+  }, []);
+
   // export/handoff nghe từ toolbar? Ở đây làm nút riêng trên thanh file.
   const doExportPng = () => {
     const doc = useCadStore.getState().doc;
