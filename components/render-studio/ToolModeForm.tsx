@@ -1,0 +1,310 @@
+'use client';
+
+/**
+ * components/render-studio/ToolModeForm.tsx — giao diện 2 cột (ẢNH GỐC + KẾT QUẢ) cho 1 thẻ việc
+ * đã chọn (VIỆC B, 28/07, docs/SPEC-RENDER-STUDIO.md §1B). Hai cột · một nút · tham số rút gọn.
+ * KHÔNG dây, không node hiện ra — nhưng phía sau vẫn dựng ĐÚNG node thật (input.image → node AI
+ * của thẻ) và chạy qua `runNode()` CÙNG đường với canvas thường (không có luồng "giả" riêng).
+ */
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowLeft, Upload } from 'lucide-react';
+import { useFlowStore } from '@/lib/store';
+import { runNode } from '@/lib/execution';
+import { getDefinition, defaultParams } from '@/lib/nodes/registry';
+import { useToolModeUi, useIsSmallScreenForCanvas } from '@/lib/render-studio/tool-mode-ui';
+import { taskCardById } from '@/lib/render-studio/task-cards';
+import type { ParamDef } from '@/lib/types';
+
+export default function ToolModeForm({ cardId }: { cardId: string }) {
+  const card = taskCardById(cardId);
+  const backToHome = useToolModeUi((s) => s.backToHome);
+  const openCanvas = useToolModeUi((s) => s.openCanvas);
+  const smallScreen = useIsSmallScreenForCanvas();
+
+  const def = card ? getDefinition(card.nodeType) : null;
+  const [values, setValues] = useState<Record<string, string | number>>(() => (def ? defaultParams(def) : {}));
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const nodeIdsRef = useRef<{ imgId: string; aiId: string } | null>(null);
+  const [aiNodeId, setAiNodeId] = useState<string | null>(null); // trigger re-render khi node vừa dựng
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // đổi thẻ → xoá phiên node cũ (thẻ mới = việc mới, không lẫn ảnh/tham số thẻ trước).
+  useEffect(() => {
+    nodeIdsRef.current = null;
+    setAiNodeId(null);
+    setImageDataUrl(null);
+    if (def) setValues(defaultParams(def));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardId]);
+
+  const run = useFlowStore((s) => (aiNodeId ? s.nodes.find((n) => n.id === aiNodeId)?.data.run : undefined));
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') setImageDataUrl(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const buildOrUpdateGraph = useCallback((): string => {
+    const store = useFlowStore.getState();
+    if (!nodeIdsRef.current) {
+      store.addNode('input.image', { x: 40, y: 160 });
+      const imgId = useFlowStore.getState().nodes.at(-1)!.id;
+      store.addNode(card!.nodeType, { x: 480, y: 160 });
+      const aiId = useFlowStore.getState().nodes.at(-1)!.id;
+      store.onConnect({ source: imgId, sourceHandle: 'image', target: aiId, targetHandle: 'image' });
+      nodeIdsRef.current = { imgId, aiId };
+      setAiNodeId(aiId);
+    }
+    const { imgId, aiId } = nodeIdsRef.current;
+    if (imageDataUrl) store.updateParam(imgId, 'file', imageDataUrl);
+    for (const [k, v] of Object.entries(values)) store.updateParam(aiId, k, v);
+    return aiId;
+  }, [card, imageDataUrl, values]);
+
+  const onRender = () => {
+    if (!card || !imageDataUrl) return;
+    const aiId = buildOrUpdateGraph();
+    if (card.formKind === 'canvas-handoff') {
+      openCanvas();
+      return;
+    }
+    void runNode(aiId);
+  };
+
+  if (!card || !def) {
+    return (
+      <div style={{ position: 'absolute', inset: 0, zIndex: 35, display: 'grid', placeItems: 'center', background: 'var(--bg)' }}>
+        <button type="button" onClick={backToHome} style={{ color: 'var(--t2)' }}>
+          ← Quay lại
+        </button>
+      </div>
+    );
+  }
+
+  const editableParams = def.params.filter(
+    (p): p is Extract<ParamDef, { kind: 'select' | 'slider' | 'text' }> =>
+      p.kind === 'select' || p.kind === 'slider' || p.kind === 'text',
+  );
+
+  const outputUrl = run?.outputs?.image?.value;
+  const handoffBlockedOnSmallScreen = card.formKind === 'canvas-handoff' && smallScreen;
+  const canRender = !!imageDataUrl && run?.status !== 'running' && !handoffBlockedOnSmallScreen;
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 35, background: 'var(--bg)', overflowY: 'auto' }}>
+      <div style={{ maxWidth: 920, margin: '0 auto', padding: '32px 24px' }}>
+        <button
+          type="button"
+          onClick={backToHome}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 12.5,
+            color: 'var(--t3)',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            marginBottom: 20,
+          }}
+        >
+          <ArrowLeft size={14} /> Chọn việc khác
+        </button>
+
+        <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--t1)', marginBottom: 20 }}>{card.label}</h2>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          {/* ẢNH GỐC */}
+          <div>
+            <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={onPickFile} />
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              style={{
+                aspectRatio: '4/3',
+                border: '1px dashed var(--border)',
+                borderRadius: 10,
+                display: 'grid',
+                placeItems: 'center',
+                cursor: 'pointer',
+                overflow: 'hidden',
+                background: 'var(--field)',
+              }}
+            >
+              {imageDataUrl ? (
+                <img src={imageDataUrl} alt="Ảnh gốc" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: 'var(--t4)' }}>
+                  <Upload size={20} />
+                  <span style={{ fontSize: 12 }}>Thả ảnh vào đây</span>
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {editableParams.map((p) => (
+                <ParamControl key={p.id} param={p} value={values[p.id]} onChange={(v) => setValues((s) => ({ ...s, [p.id]: v }))} />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={onRender}
+              disabled={!canRender}
+              style={{
+                marginTop: 18,
+                width: '100%',
+                padding: '10px',
+                borderRadius: 8,
+                border: 'none',
+                background: canRender ? 'var(--accent)' : 'var(--border)',
+                color: '#fff',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: canRender ? 'pointer' : 'not-allowed',
+              }}
+            >
+              {handoffBlockedOnSmallScreen
+                ? 'Cần màn lớn hơn để vẽ vùng sửa'
+                : card.formKind === 'canvas-handoff'
+                  ? '✎ Vẽ vùng cần sửa (mở canvas)'
+                  : run?.status === 'running'
+                    ? `Đang chạy… ${Math.round((run.progress ?? 0) * 100)}%`
+                    : '▶ Render'}
+            </button>
+          </div>
+
+          {/* KẾT QUẢ */}
+          <div>
+            <div
+              style={{
+                aspectRatio: '4/3',
+                border: '1px solid var(--border)',
+                borderRadius: 10,
+                display: 'grid',
+                placeItems: 'center',
+                overflow: 'hidden',
+                background: 'var(--field)',
+              }}
+            >
+              {outputUrl ? (
+                <img src={String(outputUrl)} alt="Kết quả" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              ) : run?.status === 'error' ? (
+                <span style={{ fontSize: 12, color: '#c0392b', padding: 16, textAlign: 'center' }}>{run.error}</span>
+              ) : (
+                <span style={{ fontSize: 12, color: 'var(--t4)' }}>
+                  {run?.status === 'running' ? 'Đang render…' : 'Chưa có kết quả'}
+                </span>
+              )}
+            </div>
+            {!smallScreen && (
+              <div style={{ textAlign: 'right', marginTop: 12 }}>
+                <button
+                  type="button"
+                  onClick={openCanvas}
+                  title="Xem/chỉnh node phía sau thẻ này trên canvas"
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--t3)',
+                    background: 'transparent',
+                    border: '1px solid var(--border)',
+                    borderRadius: 7,
+                    padding: '6px 12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Mở canvas ▾
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ParamControl({
+  param,
+  value,
+  onChange,
+}: {
+  param: Extract<ParamDef, { kind: 'select' | 'slider' | 'text' }>;
+  value: string | number | undefined;
+  onChange: (v: string | number) => void;
+}) {
+  if (param.kind === 'select') {
+    return (
+      <label style={{ display: 'block' }}>
+        <div style={{ fontSize: 11, color: 'var(--t3)', marginBottom: 4 }}>{param.label}</div>
+        <select
+          value={String(value ?? param.options[0])}
+          onChange={(e) => onChange(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '7px 9px',
+            borderRadius: 7,
+            border: '1px solid var(--border)',
+            background: 'var(--panel)',
+            color: 'var(--t1)',
+            fontSize: 12.5,
+          }}
+        >
+          {param.options.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
+  if (param.kind === 'slider') {
+    const v = typeof value === 'number' ? value : param.default;
+    return (
+      <label style={{ display: 'block' }}>
+        <div style={{ fontSize: 11, color: 'var(--t3)', marginBottom: 4 }}>
+          {param.label} <span style={{ color: 'var(--t4)' }}>{v}</span>
+        </div>
+        <input
+          type="range"
+          min={param.min}
+          max={param.max}
+          step={param.step}
+          value={v}
+          onChange={(e) => onChange(+e.target.value)}
+          style={{ width: '100%' }}
+        />
+      </label>
+    );
+  }
+  // 'text'
+  return (
+    <label style={{ display: 'block' }}>
+      <div style={{ fontSize: 11, color: 'var(--t3)', marginBottom: 4 }}>{param.label}</div>
+      <input
+        type="text"
+        value={String(value ?? '')}
+        placeholder={param.placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          width: '100%',
+          padding: '7px 9px',
+          borderRadius: 7,
+          border: '1px solid var(--border)',
+          background: 'var(--panel)',
+          color: 'var(--t1)',
+          fontSize: 12.5,
+        }}
+      />
+    </label>
+  );
+}

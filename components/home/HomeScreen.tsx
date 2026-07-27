@@ -36,6 +36,7 @@ import { AnnotateModal } from '@/components/AnnotateModal';
 import { Lightbox } from '@/components/Lightbox';
 import { Dashboard } from '@/components/Dashboard';
 import StatusBar from '@/components/studio/StatusBar';
+import RenderToolModeOverlay from '@/components/render-studio/RenderToolModeOverlay';
 import PresentOverlay from '@/components/present/PresentOverlay';
 import { ProjectSelect } from '@/components/ProjectSelect';
 import { CommentLayer } from '@/components/CommentLayer';
@@ -585,6 +586,7 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
           <FlowsPanel />
           {/* Cả 3 chặng đều là canvas node (Present sang studio riêng). Nút Tải lên/Concept = moodboard. */}
           <FlowCanvas />
+          <RenderToolModeOverlay />
           <ChatPanel />
         </div>
         <StatusBar stage="render" hidden={presentModeOpen} />
