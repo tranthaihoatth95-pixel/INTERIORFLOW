@@ -77,6 +77,7 @@ import ImageEditor from './ImageEditor';
 import BrandKitPanel from './BrandKitPanel';
 import { applyBrandKitToDeck, type BrandKit } from '@/lib/present-editor/brand-kit';
 import StagePresetPanel from './StagePresetPanel';
+import ReplaceImageDialog from './ReplaceImageDialog';
 import { reflowDeckForStage } from '@/lib/present-editor/reflow';
 import { alignFrames, distributeFrames, type AlignMode as GroupAlignMode, type DistributeAxis } from '@/lib/present-editor/align';
 import { stageFor, type StagePresetId } from '@/lib/present-editor/stage-presets';
@@ -139,6 +140,10 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
 
   const [tab, setTab] = useState<LeftTab>('layout');
   const [panelOpen, setPanelOpen] = useState(true);
+  // "Thay ảnh…" (VIỆC 2d, 28/07): replaceDialogId = đang hiện hộp thoại 2 lựa chọn cho ảnh này;
+  // replaceTarget = đã chọn "Từ thư viện", đang chờ user bấm 1 ảnh trong tab Reference.
+  const [replaceDialogId, setReplaceDialogId] = useState<string | null>(null);
+  const [replaceTarget, setReplaceTarget] = useState<string | null>(null);
   const [panelW, setPanelW] = useState(288); // rộng cột trái (kéo dãn)
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [inspectorW, setInspectorW] = useState(280); // rộng cột phải "LỚP" (kéo dãn)
@@ -410,6 +415,33 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
       }
     });
     ed.select(el.id);
+  };
+
+  // "Thay ảnh…" (VIỆC 2d) — chỉ đổi `src`, GIỮ NGUYÊN vị trí/kích thước/crop (frame/crop/adjust
+  // không đụng tới). Xoá `assetId`: ảnh đã đổi nội dung tại chỗ này, không còn đại diện đúng cho
+  // tài sản liên kết cũ nữa (tránh các slide khác cùng assetId bị đổi lây ngoài ý muốn).
+  const replaceImageSrc = useCallback(
+    (id: string, src: string) => {
+      ed.updateSlide((s) => {
+        const el = s.elements.find((e) => e.id === id);
+        if (el && el.kind === 'image') {
+          el.src = src;
+          delete el.assetId;
+        }
+      });
+    },
+    [ed],
+  );
+
+  // Tab Reference khi có `replaceTarget` (đến từ "Thay ảnh… → Từ thư viện"): bấm ảnh = THAY
+  // đúng ảnh đang chờ, KHÔNG thêm element mới như hành vi mặc định của LibraryBrowser.
+  const onUseRefImage = (url: string) => {
+    if (replaceTarget) {
+      replaceImageSrc(replaceTarget, url);
+      setReplaceTarget(null);
+    } else {
+      onAddImageUrl(url);
+    }
   };
 
   const onFrame = useCallback(
@@ -1171,6 +1203,17 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         zoomReset();
         return;
       }
+      // ⌘⇧] / ⌘⇧[ — đưa lên trước / ra sau (khớp gợi ý phím tắt trong menu chuột phải ảnh, VIỆC 2).
+      if (mod && e.shiftKey && (e.key === ']' || e.key === '}')) {
+        e.preventDefault();
+        onZOrder('front');
+        return;
+      }
+      if (mod && e.shiftKey && (e.key === '[' || e.key === '{')) {
+        e.preventDefault();
+        onZOrder('back');
+        return;
+      }
       if ((e.key === 'Delete' || e.key === 'Backspace') && ed.selectedIds.length) {
         e.preventDefault();
         onDeleteSelected();
@@ -1193,6 +1236,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     onCopySelected,
     onPaste,
     onDeleteSelected,
+    onZOrder,
     onNudge,
     onSelectNext,
     imageEditId,
@@ -1451,13 +1495,34 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
                   />
                 )}
                 {tab === 'reference' && (
-                  <LibraryBrowser
-                    images={refImages}
-                    loading={libLoading}
-                    onUseImage={onAddImageUrl}
-                    onDelete={onDeleteRef}
-                    onUploadLocal={onUploadLocalRefs}
-                  />
+                  <>
+                    {replaceTarget && (
+                      <div
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          gap: 8, marginBottom: 8, padding: '7px 10px', borderRadius: 8,
+                          border: '1px solid var(--accent)', background: 'var(--accent-soft)',
+                          fontSize: 11.5, color: 'var(--accent)',
+                        }}
+                      >
+                        <span>Chọn ảnh để thay thế</span>
+                        <button
+                          type="button"
+                          onClick={() => setReplaceTarget(null)}
+                          style={{ background: 'none', border: 'none', color: 'inherit', fontSize: 11.5, cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                          Huỷ
+                        </button>
+                      </div>
+                    )}
+                    <LibraryBrowser
+                      images={refImages}
+                      loading={libLoading}
+                      onUseImage={onUseRefImage}
+                      onDelete={onDeleteRef}
+                      onUploadLocal={onUploadLocalRefs}
+                    />
+                  </>
                 )}
                 {tab === 'motion' && ed.slide && (
                   <MotionPanel
@@ -1551,6 +1616,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
               onEditTextCommit={onEditTextCommit}
               onEditImage={(id) => setImageEditId(id)}
               onEditImageAdvanced={openAdvancedEditor}
+              onReplaceImage={(id) => setReplaceDialogId(id)}
               onDropRefImage={onAddImageUrl}
               onDuplicate={onDuplicateSelected}
               onDelete={onDeleteSelected}
@@ -1774,6 +1840,23 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
           current={ed.deck.stagePreset}
           onClose={() => setStagePresetOpen(false)}
           onApply={onApplyStagePreset}
+        />
+      )}
+
+      {/* "Thay ảnh…" (VIỆC 2d, 28/07) — hộp thoại 2 lựa chọn từ menu chuột phải trên ảnh. */}
+      {replaceDialogId && (
+        <ReplaceImageDialog
+          onClose={() => setReplaceDialogId(null)}
+          onPickFromLibrary={() => {
+            setReplaceTarget(replaceDialogId);
+            setReplaceDialogId(null);
+            setPanelOpen(true);
+            setTab('reference');
+          }}
+          onPickFromDisk={(dataUrl) => {
+            replaceImageSrc(replaceDialogId, dataUrl);
+            setReplaceDialogId(null);
+          }}
         />
       )}
     </div>

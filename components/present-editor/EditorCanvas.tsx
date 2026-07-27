@@ -23,6 +23,7 @@ import { extractTextFormat, applyTextFormat, type TextFormat } from '@/lib/prese
 import Element, { textOverImage, type Guides } from './Element';
 import TextToolbar from './TextToolbar';
 import ShapeQuickPanel from './ShapeQuickPanel';
+import Popover from '@/components/ui/Popover';
 
 /** Bộ chữ hiển thị trên canvas (khớp Element.tsx + render.ts). */
 const CANVAS_FONT: Record<string, string> = {
@@ -52,6 +53,8 @@ interface Props {
   onEditImage: (id: string) => void;
   /** mở trình chỉnh ảnh nâng cao (Photoshop-level, /photo-editor) cho đúng ảnh `id`. */
   onEditImageAdvanced?: (id: string) => void;
+  /** mở hộp thoại "Thay ảnh…" (VIỆC 2d) cho đúng ảnh `id`. */
+  onReplaceImage?: (id: string) => void;
   /** thả ảnh Reference (drag từ panel) lên sân khấu → thêm image element. */
   onDropRefImage?: (url: string) => void;
   /** thao tác cho menu chuột phải trên element. */
@@ -72,10 +75,10 @@ interface Props {
   watermark?: DeckWatermark;
 }
 
-/** Trạng thái menu chuột phải: vị trí (px trong khung stage) + id element. */
+/** Trạng thái menu chuột phải: toạ độ VIEWPORT (Popover tự quy đổi + lật hướng) + id element. */
 interface MenuState {
-  x: number;
-  y: number;
+  clientX: number;
+  clientY: number;
   id: string;
   locked: boolean;
   /** loại element (để hiện mục "Chỉnh ảnh" khi là ảnh). */
@@ -112,6 +115,7 @@ export default function EditorCanvas({
   onToggleLock,
   onUpdateText,
   onUpdateShape,
+  onReplaceImage,
   brand,
   project,
   palette,
@@ -346,10 +350,9 @@ export default function EditorCanvas({
             e.preventDefault();
             e.stopPropagation();
             if (!selectedIds.includes(el.id)) onSelect(el.id);
-            const rect = stageRef.current?.getBoundingClientRect();
             setMenu({
-              x: rect ? e.clientX - rect.left : 0,
-              y: rect ? e.clientY - rect.top : 0,
+              clientX: e.clientX,
+              clientY: e.clientY,
               id: el.id,
               locked: !!el.locked,
               kind: el.kind,
@@ -375,54 +378,67 @@ export default function EditorCanvas({
         />
       )}
 
-      {/* menu chuột phải trên element */}
+      {/* menu chuột phải trên element — Popover tự lật hướng + chừa mép viewport (VIỆC 2, 28/07) */}
       {menu && (
-        <div
+        <Popover
+          anchorX={menu.clientX}
+          anchorY={menu.clientY}
           style={{
-            position: 'absolute',
-            left: menu.x,
-            top: menu.y,
-            zIndex: 20,
-            minWidth: 160,
+            // width CỐ ĐỊNH (không minWidth/maxWidth auto) — cố ý: box position:fixed có `left`
+            // + width auto sẽ shrink-to-fit theo KHÔNG GIAN CÒN LẠI từ `left` tới mép viewport,
+            // mà `left` lại tính TỪ chính width đó → vòng lặp phản hồi (test DOM thật bắt được
+            // width tự phình 200→210→211px qua nhiều lần đo). max-width 240 (VIỆC 2b) áp cố định.
+            width: 220,
             background: 'var(--panel)',
             border: '1px solid var(--border)',
-            borderRadius: 8,
+            borderRadius: 12,
             padding: 4,
             boxShadow: '0 8px 24px rgba(0,0,0,.35)',
             userSelect: 'none',
           }}
-          onPointerDown={(e) => e.stopPropagation()}
         >
-          {menu.kind === 'image' && (
+          {menu.kind === 'image' ? (
+            // Menu ẢNH — nội dung + thứ tự chốt riêng (VIỆC 2c), KHÔNG dùng chung khối dưới.
             <>
-              <MenuItem onClick={() => { onEditImage(menu.id); setMenu(null); }}>Chỉnh ảnh (crop · lọc · thay)</MenuItem>
+              {onReplaceImage && (
+                <MenuItem onClick={() => { onReplaceImage(menu.id); setMenu(null); }}>Thay ảnh…</MenuItem>
+              )}
+              <MenuItem onClick={() => { onEditImage(menu.id); setMenu(null); }}>Chỉnh ảnh (crop, màu)</MenuItem>
               {onEditImageAdvanced && (
-                <MenuItem onClick={() => { onEditImageAdvanced(menu.id); setMenu(null); }}>Chỉnh ảnh nâng cao (Photoshop)</MenuItem>
+                <MenuItem onClick={() => { onEditImageAdvanced(menu.id); setMenu(null); }}>Chỉnh nâng cao (Photoshop)</MenuItem>
               )}
               <MenuSep />
+              <MenuItem shortcut="⌘D" onClick={() => { onDuplicate(); setMenu(null); }}>Nhân bản</MenuItem>
+              <MenuItem shortcut="⌫" danger onClick={() => { onDelete(); setMenu(null); }}>Xoá</MenuItem>
+              <MenuSep />
+              <MenuItem shortcut="⌘⇧]" onClick={() => { onZOrder('front'); setMenu(null); }}>Đưa lên trước</MenuItem>
+              <MenuItem shortcut="⌘⇧[" onClick={() => { onZOrder('back'); setMenu(null); }}>Đưa xuống sau</MenuItem>
+            </>
+          ) : (
+            <>
+              {/* Chuột phải SHAPE → bảng chỉnh cạnh/góc bo/số cạnh ngay tại đây (góp ý #6). */}
+              {menu.kind === 'shape' && onUpdateShape && (() => {
+                const sh = slide.elements.find((e) => e.id === menu.id);
+                if (!sh || sh.kind !== 'shape') return null;
+                return (
+                  <>
+                    <ShapeQuickPanel el={sh as ShapeElement} onUpdate={(m, live) => onUpdateShape(menu.id, m, live)} />
+                    <MenuSep />
+                  </>
+                );
+              })()}
+              <MenuItem shortcut="⌘D" onClick={() => { onDuplicate(); setMenu(null); }}>Nhân bản</MenuItem>
+              <MenuItem onClick={() => { onZOrder('front'); setMenu(null); }}>Đưa lên trước</MenuItem>
+              <MenuItem onClick={() => { onZOrder('forward'); setMenu(null); }}>Tiến 1 bậc</MenuItem>
+              <MenuItem onClick={() => { onZOrder('backward'); setMenu(null); }}>Lùi 1 bậc</MenuItem>
+              <MenuItem onClick={() => { onZOrder('back'); setMenu(null); }}>Đưa ra sau</MenuItem>
+              <MenuItem onClick={() => { onToggleLock(); setMenu(null); }}>
+                {menu.locked ? 'Mở khoá' : 'Khoá'}
+              </MenuItem>
+              <MenuItem danger shortcut="⌫" onClick={() => { onDelete(); setMenu(null); }}>Xoá</MenuItem>
             </>
           )}
-          {/* Chuột phải SHAPE → bảng chỉnh cạnh/góc bo/số cạnh ngay tại đây (góp ý #6). */}
-          {menu.kind === 'shape' && onUpdateShape && (() => {
-            const sh = slide.elements.find((e) => e.id === menu.id);
-            if (!sh || sh.kind !== 'shape') return null;
-            return (
-              <>
-                <ShapeQuickPanel el={sh as ShapeElement} onUpdate={(m, live) => onUpdateShape(menu.id, m, live)} />
-                <MenuSep />
-              </>
-            );
-          })()}
-          <MenuItem onClick={() => { onDuplicate(); setMenu(null); }}>Nhân bản</MenuItem>
-          <MenuItem onClick={() => { onZOrder('front'); setMenu(null); }}>Đưa lên trước</MenuItem>
-          <MenuItem onClick={() => { onZOrder('forward'); setMenu(null); }}>Tiến 1 bậc</MenuItem>
-          <MenuItem onClick={() => { onZOrder('backward'); setMenu(null); }}>Lùi 1 bậc</MenuItem>
-          <MenuItem onClick={() => { onZOrder('back'); setMenu(null); }}>Đưa ra sau</MenuItem>
-          <MenuItem onClick={() => { onToggleLock(); setMenu(null); }}>
-            {menu.locked ? 'Mở khoá' : 'Khoá'}
-          </MenuItem>
-          <MenuItem danger onClick={() => { onDelete(); setMenu(null); }}>Xoá</MenuItem>
-        </div>
+        </Popover>
       )}
 
       {/* guide căn */}
@@ -550,21 +566,28 @@ function MenuItem({
   children,
   onClick,
   danger,
+  shortcut,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   danger?: boolean;
+  /** gợi ý phím tắt, căn phải, chữ mờ (vd "⌘D") — chỉ hiển thị, phím thật đăng ký ở PresentEditor. */
+  shortcut?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       style={{
-        display: 'block',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 10,
         width: '100%',
+        height: 34,
         textAlign: 'left',
-        padding: '7px 10px',
-        borderRadius: 6,
+        padding: '0 12px',
+        borderRadius: 8,
         border: 'none',
         background: 'transparent',
         color: danger ? '#e5674f' : 'var(--t2)',
@@ -574,7 +597,9 @@ function MenuItem({
       onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--field)')}
       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
     >
-      {children}
+      <span>{children}</span>
+      {/* mã app không có token --text-muted riêng — dùng --t4 (chữ mờ nhất trong thang t1..t5). */}
+      {shortcut && <span style={{ fontSize: 12, color: 'var(--t4)' }}>{shortcut}</span>}
     </button>
   );
 }
