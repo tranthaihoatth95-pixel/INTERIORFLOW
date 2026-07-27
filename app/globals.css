@@ -32,6 +32,18 @@
   --radius-xl: 28px;
   --radius: var(--radius-md);
 
+  /* Cỡ chữ — VIỆC 6 (28/07, docs/DESIGN-TOKENS.md audit: ~967 khai báo font-size rời, 0%
+     token hoá). Dọn DẦN, không ồ ạt — bắt đầu ở LoginScreen/ProjectSelect/Header (3 màn đầu
+     tiên), phần còn lại của app chờ đợt sau (xem STATUS.md). Giá trị lẻ ở 3 màn này làm tròn
+     về mốc gần nhất trong thang dưới đây khi thay. */
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-md: 16px;
+  --fs-lg: 20px;
+  --fs-xl: 28px;
+  --fw-normal: 400;
+  --fw-semi: 600;
+
   /* Vibrancy — độ nhoè của materials trong suốt */
   --blur: 22px;
   --blur-strong: 40px;

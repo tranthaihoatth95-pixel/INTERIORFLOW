@@ -813,8 +813,8 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               width: 28,
               height: 28,
               marginLeft: idx === 0 ? 0 : -8,
-              fontSize: 11,
-              fontWeight: 600,
+              fontSize: 'var(--fs-xs)',
+              fontWeight: 'var(--fw-semi)',
               color: '#fff',
               background: avatarGradient(m.name),
               border: `1.5px solid ${ring}`,
@@ -846,7 +846,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         <div className="flex items-start justify-between gap-2.5">
           <div className="min-w-0 flex-1">
             <div
-              className="truncate text-[15px] font-semibold leading-tight sm:text-[17px]"
+              className="truncate text-[length:var(--fs-sm)] font-semibold leading-tight sm:text-[length:var(--fs-md)]"
               style={{ ...strong }}
             >
               {f.name}
@@ -871,7 +871,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                     else if (e.key === 'Escape') setStatusFor(null);
                   }}
                   placeholder={en ? 'Short status…' : 'Ghi chú ngắn…'}
-                  className="w-full bg-transparent text-[12px] text-white placeholder:text-white/40 focus:outline-none"
+                  className="w-full bg-transparent text-[length:var(--fs-xs)] text-white placeholder:text-white/40 focus:outline-none"
                 />
                 <button
                   type="button"
@@ -898,7 +898,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   e.stopPropagation();
                   beginStatus(f);
                 }}
-                className="mt-1 block max-w-full truncate text-left text-[12px] transition-colors disabled:cursor-default"
+                className="mt-1 block max-w-full truncate text-left text-[length:var(--fs-xs)] transition-colors disabled:cursor-default"
                 style={{
                   ...adaptiveTextStyle(plan, true),
                   opacity: f.status ? 1 : 0.62,
@@ -910,7 +910,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
 
             <div className="mt-1.5 flex items-center gap-2">
               <span
-                className="truncate text-[11px]"
+                className="truncate text-[length:var(--fs-xs)]"
                 style={{ ...adaptiveTextStyle(plan, true), opacity: 0.78 }}
               >
                 {f.project ? f.project.name : en ? 'No project' : 'Chưa gắn dự án'}
@@ -920,14 +920,14 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2(a)/§2.1). */}
               {f.project?.larkProjectCode && larkSummary?.byCode.get(f.project.larkProjectCode) && (
                 <span
-                  className="shrink-0 rounded-full px-2 py-0.5 text-[10px]"
+                  className="shrink-0 rounded-full px-2 py-0.5 text-[length:var(--fs-xs)]"
                   style={{ ...adaptiveTextStyle(plan, true), background: 'rgba(240,96,32,0.16)', border: '1px solid rgba(240,96,32,0.32)' }}
                 >
                   {larkSummary.byCode.get(f.project.larkProjectCode)}
                 </span>
               )}
               <span
-                className="shrink-0 rounded-full px-2 py-0.5 text-[9px] uppercase tracking-[0.14em]"
+                className="shrink-0 rounded-full px-2 py-0.5 text-[length:var(--fs-xs)] uppercase tracking-[0.14em]"
                 style={{
                   ...adaptiveTextStyle(plan, true),
                   background: plan.tone === 'light' ? 'rgba(255,255,255,0.1)' : 'rgba(20,17,13,0.08)',
@@ -948,7 +948,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   e.stopPropagation();
                   openPicker(f.id);
                 }}
-                className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-white/90 hover:text-white"
+                className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-white/90 hover:text-white"
                 style={darkPill}
               >
                 <ImagePlus size={13} />
@@ -961,7 +961,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   e.stopPropagation();
                   openDashboardTab('board', f.project?.id ?? null);
                 }}
-                className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-white/90 hover:text-white"
+                className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-white/90 hover:text-white"
                 style={darkPill}
               >
                 <Info size={13} />
@@ -977,7 +977,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   e.stopPropagation();
                   router.push(`/projects/${f.project?.id ?? f.id}/overview`);
                 }}
-                className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-white/90 hover:text-white"
+                className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-white/90 hover:text-white"
                 style={darkPill}
               >
                 <ArrowRight size={13} />
@@ -998,7 +998,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   const loadingBlock = (
     <div className="flex items-center gap-2.5 rounded-full px-5 py-3" style={glass}>
       <Loader2 size={15} className="animate-spin" style={{ color: ACCENT }} />
-      <span className="text-[13px] text-[var(--t3,var(--t4))]">
+      <span className="text-[length:var(--fs-sm)] text-[var(--t3,var(--t4))]">
         {en ? 'Loading your projects…' : 'Đang tải dự án…'}
       </span>
     </div>
@@ -1006,7 +1006,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
 
   const errorBlock = (
     <div className="flex max-w-sm flex-col items-center gap-4 rounded-[var(--radius-xl)] px-7 py-7 text-center" style={glass}>
-      <p className="text-[13px] leading-relaxed text-[var(--t4)]">
+      <p className="text-[length:var(--fs-sm)] leading-relaxed text-[var(--t4)]">
         {en
           ? 'Could not load your projects — check the connection and try again.'
           : 'Không tải được danh sách dự án — kiểm tra kết nối rồi thử lại.'}
@@ -1016,7 +1016,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           {...pressable}
           type="button"
           onClick={load}
-          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-medium text-[var(--t1)]"
+          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--fs-xs)] font-medium text-[var(--t1)]"
           style={glass}
         >
           <RefreshCw size={13} />
@@ -1026,7 +1026,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           {...pressable}
           type="button"
           onClick={onEnter}
-          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-semibold"
+          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--fs-xs)] font-semibold"
           style={{ background: ACCENT, color: '#fff' }}
         >
           {en ? 'Enter empty canvas' : 'Vào canvas trống'}
@@ -1124,12 +1124,12 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                         <Plus size={20} />
                       </span>
                       <span
-                        className="text-[14px] font-semibold"
+                        className="text-[length:var(--fs-sm)] font-semibold"
                         style={{ color: isCenter ? 'var(--t1)' : 'var(--t4)' }}
                       >
                         {en ? 'New project' : 'Dự án mới'}
                       </span>
-                      <span className="max-w-[14rem] text-center text-[11px] leading-relaxed text-[var(--t4)]">
+                      <span className="max-w-[14rem] text-center text-[length:var(--fs-xs)] leading-relaxed text-[var(--t4)]">
                         {en ? 'Start from an empty canvas' : 'Bắt đầu từ một canvas trống'}
                       </span>
                       {/* Liên kết Larkbase TUỲ CHỌN (§2.4/§2.6 M1) — chỉ hiện khi có mã đã
@@ -1140,7 +1140,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                           <select
                             value={pendingLarkCode}
                             onChange={(e) => setPendingLarkCode(e.target.value)}
-                            className="cursor-pointer appearance-none rounded-full border border-[rgba(127,127,127,0.35)] bg-transparent px-2.5 py-1 text-[10px]"
+                            className="cursor-pointer appearance-none rounded-full border border-[rgba(127,127,127,0.35)] bg-transparent px-2.5 py-1 text-[length:var(--fs-xs)]"
                             style={{ color: pendingLarkCode ? ACCENT : 'var(--t4)' }}
                             title={en ? 'Optionally link a Larkbase project code' : 'Tuỳ chọn liên kết mã dự án Larkbase'}
                           >
@@ -1198,7 +1198,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         ))}
       </div>
 
-      <p className="mt-3 text-center text-[11px] text-[var(--t5,var(--t4))]">
+      <p className="mt-3 text-center text-[length:var(--fs-xs)] text-[var(--t5,var(--t4))]">
         {en
           ? 'Click focused card or Enter to open · ← → · Home/End · wheel/2-finger swipe'
           : 'Bấm thẻ đang chọn hoặc Enter để mở · ← → · Home/End · lăn chuột / trượt 2 ngón'}
@@ -1246,18 +1246,18 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                     className="h-14 w-[74px] shrink-0 rounded-lg object-cover"
                   />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[14px] font-semibold text-[var(--t1)]">
+                    <span className="block truncate text-[length:var(--fs-sm)] font-semibold text-[var(--t1)]">
                       {item.flow.name}
                     </span>
                     <span
-                      className="mt-0.5 block truncate text-[11px]"
+                      className="mt-0.5 block truncate text-[length:var(--fs-xs)]"
                       style={{
                         color: item.flow.status ? 'var(--t3,var(--t4))' : 'var(--t5,var(--t4))',
                       }}
                     >
                       {item.flow.status ? item.flow.status : en ? '· No note yet' : '· Chưa có ghi chú'}
                     </span>
-                    <span className="mt-0.5 block truncate text-[11px] text-[var(--t4)]">
+                    <span className="mt-0.5 block truncate text-[length:var(--fs-xs)] text-[var(--t4)]">
                       {item.flow.project ? `${item.flow.project.name} · ` : ''}
                       {timeAgo(item.flow.updatedAt, en)}
                     </span>
@@ -1278,10 +1278,10 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                     <Plus size={18} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[14px] font-semibold text-[var(--t1)]">
+                    <span className="block text-[length:var(--fs-sm)] font-semibold text-[var(--t1)]">
                       {en ? 'New project' : 'Dự án mới'}
                     </span>
-                    <span className="mt-0.5 block text-[11px] text-[var(--t4)]">
+                    <span className="mt-0.5 block text-[length:var(--fs-xs)] text-[var(--t4)]">
                       {en ? 'Start from an empty canvas' : 'Bắt đầu từ một canvas trống'}
                     </span>
                   </span>
@@ -1306,7 +1306,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={en ? 'Search name, note, project…' : 'Tìm tên, ghi chú, dự án…'}
-            className="w-48 bg-transparent text-[13px] text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none sm:w-56"
+            className="w-48 bg-transparent text-[length:var(--fs-sm)] text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none sm:w-56"
           />
           {query && (
             <button
@@ -1323,7 +1323,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           value={projFilter}
           onChange={(e) => setProjFilter(e.target.value)}
           aria-label={en ? 'Filter by project' : 'Lọc theo dự án'}
-          className="cursor-pointer appearance-none rounded-full px-3.5 py-2 text-[12px] text-[var(--t1)] focus:outline-none"
+          className="cursor-pointer appearance-none rounded-full px-3.5 py-2 text-[length:var(--fs-xs)] text-[var(--t1)] focus:outline-none"
           style={{ ...glass}}
         >
           <option value="">{en ? 'All projects' : 'Tất cả dự án'}</option>
@@ -1334,7 +1334,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             </option>
           ))}
         </select>
-        <span className="text-[11px] text-[var(--t4)]">
+        <span className="text-[length:var(--fs-xs)] text-[var(--t4)]">
           {filteredFlows.length}/{flows.length}
         </span>
       </div>
@@ -1370,7 +1370,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             >
               <Plus size={17} />
             </span>
-            <span className="text-[13px] font-semibold text-[var(--t1)]">
+            <span className="text-[length:var(--fs-sm)] font-semibold text-[var(--t1)]">
               {en ? 'New project' : 'Dự án mới'}
             </span>
           </div>
@@ -1448,7 +1448,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 </div>
               </div>
               <div className="px-3 pb-2.5 pt-2">
-                <div className="truncate text-[13px] font-semibold text-white">
+                <div className="truncate text-[length:var(--fs-sm)] font-semibold text-white">
                   {f.name}
                 </div>
                 {editing ? (
@@ -1469,7 +1469,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                         else if (e.key === 'Escape') setStatusFor(null);
                       }}
                       placeholder={en ? 'Short status…' : 'Ghi chú ngắn…'}
-                      className="w-full bg-transparent text-[11px] text-white placeholder:text-white/40 focus:outline-none"
+                      className="w-full bg-transparent text-[length:var(--fs-xs)] text-white placeholder:text-white/40 focus:outline-none"
                     />
                     <button
                       type="button"
@@ -1487,7 +1487,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       e.stopPropagation();
                       beginStatus(f);
                     }}
-                    className="mt-0.5 block max-w-full truncate text-left text-[11px]"
+                    className="mt-0.5 block max-w-full truncate text-left text-[length:var(--fs-xs)]"
                     style={{
                       color: f.status ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.4)',
                     }}
@@ -1496,7 +1496,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   </button>
                 )}
                 <div className="mt-1.5 flex items-center justify-between gap-2">
-                  <span className="min-w-0 truncate text-[10px] text-white/50">
+                  <span className="min-w-0 truncate text-[length:var(--fs-xs)] text-white/50">
                     {f.project ? f.project.name : timeAgo(f.updatedAt, en)}
                   </span>
                   {avatarRow(membersOf(f), { ownerId: f.userId })}
@@ -1508,7 +1508,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
       </div>
 
       {filteredFlows.length === 0 && (
-        <p className="mt-4 text-center text-[12px] text-[var(--t4)]">
+        <p className="mt-4 text-center text-[length:var(--fs-xs)] text-[var(--t4)]">
           {en ? 'No project matches the search.' : 'Không có dự án nào khớp tìm kiếm.'}
         </p>
       )}
@@ -1583,19 +1583,19 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           <div className="flex items-center gap-2 rounded-full px-4 py-1.5" style={glass}>
             <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: ACCENT }} />
             <span
-              className="text-[10px] uppercase text-[var(--t4)]"
+              className="text-[length:var(--fs-xs)] uppercase text-[var(--t4)]"
               style={{ letterSpacing: '0.28em' }}
             >
               {firstName ? (en ? `Hi ${firstName}` : `Chào ${firstName}`) : 'InteriorFlow'}
             </span>
           </div>
           <h1
-            className="mt-4 text-[26px] font-semibold leading-tight text-[var(--t1)] sm:text-[34px]"
+            className="mt-4 text-[length:var(--fs-xl)] font-semibold leading-tight text-[var(--t1)] sm:text-[length:var(--fs-xl)]"
             style={{ letterSpacing: '-0.028em' }}
           >
             {en ? 'Pick a project to begin' : 'Chọn dự án để bắt đầu'}
           </h1>
-          <p className="mt-2.5 max-w-md text-[13px] leading-relaxed text-[var(--t4)]">
+          <p className="mt-2.5 max-w-md text-[length:var(--fs-sm)] leading-relaxed text-[var(--t4)]">
             {en
               ? 'Open a flow and land straight on the canvas — Concept · Render · Present live in the header.'
               : 'Mở một flow là vào thẳng canvas — Concept · Render · Present nằm sẵn trên thanh Header.'}
@@ -1609,7 +1609,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             <button
               type="button"
               onClick={() => openDashboardTab('board', null)}
-              className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)]"
+              className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)]"
               style={glass}
             >
               <Info size={13} />
@@ -1626,7 +1626,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                     : 'Chưa cấu hình Lark — thiếu LARK_APP_ID/LARK_APP_SECRET/LARK_BASE_APP_TOKEN. Xem docs/INTEGRATIONS.md.'
                   : undefined
               }
-              className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-45"
+              className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-45"
               style={glass}
             >
               {syncing ? <Loader2 size={13} className="animate-spin" /> : <Link2 size={13} />}
@@ -1634,7 +1634,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             </button>
           </div>
           {syncMsg && (
-            <p className="mt-2 text-[11px] text-[var(--t4)]">
+            <p className="mt-2 text-[length:var(--fs-xs)] text-[var(--t4)]">
               {syncMsg}
             </p>
           )}
@@ -1656,7 +1656,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           >
             <VitalsIcon size={15} className="shrink-0" style={{ color: ACCENT }} />
             <span
-              className="shrink-0 text-[9px] uppercase text-[var(--t4)]"
+              className="shrink-0 text-[length:var(--fs-xs)] uppercase text-[var(--t4)]"
               style={{ letterSpacing: '0.22em' }}
             >
               Vitals AI
@@ -1683,7 +1683,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 disabled={chatSending}
                 aria-label="Vitals AI"
                 placeholder=""
-                className="w-full bg-transparent text-[13px] text-[var(--t1)] focus:outline-none disabled:opacity-60"
+                className="w-full bg-transparent text-[length:var(--fs-sm)] text-[var(--t1)] focus:outline-none disabled:opacity-60"
               />
               {/* placeholder động xoay vòng — chỉ hiện khi ô trống */}
               {chatInput === '' && (
@@ -1695,7 +1695,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: reduce ? 0 : -7 }}
                       transition={{ duration: reduce ? 0 : 0.35, ease: easeApple }}
-                      className="truncate text-[13px] text-[var(--t4)]"
+                      className="truncate text-[length:var(--fs-sm)] text-[var(--t4)]"
                     >
                       {vitalsHints[hintIdx % vitalsHints.length]}
                     </motion.span>
@@ -1747,7 +1747,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 <div className="lq-card overflow-hidden rounded-[var(--radius-xl)]">
                   <div className="flex items-center justify-between border-b border-[rgba(127,127,127,0.2)] px-4 py-2">
                     <span
-                      className="text-[9px] uppercase text-[var(--t4)]"
+                      className="text-[length:var(--fs-xs)] uppercase text-[var(--t4)]"
                       style={{ letterSpacing: '0.22em' }}
                     >
                       {en ? 'Vitals · conversation' : 'Vitals · hội thoại'}
@@ -1817,13 +1817,13 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             className="mt-5 flex flex-wrap items-center justify-center gap-3 rounded-full px-5 py-2.5"
             style={glass}
           >
-            <span className="text-[12px] text-[var(--t4)]">
+            <span className="text-[length:var(--fs-xs)] text-[var(--t4)]">
               {openError}
             </span>
             <button
               type="button"
               onClick={onEnter}
-              className="text-[12px] font-semibold underline-offset-2 hover:underline"
+              className="text-[length:var(--fs-xs)] font-semibold underline-offset-2 hover:underline"
               style={{ color: ACCENT}}
             >
               {en ? 'Enter empty canvas' : 'Vào canvas trống'}
@@ -1854,7 +1854,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               style={{ ...glass, background: 'rgba(20,18,16,0.72)' }}
             >
               <div className="flex items-center justify-between border-b border-white/10 px-5 py-3.5">
-                <span className="text-[14px] font-semibold text-[var(--t1)]">
+                <span className="text-[length:var(--fs-sm)] font-semibold text-[var(--t1)]">
                   {en ? 'Choose a cover' : 'Chọn ảnh bìa'}
                 </span>
                 <button
@@ -1884,7 +1884,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   type="button"
                   disabled={uploading}
                   onClick={() => fileInputRef.current?.click()}
-                  className="mb-1 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[13px] font-medium text-[var(--t1)] transition-opacity disabled:opacity-60"
+                  className="mb-1 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[length:var(--fs-sm)] font-medium text-[var(--t1)] transition-opacity disabled:opacity-60"
                   style={{ ...glass, border: '1.5px dashed rgba(106,87,245,0.53)' }}
                 >
                   {uploading ? (
@@ -1901,12 +1901,12 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       : 'Tải ảnh từ máy lên làm bìa'}
                 </button>
                 {uploadError && (
-                  <p className="mb-1 text-[11px]" style={{ color: '#e5806b' }}>
+                  <p className="mb-1 text-[length:var(--fs-xs)]" style={{ color: '#e5806b' }}>
                     {uploadError}
                   </p>
                 )}
 
-                <p className="mb-2 mt-3 text-[10px] uppercase tracking-[0.16em] text-[var(--t4)]">
+                <p className="mb-2 mt-3 text-[length:var(--fs-xs)] uppercase tracking-[0.16em] text-[var(--t4)]">
                   {en ? 'Defaults' : 'Mặc định'}
                 </p>
                 <div className="grid grid-cols-3 gap-2.5">
@@ -1924,16 +1924,16 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   ))}
                 </div>
 
-                <p className="mb-2 mt-4 text-[10px] uppercase tracking-[0.16em] text-[var(--t4)]">
+                <p className="mb-2 mt-4 text-[length:var(--fs-xs)] uppercase tracking-[0.16em] text-[var(--t4)]">
                   {en ? 'From library' : 'Từ thư viện'}
                 </p>
                 {libThumbs === null ? (
-                  <div className="flex items-center gap-2 py-3 text-[12px] text-[var(--t4)]">
+                  <div className="flex items-center gap-2 py-3 text-[length:var(--fs-xs)] text-[var(--t4)]">
                     <Loader2 size={14} className="animate-spin" style={{ color: ACCENT }} />
                     {en ? 'Loading library…' : 'Đang tải thư viện…'}
                   </div>
                 ) : libThumbs.length === 0 ? (
-                  <p className="py-3 text-[12px] text-[var(--t4)]">
+                  <p className="py-3 text-[length:var(--fs-xs)] text-[var(--t4)]">
                     {en ? 'No images in the library yet.' : 'Thư viện chưa có ảnh nào.'}
                   </p>
                 ) : (
@@ -1973,7 +1973,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         >
           <div className="flex items-center gap-2.5 rounded-full px-5 py-3" style={glass}>
             <Loader2 size={15} className="animate-spin" style={{ color: ACCENT }} />
-            <span className="text-[13px] text-[var(--t1)]">
+            <span className="text-[length:var(--fs-sm)] text-[var(--t1)]">
               {en ? 'Opening project…' : 'Đang mở dự án…'}
             </span>
           </div>

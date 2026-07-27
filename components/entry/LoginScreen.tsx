@@ -117,7 +117,7 @@ export function LoginScreen({ onAuthed, notice }: { onAuthed: () => void; notice
               <IFLogo size={46} variant="framed" />
             </div>
             <div
-              className="relative mt-4 flex items-center gap-3 text-[11px] uppercase"
+              className="relative mt-4 flex items-center gap-3 text-[length:var(--fs-xs)] uppercase"
               style={{
                 letterSpacing: '0.26em',
                 ...adaptiveTextStyle(plan),

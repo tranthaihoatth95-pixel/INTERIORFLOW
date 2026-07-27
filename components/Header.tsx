@@ -151,7 +151,7 @@ export function Header() {
           >
             {tr('Việc', 'Tasks')}
             {activeJobs > 0 && (
-              <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-semibold text-white">
+              <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[var(--accent)] px-1 text-[length:var(--fs-xs)] font-semibold text-white">
                 {activeJobs}
               </span>
             )}
@@ -254,7 +254,7 @@ function MoreMenu() {
 
               {/* ngôn ngữ */}
               <div className="mt-2 flex items-center justify-between border-t border-[var(--border)] pt-2">
-                <span className="pl-0.5 text-[11px] text-[var(--t4)]">{tr('Ngôn ngữ', 'Language')}</span>
+                <span className="pl-0.5 text-[length:var(--fs-xs)] text-[var(--t4)]">{tr('Ngôn ngữ', 'Language')}</span>
                 <LangToggle />
               </div>
 
@@ -519,7 +519,7 @@ function AiTierMenu() {
           'AI dependency level — click to switch (High cloud · Medium · Self-host free · No AI)',
         )}
         className={cn(
-          'flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium',
+          'flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--fs-xs)] font-medium',
           TIER_TONE[aiTier],
         )}
       >
@@ -541,7 +541,7 @@ function AiTierMenu() {
               transition={{ duration: 0.16, ease: easeApple }}
               className="mat-panel absolute left-0 top-8 z-40 w-72 rounded-[14px] border border-[var(--border)] p-1.5 shadow-xl"
             >
-              <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t4)]">
+              <p className="px-2 py-1 text-[length:var(--fs-xs)] font-semibold uppercase tracking-wider text-[var(--t4)]">
                 {tr('Mức phụ thuộc AI', 'AI dependency')}
               </p>
               {TIER_ORDER.map((t) => {
@@ -565,13 +565,13 @@ function AiTierMenu() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-medium text-[var(--t1)]">{m.name}</span>
-                        <span className="rounded bg-[var(--hover)] px-1 text-[9px] text-[var(--t4)]">{m.cost}</span>
+                        <span className="rounded bg-[var(--hover)] px-1 text-[length:var(--fs-xs)] text-[var(--t4)]">{m.cost}</span>
                         {a === false && (
-                          <span className="rounded bg-amber-500/15 px-1 text-[9px] text-amber-300">{tr('chạy mock', 'mock')}</span>
+                          <span className="rounded bg-amber-500/15 px-1 text-[length:var(--fs-xs)] text-amber-300">{tr('chạy mock', 'mock')}</span>
                         )}
                         {active && <Check size={11} className="ml-auto text-[var(--accent)]" />}
                       </div>
-                      <p className="mt-0.5 text-[10px] leading-snug text-[var(--t4)]">{m.blurb}</p>
+                      <p className="mt-0.5 text-[length:var(--fs-xs)] leading-snug text-[var(--t4)]">{m.blurb}</p>
                     </div>
                   </button>
                 );
@@ -580,7 +580,7 @@ function AiTierMenu() {
               {/* oneAI (mức 2): chọn engine + runtime */}
               {aiTier === 2 && (
                 <div className="mt-1 border-t border-[var(--border)] pt-1.5">
-                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t4)]">
+                  <p className="px-2 py-1 text-[length:var(--fs-xs)] font-semibold uppercase tracking-wider text-[var(--t4)]">
                     oneAI — Engine
                   </p>
                   <div className="flex gap-1 px-1.5">
@@ -592,7 +592,7 @@ function AiTierMenu() {
                           onClick={() => setOneAiEngine(e.id)}
                           title={e.blurb}
                           className={cn(
-                            'flex-1 rounded-[9px] border px-2 py-1 text-[11px] font-medium transition-colors',
+                            'flex-1 rounded-[9px] border px-2 py-1 text-[length:var(--fs-xs)] font-medium transition-colors',
                             on
                               ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
                               : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
@@ -607,7 +607,7 @@ function AiTierMenu() {
                   {/* runtime chỉ áp cho engine SD-portable */}
                   {oneAiEngine === 'sd' && (
                     <>
-                      <p className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--t4)]">
+                      <p className="px-2 pb-1 pt-2 text-[length:var(--fs-xs)] font-semibold uppercase tracking-wider text-[var(--t4)]">
                         Runtime
                       </p>
                       <div className="flex gap-1 px-1.5 pb-1">
@@ -619,7 +619,7 @@ function AiTierMenu() {
                               onClick={() => setOneAiRuntime(r.id)}
                               title={r.blurb}
                               className={cn(
-                                'flex-1 rounded-[9px] border px-2 py-1 text-[11px] font-medium transition-colors',
+                                'flex-1 rounded-[9px] border px-2 py-1 text-[length:var(--fs-xs)] font-medium transition-colors',
                                 on
                                   ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
                                   : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',

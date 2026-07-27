@@ -254,7 +254,7 @@ function SlotColorRow({
               height: 28,
               borderRadius: 3,
               background: colorOf(it),
-              border: it === value ? '2px solid #F06020' : '1px solid #1B1512',
+              border: it === value ? '2px solid var(--accent)' : '1px solid #1B1512',
               cursor: 'pointer',
             }}
           />
@@ -268,7 +268,7 @@ const labelStyle: React.CSSProperties = {
   fontSize: 10,
   letterSpacing: '0.24em',
   textTransform: 'uppercase',
-  color: '#002850',
+  color: 'var(--accent-strong)',
   marginBottom: 8,
   fontWeight: 500,
 };
@@ -277,7 +277,7 @@ function chipStyle(active: boolean): React.CSSProperties {
   return {
     padding: '6px 10px',
     fontSize: 12,
-    background: active ? '#002850' : 'transparent',
+    background: active ? 'var(--accent-strong)' : 'transparent',
     color: active ? '#F1ECE3' : '#1B1512',
     border: '1px solid #1B1512',
     borderRadius: 3,
@@ -290,7 +290,7 @@ function btnStyle(variant: 'primary' | 'ghost'): React.CSSProperties {
   if (variant === 'primary') {
     return {
       padding: '10px 20px',
-      background: '#F06020',
+      background: 'var(--accent)',
       color: '#F1ECE3',
       border: 'none',
       borderRadius: 3,
