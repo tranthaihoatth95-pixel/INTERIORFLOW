@@ -1,5 +1,19 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 28/07 tối — NT-gateway ①②③ + StatusBar (VIỆC A) + Tool Mode Render (VIỆC B)
+
+Chi tiết đầy đủ nằm trong message commit (`git log`), đây chỉ tóm để không mất dấu:
+- `144ea46` docs: chốt 4 câu hỏi PLAN-LIBRARY-GATEWAY.md.
+- `9a52f83` NT3 chuột phải CAD+Render (Popover.tsx dùng chung).
+- `bfd5fe9` NT2 bảng ánh xạ định dạng→đích, `lib/gateway/detect.ts`+`route.ts`, 34/34 test.
+- `1f637ba` NT4 pha 1 `diskPath`+"Cập nhật liên kết", Present Inspector.
+- `03b741a` docs: SPEC-RENDER-STUDIO §6C sinh diện đồ nội thất bằng hình học + kho nhớ 3 tầng.
+- `8b03e2e` VIỆC A: StatusBar dùng chung 3 chặng, Vitals neo status bar (bỏ nút nổi).
+- `cf1beeb` VIỆC B: Tool Mode 3 tầng làm mặc định chặng Render (6 thẻ → 2 cột → canvas).
+
+Chi tiết đầy đủ (lý do thiết kế, trade-off, kết quả verify browser) → xem STATUS.md "Nợ kỹ
+thuật" mục cùng ngày, hoặc đọc trực tiếp commit message từng commit trên.
+
 ## 27/07 tối — Sửa 4 lỗi giao diện chặng Rendering + gom nút trùng nghĩa + audit Vitals (CHƯA commit)
 
 **Bối cảnh**: sau khi chốt design tokens + "giấy vuông vỏ bo" (mục dưới), user báo 4 lỗi UI cụ
