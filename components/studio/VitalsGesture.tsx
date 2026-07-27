@@ -61,12 +61,28 @@ export default function VitalsGesturePanel({
   open,
   onClose,
   stage,
+  direction = 'down',
+  initialInput,
+  autoSend,
+  onConsumeInitial,
 }: {
   originPx: number | null;
   open: boolean;
   onClose: () => void;
   /** Chặng hiện tại — gửi vào payload để backend pick system prompt phù hợp. */
   stage: Phase;
+  /**
+   * 'down' (mặc định, hành vi CŨ) = panel xổ XUỐNG từ mép trên container (gesture kéo ở
+   * StageSwitcher, trên cùng màn). 'up' (VIỆC A, 28/07) = xổ LÊN từ mép dưới container —
+   * dùng khi mở từ StatusBar (đáy màn hình), giống Spotlight/Siri macOS xổ lên từ thanh dưới.
+   */
+  direction?: 'down' | 'up';
+  /** Gõ sẵn trong ô gọn ở StatusBar rồi bấm/Enter → panel mở kèm câu hỏi này (lib/vitals-ui.ts). */
+  initialInput?: string;
+  /** true = gửi luôn `initialInput` ngay khi panel mở, không cần gõ lại. */
+  autoSend?: boolean;
+  /** Panel đã tiêu thụ initialInput/autoSend — caller xoá khỏi store dùng chung, tránh gửi lặp. */
+  onConsumeInitial?: () => void;
 }) {
   const reduce = useReducedMotion();
   const router = useRouter();
@@ -111,8 +127,8 @@ export default function VitalsGesturePanel({
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, sending]);
 
-  const send = useCallback(async () => {
-    const text = input.trim();
+  const send = useCallback(async (overrideText?: string) => {
+    const text = (overrideText ?? input).trim();
     if (!text || sending) return;
     const next: ChatTurn[] = [...messages, { role: 'user', content: text }];
     setMessages(next);
@@ -143,6 +159,18 @@ export default function VitalsGesturePanel({
     }
   }, [input, sending, messages, stage]);
 
+  // VIỆC A (28/07) — mở từ StatusBar kèm sẵn câu hỏi (gõ ở ô gọn trước khi bấm/Enter).
+  // Chỉ chạy khi `open` chuyển true (không phụ thuộc initialInput đổi liên tục — chỉ đọc 1 lần
+  // lúc mở), tiêu thụ xong báo `onConsumeInitial` để store dùng chung xoá, tránh gửi lặp nếu
+  // panel re-render hoặc mở lại mà không gõ gì mới.
+  useEffect(() => {
+    if (!open || !initialInput) return;
+    setInput(initialInput);
+    if (autoSend) void send(initialInput);
+    onConsumeInitial?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   /**
    * Mở NotebookLM full — điểm dừng thứ 2 của state machine kéo giọt Vitals.
    * Reachable qua: (a) bấm nút Mở rộng ở header popover này; (b) kéo dài
@@ -165,27 +193,33 @@ export default function VitalsGesturePanel({
       aria-label={`Vitals AI · ${STAGE_LABEL[stage]}`}
       aria-hidden={!open}
       data-vitals-chat=""
-      initial={reduce ? { opacity: 0 } : { opacity: 0, scaleY: 0.7, scaleX: 0.95, y: -6 }}
+      initial={reduce ? { opacity: 0 } : { opacity: 0, scaleY: 0.7, scaleX: 0.95, y: direction === 'up' ? 6 : -6 }}
       animate={
         reduce
           ? { opacity: open ? 1 : 0, transition: { duration: 0.15 } }
           : open
             ? { opacity: 1, scaleY: 1, scaleX: 1, y: 0, transition: { duration: 0.22, ease: easeApple } }
-            : { opacity: 0, scaleY: 0.7, scaleX: 0.95, y: -6, transition: { duration: 0.14, ease: easeApple } }
+            : {
+                opacity: 0,
+                scaleY: 0.7,
+                scaleX: 0.95,
+                y: direction === 'up' ? 6 : -6,
+                transition: { duration: 0.14, ease: easeApple },
+              }
       }
       exit={
         reduce
           ? { opacity: 0, transition: { duration: 0.12 } }
-          : { opacity: 0, scaleY: 0.94, y: -6, transition: { duration: 0.16, ease: easeApple } }
+          : { opacity: 0, scaleY: 0.94, y: direction === 'up' ? 6 : -6, transition: { duration: 0.16, ease: easeApple } }
       }
       style={{
         position: 'absolute',
-        top: 'calc(100% + 10px)',
+        ...(direction === 'up' ? { bottom: 'calc(100% + 10px)' } : { top: 'calc(100% + 10px)' }),
         left: 0,
         width: 'min(380px, calc(100vw - 24px))',
         zIndex: 60,
         originX: originPx == null ? 0.5 : `${originPx}px`,
-        originY: 0,
+        originY: direction === 'up' ? 1 : 0,
         pointerEvents: open ? 'auto' : 'none',
       }}
     >

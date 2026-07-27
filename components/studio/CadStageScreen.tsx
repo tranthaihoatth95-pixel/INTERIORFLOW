@@ -18,6 +18,7 @@ import CadSheets from '@/components/cad/CadSheets';
 import { StageEnter } from '@/components/studio/StageTransition';
 import FoldableDualPane from '@/components/studio/FoldableDualPane';
 import ReferencePane from '@/components/studio/ReferencePane';
+import StatusBar from '@/components/studio/StatusBar';
 import { StageIntroCard } from '@/components/onboarding/StageIntroCard';
 import { useFlowStore } from '@/lib/store';
 import { effectiveUserId } from '@/lib/resume';
@@ -35,6 +36,7 @@ export default function CadStageScreen() {
         {/* Tầng multi-sheet (phụ-thêm): thanh tab + CadEditor. 1 sheet ⇒ y hệt bản cũ. */}
         <FoldableDualPane primary={<CadSheets />} secondary={<ReferencePane />} />
       </StageEnter>
+      <StatusBar stage="concept" />
       {/* Tầng 2 onboarding — thẻ giới thiệu lần đầu chặng CAD (góc màn, không chặn thao tác). */}
       <StageIntroCard stage="cad" userId={userId} />
     </div>

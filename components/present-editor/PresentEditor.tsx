@@ -18,6 +18,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { usePlayStatus } from '@/lib/present-editor/play-status';
 import type {
   EditorDeck,
   ShapeKind,
@@ -207,7 +208,11 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   const [libLoading, setLibLoading] = useState(true);
   const [gu, setGu] = useState<GuProfile | null>(null);
   const [imageEditId, setImageEditId] = useState<string | null>(null);
-  const [playing, setPlaying] = useState(false);
+  // VIỆC A (28/07): nâng lên store dùng chung (lib/present-editor/play-status.ts) — StatusBar
+  // (mount ở PresentStageScreen, NGOÀI PresentEditor) cần biết để tự ẩn khi trình chiếu toàn
+  // màn hình (SlidePlayer). Mọi lời gọi playing/setPlaying bên dưới giữ nguyên cú pháp cũ.
+  const playing = usePlayStatus((s) => s.playing);
+  const setPlaying = usePlayStatus((s) => s.setPlaying);
   // "Xem lưới" (Slide Sorter) — overlay bổ sung cho SlideStrip, xem toàn deck dạng lưới.
   const [sorterOpen, setSorterOpen] = useState(false);
   // bảng hỏi số liệu (áp vào bố cục sinh ra).

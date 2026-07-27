@@ -64,6 +64,7 @@ import {
   type SheetsAutosaver,
   type SheetsRecord,
 } from '@/lib/sheets-persist';
+import { useSaveStatus } from '@/lib/save-status';
 import { useSheetsBucketId } from '@/lib/scope';
 
 const MAX_SHEETS = 5;
@@ -190,6 +191,7 @@ export default function PresentSheets({ initialDeck }: Props) {
     const saver = createSheetsAutosaver(userId, ROUTE, getRecord, {
       projectId: bucketId, // chốt bucket lúc tạo → nhịp flush cuối luôn về đúng dự án này
       onSaved: (bytes) => console.debug(`[present-sheets] IDB ghi ${(bytes / 1024).toFixed(1)} KB`),
+      onSavingChange: (saving) => useSaveStatus.getState().setStatus(saving ? 'saving' : 'saved'),
     });
     saverRef.current = saver;
     const flush = () => saver.flush();

@@ -218,13 +218,19 @@ export interface SheetsAutosaver {
 /**
  * Tạo autosaver debounce (mặc định 1200ms ≥ yêu cầu 1s — không ghi mỗi keystroke).
  * `getRecord` trả bản ghi hiện hành lúc ghi (null → bỏ lượt). `onSaved` nhận số byte
- * đã ghi (đo kích thước bản ghi cho report/debug).
+ * đã ghi (đo kích thước bản ghi cho report/debug). `onSavingChange` (VIỆC A, 28/07) báo
+ * true ngay khi có thay đổi treo (để StatusBar hiện "Đang lưu…"), false khi ghi xong.
  */
 export function createSheetsAutosaver(
   userId: string,
   route: string,
   getRecord: () => SheetsRecord | null,
-  opts?: { delay?: number; onSaved?: (bytes: number) => void; projectId?: string | null },
+  opts?: {
+    delay?: number;
+    onSaved?: (bytes: number) => void;
+    projectId?: string | null;
+    onSavingChange?: (saving: boolean) => void;
+  },
 ): SheetsAutosaver {
   const delay = Math.max(1000, opts?.delay ?? 1200);
   let timer: ReturnType<typeof setTimeout> | null = null;
@@ -235,17 +241,23 @@ export function createSheetsAutosaver(
     if (!dirty) return;
     dirty = false;
     const record = getRecord();
-    if (!record) return;
+    if (!record) {
+      opts?.onSavingChange?.(false);
+      return;
+    }
     // Ghi vào ĐÚNG bucket dự án đã chốt lúc tạo autosaver — dù store có đổi dự án giữa
     // chừng thì nhịp ghi cuối vẫn về đúng chỗ cũ, không đè lên dự án khác.
     void saveSheets(userId, route, record, opts?.projectId).then((bytes) => {
       if (bytes > 0) opts?.onSaved?.(bytes);
+      opts?.onSavingChange?.(false);
     });
   };
 
   return {
     touch: () => {
+      const wasIdle = !dirty;
       dirty = true;
+      if (wasIdle) opts?.onSavingChange?.(true);
       if (timer) clearTimeout(timer);
       timer = setTimeout(write, delay);
     },

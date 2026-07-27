@@ -18,11 +18,13 @@ import { useState } from 'react';
 import PresentSheets from '@/components/present-editor/PresentSheets';
 import { makeSampleDeck } from '@/lib/present-editor/sample';
 import StudioBar from '@/components/studio/StudioBar';
+import StatusBar from '@/components/studio/StatusBar';
 import { StageEnter } from '@/components/studio/StageTransition';
 import { CommentLayer } from '@/components/CommentLayer';
 import { ChatPanel } from '@/components/ChatPanel';
 import { StageIntroCard } from '@/components/onboarding/StageIntroCard';
 import { useFlowStore } from '@/lib/store';
+import { usePlayStatus } from '@/lib/present-editor/play-status';
 import { effectiveUserId } from '@/lib/resume';
 
 export default function PresentStageScreen() {
@@ -32,6 +34,9 @@ export default function PresentStageScreen() {
   // lặng không bao giờ hiện cho user mở thẳng `/projects/[id]/present`.
   const storeUserId = useFlowStore((s) => s.user?.id);
   const userId = effectiveUserId(storeUserId);
+  // VIỆC A3 (28/07): StatusBar tự ẩn khi trình chiếu toàn màn hình (SlidePlayer che hết,
+  // playing nay ở store dùng chung để đọc được từ NGOÀI PresentEditor).
+  const playing = usePlayStatus((s) => s.playing);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
       <StudioBar active="present" />
@@ -40,6 +45,7 @@ export default function PresentStageScreen() {
         {/* Tầng multi-sheet (phụ-thêm): thanh tab + PresentEditor. 1 sheet ⇒ y hệt bản cũ. */}
         <PresentSheets initialDeck={deck} />
       </StageEnter>
+      <StatusBar stage="present" hidden={playing} />
       <ChatPanel />
       <CommentLayer />
       {/* Tầng 2 onboarding — thẻ giới thiệu lần đầu chặng Presenting. */}

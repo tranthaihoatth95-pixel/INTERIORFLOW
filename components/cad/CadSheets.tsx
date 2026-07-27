@@ -39,6 +39,7 @@ import { useSheetsBucketId } from '@/lib/scope';
 import { useFlowStore } from '@/lib/store';
 import { createProject } from '@/lib/workspace';
 import { saveSheets } from '@/lib/sheets-persist';
+import { useSaveStatus } from '@/lib/save-status';
 import { useRouter } from 'next/navigation';
 
 const MAX_SHEETS = 5;
@@ -207,6 +208,7 @@ export default function CadSheets() {
     const saver = createSheetsAutosaver(userId, ROUTE, getRecord, {
       projectId: bucketId, // chốt bucket lúc tạo → nhịp flush cuối luôn về đúng dự án này
       onSaved: (bytes) => console.debug(`[cad-sheets] IDB ghi ${(bytes / 1024).toFixed(1)} KB`),
+      onSavingChange: (saving) => useSaveStatus.getState().setStatus(saving ? 'saving' : 'saved'),
     });
     saverRef.current = saver;
     // CHỈ nghe lát cắt được persist (doc/viewport/layer) — store còn nhiều state phụ

@@ -24,6 +24,7 @@ import {
 import IOMenu from '@/components/ui/IOMenu';
 import MenuButton from '@/components/ui/MenuButton';
 import { useCadStore } from '@/lib/cad/store';
+import { useCadLiveStatus } from '@/lib/cad/live-status';
 import type { HatchPattern } from '@/lib/cad/model';
 import { parseDxf, exportDxf } from '@/lib/cad/dxf';
 import { openDwgFile } from '@/lib/cad/dwg';
@@ -978,6 +979,12 @@ function StandardsPanel({ onClose }: { onClose: () => void }) {
     operator ? rulesForOperator(operator).flatMap((g) => g.rules) : getAllRules();
 
   const run = () => setViolations(checkStandards(doc, rulesToUse()));
+
+  // VIỆC A (28/07) — đẩy số vi phạm LẦN CHẠY GẦN NHẤT sang StatusBar. KHÔNG tự chạy nền (giữ
+  // đúng "chỉ đọc & đề xuất, chạy tay" của panel này) — null = chưa kiểm lần nào phiên này.
+  useEffect(() => {
+    useCadLiveStatus.getState().setLastViolationCount(violations?.length ?? null);
+  }, [violations]);
 
   // ── Xuất PDF báo cáo quy chuẩn (TRUNG TÍNH) — tên studio/dự án ĐỌC TỪ DỮ LIỆU, không hardcode.
   // studio ← Brand Kit dự án đang mở (getActiveBrandKit); dự án ← khung tên bản vẽ (extractProjectName).

@@ -35,6 +35,7 @@ import { MaskPainterModal } from '@/components/MaskPainterModal';
 import { AnnotateModal } from '@/components/AnnotateModal';
 import { Lightbox } from '@/components/Lightbox';
 import { Dashboard } from '@/components/Dashboard';
+import StatusBar from '@/components/studio/StatusBar';
 import PresentOverlay from '@/components/present/PresentOverlay';
 import { ProjectSelect } from '@/components/ProjectSelect';
 import { CommentLayer } from '@/components/CommentLayer';
@@ -586,6 +587,7 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
           <FlowCanvas />
           <ChatPanel />
         </div>
+        <StatusBar stage="render" hidden={presentModeOpen} />
         <MaskPainterModal />
         <AnnotateModal />
         <Lightbox />

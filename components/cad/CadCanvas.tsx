@@ -14,6 +14,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useCadStore, toolHint } from '@/lib/cad/store';
 import type { Tool } from '@/lib/cad/store';
+import { useCadLiveStatus } from '@/lib/cad/live-status';
 import { useFlowStore } from '@/lib/store';
 import type { Entity, Pt, Viewport, DimEntity, LineEntity, MarkupPin, PhotoEmbed, Box, ZoneEntity } from '@/lib/cad/model';
 import { screenToWorld, worldToScreen, zoomAt, fitBox, docBox, dist, entityBox, ZONE_GROUP_META } from '@/lib/cad/model';
@@ -68,6 +69,9 @@ import Popover from '@/components/ui/Popover';
 interface Ix {
   cursorScreen: Pt;
   cursorWorld: Pt;
+  /** VIỆC A (28/07) — mốc thời gian lần cuối đẩy `cursorWorld` sang lib/cad/live-status.ts
+   * (StatusBar đọc DOM, không phải canvas) — throttle ~100ms, tránh re-render mỗi pointermove. */
+  lastCursorPublish: number;
   snap: SnapResult;
   pts: Pt[]; // click đã chốt cho thao tác hiện tại (world)
   dynBuf: string; // dynamic input độ dài
@@ -279,6 +283,7 @@ export default function CadCanvas() {
   const ix = useRef<Ix>({
     cursorScreen: { x: 0, y: 0 },
     cursorWorld: { x: 0, y: 0 },
+    lastCursorPublish: 0,
     snap: { pt: { x: 0, y: 0 }, type: 'none' },
     pts: [],
     dynBuf: '',
@@ -492,6 +497,13 @@ export default function CadCanvas() {
     const effSnap = ix.current.snapAltOff ? { ...st.snap, enabled: false } : st.snap;
     ix.current.snap = findSnap(st.doc, ix.current.cursorWorld, tolMm(), st.gridStep, effSnap, from);
     ix.current.redraw = true;
+    // VIỆC A (28/07) — đẩy toạ độ sang StatusBar (DOM), throttle 100ms: đủ mượt để đọc, không
+    // re-render Zustand mỗi pointermove (vốn có thể bắn hàng trăm lần/giây).
+    const now = performance.now();
+    if (now - ix.current.lastCursorPublish > 100) {
+      ix.current.lastCursorPublish = now;
+      useCadLiveStatus.getState().setCursorWorld(ix.current.cursorWorld);
+    }
   }
 
   const onPointerDown = (ev: React.PointerEvent) => {
