@@ -134,15 +134,19 @@ chuột-phải-trên-canvas → menu nạp nhanh (mục 0.3 đã xác nhận `Fl
 **Thực trạng:** `lib/present-editor/linked-assets.ts` đã có 1 NỬA khái niệm — link nhiều
 INSTANCE ảnh trong CÙNG 1 app-session với nhau qua `assetId`, KHÔNG có path đĩa thật (xem mục 0.4).
 
-**(a) File cần đổi/tạo:**
+**(a) File cần đổi/tạo — ĐÃ SỬA LẠI 28/07 theo quyết định Q3 (không kén trình duyệt cho pha NAY):**
 - SỬA `lib/present-editor/model.ts` `ImageElement` — thêm field `diskPath?: string` (path thật,
-  optional — ảnh cũ/paste không có path vẫn hoạt động như hiện tại).
-- TẠO `lib/present-editor/file-watch.ts` — dùng File System Access API (`window.showOpenFilePicker`,
-  giữ `FileSystemFileHandle` trong IndexedDB vì không serialize được sang JSON thường) để đọc lại
-  file khi user bấm "Cập nhật liên kết"; KHÔNG watch tự động nền (API không hỗ trợ watch liên tục
-  đáng tin cậy) — chỉ so sánh `lastModified` mỗi lần user quay lại tab/bấm nút.
+  optional — ảnh cũ/paste không có path vẫn hoạt động như hiện tại) + `diskPathMissing?: boolean`
+  (đánh dấu lần cập nhật gần nhất user chọn nhầm file khác/không tìm thấy).
+  ~~File System Access API (`showOpenFilePicker`/`FileSystemFileHandle`)~~ — BỎ, chỉ Chrome/Edge
+  hỗ trợ, vi phạm quyết định Q3 ("bản web là kênh cho khách xem deck, không được kén"). THAY BẰNG
+  `&lt;input type="file"&gt;` thường (chạy MỌI trình duyệt) — user bấm "Cập nhật liên kết" → chọn
+  lại file THẬT trên máy → đọc `File.name` lưu vào `diskPath` (chỉ để hiển thị/đối chiếu tên, không
+  phải path hệ điều hành thật — trình duyệt không cho JS đọc full path vì lý do bảo mật, giới hạn
+  chung của MỌI web app, không riêng cách làm này) → data URL mới thay `src`.
 - SỬA `components/present-editor/Inspector.tsx` — thêm nút "Cập nhật liên kết" khi element có
-  `diskPath`, disable + tooltip rõ lý do trên Safari/Firefox (API không hỗ trợ).
+  `diskPath`, mở file input ẩn, luôn bật (không disable theo trình duyệt vì không còn phụ thuộc
+  File System Access API).
 
 **(b) Rẻ làm trước:** Field `diskPath` + nút "Cập nhật liên kết" thủ công (user tự bấm, không tự
 động watch) — làm được mà không cần giải quyết bài toán "watch file nền" khó.
@@ -202,18 +206,43 @@ phần nào "làm được ngay" để xếp thứ tự cùng các việc khác.
 
 ---
 
-## Câu hỏi cần Hoà quyết trước khi bắt tay code (không tự chọn giùm)
+## Câu hỏi cần Hoà quyết trước khi bắt tay code — ĐÃ CHỐT 28/07
 
 1. **NT1 vs popover `[+]` vừa làm sáng nay** — bỏ hẳn (đúng NT1) hay giữ, chỉ thêm 1 mục "Nạp
    hàng loạt" trỏ vào luồng ingest?
+   > **CHỐT: BỎ HẲN, đúng NT1.** Không giữ, không thêm mục. Thay bằng: thả file vào panel → tự
+   > nhận. Nhiều file hoặc có PDF/Excel/CAD → tự chuyển sang chế độ "nạp hàng loạt" TRONG CÙNG
+   > PANEL, không hỏi người dùng. *(Thuộc phạm vi NT1 — xem §1(a); NT1 xếp việc ④, chỉ làm nếu
+   > còn thời gian đợt này — xem "Thứ tự đề xuất tổng" bên dưới.)*
 2. **NT3 áp cho CAD không?** — nguyên tắc chỉ nói rõ Render; CAD giữ nút bar hiện tại hay cũng
    thêm chuột-phải?
+   > **CHỐT: CÓ, CAD cũng thêm chuột phải** — chuột phải là quy ước hệ điều hành, không riêng
+   > Render. CAD nền trống: Dán · Nhập tệp vào đây · Thêm block. CAD trên đối tượng: Sửa · Nhân
+   > bản · Xoá · Đổi vật liệu. GIỮ nút bar (đường chính thức); chuột phải là đường tắt.
 3. **NT4 watch nền** — chấp nhận giới hạn "chỉ Chrome/Edge" (File System Access API), hay đợi
-   giải pháp khác (Electron/desktop wrapper — repo đã có `dist-installer/`, có bản đóng gói
-   riêng để dùng API hệ điều hành thật không)?
+   giải pháp khác?
+   > **CHỐT: chia 2 pha.** NAY = `diskPath` + nút "Cập nhật liên kết" bấm tay, chạy MỌI trình
+   > duyệt (không dùng File System Access API cho pha này — xem §1(a) VIỆC ③ sửa lại bên dưới).
+   > SAU = watch nền tự động, CHỈ Electron desktop (`dist-installer/` đã có). KHÔNG chấp nhận giới
+   > hạn chỉ-Chrome/Edge cho bản web — bản web là kênh cho khách xem deck, không được kén trình
+   > duyệt.
 4. **NT1 block/furniture (CAD)** — gộp chung 1 `LibraryAsset` model với ảnh, hay giữ 2 "ngăn" dữ
    liệu khác nhau trong cùng 1 panel UI?
+   > **CHỐT: MỘT model `LibraryAsset` chung** + trường `type` + trường mở rộng theo loại — đúng
+   > nguyên tắc "một xương sống, mỗi loại một bộ mặt" đã ghi ở `SPEC-IF-LIBRARY.md §2` ("Không
+   > làm 8 thư viện rời. Cũng không nhét mọi thứ vào một bảng phẳng"). KHÔNG tách 2 model — tách
+   > là quay lại đúng bệnh "hai nơi, hai cách dùng" mà NT1 đang chống.
+
+## Thứ tự làm — đợt 28/07 tối (theo ước lượng ở mục 1-5, không đổi)
+
+① NT3 Render chuột phải (NHỎ — `Popover.tsx` đã có, chỉ nối dây) + CAD chuột phải theo Q2 ·
+② NT2 bảng ánh xạ định dạng→đích (NHỎ, thuần dữ liệu, test độc lập) ·
+③ NT4 pha 1: `diskPath` + nút "Cập nhật liên kết" (VỪA) ·
+④ NT1 gộp `LibraryPanel` + `LibraryBrowser` (LỚN) — làm SAU CÙNG, chỉ nếu còn thời gian và ①②③
+đã sạch test ·
+⑤ NT5 cây thư mục thật (RẤT LỚN) — KHÔNG làm đợt này, chờ ở `STATUS.md`.
 
 ---
 
+*v1.1 (chốt 4 câu hỏi + thứ tự làm đợt 28/07 tối) · 2026-07-28 · Ben soạn theo ý Hoà.*
 *v1.0 · 2026-07-28 · Ben soạn theo ý Hoà — VIỆC 8, chỉ kế hoạch, chưa code dòng nào.*
