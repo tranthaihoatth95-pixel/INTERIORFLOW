@@ -65,12 +65,14 @@ export function UploadButton() {
     await addImageNodesFromFiles(files);
   };
 
+  // 27/07 — "Tải lên"→"Thêm vào canvas" ở chặng Render: đặt tên theo ĐÍCH ĐẾN (việc đang làm,
+  // chỉ dự án này) để phân biệt rõ với "Thêm vào thư viện" (kho dùng chung mọi dự án).
   const label =
     phase === 'concept'
       ? tr('Tạo moodboard', 'Make moodboard')
       : phase === 'present'
         ? tr('Ảnh nội dung', 'Content images')
-        : tr('Tải lên', 'Upload');
+        : tr('Thêm vào canvas', 'Add to canvas');
 
   return (
     <>

@@ -6,6 +6,8 @@
  * Xuất "AI manifest" (bỏ thumbnail) = vài KB → feed pipeline không tràn context window.
  */
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import {
   ingestFile, loadManifest, saveManifest, toAiManifest, byteSize, human,
   USAGES, type RefAsset, type RefManifest, type RefUsage,
@@ -27,6 +29,14 @@ const RANK_META: Record<string, { label: string; tone: string }> = {
 };
 
 export default function IngestPage() {
+  const router = useRouter();
+  const goBack = () => {
+    // Route đứng riêng, không có shell/breadcrumb (xem docstring đầu file) — không biết chắc
+    // user đến từ dự án nào để quay đúng chỗ, nên back trong lịch sử trình duyệt, có "/" dự phòng
+    // khi vào thẳng bằng URL (không có lịch sử để back).
+    if (typeof window !== 'undefined' && window.history.length > 1) router.back();
+    else router.push('/');
+  };
   const [project, setProject] = useState('Dự án chưa đặt tên');
   const [assets, setAssets] = useState<RefAsset[]>([]);
   const [busy, setBusy] = useState(false);
@@ -144,6 +154,17 @@ export default function IngestPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#0E0C09', color: '#EFE9DC', fontFamily: 'system-ui', padding: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <button
+          type="button"
+          onClick={goBack}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: '#1B1712', border: '1px solid #33302a', color: '#EFE9DC',
+            borderRadius: 8, padding: '6px 10px', fontSize: 12.5, cursor: 'pointer',
+          }}
+        >
+          <ArrowLeft size={14} /> Quay lại
+        </button>
         <h1 style={{ fontSize: 20, margin: 0 }}>Thư viện · Reference Ingest</h1>
         <input value={project} onChange={(e) => setProject(e.target.value)}
           style={{ background: '#1B1712', border: '1px solid #33302a', color: '#EFE9DC', borderRadius: 8, padding: '6px 10px', fontSize: 13 }} />

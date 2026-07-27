@@ -5,22 +5,26 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (27/07 — chốt design tokens + "giấy vuông vỏ bo" ở Present)
-- ✅ **`origin/main`** = `ee66bf0` — gồm audit IF1, docs/ phân loại, gói đợt 4-11, T1/T2 Semantic
-  Room, onboarding 3 tầng, thẻ kính login, luật vận hành 8, audit + chốt design tokens, và bo
-  góc Present (mới nhất). Chi tiết đầy đủ từng phần → `CHANGELOG.md`.
-- ✅ **"Giấy vuông, vỏ bo"** (`ee66bf0`) — trang slide Present hết bo góc (từng cắt góc ảnh
-  full-bleed dù PDF/PPTX xuất ra vẫn vuông — thuần lỗi hiển thị editor, verify render.ts/export.ts
-  không hề bo). Tách trang khỏi canvas bằng viền 1px + box-shadow nổi thay vì bo góc; áp cùng cho
-  khung "Trình chiếu" (SlidePlayer). Dải thumbnail + mọi panel/nút giữ nguyên bo góc. Luật ghi vào
-  `docs/SPEC-UI-SHELL.md` §3B. **Lưu ý dev server**: `.next` cache hỏng nhiều lần phiên này sau
-  git stash/nhiều HMR — nếu trang trắng/lỗi "Cannot find module vendor-chunks", xoá `.next` rồi
-  khởi động lại, không phải bug code.
-- ✅ **Chốt design tokens** (`c350a55`) — `--accent` tím hạ còn `#6a57f5` (đạt WCAG AA 4.89:1,
-  bản cũ chỉ 3.32:1); thay ~40 chỗ vàng ấm bằng `--accent` khắp login/dashboard/CAD/Present (giữ
-  2 ngoại lệ nội dung + `--accent-warm` riêng nút "Vào xưởng"); gộp font về Be Vietnam Pro (4 file
-  sống, verify import trace — không phải 7 như brief đoán); thêm `--danger`/`--warning`/`--success`
-  nối vào standards checker. Verify: tsc 0 · 97/97 test · build sạch · browser thật cả 4 màn.
+## Hiện tại (27/07 tối — sửa 4 lỗi giao diện chặng Rendering, CHƯA commit/push)
+- ✅ **3 lỗi UI Rendering đã sửa + verify browser thật** (tsc 0 · 97/97 test PASS · build sạch):
+  (1) [`ingest/page.tsx`](app/library/ingest/page.tsx) thêm nút "← Quay lại" (`router.back()` +
+  fallback `/`). (2) [`LibraryPanel.tsx`](components/LibraryPanel.tsx) — panel Reference theo
+  "THẤY ẢNH TRƯỚC, LỌC SAU": hàng 1 ô tìm + nút `[+]`, hàng 2 = 1 dropdown lọc gộp (thay 5 tab +
+  checkbox), còn lại = lưới ảnh. Ẩn sau `[+]`: auto-classify, tag, nút Upload + "Nạp vào thư viện"
+  (2 nút CHƯA gộp — xem dưới). (3) [`FlowCanvas.tsx`](components/FlowCanvas.tsx) — `<MiniMap>`
+  chỉ hiện khi `nodes.length >= 3`.
+- ✅ **Gom nút trùng nghĩa (đổi tên theo ĐÍCH ĐẾN)**: `IOMenu.tsx` `'Nhập'`→`'Mở tệp'` (3 chặng) ·
+  `UploadButton.tsx` chặng Render `'Tải lên'`→`'Thêm vào canvas'`.
+- ⏸️ **CHƯA gộp "Upload" + "Nạp vào thư viện"** — KHÁC chức năng thật, không phải trùng UI: Upload
+  = thêm nhanh vài ảnh thẳng vào thư viện team. "Nạp vào thư viện" = mở `/library/ingest`, trang
+  riêng dàn cả bộ reference dự án (PDF/Excel/CAD, không chỉ ảnh) + "AI Content Strategist" sinh
+  kịch bản content. Đã báo Hoà, chờ quyết định.
+- ⏸️ **Chưa commit/push** — chờ Hoà xác nhận (nhánh `feat/present-layout-ml-p1`, không phải main).
+- ✅ **`origin/main`** = `ee66bf0` — audit IF1, docs/ phân loại, gói đợt 4-11, T1/T2 Semantic Room,
+  onboarding 3 tầng, thẻ kính login, chốt design tokens, "giấy vuông vỏ bo" Present. Chi tiết đầy
+  đủ từng phần → `CHANGELOG.md`. **Lưu ý dev server**: `.next` cache hay hỏng sau nhiều HMR/git
+  stash — trang trắng/lỗi "Cannot find module vendor-chunks" → xoá `.next` rồi khởi động lại,
+  không phải bug code (gặp lại đúng pattern này khi build lần này, đã xoá `.next` xong).
 - ⏸️ **T3/T4 (Semantic Room)** vẫn CHƯA LÀM — để phiên sau, đọc `docs/IF1-COMPLETION-AUDIT.md`
   §3 (a)/(d) trước.
 
@@ -34,8 +38,8 @@ Không có.
 - **DWG**: sửa tuân thủ GPL ngay (0đ)? · server-side (mất offline)? · ODA khi bán? →
   `docs/RESEARCH-DWG-LICENSE.md`.
 - Treo: **VIỆC 4 cũ** GuProfile=dữ liệu · **VIỆC 7** demo+onboarding · **#14** cụm Mẫu Presenting.
-- 3 nhánh git rác `worktree-agent-*` đã merged còn local; `fix/hatch-t-junction` +
-  `fix/quality-pipeline` chưa merge — xoá được không?
+- 3 nhánh `worktree-agent-*` đã merged còn local; `fix/hatch-t-junction`+`fix/quality-pipeline`
+  chưa merge — xoá được không?
 - BOQ (bảng thống kê vật tư): audit xác nhận 0 dòng code — cần quyết có làm không, matId nối
   vào đâu (xem IF1-COMPLETION-AUDIT §3c).
 
@@ -45,14 +49,17 @@ Không có.
 - 🟡 `resume-state` chỉ lưu `flowId`+`sheetId` (trùng giữa dự án — chọn nhầm TAB, không rò dữ liệu).
 - 🟡 Audit CATALOG-STAGE2 kê node ma (`ai.localedit`/`idmask`/`furnitureextract`) — registry thật 5 node AI_EDIT.
 - 🟡 `lastEditedDevice` (4 model local-first) luôn null — chưa có `deviceId` thật, cần dựng TRƯỚC Pha 2.
-- 🟡 `Toolbar.tsx` (present-editor) `Btn` chưa dùng `Tooltip.tsx` · `CadToolbar.tsx` dư cả `title=` lẫn `<Tooltip>`.
-- 🟡 `FINAL_ARCHITECTURE_REPORT.md` + `HUONG-DAN-SU-DUNG.md` framing cũ "nội bộ TTT" — đã gắn ⚠️ đầu file, cần viết lại (đợt de-TTT 2).
+- 🟡 `Toolbar.tsx` (present-editor) `Btn` chưa dùng `Tooltip.tsx` · `CadToolbar.tsx` dư `title=`+`<Tooltip>`.
+- 🟡 `FINAL_ARCHITECTURE_REPORT.md`/`HUONG-DAN-SU-DUNG.md` framing cũ "nội bộ TTT" — đã gắn ⚠️, cần viết lại.
 - 🟡 Wall cũ (trước T2) không có `wallKind` — báo "chưa phân loại", KHÔNG tự gán; cần UI bulk-assign nếu muốn phủ hết (không phải bug).
 - 🟡 `.idf` chưa có migration path thật (version lệch = từ chối thẳng) — T3 sẽ giải quyết.
 - 🟡 **Luật 8 — LLM↔Hình học**: `lib/cad/ai-assist.ts` ĐÃ ĐÚNG kiến trúc nhưng chưa có LLM thật
   cắm vào; khi cắm cần zod validate chặn AI trả toạ độ lạ + nối `checker.ts` thành vòng lặp
   tự-sửa/tự-chặn-ship thật (hiện chỉ skip-and-note) như `SPEC-SEMANTIC-MODEL.md` §8 mô tả.
-- 🐛 `/cad-editor` React warning không tái hiện · ⌘J Vitals grep 0 · morph login chỉ fade · cursor polling idle.
+- 🐛 `/cad-editor` React warning không tái hiện · morph login chỉ fade · cursor polling idle.
+- 🟡 **Vitals audit (27/07)**: chat thật (không phải shell) — gesture kéo xuống cả 3 chặng + bar
+  Gallery, cùng gọi `/api/ai-assist-chat` → NVIDIA/Ollama thật. Thiếu nhất: function-calling —
+  chỉ nói chuyện, chưa sửa được CAD/Render/Present (`docs/SPEC-VITALS-AI.md` §Nhóm 4).
 - 53 ảnh `public/wallpapers/ttt-*` giữ tạm theo ý user.
 
 ## Quy tắc session

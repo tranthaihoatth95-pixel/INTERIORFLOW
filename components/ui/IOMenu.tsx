@@ -70,7 +70,9 @@ export default function IOMenu({
 
   const isImport = kind === 'import';
   const side = align ?? (isImport ? 'left' : 'right');
-  const baseLabel = label ?? (isImport ? 'Nhập' : 'Xuất');
+  // 27/07 — "Nhập"→"Mở tệp": tên cũ mô tả HÀNH ĐỘNG, không nói ĐÍCH ĐẾN (mở DXF/.idf ở CAD,
+  // ảnh ở Render, deck .pptx/.pdf ở Present — đều là "mở 1 tệp có sẵn", đặt tên theo đó).
+  const baseLabel = label ?? (isImport ? 'Mở tệp' : 'Xuất');
 
   // đóng khi bấm ra ngoài / nhấn Escape — cùng hành vi ở cả 3 chặng.
   useEffect(() => {

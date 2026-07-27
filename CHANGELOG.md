@@ -1,5 +1,96 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 27/07 tối — Sửa 4 lỗi giao diện chặng Rendering + gom nút trùng nghĩa + audit Vitals (CHƯA commit)
+
+**Bối cảnh**: sau khi chốt design tokens + "giấy vuông vỏ bo" (mục dưới), user báo 4 lỗi UI cụ
+thể ở chặng Rendering + yêu cầu gom nút trùng nghĩa giữa lúc làm + yêu cầu audit Vitals (chỉ báo
+cáo). Nhánh `feat/present-layout-ml-p1`, KHÔNG phải main.
+
+**1) `/library/ingest` không có đường về** — route đứng riêng (`app/library/ingest/page.tsx`),
+không dùng khung `HomeScreen` (có login/resume/project-scope logic phức tạp, tích hợp nguyên
+khung được đánh giá rủi ro cao/không đáng — route này vốn manual-first, không project-scoped qua
+URL). Thêm nút "← Quay lại" tối thiểu: `router.back()`, fallback `router.push('/')` khi
+`window.history.length <= 1` (vào thẳng bằng URL, không có lịch sử để back). Verify browser thật:
+bấm nút từ `/library/ingest` quay đúng về project Rendering vừa mở trước đó.
+
+**2) Reference panel (`components/LibraryPanel.tsx`) quá rối** — trước đó bắt lọc/khai báo TRƯỚC
+KHI thấy ảnh nào (5 tab category + search + checkbox cross-category + dropdown usage + tag input +
+2 nút, tổng 7 hàng chrome trước lưới ảnh). Tái cấu trúc theo "THẤY ẢNH TRƯỚC, LỌC SAU":
+- Hàng 1: 1 ô tìm (giữ nguyên logic `searchAssets()`) + 1 nút `[+]` (icon `Plus`, toggle popover).
+- Hàng 2: 1 `<select>` duy nhất thay thế 5 tab + checkbox cũ — value `crossCat ? '__all__' : cat`,
+  option `__all__` = "Tất cả (tìm xuyên mọi category)", các option khác giữ đánh dấu `★` khi hợp
+  chặng đang mở (logic `phaseCats`/`orderCategoriesByPhase` giữ nguyên).
+- Phần còn lại (đa số chiều cao panel): lưới ảnh — không đổi logic, chỉ đổi vị trí (giờ hiện ngay
+  sau 2 hàng thay vì sau 7 hàng).
+- Ẩn sau `[+]` (chỉ cần khi THÊM ảnh, không cần khi TÌM ảnh): `usage` select (auto-classify), tag
+  input lúc upload, nút "Upload" (giữ nguyên logic xử lý ảnh: FileReader→dataURL, extractPalette
+  cho Gu Engine, classifyImage() khi usage='auto', POST `/api/library` từng file), và nút "Nạp vào
+  thư viện" (giữ nguyên, route sang `/library/ingest`).
+- Xoá `title="Hợp với chặng đang làm"` từng đè lên 2 tab bên dưới nó — hết vấn đề vì cả hàng tab
+  cũ đã bị thay bằng dropdown (không còn tooltip nào để đè).
+Verify browser thật (không chỉ tsc): mở panel Reference ở chặng Render → thấy lưới ảnh ngay, bấm
+`[+]` → đúng 1 popover chứa usage/tag/Upload/"Nạp vào thư viện", đóng lại sạch sẽ.
+
+**3) MiniMap React Flow hiện khối đen rỗng khi canvas ít node** — `components/FlowCanvas.tsx`:
+bọc `<MiniMap>` (vốn luôn render, không điều kiện) trong `{nodes.length >= 3 && (...)}`. Lý do
+đen rỗng: `maskColor` phủ toàn bộ phần ngoài viewport, mà viewport quá nhỏ so với khung minimap cố
+định (160×110) khi canvas chỉ 1-2 node → gần như toàn bộ minimap là màu mask. Verify 2 chiều
+bằng browser thật: canvas rỗng (0 node) → không có `.react-flow__minimap` trong DOM; sau khi thêm
+demo flow (4 node) → minimap xuất hiện đúng góc dưới phải.
+
+**4) Mục 4 của brief (3 thẻ gợi ý demo trên canvas rỗng)**: giữ nguyên theo đúng yêu cầu, không
+đổi gì.
+
+**Gom nút trùng nghĩa (đổi tên theo ĐÍCH ĐẾN, giữa lúc làm việc trên)**:
+- `components/ui/IOMenu.tsx` — nhãn mặc định `'Nhập'` → `'Mở tệp'` (dùng chung CAD/Render/
+  Present qua cùng component). Lý do: "Nhập" mô tả HÀNH ĐỘNG, không nói ĐÍCH — "Mở tệp" đúng cho
+  cả 3 chặng (.idf/DXF ở CAD, ảnh ở Render, .pptx/.pdf ở Present) vì bản chất đều là "mở 1 tệp có
+  sẵn". Nhận định premise: brief mô tả "Nhập mở .idf/DXF/PPTX" thực ra là GỘP hành vi của CẢ 3
+  chặng lại — riêng menu Nhập của CHÍNH chặng Render chỉ có ảnh + 1 mục flow-JSON (disabled), không
+  liên quan tài liệu — vẫn đổi nhãn mặc định GLOBAL vì "Mở tệp" đúng ngữ nghĩa bất kể định dạng cụ
+  thể mỗi chặng cho phép.
+- `components/studio/UploadButton.tsx` — nhãn chặng Render `'Tải lên'` → `'Thêm vào canvas'` (đây
+  là chỗ TRÙNG 100% với "Nhập → Ảnh" cũ, cùng gọi `addImageNodesFromFiles()`, nên đổi tên không
+  rủi ro hành vi). Nhãn chặng `concept`/`present` giữ nguyên (đã đặt tên theo đích từ trước).
+- **CHƯA gộp "Upload" + "Nạp vào thư viện" thành 1 nút** theo đúng điều kiện user đặt ra ("nếu 2
+  nút khác chức năng thật thì báo trước khi gộp") — 2 nút này KHÁC NHAU THẬT: Upload = thêm nhanh
+  vài ảnh thẳng vào thư viện team, xử lý ngay tại chỗ. "Nạp vào thư viện" = mở `/library/ingest`,
+  một trang riêng để DÀN CẢ BỘ reference của dự án (nhận PDF/Excel/CSV/DXF/DWG, không chỉ ảnh),
+  có tính năng "AI Content Strategist" (gọi `/api/vision/caption`, `/api/strategy/scenarios`,
+  `/api/illustration` để sinh 3 kịch bản content xếp hạng tốt nhất/phân vân/loại) — không phải chỉ
+  "thêm ảnh vào thư viện". Đã báo user, CHỜ quyết định cách gộp (hoặc không gộp) trước khi sửa
+  thêm.
+
+**Audit Vitals (report-only, KHÔNG sửa code)** — chạy Explore agent, xác nhận bằng code thật:
+- Mount: `VitalsGesture.tsx` (export `VitalsGesturePanel`) chỉ render từ `StageSwitcher.tsx`, gated
+  bởi `dragging || panelOpen`; `StageSwitcher` có mặt ở cả 3 chặng qua `StudioBar`/`Header` →
+  `HomeScreen`/`CadStageScreen`/`PresentStageScreen`. Confirmed: có mặt cả CAD/Render/Present.
+- Cách gọi: KHÔNG có nút, KHÔNG có phím tắt hoạt động — chỉ có gesture kéo xuống trên 1 hairline
+  nhỏ (40×12px) dưới stage-switcher pill (`onPointerDown`→`createStageDragTracker()`, ngưỡng
+  28px = mở popover Vitals, 120px = sang Notebook full). `⌘J` được SPEC-VITALS-AI.md tự ghi nhận
+  là nợ CHƯA implement (đúng, grep 0 kết quả). Gallery (`ProjectSelect.tsx`) có 1 bar chat luôn
+  hiện, không cần gesture — mô hình gọi khác hẳn 3 chặng kia.
+- Backend thật, KHÔNG phải shell: gửi tin nhắn → `POST /api/ai-assist-chat` (yêu cầu session đăng
+  nhập, sanitize input, system prompt theo chặng) → `completeTextTiered()` gọi NVIDIA cloud thật,
+  fallback Ollama local thật; thiếu cấu hình thì báo lỗi rõ ràng, không tự bịa câu trả lời. Có 1
+  đường RAG riêng, mạnh hơn (`lib/notebook/rag.ts`, dùng cho Notebook full) nhưng popover Vitals ở
+  3 chặng KHÔNG dùng đường này.
+- So với "một trợ lý, nhiều điểm gọi" (`SPEC-VITALS-AI.md` — bản thân spec còn ghi
+  `[CẦN HOÀ DUYỆT]`, chưa duyệt): phần chat ĐÃ đúng (cùng 1 endpoint, gọi được từ cả 4 nơi), nhưng
+  tầm nhìn sâu hơn — hợp nhất 4 tính năng AI rời rạc (AI mô tả CAD, node-AI Render, PS-8 Present,
+  Vitals) qua function-calling — là 0 dòng code, thuần spec (spec tự grep xác nhận).
+- **Kết luận 1 dòng**: Vitals là trợ lý chat THẬT (không phải shell), gọi được từ cả 3 chặng +
+  Gallery cùng 1 backend NVIDIA/Ollama thật, nhưng CHỈ nói chuyện — thiếu function-calling để thực
+  sự SỬA được CAD/Render/Present là thứ cần nhất để dùng được đúng nghĩa "trợ lý".
+
+**Verify**: `npx tsc --noEmit` 0 lỗi · 97/97 file test PASS (`sucrase-node` từng file, vitest
+config không chạy được trên repo này — quirk đã biết) · `npm run build` sạch (phải dừng dev server
++ xoá `.next` trước vì 2 tiến trình cùng ghi `.next` gây `PageNotFoundError` giả — không phải bug
+code) · browser thật qua `127.0.0.1:3000` cho cả 3 điểm sửa UI + 2 nhãn nút đổi tên.
+
+**CHƯA làm**: commit + push (chờ user xác nhận), quyết định gộp Upload/Nạp vào thư viện, xoá
+function-calling nợ Vitals.
+
 ## 27/07 — Chốt design tokens: accent tím, gộp font, token trạng thái (`c350a55`)
 
 Thực thi 3 việc từ báo cáo audit `docs/DESIGN-TOKENS.md` (trước đó cùng ngày).
