@@ -5,21 +5,23 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (27/07 tối — nhánh Rendering-fix đã MERGE vào main)
-- ✅ **`origin/main`** = `6ebb196` (merge commit, no-ff) — gồm nhánh `feat/present-layout-ml-p1`
-  (`c258450`, đã xoá cả local + remote sau merge). tsc 0 · `npm run build` sạch trên main trước
-  khi push. 3 lỗi UI Rendering + gom nút trùng nghĩa + docs SPEC-FILE-MANAGER §7 — chi tiết đầy
-  đủ → `CHANGELOG.md` mục "27/07 tối".
-- ✅ **3 lỗi UI Rendering đã sửa + verify browser thật**: (1) [`ingest/page.tsx`](app/library/ingest/page.tsx)
-  thêm nút "← Quay lại". (2) [`LibraryPanel.tsx`](components/LibraryPanel.tsx) — panel Reference
-  theo "THẤY ẢNH TRƯỚC, LỌC SAU" (hàng tìm + `[+]`, 1 dropdown lọc gộp, còn lại là lưới ảnh). (3)
-  [`FlowCanvas.tsx`](components/FlowCanvas.tsx) — `<MiniMap>` chỉ hiện khi `nodes.length >= 3`.
-- ✅ **Gom nút trùng nghĩa**: `IOMenu.tsx` `'Nhập'`→`'Mở tệp'` (3 chặng) · `UploadButton.tsx`
-  chặng Render `'Tải lên'`→`'Thêm vào canvas'`.
-- ⏸️ **CHƯA gộp "Upload" + "Nạp vào thư viện"** — KHÁC chức năng thật, không phải trùng UI: Upload
-  = thêm nhanh vài ảnh thẳng vào thư viện team. "Nạp vào thư viện" = mở `/library/ingest`, trang
-  riêng dàn cả bộ reference dự án (PDF/Excel/CAD, không chỉ ảnh) + "AI Content Strategist" sinh
-  kịch bản content. Đã báo Hoà, chờ quyết định.
+## Hiện tại (28/07 — PROMPT-2807-RUN VIỆC 2-8 xong + kiểm chứng + 2 fix onboarding)
+- ✅ **`origin/main`** đã có: menu ngữ cảnh Present hết tràn viewport (`Popover.tsx` dùng chung,
+  848eaf2) · Vitals nút nổi + ⌘J/Ctrl+J (1ecbbe7) · `.idf` migration path (80e2c5b) · backup
+  `.ifpack` (5a0aad2) · token cỡ chữ 3 màn + gỡ hardcode TTT avatar builder (56a6459) · audit
+  `docs/UI-SYSTEM-AUDIT.md` + kế hoạch `docs/PLAN-LIBRARY-GATEWAY.md` (2bb1f73). Chi tiết đầy đủ
+  từng việc → `CHANGELOG.md` mục "27/07 tối"/"28/07".
+- ✅ **KIỂM CHỨNG (28/07)** — đối chiếu git log + code thật: onboarding 3 tầng đủ cả 3 chặng trong
+  code; glass-card khớp 4/5 giá trị yêu cầu (riêng `background` là gradient-tint có sẵn, không
+  phải rgba phẳng); `--accent` = `#6a57f5` (đổi từ `#8b7cf7` vì WCAG AA, tự tính lại contrast
+  đúng 4.89:1); SPEC-FILE-MANAGER §7 xác nhận thuần docs, 0 code.
+- ✅ **Onboarding — 2 fix nhỏ (28/07)**: (1) "Xem lại hướng dẫn" trước chỉ reset Tầng 1+2, thiếu
+  Tầng 3 (coachmark) — đã thêm `resetCoachmarkSeen()`/`COACHMARKS` (`8da38d6`). (2) Verify Tầng 2
+  ở Present bằng browser thật — **không lỗi**: `StageIntroCard` hiện đúng 3 dòng + ảnh before/after,
+  0 console error mới (đã loại trừ log tồn đọng bằng marker). Vậy Tầng 2 nay đã verify đủ CẢ 3
+  CHẶNG (CAD/Render/Present), không chỉ CAD+Render như commit gốc ghi.
+- ⏸️ **CHƯA gộp "Upload" + "Nạp vào thư viện"** — KHÁC chức năng thật (xem `docs/PLAN-LIBRARY-
+  GATEWAY.md` NT1). Đang chờ Hoà quyết 4 câu hỏi trong đó.
 - **Lưu ý dev server**: `.next` cache hay hỏng sau nhiều HMR/git stash — trang trắng/lỗi "Cannot
   find module vendor-chunks" → xoá `.next` rồi khởi động lại, không phải bug code.
 - ⏸️ **T3/T4 (Semantic Room)** vẫn CHƯA LÀM — để phiên sau, đọc `docs/IF1-COMPLETION-AUDIT.md`
@@ -34,8 +36,8 @@ Không có.
 - **Figma**: MCP trả `net::ERR_FAILED` 2 lần. Đường vòng: file trống + `docs/figma-bootstrap.js`.
 - **DWG**: sửa tuân thủ GPL ngay (0đ)? · server-side (mất offline)? · ODA khi bán? →
   `docs/RESEARCH-DWG-LICENSE.md`.
-- Treo: **VIỆC 4 cũ** GuProfile=dữ liệu · **VIỆC 7** demo+onboarding · **#14** cụm Mẫu Presenting.
-- 3 nhánh `worktree-agent-*` đã merged còn local; `fix/hatch-t-junction`+`fix/quality-pipeline`
+- Treo: **VIỆC 4 cũ** GuProfile=dữ liệu · **#14** cụm Mẫu Presenting.
+- 3 nhánh `worktree-agent-*` merged còn local; `fix/hatch-t-junction`+`fix/quality-pipeline`
   chưa merge — xoá được không?
 - BOQ (bảng thống kê vật tư): audit xác nhận 0 dòng code — cần quyết có làm không, matId nối
   vào đâu (xem IF1-COMPLETION-AUDIT §3c).
@@ -49,14 +51,15 @@ Không có.
 - 🟡 `Toolbar.tsx` (present-editor) `Btn` chưa dùng `Tooltip.tsx` · `CadToolbar.tsx` dư `title=`+`<Tooltip>`.
 - 🟡 `FINAL_ARCHITECTURE_REPORT.md`/`HUONG-DAN-SU-DUNG.md` framing cũ "nội bộ TTT" — đã gắn ⚠️, cần viết lại.
 - 🟡 Wall cũ (trước T2) không có `wallKind` — báo "chưa phân loại", KHÔNG tự gán; cần UI bulk-assign nếu muốn phủ hết (không phải bug).
-- 🟡 `.idf` chưa có migration path thật (version lệch = từ chối thẳng) — T3 sẽ giải quyết.
 - 🟡 **Luật 8 — LLM↔Hình học**: `lib/cad/ai-assist.ts` ĐÃ ĐÚNG kiến trúc nhưng chưa có LLM thật
   cắm vào; khi cắm cần zod validate chặn AI trả toạ độ lạ + nối `checker.ts` thành vòng lặp
   tự-sửa/tự-chặn-ship thật (hiện chỉ skip-and-note) như `SPEC-SEMANTIC-MODEL.md` §8 mô tả.
 - 🐛 `/cad-editor` React warning không tái hiện · morph login chỉ fade · cursor polling idle.
-- 🟡 **Vitals audit (27/07)**: chat thật (không phải shell) — gesture kéo xuống cả 3 chặng + bar
-  Gallery, cùng gọi `/api/ai-assist-chat` → NVIDIA/Ollama thật. Thiếu nhất: function-calling —
-  chỉ nói chuyện, chưa sửa được CAD/Render/Present (`docs/SPEC-VITALS-AI.md` §Nhóm 4).
+- 🟡 **Vitals**: chat thật, gesture+nút+⌘J cả 3 chặng, gọi NVIDIA/Ollama thật. Thiếu function-
+  calling — chỉ nói chuyện, chưa sửa được CAD/Render/Present (`SPEC-VITALS-AI.md` §Nhóm 4).
+- 🟡 **`docs/UI-SYSTEM-AUDIT.md` (28/07)**: menu/dropdown chưa lật hướng (ngoài `Popover.tsx`) ·
+  `/settings/avatar` không có nút quay lại · Present drag-state vẫn đè toolbar · lỗi raw HTTP
+  status ở `NodeExtras.tsx`/`ProjectMembersPanel.tsx` — top 5 xếp theo rẻ×tác động trong file.
 - 53 ảnh `public/wallpapers/ttt-*` giữ tạm theo ý user.
 
 ## Quy tắc session
