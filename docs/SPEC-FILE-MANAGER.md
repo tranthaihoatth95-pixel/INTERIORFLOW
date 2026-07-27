@@ -77,6 +77,45 @@ Sản phẩm xuất ra ← 05-output/ ← gắn img_/deck_ id ← KnowledgePack 
 | **3** | Watch folder `01-input/` → tự phân loại vào Library |
 | **4** | Vòng đời file · bảng dung lượng · dọn file tạm |
 
+## 7. QUAN HỆ VỚI LIBRARY — cửa hàng ↔ chợ đầu mối
+
+| | LIBRARY (cửa hàng) | FILE MANAGER (chợ đầu mối) |
+|---|---|---|
+| Sắp xếp theo | Ý NGHĨA — nhóm · thẻ · gu · dự án | CẤU TRÚC THƯ MỤC trên đĩa |
+| Nội dung | ĐÃ TUYỂN CHỌN, có thẻ, chưng đẹp | TẤT CẢ — kể cả file thô, tạm, khoá |
+| Ai vào | Designer, hằng ngày | Khi cần biết file nằm đâu |
+| Vai trò | Mặt tiền | LỚP TRUNG GIAN app ↔ máy tính |
+
+### Ba tầng + phân quyền
+
+```
+LIBRARY (đã duyệt, lọc theo chặng)
+  ▲
+FILE MANAGER: Projects/ đọc-ghi · Library/ đọc-ghi
+             · Knowledge/ 🔒 CHỈ ĐỌC (quy chuẩn · sách · .md của Vitals)
+             · _System/ 🔒 KHOÁ (.idf gốc · cache · backup)
+  ▲
+Ổ ĐĨA
+```
+
+**Vì sao khoá `Knowledge/`**: xoá nhầm file quy chuẩn → checker im lặng bỏ qua lỗi (nguy hiểm hơn
+báo sai) · sửa nội dung TCVN → Vitals trích dẫn sai mà vẫn tự tin · đổi tên → trích dẫn gãy.
+
+**KHOÁ ≠ GIẤU**: vẫn cho XEM (biết Vitals dựa vào gì) và THÊM (studio nạp sách của mình), chỉ chặn
+sửa/xoá. Đúng luật kệ sách: app là tủ rỗng, tenant tự nạp.
+
+### Đường một chiều chợ → cửa hàng
+
+```
+File vào Projects/01-input/ → máy đọc + gắn thẻ → "CHỜ DUYỆT" trong Library
+→ người bấm duyệt → lên kệ Library.
+```
+
+Bước "chờ duyệt" giữ cho cửa hàng không thành kho lộn xộn thứ hai — đây là điều phân biệt 2 lớp.
+
+**NGOẠI LỆ**: thứ do chính IF sinh ra (ảnh render, deck xuất) TỰ LÊN KỆ, vì đã sạch sẵn.
+
 ---
 
+*v1.1 (thêm §7 quan hệ Library ↔ File Manager) · 2026-07-27 · Ben soạn theo ý Hoà.*
 *v1.0 · 2026-07-26 · Ben soạn theo ý Hoà.*

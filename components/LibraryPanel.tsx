@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, FolderInput, Trash2, Loader2 } from 'lucide-react';
+import { X, Upload, FolderInput, Trash2, Loader2, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { sheetSlide, pressableIcon } from '@/lib/motion';
@@ -56,6 +56,9 @@ export function LibraryPanel() {
   const [tags, setTags] = useState('');
   const [usage, setUsage] = useState<string>('auto');
   const [uploading, setUploading] = useState(false);
+  // 27/07 — popover [+] gom "Tự động phân loại"/tag khi upload/"Nạp vào thư viện" (chỉ dùng
+  // lúc THÊM ảnh, không dùng lúc TÌM ảnh — xem SẮP LẠI bên dưới).
+  const [addOpen, setAddOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(() => {
@@ -107,138 +110,158 @@ export function LibraryPanel() {
         </motion.button>
       </div>
 
-      <div className="flex flex-wrap gap-1 px-2.5 pt-2.5">
-        {orderedCats.map((c) => (
-          <button
-            key={c}
-            onClick={() => setCat(c)}
-            title={phaseCats.has(c) ? 'Hợp với chặng đang làm' : undefined}
-            className={cn(
-              'rounded-md px-2 py-1 text-[10px] transition-colors',
-              cat === c && !crossCat
-                ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
-                : 'text-[var(--t4)] hover:bg-[var(--hover)] hover:text-[var(--t2)]',
-            )}
-          >
-            {phaseCats.has(c) && <span className="mr-0.5 text-[var(--accent)]">★</span>}
-            {c}
-          </button>
-        ))}
-      </div>
-
+      {/* 27/07 — SẮP LẠI theo nguyên tắc "THẤY ẢNH TRƯỚC, LỌC SAU": trước đây 5 tab + tìm + checkbox
+          + dropdown + tag + 2 nút (7 hàng chrome) đè hết chỗ trước khi thấy ảnh nào. Giờ còn 2 hàng:
+          Hàng 1 = tìm + [+] (thêm ảnh) · Hàng 2 = 1 dropdown gộp mọi bộ lọc (category + xuyên category).
+          "Tự động phân loại"/tag khi upload/"Nạp vào thư viện" chỉ dùng lúc THÊM ảnh → giấu trong [+]. */}
       <div className="space-y-1.5 p-2.5">
-        <input
-          className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
-          placeholder="Tìm: tên · tag · mô tả · màu (vd 'gỗ ấm', 'be tong', 'xanh')…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <label className="flex cursor-pointer items-center gap-1.5 px-0.5 text-[10px] text-[var(--t4)]">
-          <input
-            type="checkbox"
-            checked={crossCat}
-            onChange={(e) => setCrossCat(e.target.checked)}
-            className="h-3 w-3 accent-[var(--accent)]"
-          />
-          Tìm xuyên mọi category
-        </label>
-        <select
-          value={usage}
-          onChange={(e) => setUsage(e.target.value)}
-          title="Phân loại ảnh — Tự động: app tự nhận (dàn trang / không gian / bản vẽ / vật liệu / furniture). Hoặc chọn tay để ép."
-          className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] outline-none transition-colors focus:border-[var(--accent-ring)]"
-        >
-          <option value="auto">⚡ Tự động phân loại</option>
-          {USAGES.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.label}
-            </option>
-          ))}
-        </select>
+        {/* Hàng 1: tìm + [+] */}
         <div className="flex gap-1.5">
           <input
             className="min-w-0 flex-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
-            placeholder="Tag khi upload: NCC, mã, style…"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
+            placeholder="Tìm: tên · tag · mô tả · màu (vd 'gỗ ấm', 'be tong', 'xanh')…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
           />
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={async (e) => {
-              const files = [...(e.target.files ?? [])];
-              if (!files.length) return;
-              setUploading(true);
-              try {
-                for (const f of files) {
-                  const dataUrl = await new Promise<string>((res, rej) => {
-                    const reader = new FileReader();
-                    reader.onload = () => res(String(reader.result));
-                    reader.onerror = () => rej(reader.error);
-                    reader.readAsDataURL(f);
-                  });
-                  // ---- Gu Engine: chưng cất gu local (0 AI) — palette + kích thước ----
-                  let palette: string[] = [];
-                  let w = 0;
-                  let h = 0;
-                  try {
-                    const img = await loadImage(dataUrl);
-                    w = img.naturalWidth || img.width;
-                    h = img.naturalHeight || img.height;
-                    palette = await extractPalette(dataUrl).catch(() => []);
-                  } catch {
-                    /* ảnh lỗi → vẫn upload, gu để trống */
-                  }
-                  // ---- Auto phân loại (local, 0 AI) khi để "Tự động"; chọn tay thì ép ----
-                  const finalUsage =
-                    usage === 'auto'
-                      ? await classifyImage(dataUrl)
-                          .then((r) => r.usage)
-                          .catch(() => 'ref-render')
-                      : usage;
-                  await fetch('/api/library', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      name: f.name.replace(/\.[^.]+$/, ''),
-                      category: cat,
-                      tags,
-                      dataUrl,
-                      usage: finalUsage,
-                      palette,
-                      w,
-                      h,
-                    }),
-                  });
-                }
-                refresh();
-              } finally {
-                setUploading(false);
-                e.target.value = '';
-              }
-            }}
-          />
-          <motion.button
-            {...pressableIcon}
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading}
-            title={`Upload vào "${cat}" — cả team thấy`}
-            className="flex shrink-0 items-center gap-1 rounded-[10px] bg-[var(--accent-strong)] px-2.5 text-[11px] font-medium text-white transition-colors hover:bg-[var(--accent)] disabled:opacity-50"
-          >
-            {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />} Upload
-          </motion.button>
+          <div className="relative shrink-0">
+            <motion.button
+              {...pressableIcon}
+              onClick={() => setAddOpen((o) => !o)}
+              title="Thêm ảnh vào thư viện"
+              className={cn(
+                'grid h-[30px] w-[30px] place-items-center rounded-[10px] border transition-colors',
+                addOpen
+                  ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                  : 'border-[var(--border)] bg-[var(--field)] text-[var(--t2)] hover:bg-[var(--hover)]',
+              )}
+            >
+              <Plus size={14} />
+            </motion.button>
+            {addOpen && (
+              <div className="absolute right-0 top-full z-30 mt-1.5 w-64 space-y-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--card)] p-2.5 shadow-lg">
+                <select
+                  value={usage}
+                  onChange={(e) => setUsage(e.target.value)}
+                  title="Phân loại ảnh — Tự động: app tự nhận (dàn trang / không gian / bản vẽ / vật liệu / furniture). Hoặc chọn tay để ép."
+                  className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] outline-none transition-colors focus:border-[var(--accent-ring)]"
+                >
+                  <option value="auto">⚡ Tự động phân loại</option>
+                  {USAGES.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
+                  placeholder="Tag khi upload: NCC, mã, style…"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                />
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={async (e) => {
+                    const files = [...(e.target.files ?? [])];
+                    if (!files.length) return;
+                    setUploading(true);
+                    try {
+                      for (const f of files) {
+                        const dataUrl = await new Promise<string>((res, rej) => {
+                          const reader = new FileReader();
+                          reader.onload = () => res(String(reader.result));
+                          reader.onerror = () => rej(reader.error);
+                          reader.readAsDataURL(f);
+                        });
+                        // ---- Gu Engine: chưng cất gu local (0 AI) — palette + kích thước ----
+                        let palette: string[] = [];
+                        let w = 0;
+                        let h = 0;
+                        try {
+                          const img = await loadImage(dataUrl);
+                          w = img.naturalWidth || img.width;
+                          h = img.naturalHeight || img.height;
+                          palette = await extractPalette(dataUrl).catch(() => []);
+                        } catch {
+                          /* ảnh lỗi → vẫn upload, gu để trống */
+                        }
+                        // ---- Auto phân loại (local, 0 AI) khi để "Tự động"; chọn tay thì ép ----
+                        const finalUsage =
+                          usage === 'auto'
+                            ? await classifyImage(dataUrl)
+                                .then((r) => r.usage)
+                                .catch(() => 'ref-render')
+                            : usage;
+                        await fetch('/api/library', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            name: f.name.replace(/\.[^.]+$/, ''),
+                            category: cat,
+                            tags,
+                            dataUrl,
+                            usage: finalUsage,
+                            palette,
+                            w,
+                            h,
+                          }),
+                        });
+                      }
+                      refresh();
+                      setAddOpen(false);
+                    } finally {
+                      setUploading(false);
+                      e.target.value = '';
+                    }
+                  }}
+                />
+                <motion.button
+                  {...pressableIcon}
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                  title={`Upload vào "${cat}" — cả team thấy`}
+                  className="flex w-full items-center justify-center gap-1 rounded-[10px] bg-[var(--accent-strong)] px-2.5 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-[var(--accent)] disabled:opacity-50"
+                >
+                  {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />} Upload
+                </motion.button>
+                <hr className="border-[var(--border)]" />
+                <motion.button
+                  {...pressableIcon}
+                  onClick={() => router.push('/library/ingest')}
+                  title="Nạp hàng loạt ảnh/file lớn — chưng cất thumbnail + palette + tag"
+                  className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+                >
+                  <FolderInput size={12} /> Nạp vào thư viện
+                </motion.button>
+              </div>
+            )}
+          </div>
         </div>
-        <motion.button
-          {...pressableIcon}
-          onClick={() => router.push('/library/ingest')}
-          title="Nạp hàng loạt ảnh/file lớn — chưng cất thumbnail + palette + tag"
-          className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+
+        {/* Hàng 2: 1 dropdown gộp mọi bộ lọc (thay 5 tab + checkbox rời) */}
+        <select
+          value={crossCat ? '__all__' : cat}
+          onChange={(e) => {
+            if (e.target.value === '__all__') {
+              setCrossCat(true);
+            } else {
+              setCrossCat(false);
+              setCat(e.target.value);
+            }
+          }}
+          className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] outline-none transition-colors focus:border-[var(--accent-ring)]"
         >
-          <FolderInput size={12} /> Nạp vào thư viện
-        </motion.button>
+          <option value="__all__">Tất cả (tìm xuyên mọi category)</option>
+          {orderedCats.map((c) => (
+            <option key={c} value={c}>
+              {phaseCats.has(c) ? '★ ' : ''}
+              {c}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="grid flex-1 auto-rows-min grid-cols-2 gap-2 overflow-y-auto px-2.5 pb-4">

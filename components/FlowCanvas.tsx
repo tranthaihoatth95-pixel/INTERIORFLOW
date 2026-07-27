@@ -318,22 +318,25 @@ export function FlowCanvas() {
         className={tool === 'pan' ? 'cursor-grab' : ''}
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="var(--dots)" />
-        <MiniMap
-          pannable
-          zoomable
-          className="!bottom-4 !right-4 hidden rounded-lg border border-[var(--border)] md:block"
-          style={{ background: 'var(--card)', width: 160, height: 110 }}
-          nodeColor={(n) => {
-            if (n.type === 'note') return '#fbbf24';
-            try {
-              const def = getDefinition((n.data as { defType: string }).defType);
-              return CATEGORY_META[def.category].color;
-            } catch {
-              return '#52525b';
-            }
-          }}
-          maskColor="var(--minimap-mask)"
-        />
+        {/* Ẩn khi canvas ít node — viewport gần như trùng khung minimap, chỉ thấy 1 khối đen rỗng */}
+        {nodes.length >= 3 && (
+          <MiniMap
+            pannable
+            zoomable
+            className="!bottom-4 !right-4 hidden rounded-lg border border-[var(--border)] md:block"
+            style={{ background: 'var(--card)', width: 160, height: 110 }}
+            nodeColor={(n) => {
+              if (n.type === 'note') return '#fbbf24';
+              try {
+                const def = getDefinition((n.data as { defType: string }).defType);
+                return CATEGORY_META[def.category].color;
+              } catch {
+                return '#52525b';
+              }
+            }}
+            maskColor="var(--minimap-mask)"
+          />
+        )}
       </ReactFlow>
 
       {/* Group overlay — vẽ khung bao quanh nhóm node (tự bọc ViewportPortal bên trong) */}
