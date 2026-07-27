@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 import { IFLogo } from '@/components/entry/IFLogo';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
 import { HomeButton } from '@/components/studio/HomeButton';
-import { requestGallery, resetTourDone, resetStageIntroSeen, ONBOARDING_STAGES } from '@/lib/resume';
+import { requestGallery, resetTourDone, resetStageIntroSeen, ONBOARDING_STAGES, resetCoachmarkSeen, COACHMARKS } from '@/lib/resume';
 
 export function Header() {
   const flowName = useFlowStore((s) => s.flowName);
@@ -194,14 +194,16 @@ function MoreMenu() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  /** "Xem lại hướng dẫn" — xoá cờ Tầng 1 (tourDone) + cả 3 cờ Tầng 2 (stageIntro) của user
-   * hiện tại rồi về Gallery, để toàn bộ chuỗi onboarding chạy lại từ đầu (WelcomeIntro trước,
-   * StageIntroCard hiện lại lần lượt khi vào từng chặng). */
+  /** "Xem lại hướng dẫn" — xoá cờ Tầng 1 (tourDone) + cả 3 cờ Tầng 2 (stageIntro) + mọi cờ
+   * Tầng 3 (coachmark) của user hiện tại rồi về Gallery, để toàn bộ chuỗi onboarding chạy lại
+   * từ đầu (WelcomeIntro trước, StageIntroCard hiện lại lần lượt khi vào từng chặng, coachmark
+   * hiện lại lần đầu tương tác tiếp theo). */
   const replayOnboarding = () => {
     const u = useFlowStore.getState().user;
     if (u) {
       resetTourDone(u.id);
       for (const stage of ONBOARDING_STAGES) resetStageIntroSeen(stage, u.id);
+      for (const name of COACHMARKS) resetCoachmarkSeen(name, u.id);
     }
     setOpen(false);
     requestGallery();

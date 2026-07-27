@@ -211,6 +211,21 @@ export function markCoachmarkSeen(name: string, userId: string): void {
   }
 }
 
+/** Xoá cờ 1 coachmark — dùng bởi "Xem lại hướng dẫn" (loop qua `COACHMARKS`, cùng cách
+ * `resetStageIntroSeen` được loop qua `ONBOARDING_STAGES`). */
+export function resetCoachmarkSeen(name: string, userId: string): void {
+  if (!userId) return;
+  try {
+    localStorage.removeItem(COACHMARK_PREFIX + name + '.' + userId);
+  } catch {
+    /* bỏ qua */
+  }
+}
+
+/** Mọi coachmark Tầng 3 đã đăng ký trong app — thêm tên mới vào đây khi có coachmark mới, để
+ * "Xem lại hướng dẫn" tự reset đủ (xem CadCanvas.tsx `markCoachmarkSeen('selectMove', ...)`). */
+export const COACHMARKS: readonly string[] = ['selectMove'];
+
 /* ---------- "Về Home" (Gallery) — nút Home + logo IF (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md
    §5.1 quyết định 3) ----------
  * Vấn đề: route '/' KHÔNG luôn hiện Gallery — returning-user có `stageFlag`/`resume` đã lưu

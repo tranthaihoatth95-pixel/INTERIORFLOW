@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
-import { requestGallery, resetTourDone, resetStageIntroSeen, ONBOARDING_STAGES } from '@/lib/resume';
+import { requestGallery, resetTourDone, resetStageIntroSeen, ONBOARDING_STAGES, resetCoachmarkSeen, COACHMARKS } from '@/lib/resume';
 import { checkProviders, type ProviderStatus } from '@/lib/ai/client';
 import {
   TIERS, TIER_ORDER, type AiTier, providerForTier,
@@ -315,12 +315,14 @@ function ActionsRow({ close }: { close: () => void }) {
   const router = useRouter();
 
   /** "Xem lại hướng dẫn" — cùng logic với MoreMenu (Header.tsx) desktop: xoá cờ Tầng 1 +
-   * cả 3 cờ Tầng 2 của user hiện tại rồi về Gallery, cho onboarding chạy lại từ đầu. */
+   * cả 3 cờ Tầng 2 + mọi cờ Tầng 3 (coachmark) của user hiện tại rồi về Gallery, cho onboarding
+   * chạy lại từ đầu. */
   const replayOnboarding = () => {
     const u = useFlowStore.getState().user;
     if (u) {
       resetTourDone(u.id);
       for (const stage of ONBOARDING_STAGES) resetStageIntroSeen(stage, u.id);
+      for (const name of COACHMARKS) resetCoachmarkSeen(name, u.id);
     }
     close();
     requestGallery();
