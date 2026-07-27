@@ -242,6 +242,103 @@ cho ảnh chung; IF gắn được **mã vật liệu + giá + NCC** vào từng
 | 4 | **Đổi góc phối cảnh** (chờ chuỗi 2D→3D extrude) |
 | 5 | Ba tab Của IF / Cộng đồng / Của tôi — khi kho thẻ đủ nhiều |
 
+## 6C. SINH DIỆN THIẾU CỦA ĐỒ NỘI THẤT — SUY LUẬN HÌNH HỌC, KHÔNG PHẢI AI ĐOÁN
+
+*(bổ sung 28/07 — Hoà giao thẳng nội dung, Ben chỉ định vị + trả lời phần kỹ thuật kho nhớ.)*
+
+Bối cảnh: đồ nội thất tách ra từ 1 ảnh phối cảnh (node trích xuất đồ vật, xem `STATUS.md` mục
+Nợ kỹ thuật "registry thật 5 node AI_EDIT") chỉ THẤY được 1-2 mặt. Cần dựng đủ diện (chính/cạnh/
+trên/sau) để đưa vào spec sheet vật liệu — bốn bước dưới đây làm việc đó bằng HÌNH HỌC trước,
+chỉ nhờ AI khi hình học bó tay, và chỉ khi người dùng đồng ý trả phí.
+
+### ④ Sinh diện bằng suy luận hình học (không phải AI đoán)
+
+Nguyên lý: nội thất phần lớn ĐỐI XỨNG GƯƠNG qua trục dọc (sofa · giường · tủ · bàn · ghế). ⇒
+Nội suy phần khuất từ phần thấy là suy luận CÓ CƠ SỞ, không phải bịa.
+
+**Bốn bước:**
+
+4a) **TÌM TRỤC ĐỐI XỨNG** — máy đề xuất, người kéo chỉnh (bắt buộc cho phép sửa tay):
+- Cách rẻ: trục thẳng đứng qua trọng tâm vùng đã tách (đúng với đồ đứng thẳng).
+- Cách chính xác hơn: trục theo điểm tụ phối cảnh (vanishing point) khi góc chụp chéo.
+
+4b) **MẶT PHẲNG CẮT THẤY/KHUẤT** (silhouette boundary): ranh giới này thay đổi theo góc nhìn
+nhưng LUÔN nằm giữa trục và mép ngoài, KHÔNG vượt quá trục. Dùng làm ràng buộc chặn nội suy
+quá tay.
+
+4c) **SMART MIRROR**: soi gương phần đã thấy sang phần khuất, CHỈ trong ranh giới 4b.
+
+4d) **NẮN PHỐI CẢNH** (perspective rectification) TRƯỚC khi gương — spec sheet cần hình chiếu
+THẲNG (orthographic), còn ảnh gốc là phối cảnh. Không nắn thì gương ra hình vẫn nghiêng.
+
+**Kết quả từ 1 ảnh phối cảnh:**
+
+| Diện | Độ tin cậy | Cách ra |
+|---|---|---|
+| Chính | 🟢 | nắn phối cảnh từ vùng thấy |
+| Cạnh | 🟡 | gương + nắn — tốt nếu đối xứng |
+| Trên | 🟡 | gương + suy từ chiều sâu |
+| Sau | 🔴 | KHÔNG BIẾT — để trống, ghi rõ "không có dữ liệu", KHÔNG đoán |
+
+(3 diện đầu đủ cho spec nội thất — mặt sau thường áp tường.)
+
+⚠️ **BẮT BUỘC phát hiện đồ KHÔNG đối xứng** (sofa góc L · kệ bất đối xứng · đồ hữu cơ): máy
+kiểm độ đối xứng của vùng đã tách; dưới ngưỡng → TẮT smart mirror, báo "Món này không đối xứng —
+cần chụp thêm góc khác hoặc vẽ tay". KHÔNG gương bừa.
+
+⚠️ Góc chụp quá chéo (một bên thấy quá ít) → cảnh báo "góc chụp không đủ dữ liệu để nội suy".
+
+*Từ khoá tra cứu: symmetry detection · silhouette boundary · perspective rectification ·
+homography · vanishing point · single-view reconstruction · orthographic projection.*
+
+### Diện thứ 4 (mặt sau) — ba tầng, chỉ tầng 3 tốn tiền
+
+| Tầng | Cách | Chi phí | Khi nào |
+|---|---|---|---|
+| 1 | Để trống, ghi "không có dữ liệu" | 0 | MẶC ĐỊNH — mặt sau thường áp tường |
+| 2 | **Tra kho đã học**: món tương tự đã làm → dùng lại mặt sau đó | **0 credit** | Càng dùng càng nhiều lần khớp |
+| 3 | AI nội suy — **có xin phép, hiện rõ chi phí** | Tốn | Người dùng chủ động bấm |
+
+⭐ **CHƯNG CẤT**: kết quả tầng 3 được CẤT VÀO KHO, lần sau thành tầng 2. Trả tiền MỘT LẦN cho
+một LOẠI món đồ, không trả lại.
+
+**Cơ chế nhớ — nhớ LOẠI, không nhớ MÓN:** lưu theo vector đặc trưng hình dáng (vd "sofa 3 chỗ,
+tay vuông, chân gỗ"), không lưu theo từng ảnh. Món mới có vector gần giống → gợi ý dùng lại kèm
+**% giống**. (Nhớ theo từng ảnh thì kho phình mà không bao giờ khớp lại.)
+
+**Ba luật giữ kho không thành bãi rác:**
+1. Người duyệt mới vào kho — AI sinh rồi bỏ đi thì KHÔNG lưu. Chỉ cái dùng thật mới đáng nhớ.
+2. Gắn cờ `nguồn: AI-nội-suy` — không trộn với ảnh thật (luật chống buồng vang, blueprint §5C).
+3. Dùng lại phải hiện % giống — dưới 80% thì HỎI trước, không tự áp.
+
+**Hiện chi phí trước khi bấm:**
+```
+[Nội suy mặt sau bằng AI]  ~N credit
+Kho đã có X món tương tự — thử dùng lại trước?  [Xem]
+```
+Nút phải nói giá, và LUÔN gợi ý đường miễn phí (tầng 2) trước.
+
+**Vector đặc trưng — trả lời câu hỏi kỹ thuật (28/07):**
+- **Embedding dùng gì:** ảnh CLIP-style — KHÁC `lib/notebook/embed.ts` hiện có (đó là
+  `nvidia/nv-embedqa-e5-v5`, embedding CHỮ cho RAG text, không dùng được cho hình dáng đồ vật).
+  Đề xuất `nvidia/nvclip` (NIM image embedding) làm mặc định — tái dùng NGUYÊN hạ tầng
+  `lib/ai/providers/nvidia.ts` (cùng key, cùng base URL, cùng schema OpenAI-compatible đã có),
+  vector đủ để phân biệt hình dáng/tỷ lệ các loại đồ nội thất, không cần train riêng.
+- **Chạy local được không:** KHÔNG với lựa chọn trên — NIM cần mạng + `NVIDIA_API_KEY`, giống
+  hạn chế đã có ở `embed.ts` (không có fallback Ollama). Muốn offline thật (khớp hướng
+  local-first của app) thì phương án dự phòng là CLIP ViT-B/32 xuất ONNX chạy qua
+  `onnxruntime-web` phía client — thêm ~90MB model + runtime, KHÔNG làm ở bản NAY, chỉ ghi vào
+  Nợ kỹ thuật nếu sau này cần offline.
+- **Lưu ở đâu (bảng nào):** bảng Prisma mới `FurnitureShapeMemory`, đúng khuôn `NotebookChunk` đã
+  có (`prisma/schema.prisma:166`): `id, shapeKey (nhãn loại, vd "sofa-3cho-tay-vuong-chan-go"),
+  embedding String // JSON float32[], backFaceAssetId (trỏ LibraryAsset, nguồn=AI-nội-suy),
+  approvedBy, createdAt`. So khớp bằng cosine similarity thuần JS — tái dùng nguyên
+  `lib/notebook/similarity.ts::cosineSimilarity`, KHÔNG cần pgvector/DB vector riêng (quy mô kho
+  vài trăm–nghìn mục, cùng lý do `similarity.ts` đã ghi: dưới chục nghìn vector chưa cần).
+- **Ước lượng:** VỪA (bảng mới + gọi embedding có sẵn hạ tầng + cosine match tái dùng code cũ +
+  UI hiện % giống/chi phí trước khi bấm). KHÔNG tính phần ONNX local (để dành riêng, RẤT LỚN
+  nếu làm).
+
 ## 7. Chuỗi 2D → 3D → Render (tham vọng, mổ ra 4 khúc)
 
 | Khúc | Bản chất | Ai làm |
@@ -260,5 +357,6 @@ cho ảnh chung; IF gắn được **mã vật liệu + giá + NCC** vào từng
 
 ---
 
+*v1.3 (thêm §6C sinh diện đồ nội thất — suy luận hình học + kho nhớ 3 tầng) · 2026-07-28 · Ben soạn theo ý Hoà.*
 *v1.2 (thêm §6B hệ tool — học mô hình Google Flow) · 2026-07-26 · Ben soạn theo ý Hoà.*
 

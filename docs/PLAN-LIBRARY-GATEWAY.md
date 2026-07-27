@@ -235,14 +235,18 @@ phần nào "làm được ngay" để xếp thứ tự cùng các việc khác.
 
 ## Thứ tự làm — đợt 28/07 tối (theo ước lượng ở mục 1-5, không đổi)
 
-① NT3 Render chuột phải (NHỎ — `Popover.tsx` đã có, chỉ nối dây) + CAD chuột phải theo Q2 ·
-② NT2 bảng ánh xạ định dạng→đích (NHỎ, thuần dữ liệu, test độc lập) ·
-③ NT4 pha 1: `diskPath` + nút "Cập nhật liên kết" (VỪA) ·
-④ NT1 gộp `LibraryPanel` + `LibraryBrowser` (LỚN) — làm SAU CÙNG, chỉ nếu còn thời gian và ①②③
-đã sạch test ·
+① ✅ XONG — NT3 Render chuột phải (`FlowCanvas.tsx`) + CAD chuột phải theo Q2 (`CadCanvas.tsx`,
+`CadEditor.tsx`, `lib/cad/store.ts`) · commit `9a52f83`.
+② ✅ XONG — NT2 bảng ánh xạ định dạng→đích (`lib/gateway/detect.ts` + `route.ts`, 34/34 test
+PASS, thuần dữ liệu, CHƯA nối UI) · commit `bfd5fe9`.
+③ ✅ XONG — NT4 pha 1: `diskPath` + nút "Cập nhật liên kết" (`lib/present-editor/model.ts` +
+`Inspector.tsx`), verify browser thật (chọn lại file → ảnh đổi ngay) · commit `1f637ba`.
+④ NT1 gộp `LibraryPanel` + `LibraryBrowser` (LỚN) — CHƯA làm đợt này (Hoà giao thêm VIỆC A/B
+ngay sau ①②③, ưu tiên trước ④). Đợi đợt sau, xem `STATUS.md`.
 ⑤ NT5 cây thư mục thật (RẤT LỚN) — KHÔNG làm đợt này, chờ ở `STATUS.md`.
 
 ---
 
+*v1.2 (①②③ xong, ④ dời sau — Hoà giao thêm VIỆC A/B) · 2026-07-28 · Ben soạn theo ý Hoà.*
 *v1.1 (chốt 4 câu hỏi + thứ tự làm đợt 28/07 tối) · 2026-07-28 · Ben soạn theo ý Hoà.*
 *v1.0 · 2026-07-28 · Ben soạn theo ý Hoà — VIỆC 8, chỉ kế hoạch, chưa code dòng nào.*
