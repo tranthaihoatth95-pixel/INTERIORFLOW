@@ -37,9 +37,29 @@ phân quyền lọc **theo người**. Thiếu lớp nào cũng rò.
 | **Thành viên** | Làm dự án được giao |
 | **Khách xem** | Xem + bình luận deck · **không tải bản vẽ gốc** |
 
-### ⚠️ Luật rẻ tiền nhất
-**KHÔNG tự viết hệ đăng nhập/phân quyền.** Dùng dịch vụ có sẵn (Clerk · Auth0 · Supabase Auth ·
-WorkOS): vài giờ thay vì vài tuần, không tự tạo lỗ hổng bảo mật.
+### ⚠️ ĐÃ SỬA 28/07 (Q2b) — auth tự viết là QUYẾT ĐỊNH CÓ CHỦ ĐÍCH, không phải nợ kỹ thuật
+
+> **Bối cảnh sửa**: bản v1.0 dưới đây khuyên dùng Clerk/Auth0/Supabase Auth/WorkOS. Khám code
+> 28/07 (`docs/IF-MASTER-TREE.md` 1.1.5) xác nhận `lib/server/auth.ts` tự viết hoàn toàn (email/
+> SĐT + password hash tự quản, tự tạo session/cookie) — đi ngược khuyến nghị này. **Hoà quyết
+> GIỮ auth tự viết**, sửa lại khuyến nghị thay vì sửa code.
+
+**Lý do giữ**: IF là **local-first** (mục 1B `IF-ARCHITECTURE-BLUEPRINT-v1.md`) — dữ liệu nằm ở
+máy người dùng, cloud chỉ là bản sao đồng bộ. Cắm Clerk/Auth0/Supabase Auth/WorkOS nghĩa là
+**đăng nhập LUÔN cần gọi ra dịch vụ ngoài** (dù app đang chạy offline-first) — đúng thứ local-first
+đang tránh: 1 điểm phụ thuộc cloud bắt buộc, ràng giá theo lượt (MAU pricing) của bên thứ ba vào
+đúng luồng người dùng chạm vào đầu tiên, và khoá app vào 1 nhà cung cấp danh tính ngoài tầm kiểm
+soát. "Vài giờ thay vì vài tuần" đúng cho app cloud-first thuần — SAI tiền đề cho app local-first:
+cái đắt không phải công viết auth, mà là **tự trói vào 1 dịch vụ bên ngoài đúng ở lớp T0 (hạ tầng)
+mà mọi tầng trên đều phụ thuộc**.
+
+**Không phải "không cần bảo mật"** — `lib/server/auth.ts` vẫn phải tự chịu trách nhiệm đúng những
+gì Clerk/Auth0 lo hộ (hash mật khẩu đúng chuẩn, session an toàn, chống brute-force) — chỉ là
+KHÔNG đi qua dịch vụ ngoài để làm việc đó. RBAC (mục 2 trên, `lib/server/access-policy.ts`) vẫn
+đúng và ĐÃ vượt kỳ vọng ban đầu (5 vai chi tiết hơn 3 vai N đề xuất).
+
+*(Câu gốc "KHÔNG tự viết hệ đăng nhập/phân quyền — dùng Clerk/Auth0/Supabase/WorkOS" đã BỎ, xem
+lý do trên.)*
 
 ## 3. #5 Extension manager — luật bắt buộc trước khi bán ra ngoài
 
@@ -59,5 +79,7 @@ WorkOS): vài giờ thay vì vài tuần, không tự tạo lỗ hổng bảo m�
 
 ---
 
+*v1.1 (28/07 — Q2b: bỏ khuyến nghị Clerk/Auth0/Supabase/WorkOS, giữ auth tự viết là quyết định
+có chủ đích vì local-first) · 2026-07-28 · Hoà quyết, Claude ghi theo `docs/IF-MASTER-TREE.md`.*
 *v1.0 · 2026-07-24 · Ben soạn theo ý Hoà.*
 

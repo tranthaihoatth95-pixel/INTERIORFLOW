@@ -53,7 +53,7 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 1.1.2 | Admin cấp tay tài khoản ngoài | N | ✅ | không | `IF-FEATURE-SPEC-P1-v2.md` G3.2 |
 | 1.1.3 | Grandfather user cũ ngoài domain | N | ⬜ moot (domain-gate đã gỡ hết, không còn gì để "grandfather") | 1.1.1 | `IF-FEATURE-SPEC-P1-v2.md` G3.3 |
 | 1.1.4 | Remember Me 30 ngày | N | ✅ | không | `IF-FEATURE-SPEC-P1-v2.md` G3.4 |
-| 1.1.5 | Auth tự viết (KHÔNG dùng Clerk/Auth0/Supabase/WorkOS) | — (luật vi phạm) | 🔴 CODE ĐI NGƯỢC khuyến nghị rõ nhất của spec — `lib/server/auth.ts` tự viết hoàn toàn | không | `SPEC-PRODUCT-INFRA.md` |
+| 1.1.5 | Auth tự viết (KHÔNG dùng Clerk/Auth0/Supabase/WorkOS) | — (quyết định có chủ đích, đã QUYẾT Q2b 28/07) | ✅ GIỮ `lib/server/auth.ts` tự viết — không còn "vi phạm" sau khi sửa `SPEC-PRODUCT-INFRA.md` ghi rõ: local-first mà phụ thuộc Clerk/Auth0 (dịch vụ cloud) là tự trói, đi ngược chính luật local-first của app | không | `SPEC-PRODUCT-INFRA.md` (đã sửa 28/07) |
 | 1.1.6 | RBAC 5 vai (owner/crea/drafter/bim/viewer) + rank | N | ✅ mạnh hơn kỳ vọng spec (spec chỉ đề xuất 3 vai) | không | `SPEC-PRODUCT-INFRA.md` |
 | 1.1.7 | Gate theo chặng (STAGE_OWNER: concept→crea, render→drafter, present→bim) | N | ✅ | 1.1.6 | `SPEC-PRODUCT-INFRA.md` |
 | 1.1.8 | API mời/xoá thành viên dự án (chặn xoá owner cuối cùng) | N | ✅ | 1.1.6 | `SPEC-PRODUCT-INFRA.md` |
@@ -74,21 +74,8 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 1.2.9 | Trạng thái hệ thống (GPU/RAM/hàng đợi/dung lượng) | P | 🟡 hàng đợi render có (StatusBar); GPU/RAM/dung lượng chưa (đúng dự kiến — chỉ cần khi có desktop) | 7.1 Electron | `SPEC-PRODUCT-INFRA.md` |
 | 1.2.10 | Auto-updater (Electron) | N | ✅ | không | `SPEC-PRODUCT-INFRA.md`, `IF-ARCHITECTURE-BLUEPRINT-v1.md` §1B |
 
-### 1.3 Đề bài & khởi tạo dự án (Brief Intake)
-
-| Mã | Tên | Bậc | Trạng thái | Phụ thuộc | File spec gốc |
-|---|---|---|---|---|---|
-| 1.3.1 | Đổi tên panel "AI mô tả — Đề bài chi tiết" → "Đề bài → Phương án" | — | ⬜ chưa đổi tên | không | `SPEC-BRIEF-INTAKE.md` |
-| 1.3.2 | Luồng 6 bước chuẩn | N/P/L | 🟡 từng phần (①⑤⑥ có, ②③④ chưa) | không | `SPEC-BRIEF-INTAKE.md` |
-| 1.3.2.a | ① Nạp hiện trạng (import DXF/DWG hoặc dùng bản vẽ hiện tại) | N | ✅ | không | `SPEC-BRIEF-INTAKE.md` |
-| 1.3.2.b | ② Nạp brief thật PDF/Word/email/ảnh (KHÔNG chỉ gõ 1 dòng) | N | ⬜ chỉ có `<textarea>` gõ tay | 1.3.2.a | `SPEC-BRIEF-INTAKE.md` |
-| 1.3.2.c | ③ Máy đọc trích + hỏi lại chỗ thiếu (LLM thật, human-in-loop) | N | 🔴 xác nhận vẫn RULE-BASED (từ khoá), code tự comment "chưa phải LLM" | 1.3.2.b | `SPEC-BRIEF-INTAKE.md`, `lib/cad/ai-assist.ts` |
-| 1.3.2.d | ④ Chọn loại hình + chuẩn vận hành (Accor/Marriott…) | N | 🟡 tự nhận diện operator có (heuristic), chọn tay brand-standard chưa có UI | 1.3.2.c | `SPEC-BRIEF-INTAKE.md` |
-| 1.3.2.e | ⑤ Sinh N phương án kèm căn cứ trích dẫn | N | ✅ sinh 3 phương án; 🟡 căn cứ trích dẫn chỉ có ở tầng quy chuẩn quốc gia, chưa có brand-standard | 1.3.2.d | `SPEC-BRIEF-INTAKE.md` |
-| 1.3.2.f | ⑥ Chọn → máy học (Perceptron) | N | ✅ | 1.3.2.e | `SPEC-BRIEF-INTAKE.md` |
-| 1.3.3 | Operator/loại hình tự nhận diện (residential/office/f&b/retail/hospitality/clinic) | N | ✅ | không | `SPEC-BRIEF-INTAKE.md`, `IF-FEATURE-SPEC-P1-v2.md` C3.1 |
-| 1.3.4 | Chuẩn Accor/Marriott theo tenant — "kệ sách = tủ rỗng", không ship bản quyền mật | N | ⬜ không có cơ chế tủ sách/upload brand-standard theo tenant | 1.3.3 | `SPEC-BRIEF-INTAKE.md` |
-| 1.3.5 | Luật trích dẫn mọi gợi ý kèm căn cứ (hạng nguồn A-D) | N | 🟡 có ở tầng TCVN quốc gia (checker tự ghi rõ khi thiếu căn cứ), chưa áp cho brand-standard | 1.3.4 | `SPEC-BRIEF-INTAKE.md`, `SPEC-KNOWLEDGE-BASE.md` |
+> **1.3 — DỜI sang 2.0.24-2.0.33 (Q4, 28/07)**: Brief-Intake là đầu vào thiết kế (chặng Ý tưởng),
+> không phải "quản lý công việc" — mã 1.3.x KHÔNG dùng lại, xem khối 2.0 Ý tưởng.
 
 ### 1.4 Ranh giới với ArchiNote (app hiện trường riêng biệt)
 
@@ -133,7 +120,7 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 2.0.7 | ATLAS vật liệu — ảnh có mã/giá/NCC | ? | 🟡 hook `photoUrl?` có tên đúng nhưng KHÔNG có field mã/giá/NCC | không | `SPEC-STAGE-0-IDEATION.md` |
 | 2.0.8 | Sinh prompt cho Render từ moodboard | L | ⬜ | 2.0.1, 2.2 Render | `SPEC-STAGE-0-IDEATION.md` |
 | 2.0.9 | Xuất board thành trang deck Present | P | ⬜ | 2.0.1, 2.3 Present | `SPEC-STAGE-0-IDEATION.md` |
-| 2.0.10 | Vật liệu mã+giá từ moodboard → BOQ | L | ⬜ (BOQ toàn app xác nhận 0 dòng code — xem STATUS.md) | 2.0.7 | `SPEC-STAGE-0-IDEATION.md` |
+| 2.0.10 | Vật liệu mã+giá từ moodboard → BOQ | L | ⬜ **gộp vào 2.1.9.p (Q6, 28/07) — xem đó, không lặp lại ở đây** | 2.0.7, 2.1.9.p | `SPEC-STAGE-0-IDEATION.md` |
 | 2.0.11 | "Thả tim" — 1 thao tác 3 tác dụng (học gu + trích đặc trưng + cộng radar) | ? | ⬜ Perceptron thật có nhưng cho gợi ý template, không phải nút ♥ ảnh cảm hứng chặng 0 | 2.0.1, 2.0.6 | `SPEC-STAGE-0-IDEATION.md` |
 | 2.0.12 | Quy trình 3 bước: Trích xuất → Tổ hợp → Diễn giải (mỗi bước truy nguồn) | ? | ⬜ | 2.0.1 | `SPEC-STAGE-0-IDEATION.md` |
 | 2.0.13 | Kỹ thuật trích xuất — Canny/Sobel edge detection | N | ⬜ | 2.0.12 | `SPEC-STAGE-0-IDEATION.md` |
@@ -147,6 +134,22 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 2.0.21 | Vai trò Vitals ở chặng 0 (hỏi ngược chốt hướng, từ khoá EN, lọc nguồn hạng A-D) | ? | ⬜ (không kiểm sâu — Vitals nói chung thiếu function-calling, xem khối 6) | 6. Vitals | `SPEC-STAGE-0-IDEATION.md` |
 | 2.0.22 | Chat trong chặng 0 — quyết định KHÔNG làm (đã có Lark/Zalo) | — | ⛔ chủ đích không làm | không | `SPEC-STAGE-0-IDEATION.md` |
 | 2.0.23 | Luật nguồn ảnh — KHÔNG lấy Pinterest, chỉ studio/CC0/AI-sinh/user-nạp | — (luật) | (không kiểm chứng — chính sách pháp lý) | 3.5 Nguồn & giấy phép | `SPEC-STAGE-0-IDEATION.md` |
+
+#### Đề bài & khởi tạo dự án (Brief Intake — DỜI từ khối 1.3, Q4 28/07: đây là đầu vào thiết kế, không phải quản lý công việc)
+
+| Mã | Tên | Bậc | Trạng thái | Phụ thuộc | File spec gốc |
+|---|---|---|---|---|---|
+| 2.0.24 | Đổi tên panel "AI mô tả — Đề bài chi tiết" → "Đề bài → Phương án" | — | ⬜ chưa đổi tên | không | `SPEC-BRIEF-INTAKE.md` |
+| 2.0.25 | Luồng 6 bước chuẩn | N/P/L | 🟡 từng phần (①⑤⑥ có, ②③④ chưa) | không | `SPEC-BRIEF-INTAKE.md` |
+| 2.0.25.a | ① Nạp hiện trạng (import DXF/DWG hoặc dùng bản vẽ hiện tại) | N | ✅ | không | `SPEC-BRIEF-INTAKE.md` |
+| 2.0.25.b | ② Nạp brief thật PDF/Word/email/ảnh (KHÔNG chỉ gõ 1 dòng) | N | ⬜ chỉ có `<textarea>` gõ tay | 2.0.25.a | `SPEC-BRIEF-INTAKE.md` |
+| 2.0.25.c | ③ Máy đọc trích + hỏi lại chỗ thiếu (LLM thật, human-in-loop) | N | 🔴 xác nhận vẫn RULE-BASED (từ khoá), code tự comment "chưa phải LLM" | 2.0.25.b | `SPEC-BRIEF-INTAKE.md`, `lib/cad/ai-assist.ts` |
+| 2.0.25.d | ④ Chọn loại hình + chuẩn vận hành (Accor/Marriott…) | N | 🟡 tự nhận diện operator có (heuristic), chọn tay brand-standard chưa có UI | 2.0.25.c | `SPEC-BRIEF-INTAKE.md` |
+| 2.0.25.e | ⑤ Sinh N phương án kèm căn cứ trích dẫn | N | ✅ sinh 3 phương án; 🟡 căn cứ trích dẫn chỉ có ở tầng quy chuẩn quốc gia, chưa có brand-standard | 2.0.25.d | `SPEC-BRIEF-INTAKE.md` |
+| 2.0.25.f | ⑥ Chọn → máy học (Perceptron) | N | ✅ | 2.0.25.e | `SPEC-BRIEF-INTAKE.md` |
+| 2.0.26 | Operator/loại hình tự nhận diện (residential/office/f&b/retail/hospitality/clinic) | N | ✅ | không | `SPEC-BRIEF-INTAKE.md`, `IF-FEATURE-SPEC-P1-v2.md` C3.1 |
+| 2.0.27 | Chuẩn Accor/Marriott theo tenant — "kệ sách = tủ rỗng", không ship bản quyền mật | N | ⬜ không có cơ chế tủ sách/upload brand-standard theo tenant | 2.0.26 | `SPEC-BRIEF-INTAKE.md` |
+| 2.0.28 | Luật trích dẫn mọi gợi ý kèm căn cứ (hạng nguồn A-D) | N | 🟡 có ở tầng TCVN quốc gia (checker tự ghi rõ khi thiếu căn cứ), chưa áp cho brand-standard | 2.0.27 | `SPEC-BRIEF-INTAKE.md`, `SPEC-KNOWLEDGE-BASE.md` |
 
 ### 2.1 CAD (Vẽ sơ phác + Pro mode)
 
@@ -174,7 +177,7 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 2.1.5 | E — Tô vật liệu (5 item: hatch + palette) | N | 🟡 2.5/5 = 50% (nhóm yếu nhất) | không | `IF-FEATURE-SPEC-P1-v2.md` E, `IF1-COMPLETION-AUDIT.md` §1-E |
 | 2.1.5.a | E1.1-E1.2 tap-fill + thumbnail procedural texture (đóng gap 17/07) | N | ✅ | không | " |
 | 2.1.5.b | E1.3 wall material (qua cơ chế hatch chung, không phải tool riêng) | N | 🟡 | không | " |
-| 2.1.5.c | E1.4 Auto-update BOQ | N | ⬜ **0 dòng code toàn repo** | 4.7 (matId chưa nối) | " |
+| 2.1.5.c | E1.4 Auto-update BOQ | N | ⬜ **gộp vào 2.1.9.p (Q6, 28/07) — xem đó, không lặp lại ở đây** | 2.1.9.p | " |
 | 2.1.5.d | E1.5 Design DNA link (vật liệu↔GuProfile) | N | ⬜ | không | " |
 | 2.1.6 | F — Xuất bản & chia sẻ (13 item, phần CAD của F2/F3) | N | 🟡 11/13 ≈ 85% | không | `IF-FEATURE-SPEC-P1-v2.md` F, `IF1-COMPLETION-AUDIT.md` §1-F |
 | 2.1.6.a | F1 Pipeline IF (CAD→Render, Render→Present, Present→PDF/PPTX, multi-sheet ≤5 tab IDB) | N | ✅ 4/4 | không | " |
@@ -207,11 +210,12 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 2.1.9.h | Solver ràng buộc đặt nội thất (áp tường/giữa 2 vật/lối đi ≥900mm/không chồng) | N | 🟡 áp tường+không chồng có; lối đi ≥900mm chưa xác minh enforce | 2.1.9.e | `SPEC-SEMANTIC-MODEL.md` |
 | 2.1.9.i | Vùng tô: màu (hiển thị) ≠ vật liệu (dữ liệu matId→hãng/mã/giá) — 4 chế độ hiển thị chung dữ liệu | N | ⬜ chỉ 1 kiểu vẽ hatch, chưa có 4-chế-độ | 4.7, 2.2.9 Material Pipeline | `SPEC-SEMANTIC-MODEL.md` |
 | 2.1.9.j | `tiling size (mm)` bắt buộc cho vùng vật liệu | N | ⬜ | 2.1.9.i | `SPEC-SEMANTIC-MODEL.md` |
-| 2.1.9.k | BOQ tự sinh từ vùng tô (diện tích×matId→m²×đơn giá+hao hụt) | N | ⬜ (0 dòng code, trùng E1.4) | 2.1.5.c, 2.1.9.i | `SPEC-SEMANTIC-MODEL.md` |
+| 2.1.9.k | BOQ tự sinh từ vùng tô (diện tích×matId→m²×đơn giá+hao hụt) | N | ⬜ **gộp vào 2.1.9.p (Q6, 28/07) — xem đó, không lặp lại ở đây** | 2.1.9.p | `SPEC-SEMANTIC-MODEL.md` |
 | 2.1.9.l | Present — style chữ/màu dùng chung toàn deck (shared styles) | N | ✅ `theme-roles.ts` remap thật | 2.3 Present | `SPEC-SEMANTIC-MODEL.md` |
 | 2.1.9.m | Present — master page (mọi trang cùng loại đổi 1 lượt) | N | 🟡 tên hằng số có thể đã đổi, cần xác nhận | 2.1.9.l | `SPEC-SEMANTIC-MODEL.md` |
 | 2.1.9.n | Present — liên kết sống về CAD (sửa bản vẽ → deck tự cập nhật) — moat | L | ⬜ `linked-assets.ts` có tên gợi ý nhưng chưa xác minh live-update thật | 2.1.9.a | `SPEC-SEMANTIC-MODEL.md` |
 | 2.1.9.o | L6 công thức lumen đọc reflectance vật liệu | P | 🟡 xem 2.2.9 Material Pipeline (trùng, không đếm 2 lần) | 2.2.9 | `SPEC-SEMANTIC-MODEL.md` |
+| 2.1.9.p | ⭐ BOQ (Bill of Quantity) — SÁNG KIẾN GỘP DUY NHẤT (Q6, 28/07) | N | ⬜ **0 dòng code toàn repo** (xác nhận lại 28/07, cùng gốc đã ghi ở `STATUS.md` "Chờ USER quyết") | 2.1.9.i Vùng tô vật liệu (material-zone, matId liên kết) — CHẶN CỨNG | `SPEC-SEMANTIC-MODEL.md`, `SPEC-MATERIAL-PIPELINE.md`, `SPEC-STAGE-0-IDEATION.md`, `IF-FEATURE-SPEC-P1-v2.md` E1.4 — **gộp 4 chỗ trước đây rải rác: 2.1.5.c (E1.4 CAD) · 2.1.9.k (semantic model) · 2.2.29.f (material pipeline) · 2.0.10 (ý tưởng/moodboard) — không lặp lại mô tả ở 4 chỗ đó nữa, chỉ trỏ về đây.** Mở khoá khi làm: matId trên `MaterialDef`/vùng hatch → tính m²×đơn giá+hao hụt → bảng BOQ xuất được → callout/legend Present tự đọc theo → (xa hơn) vật liệu mã+giá từ moodboard chặng Ý tưởng. Quyết định DUY NHẤT cần: có làm không, matId nối vào đâu (field mới trên `MaterialDef` hay bảng riêng) — 1 câu trả lời tự mở khoá cả 4 nhánh. |
 | 2.1.10 | Editor toolkit — luật "một năng lực, hai lối vào" (Lối Tay + Lối AI gọi CÙNG hàm) | N | 🟡 Lối Tay từng phần có, Lối AI gọi cùng hàm (function-calling) KHÔNG có | 6.7 Vitals function-calling | `SPEC-EDITOR-TOOLKIT.md` |
 | 2.1.10.a | Thứ tự bắt buộc: năng lực→nút→AI gọi hàm | N | 🟡 bước 1-2 từng phần, bước 3 chưa | 2.1.10 | `SPEC-EDITOR-TOOLKIT.md`, `IF-ARCHITECTURE-BLUEPRINT-v1.md` §8 luật 7 |
 | 2.1.10.b | AI thất bại phải nói thẳng + liệt kê lối thay thế | N | ⬜ | 2.1.10 | `SPEC-EDITOR-TOOLKIT.md` |
@@ -288,7 +292,7 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 2.2.29.c | Vùng tô vật liệu (material zone) khác tô màu — đổi mã tự đổi callout/BOQ | N | ⬜ chỉ có hatch pattern/scale/angle, chưa có material-zone thật | 2.1.9.i | " |
 | 2.2.29.d | 4 chế độ hiển thị (Kỹ thuật/Trình bày/Ảnh thật/Phân tích, 1 dữ liệu) | N | ⬜ chỉ 1 kiểu vẽ | 2.2.29.c | " |
 | 2.2.29.e | Trường bắt buộc `tiling size (mm)` | N | ⬜ (trùng 2.1.9.j) | 2.2.29.c | " |
-| 2.2.29.f | Vùng tô tự biết diện tích → callout/legend/BOQ/prompt AI/V-Ray-D5 tự sinh | N | 🟡 tính diện tích có (dùng cho 3D extrude), chưa nối callout/legend/BOQ | 2.2.29.c | " |
+| 2.2.29.f | Vùng tô tự biết diện tích → callout/legend/BOQ/prompt AI/V-Ray-D5 tự sinh | N | 🟡 tính diện tích có (dùng cho 3D extrude); phần BOQ **gộp vào 2.1.9.p (Q6, 28/07)** — phần callout/legend/V-Ray-D5 còn lại vẫn ⬜ ở đây | 2.2.29.c, 2.1.9.p (phần BOQ) | " |
 | 2.2.30 | L6 chiếu sáng — 3 mức | N/P/L | 🟡 | 2.1.9.o | `SPEC-MATERIAL-PIPELINE.md` §4 |
 | 2.2.30.a | Mức 1 hình học (vị trí đèn/vùng phủ) — 0 credit | N | 🟡 có `suggestLightGridPositions` (MEP suggest) nhưng khác khung "diagram trình bày" | 2.2.30 | " |
 | 2.2.30.b | Mức 2 công thức lumen E=(Φ×n×UF×MF)/A + reflectance vật liệu | P | 🟡 có công thức NGƯỢC chiều (lux mục tiêu→số đèn) trong `mep-suggest.ts`, không đọc reflectance | 2.2.30.a | " |
@@ -345,30 +349,39 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 2.3.26 | Animated Layout loại 4 — chuyển phương án A↔B (morph) | ? | ⬜ | 2.3.23 | " |
 | 2.3.27 | Animated Layout loại 5 — ngày↔đêm (đổi màu+reflectance theo giờ) | ? | ⬜ | 2.2.30.b (L6 reflectance) | " |
 | 2.3.28 | Ba đường ra 1 nguồn (GIF/MP4 social · slide động khi trình chiếu · clip video hậu kỳ) | ? | ⬜ | 2.3.23-27 | " |
-| 2.3.29 | Editor toolkit Deck — text tracking/leading/outline/uppercase | N | 🟡 | 2.1.10.c | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.30 | Editor toolkit Deck — image mask theo hình+bo góc+crop | N | ✅ (khác spec ghi ⬜ — doc/code lệch, xem CẦN HOÀ QUYẾT) | 2.1.10.c | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.31 | Editor toolkit Deck — gradient+overlay+opacity | N | ✅ (khác spec ghi ⬜) | 2.3.30 | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.32 | Editor toolkit Deck — align/distribute/khoá tỉ lệ | N | ✅ (khác spec ghi ⬜) | 2.1.10.c | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.33 | Editor toolkit Deck — layer thứ tự/nhóm/khoá/ẩn | N | 🟡 | 2.1.10.c | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.34 | Editor toolkit Deck — đường kẻ/mũi tên/khung | N | 🟡 | 2.1.10.c | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.35 | Editor toolkit Deck — nhân bản có căn (smart duplicate) | N | ⬜ | 2.1.10.c | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.36 | Editor toolkit Deck — pattern theo kích thước thật, xuất tile PNG/SVG (moat) | P/L | ⬜ (có AI-render pattern, không phải tile-export theo mm thật) | 2.3.30 | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.37 | Editor toolkit Deck — blend mode | N | ✅ (khác spec ghi ⬜) | 2.3.31 | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.38 | Editor toolkit Deck — đổ bóng/làm mờ | N | 🟡 chỉ có cho text | 2.3.37 | `SPEC-EDITOR-TOOLKIT.md` |
+> **2.3.29-2.3.43 — SỬA 28/07 sau khi khám `docs/AUDIT-EDITOR-TOOLKIT.md` (VIỆC 1)**: trạng thái
+> dưới đây đã chính xác hoá theo `file:dòng` thật, thay cho ước lượng thô của lượt agent trước.
+
+| 2.3.29 | Editor toolkit Deck — text tracking/leading/tràn viền (outline) | N | ✅ đủ dùng — hệ `TextFx` trưởng thành nhất trong toolkit (`lib/present-editor/text-fx.ts`, đồng bộ 3 nơi vẽ chữ) | 2.1.10.c | `SPEC-EDITOR-TOOLKIT.md`, `docs/AUDIT-EDITOR-TOOLKIT.md` |
+| 2.3.30 | Editor toolkit Deck — bo góc ảnh + crop trong khung | N | ✅ đủ dùng (`ImageElement.radius`+`crop`, UI kéo-thả thật ở `ImageEditor.tsx`) — nhưng **mask ảnh theo hình tuỳ ý KHÔNG có** (chỉ chữ nhật+bo góc, không mask hình tự do) | 2.1.10.c | `SPEC-EDITOR-TOOLKIT.md`, `docs/AUDIT-EDITOR-TOOLKIT.md` |
+| 2.3.31 | Editor toolkit Deck — gradient+overlay+opacity | N | 🟡 hỗn hợp: opacity ✅ đủ dùng (mọi loại) · gradient CHỈ đủ cho chữ (màu thật qua `TextGradient`), shape chỉ có mặt nạ độ-mờ (không phải màu), ảnh KHÔNG có gradient nào · overlay (lớp phủ riêng) hoàn toàn CHƯA có | 2.3.30 | `SPEC-EDITOR-TOOLKIT.md`, `docs/AUDIT-EDITOR-TOOLKIT.md` |
+| 2.3.32 | Editor toolkit Deck — align/distribute/khoá tỉ lệ | N | 🟡 align+distribute ✅ đủ dùng (`lib/present-editor/align.ts`, có test riêng) · khoá tỉ lệ khi resize ⬜ hoàn toàn không có | 2.1.10.c | `SPEC-EDITOR-TOOLKIT.md`, `docs/AUDIT-EDITOR-TOOLKIT.md` |
+| 2.3.33 | Editor toolkit Deck — layer thứ tự/nhóm/khoá/ẩn | N | 🟡 3/4 đủ dùng (thứ tự kéo-thả·khoá·ẩn, `LayerPanel.tsx`) · nhóm (group nhiều phần tử) ⬜ hoàn toàn chưa có, không có `groupId` trong model | 2.1.10.c | `SPEC-EDITOR-TOOLKIT.md`, `docs/AUDIT-EDITOR-TOOLKIT.md` |
+| 2.3.34 | Editor toolkit Deck — đường kẻ/mũi tên/khung | N | 🟡 (ngoài phạm vi audit 19 món chi tiết — giữ ước lượng cũ) | 2.1.10.c | `SPEC-EDITOR-TOOLKIT.md` |
+| 2.3.35 | Editor toolkit Deck — nhân bản có căn (smart duplicate) | N | 🟡 CÓ nhưng thô — `duplicateElement()` chỉ dời chéo cố định 2%/2%, KHÔNG phải smart-align-duplicate thật (nâng từ ⬜→🟡 sau khám) | 2.1.10.c | `SPEC-EDITOR-TOOLKIT.md`, `docs/AUDIT-EDITOR-TOOLKIT.md` |
+| 2.3.36 | Editor toolkit Deck — pattern theo kích thước thật, xuất tile PNG/SVG (moat) | P/L | ⬜ xác nhận lại — 0 bằng chứng (`tiling`/`realWorldScale`/`mmPerTile` = 0 kết quả grep) | 2.3.30 | `SPEC-EDITOR-TOOLKIT.md`, `docs/AUDIT-EDITOR-TOOLKIT.md` |
+| 2.3.37 | Editor toolkit Deck — blend mode | N | 🟡 CHỈ có cho TEXT (`TextFx.blend`, `mixBlendMode` ở `Element.tsx`) — ảnh/shape KHÔNG có (sửa từ "✅ khác spec" → chính xác hơn sau khám) | 2.3.31 | `SPEC-EDITOR-TOOLKIT.md`, `docs/AUDIT-EDITOR-TOOLKIT.md` |
+| 2.3.38 | Editor toolkit Deck — đổ bóng | N | 🟡 CHỈ có cho text (`TextShadowLayer[]`, nhiều lớp, chất lượng tốt) — ảnh/shape KHÔNG có field shadow nào | 2.3.37 | `SPEC-EDITOR-TOOLKIT.md`, `docs/AUDIT-EDITOR-TOOLKIT.md` |
+| 2.3.38.a | Editor toolkit Deck — làm mờ (blur filter trên nội dung) | N | ⬜ hoàn toàn chưa có — chỉ có `blur` là bán-kính-của-bóng-đổ (không phải filter độc lập) và 1 `backdropFilter` chrome của modal (không phải công cụ cho user) | 2.3.38 | `docs/AUDIT-EDITOR-TOOLKIT.md` |
 | 2.3.39 | Editor toolkit Deck — dải palette tự sinh từ ảnh | N | ⬜ | không | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.40 | Editor toolkit Deck — bảng số liệu đơn giản | N | ⬜ (trùng PS-11 thiếu ElementKind='table') | 2.3.16 | `SPEC-EDITOR-TOOLKIT.md` |
+| 2.3.40 | Editor toolkit Deck — bảng số liệu đơn giản | N | ⬜ (trùng PS-11 thiếu ElementKind='table', xác nhận lại) | 2.3.16 | `SPEC-EDITOR-TOOLKIT.md`, `docs/AUDIT-EDITOR-TOOLKIT.md` |
 | 2.3.41 | Editor toolkit Zoning — khối màu bán trong suốt (diagram công năng) | N | ⬜ | không | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.42 | Editor toolkit Photo — crop/xoay/lật/thẳng chân trời | N | 🟡 | 2.3.30 | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.43 | Editor toolkit Photo — sáng/tương phản/nhiệt độ/bão hoà | N | ⬜ | không | `SPEC-EDITOR-TOOLKIT.md` |
+| 2.3.42 | Editor toolkit Photo — crop/xoay/lật/thẳng chân trời | N | 🟡 hỗn hợp: crop ✅ đủ dùng (Present `ImageEditor.tsx`) · xoay = **field chết** (`Frame.rotation` tồn tại, ĐƯỢC render, nhưng KHÔNG có UI/gesture nào từng set khác 0) · lật (flip/mirror) ⬜ **KHÔNG CÓ ở cả Present LẪN Photo-editor** — bất ngờ cho tool marketing "gần Photoshop" | 2.3.30 | `SPEC-EDITOR-TOOLKIT.md`, `docs/AUDIT-EDITOR-TOOLKIT.md` |
+| 2.3.43 | Editor toolkit Photo — sáng/tương phản/nhiệt độ/bão hoà | N | **SỬA LỚN sau khám**: Present 🟡 thô sơ (4 field CSS filter đơn giản) · **Photo-editor ✅ đủ dùng** (`AdjustPanel.tsx` — exposure/brightness/contrast/saturation/temp/tint/levels/gamma/hue/**curve editor**, non-destructive, có preset) — trước ghi ⬜ chung cho cả 2 là SAI, Photo-editor thật ra mạnh | không | `SPEC-EDITOR-TOOLKIT.md`, `docs/AUDIT-EDITOR-TOOLKIT.md` |
 | 2.3.44 | Editor toolkit Photo — xoá nền+inpaint | N | 🟡 (có ở Render, chưa nối Photo-editor) | 2.2 Render | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.45 | Editor toolkit Video — mức 2 CapCut-like (timeline 3-4 track) | L | ⬜ (`remotion` không có trong package.json) | 2.1.10.c | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.46 | Editor toolkit Video — kiến trúc Timeline-là-JSON + Remotion render | L | ⬜ | 2.3.45 | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.47 | Editor toolkit Video — render GPU máy user (Electron, 0 credit, riêng tư) | L | ⬜ | 2.3.45, 1.2.10 Electron | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.48 | Editor toolkit Film — kịch bản (brief+gu→LLM narrative) | L | ⬜ | không | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.49 | Editor toolkit Film — storyboard từ dự án thật (moat) | L | ⬜ | 2.3.48 | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.50 | Editor toolkit Film — camera path vẽ trên CAD → xuất D5/Unreal (moat) | L | ⬜ | 2.3.49, 2.2.17 (đổi góc phối cảnh) | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.51 | Editor toolkit Film — animatic nháp (ảnh+Ken Burns+nhạc+lời) | L | ⬜ | 2.3.50 | `SPEC-EDITOR-TOOLKIT.md` |
-| 2.3.52 | Editor toolkit Film — xuất D5/Unreal kèm camera path+kịch bản+vật liệu | L | ⬜ | 2.3.50 | `SPEC-EDITOR-TOOLKIT.md` |
+> **[v2] 2.3.45-2.3.52 — DỜI HẲN (Q5, 28/07)**: Present bậc N mới ~44% (Bảng tổng 1) — làm nhánh L
+> (video/film) khi N chặng đó chưa xong là VI PHẠM luật 1 (`IF-ARCHITECTURE-BLUEPRINT-v1.md` §8:
+> "Không xây L khi N chặng đó chưa ✅"). Giữ mã để không mất dấu, nhưng đóng băng — KHÔNG code cho
+> tới khi Present N đạt ngưỡng đủ (chưa định số cụ thể, cần quyết riêng khi tới lúc).
+
+| 2.3.45 [v2] | Editor toolkit Video — mức 2 CapCut-like (timeline 3-4 track) | L | ⬜ DỜI HẲN — chờ Present N xong (`remotion` không có trong package.json) | 2.1.10.c | `SPEC-EDITOR-TOOLKIT.md` |
+| 2.3.46 [v2] | Editor toolkit Video — kiến trúc Timeline-là-JSON + Remotion render | L | ⬜ DỜI HẲN | 2.3.45 | `SPEC-EDITOR-TOOLKIT.md` |
+| 2.3.47 [v2] | Editor toolkit Video — render GPU máy user (Electron, 0 credit, riêng tư) | L | ⬜ DỜI HẲN | 2.3.45, 1.2.10 Electron | `SPEC-EDITOR-TOOLKIT.md` |
+| 2.3.48 [v2] | Editor toolkit Film — kịch bản (brief+gu→LLM narrative) | L | ⬜ DỜI HẲN | không | `SPEC-EDITOR-TOOLKIT.md` |
+| 2.3.49 [v2] | Editor toolkit Film — storyboard từ dự án thật (moat) | L | ⬜ DỜI HẲN | 2.3.48 | `SPEC-EDITOR-TOOLKIT.md` |
+| 2.3.50 [v2] | Editor toolkit Film — camera path vẽ trên CAD → xuất D5/Unreal (moat) | L | ⬜ DỜI HẲN | 2.3.49, 2.2.17 (đổi góc phối cảnh) | `SPEC-EDITOR-TOOLKIT.md` |
+| 2.3.51 [v2] | Editor toolkit Film — animatic nháp (ảnh+Ken Burns+nhạc+lời) | L | ⬜ DỜI HẲN | 2.3.50 | `SPEC-EDITOR-TOOLKIT.md` |
+| 2.3.52 [v2] | Editor toolkit Film — xuất D5/Unreal kèm camera path+kịch bản+vật liệu | L | ⬜ DỜI HẲN | 2.3.50 | `SPEC-EDITOR-TOOLKIT.md` |
 | 2.3.53 | LOẠI có chủ đích — AI chọn template theo nội dung (giữ deterministic) | — | ⛔ đúng chủ đích | không | `IF-PRESENT-SPRINT-PLAN.md` |
 | 2.3.54 | LOẠI có chủ đích — Auto-deck 1-click không người duyệt | — | ⛔ đúng chủ đích | không | `IF-PRESENT-SPRINT-PLAN.md` |
 | 2.3.55 | LOẠI có chủ đích — Generative-fill/inpaint trong Present (thuộc Render) | — | ⛔ đúng chủ đích (redirect sang 2.2 Render) | 2.2 Render | `IF-PRESENT-SPRINT-PLAN.md` |
@@ -587,7 +600,7 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | Mã | Tên | Bậc | Trạng thái | Phụ thuộc | File spec gốc |
 |---|---|---|---|---|---|
 | 7.4.1 | Bình luận gắn vào đối tượng (ghim đúng vị trí trên ảnh/slide/CAD, KHÔNG phải chat rời) | N | ⬜ **không có model `Comment` nào trong Prisma gắn projectId+object id** | không | `SPEC-COLLABORATION.md` |
-| 7.4.2 | ⛔ Luật rõ — ĐỪNG xây chat chung kiểu Slack (đã có Lark/Zalo) | — (luật) | 🔴 **VI PHẠM** — `ChatPanel.tsx`+`ChatMessage` model (poll 3s, list phẳng, không projectId/anchor) chính là thứ spec cấm xây | không | `SPEC-COLLABORATION.md` |
+| 7.4.2 | Luật ranh giới — chat GẮN NGỮ CẢNH DỰ ÁN được phép, chat CHUNG kiểu Slack/tán gẫu (lặp Lark/Zalo) thì không | — (luật, đã QUYẾT Q2a 28/07) | ✅ GIỮ `ChatPanel.tsx` — không còn vi phạm sau khi sửa lại `SPEC-COLLABORATION.md` làm rõ ranh giới (luật cấm nhắm tới tán gẫu chung, không nhắm ChatPanel gắn theo dự án/flow hiện có) | không | `SPEC-COLLABORATION.md` (đã sửa 28/07) |
 | 7.4.3 | Trả lời theo luồng (threaded reply) + đánh dấu đã xử lý | N | 🟡 CHỈ tồn tại ở `CommentLayer.tsx` (công cụ dev nội bộ, không phải sản phẩm) — có "resolved", KHÔNG có threaded reply | 7.4.1 | `SPEC-COLLABORATION.md` |
 | 7.4.4 | @nhắc tên → gửi thông báo | N | ⬜ | 7.4.1 | `SPEC-COLLABORATION.md` |
 | 7.4.5 | "Việc của tôi" — gom bình luận nhắc mình xuyên mọi dự án | N | ⬜ | 7.4.1, 7.4.4 | `SPEC-COLLABORATION.md` |
@@ -647,7 +660,7 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 2.2.23 (6C sinh diện) toàn nhánh a-i | Node `ai.furnitureextract` làm input (đã có) + nhau (4a→4b→4c→4d tuần tự) | Phụ thuộc trình tự nội bộ |
 | 7.2.3 Hội đồng giả định | 5.2 Phân hạng nguồn A-D (persona cần checklist KIÊN/NHÃ + hạng nguồn) | Phụ thuộc dữ liệu |
 | 6.7-6.9, 6.15 Selection-aware Vitals | Không phụ thuộc kỹ thuật cứng nào — chỉ chưa làm | Không chặn, chỉ chưa ưu tiên |
-| 2.1.9.k, 2.1.5.c, 2.2.29.f BOQ (3 nơi trùng) | 2.1.9.i Vùng tô vật liệu (material-zone) CHƯA có field `matId` liên kết | Chặn cứng — `STATUS.md` xác nhận 0 dòng code |
+2.1.9.p ⭐ BOQ (gộp DUY NHẤT, Q6 28/07 — thay cho 4 chỗ cũ 2.1.5.c/2.1.9.k/2.2.29.f/2.0.10) | 2.1.9.i Vùng tô vật liệu (material-zone) CHƯA có field `matId` liên kết | Chặn cứng — `STATUS.md` xác nhận 0 dòng code |
 | 2.3.16, 2.3.40, 2.3.57 Element bảng trong Present (3 nơi trùng) | `ElementKind` chưa có `'table'` | Chặn cứng |
 | 2.3.11 PS-6 Comment khách trên slide | 2.3.10 PS-5 Share deck (cần route EditorDeck trước) | Chặn cứng |
 | 7.4.4, 7.4.5 @nhắc tên, Việc của tôi | 7.4.1 Bình luận gắn đối tượng (model Comment chưa tồn tại) | Chặn cứng |
@@ -673,54 +686,72 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 
 ## CẦN HOÀ QUYẾT
 
-Các mục sau **KHÔNG tự xếp bừa** — cần Hoà quyết định trước khi coi là "đúng" trong cây này:
+> **CẬP NHẬT 28/07 — 6/7 mục đã QUYẾT** (KHÁM TRƯỚC, QUYẾT SAU — xem PHẦN E). Giữ nguyên số cũ để
+> truy vết, đánh dấu ✅ QUYẾT + trỏ tới nơi ghi quyết định. Chỉ còn mục 6 CHƯA quyết.
 
-1. **Doc/code lệch nhau ở Editor Toolkit Deck** (2.3.30-2.3.32, 2.3.37) — `SPEC-EDITOR-TOOLKIT.md`
-   (26/07) đánh dấu ⬜ cho image-mask/crop, gradient+overlay+opacity, align/distribute, blend-mode,
-   nhưng code (`lib/present-editor/model.ts`, `shape-geometry.ts`, `align.ts`,
-   `components/present-editor/Element.tsx`) cho thấy các mục này **ĐÃ CÓ** cho bộ công cụ Deck.
-   Có 2 khả năng: (a) spec viết trước khi soát code Present, cần cập nhật lại trạng thái; hoặc
-   (b) spec đang nói về bộ Graphic/Photo riêng (chưa có) chứ không phải Deck — cần Hoà xác nhận ý
-   nào đúng để sửa lại `SPEC-EDITOR-TOOLKIT.md`.
+1. ✅ **QUYẾT (VIỆC 1, khám `docs/AUDIT-EDITOR-TOOLKIT.md`)** — doc/code lệch ở Editor Toolkit
+   Deck KHÔNG phải lệch nhị phân ✅/⬜ như agent trước ước lượng thô, mà là hỗn hợp theo từng món
+   con (vd 2.3.30: bo góc+crop ✅, mask ⬜; 2.3.31: opacity ✅, gradient chỉ đủ cho chữ, overlay ⬜).
+   Đã sửa chính xác vào từng dòng 2.3.29-2.3.43 ở trên, tham chiếu `docs/AUDIT-EDITOR-TOOLKIT.md`.
 
-2. **2 vi phạm luật tự đặt ra** — cần quyết giữ nguyên (chấp nhận đổi hướng) hay sửa code cho khớp
-   luật:
-   - `SPEC-COLLABORATION.md` cấm rõ "ĐỪNG xây chat chung kiểu Slack" nhưng `ChatPanel.tsx`+
-     `ChatMessage` model chính là thứ đó (7.4.2). Giữ `ChatPanel` (đã dùng thật) hay viết lại
-     theo hướng bình luận-gắn-đối-tượng đúng spec?
-   - `SPEC-PRODUCT-INFRA.md` khuyến nghị rõ "KHÔNG tự viết hệ đăng nhập — dùng Clerk/Auth0/
-     Supabase/WorkOS" nhưng `lib/server/auth.ts` tự viết hoàn toàn (1.1.5). Đổi sang dịch vụ sẵn
-     (tốn công di trú) hay sửa lại khuyến nghị trong spec cho khớp hiện trạng?
+2. ✅ **QUYẾT (Q2a + Q2b, 28/07)**:
+   - **Q2a — GIỮ `ChatPanel.tsx`.** Không phải vi phạm luật cấm chat-chung — luật đó nhắm "chat
+     CHUNG kiểu Slack" (tán gẫu, không gắn ngữ cảnh), còn `ChatPanel` gắn theo dự án/flow đang mở.
+     Đã sửa `SPEC-COLLABORATION.md` mục 1 ghi rõ ranh giới. Xem dòng 7.4.2 ở trên.
+   - **Q2b — GIỮ `lib/server/auth.ts` tự viết.** Quyết định có chủ đích vì local-first (phụ thuộc
+     Clerk/Auth0/Supabase/WorkOS = tự trói 1 điểm cloud bắt buộc ở lớp T0), không phải nợ kỹ thuật.
+     Đã sửa `SPEC-PRODUCT-INFRA.md` mục 2, bỏ khuyến nghị cũ. Xem dòng 1.1.5 ở trên.
 
-3. **NT5 (`PLAN-LIBRARY-GATEWAY.md`) và Pha-1 `SPEC-FILE-MANAGER.md` mô tả CÙNG 1 việc** (cây thư
-   mục thật `~/InteriorFlow/Projects/...`) — đã gộp làm 1 mục (4.1) trong file này, KHÔNG đếm 2
-   lần. Xác nhận cách gộp này đúng ý định, hay 2 spec thực ra muốn 2 việc khác nhau mà agent hiểu
-   nhầm là trùng?
+3. ✅ **QUYẾT (Q3, 28/07)** — đúng, NT5 và Pha-1 File Manager là MỘT việc (cây thư mục thật
+   `~/InteriorFlow/Projects/...`). Giữ gộp làm 1 mục (4.1), không tách lại.
 
-4. **"Manager Center" (khối 1) là khối GHÉP** từ 3 spec khác chủ đề (Product-Infra/settings-auth,
-   Brief-Intake/khởi tạo dự án, ArchiNote-Boundary/ranh giới app khác) — không có 1 file spec nào
-   đặt tên "Manager Center" thật. Đây là suy đoán hợp lý theo ví dụ Hoà đưa trong yêu cầu, nhưng
-   cần xác nhận có đúng ý hay nên tách thành khối riêng (vd tách Brief-Intake vào khối 2.0 Ý
-   tưởng vì bản chất là bước đầu tiên của Studio, không phải "quản lý").
+4. ✅ **QUYẾT (Q4, 28/07)** — giữ tên "Manager Center" cho khối 1. Brief-Intake (cũ 1.3.x) đã
+   TÁCH sang khối **2.0 Ý tưởng** (mã mới 2.0.24-2.0.28) vì bản chất là đầu vào thiết kế, không
+   phải "quản lý công việc" — xem ghi chú tại vị trí cũ 1.3 và mục 2.0 ở trên.
 
-5. **Present editor toolkit "Video mức 2" (2.3.45-2.3.47) và "Film pre-pro" (2.3.48-2.3.52)** —
-   toàn bộ 8 mục đều ⬜, phụ thuộc `remotion` (chưa cài) — đây là nhánh L (lai trội) rất lớn theo
-   `IF-ARCHITECTURE-BLUEPRINT-v1.md` luật 1 ("không xây L khi N chặng đó chưa ✅"). Present N hiện
-   mới đạt ~44% (Bảng 1) — các mục này có nên giữ trong roadmap gần hay dời hẳn xuống "để sau"?
+5. ✅ **QUYẾT (Q5, 28/07)** — DỜI HẲN "Video mức 2" (2.3.45-2.3.47) + "Film pre-pro"
+   (2.3.48-2.3.52), đánh dấu `[v2]` trong cây. Lý do: Present bậc N mới ~44% (Bảng tổng 1), làm
+   nhánh L (video/film) khi N chưa xong là VI PHẠM luật 1. Đóng băng tới khi Present N đạt ngưỡng
+   đủ (chưa định số — quyết riêng khi tới lúc). Xem blockquote trước dòng 2.3.45 ở trên.
 
-6. **2.2.16-2.2.21 (6B ba tool đắt nhất + 3 tool khác)** — nhiều mục có hạ tầng lõi ĐÃ CÓ (Gu
-   Engine, camera 3D, moodboard node) nhưng CHƯA lộ ra thành Tool Mode card. Đây có phải là ưu
-   tiên kế tiếp sau 6 thẻ N hiện tại, hay cố ý dời? (`SPEC-RENDER-STUDIO.md` §6B tự có bảng "Thứ
-   tự" xếp đây là Pha 2-4, sau khi kho thẻ đủ nhiều — nhưng "đủ nhiều" là bao nhiêu thẻ thì chưa
-   định nghĩa số cụ thể.)
+6. ⬜ **CHƯA QUYẾT — mục duy nhất còn mở.** 2.2.16-2.2.21 (6B ba tool đắt nhất + 3 tool khác) —
+   nhiều mục có hạ tầng lõi ĐÃ CÓ (Gu Engine, camera 3D, moodboard node) nhưng CHƯA lộ ra thành
+   Tool Mode card. Đây có phải là ưu tiên kế tiếp sau 6 thẻ N hiện tại, hay cố ý dời?
+   (`SPEC-RENDER-STUDIO.md` §6B tự có bảng "Thứ tự" xếp đây là Pha 2-4, sau khi kho thẻ đủ nhiều —
+   nhưng "đủ nhiều" là bao nhiêu thẻ thì chưa định nghĩa số cụ thể.) *Theo Luật Đóng Băng #5
+   (KHÁM→QUYẾT→SPEC→CODE): mục này cần khám thêm trước khi quyết, không quyết vội ở đây.*
 
-7. **BOQ (Bill of Quantity)** xuất hiện ⬜ ở ÍT NHẤT 4 chỗ khác nhau trong cây này (2.1.5.c,
-   2.1.9.k, 2.2.29.f, 2.0.10) — đều cùng 1 gốc "0 dòng code toàn repo" đã ghi trong `STATUS.md`
-   "Chờ USER quyết". Đây là ứng viên rõ nhất cho 1 quyết định DUY NHẤT (làm hay không, matId nối
-   vào đâu) sẽ tự động mở khoá cả 4 nhánh — nên gộp thành 1 sáng kiến riêng thay vì để rải rác.
+7. ✅ **QUYẾT (Q6, 28/07)** — gộp BOQ (Bill of Quantity) thành MỘT sáng kiến duy nhất, mã
+   `2.1.9.p`, gỡ 4 chỗ rải rác cũ (2.1.5.c/2.1.9.k/2.2.29.f/2.0.10 nay chỉ trỏ về đây). Mở khoá:
+   matId trên MaterialDef/vùng hatch → tính m²×đơn giá+hao hụt → bảng BOQ xuất được → callout/
+   legend Present tự đọc theo → (xa hơn) vật liệu mã+giá từ moodboard chặng Ý tưởng. Xem dòng
+   2.1.9.p và Bảng tổng 2 ở trên.
 
 ---
 
+## PHẦN E — LUẬT ĐÓNG BĂNG *(chốt 28/07, VIỆC 3)*
+
+1. **Tính năng không có mã trong cây này → KHÔNG code.** Mọi task giao (cho Claude, cho Ben, cho
+   agent bất kỳ) phải trỏ về đúng 1 mã (vd `2.3.30`) đã tồn tại trong `IF-MASTER-TREE.md`.
+2. **Ý mới → `docs/IDEAS-BACKLOG.md`, KHÔNG chen vào cây.** Áp dụng cho cả Ben lẫn Hoà. Ý tưởng
+   nảy ra giữa lúc làm việc khác không được gắn mã và code ngay — ghi vào backlog, chờ đến mốc
+   mở rộng cây (luật 3).
+3. **Cây chỉ mở rộng khi KẾT THÚC một pha**, không mở giữa chừng. Không thêm mục cấp 3/4 mới vào
+   `IF-MASTER-TREE.md` khi đang giữa 1 sprint đang chạy.
+4. **Cột "Code" (Trạng thái thật trong CODE) là sự thật duy nhất.** Spec nói "đã xong" mà code
+   chưa có thì vẫn ghi ⬜ — không nâng trạng thái theo lời spec hay lời báo cáo, phải tự verify.
+5. ⭐ **THỨ TỰ BẮT BUỘC: KHÁM → QUYẾT → SPEC → CODE.** Không spec hoá từ mô tả suông — mọi spec
+   mới phải dựa trên bằng chứng khám thật (file:dòng), mọi quyết định phải có trước khi sửa spec,
+   mọi code phải có sau khi spec đã chốt. Ví dụ áp dụng đúng luật này: VIỆC 1/2/3 của phiên 28/07
+   (khám `AUDIT-EDITOR-TOOLKIT.md` trước → Hoà quyết Q2a-Q6 → sửa `SPEC-COLLABORATION.md`/
+   `SPEC-PRODUCT-INFRA.md` → chưa code gì, đúng thứ tự).
+
+---
+
+*v1.1 · 2026-07-28 tối · VIỆC 1/2/3: khám editor toolkit (`docs/AUDIT-EDITOR-TOOLKIT.md`) → sửa
+chính xác dòng 2.3.29-2.3.43 · ghi quyết Q2a-Q6 (chat/auth/NT5/Manager Center/video-film/BOQ) ·
+cập nhật CẦN HOÀ QUYẾT (6/7 đã quyết, 1 còn mở) · thêm PHẦN E Luật Đóng Băng. Theo đúng thứ tự
+KHÁM → QUYẾT → SPEC → CODE (luật E5) — phiên này dừng ở SPEC, chưa code.*
 *v1.0 · 2026-07-28 · Tổng hợp từ 22 file spec (18 `SPEC-*.md` + `IF-ARCHITECTURE-BLUEPRINT-v1.md`
 + `IF-FEATURE-SPEC-P1-v2.md` + `IF-PRESENT-SPRINT-PLAN.md` + `IF1-COMPLETION-AUDIT.md`) +
 `docs/PLAN-LIBRARY-GATEWAY.md`, do Claude tổng hợp qua 6 agent song song đọc toàn văn + tự grep/
