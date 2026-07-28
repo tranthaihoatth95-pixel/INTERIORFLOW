@@ -5,19 +5,21 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (28/07 tối — NT-gateway ①②③ + StatusBar (VIỆC A) + Tool Mode Render (VIỆC B))
-Chi tiết đầy đủ → `CHANGELOG.md` mục "28/07 tối" (danh sách 7 commit). Tóm tắt:
-- ✅ **PLAN-LIBRARY-GATEWAY.md ①②③ xong**, ④ NT1 (gộp LibraryPanel/LibraryBrowser) dời sau.
-- ✅ **SPEC-RENDER-STUDIO.md §6C mới** — sinh diện đồ nội thất bằng hình học + kho nhớ 3 tầng
-  (thuần tài liệu, chưa code).
-- ✅ **VIỆC A — StatusBar dùng chung** 3 chặng: trái (dự án·toạ độ CAD) · giữa (Vitals, hover
-  150ms/⌘J/xổ lên, điểm gọi DUY NHẤT — gỡ nút nổi cũ) · phải (hàng đợi·lưu·lỗi quy chuẩn). Verify
-  browser thật + tự ẩn khi Trình chiếu. Khớp khung có sẵn `SPEC-NAVIGATION-MODEL.md` §2.
-- ✅ **VIỆC B — Tool Mode mặc định chặng Render**: 6 thẻ (Tầng 1) → 2 cột tham số động từ node
-  registry thật (Tầng 2) → node graph cũ nguyên vẹn qua "Mở canvas" (Tầng 3). Verify browser
-  thật: Render chạy qua `runNode()` thật, ra lỗi thật (ComfyUI chưa bật) — không giả vờ thành công.
-- **Lưu ý dev server**: `.next` cache hay hỏng sau nhiều HMR/git stash → xoá `.next` rồi khởi
-  động lại, không phải bug code.
+## Hiện tại (28/07 khuya — IF-MASTER-TREE.md tạo mới + VIỆC 1/2/3: khám toolkit + quyết + Luật Đóng Băng)
+Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này:
+- ✅ **`docs/IF-MASTER-TREE.md` mới** — cây phân rã 4 cấp DUY NHẤT của toàn app, gom từ 22 file
+  spec, thay việc đọc rời. Có 3 bảng tổng (đếm/phụ thuộc/làm-được-ngay) + mục CẦN HOÀ QUYẾT.
+- ✅ **`docs/AUDIT-EDITOR-TOOLKIT.md` mới** — khám code thật (file:dòng) 19 món editor toolkit
+  Present/Photo. Kết luận 3 nhóm: đủ dùng (bo góc/crop/opacity/align/text-fx/photo-adjust) · có mà
+  thô (gradient/blend/shadow chỉ-cho-text, nhân bản fixed-offset, layer thiếu nhóm) · thật sự chưa
+  có (mask ảnh, overlay, khoá tỉ lệ, làm mờ, pattern real-scale, bảng số liệu, lật ảnh). Đã propagate
+  vào `IF-MASTER-TREE.md` dòng 2.3.29-2.3.43.
+- ✅ **6/7 mục CẦN HOÀ QUYẾT đã chốt** (Q2a-Q6): giữ `ChatPanel` (sửa `SPEC-COLLABORATION.md`) ·
+  giữ auth tự viết (sửa `SPEC-PRODUCT-INFRA.md`) · NT5=Pha-1 File Manager · Brief-Intake tách sang
+  khối 2.0 Ý tưởng · video/film Present dời hẳn `[v2]` · BOQ gộp 1 sáng kiến `2.1.9.p`. Còn mở:
+  mục 6 (2.2.16-2.2.21 Render Tool Mode Pha 2-4).
+- ✅ **PHẦN E — Luật Đóng Băng** thêm vào cuối `IF-MASTER-TREE.md` (5 luật, cốt lõi: KHÁM→QUYẾT→
+  SPEC→CODE) + `docs/IDEAS-BACKLOG.md` mới cho ý phát sinh giữa chừng.
 - ⏸️ **T3/T4 (Semantic Room)** vẫn CHƯA LÀM — đọc `docs/IF1-COMPLETION-AUDIT.md` §3 (a)/(d) trước.
 
 ## Worktree đang mở
@@ -34,8 +36,10 @@ Không có.
 - Treo: VIỆC 4 cũ (GuProfile=dữ liệu) · #14 (cụm Mẫu Presenting).
 - 3 nhánh `worktree-agent-*` merged còn local; `fix/hatch-t-junction`+`fix/quality-pipeline`
   chưa merge — xoá được không?
-- BOQ (bảng thống kê vật tư): audit xác nhận 0 dòng code — cần quyết có làm không, matId nối
-  vào đâu (xem IF1-COMPLETION-AUDIT §3c).
+- BOQ: đã gộp 1 sáng kiến `2.1.9.p` (`IF-MASTER-TREE.md`, Q6 28/07) — vẫn cần quyết có làm không,
+  matId nối vào đâu (xem IF1-COMPLETION-AUDIT §3c).
+- **2.2.16-2.2.21** (Render Tool Mode Pha 2-4, hạ tầng có sẵn chưa lộ card) — mục CẦN HOÀ QUYẾT
+  duy nhất còn mở trong `IF-MASTER-TREE.md`.
 
 ## Nợ kỹ thuật
 - 🟡 `lib/cad/pdf.ts:383` nhắc `lib/cad/pdf.node-check.mjs` — file KHÔNG tồn tại.
