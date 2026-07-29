@@ -14,6 +14,7 @@ import { runNode } from '@/lib/execution';
 import { getDefinition, defaultParams } from '@/lib/nodes/registry';
 import { useToolModeUi, useIsSmallScreenForCanvas } from '@/lib/render-studio/tool-mode-ui';
 import { taskCardById } from '@/lib/render-studio/task-cards';
+import { ensureToolModeGraph } from '@/lib/render-studio/tool-mode-graph';
 import type { ParamDef } from '@/lib/types';
 
 export default function ToolModeForm({ cardId }: { cardId: string }) {
@@ -22,22 +23,34 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
   const openCanvas = useToolModeUi((s) => s.openCanvas);
   const smallScreen = useIsSmallScreenForCanvas();
 
+  // LỖ RÒ 1 (2.2.77, 29/07, docs/CHOT-SO-MA-2026-07-29.md §D) — ảnh đã thả + node graph refs
+  // sống Ở STORE (useToolModeUi), KHÔNG phải `useState`/`useRef` cục bộ trong component này.
+  // Lý do bắt buộc, đã xác nhận bằng browser thật: `RenderToolModeOverlay` UNMOUNT HẲN
+  // `ToolModeForm` mỗi lần `view` rời 'form' (vd bấm "Chọn việc khác" về Home) — state cục bộ
+  // (kể cả `useRef`) KHÔNG sống sót qua unmount, chỉ state ở NGOÀI component (store) mới giữ
+  // được ảnh khi user quay lại Home rồi chọn thẻ khác.
+  const imageDataUrl = useToolModeUi((s) => s.sessionImageDataUrl);
+  const setImageDataUrl = useToolModeUi((s) => s.setSessionImageDataUrl);
+  const nodeRefs = useToolModeUi((s) => s.sessionNodeRefs);
+  const setNodeRefs = useToolModeUi((s) => s.setSessionNodeRefs);
+
   const def = card ? getDefinition(card.nodeType) : null;
   const [values, setValues] = useState<Record<string, string | number>>(() => (def ? defaultParams(def) : {}));
-  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
-  const nodeIdsRef = useRef<{ imgId: string; aiId: string } | null>(null);
-  const [aiNodeId, setAiNodeId] = useState<string | null>(null); // trigger re-render khi node vừa dựng
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // đổi thẻ → xoá phiên node cũ (thẻ mới = việc mới, không lẫn ảnh/tham số thẻ trước).
+  // Đổi thẻ → chỉ reset THAM SỐ (node AI khác thì params cũ không còn hợp lệ nữa) — KHÔNG đụng
+  // `imageDataUrl`/`nodeRefs` (ở store, tự sống sót qua unmount/remount). Việc thay node AI thật
+  // sự (xoá node cũ, dựng node mới, nối lại vào ĐÚNG node ảnh nguồn) xảy ra lười (lazy) trong
+  // buildOrUpdateGraph(), đúng lúc user bấm Render — không mutate graph chỉ vì đang lướt xem thẻ.
   useEffect(() => {
-    nodeIdsRef.current = null;
-    setAiNodeId(null);
-    setImageDataUrl(null);
     if (def) setValues(defaultParams(def));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardId]);
 
+  // Kết quả hiện ĐÚNG khi refs trong store khớp thẻ đang mở (mở lại đúng thẻ vừa render trước
+  // đó) — thẻ khác thì chưa có kết quả CHO THẺ NÀY (dù node AI của thẻ cũ vẫn còn tới lúc bấm
+  // Render tiếp mới bị thay, xem ensureToolModeGraph).
+  const aiNodeId = nodeRefs?.cardId === cardId ? nodeRefs.aiId : null;
   const run = useFlowStore((s) => (aiNodeId ? s.nodes.find((n) => n.id === aiNodeId)?.data.run : undefined));
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,20 +66,22 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
 
   const buildOrUpdateGraph = useCallback((): string => {
     const store = useFlowStore.getState();
-    if (!nodeIdsRef.current) {
-      store.addNode('input.image', { x: 40, y: 160 });
-      const imgId = useFlowStore.getState().nodes.at(-1)!.id;
-      store.addNode(card!.nodeType, { x: 480, y: 160 });
-      const aiId = useFlowStore.getState().nodes.at(-1)!.id;
-      store.onConnect({ source: imgId, sourceHandle: 'image', target: aiId, targetHandle: 'image' });
-      nodeIdsRef.current = { imgId, aiId };
-      setAiNodeId(aiId);
-    }
-    const { imgId, aiId } = nodeIdsRef.current;
-    if (imageDataUrl) store.updateParam(imgId, 'file', imageDataUrl);
-    for (const [k, v] of Object.entries(values)) store.updateParam(aiId, k, v);
-    return aiId;
-  }, [card, imageDataUrl, values]);
+    const refs = ensureToolModeGraph(
+      {
+        addNode: store.addNode,
+        deleteNode: store.deleteNode,
+        onConnect: store.onConnect,
+        lastNodeId: () => useFlowStore.getState().nodes.at(-1)!.id,
+      },
+      nodeRefs,
+      cardId,
+      card!.nodeType,
+    );
+    if (refs !== nodeRefs) setNodeRefs(refs);
+    if (imageDataUrl) store.updateParam(refs.imgId, 'file', imageDataUrl);
+    for (const [k, v] of Object.entries(values)) store.updateParam(refs.aiId, k, v);
+    return refs.aiId;
+  }, [card, cardId, imageDataUrl, values, nodeRefs, setNodeRefs]);
 
   const onRender = () => {
     if (!card || !imageDataUrl) return;

@@ -12,6 +12,8 @@
 
 import { useEffect } from 'react';
 import { useToolModeUi, useIsSmallScreenForCanvas } from '@/lib/render-studio/tool-mode-ui';
+import { useFlowStore } from '@/lib/store';
+import { detectGraphPattern } from '@/lib/render-studio/graph-pattern';
 import ToolModeHome from './ToolModeHome';
 import ToolModeForm from './ToolModeForm';
 
@@ -22,6 +24,8 @@ export default function RenderToolModeOverlay() {
   const selectedCardId = useToolModeUi((s) => s.selectedCardId);
   const backToHome = useToolModeUi((s) => s.backToHome);
   const smallScreen = useIsSmallScreenForCanvas();
+  const nodes = useFlowStore((s) => s.nodes);
+  const edges = useFlowStore((s) => s.edges);
 
   useEffect(() => {
     hydrate();
@@ -37,5 +41,19 @@ export default function RenderToolModeOverlay() {
   if (view === 'canvas') return null; // canvas lộ ra — overlay ẩn hẳn.
 
   if (view === 'form' && selectedCardId) return <ToolModeForm cardId={selectedCardId} />;
+
+  // LỖ RÒ 2 (2.2.77, 29/07, docs/CHOT-SO-MA-2026-07-29.md §D) — rời canvas về 'home' KHÔNG được
+  // lờ đi graph đang có trên đó. Khớp đúng mẫu 1 ảnh→1 node AI có thẻ tương ứng → mở lại ĐÚNG thẻ
+  // đó (không hỏi lại, không mất ngữ cảnh). Phức tạp hơn → báo rõ số node, không im lặng hiện
+  // lưới 6 thẻ trống như canvas chưa từng có gì.
+  const pattern = detectGraphPattern(nodes, edges);
+  if (pattern.kind === 'single') return <ToolModeForm cardId={pattern.cardId} />;
+  if (pattern.kind === 'complex') {
+    return (
+      <ToolModeHome
+        notice={`Flow này có ${pattern.nodeCount} node — Tool Mode chỉ hiện được 1 việc, mở canvas để xem đủ.`}
+      />
+    );
+  }
   return <ToolModeHome />;
 }

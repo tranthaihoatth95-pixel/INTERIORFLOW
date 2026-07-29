@@ -14,6 +14,7 @@
 
 import { create } from 'zustand';
 import { useEffect, useState } from 'react';
+import type { ToolModeNodeRefs } from './tool-mode-graph';
 
 export type ToolModeView = 'home' | 'form' | 'canvas';
 
@@ -56,6 +57,16 @@ interface ToolModeUiState {
   openCanvas: () => void;
   backToHome: () => void;
   backToForm: () => void;
+  // LỖ RÒ 1 (2.2.77, 29/07, docs/CHOT-SO-MA-2026-07-29.md §D) — ảnh đã thả + node graph của
+  // ToolModeForm ĐẶT Ở ĐÂY (store sống ngoài React tree), KHÔNG phải `useState`/`useRef` cục bộ
+  // trong component. Lý do bắt buộc: `RenderToolModeOverlay` unmount hẳn `ToolModeForm` mỗi lần
+  // `view` rời khỏi `'form'` (về `'home'` để chọn thẻ khác, ví dụ) — state cục bộ (kể cả `useRef`)
+  // KHÔNG sống sót qua unmount. Chỉ có state ở NGOÀI component (store này) mới giữ được ảnh khi
+  // user quay lại Tool Mode Home rồi chọn thẻ khác.
+  sessionImageDataUrl: string | null;
+  setSessionImageDataUrl: (v: string | null) => void;
+  sessionNodeRefs: ToolModeNodeRefs | null;
+  setSessionNodeRefs: (r: ToolModeNodeRefs | null) => void;
 }
 
 export const useToolModeUi = create<ToolModeUiState>((set) => ({
@@ -89,6 +100,10 @@ export const useToolModeUi = create<ToolModeUiState>((set) => ({
       persist('form', s.selectedCardId);
       return { view: 'form' };
     }),
+  sessionImageDataUrl: null,
+  setSessionImageDataUrl: (v) => set({ sessionImageDataUrl: v }),
+  sessionNodeRefs: null,
+  setSessionNodeRefs: (r) => set({ sessionNodeRefs: r }),
 }));
 
 /** Màn ≤7 inch — ÉP Tool Mode, ẩn hẳn lối vào canvas (§1B "Ngưỡng thiết bị"). Không có API đọc

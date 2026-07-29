@@ -8,7 +8,7 @@
 import { TASK_CARDS } from '@/lib/render-studio/task-cards';
 import { useToolModeUi, useIsSmallScreenForCanvas } from '@/lib/render-studio/tool-mode-ui';
 
-export default function ToolModeHome() {
+export default function ToolModeHome({ notice }: { notice?: string } = {}) {
   const selectCard = useToolModeUi((s) => s.selectCard);
   const openCanvas = useToolModeUi((s) => s.openCanvas);
   const smallScreen = useIsSmallScreenForCanvas();
@@ -42,6 +42,26 @@ export default function ToolModeHome() {
         <p style={{ fontSize: 13, color: 'var(--t3)', textAlign: 'center', marginBottom: 32 }}>
           Không dây, không node — chọn 1 việc, thả ảnh, bấm Render.
         </p>
+
+        {/* LỖ RÒ 2 (2.2.77, 29/07) — graph trên canvas phức tạp hơn 1 việc Tool Mode hiểu được:
+            báo rõ, không im lặng hiện lưới trống như chưa từng có gì. */}
+        {notice && (
+          <div
+            style={{
+              marginBottom: 24,
+              padding: '12px 16px',
+              borderRadius: 10,
+              border: '1px solid var(--border)',
+              background: 'var(--field)',
+              color: 'var(--t2)',
+              fontSize: 12.5,
+              textAlign: 'center',
+            }}
+          >
+            {notice}
+          </div>
+        )}
+
         <div
           style={{
             display: 'grid',
