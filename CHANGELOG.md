@@ -1,5 +1,24 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 29/07 khuya — Sprint 1 (docs/CHOT-SO-MA-2026-07-29.md §D) CODE xong, 4 commit
+- **Sprint 1 xong cả 4 việc, mỗi việc 1 commit, browser-verify thật**:
+  `4804f45` **7.4.11** ẩn `LiveCursors` (giữ `PresenceBar`) · `573e314` **2.2.75** sửa
+  `composeBoard()` từ "A4 300dpi-ish" (2480×1754, thật ra ~212dpi) → đúng A3 300dpi thật
+  (4961×3508) · `57124b3` **2.2.60+2.2.61** (chung 1 commit — cùng file `Header.tsx`) gộp Header
+  chỉ 1 zone co giãn `min-w-0 flex-1`, "Chạy flow"+avatar luôn `shrink-0` — verify thật ở
+  1024/1183/1440px; dời `AiTierMenu` khỏi Header sang `/settings` (`AiDependencySettings.tsx`
+  mới), Header chỉ còn `AiStatusDot` nhỏ · `e82b46d` **2.2.77** bịt 2 lỗ rò dữ liệu Tool Mode
+  (ảnh mất khi đổi thẻ việc do `ToolModeForm` unmount hẳn — chuyển lên store `useToolModeUi`;
+  rời canvas về Home im lặng bỏ qua graph đang có — `detectGraphPattern()` nhận mẫu đơn giản
+  thì tự mở đúng thẻ, phức tạp thì báo) — 11/11 test pass (`sucrase-node`) + browser-verify thật
+  qua `__flowStore`: đổi thẻ giữ nguyên node ảnh, chỉ thay node AI, không rác.
+  ⚠️ 2 lần tự sửa sai giữa chừng (browser test bắt được, không phải chủ dự án báo): giả định
+  sai `ToolModeForm` không unmount (sai — đã sửa lại đúng) · `overflow-hidden` thêm vào Header
+  che mất toàn bộ dropdown popover (đã gỡ, quay lại chỉ dùng `min-w-0`+`flex-shrink`).
+- Đã đọc `docs/TICKET-FONT-MONO-NODE-2026-07-29.md` (mã **2.2.85** — bỏ font mono nhãn node) —
+  CHƯA LÀM lúc đó, hẹn gộp chung commit với **2.2.69** (quy chuẩn thoại) ở Sprint 3 (mã đã dán
+  vào cây 30/07, xem entry "dán mã tính năng" bên dưới).
+
 ## 29/07 — SPEC TỔNG Cowork: ingest 3 file lớn + PHẦN E v4 + cảnh báo trùng mã
 - Đổi tên file nguồn sự thật (git-commit `8e096a8`): `IF-MASTER-TREE.md` → `docs/IF-FEATURE-TREE.md` ·
   `IF-MASTER-BLUEPRINT.md` → `docs/IF-ARCHITECTURE-COMPASS.md`. Tên cũ giữ dạng redirect 1 dòng —

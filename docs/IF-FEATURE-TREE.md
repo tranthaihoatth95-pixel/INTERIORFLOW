@@ -312,6 +312,47 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 2.2.36 | Lộ trình — chốt schema 4 mặt (T1) | N | 🟡 | 2.2.29 | `SPEC-MATERIAL-PIPELINE.md` §7 |
 | 2.2.37 | Lộ trình — nhập ATLAS Vol.3 Lark Base (30-50 vật liệu) | N | ⬜ chỉ 13 preset thủ công, không gắn `larkRecordId` | 2.2.36 | `SPEC-MATERIAL-PIPELINE.md` §7 |
 
+#### 2.2.60-2.2.85 — SPEC TỔNG Cowork 29/07 (Sprint 1-6, dán 30/07)
+
+> Nguồn: `docs/SPEC-TONG-COWORK-2026-07-29.md` §3-§8 + `docs/TICKET-FONT-MONO-NODE-2026-07-29.md`.
+> Đã kiểm trùng trước khi dán (xem cảnh báo cuối file "PHẦN E" — batch này xác nhận KHÔNG trùng mã
+> có sẵn, đây chính là đợt dán riêng đã hẹn). **Bậc N** cho toàn batch là suy luận hợp lý (spec gốc
+> không tự gán N/P/L cho các mã Sprint) — trừ `2.3.60` ghi rõ là suy luận riêng.
+>
+> **Thứ tự phụ thuộc ĐÃ CHỐT** (Sprint 3, `docs/SPEC-TONG-COWORK-2026-07-29.md` §3 ①-⑤, dùng đúng mã
+> hiện có trong cây — không dùng mã cũ sai `7.23`):
+> **`2.2.77` → `2.2.69` (gộp chung commit với `2.2.85`) → `2.2.65` → `2.2.78` → `7.1.18` → phần còn
+> lại** (⑥⑦ trong §3: `2.2.70/71/79/80/81`, `2.2.72`, `2.2.66/67`, `2.3.61`, `2.2.84` — các mục này
+> phụ thuộc `7.1.18` xong trước, thứ tự riêng giữa chúng KHÔNG bắt buộc).
+>
+> **Không dán trong đợt này** (ngoài phạm vi yêu cầu 30/07, còn ở `SPEC-TONG-COWORK-2026-07-29.md`
+> §3 chờ đợt sau): `2.2.62`-`2.2.64` (Backlog — PBR/đóng gói đa góc nhìn, khuyến nghị KHÔNG làm) ·
+> `2.2.73`-`2.2.74` (Sprint 6 — Gallery công thức/chia sẻ `.ifpack`).
+
+| Mã | Tên | Bậc | Trạng thái | Phụ thuộc | File spec gốc |
+|---|---|---|---|---|---|
+| 2.2.60 | Sửa tràn khung thanh đầu (Header) — gộp Thêm vào canvas/Mở tệp/Xuất thành 1 menu "Tệp", priority+ overflow giữ Chạy flow+avatar cố định bên phải | N | ✅ done (checklist 6 bước đủ) — commit `57124b3`, browser-verify thật 1024/1183/1440px | không | `docs/SPEC-TONG-COWORK-2026-07-29.md` §4.1 |
+| 2.2.61 | Dời `AiTierMenu` khỏi Header sang trang Cài đặt, Header chỉ còn 1 chấm trạng thái nhỏ | N | ✅ done (checklist 6 bước đủ) — commit `57124b3` (`components/settings/AiDependencySettings.tsx` mới, `app/settings/page.tsx` mới, `Header.tsx` chỉ còn `<AiStatusDot/>`) | 2.2.60 (cùng file `Header.tsx`, chung 1 commit) | `docs/SPEC-TONG-COWORK-2026-07-29.md` §4.2 |
+| 2.2.65 | `lib/products.ts` — một danh mục sản phẩm đầu ra dùng chung chặng 2+3 (6 sản phẩm: board concept/bộ ảnh phương án/hồ sơ khách/spec sheet/bảng vật liệu/ảnh in khổ lớn) | N | ⬜ `lib/products.ts` KHÔNG tồn tại (xác nhận `ls` 30/07) | 2.2.69 (thứ tự Sprint 3 ②→③ đã chốt) | `docs/SPEC-TONG-COWORK-2026-07-29.md` §5.4 |
+| 2.2.66 | `loadDemoFlow()` đổi từ thay thế toàn bộ canvas → merge theo điểm thả (cộng offset toạ độ) | N | ⬜ `store.ts:656 loadDemoFlow` hiện vẫn thay thế toàn bộ canvas, chưa có logic merge-theo-offset | 7.1.18 (phần "còn lại" ⑦, xem ghi chú thứ tự trên) | `docs/SPEC-TONG-COWORK-2026-07-29.md` §5.5 |
+| 2.2.67 | 3 trạng thái thẻ trong gói combo (Cần import/Cần điền chữ/Đã đủ chỉ Start) + nút "▶ Chạy cả gói" | N | ⬜ `TaskCard` (`lib/render-studio/task-cards.ts:14`) chưa có field trạng thái 3 loại này, không có nút chạy cả gói | 2.2.66 | `docs/SPEC-TONG-COWORK-2026-07-29.md` §5.5 |
+| 2.2.68 | Nâng `out.board` — nhúng `AdjustPanel`, chọn định dạng PNG/JPG/PDF/WebP + DPI + khổ giấy, bỏ giới hạn 4 ảnh | N | 🟡 node `out.board` có sẵn (`lib/nodes/registry.ts:952-953 'Export Board'`) nhưng chưa nhúng `AdjustPanel`/chưa chọn DPI-khổ/còn giới hạn 4 ảnh | 2.2.67 | `docs/SPEC-TONG-COWORK-2026-07-29.md` §5.5 |
+| 2.2.69 | Quy chuẩn thoại 5 luật (Việt dẫn·Anh theo ngăn bằng `·`, `→` cho biến đổi 2 vế cùng ngôn ngữ, bỏ ngoặc giải thích, cấm tiếng lóng, tên=việc người dùng làm) áp cho 45 node + 4 tên nhóm | N | ⬜ node title vẫn thuần Anh (`lib/nodes/registry.ts:207 'Import Image'`, `:222 'Text Prompt'`, `:245 'Style Preset'` — chưa đổi tên nào theo luật mới) | 2.2.77 (thứ tự Sprint 3 ①→② đã chốt) | `docs/SPEC-TONG-COWORK-2026-07-29.md` §6.3 |
+| 2.2.70 | Hệ minh hoạ nét — 45 bìa SVG inline (`stroke-width:1.5`, không gradient/bóng/icon mua sẵn), ưu tiên 24 thẻ hay dùng | N | ⬜ 0 kết quả `stroke-width` trong `lib/render-studio/` — chưa có bộ SVG bìa nét riêng cho thẻ node | 7.1.18 (phần "còn lại") | `docs/SPEC-TONG-COWORK-2026-07-29.md` §6.2 |
+| 2.2.71 | 4 nhóm (Ý tưởng·Dựng·Sửa·Xuất) thêm trường `group` song song `category` cũ + bố cục cross (4 ô góc quanh 1 ô phong cách giữa) | N | ⬜ `lib/types.ts` chưa có `group?:` trên node def (xác nhận grep 0 kết quả), chưa có UI cross | 7.1.18 (phần "còn lại") | `docs/SPEC-TONG-COWORK-2026-07-29.md` §6.1 |
+| 2.2.72 | Lộ `three.cad2fbx` (CAD→3D, 0 credit, đã tất định) + `three.camera` (đổi góc phối cảnh) ra mặt tiền Tool Mode | N | ⬜ 2 node có thật (`lib/nodes/defs/render-v2.ts:203-237`) nhưng KHÔNG có trong `lib/render-studio/task-cards.ts` (xác nhận grep 0 kết quả) — đúng phát hiện §1.2 "đang vô hình" | 2.2.24 (pull tường, đã ✅); 7.1.18 (phần "còn lại") | `docs/SPEC-TONG-COWORK-2026-07-29.md` §1.2, §5 Sprint 3 ⑦ |
+| 2.2.75 | `lib/imaging.ts composeBoard()` board 2480×1754→**4961×3508** (A3 300dpi thật) + sửa chú thích sai "A4 300dpi-ish" | N | ✅ done (checklist 6 bước đủ) — commit `573e314`, browser-verify canvas layout tỉ lệ đúng | không | `docs/SPEC-TONG-COWORK-2026-07-29.md` §1.6, §3 Sprint 1 |
+| 2.2.76 | Tự chèn `ai.upscale` ×4 vào đường xuất in + hiện dpi thật + mở khoá 2 nút "In 300dpi" đang khoá | N | ⬜ 2 nút vẫn `disabled:true` (`components/studio/RenderIOMenus.tsx:152`, `components/present-editor/Toolbar.tsx:143` — `disabledReason` "ảnh render hiện ~116dpi") | 2.2.82 (cùng luật 9 ≥300dpi) | `docs/SPEC-TONG-COWORK-2026-07-29.md` §1.6, §3 Sprint 6 |
+| 2.2.77 | ⭐ Bịt 2 lỗ rò dữ liệu Tool Mode (đổi thẻ mất ảnh + canvas→Tool Mode lờ graph đang có) + test luật "chuyển giao diện không xoá dữ liệu" | N | ✅ done (checklist 6 bước đủ) — commit `e82b46d`, 11/11 test (`lib/render-studio/tool-mode-graph.test.ts` 4, `graph-pattern.test.ts` 7) + browser-verify qua `__flowStore`: đổi thẻ giữ nguyên node ảnh, chỉ thay node AI | không (làm TRƯỚC mọi việc UI khác — Sprint 3 ①) | `docs/SPEC-TONG-COWORK-2026-07-29.md` §5.1 |
+| 2.2.78 | Mở rộng `ParamDef`: thêm `span?: 1\|2\|4` · `group?: string` · `advanced?: boolean`, gán cho 45 node | N | ⬜ `lib/types.ts` `ParamDef` hiện chỉ có 9 `kind` (text/select/slider/image/mask/annotate/sketch/smartmask/corners), không có 3 trường này (xác nhận grep 0 kết quả) | 2.2.65 (thứ tự Sprint 3 ③→④ đã chốt) | `docs/SPEC-TONG-COWORK-2026-07-29.md` §5.2 |
+| 2.2.79 | Renderer Tool Mode 3 dải màn (<8" 1 cột / 8"-laptop 2 cột / desktop 3 cột — dải màn ≠ lựa chọn giao diện, 2 trục độc lập) | N | 🟡 mới có gate nhị phân `useIsSmallScreenForCanvas()` (`lib/render-studio/tool-mode-ui.ts:114`, ngưỡng CSS 700px) khoá/mở Node Mode — chưa có renderer 3-dải/3-cột thật | 7.1.18 (phần "còn lại") | `docs/SPEC-TONG-COWORK-2026-07-29.md` §5.2 |
+| 2.2.80 | Pill nổi switch "▦ Bảng việc ⇄ ⁂ Canvas" (liquid-glass, góc dưới-trái, phím `⌘\`), thay 2 điều khiển rời hiện có | N | ⬜ hiện vẫn 2 điều khiển rời: link "Mở canvas (nâng cao) →" (`ToolModeHome.tsx`) và nút "Mở canvas ▾" (`ToolModeForm.tsx:227`) — chưa gộp thành pill | 7.1.18 (phần "còn lại") | `docs/SPEC-TONG-COWORK-2026-07-29.md` §5.3 |
+| 2.2.81 | 11 phím/chuột Node Mode (Space kéo màn · lăn zoom · ⇧1 vừa màn · kéo khoanh+⇧click chọn nhiều · Delete · ⌘D nhân bản · ⌘Z/⌘⇧Z · ⌘↵/⌘⇧↵ chạy node/flow · Tab/chuột phải thêm node · ⌘\\ đổi giao diện) | N | ⬜ 0 kết quả `onKeyDown`/`keydown` trong `components/render-studio/` — chưa có bộ phím tắt riêng Node Mode | 7.1.18 (phần "còn lại") | `docs/SPEC-TONG-COWORK-2026-07-29.md` §5.2 |
+| 2.2.82 | Preflight chặng 2 — mở rộng cơ chế `Violation`/`severity` (§1.4) sang Render, thêm SSIM/LPIPS đo lệch bố cục so ảnh gốc | N | ⬜ `lib/standards/` dùng chung (đề xuất ở `7.1.18`) chưa tồn tại; 0 kết quả SSIM/LPIPS toàn repo | 7.1.18 | `docs/SPEC-TONG-COWORK-2026-07-29.md` §7.5 |
+| 2.2.83 | Preflight — tích hợp vào nút Xuất (`IOMenu`), không panel riêng, có nút "Xuất kèm lỗi" cho trường hợp cố ý | N | ⬜ chưa có (phụ thuộc `2.2.82` chưa có cơ chế preflight nào để tích hợp) — **⚠️ nguồn `§7.5` chỉ liệt kê chung tiêu đề `2.3.63/2.2.82/2.2.83` cho CÙNG 1 đoạn mô tả, không tách rõ nội dung riêng của `2.2.83`; dòng này = suy luận hợp lý (tách phần "tích hợp UI xuất" khỏi phần "tính luật" của `2.2.82`) — CẦN Hoà xác nhận lại ranh giới đúng, không tự chốt** | 2.2.82 | `docs/SPEC-TONG-COWORK-2026-07-29.md` §7.5 |
+| 2.2.84 | Vitals visual mới — 2 electron cuộn nhau + cung hở, 5 trạng thái, 3 cỡ, xoắn thiên hà, chữ bụi sáng (thay `VitalsIcon.tsx` cam-navy hiện tại) | N | ⬜ `components/studio/VitalsIcon.tsx` vẫn 67 dòng bản cũ (xác nhận `wc -l` 30/07) — mockup chạy thật đã có sẵn ở `if-vitals-visual.html`, chưa chuyển vào component thật | 7.1.18 (phần "còn lại") | `docs/SPEC-TONG-COWORK-2026-07-29.md` §8 |
+| 2.2.85 | Bỏ font mono ở nhãn node (icon+chữ, giữ `tabular-nums` cho số/toạ độ/mã), quét đồng bộ 9 file | N | ⬜ vẫn `fontFamily: 'ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace'` tại `components/nodes/InteriorNode.tsx:269` | 2.2.69 — **PHẢI gộp CHUNG 1 COMMIT** với `2.2.69` (Luật Đồng Bộ #6 — đổi tên node xong mà chưa bỏ mono thì dấu tiếng Việt vỡ ngay giữa dòng, xem `docs/TICKET-FONT-MONO-NODE-2026-07-29.md` §2②) | `docs/TICKET-FONT-MONO-NODE-2026-07-29.md` |
+
 ### 2.3 Present
 
 > PS-0..PS-11 dùng nguyên trạng thái đã audit ở `IF1-COMPLETION-AUDIT.md` §2.
@@ -389,6 +430,19 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 2.3.55 | LOẠI có chủ đích — Generative-fill/inpaint trong Present (thuộc Render) | — | ⛔ đúng chủ đích (redirect sang 2.2 Render) | 2.2 Render | `IF-PRESENT-SPRINT-PLAN.md` |
 | 2.3.56 | LOẠI có chủ đích — Design system hình thức đầy đủ (Storybook/governance) | — | 🟡 phần token nhẹ đã có (`DECK_STANDARDS`), phần đầy đủ chốt LOẠI | 2.3.7 | `IF-PRESENT-SPRINT-PLAN.md` |
 | 2.3.57 | HOÃN — Element bảng trong Present (redirect `du-toan-noi-that`) | — | ⬜ (trùng PS-11) | 2.3.16 | `IF-PRESENT-SPRINT-PLAN.md` |
+
+#### 2.3.58-2.3.63 — SPEC TỔNG Cowork 29/07 (Sprint 2/6, dán 30/07)
+
+> Nguồn + luật kiểm trùng/thứ tự chốt: xem ghi chú đầu mục "2.2.60-2.2.85" ở khối 2.2 Render trên.
+
+| Mã | Tên | Bậc | Trạng thái | Phụ thuộc | File spec gốc |
+|---|---|---|---|---|---|
+| 2.3.58 | Gộp Photo-editor vào Present — bỏ round-trip tab mới+localStorage, nhúng `AdjustPanel`/`LayersPanel` làm panel phụ cùng app-shell | N | ⬜ hiện vẫn route riêng: `app/projects/[id]/photo/page.tsx` (`PhotoEditorScreen`) mở qua `window.open(...,'_blank')` từ nút "Chỉnh ảnh nâng cao" trong Present; `app/photo-editor/page.tsx` giữ làm redirect route cũ | không | `docs/SPEC-TONG-COWORK-2026-07-29.md` §3 Sprint 2 |
+| 2.3.59 | Tách `GenerateFlow` khỏi tab "Mẫu" thành lối vào riêng cấp toolbar | N | ⬜ `<GenerateFlow>` hiện nhúng thẳng trong `components/present-editor/LayoutShelf.tsx:314`, không phải lối vào riêng | không | `docs/SPEC-TONG-COWORK-2026-07-29.md` §3 Sprint 2 |
+| 2.3.60 | Catalogue→template→batch export | P (suy luận riêng — spec không tự gán bậc cho mã này) | ⬜ SPEC CHƯA VIẾT (đúng kế hoạch — Sprint 2 chỉ yêu cầu viết SPEC, CODE dời sang Sprint 7); 0 kết quả `catalogue`/`batchExport` toàn repo | không | `docs/SPEC-TONG-COWORK-2026-07-29.md` §3 Sprint 2+7 |
+| 2.3.61 | Màn chọn đầu chặng 3 — component dùng chung `StageEntryScreen` (6 ô: 16:9·A4 ngang/dọc·A3 ngang/dọc·Kho mẫu), tự nhận khổ khi vào từ ▶ Chạy flow | N | ⬜ `StageEntryScreen` không tồn tại; khổ hiện chọn qua nút trên toolbar (`Toolbar.tsx:198` khu vực khổ trình bày), không phải màn chọn đầu chặng | 3.31 (Kho mẫu, đã dán — xem khối 3 Library) | `docs/SPEC-TONG-COWORK-2026-07-29.md` §5.6 |
+| 2.3.62 | Tách sân khấu làm-việc / sân khấu xuất ở Present | N | ⬜ chưa xác minh cơ chế tách 2 sân khấu trong code hiện có — cần đọc thêm `docs/AUDIT-PRESENT-UX-2026-07-29.md` (chưa nhận vào repo, xem STATUS.md "Chờ USER quyết") | 2.3.61 | `docs/SPEC-TONG-COWORK-2026-07-29.md` §3 Sprint 6 |
+| 2.3.63 | Preflight chặng 3 — mở rộng cơ chế `Violation`/`severity` (§1.4) sang Present (dpi/placeholder chưa điền/chữ tràn khung/ảnh méo tỉ lệ/font chưa nhúng) | N | ⬜ cùng hiện trạng `2.2.82` — `lib/standards/` dùng chung chưa tồn tại | 7.1.18, 2.2.82 (dùng chung 1 engine chấm chuẩn) | `docs/SPEC-TONG-COWORK-2026-07-29.md` §7.5 |
 
 ---
 
@@ -562,7 +616,7 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 7.1.15 | 8 luật vận hành (không xây L khi N chưa ✅ · hộ chiếu bắt buộc · sprint tách bậc · ⛔-list ghi sổ · output-có-id · human-in-loop 4 luật · năng lực-trước-AI · LLM-không-ghi-hình-học) | — (luật) | (quy trình, không chấm trạng thái code) | không | `IF-ARCHITECTURE-BLUEPRINT-v1.md` §8 |
 | 7.1.16 | IF Gateway 5B — xem khối 4 File Manager (không đếm trùng) | N | (xem 4.16-4.27) | 4. File Manager | `IF-ARCHITECTURE-BLUEPRINT-v1.md` §5B |
 | 7.1.17 | Dây chuyền vận hành — hợp đồng I/O từng chặng (0 Đề bài→1 CAD→2 Render→3 Present→4 Phản hồi) | — (mô hình) | 🟡 luật "output không id = mồ côi" đã áp cho ảnh (`img_`), chưa toàn bộ pipeline | không | `IF-ARCHITECTURE-BLUEPRINT-v1.md` §5 |
-| 7.1.18 | Nâng `Violation`/`Severity`/`registry` từ `lib/cad/standards/` → `lib/standards/` dùng chung cho cả 3 chặng (chấm chuẩn trước khi xuất, đề xuất 29/07, mã cũ đề xuất sai `7.23`) | N | ⬜ chưa nâng cấp — hiện chỉ chặng 1 dùng | 2.1.4 (Standards Checker chặng 1) | `docs/SPEC-TONG-COWORK-2026-07-29.md` §7.5 |
+| 7.1.18 | Nâng `Violation`/`Severity`/`registry` từ `lib/cad/standards/` → `lib/standards/` dùng chung cho cả 3 chặng (chấm chuẩn trước khi xuất, đề xuất 29/07, mã cũ đề xuất sai `7.23`) | N | ⬜ chưa nâng cấp — hiện chỉ chặng 1 dùng | 2.1.4 (Standards Checker chặng 1); 2.2.78 (thứ tự Sprint 3 ④→⑤ đã chốt, xem ghi chú đầu mục "2.2.60-2.2.85" khối 2.2 Render) | `docs/SPEC-TONG-COWORK-2026-07-29.md` §7.5 |
 
 ### 7.2 Trend clock & hội đồng giả định (5C)
 
@@ -850,8 +904,10 @@ người dùng nâng cấp (vd chạy `ai.upscale`) trước khi quyết định
 > 2. `7.20`-`7.27` (lệch quy ước 4 cấp) → đổi thành **`7.1.18`, `7.3.27`-`7.3.29`, `7.4.11`-`7.4.13`**
 >    (đã dán vào đúng nhóm trong khối 7). Riêng `7.25` (Ghim góp ý) **không cần mã mới** — phát
 >    hiện thêm: đã có sẵn `7.4.1`+`7.4.3`+`7.4.6` với spec gốc, chỉ chưa xây (xem ghi chú ở khối
->    7.4). `2.2.60`-`2.2.84`/`2.3.58`-`2.3.63` xác nhận không trùng, **chưa dán vào cây** (khối
->    lượng lớn, để một đợt riêng) — đọc `docs/SPEC-TONG-COWORK-2026-07-29.md` §3-§8 cho nội dung đủ.
+>    7.4). `2.2.60`-`2.2.85`/`2.3.58`-`2.3.63` xác nhận không trùng — **ĐÃ DÁN vào cây 30/07** (xem
+>    khối 2.2 Render mục "2.2.60-2.2.85" và khối 2.3 Present mục "2.3.58-2.3.63"), gồm cả `2.2.85`
+>    (bổ sung, từ `docs/TICKET-FONT-MONO-NODE-2026-07-29.md`, không có trong `SPEC-TONG` gốc). Loại
+>    trừ có chủ đích khỏi đợt dán: `2.2.62`-`2.2.64`, `2.2.73`-`2.2.74` (ngoài phạm vi yêu cầu 30/07).
 
 ---
 
