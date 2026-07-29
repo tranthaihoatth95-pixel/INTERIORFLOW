@@ -5,28 +5,28 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (29/07 — SPEC TỔNG Cowork: ingest 3 file lớn + PHẦN E v4 + cảnh báo trùng mã)
+## Hiện tại (29/07 khuya — Sprint 1 (docs/CHOT-SO-MA-2026-07-29.md §D) CODE xong, 4 commit)
 Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này:
-- ⚠️ **Đổi tên file nguồn sự thật** (Cowork, phiên trước, đã git-commit `8e096a8`):
-  `IF-MASTER-TREE.md` → **`docs/IF-FEATURE-TREE.md`** · `IF-MASTER-BLUEPRINT.md` →
-  **`docs/IF-ARCHITECTURE-COMPASS.md`**. Tên cũ giữ dạng redirect 1 dòng — `docs/CLAUDE.md` vẫn
-  còn ghi tên cũ, cần sửa khi tiện.
-- ✅ **3 file lớn từ Cowork đã lưu vào repo**: `docs/SPEC-TONG-COWORK-2026-07-29.md` (6 phát hiện
-  lõi + bảng việc 8 sprint + chi tiết chặng 2/thoại/chỉ dẫn/chấm chuẩn/cộng tác/Vitals) ·
-  `docs/IF-DESIGN-STANDARD-2026-07-29.md` (chuẩn thiết kế: 10 tật "mùi AI", thang chữ 7 bậc,
-  khoảng cách bội-4, bo góc 3 bậc, Swiss/Apple HIG) · `if-vitals-visual.html` (mockup Vitals chạy
-  thật, 5 trạng thái + 3 cỡ + xoắn thiên hà). **Chưa nhận được** 12 file phụ khác mà SPEC-TỔNG §9
-  liệt kê (KHAM-*.md, LUAT-300DPI, AUDIT-PRESENT-UX, if-chang2-mockup.html...) — chỉ lưu được cái
-  đã dán vào chat.
-- ✅ **PHẦN E v4** (`docs/IF-FEATURE-TREE.md`) — thêm luật 8a (checklist 6 bước = "xong"), 8b (luật
-  xếp hàng gia phả), 9 (≥300dpi khi giao khách/in).
-- ⚠️ **CẢNH BÁO TRÙNG MÃ — chưa dán mã tính năng đề xuất vào cây, chờ Hoà quyết**: `3.30`/`3.31`
-  (đề xuất) TRÙNG `3.30.a/b/c` đã có (Library NT1, việc khác hẳn) · `7.20-7.27` không khớp quy ước
-  4 cấp của khối 7 (`7.<nhóm>.<mục>`) — đặc biệt `7.24-7.27` nên là `7.4.x` (đã có nhóm Cộng tác).
-  `2.2.60-2.2.84`/`2.3.58-2.3.63` không trùng, an toàn dán khi Hoà duyệt.
-- ⏸️ Chưa code gì cho Sprint 1 (`2.2.60` tràn thanh đầu, `2.2.61` dời AiTierMenu, `2.2.77` lỗ rò
-  Tool Mode, `7.24` LiveCursors) — đúng luật 5 (SPEC/TƯ VẤN xong, CODE để phiên sau, được phép tách).
+- ✅ **Sprint 1 xong cả 4 việc, mỗi việc 1 commit, browser-verify thật**:
+  `4804f45` **7.4.11** ẩn `LiveCursors` (giữ `PresenceBar`) · `573e314` **2.2.75** sửa
+  `composeBoard()` từ "A4 300dpi-ish" (2480×1754, thật ra ~212dpi) → đúng A3 300dpi thật
+  (4961×3508) · `57124b3` **2.2.60+2.2.61** (chung 1 commit — cùng file `Header.tsx`) gộp Header
+  chỉ 1 zone co giãn `min-w-0 flex-1`, "Chạy flow"+avatar luôn `shrink-0` — verify thật ở
+  1024/1183/1440px; dời `AiTierMenu` khỏi Header sang `/settings` (`AiDependencySettings.tsx`
+  mới), Header chỉ còn `AiStatusDot` nhỏ · `e82b46d` **2.2.77** bịt 2 lỗ rò dữ liệu Tool Mode
+  (ảnh mất khi đổi thẻ việc do `ToolModeForm` unmount hẳn — chuyển lên store `useToolModeUi`;
+  rời canvas về Home im lặng bỏ qua graph đang có — `detectGraphPattern()` nhận mẫu đơn giản
+  thì tự mở đúng thẻ, phức tạp thì báo) — 11/11 test pass (`sucrase-node`) + browser-verify thật
+  qua `__flowStore`: đổi thẻ giữ nguyên node ảnh, chỉ thay node AI, không rác.
+  ⚠️ 2 lần tự sửa sai giữa chừng (browser test bắt được, không phải chủ dự án báo): giả định
+  sai `ToolModeForm` không unmount (sai — đã sửa lại đúng) · `overflow-hidden` thêm vào Header
+  che mất toàn bộ dropdown popover (đã gỡ, quay lại chỉ dùng `min-w-0`+`flex-shrink`).
+- 📌 Đã đọc `docs/TICKET-FONT-MONO-NODE-2026-07-29.md` (mã **2.2.85** — bỏ font mono nhãn node) —
+  CHƯA LÀM, hẹn gộp chung commit với **2.2.69** (quy chuẩn thoại) ở Sprint 3.
 - ⏸️ **T3/T4 (Semantic Room)** vẫn CHƯA LÀM — đọc `docs/IF1-COMPLETION-AUDIT.md` §3 (a)/(d) trước.
+- ⏸️ **Sprint 2/3** (`docs/CHOT-SO-MA-2026-07-29.md` §D) chưa bắt đầu — Sprint 3 nhớ gộp **2.2.85**
+  (font mono node) chung commit với **2.2.69**. Phiên trước (29/07 sáng, → `CHANGELOG.md`): ingest
+  SPEC-TỔNG Cowork + PHẦN E v4 + cảnh báo trùng mã `3.30`/`3.31`/`7.20-7.27` (xem "Chờ USER quyết").
 
 ## Worktree đang mở
 Không có.

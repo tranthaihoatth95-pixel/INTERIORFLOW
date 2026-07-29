@@ -1,5 +1,23 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 29/07 — SPEC TỔNG Cowork: ingest 3 file lớn + PHẦN E v4 + cảnh báo trùng mã
+- Đổi tên file nguồn sự thật (git-commit `8e096a8`): `IF-MASTER-TREE.md` → `docs/IF-FEATURE-TREE.md` ·
+  `IF-MASTER-BLUEPRINT.md` → `docs/IF-ARCHITECTURE-COMPASS.md`. Tên cũ giữ dạng redirect 1 dòng —
+  `docs/CLAUDE.md` vẫn còn ghi tên cũ, cần sửa khi tiện.
+- 3 file lớn từ Cowork lưu vào repo: `docs/SPEC-TONG-COWORK-2026-07-29.md` (6 phát hiện lõi + bảng
+  việc 8 sprint + chi tiết chặng 2/thoại/chỉ dẫn/chấm chuẩn/cộng tác/Vitals) ·
+  `docs/IF-DESIGN-STANDARD-2026-07-29.md` (chuẩn thiết kế: 10 tật "mùi AI", thang chữ 7 bậc, khoảng
+  cách bội-4, bo góc 3 bậc, Swiss/Apple HIG) · `if-vitals-visual.html` (mockup Vitals chạy thật, 5
+  trạng thái + 3 cỡ + xoắn thiên hà). Chưa nhận được 12 file phụ khác mà SPEC-TỔNG §9 liệt kê
+  (KHAM-*.md, LUAT-300DPI, AUDIT-PRESENT-UX, if-chang2-mockup.html...) — chỉ lưu được cái đã dán
+  vào chat.
+- PHẦN E v4 (`docs/IF-FEATURE-TREE.md`) — thêm luật 8a (checklist 6 bước = "xong"), 8b (luật xếp
+  hàng gia phả), 9 (≥300dpi khi giao khách/in).
+- CẢNH BÁO TRÙNG MÃ (chưa dán mã tính năng đề xuất vào cây, chờ Hoà quyết): `3.30`/`3.31` (đề
+  xuất) TRÙNG `3.30.a/b/c` đã có (Library NT1, việc khác hẳn) · `7.20-7.27` không khớp quy ước 4
+  cấp của khối 7 (`7.<nhóm>.<mục>`) — đặc biệt `7.24-7.27` nên là `7.4.x` (đã có nhóm Cộng tác).
+  `2.2.60-2.2.84`/`2.3.58-2.3.63` không trùng, an toàn dán khi Hoà duyệt.
+
 ## 28/07 tối — NT-gateway ①②③ + StatusBar (VIỆC A) + Tool Mode Render (VIỆC B)
 
 Chi tiết đầy đủ nằm trong message commit (`git log`), đây chỉ tóm để không mất dấu:
