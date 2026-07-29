@@ -5,17 +5,14 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MoreHorizontal, X, Coins, Share2, Check, MessageCircle, LogOut, Sun, Moon, SunMoon,
-  LayoutDashboard, Palette, Box, Presentation, Cloud, Zap, Cpu, ShieldCheck,
+  LayoutDashboard, Palette, Box, Presentation, ChevronRight,
   Loader2, Clock3, CircleCheck, CircleAlert, RotateCcw,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { requestGallery, resetTourDone, resetStageIntroSeen, ONBOARDING_STAGES, resetCoachmarkSeen, COACHMARKS } from '@/lib/resume';
-import { checkProviders, type ProviderStatus } from '@/lib/ai/client';
-import {
-  TIERS, TIER_ORDER, type AiTier, providerForTier,
-  ONE_AI_ENGINES, ONE_AI_RUNTIMES,
-} from '@/lib/ai/tiers';
+import { TIERS } from '@/lib/ai/tiers';
+import { AiStatusDot } from '@/components/settings/AiDependencySettings';
 import { PHASES, DEFAULT_PHASE, type Phase } from '@/lib/phases';
 import { toggleShare } from '@/lib/workspace';
 import { pressable, pressableIcon, springSheet, easeApple } from '@/lib/motion';
@@ -25,7 +22,6 @@ import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
 
 const PHASE_ICON: Record<Phase, typeof Palette> = { concept: Palette, render: Box, present: Presentation };
-const TIER_ICON: Record<AiTier, typeof Cloud> = { 4: Cloud, 3: Zap, 2: Cpu, 1: ShieldCheck };
 
 /**
  * Overflow "⋯" cho mobile (<sm). Trên desktop các control này nằm inline ở Header;
@@ -103,7 +99,7 @@ function Sheet({ close }: { close: () => void }) {
         <div className="space-y-4 px-4 pt-1">
           <AccountRow />
           <PhaseRow />
-          <TierRow />
+          <TierLinkRow />
           <ActionsRow close={close} />
           <LangRow />
           <TasksRow />
@@ -207,103 +203,30 @@ function PhaseRow() {
   );
 }
 
-function TierRow() {
+/**
+ * 2.2.61.a (30/07, docs/PROMPT-... "7.3.30") — chỉ 1 dòng dẫn sang `/settings`, KHÔNG còn picker
+ * thật ở đây. Trước đó `TierRow` lặp lại nguyên bảng 4 tầng của `AiDependencySettings.tsx`
+ * (2.2.61 đã dời khỏi Header nhưng bỏ sót MobileMenu) — vi phạm Luật #6 Đồng Bộ, một cấu hình
+ * hai mặt tiền, hai trải nghiệm khác nhau cho cùng một thứ. Cài đặt là nguồn sự thật duy nhất.
+ */
+function TierLinkRow() {
   const aiTier = useFlowStore((s) => s.aiTier);
-  const setAiTier = useFlowStore((s) => s.setAiTier);
-  const oneAiEngine = useFlowStore((s) => s.oneAiEngine);
-  const setOneAiEngine = useFlowStore((s) => s.setOneAiEngine);
-  const oneAiRuntime = useFlowStore((s) => s.oneAiRuntime);
-  const setOneAiRuntime = useFlowStore((s) => s.setOneAiRuntime);
-  const [status, setStatus] = useState<ProviderStatus | null>(null);
   const tr = useT();
-  useEffect(() => {
-    checkProviders().then(setStatus);
-  }, []);
-
-  const avail = (t: AiTier): boolean | null => {
-    const p = providerForTier(t, oneAiEngine);
-    if (!p) return true;
-    if (!status) return null;
-    return p === 'fal' ? status.fal : p === 'comfyui' ? status.comfyui : status.sd;
-  };
-
   return (
     <Section label={tr('Mức phụ thuộc AI', 'AI dependency')}>
-      <div className="space-y-1.5">
-        {TIER_ORDER.map((t) => {
-          const m = TIERS[t];
-          const TI = TIER_ICON[t];
-          const active = t === aiTier;
-          const a = avail(t);
-          return (
-            <button
-              key={t}
-              onClick={() => setAiTier(t)}
-              className={cn(
-                'flex w-full items-start gap-2.5 rounded-[12px] border px-3 py-2 text-left transition-colors',
-                active ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)]' : 'border-[var(--border)] hover:bg-[var(--hover)]',
-              )}
-            >
-              <TI size={16} className="mt-0.5 shrink-0 text-[var(--t3)]" />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-medium text-[var(--t1)]">{m.name}</span>
-                  <span className="rounded bg-[var(--hover)] px-1 text-[9px] text-[var(--t4)]">{m.cost}</span>
-                  {a === false && <span className="rounded bg-amber-500/15 px-1 text-[9px] text-amber-300">mock</span>}
-                  {active && <Check size={12} className="ml-auto text-[var(--accent)]" />}
-                </div>
-                <p className="mt-0.5 text-[10px] leading-snug text-[var(--t4)]">{m.blurb}</p>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* oneAI (mức 2): engine + runtime */}
-      {aiTier === 2 && (
-        <div className="mt-2 space-y-1.5">
-          <p className="px-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--t4)]">Engine</p>
-          <div className="flex gap-1.5">
-            {ONE_AI_ENGINES.map((e) => {
-              const on = e.id === oneAiEngine;
-              return (
-                <button
-                  key={e.id}
-                  onClick={() => setOneAiEngine(e.id)}
-                  className={cn(
-                    'flex-1 rounded-[10px] border px-2 py-2 text-[11px] font-medium transition-colors',
-                    on ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--t3)]',
-                  )}
-                >
-                  {e.name}
-                </button>
-              );
-            })}
-          </div>
-          {oneAiEngine === 'sd' && (
-            <>
-              <p className="px-0.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t4)]">Runtime</p>
-              <div className="flex gap-1.5">
-                {ONE_AI_RUNTIMES.map((r) => {
-                  const on = r.id === oneAiRuntime;
-                  return (
-                    <button
-                      key={r.id}
-                      onClick={() => setOneAiRuntime(r.id)}
-                      className={cn(
-                        'flex-1 rounded-[10px] border px-2 py-2 text-[11px] font-medium transition-colors',
-                        on ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--t3)]',
-                      )}
-                    >
-                      {r.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
-      )}
+      <a
+        href="/settings"
+        className="flex items-center justify-between rounded-[14px] border border-[var(--border)] bg-[var(--field)] px-3 py-2.5 text-xs text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+      >
+        <span className="flex items-center gap-1.5">
+          {TIERS[aiTier].name}
+          <AiStatusDot />
+        </span>
+        <span className="flex items-center gap-0.5 text-[var(--t4)]">
+          {tr('Đổi trong Cài đặt', 'Change in Settings')}
+          <ChevronRight size={13} />
+        </span>
+      </a>
     </Section>
   );
 }
