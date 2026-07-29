@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IF · Vitals — visual đề xuất</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f2efe9;--panel:#faf8f4;--field:#f4f1eb;--border:#e3ded4;--border-strong:#cbc4b6;
+  --t1:#211e19;--t2:#47423a;--t3:#726c62;--t4:#9a938a;
+  --accent:#6a57f5;--accent-strong:#553ff3;--accent-soft:rgba(106,87,245,.14);
+  --warm:#c79a63;--bad:#b4483a;--good:#4d7a52;
+  /* ── BẢNG MÀU VITALS: ấm ở lõi · lạnh ở quầng ngoài ──────────────────
+     Lấy thẳng từ token đã có: --accent-warm #c79a63 · STAGE_TINT.render #b57a4e
+     · STAGE_TINT.concept #6e8ca6 · cam TTT #F06020 · navy TTT #002850.
+     KHÔNG phải màu mới — chỉ là dùng đúng cặp đã có sẵn trong hệ.            */
+  --v-hot:#ffdcae;      /* đỉnh sáng rim, gần trắng ấm */
+  --v-rim:#eaa863;      /* rim chính */
+  --v-rim2:#b57a4e;     /* rim tối dần = STAGE_TINT.render */
+  --v-deep:#6b3d1c;     /* chân rim, tắt vào nền */
+  --v-cool:#6e8ca6;     /* quầng lạnh = STAGE_TINT.concept */
+  --v-cool2:#3d6b8f;
+  --v-coolhi:#9dc4e0;   /* đỉnh quầng lạnh */
+  /* bản nền giấy — đậm hơn để không bị nhạt trên kem */
+  --vl-hot:#e09a45; --vl-rim:#c07a2c; --vl-rim2:#8a5424;
+  --vl-cool:#4a7ba8; --vl-coolhi:#6e9ec4;
+  --dk:#0c0c0e;--dk2:#141417;--dkline:#2a2a31;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);
+  font-family:'Be Vietnam Pro',-apple-system,system-ui,sans-serif;font-size:13px;line-height:1.55;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding:40px 24px 80px}
+h1{font-size:20px;font-weight:600;letter-spacing:-.02em;margin:0 0 4px}
+.sub{color:var(--t3);font-size:11.5px;margin:0 0 36px;max-width:70ch}
+h2{font-size:9.5px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--t4);
+  margin:44px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+p.l{color:var(--t2);font-size:12.5px;max-width:74ch;margin:0 0 20px}
+
+/* ── sân khấu tối ── */
+.dark{background:var(--dk);border-radius:10px;padding:0;overflow:hidden}
+.states{display:grid;grid-template-columns:repeat(5,1fr)}
+.st{padding:26px 12px 20px;text-align:center;border-right:1px solid var(--dkline)}
+.st:last-child{border-right:none}
+.stg{display:grid;place-items:center;height:96px}
+.stn{font-size:10.5px;font-weight:600;color:#d6d6db;margin-top:14px}
+.std{font-size:9.5px;color:#6e6e78;margin-top:2px;line-height:1.45}
+
+/* ── glyph: chuyển động BÊN TRONG một khối cầu kính ──────────────────
+   · không dùng nét đơn — mọi nét là dải sáng có gradient + lớp nhoè bên dưới
+   · electron đổi cỡ + độ sáng theo chiều sâu quỹ đạo → cảm giác nằm trong cầu
+   · các lớp sáng cộng vào nhau bằng mix-blend-mode: screen, không tách rời     */
+.gw{position:relative;display:inline-grid;place-items:center;isolation:isolate}
+.gw::before{content:'';position:absolute;inset:0;border-radius:50%;z-index:0;
+  background:
+    radial-gradient(64% 58% at 30% 74%, rgba(234,168,99,.30) 0%, rgba(181,122,78,.10) 46%, transparent 70%),
+    radial-gradient(70% 62% at 62% 20%, rgba(110,140,166,.24) 0%, rgba(61,107,143,.08) 52%, transparent 76%),
+    radial-gradient(96% 96% at 50% 50%, rgba(20,14,10,.35) 0%, rgba(8,7,9,.86) 62%, rgba(4,4,6,.95) 100%);
+  box-shadow:inset 0 -12px 26px rgba(234,168,99,.26), inset 0 10px 24px rgba(110,140,166,.18),
+             inset 0 0 18px rgba(0,0,0,.5), 0 0 34px rgba(181,122,78,.18), 0 0 60px rgba(61,107,143,.12)}
+.gw::after{content:'';position:absolute;inset:0;border-radius:50%;z-index:3;pointer-events:none;
+  background:radial-gradient(40% 30% at 66% 18%, rgba(157,196,224,.28) 0%, transparent 60%),
+              radial-gradient(34% 26% at 28% 80%, rgba(255,220,174,.26) 0%, transparent 62%);
+  mix-blend-mode:screen}
+.gw.lt::before{background:
+    radial-gradient(58% 52% at 30% 74%, rgba(224,154,69,.26) 0%, transparent 66%),
+    radial-gradient(62% 56% at 64% 20%, rgba(74,123,168,.20) 0%, transparent 70%),
+    radial-gradient(60% 56% at 36% 28%, rgba(255,255,255,.92) 0%, transparent 62%),
+    radial-gradient(96% 96% at 50% 50%, rgba(244,241,235,.7) 0%, rgba(226,220,209,.55) 76%, rgba(203,196,182,.5) 100%);
+  box-shadow:inset 0 -10px 22px rgba(192,122,44,.22), inset 0 8px 20px rgba(74,123,168,.14),
+             inset 0 3px 12px rgba(255,255,255,.7), 0 4px 20px rgba(181,122,78,.14)}
+.gw.lt::after{background:radial-gradient(40% 32% at 34% 24%, rgba(255,255,255,.8) 0%, transparent 60%),
+              radial-gradient(30% 24% at 68% 20%, rgba(110,158,196,.22) 0%, transparent 62%)}
+
+.gw{width:72px;height:72px}
+.g{width:100%;height:100%;display:block;overflow:visible;position:relative;z-index:2;
+  mix-blend-mode:screen;filter:url(#vsoft)}
+.gw.lt .g{mix-blend-mode:normal;filter:url(#vsoftL)}
+
+/* cung ngoài: dải sáng gradient (đậm→trong), KHÔNG phải nét đơn */
+.g .arc{fill:none;stroke:url(#vtrail);stroke-linecap:round;transform-origin:36px 36px;
+  stroke-width:2.2;stroke-dasharray:26 163;opacity:.55;
+  animation:sweep 19s cubic-bezier(.42,0,.66,.55) infinite}
+.g .arc2{fill:none;stroke:url(#vtrail);stroke-linecap:round;transform-origin:36px 36px;
+  stroke-width:1.1;stroke-dasharray:14 175;opacity:.3;
+  animation:sweep 27s cubic-bezier(.4,0,.62,.6) infinite reverse}
+.gw.lt .g .arc,.gw.lt .g .arc2{stroke:url(#vtrailL)}
+
+.g .orbit{fill:none;stroke:var(--v-rim);stroke-width:.7;opacity:0}
+.g .rose{display:none}
+.g .petals{transform-origin:36px 36px}
+.gw.lt .g .orbit{stroke:var(--vl-rim)}
+.g .p{display:none}
+.g .e{fill:var(--v-hot);offset-path:path("M 12,36 A 24,9.5 0 1,1 60,36 A 24,9.5 0 1,1 12,36");
+  offset-rotate:0deg;animation:orbit 9.3s cubic-bezier(.42,0,.66,.55) infinite,
+  depth 9.3s cubic-bezier(.42,0,.58,1) infinite}
+.g .halo{fill:var(--v-rim);offset-path:path("M 12,36 A 24,9.5 0 1,1 60,36 A 24,9.5 0 1,1 12,36");
+  offset-rotate:0deg;animation:orbit 9.3s cubic-bezier(.42,0,.66,.55) infinite,
+  glow 9.3s cubic-bezier(.42,0,.58,1) infinite}
+.gw.lt .g .e{fill:var(--vl-hot)}
+.gw.lt .g .halo{fill:var(--vl-rim)}
+/* lệch pha bằng số lẻ → không bao giờ lặp đều, nhìn tự nhiên */
+.g .p2 .e,.g .p2 .halo{animation-delay:-3.7s}
+.g .p3 .e,.g .p3 .halo{animation-delay:-1.3s}
+.g .p4 .e,.g .p4 .halo{animation-delay:-6.1s}
+.g .p5 .e,.g .p5 .halo{animation-delay:-7.9s}
+
+/* nhịp LEO THANG: mỗi vòng chia 4 chặng, chặng nào cũng khởi chậm rồi nhanh dần đều,
+   hết chặng lại chậm lại — không có đoạn nào chạy đều. */
+@keyframes orbit{
+  0%{offset-distance:0%} 50%{offset-distance:50%} 100%{offset-distance:100%}}
+@keyframes sweep{
+  0%{transform:rotate(0deg)} 50%{transform:rotate(180deg)} 100%{transform:rotate(360deg)}}
+/* chiều sâu: gần thì to và sáng, ra sau kính thì nhỏ và mờ */
+@keyframes depth{0%{r:2.05;opacity:.66}25%{r:1.6;opacity:.44}
+  50%{r:2.05;opacity:.66}75%{r:2.55;opacity:1}100%{r:2.05;opacity:.66}}
+@keyframes glow{0%{r:5;opacity:.13}25%{r:4;opacity:.08}
+  50%{r:5;opacity:.13}75%{r:6.8;opacity:.22}100%{r:5;opacity:.13}}
+@keyframes pop{from{opacity:0;transform:rotate(var(--a)) scale(.72)}to{opacity:1;transform:rotate(var(--a)) scale(1)}}
+
+/* nghỉ — 2 hạt, cung trôi rất chậm */
+.idle .p1,.idle .p2{display:block}
+.idle .arc{opacity:.34;animation-duration:24s}
+.idle .arc2{opacity:.18;animation-duration:33s}
+
+/* nghe — 3 hạt, cầu hơi phồng lên như hít vào */
+@keyframes inhale{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
+.listen .p1,.listen .p2,.listen .p3{display:block}
+.listen{animation:inhale 3.2s cubic-bezier(.42,0,.4,1) infinite}
+.listen .arc{opacity:.8;stroke-dasharray:56 133;animation-duration:8s}
+.listen .arc2{opacity:.45;animation-duration:12s}
+.listen .orbit{opacity:.11}
+.listen .e,.listen .halo{animation-duration:6.6s}
+
+/* nghĩ — 5 hạt, đông và nhanh nhất */
+.think .p1,.think .p2,.think .p3,.think .p4,.think .p5{display:block}
+.think .arc{opacity:.82;stroke-dasharray:62 127;stroke-width:2.4;animation-duration:3.2s}
+.think .arc2{opacity:.4;stroke-dasharray:30 159;animation-duration:5s}
+.think .orbit{opacity:.16}
+.think .e,.think .halo{animation-duration:4.2s}
+.think .p4,.think .p5{animation:pop .7s cubic-bezier(.25,1.08,.4,1) both;transform-origin:36px 36px}
+.think .p5{animation-delay:.14s}
+
+/* trả lời — 3 hạt, sóng lan ra chạm mặt kính */
+.answer .p1,.answer .p2,.answer .p3{display:block}
+.answer .arc{opacity:.6;animation-duration:7s}
+@keyframes pulse{0%{r:4;opacity:.38;stroke-width:1.8}80%{r:30;opacity:0;stroke-width:.6}100%{r:30;opacity:0}}
+.answer .ring{fill:none;stroke:url(#vtrail);animation:pulse 2.8s cubic-bezier(.25,.6,.35,1) infinite}
+.gw.lt .answer .ring{stroke:url(#vtrailL)}
+.answer .ring.b{animation-delay:1s}
+.answer .e,.answer .halo{animation-duration:5.4s}
+
+/* cảnh báo — 2 hạt, 1 hổ phách, mọi thứ chậm hẳn */
+.warn .p1,.warn .p2{display:block}
+.warn .arc{stroke:url(#vbad);opacity:.6;animation-duration:30s}
+.warn .arc2{opacity:.14}
+.warn .e,.warn .halo{animation-duration:16s}
+.warn .p2 .e{fill:#e8836f}
+.warn .p2 .halo{fill:#b4483a}
+.warn .p1 .e{fill:#7a7a86}
+.warn .p1 .halo{opacity:0}
+
+
+/* ── khối cầu: độ chuyển êm — nguồn sáng dịch rất chậm, cầu phồng nhẹ, không giật ── */
+@keyframes lightshift{
+  0%  {background-position:33% 27%, 50% 50%}
+  33% {background-position:44% 21%, 52% 48%}
+  66% {background-position:27% 35%, 48% 53%}
+  100%{background-position:33% 27%, 50% 50%}
+}
+@keyframes swell{0%,100%{transform:scale(1)}50%{transform:scale(1.018)}}
+.gw{transition:transform .9s cubic-bezier(.32,.72,0,1)}
+.gw::before{animation:swell 9s cubic-bezier(.4,0,.62,.6) infinite}
+.gw::after{animation:swell 11s cubic-bezier(.4,0,.62,.6) infinite reverse}
+/* đổi trạng thái: mọi thuộc tính động đều lăn qua nhau, không nhảy bậc */
+.g .arc,.g .arc2{transition:opacity 1.1s cubic-bezier(.32,.72,0,1),
+  stroke-width .9s cubic-bezier(.32,.72,0,1),stroke-dasharray 1.1s cubic-bezier(.32,.72,0,1)}
+.g .orbit{transition:opacity 1.2s cubic-bezier(.32,.72,0,1)}
+.g .e,.g .halo{transition:fill .8s ease}
+
+
+
+/* ── vệt kéo nhẹ sau mỗi electron: 3 bản sao lệch pha rất nhỏ, mờ và nhỏ dần ── */
+.g .tr{fill:var(--v-rim2);offset-path:path("M 12,36 A 24,9.5 0 1,1 60,36 A 24,9.5 0 1,1 12,36");
+  offset-rotate:0deg;animation:orbit 9.3s cubic-bezier(.42,0,.66,.55) infinite,
+  trailfade 9.3s cubic-bezier(.42,0,.58,1) infinite}
+.gw.lt .g .tr{fill:var(--vl-rim2)}
+.g .tr1{animation-delay:-.09s} .g .tr2{animation-delay:-.19s} .g .tr3{animation-delay:-.31s}
+.g .p2 .tr1{animation-delay:calc(-3.7s - .09s)} .g .p2 .tr2{animation-delay:calc(-3.7s - .19s)} .g .p2 .tr3{animation-delay:calc(-3.7s - .31s)}
+.g .p3 .tr1{animation-delay:calc(-1.3s - .09s)} .g .p3 .tr2{animation-delay:calc(-1.3s - .19s)} .g .p3 .tr3{animation-delay:calc(-1.3s - .31s)}
+.g .p4 .tr1{animation-delay:calc(-6.1s - .09s)} .g .p4 .tr2{animation-delay:calc(-6.1s - .19s)} .g .p4 .tr3{animation-delay:calc(-6.1s - .31s)}
+.g .p5 .tr1{animation-delay:calc(-7.9s - .09s)} .g .p5 .tr2{animation-delay:calc(-7.9s - .19s)} .g .p5 .tr3{animation-delay:calc(-7.9s - .31s)}
+/* vệt cũng mờ đi khi hạt lùi ra sau kính — cùng nhịp chiều sâu */
+@keyframes trailfade{0%{r:1.5;opacity:.20}25%{r:1.15;opacity:.11}
+  50%{r:1.5;opacity:.20}75%{r:1.85;opacity:.30}100%{r:1.5;opacity:.20}}
+.g .tr2{opacity:.6} .g .tr3{opacity:.34}
+.listen .tr{animation-duration:6.6s} .think .tr{animation-duration:4.2s}
+.answer .tr{animation-duration:5.4s} .warn .tr{animation-duration:16s}
+.warn .p2 .tr{fill:#b4483a} .warn .p1 .tr{opacity:0}
+
+
+/* ── NGHĨ: hoa văn sinh từ chỗ quỹ đạo giao nhau ─────────────────────────
+   Tránh 5 cánh tròn đều kiểu hoa mai bằng 4 điều chỉnh:
+     · vòng là ELIP nghiêng, không phải tròn → cánh hình hạt hạnh nhân, thanh hơn
+     · vòng KHÔNG đi qua đúng tâm → chừa lõi trống, hoa văn thành một VÀNH, không đặc
+     · viền quỹ đạo gần như tàng hình — hình do VỆT SÁNG vẽ ra, không do nét vẽ sẵn
+     · cả cụm tuế sai rất chậm (26s) → không bao giờ đứng yên thành bông hoa phẳng   */
+.think .p{transform:rotate(var(--ta))!important;transform-origin:36px 36px}
+.think .p1{--ta:0deg}   .think .p2{--ta:72deg}  .think .p3{--ta:144deg}
+.think .p4{--ta:216deg} .think .p5{--ta:288deg}
+.think .rose{display:none}
+.think .orbit{display:block;cy:21.5px;rx:14.5px;ry:10.5px;opacity:.13;stroke-width:.6}
+.gw.lt .think .orbit{opacity:.20}
+/* elip nghiêng, tâm (36,21.5) — điểm thấp nhất y=32, chừa lõi trống bán kính 4 */
+.think .e,.think .halo,.think .tr{
+  offset-path:path("M 21.5,21.5 A 14.5,10.5 0 1,1 50.5,21.5 A 14.5,10.5 0 1,1 21.5,21.5")!important;
+  animation-timing-function:linear!important;
+  animation-duration:4.4s!important}
+/* lệch pha 1/10 chu kỳ → nở cuộn thành sóng, không bật/tắt cùng lúc như bông hoa mở */
+.think .p1 .e,.think .p1 .halo{animation-delay:0s!important}
+.think .p2 .e,.think .p2 .halo{animation-delay:-.44s!important}
+.think .p3 .e,.think .p3 .halo{animation-delay:-.88s!important}
+.think .p4 .e,.think .p4 .halo{animation-delay:-1.32s!important}
+.think .p5 .e,.think .p5 .halo{animation-delay:-1.76s!important}
+/* vệt dài hơn hẳn ở trạng thái này — chính vệt vẽ ra hoa văn */
+.think .tr{opacity:1}
+.think .p1 .tr1{animation-delay:-.16s!important}.think .p1 .tr2{animation-delay:-.33s!important}.think .p1 .tr3{animation-delay:-.52s!important}
+.think .p2 .tr1{animation-delay:-.60s!important}.think .p2 .tr2{animation-delay:-.77s!important}.think .p2 .tr3{animation-delay:-.96s!important}
+.think .p3 .tr1{animation-delay:-1.04s!important}.think .p3 .tr2{animation-delay:-1.21s!important}.think .p3 .tr3{animation-delay:-1.40s!important}
+.think .p4 .tr1{animation-delay:-1.48s!important}.think .p4 .tr2{animation-delay:-1.65s!important}.think .p4 .tr3{animation-delay:-1.84s!important}
+.think .p5 .tr1{animation-delay:-1.92s!important}.think .p5 .tr2{animation-delay:-2.09s!important}.think .p5 .tr3{animation-delay:-2.28s!important}
+/* tuế sai: cả cụm xoay rất chậm nên hoa văn luôn dịch, không đứng thành hoa mai */
+@keyframes precess{to{transform:rotate(360deg)}}
+.think .petals{animation:precess 26s linear infinite;transform-origin:36px 36px}
+/* sáng dịu, không nhấp nháy */
+.think .e{animation-name:orbit,bloom!important}
+.think .halo{animation-name:orbit,bloomGlow!important}
+@keyframes bloom{0%,100%{r:2.3;opacity:.92}50%{r:2.6;opacity:1}}
+@keyframes bloomGlow{0%,100%{r:5.6;opacity:.16}50%{r:7;opacity:.24}}
+
+/* ── XUẤT HIỆN: xoắn thiên hà ─────────────────────────────────────────
+   Mỗi lần gọi, các nhánh quỹ đạo văng ra xa rồi cuộn xoáy vào tâm, lệch
+   pha nhau nên tạo hình xoắn ốc; cầu kính hiện lên sau cùng.            */
+.g .p{transform:rotate(var(--a));transform-origin:36px 36px}
+@keyframes armIn{
+  0%  {transform:rotate(calc(var(--a) + 240deg)) scale(1.75);opacity:0;filter:blur(1.4px)}
+  45% {opacity:.85}
+  100%{transform:rotate(var(--a)) scale(1);opacity:1;filter:blur(0)}
+}
+@keyframes arcIn{
+  0%  {transform:rotate(-160deg) scale(1.4);opacity:0;stroke-dasharray:8 181}
+  100%{transform:rotate(0deg) scale(1);opacity:inherit}
+}
+@keyframes ballIn{
+  0%  {transform:scale(.62);opacity:0}
+  55% {opacity:.55}
+  100%{transform:scale(1);opacity:1}
+}
+.summon .p{animation:armIn 1.35s cubic-bezier(.22,.8,.3,1) both!important}
+.summon .p1{animation-delay:0s!important}
+.summon .p2{animation-delay:.07s!important}
+.summon .p3{animation-delay:.14s!important}
+.summon .p4{animation-delay:.21s!important}
+.summon .p5{animation-delay:.28s!important}
+.summon .arc,.summon .arc2{animation:arcIn 1.3s cubic-bezier(.22,.8,.3,1) both!important}
+.summon .arc2{animation-delay:.12s!important}
+.gwsummon::before,.gwsummon::after{animation:ballIn 1.05s cubic-bezier(.25,.75,.3,1) both!important}
+
+/* ── mục 06 ── */
+.grow{display:flex;align-items:center;gap:40px;flex-wrap:wrap;padding:34px 26px;border-radius:10px;
+  background:radial-gradient(120% 100% at 50% 10%,#141a2e 0%,#0a0c14 58%,#050609 100%)}
+.gcell{text-align:center}
+.gcl{font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:#6e6e78;margin-top:12px}
+.replay{margin-left:auto;border:1px solid #2a2a31;background:#141417;color:#d6d6db;
+  font-family:inherit;font-size:12px;font-weight:500;padding:9px 16px;border-radius:999px;cursor:pointer}
+.replay:hover{background:#202024}
+
+
+/* ── chữ trong lõi: dựng từ vô số hạt bụi sáng ── */
+.dust{position:absolute;inset:0;z-index:2;pointer-events:none}
+.dustwrap{position:relative;width:100%;height:100%;display:grid;place-items:center}
+.wordbtns{display:flex;gap:6px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.wb{font-family:inherit;font-size:11px;color:var(--t3);background:var(--field);
+  border:1px solid var(--border);border-radius:999px;padding:5px 12px;cursor:pointer}
+.wb:hover{background:var(--hover);color:var(--t1)}
+
+/* ── dải so sánh ── */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cc{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--panel)}
+.ch{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  padding:9px 13px;border-bottom:1px solid var(--border)}
+.ch.no{color:var(--bad)} .ch.yes{color:var(--good)}
+.cb{background:var(--dk);height:140px;display:grid;place-items:center}
+
+.cf{font-size:11px;color:var(--t3);padding:11px 13px;line-height:1.55}
+.blob{width:64px;height:64px;border-radius:50%;
+  background:conic-gradient(from 0deg,#ff3b6b,#ffb020,#39d6a0,#3b8cff,#a855f7,#ff3b6b);
+  filter:blur(1px) saturate(1.3);animation:sweep 6s linear infinite}
+
+/* ── statusbar thật ── */
+.sbwrap{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.sbtop{height:150px;background:var(--bg);display:grid;place-items:center;
+  font-size:11px;color:var(--t4);border-bottom:1px solid var(--border)}
+.sb{display:flex;align-items:center;gap:10px;height:34px;padding:0 12px;
+  background:var(--panel);border-top:1px solid var(--border);font-size:11px;color:var(--t3)}
+.sbg{flex:1}
+.vpill{display:flex;align-items:center;gap:7px;padding:3px 12px 3px 6px;border-radius:999px;
+  border:1px solid var(--border);background:var(--field)}
+.vpill .gw{width:22px;height:22px}
+
+.vpill .e{fill:var(--vl-hot)}
+.vpill .halo{fill:var(--vl-rim);opacity:.18}
+.vpill b{font-weight:500;color:var(--t2);font-size:11px}
+
+/* ── 04 · orb chứa chữ ── */
+.orbrow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.obox{border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+.obox .ch{background:var(--panel)}
+.ostage{height:230px;display:grid;place-items:center;position:relative}
+.ostage.dk{background:radial-gradient(120% 100% at 50% 8%,#141a2e 0%,#0a0c14 55%,#050609 100%)}
+.ostage.lt{background:var(--bg)}
+.orb{position:relative;width:132px;height:132px;border-radius:50%;display:grid;place-items:center}
+/* thân: tối ở giữa, viền sáng 1 phía (rim light) — KHÔNG cầu vồng, đúng 1 sắc tím */
+.orb.dk{background:
+   radial-gradient(80% 80% at 50% 50%, rgba(6,5,8,.0) 44%, rgba(6,5,8,.92) 58%),
+   radial-gradient(62% 56% at 26% 72%, rgba(255,220,174,.9) 0%, rgba(234,168,99,.45) 34%, transparent 64%),
+   radial-gradient(70% 64% at 68% 22%, rgba(157,196,224,.55) 0%, rgba(61,107,143,.20) 46%, transparent 76%);
+  box-shadow:0 0 52px rgba(181,122,78,.28), 0 0 90px rgba(61,107,143,.18), inset 0 0 40px rgba(0,0,0,.55)}
+.orb.lt{background:
+   radial-gradient(60% 56% at 30% 74%, rgba(224,154,69,.40) 0%, rgba(192,122,44,.14) 42%, transparent 70%),
+   radial-gradient(64% 58% at 66% 20%, rgba(74,123,168,.28) 0%, transparent 72%),
+   radial-gradient(74% 74% at 36% 30%, rgba(255,255,255,.94) 0%, var(--field) 64%);
+  box-shadow:0 0 0 1px var(--border), 0 6px 28px rgba(181,122,78,.18)}
+@keyframes rim{0%,100%{transform:rotate(0deg)}50%{transform:rotate(22deg)}}
+.orb::after{content:'';position:absolute;inset:-2px;border-radius:50%;
+  animation:rim 5.5s ease-in-out infinite}
+/* vòng cung mảnh chồng lớp — chiều sâu mà không cần nhiều màu */
+.arcs{position:absolute;inset:-9px}
+.arcs circle{fill:none;stroke:var(--v-rim);stroke-linecap:round;transform-origin:50% 50%}
+.arcs .a1{stroke-width:1.1;opacity:.55;stroke-dasharray:74 210;animation:sweep 4.2s linear infinite}
+.arcs .a2{stroke-width:.8;opacity:.30;stroke-dasharray:34 260;animation:sweep 7s linear infinite reverse}
+.ostage.lt .arcs circle{stroke:var(--vl-rim)}
+.ostage.lt .a1{opacity:.42}.ostage.lt .a2{opacity:.22}
+/* chữ trong orb — hiện dần từng ký tự */
+.otxt{position:relative;z-index:2;font-size:14px;font-weight:500;letter-spacing:.01em;
+  display:flex;gap:.5px}
+.ostage.dk .otxt{color:#ffe8cd}
+.ostage.lt .otxt{color:var(--t1)}
+@keyframes shim{0%,100%{opacity:.32}50%{opacity:1}}
+.otxt i{font-style:normal;animation:shim 1.8s ease-in-out infinite}
+.osub{position:absolute;bottom:26px;font-size:10.5px;letter-spacing:.02em}
+.ostage.dk .osub{color:#6e6e78}.ostage.lt .osub{color:var(--t4)}
+/* ── 05 · ba cỡ ── */
+.three{display:flex;align-items:center;gap:34px;flex-wrap:wrap;padding:26px 22px;
+  background:var(--panel);border:1px solid var(--border);border-radius:10px}
+.tz{text-align:center}
+.tzl{font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--t4);margin-top:11px}
+.note{margin-top:16px;padding:13px 15px;border-left:2px solid var(--warm);background:var(--panel);
+  border-radius:0 10px 10px 0;font-size:12px;color:var(--t2);max-width:78ch;line-height:1.65}
+.note b{color:var(--t1)}
+.ftr{margin-top:52px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--t4)}
+@media(max-width:800px){.states{grid-template-columns:repeat(2,1fr)}.cmp{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="vtrail" gradientUnits="objectBoundingBox" x1="0" y1="1" x2="1" y2="0">
+    <stop offset="0%" stop-color="#6b3d1c" stop-opacity="0"/>
+    <stop offset="34%" stop-color="#b57a4e" stop-opacity=".55"/>
+    <stop offset="62%" stop-color="#ffdcae" stop-opacity="1"/>
+    <stop offset="88%" stop-color="#9dc4e0" stop-opacity=".7"/>
+    <stop offset="100%" stop-color="#6e8ca6" stop-opacity="0"/>
+  </linearGradient>
+  <linearGradient id="vtrailL" gradientUnits="objectBoundingBox" x1="0" y1="1" x2="1" y2="0">
+    <stop offset="0%" stop-color="#8a5424" stop-opacity="0"/>
+    <stop offset="38%" stop-color="#c07a2c" stop-opacity=".6"/>
+    <stop offset="66%" stop-color="#e09a45" stop-opacity=".95"/>
+    <stop offset="92%" stop-color="#4a7ba8" stop-opacity=".55"/>
+    <stop offset="100%" stop-color="#4a7ba8" stop-opacity="0"/>
+  </linearGradient>
+  <linearGradient id="vbad" gradientUnits="objectBoundingBox" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#b4483a" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#e8836f" stop-opacity=".95"/>
+  </linearGradient>
+  <filter id="vsoft" x="-60%" y="-60%" width="220%" height="220%">
+    <feGaussianBlur stdDeviation="1.5" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="vsoftL" x="-60%" y="-60%" width="220%" height="220%">
+    <feGaussianBlur stdDeviation=".9" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs></svg>
+<div class="wrap">
+
+<h1>Vitals — visual đề xuất <span style="font-size:12px;font-weight:400;color:var(--t4)">· tone ấm–lạnh</span></h1>
+<p class="sub">Ảnh Hoà gửi: ① lưới kết quả tìm ảnh trợ lý AI — dải ruy-băng Siri nhiều màu trên nền đen, quả cầu xà phòng ánh sắc đỏ-tím, điện thoại có vòng sáng, quả cầu lăng kính WWDC 2026. ② nền xanh navy đậm, một vòng tròn nét mảnh trắng + một cung sáng quét quanh, có mạt sáng bắn ra. ③ nền navy, vài cung cong mảnh với các nút phát sáng ở đầu — như chòm sao / quỹ đạo.</p>
+
+<h2>01 · Hai lớp giá trị — nên lấy gì, nên tránh gì</h2>
+<p class="l"><b>Lớp tính năng:</b> cả 3 ảnh đều nói một điều — trợ lý phải <b>có trạng thái nhìn thấy được</b>: đang nghỉ, đang nghe, đang nghĩ, đang trả lời. Đây là thứ Vitals đang thiếu hẳn. <b>Lấy toàn bộ.</b><br><br>
+<b>Lớp giao diện:</b> tách làm hai nửa rõ rệt — một nửa nên lấy, một nửa phải tránh.</p>
+
+<div class="cmp">
+  <div class="cc">
+    <div class="ch no">✕ Nên tránh — ruy-băng / cầu ánh sắc</div>
+    <div class="cb"><div class="blob"></div></div>
+    <div class="cf">Gradient cầu vồng là <b>cliché AI của 2025–2026</b> — mọi app đều dùng. IF khác biệt ở chỗ là <b>công cụ nghề cho kiến trúc sư</b>: node tất định, CAD→3D 0 credit, chấm màu theo ISO 3664. Dán quả cầu cầu vồng vào đó là tự hạ mình xuống hàng “đồ chơi AI”. Nó cũng phá luật màu của chính IF: <b>1 accent duy nhất</b>.</div>
+  </div>
+  <div class="cc">
+    <div class="ch yes">✓ Nên lấy — electron tăng theo nhịp</div>
+    <div class="cb">
+      <span class="gw" style="width:88px;height:88px">
+        <svg class="g idle" viewBox="0 0 72 72">
+          <circle class="arc" cx="36" cy="36" r="30"/>
+          <circle class="arc2" cx="36" cy="36" r="25"/>
+          <g class="petals"><g class="p p1" style="--a:34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p2" style="--a:-34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p3" style="--a:0deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p4" style="--a:72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p5" style="--a:-72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g></g>
+        </svg>
+      </span>
+    </div>
+    <div class="cf">Chốt theo Hoà: <b>Mọi thứ nằm trong một khối cầu kính.</b> Hạt <b>to và sáng khi ra mặt trước, nhỏ và mờ khi lùi ra sau</b> — đó là thứ làm mắt đọc ra chiều sâu thay vì thấy một cái đĩa phẳng. Mỗi hạt kéo theo <b>một vệt sáng ngắn</b> — ba bản sao lệch pha rất nhỏ, mờ và nhỏ dần, nên vệt mềm chứ không thành cái đuôi cứng. Nét không còn là nét đơn: mỗi cung là <b>dải sáng có gradient tắt dần</b> chồng một lớp nhoè, các lớp sáng cộng vào nhau bằng <code>mix-blend-mode: screen</code> nên hoà thành một khối, không rời ra từng mảnh. Và <b>không có đoạn nào chạy đều</b>: mỗi nửa vòng <b>khởi chậm rồi nhanh dần</b> rồi lại dịu xuống — nhịp leo thang <b>rất nhẹ</b>, đủ để thấy có quán tính chứ không giật. Cộng thêm chu kỳ lệch nhau bằng số lẻ (9,3s · 3,7s · 1,3s…) nên hình <b>không bao giờ lặp lại y hệt</b>.<br><br><b>Số electron là kênh thông tin.</b> 2 hạt khi nghỉ → 3 khi nghe → <b>5 khi nghĩ</b> → 3 khi trả lời. Nhìn một cái biết ngay máy đang làm nặng hay nhẹ, <b>không cần đọc chữ, không cần đổi màu</b>. Lớp ngoài là <b>cung chạy</b> chứ không phải vòng kín, nên hình thở được thay vì bị đóng khung.</div>
+  </div>
+</div>
+
+<h2>02 · Năm trạng thái — “thông minh, năng động” đến từ hành vi, không từ gradient</h2>
+<p class="l">Cùng một hình, đổi <b>cách chuyển động</b> để nói nó đang làm gì. Người dùng liếc một cái là biết — không cần chữ.</p>
+
+<div class="dark">
+<div class="states">
+
+  <div class="st">
+    <div class="stg">
+      <span class="gw">
+        <svg class="g idle" viewBox="0 0 72 72">
+          <circle class="arc" cx="36" cy="36" r="30"/>
+          <circle class="arc2" cx="36" cy="36" r="25"/>
+          <g class="petals"><g class="p p1" style="--a:34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p2" style="--a:-34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p3" style="--a:0deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p4" style="--a:72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p5" style="--a:-72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g></g>
+        </svg>
+      </span>
+    </div>
+    <div class="stn">Nghỉ</div>
+    <div class="std"><b>2 hạt.</b> Cung ngắn trôi 20s một vòng, quỹ đạo ẩn hẳn — có sự sống, không đòi chú ý.</div>
+  </div>
+
+  <div class="st">
+    <div class="stg">
+      <span class="gw">
+        <svg class="g listen" viewBox="0 0 72 72">
+          <circle class="arc" cx="36" cy="36" r="30"/>
+          <circle class="arc2" cx="36" cy="36" r="25"/>
+          <g class="petals"><g class="p p1" style="--a:34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p2" style="--a:-34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p3" style="--a:0deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p4" style="--a:72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p5" style="--a:-72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g></g>
+        </svg>
+      </span>
+    </div>
+    <div class="stn">Nghe</div>
+    <div class="std"><b>3 hạt.</b> Hạt thứ ba xuất hiện, cung dài ra, cả cụm hít vào nhả ra nhịp 2s.</div>
+  </div>
+
+  <div class="st">
+    <div class="stg">
+      <span class="gw">
+        <svg class="g think" viewBox="0 0 72 72">
+          <circle class="arc" cx="36" cy="36" r="30"/>
+          <circle class="arc2" cx="36" cy="36" r="25"/>
+          <g class="petals"><g class="p p1" style="--a:34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p2" style="--a:-34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p3" style="--a:0deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p4" style="--a:72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p5" style="--a:-72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g></g>
+        </svg>
+      </span>
+    </div>
+    <div class="stn">Nghĩ</div>
+    <div class="std"><b>5 quỹ đạo elip nghiêng lệch đều 72°</b> — hoa văn sinh ra từ chỗ chúng <b>giao nhau</b>, và chủ yếu do <b>vệt sáng vẽ ra</b> chứ không phải nét vẽ sẵn (viền quỹ đạo gần như tàng hình). Vòng <b>không đi qua đúng tâm</b> nên lõi để trống — hoa văn là một vành, không đặc như bông hoa mai. Hạt lệch pha 1/10 chu kỳ nên nở <b>cuộn thành sóng</b>, và cả cụm <b>tuế sai 26s</b> nên không bao giờ đứng yên thành hình phẳng. Vẫn là trạng thái duy nhất chạy đều tăm tắp.</div>
+  </div>
+
+  <div class="st">
+    <div class="stg">
+      <span class="gw">
+        <svg class="g answer" viewBox="0 0 72 72">
+          <circle class="arc" cx="36" cy="36" r="30"/>
+          <circle class="arc2" cx="36" cy="36" r="25"/>
+          <circle class="ring" cx="36" cy="36" r="3"/>
+          <circle class="ring b" cx="36" cy="36" r="3"/>
+          <g class="petals"><g class="p p1" style="--a:34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p2" style="--a:-34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p3" style="--a:0deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p4" style="--a:72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p5" style="--a:-72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g></g>
+        </svg>
+      </span>
+    </div>
+    <div class="stn">Trả lời</div>
+    <div class="std"><b>3 hạt.</b> Rút bớt từ 5 xuống 3 + xung lan từ tâm — nói “vừa xong, có gì đó đi ra”.</div>
+  </div>
+
+  <div class="st">
+    <div class="stg">
+      <span class="gw">
+        <svg class="g warn" viewBox="0 0 72 72">
+          <circle class="arc" cx="36" cy="36" r="30"/>
+          <circle class="arc2" cx="36" cy="36" r="25"/>
+          <g class="petals"><g class="p p1" style="--a:34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p2" style="--a:-34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p3" style="--a:0deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p4" style="--a:72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p5" style="--a:-72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g></g>
+        </svg>
+      </span>
+    </div>
+    <div class="stn">Có việc cần xem</div>
+    <div class="std"><b>2 hạt.</b> Một hạt hổ phách, hạt kia chìm xám, cung chậm còn 26s. Dùng cho preflight chưa đạt, render lỗi.</div>
+  </div>
+
+</div>
+</div>
+
+<h2>03 · Đặt vào status bar thật — kích thước 20px</h2>
+<p class="l">Cùng một hình, thu về 20px trên nền giấy sáng: đổi sang tím <code>#6a57f5</code>, bỏ nền tối. Vẫn đọc được, vẫn có nhịp.</p>
+
+<div class="sbwrap">
+  <div class="sbtop">— vùng làm việc —</div>
+  <div class="sb">
+    <span>Dự án mẫu</span>
+    <span class="sbg"></span>
+    <span class="vpill">
+      <span class="gw lt">
+        <svg class="g idle" viewBox="0 0 72 72">
+          <circle class="arc" cx="36" cy="36" r="30"/>
+          <circle class="arc2" cx="36" cy="36" r="25"/>
+          <g class="petals"><g class="p p1" style="--a:34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p2" style="--a:-34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p3" style="--a:0deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p4" style="--a:72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p5" style="--a:-72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g></g>
+        </svg>
+      </span>
+      <b>Vitals</b>
+    </span>
+    <span class="sbg"></span>
+    <span>Đã lưu · 2 phút trước</span>
+  </div>
+</div>
+
+<div class="note">
+<b>Ba lý do đề xuất này không phải “cho đẹp”:</b><br><br>
+① <b>Đơn giản nên co giãn được.</b> Cả hình chỉ gồm <b>1 vòng tròn + 2 elip + 2 chấm</b> — ở 20px vẫn rõ, ở 132px vẫn sang, và cùng một file SVG dùng cho cả ba cỡ. Mọi glyph AI kiểu ruy-băng/cầu ánh sắc đều <b>vỡ khi thu nhỏ</b>; hình này thì không.<br><br>
+② <b>Không phá hệ màu.</b> Đúng <b>một</b> accent <code>#6a57f5</code>, không thêm màu nào — trừ hổ phách <code>#c79a63</code> đã có sẵn trong token IF, chỉ dùng cho trạng thái cảnh báo.<br><br>
+③ <b>Rẻ và nhẹ.</b> SVG + CSS thuần, không video, không Lottie, không thư viện. Tự tắt khi máy bật <code>prefers-reduced-motion</code>. Thay thẳng <code>VitalsIcon.tsx</code> (67 dòng) — hiện đang là <i>vòng tròn chứa ô vuông bo góc, gradient cam #F06020 → navy #002850</i>, tức <b>đang dùng 2 màu không thuộc hệ màu IF</b>.
+</div>
+
+
+<h2>04 · Hai ảnh mới — chữ nằm TRONG glyph</h2>
+<p class="l">Ảnh ④: nền navy→đen, quả cầu xanh phát sáng, <b>viền sáng lệch một bên</b> (rim light) tạo khối, chữ <i>“Generating”</i> nằm <b>bên trong</b> quả cầu, từng ký tự sáng lệch nhịp. Ảnh ⑤: vòng ghép từ <b>nhiều cung chồng lớp</b> teal→tím→hồng có hạt nhiễu, chữ <i>“Hi”</i> ở giữa vòng.<br><br>
+<b>Thông tin mới so với 3 ảnh trước:</b> glyph không chỉ báo trạng thái — nó <b>chứa luôn câu chữ</b>. Đây là ý đáng lấy nhất: hiện Vitals đang là <i>icon</i> và <i>chữ trạng thái</i> nằm rời nhau; gộp lại thành <b>một vật</b> thì vừa gọn vừa ra chất.</p>
+<p class="l"><b>Nhưng hai ảnh này là một CÔNG DỤNG KHÁC.</b> Chúng là <b>màn chờ toàn khung</b> (đang sinh ảnh), không phải viên trạng thái 20px trên status bar. IF cần cả hai, và đây đúng chỗ dùng: <b>lúc Render đang chạy</b>, và <b>lúc panel Vitals mở ra</b>.</p>
+
+<div class="orbrow">
+  <div class="obox">
+    <div class="ch" style="color:var(--t3)">Nền tối — Render đang chạy</div>
+    <div class="ostage dk">
+      <div class="orb dk">
+        <svg class="arcs" viewBox="0 0 100 100"><circle class="a1" cx="50" cy="50" r="48"/><circle class="a2" cx="50" cy="50" r="44"/></svg>
+        <canvas class="dust" data-dust="dark" data-word="Đang dựng"></canvas>
+      </div>
+      <div class="osub">Sketch → Ảnh thật · 2048 × 1365 · 4 credit</div>
+    </div>
+  </div>
+
+  <div class="obox">
+    <div class="ch" style="color:var(--t3)">Nền giấy — panel Vitals vừa mở</div>
+    <div class="ostage lt">
+      <div class="orb lt">
+        <svg class="arcs" viewBox="0 0 100 100"><circle class="a1" cx="50" cy="50" r="48"/><circle class="a2" cx="50" cy="50" r="44"/></svg>
+        <canvas class="dust" data-dust="light" data-word="Chào Hoà"></canvas>
+      </div>
+      <div class="osub">Hỏi bất cứ điều gì về dự án này</div>
+    </div>
+  </div>
+</div>
+
+<div class="wordbtns">
+  <button class="wb" onclick="setWord('Đang dựng')">Đang dựng</button>
+  <button class="wb" onclick="setWord('Sắp xong')">Sắp xong</button>
+  <button class="wb" onclick="setWord('Xong rồi')">Xong rồi</button>
+  <button class="wb" onclick="setWord('Chào Hoà')">Chào Hoà</button>
+  <button class="wb" onclick="setWord('2 lỗi')">2 lỗi</button>
+</div>
+
+<div class="note">
+<b>Vì sao tím bị xám trên nền giấy — và vì sao ấm+lạnh thì không.</b> Tím <code>#6a57f5</code> đặt ở độ mờ thấp trên nền kem <code>#f2efe9</code> sẽ <b>mất sắc độ và ngả xám</b>, vì kem là màu ấm — nó kéo tím về phía trung tính. Còn <b>hổ phách trên kem thì vẫn ấm và vẫn phát sáng</b>; <b>xanh lạnh trên kem thì càng nổi</b> vì tương phản nhiệt độ. Đây là lý do vật lý, không phải cảm tính — và nó đúng với đúng cái Hoà thấy: “tím buồn, bị xám khi ở trên doc”.<br><br>
+<b>Và đây không phải màu mới.</b> Cặp ấm–lạnh này <b>đã nằm sẵn trong hệ màu IF</b>: <code>--accent-warm #c79a63</code> · <code>STAGE_TINT.render #b57a4e</code> (ấm) · <code>STAGE_TINT.concept #6e8ca6</code> (lạnh) · và chính <code>VitalsIcon.tsx</code> hiện tại đang dùng <b>cam TTT #F06020 → navy TTT #002850</b> — tức bản gốc <b>vốn đã ở đúng gia đình màu này</b>, chỉ là chưa được dựng thành khối sáng. Tôi chỉ dùng lại đúng cặp đã có.<br><br>
+<b>Một quyết định cần Hoà xác nhận:</b> như vậy Vitals sẽ <b>không dùng chung màu nhấn với giao diện</b> — tím <code>#6a57f5</code> vẫn là màu của “đang chọn / hành động chính”, còn Vitals có bảng màu riêng ấm–lạnh. Tôi cho là <b>đúng</b>: Vitals là một <b>thực thể</b>, không phải một nút bấm; tách màu giúp mắt phân biệt ngay “đây là trợ lý” với “đây là điều khiển”. Apple làm y hệt — Siri có ngôn ngữ màu riêng, không dùng system blue.<br><br>
+<b>Trạng thái cảnh báo phải đổi theo:</b> trước dùng hổ phách <code>#c79a63</code>, nhưng giờ hổ phách đã là màu nền của mọi trạng thái → cảnh báo chuyển sang <b>đỏ đất <code>#b4483a</code></b> (token <code>--bad</code> đã có sẵn), để nó vẫn bật ra khỏi nền ấm.
+</div>
+
+<h2>05 · Một DNA, ba cỡ — dùng đúng chỗ</h2>
+<p class="l">Không phải ba thiết kế rời. Cùng một hình, đổi độ chi tiết theo chỗ đặt — giống cách Apple để SF Symbols ăn theo cỡ chữ.</p>
+
+<div class="three">
+  <div class="tz">
+    <span class="vpill" style="display:inline-flex">
+      <span class="gw">
+        <svg class="g idle" viewBox="0 0 72 72">
+          <circle class="arc" cx="36" cy="36" r="30"/>
+          <circle class="arc2" cx="36" cy="36" r="25"/>
+          <g class="petals"><g class="p p1" style="--a:34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p2" style="--a:-34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p3" style="--a:0deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p4" style="--a:72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p5" style="--a:-72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g></g>
+        </svg>
+      </span><b>Vitals</b>
+    </span>
+    <div class="tzl">S · 20px — status bar</div>
+  </div>
+
+  <div class="tz">
+    <span class="gw lt" style="width:56px;height:56px">
+        <svg class="g think" viewBox="0 0 72 72">
+          <circle class="arc" cx="36" cy="36" r="30"/>
+          <circle class="arc2" cx="36" cy="36" r="25"/>
+          <g class="petals"><g class="p p1" style="--a:34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p2" style="--a:-34deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p3" style="--a:0deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p4" style="--a:72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g>
+          <g class="p p5" style="--a:-72deg">
+            <ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/>
+            <circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/>
+          </g></g>
+        </svg>
+      </span>
+    <div class="tzl">M · 56px — đầu panel</div>
+  </div>
+
+  <div class="tz">
+    <div class="orb lt" style="width:96px;height:96px">
+      <svg class="arcs" viewBox="0 0 100 100"><circle class="a1" cx="50" cy="50" r="48"/><circle class="a2" cx="50" cy="50" r="44"/></svg>
+      <canvas class="dust" data-dust="light" data-word="Đang" data-size="26"></canvas>
+    </div>
+    <div class="tzl">L · 96–132px — màn chờ</div>
+  </div>
+</div>
+
+
+<h2>06 · Xuất hiện — xoắn thiên hà</h2>
+<p class="l">Mỗi lần gọi Vitals, glyph <b>không hiện ra ngay</b>: các nhánh quỹ đạo văng ra xa rồi <b>cuộn xoáy vào tâm</b>, lệch pha nhau nên vệt sáng kéo thành hình xoắn ốc; quả cầu kính nở lên sau cùng. Chỉ 1,5 giây, chạy đúng <b>một lần</b> mỗi lần gọi — không lặp, không thành đồ trang trí.</p>
+
+<div class="grow" id="gal">
+  <div class="gcell">
+    <span class="gw gwsummon" style="width:112px;height:112px">
+      <svg class="g listen summon" viewBox="0 0 72 72">
+        <circle class="arc" cx="36" cy="36" r="30"/><circle class="arc2" cx="36" cy="36" r="25"/>
+        <g class="petals"><g class="p p1" style="--a:34deg"><ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/><circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/></g>
+        <g class="p p2" style="--a:-34deg"><ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/><circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/></g>
+        <g class="p p3" style="--a:0deg"><ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/><circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/></g>
+        <g class="p p4" style="--a:72deg"><ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/><circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/></g>
+        <g class="p p5" style="--a:-72deg"><ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/><circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/></g></g>
+      </svg>
+    </span>
+    <div class="gcl">Nền tối · panel mở</div>
+  </div>
+
+  <div class="gcell">
+    <span class="gw lt gwsummon" style="width:112px;height:112px">
+      <svg class="g listen summon" viewBox="0 0 72 72">
+        <circle class="arc" cx="36" cy="36" r="30"/><circle class="arc2" cx="36" cy="36" r="25"/>
+        <g class="petals"><g class="p p1" style="--a:34deg"><ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/><circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/></g>
+        <g class="p p2" style="--a:-34deg"><ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/><circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/></g>
+        <g class="p p3" style="--a:0deg"><ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/><circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/></g>
+        <g class="p p4" style="--a:72deg"><ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/><circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/></g>
+        <g class="p p5" style="--a:-72deg"><ellipse class="orbit" cx="36" cy="36" rx="24" ry="9.5"/><circle class="tr tr3" r="1.5"/><circle class="tr tr2" r="1.5"/><circle class="tr tr1" r="1.5"/><circle class="halo" r="5"/><circle class="e" r="2"/></g></g>
+      </svg>
+    </span>
+    <div class="gcl">Nền giấy · pill kích hoạt</div>
+  </div>
+
+  <button class="replay" onclick="replay()">↻ &nbsp;Gọi lại</button>
+</div>
+
+<script>
+function replay(){
+  document.querySelectorAll('#gal .summon, #gal .gwsummon').forEach(function(el){
+    el.classList.remove('summon','gwsummon');
+    void el.offsetWidth;
+    el.classList.add(el.tagName === 'SPAN' ? 'gwsummon' : 'summon');
+  });
+}
+</script>
+
+<p class="ftr">Cowork · 29/07/2026 — dựng bằng token thật <code>globals.css</code>. Ảnh tham chiếu do Hoà gửi, đọc theo Luật #7 (tách lớp tính năng / lớp giao diện).</p>
+
+</div>
+
+<script>
+(function(){
+  var RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var insts=[], DPR=Math.min(devicePixelRatio||1,2);
+
+  /* Sprite hạt: gradient toả tròn, tắt dần theo luỹ thừa → KHÔNG có mép cứng.
+     Vẽ bằng drawImage thay vì arc() nên hạt mịn ở mọi cỡ, và nhanh hơn nhiều. */
+  function makeSprite(px, rgb){
+    var c=document.createElement('canvas'); c.width=c.height=px;
+    var g=c.getContext('2d'), r=px/2, rg=g.createRadialGradient(r,r,0,r,r,r);
+    rg.addColorStop(0,   'rgba('+rgb+',1)');
+    rg.addColorStop(.18, 'rgba('+rgb+',.72)');
+    rg.addColorStop(.42, 'rgba('+rgb+',.26)');
+    rg.addColorStop(.68, 'rgba('+rgb+',.07)');
+    rg.addColorStop(1,   'rgba('+rgb+',0)');
+    g.fillStyle=rg; g.fillRect(0,0,px,px); return c;
+  }
+  var SPR = {
+    dark: makeSprite(24,'255,220,174'),
+    light: makeSprite(24,'192,122,44')
+  };
+
+  function DustText(cv){
+    var self=this;
+    self.cv=cv; self.ctx=cv.getContext('2d');
+    self.dark = cv.dataset.dust==='dark';
+    self.spr = self.dark ? SPR.dark : SPR.light;
+    self.fs = +(cv.dataset.size||34);
+    self.word = cv.dataset.word||'';
+    self.N = 2600;                      /* nhiều hạt hơn 3× → mịn, không thấy khe */
+    self.P=[];
+    for(var i=0;i<self.N;i++){
+      var a=Math.random()*6.283, r=16+Math.random()*34;
+      self.P.push({x:0,y:0,vx:0,vy:0,tx:0,ty:0,on:false,
+        ph:Math.random()*6.283, sp:.35+Math.random()*.9,
+        ra:a, rr:r, a:0, ta:0,
+        sz:.55+Math.random()*.75});    /* cỡ lệch nhau → không thành lưới đều */
+    }
+    function fit(){
+      var b=cv.getBoundingClientRect();
+      cv.width=Math.max(1,Math.round(b.width*DPR));
+      cv.height=Math.max(1,Math.round(b.height*DPR));
+      self.w=b.width; self.h=b.height;
+      self.ctx.setTransform(DPR,0,0,DPR,0,0);
+      self.retarget(self.word);
+    }
+    self.fit=fit;
+    self.retarget=function(word){
+      self.word=word;
+      var o=document.createElement('canvas'), oc=o.getContext('2d'),
+          S=2;                                   /* lấy mẫu ở độ phân giải gấp đôi */
+      o.width=Math.round(self.w*S); o.height=Math.round(self.h*S);
+      oc.fillStyle='#fff';
+      oc.font='500 '+(self.fs*S)+'px "Be Vietnam Pro", system-ui, sans-serif';
+      oc.textAlign='center'; oc.textBaseline='middle';
+      oc.fillText(word, o.width/2, o.height/2);
+      var d=oc.getImageData(0,0,o.width,o.height).data, pts=[], step=2;  /* 1px CSS */
+      for(var y=0;y<o.height;y+=step) for(var x=0;x<o.width;x+=step){
+        var al=d[(y*o.width+x)*4+3];
+        if(al>60) pts.push([x/S+(Math.random()-.5)*.5, y/S+(Math.random()-.5)*.5, al/255]);
+      }
+      for(var i=pts.length-1;i>0;i--){var j=(Math.random()*(i+1))|0,t=pts[i];pts[i]=pts[j];pts[j]=t;}
+      var cx=self.w/2, cy=self.h/2;
+      for(var k=0;k<self.N;k++){
+        var p=self.P[k];
+        if(k<pts.length){
+          p.tx=pts[k][0]; p.ty=pts[k][1]; p.on=true;
+          p.ta=(.42+Math.random()*.34)*(.5+pts[k][2]*.5);   /* mép chữ nhạt dần → không răng cưa */
+        } else {
+          p.tx=cx+Math.cos(p.ra)*p.rr; p.ty=cy+Math.sin(p.ra)*p.rr*.6; p.on=false;
+          p.ta=.03+Math.random()*.05;
+        }
+        if(!p.x&&!p.y){ p.x=cx+Math.cos(p.ra)*(p.rr+34); p.y=cy+Math.sin(p.ra)*(p.rr+34); }
+      }
+    };
+    fit(); addEventListener('resize',fit);
+  }
+
+  DustText.prototype.step=function(t){
+    var c=this.ctx, w=this.w, h=this.h, spr=this.spr;
+    c.setTransform(DPR,0,0,DPR,0,0);
+    c.clearRect(0,0,w,h);
+    c.globalCompositeOperation='lighter';
+    for(var i=0;i<this.P.length;i++){
+      var p=this.P[i];
+      var dx=Math.cos(t*.00028*p.sp+p.ph)*(p.on?.45:2.2);
+      var dy=Math.sin(t*.00023*p.sp+p.ph*1.7)*(p.on?.45:2.2);
+      p.vx += ((p.tx+dx)-p.x)*.013; p.vy += ((p.ty+dy)-p.y)*.013;
+      p.vx *= .905; p.vy *= .905;
+      p.x += p.vx; p.y += p.vy;
+      p.a += (p.ta-p.a)*.045;
+      if(p.a<.008) continue;
+      var s = (p.on ? 3.1 : 4.2) * p.sz;      /* hạt rất nhỏ — mịn */
+      c.globalAlpha = p.a;
+      c.drawImage(spr, p.x-s/2, p.y-s/2, s, s);
+    }
+    c.globalAlpha=1;
+    /* BLOOM: chồng chính khung đã vẽ, làm nhoè nhẹ rồi cộng thêm → sáng, mượt,
+       không phải vẽ hào quang riêng cho từng hạt (vốn gây lốm đốm thô). */
+    if(c.filter!==undefined){
+      c.setTransform(1,0,0,1,0,0);
+      c.globalAlpha=this.dark?.5:.34; c.filter='blur('+(3.2*DPR)+'px)';
+      c.drawImage(this.cv,0,0);
+      c.globalAlpha=this.dark?.26:.16; c.filter='blur('+(8*DPR)+'px)';
+      c.drawImage(this.cv,0,0);
+      c.filter='none'; c.globalAlpha=1;
+    }
+    c.globalCompositeOperation='source-over';
+  };
+
+  function boot(){
+    document.querySelectorAll('canvas.dust').forEach(function(cv){ insts.push(new DustText(cv)); });
+    if(RM){ insts.forEach(function(o){ o.P.forEach(function(p){p.x=p.tx;p.y=p.ty;p.a=p.ta;}); o.step(0); }); return; }
+    (function loop(t){ insts.forEach(function(o){o.step(t);}); requestAnimationFrame(loop); })(0);
+  }
+  window.setWord=function(w){ insts.forEach(function(o){ o.retarget(o.fs<28? w.split(' ')[0] : w); }); };
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(boot); else addEventListener('load',boot);
+})();
+</script>
+</body>
+</html>

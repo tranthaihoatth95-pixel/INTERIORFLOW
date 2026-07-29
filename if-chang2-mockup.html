@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IF · Đề xuất giao diện chặng 2 + chặng 3</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f2efe9; --panel:#faf8f4; --field:#f4f1eb; --hover:#e9e5dd;
+    --border:#e3ded4; --border-strong:#cbc4b6;
+    --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a;
+    --accent:#6a57f5; --accent-strong:#553ff3;
+    --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --warm:#c79a63; --tint-render:#b57a4e; --tint-present:#7f8d78; --tint-cad:#6e8ca6;
+    --bad:#b4483a; --good:#4d7a52;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--t1);
+    font-family:'Be Vietnam Pro',-apple-system,'SF Pro Text',system-ui,sans-serif;
+    font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1140px;margin:0 auto;padding:40px 24px 72px}
+  h1{font-size:23px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
+  .sub{color:var(--t3);font-size:13px;margin:0 0 40px}
+  h2{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--t4);margin:52px 0 4px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+  h2 .n{color:var(--accent);margin-right:8px}
+  .lead{color:var(--t2);font-size:13.5px;margin:14px 0 20px;max-width:74ch}
+  .tag{display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.06em;
+    text-transform:uppercase;padding:2px 7px;border-radius:5px;vertical-align:2px}
+  .tag.bad{background:rgba(180,72,58,.12);color:var(--bad)}
+  .tag.good{background:rgba(77,122,82,.13);color:var(--good)}
+
+  /* ---- fake app chrome ---- */
+  .frame{border:1px solid var(--border);border-radius:10px;overflow:hidden;
+    background:var(--panel)}
+  .frame + .frame{margin-top:18px}
+  .cap{font-size:11px;color:var(--t4);padding:8px 13px;background:transparent;
+    border-bottom:1px solid var(--border);display:flex;gap:9px;align-items:center}
+  .bar{display:flex;align-items:center;gap:9px;height:46px;padding:0 11px;
+    background:var(--panel);border-bottom:1px solid;position:relative}
+  .bar.render{border-bottom-color:color-mix(in srgb,var(--tint-render) 55%,var(--border))}
+  .bar.present{border-bottom-color:color-mix(in srgb,var(--tint-present) 55%,var(--border))}
+  .clip{overflow:hidden}
+  .logo{width:20px;height:20px;border:1.5px solid var(--t2);border-radius:5px;flex:0 0 auto;
+    display:grid;place-items:center;font-size:9px;font-weight:700;color:var(--t2)}
+  .div{width:1px;height:18px;background:var(--border);flex:0 0 auto}
+  .btn{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;
+    border:1px solid var(--border);border-radius:9px;background:var(--field);
+    font-size:12px;color:var(--t2);white-space:nowrap;flex:0 0 auto}
+  .btn.pri{background:var(--accent-strong);border-color:var(--accent-strong);color:#fff;font-weight:500}
+  .btn.on{background:var(--accent-soft);border-color:var(--accent-ring);color:var(--accent)}
+  .btn.ico{width:28px;padding:0;justify-content:center}
+  .seg{display:flex;gap:2px;padding:2px;background:var(--field);border:1px solid var(--border);
+    border-radius:10px;flex:0 0 auto}
+  .seg span{font-size:12px;padding:3px 10px;border-radius:8px;color:var(--t3);white-space:nowrap}
+  .seg span.on{background:var(--panel);color:var(--t1);font-weight:600;
+    box-shadow:0 1px 2px rgba(33,30,25,.08)}
+  .micro{font-size:10.5px;letter-spacing:.13em;color:var(--t4);white-space:nowrap;flex:0 0 auto}
+  .grow{flex:1 1 auto;min-width:6px}
+  .avatar{width:26px;height:26px;border-radius:50%;background:var(--warm);flex:0 0 auto;
+    display:grid;place-items:center;color:#fff;font-size:11px;font-weight:600}
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px;
+    border:1px solid var(--border-strong);font-size:11px;color:var(--t3);white-space:nowrap;flex:0 0 auto}
+  .cut{position:absolute;top:0;bottom:0;right:0;width:120px;
+    background:linear-gradient(90deg,rgba(242,239,233,0) 0%,var(--bg) 72%);pointer-events:none}
+  .cutlab{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;
+    font-weight:700;color:var(--bad);letter-spacing:.04em}
+
+  /* ---- stage 2 body ---- */
+  .body{padding:26px 22px 30px;background:var(--bg)}
+  .gu{border:1px solid var(--accent-ring);background:var(--accent-soft);border-radius:12px;
+    padding:12px 14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .gu .lab{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--accent)}
+  .dots{display:flex;gap:5px}
+  .dots i{width:17px;height:17px;border-radius:5px;display:block;border:1px solid rgba(33,30,25,.1)}
+  .gu .meta{font-size:12px;color:var(--t2)}
+  .gu .meta b{color:var(--t1);font-weight:600}
+  .flowdown{text-align:center;font-size:11.5px;color:var(--t4);padding:30px 0 3px;letter-spacing:.01em}
+  /* cross: chữ thập là 2 đường hairline THẬT, 4 nhóm nằm 4 góc — không card, không viền */
+  .cross{position:relative;display:grid;grid-template-columns:1fr 1fr;
+    gap:52px 104px;max-width:960px;margin:8px auto 0;padding:4px 0}
+  .cross::before,.cross::after{content:'';position:absolute;background:var(--border);z-index:0}
+  .cross::before{left:50%;top:0;bottom:0;width:1px;transform:translateX(-.5px)}
+  .cross::after{top:50%;left:0;right:0;height:1px;transform:translateY(-.5px)}
+  .hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:250px;
+    background:var(--bg);padding:14px 16px;text-align:center;z-index:2}
+  .hub .dots{justify-content:center;gap:7px;margin-bottom:11px}
+  .hub .dots i{width:22px;height:22px;border-radius:4px;border:none;
+    box-shadow:inset 0 0 0 1px rgba(33,30,25,.07)}
+  .hub .hm{font-size:12.5px;color:var(--t1);font-weight:600;letter-spacing:-.01em}
+  .hub .hs{font-size:11px;color:var(--t3);margin-top:3px}
+  .hub .hb{display:flex;gap:14px;justify-content:center;margin-top:11px;
+    font-size:11px;color:var(--t3)}
+  .hub .hb u{text-decoration:none;border-bottom:1px solid var(--border-strong);padding-bottom:1px;cursor:pointer}
+  .steps{display:contents}
+  .step{position:relative;z-index:1;padding:0 4px}
+  .ill{height:104px;margin-bottom:16px;display:flex;align-items:center;justify-content:center;
+    color:var(--t2)}
+  .ill svg{width:132px;height:100px;overflow:visible;display:block}
+  .step h3{margin:0 0 3px;font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--t1);
+    display:flex;align-items:baseline;gap:0}
+  .step h3 em{font-style:normal;color:var(--accent);margin-right:9px;font-size:11px;
+    font-variant-numeric:tabular-nums;letter-spacing:.08em}
+  .step h3 b{font-weight:500;color:var(--t4);letter-spacing:.06em;font-size:10.5px;margin-left:5px}
+  .step h3 .ct{margin-left:auto;font-size:10.5px;font-weight:500;color:var(--t4);
+    font-variant-numeric:tabular-nums}
+  .step p{margin:0 0 13px;font-size:12px;color:var(--t3);font-style:italic}
+  /* danh sách: sát icon thì rõ, xuống dưới chìm dần vào nền, cuộn được */
+  .list{max-height:132px;overflow-y:auto;overscroll-behavior:contain;
+    -webkit-mask-image:linear-gradient(180deg,#000 0,#000 24%,rgba(0,0,0,.55) 58%,rgba(0,0,0,.16) 88%,transparent 100%);
+    mask-image:linear-gradient(180deg,#000 0,#000 24%,rgba(0,0,0,.55) 58%,rgba(0,0,0,.16) 88%,transparent 100%);
+    scrollbar-width:none}
+  .list::-webkit-scrollbar{display:none}
+  .tool{display:flex;align-items:baseline;gap:10px;padding:7px 0;border:none;background:none}
+  .tool .tn{font-size:12.5px;color:var(--t2);flex:1 1 auto;font-weight:400;letter-spacing:-.005em}
+  .tool:first-child .tn{color:var(--t1);font-weight:500}
+  .tool .st{font-size:9.5px;letter-spacing:.04em;padding:0;background:none!important;font-weight:500}
+  .st.hid{color:var(--t4)}
+  .st.sh{color:var(--good)}
+  .more{display:none}
+
+  /* ---- stage 3 ---- */
+  .p3{padding:30px 22px 34px;background:var(--bg)}
+  .p3 h3{margin:0;font-size:17px;font-weight:600;text-align:center}
+  .p3 .s{margin:4px 0 22px;font-size:12.5px;color:var(--t3);text-align:center}
+  .sizes{display:grid;grid-template-columns:repeat(6,1fr);gap:11px;max-width:880px;margin:0 auto}
+  .size.lib{border-color:var(--accent-ring);background:var(--accent-soft)}
+  .dpi{max-width:620px;margin:14px auto 0;text-align:center;font-size:11.5px;color:var(--t3)}
+  .dpi b{color:var(--accent);font-weight:700}
+  .size{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:11px;text-align:center}
+  .size.on{border-color:var(--accent-ring);background:var(--accent-soft)}
+  .paper{margin:0 auto 9px;background:var(--field);border:1px solid var(--border-strong);border-radius:3px}
+  .size .nm{font-size:11.5px;font-weight:600;color:var(--t1)}
+  .size .ds{font-size:10px;color:var(--t4);margin-top:1px}
+  .files{display:flex;gap:9px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+  .auto{max-width:620px;margin:22px auto 0;border:1px dashed var(--border-strong);border-radius:11px;
+    padding:11px 14px;background:var(--panel);font-size:12px;color:var(--t2);text-align:center}
+  .auto b{color:var(--t1)}
+  .auto u{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-ring)}
+
+  .note{margin-top:16px;padding:13px 15px;border-left:2px solid var(--warm);
+    background:var(--panel);border-radius:0 10px 10px 0;font-size:12.5px;color:var(--t2);max-width:78ch}
+  .note b{color:var(--t1)}
+  .ftr{margin-top:56px;padding-top:16px;border-top:1px solid var(--border);
+    font-size:11.5px;color:var(--t4)}
+  /* ---- 04 packs ---- */
+  .packs{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
+  .pack{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:10px 9px;cursor:grab}
+  .pack.on{border-color:var(--accent-ring);background:var(--accent-soft)}
+  .pack .pi{font-size:15px;color:var(--t3);line-height:1}
+  .pack.on .pi{color:var(--accent)}
+  .pack .pn{font-size:11.5px;font-weight:600;color:var(--t1);margin-top:6px;line-height:1.3}
+  .pack .pd{font-size:10px;color:var(--t4);margin-top:2px}
+  .dropzone{margin-top:16px;border:1px dashed var(--accent-ring);border-radius:12px;
+    background:rgba(106,87,245,.05);padding:12px}
+  .dzhead{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .dzt{font-size:12.5px;color:var(--t2)} .dzt b{color:var(--t1);font-weight:600}
+  .dzw{font-size:10.5px;font-weight:600;color:var(--bad);background:rgba(180,72,58,.1);
+    padding:2px 7px;border-radius:5px}
+  .nodes{display:flex;align-items:flex-start;gap:6px;overflow-x:auto;padding-bottom:4px}
+  .wire{color:var(--t4);font-size:14px;padding-top:34px;flex:0 0 auto}
+  .nd{flex:0 0 auto;width:132px;background:var(--panel);border:1px solid var(--border);
+    border-radius:10px;padding:8px;box-shadow:0 1px 2px rgba(33,30,25,.05)}
+  .nd.need{border-style:dashed;border-color:var(--warm)}
+  .nd.exp{width:158px;border-color:var(--accent-ring);background:var(--panel)}
+  .ndh{font-size:10.5px;font-weight:600;color:var(--t1);margin-bottom:6px}
+  .ndb{border-radius:7px;font-size:10.5px;display:grid;place-items:center;height:38px;text-align:center;padding:0 6px}
+  .ndb.import{background:rgba(199,154,99,.12);color:#8a6435;border:1px dashed var(--warm)}
+  .ndb.text{background:var(--field);color:var(--t4);border:1px solid var(--border);font-style:italic}
+  .ndb.run{background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-ring);font-weight:600}
+  .ndf{font-size:9.5px;color:var(--warm);margin-top:6px;font-weight:600;letter-spacing:.03em}
+  .ndf.ready{color:var(--good)}
+  .sl{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+  .sl span{font-size:9.5px;color:var(--t4);width:52px;flex:0 0 auto}
+  .sl i{flex:1;height:3px;border-radius:2px;background:var(--border-strong);position:relative;display:block}
+  .sl i::after{content:'';position:absolute;top:-2.5px;left:var(--p,55%);width:8px;height:8px;
+    border-radius:50%;background:var(--accent);transform:translateX(-50%)}
+  .fmt{display:flex;gap:3px;margin-top:6px}
+  .fmt span{font-size:9px;padding:2px 5px;border-radius:4px;background:var(--field);
+    border:1px solid var(--border);color:var(--t4)}
+  .fmt span.on{background:var(--accent-soft);border-color:var(--accent-ring);color:var(--accent);font-weight:600}
+  /* ---- 05 bento ---- */
+  .bento{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .bt{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:88px}
+  .bt.s4{grid-column:span 4} .bt.s2{grid-column:span 2}
+  .btl{font-size:11px;font-weight:600;color:var(--t2);margin-bottom:9px;display:flex;align-items:center;gap:7px}
+  .sp{font-size:9px;font-weight:600;color:var(--accent);background:var(--accent-soft);
+    border:1px solid var(--accent-ring);padding:1px 5px;border-radius:4px}
+  .drop{height:132px;border:1.5px dashed var(--border-strong);border-radius:9px;display:grid;
+    place-items:center;font-size:12px;color:var(--t4);background:var(--field)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .tap{height:44px;border:1px solid var(--border);border-radius:9px;background:var(--field);
+    display:grid;place-items:center;font-size:12.5px;color:var(--t2)}
+  .tap.on{background:var(--accent-soft);border-color:var(--accent-ring);color:var(--accent);font-weight:600}
+  .ta{min-height:56px;border:1px solid var(--border);border-radius:9px;background:var(--field);
+    padding:9px 11px;font-size:12px;color:var(--t4);font-style:italic}
+  .sld{height:44px;display:flex;align-items:center}
+  .sld i{flex:1;height:5px;border-radius:3px;background:var(--border-strong);position:relative;display:block}
+  .sld i::after{content:'';position:absolute;top:-11px;left:var(--p,50%);width:28px;height:28px;
+    border-radius:50%;background:var(--panel);border:2px solid var(--accent);transform:translateX(-50%)}
+  .bt.adv{min-height:0;padding:12px;font-size:12px;color:var(--t3);background:var(--field)}
+  .pill{display:inline-flex;align-items:center;gap:3px;margin-top:14px;padding:5px;
+    border-radius:999px;border:1px solid var(--border);
+    background:color-mix(in srgb, var(--panel) 78%, transparent);
+    backdrop-filter:blur(18px) saturate(1.4);box-shadow:0 8px 30px rgba(33,30,25,.16)}
+  .pill span{font-size:12px;padding:6px 14px;border-radius:999px;color:var(--t3);white-space:nowrap}
+  .pill span.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .pill .pk{margin:0 8px 0 4px;font-size:10px;opacity:.75}
+
+  /* ============ 05 · bản sửa: giao diện nghề ============ */
+  .frame.dk{border-color:#2a2a31;background:#141417}
+  .frame.dk .cap{background:#1a1a1e;border-bottom-color:#2a2a31;color:#9e9ea8}
+  .wsbar{display:flex;align-items:center;gap:9px;height:40px;padding:0 12px;background:#141417;
+    border-bottom:1px solid color-mix(in srgb,#b57a4e 45%,#2a2a31)}
+  .wlogo{width:17px;height:17px;border:1.5px solid #9e9ea8;border-radius:4px;display:grid;
+    place-items:center;font-size:7.5px;font-weight:700;color:#9e9ea8;flex:0 0 auto}
+  .wname{font-size:12px;color:#9e9ea8}
+  .wdiv{width:1px;height:15px;background:#2a2a31}
+  .wseg{display:flex;gap:1px;padding:2px;background:#0c0c0e;border-radius:8px}
+  .wseg i{font-style:normal;font-size:11px;padding:2.5px 9px;border-radius:6px;color:#6e6e78}
+  .wseg i.on{background:#202024;color:#f5f5f7;font-weight:600}
+  .wgrow{flex:1 1 auto}
+  .wbtn{font-size:11px;color:#9e9ea8;border:1px solid #2a2a31;border-radius:7px;padding:3px 9px}
+  .wav{width:22px;height:22px;border-radius:50%;background:#c79a63;display:grid;place-items:center;
+    color:#141417;font-size:10px;font-weight:700}
+  .ws{display:grid;grid-template-columns:1fr 296px;height:440px}
+
+  /* sân khấu ảnh — nền TRUNG TÍNH để chấm màu (ISO 3664) */
+  .stage{background:#2b2b2d;display:flex;flex-direction:column;padding:16px 16px 0}
+  .shot{position:relative;flex:1;border-radius:3px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.35)}
+  .before{position:absolute;inset:0;
+    background:linear-gradient(160deg,#6e6a63 0%,#8a857c 42%,#a8a196 70%,#565049 100%)}
+  .after{position:absolute;inset:0;clip-path:inset(0 0 0 52%);
+    background:linear-gradient(160deg,#6e6a63 0%,#8a857c 42%,#a8a196 70%,#565049 100%)}
+  .after::after{content:'';position:absolute;left:0;right:0;bottom:0;height:44%;
+    background:repeating-linear-gradient(58deg,#7a5636 0 9px,#8d6742 9px 18px,#5f4127 18px 27px,#7a5636 27px 36px)}
+  .maskzone{position:absolute;left:0;right:0;bottom:0;height:44%;
+    outline:1px dashed rgba(106,87,245,.85);background:rgba(106,87,245,.10)}
+  .handle{position:absolute;top:0;bottom:0;left:52%;width:1px;background:rgba(255,255,255,.9)}
+  .handle span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;
+    border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 1px 5px rgba(0,0,0,.4)}
+  .lab{position:absolute;top:9px;font-size:9px;font-weight:700;letter-spacing:.13em;
+    color:rgba(255,255,255,.82);background:rgba(0,0,0,.34);padding:2px 7px;border-radius:3px}
+  .lab.l{left:9px} .lab.r{right:9px}
+  .stagefoot{display:flex;align-items:center;gap:5px;height:40px;flex:0 0 auto}
+  .sf{font-size:10.5px;color:#c8c4bd;padding:4px 9px;border-radius:6px}
+  .sf.on{background:rgba(255,255,255,.11);color:#fff}
+  .sfm{font-size:10px;color:#9b968e;letter-spacing:.02em}
+
+  /* thanh điều khiển — dày, chữ nhỏ, gạch mảnh, KHÔNG hộp lồng hộp */
+  .rail{background:#141417;border-left:1px solid #2a2a31;display:flex;flex-direction:column;overflow:hidden}
+  .rhead{padding:13px 14px 11px;border-bottom:1px solid #2a2a31}
+  .rt{font-size:14px;font-weight:600;color:#f5f5f7;letter-spacing:-.01em}
+  .rs{font-size:10.5px;color:#6e6e78;margin-top:2px}
+  .sec{padding:12px 14px;border-bottom:1px solid #2a2a31}
+  .sl{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6e6e78;
+    margin-bottom:9px;display:flex;align-items:baseline;justify-content:space-between}
+  .lk{font-size:9.5px;letter-spacing:0;text-transform:none;font-weight:500;color:#6a57f5}
+  .icos{display:flex;align-items:center;gap:4px}
+  .ic{width:29px;height:29px;border-radius:7px;border:1px solid #2a2a31;display:grid;place-items:center;
+    font-size:13px;color:#9e9ea8;background:#0c0c0e}
+  .ic.on{background:rgba(106,87,245,.16);border-color:rgba(106,87,245,.55);color:#8f80f8}
+  .swg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:9px}
+  .sw{position:relative;height:44px;border-radius:6px;border:1px solid #2a2a31;overflow:hidden;
+    background:linear-gradient(140deg,var(--c1),var(--c2))}
+  .sw.on{border-color:#6a57f5;box-shadow:0 0 0 1px #6a57f5}
+  .sw span{position:absolute;left:0;right:0;bottom:0;font-size:8.5px;font-weight:600;color:#fff;
+    background:linear-gradient(transparent,rgba(0,0,0,.62));padding:8px 4px 3px;text-align:center}
+  .sw.add{background:#0c0c0e;display:grid;place-items:center}
+  .sw.add span{position:static;background:none;font-size:15px;color:#6e6e78;padding:0;font-weight:400}
+  .inp{font-size:11px;color:#9e9ea8;background:#0c0c0e;border:1px solid #2a2a31;border-radius:6px;
+    padding:7px 9px;font-style:italic}
+  .row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+  .row+.tr{margin-bottom:13px}
+  .rl{font-size:11.5px;color:#d6d6db}
+  .rv{font-size:10px;color:#6e6e78}
+  .rv.num{font-variant-numeric:tabular-nums;font-size:11px;color:#9e9ea8;letter-spacing:.02em}
+  .tr{height:3px;border-radius:2px;background:#2a2a31;position:relative}
+  .tr i{position:absolute;left:0;top:0;bottom:0;width:var(--p);background:#6a57f5;border-radius:2px;display:block}
+  .tr i::after{content:'';position:absolute;right:-5px;top:-4px;width:11px;height:11px;border-radius:50%;
+    background:#f5f5f7;box-shadow:0 1px 3px rgba(0,0,0,.5)}
+  .seg3{display:flex;gap:1px;padding:2px;background:#0c0c0e;border-radius:6px}
+  .seg3 i{font-style:normal;font-size:10.5px;padding:2px 10px;border-radius:4px;color:#6e6e78;
+    font-variant-numeric:tabular-nums}
+  .seg3 i.on{background:rgba(106,87,245,.16);color:#8f80f8;font-weight:600}
+  .adv2{font-size:11px;color:#9e9ea8;display:flex;align-items:center;justify-content:space-between}
+  .rfoot{margin-top:auto;padding:11px 14px 13px;display:flex;align-items:center;gap:10px}
+  .gu2{flex:1;font-size:9.5px;color:#6e6e78;display:flex;align-items:center;gap:3px}
+  .gd{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:1px}
+  .go{border:none;border-radius:8px;background:#553ff3;color:#fff;font-family:inherit;
+    font-size:12.5px;font-weight:600;padding:9px 15px;display:flex;align-items:center;gap:8px}
+  .go span{font-size:10px;font-weight:500;opacity:.72}
+  @media(max-width:820px){.ws{grid-template-columns:1fr;height:auto}.rail{border-left:none;border-top:1px solid #2a2a31}}
+  .kbdgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .kbdcol{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:12px}
+  .kbdh{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--t4);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+  .kbdr{display:flex;align-items:center;gap:5px;margin-bottom:8px;font-size:11.5px;color:var(--t2)}
+  .kbdr>span:first-child{flex:1;min-width:0}
+  .kbdr .pl{color:var(--t4);font-size:10.5px;flex:0 0 auto}
+  kbd{font-family:inherit;font-size:10.5px;font-weight:600;color:var(--t1);background:var(--field);
+    border:1px solid var(--border-strong);border-bottom-width:2px;border-radius:5px;
+    padding:2px 6px;flex:0 0 auto}
+  .bridge{margin-top:13px;padding:11px 14px;border-radius:10px;background:var(--accent-soft);
+    border:1px solid var(--accent-ring);font-size:11.5px;color:var(--t2);line-height:1.6}
+  .bridge b{color:var(--t1)}
+  .sticky{margin-top:14px;height:52px;border-radius:11px;background:var(--accent-strong);color:#fff;
+    display:grid;place-items:center;font-size:14px;font-weight:600;letter-spacing:.01em}
+  @media(max-width:820px){.steps{grid-template-columns:1fr}.sizes{grid-template-columns:repeat(2,1fr)}
+    .packs{grid-template-columns:repeat(2,1fr)}.kbdgrid{grid-template-columns:repeat(2,1fr)}
+    .cross{grid-template-columns:1fr;gap:12px}
+    .hub{position:static;transform:none;width:auto;margin-bottom:12px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Đề xuất giao diện chặng 2 · chặng 3</h1>
+  <p class="sub">Dựng bằng token thật của IF (<code>globals.css</code> · theme sáng) — tím <code>#6a57f5</code>, nền giấy <code>#f2efe9</code>, Be&nbsp;Vietnam&nbsp;Pro. Đây là bản vẽ ý, chưa phải code.</p>
+
+  <!-- ============ 1 ============ -->
+  <h2><span class="n">01</span>Thanh đầu — tràn khung</h2>
+  <p class="lead">Ở 1183px (đúng độ rộng ảnh Hoà gửi), thanh đầu chứa 13 phần tử. Không có <code>overflow-hidden</code>, không wrap, mọi thứ sau tên flow đều <code>shrink-0</code> → nút Chạy flow và avatar bị đẩy khỏi màn.</p>
+
+  <div class="frame">
+    <div class="cap"><span class="tag bad">Hiện tại</span> 1183px — chip AI bị cắt, 5 nút bên phải mất hẳn</div>
+    <div class="bar render clip">
+      <div class="logo">IF</div>
+      <span style="font-size:13px;font-weight:600">InteriorFlow</span>
+      <span class="div"></span>
+      <span style="font-size:13px;color:var(--t3)">D</span>
+      <div class="seg"><span>CAD · Phác thảo</span><span class="on">Rendering</span><span>Presenting</span></div>
+      <span class="micro">— 02 · RENDERING</span>
+      <span class="btn">Thêm vào canvas</span>
+      <span class="btn">Mở tệp ▾</span>
+      <span class="btn">Xuất ▾</span>
+      <span class="chip" style="border-color:var(--accent-ring);color:var(--accent)">AI · oneAI · FLUX-R</span>
+      <span class="btn pri">Chạy flow</span>
+      <span class="btn">Việc</span>
+      <span class="avatar">H</span>
+      <div class="cut"></div><div class="cutlab">↯ tràn</div>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="cap"><span class="tag good">Đề xuất</span> gộp Tệp · AI vào Cài đặt · priority+ overflow — cùng 1183px</div>
+    <div class="bar render">
+      <div class="logo">IF</div>
+      <span style="font-size:13px;color:var(--t2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Dự án mẫu</span>
+      <span class="div"></span>
+      <div class="seg"><span>CAD</span><span class="on">Rendering</span><span>Presenting</span></div>
+      <span class="micro">02</span>
+      <div class="grow"></div>
+      <span class="btn">Tệp ▾</span>
+      <span class="btn ico">⋯</span>
+      <span class="btn pri">▶ Chạy flow</span>
+      <span class="avatar">H</span>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>4 thay đổi:</b> ① Mở tệp + Xuất + Thêm vào canvas → gộp 1 menu <b>Tệp</b>. ② Chip AI → vào <b>Cài đặt</b>, chỉ hiện lại dưới dạng chấm cảnh báo khi đang chạy mock. ③ Nhãn “— 02 · RENDERING” rút còn <b>02</b>. ④ Nút Chạy flow + avatar khoá cứng bên phải, <b>không bao giờ bị đẩy ra</b> — mọi thứ khác tự chui vào <b>⋯</b> khi hẹp (priority+, theo PatternFly).
+  </div>
+
+  <!-- ============ 2 ============ -->
+  <h2><span class="n">02</span>Chặng 2 — 4 nhóm quanh một phong cách chung</h2>
+  <p class="lead">IF có <b>45 node thật</b> nhưng Tool Mode chỉ lộ 6. Thay lưới 6 thẻ phẳng bằng 4 nhóm theo đúng thứ tự nghề, đặt quanh một chữ thập — giữa là <b>phong cách đang áp</b>, thứ cả 4 nhóm dùng chung.</p>
+
+  <div class="frame">
+    <div class="cap"><span class="tag good">Đề xuất</span> chặng 2 — lộ đủ 20 node mà không thành bức tường</div>
+    <div class="bar render">
+      <div class="logo">IF</div>
+      <span style="font-size:13px;color:var(--t2)">Dự án mẫu</span>
+      <span class="div"></span>
+      <div class="seg"><span>CAD</span><span class="on">Rendering</span><span>Presenting</span></div>
+      <div class="grow"></div>
+      <span class="btn">Tệp ▾</span><span class="btn ico">⋯</span>
+      <span class="btn pri">▶ Chạy flow</span><span class="avatar">H</span>
+    </div>
+    <div class="body">
+
+      <div class="cross">
+
+        <div class="step">
+          <div class="ill">
+            <svg viewBox="0 0 160 120" fill="none" stroke="currentColor" stroke-width="1.5">
+              <g transform="translate(1,1)"><rect x="16" y="26" width="52" height="42" rx="2" stroke="var(--t4)" transform="rotate(-7 42 47)"/>
+              <rect x="58" y="14" width="46" height="58" rx="2" stroke="var(--t2)" transform="rotate(4 81 43)"/>
+              <path d="M64 60 L76 44 L85 55 L92 48 L100 62" stroke="var(--t2)" transform="rotate(4 81 43)"/>
+              <circle cx="93" cy="27" r="4" stroke="var(--t2)" transform="rotate(4 81 43)"/>
+              <rect x="98" y="34" width="44" height="34" rx="2" stroke="var(--t4)" transform="rotate(-4 120 51)"/>
+              <rect x="30" y="84" width="20" height="20" rx="2" stroke="var(--t4)"/>
+              <rect x="56" y="84" width="20" height="20" rx="2" stroke="var(--accent)" fill="var(--accent-soft)"/>
+              <rect x="82" y="84" width="20" height="20" rx="2" stroke="var(--t4)"/>
+              <path d="M112 94 L136 94" stroke="var(--t4)"/></g>
+            </svg>
+          </div>
+          <h3><em>01</em>Ý tưởng <b>· Ideate</b><span class="ct">8</span></h3>
+          <p>“Làm theo gu gì?”</p>
+          <div class="list">
+          <div class="tool"><span class="tn">Rút gu · Gu Reference</span><span class="st hid">ẩn</span></div>
+          <div class="tool"><span class="tn">Moodboard · Moodboard Gen</span><span class="st hid">ẩn</span></div>
+          <div class="tool"><span class="tn">Bảng màu · Palette</span><span class="st hid">ẩn</span></div>
+          <div class="tool"><span class="tn">Hoa văn · Pattern Studio</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Ảnh tham chiếu · Reference</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Loại phòng · Room Info</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Preset phong cách · Style Preset</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Moodboard ghép · Collage</span><span class="st hid">ẩn</span></div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="ill">
+            <svg viewBox="0 0 160 120" fill="none" stroke="currentColor" stroke-width="1.5">
+              <g transform="translate(-1.5,3.5)"><path d="M46 46 L86 32 L118 44 L118 84 L86 96 L46 84 Z" stroke="var(--t2)"/>
+              <path d="M46 46 L86 58 L118 44 M86 58 L86 96" stroke="var(--t4)"/>
+              <path d="M24 96 L24 62 L40 62" stroke="var(--t4)" stroke-dasharray="3 3"/>
+              <circle cx="130" cy="26" r="9" stroke="var(--accent)"/>
+              <path d="M130 35 L112 46" stroke="var(--accent)"/></g>
+            </svg>
+          </div>
+          <h3><em>02</em>Dựng <b>· Build</b><span class="ct">9</span></h3>
+          <p>“Ra ảnh đầu tiên bằng gì?”</p>
+          <div class="list">
+          <div class="tool"><span class="tn">Bản vẽ → 3D · CAD to 3D</span><span class="st hid">ẩn ⚑</span></div>
+          <div class="tool"><span class="tn">Góc máy ảnh · Camera</span><span class="st hid">ẩn ⚑</span></div>
+          <div class="tool"><span class="tn">Nét vẽ → Ảnh · Sketch</span><span class="st sh">lộ</span></div>
+          <div class="tool"><span class="tn">Khối trắng → Ảnh · Clay</span><span class="st sh">lộ</span></div>
+            <div class="tool"><span class="tn">Phòng trống → Bày đồ · Staging</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Ngoại thất · Exterior</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Ý tưởng → Ảnh · Text to Image</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Vẽ nhanh · Free Sketch</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Nhập ảnh · Import</span><span class="st hid">ẩn</span></div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="ill">
+            <svg viewBox="0 0 160 120" fill="none" stroke="currentColor" stroke-width="1.5">
+              <g transform="translate(0,-8)"><rect x="30" y="28" width="100" height="60" rx="4" stroke="var(--t2)"/>
+              <path d="M52 74 L74 48 L92 68 L106 56 L118 74" stroke="var(--t4)"/>
+              <rect x="66" y="42" width="40" height="34" rx="2" stroke="var(--accent)" stroke-dasharray="4 3"/>
+              <path d="M96 70 L104 92 L108 82 L118 80 Z" fill="var(--accent)" stroke="var(--accent)" stroke-linejoin="round"/>
+              <path d="M38 104 L122 104" stroke="var(--t4)"/><circle cx="88" cy="104" r="4.5" fill="var(--panel)" stroke="var(--accent)"/></g>
+            </svg>
+          </div>
+          <h3><em>03</em>Sửa <b>· Refine</b><span class="ct">11</span></h3>
+          <p>“Chưa ưng chỗ nào?”</p>
+          <div class="list">
+          <div class="tool"><span class="tn">Đổi phong cách · Style</span><span class="st sh">lộ</span></div>
+          <div class="tool"><span class="tn">Đổi ánh sáng · Relight</span><span class="st sh">lộ</span></div>
+          <div class="tool"><span class="tn">Đổi vật liệu · Material</span><span class="st sh">lộ</span></div>
+          <div class="tool"><span class="tn">Thêm/xoá đồ · Furniture</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Chỉnh cục bộ · Local Edit</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Chọn vùng · Smart Select</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Phân vùng · ID Mask</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Vẽ mask · Mask Painter</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Chỉnh tay · Manual</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Sửa phối cảnh · Warp</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Cắt · Crop</span><span class="st hid">ẩn</span></div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="ill">
+            <svg viewBox="0 0 160 120" fill="none" stroke="currentColor" stroke-width="1.5">
+              <g transform="translate(-5,1)"><rect x="30" y="24" width="62" height="46" rx="3" stroke="var(--t4)"/>
+              <rect x="40" y="36" width="62" height="46" rx="3" stroke="var(--t4)"/>
+              <rect x="50" y="48" width="62" height="46" rx="3" stroke="var(--t2)"/>
+              <path d="M60 62 L84 62 M60 72 L96 72 M60 82 L78 82" stroke="var(--t4)"/>
+              <path d="M118 71 L140 71 M132 63 L140 71 L132 79" stroke="var(--accent)" stroke-linecap="round" stroke-linejoin="round"/></g>
+            </svg>
+          </div>
+          <h3><em>04</em>Xuất <b>· Deliver</b><span class="ct">15</span></h3>
+          <p>“Giao khách thế nào?”</p>
+          <div class="list">
+          <div class="tool"><span class="tn">3 phương án · Variants</span><span class="st hid">ẩn</span></div>
+          <div class="tool"><span class="tn">So sánh A/B · Compare</span><span class="st hid">ẩn</span></div>
+          <div class="tool"><span class="tn">Phóng to in · Upscale</span><span class="st sh">lộ</span></div>
+          <div class="tool"><span class="tn">Xuất board · Export Board</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Cắt nền · Remove BG</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Tách nội thất · Extract</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Ghi chú vật liệu · Note</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Chú thích · Annotate</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Ghép ảnh · Composite</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Watermark</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Lưu Gallery</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Dựng slide · Composer</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Xuất deck · Export Deck</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">Concept Content</span><span class="st hid">ẩn</span></div>
+            <div class="tool"><span class="tn">So sánh model · Model Compare</span><span class="st hid">ẩn</span></div>
+          </div>
+        </div>
+
+        <div class="hub">
+          <div class="dots">
+            <i style="background:#cbbca6"></i><i style="background:#8a6f52"></i>
+            <i style="background:#3f4a44"></i><i style="background:#d9d3c6"></i>
+          </div>
+          <div class="hm">travertine · sồi · đồng</div>
+          <div class="hs">Tối giản ấm, Á Đông · 12 ảnh tham chiếu</div>
+          <div class="hb"><u>Đổi</u><u>Bỏ áp dụng</u></div>
+        </div>
+
+      </div>
+
+      <div class="flowdown">Phong cách ở giữa — cả 4 nhóm tự dùng chung, không phải tả lại từng lần</div>
+      <div class="adv">Mở canvas (nâng cao) →</div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>Ô giữa cố ý KHÔNG có nhãn.</b> Gọi nó là “Thẻ Gu” thì người dùng thường không hiểu — và đặt một từ khó hiểu ngay giữa màn hình là phản tác dụng. Nên để <b>nội dung tự nói</b>: 4 ô màu + <i>travertine · sồi · đồng</i> + <i>Tối giản ấm, Á Đông</i> — nhìn là biết đây là phong cách đang áp, không cần ai giải thích. Bên dưới lớp áo đó vẫn là <code>input.guref</code> đã code xong (0 credit): <i>“kéo hồ sơ gu ra làm 1 node độc lập, cắm vào bất kỳ node nào”</i> — đúng nguyên văn ý Hoà, <b>1 node cô đọng rồi truyền ra</b>. Tên trong code giữ nguyên <code>GuProfile</code>; chỉ nhãn người dùng thấy là đổi.
+  </div>
+
+  <!-- ============ 3 ============ -->
+  <h2><span class="n">03</span>Chặng 3 — màn chọn khổ đầu chặng</h2>
+  <p class="lead">5 khổ đã code xong (<code>StagePresetPanel.tsx</code>) nhưng nằm trong toolbar — phải vào trình sửa rồi mới chọn được. Hệ quả: dàn xong 7 trang 16:9 mới biết khách cần in A3 dọc.</p>
+
+  <div class="frame">
+    <div class="cap"><span class="tag good">Đề xuất</span> chặng 3 — cùng khuôn “màn chọn đầu chặng” với chặng 2</div>
+    <div class="bar present">
+      <div class="logo">IF</div>
+      <span style="font-size:13px;color:var(--t2)">Dự án mẫu</span>
+      <span class="div"></span>
+      <div class="seg"><span>CAD</span><span>Rendering</span><span class="on">Presenting</span></div>
+      <div class="grow"></div>
+      <span class="btn">Tệp ▾</span><span class="btn ico">⋯</span><span class="avatar">H</span>
+    </div>
+    <div class="p3">
+      <h3>Tạo hồ sơ trình bày</h3>
+      <p class="s">Chọn khổ trước — đổi sau phải dàn lại toàn bộ.</p>
+      <div class="sizes">
+        <div class="size on"><div class="paper" style="width:56px;height:32px"></div><div class="nm">16:9</div><div class="ds">Trình chiếu</div></div>
+        <div class="size"><div class="paper" style="width:50px;height:35px"></div><div class="nm">A4 ngang</div><div class="ds">297×210</div></div>
+        <div class="size"><div class="paper" style="width:28px;height:40px"></div><div class="nm">A4 dọc</div><div class="ds">210×297</div></div>
+        <div class="size"><div class="paper" style="width:56px;height:39px"></div><div class="nm">A3 ngang</div><div class="ds">420×297</div></div>
+        <div class="size"><div class="paper" style="width:32px;height:45px"></div><div class="nm">A3 dọc</div><div class="ds">hồ sơ khách</div></div>
+        <div class="size lib">
+          <svg viewBox="0 0 60 46" fill="none" stroke="currentColor" stroke-width="1.5" style="width:60px;height:46px;margin-bottom:6px;color:var(--accent)">
+            <rect x="6" y="8" width="15" height="30" rx="2"/><rect x="24" y="8" width="15" height="30" rx="2"/>
+            <rect x="42" y="12" width="12" height="26" rx="2" transform="rotate(8 48 25)"/>
+            <path d="M10 16h7M27 16h7"/>
+          </svg>
+          <div class="nm">Kho mẫu</div><div class="ds">biểu mẫu · tem nhãn · họp</div>
+        </div>
+      </div>
+      <div class="files">
+        <span class="btn">Hồ sơ thiết kế</span>
+        <span class="btn">Văn phòng · Giấy tờ</span>
+        <span class="btn">Tem nhãn · Bảng mẫu</span>
+        <span class="btn">Trình bày</span>
+        <span class="btn">Trang trắng</span>
+      </div>
+      <div class="dpi">Mọi sản phẩm xuất ra <b>≥ 300 dpi</b> — khổ nào cũng vậy, không ngoại lệ.</div>
+      <div class="auto">
+        Vào từ <b>▶ Chạy flow</b> → không hỏi lại, tự chọn khổ theo tỉ lệ ảnh + đích xuất, mở thẳng trình sửa.<br>
+        Trên đầu trình sửa hiện 1 dòng: “Đang dùng <b>A3 dọc</b> — <u>đổi khổ</u>”. Tự động nhưng không khoá tay.
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>Quy luật vừa lộ ra:</b> chặng 2 và chặng 3 cần <b>cùng một thứ</b> — màn chọn đầu chặng, chỉ khác trục chọn (việc / khổ giấy). Nên làm <b>1 component dùng chung</b> <code>StageEntryScreen</code>, không viết 3 lần. Đúng Luật&nbsp;#6 Đồng Bộ.
+  </div>
+
+  <!-- ============ 4 ============ -->
+  <h2><span class="n">04</span>Canvas chặng 2 — hero là gói combo node</h2>
+  <p class="lead">1 gói = 1 sản phẩm đầu ra. Kéo thả vào canvas → bung cả gói, mỗi thẻ tự nói rõ nó đang cần gì. Hệ <code>DemoModule</code> đã có sẵn 4 gói chạy được — chỉ cần đổi từ “nạp demo thay canvas” sang “thả gói vào canvas”.</p>
+
+  <div class="frame">
+    <div class="cap"><span class="tag good">Đề xuất</span> canvas — dải gói ở trên, gói vừa thả ở dưới</div>
+    <div class="bar render">
+      <div class="logo">IF</div>
+      <span style="font-size:13px;color:var(--t2)">Dự án mẫu</span>
+      <span class="div"></span>
+      <div class="seg"><span>CAD</span><span class="on">Rendering</span><span>Presenting</span></div>
+      <div class="grow"></div>
+      <span class="btn">Tệp ▾</span><span class="btn ico">⋯</span>
+      <span class="btn pri">▶ Chạy flow</span><span class="avatar">H</span>
+    </div>
+    <div class="body">
+
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--t4);margin-bottom:9px">Gói sản phẩm — kéo thả vào canvas</div>
+      <div class="packs">
+        <div class="pack on"><div class="pi">▦</div><div class="pn">Hồ sơ trình bày khách</div><div class="pd">4 thẻ · A3 dọc</div></div>
+        <div class="pack"><div class="pi">◈</div><div class="pn">Board concept</div><div class="pd">3 thẻ · A3 ngang</div></div>
+        <div class="pack"><div class="pi">⊞</div><div class="pn">Bộ 3 phương án</div><div class="pd">4 thẻ · 16:9</div></div>
+        <div class="pack"><div class="pi">▤</div><div class="pn">Spec sheet nội thất</div><div class="pd">4 thẻ · A4 dọc</div></div>
+        <div class="pack"><div class="pi">◧</div><div class="pn">Bảng vật liệu</div><div class="pd">4 thẻ · A4 ngang</div></div>
+        <div class="pack"><div class="pi">⊡</div><div class="pn">Ảnh in khổ lớn</div><div class="pd">3 thẻ · 300dpi</div></div>
+      </div>
+
+      <div class="dropzone">
+        <div class="dzhead">
+          <span class="dzt">Gói vừa thả — <b>Hồ sơ trình bày khách</b></span>
+          <span class="dzw">2 thẻ còn thiếu dữ liệu</span>
+          <div class="grow"></div>
+          <span class="btn pri">▶ Chạy cả gói</span>
+        </div>
+        <div class="nodes">
+          <div class="nd need"><div class="ndh">Ảnh gốc</div><div class="ndb import">⬆ Thả ảnh vào đây</div><div class="ndf">cần import</div></div>
+          <span class="wire">→</span>
+          <div class="nd need"><div class="ndh">Mô tả</div><div class="ndb text">oak herringbone, linen…</div><div class="ndf">cần điền chữ</div></div>
+          <span class="wire">→</span>
+          <div class="nd ok"><div class="ndh">Sketch → Ảnh thật</div><div class="ndb run">▶ Start</div><div class="ndf ready">sẵn sàng</div></div>
+          <span class="wire">→</span>
+          <div class="nd ok"><div class="ndh">Đổi ánh sáng</div><div class="ndb run">▶ Start</div><div class="ndf ready">sẵn sàng</div></div>
+          <span class="wire">→</span>
+          <div class="nd exp">
+            <div class="ndh">Node xuất</div>
+            <div class="sl"><span>Phơi sáng</span><i></i></div>
+            <div class="sl"><span>Tương phản</span><i style="--p:38%"></i></div>
+            <div class="sl"><span>Nhiệt độ</span><i style="--p:72%"></i></div>
+            <div class="fmt"><span class="on">PDF</span><span>PNG</span><span>JPG</span></div>
+            <div class="fmt"><span class="on">A3 dọc</span><span>300dpi</span></div>
+            <div class="ndf ready">xuất định dạng tuỳ chọn</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>Ba mảnh đã có, chỉ cần ghép:</b> gói node = <code>DemoModule</code> (<code>lib/demos/</code>, 4 gói chạy được) · node xuất = <code>out.board</code> “Export Board — tải PNG/PDF” · tool chỉnh sáng-màu = <code>AdjustPanel</code> (Phơi sáng · Tương phản · Bão hoà · Nhiệt độ · Levels · Curves). <b>Phần thiếu hẳn và đáng làm nhất</b> là 3 trạng thái thẻ ở trên — nó biến một đống node thành phiếu điền vào chỗ trống.
+  </div>
+
+  <!-- ============ 5 ============ -->
+  <h2><span class="n">05</span>Thẻ việc — bản sửa sau góp ý “non nghề”</h2>
+  <p class="lead">Bản trước sai thể loại: tôi vẽ một <b>cái form</b> cho một công cụ mà chủ thể là <b>bức ảnh</b>. Ảnh chiếm 0% màn hình, ô rỗng chiếm 100%, và nhãn debug (<code>span 4</code>, <code>nhóm</code>) lọt thẳng vào giao diện. Bản dưới đảo lại tỉ lệ: ảnh lên sân khấu, điều khiển thu về thanh dày bên phải, nền trung tính để mắt chấm được màu thật.</p>
+
+  <div class="frame dk">
+    <div class="cap"><span class="tag good">Sửa lại</span> ảnh chiếm sân khấu · thanh điều khiển dày · nền trung tính để chấm màu</div>
+    <div class="wsbar">
+      <span class="wlogo">IF</span>
+      <span class="wname">Dự án mẫu</span>
+      <span class="wdiv"></span>
+      <span class="wseg"><i>CAD</i><i class="on">Rendering</i><i>Presenting</i></span>
+      <span class="wgrow"></span>
+      <span class="wbtn">Tệp</span><span class="wbtn">⋯</span><span class="wav">H</span>
+    </div>
+    <div class="ws">
+      <div class="stage">
+        <div class="shot">
+          <div class="before"></div>
+          <div class="after"></div>
+          <div class="maskzone"></div>
+          <div class="handle"><span></span></div>
+          <div class="lab l">TRƯỚC</div><div class="lab r">SAU</div>
+        </div>
+        <div class="stagefoot">
+          <span class="sf on">◧ So sánh</span><span class="sf">◱ Chỉ mask</span><span class="sf">⤢ Vừa khung</span>
+          <span class="wgrow"></span>
+          <span class="sfm">2048 × 1365 · 4 credit</span>
+        </div>
+      </div>
+
+      <div class="rail">
+        <div class="rhead">
+          <div class="rt">Đổi vật liệu</div>
+          <div class="rs">Material Swap · FLUX Fill</div>
+        </div>
+
+        <div class="sec">
+          <div class="sl">Vùng cần sửa</div>
+          <div class="icos">
+            <span class="ic on" title="Vẽ mask">✎</span>
+            <span class="ic" title="Chọn thông minh">✧</span>
+            <span class="ic" title="Đảo vùng">⇄</span>
+            <span class="ic" title="Xoá vùng">⌫</span>
+            <span class="wgrow"></span>
+            <span class="rv">sàn · 34%</span>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="sl">Vật liệu <span class="lk">Thư viện ›</span></div>
+          <div class="swg">
+            <div class="sw on" style="--c1:#8a6a48;--c2:#6b4f34"><span>Óc chó</span></div>
+            <div class="sw" style="--c1:#cfc3ad;--c2:#b8a98e"><span>Travertine</span></div>
+            <div class="sw" style="--c1:#9a9691;--c2:#7d7a75"><span>Terrazzo</span></div>
+            <div class="sw" style="--c1:#c9a882;--c2:#ab8b64"><span>Sồi</span></div>
+            <div class="sw" style="--c1:#3f4a44;--c2:#2c3531"><span>Đá lục</span></div>
+            <div class="sw add"><span>+</span></div>
+          </div>
+          <div class="inp">walnut herringbone, matte, 90mm</div>
+        </div>
+
+        <div class="sec">
+          <div class="row"><span class="rl">Độ bám</span><span class="rv num">0.65</span></div>
+          <div class="tr"><i style="--p:65%"></i></div>
+          <div class="row"><span class="rl">Nhám bề mặt</span><span class="rv num">0.30</span></div>
+          <div class="tr"><i style="--p:30%"></i></div>
+          <div class="row"><span class="rl">Phương án</span>
+            <span class="seg3"><i class="on">1</i><i>3</i><i>6</i></span></div>
+        </div>
+
+        <div class="sec adv2">▸ Nâng cao <span class="rv">guidance · seed · negative</span></div>
+
+        <div class="rfoot">
+          <div class="gu2"><span class="gd" style="background:#cbbca6"></span><span class="gd" style="background:#8a6f52"></span><span class="gd" style="background:#3f4a44"></span> phong cách đang áp</div>
+          <button class="go">Render <span>4 cr</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="cap"><span class="tag good">Đề xuất</span> gạt sang <b>Canvas</b> — cùng dữ liệu, nhưng tối ưu phím + chuột</div>
+    <div class="bar render">
+      <div class="logo">IF</div>
+      <span style="font-size:13px;color:var(--t2)">Dự án mẫu</span>
+      <span class="div"></span>
+      <div class="seg"><span>CAD</span><span class="on">Rendering</span><span>Presenting</span></div>
+      <div class="grow"></div>
+      <span class="btn">Tệp ▾</span><span class="btn ico">⋯</span><span class="avatar">H</span>
+    </div>
+    <div class="body" style="padding-top:18px">
+      <div class="kbdgrid">
+        <div class="kbdcol">
+          <div class="kbdh">Di chuyển · nhìn</div>
+          <div class="kbdr"><span>Kéo màn</span><kbd>Space</kbd><span class="pl">+ kéo</span></div>
+          <div class="kbdr"><span>Zoom</span><kbd>con lăn</kbd></div>
+          <div class="kbdr"><span>Vừa màn hình</span><kbd>⇧</kbd><kbd>1</kbd></div>
+        </div>
+        <div class="kbdcol">
+          <div class="kbdh">Chọn · sửa</div>
+          <div class="kbdr"><span>Chọn nhiều</span><span class="pl">kéo khoanh vùng</span></div>
+          <div class="kbdr"><span>Nhân bản</span><kbd>⌘</kbd><kbd>D</kbd></div>
+          <div class="kbdr"><span>Xoá node</span><kbd>Delete</kbd></div>
+        </div>
+        <div class="kbdcol">
+          <div class="kbdh">Chạy · thêm</div>
+          <div class="kbdr"><span>Chạy node</span><kbd>⌘</kbd><kbd>↵</kbd></div>
+          <div class="kbdr"><span>Chạy cả flow</span><kbd>⌘</kbd><kbd>⇧</kbd><kbd>↵</kbd></div>
+          <div class="kbdr"><span>Thêm node</span><kbd>Tab</kbd><span class="pl">/ chuột phải</span></div>
+        </div>
+        <div class="kbdcol">
+          <div class="kbdh">Chuyển</div>
+          <div class="kbdr"><span>Đổi giao diện</span><kbd>⌘</kbd><kbd>\</kbd></div>
+          <div class="kbdr"><span>Hoàn tác</span><kbd>⌘</kbd><kbd>Z</kbd></div>
+          <div class="kbdr"><span>Tooltip</span><span class="pl">hover</span></div>
+        </div>
+      </div>
+      <div class="pill"><span>▦ Bảng việc</span><span class="on">⁂ Canvas</span><kbd class="pk">⌘\</kbd></div>
+      <div class="bridge">Mọi phím tắt ở đây phải gọi <b>đúng lớp lệnh</b> mà nút cảm ứng bên Bảng việc gọi — cầu “nút = phím”, theo đúng mẫu <code>CadTouchDock</code> của chặng 1. Một lớp lệnh, hai cách gọi.</div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>Sáu chỗ bản trước làm hỏng:</b> ① sai thể loại — form thay vì sân khấu ảnh; ② hộp lồng hộp, mọi ô cùng một sắc độ, cùng một bo góc → không có phân cấp; ③ khoảng trắng do kéo giãn ô rỗng, không phải do nhịp; ④ công cụ đổi <i>vật liệu</i> mà không hiện lấy một mẩu vật liệu nào; ⑤ nút Render là tấm màu tím trải ngang — to không có nghĩa là quan trọng; ⑥ nhãn debug lọt vào sản phẩm.<br><br>
+    <b>Nền trung tính không phải chuyện thẩm mỹ:</b> <b>ISO 3664</b> quy định môi trường quan sát để chấm màu phải là <b>xám trung tính</b>. Nền kem ấm <code>#f2efe9</code> của IF rất hợp cho chặng 3 (làm tài liệu, giấy in) nhưng <b>sai cho chặng 2</b> — nó hắt sắc ấm lên võng mạc, làm mọi render trông ấm hơn thực tế. Đề xuất: <b>chặng 2 mặc định nền tối trung tính, chặng 3 giữ nền giấy ấm.</b> Đây là quyết định kỹ thuật có căn cứ, không phải sở thích.<br><br>
+    <b>Cơ chế chung vẫn giữ nguyên:</b> <code>ParamDef</code> (<code>lib/types.ts:9-25</code>) đã là union 9 kiểu điều khiển. Bản sửa này <b>không đổi schema</b> — chỉ đổi <i>renderer</i>. Đúng luận điểm ban đầu: một schema, nhiều bộ mặt; muốn đổi chất lượng giao diện thì sửa renderer, không phải sửa 45 node.
+  </div>
+
+  <p class="ftr">Cowork · 29/07/2026 — bản vẽ ý kèm <code>KHAM-CHANG2-RENDER-2026-07-29.md</code>. Token lấy trực tiếp từ <code>app/globals.css</code> + <code>lib/phases.ts</code> trên máy Hoà, không tự chế màu.</p>
+
+</div>
+</body>
+</html>

@@ -434,6 +434,12 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 3.30.b | Gộp `/library/ingest` thành 1 CHẾ ĐỘ trong panel (thay route riêng) | ? | ⬜ | 3.30.a | `PLAN-LIBRARY-GATEWAY.md` NT1 |
 | 3.30.c | Gộp block/furniture CAD vào cùng 1 model `LibraryAsset` (Q4: 1 model chung + trường `type`) | L | ⬜ schema hiện KHÔNG có trường `type`, block CAD vẫn ở file JSON tĩnh riêng | 3.30.a | `PLAN-LIBRARY-GATEWAY.md` NT1 |
 
+> *Lưu ý đánh số khối 3 (29/07, `docs/CHOT-SO-MA-2026-07-29.md` §A): `3.1`–`3.29` là mã phẳng;
+> `3.30` là **mục** (NT1) có con `.a/.b/.c`; `3.31` trở đi tiếp tục đánh phẳng.*
+
+| 3.31 | Ô thứ 6 "Kho mẫu" ở màn chọn đầu chặng 3 + lọc Library theo nhóm Template (đề xuất 29/07, mã cũ đề xuất sai `3.30`) | N | ⬜ chưa code — `StagePresetPanel.tsx` có 5 khổ nhưng không có ô "Kho mẫu" | 2.3.61 (màn chọn đầu chặng 3, khối Present) | `docs/SPEC-TONG-COWORK-2026-07-29.md` §5.6 |
+| 3.32 | Nội dung kho mẫu đợt 1 — 4 nhóm × 6 mẫu (Hồ sơ thiết kế · Văn phòng/Giấy tờ · Tem nhãn/Bảng mẫu · Trình bày) | N | ⬜ chưa có mẫu nào; nhóm "Tem nhãn·Bảng mẫu" là sáng kiến riêng ngành nội thất, không app trình bày nào có | 3.31 | `docs/SPEC-TONG-COWORK-2026-07-29.md` §5.6 |
+
 ---
 
 ## 4. FILE MANAGER / GATEWAY
@@ -556,6 +562,7 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 7.1.15 | 8 luật vận hành (không xây L khi N chưa ✅ · hộ chiếu bắt buộc · sprint tách bậc · ⛔-list ghi sổ · output-có-id · human-in-loop 4 luật · năng lực-trước-AI · LLM-không-ghi-hình-học) | — (luật) | (quy trình, không chấm trạng thái code) | không | `IF-ARCHITECTURE-BLUEPRINT-v1.md` §8 |
 | 7.1.16 | IF Gateway 5B — xem khối 4 File Manager (không đếm trùng) | N | (xem 4.16-4.27) | 4. File Manager | `IF-ARCHITECTURE-BLUEPRINT-v1.md` §5B |
 | 7.1.17 | Dây chuyền vận hành — hợp đồng I/O từng chặng (0 Đề bài→1 CAD→2 Render→3 Present→4 Phản hồi) | — (mô hình) | 🟡 luật "output không id = mồ côi" đã áp cho ảnh (`img_`), chưa toàn bộ pipeline | không | `IF-ARCHITECTURE-BLUEPRINT-v1.md` §5 |
+| 7.1.18 | Nâng `Violation`/`Severity`/`registry` từ `lib/cad/standards/` → `lib/standards/` dùng chung cho cả 3 chặng (chấm chuẩn trước khi xuất, đề xuất 29/07, mã cũ đề xuất sai `7.23`) | N | ⬜ chưa nâng cấp — hiện chỉ chặng 1 dùng | 2.1.4 (Standards Checker chặng 1) | `docs/SPEC-TONG-COWORK-2026-07-29.md` §7.5 |
 
 ### 7.2 Trend clock & hội đồng giả định (5C)
 
@@ -596,6 +603,9 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 7.3.24 | Empty state bắt buộc — 2 nút mời gọi + tour | N | 🟡 hệ onboarding tồn tại, chưa khớp đúng "2 nút" | không | `SPEC-UI-SHELL.md` |
 | 7.3.25 | Phân nhóm theo việc thiết kế, không theo kiến trúc phần mềm | N | 🟡 Command Palette vẫn dùng nhãn kỹ thuật (INPUT/AI_GENERATE…) ở tầng category-order, có thể đã Việt hoá ở label hiển thị | 7.3.21 | `SPEC-UI-SHELL.md` |
 | 7.3.26 | "Giấy vuông vỏ bo" — Present giữ `border-radius:0`, UI khác giữ bo góc | N | ✅ | không | `SPEC-UI-SHELL.md` |
+| 7.3.27 | Lấp đầy tầng 3 chỉ dẫn — nối 45 `description` node có sẵn vào `coachmarkSeen` (đề xuất 29/07, mã cũ đề xuất sai `7.20`) | N | ⬜ `COACHMARKS` hiện chỉ 1 mục (`'selectMove'`) trong 45 node | không | `docs/SPEC-TONG-COWORK-2026-07-29.md` §7.1 |
+| 7.3.28 | Tầng 4 chỉ dẫn — kích hoạt theo hành vi (dừng ≥8s · lỗi 2 lần liên tiếp · thả sai định dạng · mở node lần đầu) (mã cũ đề xuất sai `7.21`) | N | ⬜ chưa có, chỉ có kích hoạt "lần đầu nhìn thấy X" | 7.3.27 | `docs/SPEC-TONG-COWORK-2026-07-29.md` §7.1 |
+| 7.3.29 | Tầng 5 chỉ dẫn — Vitals trả lời "làm sao để…", đọc `IF-FEATURE-TREE.md` + 45 description (mã cũ đề xuất sai `7.22`) | N | ⬜ | 7.3.27 | `docs/SPEC-TONG-COWORK-2026-07-29.md` §7.1 |
 
 ### 7.4 Cộng tác (Collaboration)
 
@@ -611,6 +621,15 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 7.4.8 | Bình luận → `FeedbackRecord` nạp về T5 ("bài học dự án") | L | ⬜ | 7.4.1 | `SPEC-COLLABORATION.md` |
 | 7.4.9 | Sync bình luận nhẹ lên Lark/cloud (pha 2) | N | ⬜ (không có gì để sync) | 7.4.1 | `SPEC-COLLABORATION.md` |
 | 7.4.10 | Live cursor + presence thời gian thực trên canvas (KHÔNG spec trong SPEC-COLLABORATION.md, code đã vượt trước) | — | ✅ THẬT, hoạt động — `lib/collabStore.ts` poll 900ms + `LiveCursors.tsx`+`PresenceBar.tsx`, mount trong `FlowCanvas.tsx` | không | (không có spec — code vượt trước tài liệu) |
+| 7.4.11 | Chốt A/B `LiveCursors` — con trỏ hứa đồng bộ mà `nodes`/`edges`/`params` không hề đồng bộ, lỗi tin cậy (đề xuất 29/07, mã cũ đề xuất sai `7.24`) | N | ⬜ chưa chốt — phương án A **được duyệt** (`docs/CHOT-SO-MA-2026-07-29.md` §D): tạm ẩn `LiveCursors`, giữ `PresenceBar` | 7.4.10 | `docs/SPEC-TONG-COWORK-2026-07-29.md` §7.4 |
+| 7.4.12 | Khoá mềm "ai đang mở dự án này" — đọc `lastSeenAt`, báo trước khi 2 người cùng sửa, KHÔNG khoá cứng (mã cũ đề xuất sai `7.26`) | N | ⬜ | không | `docs/SPEC-TONG-COWORK-2026-07-29.md` §7.4 |
+| 7.4.13 | CRDT Yjs đồng bộ graph/slide thật — CHỈ làm khi 7.4.1+7.4.3+7.4.6 (ghim góp ý) và 7.4.12 (khoá mềm) đã dùng thật mà vẫn thiếu (mã cũ đề xuất sai `7.27`) | L | ⬜ (đúng chủ đích, không phải nợ) | 7.4.1, 7.4.12 | `docs/SPEC-TONG-COWORK-2026-07-29.md` §7.4 |
+
+> **29/07 (`docs/CHOT-SO-MA-2026-07-29.md` §C)** — "Ghim góp ý" mà SPEC-TỔNG đề xuất mã mới `7.25`
+> **KHÔNG cần mã mới**: đã nằm sẵn ở `7.4.1`+`7.4.3`+`7.4.6` ngay trên, có spec gốc
+> `SPEC-COLLABORATION.md`, chỉ chưa xây. Phát hiện quan trọng: `7.4.1` (giá trị nghề hạng 1, có
+> spec) vẫn ⬜, trong khi `7.4.10` Live cursor (giá trị hạng 3, KHÔNG có spec) lại ✅ đã xây — đúng
+> hiện tượng "xây nhầm thứ rẻ, bỏ thứ đắt" mà Luật #6 Đồng Bộ muốn chặn.
 
 ### 7.5 Nền tảng vận hành khác
 
@@ -801,6 +820,38 @@ năng hay lấy giao diện, hay cả hai, hay không cái nào.
 
 *Cowork, 29/07/2026. Nếu hiểu sai phần nào trong yêu cầu gốc (đặc biệt đoạn "LUẬT ĐỘC ẢNH USES
 GỬI"), Hoà sửa lại — đây là diễn giải tốt nhất của Cowork từ câu gõ nhanh.*
+
+---
+
+## Luật MỚI thêm 29/07 (đợt 2, `docs/SPEC-TONG-COWORK-2026-07-29.md` §2) — 8a/8b/9
+
+**8a · Checklist 6 bước = định nghĩa "xong"** — **BÀN → APPROVE → CODE → XÁC NHẬN → COMMIT → GIT.**
+Thiếu bước nào thì ghi 🟡 trong cột trạng thái, **không được ghi ✅**. Áp cho mọi dòng trong
+`IF-FEATURE-TREE.md` từ nay — kể cả dòng đã ghi ✅ trước 29/07, nếu soát lại thiếu bước nào (vd
+CODE xong nhưng chưa COMMIT/GIT) thì hạ xuống 🟡 khi phát hiện, không giữ ✅ theo quán tính.
+
+**8b · Luật xếp hàng gia phả** — mỗi tính năng mới khi đưa vào cây: ① gắn mã đúng khối (theo cấu
+trúc 4 cấp đã có, KHÔNG tự chế quy ước số mới — xem cảnh báo trùng mã bên dưới) ② **kiểm tra phụ
+thuộc** — làm sớm có phải đập đi làm lại không (đối chiếu Bảng Tổng 2 — cây phụ thuộc) ③ xếp vào
+đúng sprint theo độ ưu tiên; **SPEC và CODE được phép ở 2 sprint khác nhau** (viết SPEC trước,
+CODE sau, không bắt buộc làm liền tay).
+
+**9 · Luật ≥300 dpi** — mọi sản phẩm **giao khách hoặc in** phải đạt ≥300dpi ở khổ đích: A3
+≥4961×3508 · A4 ≥3508×2480 · A5 ≥2480×1754. Sản phẩm chỉ xem màn hình (16:9) được miễn **nhưng
+phải ghi nhãn "độ phân giải màn hình"**. Nút xuất phải **hiện dpi thật** của kết quả; không đạt
+ngưỡng thì **không im lặng xuất bừa, cũng không khoá cứng chặn xuất** — báo đúng con số và mời
+người dùng nâng cấp (vd chạy `ai.upscale`) trước khi quyết định xuất hay không.
+
+> ✅ **CẢNH BÁO TRÙNG/LỆCH MÃ — ĐÃ GIẢI QUYẾT (29/07, `docs/CHOT-SO-MA-2026-07-29.md`).** Claude
+> Code phát hiện 2 điểm lệch khi đối chiếu `SPEC-TONG-COWORK-2026-07-29.md` với cây này (đúng luật
+> "kiểm tra trùng mã trước khi dán"); Cowork xác nhận cả 2 là lỗi đặt số của Cowork, đã chốt số mới
+> và Claude Code đã dán vào đúng vị trí:
+> 1. `3.30`/`3.31` (trùng `3.30.a/b/c` NT1) → đổi thành **`3.31`/`3.32`** (dòng ngay trên, khối 3).
+> 2. `7.20`-`7.27` (lệch quy ước 4 cấp) → đổi thành **`7.1.18`, `7.3.27`-`7.3.29`, `7.4.11`-`7.4.13`**
+>    (đã dán vào đúng nhóm trong khối 7). Riêng `7.25` (Ghim góp ý) **không cần mã mới** — phát
+>    hiện thêm: đã có sẵn `7.4.1`+`7.4.3`+`7.4.6` với spec gốc, chỉ chưa xây (xem ghi chú ở khối
+>    7.4). `2.2.60`-`2.2.84`/`2.3.58`-`2.3.63` xác nhận không trùng, **chưa dán vào cây** (khối
+>    lượng lớn, để một đợt riêng) — đọc `docs/SPEC-TONG-COWORK-2026-07-29.md` §3-§8 cho nội dung đủ.
 
 ---
 

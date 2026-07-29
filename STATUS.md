@@ -5,21 +5,27 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (28/07 khuya — IF-MASTER-TREE.md tạo mới + VIỆC 1/2/3: khám toolkit + quyết + Luật Đóng Băng)
+## Hiện tại (29/07 — SPEC TỔNG Cowork: ingest 3 file lớn + PHẦN E v4 + cảnh báo trùng mã)
 Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này:
-- ✅ **`docs/IF-MASTER-TREE.md` mới** — cây phân rã 4 cấp DUY NHẤT của toàn app, gom từ 22 file
-  spec, thay việc đọc rời. Có 3 bảng tổng (đếm/phụ thuộc/làm-được-ngay) + mục CẦN HOÀ QUYẾT.
-- ✅ **`docs/AUDIT-EDITOR-TOOLKIT.md` mới** — khám code thật (file:dòng) 19 món editor toolkit
-  Present/Photo. Kết luận 3 nhóm: đủ dùng (bo góc/crop/opacity/align/text-fx/photo-adjust) · có mà
-  thô (gradient/blend/shadow chỉ-cho-text, nhân bản fixed-offset, layer thiếu nhóm) · thật sự chưa
-  có (mask ảnh, overlay, khoá tỉ lệ, làm mờ, pattern real-scale, bảng số liệu, lật ảnh). Đã propagate
-  vào `IF-MASTER-TREE.md` dòng 2.3.29-2.3.43.
-- ✅ **6/7 mục CẦN HOÀ QUYẾT đã chốt** (Q2a-Q6): giữ `ChatPanel` (sửa `SPEC-COLLABORATION.md`) ·
-  giữ auth tự viết (sửa `SPEC-PRODUCT-INFRA.md`) · NT5=Pha-1 File Manager · Brief-Intake tách sang
-  khối 2.0 Ý tưởng · video/film Present dời hẳn `[v2]` · BOQ gộp 1 sáng kiến `2.1.9.p`. Còn mở:
-  mục 6 (2.2.16-2.2.21 Render Tool Mode Pha 2-4).
-- ✅ **PHẦN E — Luật Đóng Băng** thêm vào cuối `IF-MASTER-TREE.md` (5 luật, cốt lõi: KHÁM→QUYẾT→
-  SPEC→CODE) + `docs/IDEAS-BACKLOG.md` mới cho ý phát sinh giữa chừng.
+- ⚠️ **Đổi tên file nguồn sự thật** (Cowork, phiên trước, đã git-commit `8e096a8`):
+  `IF-MASTER-TREE.md` → **`docs/IF-FEATURE-TREE.md`** · `IF-MASTER-BLUEPRINT.md` →
+  **`docs/IF-ARCHITECTURE-COMPASS.md`**. Tên cũ giữ dạng redirect 1 dòng — `docs/CLAUDE.md` vẫn
+  còn ghi tên cũ, cần sửa khi tiện.
+- ✅ **3 file lớn từ Cowork đã lưu vào repo**: `docs/SPEC-TONG-COWORK-2026-07-29.md` (6 phát hiện
+  lõi + bảng việc 8 sprint + chi tiết chặng 2/thoại/chỉ dẫn/chấm chuẩn/cộng tác/Vitals) ·
+  `docs/IF-DESIGN-STANDARD-2026-07-29.md` (chuẩn thiết kế: 10 tật "mùi AI", thang chữ 7 bậc,
+  khoảng cách bội-4, bo góc 3 bậc, Swiss/Apple HIG) · `if-vitals-visual.html` (mockup Vitals chạy
+  thật, 5 trạng thái + 3 cỡ + xoắn thiên hà). **Chưa nhận được** 12 file phụ khác mà SPEC-TỔNG §9
+  liệt kê (KHAM-*.md, LUAT-300DPI, AUDIT-PRESENT-UX, if-chang2-mockup.html...) — chỉ lưu được cái
+  đã dán vào chat.
+- ✅ **PHẦN E v4** (`docs/IF-FEATURE-TREE.md`) — thêm luật 8a (checklist 6 bước = "xong"), 8b (luật
+  xếp hàng gia phả), 9 (≥300dpi khi giao khách/in).
+- ⚠️ **CẢNH BÁO TRÙNG MÃ — chưa dán mã tính năng đề xuất vào cây, chờ Hoà quyết**: `3.30`/`3.31`
+  (đề xuất) TRÙNG `3.30.a/b/c` đã có (Library NT1, việc khác hẳn) · `7.20-7.27` không khớp quy ước
+  4 cấp của khối 7 (`7.<nhóm>.<mục>`) — đặc biệt `7.24-7.27` nên là `7.4.x` (đã có nhóm Cộng tác).
+  `2.2.60-2.2.84`/`2.3.58-2.3.63` không trùng, an toàn dán khi Hoà duyệt.
+- ⏸️ Chưa code gì cho Sprint 1 (`2.2.60` tràn thanh đầu, `2.2.61` dời AiTierMenu, `2.2.77` lỗ rò
+  Tool Mode, `7.24` LiveCursors) — đúng luật 5 (SPEC/TƯ VẤN xong, CODE để phiên sau, được phép tách).
 - ⏸️ **T3/T4 (Semantic Room)** vẫn CHƯA LÀM — đọc `docs/IF1-COMPLETION-AUDIT.md` §3 (a)/(d) trước.
 
 ## Worktree đang mở
@@ -39,7 +45,13 @@ Không có.
 - BOQ: đã gộp 1 sáng kiến `2.1.9.p` (`IF-MASTER-TREE.md`, Q6 28/07) — vẫn cần quyết có làm không,
   matId nối vào đâu (xem IF1-COMPLETION-AUDIT §3c).
 - **2.2.16-2.2.21** (Render Tool Mode Pha 2-4, hạ tầng có sẵn chưa lộ card) — mục CẦN HOÀ QUYẾT
-  duy nhất còn mở trong `IF-MASTER-TREE.md`.
+  duy nhất còn mở trong `docs/IF-FEATURE-TREE.md`.
+- **Đánh số lại `3.30`/`3.31` và `7.20-7.27`** (SPEC-TONG-COWORK-2026-07-29 §3) — trùng/lệch quy
+  ước mã hiện có, xem cảnh báo chi tiết cuối `docs/IF-FEATURE-TREE.md` PHẦN E. Quyết xong mới dán
+  mã chính thức vào cây và bắt đầu CODE các sprint liên quan.
+- **12 file phụ SPEC-TỔNG §9 chưa nhận được** (KHAM-*.md × 8, LUAT-300DPI, AUDIT-PRESENT-UX,
+  PHAN-E-HIEN-TAI-v4, FILEMANAGER-SPRINT-v2, `if-chang2-mockup.html`) — cần Hoà dán tiếp nếu muốn
+  Claude Code đọc đủ trước khi làm các sprint liên quan.
 
 ## Nợ kỹ thuật
 - 🟡 `lib/cad/pdf.ts:383` nhắc `lib/cad/pdf.node-check.mjs` — file KHÔNG tồn tại.
