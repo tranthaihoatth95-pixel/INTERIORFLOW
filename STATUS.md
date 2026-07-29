@@ -15,6 +15,10 @@ Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này:
   7.1.18→phần còn lại`. 1 điểm mơ hồ nguồn (`2.2.83` gộp chung mô tả với `2.2.82`) đã tự tách theo
   suy luận, ghi rõ cần Hoà xác nhận lại (xem "Chờ USER quyết").
 - ✅ **Tách "Nợ kỹ thuật" sang `docs/TECH-DEBT.md`** — STATUS.md chỉ còn 1 dòng link, không mất nội dung.
+- ✅ **`2.2.61.a`** — Cowork phát hiện `2.2.61` bỏ sót `MobileMenu.tsx` (picker AI tier thật vẫn còn
+  ở đó, trùng với `/settings`, vi phạm Luật #6). Sửa NGAY theo khuyến nghị ticket — commit `77224dc`,
+  browser-verify thật ở 375px. `7.3.30` (phần lớn hơn — gom sáng/tối/ngôn ngữ/avatar/hướng dẫn về
+  `/settings` 4 nhóm) đã dán vào cây, CHƯA làm, xếp Sprint 3 cùng cụm `2.2.69`.
 - ⏸️ **T3/T4 (Semantic Room)** vẫn CHƯA LÀM — đọc `docs/IF1-COMPLETION-AUDIT.md` §3 (a)/(d) trước.
 - ⏸️ **Sprint 2/3** (`docs/CHOT-SO-MA-2026-07-29.md` §D) code chưa bắt đầu — Sprint 3 nhớ gộp
   **2.2.85** (font mono node) chung commit với **2.2.69**, đúng thứ tự CHỐT ①-⑤ ghi trong cây.
