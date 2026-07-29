@@ -224,7 +224,8 @@ Mọi export (DXF/PDF/PPTX/PNG/share link) đi qua CÙNG cổng — gắn id + m
 
 ### 2) Hội đồng giả định *(synthetic panel)* — tác nhân tự Q&A
 - **Persona = vân tay 10 trục trong bảng `DEVELOPER` của TENANT** (dữ liệu não riêng từng studio — với TTT là Vinhomes/Sun/CapitaLand…, KHÔNG ship trong app) + House
-  Rules + checklist KIÊN/NHÃ → dựng khách giả lập gần như 0đ (dữ liệu đã có).
+  Rules + checklist TRỤ/NHÃ → dựng khách giả lập gần như 0đ (dữ liệu đã có). *(TRỤ = tên mới của
+  KIÊN cũ, đổi 28/07 để hết đụng KIẾN — xem `QUY_TRINH_SPIRAL_v1.md` mục 5.)*
 - Mỗi output (deck, layout, trang DNA) chạy **vòng sơ khảo**: các persona tự Q&A, chấm theo
   10 trục + quy chuẩn → trả danh sách lỗi/nghi vấn → sửa xong mới tới khách thật.
 - **Vòng chung khảo** = khách thật. Phản hồi thật nạp não; nếu persona đoán sai phản ứng
