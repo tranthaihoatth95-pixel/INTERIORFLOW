@@ -58,13 +58,19 @@ export interface BoardOptions {
   studioName: string;
 }
 
-/** Ghép output thành presentation board 2480×1754 (A4 landscape 300dpi-ish), nền tối. */
+/**
+ * Ghép output thành presentation board 4961×3508 (A3 landscape, 300dpi thật — Luật 9
+ * `docs/IF-FEATURE-TREE.md` PHẦN E, mã 2.2.75 29/07). Trước là 2480×1754, tự nhận nhầm
+ * "A4 300dpi-ish" nhưng thực tế chỉ ~212dpi — sai chuẩn ngay trong code. `SCALE` giữ mọi
+ * hằng số bố cục (lề/tiêu đề/cỡ chữ) đúng tỉ lệ ở độ phân giải mới, không đổi bố cục nhìn thấy.
+ */
 export async function composeBoard({ images, projectName, studioName }: BoardOptions): Promise<string> {
-  const W = 2480;
-  const H = 1754;
-  const PAD = 90;
-  const HEADER = 200;
-  const FOOTER = 90;
+  const SCALE = 2;
+  const W = 4961;
+  const H = 3508;
+  const PAD = 90 * SCALE;
+  const HEADER = 200 * SCALE;
+  const FOOTER = 90 * SCALE;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
@@ -75,21 +81,21 @@ export async function composeBoard({ images, projectName, studioName }: BoardOpt
 
   // header
   ctx.fillStyle = '#f4f4f5';
-  ctx.font = '600 64px system-ui, sans-serif';
-  ctx.fillText(projectName || 'Untitled project', PAD, 128);
+  ctx.font = `600 ${64 * SCALE}px system-ui, sans-serif`;
+  ctx.fillText(projectName || 'Untitled project', PAD, 128 * SCALE);
   ctx.fillStyle = '#8b7cf7';
-  ctx.font = '500 34px system-ui, sans-serif';
-  ctx.fillText((studioName || 'InteriorFlow Studio').toUpperCase(), PAD, 182);
+  ctx.font = `500 ${34 * SCALE}px system-ui, sans-serif`;
+  ctx.fillText((studioName || 'InteriorFlow Studio').toUpperCase(), PAD, 182 * SCALE);
   ctx.strokeStyle = '#2a2a31';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 2 * SCALE;
   ctx.beginPath();
-  ctx.moveTo(PAD, HEADER + 10);
-  ctx.lineTo(W - PAD, HEADER + 10);
+  ctx.moveTo(PAD, HEADER + 10 * SCALE);
+  ctx.lineTo(W - PAD, HEADER + 10 * SCALE);
   ctx.stroke();
 
   // layout ảnh theo số lượng
-  const area = { x: PAD, y: HEADER + 50, w: W - PAD * 2, h: H - HEADER - 50 - FOOTER };
-  const gap = 40;
+  const area = { x: PAD, y: HEADER + 50 * SCALE, w: W - PAD * 2, h: H - HEADER - 50 * SCALE - FOOTER };
+  const gap = 40 * SCALE;
   const cells: { x: number; y: number; w: number; h: number }[] = [];
   const n = Math.min(images.length, 4);
   if (n === 1) cells.push(area);
@@ -126,7 +132,7 @@ export async function composeBoard({ images, projectName, studioName }: BoardOpt
     const sy = (img.naturalHeight - sh) / 2;
     ctx.save();
     ctx.beginPath();
-    ctx.roundRect(cell.x, cell.y, cell.w, cell.h, 18);
+    ctx.roundRect(cell.x, cell.y, cell.w, cell.h, 18 * SCALE);
     ctx.clip();
     ctx.drawImage(img, sx, sy, sw, sh, cell.x, cell.y, cell.w, cell.h);
     ctx.restore();
@@ -134,12 +140,12 @@ export async function composeBoard({ images, projectName, studioName }: BoardOpt
 
   // footer
   ctx.fillStyle = '#71717a';
-  ctx.font = '400 26px system-ui, sans-serif';
+  ctx.font = `400 ${26 * SCALE}px system-ui, sans-serif`;
   const date = new Date().toLocaleDateString('vi-VN');
-  ctx.fillText(date, PAD, H - 44);
+  ctx.fillText(date, PAD, H - 44 * SCALE);
   const credit = 'Made with InteriorFlow';
   const tw = ctx.measureText(credit).width;
-  ctx.fillText(credit, W - PAD - tw, H - 44);
+  ctx.fillText(credit, W - PAD - tw, H - 44 * SCALE);
 
   return canvas.toDataURL('image/jpeg', 0.92);
 }

@@ -171,7 +171,7 @@ export default function PresentViewer({
               margin: 0,
               maxWidth: '100%',
               maxHeight: '100%',
-              aspectRatio: isMoodFrame ? '2480 / 1754' : '16 / 9',
+              aspectRatio: isMoodFrame ? '4961 / 3508' : '16 / 9',
               width: 'auto',
               height: '100%',
               boxShadow: 'var(--shadow-sheet)',
