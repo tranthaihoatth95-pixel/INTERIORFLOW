@@ -2,16 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Share2, Play, Loader2, ChevronDown, Cloud, Zap, Cpu, ShieldCheck, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, MoreHorizontal, RotateCcw } from 'lucide-react';
+import { Coins, Share2, Play, Loader2, ChevronDown, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, MoreHorizontal, RotateCcw } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { runFlow } from '@/lib/execution';
-import { checkProviders, type ProviderStatus } from '@/lib/ai/client';
-import {
-  TIERS, TIER_ORDER, type AiTier, providerForTier,
-  type OneAiEngine, ONE_AI_ENGINES, ONE_AI_RUNTIMES,
-} from '@/lib/ai/tiers';
-import { DEFAULT_PHASE, PHASE_MAP, STAGE_TINT, type Phase } from '@/lib/phases';
+import { AiStatusDot } from '@/components/settings/AiDependencySettings';
+import { DEFAULT_PHASE, STAGE_TINT, type Phase } from '@/lib/phases';
 import StageSwitcher from '@/components/studio/StageSwitcher';
 import { UploadButton } from '@/components/studio/UploadButton';
 import { RenderIOMenus } from '@/components/studio/RenderIOMenus';
@@ -45,6 +41,14 @@ export function Header() {
 
   return (
     // material blur (vibrancy) — header trong suốt, hairline mảnh
+    // 2.2.60 (29/07, docs/CHOT-SO-MA-2026-07-29.md §D) — cụm giữa (flowname/phase/Tệp/AI-dot)
+    // bọc riêng min-w-0+flex-1 để CHÍNH nó co lại/truncate TRƯỚC tiên khi hẹp, cụm phải
+    // (Chạy flow · Tasks · Home · ⋯ · avatar) luôn shrink-0, không bao giờ bị đẩy khỏi màn.
+    // ⚠️ KHÔNG đặt overflow-hidden trên <header> hay cụm giữa — đã thử và bỏ: header là ancestor
+    // của mọi popover con (Tệp/MoreMenu/TasksDropdown/Vitals gesture), overflow-hidden ở đây
+    // CẮT LUÔN các popover đó (chúng position:absolute vươn XUỐNG dưới mép header). Phép co
+    // min-w-0+shrink+truncate tự đủ để không tràn ở 1024/1183/1440px (đã verify browser thật),
+    // không cần clip.
     <header
       className="mat-header relative z-30 flex h-12 items-center gap-2 border-b border-[var(--border)] px-2 sm:gap-3 sm:px-3"
       // Phân định chặng — hairline đáy header mang tông chặng đang mở (cùng cách làm với
@@ -74,52 +78,46 @@ export function Header() {
 
       <div className="mx-1 hidden h-5 w-px bg-[var(--border)] sm:block" />
 
-      {/* flow name — editable (co giãn mượt, không đè lên cụm nút phải) */}
-      {editing ? (
-        <input
-          autoFocus
-          className="w-36 shrink rounded-[10px] border border-[var(--accent-ring)] bg-[var(--field)] px-2 py-1 text-sm text-[var(--t1)] outline-none sm:w-56"
-          value={flowName}
-          onChange={(e) => setFlowName(e.target.value)}
-          onBlur={() => setEditing(false)}
-          onKeyDown={(e) => e.key === 'Enter' && setEditing(false)}
-        />
-      ) : (
-        <motion.button
-          {...pressable}
-          className="min-w-0 max-w-28 shrink truncate rounded-[10px] px-2 py-1 text-sm text-[var(--t2)] transition-colors hover:bg-[var(--hover)] sm:max-w-40 lg:max-w-56"
-          onClick={() => setEditing(true)}
-          title={tr('Đổi tên flow', 'Rename flow')}
-        >
-          {flowName}
-        </motion.button>
-      )}
+      {/* Cụm giữa — co lại/cắt TRƯỚC tiên khi hẹp, để cụm phải (Chạy flow + avatar) luôn thấy. */}
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        {/* flow name — editable (co giãn mượt, không đè lên cụm nút phải) */}
+        {editing ? (
+          <input
+            autoFocus
+            className="w-36 shrink rounded-[10px] border border-[var(--accent-ring)] bg-[var(--field)] px-2 py-1 text-sm text-[var(--t1)] outline-none sm:w-56"
+            value={flowName}
+            onChange={(e) => setFlowName(e.target.value)}
+            onBlur={() => setEditing(false)}
+            onKeyDown={(e) => e.key === 'Enter' && setEditing(false)}
+          />
+        ) : (
+          <motion.button
+            {...pressable}
+            className="min-w-0 max-w-28 shrink truncate rounded-[10px] px-2 py-1 text-sm text-[var(--t2)] transition-colors hover:bg-[var(--hover)] sm:max-w-40 lg:max-w-56"
+            onClick={() => setEditing(true)}
+            title={tr('Đổi tên flow', 'Rename flow')}
+          >
+            {flowName}
+          </motion.button>
+        )}
 
-      {/* TRỤC ĐIỀU HƯỚNG DUY NHẤT — Concept · Render · Present.
-          Header chỉ render ở màn ≥600px (cover đã tách Dashboard riêng) nên luôn hiện.
-          data-tour: neo highlight cho SmartTour (B-5). */}
-      <div className="shrink-0" data-tour="phase-switcher">
-        <PhaseSwitcher />
-      </div>
-
-      {/* Nút Tải lên — hành vi theo chặng (Concept: moodboard · Render: import node · Present: studio) */}
-      <UploadButton />
-
-      {/* 19/07 — cặp Nhập/Xuất dùng chung 3 chặng (components/ui/IOMenu.tsx). Chỉ hiện ở chặng
-          Render: chặng Layout CAD có cặp này trên thanh file của CadEditor, chặng Present có
-          trên thanh công cụ của present-editor. Ẩn ở màn hẹp (<lg) cho khỏi chật header. */}
-      {(workspace ?? 'render') === 'render' && (
-        <div className="hidden items-center gap-2 lg:flex">
-          <RenderIOMenus />
+        {/* TRỤC ĐIỀU HƯỚNG DUY NHẤT — Concept · Render · Present.
+            Header chỉ render ở màn ≥600px (cover đã tách Dashboard riêng) nên luôn hiện.
+            data-tour: neo highlight cho SmartTour (B-5). */}
+        <div className="shrink-0" data-tour="phase-switcher">
+          <PhaseSwitcher />
         </div>
-      )}
 
-      {/* Núm chọn mức phụ thuộc AI (4 mức) — mobile gom vào ⋯ */}
-      <div className="hidden sm:block">
-        <AiTierMenu />
+        {/* 2.2.60 (29/07) — 1 slot DUY NHẤT: chặng Render gộp "Thêm vào canvas" + Nhập +
+            Xuất thành nút "Tệp" (RenderIOMenus, viết lại — xem file đó). Chặng khác vẫn
+            UploadButton cũ (hành vi theo chặng: moodboard/nội dung slide). */}
+        {(workspace ?? 'render') === 'render' ? <RenderIOMenus /> : <UploadButton />}
+
+        {/* 2.2.61 (29/07) — Mức phụ thuộc AI dời hẳn vào /settings (cấu hình toàn cục,
+            không phải nút thao tác). Thanh đầu chỉ giữ 1 chấm nhỏ, im lặng khi bình thường,
+            chỉ hiện khi mức đang chọn đang chạy mock (xem AiDependencySettings.tsx). */}
+        <AiStatusDot />
       </div>
-
-      <div className="min-w-2 flex-1" />
 
       {/* run flow — nút chính, press-scale */}
       <motion.button
@@ -472,174 +470,3 @@ function PhaseSwitcher() {
   );
 }
 
-// Núm chọn mức phụ thuộc AI — 4 mức (Cao cloud · Vừa · Tự-host 0đ · Không AI).
-const TIER_ICON: Record<AiTier, typeof Cloud> = { 4: Cloud, 3: Zap, 2: Cpu, 1: ShieldCheck };
-const TIER_TONE: Record<AiTier, string> = {
-  4: 'border-sky-500/40 bg-sky-500/10 text-sky-300',
-  3: 'border-violet-500/40 bg-violet-500/10 text-violet-300',
-  2: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
-  1: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
-};
-
-/** null = chưa biết (đang check); true/false = provider của mức đó sẵn sàng chưa. */
-function tierAvailable(tier: AiTier, engine: OneAiEngine, status: ProviderStatus | null): boolean | null {
-  const p = providerForTier(tier, engine);
-  if (!p) return true; // mức 1 luôn "sẵn sàng"
-  if (!status) return null;
-  return p === 'fal' ? status.fal : p === 'comfyui' ? status.comfyui : status.sd;
-}
-
-function AiTierMenu() {
-  const aiTier = useFlowStore((s) => s.aiTier);
-  const setAiTier = useFlowStore((s) => s.setAiTier);
-  const oneAiEngine = useFlowStore((s) => s.oneAiEngine);
-  const setOneAiEngine = useFlowStore((s) => s.setOneAiEngine);
-  const oneAiRuntime = useFlowStore((s) => s.oneAiRuntime);
-  const setOneAiRuntime = useFlowStore((s) => s.setOneAiRuntime);
-  const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState<ProviderStatus | null>(null);
-  const tr = useT();
-
-  useEffect(() => {
-    checkProviders().then(setStatus);
-  }, []);
-
-  const meta = TIERS[aiTier];
-  const Icon = TIER_ICON[aiTier];
-  const avail = tierAvailable(aiTier, oneAiEngine, status);
-  // badge của oneAI (mức 2) kèm tên engine đang chọn
-  const engineName = aiTier === 2 ? ONE_AI_ENGINES.find((e) => e.id === oneAiEngine)?.name : null;
-
-  return (
-    <div className="relative">
-      <motion.button
-        {...pressable}
-        data-testid="ai-tier"
-        onClick={() => setOpen((o) => !o)}
-        title={tr(
-          'Mức phụ thuộc AI — bấm để đổi (Cao cloud · Vừa · Tự-host 0đ · Không AI)',
-          'AI dependency level — click to switch (High cloud · Medium · Self-host free · No AI)',
-        )}
-        className={cn(
-          'flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--fs-xs)] font-medium',
-          TIER_TONE[aiTier],
-        )}
-      >
-        <Icon size={10} /> <span className="whitespace-nowrap">AI · {meta.name}</span>
-        {/* tên engine chỉ hiện từ ≥lg — dưới đó badge bọc 2 dòng làm header cao lệch (bug 768px) */}
-        {engineName && <span className="hidden whitespace-nowrap opacity-80 lg:inline">· {engineName}</span>}
-        {avail === false && <span className="whitespace-nowrap text-amber-300/90">· mock</span>}
-        <ChevronDown size={9} className={cn('transition-transform', open && 'rotate-180')} />
-      </motion.button>
-
-      <AnimatePresence>
-        {open && (
-          <>
-            <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-            <motion.div
-              initial={{ opacity: 0, y: -4, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -4, scale: 0.98 }}
-              transition={{ duration: 0.16, ease: easeApple }}
-              className="mat-panel absolute left-0 top-8 z-40 w-72 rounded-[14px] border border-[var(--border)] p-1.5 shadow-xl"
-            >
-              <p className="px-2 py-1 text-[length:var(--fs-xs)] font-semibold uppercase tracking-wider text-[var(--t4)]">
-                {tr('Mức phụ thuộc AI', 'AI dependency')}
-              </p>
-              {TIER_ORDER.map((t) => {
-                const m = TIERS[t];
-                const TI = TIER_ICON[t];
-                const a = tierAvailable(t, oneAiEngine, status);
-                const active = t === aiTier;
-                return (
-                  <button
-                    key={t}
-                    onClick={() => {
-                      setAiTier(t);
-                      setOpen(false);
-                    }}
-                    className={cn(
-                      'flex w-full items-start gap-2 rounded-[10px] px-2 py-1.5 text-left transition-colors hover:bg-[var(--hover)]',
-                      active && 'bg-[var(--accent-soft)]',
-                    )}
-                  >
-                    <TI size={14} className="mt-0.5 shrink-0 text-[var(--t3)]" />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-medium text-[var(--t1)]">{m.name}</span>
-                        <span className="rounded bg-[var(--hover)] px-1 text-[length:var(--fs-xs)] text-[var(--t4)]">{m.cost}</span>
-                        {a === false && (
-                          <span className="rounded bg-amber-500/15 px-1 text-[length:var(--fs-xs)] text-amber-300">{tr('chạy mock', 'mock')}</span>
-                        )}
-                        {active && <Check size={11} className="ml-auto text-[var(--accent)]" />}
-                      </div>
-                      <p className="mt-0.5 text-[length:var(--fs-xs)] leading-snug text-[var(--t4)]">{m.blurb}</p>
-                    </div>
-                  </button>
-                );
-              })}
-
-              {/* oneAI (mức 2): chọn engine + runtime */}
-              {aiTier === 2 && (
-                <div className="mt-1 border-t border-[var(--border)] pt-1.5">
-                  <p className="px-2 py-1 text-[length:var(--fs-xs)] font-semibold uppercase tracking-wider text-[var(--t4)]">
-                    oneAI — Engine
-                  </p>
-                  <div className="flex gap-1 px-1.5">
-                    {ONE_AI_ENGINES.map((e) => {
-                      const on = e.id === oneAiEngine;
-                      return (
-                        <button
-                          key={e.id}
-                          onClick={() => setOneAiEngine(e.id)}
-                          title={e.blurb}
-                          className={cn(
-                            'flex-1 rounded-[9px] border px-2 py-1 text-[length:var(--fs-xs)] font-medium transition-colors',
-                            on
-                              ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
-                              : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
-                          )}
-                        >
-                          {e.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* runtime chỉ áp cho engine SD-portable */}
-                  {oneAiEngine === 'sd' && (
-                    <>
-                      <p className="px-2 pb-1 pt-2 text-[length:var(--fs-xs)] font-semibold uppercase tracking-wider text-[var(--t4)]">
-                        Runtime
-                      </p>
-                      <div className="flex gap-1 px-1.5 pb-1">
-                        {ONE_AI_RUNTIMES.map((r) => {
-                          const on = r.id === oneAiRuntime;
-                          return (
-                            <button
-                              key={r.id}
-                              onClick={() => setOneAiRuntime(r.id)}
-                              title={r.blurb}
-                              className={cn(
-                                'flex-1 rounded-[9px] border px-2 py-1 text-[length:var(--fs-xs)] font-medium transition-colors',
-                                on
-                                  ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
-                                  : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
-                              )}
-                            >
-                              {r.name}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}

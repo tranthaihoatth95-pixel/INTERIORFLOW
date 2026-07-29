@@ -398,7 +398,10 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         }}
       >
         <span style={{ width: 14, height: 1, background: STAGE_TINT[active] }} />
-        {STAGE_INDEX[active]} · {PHASES.find((p) => p.id === active)?.label}
+        {/* 2.2.60 (29/07) — tên chặng chỉ hiện từ `xl` (1280px); dưới đó rút còn số thứ tự,
+            giảm bề rộng đúng ở dải 1024-1280px đang tràn khung (docs/CHOT-SO-MA-2026-07-29.md). */}
+        {STAGE_INDEX[active]}
+        <span className="hidden xl:inline">· {PHASES.find((p) => p.id === active)?.label}</span>
       </span>
       {photoContext && (
         <span
