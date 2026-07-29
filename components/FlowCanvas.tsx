@@ -23,7 +23,6 @@ import DemoLauncher from '@/components/DemoLauncher';
 import { DND_MIME } from '@/components/NodeLibraryPanel';
 import { ASSET_MIME } from '@/components/LibraryPanel';
 import { CATEGORY_META } from '@/lib/types';
-import { LiveCursors } from '@/components/collab/LiveCursors';
 import { PresenceBar } from '@/components/collab/PresenceBar';
 import { GroupOverlay } from '@/components/nodes/GroupOverlay';
 import { useCollabStore } from '@/lib/collabStore';
@@ -417,8 +416,11 @@ export function FlowCanvas() {
       {/* Group overlay — vẽ khung bao quanh nhóm node (tự bọc ViewportPortal bên trong) */}
       <GroupOverlay />
 
-      {/* Collab: con trỏ live (flow-space) + thanh presence */}
-      <LiveCursors />
+      {/* Collab: 7.4.11 (29/07) — LiveCursors TẠM ẨN, phương án A đã duyệt
+          (docs/CHOT-SO-MA-2026-07-29.md §D): con trỏ hứa đồng bộ real-time nhưng
+          nodes/edges/params KHÔNG hề đồng bộ (chỉ poll 900ms vị trí chuột) — lỗi tin cậy,
+          người dùng thấy con trỏ bay tưởng đang cộng tác thật rồi ghi đè lẫn nhau.
+          PresenceBar GIỮ NGUYÊN — "ai đang online" là thông tin thật, không hứa suông. */}
       <PresenceBar />
 
       <BottomToolbar onAddNote={handleAddNote} />
