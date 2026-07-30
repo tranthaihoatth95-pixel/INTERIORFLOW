@@ -44,3 +44,6 @@ docs/DEMO-CLAY-2407/
 
 # Thư mục tạm Cowork (screenshot/note quan sát UI, không commit)
 .cowork-tmp/
+
+# Worktree phụ cho phiên Cowork song song (feat/7.1.19-lark-wiki) — không commit
+.worktrees/

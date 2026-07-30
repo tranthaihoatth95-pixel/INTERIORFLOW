@@ -84,6 +84,36 @@ export interface Job {
   error?: string;
 }
 
+export type FlowRunStatus = 'queued' | 'running' | 'done' | 'error' | 'cancelled';
+
+/**
+ * 2.2.86 (30/07, Hoà chốt) — đơn vị HÀNG ĐỢI là 1 lượt chạy (node ▶ + upstream, thẻ Tool Mode
+ * "Kết xuất", hoặc "Run flow" toàn graph), KHÔNG phải từng node lẻ. `Job` (trên) vẫn giữ nguyên,
+ * là chi tiết TỪNG NODE — xem "lồng" trong 1 FlowRun bằng cách lọc `jobs[]` theo `nodeIds` +
+ * khoảng thời gian `startedAt..finishedAt` (không thêm field `runId` vào Job — execNode() giữ
+ * nguyên 100%, không đụng, theo đúng yêu cầu).
+ */
+export interface FlowRun {
+  id: string;
+  /** tên flow/node lúc XẾP HÀNG (không đổi theo sau, kể cả nếu người dùng đổi tên flow lúc đang chạy). */
+  label: string;
+  /** thứ tự node sẽ chạy — topo-sort tính SẴN lúc xếp hàng, không tính lại khi tới lượt. */
+  nodeIds: string[];
+  status: FlowRunStatus;
+  queuedAt: number;
+  startedAt?: number;
+  finishedAt?: number;
+  /** index (0-based) của node đang/vừa chạy trong nodeIds — dùng hiện "3/7 node". -1 = chưa bắt đầu. */
+  currentIndex: number;
+  /** true (nút ▶ trên node): dừng CẢ chuỗi ngay khi 1 node lỗi. false (Run flow toàn graph): bỏ
+   * qua nhánh bị chặn bởi node lỗi, chạy tiếp nhánh khác — đúng hành vi cũ của runNode()/runFlow(). */
+  stopOnFirstFailure: boolean;
+  /** true (Run flow toàn graph): snapshot version lên server trước khi chạy — đúng hành vi cũ. */
+  snapshotOnStart: boolean;
+  /** true = người dùng bấm Huỷ khi đang chạy — dừng ở ranh giới node kế tiếp, không cắt giữa 1 lần gọi API. */
+  cancelRequested: boolean;
+}
+
 export interface InteriorNodeData extends Record<string, unknown> {
   defType: string;
   params: Record<string, string | number>;

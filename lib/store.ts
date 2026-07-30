@@ -11,7 +11,7 @@ import {
   type EdgeChange,
   type Connection,
 } from '@xyflow/react';
-import type { InteriorNodeData, Job, NodeRunState } from '@/lib/types';
+import type { InteriorNodeData, Job, FlowRun, NodeRunState } from '@/lib/types';
 import { DATA_TYPE_COLORS } from '@/lib/types';
 import { getDefinition, defaultParams } from '@/lib/nodes/registry';
 import {
@@ -53,6 +53,9 @@ interface FlowState {
   nodes: FlowNode[];
   edges: Edge[];
   jobs: Job[];
+  /** 2.2.86 (30/07) — hàng đợi chạy flow (nút ▶/Kết xuất/Run flow), thay `isRunningFlow` boolean
+   * cũ (chỉ biết bận/rảnh, không biết CHẠY GÌ/CHỜ MẤY CÁI). Xem lib/types.ts FlowRun. */
+  flowRuns: FlowRun[];
   tool: Tool;
   panel: Panel;
   tasksOpen: boolean;
@@ -106,7 +109,6 @@ interface FlowState {
   annotateNodeId: string | null;
   /** URL ảnh đang mở lightbox */
   lightboxUrl: string | null;
-  isRunningFlow: boolean;
   /** command palette (⌘K) đang mở */
   paletteOpen: boolean;
   /** snap node vào lưới khi kéo */
@@ -174,7 +176,14 @@ interface FlowState {
   addJob: (job: Job) => void;
   updateJob: (jobId: string, patch: Partial<Job>) => void;
   spendCredits: (amount: number) => void;
-  setRunningFlow: (running: boolean) => void;
+  /** Thêm 1 lượt chạy vào cuối hàng đợi (FIFO), trả về id — người gọi (lib/execution.ts) tự lo
+   * bắt đầu rút hàng đợi. KHÔNG chạy ngay ở đây — tách rời "ghi vào hàng đợi" khỏi "xử lý hàng
+   * đợi" cho đúng tinh thần tách khởi-chạy khỏi theo-dõi. */
+  enqueueFlowRun: (input: Omit<FlowRun, 'id' | 'status' | 'queuedAt' | 'currentIndex' | 'cancelRequested'>) => string;
+  updateFlowRun: (runId: string, patch: Partial<FlowRun>) => void;
+  /** Mục ĐANG CHỜ: xoá hẳn khỏi hàng đợi. Mục ĐANG CHẠY: chỉ đặt cờ, dừng ở ranh giới node kế
+   * tiếp (lib/execution.ts tự kiểm cờ này giữa các bước) — không cắt giữa 1 lần gọi API. */
+  requestCancelFlowRun: (runId: string) => void;
 
   snapshot: () => void;
   undo: () => void;
@@ -241,6 +250,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   nodes: [],
   edges: [],
   jobs: [],
+  flowRuns: [],
   tool: 'select',
   panel: null,
   tasksOpen: false,
@@ -266,7 +276,6 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   aiTier: DEFAULT_TIER,
   oneAiEngine: DEFAULT_ONE_AI_ENGINE,
   oneAiRuntime: DEFAULT_ONE_AI_RUNTIME,
-  isRunningFlow: false,
   paletteOpen: false,
   snapGrid: false,
   groups: [],
@@ -633,7 +642,30 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   updateJob: (jobId, patch) =>
     set((s) => ({ jobs: s.jobs.map((j) => (j.id === jobId ? { ...j, ...patch } : j)) })),
   spendCredits: (amount) => set((s) => ({ credits: Math.max(0, s.credits - amount) })),
-  setRunningFlow: (isRunningFlow) => set({ isRunningFlow }),
+
+  enqueueFlowRun: (input) => {
+    const id = nextId('run');
+    const run: FlowRun = {
+      ...input,
+      id,
+      status: 'queued',
+      queuedAt: Date.now(),
+      currentIndex: -1,
+      cancelRequested: false,
+    };
+    // append cuối (FIFO) — khác addJob (prepend, log mới nhất lên đầu). slice(-100): giữ 100 lượt
+    // GẦN NHẤT khi hàng đợi dài (khác jobs dùng slice(0,100) vì thứ tự prepend ngược).
+    set((s) => ({ flowRuns: [...s.flowRuns, run].slice(-100) }));
+    return id;
+  },
+  updateFlowRun: (runId, patch) =>
+    set((s) => ({ flowRuns: s.flowRuns.map((r) => (r.id === runId ? { ...r, ...patch } : r)) })),
+  requestCancelFlowRun: (runId) =>
+    set((s) => ({
+      flowRuns: s.flowRuns
+        .map((r) => (r.id === runId && r.status === 'running' ? { ...r, cancelRequested: true } : r))
+        .filter((r) => !(r.id === runId && r.status === 'queued')),
+    })),
 
   snapshot: () => {
     const { nodes, edges } = get();

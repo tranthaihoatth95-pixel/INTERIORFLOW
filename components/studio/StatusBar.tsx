@@ -11,7 +11,8 @@
  *           kiểu Siri macOS) · bấm (hoặc Enter) → mở popover đầy đủ (VitalsGesturePanel, neo
  *           'statusbar', xổ LÊN). ⌘J/Ctrl+J (đăng ký ở StageSwitcher.tsx) cũng neo vào đây.
  *           Cảm ứng/di động: GIỮ NGUYÊN cử chỉ kéo từ vùng 3 chặng (StageSwitcher, không sửa).
- *   PHẢI  — trạng thái hệ thống: hàng đợi render (chỉ Render, lib/store.ts jobs) · đang lưu/
+ *   PHẢI  — trạng thái hệ thống: hàng đợi render (chỉ Render, lib/store.ts flowRuns — 2.2.86,
+ *           30/07: đơn vị là FlowRun/lượt chạy, không phải Job/node lẻ) · đang lưu/
  *           đã lưu (CAD + Present, lib/save-status.ts — bám autosaver có sẵn) · số vi phạm quy
  *           chuẩn LẦN KIỂM GẦN NHẤT (chỉ CAD, lib/cad/live-status.ts — KHÔNG tự chạy nền, giữ
  *           đúng "chỉ đọc & đề xuất, chạy tay" của StandardsPanel).
@@ -45,7 +46,7 @@ const HOVER_DELAY_MS = 150;
 
 export default function StatusBar({ stage, hidden }: Props) {
   const flowName = useFlowStore((s) => s.flowName);
-  const jobs = useFlowStore((s) => s.jobs);
+  const flowRuns = useFlowStore((s) => s.flowRuns);
   const cursorWorld = useCadLiveStatus((s) => s.cursorWorld);
   const lastViolationCount = useCadLiveStatus((s) => s.lastViolationCount);
   const saveState = useSaveStatus((s) => s.status);
@@ -85,7 +86,9 @@ export default function StatusBar({ stage, hidden }: Props) {
     openVitals('statusbar', text, text.length > 0);
   };
 
-  const jobsActive = stage === 'render' ? jobs.filter((j) => j.status === 'running' || j.status === 'queued').length : 0;
+  // 2.2.86 (30/07) — đếm theo FlowRun (lượt chạy), khớp badge "Việc" ở AppChrome.tsx (Luật Đồng
+  // Bộ #6, tránh 2 mặt tiền đếm khác đơn vị — trước đếm Job/node lẻ, ra số khác badge trên bar).
+  const jobsActive = stage === 'render' ? flowRuns.filter((r) => r.status === 'running' || r.status === 'queued').length : 0;
   const showSave = (stage === 'concept' || stage === 'present') && saveState !== 'idle';
   const showStandards = stage === 'concept' && lastViolationCount !== null;
 

@@ -6,10 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   MoreHorizontal, X, Coins, Share2, Check, MessageCircle, LogOut,
   LayoutDashboard, Palette, Box, Presentation, ChevronRight,
-  Loader2, Clock3, CircleCheck, CircleAlert, Settings as SettingsIcon,
+  Loader2, Clock3, CircleCheck, CircleAlert, CircleX, Settings as SettingsIcon,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
+import { estimateRunCredit } from '@/lib/execution';
+import type { FlowRun } from '@/lib/types';
 import { TIERS } from '@/lib/ai/tiers';
 import { AiStatusDot } from '@/components/settings/AiDependencySettings';
 import { PHASES, type Phase } from '@/lib/phases';
@@ -35,7 +37,9 @@ const PHASE_ICON: Record<Phase, typeof Palette> = { concept: Palette, render: Bo
  */
 export function MobileMenu({ active }: { active: AppChromeActive }) {
   const [open, setOpen] = useState(false);
-  const activeJobs = useFlowStore((s) => s.jobs.filter((j) => j.status === 'running' || j.status === 'queued').length);
+  // 2.2.86 (30/07) — đếm theo FlowRun (lượt chạy), KHÔNG phải Job (node lẻ) — khớp badge "Việc"
+  // ở AppChrome.tsx (Luật Đồng Bộ #6, tránh 2 mặt tiền đếm khác đơn vị, ra 2 con số khác nhau).
+  const activeJobs = useFlowStore((s) => s.flowRuns.filter((r) => r.status === 'running' || r.status === 'queued').length);
 
   // khoá scroll nền khi sheet mở
   useEffect(() => {
@@ -333,29 +337,50 @@ function timeAgo(ts: number) {
   return `${Math.floor(m / 60)}h trước`;
 }
 
+/** 2.2.86 (30/07) — đơn vị hàng đợi là FlowRun (lượt chạy), KHÔNG phải Job (node lẻ), khớp
+ * TasksDropdown.tsx (desktop) — Luật Đồng Bộ #6, tránh 2 mặt tiền đếm khác đơn vị. Bản mobile
+ * gọn hơn: 1 danh sách phẳng (đang chạy → đang chờ → vừa xong), không tách 3 nhóm có tiêu đề
+ * riêng như desktop (đủ chỗ hơn) — cùng dữ liệu, khác mức chi tiết trình bày. */
 function TasksRow() {
-  const jobs = useFlowStore((s) => s.jobs);
+  const flowRuns = useFlowStore((s) => s.flowRuns);
+  const running = flowRuns.filter((r) => r.status === 'running');
+  const queued = flowRuns.filter((r) => r.status === 'queued').sort((a, b) => a.queuedAt - b.queuedAt);
+  const finished = flowRuns
+    .filter((r) => r.status === 'done' || r.status === 'error' || r.status === 'cancelled')
+    .sort((a, b) => (b.finishedAt ?? 0) - (a.finishedAt ?? 0));
+  const ordered = [...running, ...queued, ...finished].slice(0, 8);
   return (
-    <Section label={`Tasks${jobs.length ? ` · ${jobs.length}` : ''}`}>
+    <Section label={`Việc${running.length + queued.length ? ` · ${running.length + queued.length}` : ''}`}>
       <div className="overflow-hidden rounded-[14px] border border-[var(--border)]">
-        {jobs.length === 0 && (
-          <p className="px-3 py-5 text-center text-xs text-[var(--t4)]">Chưa có job nào — bấm ▶ trên node hoặc Run flow.</p>
+        {ordered.length === 0 && (
+          <p className="px-3 py-5 text-center text-xs text-[var(--t4)]">Chưa có lượt chạy nào — bấm ▶ trên node hoặc &quot;Kết xuất&quot; trên thẻ.</p>
         )}
-        {jobs.slice(0, 8).map((j) => (
-          <div key={j.id} className="flex items-center gap-2.5 border-b border-[var(--border)] px-3 py-2.5 last:border-0">
-            {j.status === 'running' && <Loader2 size={14} className="shrink-0 animate-spin text-[var(--accent)]" />}
-            {j.status === 'queued' && <Clock3 size={14} className="shrink-0 text-[var(--t4)]" />}
-            {j.status === 'done' && <CircleCheck size={14} className="shrink-0 text-emerald-400" />}
-            {j.status === 'error' && <CircleAlert size={14} className="shrink-0 text-red-400" />}
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs text-[var(--t1)]">{j.nodeTitle}</p>
-              <p className="truncate text-[10px] text-[var(--t4)]">
-                {j.status === 'error' ? j.error : timeAgo(j.createdAt)}
-                {j.creditCost > 0 && ` · ${j.creditCost}cr${j.status === 'error' ? ' (đã hoàn)' : ''}`}
-              </p>
+        {ordered.map((r: FlowRun) => {
+          const total = r.nodeIds.length;
+          const credit = r.status === 'queued' || r.status === 'running' ? estimateRunCredit(r.nodeIds) : 0;
+          let detail: string;
+          if (r.status === 'running') detail = `${Math.min(total, Math.max(0, r.currentIndex) + 1)}/${total} node`;
+          else if (r.status === 'queued') detail = `Đang chờ · ${total} node`;
+          else if (r.status === 'error') detail = `Lỗi · ${timeAgo(r.finishedAt ?? r.queuedAt)}`;
+          else if (r.status === 'cancelled') detail = `Đã huỷ · ${timeAgo(r.finishedAt ?? r.queuedAt)}`;
+          else detail = `${total} node · ${timeAgo(r.finishedAt ?? r.queuedAt)}`;
+          return (
+            <div key={r.id} className="flex items-center gap-2.5 border-b border-[var(--border)] px-3 py-2.5 last:border-0">
+              {r.status === 'running' && <Loader2 size={14} className="shrink-0 animate-spin text-[var(--accent)]" />}
+              {r.status === 'queued' && <Clock3 size={14} className="shrink-0 text-[var(--t4)]" />}
+              {r.status === 'done' && <CircleCheck size={14} className="shrink-0 text-emerald-400" />}
+              {r.status === 'error' && <CircleAlert size={14} className="shrink-0 text-red-400" />}
+              {r.status === 'cancelled' && <CircleX size={14} className="shrink-0 text-[var(--t4)]" />}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs text-[var(--t1)]">{r.label}</p>
+                <p className="truncate text-[10px] text-[var(--t4)]">
+                  {detail}
+                  {credit > 0 && ` · ~${credit}cr`}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Section>
   );

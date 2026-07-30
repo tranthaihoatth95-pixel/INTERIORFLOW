@@ -15,25 +15,27 @@
  * sẽ TRÙNG (2 menu Nhập/Xuất cùng lúc trên 1 trang).
  *
  * PHẦN RIÊNG CHẶNG (chỉ `active==='render'`, không di chuyển đi đâu — không phải bug, không
- * phải "thiếu"): "Chạy flow" (chạy node-graph, CAD/Present không có), Tasks/AiStatusDot (hàng
- * đợi job AI, hôm nay chỉ Render gọi AI), `photoContext` badge (chỉ route `/photo-editor`),
- * `data-if-deselect-zone` (canvas 2D tự viết của CAD/Present cần marker này; canvas Render là
- * React Flow, đã tự deselect khi click nền, không cần marker).
+ * phải "thiếu"): Tasks/AiStatusDot (hàng đợi job AI, hôm nay chỉ Render gọi AI), `photoContext`
+ * badge (chỉ route `/photo-editor`), `data-if-deselect-zone` (canvas 2D tự viết của CAD/Present
+ * cần marker này; canvas Render là React Flow, đã tự deselect khi click nền, không cần marker).
  *
  * SỬA 2 LỖI (không phải gap) khi hợp nhất: (1) `SessionWatch` trước chỉ có ở StudioBar — route
- * `/` không báo hết phiên, tới lúc bấm Chạy flow mới bị đá login. (2) Không route nào ngoài `/`
- * có đường tới `/settings` (dựng ở 7.3.30 cùng ngày) — MoreMenu (kèm link Cài đặt) giờ universal.
+ * `/` không báo hết phiên giữa chừng. (2) Không route nào ngoài `/` có đường tới `/settings`
+ * (dựng ở 7.3.30 cùng ngày) — MoreMenu (kèm link Cài đặt) giờ universal.
+ *
+ * 2.2.86 (30/07, Hoà chốt) — nút "Chạy flow" ĐÃ XOÁ khỏi bar (không phải ẩn có điều kiện như
+ * trước — xoá hẳn). Khởi chạy chuyển hết sang cạnh đối tượng (▶ node, "Kết xuất" thẻ Tool Mode,
+ * "Run flow" Command Palette) + hàng đợi trong menu "Việc" — xem lib/execution.ts.
  */
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Coins, Share2, Play, Loader2, ChevronDown, MessageCircle, LogOut, Check, MoreHorizontal,
+  Coins, Share2, ChevronDown, MessageCircle, LogOut, Check, MoreHorizontal,
   Settings as SettingsIcon,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
-import { runFlow } from '@/lib/execution';
 import { AiStatusDot } from '@/components/settings/AiDependencySettings';
 import { DEFAULT_PHASE, STAGE_TINT, type Phase } from '@/lib/phases';
 import StageSwitcher from '@/components/studio/StageSwitcher';
@@ -66,10 +68,9 @@ export function AppChrome({ active }: Props) {
   const flowName = useFlowStore((s) => s.flowName);
   const workspace = useFlowStore((s) => s.workspace);
   const setFlowName = useFlowStore((s) => s.setFlowName);
-  const isRunningFlow = useFlowStore((s) => s.isRunningFlow);
   const tasksOpen = useFlowStore((s) => s.tasksOpen);
   const setTasksOpen = useFlowStore((s) => s.setTasksOpen);
-  const jobs = useFlowStore((s) => s.jobs);
+  const flowRuns = useFlowStore((s) => s.flowRuns);
   const applyTheme = useFlowStore((s) => s.applyTheme);
   const [editing, setEditing] = useState(false);
   const tr = useT();
@@ -77,7 +78,9 @@ export function AppChrome({ active }: Props) {
   const pathname = usePathname();
   const { begin } = useStageTransition();
 
-  const activeJobs = jobs.filter((j) => j.status === 'running' || j.status === 'queued').length;
+  // 2.2.86 (30/07) — badge "Việc" = số lượt ĐANG CHẠY + ĐANG CHỜ (không phải số job lẻ như cũ),
+  // đúng đơn vị FlowRun mới. "Liếc là biết" — không cần mở menu mới thấy có gì đang bận.
+  const activeJobs = flowRuns.filter((r) => r.status === 'running' || r.status === 'queued').length;
   const currentPhase = activeToPhase(active);
   const tint = STAGE_TINT[active === 'render' ? (workspace ?? DEFAULT_PHASE) : currentPhase];
 
@@ -180,19 +183,10 @@ export function AppChrome({ active }: Props) {
 
       {active === 'render' && <AiStatusDot />}
 
-      {/* Chạy flow — CHỈ Render (node-graph để chạy). */}
-      {active === 'render' && (
-        <motion.button
-          {...pressable}
-          onClick={() => runFlow()}
-          disabled={isRunningFlow}
-          title={tr('Chạy flow', 'Run flow')}
-          className="flex shrink-0 items-center gap-1.5 rounded-[10px] bg-[var(--accent-strong)] px-2.5 py-1.5 text-xs font-medium text-white shadow-sm transition-[background-color,transform] duration-200 ease-[cubic-bezier(.32,.72,0,1)] hover:bg-[var(--accent)] disabled:opacity-50 sm:px-3"
-        >
-          {isRunningFlow ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
-          <span className="hidden sm:inline">{tr('Chạy flow', 'Run flow')}</span>
-        </motion.button>
-      )}
+      {/* 2.2.86 (30/07, Hoà chốt) — "Chạy flow" KHÔNG còn đứng riêng trên bar (~110px trả lại
+          ngân sách bề rộng). Khởi chạy giờ CẠNH ĐỐI TƯỢNG: nút ▶ trên node, "Kết xuất" trên thẻ
+          Tool Mode, "Run flow" ở Command Palette (⌘K) — cả ba đều xếp hàng qua cùng 1 hàng đợi
+          (lib/execution.ts). Theo dõi/huỷ ở menu "Việc" (TasksDropdown) — xem badge số dưới đây. */}
 
       <div className="hidden items-center gap-2 sm:flex sm:gap-2.5">
         {active === 'render' && (

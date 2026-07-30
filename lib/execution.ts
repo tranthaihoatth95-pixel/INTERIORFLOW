@@ -181,47 +181,131 @@ declare global {
 }
 const isReadOnly = () => typeof window !== 'undefined' && window.__ifReadOnly === true;
 
-/** Nút ▶ trên node: chạy node + toàn bộ upstream. */
-export async function runNode(nodeId: string) {
-  if (isReadOnly()) return;
+/**
+ * 2.2.86 (30/07, Hoà chốt — bỏ pill nổi trên canvas, thay bằng hàng đợi trong menu "Việc") —
+ * TÁCH khởi chạy khỏi theo dõi: mọi lượt chạy (▶ trên node, "Kết xuất" thẻ Tool Mode, "Run flow"
+ * ở Command Palette) đều tạo 1 `FlowRun` (lib/types.ts) và đi qua HÀNG ĐỢI DUY NHẤT dưới đây —
+ * tuần tự tuyệt đối, 1 lượt một lúc. Bấm khi đang bận KHÔNG bị từ chối (khác code cũ: `if
+ * (store.isRunningFlow) return` im lặng) — xếp hàng, "Việc" tự hiện "đứng thứ N".
+ *
+ * `execNode()` GIỮ NGUYÊN 100%, không đụng — hàm dưới đây chỉ ĐIỀU PHỐI bên ngoài nó (khi nào
+ * gọi, gọi node nào tiếp theo, dừng ở đâu khi lỗi/huỷ), đúng yêu cầu "đã có, đừng làm lại".
+ */
+let draining = false;
+
+async function drainQueue() {
+  if (draining) return; // đã có 1 vòng rút hàng đợi đang chạy — không mở vòng thứ 2 chồng lên.
+  draining = true;
+  try {
+    for (;;) {
+      const next = useFlowStore.getState().flowRuns.find((r) => r.status === 'queued');
+      if (!next) break;
+      await executeRun(next.id);
+    }
+  } finally {
+    draining = false;
+  }
+}
+
+async function executeRun(runId: string) {
+  const store = useFlowStore.getState();
+  const run = store.flowRuns.find((r) => r.id === runId);
+  if (!run) return;
+  store.updateFlowRun(runId, { status: 'running', startedAt: Date.now() });
+  if (run.snapshotOnStart) {
+    // snapshot version trước khi chạy — giữ lịch sử _v(n) không ghi đè (đúng hành vi cũ runFlow()).
+    import('@/lib/workspace').then((w) => w.snapshotFlow()).catch(() => {});
+  }
+  const failed = new Set<string>();
+  try {
+    for (let i = 0; i < run.nodeIds.length; i++) {
+      const fresh = useFlowStore.getState().flowRuns.find((r) => r.id === runId);
+      if (!fresh || fresh.cancelRequested) {
+        store.updateFlowRun(runId, { status: 'cancelled', finishedAt: Date.now() });
+        return;
+      }
+      store.updateFlowRun(runId, { currentIndex: i });
+      const id = run.nodeIds[i];
+      if (run.stopOnFirstFailure) {
+        // Đúng hành vi cũ runNode(): 1 node lỗi thì dừng CẢ chuỗi ngay (upstream lỗi → hạ nguồn vô nghĩa).
+        const ok = await execNode(id);
+        if (!ok) {
+          store.updateFlowRun(runId, { status: 'error', finishedAt: Date.now(), currentIndex: i });
+          return;
+        }
+      } else {
+        // Đúng hành vi cũ runFlow(): bỏ qua NHÁNH bị chặn bởi node lỗi, chạy tiếp nhánh khác.
+        const { edges } = useFlowStore.getState();
+        const blockedByUpstream = edges.some((e) => e.target === id && failed.has(e.source));
+        if (blockedByUpstream) {
+          failed.add(id);
+          continue;
+        }
+        const ok = await execNode(id);
+        if (!ok) failed.add(id);
+      }
+    }
+  } catch (err) {
+    store.setConnectError(err instanceof Error ? err.message : String(err));
+    store.updateFlowRun(runId, { status: 'error', finishedAt: Date.now() });
+    return;
+  }
+  store.updateFlowRun(runId, {
+    status: failed.size > 0 ? 'error' : 'done',
+    finishedAt: Date.now(),
+    currentIndex: run.nodeIds.length,
+  });
+}
+
+/**
+ * Ước tính credit của 1 lượt chạy TRƯỚC khi chạy (2.2.86, "nói giá trước khi tiêu tiền") — tổng
+ * `creditCost` các node CHƯA `done` (node đã `done` sẽ bị `execNode()` cache-skip qua inputHash,
+ * xem execNode() ở trên — không tính tiền node sẽ bị bỏ qua). Xấp xỉ có chủ đích: hash THẬT chỉ
+ * biết được lúc chạy (phụ thuộc input từ node upstream chạy trước đó trong CÙNG lượt) — dùng
+ * trạng thái `done` hiện tại làm tín hiệu đủ tốt cho số hiển thị TRƯỚC khi chạy.
+ */
+export function estimateRunCredit(nodeIds: string[]): number {
+  const { nodes } = useFlowStore.getState();
+  let total = 0;
+  for (const id of nodeIds) {
+    const node = nodes.find((n) => n.id === id);
+    if (!node || node.data.run.status === 'done') continue;
+    const def = getDefinition(node.data.defType);
+    if (def) total += def.creditCost;
+  }
+  return total;
+}
+
+function enqueueRun(
+  label: string,
+  nodeIds: string[],
+  opts: { stopOnFirstFailure: boolean; snapshotOnStart: boolean },
+): string {
+  const runId = useFlowStore.getState().enqueueFlowRun({ label, nodeIds, ...opts });
+  void drainQueue();
+  return runId;
+}
+
+/** Nút ▶ trên node / "Kết xuất" thẻ Tool Mode: xếp hàng node + toàn bộ upstream. */
+export async function runNode(nodeId: string): Promise<string | null> {
+  if (isReadOnly()) return null;
   const { nodes, edges } = useFlowStore.getState();
   let order: string[];
   try {
     order = upstreamOrder(nodeId, nodes, edges);
   } catch (err) {
     useFlowStore.getState().setConnectError(err instanceof Error ? err.message : String(err));
-    return;
+    return null;
   }
-  for (const id of order) {
-    const ok = await execNode(id);
-    if (!ok) break; // upstream lỗi thì dừng chuỗi
-  }
+  const def = getDefinition(nodes.find((n) => n.id === nodeId)?.data.defType ?? '');
+  return enqueueRun(def?.title ?? 'Node', order, { stopOnFirstFailure: true, snapshotOnStart: false });
 }
 
-/** "Run flow": topo-sort toàn graph + snapshot version lên server. */
-export async function runFlow() {
-  if (isReadOnly()) return;
+/** "Run flow": xếp hàng toàn graph. Trước im lặng từ chối khi đang bận — nay LUÔN xếp hàng,
+ * không bao giờ từ chối, chỉ khác nhau ở CHẠY NGAY (hàng đợi rỗng) hay ĐỢI (đang có lượt khác). */
+export async function runFlow(): Promise<string | null> {
+  if (isReadOnly()) return null;
   const store = useFlowStore.getState();
-  if (store.isRunningFlow) return;
-  store.setRunningFlow(true);
-  // snapshot version trước khi chạy — giữ lịch sử _v(n) không ghi đè
-  import('@/lib/workspace').then((w) => w.snapshotFlow()).catch(() => {});
-  try {
-    const order = fullOrder(store.nodes, store.edges);
-    const failed = new Set<string>();
-    for (const id of order) {
-      const { edges } = useFlowStore.getState();
-      const blockedByUpstream = edges.some((e) => e.target === id && failed.has(e.source));
-      if (blockedByUpstream) {
-        failed.add(id);
-        continue;
-      }
-      const ok = await execNode(id);
-      if (!ok) failed.add(id);
-    }
-  } catch (err) {
-    store.setConnectError(err instanceof Error ? err.message : String(err));
-  } finally {
-    useFlowStore.getState().setRunningFlow(false);
-  }
+  const order = fullOrder(store.nodes, store.edges);
+  return enqueueRun(store.flowName || 'Flow', order, { stopOnFirstFailure: false, snapshotOnStart: true });
 }

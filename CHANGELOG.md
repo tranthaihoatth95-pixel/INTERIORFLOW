@@ -1,5 +1,18 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 30/07 khuya — 7.1.20: gộp hệ ngưỡng breakpoint + 2.2.86: hàng đợi "Việc" thay pill nổi
+- `7.1.20` — `lib/breakpoints.ts` mới (hằng `BP`, nguồn duy nhất), kéo 5 ngưỡng tự viết rải rác
+  (700/900/720/520/1100) về đúng mốc Tailwind. Ghi Luật #10 (tiêu chuẩn nghề không hỏi) + Luật #11
+  (giao thức verify bắt buộc 5 mốc 640·768·1024·1180·1440, 1180 là bề rộng Hoà thật sự chạy).
+- `2.2.86` — **ĐỔI PHƯƠNG ÁN**: bản đầu (pill nổi trên canvas, theo
+  `docs/TICKET-CHAY-FLOW-KHONG-GHIM-BAR-2026-07-30.md`) bị HUỶ, Hoà chốt hướng khác cùng ngày —
+  "Chạy flow" xoá hẳn khỏi headbar, khởi chạy chuyển hết sang cạnh đối tượng (▶ node/"Kết xuất"
+  thẻ/Command Palette), theo dõi+huỷ qua hàng đợi thật trong menu "Việc" (đơn vị `FlowRun`, tuần
+  tự tuyệt đối). Lý do đổi: kiến trúc sư cần THẤY ĐANG CHẠY GÌ/CÒN CHỜ GÌ/HUỶ ĐƯỢC — pill nổi
+  không cho kiểm soát được quá trình, hàng đợi mới đúng nhu cầu nghề. `execNode()` giữ nguyên
+  100%, chỉ thêm lớp điều phối hàng đợi bên ngoài. Sửa kèm 2 mặt tiền đếm lệch đơn vị
+  (`MobileMenu.tsx`/`StatusBar.tsx` đếm `jobs[]` cũ, nay đổi sang `flowRuns[]` khớp badge chính).
+
 ## 30/07 khuya — 2.1.8.k: xuất bộ hồ sơ nhiều tờ thành 1 PDF có mục lục
 - `buildSheetSetPdf()`/`exportSheetSetPdf()` mới (`lib/cad/pdf.ts`) — tách `drawDocOntoPdfPage()`
   dùng chung với `buildCadPdf()` (trang đơn) để không viết lại logic vẽ entity. Trang 1 mục lục
