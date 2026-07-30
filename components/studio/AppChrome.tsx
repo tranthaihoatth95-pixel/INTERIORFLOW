@@ -94,6 +94,19 @@ export function AppChrome({ active }: Props) {
   // Điều hướng chặng — logic dùng chung với MobileMenu's PhaseRow, xem lib/studio/stage-nav.ts.
   const onPick = (p: Phase) => pickStage(p, { active, pathname, router, begin });
 
+  /**
+   * 30/07 — THANG ƯU TIÊN NHƯỜNG CHỖ khi hẹp dần (PatternFly priority+, IF theo từ 2.2.60).
+   * Phát hiện 1024px thiếu ~23px ngay cả khi tên dự án co về 0 (docs/VERIFY-7.3.31.md mục 4) —
+   * đây là chuẩn responsive, không phải quyết định sản phẩm (Luật #10), làm ngay không hỏi:
+   *   1. wordmark "InteriorFlow" → chỉ còn logomark        (≥1280px mới hiện chữ, xem span dưới)
+   *   2. "Đăng xuất" → vào menu bấm-avatar (KHÔNG theo breakpoint — đúng ở MỌI kích thước, hành
+   *      động phá huỷ không đứng trần trụi ngoài thanh, xem UserChip())
+   *   3. Home → gộp vào ⋯                                   (CHƯA LÀM — chỉ khi đo vẫn thiếu)
+   *   4. "Việc" → gộp vào ⋯                                  (CHƯA LÀM — chỉ khi đo vẫn thiếu)
+   *   5. "Tệp" → còn icon, bỏ chữ                            (CHƯA LÀM — chỉ khi đo vẫn thiếu)
+   * KHÔNG BAO GIỜ nhường: StageSwitcher · avatar · nút ⋯. Bậc 1+2 đã đủ bù 23px thiếu ở 1024px
+   * (xác nhận bằng số ở docs/VERIFY-7.3.31.md mục 5) — 3/4/5 để dành, không làm trước khi cần.
+   */
   return (
     <header
       // data-if-deselect-zone: CHỈ cad/present/photo — canvas 2D tự viết của 2 route đó cần
@@ -114,7 +127,10 @@ export function AppChrome({ active }: Props) {
         className="flex shrink-0 items-center gap-2 border-none bg-transparent p-0"
       >
         <IFLogo size={26} variant="framed" className="shrink-0 text-[var(--t1)]" />
-        <span className="hidden text-sm font-semibold tracking-tight text-[var(--t1)] lg:block">
+        {/* 30/07 — bậc ① thang ưu tiên nhường chỗ (xem comment đầu <header>): wordmark chỉ hiện
+            ≥1280px (xl), không phải ≥1024px (lg) — lg là breakpoint CHẬT NHẤT, bật chữ ngay đó
+            là sai hướng ưu tiên. Logomark (IFLogo) luôn hiện, mọi kích thước. */}
+        <span className="hidden text-sm font-semibold tracking-tight text-[var(--t1)] xl:block">
           InteriorFlow
         </span>
       </button>
@@ -366,36 +382,80 @@ function ChatToggle() {
   );
 }
 
+/**
+ * 30/07 — bậc ② thang ưu tiên nhường chỗ (xem comment đầu <header>): "Đăng xuất" KHÔNG còn là nút
+ * rời cạnh avatar — vào trong menu bấm-avatar-để-mở, chuẩn Google/Figma/Notion/Slack/GitHub cho
+ * hành động PHÁ HUỶ (mất phiên) không đặt trần trụi ngoài thanh. Không phải responsive (không ẩn
+ * theo breakpoint) — đây là ĐÚNG chuẩn ở mọi kích thước, tiện thể trả lại ~1 nút rời chiều rộng.
+ */
 function UserChip() {
   const user = useFlowStore((s) => s.user);
   const setUser = useFlowStore((s) => s.setUser);
   const router = useRouter();
   const tr = useT();
+  const [open, setOpen] = useState(false);
   if (!user) return null;
   return (
-    <div className="flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--border)] py-1 pl-1 pr-1 text-xs text-[var(--t2)]">
+    <div className="relative shrink-0">
       <motion.button
-        {...pressableIcon}
-        onClick={() => router.push('/settings/avatar')}
-        title={tr('Đổi avatar', 'Change avatar')}
-        className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full"
+        {...pressable}
+        onClick={() => setOpen((o) => !o)}
+        title={`${user.name} · ${user.email}${user.isAdmin ? ' · admin' : ''}`}
+        aria-expanded={open}
+        className={cn(
+          'flex items-center gap-1.5 rounded-[10px] border py-1 pl-1 pr-2 text-xs transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
+          open
+            ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
+            : 'border-[var(--border)] text-[var(--t2)] hover:bg-[var(--hover)]',
+        )}
       >
-        <UserAvatar id={user.id} avatar={user.avatar} name={user.name} size={24} frame={false} />
+        <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full">
+          <UserAvatar id={user.id} avatar={user.avatar} name={user.name} size={24} frame={false} />
+        </span>
+        <span className="hidden max-w-24 truncate sm:inline">{user.name}</span>
       </motion.button>
-      <span className="hidden max-w-24 truncate sm:inline" title={`${user.name} · ${user.email}${user.isAdmin ? ' · admin' : ''}`}>
-        {user.name}
-      </span>
-      <motion.button
-        {...pressableIcon}
-        title={tr('Đăng xuất', 'Sign out')}
-        onClick={async () => {
-          await fetch('/api/auth/me', { method: 'DELETE' });
-          setUser(null);
-        }}
-        className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-red-400"
-      >
-        <LogOut size={12} />
-      </motion.button>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: -4, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.98 }}
+              transition={{ duration: 0.18, ease: easeApple }}
+              className="mat-panel absolute right-0 top-9 z-40 w-48 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
+            >
+              <div className="truncate px-2 py-1.5 text-xs text-[var(--t3)]" title={`${user.name} · ${user.email}`}>
+                {user.name}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  router.push('/settings/avatar');
+                }}
+                className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+              >
+                {tr('Đổi avatar', 'Change avatar')}
+              </button>
+              {/* Ngăn cách phía trên — hành động phá huỷ tách khỏi mục thường, khớp yêu cầu. */}
+              <button
+                type="button"
+                onClick={async () => {
+                  setOpen(false);
+                  await fetch('/api/auth/me', { method: 'DELETE' });
+                  setUser(null);
+                }}
+                className="mt-1 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-2 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-red-400"
+              >
+                <LogOut size={13} />
+                {tr('Đăng xuất', 'Sign out')}
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

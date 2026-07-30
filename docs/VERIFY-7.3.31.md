@@ -61,13 +61,54 @@ rộng tối thiểu của mọi phần tử `shrink-0` > 1024px.** Cần Hoà q
 1024px không còn là breakpoint đủ cho route Render — route này có nhiều nội dung cố định nhất
 trong 4 route do có thêm Tệp/AiStatusDot/Chạy flow mà CAD/Present/Photo không có).
 
-## 5 · Kết luận
+## 5 · Sửa theo chuẩn responsive (Luật #10, không hỏi) — trả lại 23px thiếu ở mục 4
 
-- Overlap CỤ THỂ Hoà chỉ ra (Tệp/StageSwitcher/Chạy flow đè nhau) — **ĐÃ SỬA**, 0px chồng ở cả
-  3 breakpoint, gap tối thiểu 12px.
-- Tên dự án cắt còn 1 ký tự — **ĐÃ SỬA** ở 1183px/1440px (hiện đủ chữ); ở 1024px giờ ẩn hẳn (0px,
-  đúng hành vi "cắt sạch" thay vì "tràn/vỡ chữ") — nhưng đây là triệu chứng của vấn đề #4, không
-  phải bug riêng của tên dự án.
-- **Mới lộ ra khi verify sâu**: 1024px không đủ ngân sách bề rộng cho toàn bộ thanh kể cả khi tên
-  dự án = 0 — "Đăng xuất" chờm 18.5px ngoài viewport. Đây là hệ quả trực tiếp của việc tái cấu
-  trúc (dời Tệp+StageSwitcher ra khỏi vùng co được) — cần quyết định sản phẩm, không tự chốt.
+Hai phép chuẩn, không phải quyết định sản phẩm:
+
+**① Wordmark → logomark khi hẹp.** `<span>InteriorFlow</span>` cạnh logo: `lg:block` (bật ngay ở
+1024px — breakpoint CHẬT NHẤT, sai hướng ưu tiên) → `xl:block` (chỉ bật ≥1280px). IFLogo (icon)
+giữ nguyên, luôn hiện. Tiết kiệm ~110px ở 1024/1183.
+
+**② "Đăng xuất" vào menu bấm-avatar.** `UserChip` trước có nút Đăng xuất đứng RỜI cạnh avatar
+(chuẩn Google/Figma/Notion/Slack/GitHub: sign-out — hành động phá huỷ — nằm TRONG dropdown tài
+khoản, không đứng trần trụi ngoài thanh). Bấm avatar/tên giờ mở popover: tên+email (đọc) → "Đổi
+avatar" → ngăn cách → "Đăng xuất". Áp dụng ở MỌI kích thước (không phải chỉ khi hẹp — đây là
+đúng chuẩn, không phải workaround responsive).
+
+Thang ưu tiên đầy đủ (comment trên `<header>`, `AppChrome.tsx`) — bậc 3/4/5 CHƯA làm, chỉ làm nếu
+đo vẫn thiếu:
+```
+1. wordmark → logomark        (≥1280px mới hiện chữ)          — ĐÃ LÀM
+2. Đăng xuất → menu avatar    (mọi kích thước)                 — ĐÃ LÀM
+3. Home → gộp vào ⋯           (nếu vẫn thiếu)                  — chưa làm, không cần
+4. "Việc" → gộp vào ⋯         (nếu vẫn thiếu)                  — chưa làm, không cần
+5. "Tệp" → còn icon, bỏ chữ   (nếu vẫn thiếu)                  — chưa làm, không cần
+KHÔNG BAO GIỜ nhường: StageSwitcher · avatar · nút ⋯.
+```
+
+### Bảng đo sau ①② — route render, cả 4 điều kiện đạt
+
+| BP | `header.scrollWidth` ≤ viewport? | Phần tử ngoài cùng phải `right` | Gap nhỏ nhất (mọi cặp liền kề) | Tên dự án ở 1024px |
+|---|---|---|---|---|
+| 1024px | 1024 ≤ 1024 ✅ | 1012 ≤ 1024 ✅ | **10.00px** (⋯→avatar) | **"Dự án mẫu" hiện ĐỦ CHỮ, rộng 78.66px** ✅ |
+| 1183px | 1183 ≤ 1183 ✅ | 1171 ≤ 1183 ✅ | **10.00px** (⋯→avatar) | "Dự án mẫu" đủ chữ, rộng 193.4px |
+| 1440px | 1440 ≤ 1440 ✅ | 1428 ≤ 1440 ✅ | **10.00px** (⋯→avatar) | "Dự án mẫu" đủ chữ, rộng 361.25px |
+
+Chi tiết gap từng cặp liền kề ở CẢ 3 breakpoint (logo→Tệp: 33px · Tệp→tên DA: 12px · tên DA→Dock:
+12px · Dock→Chạy flow: 12px @1024, 56.26px @1183/1440 · Chạy flow→Việc: 12px · Việc→⋯: 54px ·
+⋯→avatar: 10px) — **mọi cặp ≥8px, 0px chồng lấn, 0px tràn ở cả 3 breakpoint.** 1024px không còn
+là vấn đề: **tên dự án hiện được chữ thật (không còn co về 0 như trước phép sửa ①②).**
+
+Xác nhận thêm: menu avatar mở đúng, có 2 mục "Đổi avatar"/"Đăng xuất" (test qua `click()`+đọc DOM).
+`xl:block` xác nhận đúng — wordmark "InteriorFlow" ẩn ở 1024/1183, hiện lại ở 1440 (logo.right
+nhảy từ 38px lên 127.15px, khớp bật lại wordmark ≥1280px).
+
+## 6 · Kết luận
+
+- Overlap CỤ THỂ Hoà chỉ ra (Tệp/StageSwitcher/Chạy flow đè nhau) — **ĐÃ SỬA**.
+- Tên dự án cắt còn 1 ký tự / ẩn hẳn ở 1024px — **ĐÃ SỬA HOÀN TOÀN** sau ①②, hiện đủ chữ ở cả 3
+  breakpoint, không chỉ 1183/1440 như bản vá đầu.
+- Ngân sách bề rộng 1024px (mục 4) — **ĐÃ ĐỦ** sau ①②, dư ra tới gap nhỏ nhất 10px (không âm,
+  không tràn). Bậc 3/4/5 của thang ưu tiên để dành, không cần dùng tới.
+- `2.2.86` (dời "Chạy flow" khỏi header) sẽ trả thêm ~110px nữa — không tính trước, đã đủ ngay
+  bây giờ theo yêu cầu.
