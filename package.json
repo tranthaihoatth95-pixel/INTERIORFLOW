@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "find . -name '*.test.ts' -not -path '*/node_modules/*' -not -path '*/.worktrees/*' -not -name 'edgecase-concurrency.test.ts' -print0 | xargs -0 -n1 -P8 sh -c 'node_modules/.bin/sucrase-node \"$0\"'",
     "postinstall": "prisma generate",
     "electron": "electron .",
     "electron:dev": "cross-env ELECTRON_START_URL=http://localhost:3000 concurrently -k -n NEXT,ELECTRON -c blue,magenta \"next dev\" \"wait-on tcp:3000 && electron .\"",

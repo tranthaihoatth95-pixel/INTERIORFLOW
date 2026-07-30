@@ -951,6 +951,27 @@ Cowork lúc Claude Code chưa kịp ghi dòng mới vào cây): **CHỈ Claude C
 bất kỳ ai) soạn ticket/brief thì KHÔNG kèm số mã có sẵn — Claude Code tự tra cây, gán số trống kế
 tiếp đúng khối, báo lại trong phản hồi, Hoà xác nhận hoặc yêu cầu đổi. Không ai khác tự đề xuất số.
 
+**13 · Luật Trung Tính** (Hoà chốt 30/07, số điền theo đúng Luật #12 ở trên):
+
+```
+LUẬT TRUNG TÍNH — Nguồn phải trung tính với mọi đích. .idf mô tả CÁI GÌ và
+VAI TRÒ GÌ, không bao giờ mô tả TRÔNG THẾ NÀO.
+① Thêm đích mới KHÔNG được sửa nguồn.
+② Xoá một đích KHÔNG được mất dữ liệu.
+③ Trường nào chỉ có nghĩa với đúng 1 đích ⇒ đặt sai chỗ.
+④ Ràng buộc NGHỀ thuộc nguồn (≥300dpi · tỉ lệ 1:20 · khổ A3 dọc · độ chín ·
+   vai trò). Thuộc tính TRÌNH BÀY thuộc đích (cỡ chữ · màu · vị trí · font ·
+   khoảng cách · thứ tự trang).
+   Phân biệt: ràng buộc nghề tồn tại KỂ CẢ KHI KHÔNG CÓ ĐÍCH NÀO.
+Áp cho cả ATLAS, IF2, ArchiNote — không riêng chặng 3.
+```
+
+**Test cưỡng chế (`if-infra`, 30/07)** — luật không có test thì 3 tuần là có người vi phạm: quét
+schema `.idf` (`lib/cad/idf.ts` + `lib/cad/model.ts`) FAIL nếu thấy bất kỳ khoá trình bày nào
+trong số `fontSize · fontFamily · color · fill · stroke(màu) · x · y · left · top · margin ·
+padding · zIndex · opacity · align` lọt vào type nguồn. Ngoại lệ hợp lệ đã có phải liệt kê kèm lý
+do trong danh sách miễn trừ của test — KHÔNG nới luật để chiều ngoại lệ. Xem file test đi kèm.
+
 ---
 
 *v1.4 · 2026-07-29 (Cowork, dán theo yêu cầu Hoà) · PHẦN E gộp bản v3: luật 1-3 (28/07) BÃI BỎ,

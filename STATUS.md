@@ -14,8 +14,13 @@ Chi tiết đầy đủ → `CHANGELOG.md` (mỗi dòng dưới đây có 1 mụ
 - 🟡 **2.2.87+2.2.88 SỬA SANG cascade 4 bậc "không-bao-giờ-fail", HẠ TỪ ✅ (Hoà chốt)** —
   `measureObjectTiered()` tự tụt bậc, không bao giờ throw. 46/46 test. **CHƯA verify ảnh thật
   trong browser** — nâng lại ✅ khi Hoà tự thử. Disclose: Tầng 2/3 AI chưa làm.
-- ✅ **2 mã XÁC NHẬN** (Luật #12 mới — chỉ Claude Code cấp mã): `7.1.21`=script test,
-  `7.1.22`=Bộ nhớ đo đạc. Cả 2 CHƯA CODE.
+- ✅ **7.1.21 CODE XONG (worktree phụ `feat/sprint-infra`, merge 30/07 khuya)** — `"test"` vào
+  `package.json`, 102/102 pass. **Sửa lại khi merge**: loại trừ `auto-backup.test.ts` giờ VÔ
+  NGHĨA — file đó tôi đã xoá trong B3 (thay bằng `backup-diff.test.ts`, 50 test); xác nhận bằng
+  cách chạy thử bản CŨ trước khi merge — 6/6 pass, KHÔNG chậm/flaky, không rõ lý do phiên phụ loại
+  trừ ban đầu. Đã bỏ mệnh đề loại trừ chết đó khỏi script, giữ `edgecase-concurrency.test.ts`
+  (loại đúng — `jose` ESM-only vỡ `require()` CommonJS của sucrase-node, đã xác nhận trong code).
+  `7.1.22` (Bộ nhớ đo đạc) CHƯA CODE.
 - ✅ **2.1.9.q (BOQ groundwork)** — `polygonPerimeter()`+`openingsAreaInPolygon()` vào `hatch.ts`.
   Phát hiện khi khám: `BlockDef.h` không phải chiều cao cửa (độ sâu mặt bằng) — sửa dùng
   `w`×`OPENING_STANDARD_HEIGHT_MM`. 45/45 test. BOQ `2.1.9.p` (engine thật) vẫn chờ quyết.
