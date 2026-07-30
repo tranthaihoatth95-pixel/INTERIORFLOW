@@ -506,14 +506,14 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 4.3 | Watch folder — thả file vào `01-input/` → tự nhận & phân loại | N/P | ⬜ | 4.1, 3.16 | `SPEC-FILE-MANAGER.md` |
 | 4.4 | Vòng đời file (nháp→chính thức→lưu trữ, tự dọn file tạm sau N ngày) | ? | ⬜ | 4.1 | `SPEC-FILE-MANAGER.md` |
 | 4.5 | Bảng dung lượng (dự án nào nặng, cái gì xoá được) | ? | ⬜ | 4.1 | `SPEC-FILE-MANAGER.md` |
-| 4.6 | Sao lưu + đóng gói `.ifpack` — tự backup định kỳ | N | 🟡 build/restore đã có (`lib/cad/ifpack.ts`), CHỈ thủ công (bấm nút), không có cron/interval | không | `SPEC-FILE-MANAGER.md` |
+| 4.6 | Sao lưu + đóng gói `.ifpack` — tự backup định kỳ | N | ✅ done (checklist 6 bước đủ, 30/07) — `lib/cad/auto-backup.ts` mới: `setInterval` 10 phút + trigger mỗi lần autosave IDB ghi xong (`onSaved`, app không có nút "Lưu tay" riêng), ghi ra thư mục thứ 2 do người dùng chọn 1 lần (File System Access API, `chooseBackupFolder()` — nút "Bật backup tự động" trong menu Xuất CAD), giữ đúng 5 bản gần nhất (`namesToPrune()`, 6/6 test `auto-backup.test.ts`). Browser-verify thật (OPFS thay dialog OS không tự động hoá được): ghi file `.ifpack` thật (ZIP hợp lệ xác nhận qua magic byte `PK`), sửa bản vẽ → prune tự động giữ đúng 5/5, xoá đúng 2 file cũ nhất khi dư | không | `SPEC-FILE-MANAGER.md` |
 | 4.7 | Nhấp đúp file `.idf` từ Finder mở app | N | ⬜ | 4.1 | `SPEC-FILE-MANAGER.md` |
 | 4.8 | Ba tầng + phân quyền đĩa (`Projects/` đọc-ghi · `Knowledge/` khoá đọc · `_System/` khoá) | N | ⬜ | 4.1 | `SPEC-FILE-MANAGER.md` |
 | 4.9 | Khoá `Knowledge/` chỉ đọc (bảo vệ quy chuẩn cho Vitals) | N | ⬜ | 4.8 | `SPEC-FILE-MANAGER.md` |
 | 4.10 | Đường một chiều — `01-input/`→gắn thẻ→"CHỜ DUYỆT"→người duyệt→lên kệ | N | ⬜ (trừ ngoại lệ nội dung IF tự sinh, cũng ⬜ vì chưa có cờ phân biệt nguồn) | 4.3 | `SPEC-FILE-MANAGER.md` |
 | 4.11 | Phân biệt kiến trúc Library (cửa hàng) vs File Manager (chợ đầu mối) | — (nguyên tắc) | 🟡 hiện gộp lẫn (Library dùng Prisma+/uploads phẳng, chưa có cấu trúc đĩa riêng để phân biệt) | 4.1 | `SPEC-FILE-MANAGER.md` |
 | 4.12 | Lộ trình Pha 1 — cây thư mục+quy ước tên+`.idf` mở từ Finder | N | ⬜ (tổng hợp 4.1+4.2+4.7, cả 3 chưa xong) | 4.1, 4.2, 4.7 | `SPEC-FILE-MANAGER.md` |
-| 4.13 | Lộ trình Pha 2 — backup tự động + `.ifpack` (làm sớm) | N | 🟡 hàm build có sẵn, "tự động" chưa | 4.6 | `SPEC-FILE-MANAGER.md` |
+| 4.13 | Lộ trình Pha 2 — backup tự động + `.ifpack` (làm sớm) | N | ✅ xong cùng `4.6` (30/07) — xem bằng chứng ở dòng đó, không lặp lại | 4.6 (✅) | `SPEC-FILE-MANAGER.md` |
 | 4.14 | Lộ trình Pha 3 — watch folder → tự phân loại vào Library | N/P | ⬜ | 4.12, 3.3 (NT1) | `SPEC-FILE-MANAGER.md` |
 | 4.15 | Lộ trình Pha 4 — vòng đời file · bảng dung lượng | ? | ⬜ | 4.14 | `SPEC-FILE-MANAGER.md` |
 | 4.16 | Nhận diện định dạng từ đuôi+magic byte (NT2, 28/07) | N | ✅ commit `bfd5fe9` | không | `PLAN-LIBRARY-GATEWAY.md` NT2 |

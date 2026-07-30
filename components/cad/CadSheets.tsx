@@ -34,6 +34,7 @@ import {
 } from '@/lib/sheets-persist';
 import { exportIdf, importIdf, lastImportIdfError } from '@/lib/cad/idf';
 import { buildIfpack, restoreIfpack } from '@/lib/cad/ifpack';
+import { startAutoBackup, type AutoBackupSession } from '@/lib/cad/auto-backup';
 import { backfillRoomTypes } from '@/lib/cad/standards/checker';
 import { useSheetsBucketId } from '@/lib/scope';
 import { useFlowStore } from '@/lib/store';
@@ -131,6 +132,7 @@ export default function CadSheets() {
   const sheetsRef = useRef(sheets);
   const activeIdRef = useRef(activeId);
   const saverRef = useRef<SheetsAutosaver | null>(null);
+  const backupSessionRef = useRef<AutoBackupSession | null>(null);
   /**
    * BUCKET THEO DỰ ÁN (sửa rò chéo 25/07): bộ sheet lưu theo `userId::route::projectId`.
    * Đổi dự án ⇒ `bucketId` đổi ⇒ hydrate lại từ bucket mới. `hydratedFor` giữ bucket ĐÃ
@@ -205,9 +207,26 @@ export default function CadSheets() {
         }),
       };
     };
+    // B1 (30/07, docs/CAT-PHAM-VI-3-NGAY-2026-07-30.md §1) — backup .ifpack ra thư mục thứ 2
+    // trên máy (khác nơi IDB lưu), giữ 5 bản gần nhất. Chạy mỗi 10 phút + mỗi lần autosave IDB
+    // thật sự ghi xong (`onSaved` bên dưới) — app này không có nút "Lưu tay" riêng, autosave
+    // debounce là tín hiệu "vừa lưu" duy nhất. Chưa bật (chưa chọn thư mục) → tự bỏ qua, im lặng.
+    const backup = startAutoBackup(() => ({
+      sheets: sheetsRef.current.slice(0, MAX_SHEETS).map((s) => {
+        const snap = snaps.current[s.id] ?? blankSnapshot();
+        return { id: s.id, name: s.name, doc: snap.doc };
+      }),
+      projectId: bucketId || userId,
+      projectName: useFlowStore.getState().flowName || 'InteriorFlow project',
+    }));
+    backupSessionRef.current = backup;
+
     const saver = createSheetsAutosaver(userId, ROUTE, getRecord, {
       projectId: bucketId, // chốt bucket lúc tạo → nhịp flush cuối luôn về đúng dự án này
-      onSaved: (bytes) => console.debug(`[cad-sheets] IDB ghi ${(bytes / 1024).toFixed(1)} KB`),
+      onSaved: (bytes) => {
+        console.debug(`[cad-sheets] IDB ghi ${(bytes / 1024).toFixed(1)} KB`);
+        backup.triggerNow();
+      },
       onSavingChange: (saving) => useSaveStatus.getState().setStatus(saving ? 'saving' : 'saved'),
     });
     saverRef.current = saver;
@@ -231,6 +250,8 @@ export default function CadSheets() {
       saver.flush(); // rời route (client-nav) → không mất nhịp cuối
       saver.dispose();
       saverRef.current = null;
+      backup.dispose();
+      backupSessionRef.current = null;
     };
   }, [hydrated, bucketId]);
 

@@ -19,7 +19,7 @@ import { useRouter } from 'next/navigation';
 import {
   FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Plus, Trash2, X, Command, Sparkles, Wand2,
   ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair, Tag, Check, Lightbulb, FileText, Save, Camera,
-  LayoutTemplate, FileSignature, Wrench, Ruler, ListOrdered, History,
+  LayoutTemplate, FileSignature, Wrench, Ruler, ListOrdered, History, HardDrive,
 } from 'lucide-react';
 import IOMenu from '@/components/ui/IOMenu';
 import MenuButton from '@/components/ui/MenuButton';
@@ -37,6 +37,7 @@ import { buildDemoPlan, buildDemoPlanApartment74 } from '@/lib/cad/demo-plan';
 import { consumeCadDemoSeedRequest } from '@/lib/cad/seed-demo-flag';
 import { buildOfficeTemplate, buildHotelTemplate } from '@/lib/cad/templates';
 import { titleBlockPro, type TitleBlockInfoPro } from '@/lib/cad/commands';
+import { backupSupported, backupFolderChosen, chooseBackupFolder } from '@/lib/cad/auto-backup';
 import { getActiveBrandKit } from '@/lib/present-editor/brand-kit';
 import {
   docBox, docScaleLabel, docPaperMm, suggestStandardScale, fitsAtScale,
@@ -91,6 +92,13 @@ export default function CadEditor() {
   // 20/07: ô 1 dòng cũ (aiAskOpen/aiDesc/runAiAssist) THAY bằng AiBriefPanel (đề bài chi tiết +
   // nhiều option + Kiểm chuẩn) — panel giữ nguyên đường "Vẽ nhanh" 1 dòng bên trong, xem file đó.
   const [aiBriefOpen, setAiBriefOpen] = useState(false);
+  // B1 (30/07) — backup tự động: nút chỉ đổi nhãn "Bật"/"Đang bật" theo đã có thư mục hay chưa;
+  // vòng lặp setInterval thật chạy trong lib/cad/auto-backup.ts (gọi từ CadSheets.tsx), KHÔNG
+  // phải ở đây — component này chỉ mở hộp thoại chọn thư mục (cần gesture người dùng).
+  const [backupOn, setBackupOn] = useState(false);
+  useEffect(() => {
+    void backupFolderChosen().then(setBackupOn);
+  }, []);
   const fileRef = useRef<HTMLInputElement>(null);
   const dwgRef = useRef<HTMLInputElement>(null);
   const idfRef = useRef<HTMLInputElement>(null);
@@ -205,6 +213,21 @@ export default function CadEditor() {
   // T4 (VIỆC 5) — "Sao lưu dự án": bắc cầu CustomEvent giống .idf ở trên (CadSheets giữ sheet thật).
   const doExportIfpack = () => {
     window.dispatchEvent(new CustomEvent('cad:ifpack-export-request'));
+  };
+
+  // B1 (30/07) — bấm 1 lần để chọn thư mục backup thật trên máy (File System Access API,
+  // bắt buộc gesture người dùng — không thể tự động mở hộp thoại này được).
+  const doChooseBackupFolder = () => {
+    if (!backupSupported()) {
+      useCadStore.getState().setStatus('Trình duyệt này chưa hỗ trợ chọn thư mục backup (cần Chrome/Edge hoặc bản Electron).');
+      return;
+    }
+    void chooseBackupFolder().then((ok) => {
+      if (ok) {
+        setBackupOn(true);
+        useCadStore.getState().setStatus('Đã bật backup tự động — ghi .ifpack mỗi 10 phút + mỗi lần lưu, giữ 5 bản gần nhất.');
+      }
+    });
   };
   // "Phục hồi từ .ifpack" — KHÔNG thay thế project hiện tại (khác .idf) nên KHÔNG cần hộp xác
   // nhận "sẽ ghi đè" — CadSheets tự tạo dự án MỚI để phục hồi vào, dự án đang mở không đổi gì.
@@ -394,6 +417,15 @@ export default function CadEditor() {
             { id: 'pdf', label: 'PDF', sub: 'PDF vector (nét/text thật) — layer chưa ẩn/hiện được trong PDF', icon: <FileText size={15} />, onSelect: doExportPdf },
             { id: 'idf', label: '.idf', sub: 'File project JSON — TẤT CẢ sheet + metadata, để backup/chia sẻ', icon: <Save size={15} />, onSelect: doExportIdf },
             { id: 'ifpack', label: 'Sao lưu dự án (.ifpack)', sub: 'ZIP đầy đủ — bản vẽ + ảnh markup hiện trường, phục hồi lại được', icon: <Save size={15} />, onSelect: doExportIfpack },
+            {
+              id: 'auto-backup',
+              label: backupOn ? 'Backup tự động: đang bật' : 'Bật backup tự động',
+              sub: backupOn
+                ? 'Ghi .ifpack ra thư mục đã chọn mỗi 10 phút + mỗi lần lưu, giữ 5 bản gần nhất'
+                : 'Chọn 1 thư mục trên máy — tự ghi .ifpack định kỳ, không cần nhớ bấm Sao lưu',
+              icon: <HardDrive size={15} />,
+              onSelect: doChooseBackupFolder,
+            },
           ]}
         />
         <MenuButton

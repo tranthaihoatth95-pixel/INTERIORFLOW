@@ -1,5 +1,18 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 30/07 tối — Sprint 3 cụm đầu: 2.2.85+2.2.69+7.3.30, 3 commit + 2 xác nhận
+- `2.2.85`+`2.2.69` chung 1 commit `74cf4c5` (đúng thứ tự bắt buộc: bỏ mono TRƯỚC đổi tên, vì SF
+  Mono/Cascadia/Fira thiếu glyph dấu Việt). Bỏ font mono ở mọi nhãn node (10 file, 1 ngoài danh
+  sách gốc phát hiện qua quét độc lập) + áp 5 luật thoại cho 45 node + `CATEGORY_META`.
+  Browser-verify thật: `getComputedStyle` xác nhận font `Be Vietnam Pro`, không phải mono.
+- `7.3.30` commit `10ba92e` — dựng `/settings` đủ 4 nhóm (Tài khoản/Giao diện/AI/Trải nghiệm),
+  gỡ Ngôn ngữ + "Xem lại hướng dẫn" khỏi Header MoreMenu + MobileMenu. Browser-verify 1440+375px.
+- Hoà xác nhận (commit `e947da6`): (1) giữ cả 2 nút theme Header/StudioBar là ĐÚNG — 2 route
+  khác nhau (HomeScreen vs CadStageScreen/PresentStageScreen/PhotoEditorScreen), không trùng lặp
+  thật, ticket gốc sai. (2) `2.2.69` hạ ✅→🟡 — phần "4 tên nhóm" chưa làm, hoãn tới `2.2.71`
+  (nơi tiêu thụ thật). Cảnh báo mới ở `2.2.71`: dịch `CATEGORY_META` đã tự sinh 2 hệ phân loại
+  song song lộ ra người dùng (6 category máy vs 4 nhóm nghề) — làm `2.2.71` phải chốt 1 cái chính.
+
 ## 30/07 — dán mã tính năng Sprint 1-6 vào cây + tách Nợ kỹ thuật + 2.2.61.a
 - Dán `2.2.60`-`2.2.85` + `2.3.58`-`2.3.63` vào `docs/IF-FEATURE-TREE.md` (nguồn
   `SPEC-TONG-COWORK-2026-07-29.md` §3-§8 + `TICKET-FONT-MONO-NODE`), đủ 6 cột, Trạng thái ghi

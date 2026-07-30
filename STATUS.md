@@ -5,19 +5,19 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (30/07 tối — Sprint 3 cụm đầu xong: 2.2.85+2.2.69+7.3.30, 3 commit)
+## Hiện tại (30/07 khuya — B1 backup tự động xong, chặn blocker mất dữ liệu)
 Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này:
-- ✅ **`2.2.85` xong** (commit `74cf4c5`) — bỏ font mono ở mọi nhãn node (10 file). `2.2.69`
-  **hạ ✅→🟡 (30/07, Hoà xác nhận)**: 45/45 node title + `CATEGORY_META` đã đổi theo 5 luật thoại,
-  nhưng phần "4 tên nhóm" (Ý tưởng/Dựng/Sửa/Xuất) CHƯA làm — hoãn tới `2.2.71` (nơi tiêu thụ thật).
-  ⚠️ Cảnh báo mới ghi vào `2.2.71`: dịch `CATEGORY_META` xong đã tự sinh **2 hệ phân loại song
-  song lộ ra người dùng** (6 category máy vs 4 nhóm nghề) — làm `2.2.71` phải CHỐT 1 cái chính.
-- ✅ **`7.3.30` xong** (commit `10ba92e`) — dựng `/settings` đủ 4 nhóm. **Hoà xác nhận (30/07)**:
-  giữ cả 2 nút theme Header/StudioBar là ĐÚNG (2 route khác nhau, ticket gốc sai) — đã ghi cố
-  định vào cây, không còn là mục chờ quyết.
+- ✅ **B1 backup tự động** (`4.6`+`4.13` ✅, theo `docs/CAT-PHAM-VI-3-NGAY-2026-07-30.md` §1 —
+  ưu tiên trên mọi mã UI, blocker mất dữ liệu) — `lib/cad/auto-backup.ts` mới: `setInterval` 10
+  phút + mỗi lần autosave IDB ghi xong, ra thư mục thứ 2 do user chọn 1 lần (File System Access
+  API), giữ đúng 5 bản. Nút "Bật backup tự động" trong menu Xuất CAD. 6/6 test `namesToPrune()`.
+  Browser-verify thật (OPFS thay dialog OS): ghi `.ifpack` ZIP hợp lệ thật, prune đúng 5/5 khi dư.
+- ⏸️ **B2/B3/B4** (`docs/CAT-PHAM-VI-3-NGAY-2026-07-30.md` §1, §3 Ngày 1-2) chưa làm — B3 (kiểm
+  autosave sống sót crash) cần THỬ TAY thật, không đọc code; B4 (trung tính 44 chỗ/25 file) đụng
+  `lib/server/auth.ts`+`app/layout.tsx`, rủi ro cao nhất.
+- ⏸️ **Sprint 3 UI còn lại** (`2.2.65-68/70-72/78-84`, `2.3.61`) — xem CHANGELOG cho tóm tắt
+  `2.2.85`/`2.2.69`(🟡)/`7.3.30` đã xong phiên trước; chuỗi phụ thuộc CHỐT ở `IF-FEATURE-TREE.md`.
 - ⏸️ **T3/T4 (Semantic Room)** vẫn CHƯA LÀM — đọc `docs/IF1-COMPLETION-AUDIT.md` §3 (a)/(d) trước.
-- ⏸️ **Sprint 3 phần còn lại** (`2.2.65-68/70-72/78-84`, `2.3.61`) chưa bắt đầu — xem chuỗi phụ
-  thuộc CHỐT trong `docs/IF-FEATURE-TREE.md` mục "2.2.60-2.2.85".
 
 ## Worktree đang mở
 Không có.
