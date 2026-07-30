@@ -20,6 +20,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import CadEditor from './CadEditor';
+import BackupRecoveryModal from './BackupRecoveryModal';
 import SheetTabBar, { type SheetTab } from '@/components/studio/SheetTabBar';
 import { useCadStore } from '@/lib/cad/store';
 import type { Doc, Viewport } from '@/lib/cad/model';
@@ -125,6 +126,7 @@ export default function CadSheets() {
   // Sheet 1 = trạng thái store hiện có (giữ nguyên bản demo/blank đang mở).
   const [sheets, setSheets] = useState<SheetTab[]>([{ id: 'cadsheet-0', name: 'Bản vẽ 1' }]);
   const [activeId, setActiveId] = useState('cadsheet-0');
+  const [backupBrowserOpen, setBackupBrowserOpen] = useState(false);
   // Snapshot nội dung từng sheet (ref → không render thừa). Sheet đang mở = store thật.
   const snaps = useRef<Record<string, CadSnapshot>>({});
 
@@ -488,10 +490,63 @@ export default function CadSheets() {
       })();
     };
 
+    /**
+     * B3 (30/07) — phục hồi từ 1 điểm trong thư mục backup tự động (`auto-backup.ts::recoverBackup()`
+     * đã ráp SẴN thành `IdfSheetData[]` — KHÔNG cần giải nén .ifpack như `onRestoreIfpack` ở trên,
+     * vì có thể là điểm CHÊNH LỆCH đã ráp xuôi từ mốc đầy đủ, không phải file .ifpack thật trên đĩa).
+     * Cùng nguyên tắc TẠO DỰ ÁN MỚI, không ghi đè dự án đang mở — y hệt `onRestoreIfpack`.
+     */
+    const onRestoreFromBackup = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ sheets: import('@/lib/cad/idf').IdfSheetData[]; projectName: string; degraded: boolean; recoveredAsOf: string | null }>).detail;
+      if (!detail) return;
+      const userId = userIdRef.current;
+      if (!userId) {
+        useCadStore.getState().setStatus('Cần đăng nhập để phục hồi từ backup thành dự án mới.');
+        return;
+      }
+      useCadStore.getState().setStatus(`Đang phục hồi từ backup…`);
+      void (async () => {
+        if (!detail.sheets.length) {
+          useCadStore.getState().setStatus('Không phục hồi được — bản backup này rỗng hoặc hỏng, không còn mốc nào ráp được trước đó.');
+          return;
+        }
+        const newName = `${detail.projectName || 'Dự án'} (phục hồi backup)`;
+        const created = await createProject(newName);
+        if (!created) {
+          useCadStore.getState().setStatus('Không tạo được dự án mới để phục hồi — thử lại.');
+          return;
+        }
+        const kept = detail.sheets.slice(0, MAX_SHEETS);
+        const record: SheetsRecord<PersistedCadSheet> = {
+          v: 1,
+          activeId: kept[0]?.id ?? 'cadsheet-0',
+          ts: Date.now(),
+          sheets: kept.map((s) => {
+            const doc = backfillRoomTypes(s.doc);
+            return {
+              id: s.id,
+              name: s.name,
+              doc,
+              viewport: { ...DEFAULT_VIEWPORT },
+              currentLayer: doc.layers[0]?.id ?? 'l-wall',
+            };
+          }),
+        };
+        await saveSheets(userId, ROUTE, record, created.id);
+        const warn = detail.degraded ? ` (⚠ không ráp trọn tới đúng điểm bạn chọn — dừng ở mốc "${detail.recoveredAsOf ?? '?'}" gần nhất ráp được)` : '';
+        useCadStore.getState().setStatus(`Đã phục hồi thành dự án mới "${newName}"${warn} — đang chuyển…`);
+        router.push(`/projects/${created.id}/cad`);
+      })();
+    };
+
     window.addEventListener('cad:idf-export-request', onExportIdf);
     window.addEventListener('cad:idf-import-request', onImportIdf);
     window.addEventListener('cad:ifpack-export-request', onExportIfpack);
+    const onOpenBackupBrowser = () => setBackupBrowserOpen(true);
+
     window.addEventListener('cad:ifpack-import-request', onRestoreIfpack);
+    window.addEventListener('cad:backup-restore-request', onRestoreFromBackup);
+    window.addEventListener('cad:backup-browse-open', onOpenBackupBrowser);
     window.addEventListener('cad:sheetset-pdf-export-request', onExportSheetSetPdf);
     return () => {
       window.removeEventListener('cad:idf-export-request', onExportIdf);
@@ -499,6 +554,8 @@ export default function CadSheets() {
       window.removeEventListener('cad:ifpack-export-request', onExportIfpack);
       window.removeEventListener('cad:sheetset-pdf-export-request', onExportSheetSetPdf);
       window.removeEventListener('cad:ifpack-import-request', onRestoreIfpack);
+      window.removeEventListener('cad:backup-restore-request', onRestoreFromBackup);
+      window.removeEventListener('cad:backup-browse-open', onOpenBackupBrowser);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -518,6 +575,13 @@ export default function CadSheets() {
       />
       {/* CadEditor tự có flex:1 → là con trực tiếp của cột này để giãn đầy. */}
       <CadEditor />
+      {backupBrowserOpen && (
+        <BackupRecoveryModal
+          projectId={bucketIdRef.current || userIdRef.current || 'local'}
+          projectName={useFlowStore.getState().flowName || 'InteriorFlow project'}
+          onClose={() => setBackupBrowserOpen(false)}
+        />
+      )}
     </div>
   );
 }

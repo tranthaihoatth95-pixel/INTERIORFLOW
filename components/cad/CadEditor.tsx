@@ -231,7 +231,7 @@ export default function CadEditor() {
     void chooseBackupFolder().then((ok) => {
       if (ok) {
         setBackupOn(true);
-        useCadStore.getState().setStatus('Đã bật backup tự động — ghi .ifpack mỗi 10 phút + mỗi lần lưu, giữ 5 bản gần nhất.');
+        useCadStore.getState().setStatus('Đã bật backup tự động — ghi mỗi 10 phút + mỗi lần lưu, giữ theo thang thời gian (phủ toàn bộ đời dự án).');
       }
     });
   };
@@ -428,11 +428,22 @@ export default function CadEditor() {
               id: 'auto-backup',
               label: backupOn ? 'Backup tự động: đang bật' : 'Bật backup tự động',
               sub: backupOn
-                ? 'Ghi .ifpack ra thư mục đã chọn mỗi 10 phút + mỗi lần lưu, giữ 5 bản gần nhất'
-                : 'Chọn 1 thư mục trên máy — tự ghi .ifpack định kỳ, không cần nhớ bấm Sao lưu',
+                ? 'Ghi ra thư mục đã chọn mỗi 10 phút + mỗi lần lưu — giữ theo thang thời gian (mọi bản 1 giờ đầu, thưa dần về sau, phủ toàn bộ đời dự án)'
+                : 'Chọn 1 thư mục trên máy — tự ghi backup định kỳ, không cần nhớ bấm Sao lưu',
               icon: <HardDrive size={15} />,
               onSelect: doChooseBackupFolder,
             },
+            ...(backupOn
+              ? [
+                  {
+                    id: 'backup-recover',
+                    label: 'Khôi phục từ backup…',
+                    sub: 'Xem lịch sử backup, chọn 1 điểm — tạo dự án MỚI, không đụng dự án đang mở',
+                    icon: <History size={15} />,
+                    onSelect: () => window.dispatchEvent(new CustomEvent('cad:backup-browse-open')),
+                  },
+                ]
+              : []),
           ]}
         />
         <MenuButton
