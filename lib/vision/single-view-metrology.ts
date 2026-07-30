@@ -88,7 +88,7 @@ export interface ScaleAnchorInput {
   vertical: boolean;
 }
 
-export type AnchorKind = 'cameraHeight' | 'door' | 'stairRiser' | 'tileModule' | 'tableTop' | 'seatHeight' | 'outlet' | 'depthMetric';
+export type AnchorKind = 'cameraHeight' | 'door' | 'bed' | 'stairRiser' | 'tileModule' | 'tableTop' | 'seatHeight' | 'outlet' | 'depthMetric';
 
 export interface ScaleResult {
   /** mm thế giới thật trên mỗi đơn vị "world" nội bộ (world dựng theo camera height = 1 đơn vị
@@ -126,15 +126,16 @@ export interface ObjectSilhouette {
 
 /* ═══════════════════════════ CONFIG — mọi hằng số neo (không hard-code rải rác) ═══════════════════════════ */
 
-export const ANCHOR_CONFIG: Record<AnchorKind, { minMm: number; maxMm: number; typicalMm: number; label: string }> = {
-  cameraHeight: { minMm: 1500, maxMm: 1600, typicalMm: 1550, label: 'Chiều cao máy ảnh (tầm mắt)' },
-  door: { minMm: 2000, maxMm: 2200, typicalMm: 2100, label: 'Cửa đi' },
-  stairRiser: { minMm: 150, maxMm: 180, typicalMm: 165, label: 'Bậc thang' },
-  tileModule: { minMm: 300, maxMm: 800, typicalMm: 600, label: 'Module gạch lát' },
-  tableTop: { minMm: 720, maxMm: 780, typicalMm: 750, label: 'Mặt bàn' },
-  seatHeight: { minMm: 400, maxMm: 450, typicalMm: 425, label: 'Mặt ngồi ghế' },
-  outlet: { minMm: 280, maxMm: 1220, typicalMm: 300, label: 'Ổ cắm/công tắc' },
-  depthMetric: { minMm: 0, maxMm: 1e9, typicalMm: 0, label: 'Depth map (chỉ kiểm chéo)' },
+export const ANCHOR_CONFIG: Record<AnchorKind, { minMm: number; maxMm: number; typicalMm: number; label: string; defaultVertical: boolean }> = {
+  cameraHeight: { minMm: 1500, maxMm: 1600, typicalMm: 1550, label: 'Chiều cao máy ảnh (tầm mắt)', defaultVertical: true },
+  door: { minMm: 2000, maxMm: 2200, typicalMm: 2100, label: 'Cửa đi (cao)', defaultVertical: true },
+  bed: { minMm: 1500, maxMm: 2000, typicalMm: 1600, label: 'Giường (rộng) — mốc rất đáng tin', defaultVertical: false },
+  stairRiser: { minMm: 150, maxMm: 180, typicalMm: 165, label: 'Bậc thang (cao)', defaultVertical: true },
+  tileModule: { minMm: 300, maxMm: 800, typicalMm: 600, label: 'Module gạch lát (cạnh)', defaultVertical: false },
+  tableTop: { minMm: 720, maxMm: 780, typicalMm: 750, label: 'Mặt bàn (cao)', defaultVertical: true },
+  seatHeight: { minMm: 400, maxMm: 450, typicalMm: 425, label: 'Mặt ngồi ghế (cao)', defaultVertical: true },
+  outlet: { minMm: 280, maxMm: 1220, typicalMm: 300, label: 'Ổ cắm/công tắc (cao so nền)', defaultVertical: true },
+  depthMetric: { minMm: 0, maxMm: 1e9, typicalMm: 0, label: 'Depth map (chỉ kiểm chéo)', defaultVertical: true },
 };
 
 /** Ngưỡng khớp 3 nguồn neo (§ "Ba nguồn khớp trong ±5% ⇒ tin"). */
@@ -705,4 +706,253 @@ export function calibrateFromImage(img: RgbaImage): CameraCalib | { needsManualS
   const calib = calibrateFromVanishingPoints(vpV.vp, vpA.vp, vpB.vp, img.width, img.height);
   if (!calib) return { needsManualScale: true, reason: 'Hình học 3 điểm tụ không trực giao được — hiệu chỉnh thất bại.' };
   return calib;
+}
+
+/* ═══════════════════════════ Thang PHƯƠNG PHÁP (không rơi tay không) — 30/07 sửa 2 lần ═══════════════════════════
+ *
+ * SỬA LẦN 1: bản gốc (trên) bắt MỌI phép đo đi qua điểm tụ (bước ①) — cần ảnh có cạnh thẳng dài
+ * 2 phương. Ảnh render nội thất ĐẸP (rèm, thảm cong, ánh sáng loang) thường KHÔNG có → báo lỗi
+ * trung thực nhưng "tay không". Nguyên tắc mới: "Bấm Render KHÔNG BAO GIỜ trả về tay không" —
+ * luôn có số + độ tin thật, tự TỤT phương pháp khi phương pháp trên không đủ điều kiện, KHÔNG
+ * dừng báo lỗi đỏ (lỗi đỏ CHỈ dành cho ngoại lệ thật — ảnh hỏng không đọc được).
+ *
+ * SỬA LẦN 2 (Hoà chỉ đúng — Luật #6 Đồng Bộ): 4 "bậc" KHÔNG được là cơ chế riêng — phải ÁNH XẠ
+ * vào 4 TẦNG AI đã có sẵn (`lib/ai/tiers.ts`, dùng CHUNG toàn app). `tier` field dưới đây là
+ * PHƯƠNG PHÁP ĐO (method quality 1-4, riêng của module này — hình học có gì dùng nấy), KHÁC với
+ * `AiTier` (1-4, hệ thống — Không AI/oneAI/AI Vừa/AI Cao). Node (2.2.88) đọc `ctx.aiTier` rồi
+ * hiện CẢ HAI: "Tầng <n> · phương pháp bậc <m> · độ tin <k>%" — không trộn làm một số.
+ *
+ * Phương pháp 4 (tốt nhất, hoạt động ở MỌI aiTier kể cả 1=Không AI — thuần hình học, 0 credit):
+ *   `calibrateFromImage()`+`anchorScale()`+`measureObject()` — điểm tụ ảnh. ~90%.
+ * Phương pháp 3 (neo tay — hoạt động ở MỌI aiTier, không cần AI): người dùng khoanh 2 điểm 1 vật
+ *   chuẩn (`tierManualAnchor`) HOẶC xác nhận 1 kích thước của chính món đang đo (`tier3`, đơn
+ *   giản hoá). ~80%.
+ * Phương pháp 2 (có mặt nạ — `ai.furnitureextract`/`ai.removebg`, tự động ở aiTier≥2 hoặc tầng
+ *   lõi tất định): tỉ lệ W:H khung bao mặt nạ tinh chỉnh dải chuẩn nghề. D vẫn 🟡. ~65%.
+ * Phương pháp 1 (LUÔN sẵn sàng, 0 điều kiện) — dải chuẩn nghề theo loại đồ NGƯỜI DÙNG CHỌN (không
+ *   tự đoán qua ảnh — đoán loại đồ bằng heuristic không đáng tin, đúng bước cấm "đoán bừa"). ~50%.
+ *
+ * ⚠️ CHƯA LÀM (disclose rõ, không giấu — ưu tiên xây 1→2→3→4, KHÔNG làm 4 trước theo yêu cầu):
+ * Tầng 2 auto-tìm vật neo qua oneAI (object detection) và Tầng 3 VLM tự ước category/tỉ lệ CHƯA
+ * có trong bản này — cần hạ tầng object-detection/VLM riêng, ngoài thời gian phiên này. Phương
+ * pháp 4/3/2/1 ở trên hoạt động ĐỘC LẬP với AI (không cần Tầng 2/3 mới đạt "luôn ra số thật").
+ */
+
+export type FurnitureCategory =
+  | 'sofa2'
+  | 'sofa3'
+  | 'armchair'
+  | 'bedSingle'
+  | 'bedDouble'
+  | 'bedQueen'
+  | 'bedKing'
+  | 'diningTable'
+  | 'coffeeTable'
+  | 'deskTable'
+  | 'wardrobe'
+  | 'nightstand'
+  | 'diningChair'
+  | 'other';
+
+/** Dải chuẩn nghề [min,max] mm — nguồn: thực hành nội thất phổ thông (tương tự tinh thần
+ * `ANCHOR_CONFIG` ở trên, không phải số bịa). `typical*` = trung điểm dải, dùng làm giá trị bậc 1. */
+export const FURNITURE_SIZE_PRIORS: Record<FurnitureCategory, { widthMm: [number, number]; depthMm: [number, number]; heightMm: [number, number]; label: string }> = {
+  sofa2: { widthMm: [1400, 1800], depthMm: [800, 950], heightMm: [800, 900], label: 'Sofa 2 chỗ' },
+  sofa3: { widthMm: [1800, 2300], depthMm: [850, 1000], heightMm: [800, 900], label: 'Sofa 3 chỗ' },
+  armchair: { widthMm: [700, 900], depthMm: [750, 900], heightMm: [750, 900], label: 'Ghế bành' },
+  bedSingle: { widthMm: [900, 1000], depthMm: [1900, 2000], heightMm: [400, 500], label: 'Giường đơn' },
+  bedDouble: { widthMm: [1350, 1500], depthMm: [1900, 2000], heightMm: [400, 500], label: 'Giường đôi' },
+  bedQueen: { widthMm: [1500, 1600], depthMm: [2000, 2100], heightMm: [400, 500], label: 'Giường Queen' },
+  bedKing: { widthMm: [1800, 2000], depthMm: [2000, 2100], heightMm: [400, 500], label: 'Giường King' },
+  diningTable: { widthMm: [1400, 1800], depthMm: [800, 950], heightMm: [720, 760], label: 'Bàn ăn' },
+  coffeeTable: { widthMm: [900, 1200], depthMm: [500, 700], heightMm: [350, 450], label: 'Bàn cà phê' },
+  deskTable: { widthMm: [1100, 1400], depthMm: [550, 700], heightMm: [720, 760], label: 'Bàn làm việc' },
+  wardrobe: { widthMm: [1500, 2400], depthMm: [550, 650], heightMm: [2000, 2400], label: 'Tủ quần áo' },
+  nightstand: { widthMm: [400, 550], depthMm: [350, 450], heightMm: [500, 600], label: 'Táp đầu giường' },
+  diningChair: { widthMm: [450, 550], depthMm: [500, 600], heightMm: [800, 950], label: 'Ghế ăn' },
+  other: { widthMm: [400, 2000], depthMm: [400, 900], heightMm: [400, 1200], label: 'Nội thất khác' },
+};
+
+export interface TieredMeasurement {
+  /** Phương pháp đo (method quality — CỦA MODULE NÀY), KHÁC `AiTier` hệ thống. Xem docstring khối. */
+  tier: 1 | 2 | 3 | 4;
+  tierLabel: string;
+  confidencePercent: number;
+  width: MeasurementValue;
+  depth: MeasurementValue;
+  height: MeasurementValue;
+  /** Gợi ý CỤ THỂ để lên bậc kế tiếp — undefined khi đã ở bậc 4 (không còn gì để lên). */
+  upgradeHint?: string;
+  /** true khi chưa có neo tay/hình học thật (tier ≤2) — UI nên mời khoanh vật neo. */
+  needsManualAnchor?: boolean;
+}
+
+function priorValue(range: [number, number]): number {
+  return (range[0] + range[1]) / 2;
+}
+function priorTolerance(range: [number, number]): number {
+  return (range[1] - range[0]) / 2;
+}
+
+/** Bậc 1 — dải chuẩn nghề theo loại đồ, KHÔNG cần ảnh/mặt nạ/neo gì cả. */
+function tier1(category: FurnitureCategory): TieredMeasurement {
+  const p = FURNITURE_SIZE_PRIORS[category];
+  const mk = (range: [number, number], basis: string): MeasurementValue => ({
+    valueMm: priorValue(range),
+    toleranceMm: priorTolerance(range),
+    kind: 'inferred',
+    basis,
+  });
+  return {
+    tier: 1,
+    tierLabel: `Bậc 1 — dải chuẩn nghề (${p.label})`,
+    confidencePercent: 50,
+    width: mk(p.widthMm, `Dải chuẩn nghề "${p.label}" — chưa tách được món trong ảnh.`),
+    depth: mk(p.depthMm, `Dải chuẩn nghề "${p.label}" — ảnh 2D không thấy mặt sau.`),
+    height: mk(p.heightMm, `Dải chuẩn nghề "${p.label}" — chưa tách được món trong ảnh.`),
+    upgradeHint: 'Tách được món trong ảnh (nút "Tách nội thất") sẽ tăng độ tin lên ~65%.',
+  };
+}
+
+/** Bậc 2 — tỉ lệ W:H khung bao mặt nạ tinh chỉnh bậc 1 (H làm neo, lệch ít hơn W giữa các món
+ * cùng loại). D vẫn 🟡 — ảnh 2D không đo được sâu, bất kể có mặt nạ hay không. */
+function tier2(category: FurnitureCategory, silhouette: ObjectSilhouette): TieredMeasurement {
+  const p = FURNITURE_SIZE_PRIORS[category];
+  const box = bbox(silhouette.front);
+  const pxW = Math.max(1, box.maxX - box.minX);
+  const pxH = Math.max(1, box.maxY - box.minY);
+  const hTypical = priorValue(p.heightMm);
+  const mmPerPx = hTypical / pxH;
+  const widthMm = pxW * mmPerPx;
+  const t1 = tier1(category);
+  return {
+    tier: 2,
+    tierLabel: `Bậc 2 — tỉ lệ khung bao mặt nạ (${p.label})`,
+    confidencePercent: 65,
+    width: {
+      valueMm: widthMm,
+      toleranceMm: widthMm * 0.2,
+      kind: 'measured',
+      basis: `Tỉ lệ rộng/cao khung bao mặt nạ × cao chuẩn nghề "${p.label}" (${Math.round(hTypical)}mm).`,
+    },
+    depth: t1.depth,
+    height: {
+      valueMm: hTypical,
+      toleranceMm: priorTolerance(p.heightMm),
+      kind: 'measured',
+      basis: `Cao chuẩn nghề "${p.label}" — chưa có neo thật để hiệu chỉnh riêng.`,
+    },
+    upgradeHint: 'Nhập 1 kích thước bạn biết của món này (vd rộng thật) để tăng độ tin lên ~80%.',
+  };
+}
+
+/** Bậc 3 — người dùng xác nhận 1 kích thước THẬT của chính món đang đo (đơn giản hoá thay vì
+ * khoanh vật neo riêng khác trong khung — xem docstring đầu khối). */
+function tier3(category: FurnitureCategory, silhouette: ObjectSilhouette, knownWidthMm: number): TieredMeasurement {
+  const p = FURNITURE_SIZE_PRIORS[category];
+  const box = bbox(silhouette.front);
+  const pxW = Math.max(1, box.maxX - box.minX);
+  const pxH = Math.max(1, box.maxY - box.minY);
+  const mmPerPx = knownWidthMm / pxW;
+  const heightMm = pxH * mmPerPx;
+  return {
+    tier: 3,
+    tierLabel: `Bậc 3 — neo bằng kích thước người dùng xác nhận (${p.label})`,
+    confidencePercent: 80,
+    width: { valueMm: knownWidthMm, toleranceMm: knownWidthMm * 0.03, kind: 'measured', basis: 'Người dùng xác nhận trực tiếp.' },
+    depth: {
+      valueMm: priorValue(p.depthMm),
+      toleranceMm: priorTolerance(p.depthMm),
+      kind: 'inferred',
+      basis: `Dải chuẩn nghề "${p.label}" — ảnh 2D không thấy mặt sau, kể cả khi đã neo rộng thật.`,
+    },
+    height: { valueMm: heightMm, toleranceMm: heightMm * 0.1, kind: 'measured', basis: 'Tỉ lệ khung bao mặt nạ × rộng thật người dùng xác nhận.' },
+    upgradeHint: 'Ảnh có đủ cạnh tường/sàn/trần thẳng sẽ tự động lên ~90% độ tin (không cần làm gì thêm).',
+  };
+}
+
+/** Neo tay THẬT — người dùng khoanh 2 điểm trên 1 vật chuẩn (`ANCHOR_CONFIG`) ở BẤT KỲ đâu trong
+ * khung hình (không nhất thiết là chính món đang đo, khác `tier3` ở trên). Tỉ lệ mm/px suy từ
+ * khoảng cách 2 điểm đó, áp thẳng lên khung bao mặt nạ món đang đo — giả định món đang đo VÀ vật
+ * neo ở GẦN CÙNG MẶT PHẲNG/ĐỘ SÂU (đơn giản hoá hợp lý cho ~80% độ tin, không cần camera calib). */
+function tierManualAnchor(
+  category: FurnitureCategory,
+  silhouette: ObjectSilhouette,
+  anchorKind: AnchorKind,
+  anchorPoints: [Pt2D, Pt2D],
+  anchorRealMm: number,
+): TieredMeasurement {
+  const p = FURNITURE_SIZE_PRIORS[category];
+  const anchorPx = Math.hypot(anchorPoints[1].x - anchorPoints[0].x, anchorPoints[1].y - anchorPoints[0].y) || 1;
+  const mmPerPx = anchorRealMm / anchorPx;
+  const box = bbox(silhouette.front);
+  const widthMm = (box.maxX - box.minX) * mmPerPx;
+  const heightMm = (box.maxY - box.minY) * mmPerPx;
+  const anchorLabel = ANCHOR_CONFIG[anchorKind].label;
+  return {
+    tier: 3,
+    tierLabel: `Bậc 3 — neo tay bằng "${anchorLabel}" (${Math.round(anchorRealMm)}mm)`,
+    confidencePercent: 80,
+    width: { valueMm: widthMm, toleranceMm: widthMm * 0.15, kind: 'measured', basis: `Neo tay: "${anchorLabel}" ${Math.round(anchorRealMm)}mm khoanh trong ảnh → mm/px → khung bao mặt nạ.` },
+    depth: {
+      valueMm: priorValue(p.depthMm),
+      toleranceMm: priorTolerance(p.depthMm),
+      kind: 'inferred',
+      basis: `Dải chuẩn nghề "${p.label}" — ảnh 2D không thấy mặt sau, kể cả khi đã neo tay.`,
+    },
+    height: { valueMm: heightMm, toleranceMm: heightMm * 0.15, kind: 'measured', basis: `Neo tay: "${anchorLabel}" ${Math.round(anchorRealMm)}mm khoanh trong ảnh → mm/px → khung bao mặt nạ.` },
+    upgradeHint: 'Ảnh có đủ cạnh tường/sàn/trần thẳng sẽ tự động lên ~90% độ tin (không cần làm gì thêm).',
+  };
+}
+
+/** Bậc 4 — engine hiệu chỉnh điểm tụ gốc (`calibrateFromImage`+`anchorScale`+`measureObject`,
+ * KHÔNG đổi). Trả null nếu không đạt điều kiện — caller tự tụt xuống bậc 3. */
+function tryTier4(category: FurnitureCategory, silhouette: ObjectSilhouette, image: RgbaImage, cameraHeightMm: number): TieredMeasurement | null {
+  const calib = calibrateFromImage(image);
+  if ('needsManualScale' in calib) return null;
+  const scale = anchorScale(calib, [
+    { kind: 'cameraHeight', realLengthMm: cameraHeightMm, imagePoints: [{ x: 0, y: 0 }, { x: 0, y: 0 }], vertical: true },
+  ]);
+  const result = measureObject(calib, scale, silhouette);
+  const p = FURNITURE_SIZE_PRIORS[category];
+  return {
+    tier: 4,
+    tierLabel: 'Bậc 4 — hiệu chỉnh camera từ điểm tụ ảnh',
+    confidencePercent: 90,
+    width: result.width,
+    depth: result.depth.kind === 'measured' ? result.depth : { ...result.depth, basis: `${result.depth.basis} (dải chuẩn nghề "${p.label}" dùng làm tỉ lệ ước lượng — xem prior tỉ lệ trong basis gốc)` },
+    height: result.height,
+  };
+}
+
+/**
+ * ĐIỀU PHỐI PHƯƠNG PHÁP — hàm DUY NHẤT node `vision.measureobject` (2.2.88) gọi. KHÔNG BAO GIỜ
+ * throw vì thiếu cấu trúc/neo (tự tụt phương pháp) — CHỈ throw khi ảnh thật sự hỏng (decode lỗi,
+ * ném ở caller trước khi gọi hàm này, không phải trong hàm này). Thứ tự thử: 4 (tự động, mọi
+ * aiTier) → 3 (neo tay — 2 điểm HOẶC tự xác nhận rộng) → 2 (có mặt nạ) → 1 (chỉ loại đồ).
+ */
+export function measureObjectTiered(opts: {
+  category: FurnitureCategory;
+  silhouette?: ObjectSilhouette;
+  image?: RgbaImage;
+  cameraHeightMm?: number;
+  knownWidthMm?: number;
+  manualAnchor?: { kind: AnchorKind; points: [Pt2D, Pt2D]; realMm: number };
+}): TieredMeasurement {
+  const { category, silhouette, image, cameraHeightMm, knownWidthMm, manualAnchor } = opts;
+
+  if (image && silhouette) {
+    const t4 = tryTier4(category, silhouette, image, cameraHeightMm ?? ANCHOR_CONFIG.cameraHeight.typicalMm);
+    if (t4) return t4;
+  }
+  if (silhouette && manualAnchor && manualAnchor.realMm > 0) {
+    return tierManualAnchor(category, silhouette, manualAnchor.kind, manualAnchor.points, manualAnchor.realMm);
+  }
+  if (silhouette && knownWidthMm && knownWidthMm > 0) {
+    return tier3(category, silhouette, knownWidthMm);
+  }
+  if (silhouette) {
+    return { ...tier2(category, silhouette), needsManualAnchor: true };
+  }
+  return { ...tier1(category), needsManualAnchor: true };
 }

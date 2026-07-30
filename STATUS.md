@@ -5,7 +5,7 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (30/07 khuya — 2.2.87/2.2.88 đo món đồ xong, npm test script còn treo)
+## Hiện tại (30/07 khuya — 2.2.87/2.2.88 sửa SANG cascade "không-bao-giờ-fail", 2 mã mới chờ xác nhận)
 Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này (nhiều việc, thứ tự commit thật):
 - ✅ **7.3.31 mở rộng** — hợp nhất `Header.tsx`+`StudioBar.tsx` → `AppChrome.tsx`, sửa TRIỆT ĐỂ
   overlap 1024px (tái cấu trúc Tệp/StageSwitcher ra khỏi hộp co + wordmark→logomark ở `xl` +
@@ -18,21 +18,33 @@ Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này (nhiều vi�
   vị `FlowRun`). Phát hiện `7.3.32` (⬜, header tràn 179px@640/51px@768) — cấp mã, chưa sửa.
 - ✅ **7.1.19 (Lark Wiki) MERGE XONG** — worktree phụ dọn sạch. **VẪN 🟡** — chờ 3 khoá Lark trong
   `.env.local` để verify bằng call thật.
-- ✅ **2.2.87 + 2.2.88 (đo món đồ từ 1 ảnh)** — `docs/TU-VAN-ANH-SANG-BAN-VE-2026-07-30.md` "Lát
-  cắt 1". `lib/vision/single-view-metrology.ts` (2.2.87): hiệu chỉnh camera từ điểm tụ + neo thang
-  đo + đo R×S×C, 28/28 test verify bằng cảnh 3D tổng hợp chiếu qua camera biết trước (bắt được 2
-  bug hình học thật nhờ test, không phải suy luận suông). `vision.measureobject` node + thẻ Tool
-  Mode thứ 7 "Đo món đồ" (2.2.88) — tái dùng `extractForeground()`/`composeBoard()` có sẵn, không
-  viết engine mới. Verify UI thật: chạy qua `runNode()` thật, đường lỗi "không đủ neo" đúng thiết
-  kế; **đường đo-thành-công CHƯA thử ảnh thật** — khuyến nghị Hoà thử 1 ảnh phòng thật.
-- ⏭️ **Đang chờ Hoà xác nhận mã `7.1.21`** — thêm script `"test"` vào `package.json` (hiện không có).
+- ✅ **2.2.87 + 2.2.88 (đo món đồ từ 1 ảnh) — SỬA SANG CASCADE 4 BẬC cùng đêm** — bản gốc (điểm
+  tụ bắt buộc) đúng thiết kế ban đầu nhưng THẤT BẠI TRUNG THỰC quá nhiều với ảnh render đẹp thiếu
+  cạnh thẳng 2 phương (Hoà tự nhận lỗi thiết kế, không phải lỗi code) → nguyên tắc mới "Bấm Render
+  KHÔNG BAO GIỜ trả về tay không". `single-view-metrology.ts` thêm `measureObjectTiered()` — 4 bậc
+  tự tụt (dải chuẩn nghề → tỉ lệ mặt nạ → neo tay 2-điểm/tự xác nhận → điểm tụ gốc), KHÔNG BAO GIỜ
+  throw vì thiếu cấu trúc/neo, tách bạch khỏi `AiTier` hệ thống (Luật #6, không quản chi phí 2 lần).
+  `ToolModeForm.tsx` viết lại: `category` hiện chính + "Tinh chỉnh" (2 slider cũ) thu gọn mặc định
+  ĐÓNG + UI khoanh tay 2-điểm mới cho vật chuẩn + `MeasurementPanel` hiện "Tầng N · Bậc M · độ tin
+  K%". 46/46 test (28 gốc + 18 mới) + 100+ test khác cả repo sạch, tsc+eslint sạch. ⚠️ **CHƯA verify
+  đường khoanh-tay+ra-số-thật trong browser** — môi trường test không đưa được file ảnh thật qua
+  input (đã thử 2 cách, không kích hoạt được) — bù bằng đối chiếu kiểu dữ liệu + 46 test đơn vị
+  đúng hàm node gọi; khuyến nghị Hoà tự thử 1 ảnh thật. ⚠️ **CHƯA LÀM, disclose rõ**: Tầng 2 (oneAI
+  tự tìm vật neo) / Tầng 3 (VLM ước category) của bản đồ 4-AiTier Hoà yêu cầu — thiếu hạ tầng
+  object-detection-có-bbox + VLM tách biệt kiến trúc khỏi hệ `fal`-tier, để đợt sau. Chi tiết đủ →
+  `docs/IF-FEATURE-TREE.md` dòng `2.2.87`/`2.2.88`.
+- ⏭️ **2 mã mới chờ Hoà xác nhận** (đụng số `7.1.21`, tự xếp lại — xem ghi chú trong cây):
+  `7.1.21` = script `"test"` vào `package.json` (đề xuất trước, giữ nguyên số). `7.1.22` = Bộ nhớ
+  đo đạc — Tầng 1 tự học kích thước/tỉ lệ/chiều cao máy ảnh theo dữ liệu nhà (Prisma), CHƯA CODE.
 - 🟡 **2.2.70** (a)(b) — 2 lỗi nhỏ sửa kèm — CODE XONG, CHƯA COMMIT, gộp cùng đợt ảnh thật 5 thẻ
   Tool Mode (đang CHỜ Hoà duyệt credit trước khi chạy AI thật).
 - ⏸️ **Còn treo**: `2.1.9.q` (BOQ groundwork) → BOQ `2.1.9.p` (matId đã CHỐT, chờ quyết "có làm
   engine không"). B2/B3/B4 chưa làm — B3 cần THỬ TAY thật.
 
 ## Worktree đang mở
-Không có (dọn sạch 30/07 khuya — `.worktrees/if-lark`/`feat/7.1.19-lark-wiki` đã merge+prune+xoá).
+Không có. Dọn thêm 1 thứ 30/07 khuya: `.worktrees/if-lark/` (thư mục VẬT LÝ còn sót trên đĩa dù
+`git worktree list` đã không còn đăng ký nó, `.git` bên trong trỏ đường dẫn VM chết) — xác nhận đủ
+4 điều kiện an toàn (nhánh đã merge+xoá, không dev server, không branch riêng chưa lưu) rồi `rm -rf`.
 
 ## Chờ USER quyết
 - **NT1** (gộp `LibraryPanel`+`LibraryBrowser`, LỚN) và **NT5** (cây thư mục thật, RẤT LỚN) —

@@ -11,7 +11,7 @@
  */
 import { composeBoard } from '@/lib/imaging';
 import { loadImage } from '@/lib/imaging';
-import type { MeasurementResult, MeasurementValue } from '@/lib/vision/single-view-metrology';
+import type { TieredMeasurement, MeasurementValue } from '@/lib/vision/single-view-metrology';
 
 const PANEL_W = 2840;
 const PANEL_H = 2000;
@@ -24,7 +24,7 @@ function fmtMm(v: MeasurementValue): string {
 
 /** Vẽ panel [ảnh trái · bảng số đo phải] ở độ phân giải cao — trả dataURL PNG, đưa vào
  * `composeBoard({images:[panel]})` để có khung/300dpi/tiêu đề cuối cùng. */
-async function buildMeasurementPanel(photoDataUrl: string, result: MeasurementResult, meta: { calibConfidence: number; scaleConfidence: number }): Promise<string> {
+async function buildMeasurementPanel(photoDataUrl: string, result: TieredMeasurement, methodLine: string): Promise<string> {
   const canvas = document.createElement('canvas');
   canvas.width = PANEL_W;
   canvas.height = PANEL_H;
@@ -78,11 +78,7 @@ async function buildMeasurementPanel(photoDataUrl: string, result: MeasurementRe
   y += 20 * SCALE;
   ctx.font = `400 ${22 * SCALE}px system-ui, sans-serif`;
   ctx.fillStyle = '#71717a';
-  ctx.fillText(
-    `Độ tin camera ${(meta.calibConfidence * 100).toFixed(0)}% · thang đo ${(meta.scaleConfidence * 100).toFixed(0)}%`,
-    px,
-    y,
-  );
+  ctx.fillText(methodLine, px, y);
   y += lh * 0.9;
 
   // ĐÓNG DẤU CẢNH BÁO — BẮT BUỘC, không tham số tắt.
@@ -116,16 +112,17 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: num
   if (line) ctx.fillText(line, x, cy);
 }
 
-/** Xuất spec sheet đầy đủ (300dpi, khung out.board) rồi tải xuống — dùng trong ToolModeForm. */
+/** Xuất spec sheet đầy đủ (300dpi, khung out.board) rồi tải xuống — dùng trong ToolModeForm.
+ * `methodLine` = dòng "Tầng N · aiTierName · Bậc M · độ tin K%" đã dựng sẵn ở caller (khớp đúng
+ * dòng hiện trên MeasurementPanel — không dựng lại logic ghép chuỗi lần 2 ở đây). */
 export async function exportMeasurementSpecSheet(opts: {
   photoDataUrl: string;
-  result: MeasurementResult;
-  calibConfidence: number;
-  scaleConfidence: number;
+  result: TieredMeasurement;
+  methodLine: string;
   projectName: string;
   studioName: string;
 }): Promise<void> {
-  const panel = await buildMeasurementPanel(opts.photoDataUrl, opts.result, opts);
+  const panel = await buildMeasurementPanel(opts.photoDataUrl, opts.result, opts.methodLine);
   const board = await composeBoard({ images: [panel], projectName: opts.projectName, studioName: opts.studioName });
   const a = document.createElement('a');
   a.href = board;

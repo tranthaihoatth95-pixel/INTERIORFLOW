@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Upload } from 'lucide-react';
+import { ArrowLeft, Upload, ChevronDown } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { runNode } from '@/lib/execution';
 import { getDefinition, defaultParams } from '@/lib/nodes/registry';
@@ -17,8 +17,16 @@ import { taskCardById } from '@/lib/render-studio/task-cards';
 import { ensureToolModeGraph } from '@/lib/render-studio/tool-mode-graph';
 import { exportMeasurementSpecSheet } from '@/lib/render-studio/measurement-spec-sheet';
 import { getActiveBrandKit } from '@/lib/present-editor/brand-kit';
-import type { MeasurementResult } from '@/lib/vision/single-view-metrology';
+import { ANCHOR_CONFIG, type TieredMeasurement, type AnchorKind, type Pt2D } from '@/lib/vision/single-view-metrology';
 import type { ParamDef } from '@/lib/types';
+
+/** Tham số của node "Đo món đồ" GOM vào "Tinh chỉnh" thu gọn — người dùng bấm Render trước, ra
+ * kết quả rồi mới cần sờ tới (30/07, Hoà chỉ ra bản trước bày cả 2 slider ra trước khi chạy). */
+const MEASURE_ADVANCED_PARAM_IDS = new Set(['cameraHeightMm', 'bgTolerance']);
+/** Vật chuẩn cho UI khoanh tay — bỏ cameraHeight (đã có slider riêng) và depthMetric (chỉ kiểm chéo). */
+const MANUAL_ANCHOR_KINDS: AnchorKind[] = ['bed', 'door', 'tableTop', 'stairRiser', 'tileModule', 'seatHeight', 'outlet'];
+
+type MeasurePayload = TieredMeasurement & { aiTier: number; aiTierName: string; hasSilhouette: boolean; warnings: string[] };
 
 export default function ToolModeForm({ cardId }: { cardId: string }) {
   const card = taskCardById(cardId);
@@ -39,7 +47,16 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
 
   const def = card ? getDefinition(card.nodeType) : null;
   const [values, setValues] = useState<Record<string, string | number>>(() => (def ? defaultParams(def) : {}));
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // 2.2.88 — 2 điểm khoanh tay cho neo thang đo (chỉ thẻ "Đo món đồ"). Toạ độ NATURAL PIXEL của
+  // ảnh gốc (không phải px màn hình) — quy đổi ở onImageClick(). Sống ở state cục bộ (KHÔNG cần
+  // sống sót qua unmount như ảnh/refs — chỉ là thao tác đang dở trong 1 lượt xem thẻ này).
+  const [anchorPoints, setAnchorPoints] = useState<Pt2D[]>([]);
+  const [anchorKind, setAnchorKind] = useState<AnchorKind>('bed');
+  const [anchorMm, setAnchorMm] = useState<number>(ANCHOR_CONFIG.bed.typicalMm);
 
   // Đổi thẻ → chỉ reset THAM SỐ (node AI khác thì params cũ không còn hợp lệ nữa) — KHÔNG đụng
   // `imageDataUrl`/`nodeRefs` (ở store, tự sống sót qua unmount/remount). Việc thay node AI thật
@@ -47,6 +64,7 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
   // buildOrUpdateGraph(), đúng lúc user bấm Render — không mutate graph chỉ vì đang lướt xem thẻ.
   useEffect(() => {
     if (def) setValues(defaultParams(def));
+    setAnchorPoints([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardId]);
 
@@ -62,29 +80,36 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      if (typeof reader.result === 'string') setImageDataUrl(reader.result);
+      if (typeof reader.result === 'string') {
+        setImageDataUrl(reader.result);
+        setAnchorPoints([]); // ảnh mới — 2 điểm khoanh cũ (nếu có) không còn nghĩa gì trên ảnh này.
+      }
     };
     reader.readAsDataURL(file);
   };
 
-  const buildOrUpdateGraph = useCallback((): string => {
-    const store = useFlowStore.getState();
-    const refs = ensureToolModeGraph(
-      {
-        addNode: store.addNode,
-        deleteNode: store.deleteNode,
-        onConnect: store.onConnect,
-        lastNodeId: () => useFlowStore.getState().nodes.at(-1)!.id,
-      },
-      nodeRefs,
-      cardId,
-      card!.nodeType,
-    );
-    if (refs !== nodeRefs) setNodeRefs(refs);
-    if (imageDataUrl) store.updateParam(refs.imgId, 'file', imageDataUrl);
-    for (const [k, v] of Object.entries(values)) store.updateParam(refs.aiId, k, v);
-    return refs.aiId;
-  }, [card, cardId, imageDataUrl, values, nodeRefs, setNodeRefs]);
+  const buildOrUpdateGraph = useCallback(
+    (extraParams?: Record<string, string | number>): string => {
+      const store = useFlowStore.getState();
+      const refs = ensureToolModeGraph(
+        {
+          addNode: store.addNode,
+          deleteNode: store.deleteNode,
+          onConnect: store.onConnect,
+          lastNodeId: () => useFlowStore.getState().nodes.at(-1)!.id,
+        },
+        nodeRefs,
+        cardId,
+        card!.nodeType,
+      );
+      if (refs !== nodeRefs) setNodeRefs(refs);
+      if (imageDataUrl) store.updateParam(refs.imgId, 'file', imageDataUrl);
+      for (const [k, v] of Object.entries(values)) store.updateParam(refs.aiId, k, v);
+      if (extraParams) for (const [k, v] of Object.entries(extraParams)) store.updateParam(refs.aiId, k, v);
+      return refs.aiId;
+    },
+    [card, cardId, imageDataUrl, values, nodeRefs, setNodeRefs],
+  );
 
   const onRender = () => {
     if (!card || !imageDataUrl) return;
@@ -94,6 +119,33 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
       return;
     }
     void runNode(aiId);
+  };
+
+  /** 2.2.88 — bấm "Dùng vật chuẩn này" sau khi đã khoanh 2 điểm: ghi neo tay vào node (param
+   * KHÔNG khai báo trong `NodeDefinition.params` — xem ghi chú `manualAnchorJson` ở metrology.ts)
+   * rồi chạy lại NGAY, không bắt bấm Render 2 lần. */
+  const onConfirmAnchorAndRerun = () => {
+    if (!card || !imageDataUrl || anchorPoints.length !== 2) return;
+    const payload = JSON.stringify({ kind: anchorKind, points: anchorPoints, realMm: anchorMm });
+    const aiId = buildOrUpdateGraph({ manualAnchorJson: payload });
+    void runNode(aiId);
+  };
+
+  /** Toạ độ click trên `<img>` (object-fit:contain) → toạ độ pixel THẬT của ảnh gốc — object-fit
+   * contain co-giãn giữ tỉ lệ + letterbox 2 bên, phải trừ phần letterbox trước khi quy đổi tỉ lệ. */
+  const onImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
+    const img = imgRef.current;
+    if (!img || !img.naturalWidth) return;
+    const rect = img.getBoundingClientRect();
+    const scale = Math.min(rect.width / img.naturalWidth, rect.height / img.naturalHeight);
+    const dispW = img.naturalWidth * scale;
+    const dispH = img.naturalHeight * scale;
+    const offX = (rect.width - dispW) / 2;
+    const offY = (rect.height - dispH) / 2;
+    const px = (e.clientX - rect.left - offX) / scale;
+    const py = (e.clientY - rect.top - offY) / scale;
+    if (px < 0 || py < 0 || px > img.naturalWidth || py > img.naturalHeight) return; // click vào vùng letterbox
+    setAnchorPoints((pts) => (pts.length >= 2 ? [{ x: px, y: py }] : [...pts, { x: px, y: py }]));
   };
 
   if (!card || !def) {
@@ -106,16 +158,19 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
     );
   }
 
-  const editableParams = def.params.filter(
+  const isMeasureCard = card.id === 'measureobject';
+  const allEditableParams = def.params.filter(
     (p): p is Extract<ParamDef, { kind: 'select' | 'slider' | 'text' }> =>
       p.kind === 'select' || p.kind === 'slider' || p.kind === 'text',
   );
+  // "Đo món đồ": category hiện NGAY (lựa chọn chính trước khi Render); cameraHeight/bgTolerance
+  // gom vào "Tinh chỉnh" thu gọn. Thẻ khác: giữ nguyên hành vi cũ (mọi param hiện thẳng).
+  const primaryParams = isMeasureCard ? allEditableParams.filter((p) => !MEASURE_ADVANCED_PARAM_IDS.has(p.id)) : allEditableParams;
+  const advancedParams = isMeasureCard ? allEditableParams.filter((p) => MEASURE_ADVANCED_PARAM_IDS.has(p.id)) : [];
 
   const outputUrl = run?.outputs?.image?.value;
-  // 2.2.88 — thẻ "Đo món đồ" xuất TEXT (JSON đo lường), không phải ảnh — nhánh hiển thị riêng.
-  const isMeasureCard = card.id === 'measureobject';
   const measurementJson = isMeasureCard ? run?.outputs?.measurement?.value : undefined;
-  const measurement: (MeasurementResult & { calibConfidence: number; scaleConfidence: number }) | null =
+  const measurement: MeasurePayload | null =
     typeof measurementJson === 'string'
       ? (() => {
           try {
@@ -156,35 +211,144 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
           <div>
             <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={onPickFile} />
             <div
-              onClick={() => fileInputRef.current?.click()}
-              role="button"
-              tabIndex={0}
               style={{
+                position: 'relative',
                 aspectRatio: '4/3',
                 border: '1px dashed var(--border)',
                 borderRadius: 10,
                 display: 'grid',
                 placeItems: 'center',
-                cursor: 'pointer',
                 overflow: 'hidden',
                 background: 'var(--field)',
               }}
             >
               {imageDataUrl ? (
-                <img src={imageDataUrl} alt="Ảnh gốc" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                <>
+                  <img
+                    ref={imgRef}
+                    src={imageDataUrl}
+                    alt="Ảnh gốc"
+                    onClick={isMeasureCard ? onImageClick : () => fileInputRef.current?.click()}
+                    title={isMeasureCard ? 'Bấm 2 điểm trên 1 vật chuẩn (vd 2 đầu giường) để neo thang đo tay' : undefined}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: 'pointer' }}
+                  />
+                  {isMeasureCard &&
+                    anchorPoints.map((p, i) => {
+                      const img = imgRef.current;
+                      if (!img || !img.naturalWidth) return null;
+                      const rect = img.getBoundingClientRect();
+                      const scale = Math.min(rect.width / img.naturalWidth, rect.height / img.naturalHeight);
+                      const dispW = img.naturalWidth * scale;
+                      const dispH = img.naturalHeight * scale;
+                      const left = (rect.width - dispW) / 2 + p.x * scale;
+                      const top = (rect.height - dispH) / 2 + p.y * scale;
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            position: 'absolute',
+                            left,
+                            top,
+                            width: 10,
+                            height: 10,
+                            marginLeft: -5,
+                            marginTop: -5,
+                            borderRadius: '50%',
+                            background: 'var(--accent)',
+                            border: '2px solid #fff',
+                            pointerEvents: 'none',
+                          }}
+                        />
+                      );
+                    })}
+                </>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: 'var(--t4)' }}>
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  role="button"
+                  tabIndex={0}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: 'var(--t4)', cursor: 'pointer' }}
+                >
                   <Upload size={20} />
                   <span style={{ fontSize: 12 }}>Thả ảnh vào đây</span>
                 </div>
               )}
             </div>
 
+            {isMeasureCard && imageDataUrl && (
+              <div style={{ marginTop: 8, fontSize: 11, color: 'var(--t4)' }}>
+                {anchorPoints.length === 0 && 'Tuỳ chọn: bấm 2 điểm trên 1 vật chuẩn trong ảnh (vd 2 đầu giường) để tăng độ tin.'}
+                {anchorPoints.length === 1 && 'Đã đặt 1 điểm — bấm điểm thứ 2 để hoàn tất.'}
+              </div>
+            )}
+            {isMeasureCard && anchorPoints.length === 2 && (
+              <div style={{ marginTop: 10, padding: 12, borderRadius: 8, border: '1px solid var(--accent-ring)', background: 'var(--accent-soft)' }}>
+                <div style={{ fontSize: 11, color: 'var(--t2)', marginBottom: 6 }}>Vật chuẩn vừa khoanh là gì?</div>
+                <select
+                  value={anchorKind}
+                  onChange={(e) => {
+                    const k = e.target.value as AnchorKind;
+                    setAnchorKind(k);
+                    setAnchorMm(ANCHOR_CONFIG[k].typicalMm);
+                  }}
+                  style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)', fontSize: 12, marginBottom: 6 }}
+                >
+                  {MANUAL_ANCHOR_KINDS.map((k) => (
+                    <option key={k} value={k}>
+                      {ANCHOR_CONFIG[k].label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  value={anchorMm}
+                  onChange={(e) => setAnchorMm(+e.target.value)}
+                  style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)', fontSize: 12, marginBottom: 8 }}
+                />
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    type="button"
+                    onClick={onConfirmAnchorAndRerun}
+                    style={{ flex: 1, padding: '7px', borderRadius: 6, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Dùng vật chuẩn này, đo lại
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAnchorPoints([])}
+                    style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', color: 'var(--t3)', fontSize: 12, cursor: 'pointer' }}
+                  >
+                    Xoá
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {editableParams.map((p) => (
+              {primaryParams.map((p) => (
                 <ParamControl key={p.id} param={p} value={values[p.id]} onChange={(v) => setValues((s) => ({ ...s, [p.id]: v }))} />
               ))}
             </div>
+
+            {advancedParams.length > 0 && (
+              <div style={{ marginTop: 14 }}>
+                <button
+                  type="button"
+                  onClick={() => setAdvancedOpen((o) => !o)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: 'var(--t3)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+                >
+                  <ChevronDown size={13} style={{ transform: advancedOpen ? 'rotate(180deg)' : undefined, transition: 'transform .15s' }} />
+                  Tinh chỉnh
+                </button>
+                {advancedOpen && (
+                  <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {advancedParams.map((p) => (
+                      <ParamControl key={p.id} param={p} value={values[p.id]} onChange={(v) => setValues((s) => ({ ...s, [p.id]: v }))} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <button
               type="button"
@@ -271,14 +435,15 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
 }
 
 /** 2.2.88 — bảng R×S×C cho thẻ "Đo món đồ": số 🟢 ĐO màu `--success`, số 🟡 SUY màu `--warning`
- * + dấu `~` + tooltip nêu `basis` (đúng yêu cầu "KHÔNG cho số 🟡 hiện giống số 🟢"). */
+ * + dấu `~` + tooltip nêu `basis`. Luôn hiện "Tầng N · phương pháp bậc M · độ tin K%" (30/07 —
+ * KHÔNG BAO GIỜ chỉ hiện chữ đỏ rồi dừng, trừ ngoại lệ thật — xem `status==='error'`). */
 function MeasurementPanel({
   measurement,
   status,
   error,
   progress,
 }: {
-  measurement: (MeasurementResult & { calibConfidence: number; scaleConfidence: number }) | null;
+  measurement: MeasurePayload | null;
   status: string | undefined;
   error: string | undefined;
   progress: number | undefined;
@@ -306,7 +471,7 @@ function MeasurementPanel({
     );
   }
 
-  const rows: { label: string; v: MeasurementResult['width'] }[] = [
+  const rows: { label: string; v: MeasurePayload['width'] }[] = [
     { label: 'Rộng · Width', v: measurement.width },
     { label: 'Sâu · Depth', v: measurement.depth },
     { label: 'Cao · Height', v: measurement.height },
@@ -314,6 +479,9 @@ function MeasurementPanel({
 
   return (
     <div style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 18, background: 'var(--field)' }}>
+      <div style={{ fontSize: 11, color: 'var(--t3)', marginBottom: 12 }}>
+        Tầng {measurement.aiTier} · {measurement.aiTierName} · {measurement.tierLabel} · độ tin <b style={{ color: 'var(--t1)' }}>{measurement.confidencePercent}%</b>
+      </div>
       {rows.map(({ label, v }) => {
         const measured = v.kind === 'measured';
         const color = measured ? 'var(--success)' : 'var(--warning)';
@@ -328,12 +496,12 @@ function MeasurementPanel({
           </div>
         );
       })}
-      <div style={{ fontSize: 11, color: 'var(--t4)', marginTop: 4 }}>
-        Độ tin camera {(measurement.calibConfidence * 100).toFixed(0)}% · thang đo {(measurement.scaleConfidence * 100).toFixed(0)}%
-      </div>
+      {measurement.upgradeHint && (
+        <div style={{ fontSize: 11, color: 'var(--accent)', marginTop: 4, marginBottom: 8 }}>💡 {measurement.upgradeHint}</div>
+      )}
       <div
         style={{
-          marginTop: 12,
+          marginTop: 8,
           padding: '8px 10px',
           borderRadius: 8,
           border: '1px solid var(--warning)',
@@ -354,7 +522,7 @@ function MeasurementExportButton({
   measurement,
 }: {
   imageDataUrl: string;
-  measurement: MeasurementResult & { calibConfidence: number; scaleConfidence: number };
+  measurement: MeasurePayload;
 }) {
   const flowName = useFlowStore((s) => s.flowName);
   const [busy, setBusy] = useState(false);
@@ -369,8 +537,7 @@ function MeasurementExportButton({
           await exportMeasurementSpecSheet({
             photoDataUrl: imageDataUrl,
             result: measurement,
-            calibConfidence: measurement.calibConfidence,
-            scaleConfidence: measurement.scaleConfidence,
+            methodLine: `Tầng ${measurement.aiTier} · ${measurement.aiTierName} · ${measurement.tierLabel} · độ tin ${measurement.confidencePercent}%`,
             projectName: flowName,
             studioName,
           });

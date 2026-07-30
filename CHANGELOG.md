@@ -1,5 +1,63 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 30/07 khuya (đợt 3) — 2.2.87+2.2.88 SỬA SANG cascade "không-bao-giờ-fail" + dọn worktree cũ + 2 mã mới
+- **Lý do sửa cùng đêm vừa ship (đợt 2, xem mục ngay dưới)**: bản gốc bắt buộc hiệu chỉnh camera từ
+  điểm tụ — ĐÚNG thiết kế ban đầu nhưng THẤT BẠI TRUNG THỰC quá thường xuyên với ảnh render đẹp
+  (rèm/thảm cong/sáng mềm hiếm cạnh thẳng 2 phương). Hoà tự nhận đây là lỗi thiết kế của brief, không
+  phải lỗi code ("báo lỗi trung thực thay vì đoán bừa là đúng, nhưng brief bắt sai đường"). Nguyên tắc
+  mới, ưu tiên cao nhất: **"Bấm Render KHÔNG BAO GIỜ được trả về tay không."**
+- **`single-view-metrology.ts`**: thêm `measureObjectTiered()` — cascade 4 BẬC tự tụt, KHÔNG BAO GIỜ
+  throw vì thiếu cấu trúc/mặt nạ/neo (chỉ throw ở tầng gọi khi ảnh THẬT sự hỏng — CORS/corrupt).
+  Bậc 1 = dải chuẩn nghề theo loại đồ (`FURNITURE_SIZE_PRIORS` 14 loại, ~50% tin, ĐÁY không bao giờ
+  fail, không cần ảnh/mặt nạ gì). Bậc 2 = tỉ lệ khung bao mặt nạ tinh chỉnh Bậc 1 (~65%). Bậc 3 = neo
+  tay 2-điểm-khoanh bất kỳ trong khung (`tierManualAnchor`, `ANCHOR_CONFIG` thêm `bed` 1500-2000mm
+  "mốc rất đáng tin") hoặc người dùng tự xác nhận 1 kích thước của chính món (`tier3`, ~80%). Bậc 4 =
+  engine điểm tụ gốc KHÔNG ĐỔI (`tryTier4`, ~90%, trả `null` không throw khi thiếu cấu trúc, caller tự
+  tụt Bậc 3). "Phương pháp" (bậc đo, độc lập chất lượng dữ liệu) TÁCH BẠCH khỏi `AiTier` hệ thống
+  (`lib/ai/tiers.ts`, chọn provider/chi phí) — đúng Luật #6, không dựng 2 mặt quản chi phí song song;
+  kể cả `aiTier=1` "Không AI" vẫn đạt Bậc 3/4 nếu ảnh/thao tác cho phép. 46/46 test (28 gốc giữ
+  nguyên + 18 mới: ảnh mềm không cạnh thẳng vẫn ra số hữu hạn·nền trắng+1 vật→Bậc 1-2·gọi chỉ với
+  `category` không ảnh/mặt nạ/neo vẫn ra số·neo tay 2 điểm→Bậc 3 đúng `kind:'measured'`).
+- **`metrology.ts` node** rewrite: parse `manualAnchorJson` phòng thủ (JSON hỏng → bỏ qua im lặng,
+  không throw), gọi `measureObjectTiered()`, payload thêm `aiTier`/`aiTierName` (CHỈ để ghi nhãn hiển
+  thị, không điều khiển bậc đo).
+- **`ToolModeForm.tsx`** viết lại cho thẻ "Đo món đồ": (1) `category` hiện chính, 2 slider cũ
+  (`cameraHeightMm`/`bgTolerance`) gom vào mục **"Tinh chỉnh" thu gọn, mặc định ĐÓNG** — bản trước
+  bày cả 2 ra trước khi chạy, Hoà chỉ ra sai ("bắt chỉnh tham số của thứ chưa chạy"); (2) UI khoanh
+  tay 2-điểm mới trên ảnh gốc — bấm 2 điểm → chọn loại vật chuẩn (dropdown `ANCHOR_CONFIG`) + nhập mm
+  thật → nút "Dùng vật chuẩn này, đo lại" ghi `manualAnchorJson` qua `store.updateParam()` (param
+  KHÔNG khai trong `NodeDefinition.params`, tránh lộ vào vòng render tham số chung) rồi chạy lại ngay;
+  quy đổi toạ độ px màn hình→px ảnh gốc có trừ letterbox của `object-fit:contain`; (3) `MeasurementPanel`
+  hiện dòng bắt buộc "Tầng N · <tên tầng> · Bậc M · độ tin K%" + gợi ý nâng bậc cụ thể khi
+  `needsManualAnchor` — không bao giờ chỉ hiện chữ đỏ rồi dừng, dấu cảnh báo "Mặt khuất là suy diễn"
+  vẫn bắt buộc không tắt được. `measurement-spec-sheet.ts` sửa theo: nhận `TieredMeasurement` +
+  `methodLine` dựng sẵn ở caller (không ghép chuỗi 2 lần).
+- **Verify**: tsc sạch, eslint sạch (2 warning `<img>` có sẵn từ trước, không phải lỗi mới), 46/46
+  test module + toàn bộ 100+ file `*.test.ts` khác trong repo chạy sạch không hồi quy. Browser thật
+  (`127.0.0.1:3000`) xác nhận layout tĩnh đúng yêu cầu — category hiện chính, "Tinh chỉnh" đóng mặc
+  định, Render tắt khi chưa có ảnh. ⚠️ **CHƯA verify được đường khoanh-tay+ra-số-thật** trong browser —
+  môi trường test không đưa được file ảnh qua `<input type=file>` (thử native-setter+`change` event
+  không kích hoạt handler React; thử điều khiển canvas qua `window.__flowStore` trực tiếp cũng không
+  thao tác được do panel node zoom khoá trong demo project) — bù bằng đối chiếu type từng trường với
+  export thật + 46 test đơn vị đúng hàm node gọi. Khuyến nghị Hoà tự thử 1 ảnh thật trước khi tin số
+  đầu tiên hiện ra.
+- ⚠️ **CHƯA LÀM, disclose rõ không giấu**: Hoà yêu cầu thêm ánh xạ Tầng 2 (oneAI/ComfyUI tự tìm vật
+  neo qua object-detection+bbox) và Tầng 3 (VLM tự ước category/tỉ lệ) vào bản đồ 4-AiTier — chưa tìm
+  thấy năng lực object-detection-có-bbox nào qua oneAI/ComfyUI trong codebase hiện tại; VLM sẵn có
+  (`captionImage()`, `lib/ai/providers/nvidia.ts`) tách biệt kiến trúc khỏi hệ `fal`-tier Hoà kỳ vọng
+  gắn vào — cần hạ tầng riêng, để đợt sau.
+- **Dọn worktree cũ sót lại**: `.worktrees/if-lark/` — thư mục VẬT LÝ còn trên đĩa dù `git worktree
+  list` đã không đăng ký (nhánh `feat/7.1.19-lark-wiki` đã merge+xoá từ trước), `.git` bên trong trỏ
+  đường dẫn VM của phiên phụ đã chết. Xác nhận đủ 4 điều kiện an toàn (CLAUDE.md) trước khi `rm -rf`:
+  nhánh đã merge (`2b89d47`) và xoá, không dev server đang mở trong đó (`lsof` chỉ thấy tiến trình lập
+  chỉ mục Spotlight), không branch nào chỉ tồn tại ở đó.
+- **2 mã mới đề xuất, va số `7.1.21`** — Hoà gửi liền 2 việc, cả 2 đều gắn số `7.1.21`: (a) script
+  `"test"` vào `package.json` (đề xuất từ lúc merge `7.1.19`, sớm hơn) giữ nguyên `7.1.21`; (b) "Bộ
+  nhớ đo đạc" — Tầng 1 tự học kích thước/tỉ lệ bộ phận/chiều cao máy ảnh theo dữ liệu nhà (Prisma
+  `MeasurementSample`, ngưỡng n<5 dải chuẩn/n≥5 trộn/n≥20 ưu tiên dữ liệu nhà) — tự xếp `7.1.22`
+  (số trống kế tiếp), CHƯA CODE theo đúng yêu cầu "báo mã, chờ xác nhận". Cả 2 ghi vào
+  `docs/IF-FEATURE-TREE.md`, Hoà xác nhận lại nếu muốn số khác.
+
 ## 30/07 khuya (đợt 2) — 2.2.87+2.2.88: đo món đồ từ 1 ảnh + sửa triệt để overlap header
 - **AppChrome overlap 1024px — sửa lần 2, triệt để.** Lần 1 (dời Tệp/StageSwitcher ra khỏi hộp
   co) hết overlap cụ thể nhưng lộ vấn đề sâu hơn: tổng `shrink-0` vượt viewport 23px, "Đăng xuất"

@@ -11,9 +11,11 @@ import {
   anchorScale,
   measureObject,
   vanishingPointFromLines,
+  measureObjectTiered,
   type Pt2D,
   type ScaleAnchorInput,
   type ObjectSilhouette,
+  type RgbaImage,
 } from './single-view-metrology';
 
 let pass = 0;
@@ -253,6 +255,107 @@ function testVanishingPointFromLinesMatchesKnownVP() {
   ok('điểm tụ suy ra cách điểm tụ thật < 2px (5 đường hình học chính xác, không nhiễu)', dist < 2);
 }
 
+/* ── [5] measureObjectTiered() — 30/07 sửa: KHÔNG BAO GIỜ "tay không", kể cả ảnh mềm/1 màu ── */
+
+/** Ảnh gradient mượt, KHÔNG có cạnh thẳng nào — mô phỏng render nội thất đẹp (rèm/thảm cong/ánh
+ * sáng loang) mà Hoà chỉ ra: Sobel không dò được biên rõ ⇒ Hough không đủ đường ⇒
+ * `calibrateFromImage()` phải trả `needsManualScale`, KHÔNG throw. */
+function softGradientImage(w: number, h: number): RgbaImage {
+  const data = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const v = 180 + Math.round(20 * Math.sin(x / 37) * Math.cos(y / 53)); // biến thiên rất mượt, không biên
+      data[i] = v;
+      data[i + 1] = v - 5;
+      data[i + 2] = v - 10;
+      data[i + 3] = 255;
+    }
+  }
+  return { width: w, height: h, data };
+}
+
+/** Ảnh nền trắng đều tuyệt đối + 1 khối màu tương phản — mô phỏng ảnh sản phẩm/nền phẳng
+ * catalogue: `extractForeground()` tách được (viền đồng màu), nhưng KHÔNG có cạnh kiến trúc nào
+ * cho vanishing-point calibration (chỉ có 1 khối, không phải cảnh nội thất). */
+function flatBackgroundWithObjectImage(w: number, h: number): RgbaImage {
+  const data = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const inObj = x > w * 0.3 && x < w * 0.7 && y > h * 0.4 && y < h * 0.8;
+      const v = inObj ? 60 : 245;
+      data[i] = v;
+      data[i + 1] = v;
+      data[i + 2] = v;
+      data[i + 3] = 255;
+    }
+  }
+  return { width: w, height: h, data };
+}
+
+function testSoftImageNoStraightEdgesStillReturnsNumbers() {
+  console.log('\n[5a] Ảnh render mềm KHÔNG cạnh thẳng — measureObjectTiered() PHẢI ra số, không lỗi');
+  const image = softGradientImage(640, 480);
+  const silhouette: ObjectSilhouette = {
+    front: [{ x: 200, y: 200 }, { x: 400, y: 200 }, { x: 400, y: 380 }, { x: 200, y: 380 }],
+  };
+  const result = measureObjectTiered({ category: 'sofa3', silhouette, image, cameraHeightMm: 1550 });
+  console.log(`    tier=${result.tier} (${result.tierLabel}) — width=${result.width.valueMm.toFixed(0)}mm, height=${result.height.valueMm.toFixed(0)}mm, confidence=${result.confidencePercent}%`);
+  ok('width.valueMm là số hữu hạn > 0 (không phải NaN/0/undefined)', Number.isFinite(result.width.valueMm) && result.width.valueMm > 0);
+  ok('height.valueMm là số hữu hạn > 0', Number.isFinite(result.height.valueMm) && result.height.valueMm > 0);
+  ok('depth.valueMm là số hữu hạn > 0', Number.isFinite(result.depth.valueMm) && result.depth.valueMm > 0);
+  ok('tụt xuống phương pháp ≤2 (không có cạnh thẳng ⇒ không đạt bậc 4/3)', result.tier <= 2);
+  ok('needsManualAnchor=true (gợi ý khoanh vật neo để tăng độ tin)', result.needsManualAnchor === true);
+  ok('confidencePercent là số hợp lệ 0-100', result.confidencePercent >= 0 && result.confidencePercent <= 100);
+}
+
+function testWhiteBackgroundSingleObjectReachesTier1Or2() {
+  console.log('\n[5b] Ảnh nền trắng 1 món — phải ra số ở bậc 1 hoặc 2');
+  const image = flatBackgroundWithObjectImage(640, 480);
+  // KHÔNG truyền silhouette — mô phỏng trường hợp còn chưa tách được món (mới có ảnh gốc).
+  const resultNoSilhouette = measureObjectTiered({ category: 'coffeeTable', image, cameraHeightMm: 1550 });
+  ok('không silhouette → tier 1 (chỉ dải chuẩn nghề)', resultNoSilhouette.tier === 1);
+  ok('vẫn ra số hữu hạn > 0', Number.isFinite(resultNoSilhouette.width.valueMm) && resultNoSilhouette.width.valueMm > 0);
+
+  // CÓ silhouette (giả lập đã tách được món) nhưng ảnh không đủ cạnh kiến trúc để lên bậc 3/4.
+  const silhouette: ObjectSilhouette = {
+    front: [{ x: 192, y: 192 }, { x: 448, y: 192 }, { x: 448, y: 384 }, { x: 192, y: 384 }],
+  };
+  const resultWithSilhouette = measureObjectTiered({ category: 'coffeeTable', silhouette, image, cameraHeightMm: 1550 });
+  console.log(`    không mặt nạ: tier=${resultNoSilhouette.tier} · có mặt nạ: tier=${resultWithSilhouette.tier}`);
+  ok('có silhouette (đã tách món) → tier 1 hoặc 2, đúng yêu cầu', resultWithSilhouette.tier === 1 || resultWithSilhouette.tier === 2);
+  ok('có mặt nạ → width vẫn số hữu hạn > 0', Number.isFinite(resultWithSilhouette.width.valueMm) && resultWithSilhouette.width.valueMm > 0);
+}
+
+function testNoImageEverReturnsCannotMeasure() {
+  console.log('\n[5c] KHÔNG có ảnh nào cho ra "không đo được" — kể cả 0 tham số ngoài category');
+  const result = measureObjectTiered({ category: 'other' });
+  ok('0 ảnh, 0 mặt nạ, 0 neo → vẫn trả object hợp lệ (không null/undefined/throw)', !!result);
+  ok('width/depth/height đều có valueMm số hữu hạn > 0', [result.width, result.depth, result.height].every((v) => Number.isFinite(v.valueMm) && v.valueMm > 0));
+  ok('tier = 1 (đáy — chỉ còn dải chuẩn nghề)', result.tier === 1);
+  ok('mọi giá trị đều kind hợp lệ (measured/inferred, không rỗng)', [result.width, result.depth, result.height].every((v) => v.kind === 'measured' || v.kind === 'inferred'));
+}
+
+function testManualAnchorReachesTier3() {
+  console.log('\n[5d] Neo tay 2 điểm (vd giường 1600mm) → lên bậc 3, W/H measured');
+  const image = softGradientImage(640, 480); // ảnh không đủ cạnh thẳng — bậc 4 vẫn fail
+  const silhouette: ObjectSilhouette = {
+    front: [{ x: 260, y: 300 }, { x: 380, y: 300 }, { x: 380, y: 400 }, { x: 260, y: 400 }],
+  };
+  const result = measureObjectTiered({
+    category: 'nightstand',
+    silhouette,
+    image,
+    manualAnchor: { kind: 'bed', points: [{ x: 100, y: 350 }, { x: 500, y: 350 }], realMm: 1600 },
+  });
+  console.log(`    tier=${result.tier} — width=${result.width.valueMm.toFixed(0)}mm (kind=${result.width.kind})`);
+  ok('có neo tay → tier 3', result.tier === 3);
+  ok('width.kind = measured nhờ neo tay', result.width.kind === 'measured');
+  ok('height.kind = measured nhờ neo tay', result.height.kind === 'measured');
+  ok('depth vẫn inferred (neo tay không giải quyết được chiều sâu)', result.depth.kind === 'inferred');
+}
+
 function main() {
   testCalibrationRecoversKnownCamera();
   testAnchorScaleThreeSourcesAgree();
@@ -261,6 +364,10 @@ function main() {
   testAnchorScaleDepthMetricNeverDrivesDecision();
   testMeasureObjectKnownBoxUnder5PercentError();
   testVanishingPointFromLinesMatchesKnownVP();
+  testSoftImageNoStraightEdgesStillReturnsNumbers();
+  testWhiteBackgroundSingleObjectReachesTier1Or2();
+  testNoImageEverReturnsCannotMeasure();
+  testManualAnchorReachesTier3();
   console.log(`\n${pass} ok, ${fail} fail`);
   if (fail > 0) process.exit(1);
 }
