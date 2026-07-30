@@ -378,27 +378,24 @@ function drawEntityPdf(pdf: JsPdf, v: Viewport, doc: Doc, e: Entity, ds: CadPdfD
   }
 }
 
-/**
- * Dựng jsPDF instance đã vẽ xong Doc (tách riêng khỏi exportCadToPdf để test được — tạo Blob/
- * ArrayBuffer kiểm tra mà không cần DOM/anchor-click, xem lib/cad/pdf.node-check.mjs khi verify).
- */
-export async function buildCadPdf(doc: Doc, opts: CadPdfOptions = {}) {
-  const { jsPDF } = await import('jspdf');
-  // B1 (24/07) — khổ giấy: opts.paper (caller ép) > doc.paperKey (per-sheet) > A3 mặc định cũ.
+/** Khổ giấy hiệu dụng của 1 trang PDF (mm) + orientation suy từ đó — tách ra vì `buildCadPdf`
+ * (trang đơn) VÀ `buildSheetSetPdf` (nhiều trang, mỗi trang addPage() với khổ riêng) đều cần
+ * đúng công thức orientation này (xem lý do ở drawDocOntoPdfPage bên dưới). */
+function pageFormatOf(doc: Doc, opts: CadPdfOptions): { pw: number; ph: number; orientation: 'landscape' | 'portrait' } {
   const [pw, ph] = opts.paper ?? docPaperMm(doc);
+  return { pw, ph, orientation: pw >= ph ? 'landscape' : 'portrait' };
+}
+
+/**
+ * Vẽ 1 Doc lên TRANG HIỆN TẠI của 1 jsPDF instance đã tồn tại (đã đúng khổ giấy — caller lo
+ * `new jsPDF(...)`/`pdf.addPage(...)` trước khi gọi). Tách khỏi `buildCadPdf` để `buildSheetSetPdf`
+ * (2.1.8.k) dùng lại NGUYÊN VẸN logic vẽ 1 tờ mà không phải tạo N instance jsPDF rời rồi tự ghép
+ * (jsPDF không có API "merge 2 PDF" — addPage() trong CÙNG 1 instance là cách đúng, xem
+ * lib/cad/standards-report.ts đã làm y hệt cho báo cáo nhiều trang).
+ */
+function drawDocOntoPdfPage(pdf: JsPdf, doc: Doc, pw: number, ph: number, opts: CadPdfOptions): void {
   const margin = opts.margin ?? DEFAULT_PDF_MARGIN_MM;
   const ds = opts.dimStyle ?? DEFAULT_DIM_STYLE;
-  // Khổ giấy CAD (PAPER_SIZES_MM) khai báo NGANG — [420,297] cho A3. jsPDF mặc định
-  // orientation 'portrait' và khi đó nó TỰ ĐẢO format cho cạnh ngắn thành bề rộng, nên
-  // `format:[420,297]` không có orientation ⇒ trang thật ra 297×420 DỌC, trong khi viewport
-  // bên dưới tính theo pw=420 ⇒ mất ~30% mép phải, đúng chỗ khung tên neo. Suy orientation
-  // từ chính khổ giấy để trang PDF luôn khớp [pw, ph] đã dùng để dựng viewport.
-  const pdf = new jsPDF({ orientation: pw >= ph ? 'landscape' : 'portrait', unit: 'mm', format: [pw, ph] });
-  // #25 — nhúng font có dấu TRƯỚC vòng vẽ entity: nhãn phòng, khung tên ("DỰ ÁN · PROJECT",
-  // "Tỷ lệ 1:100"), nhãn zone… đều là tiếng Việt. Phải `await` ở đây, KHÔNG để promise trôi —
-  // pdf.text() chạy trước khi font đăng ký xong thì vẫn ra helvetica/WinAnsi (mất dấu).
-  await ensureVietnameseFont(pdf);
-
   const box = docBox(doc) ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
   // B1 (24/07) — "plot to scale": doc.printScale (1:N chuẩn, per-sheet) + bản vẽ LỌT giấy ở tỉ
   // lệ đó → viewport tỉ lệ CỐ ĐỊNH (đo thước trên bản in ra đúng 1:N). Không đặt/không lọt →
@@ -424,6 +421,27 @@ export async function buildCadPdf(doc: Doc, opts: CadPdfOptions = {}) {
     pdf.setTextColor('#888888');
     pdf.text(opts.title, margin, ph - 6);
   }
+}
+
+/**
+ * Dựng jsPDF instance đã vẽ xong Doc (tách riêng khỏi exportCadToPdf để test được — tạo Blob/
+ * ArrayBuffer kiểm tra mà không cần DOM/anchor-click, xem lib/cad/pdf.node-check.mjs khi verify).
+ */
+export async function buildCadPdf(doc: Doc, opts: CadPdfOptions = {}) {
+  const { jsPDF } = await import('jspdf');
+  // B1 (24/07) — khổ giấy: opts.paper (caller ép) > doc.paperKey (per-sheet) > A3 mặc định cũ.
+  const { pw, ph, orientation } = pageFormatOf(doc, opts);
+  // Khổ giấy CAD (PAPER_SIZES_MM) khai báo NGANG — [420,297] cho A3. jsPDF mặc định
+  // orientation 'portrait' và khi đó nó TỰ ĐẢO format cho cạnh ngắn thành bề rộng, nên
+  // `format:[420,297]` không có orientation ⇒ trang thật ra 297×420 DỌC, trong khi viewport
+  // bên dưới tính theo pw=420 ⇒ mất ~30% mép phải, đúng chỗ khung tên neo. Suy orientation
+  // từ chính khổ giấy để trang PDF luôn khớp [pw, ph] đã dùng để dựng viewport.
+  const pdf = new jsPDF({ orientation, unit: 'mm', format: [pw, ph] });
+  // #25 — nhúng font có dấu TRƯỚC vòng vẽ entity: nhãn phòng, khung tên ("DỰ ÁN · PROJECT",
+  // "Tỷ lệ 1:100"), nhãn zone… đều là tiếng Việt. Phải `await` ở đây, KHÔNG để promise trôi —
+  // pdf.text() chạy trước khi font đăng ký xong thì vẫn ra helvetica/WinAnsi (mất dấu).
+  await ensureVietnameseFont(pdf);
+  drawDocOntoPdfPage(pdf, doc, pw, ph, opts);
   return pdf;
 }
 
@@ -431,5 +449,110 @@ export async function buildCadPdf(doc: Doc, opts: CadPdfOptions = {}) {
 export async function exportCadToPdf(doc: Doc, filename = 'layout.pdf', opts: CadPdfOptions = {}): Promise<void> {
   if (typeof window === 'undefined') return;
   const pdf = await buildCadPdf(doc, opts);
+  pdf.save(filename);
+}
+
+/** 1 tờ trong bộ hồ sơ — id/name khớp hình hài `sheets[]` của `CadSheets.tsx` (không import
+ * type từ đó để tránh vòng lặp 'use client' → module thuần này chỉ cần 3 field). */
+export interface SheetSetEntry {
+  id: string;
+  name: string;
+  doc: Doc;
+}
+
+/**
+ * 2.1.8.k — Xuất BỘ HỒ SƠ nhiều tờ thành 1 PDF: trang 1 = MỤC LỤC (số tờ · tên tờ · khổ · tỉ lệ),
+ * các trang sau mỗi tờ 1 trang, TÔN TRỌNG paperKey/printScale RIÊNG từng tờ (không ép chung 1
+ * khổ — dùng lại NGUYÊN VẸN `drawDocOntoPdfPage`, mỗi trang `addPage([pw,ph], orientation)` với
+ * khổ của ĐÚNG tờ đó, xem lib/cad/pdf.ts đầu file `pageFormatOf`). Bookmark PDF (`pdf.outline.add`,
+ * plugin `jsPDF-AutoTable`… KHÔNG — đây là "Outline PlugIn" lõi của jsPDF, đã có sẵn, không thêm
+ * dependency) theo tên tờ, trỏ đúng trang — mở trong Preview/Acrobat thấy khung điều hướng bên trái.
+ *
+ * DPI (Luật #9 ≥300dpi): hàm này KHÔNG raster hoá gì — dùng lại `drawEntityPdf` (line/rect/text
+ * vẽ bằng API hình học jsPDF, xem đầu file lib/cad/pdf.ts), không có `addImage()` nào trong toàn
+ * bộ file (đã grep xác nhận). PDF vector không có trần dpi — in ở bất kỳ độ phân giải máy in nào
+ * cũng sắc nét tuyệt đối, khác PNG/board composite (Luật #9 áp cho export RASTER, xem
+ * docs/LUAT-300DPI-2026-07-29.md). Vì vậy không có nhánh "báo dpi thật" ở đây — không phải bỏ sót,
+ * là vì luật này vô nghĩa với vector (không có dpi để đo).
+ */
+export async function buildSheetSetPdf(sheets: SheetSetEntry[], opts: CadPdfOptions = {}) {
+  const { jsPDF } = await import('jspdf');
+  // Trang mục lục: A4 dọc (giống lib/cad/standards-report.ts) — nội dung chỉ là bảng chữ, không
+  // cần khớp khổ giấy của bất kỳ tờ nào (mục lục không phải bản vẽ kỹ thuật).
+  const TOC_PW = 210;
+  const TOC_PH = 297;
+  const margin = opts.margin ?? DEFAULT_PDF_MARGIN_MM;
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [TOC_PW, TOC_PH] });
+  // 1 lần cho CẢ instance — jsPDF giữ font hiện hành qua addPage(). Giữ lại tên font (FONT) để
+  // gọi setFont(FONT, 'bold'/'normal') tường minh ở bảng mục lục — setFont(undefined, ...) không
+  // hợp lệ với type jsPDF (không phải "giữ nguyên font hiện tại" như CSS font-weight).
+  const FONT = await ensureVietnameseFont(pdf);
+
+  pdf.outline.add(null, opts.title ?? 'Mục lục', { pageNumber: 1 });
+
+  pdf.setFontSize(16);
+  pdf.setTextColor('#1E1B16');
+  pdf.text(opts.title ?? 'Bộ hồ sơ bản vẽ · Drawing Set', margin, margin + 4);
+  pdf.setFontSize(9);
+  pdf.setTextColor('#888888');
+  pdf.text(`${sheets.length} tờ · Mục lục · Table of Contents`, margin, margin + 11);
+
+  let y = margin + 22;
+  pdf.setFontSize(10);
+  pdf.setTextColor('#1E1B16');
+  const colNo = margin;
+  const colName = margin + 14;
+  const colPaper = margin + 120;
+  const colScale = margin + 155;
+  pdf.setFont(FONT, 'bold');
+  pdf.text('Số tờ', colNo, y);
+  pdf.text('Tên tờ · Sheet name', colName, y);
+  pdf.text('Khổ', colPaper, y);
+  pdf.text('Tỉ lệ', colScale, y);
+  y += 3;
+  pdf.setDrawColor('#C9C2B4');
+  pdf.setLineWidth(0.2);
+  pdf.line(margin, y, TOC_PW - margin, y);
+  y += 6;
+  pdf.setFont(FONT, 'normal');
+
+  const paperLabelOf = (doc: Doc) => doc.paperKey ?? 'A3';
+  const scaleLabelOf = (doc: Doc, pw: number, ph: number) => {
+    const box = docBox(doc) ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
+    const m = opts.margin ?? DEFAULT_PDF_MARGIN_MM;
+    return doc.printScale && fitsAtScale(box, [pw, ph], m, doc.printScale)
+      ? `1:${doc.printScale}`
+      : fitScaleLabel(box, [pw, ph], m);
+  };
+
+  sheets.forEach((s, i) => {
+    const { pw, ph } = pageFormatOf(s.doc, opts);
+    pdf.text(String(i + 1), colNo, y);
+    pdf.text(s.name, colName, y);
+    pdf.text(paperLabelOf(s.doc), colPaper, y);
+    pdf.text(scaleLabelOf(s.doc, pw, ph), colScale, y);
+    y += 7;
+  });
+
+  // Mỗi tờ 1 trang, khổ giấy RIÊNG của tờ đó (không ép chung 1 khổ như brief yêu cầu) — trang
+  // mục lục là trang 1, tờ thứ i là trang i+1 (outline.add pageNumber phải khớp thứ tự này).
+  sheets.forEach((s, i) => {
+    const { pw, ph, orientation } = pageFormatOf(s.doc, opts);
+    pdf.addPage([pw, ph], orientation);
+    drawDocOntoPdfPage(pdf, s.doc, pw, ph, { ...opts, title: s.name });
+    pdf.outline.add(null, s.name, { pageNumber: i + 2 });
+  });
+
+  return pdf;
+}
+
+/** Xuất + tải xuống bộ hồ sơ nhiều tờ (client-only, cùng pattern exportCadToPdf ở trên). */
+export async function exportSheetSetPdf(
+  sheets: SheetSetEntry[],
+  filename = 'drawing-set.pdf',
+  opts: CadPdfOptions = {},
+): Promise<void> {
+  if (typeof window === 'undefined') return;
+  const pdf = await buildSheetSetPdf(sheets, opts);
   pdf.save(filename);
 }

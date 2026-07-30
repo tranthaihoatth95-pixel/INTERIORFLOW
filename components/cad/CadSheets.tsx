@@ -33,6 +33,7 @@ import {
   type SheetsRecord,
 } from '@/lib/sheets-persist';
 import { exportIdf, importIdf, lastImportIdfError } from '@/lib/cad/idf';
+import { exportSheetSetPdf } from '@/lib/cad/pdf';
 import { buildIfpack, restoreIfpack } from '@/lib/cad/ifpack';
 import { startAutoBackup, type AutoBackupSession } from '@/lib/cad/auto-backup';
 import { backfillRoomTypes } from '@/lib/cad/standards/checker';
@@ -348,6 +349,26 @@ export default function CadSheets() {
       useCadStore.getState().setStatus(`Đã xuất project.idf — ${idfSheets.length} bản vẽ.`);
     };
 
+    /**
+     * 2.1.8.k (30/07) — bộ hồ sơ PDF nhiều tờ: CÙNG lý do bắc cầu như .idf ở trên (CadEditor
+     * không giữ sheets[]). Đồng bộ sheet đang mở TRƯỚC khi gom, y hệt onExportIdf.
+     */
+    const onExportSheetSetPdf = () => {
+      snaps.current[activeIdRef.current] = captureStore();
+      const idfSheets = sheetsRef.current.map((s) => {
+        const snap = snaps.current[s.id] ?? blankSnapshot();
+        return { id: s.id, name: s.name, doc: snap.doc };
+      });
+      useCadStore.getState().setStatus('Đang dựng bộ hồ sơ PDF…');
+      void exportSheetSetPdf(idfSheets, 'drawing-set.pdf', { title: useFlowStore.getState().flowName || 'InteriorFlow — Drafting CAD' })
+        .then(() => {
+          useCadStore.getState().setStatus(`Đã xuất drawing-set.pdf — ${idfSheets.length} tờ + mục lục.`);
+        })
+        .catch((err) => {
+          useCadStore.getState().setStatus(`Lỗi xuất bộ hồ sơ PDF: ${err instanceof Error ? err.message : String(err)}`);
+        });
+    };
+
     const onImportIdf = (ev: Event) => {
       const detail = (ev as CustomEvent<{ json: string; fileName: string }>).detail;
       if (!detail) return;
@@ -471,10 +492,12 @@ export default function CadSheets() {
     window.addEventListener('cad:idf-import-request', onImportIdf);
     window.addEventListener('cad:ifpack-export-request', onExportIfpack);
     window.addEventListener('cad:ifpack-import-request', onRestoreIfpack);
+    window.addEventListener('cad:sheetset-pdf-export-request', onExportSheetSetPdf);
     return () => {
       window.removeEventListener('cad:idf-export-request', onExportIdf);
       window.removeEventListener('cad:idf-import-request', onImportIdf);
       window.removeEventListener('cad:ifpack-export-request', onExportIfpack);
+      window.removeEventListener('cad:sheetset-pdf-export-request', onExportSheetSetPdf);
       window.removeEventListener('cad:ifpack-import-request', onRestoreIfpack);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

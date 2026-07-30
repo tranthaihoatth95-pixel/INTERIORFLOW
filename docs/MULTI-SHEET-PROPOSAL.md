@@ -111,4 +111,7 @@ sau khi tách được store CAD + phạm-vi-hoá listener Present.
 ## 7. Giới hạn & mặc định
 - **Tối đa 5 sheet/chặng** (hằng `MAX_SHEETS = 5`).
 - Sheet đặt tên tự động: "Bản vẽ N" (CAD) / "Trang N" (Present); đổi tên tuỳ ý.
-- Không persist qua reload ở pha 1 (khớp hiện trạng: CAD/Present editor cũng chưa auto-persist doc/deck).
+- ~~Không persist qua reload ở pha 1~~ **SAI — cập nhật 30/07**: `CadSheets.tsx:1-19` đã persist
+  `sheets[]` (doc + tên + viewport + layer) qua IndexedDB (J-3 Sprint 2 quyết định #6) — reload
+  KHÔI PHỤC lại đúng bộ sheet, không mất. Câu gốc đúng tại thời điểm viết pha 1, lỗi thời từ khi
+  autosave IndexedDB được thêm sau đó.

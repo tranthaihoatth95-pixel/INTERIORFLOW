@@ -1,5 +1,19 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 30/07 khuya — 2.1.8.k: xuất bộ hồ sơ nhiều tờ thành 1 PDF có mục lục
+- `buildSheetSetPdf()`/`exportSheetSetPdf()` mới (`lib/cad/pdf.ts`) — tách `drawDocOntoPdfPage()`
+  dùng chung với `buildCadPdf()` (trang đơn) để không viết lại logic vẽ entity. Trang 1 mục lục
+  (A4 dọc, bảng số tờ·tên·khổ·tỉ lệ) + mỗi tờ 1 trang riêng khổ giấy/tỉ lệ (`paperKey`/`printScale`
+  per-sheet, không ép chung 1 khổ), bookmark PDF thật qua Outline PlugIn lõi jsPDF (không thêm
+  dependency). Nối vào IOMenu CAD cạnh `.idf` qua CustomEvent `cad:sheetset-pdf-export-request`
+  (cùng pattern bắc cầu `.idf`/`.ifpack`, `CadSheets.tsx` giữ `sheets[]`). Luật #9 (≥300dpi) xác
+  nhận KHÔNG áp dụng — export 100% vector, không `addImage()`. 13/13 test mới
+  (`pdf-sheetset.test.ts`), 103/103 test toàn repo, tsc sạch.
+- Lệch nhẹ so với brief: test dùng khổ A1/A2/A3 thay vì "A2/A3/A4" — `PaperKey` chỉ có 3 giá trị
+  này, không có 'A4' (xác nhận 30/07, brief ghi nhầm).
+- Sửa doc drift `docs/MULTI-SHEET-PROPOSAL.md` §7: "không persist qua reload ở pha 1" — SAI,
+  `CadSheets.tsx` đã persist IndexedDB từ J-3 Sprint 2 quyết định #6.
+
 ## 30/07 khuya — 7.3.31 mở rộng: hợp nhất Header+StudioBar → AppChrome, cấp mã đợt review BOQ/Lark
 - **7.3.31** (nâng phạm vi từ "sửa 3 nút nhảy vị trí" lên "hợp nhất lớp app chrome") — `Header.tsx`
   (route `/`) + `StudioBar.tsx` (`/cad`,`/present`,`/photo`) → `AppChrome.tsx` duy nhất, prop

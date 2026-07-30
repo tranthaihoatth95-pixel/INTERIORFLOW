@@ -190,6 +190,11 @@ export default function CadEditor() {
   const doExportIdf = () => {
     window.dispatchEvent(new CustomEvent('cad:idf-export-request'));
   };
+  // 2.1.8.k (30/07) — bộ hồ sơ PDF nhiều tờ CŨNG cần TẤT CẢ sheet, y hệt lý do .idf ở trên —
+  // bắc cầu CustomEvent riêng, CadSheets.tsx (nơi giữ sheets[]) lắng nghe và gọi exportSheetSetPdf().
+  const doExportSheetSetPdf = () => {
+    window.dispatchEvent(new CustomEvent('cad:sheetset-pdf-export-request'));
+  };
   const onOpenIdfFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     e.target.value = '';
@@ -416,6 +421,7 @@ export default function CadEditor() {
             { id: 'dxf', label: 'DXF', sub: 'Trao đổi với AutoCAD — bản vẽ đang mở', icon: <Download size={15} />, onSelect: doExportDxf },
             { id: 'pdf', label: 'PDF', sub: 'PDF vector (nét/text thật) — layer chưa ẩn/hiện được trong PDF', icon: <FileText size={15} />, onSelect: doExportPdf },
             { id: 'idf', label: '.idf', sub: 'File project JSON — TẤT CẢ sheet + metadata, để backup/chia sẻ', icon: <Save size={15} />, onSelect: doExportIdf },
+            { id: 'sheetset-pdf', label: 'Xuất bộ hồ sơ (PDF nhiều tờ)', sub: 'TẤT CẢ sheet gộp 1 PDF — mục lục đầu + mỗi tờ 1 trang, giữ khổ giấy/tỉ lệ riêng', icon: <ListOrdered size={15} />, onSelect: doExportSheetSetPdf },
             { id: 'ifpack', label: 'Sao lưu dự án (.ifpack)', sub: 'ZIP đầy đủ — bản vẽ + ảnh markup hiện trường, phục hồi lại được', icon: <Save size={15} />, onSelect: doExportIfpack },
             {
               id: 'auto-backup',
