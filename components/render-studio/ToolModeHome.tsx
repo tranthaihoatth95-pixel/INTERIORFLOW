@@ -133,7 +133,7 @@ export default function ToolModeHome({ notice }: { notice?: string } = {}) {
                 cursor: 'pointer',
                 textDecoration: 'underline',
               }}
-              title="Vào thẳng node graph (nối node thủ công) — dành cho việc phức tạp hơn 6 thẻ trên"
+              title="Vào thẳng node graph (nối node thủ công) — dành cho việc phức tạp hơn các thẻ trên"
             >
               Mở canvas (nâng cao) →
             </button>

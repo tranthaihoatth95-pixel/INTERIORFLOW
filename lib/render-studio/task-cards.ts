@@ -65,8 +65,19 @@ export const TASK_CARDS: TaskCard[] = [
   {
     id: 'upscale',
     label: 'Phóng to in',
-    desc: 'Nâng độ phân giải — đủ 300dpi khổ A3 để in',
+    // 30/07 — bỏ gắn cứng 1 khổ giấy (Luật Đồng Bộ #6): "khổ A3" mâu thuẫn với khổ giấy CAD vừa
+    // mở rộng A0-A4 + hướng giấy độc lập (2.1.8.m). Thẻ Render này không có khái niệm "khổ giấy"
+    // riêng của nó (đó là chuyện CAD paper-space) — chỉ nói đúng việc nó làm: nâng độ phân giải.
+    desc: 'Nâng độ phân giải — đủ 300dpi để in khổ lớn',
     nodeType: 'ai.upscale',
+  },
+  {
+    // 2.2.88 (30/07) — docs/TU-VAN-ANH-SANG-BAN-VE-2026-07-30.md §4 "Lát cắt 1". Node
+    // `vision.measureobject` (2.2.87, lib/nodes/defs/metrology.ts) — 0 credit, tất định.
+    id: 'measureobject',
+    label: 'Đo món đồ',
+    desc: 'Khoanh 1 món trong ảnh → rộng × sâu × cao kèm sai số — cần ảnh thấy rõ cạnh tường/sàn',
+    nodeType: 'vision.measureobject',
   },
 ];
 

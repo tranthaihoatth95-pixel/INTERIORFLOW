@@ -15,6 +15,9 @@ import { getDefinition, defaultParams } from '@/lib/nodes/registry';
 import { useToolModeUi, useIsSmallScreenForCanvas } from '@/lib/render-studio/tool-mode-ui';
 import { taskCardById } from '@/lib/render-studio/task-cards';
 import { ensureToolModeGraph } from '@/lib/render-studio/tool-mode-graph';
+import { exportMeasurementSpecSheet } from '@/lib/render-studio/measurement-spec-sheet';
+import { getActiveBrandKit } from '@/lib/present-editor/brand-kit';
+import type { MeasurementResult } from '@/lib/vision/single-view-metrology';
 import type { ParamDef } from '@/lib/types';
 
 export default function ToolModeForm({ cardId }: { cardId: string }) {
@@ -109,6 +112,19 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
   );
 
   const outputUrl = run?.outputs?.image?.value;
+  // 2.2.88 — thẻ "Đo món đồ" xuất TEXT (JSON đo lường), không phải ảnh — nhánh hiển thị riêng.
+  const isMeasureCard = card.id === 'measureobject';
+  const measurementJson = isMeasureCard ? run?.outputs?.measurement?.value : undefined;
+  const measurement: (MeasurementResult & { calibConfidence: number; scaleConfidence: number }) | null =
+    typeof measurementJson === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(measurementJson);
+          } catch {
+            return null;
+          }
+        })()
+      : null;
   const handoffBlockedOnSmallScreen = card.formKind === 'canvas-handoff' && smallScreen;
   const canRender = !!imageDataUrl && run?.status !== 'running' && !handoffBlockedOnSmallScreen;
 
@@ -199,27 +215,34 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
 
           {/* KẾT QUẢ */}
           <div>
-            <div
-              style={{
-                aspectRatio: '4/3',
-                border: '1px solid var(--border)',
-                borderRadius: 10,
-                display: 'grid',
-                placeItems: 'center',
-                overflow: 'hidden',
-                background: 'var(--field)',
-              }}
-            >
-              {outputUrl ? (
-                <img src={String(outputUrl)} alt="Kết quả" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              ) : run?.status === 'error' ? (
-                <span style={{ fontSize: 12, color: '#c0392b', padding: 16, textAlign: 'center' }}>{run.error}</span>
-              ) : (
-                <span style={{ fontSize: 12, color: 'var(--t4)' }}>
-                  {run?.status === 'running' ? 'Đang render…' : 'Chưa có kết quả'}
-                </span>
-              )}
-            </div>
+            {isMeasureCard ? (
+              <MeasurementPanel measurement={measurement} status={run?.status} error={run?.error} progress={run?.progress} />
+            ) : (
+              <div
+                style={{
+                  aspectRatio: '4/3',
+                  border: '1px solid var(--border)',
+                  borderRadius: 10,
+                  display: 'grid',
+                  placeItems: 'center',
+                  overflow: 'hidden',
+                  background: 'var(--field)',
+                }}
+              >
+                {outputUrl ? (
+                  <img src={String(outputUrl)} alt="Kết quả" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                ) : run?.status === 'error' ? (
+                  <span style={{ fontSize: 12, color: '#c0392b', padding: 16, textAlign: 'center' }}>{run.error}</span>
+                ) : (
+                  <span style={{ fontSize: 12, color: 'var(--t4)' }}>
+                    {run?.status === 'running' ? 'Đang render…' : 'Chưa có kết quả'}
+                  </span>
+                )}
+              </div>
+            )}
+            {isMeasureCard && measurement && imageDataUrl && (
+              <MeasurementExportButton imageDataUrl={imageDataUrl} measurement={measurement} />
+            )}
             {!smallScreen && (
               <div style={{ textAlign: 'right', marginTop: 12 }}>
                 <button
@@ -244,6 +267,132 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/** 2.2.88 — bảng R×S×C cho thẻ "Đo món đồ": số 🟢 ĐO màu `--success`, số 🟡 SUY màu `--warning`
+ * + dấu `~` + tooltip nêu `basis` (đúng yêu cầu "KHÔNG cho số 🟡 hiện giống số 🟢"). */
+function MeasurementPanel({
+  measurement,
+  status,
+  error,
+  progress,
+}: {
+  measurement: (MeasurementResult & { calibConfidence: number; scaleConfidence: number }) | null;
+  status: string | undefined;
+  error: string | undefined;
+  progress: number | undefined;
+}) {
+  if (!measurement) {
+    return (
+      <div
+        style={{
+          aspectRatio: '4/3',
+          border: '1px solid var(--border)',
+          borderRadius: 10,
+          display: 'grid',
+          placeItems: 'center',
+          background: 'var(--field)',
+        }}
+      >
+        {status === 'error' ? (
+          <span style={{ fontSize: 12, color: '#c0392b', padding: 16, textAlign: 'center' }}>{error}</span>
+        ) : (
+          <span style={{ fontSize: 12, color: 'var(--t4)' }}>
+            {status === 'running' ? `Đang đo… ${Math.round((progress ?? 0) * 100)}%` : 'Chưa có kết quả'}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  const rows: { label: string; v: MeasurementResult['width'] }[] = [
+    { label: 'Rộng · Width', v: measurement.width },
+    { label: 'Sâu · Depth', v: measurement.depth },
+    { label: 'Cao · Height', v: measurement.height },
+  ];
+
+  return (
+    <div style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 18, background: 'var(--field)' }}>
+      {rows.map(({ label, v }) => {
+        const measured = v.kind === 'measured';
+        const color = measured ? 'var(--success)' : 'var(--warning)';
+        return (
+          <div key={label} style={{ marginBottom: 14 }} title={v.basis}>
+            <div style={{ fontSize: 11, color: 'var(--t3)', marginBottom: 2 }}>{label}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color }}>
+              {measured ? '' : '~'}
+              {Math.round(v.valueMm)} <span style={{ fontSize: 12, fontWeight: 500 }}>± {Math.round(v.toleranceMm)} mm</span>{' '}
+              <span style={{ fontSize: 11, fontWeight: 500 }}>{measured ? '🟢 ĐO' : '🟡 SUY'}</span>
+            </div>
+          </div>
+        );
+      })}
+      <div style={{ fontSize: 11, color: 'var(--t4)', marginTop: 4 }}>
+        Độ tin camera {(measurement.calibConfidence * 100).toFixed(0)}% · thang đo {(measurement.scaleConfidence * 100).toFixed(0)}%
+      </div>
+      <div
+        style={{
+          marginTop: 12,
+          padding: '8px 10px',
+          borderRadius: 8,
+          border: '1px solid var(--warning)',
+          background: 'color-mix(in srgb, var(--warning) 12%, transparent)',
+          color: 'var(--warning)',
+          fontSize: 11,
+          fontWeight: 600,
+        }}
+      >
+        ⚠ Mặt khuất là suy diễn — kiểm tra trước khi sản xuất.
+      </div>
+    </div>
+  );
+}
+
+function MeasurementExportButton({
+  imageDataUrl,
+  measurement,
+}: {
+  imageDataUrl: string;
+  measurement: MeasurementResult & { calibConfidence: number; scaleConfidence: number };
+}) {
+  const flowName = useFlowStore((s) => s.flowName);
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        try {
+          const studioName = getActiveBrandKit()?.name ?? '';
+          await exportMeasurementSpecSheet({
+            photoDataUrl: imageDataUrl,
+            result: measurement,
+            calibConfidence: measurement.calibConfidence,
+            scaleConfidence: measurement.scaleConfidence,
+            projectName: flowName,
+            studioName,
+          });
+        } finally {
+          setBusy(false);
+        }
+      }}
+      style={{
+        marginTop: 12,
+        width: '100%',
+        padding: '9px',
+        borderRadius: 8,
+        border: '1px solid var(--border)',
+        background: 'transparent',
+        color: 'var(--t2)',
+        fontSize: 12.5,
+        fontWeight: 600,
+        cursor: busy ? 'not-allowed' : 'pointer',
+      }}
+    >
+      {busy ? 'Đang dựng spec sheet…' : '⬇ Xuất Spec Sheet'}
+    </button>
   );
 }
 

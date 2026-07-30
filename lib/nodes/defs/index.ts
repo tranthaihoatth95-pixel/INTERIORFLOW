@@ -22,6 +22,7 @@ import { batchVariantNodes } from './batch-variants';
 import { sketchNodes } from './sketch-node';
 import { renderV2Nodes } from './render-v2';
 import { patternWarpNodes } from './pattern-warp';
+import { metrologyNodes } from './metrology';
 
 export const EXTRA_NODES: NodeDefinition[] = [
   ...watermarkNodes,
@@ -33,4 +34,5 @@ export const EXTRA_NODES: NodeDefinition[] = [
   ...sketchNodes,
   ...renderV2Nodes,
   ...patternWarpNodes,
+  ...metrologyNodes,
 ];
