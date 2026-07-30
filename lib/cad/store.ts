@@ -9,7 +9,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Doc, Entity, Layer, LineType, Viewport, HatchPattern, MarkupPin, PhotoEmbed, SiteImage, ZoneGroup, PaperKey } from './model';
+import type { Doc, Entity, Layer, LineType, Viewport, HatchPattern, MarkupPin, PhotoEmbed, SiteImage, ZoneGroup, PaperKey, PaperOrientation } from './model';
 import { emptyDoc, ZONE_DEFAULT_OPACITY } from './model';
 import { pasteEntities } from './geometry';
 
@@ -328,7 +328,7 @@ interface CadState {
   /** B1 (24/07) — tỉ lệ in 1:N + khổ giấy per-sheet (lưu trong Doc → tự vào .idf/per-sheet).
    * null = xoá field (về auto-fit / A3 mặc định). KHÔNG snapshot — thiết lập in ấn, không phải
    * hình học (giống viewport, không nên chiếm 1 nấc Undo). */
-  setPrintSettings: (patch: { printScale?: number | null; paperKey?: PaperKey | null; studioName?: string | null }) => void;
+  setPrintSettings: (patch: { printScale?: number | null; paperKey?: PaperKey | null; paperOrientation?: PaperOrientation | null; studioName?: string | null }) => void;
   reset: () => void;
 
   /** Sprint 7 — Việc 3 (markup) + Việc 4 (photo embed): annotation rời trong doc.markups/
@@ -691,6 +691,11 @@ export const useCadStore = create<CadState>((set, get) => ({
       if (patch.paperKey !== undefined) {
         if (patch.paperKey === null) delete doc.paperKey;
         else doc.paperKey = patch.paperKey;
+      }
+      // 2.1.8.m (30/07) — hướng giấy TRỤC ĐỘC LẬP với khổ, xem model.ts PaperOrientation.
+      if (patch.paperOrientation !== undefined) {
+        if (patch.paperOrientation === null) delete doc.paperOrientation;
+        else doc.paperOrientation = patch.paperOrientation;
       }
       // Tên studio của DỰ ÁN (khung tên) — chuỗi rỗng cũng coi như xoá field.
       if (patch.studioName !== undefined) {

@@ -30,6 +30,7 @@ import { parseDxf, exportDxf } from '@/lib/cad/dxf';
 import { openDwgFile } from '@/lib/cad/dwg';
 import { renderDocToDataURL, renderZoneMapToDataURL } from '@/lib/cad/render';
 import { exportCadToPdf, DEFAULT_PDF_PAPER_MM, DEFAULT_PDF_MARGIN_MM } from '@/lib/cad/pdf';
+import { canvasSafeAreaInsets } from '@/lib/cad/safe-area';
 import { BLOCKS, BLOCK_MAP } from '@/lib/cad/furniture';
 import ShapePalette, { ShapeInfoPanel } from '@/components/ShapePalette';
 import { loadManifest, groupByCategory, type LibraryManifest } from '@/lib/cad/block-library';
@@ -40,9 +41,9 @@ import { titleBlockPro, type TitleBlockInfoPro } from '@/lib/cad/commands';
 import { backupSupported, backupFolderChosen, chooseBackupFolder } from '@/lib/cad/auto-backup';
 import { getActiveBrandKit } from '@/lib/present-editor/brand-kit';
 import {
-  docBox, docScaleLabel, docPaperMm, suggestStandardScale, fitsAtScale,
+  docBox, docScaleLabel, docPaperMm, suggestStandardScale, fitsAtScale, defaultPaperOrientation,
   STANDARD_SCALES, PAPER_SIZES_MM, ELEMENT_TYPE_OPTIONS, ROOM_KIND_OPTIONS, WALL_KIND_OPTIONS,
-  type PaperKey, type ElementType, type Entity, type TextEntity,
+  type PaperKey, type PaperOrientation, type ElementType, type Entity, type TextEntity,
 } from '@/lib/cad/model';
 import { useFlowStore } from '@/lib/store';
 import { stashCadHandoff } from '@/lib/cad/handoff';
@@ -842,6 +843,8 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
   const doc = useCadStore((s) => s.doc);
   const addEntities = useCadStore((s) => s.addEntities);
   const setPrintSettings = useCadStore((s) => s.setPrintSettings);
+  const cadMode = useCadStore((s) => s.cadMode);
+  const safeArea = canvasSafeAreaInsets(cadMode);
   const today = new Date().toISOString().slice(0, 10);
   const [project, setProject] = useState('');
   // Tên studio in ở khung tên — nhận diện của DỰ ÁN, KHÔNG hardcode studio nào (luật nền tảng).
@@ -865,6 +868,8 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
 
   // B1 (24/07) — khổ giấy + tỉ lệ chuẩn per-sheet (lưu trong Doc → .idf/PDF dùng chung nguồn).
   const paperKey: PaperKey = doc.paperKey ?? 'A3';
+  // 2.1.8.m (30/07) — hướng giấy TRỤC ĐỘC LẬP, xem model.ts PaperOrientation.
+  const orientation: PaperOrientation = doc.paperOrientation ?? defaultPaperOrientation(paperKey);
   const paperMm = docPaperMm(doc);
   const box = docBox(doc);
   const suggestedN = suggestStandardScale(box, paperMm, DEFAULT_PDF_MARGIN_MM);
@@ -900,10 +905,13 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
   const fieldLabel: React.CSSProperties = { fontSize: 10.5, color: 'var(--t3)', marginBottom: 3, display: 'block' };
   const readonlyField: React.CSSProperties = { ...field, color: 'var(--t3)', cursor: 'default', display: 'flex', alignItems: 'center' };
 
+  // 2.1.8.l (30/07) — B1: panel dài hơn (khổ giấy/tỉ lệ/số bản vẽ/người kiểm) → maxHeight + cuộn
+  // để nút Chèn không chui xuống dưới CadTouchDock (dock từng nuốt click nút này khi verify).
+  // TỪNG hard-code "130px" đoán chừng — nay tính THẬT từ safe-area (đọc lib/cad/safe-area.ts,
+  // xem docstring file đó vì sao: 3 lần né dock bằng số cứng trước khi có luật này).
+  const panelTop = 70;
   return (
-    // B1: panel dài hơn (khổ giấy/tỉ lệ/số bản vẽ/người kiểm) → maxHeight + cuộn để nút Chèn
-    // không chui xuống dưới CadTouchDock/status bar (dock từng nuốt click nút này khi verify).
-    <div style={{ ...panel, left: 12, top: 70, width: 280, maxHeight: 'calc(100% - 130px)', overflowY: 'auto' }}>
+    <div style={{ ...panel, left: 12, top: panelTop, width: 280, maxHeight: `calc(100% - ${panelTop + safeArea.bottom}px)`, overflowY: 'auto' }}>
       <div style={panelHead}>
         <span>Khung tên (cajetín)</span>
         <button type="button" onClick={onClose} style={miniBtn} title="Đóng">
@@ -920,13 +928,26 @@ function TitleBlockPanel({ onClose }: { onClose: () => void }) {
             <select
               value={paperKey}
               onChange={(e) => setPrintSettings({ paperKey: e.target.value as PaperKey })}
-              title="Khổ giấy in (ISO 216, ngang) — lưu theo từng sheet, PDF xuất đúng khổ này"
+              title="Khổ giấy ISO 216 (kích thước CHUẨN DỌC — chọn hướng riêng ở nút bên cạnh) — lưu theo từng sheet, PDF xuất đúng khổ này"
               style={field}
             >
               {(Object.keys(PAPER_SIZES_MM) as PaperKey[]).map((k) => (
                 <option key={k} value={k}>{k} ({PAPER_SIZES_MM[k][0]}×{PAPER_SIZES_MM[k][1]}mm)</option>
               ))}
             </select>
+          </div>
+          {/* 2.1.8.m (30/07, Luật #10) — hướng RỜI khỏi khổ giấy, 2 điều khiển độc lập (chuẩn
+              AutoCAD Page Setup): đổi khổ không đổi hướng đang chọn, và ngược lại. */}
+          <div style={{ flexShrink: 0 }}>
+            <label style={fieldLabel}>Hướng</label>
+            <button
+              type="button"
+              onClick={() => setPrintSettings({ paperOrientation: orientation === 'landscape' ? 'portrait' : 'landscape' })}
+              title={`Hướng giấy hiện tại: ${orientation === 'landscape' ? 'Ngang' : 'Dọc'} — bấm để đổi`}
+              style={{ ...field, width: 76, cursor: 'pointer', textAlign: 'center' }}
+            >
+              ⇄ {orientation === 'landscape' ? 'Ngang' : 'Dọc'}
+            </button>
           </div>
           <div style={{ flex: 1 }}>
             <label style={fieldLabel}>Tỉ lệ bản vẽ</label>
@@ -1956,6 +1977,8 @@ function SelectionInfoPanel() {
   const selection = useCadStore((s) => s.selection);
   const updateEntities = useCadStore((s) => s.updateEntities);
   const clearSelection = useCadStore((s) => s.clearSelection);
+  const cadMode = useCadStore((s) => s.cadMode);
+  const safeArea = canvasSafeAreaInsets(cadMode);
 
   if (selection.length === 0) return null;
   const selected = doc.entities.filter((e) => selection.includes(e.id));
@@ -1966,8 +1989,9 @@ function SelectionInfoPanel() {
   const wallLikeEntity = single && isWallLikeEntity(single) ? single : null;
 
   return (
-    // bottom 110 (thay 46 cũ): tránh CadTouchDock (chế độ Sketch) đè lên ô BIM/ShapeInfo.
-    <div style={{ position: 'absolute', left: 12, bottom: 110, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+    // 2.1.8.l (30/07) — 3ª lần né dock trước khi có luật: "bottom 110" đoán chừng (thay "46 cũ",
+    // đã né 2 lần). Nay đọc THẬT từ safe-area, tự đúng nếu CadTouchDock đổi kích thước sau này.
+    <div style={{ position: 'absolute', left: 12, bottom: safeArea.bottom, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <BimAssignBox key={selection.join('|')} selected={selected} onApply={updateEntities} />
       {roomLabelEntity && (
         <RoomTypeBox

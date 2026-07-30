@@ -36,7 +36,7 @@
  */
 
 import type { Doc, Entity, Pt, Viewport, DimEntity } from './model';
-import { docBox, fitBox, fitScaleLabel, worldToScreen, ellipseBoundaryPoints, zoneBoundaryPoints, zoneCentroid, ZONE_GROUP_META, fixedScaleViewport, fitsAtScale, docPaperMm } from './model';
+import { docBox, fitBox, fitScaleLabel, worldToScreen, ellipseBoundaryPoints, zoneBoundaryPoints, zoneCentroid, ZONE_GROUP_META, fixedScaleViewport, fitsAtScale, docPaperMm, defaultPaperOrientation } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 import { hatchLines, hatchDots } from './hatch';
 import { ensureVietnameseFont } from '../pdf-font';
@@ -73,6 +73,16 @@ export function applyRealScaleToTitleBlock(entities: Entity[], scaleLabel: strin
       ? { ...e, text: `${TITLE_BLOCK_SCALE_PREFIX}${scaleLabel}` }
       : e,
   );
+}
+
+/** 2.1.8.m (30/07) — nhãn "Khổ · Hướng" cho mục lục bộ hồ sơ (VD "A4 · Dọc") — khổ và hướng là
+ * 2 trục độc lập (xem model.ts), 1 tên khổ không còn đủ mô tả 1 trang giấy thật. Export riêng
+ * (không phải closure cục bộ trong buildSheetSetPdf) để test được trực tiếp, không phải spy
+ * jsPDF (jsPDF gắn `text()` làm own-property mỗi instance, không qua prototype — khó spy sạch). */
+export function paperKeyOrientationLabel(doc: Doc): string {
+  const key = doc.paperKey ?? 'A3';
+  const orientation = doc.paperOrientation ?? defaultPaperOrientation(key);
+  return `${key} · ${orientation === 'portrait' ? 'Dọc' : 'Ngang'}`;
 }
 
 /** Dim style tối thiểu — bản sao cục bộ giống hệt DEFAULT_DIM_STYLE của render.ts (chủ đích
@@ -516,7 +526,6 @@ export async function buildSheetSetPdf(sheets: SheetSetEntry[], opts: CadPdfOpti
   y += 6;
   pdf.setFont(FONT, 'normal');
 
-  const paperLabelOf = (doc: Doc) => doc.paperKey ?? 'A3';
   const scaleLabelOf = (doc: Doc, pw: number, ph: number) => {
     const box = docBox(doc) ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };
     const m = opts.margin ?? DEFAULT_PDF_MARGIN_MM;
@@ -529,7 +538,7 @@ export async function buildSheetSetPdf(sheets: SheetSetEntry[], opts: CadPdfOpti
     const { pw, ph } = pageFormatOf(s.doc, opts);
     pdf.text(String(i + 1), colNo, y);
     pdf.text(s.name, colName, y);
-    pdf.text(paperLabelOf(s.doc), colPaper, y);
+    pdf.text(paperKeyOrientationLabel(s.doc), colPaper, y);
     pdf.text(scaleLabelOf(s.doc, pw, ph), colScale, y);
     y += 7;
   });

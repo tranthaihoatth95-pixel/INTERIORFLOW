@@ -10,7 +10,7 @@
  *
  * Chạy: node_modules/.bin/sucrase-node lib/cad/pdf-scale.test.ts
  */
-import { emptyDoc, fitBox, fitScaleLabel, docBox, PAPER_SIZES_MM } from './model';
+import { emptyDoc, fitBox, fitScaleLabel, docBox, paperSizeMm } from './model';
 import type { Doc, PaperKey } from './model';
 import { newId } from './store';
 import { titleBlock } from './commands';
@@ -123,7 +123,10 @@ async function testBuildCadPdfUsesRealScaleEndToEnd() {
 async function testPaperOrientationMatchesViewport() {
   console.log('\n[4] khổ giấy PDF thật = khổ NGANG dùng dựng viewport (A3/A2/A1)');
   for (const key of ['A3', 'A2', 'A1'] as PaperKey[]) {
-    const [pw, ph] = PAPER_SIZES_MM[key];
+    // 2.1.8.m (30/07) — PAPER_SIZES_MM nay lưu CHUẨN DỌC [ngắn,dài] (Luật #10, khổ/hướng tách
+    // trục độc lập); test này giữ NGUYÊN ý định gốc "A3/A2/A1 mặc định NGANG" bằng paperSizeMm()
+    // tường minh — giá trị số ra giống hệt trước khi tách (không đổi hành vi, chỉ đổi API đọc).
+    const [pw, ph] = paperSizeMm(key, 'landscape');
     const doc: Doc = emptyDoc();
     doc.paperKey = key;
     const wall = doc.layers[0].id;
@@ -142,11 +145,56 @@ async function testPaperOrientationMatchesViewport() {
   }
 }
 
+/* ── 5) 2.1.8.m (30/07, Luật #10) — khổ và hướng giấy là 2 TRỤC ĐỘC LẬP ── */
+async function testPaperOrientationDecoupled() {
+  console.log('\n[5] khổ/hướng giấy tách trục độc lập (Luật #10) — A4 dọc·ngang, A0 ngang, tương thích ngược');
+  const pageDimsOf = async (doc: Doc) => {
+    const pdf = await buildCadPdf(doc, {});
+    const size = (pdf as unknown as { internal: { pageSize: { getWidth(): number; getHeight(): number } } }).internal.pageSize;
+    return [size.getWidth(), size.getHeight()];
+  };
+  const nearlyEq = (a: number, b: number) => Math.abs(a - b) < 0.5;
+
+  // A4 dọc (mặc định ISO 5457 khi CHƯA chọn hướng tường minh).
+  {
+    const doc: Doc = emptyDoc();
+    doc.paperKey = 'A4';
+    const [w, h] = await pageDimsOf(doc);
+    console.log(`    A4 (mặc định): trang thật ${w.toFixed(1)}×${h.toFixed(1)}mm`);
+    ok('A4 mặc định = DỌC 210×297mm (ISO 5457, chưa chọn hướng)', nearlyEq(w, 210) && nearlyEq(h, 297));
+  }
+  // A4 ngang (chọn tường minh — CÙNG khổ A4, đổi trục hướng, không phải khổ khác).
+  {
+    const doc: Doc = emptyDoc();
+    doc.paperKey = 'A4';
+    doc.paperOrientation = 'landscape';
+    const [w, h] = await pageDimsOf(doc);
+    console.log(`    A4 ngang (chọn tường minh): trang thật ${w.toFixed(1)}×${h.toFixed(1)}mm`);
+    ok('A4 + paperOrientation=landscape = NGANG 297×210mm', nearlyEq(w, 297) && nearlyEq(h, 210));
+  }
+  // A0 ngang (mặc định — bản vẽ kỹ thuật khổ lớn).
+  {
+    const doc: Doc = emptyDoc();
+    doc.paperKey = 'A0';
+    const [w, h] = await pageDimsOf(doc);
+    console.log(`    A0 (mặc định): trang thật ${w.toFixed(1)}×${h.toFixed(1)}mm`);
+    ok('A0 mặc định = NGANG 1189×841mm (ISO 5457)', nearlyEq(w, 1189) && nearlyEq(h, 841));
+  }
+  // Doc CŨ (trước 2.1.8.m) không có paperKey/paperOrientation — tương thích ngược nguyên vẹn.
+  {
+    const doc: Doc = emptyDoc();
+    const [w, h] = await pageDimsOf(doc);
+    console.log(`    Doc cũ (không paperKey): trang thật ${w.toFixed(1)}×${h.toFixed(1)}mm`);
+    ok('Doc cũ không paperKey/paperOrientation → vẫn A3 NGANG 420×297mm (hành vi cũ nguyên vẹn)', nearlyEq(w, 420) && nearlyEq(h, 297));
+  }
+}
+
 async function main() {
   testFitScaleLabelMatchesManualFitBox();
   testApplyRealScaleOverridesOnlyTitleBlockText();
   await testBuildCadPdfUsesRealScaleEndToEnd();
   await testPaperOrientationMatchesViewport();
+  await testPaperOrientationDecoupled();
   console.log(`\n${pass} ok, ${fail} fail`);
   if (fail > 0) process.exit(1);
 }

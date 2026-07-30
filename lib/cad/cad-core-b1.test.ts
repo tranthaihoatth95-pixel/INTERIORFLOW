@@ -14,7 +14,7 @@
 
 import {
   emptyDoc, docBox, suggestStandardScale, fixedScaleViewport, docScaleLabel, fitsAtScale,
-  fitScaleLabel, PAPER_SIZES_MM, docPaperMm,
+  fitScaleLabel, paperSizeMm, docPaperMm,
 } from './model';
 import type { Doc, Entity, TextEntity } from './model';
 import { newId, useCadStore } from './store';
@@ -23,6 +23,10 @@ import { applyRealScaleToTitleBlock } from './pdf';
 import { exportDxf, parseDxf } from './dxf';
 import { exportIdf, importIdf } from './idf';
 import { generateLayoutOptions, type TargetRoom } from './ai-assist';
+
+// 2.1.8.m (30/07) — PAPER_SIZES_MM nay lưu CHUẨN DỌC (Luật #10); test dưới đây giữ NGUYÊN ý định
+// gốc "khổ A3 ngang" bằng paperSizeMm() tường minh — giá trị số giống hệt trước khi tách trục.
+const A3_LANDSCAPE = paperSizeMm('A3', 'landscape');
 
 let pass = 0;
 let fail = 0;
@@ -43,24 +47,24 @@ function testScales() {
   console.log('\n[1] Tỉ lệ bản vẽ chuẩn (1:N) — suggest / fixed viewport / label');
   const doc = docWithLine(10000); // 10m — A3 usable 390mm → cần N ≥ 25.6 → chuẩn kế tiếp = 50
   const box = docBox(doc);
-  const n = suggestStandardScale(box, PAPER_SIZES_MM.A3, 15);
+  const n = suggestStandardScale(box, A3_LANDSCAPE, 15);
   ok(`suggestStandardScale(10m, A3) = 50 (được ${n})`, n === 50);
 
-  const v = fixedScaleViewport(box, PAPER_SIZES_MM.A3, 50);
+  const v = fixedScaleViewport(box, A3_LANDSCAPE, 50);
   ok('fixedScaleViewport scale = 1/50', Math.abs(v.scale - 1 / 50) < 1e-12);
   // tâm bản vẽ (5000,0) phải rơi đúng giữa trang (210, 148.5)
   const cx = 5000 * v.scale + v.panX;
   const cy = -0 * v.scale + v.panY;
   ok('tâm bản vẽ nằm giữa trang A3', Math.abs(cx - 210) < 1e-9 && Math.abs(cy - 148.5) < 1e-9);
 
-  ok('fitsAtScale 1:50 lọt A3', fitsAtScale(box, PAPER_SIZES_MM.A3, 15, 50));
-  ok('fitsAtScale 1:20 KHÔNG lọt A3 (10m/20=500mm > 390mm)', !fitsAtScale(box, PAPER_SIZES_MM.A3, 15, 20));
+  ok('fitsAtScale 1:50 lọt A3', fitsAtScale(box, A3_LANDSCAPE, 15, 50));
+  ok('fitsAtScale 1:20 KHÔNG lọt A3 (10m/20=500mm > 390mm)', !fitsAtScale(box, A3_LANDSCAPE, 15, 20));
 
   doc.printScale = 50;
-  ok('docScaleLabel = "1:50" khi printScale lọt giấy', docScaleLabel(doc, PAPER_SIZES_MM.A3, 15) === '1:50');
+  ok('docScaleLabel = "1:50" khi printScale lọt giấy', docScaleLabel(doc, A3_LANDSCAPE, 15) === '1:50');
   doc.printScale = 20;
-  const fallback = fitScaleLabel(box, PAPER_SIZES_MM.A3, 15);
-  ok(`docScaleLabel fallback auto-fit ("${fallback}") khi 1:20 không lọt`, docScaleLabel(doc, PAPER_SIZES_MM.A3, 15) === fallback);
+  const fallback = fitScaleLabel(box, A3_LANDSCAPE, 15);
+  ok(`docScaleLabel fallback auto-fit ("${fallback}") khi 1:20 không lọt`, docScaleLabel(doc, A3_LANDSCAPE, 15) === fallback);
 
   doc.paperKey = 'A2';
   ok('docPaperMm đọc paperKey per-sheet (A2)', docPaperMm(doc)[0] === 594 && docPaperMm(doc)[1] === 420);

@@ -475,8 +475,12 @@ export interface Doc {
    * giữ Doc riêng) + tự vào .idf (JSON). Xem STANDARD_SCALES/fixedScaleViewport bên dưới.
    */
   printScale?: number;
-  /** B1 (24/07) — khổ giấy in per-sheet (A3/A2/A1, ngang). undefined = A3 (mặc định cũ). */
+  /** B1 (24/07) — khổ giấy in per-sheet. undefined = A3 (mặc định cũ). */
   paperKey?: PaperKey;
+  /** 2.1.8.m (30/07, Luật #10 — chuẩn AutoCAD Page Setup/ISO 5457) — hướng giấy, TRỤC ĐỘC LẬP với
+   * `paperKey` (khổ và hướng không phải cùng 1 trục — "A3 ngang"/"A3 dọc" là 2 lựa chọn của CÙNG
+   * khổ A3, không phải 2 khổ khác nhau). undefined = mặc định theo khổ, xem `defaultPaperOrientation()`. */
+  paperOrientation?: PaperOrientation;
   /**
    * Tên studio/công ty in ở khung tên — NHẬN DIỆN CỦA DỰ ÁN, không phải của app (luật nền
    * tảng: IF là sản phẩm độc lập, không nhúng cứng studio nào). Nguồn: Brand Kit dự án
@@ -488,14 +492,40 @@ export interface Doc {
 
 /* ───────────────────────── B1 — tỉ lệ bản vẽ chuẩn + khổ giấy (paper-space cơ bản) ───────────────────────── */
 
-export type PaperKey = 'A3' | 'A2' | 'A1';
+/**
+ * 2.1.8.m (30/07, Luật #10) — SỬA lỗi gốc "nướng hướng giấy vào tuple kích thước": trước đây
+ * `PAPER_SIZES_MM` lưu SẴN dạng ngang (A3=[420,297]), coi "khổ" và "hướng" là 1 trục — thiếu A0/A4
+ * chỉ là TRIỆU CHỨNG, không phải bệnh gốc. Chuẩn AutoCAD Page Setup/ISO 5457: khổ giấy (A0-A4) và
+ * hướng (ngang/dọc) là HAI TRỤC ĐỘC LẬP — cùng 1 khổ A3 có thể ngang HOẶC dọc, không phải 2 khổ
+ * khác nhau ("A3-ngang" KHÔNG phải khổ giấy thứ 6). Sửa: `PAPER_SIZES_MM` lưu CHUẨN DỌC [ngắn,
+ * dài] (đúng cách ISO 216 công bố khổ giấy), `paperSizeMm(key, orientation)` hoán vị khi ngang.
+ */
+export type PaperKey = 'A0' | 'A1' | 'A2' | 'A3' | 'A4';
+export type PaperOrientation = 'portrait' | 'landscape';
 
-/** Khổ giấy ISO 216 NGANG (mm) — A3 khớp DEFAULT_PDF_PAPER_MM cũ của pdf.ts. */
+/** Khổ giấy ISO 216 CHUẨN DỌC [ngắn, dài] (mm) — dùng `paperSizeMm()` để lấy kích thước HIỆU
+ * DỤNG theo hướng, ĐỪNG đọc thẳng tuple này làm [rộng, cao] (đó chính là lỗi gốc đã sửa ở đây). */
 export const PAPER_SIZES_MM: Record<PaperKey, [number, number]> = {
-  A3: [420, 297],
-  A2: [594, 420],
-  A1: [841, 594],
+  A0: [841, 1189],
+  A1: [594, 841],
+  A2: [420, 594],
+  A3: [297, 420],
+  A4: [210, 297],
 };
+
+/** ISO 5457 — hướng MẶC ĐỊNH theo khổ khi Doc chưa chọn tường minh: A0-A3 ngang (bản vẽ kỹ
+ * thuật/mặt bằng), A4 dọc (biểu mẫu/mục lục — khớp trang mục lục `buildSheetSetPdf` đã dùng). */
+export function defaultPaperOrientation(key: PaperKey): PaperOrientation {
+  return key === 'A4' ? 'portrait' : 'landscape';
+}
+
+/** Kích thước giấy HIỆU DỤNG [rộng, cao] (mm) — khổ + hướng, 2 trục độc lập ghép lại. Đây là hàm
+ * DUY NHẤT được đọc kích thước giấy để vẽ/xuất — mọi nơi khác PHẢI qua đây (Luật Đồng Bộ #6),
+ * không tự hoán vị `PAPER_SIZES_MM` tay (dễ hoán nhầm chiều, xem lịch sử lỗi ở docstring trên). */
+export function paperSizeMm(key: PaperKey, orientation: PaperOrientation): [number, number] {
+  const [short, long] = PAPER_SIZES_MM[key];
+  return orientation === 'landscape' ? [long, short] : [short, long];
+}
 
 /** Thang tỉ lệ kiến trúc chuẩn (1:N) — ISO 5455 / thực hành hồ sơ nội thất. */
 export const STANDARD_SCALES = [10, 20, 25, 50, 100, 200, 500] as const;
@@ -545,9 +575,12 @@ export function docScaleLabel(doc: Doc, paperMm: [number, number], margin: numbe
   return fitScaleLabel(box, paperMm, margin);
 }
 
-/** Khổ giấy hiệu dụng của Doc (mm) — paperKey per-sheet, mặc định A3 (khớp hành vi cũ). */
+/** Khổ giấy hiệu dụng của Doc (mm) — paperKey+paperOrientation per-sheet. Doc cũ không có 2
+ * field này (trước khi 2.1.8.m tách hướng) → A3 NGANG (khớp hành vi cũ nguyên vẹn — tương thích
+ * ngược, xem defaultPaperOrientation('A3')==='landscape'). */
 export function docPaperMm(doc: Doc): [number, number] {
-  return PAPER_SIZES_MM[doc.paperKey ?? 'A3'];
+  const key = doc.paperKey ?? 'A3';
+  return paperSizeMm(key, doc.paperOrientation ?? defaultPaperOrientation(key));
 }
 
 export const DEFAULT_LAYERS: Layer[] = [
