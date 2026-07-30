@@ -5,13 +5,19 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (30/07 khuya — B1 backup tự động xong, chặn blocker mất dữ liệu)
+## Hiện tại (30/07 khuya — 7.3.31 hợp nhất AppChrome xong, tiếp 2.2.86)
 Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này:
-- ✅ **B1 backup tự động** (`4.6`+`4.13` ✅, theo `docs/CAT-PHAM-VI-3-NGAY-2026-07-30.md` §1 —
-  ưu tiên trên mọi mã UI, blocker mất dữ liệu) — `lib/cad/auto-backup.ts` mới: `setInterval` 10
-  phút + mỗi lần autosave IDB ghi xong, ra thư mục thứ 2 do user chọn 1 lần (File System Access
-  API), giữ đúng 5 bản. Nút "Bật backup tự động" trong menu Xuất CAD. 6/6 test `namesToPrune()`.
-  Browser-verify thật (OPFS thay dialog OS): ghi `.ifpack` ZIP hợp lệ thật, prune đúng 5/5 khi dư.
+- ✅ **7.3.31 mở rộng** — hợp nhất `Header.tsx`+`StudioBar.tsx` → `AppChrome.tsx` duy nhất (4 route),
+  `stage-nav.ts` gộp logic điều hướng, sửa 2 lỗi thật (`SessionWatch`+link `/settings` trước thiếu
+  ở 3/4 route). Browser-verify 4 route×2 breakpoint: `.if-dock` left 0px jitter (254.203125px cả
+  8/8 lần đo), width lệch tối đa 0.28px. 102/102 test, tsc+eslint sạch.
+- 🔴 **Nợ kỹ thuật phát hiện** (pre-existing, không phải regression `7.3.31`): Tệp chồng Chạy flow
+  ở 1024px route render — ghi vào `docs/TECH-DEBT.md`, tự hết khi `2.2.86` dời nút khỏi bar.
+- ✅ **B1 backup tự động** (`4.6`+`4.13`) — xem CHANGELOG cho chi tiết, đã xong phiên trước.
+- ⏭️ **Tiếp theo (thứ tự Hoà chốt 30/07)**: `2.2.86` (Chạy flow rời bar → pill nổi trạng thái,
+  `docs/TICKET-CHAY-FLOW-KHONG-GHIM-BAR-2026-07-30.md`) → `7.1.19` (Lark Wiki token,
+  `docs/REVIEW-SPEC-BOQ-LARK-2026-07-30.md`) → `2.1.9.q` (BOQ groundwork hình học) → BOQ `2.1.9.p`
+  (còn chờ Hoà quyết "có làm không", matId đã CHỐT 30/07 — xem cây mã `2.1.9.i`).
 - ⏸️ **B2/B3/B4** (`docs/CAT-PHAM-VI-3-NGAY-2026-07-30.md` §1, §3 Ngày 1-2) chưa làm — B3 (kiểm
   autosave sống sót crash) cần THỬ TAY thật, không đọc code; B4 (trung tính 44 chỗ/25 file) đụng
   `lib/server/auth.ts`+`app/layout.tsx`, rủi ro cao nhất.
@@ -33,8 +39,8 @@ Không có.
 - Treo: VIỆC 4 cũ (GuProfile=dữ liệu) · #14 (cụm Mẫu Presenting).
 - 3 nhánh `worktree-agent-*` merged còn local; `fix/hatch-t-junction`+`fix/quality-pipeline`
   chưa merge — xoá được không?
-- BOQ: đã gộp 1 sáng kiến `2.1.9.p` (`IF-MASTER-TREE.md`, Q6 28/07) — vẫn cần quyết có làm không,
-  matId nối vào đâu (xem IF1-COMPLETION-AUDIT §3c).
+- BOQ: đã gộp 1 sáng kiến `2.1.9.p` (`IF-MASTER-TREE.md`, Q6 28/07) — matId nối vào đâu **ĐÃ CHỐT
+  30/07** (bảng riêng `AtlasMaterial`, xem `2.1.9.i`); vẫn cần quyết CÓ LÀM ENGINE THẬT không.
 - **2.2.16-2.2.21** (Render Tool Mode Pha 2-4, hạ tầng có sẵn chưa lộ card) — mục CẦN HOÀ QUYẾT
   duy nhất còn mở trong `docs/IF-FEATURE-TREE.md`.
 - **12 file phụ SPEC-TỔNG §9 chưa nhận được** (KHAM-*.md × 8, LUAT-300DPI, AUDIT-PRESENT-UX,

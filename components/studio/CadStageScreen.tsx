@@ -13,7 +13,7 @@
  * StageEnter (C-4 crossfade) và FoldableDualPane (D-1 pane Reference khi máy gập mở).
  */
 
-import StudioBar from '@/components/studio/StudioBar';
+import { AppChrome } from '@/components/studio/AppChrome';
 import CadSheets from '@/components/cad/CadSheets';
 import { StageEnter } from '@/components/studio/StageTransition';
 import FoldableDualPane from '@/components/studio/FoldableDualPane';
@@ -31,7 +31,7 @@ export default function CadStageScreen() {
   const userId = effectiveUserId(storeUserId);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: 'var(--bg)' }}>
-      <StudioBar active="cad" />
+      <AppChrome active="cad" />
       <StageEnter>
         {/* Tầng multi-sheet (phụ-thêm): thanh tab + CadEditor. 1 sheet ⇒ y hệt bản cũ. */}
         <FoldableDualPane primary={<CadSheets />} secondary={<ReferencePane />} />

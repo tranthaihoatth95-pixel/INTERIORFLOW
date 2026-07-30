@@ -34,7 +34,7 @@ import PhotoEditor from '@/components/photo-editor/PhotoEditor';
 import { makeSampleDoc } from '@/lib/photo-editor/sample';
 import { makeEmptyDoc, makeRasterLayer, type PhotoDoc } from '@/lib/photo-editor/model';
 import { loadImage } from '@/lib/photo-editor/imaging';
-import StudioBar from '@/components/studio/StudioBar';
+import { AppChrome } from '@/components/studio/AppChrome';
 import {
   consumePhotoEditorIn,
   writePhotoEditorReturn,
@@ -93,7 +93,7 @@ export default function PhotoEditorScreen() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
-      <StudioBar active="photo" />
+      <AppChrome active="photo" />
       <div style={{ flex: 1, minHeight: 0 }}>
         {doc && <PhotoEditor initialDoc={doc} onWriteBack={target ? onWriteBack : undefined} />}
       </div>

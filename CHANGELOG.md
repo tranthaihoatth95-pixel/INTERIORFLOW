@@ -1,5 +1,33 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 30/07 khuya — 7.3.31 mở rộng: hợp nhất Header+StudioBar → AppChrome, cấp mã đợt review BOQ/Lark
+- **7.3.31** (nâng phạm vi từ "sửa 3 nút nhảy vị trí" lên "hợp nhất lớp app chrome") — `Header.tsx`
+  (route `/`) + `StudioBar.tsx` (`/cad`,`/present`,`/photo`) → `AppChrome.tsx` duy nhất, prop
+  `active`. `lib/studio/stage-nav.ts` mới gộp `PhaseSwitcher.onPick` (Header cũ) + `go()`
+  (StudioBar cũ) thành `pickStage()`. `AppChromeTypes.ts` tách `type AppChromeActive` tránh vòng
+  lặp import. `MobileMenu.tsx` nhận prop `active`, `PhaseRow` đổi gọi `pickStage()` qua router
+  (trước gọi `setWorkspace()` trực tiếp — bug: đổi state không đổi URL ngoài route render).
+  2 lỗi thật sửa kèm: `SessionWatch` trước chỉ ở `StudioBar` (route `/` không báo hết phiên) → nay
+  universal 4 route; không route nào ngoài `/` có đường tới `/settings` → `MoreMenu` (link Cài
+  đặt + theme) nay universal. Theme toggle: thử tách đứng riêng ở cụm phải trước, phát hiện vỡ
+  bất biến priority+ (2.2.60) ở 1024px (thêm ~32-40px luôn-hiện làm "Chạy flow" đè "Tệp") — trả về
+  đúng vị trí gốc trong `MoreMenu()`. `Header.tsx`+`StudioBar.tsx` xoá hẳn (xác nhận grep 0 import).
+  Browser-verify thật: `.if-dock` ở CẢ 4 route (`/photo` qua tab mới, đúng cách vào thật) × 2
+  breakpoint (1183/1440px) — left giống hệt 254.203125px cả 8/8 lần đo (0px jitter), width lệch
+  tối đa 0.28px. `UserChip`/Cài đặt/`SessionWatch`/theme xác nhận có mặt cả 4 route. tsc sạch,
+  ESLint sạch, 102/102 test sucrase-node pass.
+- 🔴 Nợ kỹ thuật phát hiện khi verify (không phải regression `7.3.31`) — Tệp chồng một phần Chạy
+  flow ở 1024px route render, pre-existing từ `Header.tsx` cũ (comment gốc dòng 45-52 xác nhận cố
+  ý không dùng `overflow-hidden` vì cắt popover con). Ghi `docs/TECH-DEBT.md`, tự hết khi `2.2.86`
+  dời "Chạy flow" khỏi bar.
+- **Cấp mã (Luật #8b)** theo `docs/REVIEW-SPEC-BOQ-LARK-2026-07-30.md` và
+  `docs/TICKET-CHAY-FLOW-KHONG-GHIM-BAR-2026-07-30.md`, Hoà đã xác nhận không trùng: `2.2.86`
+  (Chạy flow rời bar → pill nổi trạng thái), `7.1.19` (Lark Wiki `resolveWikiAppToken` + 3-token
+  split), `2.1.9.q` (BOQ groundwork — `polygonPerimeter`+trừ lỗ mở, gộp 2 việc 1 mã theo yêu cầu
+  Hoà). Chốt luôn câu hỏi treo ở `2.1.9.i`/`2.1.9.p`: matId nối vào bảng Prisma riêng
+  `AtlasMaterial` + `MaterialDef.atlasRecordId` — không thêm field thương mại vào `MaterialDef`
+  (vật liệu thị giác, dùng vẽ texture). Thứ tự làm tiếp: `2.2.86`→`7.1.19`→`2.1.9.q`→BOQ `2.1.9.p`.
+
 ## 30/07 tối — Sprint 3 cụm đầu: 2.2.85+2.2.69+7.3.30, 3 commit + 2 xác nhận
 - `2.2.85`+`2.2.69` chung 1 commit `74cf4c5` (đúng thứ tự bắt buộc: bỏ mono TRƯỚC đổi tên, vì SF
   Mono/Cascadia/Fira thiếu glyph dấu Việt). Bỏ font mono ở mọi nhãn node (10 file, 1 ngoài danh

@@ -21,7 +21,7 @@ import { useRouter } from 'next/navigation';
 import { LoginScreen } from '@/components/entry/LoginScreen';
 import { WelcomeIntro } from '@/components/entry/WelcomeIntro';
 import { StageIntroCard } from '@/components/onboarding/StageIntroCard';
-import { Header } from '@/components/Header';
+import { AppChrome } from '@/components/studio/AppChrome';
 import { LeftRail } from '@/components/LeftRail';
 import { NodeLibraryPanel } from '@/components/NodeLibraryPanel';
 import { GalleryPanel } from '@/components/GalleryPanel';
@@ -562,7 +562,7 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
         animate="visible"
         className="flex h-[100dvh] flex-col overflow-hidden bg-[var(--bg)]"
       >
-        <Header />
+        <AppChrome active="render" />
         {/* relative: neo các panel overlay (mobile) vào vùng dưới header */}
         <div className="relative flex min-h-0 flex-1">
           <LeftRail />

@@ -8,14 +8,17 @@ import {
   LayoutDashboard, Palette, Box, Presentation, ChevronRight,
   Loader2, Clock3, CircleCheck, CircleAlert, Settings as SettingsIcon,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { TIERS } from '@/lib/ai/tiers';
 import { AiStatusDot } from '@/components/settings/AiDependencySettings';
-import { PHASES, DEFAULT_PHASE, type Phase } from '@/lib/phases';
+import { PHASES, type Phase } from '@/lib/phases';
 import { toggleShare } from '@/lib/workspace';
 import { nextThemePref, themeIconFor, themeLabelVi } from '@/lib/theme-toggle';
 import { pressable, pressableIcon, springSheet, easeApple } from '@/lib/motion';
+import { useStageTransition } from '@/components/studio/StageTransitionProvider';
+import { activeToPhase, pickStage } from '@/lib/studio/stage-nav';
+import type { AppChromeActive } from '@/components/studio/AppChromeTypes';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
@@ -23,10 +26,14 @@ import { UserAvatar } from '@/components/avatar/UserAvatar';
 const PHASE_ICON: Record<Phase, typeof Palette> = { concept: Palette, render: Box, present: Presentation };
 
 /**
- * Overflow "⋯" cho mobile (<sm). Trên desktop các control này nằm inline ở Header;
+ * Overflow "⋯" cho mobile (<sm). Trên desktop các control này nằm inline ở `AppChrome`;
  * dưới 640px chúng tràn mép nên gom hết vào bottom-sheet kiểu Apple.
+ *
+ * `active` (30/07, hợp nhất Header+StudioBar) — bắt buộc truyền vào để `PhaseRow` điều hướng
+ * ĐÚNG route hiện tại (`lib/studio/stage-nav.ts`), thay vì gọi thẳng `setWorkspace()` như trước
+ * (chỉ đúng khi mount ở route `/`, SAI ở /cad·/present·/photo — đổi state mà không đổi URL).
  */
-export function MobileMenu() {
+export function MobileMenu({ active }: { active: AppChromeActive }) {
   const [open, setOpen] = useState(false);
   const activeJobs = useFlowStore((s) => s.jobs.filter((j) => j.status === 'running' || j.status === 'queued').length);
 
@@ -56,12 +63,12 @@ export function MobileMenu() {
         )}
       </motion.button>
 
-      <AnimatePresence>{open && <Sheet close={() => setOpen(false)} />}</AnimatePresence>
+      <AnimatePresence>{open && <Sheet close={() => setOpen(false)} active={active} />}</AnimatePresence>
     </div>
   );
 }
 
-function Sheet({ close }: { close: () => void }) {
+function Sheet({ close, active }: { close: () => void; active: AppChromeActive }) {
   // portal ra body — tránh bị ancestor có transform (header/motion wrapper) "giam" fixed
   if (typeof document === 'undefined') return null;
   return createPortal(
@@ -97,7 +104,7 @@ function Sheet({ close }: { close: () => void }) {
 
         <div className="space-y-4 px-4 pt-1">
           <AccountRow />
-          <PhaseRow />
+          <PhaseRow active={active} />
           <TierLinkRow />
           <ActionsRow close={close} />
           <TasksRow />
@@ -158,24 +165,25 @@ function AccountRow() {
   );
 }
 
-function PhaseRow() {
-  const workspace = useFlowStore((s) => s.workspace);
-  const setWorkspace = useFlowStore((s) => s.setWorkspace);
-  const current: Phase = workspace ?? DEFAULT_PHASE;
+function PhaseRow({ active }: { active: AppChromeActive }) {
+  const current: Phase = activeToPhase(active);
+  const router = useRouter();
+  const pathname = usePathname();
+  const { begin } = useStageTransition();
   const tr = useT();
   return (
     <Section label={tr('Chặng làm việc', 'Workflow stage')}>
       <div className="grid grid-cols-3 gap-1.5">
         {PHASES.map((p) => {
           const Icon = PHASE_ICON[p.id];
-          const active = current === p.id;
+          const isActive = current === p.id;
           return (
             <button
               key={p.id}
-              onClick={() => setWorkspace(p.id)}
+              onClick={() => pickStage(p.id, { active, pathname, router, begin })}
               className={cn(
                 'flex flex-col items-center gap-1 rounded-[12px] border px-2 py-2.5 text-[11px] font-medium transition-colors',
-                active
+                isActive
                   ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
                   : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)]',
               )}

@@ -17,7 +17,7 @@
 import { useState } from 'react';
 import PresentSheets from '@/components/present-editor/PresentSheets';
 import { makeSampleDeck } from '@/lib/present-editor/sample';
-import StudioBar from '@/components/studio/StudioBar';
+import { AppChrome } from '@/components/studio/AppChrome';
 import StatusBar from '@/components/studio/StatusBar';
 import { StageEnter } from '@/components/studio/StageTransition';
 import { CommentLayer } from '@/components/CommentLayer';
@@ -39,7 +39,7 @@ export default function PresentStageScreen() {
   const playing = usePlayStatus((s) => s.playing);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
-      <StudioBar active="present" />
+      <AppChrome active="present" />
       {/* C-4: vào chặng bằng crossfade + scale "dynamic wallpaper" (StageEnter). */}
       <StageEnter style={{ display: 'block' }}>
         {/* Tầng multi-sheet (phụ-thêm): thanh tab + PresentEditor. 1 sheet ⇒ y hệt bản cũ. */}

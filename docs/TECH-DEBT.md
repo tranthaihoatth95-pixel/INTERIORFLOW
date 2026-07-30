@@ -25,3 +25,6 @@
 - 🟡 **Tool Mode Render (VIỆC B)** — "Sửa một mảng" cần vẽ mask tay, chỉ dựng node rồi mở canvas
   · ngưỡng "≤7 inch" xấp xỉ bề rộng CSS px (`lib/render-studio/tool-mode-ui.ts`), chưa test máy thật.
 - 53 ảnh `public/wallpapers/ttt-*` giữ tạm theo ý user.
+- 🟡 1024px — Tệp chồng một phần Chạy flow ở route render. Pre-existing (`Header.tsx` cũ), không
+  phải `7.3.31`. KHÔNG sửa bằng `overflow-hidden` (cắt popover — xem comment `Header.tsx` cũ dòng
+  45-52). Tự hết khi dời Chạy flow khỏi bar theo `docs/TICKET-CHAY-FLOW-KHONG-GHIM-BAR-2026-07-30.md`.
