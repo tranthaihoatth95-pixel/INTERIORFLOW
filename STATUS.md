@@ -18,6 +18,7 @@ Chi tiết đầy đủ → `CHANGELOG.md` (mỗi dòng dưới đây có 1 mụ
   test không đưa được file qua input) — nâng lại ✅ khi Hoà tự thử. Disclose: Tầng 2/3 AI chưa làm.
 - ✅ **2 mã XÁC NHẬN** (Luật #12 mới — chỉ Claude Code cấp mã): `7.1.21`=script test,
   `7.1.22`=Bộ nhớ đo đạc. Cả 2 CHƯA CODE.
+- ✅ **7.1.21 CODE XONG (30/07, `if-infra`)** — thêm `"test"` vào `package.json`: `find` mọi `*.test.ts` (trừ `node_modules`/`.worktrees`, loại 2 ngoại lệ `edgecase-concurrency.test.ts`/`auto-backup.test.ts`) chạy song song qua `sucrase-node` (`xargs -P8`). Verify thật `npm test`: 102/102 pass, ~20-25s.
 - ✅ **2.2.70 (a)(b)** 2 lỗi nhỏ commit riêng (`df74551`). Nội dung chính `2.2.70` vẫn treo (credit).
 - ✅ **2.1.9.q (BOQ groundwork)** — `polygonPerimeter()`+`openingsAreaInPolygon()` vào `hatch.ts`.
   Phát hiện khi khám: review spec giả định sai `BlockDef.h`=chiều cao cửa (thật ra là độ sâu mặt
