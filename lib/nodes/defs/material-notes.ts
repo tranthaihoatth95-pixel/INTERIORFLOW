@@ -107,7 +107,7 @@ async function renderMaterialCard(opt: {
 export const materialNoteNodes: NodeDefinition[] = [
   {
     type: 'util.materialnote',
-    title: 'Material Note',
+    title: 'Ghi chú vật liệu · Material Note',
     category: 'UTILITY',
     description:
       'Ghi chú vật liệu: tên · mã/SKU · NCC · màu · ghi chú → 1 thẻ ảnh + mô tả text. Dán lên board/slide hoặc nhồi vào prompt AI. 0 credit.',

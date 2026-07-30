@@ -122,7 +122,7 @@ export const patternWarpNodes: NodeDefinition[] = [
   // ══════════════ 1) SMART SELECT ══════════════
   {
     type: 'ai.smartselect',
-    title: 'Smart Select (chọn vùng)',
+    title: 'Chọn vùng thông minh · Smart Select',
     category: 'AI_EDIT',
     description:
       'Bấm vào vật thể (hoặc kéo 1 khung) → chọn đúng biên bằng SAM 2, brush tinh chỉnh mép. Ra mask nối thẳng vào Material Swap / Furniture.',
@@ -163,7 +163,7 @@ export const patternWarpNodes: NodeDefinition[] = [
   // ══════════════ 2) PATTERN STUDIO ══════════════
   {
     type: 'ai.pattern',
-    title: 'Pattern Studio (hoa văn)',
+    title: 'Hoa văn · Pattern Studio',
     category: 'AI_GENERATE',
     description:
       'Hoa văn cho vách · giấy dán tường · thảm · gạch · rèm. Nối ẢNH MẪU vào input Reference để giữ đúng motif (Chăm/Khmer/Đông Sơn…) — chỉ tả bằng chữ thì AI hay chệch sang mandala/damask.',
@@ -283,7 +283,7 @@ export const patternWarpNodes: NodeDefinition[] = [
   // ══════════════ 3) PERSPECTIVE WARP ══════════════
   {
     type: 'util.warp',
-    title: 'Perspective Warp (4 góc)',
+    title: 'Nắn phối cảnh · Perspective Warp',
     category: 'UTILITY',
     description:
       'Kéo 4 góc để dán pattern/ảnh lên mặt vách NGHIÊNG trong ảnh phối cảnh. Vùng ngoài trong suốt → nối vào Ghép ảnh (Composite). Tức thì, 0 credit.',

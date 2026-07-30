@@ -114,7 +114,7 @@ export const renderV2Nodes: NodeDefinition[] = [
   // ============ 1) TEXT → ẢNH (2 tầng: NVIDIA → fal/oneAI → lõi) ============
   {
     type: 'ai.text2image',
-    title: 'Tạo ảnh (Text → Ảnh)',
+    title: 'Tạo ảnh từ chữ · Text to Image',
     category: 'AI_GENERATE',
     description:
       'Prompt → ảnh nội thất. Tầng AI: NVIDIA NIM free (SD3-medium) → fal/oneAI theo mức AI. Chưa có key: tầng lõi tất định vẽ concept sketch từ chính prompt — ghi rõ tầng đã chạy.',
@@ -200,7 +200,7 @@ export const renderV2Nodes: NodeDefinition[] = [
   // ============ 2) GÓC MÁY ẢNH (tất định) ============
   {
     type: 'three.camera',
-    title: 'Góc máy ảnh',
+    title: 'Góc máy ảnh · Camera Angle',
     category: 'INPUT',
     description:
       'Preset máy ảnh tất định (tầm mắt / góc rộng / cận vật liệu / trên cao) → JSON camera cho node 3D + mẩu prompt cho node render. 0 credit.',
@@ -228,7 +228,7 @@ export const renderV2Nodes: NodeDefinition[] = [
   // ============ 3) BẢN VẼ → 3D (OBJ/FBX) ============
   {
     type: 'three.cad2fbx',
-    title: 'Bản vẽ → 3D (OBJ/FBX)',
+    title: 'Bản vẽ → Khối 3D · Drawing to 3D',
     category: 'INPUT',
     description:
       'Đọc bản vẽ chặng 1 (tường WALL + block nội thất) → dựng khối 3D đúng kích thước thật, xuất OBJ/MTL ngay trên node; nút "Xuất FBX" convert qua Blender local (có thì dùng, không có báo rõ). 0 credit, 100% tất định.',
@@ -287,7 +287,7 @@ export const renderV2Nodes: NodeDefinition[] = [
   // ============ 4) ID MASK (phân vùng) ============
   {
     type: 'ai.idmask',
-    title: 'ID Mask (phân vùng)',
+    title: 'Phân vùng ID · ID Mask',
     category: 'AI_EDIT',
     description:
       'Phân ảnh thành các vùng màu phẳng kiểu ID map VRay (median-cut, tất định) → chọn 1 vùng làm mask cho Material Swap / Chỉnh cục bộ. Có FAL_KEY: BiRefNet tách nền chính xác thành vùng riêng.',
@@ -349,7 +349,7 @@ export const renderV2Nodes: NodeDefinition[] = [
   // ============ 5) TÁCH NỘI THẤT ============
   {
     type: 'ai.furnitureextract',
-    title: 'Tách nội thất',
+    title: 'Tách nội thất · Furniture Extract',
     category: 'AI_EDIT',
     description:
       'Tách đồ nội thất/sản phẩm khỏi nền → cutout PNG trong suốt + mask. Có FAL_KEY: BiRefNet (AI). Không có: tầng lõi tách theo màu nền viền (hợp ảnh catalogue nền phẳng) — ghi rõ tầng đã chạy.',
@@ -417,7 +417,7 @@ export const renderV2Nodes: NodeDefinition[] = [
   // ============ 6) CHỈNH CỤC BỘ ============
   {
     type: 'ai.localedit',
-    title: 'Chỉnh cục bộ',
+    title: 'Chỉnh cục bộ · Local Edit',
     category: 'AI_EDIT',
     description:
       'Chỉnh đúng vùng mask, phần còn lại giữ nguyên. Chế độ AI: inpaint theo prompt (FLUX Fill, cần key). Chế độ tay / không key: chỉnh sáng·tương phản·bão hoà·nhiệt màu·hue trong vùng mask — tất định, 0đ.',

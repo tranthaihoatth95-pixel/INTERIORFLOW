@@ -128,7 +128,7 @@ async function compositeImages(
 export const cropCompositeNodes: NodeDefinition[] = [
   {
     type: 'util.crop',
-    title: 'Crop & Resize',
+    title: 'Cắt và đổi cỡ · Crop & Resize',
     category: 'UTILITY',
     description: 'Cắt khung + ép tỉ lệ (vuông/16:9/dọc…) — chỉnh bố cục trước khi đưa vào AI. Tức thì, 0 credit.',
     inputs: [{ id: 'image', label: 'Ảnh', dataType: 'image' }],
@@ -157,7 +157,7 @@ export const cropCompositeNodes: NodeDefinition[] = [
   },
   {
     type: 'util.composite',
-    title: 'Ghép ảnh (Composite)',
+    title: 'Ghép ảnh · Composite',
     category: 'UTILITY',
     description: 'Chồng 1 ảnh (vd cutout Remove BG) lên nền — chọn góc, cỡ, độ mờ, chế độ hoà màu. Tức thì, 0 credit.',
     inputs: [

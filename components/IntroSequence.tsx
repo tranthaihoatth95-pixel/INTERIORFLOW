@@ -27,7 +27,6 @@ import { LoginForm } from '@/components/entry/LoginForm';
 // Token cục bộ (brand đích — warm stone, đồng #C79A63). SANS, không chân.
 const COPPER = '#c79a63';
 const SANS = '-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue","Space Grotesk",system-ui,sans-serif';
-const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
 const INK = '#e9e0d2'; // "mực" nhạt trên nền đêm ấm
 
 // 4 cảnh kể chuyện + 1 cảnh đăng nhập. `stage` điều khiển khung tranh.
@@ -154,7 +153,7 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
         <button
           onClick={gotoLogin}
           className="absolute right-6 top-6 z-30 rounded-full px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-[var(--t4)] transition-colors hover:text-[var(--t2)]"
-          style={{ fontFamily: MONO }}
+          style={{ fontFamily: SANS }}
         >
           {lang === 'en' ? 'Sign in →' : 'Đăng nhập →'}
         </button>
@@ -204,7 +203,7 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
             >
               <div
                 className="mb-6 flex items-center gap-3 text-[11px] uppercase text-[var(--t4)]"
-                style={{ fontFamily: MONO, letterSpacing: '0.26em' }}
+                style={{ fontFamily: SANS, letterSpacing: '0.26em' }}
               >
                 <span style={{ color: COPPER }}>{scene.no}</span>
                 <span className="h-px w-6" style={{ background: 'var(--border)' }} />
@@ -234,7 +233,7 @@ export function IntroSequence({ onDone }: { onDone: () => void }) {
                 animate={{ opacity: 1 }}
                 onClick={() => setI(Math.min(i + 1, SCENES.length - 1))}
                 className="text-[11px] uppercase tracking-[0.2em] text-[var(--t4)] transition-colors hover:text-[var(--t2)]"
-                style={{ fontFamily: MONO }}
+                style={{ fontFamily: SANS }}
               >
                 {lang === 'en' ? 'Next →' : 'Tiếp →'}
               </motion.button>
@@ -360,7 +359,7 @@ function SketchStage({ stage, reduce, sceneKey }: { stage: Stage; reduce: boolea
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.7, ease: easeApple, delay: 0.15 }}
             >
-              <div className="text-[10px] uppercase" style={{ fontFamily: MONO, letterSpacing: '0.28em', color: COPPER }}>
+              <div className="text-[10px] uppercase" style={{ fontFamily: SANS, letterSpacing: '0.28em', color: COPPER }}>
                 Concept · Bedroom
               </div>
               <div
@@ -377,7 +376,7 @@ function SketchStage({ stage, reduce, sceneKey }: { stage: Stage; reduce: boolea
             </motion.div>
             <div
               className="absolute right-4 top-4 rounded-full px-2.5 py-1 text-[9px] uppercase tracking-[0.2em]"
-              style={{ fontFamily: MONO, background: 'rgba(15,12,9,0.55)', color: '#f6efe2' }}
+              style={{ fontFamily: SANS, background: 'rgba(15,12,9,0.55)', color: '#f6efe2' }}
             >
               16:9 · PDF
             </div>
@@ -389,7 +388,7 @@ function SketchStage({ stage, reduce, sceneKey }: { stage: Stage; reduce: boolea
       <div
         className="absolute left-4 top-4 rounded-full px-2.5 py-1 text-[9px] uppercase tracking-[0.22em]"
         style={{
-          fontFamily: MONO,
+          fontFamily: SANS,
           background: showReal ? 'rgba(15,12,9,0.5)' : 'rgba(75,64,52,0.12)',
           color: showReal ? '#f6efe2' : '#6b5b45',
         }}

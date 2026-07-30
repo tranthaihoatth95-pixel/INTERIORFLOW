@@ -54,7 +54,7 @@ async function composeCompare(cells: { name: string; strength: string; url: stri
 export const compareNodes: NodeDefinition[] = [
   {
     type: 'render.compare',
-    title: 'So sánh model (xịn)',
+    title: 'So sánh model · Model Compare',
     category: 'AI_GENERATE',
     description:
       '1 prompt → 4 model đỉnh (FLUX Pro · SD3.5 · Ideogram · Recraft) cạnh nhau để chọn. Cần balance fal cho ảnh thật — 4cr/model render thật (16cr đủ 4), mock miễn phí.',

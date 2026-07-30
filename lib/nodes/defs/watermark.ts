@@ -50,7 +50,7 @@ async function applyWatermark(
 export const watermarkNodes: NodeDefinition[] = [
   {
     type: 'util.watermark',
-    title: 'Watermark',
+    title: 'Đóng dấu · Watermark',
     category: 'UTILITY',
     description: 'Dán logo/watermark lên ảnh — chọn góc, cỡ, độ mờ. Tức thì, 0 credit.',
     inputs: [

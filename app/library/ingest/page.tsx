@@ -177,7 +177,7 @@ export default function IngestPage() {
       {/* AI Content Strategist — 3 kịch bản trình khách */}
       <div style={{ border: '1px solid #2A261F', borderRadius: 12, background: 'linear-gradient(180deg,#141009,transparent)', padding: 18, margin: '16px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-          <span style={{ fontFamily: '"SF Mono",monospace', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: '#C79A63' }}>AI · Chiến lược content</span>
+          <span style={{ fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: '#C79A63' }}>AI · Chiến lược content</span>
           <span style={{ fontSize: 11.5, color: '#8B887F' }}>khai thác → hiểu → biện luận → tốt nhất · phân vân · loại</span>
         </div>
         <textarea value={brief} onChange={(e) => setBrief(e.target.value)} rows={2}
@@ -194,7 +194,7 @@ export default function IngestPage() {
                 const rm = RANK_META[s.rank] ?? { label: s.rank, tone: '#8B887F' };
                 return (
                   <div key={i} style={{ border: `1px solid ${rm.tone}55`, borderRadius: 10, padding: 14, background: `${rm.tone}0D` }}>
-                    <span style={{ fontFamily: '"SF Mono",monospace', fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: rm.tone }}>{rm.label}</span>
+                    <span style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: rm.tone }}>{rm.label}</span>
                     <h3 style={{ fontSize: 15, margin: '6px 0 4px', color: '#EFE9DC', fontWeight: 600 }}>{s.title}</h3>
                     <p style={{ fontSize: 12, color: '#9C8E76', margin: '0 0 8px', fontStyle: 'italic' }}>{s.angle}</p>
                     <p style={{ fontSize: 12, color: '#CFC7B8', margin: '0 0 8px', lineHeight: 1.5 }}>{s.why}</p>
@@ -214,7 +214,7 @@ export default function IngestPage() {
       {/* Illustration Picker — thác nguồn ảnh */}
       <div style={{ border: '1px solid #2A261F', borderRadius: 12, background: 'linear-gradient(180deg,#100D14,transparent)', padding: 18, margin: '0 0 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: '"SF Mono",monospace', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: '#6B84A8' }}>Hình minh hoạ · thác nguồn</span>
+          <span style={{ fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: '#6B84A8' }}>Hình minh hoạ · thác nguồn</span>
           <span style={{ fontSize: 11.5, color: '#8B887F' }}>Reference → Openverse (CC) → Unsplash → sinh khi cần</span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -237,7 +237,7 @@ export default function IngestPage() {
                     {src ? <img src={src} alt={p.title ?? ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
                   </div>
                   <div style={{ padding: '7px 8px' }}>
-                    <span style={{ fontFamily: '"SF Mono",monospace', fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase', color: tone }}>
+                    <span style={{ fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase', color: tone }}>
                       {p.source === 'reference'
                         ? 'Reference'
                         : p.source === 'unsplash'

@@ -13,7 +13,6 @@ import { easeApple, springPop, pressable } from '@/lib/motion';
 // Token cục bộ (brand đích — warm stone, đồng #C79A63). SANS hiện đại, KHÔNG chân.
 const COPPER = '#c79a63';
 const SANS = '-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue","Space Grotesk",system-ui,sans-serif';
-const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
 
 // 3 chặng mềm của cùng 1 pipeline — chọn nơi bắt đầu, không phải 3 app rời.
 const MODES: {
@@ -123,7 +122,7 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
           </div>
           <div
             className="mt-5 text-[10px] uppercase text-[var(--t4)]"
-            style={{ fontFamily: MONO, letterSpacing: '0.28em' }}
+            style={{ fontFamily: SANS, letterSpacing: '0.28em' }}
           >
             InteriorFlow
           </div>
@@ -165,7 +164,7 @@ export function LoginScreen({ onReplayIntro }: { onReplayIntro?: () => void }) {
                 <div
                   className="relative z-10 mt-4 text-[10px] uppercase transition-colors"
                   style={{
-                    fontFamily: MONO,
+                    fontFamily: SANS,
                     letterSpacing: '0.24em',
                     color: active ? COPPER : 'var(--t5)',
                   }}

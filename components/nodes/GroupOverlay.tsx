@@ -39,7 +39,6 @@ function GroupRect({ group }: { group: NodeGroup }) {
         style={{
           transform: `translate(${cx - 60}px, ${cy - 16}px)`,
           zIndex: 5,
-          fontFamily: 'ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace',
         }}
       >
         <button
@@ -82,10 +81,7 @@ function GroupRect({ group }: { group: NodeGroup }) {
       {/* Label bar — pointer-events on */}
       <div
         className="absolute -top-0.5 left-0 right-0 flex items-center gap-1.5 rounded-t-xl px-3 py-1"
-        style={{
-          pointerEvents: 'auto',
-          fontFamily: 'ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace',
-        }}
+        style={{ pointerEvents: 'auto' }}
       >
         <button
           className="nodrag grid h-5 w-5 place-items-center rounded text-[var(--t3)] hover:bg-[var(--hover)]"

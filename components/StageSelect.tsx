@@ -27,7 +27,6 @@ import { LangToggle } from '@/components/LangToggle';
 
 const COPPER = '#c79a63';
 const SANS = '-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue","Space Grotesk",system-ui,sans-serif';
-const MONO = '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace';
 
 const MODES: {
   id: WorkspaceMode;
@@ -130,7 +129,7 @@ export function StageSelect({ onEnter }: { onEnter: () => void }) {
         <div className="mb-11 flex flex-col items-center text-center">
           <div
             className="text-[10px] uppercase text-[var(--t4)]"
-            style={{ fontFamily: MONO, letterSpacing: '0.28em' }}
+            style={{ fontFamily: SANS, letterSpacing: '0.28em' }}
           >
             {firstName ? (en ? `Hi ${firstName}` : `Chào ${firstName}`) : 'InteriorFlow'}
           </div>
@@ -171,7 +170,7 @@ export function StageSelect({ onEnter }: { onEnter: () => void }) {
 
                 <div
                   className="relative z-10 mt-4 text-[10px] uppercase transition-colors"
-                  style={{ fontFamily: MONO, letterSpacing: '0.24em', color: active ? COPPER : 'var(--t5)' }}
+                  style={{ fontFamily: SANS, letterSpacing: '0.24em', color: active ? COPPER : 'var(--t5)' }}
                 >
                   {m.tagline[lang]}
                 </div>

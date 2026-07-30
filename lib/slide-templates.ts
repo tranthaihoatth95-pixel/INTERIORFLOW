@@ -17,13 +17,13 @@ export const SLIDE_W = 1920;
 export const SLIDE_H = 1080;
 
 /**
- * Font hệ thống — SANS, không chân. `display` cho tiêu đề, `body` cho nội dung,
- * `mono` cho nhãn/số kỹ thuật. Tất cả là stack an toàn, không cần tải webfont.
+ * Font hệ thống — SANS, không chân. `display` cho tiêu đề, `body` cho nội dung.
+ * Tất cả là stack an toàn, không cần tải webfont. (30/07: bỏ field `mono` — 0 nơi dùng,
+ * và mono thiếu glyph dấu tiếng Việt nếu sau này ai lỡ cắm vào nhãn chữ, xem 2.2.85.)
  */
 export const SLIDE_FONTS = {
   display: '-apple-system,"SF Pro Display","Helvetica Neue","Space Grotesk",system-ui,sans-serif',
   body: '-apple-system,"SF Pro Text","Helvetica Neue","Inter",system-ui,sans-serif',
-  mono: '"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace',
 } as const;
 
 /** Lưới cột editorial: 12 cột, máng 40px, lề an toàn 120px. */

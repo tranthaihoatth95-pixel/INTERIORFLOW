@@ -261,17 +261,16 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
         status === 'error' && 'border-red-500/60',
       )}
     >
-      {/* header — icon flat + font mono low-tech */}
+      {/* header — icon flat, nhãn dùng font hệ thống app (2.2.85, 30/07: bỏ font mono —
+          SF Mono/Cascadia Code/Fira Code thiếu glyph dấu tiếng Việt tổ hợp, xung khắc với
+          luật thoại 2.2.69 "Việt dẫn · Anh theo") */}
       <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2">
         {(() => { const Icon = nodeIconFor(data.defType); return <Icon size={14} className="shrink-0 text-[var(--t2)]" />; })()}
-        <span
-          className="flex-1 truncate text-[11px] font-medium text-[var(--t1)]"
-          style={{ fontFamily: 'ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace' }}
-        >
+        <span className="flex-1 truncate text-[11.5px] font-medium tracking-[-.005em] text-[var(--t1)]">
           {def.title}
         </span>
         {def.creditCost > 0 && (
-          <span className="rounded bg-[var(--hover)] px-1.5 py-0.5 text-[10px] text-[var(--t3)]">
+          <span className="rounded bg-[var(--hover)] px-1.5 py-0.5 text-[10px] tabular-nums text-[var(--t3)]">
             {def.creditCost}cr
           </span>
         )}

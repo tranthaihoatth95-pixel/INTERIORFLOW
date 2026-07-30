@@ -100,11 +100,14 @@ export const DATA_TYPE_COLORS: Record<DataType, string> = {
   video: '#fb7185', // hồng san hô — phân biệt luồng video với ảnh
 };
 
+// Nhãn nhóm — quy chuẩn thoại 5 luật (2.2.69, 30/07): Việt dẫn · Anh theo, dùng trong
+// CommandPalette (nguồn nhãn kỹ thuật thô bị 7.3.25 nêu). Đây KHÔNG phải "4 nhóm" cross-layout
+// của 2.2.71 (Ý tưởng/Dựng/Sửa/Xuất, còn ⬜ chờ 7.1.18) — đó là màn hình riêng, mã riêng.
 export const CATEGORY_META: Record<NodeCategory, { label: string; color: string }> = {
-  INPUT: { label: 'Input', color: '#38bdf8' },
-  AI_GENERATE: { label: 'AI Generate', color: '#8b7cf7' },
-  AI_EDIT: { label: 'AI Edit', color: '#f472b6' },
-  SLIDE: { label: 'Slide Deck', color: '#fb923c' },
-  UTILITY: { label: 'Utility', color: '#34d399' },
-  OUTPUT: { label: 'Output', color: '#fbbf24' },
+  INPUT: { label: 'Đầu vào · Input', color: '#38bdf8' },
+  AI_GENERATE: { label: 'Sinh ảnh AI · AI Generate', color: '#8b7cf7' },
+  AI_EDIT: { label: 'Sửa ảnh AI · AI Edit', color: '#f472b6' },
+  SLIDE: { label: 'Slide trình bày · Slide Deck', color: '#fb923c' },
+  UTILITY: { label: 'Tiện ích · Utility', color: '#34d399' },
+  OUTPUT: { label: 'Xuất · Output', color: '#fbbf24' },
 };

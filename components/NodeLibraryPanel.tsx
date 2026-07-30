@@ -291,7 +291,7 @@ function NodeCard({ def, onAdd }: { def: NodeDefinition; onAdd: (type: string) =
     >
       {(() => { const Icon = nodeIconFor(def.type); return <Icon size={14} className="mt-0.5 shrink-0 text-[var(--t3)]" />; })()}
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-medium text-[var(--t1)]" style={{ fontFamily: 'ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace' }}>{def.title}</p>
+        <p className="text-[11.5px] font-medium tracking-[-.005em] text-[var(--t1)]">{def.title}</p>
         <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-[var(--t4)]">{def.description}</p>
       </div>
       <div className="ml-auto flex shrink-0 flex-col items-end gap-1">
