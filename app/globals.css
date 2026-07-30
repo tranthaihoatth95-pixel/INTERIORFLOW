@@ -1067,3 +1067,26 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
     display: none !important;
   }
 }
+
+/* 7.3.31 (30/07, docs/TICKET-STAGE-SWITCHER-NHAY-2026-07-30.md) — bịt nguyên nhân ① (bề rộng
+   pill đổi khi active/inactive đổi fontWeight 600↔500) VÀ ② (nhãn CAD tự đổi độ dài theo
+   cadStage) CÙNG LÚC: mỗi nút chặng có `data-label` = phiên bản CHỮ ĐẬM RỘNG NHẤT nó có thể
+   hiện (không phải nhãn ĐANG hiện) → ::before vẽ ẢO bản đó (height:0, ẩn hẳn) để CHIẾM SẴN chỗ,
+   nút không bao giờ đổi bề rộng dù đổi active hay đổi cadStage. Nút PHẢI không phải flex trực
+   tiếp (ghost cần xếp CHỒNG dưới nội dung thật theo flow khối bình thường, không phải cạnh nhau
+   trong 1 hàng flex) — layout hàng ngang thật (icon+chữ) nằm ở <span> con bên trong, KHÔNG đổi. */
+.stage-btn {
+  display: inline-block;
+  position: relative;
+}
+.stage-btn::before {
+  content: attr(data-label);
+  font-weight: 600;
+  font-size: 12.5px;
+  display: block;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+}

@@ -36,6 +36,21 @@ import VitalsGesturePanel, { markVitalsUsed, wasVitalsUsed } from './VitalsGestu
 /** Cùng công thức slug của NotebookButton cũ (đã bỏ khỏi Header). */
 const ICON: Record<Phase, typeof PencilRuler> = { concept: PencilRuler, render: Box, present: Presentation };
 
+/**
+ * 7.3.31 (30/07) — bản CHỮ ĐẬM RỘNG NHẤT mỗi nút chặng CÓ THỂ hiện, dùng làm `data-label` ghost
+ * (xem `.stage-btn::before` ở globals.css) để chiếm sẵn chỗ, không đổi bề rộng khi active/
+ * inactive hay khi đổi cadStage. Render/Present chỉ có 1 nhãn — dùng chính nó. CAD có 3 biến
+ * thể theo cadStage ('CAD · Phác thảo'/'CAD · Kỹ thuật'/'CAD · BIM') — 'Phác thảo' dài nhất
+ * trong 3, dùng cố định làm ghost dù cadStage đang là gì (cadStage hiện luôn = 'sketch' trong
+ * thực tế — `setStage()` KHÔNG được gọi ở đâu trong UI, `cadStageFromProjectStage()` chỉ có
+ * trong test — nên đây là phòng xa cho lúc field này được nối thật, không đổi gì hôm nay).
+ */
+const WIDEST_LABEL: Record<Phase, string> = {
+  concept: 'CAD · Phác thảo',
+  render: 'Rendering',
+  present: 'Presenting',
+};
+
 const HINT_SEEN_KEY = 'interiorflow.vitals.gesture_hint_seen';
 const FIRST_DONE_KEY = 'interiorflow.vitals.gesture_first_done';
 
@@ -232,11 +247,9 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
               {...pressable}
               onClick={() => onPick(p.id)}
               title={`${phaseLabel(p.id, p.id === 'concept' ? cadStage : undefined)} — ${p.tagline}`}
+              className="stage-btn"
+              data-label={WIDEST_LABEL[p.id]}
               style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
                 padding: '6px 12px',
                 borderRadius: 9,
                 border: 'none',
@@ -398,10 +411,11 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         }}
       >
         <span style={{ width: 14, height: 1, background: STAGE_TINT[active] }} />
-        {/* 2.2.60 (29/07) — tên chặng chỉ hiện từ `xl` (1280px); dưới đó rút còn số thứ tự,
-            giảm bề rộng đúng ở dải 1024-1280px đang tràn khung (docs/CHOT-SO-MA-2026-07-29.md). */}
+        {/* 7.3.31 (30/07) — bỏ hẳn `· {label}` trùng thông tin với nút pill NGAY BÊN CẠNH (đã ghi
+           tên chặng rõ ràng) — vi phạm Luật #6 Đồng Bộ, và bản thân nó là nguyên nhân ③ khiến
+           Tệp/⋯/avatar nhảy vị trí (3 độ dài khác nhau đẩy mọi thứ SAU nó). Giữ đúng số 2 chữ số
+           (bất biến bề rộng) + vạch màu chặng — đủ phân biệt, không lặp lại chữ đã có. */}
         {STAGE_INDEX[active]}
-        <span className="hidden xl:inline">· {PHASES.find((p) => p.id === active)?.label}</span>
       </span>
       {photoContext && (
         <span
