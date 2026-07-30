@@ -7,16 +7,14 @@
 
 ## Hiện tại (30/07 tối — Sprint 3 cụm đầu xong: 2.2.85+2.2.69+7.3.30, 3 commit)
 Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này:
-- ✅ **`2.2.85`+`2.2.69` chung 1 commit `74cf4c5`** (đúng thứ tự bắt buộc: bỏ mono TRƯỚC đổi tên,
-  vì SF Mono/Cascadia/Fira thiếu glyph dấu Việt). Bỏ font mono ở mọi nhãn node (10 file, 1 file
-  ngoài danh sách gốc phát hiện qua quét độc lập) + áp 5 luật thoại cho toàn bộ 45 node +
-  `CATEGORY_META`. Browser-verify thật: `getComputedStyle` xác nhận font `Be Vietnam Pro` (không
-  phải mono) cho cả nhãn có dấu + mũi tên `→`. tsc/eslint sạch, 101/101 test pass.
-- ✅ **`7.3.30` commit `10ba92e`** — dựng `/settings` đủ 4 nhóm (Tài khoản/Giao diện/AI/Trải
-  nghiệm), gỡ Ngôn ngữ + "Xem lại hướng dẫn" khỏi Header MoreMenu + MobileMenu. Browser-verify
-  thật 1440px + 375px. ⚠️ **Lệch có chủ đích**: KHÔNG gom nút theme Header/StudioBar còn 1 cái —
-  2 route khác nhau (app chính vs CAD/Present), xoá 1 cái sẽ mất nút ở route kia. Giữ cả 2, chỉ
-  gom LOGIC dùng chung (`lib/theme-toggle.ts`). Cần Hoà xác nhận lại (xem "Chờ USER quyết").
+- ✅ **`2.2.85` xong** (commit `74cf4c5`) — bỏ font mono ở mọi nhãn node (10 file). `2.2.69`
+  **hạ ✅→🟡 (30/07, Hoà xác nhận)**: 45/45 node title + `CATEGORY_META` đã đổi theo 5 luật thoại,
+  nhưng phần "4 tên nhóm" (Ý tưởng/Dựng/Sửa/Xuất) CHƯA làm — hoãn tới `2.2.71` (nơi tiêu thụ thật).
+  ⚠️ Cảnh báo mới ghi vào `2.2.71`: dịch `CATEGORY_META` xong đã tự sinh **2 hệ phân loại song
+  song lộ ra người dùng** (6 category máy vs 4 nhóm nghề) — làm `2.2.71` phải CHỐT 1 cái chính.
+- ✅ **`7.3.30` xong** (commit `10ba92e`) — dựng `/settings` đủ 4 nhóm. **Hoà xác nhận (30/07)**:
+  giữ cả 2 nút theme Header/StudioBar là ĐÚNG (2 route khác nhau, ticket gốc sai) — đã ghi cố
+  định vào cây, không còn là mục chờ quyết.
 - ⏸️ **T3/T4 (Semantic Room)** vẫn CHƯA LÀM — đọc `docs/IF1-COMPLETION-AUDIT.md` §3 (a)/(d) trước.
 - ⏸️ **Sprint 3 phần còn lại** (`2.2.65-68/70-72/78-84`, `2.3.61`) chưa bắt đầu — xem chuỗi phụ
   thuộc CHỐT trong `docs/IF-FEATURE-TREE.md` mục "2.2.60-2.2.85".
@@ -45,10 +43,6 @@ Không có.
 - **`2.2.83`** (preflight — tích hợp nút Xuất) — nguồn `SPEC-TONG` §7.5 gộp chung tiêu đề với
   `2.2.82`, không tách rõ nội dung; đã tự tách theo suy luận hợp lý khi dán 30/07 (xem dòng đó
   trong cây), **cần Hoà xác nhận lại ranh giới đúng**.
-- **`7.3.30` nút theme** — ticket đề xuất "gom sáng/tối về 1 chỗ (hiện 3)"; kiểm code thấy
-  `Header.tsx`/`StudioBar.tsx` là 2 route khác nhau, không trùng thật — đã GIỮ CẢ 2 nút, chỉ gom
-  logic (`lib/theme-toggle.ts`). **Cần Hoà xác nhận** nếu ý định ban đầu là ép 1 nút duy nhất bất
-  kể route (sẽ cần thiết kế lại — hiện CAD/Present không có Header app chính để dùng chung).
 
 ## Nợ kỹ thuật
 → Tách ra `docs/TECH-DEBT.md` (30/07, giữ STATUS dưới 800 từ) — nội dung nguyên vẹn, không mất mục nào.
