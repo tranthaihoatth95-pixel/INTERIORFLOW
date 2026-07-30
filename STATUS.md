@@ -38,8 +38,9 @@ Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này (nhiều vi�
 - ✅ **2 mã XÁC NHẬN 30/07 khuya** (Luật #12 mới — chỉ Claude Code cấp mã, xem PHẦN E):
   `7.1.21` = script `"test"` vào `package.json`. `7.1.22` = Bộ nhớ đo đạc — Tầng 1 tự học kích
   thước/tỉ lệ/chiều cao máy ảnh theo dữ liệu nhà (Prisma). Cả 2 CHƯA CODE, chưa tới lượt hàng chờ.
-- 🟡 **2.2.70** (a)(b) — 2 lỗi nhỏ sửa kèm — CODE XONG, CHƯA COMMIT, gộp cùng đợt ảnh thật 5 thẻ
-  Tool Mode (đang CHỜ Hoà duyệt credit trước khi chạy AI thật).
+- ✅ **2.2.70 (a)(b)** — 2 lỗi nhỏ commit riêng (`df74551`), đúng Hoà chỉ đạo "rủi ro mất việc cao
+  hơn giá trị chờ". Nội dung chính `2.2.70` (45 bìa SVG + 5 node ảnh thật) VẪN treo, chờ Hoà duyệt
+  credit trước khi chạy AI thật.
 - ⏸️ **Còn treo**: `2.1.9.q` (BOQ groundwork) → BOQ `2.1.9.p` (matId đã CHỐT, chờ quyết "có làm
   engine không"). B2/B3/B4 chưa làm — B3 cần THỬ TAY thật.
 
