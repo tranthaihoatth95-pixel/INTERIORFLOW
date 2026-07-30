@@ -1,5 +1,84 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 30/07 khuya (đợt 6) — merge feat/sprint-infra + sprint BOQ ĐỢT 2 (2.1.9.r ATLAS Material cache)
+
+### Merge `feat/sprint-infra` (`7a62e09`)
+Worktree phụ (`.worktrees/if-infra`, nhánh `feat/sprint-infra`) phát hiện tình cờ khi quét test
+file cho B3 — Hoà xác nhận đây là phiên phụ của mình, soát xong, merge được sau khi xử 1 việc.
+- **Điều tra loại trừ `auto-backup.test.ts`** (Hoà nghi ngờ đúng: "loại đúng cái đang lo nhất ra
+  khỏi lưới an toàn là ngược") — chạy thử bản gốc TRƯỚC khi merge: 6/6 pass, KHÔNG chậm, KHÔNG
+  flaky, không tìm ra lý do kỹ thuật cho việc loại trừ ban đầu. Nhưng đằng nào cũng đã xoá file đó
+  trong B3 (thay `backup-diff.test.ts`, 50 test bao phủ đúng lớp rủi ro cao nhất) — bỏ mệnh đề
+  loại trừ chết khỏi script `"test"`. Giữ nguyên loại trừ `edgecase-concurrency.test.ts` — xác
+  nhận ĐÚNG (chạy thử thấy PASS đơn lẻ do file tự tránh import `jose` trực tiếp trong phần code
+  thật dùng, nhưng nguyên nhân gốc `jose` ESM-only vẫn treo trong docstring của chính file đó).
+- 1 conflict nhỏ ở `STATUS.md` (2 nhánh cùng thêm bullet khác vị trí) — tự giải quyết, giữ cả 2 ý.
+- Điền số **Luật #13 — Trung Tính** vào PHẦN E (phiên phụ để trống đúng Luật #12, chờ Claude Code
+  điền). Test cưỡng chế `idf-neutrality.test.ts` (8 test) quét `.idf`/`model.ts`, FAIL nếu khoá
+  TRÌNH BÀY (fontSize/color/x/y/...) lọt vào type nguồn mà không có trong EXEMPTIONS có lý do.
+- Thêm ghi chú "XEM LẠI khi làm preflight-theo-đích" vào 2 miễn trừ `Layer.color`/`Base.color` —
+  Hoà chỉ ra đây là miễn trừ YẾU NHẤT (ACI color-dependent plot style có phần là ánh xạ trình bày).
+- `scripts/probe-xlsx-roundtrip.ts` (thăm dò round-trip Excel, KHÔNG phải code sản phẩm) — chặn
+  ở fixture thật `SPEC_TEMPLATE 1.xlsx` chưa có trên đĩa (lỗi của Cowork, Hoà sẽ copy vào sau).
+- Dọn sau merge: `git worktree prune` + `git branch -d feat/sprint-infra` + `rm -rf` thư mục vật
+  lý còn sót (giống ca `if-lark` trước) + xoá lock rác `feat/sprint-infra.lock.stale.*`.
+- `npm test`: 0 fail sau merge (log lưu `/tmp/npmtest.log` phiên này, không commit).
+
+### Sprint BOQ ĐỢT 2 — `2.1.9.r`: ATLAS Material cache + adapter pull-only
+- **PHÁT HIỆN quan trọng khi khám trước khi code (Luật #4/#5)**: chỉ đạo gốc của Hoà yêu cầu bảng
+  Prisma `AtlasMaterial` HOÀN TOÀN MỚI. Đọc `prisma/schema.prisma` trước khi tạo bảng (thói quen
+  đã thành phản xạ sau B3/2.1.9.q) phát hiện `ProductSpec{kind:'material'}` đã tồn tại, có comment
+  "Q-L2: GỘP MaterialRef vào đây, 1 bảng duy nhất" — CÙNG HẠT dữ liệu: không `projectId` (danh mục
+  gốc, không phải bản ghi theo dự án), có `larkRecordId @unique`+`raw`+`syncedAt` y hệt mẫu
+  `LarkTaskRef`. Tạo `AtlasMaterial` mới sẽ đúng loại xung đột Luật Đồng Bộ #6 cấm ("2 tính năng
+  gần nhau tồn tại rời rạc"). Dùng `AskUserQuestion` hỏi thẳng — Hoà xác nhận: **"Bạn phát hiện
+  đúng. Spec của tôi SAI: tôi đề xuất bảng AtlasMaterial mà không đọc schema trước."**
+- **`prisma/schema.prisma`** — `ProductSpec` thêm 6 field: `unit` · `priceVnd` (**Decimal, KHÔNG
+  Float** — tránh sai số nhị phân khi tính BOQ) · `wastagePercent` (Decimal) · `packagingSpec` ·
+  `altSku` · `styleTags` (JSON string[], cùng mẫu `materials`/`finishes` có sẵn). `priceNote` (text
+  tự do "1.250.000đ/cái") GIỮ NGUYÊN song song `priceVnd` — **TUYỆT ĐỐI không tự parse `priceNote`
+  sang số khi migrate** (Hoà: "parse sai một dòng là sai tiền thật, và sai ÂM THẦM"). `priceVnd`
+  null = chưa sync/chưa có giá — BOQ (đợt 3) phải HIỆN rõ "chưa có giá", không đoán, không bỏ qua
+  dòng, nhưng vẫn hiện `priceNote` cạnh đó cho người kiểm.
+- **Phát hiện phụ khi migrate**: `npx prisma migrate dev` báo drift giữa `prisma/migrations/` (1
+  migration cũ) và `dev.db` thật — đòi RESET TOÀN BỘ DATABASE ("All data will be lost"). DỪNG
+  ngay, KHÔNG xác nhận. Xác nhận `dev.db` (143MB, dữ liệu demo thật) còn nguyên (10 User/4
+  Project/10 ProductSpec trước/sau, đếm bằng `sqlite3` trực tiếp). Dùng `npx prisma db push
+  --skip-generate` thay thế — đúng workflow repo đã dùng cho local dev.db từ trước (xem
+  `electron/main.js:188`), chỉ diff schema hiện tại vs DB hiện tại, không đòi reconcile lịch sử
+  migration. Áp dụng sạch, 6 cột mới thêm, dữ liệu cũ nguyên vẹn (xác nhận lại bằng `PRAGMA
+  table_info`). ⚠️ Phát hiện đây là NỢ KỸ THUẬT tồn tại từ trước (không phải do tôi gây ra) — migration
+  history đã lệch khỏi dev.db thật do quy trình local luôn dùng `db push` — ghi vào TECH-DEBT.
+- **`MaterialDef.atlasRecordId?: string`** (`lib/cad/materials.ts`) — neo DUY NHẤT sang
+  `ProductSpec.larkRecordId`, đúng yêu cầu gốc "CHỈ thêm 1 field neo, TUYỆT ĐỐI không nhồi giá/đơn
+  vị vào MaterialDef" (2.1.9.i, texture đổi theo thiết kế ≠ giá đổi theo NCC, 2 nhịp sống khác nhau).
+- **`lib/integrations/providers/lark.ts`**: `listAllRecords()` thêm tham số `pageSize` (mặc định
+  100, giữ nguyên hành vi 2 caller cũ `listTaskRecords`/`listHrRecords`) + `listAtlasMaterialRecords()`
+  mới (page_size 500 theo Hoà chốt — ~1.449 record ⇒ 3 request thay vì ~15). KHÁC 2 hàm cũ: KHÔNG
+  có `table_id` mặc định — `LARK_ATLAS_MATERIAL_TABLE_ID` bắt buộc, throw rõ lý do nếu thiếu
+  (chưa từng verify bảng này, không đoán 1 id không rõ nguồn).
+- **`lib/lark/atlas-material-map.ts`** (mới) — `mapAtlasRecordToProductSpec()` thuần, tách khỏi
+  route API để test độc lập. `ATLAS_FIELD_NAMES` ghi RÕ là **PLACEHOLDER chưa xác minh** (đoán
+  theo thuật ngữ Hoà dùng khi mô tả yêu cầu — "Giá tham khảo"/"Hao hụt %"/"Quy cách"/... — KHÔNG
+  phải field_name thật qua MCP `list_tables`, vì bảng CHƯA từng nối route đọc). `raw` JSON luôn
+  giữ nguyên bản gốc — sai tên cột thì sửa map rồi re-sync, không mất dữ liệu.
+- **`app/api/atlas-materials/sync/route.ts`** (mới) — mirror đúng `/api/lark-tasks/sync` (pull-
+  only, `getSessionUser()` dòng đầu, upsert theo `larkRecordId`, không bao giờ throw ra ngoài).
+  Gate kép: `atlasConfigured()` (3 khoá Lark) + `LARK_ATLAS_MATERIAL_TABLE_ID` — thiếu 1 trong 2
+  trả 503 rõ lý do, không chạy nửa vời.
+- **`docs/SPEC-THU-VIEN-D-2026-07-30.md` §2 sửa** (Hoà chỉ ra thêm, cùng phát hiện): "Một thư
+  viện, ba họ" KHÔNG cần model union mới như bản spec ban đầu đề xuất — `ProductSpec` đã có ĐỦ 3
+  khoá nối đúng 3 họ tài liệu mô tả (`imageAssetId`→họ A ảnh, `drawingBlock`→họ B block CAD,
+  `larkRecordId`→họ C ATLAS) — rẻ hơn nhiều, chỉ cần JOIN 3 bảng có sẵn qua `ProductSpec`, không
+  phải dựng bảng lõi mới. Giữ nguyên phần "ngữ cảnh theo chặng" (§3 trở xuống) của tài liệu gốc.
+- **Test — `lib/lark/atlas-material-map.test.ts`, 22/22 pass**: map đủ field → đúng toàn bộ ·
+  field thiếu → `null`/JSON rỗng, KHÔNG bịa giá trị mặc định (đặc biệt `priceVnd` null khi thiếu —
+  đúng luật "chưa có giá thì hiện rõ") · giá tới dạng chuỗi có dấu phẩy ("285,000") → `numberOf()`
+  bóc đúng số · `styleTags` nhiều kiểu dấu phân cách (`,`/`|`/`·`) → tách đúng. `npm test` toàn repo
+  sau khi thêm: 0 fail (log `/tmp/npmtest2.log`/`/tmp/npmtest3.log` phiên này, không commit).
+- ⚠️ **CHƯA chạy thật** — chặn ở thiếu khoá Lark + `LARK_ATLAS_MATERIAL_TABLE_ID`; field mapping
+  cần đối chiếu tên cột thật qua MCP trước khi tin số liệu sync ra lần đầu.
+
 ## 30/07 khuya (đợt 5) — B3: backup CAD bỏ "giữ 5 bản" sang thang thời gian + lưu chênh lệch
 - **Lý do sửa cùng đêm**: B1 (`4.6`) chỉ verify được phần GHI (auto-backup, giữ 5 bản gần nhất).
   Hoà yêu cầu thử tay B3 (kịch bản sập/phục hồi thật) — nhưng trước khi thử, nhận ra "5 bản × 10

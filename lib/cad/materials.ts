@@ -44,6 +44,15 @@ export interface MaterialDef {
    * (material-texture.ts) tự ưu tiên nó thay cho hoạ tiết procedural, KHÔNG cần đổi code khác.
    */
   photoUrl?: string;
+  /**
+   * 2.1.9.i/2.1.9.r (30/07) — neo DUY NHẤT sang bản ghi THƯƠNG MẠI (giá/đơn vị/hao hụt/quy cách/
+   * mã thay thế), khớp `ProductSpec.larkRecordId` (`prisma/schema.prisma` — KHÔNG bảng
+   * `AtlasMaterial` riêng, xem `docs/IF-FEATURE-TREE.md` 2.1.9.r). CHỈ neo — TUYỆT ĐỐI không nhồi
+   * giá/đơn vị/hao hụt vào `MaterialDef` này: `MaterialDef` là vật liệu THỊ GIÁC (vẽ texture,
+   * đổi theo thiết kế), `ProductSpec` là vật liệu THƯƠNG MẠI (đổi theo NCC) — 2 nhịp sống khác
+   * nhau, cố ý KHÔNG trộn (2.1.9.i chốt 30/07). undefined = chưa gán/chưa cần BOQ cho preset này.
+   */
+  atlasRecordId?: string;
 }
 
 export const MATERIALS: MaterialDef[] = [

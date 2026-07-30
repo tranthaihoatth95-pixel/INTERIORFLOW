@@ -3,6 +3,18 @@
 > Tách ra từ `STATUS.md` (30/07) để giữ STATUS dưới 800 từ — nội dung nguyên vẹn, không xoá gì.
 > Cập nhật cùng lúc với `STATUS.md` mỗi khi phát hiện/đóng nợ kỹ thuật mới.
 
+- 🟡 **`prisma/migrations/` lệch khỏi `dev.db` thật** (phát hiện 30/07 khi làm `2.1.9.r`) —
+  `npx prisma migrate dev` báo drift (đòi thêm hàng loạt index vào `IntegrationAccount`/
+  `LarkPersonRef`/`LarkTaskRef`/`LarkUserMap`/`NotebookChunk`/`NotebookSource`/`ProductSpec`/
+  `ProjectMember`/`ProjectNotebook`) và ĐÒI RESET TOÀN BỘ DATABASE để reconcile — không phải lỗi
+  do lần sửa này gây ra, mà do quy trình local LUÔN dùng `db push` (xem `electron/main.js:188`)
+  thay vì `migrate dev`/`migrate deploy`, nên migration history (`20260703141955_init`, 1 bản duy
+  nhất) chưa từng ghi lại các thay đổi schema về sau. Rủi ro thật: bản ĐÓNG GÓI (`electron/main.js`
+  dùng `migrate deploy` cho máy khách mới, KHÔNG phải `db push`) sẽ tạo DB THIẾU các index/field đã
+  thêm qua `db push` cục bộ — cần dọn: hoặc tạo migration mới bằng `prisma migrate dev --create-only`
+  (không áp lên dev.db, chỉ generate file) rồi review tay, hoặc `prisma migrate resolve --applied`
+  để đánh dấu drift đã biết là "đã áp" mà không chạy lại. CHƯA sửa — chỉ né bằng `db push` cho lần
+  này, để nguyên đợi Hoà quyết cách dọn (rủi ro cho installer, không phải cho dev.db hiện tại).
 - 🟡 `lib/cad/pdf.ts:383` nhắc `lib/cad/pdf.node-check.mjs` — file KHÔNG tồn tại.
 - 🟡 Brand Kit chưa cho upload font ⇒ `lib/pdf-font.ts` LUÔN rơi về mặc định.
 - 🟡 `resume-state` chỉ lưu `flowId`+`sheetId` (trùng giữa dự án — chọn nhầm TAB, không rò dữ liệu).

@@ -191,15 +191,16 @@ export async function getAtlasAppToken(): Promise<string> {
 
 /* ---------- Bitable list_records — phân trang đầy đủ ---------- */
 
-async function listAllRecords(appToken: string, tableId: string): Promise<LarkRecord[]> {
+async function listAllRecords(appToken: string, tableId: string, pageSize = 100): Promise<LarkRecord[]> {
   const token = await getTenantAccessToken();
   const out: LarkRecord[] = [];
   let pageToken: string | undefined;
-  // Giới hạn an toàn — 2 bảng hiện chỉ ~10-20 record (báo cáo §2.5); 50 trang × 100 record là
-  // dư sức, tránh vòng lặp vô hạn nếu Lark trả has_more sai.
+  // Giới hạn an toàn — 2 bảng cũ hiện chỉ ~10-20 record (báo cáo §2.5), 50 trang × 100 là dư sức.
+  // ATLAS Material Library (2.1.9.r, 30/07) ~1.449 record × page_size 500 ≈ 3 trang thật — 50
+  // trang vẫn đủ dư (13×), giữ CHUNG 1 vòng lặp phân trang, không viết lại cho riêng ATLAS.
   for (let page = 0; page < 50; page++) {
     const url = new URL(`${apiBase()}/open-apis/bitable/v1/apps/${appToken}/tables/${tableId}/records`);
-    url.searchParams.set('page_size', '100');
+    url.searchParams.set('page_size', String(pageSize));
     if (pageToken) url.searchParams.set('page_token', pageToken);
     const j = await larkFetchJson(url, { headers: { Authorization: `Bearer ${token}` } });
     const data = (j as { data?: { items?: unknown[]; has_more?: boolean; page_token?: string } }).data;
@@ -230,6 +231,22 @@ export async function listHrRecords(): Promise<LarkRecord[]> {
     throw new Error('LARK_WORK_APP_TOKEN (hoặc LARK_BASE_APP_TOKEN cũ) chưa cấu hình — xem docs/INTEGRATIONS.md mục Lark.');
   }
   return listAllRecords(appToken, process.env.LARK_HR_TABLE_ID || 'tblUvVYG5j70FCTn');
+}
+
+/**
+ * 2.1.9.r (30/07) — ATLAS Material Library, page_size 500 (Hoà chốt: ~1.449 record ⇒ 3 request).
+ * KHÁC `listTaskRecords()`/`listHrRecords()`: KHÔNG có table_id mặc định — chưa từng verify field
+ * thật (docs/INTEGRATIONS.md: "chưa nối route đọc"), không đoán 1 id không rõ nguồn. Bắt buộc
+ * `LARK_ATLAS_MATERIAL_TABLE_ID` trong `.env.local`, throw rõ lý do nếu thiếu (không im lặng trả
+ * mảng rỗng — sẽ bị hiểu nhầm là "bảng thật sự rỗng").
+ */
+export async function listAtlasMaterialRecords(): Promise<LarkRecord[]> {
+  const appToken = await getAtlasAppToken();
+  const tableId = process.env.LARK_ATLAS_MATERIAL_TABLE_ID;
+  if (!tableId) {
+    throw new Error('LARK_ATLAS_MATERIAL_TABLE_ID chưa cấu hình — xem docs/INTEGRATIONS.md mục ATLAS Material Library.');
+  }
+  return listAllRecords(appToken, tableId, 500);
 }
 
 /* ---------- Field-value normalizers ----------

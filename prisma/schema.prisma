@@ -346,13 +346,25 @@ model ProductSpec {
   colorHex     String? // swatch chính
   imageAssetId String? // FK mềm LibraryAsset — lưu-theo-tham-chiếu
   drawingBlock String? // key BlockDef/manifest id — line drawing top-view có sẵn
-  priceNote    String? // text tự do "1.250.000đ/cái" — chưa chuẩn hoá số
+  priceNote    String? // text tự do "1.250.000đ/cái" — chưa chuẩn hoá số, GIỮ cho hiển thị/legacy
   currency     String? // 'VND' | 'USD' | 'EUR'
   larkRecordId String?   @unique // khoá sync nếu record đến từ Larkbase
   raw          String? // JSON field gốc Larkbase (mẫu LarkTaskRef)
   note         String?
   createdAt    DateTime  @default(now())
   syncedAt     DateTime?
+
+  // ── 2.1.9.r (30/07) — mở rộng cho BOQ, THAY vì bảng AtlasMaterial riêng (Luật Đồng Bộ #6,
+  // Hoà xác nhận): ProductSpec{kind:'material'} đã là "1 bảng duy nhất" theo Q-L2 trước đó, thêm
+  // field còn thiếu thay vì tạo bảng cạnh tranh. priceNote (text tự do) GIỮ NGUYÊN cho hiển thị/
+  // tương thích ngược — priceVnd là SỐ THẬT dùng cho phép tính BOQ (Decimal, không làm tròn giữa
+  // chừng — xem lib/cad/schedule.ts khi 2.1.9.p dùng tới).
+  unit           String? // đơn vị tính BOQ: 'm2' | 'm' | 'cai' | 'bo' | 'm3' | ... (không ràng buộc enum — Lark có thể thêm đơn vị mới)
+  priceVnd       Decimal? // giá tham khảo, SỐ THẬT (VND, Decimal — KHÔNG Float, tránh sai số nhị phân khi tính BOQ) — dùng cho amount = qty × giá. Song song priceNote (text tự do, GIỮ NGUYÊN cho hiển thị+truy nguồn), KHÔNG parse priceNote sang số (sai 1 dòng = sai tiền thật, âm thầm). null = "chưa có giá" — BOQ phải HIỆN rõ, không đoán, không bỏ qua dòng.
+  wastagePercent Decimal? // hao hụt % khi thi công (vd 5 = 5%) — đọc từ ATLAS khi sync, KHÔNG hard-code trong app. BOQ cộng vào qty_exec→qty_order.
+  packagingSpec  String? // quy cách đóng gói/thương mại, vd "4 viên/thùng = 1,44 m²" — dùng để CEILING ra số đơn vị đóng gói (qty_order). KHÁC drawingBlock (hình học bản vẽ).
+  altSku         String? // mã thay thế/tương đương khi hết hàng — text tự do, chưa chuẩn hoá thành bảng riêng
+  styleTags      String   @default("") // JSON string[] — cùng mẫu materials/finishes ở trên, mầm STYLE_DNA nối Gu Engine
 
   @@index([kind])
   @@index([sku])

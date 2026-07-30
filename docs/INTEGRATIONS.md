@@ -143,6 +143,16 @@ cũ, tương thích ngược) — bắt buộc 1 trong 2. Base "ATLAS Material L
 hoặc `LARK_ATLAS_APP_TOKEN` — bắt buộc 1 trong 2. Tuỳ chọn: `LARK_API_BASE` (mặc định
 `https://open.larksuite.com`), `LARK_TASK_TABLE_ID`/`LARK_HR_TABLE_ID` (có default đúng).
 
+**2.1.9.r (30/07) — route đọc `POST /api/atlas-materials/sync`**: kéo bảng vật liệu, upsert vào
+`ProductSpec{kind:'material'}` (KHÔNG bảng `AtlasMaterial` riêng — mở rộng schema có sẵn, Luật
+Đồng Bộ #6). Cần THÊM `LARK_ATLAS_MATERIAL_TABLE_ID` (KHÔNG có default — khác `LARK_TASK_TABLE_ID`/
+`LARK_HR_TABLE_ID`, vì chưa từng verify bảng này). ⚠️ **`ATLAS_FIELD_NAMES`
+(`lib/lark/atlas-material-map.ts`) LÀ PLACEHOLDER** (Tên vật liệu/Đơn vị/Giá tham khảo/Hao hụt %/
+Quy cách/Mã thay thế/Nhà cung cấp/Mã vật liệu/Style tag) — đoán theo thuật ngữ Hoà dùng, CHƯA đối
+chiếu field_name thật qua MCP `list_tables`. Khi có đủ khoá + table_id: chạy sync 1 lần, so `raw`
+JSON đã lưu trên `ProductSpec` với kỳ vọng — sai tên cột thì sửa `ATLAS_FIELD_NAMES`, KHÔNG đổi
+schema (cùng nguyên tắc "raw giữ nguyên để dò lại" như `LarkTaskRef`/`LarkPersonRef`).
+
 ## 🔐 Rủi ro bảo mật (bắt buộc đọc)
 1. **Secret server-only** — mọi khoá ở `.env.local` (đã gitignore), KHÔNG `NEXT_PUBLIC_`, không commit. Mọi gọi API ở route handler (server), không lộ token ra client.
 2. **Token mã hoá at-rest** — access/refresh token lưu AES-256-GCM (`crypto.ts`), khoá `INTEGRATION_ENC_KEY` tách khỏi DB. SQLite `dev.db` là file → không lưu token thô.

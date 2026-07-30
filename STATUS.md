@@ -5,35 +5,37 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (30/07 khuya — merge feat/sprint-infra xong, B3 xong, 2.1.9.q xong, 2.2.87/2.2.88 🟡)
+## Hiện tại (30/07 khuya — sprint BOQ ĐỢT 1+2 xong, merge sprint-infra, B3 xong, 2.2.87/88 🟡)
 Chi tiết đầy đủ → `CHANGELOG.md` (mỗi dòng dưới đây có 1 mục tương ứng ở đó). Tóm tắt:
-- ✅ **7.3.31/2.1.8.k-m/7.1.20/2.2.86/2.2.70(a)(b)** — hợp nhất AppChrome hết overlap · PDF nhiều
-  tờ+khổ/hướng giấy · gộp hệ ngưỡng breakpoint (Luật #10/#11) · hàng đợi "Việc" (`FlowRun`) · 2 fix
-  nhỏ (`df74551`). Không đổi gì thêm — xem CHANGELOG nếu cần chi tiết.
-- ✅ **7.1.19 (Lark Wiki) MERGE**. **VẪN 🟡** — chờ 3 khoá Lark trong `.env.local` verify call thật.
+- ✅ **7.3.31/2.1.8.k-m/7.1.20/2.2.86/2.2.70(a)(b)/7.1.19-merge** — hợp nhất AppChrome hết overlap ·
+  PDF nhiều tờ+khổ/hướng giấy · gộp hệ ngưỡng breakpoint (Luật #10/#11) · hàng đợi "Việc" · 2 fix
+  nhỏ · Lark Wiki merge (**VẪN 🟡**, chờ 3 khoá Lark verify call thật). Xem CHANGELOG nếu cần chi tiết.
 - 🟡 **2.2.87+2.2.88 SỬA SANG cascade 4 bậc "không-bao-giờ-fail", HẠ TỪ ✅ (Hoà chốt)** —
   `measureObjectTiered()` tự tụt bậc, không bao giờ throw. 46/46 test. **CHƯA verify ảnh thật
   trong browser** — nâng lại ✅ khi Hoà tự thử. Disclose: Tầng 2/3 AI chưa làm.
-- ✅ **7.1.21 CODE XONG** (worktree phụ `feat/sprint-infra`, merge `7a62e09`) — `"test"` vào
-  `package.json`, npm test sạch. Sửa khi merge: bỏ mệnh đề loại trừ `auto-backup.test.ts` (VÔ
-  NGHĨA — file đã xoá trong B3, thay bằng `backup-diff.test.ts` 50 test; xác nhận bản cũ 6/6 pass
-  không chậm/flaky trước khi merge). Giữ loại trừ `edgecase-concurrency.test.ts` (đúng — `jose`
-  ESM-only vỡ sucrase-node). `7.1.22` CHƯA CODE. Luật #13 Trung Tính đã điền số + test cưỡng chế.
-- ✅ **2.1.9.q (BOQ groundwork)** — `polygonPerimeter()`+`openingsAreaInPolygon()` vào `hatch.ts`.
-  Phát hiện khi khám: `BlockDef.h` không phải chiều cao cửa (độ sâu mặt bằng) — sửa dùng
-  `w`×`OPENING_STANDARD_HEIGHT_MM`. 45/45 test. BOQ `2.1.9.p` (engine thật) vẫn chờ quyết.
+- ✅ **7.1.21+Luật #13 Trung Tính** (merge worktree phụ `feat/sprint-infra`, `7a62e09`) — `"test"`
+  vào `package.json`. Sửa khi merge: bỏ loại trừ `auto-backup.test.ts` chết (file đã xoá trong B3,
+  thay `backup-diff.test.ts` 50 test). `7.1.22` CHƯA CODE.
 - ✅ **B3 (`4.6` sửa) — backup CAD bỏ "giữ 5 bản" sang thang thời gian + lưu chênh lệch** —
-  `lib/cad/backup-diff.ts` mới (50 test) + `auto-backup.ts` viết lại + lối phục hồi UI mới
-  (`BackupRecoveryModal.tsx`, trước không có). **Giới hạn công cụ disclose rõ**
-  (`docs/VERIFY-B3.md`): không tự động hoá được hộp thoại chọn thư mục thật và `kill -9` tiến
-  trình Electron thật — kèm hướng dẫn 3 bước Hoà tự làm 1 lần xác nhận mức OS thật. ⚠️ Còn 1
-  project test (`cms7imxpt...`) trong tài khoản demo — Hoà xoá tay trong Gallery nếu không cần.
-- ⏸️ **Còn treo**: B2/B4 chưa làm.
+  `lib/cad/backup-diff.ts` (50 test) + lối phục hồi UI mới. **Giới hạn công cụ disclose rõ**
+  (`docs/VERIFY-B3.md`): không tự động hoá được hộp thoại chọn thư mục thật/`kill -9` Electron thật
+  — hướng dẫn 3 bước Hoà tự làm 1 lần. ⚠️ Còn 1 project test (`cms7imxpt...`) trong demo — Hoà xoá tay.
+- ✅ **Sprint BOQ ĐỢT 1 — `2.1.9.q`** — `polygonPerimeter()`+`openingsAreaInPolygon()` vào
+  `hatch.ts`. Phát hiện khi khám: `BlockDef.h` không phải chiều cao cửa — sửa dùng
+  `w`×`OPENING_STANDARD_HEIGHT_MM`. 45/45 test.
+- ✅ **Sprint BOQ ĐỢT 2 — `2.1.9.r` (ATLAS Material cache)** — **PHÁT HIỆN**: chỉ đạo gốc "bảng
+  AtlasMaterial riêng" ĐỤNG `ProductSpec{kind:'material'}` có sẵn (Q-L2 cũ "1 bảng duy nhất") —
+  hỏi Hoà, **XÁC NHẬN mở rộng ProductSpec** (Luật Đồng Bộ #6). Thêm 6 field (`priceVnd` Decimal +
+  5 field khác) — `priceNote` cũ GIỮ song song, `priceVnd=null` ⇒ BOQ hiện "chưa có giá", KHÔNG tự
+  parse. `MaterialDef.atlasRecordId?` neo sang `ProductSpec.larkRecordId`. `db push` an toàn (⚠️
+  `migrate dev` phát hiện drift, đòi RESET dev.db — HUỶ ngay, dữ liệu nguyên vẹn). Route
+  `/api/atlas-materials/sync` + mapping **PLACEHOLDER** (chưa verify tên cột thật). 22/22 test.
+  `docs/SPEC-THU-VIEN-D-2026-07-30.md` §2 sửa theo — không cần model union mới.
+- ⏸️ **Còn treo**: B2/B4 chưa làm. Sprint BOQ ĐỢT 3 (`2.1.9.p`, engine thật) — kế tiếp.
 
 ## Worktree đang mở
-Không có. `feat/sprint-infra` (`.worktrees/if-infra`) đã merge (`7a62e09`) + `git worktree prune`
-+ `git branch -d` + `rm -rf` thư mục vật lý còn sót + xoá lock rác `feat/sprint-infra.lock.stale.*`
-— đủ 4 điều kiện an toàn, đúng quy trình `if-lark` trước đó.
+Không có. `feat/sprint-infra` đã merge (`7a62e09`) + prune + xoá branch/thư mục/lock rác — đủ 4
+điều kiện an toàn.
 
 ## Chờ USER quyết
 - **NT1** (gộp `LibraryPanel`+`LibraryBrowser`, LỚN) và **NT5** (cây thư mục thật, RẤT LỚN) —
@@ -48,16 +50,11 @@ Không có. `feat/sprint-infra` (`.worktrees/if-infra`) đã merge (`7a62e09`) +
   1.xlsx` vào `scripts/fixtures/` rồi chạy cả 2 nhánh `--mode=ziponly`/`--mode=exceljs` + mở bằng
   Excel thật để chốt (khuyến nghị hiện tại "vá XML trong zip" mới CÓ ĐIỀU KIỆN, chưa verify file thật).
 - 3 nhánh `worktree-agent-*` merged còn local; `fix/hatch-t-junction`+`fix/quality-pipeline` chưa merge.
-- BOQ: đã gộp 1 sáng kiến `2.1.9.p` (`IF-MASTER-TREE.md`, Q6 28/07) — matId nối vào đâu **ĐÃ CHỐT
-  30/07** (bảng riêng `AtlasMaterial`, xem `2.1.9.i`); vẫn cần quyết CÓ LÀM ENGINE THẬT không.
-- **2.2.16-2.2.21** (Render Tool Mode Pha 2-4, hạ tầng có sẵn chưa lộ card) — mục CẦN HOÀ QUYẾT
-  duy nhất còn mở trong `docs/IF-FEATURE-TREE.md`.
-- **12 file phụ SPEC-TỔNG §9 chưa nhận được** (KHAM-*.md × 8, LUAT-300DPI, AUDIT-PRESENT-UX,
-  PHAN-E-HIEN-TAI-v4, FILEMANAGER-SPRINT-v2, `if-chang2-mockup.html`) — cần Hoà dán tiếp nếu muốn
-  Claude Code đọc đủ trước khi làm các sprint liên quan.
-- **`2.2.83`** (preflight — tích hợp nút Xuất) — nguồn `SPEC-TONG` §7.5 gộp chung tiêu đề với
-  `2.2.82`, không tách rõ nội dung; đã tự tách theo suy luận hợp lý khi dán 30/07 (xem dòng đó
-  trong cây), **cần Hoà xác nhận lại ranh giới đúng**.
+- BOQ: matId nối vào đâu **ĐÃ CHỐT + CODE XONG 30/07** (`2.1.9.r` — mở rộng `ProductSpec`, xem
+  trên); groundwork hình học (`2.1.9.q`) cũng xong. Engine thật (`2.1.9.p`) — Hoà đã greenlight
+  trong sprint BOQ, đang làm tiếp ĐỢT 3.
+- **2.2.16-2.2.21**, **12 file phụ SPEC-TỔNG §9**, **`2.2.83` ranh giới** — 3 mục cũ chưa quyết,
+  chi tiết đủ trong `docs/IF-FEATURE-TREE.md`/`CHANGELOG.md`, không lặp lại ở đây.
 
 ## Nợ kỹ thuật
 → Tách ra `docs/TECH-DEBT.md` (30/07, giữ STATUS dưới 800 từ) — nội dung nguyên vẹn, không mất mục nào.
