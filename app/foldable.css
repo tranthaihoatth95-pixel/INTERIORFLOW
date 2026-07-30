@@ -32,9 +32,12 @@
 }
 
 /* ---------- 2. NARROW folded aspect (cover screen, ~20:9 portrait)
-   Anything up to ~520px wide is treated as the folded phone. Keep panels
-   from eating the whole canvas; tighten the chat/side panel width. ---------- */
-@media (max-width: 520px) {
+   Anything up to ~640px wide is treated as the folded phone. Keep panels
+   from eating the whole canvas; tighten the chat/side panel width.
+   7.1.20 (30/07) — was a stray 520px, matching no Tailwind breakpoint; pulled to
+   BP.sm (640, lib/breakpoints.ts). Plain CSS can't import the JS constant — keep
+   this number in sync with BP.sm by hand if that ever changes. ---------- */
+@media (max-width: 640px) {
   /* Side sheets should never exceed the narrow screen */
   aside {
     max-width: min(88vw, 20rem);
@@ -44,8 +47,9 @@
 /* ---------- 3. SQUARE unfolded aspect (inner screen, ~1:1.10)
    Detect a wide-ish, roughly-square large viewport. On the unfolded panel
    we have generous width — let side panels sit at a comfortable fixed
-   width and give the canvas the remaining room. ---------- */
-@media (min-width: 720px) and (max-aspect-ratio: 5 / 4) {
+   width and give the canvas the remaining room.
+   7.1.20 (30/07) — was a stray 720px; pulled to BP.md (768, lib/breakpoints.ts). ---------- */
+@media (min-width: 768px) and (max-aspect-ratio: 5 / 4) {
   /* Roughly square (inner) screen: allow panels their natural width and
      keep the canvas as the flexible remainder — nothing to override on the
      canvas itself since it already uses flex-1; this block exists so future

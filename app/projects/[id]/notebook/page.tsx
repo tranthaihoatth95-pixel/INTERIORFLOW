@@ -20,6 +20,7 @@ import { NotebookSourcesSidebar } from '@/components/notebook/NotebookSourcesSid
 import { NotebookChatPanel } from '@/components/notebook/NotebookChatPanel';
 import { NotebookSourceViewer } from '@/components/notebook/NotebookSourceViewer';
 import { useNotebook } from '@/components/notebook/useNotebook';
+import { BP } from '@/lib/breakpoints';
 
 type MobileTab = 'sources' | 'chat' | 'viewer';
 
@@ -190,7 +191,9 @@ export default function ProjectNotebookPage() {
       </main>
 
       <style jsx>{`
-        @media (max-width: 900px) {
+        /* 7.1.20 (30/07) — 900px lẻ, không khớp mốc Tailwind → kéo về BP.lg (1024,
+           lib/breakpoints.ts). Dải notebook 2 cột chỉ đủ chỗ từ desktop trở lên. */
+        @media (max-width: ${BP.lg}px) {
           .nb-grid {
             grid-template-columns: 1fr !important;
           }

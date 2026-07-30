@@ -14,6 +14,7 @@
 
 import { create } from 'zustand';
 import { useEffect, useState } from 'react';
+import { BP } from '@/lib/breakpoints';
 import type { ToolModeNodeRefs } from './tool-mode-graph';
 
 export type ToolModeView = 'home' | 'form' | 'canvas';
@@ -108,8 +109,10 @@ export const useToolModeUi = create<ToolModeUiState>((set) => ({
 
 /** Màn ≤7 inch — ÉP Tool Mode, ẩn hẳn lối vào canvas (§1B "Ngưỡng thiết bị"). Không có API đọc
  * kích thước MÀN HÌNH VẬT LÝ thật từ trình duyệt (giới hạn nền tảng chung, không riêng cách làm
- * này) — dùng ngưỡng bề rộng CSS px làm xấp xỉ, cùng khuôn `useIsCoverScreen` (HomeScreen.tsx). */
-const SMALL_SCREEN_MAX_WIDTH = 700;
+ * này) — dùng ngưỡng bề rộng CSS px làm xấp xỉ, cùng khuôn `useIsCoverScreen` (HomeScreen.tsx).
+ * 7.1.20 (30/07) — trước là số lẻ tự viết (700, không khớp mốc Tailwind nào) → kéo về đúng
+ * `BP.md` (768, lib/breakpoints.ts) — "≤7 inch" nằm gọn trong dải tablet 8-11" trở xuống. */
+const SMALL_SCREEN_MAX_WIDTH = BP.md;
 
 export function useIsSmallScreenForCanvas(): boolean {
   const [small, setSmall] = useState(false);

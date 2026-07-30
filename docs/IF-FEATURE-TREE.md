@@ -621,6 +621,7 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 7.1.17 | Dây chuyền vận hành — hợp đồng I/O từng chặng (0 Đề bài→1 CAD→2 Render→3 Present→4 Phản hồi) | — (mô hình) | 🟡 luật "output không id = mồ côi" đã áp cho ảnh (`img_`), chưa toàn bộ pipeline | không | `IF-ARCHITECTURE-BLUEPRINT-v1.md` §5 |
 | 7.1.18 | Nâng `Violation`/`Severity`/`registry` từ `lib/cad/standards/` → `lib/standards/` dùng chung cho cả 3 chặng (chấm chuẩn trước khi xuất, đề xuất 29/07, mã cũ đề xuất sai `7.23`) | N | ⬜ chưa nâng cấp — hiện chỉ chặng 1 dùng | 2.1.4 (Standards Checker chặng 1); 2.2.78 (thứ tự Sprint 3 ④→⑤ đã chốt, xem ghi chú đầu mục "2.2.60-2.2.85" khối 2.2 Render) | `docs/SPEC-TONG-COWORK-2026-07-29.md` §7.5 |
 | 7.1.19 | Lark provider — Wiki `app_token` resolution: `resolveWikiAppToken()` (`GET /open-apis/wiki/v2/spaces/get_node?token={node_token}&obj_type=wiki` → đọc `obj_token`, cache) + tách 3 biến `LARK_ATLAS_NODE_TOKEN`/`LARK_ATLAS_APP_TOKEN`/`LARK_WORK_APP_TOKEN`, giữ tương thích `LARK_BASE_APP_TOKEN` | N | ⬜ chưa có — `lib/integrations/providers/lark.ts` hiện 0 dòng về wiki (grep xác nhận 30/07), chỉ 1 `LARK_BASE_APP_TOKEN`. **Lý do cần**: ATLAS Material Library nằm trong Lark **Wiki**, không phải Drive base thường — `node_token` (deep link) ≠ `app_token` (gọi bitable API), phải giải qua endpoint trên rồi cache, KHÔNG suy ra từ nhau (nhầm lẫn này tốn nửa ngày để tìm nếu không ghi rõ) | không | `docs/REVIEW-SPEC-BOQ-LARK-2026-07-30.md` §3 |
+| 7.1.20 | ⭐ Gộp hệ ngưỡng bề rộng màn hình — `lib/breakpoints.ts` (hằng `BP` = 640/768/1024/1280/1536, KHÔNG đổi giá trị Tailwind — 70 chỗ đang dùng) làm nguồn duy nhất, kéo 5 ngưỡng tự viết rải rác (700/900/720/520/1100, không khớp mốc nào) về đúng `BP` | N | ✅ done (checklist 6 bước đủ, 30/07) — `lib/breakpoints.ts` mới (`BP` + `isNarrowerThan()` + hook `useBreakpoint()`). Sửa 5 chỗ: `tool-mode-ui.ts:112` (700→`BP.md`) · `notebook/page.tsx:193` (900→`BP.lg`, styled-jsx interpolate) · `foldable.css` ×2 (520→640, 720→768, plain CSS không import được JS — giữ số khớp tay) · `globals.css:1065` (1100→1279, chọn `BP.xl` không phải `BP.lg` vì dải 1024-1279 tự nó đã là "ngân sách bề rộng CHẶT", nhãn phụ nên ẩn suốt dải đó). Grep toàn repo xác nhận không sót ngưỡng lẻ nào khác (matchMedia còn lại đều là feature query khác, không phải width). Ghi **Luật #10** (tiêu chuẩn nghề không hỏi) và **Luật #11** (nguồn `BP` duy nhất + giao thức verify 5 mốc **640·768·1024·1180·1440**, 1180 bắt buộc) vào PHẦN E. Khảo dải 1024-1279 (bước 4, chỉ liệt kê chưa sửa): `AppChrome.tsx` cụm phải `hidden...sm:flex` nhảy thẳng ẩn→đủ desktop từ 640px, chưa test riêng 640-1023; `ToolModeForm.tsx:138` `gridTemplateColumns:'1fr 1fr'` cứng, KHÔNG có breakpoint nào — 2 cột ẢNH GỐC+KẾT QUẢ sẽ chật trên điện thoại/tablet hẹp. `ToolModeHome.tsx` KHÔNG phải lỗi — dùng `auto-fill,minmax(220px,1fr)` tự co giãn, không cần breakpoint. | không | `docs/VERIFY-7.3.31.md` (nguồn phát hiện), Luật #10/#11 PHẦN E |
 
 ### 7.2 Trend clock & hội đồng giả định (5C)
 
@@ -915,6 +916,27 @@ người dùng nâng cấp (vd chạy `ai.upscale`) trước khi quyết định
 >    khối 2.2 Render mục "2.2.60-2.2.85" và khối 2.3 Present mục "2.3.58-2.3.63"), gồm cả `2.2.85`
 >    (bổ sung, từ `docs/TICKET-FONT-MONO-NODE-2026-07-29.md`, không có trong `SPEC-TONG` gốc). Loại
 >    trừ có chủ đích khỏi đợt dán: `2.2.62`-`2.2.64`, `2.2.73`-`2.2.74` (ngoài phạm vi yêu cầu 30/07).
+
+## Luật MỚI thêm 30/07 — 10/11
+
+**10 · Luật tiêu chuẩn nghề — không hỏi** (Hoà chốt 30/07, khi sửa va chạm `CadTouchDock`):
+Thứ thuộc TIÊU CHUẨN nghề (ISO · TCVN · Apple HIG · WCAG · chuẩn responsive phổ thông…) thì TRA
+CHUẨN rồi LÀM ĐÚNG CHUẨN — KHÔNG HỎI. Chỉ hỏi khi là quyết định SẢN PHẨM (làm hay không, thứ tự
+ưu tiên, đánh đổi). Đã áp dụng: khổ giấy ISO 216/5457 (`2.1.8.m`), thang ưu tiên nhường chỗ
+PatternFly priority+ (`7.3.31` phần vá cuối), hệ ngưỡng breakpoint (`7.1.20`, luật 11 dưới đây).
+
+**11 · Luật ngưỡng màn hình DUY NHẤT** (`7.1.20`, 30/07) — mọi ngưỡng bề rộng responsive trong JS
+PHẢI đọc từ `lib/breakpoints.ts` (hằng `BP`), KHÔNG tự viết số px rời. CSS thuần (không import
+được JS) giữ số khớp tay với `BP`, ghi rõ trong comment tại chỗ dùng. 4 dải chính thức: <640 điện
+thoại · 640–1023 tablet 8-11" · 1024–1279 laptop 13"/cửa sổ không full (ngân sách bề rộng CHẶT) ·
+≥1280 desktop đầy đủ.
+
+**Giao thức VERIFY responsive — áp cho MỌI ticket giao diện từ 30/07, không riêng ticket phát
+sinh luật này**: đo bằng số ở ĐỦ 5 mốc — **640 · 768 · 1024 · 1180 · 1440**. **1180 BẮT BUỘC** —
+bề rộng Hoà THẬT SỰ chạy hàng ngày (cửa sổ không full trên MacBook), nằm giữa `lg`(1024) và
+`xl`(1280), đúng dải "ngân sách bề rộng CHẶT" nơi loạt lỗi layout gần đây lộ ra
+(`docs/VERIFY-7.3.31.md` — overlap 1024px vá xong nhưng đợt đầu chỉ đo 1024/1183/1440, không có
+1180 chính thức trong luật lúc đó). Test riêng ở 1024/1440 KHÔNG bắt được lỗi ở dải giữa.
 
 ---
 

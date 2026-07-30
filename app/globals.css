@@ -1058,11 +1058,18 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
 }
 
 /* Nhãn micro chặng ("01 · DRAFTING CAD") trên StageSwitcher — vế phân định chặng. Thanh đầu đã
-   khá chật ở laptop nhỏ, nên ẩn nhãn dưới 1100px; pill + chấm tông chặng vẫn còn nguyên. */
+   khá chật ở laptop nhỏ, nên ẩn nhãn dưới ngưỡng; pill + chấm tông chặng vẫn còn nguyên.
+   7.1.20 (30/07) — 1100px lẻ, không khớp mốc Tailwind. Chọn BP.xl (1280, lib/breakpoints.ts)
+   thay vì BP.lg (1024): dải 1024-1279 tự nó đã định nghĩa "laptop 13"/cửa sổ không full — ngân
+   sách bề rộng CHẶT" (docs/VERIFY-7.3.31.md xác nhận đúng dải này chật thật, header 4 route
+   suýt tràn ở 1024px trước khi vá). Nhãn micro là trang trí phụ (pill+chấm đã đủ thông tin) —
+   nên tiếp tục ẩn SUỐT dải chặt đó, chỉ hiện lại ở desktop đầy đủ ≥1280, không phải ngay ≥1024
+   (lúc đó vẫn còn chật, chưa nên thêm chữ). Plain CSS không import được hằng JS — giữ số này
+   khớp tay với BP.xl nếu sau đổi. */
 .if-stage-label {
   display: flex;
 }
-@media (max-width: 1100px) {
+@media (max-width: 1279px) {
   .if-stage-label {
     display: none !important;
   }
