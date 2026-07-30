@@ -121,10 +121,22 @@ export function AppChrome({ active }: Props) {
 
       <div className="mx-1 hidden h-5 w-px bg-[var(--border)] sm:block" />
 
-      {/* Cụm giữa — co lại/cắt TRƯỚC tiên khi hẹp (2.2.60, 29/07), để cụm phải (Chạy flow/Home/
-          ⋯/avatar) luôn thấy. Bất biến 4 route: tên dự án + StageSwitcher luôn có; Tệp/AiStatusDot
-          CHỈ render (đúng lý do ở đầu file). */}
-      <div className="flex min-w-0 flex-1 items-center gap-2">
+      {/* 30/07 — TÁI CẤU TRÚC (sửa nốt phần overlap 1024px của 7.3.31, thay bản "co lại/cắt" cũ):
+          "Tệp" về cụm trái cạnh logo (đúng quy ước menu File, vẫn CHỈ active==='render' — không
+          đổi lớp, xem ghi chú đầu file). StageSwitcher ra làm con TRỰC TIẾP shrink-0 của header
+          — khớp yêu cầu "3 nút chặng đứng yên một chỗ" của 7.3.31, không còn sống trong hộp co. */}
+      {active === 'render' && ((workspace ?? 'render') === 'render' ? <RenderIOMenus /> : <UploadButton />)}
+
+      {/* LUẬT (đã vỡ 1 lần, 30/07 — Tệp/StageSwitcher từng sống ở đây, cả 2 đều shrink-0, tràn
+          khỏi hộp bị bóp nhỏ hơn nội dung → "Chạy flow" vẽ sau trong DOM nên đè lên phần tràn,
+          KHÔNG phải z-index/stacking quirk): hộp `flex-1 min-w-0` CHỈ được chứa thứ CO ĐƯỢC.
+          Mọi shrink-0 đặt trong nó sẽ tràn ra ngoài và bị phần tử vẽ sau đè lên. KHÔNG chữa bằng
+          overflow-hidden (cắt popover con — đã thử, bỏ, xem Header.tsx cũ trước 7.3.31). */}
+      {/* overflow-hidden CHỈ ở đây (an toàn — hộp này không chứa popover nào, khác cụm giữa cũ
+          bị cấm overflow-hidden vì có Tệp/MoreMenu). Không có nó: khi flex bóp hộp này xuống gần
+          0, nút tên dự án vẫn cần 1 mức rộng tối thiểu để vẽ (padding + 1 ký tự + "…") và TRÀN
+          khỏi hộp — đè lên StageSwitcher (phát hiện 30/07, đo được 4px chồng ở 1024px). */}
+      <div className="flex min-w-0 flex-1 items-center overflow-hidden">
         {editing ? (
           <input
             autoFocus
@@ -137,21 +149,20 @@ export function AppChrome({ active }: Props) {
         ) : (
           <motion.button
             {...pressable}
-            className="min-w-0 max-w-28 shrink truncate rounded-[10px] px-2 py-1 text-sm text-[var(--t2)] transition-colors hover:bg-[var(--hover)] sm:max-w-40 lg:max-w-56"
+            className="min-w-0 truncate rounded-[10px] px-2 py-1 text-sm text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
             onClick={() => setEditing(true)}
             title={tr('Đổi tên dự án', 'Rename project')}
           >
             {flowName}
           </motion.button>
         )}
-
-        <div className="shrink-0" data-tour="phase-switcher">
-          <StageSwitcher active={currentPhase} onPick={onPick} photoContext={active === 'photo'} />
-        </div>
-
-        {active === 'render' && ((workspace ?? 'render') === 'render' ? <RenderIOMenus /> : <UploadButton />)}
-        {active === 'render' && <AiStatusDot />}
       </div>
+
+      <div className="shrink-0" data-tour="phase-switcher">
+        <StageSwitcher active={currentPhase} onPick={onPick} photoContext={active === 'photo'} />
+      </div>
+
+      {active === 'render' && <AiStatusDot />}
 
       {/* Chạy flow — CHỈ Render (node-graph để chạy). */}
       {active === 'render' && (
