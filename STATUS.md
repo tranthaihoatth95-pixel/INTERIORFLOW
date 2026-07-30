@@ -5,30 +5,30 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (30/07 khuya — 7.1.20+2.2.86 xong, 2.1.8.l/m còn CODE chưa commit)
+## Hiện tại (30/07 khuya — 7.1.19 merge xong, 2.2.70 + npm test script còn treo)
 Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này (nhiều việc, thứ tự commit thật):
 - ✅ **7.3.31 mở rộng** — hợp nhất `Header.tsx`+`StudioBar.tsx` → `AppChrome.tsx`, sửa 2 lần overlap
-  1024px (bản 1: dời Tệp/StageSwitcher ra khỏi hộp co; bản 2: wordmark→logomark ở `xl` + "Đăng
-  xuất" vào menu avatar, trả 23px thiếu) — xem `docs/VERIFY-7.3.31.md` bảng số đầy đủ.
-- ✅ **2.1.8.k** — xuất bộ hồ sơ nhiều tờ 1 PDF có mục lục (`buildSheetSetPdf`).
-- ✅ **7.1.20** — gộp hệ ngưỡng breakpoint (`lib/breakpoints.ts`), ghi Luật #10/#11 (chuẩn nghề
-  không hỏi + verify bắt buộc 5 mốc 640·768·1024·1180·1440).
-- ✅ **2.2.86 ĐỔI PHƯƠNG ÁN** — bỏ "pill nổi trên canvas" (bản đầu), Hoà chốt hàng đợi thật trong
-  menu "Việc" (đơn vị `FlowRun`, tuần tự, huỷ được). `execNode()` giữ nguyên, chỉ thêm điều phối.
-- 🟡 **2.1.8.l** (va chạm `CadTouchDock`, safe-area) + **2.1.8.m** (khổ giấy A0-A4 tách trục
-  hướng) — CODE ĐÃ XONG, đã tsc+test sạch, **NHƯNG CHƯA COMMIT** (bị chen bởi các việc ưu tiên
-  hơn liên tục trong phiên) — làm tiếp đầu phiên sau: commit riêng, cập nhật 2 dòng cây.
-- 🟡 **2.2.70** (a)(b) — 2 lỗi nhỏ sửa kèm (banner báo động giả nodeCount≤1, upscale desc gắn cứng
-  A3) — CODE XONG, CHƯA COMMIT, gộp cùng đợt ảnh thật 5 thẻ Tool Mode (đang CHỜ Hoà duyệt credit).
-- ⏸️ **Còn treo, thứ tự Hoà chốt**: `7.1.19` (Lark Wiki, `docs/REVIEW-SPEC-BOQ-LARK-2026-07-30.md`)
-  → `2.1.9.q` (BOQ groundwork) → BOQ `2.1.9.p` (matId đã CHỐT, còn chờ quyết "có làm engine không").
-- ⏸️ **B2/B3/B4** chưa làm — B3 cần THỬ TAY thật.
+  1024px — xem `docs/VERIFY-7.3.31.md` bảng số đầy đủ.
+- ✅ **2.1.8.k/l/m** — PDF nhiều tờ có mục lục · sửa va chạm `CadTouchDock` (`safe-area.ts`) · tách
+  khổ giấy/hướng giấy (A0-A4, Luật #10). Cả 3 đã commit riêng.
+- ✅ **7.1.20** — gộp hệ ngưỡng breakpoint (`lib/breakpoints.ts`), ghi Luật #10/#11.
+- ✅ **2.2.86 ĐỔI PHƯƠNG ÁN** — bỏ "pill nổi trên canvas", hàng đợi thật trong menu "Việc" (đơn
+  vị `FlowRun`, tuần tự, huỷ được). Phát hiện thêm `7.3.32` (⬜, header tràn 179px@640/51px@768,
+  `sm:flex` cụm phải chưa thiết kế dải 640-1023) — cấp mã, chưa sửa.
+- ✅ **7.1.19 (Lark Wiki) MERGE XONG** — làm ở worktree phụ song song, merge sạch không conflict
+  (đúng 3 file `lark.ts`/`.env.example`/`INTEGRATIONS.md`). tsc+103/103 test sạch SAU merge (lớp
+  kiểm duy nhất code này chưa từng qua — worktree phụ không chạy được bộ test). **VẪN 🟡** — chờ
+  `.env.local` có `LARK_APP_ID/SECRET/LARK_ATLAS_NODE_TOKEN` để verify bằng call thật, chưa ✅.
+  Worktree phụ `.worktrees/if-lark` + branch `feat/7.1.19-lark-wiki` đã dọn sạch (prune + `-d`).
+- ⏭️ **Đang chờ Hoà xác nhận mã `7.1.21`** — thêm script `"test"` vào `package.json` (hiện KHÔNG
+  có, bộ 103 bài chỉ chạy được nếu biết cú pháp riêng — đúng lý do `7.1.19` ship mà chưa qua test).
+- 🟡 **2.2.70** (a)(b) — 2 lỗi nhỏ sửa kèm — CODE XONG, CHƯA COMMIT, gộp cùng đợt ảnh thật 5 thẻ
+  Tool Mode (đang CHỜ Hoà duyệt credit trước khi chạy AI thật).
+- ⏸️ **Còn treo**: `2.1.9.q` (BOQ groundwork) → BOQ `2.1.9.p` (matId đã CHỐT, chờ quyết "có làm
+  engine không"). B2/B3/B4 chưa làm — B3 cần THỬ TAY thật.
 
 ## Worktree đang mở
-🔴 **PHÁT HIỆN 30/07 khuya** — `.worktrees/if-lark` (branch `feat/7.1.19-lark-wiki`, cùng SHA
-`af4559b` với main) đang mở, KHÔNG PHẢI do phiên này tạo — nghi là phiên Cowork song song khác
-đang làm `7.1.19`. `.gitignore` đã có sẵn dòng loại trừ `.worktrees/` (không phải tôi thêm). Chưa
-rõ còn sống hay đã xong — Hoà kiểm `git worktree list` xác nhận, đừng để tôi tự xoá/gộp.
+Không có (dọn sạch 30/07 khuya — `.worktrees/if-lark`/`feat/7.1.19-lark-wiki` đã merge+prune+xoá).
 
 ## Chờ USER quyết
 - **NT1** (gộp `LibraryPanel`+`LibraryBrowser`, LỚN) và **NT5** (cây thư mục thật, RẤT LỚN) —
