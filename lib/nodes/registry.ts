@@ -664,7 +664,7 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
     type: 'ai.upscale',
     title: 'Phóng to ảnh · Upscale',
     category: 'AI_EDIT',
-    description: 'ESRGAN upscale — xuất in ấn, đủ 300dpi khổ A3',
+    description: 'ESRGAN upscale — xuất in ấn, đủ 300dpi để in khổ lớn', // 30/07: bỏ gắn cứng A3, xem task-cards.ts
     inputs: [{ id: 'image', label: 'Image', dataType: 'image' }],
     outputs: [{ id: 'image', label: 'Image', dataType: 'image' }],
     params: [{ kind: 'select', id: 'scale', label: 'Scale', options: ['2', '4'] }],

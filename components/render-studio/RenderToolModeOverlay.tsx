@@ -48,7 +48,11 @@ export default function RenderToolModeOverlay() {
   // lưới 6 thẻ trống như canvas chưa từng có gì.
   const pattern = detectGraphPattern(nodes, edges);
   if (pattern.kind === 'single') return <ToolModeForm cardId={pattern.cardId} />;
-  if (pattern.kind === 'complex') {
+  // 30/07 — sửa báo động giả (Luật Đồng Bộ #6, cùng màn với 2.2.70): `detectGraphPattern()` trả
+  // 'complex' cho CẢ trường hợp 1 node mồ côi (không khớp mẫu ảnh→AI 2-node), nodeCount=1. Với
+  // đúng 1 node thì KHÔNG có gì bị "giấu" — dải cảnh báo chiếm nguyên hàng ngang đầu màn là báo
+  // động giả. Chỉ hiện khi nodeCount thật sự > 1 (đúng nghĩa "còn thứ khác đang ẩn").
+  if (pattern.kind === 'complex' && pattern.nodeCount > 1) {
     return (
       <ToolModeHome
         notice={`Flow này có ${pattern.nodeCount} node — Tool Mode chỉ hiện được 1 việc, mở canvas để xem đủ.`}
