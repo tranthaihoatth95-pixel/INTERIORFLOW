@@ -5,28 +5,30 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (30/07 khuya — 7.3.31 hợp nhất AppChrome xong, tiếp 2.2.86)
-Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này:
-- ✅ **7.3.31 mở rộng** — hợp nhất `Header.tsx`+`StudioBar.tsx` → `AppChrome.tsx` duy nhất (4 route),
-  `stage-nav.ts` gộp logic điều hướng, sửa 2 lỗi thật (`SessionWatch`+link `/settings` trước thiếu
-  ở 3/4 route). Browser-verify 4 route×2 breakpoint: `.if-dock` left 0px jitter (254.203125px cả
-  8/8 lần đo), width lệch tối đa 0.28px. 102/102 test, tsc+eslint sạch.
-- 🔴 **Nợ kỹ thuật phát hiện** (pre-existing, không phải regression `7.3.31`): Tệp chồng Chạy flow
-  ở 1024px route render — ghi vào `docs/TECH-DEBT.md`, tự hết khi `2.2.86` dời nút khỏi bar.
-- ✅ **B1 backup tự động** (`4.6`+`4.13`) — xem CHANGELOG cho chi tiết, đã xong phiên trước.
-- ⏭️ **Tiếp theo (thứ tự Hoà chốt 30/07)**: `2.2.86` (Chạy flow rời bar → pill nổi trạng thái,
-  `docs/TICKET-CHAY-FLOW-KHONG-GHIM-BAR-2026-07-30.md`) → `7.1.19` (Lark Wiki token,
-  `docs/REVIEW-SPEC-BOQ-LARK-2026-07-30.md`) → `2.1.9.q` (BOQ groundwork hình học) → BOQ `2.1.9.p`
-  (còn chờ Hoà quyết "có làm không", matId đã CHỐT 30/07 — xem cây mã `2.1.9.i`).
-- ⏸️ **B2/B3/B4** (`docs/CAT-PHAM-VI-3-NGAY-2026-07-30.md` §1, §3 Ngày 1-2) chưa làm — B3 (kiểm
-  autosave sống sót crash) cần THỬ TAY thật, không đọc code; B4 (trung tính 44 chỗ/25 file) đụng
-  `lib/server/auth.ts`+`app/layout.tsx`, rủi ro cao nhất.
-- ⏸️ **Sprint 3 UI còn lại** (`2.2.65-68/70-72/78-84`, `2.3.61`) — xem CHANGELOG cho tóm tắt
-  `2.2.85`/`2.2.69`(🟡)/`7.3.30` đã xong phiên trước; chuỗi phụ thuộc CHỐT ở `IF-FEATURE-TREE.md`.
-- ⏸️ **T3/T4 (Semantic Room)** vẫn CHƯA LÀM — đọc `docs/IF1-COMPLETION-AUDIT.md` §3 (a)/(d) trước.
+## Hiện tại (30/07 khuya — 7.1.20+2.2.86 xong, 2.1.8.l/m còn CODE chưa commit)
+Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này (nhiều việc, thứ tự commit thật):
+- ✅ **7.3.31 mở rộng** — hợp nhất `Header.tsx`+`StudioBar.tsx` → `AppChrome.tsx`, sửa 2 lần overlap
+  1024px (bản 1: dời Tệp/StageSwitcher ra khỏi hộp co; bản 2: wordmark→logomark ở `xl` + "Đăng
+  xuất" vào menu avatar, trả 23px thiếu) — xem `docs/VERIFY-7.3.31.md` bảng số đầy đủ.
+- ✅ **2.1.8.k** — xuất bộ hồ sơ nhiều tờ 1 PDF có mục lục (`buildSheetSetPdf`).
+- ✅ **7.1.20** — gộp hệ ngưỡng breakpoint (`lib/breakpoints.ts`), ghi Luật #10/#11 (chuẩn nghề
+  không hỏi + verify bắt buộc 5 mốc 640·768·1024·1180·1440).
+- ✅ **2.2.86 ĐỔI PHƯƠNG ÁN** — bỏ "pill nổi trên canvas" (bản đầu), Hoà chốt hàng đợi thật trong
+  menu "Việc" (đơn vị `FlowRun`, tuần tự, huỷ được). `execNode()` giữ nguyên, chỉ thêm điều phối.
+- 🟡 **2.1.8.l** (va chạm `CadTouchDock`, safe-area) + **2.1.8.m** (khổ giấy A0-A4 tách trục
+  hướng) — CODE ĐÃ XONG, đã tsc+test sạch, **NHƯNG CHƯA COMMIT** (bị chen bởi các việc ưu tiên
+  hơn liên tục trong phiên) — làm tiếp đầu phiên sau: commit riêng, cập nhật 2 dòng cây.
+- 🟡 **2.2.70** (a)(b) — 2 lỗi nhỏ sửa kèm (banner báo động giả nodeCount≤1, upscale desc gắn cứng
+  A3) — CODE XONG, CHƯA COMMIT, gộp cùng đợt ảnh thật 5 thẻ Tool Mode (đang CHỜ Hoà duyệt credit).
+- ⏸️ **Còn treo, thứ tự Hoà chốt**: `7.1.19` (Lark Wiki, `docs/REVIEW-SPEC-BOQ-LARK-2026-07-30.md`)
+  → `2.1.9.q` (BOQ groundwork) → BOQ `2.1.9.p` (matId đã CHỐT, còn chờ quyết "có làm engine không").
+- ⏸️ **B2/B3/B4** chưa làm — B3 cần THỬ TAY thật.
 
 ## Worktree đang mở
-Không có.
+🔴 **PHÁT HIỆN 30/07 khuya** — `.worktrees/if-lark` (branch `feat/7.1.19-lark-wiki`, cùng SHA
+`af4559b` với main) đang mở, KHÔNG PHẢI do phiên này tạo — nghi là phiên Cowork song song khác
+đang làm `7.1.19`. `.gitignore` đã có sẵn dòng loại trừ `.worktrees/` (không phải tôi thêm). Chưa
+rõ còn sống hay đã xong — Hoà kiểm `git worktree list` xác nhận, đừng để tôi tự xoá/gộp.
 
 ## Chờ USER quyết
 - **NT1** (gộp `LibraryPanel`+`LibraryBrowser`, LỚN) và **NT5** (cây thư mục thật, RẤT LỚN) —
