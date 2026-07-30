@@ -1,5 +1,45 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 30/07 khuya (đợt 4) — 2.1.9.q (BOQ groundwork) + hạ 2.2.87/2.2.88 ✅→🟡 + Luật #12 + commit 2.2.70
+- **Luật #12 mới** (`docs/IF-FEATURE-TREE.md` PHẦN E) — Hoà chốt sau va số `7.1.21` (lỗi grep của
+  Cowork, không phải lỗi Claude Code): "CHỈ Claude Code cấp mã. Cowork soạn ticket KHÔNG kèm số;
+  Claude Code gán, báo lại, Cowork xác nhận." `7.1.21` = script test (giữ, đề xuất trước),
+  `7.1.22` = Bộ nhớ đo đạc — cả 2 xác nhận, vẫn CHƯA CODE.
+- **Hạ `2.2.87`/`2.2.88` ✅→🟡** — Hoà chốt: "46 test đơn vị sạch NHƯNG đường hiển thị end-to-end
+  chưa verify — chưa có ảnh thật nào chạy thông ra số trên màn hình. Tính năng này xuất số đi tới
+  xưởng; lỗi tầng hiển thị gây thiệt hại tiền thật mà test đơn vị không bắt được." Nâng lại ✅ khi
+  Hoà tự xác nhận 1 ảnh thật chạy đúng — đúng nguyên tắc không tự nâng trạng thái khi chưa verify
+  đủ lớp (Luật #4 PHẦN E).
+- **Xác nhận an toàn dọn `.worktrees/if-lark/`** (Hoà yêu cầu kiểm bằng số, do bridge của Hoà đang
+  khởi động lại): `git merge-base --is-ancestor 68f2a2e HEAD` → CÓ trong main (qua merge `2b89d47`);
+  `grep -c resolveWikiAppToken lib/integrations/providers/lark.ts` → 7 (>0); `git branch --list
+  "feat/7.1.19*"` → rỗng. Không có gì mồ côi, `rm -rf` trước đó an toàn như đã báo.
+- **Commit `2.2.70` (a)(b) tách riêng** (`df74551`) — Hoà chỉ đạo ưu tiên: "rủi ro mất việc cao hơn
+  giá trị của việc chờ" (2 fix đã nằm chưa commit qua nhiều lượt trong khi commit khác đè lên).
+  (a) `RenderToolModeOverlay.tsx`: `detectGraphPattern()` trả `'complex'` cả khi chỉ 1 node mồ côi
+  → báo động giả "còn node khác đang ẩn" dù không có gì ẩn — sửa chỉ hiện khi `nodeCount > 1`.
+  (b) Mô tả node `ai.upscale` gắn cứng "khổ A3" — sửa chung chung, không hứa sai khổ giấy cụ thể.
+- **`2.1.9.q` — Groundwork đo bóc hình học cho BOQ** (`lib/cad/hatch.ts`): `polygonPerimeter(poly,
+  edgeMask?)` — chu vi hoặc chỉ cạnh được chọn (`edgeMask[i]===false` bỏ cạnh `i`), cùng phong
+  cách `polygonArea` đã có. `openingsAreaInPolygon(entities, poly, thresholdM2?)` — trừ diện tích
+  lỗ mở (cửa/cửa sổ) đi Đường (a) khuyến nghị của `docs/REVIEW-SPEC-BOQ-LARK-2026-07-30.md` §2②:
+  trừ theo entity ĐÃ PHÂN LOẠI (`elementType==='door'|'window'`) có `.at` nằm trong polygon, KHÔNG
+  dò ring con hình học. Ngưỡng `BOQ_OPENING_MIN_AREA_M2=0.5` vào CONFIG, không hard-code.
+  **PHÁT HIỆN khi khám code trước khi code (Luật #4/#5)**: review spec ví dụ "cửa 900×2200=1,98m²"
+  ngầm giả định `BlockDef.h` là chiều cao cửa thật — đọc `furniture.ts:599-619` xác nhận SAI: `h`
+  là ĐỘ SÂU MẶT BẰNG (`door(900)` có `h:900` = bán kính cung mở cửa vẽ trên mặt bằng, `window` có
+  `h:100` = độ dày tường tại vị trí cửa sổ). Dùng thẳng `w×h` sẽ trừ SAI 0,81m² thay vì ~1,89m²
+  cho 1 cửa 900 — đúng loại lỗi "âm thầm sai số tiền thật" mà Hoà vừa nhắc ở mục `2.2.87` trên.
+  Sửa: dùng `w` (rộng cửa/sổ, dữ liệu THẬT từ `BLOCK_MAP` qua `blockInfo()` — export thêm từ
+  `schedule.ts`, TÁI DÙNG Luật #6, không đọc lại `BLOCK_MAP` theo cách khác) × hằng số
+  `OPENING_STANDARD_HEIGHT_MM` mới (door 2100mm — cùng dải `ANCHOR_CONFIG.door` của `2.2.87`,
+  window 1500mm — Luật #10, chuẩn nghề công khai, không bịa theo từng block). 17 test mới
+  (`hatch.test.ts` [9] chu vi đầy đủ/từng cạnh/`edgeMask` rỗng, [10] cửa trong/ngoài polygon ·
+  cộng dồn nhiều lỗ mở · bỏ qua entity không phải cửa/sổ · ngưỡng CONFIG điều khiển được · block
+  lạ (không có trong `BLOCK_MAP`) không đoán mò) + 28 test cũ cùng file không hồi quy (45/45 tổng),
+  toàn bộ 100+ test khác trong repo sạch, tsc+eslint sạch. BOQ thật (`2.1.9.p`) vẫn chờ Hoà quyết
+  "có làm engine không" — mã này CHỈ là groundwork hình học, không phải BOQ.
+
 ## 30/07 khuya (đợt 3) — 2.2.87+2.2.88 SỬA SANG cascade "không-bao-giờ-fail" + dọn worktree cũ + 2 mã mới
 - **Lý do sửa cùng đêm vừa ship (đợt 2, xem mục ngay dưới)**: bản gốc bắt buộc hiệu chỉnh camera từ
   điểm tụ — ĐÚNG thiết kế ban đầu nhưng THẤT BẠI TRUNG THỰC quá thường xuyên với ảnh render đẹp

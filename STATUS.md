@@ -5,44 +5,25 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (30/07 khuya — 2.2.87/2.2.88 sửa SANG cascade "không-bao-giờ-fail", HẠ 🟡 chờ Hoà thử ảnh thật)
-Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này (nhiều việc, thứ tự commit thật):
-- ✅ **7.3.31 mở rộng** — hợp nhất `Header.tsx`+`StudioBar.tsx` → `AppChrome.tsx`, sửa TRIỆT ĐỂ
-  overlap 1024px (tái cấu trúc Tệp/StageSwitcher ra khỏi hộp co + wordmark→logomark ở `xl` +
-  "Đăng xuất" vào menu avatar) — xem `docs/VERIFY-7.3.31.md` bảng số đầy đủ, 0 tràn ở cả 3 mốc.
-- ✅ **2.1.8.k/l/m** — PDF nhiều tờ có mục lục · sửa va chạm `CadTouchDock` (`safe-area.ts`) · tách
-  khổ giấy/hướng giấy (A0-A4, Luật #10).
-- ✅ **7.1.20** — gộp hệ ngưỡng breakpoint (`lib/breakpoints.ts`), ghi Luật #10/#11 (verify bắt
-  buộc 5 mốc 640·768·1024·1180·1440).
-- ✅ **2.2.86 ĐỔI PHƯƠNG ÁN** — bỏ "pill nổi trên canvas", hàng đợi thật trong menu "Việc" (đơn
-  vị `FlowRun`). Phát hiện `7.3.32` (⬜, header tràn 179px@640/51px@768) — cấp mã, chưa sửa.
-- ✅ **7.1.19 (Lark Wiki) MERGE XONG** — worktree phụ dọn sạch. **VẪN 🟡** — chờ 3 khoá Lark trong
-  `.env.local` để verify bằng call thật.
-- 🟡 **2.2.87 + 2.2.88 (đo món đồ từ 1 ảnh) — SỬA SANG CASCADE 4 BẬC cùng đêm, HẠ TỪ ✅ (Hoà chốt)**
-  — xuất số đi tới xưởng, lỗi tầng hiển thị = thiệt hại tiền thật mà test đơn vị không bắt được;
-  nâng lại ✅ khi Hoà tự xác nhận 1 ảnh thật chạy đúng. Bản gốc (điểm
-  tụ bắt buộc) đúng thiết kế ban đầu nhưng THẤT BẠI TRUNG THỰC quá nhiều với ảnh render đẹp thiếu
-  cạnh thẳng 2 phương (Hoà tự nhận lỗi thiết kế, không phải lỗi code) → nguyên tắc mới "Bấm Render
-  KHÔNG BAO GIỜ trả về tay không". `single-view-metrology.ts` thêm `measureObjectTiered()` — 4 bậc
-  tự tụt (dải chuẩn nghề → tỉ lệ mặt nạ → neo tay 2-điểm/tự xác nhận → điểm tụ gốc), KHÔNG BAO GIỜ
-  throw vì thiếu cấu trúc/neo, tách bạch khỏi `AiTier` hệ thống (Luật #6, không quản chi phí 2 lần).
-  `ToolModeForm.tsx` viết lại: `category` hiện chính + "Tinh chỉnh" (2 slider cũ) thu gọn mặc định
-  ĐÓNG + UI khoanh tay 2-điểm mới cho vật chuẩn + `MeasurementPanel` hiện "Tầng N · Bậc M · độ tin
-  K%". 46/46 test (28 gốc + 18 mới) + 100+ test khác cả repo sạch, tsc+eslint sạch. ⚠️ **CHƯA verify
-  đường khoanh-tay+ra-số-thật trong browser** — môi trường test không đưa được file ảnh thật qua
-  input (đã thử 2 cách, không kích hoạt được) — bù bằng đối chiếu kiểu dữ liệu + 46 test đơn vị
-  đúng hàm node gọi; khuyến nghị Hoà tự thử 1 ảnh thật. ⚠️ **CHƯA LÀM, disclose rõ**: Tầng 2 (oneAI
-  tự tìm vật neo) / Tầng 3 (VLM ước category) của bản đồ 4-AiTier Hoà yêu cầu — thiếu hạ tầng
-  object-detection-có-bbox + VLM tách biệt kiến trúc khỏi hệ `fal`-tier, để đợt sau. Chi tiết đủ →
-  `docs/IF-FEATURE-TREE.md` dòng `2.2.87`/`2.2.88`.
-- ✅ **2 mã XÁC NHẬN 30/07 khuya** (Luật #12 mới — chỉ Claude Code cấp mã, xem PHẦN E):
-  `7.1.21` = script `"test"` vào `package.json`. `7.1.22` = Bộ nhớ đo đạc — Tầng 1 tự học kích
-  thước/tỉ lệ/chiều cao máy ảnh theo dữ liệu nhà (Prisma). Cả 2 CHƯA CODE, chưa tới lượt hàng chờ.
-- ✅ **2.2.70 (a)(b)** — 2 lỗi nhỏ commit riêng (`df74551`), đúng Hoà chỉ đạo "rủi ro mất việc cao
-  hơn giá trị chờ". Nội dung chính `2.2.70` (45 bìa SVG + 5 node ảnh thật) VẪN treo, chờ Hoà duyệt
-  credit trước khi chạy AI thật.
-- ⏸️ **Còn treo**: `2.1.9.q` (BOQ groundwork) → BOQ `2.1.9.p` (matId đã CHỐT, chờ quyết "có làm
-  engine không"). B2/B3/B4 chưa làm — B3 cần THỬ TAY thật.
+## Hiện tại (30/07 khuya — 2.1.9.q xong, 2.2.87/2.2.88 HẠ 🟡 chờ Hoà thử ảnh thật)
+Chi tiết đầy đủ → `CHANGELOG.md` (mỗi dòng dưới đây có 1 mục tương ứng ở đó). Tóm tắt:
+- ✅ **7.3.31 mở rộng** — `AppChrome.tsx` hợp nhất Header+StudioBar, hết overlap 1024px (0 tràn 3 mốc).
+- ✅ **2.1.8.k/l/m** — PDF nhiều tờ có mục lục · sửa va chạm `CadTouchDock` · tách khổ/hướng giấy.
+- ✅ **7.1.20** — gộp hệ ngưỡng breakpoint (`lib/breakpoints.ts`), ghi Luật #10/#11.
+- ✅ **2.2.86 ĐỔI PHƯƠNG ÁN** — hàng đợi thật trong menu "Việc" (`FlowRun`). Phát hiện `7.3.32` ⬜.
+- ✅ **7.1.19 (Lark Wiki) MERGE**. **VẪN 🟡** — chờ 3 khoá Lark trong `.env.local` verify call thật.
+- 🟡 **2.2.87+2.2.88 SỬA SANG cascade 4 bậc "không-bao-giờ-fail", HẠ TỪ ✅ (Hoà chốt)** — bản gốc
+  (điểm tụ bắt buộc) thất bại trung thực quá nhiều với ảnh thiếu cạnh thẳng; `measureObjectTiered()`
+  tự tụt bậc, không bao giờ throw. 46/46 test. **CHƯA verify ảnh thật trong browser** (môi trường
+  test không đưa được file qua input) — nâng lại ✅ khi Hoà tự thử. Disclose: Tầng 2/3 AI chưa làm.
+- ✅ **2 mã XÁC NHẬN** (Luật #12 mới — chỉ Claude Code cấp mã): `7.1.21`=script test,
+  `7.1.22`=Bộ nhớ đo đạc. Cả 2 CHƯA CODE.
+- ✅ **2.2.70 (a)(b)** 2 lỗi nhỏ commit riêng (`df74551`). Nội dung chính `2.2.70` vẫn treo (credit).
+- ✅ **2.1.9.q (BOQ groundwork)** — `polygonPerimeter()`+`openingsAreaInPolygon()` vào `hatch.ts`.
+  Phát hiện khi khám: review spec giả định sai `BlockDef.h`=chiều cao cửa (thật ra là độ sâu mặt
+  bằng) — sửa dùng `w`×`OPENING_STANDARD_HEIGHT_MM` (CONFIG chuẩn nghề). 45/45 test. BOQ `2.1.9.p`
+  (engine thật) vẫn chờ quyết.
+- ⏸️ **Còn treo**: B2/B3/B4 chưa làm — B3 cần THỬ TAY thật.
 
 ## Worktree đang mở
 Không có. Dọn thêm 1 thứ 30/07 khuya: `.worktrees/if-lark/` (thư mục VẬT LÝ còn sót trên đĩa dù

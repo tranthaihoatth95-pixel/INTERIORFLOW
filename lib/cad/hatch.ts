@@ -32,6 +32,7 @@ import type { Doc, Entity, Pt } from './model';
 import { dist } from './model';
 import { entSegments } from './query';
 import { infiniteLineIntersect } from './modify';
+import { blockInfo } from './schedule';
 
 function norm2pi(a: number): number {
   return ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
@@ -60,6 +61,67 @@ export function polygonArea(poly: Pt[]): number {
     a += p.x * q.y - q.x * p.y;
   }
   return Math.abs(a) / 2;
+}
+
+/**
+ * 2.1.9.q — chu vi (mm), TẤT CẢ cạnh hoặc chỉ cạnh được chọn qua `edgeMask` (cạnh `i` nối
+ * `poly[i]→poly[(i+1)%length]`, `edgeMask[i]===false` → bỏ qua). Dùng cho m dài BOQ (chân
+ * tường/nẹp/tay nắm) — "nẹp cạnh chỉ lấy cạnh biên, không lấy toàn chu vi"
+ * (docs/REVIEW-SPEC-BOQ-LARK-2026-07-30.md §2①). Không `edgeMask` = chu vi đầy đủ.
+ */
+export function polygonPerimeter(poly: Pt[], edgeMask?: boolean[]): number {
+  let total = 0;
+  for (let i = 0; i < poly.length; i++) {
+    if (edgeMask && edgeMask[i] === false) continue;
+    total += dist(poly[i], poly[(i + 1) % poly.length]);
+  }
+  return total;
+}
+
+/** 2.1.9.q — ngưỡng diện tích lỗ mở (m²) TỐI THIỂU để trừ khỏi diện tích tường/sàn khi tính BOQ —
+ * lỗ nhỏ hơn (ô thoáng, lam gió...) không đáng trừ, bỏ qua. Nguồn: ví dụ VD1 cửa 900×2100≈1,89m²
+ * PHẢI trừ (docs/REVIEW-SPEC-BOQ-LARK-2026-07-30.md §2②) — vào CONFIG, không hard-code rải rác. */
+export const BOQ_OPENING_MIN_AREA_M2 = 0.5;
+
+/**
+ * 2.1.9.q — chiều cao chuẩn nghề (mm) cho cửa/cửa sổ khi tính DIỆN TÍCH lỗ mở (m²).
+ * ⚠️ PHÁT HIỆN khi khám code (Luật #4/#5 PHẦN E — khám trước khi code): `BlockDef.h` trong
+ * `furniture.ts` KHÔNG phải chiều cao cửa/sổ thật — đó là chiều SÂU MẶT BẰNG (vd `door(900)` có
+ * `h:900` = bán kính cung vẽ khi cửa mở, `window` có `h:100` = độ dày tường tại vị trí cửa sổ,
+ * xem `furniture.ts:599-619`). `docs/REVIEW-SPEC-BOQ-LARK-2026-07-30.md` §2② giả định `w×h` ra
+ * ngay diện tích thật — giả định đó SAI với dữ liệu 2D-mặt-bằng app này đang có. Dùng `w` (rộng
+ * cửa/sổ, DỮ LIỆU THẬT từ `BLOCK_MAP`) × chiều cao chuẩn nghề công khai dưới đây (Luật #10 — tiêu
+ * chuẩn nghề không hỏi) thay vì bịa theo từng block. `2.1.9.p` (BOQ thật, chưa greenlight) có thể
+ * thêm field chiều cao THẬT riêng từng cửa/sổ khi cần chính xác hơn mức groundwork này.
+ */
+export const OPENING_STANDARD_HEIGHT_MM: Record<'door' | 'window', number> = {
+  door: 2100, // dải chuẩn cửa đi 2000-2200mm, lấy giữa dải — cùng dải ANCHOR_CONFIG.door (2.2.87)
+  window: 1500, // cửa sổ dân dụng phổ biến ~1400-1600mm bệ-đỉnh, lấy giữa dải
+};
+
+/**
+ * 2.1.9.q — tổng diện tích (m²) các lỗ mở (cửa/cửa sổ) NẰM TRONG `poly`, dùng để trừ khỏi diện
+ * tích tường/sàn khi tính BOQ. Đi đường (a) khuyến nghị của
+ * docs/REVIEW-SPEC-BOQ-LARK-2026-07-30.md §2②: trừ theo entity ĐÃ PHÂN LOẠI
+ * (`elementType==='door'|'window'`) nằm trong polygon — KHÔNG dò ring con bằng hình học (đắt, dễ
+ * sai với bản vẽ thật). Chiều RỘNG lấy qua `blockInfo()` (`schedule.ts`, TÁI DÙNG — Luật #6, cùng
+ * nguồn cột w bảng thống kê Legend C1); chiều CAO lấy `OPENING_STANDARD_HEIGHT_MM` (xem lý do ở
+ * đó — `BlockDef.h` không phải chiều cao thật). Entity không có `w` (block DXF/lạ không có trong
+ * `BLOCK_MAP`) → bỏ qua, không đoán mò. Chỉ trừ lỗ đạt `thresholdM2` trở lên.
+ */
+export function openingsAreaInPolygon(entities: Entity[], poly: Pt[], thresholdM2 = BOQ_OPENING_MIN_AREA_M2): number {
+  let total = 0;
+  for (const e of entities) {
+    if (e.type !== 'block') continue;
+    if (e.elementType !== 'door' && e.elementType !== 'window') continue;
+    if (!pointInPolygon(e.at, poly)) continue;
+    const { w } = blockInfo(e);
+    if (!w) continue;
+    const heightMm = OPENING_STANDARD_HEIGHT_MM[e.elementType];
+    const areaM2 = (w * heightMm) / 1e6;
+    if (areaM2 >= thresholdM2) total += areaM2;
+  }
+  return total;
 }
 
 /** Lấy mọi đoạn thẳng biên khả dĩ từ entity hiển thị trong `doc` (circle/arc xấp xỉ đa giác). */

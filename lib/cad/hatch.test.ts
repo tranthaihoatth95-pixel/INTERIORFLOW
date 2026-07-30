@@ -4,12 +4,21 @@
  */
 import {
   pointInPolygon, polygonArea, traceHatchBoundary, findHatchBoundary, hatchLines, hatchDots,
+  polygonPerimeter, openingsAreaInPolygon, BOQ_OPENING_MIN_AREA_M2, OPENING_STANDARD_HEIGHT_MM,
 } from './hatch';
 import { emptyDoc } from './model';
-import type { Doc, LineEntity } from './model';
+import type { Doc, LineEntity, BlockEntity, Entity } from './model';
 import { newId } from './store';
 import { wallChain } from './commands';
 import { buildDemoPlan } from './demo-plan';
+
+const LAY = 'l-default';
+function doorBlock(at: { x: number; y: number }, block = 'door'): BlockEntity {
+  return { id: newId('e'), type: 'block', layer: LAY, block, at, rot: 0, sx: 1, sy: 1, elementType: 'door' };
+}
+function windowBlock(at: { x: number; y: number }): BlockEntity {
+  return { id: newId('e'), type: 'block', layer: LAY, block: 'window', at, rot: 0, sx: 1, sy: 1, elementType: 'window' };
+}
 
 let pass = 0;
 let fail = 0;
@@ -165,6 +174,45 @@ function testDemoPlanRooms() {
   }
 }
 
+/* ── 9) polygonPerimeter — 2.1.9.q ── */
+function testPolygonPerimeter() {
+  console.log('\n[9] polygonPerimeter — 2.1.9.q');
+  const rect = [{ x: 0, y: 0 }, { x: 4000, y: 0 }, { x: 4000, y: 3000 }, { x: 0, y: 3000 }];
+  ok('chu vi đầy đủ hình chữ nhật 4000×3000 = 14000', approx(polygonPerimeter(rect), 14000));
+  ok('edgeMask chỉ lấy cạnh 0 (đáy, dài 4000)', approx(polygonPerimeter(rect, [true, false, false, false]), 4000));
+  ok('edgeMask 2 cạnh đối (đáy+đỉnh, mỗi cạnh 4000) = 8000', approx(polygonPerimeter(rect, [true, false, true, false]), 8000));
+  ok('edgeMask toàn false = 0', approx(polygonPerimeter(rect, [false, false, false, false]), 0));
+  ok('không truyền edgeMask = chu vi đầy đủ (mặc định lấy hết)', approx(polygonPerimeter(rect), polygonPerimeter(rect, [true, true, true, true])));
+}
+
+/* ── 10) openingsAreaInPolygon — 2.1.9.q, trừ lỗ mở cửa/cửa sổ ── */
+function testOpeningsAreaInPolygon() {
+  console.log('\n[10] openingsAreaInPolygon — 2.1.9.q');
+  const room = [{ x: 0, y: 0 }, { x: 5000, y: 0 }, { x: 5000, y: 4000 }, { x: 0, y: 4000 }];
+
+  const doorInside = doorBlock({ x: 2500, y: 10 }); // 'door' block w=900 — lệch nhẹ khỏi biên y=0 (tránh mơ hồ ray-casting đúng trên cạnh)
+  const expectedDoorM2 = (900 * OPENING_STANDARD_HEIGHT_MM.door) / 1e6;
+  ok(`1 cửa trong phòng (rộng 900) → diện tích ≈ ${expectedDoorM2.toFixed(2)} m² (900×${OPENING_STANDARD_HEIGHT_MM.door})`, approx(openingsAreaInPolygon([doorInside], room), expectedDoorM2, 0.01));
+
+  const doorOutside = doorBlock({ x: 9000, y: 9000 }); // ngoài room hẳn
+  ok('cửa NẰM NGOÀI polygon → không trừ (0 m²)', approx(openingsAreaInPolygon([doorOutside], room), 0, 0.001));
+
+  const win = windowBlock({ x: 1000, y: 3990 }); // 'window' block w=1200 — lệch nhẹ khỏi biên y=4000
+  const expectedWinM2 = (1200 * OPENING_STANDARD_HEIGHT_MM.window) / 1e6;
+  const both = openingsAreaInPolygon([doorInside, win], room);
+  ok(`cửa + cửa sổ cùng trong phòng → cộng dồn ≈ ${(expectedDoorM2 + expectedWinM2).toFixed(2)} m²`, approx(both, expectedDoorM2 + expectedWinM2, 0.01));
+
+  const furnitureNotOpening: Entity = { id: newId('e'), type: 'block', layer: LAY, block: 'sofa2', at: { x: 2000, y: 2000 }, rot: 0, sx: 1, sy: 1, elementType: 'furniture' } as BlockEntity;
+  ok('entity block KHÔNG phải cửa/cửa sổ (furniture) → bỏ qua dù ở trong polygon', approx(openingsAreaInPolygon([furnitureNotOpening], room), 0, 0.001));
+
+  const tinyDoor = doorBlock({ x: 2500, y: 10 }, 'doorWC'); // w=700 → 700×2100/1e6 = 1.47m², vẫn > ngưỡng 0.5
+  ok(`ngưỡng mặc định ${BOQ_OPENING_MIN_AREA_M2}m² — cửa WC 700 vẫn vượt ngưỡng, vẫn trừ`, approx(openingsAreaInPolygon([tinyDoor], room), (700 * OPENING_STANDARD_HEIGHT_MM.door) / 1e6, 0.01));
+  ok('ngưỡng cao hơn diện tích cửa thật → không trừ (đúng nghĩa CONFIG điều khiển được, không hard-code)', approx(openingsAreaInPolygon([tinyDoor], room, 5), 0, 0.001));
+
+  const unknownBlock: Entity = { id: newId('e'), type: 'block', layer: LAY, block: 'khong-ton-tai-trong-block-map', at: { x: 2500, y: 10 }, rot: 0, sx: 1, sy: 1, elementType: 'door' } as BlockEntity;
+  ok('block KHÔNG có trong BLOCK_MAP (DXF lạ) → không đoán mò kích thước, bỏ qua', approx(openingsAreaInPolygon([unknownBlock], room), 0, 0.001));
+}
+
 testPointInPolygon();
 testSimpleRoom();
 testNestedRoom();
@@ -173,6 +221,8 @@ testFromDoc();
 testPatterns();
 testTJunctionTwoRooms();
 testDemoPlanRooms();
+testPolygonPerimeter();
+testOpeningsAreaInPolygon();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

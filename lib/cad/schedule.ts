@@ -44,8 +44,10 @@ export const ELEMENT_TYPE_LABELS: Record<Exclude<ElementType, null>, string> = {
 
 export type ScheduleFilter = Exclude<ElementType, null> | 'all';
 
-/** Tên + kích thước danh nghĩa của 1 BlockEntity (variant ưu tiên). */
-function blockInfo(e: BlockEntity): { label: string; w?: number; h?: number } {
+/** Tên + kích thước danh nghĩa của 1 BlockEntity (variant ưu tiên). Export — dùng lại ở
+ * `hatch.ts::openingsAreaInPolygon()` (2.1.9.q, BOQ groundwork) để lấy w/h danh nghĩa cửa/cửa sổ,
+ * không viết lại logic đọc BLOCK_MAP/variant lần 2 (Luật #6). */
+export function blockInfo(e: BlockEntity): { label: string; w?: number; h?: number } {
   const def = BLOCK_MAP[e.block];
   if (!def) return { label: e.block }; // block DXF/lạ — vẫn đếm, label = key thô
   if (e.variant && def.variants) {
