@@ -5,23 +5,27 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (30/07 khuya — 7.1.19 merge xong, 2.2.70 + npm test script còn treo)
+## Hiện tại (30/07 khuya — 2.2.87/2.2.88 đo món đồ xong, npm test script còn treo)
 Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này (nhiều việc, thứ tự commit thật):
-- ✅ **7.3.31 mở rộng** — hợp nhất `Header.tsx`+`StudioBar.tsx` → `AppChrome.tsx`, sửa 2 lần overlap
-  1024px — xem `docs/VERIFY-7.3.31.md` bảng số đầy đủ.
+- ✅ **7.3.31 mở rộng** — hợp nhất `Header.tsx`+`StudioBar.tsx` → `AppChrome.tsx`, sửa TRIỆT ĐỂ
+  overlap 1024px (tái cấu trúc Tệp/StageSwitcher ra khỏi hộp co + wordmark→logomark ở `xl` +
+  "Đăng xuất" vào menu avatar) — xem `docs/VERIFY-7.3.31.md` bảng số đầy đủ, 0 tràn ở cả 3 mốc.
 - ✅ **2.1.8.k/l/m** — PDF nhiều tờ có mục lục · sửa va chạm `CadTouchDock` (`safe-area.ts`) · tách
-  khổ giấy/hướng giấy (A0-A4, Luật #10). Cả 3 đã commit riêng.
-- ✅ **7.1.20** — gộp hệ ngưỡng breakpoint (`lib/breakpoints.ts`), ghi Luật #10/#11.
+  khổ giấy/hướng giấy (A0-A4, Luật #10).
+- ✅ **7.1.20** — gộp hệ ngưỡng breakpoint (`lib/breakpoints.ts`), ghi Luật #10/#11 (verify bắt
+  buộc 5 mốc 640·768·1024·1180·1440).
 - ✅ **2.2.86 ĐỔI PHƯƠNG ÁN** — bỏ "pill nổi trên canvas", hàng đợi thật trong menu "Việc" (đơn
-  vị `FlowRun`, tuần tự, huỷ được). Phát hiện thêm `7.3.32` (⬜, header tràn 179px@640/51px@768,
-  `sm:flex` cụm phải chưa thiết kế dải 640-1023) — cấp mã, chưa sửa.
-- ✅ **7.1.19 (Lark Wiki) MERGE XONG** — làm ở worktree phụ song song, merge sạch không conflict
-  (đúng 3 file `lark.ts`/`.env.example`/`INTEGRATIONS.md`). tsc+103/103 test sạch SAU merge (lớp
-  kiểm duy nhất code này chưa từng qua — worktree phụ không chạy được bộ test). **VẪN 🟡** — chờ
-  `.env.local` có `LARK_APP_ID/SECRET/LARK_ATLAS_NODE_TOKEN` để verify bằng call thật, chưa ✅.
-  Worktree phụ `.worktrees/if-lark` + branch `feat/7.1.19-lark-wiki` đã dọn sạch (prune + `-d`).
-- ⏭️ **Đang chờ Hoà xác nhận mã `7.1.21`** — thêm script `"test"` vào `package.json` (hiện KHÔNG
-  có, bộ 103 bài chỉ chạy được nếu biết cú pháp riêng — đúng lý do `7.1.19` ship mà chưa qua test).
+  vị `FlowRun`). Phát hiện `7.3.32` (⬜, header tràn 179px@640/51px@768) — cấp mã, chưa sửa.
+- ✅ **7.1.19 (Lark Wiki) MERGE XONG** — worktree phụ dọn sạch. **VẪN 🟡** — chờ 3 khoá Lark trong
+  `.env.local` để verify bằng call thật.
+- ✅ **2.2.87 + 2.2.88 (đo món đồ từ 1 ảnh)** — `docs/TU-VAN-ANH-SANG-BAN-VE-2026-07-30.md` "Lát
+  cắt 1". `lib/vision/single-view-metrology.ts` (2.2.87): hiệu chỉnh camera từ điểm tụ + neo thang
+  đo + đo R×S×C, 28/28 test verify bằng cảnh 3D tổng hợp chiếu qua camera biết trước (bắt được 2
+  bug hình học thật nhờ test, không phải suy luận suông). `vision.measureobject` node + thẻ Tool
+  Mode thứ 7 "Đo món đồ" (2.2.88) — tái dùng `extractForeground()`/`composeBoard()` có sẵn, không
+  viết engine mới. Verify UI thật: chạy qua `runNode()` thật, đường lỗi "không đủ neo" đúng thiết
+  kế; **đường đo-thành-công CHƯA thử ảnh thật** — khuyến nghị Hoà thử 1 ảnh phòng thật.
+- ⏭️ **Đang chờ Hoà xác nhận mã `7.1.21`** — thêm script `"test"` vào `package.json` (hiện không có).
 - 🟡 **2.2.70** (a)(b) — 2 lỗi nhỏ sửa kèm — CODE XONG, CHƯA COMMIT, gộp cùng đợt ảnh thật 5 thẻ
   Tool Mode (đang CHỜ Hoà duyệt credit trước khi chạy AI thật).
 - ⏸️ **Còn treo**: `2.1.9.q` (BOQ groundwork) → BOQ `2.1.9.p` (matId đã CHỐT, chờ quyết "có làm

@@ -1,5 +1,36 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 30/07 khuya (đợt 2) — 2.2.87+2.2.88: đo món đồ từ 1 ảnh + sửa triệt để overlap header
+- **AppChrome overlap 1024px — sửa lần 2, triệt để.** Lần 1 (dời Tệp/StageSwitcher ra khỏi hộp
+  co) hết overlap cụ thể nhưng lộ vấn đề sâu hơn: tổng `shrink-0` vượt viewport 23px, "Đăng xuất"
+  chờm ngoài màn. Lần 2 (Luật #10, không hỏi — 2 phép chuẩn responsive phổ thông): wordmark
+  "InteriorFlow" chỉ hiện ≥1280px (trước bật nhầm ở 1024px, breakpoint CHẬT NHẤT) + "Đăng xuất"
+  vào trong menu bấm-avatar (chuẩn Google/Figma/Notion — hành vi phá huỷ không đứng trần trụi
+  ngoài thanh). Kết quả: 0 tràn ngang cả 3 mốc, gap nhỏ nhất 10px, tên dự án hiện đủ chữ kể cả ở
+  1024px (trước phải co về 0). Bảng số đầy đủ `docs/VERIFY-7.3.31.md`.
+- **`2.2.87`** — `lib/vision/single-view-metrology.ts` mới: engine đo món đồ từ 1 ảnh (single-view
+  metrology), Lát cắt 1 của `docs/TU-VAN-ANH-SANG-BAN-VE-2026-07-30.md` — hiệu chỉnh camera từ 3
+  điểm tụ (Caprile-Torre) + neo thang đo 3 nguồn kiểm chéo ±5% + đo R×S×C có sai số, phân nhóm
+  🟢 ĐO/🟡 SUY đúng bản chất toán học (depth luôn 🟡 trừ khi thấy mặt bên). 0 credit, tất định,
+  không AI. 28/28 test verify bằng cảnh 3D tổng hợp chiếu qua camera pinhole biết trước (không
+  phải raster ảnh thật) — bắt được 2 bug hình học có thật (điểm tụ rơi đúng vô cực khi camera
+  test không có yaw; heuristic "dải sàn theo y" vỡ dưới phối cảnh xiên) nhờ đối chiếu độc lập,
+  không phải suy luận suông.
+- **`2.2.88`** — mặt tiền cho `2.2.87`: node `vision.measureobject` (tái dùng `extractForeground()`
+  — chính hàm `ai.furnitureextract` gọi ở tầng lõi, không viết engine mới) + thẻ Tool Mode thứ 7
+  "Đo món đồ" + bảng R×S×C phân màu (`--success`/`--warning`) trong `ToolModeForm.tsx` + xuất spec
+  sheet (tái dùng `composeBoard()`/`out.board`, dấu cảnh báo "Mặt khuất là suy diễn" bắt buộc
+  không tắt được). Verify browser thật: chạy qua `runNode()` thật (không giả lập) trên ảnh tổng
+  hợp thiếu cấu trúc kiến trúc → đúng đường lỗi "không đủ neo, không đoán bừa" của tài liệu. Chưa
+  thử đường đo-thành-công bằng ảnh thật — ghi rõ trong cây, không giấu.
+- **7.1.19 merge** vào main từ worktree phụ (không conflict, đúng 3 file). Dọn `.git/refs/heads/
+  feat/7.1.19-lark-wiki.lock.stale.*` (rác do phiên phụ bị ngắt giữa ghi ref) + `git worktree
+  prune`. Đề xuất mã `7.1.21` (npm script "test") — chờ Hoà xác nhận.
+- **Cấp mã đợt review BOQ/Lark** (`docs/REVIEW-SPEC-BOQ-LARK-2026-07-30.md`): `2.1.9.q` (groundwork
+  hình học BOQ, gộp perimeter+trừ lỗ mở 1 mã theo yêu cầu Hoà), chốt câu hỏi treo `2.1.9.i`/
+  `2.1.9.p` (matId → bảng riêng `AtlasMaterial`). `7.3.32` cấp mã cho header tràn 640/768px
+  (chưa sửa). `ToolModeForm.tsx:138` grid cứng gộp vào `2.2.79` đã có (không mã mới).
+
 ## 30/07 khuya — 7.1.20: gộp hệ ngưỡng breakpoint + 2.2.86: hàng đợi "Việc" thay pill nổi
 - `7.1.20` — `lib/breakpoints.ts` mới (hằng `BP`, nguồn duy nhất), kéo 5 ngưỡng tự viết rải rác
   (700/900/720/520/1100) về đúng mốc Tailwind. Ghi Luật #10 (tiêu chuẩn nghề không hỏi) + Luật #11
