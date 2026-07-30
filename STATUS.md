@@ -5,7 +5,7 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (30/07 khuya — 2.2.87/2.2.88 sửa SANG cascade "không-bao-giờ-fail", 2 mã mới chờ xác nhận)
+## Hiện tại (30/07 khuya — 2.2.87/2.2.88 sửa SANG cascade "không-bao-giờ-fail", HẠ 🟡 chờ Hoà thử ảnh thật)
 Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này (nhiều việc, thứ tự commit thật):
 - ✅ **7.3.31 mở rộng** — hợp nhất `Header.tsx`+`StudioBar.tsx` → `AppChrome.tsx`, sửa TRIỆT ĐỂ
   overlap 1024px (tái cấu trúc Tệp/StageSwitcher ra khỏi hộp co + wordmark→logomark ở `xl` +
@@ -18,7 +18,9 @@ Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này (nhiều vi�
   vị `FlowRun`). Phát hiện `7.3.32` (⬜, header tràn 179px@640/51px@768) — cấp mã, chưa sửa.
 - ✅ **7.1.19 (Lark Wiki) MERGE XONG** — worktree phụ dọn sạch. **VẪN 🟡** — chờ 3 khoá Lark trong
   `.env.local` để verify bằng call thật.
-- ✅ **2.2.87 + 2.2.88 (đo món đồ từ 1 ảnh) — SỬA SANG CASCADE 4 BẬC cùng đêm** — bản gốc (điểm
+- 🟡 **2.2.87 + 2.2.88 (đo món đồ từ 1 ảnh) — SỬA SANG CASCADE 4 BẬC cùng đêm, HẠ TỪ ✅ (Hoà chốt)**
+  — xuất số đi tới xưởng, lỗi tầng hiển thị = thiệt hại tiền thật mà test đơn vị không bắt được;
+  nâng lại ✅ khi Hoà tự xác nhận 1 ảnh thật chạy đúng. Bản gốc (điểm
   tụ bắt buộc) đúng thiết kế ban đầu nhưng THẤT BẠI TRUNG THỰC quá nhiều với ảnh render đẹp thiếu
   cạnh thẳng 2 phương (Hoà tự nhận lỗi thiết kế, không phải lỗi code) → nguyên tắc mới "Bấm Render
   KHÔNG BAO GIỜ trả về tay không". `single-view-metrology.ts` thêm `measureObjectTiered()` — 4 bậc
@@ -33,9 +35,9 @@ Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này (nhiều vi�
   tự tìm vật neo) / Tầng 3 (VLM ước category) của bản đồ 4-AiTier Hoà yêu cầu — thiếu hạ tầng
   object-detection-có-bbox + VLM tách biệt kiến trúc khỏi hệ `fal`-tier, để đợt sau. Chi tiết đủ →
   `docs/IF-FEATURE-TREE.md` dòng `2.2.87`/`2.2.88`.
-- ⏭️ **2 mã mới chờ Hoà xác nhận** (đụng số `7.1.21`, tự xếp lại — xem ghi chú trong cây):
-  `7.1.21` = script `"test"` vào `package.json` (đề xuất trước, giữ nguyên số). `7.1.22` = Bộ nhớ
-  đo đạc — Tầng 1 tự học kích thước/tỉ lệ/chiều cao máy ảnh theo dữ liệu nhà (Prisma), CHƯA CODE.
+- ✅ **2 mã XÁC NHẬN 30/07 khuya** (Luật #12 mới — chỉ Claude Code cấp mã, xem PHẦN E):
+  `7.1.21` = script `"test"` vào `package.json`. `7.1.22` = Bộ nhớ đo đạc — Tầng 1 tự học kích
+  thước/tỉ lệ/chiều cao máy ảnh theo dữ liệu nhà (Prisma). Cả 2 CHƯA CODE, chưa tới lượt hàng chờ.
 - 🟡 **2.2.70** (a)(b) — 2 lỗi nhỏ sửa kèm — CODE XONG, CHƯA COMMIT, gộp cùng đợt ảnh thật 5 thẻ
   Tool Mode (đang CHỜ Hoà duyệt credit trước khi chạy AI thật).
 - ⏸️ **Còn treo**: `2.1.9.q` (BOQ groundwork) → BOQ `2.1.9.p` (matId đã CHỐT, chờ quyết "có làm
