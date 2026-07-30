@@ -142,9 +142,12 @@ function DockBtn({
         height: TOUCH_MIN,
         padding: '0 12px',
         borderRadius: 999,
-        border: 'none',
-        background: active ? 'var(--accent)' : 'transparent',
-        color: active ? '#fff' : 'var(--t2)',
+        // 2.1.8.l (30/07) — bật KHÔNG tô đặc nữa: trên bản vẽ kỹ thuật, khối màu đặc thắng chính
+        // bản vẽ (cùng luật đã áp cho nút "Chạy flow", xem docs/TICKET-CHAY-FLOW-KHONG-GHIM-BAR
+        // -2026-07-30.md quyết định ④) — ghost bằng token đã có, KHÔNG thêm màu mới.
+        border: active ? '1px solid var(--accent-ring)' : '1px solid transparent',
+        background: active ? 'var(--accent-soft)' : 'transparent',
+        color: active ? 'var(--accent)' : 'var(--t2)',
         fontFamily: 'inherit',
         fontSize: 12,
         fontWeight: 600,

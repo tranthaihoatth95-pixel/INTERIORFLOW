@@ -341,13 +341,16 @@ function Divider() {
 }
 
 /** Sprint 9 — công tắc 2 chiều Sketch↔Pro (Phương án A đã duyệt). Cùng ngôn ngữ pill/accent với
- * phần còn lại của toolbar — KHÔNG thêm màu mới, "đang chọn" tô var(--accent) như mọi nút khác. */
+ * phần còn lại của toolbar — KHÔNG thêm màu mới, "đang chọn" GHOST (viền+nền accent nhạt, xem
+ * 2.1.8.l 30/07 — không còn tô đặc như trước). */
 function ModeSwitch({ mode, onChange, pro }: { mode: CadMode; onChange: (m: CadMode) => void; pro: boolean }) {
   const segBtn = (active: boolean): React.CSSProperties => ({
     appearance: 'none',
-    border: 'none',
-    background: active ? 'var(--accent)' : 'transparent',
-    color: active ? '#fff' : 'var(--t2)',
+    // 2.1.8.l (30/07) — bật KHÔNG tô đặc nữa: trên bản vẽ kỹ thuật, khối màu đặc thắng chính bản
+    // vẽ (cùng luật đã áp cho "Chạy flow" và CadTouchDock — xem safe-area.ts/CadTouchDock.tsx).
+    border: active ? '1px solid var(--accent-ring)' : '1px solid transparent',
+    background: active ? 'var(--accent-soft)' : 'transparent',
+    color: active ? 'var(--accent)' : 'var(--t2)',
     fontFamily: 'inherit',
     fontSize: 12,
     fontWeight: 650,
@@ -396,9 +399,10 @@ function btn(active: boolean, disabled = false, pro = false): React.CSSPropertie
     width: s,
     height: s,
     borderRadius: 999,
-    border: 'none',
-    background: active ? 'var(--accent)' : 'transparent',
-    color: active ? '#fff' : 'var(--t2)',
+    // 2.1.8.l (30/07) — ghost khi bật, không tô đặc (xem ghi chú segBtn() phía trên, cùng lý do).
+    border: active ? '1px solid var(--accent-ring)' : '1px solid transparent',
+    background: active ? 'var(--accent-soft)' : 'transparent',
+    color: active ? 'var(--accent)' : 'var(--t2)',
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.35 : 1,
     // Cảm ứng: bỏ trễ 300ms + chặn phóng to 2-chạm khi bấm nhanh liên tiếp (mode Sketch).

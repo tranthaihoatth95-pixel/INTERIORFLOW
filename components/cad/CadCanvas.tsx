@@ -2226,7 +2226,7 @@ export default function CadCanvas() {
     drawPreview(ctx, v, accent);
     drawSelectionBox(ctx, v, accent);
     drawSnap(ctx, v, accent);
-    drawCrosshair(ctx, W, H, gridMinor, t3);
+    drawCrosshair(ctx, W, H, gridMinor);
     drawDynInput(ctx, W, H);
 
     ctx.restore();
@@ -2929,7 +2929,13 @@ export default function CadCanvas() {
     ctx.restore();
   }
 
-  function drawCrosshair(ctx: CanvasRenderingContext2D, W: number, H: number, color: string, textColor: string) {
+  /**
+   * 2.1.8.l (30/07) — chữ toạ độ TỪNG vẽ ở đây bị xoá: đè lên `CadTouchDock` góc dưới-trái
+   * (Sketch), và là bản sao của CÙNG giá trị `StatusBar.tsx` đã hiện (cả hai đọc
+   * `ix.current.cursorWorld`/`useCadLiveStatus`, xem `lib/cad/live-status.ts`) — trùng dữ liệu,
+   * không phải 2 ý nghĩa khác nhau. Giữ nguyên crosshair line, chỉ bỏ phần chữ.
+   */
+  function drawCrosshair(ctx: CanvasRenderingContext2D, W: number, H: number, color: string) {
     const s = ix.current.cursorScreen;
     ctx.save();
     ctx.strokeStyle = color;
@@ -2942,11 +2948,6 @@ export default function CadCanvas() {
     ctx.lineTo(W, s.y);
     ctx.stroke();
     ctx.globalAlpha = 1;
-    // toạ độ live
-    const w = ix.current.cursorWorld;
-    ctx.fillStyle = textColor;
-    ctx.font = '11px ui-monospace, monospace';
-    ctx.fillText(`X ${Math.round(w.x)}  Y ${Math.round(w.y)} mm`, 12, H - 12);
     ctx.restore();
   }
 
