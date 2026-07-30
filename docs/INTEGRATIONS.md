@@ -19,7 +19,7 @@ Redirect URI mỗi provider: `<origin>/api/integrations/<provider>/callback`
 | YouTube | 2 | API key | **Khung** (search+nhúng) | Video tham khảo |
 | Apple Music | 3 | — | **STUB** (503) | (sau) |
 | Chrome Clipper | — | — | **Khung extension** + `POST /api/library/clip` | Clip ảnh web → Reference |
-| Lark/Feishu Base | 1 | API key (server-to-server, KHÔNG OAuth) | **Thật** (đọc "Chi tiết công việc" + "Nhân sự", pull-only) | Home/Gallery — tiến độ dự án + roster |
+| Lark/Feishu Base | 1 | API key (server-to-server, KHÔNG OAuth) | **Thật** (base "Quản lý Công việc" — đọc "Chi tiết công việc" + "Nhân sự", pull-only) + Wiki `app_token` resolution cho base "ATLAS Material Library" (7.1.19, ⬜ chưa nối route đọc) | Home/Gallery — tiến độ dự án + roster; ATLAS — thư viện vật liệu |
 
 ## Lấy khoá (tóm tắt)
 - **Google**: Cloud Console → OAuth client (Web) → thêm redirect URI ở trên → bật Gmail/Calendar/Drive API. Dùng `GOOGLE_CLIENT_ID/SECRET`.
@@ -54,19 +54,25 @@ tooltip "chưa cấu hình" (route `/api/auth/providers` trả `microsoft:false`
 7. `.env.local`: `MS365_CLIENT_ID=... MS365_CLIENT_SECRET=... MS365_TENANT=common` → restart dev server
    → nút Microsoft tự chuyển enabled.
 
-## Lark/Feishu Base — Home/Gallery đọc tiến độ dự án (M1, 21/07)
+## Lark/Feishu Base — Home/Gallery đọc tiến độ dự án (M1, 21/07) + ATLAS Material Library (7.1.19, 30/07)
 
-`components/ProjectSelect.tsx` (nút "Đồng bộ tiến độ" + "Chi tiết") kéo dữ liệu từ 1 Base
-Larkbase DÙNG CHUNG CẢ CÔNG TY (bảng "Chi tiết công việc" + "Nhân sự") — xem
+`components/ProjectSelect.tsx` (nút "Đồng bộ tiến độ" + "Chi tiết") kéo dữ liệu từ base
+"Quản lý Công việc" (bảng "Chi tiết công việc" + "Nhân sự") — xem
 `docs/RESEARCH-HOME-GALLERY-DASHBOARD.md` cho đầy đủ field_id/quyết định kiến trúc. **KHÁC MỌI
 provider khác trong bảng trên**: đây là **server-to-server**, KHÔNG phải OAuth per-user — không
 có nút "kết nối tài khoản Lark của bạn" nào, vì không có khái niệm "tài khoản Lark của user IF"
 — app đọc thẳng 1 Base bằng App ID/Secret cấp server, đổi lấy `tenant_access_token`.
 
-**PULL-ONLY TUYỆT ĐỐI — không có ngoại lệ.** `lib/integrations/providers/lark.ts` chỉ có
-`list_records` (GET). Không có route nào gọi `create_record`/`update_record` lên Larkbase, dù
-là tính năng tương lai — bảng "Chi tiết công việc" là công cụ vận hành CHUNG cả công ty (nhiều
-phòng ban), IF ghi nhầm sẽ làm loạn task tracker của người không liên quan.
+> ⚠️ **Sửa tiền đề sai (30/07):** bản trước ghi base này "DÙNG CHUNG CẢ CÔNG TY" và cấm ghi
+> tuyệt đối. **Sai** — cả base "Quản lý Công việc" lẫn base "ATLAS Material Library" (mục dưới)
+> đều là base **RIÊNG của Hoà**, không phải công cụ vận hành chung nhiều phòng ban. Phạm vi
+> đúng: **IF được phép ghi lên base của Hoà** khi tính năng thật sự cần (chưa có hàm ghi nào ở
+> thời điểm 30/07 — `lib/integrations/providers/lark.ts` vẫn chỉ có `list_records`/`resolveWikiAppToken`,
+> đều là GET; thêm hàm ghi là việc của tính năng khác, không phải 7.1.19). Nếu VỀ SAU có thêm
+> 1 base thật sự dùng chung nhiều người (vd phòng ban khác cùng công ty), base đó phải **CHỈ
+> ĐỌC** và dùng **biến môi trường RIÊNG** (không tái dùng `LARK_WORK_APP_TOKEN`/`LARK_ATLAS_APP_TOKEN`)
+> để không thể vô tình ghi nhầm lên base người khác — phân biệt rạch ròi bằng tên biến, không
+> phân biệt bằng "nhớ trong đầu".
 
 **Tạo Lark/Feishu Open Platform app (từng bước):**
 1. Lark quốc tế: [open.larksuite.com](https://open.larksuite.com/app) → **Create app** → *Custom App*.
@@ -78,14 +84,40 @@ phòng ban), IF ghi nhầm sẽ làm loạn task tracker của người không l
    Lark/Feishu → **···** (góc phải) → **Advanced permissions** / **Add collaborator** → mời app
    vừa tạo (theo App ID) làm collaborator có quyền đọc. Thiếu bước này → API trả lỗi permission
    dù token đổi thành công.
-5. **Lấy `LARK_BASE_APP_TOKEN`** — mở Base trên trình duyệt, nhìn URL dạng
+5. **Lấy `LARK_WORK_APP_TOKEN`** (tên cũ `LARK_BASE_APP_TOKEN` vẫn đọc được, tương thích ngược)
+   — mở base "Quản lý Công việc" trên trình duyệt, nhìn URL dạng
    `https://open.larksuite.com/base/<app_token>?table=<table_id>` — phần `<app_token>` (KHÔNG
-   phải `<table_id>`) chính là `LARK_BASE_APP_TOKEN`. Bắt buộc — không đoán được từ App ID/Secret.
+   phải `<table_id>`) chính là giá trị cần điền. Bắt buộc — không đoán được từ App ID/Secret.
 6. `LARK_TASK_TABLE_ID`/`LARK_HR_TABLE_ID` — đã có mặc định đúng theo báo cáo đã verify bằng MCP
    thật (`tblnjLehkr6DRMJN`/`tblUvVYG5j70FCTn`) — chỉ đổi nếu Larkbase tái cấu trúc bảng.
-7. `.env.local`: điền `LARK_APP_ID/LARK_APP_SECRET/LARK_BASE_APP_TOKEN` → restart dev server →
+7. `.env.local`: điền `LARK_APP_ID/LARK_APP_SECRET/LARK_WORK_APP_TOKEN` → restart dev server →
    nút "Đồng bộ tiến độ" ở Gallery tự chuyển enabled (health-check `GET /api/integrations/lark/status`,
    cùng cơ chế `configured()` các provider khác — không phát minh cơ chế status riêng).
+
+### ATLAS Material Library — base nằm trong Lark WIKI (7.1.19, 30/07)
+
+**Khác hẳn base "Quản lý Công việc" ở trên** — ATLAS Material Library nằm TRONG Lark **Wiki**,
+không phải Drive base thường, nên KHÔNG thể lấy `app_token` thẳng từ URL base như bước 5. Wiki
+phân biệt 2 khái niệm:
+- **`node_token`** — định danh trang Wiki, dùng để MỞ DEEP LINK (mở đúng trang cho người xem).
+  Lấy từ URL trang Wiki trên trình duyệt → `LARK_ATLAS_NODE_TOKEN`.
+- **`app_token`** — định danh Bitable THẬT bên dưới trang đó, dùng để gọi API (`list_records`...).
+  **`node_token` ≠ `app_token` — KHÔNG suy ra giá trị này từ giá trị kia** (nhầm lẫn này từng
+  tốn nửa ngày để tìm ra khi không ghi rõ, xem `docs/REVIEW-SPEC-BOQ-LARK-2026-07-30.md` §3).
+
+`lib/integrations/providers/lark.ts` có `resolveWikiAppToken(nodeToken)` — gọi
+`GET /open-apis/wiki/v2/spaces/get_node?token={node_token}&obj_type=wiki`, đọc `obj_token` trong
+response ra làm `app_token`, cache trong bộ nhớ TTL 2 giờ (cùng quy ước với `tenant_access_token`
+— get_node không trả `expire` nên không có TTL "thật" để theo). `getAtlasAppToken()` gọi hàm này
+giúp: ưu tiên `LARK_ATLAS_APP_TOKEN` nếu đã điền tay (đỡ resolve mỗi cold-start), nếu chưa có thì
+tự giải qua `LARK_ATLAS_NODE_TOKEN`. Điền **1 trong 2 biến là đủ** — không bắt buộc cả hai.
+
+Host: dùng chung `open.larksuite.com` (KHÔNG đổi sang `open.feishu.cn`) kể cả khi tenant nằm ở
+shard khu vực khác (vd `.jp`) — host phân biệt Lark-quốc-tế/Feishu-Trung-Quốc, không phân biệt
+theo shard/khu vực tenant. **Chưa verify bằng call thật** tại thời điểm viết mục này (30/07) —
+`.env.local` chưa có `LARK_APP_ID`/`LARK_APP_SECRET`/`LARK_ATLAS_NODE_TOKEN` để thử; khi có đủ 3
+khoá, chạy `resolveWikiAppToken()` 1 lần thật rồi cập nhật đoạn này với kết quả thật (KHÔNG suy
+đoán trước khi có bằng chứng).
 
 **Vì sao KHÔNG dùng `IntegrationAccount` để lưu `tenant_access_token`:** bảng đó khoá theo
 `(userId, provider)` với ngữ nghĩa "user X đã consent kết nối tài khoản cá nhân của họ" (đúng
@@ -105,8 +137,10 @@ không lộ ra shape JSON thô cấp field). Khi có `LARK_APP_ID/SECRET` thật
 kỳ vọng — nếu `ownerAccount`/`deadline`/`daysLeft` sai shape, sửa các hàm normalizer trong
 `lark.ts`, KHÔNG cần đổi schema (field `raw` đã giữ nguyên bản gốc để dò lại).
 
-**Env cần** (mẫu ở `.env.example`): `LARK_APP_ID`, `LARK_APP_SECRET`, `LARK_BASE_APP_TOKEN`
-(bắt buộc cả 3, thiếu 1 → "chưa cấu hình"), `LARK_API_BASE` (tuỳ chọn, mặc định
+**Env cần** (mẫu ở `.env.example`): `LARK_APP_ID`, `LARK_APP_SECRET` (bắt buộc, chung cho cả 2
+base). Base "Quản lý Công việc": `LARK_WORK_APP_TOKEN` (tên mới) hoặc `LARK_BASE_APP_TOKEN` (tên
+cũ, tương thích ngược) — bắt buộc 1 trong 2. Base "ATLAS Material Library": `LARK_ATLAS_NODE_TOKEN`
+hoặc `LARK_ATLAS_APP_TOKEN` — bắt buộc 1 trong 2. Tuỳ chọn: `LARK_API_BASE` (mặc định
 `https://open.larksuite.com`), `LARK_TASK_TABLE_ID`/`LARK_HR_TABLE_ID` (có default đúng).
 
 ## 🔐 Rủi ro bảo mật (bắt buộc đọc)
