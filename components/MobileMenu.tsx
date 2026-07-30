@@ -4,20 +4,19 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  MoreHorizontal, X, Coins, Share2, Check, MessageCircle, LogOut, Sun, Moon, SunMoon,
+  MoreHorizontal, X, Coins, Share2, Check, MessageCircle, LogOut,
   LayoutDashboard, Palette, Box, Presentation, ChevronRight,
-  Loader2, Clock3, CircleCheck, CircleAlert, RotateCcw,
+  Loader2, Clock3, CircleCheck, CircleAlert, Settings as SettingsIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
-import { requestGallery, resetTourDone, resetStageIntroSeen, ONBOARDING_STAGES, resetCoachmarkSeen, COACHMARKS } from '@/lib/resume';
 import { TIERS } from '@/lib/ai/tiers';
 import { AiStatusDot } from '@/components/settings/AiDependencySettings';
 import { PHASES, DEFAULT_PHASE, type Phase } from '@/lib/phases';
 import { toggleShare } from '@/lib/workspace';
+import { nextThemePref, themeIconFor, themeLabelVi } from '@/lib/theme-toggle';
 import { pressable, pressableIcon, springSheet, easeApple } from '@/lib/motion';
 import { useT } from '@/lib/i18n';
-import { LangToggle } from '@/components/LangToggle';
 import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
 
@@ -101,7 +100,6 @@ function Sheet({ close }: { close: () => void }) {
           <PhaseRow />
           <TierLinkRow />
           <ActionsRow close={close} />
-          <LangRow />
           <TasksRow />
         </div>
       </motion.div>
@@ -157,18 +155,6 @@ function AccountRow() {
         </motion.button>
       )}
     </div>
-  );
-}
-
-function LangRow() {
-  const tr = useT();
-  return (
-    <Section label={tr('Ngôn ngữ', 'Language')}>
-      <div className="flex items-center justify-between rounded-[14px] border border-[var(--border)] bg-[var(--field)] px-3 py-2.5">
-        <span className="text-xs text-[var(--t2)]">{tr('Tiếng Việt / English', 'Vietnamese / English')}</span>
-        <LangToggle />
-      </div>
-    </Section>
   );
 }
 
@@ -237,21 +223,6 @@ function ActionsRow({ close }: { close: () => void }) {
   const tr = useT();
   const router = useRouter();
 
-  /** "Xem lại hướng dẫn" — cùng logic với MoreMenu (Header.tsx) desktop: xoá cờ Tầng 1 +
-   * cả 3 cờ Tầng 2 + mọi cờ Tầng 3 (coachmark) của user hiện tại rồi về Gallery, cho onboarding
-   * chạy lại từ đầu. */
-  const replayOnboarding = () => {
-    const u = useFlowStore.getState().user;
-    if (u) {
-      resetTourDone(u.id);
-      for (const stage of ONBOARDING_STAGES) resetStageIntroSeen(stage, u.id);
-      for (const name of COACHMARKS) resetCoachmarkSeen(name, u.id);
-    }
-    close();
-    requestGallery();
-    router.push('/');
-  };
-
   return (
     <Section label={tr('Công cụ', 'Tools')}>
       <div className="grid grid-cols-2 gap-1.5">
@@ -273,10 +244,14 @@ function ActionsRow({ close }: { close: () => void }) {
         />
         <ShareTile />
         <ThemeTile />
+        {/* Ngôn ngữ + xem lại hướng dẫn dời hết vào /settings (7.3.30) */}
         <Tile
-          icon={<RotateCcw size={16} />}
-          label={tr('Xem lại hướng dẫn', 'Replay tutorial')}
-          onClick={replayOnboarding}
+          icon={<SettingsIcon size={16} />}
+          label={tr('Cài đặt', 'Settings')}
+          onClick={() => {
+            close();
+            router.push('/settings');
+          }}
         />
       </div>
     </Section>
@@ -335,9 +310,9 @@ function ThemeTile() {
   const pref = useFlowStore((s) => s.themePref);
   const applied = useFlowStore((s) => s.appliedTheme);
   const setThemePref = useFlowStore((s) => s.setThemePref);
-  const next = pref === 'auto' ? 'light' : pref === 'light' ? 'dark' : 'auto';
-  const Icon = pref === 'auto' ? SunMoon : pref === 'light' ? Sun : Moon;
-  const label = pref === 'auto' ? `Tự động (${applied === 'light' ? 'sáng' : 'tối'})` : pref === 'light' ? 'Sáng' : 'Tối';
+  const next = nextThemePref(pref);
+  const Icon = themeIconFor(pref);
+  const label = pref === 'auto' ? `${themeLabelVi(pref)} (${applied === 'light' ? 'sáng' : 'tối'})` : themeLabelVi(pref);
   return <Tile icon={<Icon size={16} />} label={`Theme: ${label}`} onClick={() => setThemePref(next)} />;
 }
 

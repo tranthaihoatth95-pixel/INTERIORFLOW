@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Share2, Play, Loader2, ChevronDown, Sun, Moon, SunMoon, MessageCircle, LogOut, Check, MoreHorizontal, RotateCcw } from 'lucide-react';
+import { Coins, Share2, Play, Loader2, ChevronDown, MessageCircle, LogOut, Check, MoreHorizontal, Settings as SettingsIcon } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { runFlow } from '@/lib/execution';
@@ -14,7 +14,7 @@ import { RenderIOMenus } from '@/components/studio/RenderIOMenus';
 import { toggleShare } from '@/lib/workspace';
 import { TasksDropdown } from '@/components/TasksDropdown';
 import { MobileMenu } from '@/components/MobileMenu';
-import { LangToggle } from '@/components/LangToggle';
+import { nextThemePref, themeIconFor } from '@/lib/theme-toggle';
 import { pressable, pressableIcon, easeApple } from '@/lib/motion';
 import { useStageTransition } from '@/components/studio/StageTransitionProvider';
 import { stashPresentHandoffWithIds, deckImagesWithIdsFromNodes } from '@/lib/present-editor/handoff';
@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 import { IFLogo } from '@/components/entry/IFLogo';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
 import { HomeButton } from '@/components/studio/HomeButton';
-import { requestGallery, resetTourDone, resetStageIntroSeen, ONBOARDING_STAGES, resetCoachmarkSeen, COACHMARKS } from '@/lib/resume';
+import { requestGallery } from '@/lib/resume';
 
 export function Header() {
   const flowName = useFlowStore((s) => s.flowName);
@@ -183,30 +183,21 @@ export function Header() {
 }
 
 /**
- * MoreMenu — popover "⋯" gom control phụ (credits · share · chat · theme · ngôn ngữ).
+ * MoreMenu — popover "⋯" gom control phụ (credits · share · chat · theme).
  * Progressive disclosure: bar mặc định gọn, bấm ⋯ mới lộ chi tiết.
+ *
+ * 7.3.30 (30/07, docs/TICKET-SETTINGS-GOM-CAU-HINH-2026-07-29.md): gỡ "Ngôn ngữ" và
+ * "Xem lại hướng dẫn" khỏi đây — cả 2 là CẤU HÌNH đặt-rồi-quên (gần như không bao giờ đổi
+ * lại trong 1 phiên), thuộc về /settings, không phải nút thao tác nhanh. Theme GIỮ NGUYÊN ở
+ * đây (đổi nhiều lần/phiên theo ánh sáng phòng — đúng luật "nút nhanh" của ticket §4) +
+ * cũng có ở /settings cho ai muốn đặt cố định. Credits GIỮ NGUYÊN (trạng thái xem, không
+ * phải cấu hình đặt — luật phân biệt trong ticket §4).
  */
 function MoreMenu() {
   const tr = useT();
   const credits = useFlowStore((s) => s.credits);
   const [open, setOpen] = useState(false);
   const router = useRouter();
-
-  /** "Xem lại hướng dẫn" — xoá cờ Tầng 1 (tourDone) + cả 3 cờ Tầng 2 (stageIntro) + mọi cờ
-   * Tầng 3 (coachmark) của user hiện tại rồi về Gallery, để toàn bộ chuỗi onboarding chạy lại
-   * từ đầu (WelcomeIntro trước, StageIntroCard hiện lại lần lượt khi vào từng chặng, coachmark
-   * hiện lại lần đầu tương tác tiếp theo). */
-  const replayOnboarding = () => {
-    const u = useFlowStore.getState().user;
-    if (u) {
-      resetTourDone(u.id);
-      for (const stage of ONBOARDING_STAGES) resetStageIntroSeen(stage, u.id);
-      for (const name of COACHMARKS) resetCoachmarkSeen(name, u.id);
-    }
-    setOpen(false);
-    requestGallery();
-    router.push('/');
-  };
 
   return (
     <div className="relative shrink-0">
@@ -252,20 +243,17 @@ function MoreMenu() {
                 <ThemeToggle />
               </div>
 
-              {/* ngôn ngữ */}
-              <div className="mt-2 flex items-center justify-between border-t border-[var(--border)] pt-2">
-                <span className="pl-0.5 text-[length:var(--fs-xs)] text-[var(--t4)]">{tr('Ngôn ngữ', 'Language')}</span>
-                <LangToggle />
-              </div>
-
-              {/* Xem lại hướng dẫn — replay toàn bộ onboarding Tầng 1+2 từ đầu */}
+              {/* Cài đặt — ngôn ngữ/avatar/xem lại hướng dẫn dời hết vào đây (7.3.30) */}
               <button
                 type="button"
-                onClick={replayOnboarding}
+                onClick={() => {
+                  setOpen(false);
+                  router.push('/settings');
+                }}
                 className="mt-2 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-0.5 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
               >
-                <RotateCcw size={13} />
-                {tr('Xem lại hướng dẫn', 'Replay tutorial')}
+                <SettingsIcon size={13} />
+                {tr('Cài đặt', 'Settings')}
               </button>
             </motion.div>
           </>
@@ -391,8 +379,8 @@ function ThemeToggle() {
   const applied = useFlowStore((s) => s.appliedTheme);
   const setThemePref = useFlowStore((s) => s.setThemePref);
   const tr = useT();
-  const next = pref === 'auto' ? 'light' : pref === 'light' ? 'dark' : 'auto';
-  const Icon = pref === 'auto' ? SunMoon : pref === 'light' ? Sun : Moon;
+  const next = nextThemePref(pref);
+  const Icon = themeIconFor(pref);
   return (
     <motion.button
       {...pressableIcon}

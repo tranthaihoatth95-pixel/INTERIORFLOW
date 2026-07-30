@@ -1,15 +1,18 @@
 'use client';
 
 /**
- * /settings — Cài đặt chung. Trang mới (2.2.61, 29/07) — dời "Mức phụ thuộc AI" ra khỏi
- * thanh đầu (Header.tsx) về đây, vì đó là cấu hình toàn cục áp cả 3 chặng, không phải nút
- * thao tác. Trang này còn mỏng (1 mục), sẽ gộp thêm các mục Cài đặt khác khi cần
- * (docs/CHOT-SO-MA-2026-07-29.md §D, mã 2.2.61).
+ * /settings — Cài đặt chung. Bắt đầu từ 2.2.61 (29/07, chỉ 1 mục AI). Dựng đủ 4 nhóm ở
+ * 7.3.30 (30/07, docs/TICKET-SETTINGS-GOM-CAU-HINH-2026-07-29.md §5): Tài khoản · Giao diện ·
+ * AI · Trải nghiệm — nguồn sự thật DUY NHẤT cho mọi cấu hình (nút nhanh sáng/tối vẫn giữ ở
+ * Header/StudioBar/MobileMenu — đó là THAO TÁC hay dùng, không phải cấu hình đặt-rồi-quên).
  */
 
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { AiDependencySettings } from '@/components/settings/AiDependencySettings';
+import { AccountSettings } from '@/components/settings/AccountSettings';
+import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
+import { ExperienceSettings } from '@/components/settings/ExperienceSettings';
 import { useT } from '@/lib/i18n';
 
 export default function SettingsPage() {
@@ -32,8 +35,11 @@ export default function SettingsPage() {
           {tr('Cài đặt', 'Settings')}
         </h1>
 
-        <div className="mt-8">
+        <div className="mt-8 flex flex-col gap-8">
+          <AccountSettings />
+          <AppearanceSettings />
           <AiDependencySettings />
+          <ExperienceSettings />
         </div>
       </div>
     </main>

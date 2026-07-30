@@ -15,8 +15,9 @@
 
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Sun, Moon, SunMoon, MessageCircle } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
+import { nextThemePref, themeIconFor } from '@/lib/theme-toggle';
 import { STAGE_TINT } from '@/lib/phases';
 import { useFlowStore } from '@/lib/store';
 import StageSwitcher from './StageSwitcher';
@@ -56,9 +57,8 @@ export default function StudioBar({ active }: { active: 'present' | 'photo' | 'c
     router.prefetch(stageHrefFrom(pathname, 'present'));
   }, [applyTheme, router, pathname]);
 
-  const nextTheme: 'auto' | 'light' | 'dark' =
-    pref === 'auto' ? 'light' : pref === 'light' ? 'dark' : 'auto';
-  const ThemeIcon = pref === 'auto' ? SunMoon : pref === 'light' ? Sun : Moon;
+  const nextTheme = nextThemePref(pref);
+  const ThemeIcon = themeIconFor(pref);
 
   const go = (p: Phase) => {
     // Bấm lại đúng chặng đang mở → không làm gì (tránh push trùng route làm veil kẹt).
