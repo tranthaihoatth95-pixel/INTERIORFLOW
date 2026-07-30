@@ -5,30 +5,33 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (30/07 khuya — 2.1.9.q xong, 2.2.87/2.2.88 HẠ 🟡 chờ Hoà thử ảnh thật)
+## Hiện tại (30/07 khuya — B3 xong (giới hạn công cụ disclose), 2.1.9.q xong, 2.2.87/2.2.88 🟡)
 Chi tiết đầy đủ → `CHANGELOG.md` (mỗi dòng dưới đây có 1 mục tương ứng ở đó). Tóm tắt:
-- ✅ **7.3.31 mở rộng** — `AppChrome.tsx` hợp nhất Header+StudioBar, hết overlap 1024px (0 tràn 3 mốc).
-- ✅ **2.1.8.k/l/m** — PDF nhiều tờ có mục lục · sửa va chạm `CadTouchDock` · tách khổ/hướng giấy.
-- ✅ **7.1.20** — gộp hệ ngưỡng breakpoint (`lib/breakpoints.ts`), ghi Luật #10/#11.
-- ✅ **2.2.86 ĐỔI PHƯƠNG ÁN** — hàng đợi thật trong menu "Việc" (`FlowRun`). Phát hiện `7.3.32` ⬜.
+- ✅ **7.3.31/2.1.8.k-m/7.1.20/2.2.86/2.2.70(a)(b)** — hợp nhất AppChrome hết overlap · PDF nhiều
+  tờ+khổ/hướng giấy · gộp hệ ngưỡng breakpoint (Luật #10/#11) · hàng đợi "Việc" (`FlowRun`) · 2 fix
+  nhỏ (`df74551`). Không đổi gì thêm — xem CHANGELOG nếu cần chi tiết.
 - ✅ **7.1.19 (Lark Wiki) MERGE**. **VẪN 🟡** — chờ 3 khoá Lark trong `.env.local` verify call thật.
-- 🟡 **2.2.87+2.2.88 SỬA SANG cascade 4 bậc "không-bao-giờ-fail", HẠ TỪ ✅ (Hoà chốt)** — bản gốc
-  (điểm tụ bắt buộc) thất bại trung thực quá nhiều với ảnh thiếu cạnh thẳng; `measureObjectTiered()`
-  tự tụt bậc, không bao giờ throw. 46/46 test. **CHƯA verify ảnh thật trong browser** (môi trường
-  test không đưa được file qua input) — nâng lại ✅ khi Hoà tự thử. Disclose: Tầng 2/3 AI chưa làm.
+- 🟡 **2.2.87+2.2.88 SỬA SANG cascade 4 bậc "không-bao-giờ-fail", HẠ TỪ ✅ (Hoà chốt)** —
+  `measureObjectTiered()` tự tụt bậc, không bao giờ throw. 46/46 test. **CHƯA verify ảnh thật
+  trong browser** — nâng lại ✅ khi Hoà tự thử. Disclose: Tầng 2/3 AI chưa làm.
 - ✅ **2 mã XÁC NHẬN** (Luật #12 mới — chỉ Claude Code cấp mã): `7.1.21`=script test,
   `7.1.22`=Bộ nhớ đo đạc. Cả 2 CHƯA CODE.
-- ✅ **2.2.70 (a)(b)** 2 lỗi nhỏ commit riêng (`df74551`). Nội dung chính `2.2.70` vẫn treo (credit).
 - ✅ **2.1.9.q (BOQ groundwork)** — `polygonPerimeter()`+`openingsAreaInPolygon()` vào `hatch.ts`.
-  Phát hiện khi khám: review spec giả định sai `BlockDef.h`=chiều cao cửa (thật ra là độ sâu mặt
-  bằng) — sửa dùng `w`×`OPENING_STANDARD_HEIGHT_MM` (CONFIG chuẩn nghề). 45/45 test. BOQ `2.1.9.p`
-  (engine thật) vẫn chờ quyết.
-- ⏸️ **Còn treo**: B2/B3/B4 chưa làm — B3 cần THỬ TAY thật.
+  Phát hiện khi khám: `BlockDef.h` không phải chiều cao cửa (độ sâu mặt bằng) — sửa dùng
+  `w`×`OPENING_STANDARD_HEIGHT_MM`. 45/45 test. BOQ `2.1.9.p` (engine thật) vẫn chờ quyết.
+- ✅ **B3 (`4.6` sửa) — backup CAD bỏ "giữ 5 bản" sang thang thời gian + lưu chênh lệch** —
+  `lib/cad/backup-diff.ts` mới (50 test) + `auto-backup.ts` viết lại + lối phục hồi UI mới
+  (`BackupRecoveryModal.tsx`, trước không có). **Giới hạn công cụ disclose rõ**
+  (`docs/VERIFY-B3.md`): không tự động hoá được hộp thoại chọn thư mục thật và `kill -9` tiến
+  trình Electron thật — kèm hướng dẫn 3 bước Hoà tự làm 1 lần xác nhận mức OS thật. ⚠️ Còn 1
+  project test (`cms7imxpt...`) trong tài khoản demo — Hoà xoá tay trong Gallery nếu không cần.
+- ⏸️ **Còn treo**: B2/B4 chưa làm.
 
 ## Worktree đang mở
-Không có. Dọn thêm 1 thứ 30/07 khuya: `.worktrees/if-lark/` (thư mục VẬT LÝ còn sót trên đĩa dù
-`git worktree list` đã không còn đăng ký nó, `.git` bên trong trỏ đường dẫn VM chết) — xác nhận đủ
-4 điều kiện an toàn (nhánh đã merge+xoá, không dev server, không branch riêng chưa lưu) rồi `rm -rf`.
+**1 worktree phụ ĐANG CHẠY, KHÔNG đụng vào**: `.worktrees/if-infra` nhánh `feat/sprint-infra` —
+phát hiện tình cờ, `git worktree list` báo "prunable" (VM mount khác, giống ca `if-lark` cũ trước
+đây) nhưng KHÔNG prune — nhánh CHƯA merge, có nội dung thật. Nếu không phải phiên phụ của Hoà, báo
+lại. Ngoài ra sạch — `.worktrees/if-lark/` cũ đã `rm -rf` an toàn (đủ 4 điều kiện, xem CHANGELOG).
 
 ## Chờ USER quyết
 - **NT1** (gộp `LibraryPanel`+`LibraryBrowser`, LỚN) và **NT5** (cây thư mục thật, RẤT LỚN) —

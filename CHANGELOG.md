@@ -1,5 +1,67 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 30/07 khuya (đợt 5) — B3: backup CAD bỏ "giữ 5 bản" sang thang thời gian + lưu chênh lệch
+- **Lý do sửa cùng đêm**: B1 (`4.6`) chỉ verify được phần GHI (auto-backup, giữ 5 bản gần nhất).
+  Hoà yêu cầu thử tay B3 (kịch bản sập/phục hồi thật) — nhưng trước khi thử, nhận ra "5 bản × 10
+  phút = chỉ 50 phút lịch sử, sai từ hôm qua là mất" → chốt sửa cơ chế TRƯỚC khi chạy kịch bản thử.
+- **`lib/cad/backup-diff.ts` mới** (thuần, không đụng File System Access API — test bằng
+  sucrase-node không cần mock trình duyệt, đúng mẫu `namesToPrune()` cũ): `diffSheets()`/
+  `applyDiff()` — chênh lệch theo ENTITY (so khớp theo id, không phải byte/JSON diff cả cây),
+  fallback lưu NGUYÊN sheet khi field khác `entities` đổi (layers/viewport/paperKey/...) thay vì
+  cố diff từng field nhỏ lẻ dễ sai. `planRetention()` — thang thời gian Hoà chốt: 1 giờ giữ MỌI
+  bản · 24 giờ 1 bản/giờ · 30 ngày 1 bản/ngày · xa hơn 1 bản/tuần KHÔNG giới hạn
+  (`RETENTION_TIERS`, CONFIG không hard-code) → ~60-80 bản phủ TOÀN BỘ đời dự án thay vì 50 phút.
+  **Bất biến bắt buộc** ("mỗi mốc đầy đủ phải tự đứng được — mất 1 diff không được kéo sập cả
+  chuỗi"): 1 bản chênh lệch được GIỮ mà đoạn chuỗi dẫn tới nó (từ mốc đầy đủ gần nhất) có chỗ bị
+  XOÁ → tự ĐÚC (materialize) thành bản đầy đủ MỚI TRƯỚC khi xoá phần chuỗi phía trước — phát hiện
+  qua debug thật lúc viết test: kể cả chính MỐC ĐẦY ĐỦ gốc cũng có thể bị xoá nếu không phải đại
+  diện của bucket nó, miễn là bản phụ thuộc nó đã được đúc trước — ban đầu tưởng là bug, debug kỹ
+  xác nhận đây là hành vi ĐÚNG (không phải bug), sửa lại 2 assertion test sai thay vì sửa code.
+  `reconstructUpTo()` — ráp trạng thái tại 1 điểm bất kỳ (không chỉ mới nhất, đúng yêu cầu B3 "lấy
+  bản thứ 2/3/4/5"); gặp entry thiếu/hỏng ở BẤT KỲ đâu trên đường đi → DỪNG NGAY, trả về trạng
+  thái TỐT NHẤT ráp được NGAY TRƯỚC entry hỏng đó (không nhảy qua lỗ hổng ráp tiếp — sẽ ra trạng
+  thái SAI mà tưởng là đúng, nguy hiểm hơn không phục hồi được); mốc đầy đủ bản thân cũng hỏng →
+  tự lùi về mốc đầy đủ TRƯỚC ĐÓ, không throw. `formatBackupRelativeTime()` — "10 phút trước · 1
+  giờ trước · hôm qua 15:20 · thứ Hai · tuần trước" (Hoà: "1.000 dòng thời gian giống hệt nhau còn
+  khó dùng hơn 5 dòng"). Mốc đầy đủ mỗi 20 bản (`FULL_SNAPSHOT_EVERY`).
+- **Test — `lib/cad/backup-diff.test.ts`, 50/50 pass** (nặng hơn bình thường — đây là lớp RỦI RO
+  CAO NHẤT của sprint, "mất dữ liệu không sửa lại được"): round-trip diff/apply đủ 8 kiểu đổi ·
+  tỉa đúng thang (2 kịch bản: thưa không tỉa gì/dày tỉa đúng kể cả xoá mốc đầy đủ gốc) · **2 đại
+  diện khác bucket cùng gãy bởi 1 lần xoá → cả 2 phải đúc ĐỘC LẬP** (bẫy dễ mắc nếu code chỉ nhìn
+  "bản cuối trong đoạn gãy") · **xoá 1 file diff giữa chuỗi → lùi ĐÚNG về mốc ngay trước đó, không
+  throw** — đúng chính kịch bản B3 yêu cầu thử tay · mốc đầy đủ hỏng → lùi tiếp về mốc trước nữa ·
+  phục hồi điểm GIỮA chuỗi (không chỉ mới nhất) · format hiển thị 8 mốc thời gian.
+- **`lib/cad/auto-backup.ts` viết lại** — lớp keo mỏng chạm File System Access API thật: đếm số
+  bản kể từ mốc đầy đủ gần nhất để quyết ghi đầy đủ hay chênh lệch, gọi `planRetention()` sau mỗi
+  lần ghi (đúc TRƯỚC, xoá SAU — đúng thứ tự bắt buộc). `reconstructAsync()` mới — bản song sinh
+  ĐỌC THẬT của `reconstructUpTo()` (cùng thuật toán, khác mỗi chỗ `await` đọc file thay vì tra
+  bảng thuần — không đổi chữ ký hàm thuần chỉ để chiều 1 chỗ gọi bất đồng bộ). `namesToPrune()`/
+  `auto-backup.test.ts` cũ (6 test "giữ 5 bản") đã xoá — thay hẳn bởi cơ chế mới.
+- **Lối vào UI MỚI** (trước B3 KHÔNG CÓ — "phục hồi" chỉ có đường .ifpack export/import thủ công,
+  tự mò Finder đoán tên file): `components/cad/BackupRecoveryModal.tsx` liệt kê backup theo thang
+  hiển thị, bấm 1 mục → tạo DỰ ÁN MỚI (không đè dự án đang mở, đúng nguyên tắc `.ifpack` cũ), báo
+  rõ nếu phải lùi mốc (`degraded`/`recoveredAsOf`) thay vì im lặng. Menu Xuất → "Khôi phục từ
+  backup…" chỉ hiện khi đã bật backup tự động.
+- **Verify browser thật** (`127.0.0.1:3000`): menu mô tả đã cập nhật (hết "giữ 5 bản gần nhất") ·
+  phát `cad:backup-browse-open` → modal mở đúng, hiện đúng trạng thái rỗng · phát
+  `cad:backup-restore-request` với 1 sheet giả lập → **xác nhận điều hướng sang project MỚI**
+  (cuid khác hẳn), đọc `window.__cadStore.getState()` sau khi tải → entity/layer khớp CHÍNH XÁC dữ
+  liệu đã gửi — chứng minh đường ống chạy TRỌN từ event → tạo project → ghi IndexedDB → điều
+  hướng → nạp lại, không phải giả lập. `ifpack.test.ts::testCorruptZipDoesNotThrow` (có sẵn, không
+  viết mới) vẫn PASS — xác nhận corrupt full-backup vẫn không throw.
+- ⚠️ **Giới hạn công cụ, disclose rõ không giấu** (`docs/VERIFY-B3.md`): không tự động hoá được
+  `showDirectoryPicker()` (bắt buộc gesture người dùng thật + hộp thoại OS thật) và `kill -9` tiến
+  trình Electron thật trong môi trường phiên này. Bù bằng: rủi ro THẬT của cơ chế nằm ở lớp THUẬT
+  TOÁN reconstruct/retention (không phải "app có crash không" — mọi đường đọc đã bọc try/catch) —
+  lớp đó đã test 50 kịch bản kể cả mô phỏng đúng "1 file giữa chuỗi hỏng/mất". Kèm hướng dẫn 3
+  bước Hoà tự làm 1 lần (kill -9 thật + mở lại + khôi phục) để xác nhận mức OS — bằng chứng cần
+  cho phần trình BGĐ "mất dữ liệu: rủi ro thấp". Còn 1 project test (`cms7imxpt...`, "Test B3
+  (phục hồi backup)") trong tài khoản demo — thử xoá qua `/api/projects/:id` DELETE bị chặn đúng
+  luật (hành động phá huỷ), Hoà xoá tay trong Gallery nếu không cần giữ.
+- **Phát hiện kèm, không phải việc của B3**: `.worktrees/if-infra` (nhánh `feat/sprint-infra`) —
+  1 worktree phụ ĐANG CHẠY, chưa merge, phát hiện tình cờ lúc quét test file — KHÔNG đụng vào,
+  ghi vào STATUS.md để Hoà biết (đúng luật "1 điều kiện thiếu thì giữ nguyên, báo rõ lý do").
+
 ## 30/07 khuya (đợt 4) — 2.1.9.q (BOQ groundwork) + hạ 2.2.87/2.2.88 ✅→🟡 + Luật #12 + commit 2.2.70
 - **Luật #12 mới** (`docs/IF-FEATURE-TREE.md` PHẦN E) — Hoà chốt sau va số `7.1.21` (lỗi grep của
   Cowork, không phải lỗi Claude Code): "CHỈ Claude Code cấp mã. Cowork soạn ticket KHÔNG kèm số;
