@@ -1,5 +1,17 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 30/07 — dán mã tính năng Sprint 1-6 vào cây + tách Nợ kỹ thuật + 2.2.61.a
+- Dán `2.2.60`-`2.2.85` + `2.3.58`-`2.3.63` vào `docs/IF-FEATURE-TREE.md` (nguồn
+  `SPEC-TONG-COWORK-2026-07-29.md` §3-§8 + `TICKET-FONT-MONO-NODE`), đủ 6 cột, Trạng thái ghi
+  bằng chứng `file:dòng` thật. Kiểm trùng: không lệch. Ghi rõ chuỗi phụ thuộc CHỐT
+  `2.2.77→2.2.69(+2.2.85 chung commit)→2.2.65→2.2.78→7.1.18→phần còn lại`. 1 điểm mơ hồ nguồn
+  (`2.2.83` gộp chung mô tả với `2.2.82`) tự tách theo suy luận, ghi cần Hoà xác nhận lại.
+- Tách "Nợ kỹ thuật" từ STATUS.md sang `docs/TECH-DEBT.md` — nội dung nguyên vẹn.
+- `2.2.61.a` (commit `77224dc`) — Cowork phát hiện `2.2.61` bỏ sót `MobileMenu.tsx` (picker AI
+  tier thật vẫn còn đó, trùng `/settings`, vi phạm Luật #6). Sửa ngay: `TierRow()` → `TierLinkRow()`
+  (tên tier + `AiStatusDot` + link `/settings`). Browser-verify thật ở 375px.
+- Dán `7.3.30` vào cây (chưa code lúc đó, xem entry riêng bên dưới khi code xong).
+
 ## 29/07 khuya — Sprint 1 (docs/CHOT-SO-MA-2026-07-29.md §D) CODE xong, 4 commit
 - **Sprint 1 xong cả 4 việc, mỗi việc 1 commit, browser-verify thật**:
   `4804f45` **7.4.11** ẩn `LiveCursors` (giữ `PresenceBar`) · `573e314` **2.2.75** sửa

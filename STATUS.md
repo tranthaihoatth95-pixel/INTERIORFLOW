@@ -5,23 +5,21 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (30/07 — dán mã tính năng Sprint 1-6 vào cây + tách Nợ kỹ thuật, đợt doc thuần)
+## Hiện tại (30/07 tối — Sprint 3 cụm đầu xong: 2.2.85+2.2.69+7.3.30, 3 commit)
 Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt phiên này:
-- ✅ **Dán `2.2.60`-`2.2.85` + `2.3.58`-`2.3.63` vào `docs/IF-FEATURE-TREE.md`** (nguồn
-  `SPEC-TONG-COWORK-2026-07-29.md` §3-§8 + `TICKET-FONT-MONO-NODE`), đủ 6 cột, Trạng thái ghi
-  bằng chứng `file:dòng` thật (không chép lời spec) — 4 mã Sprint 1 ghi ✅ kèm SHA, còn lại ⬜/🟡.
-  Kiểm trùng trước khi dán: KHÔNG lệch (đợt trùng `3.30`/`3.31`/`7.20-7.27` đã Cowork giải quyết
-  phiên trước). Ghi rõ chuỗi phụ thuộc CHỐT `2.2.77→2.2.69(+2.2.85 chung commit)→2.2.65→2.2.78→
-  7.1.18→phần còn lại`. 1 điểm mơ hồ nguồn (`2.2.83` gộp chung mô tả với `2.2.82`) đã tự tách theo
-  suy luận, ghi rõ cần Hoà xác nhận lại (xem "Chờ USER quyết").
-- ✅ **Tách "Nợ kỹ thuật" sang `docs/TECH-DEBT.md`** — STATUS.md chỉ còn 1 dòng link, không mất nội dung.
-- ✅ **`2.2.61.a`** — Cowork phát hiện `2.2.61` bỏ sót `MobileMenu.tsx` (picker AI tier thật vẫn còn
-  ở đó, trùng với `/settings`, vi phạm Luật #6). Sửa NGAY theo khuyến nghị ticket — commit `77224dc`,
-  browser-verify thật ở 375px. `7.3.30` (phần lớn hơn — gom sáng/tối/ngôn ngữ/avatar/hướng dẫn về
-  `/settings` 4 nhóm) đã dán vào cây, CHƯA làm, xếp Sprint 3 cùng cụm `2.2.69`.
+- ✅ **`2.2.85`+`2.2.69` chung 1 commit `74cf4c5`** (đúng thứ tự bắt buộc: bỏ mono TRƯỚC đổi tên,
+  vì SF Mono/Cascadia/Fira thiếu glyph dấu Việt). Bỏ font mono ở mọi nhãn node (10 file, 1 file
+  ngoài danh sách gốc phát hiện qua quét độc lập) + áp 5 luật thoại cho toàn bộ 45 node +
+  `CATEGORY_META`. Browser-verify thật: `getComputedStyle` xác nhận font `Be Vietnam Pro` (không
+  phải mono) cho cả nhãn có dấu + mũi tên `→`. tsc/eslint sạch, 101/101 test pass.
+- ✅ **`7.3.30` commit `10ba92e`** — dựng `/settings` đủ 4 nhóm (Tài khoản/Giao diện/AI/Trải
+  nghiệm), gỡ Ngôn ngữ + "Xem lại hướng dẫn" khỏi Header MoreMenu + MobileMenu. Browser-verify
+  thật 1440px + 375px. ⚠️ **Lệch có chủ đích**: KHÔNG gom nút theme Header/StudioBar còn 1 cái —
+  2 route khác nhau (app chính vs CAD/Present), xoá 1 cái sẽ mất nút ở route kia. Giữ cả 2, chỉ
+  gom LOGIC dùng chung (`lib/theme-toggle.ts`). Cần Hoà xác nhận lại (xem "Chờ USER quyết").
 - ⏸️ **T3/T4 (Semantic Room)** vẫn CHƯA LÀM — đọc `docs/IF1-COMPLETION-AUDIT.md` §3 (a)/(d) trước.
-- ⏸️ **Sprint 2/3** (`docs/CHOT-SO-MA-2026-07-29.md` §D) code chưa bắt đầu — Sprint 3 nhớ gộp
-  **2.2.85** (font mono node) chung commit với **2.2.69**, đúng thứ tự CHỐT ①-⑤ ghi trong cây.
+- ⏸️ **Sprint 3 phần còn lại** (`2.2.65-68/70-72/78-84`, `2.3.61`) chưa bắt đầu — xem chuỗi phụ
+  thuộc CHỐT trong `docs/IF-FEATURE-TREE.md` mục "2.2.60-2.2.85".
 
 ## Worktree đang mở
 Không có.
@@ -47,6 +45,10 @@ Không có.
 - **`2.2.83`** (preflight — tích hợp nút Xuất) — nguồn `SPEC-TONG` §7.5 gộp chung tiêu đề với
   `2.2.82`, không tách rõ nội dung; đã tự tách theo suy luận hợp lý khi dán 30/07 (xem dòng đó
   trong cây), **cần Hoà xác nhận lại ranh giới đúng**.
+- **`7.3.30` nút theme** — ticket đề xuất "gom sáng/tối về 1 chỗ (hiện 3)"; kiểm code thấy
+  `Header.tsx`/`StudioBar.tsx` là 2 route khác nhau, không trùng thật — đã GIỮ CẢ 2 nút, chỉ gom
+  logic (`lib/theme-toggle.ts`). **Cần Hoà xác nhận** nếu ý định ban đầu là ép 1 nút duy nhất bất
+  kể route (sẽ cần thiết kế lại — hiện CAD/Present không có Header app chính để dùng chung).
 
 ## Nợ kỹ thuật
 → Tách ra `docs/TECH-DEBT.md` (30/07, giữ STATUS dưới 800 từ) — nội dung nguyên vẹn, không mất mục nào.
