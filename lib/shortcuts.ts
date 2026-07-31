@@ -16,7 +16,7 @@
  * dùng) qua `cadTypedCommandGroups()` bên dưới, đúng yêu cầu "đừng chép tay, chép tay là lệch".
  */
 
-import { groupedCadCommands } from './cad/command-aliases';
+import { groupedCadCommands, groupedCadCommandsByCategory } from './cad/command-aliases';
 
 export type ShortcutScope = 'toàn cục' | 'cad' | 'render' | 'present';
 
@@ -113,4 +113,10 @@ export function shortcutsByScope(scope: ShortcutScope): ShortcutEntry[] {
 /** CAD · lệnh gõ tay kiểu AutoCAD — alias gộp theo nghĩa, đọc trực tiếp từ command-aliases.ts. */
 export function cadTypedCommandGroups(): { cmds: string[]; label: string }[] {
   return groupedCadCommands();
+}
+
+/** CAD · lệnh gõ tay gộp theo 5 nhóm hiển thị (Vẽ/Kích thước & mặt cắt/Biến đổi/Nhìn/Chọn·xoá·
+ * hoàn tác) — dùng cho `ShortcutsPanel.tsx` tab "Lệnh gõ tay" (khớp bản mẫu Hoà gửi 31/07). */
+export function cadTypedCommandGroupsByCategory() {
+  return groupedCadCommandsByCategory();
 }

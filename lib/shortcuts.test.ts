@@ -2,7 +2,7 @@
  * lib/shortcuts.test.ts — 7.3.33: không tổ hợp phím trùng trong cùng scope, mọi mục có label.
  *   node_modules/.bin/sucrase-node lib/shortcuts.test.ts
  */
-import { SHORTCUTS, formatShortcutKeys, cadTypedCommandGroups, type ShortcutScope } from './shortcuts';
+import { SHORTCUTS, formatShortcutKeys, cadTypedCommandGroups, cadTypedCommandGroupsByCategory, type ShortcutScope } from './shortcuts';
 
 let pass = 0;
 let fail = 0;
@@ -57,10 +57,23 @@ function testCadTypedCommandGroups() {
   ok('mọi nhóm có ít nhất 1 cmd', groups.every((g) => g.cmds.length > 0));
 }
 
+function testCadTypedCommandGroupsByCategory() {
+  console.log('\n[5] cadTypedCommandGroupsByCategory — 5 nhóm hiển thị (mẫu Hoà 31/07)');
+  const cats = cadTypedCommandGroupsByCategory();
+  const flatCount = cadTypedCommandGroups().length;
+  const catCount = cats.reduce((n, c) => n + c.items.length, 0);
+  ok('tổng số dòng theo category = tổng số dòng flat (không mất/nhân đôi dòng nào)', catCount === flatCount);
+  ok('mọi category có ít nhất 1 dòng', cats.every((c) => c.items.length > 0));
+  ok('có nhóm "Vẽ"', cats.some((c) => c.group === 'Vẽ'));
+  ok('có nhóm "Biến đổi"', cats.some((c) => c.group === 'Biến đổi'));
+  ok('có nhóm "Chọn, xoá, hoàn tác"', cats.some((c) => c.group === 'Chọn, xoá, hoàn tác'));
+}
+
 testNoDuplicateWithinScope();
 testNoEmptyLabel();
 testFormatShortcutKeys();
 testCadTypedCommandGroups();
+testCadTypedCommandGroupsByCategory();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);
