@@ -47,3 +47,10 @@ docs/DEMO-CLAY-2407/
 
 # Worktree phụ cho phiên Cowork song song (feat/7.1.19-lark-wiki) — không commit
 .worktrees/
+
+# Lưới an toàn ĐỢT B (4.1.d, 31/07): nếu ai đó trỏ thư mục gốc InteriorFlow (Cài đặt → Lưu trữ)
+# vào CHÍNH thư mục repo này, mỗi dự án tạo 1 thư mục con "<mã dự án> — <tên>/" ở gốc — không
+# được lọt vào git dù `git add .`. Verify bằng `git check-ignore -v "<mã> — <tên>"` phải khớp
+# đúng dòng dưới (đã test: khớp thư mục gốc thật/tên project thật, KHÔNG khớp thư mục thường,
+# KHÔNG khớp tên có dấu gạch ngang thường "-" (chỉ khớp em dash "—"), KHÔNG khớp đường dẫn lồng).
+/*[[:space:]]—[[:space:]]*/
