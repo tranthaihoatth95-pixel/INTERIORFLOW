@@ -84,12 +84,23 @@ export function CommandPalette() {
     };
 
     const actions: Cmd[] = [
-      { id: 'run-flow', label: 'Run flow', hint: 'chạy toàn bộ', group: 'Hành động', icon: Play, keywords: 'execute chạy graph', run: run(() => void runFlow()) },
+      { id: 'run-flow', label: 'Chạy flow', hint: 'chạy toàn bộ', group: 'Hành động', icon: Play, keywords: 'run execute chạy graph', run: run(() => void runFlow()) },
       { id: 'auto-layout', label: 'Tự sắp xếp graph', hint: 'auto-layout', group: 'Hành động', icon: LayoutGrid, keywords: 'arrange dagre tidy sắp xếp', run: run(() => s.autoLayout()) },
-      { id: 'fit', label: 'Fit view', group: 'Hành động', icon: Maximize, keywords: 'zoom vừa màn hình', run: run(() => fitView({ padding: 0.2, duration: 300 })) },
-      { id: 'snap', label: `Snap lưới: ${s.snapGrid ? 'TẮT' : 'BẬT'}`, group: 'Hành động', icon: Grid3x3, keywords: 'grid canh lề align', run: run(() => s.toggleSnap()) },
-      { id: 'undo', label: 'Undo', hint: modKey('Z'), group: 'Hành động', icon: Undo2, keywords: 'hoàn tác', run: run(() => s.undo()) },
-      { id: 'redo', label: 'Redo', hint: modShiftKey('Z'), group: 'Hành động', icon: Redo2, keywords: 'làm lại', run: run(() => s.redo()) },
+      { id: 'fit', label: 'Vừa khung', group: 'Hành động', icon: Maximize, keywords: 'fit view zoom vừa màn hình', run: run(() => fitView({ padding: 0.2, duration: 300 })) },
+      {
+        id: 'snap',
+        // 7.3.34 (31/07, Sprint "Lộ nền" VIỆC 5) — "TẮT"/"BẬT" viết hoa có dấu vi phạm 7.1.23①
+        // (chữ hoa không còn chỗ cho dấu thanh). Đổi sang "đang tắt"/"đang bật" thường, đúng
+        // dạng đã dùng ở CadToolbar ("Bắt điểm (snap): BẬT" — mã đó CHƯA sửa, ngoài phạm vi
+        // VIỆC 5 chỉ nêu CommandPalette.tsx, không quét lan sang chỗ khác).
+        label: `Bắt điểm lưới: ${s.snapGrid ? 'đang bật' : 'đang tắt'}`,
+        group: 'Hành động',
+        icon: Grid3x3,
+        keywords: 'snap grid canh lề align',
+        run: run(() => s.toggleSnap()),
+      },
+      { id: 'undo', label: 'Hoàn tác', hint: modKey('Z'), group: 'Hành động', icon: Undo2, keywords: 'undo hoàn tác', run: run(() => s.undo()) },
+      { id: 'redo', label: 'Làm lại', hint: modShiftKey('Z'), group: 'Hành động', icon: Redo2, keywords: 'redo làm lại', run: run(() => s.redo()) },
       { id: 'note', label: 'Thêm ghi chú (sticky)', group: 'Hành động', icon: StickyNote, keywords: 'note comment', run: run(() => s.addNote(centerPos())) },
       { id: 'lib', label: 'Mở Node Library', group: 'Hành động', icon: Boxes, keywords: 'panel node', run: run(() => s.setPanel('library')) },
       { id: 'gallery', label: 'Mở Gallery', group: 'Hành động', icon: Images, keywords: 'ảnh asset', run: run(() => s.setPanel('gallery')) },
