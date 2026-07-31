@@ -1995,6 +1995,7 @@ export default function CadCanvas() {
         // semantics prompt/confirm cũ. setState từ closure ổn: setter của useState là stable.
         setInlineForm(null);
         setInlineConfirm(null);
+        setCadMenu(null); // 2.2.89 — nhánh này trước đây quên đóng menu chuột phải
         ix.current.pts = [];
         ix.current.dynBuf = '';
         ix.current.filletFirst = null;
@@ -3217,6 +3218,7 @@ export default function CadCanvas() {
         <Popover
           anchorX={cadMenu.clientX}
           anchorY={cadMenu.clientY}
+          onDismiss={() => setCadMenu(null)}
           style={{
             width: 200,
             background: 'var(--panel)',

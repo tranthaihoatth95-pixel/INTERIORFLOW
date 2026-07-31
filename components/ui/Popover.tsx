@@ -17,7 +17,7 @@
  */
 
 import { createPortal } from 'react-dom';
-import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 interface PopoverProps {
   /** toạ độ neo THEO VIEWPORT (vd e.clientX/e.clientY). */
@@ -28,9 +28,21 @@ interface PopoverProps {
   children: ReactNode;
   style?: CSSProperties;
   className?: string;
+  /**
+   * 2.2.89 (31/07) — TUỲ CHỌN: đóng popover khi bấm ra ngoài / Escape. Không truyền → hành vi
+   * y hệt trước (2 nơi dùng cũ, FlowCanvas/EditorCanvas, KHÔNG đổi gì). Khuôn chép từ
+   * `MenuButton.tsx` (document mousedown + keydown capture). BẪY đã xử lý theo yêu cầu Hoà —
+   * gắn CẢ HAI lớp phòng thủ, không chỉ 1: (a) bỏ qua nếu target nằm TRONG popover (giống
+   * MenuButton `ref.contains`) — cần vì listener dùng 'mousedown' còn Popover tự chặn
+   * 'pointerdown' lan lên (2 event khác nhau, không tự loại nhau); (b) gắn listener ở tick
+   * SAU qua requestAnimationFrame — dù effect vốn đã chạy sau khi sự kiện chuột phải gốc
+   * dispatch xong (tiền lệ đã có ở `CadCanvas.tsx` dòng ~242, coachmark tự ẩn), làm thêm lớp
+   * rAF theo đúng yêu cầu để chắc chắn không phụ thuộc riêng vào giả định lịch effect.
+   */
+  onDismiss?: () => void;
 }
 
-export default function Popover({ anchorX, anchorY, margin = 8, children, style, className }: PopoverProps) {
+export default function Popover({ anchorX, anchorY, margin = 8, children, style, className, onDismiss }: PopoverProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
@@ -65,6 +77,35 @@ export default function Popover({ anchorX, anchorY, margin = 8, children, style,
     ro.observe(el);
     return () => ro.disconnect();
   }, [reposition]);
+
+  // 2.2.89 — bấm ra ngoài / Escape đóng popover. Chỉ chạy khi có `onDismiss` (điều kiện an
+  // toàn cho 2 nơi dùng cũ không truyền prop này).
+  useEffect(() => {
+    if (!onDismiss) return;
+    let rafId = 0;
+    let armed = false; // false trong lúc chờ tick sau — chặn đúng cú chuột phải vừa mở popover
+    const onDoc = (e: MouseEvent) => {
+      if (!armed) return;
+      if (ref.current && ref.current.contains(e.target as Node)) return;
+      onDismiss();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onDismiss();
+      }
+    };
+    rafId = requestAnimationFrame(() => {
+      armed = true;
+    });
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey, true);
+    return () => {
+      cancelAnimationFrame(rafId);
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey, true);
+    };
+  }, [onDismiss]);
 
   if (typeof document === 'undefined') return null;
 
