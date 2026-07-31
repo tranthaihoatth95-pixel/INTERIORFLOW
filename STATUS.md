@@ -5,40 +5,28 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (31/07 — ĐỢT DEMO CAD LAN: 2.2.89 xong (ƯU TIÊN 1) · 7.3.32 xong · 2.1.8.n Ctrl+S xong)
-Chi tiết đầy đủ → `CHANGELOG.md` (mỗi dòng dưới đây có 1 mục tương ứng ở đó). Tóm tắt:
-- ✅ **2.2.89 (31/07, ĐỢT DEMO GẤP, ƯU TIÊN 1)** — menu chuột phải CAD không có đường thoát nào
-  (bấm ngoài/Escape đều không đóng). `Popover.tsx` thêm `onDismiss?` tuỳ chọn (khuôn `MenuButton.tsx`
-  — 2 nơi dùng cũ FlowCanvas/EditorCanvas không truyền, không đổi gì). `CadCanvas.tsx` truyền
-  `onDismiss` + bổ sung `setCadMenu(null)` bị quên ở nhánh Escape. Bẫy "chính cú chuột phải mở menu
-  bị đóng ngay" xử lý 2 lớp: bỏ qua target trong popover + cờ `armed` sau `requestAnimationFrame`.
-  Test tay đủ 5 kịch bản qua dispatch event JS thật (mở-ở-lại · đóng ngoài · Escape · bấm mục
-  chạy+đóng · nhảy vị trí không nhân đôi). tsc+eslint+test+build sạch. Nợ `useDismissable` dùng
-  chung → `2.2.90`, hoãn sau demo.
-- ✅ **7.3.32 (31/07, ĐỢT DEMO GẤP)** — tràn headbar 179px@640/51px@768 route render: đẩy mốc
-  "hiện cụm phải" (Tasks/Home/⋯/UserChip) từ `sm`(640)→`lg`(1024) đồng bộ `MobileMenu`, tái dùng
-  bottom-sheet có sẵn. Verify browser thật `/render`+`/cad`: 0 tràn 640/768/1024. Đo trước phát hiện
-  brief ② (`ToolModeForm` grid) là NON-ISSUE, không sửa. ④ (quét 7.1.23) không kịp, hết giờ.
-- ✅ **2.1.8.n (31/07, GẤP chặn thử CAD LAN)** — Ctrl/⌘+S ép autosave chạy ngay + toast "Đã lưu —
-  HH:MM" · Ctrl/⌘+Shift+S xuất `.idf` (tái dùng luồng có sẵn) · StatusBar thêm giờ vào "Đã lưu lúc
-  HH:MM". Verify browser thật cả 3 việc, tsc+eslint+test sạch.
-- ✅ **7.3.31/2.1.8.k-m/7.1.20/2.2.86/2.2.70(a)(b)/7.1.19-merge** — hợp nhất AppChrome hết overlap ·
-  PDF nhiều tờ+khổ/hướng giấy · gộp hệ ngưỡng breakpoint · hàng đợi "Việc" · Lark Wiki merge (**VẪN
-  🟡**, chờ 3 khoá Lark verify call thật). Chi tiết → CHANGELOG.
-- 🟡 **2.2.87+2.2.88** cascade 4 bậc "không-bao-giờ-fail", HẠ TỪ ✅ (Hoà chốt) — `measureObjectTiered()`
-  tự tụt bậc, không throw. 46/46 test, CHƯA verify ảnh thật — nâng ✅ khi Hoà tự thử.
-- ✅ **7.1.21+Luật #13** (merge `feat/sprint-infra`, `7a62e09`) — `"test"` vào `package.json`, bỏ
-  loại trừ `auto-backup.test.ts` chết (xoá trong B3, thay `backup-diff.test.ts` 50 test). `7.1.22`
-  CHƯA CODE.
-- ✅ **B3 (`4.6`)** — backup CAD bỏ "giữ 5 bản" sang thang thời gian + lưu chênh lệch,
-  `lib/cad/backup-diff.ts` (50 test) + UI phục hồi mới. Giới hạn công cụ ở `docs/VERIFY-B3.md`. ⚠️
-  Còn 1 project test (`cms7imxpt...`) — Hoà xoá tay.
-- ✅ **Sprint BOQ ĐỢT 1+2 — `2.1.9.q`+`2.1.9.r`** — `polygonPerimeter()`+`openingsAreaInPolygon()`
-  (sửa `BlockDef.h` không phải chiều cao cửa, 45/45 test) + ATLAS Material cache mở rộng
-  `ProductSpec` (Luật Đồng Bộ #6, mapping PLACEHOLDER, 22/22 test).
-- 🟡 **7.1.23 — Bước 1 xong, CHỜ HOÀ GẬT** — bảng phân loại ở `docs/AUDIT-7.1.23-...md` (~112 chỗ
-  tay + ⑤c token sàn 13px đã chốt hướng). CHƯA sửa dòng nào, hoãn sau ĐỢT DEMO.
-- ⏸️ **Còn treo**: B2/B4. Sprint BOQ ĐỢT 3 (`2.1.9.p`, engine thật) — kế tiếp.
+## Hiện tại (31/07 — Sprint "Lộ nền" xong, ĐANG LÀM ĐỢT B lớp lưu trữ — B1)
+Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt:
+- 🔵 **ĐANG LÀM: ĐỢT B — lớp lưu trữ** (`docs/QUYET-DINH-HA-TANG-2026-07-31.md`, Hoà đã gật kiến
+  trúc) — 5 pha B1-B5, MỖI PHA BÁO+CHỜ GẬT riêng, tuyệt đối không chạy thẳng B4 (đảo nguồn sự thật
+  IndexedDB→tệp thật, rủi ro mất dữ liệu). Tái dùng khuôn `lib/cad/auto-backup.ts` có sẵn
+  (`showDirectoryPicker`/`storeHandle`/`loadHandle`/`writeAndPrune`), không viết cơ chế mới.
+- ✅ **Sprint "Lộ nền" — `7.3.33`/`2.1.11`/`7.3.34`** (31/07, `docs/KIEM-NEN-2026-07-31.md`) — bảng
+  tra phím tắt toàn app (`lib/shortcuts.ts` 1 nguồn, lệnh gõ tay CAD tách `command-aliases.ts`,
+  layout theo mẫu Hoà gửi: cột phím 118px/hàng 30px/2 tab/ô tìm) · CAD thêm ⌘A chọn tất cả/⌘D nhân
+  bản (nối hàm có sẵn)/⌘0·⌘=·⌘- zoom (phát hiện CAD ĐÃ CÓ SẴN phím `f`+nút Zoom Extents, chỉ thiếu
+  ⌘0 discoverable) · dọn chữ CommandPalette (Anh→Việt, tự bắt lỗi đảo ternary khi đổi nhãn). 21+16
+  test mới, tsc+eslint+test+build sạch mọi commit.
+- ✅ **2.2.89** — menu chuột phải CAD thêm `onDismiss` cho `Popover` (khuôn `MenuButton`) · **7.3.32**
+  — tràn headbar route render (mốc `sm`→`lg`) · **2.1.8.n** — Ctrl+S lưu ngay/xuất `.idf`/chỉ báo
+  giờ lưu. Cả 3 GẤP cho ĐỢT DEMO CAD LAN 31/07, xong trước giờ thử.
+- ✅ **7.3.31/2.1.8.k-m/7.1.20/2.2.86/B3(`4.6`)/Sprint BOQ ĐỢT 1+2(`2.1.9.q`+`.r`)/7.1.21+Luật #13**
+  — hợp nhất AppChrome · PDF nhiều tờ · backup thang thời gian (`lib/cad/backup-diff.ts`) · BOQ
+  groundwork+ATLAS cache · merge `feat/sprint-infra`. Chi tiết → CHANGELOG.
+- 🟡 **2.2.87+2.2.88** — cascade 4 bậc, HẠ TỪ ✅ (Hoà chốt), CHƯA verify ảnh thật.
+- 🟡 **7.1.23** — Bước 1 xong CHỜ HOÀ GẬT (~112 chỗ tay), hoãn tới khi ĐỢT B xong.
+- ⏸️ **Còn treo**: mục "B2/B4" cũ trong CHANGELOG (đặt tên TRƯỚC khi có cây mã số, KHÔNG liên quan
+  ĐỢT B lớp lưu trữ mới — tên trùng tình cờ). Sprint BOQ ĐỢT 3 (`2.1.9.p`) — kế tiếp sau ĐỢT B.
 
 ## Worktree đang mở
 Không có. `feat/sprint-infra` đã merge (`7a62e09`) + prune + xoá branch/thư mục/lock rác — đủ 4
