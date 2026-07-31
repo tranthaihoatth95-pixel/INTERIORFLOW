@@ -34,7 +34,9 @@ export function modShiftKey(key: string): string {
  * React log warning. Cùng pattern "nạp SAU mount" đã dùng ở CadToolbar (lựa chọn
  * Sketch/Pro) và PresentEditor.tsx.
  */
-function useMacAfterMount(): boolean {
+/** Export riêng (7.3.33) — dùng khi cần render NHIỀU nhãn phím khác `${MOD}${key}`/`${MOD}${SHIFT}${key}`
+ * (vd bảng tra phím tắt), tránh gọi hook lặp lại cho từng dòng. Cùng SSR-safe pattern useModKey. */
+export function useMacAfterMount(): boolean {
   const [isMac, setIsMac] = useState(false);
   useEffect(() => {
     setIsMac(IS_MAC);

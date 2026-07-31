@@ -15,6 +15,7 @@ import {
   Images,
   SunMoon,
   CornerDownLeft,
+  Keyboard,
   type LucideIcon,
 } from 'lucide-react';
 import { NODE_DEFINITIONS } from '@/lib/nodes/registry';
@@ -96,6 +97,10 @@ export function CommandPalette() {
         const next = s.themePref === 'auto' ? 'light' : s.themePref === 'light' ? 'dark' : 'auto';
         s.setThemePref(next);
       }) },
+      // 7.3.33 (31/07) — đường tìm thấy bảng tra phím tắt cho người chỉ biết ⌘K. Phát CustomEvent
+      // 'shortcuts:open' (AppChrome.tsx lắng nghe) — CommandPalette chỉ sống ở HomeScreen (⌘K
+      // hiện KHÔNG hoạt động ở /cad·/present) nên không gọi state cục bộ trực tiếp được.
+      { id: 'shortcuts', label: 'Phím tắt', hint: modKey('/'), group: 'Hành động', icon: Keyboard, keywords: 'shortcut hotkey keyboard bàn phím lệnh gõ tay', run: run(() => window.dispatchEvent(new CustomEvent('shortcuts:open'))) },
       // Demo flows đã tách khỏi app thật — chuyển sang khu /demo (làm sau cùng). Xem docs/CONTENT-RULES.md
     ];
 

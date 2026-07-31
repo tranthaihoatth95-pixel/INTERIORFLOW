@@ -55,6 +55,7 @@ import { UserAvatar } from '@/components/avatar/UserAvatar';
 import { HomeButton } from '@/components/studio/HomeButton';
 import { requestGallery } from '@/lib/resume';
 import SessionWatch from '@/components/studio/SessionWatch';
+import ShortcutsPanel from '@/components/ShortcutsPanel';
 import { activeToPhase, pickStage } from '@/lib/studio/stage-nav';
 import type { AppChromeActive } from '@/components/studio/AppChromeTypes';
 
@@ -73,6 +74,7 @@ export function AppChrome({ active }: Props) {
   const flowRuns = useFlowStore((s) => s.flowRuns);
   const applyTheme = useFlowStore((s) => s.applyTheme);
   const [editing, setEditing] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const tr = useT();
   const router = useRouter();
   const pathname = usePathname();
@@ -93,6 +95,30 @@ export function AppChrome({ active }: Props) {
     router.prefetch(stageHrefFrom(pathname, 'present'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
+
+  // 7.3.33 (31/07) — ⌘/ (và phím phụ ?) mở bảng tra phím tắt, TOÀN CỤC vì AppChrome universal
+  // 4 route (không giống ⌘K của CommandPalette.tsx, chỉ sống ở HomeScreen). '?' cũng chạy khi
+  // KHÔNG giữ Shift (một số bàn phím gửi '?' trực tiếp không cần Shift+/ tuỳ layout) — chặn khi
+  // đang gõ INPUT/TEXTAREA (đổi tên dự án, ô lệnh CAD…), cùng khuôn input-guard các nơi khác.
+  // 'shortcuts:open' — CustomEvent bridge cho mục "Phím tắt" trong CommandPalette.tsx (nơi đó
+  // không có state cục bộ của AppChrome), cùng pattern cad:*-request đã dùng khắp app.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (((e.metaKey || e.ctrlKey) && e.key === '/') || e.key === '?') {
+        e.preventDefault();
+        setShortcutsOpen((v) => !v);
+      }
+    };
+    const onOpenEvent = () => setShortcutsOpen(true);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('shortcuts:open', onOpenEvent);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('shortcuts:open', onOpenEvent);
+    };
+  }, []);
 
   // Điều hướng chặng — logic dùng chung với MobileMenu's PhaseRow, xem lib/studio/stage-nav.ts.
   const onPick = (p: Phase) => pickStage(p, { active, pathname, router, begin });
@@ -227,6 +253,8 @@ export function AppChrome({ active }: Props) {
       <SessionWatch />
 
       <MobileMenu active={active} />
+
+      <ShortcutsPanel open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} active={active} />
     </header>
   );
 }
