@@ -5,11 +5,13 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (31/07 — Sprint "Lộ nền" xong, ĐANG LÀM ĐỢT B lớp lưu trữ — B1)
+## Hiện tại (31/07 — Sprint "Lộ nền" xong · ĐỢT B lớp lưu trữ: B1 xong, CHỜ GẬT B2)
 Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt:
-- 🔵 **ĐANG LÀM: ĐỢT B — lớp lưu trữ** (`docs/QUYET-DINH-HA-TANG-2026-07-31.md`, Hoà đã gật kiến
-  trúc) — 5 pha B1-B5, MỖI PHA BÁO+CHỜ GẬT riêng, tuyệt đối không chạy thẳng B4 (đảo nguồn sự thật
-  IndexedDB→tệp thật, rủi ro mất dữ liệu). Tái dùng khuôn `lib/cad/auto-backup.ts` có sẵn
+- 🟡 **ĐỢT B — `4.1.a` (B1) xong, DỪNG CHỜ GẬT** (`docs/QUYET-DINH-HA-TANG-2026-07-31.md`) — chọn
+  thư mục gốc `~/InteriorFlow` (`lib/root-folder.ts`, chép khuôn `auto-backup.ts`) + UI "Lưu trữ"
+  trong `/settings`. CHƯA đổi nguồn sự thật gì. 5 pha B1-B5, MỖI PHA BÁO+CHỜ GẬT riêng, tuyệt đối
+  không chạy thẳng B4 (đảo nguồn sự thật IndexedDB→tệp thật, rủi ro mất dữ liệu). Tái dùng khuôn
+  `lib/cad/auto-backup.ts` có sẵn
   (`showDirectoryPicker`/`storeHandle`/`loadHandle`/`writeAndPrune`), không viết cơ chế mới.
 - ✅ **Sprint "Lộ nền" — `7.3.33`/`2.1.11`/`7.3.34`** (31/07, `docs/KIEM-NEN-2026-07-31.md`) — bảng
   tra phím tắt toàn app (`lib/shortcuts.ts` 1 nguồn, lệnh gõ tay CAD tách `command-aliases.ts`,
