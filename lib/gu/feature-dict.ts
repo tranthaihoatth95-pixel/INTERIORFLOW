@@ -49,8 +49,24 @@ export const FEATURE_DOC: Record<string, string> = {
   'room:*': '(đặt chỗ — chặng Render) one-hot subject phòng từ ROOM_TERMS (gu.ts).',
 };
 
-/** Key localStorage cho model gợi ý TEMPLATE PRESENT (versioned — đổi schema thì tăng v). */
+/** Key localStorage cho model gợi ý TEMPLATE PRESENT (versioned — đổi schema thì tăng v).
+ * ⚠️ CHUỖI CỐ ĐỊNH, KHÔNG có userId — LỖI đã biết (0a, 31/07): máy chung ở studio thì trọng số
+ * nhiều người TRỘN LẪN vào đúng 1 khoá này. GIỮ NGUYÊN constant này KHÔNG ĐỔI, KHÔNG XOÁ (quyết
+ * định đã chốt: không di trú dữ liệu cũ, để yên) — dùng `presentTemplateModelKey()` bên dưới cho
+ * mọi điểm đọc/ghi model MỚI. */
 export const PRESENT_TEMPLATE_MODEL_KEY = 'interiorflow.gu.perceptron.present-template.v1';
+
+/**
+ * Khoá localStorage THEO NGƯỜI DÙNG cho model gợi ý template (0a, 31/07). Không đụng, không đọc,
+ * không ghi vào `PRESENT_TEMPLATE_MODEL_KEY` ở trên nữa — khoá đó có thể đã bẩn (trộn nhiều
+ * người), minPairs=10 nên bắt đầu lại từ 0 chỉ mất ~10 lượt tương tác.
+ * Không có userId (chưa đăng nhập, hoặc route studio mở thẳng chưa kịp resolve `effectiveUserId`)
+ * → trả về `null`: caller KHÔNG persist (model sống thuần RAM trong phiên đó), CHỦ Ý không tạo
+ * thêm 1 khoá "ẩn danh" dùng chung — làm vậy vẫn tái diễn đúng lỗi mà 0a phải sửa.
+ */
+export function presentTemplateModelKey(userId: string | null | undefined): string | null {
+  return userId ? `${PRESENT_TEMPLATE_MODEL_KEY}.${userId}` : null;
+}
 
 /* ═══════════════════════ TRAITS — đặc điểm TĨNH của 1 template ═══════════════════════ */
 

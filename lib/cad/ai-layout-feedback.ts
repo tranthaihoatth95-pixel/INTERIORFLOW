@@ -16,8 +16,19 @@
 import type { FeatureVector } from '../gu/pairwise-perceptron';
 import type { WallVariant } from './ai-assist';
 
-/** Key localStorage — versioned giống quy ước PRESENT_TEMPLATE_MODEL_KEY. */
+/** Key localStorage — versioned giống quy ước PRESENT_TEMPLATE_MODEL_KEY.
+ * ⚠️ CHUỖI CỐ ĐỊNH, KHÔNG có userId — cùng lỗi 0a (31/07) như PRESENT_TEMPLATE_MODEL_KEY. GIỮ
+ * NGUYÊN, KHÔNG ĐỔI, KHÔNG XOÁ — dùng `cadLayoutOptionModelKey()` bên dưới cho model MỚI. */
 export const CAD_LAYOUT_OPTION_MODEL_KEY = 'interiorflow.gu.perceptron.cad-layout-option.v1';
+
+/**
+ * Khoá localStorage THEO NGƯỜI DÙNG (0a, 31/07) — xem giải thích đầy đủ ở
+ * `lib/gu/feature-dict.ts` → `presentTemplateModelKey()` (cùng quyết định, cùng lý do: không di
+ * trú dữ liệu cũ, không tạo khoá ẩn danh dùng chung, không có userId thì không persist).
+ */
+export function cadLayoutOptionModelKey(userId: string | null | undefined): string | null {
+  return userId ? `${CAD_LAYOUT_OPTION_MODEL_KEY}.${userId}` : null;
+}
 
 export interface LayoutOptionSignal {
   variant: WallVariant;
