@@ -5,33 +5,36 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (31/07 — ĐỢT B lớp lưu trữ: B1+B2 xong, CHỜ GẬT B3)
+## Hiện tại (31/07 — ĐỢT B lớp lưu trữ: B1+B2+B3 xong, CHỜ GẬT B4)
 Chi tiết đầy đủ → `CHANGELOG.md`. Tóm tắt:
-- 🟡 **ĐỢT B — `4.1.a`+`4.1.b` (B1+B2) xong, DỪNG CHỜ GẬT B3** (`docs/QUYET-DINH-HA-TANG-2026-07-31.md`)
+- 🟡 **ĐỢT B — `4.1.a`+`4.1.b`+`4.1.c` (B1+B2+B3) xong, DỪNG CHỜ GẬT B4** (`docs/QUYET-DINH-HA-TANG-2026-07-31.md`)
   — B1: chọn thư mục gốc `~/InteriorFlow` (`lib/root-folder.ts`) + UI "Lưu trữ" trong `/settings`.
-  B2: định dạng `.idfp` cho Present (`lib/present-editor/idfp.ts`, đúng khuôn `idf.ts`) — mang đủ
-  slide/ảnh nhúng/font nhúng-theo-deck/khổ trình bày (đã nằm sẵn trong `EditorDeck`) + brandKitSnapshot
-  (bản CHỤP, không tham chiếu sống). UI Nhập/Xuất trong Present Toolbar, CustomEvent bridge đúng
-  pattern `.idf`. **Bug thật bắt được khi browser-verify** (không phải unit test): nhập `.idfp` giữ
-  nguyên id sheet ⇒ `key={activeId}` không đổi ⇒ canvas không remount dù tab đổi tên đúng — sửa
-  bằng `importGen` ép remount. Verify thật: xuất → xoá sạch IndexedDB → reload (xác nhận rỗng thật)
-  → nhập nội dung ĐÃ ĐỔI → canvas đúng, font đúng, phục hồi nội dung gốc sau test. 41+9 test mới.
-  CHƯA đổi nguồn sự thật gì cả (đúng yêu cầu, chờ B4). 5 pha B1-B5, MỖI PHA BÁO+CHỜ GẬT riêng,
-  tuyệt đối không chạy thẳng B4 (đảo nguồn sự thật IndexedDB→tệp thật, rủi ro mất dữ liệu).
-- ✅ **ĐỢT A merge (`feat/dot-a-ha-tang`) + dọn git** — `7.1.24` khoá bộ học Gu theo user · `7.1.25`
-  Brand Kit xuất/nhập `.json`. Code phụ chỉ đề xuất mã — code chính ghi cây (**Luật #12b mới**).
-  Dọn ref hỏng đang CHẶN `git fetch` + 8 file `.lock*` rác + `git gc --prune=now`.
+  B2: `.idfp` cho Present (`lib/present-editor/idfp.ts`, khuôn `idf.ts`) — mang đủ slide/ảnh
+  nhúng/font-theo-deck + brandKitSnapshot (bản CHỤP). **Bug thật bắt được khi browser-verify**:
+  nhập `.idfp` giữ nguyên id sheet ⇒ canvas không remount dù tab đổi tên đúng — sửa bằng `importGen`
+  ép remount. B3: `brand-kit.json` ra thư mục dự án — mở rộng `root-folder.ts`
+  (`getProjectFolderHandle`/`writeTextFile`/`readTextFile`, hạ tầng chung cho B4) +
+  `brand-kit-disk.ts` (mới, cầu nối mỏng tái dùng nguyên hàm THUẦN `7.1.25`) + nút "Nhập từ thư mục
+  dự án" trong `BrandKitPanel.tsx`. **Giới hạn công cụ (B1+B3 giống nhau)**: `showDirectoryPicker()`
+  cần gesture thật, không tự động hoá được — vòng ghi→đọc thật CHƯA verify tay thật, code mirror
+  đúng khuôn `auto-backup.ts` đã chạy sản xuất; đã browser-verify phần còn lại: panel render đúng,
+  Lưu không crash, nút disk-import ẩn đúng khi chưa có file. tsc+eslint+test+build sạch mọi bước.
+  CHƯA đổi nguồn sự thật (đúng yêu cầu, chờ B4). 5 pha B1-B5, MỖI PHA BÁO+CHỜ GẬT riêng, tuyệt đối
+  không chạy thẳng B4 (đảo nguồn sự thật IndexedDB→tệp thật — B4 phải trình kế hoạch xử lý
+  remount/id trùng TRƯỚC khi code, bài học từ bug B2).
+- ✅ **ĐỢT A merge + dọn git** — `7.1.24` khoá bộ học Gu theo user · `7.1.25` Brand Kit xuất/nhập
+  `.json`. Code phụ chỉ đề xuất mã — code chính ghi cây (**Luật #12b mới**). Dọn ref hỏng CHẶN
+  `git fetch` + 8 file `.lock*` rác + `git gc --prune=now`.
 - ✅ **Sprint "Lộ nền" — `7.3.33`/`2.1.11`/`7.3.34`** (31/07) — bảng tra phím tắt toàn app
-  (`lib/shortcuts.ts` 1 nguồn, layout theo mẫu Hoà gửi) · CAD thêm ⌘A/⌘D/⌘0·⌘=·⌘- (đã có sẵn phím
-  `f`+nút Zoom Extents, chỉ thiếu ⌘0) · dọn chữ CommandPalette. 21+16 test, tsc+eslint+test+build
-  sạch mọi commit. Chi tiết → CHANGELOG.
+  (`lib/shortcuts.ts` 1 nguồn) · CAD thêm ⌘A/⌘D/⌘0·⌘=·⌘- · dọn chữ CommandPalette. 21+16 test.
+  Chi tiết → CHANGELOG.
 - ✅ **2.2.89/7.3.32/2.1.8.n** (GẤP demo LAN) · **7.3.31/2.1.8.k-m/7.1.20/2.2.86/B3(`4.6`)/BOQ ĐỢT
   1+2/7.1.21+Luật #13** — menu chuột phải/tràn headbar/Ctrl+S · hợp nhất AppChrome/PDF nhiều tờ/
   backup thang thời gian/BOQ groundwork+ATLAS cache. Chi tiết → CHANGELOG.
 - 🟡 **2.2.87+2.2.88** — cascade 4 bậc, HẠ TỪ ✅ (Hoà chốt), CHƯA verify ảnh thật.
 - 🟡 **7.1.23** — Bước 1 xong CHỜ HOÀ GẬT (~112 chỗ tay), hoãn tới khi ĐỢT B xong.
-- ⏸️ **Còn treo**: mục "B2/B4" cũ trong CHANGELOG (đặt tên TRƯỚC khi có cây mã số, KHÔNG liên quan
-  ĐỢT B lớp lưu trữ mới — tên trùng tình cờ). Sprint BOQ ĐỢT 3 (`2.1.9.p`) — kế tiếp sau ĐỢT B.
+- ⏸️ Mục "B2/B4" cũ trong CHANGELOG (tên đặt TRƯỚC cây mã số, KHÔNG liên quan ĐỢT B mới — trùng tên
+  tình cờ). Sprint BOQ ĐỢT 3 (`2.1.9.p`) — kế tiếp sau ĐỢT B.
 
 ## Worktree đang mở
 Không có. `feat/sprint-infra`+`feat/dot-a-ha-tang` đã merge + prune + xoá branch/thư mục/lock rác

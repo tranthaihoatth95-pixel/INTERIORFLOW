@@ -26,6 +26,13 @@ import {
   exportBrandKitsJson,
   importBrandKitsJson,
 } from '@/lib/present-editor/brand-kit';
+import { useSheetsBucketId } from '@/lib/scope';
+import { useFlowStore } from '@/lib/store';
+import {
+  writeBrandKitToProjectFolder,
+  importBrandKitFromProjectFolder,
+  projectFolderHasBrandKit,
+} from '@/lib/present-editor/brand-kit-disk';
 
 const FONT_OPTIONS: FontPairing[] = ['Editorial', 'Modern', 'Elegant'];
 const CORNERS: { v: BrandWatermark['corner']; label: string }[] = [
@@ -74,6 +81,10 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const importFileRef = useRef<HTMLInputElement>(null); // 7.1.25 — nhập brand-kits.json (khác fileRef = logo ảnh)
 
+  const projectId = useSheetsBucketId();
+  const projectName = useFlowStore((s) => s.flowName) || 'Không tên';
+  const [hasProjectFile, setHasProjectFile] = useState(false); // B3 (4.1.c) — có brand-kit.json trong thư mục dự án chưa
+
   // Nạp danh sách kit + active khi mở (sau mount).
   useEffect(() => {
     const list = getBrandKits();
@@ -82,6 +93,17 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
     if (active) loadKit(active);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // B3 (4.1.c) — dò thư mục dự án có sẵn brand-kit.json không, quyết hiện nút "Nhập từ thư mục dự án".
+  useEffect(() => {
+    let cancelled = false;
+    projectFolderHasBrandKit(projectId, projectName).then((has) => {
+      if (!cancelled) setHasProjectFile(has);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId, projectName]);
 
   function loadKit(k: BrandKit) {
     setEditingId(k.id);
@@ -126,6 +148,29 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
     setKits(getBrandKits());
     setSaved('Đã lưu Brand Kit ✓');
     setTimeout(() => setSaved(null), 1800);
+    // B3 (4.1.c) — ghi bản sao brand-kit.json vào thư mục dự án, tiện nghi nền, không chặn Lưu
+    // chính nếu thất bại (chưa chọn thư mục gốc/quyền bị từ chối — im lặng bỏ qua).
+    writeBrandKitToProjectFolder(projectId, projectName).then((ok) => {
+      if (ok) setHasProjectFile(true);
+    });
+  }
+
+  function onImportFromProjectFolder() {
+    const overwrite = window.confirm(
+      'Nhập Brand Kit từ brand-kit.json trong thư mục dự án:\n\nOK = GHI ĐÈ toàn bộ Brand Kit hiện có bằng file này\nHuỷ = GỘP THÊM (giữ nguyên kit đang có, thêm kit mới từ file)',
+    );
+    importBrandKitFromProjectFolder(projectId, projectName, overwrite ? 'overwrite' : 'merge').then((result) => {
+      if (!result.ok) {
+        window.alert(result.error);
+        return;
+      }
+      const list = getBrandKits();
+      setKits(list);
+      const active = getActiveBrandKit();
+      if (active) loadKit(active);
+      setSaved(`Đã nhập ${result.addedCount} kit (tổng ${result.totalCount}) ✓`);
+      setTimeout(() => setSaved(null), 2400);
+    });
   }
 
   function onApplyClick() {
@@ -399,6 +444,16 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
             Nhập .json…
           </button>
           <input ref={importFileRef} type="file" accept=".json,application/json" hidden onChange={onImportFile} />
+          {hasProjectFile && (
+            <button
+              type="button"
+              onClick={onImportFromProjectFolder}
+              style={btnGhost}
+              title="Nhập brand-kit.json đã lưu trong thư mục dự án này — sẽ hỏi ghi đè hay gộp"
+            >
+              Nhập từ thư mục dự án
+            </button>
+          )}
         </div>
 
         <p style={{ fontSize: 11, color: 'var(--t4)', marginTop: 10, lineHeight: 1.5 }}>

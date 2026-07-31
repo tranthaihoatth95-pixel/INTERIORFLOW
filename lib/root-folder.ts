@@ -97,3 +97,88 @@ export async function chooseRootFolder(): Promise<boolean> {
     return false; // user bấm Huỷ hộp thoại chọn thư mục — không phải lỗi thật
   }
 }
+
+/* ───────────────────── B3 (31/07, mã 4.1.c) — thư mục 1 dự án + đọc/ghi tệp ─────────────────────
+ * Hạ tầng CHUNG cho mọi thứ sẽ nối vào thư mục dự án (brand-kit.json ở B3, .idf/.idfp/.sao-luu/
+ * ở B4) — viết 1 lần ở đây, không lặp lại cho từng loại tệp.
+ */
+
+interface PermissibleHandle {
+  queryPermission: (opts: { mode: string }) => Promise<string>;
+  requestPermission: (opts: { mode: string }) => Promise<string>;
+}
+
+/** Cùng khuôn `ensurePermission()` (`auto-backup.ts`) — quyền File System Access có thể bị trình
+ * duyệt thu hồi giữa các phiên, phải xin lại (không throw nếu bị từ chối, trả false). */
+async function ensurePermission(handle: FileSystemDirectoryHandle): Promise<boolean> {
+  const h = handle as unknown as PermissibleHandle;
+  if ((await h.queryPermission({ mode: 'readwrite' })) === 'granted') return true;
+  try {
+    return (await h.requestPermission({ mode: 'readwrite' })) === 'granted';
+  } catch {
+    return false; // requestPermission cần gesture — không có thì bỏ qua lượt này
+  }
+}
+
+/** Tên thư mục 1 dự án — khớp sơ đồ Hoà chốt `<mã dự án> — <tên>/`. Lọc ký tự hệ điều hành cấm
+ * trong tên thư mục (`/ \ : * ? " < > |`) khỏi TÊN (mã dự án là id kỹ thuật, luôn an toàn sẵn). */
+export function projectFolderName(projectId: string, projectName: string): string {
+  const safeName = projectName.replace(/[/\\:*?"<>|]/g, '').trim() || 'Không tên';
+  return `${projectId} — ${safeName}`;
+}
+
+/**
+ * Thư mục của 1 dự án dưới thư mục gốc — tự tạo nếu `create:true` và chưa có. `null` nếu chưa
+ * chọn thư mục gốc (B1), quyền bị từ chối, hoặc lỗi File System Access bất kỳ (không throw —
+ * mọi hàm ở đây là tiện nghi, không được làm gãy editor, cùng triết lý auto-backup.ts).
+ */
+export async function getProjectFolderHandle(
+  projectId: string,
+  projectName: string,
+  opts?: { create?: boolean },
+): Promise<FileSystemDirectoryHandle | null> {
+  if (!projectId) return null;
+  const root = await loadRootFolderHandle();
+  if (!root) return null;
+  if (!(await ensurePermission(root))) return null;
+  try {
+    const dir = root as unknown as { getDirectoryHandle: (name: string, o: { create: boolean }) => Promise<FileSystemDirectoryHandle> };
+    return await dir.getDirectoryHandle(projectFolderName(projectId, projectName), { create: opts?.create ?? false });
+  } catch {
+    return null; // create:false + thư mục chưa tồn tại → NotFoundError, coi như "chưa có"
+  }
+}
+
+interface WritableFileHandle {
+  getFileHandle: (name: string, opts: { create: boolean }) => Promise<{
+    createWritable: () => Promise<{ write: (data: Blob | string) => Promise<void>; close: () => Promise<void> }>;
+    getFile: () => Promise<File>;
+  }>;
+}
+
+/** Ghi 1 tệp văn bản vào thư mục đã có handle — `true` nếu ghi thành công. Cùng khuôn `writeFile`
+ * nội bộ của `auto-backup.ts`, xuất công khai vì B3/B4 đều cần. */
+export async function writeTextFile(dir: FileSystemDirectoryHandle, name: string, text: string): Promise<boolean> {
+  try {
+    const d = dir as unknown as WritableFileHandle;
+    const fileHandle = await d.getFileHandle(name, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(text);
+    await writable.close();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Đọc 1 tệp văn bản từ thư mục đã có handle — `null` nếu thiếu tệp/lỗi đọc (không throw). */
+export async function readTextFile(dir: FileSystemDirectoryHandle, name: string): Promise<string | null> {
+  try {
+    const d = dir as unknown as WritableFileHandle;
+    const fileHandle = await d.getFileHandle(name, { create: false });
+    const file = await fileHandle.getFile();
+    return await file.text();
+  } catch {
+    return null;
+  }
+}
