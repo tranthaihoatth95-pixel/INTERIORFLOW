@@ -22,13 +22,15 @@ import type { GuProfile } from '@/lib/gu';
 import type { GridGeometryInput } from '@/lib/present-editor/suggest';
 import { PairwisePerceptron } from '@/lib/gu/pairwise-perceptron';
 import {
-  PRESENT_TEMPLATE_MODEL_KEY,
+  presentTemplateModelKey,
   templateTraits,
   presentTemplateFeatures,
   explainTemplateChoice,
   type TemplateTraits,
   type PresentFeatureContext,
 } from '@/lib/gu/feature-dict';
+import { useFlowStore } from '@/lib/store';
+import { effectiveUserId } from '@/lib/resume';
 import {
   getCustomTemplates,
   saveCustomTemplate,
@@ -155,9 +157,25 @@ export default function LayoutShelf({
   const [model, setModel] = useState<PairwisePerceptron | null>(null);
   const [modelTick, setModelTick] = useState(0); // model mutate tại chỗ — tick để re-rank/re-render
   const [rejected, setRejected] = useState<Record<string, string[]>>({}); // shelf → id bị Bỏ (phiên này)
+  // (0a, 31/07) khoá bộ học Gu THEO NGƯỜI DÙNG — máy chung studio không còn trộn trọng số.
+  const storeUserId = useFlowStore((s) => s.user?.id);
+  const userId = effectiveUserId(storeUserId);
+  const modelKey = useMemo(() => presentTemplateModelKey(userId), [userId]);
+  const [guFreshStart, setGuFreshStart] = useState(false);
   useEffect(() => {
-    setModel(PairwisePerceptron.loadFromLocalStorage(PRESENT_TEMPLATE_MODEL_KEY));
-  }, []);
+    if (!modelKey) {
+      setModel(new PairwisePerceptron()); // không có userId → model thuần RAM, không persist
+      return;
+    }
+    let existed = false;
+    try {
+      existed = window.localStorage.getItem(modelKey) != null;
+    } catch {
+      /* localStorage bị chặn — coi như chưa từng có, không chặn model */
+    }
+    setModel(PairwisePerceptron.loadFromLocalStorage(modelKey));
+    if (!existed) setGuFreshStart(true); // lần đầu thấy khoá này → báo cho người dùng biết
+  }, [modelKey]);
 
   const paletteKeyForTraits = (palette ?? []).join(',');
   // traits tĩnh mỗi template (build thử 1 lần) — cache theo id + palette.
@@ -217,12 +235,12 @@ export default function LayoutShelf({
           const rej = all.find((x) => x.id === id);
           if (rej) model.update(acceptedF, featOf(rej));
         }
-        model.saveToLocalStorage(PRESENT_TEMPLATE_MODEL_KEY);
+        if (modelKey) model.saveToLocalStorage(modelKey); // không có userId → chỉ học trong RAM phiên này
         setRejected((prev) => ({ ...prev, [shelf]: [] }));
         setModelTick((v) => v + 1);
       }
     },
-    [model, rejected, featOf],
+    [model, rejected, featOf, modelKey],
   );
 
   /** Xếp lại 1 hàng kệ: model ĐỦ dữ liệu (≥ minPairs) → re-rank theo điểm học được; chưa đủ →
@@ -317,6 +335,24 @@ export default function LayoutShelf({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 }}>
+      {/* (0a, 31/07) thông báo bộ học Gu bắt đầu lại cho tài khoản này — 1 lần, tự đóng được */}
+      {guFreshStart && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid var(--accent-ring)', borderRadius: 10, background: 'var(--accent-soft)', padding: '7px 11px' }}>
+          <Sparkles size={12} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+          <span style={{ fontSize: 10.5, color: 'var(--t2)', lineHeight: 1.4, flex: 1 }}>
+            Máy học &quot;gu&quot; bắt đầu lại cho tài khoản này — dữ liệu học cũ trên máy này (nếu có) thuộc
+            người dùng khác, không mang sang.
+          </span>
+          <button
+            type="button"
+            onClick={() => setGuFreshStart(false)}
+            title="Đã hiểu"
+            style={{ display: 'flex', border: 'none', background: 'transparent', color: 'var(--t3)', cursor: 'pointer', flexShrink: 0 }}
+          >
+            <X size={12} />
+          </button>
+        </div>
+      )}
       {/* dòng máy-học-được + generate lại */}
       {learnedNotes && (
         <div style={{ border: '1px solid var(--accent-ring)', borderRadius: 10, background: 'var(--accent-soft)', padding: '9px 11px' }}>

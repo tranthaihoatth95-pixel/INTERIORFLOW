@@ -34,7 +34,9 @@ import { checkStandards, type Violation } from '@/lib/cad/standards/checker';
 import { getAllRules } from '@/lib/cad/standards/registry';
 import { rulesForOperator } from '@/lib/cad/operator-profile';
 import { PairwisePerceptron } from '@/lib/gu/pairwise-perceptron';
-import { CAD_LAYOUT_OPTION_MODEL_KEY, layoutOptionFeatures, explainLayoutOption, type LayoutOptionSignal } from '@/lib/cad/ai-layout-feedback';
+import { cadLayoutOptionModelKey, layoutOptionFeatures, explainLayoutOption, type LayoutOptionSignal } from '@/lib/cad/ai-layout-feedback';
+import { useFlowStore } from '@/lib/store';
+import { effectiveUserId } from '@/lib/resume';
 
 interface Props {
   onClose: () => void;
@@ -119,9 +121,25 @@ export default function AiBriefPanel({ onClose }: Props) {
   const [baselineOn, setBaselineOn] = useState(draftCache.baselineOn);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
+  // (0a, 31/07) khoá bộ học Gu THEO NGƯỜI DÙNG — máy chung studio không còn trộn trọng số.
+  const storeUserId = useFlowStore((s) => s.user?.id);
+  const userId = effectiveUserId(storeUserId);
+  const modelKey = useMemo(() => cadLayoutOptionModelKey(userId), [userId]);
+  const [guFreshStart, setGuFreshStart] = useState(false);
   useEffect(() => {
-    setModel(PairwisePerceptron.loadFromLocalStorage(CAD_LAYOUT_OPTION_MODEL_KEY));
-  }, []);
+    if (!modelKey) {
+      setModel(new PairwisePerceptron()); // không có userId → model thuần RAM, không persist
+      return;
+    }
+    let existed = false;
+    try {
+      existed = window.localStorage.getItem(modelKey) != null;
+    } catch {
+      /* localStorage bị chặn — coi như chưa từng có, không chặn model */
+    }
+    setModel(PairwisePerceptron.loadFromLocalStorage(modelKey));
+    if (!existed) setGuFreshStart(true); // lần đầu thấy khoá này → báo cho người dùng biết
+  }, [modelKey]);
 
   // Đồng bộ state → cache + localStorage mỗi khi user gõ (draft sống qua cả reload — B1 24/07).
   useEffect(() => { draftCache.brief = brief; saveDraft(); }, [brief]);
@@ -272,7 +290,7 @@ export default function AiBriefPanel({ onClose }: Props) {
       if (losers.length) {
         const acceptedF = layoutOptionFeatures(signalOf(s));
         for (const rej of losers) model.update(acceptedF, layoutOptionFeatures(signalOf(rej)));
-        model.saveToLocalStorage(CAD_LAYOUT_OPTION_MODEL_KEY);
+        if (modelKey) model.saveToLocalStorage(modelKey); // không có userId → chỉ học trong RAM phiên này
       }
     }
     onClose();
@@ -298,6 +316,25 @@ export default function AiBriefPanel({ onClose }: Props) {
           hiện là RULE-BASED (từ khoá), chưa phải LLM — ghi rõ từng phòng theo mẫu &quot;phòng X AxB có
           [nội thất]&quot; càng chính xác.
         </div>
+
+        {/* (0a, 31/07) thông báo bộ học Gu bắt đầu lại cho tài khoản này — 1 lần, tự đóng được */}
+        {guFreshStart && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid var(--accent-ring)', borderRadius: 10, background: 'var(--accent-soft)', padding: '7px 11px', marginBottom: 8 }}>
+            <Sparkles size={12} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+            <span style={{ fontSize: 10.5, color: 'var(--t2)', lineHeight: 1.4, flex: 1 }}>
+              Máy học &quot;gu&quot; bắt đầu lại cho tài khoản này — dữ liệu học cũ trên máy này (nếu có) thuộc
+              người dùng khác, không mang sang.
+            </span>
+            <button
+              type="button"
+              onClick={() => setGuFreshStart(false)}
+              title="Đã hiểu"
+              style={{ display: 'flex', border: 'none', background: 'transparent', color: 'var(--t3)', cursor: 'pointer', flexShrink: 0 }}
+            >
+              <X size={12} />
+            </button>
+          </div>
+        )}
 
         {/* ═════════ BƯỚC 1 — HIỆN TRẠNG ═════════ */}
         <label style={label}>1 · Hiện trạng (layout có sẵn để bố trí vào)</label>

@@ -4,6 +4,7 @@
  */
 import {
   templateTraits, presentTemplateFeatures, explainTemplateChoice, baseTemplateId, nearestDeltaE,
+  presentTemplateModelKey, PRESENT_TEMPLATE_MODEL_KEY,
   type PresentFeatureContext,
 } from './feature-dict';
 import { PairwisePerceptron } from './pairwise-perceptron';
@@ -95,11 +96,30 @@ function testPerceptronIntegration() {
   ok('state sống qua serialize', m2.rank([cover, darkCover], feat, () => 0)[0].id === 'dark-cover');
 }
 
+/**
+ * [6] presentTemplateModelKey (0a, 31/07) — 2 userId khác nhau PHẢI ra 2 khoá localStorage khác
+ * nhau (⇒ 2 bộ trọng số tách biệt khi PairwisePerceptron load/save theo khoá này). Không có
+ * userId → null (không persist, không rơi về khoá cũ dùng chung).
+ */
+function testModelKeyPerUser() {
+  console.log('\n[6] presentTemplateModelKey — tách khoá theo userId (0a)');
+  const kA = presentTemplateModelKey('user-A');
+  const kB = presentTemplateModelKey('user-B');
+  ok('userId khác nhau → khoá khác nhau', kA !== kB);
+  ok('khoá A mang đúng userId A', kA === `${PRESENT_TEMPLATE_MODEL_KEY}.user-A`);
+  ok('khoá B mang đúng userId B', kB === `${PRESENT_TEMPLATE_MODEL_KEY}.user-B`);
+  ok('cùng userId → cùng khoá (tất định)', presentTemplateModelKey('user-A') === kA);
+  ok('không có userId (null) → null, KHÔNG rơi về khoá cũ dùng chung', presentTemplateModelKey(null) === null);
+  ok('không có userId (undefined) → null', presentTemplateModelKey(undefined) === null);
+  ok('khoá mới KHÔNG trùng khoá cũ cố định (khoá cũ để yên, không đụng)', kA !== PRESENT_TEMPLATE_MODEL_KEY && kB !== PRESENT_TEMPLATE_MODEL_KEY);
+}
+
 testTraits();
 testFeatures();
 testDeltaE();
 testExplain();
 testPerceptronIntegration();
+testModelKeyPerUser();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

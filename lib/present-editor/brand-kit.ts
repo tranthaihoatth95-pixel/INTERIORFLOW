@@ -139,6 +139,128 @@ export function deleteBrandKit(id: string): void {
   write({ kits, activeId });
 }
 
+/* ---------------------- XUẤT / NHẬP .json (0b, 31/07) ----------------------
+ * Brand Kit CHỈ ở localStorage (KEY/ACTIVE_KEY ở trên) — không bản sao Prisma, không trong .idf
+ * (.idf chỉ mang studioName dạng chuỗi, xem lib/cad/idf.ts). Đổi máy = mất Brand Kit của MỌI dự
+ * án. Nút xuất/nhập .json ở BrandKitPanel là PHAO TẠM — đợt B (docs/QUYET-DINH-HA-TANG-2026-07-31.md
+ * §⑥ Đợt B, pha B3) sẽ đưa brand-kit.json vào thư mục dự án thật; hàm ở đây có thể tái dùng
+ * nguyên cho bước đó (buildBrandKitExport/mergeBrandKits đã tách THUẦN, không đụng localStorage).
+ */
+
+/** Gói xuất — versioned để đợt sau đổi schema không vỡ file cũ người dùng đã tải về. */
+export interface BrandKitExport {
+  version: 1;
+  exportedAt: number;
+  kits: BrandKit[];
+  activeId: string | null;
+}
+
+/** Dựng gói xuất (THUẦN — test được bằng sucrase-node, không đụng localStorage). */
+export function buildBrandKitExport(kits: BrandKit[], activeId: string | null): BrandKitExport {
+  return { version: 1, exportedAt: Date.now(), kits, activeId: activeId && kits.some((k) => k.id === activeId) ? activeId : null };
+}
+
+/** Xuất TOÀN BỘ danh sách kit + kit đang chọn thành chuỗi JSON (đọc localStorage). */
+export function exportBrandKitsJson(): string {
+  const { kits, activeId } = read();
+  return JSON.stringify(buildBrandKitExport(kits, activeId), null, 2);
+}
+
+function isValidWatermark(v: unknown): v is BrandWatermark {
+  if (!v || typeof v !== 'object') return false;
+  const w = v as Record<string, unknown>;
+  return (
+    typeof w.corner === 'string' &&
+    ['tl', 'tr', 'bl', 'br'].includes(w.corner) &&
+    typeof w.sizePct === 'number' &&
+    typeof w.opacity === 'number' &&
+    typeof w.marginPct === 'number'
+  );
+}
+
+/** 1 kit hợp lệ tối thiểu (id/name chuỗi, palette mảng, watermark đủ trường). Không ném — lọc bỏ
+ * kit hỏng thay vì làm hỏng cả gói nhập. */
+function isValidKit(v: unknown): v is BrandKit {
+  if (!v || typeof v !== 'object') return false;
+  const k = v as Record<string, unknown>;
+  return (
+    typeof k.id === 'string' &&
+    k.id.length > 0 &&
+    typeof k.name === 'string' &&
+    (k.logo === null || typeof k.logo === 'string') &&
+    Array.isArray(k.palette) &&
+    k.palette.every((c) => typeof c === 'string') &&
+    typeof k.fonts === 'string' &&
+    isValidWatermark(k.watermark) &&
+    typeof k.updatedAt === 'number'
+  );
+}
+
+/** Đọc + kiểm gói .json nhập vào (THUẦN). Sai định dạng/hỏng → null (không ném). Lọc bỏ từng kit
+ * hỏng riêng lẻ thay vì từ chối cả file (1 kit lỗi không kéo sập những kit hợp lệ khác). */
+export function parseBrandKitExport(json: string): BrandKitExport | null {
+  try {
+    const raw = JSON.parse(json) as Partial<BrandKitExport>;
+    if (raw?.version !== 1 || !Array.isArray(raw.kits)) return null;
+    const kits = raw.kits.filter(isValidKit);
+    if (!kits.length) return null;
+    const activeId = typeof raw.activeId === 'string' && kits.some((k) => k.id === raw.activeId) ? raw.activeId : null;
+    return { version: 1, exportedAt: typeof raw.exportedAt === 'number' ? raw.exportedAt : Date.now(), kits, activeId };
+  } catch {
+    return null;
+  }
+}
+
+export interface ImportResult {
+  kits: BrandKit[];
+  activeId: string | null;
+  /** số kit đưa vào MỚI (mode='merge': đếm cả kit trùng id được cấp id mới; mode='overwrite': = tổng số kit trong gói). */
+  addedCount: number;
+}
+
+/**
+ * Gộp gói nhập vào kho hiện có (THUẦN — test được).
+ *   - 'overwrite': THAY TOÀN BỘ bằng gói nhập — đây là lựa chọn NGƯỜI DÙNG ĐÃ CHỌN tường minh ở
+ *     hộp thoại (không phải ghi đè im lặng).
+ *     - 'merge': CỘNG THÊM — kit id chưa từng có thì thêm nguyên id; kit TRÙNG id với kit đang có
+ *     thì cấp ID MỚI (coi là bản sao) — CHỦ Ý không đè lên kit đang có, đúng yêu cầu "KHÔNG ghi đè
+ *     im lặng" ngay trong bản thân chế độ "gộp".
+ */
+export function mergeBrandKits(existing: Stored, incoming: BrandKitExport, mode: 'merge' | 'overwrite'): ImportResult {
+  if (mode === 'overwrite') {
+    return { kits: incoming.kits, activeId: incoming.activeId, addedCount: incoming.kits.length };
+  }
+  const existingIds = new Set(existing.kits.map((k) => k.id));
+  const added: BrandKit[] = [];
+  for (const k of incoming.kits) {
+    if (existingIds.has(k.id)) {
+      const dup: BrandKit = { ...k, id: makeId(), name: k.name ? `${k.name} (nhập)` : 'Không tên (nhập)' };
+      added.push(dup);
+    } else {
+      added.push(k);
+      existingIds.add(k.id);
+    }
+  }
+  const kits = [...existing.kits, ...added];
+  // giữ active hiện tại nếu đang có; chưa có kit nào trước đó → nhận active của gói nhập (ánh xạ id mới nếu bị đổi).
+  const activeId =
+    existing.activeId ??
+    (incoming.activeId ? (added.find((a) => incoming.kits.find((i) => i.id === incoming.activeId)?.name === a.name)?.id ?? incoming.activeId) : null) ??
+    kits[0]?.id ??
+    null;
+  return { kits, activeId, addedCount: added.length };
+}
+
+/** Nhập gói .json — đọc localStorage, gộp, ghi lại. Trả kết quả hoặc lỗi (KHÔNG ném). */
+export function importBrandKitsJson(json: string, mode: 'merge' | 'overwrite'): { ok: true; addedCount: number; totalCount: number } | { ok: false; error: string } {
+  const pkg = parseBrandKitExport(json);
+  if (!pkg) return { ok: false, error: 'File không đúng định dạng Brand Kit (.json xuất từ InteriorFlow).' };
+  const existing = read();
+  const result = mergeBrandKits(existing, pkg, mode);
+  write({ kits: result.kits, activeId: result.activeId });
+  return { ok: true, addedCount: result.addedCount, totalCount: result.kits.length };
+}
+
 /* ---------------------- PHẦN THUẦN (áp kit vào deck) ---------------------- */
 
 /** Dựng watermark deck-level từ Brand Kit (dùng logo của kit). Không logo → undefined. */
