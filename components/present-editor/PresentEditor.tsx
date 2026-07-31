@@ -204,6 +204,21 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     const t = setTimeout(() => setExportMsg(null), exportMsg.ok ? 3000 : 4500);
     return () => clearTimeout(t);
   }, [exportMsg]);
+  // B2 (31/07, mã 4.1.b) — .idfp export/import CHẠY ở PresentSheets.tsx (giữ sheets[]), báo kết
+  // quả về đây qua CustomEvent để DÙNG CHUNG toast exportMsg đã có sẵn (Luật Đồng Bộ #6, không
+  // viết toast mới).
+  useEffect(() => {
+    const onDone = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ ok: boolean; text: string }>).detail;
+      if (detail) setExportMsg(detail);
+    };
+    window.addEventListener('present:idfp-export-done', onDone);
+    window.addEventListener('present:idfp-import-done', onDone);
+    return () => {
+      window.removeEventListener('present:idfp-export-done', onDone);
+      window.removeEventListener('present:idfp-import-done', onDone);
+    };
+  }, []);
   const [libAssets, setLibAssets] = useState<GuAsset[]>([]);
   const [libLoading, setLibLoading] = useState(true);
   const [gu, setGu] = useState<GuProfile | null>(null);

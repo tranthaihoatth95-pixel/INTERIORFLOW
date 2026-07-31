@@ -57,6 +57,7 @@ import type { EditorDeck, EditorSlide } from '@/lib/present-editor/model';
 import { newId } from '@/lib/present-editor/model';
 import { getLastUserId, loadResume, saveResume } from '@/lib/resume';
 import { getActiveBrandKit, seedDeckWithBrandKit } from '@/lib/present-editor/brand-kit';
+import { exportIdfp, importIdfp, lastImportIdfpError, type IdfpSheetData } from '@/lib/present-editor/idfp';
 import {
   createSheetsAutosaver,
   loadSheets,
@@ -115,6 +116,17 @@ export default function PresentSheets({ initialDeck }: Props) {
   const [activeId, setActiveId] = useState('presheet-0');
   // deck "sống" mới nhất của sheet đang mở (ref → không render thừa mỗi lần deck đổi).
   const liveDeck = useRef<EditorDeck>(initialDeck);
+  /**
+   * B2 (31/07, mã 4.1.b) — PHÁT HIỆN khi verify browser thật (không phải suy đoán từ code):
+   * PresentEditor chỉ nạp LẠI `initialDeck` khi `key={activeId}` ĐỔI (remount thật, comment đầu
+   * file dòng 7-9 đã nói rõ "re-key theo activeId"). Nhập `.idfp` giữ NGUYÊN id sheet trong file
+   * (vd 'presheet-0' — đúng id project TỰ xuất ra rồi nhập lại) ⇒ activeId SAU import TRÙNG activeId
+   * TRƯỚC import ⇒ key không đổi ⇒ PresentEditor KHÔNG remount ⇒ canvas giữ nguyên deck CŨ dù
+   * state `sheets`/tab đã đổi đúng (tab tên đổi được vì đó là state khác, không qua remount).
+   * `importGen` tăng mỗi lần nhập — ghép vào key để LUÔN buộc remount sau import, bất kể id trùng
+   * hay không. Không đổi id sheet (giữ nguyên fidelity với file .idfp).
+   */
+  const [importGen, setImportGen] = useState(0);
 
   // ---- Persistence (J-3): refs gương cho autosaver + cờ hydrate ----
   const userIdRef = useRef<string | null>(null);
@@ -219,6 +231,71 @@ export default function PresentSheets({ initialDeck }: Props) {
     if (hydrated) saverRef.current?.touch();
   }, [sheets, activeId, hydrated]);
 
+  /**
+   * B2 (31/07, ĐỢT B lớp lưu trữ, mã `4.1.b`) — `.idfp` gồm TẤT CẢ trang (không chỉ trang đang
+   * mở) — Toolbar/PresentEditor không giữ danh sách sheet (nằm ở đây). Bắc cầu qua CustomEvent,
+   * ĐÚNG pattern `cad:idf-export-request`/`cad:idf-import-request` (CadSheets.tsx) — không viết
+   * cơ chế mới. Kết quả báo lại qua `present:idfp-*-done` để PresentEditor.tsx hiện toast dùng
+   * CHUNG cơ chế `exportMsg` đã có sẵn cho PDF/PPTX/PNG (Luật Đồng Bộ #6, không viết toast mới).
+   */
+  useEffect(() => {
+    const onExportIdfp = () => {
+      const committed = commitActive(sheetsRef.current);
+      const idfpSheets: IdfpSheetData[] = committed.map((s) => ({ id: s.id, name: s.name, deck: s.deck }));
+      // Brand Kit: nhúng bản CHỤP TẠI THỜI ĐIỂM XUẤT, không phải id tham chiếu sống — đọc
+      // getActiveBrandKit() ĐÚNG 1 lần ở đây, không lưu lại để tra cứu sau này.
+      const brandKitSnapshot = getActiveBrandKit();
+      const json = exportIdfp(idfpSheets, brandKitSnapshot);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'project.idfp';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      window.dispatchEvent(new CustomEvent('present:idfp-export-done', { detail: { ok: true, text: `Đã xuất project.idfp — ${idfpSheets.length} trang.` } }));
+    };
+
+    const onImportIdfp = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ json: string; fileName: string }>).detail;
+      if (!detail) return;
+      const parsed = importIdfp(detail.json);
+      if (!parsed) {
+        const reason = lastImportIdfpError();
+        window.dispatchEvent(new CustomEvent('present:idfp-import-done', {
+          detail: { ok: false, text: reason ?? `Không mở được "${detail.fileName}" — file .idfp hỏng hoặc sai định dạng.` },
+        }));
+        return;
+      }
+      const kept = parsed.sheets.slice(0, MAX_SHEETS);
+      const dropped = parsed.sheets.length - kept.length;
+      seq = Math.max(seq, nextSeqFrom(kept.map((s) => s.id), 'presheet'));
+      const nextSheets: Sheet[] = kept.map(({ id, name, deck }) => ({ id, name, deck }));
+      setSheets(nextSheets);
+      const firstId = nextSheets[0].id;
+      setActiveId(firstId);
+      liveDeck.current = nextSheets[0].deck;
+      setImportGen((g) => g + 1); // ép remount PresentEditor dù id trùng — xem docstring importGen
+      saverRef.current?.touch(); // ghi ngay vào IDB, không đợi debounce thao tác kế tiếp
+      window.dispatchEvent(new CustomEvent('present:idfp-import-done', {
+        detail: {
+          ok: true,
+          text: `Đã mở "${detail.fileName}" — ${kept.length} trang${dropped > 0 ? ` (bỏ ${dropped} trang vượt trần ${MAX_SHEETS})` : ''}.`,
+        },
+      }));
+    };
+
+    window.addEventListener('present:idfp-export-request', onExportIdfp);
+    window.addEventListener('present:idfp-import-request', onImportIdfp);
+    return () => {
+      window.removeEventListener('present:idfp-export-request', onExportIdfp);
+      window.removeEventListener('present:idfp-import-request', onImportIdfp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /** Resume trỏ tận sheet: ghi sheetId đang mở vào resume-state (lib/resume). */
   useEffect(() => {
     const userId = userIdRef.current;
@@ -289,10 +366,12 @@ export default function PresentSheets({ initialDeck }: Props) {
         addLabel="Thêm trang trình bày"
       />
       <div style={{ flex: 1, minHeight: 0 }}>
-        {/* Chỉ mount editor SAU hydrate: deck khôi phục phải vào từ initialDeck (key=activeId). */}
+        {/* Chỉ mount editor SAU hydrate: deck khôi phục phải vào từ initialDeck (key=activeId).
+            B2 (4.1.b) — `:importGen` ép remount sau khi nhập .idfp dù id sheet trùng (xem
+            docstring importGen phía trên). */}
         {hydrated && (
           <PresentEditor
-            key={activeId}
+            key={`${activeId}:${importGen}`}
             initialDeck={active.deck}
             onDeckChange={(d) => {
               liveDeck.current = d;

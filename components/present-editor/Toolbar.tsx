@@ -26,6 +26,7 @@ import {
   FileDown,
   FileText,
   FileUp,
+  FileJson,
   Printer,
 } from 'lucide-react';
 import IOMenu from '@/components/ui/IOMenu';
@@ -63,6 +64,7 @@ interface Props {
 
 export default function Toolbar(p: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const idfpFileRef = useRef<HTMLInputElement>(null);
   const [libOpen, setLibOpen] = useState(false);
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -72,6 +74,25 @@ export default function Toolbar(p: Props) {
     reader.onload = () => p.onAddImageUrl(String(reader.result));
     reader.readAsDataURL(f);
     e.target.value = '';
+  }
+
+  /**
+   * B2 (31/07, ĐỢT B lớp lưu trữ, mã `4.1.b`) — `.idfp` gồm TẤT CẢ sheet (không chỉ trang đang
+   * mở) — Toolbar/PresentEditor không giữ danh sách sheet (nằm trong PresentSheets.tsx, phía
+   * trên trong cây component). Bắc cầu qua CustomEvent, ĐÚNG pattern `cad:idf-export-request`/
+   * `cad:idf-import-request` (CadEditor.tsx/CadSheets.tsx) — không viết cơ chế mới.
+   */
+  function onOpenIdfpFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    // .idfp THAY THẾ TOÀN BỘ project (mọi trang) — luôn hỏi trước, cùng UX .idf phía CAD.
+    if (!window.confirm(`Mở "${f.name}" sẽ THAY THẾ TOÀN BỘ project hiện tại (mọi trang đang mở). Tiếp tục?`)) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      window.dispatchEvent(new CustomEvent('present:idfp-import-request', { detail: { json: String(reader.result), fileName: f.name } }));
+    };
+    reader.readAsText(f);
   }
 
   // Thoát Canva mode: quay lại trang trước, không có lịch sử thì về app chính '/'.
@@ -120,8 +141,16 @@ export default function Toolbar(p: Props) {
             disabled: true,
             disabledReason: 'Chưa hỗ trợ mở lại file deck — Present hiện chỉ nhập ảnh',
           },
+          {
+            id: 'idfp',
+            label: 'Mở project (.idfp)',
+            sub: 'Thay thế toàn bộ project — mọi trang/slide/font/ảnh nhúng',
+            icon: <FileJson size={15} />,
+            onSelect: () => idfpFileRef.current?.click(),
+          },
         ]}
       />
+      <input ref={idfpFileRef} type="file" accept=".idfp,application/json" hidden onChange={onOpenIdfpFile} />
       <IOMenu
         kind="export"
         size="md"
@@ -134,6 +163,13 @@ export default function Toolbar(p: Props) {
           { id: 'pdf', label: 'PDF', sub: '1:1 với editor · đúng khổ đã chọn (màn hình/chiếu)', icon: <FileDown size={15} />, onSelect: p.onExportPdf },
           { id: 'pptx', label: 'PowerPoint (.pptx)', sub: 'Chữ còn chỉnh được trong PPT · luôn khổ 16:9', icon: <FileText size={15} />, onSelect: p.onExportPptx },
           { id: 'png', label: 'Ảnh PNG', sub: 'Mỗi slide 1 ảnh, tải lần lượt', icon: <ImageIcon size={15} />, onSelect: p.onExportPng },
+          {
+            id: 'idfp',
+            label: 'Toàn bộ project (.idfp)',
+            sub: 'Mở lại chỉnh được tiếp — mọi trang/slide/font/ảnh nhúng, tự chứa',
+            icon: <FileJson size={15} />,
+            onSelect: () => window.dispatchEvent(new CustomEvent('present:idfp-export-request')),
+          },
           {
             id: 'print300',
             label: 'PDF in 300dpi (A3/A4)',
