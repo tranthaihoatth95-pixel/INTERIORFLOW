@@ -228,6 +228,7 @@ export default function CadSheets() {
       projectId: bucketId, // chốt bucket lúc tạo → nhịp flush cuối luôn về đúng dự án này
       onSaved: (bytes) => {
         console.debug(`[cad-sheets] IDB ghi ${(bytes / 1024).toFixed(1)} KB`);
+        useSaveStatus.getState().setLastSavedAt(Date.now());
         backup.triggerNow();
       },
       onSavingChange: (saving) => useSaveStatus.getState().setStatus(saving ? 'saving' : 'saved'),
@@ -544,10 +545,27 @@ export default function CadSheets() {
     window.addEventListener('cad:ifpack-export-request', onExportIfpack);
     const onOpenBackupBrowser = () => setBackupBrowserOpen(true);
 
+    /**
+     * 2.1.8.n (31/07, GẤP — chặn buổi thử CAD LAN) — Ctrl/⌘+S phát sự kiện này (CadCanvas.tsx),
+     * KHÔNG mở đường lưu mới: app đã tự lưu đúng qua autosave debounce, cái thiếu là người dùng
+     * KHÔNG THẤY. Ép flush() chạy ngay (bỏ qua debounce ~1.2s) rồi báo trạng thái ngay lập tức —
+     * không đợi promise `saveSheets()` bên trong `flush()` xong mới báo, vì mục đích là XÁC NHẬN
+     * THỊ GIÁC "trạng thái hiện tại đã/đang được lưu", không phải theo dõi 1 lần ghi cụ thể (ghi
+     * IndexedDB cục bộ gần như luôn thành công tức thời — cùng tinh thần optimistic-status các
+     * chỗ khác trong file này, vd `st.setStatus()` sau `pasteClipboard()`).
+     */
+    const onForceSave = () => {
+      saverRef.current?.flush();
+      const d = new Date();
+      const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      useCadStore.getState().setStatus(`Đã lưu — ${hhmm}`);
+    };
+
     window.addEventListener('cad:ifpack-import-request', onRestoreIfpack);
     window.addEventListener('cad:backup-restore-request', onRestoreFromBackup);
     window.addEventListener('cad:backup-browse-open', onOpenBackupBrowser);
     window.addEventListener('cad:sheetset-pdf-export-request', onExportSheetSetPdf);
+    window.addEventListener('cad:force-save-request', onForceSave);
     return () => {
       window.removeEventListener('cad:idf-export-request', onExportIdf);
       window.removeEventListener('cad:idf-import-request', onImportIdf);
@@ -556,6 +574,7 @@ export default function CadSheets() {
       window.removeEventListener('cad:ifpack-import-request', onRestoreIfpack);
       window.removeEventListener('cad:backup-restore-request', onRestoreFromBackup);
       window.removeEventListener('cad:backup-browse-open', onOpenBackupBrowser);
+      window.removeEventListener('cad:force-save-request', onForceSave);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

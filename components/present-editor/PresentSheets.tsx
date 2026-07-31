@@ -190,7 +190,10 @@ export default function PresentSheets({ initialDeck }: Props) {
     });
     const saver = createSheetsAutosaver(userId, ROUTE, getRecord, {
       projectId: bucketId, // chốt bucket lúc tạo → nhịp flush cuối luôn về đúng dự án này
-      onSaved: (bytes) => console.debug(`[present-sheets] IDB ghi ${(bytes / 1024).toFixed(1)} KB`),
+      onSaved: (bytes) => {
+        console.debug(`[present-sheets] IDB ghi ${(bytes / 1024).toFixed(1)} KB`);
+        useSaveStatus.getState().setLastSavedAt(Date.now()); // 2.1.8.n — đồng bộ với CAD, chung 1 store
+      },
       onSavingChange: (saving) => useSaveStatus.getState().setStatus(saving ? 'saving' : 'saved'),
     });
     saverRef.current = saver;

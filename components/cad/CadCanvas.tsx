@@ -1970,6 +1970,16 @@ export default function CadCanvas() {
         st.setStatus(`Đã dán ${st.clipboard.length} đối tượng (lệch +20mm).`);
         return;
       }
+      // 2.1.8.n (31/07) — Ctrl/⌘+S ép autosave chạy ngay (KHÔNG mở đường lưu mới, app không có
+      // nút "Lưu tay" — auto-backup.ts). preventDefault() BẮT BUỘC, thiếu là trình duyệt tự mở
+      // hộp "Lưu trang web". Ctrl/⌘+Shift+S = xuất .idf, TÁI DÙNG event 'cad:idf-export-request'
+      // đã có (CadEditor.tsx doExportIdf) — không viết luồng xuất mới.
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        if (e.shiftKey) window.dispatchEvent(new CustomEvent('cad:idf-export-request'));
+        else window.dispatchEvent(new CustomEvent('cad:force-save-request'));
+        return;
+      }
       if (e.key === ' ') {
         // Việc 3: đánh dấu thời điểm nhấn để phân biệt TAP nhanh (lặp lệnh) với GIỮ để pan.
         if (!e.repeat) {

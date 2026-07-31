@@ -44,12 +44,20 @@ interface Props {
 
 const HOVER_DELAY_MS = 150;
 
+/** 2.1.8.n — "HH:MM" giờ lưu gần nhất, không giây (không cần chính xác tới giây cho mục đích
+ * xác nhận thị giác "đã lưu chưa"). */
+function formatHHMM(ts: number): string {
+  const d = new Date(ts);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 export default function StatusBar({ stage, hidden }: Props) {
   const flowName = useFlowStore((s) => s.flowName);
   const flowRuns = useFlowStore((s) => s.flowRuns);
   const cursorWorld = useCadLiveStatus((s) => s.cursorWorld);
   const lastViolationCount = useCadLiveStatus((s) => s.lastViolationCount);
   const saveState = useSaveStatus((s) => s.status);
+  const lastSavedAt = useSaveStatus((s) => s.lastSavedAt);
 
   const panelOpen = useVitalsUi((s) => s.panelOpen && s.anchor === 'statusbar');
   const initialInput = useVitalsUi((s) => s.initialInput);
@@ -222,9 +230,14 @@ export default function StatusBar({ stage, hidden }: Props) {
           </span>
         )}
         {showSave && (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+          // 2.1.8.n (31/07) — thêm giờ lưu gần nhất ("Đã lưu lúc HH:MM"), kiến trúc sư quen
+          // AutoCAD không tin autosave nếu không đọc được bằng mắt. Cỡ chữ/line-height ghi đè
+          // riêng (7.1.23 ⑤c, ≥12px/≥1.5) — CHỈ cho dòng này, KHÔNG đổi `fontSize:11.5` chung
+          // của cả StatusBar (thuộc đợt sửa token 7.1.23 riêng, đang chờ Hoà gật, ngoài phạm vi
+          // việc gấp này).
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', fontSize: 12, lineHeight: 1.5 }}>
             <Save size={12} />
-            {saveState === 'saving' ? 'Đang lưu…' : 'Đã lưu'}
+            {saveState === 'saving' ? 'Đang lưu…' : lastSavedAt ? `Đã lưu lúc ${formatHHMM(lastSavedAt)}` : 'Đã lưu'}
           </span>
         )}
         {showStandards && (

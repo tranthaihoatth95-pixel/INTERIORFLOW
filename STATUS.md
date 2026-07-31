@@ -5,8 +5,12 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (30/07 khuya — sprint BOQ ĐỢT 1+2 xong, merge sprint-infra, B3 xong, 2.2.87/88 🟡)
+## Hiện tại (31/07 — 2.1.8.n Ctrl+S/xuất/chỉ báo lưu xong (GẤP LAN), sprint BOQ+B3+merge 30/07)
 Chi tiết đầy đủ → `CHANGELOG.md` (mỗi dòng dưới đây có 1 mục tương ứng ở đó). Tóm tắt:
+- ✅ **2.1.8.n (31/07, GẤP chặn thử CAD LAN)** — Ctrl/⌘+S ép autosave chạy ngay + toast "Đã lưu —
+  HH:MM" (không đường lưu mới) · Ctrl/⌘+Shift+S xuất `.idf` (tái dùng luồng có sẵn) · StatusBar
+  thêm giờ vào chỉ báo "Đã lưu lúc HH:MM" (khung đã có sẵn từ VIỆC A 28/07, chỉ thiếu giờ). Verify
+  browser thật: cả 3 việc chạy đúng, input-guard chặn khi đang gõ lệnh. tsc+eslint+test sạch.
 - ✅ **7.3.31/2.1.8.k-m/7.1.20/2.2.86/2.2.70(a)(b)/7.1.19-merge** — hợp nhất AppChrome hết overlap ·
   PDF nhiều tờ+khổ/hướng giấy · gộp hệ ngưỡng breakpoint (Luật #10/#11) · hàng đợi "Việc" · 2 fix
   nhỏ · Lark Wiki merge (**VẪN 🟡**, chờ 3 khoá Lark verify call thật). Xem CHANGELOG nếu cần chi tiết.
@@ -23,14 +27,14 @@ Chi tiết đầy đủ → `CHANGELOG.md` (mỗi dòng dưới đây có 1 mụ
 - ✅ **Sprint BOQ ĐỢT 1 — `2.1.9.q`** — `polygonPerimeter()`+`openingsAreaInPolygon()` vào
   `hatch.ts`. Phát hiện khi khám: `BlockDef.h` không phải chiều cao cửa — sửa dùng
   `w`×`OPENING_STANDARD_HEIGHT_MM`. 45/45 test.
-- ✅ **Sprint BOQ ĐỢT 2 — `2.1.9.r` (ATLAS Material cache)** — **PHÁT HIỆN**: chỉ đạo gốc "bảng
-  AtlasMaterial riêng" ĐỤNG `ProductSpec{kind:'material'}` có sẵn (Q-L2 cũ "1 bảng duy nhất") —
-  hỏi Hoà, **XÁC NHẬN mở rộng ProductSpec** (Luật Đồng Bộ #6). Thêm 6 field (`priceVnd` Decimal +
-  5 field khác) — `priceNote` cũ GIỮ song song, `priceVnd=null` ⇒ BOQ hiện "chưa có giá", KHÔNG tự
-  parse. `MaterialDef.atlasRecordId?` neo sang `ProductSpec.larkRecordId`. `db push` an toàn (⚠️
-  `migrate dev` phát hiện drift, đòi RESET dev.db — HUỶ ngay, dữ liệu nguyên vẹn). Route
-  `/api/atlas-materials/sync` + mapping **PLACEHOLDER** (chưa verify tên cột thật). 22/22 test.
-  `docs/SPEC-THU-VIEN-D-2026-07-30.md` §2 sửa theo — không cần model union mới.
+- ✅ **Sprint BOQ ĐỢT 2 — `2.1.9.r` (ATLAS Material cache)** — phát hiện chỉ đạo gốc "bảng
+  AtlasMaterial riêng" đụng `ProductSpec{kind:'material'}` có sẵn, Hoà xác nhận mở rộng
+  ProductSpec thay vì bảng mới (Luật Đồng Bộ #6). 6 field mới (`priceVnd` Decimal...), `priceNote`
+  cũ giữ song song. `MaterialDef.atlasRecordId?` neo sang `ProductSpec.larkRecordId`. Route
+  `/api/atlas-materials/sync` — mapping PLACEHOLDER, chưa verify tên cột thật. 22/22 test.
+- 🟡 **7.1.23 (Luật chữ Việt) — Bước 1 xong, CHỜ HOÀ GẬT** — bảng phân loại đầy đủ ở
+  `docs/AUDIT-7.1.23-BANG-PHAN-LOAI-2026-07-31.md` (~112 chỗ sửa tay ①②③⑤ab + ⑤c hệ thống ~100+
+  chỗ, đã chốt hướng đổi token chung sàn 13px). CHƯA sửa dòng nào — đợi gật trước Bước 2.
 - ⏸️ **Còn treo**: B2/B4 chưa làm. Sprint BOQ ĐỢT 3 (`2.1.9.p`, engine thật) — kế tiếp.
 
 ## Worktree đang mở
