@@ -23,6 +23,8 @@ import {
   saveBrandKit,
   deleteBrandKit,
   setActiveBrandKit,
+  exportBrandKitsJson,
+  importBrandKitsJson,
 } from '@/lib/present-editor/brand-kit';
 
 const FONT_OPTIONS: FontPairing[] = ['Editorial', 'Modern', 'Elegant'];
@@ -70,6 +72,7 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
   const [kits, setKits] = useState<BrandKit[]>([]);
   const [saved, setSaved] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const importFileRef = useRef<HTMLInputElement>(null); // 7.1.25 — nhập brand-kits.json (khác fileRef = logo ảnh)
 
   // Nạp danh sách kit + active khi mở (sau mount).
   useEffect(() => {
@@ -145,6 +148,52 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
     if (id === editingId) {
       setEditingId('');
     }
+  }
+
+  /*
+   * 7.1.25 — Xuất/nhập Brand Kit .json (0b, docs/QUYET-DINH-HA-TANG-2026-07-31.md §0b).
+   * Brand Kit CHỈ ở localStorage — đổi máy là mất. Đây là PHAO TẠM; đợt B sẽ đưa
+   * brand-kit.json vào thư mục dự án thật (lib/present-editor/brand-kit.ts đã tách hàm
+   * THUẦN để tái dùng nguyên cho bước đó).
+   */
+  function onExportClick() {
+    const json = exportBrandKitsJson();
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'brand-kits.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    setSaved(`Đã xuất ${kits.length} kit ✓`);
+    setTimeout(() => setSaved(null), 1800);
+  }
+
+  function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      // hỏi ghi đè hay gộp — KHÔNG ghi đè im lặng (yêu cầu tường minh ở §0b).
+      const overwrite = window.confirm(
+        'Nhập Brand Kit từ file .json:\n\nOK = GHI ĐÈ toàn bộ Brand Kit hiện có bằng file này\nHuỷ = GỘP THÊM (giữ nguyên kit đang có, thêm kit mới từ file)',
+      );
+      const result = importBrandKitsJson(String(reader.result), overwrite ? 'overwrite' : 'merge');
+      if (!result.ok) {
+        window.alert(result.error);
+        return;
+      }
+      const list = getBrandKits();
+      setKits(list);
+      const active = getActiveBrandKit();
+      if (active) loadKit(active);
+      setSaved(`Đã nhập ${result.addedCount} kit (tổng ${result.totalCount}) ✓`);
+      setTimeout(() => setSaved(null), 2400);
+    };
+    reader.readAsText(f);
   }
 
   return (
@@ -340,9 +389,23 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
           <div style={{ flex: 1 }} />
           {saved && <span style={{ fontSize: 12, color: 'var(--accent)' }}>{saved}</span>}
         </div>
+
+        {/* Xuất/nhập .json — phao tạm chuyển máy (7.1.25) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <button type="button" onClick={onExportClick} disabled={kits.length === 0} style={{ ...btnGhost, opacity: kits.length === 0 ? 0.5 : 1 }} title="Tải về brand-kits.json — mọi kit đã lưu + kit đang chọn">
+            Xuất .json
+          </button>
+          <button type="button" onClick={() => importFileRef.current?.click()} style={btnGhost} title="Nhập từ brand-kits.json — sẽ hỏi ghi đè hay gộp">
+            Nhập .json…
+          </button>
+          <input ref={importFileRef} type="file" accept=".json,application/json" hidden onChange={onImportFile} />
+        </div>
+
         <p style={{ fontSize: 11, color: 'var(--t4)', marginTop: 10, lineHeight: 1.5 }}>
-          "Áp lại theme" nhuộm lại nền + màu chữ + hình khối của MỌI slide theo bộ màu này (giữ nội
-          dung/bố cục). Deck mới sẽ tự nạp Brand Kit đang chọn.
+          &quot;Áp lại theme&quot; nhuộm lại nền + màu chữ + hình khối của MỌI slide theo bộ màu này
+          (giữ nội dung/bố cục). Deck mới sẽ tự nạp Brand Kit đang chọn. Brand Kit hiện chỉ lưu
+          trên máy này (localStorage) — dùng Xuất/Nhập .json để mang sang máy khác; đây là giải
+          pháp tạm, đợt sau sẽ lưu Brand Kit theo từng dự án.
         </p>
       </div>
     </div>

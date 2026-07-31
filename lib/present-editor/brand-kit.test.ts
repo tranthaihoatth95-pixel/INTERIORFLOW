@@ -10,6 +10,9 @@ import {
   seedDeckWithBrandKit,
   watermarkFromKit,
   draftKitFromDeck,
+  buildBrandKitExport,
+  parseBrandKitExport,
+  mergeBrandKits,
   type BrandKit,
 } from './brand-kit';
 import { makeText, type EditorDeck } from './model';
@@ -140,11 +143,65 @@ function testDraft() {
   ok('id rỗng (kit mới)', dk.id === '');
 }
 
+const KIT2: BrandKit = { ...KIT, id: 'k2', name: 'Studio Khác', palette: ['#000000', '#111111', '#222222', '#333333', '#444444', '#555555'] };
+
+/**
+ * [5] Xuất/nhập .json (0b, 31/07, mã 7.1.25) — buildBrandKitExport/parseBrandKitExport/
+ * mergeBrandKits đều THUẦN (không đụng localStorage) nên test trực tiếp được ở đây.
+ */
+function testExportImport() {
+  console.log('\n[5] Xuất/nhập Brand Kit .json — buildBrandKitExport / parseBrandKitExport / mergeBrandKits');
+
+  const pkg = buildBrandKitExport([KIT, KIT2], KIT.id);
+  ok('gói xuất mang đủ 2 kit', pkg.kits.length === 2);
+  ok('activeId hợp lệ được giữ', pkg.activeId === KIT.id);
+  ok('activeId KHÔNG thuộc danh sách kit → bỏ về null', buildBrandKitExport([KIT], 'khong-ton-tai').activeId === null);
+  ok('version = 1', pkg.version === 1);
+
+  const roundTrip = parseBrandKitExport(JSON.stringify(pkg));
+  ok('round-trip JSON giữ đủ kit', roundTrip !== null && roundTrip.kits.length === 2);
+  ok('round-trip giữ activeId', roundTrip?.activeId === KIT.id);
+
+  ok('JSON hỏng (không parse được) → null, không ném', parseBrandKitExport('{ khong phai json') === null);
+  ok('version sai → null', parseBrandKitExport(JSON.stringify({ version: 2, kits: [KIT] })) === null);
+  ok('thiếu mảng kits → null', parseBrandKitExport(JSON.stringify({ version: 1 })) === null);
+  ok('mọi kit trong gói đều hỏng → null (không có kit hợp lệ nào)', parseBrandKitExport(JSON.stringify({ version: 1, kits: [{ id: 'x' }] })) === null);
+
+  const withOneBad = parseBrandKitExport(JSON.stringify({ version: 1, kits: [KIT, { id: 'x' }] }));
+  ok('1 kit hỏng bị lọc bỏ, kit hợp lệ còn lại vẫn giữ (không sập cả gói)', withOneBad !== null && withOneBad.kits.length === 1 && withOneBad.kits[0].id === KIT.id);
+
+  // overwrite — thay TOÀN BỘ bằng gói nhập (người dùng đã CHỌN tường minh ở hộp thoại, không phải im lặng).
+  const existing = { kits: [KIT2], activeId: KIT2.id };
+  const incoming = buildBrandKitExport([KIT], KIT.id);
+  const ow = mergeBrandKits(existing, incoming, 'overwrite');
+  ok('overwrite: chỉ còn kit của gói nhập', ow.kits.length === 1 && ow.kits[0].id === KIT.id);
+  ok('overwrite: addedCount = số kit trong gói', ow.addedCount === 1);
+
+  // merge — cộng thêm, id chưa có thì giữ nguyên id.
+  const mergeNew = mergeBrandKits({ kits: [KIT2], activeId: KIT2.id }, buildBrandKitExport([KIT], KIT.id), 'merge');
+  ok('merge (id mới): giữ kit cũ + thêm kit mới → 2 kit', mergeNew.kits.length === 2);
+  ok('merge (id mới): giữ nguyên id kit nhập vào (không trùng)', mergeNew.kits.some((k) => k.id === KIT.id));
+  ok('merge: giữ active hiện có (không bị gói nhập ghi đè)', mergeNew.activeId === KIT2.id);
+
+  // merge — id TRÙNG với kit đang có → KHÔNG ghi đè, cấp id mới (bản sao).
+  const dupPkg = buildBrandKitExport([{ ...KIT2, name: 'Studio Khác (từ máy kia)' }], KIT2.id);
+  const mergeDup = mergeBrandKits({ kits: [KIT2], activeId: KIT2.id }, dupPkg, 'merge');
+  ok('merge (id trùng): KHÔNG ghi đè kit đang có — vẫn 2 kit (kit cũ + bản sao)', mergeDup.kits.length === 2);
+  ok('merge (id trùng): kit cũ giữ nguyên, không bị đổi tên', mergeDup.kits.some((k) => k.id === KIT2.id && k.name === KIT2.name));
+  ok('merge (id trùng): kit nhập vào được cấp ID MỚI (không trùng id cũ)', mergeDup.kits.filter((k) => k.id === KIT2.id).length === 1);
+  ok('merge (id trùng): addedCount vẫn đếm là 1 kit mới thêm', mergeDup.addedCount === 1);
+
+  // kho rỗng ban đầu → merge nhận active của gói nhập.
+  const mergeEmpty = mergeBrandKits({ kits: [], activeId: null }, buildBrandKitExport([KIT], KIT.id), 'merge');
+  ok('merge vào kho RỖNG: nhận active từ gói nhập', mergeEmpty.activeId === KIT.id);
+}
+
 testWatermarkFromKit();
 testApply();
 testApplyAllSlides();
 testSeed();
 testDraft();
+testExportImport();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);
