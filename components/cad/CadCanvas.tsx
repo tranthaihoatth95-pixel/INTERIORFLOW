@@ -1970,6 +1970,52 @@ export default function CadCanvas() {
         st.setStatus(`Đã dán ${st.clipboard.length} đối tượng (lệch +20mm).`);
         return;
       }
+      // 2.1.11.a (31/07, Sprint "Lộ nền" VIỆC 2) — ⌘A chọn tất cả entity trên TỜ HIỆN TẠI
+      // (st.doc = đúng tờ đang mở, mỗi tờ là 1 Doc riêng — không phải toàn tài liệu nhiều tờ).
+      // Tái dùng st.select() sẵn có: tự loại entity thuộc layer khoá/ẩn (đúng thói quen AutoCAD),
+      // không viết luồng chọn mới.
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        st.select(st.doc.entities.map((en) => en.id), false);
+        ix.current.redraw = true;
+        // st.selection ở đây là snapshot CŨ (từ đầu handler, trước select()) — lấy lại state
+        // mới để đếm đúng số ĐÃ chọn (select() tự loại entity thuộc layer khoá/ẩn).
+        st.setStatus(`Đã chọn ${useCadStore.getState().selection.length} đối tượng trên tờ hiện tại.`);
+        return;
+      }
+      // 2.1.11.b (31/07, Sprint "Lộ nền" VIỆC 3) — ⌘D nhân bản. CHỈ nối phím vào hàm đã có sẵn
+      // cadMenuDuplicate() (copySelection()+pasteClipboard()+setStatus, dùng cho menu chuột phải
+      // "Nhân bản") — không viết luồng nhân bản mới. Hàm tự setCadMenu(null) ở cuối, vô hại khi
+      // menu đang đóng sẵn (idempotent, cùng nguyên tắc đã áp dụng ở 2.2.89).
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        cadMenuDuplicate();
+        return;
+      }
+      // 2.1.11.c (31/07, Sprint "Lộ nền" VIỆC 4) — ⌘0/⌘=/⌘- discoverable cho zoom, khuôn giống
+      // PhotoEditor.tsx (⌘0 fit) + PresentEditor.tsx (⌘=/⌘- phóng/thu). Vừa khung KHÔNG PHẢI
+      // tính năng mới — CAD đã có SẴN phím `f` (zoomExtents(), xem nhánh bên dưới) + nút toolbar
+      // "Zoom Extents" (CadToolbar.tsx, event cad:zoom-extents), chỉ thiếu lối vào kiểu ⌘-combo
+      // quen thuộc với người dùng ứng dụng khác — KHÔNG xoá `f`, thêm ⌘0 chạy song song.
+      if ((e.metaKey || e.ctrlKey) && e.key === '0') {
+        e.preventDefault();
+        zoomExtents();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === '=' || e.key === '+')) {
+        e.preventDefault();
+        const { W, H } = screenSize();
+        st.setViewport(zoomAt(st.viewport, { x: W / 2, y: H / 2 }, 1.2));
+        ix.current.redraw = true;
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === '-') {
+        e.preventDefault();
+        const { W, H } = screenSize();
+        st.setViewport(zoomAt(st.viewport, { x: W / 2, y: H / 2 }, 1 / 1.2));
+        ix.current.redraw = true;
+        return;
+      }
       // 2.1.8.n (31/07) — Ctrl/⌘+S ép autosave chạy ngay (KHÔNG mở đường lưu mới, app không có
       // nút "Lưu tay" — auto-backup.ts). preventDefault() BẮT BUỘC, thiếu là trình duyệt tự mở
       // hộp "Lưu trang web". Ctrl/⌘+Shift+S = xuất .idf, TÁI DÙNG event 'cad:idf-export-request'
