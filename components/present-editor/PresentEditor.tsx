@@ -1176,6 +1176,14 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         if (ids.length) ed.selectMany(ids);
         return;
       }
+      // B4 (31/07, mã 4.1.d) — Ctrl/⌘+S ép ghi ngay (IndexedDB + đĩa dự án), CÙNG mẫu
+      // `cad:force-save-request` (2.1.8.n, CadCanvas.tsx) — không mở đường lưu mới, app không có
+      // nút "Lưu tay" riêng. preventDefault() BẮT BUỘC, thiếu là trình duyệt tự mở hộp "Lưu trang".
+      if (mod && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('present:force-save-request'));
+        return;
+      }
       if (e.key === 'Tab') {
         e.preventDefault();
         onSelectNext(e.shiftKey ? -1 : 1);

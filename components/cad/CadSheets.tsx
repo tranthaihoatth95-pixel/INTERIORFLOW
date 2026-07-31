@@ -33,7 +33,11 @@ import {
   type SheetsAutosaver,
   type SheetsRecord,
 } from '@/lib/sheets-persist';
-import { exportIdf, importIdf, lastImportIdfError } from '@/lib/cad/idf';
+import { exportIdf, importIdf, lastImportIdfError, type IdfSheetData } from '@/lib/cad/idf';
+import { rootFolderChosen, getProjectFolderHandle, writeTextFile, readTextFile } from '@/lib/root-folder';
+import { resolveSourceOfTruth, createDiskWriter, watchProjectPresence, type DiskWriter } from '@/lib/disk-sync';
+import { useProjectPresence } from '@/lib/project-presence-ui';
+import { ensureProjectScope } from '@/lib/project-scope';
 import { exportSheetSetPdf } from '@/lib/cad/pdf';
 import { buildIfpack, restoreIfpack } from '@/lib/cad/ifpack';
 import { startAutoBackup, type AutoBackupSession } from '@/lib/cad/auto-backup';
@@ -118,6 +122,121 @@ function applySnapshot(t: CadSnapshot) {
   });
 }
 
+/**
+ * B4 (31/07, mã `4.1.d`) — tệp NGUỒN SỰ THẬT trên đĩa cho chặng CAD, trong thư mục dự án
+ * (`docs/QUYET-DINH-HA-TANG-2026-07-31.md` sơ đồ đã chốt). Cùng định dạng `.idf` xuất/nhập thủ
+ * công đã có (`lib/cad/idf.ts`) — KHÔNG đổi format, chỉ đổi CHỖ đọc/ghi tự động.
+ */
+const IDF_DISK_FILE = 'ban-ve.idf';
+
+/**
+ * Ghi `sheets` ra `ban-ve.idf` trong thư mục dự án — GHI RỒI ĐỌC LẠI XÁC NHẬN đúng kỷ luật
+ * `testStorageConnection()` (vá sự cố 31/07 ở B3), không coi ghi xong là ghi ĐÚNG. `create:false`
+ * dùng khi CHỈ kiểm tra thư mục dự án có sẵn hay chưa (không tự tạo) — xem gọi ở dưới.
+ */
+async function writeIdfToDisk(
+  bucketId: string,
+  projectName: string,
+  sheets: IdfSheetData[],
+  opts?: { create?: boolean },
+): Promise<boolean> {
+  const dirRes = await getProjectFolderHandle(bucketId, projectName, { create: opts?.create ?? true });
+  if (!dirRes.ok) return false;
+  const json = exportIdf(sheets, { projectName });
+  if (!(await writeTextFile(dirRes.dir, IDF_DISK_FILE, json))) return false;
+  const readBack = await readTextFile(dirRes.dir, IDF_DISK_FILE);
+  if (readBack === null) return false;
+  const verify = importIdf(readBack);
+  return !!verify && verify.sheets.length === sheets.length;
+}
+
+/**
+ * B4 (4.1.d) — quyết định NGUỒN NÀO thắng lúc mount + tự di trú/tự đồng bộ. Trả về sheets đã
+ * parse nếu ĐĨA thắng (caller tự áp qua `applyIdfSheets`); `null` nếu cache thắng (không đổi gì,
+ * cache đã đang hiển thị đúng rồi). Cập nhật `useSaveStatus().diskStatus` trong MỌI nhánh — không
+ * nhánh nào được im lặng (bài học sự cố 31/07).
+ *
+ * `cacheSheets`/`cacheTs` rỗng/0 hợp lệ khi CHƯA từng có bản ghi IndexedDB nào (máy mới/trình
+ * duyệt mới) — B5 "copy thư mục dự án sang máy khác" phụ thuộc ĐÚNG nhánh này: cache rỗng ⇒
+ * `cacheTs=0` (cũ nhất có thể) ⇒ đĩa LUÔN thắng nếu đọc được, không bị coi nhầm là "cache mới hơn".
+ */
+async function resolveAndSyncCadDisk(
+  bucketId: string,
+  projectName: string,
+  cacheSheets: IdfSheetData[],
+  cacheTs: number,
+): Promise<IdfSheetData[] | null> {
+  const { setDiskStatus } = useSaveStatus.getState();
+  if (!bucketId || !(await rootFolderChosen())) {
+    setDiskStatus('off');
+    return null;
+  }
+
+  const dirRes = await getProjectFolderHandle(bucketId, projectName, { create: false });
+  if (!dirRes.ok) {
+    if (dirRes.reason === 'no-root') {
+      setDiskStatus('off');
+      return null;
+    }
+    if (dirRes.reason === 'no-permission') {
+      setDiskStatus('error', 'Mất quyền truy cập thư mục dự án — vào Cài đặt → Lưu trữ, bấm "Kiểm tra kết nối thư mục".');
+      return null;
+    }
+    // Thư mục dự án CHƯA có (NotFoundError, create:false) — CHƯA DI TRÚ, ghi lần đầu nếu có gì để ghi.
+    if (cacheSheets.length > 0) {
+      setDiskStatus((await writeIdfToDisk(bucketId, projectName, cacheSheets, { create: true })) ? 'synced' : 'off');
+    }
+    return null;
+  }
+
+  const json = await readTextFile(dirRes.dir, IDF_DISK_FILE);
+  if (json === null) {
+    // Thư mục dự án CÓ nhưng chưa có ban-ve.idf — CHƯA DI TRÚ, ghi lần đầu nếu có gì để ghi.
+    if (cacheSheets.length > 0) {
+      setDiskStatus((await writeIdfToDisk(bucketId, projectName, cacheSheets, { create: true })) ? 'synced' : 'off');
+    }
+    return null;
+  }
+  const parsed = importIdf(json);
+  if (!parsed) {
+    setDiskStatus('error', 'Tệp ban-ve.idf trên đĩa hỏng hoặc sai định dạng — đang dùng bản trong máy, KHÔNG tự ghi đè.');
+    return null;
+  }
+
+  const resolution = resolveSourceOfTruth({
+    diskModifiedAtMs: Date.parse(parsed.meta.modifiedAt) || null,
+    cacheTs,
+    diskSheetCount: parsed.sheets.length,
+    cacheSheetCount: cacheSheets.length,
+  });
+
+  if (resolution.kind === 'disk') {
+    setDiskStatus('synced');
+    return parsed.sheets;
+  }
+  if (resolution.reason === 'disk-incomplete') {
+    // ② — KHÔNG thay im lặng, báo rõ + giữ cache.
+    setDiskStatus(
+      'error',
+      `Tệp trên đĩa chỉ có ${parsed.sheets.length} bản vẽ, ít hơn ${cacheSheets.length} đang mở trong máy — có thể ghi dở/hỏng. ĐANG GIỮ bản trong máy, không tự ghi đè lên đĩa.`,
+    );
+    return null;
+  }
+  if (resolution.reason === 'cache-newer' && cacheSheets.length > 0) {
+    // Cache mới hơn đĩa (thường do mất quyền phiên trước) — ĐẨY cache RA đĩa, KHÔNG BAO GIỜ
+    // kéo đĩa cũ đè bản đang sửa (Hoà chốt, giữ nguyên).
+    const wrote = await writeIdfToDisk(bucketId, projectName, cacheSheets, { create: true });
+    setDiskStatus(
+      wrote ? 'synced' : 'error',
+      wrote ? undefined : 'Bản trong máy MỚI HƠN đĩa (có thể do mất quyền ở phiên trước) — thử ghi lại ra đĩa nhưng THẤT BẠI. Vào Cài đặt → Lưu trữ, bấm "Kiểm tra kết nối thư mục".',
+    );
+    return null;
+  }
+  // 'tie' — lệch trong ngưỡng dung sai, coi là ngang tuổi, không có gì bất thường.
+  setDiskStatus('synced');
+  return null;
+}
+
 let seq = 1;
 const nextId = () => `cadsheet-${seq++}`;
 
@@ -136,6 +255,8 @@ export default function CadSheets() {
   const activeIdRef = useRef(activeId);
   const saverRef = useRef<SheetsAutosaver | null>(null);
   const backupSessionRef = useRef<AutoBackupSession | null>(null);
+  // B4 (4.1.d) — writer đĩa RIÊNG, nhịp chậm hơn IndexedDB (③), tạo lại mỗi khi đổi dự án.
+  const diskWriterRef = useRef<DiskWriter | null>(null);
   /**
    * BUCKET THEO DỰ ÁN (sửa rò chéo 25/07): bộ sheet lưu theo `userId::route::projectId`.
    * Đổi dự án ⇒ `bucketId` đổi ⇒ hydrate lại từ bucket mới. `hydratedFor` giữ bucket ĐÃ
@@ -150,6 +271,37 @@ export default function CadSheets() {
   const [hydratedFor, setHydratedFor] = useState<string | null>(null);
   const hydrated = hydratedFor === bucketId;
   const prevBucketRef = useRef<string | null>(null);
+
+  /**
+   * B4 (4.1.d) — ÁP dữ liệu `.idf` đã parse vào state sống — ĐÚNG 1 đường dùng chung cho cả
+   * nhập thủ công (`onImportIdf`) LẪN nạp tự động khi đĩa thắng lúc mount (Luật Đồng Bộ #6:
+   * không viết đường thứ hai). CAD dùng Zustand (`applySnapshot` → `setState`) nên KHÔNG dính
+   * lớp lỗi remount/id-trùng của B2 (đó là đặc thù kiến trúc key-remount riêng của Present) —
+   * nhưng vẫn giữ NGUYÊN TẮC "1 đường áp dụng duy nhất" để không phải verify lại 2 lần.
+   */
+  const applyIdfSheets = (parsedSheets: IdfSheetData[]): { keptCount: number; droppedCount: number } => {
+    const kept = parsedSheets.slice(0, MAX_SHEETS);
+    snaps.current = {};
+    for (const s of kept) {
+      const doc = backfillRoomTypes(s.doc);
+      snaps.current[s.id] = {
+        doc,
+        past: [],
+        future: [],
+        viewport: { ...DEFAULT_VIEWPORT },
+        currentLayer: doc.layers[0]?.id ?? 'l-wall',
+        selection: [],
+      };
+    }
+    seq = Math.max(seq, nextSeqFrom(kept.map((s) => s.id), 'cadsheet'));
+    const nextSheets = kept.map(({ id, name }) => ({ id, name }));
+    setSheets(nextSheets);
+    const firstId = nextSheets[0].id;
+    setActiveId(firstId);
+    applySnapshot(snaps.current[firstId]);
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+    return { keptCount: kept.length, droppedCount: parsedSheets.length - kept.length };
+  };
 
   /** KHÔI PHỤC 1 lần lúc mount: IDB → bộ sheet + sheet active (ưu tiên resume.sheetId). */
   useEffect(() => {
@@ -170,10 +322,30 @@ export default function CadSheets() {
       return;
     }
     let cancelled = false;
-    void loadSheets<PersistedCadSheet>(userId, ROUTE, bucketId).then((rec) => {
+    void loadSheets<PersistedCadSheet>(userId, ROUTE, bucketId).then(async (rec) => {
       if (cancelled) return;
       const valid = rec?.sheets.filter((s) => s.doc && s.viewport).slice(0, MAX_SHEETS) ?? [];
-      if (rec && valid.length > 0) {
+
+      // B4 (4.1.d) — quyết định NGUỒN NÀO thắng TRƯỚC khi áp bất kỳ state nào, tránh 1 khung
+      // hình hiện cache rồi ngay sau đó bị đĩa ghi đè (nhấp nháy). `cacheTs=0` khi CHƯA có bản
+      // ghi IndexedDB nào (máy mới) — để B5 "copy thư mục dự án sang máy khác" hoạt động đúng:
+      // cache rỗng phải LUÔN thua đĩa thật, không bị coi nhầm là "cache mới hơn vì vừa mới now()".
+      //
+      // BUG BẮT ĐƯỢC KHI BROWSER-VERIFY (31/07, xem PresentSheets.tsx docstring y hệt) —
+      // `flowName` nạp bất đồng bộ qua `ensureProjectScope()`, effect này có thể chạy TRƯỚC khi
+      // nạp xong ⇒ tạo NHẦM thư mục theo tên mặc định `'Untitled flow'`. Gọi lại
+      // `ensureProjectScope()` — IDEMPOTENT, không tốn request nếu trang đã nạp xong.
+      if (bucketId) await ensureProjectScope(bucketId);
+      if (cancelled) return;
+      const projectName = useFlowStore.getState().flowName || 'InteriorFlow project';
+      const cacheSheets: IdfSheetData[] = valid.map((s) => ({ id: s.id, name: s.name, doc: s.doc }));
+      const diskSheets = await resolveAndSyncCadDisk(bucketId, projectName, cacheSheets, rec?.ts ?? 0);
+      if (cancelled) return;
+
+      if (diskSheets) {
+        applyIdfSheets(diskSheets);
+        saverRef.current?.touch(); // đồng bộ ngược lại IndexedDB — cache luôn ấm cho lần mở kế
+      } else if (rec && valid.length > 0) {
         for (const s of valid) snaps.current[s.id] = snapshotFromPersisted(s);
         seq = Math.max(seq, nextSeqFrom(valid.map((s) => s.id), 'cadsheet'));
         // sheet active: resume trỏ tận sheet nếu id còn sống, kế đến activeId đã lưu.
@@ -234,16 +406,49 @@ export default function CadSheets() {
       onSavingChange: (saving) => useSaveStatus.getState().setStatus(saving ? 'saving' : 'saved'),
     });
     saverRef.current = saver;
+
+    /**
+     * B4 (4.1.d, bổ sung ③) — ghi đĩa THEO NHỊP RIÊNG, chậm hơn IndexedDB (throttle 10s, không
+     * debounce) + ⌘S/rời trang ép ghi ngay. `reason:'off'` là cờ nội bộ (KHÔNG phải lỗi) khi dự
+     * án chưa bật lưu trữ — `onStatus` tách riêng, không báo "lỗi" cho trường hợp opt-in này.
+     */
+    const diskWriter = createDiskWriter(
+      async () => {
+        if (!bucketId || !(await rootFolderChosen())) return { ok: true, reason: 'off' };
+        const projectName = useFlowStore.getState().flowName || 'InteriorFlow project';
+        snaps.current[activeIdRef.current] = captureStore();
+        const idfSheets: IdfSheetData[] = sheetsRef.current.slice(0, MAX_SHEETS).map((s) => {
+          const snap = snaps.current[s.id] ?? blankSnapshot();
+          return { id: s.id, name: s.name, doc: snap.doc };
+        });
+        const wrote = await writeIdfToDisk(bucketId, projectName, idfSheets, { create: true });
+        return wrote ? { ok: true } : { ok: false, reason: 'write-failed' };
+      },
+      {
+        intervalMs: 10_000,
+        onStatus: (r) => {
+          const { setDiskStatus } = useSaveStatus.getState();
+          if (r.reason === 'off') setDiskStatus('off');
+          else setDiskStatus(r.ok ? 'synced' : 'error', r.ok ? undefined : 'Chưa ghi ra đĩa — kiểm tra quyền thư mục dự án (Cài đặt → Lưu trữ).');
+        },
+      },
+    );
+    diskWriterRef.current = diskWriter;
+
     // CHỈ nghe lát cắt được persist (doc/viewport/layer) — store còn nhiều state phụ
     // (tool, hover, dynamic-input…) đổi liên tục, nghe tất sẽ ghi IDB vô ích mỗi 1.2s.
     const unsub = useCadStore.subscribe((s, prev) => {
       if (s.doc !== prev.doc || s.viewport !== prev.viewport || s.currentLayer !== prev.currentLayer) {
         saver.touch();
+        diskWriter.touch();
       }
     });
-    const flush = () => saver.flush();
+    const flush = () => {
+      saver.flush();
+      diskWriter.flushNow();
+    };
     const onHide = () => {
-      if (document.visibilityState === 'hidden') saver.flush();
+      if (document.visibilityState === 'hidden') flush();
     };
     window.addEventListener('beforeunload', flush);
     document.addEventListener('visibilitychange', onHide);
@@ -254,16 +459,34 @@ export default function CadSheets() {
       saver.flush(); // rời route (client-nav) → không mất nhịp cuối
       saver.dispose();
       saverRef.current = null;
+      diskWriter.flushNow();
+      diskWriter.dispose();
+      diskWriterRef.current = null;
       backup.dispose();
       backupSessionRef.current = null;
     };
   }, [hydrated, bucketId]);
 
+  /** B4 (4.1.d, bổ sung ④) — CHỈ phát hiện + cảnh báo 2 tab cùng mở 1 dự án, KHÔNG khoá/gộp. */
+  useEffect(() => {
+    if (!bucketId) return;
+    const handle = watchProjectPresence(bucketId, (present) => useProjectPresence.getState().setOtherTabOpen(present));
+    return () => {
+      useProjectPresence.getState().setOtherTabOpen(false);
+      handle.dispose();
+    };
+  }, [bucketId]);
+
   /** Cấu trúc tab đổi (thêm/xoá/đổi tên/reorder/đổi active) → gương ref + đánh dấu lưu. */
   useEffect(() => {
     sheetsRef.current = sheets;
     activeIdRef.current = activeId;
-    if (hydrated) saverRef.current?.touch();
+    if (hydrated) {
+      saverRef.current?.touch();
+      diskWriterRef.current?.touch(); // B4 (4.1.d) — thiếu dòng này thì dự án CAD mới, chưa ai
+      // vẽ gì, sẽ KHÔNG BAO GIỜ có ban-ve.idf đầu tiên (bắt được khi browser-verify: Present có
+      // dòng này nên tự ghi lần đầu ngay cả khi không ai thao tác, CAD thiếu nên treo mãi).
+    }
   }, [sheets, activeId, hydrated]);
 
   /** Resume trỏ tận sheet: ghi sheetId đang mở vào resume-state (lib/resume). */
@@ -383,34 +606,15 @@ export default function CadSheets() {
         useCadStore.getState().setStatus(reason ?? `Không mở được "${detail.fileName}" — file .idf hỏng hoặc sai định dạng.`);
         return;
       }
-      const kept = parsed.sheets.slice(0, MAX_SHEETS);
-      const dropped = parsed.sheets.length - kept.length;
-      snaps.current = {};
-      for (const s of kept) {
-        // backfillRoomTypes(): file .idf cũ (trước khi roomType tồn tại) — gán 1 LẦN roomType
-        // cho nhãn phòng chưa có field này, để sau đó đổi text label không mất công năng phòng.
-        const doc = backfillRoomTypes(s.doc);
-        snaps.current[s.id] = {
-          doc,
-          past: [],
-          future: [],
-          viewport: { ...DEFAULT_VIEWPORT },
-          currentLayer: doc.layers[0]?.id ?? 'l-wall',
-          selection: [],
-        };
-      }
-      seq = Math.max(seq, nextSeqFrom(kept.map((s) => s.id), 'cadsheet'));
-      const nextSheets = kept.map(({ id, name }) => ({ id, name }));
-      setSheets(nextSheets);
-      const firstId = nextSheets[0].id;
-      setActiveId(firstId);
-      applySnapshot(snaps.current[firstId]);
-      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+      // B4 (4.1.d) — dùng ĐÚNG 1 đường áp dụng sheet đã parse, chung với nạp tự động khi đĩa
+      // thắng lúc mount (xem docstring applyIdfSheets — Luật Đồng Bộ #6).
+      const { keptCount, droppedCount } = applyIdfSheets(parsed.sheets);
       saverRef.current?.touch(); // ghi ngay vào IDB, không đợi debounce thao tác kế tiếp
+      diskWriterRef.current?.touch(); // B4 — cũng đánh dấu đĩa cần ghi lại (nhịp riêng, không ngay lập tức)
       useCadStore
         .getState()
         .setStatus(
-          `Đã mở "${detail.fileName}" — ${kept.length} bản vẽ${dropped > 0 ? ` (bỏ ${dropped} sheet vượt trần ${MAX_SHEETS})` : ''}.`,
+          `Đã mở "${detail.fileName}" — ${keptCount} bản vẽ${droppedCount > 0 ? ` (bỏ ${droppedCount} sheet vượt trần ${MAX_SHEETS})` : ''}.`,
         );
     };
 
@@ -556,6 +760,7 @@ export default function CadSheets() {
      */
     const onForceSave = () => {
       saverRef.current?.flush();
+      diskWriterRef.current?.flushNow(); // B4 (4.1.d) — ⌘S cũng ép ghi đĩa ngay, không đợi nhịp 10s
       const d = new Date();
       const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
       useCadStore.getState().setStatus(`Đã lưu — ${hhmm}`);

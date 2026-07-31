@@ -5,26 +5,26 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (31/07 — ĐỢT B lớp lưu trữ: B1+B2+B3 xong + sự cố B3 đã vá, CHỜ GẬT B4)
-Chi tiết đầy đủ → `CHANGELOG.md` + `docs/IF-FEATURE-TREE.md` `4.1.c`. Tóm tắt:
-- 🔴→✅ **SỰ CỐ 31/07 — mất-dữ-liệu-im-lặng ở B3** (Hoà bắt ngay sau báo cáo B3, TRƯỚC khi gật B4).
-  Chọn thư mục xong, "Lưu Brand Kit" báo đã lưu nhưng KHÔNG ghi file thật, không hộp xin quyền hiện
-  ra. Verify độc lập bằng handle **OPFS thật** (không mock, qua đúng code sản xuất): logic ghi/đọc
-  ĐÚNG 100% — lỗi 100% ở TẦNG QUYỀN (`readwrite` reset về `'prompt'` sau mỗi lần tải lại trang, đúng
-  đặc tả API — `requestPermission()` gọi lại thiếu activation ⇒ Chrome âm thầm `'denied'`, không hộp
-  thoại — khớp đúng quan sát của Hoà). Sửa: ① `getProjectFolderHandle`/`writeBrandKitToProjectFolder`
-  trả LÝ DO cụ thể thay vì `null`/`boolean` mập mờ — `BrandKitPanel` tách "đã lưu máy" khỏi "đã ghi
-  đĩa" (banner đỏ riêng, không tự tắt khi lỗi). ② Không dựng nút xin-quyền riêng — banner lỗi trỏ
-  sang nút ③. ③ `testStorageConnection()` + nút "Kiểm tra kết nối thư mục" mới (Settings) — ghi/đọc/
-  dọn 1 tệp thật vào thư mục gốc, chính cú bấm vừa kiểm vừa cấp lại quyền. Rà cùng lớp: `ensurePermission()`
-  bọc try/catch đầy đủ hơn (B1+B3 dùng chung). Verify lại bằng browser thật (OPFS): nút Kiểm tra báo
-  ✓ đúng + dọn rác đúng · Lưu Brand Kit ghi file MỚI đúng nội dung + nút Nhập xuất hiện đúng lúc.
-  tsc+eslint+test+build sạch lại.
-- 🟡 **ĐỢT B — `4.1.a`+`4.1.b`+`4.1.c` xong, DỪNG CHỜ GẬT B4** (`docs/QUYET-DINH-HA-TANG-2026-07-31.md`)
-  — B1 chọn thư mục gốc, B2 `.idfp` cho Present (**bug thật**: nhập giữ nguyên id sheet ⇒ canvas
-  không remount — sửa bằng `importGen`), B3 brand-kit.json ra thư mục dự án (nay đã vá sự cố trên).
-  CHƯA đổi nguồn sự thật. 5 pha B1-B5, MỖI PHA BÁO+CHỜ GẬT riêng — B4 phải trình kế hoạch xử lý
-  remount/id trùng TRƯỚC khi code VÀ xác nhận không lặp lại lớp lỗi permission-timing vừa vá.
+## Hiện tại (31/07 — ĐỢT B lớp lưu trữ: B1-B4 xong, CHỜ GẬT B5)
+Chi tiết đầy đủ → `CHANGELOG.md` + `docs/IF-FEATURE-TREE.md` `4.1.d`. Tóm tắt:
+- ✅ **B4 — đảo nguồn sự thật** (`4.1.d`, PHA RỦI RO NHẤT, kế hoạch trình + Hoà gật kèm 4 bổ sung
+  trước khi code). `lib/disk-sync.ts` mới: `resolveSourceOfTruth()` THUẦN (ngưỡng dung sai 2s —
+  `modifiedAt`/`IndexedDB.ts` không nguyên tử, lệch trong ngưỡng = tie = DÙNG CACHE; guard "đĩa ít
+  sheet hơn cache" = nghi ghi dở, KHÔNG thay im lặng) · `createDiskWriter()` throttle riêng (không
+  debounce) + ⌘S/rời trang ép ghi ngay · `watchProjectPresence()` cảnh báo 2 tab cùng mở 1 dự án.
+  Nối CAD (Zustand, không dính lớp lỗi remount B2) + Present (BẮT BUỘC tăng `importGen`, đường tự
+  động đi qua ĐÚNG 1 hàm với nhập tay `.idfp`); thêm ⌘S cho Present. **2 bug thật bắt được khi
+  browser-verify**: ① `flowName` nạp bất đồng bộ ⇒ có thể tạo nhầm 2 thư mục khác tên cho cùng 1
+  dự án — sửa bằng gọi lại `ensureProjectScope()` trước khi đọc tên. ② cảnh báo đa-tab chỉ gửi
+  `'bye'` lúc `beforeunload` — đóng không sạch ⇒ banner treo vĩnh viễn — sửa bằng heartbeat+TTL.
+  Verify thật (OPFS + nhiều tab thật): di trú đúng tên · đĩa thắng id TRÙNG hiện đúng nội dung mới
+  (CAD lẫn Present) · guard sheet-thiếu giữ cache + tự lành · cảnh báo đa-tab 2 chiều + tự hết khi
+  tab kia mất. 14 test mới, tsc+eslint+test+build sạch. Còn 1 phép thử CHỈ Hoà tự làm được (mất
+  quyền giữa phiên qua reload thật) — checklist đã soạn sẵn kèm báo cáo.
+- ✅ **B1-B3 xong** — B1 chọn thư mục gốc, B2 `.idfp` Present (bug remount → `importGen`), B3
+  brand-kit.json ra thư mục dự án + vá sự cố mất-dữ-liệu-im-lặng 31/07 (quyền File System Access
+  reset sau mỗi lần tải trang). 5 pha B1-B5 — còn B5 (nghiệm thu: copy thư mục dự án sang máy
+  khác, mở lên, chạy đủ).
 - ✅ **ĐỢT A merge + dọn git** — `7.1.24`/`7.1.25`. Code phụ chỉ đề xuất mã, code chính ghi cây
   (Luật #12b mới). Dọn ref hỏng chặn `git fetch` + lock rác + `git gc`.
 - ✅ **Sprint "Lộ nền"** (`7.3.33`/`2.1.11`/`7.3.34`) · **2.2.89/7.3.32/2.1.8.n** (demo LAN) ·
@@ -47,7 +47,7 @@ Không có. `feat/sprint-infra`+`feat/dot-a-ha-tang` đã merge + prune + xoá b
 - **Figma**: MCP lỗi `net::ERR_FAILED`. Đường vòng: file trống + `docs/figma-bootstrap.js`.
 - **DWG**: sửa GPL ngay (0đ)? · server-side? · ODA khi bán? → `docs/RESEARCH-DWG-LICENSE.md`. **Mới
   31/07**: `2.1.6.d` 🔴 bug Nhập DWG treo vĩnh viễn trên file thật (nghi block-flatten INSERT bùng
-  nổ) — HÀNG ĐỢI, chờ xong sự cố ghi đĩa B3, chi tiết đủ ở cây.
+  nổ) — HÀNG ĐỢI, làm sau khi ĐỢT B xong hẳn (B5), chi tiết đủ ở cây.
 - Treo: VIỆC 4 cũ (GuProfile) · #14 (Mẫu Presenting).
 - **Xlsx round-trip probe** — chờ Hoà copy `SPEC_TEMPLATE 1.xlsx` vào `scripts/fixtures/`.
 - 3 nhánh `worktree-agent-*` merged còn local; `fix/hatch-t-junction`/`fix/quality-pipeline` chưa merge.

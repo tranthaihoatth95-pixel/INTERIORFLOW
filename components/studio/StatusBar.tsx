@@ -28,10 +28,11 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, Save, ShieldAlert } from 'lucide-react';
+import { Loader2, Save, ShieldAlert, HardDriveDownload, Users } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { useCadLiveStatus } from '@/lib/cad/live-status';
 import { useSaveStatus } from '@/lib/save-status';
+import { useProjectPresence } from '@/lib/project-presence-ui';
 import { useVitalsUi } from '@/lib/vitals-ui';
 import VitalsGesturePanel from './VitalsGesture';
 import VitalsIcon from './VitalsIcon';
@@ -58,6 +59,9 @@ export default function StatusBar({ stage, hidden }: Props) {
   const lastViolationCount = useCadLiveStatus((s) => s.lastViolationCount);
   const saveState = useSaveStatus((s) => s.status);
   const lastSavedAt = useSaveStatus((s) => s.lastSavedAt);
+  const diskStatus = useSaveStatus((s) => s.diskStatus);
+  const diskMessage = useSaveStatus((s) => s.diskMessage);
+  const otherTabOpen = useProjectPresence((s) => s.otherTabOpen);
 
   const panelOpen = useVitalsUi((s) => s.panelOpen && s.anchor === 'statusbar');
   const initialInput = useVitalsUi((s) => s.initialInput);
@@ -99,6 +103,8 @@ export default function StatusBar({ stage, hidden }: Props) {
   const jobsActive = stage === 'render' ? flowRuns.filter((r) => r.status === 'running' || r.status === 'queued').length : 0;
   const showSave = (stage === 'concept' || stage === 'present') && saveState !== 'idle';
   const showStandards = stage === 'concept' && lastViolationCount !== null;
+  // B4 (4.1.d) — 'off' (chưa bật lưu trữ dự án) KHÔNG hiện gì, đúng thiết kế opt-in.
+  const showDisk = (stage === 'concept' || stage === 'present') && diskStatus !== 'off';
 
   if (hidden) return null;
 
@@ -238,6 +244,35 @@ export default function StatusBar({ stage, hidden }: Props) {
           <span style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', fontSize: 12, lineHeight: 1.5 }}>
             <Save size={12} />
             {saveState === 'saving' ? 'Đang lưu…' : lastSavedAt ? `Đã lưu lúc ${formatHHMM(lastSavedAt)}` : 'Đã lưu'}
+          </span>
+        )}
+        {showDisk && (
+          // B4 (4.1.d) — VIỆC THỨ HAI, tách khỏi `showSave` ở trên (bài học sự cố 31/07: cache
+          // và đĩa là 2 việc, 2 trạng thái). 'error' KHÔNG tự tắt, đỏ để không lướt qua được.
+          <span
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              whiteSpace: 'nowrap',
+              fontSize: 12,
+              lineHeight: 1.5,
+              color: diskStatus === 'error' ? '#c0392b' : 'var(--t3)',
+            }}
+            title={diskMessage ?? undefined}
+          >
+            <HardDriveDownload size={12} />
+            {diskStatus === 'syncing' ? 'Đang ghi đĩa…' : diskStatus === 'error' ? 'Chưa ghi ra đĩa' : 'Đĩa đồng bộ'}
+          </span>
+        )}
+        {otherTabOpen && (stage === 'concept' || stage === 'present') && (
+          // ④ — CHỈ cảnh báo, không khoá/gộp (phạm vi B4 đã chốt với Hoà).
+          <span
+            style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', color: '#c0392b' }}
+            title="Dự án này đang mở ở tab/cửa sổ khác — sửa đồng thời có thể ghi đè lẫn nhau"
+          >
+            <Users size={12} />
+            Đang mở nơi khác
           </span>
         )}
         {showStandards && (
