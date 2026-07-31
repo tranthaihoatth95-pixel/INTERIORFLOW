@@ -108,11 +108,24 @@ interface PermissibleHandle {
   requestPermission: (opts: { mode: string }) => Promise<string>;
 }
 
-/** Cùng khuôn `ensurePermission()` (`auto-backup.ts`) — quyền File System Access có thể bị trình
- * duyệt thu hồi giữa các phiên, phải xin lại (không throw nếu bị từ chối, trả false). */
+/**
+ * Cùng khuôn `ensurePermission()` (`auto-backup.ts`) — quyền File System Access có thể bị trình
+ * duyệt thu hồi giữa các phiên (mỗi lần TẢI LẠI TRANG/điều hướng mới, quyền `readwrite` đã cấp lúc
+ * chọn thư mục RESET về 'prompt' — đây KHÔNG phải lỗi hiếm, là hành vi CHUẨN của File System Access
+ * API). `requestPermission()` cần "user activation" thật — gọi được nhưng KHÔNG có gesture đủ mới
+ * (vd bên trong 1 chuỗi await sau khi bấm nút) thì Chrome ÂM THẦM trả 'denied', KHÔNG hiện hộp
+ * thoại nào cả (đây CHÍNH LÀ nguyên nhân lỗi mất-dữ-liệu-im-lặng Hoà bắt được 31/07 — xem
+ * `docs/QUYET-DINH-HA-TANG-2026-07-31.md` mục sự cố). Không throw nếu bị từ chối, trả `false` —
+ * NHƯNG callers ở lớp trên (B3/B4) BẮT BUỘC phải biến `false` này thành thông báo THẤY ĐƯỢC cho
+ * người dùng, không được nuốt im lặng nữa (đúng yêu cầu sửa lỗi 31/07).
+ */
 async function ensurePermission(handle: FileSystemDirectoryHandle): Promise<boolean> {
   const h = handle as unknown as PermissibleHandle;
-  if ((await h.queryPermission({ mode: 'readwrite' })) === 'granted') return true;
+  try {
+    if ((await h.queryPermission({ mode: 'readwrite' })) === 'granted') return true;
+  } catch {
+    return false; // queryPermission tự nó hiếm khi throw nhưng vẫn phòng thủ — không để rơi unhandled
+  }
   try {
     return (await h.requestPermission({ mode: 'readwrite' })) === 'granted';
   } catch {
@@ -127,25 +140,35 @@ export function projectFolderName(projectId: string, projectName: string): strin
   return `${projectId} — ${safeName}`;
 }
 
+/** Lý do KHÔNG mở/ghi/đọc được thư mục — callers dùng để hiện ĐÚNG thông báo cho người dùng, không
+ * được gộp chung thành "lỗi chung chung" hay im lặng nữa (bài học sự cố 31/07). */
+export type FolderAccessFailure = 'no-root' | 'no-permission' | 'no-project-id' | 'error';
+
+export type FolderAccessResult =
+  | { ok: true; dir: FileSystemDirectoryHandle }
+  | { ok: false; reason: FolderAccessFailure };
+
 /**
- * Thư mục của 1 dự án dưới thư mục gốc — tự tạo nếu `create:true` và chưa có. `null` nếu chưa
- * chọn thư mục gốc (B1), quyền bị từ chối, hoặc lỗi File System Access bất kỳ (không throw —
- * mọi hàm ở đây là tiện nghi, không được làm gãy editor, cùng triết lý auto-backup.ts).
+ * Thư mục của 1 dự án dưới thư mục gốc — tự tạo nếu `create:true` và chưa có. Trả lý do CỤ THỂ khi
+ * thất bại (KHÔNG còn `null` mập mờ như bản cũ 31/07 — đó chính là chỗ nuốt lỗi khiến `brand-kit.json`
+ * "lưu" mà không ghi xuống đĩa, người dùng không hề biết). Không throw — mọi hàm ở đây là tiện nghi,
+ * không được làm gãy editor, cùng triết lý `auto-backup.ts`; nhưng "không throw" khác "không báo".
  */
 export async function getProjectFolderHandle(
   projectId: string,
   projectName: string,
   opts?: { create?: boolean },
-): Promise<FileSystemDirectoryHandle | null> {
-  if (!projectId) return null;
+): Promise<FolderAccessResult> {
+  if (!projectId) return { ok: false, reason: 'no-project-id' };
   const root = await loadRootFolderHandle();
-  if (!root) return null;
-  if (!(await ensurePermission(root))) return null;
+  if (!root) return { ok: false, reason: 'no-root' };
+  if (!(await ensurePermission(root))) return { ok: false, reason: 'no-permission' };
   try {
     const dir = root as unknown as { getDirectoryHandle: (name: string, o: { create: boolean }) => Promise<FileSystemDirectoryHandle> };
-    return await dir.getDirectoryHandle(projectFolderName(projectId, projectName), { create: opts?.create ?? false });
+    const handle = await dir.getDirectoryHandle(projectFolderName(projectId, projectName), { create: opts?.create ?? false });
+    return { ok: true, dir: handle };
   } catch {
-    return null; // create:false + thư mục chưa tồn tại → NotFoundError, coi như "chưa có"
+    return { ok: false, reason: 'error' }; // create:false + thư mục chưa tồn tại → NotFoundError, coi như "chưa có"
   }
 }
 
@@ -181,4 +204,45 @@ export async function readTextFile(dir: FileSystemDirectoryHandle, name: string)
   } catch {
     return null;
   }
+}
+
+/* ═══════════ Sự cố 31/07 — "Kiểm tra kết nối thư mục" ═══════════
+ * Hoà bắt được: chọn thư mục xong, Settings hiện đã chọn, bấm "Lưu Brand Kit" báo ĐÃ LƯU — nhưng
+ * KHÔNG có tệp nào ghi xuống đĩa thật, KHÔNG có hộp xin quyền nào hiện ra. Verify độc lập (thay
+ * `showDirectoryPicker()` thật bằng handle OPFS thật qua cùng đường IndexedDB — không cần hộp
+ * thoại OS, vẫn là FileSystemDirectoryHandle thật, không phải mock) xác nhận: LOGIC ghi/đọc/đặt
+ * tên thư mục ĐÚNG (file lên đúng chỗ, đúng nội dung) — lỗi nằm 100% ở TẦNG QUYỀN: sau khi điều
+ * hướng/tải lại trang, quyền `readwrite` đã cấp lúc chọn thư mục RESET về 'prompt' (đúng đặc tả,
+ * không phải bug trình duyệt), `requestPermission()` gọi lại không đủ "user activation" mới ⇒
+ * Chrome ÂM THẦM trả 'denied', không hiện hộp thoại — `ensurePermission()` nuốt gọn thành `false`,
+ * không ai báo cho người dùng biết. Hàm dưới đây là CÁCH DUY NHẤT chứng minh tầng đĩa còn sống:
+ * ghi thật 1 tệp, đọc lại, so khớp, dọn rác — gọi TRỰC TIẾP từ nút bấm (gesture thật, tối thiểu
+ * await trước khi chạm `requestPermission` bên trong `ensurePermission`).
+ */
+
+const CONNECTION_TEST_FILE = '.interiorflow-connection-test';
+
+export type ConnectionTestResult =
+  | { ok: true }
+  | { ok: false; reason: 'no-root' | 'no-permission' | 'write-failed' | 'read-mismatch' };
+
+/** "Kiểm tra kết nối thư mục" (Settings) — ghi/đọc/dọn 1 tệp thật vào thư mục gốc, báo ĐÚNG kết
+ * quả. Đồng thời đây chính là lối "xin lại quyền" khi quyền đã bị thu hồi — click này CHÍNH LÀ
+ * gesture cần thiết để `ensurePermission()` bên trong xin lại thành công. */
+export async function testStorageConnection(): Promise<ConnectionTestResult> {
+  const root = await loadRootFolderHandle();
+  if (!root) return { ok: false, reason: 'no-root' };
+  if (!(await ensurePermission(root))) return { ok: false, reason: 'no-permission' };
+  const token = `if-test-${Math.random().toString(36).slice(2)}`;
+  const wrote = await writeTextFile(root, CONNECTION_TEST_FILE, token);
+  if (!wrote) return { ok: false, reason: 'write-failed' };
+  const read = await readTextFile(root, CONNECTION_TEST_FILE);
+  try {
+    const d = root as unknown as { removeEntry: (name: string) => Promise<void> };
+    await d.removeEntry(CONNECTION_TEST_FILE);
+  } catch {
+    /* dọn rác thất bại không quan trọng, không chặn kết quả test */
+  }
+  if (read !== token) return { ok: false, reason: 'read-mismatch' };
+  return { ok: true };
 }

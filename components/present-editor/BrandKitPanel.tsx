@@ -84,6 +84,9 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
   const projectId = useSheetsBucketId();
   const projectName = useFlowStore((s) => s.flowName) || 'Không tên';
   const [hasProjectFile, setHasProjectFile] = useState(false); // B3 (4.1.c) — có brand-kit.json trong thư mục dự án chưa
+  // Sự cố 31/07: "đã lưu" (localStorage) và "đã ghi đĩa" (thư mục dự án) là HAI việc — HAI thông
+  // báo riêng, không được gộp. `diskMsg` báo lỗi đĩa KHÔNG tự tắt nhanh như `saved` (cần đọc kỹ).
+  const [diskMsg, setDiskMsg] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
 
   // Nạp danh sách kit + active khi mở (sau mount).
   useEffect(() => {
@@ -146,12 +149,26 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
     const k = saveBrandKit({ ...currentKit, id: editingId || undefined });
     setEditingId(k.id);
     setKits(getBrandKits());
-    setSaved('Đã lưu Brand Kit ✓');
+    // "Đã lưu" ở đây CHỈ nói về localStorage — việc ghi đĩa là VIỆC THỨ HAI, báo riêng bên dưới
+    // (sự cố 31/07: gộp chung 2 việc làm người dùng tưởng đĩa đã ghi trong khi chưa hề chạy).
+    setSaved('Đã lưu Brand Kit (trên máy) ✓');
     setTimeout(() => setSaved(null), 1800);
-    // B3 (4.1.c) — ghi bản sao brand-kit.json vào thư mục dự án, tiện nghi nền, không chặn Lưu
-    // chính nếu thất bại (chưa chọn thư mục gốc/quyền bị từ chối — im lặng bỏ qua).
-    writeBrandKitToProjectFolder(projectId, projectName).then((ok) => {
-      if (ok) setHasProjectFile(true);
+    setDiskMsg(null);
+    writeBrandKitToProjectFolder(projectId, projectName).then((res) => {
+      if (res.ok) {
+        setHasProjectFile(true);
+        setDiskMsg({ kind: 'ok', text: 'Đã ghi vào thư mục dự án ✓' });
+        setTimeout(() => setDiskMsg(null), 2400);
+        return;
+      }
+      if (res.reason === 'no-root') return; // chưa bật lưu trữ theo dự án — đúng thiết kế opt-in, không phải lỗi
+      const text =
+        res.reason === 'no-permission'
+          ? 'CHƯA ghi được vào thư mục dự án — mất quyền truy cập (thường do vừa tải lại trang). Vào Cài đặt → Lưu trữ, bấm "Kiểm tra kết nối thư mục" để cấp lại quyền, rồi quay lại bấm Lưu.'
+          : res.reason === 'no-project-id'
+            ? 'CHƯA ghi được vào thư mục dự án — không xác định được dự án đang mở.'
+            : 'CHƯA ghi được vào thư mục dự án — lỗi đĩa, thử lại.';
+      setDiskMsg({ kind: 'error', text });
     });
   }
 
@@ -434,6 +451,27 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
           <div style={{ flex: 1 }} />
           {saved && <span style={{ fontSize: 12, color: 'var(--accent)' }}>{saved}</span>}
         </div>
+
+        {/* Trạng thái ghi đĩa — VIỆC THỨ HAI, tách khỏi "saved" ở trên (sự cố 31/07: gộp chung làm
+            người dùng tưởng đã ghi đĩa trong khi chưa hề chạy). Lỗi không tự tắt nhanh — cần đọc. */}
+        {diskMsg && (
+          <p
+            role={diskMsg.kind === 'error' ? 'alert' : undefined}
+            style={{
+              fontSize: 12,
+              marginTop: 8,
+              padding: '8px 10px',
+              borderRadius: 8,
+              lineHeight: 1.5,
+              background: diskMsg.kind === 'error' ? 'color-mix(in srgb, #d33 15%, var(--field))' : 'var(--field)',
+              color: diskMsg.kind === 'error' ? '#e0665a' : 'var(--accent)',
+              border: `1px solid ${diskMsg.kind === 'error' ? '#d33' : 'var(--border)'}`,
+            }}
+          >
+            {diskMsg.kind === 'error' ? '⚠ ' : ''}
+            {diskMsg.text}
+          </p>
+        )}
 
         {/* Xuất/nhập .json — phao tạm chuyển máy (7.1.25) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>

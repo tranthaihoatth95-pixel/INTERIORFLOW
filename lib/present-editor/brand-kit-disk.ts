@@ -13,28 +13,37 @@
  * "Nối với đường Nhập .json đã có ở 0b" (yêu cầu B3) = `importBrandKitFromProjectFolder()` dưới
  * đây gọi THẲNG `importBrandKitsJson()` — cùng logic merge/overwrite/dedup-id với nút "Nhập
  * .json…" thủ công, chỉ khác nguồn đọc JSON (tệp trong thư mục dự án thay vì hộp thoại chọn tệp).
+ *
+ * SỬA SỰ CỐ 31/07 (mất-dữ-liệu-im-lặng): trước đây `writeBrandKitToProjectFolder` trả `boolean`
+ * trơn — thất bại (kể cả mất quyền truy cập) chỉ là `false`, không lý do, caller ở `BrandKitPanel`
+ * coi là "tiện nghi nền" rồi bỏ qua luôn, không báo gì cho người dùng. Giờ trả LÝ DO CỤ THỂ
+ * (`FolderAccessFailure` từ `root-folder.ts`) — `BrandKitPanel` BẮT BUỘC hiện thông báo khác với
+ * "đã lưu" khi ghi đĩa thất bại (xem `docs/QUYET-DINH-HA-TANG-2026-07-31.md` mục sự cố).
  */
 
 import { exportBrandKitsJson, importBrandKitsJson } from './brand-kit';
-import { getProjectFolderHandle, writeTextFile, readTextFile } from '../root-folder';
+import { getProjectFolderHandle, writeTextFile, readTextFile, type FolderAccessFailure } from '../root-folder';
 
 const FILE_NAME = 'brand-kit.json';
 
-/** Ghi Brand Kit (mọi kit + kit đang chọn) vào `brand-kit.json` trong thư mục dự án. `true` nếu
- * ghi thành công — `false` khi chưa chọn thư mục gốc (B1)/quyền bị từ chối/lỗi đĩa (không throw,
- * gọi từ UI như 1 tiện nghi nền, không được làm gãy thao tác Lưu Brand Kit chính). */
-export async function writeBrandKitToProjectFolder(projectId: string, projectName: string): Promise<boolean> {
-  const dir = await getProjectFolderHandle(projectId, projectName, { create: true });
-  if (!dir) return false;
-  return writeTextFile(dir, FILE_NAME, exportBrandKitsJson());
+export type WriteBrandKitResult = { ok: true } | { ok: false; reason: FolderAccessFailure | 'write-failed' };
+
+/** Ghi Brand Kit (mọi kit + kit đang chọn) vào `brand-kit.json` trong thư mục dự án — trả lý do cụ
+ * thể khi thất bại, KHÔNG còn `boolean` mập mờ (caller PHẢI phân biệt "chưa bật lưu trữ" — im lặng
+ * đúng, tính năng opt-in — với "đã bật nhưng ghi lỗi" — BẮT BUỘC báo, đây là sự cố 31/07). */
+export async function writeBrandKitToProjectFolder(projectId: string, projectName: string): Promise<WriteBrandKitResult> {
+  const res = await getProjectFolderHandle(projectId, projectName, { create: true });
+  if (!res.ok) return res;
+  const wrote = await writeTextFile(res.dir, FILE_NAME, exportBrandKitsJson());
+  return wrote ? { ok: true } : { ok: false, reason: 'write-failed' };
 }
 
 /** `true` nếu thư mục dự án đang có sẵn `brand-kit.json` (dùng cho UI quyết có hiện nút "Nhập từ
  * thư mục dự án" hay không — không hiện nút dẫn tới lỗi chắc chắn). */
 export async function projectFolderHasBrandKit(projectId: string, projectName: string): Promise<boolean> {
-  const dir = await getProjectFolderHandle(projectId, projectName);
-  if (!dir) return false;
-  return (await readTextFile(dir, FILE_NAME)) !== null;
+  const res = await getProjectFolderHandle(projectId, projectName);
+  if (!res.ok) return false;
+  return (await readTextFile(res.dir, FILE_NAME)) !== null;
 }
 
 /** Nhập Brand Kit TỪ `brand-kit.json` trong thư mục dự án — tái dùng nguyên `importBrandKitsJson()`
@@ -44,9 +53,17 @@ export async function importBrandKitFromProjectFolder(
   projectName: string,
   mode: 'merge' | 'overwrite',
 ): Promise<{ ok: true; addedCount: number; totalCount: number } | { ok: false; error: string }> {
-  const dir = await getProjectFolderHandle(projectId, projectName);
-  if (!dir) return { ok: false, error: 'Chưa chọn thư mục gốc InteriorFlow (xem Cài đặt → Lưu trữ).' };
-  const json = await readTextFile(dir, FILE_NAME);
+  const res = await getProjectFolderHandle(projectId, projectName);
+  if (!res.ok) {
+    const error =
+      res.reason === 'no-root'
+        ? 'Chưa chọn thư mục gốc InteriorFlow (xem Cài đặt → Lưu trữ).'
+        : res.reason === 'no-permission'
+          ? 'Mất quyền truy cập thư mục gốc — vào Cài đặt → Lưu trữ, bấm "Kiểm tra kết nối thư mục" để cấp lại.'
+          : 'Không mở được thư mục dự án.';
+    return { ok: false, error };
+  }
+  const json = await readTextFile(res.dir, FILE_NAME);
   if (json === null) return { ok: false, error: 'Thư mục dự án chưa có brand-kit.json.' };
   return importBrandKitsJson(json, mode);
 }
