@@ -188,7 +188,11 @@ export function AppChrome({ active }: Props) {
           Tool Mode, "Run flow" ở Command Palette (⌘K) — cả ba đều xếp hàng qua cùng 1 hàng đợi
           (lib/execution.ts). Theo dõi/huỷ ở menu "Việc" (TasksDropdown) — xem badge số dưới đây. */}
 
-      <div className="hidden items-center gap-2 sm:flex sm:gap-2.5">
+      {/* 7.3.32 (31/07) — mốc "hiện đủ 4 nút" đẩy từ sm(640) sang lg(1024): ở 640-1023px cụm
+          này cộng Tệp/AiStatusDot (route render) tràn 819px cứng bất kể viewport. MobileMenu
+          (sm:hidden trước đây, nay lg:hidden) đã có sẵn Tasks+Home+account+actions trong bottom
+          sheet — chỉ cần đẩy cùng mốc, không viết UI mới. */}
+      <div className="hidden items-center gap-2 lg:flex lg:gap-2.5">
         {active === 'render' && (
           <div className="relative shrink-0">
             <motion.button

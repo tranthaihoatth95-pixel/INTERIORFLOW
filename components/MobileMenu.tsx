@@ -52,7 +52,7 @@ export function MobileMenu({ active }: { active: AppChromeActive }) {
   }, [open]);
 
   return (
-    <div className="sm:hidden">
+    <div className="lg:hidden">
       <motion.button
         {...pressableIcon}
         onClick={() => setOpen(true)}
