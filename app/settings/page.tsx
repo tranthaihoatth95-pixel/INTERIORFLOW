@@ -5,6 +5,9 @@
  * 7.3.30 (30/07, docs/TICKET-SETTINGS-GOM-CAU-HINH-2026-07-29.md §5): Tài khoản · Giao diện ·
  * AI · Trải nghiệm — nguồn sự thật DUY NHẤT cho mọi cấu hình (nút nhanh sáng/tối vẫn giữ ở
  * Header/StudioBar/MobileMenu — đó là THAO TÁC hay dùng, không phải cấu hình đặt-rồi-quên).
+ *
+ * Thêm nhóm thứ 5 "Lưu trữ" ở B1 (31/07, ĐỢT B lớp lưu trữ, mã `4.1.a`) — khái niệm mới, không
+ * ép vào 4 nhóm cũ.
  */
 
 import { useRouter } from 'next/navigation';
@@ -13,6 +16,7 @@ import { AiDependencySettings } from '@/components/settings/AiDependencySettings
 import { AccountSettings } from '@/components/settings/AccountSettings';
 import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
 import { ExperienceSettings } from '@/components/settings/ExperienceSettings';
+import { StorageSettings } from '@/components/settings/StorageSettings';
 import { useT } from '@/lib/i18n';
 
 export default function SettingsPage() {
@@ -40,6 +44,7 @@ export default function SettingsPage() {
           <AppearanceSettings />
           <AiDependencySettings />
           <ExperienceSettings />
+          <StorageSettings />
         </div>
       </div>
     </main>
