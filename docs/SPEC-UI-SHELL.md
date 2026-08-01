@@ -1,6 +1,7 @@
 # SPEC — KHUNG GIAO DIỆN CHUNG *(UI shell)*
 
-> **[CẦN HOÀ DUYỆT]** · Một khung dùng cho **cả 3 chặng** — người dùng học 1 lần, đi khắp app.
+> **Đã duyệt (Cowork thay, uỷ quyền phần thuần kỹ thuật, 01/08).** Một khung dùng cho **cả 3
+> chặng** — người dùng học 1 lần, đi khắp app.
 > Nguồn: phân tích bố cục ComfyUI (cấu trúc tốt) + chỗ họ làm dở (không chép).
 
 ---

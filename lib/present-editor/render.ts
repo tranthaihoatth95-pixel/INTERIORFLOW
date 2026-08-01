@@ -32,8 +32,8 @@ import { loadImage } from '@/lib/imaging';
 import { STAGE_PRESETS, type StageSize } from './stage-presets';
 
 /** Bộ quy đổi %→px CHO 1 LẦN vẽ — truyền qua tham số (KHÔNG dùng biến module-level dùng
- * chung) để nhiều renderEditorSlide chạy song song (Promise.all ở TemplatePicker/LayoutShelf)
- * không giẫm lên nhau. */
+ * chung) để nhiều renderEditorSlide chạy song song (Promise.all ở LayoutShelf) không giẫm
+ * lên nhau. */
 interface Scale {
   W: number;
   H: number;

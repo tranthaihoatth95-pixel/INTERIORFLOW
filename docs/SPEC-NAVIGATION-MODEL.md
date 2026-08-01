@@ -1,6 +1,7 @@
 # SPEC — MÔ HÌNH ĐIỀU HƯỚNG & LUỒNG SỬ DỤNG
 
-> **[CẦN HOÀ DUYỆT]** · Giải bệnh "lớp ngoài lớp trong loạn xà ngầu".
+> **Đã duyệt (Cowork thay, uỷ quyền phần thuần kỹ thuật, 01/08).** Giải bệnh "lớp ngoài lớp trong
+> loạn xà ngầu".
 > Chẩn đoán gốc: app hiện **không có một trục điều hướng duy nhất** — mỗi màn tự dựng layout,
 > mỗi chặng tự đặt nút, thư viện có nhiều lối vào, có trang tràn ra ngoài khung.
 

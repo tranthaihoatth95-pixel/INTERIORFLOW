@@ -1,6 +1,7 @@
 # SPEC — VITALS: VAI TRÒ · GIAO DIỆN · NGỮ CẢNH
 
-> **[CẦN HOÀ DUYỆT]** · Bổ sung cho `SPEC-VITALS-AI.md` (đã có phần "hai trợ lý một não").
+> **Đã duyệt (Cowork thay, uỷ quyền phần thuần kỹ thuật, 01/08).** Bổ sung cho `SPEC-VITALS-AI.md`
+> (đã có phần "hai trợ lý một não").
 > File này chốt 3 thứ chưa rõ: **làm gì · trông thế nào · hiện khi nào**.
 > Đọc cùng `SPEC-NAVIGATION-MODEL.md` §2 (status bar), `SPEC-KNOWLEDGE-BASE.md` (luật trích dẫn).
 

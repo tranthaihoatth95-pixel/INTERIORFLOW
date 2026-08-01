@@ -1,6 +1,6 @@
 # SPEC — CAD HAI CHẾ ĐỘ *(Sketch ↔ Pro)*
 
-> **[CẦN HOÀ DUYỆT]** · Chẩn đoán 26/07: giao diện Sketch và Pro hiện **chỉ khác số lượng icon**
+> **Đã duyệt (Hoà, 01/08).** Chẩn đoán 26/07: giao diện Sketch và Pro hiện **chỉ khác số lượng icon**
 > — đó là **phân biệt giả**. Bằng chứng: đưa bản Sketch hiện tại lên iPad vẫn không dùng được
 > (nút nhỏ như cho chuột, không cử chỉ, không nhận bút).
 > Đọc cùng `IF-FEATURE-SPEC-P1-v2.md` (⚠️ FILE KHÔNG CÓ TRONG REPO — cần Hoà upload lại nếu còn

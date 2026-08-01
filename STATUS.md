@@ -5,46 +5,36 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (01/08 — ĐỢT B lớp lưu trữ HOÀN TẤT, B1-B5 đủ)
+## Hiện tại (01/08 — ĐỢT B HOÀN TẤT · sự cố `dev.db` đã KHÉP, không mất dữ liệu)
 Chi tiết đầy đủ → `CHANGELOG.md` + `docs/IF-FEATURE-TREE.md` `4.1.a-e`. Tóm tắt:
-- ✅ **B5 — nghiệm thu ĐỢT B** (`4.1.e`, 01/08, Hoà tự chạy thật — ẩn danh, copy thư mục dự án
-  sang `IF-MAYKHAC`). **7/7 ĐẠT** (CAD/Present/Brand Kit/StatusBar/bản gốc còn nguyên — verify
-  TRÊN ĐĨA bằng diff tệp). **ĐỢT B (B1-B5) ĐÓNG.**
-- ✅ **B1-B4** — chọn thư mục gốc · `.idfp` Present · `brand-kit.json` ra thư mục dự án ·
-  `lib/disk-sync.ts` đảo nguồn sự thật, nối CAD+Present — chi tiết đủ → CHANGELOG + `4.1.a-d`.
+- ✅ **B1-B5 (ĐỢT B) ĐÓNG** — B5 nghiệm thu 7/7 ĐẠT (01/08, Hoà tự chạy, verify TRÊN ĐĨA bằng diff
+  tệp) · đĩa là nguồn sự thật cho `.idf`/`.idfp`, nối CAD+Present — chi tiết → CHANGELOG + `4.1.a-e`.
 - ✅ **4.1.f Brand Kit — Hoà ĐÃ QUYẾT** thuộc DỰ ÁN (`docs/CHOT-BRAND-KIT-2026-08-01.md`) — kèm
-  đính chính B5 dòng (e): 6 màu+Elegant+tên đo được từ **DECK** (`.idfp`), KHÔNG chứng minh
-  `brand-kit.json` được đọc (sửa câu trong `4.1.e`). Thi công CHƯA làm — xem "Chờ USER quyết".
-- ✅ **`docs/00-CHOT.md`** (sổ mục lục quyết định, đọc đầu phiên sau STATUS.md) + 10 file Cowork
-  01/08 đã commit (`b4598f3`); `CLAUDE.md` dòng 2 cập nhật theo.
-- ✅ **Present — chữ nghĩa** (A1b/c): tab "Mẫu"→**"Magic"** + đồng bộ 6 chỗ `PresentEditor.tsx`;
-  microcopy `BrandKitPanel.tsx:497-501` đổi câu đúng hiện trạng (Hoà duyệt). Verify browser thật.
-  tsc+eslint+test+build sạch.
-- 🆕 **A1a khám (chưa gộp)**: `TemplatePicker.tsx` (267 dòng) là **DEAD CODE** — 0 import ngoài
-  chính nó, không render ở đâu. `LayoutShelf.tsx` (825 dòng, `PresentEditor.tsx:1507`) là bản LIVE
-  duy nhất. "Gộp thành Bố cục" (`CHOT-TACH-AI-VA-CHINH-TAY.md` §3c) hoá ra chỉ là XOÁ
-  `TemplatePicker.tsx` — chưa làm, chờ quyết.
-- ✅ **ĐỢT A merge + dọn git** · **Sprint "Lộ nền"** · **2.2.89/7.3.32/2.1.8.n** (demo LAN) ·
-  **7.3.31/2.1.8.k-m/7.1.20/2.2.86/BOQ ĐỢT 1+2/7.1.21+Luật #13** — chi tiết → CHANGELOG.
-- ✅ **2.2.90 ĐỢT 1+2 — `useDismissable`** (`5d81364`+`ad737e3`). ĐỢT 1: nối `MenuButton`/
-  `IOMenu`/`RenderIOMenus`, sửa `stopPropagation` gọi sớm chặn Escape nổi lên window. ĐỢT 2:
-  `Popover.tsx`+`AppChrome.tsx` (`MoreMenu`/`UserChip`/Tasks) — bỏ backdrop, thêm Escape. Verify
-  browser thật đủ 4 nơi trừ FlowCanvas (môi trường, suy ra từ component chung). Cấp mã `2.2.92`
-  mở rộng (overlay đè popover, pre-existing). tsc+eslint+test+build sạch. CHỜ GẬT ĐỢT 3 (panel CAD).
-- 🟡 **2.2.87+2.2.88** cascade 4 bậc CHƯA verify ảnh thật · **7.1.23** Bước 1 xong CHỜ HOÀ GẬT —
-  ĐỢT B đã xong, cả hai giờ MỞ LẠI được, chưa ai động tới.
-- ⏸️ Mục "B2/B4" cũ trong CHANGELOG trùng tên tình cờ, KHÔNG liên quan ĐỢT B. Sprint BOQ ĐỢT 3
-  (`2.1.9.p`) — ĐỢT B xong, tới lượt (Hoà đã greenlight).
+  đính chính B5 dòng (e): màu/font/tên đo được từ **DECK** (`.idfp`), không phải `brand-kit.json`
+  được đọc. Thi công đổi hình dạng tệp CHƯA làm — xem "Chờ USER quyết".
+- ✅ **`docs/00-CHOT.md`** (sổ mục lục, đọc đầu phiên sau STATUS.md) — `CLAUDE.md` dòng 2 theo.
+- ✅ **Present — A1b/c chữ nghĩa**: tab "Mẫu"→**"Magic"** (6 chỗ `PresentEditor.tsx`) · microcopy
+  `BrandKitPanel.tsx:497-501` đúng hiện trạng (Hoà duyệt).
+- ✅ **A2** xoá `TemplatePicker.tsx` (dead code, `grep`=0 xác nhận lại trước khi xoá). **A3**
+  `SPEC-PRESENT-FLOW.md`: gỡ cảnh báo sai + "25 template"→**21** (đếm `BUILTIN_TEMPLATES` thật,
+  không dùng số 47 raw lẫn kiểu dữ liệu). **A4** gỡ nhãn `[CẦN HOÀ DUYỆT]` 7 spec đã duyệt (2 Hoà,
+  4 Cowork thay, 1 tách vai trò/cơ chế) — `docs/CHOT-DUYET-SPEC-2026-08-01.md`. tsc+eslint+
+  test+build sạch cả đợt.
+- ✅ **ĐỢT A + Sprint "Lộ nền" + 2.2.89/7.3.x/2.1.8.x/2.2.86/BOQ ĐỢT 1+2** — chi tiết → CHANGELOG.
+- ✅ **2.2.90 ĐỢT 1+2 `useDismissable`** (`5d81364`+`ad737e3`) — nối `MenuButton`/`IOMenu`/
+  `RenderIOMenus`/`Popover`/`AppChrome`, sửa lỗi `stopPropagation` chặn Escape window. Cấp mã
+  `2.2.92` (overlay đè popover, pre-existing). CHỜ GẬT ĐỢT 3 (panel CAD).
+- 🟡 **2.2.87+2.2.88**/**7.1.23** CHỜ HOÀ GẬT — ĐỢT B xong, MỞ LẠI được, chưa ai động.
 
 ## Worktree đang mở
 Không có. `feat/sprint-infra`+`feat/dot-a-ha-tang` đã merge + prune + xoá branch/thư mục/lock rác
 — đủ điều kiện an toàn.
 
 ## Chờ USER quyết
-- **A1a** — xoá `TemplatePicker.tsx` (dead code) + đổi tên `LayoutShelf.tsx` thành "Bố cục"? Khám
-  xong, chưa gộp.
 - **4.1.f thi công** — hướng đã chốt, CHƯA làm: đổi hình dạng `brand-kit.json` (chỉ kit của dự án
   đó) TRƯỚC khi bàn đảo nguồn.
+- **`knowledge/ttt-design-system/`** (16 KB) đang trong git — vi phạm LUẬT TRUNG TÍNH, `.gitignore`
+  chưa khớp (nêu ở `docs/CHOT-DUYET-SPEC-2026-08-01.md` §3) — CHƯA sửa, ngoài phạm vi đợt này.
 - **④ `FlowVersion`** — 14 dòng/7,27MB/5,31% `dev.db`, không phải thủ phạm → hạ 🟡. 136MB
   còn lại của 143MB `dev.db` bất thường — nghi `NotebookChunk`/`Flow.graphJson`/`ChatMessage` rác
   chưa VACUUM, đo sau.
@@ -69,3 +59,6 @@ Không có. `feat/sprint-infra`+`feat/dot-a-ha-tang` đã merge + prune + xoá b
 1. Không tự merge/push **main** nếu chưa hỏi; đã hỏi rồi thì tự làm (đã push xong lần này).
 2. **LUẬT MÁU verify browser**: qua `127.0.0.1:<port>` (KHÔNG `localhost`); KHÔNG logout/xoá cookie.
 3. Login demo: `demo@if.local` / `demo1234`.
+4. **KHÔNG `prisma db push`/`migrate` qua sandbox** (FUSE chặn khoá file SQLite đúng chuẩn) — soạn
+   lệnh sẵn cho Hoà chạy máy thật. Backup SQLite bằng `sqlite3 dev.db ".backup 'ten'"`, không `cp`.
+   Chi tiết → `docs/00-CHOT.md` mục "LUẬT VẬN HÀNH".

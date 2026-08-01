@@ -1,7 +1,6 @@
 # SPEC · VITALS AI — trợ lý AI trong InteriorFlow
 
-> **`[CẦN HOÀ DUYỆT]`**
-> Trạng thái: **DRAFT v0.1** — chưa được duyệt, KHÔNG dùng làm căn cứ code.
+> Trạng thái: phần **VAI TRÒ** đã duyệt (xem `SPEC-VITALS-ROLE.md`), phần **CƠ CHẾ** còn draft.
 > Ngày soạn: **25/07/2026** · Người soạn: agent tài liệu (docs-only)
 > Nợ tài liệu này được nêu ở `docs/INDEX-AI-SPECS.md` §F (dòng 43, 55) — file này trả nợ đó.
 > Mọi trạng thái ✅/🟡/⬜ dưới đây đã **verify bằng code thật** (file:dòng làm bằng chứng),

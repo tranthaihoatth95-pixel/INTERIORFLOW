@@ -1,6 +1,7 @@
 # SPEC — HẠ TẦNG SẢN PHẨM *(product infrastructure)*
 
-> **[CẦN HOÀ DUYỆT]** · Lớp phân biệt "app bán được" với "prototype chạy được".
+> **Đã duyệt (Cowork thay, uỷ quyền phần thuần kỹ thuật, 01/08).** Lớp phân biệt "app bán được"
+> với "prototype chạy được".
 > Đọc cùng `IF-ARCHITECTURE-BLUEPRINT-v1.md` mục 1B (ràng buộc nền tảng web/desktop).
 > **Cảnh báo**: đây là việc **vô hình** — tốn công, không ai khen, nhưng thiếu thì không bán được.
 

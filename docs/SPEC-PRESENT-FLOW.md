@@ -1,11 +1,8 @@
 # SPEC — PRESENT FLOW & VIDEO *(chặng 3)*
 
-> **[CẦN HOÀ DUYỆT]** · Chẩn đoán gốc (Hoà, 24/07): *"thông minh chưa tới mà human-in-loop
+> **Đã duyệt (Hoà, 01/08).** Chẩn đoán gốc (Hoà, 24/07): *"thông minh chưa tới mà human-in-loop
 > cũng chưa tới"* — Present đang **kẹt giữa** hai mô hình.
-> Đọc cùng `SPEC-UI-SHELL.md`, `SPEC-SEMANTIC-MODEL.md`, `IF-PRESENT-SPRINT-PLAN.md` (⚠️ FILE
-> KHÔNG CÓ TRONG REPO, 26/07 — lộ trình PS đầy đủ không còn ở đâu, chỉ còn mảnh rải rác nhắc số
-> PS trong `docs/IF-ARCHITECTURE-BLUEPRINT-v1.md` + `docs/SPEC-RENDER-STUDIO.md` +
-> `docs/RESEARCH-TEAM-COLLABORATION.md` — cần Hoà upload lại bản đầy đủ nếu còn cần).
+> Đọc cùng `SPEC-UI-SHELL.md`, `SPEC-SEMANTIC-MODEL.md`, `IF-PRESENT-SPRINT-PLAN.md`.
 
 ---
 
@@ -48,7 +45,7 @@ nguyên liệu  → 3 phương án khác   →  canvas tự do   →  deck · PD
 | Điểm yếu | Trang trắng, tự dựng từ đầu | ⚠️ **Không đồng nhất thẩm mỹ** |
 
 **Vì sao Canva rời rạc**: sinh từng slide độc lập, không có hệ thống ràng buộc.
-**IF khác**: đã có `DECK_STANDARDS` (lưới 12 cột) · Brand Kit · 25 template · Perceptron học gu.
+**IF khác**: đã có `DECK_STANDARDS` (lưới 12 cột) · Brand Kit · 21 template · Perceptron học gu.
 
 > ⭐ **LUẬT: AI chỉ được CHỌN trong bộ template đã duyệt — KHÔNG được tự sáng tác bố cục.**
 > *(constrained generation)* → nhanh như Canva nhưng **đồng nhất thẩm mỹ**, vì mọi trang
@@ -80,7 +77,7 @@ nguyên liệu  → 3 phương án khác   →  canvas tự do   →  deck · PD
 ```
 ① Chọn loại hồ sơ   → ra CÂY DÀN BÀI mẫu (sửa được: thêm/bớt/đổi tên chương)
 ② Nạp nguyên liệu   → ảnh · bản vẽ từ CAD · text · reference
-③ Máy phân vào chỗ  → mỗi trang tự CHỌN template phù hợp trong 25 mẫu (không sáng tác)
+③ Máy phân vào chỗ  → mỗi trang tự CHỌN template phù hợp trong 21 mẫu (không sáng tác)
 ④ Cây bên trái      → kéo thả sắp xếp, thấy trang nào còn trống
 ⑤ Sửa trên canvas   → chỗ đã sửa được KHOÁ GIỮ (luật 6c)
 ⑥ Xuất              → PDF · PPTX · HTML · video
