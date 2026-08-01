@@ -5,13 +5,14 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (01/08 — V1+V2 video · toggle Gallery · P1/P2 Present xong · P3 KHÁM xong CHỜ Hoà)
-- ✅ **P1+P2 Present** (`ab1d9a9`, `8f4ed9f`) — sửa 3 nhãn nói dối IF-FEATURE-TREE/Toolbar (khoá
-  tỉ lệ + linked-assets ĐÃ chạy thật, nút deck .pptx/.pdf giữ khoá đúng nhưng sửa câu lý do lỗi
-  thời) · ảnh mặc định GIỮ TỈ LỆ khi resize góc (Shift để bẻ, đảo ngược so text/shape), tách
-  `resize-corner.ts` test được (18 test). **P3 (in 300dpi) — CHỈ KHÁM, CHƯA CODE** (đúng gate):
-  nghẽn thật là 2 tầng riêng (canvas/text vô hạn dpi, rẻ · ảnh hero cần `ai.upscale` ×4 thật,
-  2cr/ảnh) — báo Cowork trước khi động tay.
+## Hiện tại (01/08 — V1+V2 video · toggle Gallery · P1/P2/P3-phần1 Present xong · P3-phần2 chờ đo)
+- ✅ **P1+P2+P3 phần 1 Present** (`ab1d9a9`, `8f4ed9f`, `00bf640`, `73b92f0`) — sửa 3 nhãn nói dối
+  · ảnh mặc định GIỮ TỈ LỆ resize góc (Shift bẻ), `resize-corner.ts` 18 test · **in giấy thật theo
+  dpi ĐÃ LÀM cho chữ/hình khối** (`renderEditorSlide` param `resScale`, `exportDeckToPdfAtPaperSize`,
+  `PAPER_SIZE_MM`/`printResScale`, 51 test `stage-presets.test.ts`) — 0 credit, chữ/vector hết trần
+  dpi. Ảnh hero/nền CHƯA (P3 phần 2): `scripts/measure-upscale-dpi.ts` soạn xong, **Hoà tự chạy**
+  (cần FAL_KEY thật + ~4cr) lấy số thật trước khi code tích hợp `ai.upscale` — bắt buộc cache theo
+  img id. Toolbar chưa wire được (cần PresentEditor.tsx, đang KHÔNG ĐỤNG — code phụ).
 - ✅ **Toggle Carousel↔Grid Gallery** (`6303d7c`) — ghi đè J-4c (luật 2.1.10), nhớ theo user qua
   `lib/resume.ts`. Verify browser thật cả 2 chiều + persist qua reload; reduce-motion chỉ verify code.
 - ✅ **V2 đường cam mức 2-a** (`69db004`, `SPEC-VIDEO-MAT-BANG.md` §2) — A/C/D đủ, B rút gọn:
