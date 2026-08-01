@@ -106,7 +106,8 @@ export function classifyDrawOnBatch(entity: Entity, layerLineweightMm: number): 
 }
 
 /** lineweight hiệu dụng của 1 entity: override riêng entity (hiếm) → lineweight layer → mặc định. */
-function lineweightOf(entity: Entity, layerById: Map<string, Layer>): number {
+/** Export để `DrawOnPreview` (phần C) tính độ dày nét ISO 128 — dùng LẠI, không suy ra lần 2. */
+export function lineweightOf(entity: Entity, layerById: Map<string, Layer>): number {
   if (typeof entity.lineweight === 'number') return entity.lineweight;
   const layer = layerById.get(entity.layer);
   return layer?.lineweight ?? DEFAULT_LINEWEIGHT_MM;
