@@ -34,6 +34,7 @@ import { checkStandards, type Violation } from '@/lib/cad/standards/checker';
 import { getAllRules } from '@/lib/cad/standards/registry';
 import { rulesForOperator } from '@/lib/cad/operator-profile';
 import { PairwisePerceptron } from '@/lib/gu/pairwise-perceptron';
+import { loadGuModelFromServer, saveGuModelToServer } from '@/lib/gu/gu-model-sync';
 import { cadLayoutOptionModelKey, layoutOptionFeatures, explainLayoutOption, type LayoutOptionSignal } from '@/lib/cad/ai-layout-feedback';
 import { useFlowStore } from '@/lib/store';
 import { effectiveUserId } from '@/lib/resume';
@@ -137,8 +138,38 @@ export default function AiBriefPanel({ onClose }: Props) {
     } catch {
       /* localStorage bị chặn — coi như chưa từng có, không chặn model */
     }
-    setModel(PairwisePerceptron.loadFromLocalStorage(modelKey));
+    const localModel = PairwisePerceptron.loadFromLocalStorage(modelKey);
+    setModel(localModel);
     if (!existed) setGuFreshStart(true); // lần đầu thấy khoá này → báo cho người dùng biết
+
+    // (Đợt C, 01/08) Prisma LÀ NGUỒN — đọc server SONG SONG, không chặn UI (model cục bộ đã
+    // setModel ở trên, dùng được ngay). Đối chiếu bằng pairsSeen (bằng chứng học được nhiều hơn
+    // thắng) thay vì ghi đè mù quáng 1 chiều: tránh vừa mất tiến độ học offline (server cũ hơn
+    // local) VÀ tránh bỏ qua dữ liệu server mới hơn (đăng nhập máy khác đã học thêm ở đó).
+    let cancelled = false;
+    loadGuModelFromServer('cad-layout-option').then((server) => {
+      if (cancelled) return;
+      const localState = localModel.toState();
+      if (server) {
+        const serverModel = PairwisePerceptron.deserialize(server.weightsJson);
+        if (server.pairCount > localState.pairsSeen) {
+          // server đi trước → nhận, đồng bộ lại cache cục bộ cho khớp.
+          setModel(serverModel);
+          serverModel.saveToLocalStorage(modelKey);
+        } else if (localState.pairsSeen > server.pairCount) {
+          // cục bộ đi trước (học offline chưa kịp đẩy lên) → giữ nguyên, đẩy lên cho server bắt kịp.
+          void saveGuModelToServer('cad-layout-option', localModel.serialize(), localState.pairsSeen);
+        }
+        // bằng nhau → coi như đã đồng bộ, không làm gì thêm.
+      } else if (localState.pairsSeen > 0) {
+        // server CHƯA có bản ghi (lần đầu bật Đợt C) nhưng cục bộ đã có dữ liệu SẠCH (đã khoá
+        // theo userId từ 0a, không phải trọng số trộn nhiều người) → đẩy lên làm bản khởi tạo.
+        void saveGuModelToServer('cad-layout-option', localModel.serialize(), localState.pairsSeen);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [modelKey]);
 
   // Đồng bộ state → cache + localStorage mỗi khi user gõ (draft sống qua cả reload — B1 24/07).
@@ -290,7 +321,12 @@ export default function AiBriefPanel({ onClose }: Props) {
       if (losers.length) {
         const acceptedF = layoutOptionFeatures(signalOf(s));
         for (const rej of losers) model.update(acceptedF, layoutOptionFeatures(signalOf(rej)));
-        if (modelKey) model.saveToLocalStorage(modelKey); // không có userId → chỉ học trong RAM phiên này
+        if (modelKey) {
+          model.saveToLocalStorage(modelKey); // không có userId → chỉ học trong RAM phiên này
+          // (Đợt C) fire-and-forget lên Prisma — lỗi mạng KHÔNG chặn luồng học cục bộ, xem
+          // saveGuModelToServer (không bao giờ ném).
+          void saveGuModelToServer('cad-layout-option', model.serialize(), model.pairsSeen);
+        }
       }
     }
     onClose();

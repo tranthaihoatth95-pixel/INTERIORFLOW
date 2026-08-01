@@ -39,6 +39,7 @@ model User {
   integrations IntegrationAccount[]
   larkUserMaps LarkUserMap[]
   memberships  ProjectMember[]
+  guModels     GuModel[]
 }
 
 // Token OAuth của user cho từng dịch vụ ngoài (google/ms365/zoom/zalo/spotify/youtube/team...).
@@ -276,6 +277,32 @@ model LibraryAsset {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([deletedAt])
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Đợt C (01/08, docs/QUYET-DINH-HA-TANG-2026-07-31.md §③, phương án C) — bộ học "Gu"
+// (lib/gu/pairwise-perceptron.ts) chuyển từ CHỈ localStorage sang Prisma LÀ NGUỒN, kèm
+// đường xuất/nhập tệp (yêu cầu, xem đường dẫn ở lib/gu/gu-model-sync.ts). weightsJson =
+// nguyên văn PairwisePerceptron.serialize() (JSON thuần, xem PerceptronState) — KHÔNG tách
+// cột theo từng trọng số (vector thưa, key động theo feature, tách cột là vô nghĩa).
+// kind PHÂN LOẠI theo điểm cắm (mỗi điểm cắm học riêng, không trộn): hiện có
+// 'cad-layout-option' (components/cad/AiBriefPanel.tsx). 0a (31/07) đã khoá theo userId ở
+// tầng localStorage — model Prisma này THỪA KẾ nguyên tắc đó qua @@unique([userId, kind]),
+// và CŨNG bắt đầu lại từ 0 (không di trú trọng số cũ) vì lý do giống hệt 0a: khoá
+// localStorage cũ là chuỗi cố định, có thể đã trộn nhiều người dùng — coi là dữ liệu bẩn.
+// ══════════════════════════════════════════════════════════════════════════
+model GuModel {
+  id          String   @id @default(cuid())
+  userId      String
+  kind        String // 'cad-layout-option' | 'present-template' (điểm cắm nào học riêng điểm đó)
+  weightsJson String // PairwisePerceptron.serialize() nguyên văn
+  pairCount   Int      @default(0) // cache của PerceptronState.pairsSeen — hiển thị nhanh, không phải nguồn
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind])
 }
 
 // ══════════════════════════════════════════════════════════════════════════
