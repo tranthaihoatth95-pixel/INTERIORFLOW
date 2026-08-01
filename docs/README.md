@@ -16,7 +16,7 @@
 | [`IF-FEATURE-SPEC-P1-v2.md`](IF-FEATURE-SPEC-P1-v2.md) | **Spec canonical** — 101 item, đối soát mã nguồn 17/07. Dùng file này khi được giao build tính năng mới. |
 | [`IF-FEATURE-UPGRADES.md`](IF-FEATURE-UPGRADES.md) | Nâng cấp tính năng đã có (Basic→Pro→Elite). Đọc khi được giao nâng cấp tính năng cũ. |
 | [`IF-PRESENT-SPRINT-PLAN.md`](IF-PRESENT-SPRINT-PLAN.md) | Lộ trình PS-0…PS-11 cho chặng Present — sprint nào đã xong, sprint nào còn mở. |
-| [`IF-ARCHITECTURE-BLUEPRINT-v1.md`](IF-ARCHITECTURE-BLUEPRINT-v1.md) | Hiến pháp kiến trúc — lưới phân loại N/P/L, đứng trên mọi spec/sprint plan. Duyệt 01/08 (Cowork); IF chính thức 4 chặng (0→3). |
+| [`IF-ARCHITECTURE-BLUEPRINT-v1.md`](IF-ARCHITECTURE-BLUEPRINT-v1.md) | Hiến pháp kiến trúc — lưới phân loại N/P/L, đứng trên mọi spec/sprint plan. |
 | [`IF-CORE-SCHEMA.md`](IF-CORE-SCHEMA.md) | Chi tiết kỹ thuật T1 — schema Prisma, quy ước ID, mô hình local-first. |
 | [`IF1_IF2_BIGPICTURE.md`](IF1_IF2_BIGPICTURE.md) | Roadmap tổng IF1/IF2. |
 | [`APP-MAP.md`](APP-MAP.md) | Bản đồ ứng dụng — route tree, API map, 3-stage handoff (đọc code, không phải kế hoạch). |
@@ -88,24 +88,22 @@
 | [`RESEARCH-OFFICE-FILE-INTEROP.md`](RESEARCH-OFFICE-FILE-INTEROP.md) | Mở file Office thật (PPTX/Keynote/Word) + Excel — đề xuất, chưa thực thi. |
 | [`RESEARCH-TEAM-COLLABORATION.md`](RESEARCH-TEAM-COLLABORATION.md) | Cộng tác nhóm — comment bất đồng bộ & real-time — đề xuất, chưa thực thi. |
 | [`RESEARCH-TECHNICAL-DRAWING-PIPELINE.md`](RESEARCH-TECHNICAL-DRAWING-PIPELINE.md) | Dàn trang bản vẽ kỹ thuật + cầu nối CAD→Presenting — đề xuất, chưa thực thi. |
-| [`SPEC-ARCHINOTE-IF-BOUNDARY.md`](SPEC-ARCHINOTE-IF-BOUNDARY.md) | Ranh giới ArchiNote ↔ InteriorFlow — duyệt 01/08, đã bị `SPEC-ARCHINOTE-DETAIL-v1.md` thay thế. |
-| [`SPEC-BRIEF-INTAKE.md`](SPEC-BRIEF-INTAKE.md) | Đề bài → Phương án (brief intake) + chuẩn vận hành thương hiệu (Accor/Marriott…) — duyệt hướng 01/08. |
-| [`SPEC-CAD-MODES.md`](SPEC-CAD-MODES.md) | CAD hai chế độ (Sketch↔Pro) — đã duyệt (Hoà, 01/08). |
-| [`SPEC-COLLABORATION.md`](SPEC-COLLABORATION.md) | Cộng tác nhóm (bình luận ngữ cảnh) — duyệt hướng 01/08. |
-| [`SPEC-EDITOR-TOOLKIT.md`](SPEC-EDITOR-TOOLKIT.md) | Bộ công cụ editor (deck·graphic·photo·video) — duyệt hướng 01/08. |
-| [`SPEC-FILE-MANAGER.md`](SPEC-FILE-MANAGER.md) | File Manager toàn app — duyệt hướng 01/08. |
-| [`SPEC-IF-LIBRARY.md`](SPEC-IF-LIBRARY.md) | IF Library (siêu thư viện tài sản/DAM) — duyệt 01/08 (Cowork, căn cứ đo code). |
-| [`SPEC-KNOWLEDGE-BASE.md`](SPEC-KNOWLEDGE-BASE.md) | Kệ sách & tri thức (T5) — duyệt hướng 01/08 (Cowork), cơ chế chưa xây. |
-| [`SPEC-MATERIAL-PIPELINE.md`](SPEC-MATERIAL-PIPELINE.md) | Chuỗi vật liệu — duyệt 01/08 (Cowork, căn cứ đo code). |
-| [`SPEC-PRESENT-FLOW.md`](SPEC-PRESENT-FLOW.md) | Present Flow & Video (chặng 3) — đã duyệt (Hoà, 01/08). |
-| [`SPEC-PRODUCT-INFRA.md`](SPEC-PRODUCT-INFRA.md) | Hạ tầng sản phẩm — duyệt 01/08 (Cowork). |
-| [`SPEC-RENDER-STUDIO.md`](SPEC-RENDER-STUDIO.md) | Render Studio (canvas+node+template) — duyệt 01/08 (Cowork, căn cứ đo code). |
-| [`SPEC-SEMANTIC-MODEL.md`](SPEC-SEMANTIC-MODEL.md) | Mô hình ngữ nghĩa 2D (BIM-lite) — **[CẦN HOÀ DUYỆT]** (Hoà giữ lại tự đọc — quyết định đắt nhất của IF). |
-| [`SPEC-STAGE-0-IDEATION.md`](SPEC-STAGE-0-IDEATION.md) | CHẶNG 0 · Ý tưởng & moodboard — chặng mới phát hiện thiếu 26/07 — duyệt hướng 01/08, xếp hàng đợi. |
-| [`SPEC-UI-SHELL.md`](SPEC-UI-SHELL.md) | Khung giao diện chung — duyệt 01/08 (Cowork). |
-| [`SPEC-VITALS-AI.md`](SPEC-VITALS-AI.md) | Vitals AI — trợ lý AI trong IF — DRAFT v0.1, vai trò đã duyệt · cơ chế còn draft. |
-| [`SPEC-ARCHINOTE-DETAIL-v1.md`](SPEC-ARCHINOTE-DETAIL-v1.md) | ArchiNote chi tiết — duyệt 01/08 (5 đề xuất E2, sửa điều 2: ArchiNote cũng theo Luật Trung Tính). |
-| [`PLAN-LIBRARY-GATEWAY.md`](PLAN-LIBRARY-GATEWAY.md) | Kế hoạch hợp nhất Library ↔ Gateway ↔ File Manager — duyệt 01/08 (Cowork). |
+| [`SPEC-ARCHINOTE-IF-BOUNDARY.md`](SPEC-ARCHINOTE-IF-BOUNDARY.md) | Ranh giới ArchiNote ↔ InteriorFlow — ✅ duyệt 01/08/2026 (CHOT-DUYET-SPEC ·-DOT2). |
+| [`SPEC-BRIEF-INTAKE.md`](SPEC-BRIEF-INTAKE.md) | Đề bài → Phương án (brief intake) + chuẩn vận hành thương hiệu (Accor/Marriott…) — ✅ duyệt 01/08/2026 (CHOT-DUYET-SPEC ·-DOT2). |
+| [`SPEC-CAD-MODES.md`](SPEC-CAD-MODES.md) | CAD hai chế độ (Sketch↔Pro) — ✅ duyệt 01/08/2026 (CHOT-DUYET-SPEC ·-DOT2). |
+| [`SPEC-COLLABORATION.md`](SPEC-COLLABORATION.md) | Cộng tác nhóm (bình luận ngữ cảnh) — ✅ duyệt 01/08/2026 (CHOT-DUYET-SPEC ·-DOT2). |
+| [`SPEC-EDITOR-TOOLKIT.md`](SPEC-EDITOR-TOOLKIT.md) | Bộ công cụ editor (deck·graphic·photo·video) — ✅ duyệt 01/08/2026 (CHOT-DUYET-SPEC ·-DOT2). |
+| [`SPEC-FILE-MANAGER.md`](SPEC-FILE-MANAGER.md) | File Manager toàn app — ✅ duyệt 01/08/2026 (CHOT-DUYET-SPEC ·-DOT2). |
+| [`SPEC-IF-LIBRARY.md`](SPEC-IF-LIBRARY.md) | IF Library (siêu thư viện tài sản/DAM) — ✅ duyệt 01/08/2026 (CHOT-DUYET-SPEC ·-DOT2). |
+| [`SPEC-KNOWLEDGE-BASE.md`](SPEC-KNOWLEDGE-BASE.md) | Kệ sách & tri thức (T5) — ✅ duyệt 01/08/2026 (CHOT-DUYET-SPEC ·-DOT2). |
+| [`SPEC-MATERIAL-PIPELINE.md`](SPEC-MATERIAL-PIPELINE.md) | Chuỗi vật liệu — ✅ duyệt 01/08/2026 (CHOT-DUYET-SPEC ·-DOT2). |
+| [`SPEC-PRESENT-FLOW.md`](SPEC-PRESENT-FLOW.md) | Present Flow & Video (chặng 3) — ✅ duyệt 01/08/2026 (CHOT-DUYET-SPEC ·-DOT2). |
+| [`SPEC-PRODUCT-INFRA.md`](SPEC-PRODUCT-INFRA.md) | Hạ tầng sản phẩm — ✅ duyệt 01/08/2026 (CHOT-DUYET-SPEC ·-DOT2). |
+| [`SPEC-RENDER-STUDIO.md`](SPEC-RENDER-STUDIO.md) | Render Studio (canvas+node+template) — ✅ duyệt 01/08/2026 (CHOT-DUYET-SPEC ·-DOT2). |
+| [`SPEC-SEMANTIC-MODEL.md`](SPEC-SEMANTIC-MODEL.md) | Mô hình ngữ nghĩa 2D (BIM-lite) — ✅ duyệt 01/08/2026 (CHOT-DUYET-SPEC ·-DOT2). |
+| [`SPEC-STAGE-0-IDEATION.md`](SPEC-STAGE-0-IDEATION.md) | CHẶNG 0 · Ý tưởng & moodboard — chặng mới phát hiện thiếu 26/07 — ✅ duyệt 01/08/2026 (CHOT-DUYET-SPEC ·-DOT2). |
+| [`SPEC-UI-SHELL.md`](SPEC-UI-SHELL.md) | Khung giao diện chung — ✅ duyệt 01/08/2026 (CHOT-DUYET-SPEC ·-DOT2). |
+| [`SPEC-VITALS-AI.md`](SPEC-VITALS-AI.md) | Vitals AI — trợ lý AI trong IF — DRAFT v0.1 — vai trò ✅ duyệt 01/08, cơ chế còn draft. |
 
 ## 🔴 LỖI THỜI (`docs/archive/`)
 

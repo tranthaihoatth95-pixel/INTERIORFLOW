@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Tool Window — Sketch → Ảnh thật (mock)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:#6a57f5;
+    --paper:#EFECE6;
+    --ink:#1c1c21;
+    --t2:#6a6d78;
+    --glass:rgba(255,255,255,.55);
+    --glass-border:rgba(255,255,255,.75);
+    --shadow:0 18px 50px rgba(28,28,33,.14), 0 2px 8px rgba(28,28,33,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Be Vietnam Pro',sans-serif;color:var(--ink);
+    background:var(--paper);min-height:100vh;overflow-x:hidden;
+    background-image:radial-gradient(rgba(28,28,33,.07) 1px, transparent 1px);
+    background-size:22px 22px;
+  }
+
+  /* ── THANH TAB TOOL ───────────────────────────── */
+  .tabbar{
+    position:sticky;top:14px;z-index:50;margin:14px auto 0;width:max-content;max-width:94vw;
+    display:flex;gap:6px;align-items:center;padding:6px;
+    background:var(--glass);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);
+    border:1px solid var(--glass-border);border-radius:16px;box-shadow:var(--shadow);
+    overflow-x:auto;
+  }
+  .tab{
+    padding:8px 14px;border-radius:10px;font-size:13px;font-weight:500;color:var(--t2);
+    white-space:nowrap;cursor:pointer;display:flex;gap:7px;align-items:center;border:1px solid transparent;
+  }
+  .tab:hover{background:rgba(255,255,255,.6);color:var(--ink)}
+  .tab.active{background:#fff;color:var(--ink);border-color:rgba(28,28,33,.08);box-shadow:0 2px 6px rgba(28,28,33,.08)}
+  .tab .dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  .tab.pin{color:var(--accent);font-weight:600}
+  .cr{font-size:10.5px;font-weight:600;background:rgba(106,87,245,.1);color:var(--accent);padding:2px 6px;border-radius:6px}
+
+  /* ── SÂN KHẤU ─────────────────────────────────── */
+  .stage{position:relative;max-width:1100px;margin:46px auto 60px;padding:0 20px;min-height:640px}
+
+  /* dây nối kiểu React Flow */
+  svg.wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+  .wire{fill:none;stroke:var(--accent);stroke-width:2;opacity:.55;stroke-dasharray:6 5;animation:flow 1.6s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-22}}
+
+  /* ── TOOL WINDOW ──────────────────────────────── */
+  .win{
+    position:relative;z-index:10;width:620px;max-width:100%;
+    background:var(--glass);backdrop-filter:blur(22px) saturate(1.5);-webkit-backdrop-filter:blur(22px) saturate(1.5);
+    border:1px solid var(--glass-border);border-radius:20px;box-shadow:var(--shadow);
+    padding:14px;
+  }
+  .win-head{display:flex;align-items:center;gap:10px;padding:2px 4px 12px}
+  .win-icon{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#9b8cff);
+    display:grid;place-items:center;color:#fff;font-size:15px}
+  .win-title{font-size:14.5px;font-weight:600}
+  .win-sub{font-size:11.5px;color:var(--t2)}
+  .win-acts{margin-left:auto;display:flex;gap:6px}
+  .wbtn{width:26px;height:26px;border-radius:8px;border:1px solid rgba(28,28,33,.1);background:rgba(255,255,255,.55);
+    display:grid;place-items:center;font-size:12px;color:var(--t2);cursor:pointer}
+  .wbtn:hover{color:var(--ink);background:#fff}
+
+  /* RUỘT — nội dung sắc nét, GÓC VUÔNG, không blur */
+  .content{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pane{background:#fff;border:1px solid rgba(28,28,33,.09)}
+  .pane .label{font-size:10.5px;font-weight:600;letter-spacing:.08em;color:var(--t2);padding:8px 10px 6px;text-transform:uppercase}
+  .pane .img{aspect-ratio:4/3;position:relative;overflow:hidden;background:#fafaf8}
+  .pane .img svg,.pane .img .fake{position:absolute;inset:0;width:100%;height:100%}
+
+  /* ảnh "kết quả" giả bằng gradient vật liệu — hư cấu 100% */
+  .fake{background:
+    linear-gradient(180deg,#c9b8a0 0%,#e8ded0 34%,#efe9e0 35%,#d9cfc0 62%,#8a7a64 63%,#6d5f4c 100%);}
+  .fake::before{content:'';position:absolute;left:8%;top:12%;width:34%;height:52%;
+    background:linear-gradient(115deg,#f5efe4 0%,#fdf9f0 60%,#e9dfd0 100%);box-shadow:0 6px 24px rgba(60,45,20,.25)}
+  .fake::after{content:'';position:absolute;right:10%;bottom:14%;width:44%;height:26%;
+    background:linear-gradient(180deg,#b7a288,#94805f);border-radius:3px;box-shadow:0 10px 28px rgba(60,45,20,.35)}
+  .badge-out{position:absolute;right:8px;top:8px;background:rgba(28,28,33,.72);color:#fff;
+    font-size:10px;font-weight:600;padding:3px 8px;border-radius:99px;backdrop-filter:blur(4px)}
+
+  /* núm điều khiển */
+  .ctrls{padding:12px 4px 4px;display:flex;flex-direction:column;gap:11px}
+  .slider{display:flex;align-items:center;gap:10px;font-size:12.5px}
+  .slider .name{width:120px;color:var(--ink);font-weight:500}
+  .track{flex:1;height:5px;border-radius:99px;background:rgba(28,28,33,.12);position:relative}
+  .fill{position:absolute;inset:0;right:auto;border-radius:99px;background:var(--accent)}
+  .knob{position:absolute;top:50%;transform:translate(-50%,-50%);width:15px;height:15px;border-radius:50%;
+    background:#fff;border:1.5px solid var(--accent);box-shadow:0 1px 4px rgba(28,28,33,.25)}
+  .val{width:34px;text-align:right;font-variant-numeric:tabular-nums;color:var(--t2);font-size:12px}
+  .row{display:flex;gap:8px;align-items:center}
+  .chip{display:flex;gap:7px;align-items:center;font-size:12px;color:var(--t2);border:1px dashed rgba(28,28,33,.25);
+    padding:7px 11px;border-radius:10px;background:rgba(255,255,255,.4);cursor:pointer}
+  .chip:hover{color:var(--ink);border-color:var(--accent)}
+  .go{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--accent);color:#fff;border:none;
+    font-family:inherit;font-size:13.5px;font-weight:600;padding:10px 20px;border-radius:12px;cursor:pointer;
+    box-shadow:0 6px 18px rgba(106,87,245,.35)}
+  .go:hover{filter:brightness(1.07)}
+  .go .c{font-size:11px;font-weight:600;background:rgba(255,255,255,.22);padding:2px 7px;border-radius:7px}
+
+  /* CỔNG NODE hai bên — chứng minh window LÀ node */
+  .port{position:absolute;width:13px;height:13px;border-radius:50%;background:#fff;border:2.5px solid var(--accent);z-index:12}
+  .port.in{left:-7px;top:50%}
+  .port.out{right:-7px;top:42%}
+  .port.out2{right:-7px;top:58%}
+
+  /* node đã thu nhỏ */
+  .mini{
+    position:absolute;z-index:10;right:24px;top:96px;width:212px;
+    background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border:1px solid var(--glass-border);border-radius:14px;box-shadow:var(--shadow);padding:10px 12px;cursor:pointer;
+  }
+  .mini .t{display:flex;gap:8px;align-items:center;font-size:12.5px;font-weight:600}
+  .mini .t .ic{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,#e0906b,#d4b06a);
+    display:grid;place-items:center;color:#fff;font-size:11px}
+  .mini .s{font-size:11px;color:var(--t2);margin-top:4px}
+  .mini .port.in{left:-7px;top:50%}
+  .mini:hover{border-color:var(--accent)}
+  .hint{position:absolute;z-index:9;font-size:11px;color:var(--t2);background:rgba(255,255,255,.6);
+    padding:4px 9px;border-radius:8px;backdrop-filter:blur(8px)}
+
+  .caption{max-width:1100px;margin:0 auto 50px;padding:0 20px;font-size:12px;color:var(--t2);line-height:1.7}
+  .caption b{color:var(--ink)}
+  @media(max-width:720px){.content{grid-template-columns:1fr}.mini{display:none}.stage{min-height:auto}}
+</style>
+</head>
+<body>
+
+<!-- THANH TAB TOOL -->
+<div class="tabbar">
+  <div class="tab active"><span class="dot"></span>Sketch → Ảnh thật <span class="cr">3cr</span></div>
+  <div class="tab">Đổi vật liệu</div>
+  <div class="tab">Đổi ánh sáng</div>
+  <div class="tab">Sửa một mảng</div>
+  <div class="tab">Đổi phong cách</div>
+  <div class="tab">Phóng to in</div>
+  <div class="tab pin">＋ Ghim</div>
+</div>
+
+<div class="stage">
+  <!-- dây nối window → node thu nhỏ -->
+  <svg class="wires"><path class="wire" d="M 648 300 C 760 300, 720 150, 866 150"/></svg>
+
+  <!-- TOOL WINDOW = SUBGRAPH NODE PHÓNG TO -->
+  <div class="win" style="margin-top:40px">
+    <span class="port in" title="Ảnh vào"></span>
+    <span class="port out" title="Ảnh ra"></span>
+    <span class="port out2" style="border-color:#d4b06a" title="Mask ra"></span>
+
+    <div class="win-head">
+      <div class="win-icon">✦</div>
+      <div>
+        <div class="win-title">Sketch → Ảnh thật</div>
+        <div class="win-sub">FLUX Depth · giữ đúng hình học bản vẽ</div>
+      </div>
+      <div class="win-acts">
+        <div class="wbtn" title="Thu về node">▁</div>
+        <div class="wbtn" title="Mở graph bên trong">⌗</div>
+        <div class="wbtn" title="Đóng">✕</div>
+      </div>
+    </div>
+
+    <!-- RUỘT: sắc nét, góc vuông, không blur -->
+    <div class="content">
+      <div class="pane">
+        <div class="label">Ảnh gốc</div>
+        <div class="img">
+          <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" stroke="#3a3a40" fill="none" stroke-width="1.6">
+            <rect x="0" y="0" width="400" height="300" fill="#fbfaf7" stroke="none"/>
+            <path d="M20 40 L200 20 L200 280 L20 260 Z"/>
+            <path d="M200 20 L380 44 L380 256 L200 280"/>
+            <path d="M215 60 L365 78 M215 100 L365 112 M215 140 L365 146"/>
+            <path d="M40 170 L150 165 L165 210 L48 218 Z"/>
+            <path d="M55 175 L60 150 L140 146 L146 168"/>
+            <path d="M230 190 L330 186 L340 236 L238 242 Z" />
+            <path d="M60 70 L160 62 M60 100 L160 96" stroke-dasharray="4 3"/>
+            <circle cx="300" cy="70" r="14"/>
+          </svg>
+        </div>
+      </div>
+      <div class="pane">
+        <div class="label">Kết quả</div>
+        <div class="img"><div class="fake"></div><span class="badge-out">V2 · 12s</span></div>
+      </div>
+    </div>
+
+    <div class="ctrls">
+      <div class="slider">
+        <span class="name">Bám bản vẽ</span>
+        <div class="track"><div class="fill" style="width:80%"></div><div class="knob" style="left:80%"></div></div>
+        <span class="val">0.8</span>
+      </div>
+      <div class="slider">
+        <span class="name">Tự do sáng tạo</span>
+        <div class="track"><div class="fill" style="width:40%"></div><div class="knob" style="left:40%"></div></div>
+        <span class="val">0.4</span>
+      </div>
+      <div class="row">
+        <div class="chip">🖼 + Ảnh tham chiếu gu</div>
+        <div class="chip">📐 Khổ 4:3</div>
+        <button class="go">▶ Render <span class="c">3cr</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NODE ĐÃ THU NHỎ — nhận output từ window -->
+  <div class="mini">
+    <span class="port in"></span>
+    <div class="t"><span class="ic">◑</span>Đổi vật liệu</div>
+    <div class="s">Chờ ảnh vào · sàn gỗ → đá</div>
+  </div>
+  <div class="hint" style="right:24px;top:158px">bấm để nở thành window thứ 2</div>
+</div>
+
+<div class="caption">
+  <b>Mock theo CHOT-RENDER-TOOL-WINDOW 01/08.</b> Vỏ window + thanh tab = kính mờ bo góc (họ card kính
+  gallery / cầu kính Vitals) · ruột ảnh sắc nét góc vuông, không blur — <b>kính là vỏ, không bao giờ là ruột</b>.
+  Cổng tròn hai bên chứng minh window LÀ node: dây tím đang nối "Ảnh ra" sang node "Đổi vật liệu" thu nhỏ —
+  bấm node là nở thành window thứ 2, tối đa 3. Nút ▁ thu về node, ⌗ mở graph bên trong (subgraph), ✕ đóng.
+  Nội dung hư cấu 100%.
+</div>
+
+</body>
+</html>

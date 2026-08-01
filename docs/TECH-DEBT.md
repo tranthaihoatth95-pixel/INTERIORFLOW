@@ -40,3 +40,8 @@
 - 🟡 1024px — Tệp chồng một phần Chạy flow ở route render. Pre-existing (`Header.tsx` cũ), không
   phải `7.3.31`. KHÔNG sửa bằng `overflow-hidden` (cắt popover — xem comment `Header.tsx` cũ dòng
   45-52). Tự hết khi dời Chạy flow khỏi bar theo `docs/TICKET-CHAY-FLOW-KHONG-GHIM-BAR-2026-07-30.md`.
+- 🟡 `findHatchBoundary` (dò biên phòng, gọi trong `lib/three/cad-to-obj.ts` `docToObjScene`) —
+  CODE CŨ, phát hiện khi bench 3D-1 (01/08): treo > 2 phút với 289 phòng nhỏ tách rời (1156 tường)
+  × 578 block nội thất — mỗi block gọi 1 lần, mỗi lần quét toàn bộ `traceDoc`. Bản vẽ thật hiếm
+  đạt mật độ này (chưa phải bug chặn) nhưng nếu có ca thật cần: cache biên phòng theo room thay vì
+  dò lại mỗi block, hoặc index không gian (spatial hash) cho `traceDoc`.

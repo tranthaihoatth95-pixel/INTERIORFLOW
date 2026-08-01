@@ -16,6 +16,11 @@
 
 ## ✅ ĐÃ CHỐT — coi như luật, không bàn lại
 
+> ⭐ **NGUYÊN TẮC GIAI ĐOẠN MỚI (Hoà chốt 01/08):** hệ IDF đã ĐỊNH HÌNH ĐỦ — chat nhóm, lập việc,
+> 3 chặng × 2 mode, ArchiNote, ATLAS, Vitals, siêu thư viện, chợ đầu mối (File Manager) ↔ cửa hàng
+> (Library). Từ nay **ĐI SÂU từng tính năng: giữ cái đắt giá, giải đúng nỗi đau hiện tại; cái thừa
+> để sau. NGỪNG mở rộng phạm vi mới.**
+
 | File | Chốt điều gì |
 |---|---|
 | `CHOT-COWORK-2026-07-30.md` | **Sổ append-only** — quyết định chốt xong ghi vào, không sửa dòng cũ |
@@ -23,6 +28,12 @@
 | `CHOT-DUYET-SPEC-DOT2-2026-08-01.md` | ⭐ **Đợt 2 — đóng 13/14 nhãn còn lại**: IF chính thức **4 chặng (0→3)** · duyệt hướng 4 spec tính năng · **ArchiNote CŨNG trung tính** (Hoà lật đề xuất E2.2) · chỉ còn `SPEC-SEMANTIC-MODEL` treo chờ Hoà tự đọc |
 | `SPEC-VIDEO-MAT-BANG.md` | Spec bậc 1·2·4 video 0-credit — layer `IF_CAMPATH`, không EntityType mới, tầm mắt người 1650 |
 | `TICKET-GALLERY-TOGGLE-2026-08-01.md` | Gallery Home: **toggle carousel 3D ↔ grid** ghi đè J-4c (>8 dự án), nhớ lựa chọn, reduce-motion thắng tất cả |
+| `CHOT-HUONG-3D-2026-08-01.md` | ⭐⭐ **Hướng 3D + vai trò hệ IDF (bản cuối)**: IF = MỘT sản phẩm, **giữ luồng chặng 0→3, IF1/IF2 = TẦNG năng lực cắt NGANG chặng — vận hành bằng **cơ chế Sketch/Pro mode đã có, KHÔNG hệ phân quyền mới**** — chặng 1 nhận cả cấu kiện Revit-style (B2) · chặng 2 + vẽ khối 3D (B1, nguồn vẫn là Doc chặng 1) + IFC/va chạm (B3-B4) · chặng 3 + **đích chiếu công trường** (tablet cắt lớp = đích thứ 5 của hàm chiếu) = BIM thoát Autodesk, không phá gì đã xây · ArchiNote = máy THU · ATLAS = chỉ-đọc |
+| `CHOT-NGUYEN-LIEU-EDITOR-2026-08-01.md` | Chặng 3 nghèo edit tay → **GIỮ engine, xây 4 nguyên liệu**: E1 group · E2 mask ảnh (rẻ nhất) · E3 lớp phủ fill · E4 filter. Bảng số liệu chờ BOQ, pattern chờ L5. Code phụ làm sau VIỆC 5 |
+| `SPEC-3D-CORE.md` | ⭐ **Hạ tầng 3D lõi** — 3 tầng (dữ liệu ✅ có sẵn `docToObjScene` / viewer three.js MỘT component / chụp PNG·depth) · 4 nơi tiêu thụ (video 2-b · Đổi góc · Công trường cắt lớp · D5 handoff) · xám trơn không PBR · thi công 3D-1→6 SAU V2 (3D-5 push-pull = B1 thang BIM) |
+| `NGHIEN-CUU-QUY-TRINH-RENDER-2026-08-01.md` | ✅ Hoà duyệt hướng **cả 6 đề xuất render**: nháp→chốt · đổi giờ sau render (LightMix IF) · không khí từ ảnh khách · render vùng · bookmark góc máy (chờ V2) · hàng đợi |
+| `CHOT-RENDER-TOOL-WINDOW-2026-08-01.md` | ⭐ **LẬT §1B Render Studio**: bỏ màn tool mode riêng — **tool window = subgraph node phóng to**, tab 8 tool + ghim, tối đa 3 window, ≤7in phóng toàn màn · **kính là VỎ không là RUỘT** · đóng luôn bug 2.2.92 (xoá overlay) · mock: `mocks/tool-window-sketch2photo.html` · **điều khiển tay 2B: BẬC THANG 4 nấc + khoá giữ vùng + seed khoá** |
+| `RANG-BUOC-IF2-CHO-IF1.md` | ⭐ **7 ràng buộc IF1 không được phá** để IF2 rẻ — `elementType`/`storey` luôn optional · XDATA round-trip sống · chặng 3 không hardcode đích · ảnh gắn CẤU KIỆN. **Spec IF2 thật chờ đủ 3 điều kiện** (IF1 ship · ATLAS chạy · ArchiNote có dữ liệu) |
 | `CHOT-TACH-AI-VA-CHINH-TAY.md` | Tách AI bằng **dấu + truy vết**, không bằng vị trí · từ khoá **"Magic"** · ba trục Khổ/Bố cục/Nhận diện · cấm chữ "tự động" |
 | `CHOT-BRAND-KIT-2026-08-01.md` | Brand Kit thuộc **DỰ ÁN**; `_studio/` chỉ là mẫu đọc một chiều |
 | `QUYET-DINH-HA-TANG-2026-07-31.md` | Đĩa là nguồn sự thật (①B) · cây thư mục (②) · Gu→Prisma (③C) · FlowVersion đổi cò (④C) · desktop-first 1024/1440 |
@@ -53,8 +64,9 @@
 `SPEC-KNOWLEDGE-BASE` · `SPEC-BRIEF-INTAKE` · `SPEC-STAGE-0-IDEATION` ·
 `CHUAN-THIET-KE-v7.6-NGUON` (chuẩn nội thất v7.6, 8 mục, ISO 128)
 
-✅ **Vòng duyệt đợt 2 (01/08) đã đóng mâu thuẫn nhãn**: 13 file gỡ nhãn (commit `1de5df7`), toàn
-repo chỉ còn **1 nhãn sống có chủ đích** — `SPEC-SEMANTIC-MODEL`, Hoà giữ lại tự đọc.
+✅ **Vòng duyệt 01/08 ĐÓNG TRỌN — repo sạch nhãn 100%**: đợt 1 (7 file) + đợt 2 (13 file) +
+`SPEC-SEMANTIC-MODEL` (Hoà tự đọc, duyệt cuối ngày — kèm lời nhắc kỷ luật §3: *ngữ nghĩa chỉ thêm
+khi có nơi tiêu thụ*). README mục lục đã thay 16 dòng nhãn lỗi thời bằng dòng duyệt.
 
 ---
 
@@ -69,7 +81,7 @@ Trước khi thiết kế bất cứ gì: `ls docs/` + grep tên chủ đề + g
 | Chuẩn nội thất | `docs/CHUAN-THIET-KE-v7.6-NGUON.md` + `lib/vision/single-view-metrology.ts` (958 dòng) |
 | Hạ tầng đóng lớp | `lib/useDismissable.ts` — 1 họ sự kiện `pointerdown` pha bắt toàn app |
 | Đảo nguồn sự thật | `lib/disk-sync.ts` — `resolveSourceOfTruth()` thuần, có test |
-| Bộ dàn trang Present | `LayoutShelf.tsx` (825) — `TemplatePicker.tsx` là **dead code**, đang xoá |
+| Bộ dàn trang Present | `LayoutShelf.tsx` (825) — `TemplatePicker.tsx` đã xoá (A2) |
 
 ⚠️ **Hai con số dễ lẫn**: metrology dùng **tầm mắt máy ảnh 1500–1600** (mặc định 1550);
 đường cam video dùng **tầm mắt người ~1650**. Hai việc khác nhau.
@@ -80,33 +92,29 @@ Trước khi thiết kế bất cứ gì: `ls docs/` + grep tên chủ đề + g
 
 | Câu | Ai quyết |
 |---|---|
-| ~~136 MB trong `dev.db` là gì?~~ **ĐÃ ĐO (B3, 01/08)**: dữ liệu sống chỉ **11,8 MB** — **125,1 MB là freelist** (trang rỗng sau xoá, `auto_vacuum=0`, chưa từng VACUUM). Thu hồi = chạy `VACUUM` trên máy thật | **Hoà** — lệnh đã soạn, chạy lúc nào cũng được |
-| Brand Kit đảo nguồn — phải đổi hình dạng `brand-kit.json` trước | thiết kế, chưa tới lượt |
+| ~~136 MB trong `dev.db` là gì?~~ **ĐÃ ĐO (B3) + ĐÃ VACUUM 01/08**: dev.db 137 MB→**12 MB**, freelist 0, integrity ok, không mất bản ghi nào | ✅ XONG |
+| Brand Kit đảo nguồn — phải đổi hình dạng `brand-kit.json` trước | code phụ VIỆC 5 đang làm |
 | GPL-3.0 của `@mlightcad/libredwg-web` — `licenseNotes` UNRESOLVED | **Hoà**, trước khi phát hành |
-| `/library/ingest` tràn full màn + placeholder có tên khách — sửa 1 lần được cả 2 | hàng đợi |
+| `/library/ingest` tràn full màn + placeholder có tên khách — sửa 1 lần được cả 2 | code phụ VIỆC 4 |
 | **Viết lại lịch sử git** (`filter-repo`) để xoá dấu vết TTT ở các commit cũ | **Hoà**, chỉ làm **ngay trước khi giao repo ra ngoài** |
 
 ### ✅ Dọn trung tính 01/08 — Hoà duyệt cả ba
 
 | Thứ | Xử lý | Về đâu |
 |---|---|---|
-| `knowledge/ttt-design-system/` (16 KB) — readme có tên khách thật: *Sofitel Metropole · Fairmont · Four Seasons · Movenpick · New World Saigon · OCB The Hallmark* | **dời hẳn ra ngoài repo** + gitignore | `~/Downloads/_TTT-BRAND/` |
-| `docs/files.zip` — 11 instruction của agent RIN·NHA·VU·KIEN, tài sản cá nhân | **gỡ khỏi git + dời ra** | `~/Downloads/_CLAUDE-AGENTS/` |
-| 21 ảnh · 8,9 MB trong `docs/` (có `42-demo-amanoi.png` — tên resort thật) | **gỡ ảnh, giữ `report.md`** | `~/Downloads/_IF-ANH-DEMO/` (giữ nguyên cây) |
+| `knowledge/ttt-design-system/` (16 KB) — readme có tên khách thật | **dời hẳn ra ngoài repo** + gitignore (commit `96b5f1e`) | `~/Downloads/_TTT-BRAND/` |
+| `docs/files.zip` — 11 instruction của agent, tài sản cá nhân | **gỡ khỏi git + dời ra** | `~/Downloads/_CLAUDE-AGENTS/` |
+| 21 ảnh · 8,9 MB trong `docs/` | **gỡ ảnh, giữ `report.md`** | `~/Downloads/_IF-ANH-DEMO/` |
 
-⚠️ `@ttt.vn` trong `auth-policy.ts` · `auth.ts` · `LoginForm.tsx` **KHÔNG phải khoá domain** — chỉ là
-comment mô tả chính sách cũ đã bỏ 19/07. `isValidAccountEmail()` nhận **mọi domain**. Chữ cần dọn,
-chức năng không sai. *(Luật 14d: comment không phải code.)*
+⚠️ `@ttt.vn` trong auth **KHÔNG phải khoá domain** — chỉ là comment chính sách cũ đã bỏ 19/07.
+`isValidAccountEmail()` nhận **mọi domain**. Chữ cần dọn, chức năng không sai.
 
 ---
 
 ## ⛔ LUẬT VẬN HÀNH — học từ sự cố thật
 
-**Sự cố `dev.db` 01/08** — `prisma db push` bị FUSE chặn giữa chừng. Không mất dữ liệu: SQLite ghi
-hot journal, mở lại trên máy thật là tự lùi. `integrity_check` = ok.
-
-1. **KHÔNG chạy `prisma db push` / `migrate` qua sandbox.** FUSE không cho SQLite khoá file đúng
-   chuẩn POSIX. Soạn lệnh sẵn, Hoà chạy trên máy thật.
+1. **KHÔNG chạy `prisma db push` / `migrate` / `VACUUM` / `git merge` qua sandbox.** FUSE
+   không cho khoá file POSIX (đã chứng minh). Soạn lệnh sẵn, Hoà chạy trên máy thật.
 2. **Sao lưu SQLite bằng `sqlite3 dev.db ".backup 'ten'"`**, không dùng `cp`.
 3. **Gặp sự cố DB: DỪNG, đừng tự chữa.** Đừng xoá journal — đó là cuốn sổ hoàn tác.
 4. Trong `device_bash`, `~` = thư mục phiên sandbox, **không phải máy Hoà**. Luôn dùng `/mnt/`.
