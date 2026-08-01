@@ -50,6 +50,11 @@
 `SPEC-KNOWLEDGE-BASE` · `SPEC-BRIEF-INTAKE` · `SPEC-STAGE-0-IDEATION` ·
 `CHUAN-THIET-KE-v7.6-NGUON` (chuẩn nội thất v7.6, 8 mục, ISO 128)
 
+⚠️ **Mâu thuẫn Cowork tự phát hiện 01/08**: 12 trong số các file trên vẫn **đeo nhãn
+`[CẦN HOÀ DUYỆT]`** trong khi bảng này gọi chúng là "đã ổn định". 🧮 Tổng còn đeo nhãn: **14 file**
+(thêm `PLAN-LIBRARY-GATEWAY` · `IF-ARCHITECTURE-BLUEPRINT-v1`). ⇒ Cần **vòng duyệt đợt 2** —
+hoặc gỡ nhãn vì đã lỗi thời, hoặc duyệt thật. Chưa quyết.
+
 ---
 
 ## 🔧 THỨ ĐÃ TỒN TẠI TRONG CODE — kiểm trước khi định "làm mới"

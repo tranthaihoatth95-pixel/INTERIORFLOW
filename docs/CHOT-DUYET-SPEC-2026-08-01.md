@@ -107,7 +107,7 @@ sản phẩm. Người mới chỉ cần render một tấm; bắt vẽ trước
 |---|---|---|
 | 1 | 🔴 `knowledge/ttt-design-system/` (16 KB, 3 file) **đang trong git** | `git check-ignore` không khớp. `CLAUDE.md` ghi *"KHÔNG áp vào sản phẩm"*, `AUDIT-BRAND-PII.md` xếp phải ra ngoài repo. **Vi phạm luật trung tính, đang sống** |
 | 2 | 🟡 `/library/ingest` tràn full màn, không rõ thuộc lớp nào | `SPEC-NAVIGATION-MODEL` §1. **Cùng file** cũng nằm trong `AUDIT-BRAND-PII` (placeholder có tên khách) — sửa 1 lần được cả 2 |
-| 3 | 🟡 Spec ghi "25 template", `templates.ts` có **47** mục | số đã cũ, đếm lại khi thi công |
+| 3 | ✅ ĐÃ SỬA — spec ghi "25 template", số thật là **21** | ~~"47 mục"~~ là **lỗi của Cowork**: grep thô đếm cả `id: string` (khai báo kiểu) lẫn `newId('sld')` (sinh lúc chạy). Code chính đếm trên `BUILTIN_TEMPLATES` thật = 21; Cowork đếm lại độc lập bằng regex khối cấp 1 cũng ra **21**. Đúng Luật 14c — grep ra số chưa phải là số đo |
 | 4 | 🟡 `SPEC-PRESENT-FLOW` cảnh báo `IF-PRESENT-SPRINT-PLAN.md` không có trong repo | **có thật, 31,8 KB, sửa 26/07** — cảnh báo cũ, gỡ đi |
 
 ---
