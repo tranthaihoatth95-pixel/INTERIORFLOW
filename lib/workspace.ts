@@ -1,6 +1,7 @@
 'use client';
 
 import { useFlowStore } from '@/lib/store';
+import { isReadOnly } from '@/lib/execution';
 
 export interface FlowMeta {
   id: string;
@@ -75,8 +76,15 @@ export async function assignProject(flowId: string, projectId: string | null): P
   });
 }
 
-/** Snapshot version khi Run flow. */
+/**
+ * Ghi 1 `FlowVersion` mới — CHỈ gọi khi người dùng chủ động bấm "Đánh dấu bản này"
+ * (CommandPalette.tsx). ④ đổi cò, 01/08, docs/QUYET-DINH-HA-TANG-2026-07-31.md §④ phương án C:
+ * trước đây gọi tự động ở MỌI lượt "Chạy flow" (lib/execution.ts) — chụp mọi lượt, không tỉa,
+ * không ai đọc, phình `dev.db`. Giờ ghi ít hơn NHƯNG có chủ đích hơn (cờ đánh dấu tay), kèm thang
+ * lưu giữ phía server (xem app/api/flows/[id]/route.ts action=snapshot).
+ */
 export async function snapshotFlow(): Promise<void> {
+  if (isReadOnly()) return;
   const { currentFlowId, user } = useFlowStore.getState();
   if (!currentFlowId || !user) return;
   await fetch(`/api/flows/${currentFlowId}`, {

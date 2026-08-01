@@ -179,7 +179,7 @@ declare global {
     __ifReadOnly?: boolean;
   }
 }
-const isReadOnly = () => typeof window !== 'undefined' && window.__ifReadOnly === true;
+export const isReadOnly = () => typeof window !== 'undefined' && window.__ifReadOnly === true;
 
 /**
  * 2.2.86 (30/07, Hoà chốt — bỏ pill nổi trên canvas, thay bằng hàng đợi trong menu "Việc") —
@@ -212,10 +212,9 @@ async function executeRun(runId: string) {
   const run = store.flowRuns.find((r) => r.id === runId);
   if (!run) return;
   store.updateFlowRun(runId, { status: 'running', startedAt: Date.now() });
-  if (run.snapshotOnStart) {
-    // snapshot version trước khi chạy — giữ lịch sử _v(n) không ghi đè (đúng hành vi cũ runFlow()).
-    import('@/lib/workspace').then((w) => w.snapshotFlow()).catch(() => {});
-  }
+  // ④ đổi cò (01/08, docs/QUYET-DINH-HA-TANG-2026-07-31.md §④ phương án C) — KHÔNG còn tự động
+  // snapshot FlowVersion mỗi lượt chạy ở đây. Ghi bản chỉ xảy ra khi người dùng bấm "Đánh dấu bản
+  // này" (lib/workspace.ts snapshotFlow(), gọi từ CommandPalette.tsx) — xem lý do ở đó.
   const failed = new Set<string>();
   try {
     for (let i = 0; i < run.nodeIds.length; i++) {
@@ -279,7 +278,7 @@ export function estimateRunCredit(nodeIds: string[]): number {
 function enqueueRun(
   label: string,
   nodeIds: string[],
-  opts: { stopOnFirstFailure: boolean; snapshotOnStart: boolean },
+  opts: { stopOnFirstFailure: boolean },
 ): string {
   const runId = useFlowStore.getState().enqueueFlowRun({ label, nodeIds, ...opts });
   void drainQueue();
@@ -298,7 +297,7 @@ export async function runNode(nodeId: string): Promise<string | null> {
     return null;
   }
   const def = getDefinition(nodes.find((n) => n.id === nodeId)?.data.defType ?? '');
-  return enqueueRun(def?.title ?? 'Node', order, { stopOnFirstFailure: true, snapshotOnStart: false });
+  return enqueueRun(def?.title ?? 'Node', order, { stopOnFirstFailure: true });
 }
 
 /** "Run flow": xếp hàng toàn graph. Trước im lặng từ chối khi đang bận — nay LUÔN xếp hàng,
@@ -307,5 +306,5 @@ export async function runFlow(): Promise<string | null> {
   if (isReadOnly()) return null;
   const store = useFlowStore.getState();
   const order = fullOrder(store.nodes, store.edges);
-  return enqueueRun(store.flowName || 'Flow', order, { stopOnFirstFailure: false, snapshotOnStart: true });
+  return enqueueRun(store.flowName || 'Flow', order, { stopOnFirstFailure: false });
 }

@@ -17,6 +17,7 @@ import { AccountSettings } from '@/components/settings/AccountSettings';
 import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
 import { ExperienceSettings } from '@/components/settings/ExperienceSettings';
 import { StorageSettings } from '@/components/settings/StorageSettings';
+import { GuModelSettings } from '@/components/settings/GuModelSettings';
 import { useT } from '@/lib/i18n';
 
 export default function SettingsPage() {
@@ -45,6 +46,7 @@ export default function SettingsPage() {
           <AiDependencySettings />
           <ExperienceSettings />
           <StorageSettings />
+          <GuModelSettings />
         </div>
       </div>
     </main>
