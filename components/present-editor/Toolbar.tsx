@@ -181,7 +181,7 @@ export default function Toolbar(p: Props) {
           {
             id: 'print300',
             label: 'PDF in 300dpi (A3/A4)',
-            sub: 'Chữ/hình khối đạt 300dpi thật · ảnh hero/nền CHƯA (chờ phần 2)',
+            sub: 'Chữ/hình khối + ảnh đủ nguồn đạt 300dpi thật · ảnh nhỏ tự nâng độ phân giải (hỏi giá/thời gian trước khi chạy)',
             icon: <Printer size={15} />,
             onSelect: p.onExportPrint300,
             disabled: !p.printReady,

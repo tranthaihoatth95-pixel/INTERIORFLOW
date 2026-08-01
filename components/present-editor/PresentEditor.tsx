@@ -43,6 +43,8 @@ import { DEFAULT_SPEC, applySpecToSlide, type LayoutSpec } from '@/lib/present-e
 import { classifyWheel } from '@/lib/input/wheel';
 import { buildGuProfile, type GuAsset, type GuProfile } from '@/lib/gu';
 import { exportDeckToPdf, exportDeckToPptxFromModel, exportDeckToPng, exportDeckToPdfAtPaperSize } from '@/lib/present-editor/export';
+import { estimatePrintUpscale, UpscaleCreditError } from '@/lib/present-editor/print-upscale';
+import { useFlowStore } from '@/lib/store';
 import { useEditor } from './useEditor';
 import { slidesFromContent, coverKickerFromDeck } from '@/lib/present-editor/content-deck';
 import { evaluateDeck } from '@/lib/present-editor/layout-check';
@@ -1104,17 +1106,57 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     }
   }, [ed.deck]);
 
-  /** P3 phần 1 (01/08) — chữ/hình khối đạt 300dpi thật ở khổ giấy A4/A3 thật (mm). Ảnh hero/nền
-   * CHƯA đạt dpi đó (P3 phần 2, chờ đo `ai.upscale`) — `exportDeckToPdfAtPaperSize` tự ném lỗi rõ
-   * nếu khổ hiện tại không phải A4/A3 (vd đang 16:9), báo qua `exportMsg` như mọi export khác. */
+  /**
+   * P3 phần 1+2 (01/08 · 02/08 Hoà chốt hướng "chuẩn nguồn in") — chữ/hình khối đạt 300dpi thật
+   * qua `resScale`; ẢNH hero/nền thiếu độ phân giải được `ai.upscale` nâng lên TRƯỚC khi render
+   * (`print-upscale.ts`, ×4 hoặc ×4+×2, cache theo hash src — cùng ảnh chỉ trả tiền 1 lần).
+   *
+   * "Hiện giá + thời gian ước trước khi bấm" (luật nói-giá-trước-khi-tiêu-tiền, cùng tinh thần
+   * `estimateRunCredit` ở node-graph, `lib/execution.ts`) — `estimatePrintUpscale` CHỈ đọc kích
+   * thước ảnh (không gọi AI, 0 chi phí) rồi hỏi `window.confirm` (đúng khuôn xác nhận ".idfp" đã
+   * có ở `Toolbar.tsx`, không thêm component mới) trước khi thật sự trừ credit.
+   */
   const onExportPrint300 = useCallback(async () => {
     setBusy('print300');
     try {
-      await exportDeckToPdfAtPaperSize(ed.deck, 300);
-      setExportMsg({ ok: true, text: 'Đã xuất PDF 300dpi — chữ/hình khối đạt dpi thật, ảnh hero/nền chưa (chờ phần 2).' });
+      const aiTier = useFlowStore.getState().aiTier;
+      const estimate = await estimatePrintUpscale(ed.deck, 300, aiTier);
+      if (estimate.aiUnavailable) {
+        if (
+          !window.confirm(
+            'Đang ở mức "Không AI" (góc phải header) — ảnh hero/nền sẽ GIỮ NGUYÊN độ phân giải nguồn, không đạt 300dpi nếu ảnh nhỏ. Chữ/hình khối vẫn đạt 300dpi thật. Xuất tiếp?',
+          )
+        ) {
+          setBusy(null);
+          return;
+        }
+      } else if (estimate.needCount > 0) {
+        const sec = Math.round(estimate.estMs / 1000);
+        if (
+          !window.confirm(
+            `${estimate.needCount} ảnh hero/nền cần nâng độ phân giải để đạt 300dpi thật — tốn ~${estimate.totalCredits}cr, ~${sec}s. Tiếp tục?`,
+          )
+        ) {
+          setBusy(null);
+          return;
+        }
+      }
+      const { upscaledCount, failedCount } = await exportDeckToPdfAtPaperSize(ed.deck, 300, { tier: aiTier });
+      const parts = ['Đã xuất PDF 300dpi — chữ/hình khối đạt dpi thật'];
+      if (upscaledCount > 0) parts.push(`đã nâng độ phân giải ${upscaledCount} ảnh hero/nền lên dpi thật`);
+      else if (estimate.aiUnavailable) parts.push('ảnh hero/nền chưa (mức Không AI)');
+      else if (estimate.needCount === 0) parts.push('ảnh hero/nền đã đủ độ phân giải nguồn');
+      if (failedCount > 0) parts.push(`${failedCount} ảnh lỗi/hết credit khi nâng — đã giữ ảnh gốc`);
+      setExportMsg({ ok: failedCount === 0, text: parts.join(', ') + '.' });
     } catch (err) {
       console.error('[PresentEditor] print300 export failed', err);
-      setExportMsg({ ok: false, text: err instanceof Error ? err.message : 'Xuất PDF 300dpi lỗi — thử lại.' });
+      const msg =
+        err instanceof UpscaleCreditError
+          ? 'Hết credits khi nâng độ phân giải ảnh — nạp thêm rồi thử lại, hoặc xuất ở mức chưa nâng ảnh.'
+          : err instanceof Error
+            ? err.message
+            : 'Xuất PDF 300dpi lỗi — thử lại.';
+      setExportMsg({ ok: false, text: msg });
     } finally {
       setBusy(null);
     }

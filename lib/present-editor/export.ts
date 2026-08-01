@@ -35,6 +35,8 @@ import { renderEditorSlide } from './render';
 import { stageFor, printResScale, PAPER_SIZE_MM, type StageSize } from './stage-presets';
 import { exportDeckToPptx, type PptxSlide, type PptxExportResult } from '@/lib/pptx';
 import type { SlideContent, SlideTheme, SlideLayout } from '@/lib/slides';
+import { applyPrintUpscale } from './print-upscale';
+import type { AiTier } from '@/lib/ai/tiers';
 
 /* --------------------------------- PDF --------------------------------- */
 
@@ -59,26 +61,45 @@ export async function exportDeckToPdf(deck: EditorDeck): Promise<void> {
  * `deck.stagePreset` là A4/A3 (`PAPER_SIZE_MM` có mục) — 16:9 không phải khổ in, ném lỗi rõ
  * thay vì âm thầm ra file sai khổ.
  *
- * ⚠️ CHỈ đạt `dpi` thật cho CHỮ/HÌNH KHỐI (vẽ vector qua canvas 2D, xem JSDoc `renderEditorSlide`).
- * ẢNH hero/nền trong slide vẫn giữ nguyên độ chi tiết nguồn — P3 phần 2 (`ai.upscale`, CHƯA làm,
- * chờ đo số thật) mới nâng được phần đó. KHÔNG đổi tên hàm thành "300dpi" để khỏi ngầm hứa quá.
+ * CHỮ/HÌNH KHỐI (vẽ vector qua canvas 2D) đạt `dpi` thật qua `resScale`, xem JSDoc
+ * `renderEditorSlide`. ẢNH hero/nền — P3 phần 2 (02/08, Hoà chốt hướng "chuẩn nguồn in") —
+ * truyền `opts.tier` để tự nâng độ phân giải ảnh thiếu (`lib/present-editor/print-upscale.ts`,
+ * ×4 hoặc ×4+×2 tuỳ độ thiếu, cache theo hash src, trừ credit thật) TRƯỚC khi render; không
+ * truyền `opts` (hoặc mức "Không AI") → giữ nguyên ảnh gốc, KHÔNG chặn export (Tầng lõi tất định
+ * luôn ra PDF, chỉ là ảnh chưa tới dpi nếu nguồn nhỏ).
  */
-export async function exportDeckToPdfAtPaperSize(deck: EditorDeck, dpi = 300): Promise<void> {
-  if (typeof window === 'undefined') return;
+export async function exportDeckToPdfAtPaperSize(
+  deck: EditorDeck,
+  dpi = 300,
+  opts?: { tier: AiTier; onUpscaleProgress?: (done: number, total: number) => void },
+): Promise<{ upscaledCount: number; failedCount: number }> {
+  if (typeof window === 'undefined') return { upscaledCount: 0, failedCount: 0 };
   if (!deck.slides.length) throw new Error('Deck rỗng — cần ít nhất 1 slide.');
   const mm = deck.stagePreset ? PAPER_SIZE_MM[deck.stagePreset] : undefined;
   if (!mm) throw new Error('Khổ hiện tại không phải giấy in thật (chỉ 16:9) — chọn A4/A3 trước khi xuất theo dpi.');
-  const stage = stageFor(deck.stagePreset);
-  const resScale = printResScale(deck.stagePreset, dpi)!;
+
+  let printDeck = deck;
+  let upscaledCount = 0;
+  let failedCount = 0;
+  if (opts) {
+    const res = await applyPrintUpscale(deck, dpi, opts.tier, opts.onUpscaleProgress);
+    printDeck = res.deck;
+    upscaledCount = res.upscaledCount;
+    failedCount = res.failedCount;
+  }
+
+  const stage = stageFor(printDeck.stagePreset);
+  const resScale = printResScale(printDeck.stagePreset, dpi)!;
   const orientation = mm.w >= mm.h ? 'landscape' : 'portrait';
   const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({ orientation, unit: 'mm', format: [mm.w, mm.h] });
-  for (let i = 0; i < deck.slides.length; i++) {
-    const img = await renderEditorSlide(deck.slides[i], deck.fonts, deck.watermark, stage, resScale);
+  for (let i = 0; i < printDeck.slides.length; i++) {
+    const img = await renderEditorSlide(printDeck.slides[i], printDeck.fonts, printDeck.watermark, stage, resScale);
     if (i > 0) doc.addPage([mm.w, mm.h], orientation);
     doc.addImage(img, 'JPEG', 0, 0, mm.w, mm.h);
   }
-  doc.save(`${safeName(deck.project || deck.brand || 'deck')}-${dpi}dpi.pdf`);
+  doc.save(`${safeName(printDeck.project || printDeck.brand || 'deck')}-${dpi}dpi.pdf`);
+  return { upscaledCount, failedCount };
 }
 
 /* --------------------------------- PNG --------------------------------- */
