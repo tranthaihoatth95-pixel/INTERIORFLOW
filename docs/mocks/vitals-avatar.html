@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Vitals — bảng avatar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --accent:#6a57f5; --accent-lit:#a99bff; --accent-hot:#e4dfff; --amber:#c79a63;
+  --bg:#08080c; --panel:#121218; --panel2:#1a1a21; --line:#26262f; --hair:#1d1d24;
+  --t1:#f2f1ee; --t2:#a8a49d; --t3:#6f6b64;
+  --page:#e6e1d9; --paper:#fdfcfa; --line-l:#ddd6cb; --t1l:#1b1916; --t2l:#6b645c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);font-family:'Be Vietnam Pro',system-ui,sans-serif;
+     font-size:14px;line-height:1.6}
+.wrap{max-width:1060px;margin:0 auto;padding:44px 32px 96px}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+
+header{border-bottom:1px solid var(--line);padding-bottom:24px;margin-bottom:14px}
+h1{font-size:22px;font-weight:600;margin:0 0 7px;letter-spacing:-.01em}
+.lede{font-size:13.5px;line-height:1.7;color:var(--t2);max-width:64ch;margin:0}
+.lede b{color:var(--t1);font-weight:500}
+.lede code{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent-lit)}
+
+h2{font-size:10.5px;font-weight:600;letter-spacing:.14em;color:var(--amber);margin:54px 0 5px;text-transform:uppercase}
+h2+.sub{font-size:13px;line-height:1.65;color:var(--t2);margin:0 0 20px;max-width:66ch}
+h2+.sub b{color:var(--t1);font-weight:500}
+
+/* ═══════════ GLYPH ═══════════ */
+.glyph{position:relative;flex:0 0 auto;isolation:isolate}
+.sphere{position:absolute;inset:8%;border-radius:50%;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(150,134,255,.30), rgba(48,42,96,.55) 42%, rgba(12,12,22,.94) 72%),
+    radial-gradient(circle at 62% 78%, rgba(106,87,245,.20), transparent 58%);
+  box-shadow:inset -1px -2px 10px rgba(0,0,0,.7), inset 6px 5px 22px rgba(140,124,255,.13);}
+/* rim light lệch MỘT bên — tạo khối bằng độ sáng, không bằng nhiều màu */
+.rim{position:absolute;inset:8%;border-radius:50%;
+     box-shadow:inset 2px 3px 0 -1.2px rgba(196,186,255,.55), 0 0 22px -4px rgba(106,87,245,.42);}
+
+.orbits{position:absolute;inset:0;mix-blend-mode:screen}
+.orb{position:absolute;inset:0}
+.arc{position:absolute;inset:0;overflow:visible}
+.arc ellipse{fill:none;stroke-linecap:round}
+.arc .soft{filter:blur(3px);opacity:.5}
+
+/* hạt — offset-path cho quỹ đạo thật, scale/opacity cho CHIỀU SÂU */
+.p{position:absolute;left:0;top:0;width:var(--pd,7px);height:var(--pd,7px);border-radius:50%;
+   background:radial-gradient(circle,#fff 0%,var(--accent-hot) 32%,var(--accent) 72%,transparent 78%);
+   box-shadow:0 0 9px 1px rgba(150,134,255,.8);
+   offset-rotate:0deg;margin:calc(var(--pd,7px)/-2) 0 0 calc(var(--pd,7px)/-2);
+   animation:travel var(--dur,9.3s) linear infinite, depth var(--dur,9.3s) linear infinite;}
+.p.t1{opacity:.42;--pd:5px;box-shadow:0 0 6px rgba(150,134,255,.5);animation-delay:-.055s,-.055s}
+.p.t2{opacity:.18;--pd:3.6px;box-shadow:none;animation-delay:-.11s,-.11s}
+
+@keyframes travel{to{offset-distance:100%}}
+/* KHÔNG ease-in-out — leo thang rất nhẹ, đủ thấy quán tính, không giật */
+@keyframes depth{
+  0%  {transform:scale(1);   opacity:1}
+  25% {transform:scale(.5);  opacity:.38}
+  50% {transform:scale(1);   opacity:1}
+  75% {transform:scale(1.55);opacity:1}
+  100%{transform:scale(1);   opacity:1}
+}
+/* xung lan từ tâm ra — chỉ dùng cho trạng thái Trả lời */
+@keyframes pulseout{
+  0%  {box-shadow:0 0 0 0 rgba(106,87,245,.45)}
+  70% {box-shadow:0 0 0 15px rgba(106,87,245,0)}
+  100%{box-shadow:0 0 0 0 rgba(106,87,245,0)}
+}
+@media(prefers-reduced-motion:reduce){.p,.orb,.glyph,.g1,.g2,[style*=pulseout]{animation:none!important}}
+
+/* ═══════════ LƯỚI TRẠNG THÁI ═══════════ */
+.states{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border:1px solid var(--line);
+        border-radius:14px;background:var(--panel);overflow:hidden}
+.st{padding:26px 14px 18px;display:flex;flex-direction:column;align-items:center;gap:15px;
+    border-right:1px solid var(--hair)}
+.st:last-child{border-right:0}
+.st .stage{height:116px;display:flex;align-items:center;justify-content:center}
+.st .nm{font-size:12.5px;font-weight:600;color:var(--t1)}
+.st .ct{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--accent-lit);
+        border:1px solid #2e2a4d;background:#171432;border-radius:999px;padding:2px 8px;margin-top:-9px}
+.st .ct.w{color:var(--amber);border-color:#3a3020;background:#211a10}
+.st .dsc{font-size:11.5px;line-height:1.55;color:var(--t3);text-align:center}
+
+/* ═══════════ BA CỠ ═══════════ */
+.sizes{display:flex;align-items:flex-end;gap:0;border:1px solid var(--line);border-radius:14px;
+       background:var(--panel);overflow:hidden}
+.sz{flex:1;padding:28px 20px 18px;display:flex;flex-direction:column;align-items:center;gap:16px;
+    border-right:1px solid var(--hair)}
+.sz:last-child{border-right:0}
+.sz .stage{height:140px;display:flex;align-items:center;justify-content:center}
+.sz .lb{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t2);text-align:center;line-height:1.6}
+.sz .lb span{display:block;color:var(--t3);font-size:10px;margin-top:3px;font-family:'Be Vietnam Pro',sans-serif}
+
+/* cỡ S — ĐƠN GIẢN HOÁ, không phải thu nhỏ: 1 vòng + 2 elip + 2 chấm, KHÔNG toả sáng */
+.s20{width:20px;height:20px;position:relative}
+.s20 svg{display:block;overflow:visible}
+.s20 .ring{fill:none;stroke:var(--accent-lit);stroke-width:1.1;opacity:.42}
+.s20 .el{fill:none;stroke:var(--accent-lit);stroke-width:1.15}
+.s20 .dot{fill:var(--accent-hot)}
+.s20 .g1,.s20 .g2{transform-box:view-box;transform-origin:10px 10px}
+.s20 .g1{animation:spin 3.7s linear infinite}
+.s20 .g2{animation:spin 9.3s linear infinite reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ═══════════ NỀN GIẤY ═══════════ */
+.paper{background:var(--page);border:1px solid var(--line);border-radius:14px;padding:26px;
+       display:flex;gap:30px;align-items:center;flex-wrap:wrap}
+.paper .txt{font-size:12.5px;line-height:1.7;color:var(--t2l);max-width:44ch}
+.paper .txt b{color:var(--t1l);font-weight:600}
+/* trên giấy: nét đặc #6a57f5, BỎ nền tối, đảo rim light thành bóng đổ nhẹ + hairline */
+.s20.light .ring{stroke:var(--accent);opacity:.32}
+.s20.light .el{stroke:var(--accent)}
+.s20.light .dot{fill:var(--accent)}
+.ball-l{width:96px;height:96px;border-radius:50%;position:relative;background:var(--paper);
+        border:1px solid var(--line-l);box-shadow:0 6px 18px -8px rgba(50,40,20,.35)}
+.ball-l .orbits{mix-blend-mode:normal}
+.ball-l .arc ellipse{stroke:var(--accent)!important}
+.ball-l .arc .soft{opacity:.16}
+.ball-l .p{background:radial-gradient(circle,var(--accent) 0%,var(--accent) 60%,transparent 72%);box-shadow:none}
+.ball-l .p.t1{opacity:.3}.ball-l .p.t2{opacity:.13}
+
+/* ═══════════ STATUS BAR ═══════════ */
+.bar{display:flex;align-items:center;gap:7px;height:44px;padding:0 14px;border-radius:11px;
+     background:var(--panel);border:1px solid var(--line)}
+.bar.l{background:var(--paper);border-color:var(--line-l)}
+.bar .b{font-size:12.5px;color:var(--t3);padding:0 9px}
+.bar.l .b{color:var(--t2l)}
+.bar .sep{width:1px;height:19px;background:var(--line);margin:0 5px}
+.bar.l .sep{background:var(--line-l)}
+.pill{display:flex;align-items:center;gap:8px;height:29px;padding:0 12px 0 8px;border-radius:999px;
+      background:#171432;border:1px solid #2e2a4d;color:#cfc7ff;font-size:12.5px;font-weight:500}
+.bar.l .pill{background:#efedfd;border-color:#d5cffa;color:#3c2fa8}
+.grow{flex:1}
+.tail{font-size:12px;color:var(--t3)}
+.bar.l .tail{color:var(--t2l)}
+
+/* ═══════════ XOẮN THIÊN HÀ ═══════════ */
+.appear{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:30px;
+        display:flex;align-items:center;gap:32px;flex-wrap:wrap}
+.replay{margin-left:auto;font:inherit;font-size:12.5px;color:var(--accent-lit);background:#171432;
+        border:1px solid #2e2a4d;border-radius:9px;padding:8px 15px;cursor:pointer}
+.replay:hover{background:#1e1a3d}
+.spin-in .orb{animation:windin 1.5s cubic-bezier(.16,.9,.24,1) both}
+.spin-in .sphere,.spin-in .rim{animation:pop 1.5s cubic-bezier(.16,.9,.24,1) both}
+@keyframes windin{
+  0%  {transform:scale(2.5) rotate(-230deg);opacity:0}
+  55% {opacity:1}
+  100%{transform:scale(1) rotate(0deg);opacity:1}
+}
+@keyframes pop{0%,42%{transform:scale(.25);opacity:0}100%{transform:scale(1);opacity:1}}
+
+.foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;
+      line-height:1.7;color:var(--t3);max-width:70ch}
+.foot b{color:var(--t2);font-weight:500}
+@media(max-width:860px){.states{grid-template-columns:repeat(2,1fr)}.sizes{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Vitals — bảng avatar</h1>
+  <p class="lede">Dựng đúng <b>SPEC-VITALS-VISUAL</b> (29/07): khối <b>cầu kính</b>, hạt to sáng khi ra
+  mặt trước — nhỏ mờ khi lùi ra sau, vệt sáng ba lớp lệch pha, các lớp cộng bằng
+  <code>mix-blend-mode: screen</code>. Một accent <code>#6a57f5</code>, hổ phách <code>#c79a63</code>
+  chỉ dùng cho cảnh báo. Chu kỳ lệch số lẻ (9,3s · 3,7s · 1,3s) nên <b>không bao giờ lặp lại y hệt</b>.</p>
+</header>
+
+<!-- ══ 1 · NĂM TRẠNG THÁI ══ -->
+<h2>1 · Năm trạng thái — số hạt LÀ kênh thông tin</h2>
+<p class="sub">Không đổi màu, không cần chữ. <b>Liếc một cái là biết máy đang làm nặng hay nhẹ.</b>
+Đọc được cả khi mù màu, và ở 20px vẫn đếm được.</p>
+
+<div class="states">
+
+  <div class="st">
+    <div class="stage">
+      <div class="glyph" style="width:104px;height:104px">
+        <div class="sphere"></div><div class="rim"></div>
+        <div class="orbits">
+          <div class="orb" style="transform:rotate(18deg)">
+            <svg class="arc" viewBox="0 0 104 104"><ellipse class="soft" cx="52" cy="52" rx="43" ry="16" stroke="#6a57f5" stroke-width="3"/><ellipse cx="52" cy="52" rx="43" ry="16" stroke="#8c7cff" stroke-width=".8" opacity=".5"/></svg>
+            <div class="p"    style="--dur:20s;offset-path:path('M 9,52 A 43,16 0 1,1 95,52 A 43,16 0 1,1 9,52')"></div>
+            <div class="p t1" style="--dur:20s;offset-path:path('M 9,52 A 43,16 0 1,1 95,52 A 43,16 0 1,1 9,52')"></div>
+            <div class="p t2" style="--dur:20s;offset-path:path('M 9,52 A 43,16 0 1,1 95,52 A 43,16 0 1,1 9,52')"></div>
+          </div>
+          <div class="orb" style="transform:rotate(-62deg)">
+            <div class="p"    style="--dur:20s;animation-delay:-9.4s,-9.4s;offset-path:path('M 12,52 A 40,15 0 1,1 92,52 A 40,15 0 1,1 12,52')"></div>
+            <div class="p t1" style="--dur:20s;animation-delay:-9.46s,-9.46s;offset-path:path('M 12,52 A 40,15 0 1,1 92,52 A 40,15 0 1,1 12,52')"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nm">Nghỉ</div><div class="ct">2 hạt</div>
+    <div class="dsc">Cung ngắn, ~20s một vòng, quỹ đạo ẩn hẳn — có sự sống, <b>không đòi chú ý</b></div>
+  </div>
+
+  <div class="st">
+    <div class="stage">
+      <div class="glyph" style="width:104px;height:104px">
+        <div class="sphere"></div><div class="rim"></div>
+        <div class="orbits">
+          <div class="orb" style="transform:rotate(20deg)">
+            <svg class="arc" viewBox="0 0 104 104"><ellipse class="soft" cx="52" cy="52" rx="43" ry="16" stroke="#6a57f5" stroke-width="3.4"/><ellipse cx="52" cy="52" rx="43" ry="16" stroke="#a99bff" stroke-width=".9" opacity=".7"/></svg>
+            <div class="p"    style="--dur:9.3s;offset-path:path('M 9,52 A 43,16 0 1,1 95,52 A 43,16 0 1,1 9,52')"></div>
+            <div class="p t1" style="--dur:9.3s;offset-path:path('M 9,52 A 43,16 0 1,1 95,52 A 43,16 0 1,1 9,52')"></div>
+            <div class="p t2" style="--dur:9.3s;offset-path:path('M 9,52 A 43,16 0 1,1 95,52 A 43,16 0 1,1 9,52')"></div>
+          </div>
+          <div class="orb" style="transform:rotate(-58deg)">
+            <svg class="arc" viewBox="0 0 104 104"><ellipse class="soft" cx="52" cy="52" rx="40" ry="15" stroke="#6a57f5" stroke-width="2.6"/></svg>
+            <div class="p"    style="--dur:9.3s;animation-delay:-4.3s,-4.3s;offset-path:path('M 12,52 A 40,15 0 1,1 92,52 A 40,15 0 1,1 12,52')"></div>
+            <div class="p t1" style="--dur:9.3s;animation-delay:-4.36s,-4.36s;offset-path:path('M 12,52 A 40,15 0 1,1 92,52 A 40,15 0 1,1 12,52')"></div>
+          </div>
+          <div class="orb" style="transform:rotate(86deg)">
+            <div class="p"    style="--dur:9.3s;animation-delay:-7s,-7s;offset-path:path('M 14,52 A 38,13 0 1,1 90,52 A 38,13 0 1,1 14,52')"></div>
+            <div class="p t1" style="--dur:9.3s;animation-delay:-7.06s,-7.06s;offset-path:path('M 14,52 A 38,13 0 1,1 90,52 A 38,13 0 1,1 14,52')"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nm">Nghe</div><div class="ct">3 hạt</div>
+    <div class="dsc">Hạt thứ ba xuất hiện, cung dài ra — cả cụm hít vào thở ra nhịp ~2s</div>
+  </div>
+
+  <div class="st">
+    <div class="stage">
+      <div class="glyph" style="width:104px;height:104px">
+        <div class="sphere"></div><div class="rim"></div>
+        <div class="orbits">
+          <div class="orb" style="transform:rotate(0deg)">
+            <svg class="arc" viewBox="0 0 104 104"><ellipse class="soft" cx="52" cy="52" rx="43" ry="17" stroke="#6a57f5" stroke-width="3.4"/><ellipse cx="52" cy="52" rx="43" ry="17" stroke="#a99bff" stroke-width=".85" opacity=".62"/></svg>
+            <div class="p"    style="--dur:3.7s;offset-path:path('M 9,52 A 43,17 0 1,1 95,52 A 43,17 0 1,1 9,52')"></div>
+            <div class="p t1" style="--dur:3.7s;offset-path:path('M 9,52 A 43,17 0 1,1 95,52 A 43,17 0 1,1 9,52')"></div>
+            <div class="p t2" style="--dur:3.7s;offset-path:path('M 9,52 A 43,17 0 1,1 95,52 A 43,17 0 1,1 9,52')"></div>
+          </div>
+          <div class="orb" style="transform:rotate(72deg)">
+            <svg class="arc" viewBox="0 0 104 104"><ellipse class="soft" cx="52" cy="52" rx="43" ry="17" stroke="#6a57f5" stroke-width="3"/><ellipse cx="52" cy="52" rx="43" ry="17" stroke="#a99bff" stroke-width=".8" opacity=".5"/></svg>
+            <div class="p"    style="--dur:3.7s;animation-delay:-.74s,-.74s;offset-path:path('M 9,52 A 43,17 0 1,1 95,52 A 43,17 0 1,1 9,52')"></div>
+            <div class="p t1" style="--dur:3.7s;animation-delay:-.8s,-.8s;offset-path:path('M 9,52 A 43,17 0 1,1 95,52 A 43,17 0 1,1 9,52')"></div>
+          </div>
+          <div class="orb" style="transform:rotate(144deg)">
+            <svg class="arc" viewBox="0 0 104 104"><ellipse class="soft" cx="52" cy="52" rx="43" ry="17" stroke="#6a57f5" stroke-width="3"/></svg>
+            <div class="p"    style="--dur:3.7s;animation-delay:-1.48s,-1.48s;offset-path:path('M 9,52 A 43,17 0 1,1 95,52 A 43,17 0 1,1 9,52')"></div>
+            <div class="p t1" style="--dur:3.7s;animation-delay:-1.54s,-1.54s;offset-path:path('M 9,52 A 43,17 0 1,1 95,52 A 43,17 0 1,1 9,52')"></div>
+          </div>
+          <div class="orb" style="transform:rotate(216deg)">
+            <svg class="arc" viewBox="0 0 104 104"><ellipse class="soft" cx="52" cy="52" rx="43" ry="17" stroke="#6a57f5" stroke-width="3"/></svg>
+            <div class="p"    style="--dur:3.7s;animation-delay:-2.22s,-2.22s;offset-path:path('M 9,52 A 43,17 0 1,1 95,52 A 43,17 0 1,1 9,52')"></div>
+            <div class="p t1" style="--dur:3.7s;animation-delay:-2.28s,-2.28s;offset-path:path('M 9,52 A 43,17 0 1,1 95,52 A 43,17 0 1,1 9,52')"></div>
+          </div>
+          <div class="orb" style="transform:rotate(288deg)">
+            <svg class="arc" viewBox="0 0 104 104"><ellipse class="soft" cx="52" cy="52" rx="43" ry="17" stroke="#6a57f5" stroke-width="3"/></svg>
+            <div class="p"    style="--dur:3.7s;animation-delay:-2.96s,-2.96s;offset-path:path('M 9,52 A 43,17 0 1,1 95,52 A 43,17 0 1,1 9,52')"></div>
+            <div class="p t1" style="--dur:3.7s;animation-delay:-3.02s,-3.02s;offset-path:path('M 9,52 A 43,17 0 1,1 95,52 A 43,17 0 1,1 9,52')"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nm">Nghĩ</div><div class="ct">5 hạt</div>
+    <div class="dsc">Năm vòng <b>lệch đều 72°</b> — chỗ chồng nhau thành cánh hoa. Chạy <b>đều</b>, như máy xử lý ổn định</div>
+  </div>
+
+  <div class="st">
+    <div class="stage">
+      <div class="glyph" style="width:104px;height:104px">
+        <div class="sphere"></div><div class="rim"></div>
+        <div class="orbits">
+          <div class="orb" style="transform:rotate(14deg)">
+            <svg class="arc" viewBox="0 0 104 104"><ellipse class="soft" cx="52" cy="52" rx="44" ry="18" stroke="#6a57f5" stroke-width="3.6"/><ellipse cx="52" cy="52" rx="44" ry="18" stroke="#c7bfff" stroke-width=".95" opacity=".75"/></svg>
+            <div class="p"    style="--dur:1.3s;offset-path:path('M 8,52 A 44,18 0 1,1 96,52 A 44,18 0 1,1 8,52')"></div>
+            <div class="p t1" style="--dur:1.3s;offset-path:path('M 8,52 A 44,18 0 1,1 96,52 A 44,18 0 1,1 8,52')"></div>
+            <div class="p t2" style="--dur:1.3s;offset-path:path('M 8,52 A 44,18 0 1,1 96,52 A 44,18 0 1,1 8,52')"></div>
+          </div>
+          <div class="orb" style="transform:rotate(-66deg)">
+            <div class="p"    style="--dur:1.3s;animation-delay:-.43s,-.43s;offset-path:path('M 12,52 A 40,15 0 1,1 92,52 A 40,15 0 1,1 12,52')"></div>
+            <div class="p t1" style="--dur:1.3s;animation-delay:-.49s,-.49s;offset-path:path('M 12,52 A 40,15 0 1,1 92,52 A 40,15 0 1,1 12,52')"></div>
+          </div>
+          <div class="orb" style="transform:rotate(88deg)">
+            <div class="p"    style="--dur:1.3s;animation-delay:-.86s,-.86s;offset-path:path('M 14,52 A 38,13 0 1,1 90,52 A 38,13 0 1,1 14,52')"></div>
+            <div class="p t1" style="--dur:1.3s;animation-delay:-.92s,-.92s;offset-path:path('M 14,52 A 38,13 0 1,1 90,52 A 38,13 0 1,1 14,52')"></div>
+          </div>
+        </div>
+        <div style="position:absolute;inset:8%;border-radius:50%;box-shadow:0 0 0 0 rgba(106,87,245,.5);animation:pulseout 1.3s linear infinite"></div>
+      </div>
+    </div>
+    <div class="nm">Trả lời</div><div class="ct">3 hạt</div>
+    <div class="dsc">Rút từ 5 xuống 3 <b>+ xung lan từ tâm ra</b> — nói "vừa xong, có gì đó đi ra"</div>
+  </div>
+
+  <div class="st">
+    <div class="stage">
+      <div class="glyph" style="width:104px;height:104px">
+        <div class="sphere" style="background:radial-gradient(circle at 36% 30%,rgba(199,154,99,.22),rgba(60,46,28,.5) 44%,rgba(14,12,10,.95) 74%)"></div>
+        <div class="rim" style="box-shadow:inset 2px 3px 0 -1.2px rgba(232,205,166,.45), 0 0 20px -6px rgba(199,154,99,.35)"></div>
+        <div class="orbits">
+          <div class="orb" style="transform:rotate(16deg)">
+            <svg class="arc" viewBox="0 0 104 104"><ellipse class="soft" cx="52" cy="52" rx="43" ry="16" stroke="#c79a63" stroke-width="2.6" /></svg>
+            <div class="p" style="--dur:26s;background:radial-gradient(circle,#fff 0%,#f0d3ab 32%,#c79a63 72%,transparent 78%);box-shadow:0 0 9px 1px rgba(199,154,99,.75);offset-path:path('M 9,52 A 43,16 0 1,1 95,52 A 43,16 0 1,1 9,52')"></div>
+            <div class="p t1" style="--dur:26s;background:radial-gradient(circle,#f0d3ab 0%,#c79a63 60%,transparent 74%);box-shadow:none;offset-path:path('M 9,52 A 43,16 0 1,1 95,52 A 43,16 0 1,1 9,52')"></div>
+          </div>
+          <div class="orb" style="transform:rotate(-60deg)">
+            <div class="p" style="--dur:26s;animation-delay:-13s,-13s;background:radial-gradient(circle,#6e6a63 0%,#4a4740 65%,transparent 76%);box-shadow:none;offset-path:path('M 12,52 A 40,15 0 1,1 92,52 A 40,15 0 1,1 12,52')"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nm">Có việc cần xem</div><div class="ct w">2 hạt · hổ phách</div>
+    <div class="dsc">Một hạt hổ phách, hạt kia chìm xám, cung chậm còn ~26s. Preflight chưa đạt, render lỗi</div>
+  </div>
+
+</div>
+
+<!-- ══ 2 · BA CỠ ══ -->
+<h2>2 · Một DNA, ba cỡ</h2>
+<p class="sub">Không phải ba bản thiết kế rời — <b>cùng một hình, đổi độ chi tiết theo chỗ đặt</b>.
+Ở 20px là <b>đơn giản hoá</b>, không phải thu nhỏ: 1 vòng + 2 elip + 2 chấm, <b>bỏ toả sáng</b>
+(blur ở cỡ đó chỉ tạo quầng bẩn và ăn mất nét mảnh).</p>
+
+<div class="sizes">
+  <div class="sz">
+    <div class="stage">
+      <div class="s20">
+        <svg width="20" height="20" viewBox="0 0 20 20">
+          <circle class="ring" cx="10" cy="10" r="8.4"/>
+          <g class="g1"><ellipse class="el" cx="10" cy="10" rx="8.4" ry="3.3"/><circle class="dot" cx="18.4" cy="10" r="1.7"/></g>
+          <g class="g2"><ellipse class="el" cx="10" cy="10" rx="8.4" ry="3.3" transform="rotate(62 10 10)"/><circle class="dot" cx="6" cy="2.6" r="1.5"/></g>
+        </svg>
+      </div>
+    </div>
+    <div class="lb">S · 20 PX<span>thanh trạng thái</span></div>
+  </div>
+  <div class="sz">
+    <div class="stage">
+      <div class="glyph" style="width:56px;height:56px">
+        <div class="sphere"></div><div class="rim"></div>
+        <div class="orbits">
+          <div class="orb" style="transform:rotate(20deg)">
+            <svg class="arc" viewBox="0 0 56 56"><ellipse class="soft" cx="28" cy="28" rx="23" ry="9" stroke="#6a57f5" stroke-width="2.2"/><ellipse cx="28" cy="28" rx="23" ry="9" stroke="#a99bff" stroke-width=".7" opacity=".6"/></svg>
+            <div class="p" style="--pd:5px;--dur:3.7s;offset-path:path('M 5,28 A 23,9 0 1,1 51,28 A 23,9 0 1,1 5,28')"></div>
+            <div class="p t1" style="--pd:3.6px;--dur:3.7s;offset-path:path('M 5,28 A 23,9 0 1,1 51,28 A 23,9 0 1,1 5,28')"></div>
+          </div>
+          <div class="orb" style="transform:rotate(-60deg)">
+            <svg class="arc" viewBox="0 0 56 56"><ellipse class="soft" cx="28" cy="28" rx="21" ry="8" stroke="#6a57f5" stroke-width="1.8"/></svg>
+            <div class="p" style="--pd:5px;--dur:3.7s;animation-delay:-1.85s,-1.85s;offset-path:path('M 7,28 A 21,8 0 1,1 49,28 A 21,8 0 1,1 7,28')"></div>
+            <div class="p t1" style="--pd:3.6px;--dur:3.7s;animation-delay:-1.91s,-1.91s;offset-path:path('M 7,28 A 21,8 0 1,1 49,28 A 21,8 0 1,1 7,28')"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="lb">M · 56 PX<span>đầu panel</span></div>
+  </div>
+  <div class="sz">
+    <div class="stage">
+      <div class="glyph" style="width:132px;height:132px">
+        <div class="sphere"></div><div class="rim"></div>
+        <div class="orbits">
+          <div class="orb" style="transform:rotate(18deg)">
+            <svg class="arc" viewBox="0 0 132 132"><ellipse class="soft" cx="66" cy="66" rx="55" ry="21" stroke="#6a57f5" stroke-width="4"/><ellipse cx="66" cy="66" rx="55" ry="21" stroke="#a99bff" stroke-width="1" opacity=".62"/></svg>
+            <div class="p" style="--pd:9px;--dur:9.3s;offset-path:path('M 11,66 A 55,21 0 1,1 121,66 A 55,21 0 1,1 11,66')"></div>
+            <div class="p t1" style="--pd:6.5px;--dur:9.3s;offset-path:path('M 11,66 A 55,21 0 1,1 121,66 A 55,21 0 1,1 11,66')"></div>
+            <div class="p t2" style="--pd:4.6px;--dur:9.3s;offset-path:path('M 11,66 A 55,21 0 1,1 121,66 A 55,21 0 1,1 11,66')"></div>
+          </div>
+          <div class="orb" style="transform:rotate(-58deg)">
+            <svg class="arc" viewBox="0 0 132 132"><ellipse class="soft" cx="66" cy="66" rx="51" ry="19" stroke="#6a57f5" stroke-width="3.2"/></svg>
+            <div class="p" style="--pd:9px;--dur:9.3s;animation-delay:-4.3s,-4.3s;offset-path:path('M 15,66 A 51,19 0 1,1 117,66 A 51,19 0 1,1 15,66')"></div>
+            <div class="p t1" style="--pd:6.5px;--dur:9.3s;animation-delay:-4.36s,-4.36s;offset-path:path('M 15,66 A 51,19 0 1,1 117,66 A 51,19 0 1,1 15,66')"></div>
+          </div>
+          <div class="orb" style="transform:rotate(88deg)">
+            <div class="p" style="--pd:8px;--dur:9.3s;animation-delay:-7s,-7s;offset-path:path('M 18,66 A 48,17 0 1,1 114,66 A 48,17 0 1,1 18,66')"></div>
+            <div class="p t1" style="--pd:5.6px;--dur:9.3s;animation-delay:-7.06s,-7.06s;offset-path:path('M 18,66 A 48,17 0 1,1 114,66 A 48,17 0 1,1 18,66')"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="lb">L · 96–132 PX<span>màn chờ</span></div>
+  </div>
+</div>
+
+<!-- ══ 3 · NỀN GIẤY ══ -->
+<h2>3 · Nền giấy — IF mặc định là nền ấm</h2>
+<p class="sub">Chỉ có bản nền đen thì glyph <b>chỉ dùng được nửa app</b>. Trên giấy: nét đặc
+<code>#6a57f5</code>, bỏ nền tối, <b>đảo rim light thành bóng đổ nhẹ + viền hairline</b>.</p>
+
+<div class="paper">
+  <div class="ball-l">
+    <div class="orbits">
+      <div class="orb" style="transform:rotate(20deg)">
+        <svg class="arc" viewBox="0 0 96 96"><ellipse class="soft" cx="48" cy="48" rx="38" ry="14" stroke="#6a57f5" stroke-width="3"/><ellipse cx="48" cy="48" rx="38" ry="14" stroke="#6a57f5" stroke-width=".9" opacity=".5"/></svg>
+        <div class="p" style="--pd:7px;--dur:9.3s;offset-path:path('M 10,48 A 38,14 0 1,1 86,48 A 38,14 0 1,1 10,48')"></div>
+        <div class="p t1" style="--pd:5px;--dur:9.3s;offset-path:path('M 10,48 A 38,14 0 1,1 86,48 A 38,14 0 1,1 10,48')"></div>
+      </div>
+      <div class="orb" style="transform:rotate(-58deg)">
+        <svg class="arc" viewBox="0 0 96 96"><ellipse class="soft" cx="48" cy="48" rx="35" ry="13" stroke="#6a57f5" stroke-width="2.4"/></svg>
+        <div class="p" style="--pd:7px;--dur:9.3s;animation-delay:-4.3s,-4.3s;offset-path:path('M 13,48 A 35,13 0 1,1 83,48 A 35,13 0 1,1 13,48')"></div>
+      </div>
+    </div>
+  </div>
+  <div class="s20 light">
+    <svg width="20" height="20" viewBox="0 0 20 20">
+      <circle class="ring" cx="10" cy="10" r="8.4"/>
+      <g class="g1"><ellipse class="el" cx="10" cy="10" rx="8.4" ry="3.3"/><circle class="dot" cx="18.4" cy="10" r="1.7"/></g>
+      <g class="g2"><ellipse class="el" cx="10" cy="10" rx="8.4" ry="3.3" transform="rotate(62 10 10)"/><circle class="dot" cx="6" cy="2.6" r="1.5"/></g>
+    </svg>
+  </div>
+  <div class="txt"><b>Không đặt đĩa tối lên trang giấy.</b> Cùng một hình, đổi cách dựng khối:
+  nền tối dùng <b>ánh sáng</b>, nền giấy dùng <b>bóng đổ + hairline</b>. Vẫn đúng 1 accent.</div>
+</div>
+
+<!-- ══ 4 · TRONG THANH TRẠNG THÁI THẬT ══ -->
+<h2>4 · Trong thanh trạng thái thật — 20px</h2>
+<p class="sub">Chỗ Vitals sống nhiều nhất. <b>Đây mới là phép thử thật</b> của một dấu nhận diện,
+không phải bản 132px.</p>
+
+<div style="display:grid;gap:12px">
+  <div class="bar">
+    <span class="b">◎ Ortho</span><span class="b">◔ Số liệu</span><span class="b">&gt;_ Lệnh</span>
+    <span class="sep"></span>
+    <span class="pill">
+      <span class="s20"><svg width="19" height="19" viewBox="0 0 20 20">
+        <circle class="ring" cx="10" cy="10" r="8.4"/>
+        <g class="g1"><ellipse class="el" cx="10" cy="10" rx="8.4" ry="3.3"/><circle class="dot" cx="18.4" cy="10" r="1.7"/></g>
+        <g class="g2"><ellipse class="el" cx="10" cy="10" rx="8.4" ry="3.3" transform="rotate(62 10 10)"/><circle class="dot" cx="6" cy="2.6" r="1.5"/></g>
+      </svg></span>
+      Vitals</span>
+    <span class="grow"></span><span class="tail">X 12400 · Y 8250 mm</span>
+    <span class="sep"></span><span class="tail">Đã lưu · 2 phút trước</span>
+  </div>
+
+  <div class="bar l">
+    <span class="b">Dự án mẫu</span>
+    <span class="grow"></span>
+    <span class="pill">
+      <span class="s20 light"><svg width="19" height="19" viewBox="0 0 20 20">
+        <circle class="ring" cx="10" cy="10" r="8.4"/>
+        <g class="g1"><ellipse class="el" cx="10" cy="10" rx="8.4" ry="3.3"/><circle class="dot" cx="18.4" cy="10" r="1.7"/></g>
+        <g class="g2"><ellipse class="el" cx="10" cy="10" rx="8.4" ry="3.3" transform="rotate(62 10 10)"/><circle class="dot" cx="6" cy="2.6" r="1.5"/></g>
+      </svg></span>
+      Vitals</span>
+    <span class="grow"></span><span class="tail">Đã lưu · 2 phút trước</span>
+  </div>
+</div>
+
+<!-- ══ 5 · XOẮN THIÊN HÀ ══ -->
+<h2>5 · Xuất hiện — xoắn thiên hà</h2>
+<p class="sub">Mỗi lần gọi Vitals, glyph <b>không hiện ra ngay</b>: nhánh quỹ đạo văng ra xa rồi
+<b>cuộn xoáy vào tâm</b>, cầu kính nở lên sau cùng. <b>1,5 giây, đúng một lần mỗi lần gọi</b> —
+không lặp, không thành đồ trang trí.</p>
+
+<div class="appear">
+  <div class="glyph spin-in" id="ap" style="width:120px;height:120px">
+    <div class="sphere"></div><div class="rim"></div>
+    <div class="orbits">
+      <div class="orb" style="transform:rotate(18deg)">
+        <svg class="arc" viewBox="0 0 120 120"><ellipse class="soft" cx="60" cy="60" rx="50" ry="19" stroke="#6a57f5" stroke-width="3.8"/><ellipse cx="60" cy="60" rx="50" ry="19" stroke="#a99bff" stroke-width=".95" opacity=".6"/></svg>
+        <div class="p" style="--pd:8px;--dur:9.3s;offset-path:path('M 10,60 A 50,19 0 1,1 110,60 A 50,19 0 1,1 10,60')"></div>
+        <div class="p t1" style="--pd:6px;--dur:9.3s;offset-path:path('M 10,60 A 50,19 0 1,1 110,60 A 50,19 0 1,1 10,60')"></div>
+      </div>
+      <div class="orb" style="transform:rotate(-58deg)">
+        <svg class="arc" viewBox="0 0 120 120"><ellipse class="soft" cx="60" cy="60" rx="46" ry="17" stroke="#6a57f5" stroke-width="3"/></svg>
+        <div class="p" style="--pd:8px;--dur:9.3s;animation-delay:-4.3s,-4.3s;offset-path:path('M 14,60 A 46,17 0 1,1 106,60 A 46,17 0 1,1 14,60')"></div>
+      </div>
+      <div class="orb" style="transform:rotate(88deg)">
+        <div class="p" style="--pd:7px;--dur:9.3s;animation-delay:-7s,-7s;offset-path:path('M 17,60 A 43,15 0 1,1 103,60 A 43,15 0 1,1 17,60')"></div>
+      </div>
+    </div>
+  </div>
+  <div style="font-size:12.5px;line-height:1.7;color:var(--t2);max-width:38ch">
+    Áp cho: <b>panel Vitals mở</b> · <b>pill kích hoạt</b> · nút Gọi lại.<br>
+    Đường cong <code>cubic-bezier(.16,.9,.24,1)</code> — vào nhanh, dừng mềm, <b>không nảy</b>.
+  </div>
+  <button class="replay" id="rp">↻ Gọi lại</button>
+</div>
+
+<p class="foot">
+<b>Chi phí:</b> SVG + CSS thuần — không video, không Lottie, không thư viện. Quỹ đạo dùng
+<code>offset-path</code> (Chrome/Electron hỗ trợ sẵn), chỉ animate <code>offset-distance</code>,
+<code>transform</code>, <code>opacity</code> — đều chạy trên GPU, không đụng layout.<br>
+<b>Bắt buộc khi thi công:</b> <code>prefers-reduced-motion</code> tắt hết chuyển động (đã cài sẵn ở đây) ·
+tắt lớp nhoè khi CAD đang kéo/vẽ · <b>chỉ Vitals</b> được dùng nhịp electron này — lan sang thành phần
+thường là dấu hiệu AI mất tác dụng ngay.<br>
+<b>Chưa làm:</b> chữ nằm trong glyph (màn chờ toàn khung, §5 của spec) — công dụng khác, làm riêng.
+</p>
+
+</div>
+<script>
+  const ap=document.getElementById('ap'), rp=document.getElementById('rp');
+  rp.addEventListener('click',()=>{ap.classList.remove('spin-in');void ap.offsetWidth;ap.classList.add('spin-in')});
+</script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Vitals — bản mẫu v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0c0e; --panel:#17171b; --panel2:#1f1f24; --line:#2a2a31; --hair:#232329;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9a9aa4; --t4:#6e6e78;
+    /* ĐỔI ở v2: bỏ tím (màu mặc định của mọi AI) → vàng ấm, họ hàng với --warm #9a7442 của IF */
+    --ai:#f0b95e; --ai-hot:#ffe6b0; --ai-bg:#221c10; --ai-line:#3d3120; --mint:#7fe3c4;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:#0a0a0c;font-family:'Be Vietnam Pro',system-ui,sans-serif;color:var(--t1);
+       display:flex;flex-direction:column;overflow:hidden}
+  .note{padding:11px 16px;font-size:12.5px;line-height:1.6;color:var(--t3);background:#121216;border-bottom:1px solid var(--line)}
+  .note b{color:var(--t1);font-weight:600}
+  .note em{color:var(--ai);font-style:normal;font-weight:500}
+
+  .app{flex:1;position:relative;background:var(--bg);overflow:hidden;
+       background-image:linear-gradient(var(--hair) 1px,transparent 1px),linear-gradient(90deg,var(--hair) 1px,transparent 1px);
+       background-size:28px 28px}
+
+  /* ── DẤU VITALS — quỹ đạo quanh lõi sáng, thay chấm tím + ✨ ── */
+  .mark{display:block;overflow:visible;flex:0 0 auto}
+  .orb{fill:none;stroke-linecap:round;transform-box:fill-box;transform-origin:center}
+  .glow{filter:blur(2.2px);opacity:.5}
+  .core{transform-box:fill-box;transform-origin:center}
+  @keyframes spinA{to{transform:rotate(360deg)}}
+  @keyframes spinB{to{transform:rotate(-360deg)}}
+  @keyframes breathe{0%,100%{opacity:.82}50%{opacity:1}}
+  .s-idle .core{animation:breathe 5.5s ease-in-out infinite}
+  .s-think .o1{animation:spinA 3.1s linear infinite}
+  .s-think .o2{animation:spinB 4.6s linear infinite}
+  .s-think .o3{animation:spinA 6.9s linear infinite}
+  .s-ready .o2{stroke:var(--mint);opacity:1}
+  .s-ready .core{animation:breathe 1.6s ease-in-out infinite}
+  @media(prefers-reduced-motion:reduce){.orb,.core{animation:none !important}}
+
+  /* ── thanh trạng thái đáy — CỬA DUY NHẤT ── */
+  .status{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;
+          gap:6px;padding:0 14px;background:var(--panel);border-top:1px solid var(--line);z-index:4}
+  .sbtn{display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:8px;
+        font-size:12.5px;line-height:1.5;color:var(--t3);cursor:pointer;border:1px solid transparent}
+  .sbtn:hover{background:var(--panel2);color:var(--t1)}
+  .grow{flex:1}
+  .saved{font-size:12.5px;line-height:1.5;color:var(--t4)}
+
+  .vsep{width:1px;height:20px;background:var(--line);margin:0 10px}
+  .vbtn{display:flex;align-items:center;gap:8px;height:30px;padding:0 13px 0 9px;border-radius:999px;
+        background:var(--ai-bg);border:1px solid var(--ai-line);color:var(--ai-hot);
+        font-size:12.5px;line-height:1.5;font-weight:500;cursor:pointer}
+  .vbtn kbd{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--t4);
+            border:1px solid var(--line);border-radius:4px;padding:1px 5px;background:#101014}
+
+  /* ── panel Vitals — xổ LÊN từ đúng nút, một hướng duy nhất ── */
+  .vpanel{position:absolute;right:14px;bottom:52px;width:420px;z-index:6;
+          background:var(--panel);border:1px solid var(--ai-line);border-radius:14px;
+          box-shadow:0 24px 60px -18px rgba(0,0,0,.7);overflow:hidden}
+  .vhead{display:flex;align-items:center;gap:9px;padding:11px 14px;border-bottom:1px solid var(--hair)}
+  .vhead h4{margin:0;font-size:13.5px;font-weight:600;line-height:1.5}
+  .ctx{font-size:11.5px;line-height:1.5;color:var(--t3);background:var(--panel2);
+       border:1px solid var(--line);border-radius:999px;padding:2px 9px;white-space:nowrap}
+  .vx{margin-left:auto;color:var(--t4);cursor:pointer;font-size:15px;line-height:1}
+
+  .vbody{padding:13px 14px;max-height:340px;overflow:auto}
+  .msg{margin-bottom:12px;font-size:13px;line-height:1.6}
+  .me{color:var(--t2);background:var(--panel2);border-radius:10px;padding:8px 11px}
+  .ai{color:var(--t1)}
+  .ai .who{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ai);margin-bottom:5px;line-height:1.5}
+
+  /* ⭐ thẻ hành động — làm luật 2.1.10 NHÌN THẤY ĐƯỢC */
+  .act{margin-top:9px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);overflow:hidden}
+  .act .top{display:flex;align-items:center;gap:9px;padding:9px 11px}
+  .act .ic{width:24px;height:24px;border-radius:7px;background:#2b2b32;display:flex;align-items:center;
+           justify-content:center;font-size:12px;flex:0 0 auto}
+  .act .nm{font-size:12.5px;line-height:1.5;color:var(--t1);flex:1}
+  .act .go{font-size:12px;line-height:1.5;color:var(--ai-hot);border:1px solid var(--ai-line);
+           background:var(--ai-bg);border-radius:7px;padding:4px 10px;cursor:pointer}
+  .act .same{padding:7px 11px;border-top:1px solid var(--hair);font-size:11.5px;line-height:1.55;color:var(--t3)}
+  .act .same b{color:var(--t2);font-weight:500}
+  .act .same code{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t1);
+                  background:#101014;border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+  .vfoot{border-top:1px solid var(--hair);padding:10px 12px;display:flex;align-items:center;gap:8px}
+  .vin{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:9px;
+       padding:8px 11px;font:inherit;font-size:12.5px;line-height:1.5;color:var(--t1);outline:none}
+  .vin::placeholder{color:var(--t4)}
+  .send{width:32px;height:32px;border-radius:9px;background:var(--ai);color:#1b1408;border:0;cursor:pointer;font-size:13px;font-weight:600}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+  <!-- 26px: ba quỹ đạo + toả sáng -->
+  <g id="v-mid">
+    <g class="glow">
+      <ellipse class="orb o1" cx="12" cy="12" rx="10" ry="4.3" stroke="#f0b95e" stroke-width="1.8" transform="rotate(22 12 12)"/>
+      <ellipse class="orb o2" cx="12" cy="12" rx="9.5" ry="4"  stroke="#e8e4dc" stroke-width="1.5" transform="rotate(-60 12 12)"/>
+      <ellipse class="orb o3" cx="12" cy="12" rx="10.2" ry="3.5" stroke="#7fe3c4" stroke-width="1.3" transform="rotate(84 12 12)"/>
+    </g>
+    <ellipse class="orb o1" cx="12" cy="12" rx="10" ry="4.3" stroke="#ffe6b0" stroke-width=".8" transform="rotate(22 12 12)"/>
+    <ellipse class="orb o2" cx="12" cy="12" rx="9.5" ry="4"  stroke="#ffffff" stroke-width=".65" opacity=".78" transform="rotate(-60 12 12)"/>
+    <ellipse class="orb o3" cx="12" cy="12" rx="10.2" ry="3.5" stroke="#c8fbe9" stroke-width=".6" opacity=".7" transform="rotate(84 12 12)"/>
+    <circle class="core" cx="12" cy="12" r="2.1" fill="#ffe6b0"/>
+  </g>
+  <!-- 20px: MỘT quỹ đạo, KHÔNG toả sáng — blur ở cỡ này chỉ tạo quầng bẩn, ăn mất nét mảnh -->
+  <g id="v-small">
+    <ellipse class="orb o1" cx="10" cy="10" rx="8.2" ry="3.6" stroke="#f0b95e" stroke-width="1.25" transform="rotate(24 10 10)"/>
+    <circle class="core" cx="10" cy="10" r="2.2" fill="#ffe6b0"/>
+  </g>
+  <!-- 12px: hết là quỹ đạo, chỉ còn dấu nhận biết -->
+  <g id="v-dot">
+    <circle cx="6" cy="6" r="5.1" fill="none" stroke="#f0b95e" stroke-width="1" opacity=".6"/>
+    <circle class="core" cx="6" cy="6" r="2.1" fill="#ffe6b0"/>
+  </g>
+</defs></svg>
+
+<div class="note">
+  <b>Bản mẫu Vitals v2</b> — cấu trúc giữ nguyên v1: ① <b>một cửa duy nhất</b> (nút thanh đáy + <b>⌘J</b>) ·
+  ② <b>có dấu AI</b>, tách khỏi nhóm chỉnh tay bằng vạch ngăn · ③ <b>một hướng xổ</b> ·
+  ④ <em>mỗi đề xuất nói rõ nó chạy lệnh tay nào</em>.
+  <br><b>Chỉ đổi ở v2:</b> chấm tím + ✨ → <em>dấu quỹ đạo vàng ấm</em>. Quay = đang nghĩ · đứng im = xong.
+  Ở 20px <b>bỏ toả sáng</b>, chỉ còn một quỹ đạo + lõi. (Chấm cạnh "Vitals" trong tin thứ hai đang quay — đó là trạng thái đang nghĩ.)
+</div>
+
+<div class="app">
+
+  <!-- panel Vitals -->
+  <div class="vpanel">
+    <div class="vhead">
+      <svg class="mark s-idle" width="26" height="26" viewBox="0 0 24 24"><use href="#v-mid"/></svg>
+      <h4>Vitals</h4>
+      <span class="ctx">đang ở · CAD Phác thảo</span>
+      <span class="vx">✕</span>
+    </div>
+
+    <div class="vbody">
+      <div class="msg me">Phòng khách với bếp nên tô cùng màu hay khác màu?</div>
+
+      <div class="msg ai">
+        <div class="who"><svg class="mark s-idle" width="12" height="12" viewBox="0 0 12 12"><use href="#v-dot"/></svg> Vitals</div>
+        Cùng màu. Trên mặt bằng này khách · ăn · bếp là <b>một không gian mở liền nhau</b> —
+        tô khác màu sẽ chia cắt thứ vốn liền. Chuẩn nghề để phòng phục vụ và phòng ẩm ướt
+        khác màu, còn khu sinh hoạt giữ một mảng.
+
+        <div class="act">
+          <div class="top">
+            <span class="ic">🪣</span>
+            <span class="nm">Tô 3 vùng thành một mảng — nền be sáng</span>
+            <button class="go">Làm</button>
+          </div>
+          <div class="same">
+            Chạy đúng lệnh <code>HATCH</code> — <b>bạn tự làm bằng tay được</b>: nút 🪣 trên thanh
+            công cụ, hoặc gõ <code>H</code>. Vitals không có đường riêng.
+          </div>
+        </div>
+      </div>
+
+      <div class="msg me">WC thì sao?</div>
+
+      <div class="msg ai">
+        <div class="who"><svg class="mark s-think" width="12" height="12" viewBox="0 0 12 12"><use href="#v-dot"/></svg> Vitals</div>
+        Để xanh bạc hà — và <b>chỉ WC thôi</b>. Cả bản vẽ đang tông ấm, một điểm mát duy nhất
+        thì mắt mới bắt được. Rải xanh nhiều chỗ là mất tác dụng.
+      </div>
+    </div>
+
+    <div class="vfoot">
+      <input class="vin" placeholder="Hỏi về bản vẽ đang mở…">
+      <button class="send">↑</button>
+    </div>
+  </div>
+
+  <!-- thanh trạng thái -->
+  <div class="status">
+    <span class="sbtn">◎ Ortho</span>
+    <span class="sbtn">◔ Số liệu</span>
+    <span class="sbtn">&gt;_ Lệnh</span>
+    <span class="sbtn">✋ Kéo</span>
+    <span class="vsep"></span>
+    <span class="vbtn">
+      <svg class="mark s-idle" width="19" height="19" viewBox="0 0 20 20"><use href="#v-small"/></svg>
+      Vitals <kbd>⌘J</kbd>
+    </span>
+    <span class="grow"></span>
+    <span class="saved">X 12400 · Y 8250 mm</span>
+    <span class="vsep"></span>
+    <span class="saved">Đã lưu lúc 07:41</span>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Đổi avatar — bản mẫu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08080a; --panel:rgba(255,255,255,.045); --panel2:rgba(255,255,255,.028);
+  --line:rgba(255,255,255,.10); --hair:rgba(255,255,255,.055);
+  --t1:#f4f3f1; --t2:#9c9892; --t3:#666259;
+  --accent:#6a57f5; --accent-soft:rgba(106,87,245,.16);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);font-family:'Be Vietnam Pro',system-ui,sans-serif;font-size:14px;line-height:1.6}
+.wrap{max-width:940px;margin:0 auto;padding:40px 28px 80px}
+.mono{font-family:'JetBrains Mono',monospace}
+
+.note{font-size:12.5px;line-height:1.7;color:var(--t2);margin:0 0 26px;max-width:66ch}
+.note b{color:var(--t1);font-weight:500}
+.note code{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#a99bff}
+
+/* ── HỘP ── */
+.sheet{border:1px solid var(--line);border-radius:16px;background:var(--panel2);overflow:hidden;
+       backdrop-filter:blur(20px)}
+.head{display:flex;align-items:center;gap:12px;padding:15px 20px;border-bottom:1px solid var(--hair)}
+.head h2{margin:0;font-size:14.5px;font-weight:600}
+.head .x{margin-left:auto;color:var(--t3);cursor:pointer;font-size:16px;line-height:1}
+
+.body{display:grid;grid-template-columns:236px 1fr;min-height:396px}
+
+/* ── XEM TRƯỚC — chiếm ngôi ── */
+.prev{padding:26px 20px;border-right:1px solid var(--hair);display:flex;flex-direction:column;
+      align-items:center;gap:20px;background:var(--panel2)}
+.big{width:172px;height:172px;border-radius:50%;overflow:hidden;position:relative;
+     box-shadow:0 18px 44px -16px rgba(0,0,0,.85), inset 0 0 0 1px rgba(255,255,255,.07)}
+.scale{display:flex;align-items:flex-end;gap:13px}
+.scale figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:6px}
+.scale .r{border-radius:50%;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+.scale figcaption{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--t3)}
+.rand{font:inherit;font-size:12.5px;color:var(--t2);background:transparent;border:1px solid var(--line);
+      border-radius:999px;padding:7px 15px;cursor:pointer}
+.rand:hover{color:var(--t1);border-color:rgba(255,255,255,.2)}
+
+/* ── MỘT hàng nhóm — thay 13 hàng nhãn ── */
+.tabs{display:flex;gap:3px;padding:12px 16px 0;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;font:inherit;font-size:12.5px;color:var(--t2);background:transparent;border:0;
+     padding:8px 13px 10px;cursor:pointer;border-bottom:1.5px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--t1)}
+.tab.on{color:var(--t1);border-bottom-color:var(--t1)}
+
+.pane{padding:18px 16px 20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:8px}
+.opt{aspect-ratio:1;border-radius:11px;background:var(--panel);border:1px solid transparent;
+     cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden;
+     transition:background .12s}
+.opt:hover{background:rgba(255,255,255,.075)}
+.opt.on{border-color:var(--accent);background:var(--accent-soft)}
+.opt svg{display:block}
+
+.swrow{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px;padding-top:15px;border-top:1px solid var(--hair)}
+.swrow .lb{width:100%;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:2px}
+.sw{width:26px;height:26px;border-radius:50%;border:1px solid rgba(255,255,255,.12);cursor:pointer;padding:0}
+.sw.on{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--accent)}
+
+.foot{display:flex;align-items:center;gap:10px;padding:13px 20px;border-top:1px solid var(--hair)}
+.foot .hint{font-size:11.5px;color:var(--t3)}
+.foot .grow{flex:1}
+.btn{font:inherit;font-size:12.5px;border-radius:9px;padding:8px 16px;cursor:pointer;border:1px solid var(--line);
+     background:transparent;color:var(--t2)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+
+h3{font-size:10.5px;font-weight:600;letter-spacing:.14em;color:#9a7442;margin:44px 0 6px;text-transform:uppercase}
+h3+p{font-size:12.5px;line-height:1.7;color:var(--t2);margin:0 0 16px;max-width:66ch}
+h3+p b{color:var(--t1);font-weight:500}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:var(--panel2)}
+.card b{display:block;font-size:12.5px;margin-bottom:7px}
+.card.bad b{color:#d98b78}.card.good b{color:#7fc9a8}
+.card ul{margin:0;padding-left:17px;font-size:12.5px;line-height:1.7;color:var(--t2)}
+@media(max-width:760px){.body{grid-template-columns:1fr}.prev{border-right:0;border-bottom:1px solid var(--hair)}.cmp{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="note">
+<b>Trình đổi avatar — bản mẫu.</b> Khuôn lấy từ Memoji (Apple) và Omoji (Oppo): <b>xem trước chiếm
+ngôi · một hàng nhóm · một lưới lựa chọn</b>. Tinh thần tiết chế lấy từ Siri iOS 27 — nền tối,
+panel trong mờ, accent chấm rất nhẹ, không quầng sáng.
+<br>Hình avatar ở đây là <b>bản thế chỗ</b> để xem bố cục — bản thật đã có sẵn ở
+<code>AvatarRenderer.tsx</code> (1271 dòng, 13 slot). Đây là bàn về <b>cách bày</b>, không phải vẽ lại nhân vật.
+</p>
+
+<div class="sheet">
+  <div class="head"><h2>Đổi avatar</h2><span class="x">✕</span></div>
+
+  <div class="body">
+    <div class="prev">
+      <div class="big" id="big"></div>
+      <div class="scale">
+        <figure><span class="r" id="s48"></span><figcaption>48</figcaption></figure>
+        <figure><span class="r" id="s28"></span><figcaption>28</figcaption></figure>
+        <figure><span class="r" id="s20"></span><figcaption>20</figcaption></figure>
+      </div>
+      <button class="rand" id="rand">↻ Ngẫu nhiên</button>
+    </div>
+
+    <div>
+      <div class="tabs" id="tabs"></div>
+      <div class="pane"><div class="grid" id="grid"></div><div class="swrow" id="sw"></div></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span class="hint">Mọi thay đổi hiện ngay ở xem trước — chưa lưu cho tới khi bấm Lưu</span>
+    <span class="grow"></span>
+    <button class="btn">Huỷ</button><button class="btn pri">Lưu</button>
+  </div>
+</div>
+
+<h3>Vì sao gom lại như vậy</h3>
+<p>Bản hiện tại <b>13 hàng nhãn xếp dọc</b> — người dùng phải cuộn qua "Kiểu tóc", rồi "Màu tóc",
+rồi "Áo", rồi "Màu áo"… Đó là <b>biểu mẫu khai báo</b>, không phải trình tạo nhân vật.</p>
+
+<div class="cmp">
+  <div class="card bad"><b>✕ Hiện tại — 13 hàng</b><ul>
+    <li>Kiểu tóc và Màu tóc là <b>hai hàng rời</b> dù cùng một thứ</li>
+    <li>Phải cuộn mới thấy hết — xem trước trôi khỏi tầm mắt</li>
+    <li>Lựa chọn là <b>chữ</b> ("bob", "curly") — phải đọc rồi tưởng tượng</li>
+    <li>Mọi nhóm hiện cùng lúc, không có thứ bậc</li>
+  </ul></div>
+  <div class="card good"><b>✓ Đề xuất — 8 thẻ nhóm</b><ul>
+    <li>Kiểu + màu <b>gộp một thẻ</b>: lưới kiểu ở trên, dải màu ở dưới</li>
+    <li>Không cuộn dọc — xem trước <b>luôn trong tầm mắt</b></li>
+    <li>Lựa chọn là <b>hình</b>, không phải chữ. Bấm là thấy</li>
+    <li>Một lúc một nhóm — mắt biết đang ở đâu</li>
+  </ul></div>
+</div>
+
+<h3>Ba luật rút từ Apple · Oppo · Siri iOS 27</h3>
+<p>
+<b>① Xem trước chiếm ngôi, không bao giờ cuộn mất.</b> Cả Memoji lẫn Omoji đều dành ~40% khung cho
+khuôn mặt. Lý do: người ta chỉnh <b>theo phản hồi</b>, không theo nhãn.<br>
+<b>② Ba cỡ nhỏ nằm ngay dưới bản lớn.</b> Avatar thật sống ở 20–28px trên header. Chỉnh ở 172px rồi
+ra 20px mới biết rối là quá muộn. Bản hiện tại có 48 và 28 — tôi thêm <b>20px</b>, đúng cỡ trên thanh.<br>
+<b>③ Tiết chế theo Siri iOS 27:</b> nền tối, panel trong mờ, <b>accent chỉ dùng để đánh dấu cái đang
+chọn</b> — không viền sáng, không quầng, không gradient. Apple bỏ hẳn quả cầu cầu vồng ở iOS 27;
+đây cùng một hướng.
+</p>
+
+<h3>Chưa đụng</h3>
+<p><code>AvatarRenderer.tsx</code> giữ nguyên — 13 slot, 16 kiểu tóc, tàn nhang, má ửng vẫn còn đủ.
+Đây chỉ đổi <b>cách bày</b> trong <code>AvatarBuilder.tsx</code> (311 dòng). Không mất tính năng nào,
+chỉ gom 13 hàng thành 8 thẻ.</p>
+
+</div>
+
+<script>
+const T=['#f0d3b4','#e6bd96','#d3a072','#b57c50','#8d5a37','#66402a'];
+const H=['#2b2320','#4a3227','#8a5a30','#c9964e','#7a4b6b','#3d4a6b'];
+const S=['#6a57f5','#2f6d5c','#a34b3c','#3b4a63','#c9a227','#2c2c33'];
+const B=['#1b1b22','#232a3a','#2a2320','#1f2a26','#2c2434','#26262b'];
+const HAIR=['ngắn','bob','xoăn','buộc','đầu đinh','dài'];
+const GLS=['không','tròn','vuông','mảnh'];
+const HAT=['không','nón','tai nghe','băng đô'];
+const EXP=['cười','nhẹ','nghiêm','tinh nghịch'];
+const ACC=['không','tàn nhang','má ửng','khuyên'];
+
+let c={skin:2,hair:1,hairC:1,gls:0,hat:0,shirt:0,shirtC:0,exp:0,acc:0,bg:0};
+let tab=0;
+const TABS=[
+ {n:'Da',    kind:'grid', items:T.map((_,i)=>i), key:'skin', sw:null},
+ {n:'Tóc',   kind:'grid', items:HAIR.map((_,i)=>i), key:'hair', sw:{arr:H,key:'hairC',lb:'Màu tóc'}},
+ {n:'Kính',  kind:'grid', items:GLS.map((_,i)=>i), key:'gls', sw:null},
+ {n:'Mũ',    kind:'grid', items:HAT.map((_,i)=>i), key:'hat', sw:null},
+ {n:'Áo',    kind:'grid', items:[0,1,2], key:'shirt', sw:{arr:S,key:'shirtC',lb:'Màu áo'}},
+ {n:'Biểu cảm',kind:'grid',items:EXP.map((_,i)=>i), key:'exp', sw:null},
+ {n:'Phụ kiện',kind:'grid',items:ACC.map((_,i)=>i), key:'acc', sw:null},
+ {n:'Nền',   kind:'grid', items:B.map((_,i)=>i), key:'bg', sw:null},
+];
+
+function face(cf,size,mini){
+  const s=T[cf.skin], h=H[cf.hairC], sh=S[cf.shirtC], bg=B[cf.bg];
+  const hair=cf.hair, gl=cf.gls, ht=cf.hat, ex=cf.exp, ac=cf.acc;
+  const d=size<26;
+  let g='';
+  // tóc sau
+  if(hair===5) g+=`<path d="M18 44 Q16 20 50 20 Q84 20 82 44 L82 66 Q78 40 50 40 Q22 40 18 66 Z" fill="${h}"/>`;
+  if(hair===3) g+=`<circle cx="50" cy="22" r="9" fill="${h}"/>`;
+  // cổ + áo
+  g+=`<rect x="43" y="60" width="14" height="12" fill="${s}"/>`;
+  g+=cf.shirt===0?`<path d="M26 100 Q26 74 50 72 Q74 74 74 100 Z" fill="${sh}"/>`
+    :cf.shirt===1?`<path d="M26 100 Q26 74 50 72 Q74 74 74 100 Z" fill="${sh}"/><path d="M50 72 L44 84 L50 90 L56 84 Z" fill="rgba(255,255,255,.22)"/>`
+    :`<path d="M26 100 Q26 74 50 72 Q74 74 74 100 Z" fill="${sh}"/><rect x="26" y="86" width="48" height="4" fill="rgba(0,0,0,.22)"/>`;
+  // đầu
+  g+=`<ellipse cx="50" cy="42" rx="23" ry="25" fill="${s}"/>`;
+  // tóc trước
+  if(hair===0) g+=`<path d="M27 38 Q29 18 50 18 Q71 18 73 38 Q64 27 50 27 Q36 27 27 38 Z" fill="${h}"/>`;
+  if(hair===1) g+=`<path d="M26 42 Q26 17 50 17 Q74 17 74 42 Q74 30 50 30 Q26 30 26 42 Z" fill="${h}"/><path d="M26 42 Q24 52 27 56 Q25 44 30 38 Z" fill="${h}"/><path d="M74 42 Q76 52 73 56 Q75 44 70 38 Z" fill="${h}"/>`;
+  if(hair===2) g+=`<path d="M27 36 Q27 16 50 16 Q73 16 73 36 Q70 30 66 33 Q62 25 56 30 Q50 22 44 30 Q38 25 34 33 Q30 30 27 36 Z" fill="${h}"/>`;
+  if(hair===3) g+=`<path d="M27 38 Q29 18 50 18 Q71 18 73 38 Q64 28 50 28 Q36 28 27 38 Z" fill="${h}"/>`;
+  if(hair===4) g+=`<path d="M28 36 Q30 22 50 22 Q70 22 72 36 Q62 31 50 31 Q38 31 28 36 Z" fill="${h}" opacity=".85"/>`;
+  if(hair===5) g+=`<path d="M26 40 Q26 17 50 17 Q74 17 74 40 Q66 28 50 28 Q34 28 26 40 Z" fill="${h}"/>`;
+  // mũ
+  if(ht===1) g+=`<path d="M24 30 Q26 12 50 12 Q74 12 76 30 Z" fill="#2f6d5c"/><rect x="18" y="29" width="64" height="5" rx="2.5" fill="#255a4b"/>`;
+  if(ht===2) g+=`<path d="M24 40 Q24 14 50 14 Q76 14 76 40" fill="none" stroke="#2c2c33" stroke-width="5"/><rect x="18" y="34" width="10" height="18" rx="5" fill="#2c2c33"/><rect x="72" y="34" width="10" height="18" rx="5" fill="#2c2c33"/>`;
+  if(ht===3) g+=`<rect x="27" y="26" width="46" height="6" rx="3" fill="#a34b3c"/>`;
+  // mắt + biểu cảm
+  if(!d){
+    g+=`<circle cx="41" cy="42" r="2.6" fill="#211c19"/><circle cx="59" cy="42" r="2.6" fill="#211c19"/>`;
+    if(ex===0) g+=`<path d="M43 52 Q50 58 57 52" stroke="#211c19" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+    if(ex===1) g+=`<path d="M44 53 Q50 56 56 53" stroke="#211c19" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+    if(ex===2) g+=`<path d="M44 54 L56 54" stroke="#211c19" stroke-width="1.8" stroke-linecap="round"/>`;
+    if(ex===3) g+=`<path d="M43 52 Q50 59 57 52" stroke="#211c19" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M36 36 Q41 33 45 36" stroke="#211c19" stroke-width="1.5" fill="none"/>`;
+  } else {
+    g+=`<circle cx="41" cy="42" r="3" fill="#211c19"/><circle cx="59" cy="42" r="3" fill="#211c19"/>`;
+  }
+  // kính
+  if(gl===1) g+=`<circle cx="41" cy="42" r="7.5" fill="none" stroke="#2c2c33" stroke-width="1.8"/><circle cx="59" cy="42" r="7.5" fill="none" stroke="#2c2c33" stroke-width="1.8"/><path d="M48.5 42 L51.5 42" stroke="#2c2c33" stroke-width="1.8"/>`;
+  if(gl===2) g+=`<rect x="33" y="36" width="15" height="12" rx="2" fill="none" stroke="#2c2c33" stroke-width="1.8"/><rect x="52" y="36" width="15" height="12" rx="2" fill="none" stroke="#2c2c33" stroke-width="1.8"/><path d="M48 42 L52 42" stroke="#2c2c33" stroke-width="1.8"/>`;
+  if(gl===3) g+=`<path d="M33 41 Q41 37 48 41" stroke="#c9a227" stroke-width="1.6" fill="none"/><path d="M52 41 Q59 37 67 41" stroke="#c9a227" stroke-width="1.6" fill="none"/>`;
+  // phụ kiện
+  if(ac===1&&!d) g+=`<circle cx="40" cy="48" r="1" fill="rgba(120,70,50,.5)"/><circle cx="45" cy="50" r="1" fill="rgba(120,70,50,.5)"/><circle cx="56" cy="50" r="1" fill="rgba(120,70,50,.5)"/><circle cx="61" cy="48" r="1" fill="rgba(120,70,50,.5)"/>`;
+  if(ac===2) g+=`<ellipse cx="35" cy="49" rx="5" ry="3.4" fill="rgba(214,110,110,.32)"/><ellipse cx="65" cy="49" rx="5" ry="3.4" fill="rgba(214,110,110,.32)"/>`;
+  if(ac===3) g+=`<circle cx="27" cy="47" r="2.4" fill="#c9a227"/><circle cx="73" cy="47" r="2.4" fill="#c9a227"/>`;
+  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><rect width="100" height="100" fill="${bg}"/>${g}</svg>`;
+}
+
+function paint(){
+  big.innerHTML=face(c,172);
+  s48.innerHTML=face(c,48); s28.innerHTML=face(c,28); s20.innerHTML=face(c,20,true);
+}
+function drawTabs(){
+  tabs.innerHTML=TABS.map((t,i)=>`<button class="tab${i===tab?' on':''}" data-i="${i}">${t.n}</button>`).join('');
+}
+function drawPane(){
+  const t=TABS[tab];
+  grid.innerHTML=t.items.map(i=>{
+    const pv={...c,[t.key]:i};
+    return `<button class="opt${c[t.key]===i?' on':''}" data-v="${i}">${face(pv,52)}</button>`;
+  }).join('');
+  sw.innerHTML = t.sw ? `<span class="lb">${t.sw.lb}</span>`+t.sw.arr.map((col,i)=>
+    `<button class="sw${c[t.sw.key]===i?' on':''}" data-sw="${i}" style="background:${col}"></button>`).join('') : '';
+}
+tabs.onclick=e=>{const b=e.target.closest('.tab');if(!b)return;tab=+b.dataset.i;drawTabs();drawPane()};
+grid.onclick=e=>{const b=e.target.closest('.opt');if(!b)return;c[TABS[tab].key]=+b.dataset.v;paint();drawPane()};
+sw.onclick=e=>{const b=e.target.closest('.sw');if(!b)return;c[TABS[tab].sw.key]=+b.dataset.sw;paint();drawPane()};
+rand.onclick=()=>{const r=n=>Math.floor(Math.random()*n);
+  c={skin:r(6),hair:r(6),hairC:r(6),gls:r(4),hat:r(4),shirt:r(3),shirtC:r(6),exp:r(4),acc:r(4),bg:r(6)};
+  paint();drawPane()};
+drawTabs();drawPane();paint();
+</script>
+</body>
+</html>
