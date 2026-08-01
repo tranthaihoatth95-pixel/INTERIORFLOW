@@ -82,8 +82,7 @@ export default function Popover({ anchorX, anchorY, margin = 8, children, style,
     return () => ro.disconnect();
   }, [reposition]);
 
-  // 2.2.89 — bấm ra ngoài / Escape đóng popover. Chỉ chạy khi có `onDismiss` (điều kiện an
-  // toàn cho 2 nơi dùng cũ không truyền prop này).
+  // 2.2.89 — bấm ra ngoài / Escape đóng popover. Chỉ chạy khi có `onDismiss`.
   useEffect(() => {
     if (!onDismiss) return;
     let rafId = 0;

@@ -11,8 +11,9 @@
  * Ngôn ngữ thiết kế: keyline 1px mảnh, bo góc gần vuông, nền var(--panel)/var(--field).
  */
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useDismissable } from '@/lib/useDismissable';
 
 export interface MenuItemSpec {
   id: string;
@@ -40,24 +41,7 @@ export default function MenuButton({ label, icon, items, align = 'left', size = 
   const ref = useRef<HTMLDivElement>(null);
   const anyActive = items.some((i) => i.active);
 
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onDoc);
-    document.addEventListener('keydown', onKey, true);
-    return () => {
-      document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey, true);
-    };
-  }, [open]);
+  useDismissable({ open, onDismiss: () => setOpen(false), refs: [ref] });
 
   const pad = size === 'md' ? '8px 12px' : '5px 10px';
   const fontSize = size === 'md' ? 13 : 12;

@@ -12,23 +12,24 @@ Chi tiết đầy đủ → `CHANGELOG.md` + `docs/IF-FEATURE-TREE.md` `4.1.d`. 
   `modifiedAt`/`IndexedDB.ts` không nguyên tử, lệch trong ngưỡng = tie = DÙNG CACHE; guard "đĩa ít
   sheet hơn cache" = nghi ghi dở, KHÔNG thay im lặng) · `createDiskWriter()` throttle riêng (không
   debounce) + ⌘S/rời trang ép ghi ngay · `watchProjectPresence()` cảnh báo 2 tab cùng mở 1 dự án.
-  Nối CAD (Zustand, không dính lớp lỗi remount B2) + Present (BẮT BUỘC tăng `importGen`, đường tự
-  động đi qua ĐÚNG 1 hàm với nhập tay `.idfp`); thêm ⌘S cho Present. **2 bug thật bắt được khi
-  browser-verify**: ① `flowName` nạp bất đồng bộ ⇒ có thể tạo nhầm 2 thư mục khác tên cho cùng 1
-  dự án — sửa bằng gọi lại `ensureProjectScope()` trước khi đọc tên. ② cảnh báo đa-tab chỉ gửi
-  `'bye'` lúc `beforeunload` — đóng không sạch ⇒ banner treo vĩnh viễn — sửa bằng heartbeat+TTL.
-  Verify thật (OPFS + nhiều tab thật): di trú đúng tên · đĩa thắng id TRÙNG hiện đúng nội dung mới
-  (CAD lẫn Present) · guard sheet-thiếu giữ cache + tự lành · cảnh báo đa-tab 2 chiều + tự hết khi
-  tab kia mất. 14 test mới, tsc+eslint+test+build sạch. Còn 1 phép thử CHỈ Hoà tự làm được (mất
-  quyền giữa phiên qua reload thật) — checklist đã soạn sẵn kèm báo cáo.
-- ✅ **B1-B3 xong** — B1 chọn thư mục gốc, B2 `.idfp` Present (bug remount → `importGen`), B3
-  brand-kit.json ra thư mục dự án + vá sự cố mất-dữ-liệu-im-lặng 31/07 (quyền File System Access
-  reset sau mỗi lần tải trang). 5 pha B1-B5 — còn B5 (nghiệm thu: copy thư mục dự án sang máy
-  khác, mở lên, chạy đủ).
-- ✅ **ĐỢT A merge + dọn git** — `7.1.24`/`7.1.25`. Code phụ chỉ đề xuất mã, code chính ghi cây
-  (Luật #12b mới). Dọn ref hỏng chặn `git fetch` + lock rác + `git gc`.
-- ✅ **Sprint "Lộ nền"** (`7.3.33`/`2.1.11`/`7.3.34`) · **2.2.89/7.3.32/2.1.8.n** (demo LAN) ·
+  Nối CAD + Present (BẮT BUỘC tăng `importGen`, đường tự động đi qua ĐÚNG 1 hàm với nhập tay
+  `.idfp`); thêm ⌘S cho Present. **2 bug thật bắt được khi browser-verify** (chi tiết → CHANGELOG):
+  ① `flowName` nạp bất đồng bộ ⇒ tạo nhầm 2 thư mục cho cùng 1 dự án — sửa bằng gọi lại
+  `ensureProjectScope()` trước khi đọc tên. ② cảnh báo đa-tab đóng không sạch ⇒ banner treo vĩnh
+  viễn — sửa bằng heartbeat+TTL. Verify thật (OPFS + nhiều tab): di trú đúng tên · đĩa thắng id
+  TRÙNG đúng nội dung mới · guard sheet-thiếu tự lành · cảnh báo đa-tab 2 chiều. 14 test mới,
+  tsc+eslint+test+build sạch. Còn 1 phép thử CHỈ Hoà tự làm được (mất quyền giữa phiên qua reload
+  thật) — checklist đã soạn sẵn.
+- ✅ **B1-B3 xong** — B1 chọn thư mục gốc, B2 `.idfp` Present, B3 brand-kit.json ra thư mục dự án.
+  5 pha B1-B5 — còn B5 (nghiệm thu: copy thư mục dự án sang máy khác, mở lên, chạy đủ).
+- ✅ **ĐỢT A merge + dọn git** · **Sprint "Lộ nền"** · **2.2.89/7.3.32/2.1.8.n** (demo LAN) ·
   **7.3.31/2.1.8.k-m/7.1.20/2.2.86/BOQ ĐỢT 1+2/7.1.21+Luật #13** — chi tiết → CHANGELOG.
+- ✅ **2.2.90 ĐỢT 1 — `useDismissable`** (`lib/useDismissable.ts` mới, 1 họ sự kiện `pointerdown`
+  pha bắt toàn app + stack theo dõi lớp trên cùng cho Escape; KHÔNG parentId — TODO khi có
+  layer-trong-layer thật). Nối `MenuButton`/`IOMenu`/`RenderIOMenus` (RenderIOMenus thêm Escape
+  capture, trước thiếu). Verify browser thật cả 3 menu: ra ngoài đóng · Escape đóng · bấm món chạy
+  đúng lệnh không nuốt · mở menu này tự đóng menu kia. tsc+eslint+test+build sạch. CHỜ GẬT trước
+  ĐỢT 2 (Popover/AppChrome) + ĐỢT 3 (panel CAD).
 - 🟡 **2.2.87+2.2.88** cascade 4 bậc CHƯA verify ảnh thật · **7.1.23** Bước 1 xong CHỜ HOÀ GẬT, hoãn
   tới khi ĐỢT B xong.
 - ⏸️ Mục "B2/B4" cũ trong CHANGELOG trùng tên tình cờ, KHÔNG liên quan ĐỢT B. Sprint BOQ ĐỢT 3

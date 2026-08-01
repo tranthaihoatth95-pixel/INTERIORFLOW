@@ -17,8 +17,9 @@
  * keyline 1px mảnh (var(--border)), bo góc gần vuông, không thanh dày, nền var(--panel)/var(--field).
  */
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Upload, Download, ChevronDown } from 'lucide-react';
+import { useDismissable } from '@/lib/useDismissable';
 
 /** 1 định dạng trong menu — vd DXF / PDF / .pptx / Ảnh PNG. */
 export interface IOFormatItem {
@@ -75,24 +76,7 @@ export default function IOMenu({
   const baseLabel = label ?? (isImport ? 'Mở tệp' : 'Xuất');
 
   // đóng khi bấm ra ngoài / nhấn Escape — cùng hành vi ở cả 3 chặng.
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onDoc);
-    document.addEventListener('keydown', onKey, true);
-    return () => {
-      document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey, true);
-    };
-  }, [open]);
+  useDismissable({ open, onDismiss: () => setOpen(false), refs: [ref] });
 
   // nhãn khi đang chạy: ưu tiên label của định dạng đang xuất, không có thì nhãn chung.
   const running = busy ? items.find((i) => i.id === busy) : null;

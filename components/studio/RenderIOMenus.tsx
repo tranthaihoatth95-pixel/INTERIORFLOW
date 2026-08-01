@@ -14,13 +14,14 @@
  * đây sẽ ảnh hưởng 2 chặng kia. Popover này viết riêng, cục bộ cho chặng Render.
  */
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Files, Image as ImageIcon, FileDown, FileText, Printer, FileUp, ChevronDown } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { addImageNodesFromFiles } from '@/components/studio/UploadButton';
 import { deckImagesFromNodes } from '@/lib/present-editor/handoff';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import { useDismissable } from '@/lib/useDismissable';
 
 interface FileItem {
   id: string;
@@ -40,19 +41,7 @@ export function RenderIOMenus() {
   const menuRef = useRef<HTMLDivElement>(null);
   const tr = useT();
 
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-    document.addEventListener('mousedown', onDoc);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
+  useDismissable({ open, onDismiss: () => setOpen(false), refs: [menuRef] });
 
   const flash = (ok: boolean, text: string) => {
     setMsg({ ok, text });
