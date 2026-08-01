@@ -5,22 +5,21 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (01/08 — V1+V2 video xong · toggle Gallery Carousel↔Grid xong · đợt 2 gỡ nhãn spec xong)
+## Hiện tại (01/08 — V1+V2 video · toggle Gallery · P1/P2 Present xong · P3 KHÁM xong CHỜ Hoà)
+- ✅ **P1+P2 Present** (`ab1d9a9`, `8f4ed9f`) — sửa 3 nhãn nói dối IF-FEATURE-TREE/Toolbar (khoá
+  tỉ lệ + linked-assets ĐÃ chạy thật, nút deck .pptx/.pdf giữ khoá đúng nhưng sửa câu lý do lỗi
+  thời) · ảnh mặc định GIỮ TỈ LỆ khi resize góc (Shift để bẻ, đảo ngược so text/shape), tách
+  `resize-corner.ts` test được (18 test). **P3 (in 300dpi) — CHỈ KHÁM, CHƯA CODE** (đúng gate):
+  nghẽn thật là 2 tầng riêng (canvas/text vô hạn dpi, rẻ · ảnh hero cần `ai.upscale` ×4 thật,
+  2cr/ảnh) — báo Cowork trước khi động tay.
 - ✅ **Toggle Carousel↔Grid Gallery** (`6303d7c`) — ghi đè J-4c (luật 2.1.10), nhớ theo user qua
-  `lib/resume.ts` (kênh sẵn có). Verify browser thật: bật/tắt cả 2 chiều + persist qua reload.
-  Reduce-motion disable+title chỉ verify qua code (tool không giả lập prefers-reduced-motion được).
-- ✅ **V2 đường cam mức 2-a (`SPEC-VIDEO-MAT-BANG.md` §2) — A/C/D ĐỦ, B rút gọn** (`69db004`):
-  `campath:true` (model.ts) + layer `IF_CAMPATH` + round-trip DXF XDATA · tool `campath` TÁI DÙNG
-  cơ chế polyline có sẵn (không viết UI mới trong CadCanvas.tsx — tránh vùng code phụ sắp tới) ·
-  `lib/cad/campath.ts` (bo góc R=600mm + lấy mẫu theo độ dài + làm mượt hướng, 32 test) ·
-  `CamPathPreview.tsx` (mặt bằng tĩnh + hình quạt tầm nhìn chạy). **Cố ý CHƯA làm**: panel chỉnh
-  tay tốc độ/cao độ mắt/lens sau khi vẽ (mọi đường cam mới dùng đúng 4 mặc định spec).
-- ✅ **V1 draw-on mặt bằng (`SPEC-VIDEO-MAT-BANG.md` bậc 1) — A+B+C ĐỦ** (`d51a2cb`, `7b6bfbc`):
-  `lib/cad/plan-drawon.ts` (5 đợt theo elementType, tái dùng `computeElementRevealTimings()`) +
-  `lib/cad/entity-path.ts` (Entity→SVG path, 21 test) + `components/cad/DrawOnPreview.tsx` (xem
-  thử `stroke-dashoffset`, `guard()` reduced-motion). Đo FPS thật: 2000 entity riêng lẻ ~31fps
-  (sát ngưỡng) → batching (gộp path/layer) tự bật khi >500 entity/đợt ①, đo lại >20000fps. Beam +
-  space + mô hình cửa sổ cố định 9,5s đã chốt vào spec. Chưa làm: bậc 2/4, so le cửa chính (V1.1).
+  `lib/resume.ts`. Verify browser thật cả 2 chiều + persist qua reload; reduce-motion chỉ verify code.
+- ✅ **V2 đường cam mức 2-a** (`69db004`, `SPEC-VIDEO-MAT-BANG.md` §2) — A/C/D đủ, B rút gọn:
+  `campath:true` + layer `IF_CAMPATH` + round-trip DXF XDATA · `lib/cad/campath.ts` (bo góc
+  R=600mm, 32 test) · `CamPathPreview.tsx`. Cố ý chưa làm: panel chỉnh tốc độ/lens sau khi vẽ.
+- ✅ **V1 draw-on mặt bằng** (`d51a2cb`, `7b6bfbc`, bậc 1 cùng spec) — 5 đợt theo elementType,
+  batching tự bật khi >500 entity/đợt ①. FPS thật: 2000 entity riêng lẻ ~31fps → batching >20000fps.
+  Chưa làm: bậc 2/4, so le cửa chính (V1.1).
 - ✅ **Đợt 2 gỡ nhãn `[CẦN HOÀ DUYỆT]`** (`1de5df7`) — 13/14 file đóng, chỉ còn `SPEC-SEMANTIC-MODEL`
   treo (Hoà giữ tự đọc). Blueprint sửa 4 chặng (0→3). ArchiNote **cũng theo Luật Trung Tính** (Hoà
   lật đề xuất Cowork). README/INDEX-AI-SPECS hết lệch mục lục.
