@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, FolderInput, Trash2, Loader2, Plus } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { sheetSlide, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -44,6 +44,7 @@ interface ServerAsset {
 
 export function LibraryPanel() {
   const router = useRouter();
+  const pathname = usePathname();
   const panel = useFlowStore((s) => s.panel);
   const setPanel = useFlowStore((s) => s.setPanel);
   const setLightboxUrl = useFlowStore((s) => s.setLightboxUrl);
@@ -230,7 +231,14 @@ export function LibraryPanel() {
                 <hr className="border-[var(--border)]" />
                 <motion.button
                   {...pressableIcon}
-                  onClick={() => router.push('/library/ingest')}
+                  onClick={() => {
+                    // VIỆC 4 (01/08, SPEC-NAVIGATION-MODEL §1) — /library/ingest trước đây không
+                    // biết chắc user đến từ dự án nào (chỉ router.back() theo lịch sử trình
+                    // duyệt). Gửi kèm pathname hiện tại (đã mang scope dự án nếu có, xem
+                    // lib/project-scope.ts) để trang ingest có "đường về" xác định thay vì đoán.
+                    const from = pathname ? `?from=${encodeURIComponent(pathname)}` : '';
+                    router.push(`/library/ingest${from}`);
+                  }}
                   title="Nạp hàng loạt ảnh/file lớn — chưng cất thumbnail + palette + tag"
                   className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
                 >

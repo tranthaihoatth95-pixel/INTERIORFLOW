@@ -5,8 +5,8 @@
  *   ảnh → thumbnail + palette local + gắn USAGE (ref-render / slide / vật liệu / cad / brief) + tag tay.
  * Xuất "AI manifest" (bỏ thumbnail) = vài KB → feed pipeline không tràn context window.
  */
-import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import {
   ingestFile, loadManifest, saveManifest, toAiManifest, byteSize, human,
@@ -29,11 +29,31 @@ const RANK_META: Record<string, { label: string; tone: string }> = {
 };
 
 export default function IngestPage() {
+  // useSearchParams() bắt buộc có Suspense boundary bao ngoài (Next 14 App Router) — nếu không
+  // `next build` báo lỗi "should be wrapped in a suspense boundary". Fallback rỗng: nội dung
+  // thật render gần như tức thì (không fetch mạng trước khi có searchParams), không cần skeleton.
+  return (
+    <Suspense fallback={null}>
+      <IngestPageInner />
+    </Suspense>
+  );
+}
+
+function IngestPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const goBack = () => {
-    // Route đứng riêng, không có shell/breadcrumb (xem docstring đầu file) — không biết chắc
-    // user đến từ dự án nào để quay đúng chỗ, nên back trong lịch sử trình duyệt, có "/" dự phòng
-    // khi vào thẳng bằng URL (không có lịch sử để back).
+    // VIỆC 4 (01/08, SPEC-NAVIGATION-MODEL §1 — "mỗi lớp cần đường về") — trước đây route đứng
+    // riêng, không có shell/breadcrumb, back chỉ dựa lịch sử trình duyệt ("không biết chắc user
+    // đến từ dự án nào"). LibraryPanel.tsx giờ gửi kèm `?from=<pathname gốc>` khi điều hướng tới
+    // đây; ưu tiên đường về XÁC ĐỊNH đó. Chỉ chấp nhận path nội bộ ("/" đầu, không phải URL đầy
+    // đủ) để tránh open-redirect qua query string. Không có `from` (vào thẳng bằng URL/bookmark)
+    // → giữ hành vi cũ.
+    const from = searchParams.get('from');
+    if (from && from.startsWith('/') && !from.startsWith('//')) {
+      router.push(from);
+      return;
+    }
     if (typeof window !== 'undefined' && window.history.length > 1) router.back();
     else router.push('/');
   };
