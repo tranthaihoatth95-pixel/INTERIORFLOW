@@ -12,6 +12,7 @@ import { fade, pressable, pressableIcon, staggerList, staggerItem } from '@/lib/
 import { cn } from '@/lib/utils';
 import { useLarkData, LarkBoardTab, LarkKanbanTab, LarkRosterTab, LarkSyncBar } from '@/components/dashboard/LarkPanels';
 import { ProjectMembersPanel } from '@/components/dashboard/ProjectMembersPanel';
+import { useDismissable } from '@/lib/useDismissable';
 
 /* ---------- kiểu dữ liệu trả về từ /api/dashboard ---------- */
 interface Member {
@@ -163,13 +164,17 @@ export function Dashboard({
     if (shown) load();
   }, [shown, load]);
 
-  useEffect(() => {
-    // Esc chỉ đóng ở chế độ overlay; cover-mode không có gì để đóng.
-    if (!open || coverMode) return;
-    const h = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, [open, coverMode, setOpen]);
+  // 2.2.90 ĐỢT 3 — chuyển sang useDismissable dùng chung. Panel này KHÔNG có bấm-ra-ngoài-để-đóng
+  // ở bản gốc (chỉ Escape) — giữ outside:false. guard chặn đóng khi đang gõ tên dự án mới
+  // (newProjectOpen) để không đóng nhầm panel giữa chừng; input đổi tên tự xử lý Escape riêng
+  // (cancelNewProject, xem onKeyDown của input bên dưới) khi nó đang được focus.
+  useDismissable({
+    open: open && !coverMode,
+    onDismiss: () => setOpen(false),
+    refs: [],
+    outside: false,
+    guard: () => newProjectOpen,
+  });
 
   const onOpenFlow = async (id: string) => {
     if (coverMode) return; // màn ngoài read-only — không mở flow
