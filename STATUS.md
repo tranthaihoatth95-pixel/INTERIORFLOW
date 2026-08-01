@@ -5,22 +5,26 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (01/08 — ĐỢT B HOÀN TẤT · sự cố `dev.db` đã KHÉP, không mất dữ liệu)
-Chi tiết đầy đủ → `CHANGELOG.md` + `docs/IF-FEATURE-TREE.md` `4.1.a-e`. Tóm tắt:
+## Hiện tại (01/08 — V1 video draw-on phần A/B/C xong · đợt 2 gỡ nhãn spec xong)
+- ✅ **V1 draw-on mặt bằng (`SPEC-VIDEO-MAT-BANG.md` bậc 1) — A+B+C ĐỦ** (`d51a2cb`, `7b6bfbc`):
+  `lib/cad/plan-drawon.ts` (5 đợt theo elementType, tái dùng `computeElementRevealTimings()`) +
+  `lib/cad/entity-path.ts` (Entity→SVG path, 21 test) + `components/cad/DrawOnPreview.tsx` (xem
+  thử `stroke-dashoffset`, `guard()` reduced-motion). Đo FPS thật: 2000 entity riêng lẻ ~31fps
+  (sát ngưỡng) → batching (gộp path/layer) tự bật khi >500 entity/đợt ①, đo lại >20000fps. Beam +
+  space + mô hình cửa sổ cố định 9,5s đã chốt vào spec. Chưa làm: bậc 2/4, so le cửa chính (V1.1).
+- ✅ **Đợt 2 gỡ nhãn `[CẦN HOÀ DUYỆT]`** (`1de5df7`) — 13/14 file đóng, chỉ còn `SPEC-SEMANTIC-MODEL`
+  treo (Hoà giữ tự đọc). Blueprint sửa 4 chặng (0→3). ArchiNote **cũng theo Luật Trung Tính** (Hoà
+  lật đề xuất Cowork). README/INDEX-AI-SPECS hết lệch mục lục.
+
+Chi tiết đầy đủ → `CHANGELOG.md` + `docs/IF-FEATURE-TREE.md` `4.1.a-e`. Tóm tắt đợt trước:
 - ✅ **B1-B5 (ĐỢT B) ĐÓNG** — B5 nghiệm thu 7/7 ĐẠT (01/08, Hoà tự chạy, verify TRÊN ĐĨA bằng diff
   tệp) · đĩa là nguồn sự thật cho `.idf`/`.idfp`, nối CAD+Present — chi tiết → CHANGELOG + `4.1.a-e`.
 - ✅ **4.1.f Brand Kit — Hoà ĐÃ QUYẾT** thuộc DỰ ÁN (`docs/CHOT-BRAND-KIT-2026-08-01.md`) — kèm
   đính chính B5 dòng (e): màu/font/tên đo được từ **DECK** (`.idfp`), không phải `brand-kit.json`
   được đọc. Thi công đổi hình dạng tệp CHƯA làm — xem "Chờ USER quyết".
 - ✅ **`docs/00-CHOT.md`** (sổ mục lục, đọc đầu phiên sau STATUS.md) — `CLAUDE.md` dòng 2 theo.
-- ✅ **Present — A1b/c chữ nghĩa**: tab "Mẫu"→**"Magic"** (6 chỗ `PresentEditor.tsx`) · microcopy
-  `BrandKitPanel.tsx:497-501` đúng hiện trạng (Hoà duyệt).
-- ✅ **A2** xoá `TemplatePicker.tsx` (dead code, `grep`=0 xác nhận lại trước khi xoá). **A3**
-  `SPEC-PRESENT-FLOW.md`: gỡ cảnh báo sai + "25 template"→**21** (đếm `BUILTIN_TEMPLATES` thật,
-  không dùng số 47 raw lẫn kiểu dữ liệu). **A4** gỡ nhãn `[CẦN HOÀ DUYỆT]` 7 spec đã duyệt (2 Hoà,
-  4 Cowork thay, 1 tách vai trò/cơ chế) — `docs/CHOT-DUYET-SPEC-2026-08-01.md`. tsc+eslint+
-  test+build sạch cả đợt.
-- ✅ **ĐỢT A + Sprint "Lộ nền" + 2.2.89/7.3.x/2.1.8.x/2.2.86/BOQ ĐỢT 1+2** — chi tiết → CHANGELOG.
+- ✅ **Present A1-A4** (Magic tab · xoá `TemplatePicker.tsx` dead code · sửa số template 25→21 ·
+  gỡ nhãn đợt 1, 7 spec) — chi tiết → CHANGELOG.
 - ✅ **2.2.90 ĐỢT 1+2 `useDismissable`** (`5d81364`+`ad737e3`) — nối `MenuButton`/`IOMenu`/
   `RenderIOMenus`/`Popover`/`AppChrome`, sửa lỗi `stopPropagation` chặn Escape window. Cấp mã
   `2.2.92` (overlay đè popover, pre-existing). CHỜ GẬT ĐỢT 3 (panel CAD).
