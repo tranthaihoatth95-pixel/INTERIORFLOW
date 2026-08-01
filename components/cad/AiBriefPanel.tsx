@@ -25,6 +25,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ThumbsUp, ThumbsDown, X, Sparkles, Wand2, FolderOpen, Check, AlertTriangle, MousePointerClick } from 'lucide-react';
+import { useDismissable } from '@/lib/useDismissable';
 import { useCadStore } from '@/lib/cad/store';
 import { docBox, type Doc } from '@/lib/cad/model';
 import { renderDocToDataURL } from '@/lib/cad/render';
@@ -178,25 +179,10 @@ export default function AiBriefPanel({ onClose }: Props) {
   useEffect(() => { draftCache.scaleText = scaleText; saveDraft(); }, [scaleText]);
   useEffect(() => { draftCache.baselineOn = baselineOn; saveDraft(); }, [baselineOn]);
 
-  // Click ngoài panel = đóng · phím Esc = đóng. Không đè lên các dialog khác vì aiBriefOpen chỉ
-  // mount 1 panel duy nhất; nút mở panel nằm trong menu "Bắt đầu" đã đóng lại khi bấm chọn AI mô
-  // tả nên click ngoài không lỡ bấm trúng chính nút mở lại panel.
-  useEffect(() => {
-    const onDown = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.stopPropagation(); onClose(); }
-    };
-    // mousedown (không phải click) — khớp cách các panel dialog hay dùng, đóng ngay khi user bắt
-    // đầu tương tác ngoài panel, tránh trường hợp mouseup rơi vào panel do drag.
-    window.addEventListener('mousedown', onDown);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('mousedown', onDown);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [onClose]);
+  // Click ngoài panel = đóng · phím Esc = đóng. 2.2.90 ĐỢT 3 — chuyển sang useDismissable dùng
+  // chung. Component này chỉ tồn tại khi aiBriefOpen (cha mount/unmount theo state đó, xem comment
+  // Props ở trên) → open luôn là true trong lúc mounted, không cần đọc lại state ngoài.
+  useDismissable({ open: true, onDismiss: onClose, refs: [panelRef] });
 
   const currentLayer = useCadStore((s) => s.currentLayer);
   const wallThickness = useCadStore((s) => s.wallThickness);
