@@ -47,6 +47,10 @@ interface Props {
   onExportPptx: () => void;
   /** xuất từng slide thành ảnh PNG (zip đơn giản hoá = tải lần lượt). */
   onExportPng: () => void;
+  /** PDF khổ giấy thật A4/A3 theo dpi (P3 phần 1) — chữ/hình khối đạt dpi thật, ảnh hero/nền
+   * CHƯA (P3 phần 2). Chỉ bật khi `printReady` (khổ đang chọn là A4/A3, không phải 16:9). */
+  onExportPrint300: () => void;
+  printReady: boolean;
   /** mở trình chiếu (xem hiệu ứng động). */
   onPlay: () => void;
   /** mở panel Brand Kit — Nhận diện (PS-1). */
@@ -177,10 +181,11 @@ export default function Toolbar(p: Props) {
           {
             id: 'print300',
             label: 'PDF in 300dpi (A3/A4)',
+            sub: 'Chữ/hình khối đạt 300dpi thật · ảnh hero/nền CHƯA (chờ phần 2)',
             icon: <Printer size={15} />,
-            onSelect: () => {},
-            disabled: true,
-            disabledReason: 'Chưa khả dụng — ảnh render hiện ~116dpi ở khổ A3 (giới hạn chặng Rendering)',
+            onSelect: p.onExportPrint300,
+            disabled: !p.printReady,
+            disabledReason: 'Chỉ xuất được ở khổ giấy A4/A3 — đổi khổ trong "Khổ trình bày" trước (16:9 là khổ màn hình, không phải khổ in).',
           },
         ]}
       />

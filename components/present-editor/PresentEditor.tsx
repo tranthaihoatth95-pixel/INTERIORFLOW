@@ -42,7 +42,7 @@ import { suggestTemplate } from '@/lib/present-editor/suggest';
 import { DEFAULT_SPEC, applySpecToSlide, type LayoutSpec } from '@/lib/present-editor/spec';
 import { classifyWheel } from '@/lib/input/wheel';
 import { buildGuProfile, type GuAsset, type GuProfile } from '@/lib/gu';
-import { exportDeckToPdf, exportDeckToPptxFromModel, exportDeckToPng } from '@/lib/present-editor/export';
+import { exportDeckToPdf, exportDeckToPptxFromModel, exportDeckToPng, exportDeckToPdfAtPaperSize } from '@/lib/present-editor/export';
 import { useEditor } from './useEditor';
 import { slidesFromContent, coverKickerFromDeck } from '@/lib/present-editor/content-deck';
 import { evaluateDeck } from '@/lib/present-editor/layout-check';
@@ -81,7 +81,7 @@ import StagePresetPanel from './StagePresetPanel';
 import ReplaceImageDialog from './ReplaceImageDialog';
 import { reflowDeckForStage } from '@/lib/present-editor/reflow';
 import { alignFrames, distributeFrames, type AlignMode as GroupAlignMode, type DistributeAxis } from '@/lib/present-editor/align';
-import { stageFor, type StagePresetId } from '@/lib/present-editor/stage-presets';
+import { stageFor, PAPER_SIZE_MM, type StagePresetId } from '@/lib/present-editor/stage-presets';
 import { LayoutTemplate, Images, Wand2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 
 interface Props {
@@ -381,6 +381,8 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   const palette = ed.deck.palette;
   // Khổ trình bày đang chọn (PS-4) — mặc định 16:9, đọc 1 nguồn duy nhất (stage-presets.ts).
   const stage = useMemo(() => stageFor(ed.deck.stagePreset), [ed.deck.stagePreset]);
+  /** "In 300dpi" chỉ chạy được ở khổ giấy thật (A4/A3) — 16:9 là khổ màn hình, không phải khổ in. */
+  const printReady = useMemo(() => !!(ed.deck.stagePreset && PAPER_SIZE_MM[ed.deck.stagePreset as StagePresetId]), [ed.deck.stagePreset]);
 
   // Element ảnh đang chỉnh (nếu overlay mở). Tự đóng nếu không còn tồn tại.
   const imageEditEl = useMemo(() => {
@@ -1102,6 +1104,22 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     }
   }, [ed.deck]);
 
+  /** P3 phần 1 (01/08) — chữ/hình khối đạt 300dpi thật ở khổ giấy A4/A3 thật (mm). Ảnh hero/nền
+   * CHƯA đạt dpi đó (P3 phần 2, chờ đo `ai.upscale`) — `exportDeckToPdfAtPaperSize` tự ném lỗi rõ
+   * nếu khổ hiện tại không phải A4/A3 (vd đang 16:9), báo qua `exportMsg` như mọi export khác. */
+  const onExportPrint300 = useCallback(async () => {
+    setBusy('print300');
+    try {
+      await exportDeckToPdfAtPaperSize(ed.deck, 300);
+      setExportMsg({ ok: true, text: 'Đã xuất PDF 300dpi — chữ/hình khối đạt dpi thật, ảnh hero/nền chưa (chờ phần 2).' });
+    } catch (err) {
+      console.error('[PresentEditor] print300 export failed', err);
+      setExportMsg({ ok: false, text: err instanceof Error ? err.message : 'Xuất PDF 300dpi lỗi — thử lại.' });
+    } finally {
+      setBusy(null);
+    }
+  }, [ed.deck]);
+
   /* ------------------------- splitter kéo dãn panel trái ------------------------- */
   const dragStart = useRef<{ x: number; w: number } | null>(null);
   const onSplitDown = useCallback(
@@ -1465,6 +1483,8 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         onExportPdf={onExportPdf}
         onExportPptx={onExportPptx}
         onExportPng={onExportPng}
+        onExportPrint300={onExportPrint300}
+        printReady={printReady}
         onPlay={() => setPlaying(true)}
         onBrandKit={() => setBrandKitOpen(true)}
         onStagePreset={() => setStagePresetOpen(true)}
