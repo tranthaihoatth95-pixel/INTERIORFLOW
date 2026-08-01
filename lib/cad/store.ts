@@ -99,7 +99,11 @@ export type Tool =
    * zoneBoundaryMode. */
   | 'zone'
   /** Zone tool (24/07) — mũi tên circulation nét đứt: chuỗi điểm, Enter/double-click kết thúc. */
-  | 'arrow';
+  | 'arrow'
+  /** V2 (01/08, `SPEC-VIDEO-MAT-BANG.md` §2) — đường cam: TÁI DÙNG cơ chế vẽ polyline (chuỗi
+   * điểm, Enter/double-click kết thúc — xem `finishPolyline` ở CadCanvas.tsx), chỉ khác entity
+   * hoàn tất đi vào layer hệ thống `IF_CAMPATH` + cờ `campath:true` thay vì layer đang chọn. */
+  | 'campath';
 
 /** Sprint 9 — 2 chế độ UI cho cùng 1 editor (KHÔNG phải 2 app khác nhau, dữ liệu/Doc dùng
  * chung): 'sketch' ẩn bớt công cụ vẽ-chính-xác-kiểu-AutoCAD để giữ đúng triết lý Phase 1
@@ -164,6 +168,7 @@ export const PRO_ONLY_TOOLS: ReadonlySet<Tool> = new Set<Tool>([
   'offset', 'trim', 'extend', 'fillet', 'chamfer', 'arrayrect', 'arraypolar', 'scale', 'stretch',
   'break', 'join', 'explode', 'lengthen',
   'dimension', 'dimradius', 'dimdiameter', 'dimangular', 'dimcontinue', 'dimbaseline',
+  'campath',
 ]);
 
 export interface SnapSettings {
@@ -840,6 +845,7 @@ export function toolHint(t: Tool): string {
     divide: 'Divide/Measure (DIV/MEA): click 1 line/polyline/circle/arc → nhập số đoạn (Divide) hoặc khoảng cách (Measure).',
     zone: 'Zone (ZONE): OVAL — click tâm → click góc; POLYGON — click chuỗi điểm, Enter/double-click kết thúc → nhập nhãn. Đổi nhóm/kiểu biên/opacity ở panel Zone.',
     arrow: 'Arrow (AW): click chuỗi điểm luồng giao thông; Enter/double-click kết thúc — nét đứt + đầu mũi tên tự động.',
+    campath: 'Đường cam (CAM): click chuỗi điểm tuyến máy quay; Enter/double-click kết thúc — tự vào layer "IF_CAMPATH".',
   };
   return H[t];
 }

@@ -22,6 +22,7 @@
 | `CHOT-DUYET-SPEC-2026-08-01.md` | ⭐ **Vòng duyệt 7 spec 01/08** — CAD song song-kế thừa · Present 3 phương án + khoá giữ · dàn bài linh hoạt · **video 6 bậc** · ranh giới uỷ quyền Hoà↔Cowork |
 | `CHOT-DUYET-SPEC-DOT2-2026-08-01.md` | ⭐ **Đợt 2 — đóng 13/14 nhãn còn lại**: IF chính thức **4 chặng (0→3)** · duyệt hướng 4 spec tính năng · **ArchiNote CŨNG trung tính** (Hoà lật đề xuất E2.2) · chỉ còn `SPEC-SEMANTIC-MODEL` treo chờ Hoà tự đọc |
 | `SPEC-VIDEO-MAT-BANG.md` | Spec bậc 1·2·4 video 0-credit — layer `IF_CAMPATH`, không EntityType mới, tầm mắt người 1650 |
+| `TICKET-GALLERY-TOGGLE-2026-08-01.md` | Gallery Home: **toggle carousel 3D ↔ grid** ghi đè J-4c (>8 dự án), nhớ lựa chọn, reduce-motion thắng tất cả |
 | `CHOT-TACH-AI-VA-CHINH-TAY.md` | Tách AI bằng **dấu + truy vết**, không bằng vị trí · từ khoá **"Magic"** · ba trục Khổ/Bố cục/Nhận diện · cấm chữ "tự động" |
 | `CHOT-BRAND-KIT-2026-08-01.md` | Brand Kit thuộc **DỰ ÁN**; `_studio/` chỉ là mẫu đọc một chiều |
 | `QUYET-DINH-HA-TANG-2026-07-31.md` | Đĩa là nguồn sự thật (①B) · cây thư mục (②) · Gu→Prisma (③C) · FlowVersion đổi cò (④C) · desktop-first 1024/1440 |
@@ -52,10 +53,8 @@
 `SPEC-KNOWLEDGE-BASE` · `SPEC-BRIEF-INTAKE` · `SPEC-STAGE-0-IDEATION` ·
 `CHUAN-THIET-KE-v7.6-NGUON` (chuẩn nội thất v7.6, 8 mục, ISO 128)
 
-⚠️ **Mâu thuẫn Cowork tự phát hiện 01/08**: 12 trong số các file trên vẫn **đeo nhãn
-`[CẦN HOÀ DUYỆT]`** trong khi bảng này gọi chúng là "đã ổn định". 🧮 Tổng còn đeo nhãn: **14 file**
-(thêm `PLAN-LIBRARY-GATEWAY` · `IF-ARCHITECTURE-BLUEPRINT-v1`). ⇒ Cần **vòng duyệt đợt 2** —
-hoặc gỡ nhãn vì đã lỗi thời, hoặc duyệt thật. Chưa quyết.
+✅ **Vòng duyệt đợt 2 (01/08) đã đóng mâu thuẫn nhãn**: 13 file gỡ nhãn (commit `1de5df7`), toàn
+repo chỉ còn **1 nhãn sống có chủ đích** — `SPEC-SEMANTIC-MODEL`, Hoà giữ lại tự đọc.
 
 ---
 
@@ -81,7 +80,7 @@ Trước khi thiết kế bất cứ gì: `ls docs/` + grep tên chủ đề + g
 
 | Câu | Ai quyết |
 |---|---|
-| 136 MB trong `dev.db` là gì? (`FlowVersion` chỉ 5,31%) | đo sau khi push `GuModel` xong |
+| ~~136 MB trong `dev.db` là gì?~~ **ĐÃ ĐO (B3, 01/08)**: dữ liệu sống chỉ **11,8 MB** — **125,1 MB là freelist** (trang rỗng sau xoá, `auto_vacuum=0`, chưa từng VACUUM). Thu hồi = chạy `VACUUM` trên máy thật | **Hoà** — lệnh đã soạn, chạy lúc nào cũng được |
 | Brand Kit đảo nguồn — phải đổi hình dạng `brand-kit.json` trước | thiết kế, chưa tới lượt |
 | GPL-3.0 của `@mlightcad/libredwg-web` — `licenseNotes` UNRESOLVED | **Hoà**, trước khi phát hành |
 | `/library/ingest` tràn full màn + placeholder có tên khách — sửa 1 lần được cả 2 | hàng đợi |

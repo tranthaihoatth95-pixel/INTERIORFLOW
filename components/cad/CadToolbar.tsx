@@ -16,7 +16,7 @@ import {
   Radius, Diameter, DraftingCompass, ChevronsRight, GitBranch, PaintBucket,
   CircleDashed, LocateFixed, Palette, StickyNote,
   Pentagon, Ellipse, Donut, SplinePointer, Slash, Divide,
-  Blend, MoveUpRight,
+  Blend, MoveUpRight, Video,
 } from 'lucide-react';
 import { useCadStore, type Tool, type CadMode } from '@/lib/cad/store';
 import { useModKey, useModShiftKey } from '@/lib/kbd';
@@ -94,6 +94,7 @@ const ANNOTATE: ToolBtn[] = [
 const DIAGRAM: ToolBtn[] = [
   { tool: 'zone', icon: Blend, label: 'Zone — tô vùng chức năng (oval/polygon, 6 nhóm màu, legend tự sinh)', key: 'ZONE' },
   { tool: 'arrow', icon: MoveUpRight, label: 'Arrow — mũi tên luồng giao thông nét đứt', key: 'AW' },
+  { tool: 'campath', icon: Video, label: 'Đường cam — vẽ tuyến máy quay trên mặt bằng (video V2), tự vào layer IF_CAMPATH', key: 'CAM' },
 ];
 /** Nấc 1 — bộ chỉnh sửa (tương đương AutoCAD LT). Pro-only (Sprint 9) — dòng lệnh vẫn là cách
  * chính khi cần (TR/EX/F/CHA/…), nhưng nút toolbar chỉ hiện ở Pro để Sketch gọn. */

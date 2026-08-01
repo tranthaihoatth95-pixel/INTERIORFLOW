@@ -17,7 +17,7 @@ import type { Tool } from '@/lib/cad/store';
 import { useCadLiveStatus } from '@/lib/cad/live-status';
 import { useFlowStore } from '@/lib/store';
 import type { Entity, Pt, Viewport, DimEntity, LineEntity, MarkupPin, PhotoEmbed, Box, ZoneEntity } from '@/lib/cad/model';
-import { screenToWorld, worldToScreen, zoomAt, fitBox, docBox, dist, entityBox, ZONE_GROUP_META } from '@/lib/cad/model';
+import { screenToWorld, worldToScreen, zoomAt, fitBox, docBox, dist, entityBox, ZONE_GROUP_META, CAMPATH_LAYER_NAME, CAMPATH_LAYER_COLOR } from '@/lib/cad/model';
 import { drawEntities, drawEntity } from '@/lib/cad/render';
 import { createMarkupPin, createPhotoEmbed, nearestMarkup, nearestPhoto, formatMarkupTime } from '@/lib/cad/markup';
 import { findSnap, hitTest, idsInRect, type SnapResult } from '@/lib/cad/query';
@@ -814,7 +814,7 @@ export default function CadCanvas() {
 
   const onDblClick = () => {
     const st = useCadStore.getState();
-    if (st.tool === 'polyline' && ix.current.pts.length >= 2) finishPolyline(false);
+    if ((st.tool === 'polyline' || st.tool === 'campath') && ix.current.pts.length >= 2) finishPolyline(false);
     else if (st.tool === 'wall' && ix.current.pts.length >= 2) finishWall(false);
     else if (st.tool === 'spline' && ix.current.pts.length >= 2) finishSpline(false);
     // Zone tool — polygon mode + arrow: double-click kết thúc chuỗi điểm (giống polyline/wall).
@@ -958,7 +958,7 @@ export default function CadCanvas() {
     // Việc 1.1 (Sprint 10) — polyline/wall/spline là chuỗi NHIỀU điểm; Enter xưa nay = kết thúc
     // chuỗi luôn. Nếu đang có dynBuf (vừa gõ toạ độ/độ dài cho ĐỈNH TIẾP THEO), Enter phải CHỐT
     // đỉnh đó trước (như AutoCAD: Enter có nội dung = thêm điểm; Enter RỖNG mới thật sự kết thúc).
-    if (st.tool === 'polyline') {
+    if (st.tool === 'polyline' || st.tool === 'campath') {
       if (ix.current.dynBuf) handleClick(effectivePoint(ix.current.pts[ix.current.pts.length - 1]), shift);
       else finishPolyline(false);
     } else if (st.tool === 'wall') {
@@ -1033,6 +1033,7 @@ export default function CadCanvas() {
         }
         break;
       case 'polyline':
+      case 'campath':
         P.push(w);
         break;
       case 'wall':
@@ -1749,7 +1750,11 @@ export default function CadCanvas() {
     const st = useCadStore.getState();
     const pts = ix.current.pts;
     if (pts.length >= 2) {
-      st.addEntity({ id: newId('e'), type: 'polyline', layer: st.currentLayer, points: pts.slice(), closed });
+      // V2 — 'campath' TÁI DÙNG chuỗi điểm polyline y hệt, chỉ khác entity hoàn tất đi vào layer
+      // hệ thống IF_CAMPATH (tự tạo nếu chưa có) + cờ campath:true, KHÔNG dùng layer đang chọn.
+      const isCampath = st.tool === 'campath';
+      const layer = isCampath ? st.ensureLayerByName(CAMPATH_LAYER_NAME, CAMPATH_LAYER_COLOR) : st.currentLayer;
+      st.addEntity({ id: newId('e'), type: 'polyline', layer, points: pts.slice(), closed, ...(isCampath ? { campath: true } : {}) });
     }
     ix.current.pts = [];
     ix.current.redraw = true;
@@ -2671,6 +2676,7 @@ export default function CadCanvas() {
         break;
       }
       case 'polyline':
+      case 'campath':
       case 'wall':
       case 'arrow':
         for (let i = 0; i < P.length - 1; i++) line(P[i], P[i + 1]);

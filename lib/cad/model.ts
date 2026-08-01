@@ -175,6 +175,10 @@ interface Base {
    * wallSegment/wallChain) — field này là metadata KHAI BÁO thêm, KHÔNG tự động đo lại/đối
    * chiếu với hình học, có thể lệch nếu user chỉnh geometry sau mà quên cập nhật số này. */
   wallThicknessMm?: number;
+  /** V2 (`SPEC-VIDEO-MAT-BANG.md` §2.1) — true = entity là ĐƯỜNG CAM (polyline layer hệ thống
+   * `IF_CAMPATH`). Cờ đặt TRÊN entity (không suy từ tên layer) để round-trip DXF an toàn khi
+   * layer bị đổi tên tay — xem `applyIfXdata`/`xdataPairs` (`dxf.ts`), cùng khuôn `elementType`. */
+  campath?: true;
 }
 
 export interface LineEntity extends Base {
@@ -590,6 +594,11 @@ export const DEFAULT_LAYERS: Layer[] = [
   { id: 'l-text', name: 'Ghi chú', color: '#9a9488', visible: true, locked: false, lineweight: 0.15, lineType: 'continuous' },
   { id: 'l-axis', name: 'Trục', color: '#8a7a9a', visible: true, locked: false, lineweight: 0.13, lineType: 'center' },
 ];
+
+/** V2 — tên layer hệ thống cho đường cam (§2.1). KHÔNG có trong `DEFAULT_LAYERS` — tự tạo bằng
+ * `ensureLayerByName()` (store.ts) khi user vẽ đường cam đầu tiên, không seed sẵn mọi doc. */
+export const CAMPATH_LAYER_NAME = 'IF_CAMPATH';
+export const CAMPATH_LAYER_COLOR = '#3b82f6';
 
 export function emptyDoc(): Doc {
   return { entities: [], layers: DEFAULT_LAYERS.map((l) => ({ ...l })), markups: [], photos: [] };

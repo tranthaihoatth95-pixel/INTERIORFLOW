@@ -362,9 +362,9 @@ function buildEntity(
 const VALID_ELEMENT_TYPES = new Set(['wall', 'slab', 'column', 'beam', 'door', 'window', 'furniture', 'space']);
 
 /**
- * Đọc các chuỗi group 1000 (XDATA) → gán storey/elementType vào entity vừa parse. Chỉ nhận
- * đúng 2 khoá app tự ghi (IF_STOREY=/IF_ELEMTYPE=) — chuỗi 1000 khác (app ngoài) bỏ qua.
- * 'null' = "đã kiểm, không phải phần tử BIM" (phân biệt undefined — xem model.ts).
+ * Đọc các chuỗi group 1000 (XDATA) → gán storey/elementType/campath vào entity vừa parse. Chỉ
+ * nhận đúng 3 khoá app tự ghi (IF_STOREY=/IF_ELEMTYPE=/IF_CAMPATH=) — chuỗi 1000 khác (app
+ * ngoài) bỏ qua. 'null' = "đã kiểm, không phải phần tử BIM" (phân biệt undefined — xem model.ts).
  */
 function applyIfXdata(ent: Entity, xd?: string[]): void {
   if (!xd?.length) return;
@@ -377,6 +377,9 @@ function applyIfXdata(ent: Entity, xd?: string[]): void {
       const v = s.slice('IF_ELEMTYPE='.length).trim();
       if (v === 'null') ent.elementType = null;
       else if (VALID_ELEMENT_TYPES.has(v)) ent.elementType = v as ElementType;
+    } else if (s.startsWith('IF_CAMPATH=')) {
+      const v = s.slice('IF_CAMPATH='.length).trim();
+      if (v === '1') ent.campath = true;
     }
   }
 }
@@ -538,11 +541,12 @@ export function exportDxf(doc: Doc): string {
   // B1 (24/07, IF2-nền) — XDATA storey/elementType (đặt CUỐI record entity, chuẩn DXF). Chỉ ghi
   // khi entity CÓ dữ liệu — file không dùng IF2 giữ nguyên từng byte như cũ (backward-safe).
   const xdataPairs = (e: Entity): string[] => {
-    const has = e.storey !== undefined || e.elementType !== undefined;
+    const has = e.storey !== undefined || e.elementType !== undefined || e.campath !== undefined;
     if (!has) return [];
     const xd: string[] = [pair(1001, 'INTERIORFLOW')];
     if (e.storey !== undefined) xd.push(pair(1000, `IF_STOREY=${e.storey}`));
     if (e.elementType !== undefined) xd.push(pair(1000, `IF_ELEMTYPE=${e.elementType === null ? 'null' : e.elementType}`));
+    if (e.campath !== undefined) xd.push(pair(1000, 'IF_CAMPATH=1'));
     return xd;
   };
   // Override lineweight/linetype RIÊNG của entity (hiếm — mặc định không có, dùng ByLayer).

@@ -207,7 +207,15 @@ người khỏi CAD và Present khi cả hai chưa xong.
 
 *Cowork ghi 01/08/2026, cập nhật sau V1 (`d51a2cb`). Mọi trích dẫn `file:dòng` đọc trong lượt này.*
 
-**Số đã đo (V1):** 🧮 `planDrawOn()` trên ~2000 entity = **2,27 ms** — tính timing KHÔNG phải chỗ
-nghẽn. 💭 **Chỗ nghẽn CHƯA đo nằm ở phần C:** ~2000 animation `stroke-dashoffset` chạy đồng thời
-trên GPU. Phần C bắt buộc đo FPS trên mặt bằng 2000 entity; nếu tụt dưới 30fps thì gộp entity cùng
-layer thành một `<path>` ghép (batching) trước khi nghĩ tới cách khác.*
+**Số đã đo (V1 + phần C, 01/08):** 🧮 `planDrawOn()` ~2000 entity = **2,27 ms**. 🧮 FPS (đo proxy
+style-recalc qua CDP — trang hidden nên rAF bị throttle, không đếm khung trực tiếp được):
+2000 `<path>` animate riêng lẻ ≈ **31fps** (sát ngưỡng, không biên an toàn) · batching gộp
+1 `<path>`/layer → dư sức tuyệt đối. **CHỐT:** `DrawOnPreview` tự bật batching khi đợt ① >
+**500 entity** (`SHELL_AUTO_BATCH_THRESHOLD`, `DrawOnPreview.tsx:46`) — ngưỡng 500 chứ không phải
+~1900 lý thuyết vì phép đo chưa cộng paint/composite + 4 đợt chạy song song.
+
+**Lệch có chủ đích:** đợt ① dùng CSS `@keyframes` thuần thay vì `guard()`/motion — hiệu năng với
+hàng nghìn path; ghi trong JSDoc `DrawOnPreview.tsx`. Phát hiện khi thi công: `wallSegment()` dựng
+tường bằng CẶP `hatch`+`polyline` → đợt ① tách vẽ-nét (polyline) / tô (hatch, clip-path) đúng §1.3.
+
+💭 còn lại: preview block cửa/nội thất đang là bbox chữ nhật — đủ xem nhịp, chưa phải bản đẹp (V1.1).*
