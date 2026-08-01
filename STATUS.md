@@ -5,7 +5,10 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (01/08 — V1+V2 video xong (bậc 1 + bậc 2 mức 2-a) · đợt 2 gỡ nhãn spec xong)
+## Hiện tại (01/08 — V1+V2 video xong · toggle Gallery Carousel↔Grid xong · đợt 2 gỡ nhãn spec xong)
+- ✅ **Toggle Carousel↔Grid Gallery** (`6303d7c`) — ghi đè J-4c (luật 2.1.10), nhớ theo user qua
+  `lib/resume.ts` (kênh sẵn có). Verify browser thật: bật/tắt cả 2 chiều + persist qua reload.
+  Reduce-motion disable+title chỉ verify qua code (tool không giả lập prefers-reduced-motion được).
 - ✅ **V2 đường cam mức 2-a (`SPEC-VIDEO-MAT-BANG.md` §2) — A/C/D ĐỦ, B rút gọn** (`69db004`):
   `campath:true` (model.ts) + layer `IF_CAMPATH` + round-trip DXF XDATA · tool `campath` TÁI DÙNG
   cơ chế polyline có sẵn (không viết UI mới trong CadCanvas.tsx — tránh vùng code phụ sắp tới) ·
@@ -22,12 +25,9 @@
   treo (Hoà giữ tự đọc). Blueprint sửa 4 chặng (0→3). ArchiNote **cũng theo Luật Trung Tính** (Hoà
   lật đề xuất Cowork). README/INDEX-AI-SPECS hết lệch mục lục.
 
-Chi tiết đầy đủ → `CHANGELOG.md` + `docs/IF-FEATURE-TREE.md` `4.1.a-e`. Tóm tắt đợt trước:
-- ✅ **B1-B5 ĐÓNG** (đĩa = nguồn sự thật `.idf`/`.idfp`) · **4.1.f Brand Kit thuộc DỰ ÁN** (Hoà
-  quyết, thi công đổi hình dạng file chưa làm) · `docs/00-CHOT.md` (sổ mục lục đầu phiên).
-- ✅ **Present A1-A4** (Magic tab · xoá `TemplatePicker.tsx` · sửa số template 25→21 · gỡ nhãn
-  đợt 1) · **2.2.90 `useDismissable`** ĐỢT 1+2 (mã `2.2.92`, CHỜ GẬT ĐỢT 3 panel CAD).
-- 🟡 **2.2.87+2.2.88**/**7.1.23** CHỜ HOÀ GẬT — mở lại được, chưa ai động.
+Chi tiết đầy đủ → `CHANGELOG.md` + `docs/IF-FEATURE-TREE.md` `4.1.a-e`. Tóm tắt đợt trước: B1-B5
+ĐÓNG (đĩa = nguồn sự thật) · 4.1.f Brand Kit thuộc DỰ ÁN (thi công chưa làm) · Present A1-A4 ·
+2.2.90 `useDismissable` ĐỢT 1+2 (mã `2.2.92`) · 🟡 2.2.87+2.2.88/7.1.23 CHỜ HOÀ GẬT.
 
 ## Worktree đang mở
 Không có. `feat/sprint-infra`+`feat/dot-a-ha-tang` đã merge + prune + xoá branch/thư mục/lock rác
@@ -41,12 +41,12 @@ Không có. `feat/sprint-infra`+`feat/dot-a-ha-tang` đã merge + prune + xoá b
 - **④ `FlowVersion`** — 14 dòng/7,27MB/5,31% `dev.db`, không phải thủ phạm → hạ 🟡. 136MB
   còn lại của 143MB `dev.db` bất thường — nghi `NotebookChunk`/`Flow.graphJson`/`ChatMessage` rác
   chưa VACUUM, đo sau.
-- **NT1**/**NT5** (gộp Library panel/browser · cây thư mục thật) — dời sau (`docs/PLAN-LIBRARY-GATEWAY.md`).
-- **T3/T4** (Semantic Room) — làm tiếp phiên sau, lý do ở CHANGELOG "26/07".
+- **NT1/NT5** (gộp Library panel/browser · cây thư mục thật) — dời sau (`docs/PLAN-LIBRARY-GATEWAY.md`).
+  **T3/T4** (Semantic Room) — làm tiếp phiên sau, lý do ở CHANGELOG "26/07".
 - **Figma**: MCP lỗi `net::ERR_FAILED`. Đường vòng: file trống + `docs/figma-bootstrap.js`.
 - **DWG**: sửa GPL ngay (0đ)? · server-side? · ODA khi bán? → `docs/RESEARCH-DWG-LICENSE.md`. **Mới
   31/07**: `2.1.6.d` 🔴 bug Nhập DWG treo vĩnh viễn trên file thật (nghi block-flatten INSERT bùng
-  nổ) — ĐỢT B đã xong, đến lượt HÀNG ĐỢI này, chưa ai động, chi tiết đủ ở cây.
+  nổ) — chưa ai động, chi tiết đủ ở cây.
 - Treo: VIỆC 4 cũ (GuProfile) · #14 (Mẫu Presenting).
 - **Xlsx round-trip probe** — chờ Hoà copy `SPEC_TEMPLATE 1.xlsx` vào `scripts/fixtures/`.
 - 3 nhánh `worktree-agent-*` merged còn local; `fix/hatch-t-junction`/`fix/quality-pipeline` chưa merge.
