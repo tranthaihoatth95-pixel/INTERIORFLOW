@@ -68,3 +68,26 @@ export function stageFor(id?: StagePresetId | string | null): StageSize {
 export function isLandscape(s: StageSize): boolean {
   return s.w >= s.h;
 }
+
+/**
+ * Kích thước GIẤY THẬT (mm, ISO 216) — TÁCH khỏi `STAGE_PRESETS` (px màn hình/chiếu, PS-4).
+ * Chỉ 4 khổ giấy có nghĩa; `16:9` không phải khổ in thật → `undefined` (P3, 01/08).
+ */
+export const PAPER_SIZE_MM: Partial<Record<StagePresetId, { w: number; h: number }>> = {
+  'a4-landscape': { w: 297, h: 210 },
+  'a4-portrait': { w: 210, h: 297 },
+  'a3-landscape': { w: 420, h: 297 },
+  'a3-portrait': { w: 297, h: 420 },
+};
+
+/**
+ * Hệ số phóng canvas (`renderEditorSlide` param `resScale`) để đạt đúng `dpi` trên KHỔ GIẤY
+ * THẬT (không phải trên `stage.w/h` px màn hình) — `null` nếu khổ không phải giấy in (16:9).
+ */
+export function printResScale(id: StagePresetId | string | undefined, dpi = 300): number | null {
+  const mm = id ? PAPER_SIZE_MM[id as StagePresetId] : undefined;
+  if (!mm) return null;
+  const stage = stageFor(id);
+  const targetPxW = (mm.w / 25.4) * dpi;
+  return targetPxW / stage.w;
+}

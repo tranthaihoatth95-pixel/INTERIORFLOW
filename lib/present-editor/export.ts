@@ -22,12 +22,17 @@
  *      trong 2 lựa chọn spec cho phép ("giữ 16:9 HOẶC map khổ gần nhất") — UI nhắc rõ điều
  *      này ở StagePresetPanel + menu Xuất (components/ui/IOMenu.tsx).
  *
- * Cả ba đọc EditorDeck. jsPDF/pptx import động (client-only).
+ * PDF khổ giấy thật theo dpi (`exportDeckToPdfAtPaperSize`, P3 01/08): CHỈ chạy được với khổ
+ *     A4/A3 (`PAPER_SIZE_MM`) — trang PDF đúng mm thật (không phải px màn hình như hàm PDF
+ *     trên), canvas phóng theo `resScale` để chữ/hình khối đạt đúng dpi. Ảnh hero/nền CHƯA đạt
+ *     dpi đó (P3 phần 2, chưa làm) — xem JSDoc hàm.
+ *
+ * Cả bốn đọc EditorDeck. jsPDF/pptx import động (client-only).
  */
 
 import type { EditorDeck, EditorSlide, TextElement, ImageElement } from './model';
 import { renderEditorSlide } from './render';
-import { stageFor, type StageSize } from './stage-presets';
+import { stageFor, printResScale, PAPER_SIZE_MM, type StageSize } from './stage-presets';
 import { exportDeckToPptx, type PptxSlide, type PptxExportResult } from '@/lib/pptx';
 import type { SlideContent, SlideTheme, SlideLayout } from '@/lib/slides';
 
@@ -46,6 +51,34 @@ export async function exportDeckToPdf(deck: EditorDeck): Promise<void> {
     doc.addImage(img, 'JPEG', 0, 0, stage.w, stage.h);
   }
   doc.save(`${safeName(deck.project || deck.brand || 'deck')}.pdf`);
+}
+
+/**
+ * PDF khổ giấy THẬT (mm, ISO 216) ở `dpi` — P3 phần 1 (01/08,
+ * `docs/NGHIEN-CUU-PRESENT-VS-DOI-THU-2026-08-01.md` §3.1). Chỉ chạy được khi
+ * `deck.stagePreset` là A4/A3 (`PAPER_SIZE_MM` có mục) — 16:9 không phải khổ in, ném lỗi rõ
+ * thay vì âm thầm ra file sai khổ.
+ *
+ * ⚠️ CHỈ đạt `dpi` thật cho CHỮ/HÌNH KHỐI (vẽ vector qua canvas 2D, xem JSDoc `renderEditorSlide`).
+ * ẢNH hero/nền trong slide vẫn giữ nguyên độ chi tiết nguồn — P3 phần 2 (`ai.upscale`, CHƯA làm,
+ * chờ đo số thật) mới nâng được phần đó. KHÔNG đổi tên hàm thành "300dpi" để khỏi ngầm hứa quá.
+ */
+export async function exportDeckToPdfAtPaperSize(deck: EditorDeck, dpi = 300): Promise<void> {
+  if (typeof window === 'undefined') return;
+  if (!deck.slides.length) throw new Error('Deck rỗng — cần ít nhất 1 slide.');
+  const mm = deck.stagePreset ? PAPER_SIZE_MM[deck.stagePreset] : undefined;
+  if (!mm) throw new Error('Khổ hiện tại không phải giấy in thật (chỉ 16:9) — chọn A4/A3 trước khi xuất theo dpi.');
+  const stage = stageFor(deck.stagePreset);
+  const resScale = printResScale(deck.stagePreset, dpi)!;
+  const orientation = mm.w >= mm.h ? 'landscape' : 'portrait';
+  const { jsPDF } = await import('jspdf');
+  const doc = new jsPDF({ orientation, unit: 'mm', format: [mm.w, mm.h] });
+  for (let i = 0; i < deck.slides.length; i++) {
+    const img = await renderEditorSlide(deck.slides[i], deck.fonts, deck.watermark, stage, resScale);
+    if (i > 0) doc.addPage([mm.w, mm.h], orientation);
+    doc.addImage(img, 'JPEG', 0, 0, mm.w, mm.h);
+  }
+  doc.save(`${safeName(deck.project || deck.brand || 'deck')}-${dpi}dpi.pdf`);
 }
 
 /* --------------------------------- PNG --------------------------------- */

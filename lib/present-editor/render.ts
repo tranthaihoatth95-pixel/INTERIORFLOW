@@ -609,18 +609,29 @@ async function drawWatermark(
  * Vẽ toàn slide ra JPEG dataURL. `stage` chọn kích thước sân khấu (mặc định 16:9 —
  * STAGE_PRESETS['16:9'], HÀNH VI GIỮ NGUYÊN so với trước PS-4 khi gọi không truyền tham
  * số này) — xem stage-presets.ts.
+ *
+ * `resScale` (P3 phần 1, 01/08, `docs/NGHIEN-CUU-PRESENT-VS-DOI-THU-2026-08-01.md` §3.1) — hệ số
+ * phóng ĐỘ PHÂN GIẢI canvas cho đường xuất in, mặc định 1 (hành vi cũ nguyên vẹn). Vẽ bằng
+ * `<canvas>` 2D (`ctx.fillText`/`drawImage`), KHÔNG chụp DOM — chữ/hình khối vốn KHÔNG có trần
+ * dpi, canvas to hơn ⇒ nét hơn, 0 chi phí AI. Cách làm: canvas thật to gấp `resScale` lần, rồi
+ * `ctx.scale(resScale, resScale)` — mọi lệnh vẽ hiện có (đều tính theo `sc.W`/`sc.H` gốc, không
+ * đổi) tự động render đúng vào không gian lớn hơn, không phải sửa `drawTextEl`/`drawShapeEl`/…
+ * ⚠️ ẢNH (hero/nền) KHÔNG được hàm này làm nét thêm — `ctx.drawImage()` chỉ vẽ được đúng số chi
+ * tiết ảnh NGUỒN đang có; ảnh nguồn thấp hơn `resScale`×sc thì vẫn mờ (chờ P3 phần 2, `ai.upscale`).
  */
 export async function renderEditorSlide(
   slide: EditorSlide,
   fonts: string = 'Editorial',
   watermark?: DeckWatermark,
   stage: StageSize = STAGE_PRESETS['16:9'],
+  resScale = 1,
 ): Promise<string> {
   const sc = makeScale(stage);
   const canvas = document.createElement('canvas');
-  canvas.width = sc.W;
-  canvas.height = sc.H;
+  canvas.width = sc.W * resScale;
+  canvas.height = sc.H * resScale;
   const ctx = canvas.getContext('2d')!;
+  ctx.scale(resScale, resScale);
   const fontBody = CANVAS_FONT[fonts] ?? CANVAS_FONT.Editorial;
 
   // nền màu

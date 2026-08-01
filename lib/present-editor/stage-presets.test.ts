@@ -2,7 +2,7 @@
  * lib/present-editor/stage-presets.test.ts — kiểm NGUỒN DUY NHẤT kích thước sân khấu (PS-4).
  * Chạy: node_modules/.bin/sucrase-node lib/present-editor/stage-presets.test.ts
  */
-import { STAGE_PRESETS, STAGE_PRESET_ORDER, DEFAULT_STAGE_PRESET, stageFor, isLandscape } from './stage-presets';
+import { STAGE_PRESETS, STAGE_PRESET_ORDER, DEFAULT_STAGE_PRESET, stageFor, isLandscape, PAPER_SIZE_MM, printResScale } from './stage-presets';
 import { DECK_STANDARDS } from './standards';
 
 let pass = 0;
@@ -78,6 +78,29 @@ console.log('[6] isLandscape()');
   ok('A4 ngang là ngang', isLandscape(STAGE_PRESETS['a4-landscape']));
   ok('A4 dọc KHÔNG phải ngang', !isLandscape(STAGE_PRESETS['a4-portrait']));
   ok('A3 dọc KHÔNG phải ngang', !isLandscape(STAGE_PRESETS['a3-portrait']));
+}
+
+console.log('\n[7] PAPER_SIZE_MM/printResScale — P3 phần 1 (01/08, giấy thật ISO 216, tách khỏi px màn hình)');
+{
+  ok('16:9 KHÔNG có kích thước giấy thật (không phải khổ in)', PAPER_SIZE_MM['16:9'] === undefined);
+  ok('A4 ngang = 297×210mm (ISO 216 đúng, không phải suy từ px màn hình)', PAPER_SIZE_MM['a4-landscape']?.w === 297 && PAPER_SIZE_MM['a4-landscape']?.h === 210);
+  ok('A3 ngang = 420×297mm', PAPER_SIZE_MM['a3-landscape']?.w === 420 && PAPER_SIZE_MM['a3-landscape']?.h === 297);
+
+  ok('16:9 → printResScale null (không phải khổ giấy, không có "in 300dpi")', printResScale('16:9') === null);
+  ok('id lạ/rỗng → null', printResScale('not-a-real-id') === null && printResScale(undefined) === null);
+
+  const a3l = printResScale('a3-landscape', 300)!;
+  const stageA3l = STAGE_PRESETS['a3-landscape'];
+  const targetPxA3 = (420 / 25.4) * 300; // ≈ 4960.6px — đúng số nêu trong test [4] phía trên
+  ok('A3 ngang @300dpi: resScale × stage.w = đúng px cần cho khổ giấy thật', Math.abs(stageA3l.w * a3l - targetPxA3) < 0.01);
+  ok('A3 ngang @300dpi: resScale > 1 (stage màn hình luôn nhỏ hơn khổ in thật)', a3l > 1);
+
+  const a4p = printResScale('a4-portrait', 300)!;
+  const stageA4p = STAGE_PRESETS['a4-portrait'];
+  const targetPxA4p = (210 / 25.4) * 300;
+  ok('A4 dọc @300dpi: đúng px cần', Math.abs(stageA4p.w * a4p - targetPxA4p) < 0.01);
+
+  ok('dpi khác nhau tỉ lệ thuận đúng (600dpi = 2× resScale của 300dpi)', Math.abs(printResScale('a3-landscape', 600)! - a3l * 2) < 1e-9);
 }
 
 console.log(`\n${pass} ok, ${fail} fail`);
