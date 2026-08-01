@@ -28,6 +28,7 @@ import { useFlowStore } from '@/lib/store';
 import { createFlow, openFlow, createProject, assignProject } from '@/lib/workspace';
 import { applyCadHandoff } from '@/lib/cad/handoff';
 import { brandContextForVitals } from '@/lib/present-editor/brand-kit';
+import { getGalleryViewOverride, setGalleryViewOverride, type GalleryViewOverride } from '@/lib/resume';
 import { LangToggle } from '@/components/LangToggle';
 import { adaptiveTextStyle, useAdaptiveContrast } from '@/components/ui/AdaptiveContrast';
 import type { ContrastPlan } from '@/lib/adaptive-contrast';
@@ -476,9 +477,59 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
 
   const manyMode = (flows?.length ?? 0) > 8;
 
+  /* ---------- Toggle Carousel↔Grid (01/08, luật 2.1.10 "một năng lực, hai lối vào") — GHI ĐÈ
+   * của người dùng lên J-4c, KHÔNG thay logic tự động: mặc định `null` = vẫn theo `manyMode`
+   * (≤8 carousel · >8 grid) y hệt hôm nay; user bấm toggle mới ghi đè. Nhớ theo user qua
+   * `lib/resume.ts` (đúng kênh lưu tuỳ chọn sẵn có, KHÔNG đẻ kênh mới). `useReducedMotion`
+   * vẫn THẮNG TẤT CẢ — xem nhánh render `reduce ? flatList` đứng TRƯỚC effectiveGrid bên dưới. */
+  const [viewOverride, setViewOverrideState] = useState<GalleryViewOverride | null>(() => getGalleryViewOverride(user?.id ?? ''));
+  useEffect(() => {
+    // user chỉ chắc chắn có SAU mount (auth) — đọc lại 1 lần khi id đổi từ rỗng sang thật.
+    if (user?.id) setViewOverrideState(getGalleryViewOverride(user.id));
+  }, [user?.id]);
+  const setViewOverride = useCallback(
+    (mode: GalleryViewOverride | null) => {
+      setViewOverrideState(mode);
+      setGalleryViewOverride(user?.id ?? '', mode);
+    },
+    [user?.id],
+  );
+  const effectiveGrid = viewOverride === 'grid' ? true : viewOverride === 'carousel' ? false : manyMode;
+
+  /** Segmented 2-ô 🎠/🔲 — cùng khuôn `LangToggle` (role="group", ô đang chọn nổi bật). Vô
+   * hiệu hoá TOÀN BỘ control khi reduce-motion (không phải giấu đi) + title giải thích tại sao. */
+  const viewToggle = (
+    <div
+      role="group"
+      aria-label={en ? 'Gallery layout' : 'Kiểu hiển thị Gallery'}
+      title={reduce ? (en ? 'Reduced motion is on — flat list only.' : 'Đang bật giảm chuyển động — chỉ có danh sách phẳng.') : undefined}
+      className="inline-flex shrink-0 items-center gap-0.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-0.5"
+      style={reduce ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
+    >
+      {(['carousel', 'grid'] as const).map((mode) => {
+        const on = !effectiveGrid === (mode === 'carousel');
+        return (
+          <button
+            key={mode}
+            type="button"
+            disabled={!!reduce}
+            onClick={() => setViewOverride(mode)}
+            aria-pressed={on}
+            title={mode === 'carousel' ? (en ? '3D carousel' : 'Carousel 3D') : (en ? 'Grid' : 'Lưới')}
+            className={`flex items-center gap-1 rounded-[7px] px-2.5 py-1.5 text-[13px] transition-colors disabled:cursor-not-allowed ${
+              on ? 'bg-[var(--card)] text-[var(--t1)] shadow-sm' : 'text-[var(--t4)] hover:text-[var(--t2)]'
+            }`}
+          >
+            <span aria-hidden="true">{mode === 'carousel' ? '🎠' : '🔲'}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
   /* ---------- Ambient cover glow (tvOS-style) — nền trang "lan toả" theo ảnh bìa card đang focus ----------
-   * Chỉ có ý nghĩa ở carousel 3D (desktop, ≤8 flow, không reduce-motion) — đây là NƠI DUY NHẤT có khái
-   * niệm "1 card đang focus" (`active`). Grid tìm kiếm (manyMode) và danh sách phẳng (mobile/reduce) không
+   * Chỉ có ý nghĩa ở carousel 3D (desktop, không reduce-motion) — đây là NƠI DUY NHẤT có khái
+   * niệm "1 card đang focus" (`active`). Grid tìm kiếm (effectiveGrid) và danh sách phẳng (mobile/reduce) không
    * có khái niệm đó → không ép ambient vào, giữ nền tĩnh var(--bg) như cũ (đúng gợi ý trong brief).
    * Card "+ Dự án mới" không có ảnh bìa → GIỮ NGUYÊN ambient của flow gần nhất thay vì tắt đột ngột,
    * tránh nền chớp tắt khi user lướt hết carousel sang card cuối.
@@ -488,7 +539,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
     const focused = items[active];
     if (focused && focused.kind === 'flow') setAmbientSrc(coverOf(focused.flow));
   }, [active, items]);
-  const showAmbient = !loadError && flows !== null && !manyMode && !reduce;
+  const showAmbient = !loadError && flows !== null && !effectiveGrid && !reduce;
 
   const projOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -661,7 +712,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   // Grid-mode (>8 dự án) không có carousel → nhường phím cho ô tìm kiếm.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (busy || n === 0 || statusFor || pickerFor || manyMode) return;
+      if (busy || n === 0 || statusFor || pickerFor || effectiveGrid) return;
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
         setActive((a) => Math.max(0, a - 1));
@@ -716,7 +767,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
     choose,
     statusFor,
     pickerFor,
-    manyMode,
+    effectiveGrid,
     chatThreadShown,
     chatSending,
     chatInput,
@@ -736,7 +787,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   const WHEEL_STEP_PX = 60; // trackpad macOS 1 flick ~ 40–80px; chuột 1 nấc ~ 100px
   const onGalleryWheel = useCallback(
     (e: React.WheelEvent<HTMLDivElement>) => {
-      if (busy || n === 0 || statusFor || pickerFor || manyMode) return;
+      if (busy || n === 0 || statusFor || pickerFor || effectiveGrid) return;
       // deltaX ưu tiên (trackpad ngang); fallback deltaY (chuột dọc → convert).
       const dominant = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
       if (!dominant) return;
@@ -752,7 +803,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
       e.preventDefault();
       setActive((a) => Math.min(n - 1, Math.max(0, a + dir)));
     },
-    [busy, n, statusFor, pickerFor, manyMode],
+    [busy, n, statusFor, pickerFor, effectiveGrid],
   );
 
   const firstName = user?.name?.split(' ').slice(-1)[0] ?? null;
@@ -1045,6 +1096,11 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         <div className="relative grid place-items-center" style={{ transformStyle: 'preserve-3d' }}>
           {items.map((item, i) => {
             const off = i - active;
+            // Toggle cho phép carousel với >8 dự án (trước đây off<=2 luôn ẩn qua opacity:0
+            // NHƯNG vẫn MOUNT + tải ảnh bìa mọi card, ổn với ≤9 item J-4c cũ cho phép nhưng sẽ
+            // tải tràn lan với 20+ item). Card ngoài cửa sổ ±4 KHÔNG mount — biên rộng hơn ±2
+            // hiển thị 1 nấc để trượt 1 bước vẫn mượt (pose/hiddenPose), không dồn hết ảnh 1 lượt.
+            if (Math.abs(off) > 4) return null;
             const shown = Math.abs(off) <= 2;
             const pose = shown ? POSES[off] : hiddenPose(off < 0 ? -1 : 1);
             const isCenter = off === 0;
@@ -1334,6 +1390,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             </option>
           ))}
         </select>
+        {viewToggle}
         <span className="text-[length:var(--fs-xs)] text-[var(--t4)]">
           {filteredFlows.length}/{flows.length}
         </span>
@@ -1632,6 +1689,10 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               {syncing ? <Loader2 size={13} className="animate-spin" /> : <Link2 size={13} />}
               {en ? 'Sync progress' : 'Đồng bộ tiến độ'}
             </button>
+            {/* Toggle Carousel↔Grid — CHỈ hiện ở đây khi carousel/flatList đang hiện (đỡ trùng
+                với bản trong `searchGrid` cạnh "Tất cả dự án"); đây là lối vào duy nhất để BẬT
+                grid khi ≤8 dự án hoặc quay lại carousel — bản kia chỉ tới được SAU KHI đã ở grid. */}
+            {!loadError && flows !== null && !effectiveGrid && viewToggle}
           </div>
           {syncMsg && (
             <p className="mt-2 text-[length:var(--fs-xs)] text-[var(--t4)]">
@@ -1789,16 +1850,17 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           </AnimatePresence>
         </div>
 
-        {/* thân màn theo trạng thái */}
+        {/* thân màn theo trạng thái — reduce-motion THẮNG TẤT CẢ (kể cả override toggle,
+            xem viewToggle), rồi mới tới effectiveGrid (J-4c mặc định HOẶC override thủ công). */}
         {loadError ? (
           errorBlock
         ) : flows === null ? (
           loadingBlock
-        ) : manyMode ? (
-          // >8 dự án: carousel hết vừa → grid + tìm kiếm/lọc (mọi khổ màn, kể cả reduce-motion)
-          searchGrid
         ) : reduce ? (
           flatList
+        ) : effectiveGrid ? (
+          // >8 dự án (J-4c) HOẶC user bấm toggle 🔲 — grid + tìm kiếm/lọc
+          searchGrid
         ) : (
           <>
             {/* mobile hẹp: danh sách dọc cuộn được — không tràn ngang */}

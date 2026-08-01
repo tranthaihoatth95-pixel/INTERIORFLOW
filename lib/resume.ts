@@ -226,6 +226,35 @@ export function resetCoachmarkSeen(name: string, userId: string): void {
  * "Xem lại hướng dẫn" tự reset đủ (xem CadCanvas.tsx `markCoachmarkSeen('selectMove', ...)`). */
 export const COACHMARKS: readonly string[] = ['selectMove'];
 
+/* ---------- Gallery Home — ghi đè thủ công Carousel 3D ↔ Grid (01/08, luật 2.1.10
+   "một năng lực, hai lối vào") — J-4c (ProjectSelect.tsx) tự đổi carousel→grid khi >8 dự án;
+   cờ này là LỰA CHỌN CỦA NGƯỜI DÙNG đè lên quyết định tự động đó, theo user, key
+   `interiorflow.galleryView.<userId>`. `null`/thiếu = chưa ghi đè, dùng nguyên hành vi J-4c. */
+
+const GALLERY_VIEW_PREFIX = 'interiorflow.galleryView.';
+
+export type GalleryViewOverride = 'carousel' | 'grid';
+
+export function getGalleryViewOverride(userId: string): GalleryViewOverride | null {
+  if (!userId) return null;
+  try {
+    const v = localStorage.getItem(GALLERY_VIEW_PREFIX + userId);
+    return v === 'carousel' || v === 'grid' ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setGalleryViewOverride(userId: string, mode: GalleryViewOverride | null): void {
+  if (!userId) return;
+  try {
+    if (mode) localStorage.setItem(GALLERY_VIEW_PREFIX + userId, mode);
+    else localStorage.removeItem(GALLERY_VIEW_PREFIX + userId);
+  } catch {
+    /* bỏ qua */
+  }
+}
+
 /* ---------- "Về Home" (Gallery) — nút Home + logo IF (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md
    §5.1 quyết định 3) ----------
  * Vấn đề: route '/' KHÔNG luôn hiện Gallery — returning-user có `stageFlag`/`resume` đã lưu
