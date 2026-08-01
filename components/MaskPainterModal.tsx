@@ -9,6 +9,7 @@ import { useFlowStore } from '@/lib/store';
 import { useSourceImage } from '@/lib/nodes/source-image';
 import { fade, modalScale, pressable, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { useDismissable } from '@/lib/useDismissable';
 
 export function MaskPainterModal() {
   const nodeId = useFlowStore((s) => s.maskEditorNodeId);
@@ -163,22 +164,23 @@ export function MaskPainterModal() {
     forceClose();
   };
 
-  // Esc: còn thay đổi chưa lưu → lần đầu chỉ cảnh báo, Escape LẦN 2 mới thật sự đóng
-  // (bỏ nét vẽ). Không có gì để mất → đóng thẳng như cũ.
-  useEffect(() => {
-    if (!nodeId) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
+  // Esc: còn thay đổi chưa lưu → lần đầu chỉ cảnh báo, Escape LẦN 2 mới thật sự đóng (bỏ nét
+  // vẽ). 2.2.90 ĐỢT 3 — chuyển sang useDismissable dùng chung; `guard` tái hiện đúng logic 2
+  // nấc cũ (chặn đóng + bật cảnh báo ở nấc 1, để lọt ở nấc 2). Bản gốc KHÔNG có bấm-ra-ngoài-để-
+  // đóng (chỉ Escape/nút X) — giữ nguyên bằng `outside: false`.
+  useDismissable({
+    open: !!nodeId,
+    onDismiss: forceClose,
+    refs: [],
+    outside: false,
+    guard: () => {
       if (dirty && !confirmClose) {
         setConfirmClose(true);
-        return;
+        return true;
       }
-      forceClose();
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeId, dirty, confirmClose]);
+      return false;
+    },
+  });
 
   return (
     <AnimatePresence>
