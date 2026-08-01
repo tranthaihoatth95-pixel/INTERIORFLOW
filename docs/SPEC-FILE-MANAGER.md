@@ -1,6 +1,7 @@
 # SPEC — FILE MANAGER *(quản lý file toàn app)*
 
-> **[CẦN HOÀ DUYỆT]** · Mảnh còn trống giữa Gateway và Library.
+> Duyệt 01/08/2026 — xem `CHOT-DUYET-SPEC-DOT2-2026-08-01.md`.
+> Mảnh còn trống giữa Gateway và Library.
 > Đọc cùng `IF-ARCHITECTURE-BLUEPRINT-v1.md` §5B, `SPEC-IF-LIBRARY.md`.
 
 ---

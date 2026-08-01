@@ -1,6 +1,7 @@
 # SPEC — ĐỀ BÀI → PHƯƠNG ÁN *(brief intake)*
 
-> **[CẦN HOÀ DUYỆT]** · Thay thế tính năng "AI mô tả – Đề bài chi tiết" hiện tại ở chặng CAD.
+> Duyệt 01/08/2026 — xem `CHOT-DUYET-SPEC-DOT2-2026-08-01.md`.
+> Thay thế tính năng "AI mô tả – Đề bài chi tiết" hiện tại ở chặng CAD.
 > Đọc cùng `SPEC-KNOWLEDGE-BASE.md` (luật trích dẫn), `SPEC-SEMANTIC-MODEL.md`.
 
 ---

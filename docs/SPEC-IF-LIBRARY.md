@@ -1,6 +1,7 @@
 # SPEC — IF LIBRARY *(siêu thư viện tài sản / DAM)*
 
-> **[CẦN HOÀ DUYỆT]** · Đây **không phải tính năng mới** — là **mặt tiền của T5 Não tri thức**.
+> Duyệt 01/08/2026 — xem `CHOT-DUYET-SPEC-DOT2-2026-08-01.md`.
+> Đây **không phải tính năng mới** — là **mặt tiền của T5 Não tri thức**.
 > Nền đã có: model `LibraryAsset` + API `/api/library/[id]/file` + `path` tách khỏi DB (đúng chuẩn
 > local-first). Việc còn lại là **mở rộng**, không xây mới.
 > Đọc cùng `IF-CORE-SCHEMA.md`, `SPEC-MATERIAL-PIPELINE.md`, `SPEC-RENDER-STUDIO.md`.

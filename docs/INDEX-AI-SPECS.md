@@ -40,7 +40,7 @@
 ## F · Vitals AI (trợ lý hội thoại)
 | Nguồn | Nội dung | TT |
 |---|---|---|
-| `SPEC-VITALS-AI.md` | **Spec Vitals AI v0.1 DRAFT `[CẦN HOÀ DUYỆT]` (lưu 25/07)** — 6 nhóm tính năng: Ambient orb → canvas copilot → grounded citation → **function-calling tạo/sửa node** → multimodal (voice+ảnh) → audio overview. Mỗi nhóm có bậc N/P/L + phụ thuộc + trạng thái verify bằng code (1 ✅ · 2 🟡 · 3 ⬜). Kèm mục **Nguyên tắc trung tính** (đọc Brand Kit/GuProfile của DỰ ÁN, không ép gu studio) + nợ/rủi ro + câu hỏi chờ quyết | 📋 chờ duyệt |
+| `SPEC-VITALS-AI.md` | **Spec Vitals AI v0.1 (lưu 25/07)** — vai trò đã duyệt (xem `SPEC-VITALS-ROLE.md`), cơ chế còn draft. 6 nhóm tính năng: Ambient orb → canvas copilot → grounded citation → **function-calling tạo/sửa node** → multimodal (voice+ảnh) → audio overview. Mỗi nhóm có bậc N/P/L + phụ thuộc + trạng thái verify bằng code (1 ✅ · 2 🟡 · 3 ⬜). Kèm mục **Nguyên tắc trung tính** (đọc Brand Kit/GuProfile của DỰ ÁN, không ép gu studio) + nợ/rủi ro + câu hỏi chờ quyết | 🟡 vai trò ✅, cơ chế draft |
 | Đã build thật | Giọt Vitals kéo 2 tầng (popover → NotebookLM full) · RAG auto-smart (có nguồn = grounded, không nguồn = general) · context-aware theo chặng | ✅ |
 | `RESEARCH-CHAT-FULL.md` | 702 dòng — chat người-với-người (khác Vitals AI), có phần chạm AI | 📋 chặn bởi ACCESS-CONTROL (đã gỡ) |
 
@@ -52,5 +52,5 @@
 ## Tổng kết trạng thái AI
 - **Đang chạy thật**: 4 mức phụ thuộc AI · 30 node Rendering (fal FLUX + ComfyUI fallback) · AI brief CAD · Perceptron học gu · Vitals RAG auto-smart · VLM caption (dùng ở Notebook/taxonomy).
 - **Đề xuất chưa làm**: Gu Engine đầy đủ · Library auto-classify · Material bridge · WebGPU local · Vitals Group 4-5 (function-calling, voice, kéo ảnh).
-- **Nợ tài liệu ✅ đã trả (25/07)**: spec Vitals AI đã lưu thành `docs/SPEC-VITALS-AI.md` (DRAFT, `[CẦN HOÀ DUYỆT]`). Chưa duyệt ⇒ chưa code Nhóm 4/5/6.
+- **Nợ tài liệu ✅ đã trả (25/07)**: spec Vitals AI đã lưu thành `docs/SPEC-VITALS-AI.md` (vai trò đã duyệt, cơ chế còn draft). Cơ chế chưa duyệt ⇒ chưa code Nhóm 4/5/6.
 - **Cần rà lại theo luật mới** (IF là sản phẩm global, không dính TTT): `GU-PROFILE.md` là gu CÁ NHÂN của chủ dự án — với sản phẩm global thì gu phải học từ Reference của TỪNG dự án, không hardcode 1 gu.

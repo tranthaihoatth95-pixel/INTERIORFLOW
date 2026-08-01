@@ -1,6 +1,7 @@
 # PLAN — Hợp nhất Library ↔ Gateway ↔ File Manager
 
-> **[CẦN HOÀ DUYỆT]** · Chỉ VIẾT KẾ HOẠCH — KHÔNG code gì ở tài liệu này (VIỆC 8, 28/07).
+> Duyệt 01/08/2026 — xem `CHOT-DUYET-SPEC-DOT2-2026-08-01.md`.
+> Chỉ VIẾT KẾ HOẠCH — KHÔNG code gì ở tài liệu này (VIỆC 8, 28/07).
 > 5 nguyên tắc (NT1–NT5) do Hoà chốt sẵn trong `PROMPT-2807-RUN.txt`, chép nguyên văn ở mục
 > tương ứng bên dưới trước khi phân tích. Đối chiếu với CODE THẬT hiện có (không phải docs cũ).
 

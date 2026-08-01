@@ -1,6 +1,7 @@
 # SPEC — CHẶNG 0 · Ý TƯỞNG & MOODBOARD
 
-> **[CẦN HOÀ DUYỆT]** · **Phát hiện 26/07: IF thiếu HẲN một chặng.**
+> Duyệt 01/08/2026 — xem `CHOT-DUYET-SPEC-DOT2-2026-08-01.md`.
+> **Phát hiện 26/07: IF thiếu HẲN một chặng.**
 > IF hiện có CAD → Render → Present. Nhưng nghề thiết kế **bắt đầu trước CAD**:
 > mò mẫm · thu thập · bàn bạc · chốt hướng.
 > Bằng chứng: deck concept thật luôn có "Hiểu về dự án · Nghiên cứu liên quan · Local DNA ·

@@ -1,6 +1,7 @@
 # SPEC — RENDER STUDIO *(chặng Render: canvas + node + template)*
 
-> **[CẦN HOÀ DUYỆT]** · Đọc cùng `SPEC-SEMANTIC-MODEL.md`, `IF-CORE-SCHEMA.md`.
+> Duyệt 01/08/2026 — xem `CHOT-DUYET-SPEC-DOT2-2026-08-01.md`.
+> Đọc cùng `SPEC-SEMANTIC-MODEL.md`, `IF-CORE-SCHEMA.md`.
 > **Nguyên tắc gốc**: **quyền điều khiển đặt ở nơi tay nghề nằm** *(control follows craft)*.
 > Nghề của KTS nằm ở *chọn sửa chỗ nào, sửa thành gì* — không nằm ở sampler/scheduler.
 

@@ -1,6 +1,7 @@
 # SPEC — KỆ SÁCH & TRI THỨC *(knowledge base, T5)*
 
-> **[CẦN HOÀ DUYỆT]** · Nền dùng chung cho **cả hai trợ lý** (Vitals của IF · trợ lý của ArchiNote).
+> Duyệt 01/08/2026 — xem `CHOT-DUYET-SPEC-DOT2-2026-08-01.md`.
+> Nền dùng chung cho **cả hai trợ lý** (Vitals của IF · trợ lý của ArchiNote).
 > Mục đích gốc: **chống bịa số**. Model nhỏ chạy local không "biết" quy chuẩn — nó chỉ được phép
 > **diễn đạt lại đoạn đã tra ra**.
 > Đọc cùng `IF-ARCHITECTURE-BLUEPRINT-v1.md` (mục 5C trend clock), `IF-CORE-SCHEMA.md`.

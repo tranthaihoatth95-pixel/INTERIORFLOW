@@ -1,6 +1,7 @@
 # SPEC — BỘ CÔNG CỤ EDITOR *(deck · graphic · photo · video)*
 
-> **[CẦN HOÀ DUYỆT]** · Đây là **bậc N thiếu nặng nhất** của IF. Ben từng cắt sai nhóm này
+> Duyệt 01/08/2026 — xem `CHOT-DUYET-SPEC-DOT2-2026-08-01.md`.
+> Đây là **bậc N thiếu nặng nhất** của IF. Ben từng cắt sai nhóm này
 > (xếp nhầm sang "ngành khác") — thực tế toàn bộ là **deliverable của nghề nội thất**.
 > Đọc cùng `SPEC-PRESENT-FLOW.md`, `SPEC-UI-SHELL.md`.
 

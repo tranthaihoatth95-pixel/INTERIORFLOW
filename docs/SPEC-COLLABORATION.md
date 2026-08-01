@@ -1,6 +1,7 @@
 # SPEC — CỘNG TÁC NHÓM *(bình luận ngữ cảnh)*
 
-> **[CẦN HOÀ DUYỆT]** · App đã có: 10 thành viên · credit dùng chung · thư viện Reference chung
+> Duyệt 01/08/2026 — xem `CHOT-DUYET-SPEC-DOT2-2026-08-01.md`.
+> App đã có: 10 thành viên · credit dùng chung · thư viện Reference chung
 > — nhưng **không có chỗ nào để trao đổi**.
 
 ---

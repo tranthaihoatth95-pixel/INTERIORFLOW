@@ -1,6 +1,7 @@
 # SPEC — CHUỖI VẬT LIỆU *(material pipeline)*
 
-> **[CẦN HOÀ DUYỆT]** · Đây là moat **L5** (+ **L6** mới) — chuỗi duy nhất không app nào ghép được
+> Duyệt 01/08/2026 — xem `CHOT-DUYET-SPEC-DOT2-2026-08-01.md`.
+> Đây là moat **L5** (+ **L6** mới) — chuỗi duy nhất không app nào ghép được
 > vì không app nào có ATLAS. Nguồn chân lý: **ATLAS Vol.3 trên Lark Base** (bảng MATERIAL);
 > repo chỉ giữ **bảng mirror có `syncedAt`**.
 > Đọc cùng `SPEC-SEMANTIC-MODEL.md`, `SPEC-IF-LIBRARY.md`.

@@ -1,6 +1,7 @@
 # SPEC — ARCHINOTE CHI TIẾT: Kiến trúc tính năng → Giao diện người dùng
 
-> **[CẦN HOÀ DUYỆT]** · Cụ thể hoá `SPEC-ARCHINOTE-IF-BOUNDARY.md` (định vị) + phần còn sống của
+> Duyệt 01/08/2026 (5 đề xuất E2, sửa điều 2 — xem `CHOT-DUYET-SPEC-DOT2-2026-08-01.md` §1c).
+> Cụ thể hoá `SPEC-ARCHINOTE-IF-BOUNDARY.md` (định vị) + phần còn sống của
 > `MASTERPLAN-IF-ARCHINOTE.md` (24/07) thành **1 cây tính năng mã hoá + UI có Hero + hợp đồng
 > đồng bộ 2 chiều với IF1-2**, theo đúng khuôn `IF-MASTER-BLUEPRINT.md` để hai hệ soi được nhau.
 > Đọc cùng: `SPEC-ARCHINOTE-IF-BOUNDARY.md` · `SPEC-NAVIGATION-MODEL.md` §7 · `SPEC-KNOWLEDGE-BASE.md`
@@ -378,6 +379,11 @@ tác — nhanh hơn mọi app bản đồ khác trên sóng yếu công trườn
    nguyên vì hiện là tool nội bộ đọc thẳng Lark base tên "Chi tiết công việc"/"Nhân sự" của TTT?
    *Đề xuất: KHÔNG cần trung tính — khác IF ở chỗ IF bán toàn cầu, ArchiNote hiện phục vụ nội bộ
    TTT — nhưng cần Hoà xác nhận vì ảnh hưởng `domain.ts` và UI.*
+   > ⚖️ **Hoà quyết 01/08/2026 — LẬT đề xuất trên**: ArchiNote CŨNG theo Luật Trung Tính. Lý do:
+   > phòng mai mốt bán ra thì khỏi phải dọn lại như vừa phải dọn IF hôm nay (gỡ
+   > `knowledge/ttt-design-system`, ảnh, `files.zip` — commit `96b5f1e`). Giá chấp nhận: trừu tượng
+   > hoá `domain.ts` ngay từ đầu. Xem `CHOT-DUYET-SPEC-DOT2-2026-08-01.md` §1c. Đề xuất cũ ở trên
+   > GIỮ NGUYÊN (không xoá) để thấy Cowork từng đề xuất gì trước khi Hoà lật.
 3. **Repo `ttt-tasks` có tiếp tục là repo ArchiNote chính thức**, mở rộng dần sang Capacitor + Capture,
    hay tách repo mới khi bắt đầu phần Capture? *Đề xuất: MỞ RỘNG — đỡ phí công viết lại phần Điều
    phối đang chạy thật.*

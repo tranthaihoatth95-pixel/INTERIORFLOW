@@ -1,6 +1,7 @@
 # SPEC — RANH GIỚI ARCHINOTE ↔ INTERIORFLOW
 
-> **[CẦN HOÀ DUYỆT]** · Thay thế phần "đề xuất" trong sơ đồ HTML cũ (sơ đồ đó mô tả ArchiNote
+> Duyệt 01/08/2026 — đã bị `SPEC-ARCHINOTE-DETAIL-v1.md` thay thế, xem
+> `CHOT-DUYET-SPEC-DOT2-2026-08-01.md` §1c. Thay thế phần "đề xuất" trong sơ đồ HTML cũ (sơ đồ đó mô tả ArchiNote
 > như app ops — thực tế ArchiNote là **app hiện trường**).
 > Đọc cùng `SPEC-KNOWLEDGE-BASE.md`, `IF-CORE-SCHEMA.md`, `IF-ARCHITECTURE-BLUEPRINT-v1.md`.
 
