@@ -5,56 +5,58 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## ✅ XONG (01-02/08, mã commit — chi tiết đủ trong message từng commit + CHANGELOG)
-- P1+P2+P3-phần1 Present (`ab1d9a9`,`8f4ed9f`,`00bf640`,`73b92f0`,`db12802`): sửa 3 nhãn nói dối ·
-  ảnh mặc định giữ tỉ lệ resize (Shift bẻ) · in khổ giấy THẬT theo dpi cho chữ/hình khối (0 credit,
-  `resScale`+`exportDeckToPdfAtPaperSize`+`PAPER_SIZE_MM`) — 69 test mới, tsc/eslint/build sạch.
-- Toggle Gallery Carousel↔Grid (`6303d7c`,`26c314b`) — ghi đè J-4c, verify browser thật 2 chiều.
-- V2 đường cam mức 2-a (`69db004`,`8105298`, A/C/D đủ, B rút gọn) · V1 draw-on mặt bằng
-  (`d51a2cb`,`7b6bfbc`,`10d3fac`, FPS thật đo được ~31fps→batching >20000fps).
-- Đợt 2 gỡ nhãn `[CẦN HOÀ DUYỆT]` (`1de5df7`) — 13/14 đóng, chỉ `SPEC-SEMANTIC-MODEL` treo (Hoà đọc).
-- 2 ticket nguồn lưu lại để đối chiếu (`9ee37bf`).
+## ✅ XONG (02/08, mã commit — chi tiết đủ trong message từng commit + CHANGELOG)
+- **3D-1** (`d9eea9b`+`d5f6700`, `SPEC-3D-CORE.md` §4): `three@0.185.1`+`@types/three` pin chính
+  xác · `cad-to-obj.ts` thêm `groups`/`Scene3DData` (spec giả định sai — ObjScene trước chỉ có
+  text, đã bổ sung, 29/29 test cũ pass y hệt) · `Scene3DViewer.tsx` mode orbit + nút "Xem 3D"
+  trong node "Bản vẽ → 3D". FPS thật (bench tạm, đã xoá): 2040 entity/24k tam giác — gộp theo màu
+  4 draw call/0.087ms/khung; không gộp 2011 draw call/2.73ms/khung, vẫn realtime. walk/campath/
+  section: TODO 3D-2..3D-4.
+- **Wire nút "PDF in 300dpi (A3/A4)"** (`2a252c9`) — hết tranh chấp ĐỢT 3. Mở khoá theo
+  `printReady` (khổ A4/A3), tooltip trung thực. Verify browser thật cả 2 nhánh (xuất thành công ở
+  A3 · khoá đúng khi đổi 16:9), trả state gốc.
+- **Đo ESRGAN thật** (Hoà duyệt ~4cr) — SỐ THẬT: **8.7s** (nguồn 512px) / **10.6s** (896px), TB
+  **9.7s/ảnh** (models.ts ước 15s, thật nhanh hơn) · scale ×4 đúng lý thuyết: 512→2048px,
+  896→3584px · dpi trên A3: **124dpi**/**217dpi** — **CẢ HAI KHÔNG ĐẠT 300dpi trên A3**; trên A4:
+  175/**307dpi** (chỉ 896px+ vượt 300, chỉ ở A4). ⚠️ Pipeline ESRGAN ×4 hiện tại KHÔNG đủ cho lời
+  hứa "300dpi trên A3" trừ khi nguồn ≥~1230px ngang / scale >4 / chỉ hứa cho A4 — CHƯA code tích
+  hợp, chờ Hoà chọn hướng trước khi viết `ai.upscale` + cache theo img id.
 
-## 🟡 DANG DỞ
-- **P3 phần 2 (ảnh hero đạt 300dpi thật)**: `scripts/measure-upscale-dpi.ts` soạn xong, **CHƯA
-  CHẠY** — Hoà tự chạy (tốn credit thật), có số mới code `ai.upscale` + cache theo img id.
-- **Nút "In 300dpi" Toolbar vẫn khoá** — cần `PresentEditor.tsx` thêm 1 prop, file đang KHÔNG ĐỤNG.
+## 🟡 DANG DỞ / CHỜ QUYẾT
+- **P3 phần 2 tích hợp** — có số thật ở trên, CHƯA code. Cần Hoà chọn hướng (đổi kích nguồn tối
+  thiểu / chấp nhận scale khác / chỉ hứa 300dpi cho A4) trước khi viết `ai.upscale` + cache.
 - **KHÔNG PHẢI CỦA TÔI, đang dở trong working tree, CHƯA commit — đừng đụng khi chưa hỏi rõ**:
   `BrandKitPanel.tsx` + `lib/present-editor/brand-kit-disk.ts(.test.ts)` (VIỆC 5 code phụ) ·
-  `docs/00-CHOT.md` + `docs/README.md` (Cowork tái cấu trúc mục lục, diff 40+ dòng mỗi file, chưa
-  rõ đã xong chưa) · `docs/SPEC-SEMANTIC-MODEL.md` (có sửa nhỏ nằm sẵn, file này của Hoà).
+  `docs/SPEC-SEMANTIC-MODEL.md` (sửa nhỏ nằm sẵn, file này của Hoà) · `AGENTKIENIFARCHITECT.md` ·
+  `KE_HOACH_3_NGAY_SHIP_IF1.md` · `if-design-system.pdf` (3 file dán gốc repo, chưa rõ còn cần
+  không — KHÔNG tự xoá, hỏi Hoà).
 
 ## ⬜ CHƯA BẮT ĐẦU (hàng đợi đã biết)
+- 3D-2 (mode campath + captureSequence, mở khoá video bậc 2-b) → 3D-3 (depth/lineart) → 3D-4
+  (section/walk) — thứ tự cố định, xem `docs/SPEC-3D-CORE.md` §4.
 - V1.1 so le nội thất theo cửa chính · V2.1 look-at khoá điểm/khoá zone + panel chỉnh tốc độ/lens.
 - Liên kết sống CAD→deck (moat, `NGHIEN-CUU-PRESENT-VS-DOI-THU-2026-08-01.md` §4) — sau P1-P3.
-- `2.2.91` toolbar nổi present-editor — code phụ ĐỢT 3 đang ở cụm đó, TRANH CHẤP, chờ nó báo xong.
-- 7 file `docs/` untracked mới thấy trong phiên, **CHƯA ĐỌC** (`SPEC-3D-CORE.md`,
-  `CHOT-HUONG-3D`/`CHOT-RENDER-TOOL-WINDOW`/`CHOT-NGUYEN-LIEU-EDITOR`/`NGHIEN-CUU-QUY-TRINH-RENDER`/
-  `RANG-BUOC-IF2-CHO-IF1`/`LO-TRINH-DOT` đều `-2026-08-01.md`, + `mocks/tool-window-sketch2photo.html`)
-  — có nhắc "mở khoá 3D-1" trong hội thoại nhưng chưa giao việc cụ thể; đọc trước khi động.
 - Toàn bộ mục dưới "Chờ USER quyết" (chưa đổi) vẫn còn nguyên, chưa ai động thêm.
 
 ## 🔴 PHIÊN SAU PHẢI BIẾT (chưa nằm ở docs khác)
-- **`.git/index.lock`/`HEAD.lock` bị bỏ sót (stale) 3 LẦN** trong phiên này — không phải do tôi tạo.
-  Đã xử lý đúng cách mỗi lần: `ps aux | grep git` xác nhận KHÔNG có tiến trình thật rồi mới `rm`
-  lock. Nếu gặp thường xuyên hơn nữa → báo Hoà, nghi 1 tool/agent nào đó crash giữa `git commit`.
-- **FAL_KEY THẬT đã có sẵn trong `.env.local` sandbox này** (không phải placeholder) — chưa dùng,
-  script `measure-upscale-dpi.ts` chạy được NGAY nếu Hoà chấp nhận tốn ~4cr thật.
-- **Code phụ hoạt động CÙNG working directory này** (không worktree riêng như `CLAUDE.md` mô tả) —
-  WIP của nó lẫn trong `git status`. Lọc kỹ theo tên file trước khi commit hàng loạt, không `git add -A`.
-- **Browser test tool**: toạ độ pixel từ ảnh chụp SAI lệch toạ độ click thật (DPR≠1) — click theo
-  `ref` từ `read_page`, không đoán từ ảnh. `ref` click đôi khi thất bại âm thầm (overlay đè) — thử
-  `element.click()` qua `javascript_tool` trước khi kết luận có bug thật.
+- **`.git/index.lock` stale LẦN 4** phiên này (không do tôi tạo) — xử lý đúng cách (`ps aux | grep
+  git` xác nhận rồi mới `rm`). Đáng báo Hoà, nghi 1 tool/agent crash giữa `git commit` trong sandbox.
+- **`findHatchBoundary`** (`cad-to-obj.ts`, code CŨ) treo >2 phút ở mật độ phòng cực cao (289 phòng
+  nhỏ × 578 block) — né được trong bench, ghi `TECH-DEBT.md`, chưa phải bug chặn.
+- **Code phụ dùng CHUNG working directory** (không worktree riêng) — lọc kỹ theo tên file trước
+  khi commit hàng loạt, không `git add -A`.
+- File scratch bench 3D-1 (`app/dev-bench-3d`, `scripts/_tmp-*`) đã xoá sạch — nếu thấy sót đầu
+  phiên sau thì xoá ngay, không phải sản phẩm.
 
 ## Nợ kỹ thuật
 → `docs/TECH-DEBT.md` (30/07, giữ STATUS dưới 800 từ).
 
 ## Chờ USER quyết
-- **4.1.f thi công** (đổi hình dạng `brand-kit.json`) · **`knowledge/ttt-design-system/`** vi phạm
-  LUẬT TRUNG TÍNH, `.gitignore` chưa khớp · **④ `FlowVersion`** không phải thủ phạm `dev.db` phình
-  (136MB còn lại nghi rác chưa VACUUM) · **NT1/NT5**/**T3/T4** dời sau · **Figma** MCP lỗi, đường
-  vòng đã có · **DWG** hướng GPL chưa chốt + `2.1.6.d` 🔴 bug Nhập DWG treo vĩnh viễn chưa ai động ·
-  Treo: VIỆC 4 cũ, #14, Xlsx probe · 3 nhánh `worktree-agent-*` merged còn local · Sprint BOQ ĐỢT 3
+- **P3 phần 2 hướng dpi A3** (mới, xem trên) · **4.1.f thi công** (đổi hình dạng `brand-kit.json`)
+  · **`knowledge/ttt-design-system/`** vi phạm LUẬT TRUNG TÍNH · **④ `FlowVersion`** không phải
+  thủ phạm `dev.db` phình · **NT1/NT5**/**T3/T4** dời sau · **Figma** MCP lỗi, đường vòng đã có ·
+  **DWG** hướng GPL chưa chốt + `2.1.6.d` 🔴 bug Nhập DWG treo vĩnh viễn chưa ai động · Treo: VIỆC
+  4 cũ, #14, Xlsx probe · 3 nhánh `worktree-agent-*` merged còn local · Sprint BOQ ĐỢT 3
   greenlight sau ĐỢT DEMO · `2.2.16-2.2.21`/12 file SPEC-TỔNG §9/`2.2.83` chưa quyết. Chi tiết mỗi
   mục → CHANGELOG/`IF-FEATURE-TREE.md` (không lặp lại giải thích ở đây, tránh phình STATUS).
 
