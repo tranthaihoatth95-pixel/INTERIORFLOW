@@ -383,6 +383,7 @@ export default function EditorCanvas({
         <Popover
           anchorX={menu.clientX}
           anchorY={menu.clientY}
+          onDismiss={() => setMenu(null)}
           style={{
             // width CỐ ĐỊNH (không minWidth/maxWidth auto) — cố ý: box position:fixed có `left`
             // + width auto sẽ shrink-to-fit theo KHÔNG GIAN CÒN LẠI từ `left` tới mép viewport,

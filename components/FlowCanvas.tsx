@@ -431,6 +431,7 @@ export function FlowCanvas() {
         <Popover
           anchorX={quickLoadMenu.clientX}
           anchorY={quickLoadMenu.clientY}
+          onDismiss={() => setQuickLoadMenu(null)}
           style={{
             width: 220,
             background: 'var(--panel)',

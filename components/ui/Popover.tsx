@@ -29,8 +29,7 @@ interface PopoverProps {
   style?: CSSProperties;
   className?: string;
   /**
-   * 2.2.89 (31/07) — TUỲ CHỌN: đóng popover khi bấm ra ngoài / Escape. Không truyền → hành vi
-   * y hệt trước (2 nơi dùng cũ, FlowCanvas/EditorCanvas, KHÔNG đổi gì). Khuôn chép từ
+   * 2.2.89 (31/07) — TUỲ CHỌN: đóng popover khi bấm ra ngoài / Escape. Khuôn chép từ
    * `MenuButton.tsx` (document mousedown + keydown capture). BẪY đã xử lý theo yêu cầu Hoà —
    * gắn CẢ HAI lớp phòng thủ, không chỉ 1: (a) bỏ qua nếu target nằm TRONG popover (giống
    * MenuButton `ref.contains`) — cần vì listener dùng 'mousedown' còn Popover tự chặn
@@ -38,6 +37,11 @@ interface PopoverProps {
    * SAU qua requestAnimationFrame — dù effect vốn đã chạy sau khi sự kiện chuột phải gốc
    * dispatch xong (tiền lệ đã có ở `CadCanvas.tsx` dòng ~242, coachmark tự ẩn), làm thêm lớp
    * rAF theo đúng yêu cầu để chắc chắn không phụ thuộc riêng vào giả định lịch effect.
+   *
+   * CẢ 3 NƠI DÙNG ĐỀU ĐÃ NỐI (31/07, khám VIỆC 2 phát hiện 2/3 còn thiếu — bug 2.2.89 mới đóng
+   * 1/3 thật sự): `CadCanvas.tsx:3267` (từ đầu) · `FlowCanvas.tsx:431` và
+   * `EditorCanvas.tsx:383` (nối bù, cùng đợt sửa VIỆC A). KHÔNG còn nơi nào bỏ trống tham số
+   * này — nơi gọi mới thêm sau này BẮT BUỘC truyền `onDismiss`, không được lặp lại lỗ hổng cũ.
    */
   onDismiss?: () => void;
 }
