@@ -11,7 +11,8 @@
  *   - Shift-click: thêm/bớt vào nhóm chọn (onToggle).
  *   - Kéo khi nhiều phần tử được chọn: DỜI CẢ NHÓM (onFrameMany).
  *   - Alt/⌥ kéo: NHÂN BẢN rồi kéo bản mới (onAltDrag một lần khi bắt đầu).
- *   - Shift khi resize góc: GIỮ TỈ LỆ.
+ *   - Shift khi resize góc: GIỮ TỈ LỆ (text/shape) — riêng ẢNH thì NGƯỢC LẠI: mặc định GIỮ TỈ
+ *     LỆ, Shift để BẺ (01/08, chặn lỗi ảnh méo im lặng, xem nhánh `keepRatio` bên dưới).
  *   - Nhấp đúp ẢNH: mở chế độ chỉnh ảnh (onEditImage). Nhấp đúp CHỮ: sửa nội dung.
  *
  * Snap/căn: phát ra guide khi mép/tâm gần mốc sân khấu (0/25/50/75/100) HOẶC gần mép/tâm của
@@ -24,6 +25,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { SlideElement, ImageElement, TextElement, ShapeElement, Frame } from '@/lib/present-editor/model';
 import { adjustToCssFilter, decorateListText, effectiveListStyle } from '@/lib/present-editor/model';
+import { resizeCornerKeepRatio, shouldKeepRatio } from '@/lib/present-editor/resize-corner';
 import { shapeClipPath, gradientOverlayCss } from '@/lib/present-editor/shape-geometry';
 import { applyTransform, gradientCss, isCurved, shadowCss } from '@/lib/present-editor/text-fx';
 import { framesOverlap, planFallback, toneForColor } from '@/lib/adaptive-contrast';
@@ -222,19 +224,15 @@ export default function Element({
       const ang = (Math.atan2(e.clientY - cy, e.clientX - cx) * 180) / Math.PI + 90;
       f.rotation = Math.round(ang / 5) * 5; // snap 5°
     } else {
-      // resize theo handle. Shift = giữ tỉ lệ (với góc).
+      // resize theo handle. Shift = giữ tỉ lệ (với góc) — TRỪ ẢNH: ẢNH mặc định GIỮ TỈ LỆ ở
+      // góc, Shift để BẺ (đảo ngược, 01/08 P2 — docs/NGHIEN-CUU-PRESENT-VS-DOI-THU-2026-08-01.md
+      // §5). Lý do: méo ảnh là lỗi im lặng, không ai thấy tới lúc in — không ai kéo méo ảnh CỐ
+      // Ý mà quên giữ Shift, nên mặc định an toàn phải là GIỮ. Text/shape giữ hành vi cũ nguyên vẹn.
       let { x, y, w, h } = st.frame;
       const H = st.handle;
-      const ratio = st.frame.w / Math.max(st.frame.h, 0.001);
       const corner = H.length === 2; // nw/ne/sw/se
-      if (e.shiftKey && corner) {
-        // giữ tỉ lệ: lấy delta lớn hơn theo trục ngang, suy chiều cao.
-        const signW = H.includes('w') ? -1 : 1;
-        const dw = dxPct * signW;
-        w = Math.max(3, st.frame.w + dw);
-        h = Math.max(3, w / ratio);
-        if (H.includes('w')) x = st.frame.x + (st.frame.w - w);
-        if (H.includes('n')) y = st.frame.y + (st.frame.h - h);
+      if (shouldKeepRatio(el.kind, e.shiftKey) && corner) {
+        ({ x, y, w, h } = resizeCornerKeepRatio(st.frame, H, dxPct));
       } else {
         if (H.includes('e')) w = st.frame.w + dxPct;
         if (H.includes('s')) h = st.frame.h + dyPct;
