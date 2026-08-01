@@ -20,6 +20,7 @@ import { DEFAULT_SKETCH_COLOR } from '@/lib/sketch/palette';
 import { fade, modalScale, pressable, pressableIcon } from '@/lib/motion';
 import { SketchCanvas, type SketchCanvasHandle, type SketchTool } from '@/components/sketch/SketchCanvas';
 import { SketchToolbar } from '@/components/sketch/SketchToolbar';
+import { useDismissable } from '@/lib/useDismissable';
 
 const CANVAS_W = 960;
 const CANVAS_H = 640;
@@ -58,13 +59,10 @@ export function SketchStudioModal() {
 
   useEffect(() => setMounted(true), []);
 
-  // Esc để đóng — cùng quy ước với Mask/Annotate.
-  useEffect(() => {
-    if (!nodeId) return;
-    const handler = (e: KeyboardEvent) => e.key === 'Escape' && close();
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [nodeId, close]);
+  // Esc để đóng — cùng quy ước với Mask/Annotate. 2.2.90 ĐỢT 3 — chuyển sang useDismissable
+  // dùng chung. Modal này KHÔNG có bấm-ra-ngoài-để-đóng ở bản gốc (chỉ Escape) — giữ nguyên
+  // hành vi đó bằng `outside: false`, không tự thêm tính năng mới.
+  useDismissable({ open: !!nodeId, onDismiss: close, refs: [], outside: false });
 
   const save = useCallback(() => {
     if (!nodeId || !canvasHandle.current) return;

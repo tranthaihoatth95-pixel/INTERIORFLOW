@@ -10,6 +10,7 @@ import { runImageJob, AiJobError } from '@/lib/ai/client';
 import { rgbaToAlphaMask, alphaMaskToRgba, maskCoverage } from '@/lib/nodes/mask-ops';
 import { fade, modalScale, pressable, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { useDismissable } from '@/lib/useDismissable';
 
 /**
  * Smart Select — CHỌN VÙNG THÔNG MINH (node `ai.smartselect`).
@@ -47,6 +48,7 @@ export function SmartSelectModal() {
   const drawing = useRef(false);
   const lastPoint = useRef<{ x: number; y: number } | null>(null);
   const boxStart = useRef<{ x: number; y: number } | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const [points, setPoints] = useState<Pt[]>([]);
   const [box, setBox] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
@@ -372,14 +374,9 @@ export function SmartSelectModal() {
     close();
   };
 
-  useEffect(() => {
-    if (!nodeId) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !busy) close();
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [nodeId, busy, close]);
+  // 2.2.90 ĐỢT 3 — chuyển sang useDismissable dùng chung (bấm ra ngoài khung + Escape, guard =
+  // đang chạy job AI thì không cho đóng, giữ đúng hành vi cũ `!busy`).
+  useDismissable({ open: !!nodeId, onDismiss: close, refs: [cardRef], guard: () => busy });
 
   return (
     <AnimatePresence>
@@ -390,15 +387,14 @@ export function SmartSelectModal() {
           animate="visible"
           exit="exit"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-          onMouseDown={() => !busy && close()}
         >
           <motion.div
+            ref={cardRef}
             variants={modalScale}
             initial="hidden"
             animate="visible"
             exit="exit"
             className="flex max-h-full w-[min(96vw,1080px)] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl"
-            onMouseDown={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-2 border-b border-[var(--border)] px-4 py-2.5">
               <Wand2 size={15} className="text-[var(--accent)]" />

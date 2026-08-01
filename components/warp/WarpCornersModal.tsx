@@ -14,6 +14,7 @@ import {
   type Corners,
 } from '@/lib/warp/warp';
 import { fade, modalScale, pressable, pressableIcon } from '@/lib/motion';
+import { useDismissable } from '@/lib/useDismissable';
 
 /**
  * Kéo 4 góc phối cảnh cho `util.warp`: xem TRỰC TIẾP pattern đã warp nằm trên ảnh phối cảnh
@@ -36,6 +37,7 @@ export function WarpCornersModal() {
   const overlayRef = useRef<HTMLImageElement | null>(null);
   const baseRef = useRef<HTMLImageElement | null>(null);
   const dragIdx = useRef<number | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const [corners, setCorners] = useState<Corners>(DEFAULT_CORNERS);
   const [ready, setReady] = useState(false);
@@ -191,14 +193,8 @@ export function WarpCornersModal() {
     close();
   };
 
-  useEffect(() => {
-    if (!nodeId) return;
-    const h = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
-    };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, [nodeId, close]);
+  // 2.2.90 ĐỢT 3 — chuyển sang useDismissable dùng chung (bấm ra ngoài khung + Escape).
+  useDismissable({ open: !!nodeId, onDismiss: close, refs: [cardRef] });
 
   return (
     <AnimatePresence>
@@ -209,15 +205,14 @@ export function WarpCornersModal() {
           animate="visible"
           exit="exit"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-          onMouseDown={() => close()}
         >
           <motion.div
+            ref={cardRef}
             variants={modalScale}
             initial="hidden"
             animate="visible"
             exit="exit"
             className="flex max-h-full w-[min(96vw,1080px)] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl"
-            onMouseDown={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-2 border-b border-[var(--border)] px-4 py-2.5">
               <Frame size={15} className="text-[var(--accent)]" />
