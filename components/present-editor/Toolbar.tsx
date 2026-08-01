@@ -139,7 +139,11 @@ export default function Toolbar(p: Props) {
             icon: <FileUp size={15} />,
             onSelect: () => {},
             disabled: true,
-            disabledReason: 'Chưa hỗ trợ mở lại file deck — Present hiện chỉ nhập ảnh',
+            // Đính chính 01/08 — câu cũ "Present hiện chỉ nhập ảnh" LỖI THỜI (ngầm phủ nhận cả
+            // .idfp, trong khi nút "Mở project (.idfp)" ngay bên dưới ĐÃ chạy thật — xem
+            // idfp.ts + PresentSheets.tsx:60). Nút NÀY thật sự chưa có gì đứng sau (onSelect
+            // no-op) — KHÔNG mở khoá, chỉ sửa câu cho đúng hiện trạng.
+            disabledReason: 'Chưa hỗ trợ đọc trực tiếp .pptx/.pdf — dùng ".idfp" để mở lại project đã lưu, hoặc nhập ảnh rời',
           },
           {
             id: 'idfp',
