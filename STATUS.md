@@ -5,7 +5,13 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
-## Hiện tại (01/08 — V1 video draw-on phần A/B/C xong · đợt 2 gỡ nhãn spec xong)
+## Hiện tại (01/08 — V1+V2 video xong (bậc 1 + bậc 2 mức 2-a) · đợt 2 gỡ nhãn spec xong)
+- ✅ **V2 đường cam mức 2-a (`SPEC-VIDEO-MAT-BANG.md` §2) — A/C/D ĐỦ, B rút gọn** (`69db004`):
+  `campath:true` (model.ts) + layer `IF_CAMPATH` + round-trip DXF XDATA · tool `campath` TÁI DÙNG
+  cơ chế polyline có sẵn (không viết UI mới trong CadCanvas.tsx — tránh vùng code phụ sắp tới) ·
+  `lib/cad/campath.ts` (bo góc R=600mm + lấy mẫu theo độ dài + làm mượt hướng, 32 test) ·
+  `CamPathPreview.tsx` (mặt bằng tĩnh + hình quạt tầm nhìn chạy). **Cố ý CHƯA làm**: panel chỉnh
+  tay tốc độ/cao độ mắt/lens sau khi vẽ (mọi đường cam mới dùng đúng 4 mặc định spec).
 - ✅ **V1 draw-on mặt bằng (`SPEC-VIDEO-MAT-BANG.md` bậc 1) — A+B+C ĐỦ** (`d51a2cb`, `7b6bfbc`):
   `lib/cad/plan-drawon.ts` (5 đợt theo elementType, tái dùng `computeElementRevealTimings()`) +
   `lib/cad/entity-path.ts` (Entity→SVG path, 21 test) + `components/cad/DrawOnPreview.tsx` (xem
@@ -17,18 +23,11 @@
   lật đề xuất Cowork). README/INDEX-AI-SPECS hết lệch mục lục.
 
 Chi tiết đầy đủ → `CHANGELOG.md` + `docs/IF-FEATURE-TREE.md` `4.1.a-e`. Tóm tắt đợt trước:
-- ✅ **B1-B5 (ĐỢT B) ĐÓNG** — B5 nghiệm thu 7/7 ĐẠT (01/08, Hoà tự chạy, verify TRÊN ĐĨA bằng diff
-  tệp) · đĩa là nguồn sự thật cho `.idf`/`.idfp`, nối CAD+Present — chi tiết → CHANGELOG + `4.1.a-e`.
-- ✅ **4.1.f Brand Kit — Hoà ĐÃ QUYẾT** thuộc DỰ ÁN (`docs/CHOT-BRAND-KIT-2026-08-01.md`) — kèm
-  đính chính B5 dòng (e): màu/font/tên đo được từ **DECK** (`.idfp`), không phải `brand-kit.json`
-  được đọc. Thi công đổi hình dạng tệp CHƯA làm — xem "Chờ USER quyết".
-- ✅ **`docs/00-CHOT.md`** (sổ mục lục, đọc đầu phiên sau STATUS.md) — `CLAUDE.md` dòng 2 theo.
-- ✅ **Present A1-A4** (Magic tab · xoá `TemplatePicker.tsx` dead code · sửa số template 25→21 ·
-  gỡ nhãn đợt 1, 7 spec) — chi tiết → CHANGELOG.
-- ✅ **2.2.90 ĐỢT 1+2 `useDismissable`** (`5d81364`+`ad737e3`) — nối `MenuButton`/`IOMenu`/
-  `RenderIOMenus`/`Popover`/`AppChrome`, sửa lỗi `stopPropagation` chặn Escape window. Cấp mã
-  `2.2.92` (overlay đè popover, pre-existing). CHỜ GẬT ĐỢT 3 (panel CAD).
-- 🟡 **2.2.87+2.2.88**/**7.1.23** CHỜ HOÀ GẬT — ĐỢT B xong, MỞ LẠI được, chưa ai động.
+- ✅ **B1-B5 ĐÓNG** (đĩa = nguồn sự thật `.idf`/`.idfp`) · **4.1.f Brand Kit thuộc DỰ ÁN** (Hoà
+  quyết, thi công đổi hình dạng file chưa làm) · `docs/00-CHOT.md` (sổ mục lục đầu phiên).
+- ✅ **Present A1-A4** (Magic tab · xoá `TemplatePicker.tsx` · sửa số template 25→21 · gỡ nhãn
+  đợt 1) · **2.2.90 `useDismissable`** ĐỢT 1+2 (mã `2.2.92`, CHỜ GẬT ĐỢT 3 panel CAD).
+- 🟡 **2.2.87+2.2.88**/**7.1.23** CHỜ HOÀ GẬT — mở lại được, chưa ai động.
 
 ## Worktree đang mở
 Không có. `feat/sprint-infra`+`feat/dot-a-ha-tang` đã merge + prune + xoá branch/thư mục/lock rác
