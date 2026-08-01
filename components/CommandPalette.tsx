@@ -5,6 +5,7 @@ import { useReactFlow } from '@xyflow/react';
 import {
   Search,
   Play,
+  Bookmark,
   LayoutGrid,
   Maximize,
   Grid3x3,
@@ -25,6 +26,7 @@ import { CATEGORY_META, type NodeCategory } from '@/lib/types';
 import { useFlowStore } from '@/lib/store';
 import { modKey, modShiftKey } from '@/lib/kbd';
 import { runFlow } from '@/lib/execution';
+import { snapshotFlow } from '@/lib/workspace';
 
 interface Cmd {
   id: string;
@@ -85,6 +87,9 @@ export function CommandPalette() {
 
     const actions: Cmd[] = [
       { id: 'run-flow', label: 'Chạy flow', hint: 'chạy toàn bộ', group: 'Hành động', icon: Play, keywords: 'run execute chạy graph', run: run(() => void runFlow()) },
+      // ④ đổi cò (01/08, docs/QUYET-DINH-HA-TANG-2026-07-31.md §④ phương án C) — trước đây MỌI
+      // lượt "Chạy flow" tự động ghi 1 FlowVersion; giờ chỉ ghi khi bấm đúng nút này.
+      { id: 'mark-version', label: 'Đánh dấu bản này', hint: 'lưu 1 mốc lịch sử', group: 'Hành động', icon: Bookmark, keywords: 'snapshot version lưu mốc bookmark', run: run(() => void snapshotFlow()) },
       { id: 'auto-layout', label: 'Tự sắp xếp graph', hint: 'auto-layout', group: 'Hành động', icon: LayoutGrid, keywords: 'arrange dagre tidy sắp xếp', run: run(() => s.autoLayout()) },
       { id: 'fit', label: 'Vừa khung', group: 'Hành động', icon: Maximize, keywords: 'fit view zoom vừa màn hình', run: run(() => fitView({ padding: 0.2, duration: 300 })) },
       {

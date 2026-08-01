@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
+import { planFlowVersionRetention } from '@/lib/flow-version-retention';
 
 async function ownFlow(id: string) {
   const user = await getSessionUser();
@@ -21,7 +22,10 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 
 /**
  * PUT: autosave graph/name/project — body { graphJson?, name?, projectId? }
- * action=snapshot: tăng version + lưu FlowVersion (gọi khi Run flow)
+ * action=snapshot: tăng version + lưu FlowVersion, rồi tỉa theo thang lưu giữ (④ đổi cò, 01/08,
+ *   docs/QUYET-DINH-HA-TANG-2026-07-31.md §④ phương án C) — CHỈ gọi khi người dùng bấm
+ *   "Đánh dấu bản này" (CommandPalette.tsx qua lib/workspace.ts snapshotFlow()), KHÔNG còn tự
+ *   động mỗi lượt "Chạy flow" như trước.
  * action=share / unshare: bật/tắt share token
  */
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
@@ -37,6 +41,24 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     await prisma.flowVersion.create({
       data: { flowId: r.flow.id, version: r.flow.version, graphJson: r.flow.graphJson },
     });
+    // Thang lưu giữ — đọc lại TOÀN BỘ mốc thời gian của flow này (chỉ id+createdAt, không kéo
+    // graphJson nặng), lập kế hoạch tỉa THUẦN, xoá đúng các bản bị tỉa. Không chặn phản hồi nếu
+    // lỗi (an toàn hơn để tồn 1 bản thừa còn hơn chặn thao tác đánh dấu của người dùng).
+    try {
+      const all = await prisma.flowVersion.findMany({
+        where: { flowId: r.flow.id },
+        select: { id: true, createdAt: true },
+      });
+      const deleteIds = planFlowVersionRetention(
+        all.map((v) => ({ id: v.id, createdAtMs: v.createdAt.getTime() })),
+        Date.now(),
+      );
+      if (deleteIds.length > 0) {
+        await prisma.flowVersion.deleteMany({ where: { id: { in: deleteIds } } });
+      }
+    } catch {
+      /* tỉa là dọn dẹp nền — lỗi ở đây không được làm hỏng việc đánh dấu bản vừa ghi thành công. */
+    }
     return NextResponse.json({ version: updated.version });
   }
 

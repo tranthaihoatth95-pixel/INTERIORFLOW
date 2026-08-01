@@ -108,8 +108,6 @@ export interface FlowRun {
   /** true (nút ▶ trên node): dừng CẢ chuỗi ngay khi 1 node lỗi. false (Run flow toàn graph): bỏ
    * qua nhánh bị chặn bởi node lỗi, chạy tiếp nhánh khác — đúng hành vi cũ của runNode()/runFlow(). */
   stopOnFirstFailure: boolean;
-  /** true (Run flow toàn graph): snapshot version lên server trước khi chạy — đúng hành vi cũ. */
-  snapshotOnStart: boolean;
   /** true = người dùng bấm Huỷ khi đang chạy — dừng ở ranh giới node kế tiếp, không cắt giữa 1 lần gọi API. */
   cancelRequested: boolean;
 }
