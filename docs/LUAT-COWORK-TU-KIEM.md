@@ -154,6 +154,19 @@ người khác, không phải Hoà.
 
 **14o — Một khối, một đích, đích ghi ở dòng đầu.** Không bao giờ để Hoà phải đoán khối nào dán vào đâu.
 
+⚖️ **Định dạng BẮT BUỘC — thiếu dòng này thì khối lệnh coi như chưa gửi:**
+
+> **📍 DÁN VÀO: `<đâu>`** — ví dụ *Terminal máy thật, đang ở `~/Downloads/interiorflow`* ·
+> *ô chat Claude Code chính* · *Project Settings → Instructions*
+
+Kèm luôn: **kết quả mong đợi** (một dòng), và **làm gì nếu lỗi** (một dòng).
+Hoà chỉ ra 01/08 rằng tôi vi phạm chính điều này **ngay lượt sau khi viết ra nó**.
+
+**14o-bis — Lệnh HẸP, không lệnh RỘNG.** Cấm `git add -A` trần, `rm -rf` trần, `mv *` trần trên
+máy Hoà. Liệt kê **đúng đường dẫn cần đụng**. 🧮 Bằng chứng 01/08: một `git add -A` suýt gói
+`_to_delete/if-audit-bundle.tar.gz` (8,6 MB) + `if-design-system.pdf` vào commit "dọn trung tính".
+Lệnh rộng tiết kiệm 10 giây soạn, đổi lấy một mớ phải gỡ.
+
 **14p — Phân biệt "đã verify" với "suy ra".** Không nhận vơ. Chỗ nào không test thật được thì nói rõ.
 
 ### Nhóm F · Khi VIẾT TÀI LIỆU ⚠️ *(mới, từ lỗi 13 · 14)*

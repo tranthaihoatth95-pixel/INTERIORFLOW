@@ -54,3 +54,12 @@ docs/DEMO-CLAY-2407/
 # đúng dòng dưới (đã test: khớp thư mục gốc thật/tên project thật, KHÔNG khớp thư mục thường,
 # KHÔNG khớp tên có dấu gạch ngang thường "-" (chỉ khớp em dash "—"), KHÔNG khớp đường dẫn lồng).
 /*[[:space:]]—[[:space:]]*/
+
+# --- luật trung tính + repo nhẹ (chốt 01/08) ---
+knowledge/ttt-design-system/
+docs/files.zip
+docs/**/*.png
+docs/**/*.jpg
+docs/**/*.jpeg
+docs/**/*.webp
+_to_delete/
