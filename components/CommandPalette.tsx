@@ -27,6 +27,7 @@ import { useFlowStore } from '@/lib/store';
 import { modKey, modShiftKey } from '@/lib/kbd';
 import { runFlow } from '@/lib/execution';
 import { snapshotFlow } from '@/lib/workspace';
+import { useDismissable } from '@/lib/useDismissable';
 
 interface Cmd {
   id: string;
@@ -48,6 +49,7 @@ export function CommandPalette() {
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const { screenToFlowPosition, fitView } = useReactFlow();
 
@@ -178,13 +180,17 @@ export function CommandPalette() {
     el?.scrollIntoView({ block: 'nearest' });
   }, [active, open]);
 
+  // 2.2.90 ĐỢT 3 — chuyển bấm-ra-ngoài + Esc sang useDismissable dùng chung (trước đây tự viết
+  // overlay onMouseDown={setOpen(false)} + card onMouseDown stopPropagation — đúng loại pattern
+  // hook này sinh ra để thay, xem comment đầu lib/useDismissable.ts). Hook gọi TRƯỚC early-return
+  // (Rules of Hooks) — tự gate theo `open` bên trong.
+  useDismissable({ open, onDismiss: () => setOpen(false), refs: [cardRef] });
+
   if (!open) return null;
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      setOpen(false);
-    } else if (e.key === 'ArrowDown') {
+    // Escape giờ đi qua useDismissable (document, pha bắt) — không xử lý lại ở đây.
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
       setActive((a) => (flat.length ? (a + 1) % flat.length : 0));
     } else if (e.key === 'ArrowUp') {
@@ -197,13 +203,10 @@ export function CommandPalette() {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 pt-[14vh] backdrop-blur-sm"
-      onMouseDown={() => setOpen(false)}
-    >
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 pt-[14vh] backdrop-blur-sm">
       <div
+        ref={cardRef}
         className="w-[min(92vw,580px)] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl shadow-black/50"
-        onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2.5 border-b border-[var(--border)] px-3.5">
           <Search size={16} className="shrink-0 text-[var(--t4)]" />

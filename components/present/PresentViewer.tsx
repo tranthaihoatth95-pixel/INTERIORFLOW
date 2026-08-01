@@ -10,6 +10,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useT } from '@/lib/i18n';
+import { useDismissable } from '@/lib/useDismissable';
 
 export interface PresentViewerProps {
   /** JPEG dataURL 1920×1080 mỗi slide (đã render sẵn). */
@@ -57,7 +58,7 @@ export default function PresentViewer({
     setIdx((i) => Math.max(0, Math.min(total - 1, i)));
   }, [total]);
 
-  // phím tắt
+  // phím tắt điều hướng — Esc tách riêng, xem useDismissable bên dưới.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
@@ -72,13 +73,16 @@ export default function PresentViewer({
       } else if (e.key === 'End') {
         e.preventDefault();
         go(total - 1);
-      } else if (e.key === 'Escape' && onClose) {
-        onClose();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [next, prev, go, total, onClose]);
+  }, [next, prev, go, total]);
+
+  // 2.2.90 ĐỢT 3 — Esc thoát (chỉ khi có onClose — route /present standalone không truyền onClose
+  // nên Esc không làm gì, giữ đúng hành vi cũ). Chuyển sang useDismissable dùng chung, outside:false
+  // (bản gốc không có bấm-nền-để-đóng).
+  useDismissable({ open: !!onClose, onDismiss: onClose ?? (() => {}), refs: [], outside: false });
 
   // auto-ẩn thanh điều khiển khi để yên chuột
   const wake = useCallback(() => {

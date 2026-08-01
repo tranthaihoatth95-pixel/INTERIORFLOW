@@ -26,6 +26,7 @@ import type { Phase } from '@/lib/phases';
 import { easeApple } from '@/lib/motion';
 import { useFlowStore } from '@/lib/store';
 import { brandContextForVitals } from '@/lib/present-editor/brand-kit';
+import { useDismissable } from '@/lib/useDismissable';
 import VitalsIcon from './VitalsIcon';
 import { VitalsBubble, VitalsTyping } from './VitalsChatBubble';
 
@@ -107,21 +108,9 @@ export default function VitalsGesturePanel({
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    const onDown = (e: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    document.addEventListener('pointerdown', onDown, true);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.removeEventListener('pointerdown', onDown, true);
-    };
-  }, [open, onClose]);
+  // 2.2.90 ĐỢT 3 — chuyển sang useDismissable dùng chung (bản gốc đã tự dùng đúng họ sự kiện
+  // pointerdown pha bắt, chỉ khác Escape trước đây ở window pha nổi).
+  useDismissable({ open, onDismiss: onClose, refs: [rootRef] });
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
