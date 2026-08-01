@@ -28,7 +28,7 @@
  * "Run flow" Command Palette) + hàng đợi trong menu "Việc" — xem lib/execution.ts.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Coins, Share2, ChevronDown, MessageCircle, LogOut, Check, MoreHorizontal,
@@ -57,6 +57,7 @@ import { requestGallery } from '@/lib/resume';
 import SessionWatch from '@/components/studio/SessionWatch';
 import ShortcutsPanel from '@/components/ShortcutsPanel';
 import { activeToPhase, pickStage } from '@/lib/studio/stage-nav';
+import { useDismissable } from '@/lib/useDismissable';
 import type { AppChromeActive } from '@/components/studio/AppChromeTypes';
 
 export type { AppChromeActive };
@@ -79,6 +80,11 @@ export function AppChrome({ active }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const { begin } = useStageTransition();
+
+  // 2.2.90 ĐỢT 2 (01/08) — Tasks dropdown trước đây 0 logic đóng (không bấm-ra-ngoài, không
+  // Escape) — THÊM hành vi qua hook dùng chung, khác biệt được phép duy nhất của đợt này.
+  const tasksRef = useRef<HTMLDivElement>(null);
+  useDismissable({ open: active === 'render' && tasksOpen, onDismiss: () => setTasksOpen(false), refs: [tasksRef] });
 
   // 2.2.86 (30/07) — badge "Việc" = số lượt ĐANG CHẠY + ĐANG CHỜ (không phải số job lẻ như cũ),
   // đúng đơn vị FlowRun mới. "Liếc là biết" — không cần mở menu mới thấy có gì đang bận.
@@ -220,7 +226,7 @@ export function AppChrome({ active }: Props) {
           sheet — chỉ cần đẩy cùng mốc, không viết UI mới. */}
       <div className="hidden items-center gap-2 lg:flex lg:gap-2.5">
         {active === 'render' && (
-          <div className="relative shrink-0">
+          <div ref={tasksRef} className="relative shrink-0">
             <motion.button
               {...pressable}
               onClick={() => setTasksOpen(!tasksOpen)}
@@ -272,9 +278,16 @@ function MoreMenu() {
   const credits = useFlowStore((s) => s.credits);
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const ref = useRef<HTMLDivElement>(null);
+
+  // 2.2.90 ĐỢT 2 (01/08) — thay backdrop `fixed inset-0` (chặn click xuyên qua toàn màn hình,
+  // đóng bằng onClick) bằng hook dùng chung (đóng bằng pointerdown-outside, KHÔNG chặn click
+  // xuyên qua — bấm 1 phát vào nút khác vừa đóng menu này VỪA chạy nút kia luôn, đúng hành vi
+  // MenuButton/IOMenu đã có). Thêm luôn Escape (trước MoreMenu không có).
+  useDismissable({ open, onDismiss: () => setOpen(false), refs: [ref] });
 
   return (
-    <div className="relative shrink-0">
+    <div ref={ref} className="relative shrink-0">
       <motion.button
         {...pressable}
         onClick={() => setOpen((o) => !o)}
@@ -292,42 +305,39 @@ function MoreMenu() {
 
       <AnimatePresence>
         {open && (
-          <>
-            <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-            <motion.div
-              initial={{ opacity: 0, y: -4, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -4, scale: 0.98 }}
-              transition={{ duration: 0.18, ease: easeApple }}
-              className="mat-panel absolute right-0 top-9 z-40 w-56 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: 0.18, ease: easeApple }}
+            className="mat-panel absolute right-0 top-9 z-40 w-56 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
+          >
+            <div className="mb-2 flex items-center justify-between rounded-[10px] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
+              <span className="flex items-center gap-1.5">
+                <Coins size={13} className="text-amber-400" />
+                {tr('Tín dụng', 'Credits')}
+              </span>
+              <span className="font-semibold text-[var(--t1)]">{credits}</span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <ThemeToggle />
+              <ShareButton />
+              <ChatToggle />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                router.push('/settings');
+              }}
+              className="mt-2 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-0.5 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
             >
-              <div className="mb-2 flex items-center justify-between rounded-[10px] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
-                <span className="flex items-center gap-1.5">
-                  <Coins size={13} className="text-amber-400" />
-                  {tr('Tín dụng', 'Credits')}
-                </span>
-                <span className="font-semibold text-[var(--t1)]">{credits}</span>
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                <ThemeToggle />
-                <ShareButton />
-                <ChatToggle />
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  router.push('/settings');
-                }}
-                className="mt-2 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-0.5 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
-              >
-                <SettingsIcon size={13} />
-                {tr('Cài đặt', 'Settings')}
-              </button>
-            </motion.div>
-          </>
+              <SettingsIcon size={13} />
+              {tr('Cài đặt', 'Settings')}
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -420,9 +430,13 @@ function UserChip() {
   const router = useRouter();
   const tr = useT();
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  // 2.2.90 ĐỢT 2 (01/08) — thay backdrop `fixed inset-0` bằng hook dùng chung, cùng lý do đã
+  // ghi ở MoreMenu() phía trên (click-xuyên-qua + thêm Escape).
+  useDismissable({ open, onDismiss: () => setOpen(false), refs: [ref] });
   if (!user) return null;
   return (
-    <div className="relative shrink-0">
+    <div ref={ref} className="relative shrink-0">
       <motion.button
         {...pressable}
         onClick={() => setOpen((o) => !o)}
@@ -443,43 +457,40 @@ function UserChip() {
 
       <AnimatePresence>
         {open && (
-          <>
-            <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-            <motion.div
-              initial={{ opacity: 0, y: -4, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -4, scale: 0.98 }}
-              transition={{ duration: 0.18, ease: easeApple }}
-              className="mat-panel absolute right-0 top-9 z-40 w-48 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: 0.18, ease: easeApple }}
+            className="mat-panel absolute right-0 top-9 z-40 w-48 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
+          >
+            <div className="truncate px-2 py-1.5 text-xs text-[var(--t3)]" title={`${user.name} · ${user.email}`}>
+              {user.name}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                router.push('/settings/avatar');
+              }}
+              className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
             >
-              <div className="truncate px-2 py-1.5 text-xs text-[var(--t3)]" title={`${user.name} · ${user.email}`}>
-                {user.name}
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  router.push('/settings/avatar');
-                }}
-                className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
-              >
-                {tr('Đổi avatar', 'Change avatar')}
-              </button>
-              {/* Ngăn cách phía trên — hành động phá huỷ tách khỏi mục thường, khớp yêu cầu. */}
-              <button
-                type="button"
-                onClick={async () => {
-                  setOpen(false);
-                  await fetch('/api/auth/me', { method: 'DELETE' });
-                  setUser(null);
-                }}
-                className="mt-1 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-2 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-red-400"
-              >
-                <LogOut size={13} />
-                {tr('Đăng xuất', 'Sign out')}
-              </button>
-            </motion.div>
-          </>
+              {tr('Đổi avatar', 'Change avatar')}
+            </button>
+            {/* Ngăn cách phía trên — hành động phá huỷ tách khỏi mục thường, khớp yêu cầu. */}
+            <button
+              type="button"
+              onClick={async () => {
+                setOpen(false);
+                await fetch('/api/auth/me', { method: 'DELETE' });
+                setUser(null);
+              }}
+              className="mt-1 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-2 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-red-400"
+            >
+              <LogOut size={13} />
+              {tr('Đăng xuất', 'Sign out')}
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

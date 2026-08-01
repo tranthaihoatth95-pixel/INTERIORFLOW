@@ -7,29 +7,27 @@
 
 ## Hiện tại (31/07 — ĐỢT B lớp lưu trữ: B1-B4 xong, CHỜ GẬT B5)
 Chi tiết đầy đủ → `CHANGELOG.md` + `docs/IF-FEATURE-TREE.md` `4.1.d`. Tóm tắt:
-- ✅ **B4 — đảo nguồn sự thật** (`4.1.d`, PHA RỦI RO NHẤT, kế hoạch trình + Hoà gật kèm 4 bổ sung
-  trước khi code). `lib/disk-sync.ts` mới: `resolveSourceOfTruth()` THUẦN (ngưỡng dung sai 2s —
-  `modifiedAt`/`IndexedDB.ts` không nguyên tử, lệch trong ngưỡng = tie = DÙNG CACHE; guard "đĩa ít
-  sheet hơn cache" = nghi ghi dở, KHÔNG thay im lặng) · `createDiskWriter()` throttle riêng (không
-  debounce) + ⌘S/rời trang ép ghi ngay · `watchProjectPresence()` cảnh báo 2 tab cùng mở 1 dự án.
-  Nối CAD + Present (BẮT BUỘC tăng `importGen`, đường tự động đi qua ĐÚNG 1 hàm với nhập tay
-  `.idfp`); thêm ⌘S cho Present. **2 bug thật bắt được khi browser-verify** (chi tiết → CHANGELOG):
-  ① `flowName` nạp bất đồng bộ ⇒ tạo nhầm 2 thư mục cho cùng 1 dự án — sửa bằng gọi lại
-  `ensureProjectScope()` trước khi đọc tên. ② cảnh báo đa-tab đóng không sạch ⇒ banner treo vĩnh
-  viễn — sửa bằng heartbeat+TTL. Verify thật (OPFS + nhiều tab): di trú đúng tên · đĩa thắng id
-  TRÙNG đúng nội dung mới · guard sheet-thiếu tự lành · cảnh báo đa-tab 2 chiều. 14 test mới,
-  tsc+eslint+test+build sạch. Còn 1 phép thử CHỈ Hoà tự làm được (mất quyền giữa phiên qua reload
-  thật) — checklist đã soạn sẵn.
+- ✅ **B4 — đảo nguồn sự thật** (`4.1.d`, PHA RỦI RO NHẤT). `lib/disk-sync.ts` mới:
+  `resolveSourceOfTruth()` THUẦN (dung sai 2s = tie = dùng cache; guard "đĩa ít sheet hơn" = nghi
+  ghi dở) · `createDiskWriter()` throttle + ⌘S ép ghi ngay · `watchProjectPresence()` cảnh báo
+  2 tab. Nối CAD+Present, 2 bug thật sửa khi browser-verify (chi tiết → CHANGELOG). 14 test mới,
+  tsc+eslint+test+build sạch. Còn 1 phép thử CHỈ Hoà tự làm được (mất quyền giữa phiên) —
+  checklist đã soạn sẵn.
 - ✅ **B1-B3 xong** — B1 chọn thư mục gốc, B2 `.idfp` Present, B3 brand-kit.json ra thư mục dự án.
   5 pha B1-B5 — còn B5 (nghiệm thu: copy thư mục dự án sang máy khác, mở lên, chạy đủ).
 - ✅ **ĐỢT A merge + dọn git** · **Sprint "Lộ nền"** · **2.2.89/7.3.32/2.1.8.n** (demo LAN) ·
   **7.3.31/2.1.8.k-m/7.1.20/2.2.86/BOQ ĐỢT 1+2/7.1.21+Luật #13** — chi tiết → CHANGELOG.
-- ✅ **2.2.90 ĐỢT 1 — `useDismissable`** (`lib/useDismissable.ts` mới, 1 họ sự kiện `pointerdown`
-  pha bắt toàn app + stack theo dõi lớp trên cùng cho Escape; KHÔNG parentId — TODO khi có
-  layer-trong-layer thật). Nối `MenuButton`/`IOMenu`/`RenderIOMenus` (RenderIOMenus thêm Escape
-  capture, trước thiếu). Verify browser thật cả 3 menu: ra ngoài đóng · Escape đóng · bấm món chạy
-  đúng lệnh không nuốt · mở menu này tự đóng menu kia. tsc+eslint+test+build sạch. CHỜ GẬT trước
-  ĐỢT 2 (Popover/AppChrome) + ĐỢT 3 (panel CAD).
+- ✅ **2.2.90 ĐỢT 1+2 — `useDismissable`** (commit `5d81364` + ĐỢT 2 chưa commit). ĐỢT 1: nối
+  `MenuButton`/`IOMenu`/`RenderIOMenus`; cowork bắt lỗi `stopPropagation` gọi sớm chặn Escape nổi
+  lên window (~11 nơi khác nghe kiểu này) — đã sửa + verify 2 lớp cùng sống thật. ĐỢT 2:
+  `Popover.tsx` bỏ khối tự viết (giữ riêng `onPointerDown` stopPropagation, không đụng);
+  `AppChrome.tsx` — `MoreMenu`/`UserChip` bỏ backdrop `fixed inset-0` (mất chặn-click-xuyên-qua,
+  ĐÚNG Ý — giờ 1 click chuyển thẳng menu này→menu kia) + thêm Escape (trước không có); Tasks
+  dropdown thêm cả 2 (trước 0 logic đóng). Verify: Popover qua CadCanvas+EditorCanvas+ShortcutsPanel
+  (FlowCanvas không verify được do môi trường, suy ra từ component chung); AppChrome cả 3 đủ 4 tiêu
+  chí + "Đổi avatar" chạy đúng ("Đăng xuất" chỉ soát code, không bấm — cấm logout khi verify). Cấp
+  mã `2.2.92` mở rộng: MoreMenu/UserChip/Tasks dính cùng bệnh overlay-đè-popover, pre-existing.
+  tsc+eslint+test+build sạch. CHỜ GẬT ĐỢT 3 (panel CAD).
 - 🟡 **2.2.87+2.2.88** cascade 4 bậc CHƯA verify ảnh thật · **7.1.23** Bước 1 xong CHỜ HOÀ GẬT, hoãn
   tới khi ĐỢT B xong.
 - ⏸️ Mục "B2/B4" cũ trong CHANGELOG trùng tên tình cờ, KHÔNG liên quan ĐỢT B. Sprint BOQ ĐỢT 3

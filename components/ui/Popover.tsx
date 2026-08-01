@@ -17,7 +17,8 @@
  */
 
 import { createPortal } from 'react-dom';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useDismissable } from '@/lib/useDismissable';
 
 interface PopoverProps {
   /** toạ độ neo THEO VIEWPORT (vd e.clientX/e.clientY). */
@@ -29,17 +30,12 @@ interface PopoverProps {
   style?: CSSProperties;
   className?: string;
   /**
-   * 2.2.89 (31/07) — TUỲ CHỌN: đóng popover khi bấm ra ngoài / Escape. Khuôn chép từ
-   * `MenuButton.tsx` (document mousedown + keydown capture). BẪY đã xử lý theo yêu cầu Hoà —
-   * gắn CẢ HAI lớp phòng thủ, không chỉ 1: (a) bỏ qua nếu target nằm TRONG popover (giống
-   * MenuButton `ref.contains`) — cần vì listener dùng 'mousedown' còn Popover tự chặn
-   * 'pointerdown' lan lên (2 event khác nhau, không tự loại nhau); (b) gắn listener ở tick
-   * SAU qua requestAnimationFrame — dù effect vốn đã chạy sau khi sự kiện chuột phải gốc
-   * dispatch xong (tiền lệ đã có ở `CadCanvas.tsx` dòng ~242, coachmark tự ẩn), làm thêm lớp
-   * rAF theo đúng yêu cầu để chắc chắn không phụ thuộc riêng vào giả định lịch effect.
+   * 2.2.89 (31/07) — TUỲ CHỌN: đóng popover khi bấm ra ngoài / Escape. 2.2.90 ĐỢT 2 (01/08) —
+   * chuyển sang `useDismissable` dùng chung (xem `lib/useDismissable.ts`), không truyền thì
+   * không có hành vi đóng — giữ nguyên hợp đồng cũ. `refs: [ref]` (ref của chính popover) thay
+   * cho check `ref.contains` viết tay trước đây.
    *
-   * CẢ 3 NƠI DÙNG ĐỀU ĐÃ NỐI (31/07, khám VIỆC 2 phát hiện 2/3 còn thiếu — bug 2.2.89 mới đóng
-   * 1/3 thật sự): `CadCanvas.tsx:3267` (từ đầu) · `FlowCanvas.tsx:431` và
+   * CẢ 3 NƠI DÙNG ĐỀU ĐÃ NỐI: `CadCanvas.tsx:3267` (từ đầu) · `FlowCanvas.tsx:431` và
    * `EditorCanvas.tsx:383` (nối bù, cùng đợt sửa VIỆC A). KHÔNG còn nơi nào bỏ trống tham số
    * này — nơi gọi mới thêm sau này BẮT BUỘC truyền `onDismiss`, không được lặp lại lỗ hổng cũ.
    */
@@ -82,33 +78,13 @@ export default function Popover({ anchorX, anchorY, margin = 8, children, style,
     return () => ro.disconnect();
   }, [reposition]);
 
-  // 2.2.89 — bấm ra ngoài / Escape đóng popover. Chỉ chạy khi có `onDismiss`.
-  useEffect(() => {
-    if (!onDismiss) return;
-    let rafId = 0;
-    let armed = false; // false trong lúc chờ tick sau — chặn đúng cú chuột phải vừa mở popover
-    const onDoc = (e: MouseEvent) => {
-      if (!armed) return;
-      if (ref.current && ref.current.contains(e.target as Node)) return;
-      onDismiss();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        onDismiss();
-      }
-    };
-    rafId = requestAnimationFrame(() => {
-      armed = true;
-    });
-    document.addEventListener('mousedown', onDoc);
-    document.addEventListener('keydown', onKey, true);
-    return () => {
-      cancelAnimationFrame(rafId);
-      document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey, true);
-    };
-  }, [onDismiss]);
+  // 2.2.89 — bấm ra ngoài / Escape đóng popover. `open: !!onDismiss` — không truyền onDismiss
+  // thì hook không gắn listener nào, giữ nguyên hợp đồng "TUỲ CHỌN" cũ.
+  useDismissable({
+    open: !!onDismiss,
+    onDismiss: onDismiss ?? (() => {}),
+    refs: [ref],
+  });
 
   if (typeof document === 'undefined') return null;
 
