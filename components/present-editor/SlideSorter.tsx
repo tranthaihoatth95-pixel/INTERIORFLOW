@@ -22,6 +22,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useDismissable } from '@/lib/useDismissable';
 import { modalScale } from '@/lib/motion';
 import type { EditorDeck } from '@/lib/present-editor/model';
 import { renderEditorSlide } from '@/lib/present-editor/render';
@@ -78,17 +79,10 @@ export default function SlideSorter({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deck.slides, deck.fonts, deck.watermark, stage]);
 
-  // Esc để thoát (giống ImageEditor.tsx).
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        onClose();
-      }
-    }
-    window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
-  }, [onClose]);
+  // Esc để thoát (giống ImageEditor.tsx). 2.2.90 ĐỢT 3 — chuyển sang useDismissable dùng chung.
+  // Bấm nền để đóng KHÔNG đổi (onPointerDown target===currentTarget riêng ở overlay bên dưới,
+  // cùng lý do với ImageEditor.tsx — không có khung nội dung riêng để refs bọc) — chỉ thay Escape.
+  useDismissable({ open: true, onDismiss: onClose, refs: [], outside: false });
 
   // Kéo-thả bằng Pointer Events (mouse + touch + pen cùng 1 cơ chế).
   // dragFrom/dragOver: CHỈ set sau khi vượt ngưỡng di chuyển — dùng cho visual feedback

@@ -16,7 +16,8 @@
  * ảnh "contain" rồi quy đổi ngược về 0..1.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useDismissable } from '@/lib/useDismissable';
 import type { ImageElement, ImageAdjust, CropRect } from '@/lib/present-editor/model';
 import { DEFAULT_ADJUST, adjustToCssFilter } from '@/lib/present-editor/model';
 import { X, Check, Crop as CropIcon, Maximize, RotateCcw, Upload, Images, Wand2 } from 'lucide-react';
@@ -58,17 +59,12 @@ export default function ImageEditor({ el, libAssets, onUpdate, onOpenAdvanced, o
   const crop = el.crop ?? { x: 0, y: 0, w: 1, h: 1 };
   const adjust = el.adjust ?? DEFAULT_ADJUST;
 
-  // Esc để thoát.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        onClose();
-      }
-    }
-    window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
-  }, [onClose]);
+  // Esc để thoát. 2.2.90 ĐỢT 3 — chuyển sang useDismissable dùng chung. Bấm nền tối để đóng KHÔNG
+  // đổi (cơ chế onPointerDown target===currentTarget riêng ở overlay bên dưới — outer div vừa là
+  // backdrop vừa là cha trực tiếp của mọi nội dung nên không có 1 "khung nội dung" để refs bọc
+  // theo kiểu useDismissable; giữ nguyên cơ chế đó, chỉ thay phần Escape). Component chỉ mount khi
+  // đang chỉnh 1 ảnh (xem PresentEditor.tsx) → open:true cố định lúc mounted.
+  useDismissable({ open: true, onDismiss: onClose, refs: [], outside: false });
 
   // Đo khung ảnh contain khi ảnh load (để crop chồng đúng vùng ảnh, không phải vùng letterbox).
   const measure = useCallback((imgW: number, imgH: number) => {

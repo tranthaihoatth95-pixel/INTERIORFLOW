@@ -21,6 +21,7 @@ import { stageFor } from '@/lib/present-editor/stage-presets';
 import { slideVariants } from '@/lib/present-editor/motion-present';
 import PlayerElements from './PlayerElements';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useDismissable } from '@/lib/useDismissable';
 
 interface Props {
   deck: EditorDeck;
@@ -46,17 +47,22 @@ export default function SlidePlayer({ deck, startIndex = 0, onClose }: Props) {
     [deck.slides.length],
   );
 
+  // Điều hướng ← → / Space — tách riêng khỏi Escape (nay đi qua useDismissable bên dưới).
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
-      else if (e.key === 'ArrowRight' || e.key === ' ') {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
         e.preventDefault();
         go(1);
       } else if (e.key === 'ArrowLeft') go(-1);
     }
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [go, onClose]);
+  }, [go]);
+
+  // 2.2.90 ĐỢT 3 — Esc thoát trình chiếu, chuyển sang useDismissable dùng chung. Overlay toàn màn
+  // này chỉ mount khi playing (xem PresentEditor.tsx) → open:true cố định lúc mounted. Không có
+  // bấm-ra-ngoài-để-đóng ở bản gốc (chỉ Esc/nút X) — giữ outside:false.
+  useDismissable({ open: true, onDismiss: onClose, refs: [], outside: false });
 
   const variants = useMemo(() => slideVariants(transition), [transition]);
 

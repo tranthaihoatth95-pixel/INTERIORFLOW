@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useDismissable } from '@/lib/useDismissable';
 import type { TextElement, TextAlign, ListStyle } from '@/lib/present-editor/model';
 import { effectiveListStyle } from '@/lib/present-editor/model';
 import {
@@ -83,23 +84,8 @@ export default function TextToolbar({
   // wrapRef (cả pill) chứ không phải riêng nút màu — popover render NGOÀI `.pe-pill` (là
   // container cuộn ngang overflowX:auto, mà CSS quy đổi overflowY thành 'auto' theo — sẽ CẮT
   // mất popover nếu lồng bên trong, xem ColorPopover bên dưới).
-  useEffect(() => {
-    if (!colorOpen) return;
-    function onDocPointerDown(e: PointerEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-        setColorOpen(false);
-      }
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setColorOpen(false);
-    }
-    window.addEventListener('pointerdown', onDocPointerDown);
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      window.removeEventListener('pointerdown', onDocPointerDown);
-      window.removeEventListener('keydown', onKeyDown);
-    };
-  }, [colorOpen]);
+  // 2.2.90 ĐỢT 3 — chuyển sang useDismissable dùng chung.
+  useDismissable({ open: colorOpen, onDismiss: () => setColorOpen(false), refs: [wrapRef] });
 
   /* Clamp trong VIEWPORT BROWSER thật (không chỉ trong slide) — nếu textbox nằm sát mép
    * PHẢI/TRÁI slide, toolbar (canh giữa theo textbox bằng translate(-50%,...)) có thể tràn
