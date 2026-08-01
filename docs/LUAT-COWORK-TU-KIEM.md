@@ -23,6 +23,11 @@
 | 11 | "tối thiểu 6 chỗ" — số thật 10 chỗ + 30 file Escape | ③ |
 | 12 | **Chạy `mv` trên dữ liệu Hoà bằng đường dẫn sai, nuốt lỗi, rồi báo "SẠCH ✓"** | ⑤ |
 | 12b | Thiết kế lại avatar Vitals từ số 0 — spec đã có từ 29/07, và `AvatarBuilder.tsx` đã tồn tại | ① |
+| 13 | **Viết "cấm dùng magic" vào tài liệu — trong khi Hoà vừa chốt "đổi nghĩa mẫu → magic, KHÔNG cấm"** | ⑥ |
+| 14 | **Vi phạm Luật Trung Tính 20 phút sau khi vừa được nhắc** — ghi "lấy board TTT làm bố cục mặc định" vào tài liệu quyết định | ⑥ |
+| 15 | Đọc `doc.shapes` (không tồn tại) thay vì `doc.entities` → báo nhầm "0 shape / mất dữ liệu" **hai lần** trong B5 | ③ |
+| 16 | Đếm 29 file Escape bằng mắt — số thật **30** | ③ |
+| 17 | Nói "`cp` không phải cách sao lưu SQLite hợp lệ" — bản `cp` thật ra `integrity_check` = `ok` | ③ |
 
 **① Dùng thông tin hết hạn như thông tin mới.** Claude Code commit mỗi 20–40 phút. Mọi lần đọc code
 đều có hạn dùng. Tệ hơn: khi phiên bị nén, bản tóm tắt giữ lại **kết luận** nhưng **tước mất mốc
@@ -40,6 +45,14 @@ Cowork **quên cả việc của chính mình tồn tại**.
 Lệnh `mv` dùng `~/Downloads/...`, nhưng `~` trong sandbox trỏ về thư mục phiên, máy Hoà nằm dưới
 `/mnt/`. `2>/dev/null` nuốt mất lỗi. Phép kiểm sau đó dùng **đúng đường dẫn sai ấy**, không thấy gì,
 nên in ra "SẠCH ✓". **Báo cáo thành công cho một việc chưa từng chạy.**
+
+**⑥ Viết vào tài liệu điều Hoà KHÔNG chốt.** Đây là loại nặng nhất vì tài liệu **sống lâu hơn cuộc
+chat**. Phiên sau đọc file, thấy chữ trong đó, tưởng là Hoà đã chốt. Một câu tự ý thêm hôm nay thành
+"luật" của tháng sau. Hai biến thể:
+- **Lật ngược quyết định** (lỗi 13): Hoà chốt A, Cowork thấy A rủi ro, viết ¬A vào file kèm lý lẽ.
+  Lý lẽ có thể đúng — nhưng chỗ của nó là **tin nhắn**, không phải file.
+- **Nhét lại điều đã bị cấm** (lỗi 14): luật trung tính vừa được nhắc, 20 phút sau vẫn viết tên
+  studio thật vào tài liệu quyết định. Nhắc miệng không đủ — phải thành bước kiểm trước khi ghi.
 
 **Nguyên nhân dưới cả năm:** Cowork **nghiêm với báo cáo của Claude Code** (chạy lại từng dòng)
 nhưng **lỏng với kết luận của chính mình** (gửi thẳng). Ngược chiều — lỗi của Claude Code có Cowork
@@ -63,8 +76,19 @@ Và: **bảng biểu làm phỏng đoán trông như số đo.** "6 chỗ" trong
 
 Không gắn nhãn được ⇒ **không nói câu đó**. Nhãn 💭 phải viết ra, không được giấu trong bảng.
 
-**14b — Hạn dùng 20 phút.** Kết luận về code cũ hơn **một commit của Claude Code** ⇒ đọc lại trước
-khi gửi. Không nhớ đọc lúc nào ⇒ coi như hết hạn.
+**14b — Hạn dùng 20 phút — áp cho MỌI thứ Hoà cho xem, không chỉ code.**
+Kết luận về code cũ hơn **một commit của Claude Code** ⇒ đọc lại trước khi gửi.
+Không nhớ đọc lúc nào ⇒ coi như hết hạn.
+
+| Loại | Hết hạn khi |
+|---|---|
+| Code đã đọc | có commit chen vào (20–40 phút) |
+| **Ảnh chụp màn hình** | Hoà gửi ảnh mới, **hoặc** Claude Code vừa sửa đúng màn đó |
+| **Terminal output** | ngay sau lệnh kế tiếp — không suy trạng thái hiện tại từ ảnh cũ |
+| **Tài liệu `docs/`** | Claude Code có quyền ghi vào `docs/` — đọc lại trước khi trích |
+
+⚠️ Ảnh là loại **dễ tin nhầm nhất**: nó trông như bằng chứng trực tiếp, nhưng nó là ảnh của **một
+thời điểm**. "Trên ảnh không có nút X" không có nghĩa "hiện giờ không có nút X".
 
 **14c — Số phải là ĐẦU RA CỦA LỆNH.** Không phải thứ đọc bằng mắt từ đầu ra của lệnh.
 Đếm thì `| wc -l`. Chạy lệnh rồi nhìn bằng mắt vẫn là đoán, chỉ là đoán có vẻ khoa học hơn.
@@ -102,6 +126,19 @@ báo Hoà đường dẫn, để Hoà tự xoá.
 `dev.db`, ảnh) — dời/đổi tên phải hỏi. Tệp tạo lại được (`node_modules`, `.next`, `dist`, `.dmg`) —
 cứ dọn, báo sau.
 
+**14q — CƠ SỞ DỮ LIỆU: bốn điều tuyệt đối** *(từ sự cố `dev.db` 01/08)*
+
+| # | Luật | Vì sao |
+|---|---|---|
+| 1 | **KHÔNG chạy `prisma db push` · `migrate dev` · `migrate reset` qua sandbox** | FUSE không làm được khoá `fcntl` POSIX ⇒ SQLite đứt giữa `CreateTable`. Soạn lệnh sẵn, **Hoà chạy trên máy thật** |
+| 2 | **Sao lưu bằng `sqlite3 dev.db ".backup 'ten'"`**, không dùng `cp` | `cp` chép lúc đang ghi thì được bản rách. Lần 01/08 `cp` may mà `ok` — **may không phải luật** |
+| 3 | **Gặp sự cố DB thì DỪNG, không tự chữa** | Tự chữa là nơi mất dữ liệu thật sự xảy ra, không phải ở sự cố gốc |
+| 4 | **KHÔNG BAO GIỜ xoá `dev.db-journal`** | Đó là **cuốn sổ hoàn tác**. Mở đúng cách là SQLite tự lùi. Xoá nó = vứt đường về |
+
+🧮 Chứng cứ 01/08: `db push` bị chặn giữa chừng → hot journal (chữ ký `d9d5 05f9 20a1 63d7`, 3 trang)
+→ mở trên máy thật → tự lùi → `PRAGMA integrity_check` = `ok` cả ba tệp. **Mất 0 dữ liệu.**
+Chênh 7 MB là do dev server đang chạy ghi tiếp *sau khi* đã lùi; chênh byte 27 là bộ đếm thay đổi.
+
 ### Nhóm D · Khi SOI việc của Claude Code
 
 **14f — Đối xử với mình như với Claude Code.** Trước khi gửi bất kỳ kết luận nào: chạy đúng phép
@@ -119,19 +156,48 @@ người khác, không phải Hoà.
 
 **14p — Phân biệt "đã verify" với "suy ra".** Không nhận vơ. Chỗ nào không test thật được thì nói rõ.
 
+### Nhóm F · Khi VIẾT TÀI LIỆU ⚠️ *(mới, từ lỗi 13 · 14)*
+
+> Tài liệu **sống lâu hơn cuộc chat**. Chat bị nén thì mất; file thì phiên sau đọc và tin.
+> Vì vậy ngưỡng để **ghi vào file** phải cao hơn ngưỡng để **nói trong chat**.
+
+**14r — Hoà chốt gì thì ghi ĐÚNG điều đó.**
+Không diễn giải rộng ra, không siết chặt lại, không lật ngược.
+Không đồng ý ⇒ **nói ở tin nhắn**, để Hoà quyết. **Tuyệt đối không sửa trong file.**
+
+| Hoà nói | Được ghi | ❌ Cấm ghi |
+|---|---|---|
+| "đổi nghĩa *mẫu* → *magic*, không cấm sản phẩm từ AI" | "từ khoá **Magic**; AI hỗ trợ kiến trúc sư" | ~~"cấm dùng magic"~~ |
+| "học từ việc thật" | "học từ việc thật, **KHÔNG ship việc thật**" | ~~"lấy board TTT làm mặc định"~~ |
+
+**14s — Ba câu hỏi bắt buộc trước khi lưu bất kỳ file `.md` nào:**
+
+1. Câu nào trong file này **Hoà chưa hề nói**? → gắn *"Cowork đề xuất"* hoặc bỏ đi.
+2. Có tên thật nào lọt vào không? — studio · khách hàng · dự án · `@ttt.vn` · ảnh việc thật.
+   → **LUẬT TRUNG TÍNH**: IF là sản phẩm bán ra. Nhắc miệng không đủ, đây là **bước kiểm**.
+3. File này **mâu thuẫn** với `00-CHOT.md` chỗ nào không? → sửa cho khớp, hoặc ghi rõ *"thay thế dòng X"*.
+
+**14t — Chốt xong thì thêm 1 dòng vào `00-CHOT.md` ngay trong cùng lượt.**
+Quyết định chỉ nằm trong chat = quyết định sẽ mất. Nén phiên tước mất mốc thời gian, và kết luận cũ
+được *rửa* thành sự thật mới (nguyên nhân ①).
+
 ---
 
 ## 3 · Kiểm nhanh trước khi gửi
 
 1. Câu nào chưa gắn nhãn?
 2. Số nào chưa chạy lệnh sinh ra?
-3. Lần đọc gần nhất cách đây bao lâu? Có commit nào chen vào?
+3. Lần đọc gần nhất cách đây bao lâu? Có commit nào chen vào? **Ảnh Hoà gửi từ bao giờ?**
 4. Có chỗ nào trích từ comment không?
 5. Đây là lần thử thứ mấy của cùng một việc?
 6. **Đã `ls docs/` chưa — việc này đã có ai làm rồi chưa?**
 7. **Nếu có ghi/di chuyển: đường dẫn đã in ra chưa? Có nuốt lỗi không? Kiểm ở ĐÍCH chưa?**
+8. **Nếu là file `.md`: có câu nào Hoà chưa nói? có tên thật nào lọt vào? đã thêm dòng vào `00-CHOT.md` chưa?**
+9. **Nếu đụng `dev.db`: có phải lệnh ghi không? có đang chạy qua sandbox không?** → dừng, soạn lệnh cho Hoà.
 
 ---
 
-*Cowork, 01/08/2026. Nối tiếp Luật #4 (code là sự thật) — luật này nói rõ thêm: đọc code CÓ HẠN DÙNG,
-và hành động lên máy người khác phải chứng minh đường dẫn trước.*
+*Cowork, 01/08/2026 (bản 2 — thêm nguyên nhân ⑥, nhóm F, luật 14q–14t).
+Nối tiếp Luật #4 (code là sự thật). Ba điều luật này nói rõ thêm: đọc code **có hạn dùng** và ảnh
+cũng vậy · hành động lên máy người khác phải **chứng minh đường dẫn trước** · và tài liệu chỉ được
+ghi **đúng điều Hoà chốt**, vì file sống lâu hơn chat.*

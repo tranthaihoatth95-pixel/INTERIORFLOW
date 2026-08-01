@@ -1,0 +1,169 @@
+CHẠY TUẦN TỰ. Sonnet. Mỗi việc 1 commit · xong việc nào chạy tsc + test rồi mới sang việc kế.
+VIỆC 0 và 1 làm ngay không hỏi. VIỆC 2 phải TRÌNH KẾ HOẠCH và CHỜ TÔI DUYỆT trước khi code.
+VIỆC 3-6 làm sau khi tôi duyệt kế hoạch việc 2.
+
+═══════════════════════════════════════════════════════════════
+VIỆC 0 — DỌN NHÁNH (làm đầu tiên, 2 phút)
+═══════════════════════════════════════════════════════════════
+Nhánh feat/present-layout-ml-p1 (commit c258450) đang đứng riêng, chưa vào main.
+Merge vào main → build + tsc sạch → push origin/main → xoá nhánh nếu không còn dùng.
+Báo commit hash cuối trên main.
+
+
+═══════════════════════════════════════════════════════════════
+VIỆC 1 — MENU NGỮ CẢNH (lỗi hệ thống, sửa 1 lần hết cả họ)
+═══════════════════════════════════════════════════════════════
+Lỗi phát hiện: chuột phải vào ảnh gần mép slide → menu tràn ra ngoài, BỊ CẮT mất mục cuối.
+
+1a) VỊ TRÍ — tự lật hướng khi không đủ chỗ (collision-aware placement):
+    gần mép phải → mở sang trái · gần mép dưới → mở lên trên. Không bao giờ để viewport cắt.
+    ⚠️ Áp dụng cho MỌI context menu / dropdown / popover / tooltip trong app, không chỉ Present.
+    Sửa ở component dùng chung, không sửa lẻ từng chỗ.
+
+1b) KÍCH CỠ — menu đang quá to (chữ cỡ như nội dung, item cao gấp đôi cần thiết):
+    item cao 32–36px · chữ 13–14px · padding ngang 12px · rộng tối đa 240px.
+
+1c) NỘI DUNG — sắp lại theo tần suất dùng; tách "Chỉnh ảnh (crop · lọc · thay)" vì gộp 3 việc:
+    Thay ảnh…                    ← THÊM MỚI, trên cùng (thói quen PowerPoint)
+    Chỉnh ảnh (crop, màu)
+    Chỉnh nâng cao (Photoshop)
+    ─────
+    Nhân bản          ⌘D
+    Xoá               ⌫
+    ─────
+    Đưa lên trước     ⌘⇧]
+    Đưa xuống sau     ⌘⇧[
+    Phím tắt hiện bên phải mỗi mục, căn phải, màu nhạt.
+
+1d) "Thay ảnh…" mở hộp chọn nguồn: [Từ thư viện] [Từ máy tính]. Dấu … = mở hộp thoại.
+
+Nghiệm thu: chuột phải vào ảnh ở GÓC PHẢI DƯỚI slide → menu hiện đầy đủ, không bị cắt.
+
+
+═══════════════════════════════════════════════════════════════
+VIỆC 2 — KẾ HOẠCH TỔNG: GATEWAY + LIBRARY + FILE MANAGER
+⚠️ TRÌNH KẾ HOẠCH TRƯỚC, CHỜ TÔI DUYỆT. TUYỆT ĐỐI CHƯA CODE.
+═══════════════════════════════════════════════════════════════
+Đọc trước: docs/SPEC-FILE-MANAGER.md · docs/SPEC-IF-LIBRARY.md ·
+docs/IF-ARCHITECTURE-BLUEPRINT-v1.md §5B (IF Gateway).
+
+Bốn nguyên tắc đã chốt — kế hoạch phải tuân đúng:
+
+NT1 — THƯ VIỆN LÀ MỘT NƠI DUY NHẤT
+  Một panel · một giao diện · một cách dùng. Chỉ khác NỘI DUNG ƯU TIÊN theo chặng
+  (giống cách Vitals đổi vai theo chặng):
+  CAD → block/detail/vật liệu · Render → ảnh ref/thẻ/vật liệu · Present → ảnh/template/palette.
+  ⇒ /library/ingest KHÔNG còn là trang riêng — thành MỘT CHẾ ĐỘ của panel thư viện
+    (chế độ "nạp hàng loạt" khi thả nhiều file/PDF/Excel/CAD).
+  ⇒ BỎ HẲN popover [+] với 2 lựa chọn khó hiểu. Chỉ còn: thả file vào panel → tự nhận, tự phân loại.
+  Lý do: 90% người dùng KHÔNG phân biệt được "tải thư viện" với "nạp vài ảnh" — phải gắn liền hành vi.
+
+NT2 — MỘT CỬA NUỐT MỌI ĐUÔI
+  "Mở tệp" là cửa duy nhất, nhận mọi định dạng, tự nhận diện và đưa đúng chỗ.
+  Đây chính là IF Gateway blueprint §5B mà app chưa dùng — nối vào.
+
+NT3 — HÀNH VI NẠP THEO CHẶNG
+  - CAD (chặng 1) + Present (chặng 3): nút trên thanh bar phía trên
+  - Render (chặng 2): CHUỘT PHẢI trên canvas (cảm ứng/di động: CHẠM GIỮ) → menu nạp nhanh
+    tại chỗ con trỏ. KHÔNG thêm nút trên bar (node đã có).
+  - Present: THÊM chuột phải trên ảnh → "Thay ảnh" (khớp việc 1c)
+
+NT4 — LINKED ASSET (dùng File Manager, docs đã viết mà chưa dùng)
+  Ảnh trong deck GIỮ ĐƯỜNG DẪN tới file trên máy (kiểu InDesign):
+  render lại ảnh đó → deck TỰ CẬP NHẬT, không phải chèn lại thủ công.
+  Cần: trường path trong asset · theo dõi file đổi · nút "Cập nhật liên kết" khi file mất/đổi.
+
+NT5 — CỬA HÀNG ↔ CHỢ ĐẦU MỐI (phân vai 2 lớp)
+  | | LIBRARY (cửa hàng) | FILE MANAGER (chợ đầu mối) |
+  |---|---|---|
+  | Sắp theo | Ý NGHĨA — nhóm·thẻ·gu·dự án | CẤU TRÚC THƯ MỤC trên đĩa |
+  | Nội dung | ĐÃ TUYỂN CHỌN, có thẻ, chưng đẹp | TẤT CẢ — kể cả file thô, tạm, khoá |
+  | Vai trò | Mặt tiền | LỚP TRUNG GIAN app ↔ máy tính |
+  Phân quyền: Projects/ đọc-ghi · Library/ đọc-ghi · Knowledge/ 🔒 CHỈ ĐỌC (quy chuẩn·sách·.md
+  của Vitals) · _System/ 🔒 KHOÁ (.idf gốc·cache·backup).
+  KHOÁ ≠ GIẤU: vẫn cho XEM (biết Vitals dựa vào gì) và THÊM (studio nạp sách riêng), chặn sửa/xoá.
+  Đường một chiều: Projects/01-input/ → máy đọc+gắn thẻ → "CHỜ DUYỆT" trong Library
+  → người duyệt → lên kệ. NGOẠI LỆ: thứ do IF sinh ra (ảnh render, deck xuất) TỰ LÊN KỆ.
+
+KẾ HOẠCH PHẢI TRẢ LỜI:
+  (a) Cần đổi/tạo những file nào — liệt kê cụ thể
+  (b) Việc nào RẺ làm trước (đổi ít code, hiệu quả cao)
+  (c) Việc nào PHẢI ĐỢI hạ tầng khác — đợi cái gì
+  (d) Chỗ nào mâu thuẫn với code thật hiện tại
+  (e) Ước lượng: nhỏ / vừa / lớn cho từng mục
+Nếu 5 nguyên tắc trên có chỗ nào bất khả thi hoặc xung đột nhau → BÁO NGAY, đừng tự chọn giùm.
+
+
+═══════════════════════════════════════════════════════════════
+VIỆC 3 — VITALS: LỐI VÀO TƯỜNG MINH
+═══════════════════════════════════════════════════════════════
+Vitals hiện CHỈ gọi được bằng cử chỉ kéo ẩn → người mới không bao giờ tìm ra
+(chính tôi làm ra app mà vẫn phải hỏi "Vitals đâu"). Thêm:
+- Nút Vitals cố định góc phải dưới canvas (nổi, icon + nhãn), ở CẢ 3 CHẶNG
+- Phím tắt ⌘J / Ctrl+J (spec đã có, chưa cài) — cài luôn
+- GIỮ cử chỉ kéo làm đường tắt cho người quen
+Nghiệm thu: người chưa dùng app tìm ra Vitals trong 5 giây, không cần hướng dẫn.
+
+Ghi vào STATUS nợ kỹ thuật, xếp thứ tự:
+  🔴 Vitals thiếu FUNCTION-CALLING — chỉ tư vấn được, không thao tác được vào CAD/Render/Present.
+     Là vòng lặp chết của luật 7 blueprint. Gap lớn nhất của Vitals.
+     KHÔNG làm bây giờ: phụ thuộc tầng năng lực (hàm có tên) chưa dựng xong.
+     Đúng thứ tự luật 7: năng lực → nút → AI gọi hàm.
+  🟡 Vitals chỉ stage-aware, chưa selection-aware (không biết đang chọn ảnh/node/slide/phòng nào).
+
+
+═══════════════════════════════════════════════════════════════
+VIỆC 4 — SPRINT SEMANTIC ROOM: T3 + T4 (nốt phần còn thiếu)
+═══════════════════════════════════════════════════════════════
+T3 — .idf MIGRATION PATH
+  Viết migrate(oldVersion → currentVersion) TRƯỚC khi bump IDF_VERSION lần đầu.
+  Hiện importIdf() gặp version lệch là return null (từ chối thẳng) → thay bằng migrate.
+  Nghiệm thu: file .idf v1 vẫn mở được sau khi bump IDF_VERSION lên 2.
+  (Để lâu = bom nổ chậm: bump version mà chưa có migrate → mọi .idf cũ của khách đọc lỗi im lặng.)
+
+T4 — BACKUP DỰ ÁN
+  Nút "Sao lưu dự án" → xuất .ifpack (1 file: .idf + ảnh + metadata).
+  Tự backup định kỳ ra thư mục người dùng chọn.
+  Nghiệm thu: xoá dev.db rồi phục hồi đầy đủ từ .ifpack.
+  (Local-first mà không có backup = ổ cứng hỏng là mất trắng. Chặn cam kết với khách trả tiền.)
+
+
+═══════════════════════════════════════════════════════════════
+VIỆC 5 — DESIGN TOKENS: DỌN DẦN (không dọn ồ ạt)
+═══════════════════════════════════════════════════════════════
+Theo docs/DESIGN-TOKENS.md: ~190 màu chrome vs mục tiêu ~12 · cỡ chữ 0% token hoá (~967 khai báo).
+⚠️ KHÔNG dọn hết một lượt — dọn ồ ạt là mời gọi lỗi hiển thị không ai kiểm hết được.
+
+5a) Token hoá CỠ CHỮ trước (worst category): 5 cỡ 12·14·16·20·28 + 2 độ đậm.
+    Thay dần theo từng màn hình, mỗi màn 1 commit, chụp ảnh trước/sau từng màn.
+5b) Gỡ 4 mã màu TTT hardcode trong avatar builder → đọc từ Brand Kit.
+    (Đang vi phạm Luật trung tính — IF là app global, TTT chỉ là tenant.)
+5c) Gom màu: chỉ gom các nhóm GẦN GIỐNG NHAU (near-duplicate) mà DESIGN-TOKENS.md đã liệt kê.
+    Màu nào chỉ dùng 1-2 lần và không giống gì thì để yên, ghi vào danh sách chờ.
+
+
+═══════════════════════════════════════════════════════════════
+VIỆC 6 — SOI HỆ THỐNG 3 CHẶNG (báo cáo, chưa sửa)
+═══════════════════════════════════════════════════════════════
+Mấy lỗi tìm được hôm qua đều là LỖI HỆ THỐNG chứ không phải lỗi cục bộ (menu bị cắt · nút trùng
+nghĩa · panel rối · thiếu nút quay về · route mồ côi). Soi một lượt cả 3 chặng, gom thành 1 danh sách:
+
+Tạo docs/UI-SYSTEM-AUDIT.md:
+1) Mọi popover/dropdown/menu/tooltip: cái nào CHƯA có logic lật hướng khi gần mép?
+2) Mọi màn hình/trang: cái nào thiếu nút quay về hoặc breadcrumb? cái nào tràn full màn
+   không nằm trong khung app (SPEC-UI-SHELL)?
+3) Mọi nút/nhãn: còn cặp nào TRÙNG NGHĨA mà không nói rõ khác biệt (kiểu Tải lên/Nhập/Upload/Nạp)?
+4) Mọi màn hình: cái nào thiếu empty state có lối đi (mở lần đầu chưa có dữ liệu thì hiện gì)?
+5) Mọi thông báo lỗi: cái nào còn là chữ kỹ thuật thô cho người dùng?
+   (Luật: mỗi lỗi phải trả lời 2 câu — chuyện gì xảy ra · giờ bấm gì.)
+6) Luật canvas 4 trạng thái (SPEC-UI-SHELL §2B): chỗ nào đang VI PHẠM — kéo/resize mà toolbar
+   vẫn nằm đè?
+Mỗi mục: file · mô tả ngắn · mức độ (🔴 chặn dùng / 🟡 khó chịu / ⚪ nhỏ).
+Kết luận: 5 việc nên sửa trước, xếp theo (rẻ × tác động).
+
+
+═══════════════════════════════════════════════════════════════
+BÁO CÁO CUỐI
+═══════════════════════════════════════════════════════════════
+CHANGELOG append-only + STATUS.md (<800 từ) · push origin/main ·
+nêu rõ việc nào lệch nghiệm thu · phát hiện nào mâu thuẫn tài liệu · 3 đề xuất tiếp theo.

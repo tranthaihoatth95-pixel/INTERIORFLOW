@@ -1,0 +1,155 @@
+CHẠY MỘT MẠCH, KHÔNG HỎI LẠI. Sonnet. Mỗi VIỆC = 1 commit. Xong việc nào chạy tsc + test rồi
+sang việc kế. Cuối cùng merge main + push + báo cáo gộp một lần.
+
+QUY TẮC TIẾT KIỆM TOKEN (bắt buộc):
+- KHÔNG đọc lại file docs nếu đã nêu đủ nội dung trong lệnh này. Chỉ đọc file CODE cần sửa.
+- KHÔNG dùng agent phụ trừ VIỆC 7. Tự làm tuần tự.
+- KHÔNG chụp ảnh trung gian. Chỉ verify bằng tsc + test + 1 lần kiểm DOM cuối mỗi việc.
+- KHÔNG báo cáo giữa chừng. Chỉ báo cáo MỘT LẦN ở cuối.
+- Gặp mơ hồ → chọn phương án đơn giản nhất, ghi lại vào báo cáo cuối, KHÔNG dừng hỏi.
+- Không chạy dev server song song với build (gây lỗi .next cache). Build thì tắt dev trước.
+
+═══════════════════════════════════════════════════════════════
+VIỆC 1 — MERGE NHÁNH (làm đầu tiên)
+═══════════════════════════════════════════════════════════════
+git merge feat/present-layout-ml-p1 vào main (commit c258450) → tsc + build sạch →
+push origin/main → xoá nhánh local + remote nếu đã merge sạch.
+
+═══════════════════════════════════════════════════════════════
+VIỆC 2 — MENU NGỮ CẢNH (lỗi hệ thống, sửa ở component chung)
+═══════════════════════════════════════════════════════════════
+Lỗi: chuột phải vào ảnh gần mép slide → menu tràn viewport, bị cắt mục cuối.
+
+2a) Tìm component context-menu / dropdown / popover dùng chung trong repo.
+    Nếu CÓ component chung → sửa 1 chỗ. Nếu KHÔNG có → tạo mới `components/ui/Popover.tsx`
+    rồi thay thế các chỗ tự chế.
+    Logic bắt buộc: đo viewport trước khi hiện; thiếu chỗ bên phải → mở sang trái;
+    thiếu chỗ bên dưới → mở lên trên; luôn chừa 8px cách mép. Không bao giờ để bị cắt.
+2b) Kích cỡ menu: item cao 34px · font 13px · padding ngang 12px · max-width 240px ·
+    border-radius 12px.
+2c) Nội dung menu chuột phải trên ẢNH ở chặng Present, đúng thứ tự này:
+      Thay ảnh…                                  (THÊM MỚI)
+      Chỉnh ảnh (crop, màu)
+      Chỉnh nâng cao (Photoshop)
+      ───── (divider)
+      Nhân bản            ⌘D
+      Xoá                 ⌫
+      ───── (divider)
+      Đưa lên trước       ⌘⇧]
+      Đưa xuống sau       ⌘⇧[
+    Phím tắt căn phải, màu var(--text-muted), font 12px.
+    Bỏ mục cũ "Chỉnh ảnh (crop · lọc · thay)" — đã tách thành 2 mục trên.
+2d) "Thay ảnh…" mở hộp thoại 2 lựa chọn: [Từ thư viện] mở LibraryPanel ở chế độ chọn ·
+    [Từ máy tính] mở file picker (accept="image/*"). Chọn xong thay đúng ảnh đang chuột phải,
+    GIỮ NGUYÊN vị trí/kích thước/crop của ảnh cũ.
+Nghiệm thu (tự kiểm bằng DOM, không cần ảnh): mở menu ở toạ độ sát mép phải-dưới → toàn bộ
+menu nằm trong viewport.
+
+═══════════════════════════════════════════════════════════════
+VIỆC 3 — VITALS: LỐI VÀO TƯỜNG MINH
+═══════════════════════════════════════════════════════════════
+Hiện Vitals chỉ gọi được bằng cử chỉ kéo ẩn (VitalsGesture.tsx trong StageSwitcher/Header).
+3a) Thêm nút nổi cố định góc phải-dưới canvas ở CẢ 3 CHẶNG: icon + nhãn "Vitals",
+    dùng var(--accent), bo tròn, cách mép 24px, z-index trên canvas nhưng dưới modal.
+    Bấm nút = mở đúng popover mà cử chỉ kéo nhẹ đang mở (dùng lại handler sẵn có, không viết mới).
+3b) Cài phím tắt ⌘J (Mac) / Ctrl+J (Win) mở/đóng Vitals, hoạt động ở cả 3 chặng.
+    Không đè phím tắt sẵn có — kiểm trước khi đăng ký.
+3c) GIỮ NGUYÊN cử chỉ kéo.
+3d) Nút phải ẩn khi đang mở modal/overlay khác.
+Nghiệm thu: ở mỗi chặng, thấy nút Vitals ngay; bấm nút và ⌘J đều mở đúng popover.
+
+═══════════════════════════════════════════════════════════════
+VIỆC 4 — T3: .idf MIGRATION PATH
+═══════════════════════════════════════════════════════════════
+Hiện `importIdf()` gặp `idfVersion !== IDF_VERSION` là `return null` (từ chối thẳng),
+KHÔNG có migrate. Bump version lần đầu = mọi file .idf cũ đọc lỗi im lặng.
+4a) Trong lib/cad/idf.ts: viết `migrateIdf(file: unknown, fromVersion: number): IdfFile | null`
+    theo mẫu dispatcher: map từ version → hàm nâng cấp 1 bậc, chạy nối tiếp tới version hiện tại.
+    Hiện mới có v1 nên chỉ cần khung + identity cho v1; viết sẵn chỗ cắm cho v2.
+4b) `importIdf()` gọi migrateIdf khi version lệch, thay vì return null.
+    Version CAO HƠN version app → vẫn return null + thông báo rõ:
+    "File tạo bởi bản IF mới hơn. Cập nhật app để mở file này."
+4c) Viết test: file .idf giả với idfVersion=1 vẫn parse được sau khi tạm bump IDF_VERSION=2
+    (test tự set/restore hằng số, không đổi hằng số thật trong code).
+Nghiệm thu: test pass, và importIdf với version lệch KHÔNG còn trả null im lặng.
+
+═══════════════════════════════════════════════════════════════
+VIỆC 5 — T4: BACKUP .ifpack
+═══════════════════════════════════════════════════════════════
+5a) Định dạng `.ifpack` = file ZIP chứa:
+    /project.json  (metadata dự án: id, tên, ngày, version pack)
+    /drawing.idf   (bản vẽ)
+    /assets/       (ảnh render + ảnh library thuộc dự án, giữ tên gốc)
+    /manifest.json (danh sách file + kích thước + hash để kiểm toàn vẹn)
+5b) Nút "Sao lưu dự án" trong menu Xuất (hoặc menu dự án) → tạo .ifpack → tải về máy.
+5c) Nút "Phục hồi từ .ifpack" → chọn file → đọc manifest → kiểm hash → tạo lại dự án mới
+    (KHÔNG ghi đè dự án đang có; luôn tạo bản mới, tên + " (phục hồi)").
+5d) Backup tự động: chưa làm ở việc này, chỉ ghi TODO vào STATUS.
+Nghiệm thu: xuất .ifpack của 1 dự án có ảnh → phục hồi ra dự án mới đầy đủ bản vẽ + ảnh.
+
+═══════════════════════════════════════════════════════════════
+VIỆC 6 — DESIGN TOKENS: CỠ CHỮ (dọn dần, không ồ ạt)
+═══════════════════════════════════════════════════════════════
+Theo docs/DESIGN-TOKENS.md: cỡ chữ 0% token hoá, ~967 khai báo rời.
+6a) Thêm vào app/globals.css: --fs-xs:12px · --fs-sm:14px · --fs-md:16px · --fs-lg:20px ·
+    --fs-xl:28px · --fw-normal:400 · --fw-semi:600.
+6b) Thay dần, CHỈ 3 màn hình sau (không làm cả app): LoginScreen · ProjectSelect · Header.
+    Giá trị lẻ thì làm tròn về cỡ gần nhất trong thang.
+6c) Gỡ 4 mã màu TTT hardcode trong avatar builder → đọc từ Brand Kit (vi phạm Luật trung tính).
+6d) Còn lại ghi vào STATUS: "cỡ chữ: đã token hoá 3 màn, còn lại chờ; màu: 190 → dọn dần theo màn".
+Nghiệm thu: 3 màn trên không còn font-size rời; tsc + test sạch.
+
+═══════════════════════════════════════════════════════════════
+VIỆC 7 — SOI HỆ THỐNG 3 CHẶNG (dùng 1 agent, báo cáo, KHÔNG sửa)
+═══════════════════════════════════════════════════════════════
+Tạo docs/UI-SYSTEM-AUDIT.md. Chỉ liệt kê, không sửa:
+1) Popover/dropdown/menu/tooltip nào CHƯA có logic lật hướng khi gần mép?
+2) Màn hình/trang nào thiếu nút quay về hoặc breadcrumb? Cái nào tràn full màn, không nằm
+   trong khung app?
+3) Còn cặp nút/nhãn nào TRÙNG NGHĨA mà không nói rõ khác biệt?
+4) Màn hình nào thiếu empty state có lối đi (mở lần đầu chưa có dữ liệu thì hiện gì)?
+5) Thông báo lỗi nào còn là chữ kỹ thuật thô? (Luật: mỗi lỗi trả lời 2 câu — chuyện gì xảy ra ·
+   giờ bấm gì.)
+6) Chỗ nào vi phạm luật canvas 4 trạng thái: đang kéo/resize mà toolbar vẫn nằm đè?
+Mỗi mục: file · mô tả 1 dòng · mức độ (🔴 chặn dùng / 🟡 khó chịu / ⚪ nhỏ).
+Kết luận: 5 việc nên sửa trước, xếp theo (rẻ × tác động).
+
+═══════════════════════════════════════════════════════════════
+VIỆC 8 — KẾ HOẠCH GATEWAY + LIBRARY + FILE MANAGER (chỉ VIẾT KẾ HOẠCH, KHÔNG CODE)
+═══════════════════════════════════════════════════════════════
+Tạo docs/PLAN-LIBRARY-GATEWAY.md theo 5 nguyên tắc đã chốt dưới đây (KHÔNG cần đọc lại docs khác):
+
+NT1 THƯ VIỆN LÀ MỘT NƠI DUY NHẤT — một panel · một giao diện · một cách dùng; chỉ khác NỘI DUNG
+  ƯU TIÊN theo chặng (CAD → block/detail/vật liệu · Render → ảnh ref/thẻ/vật liệu ·
+  Present → ảnh/template/palette). /library/ingest KHÔNG còn là trang riêng, thành MỘT CHẾ ĐỘ
+  của panel (chế độ nạp hàng loạt khi thả nhiều file/PDF/Excel/CAD). BỎ HẲN popover [+] 2 lựa chọn.
+  Lý do: 90% người dùng không phân biệt được "tải thư viện" với "nạp vài ảnh".
+NT2 MỘT CỬA NUỐT MỌI ĐUÔI — "Mở tệp" là cửa duy nhất, nhận mọi định dạng, tự nhận diện và đưa
+  đúng chỗ (IF Gateway).
+NT3 HÀNH VI NẠP THEO CHẶNG — CAD + Present: nút trên bar trên · Render: CHUỘT PHẢI trên canvas
+  (cảm ứng/di động: CHẠM GIỮ) → menu nạp nhanh tại chỗ con trỏ, không thêm nút bar ·
+  Present: chuột phải trên ảnh → "Thay ảnh" (khớp việc 2).
+NT4 LINKED ASSET — ảnh trong deck GIỮ ĐƯỜNG DẪN tới file trên máy (kiểu InDesign): render lại
+  ảnh đó → deck TỰ CẬP NHẬT. Cần: trường path trong asset · theo dõi file đổi ·
+  nút "Cập nhật liên kết" khi file mất/đổi.
+NT5 CỬA HÀNG ↔ CHỢ ĐẦU MỐI —
+  LIBRARY (cửa hàng): sắp theo Ý NGHĨA (nhóm·thẻ·gu·dự án), nội dung ĐÃ TUYỂN CHỌN, là mặt tiền.
+  FILE MANAGER (chợ đầu mối): sắp theo CẤU TRÚC THƯ MỤC trên đĩa, chứa TẤT CẢ kể cả file thô/tạm/khoá,
+  là LỚP TRUNG GIAN app ↔ máy tính.
+  Phân quyền: Projects/ đọc-ghi · Library/ đọc-ghi · Knowledge/ 🔒 CHỈ ĐỌC (quy chuẩn·sách·.md
+  của Vitals) · _System/ 🔒 KHOÁ (.idf gốc·cache·backup). KHOÁ ≠ GIẤU: cho XEM và THÊM, chặn sửa/xoá.
+  Đường một chiều: Projects/01-input/ → máy đọc+gắn thẻ → "CHỜ DUYỆT" trong Library → người duyệt
+  → lên kệ. NGOẠI LỆ: thứ do IF sinh ra (ảnh render, deck xuất) TỰ LÊN KỆ.
+
+KẾ HOẠCH PHẢI TRẢ LỜI: (a) đổi/tạo file nào — liệt kê cụ thể · (b) việc nào RẺ làm trước ·
+(c) việc nào PHẢI ĐỢI hạ tầng khác, đợi cái gì · (d) chỗ nào mâu thuẫn code thật hiện tại ·
+(e) ước lượng nhỏ/vừa/lớn từng mục.
+Nếu 5 nguyên tắc có chỗ bất khả thi hoặc xung đột → ghi rõ trong kế hoạch, KHÔNG tự chọn giùm.
+
+═══════════════════════════════════════════════════════════════
+KẾT THÚC
+═══════════════════════════════════════════════════════════════
+- Cập nhật CHANGELOG.md (append-only) + STATUS.md (<800 từ)
+- Merge tất cả vào main, build + tsc sạch, push origin/main
+- BÁO CÁO MỘT LẦN, gọn: mỗi việc 1 dòng (commit hash + xong/lệch) · việc nào lệch nghiệm thu và
+  vì sao · quyết định nào bạn tự chọn khi gặp mơ hồ · 3 đề xuất tiếp theo.
