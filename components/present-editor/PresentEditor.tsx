@@ -3,7 +3,7 @@
 /**
  * components/present-editor/PresentEditor.tsx — Trình dàn trang "Present" (container).
  *
- * Lắp ráp: Toolbar (trên) · [Panel trái RESIZE (Mẫu | Reference | Motion) | Canvas |
+ * Lắp ráp: Toolbar (trên) · [Panel trái RESIZE (Magic | Reference | Motion) | Canvas |
  * Inspector] (giữa) · SlideStrip (dưới). State cục bộ ở useEditor (KHÔNG dùng lib/store).
  *
  * Round 2 (user):
@@ -479,7 +479,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   const groupLastDelta = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
 
   /** vùng "còn liên quan tới selection" — canvas (stage + toolbar nổi) và Inspector (phải).
-   * Click ngoài CẢ HAI (vd sidebar Mẫu/Reference/Motion bên trái, header) = bỏ chọn. */
+   * Click ngoài CẢ HAI (vd sidebar Magic/Reference/Motion bên trái, header) = bỏ chọn. */
   const canvasAreaRef = useRef<HTMLElement | null>(null);
   const inspectorRef = useRef<HTMLElement | null>(null);
 
@@ -1492,7 +1492,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
               {/* tab head */}
               <div style={{ display: 'flex', gap: 4, padding: '10px 12px 0' }}>
                 <TabBtn active={tab === 'layout'} onClick={() => setTab('layout')} icon={<LayoutTemplate size={13} />}>
-                  Mẫu
+                  Magic
                 </TabBtn>
                 <TabBtn active={tab === 'reference'} onClick={() => setTab('reference')} icon={<Images size={13} />}>
                   Reference
@@ -1591,7 +1591,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
                 type="button"
                 className="pe-panel-toggle"
                 onClick={() => setPanelOpen(false)}
-                title="Ẩn panel Mẫu/Reference/Motion"
+                title="Ẩn panel Magic/Reference/Motion"
                 style={panelToggleBtnStyle}
               >
                 <ChevronLeft size={12} />
@@ -1603,7 +1603,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
             type="button"
             className="pe-panel-toggle"
             onClick={() => setPanelOpen(true)}
-            title="Hiện panel Mẫu/Reference/Motion"
+            title="Hiện panel Magic/Reference/Motion"
             style={panelEdgeStripStyle}
           >
             <ChevronRight size={12} />
@@ -1664,7 +1664,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
                 Chưa có trang nào
               </p>
               <p style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 16 }}>
-                Bắt đầu bằng 1 trang trắng, hoặc chọn <b>Mẫu</b> ở cột trái để dàn nhanh.
+                Bắt đầu bằng 1 trang trắng, hoặc chọn <b>Magic</b> ở cột trái để dàn nhanh.
               </p>
               <button
                 onClick={onAddSlide}

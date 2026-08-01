@@ -1,5 +1,5 @@
 ## Bắt đầu session
-Đọc @STATUS.md TRƯỚC TIÊN. Cập nhật nó cuối mỗi task.
+Đọc @STATUS.md rồi @docs/00-CHOT.md TRƯỚC TIÊN. Cập nhật nó cuối mỗi task.
 
 ## Quy tắc worktree & context
 

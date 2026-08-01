@@ -496,9 +496,9 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
 
         <p style={{ fontSize: 11, color: 'var(--t4)', marginTop: 10, lineHeight: 1.5 }}>
           &quot;Áp lại theme&quot; nhuộm lại nền + màu chữ + hình khối của MỌI slide theo bộ màu này
-          (giữ nội dung/bố cục). Deck mới sẽ tự nạp Brand Kit đang chọn. Brand Kit hiện chỉ lưu
-          trên máy này (localStorage) — dùng Xuất/Nhập .json để mang sang máy khác; đây là giải
-          pháp tạm, đợt sau sẽ lưu Brand Kit theo từng dự án.
+          (giữ nội dung/bố cục). Deck mới sẽ tự nạp Brand Kit đang chọn. Brand Kit lưu trên máy
+          này (localStorage), dùng chung cho mọi dự án. Mỗi dự án có thể giữ 1 bản sao
+          brand-kit.json để mang sang máy khác — bản xuất MỘT CHIỀU, không tự đồng bộ ngược.
         </p>
       </div>
     </div>

@@ -12,10 +12,18 @@ Chi tiết đầy đủ → `CHANGELOG.md` + `docs/IF-FEATURE-TREE.md` `4.1.a-e`
   TRÊN ĐĨA bằng diff tệp). **ĐỢT B (B1-B5) ĐÓNG.**
 - ✅ **B1-B4** — chọn thư mục gốc · `.idfp` Present · `brand-kit.json` ra thư mục dự án ·
   `lib/disk-sync.ts` đảo nguồn sự thật, nối CAD+Present — chi tiết đủ → CHANGELOG + `4.1.a-d`.
-- 🆕 **4.1.f — Brand Kit KHÔNG đảo nguồn theo B4** (khám xong, CHƯA CODE) — vẫn localStorage
-  global, `brand-kit.json` chỉ xuất MỘT CHIỀU ⇒ hồ sơ sạch tạo id `bk_` MỚI thay vì nhận id trên
-  đĩa. `resolveSourceOfTruth()` không tái dùng thẳng được — thư viện DÙNG CHUNG nhiều dự án, khác
-  bản chất 1-dự-án-1-file. Xem "Chờ USER quyết".
+- ✅ **4.1.f Brand Kit — Hoà ĐÃ QUYẾT** thuộc DỰ ÁN (`docs/CHOT-BRAND-KIT-2026-08-01.md`) — kèm
+  đính chính B5 dòng (e): 6 màu+Elegant+tên đo được từ **DECK** (`.idfp`), KHÔNG chứng minh
+  `brand-kit.json` được đọc (sửa câu trong `4.1.e`). Thi công CHƯA làm — xem "Chờ USER quyết".
+- ✅ **`docs/00-CHOT.md`** (sổ mục lục quyết định, đọc đầu phiên sau STATUS.md) + 10 file Cowork
+  01/08 đã commit (`b4598f3`); `CLAUDE.md` dòng 2 cập nhật theo.
+- ✅ **Present — chữ nghĩa** (A1b/c): tab "Mẫu"→**"Magic"** + đồng bộ 6 chỗ `PresentEditor.tsx`;
+  microcopy `BrandKitPanel.tsx:497-501` đổi câu đúng hiện trạng (Hoà duyệt). Verify browser thật.
+  tsc+eslint+test+build sạch.
+- 🆕 **A1a khám (chưa gộp)**: `TemplatePicker.tsx` (267 dòng) là **DEAD CODE** — 0 import ngoài
+  chính nó, không render ở đâu. `LayoutShelf.tsx` (825 dòng, `PresentEditor.tsx:1507`) là bản LIVE
+  duy nhất. "Gộp thành Bố cục" (`CHOT-TACH-AI-VA-CHINH-TAY.md` §3c) hoá ra chỉ là XOÁ
+  `TemplatePicker.tsx` — chưa làm, chờ quyết.
 - ✅ **ĐỢT A merge + dọn git** · **Sprint "Lộ nền"** · **2.2.89/7.3.32/2.1.8.n** (demo LAN) ·
   **7.3.31/2.1.8.k-m/7.1.20/2.2.86/BOQ ĐỢT 1+2/7.1.21+Luật #13** — chi tiết → CHANGELOG.
 - ✅ **2.2.90 ĐỢT 1+2 — `useDismissable`** (`5d81364`+`ad737e3`). ĐỢT 1: nối `MenuButton`/
@@ -33,14 +41,11 @@ Không có. `feat/sprint-infra`+`feat/dot-a-ha-tang` đã merge + prune + xoá b
 — đủ điều kiện an toàn.
 
 ## Chờ USER quyết
-- **🆕 `4.1.f` Brand Kit — 3 câu hỏi** (khám xong, chi tiết đủ ở cây): ① đảo nguồn theo B4 đụng
-  gì — có tái dùng `resolveSourceOfTruth()` được không hay cần thiết kế hợp nhất cấp-từng-kit
-  riêng? ② **Brand Kit của DỰ ÁN hay của STUDIO?** — sơ đồ gốc `QUYET-DINH-HA-TANG-2026-07-31.md`
-  ② dự tính CẢ HAI lớp (`<dự án>/brand-kit.json` + `_studio/brand-kit-mac-dinh.json`) nhưng lớp
-  `_studio/` CHƯA CODE — nếu CẢ HAI thì B4-kiểu-1-tầng sai khuôn. ③ microcopy
-  `BrandKitPanel.tsx:497-501` lỗi thời một nửa, đã đề xuất câu thay — chờ chốt hướng trước khi đổi
-  (đổi 2 lần nếu đổi sớm).
-- **④ `FlowVersion`** — 14 dòng/7,27MB/5,31% `dev.db`, không phải thủ phạm phình DB → hạ 🟡. 136MB
+- **A1a** — xoá `TemplatePicker.tsx` (dead code) + đổi tên `LayoutShelf.tsx` thành "Bố cục"? Khám
+  xong, chưa gộp.
+- **4.1.f thi công** — hướng đã chốt, CHƯA làm: đổi hình dạng `brand-kit.json` (chỉ kit của dự án
+  đó) TRƯỚC khi bàn đảo nguồn.
+- **④ `FlowVersion`** — 14 dòng/7,27MB/5,31% `dev.db`, không phải thủ phạm → hạ 🟡. 136MB
   còn lại của 143MB `dev.db` bất thường — nghi `NotebookChunk`/`Flow.graphJson`/`ChatMessage` rác
   chưa VACUUM, đo sau.
 - **NT1**/**NT5** (gộp Library panel/browser · cây thư mục thật) — dời sau (`docs/PLAN-LIBRARY-GATEWAY.md`).
