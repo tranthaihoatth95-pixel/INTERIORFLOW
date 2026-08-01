@@ -77,8 +77,20 @@ Trước khi thiết kế bất cứ gì: `ls docs/` + grep tên chủ đề + g
 | 136 MB trong `dev.db` là gì? (`FlowVersion` chỉ 5,31%) | đo sau khi push `GuModel` xong |
 | Brand Kit đảo nguồn — phải đổi hình dạng `brand-kit.json` trước | thiết kế, chưa tới lượt |
 | GPL-3.0 của `@mlightcad/libredwg-web` — `licenseNotes` UNRESOLVED | **Hoà**, trước khi phát hành |
-| `knowledge/ttt-design-system/` (16 KB) **đang trong git** — vi phạm luật trung tính | **Hoà** |
 | `/library/ingest` tràn full màn + placeholder có tên khách — sửa 1 lần được cả 2 | hàng đợi |
+| **Viết lại lịch sử git** (`filter-repo`) để xoá dấu vết TTT ở các commit cũ | **Hoà**, chỉ làm **ngay trước khi giao repo ra ngoài** |
+
+### ✅ Dọn trung tính 01/08 — Hoà duyệt cả ba
+
+| Thứ | Xử lý | Về đâu |
+|---|---|---|
+| `knowledge/ttt-design-system/` (16 KB) — readme có tên khách thật: *Sofitel Metropole · Fairmont · Four Seasons · Movenpick · New World Saigon · OCB The Hallmark* | **dời hẳn ra ngoài repo** + gitignore | `~/Downloads/_TTT-BRAND/` |
+| `docs/files.zip` — 11 instruction của agent RIN·NHA·VU·KIEN, tài sản cá nhân | **gỡ khỏi git + dời ra** | `~/Downloads/_CLAUDE-AGENTS/` |
+| 21 ảnh · 8,9 MB trong `docs/` (có `42-demo-amanoi.png` — tên resort thật) | **gỡ ảnh, giữ `report.md`** | `~/Downloads/_IF-ANH-DEMO/` (giữ nguyên cây) |
+
+⚠️ `@ttt.vn` trong `auth-policy.ts` · `auth.ts` · `LoginForm.tsx` **KHÔNG phải khoá domain** — chỉ là
+comment mô tả chính sách cũ đã bỏ 19/07. `isValidAccountEmail()` nhận **mọi domain**. Chữ cần dọn,
+chức năng không sai. *(Luật 14d: comment không phải code.)*
 
 ---
 
