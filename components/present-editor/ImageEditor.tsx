@@ -107,7 +107,7 @@ export default function ImageEditor({ el, libAssets, onUpdate, onOpenAdvanced, o
     if (!st || !box) return;
     const dx = (e.clientX - st.startX) / box.w;
     const dy = (e.clientY - st.startY) / box.h;
-    let c = { ...st.crop };
+    const c = { ...st.crop };
     if (st.handle === 'move') {
       c.x = st.crop.x + dx;
       c.y = st.crop.y + dy;
