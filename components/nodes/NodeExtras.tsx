@@ -3,13 +3,28 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Download, FileText, Film, Presentation, Check } from 'lucide-react';
+import { Download, FileText, Film, Presentation, Check, Box } from 'lucide-react';
 import { tweenBase, prefersReducedMotion } from '@/lib/motion';
 import { useFlowStore } from '@/lib/store';
 import { stashPresentHandoffWithIds, renderImageId } from '@/lib/present-editor/handoff';
 import ExportPptxButton from '@/components/ExportPptxButton';
 import { adaptiveTextStyle, useAdaptiveContrast } from '@/components/ui/AdaptiveContrast';
+import { Scene3DPreviewModal } from '@/components/three/Scene3DPreviewModal';
+import type { Scene3DData } from '@/lib/three/cad-to-obj';
 import type { InteriorNodeData, PortValue } from '@/lib/types';
+
+/** Parse an toàn output ẩn `_scene3d` (JSON `Scene3DData`, SPEC-3D-CORE §3) — thiếu/hỏng thì
+ * trả null, nút "Xem 3D" tự ẩn thay vì crash panel node. */
+function parseScene3D(json: string | undefined): Scene3DData | null {
+  if (!json) return null;
+  try {
+    const v = JSON.parse(json) as Partial<Scene3DData>;
+    if (Array.isArray(v.groups) && v.bboxMm && v.sizeM) return v as Scene3DData;
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Nhãn nhỏ đè lên thumbnail ảnh (A/B của node so sánh). Đo đúng GÓC ảnh mà nhãn nằm lên
@@ -290,13 +305,25 @@ function downloadText(content: string, filename: string, mime = 'text/plain') {
   URL.revokeObjectURL(url);
 }
 
-/** Nút tải OBJ/MTL + convert FBX (Blender local qua /api/render/fbx) cho node Bản vẽ → 3D. */
-function ObjFbxActions({ obj, mtl, cam }: { obj: string; mtl: string; cam: string }) {
+/** Nút tải OBJ/MTL + convert FBX (Blender local qua /api/render/fbx) + xem trực tiếp khối 3D
+ * (`Scene3DViewer` mode orbit, SPEC-3D-CORE §4 mã 3D-1 — lần đầu XEM khối trong app) cho node
+ * Bản vẽ → 3D. */
+function ObjFbxActions({ obj, mtl, cam, scene3d }: { obj: string; mtl: string; cam: string; scene3d: Scene3DData | null }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [show3d, setShow3d] = useState(false);
   return (
     <div className="space-y-1.5">
       <div className="flex gap-1.5">
+        {scene3d && (
+          <button
+            className="nodrag flex flex-1 items-center justify-center gap-1 rounded-md border border-[var(--border-strong)] py-1.5 text-[11px] text-[var(--t2)] hover:border-sky-500/60"
+            onClick={() => setShow3d(true)}
+          >
+            <Box size={12} /> Xem 3D
+          </button>
+        )}
+        {scene3d && <Scene3DPreviewModal open={show3d} onClose={() => setShow3d(false)} scene={scene3d} />}
         <button
           className="nodrag flex flex-1 items-center justify-center gap-1 rounded-md border border-[var(--border-strong)] py-1.5 text-[11px] text-[var(--t2)] hover:border-sky-500/60"
           onClick={() => {
@@ -386,6 +413,7 @@ export function NodeExtras({ nodeId, data }: { nodeId: string; data: InteriorNod
           obj={String(outputs._obj.value)}
           mtl={String(outputs._mtl?.value ?? '')}
           cam={String(outputs._cam?.value ?? '')}
+          scene3d={parseScene3D(outputs._scene3d ? String(outputs._scene3d.value) : undefined)}
         />
         {tier && <TierBadge tier={tier} />}
       </div>

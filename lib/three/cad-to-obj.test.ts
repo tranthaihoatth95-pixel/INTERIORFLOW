@@ -63,6 +63,19 @@ console.log('docToObjScene — dựng khối từ Doc thật');
   ok('tất định — 2 lần chạy cùng OBJ', again.obj === scene.obj && again.mtl === scene.mtl);
 }
 
+console.log('docToObjScene — groups (nguyên liệu viewer 3D, SPEC-3D-CORE §3)');
+{
+  const scene = docToObjScene(demoDoc(), { wallHeightMm: 2700, theme: 'warm' });
+  ok('có group tường + nội thất + sàn + phòng', scene.groups.some((g) => g.name === 'Wall_1') && scene.groups.some((g) => g.name.startsWith('Furn_1_')) && scene.groups.some((g) => g.name === 'Floor'));
+  ok('mọi group có positions chia hết cho 9 (số nguyên tam giác × 3 đỉnh × 3 toạ độ)', scene.groups.every((g) => g.positions.length > 0 && g.positions.length % 9 === 0));
+  ok('mọi group có colorHex hợp lệ (#rrggbb)', scene.groups.every((g) => /^#[0-9a-f]{6}$/i.test(g.colorHex)));
+  const wall1 = scene.groups.find((g) => g.name === 'Wall_1')!;
+  const wallYs: number[] = [];
+  for (let i = 1; i < wall1.positions.length; i += 3) wallYs.push(wall1.positions[i]);
+  ok('tam giác tường chạm đúng cao 2.7m (trục Y-up)', Math.max(...wallYs) - 2.7 < 1e-6 && Math.min(...wallYs) === 0);
+  ok('tổng số tam giác toàn scene khớp verts/faces cùng cấp độ lớn (không rỗng, không nổ số)', scene.groups.reduce((n, g) => n + g.positions.length / 9, 0) > scene.stats.faces * 0.5);
+}
+
 console.log('docToObjScene — biên & lỗi rõ ràng');
 {
   let threw = '';

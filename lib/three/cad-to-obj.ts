@@ -56,11 +56,34 @@ export interface SceneStats {
   sizeM: { w: number; d: number; h: number };
 }
 
+/**
+ * Một "lớp" hình học cùng 1 màu phẳng (Wall_i/Room_i/Furn_i/Window_i/Floor/Ceiling) — tam giác hoá
+ * SẴN, mét, trục Y-up (khớp hệ toạ độ OBJ export: x, cao, -y). `positions` là mảng phẳng KHÔNG
+ * index [x0,y0,z0, x1,y1,z1, ...] — đơn giản nhất cho BufferGeometry non-indexed ở tầng viewer
+ * (components/three), không cần thêm bước build index buffer cho khối phẳng-màu low-poly này.
+ */
+export interface SceneGroup {
+  name: string;
+  colorHex: string;
+  positions: number[];
+}
+
 export interface ObjScene {
   obj: string;
   mtl: string;
   stats: SceneStats;
   warnings: string[];
+  /** SPEC-3D-CORE §3 — nguyên liệu cho adapter ObjScene→BufferGeometry (viết tay, KHÔNG parse
+   * lại `obj` text — xem `lib/three/obj-scene-to-geometry.ts`). */
+  groups: SceneGroup[];
+}
+
+/** Phần CẦN cho tầng trình chiếu 3D (B) — bbox/size để đặt camera, groups để dựng hình. Không
+ * kéo theo `obj`/`mtl` text (chỉ dùng cho xuất file, không cần ở viewer). */
+export type Scene3DData = Pick<ObjScene, 'groups'> & { bboxMm: SceneStats['bboxMm']; sizeM: SceneStats['sizeM'] };
+
+export function toScene3DData(scene: ObjScene): Scene3DData {
+  return { groups: scene.groups, bboxMm: scene.stats.bboxMm, sizeM: scene.stats.sizeM };
 }
 
 /* ───────────────────── vật liệu ───────────────────── */
@@ -132,35 +155,67 @@ export function furnitureHeightMm(blockId: string): number {
   return 750;
 }
 
-/** builder OBJ — gom vertex/face, đơn vị mét, trục OBJ Y-up: (x, cao, -y). */
+/** builder OBJ — gom vertex/face, đơn vị mét, trục OBJ Y-up: (x, cao, -y). Đồng thời gom SONG
+ * SONG hình học đã tam-giác-hoá theo từng `object()` vào `groups` (SceneGroup) — 1 nguồn dựng cả
+ * OBJ text (xuất file) lẫn BufferGeometry (viewer 3D), tránh 2 lần logic dựng hình lệch nhau. */
 class ObjBuilder {
   private lines: string[] = [];
   private v = 0;
   verts = 0;
   faces = 0;
+  private posByIndex: number[][] = []; // posByIndex[i] = vị trí (m, Y-up) của vertex OBJ #(i+1)
+  private groupList: SceneGroup[] = [];
+  private cur: { name: string; colorHex: string; tris: number[] } | null = null;
 
   constructor(mtlFile: string) {
     this.lines.push('# InteriorFlow — OBJ sinh tất định từ bản vẽ CAD (mm → m)');
     this.lines.push(`mtllib ${mtlFile}`);
   }
 
-  object(name: string, mat: string) {
+  object(name: string, mat: Mat) {
     this.lines.push(`o ${name}`);
-    this.lines.push(`usemtl ${mat}`);
+    this.lines.push(`usemtl ${mat.name}`);
+    this.flushGroup();
+    this.cur = { name, colorHex: mat.hex, tris: [] };
+  }
+
+  private flushGroup() {
+    if (this.cur && this.cur.tris.length) {
+      this.groupList.push({ name: this.cur.name, colorHex: this.cur.colorHex, positions: this.cur.tris });
+    }
+    this.cur = null;
   }
 
   /** thêm vertex thế giới CAD (mm) → OBJ (m, Y-up). Trả index 1-based. */
   private vert(xMm: number, yMm: number, zMm: number): number {
-    const f = (n: number) => (n / 1000).toFixed(4);
-    this.lines.push(`v ${f(xMm)} ${f(zMm)} ${f(-yMm)}`);
+    const x = xMm / 1000;
+    const y = zMm / 1000;
+    const z = -yMm / 1000;
+    const f = (n: number) => n.toFixed(4);
+    this.lines.push(`v ${f(x)} ${f(y)} ${f(z)}`);
     this.v += 1;
     this.verts += 1;
+    this.posByIndex.push([x, y, z]);
     return this.v;
   }
 
   private face(idx: number[]) {
     this.lines.push(`f ${idx.join(' ')}`);
     this.faces += 1;
+  }
+
+  /** tam-giác quạt (fan) từ idx[0] — đúng cho đa giác lồi/star-shaped (tường/phòng/sàn thường
+   * vậy); đa giác lõm phức tạp có thể ra tam giác sai — chấp nhận được, viewer chỉ cần "đúng hình
+   * học đủ xem", không phải render production (§6 SPEC-3D-CORE). Không quan tâm chiều winding —
+   * material viewer dùng `side: DoubleSide` (không đèn/bóng đổ nên winding không ảnh hưởng gì). */
+  private fanTriangles(idx: number[]) {
+    if (!this.cur) return;
+    for (let i = 1; i < idx.length - 1; i++) {
+      for (const k of [idx[0], idx[i], idx[i + 1]]) {
+        const p = this.posByIndex[k - 1];
+        this.cur.tris.push(p[0], p[1], p[2]);
+      }
+    }
   }
 
   /**
@@ -175,9 +230,12 @@ class ObjBuilder {
     const top = pts.map((p) => this.vert(p.x, p.y, z1));
     this.face([...bot].reverse()); // đáy úp xuống
     this.face(top); // đỉnh ngửa lên
+    this.fanTriangles([...bot].reverse());
+    this.fanTriangles(top);
     for (let i = 0; i < pts.length; i++) {
       const j = (i + 1) % pts.length;
       this.face([bot[i], bot[j], top[j], top[i]]);
+      this.fanTriangles([bot[i], bot[j], top[j], top[i]]);
     }
   }
 
@@ -188,6 +246,11 @@ class ObjBuilder {
 
   toString(): string {
     return this.lines.join('\n') + '\n';
+  }
+
+  groups(): SceneGroup[] {
+    this.flushGroup();
+    return this.groupList;
   }
 }
 
@@ -279,7 +342,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     { x: bbox.maxX + pad, y: bbox.maxY + pad },
     { x: bbox.minX - pad, y: bbox.maxY + pad },
   ];
-  builder.object('Floor', mats.floor.name);
+  builder.object('Floor', mats.floor);
   builder.prism(floorPoly, -100, 0);
 
   // ---- Phòng: dò biên qua findHatchBoundary tại tâm mỗi block nội thất (import-only) ----
@@ -304,19 +367,19 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     }
   }
   roomPolys.forEach((poly, i) => {
-    builder.object(`Room_${i + 1}`, mats.room.name);
+    builder.object(`Room_${i + 1}`, mats.room);
     builder.prism(poly, 0, 2);
   });
 
   // ---- Tường: extrude poché ----
   wallHatches.forEach((h, i) => {
-    builder.object(`Wall_${i + 1}`, mats.wall.name);
+    builder.object(`Wall_${i + 1}`, mats.wall);
     builder.prism(h.points, 0, H);
   });
 
   // ---- Trần (tuỳ chọn) ----
   if (opts.ceiling) {
-    builder.object('Ceiling', mats.ceil.name);
+    builder.object('Ceiling', mats.ceil);
     builder.prism(floorPoly, H, H + 100);
   }
 
@@ -325,7 +388,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     const base = blockFootprint(b);
     if (!base) return;
     const def = BLOCK_MAP[b.block];
-    builder.object(`Furn_${i + 1}_${def.id}`, mats.furn.name);
+    builder.object(`Furn_${i + 1}_${def.id}`, mats.furn);
     builder.box4(base, 0, furnitureHeightMm(def.id));
   });
 
@@ -333,7 +396,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
   windows.forEach((b, i) => {
     const base = blockFootprint(b);
     if (!base) return;
-    builder.object(`Window_${i + 1}`, mats.wall.name);
+    builder.object(`Window_${i + 1}`, mats.wall);
     builder.box4(base, 800, Math.min(2200, H - 200));
   });
 
@@ -356,5 +419,6 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     mtl: mtlOf([mats.wall, mats.floor, mats.ceil, mats.furn, mats.room]),
     stats,
     warnings,
+    groups: builder.groups(),
   };
 }

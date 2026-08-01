@@ -21,7 +21,7 @@ import { text2imageCore } from '@/lib/render-core/text2image-core';
 import { quantizeIdMap, renderIdMap, maskForRegion, refineWithAlpha, IDMASK_MAX_REGIONS } from '@/lib/render-core/idmask-core';
 import { extractForeground, alphaToMask } from '@/lib/render-core/furniture-extract-core';
 import { applyMaskedAdjust } from '@/lib/render-core/local-edit-core';
-import { docToObjScene, type SceneTheme } from '@/lib/three/cad-to-obj';
+import { docToObjScene, toScene3DData, type SceneTheme } from '@/lib/three/cad-to-obj';
 import {
   presetCamera,
   parseCameraSpec,
@@ -279,6 +279,9 @@ export const renderV2Nodes: NodeDefinition[] = [
         _obj: { dataType: 'text', value: scene.obj },
         _mtl: { dataType: 'text', value: scene.mtl },
         _cam: { dataType: 'text', value: JSON.stringify({ ...cam, ratio: spec.ratio }) },
+        // SPEC-3D-CORE §3 — nguyên liệu cho Scene3DViewer (NodeExtras nút "Xem 3D"), tách khỏi
+        // `_obj` text vì viewer KHÔNG được parse ngược OBJ (quyết định #2, xem cad-to-obj.ts).
+        _scene3d: { dataType: 'text', value: JSON.stringify(toScene3DData(scene)) },
         _tier: tierPort('Tầng lõi tất định (CAD→OBJ extrude) — không AI'),
       };
     },
