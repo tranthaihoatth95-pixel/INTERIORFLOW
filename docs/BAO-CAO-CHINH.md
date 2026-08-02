@@ -1359,3 +1359,41 @@ nút toggle trên tab browser mới đôi khi không đăng ký (đọc store th
   sửa tay chưa commit, thêm entry port 3004) + dev server đang chạy thật ở đó. Thiếu 2/4 điều
   kiện an toàn `CLAUDE.md`. Ghi rõ trong `STATUS.md` mục "Worktree đang mở", để Hoà quyết.
 - Tiếp theo: **VIỆC 2 — AppShell 6 ổ cắm** theo `SPEC-HA-TANG-UI-IF.md`.
+
+## [phiên tiếp] VIỆC 2 — AppShell 6 ổ, CẢ 5 MÀN + xoá LeftRail/StageShell — XONG (2 commit)
+- Commit `9fe8be8` (phần 1 — CAD mẫu thí điểm) + `3a92170` (phần 2 — phủ cả 5 màn theo bổ sung
+  Hoà giữa phiên, xoá `LeftRail.tsx`/`StageShell.tsx`).
+- **Phần 1 (CAD)**: `AppShell.tsx`/`Navigator.tsx`/`AppLogoMenu.tsx`/`lib/shell/mode-registry.ts`
+  mới. 6 ổ: Header 42 (AppChrome prop `logoMenu` — logo mở menu 4 mục xuyên app thay rail) ·
+  Navigator 214 (đáy 2 hàng cố định, nhớ thu gọn tay qua localStorage, auto-thu <1280 KHÔNG tự
+  mở lại) · Stage · Inspector 236 CHỈ render khi có chọn (AnimatePresence + ramp .96→1.008→1) ·
+  Toolbelt slot (chưa có nội dung — gộp CadTouchDock là việc riêng) · Status. `LayerPanel` dời
+  phải→trái (Navigator); `SelectionInfoPanel` (BIM/room/wall/shape, tự gate selection) thành ruột
+  Inspector — hết nổi đè canvas. Token mật độ `--tap/--row/--gap/--fs-2xs` vào `globals.css` +
+  override đúng điều kiện `(hover:none) and (pointer:coarse)` có sẵn dòng ~1030.
+- **Phần 2 (bổ sung Hoà giữa phiên — "rail phải biến mất khỏi CẢ app")**: Render (HomeScreen) →
+  `RenderNavigator` (outline khối trên canvas theo `NodeCategory` thật); Present →
+  `PresentNavigator` (placeholder TRUNG THỰC — deck/current là state cục bộ sâu trong
+  PresentEditor, chưa có store chung, KHÔNG giả nút; SlideStrip vẫn là nơi chuyển trang);
+  `/files` → `FilesNavigator` (cây thư mục 2 cấp, `currentFolderId` nâng lên page làm nguồn
+  chung 2 chiều); `/settings` → `SettingsNavigator` (nhảy neo 4 nhóm). XOÁ `LeftRail.tsx` +
+  `StageShell.tsx` (grep 0 tham chiếu code trước khi xoá).
+- Test: tsc/eslint sạch từng phần, `npm test` 0 fail cả 2 lần.
+- **Nghiệm thu 5 màn (đo DOM, không chỉ nhìn)**: CẢ 5 (CAD/Render/Present//files//settings)
+  header ĐÚNG 42px + Navigator ĐÚNG 214px, cả 1440×900 lẫn 2560×1440 (ổ không nhúc nhích khi
+  rộng màn), sáng + tối. CAD: chọn entity → Inspector hiện đúng title/sub + BIM box, ✕ gọi đúng
+  clearSelection. `/files`: bấm cây Navigator → nội dung + breadcrumb + inspector đổi đúng 2
+  chiều. `/settings`: neo cuộn đúng. Render: BottomToolbar đúng tâm Stage (1387=1387).
+- 💭 Hạn chế verify phiên này: sandbox `visibilityState==='hidden'` (họ vấn đề rAF đã ghi từ
+  3D-1) — animation ramp Inspector xác nhận qua computed style giữa chừng (scale 1.007/opacity
+  0.85 đúng keyframe), không xem được chạy mượt tận mắt. Screenshot enter-animation cũng vậy.
+- 💭 Server 3001 nghẹt 1 lần giữa phiên (curl timeout cả / lẫn /files) — restart + xoá
+  `.next/cache/webpack` là hết, ĐÚNG bẫy "2 dev server chung repo" đã ghi, không phải bug code.
+- 💭 `.git/index.lock` + `HEAD.lock` stale (33-40 phút, không có process git sống) — xử lý theo
+  convention có sẵn trong repo: rename `*.lock.stale-<pid>` (thấy hàng loạt file cùng dạng trong
+  `.git/`), không rm. 
+- **CHƯA làm (ghi rõ, không lặng lẽ bỏ)**: Toolbelt ổ ⑤ mới có SLOT (CadTouchDock/dock lệnh chưa
+  gộp vào — cần đổi cách CadEditor mount dock, việc riêng) · Trụ 2 sổ lệnh (`lib/commands/
+  registry.ts`) · Trụ 3 Inspector tự sinh schema · tab ngang 34px trên canvas (CadSheets đã có
+  tab riêng, chưa chuẩn hoá về khung chung) · danh sách trang thật cho PresentNavigator ·
+  click-để-focus node từ RenderNavigator · Layer State đỉnh Navigator (tính năng mới, cần model).

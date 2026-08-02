@@ -9,15 +9,16 @@
  *   · `/present-editor`        — route cũ, nay redirect; chưa xác định được dự án nào đang
  *                                hoạt động thì render thẳng màn này (giữ hành vi cũ).
  *
- * Nội dung giữ NGUYÊN: StudioBar (active='present') + PresentSheets với deck MẪU (editor tự
- * nạp template từ thư viện Reference nếu có). Hydration-safe: deck dựng trong useState
- * initializer (chạy 1 lần ở client).
+ * VIỆC 2 mở rộng (03/08) — `<AppShell>` thay `<StageShell>` (Hoà: rail capsule biến mất khỏi
+ * CẢ app, không chỉ chặng Vẽ). Navigator = `PresentNavigator` (placeholder trung thực — xem
+ * comment trong file đó). Nội dung `PresentSheets` giữ NGUYÊN.
  */
 
 import { useState } from 'react';
 import PresentSheets from '@/components/present-editor/PresentSheets';
 import { makeSampleDeck } from '@/lib/present-editor/sample';
-import { StageShell } from '@/components/studio/StageShell';
+import { AppShell } from '@/components/studio/AppShell';
+import { PresentNavigator } from '@/components/present-editor/PresentNavigator';
 import StatusBar from '@/components/studio/StatusBar';
 import { StageEnter } from '@/components/studio/StageTransition';
 import { CommentLayer } from '@/components/CommentLayer';
@@ -26,6 +27,7 @@ import { StageIntroCard } from '@/components/onboarding/StageIntroCard';
 import { useFlowStore } from '@/lib/store';
 import { usePlayStatus } from '@/lib/present-editor/play-status';
 import { effectiveUserId } from '@/lib/resume';
+import { useT } from '@/lib/i18n';
 
 export default function PresentStageScreen() {
   const [deck] = useState(makeSampleDeck);
@@ -37,8 +39,14 @@ export default function PresentStageScreen() {
   // VIỆC A3 (28/07): StatusBar tự ẩn khi trình chiếu toàn màn hình (SlidePlayer che hết,
   // playing nay ở store dùng chung để đọc được từ NGOÀI PresentEditor).
   const playing = usePlayStatus((s) => s.playing);
+  const tr = useT();
   return (
-    <StageShell active="present" statusBar={<StatusBar stage="present" hidden={playing} />}>
+    <AppShell
+      active="present"
+      statusBar={<StatusBar stage="present" hidden={playing} />}
+      navigator={<PresentNavigator />}
+      navigatorAddLabel={tr('Trang mới', 'New page')}
+    >
       {/* C-4: vào chặng bằng crossfade + scale "dynamic wallpaper" (StageEnter). */}
       <StageEnter style={{ display: 'block' }}>
         {/* Tầng multi-sheet (phụ-thêm): thanh tab + PresentEditor. 1 sheet ⇒ y hệt bản cũ. */}
@@ -48,6 +56,6 @@ export default function PresentStageScreen() {
       <CommentLayer />
       {/* Tầng 2 onboarding — thẻ giới thiệu lần đầu chặng Presenting. */}
       <StageIntroCard stage="present" userId={userId} />
-    </StageShell>
+    </AppShell>
   );
 }

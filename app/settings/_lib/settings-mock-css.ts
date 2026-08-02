@@ -3,7 +3,7 @@
 // NGUYÊN VĂN; màu bề mặt/chữ/viền đổi hex tĩnh → biến CSS thật của app (globals.css) — xem bảng
 // map + lý do ở đầu files-mock-css.ts (không lặp lại ở đây). Icon = lucide-react, không glyph.
 export const SETTINGS_MOCK_CSS = `
-.if-settings-app{display:flex;height:100dvh;max-width:1440px;margin:0 auto;color:var(--t1);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.if-settings-app{display:flex;height:100%;max-width:1440px;margin:0 auto;color:var(--t1);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 .if-settings-app *{box-sizing:border-box}
 
 /* Rail riêng ĐÃ XOÁ 03/08 — /settings dùng chung components/LeftRail.tsx toàn app. */
@@ -79,7 +79,7 @@ export const SETTINGS_MOCK_CSS = `
 .if-settings-app .avbig{cursor:pointer;transition:transform .15s,box-shadow .15s}
 .if-settings-app .avbig:hover{transform:scale(1.04)}
 
-.if-settings-outer{min-height:100dvh;background:var(--bg)}
+.if-settings-outer{height:100%;background:var(--bg)}
 
 /* SPEC-HOVER-FOCUS-IDF §3.8 — reduced-motion: bỏ scale/lift, giữ đổi nền ngắn */
 @media (prefers-reduced-motion:reduce){

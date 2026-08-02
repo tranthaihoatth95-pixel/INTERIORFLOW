@@ -21,7 +21,8 @@ import { useRouter } from 'next/navigation';
 import { LoginScreen } from '@/components/entry/LoginScreen';
 import { WelcomeIntro } from '@/components/entry/WelcomeIntro';
 import { StageIntroCard } from '@/components/onboarding/StageIntroCard';
-import { StageShell } from '@/components/studio/StageShell';
+import { AppShell } from '@/components/studio/AppShell';
+import { RenderNavigator } from '@/components/render-studio/RenderNavigator';
 import { RenderDocBar } from '@/components/studio/RenderDocBar';
 import { NodeLibraryPanel } from '@/components/NodeLibraryPanel';
 import { GalleryPanel } from '@/components/GalleryPanel';
@@ -569,13 +570,18 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
         animate="visible"
         className="h-[100dvh] overflow-hidden bg-[var(--bg)]"
       >
-        {/* 03/08 (SPEC-APP-SHELL-CHUNG §3): shell chuyển sang <StageShell> dùng chung —
-            AppChrome/LeftRail/Dashboard/FlowsPanel sống trong shell (mọi chặng như nhau).
-            Nội dung còn lại giữ nguyên. */}
-        <StageShell
+        {/* VIỆC 2 mở rộng (03/08) — <AppShell> thay <StageShell> (Hoà: rail capsule biến mất
+            khỏi CẢ app). Navigator = RenderNavigator (outline khối trên canvas, ĐỘC LẬP với
+            renderMode — Command3DPanel của mode 'model3d' vẫn sống trong Render3DModeSkeleton
+            như cũ, KHÔNG lồng 2 sidebar). ⚠️ CHƯA kiểm lại canh giữa "Vẽ 3D" toggle trong
+            ModeSwitchBar.tsx (trước neo theo bề rộng LeftRail cũ ~76px, Navigator nay 214px —
+            xem lại nếu lệch tâm khi verify). */}
+        <AppShell
           active="render"
           toolbar={<RenderDocBar />}
           statusBar={<StatusBar stage="render" hidden={presentModeOpen} />}
+          navigator={<RenderNavigator />}
+          navigatorAddLabel="Khối mới"
         >
           {/* mỗi panel tự quản AnimatePresence riêng (iOS sheet, key duy nhất) */}
 
@@ -623,7 +629,7 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
               )
             }
           />
-        </StageShell>
+        </AppShell>
         <MaskPainterModal />
         <AnnotateModal />
         <Lightbox />

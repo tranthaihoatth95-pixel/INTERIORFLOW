@@ -17,7 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Plus, Trash2, X, Command, Sparkles, Wand2,
+  FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Trash2, X, Command, Sparkles, Wand2,
   ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair, Tag, Check, Lightbulb, FileText, Save, Camera,
   LayoutTemplate, FileSignature, Wrench, Ruler, ListOrdered, History, HardDrive,
 } from 'lucide-react';
@@ -527,7 +527,8 @@ export default function CadEditor() {
         {cadMode === 'revit' && <RevitSummaryPanel />}
         {scheduleOpen && <SchedulePanel onClose={() => setScheduleOpen(false)} />}
         {historyOpen && <HistoryPanel onClose={() => setHistoryOpen(false)} />}
-        <SelectionInfoPanel />
+        {/* SelectionInfoPanel — VIỆC 2: ra khỏi canvas, nay sống ở ổ ④ Inspector của `AppShell`
+            (xem `CadStageScreen.tsx`), không render tại đây nữa. */}
         {handoffMsg && (
           <div style={{ position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 30, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 14px', fontSize: 12.5, color: 'var(--t2)' }}>
             {handoffMsg}
@@ -626,16 +627,15 @@ export function LayerPanel() {
   const current = useCadStore((s) => s.currentLayer);
   const setCurrent = useCadStore((s) => s.setCurrentLayer);
   const updateLayer = useCadStore((s) => s.updateLayer);
-  const addLayer = useCadStore((s) => s.addLayer);
   const removeLayer = useCadStore((s) => s.removeLayer);
 
   return (
-    <div style={{ padding: 10, fontSize: 12.5 }}>
+    <div style={{ padding: '2px 6px', fontSize: 12.5 }}>
+      {/* Nút "+ Lớp mới" nay ở đáy Navigator (`Navigator.tsx`, hàng trên) — không lặp ở đây nữa
+          (VIỆC 2, tránh 2 chỗ cùng chức năng khi LayerPanel dời từ Inspector phải sang Navigator
+          trái). */}
       <div style={panelHead}>
         <span>Lớp (Layer)</span>
-        <button type="button" onClick={addLayer} title="Thêm lớp" style={miniBtn}>
-          <Plus size={14} />
-        </button>
       </div>
       <div style={{ overflowY: 'auto' }}>
         {doc.layers.map((l) => {
@@ -1903,14 +1903,17 @@ function WallStatsBadge() {
 
 /* ───────── B2.4 info panel + B2.5 variant switch — hiện khi chọn ĐÚNG 1 BlockEntity ─────────
  * B1 (24/07, IF2-nền): thêm ô gán BIM (storey + elementType) cho MỌI selection (1 hay nhiều
- * entity, mọi type) — trước đây schema có field nhưng CHƯA có UI gán ở IF1. */
-function SelectionInfoPanel() {
+ * entity, mọi type) — trước đây schema có field nhưng CHƯA có UI gán ở IF1.
+ *
+ * VIỆC 2 (03/08, `SPEC-HA-TANG-UI-IF.md`/`SPEC-CAD-SHELL-V3.md`): KHÔNG còn nổi đè canvas —
+ * EXPORT để `CadStageScreen` đặt vào ổ ④ Inspector 236 của `AppShell` (khung phải cố định, chỉ
+ * render khi có chọn — `AppShell` tự gate, hàm này chỉ cần trả `null` khi rỗng như cũ). Bỏ
+ * `position:absolute`/safe-area (không còn cần né `CadTouchDock`, đã ra khỏi canvas). */
+export function SelectionInfoPanel() {
   const doc = useCadStore((s) => s.doc);
   const selection = useCadStore((s) => s.selection);
   const updateEntities = useCadStore((s) => s.updateEntities);
   const clearSelection = useCadStore((s) => s.clearSelection);
-  const cadMode = useCadStore((s) => s.cadMode);
-  const safeArea = canvasSafeAreaInsets(cadMode);
 
   if (selection.length === 0) return null;
   const selected = doc.entities.filter((e) => selection.includes(e.id));
@@ -1921,9 +1924,7 @@ function SelectionInfoPanel() {
   const wallLikeEntity = single && isWallLikeEntity(single) ? single : null;
 
   return (
-    // 2.1.8.l (30/07) — 3ª lần né dock trước khi có luật: "bottom 110" đoán chừng (thay "46 cũ",
-    // đã né 2 lần). Nay đọc THẬT từ safe-area, tự đúng nếu CadTouchDock đổi kích thước sau này.
-    <div style={{ position: 'absolute', left: 12, bottom: safeArea.bottom, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <BimAssignBox key={selection.join('|')} selected={selected} onApply={updateEntities} />
       {roomLabelEntity && (
         <RoomTypeBox
@@ -1975,7 +1976,7 @@ function BimAssignBox({ selected, onApply }: { selected: Entity[]; onApply: (es:
   const typeValue = commonType === undefined ? (sameType ? '' : '') : commonType === null ? 'null' : commonType;
 
   return (
-    <div style={{ ...panel, position: 'relative', width: 230, padding: '8px 10px' }}>
+    <div style={{ ...panel, position: 'relative', width: '100%', padding: '8px 10px' }}>
       <div style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--t3)', letterSpacing: 0.4, marginBottom: 6 }}>
         BIM · IFC — {selected.length} đối tượng
       </div>
@@ -2017,7 +2018,7 @@ function BimAssignBox({ selected, onApply }: { selected: Entity[]; onApply: (es:
 function RoomTypeBox({ entity, onApply }: { entity: TextEntity; onApply: (es: Entity[]) => void }) {
   const current = entity.roomType ?? classifyRoom(entity.text.trim());
   return (
-    <div style={{ ...panel, position: 'relative', width: 230, padding: '8px 10px' }}>
+    <div style={{ ...panel, position: 'relative', width: '100%', padding: '8px 10px' }}>
       <div style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--t3)', letterSpacing: 0.4, marginBottom: 6 }}>
         Công năng phòng · Room type
       </div>
@@ -2068,7 +2069,7 @@ function WallTypePanel({ entity, onApply }: { entity: Entity; onApply: (es: Enti
   };
 
   return (
-    <div style={{ ...panel, position: 'relative', width: 230, padding: '8px 10px' }}>
+    <div style={{ ...panel, position: 'relative', width: '100%', padding: '8px 10px' }}>
       <div style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--t3)', letterSpacing: 0.4, marginBottom: 6 }}>
         Loại tường · Wall type
       </div>

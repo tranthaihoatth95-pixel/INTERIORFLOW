@@ -28,7 +28,7 @@
  * "Run flow" Command Palette) + hàng đợi trong menu "Việc" — xem lib/execution.ts.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
@@ -43,6 +43,8 @@ import { IFLogo } from '@/components/entry/IFLogo';
 import { requestGallery } from '@/lib/resume';
 import SessionWatch from '@/components/studio/SessionWatch';
 import ShortcutsPanel from '@/components/ShortcutsPanel';
+import { AppLogoMenu } from '@/components/studio/AppLogoMenu';
+import { useDismissable } from '@/lib/useDismissable';
 import { activeToPhase, pickStage } from '@/lib/studio/stage-nav';
 import type { AppChromeActive } from '@/components/studio/AppChromeTypes';
 
@@ -50,19 +52,37 @@ export type { AppChromeActive };
 
 interface Props {
   active: AppChromeActive;
+  /** VIỆC 2 (`AppShell`, hiện chỉ CAD dùng) — bật thì logo mở `AppLogoMenu` (4 mục xuyên app)
+   * thay vì điều hướng thẳng Gallery, và header cao 42px đúng `SPEC-HA-TANG-UI-IF` Trụ 1.
+   * Mặc định false: Render/Present (còn `StageShell` cũ) giữ NGUYÊN hành vi/kích thước cũ —
+   * đổi behavior toàn cục ở đây sẽ ảnh hưởng 2 chặng chưa verify theo khung mới. */
+  logoMenu?: boolean;
 }
 
-export function AppChrome({ active }: Props) {
+export function AppChrome({ active, logoMenu }: Props) {
   const flowName = useFlowStore((s) => s.flowName);
   const workspace = useFlowStore((s) => s.workspace);
   const setFlowName = useFlowStore((s) => s.setFlowName);
   const applyTheme = useFlowStore((s) => s.applyTheme);
   const [editing, setEditing] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [logoMenuOpen, setLogoMenuOpen] = useState(false);
+  const logoRef = useRef<HTMLButtonElement>(null);
+  const logoMenuRef = useRef<HTMLDivElement>(null);
+  const [logoAnchor, setLogoAnchor] = useState<{ top: number; left: number } | null>(null);
   const tr = useT();
   const router = useRouter();
   const pathname = usePathname();
   const { begin } = useStageTransition();
+
+  useLayoutEffect(() => {
+    if (!logoMenuOpen) return;
+    const el = logoRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setLogoAnchor({ top: r.bottom + 6, left: r.left });
+  }, [logoMenuOpen]);
+  useDismissable({ open: logoMenuOpen, onDismiss: () => setLogoMenuOpen(false), refs: [logoRef, logoMenuRef] });
 
   const currentPhase = activeToPhase(active);
   const tint = STAGE_TINT[active === 'render' ? (workspace ?? DEFAULT_PHASE) : currentPhase];
@@ -124,16 +144,22 @@ export function AppChrome({ active }: Props) {
       // đã tự deselect khi click nền, không cần marker (thêm vào sẽ vô nghĩa, không hại nhưng
       // cũng không lợi — bỏ qua cho đúng phạm vi "chỉ nơi cần").
       {...(active !== 'render' ? { 'data-if-deselect-zone': 'true' } : {})}
-      className="mat-header relative z-30 flex h-12 items-center gap-2 border-b border-[var(--border)] px-2 sm:gap-3 sm:px-3"
+      className={`mat-header relative z-30 flex items-center gap-2 border-b border-[var(--border)] px-2 sm:gap-3 sm:px-3 ${logoMenu ? 'h-[42px]' : 'h-12'}`}
       style={{ borderBottomColor: `color-mix(in srgb, ${tint} 55%, var(--border))` }}
     >
       <button
+        ref={logoRef}
         type="button"
         onClick={() => {
+          if (logoMenu) {
+            setLogoMenuOpen((o) => !o);
+            return;
+          }
           requestGallery();
           if (active !== 'render') router.push('/');
         }}
-        title="Về Gallery — InteriorFlow"
+        title={logoMenu ? tr('Tổng quan · Dự án · Files · Thư viện', 'Overview · Projects · Files · Library') : 'Về Gallery — InteriorFlow'}
+        aria-expanded={logoMenu ? logoMenuOpen : undefined}
         className="flex shrink-0 items-center gap-2 border-none bg-transparent p-0"
       >
         <IFLogo size={26} variant="framed" className="shrink-0 text-[var(--t1)]" />
@@ -144,6 +170,15 @@ export function AppChrome({ active }: Props) {
           InteriorFlow
         </span>
       </button>
+      {logoMenu && (
+        <AppLogoMenu
+          open={logoMenuOpen}
+          anchorRect={logoAnchor}
+          onDismiss={() => setLogoMenuOpen(false)}
+          menuRef={logoMenuRef}
+          stage={active === 'render' ? 'render' : active === 'present' ? 'present' : 'cad'}
+        />
+      )}
 
       <div className="mx-1 hidden h-5 w-px bg-[var(--border)] sm:block" />
 

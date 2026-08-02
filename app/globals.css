@@ -52,6 +52,22 @@
   --ease-apple: cubic-bezier(0.32, 0.72, 0, 1);
   --dur-fast: 0.18s;
   --dur-base: 0.32s;
+
+  /* Mật độ desktop vs cảm ứng (SPEC-MAT-DO-CON-TRO §5, SPEC-HA-TANG-UI-IF VIỆC 2) —
+     AppShell/Navigator/Toolbelt dùng token này thay số cứng. Override cảm ứng ở
+     media query `(hover: none) and (pointer: coarse)` ngay dưới — TÁI DÙNG đúng điều
+     kiện đã có ở khối .if-tooltip-static (dòng ~1030), không phát minh điều kiện mới. */
+  --tap: 32px;
+  --row: 28px;
+  --gap: 8px;
+  --fs-2xs: 11px;
+}
+@media (hover: none) and (pointer: coarse) {
+  :root {
+    --tap: 44px;
+    --row: 44px;
+    --gap: 12px;
+  }
 }
 
 /* ---------- Dark — nền mực sâu (mặc định) ---------- */

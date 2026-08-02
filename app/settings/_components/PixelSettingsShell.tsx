@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, LogOut } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
-import { LeftRail } from '@/components/LeftRail';
 import { AiDependencySettings } from '@/components/settings/AiDependencySettings';
 import { GuModelSettings } from '@/components/settings/GuModelSettings';
 import { ExperienceSettings } from '@/components/settings/ExperienceSettings';
@@ -11,7 +10,6 @@ import { RawStyle } from '@/components/filemanager/RawStyle';
 import { SETTINGS_MOCK_CSS } from '../_lib/settings-mock-css';
 import { useSettingsLocalState } from '../_lib/local-state';
 import { CanvasWallpaper } from './CanvasWallpaper';
-import { LibrarySheet } from '@/components/library/LibrarySheet';
 import { ProfileCard } from './ProfileCard';
 import { AppearanceCard } from './AppearanceCard';
 import { StorageCard } from './StorageCard';
@@ -31,13 +29,12 @@ export function PixelSettingsShell() {
     <div className="if-settings-outer">
       <RawStyle css={SETTINGS_MOCK_CSS} />
       <CanvasWallpaper />
-      {/* Như `/files`: trang này dùng `LeftRail` nhưng không qua `StageShell`, phải tự mount sheet
-          thì nút "Thư viện" ở rail mới hoạt động. */}
-      <LibrarySheet stage="render" />
+      {/* LibrarySheet KHÔNG mount lẻ ở đây nữa (bản g4 cũ phải tự mount vì trang không qua
+          StageShell) — nay `/settings` bọc trong AppShell, sheet mount 1 lần ở đó cho CẢ 5 màn. */}
       <div className="if-settings-app">
-        {/* Rail DÙNG CHUNG toàn app — G4 bỏ rail riêng 03/08 ("đừng dựng rail thứ hai"). Cài đặt
-            giờ vào qua menu avatar cuối rail (AccountMenu), không còn nút ⚙ riêng. */}
-        <LeftRail />
+        {/* Rail (`components/LeftRail.tsx`) — XOÁ 03/08: `/settings` nay bọc trong `<AppShell>`
+            (`app/settings/page.tsx`), Navigator = `SettingsNavigator` (nhảy neo tới từng nhóm,
+            id khớp `#group-*` dưới đây). */}
 
         <div className="main">
           <button type="button" className="backlink" onClick={() => router.back()}>
@@ -47,15 +44,19 @@ export function PixelSettingsShell() {
           <h1>Cài đặt</h1>
           <div className="sub">Tài khoản · giao diện · nơi lưu file — áp cho cả app, màu dự án vẫn thuộc Brand Kit</div>
 
-          <div className="cols">
+          <div id="group-profile" className="cols" style={{ scrollMarginTop: 16 }}>
             <ProfileCard />
-            <AppearanceCard wallpaper={state.wallpaper} onPickWallpaper={setWallpaper} />
-            <StorageCard
-              reducedMotion={state.reducedMotion}
-              autoBackup={state.autoBackup}
-              onToggleReducedMotion={() => setReducedMotion(!state.reducedMotion)}
-              onToggleAutoBackup={() => setAutoBackup(!state.autoBackup)}
-            />
+            <div id="group-appearance" style={{ display: 'contents' }}>
+              <AppearanceCard wallpaper={state.wallpaper} onPickWallpaper={setWallpaper} />
+            </div>
+            <div id="group-storage" style={{ display: 'contents' }}>
+              <StorageCard
+                reducedMotion={state.reducedMotion}
+                autoBackup={state.autoBackup}
+                onToggleReducedMotion={() => setReducedMotion(!state.reducedMotion)}
+                onToggleAutoBackup={() => setAutoBackup(!state.autoBackup)}
+              />
+            </div>
           </div>
 
           {user && (
@@ -73,7 +74,7 @@ export function PixelSettingsShell() {
             </button>
           )}
 
-          <div style={{ marginTop: 32, maxWidth: 1000 }}>
+          <div id="group-advanced" style={{ marginTop: 32, maxWidth: 1000, scrollMarginTop: 16 }}>
             <h2 style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--t2)' }}>Nâng cao</h2>
             <p style={{ margin: '4px 0 12px', fontSize: 11, color: 'var(--t2)' }}>
               Chưa có trong bản mẫu pixel — giữ nguyên tính năng cũ, chưa đổi giao diện.
