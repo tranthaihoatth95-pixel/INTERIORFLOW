@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · CAD shell — rail 2 tầng + panel dock</title>
+<style>
+:root{
+  --bg:#edebe7; --panel:#fff; --card:#faf9f7; --field:#f3f1ee; --hover:#eceae6;
+  --border:#e4e1db; --border-strong:#d3cfc7;
+  --t1:#26262b; --t2:#5c5c65; --t3:#8f8f97;
+  --accent:#6a57f5; --accent-soft:rgba(106,87,245,.12); --accent-ring:rgba(106,87,245,.45);
+  --radius-sm:10px; --radius-md:14px; --radius-lg:20px;
+  --tap:32px; --row:28px; --gap:8px; --fs-ui:13px;
+  --grid:#e7e4de; --grid2:#dcd8d0; --canvas:#f6f4f0;
+  --ease:cubic-bezier(.32,.72,0,1);
+}
+[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#1e1e22; --hover:#26262c;
+  --border:#2a2a31; --border-strong:#3a3a43;
+  --t1:#f5f5f7; --t2:#b8b8c0; --t3:#85858f;
+  --grid:#212127; --grid2:#2b2b33; --canvas:#111114;
+}
+@media (hover:none) and (pointer:coarse){
+  :root{ --tap:44px; --row:40px; --gap:12px; --fs-ui:15px }
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--t1);font:400 var(--fs-ui)/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+svg{display:block}
+.ic{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ic.sm{width:14px;height:14px}
+
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* ---------- THANH TIÊU ĐỀ ---------- */
+.title{height:44px;flex:none;display:flex;align-items:center;gap:12px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--border)}
+.brandmark{width:22px;height:22px;border-radius:6px;background:var(--t1);color:var(--panel);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}
+.brand{font-weight:650;letter-spacing:-.01em}
+.docname{color:var(--t2);padding-left:12px;border-left:1px solid var(--border)}
+.stageseg{margin-left:auto;display:flex;background:var(--field);border-radius:9px;padding:3px;gap:2px}
+.stageseg button{border:0;background:transparent;color:var(--t3);font:inherit;font-size:12.5px;padding:5px 13px;border-radius:7px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.stageseg button.on{background:var(--panel);color:var(--t1);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.10)}
+.titlebtns{display:flex;gap:2px;margin-left:12px}
+.tbtn{width:var(--tap);height:var(--tap);border:0;background:transparent;color:var(--t2);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.tbtn:hover{background:var(--hover)}
+
+/* ---------- THÂN ---------- */
+.body{flex:1;display:flex;min-height:0}
+
+/* ---------- RAIL 2 TẦNG (dính mép, KHÔNG nổi) ---------- */
+.rail{width:52px;flex:none;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:6px 0}
+.rail .grp{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%}
+.rail .sep{width:24px;height:1px;background:var(--border);margin:7px 0}
+.rail .caption{font-size:8.5px;font-weight:700;letter-spacing:.08em;color:var(--t3);text-transform:uppercase;margin:2px 0 4px}
+.rb{width:38px;height:38px;border:0;background:transparent;color:var(--t2);border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:background .12s var(--ease),color .12s var(--ease)}
+.rb:hover{background:var(--hover);color:var(--t1)}
+.rb.on{color:var(--accent);background:var(--accent-soft)}
+.rb.on::before{content:"";position:absolute;left:-6px;top:9px;bottom:9px;width:2.5px;border-radius:0 3px 3px 0;background:var(--accent)}
+.rb .cnt{position:absolute;right:5px;top:5px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--field);border:1px solid var(--border);color:var(--t2);font-size:8.5px;font-weight:700;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.rail .foot{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:4px;padding-bottom:2px}
+.avat{width:30px;height:30px;border-radius:50%;background:linear-gradient(145deg,#c9a27a,#8d5f3c);border:1.5px solid var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:pointer}
+
+/* ---------- PANEL TRÁI (mở ra từ rail) ---------- */
+.side{width:250px;flex:none;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.sidehead{height:34px;flex:none;display:flex;align-items:center;gap:6px;padding:0 6px 0 12px;border-bottom:1px solid var(--border)}
+.sidehead h2{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t2);margin:0}
+.sidehead .sp{margin-left:auto;display:flex;gap:1px}
+.mini{width:24px;height:24px;border:0;background:transparent;color:var(--t3);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.mini:hover{background:var(--hover);color:var(--t1)}
+.sidescroll{flex:1;overflow-y:auto;min-height:0}
+
+/* nhóm gấp được */
+.fold{border-bottom:1px solid var(--border)}
+.foldhead{height:26px;display:flex;align-items:center;gap:5px;padding:0 8px;color:var(--t3);font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;user-select:none}
+.foldhead:hover{background:var(--hover)}
+.foldhead .cnt{margin-left:auto;font-size:10px;font-weight:600;color:var(--t3);font-variant-numeric:tabular-nums}
+
+/* HÀNG LỚP — dày, một dòng, không xuống dòng */
+.lrow{height:var(--row);display:grid;grid-template-columns:16px 1fr 46px 20px 20px;align-items:center;gap:6px;padding:0 8px;cursor:pointer;font-size:12.5px}
+.lrow:hover{background:var(--hover)}
+.lrow.on{background:var(--accent-soft)}
+.lrow.on .nm{color:var(--accent);font-weight:600}
+.sw{width:11px;height:11px;border-radius:3px;border:1px solid rgba(0,0,0,.18);justify-self:center}
+[data-theme="dark"] .sw{border-color:rgba(255,255,255,.22)}
+.nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t1)}
+.lw{font-size:10.5px;color:var(--t3);text-align:right;font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.eye{color:var(--t3);display:flex;align-items:center;justify-content:center}
+.eye:hover{color:var(--t1)}
+.eye.off{opacity:.32}
+
+/* hàng bản vẽ */
+.srow{height:var(--row);display:flex;align-items:center;gap:8px;padding:0 8px;cursor:pointer;font-size:12.5px}
+.srow:hover{background:var(--hover)}
+.srow.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.srow .pg{width:18px;height:22px;border-radius:3px;border:1px solid var(--border-strong);background:var(--card);flex:none}
+.srow.on .pg{border-color:var(--accent)}
+.srow .meta{margin-left:auto;font-size:10px;color:var(--t3);font-variant-numeric:tabular-nums}
+
+/* lưới block */
+.blocks{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:8px}
+.blk{aspect-ratio:1;border-radius:8px;background:var(--field);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--t3);cursor:grab;transition:border-color .12s,color .12s}
+.blk:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ---------- CANVAS ---------- */
+.stage{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--canvas)}
+.toolbar{flex:none;background:var(--panel);border-bottom:1px solid var(--border);padding:5px 8px;display:flex;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none}
+.toolbar::-webkit-scrollbar{display:none}
+.modeseg{display:flex;background:var(--field);border-radius:8px;padding:2px;flex:none}
+.modeseg button{border:0;background:transparent;color:var(--t3);font:inherit;font-size:12px;padding:4px 12px;border-radius:6px;cursor:pointer}
+.modeseg button.on{background:var(--panel);color:var(--t1);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.10)}
+.tsep{width:1px;height:20px;background:var(--border);flex:none}
+.tools{display:flex;gap:1px;flex:none}
+.tl{width:var(--tap);height:var(--tap);border:0;background:transparent;color:var(--t2);border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.tl:hover{background:var(--hover);color:var(--t1)}
+.tl.on{background:var(--accent);color:#fff}
+.tgrp{display:flex;gap:1px;align-items:center;flex:none}
+.tglabel{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);padding-right:4px}
+
+.canvas{flex:1;position:relative;min-height:0;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px),linear-gradient(var(--grid2) 1px,transparent 1px),linear-gradient(90deg,var(--grid2) 1px,transparent 1px);
+  background-size:20px 20px,20px 20px,100px 100px,100px 100px}
+.plan{position:absolute;left:12%;top:16%;width:52%;height:56%}
+.wall{position:absolute;background:var(--t1);opacity:.82}
+.dimt{position:absolute;font-size:9.5px;color:var(--t2);font-family:ui-monospace,Menlo,monospace;background:var(--canvas);padding:0 3px}
+.selbox{position:absolute;border:1.5px solid var(--accent);background:rgba(106,87,245,.07)}
+.selbox span{position:absolute;width:6px;height:6px;background:var(--panel);border:1.5px solid var(--accent);border-radius:1px}
+
+/* dock lệnh dưới canvas */
+.cmddock{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:4px;box-shadow:0 6px 22px rgba(20,18,15,.16)}
+[data-theme="dark"] .cmddock{box-shadow:0 6px 22px rgba(0,0,0,.6)}
+.cmddock button{border:0;background:transparent;color:var(--t2);font:inherit;font-size:12px;padding:6px 11px;border-radius:8px;display:flex;align-items:center;gap:6px;cursor:pointer}
+.cmddock button:hover{background:var(--hover)}
+.cmddock button.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.cmddock .div{width:1px;height:18px;background:var(--border);margin:0 3px}
+
+/* ---------- PANEL PHẢI = THUỘC TÍNH ---------- */
+.insp{width:262px;flex:none;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.inspscroll{flex:1;overflow-y:auto;padding-bottom:10px}
+.psec{padding:9px 12px;border-bottom:1px solid var(--border)}
+.psec h4{margin:0 0 8px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3)}
+.pgrid{display:grid;grid-template-columns:52px 1fr;gap:5px 8px;align-items:center}
+.plab{font-size:11.5px;color:var(--t3)}
+.pval{height:26px;background:var(--field);border:1px solid var(--border);border-radius:7px;padding:0 8px;display:flex;align-items:center;font-size:12px;color:var(--t1);font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+.pval.sel{justify-content:space-between;font-family:inherit}
+.pval.sel .car{color:var(--t3)}
+.matrow{display:flex;align-items:center;gap:9px}
+.matsw{width:38px;height:38px;border-radius:9px;flex:none;background:linear-gradient(140deg,#b8956a,#8a6a44);border:1px solid var(--border-strong);box-shadow:inset 0 1px 2px rgba(255,255,255,.28)}
+.matinfo{min-width:0}
+.matinfo .a{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.matinfo .b{font-size:10.5px;color:var(--t3);font-family:ui-monospace,Menlo,monospace;margin-top:1px}
+.kv{display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0}
+.kv b{font-weight:600;font-variant-numeric:tabular-nums}
+.kv.tot{border-top:1px solid var(--border);margin-top:5px;padding-top:6px;font-size:12.5px}
+.kv.tot b{color:var(--accent)}
+.empty{padding:26px 16px;text-align:center;color:var(--t3);font-size:12px;line-height:1.6}
+
+/* ---------- THANH TRẠNG THÁI ---------- */
+.status{height:26px;flex:none;display:flex;align-items:center;gap:10px;padding:0 10px;background:var(--panel);border-top:1px solid var(--border);font-size:11px;color:var(--t3)}
+.status .cmd{display:flex;align-items:center;gap:6px;background:var(--field);border:1px solid var(--border);border-radius:6px;padding:1px 8px;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--t2)}
+.status .r{margin-left:auto;display:flex;align-items:center;gap:12px}
+.vit{display:flex;align-items:center;gap:5px;color:var(--t2)}
+.vitdot{width:7px;height:7px;border-radius:2px;background:#c0704a}
+
+.tools-theme{position:fixed;right:10px;bottom:34px;display:flex;gap:5px;z-index:9}
+.tools-theme button{border:1px solid var(--border);background:var(--panel);color:var(--t2);border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TIÊU ĐỀ -->
+  <div class="title">
+    <div class="brandmark">IF</div>
+    <span class="brand">InteriorFlow</span>
+    <span class="docname">Căn hộ Thảo Điền · 128m²</span>
+    <div class="stageseg">
+      <button class="on"><svg class="ic sm" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 3v18"/></svg>Vẽ</button>
+      <button><svg class="ic sm" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12M3 7l9 5 9-5"/></svg>Dựng ảnh</button>
+      <button><svg class="ic sm" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8"/></svg>Trình bày</button>
+    </div>
+    <div class="titlebtns">
+      <button class="tbtn" title="Chia sẻ"><svg class="ic" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></button>
+      <button class="tbtn" title="Bình luận"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></button>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- RAIL 2 TẦNG -->
+    <nav class="rail">
+      <div class="grp">
+        <button class="rb" title="Tổng quan"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
+        <button class="rb" title="Dự án & bảng làm việc"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 12h6"/></svg></button>
+        <button class="rb" title="Tệp"><svg class="ic" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2z"/></svg><span class="cnt">7</span></button>
+        <button class="rb" title="Thư viện chung"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2l9 5-9 5-9-5z"/><path d="M3 12l9 5 9-5M3 17l9 5 9-5"/></svg></button>
+      </div>
+
+      <div class="sep"></div>
+      <div class="caption">Vẽ</div>
+
+      <div class="grp">
+        <button class="rb" title="Bản vẽ"><svg class="ic" viewBox="0 0 24 24"><path d="M4 3h11l5 5v13a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M14 3v6h6"/></svg><span class="cnt">5</span></button>
+        <button class="rb on" title="Lớp"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2l9 5-9 5-9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 17l9 5 9-5"/></svg><span class="cnt">6</span></button>
+        <button class="rb" title="Thư viện khối"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><path d="M17 13v8M13 17h8"/></svg><span class="cnt">46</span></button>
+        <button class="rb" title="Vùng & diện tích"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/><path d="M3 14l6-5 5 4 7-6"/></svg></button>
+        <button class="rb" title="Lịch sử lệnh"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg></button>
+        <button class="rb" title="Trợ lý bố trí"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M18 16l.9 2.1 2.1.9-2.1.9L18 22l-.9-2.1-2.1-.9 2.1-.9z"/></svg></button>
+      </div>
+
+      <div class="foot">
+        <button class="rb" title="Cài đặt"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button>
+        <div class="avat" title="Hoà"></div>
+      </div>
+    </nav>
+
+    <!-- PANEL TRÁI -->
+    <aside class="side">
+      <div class="sidehead">
+        <h2>Lớp</h2>
+        <div class="sp">
+          <button class="mini" title="Thêm lớp"><svg class="ic sm" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button class="mini" title="Lọc"><svg class="ic sm" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg></button>
+          <button class="mini" title="Thu gọn"><svg class="ic sm" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+        </div>
+      </div>
+
+      <div class="sidescroll">
+        <div class="fold">
+          <div class="foldhead"><svg class="ic sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>Kiến trúc<span class="cnt">3</span></div>
+          <div class="lrow on"><span class="sw" style="background:#26262b"></span><span class="nm">Tường</span><span class="lw">0.35</span>
+            <span class="eye"><svg class="ic sm" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            <span class="eye"><svg class="ic sm" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></span></div>
+          <div class="lrow"><span class="sw" style="background:#7d8791"></span><span class="nm">Cửa · cửa sổ</span><span class="lw">0.25</span>
+            <span class="eye"><svg class="ic sm" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            <span class="eye"><svg class="ic sm" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></span></div>
+          <div class="lrow"><span class="sw" style="background:#5b6ee0"></span><span class="nm">Trục</span><span class="lw">0.13</span>
+            <span class="eye off"><svg class="ic sm" viewBox="0 0 24 24"><path d="M17.9 17.9A10.1 10.1 0 0112 20C5 20 1 13 1 13a18 18 0 014.6-5.3M9.9 4.2A10 10 0 0112 4c7 0 11 7 11 7a18 18 0 01-2.2 3.2M1 1l22 22"/></svg></span>
+            <span class="eye"><svg class="ic sm" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></span></div>
+        </div>
+
+        <div class="fold">
+          <div class="foldhead"><svg class="ic sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>Nội thất<span class="cnt">2</span></div>
+          <div class="lrow"><span class="sw" style="background:#b8956a"></span><span class="nm">Đồ rời</span><span class="lw">0.20</span>
+            <span class="eye"><svg class="ic sm" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            <span class="eye"><svg class="ic sm" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></span></div>
+          <div class="lrow"><span class="sw" style="background:#5e8f76"></span><span class="nm">Đồ cố định</span><span class="lw">0.20</span>
+            <span class="eye"><svg class="ic sm" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            <span class="eye"><svg class="ic sm" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></span></div>
+        </div>
+
+        <div class="fold">
+          <div class="foldhead"><svg class="ic sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>Ghi chú<span class="cnt">2</span></div>
+          <div class="lrow"><span class="sw" style="background:#4f8cc9"></span><span class="nm">Kích thước</span><span class="lw">0.13</span>
+            <span class="eye"><svg class="ic sm" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            <span class="eye"><svg class="ic sm" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></span></div>
+          <div class="lrow"><span class="sw" style="background:#8f8f97"></span><span class="nm">Chú thích</span><span class="lw">0.13</span>
+            <span class="eye"><svg class="ic sm" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            <span class="eye"><svg class="ic sm" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></span></div>
+        </div>
+
+        <div class="fold">
+          <div class="foldhead"><svg class="ic sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>Bản vẽ<span class="cnt">5</span></div>
+          <div class="srow on"><span class="pg"></span>Mặt bằng bố trí<span class="meta">1:50</span></div>
+          <div class="srow"><span class="pg"></span>Mặt bằng trần<span class="meta">1:50</span></div>
+          <div class="srow"><span class="pg"></span>Mặt cắt A-A<span class="meta">1:25</span></div>
+          <div class="srow"><span class="pg"></span>Chi tiết bếp<span class="meta">1:10</span></div>
+          <div class="srow"><span class="pg"></span>Sơ đồ điện<span class="meta">1:50</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- SÂN KHẤU -->
+    <main class="stage">
+      <div class="toolbar">
+        <div class="modeseg"><button>Phác thảo</button><button class="on">Chuyên</button><button>Revit</button></div>
+        <div class="tsep"></div>
+        <div class="tgrp"><span class="tglabel">Vẽ</span>
+          <button class="tl on" title="Chọn"><svg class="ic" viewBox="0 0 24 24"><path d="M4 3l7 17 2.5-6.5L20 11z"/></svg></button>
+          <button class="tl" title="Đường"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20L20 4"/></svg></button>
+          <button class="tl" title="Chữ nhật"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="1"/></svg></button>
+          <button class="tl" title="Tròn"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></button>
+          <button class="tl" title="Đa tuyến"><svg class="ic" viewBox="0 0 24 24"><path d="M3 18l5-8 4 5 3-6 6 9"/></svg></button>
+        </div>
+        <div class="tsep"></div>
+        <div class="tgrp"><span class="tglabel">Sửa</span>
+          <button class="tl" title="Di chuyển"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/></svg></button>
+          <button class="tl" title="Sao chép"><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+          <button class="tl" title="Xoay"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-9-9 9 9 0 016.4 2.7L21 8"/><path d="M21 3v5h-5"/></svg></button>
+          <button class="tl" title="Đối xứng"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M8 7L4 12l4 5zM16 7l4 5-4 5z"/></svg></button>
+          <button class="tl" title="Bo góc"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20V10A6 6 0 0110 4h10"/></svg></button>
+        </div>
+        <div class="tsep"></div>
+        <div class="tgrp"><span class="tglabel">Ghi</span>
+          <button class="tl" title="Kích thước"><svg class="ic" viewBox="0 0 24 24"><path d="M3 8v8M21 8v8M3 12h18"/></svg></button>
+          <button class="tl" title="Chữ"><svg class="ic" viewBox="0 0 24 24"><path d="M4 6V4h16v2M12 4v16M9 20h6"/></svg></button>
+          <button class="tl" title="Vùng tô"><svg class="ic" viewBox="0 0 24 24"><path d="M19 11l-8-8-8 8 8 8z"/><path d="M20 15s2 2.5 2 4a2 2 0 01-4 0c0-1.5 2-4 2-4z"/></svg></button>
+          <button class="tl" title="Vật liệu"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.3"/><circle cx="15.5" cy="10" r="1.3"/><circle cx="12" cy="15.5" r="1.3"/></svg></button>
+        </div>
+        <div class="tsep"></div>
+        <div class="tgrp"><span class="tglabel">Xem</span>
+          <button class="tl on" title="Bắt điểm"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <button class="tl on" title="Lưới"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></button>
+          <button class="tl" title="Kéo màn"><svg class="ic" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 00-4 0v5M14 10V4a2 2 0 00-4 0v7M10 10.5V6a2 2 0 00-4 0v8"/><path d="M18 8a2 2 0 014 0v6a8 8 0 01-8 8h-2a8 8 0 01-8-8v-1a2 2 0 014 0"/></svg></button>
+        </div>
+      </div>
+
+      <div class="canvas">
+        <div class="plan">
+          <div class="wall" style="left:0;top:0;width:100%;height:5px"></div>
+          <div class="wall" style="left:0;bottom:0;width:100%;height:5px"></div>
+          <div class="wall" style="left:0;top:0;width:5px;height:100%"></div>
+          <div class="wall" style="right:0;top:0;width:5px;height:100%"></div>
+          <div class="wall" style="left:46%;top:0;width:5px;height:56%"></div>
+          <div class="wall" style="left:46%;bottom:0;width:38%;height:5px"></div>
+          <div class="dimt" style="left:18%;top:-20px">5 200</div>
+          <div class="dimt" style="right:14%;top:-20px">3 800</div>
+          <div class="dimt" style="left:-42px;top:44%">4 100</div>
+          <div class="selbox" style="left:52%;top:22%;width:30%;height:26%">
+            <span style="left:-4px;top:-4px"></span><span style="right:-4px;top:-4px"></span>
+            <span style="left:-4px;bottom:-4px"></span><span style="right:-4px;bottom:-4px"></span>
+          </div>
+        </div>
+
+        <div class="cmddock">
+          <button class="on"><svg class="ic sm" viewBox="0 0 24 24"><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/><circle cx="12" cy="12" r="3"/></svg>Ortho</button>
+          <button class="on"><svg class="ic sm" viewBox="0 0 24 24"><path d="M3 8v8M21 8v8M3 12h18"/></svg>Số liệu</button>
+          <button><svg class="ic sm" viewBox="0 0 24 24"><path d="M4 17l6-6-6-6M12 19h8"/></svg>Lệnh</button>
+          <div class="div"></div>
+          <button><svg class="ic sm" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Xong</button>
+          <button><svg class="ic sm" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Huỷ</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- PANEL PHẢI = THUỘC TÍNH -->
+    <aside class="insp">
+      <div class="sidehead">
+        <h2>Thuộc tính</h2>
+        <div class="sp"><button class="mini" title="Thu gọn"><svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button></div>
+      </div>
+      <div class="inspscroll">
+        <div class="psec">
+          <h4>Đang chọn</h4>
+          <div class="matrow">
+            <div class="matsw"></div>
+            <div class="matinfo"><div class="a">Vùng · Phòng khách</div><div class="b">ROOM · 24.6 m²</div></div>
+          </div>
+        </div>
+        <div class="psec">
+          <h4>Vị trí · kích thước</h4>
+          <div class="pgrid">
+            <span class="plab">X</span><div class="pval">2 400</div>
+            <span class="plab">Y</span><div class="pval">1 150</div>
+            <span class="plab">Rộng</span><div class="pval">5 200</div>
+            <span class="plab">Cao</span><div class="pval">4 100</div>
+          </div>
+        </div>
+        <div class="psec">
+          <h4>Lớp · nét</h4>
+          <div class="pgrid">
+            <span class="plab">Lớp</span><div class="pval sel">Tường<span class="car">▾</span></div>
+            <span class="plab">Nét</span><div class="pval sel">liền<span class="car">▾</span></div>
+            <span class="plab">Dày</span><div class="pval sel">0.35 mm<span class="car">▾</span></div>
+          </div>
+        </div>
+        <div class="psec">
+          <h4>Vật liệu</h4>
+          <div class="matrow">
+            <div class="matsw" style="background:linear-gradient(140deg,#d8cfc2,#a89787)"></div>
+            <div class="matinfo"><div class="a">Sàn gỗ sồi tự nhiên</div><div class="b">matId · OAK-NT-190</div></div>
+          </div>
+        </div>
+        <div class="psec">
+          <h4>Khối lượng</h4>
+          <div class="kv"><span>Diện tích</span><b>24.60 m²</b></div>
+          <div class="kv"><span>Đơn giá</span><b>1 250 000 ₫</b></div>
+          <div class="kv"><span>Hao hụt 5%</span><b>1.23 m²</b></div>
+          <div class="kv tot"><span>Thành tiền</span><b>32 287 500 ₫</b></div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- TRẠNG THÁI -->
+  <div class="status">
+    <span class="cmd">⌘ &nbsp;Gõ lệnh: L · PL · REC · C · W 200 · ROOM</span>
+    <span>Ortho tắt (F8)</span><span>·</span><span>Nhập số BẬT (F12)</span>
+    <div class="r">
+      <span>1:50</span>
+      <span class="vit"><span class="vitdot"></span>Vitals</span>
+      <span>Đã lưu 19:18</span>
+    </div>
+  </div>
+</div>
+
+<div class="tools-theme">
+  <button onclick="document.documentElement.dataset.theme='light'">Sáng</button>
+  <button onclick="document.documentElement.dataset.theme='dark'">Tối</button>
+</div>
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · CAD shell v3 — đúng design system</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   TOKEN — CHÉP NGUYÊN VĂN app/globals.css. Không hex tự chế, không màu lạ.
+   Bổ sung DUY NHẤT đề xuất: --fs-2xs 11px (thang 12/14/16/20/28 thiếu nấc
+   cho nhãn mục & số phụ trong panel dày). Mọi thứ khác là biến có sẵn.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --radius-sm:10px; --radius-md:14px; --radius-lg:20px; --radius-xl:28px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --blur:22px; --blur-strong:40px;
+  --ease-apple:cubic-bezier(0.32,0.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  /* mật độ theo SPEC-MAT-DO-CON-TRO — desktop mặc định */
+  --tap:32px; --row:28px; --gap:8px;
+}
+:root,:root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --dots:#26262d;
+  --mat-header:rgba(20,20,23,.72); --mat-panel:rgba(20,20,23,.68);
+  --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --grid-a:#1b1b21; --grid-b:#232329;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --dots:#ddd8ce;
+  --mat-header:rgba(250,248,244,.72); --mat-panel:rgba(250,248,244,.7);
+  --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --grid-a:#e6e1d7; --grid-b:#dbd5c8;
+}
+@media (hover:none) and (pointer:coarse){ :root{ --tap:44px; --row:44px; --gap:12px } }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--t1);overflow:hidden;
+  font:var(--fw-normal) var(--fs-xs)/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  transition:background-color var(--dur-base) var(--ease-apple),color var(--dur-base) var(--ease-apple)}
+svg{display:block}
+button{font:inherit;color:inherit}
+.mat-header{background:var(--mat-header);backdrop-filter:saturate(180%) blur(var(--blur));-webkit-backdrop-filter:saturate(180%) blur(var(--blur))}
+.mat-panel{background:var(--mat-panel);backdrop-filter:saturate(180%) blur(var(--blur));-webkit-backdrop-filter:saturate(180%) blur(var(--blur))}
+.i{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.i.s{width:13px;height:13px}
+/* Luật 6 — bàn phím = chuột */
+:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px;border-radius:var(--radius-sm)}
+
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* ══ ĐẦU — logo · tên · 3 chặng · 2 nút ══ */
+.top{height:42px;flex:none;display:flex;align-items:center;gap:10px;padding:0 10px;
+     border-bottom:1px solid var(--mat-hairline)}
+.logo{width:24px;height:24px;border-radius:var(--radius-sm);background:var(--t1);color:var(--bg);
+      display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xs);font-weight:800;
+      cursor:pointer;border:0;transition:background var(--dur-fast) var(--ease-apple)}
+.logo:hover{background:var(--t2)}
+.logo:active{transform:scale(.97);transition:transform .08s}
+.doc{display:flex;align-items:center;gap:5px;padding:5px 9px;border:0;background:transparent;
+     border-radius:var(--radius-sm);color:var(--t1);font-size:var(--fs-xs);font-weight:500;cursor:pointer;
+     transition:background .12s var(--ease-apple)}
+.doc:hover{background:var(--hover)}
+.doc .car{color:var(--t3)}
+.seg{margin-left:auto;display:flex;background:var(--field);border-radius:var(--radius-sm);padding:2px}
+.seg button{border:0;background:transparent;color:var(--t3);font-size:var(--fs-xs);padding:5px 14px;
+            border-radius:8px;cursor:pointer;transition:color .12s var(--ease-apple)}
+.seg button:hover{color:var(--t2)}
+.seg button.on{background:var(--panel);color:var(--t1);font-weight:var(--fw-semi);box-shadow:var(--shadow-node)}
+.topr{display:flex;gap:2px;margin-left:6px}
+/* nút icon: ĐỔI NỀN 120ms · KHÔNG scale (SPEC-HOVER §2) */
+.ib{width:var(--tap);height:var(--tap);border:0;background:transparent;color:var(--t3);
+    border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;cursor:pointer;
+    transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
+.ib:hover{background:var(--hover);color:var(--t1)}
+.ib:active{transform:scale(.97);transition:transform .08s}
+
+.mid{flex:1;display:flex;min-height:0}
+
+/* ══ SIDEBAR — một việc: Lớp ══ */
+.side{width:214px;flex:none;background:var(--panel);border-right:1px solid var(--border);
+      display:flex;flex-direction:column;min-height:0}
+.state{padding:var(--gap);border-bottom:1px solid var(--mat-hairline)}
+.statebtn{width:100%;height:30px;display:flex;align-items:center;gap:7px;padding:0 9px;
+          background:var(--field);border:1px solid var(--border);border-radius:var(--radius-sm);
+          font-size:var(--fs-xs);cursor:pointer;
+          transition:border-color .12s var(--ease-apple),background .12s var(--ease-apple)}
+.statebtn:hover{background:var(--hover);border-color:var(--border-strong)}
+.statebtn .dt{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none}
+.statebtn .car{margin-left:auto;color:var(--t3)}
+
+.list{flex:1;overflow-y:auto;padding:4px 0 10px;scrollbar-width:thin}
+.sech{height:24px;display:flex;align-items:center;padding:0 10px;color:var(--t4);
+      font-size:var(--fs-2xs);font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+      margin-top:7px;user-select:none}
+.sech:first-child{margin-top:0}
+.sech .n{margin-left:auto;font-weight:var(--fw-semi);letter-spacing:0;font-variant-numeric:tabular-nums}
+
+/* hàng danh sách: đổi nền 100ms · KHÔNG scale · chọn = viền trái accent 2px (SPEC-HOVER §2) */
+.lay{height:var(--row);display:flex;align-items:center;gap:var(--gap);padding:0 10px;cursor:pointer;
+     position:relative;border-left:2px solid transparent;
+     transition:background .1s var(--ease-apple)}
+.lay:hover{background:var(--hover)}
+.lay.on{background:var(--accent-soft);border-left-color:var(--accent)}
+.lay.on .nm{color:var(--accent);font-weight:var(--fw-semi)}
+.dot{width:10px;height:10px;border-radius:3px;flex:none;box-shadow:inset 0 0 0 1px var(--mat-hairline)}
+.nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-xs)}
+/* progressive disclosure — nhưng luật 7: trạng thái TẮT/KHOÁ hiện thường trực, không giấu sau hover */
+.acts{display:flex;gap:1px;opacity:0;transition:opacity .12s var(--ease-apple)}
+.lay:hover .acts,.lay:focus-within .acts,.lay.mut .acts,.lay.lok .acts{opacity:1}
+.act{width:20px;height:20px;border:0;background:transparent;color:var(--t4);border-radius:6px;
+     display:flex;align-items:center;justify-content:center;cursor:pointer;
+     transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
+.act:hover{background:var(--hover);color:var(--t1)}
+.lay.mut .nm,.lay.mut .dot{opacity:.4}
+.lay.lok .act.lk{color:var(--warning)}
+
+.sideft{flex:none;border-top:1px solid var(--mat-hairline);padding:5px 6px;display:flex;gap:2px}
+.sf{height:28px;flex:1;border:0;background:transparent;color:var(--t3);border-radius:var(--radius-sm);
+    display:flex;align-items:center;justify-content:center;gap:6px;font-size:var(--fs-2xs);cursor:pointer;
+    transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
+.sf:hover{background:var(--hover);color:var(--t1)}
+
+/* ══ SÂN KHẤU ══ */
+.stage{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;background:var(--bg)}
+.tabs{height:34px;flex:none;display:flex;align-items:flex-end;gap:2px;padding:0 8px;overflow-x:auto;scrollbar-width:none;
+      background:var(--panel);border-bottom:1px solid var(--border)}
+/* tab: chữ đậm màu hơn 120ms · chọn = nền trượt (SPEC-HOVER §2) */
+.tab{height:27px;white-space:nowrap;flex:none;display:flex;align-items:center;gap:6px;padding:0 12px;
+     border-radius:var(--radius-sm) var(--radius-sm) 0 0;border:1px solid transparent;border-bottom:0;
+     background:transparent;color:var(--t3);font-size:var(--fs-xs);cursor:pointer;
+     transition:color .12s var(--ease-apple),background .12s var(--ease-apple)}
+.tab:hover{color:var(--t2);background:var(--hover)}
+.tab.on{background:var(--bg);color:var(--t1);font-weight:var(--fw-semi);border-color:var(--border)}
+.tab .sc{font-size:var(--fs-2xs);color:var(--t4);font-variant-numeric:tabular-nums;font-weight:var(--fw-normal)}
+.tabadd{width:26px;height:26px;border:0;background:transparent;color:var(--t4);border-radius:var(--radius-sm);
+        display:flex;align-items:center;justify-content:center;cursor:pointer;margin-bottom:1px;
+        transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
+.tabadd:hover{background:var(--hover);color:var(--t1)}
+
+.canvas{flex:1;position:relative;min-height:0;overflow:hidden;
+  background-image:linear-gradient(var(--grid-a) 1px,transparent 1px),linear-gradient(90deg,var(--grid-a) 1px,transparent 1px),
+                   linear-gradient(var(--grid-b) 1px,transparent 1px),linear-gradient(90deg,var(--grid-b) 1px,transparent 1px);
+  background-size:22px 22px,22px 22px,110px 110px,110px 110px}
+.plan{position:absolute;left:16%;top:18%;width:48%;height:54%}
+.w{position:absolute;background:var(--t1);opacity:.82;border-radius:1px}
+.dm{position:absolute;font-size:var(--fs-2xs);color:var(--t3);font-family:ui-monospace,Menlo,monospace;
+    background:var(--bg);padding:0 4px}
+.furn{position:absolute;border:1.2px solid var(--t3);opacity:.5;border-radius:2px}
+/* node/vật trên canvas: viền sáng, KHÔNG scale (SPEC-HOVER §2) */
+.sel{position:absolute;border:1.5px solid var(--accent);background:var(--accent-soft);border-radius:2px}
+.sel b{position:absolute;width:7px;height:7px;background:var(--panel);border:1.5px solid var(--accent);border-radius:2px}
+
+/* ══ DOCK — kính, bo 14, đệm 4 ⇒ nút trong bo 10 (§2d đồng tâm) ══ */
+.dock{position:absolute;white-space:nowrap;left:50%;bottom:16px;transform:translateX(-50%);
+      display:flex;align-items:center;gap:1px;padding:4px;
+      border:1px solid var(--mat-hairline);border-radius:var(--radius-md);box-shadow:var(--shadow-pop)}
+.dk{width:var(--tap);height:var(--tap);border:0;background:transparent;color:var(--t3);
+    border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;cursor:pointer;
+    transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
+.dk:hover{background:var(--hover);color:var(--t1)}
+.dk:active{transform:scale(.97);transition:transform .08s}
+.dk.on{background:var(--accent);color:#fff}
+.dkdiv{width:1px;height:18px;background:var(--mat-hairline);margin:0 5px}
+.dkt{height:var(--tap);border:0;background:transparent;color:var(--t3);border-radius:var(--radius-sm);
+     padding:0 11px;display:flex;align-items:center;font-size:var(--fs-xs);cursor:pointer;white-space:nowrap;
+     transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
+.dkt:hover{background:var(--hover);color:var(--t1)}
+.dkt.on{background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semi)}
+
+/* ══ INSPECTOR — chỉ khi có chọn · vào bằng RAMP (SPEC-HOVER §1) ══ */
+@keyframes ramp{0%{opacity:0;transform:scale(.96)}60%{opacity:1;transform:scale(1.008)}100%{transform:scale(1)}}
+.insp{width:236px;flex:none;background:var(--panel);border-left:1px solid var(--border);
+      display:flex;flex-direction:column;min-height:0;transform-origin:right center;
+      animation:ramp var(--dur-base) var(--ease-apple)}
+.ihead{height:34px;flex:none;display:flex;align-items:baseline;gap:7px;padding:0 6px 0 12px;
+       border-bottom:1px solid var(--mat-hairline)}
+.ihead h2{margin:0;font-size:var(--fs-sm);font-weight:var(--fw-semi);letter-spacing:-.01em;align-self:center}
+.ihead .sub{font-size:var(--fs-2xs);color:var(--t3);font-family:ui-monospace,Menlo,monospace;align-self:center}
+.ihead .x{margin-left:auto;width:26px;height:26px;border:0;background:transparent;color:var(--t4);
+          border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;align-self:center;
+          transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
+.ihead .x:hover{background:var(--hover);color:var(--t1)}
+.iscroll{flex:1;overflow-y:auto;scrollbar-width:thin}
+.grp{padding:11px 12px;border-bottom:1px solid var(--mat-hairline)}
+.grp h4{margin:0 0 8px;font-size:var(--fs-2xs);font-weight:700;letter-spacing:.07em;
+        text-transform:uppercase;color:var(--t4)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.fld{height:28px;background:var(--field);border:1px solid transparent;border-radius:var(--radius-sm);
+     padding:0 9px;display:flex;align-items:center;gap:6px;font-size:var(--fs-xs);
+     transition:border-color .12s var(--ease-apple),background .12s var(--ease-apple)}
+.fld:hover{border-color:var(--border)}
+.fld:focus-within{border-color:var(--accent);background:var(--card)}
+.fld .k{color:var(--t4);font-size:var(--fs-2xs);font-weight:var(--fw-semi)}
+.fld .v{margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)}
+.fld.pick{cursor:pointer}
+.fld.pick .v{font-family:inherit}
+.fld.pick .car{color:var(--t4);margin-left:4px}
+/* swatch nhỏ + đơn lẻ ⇒ ĐƯỢC scale 1.04 · 150ms (SPEC-HOVER §2) */
+.matr{display:flex;align-items:center;gap:10px;cursor:pointer;padding:4px;margin:-4px;
+      border-radius:var(--radius-md);transition:background .12s var(--ease-apple)}
+.matr:hover{background:var(--hover)}
+.msw{width:34px;height:34px;border-radius:var(--radius-sm);flex:none;border:1px solid var(--border);
+     background:linear-gradient(140deg,#d7cbb9,#a8917a);
+     transition:transform .15s var(--ease-apple),box-shadow .15s var(--ease-apple)}
+.matr:hover .msw{transform:scale(1.04);box-shadow:var(--shadow-node)}
+.mtx{min-width:0}
+.mtx .a{font-size:var(--fs-xs);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mtx .b{font-size:var(--fs-2xs);color:var(--t4);font-family:ui-monospace,Menlo,monospace;margin-top:1px}
+.kv{display:flex;justify-content:space-between;align-items:baseline;font-size:var(--fs-xs);
+    padding:3px 0;color:var(--t3)}
+.kv b{color:var(--t1);font-weight:var(--fw-semi);font-variant-numeric:tabular-nums}
+.kv.big{padding-top:8px;margin-top:6px;border-top:1px solid var(--mat-hairline)}
+.kv.big b{color:var(--accent);font-size:var(--fs-sm)}
+
+/* ══ CHÂN ══ */
+.foot{height:26px;flex:none;display:flex;align-items:center;gap:10px;padding:0 10px;
+      background:var(--panel);border-top:1px solid var(--border);font-size:var(--fs-2xs);color:var(--t4)}
+.cmdl{display:flex;align-items:center;gap:6px;font-family:ui-monospace,Menlo,monospace;color:var(--t3)}
+.cmdl kbd{background:var(--field);border:1px solid var(--border);border-radius:5px;padding:0 4px;
+          font-size:var(--fs-2xs);font-family:inherit}
+.foot .r{margin-left:auto;display:flex;align-items:center;gap:14px}
+.vt{display:flex;align-items:center;gap:5px;color:var(--t3);cursor:pointer}
+.vtd{width:7px;height:7px;border-radius:2px;background:var(--warning)}
+
+/* mặc định KHÔNG chọn gì ⇒ inspector không tồn tại trong DOM-flow, canvas rộng hết cỡ */
+.insp{display:none}
+body.has-sel .insp{display:flex}
+/* sidebar thu gọn — phím B, hoặc nút « ở đáy sidebar */
+body.side-off .side{display:none}
+.hint{font-family:ui-monospace,Menlo,monospace;color:var(--t5)}
+
+/* Luật 8 */
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition-duration:.1s!important}
+  .matr:hover .msw,.dk:active,.logo:active,.ib:active{transform:none!important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top mat-header">
+    <button class="logo" title="Tổng quan · Dự án · Tệp · Thư viện">IF</button>
+    <button class="doc">Căn hộ Thảo Điền · 128m²<svg class="i s car" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="seg"><button class="on">Vẽ</button><button>Dựng ảnh</button><button>Trình bày</button></div>
+    <div class="topr">
+      <button class="ib" title="Bình luận"><svg class="i" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></button>
+      <button class="ib" title="Chia sẻ"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v13"/><path d="M8 7l4-4 4 4"/><path d="M4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4"/></svg></button>
+    </div>
+  </header>
+
+  <div class="mid">
+
+    <aside class="side">
+      <div class="state">
+        <button class="statebtn"><span class="dt"></span>Bố trí nội thất
+          <svg class="i s car" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      </div>
+
+      <div class="list">
+        <div class="sech">Kiến trúc<span class="n">3</span></div>
+        <div class="lay on"><span class="dot" style="background:#f5f5f7"></span><span class="nm">Tường</span>
+          <span class="acts"><button class="act" title="Ẩn lớp"><svg class="i s" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <button class="act lk" title="Khoá lớp"><svg class="i s" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></button></span></div>
+        <div class="lay"><span class="dot" style="background:#9e9ea8"></span><span class="nm">Cửa · cửa sổ</span>
+          <span class="acts"><button class="act"><svg class="i s" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <button class="act lk"><svg class="i s" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></button></span></div>
+        <div class="lay mut"><span class="dot" style="background:#6a57f5"></span><span class="nm">Trục</span>
+          <span class="acts"><button class="act" title="Hiện lớp"><svg class="i s" viewBox="0 0 24 24"><path d="M17.9 17.9A10.1 10.1 0 0112 20C5 20 1 13 1 13a18 18 0 014.6-5.3M9.9 4.2A10 10 0 0112 4c7 0 11 7 11 7a18 18 0 01-2.2 3.2M1 1l22 22"/></svg></button>
+          <button class="act lk"><svg class="i s" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></button></span></div>
+
+        <div class="sech">Nội thất<span class="n">2</span></div>
+        <div class="lay"><span class="dot" style="background:#c79a63"></span><span class="nm">Đồ rời</span>
+          <span class="acts"><button class="act"><svg class="i s" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <button class="act lk"><svg class="i s" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></button></span></div>
+        <div class="lay lok"><span class="dot" style="background:#46b876"></span><span class="nm">Đồ cố định</span>
+          <span class="acts"><button class="act"><svg class="i s" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <button class="act lk" title="Đang khoá"><svg class="i s" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/><path d="M12 15v2"/></svg></button></span></div>
+
+        <div class="sech">Ghi chú<span class="n">2</span></div>
+        <div class="lay"><span class="dot" style="background:#d6d6db"></span><span class="nm">Kích thước</span>
+          <span class="acts"><button class="act"><svg class="i s" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <button class="act lk"><svg class="i s" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></button></span></div>
+        <div class="lay mut"><span class="dot" style="background:#6e6e78"></span><span class="nm">Chú thích · không in</span>
+          <span class="acts"><button class="act"><svg class="i s" viewBox="0 0 24 24"><path d="M17.9 17.9A10.1 10.1 0 0112 20C5 20 1 13 1 13a18 18 0 014.6-5.3M9.9 4.2A10 10 0 0112 4c7 0 11 7 11 7a18 18 0 01-2.2 3.2M1 1l22 22"/></svg></button>
+          <button class="act lk"><svg class="i s" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></button></span></div>
+      </div>
+
+      <div class="sideft">
+        <button class="sf"><svg class="i s" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Lớp mới</button>
+        <button class="sf"><svg class="i s" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M17.5 14v7M14 17.5h7"/></svg>Khối</button>
+        <button class="sf" style="flex:none;width:28px" title="Thu gọn — B"><svg class="i s" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      </div>
+    </aside>
+
+    <main class="stage">
+      <div class="tabs">
+        <button class="tab on">Mặt bằng bố trí<span class="sc">1:50</span></button>
+        <button class="tab">Mặt bằng trần</button>
+        <button class="tab">Mặt cắt A-A</button>
+        <button class="tab">Chi tiết bếp</button>
+        <button class="tabadd"><svg class="i s" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+
+      <div class="canvas">
+        <div class="plan">
+          <div class="w" style="left:0;top:0;width:100%;height:6px"></div>
+          <div class="w" style="left:0;bottom:0;width:100%;height:6px"></div>
+          <div class="w" style="left:0;top:0;width:6px;height:100%"></div>
+          <div class="w" style="right:0;top:0;width:6px;height:100%"></div>
+          <div class="w" style="left:48%;top:0;width:6px;height:54%"></div>
+          <div class="w" style="left:48%;bottom:0;width:36%;height:6px"></div>
+          <div class="furn" style="left:9%;top:56%;width:26%;height:15%"></div>
+          <div class="furn" style="left:9%;top:16%;width:15%;height:22%"></div>
+          <div class="furn" style="right:9%;top:14%;width:19%;height:12%"></div>
+          <div class="dm" style="left:17%;top:-19px">5 200</div>
+          <div class="dm" style="right:12%;top:-19px">3 800</div>
+          <div class="dm" style="left:8px;top:45%">4 100</div>
+          <div class="sel" style="left:52%;top:24%;width:30%;height:26%">
+            <b style="left:-4px;top:-4px"></b><b style="right:-4px;top:-4px"></b>
+            <b style="left:-4px;bottom:-4px"></b><b style="right:-4px;bottom:-4px"></b>
+          </div>
+        </div>
+
+        <div class="dock mat-panel">
+          <button class="dk on" title="Chọn — V"><svg class="i" viewBox="0 0 24 24"><path d="M4 3l7 17 2.5-6.5L20 11z"/></svg></button>
+          <button class="dk" title="Đường — L"><svg class="i" viewBox="0 0 24 24"><path d="M4 20L20 4"/></svg></button>
+          <button class="dk" title="Đa tuyến — PL"><svg class="i" viewBox="0 0 24 24"><path d="M3 18l5-8 4 5 3-6 6 9"/></svg></button>
+          <button class="dk" title="Chữ nhật — REC"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="1"/></svg></button>
+          <button class="dk" title="Kích thước — D"><svg class="i" viewBox="0 0 24 24"><path d="M3 8v8M21 8v8M3 12h18"/></svg></button>
+          <button class="dk" title="Chữ — T"><svg class="i" viewBox="0 0 24 24"><path d="M4 6V4h16v2M12 4v16M9 20h6"/></svg></button>
+          <button class="dk" title="Vùng · vật liệu — ROOM"><svg class="i" viewBox="0 0 24 24"><path d="M19 11l-8-8-8 8 8 8z"/><path d="M20 15s2 2.5 2 4a2 2 0 01-4 0c0-1.5 2-4 2-4z"/></svg></button>
+          <button class="dk" title="Thêm công cụ"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg></button>
+          <span class="dkdiv"></span>
+          <button class="dkt on">Ortho</button>
+          <button class="dkt on">Bắt điểm</button>
+        </div>
+      </div>
+    </main>
+
+    <aside class="insp">
+      <div class="ihead">
+        <h2>Phòng khách</h2><span class="sub">24.6 m²</span>
+        <button class="x" title="Đóng"><svg class="i s" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="iscroll">
+        <div class="grp">
+          <h4>Kích thước</h4>
+          <div class="f2">
+            <div class="fld"><span class="k">R</span><span class="v">5 200</span></div>
+            <div class="fld"><span class="k">C</span><span class="v">4 100</span></div>
+            <div class="fld"><span class="k">X</span><span class="v">2 400</span></div>
+            <div class="fld"><span class="k">Y</span><span class="v">1 150</span></div>
+          </div>
+        </div>
+        <div class="grp">
+          <h4>Lớp</h4>
+          <div class="fld pick"><span class="v">Tường</span><svg class="i s car" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
+        </div>
+        <div class="grp">
+          <h4>Vật liệu sàn</h4>
+          <div class="matr">
+            <div class="msw"></div>
+            <div class="mtx"><div class="a">Gỗ sồi tự nhiên</div><div class="b">OAK-NT-190</div></div>
+          </div>
+        </div>
+        <div class="grp">
+          <h4>Khối lượng</h4>
+          <div class="kv"><span>Diện tích</span><b>24.60 m²</b></div>
+          <div class="kv"><span>Đơn giá</span><b>1 250 000 ₫</b></div>
+          <div class="kv"><span>Hao hụt 5%</span><b>1.23 m²</b></div>
+          <div class="kv big"><span>Thành tiền</span><b>32 287 500 ₫</b></div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <footer class="foot">
+    <span class="cmdl"><kbd>⌘</kbd>Gõ lệnh: L · PL · REC · C · ROOM</span>
+    <span>·</span><span>Ortho F8</span><span>Nhập số F12</span>
+    <span class="hint">D đổi nền · S chọn thử · B thu sidebar</span>
+    <div class="r">
+      <span>Vùng vẽ <b id="cw" style="color:var(--t2);font-variant-numeric:tabular-nums">—</b></span>
+      <span>1:50</span>
+      <span class="vt"><span class="vtd"></span>Vitals</span>
+      <span>Đã lưu 19:18</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase(), r=document.documentElement;
+  if(k==='d'){r.dataset.theme = r.dataset.theme==='light'?'dark':'light'}
+  if(k==='s'){document.body.classList.toggle('has-sel')}
+  if(k==='b'){document.body.classList.toggle('side-off')}
+  measure();
+});
+function measure(){
+  const c=document.querySelector('.canvas');
+  document.getElementById('cw').textContent=Math.round(c.getBoundingClientRect().width)+'px';
+}
+addEventListener('resize',measure); addEventListener('load',measure);
+</script>
+</body>
+</html>

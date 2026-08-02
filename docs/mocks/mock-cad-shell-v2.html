@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · CAD — bản tinh gọn (v2)</title>
+<style>
+:root{
+  --bg:#edebe7; --panel:#fdfcfb; --field:#f2f0ec; --hover:rgba(0,0,0,.045);
+  --hair:rgba(0,0,0,.09); --hair2:rgba(0,0,0,.055);
+  --t1:#22222a; --t2:#5f5f68; --t3:#9a9aa2;
+  --accent:#6a57f5; --accent-soft:rgba(106,87,245,.11);
+  --canvas:#f4f2ee; --grid:#e6e3dd; --grid2:#dbd7cf;
+  --glass:rgba(253,252,251,.72); --glassbd:rgba(0,0,0,.08);
+  --sh:0 6px 22px rgba(35,30,22,.13),0 1px 2px rgba(35,30,22,.07);
+  --r-sm:10px; --r-md:14px; --r-lg:20px;
+  --row:26px; --tap:30px;
+  --ez:cubic-bezier(.32,.72,0,1);
+}
+[data-theme="dark"]{
+  --bg:#0b0b0d; --panel:#151517; --field:#1d1d21; --hover:rgba(255,255,255,.06);
+  --hair:rgba(255,255,255,.10); --hair2:rgba(255,255,255,.06);
+  --t1:#f2f2f5; --t2:#a8a8b2; --t3:#74747e;
+  --canvas:#101012; --grid:#1e1e23; --grid2:#27272e;
+  --glass:rgba(28,28,31,.74); --glassbd:rgba(255,255,255,.10);
+  --sh:0 6px 22px rgba(0,0,0,.6),0 1px 2px rgba(0,0,0,.4);
+}
+@media (hover:none) and (pointer:coarse){ :root{ --row:38px; --tap:44px } }
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--t1);
+  font:400 13px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow:hidden}
+svg{display:block}
+.i{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.i.s{width:13px;height:13px}
+button{font:inherit}
+
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* ═══ ĐẦU — chỉ 3 thứ ═══ */
+.top{height:42px;flex:none;display:flex;align-items:center;gap:10px;padding:0 10px;
+     background:var(--panel);border-bottom:1px solid var(--hair)}
+.logo{width:24px;height:24px;border-radius:7px;background:var(--t1);color:var(--panel);
+      display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;cursor:pointer;
+      transition:transform .15s var(--ez)}
+.logo:hover{transform:scale(1.06)}
+.doc{display:flex;align-items:center;gap:5px;color:var(--t1);font-weight:550;cursor:pointer;
+     padding:4px 8px;border-radius:8px;transition:background .12s}
+.doc:hover{background:var(--hover)}
+.doc .car{color:var(--t3)}
+.seg{margin-left:auto;display:flex;background:var(--field);border-radius:9px;padding:2px}
+.seg button{border:0;background:transparent;color:var(--t3);font-size:12.5px;padding:5px 14px;
+            border-radius:7px;cursor:pointer;transition:color .12s}
+.seg button.on{background:var(--panel);color:var(--t1);font-weight:600;
+               box-shadow:0 1px 2.5px rgba(0,0,0,.14)}
+.topr{display:flex;gap:1px;margin-left:8px}
+.tb{width:var(--tap);height:var(--tap);border:0;background:transparent;color:var(--t2);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s}
+.tb:hover{background:var(--hover);color:var(--t1)}
+
+.mid{flex:1;display:flex;min-height:0}
+
+/* ═══ SIDEBAR — MỘT việc: Lớp ═══ */
+.side{width:212px;flex:none;background:var(--panel);border-right:1px solid var(--hair);
+      display:flex;flex-direction:column;min-height:0}
+
+/* Layer State — thứ dân kiến trúc dùng mỗi ngày */
+.state{padding:8px 8px 7px;border-bottom:1px solid var(--hair2)}
+.statebtn{width:100%;height:28px;display:flex;align-items:center;gap:7px;padding:0 8px;
+          background:var(--field);border:1px solid var(--hair2);border-radius:8px;color:var(--t1);
+          font-size:12.5px;cursor:pointer;transition:border-color .12s}
+.statebtn:hover{border-color:var(--accent)}
+.statebtn .car{margin-left:auto;color:var(--t3)}
+.statebtn .dt{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none}
+
+.list{flex:1;overflow-y:auto;padding:4px 0 10px}
+.sech{height:24px;display:flex;align-items:center;padding:0 10px;color:var(--t3);
+      font-size:10px;font-weight:700;letter-spacing:.075em;text-transform:uppercase;
+      margin-top:6px;user-select:none}
+.sech:first-child{margin-top:0}
+.sech .n{margin-left:auto;font-weight:600;letter-spacing:0;font-size:10.5px;
+         font-variant-numeric:tabular-nums;opacity:.75}
+
+.lay{height:var(--row);display:flex;align-items:center;gap:8px;padding:0 10px;cursor:pointer;
+     position:relative;transition:background .1s}
+.lay:hover{background:var(--hover)}
+.lay.on{background:var(--accent-soft)}
+.lay.on .nm{color:var(--accent);font-weight:600}
+.dot{width:10px;height:10px;border-radius:3px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.16)}
+[data-theme="dark"] .dot{box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+.nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}
+/* nút chỉ hiện khi trỏ vào — progressive disclosure */
+.acts{display:flex;gap:1px;opacity:0;transition:opacity .12s}
+.lay:hover .acts,.lay.mut .acts,.lay.lok .acts{opacity:1}
+.act{width:19px;height:19px;border:0;background:transparent;color:var(--t3);border-radius:5px;
+     display:flex;align-items:center;justify-content:center;cursor:pointer}
+.act:hover{background:var(--hover);color:var(--t1)}
+.lay.mut .nm{opacity:.42}
+.lay.mut .dot{opacity:.42}
+.lay.lok .act.lk{color:var(--t2)}
+
+.sideft{flex:none;border-top:1px solid var(--hair2);padding:5px 6px;display:flex;gap:2px}
+.sf{height:26px;flex:1;border:0;background:transparent;color:var(--t2);border-radius:7px;
+    display:flex;align-items:center;justify-content:center;gap:5px;font-size:11.5px;cursor:pointer}
+.sf:hover{background:var(--hover);color:var(--t1)}
+
+/* ═══ SÂN KHẤU ═══ */
+.stage{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;background:var(--canvas)}
+
+/* tab bản vẽ — nơi DUY NHẤT quản bản vẽ */
+.tabs{height:33px;flex:none;display:flex;align-items:flex-end;gap:1px;padding:0 8px;
+      border-bottom:1px solid var(--hair);background:var(--panel)}
+.tab{height:26px;display:flex;align-items:center;gap:6px;padding:0 12px;border-radius:8px 8px 0 0;
+     color:var(--t3);font-size:12.5px;cursor:pointer;border:1px solid transparent;border-bottom:0;
+     transition:color .12s,background .12s}
+.tab:hover{background:var(--hover)}
+.tab.on{background:var(--canvas);color:var(--t1);font-weight:600;border-color:var(--hair)}
+.tab .sc{font-size:10px;color:var(--t3);font-variant-numeric:tabular-nums;font-weight:400}
+.tabadd{width:24px;height:24px;border:0;background:transparent;color:var(--t3);border-radius:7px;
+        display:flex;align-items:center;justify-content:center;cursor:pointer;margin-bottom:1px}
+.tabadd:hover{background:var(--hover);color:var(--t1)}
+
+.canvas{flex:1;position:relative;min-height:0;overflow:hidden;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px),
+                   linear-gradient(var(--grid2) 1px,transparent 1px),linear-gradient(90deg,var(--grid2) 1px,transparent 1px);
+  background-size:22px 22px,22px 22px,110px 110px,110px 110px}
+.plan{position:absolute;left:15%;top:17%;width:50%;height:55%}
+.w{position:absolute;background:var(--t1);opacity:.85;border-radius:1px}
+.dm{position:absolute;font-size:9.5px;color:var(--t2);font-family:ui-monospace,Menlo,monospace;
+    background:var(--canvas);padding:0 4px;letter-spacing:.02em}
+.sel{position:absolute;border:1.5px solid var(--accent);background:rgba(106,87,245,.06);border-radius:2px}
+.sel b{position:absolute;width:7px;height:7px;background:var(--panel);border:1.5px solid var(--accent);border-radius:2px}
+.furn{position:absolute;border:1.2px solid var(--t2);opacity:.55;border-radius:2px}
+
+/* ═══ DOCK CÔNG CỤ — kính, dưới, MỘT hàng ═══ */
+.dock{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:1px;
+      background:var(--glass);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);
+      border:1px solid var(--glassbd);border-radius:var(--r-md);padding:4px;box-shadow:var(--sh)}
+.dk{width:var(--tap);height:var(--tap);border:0;background:transparent;color:var(--t2);border-radius:9px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s,color .12s}
+.dk:hover{background:var(--hover);color:var(--t1)}
+.dk.on{background:var(--accent);color:#fff}
+.dkdiv{width:1px;height:19px;background:var(--glassbd);margin:0 4px}
+.dkt{height:var(--tap);border:0;background:transparent;color:var(--t2);border-radius:9px;padding:0 11px;
+     display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;transition:background .12s}
+.dkt:hover{background:var(--hover)}
+.dkt.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+/* ═══ INSPECTOR — CHỈ hiện khi có chọn ═══ */
+.insp{width:232px;flex:none;background:var(--panel);border-left:1px solid var(--hair);
+      display:flex;flex-direction:column;min-height:0}
+.ihead{height:33px;flex:none;display:flex;align-items:center;padding:0 6px 0 12px;border-bottom:1px solid var(--hair2)}
+.ihead h2{margin:0;font-size:12.5px;font-weight:600}
+.ihead .sub{font-size:10.5px;color:var(--t3);margin-left:6px;font-family:ui-monospace,Menlo,monospace}
+.ihead .x{margin-left:auto;width:24px;height:24px;border:0;background:transparent;color:var(--t3);
+          border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.ihead .x:hover{background:var(--hover);color:var(--t1)}
+.iscroll{flex:1;overflow-y:auto}
+.grp{padding:10px 12px;border-bottom:1px solid var(--hair2)}
+.grp h4{margin:0 0 8px;font-size:10px;font-weight:700;letter-spacing:.075em;text-transform:uppercase;color:var(--t3)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.fld{height:27px;background:var(--field);border:1px solid transparent;border-radius:7px;padding:0 8px;
+     display:flex;align-items:center;gap:5px;font-size:12px;transition:border-color .12s,background .12s}
+.fld:hover{border-color:var(--hair)}
+.fld:focus-within{border-color:var(--accent);background:var(--panel)}
+.fld .k{color:var(--t3);font-size:10.5px;font-weight:600}
+.fld .v{margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)}
+.fld.pick{cursor:pointer}
+.fld.pick .v{font-family:inherit}
+.fld.pick .car{color:var(--t3);margin-left:4px}
+.matr{display:flex;align-items:center;gap:9px;cursor:pointer;padding:3px;margin:-3px;border-radius:9px}
+.matr:hover{background:var(--hover)}
+.msw{width:34px;height:34px;border-radius:8px;flex:none;border:1px solid var(--hair);
+     background:linear-gradient(140deg,#d7cbb9,#a8917a);box-shadow:inset 0 1px 2px rgba(255,255,255,.35)}
+.mtx{min-width:0}
+.mtx .a{font-size:12.5px;font-weight:550;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mtx .b{font-size:10px;color:var(--t3);font-family:ui-monospace,Menlo,monospace;margin-top:1px}
+.kv{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;padding:3px 0;color:var(--t2)}
+.kv b{color:var(--t1);font-weight:600;font-variant-numeric:tabular-nums}
+.kv.big{padding-top:7px;margin-top:5px;border-top:1px solid var(--hair2);font-size:12.5px}
+.kv.big b{color:var(--accent);font-size:14px}
+
+/* ═══ CHÂN ═══ */
+.foot{height:25px;flex:none;display:flex;align-items:center;gap:9px;padding:0 10px;
+      background:var(--panel);border-top:1px solid var(--hair);font-size:11px;color:var(--t3)}
+.cmdl{display:flex;align-items:center;gap:6px;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--t2)}
+.cmdl kbd{background:var(--field);border:1px solid var(--hair2);border-radius:4px;padding:0 4px;font-size:10px}
+.foot .r{margin-left:auto;display:flex;align-items:center;gap:13px}
+.vt{display:flex;align-items:center;gap:5px;color:var(--t2);cursor:pointer}
+.vtd{width:7px;height:7px;border-radius:2px;background:#c0704a}
+
+.themer{position:fixed;right:9px;bottom:31px;display:flex;gap:4px;z-index:20}
+.themer button{border:1px solid var(--hair);background:var(--panel);color:var(--t2);border-radius:7px;
+               padding:3px 9px;font-size:10.5px;cursor:pointer}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ĐẦU: logo · tên · 3 chặng. Hết. -->
+  <div class="top">
+    <div class="logo" title="Tổng quan · Dự án · Tệp · Thư viện">IF</div>
+    <div class="doc">Căn hộ Thảo Điền · 128m²<svg class="i s car" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
+    <div class="seg">
+      <button class="on">Vẽ</button><button>Dựng ảnh</button><button>Trình bày</button>
+    </div>
+    <div class="topr">
+      <button class="tb" title="Bình luận"><svg class="i" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></button>
+      <button class="tb" title="Chia sẻ"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v13"/><path d="M8 7l4-4 4 4"/><path d="M4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4"/></svg></button>
+    </div>
+  </div>
+
+  <div class="mid">
+
+    <!-- SIDEBAR: chỉ Lớp -->
+    <aside class="side">
+      <div class="state">
+        <button class="statebtn"><span class="dt"></span>Bố trí nội thất
+          <svg class="i s car" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      </div>
+
+      <div class="list">
+        <div class="sech">Kiến trúc<span class="n">3</span></div>
+        <div class="lay on"><span class="dot" style="background:#22222a"></span><span class="nm">Tường</span>
+          <span class="acts">
+            <button class="act" title="Ẩn"><svg class="i s" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            <button class="act lk" title="Khoá"><svg class="i s" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></button>
+          </span></div>
+        <div class="lay"><span class="dot" style="background:#7d8791"></span><span class="nm">Cửa · cửa sổ</span>
+          <span class="acts">
+            <button class="act"><svg class="i s" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            <button class="act lk"><svg class="i s" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></button>
+          </span></div>
+        <div class="lay mut"><span class="dot" style="background:#5b6ee0"></span><span class="nm">Trục</span>
+          <span class="acts">
+            <button class="act"><svg class="i s" viewBox="0 0 24 24"><path d="M17.9 17.9A10.1 10.1 0 0112 20C5 20 1 13 1 13a18 18 0 014.6-5.3M9.9 4.2A10 10 0 0112 4c7 0 11 7 11 7a18 18 0 01-2.2 3.2M1 1l22 22"/></svg></button>
+            <button class="act lk"><svg class="i s" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></button>
+          </span></div>
+
+        <div class="sech">Nội thất<span class="n">2</span></div>
+        <div class="lay"><span class="dot" style="background:#b8956a"></span><span class="nm">Đồ rời</span>
+          <span class="acts">
+            <button class="act"><svg class="i s" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            <button class="act lk"><svg class="i s" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></button>
+          </span></div>
+        <div class="lay lok"><span class="dot" style="background:#5e8f76"></span><span class="nm">Đồ cố định</span>
+          <span class="acts">
+            <button class="act"><svg class="i s" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            <button class="act lk"><svg class="i s" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M7 11V8a5 5 0 019.5-2"/></svg></button>
+          </span></div>
+
+        <div class="sech">Ghi chú<span class="n">2</span></div>
+        <div class="lay"><span class="dot" style="background:#4f8cc9"></span><span class="nm">Kích thước</span>
+          <span class="acts">
+            <button class="act"><svg class="i s" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            <button class="act lk"><svg class="i s" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></button>
+          </span></div>
+        <div class="lay mut"><span class="dot" style="background:#9a9aa2"></span><span class="nm">Chú thích · không in</span>
+          <span class="acts">
+            <button class="act"><svg class="i s" viewBox="0 0 24 24"><path d="M17.9 17.9A10.1 10.1 0 0112 20C5 20 1 13 1 13a18 18 0 014.6-5.3M9.9 4.2A10 10 0 0112 4c7 0 11 7 11 7a18 18 0 01-2.2 3.2M1 1l22 22"/></svg></button>
+            <button class="act lk"><svg class="i s" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></button>
+          </span></div>
+      </div>
+
+      <div class="sideft">
+        <button class="sf"><svg class="i s" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Lớp mới</button>
+        <button class="sf"><svg class="i s" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 3v18"/></svg>Khối</button>
+      </div>
+    </aside>
+
+    <!-- SÂN KHẤU -->
+    <main class="stage">
+      <div class="tabs">
+        <div class="tab on">Mặt bằng bố trí<span class="sc">1:50</span></div>
+        <div class="tab">Mặt bằng trần</div>
+        <div class="tab">Mặt cắt A-A</div>
+        <div class="tab">Chi tiết bếp</div>
+        <button class="tabadd"><svg class="i s" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+
+      <div class="canvas">
+        <div class="plan">
+          <div class="w" style="left:0;top:0;width:100%;height:6px"></div>
+          <div class="w" style="left:0;bottom:0;width:100%;height:6px"></div>
+          <div class="w" style="left:0;top:0;width:6px;height:100%"></div>
+          <div class="w" style="right:0;top:0;width:6px;height:100%"></div>
+          <div class="w" style="left:48%;top:0;width:6px;height:54%"></div>
+          <div class="w" style="left:48%;bottom:0;width:36%;height:6px"></div>
+          <div class="furn" style="left:9%;top:56%;width:26%;height:15%"></div>
+          <div class="furn" style="left:9%;top:16%;width:15%;height:22%"></div>
+          <div class="furn" style="right:9%;top:14%;width:19%;height:12%"></div>
+          <div class="dm" style="left:17%;top:-19px">5 200</div>
+          <div class="dm" style="right:12%;top:-19px">3 800</div>
+          <div class="dm" style="left:-44px;top:45%">4 100</div>
+          <div class="sel" style="left:52%;top:24%;width:30%;height:26%">
+            <b style="left:-4px;top:-4px"></b><b style="right:-4px;top:-4px"></b>
+            <b style="left:-4px;bottom:-4px"></b><b style="right:-4px;bottom:-4px"></b>
+          </div>
+        </div>
+
+        <!-- DOCK: 7 công cụ + ⋯ + 2 công tắc. Hết. -->
+        <div class="dock">
+          <button class="dk on" title="Chọn — V"><svg class="i" viewBox="0 0 24 24"><path d="M4 3l7 17 2.5-6.5L20 11z"/></svg></button>
+          <button class="dk" title="Đường — L"><svg class="i" viewBox="0 0 24 24"><path d="M4 20L20 4"/></svg></button>
+          <button class="dk" title="Đa tuyến — PL"><svg class="i" viewBox="0 0 24 24"><path d="M3 18l5-8 4 5 3-6 6 9"/></svg></button>
+          <button class="dk" title="Chữ nhật — REC"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="1"/></svg></button>
+          <button class="dk" title="Kích thước — D"><svg class="i" viewBox="0 0 24 24"><path d="M3 8v8M21 8v8M3 12h18"/></svg></button>
+          <button class="dk" title="Chữ — T"><svg class="i" viewBox="0 0 24 24"><path d="M4 6V4h16v2M12 4v16M9 20h6"/></svg></button>
+          <button class="dk" title="Vùng · vật liệu — ROOM"><svg class="i" viewBox="0 0 24 24"><path d="M19 11l-8-8-8 8 8 8z"/><path d="M20 15s2 2.5 2 4a2 2 0 01-4 0c0-1.5 2-4 2-4z"/></svg></button>
+          <button class="dk" title="Thêm công cụ"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg></button>
+          <div class="dkdiv"></div>
+          <button class="dkt on">Ortho</button>
+          <button class="dkt on">Bắt điểm</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- INSPECTOR: chỉ vì đang có vật được chọn -->
+    <aside class="insp">
+      <div class="ihead">
+        <h2>Phòng khách</h2><span class="sub">24.6 m²</span>
+        <button class="x"><svg class="i s" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="iscroll">
+        <div class="grp">
+          <h4>Kích thước</h4>
+          <div class="f2">
+            <div class="fld"><span class="k">R</span><span class="v">5 200</span></div>
+            <div class="fld"><span class="k">C</span><span class="v">4 100</span></div>
+            <div class="fld"><span class="k">X</span><span class="v">2 400</span></div>
+            <div class="fld"><span class="k">Y</span><span class="v">1 150</span></div>
+          </div>
+        </div>
+        <div class="grp">
+          <h4>Lớp</h4>
+          <div class="fld pick"><span class="v">Tường</span><svg class="i s car" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
+        </div>
+        <div class="grp">
+          <h4>Vật liệu sàn</h4>
+          <div class="matr">
+            <div class="msw"></div>
+            <div class="mtx"><div class="a">Gỗ sồi tự nhiên</div><div class="b">OAK-NT-190</div></div>
+          </div>
+        </div>
+        <div class="grp">
+          <h4>Khối lượng</h4>
+          <div class="kv"><span>Diện tích</span><b>24.60 m²</b></div>
+          <div class="kv"><span>Đơn giá</span><b>1 250 000 ₫</b></div>
+          <div class="kv"><span>Hao hụt 5%</span><b>1.23 m²</b></div>
+          <div class="kv big"><span>Thành tiền</span><b>32 287 500 ₫</b></div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <div class="foot">
+    <span class="cmdl"><kbd>⌘</kbd>Gõ lệnh: L · PL · REC · C · ROOM</span>
+    <span>·</span><span>Ortho F8</span><span>Nhập số F12</span>
+    <div class="r">
+      <span>1:50</span>
+      <span class="vt"><span class="vtd"></span>Vitals</span>
+      <span>Đã lưu 19:18</span>
+    </div>
+  </div>
+</div>
+
+<div class="themer">
+  <button onclick="document.documentElement.dataset.theme='light'">Sáng</button>
+  <button onclick="document.documentElement.dataset.theme='dark'">Tối</button>
+</div>
+</body>
+</html>
