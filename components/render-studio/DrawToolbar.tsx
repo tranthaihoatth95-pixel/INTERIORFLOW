@@ -9,6 +9,9 @@
  * "chọn/sticky/…/comment" trong spec ĐÃ có lối vào riêng (BottomToolbar/CommentPin) — không lặp
  * lại ở đây, chỉ thêm nút "Chọn" để thoát tool vẽ (xem ghi chú NGOÀI PHẠM VI trong
  * `docs/BAO-CAO-CHINH.md` phần (3)).
+ *
+ * G4-1a (đêm 04/08, BAO-CAO-DEM mục 2): KHÔNG đứng thường trực nữa — chỉ hiện khi một công cụ
+ * vẽ tay đang active (vào bằng nút Bút ở BottomToolbar), thoát bằng nút "Chọn" ngay trong thanh.
  */
 
 import { MousePointer2, Pen, Highlighter, PenTool, Eraser } from 'lucide-react';
@@ -30,6 +33,9 @@ export default function DrawToolbar() {
   const tool = useFlowStore((s) => s.tool);
   const setTool = useFlowStore((s) => s.setTool);
   const tr = useT();
+
+  const drawing = tool === 'pen' || tool === 'marker' || tool === 'highlight' || tool === 'eraser';
+  if (!drawing) return null;
 
   return (
     <motion.div

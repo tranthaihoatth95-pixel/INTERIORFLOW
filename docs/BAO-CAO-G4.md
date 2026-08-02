@@ -204,3 +204,55 @@ CommandPanel · 3 cảnh Cầu/Sàn/Vải tự chọn theo danh mục · lưới
 `lib/three/materials.ts` — `MATERIALS[].swatch` là gradient tạm, đúng chỗ để thay bằng render cầu.
 Dùng chung 1 renderer/PMREM cho mọi cầu (đừng dựng N canvas — bài học FPS ghi ở `SPEC-3D-CORE`).
 
+---
+
+# PHIÊN G4 — 04/08/2026 (đêm) · VIỆC 1a GẤP: 5 lỗi UI chặng Render
+
+Nguồn việc: `SO-KIEM-TONG.md` §3 G4-1a + `BAO-CAO-DEM-2026-08-04.md` mục 23:1x (điểm 2–6).
+Bước 0 đã chạy: merge `main` → `nhanh-g4` (`02b2b39`, sạch, không conflict).
+
+## Đã sửa (4 file, ngoài vùng cứng G4 gốc nhưng được phiếu giao việc TỔNG giao đích danh)
+
+1. **Toolbar bút hết đứng thường trực** — `DrawToolbar.tsx` return null khi tool không thuộc
+   {pen·marker·highlight·eraser}; **lối vào mới**: nút "Bút vẽ tay" thêm vào `BottomToolbar.tsx`
+   (cạnh Khung phòng, active khi bất kỳ tool vẽ nào bật) — không mất tính năng, chỉ đổi lối vào
+   (chống rớt §1 giữ nguyên: bảng bút + DrawLayer còn sống, thoát bằng nút "Chọn" trong bảng).
+2. **Canvas trống hết tụt 15%** — `FlowCanvas.tsx`: `fitView` chỉ bật khi có node
+   (`fitView={nodes.length>0}` + `defaultViewport zoom 1` + effect fit-một-lần `maxZoom:1` cho
+   ca hydrate muộn). **Phát hiện thêm khi verify**: đổi flow KHÔNG remount canvas → viewport flow
+   cũ dính lại; đã xử: đổi `currentFlowId` → reset cờ fit, flow trống thì `setViewport zoom 1`.
+3. **Banner đổi khuôn** — `RenderToolModeOverlay.tsx`: "Còn công cụ khác chưa hiện." →
+   "Công cụ đầy đủ nằm trong Thư viện khối." + nút "Mở thư viện" (khuôn Nhắc trạng thái
+   SPEC-NGON-NGU §2, tên panel đúng chữ trên UI).
+4. **Empty state khuôn Trống có NÚT** — `FlowCanvas.tsx`: "Canvas đang trống — kéo khối từ
+   Thư viện vào đây" + nút "Mở Thư viện khối" (mở đúng panel) + demo chips giữ nguyên; bỏ jargon
+   "Node Library"/"rail trái" (từ điển §3).
+5. **Minimap + attribution** — minimap đã có guard `nodes.length >= 3` từ trước (không sửa);
+   attribution React Flow GIỮ theo license nhưng chuyển `bottom-left` + style trong suốt/9px/55%
+   (bỏ nền trắng lộ ở theme Tối). Lưu ý kỹ thuật: selector `.react-flow__attribution` không viết
+   được bằng arbitrary variant Tailwind (underscore→space) → dùng `<style>` cục bộ trong wrapper.
+
+## Verify browser thật (127.0.0.1:3004, login demo, cả 2 theme Sáng/Tối)
+
+- Dock: nút Bút bật bảng bút mép trái (5 nút, active accent) · "Chọn" tắt bảng — DOM đếm 0.
+- Flow trống: zoom đứng 100%, empty state + nút hoạt động (mở Thư viện khối), minimap ẩn,
+  banner ẩn. Flow có node: banner hiện, nút mở đúng panel. Console: 0 lỗi runtime mới sau reload
+  (chỉ còn vết compile cũ của chính phiên — đã sửa trong phiên).
+- Verify bằng flow test "Untitled flow" tự tạo → ĐÃ XOÁ sau khi xong (stub `window.confirm`
+  tạm để bấm nút Xoá flow vì browser pane nuốt dialog native — restore ngay). Theme trả về Sáng.
+
+## 🔴 PHÁT HIỆN CHO TỔNG/PHU — nguyên nhân THẬT của ảnh "zoom 15% trống trơn" của Hoà
+
+Dự án mẫu (flow đang mở mặc định) có **3 node toạ độ văng cực xa**: y = −6150 / −9261 /
+**−50202** (đo DOM). fitView đúng logic với bbox đó → kẹt minZoom 15%, node bé đến vô hình,
+minimap "trông như trống" dù có 3 node (guard ≥3 nên vẫn hiện). Tức là NGOÀI lỗi UI đã sửa,
+còn **lỗi DỮ LIỆU demo** (nghi do kéo node ở zoom cực nhỏ hoặc import lệch) — thuộc lõi dữ
+liệu (PHU/TỔNG quyết): cần sanitize vị trí node khi load/save. G4 không tự sửa (ngoài mảng).
+
+## Ghi chú vận hành phiên này
+
+- Worktree G4 thiếu `.env` → login API 500. Đã `cp .env` từ repo chính (DATABASE_URL trỏ tuyệt
+  đối `prisma/dev.db` repo chính — đúng file gitignore, không vào git). Server 3004 cũ (khởi động
+  không env) đã kill, chạy lại `npm run dev -p 3004` nền — **đang chạy tiếp cho phiên sau**.
+- `preview_start` không nhận cwd ngoài project root → server chạy qua Bash nền (bất khả kháng,
+  log ở scratchpad phiên).

@@ -94,7 +94,10 @@ export default function RenderToolModeOverlay() {
             fontSize: 11.5,
           }}
         >
-          <span>{tr('Còn công cụ khác chưa hiện.', "More tools aren't shown.")}</span>
+          {/* G4-1a (đêm 04/08, BAO-CAO-DEM mục 4) — câu cũ "Còn công cụ khác chưa hiện" nghe như
+              debug, Hoà chê mơ hồ. Đổi theo khuôn Nhắc trạng thái §2: 1 câu chỉ đúng chỗ chứa
+              công cụ ("Thư viện khối" — tên thật trên UI) + nút xử. */}
+          <span>{tr('Công cụ đầy đủ nằm trong Thư viện khối.', 'The full toolset is in the Block library.')}</span>
           <button
             type="button"
             onClick={() => setPanel('library')}
@@ -110,7 +113,7 @@ export default function RenderToolModeOverlay() {
               cursor: 'pointer',
             }}
           >
-            {tr('Xem tất cả', 'View all')}
+            {tr('Mở thư viện', 'Open library')}
           </button>
         </div>
       )}
