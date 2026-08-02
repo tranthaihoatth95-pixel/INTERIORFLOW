@@ -107,9 +107,12 @@ export function AvatarBuilder({ value, onChange, onSave, onSkip, seedId = 'seed'
     [tr],
   );
 
-  /* Ô thumbnail = avatar THẬT với đúng 1 đặc điểm override — cấm số, cấm chữ suông (mock). */
+  /* Ô thumbnail = avatar THẬT với đúng 1 đặc điểm override — cấm số, cấm chữ suông (mock).
+   * Hoà duyệt 03/08: thumbnail KIỂU TÓC tự BỎ MŨ (override hat='none' CHỈ trong thumbnail —
+   * config thật không đổi) — ô đó để xem kiểu tóc, đội mũ che hết thì 16 ô như nhau. */
   const Opt = <K extends keyof AvatarConfig>({ k, v }: { k: K; v: AvatarConfig[K] }) => {
     const active = config[k] === v;
+    const preview: AvatarConfig = { ...config, [k]: v, ...(k === 'hair' ? { hat: 'none' as const } : null) };
     return (
       <button
         type="button"
@@ -118,7 +121,7 @@ export function AvatarBuilder({ value, onChange, onSave, onSkip, seedId = 'seed'
         className={cn('if-avb-opt', active && 'on')}
       >
         <span className="if-avb-thumb">
-          <AvatarRenderer config={{ ...config, [k]: v }} size={62} frame={false} />
+          <AvatarRenderer config={preview} size={62} frame={false} />
         </span>
       </button>
     );
