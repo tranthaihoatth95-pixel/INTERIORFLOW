@@ -141,3 +141,66 @@ G4 chỉ ĐỌC file này, không tạo/sửa, không đưa vào lệnh commit t
 Đã chụp 6 màn hình trong lúc verify (Render tab mặc định · card selected + inspector · CAD tab ·
 Publish modal mở · sau khi publish (chip chờ duyệt) · Tất cả tab nhóm theo chặng · dark theme) —
 không đính kèm file ảnh vào repo (đúng luật không rác `docs/`), mô tả bằng chữ ở mục Verify trên.
+
+---
+
+# CHỐT PHIÊN G4 — 03/08/2026 (theo SO-KIEM-TONG.md §4)
+
+> Phiên G4 đóng tại đây. Phiên G4 MỚI: đọc `docs/SO-KIEM-TONG.md` (trên main) → `docs/00-CHOT.md`
+> → file này, đúng thứ tự §4.1. Việc kế tiếp nhận từ §3 sổ tổng: **MaterialSphere quả cầu vật liệu**
+> (`SPEC-VAT-LIEU-PBR-IF` §2), rồi Mood+Collab G2.
+
+## Nhánh `nhanh-g4` tại thời điểm chốt
+
+HEAD = `245b96b`, cây sạch, 37 commit chưa push (push kèm lần chốt này). Các cụm việc phiên này,
+mới → cũ:
+
+| Cụm | Commit | Báo cáo chi tiết |
+|---|---|---|
+| **Mode Vẽ 3D (G3)**: CommandPanel 5 tab · Viewport3D (bọc `Scene3DViewer` sẵn có + trục/ViewCube/gizmo) · ObjectProperties 4 nhóm + khai báo mode Trụ 4 | `20e935d` · `f6868e7` · `245b96b` | mục dưới đây (phiên chốt trước khi kịp viết vòng riêng) |
+| **Thư viện = MỘT sheet** (xoá trang `/library`, 1 tên "Thư viện", 1 nút "Đưa lên kệ") | `a73c658` (+ 4 commit sheet trước đó `8e04f85`…`c4ab1d9`) | `docs/BAO-CAO-G4-LIB.md` |
+| File Manager + Settings (rail chung · list view · tải lên thật · hình nền canvas) | đã merge main `12223cf` | `docs/BAO-CAO-FM.md` |
+| Kệ Thư viện trang (vòng 1 — **đã khai tử** bởi `a73c658`) | `6ba1ecb` | phần đầu file này (giữ làm lịch sử) |
+
+## Mode Vẽ 3D — tóm tắt nghiệm thu (3 commit cuối phiên)
+
+- **Ranh giới giữ đúng**: chỉ file MỚI trong `components/three/*` + `lib/three/materials.ts` +
+  `lib/three/mode-render-3d.ts`. KHÔNG đụng `components/studio/*`, KHÔNG sửa engine 3D-1..3D-5
+  sẵn có. 3 component nhận props tự render, không biết gì về shell — CHINH cắm vào AppShell là chạy.
+- **⭐ Moat matId verify bằng DOM**: đổi engine IF→D5 chỉ đổi tên hiển thị (Gỗ óc chó →
+  Wood_Walnut_01), `matId` W-102 giữ nguyên, lựa chọn không mất. Dòng "Mã matId giữ nguyên khi
+  xuất sang D5 hoặc V-Ray" hiện ở cả hint tab Vật liệu lẫn Inspector.
+- **Nhóm Nguồn** (ObjectProperties): cảnh báo `--warning` TRƯỚC khi sửa khối còn đồng bộ bản vẽ
+  ("sửa ở đây sẽ TÁCH khỏi bản vẽ") và SAU khi tách — verify đủ 3 trạng thái nguồn.
+- **3 bug thật bắt khi verify** (đã sửa, console sạch tab mới): matId bị `overflow:hidden` cắt
+  ("W-102"→"102", span inline trôi dòng) · `<title>` SVG gây hydration mismatch (React 18, bỏ
+  hẳn dùng `aria-label`) · overlay theo theme vô dụng vì nền cảnh `Scene3DViewer` hardcode
+  `#2a2d33` → chốt kính tối cố định, ngoại lệ có căn cứ ghi comment.
+- `defineMode` registry CHƯA tồn tại (grep 0 kết quả) → `RENDER_3D_MODE` object thuần đúng hình
+  dạng Trụ 4 + TODO trỏ CHINH trong `lib/three/mode-render-3d.ts`, không tự chế cơ chế.
+- tsc 0 lỗi · lint sạch · test exit 0 · verify DOM thật từng tab, 2 theme (Tối trước), bàn phím.
+
+## ⚠️ MERGE BLOCKER cho ai merge `nhanh-g4` → main
+
+Main (`3a92170`) đã **XOÁ `LeftRail.tsx` + `StageShell.tsx`**; nhánh này còn 2 commit SỬA đúng 2
+file đó (`a73c658` mount `LibrarySheet` vào StageShell + nút Thư viện trong LeftRail). Merge sẽ ra
+**modify/delete conflict** — đúng ghi chú sổ tổng §1 "main đã xoá StageShell → cần luật xử mount".
+Cách xử khi merge (đề xuất, người merge quyết):
+1. Nhận xoá 2 file (`git rm`) — phần code sheet trong `components/library/*` không mất gì.
+2. Mount lại `<LibrarySheet stage={...}/>` vào chỗ tương đương của **AppShell 6 ổ** (overlay dùng
+   chung, cạnh Dashboard/FlowsPanel cũ) + nút "Thư viện" ở Navigator gọi `openLibrarySheet()`
+   (`lib/library/use-library-sheet.ts` — không phụ thuộc shell, cắm đâu cũng chạy).
+3. `/files`/`/settings` đã tự mount sheet riêng (`app/files/page.tsx`, `PixelSettingsShell`) —
+   phần đó không dính conflict.
+
+## Bàn giao phiên G4 mới — việc 1: MaterialSphere (§3 sổ tổng)
+
+Đọc `SPEC-VAT-LIEU-PBR-IF` §2 (trên main — nhánh này CHƯA có, **merge main trước khi làm**, xử
+conflict theo mục trên). Đầu bài sổ tổng: `MaterialSphere.tsx` (three.js sphere + RoomEnvironment
+PMREM dùng chung + cache PNG theo hash) · gắn vào Thư viện sheet mode Vẽ 3D + tab Vật liệu
+CommandPanel · 3 cảnh Cầu/Sàn/Vải tự chọn theo danh mục · lưới 25%, chi tiết 100%. Chỗ gắn có sẵn:
+`components/three/CommandPanel.tsx` (swatch `.msw` tab Vật liệu — thay `background:gradient` bằng
+ảnh cầu) + `components/library/LibrarySheet.tsx` (ô `.it` kệ vật liệu). Catalog matId mock ở
+`lib/three/materials.ts` — `MATERIALS[].swatch` là gradient tạm, đúng chỗ để thay bằng render cầu.
+Dùng chung 1 renderer/PMREM cho mọi cầu (đừng dựng N canvas — bài học FPS ghi ở `SPEC-3D-CORE`).
+
