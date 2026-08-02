@@ -10,8 +10,22 @@ import { stashPresentHandoffWithIds, renderImageId } from '@/lib/present-editor/
 import ExportPptxButton from '@/components/ExportPptxButton';
 import { adaptiveTextStyle, useAdaptiveContrast } from '@/components/ui/AdaptiveContrast';
 import { Scene3DPreviewModal } from '@/components/three/Scene3DPreviewModal';
-import type { Scene3DData } from '@/lib/three/cad-to-obj';
+import { docToObjScene, toScene3DData, type Scene3DData, type SceneOptions } from '@/lib/three/cad-to-obj';
+import { useCadStore } from '@/lib/cad/store';
 import type { InteriorNodeData, PortValue } from '@/lib/types';
+
+/** Parse an toàn `_sceneOpts` (JSON `SceneOptions`, 3D-5) — options ĐÃ dùng lúc node chạy, để
+ * dựng lại scene sau push-pull không lệch màu/trần/palette. Hỏng/thiếu → `{}` (mặc định
+ * `docToObjScene`), KHÔNG chặn tính năng chỉ vì thiếu 1 field phụ. */
+function parseSceneOpts(json: string | undefined): SceneOptions {
+  if (!json) return {};
+  try {
+    const v = JSON.parse(json);
+    return typeof v === 'object' && v !== null ? (v as SceneOptions) : {};
+  } catch {
+    return {};
+  }
+}
 
 /** Parse an toàn output ẩn `_scene3d` (JSON `Scene3DData`, SPEC-3D-CORE §3) — thiếu/hỏng thì
  * trả null, nút "Xem 3D" tự ẩn thay vì crash panel node. */
@@ -308,14 +322,39 @@ function downloadText(content: string, filename: string, mime = 'text/plain') {
 /** Nút tải OBJ/MTL + convert FBX (Blender local qua /api/render/fbx) + xem trực tiếp khối 3D
  * (`Scene3DViewer` mode orbit, SPEC-3D-CORE §4 mã 3D-1 — lần đầu XEM khối trong app) cho node
  * Bản vẽ → 3D. */
-function ObjFbxActions({ obj, mtl, cam, scene3d }: { obj: string; mtl: string; cam: string; scene3d: Scene3DData | null }) {
+function ObjFbxActions({
+  obj,
+  mtl,
+  cam,
+  scene3d,
+  sceneOptsJson,
+}: {
+  obj: string;
+  mtl: string;
+  cam: string;
+  scene3d: Scene3DData | null;
+  sceneOptsJson: string | undefined;
+}) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [show3d, setShow3d] = useState(false);
+  // 3D-5 push-pull ghi ngược Doc — scene node chạy 1 LẦN (snapshot), nhưng sau khi kéo-đẩy đổi
+  // heightMm trên Doc, khung nhìn phải dựng LẠI từ Doc mới (luật một nguồn) — override cục bộ,
+  // KHÔNG phải bản 3D độc lập: mỗi lần đổi đều dựng lại thẳng từ `docToObjScene()`.
+  const [scene3dOverride, setScene3dOverride] = useState<Scene3DData | null>(null);
+  const shownScene = scene3dOverride ?? scene3d;
+  function handlePushPull(entityId: string, newHeightMm: number) {
+    const store = useCadStore.getState();
+    const entity = store.doc.entities.find((e) => e.id === entityId);
+    if (!entity) return; // entity đã bị xoá giữa lúc kéo — bỏ qua, không tạo lại
+    store.updateEntities([{ ...entity, heightMm: newHeightMm }]);
+    const fresh = docToObjScene(useCadStore.getState().doc, parseSceneOpts(sceneOptsJson));
+    setScene3dOverride(toScene3DData(fresh));
+  }
   return (
     <div className="space-y-1.5">
       <div className="flex gap-1.5">
-        {scene3d && (
+        {shownScene && (
           <button
             className="nodrag flex flex-1 items-center justify-center gap-1 rounded-md border border-[var(--border-strong)] py-1.5 text-[11px] text-[var(--t2)] hover:border-sky-500/60"
             onClick={() => setShow3d(true)}
@@ -323,7 +362,7 @@ function ObjFbxActions({ obj, mtl, cam, scene3d }: { obj: string; mtl: string; c
             <Box size={12} /> Xem 3D
           </button>
         )}
-        {scene3d && <Scene3DPreviewModal open={show3d} onClose={() => setShow3d(false)} scene={scene3d} />}
+        {shownScene && <Scene3DPreviewModal open={show3d} onClose={() => setShow3d(false)} scene={shownScene} onPushPull={handlePushPull} />}
         <button
           className="nodrag flex flex-1 items-center justify-center gap-1 rounded-md border border-[var(--border-strong)] py-1.5 text-[11px] text-[var(--t2)] hover:border-sky-500/60"
           onClick={() => {
@@ -414,6 +453,7 @@ export function NodeExtras({ nodeId, data }: { nodeId: string; data: InteriorNod
           mtl={String(outputs._mtl?.value ?? '')}
           cam={String(outputs._cam?.value ?? '')}
           scene3d={parseScene3D(outputs._scene3d ? String(outputs._scene3d.value) : undefined)}
+          sceneOptsJson={outputs._sceneOpts ? String(outputs._sceneOpts.value) : undefined}
         />
         {tier && <TierBadge tier={tier} />}
       </div>

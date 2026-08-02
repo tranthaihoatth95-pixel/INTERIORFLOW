@@ -66,6 +66,13 @@ export interface SceneGroup {
   name: string;
   colorHex: string;
   positions: number[];
+  /** 3D-5 push-pull — id của `Entity` gốc (Doc chặng 1) sinh ra group này. Chỉ đặt cho group
+   * TƯỜNG (đóng vai trò đùn khối chỉnh được); group khác (sàn/phòng/nội thất/cửa sổ) để trống —
+   * chưa có nơi tiêu thụ nên chưa gán, tránh đoán mò (giữ đúng luật `storey`/`elementType`). */
+  entityId?: string;
+  /** 3D-5 — cao độ (mm) ĐÃ DÙNG để đùn group tường này (đọc từ `entity.heightMm` hoặc mặc định
+   * scene) — viewer 3D dùng số này làm mốc scale khi kéo-đẩy, KHÔNG tính lại từ hình học. */
+  heightMm?: number;
 }
 
 export interface ObjScene {
@@ -180,23 +187,30 @@ class ObjBuilder {
   faces = 0;
   private posByIndex: number[][] = []; // posByIndex[i] = vị trí (m, Y-up) của vertex OBJ #(i+1)
   private groupList: SceneGroup[] = [];
-  private cur: { name: string; colorHex: string; tris: number[] } | null = null;
+  private cur: { name: string; colorHex: string; tris: number[]; entityId?: string; heightMm?: number } | null = null;
 
   constructor(mtlFile: string) {
     this.lines.push('# InteriorFlow — OBJ sinh tất định từ bản vẽ CAD (mm → m)');
     this.lines.push(`mtllib ${mtlFile}`);
   }
 
-  object(name: string, mat: Mat) {
+  /** `entityId`/`heightMm` (3D-5 push-pull) — chỉ tường truyền vào, group khác bỏ trống. */
+  object(name: string, mat: Mat, meta?: { entityId?: string; heightMm?: number }) {
     this.lines.push(`o ${name}`);
     this.lines.push(`usemtl ${mat.name}`);
     this.flushGroup();
-    this.cur = { name, colorHex: mat.hex, tris: [] };
+    this.cur = { name, colorHex: mat.hex, tris: [], entityId: meta?.entityId, heightMm: meta?.heightMm };
   }
 
   private flushGroup() {
     if (this.cur && this.cur.tris.length) {
-      this.groupList.push({ name: this.cur.name, colorHex: this.cur.colorHex, positions: this.cur.tris });
+      this.groupList.push({
+        name: this.cur.name,
+        colorHex: this.cur.colorHex,
+        positions: this.cur.tris,
+        entityId: this.cur.entityId,
+        heightMm: this.cur.heightMm,
+      });
     }
     this.cur = null;
   }
@@ -315,11 +329,19 @@ function docBbox(entities: Entity[]): Box | null {
   return box;
 }
 
+/** Cùng 1 khung kẹp [2000,6000]mm cho cao tường — dùng chung giữa mặc định scene và cao riêng
+ * từng tường (`entity.heightMm`, 3D-5 push-pull) để 2 đường không lệch trần. Export để viewer
+ * (`Scene3DViewer.tsx`, thao tác kéo-đẩy) kẹp SỐ GHI NGƯỢC vào Doc đúng cùng biên, không lặp lại
+ * hằng số. */
+export function clampWallHeight(mm: number): number {
+  return Math.max(2000, Math.min(6000, mm));
+}
+
 /**
  * Doc bản vẽ (chặng 1) → scene OBJ+MTL. Tất định 100%: cùng Doc + options cho cùng file.
  */
 export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
-  const H = Math.max(2000, Math.min(6000, opts.wallHeightMm ?? 2700));
+  const H = clampWallHeight(opts.wallHeightMm ?? 2700);
   const theme = opts.theme ?? 'warm';
   const mats = themeMats(theme, opts.palette ?? []);
   const warnings: string[] = [];
@@ -386,10 +408,13 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     builder.prism(poly, 0, 2);
   });
 
-  // ---- Tường: extrude poché ----
+  // ---- Tường: extrude poché — mỗi tường đọc cao độ RIÊNG (`h.heightMm`, ghi ngược từ push-pull
+  // 3D-5) nếu có, không thì dùng cao mặc định scene H. Đây là NGUỒN DUY NHẤT cho cao độ tường —
+  // Doc quyết, 3D chỉ đọc lại (luật một nguồn, `CHOT-HUONG-3D-2026-08-01.md`). ----
   wallHatches.forEach((h, i) => {
-    builder.object(`Wall_${i + 1}`, mats.wall);
-    builder.prism(h.points, 0, H);
+    const wallH = clampWallHeight(h.heightMm ?? H);
+    builder.object(`Wall_${i + 1}`, mats.wall, { entityId: h.id, heightMm: wallH });
+    builder.prism(h.points, 0, wallH);
   });
 
   // ---- Trần (tuỳ chọn) ----

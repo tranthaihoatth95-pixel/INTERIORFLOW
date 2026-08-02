@@ -5,7 +5,7 @@
 import type { Doc, Entity } from '../cad/model';
 import { DEFAULT_LAYERS } from '../cad/model';
 import { wallChain } from '../cad/commands';
-import { docToObjScene, blockFootprint, furnitureHeightMm, cadAxesToThree, cadToThreeM } from './cad-to-obj';
+import { docToObjScene, blockFootprint, furnitureHeightMm, cadAxesToThree, cadToThreeM, clampWallHeight } from './cad-to-obj';
 import { presetCamera, parseCameraSpec, placeCamera, fovFromLens, CAMERA_PRESETS } from './camera';
 
 let pass = 0;
@@ -142,6 +142,38 @@ console.log('camera — preset tất định + parse an toàn');
   ok('đặt máy trong bbox, cao 1.5m', placed.pos[2] === 1.5 && placed.pos[0] === 2 && placed.pos[1] > 0 && placed.pos[1] < 3);
   const top = placeCamera({ minX: 0, minY: 0, maxX: 4000, maxY: 3000 }, presetCamera(CAMERA_PRESETS[3], '35mm', '16:9'));
   ok('trên cao: z ≥ 3.6m', top.pos[2] >= 3.6);
+}
+
+console.log('docToObjScene — heightMm riêng từng tường (3D-5 push-pull, ghi ngược Doc)');
+{
+  const doc = demoDoc();
+  const scene0 = docToObjScene(doc, { wallHeightMm: 2700, theme: 'warm' });
+  const wall1Group = scene0.groups.find((g) => g.name === 'Wall_1')!;
+  ok('group tường có entityId (nối lại Doc)', typeof wall1Group.entityId === 'string' && wall1Group.entityId.length > 0);
+  ok('group tường có heightMm = mặc định scene (2700) khi entity chưa gán riêng', wall1Group.heightMm === 2700);
+
+  // Gán heightMm RIÊNG cho đúng entity đó (giả lập ghi ngược sau push-pull) — chỉ tường này đổi.
+  const wall1Id = wall1Group.entityId!;
+  const docPushed: Doc = { ...doc, entities: doc.entities.map((e) => (e.id === wall1Id ? { ...e, heightMm: 3400 } : e)) };
+  const scene1 = docToObjScene(docPushed, { wallHeightMm: 2700, theme: 'warm' });
+  const w1After = scene1.groups.find((g) => g.name === 'Wall_1')!;
+  const w2After = scene1.groups.find((g) => g.name === 'Wall_2')!;
+  ok('đúng tường được gán heightMm → group cao 3.4m', w1After.heightMm === 3400);
+  ok('tường KHÁC không đụng — vẫn cao mặc định 2.7m (không giữ bản 3D riêng, chỉ đọc lại Doc)', w2After.heightMm === 2700);
+  const w1Ys: number[] = [];
+  for (let i = 1; i < w1After.positions.length; i += 3) w1Ys.push(w1After.positions[i]);
+  ok('hình học tam giác tường 1 THẬT SỰ đùn tới 3.4m (không chỉ đổi field số)', Math.abs(Math.max(...w1Ys) - 3.4) < 1e-6);
+
+  // Kẹp biên [2000,6000] — cùng khung cho mặc định scene lẫn heightMm riêng từng tường.
+  const docExtreme: Doc = { ...doc, entities: doc.entities.map((e) => (e.id === wall1Id ? { ...e, heightMm: 9000 } : e)) };
+  const sceneExtreme = docToObjScene(docExtreme, { wallHeightMm: 2700, theme: 'warm' });
+  const wExtreme = sceneExtreme.groups.find((g) => g.name === 'Wall_1')!;
+  ok('heightMm riêng vượt trần 6000 → bị kẹp lại 6000', wExtreme.heightMm === 6000);
+  ok('clampWallHeight kẹp đúng 2 biên', clampWallHeight(500) === 2000 && clampWallHeight(9000) === 6000 && clampWallHeight(3000) === 3000);
+
+  // Group không phải tường (Floor/Furn/Room) KHÔNG gán entityId/heightMm — chưa có nơi tiêu thụ.
+  const floor = scene0.groups.find((g) => g.name === 'Floor')!;
+  ok('group Floor không gán entityId/heightMm (chỉ tường mới có ý nghĩa push-pull)', floor.entityId === undefined && floor.heightMm === undefined);
 }
 
 console.log('cadAxesToThree/cadToThreeM — quy ước trục CAD→three.js (3D-2)');

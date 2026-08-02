@@ -58,3 +58,25 @@ export function buildMergedGeometries(scene: Scene3DData): BuiltGroup[] {
 export function buildUnmergedGeometries(scene: Scene3DData): BuiltGroup[] {
   return scene.groups.filter((g) => g.positions.length > 0).map((g) => ({ name: g.name, geometry: geometryOf(g.positions), colorHex: g.colorHex }));
 }
+
+export interface MassingWall {
+  entityId: string;
+  /** cao độ (mm) ĐÃ dùng để đùn group này lúc `docToObjScene()` chạy — mốc gốc để tính scale khi
+   * kéo-đẩy (3D-5), KHÔNG suy lại từ hình học. */
+  baseHeightMm: number;
+  geometry: THREE.BufferGeometry;
+  colorHex: string;
+}
+
+/** 1 mesh/tường RIÊNG, gắn `entityId` — nền cho raycasting push-pull (3D-5, mode `massing`
+ * `Scene3DViewer.tsx`). Chỉ tường (group có `entityId`, do `docToObjScene()` gắn) — số lượng
+ * thường vài chục, không phải ~2000 entity toàn bản vẽ, nên KHÔNG cần gộp draw-call như
+ * `buildMergedGeometries` (quyết định #2 SPEC-3D-CORE chỉ áp cho hiển thị TĨNH). */
+export function buildMassingWalls(scene: Scene3DData): MassingWall[] {
+  const out: MassingWall[] = [];
+  for (const g of scene.groups) {
+    if (!g.entityId || !g.positions.length || g.heightMm === undefined) continue;
+    out.push({ entityId: g.entityId, baseHeightMm: g.heightMm, geometry: geometryOf(g.positions), colorHex: g.colorHex });
+  }
+  return out;
+}

@@ -282,6 +282,10 @@ export const renderV2Nodes: NodeDefinition[] = [
         // SPEC-3D-CORE §3 — nguyên liệu cho Scene3DViewer (NodeExtras nút "Xem 3D"), tách khỏi
         // `_obj` text vì viewer KHÔNG được parse ngược OBJ (quyết định #2, xem cad-to-obj.ts).
         _scene3d: { dataType: 'text', value: JSON.stringify(toScene3DData(scene)) },
+        // 3D-5 push-pull — options ĐÃ dùng để dựng scene này, để modal dựng lại ĐÚNG CÙNG tuỳ
+        // chọn (theme/trần/palette) sau mỗi lần ghi ngược heightMm vào Doc — tránh gọi lại
+        // fetchGuProfile (mạng) trong modal + tránh lệch màu/trần so với lúc node chạy.
+        _sceneOpts: { dataType: 'text', value: JSON.stringify({ wallHeightMm, theme, ceiling: params.ceiling === 'Có', palette }) },
         _tier: tierPort('Tầng lõi tất định (CAD→OBJ extrude) — không AI'),
       };
     },

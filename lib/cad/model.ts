@@ -160,6 +160,14 @@ interface Base {
   /** IF2-nền — tầng chứa entity (BIM storey), VD 'GF' / 'L1' / 'L2'. Optional, `.idf` cũ không
    * có field này vẫn parse bình thường. Chưa có UI gán ở IF1; hiện chỉ nền dữ liệu cho IF2-C. */
   storey?: string;
+  /** 3D-5 (`SPEC-3D-CORE.md` push-pull massing, bậc B1 thang BIM `CHOT-HUONG-3D-2026-08-01.md`)
+   * — cao độ đùn khối RIÊNG của entity này (mm), ghi ngược từ thao tác kéo-đẩy khối 3D. Chỉ có ý
+   * nghĩa khi entity đóng vai trò tường (hatch poché trên layer tường, giống `wallKind`).
+   * undefined = dùng cao mặc định của scene (`SceneOptions.wallHeightMm`, hiện 2700) — KHÔNG
+   * tự suy đoán. Đây là NGUỒN DUY NHẤT cho cao độ tường trong khối 3D — `docToObjScene()` đọc
+   * field này, viewer 3D KHÔNG giữ bản cao độ riêng (luật một nguồn, cấm lặp lại bệnh hai-nguồn
+   * đã trả giá ở Brand Kit). */
+  heightMm?: number;
   /** IF2-nền — phân loại BIM/IFC 4.0 (xem `ElementType`). Optional, backward-compatible. */
   elementType?: ElementType;
   /** T2 — phân loại tường trong/ngoài (xem `WallKind` phía trên). Chỉ có ý nghĩa khi entity đóng

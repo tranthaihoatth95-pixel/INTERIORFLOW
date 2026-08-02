@@ -15,6 +15,12 @@
  * campath) qua `PointerLockControls` (three chuẩn) + WASD, KHÔNG tự viết vector di chuyển
  * (`controls.moveForward/moveRight` có sẵn, tự chiếu phẳng theo hướng nhìn — không bay lên/xuống
  * theo pitch).
+ * 3D-5: mode `massing` — push-pull khối (SketchUp-level, bậc B1 thang BIM
+ * `CHOT-HUONG-3D-2026-08-01.md`). Kéo mặt TRÊN 1 tường đổi cao độ SỐNG (preview qua scale.y, tường
+ * luôn đùn từ đáy 0 nên scale chính xác) — nhả chuột gọi `onPushPull(entityId, newHeightMm)` MỘT
+ * LẦN, component KHÔNG tự ghi Doc. Nguồn cao độ tường là `entity.heightMm` (`lib/cad/model.ts`) —
+ * `docToObjScene()` đọc lại field này mỗi lần dựng scene, viewer không giữ bản riêng (luật một
+ * nguồn — cấm lặp bệnh hai-nguồn đã trả giá ở Brand Kit).
  *
  * Thiếu `camPath`/`sectionMm` tương ứng → rơi về orbit, không throw, cảnh báo console 1 lần.
  *
@@ -31,13 +37,13 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
-import { buildMergedGeometries } from '@/lib/three/obj-scene-to-geometry';
-import type { Scene3DData } from '@/lib/three/cad-to-obj';
+import { buildMergedGeometries, buildMassingWalls } from '@/lib/three/obj-scene-to-geometry';
+import { clampWallHeight, type Scene3DData } from '@/lib/three/cad-to-obj';
 import { camPathSampleToThree, sampleCamPathAt, EYE_HEIGHT_MM } from '@/lib/three/capture';
 import { sectionPlane, type SectionSpec } from '@/lib/three/section';
 import type { CamPathResult } from '@/lib/cad/campath';
 
-export type Scene3DMode = 'orbit' | 'walk' | 'campath' | 'section';
+export type Scene3DMode = 'orbit' | 'walk' | 'campath' | 'section' | 'massing';
 
 export interface Scene3DViewerProps {
   scene: Scene3DData;
@@ -47,17 +53,26 @@ export interface Scene3DViewerProps {
   sectionMm?: SectionSpec;
   /** đồng bộ UI ngoài (thanh tua) — gọi mỗi khung hình với giây đã trôi từ lúc mount. */
   onFrame?: (t: number) => void;
+  /** 3D-5 push-pull (mode `massing`) — kéo mặt TRÊN 1 tường xong (pointerup) gọi 1 lần với id
+   * entity + cao độ mới (mm, đã kẹp [2000,6000]). Component KHÔNG tự ghi vào Doc — nơi gọi ghi
+   * qua `useCadStore.updateEntities` rồi truyền lại `scene` MỚI (luật một nguồn, xem
+   * `CHOT-HUONG-3D-2026-08-01.md`). Đọc qua ref (giống `onFrame`) — KHÔNG nằm trong deps effect
+   * chính để đổi ref mỗi render không dựng lại toàn cảnh. */
+  onPushPull?: (entityId: string, newHeightMm: number) => void;
   className?: string;
 }
 
-const IMPLEMENTED_MODES: Scene3DMode[] = ['orbit', 'campath', 'section', 'walk'];
+const IMPLEMENTED_MODES: Scene3DMode[] = ['orbit', 'campath', 'section', 'walk', 'massing'];
 const WALK_SPEED_M_PER_SEC = 1.5; // ~tốc độ đi bộ chậm, cùng cảm giác tempo với campath 1200mm/s
 
-export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame, className }: Scene3DViewerProps) {
+export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame, onPushPull, className }: Scene3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const campathActive = mode === 'campath' && !!camPath?.samples.length;
   const sectionActive = mode === 'section' && !!sectionMm;
   const walkActive = mode === 'walk';
+  const massingActive = mode === 'massing';
+  const onPushPullRef = useRef(onPushPull);
+  onPushPullRef.current = onPushPull;
 
   useEffect(() => {
     if (!IMPLEMENTED_MODES.includes(mode)) {
@@ -152,13 +167,86 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
       window.addEventListener('keyup', onKeyUp);
     }
 
-    const built = buildMergedGeometries(scene);
+    // Mode massing (3D-5): tường tách RIÊNG mesh/entity (raycasting push-pull cần biết đúng
+    // tường nào bị kéo) — loại khỏi đường gộp-theo-màu (quyết định #2 chỉ tối ưu hiển thị TĨNH,
+    // massing cần tương tác từng khối). Số tường thường vài chục — 1 draw call/tường chấp nhận
+    // được ở chế độ chỉnh sửa (khác hẳn cảnh quan sát ngàn entity).
+    const staticScene = massingActive ? { ...scene, groups: scene.groups.filter((g) => !g.entityId) } : scene;
+    const built = buildMergedGeometries(staticScene);
     const group = new THREE.Group();
     for (const b of built) {
       const material = new THREE.MeshBasicMaterial({ color: b.colorHex, side: THREE.DoubleSide });
       group.add(new THREE.Mesh(b.geometry, material));
     }
     three.add(group);
+
+    const massingWalls = massingActive ? buildMassingWalls(scene) : [];
+    const massingMeshes: THREE.Mesh[] = [];
+    for (const w of massingWalls) {
+      const material = new THREE.MeshBasicMaterial({ color: w.colorHex, side: THREE.DoubleSide });
+      const mesh = new THREE.Mesh(w.geometry, material);
+      mesh.userData = { entityId: w.entityId, baseHeightMm: w.baseHeightMm };
+      massingMeshes.push(mesh);
+      group.add(mesh);
+    }
+
+    // Push-pull (3D-5) — kéo mặt TRÊN 1 tường = đổi cao độ. Tường luôn đùn từ đáy z(three.y)=0
+    // (`docToObjScene` lăng trụ đứng z0=0) nên scale.y quanh gốc 0 co-giãn ĐÚNG chiều cao mới,
+    // khỏi build lại geometry mỗi khung kéo (rẻ, mượt) — chỉ tính lại geometry thật khi Doc đổi
+    // và `scene` prop mới truyền xuống (luật một nguồn, xem comment `onPushPull` ở trên).
+    const raycaster = new THREE.Raycaster();
+    const pointerNdc = new THREE.Vector2();
+    const dragPlane = new THREE.Plane();
+    const dragPoint = new THREE.Vector3();
+    let dragging: { mesh: THREE.Mesh; entityId: string; baseHeightMm: number } | null = null;
+
+    function ndcFromEvent(e: PointerEvent) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointerNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointerNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    }
+    function onPointerDown(e: PointerEvent) {
+      if (!massingMeshes.length) return;
+      ndcFromEvent(e);
+      raycaster.setFromCamera(pointerNdc, camera);
+      const hit = raycaster.intersectObjects(massingMeshes, false)[0];
+      if (!hit || !hit.face) return;
+      const worldNormal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
+      if (worldNormal.y < 0.5) return; // chỉ mặt TRÊN (đỉnh tường) mới có nghĩa "cao tường"
+      const mesh = hit.object as THREE.Mesh;
+      const ud = mesh.userData as { entityId: string; baseHeightMm: number };
+      const camDir = new THREE.Vector3();
+      camera.getWorldDirection(camDir);
+      const planeNormal = new THREE.Vector3(camDir.x, 0, camDir.z);
+      if (planeNormal.lengthSq() < 1e-6) planeNormal.set(0, 0, 1);
+      planeNormal.normalize();
+      dragPlane.setFromNormalAndCoplanarPoint(planeNormal, hit.point);
+      dragging = { mesh, entityId: ud.entityId, baseHeightMm: ud.baseHeightMm };
+      controls.enabled = false;
+      renderer.domElement.setPointerCapture(e.pointerId);
+    }
+    function onPointerMove(e: PointerEvent) {
+      if (!dragging) return;
+      ndcFromEvent(e);
+      raycaster.setFromCamera(pointerNdc, camera);
+      if (!raycaster.ray.intersectPlane(dragPlane, dragPoint)) return;
+      const newHeightM = Math.max(2, Math.min(6, dragPoint.y));
+      dragging.mesh.scale.y = newHeightM / (dragging.baseHeightMm / 1000);
+    }
+    function onPointerUp(e: PointerEvent) {
+      if (!dragging) return;
+      const newHeightMm = clampWallHeight(Math.round((dragging.baseHeightMm * dragging.mesh.scale.y) / 10) * 10);
+      onPushPullRef.current?.(dragging.entityId, newHeightMm);
+      dragging = null;
+      controls.enabled = !walkActive && !campathActive;
+      if (renderer.domElement.hasPointerCapture(e.pointerId)) renderer.domElement.releasePointerCapture(e.pointerId);
+    }
+    if (massingActive) {
+      renderer.domElement.addEventListener('pointerdown', onPointerDown);
+      renderer.domElement.addEventListener('pointermove', onPointerMove);
+      renderer.domElement.addEventListener('pointerup', onPointerUp);
+      renderer.domElement.addEventListener('pointercancel', onPointerUp);
+    }
 
     function resize() {
       if (!container) return;
@@ -214,8 +302,17 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
       }
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      if (massingActive) {
+        renderer.domElement.removeEventListener('pointerdown', onPointerDown);
+        renderer.domElement.removeEventListener('pointermove', onPointerMove);
+        renderer.domElement.removeEventListener('pointerup', onPointerUp);
+        renderer.domElement.removeEventListener('pointercancel', onPointerUp);
+      }
       for (const b of built) {
         b.geometry.dispose();
+      }
+      for (const w of massingWalls) {
+        w.geometry.dispose();
       }
       group.children.forEach((m) => {
         if (m instanceof THREE.Mesh) (m.material as THREE.Material).dispose();
