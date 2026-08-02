@@ -56,6 +56,7 @@ export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
 
   return (
     <motion.div
+      id="if-bottom-toolbar"
       initial={{ opacity: 0, y: 20, x: '-50%' }}
       animate={{ opacity: 1, y: 0, x: '-50%' }}
       transition={springSheet}
