@@ -35,11 +35,6 @@ export function kindFromMatId(matId: string): PreviewKind {
   return p === 'W' ? 'wood' : p === 'S' ? 'stone' : p === 'M' ? 'metal' : p === 'F' ? 'fabric' : p === 'G' ? 'glass' : 'paint';
 }
 
-/** swatch key của kệ sheet (shelves.ts): w/s/m/p/f/g — key khác không phải vật liệu. */
-export function kindFromSwatchKey(key: string): PreviewKind | null {
-  return key === 'w' ? 'wood' : key === 's' ? 'stone' : key === 'm' ? 'metal' : key === 'p' ? 'paint' : key === 'f' ? 'fabric' : key === 'g' ? 'glass' : null;
-}
-
 /** Cảnh theo danh mục (V-Ray có Generic/Fabric/Floor…): vải → Vải; còn lại mặc định Cầu.
  * `floorHint` = món rõ nghĩa lát sàn (gạch/lát/sàn) — danh mục ATLAS thật nối sau. */
 export function sceneForKind(kind: PreviewKind, floorHint = false): PreviewScene {
