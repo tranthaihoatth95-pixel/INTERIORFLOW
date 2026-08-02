@@ -665,3 +665,30 @@ phòng" = MỞ RỘNG `NodeGroup` có sẵn, KHÔNG tạo hệ thống group th�
    chưa theo token `SPEC-DESIGN-SYSTEM-IF` §2d vì group/frame là "canvas content" không phải
    "vỏ app" — §2d áp cho bar/pill nổi, khung phòng là panel-content nên giữ bo góc thường theo §2,
    không capsule).
+
+## G2 phần (1) — khung canvas + frame theo phòng — XONG
+- Commit `78d4cee` (`lib/store.ts` + `GroupOverlay.tsx` + `BottomToolbar.tsx` + `FlowCanvas.tsx`).
+  Kèm `43adceb` — G1d bổ sung `NodeLibraryPanel.tsx` (Hoà giao làm ngay thay vì `spawn_task`,
+  huỷ task cũ) — đã dismiss `task_cff85421`.
+- Code đúng theo thiết kế đã mô tả ở trên, không lệch.
+- 💭 **Phát hiện lúc verify, tự sửa ngay**: test bằng cách dispatch nhiều `PointerEvent` LIÊN TIẾP
+  KHÔNG delay (`pointerdown`→`pointermove`→`pointermove`→`pointerup` trong cùng 1 tick JS đồng bộ)
+  → tạo `frameDraft` xong nhưng KHÔNG có group nào được tạo. Nguyên nhân: React batch state update
+  — `onFramePointerUp` (đọc `frameDraft` qua closure `useCallback([frameDraft])`) vẫn dùng closure
+  CŨ (từ trước `pointerdown` set state) vì React chưa kịp re-render/swap closure giữa các dispatch
+  đồng bộ liên tiếp. Thêm `await wait(~50-60ms)` giữa mỗi dispatch → hoạt động đúng. **Đây là bẫy
+  của MÔI TRƯỜNG TEST (dispatch quá nhanh so với thao tác chuột người dùng thật, vốn luôn có vài ms
+  giữa mousedown→mousemove→mouseup), KHÔNG phải bug code** — ghi lại cho phiên sau đỡ mất thời gian
+  dò lại nếu test tương tự (cùng họ vấn đề với "computer tool coordinate-click không đăng ký điểm
+  vẽ đúng" đã ghi ở C4, nhưng lần này là do timing/batching chứ không phải do computer-tool).
+- Verify browser thật (dự án mẫu, đã dọn dữ liệu test sau khi xong): vẽ khung qua drag thật (có
+  delay) → group tạo đúng `rect`/`center`/`label:"Phòng mới"`, `GroupOverlay` render đúng
+  `border-solid` (phân biệt group thường `border-dashed`) — đo `getComputedStyle` khớp TUYỆT ĐỐI
+  vị trí/kích thước với `group.rect` lưu trong store. `datalist` đúng 7 gợi ý tên phòng.
+  `renameGroup` đổi tên đúng. `syncRoomMembership` cả 2 chiều đúng (gọi trực tiếp với toạ độ
+  trong/ngoài rect rõ ràng — node vào rect → `nodeIds` thêm; ra khỏi rect → `nodeIds` gỡ). 0
+  console error. tsc/eslint sạch, `npm test` 0 fail.
+- 💭 KHÔNG kiểm bằng screenshot pixel-perfect được (bar zoom 15% mặc định của dự án mẫu + style
+  nền `bg-accent/[0.04]` cố tình rất mờ, kế thừa nguyên style `GroupOverlay` cũ cho group thường —
+  không phải lỗi mới) — dùng `getComputedStyle`/`getBoundingClientRect` làm bằng chứng chính,
+  đủ chắc chắn (so khớp số chính xác, không phải "trông có vẻ đúng").
