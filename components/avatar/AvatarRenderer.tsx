@@ -63,7 +63,13 @@ export function AvatarRenderer({
   title,
 }: Props) {
   const uid = useId().replace(/:/g, '');
-  const hi = detail ?? size > 48;
+  // Ngưỡng hạ từ >48 xuống >=32 (bug 03/08: mọi nơi gọi thật đều <=48 → filter nỉ/blur/contact
+  // shadow KHÔNG BAO GIỜ chạy, avatar phẳng lì). Đo chi phí thật trước khi hạ: KHÔNG có nơi nào
+  // trong repo render avatar dạng LIST nhiều-cái-cùng-lúc (grep AvatarRenderer/UserAvatar — chỉ
+  // 3 chỗ gọi, mỗi chỗ 1 avatar đơn lẻ: chip header/mobile menu/settings) — nên hạ ngưỡng không
+  // có rủi ro hiệu năng đo được ở hiện trạng. Nếu sau này có danh sách nhiều avatar (team list…),
+  // đo lại và cân nhắc props riêng cho ngữ cảnh list.
+  const hi = detail ?? size >= 32;
 
   const skin = BASE_TONES[config.base] ?? BASE_TONES[2];
   const hair = HAIR_COLORS[config.hairColor] ?? HAIR_COLORS.brown;
@@ -85,7 +91,13 @@ export function AvatarRenderer({
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width={size}
-      height={size}
+      // Bug 03/08: height={size} trên viewBox 200×240 (5:6) ép khung vuông trong khi nội dung
+      // cao hơn rộng → letterbox hai bên, nhân vật co lọt thỏm. height={size*1.2} giữ ĐÚNG tỉ lệ
+      // 200:240 (size:size*1.2 = 5:6) — không đụng viewBox/toạ độ 14 lớp (mắt y112, mũi y128,
+      // miệng y142, cằm y161 giữ nguyên). Nơi gọi bọc trong khung vuông overflow-hidden rounded-
+      // full (mọi UserAvatar hiện có: header/mobile menu/settings) tự crop tròn đều 4 phía đúng
+      // kiểu avatar chip; nơi gọi không bọc khung vuông (AvatarBuilder preview) hiện đủ cả khối.
+      height={size * 1.2}
       viewBox="0 0 200 240"
       className={className}
       role={title ? 'img' : undefined}

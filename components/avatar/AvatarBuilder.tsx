@@ -70,7 +70,7 @@ export function AvatarBuilder({ value, onChange, onSave, onSkip, seedId = 'seed'
       {/* Preview */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
         <div style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <AvatarRenderer config={config} size={200} />
+          <AvatarRenderer config={config} size={200} detail />
           {/* cỡ nhỏ — xem trước đúng cách avatar hiện trên header */}
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
             <AvatarRenderer config={config} size={48} />
