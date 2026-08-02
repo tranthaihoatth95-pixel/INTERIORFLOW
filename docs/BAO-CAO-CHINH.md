@@ -950,3 +950,35 @@ ràng trong UI đây là "thêm người đã có tài khoản", không phải m
    (việc BOQ riêng) · picker tìm-kiếm/lọc vật liệu (2 bản ghi hiện có, chưa cần) · đồng bộ 2 chiều
    matId↔ATLAS khi sửa tay trên node (đã có triết lý "sửa tay không bị AI ghi đè" — giữ nguyên,
    node chỉ SAO CHÉP dữ liệu lúc kéo, không giữ liên kết sống).
+
+## G2 phần (5) — swatch vật liệu matId — XONG
+- Commit `a0b6968` (`components/NodeLibraryPanel.tsx`, `components/FlowCanvas.tsx`,
+  `lib/nodes/defs/material-notes.ts`).
+- Code đúng thiết kế đã mô tả ở trên: kệ "Vật liệu" mới trong khu Mood + Cộng tác, fetch
+  `GET /api/specs?kind=material` thật, mỗi swatch bấm/kéo đều tạo `util.materialnote` mang
+  `matId` (không có ô nhập tay — chỉ tự điền, đúng ý "mang dữ liệu, không chỉ ảnh").
+- Verify browser thật (dự án mẫu, panel "Thư viện Node"): 2 vật liệu thật trong DB hiện đúng
+  (An Cường AC-ENG-OAK15 · Stone World SW-TRV-BE, đủ tên/brand/sku/hex/priceNote). Test CẢ 2
+  đường tạo node:
+  1. **Bấm** — `onAddMaterial` → node mới `params: {matId, name, code, supplier, hex, note}`
+     đúng dữ liệu ATLAS.
+  2. **Kéo-thả thật** — giả lập `DragEvent`+`DataTransfer` thật (không phải gọi hàm tắt), dispatch
+     `dragstart` trên chip rồi `drop` lên `.react-flow__pane` → xác nhận `dataTransfer.types` có
+     ĐỦ cả `application/interiorflow-node` + `application/interiorflow-material`, node tạo ra
+     đúng params như đường bấm — xác nhận `FlowCanvas.onDrop` đọc đúng `MAT_MIME` mới.
+  `execute()` chạy qua `window.__nodeRegistry` (dev-only expose có sẵn, không phải hack riêng) ra
+  đúng thẻ ảnh (chèn `<img>` xem trực tiếp) + `text` có `matId cmrykxtvg...` — card hiện đủ swatch
+  màu/tên/mã·NCC/hex/**dòng matId (badge nâu)**/giá tham khảo, đúng bố cục dự kiến. Dark theme:
+  chip đọc rõ, viền/hover đúng token. Console 0 error. tsc sạch, eslint sạch (lỗi
+  `GripVertical` unused-var xác nhận CÓ SẴN từ trước, không phải do phần (5) — kiểm bằng `git
+  stash` rồi chạy lại eslint). `npm test` 0 fail.
+- 💭 **Dọn phụ**: lệnh `sqlite3 dev.db` lúc khảo sát vô tình tạo file rỗng `dev.db` ở gốc repo
+  (DB thật nằm `prisma/dev.db`, khác file) — đã `rm` trước khi commit, không lọt vào git.
+- Ref áp dụng đúng chỉ đạo: #3 xác nhận Mood+Collab hiện tại đã đúng hướng (không sửa code).
+  #5 (ambient-tint) CHỦ ĐỘNG KHÔNG áp — swatch là ô màu phẳng từ `colorHex`, không phải ảnh chụp
+  cần trích màu nền; để đúng lúc cho thẻ ảnh Gallery/File Manager/moodboard thật.
+
+## G2 phần (6) — mindmap template tuỳ chọn kéo từ kệ — CHƯA BẮT ĐẦU
+Tiếp theo trong hàng đợi G2 (6 phần theo TICKET-CHANG2-BUILD). Sẽ khảo sát trước khi thiết kế
+(SPEC-STAGE-LIBRARIES.md phần mindmap template + hạ tầng kệ Thư viện hiện có) rồi viết note thiết
+kế vào đây trước khi code, đúng quy tắc đã áp dụng suốt G2.
