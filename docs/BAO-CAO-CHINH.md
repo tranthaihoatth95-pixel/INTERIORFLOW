@@ -1231,3 +1231,16 @@ Console lỗi lặp: **"Maximum update depth exceeded" tại `EditorCanvas`**
 (`components/present-editor/EditorCanvas.tsx:53`, route `/projects/[id]/present`) — setState
 loop trong useEffect. Ngoài domain của tôi (được dặn tránh present-editor), KHÔNG sửa — phiên
 phụ xem stack đầy đủ trong console khi mở route present.
+
+## VIỆC 3 — trang đổi avatar theo mock v2 — XONG
+- Commit `88566c6` — `AvatarBuilder.tsx` viết lại, PORT NGUYÊN VĂN `docs/mocks/mock-avatar-picker-v2.html`.
+- Hết nút số "1..16"/chữ suông — mọi lựa chọn = thumbnail `<AvatarRenderer size={62}>` thật
+  (đếm DOM: tab Tóc đúng 16 thumbnail SVG + 11 chấm màu). Màu = chấm 34px viền accent + halo.
+  6 tab icon. Token var() 100%, i18n 1 ngôn ngữ, reduced-motion tắt hover scale.
+- Verify sáng+tối 1440×900 so mock: bố cục khớp (sheet bo 28 2 cột 300|1fr, preview 172 + cỡ
+  thật 44/28/20, nút Xong accent). Preview cập nhật tức thì (test click đổi kiểu tóc → selected
+  index đúng, preview đổi ngay). tsc/eslint/test sạch, console không lỗi mới.
+- 💭 Hành vi đúng-mock cần biết: thumbnail giữ NGUYÊN các đặc điểm khác của user (vd đang đội mũ
+  thì 16 thumbnail kiểu tóc đều đội mũ, tóc chỉ lộ phần không bị che) — đúng chữ mock "avatar
+  thật cùng khuôn mặt, chỉ khác đặc điểm đang xét", không phải bug. Nếu Hoà muốn thumbnail tóc
+  tự BỎ mũ để lộ trọn kiểu tóc thì là quyết định mới (1 dòng override thêm), chờ chỉ đạo.
