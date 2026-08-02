@@ -283,3 +283,27 @@ bằng đọc cột PBR thật, chỗ gắn không đổi.
 12 món ra cầu/sàn/vải đúng loại, badge nguyên · DOM đếm 14 ảnh PNG 56px · dark theme đọc rõ ·
 lint/tsc/test sạch. Ghi chú: fetch `/api/specs` sau hard-reload URL con trả rỗng 1 lần (khớp
 cảnh báo hydrate STATUS.md — không phải lỗi mới, toggle lại mode là có).
+
+## CHỐT PHIÊN G4 — 04/08/2026 (theo SO-KIEM-TONG §4)
+
+Nhánh `nhanh-g4` HEAD = `14d3ec6`, cây sạch. Phiên này: `02b2b39` (merge main) → `7ac431c`
+(G4-1a 5 lỗi UI) → `14d3ec6` (MaterialSphere). Đã thêm 2 dòng vào §1 sổ tổng (chống rớt).
+
+**Hàng đợi G4 còn lại** (đọc lại §3 sổ tổng trước khi làm):
+- Việc 2 — **BỎ QUA phiên này**: "chờ CHINH merge xong" mới verify Vẽ 3D trên main. `git log main`
+  còn `1873cbe`, chưa có commit merge nhanh-g4 ⇒ điều kiện chưa đủ, đúng luật bỏ qua.
+- Việc 3 — **Mood+Collab G2 trọn gói** (việc kế tiếp cho phiên G4 mới): `lib/collab/` (presence
+  store · share roles Viewer/Commenter/Editor · comment anchor) + UI theo ticket G2. **Đã khảo
+  sát sẵn cho phiên sau, đừng làm lại**: `lib/collabStore.ts` (147 dòng, poll cursor, KHÔNG có
+  role) · `components/collab/PresenceBar.tsx` (online/offline + mời — nhưng POST cứng
+  `role:'viewer'`, chưa cho chọn) · `components/collab/LiveCursors.tsx` (TẠM ẨN có chủ đích,
+  xem chú thích trong FlowCanvas — đừng bật lại nếu chưa đồng bộ node/edge) ·
+  `components/CommentLayer.tsx` (ghim theo % VIEWPORT + route, dùng cho góp ý app — KHÁC comment
+  neo vào node/flow-space mà G2 cần, đừng nhầm là đã có) · role hợp lệ đã có ở server:
+  `prisma/schema.prisma:109` `'owner'|'crea'|'drafter'|'bim'|'viewer'` + `app/api/projects/[id]/
+  members/route.ts` (có `isProjectRole`) ⇒ 3 vai Viewer/Commenter/Editor của spec PHẢI ánh xạ
+  vào bộ role sẵn có này, không đẻ bộ thứ hai.
+- Việc 4 (Present chooser) · việc 5 (empty state toàn app) — chưa động.
+
+**Môi trường bàn giao**: dev server G4 đang chạy nền ở `127.0.0.1:3004` (worktree này, có `.env`
+vừa copy — file gitignore, không vào git). Kill bằng `lsof -tiTCP:3004 | xargs kill` nếu cần.
