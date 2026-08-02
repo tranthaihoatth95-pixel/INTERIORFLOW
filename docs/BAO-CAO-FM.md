@@ -341,3 +341,46 @@ cd ~/Downloads/interiorflow-g4
 git add components/filemanager docs/BAO-CAO-FM.md
 git commit -m "fix(files): 7 loi tu kiem - empty state goc, nut tai len, ring gauge, rail, inspector"
 ```
+
+---
+
+## VÒNG 6 — YÊU CẦU cho CHINH: gỡ rail riêng, chờ `LeftRail.tsx` đủ mục
+
+**Chỉ đạo**: bỏ rail tự viết trong `FileManagerShell.tsx`/`PixelSettingsShell.tsx`, dùng chung
+`components/LeftRail.tsx` của app (CHINH đang chuẩn hoá: capsule 60/30, nút 44/22, đệm 8, avatar
+40px dưới đáy). Nếu `LeftRail` chưa đủ mục Files/Thư viện/Cài đặt → ghi yêu cầu, không tự sửa.
+
+**Đã làm trước khi kết luận (L1 — `docs/LUAT-GIAO-DIEN-BAT-BUOC.md`)**:
+1. `git merge main` vào `nhanh-g4` trước (theo đúng "Sau merge") — sạch, không conflict, 33 file
+   (bao gồm `components/LeftRail.tsx`, +48 dòng). `tsc`/`npm test` chạy lại sau merge — sạch.
+2. Đọc TOÀN BỘ `components/LeftRail.tsx` (153 dòng, không đoán qua tên file).
+
+**Kết luận — CHƯA gỡ được, lý do kỹ thuật cụ thể (không phải "chưa muốn làm")**:
+
+`LeftRail.tsx` hiện tại là **bộ chuyển PANEL trong canvas editor** (CAD/Render/Present), không
+phải rail điều hướng cấp app:
+- Item: Tìm node · Lịch sử (soon) · Thư viện Node · Dự án&Flow · Reference · Video (soon) · 3D
+  (soon) · Nhập web (soon) · Thư viện ảnh (Gallery) + 2 nút riêng Dashboard-overlay/Present-mode +
+  Help — **KHÔNG có mục nào trỏ `/files`, `/library`, hay `/settings`** (route thật).
+- State: `useFlowStore.panel`/`setPanel` (mở PANEL nổi trong 1 canvas đang mở), không phải "đang
+  đứng ở route nào" — gắn `/files` vào cơ chế này sẽ sai ngữ nghĩa (bấm "Thư viện Node" trong
+  `/files` không mở được gì vì không có canvas nền).
+- Kích thước hiện tại **CHƯA khớp** số Hoà vừa chốt: rail rộng 48px (không phải 60) · nút
+  38/42px (không phải 44/22 — 22 nhiều khả năng là bo góc = nửa 44, LeftRail hiện `rounded-full`
+  đã đúng phần này) · đệm dọc `py-3`=12px (không phải 8) · không có avatar ở đáy. → xác nhận CHINH
+  "đang chuẩn hoá", chưa xong tới trạng thái mô tả.
+
+**Câu hỏi cần CHINH quyết** (2 hướng, không đoán thay):
+(a) Mở rộng `LeftRail.tsx` thành 2 chế độ — canvas-panel-switcher (như hiện tại, dùng trong
+    CAD/Render/Present editor) **+** route-nav (Files/Library/Settings, dùng ở 3 trang đứng độc
+    lập) — cùng 1 component, đổi hành vi theo prop; hay
+(b) Tách riêng 1 component route-nav mới (vd `components/AppRail.tsx`) dùng chung cho
+    `/files`·`/settings`·`/library`, `LeftRail.tsx` giữ nguyên vai trò canvas-only — 2 rail khác
+    MỤC ĐÍCH, không phải trùng lặp cần gộp.
+
+**Trong lúc chờ quyết định**: GIỮ NGUYÊN rail tự viết hiện tại trong `FileManagerShell.tsx`/
+`PixelSettingsShell.tsx` (đã port đúng mock, đủ 5 mục Dashboard/Dự án/Files/Master Library/Cài
+đặt + avatar) — **không xoá** vì `/files`/`/settings` cần có cách điều hướng, xoá mà chưa có thay
+thế sẽ để 2 trang lạc lối. Đánh dấu rõ đây là NỢ KỸ THUẬT TẠM, gỡ ngay khi có (a) hoặc (b) ở trên.
+
+**Không tự sửa** `components/LeftRail.tsx` (ngoài vùng file cứng G4) — đúng chỉ đạo.
