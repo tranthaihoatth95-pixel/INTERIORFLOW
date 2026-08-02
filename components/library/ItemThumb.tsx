@@ -18,7 +18,6 @@
 import { Armchair, AppWindow, Cuboid, DoorOpen, Droplets, FileText, Gem, LayoutTemplate, PaintRoller, Ruler, Shirt, TreePine } from 'lucide-react';
 import MaterialSphere from '@/components/three/MaterialSphere';
 import type { PreviewKind } from '@/components/three/material-preview';
-import { sceneForKind } from '@/components/three/material-preview';
 import { KIND_LABEL, isMaterialKind, thumbTexture, tintFor, type ThumbKind } from '@/lib/library/thumb-kinds';
 import type { SheetItem } from '@/lib/library/shelves';
 import { useT } from '@/lib/i18n';
@@ -68,9 +67,9 @@ export function ItemThumb({ item, children }: { item: SheetItem; children?: Reac
   if (isMaterialKind(kind) && SPHERE_SHELVES.has(item.shelfId)) {
     const [colorA, colorB] = tintFor(kind);
     const previewKind = kind as PreviewKind; // 6 loại vật liệu trùng tên với PreviewKind
-    const floorHint = /sàn|gạch|lát|floor|tile/i.test(item.name);
-    // cảnh "Sàn" là mặt phẳng ăn kín khung ⇒ để 'cover' cho đầy ô; cầu/vải thì 'contain'.
-    const scene = sceneForKind(previewKind, floorHint);
+    // MỌI vật liệu cùng MỘT kiểu xem trước (Hoà 04/08) — trước đây đoán theo tên nên kệ lổn nhổn
+    // cầu/mặt-phẳng/nệm. Cảnh Sàn/Vải giữ trong `material-preview.ts` cho panel chi tiết chọn TAY.
+    const scene = 'sphere' as const;
     return (
       <MaterialSphere
         className="th"
@@ -80,7 +79,7 @@ export function ItemThumb({ item, children }: { item: SheetItem; children?: Reac
         backdrop="var(--field)"
         size={120}
         resolution={0.5}
-        fit={scene === 'floor' ? 'cover' : 'contain'}
+        fit="contain"
       >
         {children}
       </MaterialSphere>

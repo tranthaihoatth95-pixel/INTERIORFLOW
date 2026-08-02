@@ -34,7 +34,20 @@ export interface Viewport3DProps {
   onNudge?: (axis: 'x' | 'y' | 'z', deltaMm: number) => void;
   onPushPull?: (entityId: string, newHeightMm: number) => void;
   label?: string;
+  /** lưới sàn + chân trời (xem `Scene3DViewer.ground`) — mode Vẽ 3D bật, chỗ chụp ảnh tắt. */
+  ground?: boolean;
+  /** lớp phủ riêng của nơi dùng (empty state, trình tự bước…) — nằm TRÊN cảnh, dưới ViewCube. */
+  children?: React.ReactNode;
 }
+
+/** Cảnh RỖNG hợp lệ — dùng khi chưa có khối nào. Không phải "không có cảnh": sân khấu vẫn dựng,
+ * bbox 8×8m cho camera khung sẵn một khoảng người-ở-được (mở ra thấy mình đứng đâu đó, không
+ * phải nhìn vào hư không). */
+export const EMPTY_SCENE_3D: Scene3DData = {
+  groups: [],
+  bboxMm: { minX: 0, minY: 0, maxX: 8000, maxY: 8000 },
+  sizeM: { w: 8, d: 8, h: 2.7 },
+};
 
 /**
  * VIEWPORT 3D — nội dung ổ ③ (canvas) của mode Vẽ 3D.
@@ -57,6 +70,8 @@ export function Viewport3D({
   onNudge,
   onPushPull,
   label = 'Khối xám · chưa vật liệu',
+  ground = false,
+  children,
 }: Viewport3DProps) {
   const [view, setView] = useState<ViewDir>('tren');
 
@@ -69,9 +84,11 @@ export function Viewport3D({
     <div className="if-ve3d vp3d">
       <RawStyle css={VE3D_CSS} />
 
-      <Scene3DViewer scene={scene} mode={mode} onPushPull={onPushPull} className="vpscene" />
+      <Scene3DViewer scene={scene} mode={mode} onPushPull={onPushPull} ground={ground} className="vpscene" />
 
       <div className="vplabel vpover">{label}</div>
+
+      {children}
 
       {/* ── ViewCube (góc trên phải) — 3 mặt hình thoi + 5 hướng bấm được ── */}
       <svg className="viewcube" viewBox="0 0 60 60" role="group" aria-label="Hướng nhìn">

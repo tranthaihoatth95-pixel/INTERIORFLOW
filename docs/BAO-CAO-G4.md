@@ -349,3 +349,47 @@ Kèm 1 lỗi của chính tôi: backtick trong comment CSS làm đứt template 
 **Nghiệm thu**: tsc 0 lỗi · lint sạch · test 0 fail · verify browser `127.0.0.1:3004` CẢ 2 THEME
 (kệ vật liệu ra cầu đúng loại gồm cảnh Vải cho vải và cảnh Sàn cho gạch terrazzo; kệ preset/
 template ra vân + icon; scrim phủ toàn màn; 3 tầng nền đo bằng `getComputedStyle`).
+
+## 🔴 MODE VẼ 3D — dựng lại trải nghiệm mở màn (Hoà chê "rối rắm, không hệ thống", 04/08)
+
+**① Sân khấu luôn hiện.** `Render3DModeSkeleton` bỏ nhánh "chưa có bản vẽ → hiện câu chữ", nay
+LUÔN render `Viewport3D` (thêm `EMPTY_SCENE_3D` bbox 8×8m để camera khung sẵn một khoảng
+người-ở-được). Thêm prop `Scene3DViewer.ground`: lưới sàn 200×200 + `THREE.Fog` làm ĐƯỜNG CHÂN
+TRỜI. **Mặc định TẮT** — mọi chỗ chụp ảnh (campath/capture/xuất) không được dính lưới vào khung.
+
+**② Hết nói chuyện nội bộ với người dùng.** Xoá 2 câu: "Cấu kiện/IFC (B2-B4) chưa làm" (banner
+canvas) và "chưa làm — cần chọn mặt trong khung nhìn 3D, việc riêng" (tab Vật liệu). Sự thật kỹ
+thuật chuyển thành comment code tại chỗ. Tab Vật liệu nay chỉ còn 1 câu hành động: "Chọn vật liệu
+để cầm, rồi bấm lên mặt khối."
+
+**③ Empty state làm được việc TẠI CHỖ.** "Bắt đầu dựng không gian" + 2 nút:
+· **Đùn từ bản vẽ** — đặt `heightMm=2700` cho nét hatch/polyline chưa đùn, ghi thẳng vào Doc
+  (một nguồn); disabled kèm lý do khi bản vẽ trống.
+· **Dựng khối đầu tiên** — mở tab **Tạo** + **nháy nút Tường**. Tab Tạo trước đây là câu "sắp có"
+  suông, nay có nút Tường THẬT: gọi engine `wallSegment()` của chặng Vẽ (không tự chế hình học),
+  đoạn 4m dày 220. 5 khối còn lại (Hộp/Sàn/Cửa/Cửa sổ/Mái) giữ chỗ dạng disabled có lý do —
+  không nút giả. **Không còn câu "sang chặng CAD vẽ rồi quay lại".**
+
+**④ Trình tự 3 bước** góc dưới trái: ① Dựng khối → ② Gán vật liệu → ③ Đặt máy quay, tự đánh dấu
+(gạch ngang + tick accent), có nút ẩn nhớ qua localStorage `if.ve3d.guide_hidden_v1`.
+⚠️ TRUNG THỰC: bước ② hiện bắt tín hiệu "đã CHỌN vật liệu trong panel" chứ không phải "đã gán vào
+khối" — `grep matId lib/cad/*` = 0, Doc CAD chưa có field vật liệu. Khi gán-lên-mặt (raycast) xong
+thì đổi tín hiệu sang dữ liệu Doc (đã ghi TODO tại chỗ).
+
+**⑤ Mọi vật liệu cùng MỘT kiểu xem trước.** Bỏ đoán-theo-tên (`floorHint`) ở cả `Command3DPanel`
+lẫn kệ Thư viện: trước đây "Sàn gỗ sồi" ra cảnh Sàn phẳng còn "Đá travertine" ra quả cầu, nhìn
+lổn nhổn hai kiểu. Nay tất cả là quả cầu; cảnh Sàn/Vải vẫn nằm trong `material-preview.ts` cho
+panel chi tiết CHỌN TAY sau này.
+
+**Verify browser (127.0.0.1:3004, 2 theme)**: mở Vẽ 3D lúc 0 khối → THẤY lưới sàn + chân trời +
+trục XYZ + ViewCube + nhãn "Không gian trống" + thẻ "Bắt đầu dựng không gian" + trình tự 3 bước.
+Bấm "Dựng khối đầu tiên" → tab Tạo mở, nút Tường nháy → bấm Tường → khối hiện thật, nhãn đổi
+"Khối xám · chưa vật liệu", bước ① tự tick. Đo `getBoundingClientRect`: trình tự ban đầu ĐÈ LÊN
+trục XYZ (bottom 74) → dời lên 156, đo lại `chongLan=false`. Tường test đã XOÁ khỏi dự án mẫu
+(chặng Vẽ → chọn tất cả → Delete), bản vẽ trở lại rỗng như trước. tsc/lint/test sạch.
+
+### ⚠️ Tồn tại phát hiện khi verify — KHÔNG sửa ở phiếu này (ngoài phạm vi, để PHU quyết)
+Cảnh chỉ có 1 khối lẻ thì camera áp rất sát và khối nằm LỆCH TÂM khung. Nghi `controls.target`
+dùng `(cx, cz, cy)` trong khi phép chiếu CAD→three là `(x, cao, −y)` ⇒ trục thứ ba phải là `−cy`.
+Hành vi engine có từ 3D-1; đụng vào là đổi khung hình của cả campath/capture. Đã ghi comment cảnh
+báo ngay tại dòng đó trong `Scene3DViewer.tsx`.

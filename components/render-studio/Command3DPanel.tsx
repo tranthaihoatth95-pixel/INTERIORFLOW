@@ -15,14 +15,27 @@
  */
 
 import { useState } from 'react';
-import { Plus, Pencil, Palette, Camera, Eye } from 'lucide-react';
+import { Plus, Pencil, Palette, Camera, Eye, Square } from 'lucide-react';
 import { useMaterials } from '@/lib/render-studio/use-materials';
 import MaterialSphere from '@/components/three/MaterialSphere';
 import { darken, kindFromName, sceneForKind } from '@/components/three/material-preview';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
-type Tab = 'create' | 'edit' | 'material' | 'camera' | 'visibility';
+/** Tab do NƠI MOUNT giữ (mode Vẽ 3D cần mở thẳng tab Tạo khi bấm "Dựng khối đầu tiên"). */
+export type Command3DTab = 'create' | 'edit' | 'material' | 'camera' | 'visibility';
+type Tab = Command3DTab;
+
+export interface Command3DPanelProps {
+  tab: Tab;
+  onTabChange: (tab: Tab) => void;
+  /** nháy nút Tường sau khi người dùng bấm "Dựng khối đầu tiên" — chỉ dẫn ĐÚNG MỘT việc kế tiếp. */
+  nhayNutTuong?: boolean;
+  /** dựng tường mẫu (nơi mount ghi vào Doc qua engine `wallSegment`, panel không tự ghi). */
+  onTaoTuong?: () => void;
+  /** báo lên nơi mount là người dùng ĐÃ chọn vật liệu — mode dùng để đánh dấu bước ②. */
+  onPickMaterial?: (id: string) => void;
+}
 
 const TABS: { id: Tab; icon: typeof Plus; label: [string, string] }[] = [
   { id: 'create', icon: Plus, label: ['Tạo', 'Create'] },
@@ -32,8 +45,8 @@ const TABS: { id: Tab; icon: typeof Plus; label: [string, string] }[] = [
   { id: 'visibility', icon: Eye, label: ['Hiện', 'Show'] },
 ];
 
-export default function Command3DPanel() {
-  const [tab, setTab] = useState<Tab>('material');
+export default function Command3DPanel({ tab, onTabChange, nhayNutTuong = false, onTaoTuong, onPickMaterial }: Command3DPanelProps) {
+  const setTab = onTabChange;
   const tr = useT();
 
   return (
@@ -58,22 +71,71 @@ export default function Command3DPanel() {
         })}
       </div>
       <div className="flex-1 overflow-y-auto p-3">
-        {tab === 'material' ? <MaterialTab /> : <PlaceholderTab tab={tab} />}
+        {tab === 'material' && <MaterialTab onPick={onPickMaterial} />}
+        {tab === 'create' && <CreateTab nhayNutTuong={nhayNutTuong} onTaoTuong={onTaoTuong} />}
+        {tab !== 'material' && tab !== 'create' && <PlaceholderTab tab={tab} />}
       </div>
     </div>
   );
 }
 
-function MaterialTab() {
+/** Tab TẠO — trước đây là câu "sắp có" suông (Hoà: "rối rắm, không hệ thống"). Nay dựng được
+ * TẠI CHỖ: nút Tường gọi engine `wallSegment()` của chặng Vẽ qua nơi mount. Các khối còn lại giữ
+ * chỗ dạng disabled — thà nói thẳng "chưa dựng được" còn hơn nút bấm không ra gì. */
+function CreateTab({ nhayNutTuong, onTaoTuong }: { nhayNutTuong: boolean; onTaoTuong?: () => void }) {
+  const tr = useT();
+  const CHUA_CO: [string, string][] = [
+    ['Hộp', 'Box'], ['Sàn', 'Floor'], ['Cửa', 'Door'], ['Cửa sổ', 'Window'], ['Mái', 'Roof'],
+  ];
+  return (
+    <div className="space-y-3">
+      <button
+        type="button"
+        onClick={onTaoTuong}
+        className={cn(
+          'flex w-full items-center gap-2.5 rounded-[10px] border px-3 py-2.5 text-left transition-colors',
+          nhayNutTuong
+            ? 'animate-pulse border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
+            : 'border-[var(--border)] bg-[var(--field)] text-[var(--t1)] hover:border-[var(--accent-ring)]',
+        )}
+      >
+        <Square size={16} strokeWidth={1.7} />
+        <span>
+          <span className="block text-[11.5px] font-semibold">{tr('Tường', 'Wall')}</span>
+          <span className="block text-[10px] text-[var(--t4)]">{tr('Đoạn 4m, dày 220 — sửa được sau', '4m segment, 220 thick — editable')}</span>
+        </span>
+      </button>
+
+      <div className="grid grid-cols-2 gap-2">
+        {CHUA_CO.map(([vi, en]) => (
+          <button
+            key={vi}
+            type="button"
+            disabled
+            title={tr('Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ', 'Not available yet — use Wall or extrude from the drawing')}
+            className="cursor-not-allowed rounded-[9px] border border-dashed border-[var(--border)] px-2 py-2 text-[10.5px] text-[var(--t5)]"
+          >
+            {tr(vi, en)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MaterialTab({ onPick }: { onPick?: (id: string) => void }) {
   const materials = useMaterials(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const tr = useT();
 
   return (
     <div className="space-y-3">
-      <div className="rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-2 text-[10.5px] leading-relaxed text-[var(--t4)]">
-        {tr('Chọn vật liệu → gán lên mặt khối (chưa làm — cần chọn mặt trong khung nhìn 3D, việc riêng).', 'Pick a material → assign to a face (not built yet — needs face-picking in the 3D view, separate work).')}
-      </div>
+      {/* Câu cũ ở đây kể chuyện nội bộ với người dùng ("chưa làm — việc riêng") — SPEC-NGON-NGU
+          §1 cấm. Sự thật kỹ thuật giữ lại ở comment này: chọn mặt khối trong khung nhìn 3D
+          (raycast) CHƯA làm, nên bấm swatch mới chỉ ĐẶT vật liệu đang cầm. */}
+      <p className="px-0.5 text-[10.5px] leading-relaxed text-[var(--t4)]">
+        {tr('Chọn vật liệu để cầm, rồi bấm lên mặt khối.', 'Pick a material, then click a face.')}
+      </p>
       {materials.length === 0 && (
         <p className="px-1 text-center text-[11px] text-[var(--t5)]">{tr('Chưa có vật liệu trong ATLAS.', 'No materials in ATLAS yet.')}</p>
       )}
@@ -84,7 +146,7 @@ function MaterialTab() {
           return (
             <button
               key={m.id}
-              onClick={() => setSelectedId(m.id)}
+              onClick={() => { setSelectedId(m.id); onPick?.(m.id); }}
               className={cn(
                 'overflow-hidden rounded-[9px] border bg-[var(--field)] text-left transition-colors',
                 active ? 'border-[var(--accent)]' : 'border-[var(--border)] hover:border-[var(--accent-ring)]',
@@ -101,7 +163,11 @@ function MaterialTab() {
                   colorA: swatchColor.startsWith('#') ? swatchColor : '#9a9a9a',
                   colorB: darken(swatchColor.startsWith('#') ? swatchColor : '#9a9a9a'),
                   kind: kindFromName(m.name),
-                  scene: sceneForKind(kindFromName(m.name), /sàn|gạch|lát|floor|tile/i.test(m.name)),
+                  // MỌI vật liệu cùng MỘT kiểu xem trước (Hoà 04/08): trước đây đoán theo tên
+                  // ("Sàn gỗ sồi" → cảnh Sàn phẳng, "Đá travertine" → quả cầu) nên hàng swatch
+                  // lổn nhổn hai kiểu, không đọc được là cùng một danh mục. Cảnh Sàn/Vải vẫn còn
+                  // trong `material-preview.ts` cho panel chi tiết chọn TAY sau này.
+                  scene: 'sphere',
                 }}
                 fallback={swatchColor}
                 size={88}
