@@ -27,3 +27,22 @@ mục mới, xác định mìn, soạn phiếu sửa cho PHU (đúng vùng), r�
 Luật trung thực đã ghi thành §0 sổ tổng theo lệnh Hoà.
 
 ## 23:2x · Hoà thêm §0b: luật SEARCH → NGHIÊN CỨU → NGHĨ-NHƯ-NGƯỜI-DÙNG trước mọi đề xuất/quyết. Đã ghi sổ, áp từ ca audit đầu tiên (checklist A4 mở rộng: kiểm cả 3 bước §0b).
+
+## [CHINH · đêm] 1b XONG (`a3d8abd`) + CHINH-3 panel thò thụt XONG (`7847969`) — lý do quyết định
+- **1b**: chẩn đoán TỔNG đúng — RenderNavigator cũ đổ node-instance, canvas trống → rỗng. Viết
+  lại nối CATALOG (NODE_DEFINITIONS + zones H2), nhóm Nguồn·Xử lý·Bảng cảm hứng·Xuất đúng mock.
+  QUYẾT (đêm, không hỏi): bấm hàng = HÀNH VI THẬT của NodeLibraryPanel (normal→addNode giữa
+  canvas, MASTER→mở ToolWindow, note→addNote) chứ không chỉ highlight như mock tĩnh — mock
+  `pick()` chỉ demo; Navigator phải xây được graph mới đáng chỗ nó chiếm. Verify: catalog đầy khi
+  canvas trống · badge đếm đúng · MASTER không thả node trần.
+- **CHINH-3**: Rollout (3 cơ chế §2a + nhớ theo LOẠI VẬT §2b + ghim §2d + nút Thu-hết nhìn thấy) ·
+  InspectorPages (dải trang Rhino §2c) · CadInspectorPages (4 trang Khối/Phòng/Tường/Chung) ·
+  Navigator thu về dải CÓ NHÃN dọc + hover hé (§2f). QUYẾT: giữ "Inspector chỉ hiện khi có chọn"
+  (SPEC-CAD-SHELL-V3 luật 4 + SPEC-HA-TANG Trụ 1) thay vì §2c dòng "không chọn gì → thuộc tính
+  khung nhìn" — HAI SPEC CHỐT MÂU THUẪN, chọn theo 2-đánh-1 + đã verify từ VIỆC 2; Cowork/Hoà
+  phân xử sau, đổi chỉ 1 dòng gate.
+- **Sự cố tự gây + tự sửa**: commit CHINH-3 lần đầu (bcd08e8) CUỖM 17 file docs phiên Cowork đã
+  stage trong `.git` chung (commit trơn — vi phạm luật STATUS). Đã `reset --soft` + commit lại
+  đúng pathspec (`7847969`), staged của Cowork trả nguyên. Từ nay LUÔN `git commit -- <pathspec>`.
+- **CadToolbar tràn phải đè Inspector khi Inspector mở** — có từ VIỆC 2 (toolbar absolute giữa
+  stage), KHÔNG phải regression đêm nay; hết khi gộp toolbar vào Toolbelt ổ ⑤ (hàng đợi).
