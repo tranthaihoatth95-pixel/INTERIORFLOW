@@ -116,19 +116,24 @@ function buildScene(r: Rig, type: PreviewScene) {
     // mặt phẳng nhìn phối cảnh thấp — cho gạch/gỗ lát đọc được vân chạy sâu
     target = new THREE.Mesh(new THREE.PlaneGeometry(6, 6));
     target.rotation.x = -Math.PI / 2;
-    camera.position.set(0, 0.9, 2.6);
-    camera.lookAt(0, 0, -0.6);
+    // khung chặt, mắt thấp: mặt sàn ĂN KÍN khung. Khung rộng hơn (verify 04/08) để lọt mảng trống
+    // phía trên đường chân trời → ô trông như thẻ rỗng, không ra "sàn".
+    camera.position.set(0, 0.62, 1.35);
+    camera.lookAt(0, 0, -0.75);
   } else if (type === 'fabric') {
     // "khối phủ vải": cầu dẹt như nệm — đường cong mềm cho sheen/roughness vải
     target = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32));
     target.scale.set(1.15, 0.62, 1.05);
-    camera.position.set(0, 0.55, 3.1);
+    camera.position.set(0, 0.7, 4.3);
     camera.lookAt(0, 0, 0);
   } else {
     target = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32));
-    camera.position.set(0, 0, 3.05);
+    camera.position.set(0, 0, 4.6);
     camera.lookAt(0, 0, 0);
   }
+  // KHUNG HÌNH (sửa 04/08): fov 32° ở khoảng cách 3.05 chỉ thấy cao 1.75 đơn vị < đường kính cầu
+  // (2.0) ⇒ quả cầu TRÀN khung, ô xem trước thành hình vuông bo góc, mất hẳn rìa Fresnel — thứ
+  // làm quả cầu có nghĩa. Lùi camera ra 4.6 để cầu chiếm ~77% khung, còn viền thở.
   scene.add(target);
   r.scenes[type] = { scene, camera, target };
   return r.scenes[type]!;
@@ -171,9 +176,12 @@ const cache = new Map<string, string>();
  * Trả null khi WebGL không có (caller giữ swatch phẳng làm fallback).
  */
 export function renderMaterialPreview(spec: PreviewSpec, size = 96, resolution: 0.25 | 0.5 | 1 = 1): string | null {
-  // sàn 56px: nấc 25% là van chi phí cho danh sách dài, nhưng dưới 56px thì ảnh upscale nhuyễn
-  // đến mất highlight (thấy khi verify kệ 120px → nguồn 30px). 56px × ~100 ô vẫn rẻ (1 renderer).
-  const px = Math.max(56, Math.round(size * resolution));
+  // Nấc phân giải vẫn là van chi phí, nhưng phải nhân DPR và có SÀN — verify 04/08 cho thấy
+  // 120px ô × nấc 25% = 30px nguồn, phóng lên màn Retina thành vệt mờ, mất hẳn highlight/Fresnel
+  // (đúng thứ khiến quả cầu có nghĩa). Cache theo key nên mỗi tham số chỉ render 1 lần ⇒ sàn 96px
+  // rẻ hơn nhiều so với cái giá "ảnh xấu".
+  const dpr = typeof window === 'undefined' ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+  const px = Math.max(96, Math.round(size * resolution * dpr));
   const key = `${spec.id}|${spec.scene ?? 'auto'}|${spec.kind}|${spec.colorA}|${spec.colorB}|${px}`;
   const hit = cache.get(key);
   if (hit) return hit;

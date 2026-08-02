@@ -1,14 +1,20 @@
 // lib/library/shelves.ts — CẤU TRÚC KỆ cho Thư viện sheet (chặng 2 · G4).
 //
 // Nguồn: `docs/SPEC-STAGE-LIBRARIES.md` (kệ theo chặng · 3 động tác · 4 mức phạm vi) +
-// `docs/mocks/mock-if-3chang.html` (vật mẫu — tên kệ, số đếm, mã món, gradient thumbnail
-// đều CHÉP NGUYÊN VĂN từ mock, không tự chế).
+// `docs/mocks/mock-if-3chang.html` (vật mẫu — tên kệ, số đếm, mã món chép nguyên văn từ mock).
 //
-// ⚠️ DỮ LIỆU MOCK: số đếm trên kệ (46/12/9/31/6…) và danh sách món là dữ liệu vật mẫu, CHƯA nối
-// kho thật (`/api/library`, ATLAS matId). Khi nối backend thì thay `SHEET_ITEMS`/`count` bằng
+// ⚠️ DỮ LIỆU MOCK: số đếm trên kệ (46/12/9/31/18…) và danh sách món là dữ liệu vật mẫu, CHƯA nối
+// kho thật (`/api/library`, ATLAS matId). Khi nối backend thì thay `ITEMS_BY_SHELF`/`count` bằng
 // truy vấn thật — cấu trúc kệ + phạm vi giữ nguyên.
+//
+// 🔴 SỬA 04/08 (Hoà chê): (1) BỎ bảng `SWATCH` 12 gradient giả — ô xem trước giờ đi theo bậc
+// thang quả-cầu / vân-procedural / ảnh-thật, xem `thumb-kinds.ts` + `components/library/ItemThumb`.
+// Mỗi món khai `kind` (LOẠI) thay cho một gradient bịa. (2) GỘP vật liệu về MỘT kệ duy nhất
+// (kệ chung "Vật liệu ATLAS") — trước đây kệ chặng Dựng ảnh cũng có kệ "Vật liệu" 1449 y hệt,
+// cùng một kho hiện hai chỗ, đếm trùng.
 
 import type { ScopeLevel, StageKey } from './types';
+import type { ThumbKind } from './thumb-kinds';
 
 export interface ShelfDef {
   id: string;
@@ -26,8 +32,8 @@ export const STAGE_SHELVES: Record<StageKey, ShelfDef[]> = {
     { id: 'cad-hatch', label: ['Hatch · vật liệu 2D', 'Hatch · 2D materials'], count: 31 },
     { id: 'cad-form', label: ['Form lập luận', 'Reasoning forms'], count: 6 },
   ],
+  // Không còn kệ "Vật liệu" ở đây — vật liệu chỉ có MỘT chỗ: kệ chung "Vật liệu ATLAS" dưới.
   render: [
-    { id: 'render-mat', label: ['Vật liệu', 'Materials'], count: 1449 },
     { id: 'render-preset', label: ['Preset dựng ảnh', 'Render presets'], count: 18 },
     { id: 'render-mood', label: ['Template moodboard', 'Moodboard templates'], count: 7 },
     { id: 'render-chain', label: ['Chuỗi khối sẵn', 'Prebuilt node chains'], count: 5 },
@@ -44,27 +50,12 @@ export const STAGE_SHELVES: Record<StageKey, ShelfDef[]> = {
 
 /** Kệ NHÓM DƯỚI — kệ CHUNG, luôn có ở mọi chặng (không lặp lại theo chặng). */
 export const COMMON_SHELVES: ShelfDef[] = [
+  // NƠI DUY NHẤT của vật liệu trong toàn Thư viện (gộp 04/08).
   { id: 'common-atlas', label: ['Vật liệu ATLAS', 'ATLAS materials'], count: 1449 },
   { id: 'common-brand', label: ['Bộ nhận diện', 'Brand kits'], count: 3 },
   { id: 'common-asset', label: ['Ảnh & tài sản', 'Images & assets'], count: 218 },
   { id: 'common-theme', label: ['Phông · màu · nền', 'Type · color · background'], count: 14 },
 ];
-
-/** Gradient thumbnail — CHÉP NGUYÊN VĂN bảng `TH` của mock (trang trí, không theo theme). */
-export const SWATCH: Record<string, string> = {
-  wall: 'linear-gradient(140deg,#3a3a43,#22222a)',
-  furn: 'linear-gradient(140deg,#5c4b38,#33291f)',
-  san: 'linear-gradient(140deg,#3d4a52,#232b31)',
-  misc: 'linear-gradient(140deg,#2f4034,#1d281f)',
-  w: 'linear-gradient(140deg,#c9a27a,#8a6a44)',
-  s: 'linear-gradient(140deg,#e6e2da,#a9a49a)',
-  p: 'linear-gradient(140deg,#efeae0,#c8c2b6)',
-  f: 'linear-gradient(140deg,#b8a88f,#7d7160)',
-  m: 'linear-gradient(140deg,#b08d5a,#6b5432)',
-  g: 'linear-gradient(140deg,#9fb4bd,#5f727a)',
-  c: 'linear-gradient(140deg,#4a4550,#26232b)',
-  n: 'linear-gradient(140deg,#5b5560,#312e38)',
-};
 
 /** Cơ chế dùng món — SPEC-STAGE-LIBRARIES "3 động tác". */
 export type Mechanic = 'keo' | 'ap';
@@ -76,94 +67,102 @@ export interface SheetItem {
   name: string;
   /** Mã món, hiện dạng monospace (dòng .b trong mock). */
   code: string;
-  swatch: keyof typeof SWATCH;
+  /** LOẠI món — quyết định ô xem trước (quả cầu / vân procedural / icon). */
+  kind: ThumbKind;
   scope: ScopeLevel;
   mechanic: Mechanic;
+  /** Ảnh thật khi ATLAS sync có cột "Ảnh" (bậc cao nhất của ô xem trước) — chưa nối. */
+  imageUrl?: string;
   /** Dùng gần đây — cho chip "Gần đây". */
   recent?: boolean;
 }
 
-// Phạm vi lặp CHUNG→STUDIO→DỰ ÁN→CHẶNG đúng công thức `SCOPE[n%4]` của mock, để bản port giống
-// hệt vật mẫu ở trạng thái mặc định.
+// Phạm vi lặp CHUNG→STUDIO→DỰ ÁN→CHẶNG đúng công thức `SCOPE[n%4]` của mock. Mỗi kệ lệch pha một
+// chút (theo mã kệ) để lưới không rập khuôn y hệt nhau — thuần trang trí dữ liệu mock.
 const SCOPE_CYCLE: ScopeLevel[] = ['chung', 'studio', 'du_an', 'chang'];
-const scopeAt = (n: number): ScopeLevel => SCOPE_CYCLE[n % 4];
+const shelfPhase = (shelfId: string) => [...shelfId].reduce((s, c) => s + c.charCodeAt(0), 0) % 4;
 
-function build(shelfId: string, rows: [string, string, string][], startIdx = 0, mechanic: Mechanic = 'keo'): SheetItem[] {
-  return rows.map((r, i) => ({
-    id: `${shelfId}-${r[1]}`,
-    shelfId,
-    name: r[0],
-    code: r[1],
-    swatch: r[2] as keyof typeof SWATCH,
-    scope: scopeAt(startIdx + i),
-    mechanic,
-    recent: (startIdx + i) % 5 === 0,
-  }));
-}
+type Row = [name: string, code: string, kind: ThumbKind];
 
-/** 12 món/chặng của kệ MẶC ĐỊNH — chép nguyên văn bảng `DATA` trong mock. */
-const DEFAULT_ITEMS: Record<StageKey, [string, string, string][]> = {
-  cad: [
-    ['Cửa 1 cánh 800', 'DOOR-S-800', 'wall'], ['Cửa 2 cánh 1600', 'DOOR-D-1600', 'wall'],
-    ['Cửa sổ trượt', 'WIN-SL-1800', 'wall'], ['Sofa 3 chỗ', 'SOFA-3S', 'furn'],
-    ['Bàn ăn 6 ghế', 'TBL-D6', 'furn'], ['Giường 1m6', 'BED-160', 'furn'],
-    ['Bồn cầu treo', 'WC-WH', 'san'], ['Lavabo bàn đá', 'LAV-CT', 'san'],
-    ['Bếp chữ L', 'KIT-L', 'furn'], ['Tủ áo 2m4', 'WRD-240', 'furn'],
+/** Món theo từng kệ. Kệ mặc định của mỗi chặng chép nguyên văn bảng `DATA` của mock; các kệ còn
+ * lại mock không vẽ nên đặt tên theo đúng nghĩa kệ (đánh dấu rõ là mock ở đầu file). */
+const ITEMS_BY_SHELF: Record<string, Row[]> = {
+  // ── chặng Vẽ ─────────────────────────────────────────────────────────────────
+  'cad-kyhieu': [
+    ['Cửa 1 cánh 800', 'DOOR-S-800', 'block'], ['Cửa 2 cánh 1600', 'DOOR-D-1600', 'block'],
+    ['Cửa sổ trượt', 'WIN-SL-1800', 'block'], ['Sofa 3 chỗ', 'SOFA-3S', 'furniture'],
+    ['Bàn ăn 6 ghế', 'TBL-D6', 'furniture'], ['Giường 1m6', 'BED-160', 'furniture'],
+    ['Bồn cầu treo', 'WC-WH', 'sanitary'], ['Lavabo bàn đá', 'LAV-CT', 'sanitary'],
+    ['Bếp chữ L', 'KIT-L', 'furniture'], ['Tủ áo 2m4', 'WRD-240', 'furniture'],
     ['Người · tỉ lệ', 'SCALE-H', 'misc'], ['Cây trong nhà', 'PLANT-M', 'misc'],
   ],
-  render: [
-    ['Gỗ sồi tự nhiên', 'OAK-NT-190', 'w'], ['Gỗ óc chó', 'WAL-DK-150', 'w'],
-    ['Đá Calacatta', 'MRB-CAL', 's'], ['Đá đen Marquina', 'MRB-MQ', 's'],
-    ['Sơn trắng ngà', 'PNT-IV', 'p'], ['Sơn xám khói', 'PNT-SM', 'p'],
-    ['Vải lanh be', 'FAB-LIN-BE', 'f'], ['Vải nhung xanh rêu', 'FAB-VEL-GR', 'f'],
-    ['Gạch terrazzo', 'TRZ-WH', 's'], ['Đồng thau xước', 'BRS-BR', 'm'],
-    ['Thép sơn đen', 'STL-BK', 'm'], ['Kính mờ', 'GLS-FR', 'g'],
+  'cad-sheet': [['Khung tên A1', 'TB-A1', 'sheet'], ['Khung tên A3', 'TB-A3', 'sheet'], ['Bố cục 4 view', 'LAY-4V', 'sheet']],
+  'cad-room': [['Bếp chữ L', 'RM-KIT-L', 'furniture'], ['WC 3m²', 'RM-WC-3', 'sanitary'], ['Phòng ngủ master', 'RM-BED-M', 'furniture']],
+  // hatch = vật liệu 2D: GIỮ vân phẳng, không lên quả cầu (SPEC-VAT-LIEU §2, xem ItemThumb).
+  'cad-hatch': [['Gạch 600×600', 'HT-TIL-600', 'stone'], ['Sàn gỗ', 'HT-WOOD', 'wood'], ['Đá granite', 'HT-GRN', 'stone']],
+  'cad-form': [['Dây chuyền công năng', 'FRM-FLOW', 'page'], ['Sơ đồ bong bóng', 'FRM-BUBBLE', 'page']],
+
+  // ── chặng Dựng ảnh (không còn kệ vật liệu — xem kệ chung) ────────────────────
+  'render-preset': [
+    ['Nắng chiều', 'PRE-GOLD', 'sheet'], ['Trời phủ mây', 'PRE-OVC', 'sheet'], ['Đèn đêm', 'PRE-NIGHT', 'sheet'],
+    ['Nắng sớm', 'PRE-DAWN', 'sheet'], ['Studio trắng', 'PRE-STUDIO', 'sheet'],
   ],
-  present: [
-    ['Bìa · ảnh tràn', 'COVER-FULL', 'c'], ['Bìa · chia đôi', 'COVER-SPLIT', 'c'],
-    ['Mục lục 2 cột', 'TOC-2C', 'c'], ['Concept · 1 ảnh lớn', 'CPT-HERO', 'n'],
-    ['Concept · lưới 4', 'CPT-G4', 'n'], ['Mặt bằng + chú thích', 'PLAN-ANNO', 'n'],
-    ['Phối cảnh đôi', 'PSP-DUO', 'n'], ['Bảng vật liệu A3', 'MAT-A3', 'm'],
-    ['Trước · sau', 'BA-COMPARE', 'n'], ['Bảng khối lượng', 'BOQ-STD', 'm'],
-    ['Trang kết', 'END-CARD', 'c'], ['Thông tin liên hệ', 'CONTACT', 'c'],
+  'render-mood': [['Board theo phòng', 'MB-ROOM', 'sheet'], ['Board 9 ô A3', 'MB-A3-9', 'sheet']],
+  'render-chain': [['Sketch→Render→Upscale', 'CH-SRU', 'block'], ['Ảnh→Đổi góc', 'CH-RECAM', 'block']],
+  'render-form': [['Khung concept 5 nhánh', 'FRM-C5', 'page'], ['So sánh phương án', 'FRM-CMP', 'page'], ['6 chiếc mũ', 'FRM-6H', 'page']],
+
+  // ── chặng Trình bày ──────────────────────────────────────────────────────────
+  'present-page': [
+    ['Bìa · ảnh tràn', 'COVER-FULL', 'page'], ['Bìa · chia đôi', 'COVER-SPLIT', 'page'],
+    ['Mục lục 2 cột', 'TOC-2C', 'page'], ['Concept · 1 ảnh lớn', 'CPT-HERO', 'sheet'],
+    ['Concept · lưới 4', 'CPT-G4', 'sheet'], ['Mặt bằng + chú thích', 'PLAN-ANNO', 'sheet'],
+    ['Phối cảnh đôi', 'PSP-DUO', 'sheet'], ['Bảng vật liệu A3', 'MAT-A3', 'sheet'],
+    ['Trước · sau', 'BA-COMPARE', 'sheet'], ['Bảng khối lượng', 'BOQ-STD', 'page'],
+    ['Trang kết', 'END-CARD', 'page'], ['Thông tin liên hệ', 'CONTACT', 'page'],
   ],
+  'present-mata3': [['Lưới 9 ô', 'MB-9', 'sheet'], ['Lưới 6 ô + chú thích', 'MB-6N', 'sheet']],
+  'present-boq': [['Dự toán cơ bản', 'BOQ-BASE', 'page'], ['Dự toán live-link CAD', 'BOQ-LIVE', 'page']],
+  'present-doc': [['Thuyết minh song ngữ', 'DOC-BRIEF', 'page'], ['Hợp đồng mẫu', 'DOC-CTR', 'page']],
+  'present-video': [['Timeline intro/outro', 'VID-IO', 'sheet'], ['Nhịp cắt theo nhạc', 'VID-BEAT', 'sheet']],
+
+  // ── kệ CHUNG ─────────────────────────────────────────────────────────────────
+  // 12 món vật liệu (trước ở kệ "Vật liệu" của chặng Dựng ảnh) nay về đúng MỘT chỗ này.
+  'common-atlas': [
+    ['Gỗ sồi tự nhiên', 'OAK-NT-190', 'wood'], ['Gỗ óc chó', 'WAL-DK-150', 'wood'],
+    ['Đá Calacatta', 'MRB-CAL', 'stone'], ['Đá đen Marquina', 'MRB-MQ', 'stone'],
+    ['Sơn trắng ngà', 'PNT-IV', 'paint'], ['Sơn xám khói', 'PNT-SM', 'paint'],
+    ['Vải lanh be', 'FAB-LIN-BE', 'fabric'], ['Vải nhung xanh rêu', 'FAB-VEL-GR', 'fabric'],
+    ['Gạch terrazzo', 'TRZ-WH', 'stone'], ['Đồng thau xước', 'BRS-BR', 'metal'],
+    ['Thép sơn đen', 'STL-BK', 'metal'], ['Kính mờ', 'GLS-FR', 'glass'],
+  ],
+  'common-brand': [['Bộ nhận diện dự án', 'BK-PRJ', 'page'], ['Bộ nhận diện studio', 'BK-STD', 'page']],
+  'common-asset': [['Ảnh khảo sát', 'AS-SURVEY', 'sheet'], ['Ảnh tham chiếu', 'AS-REF', 'sheet'], ['Texture rời', 'AS-TEX', 'fabric']],
+  'common-theme': [['Cặp phông Editorial', 'TH-EDI', 'page'], ['Bảng màu ấm', 'TH-WARM', 'paint'], ['Nền canvas kẻ ô', 'TH-GRID', 'block']],
 };
 
-/** Kệ mặc định mỗi chặng — đúng nút `.shrow.on` trong mock. */
+/** Kệ mặc định mỗi chặng — chặng Dựng ảnh đổi sang Preset sau khi gộp kệ vật liệu. */
 export const DEFAULT_SHELF: Record<StageKey, string> = {
   cad: 'cad-kyhieu',
-  render: 'render-mat',
+  render: 'render-preset',
   present: 'present-page',
 };
 
-// Món cho các kệ CÒN LẠI — ít hơn, đủ để bấm vào kệ không thấy trống. Mock chỉ vẽ kệ mặc định
-// nên phần này KHÔNG có vật mẫu để chép; đặt tên theo đúng nghĩa từng kệ, đánh dấu rõ là mock.
-const EXTRA: Record<string, [string, string, string][]> = {
-  'cad-sheet': [['Khung tên A1', 'TB-A1', 'misc'], ['Khung tên A3', 'TB-A3', 'misc'], ['Bố cục 4 view', 'LAY-4V', 'misc']],
-  'cad-room': [['Bếp chữ L', 'RM-KIT-L', 'furn'], ['WC 3m²', 'RM-WC-3', 'san'], ['Phòng ngủ master', 'RM-BED-M', 'furn']],
-  'cad-hatch': [['Gạch 600×600', 'HT-TIL-600', 's'], ['Sàn gỗ', 'HT-WOOD', 'w'], ['Đá granite', 'HT-GRN', 's']],
-  'cad-form': [['Dây chuyền công năng', 'FRM-FLOW', 'misc'], ['Sơ đồ bong bóng', 'FRM-BUBBLE', 'misc']],
-  'render-preset': [['Nắng chiều', 'PRE-GOLD', 'p'], ['Trời phủ mây', 'PRE-OVC', 'p'], ['Đèn đêm', 'PRE-NIGHT', 'p']],
-  'render-mood': [['Board theo phòng', 'MB-ROOM', 'f'], ['Board 9 ô A3', 'MB-A3-9', 'f']],
-  'render-chain': [['Sketch→Render→Upscale', 'CH-SRU', 'm'], ['Ảnh→Đổi góc', 'CH-RECAM', 'm']],
-  'render-form': [['Khung concept 5 nhánh', 'FRM-C5', 'n'], ['So sánh phương án', 'FRM-CMP', 'n'], ['6 chiếc mũ', 'FRM-6H', 'n']],
-  'present-mata3': [['Lưới 9 ô', 'MB-9', 'm'], ['Lưới 6 ô + chú thích', 'MB-6N', 'm']],
-  'present-boq': [['Dự toán cơ bản', 'BOQ-BASE', 'm'], ['Dự toán live-link CAD', 'BOQ-LIVE', 'm']],
-  'present-doc': [['Thuyết minh song ngữ', 'DOC-BRIEF', 'c'], ['Hợp đồng mẫu', 'DOC-CTR', 'c']],
-  'present-video': [['Timeline intro/outro', 'VID-IO', 'n'], ['Nhịp cắt theo nhạc', 'VID-BEAT', 'n']],
-  'common-atlas': [['Gỗ óc chó W-102', 'W-102', 'w'], ['Travertine S-044', 'S-044', 's'], ['Sơn xanh rêu P-070', 'P-070', 'p']],
-  'common-brand': [['Bộ nhận diện dự án', 'BK-PRJ', 'c'], ['Bộ nhận diện studio', 'BK-STD', 'c']],
-  'common-asset': [['Ảnh khảo sát', 'AS-SURVEY', 'g'], ['Ảnh tham chiếu', 'AS-REF', 'g'], ['Texture rời', 'AS-TEX', 'f']],
-  'common-theme': [['Cặp phông Editorial', 'TH-EDI', 'c'], ['Bảng màu ấm', 'TH-WARM', 'p'], ['Nền canvas kẻ ô', 'TH-GRID', 'n']],
-};
-
 /** Vật liệu/preset/hatch = ÁP lên vật đang chọn; còn lại = KÉO ra bàn làm việc. */
-const APPLY_SHELVES = new Set(['render-mat', 'cad-hatch', 'render-preset', 'common-atlas', 'common-theme']);
+const APPLY_SHELVES = new Set(['cad-hatch', 'render-preset', 'common-atlas', 'common-theme']);
 
-function itemsForShelf(shelfId: string, stage: StageKey): SheetItem[] {
+function itemsForShelf(shelfId: string): SheetItem[] {
   const mech: Mechanic = APPLY_SHELVES.has(shelfId) ? 'ap' : 'keo';
-  if (shelfId === DEFAULT_SHELF[stage]) return build(shelfId, DEFAULT_ITEMS[stage], 0, mech);
-  return build(shelfId, EXTRA[shelfId] ?? [], 3, mech);
+  const phase = shelfPhase(shelfId);
+  return (ITEMS_BY_SHELF[shelfId] ?? []).map(([name, code, kind], i) => ({
+    id: `${shelfId}-${code}`,
+    shelfId,
+    name,
+    code,
+    kind,
+    scope: SCOPE_CYCLE[(phase + i) % 4],
+    mechanic: mech,
+    recent: (phase + i) % 5 === 0,
+  }));
 }
 
 /** Mọi kệ của 1 chặng (nhóm trên + kệ chung). */
@@ -175,7 +174,7 @@ export type ScopeChip = 'all' | ScopeLevel | 'recent';
 
 /** Món của 1 kệ, đã lọc theo chip phạm vi + từ khoá tìm. */
 export function itemsFor(stage: StageKey, shelfId: string, chip: ScopeChip, query = ''): SheetItem[] {
-  let out = itemsForShelf(shelfId, stage);
+  let out = itemsForShelf(shelfId);
   if (chip === 'recent') out = out.filter((i) => i.recent);
   else if (chip !== 'all') out = out.filter((i) => i.scope === chip);
   const q = query.trim().toLowerCase();

@@ -307,3 +307,45 @@ Nhánh `nhanh-g4` HEAD = `14d3ec6`, cây sạch. Phiên này: `02b2b39` (merge m
 
 **Môi trường bàn giao**: dev server G4 đang chạy nền ở `127.0.0.1:3004` (worktree này, có `.env`
 vừa copy — file gitignore, không vào git). Kill bằng `lsof -tiTCP:3004 | xargs kill` nếu cần.
+
+## 🔴 4 FIX THƯ VIỆN (Hoà chê cách Thư viện xuất hiện — 04/08)
+
+**① Xoá 12 gradient giả.** `lib/library/shelves.ts` bỏ hẳn bảng `SWATCH`; mỗi món khai `kind`
+(LOẠI) thay cho một gradient bịa. Ô xem trước đi theo bậc thang trong `components/library/
+ItemThumb.tsx`: **(c)** `item.imageUrl` (ATLAS sync có cột Ảnh — trường đã khai, chưa nối) →
+**(a)** quả cầu render thật (chỉ kệ vật liệu) → **(b)** vân procedural theo loại + icon loại
+(`lib/library/thumb-kinds.ts`: gỗ=vân dọc · đá=lấm tấm · vải=dệt chéo · kim loại=xước góc hẹp ·
+kính=vệt sáng chéo · sơn=ánh mềm; loại phi-vật-liệu=lưới/nhịp trung tính theo token).
+**Luật chống tái phạm**: tông màu gắn theo LOẠI, không theo từng món — mọi món gỗ chung một tông
+tới khi ATLAS trả màu thật, thà nói đúng "đây là nhóm gỗ" còn hơn bịa 12 màu.
+
+**② Scrim.** Bug thật, không phải chỉnh mắt: scrim z-index 20 chép từ mock, nhưng app thật có
+`.mat-header` z-30 ⇒ **header đứng TRÊN scrim, nửa màn không hề tối** (đo bằng `elementFromPoint`:
+điểm header trả về chính header). Sửa: scrim z-90 / sheet z-91 (dải modal của app: Lightbox z-60,
+menu z-80, dưới PublishModal z-190 + toast z-200 của chính Thư viện). Sau sửa `elementFromPoint`
+tại header/sidebar/canvas đều trả `scrim`. Đậm thêm 12% so với token `--mat-overlay` (token .28
+hợp modal nhỏ; sheet này chiếm 74% màn).
+
+**③ Ba tầng nền.** Sheet trước dùng `--mat-card` (Sáng = trắng .82) còn card dùng `--field`
+(#f4f1eb) ⇒ hai lớp gần trùng, phẳng lì. Nay: **nền `--bg` < sheet `--panel` < card `--card` +
+viền `--border`**. Đo thật (Sáng) 242,239,233 → 250,248,244 → 255,255,255 + viền 227,222,212;
+(Tối) 12,12,14 → 20,20,23 → 26,26,30 + viền 42,42,49. Kính giữ nhưng chỉ còn 6% trong suốt +
+blur — đúng `SPEC-APPLE-MOTION-MATERIAL` ("kính là gia vị, đọc được TRƯỚC").
+
+**④ Gộp vật liệu về MỘT kệ.** Kệ chặng Dựng ảnh nay chỉ còn **Preset dựng ảnh · Template
+moodboard · Chuỗi khối sẵn · Form lập luận**; toàn bộ 12 món vật liệu chuyển sang kệ chung
+**Vật liệu ATLAS (1449)** — hết cảnh cùng một kho hiện hai chỗ, đếm 1449 hai lần. Kệ mặc định
+chặng Dựng ảnh đổi thành Preset. `SPHERE_SHELVES` chỉ gồm `common-atlas`.
+
+### 4 lỗi tự bắt khi verify (không ai giao, sửa luôn)
+1. **Quả cầu tràn khung**: fov 32° ở khoảng cách 3.05 chỉ thấy cao 1.75 đơn vị < đường kính cầu
+   2.0 ⇒ ô xem trước ra hình vuông bo góc, mất rìa Fresnel. Lùi camera 4.6 (vải 4.3).
+2. **Ảnh mờ**: nấc 25% × 120px = 30px nguồn, phóng lên Retina thành vệt. Nay nhân DPR + sàn 96px
+   (cache theo key nên mỗi tham số chỉ render 1 lần).
+3. **`objectFit:cover` cắt chỏm cầu** → thêm prop `fit`, kệ dùng `contain` (cảnh Sàn vẫn `cover`).
+4. **Vân bám `--t5`** (Sáng #b8b1a7) pha loãng trên `--field` là mất hút → đổi bám `--t3`.
+Kèm 1 lỗi của chính tôi: backtick trong comment CSS làm đứt template literal (Build Error, sửa ngay).
+
+**Nghiệm thu**: tsc 0 lỗi · lint sạch · test 0 fail · verify browser `127.0.0.1:3004` CẢ 2 THEME
+(kệ vật liệu ra cầu đúng loại gồm cảnh Vải cho vải và cảnh Sàn cho gạch terrazzo; kệ preset/
+template ra vân + icon; scrim phủ toàn màn; 3 tầng nền đo bằng `getComputedStyle`).

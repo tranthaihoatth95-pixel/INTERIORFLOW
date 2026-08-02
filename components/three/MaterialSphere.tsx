@@ -15,8 +15,17 @@ import { renderMaterialPreview, type PreviewSpec } from './material-preview';
 
 interface Props {
   spec: PreviewSpec;
-  /** gradient CSS làm nền chờ/fallback — truyền thẳng swatch sẵn có. */
-  fallback: string;
+  /** nền chờ/fallback: chuỗi CSS `background`, hoặc cả cụm style vân procedural
+   * (`thumbTexture()` của Thư viện — nhiều lớp nên cần backgroundSize/Repeat đi kèm). */
+  fallback: string | React.CSSProperties;
+  /** tooltip — ô xem trước nên nói được nó đang thể hiện LOẠI gì. */
+  title?: string;
+  /** 'contain' = thấy TRỌN quả cầu (ô lưới thấp hơn rộng thì 'cover' cắt mất chỏm, còn lại
+   * mảng màu vô nghĩa — bắt được khi verify kệ Thư viện 122×76). */
+  fit?: 'cover' | 'contain';
+  /** Nền phía sau quả cầu KHI đã render xong (V-Ray/D5 để cầu trên nền trung tính, không để
+   * trên vân). Lúc chờ/WebGL tắt vẫn là `fallback` để không bao giờ ra ô trơn. */
+  backdrop?: string;
   /** cạnh ô hiển thị (px) — ảnh render vuông cạnh này × resolution. */
   size?: number;
   /** nấc phân giải kiểu V-Ray: lưới cuộn 0.25 · panel chi tiết 1. */
@@ -27,7 +36,7 @@ interface Props {
   children?: React.ReactNode;
 }
 
-export default function MaterialSphere({ spec, fallback, size = 96, resolution = 0.25, className, style, children }: Props) {
+export default function MaterialSphere({ spec, fallback, size = 96, resolution = 0.25, className, style, title, fit = 'cover', backdrop, children }: Props) {
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -49,14 +58,22 @@ export default function MaterialSphere({ spec, fallback, size = 96, resolution =
     <span
       aria-hidden
       className={className}
-      style={{ display: 'block', position: 'relative', background: fallback, overflow: 'hidden', ...style }}
+      title={title}
+      style={{
+        display: 'block',
+        position: 'relative',
+        overflow: 'hidden',
+        ...(typeof fallback === 'string' ? { background: fallback } : fallback),
+        ...style,
+      }}
     >
+      {url && backdrop && <span style={{ position: 'absolute', inset: 0, background: backdrop }} />}
       {url && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={url}
           alt=""
-          style={{ display: 'block', position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+          style={{ display: 'block', position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: fit }}
           draggable={false}
         />
       )}
