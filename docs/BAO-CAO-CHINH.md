@@ -692,3 +692,41 @@ phòng" = MỞ RỘNG `NodeGroup` có sẵn, KHÔNG tạo hệ thống group th�
   nền `bg-accent/[0.04]` cố tình rất mờ, kế thừa nguyên style `GroupOverlay` cũ cho group thường —
   không phải lỗi mới) — dùng `getComputedStyle`/`getBoundingClientRect` làm bằng chứng chính,
   đủ chắc chắn (so khớp số chính xác, không phải "trông có vẻ đúng").
+
+## G2 phần (2) — sticky + comment neo object — THIẾT KẾ (viết trước khi code)
+**Khảo sát lại trước khi thiết kế**: sticky note ĐÃ CÓ ĐỦ (đã xác nhận từ khảo sát đầu G2 —
+`NoteNode`/`addNote`, node React Flow thật, tự nhiên "neo vào object" vì bản thân nó LÀ 1 object
+canvas). `CommentLayer.tsx` hiện có KHÔNG đạt yêu cầu "neo object" — neo theo % TOẠ ĐỘ VIEWPORT +
+`elementHint` (DOM snapshot dò bằng `elementFromPoint`, không phải ID thật), lệch khi
+pan/zoom/resize, và mặc định TẮT (`NEXT_PUBLIC_COMMENT_LAYER`). Việc thật của phần (2) là:
+**comment neo vào NODE ID thật** (khác hẳn cơ chế `CommentLayer` cũ, không sửa file đó).
+
+**Quyết định kiến trúc**: comment là 1 mảng top-level MỚI trong store (`comments: CanvasComment[]`,
+đúng khuôn `groups: NodeGroup[]` đã có — KHÔNG nhét vào `node.data` vì comment là dữ liệu cộng tác
+nhẹ, tách khỏi payload node giúp autosave/diff gọn hơn). Render bằng 1 component dùng chung
+`CommentPin.tsx` (đúng tên đã liệt trong `SPEC-DESIGN-SYSTEM-IF.md` §4 "Comment pin") — mount
+NGAY BÊN TRONG `InteriorNode.tsx`/`NoteNode.tsx` (không dùng `ViewportPortal` như `GroupOverlay`)
+vì đặt trong chính node = tự động neo đúng vị trí theo pan/zoom/kéo-thả, không cần tính toán gì.
+
+**Việc làm**:
+1. `lib/store.ts`: type `CanvasComment {id,nodeId,author,text,createdAt}`, field `comments:
+   CanvasComment[]`. Action `addComment(nodeId,text)` (author = `user?.name ?? 'Khách'`, id qua
+   `nextId('cmt')`, `createdAt: Date.now()`), `removeComment(id)`. Đi qua ĐỦ 5 chỗ `groups` hiện
+   đã có (đúng khuôn, tránh 2-nguồn/mất dữ liệu khi lưu-mở lại): field trong `FlowState` +
+   init `[]` + `loadGraph()` (parse từ server) + `hydrate()` (parse localStorage) +
+   `persistNow()` (payload DB PUT + payload localStorage + `subscribe()` watcher đổi field mới →
+   trigger autosave).
+2. `components/nodes/CommentPin.tsx` (mới): badge góc phải-trên node (`MessageCircle` icon +
+   số đếm nếu >0), `position:absolute;-top-2;-right-2`. Bấm mở `Popover.tsx` (component có sẵn,
+   tự lật hướng theo viewport — KHÔNG viết lại) liệt kê comment cũ (tác giả + giờ tương đối + nội
+   dung) + textarea/nút gửi thêm mới. Nhận prop `nodeId`.
+3. Mount `<CommentPin nodeId={id} />` trong `InteriorNode.tsx` (thêm `relative` vào className
+   `motion.div` ngoài cùng — HIỆN CHƯA có, cần cho badge absolute định vị đúng) và trong
+   `NoteNode.tsx` (đã có sẵn `relative`, chỉ thêm dòng mount).
+4. Badge CHỈ hiện khi có ≥1 comment HOẶC đang hover node (`group-hover`, khuôn có sẵn ở nút xoá
+   note/node) — tránh rối canvas khi phần lớn node chưa ai bình luận.
+5. Bỏ NGOÀI phạm vi phần (2) (ghi rõ): **@mention** (không có UI gõ `@` autocomplete tên
+   thành viên — cần danh sách presence + logic filter, để việc riêng) · **reaction/vote** (không
+   có nút thả cảm xúc/đếm vote trên sticky/comment — cần thiết kế UI mới, chưa có trong bất kỳ
+   component nào hiện tại) · sửa/xoá TỪNG comment theo quyền tác giả (v1: ai cũng xoá được bất kỳ
+   comment nào, khớp mức đơn giản hiện có của sticky note — không kiểm tra ownership).
