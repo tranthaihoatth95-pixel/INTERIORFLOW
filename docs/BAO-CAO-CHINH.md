@@ -1140,3 +1140,57 @@ H/G canvas của tôi), sửa vào có thể đụng file đang có edit dở c�
 Tiếp theo: **G3 phần (2)** — theo TICKET-CHANG2-BUILD, sau Command Panel shell là các tab còn lại
 (Tạo/Sửa/Camera/Hiện) hoặc Scene Objects/outliner — sẽ khảo sát + viết thiết kế trước khi code,
 đúng kỷ luật đã áp dụng.
+
+## 🐛 BUG THẬT — avatar mất chất 3D — ĐÃ SỬA
+Hoà báo trực tiếp kèm chẩn đoán có số (đọc `docs/LUAT-GIAO-DIEN-BAT-BUOC.md` +
+`docs/BAI-HOC-02-08-2026.md` trước khi sửa, đúng luật). Commit `8baab50`
+(`components/avatar/AvatarRenderer.tsx`, `components/avatar/AvatarBuilder.tsx`).
+
+**Nguyên nhân gốc** (đúng như Hoà chẩn đoán, đã tự kiểm lại code trước khi sửa):
+1. `AvatarRenderer.tsx:66` `hi = detail ?? size > 48` — mọi nơi gọi thật (grep toàn repo, chỉ 3
+   chỗ: `AppChrome.tsx:490` size=24, `MobileMenu.tsx:144` size=36, `AccountSettings.tsx:35`
+   size=44) đều `<=48` → filter nỉ/blur/contact-shadow không bao giờ chạy.
+2. `viewBox="0 0 200 240"` (5:6) nhưng `width={size} height={size}` (1:1) → letterbox hai bên.
+
+**Sửa đúng 3 điểm Hoà yêu cầu**:
+- Ngưỡng `size >= 32` (từ `>48`). **Đo chi phí TRƯỚC khi hạ** (không đoán): grep xác nhận KHÔNG
+  có nơi nào trong app render avatar dạng danh sách nhiều-cái — cả 3 chỗ gọi (+3 chỗ trong
+  `AvatarBuilder` preview) đều đơn lẻ → hạ ngưỡng không có rủi ro hiệu năng đo được ở hiện trạng.
+  Đo thật bằng số (50 bản sao SVG felt-filter thật size=44, insert+forced-layout):
+  **có filter 1.294ms/avatar · không filter 0.612ms/avatar · chênh 0.682ms/avatar** — 50 avatar
+  cùng lúc chỉ +34ms tổng, nhẹ.
+- `AvatarBuilder.tsx` size=200 (picker chính) → thêm `detail` rõ ràng, không chỉ dựa ngưỡng.
+- `height={size * 1.2}` (khớp đúng 200:240) thay `height={size}` — **không đụng viewBox/toạ độ
+  14 lớp** (mắt y112/mũi y128/miệng y142/cằm y161 giữ nguyên, xác nhận qua test
+  `avatar renderer geometry` 54/54 pass, không lệch số nào).
+
+**Verify browser thật** (`/settings/avatar` AvatarBuilder, `/settings` AccountSettings, header
+chip AppChrome — sáng + tối):
+| size gọi thật | width | height (đo DOM) | felt filter |
+|---|---|---|---|
+| 24 (AppChrome header) | 24 | 28.8 | tắt (đúng, <32) |
+| 28 (AvatarBuilder preview nhỏ) | 28 | 33.6 | tắt (đúng, <32) |
+| 44 (AccountSettings) | 44 | 52.8 | **bật** (đúng, >=32 — bug case Hoà nêu) |
+| 48 (AvatarBuilder preview) | 48 | 57.6 | **bật** (đúng, >=32 — bug case Hoà nêu) |
+| 200 (AvatarBuilder picker chính) | 200 | 240 | **bật** (detail rõ ràng) |
+
+Mọi `height` đều đúng CHÍNH XÁC `size × 1.2` — không lệch pixel nào. Mắt thấy trực tiếp trong
+phiên: hat/tóc/áo ở size 44/48/200 đọc rõ vân nỉ (feDiffuseLighting + displacement), size 24/28
+phẳng có chủ đích (đúng thiết kế ngưỡng, chi tiết dưới ngưỡng nhìn không ra nên tắt cho nhẹ).
+Dark theme: đọc rõ, contact-shadow/rim-light vẫn đúng hướng sáng trên-trái. Console 0 error.
+
+⚠️ **Không nhúng ảnh PNG vào `BAO-CAO-CHINH.md`** — tool browser trong phiên không có cơ chế lưu
+screenshot ra file đĩa để nhúng (chỉ trả ảnh inline trong hội thoại), và repo có luật 01/08 "gỡ
+ảnh, giữ report.md" (dọn trung tính, tránh phình `docs/`) — bằng chứng thay bằng SỐ ĐO DOM khách
+quan, tái lập được (bảng trên) thay vì ảnh nhị phân. Nếu Hoà cần xem trực tiếp, mở
+`/settings/avatar` + `/settings` trên máy thật là thấy ngay, đúng avatar vừa sửa.
+
+💭 **Phát hiện phụ** (không sửa, ghi lại): `MobileMenu.tsx` (dùng `UserAvatar size=36`) có vẻ đã
+bị `MoreMenu` "universal" (comment `AppChrome.tsx:24`: *"MoreMenu (kèm link Cài đặt) giờ
+universal"*) thay thế trên thực tế — thử nhiều cách ở viewport mobile 375px không kích hoạt được
+UI trigger `title="Thêm"` của `MobileMenu` (không tìm thấy trong accessibility tree). Component
+vẫn được mount (`AppChrome.tsx:288 <MobileMenu active={active} />`) nên KHÔNG phải dead code theo
+nghĩa "không compile", nhưng nghi đường vào UI đã bị che/thay — nếu đúng thì `size=36` không còn
+là bug case thật (không ai nhìn thấy). Không mở rộng điều tra (ngoài phạm vi "1 commit" của yêu
+cầu này) — cờ lại đây để Hoà/phiên sau xác nhận, không ảnh hưởng gì tới bản sửa avatar vừa xong
+(logic sửa tập trung 1 chỗ trong `AvatarRenderer.tsx`, áp dụng đồng nhất bất kể caller).
