@@ -68,9 +68,19 @@ xác nhận) — đã cấp lại đủ lúc 08:57. Log cũ giữ nguyên theo l
   PointerEvent thật (chỉ test được qua dispatch PointerEvent thủ công + chờ giữa các bước) — ghi
   lại cho phiên sau đỡ mất thời gian dò lại nếu cần test kéo-thả tương tự.
 
-## HÀNG ĐỢI CÒN LẠI (ghi đè mỗi lần xong 1 việc — nguồn sự thật duy nhất, không sống trong chat)
-- **C5** (V1.1 so le nội thất theo khoảng cách tới cửa chính) — ĐANG LÀM.
-- **C6** (gỡ brand-kit trùng khỏi repo chính) — **CHỜ**: đã kiểm `~/Downloads/interiorflow-phu`
-  (worktree `nhanh-phu`) — `docs/BAO-CAO-PHU.md` CHƯA tồn tại, `git log` trên nhánh đó cũng không
-  thấy commit VIỆC 5 mới (chỉ có 2 commit cũ 31/07). Điều kiện Hoà đặt ra CHƯA thoả — không chạy
-  `git checkout --` xoá bản trùng. Sẽ tự kiểm lại khi quay lại hàng đợi này (sau C5).
+## [09:19] C5 (V1.1) — so le đợt Nội thất theo khoảng cách tới cửa chính — XONG
+- Commit: `bff0b98`.
+- Test: 58/58 (+7 ca mới, kể cả ca chứng minh thứ tự OUTPUT thật sự đổi so INPUT — không phải
+  trùng hợp giữ nguyên mảng gốc). Perf 2000-entity vẫn <500ms (3.27ms đo được). tsc/eslint/toàn
+  bộ test repo sạch. KHÔNG verify browser thêm — thuần logic sắp xếp mảng, đã chứng minh đủ bằng
+  assertion hình học trực tiếp, tầng render (DrawOnPreview.tsx, "phần C") không đổi API/hành vi.
+- 💭 `findMainDoor()` dùng ngưỡng 600mm "trên biên ngoài" (dư dả cho độ dày tường + sai số đặt
+  cửa) — số tự chọn, chưa có ca thật để hiệu chỉnh lại nếu sai.
+
+## C6 (điều kiện) — gỡ brand-kit trùng khỏi repo chính — VẪN CHỜ, kết chuỗi ở đây
+Kiểm lại lần cuối lúc 09:19: `docs/BAO-CAO-PHU.md` (worktree `nhanh-phu`) NAY ĐÃ TỒN TẠI nhưng
+báo cáo **P1·E2 (mask ảnh theo hình)** — KHÔNG nhắc gì tới VIỆC 5/brand-kit. `git log` trên nhánh
+`nhanh-phu` cho `brand-kit-disk.ts` vẫn chỉ 2 commit cũ 31/07, không có commit mới. Điều kiện Hoà
+đặt ra ("chỉ chạy khi BAO-CAO-PHU.md xác nhận VIỆC 5 đã commit") CHƯA thoả — KHÔNG chạy
+`git checkout --` xoá bản trùng. Toàn bộ C1-C5 + C7 đã xong (xem mục trên) — kết chuỗi tại đây,
+chờ Hoà xác nhận VIỆC 5 hoặc giao thêm việc mới.
