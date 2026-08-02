@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Cài đặt — bản chuẩn gu</title>
+<style>
+  :root{
+    --bg:#edebe7; --panel:#fff; --line:#e4e1db; --ink:#26262b; --mut:#8f8f97;
+    --accent:#6a57f5; --accent-soft:#efeafe; --chip:#f3f1ee;
+    --sh:0 8px 24px rgba(40,38,35,.12), 0 1px 2px rgba(40,38,35,.06);
+    --sh-soft:0 2px 10px rgba(40,38,35,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+  .app{display:flex;height:100vh;max-width:1440px;margin:0 auto}
+
+  .rail{width:76px;display:flex;flex-direction:column;align-items:center;padding:18px 0}
+  .railcap{background:var(--panel);border:1px solid var(--line);border-radius:30px;box-shadow:var(--sh-soft);display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 8px}
+  .ri{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;color:#77777f}
+  .ri.on{background:var(--ink);color:#fff;transform:scale(1.12);box-shadow:0 4px 12px rgba(38,38,43,.30)}
+  .railcap .sep{width:26px;height:1px;background:var(--line);margin:4px 0}
+  .rail .bottom{margin-top:auto}
+  .bigav{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#c9a27a,#9a6b43);border:2px solid #fff;box-shadow:var(--sh-soft)}
+
+  .main{flex:1;padding:26px 34px 30px 10px;overflow:auto}
+  h1{font-size:22px;margin:0;letter-spacing:-.02em}
+  .sub{font-size:12px;color:var(--mut);margin-top:3px}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px;max-width:1000px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh-soft);padding:18px}
+  .card h3{font-size:13px;margin:0 0 3px;display:flex;align-items:center;gap:8px}
+  .card .hint{font-size:11px;color:var(--mut);margin-bottom:14px}
+
+  /* avatar picker (Apple/Oppo style) */
+  .avrow{display:flex;align-items:center;gap:16px}
+  .avbig{width:74px;height:74px;border-radius:50%;background:linear-gradient(135deg,#c9a27a,#9a6b43);border:3px solid #fff;box-shadow:0 6px 18px rgba(40,38,35,.18);position:relative;flex:none}
+  .avbig .edit{position:absolute;right:-2px;bottom:-2px;width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid #fff}
+  .avname{font-size:15px;font-weight:700}
+  .avmail{font-size:11.5px;color:var(--mut)}
+  .avgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:9px;margin-top:14px}
+  .avo{aspect-ratio:1;border-radius:50%;position:relative;border:2px solid transparent}
+  .avo.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .avo.add{border:1.5px dashed var(--mut);display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:15px;background:var(--chip)}
+
+  /* theme cards */
+  .thgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .th{border:2px solid var(--line);border-radius:13px;overflow:hidden;position:relative}
+  .th.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .th .prev{height:64px;position:relative}
+  .th .prev .mb{position:absolute;left:8px;top:8px;right:8px;bottom:8px;border-radius:8px}
+  .th .lb{font-size:11px;font-weight:600;text-align:center;padding:7px}
+  .th .tick{position:absolute;right:7px;top:7px;width:17px;height:17px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center}
+
+  /* wallpaper */
+  .wpgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
+  .wp{aspect-ratio:4/3;border-radius:10px;border:2px solid transparent}
+  .wp.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .wp.none{border:1.5px dashed var(--mut);background:var(--chip);display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:10px}
+
+  /* folder pointer */
+  .pathbox{display:flex;align-items:center;gap:11px;background:var(--chip);border-radius:12px;padding:11px 13px}
+  .pathbox .fi{width:32px;height:27px;border-radius:7px;background:linear-gradient(180deg,#8f7df7,#6a57f5);position:relative;flex:none}
+  .pathbox .fi::before{content:"";position:absolute;top:-4px;left:0;width:14px;height:6px;border-radius:4px 4px 0 0;background:#8f7df7}
+  .pathbox .p{flex:1;min-width:0}
+  .pathbox .pp{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pathbox .ps{font-size:10.5px;color:#1f9d6b;display:flex;align-items:center;gap:5px;margin-top:1px}
+  .pathbox .dot{width:6px;height:6px;border-radius:50%;background:#1f9d6b}
+  .ghost{border:1px solid var(--line);background:#fff;border-radius:11px;height:34px;padding:0 14px;font-size:12px;font-weight:600;color:#3a3a42}
+  .warn{font-size:10.5px;color:var(--mut);margin-top:9px;line-height:1.5}
+
+  /* language + misc */
+  .seg{display:flex;background:var(--chip);border-radius:11px;padding:3px;width:max-content}
+  .seg span{padding:7px 16px;border-radius:8px;font-size:12px;color:#77777f}
+  .seg span.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.10)}
+  .noterow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);font-size:12.5px}
+  .noterow:first-of-type{border-top:0}
+  .noterow .k b{display:block;font-weight:600}
+  .noterow .k span{font-size:10.5px;color:var(--mut)}
+  .sw{width:36px;height:22px;border-radius:22px;background:#d8d5d0;position:relative;flex:none}
+  .sw.on{background:var(--accent)}
+  .sw::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:2px;left:2px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .sw.on::after{left:16px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="rail">
+    <div class="railcap">
+      <div class="ri">▦</div><div class="ri">◱</div><div class="ri">🗀</div><div class="ri">◈</div>
+      <div class="sep"></div><div class="ri on">⚙</div>
+    </div>
+    <div class="bottom"><div class="bigav"></div></div>
+  </div>
+
+  <div class="main">
+    <h1>Cài đặt</h1>
+    <div class="sub">Tài khoản · giao diện · nơi lưu file — áp cho cả app, màu dự án vẫn thuộc Brand Kit</div>
+
+    <div class="cols">
+      <!-- HỒ SƠ + AVATAR -->
+      <div class="card" style="grid-column:1/-1">
+        <h3>◐ Hồ sơ</h3>
+        <div class="hint">Chạm avatar để đổi — ảnh của bạn hiện với cộng sự khi làm chung</div>
+        <div class="avrow">
+          <div class="avbig"><span class="edit">✎</span></div>
+          <div><div class="avname">Hoà Trần</div><div class="avmail">tranthaihoa@studio.vn · gói Studio</div></div>
+        </div>
+        <div class="avgrid">
+          <div class="avo sel" style="background:linear-gradient(135deg,#c9a27a,#9a6b43)"></div>
+          <div class="avo" style="background:linear-gradient(135deg,#6a57f5,#9d5ff5)"></div>
+          <div class="avo" style="background:linear-gradient(135deg,#3fb984,#2a8f66)"></div>
+          <div class="avo" style="background:linear-gradient(135deg,#e07b53,#c9552e)"></div>
+          <div class="avo" style="background:linear-gradient(135deg,#4a78e0,#2f57b5)"></div>
+          <div class="avo" style="background:linear-gradient(135deg,#e86a9a,#c94b7c)"></div>
+          <div class="avo" style="background:linear-gradient(135deg,#8a9a8f,#5f6f66)"></div>
+          <div class="avo add">＋</div>
+        </div>
+      </div>
+
+      <!-- GIAO DIỆN -->
+      <div class="card">
+        <h3>◑ Giao diện</h3>
+        <div class="hint">Theme áp cho CẢ APP · màu thương hiệu dự án nằm ở Brand Kit</div>
+        <div class="thgrid">
+          <div class="th sel">
+            <div class="prev" style="background:#edebe7"><div class="mb" style="background:#fff;border:1px solid #e4e1db"></div></div>
+            <div class="lb">Sáng</div><span class="tick">✓</span>
+          </div>
+          <div class="th">
+            <div class="prev" style="background:#1c1c20"><div class="mb" style="background:#2a2a30"></div></div>
+            <div class="lb">Tối</div>
+          </div>
+          <div class="th">
+            <div class="prev" style="background:linear-gradient(90deg,#edebe7 50%,#1c1c20 50%)"><div class="mb" style="background:linear-gradient(90deg,#fff 50%,#2a2a30 50%)"></div></div>
+            <div class="lb">Theo hệ thống</div>
+          </div>
+        </div>
+        <div class="hint" style="margin:14px 0 8px">Hình nền canvas</div>
+        <div class="wpgrid">
+          <div class="wp none">Trơn</div>
+          <div class="wp sel" style="background:radial-gradient(circle at 1.5px 1.5px,#cdcac4 1px,transparent 0) 0 0/10px 10px,#edebe7"></div>
+          <div class="wp" style="background:repeating-linear-gradient(0deg,#e8e5e0 0 1px,transparent 1px 12px),repeating-linear-gradient(90deg,#e8e5e0 0 1px,transparent 1px 12px),#edebe7"></div>
+          <div class="wp" style="background:linear-gradient(135deg,#f2ede4,#e5ddd0)"></div>
+          <div class="wp" style="background:linear-gradient(135deg,#e8ecf2,#d8dfe9)"></div>
+          <div class="wp none">＋</div>
+        </div>
+      </div>
+
+      <!-- NƠI LƯU + KHÁC -->
+      <div class="card">
+        <h3>🗀 Nơi lưu file</h3>
+        <div class="hint">IF đọc/ghi thẳng thư mục thật — mở Finder vẫn hiểu</div>
+        <div class="pathbox">
+          <span class="fi"></span>
+          <span class="p">
+            <span class="pp">~/Documents/InteriorFlow</span>
+            <span class="ps"><span class="dot"></span> Đang đồng bộ tốt · 4.2 GB</span>
+          </span>
+          <button class="ghost">Đổi…</button>
+        </div>
+        <div class="warn">Đổi nơi lưu sẽ di chuyển toàn bộ dự án — IF tự chuyển và kiểm đủ file trước khi xoá chỗ cũ.</div>
+
+        <div style="height:14px"></div>
+        <div class="noterow"><span class="k"><b>Ngôn ngữ</b><span>chữ trong app</span></span>
+          <span class="seg"><span class="on">Tiếng Việt</span><span>English</span></span></div>
+        <div class="noterow"><span class="k"><b>Giảm chuyển động</b><span>tắt hiệu ứng cho máy yếu</span></span><span class="sw"></span></div>
+        <div class="noterow"><span class="k"><b>Tự sao lưu mỗi ngày</b><span>giữ 7 bản gần nhất</span></span><span class="sw on"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
