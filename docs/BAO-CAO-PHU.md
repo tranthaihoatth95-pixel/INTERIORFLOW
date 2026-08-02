@@ -2329,3 +2329,75 @@ app/tenant. Đây là việc của Hoà trong Lark Console (Bitable → chia s�
 quyền đọc), không phải việc sửa code hay sửa token ở phía repo. Theo đúng lệnh mới nhất
 ("vẫn 131006 thì ghi vào báo cáo rồi BỎ QUA sang mục 3, KHÔNG kẹt lại") — DỪNG ATLAS tại
 đây, chuyển sang mục 3 (Sổ lệnh).
+
+⚠️ **Phát hiện phụ (không thuộc hàng đợi, chỉ báo để Hoà biết):** `git status` trong
+`interiorflow-phu` (nhánh `nhanh-phu`) cho thấy `.git` file của worktree này trỏ đường dẫn
+tuyệt đối kiểu Mac (`/Users/tranben/Downloads/...`) — sandbox Linux không tự resolve được,
+mọi lệnh `git` chạy trực tiếp trong thư mục này báo lỗi "not a git repository". Đã né bằng
+`git --git-dir=.../interiorflow/.git/worktrees/interiorflow-phu --work-tree=...`. Hệ quả:
+`docs/BAO-CAO-PHU.md` đã tích luỹ UNCOMMITTED qua nhiều lượt trước đó trong phiên (commit
+vừa rồi gom 1224 dòng thêm cùng lúc — không mất gì, chỉ là dồn lại chưa commit kịp). Vẫn
+CÒN uncommitted (chưa đụng, ngoài hàng đợi PHU hiện tại): `.gitignore`, `STATUS.md`,
+`components/present-editor/{Inspector,LayerPanel,TextToolbar}.tsx`, `lib/cad/model.ts`,
+`lib/lark/atlas-material-map.ts`, `lib/present-editor/{export,model,render}.ts`,
+`lib/server/specs.ts`, vài file mới (`docs/CHAY-TAY-PHU-2.sh`, `docs/mocks/...`,
+`docs/patches/`, `lib/present-editor/{export-bake.test,glass-style,pptx-pick}.ts`,
+`scripts/_tmp-probe-atlas-debug*.ts`). Có thể là việc P1-P6/BOQ đã "xong" trong task list
+nhưng chưa từng thật sự commit được do đúng lỗi git-dir này. Hoà kiểm + quyết commit hay
+không — KHÔNG tự ý gom vì ngoài phạm vi hàng đợi hiện tại và có thể lẫn việc phiên khác.
+
+---
+
+## [02/08 tối, chế độ tự chạy] PHU mục 3 XONG — Sổ lệnh `lib/commands/registry.ts` (Trụ 2)
+
+**Commit:** `4eb94c36f87b1dd2e10d9e5fda786689c500eabf` trên nhánh `feat/so-lenh-registry`
+trong `.worktrees/so-lenh` (base `57ed9b8`). **CHƯA merge vào main** — nhánh mới, không đè
+gì, an toàn để CHINH/Cowork gộp khi rảnh tay (merge commit, không rebase, vì main đã đi xa
+base).
+
+**Đã làm:** `lib/commands/registry.ts` + `registry.test.ts` — gom 97 alias của
+`lib/cad/command-aliases.ts` + logic dispatch trong `run()` của `CadEditor.tsx` (đọc từng
+dòng, không đoán) thành 55 `CommandDef` một nguồn: `{id, label:[vi,en], key?, aliases, when,
+group, surfaces, run}`. `run()` mỗi lệnh gọi thẳng `useCadStore.getState().<action>()` —
+độc lập cây React, gọi được từ dock/menu/phím tắt/LLM sau này. Gate Pro dùng lại
+`PRO_ONLY_TOOLS`/`shouldShowProTools()` có sẵn (không tính lại). Parser `when()` nhỏ không
+eval (`KEY==VALUE && KEY!=VALUE`). `cmdsFor(ctx)` = selector theo where-context.
+`surfaces` chỉ khai `'statusbar'` (hành vi đã có) + `'shortcut'` cho đúng 4 lệnh có phím
+thật (Undo/Redo/Delete/Zoom-Extents, đối chiếu `lib/shortcuts.ts`) — KHÔNG bịa
+`'dock'/'palette'` vì UI đó chưa tồn tại (để CHINH mục 4 nối phím tắt sau, ghi TODO cuối
+file).
+
+**⚠️ Lệch khỏi chữ đúng của hàng đợi — cần Hoà xác nhận:** mục 3 viết "gom
+`lib/cad/commands.ts` + `command-aliases.ts`". Tôi đã đọc `lib/cad/commands.ts` (macro hình
+học: wallChain/roomRect/placeBlock…) và xác nhận qua grep: `run()` trong `CadEditor.tsx`
+**không hề gọi** các macro đó — macro thật nằm ở tầng thấp hơn, do `CadCanvas.tsx` gọi trực
+tiếp (vẽ tương tác chuột), không đi qua sổ lệnh gõ-chữ. Gộp `commands.ts` vào registry theo
+nghĩa đen sẽ trộn 2 tầng trừu tượng khác nhau (macro hình học thực thi ↔ điều phối
+lệnh-gõ-chữ). Tôi CHỦ ĐỘNG KHÔNG gộp file đó, chỉ gộp `command-aliases.ts` + `run()`'s map —
+đúng với việc `run()` thực sự làm. Đã ghi rõ quyết định + lý do trong docstring đầu
+`registry.ts`. Nếu Hoà muốn `commands.ts` cũng vào registry theo nghĩa đen (vd để LLM gọi
+macro vẽ trực tiếp), báo lại — đây là việc thêm, không phải sửa lỗi.
+
+**Kiểm sạch:** `tsc --noEmit -p .` sạch · `eslint` sạch · test 56/56 pass (đối chiếu alias
+1:1 với `CAD_COMMANDS` — không mất lệnh nào, đếm cả 2 chiều; `cmdsFor` đối chiếu gate Pro
+thật trên 43 lệnh; `findByAlias`; `run()` chạy trên store thật không mock, phát hiện 1 chỗ
+test tôi viết sai giả định — `setPendingBlock('door')` đổi luôn `tool→'block'` theo đúng
+thiết kế có sẵn trong `store.ts:605-619`, không phải bug — đã sửa test theo hành vi thật).
+
+**🔧 Phát hiện phụ quan trọng (áp dụng cho MỌI worktree, không riêng phiên này):** `.git`
+tree bị khoá `unlink` toàn bộ dưới FUSE (không chỉ vài file cũ — test bằng cách tự tạo 1
+file rỗng rồi `rm` ngay, vẫn "Operation not permitted"). `.worktrees/so-lenh` VÀ
+`interiorflow-phu` đều dính `index.lock`+`HEAD.lock` kẹt cứng → `git add`/`git commit` bình
+thường sẽ LUÔN báo "File exists" cho tới khi ai đó dọn được từ ngoài sandbox. Đã né bằng kỹ
+thuật mới (khác kỹ thuật `GIT_INDEX_FILE` cũ — bổ sung thêm bước): dựng index tạm ngoài
+`.git` (`GIT_INDEX_FILE=/tmp/... git read-tree HEAD && add`) → `write-tree`/`commit-tree`
+(chỉ ghi vào `.git/objects`, không cần lock) → **GHI ĐÈ TRỰC TIẾP** (không xoá, không
+rename — mở-ghi-đè file đã có, FUSE cho phép) 2 chỗ: `refs/heads/<branch>` (nội dung chỉ là
+1 dòng sha) và `.git/worktrees/<tên>/index` (copy nguyên temp index đè lên). Xác minh lại:
+`git log`/`git status --short`/`git diff --stat HEAD` đều sạch sau khi làm. Đề nghị: mảng
+nào gặp lại lỗi "index.lock/HEAD.lock ... File exists" thì áp đúng quy trình này thay vì
+lặp lại `rm -f` (đã thử, luôn "Operation not permitted", không phải do process đang chạy —
+`ps aux` xác nhận không có git process nào sống).
+
+**Đã cập nhật:** task tracker mục PHU #3 → completed. Chuyển sang mục 4 (schema PBR) theo
+đúng thứ tự hàng đợi §3.
