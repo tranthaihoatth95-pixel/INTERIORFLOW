@@ -1,14 +1,14 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
-import { LayoutGrid, FolderKanban, FolderOpen, LibraryBig, Settings, List, Upload, Lock } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { LayoutGrid, List, Upload, Lock, FolderOpen, HardDriveDownload } from 'lucide-react';
 import { childFolders, filesInFolder, folderPath, folderStats, storageByRoot } from '@/lib/filemanager/queries';
-import { useFileManagerLocalState } from '@/lib/filemanager/local-state';
+import { useFileManagerLocalState, kindFromName } from '@/lib/filemanager/local-state';
 import type { FmFile } from '@/lib/filemanager/types';
 import { formatBytes } from '@/lib/filemanager/types';
+import { listRealFiles, realFsMessage, writeFileToRoot, type RealFsFailure } from '@/lib/filemanager/real-fs';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
-import { useFlowStore } from '@/lib/store';
+import { LeftRail } from '@/components/LeftRail';
 import { RawStyle } from './RawStyle';
 import { FILES_MOCK_CSS } from './files-mock-css';
 
@@ -19,12 +19,12 @@ interface UploadingItem {
   id: string;
   name: string;
   size: number;
-  progress: number;
-  startedAt: number;
-  durationMs: number;
+  /** 0..100 — tiến trình ghi. File System Access không báo tiến trình từng phần nên chỉ có
+   *  0 (đang ghi) → 100 (xong); giữ thanh để người dùng thấy "máy đang làm", không giả lập số. */
+  done: boolean;
+  error?: string;
 }
 
-const UPLOAD_DURATION_MS = 6000;
 const STORAGE_QUOTA_BYTES = 10 * 1024 * 1024 * 1024;
 const LIFECYCLE_TAG: Record<FmFile['lifecycle'], string> = { nhap: 'NHÁP', chinh_thuc: 'CHÍNH THỨC', luu_tru: 'LƯU TRỮ' };
 
@@ -35,8 +35,10 @@ export function FileManagerShell() {
   const [insTab, setInsTab] = useState<InspTab>('mota');
   const [draft, setDraft] = useState('');
   const [uploading, setUploading] = useState<UploadingItem[]>([]);
+  const [dragOver, setDragOver] = useState(false);
+  const [realFiles, setRealFiles] = useState<FmFile[]>([]);
+  const [fsNote, setFsNote] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const user = useFlowStore((s) => s.user);
 
   const setCurrentFolderId = (id: string | null) => {
     setSelected(null);
@@ -48,23 +50,56 @@ export function FileManagerShell() {
   const path = useMemo(() => folderPath(currentFolderId), [currentFolderId]);
   const subfolders = useMemo(() => childFolders(currentFolderId), [currentFolderId]);
   const currentFolder = path[path.length - 1] ?? null;
+  const pathSegments = useMemo(() => path.map((p) => p.name), [path]);
+
   const files = useMemo(() => {
     if (!currentFolderId) return [];
-    return [...filesInFolder(currentFolderId), ...state.uploaded.filter((f) => f.folderId === currentFolderId)];
-  }, [currentFolderId, state.uploaded]);
+    const mock = filesInFolder(currentFolderId);
+    const session = state.uploaded.filter((f) => f.folderId === currentFolderId);
+    // File THẬT đọc từ đĩa thắng bản ghi session cùng tên (tránh hiện 2 dòng cho 1 file).
+    const realNames = new Set(realFiles.map((f) => f.name));
+    return [...mock, ...session.filter((f) => !realNames.has(f.name)), ...realFiles];
+  }, [currentFolderId, state.uploaded, realFiles]);
+
+  /** Đọc lại file thật dưới thư mục đang mở. */
+  const refreshReal = useCallback(async () => {
+    if (!currentFolderId) {
+      setRealFiles([]);
+      return;
+    }
+    const res = await listRealFiles(pathSegments);
+    if (!res.ok) {
+      setRealFiles([]);
+      return;
+    }
+    setRealFiles(
+      res.value.map((f) => ({
+        id: `real-${f.name}`,
+        folderId: currentFolderId,
+        name: f.name,
+        ext: f.name.includes('.') ? f.name.slice(f.name.lastIndexOf('.') + 1).toLowerCase() : '',
+        kind: kindFromName(f.name),
+        sizeBytes: f.sizeBytes,
+        addedById: 'you',
+        addedByName: 'Bạn',
+        source: 'local',
+        lifecycle: 'nhap',
+        description: 'File thật trên đĩa — trong thư mục bạn đã chọn ở Cài đặt.',
+      })),
+    );
+  }, [currentFolderId, pathSegments]);
+
+  useEffect(() => {
+    void refreshReal();
+  }, [refreshReal]);
 
   const byRoot = useMemo(() => storageByRoot(), []);
   const isRootView = currentFolderId === null;
   const canUpload = !isRootView && currentFolder?.permission === 'rw';
-  // Khối trống hiện bất kể root/lá — chỉ cần KHÔNG có file lẻ ở cấp này (bug #1 tự kiểm: root
-  // luôn có files.length=0 vì chỉ chứa thư mục con, nhưng trước đây `!isRootView` chặn hẳn khối
-  // này ở root → 70% màn trống trơn dưới dãy folder chip).
   const showEmptyBlock = files.length === 0 && uploading.length === 0;
 
   const usedTotal = byRoot.projects + byRoot.backups + byRoot.library + byRoot.knowledge + byRoot.system;
   const pct = Math.min(100, (usedTotal / STORAGE_QUOTA_BYTES) * 100);
-  // Chu vi thật C = 2πr (r=26), KHÔNG lấy tròn 163 của mock nữa — dùng dashoffset thay vì chia 2
-  // đoạn dasharray (bug #3 tự kiểm: vòng phải khép kín mượt, không lệch do làm tròn).
   const RING_C = 2 * Math.PI * 26;
   const ringOffset = RING_C * (1 - pct / 100);
 
@@ -75,58 +110,90 @@ export function FileManagerShell() {
     { k: 'Khác', v: byRoot.knowledge + byRoot.system, color: '#dcd7f5' },
   ];
 
-  const runUpload = (fileList: FileList) => {
+  /**
+   * Tải lên THẬT — ghi thẳng vào `<thư mục gốc>/<đường dẫn đang mở>/`. Nếu chưa chọn thư mục gốc
+   * (hoặc trình duyệt không hỗ trợ) thì KHÔNG im lặng: ghi bản ghi session + hiện rõ lý do và
+   * cách khắc phục, để người dùng không tưởng file đã nằm trên đĩa (bài học 31/07).
+   */
+  const runUpload = async (fileList: FileList) => {
     if (!currentFolderId) return;
-    Array.from(fileList).forEach((f) => {
+    const items = Array.from(fileList);
+    setFsNote(null);
+
+    for (const file of items) {
       const id = `up-${Math.random().toString(36).slice(2, 8)}`;
-      const startedAt = Date.now();
-      setUploading((prev) => [...prev, { id, name: f.name, size: f.size, progress: 0, startedAt, durationMs: UPLOAD_DURATION_MS }]);
-      const timer = window.setInterval(() => {
-        setUploading((prev) => prev.map((u) => (u.id === id ? { ...u, progress: Math.min(100, ((Date.now() - u.startedAt) / u.durationMs) * 100) } : u)));
-      }, 100);
-      window.setTimeout(() => {
-        window.clearInterval(timer);
-        setUploading((prev) => prev.map((u) => (u.id === id ? { ...u, progress: 100 } : u)));
-        window.setTimeout(() => {
-          addUploadedFile(currentFolderId, { name: f.name, size: f.size });
-          setUploading((prev) => prev.filter((u) => u.id !== id));
-        }, 350);
-      }, UPLOAD_DURATION_MS);
-    });
+      setUploading((prev) => [...prev, { id, name: file.name, size: file.size, done: false }]);
+
+      const res = await writeFileToRoot(pathSegments, file);
+
+      if (res.ok) {
+        setUploading((prev) => prev.map((u) => (u.id === id ? { ...u, done: true } : u)));
+        await refreshReal();
+        window.setTimeout(() => setUploading((prev) => prev.filter((u) => u.id !== id)), 900);
+      } else {
+        // Không ghi được ổ đĩa → vẫn giữ bản ghi phiên để người dùng thấy mình vừa chọn gì,
+        // NHƯNG nói thẳng là chưa nằm trên đĩa + cách sửa.
+        addUploadedFile(currentFolderId, { name: file.name, size: file.size });
+        setFsNote(realFsMessage(res.reason as RealFsFailure));
+        setUploading((prev) => prev.map((u) => (u.id === id ? { ...u, done: true, error: 'chưa ghi được ổ đĩa' } : u)));
+        window.setTimeout(() => setUploading((prev) => prev.filter((u) => u.id !== id)), 2200);
+      }
+    }
   };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (!canUpload) return;
+    if (e.dataTransfer.files?.length) void runUpload(e.dataTransfer.files);
+  };
+
+  const fileRow = (f: FmFile) => (
+    <button
+      type="button"
+      key={f.id}
+      className={`filerow${selected?.id === f.id ? ' sel' : ''}`}
+      onClick={() => setSelected(f)}
+    >
+      <span className="ficon">{(f.ext || '—').toUpperCase().slice(0, 4)}</span>
+      <span className="fnamecell">{f.name}</span>
+      <span className="fmeta">{f.addedByName}</span>
+      <span className="fsize">{formatBytes(f.sizeBytes)}</span>
+    </button>
+  );
 
   return (
     <div className="if-files-outer">
       <RawStyle css={FILES_MOCK_CSS} />
       <div className="if-files-app">
-        {/* RAIL — docs/mocks/mock-files-polished.html .rail/.railcap */}
-        <div className="rail">
-          <div className="railcap">
-            <Link href="/" className="ri" aria-label="Dashboard"><LayoutGrid size={17} /><span className="tip">Dashboard</span></Link>
-            <span className="ri" aria-label="Dự án" title="Chưa có trang riêng"><FolderKanban size={17} /><span className="tip">Dự án</span></span>
-            <Link href="/files" className="ri on" aria-label="Files"><FolderOpen size={17} /><span className="tip">Files</span></Link>
-            <Link href="/library" className="ri" aria-label="Master Library"><LibraryBig size={17} /><span className="tip">Master Library</span></Link>
-            <div className="sep" />
-            <Link href="/settings" className="ri" aria-label="Cài đặt"><Settings size={17} /><span className="tip">Cài đặt</span></Link>
-          </div>
-          <div className="bottom">
-            <Link href="/settings" aria-label="Tài khoản">
-              <span className="avatar"><UserAvatar id={user?.id} avatar={user?.avatar} name={user?.name} size={40} frame={false} /></span>
-            </Link>
-          </div>
-        </div>
+        {/* Rail DÙNG CHUNG toàn app (`components/LeftRail.tsx`) — G4 đã bỏ rail riêng 03/08 theo
+            chỉ đạo Hoà ("đừng dựng rail thứ hai"). Mục Files trong đó đã nối route `/files`. */}
+        <LeftRail />
 
-        {/* MAIN — .main */}
-        <div className="main">
+        <div
+          className="main"
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (canUpload) setDragOver(true);
+          }}
+          onDragLeave={(e) => {
+            if (e.currentTarget === e.target) setDragOver(false);
+          }}
+          onDrop={onDrop}
+        >
           <div className="crumbrow">
             <div>
               <h1>Files</h1>
               <div className="sub">Cây thư mục thật trên đĩa — mở Finder vẫn hiểu</div>
             </div>
             <div className="toolrow">
-              <div className="viewseg">
-                <span className={view === 'grid' ? 'on' : ''} onClick={() => setView('grid')}><LayoutGrid size={14} /></span>
-                <span className={view === 'list' ? 'on' : ''} onClick={() => setView('list')}><List size={14} /></span>
+              <div className="viewseg" role="tablist" aria-label="Kiểu hiển thị">
+                <button type="button" role="tab" aria-selected={view === 'grid'} className={view === 'grid' ? 'on' : ''} onClick={() => setView('grid')} aria-label="Dạng lưới">
+                  <LayoutGrid size={14} />
+                </button>
+                <button type="button" role="tab" aria-selected={view === 'list'} className={view === 'list' ? 'on' : ''} onClick={() => setView('list')} aria-label="Dạng danh sách">
+                  <List size={14} />
+                </button>
               </div>
               {canUpload && (
                 <button type="button" className="upbtn" onClick={() => fileInputRef.current?.click()}>
@@ -139,7 +206,7 @@ export function FileManagerShell() {
                 multiple
                 className="hidden"
                 onChange={(e) => {
-                  if (e.target.files) runUpload(e.target.files);
+                  if (e.target.files) void runUpload(e.target.files);
                   e.target.value = '';
                 }}
                 data-testid="fm-upload-input"
@@ -149,9 +216,7 @@ export function FileManagerShell() {
 
           <div className="crumbs">
             <button type="button" className="c" onClick={() => setCurrentFolderId(null)}>Files</button>
-            {isRootView && (
-              <span>&nbsp;· {subfolders.length} thư mục · {formatBytes(usedTotal)}</span>
-            )}
+            {isRootView && <span>&nbsp;· {subfolders.length} thư mục · {formatBytes(usedTotal)}</span>}
             {path.map((p, i) => (
               <span key={p.id} style={{ display: 'contents' }}>
                 {' › '}
@@ -165,14 +230,20 @@ export function FileManagerShell() {
           </div>
 
           {!canUpload && !isRootView && currentFolder && (
-            <p style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: 'var(--t2)', marginTop: 8 }}>
+            <p className="permnote">
               <Lock size={11} />
               {currentFolder.permission === 'locked' ? 'Thư mục khoá — chỉ xem, không sửa/xoá.' : 'Chỉ đọc — không tải lên trực tiếp ở đây.'}
             </p>
           )}
 
+          {fsNote && (
+            <p className="fsnote">
+              <HardDriveDownload size={12} /> {fsNote}
+            </p>
+          )}
+
           {subfolders.length > 0 && (
-            <div className="folders">
+            <div className={view === 'grid' ? 'folders' : 'folders list'}>
               {subfolders.map((f) => {
                 const stats = folderStats(f.id, state.uploaded);
                 const dim = stats.count === 0;
@@ -190,21 +261,35 @@ export function FileManagerShell() {
           )}
 
           {!isRootView && files.length > 0 && (
-            <div className="folders" style={{ marginTop: 22 }}>
-              {files.map((f) => (
-                <button type="button" key={f.id} className="fol" onClick={() => setSelected(f)} style={{ borderColor: selected?.id === f.id ? '#6a57f5' : undefined }}>
-                  <span className="ic" style={{ background: '#e6e3de' }} />
-                  <span>
-                    <b>{f.name}</b>
-                    <span className="m">{formatBytes(f.sizeBytes)} · {f.addedByName}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
+            view === 'grid' ? (
+              <div className="folders" style={{ marginTop: 22 }}>
+                {files.map((f) => (
+                  <button
+                    type="button"
+                    key={f.id}
+                    className={`fol${selected?.id === f.id ? ' sel' : ''}`}
+                    onClick={() => setSelected(f)}
+                  >
+                    <span className="ic file" />
+                    <span>
+                      <b>{f.name}</b>
+                      <span className="m">{formatBytes(f.sizeBytes)} · {f.addedByName}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="filelist">
+                <div className="filehead">
+                  <span>Tên</span><span>Người thêm</span><span>Dung lượng</span>
+                </div>
+                {files.map(fileRow)}
+              </div>
+            )
           )}
 
           {showEmptyBlock && (
-            <div className="empty">
+            <div className={dragOver ? 'empty dragover' : 'empty'}>
               <div className="fan">
                 <div className="ph p1" />
                 <div className="ph p2" />
@@ -229,20 +314,25 @@ export function FileManagerShell() {
             </div>
           )}
 
+          {dragOver && canUpload && !showEmptyBlock && (
+            <div className="dropveil">Thả file vào {currentFolder?.name}</div>
+          )}
+
           {uploading.map((u) => (
             <div className="uptoast" key={u.id}>
               <div className="fic"><span className="badge">{(u.name.split('.').pop() || 'FILE').toUpperCase()}</span></div>
               <div className="meta">
                 <div className="nm">{u.name}</div>
-                <div className="sz">{formatBytes(u.size)} · còn {Math.max(0, Math.ceil((u.durationMs - (u.progress / 100) * u.durationMs) / 1000))} giây</div>
-                <div className="track"><i style={{ width: `${u.progress}%` }} /></div>
+                <div className="sz">
+                  {formatBytes(u.size)} · {u.error ? u.error : u.done ? 'đã ghi xuống đĩa' : 'đang ghi…'}
+                </div>
+                <div className="track"><i style={{ width: u.done ? '100%' : '45%' }} /></div>
               </div>
-              <div className="pc">{u.progress.toFixed(0)}%</div>
+              <div className="pc">{u.done ? (u.error ? '!' : '✓') : '…'}</div>
             </div>
           ))}
         </div>
 
-        {/* INSPECTOR — .insp */}
         <div className="insp">
           <div className="card stor">
             <div className="storrow">
@@ -277,21 +367,13 @@ export function FileManagerShell() {
                 <>
                   <p style={{ margin: '0 0 10px', fontWeight: 600, color: 'var(--t1)' }}>{currentFolder.name}</p>
                   <p style={{ margin: '0 0 12px', color: 'var(--t2)' }}>
-                    {(() => {
-                      const st = folderStats(currentFolder.id, state.uploaded);
-                      return `${st.count} file · ${formatBytes(st.bytes)}`;
-                    })()}
+                    {files.length} file · {formatBytes(files.reduce((s, f) => s + f.sizeBytes, 0))}
                   </p>
                   {files.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, textAlign: 'left' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--t3)' }}>File trong thư mục</span>
                       {files.slice(0, 3).map((f) => (
-                        <button
-                          key={f.id}
-                          type="button"
-                          onClick={() => setSelected(f)}
-                          style={{ display: 'flex', justifyContent: 'space-between', gap: 8, background: 'var(--field)', border: 0, borderRadius: 8, padding: '6px 9px', fontSize: 11.5, color: 'var(--t1)', cursor: 'pointer', textAlign: 'left' }}
-                        >
+                        <button key={f.id} type="button" onClick={() => setSelected(f)} className="quickfile">
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
                           <span style={{ color: 'var(--t3)', flexShrink: 0 }}>{formatBytes(f.sizeBytes)}</span>
                         </button>
@@ -310,10 +392,10 @@ export function FileManagerShell() {
                 <span className="tagofficial">{LIFECYCLE_TAG[selected.lifecycle]}</span>
               </div>
               {selected.matId && (
-                <div style={{ marginTop: 10, padding: 10, borderRadius: 10, background: 'var(--field)', fontSize: 11.5, color: 'var(--t2)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>matId</span><span style={{ color: 'var(--t1)', fontFamily: 'monospace' }}>{selected.matId}</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Hãng</span><span style={{ color: 'var(--t1)' }}>{selected.brand}</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Giá</span><span style={{ color: 'var(--t1)' }}>{selected.price}</span></div>
+                <div className="matbox">
+                  <div><span>matId</span><span style={{ color: 'var(--t1)', fontFamily: 'monospace' }}>{selected.matId}</span></div>
+                  <div><span>Hãng</span><span style={{ color: 'var(--t1)' }}>{selected.brand}</span></div>
+                  <div><span>Giá</span><span style={{ color: 'var(--t1)' }}>{selected.price}</span></div>
                 </div>
               )}
               <div className="whorow">
@@ -321,10 +403,10 @@ export function FileManagerShell() {
                 Thêm bởi <b>{selected.addedByName}</b>
               </div>
               <div className="tabs">
-                <span className={insTab === 'mota' ? 'on' : ''} onClick={() => setInsTab('mota')}>Mô tả</span>
-                <span className={insTab === 'binhluan' ? 'on' : ''} onClick={() => setInsTab('binhluan')}>
+                <button type="button" className={insTab === 'mota' ? 'on' : ''} onClick={() => setInsTab('mota')}>Mô tả</button>
+                <button type="button" className={insTab === 'binhluan' ? 'on' : ''} onClick={() => setInsTab('binhluan')}>
                   Bình luận{(state.comments[selected.id]?.length ?? 0) > 0 ? ` · ${state.comments[selected.id]!.length}` : ''}
-                </span>
+                </button>
               </div>
               {insTab === 'mota' ? (
                 <div className="desc">{selected.description}</div>
@@ -345,17 +427,14 @@ export function FileManagerShell() {
                     }}
                     style={{ display: 'flex', gap: 6 }}
                   >
-                    <input
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      placeholder="Viết bình luận…"
-                      style={{ flex: 1, borderRadius: 8, padding: '6px 10px', fontSize: 12, background: 'var(--field)', color: 'var(--t1)', border: '1px solid var(--border)' }}
-                    />
-                    <button type="submit" style={{ borderRadius: 8, padding: '0 10px', fontSize: 12, background: 'var(--accent-soft)', color: 'var(--accent)', border: 0 }}>Gửi</button>
+                    <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Viết bình luận…" className="cinput" />
+                    <button type="submit" className="cbtn">Gửi</button>
                   </form>
                 </div>
               )}
-              <button type="button" className="openbtn">Mở trong InteriorFlow</button>
+              <button type="button" className="openbtn">
+                <FolderOpen size={13} /> Mở trong InteriorFlow
+              </button>
             </div>
           )}
         </div>

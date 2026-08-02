@@ -8,10 +8,11 @@
 // file cứng được giao (chỉ app/settings/** + components/filemanager/**).
 
 import { useEffect, useState } from 'react';
+import { applyWallpaper, readStoredWallpaper, type WallpaperId } from './wallpaper';
 
 const STORAGE_KEY = 'interiorflow.settings_g4.local_state_v1';
 
-export type WallpaperId = 'none' | 'dots' | 'grid' | 'warm' | 'cool';
+export type { WallpaperId };
 
 interface LocalState {
   avatarSwatch: number;
@@ -33,19 +34,16 @@ function readStorage(): LocalState {
   }
 }
 
-/** Áp hình nền lên canvas — ghi thuộc tính DOM để canvas thật đọc (chưa nối, xem BAO-CAO-FM.md). */
-function applyWallpaperToDocument(id: WallpaperId): void {
-  document.documentElement.setAttribute('data-canvas-wallpaper', id);
-}
-
 export function useSettingsLocalState() {
   const [state, setState] = useState<LocalState>(DEFAULTS);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const next = readStorage();
+    // Hình nền có KHOÁ LƯU RIÊNG (`wallpaper.ts`) vì canvas phải đọc được nó mà không cần kéo
+    // theo cả cục state Cài đặt — đọc từ đó làm chuẩn, không lấy bản trong cục state cũ.
+    const next = { ...readStorage(), wallpaper: readStoredWallpaper() };
     setState(next);
-    applyWallpaperToDocument(next.wallpaper);
+    applyWallpaper(next.wallpaper, false);
     setHydrated(true);
   }, []);
 
@@ -63,7 +61,7 @@ export function useSettingsLocalState() {
 
   const setAvatarSwatch = (i: number) => mutate((prev) => ({ ...prev, avatarSwatch: i }));
   const setWallpaper = (id: WallpaperId) => {
-    applyWallpaperToDocument(id);
+    applyWallpaper(id); // áp NGAY lên canvas + tự ghi localStorage (khoá riêng)
     mutate((prev) => ({ ...prev, wallpaper: id }));
   };
   const setReducedMotion = (v: boolean) => mutate((prev) => ({ ...prev, reducedMotion: v }));

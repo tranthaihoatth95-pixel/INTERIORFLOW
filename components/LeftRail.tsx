@@ -1,6 +1,7 @@
 'use client';
 
 import { useLayoutEffect, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -102,12 +103,26 @@ export function LeftRail() {
   const user = useFlowStore((s) => s.user);
   const tr = useT();
   const reduceMotion = useReducedMotion();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // 03/08 (G4 merge) — rail giờ dùng chung cho CẢ trang đứng độc lập (`/files`, `/settings`), nhưng
+  // Dashboard-overlay + các panel CHỈ có nơi render trong `HomeScreen` ('/'). Đứng ở `/files` mà
+  // bấm "Dự án & Flow" thì `setPanel` chỉ đổi state trong store, KHÔNG có gì hiện ra — bấm như
+  // hỏng. Nên: đổi state RỒI điều hướng về '/' nếu đang ở nơi khác. `active` cũng phải kèm điều
+  // kiện đang ở '/' — nếu không, đứng ở `/files` mà panel cũ vẫn 'library' thì 2 nút cùng sáng.
+  const onCanvas = pathname === '/';
+  const openOnCanvas = (open: () => void) => {
+    open();
+    if (!onCanvas) router.push('/');
+  };
 
   const items: NavItem[] = [
-    { icon: LayoutDashboard, label: ['Tổng quan — Dashboard project & team', 'Overview — project & team dashboard'], action: () => setDashboardOpen(true), active: dashboardOpen },
-    { icon: FolderKanban, label: ['Dự án & Flow', 'Projects & Flows'], panel: 'flows', action: () => setPanel('flows'), active: panel === 'flows' },
-    { icon: FolderOpen, label: ['Files — sắp có (chờ File Manager hợp nhất)', 'Files — coming soon (File Manager merge pending)'], soon: true },
-    { icon: Boxes, label: ['Thư viện Node', 'Node Library'], panel: 'library', action: () => setPanel('library'), active: panel === 'library' },
+    { icon: LayoutDashboard, label: ['Tổng quan — Dashboard project & team', 'Overview — project & team dashboard'], action: () => openOnCanvas(() => setDashboardOpen(true)), active: onCanvas && dashboardOpen },
+    { icon: FolderKanban, label: ['Dự án & Flow', 'Projects & Flows'], panel: 'flows', action: () => openOnCanvas(() => setPanel('flows')), active: onCanvas && panel === 'flows' },
+    // Files — G4 đã hợp nhất File Manager, gỡ `soon`, nối route thật (đúng chỗ CHINH chừa sẵn).
+    { icon: FolderOpen, label: ['Files — kho file dự án', 'Files — project file store'], action: () => router.push('/files'), active: pathname?.startsWith('/files') ?? false },
+    { icon: Boxes, label: ['Thư viện Node', 'Node Library'], panel: 'library', action: () => openOnCanvas(() => setPanel('library')), active: onCanvas && panel === 'library' },
   ];
 
   // Menu tài khoản — avatar NGOÀI capsule, tự tính anchor riêng (mở XUỐNG dưới, khác `UserChip`

@@ -1,16 +1,16 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowLeft, LogOut, LayoutGrid, FolderKanban, FolderOpen, LibraryBig, Settings as SettingsIcon } from 'lucide-react';
+import { ArrowLeft, LogOut } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
-import { UserAvatar } from '@/components/avatar/UserAvatar';
+import { LeftRail } from '@/components/LeftRail';
 import { AiDependencySettings } from '@/components/settings/AiDependencySettings';
 import { GuModelSettings } from '@/components/settings/GuModelSettings';
 import { ExperienceSettings } from '@/components/settings/ExperienceSettings';
 import { RawStyle } from '@/components/filemanager/RawStyle';
 import { SETTINGS_MOCK_CSS } from '../_lib/settings-mock-css';
 import { useSettingsLocalState } from '../_lib/local-state';
+import { CanvasWallpaper } from './CanvasWallpaper';
 import { ProfileCard } from './ProfileCard';
 import { AppearanceCard } from './AppearanceCard';
 import { StorageCard } from './StorageCard';
@@ -29,20 +29,11 @@ export function PixelSettingsShell() {
   return (
     <div className="if-settings-outer">
       <RawStyle css={SETTINGS_MOCK_CSS} />
+      <CanvasWallpaper />
       <div className="if-settings-app">
-        <div className="rail">
-          <div className="railcap">
-            <Link href="/" className="ri" aria-label="Dashboard"><LayoutGrid size={17} /><span className="tip">Dashboard</span></Link>
-            <span className="ri" aria-label="Dự án" title="Chưa có trang riêng"><FolderKanban size={17} /><span className="tip">Dự án</span></span>
-            <Link href="/files" className="ri" aria-label="Files"><FolderOpen size={17} /><span className="tip">Files</span></Link>
-            <Link href="/library" className="ri" aria-label="Master Library"><LibraryBig size={17} /><span className="tip">Master Library</span></Link>
-            <div className="sep" />
-            <Link href="/settings" className="ri on" aria-label="Cài đặt"><SettingsIcon size={17} /><span className="tip">Cài đặt</span></Link>
-          </div>
-          <div className="bottom">
-            <span className="bigav"><UserAvatar id={user?.id} avatar={user?.avatar} name={user?.name} size={40} frame={false} /></span>
-          </div>
-        </div>
+        {/* Rail DÙNG CHUNG toàn app — G4 bỏ rail riêng 03/08 ("đừng dựng rail thứ hai"). Cài đặt
+            giờ vào qua menu avatar cuối rail (AccountMenu), không còn nút ⚙ riêng. */}
+        <LeftRail />
 
         <div className="main">
           <button type="button" className="backlink" onClick={() => router.back()}>

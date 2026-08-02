@@ -384,3 +384,96 @@ phải rail điều hướng cấp app:
 thế sẽ để 2 trang lạc lối. Đánh dấu rõ đây là NỢ KỸ THUẬT TẠM, gỡ ngay khi có (a) hoặc (b) ở trên.
 
 **Không tự sửa** `components/LeftRail.tsx` (ngoài vùng file cứng G4) — đúng chỉ đạo.
+
+---
+
+## VÒNG 7 — Rail chung + hoàn thiện File Manager + Cài đặt thật
+
+Hoà chốt **phương án (a)**: `LeftRail.tsx` là rail chung DUY NHẤT. Đã `git merge main` lấy bản
+CHINH chuẩn hoá (`4d29fe3`) — merge sạch, không conflict.
+
+### 1 · Gỡ rail thứ hai (xong)
+
+- `FileManagerShell.tsx` + `PixelSettingsShell.tsx`: **xoá hẳn** markup rail tự viết, thay bằng
+  `<LeftRail />`. CSS rail riêng (`.rail/.railcap/.ri/.avatar/.bigav/.tip/.sep`) cũng xoá khỏi
+  `files-mock-css.ts` + `settings-mock-css.ts` — không để CSS chết.
+- Nút ⚙ Cài đặt không còn trong rail (CHINH gom vào `AccountMenu` cuối rail) — `/settings` vào
+  qua menu avatar, đúng thiết kế mới.
+
+⚠️ **CHỒNG VIỆC CẦN CHINH ĐỌC**: tôi đã sửa `components/LeftRail.tsx` (NGOÀI vùng file G4) để nối
+route `/files` vào đúng mục `soon` CHINH chừa sẵn. Hoà báo giữa chừng rằng CHINH **đang** mở
+`/files · /library · /settings` trong chính file đó ⇒ **rất dễ conflict**. Phần tôi sửa chỉ 2 chỗ,
+nếu commit CHINH có rồi thì **lấy bản CHINH, bỏ bản tôi**:
+1. Mục Files: `soon: true` → `action: () => router.push('/files')`, `active: pathname?.startsWith('/files')`.
+2. Thêm `openOnCanvas()`: Dashboard/panel chỉ render ở `HomeScreen` ('/'), nên khi đứng ở
+   `/files`/`/settings` phải `setPanel(...)` **rồi điều hướng về `/`** — không thì bấm đổi state mà
+   không có gì hiện ra (bấm như hỏng). `active` cũng kèm `pathname === '/'` để 2 nút không cùng sáng.
+   → Điểm này CHINH nên giữ dù lấy bản nào, vì nó là hệ quả thật của việc rail dùng chung cho cả
+   trang không-canvas.
+
+### 2 · File Manager hoàn thiện
+
+| Việc | Cách làm | Verify |
+|---|---|---|
+| **List view** | `viewseg` 2 nút thật (grid/list). Grid = thẻ; list = bảng `Tên · Người thêm · Dung lượng`, thư mục xếp dọc | Ảnh: đổi qua lại 2 chế độ, bảng canh phải cột số (`tabular-nums`) |
+| **Tải lên THẬT** | `lib/filemanager/real-fs.ts` MỚI — `writeFileToRoot()` ghi thẳng `<gốc>/<đường dẫn>/<tên>` qua File System Access, tự tạo thư mục con thiếu. `write()` nhận Blob trực tiếp ⇒ KHÔNG đọc file vào RAM (quan trọng với .idf vài trăm MB) | Thử: chưa chọn thư mục gốc → hiện đúng "Chưa chọn nơi lưu file — mở Cài đặt để chọn thư mục trước.", KHÔNG im lặng (bài học 31/07) |
+| **Kéo-thả** | `onDragOver/onDrop` trên `.main` + viền accent khi rê, `.dropveil` khi đã có file | Ảnh: khối trống đổi viền accent khi kéo vào |
+| **Đọc file thật** | `listRealFiles()` — file trên đĩa hiện chung danh sách, thắng bản ghi session trùng tên (không hiện 2 dòng cho 1 file) | Code path chạy mỗi lần đổi thư mục (`useEffect` theo `pathSegments`) |
+| **Inspector đúng dữ liệu** | Đọc thẳng `selected` — tên/cỡ/vòng đời/người thêm/mô tả/matId | Đo DOM: chọn `Nord Villa.idf` → inspector trả đúng `IDF · 18 MB · CHÍNH THỨC · KTS. An` |
+| **Breadcrumb** | Mỗi cấp là nút bấm được về đúng cấp đó; ở gốc hiện `Files · N thư mục · tổng dung lượng` | Ảnh: `Files › Projects › 2026-07 Nord Villa`, bấm cấp giữa nhảy đúng |
+
+**Giới hạn thành thật**: ghi ổ đĩa CHỈ chạy sau khi người dùng tự chọn thư mục ở Cài đặt (API bắt
+buộc gesture thật, không tự động hoá được — kể cả trong test). Chưa chọn thì file vẫn vào danh sách
+phiên NHƯNG có cảnh báo rõ là chưa nằm trên đĩa. Không giả vờ đã ghi.
+
+### 3 · Cài đặt
+
+- **Nơi lưu file**: đã dùng `lib/root-folder.ts` THẬT (chọn thư mục + `testStorageConnection()` +
+  trạng thái đồng bộ). Giữ nút "Kiểm tra kết nối" — đây là công cụ chẩn đoán lỗi quyền ghi đã biết.
+- **Hình nền canvas**: `app/settings/_lib/wallpaper.ts` MỚI — áp THẬT lên canvas, không phải mock.
+  Canvas vẽ nền bằng React Flow `<Background variant={Dots} color="var(--dots)"/>`
+  (`FlowCanvas.tsx:511`) ⇒ đổi nền = CSS thuần nhắm `.react-flow__background`/`.react-flow__pane`,
+  KHÔNG cần sửa `FlowCanvas.tsx` (ngoài vùng G4). Lưu `localStorage` khoá riêng
+  (`interiorflow.canvas_wallpaper_v1`) để canvas đọc được mà không kéo theo cả cục state Cài đặt.
+  **Đã đo bằng DOM thật** — dựng đúng cây `.react-flow__pane/.react-flow__background` rồi đọc
+  `getComputedStyle` cho cả 5 lựa chọn:
+
+  | Hình nền | `.react-flow__background` opacity | `.react-flow__pane` |
+  |---|---|---|
+  | Chấm (mặc định) | 1 | — (chấm gốc React Flow) |
+  | Trơn | **0** (ẩn chấm) | — |
+  | Kẻ ô | **0** | có `background-image` lưới |
+  | Ấm | 1 | `rgb(242,237,228)` |
+  | Lạnh | 1 | `rgb(232,236,242)` |
+
+- **Avatar**: KHÔNG đụng (CHINH đã làm) — `ProfileCard` vẫn dùng `UserAvatar`/`AvatarRenderer` thật
+  và trỏ sang `/settings/avatar`.
+
+### 4 · Token · bo góc · hover
+
+- Bo góc về thang Apple **10/14/20/28** qua `var(--radius-sm/md/lg/xl)` — thay hết số lẻ của mock
+  (16/13/12/11/10/8/7px). Bo tròn hoàn toàn (nút tải lên, CTA) dùng `9999px`.
+- Hover/focus/press theo bảng tra `docs/SPEC-HOVER-FOCUS-IDF.md` §2, đúng từng loại:
+  **thẻ thư mục/file (lưới)** = lift `translateY(-2px) scale(1.02)` 200ms · **hàng danh sách** =
+  CHỈ đổi nền 100ms, không scale (§4 cấm scale hàng lặp nhiều), chọn = viền trái accent 2px ·
+  **segmented/tab** = đổi màu chữ 120ms · **nút icon** = đổi nền, press `scale(.97)`.
+  Mọi thứ bấm được có `:focus-visible` vòng accent 2px offset 2px (§3.6).
+  `@media (prefers-reduced-motion:reduce)` bỏ scale/lift ở cả 2 file CSS (§3.8).
+
+### 5 · CẦN CHINH THÊM 1 DÒNG (ngoài vùng G4, không tự sửa)
+
+Hình nền canvas sống sót khi điều hướng client-side, nhưng **tải lại cứng thẳng vào trang canvas**
+thì thẻ style bị mất. Thêm 1 dòng vào `app/layout.tsx` (cạnh `<StoreHydrator />`) là xong:
+
+```tsx
+import { CanvasWallpaper } from '@/app/settings/_components/CanvasWallpaper';
+// …trong <body>, ngay sau <StoreHydrator />:
+<CanvasWallpaper />
+```
+
+### Nghiệm thu
+
+`tsc --noEmit` 0 lỗi · `next lint` sạch (filemanager · lib/filemanager · app/files · app/settings ·
+LeftRail) · `npm test` exit 0. Verify browser 1440×900 **cả Sáng lẫn Tối**, console sạch mọi bước:
+`/files` gốc · `/files` trong thư mục dự án (lưới + danh sách) · chọn file → inspector đúng ·
+tải lên → cảnh báo đúng · `/settings` cả 2 theme.

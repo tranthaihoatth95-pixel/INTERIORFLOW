@@ -1,23 +1,15 @@
 'use client';
 
-import { Check, Plus, SunMoon } from 'lucide-react';
+import { Check, SunMoon } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import type { ThemePref } from '@/lib/store';
 import { useT } from '@/lib/i18n';
-import type { WallpaperId } from '../_lib/local-state';
+import { WALLPAPERS, type WallpaperId } from '../_lib/wallpaper';
 
 const THEME_CARDS: { id: ThemePref; label: [string, string]; preview: string; inner: string }[] = [
   { id: 'light', label: ['Sáng', 'Light'], preview: '#edebe7', inner: '#fff' },
   { id: 'dark', label: ['Tối', 'Dark'], preview: '#1c1c20', inner: '#2a2a30' },
   { id: 'auto', label: ['Theo hệ thống', 'System'], preview: 'linear-gradient(90deg,#edebe7 50%,#1c1c20 50%)', inner: 'linear-gradient(90deg,#fff 50%,#2a2a30 50%)' },
-];
-
-const WALLPAPERS: { id: WallpaperId; bg?: string; label?: string }[] = [
-  { id: 'none', label: 'Trơn' },
-  { id: 'dots', bg: 'radial-gradient(circle at 1.5px 1.5px,#cdcac4 1px,transparent 0) 0 0/10px 10px,#edebe7' },
-  { id: 'grid', bg: 'repeating-linear-gradient(0deg,#e8e5e0 0 1px,transparent 1px 12px),repeating-linear-gradient(90deg,#e8e5e0 0 1px,transparent 1px 12px),#edebe7' },
-  { id: 'warm', bg: 'linear-gradient(135deg,#f2ede4,#e5ddd0)' },
-  { id: 'cool', bg: 'linear-gradient(135deg,#e8ecf2,#d8dfe9)' },
 ];
 
 /**
@@ -51,20 +43,23 @@ export function AppearanceCard({ wallpaper, onPickWallpaper }: { wallpaper: Wall
         })}
       </div>
 
-      <div className="hint" style={{ margin: '14px 0 8px' }}>{tr('Hình nền canvas', 'Canvas wallpaper')}</div>
+      <div className="hint" style={{ margin: '14px 0 8px' }}>
+        {tr('Hình nền canvas — áp cho canvas cả 3 chặng', 'Canvas wallpaper — applies to all 3 stages')}
+      </div>
       <div className="wpgrid">
         {WALLPAPERS.map((w) => (
           <button
             type="button"
             key={w.id}
-            className={`wp${wallpaper === w.id ? ' sel' : ''}${w.label ? ' none' : ''}`}
-            style={w.bg ? { background: w.bg } : undefined}
+            className={`wp${wallpaper === w.id ? ' sel' : ''}${w.swatch ? '' : ' none'}`}
+            style={w.swatch ? { background: w.swatch } : undefined}
             onClick={() => onPickWallpaper(w.id)}
+            aria-pressed={wallpaper === w.id}
+            title={tr(w.label[0], w.label[1])}
           >
-            {w.label}
+            {w.swatch ? '' : tr(w.label[0], w.label[1])}
           </button>
         ))}
-        <button type="button" className="wp none" title={tr('Thêm hình nền tuỳ chỉnh — chưa nối', 'Add custom wallpaper — not wired yet')}><Plus size={14} /></button>
       </div>
     </div>
   );
