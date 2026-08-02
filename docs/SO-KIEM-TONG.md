@@ -31,6 +31,7 @@ Append-only: chỉ thêm dòng, đổi trạng thái có ngày; không xoá dòn
 | Kính lỏng K1-K4 + luật portal | `globals.css` + spec | ✅ | — |
 | Tooltip tĩnh cảm ứng | `globals.css:1030` | ✅ | — |
 | Gallery/Notebook/Login/Journey/Smart Tour | các nhánh đã merge | ✅ | mở app |
+| Panel thò thụt: Rollout (tiêu đề/grip/chuột phải/ghim/nhớ theo LOẠI VẬT) + InspectorPages Rhino + dải thu gọn CÓ NHÃN | `components/studio/Rollout.tsx`·`InspectorPages.tsx`·`CadInspectorPages.tsx` | ✅ `7847969` (04/08 đêm) | chọn entity CAD → Inspector; thu Navigator |
 | **Điều còn TREO chờ Hoà** | avatar 3D (mua/thuê/Blender) · Google Flow video intro · quyền Wiki Lark · dọn `public/detech` 22MB | ⏳ | `00-CHOT.md` |
 
 ## §2 · PHÂN MẢNG — mỗi phiên một vùng, không ai đụng ai (Hoà duyệt 03/08)
