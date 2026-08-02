@@ -582,6 +582,7 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
           statusBar={<StatusBar stage="render" hidden={presentModeOpen} />}
           navigator={<RenderNavigator />}
           navigatorAddLabel="Khối mới"
+          navigatorCollapsedLabel="Khối"
         >
           {/* mỗi panel tự quản AnimatePresence riêng (iOS sheet, key duy nhất) */}
 

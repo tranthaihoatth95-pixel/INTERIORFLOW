@@ -38,11 +38,15 @@ interface Props {
   addLabel: string;
   onAdd?: () => void;
   onOpenLibrary: () => void;
+  /** Nhãn hiện trên DẢI MỎNG khi thu gọn (CHINH-3, SPEC-PANEL-ROLLOUT-IDF §2f — "dải dọc mỏng
+   * CÓ NHÃN", né lỗi SketchUp nút không nhãn). Thiếu → "Bảng". */
+  collapsedLabel?: string;
 }
 
-export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary }: Props) {
+export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, collapsedLabel }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [peek, setPeek] = useState(false);
   const user = useFlowStore((s) => s.user);
   const router = useRouter();
   const tr = useT();
@@ -85,19 +89,40 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary }
   useDismissable({ open: menuOpen, onDismiss: () => setMenuOpen(false), refs: [avatarRef, menuRef] });
 
   if (collapsed) {
+    // §2f SPEC-PANEL-ROLLOUT-IDF — thu về DẢI MỎNG CÓ NHÃN, hover mới HÉ (overlay tạm, không
+    // đổi layout — khác auto-hide bị cấm: dải là trạng thái NGƯỜI DÙNG chọn, hé chỉ để nhìn
+    // nhanh, bấm chevron mới mở hẳn lại).
     return (
       <div
-        className="flex shrink-0 flex-col items-center border-r border-[var(--border)] bg-[var(--panel)] py-2"
+        className="relative flex shrink-0 flex-col items-center border-r border-[var(--border)] bg-[var(--panel)] py-2"
         style={{ width: 36 }}
+        onMouseEnter={() => setPeek(true)}
+        onMouseLeave={() => setPeek(false)}
       >
         <button
           type="button"
           onClick={toggle}
-          title={tr('Mở Navigator', 'Expand Navigator')}
+          title={tr('Mở lại bảng — B', 'Expand panel — B')}
           className="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] text-[var(--t3)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
         >
           <ChevronLeft size={15} className="rotate-180" />
         </button>
+        <span
+          className="mt-3 select-none text-[var(--fs-2xs)] font-bold uppercase tracking-wider text-[var(--t4)]"
+          style={{ writingMode: 'vertical-rl' }}
+        >
+          {collapsedLabel ?? tr('Bảng', 'Panel')}
+        </span>
+        {peek && (
+          <div
+            className="absolute left-full top-0 z-20 flex h-full min-h-0 flex-col border-r border-[var(--border)] bg-[var(--panel)] shadow-[var(--shadow-pop)]"
+            style={{ width: WIDTH }}
+          >
+            <div className="min-h-0 flex-1 overflow-y-auto py-1" style={{ scrollbarWidth: 'thin' }}>
+              {children}
+            </div>
+          </div>
+        )}
       </div>
     );
   }

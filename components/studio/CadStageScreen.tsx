@@ -21,7 +21,8 @@
 
 import { useMemo } from 'react';
 import CadSheets from '@/components/cad/CadSheets';
-import { LayerPanel, SelectionInfoPanel } from '@/components/cad/CadEditor';
+import { LayerPanel } from '@/components/cad/CadEditor';
+import { CadInspectorPages } from '@/components/studio/CadInspectorPages';
 import { StageEnter } from '@/components/studio/StageTransition';
 import FoldableDualPane from '@/components/studio/FoldableDualPane';
 import ReferencePane from '@/components/studio/ReferencePane';
@@ -62,8 +63,11 @@ export default function CadStageScreen() {
       statusBar={<StatusBar stage="concept" />}
       navigator={<LayerPanel />}
       navigatorAddLabel={tr('Lớp mới', 'New layer')}
+      navigatorCollapsedLabel={tr('Lớp', 'Layers')}
       onNavigatorAdd={addLayer}
-      inspector={selection.length > 0 ? <SelectionInfoPanel /> : undefined}
+      /* CHINH-3 (SPEC-PANEL-ROLLOUT-IDF §2c): ruột Inspector = dải trang Rhino + rollout,
+         thay SelectionInfoPanel chồng 4 box dọc. Gate chỉ-hiện-khi-chọn giữ nguyên. */
+      inspector={selection.length > 0 ? <CadInspectorPages /> : undefined}
       inspectorTitle={title}
       inspectorSub={sub}
       onCloseInspector={selection.length > 0 ? clearSelection : undefined}

@@ -42,6 +42,8 @@ interface Props {
    * component riêng (chặng chỉ truyền phần list + 2 handler add/library). */
   navigator: ReactNode;
   navigatorAddLabel: string;
+  /** Nhãn dải mỏng khi Navigator thu gọn (§2f SPEC-PANEL-ROLLOUT-IDF) — "Lớp"/"Khối"/"Trang"… */
+  navigatorCollapsedLabel?: string;
   onNavigatorAdd?: () => void;
   /** Ghi đè hành vi nút "Thư viện" đáy Navigator — MẶC ĐỊNH (không truyền) mở `LibrarySheet`
    * (Hoà chốt 03/08 "Thư viện là MỘT nơi duy nhất, và nó là sheet" — `a73c658` trên g4).
@@ -69,6 +71,7 @@ export function AppShell({
   children,
   navigator,
   navigatorAddLabel,
+  navigatorCollapsedLabel,
   onNavigatorAdd,
   onOpenLibrary,
   inspector,
@@ -88,7 +91,7 @@ export function AppShell({
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden', background: 'var(--bg)' }}>
       <AppChrome active={active} logoMenu />
       <div className="relative flex min-h-0 flex-1">
-        <Navigator addLabel={navigatorAddLabel} onAdd={onNavigatorAdd} onOpenLibrary={openLibrary}>
+        <Navigator addLabel={navigatorAddLabel} collapsedLabel={navigatorCollapsedLabel} onAdd={onNavigatorAdd} onOpenLibrary={openLibrary}>
           {navigator}
         </Navigator>
         <div className="relative flex min-w-0 flex-1 flex-col">

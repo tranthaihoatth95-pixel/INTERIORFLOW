@@ -29,6 +29,7 @@ export default function SettingsPage() {
       active="render"
       navigator={<SettingsNavigator />}
       navigatorAddLabel={tr('Cài đặt', 'Settings')}
+      navigatorCollapsedLabel={tr('Cài đặt', 'Settings')}
     >
       <div className="min-h-0 flex-1 overflow-y-auto">
         <PixelSettingsShell />
