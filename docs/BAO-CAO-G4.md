@@ -256,3 +256,30 @@ liệu (PHU/TỔNG quyết): cần sanitize vị trí node khi load/save. G4 kh�
   không env) đã kill, chạy lại `npm run dev -p 3004` nền — **đang chạy tiếp cho phiên sau**.
 - `preview_start` không nhận cwd ngoài project root → server chạy qua Bash nền (bất khả kháng,
   log ở scratchpad phiên).
+
+## VIỆC 1 (§3 G4): MaterialSphere — quả cầu vật liệu (SPEC-VAT-LIEU-PBR-IF §2)
+
+**File mới**: `components/three/material-preview.ts` (lõi render + cache) ·
+`components/three/MaterialSphere.tsx` (component <img> + fallback gradient).
+**Gắn vào 3 nơi**: `components/three/CommandPanel.tsx` tab Vật liệu (bản G4, chờ CHINH nối) ·
+`components/render-studio/Command3DPanel.tsx` tab Vật liệu (bản ĐANG MOUNT trên main — thêm để
+tính năng nhìn thấy được ngay, ship-trước) · `components/library/LibrarySheet.tsx` kệ
+`render-mat` + `common-atlas` (badge phạm vi giữ nguyên, kệ khác + hatch 2D giữ swatch phẳng
+đúng spec "chặng Vẽ 2D giữ swatch phẳng").
+
+Đúng spec §2: MỘT WebGLRenderer + MỘT env PMREM `RoomEnvironment` dùng chung (không dựng N
+canvas — bài học FPS SPEC-3D-CORE) · render 1 lần/бộ tham số → PNG cache theo hash(params)
+(Map in-memory — chưa IndexedDB vì mỗi lượt render <5ms, không đáng ghi đĩa) · 3 cảnh
+Cầu/Sàn/Vải tự chọn theo danh mục (vải→Vải; tên có sàn/gạch/lát→Sàn) · nấc phân giải 25% cho
+lưới, 100% để dành panel chi tiết — **sàn 56px** (thấy khi verify: 120px ô × 25% = 30px nguồn
+→ nhuyễn mất highlight; 56px vẫn rẻ). Fallback = gradient swatch cũ khi WebGL tắt/SSR.
+
+**PBR tạm suy từ loại bề mặt** (W/S/M/P/F/G từ matId · từ khoá tên cho ATLAS thật) vì schema
+matId+PBR là việc PHU (§3 PHU-4) — khi PHU xong thì thay `materialFromSpec`/`kindFromName`
+bằng đọc cột PBR thật, chỗ gắn không đổi.
+
+**Verify browser thật (127.0.0.1:3004, 2 theme)**: Command3DPanel 2 vật liệu ATLAS thật ra cầu
+("Đá traverti…" = cầu highlight, "Sàn gỗ sồi" = cảnh sàn phối cảnh vì tên có "Sàn") · kệ Thư viện
+12 món ra cầu/sàn/vải đúng loại, badge nguyên · DOM đếm 14 ảnh PNG 56px · dark theme đọc rõ ·
+lint/tsc/test sạch. Ghi chú: fetch `/api/specs` sau hard-reload URL con trả rỗng 1 lần (khớp
+cảnh báo hydrate STATUS.md — không phải lỗi mới, toggle lại mode là có).

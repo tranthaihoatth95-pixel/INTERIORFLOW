@@ -17,6 +17,8 @@
 import { useState } from 'react';
 import { Plus, Pencil, Palette, Camera, Eye } from 'lucide-react';
 import { useMaterials } from '@/lib/render-studio/use-materials';
+import MaterialSphere from '@/components/three/MaterialSphere';
+import { darken, kindFromName, sceneForKind } from '@/components/three/material-preview';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -89,7 +91,22 @@ function MaterialTab() {
               )}
               title={`${m.name}${m.sku ? ` · ${m.sku}` : ''}`}
             >
-              <div className="h-11 w-full" style={{ background: swatchColor }} />
+              {/* G4 (SPEC-VAT-LIEU-PBR-IF §2) — quả cầu render thật thay ô màu phẳng. ATLAS chưa
+                  có cột PBR (việc PHU) → loại bề mặt suy từ TÊN, màu 2 tông từ colorHex; cảnh
+                  Cầu/Sàn/Vải tự chọn theo loại. Fallback = ô màu cũ khi WebGL tắt. */}
+              <MaterialSphere
+                className="h-11 w-full"
+                spec={{
+                  id: m.id,
+                  colorA: swatchColor.startsWith('#') ? swatchColor : '#9a9a9a',
+                  colorB: darken(swatchColor.startsWith('#') ? swatchColor : '#9a9a9a'),
+                  kind: kindFromName(m.name),
+                  scene: sceneForKind(kindFromName(m.name), /sàn|gạch|lát|floor|tile/i.test(m.name)),
+                }}
+                fallback={swatchColor}
+                size={88}
+                resolution={0.25}
+              />
               <p className="truncate px-1.5 py-1 text-[9px] font-medium text-[var(--t2)]">{m.name}</p>
               {m.sku && <p className="truncate px-1.5 pb-1 text-[8px] text-[var(--accent)]">{m.sku}</p>}
             </button>

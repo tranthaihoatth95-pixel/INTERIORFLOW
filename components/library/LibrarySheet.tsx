@@ -19,6 +19,8 @@ import {
 import { useLibrarySheetState } from '@/lib/library/use-library-sheet';
 import { useLibraryLocalState } from '@/lib/library/local-state';
 import { RawStyle } from '@/components/filemanager/RawStyle';
+import MaterialSphere from '@/components/three/MaterialSphere';
+import { colorsFromGradient, kindFromSwatchKey, sceneForKind } from '@/components/three/material-preview';
 import { LIBRARY_SHEET_CSS } from './library-sheet-css';
 import { LibraryToastHost, pushLibraryToast } from './LibraryToast';
 import { PublishModal } from './PublishModal';
@@ -224,9 +226,33 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                   onClick={() => use(it)}
                   onDoubleClick={() => pushLibraryToast(tr(`Xem trước: ${it.name} · ${it.code}`, `Preview: ${it.name} · ${it.code}`))}
                 >
-                  <span className="th" style={{ background: SWATCH[it.swatch] }}>
-                    <span className={it.scope === 'studio' ? 'badge st' : 'badge'}>{SCOPE_BADGE_TEXT[it.scope]}</span>
-                  </span>
+                  {/* G4 (SPEC-VAT-LIEU-PBR-IF §2) — KỆ VẬT LIỆU dùng quả cầu render thật (nấc
+                      25% cho lưới cuộn); cảnh tự chọn theo danh mục: vải→Vải, gạch/lát→Sàn.
+                      Kệ khác (ký hiệu CAD, template…) + hatch 2D giữ swatch phẳng theo spec. */}
+                  {(() => {
+                    const kind = kindFromSwatchKey(it.swatch);
+                    const isMatShelf = it.shelfId === 'render-mat' || it.shelfId === 'common-atlas';
+                    if (!kind || !isMatShelf) {
+                      return (
+                        <span className="th" style={{ background: SWATCH[it.swatch] }}>
+                          <span className={it.scope === 'studio' ? 'badge st' : 'badge'}>{SCOPE_BADGE_TEXT[it.scope]}</span>
+                        </span>
+                      );
+                    }
+                    const floorHint = /gạch|lát|sàn/i.test(it.name) || it.code.startsWith('TRZ');
+                    const [colorA, colorB] = colorsFromGradient(SWATCH[it.swatch]);
+                    return (
+                      <MaterialSphere
+                        className="th"
+                        spec={{ id: it.code, colorA, colorB, kind, scene: sceneForKind(kind, floorHint) }}
+                        fallback={SWATCH[it.swatch]}
+                        size={120}
+                        resolution={0.25}
+                      >
+                        <span className={it.scope === 'studio' ? 'badge st' : 'badge'}>{SCOPE_BADGE_TEXT[it.scope]}</span>
+                      </MaterialSphere>
+                    );
+                  })()}
                   <span className="mt">
                     <span className="a" style={{ display: 'block' }}>{it.name}</span>
                     <span className="b" style={{ display: 'block' }}>{it.code}</span>
