@@ -115,6 +115,8 @@ interface FlowState {
   snapGrid: boolean;
   /** nhóm node (grouping) — mỗi group gom nodeIds + label, có thể collapse */
   groups: NodeGroup[];
+  /** G2 phần (2) — comment neo vào 1 node ID thật (khác `CommentLayer.tsx`, neo % viewport). */
+  comments: CanvasComment[];
   past: HistoryEntry[];
   future: HistoryEntry[];
 
@@ -205,9 +207,23 @@ interface FlowState {
    * thêm vào `nodeIds` của khung đó, rơi ra ngoài thì tự gỡ. CHỈ áp cho group có `rect` (khung
    * phòng) — group thường (`groupSelected`) do user tự chọn thủ công, không tự động mutate. */
   syncRoomMembership: (nodeId: string, pos: { x: number; y: number }) => void;
+  /** G2 phần (2) — thêm comment neo vào `nodeId` (tác giả = `user?.name` hoặc "Khách"). */
+  addComment: (nodeId: string, text: string) => void;
+  /** G2 phần (2) — xoá 1 comment theo id (v1: không kiểm ownership, khớp mức đơn giản sticky note). */
+  removeComment: (id: string) => void;
 }
 
 export type DemoKind = 'sketch' | 'bedroom' | 'slide' | 'concept';
+
+/** G2 phần (2) — comment neo vào 1 node ID thật (canvas Render) — KHÁC `CommentLayer.tsx` (đó
+ * neo theo % toạ độ viewport + DOM elementHint, không phải ID node thật). */
+export interface CanvasComment {
+  id: string;
+  nodeId: string;
+  author: string;
+  text: string;
+  createdAt: number;
+}
 
 /** Nhóm node trên canvas — gom nhiều node, label + collapse. */
 export interface NodeGroup {
@@ -290,6 +306,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   paletteOpen: false,
   snapGrid: false,
   groups: [],
+  comments: [],
   past: [],
   future: [],
 
@@ -410,6 +427,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         nodes?: FlowNode[];
         edges?: Edge[];
         groups?: NodeGroup[];
+        comments?: CanvasComment[];
       };
       const nodes = (graph.nodes ?? []).map((n) => ({
         ...n,
@@ -422,6 +440,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         },
       }));
       const groups = Array.isArray(graph.groups) ? graph.groups : [];
+      const comments = Array.isArray(graph.comments) ? graph.comments : [];
       // An toàn dữ liệu cũ: node hidden=true nhưng KHÔNG thuộc group đang collapsed nào
       // (flow lưu từ trước khi `groups` được persist, hoặc dữ liệu đã kẹt do bug cũ)
       // → hiện lại, tránh node biến mất vĩnh viễn không cách nào lấy lại qua UI.
@@ -444,6 +463,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         ...(projectId !== undefined ? { currentProjectId: projectId } : {}),
         shareToken,
         groups,
+        comments,
         past: [],
         future: [],
         ...(inferred ? { workspace: inferred } : {}),
@@ -516,6 +536,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         nodes?: FlowNode[];
         edges?: Edge[];
         groups?: NodeGroup[];
+        comments?: CanvasComment[];
       };
       if (!Array.isArray(saved.nodes) || !saved.nodes.length) return;
       // node đang chạy dở lúc reload → về idle
@@ -530,6 +551,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         },
       }));
       const groups = Array.isArray(saved.groups) ? saved.groups : [];
+      const comments = Array.isArray(saved.comments) ? saved.comments : [];
       // An toàn dữ liệu cũ: node hidden=true nhưng KHÔNG thuộc group đang collapsed nào
       // (bản lưu từ trước khi `groups` được persist, hoặc dữ liệu đã kẹt do bug cũ)
       // → hiện lại, tránh node biến mất vĩnh viễn không cách nào lấy lại qua UI.
@@ -545,6 +567,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         flowName: saved.flowName ?? 'Untitled flow',
         credits: typeof saved.credits === 'number' ? saved.credits : 120,
         groups,
+        comments,
       });
     } catch {
       // save hỏng → bỏ qua, bắt đầu flow trống
@@ -1031,6 +1054,19 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       }),
     }));
   },
+
+  // G2 phần (2) — comment neo vào node ID thật (khác CommentLayer.tsx, xem CanvasComment).
+  addComment: (nodeId, text) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const author = useFlowStore.getState().user?.name ?? 'Khách';
+    set((s) => ({
+      comments: [...s.comments, { id: nextId('cmt'), nodeId, author, text: trimmed, createdAt: Date.now() }],
+    }));
+  },
+  removeComment: (id) => {
+    set((s) => ({ comments: s.comments.filter((c) => c.id !== id) }));
+  },
 }));
 
 // ===== Autosave (Phase 3-lite): debounce 2s vào localStorage =====
@@ -1038,14 +1074,14 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let quotaWarned = false;
 
 function persistNow() {
-  const { flowName, credits, nodes, edges, groups, user, currentFlowId } = useFlowStore.getState();
+  const { flowName, credits, nodes, edges, groups, comments, user, currentFlowId } = useFlowStore.getState();
 
   // Đã đăng nhập + có flow server → autosave lên DB
   if (user && currentFlowId) {
     fetch(`/api/flows/${currentFlowId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ graphJson: JSON.stringify({ nodes, edges, groups }), name: flowName }),
+      body: JSON.stringify({ graphJson: JSON.stringify({ nodes, edges, groups, comments }), name: flowName }),
     }).catch(() => {});
     return;
   }
@@ -1062,7 +1098,7 @@ function persistNow() {
       owner = 'anon';
     }
   }
-  const payload = { version: 1, owner, flowName, credits, nodes, edges, groups };
+  const payload = { version: 1, owner, flowName, credits, nodes, edges, groups, comments };
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
   } catch {
@@ -1094,7 +1130,8 @@ if (typeof window !== 'undefined') {
       state.edges === prev.edges &&
       state.flowName === prev.flowName &&
       state.credits === prev.credits &&
-      state.groups === prev.groups
+      state.groups === prev.groups &&
+      state.comments === prev.comments
     )
       return;
     if (saveTimer) clearTimeout(saveTimer);
