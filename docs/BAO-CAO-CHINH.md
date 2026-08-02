@@ -323,3 +323,34 @@ Chờ Hoà duyệt hoặc giao việc mới — không tự bịa việc tiếp 
   form 2 cột thật "Cắt nền", không phải node AI trần rơi lên canvas). 0 lỗi console.
 - 💭 `ai.pattern` (Hoa văn · Pattern Studio) là MASTER-candidate hợp lý (cùng khuôn) nhưng CHƯA
   đưa vào đợt này (chỉ chọn 5 cái rõ nhất) — ghi lại trong sidebar-zones.ts phòng Hoà muốn thêm.
+
+## [chuỗi H · ƯU TIÊN 1] H3 — bỏ hẳn tab ngang, sidebar là cửa vào duy nhất — XONG
+- Commit: `57c14e3`. Click-to-open đã có sẵn từ H2 (`NodeLibraryPanel` gọi `selectCard()`) — H3
+  dọn nốt phần còn lại đúng câu chốt "tool = NODE side trái... KHÔNG tab ngang": xoá HẲN
+  `RenderToolTabs.tsx` (thanh tab ngang D3) khỏi `RenderToolModeOverlay.tsx`, xoá file (0 nơi gọi
+  còn lại). Cảnh báo LỖ RÒ 2 (graph phức tạp) — trước sống trong `RenderToolTabs`, giờ 1 dải mỏng
+  ĐỘC LẬP, CHỈ hiện khi thật sự có cảnh báo (đa số thời gian: top hoàn toàn trống).
+- "Mở canvas" (nút cũ trong `RenderToolTabs`) — KHÔNG cần thay thế: canvas đã luôn lộ ra từ D3,
+  đóng `ToolWindow` (✕/▁) đã đủ "quay lại canvas thuần". Canvas-handoff
+  (materialswap/furniture/localedit) tự chuyển `view:'canvas'` qua `ToolModeForm`, không phụ
+  thuộc file đã xoá.
+- Test: `tsc`/`eslint` sạch. `npm test` 0 fail.
+- Verify browser thật (dự án mẫu): xác nhận 0 button `aria-pressed` mang nhãn thẻ cũ (tab bar
+  THẬT SỰ biến mất khỏi DOM, không phải ẩn CSS — grep "Sketch → Ảnh thật" ra 0 kết quả). Thu nhỏ
+  `ToolWindow` → canvas HOÀN TOÀN trống, không còn dải nào ở top — bug 2.2.92 vẫn đóng, còn TRIỆT
+  ĐỂ hơn D3 (D3 vẫn có 1 dải mỏng thường trực, H3 giờ 0 dải khi không có cảnh báo). Click thẻ
+  MASTER "Phóng to ảnh" từ sidebar → mở đúng `ToolWindow` (localStorage `card=upscale`).
+- 💭 **Phát hiện phụ, KHÔNG sửa** (ghi rõ lý do): console có warning React "Cannot update a
+  component while rendering a different component" trỏ vào `RenderToolModeOverlay`. Xác nhận
+  bằng `git stash` A/B: warning tái hiện Y HỆT khi tắt hẳn thay đổi H3 (đã có từ commit D3/H2) —
+  KHÔNG phải regression của H3. Stack trace trỏ qua `HotReload`/`ReactDevOverlay` (module dev-
+  server Next.js) — nghi artifact Fast Refresh dev-mode, không phải bug runtime thật (mọi thao
+  tác UI verify phía trên đều đúng, không crash, không hành vi sai). Để nguyên, ngoài phạm vi H3
+  — nếu Hoà muốn dò tận gốc, đây là việc riêng.
+
+## HẾT CHUỖI H (H1-H3) — ƯU TIÊN 1 xong trọn, H4 hoãn theo đúng chỉ đạo
+D5 (nối CamPathPreview/ControlPanel) + H1 (useStageMode/ModeShell) + H2 (sidebar 3 vùng, phân
+loại 34 node) + H3 (bỏ tab ngang) — 4 commit code + 4 commit docs, `tsc`/`eslint`/`npm test` sạch
+mỗi bước, verify browser thật mỗi bước, không đụng vùng E (present-editor). H4 (Present chọn 5
+loại hồ sơ) HOÃN đúng chỉ đạo Hoà — chờ code phụ xong P6 + merge present-editor mới làm, tránh
+giẫm chân. Chờ Hoà duyệt hoặc giao việc mới.
