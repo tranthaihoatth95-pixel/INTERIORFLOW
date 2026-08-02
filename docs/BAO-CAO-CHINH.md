@@ -577,6 +577,41 @@ cổng 3000 đang bị phiên khác chiếm) — thêm entry trong `.claude/laun
 6 commit code (`498e248` chore server phụ · `e1aa92c` K4 · `edd57aa` K4 follow-up · `e74485a` G1 ·
 `2daf089` G1b · `e1aaf6a` G1c) đều `git commit -- <pathspec>` scoped đúng file, không đụng
 `docs/00-CHOT.md`/`docs/SPEC-DESIGN-SYSTEM-IF.md`/2 file mới của Hoà (để nguyên theo đúng ghi chú
-phiên trước). Tiếp theo: G1d (Hoà giao thêm — áp `SPEC-NGON-NGU-CHI-DAN.md` mới, dọn jargon
-node/flow/Node Master trong UI-facing text), rồi quay lại G2 (Mood+Collab canvas) → G3 → G4 → G5
-theo `docs/TICKET-CHANG2-BUILD-2026-08-02.md`.
+phiên trước).
+
+## G1d — Hoà giao thêm: áp `SPEC-NGON-NGU-CHI-DAN.md` mới (dọn jargon UI) — XONG
+- Commit `5649f14` (`RenderToolModeOverlay.tsx` · `ToolWindow.tsx` · `ToolModeForm.tsx` ·
+  `RenderIOMenus.tsx`).
+- File spec MỚI (`docs/SPEC-NGON-NGU-CHI-DAN.md`, của Hoà, chưa commit — để nguyên như mọi file
+  mới khác của Hoà phiên này) chê đúng dải nhắc `RenderToolModeOverlay.tsx` là ví dụ mẫu ("Flow
+  này có 2 node — chọn 'Node MASTER'... mở Node Library để xem đủ" → "nói vậy chả ai hiểu gì cả").
+  Sửa đúng theo khuôn §2 "Nhắc trạng thái" + ví dụ sửa mẫu §4: **"Còn công cụ khác chưa hiện."**
+  + nút **[Xem tất cả]** gọi thẳng `setPanel('library')` (mở thư viện khối) — bỏ hẳn câu giải
+  thích cơ chế (luật 1 "hành động trước, cơ chế sau (hoặc bỏ)").
+- Grep `"node\|Node\|flow\|Flow\|MASTER"` khắp `components/shell/` + `components/render-studio/`
+  (đúng 2 thư mục Hoà chỉ định) tìm thêm 2 tooltip lộ "node" (`ToolWindow.tsx` "Thu lại thành node
+  nhỏ", `ToolModeForm.tsx` "Xem/chỉnh node phía sau thẻ này trên canvas") — cả 2 file TRƯỚC ĐÓ
+  hoàn toàn chưa có i18n (không import `useT`), thêm mới cho đúng luật "Chuỗi đi qua lib/i18n.ts
+  đủ cặp EN+VI, không hardcode". Mở rộng thêm sang `components/studio/RenderIOMenus.tsx` (menu
+  "Tệp" chặng Render — không nằm trong 2 thư mục chỉ định nhưng dính đúng jargon `node`/`flow` ở 8
+  chỗ label/sub/disabledReason, đã có sẵn `tr()` trong scope component nên bọc thẳng, không cần
+  thêm import) — quyết định tự chọn mở rộng nhẹ vì cùng 1 cụm chức năng (menu Tệp render) và chi
+  phí sửa rất nhỏ so với để sót jargon ngay cạnh.
+- Grep lại sau sửa: 0 kết quả thật (chỉ còn `id:'flow'`/`id:'flow-export'` — định danh nội bộ
+  không lộ ra UI — và code identifiers/comment, không phải chuỗi hiển thị).
+- Verify browser thật (dự án mẫu, đúng kịch bản `nodeCount>1` để notice hiện): thông báo mới hiện
+  đúng "Còn công cụ khác chưa hiện." + nút "Xem tất cả", bấm nút mở ĐÚNG Node Library panel (xác
+  nhận qua DOM). Đổi ngôn ngữ EN qua store (`setLang('en')`) xác nhận dịch đúng "More tools aren't
+  shown." + "[View all]" — cùng lúc thấy các chuỗi khác trong header (File/Tasks) cũng đổi đúng
+  (hạ tầng i18n toàn app, không phải riêng phần tôi sửa). 0 console error. tsc/eslint sạch,
+  `npm test` 0 fail.
+- 💭 **Phát hiện phụ, KHÔNG sửa** (đã `spawn_task` báo riêng, không tự ý mở rộng phạm vi): panel
+  `components/NodeLibraryPanel.tsx` (top-level `components/`, NGOÀI 2 thư mục Hoà chỉ định) vẫn
+  hiện tiêu đề "NODE LIBRARY" tiếng Anh/thuật ngữ nội bộ khi mở — đúng loại lỗi spec muốn dọn,
+  nhưng nằm ngoài ranh giới lần này nên để phiên/task riêng xử lý.
+
+## HẾT K4 + G1 + G1b + G1c + G1d — TẤT CẢ ĐÃ XONG TRỌN, không còn gì dở lại
+7 commit code (`498e248` chore server phụ · `e1aa92c` K4 · `edd57aa` K4 follow-up · `e74485a` G1 ·
+`2daf089` G1b · `e1aaf6a` G1c · `5649f14` G1d) đều `git commit -- <pathspec>` scoped đúng file.
+Tiếp theo quay lại G2 (Mood+Collab canvas) → G3 → G4 → G5 theo
+`docs/TICKET-CHANG2-BUILD-2026-08-02.md`.
