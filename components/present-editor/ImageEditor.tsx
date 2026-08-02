@@ -174,6 +174,11 @@ export default function ImageEditor({ el, libAssets, onUpdate, onOpenAdvanced, o
         flexDirection: 'column',
         background: 'rgba(10,10,12,.72)',
         backdropFilter: 'blur(6px)',
+        // P6c (02/08, TICKET-FIX-KINH-LONG, K3) — thiếu tiền tố Webkit khiến Safari/iPad (ngữ
+        // cảnh chính của Hoà) KHÔNG áp blur — overlay chỉ còn 1 màng tối phẳng, mất hiệu ứng
+        // kính mờ. Các nơi khác trong present-editor (TextToolbar.tsx pillWrap/noteStyle/
+        // ColorPopover) đã có sẵn cặp này — chỗ này bị sót.
+        WebkitBackdropFilter: 'blur(6px)',
       }}
       onPointerDown={(e) => {
         if (e.target === e.currentTarget) onClose();
