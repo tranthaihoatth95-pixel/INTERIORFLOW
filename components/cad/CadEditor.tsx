@@ -527,7 +527,6 @@ export default function CadEditor() {
         {cadMode === 'revit' && <RevitSummaryPanel />}
         {scheduleOpen && <SchedulePanel onClose={() => setScheduleOpen(false)} />}
         {historyOpen && <HistoryPanel onClose={() => setHistoryOpen(false)} />}
-        <LayerPanel />
         <SelectionInfoPanel />
         {handoffMsg && (
           <div style={{ position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 30, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 14px', fontSize: 12.5, color: 'var(--t2)' }}>
@@ -616,7 +615,13 @@ function ScaleMenu() {
 }
 
 /* ───────── Panel Layer ───────── */
-function LayerPanel() {
+/**
+ * 03/08 StageShell buoc 3 (SPEC-APP-SHELL-CHUNG §3): panel Lop KHONG con noi de canvas —
+ * EXPORT de CadStageScreen dat vao slot `inspector` cua StageShell (khung phai co dinh 280,
+ * cung vi tri/bo/nhip voi Inspector cua Presenting). Chi dung useCadStore (store toan cuc)
+ * nen mount o dau cung chay.
+ */
+export function LayerPanel() {
   const doc = useCadStore((s) => s.doc);
   const current = useCadStore((s) => s.currentLayer);
   const setCurrent = useCadStore((s) => s.setCurrentLayer);
@@ -625,14 +630,14 @@ function LayerPanel() {
   const removeLayer = useCadStore((s) => s.removeLayer);
 
   return (
-    <div style={{ ...panel, right: 12, top: 70, width: 230 }}>
+    <div style={{ padding: 10, fontSize: 12.5 }}>
       <div style={panelHead}>
         <span>Lớp (Layer)</span>
         <button type="button" onClick={addLayer} title="Thêm lớp" style={miniBtn}>
           <Plus size={14} />
         </button>
       </div>
-      <div style={{ maxHeight: 380, overflowY: 'auto' }}>
+      <div style={{ overflowY: 'auto' }}>
         {doc.layers.map((l) => {
           const on = l.id === current;
           return (

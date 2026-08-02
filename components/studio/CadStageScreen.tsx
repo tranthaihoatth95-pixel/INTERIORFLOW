@@ -15,6 +15,7 @@
  */
 
 import CadSheets from '@/components/cad/CadSheets';
+import { LayerPanel } from '@/components/cad/CadEditor';
 import { StageEnter } from '@/components/studio/StageTransition';
 import FoldableDualPane from '@/components/studio/FoldableDualPane';
 import ReferencePane from '@/components/studio/ReferencePane';
@@ -31,7 +32,13 @@ export default function CadStageScreen() {
   const storeUserId = useFlowStore((s) => s.user?.id);
   const userId = effectiveUserId(storeUserId);
   return (
-    <StageShell active="cad" statusBar={<StatusBar stage="concept" />}>
+    <StageShell
+      active="cad"
+      statusBar={<StatusBar stage="concept" />}
+      /* Buoc 3 (SPEC-APP-SHELL-CHUNG §3): panel Lop vao khung Inspector phai CHUNG (280,
+         cung vi tri/bo/nhip 3 chang) — het noi de canvas. */
+      inspector={<LayerPanel />}
+    >
       <StageEnter>
         {/* Tầng multi-sheet (phụ-thêm): thanh tab + CadEditor. 1 sheet ⇒ y hệt bản cũ. */}
         <FoldableDualPane primary={<CadSheets />} secondary={<ReferencePane />} />
