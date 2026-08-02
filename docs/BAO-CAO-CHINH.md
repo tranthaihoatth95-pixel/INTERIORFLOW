@@ -262,3 +262,36 @@ section+walk) · D2 (3D-5 push-pull massing) · D3 (tool window Render + đóng 
 (BỎ, Hoà xác nhận không cần) · D5 (nối CamPathPreview/ControlPanel). 5 commit chính +
 3 commit docs/BAO-CAO-CHINH.md, tất cả `git commit -- <pathspec>` scoped đúng, không đụng vùng E.
 Chờ Hoà duyệt hoặc giao việc mới — không tự bịa việc tiếp theo.
+
+---
+
+## [chuỗi H · ƯU TIÊN 1] H1 — useStageMode + ModeShell (CAD Revit + Render Vẽ 3D) — XONG
+- Commit: `c72cfbf`. Đọc theo đúng thứ tự Hoà giao: `00-CHOT.md` → `SPEC-MODE-PER-STAGE.md` →
+  `TICKET-UI-HATANG-2026-08-02.md` → `CATALOG-STAGE2-RENDERING.md` trước khi code.
+- `lib/stage-mode.ts`: `useStageMode(stage)` — API `{mode,setMode}` ĐỒNG NHẤT cho CAD/Render,
+  nhưng nguồn dữ liệu bên dưới KHÁC nhau để tránh 2-nguồn: CAD proxy thẳng `useCadStore.cadMode`
+  (không state song song), Render là state mới persist localStorage. Present khai type sẵn nhưng
+  KHÔNG wire (H4 hoãn — tránh giẫm code phụ đang sửa present-editor, đúng ràng buộc Hoà nêu).
+- CAD: `CadMode` thêm `'revit'` (additive, `.idf` cũ mở bình thường) — `shouldShowProTools` coi
+  revit = siêu tập Pro. Toggle 3 nút Sketch/Pro/Revit. `RevitSummaryPanel.tsx` — shell riêng mode
+  Revit, đọc lại field `elementType` có sẵn từ B1 (24/07), hiện bảng đếm "đã gán X/Y cấu kiện BIM"
+  — nền cho B2-B4 (IFC/va chạm) sau này, KHÔNG data mới.
+- Render: `ModeShell.tsx` (khung chuyển mode dùng chung, segmented control + content-slot) +
+  `Render3DModeSkeleton.tsx` — mode "Vẽ 3D" tái dùng THẲNG hạ tầng 3D-1..3D-5 đã có
+  (`docToObjScene(doc)` CÙNG Doc chặng 1 node "Bản vẽ→3D" đọc → `Scene3DViewer` mode `massing`) —
+  xem VÀ đẩy-kéo khối ngay tại đây, không phải xem tĩnh. Push-pull ghi thẳng
+  `useCadStore.updateEntities` (luật một nguồn).
+- 💭 Quyết định tự chọn: CAD giữ nguyên `ModeSwitch` cũ (đã tinh chỉnh kỹ touch-target/tag phím
+  tắt) thay vì viết lại bằng `<ModeShell>` chung — tránh regression 1 UI đã ổn định, `useStageMode`
+  vẫn cho API đồng nhất ở tầng gọi. `ModeShell`'s segmented control đặt `bottom` (không phải `top`
+  mặc định) cho Render vì `top` đang bị `RenderToolTabs` (D3) chiếm gần hết bề rộng — H3 gỡ tab
+  ngang đó thì có thể dọn lại `top` sau, không bắt buộc.
+- Test: `tsc`/`eslint` sạch (2 lỗi `CadEditor.tsx` pre-existing, không phải dòng sửa — xác nhận
+  bằng `git stash` trước khi báo). `npm test` 0 fail.
+- Verify browser thật (dự án mẫu): CAD bấm "Revit" → toolbar mở rộng đúng (isPro) +
+  RevitSummaryPanel hiện "Đã gán 0/0 (0%)". Render: toggle hiện đúng 2 nút, vị trí không đè tab
+  bar D3. Thêm 4 "tường" test qua CAD (JS trực tiếp, không qua UI vẽ — tiết kiệm bước) → điều
+  hướng CLIENT-SIDE (bấm tab "Rendering", KHÔNG hard-navigate — né đúng bug hydrate store đã ghi
+  trong STATUS.md) sang Render → bấm "Vẽ 3D" → `Scene3DViewer` dựng đúng hình học từ Doc CAD, 0
+  lỗi console. Camera framing hơi lệch tâm do tường test mỏng 1mm (dữ liệu giả, không phải bug
+  thật). Đã xoá toàn bộ entity test khỏi dự án mẫu sau verify.
