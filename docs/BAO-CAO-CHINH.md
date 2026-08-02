@@ -1498,3 +1498,27 @@ Verify: 280px đúng DOM, card đầy đủ y hệt bản trước merge, bấm 
 thành khuôn chung của những mảng khác (danh sách chữ đơn giản như CAD Lớp) — PHẢI dừng hỏi thay
 vì tự suy diễn "đồng nhất = giống hình dạng". Layer panel CAD vốn ĐÃ là list chữ từ đầu nên đúng
 khuôn; NodeLibraryPanel vốn ĐÃ là card giàu — ép nó xuống list chữ là hạ cấp, không phải đồng nhất.
+
+---
+
+## [TỰ CHẠY tiếp] CHINH-4 + CHINH-5 XONG — hàng đợi §3 CHINH cạn (trừ việc chờ)
+- **CHINH-4 phím tắt** (`2649287`): B/I/⌘\ ở AppShell (document capture, thắng type-anywhere
+  CadCanvas) · ⌘1-3 ở AppChrome (pickStage đã wire sẵn) · va phím L xử đúng §4e — CAD: ⇧L Thư
+  viện + L trần = lệnh ĐƯỜNG; 2 chặng kia L trần. Suy luật ⇧ cho cả B/I ở CAD (type-anywhere nuốt
+  chữ trần — gõ B là bắt đầu lệnh). `CadCanvas.tsx` +1 điều kiện `!e.shiftKey` vào type-anywhere
+  (thuộc phạm vi việc "xử va L" được giao — chữ CÓ ⇧ nay để dành phím tắt tầng app). ⌘K KHÔNG
+  nâng lên AppShell đợt này: CommandPalette cần ReactFlowProvider (chỉ HomeScreen có) — palette
+  đa-màn là việc riêng khi sổ lệnh PHU xong, ghi TODO.
+  Verify thật đủ ma trận: Render B/L/⌘\ · CAD ⇧L mở + L trần KHÔNG mở + ⇧B thu + ⇧I được ăn
+  (preventDefault xác nhận; DOM unmount không quan sát được do exit-animation đóng băng rAF
+  sandbox đã biết) + i trần vào type-anywhere · ⌘2 điều hướng thật CAD→Render.
+- **CHINH-5 chữ→icon** (`59702d6`): phần TRONG vùng — sub Inspector = chấm màu + TÊN lớp (hết id
+  thô `l-wall`, hàng "Lớp: Tường" §3) · LayerPanel preview nét SVG sống theo lineType/lineweight
+  (hàng "Nét: liền" §3, select giữ để đổi — native select không vẽ stroke trong option được).
+  **BÀN GIAO G4/PHU (ngoài vùng, không tự làm)**: "Đổ bóng: Có"→icon (ObjectProperties.tsx,
+  three) · chấm đồng bộ + chip engine IF/V-Ray/D5 + xích đứt --warning (material/present) ·
+  Settings icon-hoá + nút "Đặt lại bố cục panel" (nối `resetAllRolloutLayouts()` đã export sẵn
+  từ `components/studio/Rollout.tsx`).
+- Hàng đợi §3 CHINH sau 2 việc này: #1 merge nhanh-phu vẫn ⛔ chờ PHU sửa 2 lỗi type (đã ghi) ·
+  Toolbelt ổ ⑤ gộp CadToolbar/CadTouchDock (việc lớn kế tiếp, sửa luôn bug toolbar tràn đè
+  Inspector) · palette đa-màn chờ sổ lệnh PHU.
