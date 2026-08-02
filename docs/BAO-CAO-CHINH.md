@@ -1077,3 +1077,41 @@ dung thuộc domain 3D-core/P3 — KHÔNG phải phần việc H/G canvas của 
 H/G canvas của tôi), sửa vào có thể đụng file đang có edit dở của phiên kia (đúng cảnh báo
 `.git/index.lock` đã ghi sẵn trong STATUS.md). Ghi ở đây để Hoà/phiên kia thấy khi đọc — đúng luật
 "tài liệu sai → báo ngay, không im lặng" (`docs/CLAUDE.md`).
+
+## G3 phần (1) — Command Panel shell + tab Vật liệu — THIẾT KẾ (viết trước khi code)
+**Khảo sát trước khi thiết kế** (Explore agent đọc code thật):
+- `SPEC-CHANG2-UI-2MODE.md:30-43` — Command Panel = sidebar 5 tab **Tạo·Sửa·Vật liệu·Camera·Hiện**
+  (kiểu 3ds Max). `docs/mocks/mock-ve-3d.html` (Hoà đã xem qua, "✅ Vẽ 3D CHỐT qua mock" —
+  `00-CHOT.md`) vẽ đúng bố cục: sidebar rộng 256px bên trái viewport, tab "Vật liệu" đang mở minh
+  hoạ — search + 3 sub-tab nguồn (V-Ray/D5/IF·ATLAS) + lưới swatch matId + hint "chọn→click lên
+  mặt để gán". **Mock KHÔNG vẽ Scene Objects/outliner** (chỉ nhắc bằng chữ ở §5 spec) — để dành
+  phần sau, không đoán bố cục chưa được duyệt.
+- **Trạng thái code hiện tại**: `Render3DModeSkeleton.tsx` là viewport TOÀN MÀN (không sidebar),
+  chỉ có hint box nổi + `<Scene3DViewer mode="massing">` + `<ModeSwitchBar/>`. Chưa có Command
+  Panel nào — đúng như 00-CHOT ghi "chưa nối vào Scene3DViewer/3D-1".
+- **Tái dùng trực tiếp** ("một cỗ máy, nhiều mặt tiền"): tab "Vật liệu" của Command Panel dùng
+  ĐÚNG nguồn dữ liệu vừa xây ở G2 phần (5) — `GET /api/specs?kind=material` (ProductSpec/ATLAS
+  thật, đã có UI swatch matId trong `NodeLibraryPanel`). Mock hiện 3 "nguồn" (V-Ray/D5/IF·ATLAS)
+  nhưng field `vendor`/`brand` không phân biệt "nguồn phần mềm" — DB thật hiện chỉ có 2 bản ghi,
+  chưa đủ dữ liệu để phân 3 tab con có ý nghĩa. **Quyết định**: phần (1) hiện MỘT danh sách matId
+  thật (không chia sub-tab V-Ray/D5/IF giả — tránh tạo phân loại KHÔNG dữ liệu đứng sau), giữ đúng
+  câu "IF không chạy engine V-Ray — chỉ mở catalog để gán" (dòng 43): phân loại theo nguồn phần
+  mềm là việc CỦA ATLAS đồng bộ dữ liệu, không phải UI tự bịa nhãn.
+- **Việc làm phần (1)** (chỉ dựng SHELL + 1 tab thật, 4 tab còn lại placeholder — đúng tinh thần
+  SKELETON đã ghi trong chính file `Render3DModeSkeleton.tsx`):
+  1. `components/render-studio/Command3DPanel.tsx` (mới) — sidebar 256px, 5 tab (icon+label, tab
+     active = `box-shadow` dưới đúng token accent, khớp `.ctabs button.on` mock). State tab cục bộ
+     component (`useState`), KHÔNG cần lưu store (chưa có gì phụ thuộc tab đang mở giữa các nơi
+     khác — thêm sau nếu cần).
+  2. Tab "Vật liệu": fetch `/api/specs?kind=material` (y hệt logic đã viết ở `NodeLibraryPanel`,
+     KHÔNG copy-paste 2 lần — tách hàm fetch dùng chung nếu hợp lý, xem lúc code). Lưới 3 cột
+     swatch (khác layout list dọc của kệ Mood — đúng mock `.mgrid`), bấm 1 swatch = đặt
+     "vật liệu đang chọn" (state cục bộ, CHƯA gán lên mặt nào — click-to-assign lên mesh 3D là
+     việc của phần sau, cần `Scene3DViewer` hỗ trợ raycast chọn mặt, chưa có).
+  3. 4 tab còn lại (Tạo/Sửa/Camera/Hiện): placeholder rõ ràng ("Sắp có" + mô tả 1 dòng đúng
+     `SPEC-NGON-NGU-CHI-DAN`), KHÔNG giả vờ hoạt động — đúng luật "không nút giả" (tránh hứa quá).
+  4. `Render3DModeSkeleton.tsx`: bọc lại thành flex-row (sidebar + viewport flex-1), viewport giữ
+     nguyên logic hint/Scene3DViewer/ModeSwitchBar hiện có, chỉ đổi layout bao ngoài.
+- Ngoài phạm vi phần (1): Scene Objects/outliner (chưa có mock duyệt bố cục) · click-to-assign vật
+  liệu lên mặt 3D thật (cần raycast, đổi `Scene3DViewer`) · nội dung thật cho Tạo/Sửa/Camera/Hiện ·
+  ViewCube/axis gizmo (viewport hiện tại chưa có, `Scene3DViewer` props không hỗ trợ — việc riêng).
