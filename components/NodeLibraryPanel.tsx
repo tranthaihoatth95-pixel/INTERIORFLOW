@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReactFlow } from '@xyflow/react';
-import { X, GripVertical, Star, Plus, Command, Paintbrush, Wand2 } from 'lucide-react';
+import { X, GripVertical, Star, Plus, Command, Paintbrush, Wand2, Users, Sparkles, StickyNote } from 'lucide-react';
 import { NODE_DEFINITIONS, NODE_REGISTRY } from '@/lib/nodes/registry';
 import { nodeIconFor } from '@/components/nodes/NodeIcons';
 import { useFlowStore } from '@/lib/store';
@@ -18,6 +18,9 @@ import { TAG_ORDER, TAG_META, tagsFor, type NodeTag } from '@/lib/nodes/tags';
 import { PHASE_MAP, DEFAULT_PHASE } from '@/lib/phases';
 import { sheetSlide, staggerList, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { sidebarZoneOf } from '@/lib/render-studio/sidebar-zones';
+import { TASK_CARDS } from '@/lib/render-studio/task-cards';
+import { useToolModeUi } from '@/lib/render-studio/tool-mode-ui';
 
 export const DND_MIME = 'application/interiorflow-node';
 
@@ -28,10 +31,15 @@ export function NodeLibraryPanel() {
   const setPanel = useFlowStore((s) => s.setPanel);
   const setPaletteOpen = useFlowStore((s) => s.setPaletteOpen);
   const addNode = useFlowStore((s) => s.addNode);
+  const addNote = useFlowStore((s) => s.addNote);
   const updateParam = useFlowStore((s) => s.updateParam);
   const aiTier = useFlowStore((s) => s.aiTier);
   const workspace = useFlowStore((s) => s.workspace);
   const openSketch = useSketchStore((s) => s.open);
+  // H2 (docs/SPEC-MODE-PER-STAGE.md §2) — bấm thẻ MASTER = mở tool window (ĐÚNG luật "bắt buộc
+  // mở window để thao tác"), KHÔNG thả node AI trần lên canvas như thẻ thường. Tái dùng thẳng
+  // `useToolModeUi`/`ToolWindow` đã có từ D3 — không có luồng mở window thứ 2.
+  const selectCard = useToolModeUi((s) => s.selectCard);
   const [query, setQuery] = useState('');
   const [activeTag, setActiveTag] = useState<NodeTag | typeof ALL_TAG>(ALL_TAG);
   const { screenToFlowPosition } = useReactFlow();
@@ -95,13 +103,17 @@ export function NodeLibraryPanel() {
   // VI/EN, nên gõ "vách", "vach", "tach nen", "hoa văn" đều ra đúng node.
   const matchesQuery = (d: NodeDefinition, q: string) => !q || nodeMatches(d, q);
   const hiddenByTier = (d: NodeDefinition) => noAi && (d.category === 'AI_GENERATE' || d.category === 'AI_EDIT');
+  // H2 — chặng Render giờ có 2 vùng RIÊNG (Mood+Collab, Master, xem bên dưới) — danh sách
+  // theo tag/★ ở đây thu hẹp lại đúng nghĩa "Node thường" (§2), không lặp lại node đã có vùng
+  // riêng. Chặng khác (nếu sau này panel dùng lại) giữ hành vi cũ nguyên vẹn.
+  const hiddenBySidebarZone = (d: NodeDefinition) => phase.id === 'render' && sidebarZoneOf(d.type) !== 'normal';
 
   // Nhóm ★ node ưu tiên của chặng hiện tại (chỉ khi không tìm kiếm — soft focus, không lọc bỏ phần khác).
   const featured = useMemo(() => {
     if (query.trim()) return [];
     return phase.featured
       .map((t) => NODE_REGISTRY[t])
-      .filter((d): d is NodeDefinition => Boolean(d) && !hiddenByTier(d));
+      .filter((d): d is NodeDefinition => Boolean(d) && !hiddenByTier(d) && !hiddenBySidebarZone(d));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, noAi, query]);
 
@@ -109,13 +121,33 @@ export function NodeLibraryPanel() {
   // hiện ở nhiều nhóm, giúp tìm theo "việc muốn làm" thay vì tầng hệ thống.
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const filtered = NODE_DEFINITIONS.filter((d) => matchesQuery(d, q) && !hiddenByTier(d));
+    const filtered = NODE_DEFINITIONS.filter((d) => matchesQuery(d, q) && !hiddenByTier(d) && !hiddenBySidebarZone(d));
     const tagsToShow = activeTag === ALL_TAG ? TAG_ORDER : [activeTag];
     return tagsToShow
       .map((tag) => ({ tag, defs: filtered.filter((d) => tagsFor(d.type).includes(tag)) }))
       .filter((g) => g.defs.length > 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, noAi, activeTag]);
+
+  // H2 — vùng ① Mood + Collab (moodboard/reference/gu) — chỉ ai.moodboard + input.guref khớp
+  // registry thật, "note" KHÔNG phải NodeDefinition (type React Flow riêng) nên thêm bằng nút
+  // riêng (addNote), không qua NodeCard.
+  const moodDefs = useMemo(() => (phase.id === 'render' ? NODE_DEFINITIONS.filter((d) => sidebarZoneOf(d.type) === 'mood') : []), [phase]);
+  // H2 — vùng ② Node MASTER: đúng thứ tự TASK_CARDS, chỉ node còn tồn tại trong registry (phòng
+  // khi task-cards.ts trỏ nhầm type — không throw, tự bỏ qua).
+  const masterDefs = useMemo(
+    () => (phase.id === 'render' ? TASK_CARDS.map((c) => NODE_REGISTRY[c.nodeType]).filter((d): d is NodeDefinition => Boolean(d)) : []),
+    [phase],
+  );
+  const masterCardIdByNodeType = useMemo(() => new Map(TASK_CARDS.map((c) => [c.nodeType, c.id])), []);
+  const onOpenMaster = useCallback(
+    (type: string) => {
+      const cardId = masterCardIdByNodeType.get(type);
+      if (cardId) selectCard(cardId);
+    },
+    [masterCardIdByNodeType, selectCard],
+  );
+  const onAddNote = useCallback(() => addNote(centerPos()), [addNote, centerPos]);
 
   return (
     <>
@@ -212,6 +244,49 @@ export function NodeLibraryPanel() {
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-2.5 pb-4">
+        {/* H2 (docs/SPEC-MODE-PER-STAGE.md §2) — vùng ① Mood + Collab: moodboard cộng tác kiểu
+            Miro (ai.moodboard, reference/gu, note). Chỉ hiện chặng Render, không tìm kiếm (soft
+            focus, giống khối ★ bên dưới — ẩn khi đang gõ tìm để đỡ rối). */}
+        {moodDefs.length > 0 && !query.trim() && (
+          <div>
+            <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t3)]">
+              <Users size={10} />
+              Mood + Collab
+            </p>
+            <div className="space-y-1">
+              {moodDefs.map((def) => (
+                <NodeCard key={`mood-${def.type}`} def={def} onAdd={onAdd} />
+              ))}
+              <button
+                onClick={onAddNote}
+                className="flex w-full items-center gap-2 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-2 text-[11px] text-[var(--t4)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--t2)]"
+                title="Thêm ghi chú dán lên canvas — trao đổi/ghi ý tưởng, không phải node xử lý"
+              >
+                <StickyNote size={13} className="shrink-0" />
+                Ghi chú
+              </button>
+            </div>
+            <div className="mt-3 border-t border-[var(--border)]" />
+          </div>
+        )}
+
+        {/* H2 §2 — vùng ② Node MASTER: bắt buộc mở tool window để thao tác (ToolWindow, D3) —
+            bấm thẻ ở đây KHÔNG thả node AI trần lên canvas như thẻ thường (xem onOpenMaster). */}
+        {masterDefs.length > 0 && !query.trim() && (
+          <div>
+            <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t3)]">
+              <Sparkles size={10} />
+              Node MASTER — mở cửa sổ
+            </p>
+            <motion.div className="space-y-1" variants={staggerList} initial="hidden" animate="visible">
+              {masterDefs.map((def) => (
+                <NodeCard key={`master-${def.type}`} def={def} onAdd={onOpenMaster} draggableOverride={false} />
+              ))}
+            </motion.div>
+            <div className="mt-3 border-t border-[var(--border)]" />
+          </div>
+        )}
+
         {/* ★ Node ưu tiên cho chặng hiện tại — soft focus, phần còn lại vẫn liệt kê đủ bên dưới */}
         {featured.length > 0 && (
           <div>
@@ -269,14 +344,30 @@ export function NodeLibraryPanel() {
  * 1 thẻ node — BẤM để thêm vào giữa canvas (dễ nhất, nhất là cảm ứng) HOẶC kéo-thả để
  * đặt đúng chỗ. Cả hai cùng tạo node; click là lối chính vì kéo-thả React Flow khó trên touch.
  */
-function NodeCard({ def, onAdd }: { def: NodeDefinition; onAdd: (type: string) => void }) {
+function NodeCard({
+  def,
+  onAdd,
+  draggableOverride = true,
+}: {
+  def: NodeDefinition;
+  onAdd: (type: string) => void;
+  /** H2 — thẻ MASTER tắt kéo-thả: kéo lên canvas sẽ THẢ NODE AI TRẦN, sai luật "bắt buộc mở
+   * window để thao tác" (§2). Bấm vẫn mở window bình thường qua `onAdd`. Kéo-thả-mở-window là
+   * việc riêng của H3 (đúng ràng buộc "kéo/thả xổ ra WINDOW" — cần cơ chế khác `DND_MIME` hiện
+   * tại, vốn chỉ hiểu "thả ra = tạo node"). */
+  draggableOverride?: boolean;
+}) {
   return (
     <div
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData(DND_MIME, def.type);
-        e.dataTransfer.effectAllowed = 'move';
-      }}
+      draggable={draggableOverride}
+      onDragStart={
+        draggableOverride
+          ? (e) => {
+              e.dataTransfer.setData(DND_MIME, def.type);
+              e.dataTransfer.effectAllowed = 'move';
+            }
+          : undefined
+      }
       onClick={() => onAdd(def.type)}
       role="button"
       tabIndex={0}
@@ -287,7 +378,7 @@ function NodeCard({ def, onAdd }: { def: NodeDefinition; onAdd: (type: string) =
         }
       }}
       className="group flex cursor-pointer items-start gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 transition-transform hover:border-[var(--accent-ring)] hover:scale-[1.015] active:scale-[0.99]"
-      title="Bấm để thêm vào giữa canvas · hoặc kéo thả để đặt đúng chỗ"
+      title={draggableOverride ? 'Bấm để thêm vào giữa canvas · hoặc kéo thả để đặt đúng chỗ' : 'Bấm để mở cửa sổ công cụ'}
     >
       {(() => { const Icon = nodeIconFor(def.type); return <Icon size={14} className="mt-0.5 shrink-0 text-[var(--t3)]" />; })()}
       <div className="min-w-0 flex-1">

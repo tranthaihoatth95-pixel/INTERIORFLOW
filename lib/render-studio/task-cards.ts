@@ -1,9 +1,10 @@
 /**
- * lib/render-studio/task-cards.ts — 6 thẻ việc Tool Mode (VIỆC B, 28/07,
- * docs/SPEC-RENDER-STUDIO.md §1B + §6). Thuần dữ liệu — ánh xạ mỗi thẻ sang ĐÚNG 1 node AI có
- * thật trong registry (`lib/nodes/registry.ts`), KHÔNG bịa node mới. Tool Mode chỉ là lớp trình
- * bày rút gọn CHO node đó — bấm "▶ Render" build 2 node (input.image + node AI này), nối cạnh,
- * chạy qua `runNode()` CÙNG đường thật (Không có luồng "giả" riêng cho Tool Mode).
+ * lib/render-studio/task-cards.ts — thẻ việc Tool Mode (VIỆC B, 28/07, docs/SPEC-RENDER-STUDIO.md
+ * §1B + §6; mở rộng H2 02/08 — vùng "node MASTER", docs/SPEC-MODE-PER-STAGE.md §2). Thuần dữ liệu
+ * — ánh xạ mỗi thẻ sang ĐÚNG 1 node AI có thật trong registry (`lib/nodes/registry.ts`), KHÔNG
+ * bịa node mới. Tool Mode chỉ là lớp trình bày rút gọn CHO node đó — bấm "▶ Render" build 2 node
+ * (input.image + node AI này), nối cạnh, chạy qua `runNode()` CÙNG đường thật (Không có luồng
+ * "giả" riêng cho Tool Mode).
  *
  * `before`/`after`: ảnh Trước/Sau dạy bằng kết quả (§6 "dạy bằng kết quả, không bằng chữ").
  * Chỉ thẻ Sketch→Ảnh thật có ảnh THẬT sẵn (`public/demo/sketch-in.jpg`/`sketch-out.png`, dùng
@@ -60,6 +61,41 @@ export const TASK_CARDS: TaskCard[] = [
     label: 'Sửa một mảng',
     desc: 'Vẽ vùng cần sửa (sàn/tường/đồ) rồi đổi vật liệu — cần vẽ tay trên canvas',
     nodeType: 'ai.materialswap',
+    formKind: 'canvas-handoff',
+  },
+  // H2 (02/08, docs/TICKET-UI-HATANG-2026-08-02.md) — mở rộng vùng "node MASTER" (sidebar §2):
+  // 5 thẻ cùng khuôn hình các thẻ trên (ĐÚNG shape input/output, KHÔNG cần UI riêng), tận dụng
+  // thẳng ToolModeForm chung — additive, không đổi execute()/registry.
+  {
+    id: 'emptystaging',
+    label: 'Phòng trống → Bày đồ',
+    desc: 'Ảnh phòng trống → phòng có nội thất theo phong cách (virtual staging)',
+    nodeType: 'ai.emptystaging',
+  },
+  {
+    id: 'exterior',
+    label: 'Render mặt tiền',
+    desc: 'Sketch/massing mặt tiền → render exterior photoreal',
+    nodeType: 'ai.exterior',
+  },
+  {
+    id: 'furniture',
+    label: 'Xoá/Thêm đồ',
+    desc: 'Vẽ vùng cần sửa rồi xoá hoặc thêm nội thất — cần vẽ tay trên canvas',
+    nodeType: 'ai.furniture',
+    formKind: 'canvas-handoff',
+  },
+  {
+    id: 'removebg',
+    label: 'Cắt nền',
+    desc: 'Tách sản phẩm/đồ nội thất khỏi nền',
+    nodeType: 'ai.removebg',
+  },
+  {
+    id: 'localedit',
+    label: 'Chỉnh cục bộ',
+    desc: 'Vẽ vùng cần sửa rồi chỉnh sáng/tương phản/bão hoà tại chỗ — cần vẽ tay trên canvas',
+    nodeType: 'ai.localedit',
     formKind: 'canvas-handoff',
   },
   {
