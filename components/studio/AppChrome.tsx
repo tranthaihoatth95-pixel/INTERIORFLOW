@@ -28,61 +28,25 @@
  * "Run flow" Command Palette) + hàng đợi trong menu "Việc" — xem lib/execution.ts.
  */
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
-import { AiStatusDot } from '@/components/settings/AiDependencySettings';
 import { DEFAULT_PHASE, STAGE_TINT, type Phase } from '@/lib/phases';
 import StageSwitcher from '@/components/studio/StageSwitcher';
-import { UploadButton } from '@/components/studio/UploadButton';
-import { RenderIOMenus } from '@/components/studio/RenderIOMenus';
-import { TasksDropdown } from '@/components/TasksDropdown';
 import { MobileMenu } from '@/components/MobileMenu';
 import { pressable } from '@/lib/motion';
 import { useStageTransition } from '@/components/studio/StageTransitionProvider';
 import { stageHrefFrom } from '@/lib/project-scope';
 import { useT } from '@/lib/i18n';
-import { cn } from '@/lib/utils';
 import { IFLogo } from '@/components/entry/IFLogo';
-import { UserAvatar } from '@/components/avatar/UserAvatar';
-import { AccountMenu } from '@/components/AccountMenu';
-import { HomeButton } from '@/components/studio/HomeButton';
 import { requestGallery } from '@/lib/resume';
 import SessionWatch from '@/components/studio/SessionWatch';
 import ShortcutsPanel from '@/components/ShortcutsPanel';
 import { activeToPhase, pickStage } from '@/lib/studio/stage-nav';
-import { useDismissable } from '@/lib/useDismissable';
 import type { AppChromeActive } from '@/components/studio/AppChromeTypes';
 
 export type { AppChromeActive };
-
-/**
- * K4 (`docs/TICKET-FIX-KINH-HEADER-2026-08-02.md`) — 2 dropdown `mat-panel` (MoreMenu/UserChip)
- * TRƯỚC là con của `<header class="mat-header">` (cũng có backdrop-filter riêng) → "kính lồng
- * kính": blur của menu chỉ sample trong phạm vi header, không thấy canvas dưới, chữ node xuyên
- * qua rõ nét. Sửa: PORTAL panel ra `document.body`, định vị `position:fixed` theo
- * `getBoundingClientRect()` của nút bấm — thoát hẳn khỏi backdrop root của header. Animation
- * `motion.div` GIỮ NGUYÊN (không đổi sang Popover.tsx — component đó không có
- * AnimatePresence enter/exit tích hợp kiểu này, dùng thẳng sẽ mất animation hiện có).
- */
-function useMenuAnchor() {
-  const triggerRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
-  const [anchorRect, setAnchorRect] = useState<{ top: number; right: number } | null>(null);
-
-  useLayoutEffect(() => {
-    if (!open) return;
-    const el = triggerRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    setAnchorRect({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
-  }, [open]);
-
-  return { triggerRef, menuRef, open, setOpen, anchorRect };
-}
 
 interface Props {
   active: AppChromeActive;
@@ -92,9 +56,6 @@ export function AppChrome({ active }: Props) {
   const flowName = useFlowStore((s) => s.flowName);
   const workspace = useFlowStore((s) => s.workspace);
   const setFlowName = useFlowStore((s) => s.setFlowName);
-  const tasksOpen = useFlowStore((s) => s.tasksOpen);
-  const setTasksOpen = useFlowStore((s) => s.setTasksOpen);
-  const flowRuns = useFlowStore((s) => s.flowRuns);
   const applyTheme = useFlowStore((s) => s.applyTheme);
   const [editing, setEditing] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -103,14 +64,6 @@ export function AppChrome({ active }: Props) {
   const pathname = usePathname();
   const { begin } = useStageTransition();
 
-  // 2.2.90 ĐỢT 2 (01/08) — Tasks dropdown trước đây 0 logic đóng (không bấm-ra-ngoài, không
-  // Escape) — THÊM hành vi qua hook dùng chung, khác biệt được phép duy nhất của đợt này.
-  const tasksRef = useRef<HTMLDivElement>(null);
-  useDismissable({ open: active === 'render' && tasksOpen, onDismiss: () => setTasksOpen(false), refs: [tasksRef] });
-
-  // 2.2.86 (30/07) — badge "Việc" = số lượt ĐANG CHẠY + ĐANG CHỜ (không phải số job lẻ như cũ),
-  // đúng đơn vị FlowRun mới. "Liếc là biết" — không cần mở menu mới thấy có gì đang bận.
-  const activeJobs = flowRuns.filter((r) => r.status === 'running' || r.status === 'queued').length;
   const currentPhase = activeToPhase(active);
   const tint = STAGE_TINT[active === 'render' ? (workspace ?? DEFAULT_PHASE) : currentPhase];
 
@@ -198,7 +151,9 @@ export function AppChrome({ active }: Props) {
           "Tệp" về cụm trái cạnh logo (đúng quy ước menu File, vẫn CHỈ active==='render' — không
           đổi lớp, xem ghi chú đầu file). StageSwitcher ra làm con TRỰC TIẾP shrink-0 của header
           — khớp yêu cầu "3 nút chặng đứng yên một chỗ" của 7.3.31, không còn sống trong hộp co. */}
-      {active === 'render' && ((workspace ?? 'render') === 'render' ? <RenderIOMenus /> : <UploadButton />)}
+      {/* 03/08 SPEC-APP-SHELL-CHUNG §2 mục 5 — "Tệp ▾" RỜI header: nó là toolbar tài liệu RIÊNG
+          của chặng render, nay sống ở RenderDocBar (slot toolbar của StageShell, HomeScreen
+          truyền vào) — header 3 chặng đồng nhất. */}
 
       {/* LUẬT (đã vỡ 1 lần, 30/07 — Tệp/StageSwitcher từng sống ở đây, cả 2 đều shrink-0, tràn
           khỏi hộp bị bóp nhỏ hơn nội dung → "Chạy flow" vẽ sau trong DOM nên đè lên phần tràn,
@@ -235,7 +190,6 @@ export function AppChrome({ active }: Props) {
         <StageSwitcher active={currentPhase} onPick={onPick} photoContext={active === 'photo'} />
       </div>
 
-      {active === 'render' && <AiStatusDot />}
 
       {/* 2.2.86 (30/07, Hoà chốt) — "Chạy flow" KHÔNG còn đứng riêng trên bar (~110px trả lại
           ngân sách bề rộng). Khởi chạy giờ CẠNH ĐỐI TƯỢNG: nút ▶ trên node, "Kết xuất" trên thẻ
@@ -246,34 +200,9 @@ export function AppChrome({ active }: Props) {
           này cộng Tệp/AiStatusDot (route render) tràn 819px cứng bất kể viewport. MobileMenu
           (sm:hidden trước đây, nay lg:hidden) đã có sẵn Tasks+Home+account+actions trong bottom
           sheet — chỉ cần đẩy cùng mốc, không viết UI mới. */}
-      <div className="hidden items-center gap-2 lg:flex lg:gap-2.5">
-        {active === 'render' && (
-          <div ref={tasksRef} className="relative shrink-0">
-            <motion.button
-              {...pressable}
-              onClick={() => setTasksOpen(!tasksOpen)}
-              className={cn(
-                'flex items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
-                tasksOpen
-                  ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
-                  : 'border-[var(--border)] text-[var(--t2)] hover:bg-[var(--hover)]',
-              )}
-            >
-              {tr('Việc', 'Tasks')}
-              {activeJobs > 0 && (
-                <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[var(--accent)] px-1 text-[length:var(--fs-xs)] font-semibold text-white">
-                  {activeJobs}
-                </span>
-              )}
-              <ChevronDown size={12} className={cn('transition-transform duration-200 ease-[cubic-bezier(.32,.72,0,1)]', tasksOpen && 'rotate-180')} />
-            </motion.button>
-            <AnimatePresence>{tasksOpen && <TasksDropdown />}</AnimatePresence>
-          </div>
-        )}
-
-        <HomeButton compact />
-        <UserChip />
-      </div>
+      {/* 03/08 SPEC-APP-SHELL-CHUNG §2 — CẮT khỏi header: "Việc ▾" → RenderDocBar (toolbar
+          chặng render) · nút ⌂ Home (TRÙNG logo góc trái, cùng về Gallery) · avatar UserChip
+          (avatar duy nhất ở RAIL, mở AccountMenu — CHOT-AVATAR-MEMOJI §2). */}
 
       {/* SessionWatch — universal (30/07, sửa lỗi: trước chỉ StudioBar có, route `/` không báo
           hết phiên giữa chừng). Dải báo fixed đáy màn, không chặn thao tác. */}
@@ -286,46 +215,4 @@ export function AppChrome({ active }: Props) {
   );
 }
 
-/**
- * 30/07 — bậc ② thang ưu tiên nhường chỗ (xem comment đầu <header>): "Đăng xuất" KHÔNG còn là nút
- * rời cạnh avatar — vào trong menu bấm-avatar-để-mở, chuẩn Google/Figma/Notion/Slack/GitHub cho
- * hành động PHÁ HUỶ (mất phiên) không đặt trần trụi ngoài thanh. Không phải responsive (không ẩn
- * theo breakpoint) — đây là ĐÚNG chuẩn ở mọi kích thước, tiện thể trả lại ~1 nút rời chiều rộng.
- */
-function UserChip() {
-  const user = useFlowStore((s) => s.user);
-  const { triggerRef, menuRef, open, setOpen, anchorRect } = useMenuAnchor();
-  // 2.2.90 ĐỢT 2 (01/08) — thay backdrop `fixed inset-0` bằng hook dùng chung, cùng lý do đã
-  // ghi ở MoreMenu() phía trên (click-xuyên-qua + thêm Escape). K4 — 2 ref riêng, xem MoreMenu().
-  useDismissable({ open, onDismiss: () => setOpen(false), refs: [triggerRef, menuRef] });
-  if (!user) return null;
-  return (
-    <div ref={triggerRef} className="relative shrink-0">
-      <motion.button
-        {...pressable}
-        onClick={() => setOpen((o) => !o)}
-        title={`${user.name} · ${user.email}${user.isAdmin ? ' · admin' : ''}`}
-        aria-expanded={open}
-        className={cn(
-          'flex items-center gap-1.5 rounded-[10px] border py-1 pl-1 pr-2 text-xs transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
-          open
-            ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
-            : 'border-[var(--border)] text-[var(--t2)] hover:bg-[var(--hover)]',
-        )}
-      >
-        <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full">
-          <UserAvatar id={user.id} avatar={user.avatar} name={user.name} size={24} frame={false} />
-        </span>
-        <span className="hidden max-w-24 truncate sm:inline">{user.name}</span>
-      </motion.button>
-
-      <AccountMenu
-        open={open}
-        anchorRect={anchorRect ? { top: anchorRect.top, right: anchorRect.right } : null}
-        onDismiss={() => setOpen(false)}
-        menuRef={menuRef}
-      />
-    </div>
-  );
-}
 

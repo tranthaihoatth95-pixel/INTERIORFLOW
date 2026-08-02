@@ -25,7 +25,7 @@ import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PencilRuler, Box, Presentation } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
-import { PHASES, STAGE_TINT, STAGE_INDEX, phaseLabel } from '@/lib/phases';
+import { PHASES, phaseLabel } from '@/lib/phases';
 import { useCadStore } from '@/lib/cad/store';
 import { useFlowStore } from '@/lib/store';
 import { springSheet, pressable, easeApple } from '@/lib/motion';
@@ -396,27 +396,10 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
           />
         )}
       </div>
-      <span
-        className="if-stage-label"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          fontSize: 9.5,
-          fontWeight: 600,
-          letterSpacing: '0.18em',
-          textTransform: 'uppercase',
-          color: 'var(--t4)',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        <span style={{ width: 14, height: 1, background: STAGE_TINT[active] }} />
-        {/* 7.3.31 (30/07) — bỏ hẳn `· {label}` trùng thông tin với nút pill NGAY BÊN CẠNH (đã ghi
-           tên chặng rõ ràng) — vi phạm Luật #6 Đồng Bộ, và bản thân nó là nguyên nhân ③ khiến
-           Tệp/⋯/avatar nhảy vị trí (3 độ dài khác nhau đẩy mọi thứ SAU nó). Giữ đúng số 2 chữ số
-           (bất biến bề rộng) + vạch màu chặng — đủ phân biệt, không lặp lại chữ đã có. */}
-        {STAGE_INDEX[active]}
-      </span>
+      {/* 03/08 SPEC-APP-SHELL-CHUNG §2 mục 4 — nhãn "— 01/02/03" ĐÃ CẮT HẲN: Hoà chỉ ra "nhãn
+          không ai hiểu" (vi phạm SPEC-NGON-NGU-CHI-DAN — số thứ tự chặng là jargon nội bộ, nút
+          pill ngay cạnh đã ghi tên chặng rõ ràng). Bản 30/07 từng giữ số 2 chữ số làm "bất biến
+          bề rộng" — nay avatar/⋯ đã rời header nên không còn thứ gì phía sau để nhảy vị trí. */}
       {photoContext && (
         <span
           style={{

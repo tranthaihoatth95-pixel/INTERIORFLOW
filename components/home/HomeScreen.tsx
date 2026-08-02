@@ -22,6 +22,7 @@ import { LoginScreen } from '@/components/entry/LoginScreen';
 import { WelcomeIntro } from '@/components/entry/WelcomeIntro';
 import { StageIntroCard } from '@/components/onboarding/StageIntroCard';
 import { StageShell } from '@/components/studio/StageShell';
+import { RenderDocBar } from '@/components/studio/RenderDocBar';
 import { NodeLibraryPanel } from '@/components/NodeLibraryPanel';
 import { GalleryPanel } from '@/components/GalleryPanel';
 import { LibraryPanel } from '@/components/LibraryPanel';
@@ -571,7 +572,11 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
         {/* 03/08 (SPEC-APP-SHELL-CHUNG §3): shell chuyển sang <StageShell> dùng chung —
             AppChrome/LeftRail/Dashboard/FlowsPanel sống trong shell (mọi chặng như nhau).
             Nội dung còn lại giữ nguyên. */}
-        <StageShell active="render" statusBar={<StatusBar stage="render" hidden={presentModeOpen} />}>
+        <StageShell
+          active="render"
+          toolbar={<RenderDocBar />}
+          statusBar={<StatusBar stage="render" hidden={presentModeOpen} />}
+        >
           {/* mỗi panel tự quản AnimatePresence riêng (iOS sheet, key duy nhất) */}
 
           {/* Nền mờ khi mở panel trên mobile — bấm ra ngoài để đóng. Ẩn từ md trở lên. */}

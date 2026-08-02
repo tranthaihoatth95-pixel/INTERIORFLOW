@@ -437,6 +437,12 @@ export default function CadEditor() {
             { id: 'idf', label: '.idf', sub: 'File project JSON — TẤT CẢ sheet + metadata, để backup/chia sẻ', icon: <Save size={15} />, onSelect: doExportIdf },
             { id: 'sheetset-pdf', label: 'Xuất bộ hồ sơ (PDF nhiều tờ)', sub: 'TẤT CẢ sheet gộp 1 PDF — mục lục đầu + mỗi tờ 1 trang, giữ khổ giấy/tỉ lệ riêng', icon: <ListOrdered size={15} />, onSelect: doExportSheetSetPdf },
             { id: 'ifpack', label: 'Sao lưu dự án (.ifpack)', sub: 'ZIP đầy đủ — bản vẽ + ảnh markup hiện trường, phục hồi lại được', icon: <Save size={15} />, onSelect: doExportIfpack },
+            // 03/08 SPEC-APP-SHELL-CHUNG §2: 2 NÚT "Đưa sang…" to trên fileBar đã CẮT (trùng
+            // segmented chuyển chặng ở header). NĂNG LỰC handoff-ảnh (stash ảnh bản vẽ sang
+            // chặng sau — thứ segmented KHÔNG làm) GIỮ NGUYÊN, chuyển vào menu Xuất — đúng ngữ
+            // nghĩa "xuất bản vẽ đi nơi khác".
+            { id: 'to-render', label: 'Đưa ảnh bản vẽ sang Rendering', sub: 'Kết xuất layout thành node Import Image ở chặng Rendering', icon: <ArrowRight size={15} />, onSelect: toRender },
+            { id: 'to-present', label: 'Đưa ảnh bản vẽ sang Presenting', sub: 'Chụp bản vẽ hiện tại thành 1 slide mới (không đè slide có sẵn)', icon: <ArrowRight size={15} />, onSelect: toPresent },
             {
               id: 'auto-backup',
               label: backupOn ? 'Backup tự động: đang bật' : 'Bật backup tự động',
@@ -488,16 +494,6 @@ export default function CadEditor() {
         <input ref={idfRef} type="file" accept=".idf,.json,application/json" hidden onChange={onOpenIdfFile} />
         <input ref={ifpackRef} type="file" accept=".ifpack,.zip,application/zip" hidden onChange={onOpenIfpackFile} />
         <input ref={photoRef} type="file" accept="image/*" hidden onChange={onPickPhoto} />
-        {/* 2 nút chuyển chặng luôn đi CÙNG NHAU và dạt về phải (marginLeft:auto thay cho spacer
-         *  flex:1 — với flexWrap, spacer sẽ nuốt hết chỗ và đẩy nút thứ 2 xuống dòng). */}
-        <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexShrink: 0 }}>
-          <button type="button" onClick={toRender} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Kết xuất layout thành node Import Image ở chặng Rendering">
-            Đưa sang Rendering <ArrowRight size={14} />
-          </button>
-          <button type="button" onClick={toPresent} style={{ ...fileBtn, background: 'var(--accent)', color: '#fff', border: 'none' }} title="Chụp bản vẽ hiện tại thành 1 slide mới ở chặng Presenting (không đè slide có sẵn)">
-            Đưa sang Presenting <ArrowRight size={14} />
-          </button>
-        </div>
       </div>
 
       {/* vùng canvas + panel */}
