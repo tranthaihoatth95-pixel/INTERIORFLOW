@@ -1,5 +1,69 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 02/08 tối — 3D-2: sửa STATUS.md sai (3D-2..5 thật ra ĐÃ XONG) + đổi captureSequence sang streaming
+
+**Phát hiện trước khi viết gì**: nhận việc "làm 3D-2" theo đúng chỉ đạo (`docs/SPEC-3D-CORE.md` §4),
+nhưng `git log` trên `lib/three/capture.ts`/`components/three/Scene3DViewer.tsx` cho thấy 3D-2
+(`d7dff63`) → 3D-3 depth/lineart (`4c81469`) → 3D-4 section/walk (`87c2e78`) → 3D-5 push-pull massing
+(`2881c32`) ĐÃ COMMIT SẴN VÀO MAIN, working tree sạch — `STATUS.md` mục "⬜ CHƯA BẮT ĐẦU" ghi sai
+hoàn toàn (đã sửa). `Scene3DViewer.tsx` đã có đủ 5 mode `orbit/campath/section/walk/massing`; mode
+`campath` áp đúng `LookAtMode` (tangent/point/zone) tự động qua `sample.dirRad` (đã tính sẵn trong
+`planCamPath()`, không cần logic riêng ở viewer) — **task "Scene3DViewer thêm mode campath" KHÔNG
+cần code mới**.
+
+**Việc thật còn lại — đổi API `captureSequence()`** (`lib/three/capture.ts`): bản 3D-2 gốc trả thẳng
+`string[]` (gom HẾT khung PNG base64 vào 1 mảng RAM trước khi trả) — Hoà yêu cầu (02/08 tối) đổi
+sang streaming vì "cảnh mật độ cao nhiều khung có thể rất nặng". Đổi chữ ký "hợp đồng"
+(`SPEC-3D-CORE.md` §3 — đổi phải qua duyệt, coi lệnh trực tiếp của Hoà là duyệt): đã `grep` xác nhận
+0 nơi gọi `captureSequence` ngoài chính file + test, nên đổi THẲNG không giữ song song chữ ký cũ.
+
+Chữ ký mới: `captureSequence(scene, path, { fps, frameCount?, w, h, onFrame, signal? }):
+{ frameCount, aborted }`. `onFrame` nhận từng khung NGAY sau khi render (không giữ mảng nội bộ nào
+tích luỹ cả — nơi gọi tự quyết dùng `dataUrl` thế nào). `signal?: AbortSignal` kiểm TRƯỚC mỗi khung
+(không huỷ giữa khung đang render dở). `frameCount` tuỳ chọn ép đúng số khung, dàn ĐỀU trên
+`[0, totalDurationSec]` — khung cuối CHẠM đúng mốc cuối; không truyền thì giữ hành vi gốc (số khung
+suy từ `round(totalDurationSec×fps)`, mỗi khung cách `1/fps`s, khung cuối có thể hụt vài phần nghìn
+giây nếu không chia hết — đúng hành vi mọi bộ đếm khung theo fps).
+
+Tách phần LẬP KẾ HOẠCH khung ra hàm THUẦN riêng — `planCaptureSequenceFrames(path, fps,
+frameCountOverride?): CaptureSequencePlanFrame[]` — không cần `WebGLRenderer`/canvas nên test được
+dưới `sucrase-node` (khác `captureFrame`/`captureSequence` gốc cần WebGL thật). Test mới trong
+`capture.test.ts`: đường 8 giây bắt buộc theo yêu cầu Hoà — đếm đúng số khung cả 2 chế độ (fps-driven
+32 khung @ fps=4, và ép-số 5 khung dàn đều), kiểm đúng vị trí camera ở khung đầu/giữa/cuối, khung
+cuối chế độ ép-số CHẠM đúng t=8s (chế độ fps-driven thì KHÔNG, đúng ý thiết kế — đã ghi rõ trong
+JSDoc để không ai tưởng là bug), lỗi rõ khi `fps≤0`/`frameCountOverride<1`. `capture.test.ts` tổng
+26/26 pass (11 ca mới + 15 ca cũ không đổi).
+
+**Kiểm sạch**: `npm test` toàn repo (không chỉ file mới) — `EXITCODE=0`, grep hết log không thấy
+`FAIL -`/fail>0 nào. `npx tsc --noEmit -p .` (toàn repo) KHÔNG chạy xong nổi trong sandbox này — luôn
+hết giờ lệnh dù có `tsconfig.tsbuildinfo` sẵn (ghi lại làm bằng chứng, phiên sau khỏi thử lại y hệt);
+dùng tsc SCOPED (`tsconfig.scoped.json` tạm, `include` đúng 6 file liên quan: `capture.ts`,
+`capture.test.ts`, `cad-to-obj.ts`, `campath.ts`, `Scene3DViewer.tsx`, bench page) → sạch (exit 0).
+`next lint` scoped 3 file đổi → sạch (1 lỗi `no-unused-vars` phát hiện+sửa ngay lúc lint, biến
+`frames` đếm tay dư thừa vì `result.frameCount` đã có).
+
+**⚠️ CHƯA đo được thời gian THẬT captureSequence qua browser** — Hoà yêu cầu rõ "đo 1 lần, ghi số
+thật vào báo cáo, đừng đoán". Thử 2 hướng đều không được: (1) chạy `next dev` trong sandbox rồi dùng
+Chrome MCP mở `127.0.0.1:3001` — Chrome MCP điều khiển trình duyệt THẬT trên máy Hoà, không phải máy
+ảo sandbox này, nên không thấy được server chạy trong sandbox; (2) tự đo bằng headless browser NGAY
+trong sandbox — không có `puppeteer`/`playwright`/binary Chromium cài sẵn, cài mới cần tải nặng, vượt
+giới hạn 1 lệnh (~45s) của môi trường này, không background được (đã thử `nohup`+`disown`+`setsid`,
+xác nhận tiến trình nền KHÔNG sống sót qua ranh giới 2 lần gọi lệnh riêng biệt trong sandbox này —
+ghi lại làm bằng chứng môi trường, không phải lỗi thao tác). Kết luận: **không có cách đo số thật
+trong phiên Cowork này** — thay vì bịa số, đã chuẩn bị sẵn bench `app/dev-bench-3d-2/page.tsx` (scene
+tổng hợp ~2000 hộp/24.000 tam giác, gộp 4 màu — khớp quy mô bench 3D-1 "2040 entity/24k tam giác" để
+so sánh ngang hàng; đường cam 4 giây; đo tổng/trung bình/nhanh nhất/chậm nhất mỗi khung, in ra cả màn
+hình lẫn console). Hoà (hoặc phiên Claude Code chạy trên máy thật, có thể tự `npm run dev` sống lâu
+dài) chạy `npm run dev` → mở `127.0.0.1:3001/dev-bench-3d-2` → đọc số → báo lại → XOÁ route (tạm,
+không phải sản phẩm).
+
+Đã dùng để đối chứng khoảng scope tsc, **2 file scratch không xoá được trong sandbox này** (FUSE,
+cùng loại cũ) — đã dọn rỗng nội dung, Hoà `rm` tay khi tiện: `tsconfig.scoped.json`,
+`app/dev-bench-3d-2/page.tsx` (file này CHỈ xoá SAU KHI đã chạy lấy số — xem trên).
+
+Theo đúng lệnh gốc: "Xong 3D-2 thì DỪNG, báo cáo. 3D-3/3D-4 thứ tự cố định, chờ lệnh riêng." — đã
+DỪNG ở đây (3D-3/3D-4/3D-5 vốn đã xong sẵn từ trước, không phải việc mới).
+
 ## 30/07 khuya (đợt 6) — merge feat/sprint-infra + sprint BOQ ĐỢT 2 (2.1.9.r ATLAS Material cache)
 
 ### Merge `feat/sprint-infra` (`7a62e09`)

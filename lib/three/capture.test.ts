@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import type { CamPathResult } from '../cad/campath';
 import type { Scene3DData } from './cad-to-obj';
-import { sampleCamPathAt, camPathSampleToThree, nearFarForScene } from './capture';
+import { sampleCamPathAt, camPathSampleToThree, nearFarForScene, planCaptureSequenceFrames } from './capture';
 
 let pass = 0;
 let fail = 0;
@@ -91,6 +91,59 @@ console.log('nearFarForScene — near/far riêng theo khoảng cách camera→t�
 
   const farAway = nearFarForScene(demoScene, new THREE.Vector3(2, 1.35, -100));
   ok('camera xa scene → near/far dịch xa theo, vẫn far > near', farAway.near > near1.near && farAway.far > farAway.near);
+}
+
+console.log('planCaptureSequenceFrames — lập kế hoạch khung thuần (3D-2, không cần WebGL)');
+{
+  // Đường thẳng 8000mm/8s, dirRad=0 cả đường — vị trí three.js dễ tính tay: x(mét) = t(giây)×1,
+  // y luôn 0 nên z three.js luôn 0 (không cần verify trục z riêng, đã verify ở khối trên).
+  const path8s: CamPathResult = {
+    samples: [
+      { point: { x: 0, y: 0 }, dirRad: 0, tSec: 0, cumLenMm: 0 },
+      { point: { x: 8000, y: 0 }, dirRad: 0, tSec: 8, cumLenMm: 8000 },
+    ],
+    totalLengthMm: 8000,
+    totalDurationSec: 8,
+  };
+
+  // Chế độ theo fps (mặc định, không truyền frameCountOverride) — 8s ở fps=4 → 32 khung.
+  const framesFps = planCaptureSequenceFrames(path8s, 4);
+  ok('fps=4, đường 8s → đúng round(8×4)=32 khung', framesFps.length === 32);
+  ok('khung ĐẦU: t=0, x=0m', framesFps[0].tSec === 0 && Math.abs(framesFps[0].pose.position.x) < 1e-9);
+  const midFps = framesFps[16];
+  ok('khung GIỮA (i=16): t=4s, x=4m', Math.abs(midFps.tSec - 4) < 1e-9 && Math.abs(midFps.pose.position.x - 4) < 1e-9);
+  const lastFps = framesFps[framesFps.length - 1];
+  ok('khung CUỐI (chế độ fps): t=i/fps=7.75s (KHÔNG chạm đúng 8s — hành vi fps gốc, khớp cảnh báo trong JSDoc)', Math.abs(lastFps.tSec - 7.75) < 1e-9);
+
+  // Chế độ ép đúng số khung (frameCountOverride) — dàn ĐỀU trên [0, totalDurationSec], khung
+  // cuối LUÔN chạm đúng mốc cuối đường — đây là ca test bắt buộc Hoà nêu "kiểm camera đúng vị trí
+  // ở frame đầu/giữa/cuối", chỉ chế độ này đảm bảo khung cuối khớp CHÍNH XÁC t=totalDurationSec.
+  const framesN = planCaptureSequenceFrames(path8s, 4, 5);
+  ok('ép frameCountOverride=5 → đúng 5 khung (không lệ thuộc fps)', framesN.length === 5);
+  ok('khung ĐẦU (ép số): t=0, x=0m', framesN[0].tSec === 0 && Math.abs(framesN[0].pose.position.x) < 1e-9);
+  ok('khung GIỮA (ép số, i=2/4): t=4s, x=4m', Math.abs(framesN[2].tSec - 4) < 1e-9 && Math.abs(framesN[2].pose.position.x - 4) < 1e-9);
+  ok('khung CUỐI (ép số): CHẠM đúng t=8s, x=8m', framesN[4].tSec === 8 && Math.abs(framesN[4].pose.position.x - 8) < 1e-9);
+
+  ok('frameCountOverride=1 → không chia-cho-0, trả 1 khung ở t=0', (() => {
+    const f1 = planCaptureSequenceFrames(path8s, 4, 1);
+    return f1.length === 1 && f1[0].tSec === 0;
+  })());
+
+  let threwFps = '';
+  try {
+    planCaptureSequenceFrames(path8s, 0);
+  } catch (e) {
+    threwFps = e instanceof Error ? e.message : String(e);
+  }
+  ok('fps ≤ 0 → báo lỗi rõ (nhắc "fps")', threwFps.toLowerCase().includes('fps'));
+
+  let threwCount = '';
+  try {
+    planCaptureSequenceFrames(path8s, 4, 0);
+  } catch (e) {
+    threwCount = e instanceof Error ? e.message : String(e);
+  }
+  ok('frameCountOverride < 1 → báo lỗi rõ (nhắc "frameCountOverride")', threwCount.includes('frameCountOverride'));
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);
