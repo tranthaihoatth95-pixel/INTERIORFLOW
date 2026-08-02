@@ -13,10 +13,10 @@ Một khu **File Manager + Cài đặt** hợp nhất (hạ tầng xuyên app �
 | **Giao diện / Theme** | brand color · theme preset (Default/Simplified/Custom) · **hình nền** · ngôn ngữ | ref "Settings › Appearance" |
 | **Thư mục trỏ** | chọn thư mục IF trỏ tới (mounted / Drive-git bridge) | — |
 
-## Chưa chốt (để thiết kế sau)
-- Cài đặt là **trang riêng** hay **panel trượt** từ avatar?
-- Theme áp cấp **app** hay cấp **dự án** (Brand Kit đã có màu dự án — tránh trùng)?
-- "Thư mục trỏ" nối thế nào với `QUYET-DINH-HA-TANG` (đĩa là nguồn sự thật · Drive/Git bridge)?
+## ✅ Chốt 02/08 (Cowork quyết theo uỷ quyền design, mock: mocks/mock-settings-polished.html)
+- Cài đặt = **TRANG RIÊNG /settings** (mở từ rail ⚙ + menu avatar). Panel trượt không làm.
+- Theme (sáng/tối/hệ thống + hình nền canvas) = cấp **APP**; màu thương hiệu dự án vẫn ở Brand Kit — 2 tầng không giẫm.
+- "Nơi lưu file" hiện path thật + trạng thái đồng bộ; nút Đổi = di chuyển an toàn (copy→verify→xoá cũ), đúng `QUYET-DINH-HA-TANG` ①B đĩa là nguồn sự thật.
 
 ## Layout CHỐT HƯỚNG (Hoà 02/08 — ref Elementor "Documents": *"phân vùng đẹp và rõ"*)
 **3 khu — trái/giữa/phải:**

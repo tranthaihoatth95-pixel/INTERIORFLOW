@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Design System + Bản đồ Stage (chốt 02/08)</title>
+<style>
+  :root{
+    --bg:#eceae7;--panel:#fff;--line:#e6e3de;--ink:#2b2b30;--mut:#9a9aa2;--mut2:#c3c1bc;
+    --accent:#6a57f5;--accent-soft:#efeafe;--chip:#f4f2ef;
+    --o:#e8804d;--g:#3fb984;--b:#4a90e2;--pink:#e86a9a;--y:#e0a43a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink)}
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 18px 60px}
+  h1{font-size:20px;margin:0 0 4px}
+  .lead{font-size:12.5px;color:#6b6b73;margin:0 0 22px;line-height:1.5}
+  h2{font-size:14px;margin:30px 0 12px;padding-bottom:7px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+  h2 .n{width:22px;height:22px;border-radius:6px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 6px 20px rgba(40,38,35,.06)}
+  .muted{font-size:11px;color:var(--mut)}
+
+  /* tokens */
+  .swrow{display:flex;gap:10px;flex-wrap:wrap}
+  .sw{width:78px}
+  .sw .chip{height:44px;border-radius:10px;border:1px solid var(--line)}
+  .sw .lb{font-size:9.5px;margin-top:4px;color:#4a4a52;font-weight:600}
+  .sw .hx{font-size:8.5px;color:var(--mut)}
+  .tokgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:6px}
+  .type samp{display:block;margin:2px 0}
+  .radbox{display:inline-block;width:40px;height:40px;background:var(--accent-soft);border:1px solid var(--accent);margin-right:8px;vertical-align:middle}
+  .mo li{font-size:11.5px;color:#4a4a52;margin-bottom:5px;line-height:1.4}
+
+  /* components gallery */
+  .comps{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+  .cbox{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;min-height:96px;display:flex;flex-direction:column;gap:8px}
+  .cbox .ct{font-size:10px;color:var(--mut);font-weight:700;letter-spacing:.03em}
+  .btn{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:600;align-self:flex-start}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:#3a3a42}
+  .badge{font-size:9px;font-weight:700;border-radius:5px;padding:2px 7px}
+  .b1{background:#e9f6ef;color:#1f9d6b}.b2{background:var(--accent-soft);color:var(--accent)}.b3{background:#eaf1fb;color:#3a6fc4}.b4{background:#fdf0e8;color:#c96a35}
+  .node{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .node .t{font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px}
+  .dot{width:8px;height:8px;border-radius:50%}
+  .cr{margin-left:auto;font-size:9px;color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:0 5px}
+  .win{border:1px solid rgba(0,0,0,.08);border-radius:12px;background:rgba(106,87,245,.06);overflow:hidden}
+  .win .h{display:flex;align-items:center;gap:6px;padding:6px 9px;border-bottom:1px solid rgba(0,0,0,.06);font-size:11px;font-weight:600}
+  .win .play{width:18px;height:18px;border-radius:6px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px}
+  .win .x{margin-left:auto;color:var(--mut)}
+  .tbar{display:inline-flex;flex-direction:column;gap:3px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:5px}
+  .tbar .t{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#5a5a62}
+  .tbar .t.on{background:var(--accent-soft);color:var(--accent)}
+  .pres{display:flex;align-items:center;gap:6px}
+  .pg{display:flex;background:#f4f2ef;border-radius:20px;padding:3px}
+  .pg .a{width:22px;height:22px;border-radius:50%;margin-left:-6px;border:2px solid #fff;position:relative}
+  .pg .a:first-child{margin-left:0}.pg.off .a{filter:grayscale(1) opacity(.7)}
+  .onl{position:absolute;right:-1px;bottom:-1px;width:7px;height:7px;border-radius:50%;background:#3fb984;border:1.5px solid #f4f2ef}
+  .add{width:24px;height:24px;border-radius:50%;background:#2b2b30;color:#fff;border:0}
+  .mtg{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;border-radius:20px;padding:6px 12px;font-size:11.5px;font-weight:600}
+  .swt{width:30px;height:18px;border-radius:18px;background:rgba(255,255,255,.35);position:relative}
+  .swt::after{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:2px;right:2px}
+  .zoom{display:inline-flex;align-items:center;gap:3px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:4px 8px;font-size:11px;color:#5a5a62}
+  .zoom span{padding:0 3px}
+  .msw{border:1px solid var(--line);border-radius:9px;overflow:hidden;width:96px}
+  .msw .th{height:34px;background:#7a5230}.msw .mn{font-size:10px;font-weight:600;padding:3px 6px}.msw .id{font-size:8px;color:var(--accent);padding:0 6px 4px}
+
+  /* stage map */
+  .stages{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .stage{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+  .stage .sh{display:flex;flex-direction:column;height:150px;background:#f3f1ee}
+  .sh .bar{display:flex;align-items:center;gap:6px;padding:7px 10px;background:#fff;border-bottom:1px solid var(--line);font-size:10px}
+  .sh .stg{background:var(--ink);color:#fff;border-radius:6px;padding:2px 8px;font-weight:700;font-size:9.5px}
+  .sh .stg.alt{background:#fff;color:#6b6b73;border:1px solid var(--line);font-weight:500}
+  .sh .body{flex:1;display:flex}
+  .sh .sb{width:64px;border-right:1px solid var(--line);background:#fff;padding:6px;font-size:8px;color:var(--mut);display:flex;flex-direction:column;gap:4px}
+  .sh .sb .z{border:1px solid var(--line);border-radius:5px;padding:3px 4px;font-weight:600;color:#5a5a62}
+  .sh .cv{flex:1;position:relative;background:radial-gradient(circle at 1px 1px,#dcd9d3 1px,transparent 0) 0 0/14px 14px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--mut);text-align:center;padding:6px}
+  .sh .foot{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);display:flex;gap:5px}
+  .sh .pill{background:#fff;border:1px solid var(--line);border-radius:12px;padding:3px 9px;font-size:8.5px;color:#5a5a62;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  .sh .pill.acc{background:var(--accent);color:#fff;border-color:transparent}
+  .stage .cap{padding:11px 13px}
+  .stage .cap h3{font-size:12.5px;margin:0 0 6px}
+  .stage .cap ul{margin:0;padding-left:15px}
+  .stage .cap li{font-size:10.5px;color:#4a4a52;margin-bottom:3px;line-height:1.35}
+  .tag{font-size:8.5px;font-weight:700;color:#fff;background:var(--g);border-radius:5px;padding:1px 6px;margin-left:6px}
+  .vitrow{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+  .vst{text-align:center}
+  .glyph{width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 38% 34%,#fff,#efeafe 55%,#ded3fb);border:1px solid #d8cffb;position:relative;margin:0 auto;box-shadow:0 4px 14px rgba(106,87,245,.25)}
+  .glyph .el{position:absolute;width:7px;height:7px;border-radius:50%;background:#6a57f5;top:4px;left:50%;transform:translateX(-50%)}
+  .glyph .p{position:absolute;width:4px;height:4px;border-radius:50%;background:#6a57f5;opacity:.55}
+  .vst .lb{font-size:9.5px;color:#4a4a52;font-weight:600;margin-top:6px}
+  .vst .lb small{display:block;color:#9a9aa2;font-weight:400}
+  .lm{width:290px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+  .lm .lh{display:flex;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid var(--line);font-size:12px;font-weight:600}
+  .lm .tb{display:flex;gap:4px;background:var(--chip);border-radius:8px;padding:3px;margin:9px 11px 0}
+  .lm .tb b{flex:1;text-align:center;font-size:11px;padding:5px;border-radius:6px;color:#6b6b73;font-weight:500}
+  .lm .tb b.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .lm .msgs{padding:10px 11px;display:flex;flex-direction:column;gap:8px}
+  .lm .m{font-size:10.5px;line-height:1.4;max-width:84%;padding:7px 9px;border-radius:10px}
+  .lm .m.ai{background:var(--accent-soft);color:#3a3160;align-self:flex-start}
+  .lm .m.you{background:#f1f0ec;align-self:flex-end}
+  .lm .m .who{font-size:8.5px;font-weight:700;margin-bottom:2px}
+  .lm .inp{margin:0 11px 11px;border:1px solid var(--line);border-radius:9px;padding:7px 9px;font-size:10.5px;color:#9a9aa2}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>InteriorFlow · Design System + Bản đồ Stage</h1>
+  <p class="lead">Gom mọi thứ đã chốt 02/08 — token &amp; component chung, và từng stage hiện gì. Nguồn cho code build đồng bộ. (Nối các spec: DESIGN-SYSTEM-IF · CHANG2-UI-2MODE · MODE-PER-STAGE · STAGE-LIBRARIES.)</p>
+
+  <h2><span class="n">A</span> Design tokens</h2>
+  <div class="card">
+    <div class="muted" style="margin-bottom:8px">Màu nền tảng — 1 accent tím, dùng dè</div>
+    <div class="swrow">
+      <div class="sw"><div class="chip" style="background:#eceae7"></div><div class="lb">bg</div><div class="hx">#eceae7</div></div>
+      <div class="sw"><div class="chip" style="background:#fff"></div><div class="lb">panel</div><div class="hx">#ffffff</div></div>
+      <div class="sw"><div class="chip" style="background:#e6e3de"></div><div class="lb">line</div><div class="hx">#e6e3de</div></div>
+      <div class="sw"><div class="chip" style="background:#2b2b30"></div><div class="lb">ink</div><div class="hx">#2b2b30</div></div>
+      <div class="sw"><div class="chip" style="background:#6a57f5"></div><div class="lb">accent</div><div class="hx">#6a57f5</div></div>
+      <div class="sw"><div class="chip" style="background:#efeafe"></div><div class="lb">accent-soft</div><div class="hx">#efeafe</div></div>
+    </div>
+    <div class="muted" style="margin:14px 0 8px">Màu loại (node/nhánh) &amp; trục 3D</div>
+    <div class="swrow">
+      <div class="sw"><div class="chip" style="background:#e8804d"></div><div class="lb">Mood/AI</div></div>
+      <div class="sw"><div class="chip" style="background:#3fb984"></div><div class="lb">Thường/OK</div></div>
+      <div class="sw"><div class="chip" style="background:#4a90e2"></div><div class="lb">Logic</div></div>
+      <div class="sw"><div class="chip" style="background:#e86a9a"></div><div class="lb">Comment</div></div>
+      <div class="sw"><div class="chip" style="background:#e05c5c"></div><div class="lb">Trục X</div></div>
+      <div class="sw"><div class="chip" style="background:#4a78e0"></div><div class="lb">Trục Z</div></div>
+    </div>
+    <div class="tokgrid" style="margin-top:16px">
+      <div class="type"><div class="muted">Chữ (system sans)</div><samp style="font-size:17px;font-weight:700">Tiêu đề 17</samp><samp style="font-size:12.5px">Thân 12.5</samp><samp style="font-size:10px;color:#9a9aa2">Phụ 10</samp></div>
+      <div><div class="muted">Bo góc 6/9/12/16</div><span class="radbox" style="border-radius:6px"></span><span class="radbox" style="border-radius:9px"></span><span class="radbox" style="border-radius:12px"></span><span class="radbox" style="border-radius:16px"></span></div>
+      <div><div class="muted">Motion</div><ul class="mo" style="padding-left:15px;margin:6px 0 0"><li>Spring <code>withSpring</code>, không ease cứng</li><li>Window: scale 0.96→1 + fade</li><li>Gạt mode: crossfade shell</li><li><b>reduce-motion thắng tất cả</b></li></ul></div>
+    </div>
+  </div>
+
+  <h2><span class="n">B</span> Component chung</h2>
+  <div class="comps">
+    <div class="cbox"><span class="ct">BUTTON</span><button class="btn">Chính</button><button class="btn ghost">Phụ</button></div>
+    <div class="cbox"><span class="ct">BADGE PHẠM VI</span><div style="display:flex;gap:5px;flex-wrap:wrap"><span class="badge b1">Chung</span><span class="badge b2">Studio</span><span class="badge b3">Chặng</span><span class="badge b4">Dự án</span></div></div>
+    <div class="cbox"><span class="ct">NODE CARD</span><div class="node"><div class="t"><span class="dot" style="background:#6a57f5"></span>Sketch → Ảnh thật<span class="cr">4cr</span></div></div></div>
+    <div class="cbox"><span class="ct">TOOL WINDOW</span><div class="win"><div class="h"><span class="play">▶</span>Đổi ánh sáng<span class="x">✕</span></div></div></div>
+    <div class="cbox"><span class="ct">TOOLBAR BÚT (tablet)</span><div class="tbar"><span class="t on">✎</span><span class="t">🖊</span><span class="t">▬</span><span class="t">⌫</span></div></div>
+    <div class="cbox"><span class="ct">PRESENCE on/off + mời</span><div class="pres"><div class="pg"><span class="a" style="background:#c9a27a"><span class="onl"></span></span><span class="a" style="background:#6a57f5"><span class="onl"></span></span></div><div class="pg off"><span class="a" style="background:#8a8f95"></span></div><button class="add">+</button></div></div>
+    <div class="cbox"><span class="ct">MODE TOGGLE</span><div class="mtg">Vẽ 3D <span class="swt"></span></div></div>
+    <div class="cbox"><span class="ct">BOTTOM ZOOM BAR</span><div class="zoom"><span>➤</span><span>✋</span><span>▢</span>|<span>−</span><span>250%</span><span>+</span><span>⛶</span></div></div>
+    <div class="cbox"><span class="ct">MATERIAL SWATCH</span><div class="msw"><div class="th"></div><div class="mn">Gỗ óc chó</div><div class="id">matId W-102</div></div></div>
+    <div class="cbox"><span class="ct">AXIS GIZMO + VIEWCUBE</span><svg width="70" height="60" viewBox="0 0 70 60"><line x1="30" y1="45" x2="30" y2="15" stroke="#4a78e0" stroke-width="3"/><text x="30" y="12" font-size="9" fill="#4a78e0" text-anchor="middle">Z</text><line x1="30" y1="45" x2="55" y2="55" stroke="#e05c5c" stroke-width="3"/><line x1="30" y1="45" x2="8" y2="55" stroke="#3fb984" stroke-width="3"/><polygon points="60,12 68,17 60,22 52,17" fill="#efeafe" stroke="#c3bdf0"/></svg></div>
+  </div>
+
+  <h2><span class="n">C</span> Bản đồ Stage — hiện gì / cơ chế</h2>
+  <div class="stages">
+
+    <div class="stage">
+      <div class="sh">
+        <div class="bar"><span class="stg">CAD · Phác thảo</span><span class="stg alt">Rendering</span><span class="stg alt">Present</span></div>
+        <div class="body"><div class="sb"><div class="z">Vẽ</div><div class="z">Ký hiệu</div><div class="z">Layer</div></div><div class="cv">Bản vẽ 2D có ngữ nghĩa · Sketch↔Pro↔Revit</div></div>
+      </div>
+      <div class="cap"><h3>① CAD <span class="tag">chốt</span></h3><ul><li>Mode: Sketch ↔ Pro ↔ Revit (cấu kiện B2)</li><li>Kệ: khung tên · ký hiệu · template phòng · hatch</li><li>Nguồn ngữ nghĩa (matId) cho cả app</li></ul></div>
+    </div>
+
+    <div class="stage">
+      <div class="sh">
+        <div class="bar"><span class="stg alt">CAD</span><span class="stg">Rendering</span><span class="stg alt">Present</span></div>
+        <div class="body"><div class="sb"><div class="z">Mood+Collab</div><div class="z">Master</div><div class="z">Thường</div></div><div class="cv">Canvas Miro · ảnh · swatch · sticky · comment · con trỏ · vẽ tay<div class="foot"><span class="pill acc">Render+Mood</span><span class="pill">Vẽ 3D ⚪</span></div></div></div>
+      </div>
+      <div class="cap"><h3>② Render · Mood + Collab <span class="tag">chốt</span></h3><ul><li>Tablet + bút đầy đủ · presence on/off + mời</li><li>Swatch matId · share Viewer/Commenter/Editor</li><li>Mindmap = 1 template tuỳ chọn (kéo từ kệ)</li></ul></div>
+    </div>
+
+    <div class="stage">
+      <div class="sh">
+        <div class="bar"><span class="stg alt">CAD</span><span class="stg">Rendering</span><span class="stg alt">Present</span></div>
+        <div class="body"><div class="sb"><div class="z">Tạo·Sửa</div><div class="z">Vật liệu</div><div class="z">Camera</div></div><div class="cv">Viewport 3D · trục toạ độ + ViewCube · khối xám<div class="foot"><span class="pill">Render+Mood ⚪</span><span class="pill acc">Vẽ 3D ●</span></div></div></div>
+      </div>
+      <div class="cap"><h3>② Render · Vẽ 3D <span class="tag">chốt</span></h3><ul><li>Command Panel kiểu 3ds Max + Scene Objects/Properties</li><li>Catalog V-Ray/D5/IF hợp nhất matId</li><li>Massing xám → photoreal D5/Chaos (cửa bậc 5)</li></ul></div>
+    </div>
+
+    <div class="stage">
+      <div class="sh">
+        <div class="bar"><span class="stg alt">CAD</span><span class="stg alt">Rendering</span><span class="stg">Presenting</span></div>
+        <div class="body"><div class="sb"><div class="z">Deck</div><div class="z">BOQ</div><div class="z">Video</div></div><div class="cv">5 loại hồ sơ · chọn template → mở đúng editor</div></div>
+      </div>
+      <div class="cap"><h3>③ Present <span class="tag">chốt</span></h3><ul><li>5 hồ sơ: Deck · Material board · BOQ · Word · Video</li><li>Video 2 tầng: ① Sinh (chặng 2) → ② Dựng CapCut đây</li><li>Live-link CAD · Word hư cấu 100%</li></ul></div>
+    </div>
+
+    <div class="stage">
+      <div class="sh">
+        <div class="bar"><span class="stg alt">◈ Master Library</span></div>
+        <div class="body"><div class="sb"><div class="z">Nav</div><div class="z">Store</div></div><div class="cv">Kệ lọc theo chặng · card có badge phạm vi · inspector phải</div></div>
+      </div>
+      <div class="cap"><h3>◈ Kệ Thư viện (Store) <span class="tag">chốt</span></h3><ul><li>6 form lập luận · phạm vi 4 mức · publish có duyệt</li><li>Kéo = instantiate · vật liệu matId kệ chung</li></ul></div>
+    </div>
+
+    <div class="stage">
+      <div class="sh">
+        <div class="bar"><span class="stg alt">▤ File Manager + Cài đặt</span></div>
+        <div class="body"><div class="sb"><div class="z">Nav</div><div class="z">Tích hợp</div></div><div class="cv">3 khu: nav · folders+files · inspector + dung lượng</div></div>
+      </div>
+      <div class="cap"><h3>▤ File Manager + Cài đặt <span class="tag" style="background:#e0a43a">note</span></h3><ul><li>Gom chung: avatar (Apple/Oppo) · theme · thư mục trỏ · hình nền</li><li>Layout 3 khu — thiết kế chi tiết sau</li></ul></div>
+    </div>
+
+  </div>
+
+  <h2><span class="n">D</span> Visual Vitals + chế độ LM (chat AI · nhóm)</h2>
+  <div class="card">
+    <div class="muted" style="margin-bottom:12px">Glyph 1 accent (cầu kính + electron, số hạt = kênh thông tin) — KHÔNG cầu vồng Siri. Bốn trạng thái nhìn thấy được:</div>
+    <div class="vitrow">
+      <div class="vst"><div class="glyph"><div class="el"></div><div class="p" style="top:26px;left:20px"></div></div><div class="lb">Nghỉ<small>ít hạt · tĩnh</small></div></div>
+      <div class="vst"><div class="glyph"><div class="el"></div><div class="p" style="top:24px;left:18px"></div><div class="p" style="top:30px;left:30px"></div></div><div class="lb">Nghe<small>nhịp nhẹ</small></div></div>
+      <div class="vst"><div class="glyph"><div class="el"></div><div class="p" style="top:20px;left:16px"></div><div class="p" style="top:30px;left:32px"></div><div class="p" style="top:34px;left:20px"></div></div><div class="lb">Nghĩ<small>hạt xoay nhanh</small></div></div>
+      <div class="vst"><div class="glyph" style="box-shadow:0 4px 18px rgba(106,87,245,.5)"><div class="el"></div><div class="p" style="top:18px;left:18px"></div><div class="p" style="top:28px;left:30px"></div><div class="p" style="top:34px;left:22px"></div><div class="p" style="top:22px;left:32px"></div></div><div class="lb">Trả lời<small>sáng · nhiều hạt</small></div></div>
+      <div class="lm">
+        <div class="lh"><div class="glyph" style="width:24px;height:24px"><div class="el" style="width:5px;height:5px;top:2px"></div></div> Vitals · chế độ LM</div>
+        <div class="tb"><b class="on">AI</b><b>Nhóm</b></div>
+        <div class="msgs">
+          <div class="m ai"><div class="who" style="color:#6a57f5">Vitals AI</div>Concept "gỗ chiều" hợp hướng Tây — gợi ý thêm mảng sáng cân bằng. [nguồn: brief §2]</div>
+          <div class="m you">Ok, để hỏi nhóm</div>
+          <div class="m ai" style="background:#f6f0e9;color:#6a5a3a"><div class="who" style="color:#c98a2a">Cộng sự · nhóm</div>Chốt travertine cho sàn nhé 👍</div>
+        </div>
+        <div class="inp">Nhắn AI hoặc cả nhóm…</div>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:12px">Chế độ <b>LM</b> (kéo Vitals xuống → popover · kéo tiếp → panel đầy kiểu NotebookLM): <b>một cửa</b> cho cả <b>chat AI</b> (tư vấn · hỏi tài liệu có trích nguồn) LẪN <b>chat nhóm</b> người-với-người trong dự án — như đã bàn.</p>
+  </div>
+
+  <p class="muted" style="margin-top:22px">Cowork · 02/08/2026 · bộ tổng chốt hạ tầng UI. Tính năng về sau dựa trên hệ token + component này để "lầy đầy và xịn".</p>
+</div>
+</body>
+</html>

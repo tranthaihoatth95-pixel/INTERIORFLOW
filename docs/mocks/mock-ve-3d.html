@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Vẽ 3D mode — Command Panel + viewport (xem thử)</title>
+<style>
+  :root{
+    --bg:#eceae7; --panel:#fff; --line:#e6e3de; --ink:#2b2b30; --mut:#9a9aa2; --mut2:#c3c1bc;
+    --accent:#6a57f5; --accent-soft:#efeafe; --chip:#f4f2ef;
+    --x:#e05c5c; --yaxis:#3fb984; --z:#4a78e0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink)}
+  .note{max-width:1300px;margin:18px auto 8px;padding:0 16px}
+  .note h1{font-size:15px;margin:0 0 6px;font-weight:650}
+  .note p{font-size:12.5px;color:#6b6b73;margin:0;line-height:1.55}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
+  .legend span{display:flex;align-items:center;gap:6px;font-size:12px;color:#4a4a52}
+  .pin{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;flex:none}
+  code{background:#f0eefb;color:#5a49d6;border-radius:4px;padding:0 4px;font-size:11px}
+
+  .app{max-width:1300px;margin:10px auto 40px;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(40,38,35,.10)}
+  .top{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:650}
+  .brand .mk{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:12px}
+  .btn{padding:6px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;color:#3a3a42;font-size:12.5px}
+  .proj{color:#6b6b73}
+  .switch{margin:0 auto;display:flex;gap:4px;background:var(--chip);border-radius:11px;padding:4px}
+  .switch button{border:0;background:transparent;padding:7px 14px;border-radius:8px;font-size:12.5px;color:#6b6b73;display:flex;align-items:center;gap:6px}
+  .switch button.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.10)}
+  .top .right{display:flex;align-items:center;gap:8px}
+  .presence{display:flex;align-items:center;gap:6px}
+  .pgroup{display:flex;align-items:center;background:#f4f2ef;border-radius:22px;padding:4px}
+  .pgroup .av{width:26px;height:26px;border-radius:50%;position:relative;margin-left:-7px;border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+  .pgroup .av:first-child{margin-left:0}
+  .onl{position:absolute;right:-1px;bottom:-1px;width:8px;height:8px;border-radius:50%;background:#3fb984;border:1.5px solid #f4f2ef}
+  .addbtn{width:30px;height:30px;border-radius:50%;background:#2b2b30;color:#fff;border:0;font-size:16px}
+
+  .body{display:flex;min-height:600px}
+  .rail{width:46px;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:16px;padding:14px 0;color:var(--mut2)}
+  .rail .ic{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .rail .ic.on{background:var(--accent-soft);color:var(--accent)}
+
+  /* COMMAND PANEL sidebar */
+  .side{width:256px;border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+  .ctabs{display:flex;border-bottom:1px solid var(--line)}
+  .ctabs button{flex:1;border:0;background:transparent;padding:9px 2px;font-size:11px;color:#6b6b73;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .ctabs button .i{font-size:14px}
+  .ctabs button.on{color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent);font-weight:600}
+  .sbody{padding:12px;overflow:auto;display:flex;flex-direction:column;gap:10px}
+  .search{border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:12px;color:var(--mut)}
+  .mtabs{display:flex;gap:6px}
+  .mtabs b{font-weight:600;font-size:11px;padding:5px 11px;border:1px solid var(--line);border-radius:20px;color:#6b6b73;background:#fff}
+  .mtabs b.on{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+  .mgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .msw{border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+  .msw .th{height:46px}
+  .msw .mn{font-size:9px;padding:3px 5px;color:#4a4a52;font-weight:600}
+  .msw .id{font-size:8px;color:var(--accent);padding:0 5px 4px}
+  .hint{font-size:10.5px;color:var(--mut);line-height:1.4;background:#faf9f7;border:1px dashed var(--line);border-radius:8px;padding:7px 9px}
+  .shelf{border-top:1px solid var(--line);padding-top:10px;margin-top:2px}
+  .shelf .zt{font-size:10px;letter-spacing:.05em;color:var(--mut);font-weight:700;margin-bottom:6px}
+  .row{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:#fff}
+
+  /* 3D VIEWPORT */
+  .canvas{flex:1;position:relative;background:linear-gradient(#f6f4f1,#ecebe7);overflow:hidden}
+  .vp{position:absolute;inset:0}
+  .viewcube{position:absolute;right:18px;top:16px;width:60px;height:60px}
+  .axisg{position:absolute;left:22px;bottom:70px;width:90px;height:90px}
+  .camlabel{position:absolute;background:#fff;border:1px solid var(--line);border-radius:7px;font-size:10px;padding:2px 7px;color:#4a4a52;box-shadow:0 3px 8px rgba(0,0,0,.1)}
+  .cur{position:absolute;display:flex;align-items:flex-start;pointer-events:none;z-index:8}
+  .cur .ar{font-size:16px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+  .cur .nm{font-size:10px;color:#fff;padding:1px 7px;border-radius:8px;margin-left:-2px;margin-top:8px;font-weight:600}
+
+  /* bottom kept zoom bar + mode toggle */
+  .bottombar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;z-index:9}
+  .zoombar{display:flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--line);border-radius:26px;padding:6px 10px;box-shadow:0 6px 20px rgba(40,38,35,.14)}
+  .zoombar .zt{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#5a5a62}
+  .zoombar .zt.on{background:var(--accent-soft);color:var(--accent)}
+  .zoombar .zpct{font-size:12.5px;color:#4a4a52;padding:0 6px;min-width:44px;text-align:center}
+  .zoombar .div{width:1px;height:20px;background:var(--line);margin:0 4px}
+  .modetoggle{display:flex;align-items:center;gap:9px;background:var(--accent);color:#fff;border-radius:26px;padding:9px 15px;box-shadow:0 6px 20px rgba(106,87,245,.35);font-size:12.5px;font-weight:600}
+  .swt{width:34px;height:20px;border-radius:20px;background:rgba(255,255,255,.35);position:relative;flex:none}
+  .swt::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:2px;right:2px;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+</style>
+</head>
+<body>
+
+<div class="note">
+  <h1>IF · Rendering › gạt <b>Vẽ 3D</b> — hạ tầng UI giữ nguyên, chỉ đổi <b>canvas + sidebar</b> (xem thử)</h1>
+  <p>Top bar · rail · thanh zoom/pan dưới <b>giữ y nguyên</b>. Canvas → <b>viewport 3D có trục toạ độ + ViewCube</b>. Sidebar → <b>Command Panel</b> kiểu 3ds Max (Tạo·Sửa·Vật liệu·Camera·Hiện), thư viện hiện <b>V-Ray · D5 · IF(ATLAS)</b>.</p>
+  <div class="legend">
+    <span><i class="pin">1</i> Toggle Vẽ 3D (bật = đang xem)</span>
+    <span><i class="pin">2</i> Command Panel 5 tab (học Max)</span>
+    <span><i class="pin">3</i> Catalog V-Ray/D5/IF hợp nhất matId</span>
+    <span><i class="pin">4</i> Trục toạ độ + ViewCube</span>
+  </div>
+</div>
+
+<div class="app">
+  <div class="top">
+    <div class="brand"><span class="mk">▤</span> InteriorFlow</div>
+    <span class="btn">Tệp ▾</span><span class="proj">Dự án mẫu</span>
+    <div class="switch">
+      <button>◱ CAD · Phác thảo</button>
+      <button class="on">◈ Rendering</button>
+      <button>▭ Presenting</button>
+    </div>
+    <div class="right">
+      <div class="presence">
+        <div class="pgroup">
+          <span class="av" style="background:linear-gradient(135deg,#c9a27a,#9a6b43)"><span class="onl"></span></span>
+          <span class="av" style="background:linear-gradient(135deg,#6a57f5,#9d5ff5)"><span class="onl"></span></span>
+        </div>
+        <button class="addbtn">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="rail">
+      <div class="ic">▦</div><div class="ic">▭</div><div class="ic">⌕</div>
+      <div class="ic">↺</div><div class="ic on">⬢</div><div class="ic">▤</div>
+      <div class="ic">▧</div><div class="ic">◲</div><div class="ic">◍</div>
+    </div>
+
+    <!-- COMMAND PANEL -->
+    <div class="side">
+      <div class="ctabs">
+        <button><span class="i">＋</span>Tạo</button>
+        <button><span class="i">✎</span>Sửa</button>
+        <button class="on"><span class="i">◍</span>Vật liệu</button>
+        <button><span class="i">▤</span>Camera</button>
+        <button><span class="i">◲</span>Hiện</button>
+      </div>
+      <div class="sbody">
+        <div class="search">⌕ Tìm vật liệu (tag)…</div>
+        <div class="mtabs"><b class="on">V-Ray</b><b>D5</b><b>IF · ATLAS</b></div>
+        <div class="mgrid">
+          <div class="msw"><div class="th" style="background:linear-gradient(135deg,#8a5a34,#6a4526)"></div><div class="mn">Gỗ óc chó</div><div class="id">W-102</div></div>
+          <div class="msw"><div class="th" style="background:linear-gradient(135deg,#d8cbb8,#b7a687)"></div><div class="mn">Travertine</div><div class="id">S-044</div></div>
+          <div class="msw"><div class="th" style="background:linear-gradient(135deg,#b8bcc0,#8b9096)"></div><div class="mn">Thép xước</div><div class="id">M-011</div></div>
+          <div class="msw"><div class="th" style="background:linear-gradient(135deg,#6f7a70,#4c554d)"></div><div class="mn">Sơn xanh rêu</div><div class="id">P-070</div></div>
+          <div class="msw"><div class="th" style="background:linear-gradient(135deg,#e8e4dd,#cfc9bf)"></div><div class="mn">Vữa trắng</div><div class="id">P-001</div></div>
+          <div class="msw"><div class="th" style="background:linear-gradient(135deg,#cfe0e6,#a7c3cc);opacity:.85"></div><div class="mn">Kính mờ</div><div class="id">G-020</div></div>
+        </div>
+        <div class="hint">◍ Chọn → <b>click lên mặt</b> để gán. V-Ray · D5 · IF cùng khoá <code>matId</code> → render AI của IF hay xuất D5/Chaos đều khớp.</div>
+        <div class="shelf">
+          <div class="zt">▤ CAMERA (tab kế)</div>
+          <div class="row">📷 Đặt camera · ống kính 35/50mm</div>
+          <div class="row">〰 Đường cam (campath) · tầm mắt 1650</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3D VIEWPORT -->
+    <div class="canvas">
+      <svg class="vp" viewBox="0 0 700 560" preserveAspectRatio="xMidYMid slice">
+        <!-- ground diamond -->
+        <polygon points="360,150 560,246 420,330 220,222" fill="#eeece8" stroke="#dcd9d3" stroke-width="1"/>
+        <!-- ground grid lines -->
+        <g stroke="#e0ddd6" stroke-width="1">
+          <line x1="310" y1="174" x2="490" y2="270"/>
+          <line x1="270" y1="198" x2="450" y2="294"/>
+          <line x1="410" y1="162" x2="290" y2="234"/>
+          <line x1="460" y1="186" x2="340" y2="258"/>
+        </g>
+
+        <!-- BOX A (living) -->
+        <polygon points="360,102 443,150 381,186 298,138" fill="#d9d6d0"/>
+        <polygon points="298,186 381,234 381,186 298,138" fill="#b4b1aa"/>
+        <polygon points="443,198 381,234 381,186 443,150" fill="#c6c3bc"/>
+        <polygon points="360,102 443,150 443,198 360,150" fill="none"/>
+        <!-- selected outline on box A -->
+        <polygon points="360,102 443,150 381,186 298,138" fill="none" stroke="#6a57f5" stroke-width="2"/>
+        <!-- move gizmo on box A top center -->
+        <g stroke-width="2.5" fill="none">
+          <line x1="370" y1="144" x2="370" y2="108" stroke="#4a78e0"/><polygon points="370,102 366,112 374,112" fill="#4a78e0"/>
+          <line x1="370" y1="144" x2="405" y2="164" stroke="#e05c5c"/><polygon points="411,168 401,166 404,158" fill="#e05c5c"/>
+          <line x1="370" y1="144" x2="335" y2="164" stroke="#3fb984"/><polygon points="329,168 339,166 336,158" fill="#3fb984"/>
+        </g>
+
+        <!-- BOX B (taller block) -->
+        <polygon points="414,138 456,162 393,198 352,174" fill="#d9d6d0"/>
+        <polygon points="352,246 393,270 393,198 352,174" fill="#b4b1aa"/>
+        <polygon points="456,234 393,270 393,198 456,162" fill="#c6c3bc"/>
+
+        <!-- camera + campath -->
+        <path d="M235,300 C300,270 340,250 360,235" fill="none" stroke="#6a57f5" stroke-width="1.6" stroke-dasharray="5 4"/>
+        <circle cx="235" cy="300" r="5" fill="#6a57f5"/>
+      </svg>
+
+      <!-- ViewCube -->
+      <svg class="viewcube" viewBox="0 0 60 60">
+        <polygon points="30,6 54,20 30,34 6,20" fill="#f0eefb" stroke="#c3bdf0"/>
+        <polygon points="6,20 30,34 30,56 6,42" fill="#d9d3f5" stroke="#c3bdf0"/>
+        <polygon points="54,20 30,34 30,56 54,42" fill="#c9c1f2" stroke="#c3bdf0"/>
+        <text x="30" y="24" font-size="8" fill="#5a49d6" text-anchor="middle" font-weight="700">TRÊN</text>
+      </svg>
+
+      <!-- axis gizmo -->
+      <svg class="axisg" viewBox="0 0 90 90">
+        <line x1="45" y1="60" x2="45" y2="18" stroke="#4a78e0" stroke-width="3"/><text x="45" y="14" font-size="11" fill="#4a78e0" text-anchor="middle" font-weight="700">Z</text>
+        <line x1="45" y1="60" x2="80" y2="80" stroke="#e05c5c" stroke-width="3"/><text x="85" y="84" font-size="11" fill="#e05c5c" font-weight="700">X</text>
+        <line x1="45" y1="60" x2="10" y2="80" stroke="#3fb984" stroke-width="3"/><text x="3" y="84" font-size="11" fill="#3fb984" font-weight="700">Y</text>
+        <circle cx="45" cy="60" r="3" fill="#5a5a62"/>
+      </svg>
+
+      <div class="camlabel" style="left:200px;top:312px">📷 Camera 01 · 35mm</div>
+      <div class="cur" style="left:470px;top:250px"><span class="ar" style="color:var(--accent)">➤</span><span class="nm" style="background:var(--accent)">An (bạn)</span></div>
+
+      <!-- BOTTOM: kept zoom bar + Vẽ 3D toggle -->
+      <div class="bottombar">
+        <div class="zoombar">
+          <span class="zt on">➤</span><span class="zt">✋</span><span class="zt">▢</span>
+          <span class="div"></span>
+          <span class="zt">↶</span><span class="zt">↷</span>
+          <span class="div"></span>
+          <span class="zt">−</span><span class="zpct">250%</span><span class="zt">+</span><span class="zt">⛶</span>
+          <span class="div"></span>
+          <span class="zt">▦</span><span class="zt">⌘</span>
+        </div>
+        <div class="modetoggle"><span>Vẽ 3D</span><span class="swt"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note" style="margin-top:0">
+  <p><b>Đọc mock:</b> gạt <b>Vẽ 3D</b> (tím, đang bật) → chỉ <b>canvas + sidebar</b> đổi; top bar · rail · thanh zoom/pan dưới y nguyên. Viewport có <b>trục X/Y/Z + ViewCube</b> + gizmo di chuyển trên khối đang chọn; khối xám trơn (đúng massing, chưa PBR). Sidebar Command Panel: tab <b>Vật liệu</b> mở catalog <b>V-Ray/D5/IF</b> chung <code>matId</code>; tab <b>Camera</b> có đặt cam + đường cam. Gạt tắt → về Node Library (Render+Mood+Collab). Cần chỉnh gì Hoà khoanh lên hình.</p>
+</div>
+
+</body>
+</html>

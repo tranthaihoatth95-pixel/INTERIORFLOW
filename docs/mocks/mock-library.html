@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Master Library / Kệ Thư viện — xem thử</title>
+<style>
+  :root{
+    --bg:#eceae7; --panel:#fff; --line:#e6e3de; --ink:#2b2b30; --mut:#9a9aa2; --mut2:#c3c1bc;
+    --accent:#6a57f5; --accent-soft:#efeafe; --chip:#f4f2ef;
+    --o:#e8804d; --g:#3fb984; --b:#4a90e2; --pink:#e86a9a; --y:#e0a43a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink)}
+  .note{max-width:1300px;margin:18px auto 8px;padding:0 16px}
+  .note h1{font-size:15px;margin:0 0 6px;font-weight:650}
+  .note p{font-size:12.5px;color:#6b6b73;margin:0;line-height:1.55}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
+  .legend span{display:flex;align-items:center;gap:6px;font-size:12px;color:#4a4a52}
+  .pin{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700}
+  code{background:#f0eefb;color:#5a49d6;border-radius:4px;padding:0 4px;font-size:11px}
+
+  .app{max-width:1300px;margin:10px auto 40px;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(40,38,35,.10)}
+  .top{display:flex;align-items:center;gap:14px;padding:11px 16px;border-bottom:1px solid var(--line);font-size:13px}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:650}
+  .brand .mk{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:12px}
+  .gsearch{flex:1;max-width:460px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:12.5px;color:var(--mut);background:#faf9f7}
+  .top .sp{flex:1}
+  .avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#c9a27a,#9a6b43)}
+
+  .body{display:flex;min-height:600px}
+  /* LEFT NAV */
+  .nav{width:210px;border-right:1px solid var(--line);padding:14px 12px;display:flex;flex-direction:column;gap:3px}
+  .nav .n{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;font-size:12.5px;color:#4a4a52}
+  .nav .n .i{width:16px;text-align:center;color:var(--mut)}
+  .nav .n.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .nav .n.on .i{color:var(--accent)}
+  .nav .grp{font-size:9.5px;letter-spacing:.06em;color:var(--mut);font-weight:700;margin:14px 0 4px 10px}
+  .nav .sp{flex:1}
+
+  /* CENTER shelves */
+  .center{flex:1;padding:16px 18px;overflow:auto;border-right:1px solid var(--line)}
+  .chead{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+  .chead h2{font-size:17px;margin:0;font-weight:700}
+  .csub{font-size:11.5px;color:var(--mut);margin-bottom:12px}
+  .ctabs{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+  .ctabs b{font-weight:500;font-size:11.5px;padding:6px 13px;border:1px solid var(--line);border-radius:20px;color:#6b6b73;background:#fff}
+  .ctabs b.on{background:var(--ink);border-color:transparent;color:#fff;font-weight:600}
+  .pubbtn{margin-left:auto;background:var(--accent);color:#fff;border:0;border-radius:9px;padding:7px 13px;font-size:12px;font-weight:600}
+  .shelf{margin-top:16px}
+  .shelf .st{font-size:12px;font-weight:700;color:#3a3a42;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+  .shelf .st .cnt{font-size:10px;color:var(--mut);font-weight:500}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .cardt{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  .cardt.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .cardt .th{height:78px;position:relative;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600}
+  .cardt .meta{padding:8px 9px}
+  .cardt .nm{font-size:12px;font-weight:600}
+  .cardt .rw{display:flex;align-items:center;gap:6px;margin-top:5px}
+  .badge{font-size:8.5px;font-weight:700;border-radius:5px;padding:1px 6px}
+  .b-chung{background:#e9f6ef;color:#1f9d6b}
+  .b-studio{background:var(--accent-soft);color:var(--accent)}
+  .b-chang{background:#eaf1fb;color:#3a6fc4}
+  .b-duan{background:#fdf0e8;color:#c96a35}
+  .pubav{width:15px;height:15px;border-radius:50%;margin-left:auto}
+  /* material swatch card */
+  .msw .th{height:52px}
+  .mid{font-size:8.5px;color:var(--accent);background:var(--accent-soft);border-radius:4px;padding:0 5px}
+
+  /* RIGHT inspector */
+  .insp{width:270px;padding:14px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+  .insp .ih{font-size:12px;font-weight:700;display:flex;align-items:center;gap:7px}
+  .prev{height:130px;border-radius:12px;background:linear-gradient(135deg,#efeafe,#e5dcff);position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .mini{position:absolute}
+  .mmc{background:var(--accent);color:#fff;border-radius:9px;padding:6px 9px;font-size:9px;font-weight:700}
+  .mmn{background:#fff;border:1px solid var(--line);border-radius:7px;padding:3px 6px;font-size:8px;font-weight:600}
+  .iname{font-size:14px;font-weight:700}
+  .irow{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#4a4a52}
+  .irow .k{color:var(--mut);width:64px;flex:none}
+  .usebtn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:10px;font-size:12.5px;font-weight:600;width:100%}
+  .tabs2{display:flex;gap:4px;background:var(--chip);border-radius:9px;padding:3px}
+  .tabs2 b{flex:1;text-align:center;font-size:11px;padding:5px;border-radius:7px;color:#6b6b73;font-weight:500}
+  .tabs2 b.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .cmt{display:flex;gap:8px;font-size:11px}
+  .cmt .av{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#3fb984,#2a8f66);flex:none}
+  .cmt .who{font-weight:700;font-size:10.5px}
+  .cmt .t{color:#5a5a62;line-height:1.4}
+  .scopepick{border:1px dashed var(--line);border-radius:9px;padding:8px;font-size:10.5px;color:var(--mut)}
+  .scopepick .row{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<div class="note">
+  <h1>IF · <b>Master Library / Kệ Thư viện</b> (Store) — bản xem thử · 3 khu như ref Hoà thích</h1>
+  <p>Trái nav · giữa <b>kệ tự lọc theo chặng</b> (đang xem Render) · phải <b>inspector template</b>. Đề xuất chốt: <b>6 form lập luận</b> · phạm vi <b>4 mức</b> (Chung·Studio·Chặng·Dự án) · publish <b>cả studio có chủ duyệt</b>.</p>
+  <div class="legend">
+    <span><i class="pin">1</i> Kệ lọc theo chặng</span>
+    <span><i class="pin">2</i> Card có badge phạm vi (4 mức)</span>
+    <span><i class="pin">3</i> Inspector + kéo để dùng</span>
+    <span><i class="pin">4</i> Publish lên kệ (có duyệt)</span>
+  </div>
+</div>
+
+<div class="app">
+  <div class="top">
+    <div class="brand"><span class="mk">▤</span> InteriorFlow</div>
+    <div class="gsearch">⌕ Tìm template · vật liệu · asset…</div>
+    <div class="sp"></div>
+    <span class="avatar"></span>
+  </div>
+
+  <div class="body">
+    <!-- LEFT NAV -->
+    <div class="nav">
+      <div class="n"><span class="i">▦</span> Dashboard</div>
+      <div class="n"><span class="i">◱</span> Dự án</div>
+      <div class="n"><span class="i">▤</span> Files</div>
+      <div class="n on"><span class="i">◈</span> Master Library</div>
+      <div class="grp">TÍCH HỢP</div>
+      <div class="n"><span class="i">▲</span> Google Drive</div>
+      <div class="n"><span class="i">⎇</span> Git</div>
+      <div class="n"><span class="i">◪</span> Notion</div>
+      <div class="sp"></div>
+      <div class="n"><span class="i">⚙</span> Cài đặt</div>
+      <div class="n"><span class="i">⏻</span> Đăng xuất</div>
+    </div>
+
+    <!-- CENTER SHELVES -->
+    <div class="center">
+      <div class="chead"><h2>Kệ Thư viện</h2></div>
+      <div class="csub">Kéo template/asset lên canvas để dùng · kệ tự lọc theo chặng đang mở</div>
+      <div class="ctabs">
+        <b>Tất cả</b><b>CAD</b><b class="on">Render</b><b>Present</b>
+        <button class="pubbtn">+ Publish lên kệ</button>
+      </div>
+
+      <!-- shelf: form lập luận -->
+      <div class="shelf">
+        <div class="st">◈ Form lập luận <span class="cnt">· 6 mẫu</span></div>
+        <div class="grid">
+          <div class="cardt sel"><div class="th" style="background:linear-gradient(135deg,#6a57f5,#8b6ff5)">Mindmap 5 nhánh</div><div class="meta"><div class="nm">Khung concept 5 nhánh</div><div class="rw"><span class="badge b-studio">Studio</span><span class="pubav" style="background:linear-gradient(135deg,#6a57f5,#9d5ff5)"></span></div></div></div>
+          <div class="cardt"><div class="th" style="background:linear-gradient(135deg,#4a90e2,#6aa8ec)">Ma trận</div><div class="meta"><div class="nm">So sánh phương án</div><div class="rw"><span class="badge b-chung">Chung</span></div></div></div>
+          <div class="cardt"><div class="th" style="background:linear-gradient(135deg,#3fb984,#5cc79a)">6 mũ</div><div class="meta"><div class="nm">6 chiếc mũ tư duy</div><div class="rw"><span class="badge b-chung">Chung</span></div></div></div>
+          <div class="cardt"><div class="th" style="background:linear-gradient(135deg,#e8804d,#f0996d)">SWOT</div><div class="meta"><div class="nm">SWOT không gian</div><div class="rw"><span class="badge b-chung">Chung</span></div></div></div>
+          <div class="cardt"><div class="th" style="background:linear-gradient(135deg,#e0a43a,#ecc06a)">Tiêu chí</div><div class="meta"><div class="nm">Bảng chọn vật liệu</div><div class="rw"><span class="badge b-studio">Studio</span></div></div></div>
+          <div class="cardt"><div class="th" style="background:linear-gradient(135deg,#e86a9a,#f18cb3)">Mood→Concept</div><div class="meta"><div class="nm">Mood → Concept map</div><div class="rw"><span class="badge b-chung">Chung</span></div></div></div>
+        </div>
+      </div>
+
+      <!-- shelf: moodboard + preset -->
+      <div class="shelf">
+        <div class="st">◱ Moodboard &amp; Preset render <span class="cnt">· 4 mẫu</span></div>
+        <div class="grid">
+          <div class="cardt"><div class="th" style="background:linear-gradient(135deg,#b89b7a,#8a6f52)">Board phòng</div><div class="meta"><div class="nm">Moodboard theo phòng</div><div class="rw"><span class="badge b-chang">Render</span></div></div></div>
+          <div class="cardt"><div class="th" style="background:linear-gradient(135deg,#d9c7b8,#b3a48f)">Ánh sáng chiều</div><div class="meta"><div class="nm">Preset nắng chiều</div><div class="rw"><span class="badge b-duan">Dự án</span></div></div></div>
+          <div class="cardt"><div class="th" style="background:linear-gradient(135deg,#8a9a8f,#5f6f66)">Pipeline</div><div class="meta"><div class="nm">Sketch→Render→Upscale</div><div class="rw"><span class="badge b-chung">Chung</span></div></div></div>
+        </div>
+      </div>
+
+      <!-- shelf: vật liệu chung -->
+      <div class="shelf">
+        <div class="st">◍ Vật liệu (chung · xuyên chặng) <span class="cnt">· V-Ray · D5 · IF/ATLAS</span></div>
+        <div class="grid">
+          <div class="cardt msw"><div class="th" style="background:#7a5230"></div><div class="meta"><div class="nm">Gỗ óc chó</div><div class="rw"><span class="mid">matId W-102</span></div></div></div>
+          <div class="cardt msw"><div class="th" style="background:#c9b79c"></div><div class="meta"><div class="nm">Travertine</div><div class="rw"><span class="mid">matId S-044</span></div></div></div>
+          <div class="cardt msw"><div class="th" style="background:#6f7a70"></div><div class="meta"><div class="nm">Sơn xanh rêu</div><div class="rw"><span class="mid">matId P-070</span></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT INSPECTOR -->
+    <div class="insp">
+      <div class="ih">◈ Thông tin template</div>
+      <div class="prev">
+        <div class="mmc" style="left:105px;top:52px">CONCEPT</div>
+        <div class="mmn" style="left:20px;top:20px">Đề bài</div>
+        <div class="mmn" style="left:190px;top:22px">Vật liệu</div>
+        <div class="mmn" style="left:30px;top:96px">Cảm hứng</div>
+        <div class="mmn" style="left:190px;top:96px">Lý do</div>
+      </div>
+      <div class="iname">Khung concept 5 nhánh</div>
+      <div class="irow"><span class="k">Loại</span> Form lập luận</div>
+      <div class="irow"><span class="k">Phạm vi</span> <span class="badge b-studio">Studio</span> dùng lại mọi dự án</div>
+      <div class="irow"><span class="k">Người đăng</span> <span class="pubav" style="background:linear-gradient(135deg,#6a57f5,#9d5ff5)"></span> An · v2 · dùng 12 lần</div>
+      <button class="usebtn">＋ Kéo lên canvas để dùng</button>
+
+      <div class="scopepick">Phạm vi (4 mức)
+        <div class="row"><span class="badge b-chung">Chung</span><span class="badge b-studio">Studio</span><span class="badge b-chang">Chặng</span><span class="badge b-duan">Dự án</span></div>
+      </div>
+
+      <div class="tabs2"><b>Mô tả</b><b class="on">Bình luận</b></div>
+      <div class="cmt"><span class="av"></span><div><div class="who">Cộng sự</div><div class="t">Form này chốt concept nhanh, thêm nhánh "ngân sách" nữa thì tốt.</div></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="note" style="margin-top:0">
+  <p><b>Đọc mock:</b> ① tab <b>Render</b> đang bật → kệ chỉ hiện món chặng Render (form lập luận · moodboard/preset · vật liệu chung). ② mỗi card có <b>badge phạm vi</b>: Chung / <b>Studio</b> (dùng lại nhiều dự án) / Chặng / Dự án. ③ chọn 1 template → phải hiện inspector + <b>Kéo lên canvas để dùng</b> (instantiate, không đụng gốc). ④ <b>+ Publish lên kệ</b> = đưa bản của mình thành template mới, <b>chủ studio duyệt</b> trước khi lên kệ chung. Vật liệu <code>matId</code> nằm kệ chung, xuyên cả 2 mode + 3 chặng.</p>
+</div>
+
+</body>
+</html>
