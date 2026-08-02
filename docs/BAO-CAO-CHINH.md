@@ -238,3 +238,27 @@ VIỆC 5 mới nhất.
 - Luật vẫn giữ nguyên: tránh vùng E của code phụ (`Element.tsx`/`EditorCanvas.tsx`/
   `LayerPanel.tsx`/`shape-geometry.ts`/`brand-kit*`); test tốn credit thật 1 ảnh/lần đã xin phép,
   không batch; `git commit -- <pathspec>` khi commit (không `git add -A`).
+
+## [chuỗi D] D5 — nối CamPathPreview + CamPathControlPanel vào `/cad-editor` — XONG
+- Commit: `bc3d3e7` (`components/cad/CamPathPanel.tsx` mới, `CadEditor.tsx` nối vào).
+- Gap C4 để lại đã đóng: `CamPathPanel.tsx` giữ state view-only (tốc độ/ống kính/tỉ lệ/điểm ngắm)
+  cục bộ, chọn đường cam ưu tiên ĐANG chọn → rơi về đường VẼ GẦN NHẤT trong Doc. Hiện khi tool
+  `campath` đang chọn HOẶC Doc đã có sẵn đường cam (khuôn `zonePanelClosed` cũ).
+- 💭 Phát hiện + tự sửa lúc verify: vị trí ban đầu `right:12,top:70` ĐÈ THẲNG lên `LayerPanel`
+  (cùng toạ độ, LayerPanel luôn hiện không điều kiện) — đổi sang neo từ đáy (`right:12,bottom:90`)
+  trước khi commit, không để lại bug UI mới.
+- Test: `tsc`/`eslint` sạch, `npm test` 0 fail (không cần test mới — 2 component đã có test riêng
+  từ C4, panel chỉ là dây nối props/callback, không thêm logic tính toán).
+- Verify browser thật (dự án mẫu, đã dọn sạch sau): chọn tool "Đường cam" → panel hiện đúng chỗ;
+  vẽ đường 4 điểm (dispatch PointerEvent thật lên canvas — `computer` tool coordinate-click KHÔNG
+  đăng ký điểm vẽ đúng, né bằng kỹ thuật đã dùng nhiều lần phiên này) → entity tạo đúng, panel TỰ
+  hiện preview+control liền nhau; đổi Tiếp tuyến→Khoá điểm → preview đổi ngay (chốt kéo hiện ra,
+  đúng hint), animation quạt tầm nhìn chạy liên tục qua 2 khung chụp cách nhau (không phải hình
+  tĩnh). Đã xoá entity test khỏi dự án mẫu.
+
+## HẾT CHUỖI D — D1→D5 xong trọn, không còn việc nào trong hàng đợi
+Toàn bộ chuỗi D (giao lúc Hoà duyệt C3-C5, mở rộng thêm D5 giữa chừng) đã XONG: D1 (3D-4
+section+walk) · D2 (3D-5 push-pull massing) · D3 (tool window Render + đóng bug 2.2.92) · D4
+(BỎ, Hoà xác nhận không cần) · D5 (nối CamPathPreview/ControlPanel). 5 commit chính +
+3 commit docs/BAO-CAO-CHINH.md, tất cả `git commit -- <pathspec>` scoped đúng, không đụng vùng E.
+Chờ Hoà duyệt hoặc giao việc mới — không tự bịa việc tiếp theo.
