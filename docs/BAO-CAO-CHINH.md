@@ -121,18 +121,16 @@ chờ Hoà xác nhận VIỆC 5 hoặc giao thêm việc mới.
   đồng bộ (`preserveDrawingBuffer:true`, gọi `renderer.render()` trực tiếp ngoài rAF) thay vì chụp
   màn hình canvas sống.
 
-## HÀNG ĐỢI CÒN LẠI (cập nhật sau D1, ghi đè mục cũ nếu có)
-- **D2 — 3D-5 push-pull massing**: đẩy/kéo khối trên mặt bằng đã extrude, GHI NGƯỢC cao độ/storey
-  vào Doc chặng 1 (cấm giữ bản 3D riêng, luật một nguồn — `CHOT-HUONG-3D-2026-08-01.md` "bậc B1
-  thang BIM"). Chưa bắt đầu.
+## HÀNG ĐỢI CÒN LẠI (cập nhật sau D2, ghi đè mục cũ)
+- **D4 — BỎ** (Hoà xác nhận: `nhanh-phu` 0 commit đụng brand-kit, merge 3-way tự sạch — xem mục
+  D4 ở trên). Không còn trong hàng đợi.
 - **D3 — Tool window Render**: đọc `docs/CHOT-RENDER-TOOL-WINDOW-2026-08-01.md` +
   `docs/mocks/tool-window-sketch2photo.html` trước khi code. Tool window = subgraph node phóng to,
   tab 8 tool + ghim, tối đa 3 window, kính là VỎ không RUỘT, điều khiển "2B" bậc thang 4 nấc +
   khoá vùng/seed. Kèm đóng bug `2.2.92` (gỡ overlay, portal-hoá). Chưa bắt đầu.
-- **D4 — C6 điều kiện**: sau khi Hoà xác nhận VIỆC 5 (brand-kit) đã commit trên `main` (kiểm qua
-  `docs/BAO-CAO-PHU.md` hoặc `git log` nhánh `nhanh-phu`) → `git checkout --` 3 file brand-kit để
-  dọn đường merge `nhanh-phu`. Vẫn CHỜ — lần kiểm gần nhất (09:19, trước chuỗi D) `BAO-CAO-PHU.md`
-  chưa nhắc VIỆC 5.
+- **D5 — wire CamPathPreview+CamPathControlPanel vào `/cad-editor`** (gap C4 để lại, Hoà giao
+  thêm cuối chuỗi D): 2 component đã sẵn sàng nhưng chưa host cùng nhau trong trang thật. Verify
+  browser: vẽ đường cam → panel chỉnh → preview chạy. Chưa bắt đầu.
 - Luật vẫn giữ nguyên: tránh vùng E của code phụ (`Element.tsx`/`EditorCanvas.tsx`/
   `LayerPanel.tsx`/`shape-geometry.ts`/`brand-kit*`); test tốn credit thật 1 ảnh/lần đã xin phép,
   không batch; `git commit -- <pathspec>` khi commit (không `git add -A`).
@@ -153,3 +151,44 @@ VIỆC 5 mới nhất.
   đúng vấn đề) và KHÔNG tự merge/rebase `nhanh-phu` (đụng đúng vùng E của code phụ + là quyết định
   hợp nhất 2 nhánh đang phân kỳ thật, ngoài phạm vi "checkout dọn bản trùng" đã giao) — dừng ở
   đây, chờ Hoà (hoặc code phụ trên `nhanh-phu`) quyết cách hợp nhất.
+- **Cập nhật 1**: Hoà xác nhận D4 KHÔNG CẦN — `nhanh-phu` 0 commit đụng brand-kit, 3-way merge sẽ
+  tự lấy đúng VIỆC 5 từ `main` + E1-E4 từ `nhanh-phu`, sạch. Bỏ D4 khỏi hàng đợi.
+
+## [chuỗi D] D2 (3D-5) — push-pull massing, ghi ngược Doc (luật một nguồn) — XONG
+- Commit: `2881c32` (`lib/cad/model.ts`, `lib/three/cad-to-obj.ts`+test, `lib/three/obj-scene-to-geometry.ts`,
+  `components/three/Scene3DViewer.tsx`+`Scene3DPreviewModal.tsx`, `components/nodes/NodeExtras.tsx`,
+  `lib/nodes/defs/render-v2.ts`).
+- **Nguồn dữ liệu**: `Entity.heightMm?: number` mới trên `Base` (`lib/cad/model.ts`, additive như
+  `storey`/`elementType`) — cao độ đùn khối RIÊNG 1 tường. `docToObjScene()` đọc
+  `entity.heightMm ?? wallHeightMm` cho MỖI tường (trước đây 1 số H chung cả scene) — đây là
+  NGUỒN DUY NHẤT, viewer 3D không giữ bản riêng (đúng yêu cầu Hoà "cấm lặp bệnh hai-nguồn đã trả
+  giá ở Brand Kit"). `SceneGroup` thêm `entityId`/`heightMm` (chỉ group tường) nối ngược 3D→Doc.
+- **Tương tác**: `Scene3DViewer` mode `massing` mới — raycaster kiểm đúng MẶT TRÊN tường
+  (`normal.y≥0.5`, mặt bên không kích hoạt), kéo đổi cao độ SỐNG qua `scale.y` quanh gốc 0 (tường
+  luôn đùn từ đáy z=0 → scale chính xác, không rebuild geometry mỗi khung). Thả chuột gọi
+  `onPushPull(entityId, newHeightMm)` ĐÚNG 1 LẦN — component không tự ghi Doc.
+- **Nối trọn tới UI thật** (không để dở như gap C4): modal thêm nút "Quan sát"/"Đẩy-kéo khối"; node
+  `three.cad2fbx` xuất thêm `_sceneOpts` (options đã dùng, khỏi gọi lại `fetchGuProfile` mạng khi
+  dựng lại); `NodeExtras.handlePushPull` ghi qua `useCadStore.updateEntities()` rồi
+  `docToObjScene()` lại từ Doc MỚI ngay trong modal.
+- Test: 8 ca mới trong `cad-to-obj.test.ts` (tổng 40/40) — đúng tường đổi/tường khác không đụng/
+  hình học THẬT đùn đúng cao mới (không chỉ đổi field số)/kẹp biên [2000,6000]/group phi-tường
+  không gán entityId. `tsc --noEmit` + `eslint` sạch trên cả 8 file. `npm test` toàn repo 0 fail.
+- Verify browser thật (scratch bench, đã xoá): mount `Scene3DViewer` mode="massing" THẬT, tự tính
+  toạ độ màn hình mặt trên tường bằng ĐÚNG công thức camera của component rồi dispatch
+  `PointerEvent` thật — né 2 giới hạn sandbox đã ghi nhận trong phiên này (drag-tool automation
+  không bắn PointerEvent thật, xem C4; screenshot rAF không compositor được khi cửa sổ mất focus,
+  xem D1). Kết quả: kéo mặt trên → `onPushPull` gọi ĐÚNG 1 lần, đúng `entityId`, cao độ
+  2700→2970mm khớp điểm thả chuột; bấm mặt BÊN → KHÔNG kích hoạt (`normalY=0`, đúng luật chỉ mặt
+  trên mới có nghĩa "cao tường"). Debug 1 lần phát hiện + tự sửa: bug NẰM Ở BENCH (không phải
+  component) — `scene` không `useMemo` khiến mỗi `setLog()` re-render tạo `scene` ref mới →
+  `Scene3DViewer` dựng lại canvas giữa chừng → tay cầm canvas cũ của kịch bản dispatch mất
+  listener. Ghi lại vì đây là bẫy dễ lặp lại khi viết bench tương tác cho component có effect phụ
+  thuộc prop object.
+- 💭 CHƯA verify: chuỗi UI đầy đủ qua node graph thật (vẽ tường `/cad-editor` → chạy node → mở
+  modal → kéo chuột thật trong 1 lượt liền mạch) — đã verify từng LỚP riêng (data layer 40 test +
+  interaction layer bench ở trên) nhưng chưa click qua UI node thật trong 1 lần. `handlePushPull`
+  (`NodeExtras.tsx`) là hàm ghép 5 dòng nối 2 lớp đã verify riêng, đã đọc kỹ + `tsc` pass — rủi ro
+  thấp nhưng chưa "thấy tận mắt" trên UI thật. Hoà verify khi tiện: mở node "Bản vẽ → Khối 3D" →
+  Xem 3D → Đẩy-kéo khối → kéo 1 tường → đóng modal → mở lại node xem thông số → xác nhận cao độ
+  đã đổi thật trong Doc (không chỉ trong modal).
