@@ -1320,3 +1320,42 @@ khỏi TitleSequence) → rail đồng tâm 44/8/30 + AccountMenu gom ⚙/⋯/cr
 (restart là hết, KHÔNG phải bug code — chi tiết mục "PHÁT HIỆN HẠ TẦNG") · click đầu tiên vào
 nút toggle trên tab browser mới đôi khi không đăng ký (đọc store thay vì kết luận bug) · loop
 "Maximum update depth" ở `EditorCanvas` present-editor là của phiên phụ, đã cảnh báo.
+
+---
+
+## [phiên tiếp] VIỆC 1 — merge `nhanh-g4` vào main — XONG
+- Commit `12223cf` (merge) + `e6edcf1` (layout.tsx wire CanvasWallpaper + LeftRail.tsx port
+  openOnCanvas).
+- Xung đột DUY NHẤT đúng như dự đoán: `components/LeftRail.tsx` (cả 2 nhánh cùng sửa) — resolve
+  = bản `main` (`git checkout --ours`), giữ prop `active` cho `StageShell`. 11 file còn lại của
+  g4 lấy nguyên: `/files` + `/settings` pixel-match, `CanvasWallpaper.tsx`, `lib/filemanager/real-fs.ts`.
+- `app/layout.tsx`: thêm `<CanvasWallpaper />` sau `<StoreHydrator />` trong `<body>` (đúng yêu
+  cầu G4 ghi trong `BAO-CAO-FM.md` mục "Cần nối tay" #1) — hình nền canvas nay sống sót cả khi
+  tải lại cứng thẳng vào trang canvas.
+- **openOnCanvas() — port CÓ SỬA, không port nguyên văn**: G4 đề xuất chặn theo `pathname==='/'`
+  (đứng `/files`/`/settings` bấm "Dashboard"/"Dự án & Flow" chỉ đổi state, không có gì hiện ra vì
+  `FlowsPanel`/Dashboard chỉ mount trong `StageShell`). Kiểm lại: `StageShell` KHÔNG chỉ sống ở
+  `'/'` — còn sống ở `/projects/[id]/{cad,render,present}` (Task #21 ĐỔ NỀN 1B, xem
+  `app/page.tsx`). Chặn theo `pathname==='/'` sẽ sai: đứng trên canvas dự án thật (không phải
+  `/`) mà bấm 2 nút này sẽ BỊ ĐẨY VỀ `/` dù đã đúng chỗ rồi — regression mới. Grep xác nhận
+  `LeftRail` chỉ có ĐÚNG 3 nơi import: `StageShell` (có `FlowsPanel`) · `FileManagerShell`
+  (`/files`) · `PixelSettingsShell` (`/settings`) — 2 cái sau KHÔNG có `FlowsPanel`/Dashboard.
+  Sửa đúng: `onCanvas = !(pathname.startsWith('/files') || pathname.startsWith('/settings'))`
+  thay vì đoán theo `'/'`. Thêm luôn `active` cho nút "Files" (thiếu ở bản `main` cũ, G4 có sẵn).
+- Test: `tsc --noEmit` 0 lỗi · `next lint` trên 2 file sửa 0 lỗi (52 lỗi lint còn lại trong repo
+  là NỢ CŨ, xác nhận bằng `git stash` A/B — y hệt số lỗi trước cả khi tôi sửa gì, không phải của
+  tôi) · `npm test` exit 0, 0 fail.
+- Verify browser thật qua `interiorflow-verify` (127.0.0.1:3001, KHÔNG đụng port 3000/3004 đang
+  bị 2 phiên khác chiếm): `/files` sáng — rail hiện đúng 4 nút + "Files" active đúng route; bấm
+  "Dự án & Flow" (dispatch `element.click()` — click toạ độ không đăng ký lần đầu trên tab mới,
+  đúng quirk đã ghi trong báo cáo trước) → điều hướng `/` → auto-resume về
+  `/projects/.../cad` → `FlowsPanel` "PROJECTS & FLOWS" hiện đúng, KHÔNG còn là nút chết.
+  `/settings` tối — bấm "Tối" → `data-theme=dark` đổi thật, cả trang đổi màu đúng (card/avatar/
+  switch đọc rõ) → bấm "Tổng quan" → điều hướng đúng + Dashboard overlay "Tổng quan" hiện đầy đủ
+  (Dự án/Team/Flow gần đây), giữ nguyên theme tối. Console sạch suốt phiên verify. Đã trả
+  `localStorage['interiorflow.theme']` về `light` (giá trị gốc trước khi tôi bấm test) trước khi
+  rời — không để lại dấu vết verify.
+- 💭 **Worktree `interiorflow-g4` KHÔNG xoá** dù nhánh đã merge — dirty (`​.claude/launch.json`
+  sửa tay chưa commit, thêm entry port 3004) + dev server đang chạy thật ở đó. Thiếu 2/4 điều
+  kiện an toàn `CLAUDE.md`. Ghi rõ trong `STATUS.md` mục "Worktree đang mở", để Hoà quyết.
+- Tiếp theo: **VIỆC 2 — AppShell 6 ổ cắm** theo `SPEC-HA-TANG-UI-IF.md`.
