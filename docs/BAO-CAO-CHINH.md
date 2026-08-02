@@ -1244,3 +1244,33 @@ phụ xem stack đầy đủ trong console khi mở route present.
   thì 16 thumbnail kiểu tóc đều đội mũ, tóc chỉ lộ phần không bị che) — đúng chữ mock "avatar
   thật cùng khuôn mặt, chỉ khác đặc điểm đang xét", không phải bug. Nếu Hoà muốn thumbnail tóc
   tự BỎ mũ để lộ trọn kiểu tóc thì là quyết định mới (1 dòng override thêm), chờ chỉ đạo.
+
+## 🔴 FIX TRUNG TÍNH MÀN INTRO — XONG (`63cc673`) + việc còn lại cho Hoà
+Sửa xong: `IntroSequence.tsx` (4 hex TTT + 2 hex xám + font Archivo ma) · `TitleSequence.tsx`
+(7 ảnh /detech/ → gradient vật liệu trừu tượng) · `app/intro/page.tsx` (fallback #F1ECE3).
+Chi tiết trong commit message. Phát hiện: `components/IntroSequence.tsx` (root) — file duy nhất
+mount TitleSequence — là **DEAD CODE** (grep 0 import) và chính nó chứa comment credential
+(AUDIT dòng 49). Đề xuất Hoà cho xoá file này (kèm đổi mật khẩu tài khoản test đó).
+
+### Bảng /detech/ còn lại trong code (grep 03/08, sau commit trên)
+| Nơi | Số chỗ | Vùng | Đề xuất |
+|---|---|---|---|
+| `lib/present-editor/demo-enso-sample.ts:24-43` | 20 | present-editor (phiên code phụ) | Deck demo Ensō — comment tự nhận "bộ ảnh dùng TẠM, user đã cho phép giữ" nhưng theo LUẬT NỀN TẢNG mới thì phải thay. NGOÀI VÙNG của tôi — phiên phụ thay bằng `/demo/*` hoặc gradient (khuôn TitleSequence vừa làm). |
+| `lib/demos/present.ts:52-65` | 8 | lib/demos (flow demo "Present") | AUDIT dòng 31 đã kê đúng: "Trỏ sang `/demo/*` (mood1..4, hero, sketch đã có) — sửa 4 dòng". Tôi có thể làm lượt sau nếu Hoà gật (chưa tự làm — file thuộc demo flow chặng render, sát vùng tôi nhưng lệnh này chỉ giao intro). |
+| `public/__testcases/present.json:32-33` | 2 | test fixture serve công khai | AUDIT dòng 53: đổi sang `/demo/*`. Rẻ, chờ gộp lượt dọn chung. |
+
+### Lệnh dọn `public/detech/` (18 file ~22MB đang track git) — HOÀ CHẠY TAY trên máy thật
+```bash
+cd /Users/tranben/Downloads/interiorflow
+mkdir -p ~/Downloads/_IF-ANH-DEMO/detech
+git rm -r --cached public/detech
+echo "public/detech/" >> .gitignore
+mv public/detech/* ~/Downloads/_IF-ANH-DEMO/detech/
+rmdir public/detech
+git add .gitignore
+git commit -m "chore: go public/detech (anh du an khach) khoi repo - da doi cho ~/Downloads/_IF-ANH-DEMO"
+```
+⚠️ CHỈ chạy SAU khi 3 chỗ code còn tham chiếu ở bảng trên đã được thay (không thì deck demo Ensō
++ demo flow Present + testcase vỡ ảnh). ⚠️ Lịch sử git VẪN CÒN 22MB ảnh sau lệnh này —
+`git filter-repo` để xoá thật khỏi object store là việc "ngay trước khi giao repo ra ngoài"
+(đã có sẵn trong 00-CHOT mục "Viết lại lịch sử git", gộp làm cùng lúc với dấu vết TTT cũ).
