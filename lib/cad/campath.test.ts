@@ -119,11 +119,54 @@ function testPlanCamPath() {
   ok('đường thẳng 1000mm, tốc độ mặc định 1200mm/s → totalDurationSec ≈ 0.833s', near(straight.totalDurationSec, 1000 / 1200, 1e-9));
 }
 
+/* ── [6] planCamPath — lookAt V2.1 (§2.1 chế độ 2/3, 02/08) ── */
+function testLookAtModes() {
+  console.log('\n[6] planCamPath — lookAt chế độ 2 (khoá điểm) / 3 (khoá zone)');
+  const pts: Pt[] = [{ x: 0, y: 0 }, { x: 2000, y: 0 }, { x: 2000, y: 2000 }];
+
+  // mặc định KHÔNG truyền lookAt vẫn = tangent — hành vi cũ y hệt (test [5] đã phủ), chỉ xác nhận
+  // truyền tường minh { kind: 'tangent' } ra CÙNG kết quả.
+  const implicit = planCamPath(pts, { speedMmPerSec: 1200 });
+  const explicitTangent = planCamPath(pts, { speedMmPerSec: 1200, lookAt: { kind: 'tangent' } });
+  ok('lookAt tường minh "tangent" === không truyền lookAt (mặc định)', implicit.samples.every((s, i) => near(s.dirRad, explicitTangent.samples[i].dirRad, 1e-9)));
+
+  // chế độ 2 — khoá điểm cố định (1000, 5000): mọi mẫu phải nhìn ĐÚNG hướng điểm đó, bất kể
+  // đường cam đang đi hướng nào (khác hẳn tangent — không còn "đi tới đâu nhìn tới đó").
+  const lockPt: Pt = { x: 1000, y: 5000 };
+  const point = planCamPath(pts, { speedMmPerSec: 1200, lookAt: { kind: 'point', at: lockPt } });
+  ok(
+    'mọi mẫu chế độ khoá-điểm nhìn ĐÚNG hướng atan2(target-point)',
+    point.samples.every((s) => circDist(s.dirRad, Math.atan2(lockPt.y - s.point.y, lockPt.x - s.point.x)) < 1e-6),
+  );
+  ok('chế độ khoá-điểm KHÁC tangent ở đoạn cuối (không còn nhìn theo hướng đi +Y)', circDist(point.samples[point.samples.length - 1].dirRad, Math.PI / 2) > 0.3);
+
+  // chế độ 3 — khoá tâm zone (centroid truyền sẵn, campath.ts không cần biết ZoneEntity).
+  const centroid: Pt = { x: -2000, y: 1000 };
+  const zone = planCamPath(pts, { speedMmPerSec: 1200, lookAt: { kind: 'zone', centroid } });
+  ok(
+    'mọi mẫu chế độ khoá-zone nhìn ĐÚNG hướng atan2(centroid-point)',
+    zone.samples.every((s) => circDist(s.dirRad, Math.atan2(centroid.y - s.point.y, centroid.x - s.point.x)) < 1e-6),
+  );
+
+  // vị trí điểm/thời gian KHÔNG đổi theo lookAt — chỉ hướng nhìn đổi, đường đi vật lý giữ nguyên.
+  ok('đổi lookAt KHÔNG đổi vị trí điểm dọc đường', point.samples.every((s, i) => nearPt(s.point, implicit.samples[i].point)));
+  ok('đổi lookAt KHÔNG đổi tSec/tốc độ', point.samples.every((s, i) => near(s.tSec, implicit.samples[i].tSec)));
+
+  // ca suy biến: camera trùng đúng điểm khoá → atan2(0,0) vô nghĩa, rơi về tiếp tuyến (không NaN).
+  const onTarget = planCamPath([{ x: 5, y: 5 }, { x: 100, y: 5 }], { lookAt: { kind: 'point', at: { x: 5, y: 5 } } });
+  ok('camera trùng điểm khoá → rơi về tiếp tuyến, không NaN', Number.isFinite(onTarget.samples[0].dirRad));
+
+  // 1 điểm duy nhất vẫn tính được hướng theo lookAt (trước đây luôn hardcode 0).
+  const single = planCamPath([{ x: 0, y: 0 }], { lookAt: { kind: 'point', at: { x: 0, y: 10 } } });
+  ok('1 điểm + lookAt point → hướng nhìn đúng thẳng lên +Y (π/2)', single.samples.length === 1 && circDist(single.samples[0].dirRad, Math.PI / 2) < 1e-6);
+}
+
 test90DegreeCorner();
 testDegenerateCorners();
 testSampleByLength();
 testSmoothDirections();
 testPlanCamPath();
+testLookAtModes();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

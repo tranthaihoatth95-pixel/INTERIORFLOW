@@ -20,6 +20,19 @@ export interface CamPathSample {
   cumLenMm: number;
 }
 
+/**
+ * Điểm ngắm (look-at) — §2.1 "ba chế độ, chọn trên panel" (V2.1, 02/08):
+ *  1. `tangent` — đi tới đâu nhìn tới đó (mặc định, hành vi V2 gốc, dùng tiếp tuyến làm mượt).
+ *  2. `point`   — khoá vào MỘT ĐIỂM cố định trên mặt bằng (chốt kéo được ở UI, `at` là toạ độ
+ *     hiện tại của chốt đó — component UI tự lo phần kéo-thả, campath.ts chỉ nhận toạ độ).
+ *  3. `zone`    — khoá vào tâm 1 zone (`centroid` = `zoneCentroid()` đã tính sẵn ở model.ts —
+ *     campath.ts KHÔNG import `ZoneEntity`/model.ts để giữ tầng thuần tất định gọn, người gọi tự
+ *     tính centroid rồi truyền vào).
+ * Chế độ 2/3 KHÔNG cần làm mượt tiếp tuyến (hướng suy trực tiếp từ hình học điểm→đích, đã mượt
+ * tự nhiên dọc đường cong) — chỉ `tangent` mới cần `smoothDirections`.
+ */
+export type LookAtMode = { kind: 'tangent' } | { kind: 'point'; at: Pt } | { kind: 'zone'; centroid: Pt };
+
 export interface CamPathOptions {
   /** tốc độ đi, mm/giây. Mặc định 1200 (~đi bộ chậm, §2.1). */
   speedMmPerSec?: number;
@@ -31,6 +44,8 @@ export interface CamPathOptions {
   arcSegments?: number;
   /** cỡ cửa sổ trung bình trượt khi làm mượt hướng nhìn (số mẫu, LẺ). Mặc định 5. */
   smoothWindow?: number;
+  /** điểm ngắm — mặc định `{ kind: 'tangent' }` (V2.1, §2.1). */
+  lookAt?: LookAtMode;
 }
 
 export interface CamPathResult {
@@ -39,7 +54,9 @@ export interface CamPathResult {
   totalDurationSec: number;
 }
 
-const DEFAULTS: Required<CamPathOptions> = {
+// `lookAt` cố ý KHÔNG nằm trong DEFAULTS — xử lý riêng ở planCamPath() (mặc định 'tangent'),
+// không đi qua `{...DEFAULTS, ...opts}` như các field số khác.
+const DEFAULTS: Required<Omit<CamPathOptions, 'lookAt'>> = {
   speedMmPerSec: 1200,
   filletRadiusMm: 600,
   stepMm: 100,
@@ -189,14 +206,28 @@ export function smoothDirections(dirsRad: number[], windowSize = 5): number[] {
   return out;
 }
 
+/** Hướng nhìn tại 1 điểm theo `LookAtMode` — 'tangent' dùng hướng tiếp tuyến ĐÃ LÀM MƯỢT
+ * (`tangentDirRad`), 'point'/'zone' tính thẳng góc điểm→đích (atan2), bỏ qua tiếp tuyến. */
+function dirForMode(mode: LookAtMode, point: Pt, tangentDirRad: number): number {
+  if (mode.kind === 'tangent') return normalizeAngle(tangentDirRad);
+  const target = mode.kind === 'point' ? mode.at : mode.centroid;
+  if (target.x === point.x && target.y === point.y) return normalizeAngle(tangentDirRad); // trùng điểm — atan2(0,0) vô nghĩa, rơi về tiếp tuyến
+  return Math.atan2(target.y - point.y, target.x - point.x);
+}
+
 /**
  * Hàm chính: polyline đường cam → chuỗi mẫu {điểm, hướng, thời điểm}. Thứ tự đúng §2.2: bo góc
- * trước → lấy mẫu theo độ dài sau → làm mượt hướng. `tSec` suy từ `cumLenMm / speedMmPerSec`
- * (tốc độ CỐ ĐỊNH dọc đường — đúng mô hình "đi bộ đều tốc" của spec, không tăng/giảm tốc ở khúc cua).
+ * trước → lấy mẫu theo độ dài sau → làm mượt hướng (chỉ áp dụng chế độ `tangent`, xem
+ * `dirForMode`). `tSec` suy từ `cumLenMm / speedMmPerSec` (tốc độ CỐ ĐỊNH dọc đường — đúng mô
+ * hình "đi bộ đều tốc" của spec, không tăng/giảm tốc ở khúc cua).
  */
 export function planCamPath(points: Pt[], opts?: CamPathOptions): CamPathResult {
   const o = { ...DEFAULTS, ...opts };
-  if (points.length < 2) return { samples: points.length === 1 ? [{ point: points[0], dirRad: 0, tSec: 0, cumLenMm: 0 }] : [], totalLengthMm: 0, totalDurationSec: 0 };
+  const lookAt: LookAtMode = opts?.lookAt ?? { kind: 'tangent' };
+  if (points.length < 2) {
+    if (points.length !== 1) return { samples: [], totalLengthMm: 0, totalDurationSec: 0 };
+    return { samples: [{ point: points[0], dirRad: dirForMode(lookAt, points[0], 0), tSec: 0, cumLenMm: 0 }], totalLengthMm: 0, totalDurationSec: 0 };
+  }
 
   const rounded = roundPolylineCorners(points, o.filletRadiusMm, o.arcSegments);
   const sampled = sampleByLength(rounded, o.stepMm);
@@ -206,7 +237,7 @@ export function planCamPath(points: Pt[], opts?: CamPathOptions): CamPathResult 
   const totalLengthMm = sampled[sampled.length - 1]?.cumLenMm ?? 0;
   const samples: CamPathSample[] = sampled.map((s, i) => ({
     point: s.point,
-    dirRad: normalizeAngle(smoothed[i]),
+    dirRad: dirForMode(lookAt, s.point, smoothed[i]),
     tSec: o.speedMmPerSec > 0 ? s.cumLenMm / o.speedMmPerSec : 0,
     cumLenMm: s.cumLenMm,
   }));
