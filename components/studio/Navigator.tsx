@@ -25,7 +25,7 @@ import { useDismissable } from '@/lib/useDismissable';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
 import { AccountMenu } from '@/components/AccountMenu';
 
-const WIDTH = 214;
+const DEFAULT_WIDTH = 214;
 const COLLAPSE_BREAKPOINT = 1280;
 const STORAGE_KEY = 'interiorflow.navigator.collapsed_v1';
 
@@ -41,9 +41,13 @@ interface Props {
   /** Nhãn hiện trên DẢI MỎNG khi thu gọn (CHINH-3, SPEC-PANEL-ROLLOUT-IDF §2f — "dải dọc mỏng
    * CÓ NHÃN", né lỗi SketchUp nút không nhãn). Thiếu → "Bảng". */
   collapsedLabel?: string;
+  /** Bề rộng ổ ② — mặc định 214 (Trụ 1). Hoà 04/08 (BÁC bản Render list-chữ, §0d "giữ cái đang
+   * tốt"): chặng Render gắn NGUYÊN `NodeLibraryPanel` (card icon+mô tả+badge) cần THỞ hơn danh
+   * sách chữ CAD/Present — 280px, số ghi ở nơi gọi (`AppShell.tsx`). */
+  width?: number;
 }
 
-export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, collapsedLabel }: Props) {
+export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, collapsedLabel, width = DEFAULT_WIDTH }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [peek, setPeek] = useState(false);
@@ -116,7 +120,7 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
         {peek && (
           <div
             className="absolute left-full top-0 z-20 flex h-full min-h-0 flex-col border-r border-[var(--border)] bg-[var(--panel)] shadow-[var(--shadow-pop)]"
-            style={{ width: WIDTH }}
+            style={{ width }}
           >
             <div className="min-h-0 flex-1 overflow-y-auto py-1" style={{ scrollbarWidth: 'thin' }}>
               {children}
@@ -130,7 +134,7 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
   return (
     <aside
       className="flex min-h-0 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--panel)]"
-      style={{ width: WIDTH, visibility: hydrated ? 'visible' : 'hidden' }}
+      style={{ width, visibility: hydrated ? 'visible' : 'hidden' }}
       data-tour="navigator"
     >
       {topState}
@@ -194,4 +198,4 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
   );
 }
 
-export { WIDTH as NAVIGATOR_WIDTH };
+export { DEFAULT_WIDTH as NAVIGATOR_WIDTH };

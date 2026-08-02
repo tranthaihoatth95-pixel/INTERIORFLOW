@@ -22,7 +22,6 @@ import { LoginScreen } from '@/components/entry/LoginScreen';
 import { WelcomeIntro } from '@/components/entry/WelcomeIntro';
 import { StageIntroCard } from '@/components/onboarding/StageIntroCard';
 import { AppShell } from '@/components/studio/AppShell';
-import { RenderNavigator } from '@/components/render-studio/RenderNavigator';
 import { RenderDocBar } from '@/components/studio/RenderDocBar';
 import { NodeLibraryPanel } from '@/components/NodeLibraryPanel';
 import { GalleryPanel } from '@/components/GalleryPanel';
@@ -571,16 +570,19 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
         className="h-[100dvh] overflow-hidden bg-[var(--bg)]"
       >
         {/* VIỆC 2 mở rộng (03/08) — <AppShell> thay <StageShell> (Hoà: rail capsule biến mất
-            khỏi CẢ app). Navigator = RenderNavigator (outline khối trên canvas, ĐỘC LẬP với
-            renderMode — Command3DPanel của mode 'model3d' vẫn sống trong Render3DModeSkeleton
-            như cũ, KHÔNG lồng 2 sidebar). ⚠️ CHƯA kiểm lại canh giữa "Vẽ 3D" toggle trong
-            ModeSwitchBar.tsx (trước neo theo bề rộng LeftRail cũ ~76px, Navigator nay 214px —
-            xem lại nếu lệch tâm khi verify). */}
+            khỏi CẢ app).
+            🔴 04/08 — Hoà BÁC bản Navigator "list-chữ" tự viết lại (nghèo hơn bản cũ, SO-KIEM-TONG
+            §0d "giữ cái đang tốt"): Navigator = `NodeLibraryPanel` NGUYÊN BẢN (`embedded` prop mới
+            — xem component đó) gắn thẳng vào ổ ②, KHÔNG viết lại nội dung. Rộng 280 (AppShell tự
+            tính theo `active==='render'`) cho card thở, ĐỘC LẬP với renderMode — Command3DPanel
+            của mode 'model3d' vẫn sống trong Render3DModeSkeleton như cũ, không lồng 2 sidebar.
+            ⚠️ CHƯA kiểm lại canh giữa "Vẽ 3D" toggle trong ModeSwitchBar.tsx (trước neo theo bề
+            rộng LeftRail cũ ~76px, Navigator nay 280px — xem lại nếu lệch tâm khi verify). */}
         <AppShell
           active="render"
           toolbar={<RenderDocBar />}
           statusBar={<StatusBar stage="render" hidden={presentModeOpen} />}
-          navigator={<RenderNavigator />}
+          navigator={<NodeLibraryPanel embedded />}
           navigatorAddLabel="Khối mới"
           navigatorCollapsedLabel="Khối"
         >
@@ -617,7 +619,12 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
             content={(mode) =>
               mode === 'render' ? (
                 <>
-                  <NodeLibraryPanel />
+                  {/* NodeLibraryPanel giờ sống Ở NAVIGATOR (embedded, xem <AppShell> trên) —
+                      KHÔNG mount thêm bản sheet-trượt ở đây nữa (tránh 2 bản SketchStudioModal/
+                      SmartSelectModal/WarpCornersModal cùng lúc — cả 3 modal đó mount BÊN TRONG
+                      NodeLibraryPanel, xem component). Command Palette "Mở Node Library" giờ vô
+                      hại/không còn tác dụng hiển thị (Navigator luôn hiện sẵn) — chưa dọn action
+                      đó, không phải regression, panel không "mất" mà LUÔN ở đó. */}
                   <GalleryPanel />
                   <LibraryPanel />
                   {/* Cả 3 chặng đều là canvas node (Present sang studio riêng). Nút Tải lên/Concept = moodboard. */}

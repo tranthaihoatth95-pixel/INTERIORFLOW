@@ -86,12 +86,15 @@ export function AppShell({
   // AppChromeActive → StageKey của Thư viện: photo không có kệ riêng → dùng kệ chặng dựng ảnh
   // (cùng mapping bản g4 cũ đặt trong StageShell trước khi file đó bị xoá).
   const libStage: StageKey = active === 'cad' ? 'cad' : active === 'present' ? 'present' : 'render';
+  // Hoà 04/08 (BÁC bản Render list-chữ, SO-KIEM-TONG §0d) — chặng Render gắn NGUYÊN
+  // `NodeLibraryPanel` (card icon+mô tả+badge cr) làm ruột Navigator, cần THỞ hơn 214 mặc định.
+  const navigatorWidth = active === 'render' ? 280 : undefined;
   const openLibrary = onOpenLibrary ?? (() => openLibrarySheet({ stage: libStage }));
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden', background: 'var(--bg)' }}>
       <AppChrome active={active} logoMenu />
       <div className="relative flex min-h-0 flex-1">
-        <Navigator addLabel={navigatorAddLabel} collapsedLabel={navigatorCollapsedLabel} onAdd={onNavigatorAdd} onOpenLibrary={openLibrary}>
+        <Navigator addLabel={navigatorAddLabel} collapsedLabel={navigatorCollapsedLabel} onAdd={onNavigatorAdd} onOpenLibrary={openLibrary} width={navigatorWidth}>
           {navigator}
         </Navigator>
         <div className="relative flex min-w-0 flex-1 flex-col">

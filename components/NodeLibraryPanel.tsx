@@ -43,7 +43,18 @@ export const MINDMAP_MIME = 'application/interiorflow-mindmap';
 
 const ALL_TAG = 'all' as const;
 
-export function NodeLibraryPanel() {
+interface Props {
+  /** Hoà 04/08 (BÁC bản Navigator list-chữ, `docs/SO-KIEM-TONG.md` §0d "giữ cái đang tốt") —
+   * gắn NGUYÊN component này vào ổ ② Navigator của `AppShell` cho chặng Render, KHÔNG viết lại.
+   * `embedded=true`: bỏ gate `panel==='library'`/AnimatePresence sheet-trượt (Navigator luôn
+   * hiện, không phải panel bật/tắt) + bỏ khung `w-64`/border/nút đóng riêng (Navigator đã có
+   * khung 280px của nó) — MỌI nội dung bên trong (search/chip/mood/vật liệu/master/★/nhóm tag)
+   * giữ NGUYÊN 100%, không đổi 1 dòng logic. Mặc định `false` = hành vi sheet-trượt cũ, còn
+   * dùng ở Command Palette "Mở Node Library"/`RenderToolModeOverlay`. */
+  embedded?: boolean;
+}
+
+export function NodeLibraryPanel({ embedded = false }: Props = {}) {
   const panel = useFlowStore((s) => s.panel);
   const setPanel = useFlowStore((s) => s.setPanel);
   const setPaletteOpen = useFlowStore((s) => s.setPaletteOpen);
@@ -202,32 +213,10 @@ export function NodeLibraryPanel() {
     });
   }, [centerPos, addNote, updateNote]);
 
-  return (
+  // `embedded`: gắn thẳng vào ổ ② Navigator (AppShell) — không sheet trượt, không khung/nút
+  // đóng riêng (Navigator lo phần đó), luôn hiện bất kể `panel`. Nội dung bên trong NGUYÊN VẸN.
+  const body = (
     <>
-    <AnimatePresence>
-      {(panel === 'library' || panel === 'search') && (
-        // iOS sheet trượt từ trái + material blur
-        <motion.aside
-          key="node-library"
-          variants={sheetSlide('left')}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      className="mat-panel z-20 flex w-64 flex-col border-r border-[var(--border)]"
-    >
-      <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2.5">
-        <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--t3)]">
-          {tr('Thư viện khối', 'Block library')}
-        </span>
-        <motion.button
-          {...pressableIcon}
-          onClick={() => setPanel(null)}
-          className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
-        >
-          <X size={13} />
-        </motion.button>
-      </div>
-
       <div className="space-y-1.5 p-2.5">
         <input
           autoFocus={panel === 'search'}
@@ -439,9 +428,42 @@ export function NodeLibraryPanel() {
             : tr(`Chặng ${phase.label}: khối ★ ở trên. Kéo thả bất kỳ khối nào vào canvas — các chặng dùng chung 1 canvas.`, `${phase.label} stage: ★ blocks are listed above. Drag any block onto the canvas — all stages share one canvas.`)}
         </p>
       </div>
-        </motion.aside>
-      )}
-    </AnimatePresence>
+    </>
+  );
+
+  return (
+    <>
+    {embedded ? (
+      <div className="flex h-full w-full flex-col">{body}</div>
+    ) : (
+      <AnimatePresence>
+        {(panel === 'library' || panel === 'search') && (
+          // iOS sheet trượt từ trái + material blur
+          <motion.aside
+            key="node-library"
+            variants={sheetSlide('left')}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="mat-panel z-20 flex w-64 flex-col border-r border-[var(--border)]"
+          >
+            <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2.5">
+              <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--t3)]">
+                {tr('Thư viện khối', 'Block library')}
+              </span>
+              <motion.button
+                {...pressableIcon}
+                onClick={() => setPanel(null)}
+                className="grid h-6 w-6 place-items-center rounded-md text-[var(--t4)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t2)]"
+              >
+                <X size={13} />
+              </motion.button>
+            </div>
+            {body}
+          </motion.aside>
+        )}
+      </AnimatePresence>
+    )}
     {/* NodeLibraryPanel LUÔN được mount trong app/page.tsx (chỉ nội dung panel ẩn/hiện) —
         gắn Sketch Studio ở đây để không phải sửa app/page.tsx (ngoài phạm vi commit).
         Modal tự portal ra document.body nên vị trí gọi không ảnh hưởng layout/transform. */}
