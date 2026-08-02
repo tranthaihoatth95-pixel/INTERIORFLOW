@@ -1299,3 +1299,24 @@ Theo `docs/SPEC-APP-SHELL-CHUNG.md` + Figma `y421AJBWVpqGVvJ3vTn2wO` trang "Shel
 - ⚠️ Còn lại của spec (chưa làm, chờ lệnh riêng như Hoà đã dặn): **Vitals nâng cấp §4**
   (thanh trạng thái sống). MobileMenu (<lg) giữ nguyên làm đường vào mobile — hợp nhất mobile
   với AccountMenu là việc riêng nếu Hoà muốn.
+
+---
+# CHỐT PHIÊN 03/08 (context ~85%)
+**Đã xong phiên này** (mỗi mục 1+ commit, đều tsc/eslint/test + verify browser):
+G2 trọn 6/6 phần → G3 phần (1) Command Panel → avatar Memoji VIỆC 1+2+3 (chất liệu · rail 44 ·
+trang đổi avatar theo mock v2) → fix trung tính /settings + /intro (gỡ hex TTT + ảnh khách detech
+khỏi TitleSequence) → rail đồng tâm 44/8/30 + AccountMenu gom ⚙/⋯/credits/share/chat →
+**StageShell 3 bước trọn** (rail cả 3 chặng · cắt 5 thứ thừa · Inspector chuẩn hoá).
+
+**HÀNG ĐỢI PHIÊN SAU (thứ tự):**
+1. **G3 phần (2)** trở đi (`TICKET-CHANG2-BUILD`): tab Camera/Tạo/Sửa/Hiện thật cho Command
+   Panel + Scene Objects outliner (CHƯA có mock bố cục — cần Cowork dựng mock trước theo luật).
+2. **Vitals nâng cấp §4** `SPEC-APP-SHELL-CHUNG` (thanh trạng thái sống) — Hoà nói sẽ có lệnh riêng.
+3. Dọn `/detech/` 3 chỗ code còn lại (bảng ở mục fix intro phía trên) + Hoà chạy lệnh dọn
+   `public/detech/` đã soạn sẵn.
+4. Đề xuất chờ Hoà gật: xoá dead-code `components/IntroSequence.tsx` (chứa credential comment).
+
+**BẪY phiên sau cần nhớ:** 2 dev server cùng repo → `.next/` đụng nhau, server nghẹt dần
+(restart là hết, KHÔNG phải bug code — chi tiết mục "PHÁT HIỆN HẠ TẦNG") · click đầu tiên vào
+nút toggle trên tab browser mới đôi khi không đăng ký (đọc store thay vì kết luận bug) · loop
+"Maximum update depth" ở `EditorCanvas` present-editor là của phiên phụ, đã cảnh báo.
