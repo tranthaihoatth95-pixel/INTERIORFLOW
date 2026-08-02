@@ -10,8 +10,32 @@
  * NGUYÊN logic, không xoá tính năng đang chạy thật (xem comment trong PixelSettingsShell.tsx).
  */
 
+import { useRouter } from 'next/navigation';
 import { PixelSettingsShell } from './_components/PixelSettingsShell';
+import { SettingsNavigator } from './_components/SettingsNavigator';
+import { AppShell } from '@/components/studio/AppShell';
+import { useT } from '@/lib/i18n';
 
+/**
+ * Hoà chỉ đạo 03/08: `/settings` bọc trong CÙNG `<AppShell>` như CAD/Render/Present (rail
+ * capsule biến mất khỏi CẢ app, không chỉ 3 chặng) — Navigator = danh sách nhóm cài đặt
+ * (`SettingsNavigator`, nhảy neo trong `PixelSettingsShell`). Không có "thư viện" hay "thêm"
+ * hợp lý cho trang này — nút "+" mờ (`onNavigatorAdd` undefined), "Thư viện" đi `/library`
+ * (giống các chặng khác).
+ */
 export default function SettingsPage() {
-  return <PixelSettingsShell />;
+  const tr = useT();
+  const router = useRouter();
+  return (
+    <AppShell
+      active="render"
+      navigator={<SettingsNavigator />}
+      navigatorAddLabel={tr('Cài đặt', 'Settings')}
+      onOpenLibrary={() => router.push('/library')}
+    >
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <PixelSettingsShell />
+      </div>
+    </AppShell>
+  );
 }

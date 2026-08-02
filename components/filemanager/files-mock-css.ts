@@ -15,7 +15,7 @@
 //
 // Rail riêng ĐÃ XOÁ khỏi file này 03/08 — `/files` dùng chung `components/LeftRail.tsx` toàn app.
 export const FILES_MOCK_CSS = `
-.if-files-app{display:flex;height:100dvh;max-width:1440px;margin:0 auto;color:var(--t1);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.if-files-app{display:flex;height:100%;max-width:1440px;margin:0 auto;color:var(--t1);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 .if-files-app *{box-sizing:border-box}
 
 .if-files-app .main{flex:1;display:flex;flex-direction:column;padding:26px 30px 22px 18px;min-width:0;position:relative}
@@ -148,7 +148,7 @@ export const FILES_MOCK_CSS = `
 .if-files-app .quickfile:hover{background:var(--hover)}
 .if-files-app .quickfile:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
 
-.if-files-outer{min-height:100dvh;background:var(--bg)}
+.if-files-outer{height:100%;background:var(--bg)}
 
 /* SPEC-HOVER-FOCUS-IDF §3.8 — reduced-motion: bỏ scale/lift, chỉ giữ đổi nền ≤100ms */
 @media (prefers-reduced-motion:reduce){

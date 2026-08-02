@@ -2,10 +2,11 @@
 
 /**
  * components/studio/AppShell.tsx — SÁU Ổ CẮM CỐ ĐỊNH (VIỆC 2, `docs/SPEC-HA-TANG-UI-IF.md`
- * Trụ 1). Thay `StageShell` cho chặng Vẽ (CAD) — Render/Present CHƯA chuyển (dùng `StageShell`
- * cũ, xem ghi chú trong `lib/shell/mode-registry.ts`). Giữ nguyên NHÓM API bên ngoài
- * (active/children/statusBar) nhưng thay `LeftRail` icon rail bằng `Navigator` 214px +
- * `AppLogoMenu`, thêm ổ Toolbelt riêng.
+ * Trụ 1). Thay `StageShell` cho CẢ 5 màn (CAD/Render/Present/`/files`/`/settings` — Hoà 03/08:
+ * "rail capsule nổi phải biến mất khỏi CẢ app, không chỉ StageShell, không thì có HAI KIỂU
+ * VỎ"). Giữ nguyên NHÓM API bên ngoài của `StageShell` cũ (active/children/statusBar/toolbar/
+ * bottomExtra) nhưng thay `LeftRail` icon rail bằng `Navigator` 214px + `AppLogoMenu`, thêm ổ
+ * Toolbelt riêng.
  *
  * ① Header 42px — AppChrome (logo nay mở AppLogoMenu thay vì rail).
  * ② Navigator 214px — nội dung do chặng truyền qua prop `navigator`.
@@ -51,6 +52,9 @@ interface Props {
   statusBar?: ReactNode;
   /** Phần thêm cạnh statusBar (bottomExtra cũ, giữ tương thích StageShell). */
   bottomExtra?: ReactNode;
+  /** Toolbar riêng chặng trong luồng bình thường TRƯỚC children (giữ tương thích API
+   * `StageShell` cũ — vd `RenderDocBar` của Render). Không phải ổ Toolbelt (dock kính nổi). */
+  toolbar?: ReactNode;
 }
 
 export function AppShell({
@@ -67,6 +71,7 @@ export function AppShell({
   toolbelt,
   statusBar,
   bottomExtra,
+  toolbar,
 }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden', background: 'var(--bg)' }}>
@@ -76,6 +81,7 @@ export function AppShell({
           {navigator}
         </Navigator>
         <div className="relative flex min-w-0 flex-1 flex-col">
+          {toolbar}
           {children}
           {toolbelt && (
             <div className="pointer-events-none absolute inset-x-0 bottom-4 z-[6] flex justify-center">

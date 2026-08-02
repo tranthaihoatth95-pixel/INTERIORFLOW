@@ -8,7 +8,6 @@ import type { FmFile } from '@/lib/filemanager/types';
 import { formatBytes } from '@/lib/filemanager/types';
 import { listRealFiles, realFsMessage, writeFileToRoot, type RealFsFailure } from '@/lib/filemanager/real-fs';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
-import { LeftRail } from '@/components/LeftRail';
 import { RawStyle } from './RawStyle';
 import { FILES_MOCK_CSS } from './files-mock-css';
 
@@ -28,8 +27,15 @@ interface UploadingItem {
 const STORAGE_QUOTA_BYTES = 10 * 1024 * 1024 * 1024;
 const LIFECYCLE_TAG: Record<FmFile['lifecycle'], string> = { nhap: 'NHÁP', chinh_thuc: 'CHÍNH THỨC', luu_tru: 'LƯU TRỮ' };
 
-export function FileManagerShell() {
-  const [currentFolderId, setCurrentFolderIdRaw] = useState<string | null>(null);
+interface Props {
+  /** Hoà 03/08 — Navigator (`FilesNavigator`, ổ ② `AppShell`) và nội dung chính giờ là 2 ANH EM
+   * cùng đọc `currentFolderId` từ `app/files/page.tsx` (nguồn chung), thay vì state riêng —
+   * bấm cây thư mục ở Navigator phải đổi được nội dung `.main` bên này. */
+  currentFolderId: string | null;
+  onSelectFolder: (id: string | null) => void;
+}
+
+export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
   const [view, setView] = useState<ViewMode>('grid');
   const [selected, setSelected] = useState<FmFile | null>(null);
   const [insTab, setInsTab] = useState<InspTab>('mota');
@@ -42,7 +48,7 @@ export function FileManagerShell() {
 
   const setCurrentFolderId = (id: string | null) => {
     setSelected(null);
-    setCurrentFolderIdRaw(id);
+    onSelectFolder(id);
   };
 
   const { state, addComment, addUploadedFile } = useFileManagerLocalState();
@@ -166,9 +172,8 @@ export function FileManagerShell() {
     <div className="if-files-outer">
       <RawStyle css={FILES_MOCK_CSS} />
       <div className="if-files-app">
-        {/* Rail DÙNG CHUNG toàn app (`components/LeftRail.tsx`) — G4 đã bỏ rail riêng 03/08 theo
-            chỉ đạo Hoà ("đừng dựng rail thứ hai"). Mục Files trong đó đã nối route `/files`. */}
-        <LeftRail />
+        {/* Rail (`components/LeftRail.tsx`) — XOÁ 03/08: `/files` nay bọc trong `<AppShell>`
+            (`app/files/page.tsx`), Navigator = `FilesNavigator` (cây thư mục). */}
 
         <div
           className="main"
