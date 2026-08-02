@@ -105,10 +105,15 @@ export type Tool =
    * hoàn tất đi vào layer hệ thống `IF_CAMPATH` + cờ `campath:true` thay vì layer đang chọn. */
   | 'campath';
 
-/** Sprint 9 — 2 chế độ UI cho cùng 1 editor (KHÔNG phải 2 app khác nhau, dữ liệu/Doc dùng
- * chung): 'sketch' ẩn bớt công cụ vẽ-chính-xác-kiểu-AutoCAD để giữ đúng triết lý Phase 1
- * ("Sketch, không phải Draft" — xem IF-FEATURE-SPEC-P1-v2.md), 'pro' hiện đủ (Sprint 10). */
-export type CadMode = 'sketch' | 'pro';
+/** Sprint 9 — 3 chế độ UI cho cùng 1 editor (KHÔNG phải 3 app khác nhau, dữ liệu/Doc dùng
+ * chung — additive, `.idf` cũ mở bình thường): 'sketch' ẩn bớt công cụ vẽ-chính-xác-kiểu-AutoCAD
+ * để giữ đúng triết lý Phase 1 ("Sketch, không phải Draft" — xem IF-FEATURE-SPEC-P1-v2.md), 'pro'
+ * hiện đủ (Sprint 10). 'revit' (H1, `docs/SPEC-MODE-PER-STAGE.md` §1, 02/08) — SIÊU TẬP của 'pro'
+ * (mọi công cụ Pro vẫn dùng được — `shouldShowProTools` coi 'revit' như 'pro'), thêm shell riêng
+ * cho cấu kiện BIM (IF2, `CHOT-HUONG-3D-2026-08-01.md` B2) — hiện tại SKELETON (đổi shell thấy
+ * được, chưa đủ tính năng cấu kiện thật — xem `docs/TICKET-UI-HATANG-2026-08-02.md` "chưa cần đủ
+ * nội dung từng mode"). */
+export type CadMode = 'sketch' | 'pro' | 'revit';
 
 /**
  * IF2-nền — VAI TRÒ đang đăng nhập (relay pipeline theo IF1_IF2_BIGPICTURE.md §2). Không phải
@@ -136,7 +141,7 @@ export type CadStage = 'sketch' | 'technical' | 'bim';
  * (backward-compat với UI Sketch/Pro cũ) — kể cả CREA vẫn có thể bật Pro override để mượn tool.
  */
 export function shouldShowProTools(role: CadRole, stage: CadStage, cadMode: CadMode): boolean {
-  if (cadMode === 'pro') return true; // override thủ công (backward-compat)
+  if (cadMode === 'pro' || cadMode === 'revit') return true; // override thủ công (backward-compat) — revit = siêu tập của pro
   if (role === 'owner') return true; // ACCESS-CONTROL M1: owner full quyền mọi chặng
   return (role === 'drafter' || role === 'bim') && (stage === 'technical' || stage === 'bim');
 }

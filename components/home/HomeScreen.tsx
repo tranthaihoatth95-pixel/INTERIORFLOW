@@ -37,6 +37,9 @@ import { Lightbox } from '@/components/Lightbox';
 import { Dashboard } from '@/components/Dashboard';
 import StatusBar from '@/components/studio/StatusBar';
 import RenderToolModeOverlay from '@/components/render-studio/RenderToolModeOverlay';
+import Render3DModeSkeleton from '@/components/render-studio/Render3DModeSkeleton';
+import ModeShell from '@/components/shell/ModeShell';
+import { useStageMode, useHydrateRenderMode } from '@/lib/stage-mode';
 import PresentOverlay from '@/components/present/PresentOverlay';
 import { ProjectSelect } from '@/components/ProjectSelect';
 import { CommentLayer } from '@/components/CommentLayer';
@@ -82,6 +85,10 @@ function useIsCoverScreen(): boolean {
 
 export default function HomeScreen({ projectRouteId }: { projectRouteId?: string } = {}) {
   const user = useFlowStore((s) => s.user);
+  // H1 (docs/SPEC-MODE-PER-STAGE.md §1) — mode chặng Render: 'render' (canvas node + Mood/Collab,
+  // mặc định, hành vi cũ nguyên vẹn) ↔ 'model3d' (Vẽ 3D, skeleton mới — xem components/render-studio/Render3DModeSkeleton.tsx).
+  useHydrateRenderMode();
+  const { mode: renderMode, setMode: setRenderMode } = useStageMode('render');
   // Màn ngoài (cover) hẹp → chỉ cho XEM Dashboard; mọi thao tác ở màn trong.
   const isCover = useIsCoverScreen();
   // Sau khi auth thành công → hiện màn CHỌN DỰ ÁN (ProjectSelect) trước canvas.
@@ -581,14 +588,33 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
             />
           )}
 
-          <NodeLibraryPanel />
-          <GalleryPanel />
-          <LibraryPanel />
-          <FlowsPanel />
-          {/* Cả 3 chặng đều là canvas node (Present sang studio riêng). Nút Tải lên/Concept = moodboard. */}
-          <FlowCanvas />
-          <RenderToolModeOverlay />
-          <ChatPanel />
+          {/* H1 (SPEC-MODE-PER-STAGE §1) — mode Render: 'render' (canvas node cũ, mặc định) ↔
+              'model3d' (Vẽ 3D, skeleton). Đổi mode = đổi CẢ nội dung, không phải thêm nút. */}
+          <ModeShell
+            barPosition="bottom"
+            modes={[
+              { value: 'render', label: 'Render + Mood + Collab' },
+              { value: 'model3d', label: 'Vẽ 3D' },
+            ]}
+            active={renderMode}
+            onChange={setRenderMode}
+            content={(mode) =>
+              mode === 'render' ? (
+                <>
+                  <NodeLibraryPanel />
+                  <GalleryPanel />
+                  <LibraryPanel />
+                  <FlowsPanel />
+                  {/* Cả 3 chặng đều là canvas node (Present sang studio riêng). Nút Tải lên/Concept = moodboard. */}
+                  <FlowCanvas />
+                  <RenderToolModeOverlay />
+                  <ChatPanel />
+                </>
+              ) : (
+                <Render3DModeSkeleton />
+              )
+            }
+          />
         </div>
         <StatusBar stage="render" hidden={presentModeOpen} />
         <MaskPainterModal />

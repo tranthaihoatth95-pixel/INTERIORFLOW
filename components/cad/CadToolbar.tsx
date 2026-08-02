@@ -140,7 +140,7 @@ export default function CadToolbar({
   const redo = useCadStore((s) => s.redo);
   const past = useCadStore((s) => s.past.length);
   const future = useCadStore((s) => s.future.length);
-  const isPro = cadMode === 'pro';
+  const isPro = cadMode === 'pro' || cadMode === 'revit';
   const undoLabel = useModKey('Z');
   const redoLabel = useModShiftKey('Z');
   // Hai khác biệt "cầm nắm" giữa 2 mode, gom về đúng 2 biến:
@@ -156,7 +156,7 @@ export default function CadToolbar({
   useEffect(() => {
     try {
       const saved = localStorage.getItem(LS_CAD_MODE);
-      if (saved === 'sketch' || saved === 'pro') setCadMode(saved as CadMode);
+      if (saved === 'sketch' || saved === 'pro' || saved === 'revit') setCadMode(saved as CadMode);
     } catch {
       /* private mode / SSR — bỏ qua, dùng mặc định */
     }
@@ -373,13 +373,16 @@ function ModeSwitch({ mode, onChange, pro }: { mode: CadMode; onChange: (m: CadM
         padding: 2,
         gap: 1,
       }}
-      title="Sketch — vẽ bằng ngón tay (kiểu ArcSite): bộ công cụ tối giản, nút cỡ lớn, có cụm nút cảm ứng thay phím F8/F12/gõ lệnh/Space. Pro — tối ưu chuột + bàn phím: đủ công cụ CAD chính xác (toạ độ, Dimension, Fillet/Chamfer, Array…), nút gọn, tag hover kèm phím tắt."
+      title="Sketch — vẽ bằng ngón tay (kiểu ArcSite): bộ công cụ tối giản, nút cỡ lớn, có cụm nút cảm ứng thay phím F8/F12/gõ lệnh/Space. Pro — tối ưu chuột + bàn phím: đủ công cụ CAD chính xác (toạ độ, Dimension, Fillet/Chamfer, Array…), nút gọn, tag hover kèm phím tắt. Revit — thêm shell cấu kiện BIM (IF2), giữ nguyên mọi công cụ Pro."
     >
       <button type="button" onClick={() => onChange('sketch')} style={segBtn(mode === 'sketch')}>
         Sketch
       </button>
       <button type="button" onClick={() => onChange('pro')} style={segBtn(mode === 'pro')}>
         Pro
+      </button>
+      <button type="button" onClick={() => onChange('revit')} style={segBtn(mode === 'revit')}>
+        Revit
       </button>
     </div>
   );

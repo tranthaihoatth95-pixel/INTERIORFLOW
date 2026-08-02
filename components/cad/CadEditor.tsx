@@ -71,6 +71,7 @@ import MaterialPalette from './MaterialPalette';
 import AiBriefPanel from './AiBriefPanel';
 import { ZonePanel, ZonesLegend } from './ZonePanel';
 import CamPathPanel from './CamPathPanel';
+import RevitSummaryPanel from './RevitSummaryPanel';
 // Hệ Legend C1+C2 (docs/PROPOSAL-LEGEND-SYSTEM.md) — panel Thống kê · Schedule + Chú giải.
 import SchedulePanel from './SchedulePanel';
 // VIỆC 4 (Sprint ĐỔ NỀN 2) — T4: panel lịch sử Undo/Redo (past/future đã có sẵn ở lib/cad/store.ts).
@@ -112,6 +113,7 @@ export default function CadEditor() {
   // Zone tool (24/07) — panel cấu hình hiện khi đang ở tool zone/arrow (đóng được bằng ✕,
   // tự mở lại khi chọn lại tool). ZonesLegend tự ẩn/hiện theo doc (≥1 zone).
   const cadTool = useCadStore((s) => s.tool);
+  const cadMode = useCadStore((s) => s.cadMode);
   const [zonePanelClosed, setZonePanelClosed] = useState(false);
   useEffect(() => {
     if (cadTool === 'zone' || cadTool === 'arrow') setZonePanelClosed(false);
@@ -525,6 +527,8 @@ export default function CadEditor() {
         {(cadTool === 'campath' || hasCampathEntity) && !camPathPanelClosed && (
           <CamPathPanel onClose={() => setCamPathPanelClosed(true)} />
         )}
+        {/* H1 — shell riêng mode Revit (SPEC-MODE-PER-STAGE §1): đổi CẢ bố cục, không chỉ thêm nút. */}
+        {cadMode === 'revit' && <RevitSummaryPanel />}
         {scheduleOpen && <SchedulePanel onClose={() => setScheduleOpen(false)} />}
         {historyOpen && <HistoryPanel onClose={() => setHistoryOpen(false)} />}
         <LayerPanel />
