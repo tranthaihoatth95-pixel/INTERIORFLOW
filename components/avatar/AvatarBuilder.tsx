@@ -61,8 +61,8 @@ export function AvatarBuilder({ value, onChange, onSave, onSkip, seedId = 'seed'
         gridTemplateColumns: '240px 1fr',
         gap: 32,
         padding: 24,
-        background: '#FAF7F1',
-        border: '1px solid #1B1512',
+        background: 'var(--panel)',
+        border: '1px solid var(--border)',
         borderRadius: 4,
         maxWidth: 780,
       }}
@@ -254,7 +254,7 @@ function SlotColorRow({
               height: 28,
               borderRadius: 3,
               background: colorOf(it),
-              border: it === value ? '2px solid var(--accent)' : '1px solid #1B1512',
+              border: it === value ? '2px solid var(--accent)' : '1px solid var(--border)',
               cursor: 'pointer',
             }}
           />
@@ -278,8 +278,8 @@ function chipStyle(active: boolean): React.CSSProperties {
     padding: '6px 10px',
     fontSize: 12,
     background: active ? 'var(--accent-strong)' : 'transparent',
-    color: active ? '#F1ECE3' : '#1B1512',
-    border: '1px solid #1B1512',
+    color: active ? '#FFFFFF' : 'var(--t1)',
+    border: '1px solid var(--border)',
     borderRadius: 3,
     cursor: 'pointer',
     textTransform: 'lowercase',
@@ -291,7 +291,7 @@ function btnStyle(variant: 'primary' | 'ghost'): React.CSSProperties {
     return {
       padding: '10px 20px',
       background: 'var(--accent)',
-      color: '#F1ECE3',
+      color: '#FFFFFF',
       border: 'none',
       borderRadius: 3,
       cursor: 'pointer',
@@ -302,8 +302,8 @@ function btnStyle(variant: 'primary' | 'ghost'): React.CSSProperties {
   return {
     padding: '10px 20px',
     background: 'transparent',
-    color: '#1B1512',
-    border: '1px solid #1B1512',
+    color: 'var(--t1)',
+    border: '1px solid var(--border)',
     borderRadius: 3,
     cursor: 'pointer',
     fontSize: 13,
