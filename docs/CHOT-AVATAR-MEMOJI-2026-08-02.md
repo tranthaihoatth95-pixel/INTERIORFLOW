@@ -61,3 +61,27 @@ thumbnail là AVATAR THẬT** cùng khuôn mặt, chỉ khác đúng đặc đi�
 
 ---
 *Cowork ghi 02/08/2026 theo chốt Hoà. Thay thế phần "búp bê nhựa/nỉ 3D" trong comment đầu `AvatarRenderer.tsx`.*
+
+## 5 · ⛔ TREO — CHỜ HOÀ QUYẾT (ghi 02/08 chiều)
+Sau 3 vòng sửa, kết luận: **vẽ mặt người bằng code (SVG/toạ độ) không đạt chất Apple.**
+Đã kiểm chứng: mọi thư viện avatar mở (DiceBear — Notionists · Micah · Clay · Lorelei…) đều là
+**vector PHẲNG có viền**, không bộ nào có khối mềm + shading kiểu Memoji. Apple UI kit chính hãng
+trong Figma **không chứa avatar** (đã tìm, rỗng). Memoji có **bản quyền Apple** — không được chép
+vào sản phẩm bán ra.
+
+**Cơ chế thật của Apple/OPPO:** hoạ sĩ 3D dựng từng bộ phận trong Blender/C4D → render mỗi mảnh
+thành **PNG trong suốt cùng góc máy + cùng nguồn sáng** → app chỉ **xếp chồng lớp** theo lựa chọn.
+Chất 3D đến từ khâu RENDER của hoạ sĩ, không từ code. Kỹ thuật app còn **dễ hơn** hiện tại.
+
+**3 đường đi (Hoà chọn):**
+| Cách | Chi phí | Kết quả |
+|---|---|---|
+| Mua bộ 3D avatar **nhiều lớp** (UI8 · Craftwork · Blush) | ~$30–80 một lần | đẹp ngay, có license thương mại |
+| Thuê hoạ sĩ 3D dựng riêng cho IF | cao hơn, vài tuần | độc quyền, đúng gu IF |
+| Hoà tự dựng Blender rồi render | thời gian | miễn phí, kiểm soát hoàn toàn |
+
+⚠️ Nếu đi hướng ảnh-nhiều-lớp thì **bỏ builder tham số** (16 tóc × 9 kính × 10 áo) — chuyển sang
+**chọn 1 trong N avatar làm sẵn**, như Slack/Linear/Notion. Avatar không phải tính năng cốt lõi của IF.
+
+**Trong lúc chờ:** giữ nguyên `AvatarRenderer` hiện tại (đã bỏ chất nỉ, đã sửa tỉ lệ) — dùng tạm được,
+KHÔNG đầu tư thêm công vẽ tay vào nó nữa.
