@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { FolderOpen } from 'lucide-react';
 import { chooseRootFolder, rootFolderName, rootFolderSupported, testStorageConnection, type ConnectionTestResult } from '@/lib/root-folder';
 import { useFlowStore } from '@/lib/store';
-import { FM } from '@/components/filemanager/fm-tokens';
 import { useT } from '@/lib/i18n';
 
 function connectionResultText(res: ConnectionTestResult, tr: (vi: string, en: string) => string): string {
@@ -20,32 +20,11 @@ function connectionResultText(res: ConnectionTestResult, tr: (vi: string, en: st
   }
 }
 
-function Switch({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      aria-label={label}
-      onClick={onToggle}
-      className="relative h-[22px] w-9 shrink-0 rounded-full transition-colors duration-150"
-      style={{ background: on ? FM.accent : '#d8d5d0' }}
-    >
-      <span
-        className="absolute top-0.5 h-[18px] w-[18px] rounded-full bg-white transition-[left] duration-150"
-        style={{ left: on ? 16 : 2, boxShadow: '0 1px 3px rgba(0,0,0,.25)' }}
-      />
-    </button>
-  );
-}
-
 /**
- * VẬT MẪU mock-settings-polished.html card "Nơi lưu file" + khối Ngôn ngữ/switch bên dưới cùng
- * card (mock gộp 1 card). Nơi lưu = THẬT (`lib/root-folder.ts`, File System Access API đã có sẵn
- * — giữ nguyên logic cũ, chỉ đổi vỏ; xoá nút "Kiểm tra kết nối" sẽ mất chẩn đoán cho lỗi quyền ghi
- * ĐÃ BIẾT nên GIỮ LẠI dù mock không vẽ, đặt gọn dưới dòng cảnh báo). Ngôn ngữ = THẬT
- * (useFlowStore.lang/setLang). Giảm chuyển động/Tự sao lưu = state cục bộ (chưa có nguồn thật,
- * xem docs/BAO-CAO-FM.md).
+ * Nơi lưu file + Ngôn ngữ/switch — docs/mocks/mock-settings-polished.html `.pathbox`/`.seg`/`.sw`.
+ * Nơi lưu = THẬT (lib/root-folder.ts, File System Access API có sẵn, không viết lại). Ngôn ngữ =
+ * THẬT (useFlowStore.lang/setLang). Giữ thêm nút "Kiểm tra kết nối" (mock không vẽ) vì đây là
+ * chẩn đoán cho lỗi quyền ghi ĐÃ BIẾT trong StorageSettings.tsx cũ — xoá sẽ mất công cụ thật.
  */
 export function StorageCard({
   reducedMotion,
@@ -90,96 +69,61 @@ export function StorageCard({
   };
 
   return (
-    <div className="rounded-2xl p-[18px]" style={{ background: FM.panel, border: `1px solid ${FM.line}`, boxShadow: FM.shadowSoft }}>
-      <h3 className="m-0 mb-[3px] flex items-center gap-2 text-[13px]">🗀 {tr('Nơi lưu file', 'File location')}</h3>
-      <p className="mb-3.5 text-[11px]" style={{ color: FM.mut }}>
-        {tr('IF đọc/ghi thẳng thư mục thật — mở Finder vẫn hiểu', 'IF reads/writes a real folder — open Finder and it still makes sense')}
-      </p>
+    <div className="card">
+      <h3><FolderOpen size={15} /> {tr('Nơi lưu file', 'File location')}</h3>
+      <div className="hint">{tr('IF đọc/ghi thẳng thư mục thật — mở Finder vẫn hiểu', 'IF reads/writes a real folder — open Finder and it still makes sense')}</div>
 
       {!supported ? (
-        <p className="text-[12px] leading-relaxed" style={{ color: FM.mut }}>
+        <p style={{ fontSize: 12, color: 'var(--t2)', lineHeight: 1.6 }}>
           {tr('Trình duyệt chưa hỗ trợ chọn thư mục (cần Chrome/Edge hoặc bản Electron).', 'Browser does not support folder picking yet (needs Chrome/Edge or the Electron build).')}
         </p>
       ) : (
-        <div className="flex items-center gap-[11px] rounded-xl px-[13px] py-[11px]" style={{ background: FM.chip }}>
-          <span className="relative block h-[27px] w-8 shrink-0 rounded-[7px]" style={{ background: `linear-gradient(180deg, #8f7df7, ${FM.accent})` }}>
-            <span className="absolute -top-1 left-0 h-1.5 w-3.5 rounded-t-[4px]" style={{ background: '#8f7df7' }} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[12px] font-semibold">{folderName ?? tr('Chưa chọn thư mục', 'No folder chosen')}</span>
+        <div className="pathbox">
+          <span className="fi" />
+          <span className="p">
+            <span className="pp">{folderName ?? tr('Chưa chọn thư mục', 'No folder chosen')}</span>
             {folderName && (
-              <span className="mt-px flex items-center gap-1.5 text-[10.5px]" style={{ color: '#1f9d6b' }}>
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#1f9d6b' }} />
-                {tr('Đang đồng bộ tốt', 'Syncing fine')}
-              </span>
+              <span className="ps"><span className="dot" /> {tr('Đang đồng bộ tốt', 'Syncing fine')}</span>
             )}
           </span>
-          <button
-            type="button"
-            onClick={onChoose}
-            disabled={busy}
-            className="h-[34px] shrink-0 rounded-[11px] border px-3.5 text-[12px] font-semibold disabled:opacity-50"
-            style={{ borderColor: FM.line, background: '#fff', color: '#3a3a42' }}
-          >
+          <button type="button" className="ghost" onClick={onChoose} disabled={busy}>
             {folderName ? tr('Đổi…', 'Change…') : tr('Chọn…', 'Choose…')}
           </button>
         </div>
       )}
 
-      <p className="mt-[9px] text-[10.5px] leading-relaxed" style={{ color: FM.mut }}>
-        {tr('Đổi nơi lưu sẽ di chuyển toàn bộ dự án — IF tự chuyển và kiểm đủ file trước khi xoá chỗ cũ.', 'Changing location moves every project — IF copies and verifies before removing the old one.')}
-      </p>
+      <div className="warn">{tr('Đổi nơi lưu sẽ di chuyển toàn bộ dự án — IF tự chuyển và kiểm đủ file trước khi xoá chỗ cũ.', 'Changing location moves every project — IF copies and verifies before removing the old one.')}</div>
 
       {supported && folderName && (
-        <div className="mt-2">
-          <button type="button" onClick={onTestConnection} disabled={testing} className="text-[11px] font-medium underline disabled:opacity-50" style={{ color: FM.accent }}>
+        <div style={{ marginTop: 8 }}>
+          <button type="button" onClick={onTestConnection} disabled={testing} style={{ fontSize: 11, fontWeight: 500, textDecoration: 'underline', color: 'var(--accent)', background: 'none', border: 0, cursor: 'pointer' }}>
             {testing ? tr('Đang kiểm tra…', 'Testing…') : tr('Kiểm tra kết nối thư mục', 'Test folder connection')}
           </button>
           {testResult && (
-            <p className="mt-1.5 text-[11px] leading-relaxed" style={{ color: testResult.ok ? '#1f9d6b' : '#c9552e' }}>
-              {testResult.ok ? '✓ ' : '⚠ '}
+            <p style={{ marginTop: 6, fontSize: 11, lineHeight: 1.6, color: testResult.ok ? 'var(--success)' : 'var(--danger)' }}>
               {testResult.text}
             </p>
           )}
         </div>
       )}
 
-      <div className="h-3.5" />
+      <div style={{ height: 14 }} />
 
-      <div className="flex items-center justify-between py-2.5 text-[12.5px]" style={{ borderTop: `1px solid ${FM.line}` }}>
-        <span>
-          <b className="block font-semibold">{tr('Ngôn ngữ', 'Language')}</b>
-          <span className="text-[10.5px]" style={{ color: FM.mut }}>{tr('chữ trong app', 'app text')}</span>
-        </span>
-        <span className="flex w-max gap-[3px] rounded-[11px] p-[3px]" style={{ background: FM.chip }}>
+      <div className="noterow">
+        <span className="k"><b>{tr('Ngôn ngữ', 'Language')}</b><span>{tr('chữ trong app', 'app text')}</span></span>
+        <span className="seg">
           {(['vi', 'en'] as const).map((l) => (
-            <button
-              key={l}
-              type="button"
-              onClick={() => setLang(l)}
-              className="rounded-lg px-4 py-[7px] text-[12px]"
-              style={lang === l ? { background: '#fff', color: FM.ink, fontWeight: 600, boxShadow: '0 1px 3px rgba(0,0,0,.10)' } : { color: '#77777f' }}
-            >
-              {l === 'vi' ? 'Tiếng Việt' : 'English'}
-            </button>
+            <span key={l} className={lang === l ? 'on' : ''} onClick={() => setLang(l)}>{l === 'vi' ? 'Tiếng Việt' : 'English'}</span>
           ))}
         </span>
       </div>
-
-      <div className="flex items-center justify-between py-2.5 text-[12.5px]" style={{ borderTop: `1px solid ${FM.line}` }}>
-        <span>
-          <b className="block font-semibold">{tr('Giảm chuyển động', 'Reduce motion')}</b>
-          <span className="text-[10.5px]" style={{ color: FM.mut }}>{tr('tắt hiệu ứng cho máy yếu', 'turn off effects on weaker machines')}</span>
-        </span>
-        <Switch on={reducedMotion} onToggle={onToggleReducedMotion} label={tr('Giảm chuyển động', 'Reduce motion')} />
+      <div className="noterow">
+        <span className="k"><b>{tr('Giảm chuyển động', 'Reduce motion')}</b><span>{tr('tắt hiệu ứng cho máy yếu', 'turn off effects on weaker machines')}</span></span>
+        <button type="button" className={reducedMotion ? 'sw on' : 'sw'} role="switch" aria-checked={reducedMotion} onClick={onToggleReducedMotion} />
       </div>
-
-      <div className="flex items-center justify-between py-2.5 text-[12.5px]" style={{ borderTop: `1px solid ${FM.line}` }}>
-        <span>
-          <b className="block font-semibold">{tr('Tự sao lưu mỗi ngày', 'Auto-backup daily')}</b>
-          <span className="text-[10.5px]" style={{ color: FM.mut }}>{tr('giữ 7 bản gần nhất', 'keeps the last 7 backups')}</span>
-        </span>
-        <Switch on={autoBackup} onToggle={onToggleAutoBackup} label={tr('Tự sao lưu mỗi ngày', 'Auto-backup daily')} />
+      <div className="noterow">
+        <span className="k"><b>{tr('Tự sao lưu mỗi ngày', 'Auto-backup daily')}</b><span>{tr('giữ 7 bản gần nhất', 'keeps the last 7 backups')}</span></span>
+        <button type="button" className={autoBackup ? 'sw on' : 'sw'} role="switch" aria-checked={autoBackup} onClick={onToggleAutoBackup} />
       </div>
     </div>
   );

@@ -193,9 +193,121 @@ dangerouslySetInnerHTML. tsc/eslint/test sach, verify browser that ca 2
 chieu sang/toi."
 ```
 
-## Đề xuất 3 việc tiếp theo
+## Đề xuất 3 việc tiếp theo (chốt ở vòng 3, xem vòng 4 dưới đây cho việc phát sinh)
 
 1. Mock riêng cho `LibraryNav` (Kệ Thư viện) để đồng bộ rail 3 màn `/files`·`/settings`·`/library`.
 2. Wire `data-canvas-wallpaper` vào canvas CAD/Render/Present (mục "Cần nối tay" #1).
 3. Hợp nhất `lib/filemanager/mock-data.ts` + `lib/library/mock-data.ts` về 1 nguồn matId khi ATLAS
    thật sẵn sàng (mục #6) — tránh 2 bộ mock trôi dạt khác nhau.
+
+---
+
+## VÒNG 4 — SỬA KHẨN sau khi bị chê xấu (docs/LUAT-GIAO-DIEN-BAT-BUOC.md)
+
+Hoà lập luật cứng mới sau khi nhận `/files`/`/settings`/avatar xấu 3 lần liên tiếp. Vòng này **làm
+lại từ nguồn đúng** (L7 — không vá), nguyên nhân gốc + sửa từng điểm dưới đây.
+
+### L1 — đã kiểm trước khi code tiếp (bắt buộc ghi rõ)
+
+- `ls docs/mocks/` → có sẵn: `avatar-picker.html`, `library-mock-note.md`, `mapa-de-zonas.html`,
+  `mock-files-polished.html`, `mock-settings-polished.html`, `tool-window-sketch2photo.html`,
+  `vitals-avatar.html`, `vitals-prototype.html`, `vitals-v3.html`.
+- `grep AvatarRenderer|AvatarBuilder|UserAvatar` → có sẵn: `components/avatar/AvatarRenderer.tsx`
+  (1271 dòng, SVG 3D 14 lớp), `AvatarBuilder.tsx` (311 dòng), `UserAvatar.tsx` (cầu nối +
+  fallback deterministic), `app/settings/avatar/page.tsx` (trang đổi avatar đã có route thật),
+  `lib/avatar.ts` (325 dòng — `AvatarConfig`, `randomAvatarFromId()`, `REF_PRESET`,
+  `DEFAULT_AVATAR`, `HAIR_STYLES`…).
+- **Kết quả**: vòng 3 đã VI PHẠM — `ProfileCard.tsx` vẽ 7 vòng tròn `linear-gradient` tự chế thay
+  vì dùng `AvatarRenderer`/`randomAvatarFromId` có sẵn. Đã sửa ở mục dưới.
+
+### Nguyên nhân gốc (ghi để không tái phạm — L7)
+
+1. **Avatar giả** — thời điểm viết `ProfileCard.tsx` vòng 3, không chạy `grep` trước (bỏ qua L1),
+   tự vẽ 7 màu gradient cho nhanh thay vì tìm `lib/avatar.ts` đã có `randomAvatarFromId()`.
+2. **Màu hardcode → tối vỡ tương phản** — vòng 2 tự chế 1 bảng màu tối riêng (`fm-tokens.tsx` với
+   hex `#0c0c0e` tự chọn) thay vì dùng biến `--bg`/`--t1`/`--panel`… đã có sẵn + kiểm chứng của
+   app → 1 số cặp nền/chữ (segmented "Tiếng Việt") tự chế không khớp, ra trắng-trên-trắng ở bản
+   Tối.
+3. **Container méo ở màn rộng** — bọc `.if-files-app` (có `max-width:1440px;margin:0 auto`, y hệt
+   mock) bên trong 1 wrapper `display:flex;justify-content:center` — biến nó thành **flex-item**,
+   đổi hẳn cách `width:auto` tính (co theo nội dung thay vì lấp đầy-rồi-bị-max-width-chặn) → ở
+   viewport > 1440px, đo DOM thật: `app.width` chỉ 1130px, lệch tâm. Bỏ `display:flex` ở wrapper
+   ngoài, để `.app` là block bình thường (đúng như mock — con trực tiếp của `<body>`) → sửa đúng,
+   đã đo lại: `app.width=1440`, `x=180` ở viewport 1800 (180+1440+180=1800, cân đối).
+4. **Glyph/emoji làm icon** — rail dùng ký tự Unicode (▦◱🗀◈⚙…) y hệt mock thay vì lucide-react
+   (mock chỉ dùng glyph để PHÁC THẢO vị trí, không phải chỉ định icon cuối). Đã quét lại toàn bộ
+   `components/filemanager` + `app/settings/_components`, thay hết bằng icon lucide tương ứng
+   (LayoutGrid/FolderKanban/FolderOpen/LibraryBig/Settings/Upload/List/Pencil/Plus/Check/Lock/
+   CircleUser/SunMoon/FolderOpen) — xác nhận bằng `grep` glyph, không còn kết quả.
+
+### Đã sửa — 4 điểm theo đúng thứ tự yêu cầu
+
+1. **Container 1440**: bỏ `display:flex` ở wrapper ngoài (`.if-files-outer`/`.if-settings-outer`),
+   `.app` tự lấp-đầy-rồi-chặn ở 1440 + `margin:0 auto` — đúng cơ chế mock. Avatar swatch Hồ sơ cố
+   định 52px (flex, không `1fr`) — hết bug phình 200px. Card theme preview cố định 130×120px
+   (không co theo nội dung).
+2. **Màu qua biến, cấm hardcode**: `files-mock-css.ts`/`settings-mock-css.ts` viết lại — MỌI màu
+   bề mặt/chữ/viền/bóng dùng `var(--bg|--panel|--border|--t1|--t2|--t3|--field|--accent|
+   --accent-soft|--success|--shadow-node|--shadow-pop)` của `app/globals.css` (không sửa file đó,
+   chỉ tham chiếu). Giữ nguyên hardcode CHO nội dung trang trí thuần (gradient ảnh trong fan,
+   avatar mẫu, icon folder tím, swatch preview theme/hình nền) — đây là "ảnh minh hoạ", không phải
+   bề mặt UI, không đổi theo theme (giải thích rõ trong comment đầu file CSS).
+3. **Tương phản 2 theme**: verify lại toàn bộ sau khi đổi biến — "Tiếng Việt" (segmented on) giờ
+   nền `var(--panel)` + chữ `var(--t1)`, cả 2 đổi cùng chiều theo theme nên LUÔN tương phản đúng
+   (đúng cơ chế app thật, không tự chế cặp riêng). Avatar dưới rail cố định 40px trong khung
+   `.avatar` (border 2px + shadow, không đè lên rail).
+4. **Avatar thật**: `ProfileCard.tsx` viết lại — avatar lớn dùng `<UserAvatar size={68}/>` (thật,
+   đọc `useFlowStore.user`), 7 ô quick-pick dùng `<AvatarRenderer config={randomAvatarFromId(seed)}
+   size={52}/>` với 7 seed cố định (`preset-1..7`) — avatar THẬT khác nhau (tóc/kính/mũ/áo/biểu
+   cảm/da), không phải màu trơn. Bấm avatar lớn/ô quick-pick/ô ﹢ đều `router.push('/settings/avatar')`
+   mở `AvatarBuilder` có sẵn (311 dòng, không rebuild).
+
+### Verify — 4 ảnh sáng/tối ở 1440×900 (L5)
+
+**Lưu ý công cụ**: phiên này không có tool lưu ảnh chụp trình duyệt thành file trên đĩa (chỉ hiện
+trực tiếp trong transcript hội thoại lúc chụp) — 4 ảnh dưới đây đã chụp SỐNG trong phiên, xem lại
+transcript để đối chiếu trực tiếp; mô tả lại bằng chữ ở đây để không "báo xong mà không có ảnh":
+
+| # | Trang | Theme | Kết quả |
+|---|---|---|---|
+| 1 | `/settings` | Sáng | 3 card đúng bố cục mock, 7+1 avatar thật, theme card 130×120 cố định không phình, "Tiếng Việt" chữ đen nền trắng rõ, switch tím/xám rõ, container căn giữa, không lỗi console |
+| 2 | `/settings` | Tối | Nền gần đen, card `#141417`-tương-đương, avatar thật hiện đúng cả 2 theme (không đổi màu — đúng vì là ảnh), "Tiếng Việt" chữ sáng nền tối rõ (hết bug trắng-trên-trắng), tick theme "Tối" hiện đúng, không lỗi console |
+| 3 | `/files` | Sáng | Rail capsule bo tròn, icon lucide rõ nét thay glyph, folder chip đúng số liệu đệ quy, storage gauge tím đúng mock, avatar thật góc dưới rail, không lỗi console |
+| 4 | `/files` | Tối | Toàn bộ đổi màu đúng qua biến (không tự chế bảng tối), active rail bubble trắng/chữ tối (đảo màu đúng vì cùng cặp `--t1`/`--panel`), storage card đọc rõ, không lỗi console |
+
+Riêng bug container đã đo bằng `getBoundingClientRect()` thật (không chỉ nhìn ảnh) ở viewport
+1800×900: trước sửa `app.width=1130,x=334` (lệch, méo) → sau sửa `app.width=1440,x=180` (đúng,
+180+1440+180=1800 cân đối) — cho cả `/files` và `/settings`.
+
+### File thay đổi vòng 4
+
+```
+components/filemanager/files-mock-css.ts   — MỚI (thay fm-tokens.tsx, đã xoá)
+components/filemanager/RawStyle.tsx        — MỚI (bơm CSS thô an toàn hydration)
+components/filemanager/FileManagerShell.tsx — VIẾT LẠI (port 1:1 mock, icon lucide, màu qua biến)
+components/filemanager/AppRail.tsx · EmptyState.tsx · FileManagerInspector.tsx · FileTile.tsx ·
+  FolderCard.tsx · StorageGauge.tsx · UploadCard.tsx · fm-tokens.tsx · icons.ts — XOÁ (gộp vào
+  FileManagerShell.tsx theo đúng cấu trúc 1 trang của mock, tránh lệch class-name giữa nhiều file)
+
+app/settings/_lib/settings-mock-css.ts     — MỚI
+app/settings/_components/PixelSettingsShell.tsx · ProfileCard.tsx · AppearanceCard.tsx ·
+  StorageCard.tsx — VIẾT LẠI (avatar thật, màu qua biến, icon lucide, kích thước cố định)
+```
+
+### SẴN SÀNG COMMIT — vòng 4
+
+```bash
+cd ~/Downloads/interiorflow-g4
+git add components/filemanager lib/filemanager app/files app/settings docs/BAO-CAO-FM.md
+git commit -m "fix(files,settings): container + mau qua CSS var, dark theme chuan
+
+Lam lai tu nguon dung theo docs/LUAT-GIAO-DIEN-BAT-BUOC.md sau 3 lan bi
+che xau. 4 nguyen nhan goc: avatar gia (7 vong gradient tu che, dung lai
+AvatarRenderer/randomAvatarFromId that) - mau hardcode rieng cho ban toi
+(doi sang var(--bg/--t1/--panel...) that cua app, het bug trang-tren-
+trang) - container flex-item lam width co lai (bo display:flex o wrapper
+ngoai, app tro lai block+margin:auto dung nhu mock, do DOM xac nhan
+app.width=1440 can giua) - glyph/emoji lam icon (doi het sang lucide-
+react). tsc/eslint/test sach, verify 4 anh sang/toi 1440x900 (mo ta chi
+tiet + do DOM container trong BAO-CAO-FM.md)."
+```
