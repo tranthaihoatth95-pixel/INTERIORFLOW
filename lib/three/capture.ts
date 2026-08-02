@@ -37,9 +37,11 @@ export interface CaptureOut {
   h: number;
 }
 
-/** Tầm mắt người cố định cho đường cam video — KHÔNG lẫn với tầm mắt máy ảnh metrology
- * (1500-1600, xem `docs/00-CHOT.md` mục "Hai con số dễ lẫn"). */
-const EYE_HEIGHT_MM = 1650;
+/** Tầm mắt người cố định cho đường cam video (mode campath) VÀ mode `walk` (3D-4, cùng 1 con số
+ * theo SPEC-3D-CORE §1) — KHÔNG lẫn với tầm mắt máy ảnh metrology (1500-1600, xem
+ * `docs/00-CHOT.md` mục "Hai con số dễ lẫn"). Export để `Scene3DViewer.tsx` dùng chung, không
+ * khai lại số này lần 2. */
+export const EYE_HEIGHT_MM = 1650;
 const LOOK_AHEAD_M = 3;
 
 function lerpAngle(a: number, b: number, k: number): number {

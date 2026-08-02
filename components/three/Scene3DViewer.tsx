@@ -9,9 +9,14 @@
  * 3D-2: mode `campath` — camera bám theo `CamPathResult` (campath.ts, V2) mỗi khung hình, tầm
  * mắt người 1650mm (`lib/three/capture.ts` `camPathSampleToThree`, CÙNG công thức `captureSequence`
  * dùng để xuất khung hình video 2-b — xem live ở đây với xuất file dùng chung 1 nguồn toạ độ).
- * Không có `camPath` (thiếu prop) → rơi về orbit, không throw. `walk`/`section` GIỮ chữ ký đúng
- * hợp đồng §3 nhưng chưa có hành vi riêng — tạm render như orbit, cảnh báo console 1 lần. Thi
- * công thật ở 3D-4, xem bảng thứ tự §4.
+ * 3D-4: mode `section` — `renderer.clippingPlanes` theo `sectionMm` (`lib/three/section.ts`
+ * `sectionPlane()`, quyết định #5 "0 thuật toán tự viết"). Nền chế độ Công trường — cắt lớp
+ * (tablet). Mode `walk` — đi bộ tự do, tầm mắt CỐ ĐỊNH 1650mm (`EYE_HEIGHT_MM`, CÙNG hằng số
+ * campath) qua `PointerLockControls` (three chuẩn) + WASD, KHÔNG tự viết vector di chuyển
+ * (`controls.moveForward/moveRight` có sẵn, tự chiếu phẳng theo hướng nhìn — không bay lên/xuống
+ * theo pitch).
+ *
+ * Thiếu `camPath`/`sectionMm` tương ứng → rơi về orbit, không throw, cảnh báo console 1 lần.
  *
  * Xám trơn, KHÔNG PBR/đèn/bóng đổ (quyết định #3) — `MeshBasicMaterial` phẳng theo `colorHex` của
  * từng group, không cần ánh sáng. Hình học đến từ `buildMergedGeometries` (gộp theo màu = gộp
@@ -25,9 +30,11 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { buildMergedGeometries } from '@/lib/three/obj-scene-to-geometry';
 import type { Scene3DData } from '@/lib/three/cad-to-obj';
-import { camPathSampleToThree, sampleCamPathAt } from '@/lib/three/capture';
+import { camPathSampleToThree, sampleCamPathAt, EYE_HEIGHT_MM } from '@/lib/three/capture';
+import { sectionPlane, type SectionSpec } from '@/lib/three/section';
 import type { CamPathResult } from '@/lib/cad/campath';
 
 export type Scene3DMode = 'orbit' | 'walk' | 'campath' | 'section';
@@ -35,34 +42,37 @@ export type Scene3DMode = 'orbit' | 'walk' | 'campath' | 'section';
 export interface Scene3DViewerProps {
   scene: Scene3DData;
   mode: Scene3DMode;
-  /** TODO 3D-2 — chưa dùng ở 3D-1. */
   camPath?: CamPathResult;
-  /** TODO 3D-4 — chưa dùng ở 3D-1. */
-  sectionMm?: { axis: 'x' | 'y' | 'z'; at: number };
+  /** mặt cắt cho mode `section` (3D-4) — thiếu → rơi về orbit. */
+  sectionMm?: SectionSpec;
   /** đồng bộ UI ngoài (thanh tua) — gọi mỗi khung hình với giây đã trôi từ lúc mount. */
   onFrame?: (t: number) => void;
   className?: string;
 }
 
-let warnedUnsupportedMode = false;
+const IMPLEMENTED_MODES: Scene3DMode[] = ['orbit', 'campath', 'section', 'walk'];
+const WALK_SPEED_M_PER_SEC = 1.5; // ~tốc độ đi bộ chậm, cùng cảm giác tempo với campath 1200mm/s
 
-const IMPLEMENTED_MODES: Scene3DMode[] = ['orbit', 'campath'];
-
-export default function Scene3DViewer({ scene, mode, camPath, onFrame, className }: Scene3DViewerProps) {
+export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame, className }: Scene3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const campathActive = mode === 'campath' && !!camPath?.samples.length;
+  const sectionActive = mode === 'section' && !!sectionMm;
+  const walkActive = mode === 'walk';
 
   useEffect(() => {
-    if (!IMPLEMENTED_MODES.includes(mode) && !warnedUnsupportedMode) {
-      warnedUnsupportedMode = true;
+    if (!IMPLEMENTED_MODES.includes(mode)) {
       // eslint-disable-next-line no-console
-      console.warn(`Scene3DViewer: mode "${mode}" chưa thi công (3D-4) — hiển thị tạm như orbit.`);
+      console.warn(`Scene3DViewer: mode "${mode}" lạ (ngoài orbit/campath/section/walk) — hiển thị tạm như orbit.`);
     }
     if (mode === 'campath' && !camPath?.samples.length) {
       // eslint-disable-next-line no-console
       console.warn('Scene3DViewer: mode "campath" nhưng thiếu camPath (hoặc rỗng) — hiển thị tạm như orbit.');
     }
-  }, [mode, camPath]);
+    if (mode === 'section' && !sectionMm) {
+      // eslint-disable-next-line no-console
+      console.warn('Scene3DViewer: mode "section" nhưng thiếu sectionMm — hiển thị tạm như orbit (không cắt).');
+    }
+  }, [mode, camPath, sectionMm]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -70,6 +80,10 @@ export default function Scene3DViewer({ scene, mode, camPath, onFrame, className
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Mặt cắt (mode section, 3D-4) — bật sẵn cờ này (0 phí khi clippingPlanes rỗng), chỉ nạp
+    // plane thật khi có sectionMm hợp lệ.
+    renderer.localClippingEnabled = true;
+    renderer.clippingPlanes = sectionActive && sectionMm ? [sectionPlane(sectionMm)] : [];
     container.appendChild(renderer.domElement);
 
     const three = new THREE.Scene();
@@ -78,18 +92,65 @@ export default function Scene3DViewer({ scene, mode, camPath, onFrame, className
     const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 500);
 
     // Khung camera bao trọn bbox mặt bằng (mm → m) — bù xuống 1 chút trên cao nhìn xuống, đúng
-    // cảm giác "quan sát" (orbit) chứ không phải "đứng trong phòng" (đó là mode walk, 3D-4).
+    // cảm giác "quan sát" (orbit) chứ không phải "đứng trong phòng" (đó là mode walk).
     const { minX, minY, maxX, maxY } = scene.bboxMm;
     const cx = (minX + maxX) / 2 / 1000;
     const cy = (minY + maxY) / 2 / 1000;
     const halfDiag = Math.max(0.5, Math.hypot(maxX - minX, maxY - minY) / 2 / 1000);
     const cz = scene.sizeM.h / 2;
-    camera.position.set(cx + halfDiag * 1.1, cz + halfDiag * 0.9, cy + halfDiag * 1.1);
+
+    if (walkActive) {
+      // Đứng giữa mặt bằng, mắt cố định 1650mm (EYE_HEIGHT_MM, CÙNG số campath) — nhìn ngang.
+      camera.position.set(cx, EYE_HEIGHT_MM / 1000, cy);
+      camera.lookAt(cx + 1, EYE_HEIGHT_MM / 1000, cy);
+    } else {
+      camera.position.set(cx + halfDiag * 1.1, cz + halfDiag * 0.9, cy + halfDiag * 1.1);
+    }
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(cx, cz, cy);
     controls.enableDamping = true;
+    controls.enabled = !walkActive && !campathActive; // walk/campath tự lái camera, orbit nhường
     controls.update();
+
+    // Mode walk (3D-4) — PointerLockControls chuẩn three (KHÔNG tự viết vector nhìn/di chuyển).
+    // Cần cú click (kích hoạt Pointer Lock API) — hint phủ toàn khung, ẩn khi đã lock.
+    const walkControls = new PointerLockControls(camera, renderer.domElement);
+    const moveState = { forward: false, back: false, left: false, right: false };
+    let hintEl: HTMLDivElement | null = null;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') moveState.forward = true;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') moveState.back = true;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') moveState.left = true;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') moveState.right = true;
+    }
+    function onKeyUp(e: KeyboardEvent) {
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') moveState.forward = false;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') moveState.back = false;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') moveState.left = false;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') moveState.right = false;
+    }
+    function onHintClick() {
+      walkControls.lock();
+    }
+    function onLock() {
+      if (hintEl) hintEl.style.display = 'none';
+    }
+    function onUnlock() {
+      if (hintEl) hintEl.style.display = 'flex';
+    }
+    if (walkActive) {
+      hintEl = document.createElement('div');
+      hintEl.textContent = 'Bấm để đi bộ tự do — WASD di chuyển, chuột nhìn quanh, Esc thoát';
+      hintEl.style.cssText =
+        'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;background:rgba(0,0,0,.55);color:#fff;font-size:13px;cursor:pointer;z-index:5;';
+      container.appendChild(hintEl);
+      hintEl.addEventListener('click', onHintClick);
+      walkControls.addEventListener('lock', onLock);
+      walkControls.addEventListener('unlock', onUnlock);
+      window.addEventListener('keydown', onKeyDown);
+      window.addEventListener('keyup', onKeyUp);
+    }
 
     const built = buildMergedGeometries(scene);
     const group = new THREE.Group();
@@ -116,6 +177,7 @@ export default function Scene3DViewer({ scene, mode, camPath, onFrame, className
     function tick() {
       timer.update();
       const t = timer.getElapsed();
+      const dt = timer.getDelta();
       if (campathActive && camPath) {
         // Phát lặp (loop) đường cam — video 2-b xem trước ở đây, xuất file thật qua
         // captureSequence() (capture.ts, CÙNG camPathSampleToThree nên khung xem = khung xuất).
@@ -123,6 +185,15 @@ export default function Scene3DViewer({ scene, mode, camPath, onFrame, className
         const pose = camPathSampleToThree(sampleCamPathAt(camPath, loopT));
         camera.position.copy(pose.position);
         camera.lookAt(pose.target);
+      } else if (walkActive && walkControls.isLocked) {
+        // moveForward/moveRight (PointerLockControls) tự chiếu phẳng theo hướng nhìn — không cần
+        // tự tính vector di chuyển. Khoá cứng cao độ mắt sau mỗi bước (phòng trôi số/thay đổi
+        // hành vi thư viện sau này — 2 lệnh move ở trên vốn không đổi Y nhưng khoá cho chắc).
+        if (moveState.forward) walkControls.moveForward(WALK_SPEED_M_PER_SEC * dt);
+        if (moveState.back) walkControls.moveForward(-WALK_SPEED_M_PER_SEC * dt);
+        if (moveState.right) walkControls.moveRight(WALK_SPEED_M_PER_SEC * dt);
+        if (moveState.left) walkControls.moveRight(-WALK_SPEED_M_PER_SEC * dt);
+        camera.position.y = EYE_HEIGHT_MM / 1000;
       } else {
         controls.update();
       }
@@ -136,6 +207,13 @@ export default function Scene3DViewer({ scene, mode, camPath, onFrame, className
       cancelAnimationFrame(raf);
       ro.disconnect();
       controls.dispose();
+      walkControls.dispose();
+      if (hintEl) {
+        hintEl.removeEventListener('click', onHintClick);
+        container.removeChild(hintEl);
+      }
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
       for (const b of built) {
         b.geometry.dispose();
       }
@@ -145,11 +223,13 @@ export default function Scene3DViewer({ scene, mode, camPath, onFrame, className
       renderer.dispose();
       container.removeChild(renderer.domElement);
     };
-    // scene/mode/camPath đổi → dựng lại toàn bộ (đơn giản, đúng đủ — hình học tĩnh, chỉ camera
-    // đổi mỗi khung trong campath; onFrame CỐ Ý không nằm trong deps, đổi ref mỗi render sẽ dựng
-    // lại vô ích).
+    // scene/mode/camPath/sectionMm đổi → dựng lại toàn bộ (đơn giản, đúng đủ — hình học tĩnh, chỉ
+    // camera đổi mỗi khung trong campath/walk; onFrame CỐ Ý không nằm trong deps, đổi ref mỗi
+    // render sẽ dựng lại vô ích). 💭 kéo thanh trượt sectionMm.at liên tục sẽ dựng lại TOÀN BỘ mỗi
+    // lần đổi (không incremental-update riêng clippingPlanes) — chấp nhận được ở V1 (rebuild
+    // scene vài chục ms, xem bench 3D-1), tối ưu sau nếu UI thật thấy giật khi kéo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, mode, camPath]);
+  }, [scene, mode, camPath, sectionMm]);
 
-  return <div ref={containerRef} className={className} style={{ width: '100%', height: '100%', minHeight: 320 }} />;
+  return <div ref={containerRef} className={className} style={{ width: '100%', height: '100%', minHeight: 320, position: 'relative' }} />;
 }
