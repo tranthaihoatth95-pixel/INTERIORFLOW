@@ -41,8 +41,24 @@
   hướng) — sửa sai chỗ này rủi ro cao hơn lợi ích trong 1 lần vá. Đề xuất: C-mới riêng nếu Hoà
   muốn dọn luôn.
 
-## ⛔ CẦN HOÀ — C3, C4, C5, C6 chưa có định nghĩa tới được tôi
-Tin nhắn giao việc nhắc "C2 (3D-2) → C3 → C4 → C5 → C6 như đã giao" nhưng nội dung C3-C6 không
-nằm trong hội thoại này lẫn không tìm thấy trong `docs/*.md` (đã grep toàn bộ). Có thể đã giao
-cho phiên/kênh khác (vd Cowork lịch, hoặc code phụ). KHÔNG đoán bừa nội dung — dừng chuỗi ở đây
-chờ Hoà/Cowork dán lại C3-C6, hoặc xác nhận 3 việc C1/C2/C7 đã xong là đủ cho đợt này.
+*(Mục ⛔ CẦN HOÀ trước đây — C3-C6 mất nội dung theo context cũ (lỗi quy trình phía Cowork, Hoà
+xác nhận) — đã cấp lại đủ lúc 08:57. Log cũ giữ nguyên theo luật append-only.)*
+
+## [08:57] C3 (3D-3) — captureFrame() xuất depth map + lineart — XONG
+- Commit: `4c81469`.
+- Test: 15/15 (`capture.test.ts`, thêm 4 ca `nearFarForScene`). Verify browser thật (yêu cầu bắt
+  buộc của Hoà "depth và png cùng khung phải khớp hình học"): cùng scene+CameraSpec, bbox
+  non-background của png/depth trùng khít VÀ số pixel non-background bằng nhau tuyệt đối
+  (70609=70609) — không chỉ "gần giống", khớp pixel-perfect. lineart cùng bbox biên ngoài.
+- 💭 Quy ước depth (GẦN=TỐI/XA=SÁNG, `MeshDepthMaterial` mặc định three.js) — nếu `ai.render`
+  ControlNet đích cần chiều ngược (nhiều pipeline MiDaS quen GẦN=SÁNG) thì đảo màu ở PHÍA TIÊU
+  THỤ khi nối dây thật, đã ghi rõ trong code comment, chưa biết ControlNet cụ thể nào sẽ dùng nên
+  chưa đảo sẵn.
+
+## HÀNG ĐỢI CÒN LẠI (ghi đè mỗi lần xong 1 việc — nguồn sự thật duy nhất, không sống trong chat)
+- **C4** (V2.1 look-at chế độ 2/3 + panel tốc độ/ống kính) — ĐANG LÀM.
+- **C5** (V1.1 so le nội thất theo khoảng cách tới cửa chính) — CHƯA BẮT ĐẦU.
+- **C6** (gỡ brand-kit trùng khỏi repo chính) — **CHỜ**: đã kiểm `~/Downloads/interiorflow-phu`
+  (worktree `nhanh-phu`) — `docs/BAO-CAO-PHU.md` CHƯA tồn tại, `git log` trên nhánh đó cũng không
+  thấy commit VIỆC 5 mới (chỉ có 2 commit cũ 31/07). Điều kiện Hoà đặt ra CHƯA thoả — không chạy
+  `git checkout --` xoá bản trùng. Sẽ tự kiểm lại nếu quay lại hàng đợi này.
