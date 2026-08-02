@@ -86,6 +86,21 @@ export function toScene3DData(scene: ObjScene): Scene3DData {
   return { groups: scene.groups, bboxMm: scene.stats.bboxMm, sizeM: scene.stats.sizeM };
 }
 
+/** Hoán trục CAD (Y-lên) → three.js (Y-up) — CÙNG ĐƠN VỊ vào/ra, không quy đổi mm→m (dùng cho
+ * toạ độ ĐÃ SẴN mét, vd `placeCamera()` — camera.ts). `cadToThreeM` bên dưới thêm bước mm→m cho
+ * toạ độ CAD gốc (bbox, vertex, campath). 1 công thức trục duy nhất, không viết lại mỗi nơi
+ * (SPEC-3D-CORE §1 luật tầng). */
+export function cadAxesToThree(x: number, y: number, z: number): [number, number, number] {
+  return [x, z, -y];
+}
+
+/** CAD (mm, hệ Y-lên phẳng) → three.js (mét, Y-up) — CÙNG quy ước `vert()` dùng để xuất OBJ ở
+ * file này: (x, cao, -y). Dùng cho mọi toạ độ THẾ GIỚI CAD gốc (bbox framing, campath, vertex). */
+export function cadToThreeM(xMm: number, yMm: number, zMm: number): [number, number, number] {
+  const [x, y, z] = cadAxesToThree(xMm, yMm, zMm);
+  return [x / 1000, y / 1000, z / 1000];
+}
+
 /* ───────────────────── vật liệu ───────────────────── */
 
 interface Mat {

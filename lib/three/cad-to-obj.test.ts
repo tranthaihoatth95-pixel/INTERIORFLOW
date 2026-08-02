@@ -5,7 +5,7 @@
 import type { Doc, Entity } from '../cad/model';
 import { DEFAULT_LAYERS } from '../cad/model';
 import { wallChain } from '../cad/commands';
-import { docToObjScene, blockFootprint, furnitureHeightMm } from './cad-to-obj';
+import { docToObjScene, blockFootprint, furnitureHeightMm, cadAxesToThree, cadToThreeM } from './cad-to-obj';
 import { presetCamera, parseCameraSpec, placeCamera, fovFromLens, CAMERA_PRESETS } from './camera';
 
 let pass = 0;
@@ -142,6 +142,13 @@ console.log('camera — preset tất định + parse an toàn');
   ok('đặt máy trong bbox, cao 1.5m', placed.pos[2] === 1.5 && placed.pos[0] === 2 && placed.pos[1] > 0 && placed.pos[1] < 3);
   const top = placeCamera({ minX: 0, minY: 0, maxX: 4000, maxY: 3000 }, presetCamera(CAMERA_PRESETS[3], '35mm', '16:9'));
   ok('trên cao: z ≥ 3.6m', top.pos[2] >= 3.6);
+}
+
+console.log('cadAxesToThree/cadToThreeM — quy ước trục CAD→three.js (3D-2)');
+{
+  ok('hoán trục: x giữ, y→-z, z→y', JSON.stringify(cadAxesToThree(1, 2, 3)) === JSON.stringify([1, 3, -2]));
+  ok('mm→m: chia 1000 sau khi hoán trục', JSON.stringify(cadToThreeM(1000, 2000, 3000)) === JSON.stringify([1, 3, -2]));
+  ok('gốc toạ độ về gốc', JSON.stringify(cadToThreeM(0, 0, 0)) === JSON.stringify([0, 0, 0]));
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);
