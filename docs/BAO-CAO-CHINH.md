@@ -84,3 +84,55 @@ báo cáo **P1·E2 (mask ảnh theo hình)** — KHÔNG nhắc gì tới VIỆC 
 đặt ra ("chỉ chạy khi BAO-CAO-PHU.md xác nhận VIỆC 5 đã commit") CHƯA thoả — KHÔNG chạy
 `git checkout --` xoá bản trùng. Toàn bộ C1-C5 + C7 đã xong (xem mục trên) — kết chuỗi tại đây,
 chờ Hoà xác nhận VIỆC 5 hoặc giao thêm việc mới.
+
+## [chuỗi D] D1 (3D-4) — mode `section` (clippingPlanes) + mode `walk` (mắt 1650mm) — XONG
+- Commit: `87c2e78` (`lib/three/section.ts`, `lib/three/section.test.ts`, `lib/three/capture.ts`,
+  `components/three/Scene3DViewer.tsx`).
+- `lib/three/section.ts`: `sectionPlane(spec)` thuần toán (`THREE.Plane`/`Vector3`, không
+  WebGL/DOM) — quy ước GIỮ toạ độ CAD ≤ `at`, CẮT > `at` trên trục đã chọn, suy trực tiếp từ
+  `cadAxesToThree()` có sẵn (0 quy ước mới phát minh). 10/10 test (`section.test.ts`, sucrase-node)
+  — phủ cả 3 trục, đặc biệt trục y (dấu đảo do `z_three = -y_cad`, dễ sai nhất).
+- `Scene3DViewer.tsx`: `renderer.localClippingEnabled=true` + `renderer.clippingPlanes` set theo
+  `sectionMm` prop khi `mode==='section'`. Mode `walk` dùng `PointerLockControls` (three/examples/jsm
+  — API chuẩn, không tự viết look/movement) + WASD, mắt cố định `EYE_HEIGHT_MM=1650` (export từ
+  `capture.ts`, DÙNG CHUNG với đường cam video V1/V2, không khai lại số theo đúng luật đã có).
+  `IMPLEMENTED_MODES` nay đủ 4: orbit/campath/section/walk.
+- Test: `npx tsc --noEmit` + `eslint` sạch trên cả 4 file. `npm test` toàn repo 0 fail
+  (section.test.ts 10/10 nằm trong đó).
+- Verify: live `Scene3DViewer` qua rAF KHÔNG compositor được trong sandbox này (cửa sổ mất focus —
+  `document.hasFocus()===false` dù `visibilityState==='visible'`) — mọi số liệu JS xác nhận ĐÚNG
+  qua debug logging tạm thời (camera/target/groupChildren/clippingPlanes count đều khớp kỳ vọng,
+  render loop chạy liên tục không lỗi) nhưng screenshot vẫn trống. ĐÃ CHUYỂN sang verify bằng render
+  offscreen ĐỒNG BỘ (kỹ thuật đã tin cậy từ 3D-1/C3), chạy ĐÚNG production code path
+  (`buildMergedGeometries` + `sectionPlane`) qua WebGL thật, không qua rAF: scene test 5 khối (tường
+  cao 5.4m) — không cắt 64956px hình học, cắt tại z≤1500mm còn 22278px (34.3%, đúng tỉ lệ cắt hết
+  phần trên bao gồm Floor2/Wall2 z>2700mm + phần trên Wall1). Walk-eye-view (mắt 1.65m, đứng giữa
+  phòng) render đúng phối cảnh người-trong-phòng thấy tường+nội thất. Ảnh chụp 3 mode đã xem trực
+  tiếp, khớp kỳ vọng hình học.
+- 💭 KHÔNG verify được pointer-lock + WASD tương tác thật (cần gesture chuột người dùng thật để
+  `.lock()`, môi trường automation không tạo được) — dựa vào `PointerLockControls`/`.moveForward()`/
+  `.moveRight()` là API chuẩn three.js đã kiểm chứng rộng rãi, không phải logic tự viết trong repo
+  này, rủi ro thấp hơn code tự viết. Hoà verify tương tác thật trên máy/tab thật khi tiện (bấm vào
+  khung 3D → khoá chuột → WASD di chuyển → Esc thoát).
+- 💭 Phát hiện phụ (KHÔNG sửa, ghi lại cho phiên sau): sandbox này khi cửa sổ preview mất OS-focus,
+  `requestAnimationFrame`-driven canvas không compositor ra được screenshot dù mọi state JS đúng —
+  ĐÃ GẶP Ở 3D-1/3D-2, lần này thêm biến thể `visibilityState==='visible'` (trước đây từng gặp
+  `'hidden'`) — cùng họ vấn đề, không phải bug code. Cách né: luôn verify WebGL bằng render offscreen
+  đồng bộ (`preserveDrawingBuffer:true`, gọi `renderer.render()` trực tiếp ngoài rAF) thay vì chụp
+  màn hình canvas sống.
+
+## HÀNG ĐỢI CÒN LẠI (cập nhật sau D1, ghi đè mục cũ nếu có)
+- **D2 — 3D-5 push-pull massing**: đẩy/kéo khối trên mặt bằng đã extrude, GHI NGƯỢC cao độ/storey
+  vào Doc chặng 1 (cấm giữ bản 3D riêng, luật một nguồn — `CHOT-HUONG-3D-2026-08-01.md` "bậc B1
+  thang BIM"). Chưa bắt đầu.
+- **D3 — Tool window Render**: đọc `docs/CHOT-RENDER-TOOL-WINDOW-2026-08-01.md` +
+  `docs/mocks/tool-window-sketch2photo.html` trước khi code. Tool window = subgraph node phóng to,
+  tab 8 tool + ghim, tối đa 3 window, kính là VỎ không RUỘT, điều khiển "2B" bậc thang 4 nấc +
+  khoá vùng/seed. Kèm đóng bug `2.2.92` (gỡ overlay, portal-hoá). Chưa bắt đầu.
+- **D4 — C6 điều kiện**: sau khi Hoà xác nhận VIỆC 5 (brand-kit) đã commit trên `main` (kiểm qua
+  `docs/BAO-CAO-PHU.md` hoặc `git log` nhánh `nhanh-phu`) → `git checkout --` 3 file brand-kit để
+  dọn đường merge `nhanh-phu`. Vẫn CHỜ — lần kiểm gần nhất (09:19, trước chuỗi D) `BAO-CAO-PHU.md`
+  chưa nhắc VIỆC 5.
+- Luật vẫn giữ nguyên: tránh vùng E của code phụ (`Element.tsx`/`EditorCanvas.tsx`/
+  `LayerPanel.tsx`/`shape-geometry.ts`/`brand-kit*`); test tốn credit thật 1 ảnh/lần đã xin phép,
+  không batch; `git commit -- <pathspec>` khi commit (không `git add -A`).
