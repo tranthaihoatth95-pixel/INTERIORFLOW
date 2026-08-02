@@ -1274,3 +1274,28 @@ git commit -m "chore: go public/detech (anh du an khach) khoi repo - da doi cho 
 + demo flow Present + testcase vỡ ảnh). ⚠️ Lịch sử git VẪN CÒN 22MB ảnh sau lệnh này —
 `git filter-repo` để xoá thật khỏi object store là việc "ngay trước khi giao repo ra ngoài"
 (đã có sẵn trong 00-CHOT mục "Viết lại lịch sử git", gộp làm cùng lúc với dấu vết TTT cũ).
+
+## ƯU TIÊN 1 — StageShell 3 chặng — XONG CẢ 3 BƯỚC (3 commit)
+Theo `docs/SPEC-APP-SHELL-CHUNG.md` + Figma `y421AJBWVpqGVvJ3vTn2wO` trang "Shell · 3 chặng":
+- **Bước 1** `a9b7203` — `components/studio/StageShell.tsx` mới (AppChrome + LeftRail + slot
+  inspector 280/statusBar/toolbar/bottomExtra + Dashboard/FlowsPanel mount tại shell). CẢ 3 màn
+  chuyển sang shell: **CAD + Presenting lần đầu có rail trái** (lệch nặng nhất §1 — đã hết).
+  Đo DOM cả 3 route: rail 60px/4 nút/avatar 44 đồng nhất; FlowsPanel mở được từ rail ở mọi chặng.
+  LeftRail mở cho G4: **Files nối `/files` (bỏ "sắp có")**, Thư viện → `/library` ở CAD/Present —
+  **G4 gỡ rail tự viết trong FileManagerShell, dùng `LeftRail` + `StageShell` này sau merge.**
+- **Bước 2** `cfc2cab` — cắt 5 thứ thừa §2: ① 2 nút "Đưa sang…" CAD (năng lực handoff-ảnh GIỮ,
+  chuyển vào menu Xuất — segmented không làm việc stash ảnh nên không được xoá trắng chức năng)
+  ② avatar header (UserChip xoá hẳn — avatar duy nhất ở rail) ③ nút ⌂ (trùng logo) ④ nhãn
+  "—01/02/03" (jargon) ⑤ Tệp▾/Việc▾ rời header → `RenderDocBar.tsx` mới (toolbar tài liệu của
+  chặng render, slot toolbar — code move nguyên văn, năng lực 100%). Header 3 chặng giờ đồng
+  nhất: logo · tên dự án · segmented.
+- **Bước 3** `bc38604` — Inspector phải chuẩn hoá: CAD LayerPanel hết nổi đè canvas → khung
+  cố định 280 của shell. Present giữ nguyên (đã đúng hình thái 280/borderLeft; dời vật lý vào
+  slot đụng sâu selection-state của present-editor = domain phiên phụ, không đụng). Render không
+  có inspector cố định (đúng spec).
+- **Ảnh 3 chặng** (chụp trong phiên, 1440×900): CAD — rail + header sạch + Lớp trong khung phải
+  cố định · Render — rail + RenderDocBar (Tệp/Việc) dưới header · Present — rail + header sạch.
+  Cả 3 cùng khung xương: header 1 kiểu, rail 1 kiểu, Vitals đáy giữa.
+- ⚠️ Còn lại của spec (chưa làm, chờ lệnh riêng như Hoà đã dặn): **Vitals nâng cấp §4**
+  (thanh trạng thái sống). MobileMenu (<lg) giữ nguyên làm đường vào mobile — hợp nhất mobile
+  với AccountMenu là việc riêng nếu Hoà muốn.
