@@ -893,3 +893,60 @@ ràng trong UI đây là "thêm người đã có tài khoản", không phải m
 - **Lưu ý cho phần sau**: `currentProjectId` mặc định `null` cho "Dự án mẫu" (flow trần, không
   có `Project` DB record bọc ngoài) — `PresenceBar` tự ẩn khi không đủ điều kiện
   (`people.length<=1 && !canManage`), đúng hành vi mong muốn, không phải bug.
+
+## G2 phần (5) — swatch vật liệu matId — THIẾT KẾ (viết trước khi code)
+**Khảo sát trước khi thiết kế** (2 agent Explore đọc code thật, không đoán):
+- `SPEC-CHANG2-UI-2MODE.md:26` — yêu cầu đúng nguyên văn: "Swatch vật liệu | mang `matId`
+  (hãng·mã·giá/m²) — kéo vào mang dữ liệu, không chỉ ảnh". `matId` cũng nằm trong spine chung
+  (`:12-13`, "Thư viện (matId chung)") và trong "moat vật liệu: V-Ray/D5/IF hợp nhất bằng matId"
+  (`:42`).
+- **`matId` = khoá `ProductSpec{kind:'material'}`** (`prisma/schema.prisma:356-390`, bảng THẬT
+  duy nhất cho vật liệu sau khi gộp `MaterialRef`, đã chốt Q-L2/2.1.9.i) — **KHÔNG phải**
+  `MaterialDef` (`lib/cad/materials.ts`, vật liệu THỊ GIÁC cho Hatch CAD, cố ý tách khỏi thương
+  mại). API `GET /api/specs?kind=material` (`app/api/specs/route.ts`) ĐÃ CÓ SẴN, trả đủ
+  `id/name/brand/sku/colorHex/priceNote` — dùng thẳng, không viết API mới.
+  ⚠️ Phát hiện phụ (không sửa, ngoài phạm vi): `specToDto` (`lib/server/specs.ts:18-47`) CHƯA trả
+  `priceVnd`/`unit`/`wastagePercent` (field thêm sau ở 2.1.9.r) — dùng `priceNote` (text tự do,
+  đã có, đúng convention "hiển thị, không parse số") cho hiển thị giá/m² là đủ cho phần (5), việc
+  bổ sung DTO field số thật để dành cho BOQ thật sau.
+- **Cỗ máy tái dùng** ("một cỗ máy, nhiều mặt tiền"): node `util.materialnote`
+  (`lib/nodes/defs/material-notes.ts`) ĐÃ render đúng 1 thẻ ảnh tên/mã/NCC/hex/note — chỉ THIẾU
+  field `matId` để neo về `ProductSpec` thật. KHÔNG viết node/engine mới.
+- **Cơ chế kéo-thả tái dùng**: `NodeLibraryPanel.tsx` đã có `DND_MIME` ('application/
+  interiorflow-node') nối sẵn vào `FlowCanvas.onDrop` (`addNode(defType,pos)`); nhánh
+  `ASSET_MIME` (`components/LibraryPanel.tsx`) cho thấy khuôn "tạo node RỒI updateParam ngay
+  sau" (`FlowCanvas.tsx:325-343`) — áp đúng khuôn này cho MIME mới, không phát minh cơ chế khác.
+
+**Quyết định kiến trúc**:
+1. `lib/nodes/defs/material-notes.ts`: thêm field `matId` — **KHÔNG khai trong `params:
+   ParamDef[]`** (nên KHÔNG hiện ô nhập tay vô nghĩa trong panel thuộc tính — xác nhận qua code
+   `InteriorNode.tsx:307`/`ToolModeForm.tsx:164` chỉ render field theo `def.params`, trong khi
+   `execute()` nhận NGUYÊN `node.data.params` đầy đủ — `lib/execution.ts:145` — nên field không
+   khai báo vẫn "đi theo" node, chỉ ẩn khỏi form). `renderMaterialCard` thêm dòng hiển thị
+   `matId` (nếu có) trên thẻ — đúng yêu cầu "mang dữ liệu, không chỉ ảnh": nhìn thẻ vẫn thấy mã
+   ATLAS thật, không chỉ hình.
+2. Thêm khu **"Vật liệu"** vào `NodeLibraryPanel.tsx`, đặt NGAY SAU khu "Mood + Cộng tác" (đúng
+   vị trí khái niệm — swatch phục vụ canvas Mood, không phải node xử lý) — cùng điều kiện hiện
+   `phase.id==='render' && !query.trim()`. Fetch 1 lần `GET /api/specs?kind=material` lúc mount
+   (không cần poll — vật liệu đổi chậm, giống lý do bỏ poll nhanh ở phần (4)). Mỗi vật liệu = 1
+   chip: ô màu `colorHex` (fallback xám) + tên + `brand·sku` + `priceNote` rút gọn. Bấm = thêm
+   node `util.materialnote` giữa canvas rồi tự điền params (giống hành vi "bấm để thêm" của
+   `NodeCard`, ưu tiên cảm ứng). Kéo = set ĐỒNG THỜI 2 MIME lên `dataTransfer`: `DND_MIME` =
+   `'util.materialnote'` (để nhánh cũ trong `FlowCanvas.onDrop` tạo đúng loại node) + MIME MỚI
+   `application/interiorflow-material` (export từ `NodeLibraryPanel.tsx`, đặt tên `MAT_MIME`) =
+   JSON `{matId,name,code,supplier,hex,note}`.
+3. `FlowCanvas.tsx::onDrop`: SAU nhánh `DND_MIME` hiện có (đã `addNode` xong), kiểm thêm
+   `MAT_MIME` — nếu có, parse JSON rồi gọi `updateParam` cho từng field lên node vừa tạo (đúng
+   khuôn `ASSET_MIME` đã làm ở dòng 341-343: `nodes.at(-1)` lấy node vừa thêm). Additive thuần —
+   không đổi nhánh cũ.
+4. **Ref #3/#5 áp dụng thế nào** (theo chỉ đạo "G2 tiếp tục thì áp #3/#5"): #3 ("Canvas edit nền
+   đen ... → Mood+Collab đã có, xác nhận hướng") — ĐÃ ĐÚNG hướng hiện tại (chrome tối trung tính,
+   ảnh/nội dung nổi bật), KHÔNG cần sửa code, chỉ xác nhận. #5 (ambient-tint LẤY màu TỪ ảnh bên
+   trong thẻ) — áp cho "thẻ ẢNH" (Gallery/File Manager/moodboard photo card); swatch vật liệu ở
+   đây là Ô MÀU PHẲNG từ `colorHex` (không phải ảnh chụp) nên ambient-tint (trích màu từ ảnh) KHÔNG
+   khớp kỹ thuật — màu chip CHÍNH LÀ `colorHex`, không cần trích xuất gì thêm. Ghi rõ thay vì áp
+   gượng ép: #5 để dành đúng lúc động tới thẻ ảnh render/moodboard thật.
+5. Ngoài phạm vi phần (5) (ghi rõ, không mở rộng): sửa `specToDto` thêm `priceVnd/unit` số thật
+   (việc BOQ riêng) · picker tìm-kiếm/lọc vật liệu (2 bản ghi hiện có, chưa cần) · đồng bộ 2 chiều
+   matId↔ATLAS khi sửa tay trên node (đã có triết lý "sửa tay không bị AI ghi đè" — giữ nguyên,
+   node chỉ SAO CHÉP dữ liệu lúc kéo, không giữ liên kết sống).
