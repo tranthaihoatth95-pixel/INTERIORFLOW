@@ -80,6 +80,44 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .libh .cx:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
 .if-lib-root .empty{grid-column:1/-1;padding:26px 0;text-align:center;color:var(--t4);font-size:var(--fs-xs)}
 
+/* chuyển chế độ Duyệt kho ↔ Nạp hàng loạt — segmented nhỏ trong header, cùng ngôn ngữ .chip */
+.if-lib-root .modeseg{display:flex;gap:3px;background:var(--field);border-radius:20px;padding:3px;flex:none}
+.if-lib-root .modeseg button{height:22px;padding:0 10px;border-radius:20px;border:0;background:none;cursor:pointer;
+      color:var(--t3);font-size:var(--fs-2xs);transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
+.if-lib-root .modeseg button:hover{color:var(--t1)}
+.if-lib-root .modeseg button.on{background:var(--panel);color:var(--t1);font-weight:var(--fw-semi)}
+.if-lib-root .modeseg button:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
+
+/* NẠP HÀNG LOẠT — chế độ thứ 2 của sheet */
+.if-lib-root .ingest{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 14px 0}
+.if-lib-root .drop{flex:none;border:1.5px dashed var(--border-strong);border-radius:var(--radius-lg);
+      padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--t3);
+      transition:border-color .15s,background .15s}
+.if-lib-root .drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.if-lib-root .drop b{font-size:var(--fs-sm);color:var(--t1);font-weight:var(--fw-semi)}
+.if-lib-root .drop span{font-size:var(--fs-2xs);color:var(--t4);text-align:center}
+.if-lib-root .pickbtn{margin-top:8px;height:28px;padding:0 14px;border-radius:var(--radius-sm);border:1px solid var(--border);
+      background:var(--panel);color:var(--t1);font-size:var(--fs-2xs);font-weight:var(--fw-semi);cursor:pointer;
+      transition:background .12s}
+.if-lib-root .pickbtn:hover{background:var(--hover)}
+.if-lib-root .pickbtn:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
+.if-lib-root .droplist{flex:1;min-height:0;overflow-y:auto;margin-top:10px;border:1px solid var(--border);
+      border-radius:var(--radius-md);background:var(--field)}
+.if-lib-root .droprow{display:grid;grid-template-columns:16px 1fr 74px 62px 22px;align-items:center;gap:8px;
+      padding:7px 10px;font-size:var(--fs-2xs);color:var(--t2);border-bottom:1px solid var(--mat-hairline)}
+.if-lib-root .droprow:last-child{border-bottom:0}
+.if-lib-root .droprow .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t1)}
+.if-lib-root .droprow .k{color:var(--t4)}
+.if-lib-root .droprow .s{text-align:right;color:var(--t4);font-variant-numeric:tabular-nums}
+.if-lib-root .droprow .rm{width:22px;height:22px;display:flex;align-items:center;justify-content:center;border:0;
+      background:none;color:var(--t4);border-radius:6px;cursor:pointer;transition:background .12s,color .12s}
+.if-lib-root .droprow .rm:hover{background:var(--hover);color:var(--t1)}
+.if-lib-root .ingestft{flex:none;height:38px;display:flex;align-items:center;gap:10px;
+      border-top:1px solid var(--mat-hairline);margin-top:10px;font-size:var(--fs-2xs);color:var(--t4)}
+.if-lib-root .ingestft .pub{margin-left:auto}
+.if-lib-root .pub:disabled{opacity:.45;cursor:not-allowed}
+.if-lib-root .hidden{display:none}
+
 @media (prefers-reduced-motion:reduce){
   .if-lib-root *{animation:none!important;transition-duration:.1s!important}
   .if-lib-root .it:hover{transform:none!important}

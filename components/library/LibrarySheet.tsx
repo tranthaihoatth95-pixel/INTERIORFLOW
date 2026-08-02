@@ -22,6 +22,7 @@ import { RawStyle } from '@/components/filemanager/RawStyle';
 import { LIBRARY_SHEET_CSS } from './library-sheet-css';
 import { LibraryToastHost, pushLibraryToast } from './LibraryToast';
 import { PublishModal } from './PublishModal';
+import { BulkIngestMode } from './BulkIngestMode';
 
 const STAGE_CAPTION: Record<StageKey, [string, string]> = {
   cad: ['Kệ chặng Vẽ', 'Drawing stage shelf'],
@@ -55,6 +56,8 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   const [chip, setChip] = useState<ScopeChip>('all');
   const [query, setQuery] = useState('');
   const [publishOpen, setPublishOpen] = useState(false);
+  /** `/library/ingest` gộp thành 1 CHẾ ĐỘ của sheet (SPEC-NAVIGATION-MODEL §1) — không trang riêng. */
+  const [mode, setMode] = useState<'browse' | 'ingest'>('browse');
   const [mounted, setMounted] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -116,20 +119,33 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
 
         <div className="libh">
           <h3>{tr('Thư viện', 'Library')}</h3>
-          <span className="srch">
-            <Search size={13} strokeWidth={1.75} />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={tr('Tìm trong kho…', 'Search the store…')}
-              aria-label={tr('Tìm trong kho', 'Search the store')}
-            />
+          {mode === 'browse' && (
+            <span className="srch">
+              <Search size={13} strokeWidth={1.75} />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={tr('Tìm trong kho…', 'Search the store…')}
+                aria-label={tr('Tìm trong kho', 'Search the store')}
+              />
+            </span>
+          )}
+          <span className="modeseg" role="group" aria-label={tr('Chế độ', 'Mode')}>
+            <button type="button" className={mode === 'browse' ? 'on' : ''} aria-pressed={mode === 'browse'} onClick={() => setMode('browse')}>
+              {tr('Duyệt kho', 'Browse')}
+            </button>
+            <button type="button" className={mode === 'ingest' ? 'on' : ''} aria-pressed={mode === 'ingest'} onClick={() => setMode('ingest')}>
+              {tr('Nạp hàng loạt', 'Bulk add')}
+            </button>
           </span>
           <button type="button" className="cx" onClick={() => setOpen(false)} aria-label={tr('Đóng', 'Close')}>
             <X size={15} strokeWidth={1.75} />
           </button>
         </div>
 
+        {mode === 'ingest' ? (
+          <BulkIngestMode onDone={() => setMode('browse')} />
+        ) : (
         <div className="libbody">
           <div className="shelf">
             {/* NHÓM TRÊN — đổi theo chặng đang mở */}
@@ -225,6 +241,7 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
             </div>
           </div>
         </div>
+        )}
       </div>
 
       <PublishModal
