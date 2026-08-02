@@ -295,3 +295,31 @@ Chờ Hoà duyệt hoặc giao việc mới — không tự bịa việc tiếp 
   trong STATUS.md) sang Render → bấm "Vẽ 3D" → `Scene3DViewer` dựng đúng hình học từ Doc CAD, 0
   lỗi console. Camera framing hơi lệch tâm do tường test mỏng 1mm (dữ liệu giả, không phải bug
   thật). Đã xoá toàn bộ entity test khỏi dự án mẫu sau verify.
+
+## [chuỗi H · ƯU TIÊN 1] H2 — sidebar 3 vùng node, phân loại kỹ ~34 node — XONG
+- Commit: `d2236c0`. Rà TỪNG node thật trong `lib/nodes/registry.ts` + `lib/nodes/defs/*.ts`
+  (không chỉ theo `CATALOG-STAGE2-RENDERING.md` đã cũ 24/07 — tìm thêm 4 node catalog chưa liệt
+  kê: `ai.pattern`/`ai.smartselect`/`util.warp`/`vision.measureobject`). Toàn bộ lý do xếp ghi
+  trong docstring `lib/render-studio/sidebar-zones.ts` — đọc trước khi đổi phân loại sau này.
+- `sidebarZoneOf(nodeType)` suy từ 2 NGUỒN CÓ SẴN (không tạo danh sách rời rạc dễ lệch theo thời
+  gian): `master` = mọi `nodeType` trong `TASK_CARDS`, `mood` = tập cố định đúng câu chốt §2
+  (`ai.moodboard` + `input.guref`), `normal` = phần còn lại.
+- Mở rộng `task-cards.ts` 7→12 thẻ MASTER — thêm `ai.emptystaging`/`ai.exterior`/`ai.furniture`/
+  `ai.removebg`/`ai.localedit`, CÙNG khuôn hình các thẻ gốc (image[+mask]+prompt→image),
+  `ToolModeForm` dùng thẳng không cần UI riêng — KHÔNG đổi `execute()`/registry, chỉ thêm lớp
+  trình bày (additive, đúng ràng buộc "tái dùng canvas/node/editor đang chạy").
+- `NodeLibraryPanel.tsx`: 2 vùng pinned MỚI ("Mood + Collab" + "Node MASTER — mở cửa sổ") phía
+  trên danh sách tag/★ cũ; danh sách cũ lọc BỎ node đã có vùng riêng → còn lại đúng nghĩa "Node
+  thường" (§2), không trùng lặp. Bấm thẻ MASTER gọi thẳng `useToolModeUi.selectCard()` (mở
+  `ToolWindow` — D3), KHÔNG thả node AI trần lên canvas như thẻ thường — đúng luật "bắt buộc mở
+  window để thao tác". `NodeCard` thêm `draggableOverride` — thẻ MASTER tắt kéo-thả (kéo-thả-mở-
+  window để H3 làm, `DND_MIME` hiện tại chỉ hiểu "thả = tạo node trần").
+- Test: `tsc`/`eslint` sạch (1 lỗi `GripVertical` pre-existing, xác nhận qua `git stash`). `npm
+  test` 0 fail.
+- Verify browser thật (dự án mẫu): mở Node Library — đọc DOM text xác nhận đúng cấu trúc 3 vùng,
+  MỖI node xuất hiện ĐÚNG 1 LẦN (đếm bằng regex "Tạo moodboard"/"Ảnh tham chiếu gu"/"Sketch to
+  Render" = 1 mỗi cái — không trùng giữa vùng pinned và danh sách cũ). Bấm thẻ MASTER "Cắt nền" →
+  mở đúng `ToolWindow` (xác nhận qua `localStorage` `view=form,card=removebg` + ảnh chụp thấy
+  form 2 cột thật "Cắt nền", không phải node AI trần rơi lên canvas). 0 lỗi console.
+- 💭 `ai.pattern` (Hoa văn · Pattern Studio) là MASTER-candidate hợp lý (cùng khuôn) nhưng CHƯA
+  đưa vào đợt này (chỉ chọn 5 cái rõ nhất) — ghi lại trong sidebar-zones.ts phòng Hoà muốn thêm.
