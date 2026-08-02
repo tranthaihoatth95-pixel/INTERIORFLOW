@@ -111,6 +111,10 @@ export function CommandPalette() {
       { id: 'note', label: 'Thêm ghi chú (sticky)', group: 'Hành động', icon: StickyNote, keywords: 'note comment', run: run(() => s.addNote(centerPos())) },
       { id: 'lib', label: 'Mở Node Library', group: 'Hành động', icon: Boxes, keywords: 'panel node', run: run(() => s.setPanel('library')) },
       { id: 'gallery', label: 'Mở Gallery', group: 'Hành động', icon: Images, keywords: 'ảnh asset', run: run(() => s.setPanel('gallery')) },
+      // Rail hợp nhất (03/08) bỏ 2 nút này khỏi rail (chỉ còn điều hướng) — KHÔNG có lối vào nào
+      // khác trong app (đã grep xác nhận), thêm ở đây để không mất hẳn tính năng.
+      { id: 'reference', label: 'Mở Reference — ảnh / vật liệu', group: 'Hành động', icon: Images, keywords: 'reference gu vật liệu ảnh', run: run(() => s.setPanel('assets')) },
+      { id: 'present', label: 'Trình chiếu (Present mode)', group: 'Hành động', icon: Play, keywords: 'present slideshow trình chiếu', run: run(() => s.setPresentModeOpen(true)) },
       { id: 'theme', label: 'Đổi theme (auto → sáng → tối)', group: 'Hành động', icon: SunMoon, keywords: 'dark light', run: run(() => {
         const next = s.themePref === 'auto' ? 'light' : s.themePref === 'light' ? 'dark' : 'auto';
         s.setThemePref(next);

@@ -32,7 +32,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Coins, Share2, ChevronDown, MessageCircle, LogOut, Check, MoreHorizontal,
+  Coins, Share2, ChevronDown, MessageCircle, Check, MoreHorizontal,
   Settings as SettingsIcon,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -53,6 +53,7 @@ import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { IFLogo } from '@/components/entry/IFLogo';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
+import { AccountMenu } from '@/components/AccountMenu';
 import { HomeButton } from '@/components/studio/HomeButton';
 import { requestGallery } from '@/lib/resume';
 import SessionWatch from '@/components/studio/SessionWatch';
@@ -464,9 +465,6 @@ function ChatToggle() {
  */
 function UserChip() {
   const user = useFlowStore((s) => s.user);
-  const setUser = useFlowStore((s) => s.setUser);
-  const router = useRouter();
-  const tr = useT();
   const { triggerRef, menuRef, open, setOpen, anchorRect } = useMenuAnchor();
   // 2.2.90 ĐỢT 2 (01/08) — thay backdrop `fixed inset-0` bằng hook dùng chung, cùng lý do đã
   // ghi ở MoreMenu() phía trên (click-xuyên-qua + thêm Escape). K4 — 2 ref riêng, xem MoreMenu().
@@ -492,53 +490,12 @@ function UserChip() {
         <span className="hidden max-w-24 truncate sm:inline">{user.name}</span>
       </motion.button>
 
-      {typeof document !== 'undefined' &&
-        createPortal(
-          <AnimatePresence>
-            {open && anchorRect && (
-              // ref ở div con display:contents — xem chú thích trong MoreMenu() (tránh warning
-              // "ref is not a prop" của AnimatePresence/PopChild khi ref đặt thẳng trên motion.div).
-              <motion.div
-                initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                transition={{ duration: 0.18, ease: easeApple }}
-                style={{ position: 'fixed', top: anchorRect.top, right: anchorRect.right }}
-                className="mat-panel z-[80] w-48 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
-              >
-                <div ref={menuRef} style={{ display: 'contents' }}>
-                  <div className="truncate px-2 py-1.5 text-xs text-[var(--t3)]" title={`${user.name} · ${user.email}`}>
-                    {user.name}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpen(false);
-                      router.push('/settings/avatar');
-                    }}
-                    className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
-                  >
-                    {tr('Đổi avatar', 'Change avatar')}
-                  </button>
-                  {/* Ngăn cách phía trên — hành động phá huỷ tách khỏi mục thường, khớp yêu cầu. */}
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setOpen(false);
-                      await fetch('/api/auth/me', { method: 'DELETE' });
-                      setUser(null);
-                    }}
-                    className="mt-1 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-2 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-red-400"
-                  >
-                    <LogOut size={13} />
-                    {tr('Đăng xuất', 'Sign out')}
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>,
-          document.body,
-        )}
+      <AccountMenu
+        open={open}
+        anchorRect={anchorRect ? { top: anchorRect.top, right: anchorRect.right } : null}
+        onDismiss={() => setOpen(false)}
+        menuRef={menuRef}
+      />
     </div>
   );
 }
