@@ -82,8 +82,13 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .it .mt .a{font-size:var(--fs-2xs);font-weight:var(--fw-semi);color:var(--t2);overflow:hidden;
            text-overflow:ellipsis;white-space:nowrap}
 .if-lib-root .it .mt .b{font-size:var(--fs-2xs);color:var(--t5);margin-top:2px;font-family:ui-monospace,Menlo,monospace}
+/* q0b (ca trực 02:xx bắt): badge dùng blur(10px) SỐ CỨNG — vi phạm luật kính lỏng "mọi giá trị
+   kính đi từ token". Nay suy từ --blur (22px): badge chỉ cao 15px nên lấy MỘT NỬA token, blur
+   nguyên 22px trên vệt 15px thì nhoè hết chữ. Chia từ token nên đổi token là đổi theo, không
+   còn con số rời. Kèm -webkit- (bài học K3: thiếu prefix ⇒ tablet không blur). */
 .if-lib-root .badge{position:absolute;top:6px;right:6px;height:15px;padding:0 5px;border-radius:5px;background:var(--mat-card);
-       backdrop-filter:blur(10px);color:var(--t3);font-size:9px;font-weight:700;display:flex;align-items:center;
+       backdrop-filter:blur(calc(var(--blur) / 2));-webkit-backdrop-filter:blur(calc(var(--blur) / 2));
+       color:var(--t3);font-size:9px;font-weight:700;display:flex;align-items:center;
        letter-spacing:.03em}
 .if-lib-root .badge.st{color:var(--accent-warm)}
 .if-lib-root .libft{flex:none;height:38px;display:flex;align-items:center;gap:10px;padding:0 14px;

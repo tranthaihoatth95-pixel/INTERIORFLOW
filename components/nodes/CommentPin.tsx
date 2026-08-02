@@ -64,7 +64,9 @@ export default function CommentPin({ nodeId }: { nodeId: string }) {
               anchorY={r.bottom + 6}
               onDismiss={() => setOpen(false)}
               className="nodrag w-64 rounded-[12px] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-xl"
-              style={{ backdropFilter: 'blur(14px)' }}
+              /* Cùng loại vi phạm với badge Thư viện (q0b): số cứng + thiếu -webkit- (bài học K3
+                 — tablet không blur). Lấy thẳng token kính của app. */
+              style={{ backdropFilter: 'blur(var(--blur))', WebkitBackdropFilter: 'blur(var(--blur))' }}
             >
               <div className="max-h-52 space-y-2 overflow-y-auto">
                 {own.length === 0 && (
