@@ -52,3 +52,14 @@ theo NHIỀU cách gọi, không chỉ một tên. `IF-FEATURE-TREE` 2.3.32 ché
 
 *Cowork quyết + ghi 01/08/2026 theo uỷ quyền Hoà ("tuỳ bạn quyết"). Rủi ro đã nêu: giữ engine tự
 viết nghĩa là tự gánh bảo trì — đổi ý được nếu sau này có số đo chứng minh engine bất lực.*
+
+## Chốt bổ sung 02/08 — resize NHÓM (E1)
+
+> Hoà chốt: **kéo góc nhóm → scale CẢ CỤM theo tỉ lệ** (mọi phần tử con co giãn cùng tỉ lệ,
+> giữ bố cục tương đối; chữ scale font theo). Chuẩn Figma/Canva/Keynote. KHÔNG dùng mô hình
+> "khung đổi, con giữ nguyên".
+
+## Chốt bổ sung 02/08 (ca trực) — z-order nhóm (E1)
+
+> Cowork duyệt theo uỷ quyền (chuẩn Figma/Canva): khi nhóm được chọn, "Tiến/Lùi 1 bậc" →
+> **cả cụm dịch bậc cùng nhau, giữ thứ tự tương đối bên trong cụm**. Không tách lẻ phần tử con.

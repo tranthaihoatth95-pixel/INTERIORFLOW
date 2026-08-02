@@ -1,7 +1,9 @@
 # SPEC — MÔ HÌNH NGỮ NGHĨA 2D *(semantic 2D model / BIM-lite)*
 
-> **[CẦN HOÀ DUYỆT]** · Thuộc tầng **T1 lõi mã chung**. Đây là quyết định đắt nhất của IF:
-> chốt đúng thì Render + Present + Bảng tính rẻ đi; chốt sai thì đắt gấp bội.
+> ✅ **Hoà duyệt 01/08/2026** — nhãn duyệt CUỐI CÙNG của repo, Hoà tự đọc rồi mới gỡ
+> (`CHOT-DUYET-SPEC-DOT2-2026-08-01.md` §1d). Thuộc tầng **T1 lõi mã chung** — quyết định đắt
+> nhất của IF: chốt đúng thì Render + Present + Bảng tính rẻ đi; chốt sai thì đắt gấp bội.
+> ⚠️ Kỷ luật thi công: giữ chặt luật §3 — *mỗi lớp ngữ nghĩa chỉ thêm khi ĐÃ có nơi tiêu thụ*.
 > Đọc cùng `IF-CORE-SCHEMA.md` và `IF-ARCHITECTURE-BLUEPRINT-v1.md`.
 
 ---
