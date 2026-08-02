@@ -9,16 +9,17 @@
  *   · `/cad-editor`        — route cũ, nay redirect; khi chưa xác định được dự án nào đang
  *                            hoạt động thì render thẳng màn này (giữ hành vi cũ).
  *
- * Nội dung giữ NGUYÊN: StudioBar (active='cad') + tầng multi-sheet CadSheets bọc trong
- * StageEnter (C-4 crossfade) và FoldableDualPane (D-1 pane Reference khi máy gập mở).
+ * 03/08 (SPEC-APP-SHELL-CHUNG §3): chuyển sang `<StageShell>` dùng chung — CAD từ nay CÓ RAIL
+ * TRÁI + avatar/AccountMenu + Dashboard/FlowsPanel như Rendering (trước đây thiếu, "lệch nặng
+ * nhất" §1). Nội dung vùng làm việc giữ NGUYÊN: CadSheets bọc StageEnter + FoldableDualPane.
  */
 
-import { AppChrome } from '@/components/studio/AppChrome';
 import CadSheets from '@/components/cad/CadSheets';
 import { StageEnter } from '@/components/studio/StageTransition';
 import FoldableDualPane from '@/components/studio/FoldableDualPane';
 import ReferencePane from '@/components/studio/ReferencePane';
 import StatusBar from '@/components/studio/StatusBar';
+import { StageShell } from '@/components/studio/StageShell';
 import { StageIntroCard } from '@/components/onboarding/StageIntroCard';
 import { useFlowStore } from '@/lib/store';
 import { effectiveUserId } from '@/lib/resume';
@@ -30,15 +31,13 @@ export default function CadStageScreen() {
   const storeUserId = useFlowStore((s) => s.user?.id);
   const userId = effectiveUserId(storeUserId);
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: 'var(--bg)' }}>
-      <AppChrome active="cad" />
+    <StageShell active="cad" statusBar={<StatusBar stage="concept" />}>
       <StageEnter>
         {/* Tầng multi-sheet (phụ-thêm): thanh tab + CadEditor. 1 sheet ⇒ y hệt bản cũ. */}
         <FoldableDualPane primary={<CadSheets />} secondary={<ReferencePane />} />
       </StageEnter>
-      <StatusBar stage="concept" />
       {/* Tầng 2 onboarding — thẻ giới thiệu lần đầu chặng CAD (góc màn, không chặn thao tác). */}
       <StageIntroCard stage="cad" userId={userId} />
-    </div>
+    </StageShell>
   );
 }

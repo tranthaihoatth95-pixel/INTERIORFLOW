@@ -17,7 +17,7 @@
 import { useState } from 'react';
 import PresentSheets from '@/components/present-editor/PresentSheets';
 import { makeSampleDeck } from '@/lib/present-editor/sample';
-import { AppChrome } from '@/components/studio/AppChrome';
+import { StageShell } from '@/components/studio/StageShell';
 import StatusBar from '@/components/studio/StatusBar';
 import { StageEnter } from '@/components/studio/StageTransition';
 import { CommentLayer } from '@/components/CommentLayer';
@@ -38,18 +38,16 @@ export default function PresentStageScreen() {
   // playing nay ở store dùng chung để đọc được từ NGOÀI PresentEditor).
   const playing = usePlayStatus((s) => s.playing);
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
-      <AppChrome active="present" />
+    <StageShell active="present" statusBar={<StatusBar stage="present" hidden={playing} />}>
       {/* C-4: vào chặng bằng crossfade + scale "dynamic wallpaper" (StageEnter). */}
       <StageEnter style={{ display: 'block' }}>
         {/* Tầng multi-sheet (phụ-thêm): thanh tab + PresentEditor. 1 sheet ⇒ y hệt bản cũ. */}
         <PresentSheets initialDeck={deck} />
       </StageEnter>
-      <StatusBar stage="present" hidden={playing} />
       <ChatPanel />
       <CommentLayer />
       {/* Tầng 2 onboarding — thẻ giới thiệu lần đầu chặng Presenting. */}
       <StageIntroCard stage="present" userId={userId} />
-    </div>
+    </StageShell>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useLayoutEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -15,6 +16,7 @@ import { cn } from '@/lib/utils';
 import Tooltip from '@/components/ui/Tooltip';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
 import { AccountMenu } from '@/components/AccountMenu';
+import type { AppChromeActive } from '@/components/studio/AppChromeTypes';
 
 /**
  * Hợp nhất rail (Hoà chốt 03/08, sau khi xác nhận "rail của /files" trong ảnh chê là
@@ -94,7 +96,14 @@ function RailButton({
   );
 }
 
-export function LeftRail() {
+/**
+ * StageShell (03/08): rail nay song o CA 3 chang qua prop `active`.
+ * - Tong quan / Du an & Flow: Dashboard + FlowsPanel mount trong StageShell -> hoat dong moi chang.
+ * - Files: noi route /files (G4 da co route; Hoa chot bo trang thai "sap co" 03/08).
+ * - Thu vien: o Render mo NodeLibraryPanel (nhu cau tai cho cua canvas node); o CAD/Present
+ *   panel do khong mount -> dieu huong /library (Master Library route that).
+ */
+export function LeftRail({ active = 'render' }: { active?: AppChromeActive } = {}) {
   const panel = useFlowStore((s) => s.panel);
   const setPanel = useFlowStore((s) => s.setPanel);
   const dashboardOpen = useFlowStore((s) => s.dashboardOpen);
@@ -102,12 +111,19 @@ export function LeftRail() {
   const user = useFlowStore((s) => s.user);
   const tr = useT();
   const reduceMotion = useReducedMotion();
+  const router = useRouter();
 
   const items: NavItem[] = [
     { icon: LayoutDashboard, label: ['Tổng quan — Dashboard project & team', 'Overview — project & team dashboard'], action: () => setDashboardOpen(true), active: dashboardOpen },
     { icon: FolderKanban, label: ['Dự án & Flow', 'Projects & Flows'], panel: 'flows', action: () => setPanel('flows'), active: panel === 'flows' },
-    { icon: FolderOpen, label: ['Files — sắp có (chờ File Manager hợp nhất)', 'Files — coming soon (File Manager merge pending)'], soon: true },
-    { icon: Boxes, label: ['Thư viện Node', 'Node Library'], panel: 'library', action: () => setPanel('library'), active: panel === 'library' },
+    { icon: FolderOpen, label: ['Files', 'Files'], action: () => router.push('/files') },
+    {
+      icon: Boxes,
+      label: active === 'render' ? (['Thư viện Node', 'Node Library'] as [string, string]) : (['Thư viện', 'Library'] as [string, string]),
+      panel: 'library',
+      action: () => (active === 'render' ? setPanel('library') : router.push('/library')),
+      active: active === 'render' && panel === 'library',
+    },
   ];
 
   // Menu tài khoản — avatar NGOÀI capsule, tự tính anchor riêng (mở XUỐNG dưới, khác `UserChip`

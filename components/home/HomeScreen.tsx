@@ -21,12 +21,10 @@ import { useRouter } from 'next/navigation';
 import { LoginScreen } from '@/components/entry/LoginScreen';
 import { WelcomeIntro } from '@/components/entry/WelcomeIntro';
 import { StageIntroCard } from '@/components/onboarding/StageIntroCard';
-import { AppChrome } from '@/components/studio/AppChrome';
-import { LeftRail } from '@/components/LeftRail';
+import { StageShell } from '@/components/studio/StageShell';
 import { NodeLibraryPanel } from '@/components/NodeLibraryPanel';
 import { GalleryPanel } from '@/components/GalleryPanel';
 import { LibraryPanel } from '@/components/LibraryPanel';
-import { FlowsPanel } from '@/components/FlowsPanel';
 import { ChatPanel } from '@/components/ChatPanel';
 import { FlowCanvas } from '@/components/FlowCanvas';
 import { MoodboardModal } from '@/components/MoodboardModal';
@@ -568,12 +566,12 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
         variants={fade}
         initial="hidden"
         animate="visible"
-        className="flex h-[100dvh] flex-col overflow-hidden bg-[var(--bg)]"
+        className="h-[100dvh] overflow-hidden bg-[var(--bg)]"
       >
-        <AppChrome active="render" />
-        {/* relative: neo các panel overlay (mobile) vào vùng dưới header */}
-        <div className="relative flex min-h-0 flex-1">
-          <LeftRail />
+        {/* 03/08 (SPEC-APP-SHELL-CHUNG §3): shell chuyển sang <StageShell> dùng chung —
+            AppChrome/LeftRail/Dashboard/FlowsPanel sống trong shell (mọi chặng như nhau).
+            Nội dung còn lại giữ nguyên. */}
+        <StageShell active="render" statusBar={<StatusBar stage="render" hidden={presentModeOpen} />}>
           {/* mỗi panel tự quản AnimatePresence riêng (iOS sheet, key duy nhất) */}
 
           {/* Nền mờ khi mở panel trên mobile — bấm ra ngoài để đóng. Ẩn từ md trở lên. */}
@@ -610,7 +608,6 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
                   <NodeLibraryPanel />
                   <GalleryPanel />
                   <LibraryPanel />
-                  <FlowsPanel />
                   {/* Cả 3 chặng đều là canvas node (Present sang studio riêng). Nút Tải lên/Concept = moodboard. */}
                   <FlowCanvas />
                   <RenderToolModeOverlay />
@@ -621,12 +618,10 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
               )
             }
           />
-        </div>
-        <StatusBar stage="render" hidden={presentModeOpen} />
+        </StageShell>
         <MaskPainterModal />
         <AnnotateModal />
         <Lightbox />
-        <Dashboard />
         <MoodboardModal />
         {presentModeOpen && <PresentOverlay onClose={() => setPresentModeOpen(false)} />}
         <CommandPalette />
