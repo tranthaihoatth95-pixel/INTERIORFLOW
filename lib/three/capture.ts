@@ -10,6 +10,17 @@
  * qua CameraSpec — mỗi khung lấy thẳng vị trí/hướng từ mẫu `CamPathResult` (campath.ts, V2),
  * tầm mắt người cố định 1650mm (đúng quy ước đường cam video, SPEC-VIDEO-MAT-BANG).
  *
+ * 3D-3 (02/08, C3): `captureFrame` thêm `kind: 'depth' | 'lineart'` — nền cho tool Đổi góc phối
+ * cảnh (§6B pha 4 — moat): depth map nuôi thẳng `ai.render` ControlNet depth (quyết định #6, render
+ * target với `MeshDepthMaterial` — linh kiện chuẩn three, 0 thuật toán tự viết); lineart = cạnh
+ * hình học thật (`THREE.EdgesGeometry`, 0 thuật toán tự viết) vẽ trắng trên nền đen, dùng khi cần
+ * khoá đường nét cho ControlNet canny/lineart thay vì depth. CÙNG 1 hàm đặt camera cho cả 3 kind
+ * (`placeCamera` gọi đúng 1 lần/khung) — đảm bảo `png`/`depth`/`lineart` LUÔN khớp hình học tuyệt
+ * đối ở cùng 1 khung (test bắt buộc theo yêu cầu Hoà 02/08).
+ *
+ * `captureSequence` (video bậc 2-b) CHỈ hỗ trợ `kind:'png'` — chưa có nhu cầu depth/lineart theo
+ * dải khung, giữ đơn giản.
+ *
  * Client-only (three.js + canvas thật) — nơi gọi phải qua `next/dynamic(..., {ssr:false})`, cùng
  * ranh giới với `Scene3DViewer.tsx` (không import file này từ code tải ngay khi mở app).
  */
@@ -20,9 +31,8 @@ import { placeCamera, fovFromLens, type CameraSpec } from './camera';
 import type { CamPathResult, CamPathSample } from '@/lib/cad/campath';
 
 export interface CaptureOut {
-  /** 3D-2 chỉ thi công 'png'. 'depth'/'lineart' — TODO 3D-3 (SPEC-3D-CORE §4, render target độ
-   * sâu nuôi ControlNet — quyết định #6). */
-  kind: 'png';
+  /** `captureSequence` chỉ hỗ trợ 'png'. `captureFrame` hỗ trợ cả 3 (3D-3). */
+  kind: 'png' | 'depth' | 'lineart';
   w: number;
   h: number;
 }
@@ -81,7 +91,59 @@ function buildOffscreenScene(scene: Scene3DData) {
   for (const b of built) {
     three.add(new THREE.Mesh(b.geometry, new THREE.MeshBasicMaterial({ color: b.colorHex, side: THREE.DoubleSide })));
   }
-  return { three, built };
+  return { three, built, dispose: () => built.forEach((b) => b.geometry.dispose()) };
+}
+
+/** Scene depth — `MeshDepthMaterial` (quy ước mặc định three.js `BasicDepthPacking`: GẦN camera
+ * → TỐI, XA → SÁNG, khớp near/far của chính camera đang chụp). ⚠️ Nếu ControlNet đích cần chiều
+ * ngược lại (nhiều pipeline MiDaS quen GẦN=SÁNG) thì đảo màu ở phía TIÊU THỤ (`ai.render`), KHÔNG
+ * đảo ở đây — hàm này chỉ có 1 việc "render đúng depth buffer", quy ước hiển thị là việc riêng. */
+function buildDepthScene(scene: Scene3DData) {
+  const three = new THREE.Scene();
+  three.background = new THREE.Color('#ffffff'); // nền = xa vô cực, khớp quy ước "xa → sáng"
+  const built = buildMergedGeometries(scene);
+  const depthMat = new THREE.MeshDepthMaterial({ depthPacking: THREE.BasicDepthPacking });
+  for (const b of built) three.add(new THREE.Mesh(b.geometry, depthMat));
+  return { three, built, dispose: () => { built.forEach((b) => b.geometry.dispose()); depthMat.dispose(); } };
+}
+
+/** Scene lineart — cạnh hình học thật (`THREE.EdgesGeometry`, ngưỡng góc mặc định three: 1°,
+ * đủ bắt mọi cạnh khối hộp/tường vuông thành của proxy nội thất+kiến trúc ở đây) vẽ trắng trên
+ * nền đen. KHÔNG phải outline/silhouette AI — là đường viền hình học thật, rẻ, tất định. */
+function buildLineartScene(scene: Scene3DData) {
+  const three = new THREE.Scene();
+  three.background = new THREE.Color('#000000');
+  const built = buildMergedGeometries(scene);
+  const lineMat = new THREE.LineBasicMaterial({ color: '#ffffff' });
+  const edgeGeoms: THREE.EdgesGeometry[] = [];
+  for (const b of built) {
+    const edges = new THREE.EdgesGeometry(b.geometry);
+    edgeGeoms.push(edges);
+    three.add(new THREE.LineSegments(edges, lineMat));
+  }
+  return {
+    three,
+    built,
+    dispose: () => {
+      built.forEach((b) => b.geometry.dispose());
+      edgeGeoms.forEach((e) => e.dispose());
+      lineMat.dispose();
+    },
+  };
+}
+
+/** near/far RIÊNG cho camera đang chụp — bao trọn bbox scene quanh vị trí camera thật, đủ hẹp để
+ * depth map có độ phân giải hữu ích (far=500m cố định như viewer orbit sẽ nén hết depth vào vài %
+ * đầu dải giá trị với 1 phòng vài mét — depth gần như phẳng, vô dụng cho ControlNet). */
+export function nearFarForScene(scene: Scene3DData, cameraPosM: THREE.Vector3): { near: number; far: number } {
+  const { minX, minY, maxX, maxY } = scene.bboxMm;
+  const centerHeightMm = (scene.sizeM.h / 2) * 1000;
+  const [cx, cy, cz] = cadToThreeM((minX + maxX) / 2, (minY + maxY) / 2, centerHeightMm);
+  const radius = Math.max(1, Math.hypot(maxX - minX, maxY - minY) / 2 / 1000, scene.sizeM.h);
+  const dist = cameraPosM.distanceTo(new THREE.Vector3(cx, cy, cz));
+  const far = Math.max(5, dist + radius * 1.5);
+  const near = Math.max(0.02, dist - radius * 1.5);
+  return { near: near < far ? near : 0.02, far };
 }
 
 /** FOV DỌC (độ, cho `THREE.PerspectiveCamera`) từ FOV NGANG của `CameraSpec` (sensor 36mm,
@@ -92,10 +154,14 @@ function verticalFovDeg(spec: CameraSpec, aspect: number): number {
   return (vFovRad * 180) / Math.PI;
 }
 
-/** Chụp 1 khung PNG tại `CameraSpec` cho trước (`placeCamera` đặt vị trí thật trong scene) —
- * offscreen, không hiện UI. Dùng cho tool Đổi góc phối cảnh (đơn khung) hoặc debug camPath. */
+/**
+ * Chụp 1 khung tại `CameraSpec` cho trước (`placeCamera` đặt vị trí thật trong scene) — offscreen,
+ * không hiện UI. `kind`: 'png' (xem trước/debug camPath) · 'depth' (nuôi ControlNet depth, tool
+ * Đổi góc phối cảnh) · 'lineart' (cạnh hình học thật). CÙNG 1 khối đặt camera cho cả 3 kind —
+ * gọi `captureFrame` nhiều lần với CÙNG `scene`+`spec` LUÔN cho camera giống hệt nhau (tất định),
+ * nên `png`/`depth`/`lineart` của cùng 1 khung khớp hình học tuyệt đối.
+ */
 export function captureFrame(scene: Scene3DData, spec: CameraSpec, out: CaptureOut): string {
-  if (out.kind !== 'png') throw new Error(`captureFrame: kind "${out.kind}" chưa thi công (TODO 3D-3).`);
   const canvas = document.createElement('canvas');
   canvas.width = out.w;
   canvas.height = out.h;
@@ -103,15 +169,18 @@ export function captureFrame(scene: Scene3DData, spec: CameraSpec, out: CaptureO
   renderer.setSize(out.w, out.h, false);
 
   const aspect = out.w / out.h;
-  const camera = new THREE.PerspectiveCamera(verticalFovDeg(spec, aspect), aspect, 0.05, 500);
   const placed = placeCamera(scene.bboxMm, spec);
-  camera.position.set(...cadAxesToThree(...placed.pos));
-  camera.lookAt(...cadAxesToThree(...placed.target));
+  const posM = new THREE.Vector3(...cadAxesToThree(...placed.pos));
+  const targetM = new THREE.Vector3(...cadAxesToThree(...placed.target));
+  const { near, far } = nearFarForScene(scene, posM);
+  const camera = new THREE.PerspectiveCamera(verticalFovDeg(spec, aspect), aspect, near, far);
+  camera.position.copy(posM);
+  camera.lookAt(targetM);
 
-  const { three, built } = buildOffscreenScene(scene);
-  renderer.render(three, camera);
+  const built = out.kind === 'depth' ? buildDepthScene(scene) : out.kind === 'lineart' ? buildLineartScene(scene) : buildOffscreenScene(scene);
+  renderer.render(built.three, camera);
   const png = canvas.toDataURL('image/png');
-  for (const b of built) b.geometry.dispose();
+  built.dispose();
   renderer.dispose();
   return png;
 }
@@ -122,7 +191,7 @@ export function captureFrame(scene: Scene3DData, spec: CameraSpec, out: CaptureO
  * (rẻ hơn hẳn gọi `captureFrame` lặp lại N lần — không build lại hình học mỗi khung).
  */
 export function captureSequence(scene: Scene3DData, path: CamPathResult, fps: number, out: CaptureOut): string[] {
-  if (out.kind !== 'png') throw new Error(`captureSequence: kind "${out.kind}" chưa thi công (TODO 3D-3).`);
+  if (out.kind !== 'png') throw new Error(`captureSequence: chỉ hỗ trợ kind 'png' (được "${out.kind}") — depth/lineart theo dải khung chưa có nhu cầu, dùng captureFrame() cho từng khung riêng nếu cần.`);
   if (fps <= 0) throw new Error('fps phải > 0.');
   const canvas = document.createElement('canvas');
   canvas.width = out.w;
@@ -130,7 +199,7 @@ export function captureSequence(scene: Scene3DData, path: CamPathResult, fps: nu
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
   renderer.setSize(out.w, out.h, false);
   const camera = new THREE.PerspectiveCamera(60, out.w / out.h, 0.05, 500);
-  const { three, built } = buildOffscreenScene(scene);
+  const { three, dispose } = buildOffscreenScene(scene);
 
   const frameCount = Math.max(1, Math.round(path.totalDurationSec * fps));
   const frames: string[] = [];
@@ -143,7 +212,7 @@ export function captureSequence(scene: Scene3DData, path: CamPathResult, fps: nu
     frames.push(canvas.toDataURL('image/png'));
   }
 
-  for (const b of built) b.geometry.dispose();
+  dispose();
   renderer.dispose();
   return frames;
 }

@@ -1,13 +1,16 @@
 /**
- * lib/three/capture.test.ts — kiểm phần THUẦN của tầng chụp khung hình (3D-2). Chạy:
+ * lib/three/capture.test.ts — kiểm phần THUẦN của tầng chụp khung hình (3D-2/3D-3). Chạy:
  *   node_modules/.bin/sucrase-node lib/three/capture.test.ts
  *
  * KHÔNG test captureFrame/captureSequence (cần WebGLRenderer thật, không chạy được trong Node —
- * đã verify browser thật, xem STATUS.md). Chỉ test sampleCamPathAt/camPathSampleToThree — toán
- * thuần, ba lớp import (three Vector3, campath.ts) đều load được dưới sucrase-node (đã thử).
+ * đã verify browser thật, xem STATUS.md/docs/BAO-CAO-CHINH.md mục C3). Chỉ test
+ * sampleCamPathAt/camPathSampleToThree/nearFarForScene — toán thuần, ba lớp import (three
+ * Vector3, campath.ts) đều load được dưới sucrase-node (đã thử).
  */
+import * as THREE from 'three';
 import type { CamPathResult } from '../cad/campath';
-import { sampleCamPathAt, camPathSampleToThree } from './capture';
+import type { Scene3DData } from './cad-to-obj';
+import { sampleCamPathAt, camPathSampleToThree, nearFarForScene } from './capture';
 
 let pass = 0;
 let fail = 0;
@@ -72,6 +75,22 @@ console.log('camPathSampleToThree — vị trí/hướng nhìn tầm mắt ngư�
 
   const poseTurned = camPathSampleToThree({ point: { x: 0, y: 0 }, dirRad: Math.PI / 2, tSec: 0, cumLenMm: 0 });
   ok('nhìn +Y CAD (dirRad=π/2) → target.z ÂM (three.js z=-y)', poseTurned.target.z < 0);
+}
+
+console.log('nearFarForScene — near/far riêng theo khoảng cách camera→tâm scene (3D-3, C3)');
+{
+  const demoScene: Scene3DData = {
+    bboxMm: { minX: 0, minY: 0, maxX: 4000, maxY: 4000 },
+    sizeM: { w: 4, d: 4, h: 2.7 },
+    groups: [],
+  };
+  const near1 = nearFarForScene(demoScene, new THREE.Vector3(2, 1.35, -2));
+  ok('near > 0 (không bao giờ ≤0, tránh z-fighting/NaN)', near1.near > 0);
+  ok('far > near', near1.far > near1.near);
+  ok('far đủ hẹp cho phòng 4m (không còn 500m cố định)', near1.far < 20);
+
+  const farAway = nearFarForScene(demoScene, new THREE.Vector3(2, 1.35, -100));
+  ok('camera xa scene → near/far dịch xa theo, vẫn far > near', farAway.near > near1.near && farAway.far > farAway.near);
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);
