@@ -20,7 +20,8 @@ import { InteriorNode } from '@/components/nodes/InteriorNode';
 import { NoteNode } from '@/components/nodes/NoteNode';
 import { BottomToolbar } from '@/components/BottomToolbar';
 import DemoLauncher from '@/components/DemoLauncher';
-import { DND_MIME, MAT_MIME } from '@/components/NodeLibraryPanel';
+import { DND_MIME, MAT_MIME, MINDMAP_MIME } from '@/components/NodeLibraryPanel';
+import { instantiateConceptMindmap, MINDMAP_TEMPLATE_ID } from '@/lib/render-studio/mindmap-templates';
 import { ASSET_MIME } from '@/components/LibraryPanel';
 import { CATEGORY_META } from '@/lib/types';
 import { PresenceBar } from '@/components/collab/PresenceBar';
@@ -335,6 +336,19 @@ export function FlowCanvas() {
             // JSON hỏng (kéo thả lạ) — bỏ qua, node vẫn tồn tại trống params, không crash.
           }
         }
+        return;
+      }
+      // G2 phần (6) — "Form lập luận" kéo từ kệ: MIME riêng (không đi qua DND_MIME vì mindmap
+      // dựng từ nhiều `note`, không phải 1 NodeDefinition qua addNode). Dùng đúng vị trí thả làm
+      // tâm, khác đường bấm (luôn dựng giữa canvas).
+      const mindmapId = e.dataTransfer.getData(MINDMAP_MIME);
+      if (mindmapId === MINDMAP_TEMPLATE_ID) {
+        const store = useFlowStore.getState();
+        instantiateConceptMindmap(pos, {
+          addNote: store.addNote,
+          updateNote: store.updateNote,
+          getLastNodeId: () => useFlowStore.getState().nodes.at(-1)?.id,
+        });
         return;
       }
       // asset từ thư viện team → tải file, tạo node Import Image gắn sẵn ảnh

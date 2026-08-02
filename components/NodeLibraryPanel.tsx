@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReactFlow } from '@xyflow/react';
-import { X, GripVertical, Star, Plus, Command, Paintbrush, Wand2, Users, Sparkles, StickyNote, Palette } from 'lucide-react';
+import { X, GripVertical, Star, Plus, Command, Paintbrush, Wand2, Users, Sparkles, StickyNote, Palette, Network } from 'lucide-react';
 import { NODE_DEFINITIONS, NODE_REGISTRY } from '@/lib/nodes/registry';
 import { nodeIconFor } from '@/components/nodes/NodeIcons';
 import { useFlowStore } from '@/lib/store';
@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { sidebarZoneOf } from '@/lib/render-studio/sidebar-zones';
 import { TASK_CARDS } from '@/lib/render-studio/task-cards';
 import { useToolModeUi } from '@/lib/render-studio/tool-mode-ui';
+import { instantiateConceptMindmap, MINDMAP_TEMPLATE_ID } from '@/lib/render-studio/mindmap-templates';
 import { useT } from '@/lib/i18n';
 
 export const DND_MIME = 'application/interiorflow-node';
@@ -31,6 +32,13 @@ export const DND_MIME = 'application/interiorflow-node';
  * khi tạo node `util.materialnote`, đúng khuôn `ASSET_MIME` đã có (components/LibraryPanel.tsx).
  */
 export const MAT_MIME = 'application/interiorflow-material';
+/**
+ * G2 phần (6) (`docs/SPEC-CHANG2-UI-2MODE.md:27` "Mindmap = 1 TUỲ CHỌN"): đi KÈM `DND_MIME`
+ * KHÔNG được (mindmap dựng bằng nhiều `note`, không phải 1 `NodeDefinition` type qua `addNode`)
+ * — MIME RIÊNG, giá trị = id template cố định (`MINDMAP_TEMPLATE_ID`). `FlowCanvas.onDrop` đọc
+ * để gọi `instantiateConceptMindmap` tại đúng vị trí thả.
+ */
+export const MINDMAP_MIME = 'application/interiorflow-mindmap';
 
 interface MaterialSpecLite {
   id: string;
@@ -49,6 +57,7 @@ export function NodeLibraryPanel() {
   const setPaletteOpen = useFlowStore((s) => s.setPaletteOpen);
   const addNode = useFlowStore((s) => s.addNode);
   const addNote = useFlowStore((s) => s.addNote);
+  const updateNote = useFlowStore((s) => s.updateNote);
   const updateParam = useFlowStore((s) => s.updateParam);
   const aiTier = useFlowStore((s) => s.aiTier);
   const workspace = useFlowStore((s) => s.workspace);
@@ -199,6 +208,15 @@ export function NodeLibraryPanel() {
   );
   const onAddNote = useCallback(() => addNote(centerPos()), [addNote, centerPos]);
 
+  // G2 phần (6) — "Khung concept 5 nhánh" (mindmap tuỳ chọn, xem lib/render-studio/mindmap-templates.ts)
+  const onAddMindmap = useCallback(() => {
+    instantiateConceptMindmap(centerPos(), {
+      addNote,
+      updateNote,
+      getLastNodeId: () => useFlowStore.getState().nodes.at(-1)?.id,
+    });
+  }, [centerPos, addNote, updateNote]);
+
   return (
     <>
     <AnimatePresence>
@@ -332,6 +350,50 @@ export function NodeLibraryPanel() {
               {materials.map((m) => (
                 <MaterialSwatchChip key={m.id} material={m} onAdd={onAddMaterial} toParams={materialToParams} />
               ))}
+            </div>
+            <div className="mt-3 border-t border-[var(--border)]" />
+          </div>
+        )}
+
+        {/* G2 phần (6) — "Form lập luận": mindmap TUỲ CHỌN, kéo/bấm mới dựng, canvas trống mặc
+            định. Chỉ 1 template (Khung concept 5 nhánh) — 5 form còn lại của SPEC-STAGE-LIBRARIES
+            là việc riêng "xây kệ Thư viện chặng 2 đầy đủ", ngoài phạm vi phần (6). */}
+        {phase.id === 'render' && !query.trim() && (
+          <div>
+            <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t3)]">
+              <Network size={10} />
+              {tr('Form lập luận', 'Reasoning frames')}
+            </p>
+            <div className="space-y-1">
+              <div
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData(MINDMAP_MIME, MINDMAP_TEMPLATE_ID);
+                  e.dataTransfer.effectAllowed = 'copy';
+                }}
+                onClick={onAddMindmap}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onAddMindmap();
+                  }
+                }}
+                className="group flex cursor-pointer items-start gap-2 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-2 transition-transform hover:border-[var(--accent-ring)] hover:scale-[1.015] active:scale-[0.99]"
+                title={tr('Bấm để thêm vào giữa canvas · hoặc kéo thả để đặt đúng chỗ — không bắt buộc, xoá/sửa tự do', 'Click to add to the canvas center · or drag to place — optional, freely edit/delete')}
+              >
+                <Network size={14} className="mt-0.5 shrink-0 text-[var(--t3)]" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11.5px] font-medium tracking-[-.005em] text-[var(--t1)]">{tr('Khung concept 5 nhánh', '5-branch concept frame')}</p>
+                  <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-[var(--t4)]">
+                    {tr('1 ý tưởng chính + 5 nhánh gợi ý — dựng xong sửa/xoá tự do', '1 main idea + 5 suggested branches — freely edit/delete after')}
+                  </p>
+                </div>
+                <span className="ml-auto grid h-5 w-5 shrink-0 place-items-center rounded-md text-[var(--t5)] opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-[var(--accent)]">
+                  <Plus size={13} />
+                </span>
+              </div>
             </div>
             <div className="mt-3 border-t border-[var(--border)]" />
           </div>
