@@ -24,11 +24,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { SlideElement, ImageElement, TextElement, ShapeElement, Frame } from '@/lib/present-editor/model';
-import { adjustToCssFilter, decorateListText, effectiveListStyle } from '@/lib/present-editor/model';
+import { adjustToCssFilter, decorateListText, effectiveListStyle, elementFilterToCssFilter } from '@/lib/present-editor/model';
 import { resizeCornerKeepRatio, shouldKeepRatio } from '@/lib/present-editor/resize-corner';
-import { shapeClipPath, gradientOverlayCss } from '@/lib/present-editor/shape-geometry';
+import { shapeClipPath, gradientOverlayCss, imageMaskClipPath, fillOverlayCss } from '@/lib/present-editor/shape-geometry';
 import { applyTransform, gradientCss, isCurved, shadowCss } from '@/lib/present-editor/text-fx';
 import { framesOverlap, planFallback, toneForColor } from '@/lib/adaptive-contrast';
+import { autoShadowCss } from '@/lib/present-editor/text-contrast';
 
 const CANVAS_FONT: Record<string, string> = {
   Editorial: '"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
@@ -70,7 +71,16 @@ interface Props {
   overImage?: boolean;
   /** chuột phải trên element → mở menu ngữ cảnh. */
   onContextMenu?: (e: React.MouseEvent) => void;
+  /** P5/2.2.91 — báo NGOÀI (EditorCanvas) khi thao tác kéo (di chuyển HOẶC tay nắm resize/xoay)
+   * đã vượt ngưỡng ~4px, để toolbar-nổi-theo-selection (TextToolbar…) tự thu lại — KHÔNG gọi ở
+   * pointerdown (bấm để CHỌN sẽ làm thanh chớp tắt, xem `useFloatingToolbarVisibility.ts`).
+   * Gọi ĐÚNG 1 lần `true` khi vừa vượt ngưỡng, 1 lần `false` ở pointerup nếu đã từng vượt. */
+  onDragActiveChange?: (active: boolean) => void;
 }
+
+/** Ngưỡng PIXEL con trỏ (không phải % sân khấu) trước khi coi 1 thao tác pointerdown→move là
+ * "đang kéo" thật sự — khớp `docs/IF-FEATURE-TREE.md` mã 2.2.91 chi tiết ①. */
+const DRAG_ACTIVE_THRESHOLD_PX = 4;
 
 const SNAP = 1.2; // ngưỡng snap theo %
 const TARGETS = [0, 25, 50, 75, 100];
@@ -115,7 +125,14 @@ export default function Element({
   onEditImage,
   overImage,
   onContextMenu,
+  onDragActiveChange,
 }: Props) {
+  // Giữ bản mới nhất qua ref — dragState sống suốt 1 lượt kéo (không phụ thuộc re-render), gọi
+  // callback qua ref để không phải liệt kê onDragActiveChange vào dep của các hàm pointer* bên
+  // dưới (chúng đọc dragState.current trực tiếp, không phải closure theo props).
+  const onDragActiveChangeRef = useRef(onDragActiveChange);
+  onDragActiveChangeRef.current = onDragActiveChange;
+
   const dragState = useRef<{
     handle: Handle;
     startX: number;
@@ -124,6 +141,9 @@ export default function Element({
     group: boolean; // dời cả nhóm
     alt: boolean; // đã nhân bản (Alt)
     moved: boolean; // đã vượt ngưỡng để coi là "kéo"
+    /** P5/2.2.91 — đã báo `onDragActiveChange(true)` cho lượt kéo NÀY chưa (gọi đúng 1 lần khi
+     * vượt ngưỡng `DRAG_ACTIVE_THRESHOLD_PX`, không gọi lặp lại mỗi pointermove). */
+    activeNotified: boolean;
     /** frame MỚI NHẤT tính trong onPointerMove (live) — pointerUp commit từ đây, KHÔNG
      * đọc `el.frame` (prop): prop chỉ chắc chắn phản ánh live-update cuối cùng SAU khi
      * React re-render xong; nếu pointerup tới trước khi re-render kịp chạy (kéo/thả rất
@@ -162,6 +182,7 @@ export default function Element({
       group: handle === 'move' && !!multi && !!onFrameMany && !e.altKey,
       alt,
       moved: false,
+      activeNotified: false,
       lastFrame: null,
     };
   }
@@ -173,6 +194,19 @@ export default function Element({
     const dxPct = ((e.clientX - st.startX) / rect.width) * 100;
     const dyPct = ((e.clientY - st.startY) / rect.height) * 100;
     if (Math.abs(dxPct) > 0.1 || Math.abs(dyPct) > 0.1) st.moved = true;
+
+    // P5/2.2.91 — báo "đang kéo" (di chuyển HOẶC bất kỳ tay nắm resize/xoay nào — chi tiết ②) ra
+    // ngoài đúng 1 lần khi vượt ngưỡng PIXEL thật (không phải %, ngưỡng % co giãn theo cỡ sân
+    // khấu zoom mà cảm giác tay bấm là pixel màn hình thật). Đo TRƯỚC khi tính toán snap/resize
+    // bên dưới — không đổi hành vi các nhánh đó.
+    if (!st.activeNotified) {
+      const dxPx = Math.abs(e.clientX - st.startX);
+      const dyPx = Math.abs(e.clientY - st.startY);
+      if (dxPx >= DRAG_ACTIVE_THRESHOLD_PX || dyPx >= DRAG_ACTIVE_THRESHOLD_PX) {
+        st.activeNotified = true;
+        onDragActiveChangeRef.current?.(true);
+      }
+    }
 
     // Dời cả nhóm (nhiều phần tử) — không snap để giữ tương quan.
     if (st.group) {
@@ -271,6 +305,9 @@ export default function Element({
     // tác vừa làm. Không có lastFrame (chưa từng move, vd chỉ click) → fallback el.frame.
     if (st.group) onFrameMany!(0, 0, false);
     else onFrame(st.lastFrame ?? { ...el.frame }, false);
+    // P5/2.2.91 — "vừa thả": chỉ báo false nếu đã từng báo true cho lượt kéo này (click đơn
+    // thuần không vượt ngưỡng thì chưa từng gọi true, không cần gọi false vô ích).
+    if (st.activeNotified) onDragActiveChangeRef.current?.(false);
     dragState.current = null;
     onGuides(null);
   }
@@ -283,6 +320,11 @@ export default function Element({
     height: `${el.frame.h}%`,
     transform: `rotate(${el.frame.rotation}deg)`,
     opacity: el.opacity ?? 1,
+    // P4/E4 — filter CHUNG mọi loại phần tử, đặt ở NGOÀI CÙNG (khớp `render.ts#drawTextEl/
+    // drawShapeEl/drawImageEl` áp SAU CÙNG, xem đó) — với ẢNH, filter riêng `el.adjust` nằm ở
+    // <img> BÊN TRONG (dòng ~441) nên 2 filter GHÉP CHỒNG đúng thứ tự CSS (trong trước, ngoài
+    // sau), không phải đè lẫn nhau.
+    filter: elementFilterToCssFilter(el.filter),
     cursor: el.locked ? 'default' : 'move',
     touchAction: 'none',
   };
@@ -424,20 +466,45 @@ function ImageInner({ el }: { el: ImageElement }) {
   const bgPos = `${crop.w >= 1 ? 50 : (crop.x / (1 - crop.w)) * 100}% ${
     crop.h >= 1 ? 50 : (crop.y / (1 - crop.h)) * 100
   }%`;
+  // P1/E2 — mask theo hình (tròn/tam giác/đa giác/mũi tên). Có mask → clip-path chiếm quyền,
+  // bo góc chữ nhật (radius) bị bỏ qua (2 cơ chế cắt không cộng dồn, xem ImageElement.mask).
+  const maskClip = imageMaskClipPath(el.mask);
+  const overlay = el.fillOverlay;
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        backgroundImage: `url("${el.src}")`,
-        backgroundSize: crop.w < 1 || crop.h < 1 ? bgSize : 'cover',
-        backgroundPosition: bgPos,
-        backgroundRepeat: 'no-repeat',
-        filter: adjustToCssFilter(el.adjust),
-        borderRadius: `${((el.radius ?? 0) / 100) * 50}%`,
-        overflow: 'hidden',
-      }}
-    />
+    <>
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          backgroundImage: `url("${el.src}")`,
+          backgroundSize: crop.w < 1 || crop.h < 1 ? bgSize : 'cover',
+          backgroundPosition: bgPos,
+          backgroundRepeat: 'no-repeat',
+          filter: adjustToCssFilter(el.adjust),
+          borderRadius: maskClip ? 0 : `${((el.radius ?? 0) / 100) * 50}%`,
+          clipPath: maskClip,
+          WebkitClipPath: maskClip,
+          overflow: 'hidden',
+        }}
+      />
+      {/* P3/E3 — lớp phủ FILL: cùng vùng clip (mask/bo góc) với ảnh ở trên, đè lên trên cùng. */}
+      {overlay && (
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: overlay.kind === 'gradient' ? fillOverlayCss(overlay) : overlay.color,
+            opacity: overlay.opacity,
+            mixBlendMode: overlay.blend && overlay.blend !== 'normal' ? overlay.blend : undefined,
+            borderRadius: maskClip ? 0 : `${((el.radius ?? 0) / 100) * 50}%`,
+            clipPath: maskClip,
+            WebkitClipPath: maskClip,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+    </>
   );
 }
 
@@ -468,7 +535,28 @@ function ShapeInner({ el }: { el: ShapeElement }) {
       ? { maskImage: maskCss, WebkitMaskImage: maskCss, maskMode: 'alpha' as const }
       : {}),
   };
-  return <div style={fillLayer} />;
+  const overlay = el.fillOverlay;
+  if (!overlay) return <div style={fillLayer} />;
+  return (
+    <>
+      <div style={fillLayer} />
+      {/* P3/E3 — lớp phủ FILL: cùng vùng clip (clip-path đa giác / bo góc) với fill gốc ở trên. */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: overlay.kind === 'gradient' ? fillOverlayCss(overlay) : overlay.color,
+          opacity: overlay.opacity,
+          mixBlendMode: overlay.blend && overlay.blend !== 'normal' ? overlay.blend : undefined,
+          borderRadius: clip ? 0 : el.shape === 'ellipse' ? '50%' : `${((el.radius ?? 0) / 100) * 50}%`,
+          clipPath: clip,
+          WebkitClipPath: clip,
+          pointerEvents: 'none',
+        }}
+      />
+    </>
+  );
 }
 
 function TextInner({ el, fonts, overImage }: { el: TextElement; fonts: string; overImage?: boolean }) {
@@ -482,19 +570,31 @@ function TextInner({ el, fonts, overImage }: { el: TextElement; fonts: string; o
   if (isCurved(fx)) return <CurvedText el={el} fonts={fonts} text={shown} />;
 
   /* Tương phản thích ứng — CHỈ khi chữ nằm CHỒNG lên ảnh.
-     Khác 3 chỗ kia ở một điểm quan trọng: ở Present, MÀU CHỮ LÀ QUYẾT ĐỊNH THIẾT KẾ của
-     người dùng (họ tự chọn trong Inspector) — tuyệt đối KHÔNG tự đổi màu chữ của họ.
-     Vì vậy chỉ suy tone TỪ chính màu họ đã chọn rồi đắp thêm sương + bóng đổ ngược tone
-     để chữ tách khỏi ảnh. Cũng vì thế dùng tầng CSS thuần, không đo pixel: ảnh dưới có thể
-     bị crop/xoay/lọc màu/chồng nhiều lớp, đo ra số không đáng tin bằng. */
-  const plan = overImage ? planFallback(toneForColor(el.color), { shape: 'halo', baseAlpha: 0.3 }) : null;
+     P6a (04/08, TICKET-PRESENT-UI-GON, Hoà chốt) — CARVE-OUT có điều kiện của luật cũ "không tự
+     đổi màu chữ": màu HIỆN TẠI (`el.color`) đã được chốt SẴN ở nơi khác (EditorCanvas.tsx — đo
+     nền THẬT qua text-contrast.ts#resolveAutoTextColor, ghi thẳng vào element MỘT LẦN khi
+     `colorAuto === true` VÀ màu đang có KHÔNG đạt AA; giữ nguyên nếu người dùng đã tự chỉnh tay
+     [colorAuto → false vĩnh viễn] hoặc màu hiện có đã đủ AA rồi). TextInner ở đây KHÔNG tự đo/tự
+     đổi màu gì — chỉ VẼ đúng những gì đã chốt, y hệt trước 04/08. `el.autoShadow` (bật kèm lúc
+     chốt màu, khi ngay cả ứng viên tốt nhất vẫn không đạt AA) quyết định có thêm bóng đổ mảnh.
+
+     Vệt SƯƠNG (scrim) — trước 04/08 LUÔN bật ngầm khi `overImage`; nay mặc định TẮT, chỉ bật khi
+     `el.scrimEnabled === true` (tuỳ chọn tay, xem Inspector.tsx) — giữ nguyên năng lực+công thức
+     cũ (suy tone TỪ màu chữ hiện có, đắp sương CSS thuần không đo pixel — không đổi khi bật). */
+  const plan =
+    overImage && el.scrimEnabled === true
+      ? planFallback(toneForColor(el.color), { shape: 'halo', baseAlpha: 0.3 })
+      : null;
 
   /* Hiệu ứng chữ (#2). Mọi khoảng cách của TextFx tính theo % chiều cao sân khấu, mà `cqh`
      CHÍNH LÀ đơn vị đó (khung sân khấu đặt containerType:'size') ⇒ dùng thẳng, không quy đổi.
      Nhờ vậy cùng một đoạn style chạy đúng ở editor, player VÀ thumbnail 150px. */
   const fxShadow = shadowCss(fx?.shadows, { unit: 'cqh' });
-  // bóng của hiệu ứng nằm TRƯỚC (trên) bóng tương phản tự động khi chữ đè ảnh
-  const textShadow = [fxShadow, plan?.textShadow].filter(Boolean).join(', ') || undefined;
+  // thứ tự: hiệu ứng chữ TRƯỚC (trên cùng) → sương tương phản (nếu bật tay) → bóng AA mảnh P6a
+  const textShadow =
+    [fxShadow, plan?.textShadow, el.autoShadow ? autoShadowCss(el.color) : undefined]
+      .filter(Boolean)
+      .join(', ') || undefined;
   const hasStroke = Boolean(fx?.strokeWidth && fx.strokeWidth > 0);
   const gradFill = fx?.gradient;
 

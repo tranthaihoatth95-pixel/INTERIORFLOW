@@ -25,11 +25,13 @@ import {
   adjustToCssFilter,
   decorateListText,
   effectiveListStyle,
+  elementFilterToCssFilter,
 } from './model';
-import { polygonPoints01, isPolygonShape } from './shape-geometry';
+import { polygonPoints01, isPolygonShape, imageMaskCanvasPath, applyFillOverlayStyle } from './shape-geometry';
 import { applyTransform, gradientLine, isCurved } from './text-fx';
 import { loadImage } from '@/lib/imaging';
 import { STAGE_PRESETS, type StageSize } from './stage-presets';
+import { autoShadowCanvasLayers } from './text-contrast';
 
 /** Bộ quy đổi %→px CHO 1 LẦN vẽ — truyền qua tham số (KHÔNG dùng biến module-level dùng
  * chung) để nhiều renderEditorSlide chạy song song (Promise.all ở LayoutShelf) không giẫm
@@ -43,6 +45,18 @@ interface Scale {
 function makeScale(stage: StageSize): Scale {
   const { w: W, h: H } = stage;
   return { W, H, px: (pctW) => (pctW / 100) * W, py: (pctH) => (pctH / 100) * H };
+}
+
+/**
+ * P4/E4 — ghép NHIỀU chuỗi CSS filter thành 1 (Canvas `ctx.filter` chỉ nhận 1 chuỗi, các hàm
+ * filter cách nhau bằng dấu cách — cú pháp giống hệt CSS `filter`). Bỏ qua phần tử `'none'`
+ * (adjustToCssFilter/elementFilterToCssFilter trả 'none' khi không có gì áp) — tránh chuỗi
+ * `"none none"` không hợp lệ. Rỗng hết → `'none'` (khớp mặc định của canvas, tương đương KHÔNG
+ * gán `ctx.filter` — HÀNH VI CŨ với phần tử chưa từng chỉnh filter nào).
+ */
+function composeFilters(...parts: string[]): string {
+  const kept = parts.filter((p) => p && p !== 'none');
+  return kept.length ? kept.join(' ') : 'none';
 }
 
 /** Vẽ ảnh có crop (theo tỉ lệ 0..1 của ảnh gốc) + filter, phủ khung dạng cover. */
@@ -75,13 +89,27 @@ async function drawImageEl(
 
   ctx.save();
   ctx.globalAlpha = el.opacity ?? 1;
-  ctx.filter = adjustToCssFilter(el.adjust);
+  // P4/E4 — ảnh có 2 nguồn filter độc lập: adjust (sáng/tương phản/bão hoà/nhiệt độ, riêng
+  // ảnh, đã có từ trước) + filter (blur/brightness/contrast/saturate, chung mọi loại phần tử,
+  // mới). Ghép cả hai vào 1 chuỗi ctx.filter (composeFilters bỏ qua 'none', tránh chuỗi rác).
+  ctx.filter = composeFilters(adjustToCssFilter(el.adjust), elementFilterToCssFilter(el.filter));
   applyRotation(ctx, el.frame, sc);
-  // clip bo góc
-  const r = ((el.radius ?? 0) / 100) * Math.min(fw, fh);
-  roundRectPath(ctx, fx, fy, fw, fh, r);
+  // P1/E2 — mask theo hình chiếm quyền clip nếu có (khớp Element.tsx#ImageInner); không thì
+  // giữ đường cũ: clip bo góc chữ nhật (radius).
+  if (el.mask) {
+    imageMaskCanvasPath(ctx, el.mask, fx, fy, fw, fh);
+  } else {
+    const r = ((el.radius ?? 0) / 100) * Math.min(fw, fh);
+    roundRectPath(ctx, fx, fy, fw, fh, r);
+  }
   ctx.clip();
   ctx.drawImage(img, drawSx, drawSy, fw / scale, fh / scale, fx, fy, fw, fh);
+  // P3/E3 — lớp phủ FILL trên ảnh: clip (mask/bo góc) ở trên vẫn CÒN HIỆU LỰC tới `ctx.restore()`
+  // — vẽ overlay TRƯỚC restore để "ăn theo" đúng hình clip đó, không cần dựng lại path clip lần 2.
+  if (el.fillOverlay) {
+    applyFillOverlayStyle(ctx, el.fillOverlay, el.opacity ?? 1, fx, fy, fw, fh);
+    ctx.fillRect(fx, fy, fw, fh);
+  }
   void dw;
   void dh;
   ctx.restore();
@@ -143,6 +171,11 @@ function makeAlphaGradient(
   return grad;
 }
 
+// P3/E3 — `applyFillOverlayStyle`/`makeOverlayGradient` chuyển sang `shape-geometry.ts` (04/08,
+// gộp nợ kỹ thuật test): hàm chỉ cần `CanvasRenderingContext2D` truyền vào, không đụng
+// `@/lib/imaging`/`document` như phần còn lại của file này — đặt cạnh `fillOverlayCss` (đã ở
+// đó) để test bằng ctx GIẢ qua sucrase-node mà không phải kéo theo import nặng của render.ts.
+
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const h = hex.replace('#', '');
   if (h.length < 6) return { r: 138, g: 111, b: 77 };
@@ -150,13 +183,41 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
 }
 
+/**
+ * P3/E3 — dựng LẠI đúng path fill của shape (ellipse/đa giác/rect — KHÔNG gồm `line`, `line`
+ * không có path khép kín). Tách ra để dùng CHUNG cho fill gốc VÀ lớp phủ overlay (vẽ path 1
+ * lần trong 1 hàm, tránh 2 chỗ hình học dễ lệch nhau) — path/fill/stroke gốc BÊN DƯỚI giữ
+ * NGUYÊN thứ tự/logic cũ, chỉ đổi chỗ build path thành gọi hàm này.
+ */
+function shapeFillPath(ctx: CanvasRenderingContext2D, el: ShapeElement, fx: number, fy: number, fw: number, fh: number): void {
+  if (el.shape === 'ellipse') {
+    ctx.beginPath();
+    ctx.ellipse(fx + fw / 2, fy + fh / 2, fw / 2, fh / 2, 0, 0, Math.PI * 2);
+  } else if (isPolygonShape(el.shape)) {
+    const pts = polygonPoints01(el.shape, el.sides);
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      const X = fx + p.x * fw;
+      const Y = fy + p.y * fh;
+      if (i === 0) ctx.moveTo(X, Y);
+      else ctx.lineTo(X, Y);
+    });
+    ctx.closePath();
+  } else {
+    const r = ((el.radius ?? 0) / 100) * Math.min(fw, fh);
+    roundRectPath(ctx, fx, fy, fw, fh, r);
+  }
+}
+
 function drawShapeEl(ctx: CanvasRenderingContext2D, el: ShapeElement, sc: Scale): void {
   const fx = sc.px(el.frame.x);
   const fy = sc.py(el.frame.y);
   const fw = sc.px(el.frame.w);
   const fh = sc.py(el.frame.h);
+  const baseAlpha = el.opacity ?? 1;
   ctx.save();
-  ctx.globalAlpha = el.opacity ?? 1;
+  ctx.globalAlpha = baseAlpha;
+  ctx.filter = elementFilterToCssFilter(el.filter); // P4/E4 — blur/brightness/contrast/saturate
   applyRotation(ctx, el.frame, sc);
   const strokePx = (el.strokeWidth / 100) * sc.H; // strokeWidth tính @ chiều cao sân khấu
   if (el.shape === 'line') {
@@ -167,9 +228,9 @@ function drawShapeEl(ctx: CanvasRenderingContext2D, el: ShapeElement, sc: Scale)
     ctx.moveTo(fx, fy + fh / 2);
     ctx.lineTo(fx + fw, fy + fh / 2);
     ctx.stroke();
+    // `line` không có path khép kín → lớp phủ FILL (P3/E3) không áp nghĩa cho line, bỏ qua.
   } else if (el.shape === 'ellipse') {
-    ctx.beginPath();
-    ctx.ellipse(fx + fw / 2, fy + fh / 2, fw / 2, fh / 2, 0, 0, Math.PI * 2);
+    shapeFillPath(ctx, el, fx, fy, fw, fh);
     if (el.fill && el.fill !== 'transparent') {
       ctx.fillStyle = fillStyleFor(ctx, el, fx, fy, fw, fh);
       ctx.fill();
@@ -181,15 +242,7 @@ function drawShapeEl(ctx: CanvasRenderingContext2D, el: ShapeElement, sc: Scale)
     }
   } else if (isPolygonShape(el.shape)) {
     // tam giác / đa giác N cạnh / mũi tên — từ đỉnh tỉ lệ 0..1 (dùng chung với canvas UI).
-    const pts = polygonPoints01(el.shape, el.sides);
-    ctx.beginPath();
-    pts.forEach((p, i) => {
-      const X = fx + p.x * fw;
-      const Y = fy + p.y * fh;
-      if (i === 0) ctx.moveTo(X, Y);
-      else ctx.lineTo(X, Y);
-    });
-    ctx.closePath();
+    shapeFillPath(ctx, el, fx, fy, fw, fh);
     if (el.fill && el.fill !== 'transparent') {
       ctx.fillStyle = fillStyleFor(ctx, el, fx, fy, fw, fh);
       ctx.fill();
@@ -201,8 +254,7 @@ function drawShapeEl(ctx: CanvasRenderingContext2D, el: ShapeElement, sc: Scale)
       ctx.stroke();
     }
   } else {
-    const r = ((el.radius ?? 0) / 100) * Math.min(fw, fh);
-    roundRectPath(ctx, fx, fy, fw, fh, r);
+    shapeFillPath(ctx, el, fx, fy, fw, fh);
     if (el.fill && el.fill !== 'transparent') {
       ctx.fillStyle = fillStyleFor(ctx, el, fx, fy, fw, fh);
       ctx.fill();
@@ -212,6 +264,13 @@ function drawShapeEl(ctx: CanvasRenderingContext2D, el: ShapeElement, sc: Scale)
       ctx.lineWidth = strokePx;
       ctx.stroke();
     }
+  }
+  // P3/E3 — lớp phủ FILL: dựng LẠI đúng path (fill()/stroke() ở trên đã "tiêu thụ" path cũ,
+  // canvas path không tái dùng được) rồi fill với màu/gradient/alpha/blend riêng của overlay.
+  if (el.shape !== 'line' && el.fillOverlay) {
+    shapeFillPath(ctx, el, fx, fy, fw, fh);
+    applyFillOverlayStyle(ctx, el.fillOverlay, baseAlpha, fx, fy, fw, fh);
+    ctx.fill();
   }
   ctx.restore();
 }
@@ -224,6 +283,7 @@ function drawTextEl(ctx: CanvasRenderingContext2D, el: TextElement, fontDeck: st
   const sizePx = (el.fontSize / 100) * sc.H;
   ctx.save();
   ctx.globalAlpha = el.opacity ?? 1;
+  ctx.filter = elementFilterToCssFilter(el.filter); // P4/E4 — blur/brightness/contrast/saturate
   applyRotation(ctx, el.frame, sc);
   const weight = el.bold ? '700' : '400';
   const style = el.italic ? 'italic ' : '';
@@ -341,18 +401,28 @@ function buildTextPaint(
     fill = g;
   }
 
+  const shadows = (fx?.shadows ?? []).map((s) => ({
+    x: toPx(s.x),
+    y: toPx(s.y),
+    blur: Math.max(0, toPx(s.blur)),
+    color: s.color,
+  }));
+  // P6a — bóng mảnh tự động khi màu AA-fix vẫn KHÔNG đủ contrast (el.autoShadow). Nối vào CUỐI
+  // mảng (không chèn đầu) vì paintWithFx vẽ mảng theo thứ tự NGƯỢC (length-1 → 0, index 0 vẽ
+  // SAU CÙNG = nổi nhất) — khớp thứ tự CSS textShadow ở Element.tsx: [fxShadow, plan?.textShadow,
+  // autoShadowCss(...)] (autoShadow luôn ở CUỐI danh sách CSS = nằm DƯỚI cùng).
+  if (el.autoShadow) {
+    const sizePx = (el.fontSize / 100) * sc.H;
+    shadows.push(...autoShadowCanvasLayers(el.color, sizePx));
+  }
+
   return {
     fill,
     strokeColor: fx?.strokeColor ?? el.color,
     strokeWidth: fx?.strokeWidth ? toPx(fx.strokeWidth) : 0,
     outlineOnly: Boolean(fx?.outlineOnly),
     wordSpacing: fx?.wordSpacing ? toPx(fx.wordSpacing) : 0,
-    shadows: (fx?.shadows ?? []).map((s) => ({
-      x: toPx(s.x),
-      y: toPx(s.y),
-      blur: Math.max(0, toPx(s.blur)),
-      color: s.color,
-    })),
+    shadows,
     blend:
       fx?.blend && fx.blend !== 'normal' ? (fx.blend as GlobalCompositeOperation) : undefined,
   };

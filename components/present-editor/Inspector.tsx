@@ -20,8 +20,11 @@ import type {
   EmbeddedFont,
   TextFx,
   TextShadowLayer,
+  ImageMaskShape,
+  FillOverlay,
+  ElementFilter,
 } from '@/lib/present-editor/model';
-import { effectiveListStyle } from '@/lib/present-editor/model';
+import { effectiveListStyle, DEFAULT_ELEMENT_FILTER } from '@/lib/present-editor/model';
 import type { LinkedAsset } from '@/lib/present-editor/model';
 import { useState, useEffect, useRef } from 'react';
 import {
@@ -73,6 +76,8 @@ import {
   Unlink,
   RefreshCw,
   AlertTriangle,
+  Group,
+  Ungroup,
 } from 'lucide-react';
 import type { AlignMode as GroupAlignMode, DistributeAxis } from '@/lib/present-editor/align';
 
@@ -99,6 +104,12 @@ interface Props {
   onDistributeSelection?: (axis: DistributeAxis) => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  /** P2/E1 (nhóm) — khoá/mở khoá CẢ CỤM đang chọn (cascade, khác `onUpdateSelected` chỉ
+   * đụng 1 phần tử "chính"). Dùng cho nút Khoá trong Inspector. */
+  onToggleLockSelected: () => void;
+  /** P2/E1 — gộp ≥2 phần tử đang chọn thành 1 cụm mới / rã cụm đang chọn. */
+  onGroup: () => void;
+  onUngroup: () => void;
   /** mở chế độ chỉnh ảnh (Canva-style) cho ảnh đang chọn. */
   onOpenImageEditor?: (id: string) => void;
   /** mở trình chỉnh ảnh nâng cao (Photoshop-level, /photo-editor) cho đúng ảnh `id`. */
@@ -129,6 +140,9 @@ export default function Inspector({
   onDistributeSelection,
   onDuplicate,
   onDelete,
+  onToggleLockSelected,
+  onGroup,
+  onUngroup,
   onOpenImageEditor,
   onOpenAdvancedEditor,
   linkedAssets,
@@ -188,6 +202,33 @@ export default function Inspector({
   // chỉ áp cho 1 phần tử). Phân bố đều cần ≥3 phần tử — nút vẫn hiện nhưng disabled khi <3
   // để người dùng biết tính năng có tồn tại (không ẩn hẳn).
   const multiCount = selectedIds.length;
+
+  // P2/E1 (nhóm) — "Nhóm" cần ≥2 phần tử đang chọn; "Bỏ nhóm" hiện khi CÓ ÍT NHẤT 1 phần tử
+  // đang chọn thuộc 1 cụm (kể cả multiCount === 1 — chọn 1 dòng trong ô Lớp không tự mở rộng
+  // cả cụm, xem PresentEditor.tsx#onSelectGroupAware). Tách riêng khỏi multiBlock (không phụ
+  // thuộc onAlignSelection) vì Group/Ungroup là thao tác riêng, có ý nghĩa ngay cả khi <2 phần
+  // tử đang chọn (trường hợp Bỏ nhóm 1 dòng).
+  const selectedGroupCount = new Set(
+    slide.elements.filter((e) => selectedIds.includes(e.id) && e.groupId).map((e) => e.groupId),
+  ).size;
+  const groupBlock =
+    multiCount > 1 || selectedGroupCount > 0 ? (
+      <Panel title="Nhóm">
+        <Row>
+          {multiCount > 1 && (
+            <ActionBtn onClick={onGroup} title="Gộp các phần tử đang chọn thành 1 cụm">
+              <Group size={14} /> Nhóm
+            </ActionBtn>
+          )}
+          {selectedGroupCount > 0 && (
+            <ActionBtn onClick={onUngroup} title="Rã cụm của lựa chọn hiện tại">
+              <Ungroup size={14} /> Bỏ nhóm
+            </ActionBtn>
+          )}
+        </Row>
+      </Panel>
+    ) : null;
+
   const multiBlock =
     multiCount > 1 && onAlignSelection ? (
       <Panel title={`Căn & phân bố (${multiCount} đối tượng)`}>
@@ -238,6 +279,7 @@ export default function Inspector({
     return (
       <>
       {layerBlock}
+      {groupBlock}
       {multiBlock}
       <Panel title="Nền slide">
         <Field label="Màu nền">
@@ -277,6 +319,7 @@ export default function Inspector({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {layerBlock}
+      {groupBlock}
       {multiBlock}
       {selected.kind === 'text' && (
         <TextInspector
@@ -291,6 +334,7 @@ export default function Inspector({
       {selected.kind === 'image' && (
         <ImageInspector
           el={selected}
+          palette={palette}
           onUpdate={onUpdateSelected as (m: (el: ImageElement) => void, live?: boolean) => void}
           onOpenEditor={onOpenImageEditor ? () => onOpenImageEditor(selected.id) : undefined}
           onOpenAdvanced={onOpenAdvancedEditor}
@@ -321,6 +365,16 @@ export default function Inspector({
             style={{ width: '100%' }}
           />
         </Field>
+        {/* P4/E4 — filter chung mọi loại phần tử (text/shape/image), riêng với Sáng/Tương
+            phản/Bão hoà/Nhiệt độ chỉ có ở ảnh (AdjustControls bên dưới). Additive: el.filter
+            có thể chưa tồn tại (phần tử cũ chưa từng chỉnh) → mặc định DEFAULT_ELEMENT_FILTER
+            khi hiển thị, chỉ ghi el.filter khi người dùng thật sự kéo. */}
+        <Sub>Hiệu ứng lọc</Sub>
+        <FilterControls
+          filter={selected.filter}
+          onChange={(f, live) => onUpdateSelected((el) => (el.filter = f), live)}
+        />
+
         {/* z-order: lên trước cùng / tiến 1 / lùi 1 / ra sau cùng */}
         <Sub>Thứ tự lớp</Sub>
         <Row>
@@ -369,8 +423,8 @@ export default function Inspector({
             <Copy size={14} /> Nhân bản
           </ActionBtn>
           <ActionBtn
-            onClick={() => onUpdateSelected((el) => (el.locked = !el.locked))}
-            title="Khoá/mở khoá"
+            onClick={onToggleLockSelected}
+            title="Khoá/mở khoá (cả cụm nếu đang chọn nhiều)"
           >
             {selected.locked ? <Unlock size={14} /> : <Lock size={14} />}
             {selected.locked ? 'Mở khoá' : 'Khoá'}
@@ -628,7 +682,35 @@ function TextInspector({
         />
       </Field>
       <Field label="Màu chữ">
-        <ColorRow value={el.color} palette={palette} onChange={(c) => onUpdate((t) => (t.color = c))} />
+        <ColorRow
+          value={el.color}
+          palette={palette}
+          onChange={(c) =>
+            // P6a (04/08) — tự chỉnh tay → khoá colorAuto vĩnh viễn (xem TextToolbar.tsx cùng
+            // pattern, text-contrast.ts).
+            onUpdate((t) => {
+              t.color = c;
+              t.colorAuto = false;
+            })
+          }
+        />
+      </Field>
+      <Field label="Sương sau chữ (khi đè ảnh)">
+        <button
+          type="button"
+          onClick={() => onUpdate((t) => (t.scrimEnabled = !t.scrimEnabled))}
+          style={{
+            padding: '6px 10px',
+            borderRadius: 6,
+            border: el.scrimEnabled ? '1px solid var(--accent)' : '1px solid var(--border)',
+            background: el.scrimEnabled ? 'var(--accent-soft)' : 'var(--field)',
+            color: el.scrimEnabled ? 'var(--accent)' : 'var(--t2)',
+            cursor: 'pointer',
+            fontSize: 12,
+          }}
+        >
+          {el.scrimEnabled ? 'Đang bật' : 'Đang tắt'}
+        </button>
       </Field>
       </Panel>
       <TextFxPanel el={el} palette={palette} onUpdate={onUpdate} />
@@ -960,6 +1042,7 @@ function TextFxPanel({
 /* ------------------------------- IMAGE ------------------------------- */
 function ImageInspector({
   el,
+  palette,
   onUpdate,
   onOpenEditor,
   onOpenAdvanced,
@@ -969,6 +1052,7 @@ function ImageInspector({
   onDetachAsset,
 }: {
   el: ImageElement;
+  palette: string[];
   onUpdate: (m: (el: ImageElement) => void, live?: boolean) => void;
   onOpenEditor?: () => void;
   onOpenAdvanced?: (id: string) => void;
@@ -1118,11 +1202,64 @@ function ImageInspector({
           min={0}
           max={50}
           value={el.radius ?? 0}
+          disabled={!!el.mask}
           onChange={(e) => onUpdate((im) => (im.radius = +e.target.value), true)}
           onPointerUp={(e) => onUpdate((im) => (im.radius = +(e.target as HTMLInputElement).value))}
           style={{ width: '100%' }}
         />
       </Field>
+      {/* P1/E2 — mask theo hình. Có mask → chiếm quyền cắt, "Bo góc" ở trên bị vô hiệu (khoá
+          input, KHÔNG ẩn — người dùng vẫn thấy field đó tồn tại, chỉ tạm không tác dụng). */}
+      <Field label="Cắt ảnh theo hình">
+        <select
+          value={el.mask?.shape ?? ''}
+          onChange={(e) => {
+            const shape = e.target.value as ImageMaskShape | '';
+            onUpdate((im) =>
+              (im.mask = shape
+                ? { shape, sides: shape === 'polygon' ? (im.mask?.sides ?? 5) : undefined }
+                : undefined),
+            );
+          }}
+          style={{
+            width: '100%',
+            fontSize: 11.5,
+            padding: '6px 8px',
+            borderRadius: 7,
+            border: '1px solid var(--border)',
+            background: 'var(--field)',
+            color: 'var(--t2)',
+          }}
+        >
+          <option value="">Không (chữ nhật/bo góc)</option>
+          <option value="ellipse">Tròn</option>
+          <option value="triangle">Tam giác</option>
+          <option value="polygon">Đa giác</option>
+          <option value="arrow">Mũi tên</option>
+        </select>
+      </Field>
+      {el.mask?.shape === 'polygon' && (
+        <Field label={`Số cạnh ${el.mask.sides ?? 5}`}>
+          <input
+            type="range"
+            min={3}
+            max={12}
+            step={1}
+            value={el.mask.sides ?? 5}
+            onChange={(e) =>
+              onUpdate((im) => {
+                if (im.mask) im.mask.sides = +e.target.value;
+              }, true)
+            }
+            onPointerUp={(e) =>
+              onUpdate((im) => {
+                if (im.mask) im.mask.sides = +(e.target as HTMLInputElement).value;
+              })
+            }
+            style={{ width: '100%' }}
+          />
+        </Field>
+      )}
       <Sub>Cắt ảnh (crop)</Sub>
       <CropSlider label="Trái" value={crop.x} max={0.9} onChange={(v, live) => onUpdate((im) => (im.crop = clampCrop({ ...crop, x: v })), live)} />
       <CropSlider label="Trên" value={crop.y} max={0.9} onChange={(v, live) => onUpdate((im) => (im.crop = clampCrop({ ...crop, y: v })), live)} />
@@ -1135,6 +1272,7 @@ function ImageInspector({
       >
         <RotateCcw size={12} /> Bỏ crop
       </button>
+      <FillOverlayControls el={el} onUpdate={onUpdate} palette={palette} />
     </Panel>
   );
 }
@@ -1241,7 +1379,182 @@ function ShapeInspector({
         </Field>
       )}
       {el.shape !== 'line' && <GradientControls el={el} onUpdate={onUpdate} palette={palette} />}
+      {el.shape !== 'line' && <FillOverlayControls el={el} onUpdate={onUpdate} palette={palette} />}
     </Panel>
+  );
+}
+
+/**
+ * P3/E3 — lớp phủ FILL (`{kind, color, colorTo?, direction?, opacity, blend?}`) dùng CHUNG cho
+ * ẢNH + HÌNH (generic theo `T`) — khác `GradientControls` bên dưới (gradient MỜ ĐEN, mask alpha,
+ * chỉ shape) và khác gradient MÀU chữ (`TextFx.gradient`, Inspector "Hiệu ứng chữ"): đây là 1
+ * lớp MÀU/GRADIENT THẬT tô ĐÈ lên fill/ảnh gốc, có blend mode riêng (mirror `render.ts`
+ * `makeOverlayGradient`/`applyFillOverlayStyle` + `shape-geometry.ts#fillOverlayCss` — 1 nguồn
+ * sự thật cho hình học/màu, xem 2 file đó). Cộng thêm (additive) — KHÔNG thay thế `gradient` cũ
+ * của shape (`OpacityGradient`, @deprecated nhưng vẫn hoạt động — `.idfp` cũ mở lại vẫn y hệt).
+ */
+function FillOverlayControls<T extends { fillOverlay?: FillOverlay }>({
+  el,
+  onUpdate,
+  palette,
+}: {
+  el: T;
+  onUpdate: (m: (el: T) => void, live?: boolean) => void;
+  palette: string[];
+}) {
+  const o = el.fillOverlay;
+  const on = !!o;
+  const dirs: { id: NonNullable<FillOverlay['direction']>; label: string }[] = [
+    { id: 'ltr', label: 'Trái → phải' },
+    { id: 'rtl', label: 'Phải → trái' },
+    { id: 'ttb', label: 'Trên → dưới' },
+    { id: 'btt', label: 'Dưới → trên' },
+    { id: 'center', label: 'Từ giữa' },
+    { id: 'edges', label: 'Hai phía' },
+  ];
+  const blends: { id: NonNullable<FillOverlay['blend']>; label: string }[] = [
+    { id: 'normal', label: 'Thường' },
+    { id: 'multiply', label: 'Nhân (multiply)' },
+    { id: 'screen', label: 'Màn chiếu (screen)' },
+    { id: 'overlay', label: 'Chồng (overlay)' },
+    { id: 'difference', label: 'Khác biệt' },
+    { id: 'luminosity', label: 'Độ sáng' },
+  ];
+  return (
+    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <Row>
+        <span style={{ fontSize: 11, color: 'var(--t3)', flex: 1 }}>Lớp phủ (fill overlay)</span>
+        <Toggle
+          active={on}
+          onClick={() =>
+            onUpdate((e) => {
+              e.fillOverlay = on ? undefined : { kind: 'color', color: '#000000', opacity: 0.3 };
+            })
+          }
+          title={on ? 'Tắt lớp phủ' : 'Bật lớp phủ'}
+        >
+          {on ? 'Bật' : 'Tắt'}
+        </Toggle>
+      </Row>
+      {on && o && (
+        <>
+          <Field label="Kiểu phủ">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 5 }}>
+              <button
+                type="button"
+                onClick={() => onUpdate((e) => { if (e.fillOverlay) e.fillOverlay.kind = 'color'; })}
+                style={{
+                  padding: '6px 4px',
+                  borderRadius: 6,
+                  fontSize: 10,
+                  border: o.kind === 'color' ? '1px solid var(--accent)' : '1px solid var(--border)',
+                  background: o.kind === 'color' ? 'var(--accent-soft)' : 'var(--field)',
+                  color: o.kind === 'color' ? 'var(--accent)' : 'var(--t2)',
+                  cursor: 'pointer',
+                }}
+              >
+                Màu
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdate((e) => { if (e.fillOverlay) e.fillOverlay.kind = 'gradient'; })}
+                style={{
+                  padding: '6px 4px',
+                  borderRadius: 6,
+                  fontSize: 10,
+                  border: o.kind === 'gradient' ? '1px solid var(--accent)' : '1px solid var(--border)',
+                  background: o.kind === 'gradient' ? 'var(--accent-soft)' : 'var(--field)',
+                  color: o.kind === 'gradient' ? 'var(--accent)' : 'var(--t2)',
+                  cursor: 'pointer',
+                }}
+              >
+                Gradient
+              </button>
+            </div>
+          </Field>
+          <Field label={o.kind === 'gradient' ? 'Màu đầu' : 'Màu phủ'}>
+            <ColorRow
+              value={o.color}
+              palette={palette}
+              onChange={(c) => onUpdate((e) => { if (e.fillOverlay) e.fillOverlay.color = c; })}
+            />
+          </Field>
+          {o.kind === 'gradient' && (
+            <>
+              <Field label="Màu cuối">
+                <ColorRow
+                  value={o.colorTo ?? o.color}
+                  palette={palette}
+                  onChange={(c) => onUpdate((e) => { if (e.fillOverlay) e.fillOverlay.colorTo = c; })}
+                />
+              </Field>
+              <Field label="Hướng">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5 }}>
+                  {dirs.map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => onUpdate((e) => { if (e.fillOverlay) e.fillOverlay.direction = d.id; })}
+                      style={{
+                        padding: '6px 4px',
+                        borderRadius: 6,
+                        fontSize: 10,
+                        border: (o.direction ?? 'ltr') === d.id ? '1px solid var(--accent)' : '1px solid var(--border)',
+                        background: (o.direction ?? 'ltr') === d.id ? 'var(--accent-soft)' : 'var(--field)',
+                        color: (o.direction ?? 'ltr') === d.id ? 'var(--accent)' : 'var(--t2)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+            </>
+          )}
+          <Field label={`Độ mờ ${Math.round(o.opacity * 100)}%`}>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={Math.round(o.opacity * 100)}
+              onChange={(e) => onUpdate((el2) => { if (el2.fillOverlay) el2.fillOverlay.opacity = +e.target.value / 100; }, true)}
+              onPointerUp={(e) =>
+                onUpdate((el2) => {
+                  if (el2.fillOverlay) el2.fillOverlay.opacity = +(e.target as HTMLInputElement).value / 100;
+                })
+              }
+              style={{ width: '100%' }}
+            />
+          </Field>
+          <Field label="Hoà trộn (blend)">
+            <select
+              value={o.blend ?? 'normal'}
+              onChange={(e) =>
+                onUpdate((el2) => {
+                  if (el2.fillOverlay) el2.fillOverlay.blend = e.target.value as FillOverlay['blend'];
+                })
+              }
+              style={{
+                width: '100%',
+                fontSize: 11.5,
+                padding: '6px 8px',
+                borderRadius: 7,
+                border: '1px solid var(--border)',
+                background: 'var(--field)',
+                color: 'var(--t2)',
+              }}
+            >
+              {blends.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -1351,6 +1664,27 @@ function AdjustControls({
       <Slider label="Tương phản" value={adjust.contrast} min={20} max={200} onChange={(v, l) => set('contrast', v, l)} />
       <Slider label="Độ bão hoà" value={adjust.saturate} min={0} max={250} onChange={(v, l) => set('saturate', v, l)} />
       <Slider label="Nhiệt độ" value={adjust.temperature} min={-100} max={100} onChange={(v, l) => set('temperature', v, l)} />
+    </>
+  );
+}
+
+/** P4/E4 — filter chung (blur/brightness/contrast/saturate) cho MỌI loại phần tử. Khác
+ * AdjustControls (sáng/tương phản/bão hoà/nhiệt độ) chỉ dành riêng cho ảnh. */
+function FilterControls({
+  filter,
+  onChange,
+}: {
+  filter: ElementFilter | undefined;
+  onChange: (f: ElementFilter, live: boolean) => void;
+}) {
+  const f = filter ?? DEFAULT_ELEMENT_FILTER;
+  const set = (k: keyof ElementFilter, v: number, live: boolean) => onChange({ ...f, [k]: v }, live);
+  return (
+    <>
+      <Slider label="Mờ" value={f.blur} min={0} max={40} onChange={(v, l) => set('blur', v, l)} />
+      <Slider label="Sáng" value={f.brightness} min={20} max={200} onChange={(v, l) => set('brightness', v, l)} />
+      <Slider label="Tương phản" value={f.contrast} min={20} max={200} onChange={(v, l) => set('contrast', v, l)} />
+      <Slider label="Độ bão hoà" value={f.saturate} min={0} max={250} onChange={(v, l) => set('saturate', v, l)} />
     </>
   );
 }

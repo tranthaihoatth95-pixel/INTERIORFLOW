@@ -30,8 +30,9 @@
  * Cả bốn đọc EditorDeck. jsPDF/pptx import động (client-only).
  */
 
-import type { EditorDeck, EditorSlide, TextElement, ImageElement } from './model';
+import type { EditorDeck, EditorSlide, TextElement, ImageElement, FillOverlay } from './model';
 import { renderEditorSlide } from './render';
+import { imageMaskCanvasPath, applyFillOverlayStyle } from './shape-geometry';
 import { stageFor, printResScale, PAPER_SIZE_MM, type StageSize } from './stage-presets';
 import { exportDeckToPptx, type PptxSlide, type PptxExportResult } from '@/lib/pptx';
 import type { SlideContent, SlideTheme, SlideLayout } from '@/lib/slides';
@@ -135,16 +136,79 @@ function allByRole(slide: EditorSlide, role: TextElement['role']): TextElement[]
   );
 }
 
-/** Ảnh "hero" = image element có diện tích lớn nhất; nếu không có, dùng ảnh nền. */
-function pickHero(slide: EditorSlide): string | null {
+/**
+ * Ảnh "hero" = image element có diện tích lớn nhất; nếu không có, dùng ảnh nền.
+ * Trả CẢ ELEMENT (không chỉ `src`) — P1/E2 cần đọc `mask` để bake đúng hình cắt vào PPTX
+ * (`heroToDataUri` dưới đây); ảnh nền deck (`backgroundImage`) không phải ImageElement nên
+ * không mask được, giữ đường `string` cũ.
+ */
+function pickHero(slide: EditorSlide): ImageElement | string | null {
   const imgs = slide.elements.filter((e): e is ImageElement => e.kind === 'image');
   if (imgs.length) {
-    const biggest = imgs
-      .slice()
-      .sort((a, b) => b.frame.w * b.frame.h - a.frame.w * a.frame.h)[0];
-    return biggest.src;
+    return imgs.slice().sort((a, b) => b.frame.w * b.frame.h - a.frame.w * a.frame.h)[0];
   }
   return slide.backgroundImage ?? null;
+}
+
+/**
+ * P1/E2 + P3/E3 — data URI cho ảnh hero PPTX. Có `mask` VÀ/HOẶC `fillOverlay` → NƯỚNG (bake)
+ * vào chính data URI TRƯỚC khi nhúng (`maskedImageDataUri` dưới đây) — pptxgenjs chèn ảnh dạng
+ * khối chữ nhật, không hiểu `clip-path`/CSS `mix-blend-mode`, phải nướng sẵn thành PNG. Không có
+ * CẢ HAI → giữ NGUYÊN đường `toDataUri` cũ (không đổi hành vi/byte output so với trước P1/P3).
+ */
+async function heroToDataUri(hero: ImageElement | string): Promise<string | null> {
+  if (typeof hero === 'string') return toDataUri(hero);
+  if (!hero.mask && !hero.fillOverlay) return toDataUri(hero.src);
+  return maskedImageDataUri(hero, hero.mask, hero.fillOverlay);
+}
+
+/**
+ * P1/E2 + P3/E3 — bake mask + lớp phủ fill vào ảnh hero PPTX. Vẽ lên canvas đúng KHỔ CROP đã áp
+ * (`el.crop`, giống nguồn `drawImageEl` ở render.ts dùng cho PDF/PNG) rồi PNG trong-suốt (không
+ * phải JPEG — vùng bị cắt phải trong suốt để lộ nền slide phía sau, không phải nền đen). CỐ Ý
+ * KHÔNG tự ép theo tỉ lệ khung hero PPTX (`lib/pptx.ts` khối phải, cover 16:9 riêng của nó) —
+ * pptxgenjs `sizing:{type:'cover'}` sẽ tự crop/scale PNG này vào khung đó SAU, ĐÚNG NHƯ đường cũ
+ * (ảnh hero không nướng gì cũng bị cover crop lại từ tỉ lệ ảnh gốc) — không thêm khớp nối riêng.
+ * `mask` optional (P3 gọi hàm này cả khi CHỈ có `fillOverlay`, không mask) — không mask thì vẽ
+ * cả khung ảnh (không `ctx.clip()`), `fillOverlay` (nếu có) dùng CHUNG `applyFillOverlayStyle`
+ * với `render.ts#drawImageEl` (1 nguồn sự thật cho cách tô overlay, xem hàm đó) — vẽ SAU
+ * `drawImage`, TRONG vùng clip nếu có mask (giống render.ts, "ăn theo" clip có sẵn).
+ */
+async function maskedImageDataUri(
+  el: ImageElement,
+  mask: ImageElement['mask'],
+  overlay?: FillOverlay,
+): Promise<string | null> {
+  try {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    await new Promise<void>((res, rej) => {
+      img.onload = () => res();
+      img.onerror = () => rej(new Error('img load fail'));
+      img.src = el.src;
+    });
+    const crop = el.crop || { x: 0, y: 0, w: 1, h: 1 };
+    const sx = crop.x * img.naturalWidth;
+    const sy = crop.y * img.naturalHeight;
+    const sw = crop.w * img.naturalWidth || img.naturalWidth || 1;
+    const sh = crop.h * img.naturalHeight || img.naturalHeight || 1;
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(sw));
+    c.height = Math.max(1, Math.round(sh));
+    const ctx = c.getContext('2d')!;
+    if (mask) {
+      imageMaskCanvasPath(ctx, mask, 0, 0, c.width, c.height);
+      ctx.clip();
+    }
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+    if (overlay) {
+      applyFillOverlayStyle(ctx, overlay, el.opacity ?? 1, 0, 0, c.width, c.height);
+      ctx.fillRect(0, 0, c.width, c.height);
+    }
+    return c.toDataURL('image/png');
+  } catch {
+    return null;
+  }
 }
 
 /** Chuyển 1 EditorSlide → SlideContent + layout + theme cho PPTX (chữ chỉnh được). */
@@ -238,8 +302,8 @@ export async function exportDeckToPptxFromModel(deck: EditorDeck): Promise<PptxE
     const slide = deck.slides[i];
     const mapped = toContentSlide(slide, deck);
     if (mapped) {
-      const heroSrc = pickHero(slide);
-      const heroDataUrl = heroSrc ? await toDataUri(heroSrc) : null;
+      const hero = pickHero(slide);
+      const heroDataUrl = hero ? await heroToDataUri(hero) : null;
       mapped.usedFaces.forEach((f) => usedFaces.add(f));
       out.push({
         kind: 'content',
