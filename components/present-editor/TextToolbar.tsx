@@ -52,6 +52,11 @@ interface Props {
    * biết click TIẾP THEO rơi vào element nào (áp định dạng) trước khi tới lượt TextToolbar. */
   paintActive?: boolean;
   onTogglePaint?: () => void;
+  /** P5/2.2.91 — true = đang kéo (di chuyển/resize/xoay) phần tử, thanh phải THU LẠI (mờ đi,
+   * không nhận sự kiện chuột) để không đè lên vùng đang thao tác. Do
+   * `useFloatingToolbarVisibility` (EditorCanvas) tính, xem hook đó để biết vì sao mờ/hiện
+   * dùng CSS transition thay vì debounce state. */
+  hidden?: boolean;
 }
 
 export default function TextToolbar({
@@ -66,6 +71,7 @@ export default function TextToolbar({
   palette,
   paintActive,
   onTogglePaint,
+  hidden,
 }: Props) {
   const [aiBusy, setAiBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -191,10 +197,21 @@ export default function TextToolbar({
         flexDirection: 'column',
         alignItems: 'center',
         gap: 6,
-        pointerEvents: 'auto',
+        // P6c (02/08, TICKET-FIX-KINH-LONG, K1) — opacity/transition KHÔNG còn đặt ở wrapper
+        // này nữa (xem lịch sử ngay dưới) — wrapper chỉ còn giữ pointerEvents. Lý do: tổ tiên
+        // có opacity<1 tự tạo 1 "backdrop root" cô lập (spec filter-effects-2) — trong lúc
+        // fade 80-150ms, backdrop-filter của các element kính BÊN TRONG (pillWrap/noteStyle/
+        // ColorPopover) không còn lấy được nền THẬT phía sau wrapper nữa mà lấy nền của chính
+        // backdrop root cô lập đó (thường là trong suốt/xám) → blur "chết", nhìn như kính hỏng/
+        // nháy xám đúng lúc đang fade. Sửa: opacity/transition dời XUỐNG từng element kính
+        // (self-opacity KHÔNG tạo backdrop root cô lập MỚI cho backdrop-filter của CHÍNH nó —
+        // chỉ ancestor mới gây vậy) — xem `glassFade()` bên dưới, áp ở `pillWrap`/`noteStyle`/
+        // `ColorPopover`. Giữ NGUYÊN timing 80ms ẩn/150ms hiện (chống nhấp nháy quanh ngưỡng
+        // 4px, đúng ý P5 gốc — chỉ đổi CHỖ áp, không đổi con số).
+        pointerEvents: hidden ? 'none' : 'auto',
       }}
     >
-      <div className="pe-pill" style={pillWrap}>
+      <div className="pe-pill" style={{ ...pillWrap, ...glassFade(hidden) }}>
         {/* ✨ Tạo content */}
         <button
           type="button"
@@ -298,14 +315,20 @@ export default function TextToolbar({
         <ColorPopover
           color={el.color}
           palette={palette}
+          hidden={hidden}
           onPick={(c) => {
-            onUpdate((t) => (t.color = c));
+            // P6a (04/08) — người dùng tự chỉnh màu tay → khoá colorAuto VĨNH VIỄN, hệ không
+            // bao giờ tự đè lại màu này nữa (xem TextElement.colorAuto, text-contrast.ts).
+            onUpdate((t) => {
+              t.color = c;
+              t.colorAuto = false;
+            });
             setColorOpen(false);
           }}
         />
       )}
 
-      {note && <div style={noteStyle}>{note}</div>}
+      {note && <div style={{ ...noteStyle, ...glassFade(hidden) }}>{note}</div>}
     </div>
   );
 
@@ -316,14 +339,24 @@ export default function TextToolbar({
 
 /** Lưới màu nhanh: palette gu deck (tối đa 6) + đen + trắng + 1 ô "màu tuỳ chỉnh" — tái dùng
  * đúng pattern `input[type=color]` của `ColorRow` (Inspector.tsx/BrandKitPanel.tsx), chỉ đổi
- * vỏ ngoài cho khớp pill kính mờ tối của TextToolbar. */
+ * vỏ ngoài cho khớp pill kính mờ tối của TextToolbar.
+ *
+ * P6c (02/08, K2) — xác nhận: component này render như SIBLING của `.pe-pill` ngay trong JSX
+ * của `TextToolbar` (không lồng bên trong `.pe-pill`, xem đoạn `{colorOpen && <ColorPopover.../>}`
+ * đứng SAU thẻ đóng `</div>` của `.pe-pill`) — đúng như ghi chú gốc "render NGOÀI .pe-pill"
+ * (pill cuộn ngang `overflowX:auto` sẽ tự quy `overflowY` thành `auto` theo CSS, CẮT MẤT popover
+ * nếu lồng bên trong nó). K2 chỉ còn phần "áp cùng fix opacity K1" — nhận thêm prop `hidden`,
+ * merge `glassFade(hidden)` vào style của chính element này (self-opacity, không đặt ở 1 wrapper
+ * cha nào khác của riêng popover — ở đây popover đã tự là gốc nên không có tầng cha nào để đụng). */
 function ColorPopover({
   color,
   palette,
+  hidden,
   onPick,
 }: {
   color: string;
   palette?: string[];
+  hidden?: boolean;
   onPick: (c: string) => void;
 }) {
   const swatches = [...new Set([...(palette || []), '#ffffff', '#000000'])].slice(0, 8);
@@ -342,6 +375,7 @@ function ColorPopover({
         WebkitBackdropFilter: 'blur(28px) saturate(150%)',
         border: '1px solid rgba(255,255,255,.14)',
         boxShadow: '0 8px 28px rgba(0,0,0,.38)',
+        ...glassFade(hidden),
       }}
     >
       {swatches.map((c) => (
@@ -425,6 +459,21 @@ function Sep() {
  * CadToolbar.tsx xử lý chrome nổi). Đã thử mắt qua browser vài mức blur/alpha trước khi chốt. */
 const GLASS_TEXT = 'rgba(245,242,236,0.95)'; // chữ/icon — ấm nhẹ, khớp gu quiet-luxury
 const GLASS_TEXT_DIM = 'rgba(245,242,236,0.62)';
+
+/** P6c (02/08, K1/K2) — opacity+transition fade khi thu/hiện toolbar (P5/2.2.91), áp TRỰC TIẾP
+ * lên từng element có `backdrop-filter` (pillWrap/noteStyle/ColorPopover) thay vì ở 1 wrapper
+ * cha chung. Lý do: opacity<1 ở TỔ TIÊN của 1 phần tử `backdrop-filter` tự tạo "backdrop root"
+ * cô lập (spec filter-effects-2) — trong lúc fade, `backdrop-filter` KHÔNG còn lấy được nền
+ * THẬT phía sau nữa (lấy nền của backdrop root cô lập đó, thường trong suốt/xám) → blur "chết"/
+ * nháy xám đúng lúc đang mờ dần, giống kính hỏng. opacity đặt Ở CHÍNH element đó thì KHÔNG có
+ * vấn đề này (chỉ ancestor mới gây cô lập, self-opacity thì không) — 1 nguồn duy nhất cho timing
+ * để không lệch giữa các nơi gọi (giữ NGUYÊN 80ms ẩn/150ms hiện, không đổi số so với P5 gốc). */
+function glassFade(hidden?: boolean): React.CSSProperties {
+  return {
+    opacity: hidden ? 0 : 1,
+    transition: `opacity ${hidden ? 80 : 150}ms ease`,
+  };
+}
 
 const pillWrap: React.CSSProperties = {
   display: 'flex',
