@@ -730,3 +730,29 @@ vì đặt trong chính node = tự động neo đúng vị trí theo pan/zoom/k
    có nút thả cảm xúc/đếm vote trên sticky/comment — cần thiết kế UI mới, chưa có trong bất kỳ
    component nào hiện tại) · sửa/xoá TỪNG comment theo quyền tác giả (v1: ai cũng xoá được bất kỳ
    comment nào, khớp mức đơn giản hiện có của sticky note — không kiểm tra ownership).
+
+## G2 phần (2) — comment neo vào node ID thật — XONG
+- Commit `066d48b` (`lib/store.ts` + `CommentPin.tsx` mới + `InteriorNode.tsx` + `NoteNode.tsx`).
+- Code đúng thiết kế đã mô tả. Tái dùng `formatBackupRelativeTime()` có sẵn trong
+  `lib/cad/backup-diff.ts` (tên hàm mang chữ "Backup" nhưng logic hoàn toàn generic, nhận
+  `timestampMs`+`nowMs` — đúng luật "một cỗ máy nhiều mặt tiền", không viết lại bộ định dạng giờ
+  tương đối lần 2).
+- 💭 **Phát hiện lúc verify, KHÔNG phải bug**: lần đầu bấm mở, badge đo được `computed opacity:0`
+  dù `className` đã đúng `opacity-100` — nghi ngờ ban đầu là bug thật, đào sâu bằng cách so
+  `nodeEl`/`pin` inline style (không có gì bất thường) → reload trang → `opacity:1` đúng ngay.
+  Kết luận: Tailwind JIT (Next dev) cần 1 nhịp compile CSS cho class MỚI xuất hiện lần đầu trong
+  file `CommentPin.tsx` vừa tạo — không phải lỗi logic. Cũng thấy toast "1 error" thoáng qua lúc
+  đó (Next dev overlay, tự hết sau khi HMR ổn định, tab mới hoàn toàn sạch, `preview_logs` xác
+  nhận server không có lỗi thật). Ghi lại: **gặp opacity/lỗi lạ ngay sau khi tạo FILE MỚI → thử
+  reload trước khi kết luận là bug**, cùng họ với các bẫy HMR/dev-server đã ghi trước đó trong
+  phiên.
+- Verify browser thật (dự án mẫu): tạo node test → `addComment` qua store đúng (author lấy từ
+  `user.name` đăng nhập) → badge đếm đúng "1" → click thật (dispatch toạ độ chính xác dù zoom nhỏ)
+  mở đúng `Popover` hiện tác giả/giờ tương đối/nội dung + ô gửi. `removeComment` + `deleteNode`
+  dọn sạch đúng. 0 console error (tab sạch). tsc/eslint sạch (1 lỗi `meta` pre-existing
+  `InteriorNode.tsx`, xác nhận qua `git stash`). `npm test` 0 fail.
+- 💭 Dữ liệu dự án mẫu hiện có 3 node "lạ" từ trước (`note_msbbav2i_0`/`node_msbbe0yo_1` ở
+  y≈-6150/-9261, `node_msbc60ns_2` ở y≈-50202) khiến "Fit view" không hội tụ tốt (kẹt ở
+  `minZoom=0.15`) — KHÔNG xoá vì không chắc provenance (2 cái đầu có thể là "2 node" đã thấy từ
+  đầu phiên trước tôi động vào gì; cái thứ 3 khả nghi là artifact test nhưng không chắc 100%).
+  Ghi lại để Hoà tự quyết có dọn không — không tự ý xoá dữ liệu không chắc chắn là của mình.
