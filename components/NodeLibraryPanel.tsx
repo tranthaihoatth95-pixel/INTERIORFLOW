@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { sidebarZoneOf } from '@/lib/render-studio/sidebar-zones';
 import { TASK_CARDS } from '@/lib/render-studio/task-cards';
 import { useToolModeUi } from '@/lib/render-studio/tool-mode-ui';
+import { useT } from '@/lib/i18n';
 
 export const DND_MIME = 'application/interiorflow-node';
 
@@ -40,6 +41,7 @@ export function NodeLibraryPanel() {
   // mở window để thao tác"), KHÔNG thả node AI trần lên canvas như thẻ thường. Tái dùng thẳng
   // `useToolModeUi`/`ToolWindow` đã có từ D3 — không có luồng mở window thứ 2.
   const selectCard = useToolModeUi((s) => s.selectCard);
+  const tr = useT();
   const [query, setQuery] = useState('');
   const [activeTag, setActiveTag] = useState<NodeTag | typeof ALL_TAG>(ALL_TAG);
   const { screenToFlowPosition } = useReactFlow();
@@ -164,7 +166,7 @@ export function NodeLibraryPanel() {
     >
       <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2.5">
         <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--t3)]">
-          Node Library
+          {tr('Thư viện khối', 'Block library')}
         </span>
         <motion.button
           {...pressableIcon}
@@ -179,7 +181,7 @@ export function NodeLibraryPanel() {
         <input
           autoFocus={panel === 'search'}
           className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t1)] placeholder-[var(--t5)] outline-none transition-colors focus:border-[var(--accent-ring)]"
-          placeholder="Tìm node…"
+          placeholder={tr('Tìm khối…', 'Search blocks…')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -217,10 +219,10 @@ export function NodeLibraryPanel() {
         <button
           onClick={() => setPaletteOpen(true)}
           className="flex w-full items-center gap-1.5 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-1.5 text-[11px] text-[var(--t4)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--t2)]"
-          title="Tìm & thêm nhanh node/hành động"
+          title={tr('Tìm & thêm nhanh khối/hành động', 'Quickly find & add blocks/actions')}
         >
           <Command size={11} className="shrink-0" />
-          Tìm nhanh mọi thứ
+          {tr('Tìm nhanh mọi thứ', 'Quick find anything')}
           <kbd suppressHydrationWarning className="ml-auto shrink-0 rounded border border-[var(--border)] bg-[var(--field)] px-1 py-0.5 text-[9px]">{modKey('K')}</kbd>
         </button>
 
@@ -228,18 +230,18 @@ export function NodeLibraryPanel() {
         <button
           onClick={quickSketch}
           className="flex w-full items-center gap-1.5 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-1.5 text-[11px] text-[var(--t4)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--t2)]"
-          title="Thêm node Free Sketch vào canvas rồi mở Sketch Studio ngay"
+          title={tr('Thêm khối Free Sketch vào canvas rồi mở Sketch Studio ngay', 'Add a Free Sketch block to the canvas and open Sketch Studio now')}
         >
           <Paintbrush size={11} className="shrink-0" />
-          Vẽ tay nhanh
+          {tr('Vẽ tay nhanh', 'Quick sketch')}
         </button>
         <button
           onClick={demoSketchToRender}
           className="flex w-full items-center gap-1.5 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-1.5 text-[11px] text-[var(--t4)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--t2)]"
-          title="Tạo sẵn Free Sketch → Sketch→Render ← Prompt đã nối dây — minh hoạ pipeline vẽ tay → render"
+          title={tr('Tạo sẵn Free Sketch → Sketch→Render ← Prompt đã nối dây — minh hoạ pipeline vẽ tay → render', 'Sets up Free Sketch → Sketch→Render ← Prompt already wired — demoes the sketch → render pipeline')}
         >
           <Wand2 size={11} className="shrink-0" />
-          Demo: Vẽ tay → Render
+          {tr('Demo: Vẽ tay → Render', 'Demo: Sketch → Render')}
         </button>
       </div>
 
@@ -251,7 +253,7 @@ export function NodeLibraryPanel() {
           <div>
             <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t3)]">
               <Users size={10} />
-              Mood + Collab
+              {tr('Mood + Cộng tác', 'Mood + Collab')}
             </p>
             <div className="space-y-1">
               {moodDefs.map((def) => (
@@ -260,10 +262,10 @@ export function NodeLibraryPanel() {
               <button
                 onClick={onAddNote}
                 className="flex w-full items-center gap-2 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-2 text-[11px] text-[var(--t4)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--t2)]"
-                title="Thêm ghi chú dán lên canvas — trao đổi/ghi ý tưởng, không phải node xử lý"
+                title={tr('Thêm ghi chú dán lên canvas — trao đổi/ghi ý tưởng, không phải khối xử lý', 'Add a sticky note to the canvas — for discussion/ideas, not a processing block')}
               >
                 <StickyNote size={13} className="shrink-0" />
-                Ghi chú
+                {tr('Ghi chú', 'Note')}
               </button>
             </div>
             <div className="mt-3 border-t border-[var(--border)]" />
@@ -276,7 +278,7 @@ export function NodeLibraryPanel() {
           <div>
             <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t3)]">
               <Sparkles size={10} />
-              Node MASTER — mở cửa sổ
+              {tr('Công cụ', 'Tools')}
             </p>
             <motion.div className="space-y-1" variants={staggerList} initial="hidden" animate="visible">
               {masterDefs.map((def) => (
@@ -317,12 +319,12 @@ export function NodeLibraryPanel() {
           </div>
         ))}
         {groups.length === 0 && (
-          <p className="px-1 pt-4 text-center text-xs text-[var(--t5)]">Không tìm thấy node nào.</p>
+          <p className="px-1 pt-4 text-center text-xs text-[var(--t5)]">{tr('Không tìm thấy khối nào.', 'No blocks found.')}</p>
         )}
         <p className="px-1 pt-2 text-[10px] leading-relaxed text-[var(--t5)]">
           {noAi
-            ? 'Mức "Không AI" đang bật — node AI đã ẩn. Đổi mức ở góc trên để hiện lại.'
-            : `Chặng ${phase.label}: node ★ ở trên. Kéo thả bất kỳ node nào vào canvas — các chặng dùng chung 1 canvas.`}
+            ? tr('Mức "Không AI" đang bật — khối AI đã ẩn. Đổi mức ở góc trên để hiện lại.', 'The "No AI" level is on — AI blocks are hidden. Change the level at the top to show them again.')
+            : tr(`Chặng ${phase.label}: khối ★ ở trên. Kéo thả bất kỳ khối nào vào canvas — các chặng dùng chung 1 canvas.`, `${phase.label} stage: ★ blocks are listed above. Drag any block onto the canvas — all stages share one canvas.`)}
         </p>
       </div>
         </motion.aside>
