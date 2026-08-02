@@ -38,6 +38,7 @@ import { Dashboard } from '@/components/Dashboard';
 import StatusBar from '@/components/studio/StatusBar';
 import RenderToolModeOverlay from '@/components/render-studio/RenderToolModeOverlay';
 import Render3DModeSkeleton from '@/components/render-studio/Render3DModeSkeleton';
+import Render3DToggleButton from '@/components/render-studio/Render3DToggleButton';
 import ModeShell from '@/components/shell/ModeShell';
 import { useStageMode, useHydrateRenderMode } from '@/lib/stage-mode';
 import PresentOverlay from '@/components/present/PresentOverlay';
@@ -589,9 +590,12 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
           )}
 
           {/* H1 (SPEC-MODE-PER-STAGE §1) — mode Render: 'render' (canvas node cũ, mặc định) ↔
-              'model3d' (Vẽ 3D, skeleton). Đổi mode = đổi CẢ nội dung, không phải thêm nút. */}
+              'model3d' (Vẽ 3D, skeleton). Đổi mode = đổi CẢ nội dung, không phải thêm nút.
+              G1 (SPEC-CHANG2-UI-2MODE §1) — tắt segmented control có sẵn của ModeShell
+              (hideBuiltInSwitcher): chặng Render dùng "1 nút RỜI" (Render3DToggleButton) cạnh
+              BottomToolbar thay vì pill 2 nút, đúng chốt "giữ hạ tầng UI, chỉ thêm 1 nút". */}
           <ModeShell
-            barPosition="bottom"
+            hideBuiltInSwitcher
             modes={[
               { value: 'render', label: 'Render + Mood + Collab' },
               { value: 'model3d', label: 'Vẽ 3D' },
@@ -615,6 +619,9 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
               )
             }
           />
+          {/* G1 — nút rời DÙNG CHUNG cả 2 mode, đứng NGOÀI content() của ModeShell nên luôn hiện
+              (không biến mất khi gạt sang Vẽ 3D — user cần gạt NGƯỢC LẠI được). */}
+          <Render3DToggleButton />
         </div>
         <StatusBar stage="render" hidden={presentModeOpen} />
         <MaskPainterModal />
