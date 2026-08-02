@@ -537,9 +537,46 @@ cổng 3000 đang bị phiên khác chiếm) — thêm entry trong `.claude/laun
   nút GIỮ NGUYÊN `(906,640)` trước/sau — không nhảy. 0 console error (tab mới, tránh bẫy buffer
   console tồn đọng đã ghi ở K4). tsc/eslint sạch, `npm test` 0 fail.
 
-## HẾT K4 + G1 + G1b — cả 3 việc ĐÃ XONG TRỌN, không còn gì dở lại
-5 commit code (`498e248` chore server phụ · `e1aa92c` K4 · `edd57aa` K4 follow-up · `e74485a` G1 ·
-`2daf089` G1b) đều `git commit -- <pathspec>` scoped đúng file, không đụng `docs/00-CHOT.md`/2 file mới của Hoà
-(để nguyên theo đúng ghi chú phiên trước). Tiếp theo đúng thứ tự đã giao: G2 (Mood+Collab canvas)
-→ G3 (Vẽ 3D Command Panel + Scene Objects) → G4 (Present chọn 5 loại) → G5 (kệ + pattern nâng),
-theo `docs/TICKET-CHANG2-BUILD-2026-08-02.md`. Chưa tự bắt đầu G2 — dừng ở đây báo cáo trước.
+## G1c — Hoà đổi lệnh giữa chừng: bỏ phương án A (pill rời), chuyển capsule đồng tâm — XONG
+- Commit `e1aaf6a` (`BottomToolbar.tsx` + `ModeSwitchCell.tsx`/`ModeSwitchBar.tsx` mới +
+  `Render3DModeSkeleton.tsx` + `HomeScreen.tsx` + `ModeShell.tsx` comment + xoá
+  `Render3DToggleButton.tsx`).
+- Hoà đọc kỹ mock, chê G1/G1b (pill "Vẽ 3D" rời, lệch bo/bóng so với bar) — chốt lại theo
+  `docs/SPEC-DESIGN-SYSTEM-IF.md` §2c (LUẬT CHỐNG NGÔ NGHÊ) + §2d (HÌNH HỌC APPLE, cả 2 mục MỚI
+  thêm vào file spec — đọc kỹ trước khi code, không suy đoán). Bỏ HẲN cách tiếp cận "đo vị trí
+  BottomToolbar rồi đặt pill cạnh" (toàn bộ nỗ lực G1b) — thay bằng: công tắc SỐNG NGAY TRONG bar,
+  không còn là phần tử rời cần đo-vị-trí.
+- **Kiến trúc mới** (khác hẳn G1b): `ModeSwitchCell.tsx` (nhãn "Vẽ 3D" + switch thật, dùng CHUNG)
+  gắn cuối `<BottomToolbar>` sau vạch chia khi mode='render' (bar ZOOM/PAN + switch CÙNG 1 khối);
+  mode='model3d' không còn `BottomToolbar` (không có zoom/pan React-Flow) → `ModeSwitchBar.tsx`
+  (bar capsule riêng chỉ chứa switch) — mount BÊN TRONG `Render3DModeSkeleton.tsx` (KHÔNG phải
+  `HomeScreen.tsx` ngoài `ModeShell.content()` như `Render3DToggleButton` cũ) để đúng
+  positioned-ancestor (loại trừ `LeftRail`) NGAY TỪ ĐẦU — né lại đúng bug lệch tâm G1b từng vá.
+  `Render3DToggleButton.tsx` xoá hẳn (hết nơi gọi, đúng yêu cầu).
+- Hình học đúng công thức đồng tâm §2d: bar 44/r22 → đệm 5 → nút 34/r17 (=22−5) → icon 15 → cách
+  5 ĐỀU (kể cả quanh vạch chia, không còn `mx-1` tuỳ hứng cũ) → track switch 36×22/r11 → núm tròn
+  18 (đệm 2 mỗi cạnh, tắt left2 / bật left16). MỘT bóng duy nhất
+  `shadow-[0_8px_24px_rgba(40,38,35,.14)]` (bỏ `shadow-xl shadow-black/30` cũ — đúng luật "một
+  khối một bóng").
+- 💭 Quyết định tự chọn: màu track TẮT dùng `var(--border-strong)` thay vì hex `#d8d5d0` mock đưa
+  — hex đó chỉ đúng light theme (mock chỉ có 1 theme), hardcode sẽ khiến switch quá sáng/mờ nhạt
+  trên nền tối. `--border-strong` là token xám trung tính gần nhất có sẵn (`app/globals.css`), tự
+  đổi đúng theo theme — `#cbc4b6` (light, gần `#d8d5d0`) / `#3d3d45` (dark).
+- Verify browser thật (dự án mẫu, cả 2 theme): đo DOM qua `getComputedStyle`/`getBoundingClientRect`
+  xác nhận ĐÚNG TUYỆT ĐỐI mọi số — bar `height:44,radius:22px,padding:5px,shadow:rgba(40,38,35,.14)
+  0 8px 24px`; nút `34×34,radius:17px`; track `36×22,radius:11px`; núm `18×18`, offset `(2,2)` khi
+  tắt → `(16,2)` khi bật (đo được sau khi click, đúng khớp). Toggle 2 chiều đồng bộ đúng (cùng 1
+  nguồn `useStageMode`, đổi ở bar nào cũng phản ánh đúng ở bar kia lúc quay lại). `ModeSwitchBar`
+  (mode 3D) đo được tâm nằm ĐÚNG giữa vùng canvas (loại trừ `LeftRail`), không lệch — xác nhận kiến
+  trúc mount-bên-trong-Skeleton đúng ngay từ đầu, không cần vá thêm như G1b. 0 console error (tab
+  mới). tsc/eslint sạch, `npm test` 0 fail.
+- 💭 `docs/SPEC-DESIGN-SYSTEM-IF.md` đang có §2c/§2d MỚI (chưa commit, của Hoà/phiên khác trước khi
+  giao lệnh) — ĐỌC để lấy spec nhưng KHÔNG đụng vào commit của tôi, để nguyên như mọi phiên trước.
+
+## HẾT K4 + G1 + G1b + G1c — TẤT CẢ ĐÃ XONG TRỌN, không còn gì dở lại
+6 commit code (`498e248` chore server phụ · `e1aa92c` K4 · `edd57aa` K4 follow-up · `e74485a` G1 ·
+`2daf089` G1b · `e1aaf6a` G1c) đều `git commit -- <pathspec>` scoped đúng file, không đụng
+`docs/00-CHOT.md`/`docs/SPEC-DESIGN-SYSTEM-IF.md`/2 file mới của Hoà (để nguyên theo đúng ghi chú
+phiên trước). Tiếp theo: G1d (Hoà giao thêm — áp `SPEC-NGON-NGU-CHI-DAN.md` mới, dọn jargon
+node/flow/Node Master trong UI-facing text), rồi quay lại G2 (Mood+Collab canvas) → G3 → G4 → G5
+theo `docs/TICKET-CHANG2-BUILD-2026-08-02.md`.
