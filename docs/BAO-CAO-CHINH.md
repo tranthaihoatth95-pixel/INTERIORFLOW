@@ -800,3 +800,25 @@ không tạo state riêng) — nhất quán với `'frame'` đã thêm ở phầ
    là khả năng MỚI hoàn toàn, chưa có node/tool nào tương ứng, để việc riêng) · **undo/redo cho
    nét vẽ** (dùng `snapshot()` chung của toàn store — nét vẽ sẽ ĐI KÈM undo/redo hiện có của
    nodes/edges/groups một cách TỰ NHIÊN vì cùng 1 store, nhưng CHƯA kiểm tra riêng hành vi này).
+
+## G2 phần (3) — toolbar bút tablet — XONG
+- Commit `cc190d3` (`lib/store.ts` + `DrawLayer.tsx`/`DrawToolbar.tsx` mới + `FlowCanvas.tsx`).
+- Code đúng thiết kế đã mô tả.
+- 💭 **Sửa lại giả định SAI trong thiết kế phần (3) trước khi code** (phát hiện lúc verify, ghi rõ
+  thay vì lặng lẽ sửa): dòng "undo/redo cho nét vẽ ... nhét vào TỰ NHIÊN vì cùng 1 store" ở mục
+  "NGOÀI PHẠM VI" phía trên là SUY ĐOÁN CHƯA KIỂM CHỨNG. Đọc thẳng code `snapshot()`/`undo()`
+  (`lib/store.ts`) mới thấy `HistoryEntry` CHỈ theo dõi `{nodes,edges}` — `groups`/`comments`/
+  `strokes` gọi `get().snapshot()` (đúng khuôn) nhưng bản thân undo/redo KHÔNG hề khôi phục lại
+  DỮ LIỆU của chính chúng khi lùi bước — đây là giới hạn CÓ SẴN của toàn hệ (đã tồn tại từ
+  `groups` trước cả khi tôi động vào, không phải lỗi riêng của `strokes`). KHÔNG mở rộng sửa cả
+  hệ undo (ảnh hưởng `groups`/`comments`, việc lớn hơn hẳn phạm vi phần (3)) — chỉ sửa lại đúng
+  câu chữ trong tài liệu, để nguyên hành vi.
+- 💭 **Bẫy timing LẶP LẠI** (cùng họ với phần (1)): dispatch `PointerEvent` NGAY sau khi bấm nút
+  đổi tool trong `DrawToolbar` (không chờ) → nét vẽ đầu tiên vẫn dùng tool CŨ (đọc closure `tool`
+  chưa kịp cập nhật). Thêm `await wait(~100ms)` SAU MỖI lần bấm nút đổi tool (không chỉ giữa các
+  bước vẽ) mới đúng. Ghi lại lần nữa vì đây LÀ LẦN THỨ HAI gặp đúng bẫy này trong phiên — nên nhớ
+  MẶC ĐỊNH cho MỌI test tương tác canvas sau này: bấm nút → đợi → mới dispatch bước kế.
+- Verify browser thật (dự án mẫu, đã dọn strokes test): cả 4 tool tạo/xoá nét đúng qua store, SVG
+  render đúng vị trí/màu/độ dày/blend từng tool (chụp ảnh xác nhận trực quan — marker tím mờ,
+  highlight vàng dày dạ quang). Tẩy đúng nét trúng (không đụng nét khác). Dark theme giữ chất
+  lượng capsule/blur. 0 console error. tsc/eslint sạch. `npm test` 0 fail.
