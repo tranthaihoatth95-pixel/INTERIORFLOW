@@ -2,13 +2,11 @@
 
 import { useLayoutEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   FolderKanban,
   FolderOpen,
   Boxes,
-  Settings as SettingsIcon,
 } from 'lucide-react';
 import { useFlowStore, type Panel } from '@/lib/store';
 import { useT } from '@/lib/i18n';
@@ -30,16 +28,18 @@ import { AccountMenu } from '@/components/AccountMenu';
  * hết viewport bằng flex-1 như bản cũ) — avatar tài khoản đứng NGOÀI capsule, ngay dưới, cách đáy
  * capsule đúng 12px, cùng trục giữa (Tailwind `gap-3` = 12px, khớp).
  *
- * Cấu trúc chuẩn: Dashboard · Dự án · Files (chờ G4 merge, `soon`) · Thư viện · vạch ngăn ·
- * Cài đặt — RAIL CHỈ CÒN ĐIỀU HƯỚNG, không lẫn hành động khác. 2 mục cũ mất chỗ trong rail
- * (Trình chiếu, Reference — ảnh/vật liệu) KHÔNG có lối vào nào khác trong app (đã grep xác nhận
- * — khác Tìm node/Gallery đã có sẵn trong Command Palette ⌘K) nên được thêm làm 2 action mới
- * trong `CommandPalette.tsx` thay vì mất hẳn — xem commit. Trợ giúp dọn khỏi rail, chuyển hẳn vào
- * menu tài khoản (`AccountMenu.tsx`, dùng chung với `UserChip` ở `AppChrome.tsx`).
+ * Cấu trúc chuẩn (03/08, CHOT-AVATAR-MEMOJI §2): Dashboard · vạch ngăn · Dự án · Files (chờ G4
+ * merge, `soon`) · Thư viện — RAIL CHỈ CÒN ĐIỀU HƯỚNG. Nút ⚙ Cài đặt + Trợ giúp + toàn bộ ⋯
+ * (credits/share/chat) GOM VÀO menu avatar (`AccountMenu.tsx`, dùng chung với `UserChip` ở
+ * `AppChrome.tsx`) — "một cửa duy nhất cho chuyện của tôi", chuẩn macOS. Avatar 44px = ĐÚNG cỡ
+ * nút rail. 2 mục cũ mất chỗ trong rail (Trình chiếu, Reference) KHÔNG có lối vào khác (đã grep)
+ * nên đã thêm làm 2 action Command Palette (⌘K) thay vì mất hẳn.
  */
 const BTN = 44; // nút — bo 22 (rounded-full)
 const CAPSULE_PAD = 8; // đệm capsule mọi phía ⇒ capsule rộng 44+8+8=60, bo 30 (đồng tâm)
-const AVATAR_SIZE = 40;
+// 03/08 (CHOT-AVATAR-MEMOJI §2): avatar ĐÚNG BẰNG cỡ nút rail — "cái tròn ava đáng lẽ đường
+// kính phải bằng thanh tool, sao lại cái to cái nhỏ".
+const AVATAR_SIZE = 44;
 
 interface NavItem {
   icon: typeof LayoutDashboard;
@@ -101,7 +101,6 @@ export function LeftRail() {
   const setDashboardOpen = useFlowStore((s) => s.setDashboardOpen);
   const user = useFlowStore((s) => s.user);
   const tr = useT();
-  const router = useRouter();
   const reduceMotion = useReducedMotion();
 
   const items: NavItem[] = [
@@ -133,24 +132,23 @@ export function LeftRail() {
         className="mat-panel flex flex-col items-center rounded-full border border-[var(--mat-hairline)] shadow-[0_8px_24px_rgba(40,38,35,.14)]"
         style={{ width: BTN + CAPSULE_PAD * 2, padding: CAPSULE_PAD }}
       >
+        {/* 03/08 (CHOT-AVATAR-MEMOJI §2): nút ⚙ Cài đặt BỎ khỏi rail — vào AccountMenu ("một
+            cửa cho chuyện của tôi"). Vạch ngăn 24px giữ, chuyển lên ngăn Dashboard (overlay
+            tổng quan) với nhóm panel bên dưới. */}
         {items.map((item, i) => {
           const { icon: Icon, label, action, active, soon } = item;
           const text = tr(label[0], label[1]);
           return (
-            <div key={label[1]} className={cn(i > 0 && 'mt-1.5')}>
-              <Tooltip label={text}>
-                <RailButton icon={Icon} label={text} active={active} soon={soon} onClick={action} />
-              </Tooltip>
+            <div key={label[1]} className="flex flex-col items-center">
+              {i === 1 && <div className="my-1.5 h-px w-6 shrink-0 bg-[var(--border)]" />}
+              <div className={cn(i > 1 && 'mt-1.5')}>
+                <Tooltip label={text}>
+                  <RailButton icon={Icon} label={text} active={active} soon={soon} onClick={action} />
+                </Tooltip>
+              </div>
             </div>
           );
         })}
-
-        {/* vạch ngăn 24px căn giữa, margin dọc 6px (đúng Tailwind w-6/my-1.5) */}
-        <div className="my-1.5 h-px w-6 shrink-0 bg-[var(--border)]" />
-
-        <Tooltip label={tr('Cài đặt', 'Settings')}>
-          <RailButton icon={SettingsIcon} label={tr('Cài đặt', 'Settings')} onClick={() => router.push('/settings')} />
-        </Tooltip>
       </nav>
 
       {/* Avatar tài khoản — NGOÀI capsule, cách đáy 12px (gap-3), cùng trục giữa. detail={true}

@@ -12,15 +12,17 @@
  * (`docs/TICKET-FIX-KINH-HEADER-2026-08-02.md` — thoát "kính lồng kính").
  */
 
+import { useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, User, Palette, CircleHelp } from 'lucide-react';
+import { LogOut, User, Palette, CircleHelp, Coins, Share2, Check, MessageCircle, Settings as SettingsIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import type { RefObject } from 'react';
 import { useFlowStore } from '@/lib/store';
 import { nextThemePref, themeIconFor, themeLabelVi } from '@/lib/theme-toggle';
-import { easeApple } from '@/lib/motion';
+import { toggleShare } from '@/lib/workspace';
+import { easeApple, pressableIcon } from '@/lib/motion';
 import { useT } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
 interface AnchorRect {
   top?: number;
@@ -41,6 +43,7 @@ export function AccountMenu({ open, anchorRect, onDismiss, menuRef }: Props) {
   const setUser = useFlowStore((s) => s.setUser);
   const themePref = useFlowStore((s) => s.themePref);
   const setThemePref = useFlowStore((s) => s.setThemePref);
+  const credits = useFlowStore((s) => s.credits);
   const router = useRouter();
   const tr = useT();
   if (!user) return null;
@@ -68,6 +71,19 @@ export function AccountMenu({ open, anchorRect, onDismiss, menuRef }: Props) {
                 <div className="truncate px-2 py-1.5 text-xs text-[var(--t3)]" title={`${user.name} · ${user.email}`}>
                   {user.name}
                 </div>
+                {/* Gom từ MoreMenu (⋯ đã bỏ khỏi header, Hoà chốt 03/08 "một cửa cho chuyện
+                    của tôi"): credits + share/chat giữ nguyên chức năng, chỉ đổi nhà. */}
+                <div className="mb-1.5 flex items-center justify-between rounded-[10px] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
+                  <span className="flex items-center gap-1.5">
+                    <Coins size={13} className="text-amber-400" />
+                    {tr('Tín dụng', 'Credits')}
+                  </span>
+                  <span className="font-semibold text-[var(--t1)]">{credits}</span>
+                </div>
+                <div className="mb-1 flex items-center gap-1.5 px-0.5">
+                  <ShareButton />
+                  <ChatToggle />
+                </div>
                 <button
                   type="button"
                   onClick={() => go('/settings')}
@@ -93,6 +109,14 @@ export function AccountMenu({ open, anchorRect, onDismiss, menuRef }: Props) {
                   <ThemeIcon size={13} className="shrink-0 text-[var(--t4)]" />
                   {tr('Giao diện', 'Appearance')}
                   <span className="ml-auto text-[10px] text-[var(--t4)]">{themeLabelVi(themePref)}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => go('/settings')}
+                  className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+                >
+                  <SettingsIcon size={13} className="shrink-0 text-[var(--t4)]" />
+                  {tr('Cài đặt', 'Settings')}
                 </button>
                 <button
                   type="button"
@@ -124,4 +148,82 @@ export function AccountMenu({ open, anchorRect, onDismiss, menuRef }: Props) {
         </AnimatePresence>,
         document.body,
       );
+}
+
+/* ShareButton + ChatToggle — CHUYỂN NGUYÊN VĂN từ AppChrome.tsx khi MoreMenu (⋯) bị gom vào
+ * menu này (03/08). Logic không đổi — chỉ đổi nhà, giữ đủ chức năng share/chat sau khi ⋯ biến
+ * mất khỏi header. */
+
+function ShareButton() {
+  const shareToken = useFlowStore((s) => s.shareToken);
+  const currentFlowId = useFlowStore((s) => s.currentFlowId);
+  const [copied, setCopied] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const tr = useT();
+
+  const onClick = async () => {
+    if (!currentFlowId || busy) return;
+    setBusy(true);
+    try {
+      let token = shareToken;
+      if (!token) token = await toggleShare();
+      if (token) {
+        await navigator.clipboard.writeText(`${location.origin}/share/${token}`).catch(() => {});
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1600);
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <motion.button
+      {...pressableIcon}
+      onClick={onClick}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        if (shareToken) toggleShare();
+      }}
+      title={
+        shareToken
+          ? tr(
+              'Đã bật share — bấm để copy link cho khách (chuột phải: tắt share)',
+              'Sharing on — click to copy the guest link (right-click: turn off)',
+            )
+          : tr('Bật share link read-only cho khách xem flow', 'Turn on a read-only share link for guests')
+      }
+      className={cn(
+        'flex flex-1 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border px-2 py-1.5 text-[11px] transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
+        shareToken
+          ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
+          : 'border-[var(--border)] text-[var(--t2)] hover:bg-[var(--hover)]',
+      )}
+    >
+      {copied ? <Check size={13} /> : <Share2 size={13} />}
+      {copied ? tr('Đã copy', 'Copied') : tr('Chia sẻ', 'Share')}
+    </motion.button>
+  );
+}
+
+function ChatToggle() {
+  const chatOpen = useFlowStore((s) => s.chatOpen);
+  const setChatOpen = useFlowStore((s) => s.setChatOpen);
+  const tr = useT();
+  return (
+    <motion.button
+      {...pressableIcon}
+      onClick={() => setChatOpen(!chatOpen)}
+      title={tr('Chat nội bộ team', 'Team chat')}
+      className={cn(
+        'flex flex-1 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border px-2 py-1.5 text-[11px] transition-colors',
+        chatOpen
+          ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
+          : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)] hover:text-[var(--t1)]',
+      )}
+    >
+      <MessageCircle size={13} />
+      {tr('Chat', 'Chat')}
+    </motion.button>
+  );
 }
