@@ -339,11 +339,12 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
     }
   }, [enterAfterAuth]);
 
-  // theme + flow local trước, rồi check session.
+  // theme + flow local trước, rồi check session. `store.hydrate()` đã chuyển lên
+  // `components/entry/StoreHydrator.tsx` (mount ở app/layout.tsx, chạy MỌI route — deep-link
+  // thẳng vào /present-editor v.v. không còn bỏ qua bước này, xem STATUS.md "PHÁT HIỆN QUAN
+  // TRỌNG" 02/08). Effect này chỉ còn lo phần riêng của Home: theme auto-refresh + check session.
   // KHÔNG bootstrap workspace ở đây — ProjectSelect tự openFlow khi user chọn dự án.
   useEffect(() => {
-    const store = useFlowStore.getState();
-    store.hydrate();
     const t = setInterval(() => useFlowStore.getState().applyTheme(), 60_000);
 
     if (!authCheckRan.current) {

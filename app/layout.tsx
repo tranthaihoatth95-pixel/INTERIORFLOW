@@ -5,6 +5,7 @@ import './globals.css';
 import './foldable.css';
 import { PWARegister } from '@/components/PWARegister';
 import { ResumeTracker } from '@/components/entry/ResumeTracker';
+import { StoreHydrator } from '@/components/entry/StoreHydrator';
 import StageTransitionProvider from '@/components/studio/StageTransitionProvider';
 
 // Font hệ thống TTT Design System — Be Vietnam Pro (hỗ trợ dấu tiếng Việt đầy đủ).
@@ -72,6 +73,10 @@ try{if(!localStorage.getItem('interiorflow.vitals.stage_drop_cleaned_v1')){local
         {/* Màn che chuyển chặng + MotionConfig reducedMotion="user" đặt TRÊN route: veil phải
             sống xuyên qua `router.push`, nếu nằm trong route thì bị unmount giữa chừng và sinh
             ra cú "chớp" nền phẳng. Xem StageTransitionProvider. */}
+        {/* C7 (02/08): nạp aiTier/credits/theme/lang từ localStorage NGAY khi app mở, mọi route
+            (kể cả deep-link) — phải đứng TRƯỚC children để store có giá trị đúng khi trang con
+            đọc ngay lúc mount. Render null. */}
+        <StoreHydrator />
         <StageTransitionProvider>{children}</StageTransitionProvider>
         <PWARegister />
         {/* B-3: ghi route đang đứng theo user (resume đúng chỗ khi login lại) — render null */}
