@@ -334,8 +334,11 @@ function MoreMenu() {
         createPortal(
           <AnimatePresence>
             {open && anchorRect && (
+              // ref ĐẶT Ở DIV CON (display:contents, không ảnh hưởng layout) — không đặt thẳng
+              // trên motion.div: AnimatePresence/PopChild clone con trực tiếp lúc exit, đọc
+              // `props.ref` kiểu cũ gây warning "ref is not a prop" (thấy lúc verify K4). Panel
+              // vẫn định vị/animate qua motion.div, chỉ mượn div con để useDismissable có DOM ref.
               <motion.div
-                ref={menuRef}
                 initial={{ opacity: 0, y: -4, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -4, scale: 0.98 }}
@@ -343,31 +346,33 @@ function MoreMenu() {
                 style={{ position: 'fixed', top: anchorRect.top, right: anchorRect.right }}
                 className="mat-panel z-[80] w-56 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
               >
-                <div className="mb-2 flex items-center justify-between rounded-[10px] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
-                  <span className="flex items-center gap-1.5">
-                    <Coins size={13} className="text-amber-400" />
-                    {tr('Tín dụng', 'Credits')}
-                  </span>
-                  <span className="font-semibold text-[var(--t1)]">{credits}</span>
-                </div>
+                <div ref={menuRef} style={{ display: 'contents' }}>
+                  <div className="mb-2 flex items-center justify-between rounded-[10px] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
+                    <span className="flex items-center gap-1.5">
+                      <Coins size={13} className="text-amber-400" />
+                      {tr('Tín dụng', 'Credits')}
+                    </span>
+                    <span className="font-semibold text-[var(--t1)]">{credits}</span>
+                  </div>
 
-                <div className="flex items-center gap-1.5">
-                  <ThemeToggle />
-                  <ShareButton />
-                  <ChatToggle />
-                </div>
+                  <div className="flex items-center gap-1.5">
+                    <ThemeToggle />
+                    <ShareButton />
+                    <ChatToggle />
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    router.push('/settings');
-                  }}
-                  className="mt-2 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-0.5 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
-                >
-                  <SettingsIcon size={13} />
-                  {tr('Cài đặt', 'Settings')}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      router.push('/settings');
+                    }}
+                    className="mt-2 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-0.5 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
+                  >
+                    <SettingsIcon size={13} />
+                    {tr('Cài đặt', 'Settings')}
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>,
@@ -491,8 +496,9 @@ function UserChip() {
         createPortal(
           <AnimatePresence>
             {open && anchorRect && (
+              // ref ở div con display:contents — xem chú thích trong MoreMenu() (tránh warning
+              // "ref is not a prop" của AnimatePresence/PopChild khi ref đặt thẳng trên motion.div).
               <motion.div
-                ref={menuRef}
                 initial={{ opacity: 0, y: -4, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -4, scale: 0.98 }}
@@ -500,32 +506,34 @@ function UserChip() {
                 style={{ position: 'fixed', top: anchorRect.top, right: anchorRect.right }}
                 className="mat-panel z-[80] w-48 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
               >
-                <div className="truncate px-2 py-1.5 text-xs text-[var(--t3)]" title={`${user.name} · ${user.email}`}>
-                  {user.name}
+                <div ref={menuRef} style={{ display: 'contents' }}>
+                  <div className="truncate px-2 py-1.5 text-xs text-[var(--t3)]" title={`${user.name} · ${user.email}`}>
+                    {user.name}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      router.push('/settings/avatar');
+                    }}
+                    className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+                  >
+                    {tr('Đổi avatar', 'Change avatar')}
+                  </button>
+                  {/* Ngăn cách phía trên — hành động phá huỷ tách khỏi mục thường, khớp yêu cầu. */}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setOpen(false);
+                      await fetch('/api/auth/me', { method: 'DELETE' });
+                      setUser(null);
+                    }}
+                    className="mt-1 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-2 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-red-400"
+                  >
+                    <LogOut size={13} />
+                    {tr('Đăng xuất', 'Sign out')}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    router.push('/settings/avatar');
-                  }}
-                  className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
-                >
-                  {tr('Đổi avatar', 'Change avatar')}
-                </button>
-                {/* Ngăn cách phía trên — hành động phá huỷ tách khỏi mục thường, khớp yêu cầu. */}
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setOpen(false);
-                    await fetch('/api/auth/me', { method: 'DELETE' });
-                    setUser(null);
-                  }}
-                  className="mt-1 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-2 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-red-400"
-                >
-                  <LogOut size={13} />
-                  {tr('Đăng xuất', 'Sign out')}
-                </button>
               </motion.div>
             )}
           </AnimatePresence>,
