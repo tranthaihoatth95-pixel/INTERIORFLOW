@@ -859,3 +859,37 @@ ràng trong UI đây là "thêm người đã có tài khoản", không phải m
    roles Viewer/Commenter/Editor riêng cho canvas** (SPEC-CHANG2-UI-2MODE §3 liệt đây là khái
    niệm KHÁC `ProjectMember` role hiện có — "collab-share, KHÁC phân quyền IF1/IF2" — cần thiết kế
    mới, không có hạ tầng nào khớp sẵn, để việc riêng).
+
+## G2 phần (4) — presence online/offline + mời — XONG
+- Commit `0cfdd62` (`components/collab/PresenceBar.tsx`, viết lại toàn bộ).
+- Code đúng thiết kế đã mô tả ở trên: gộp cursor sống (`others`/`meId`) + roster
+  `ProjectMember` (`GET /api/projects/{id}/members`, poll 30s) → online trước/offline sau,
+  chấm emerald/xám. Nút "+" chỉ hiện khi `canManage`, mở `Popover` (portal có sẵn) lọc
+  `team` từ `/api/dashboard` bỏ người đã là member, bấm "Thêm" gọi
+  `POST /api/projects/{id}/members` role viewer mặc định.
+- 💭 **2 bug thật phát hiện lúc verify browser** (đã sửa, chi tiết kỹ thuật trong commit
+  `0cfdd62`):
+  1. Avatar offline hiện sai `opacity:1` thay vì `.45` — `animate={{opacity:1}}` cứng của
+     framer-motion đè mất `style={{opacity:.45}}` tĩnh cùng property (framer-motion tự đặt
+     inline style cho property nó đang animate, luôn thắng style tĩnh dù đặt sau trong JSX).
+     Sửa: chuyển điều kiện `p.online?1:.45` vào trong `animate`, bỏ khỏi `style` tĩnh.
+  2. Console warning "Function components cannot be given refs... Check the render method of
+     `PopChild`" — do tách avatar thành component `Avatar({p})` riêng, làm CON TRỰC TIẾP của
+     `<AnimatePresence mode="popLayout">`; `AnimatePresence`/`PopChild` cần gắn ref thẳng lên
+     con để quản lý animation thoát (exit), thất bại im lặng (chỉ warning dev) với function
+     component thường (không `forwardRef`). Sửa: bỏ component `Avatar` riêng, inline lại JSX
+     thẳng vào `.map()` bên trong `AnimatePresence` — đúng cấu trúc bản GỐC trước khi tôi tách
+     ra (không phải lỗi có sẵn, lỗi do chính bước viết lại của tôi, đã tự phát hiện + sửa
+     trước khi báo xong).
+- Verify browser thật (project "Test B3 (phục hồi backup)", `canManage:true` vì `myRole:owner`
+  của user demo trên project này): thêm thành viên "hoa" qua popover mời → `POST members`
+  thành công, list cập nhật đúng. `getComputedStyle` xác nhận opacity self=1, hoa(offline)=0.45
+  — cả hai lần: lần đầu trên tab cũ (nghi ngờ vì tab tái dùng giữ buffer console cũ), lần hai
+  trên **tab hoàn toàn mới** (đúng quy ước "console phải sạch từ đầu" của phiên) → console
+  0 error, xác nhận dứt điểm bug #2 đã hết. Dark theme: nền kính tối đúng
+  (`rgba(26,26,30,.82)`), opacity giữ nguyên đúng. tsc/eslint/`npm test` sạch (0 fail, exit 0).
+  Dọn dữ liệu test: xoá "hoa" khỏi `ProjectMember` của "Test B3" qua `DELETE
+  /api/projects/{id}/members?userId=...` (xác nhận roster về lại đúng 1 member owner ban đầu).
+- **Lưu ý cho phần sau**: `currentProjectId` mặc định `null` cho "Dự án mẫu" (flow trần, không
+  có `Project` DB record bọc ngoài) — `PresenceBar` tự ẩn khi không đủ điều kiện
+  (`people.length<=1 && !canManage`), đúng hành vi mong muốn, không phải bug.
