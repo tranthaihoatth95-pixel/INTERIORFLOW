@@ -756,3 +756,47 @@ vì đặt trong chính node = tự động neo đúng vị trí theo pan/zoom/k
   `minZoom=0.15`) — KHÔNG xoá vì không chắc provenance (2 cái đầu có thể là "2 node" đã thấy từ
   đầu phiên trước tôi động vào gì; cái thứ 3 khả nghi là artifact test nhưng không chắc 100%).
   Ghi lại để Hoà tự quyết có dọn không — không tự ý xoá dữ liệu không chắc chắn là của mình.
+
+## G2 phần (3) — toolbar bút tablet (bút·marker·highlight·tẩy) — THIẾT KẾ (viết trước khi code)
+**Khảo sát lại**: `SketchCanvas.tsx`/`MaskPainterModal.tsx`/`AnnotateModal.tsx` đều là canvas 2D
+CỠ CỐ ĐỊNH (vẽ lên 1 tấm ảnh/khung tĩnh) — KHÔNG chạy trong không gian flow-space vô hạn
+(pan/zoom) của `FlowCanvas`. Không tái dùng trực tiếp được cho "vẽ tay lên MẶT PHẲNG canvas Mood+
+Collab" (khác hẳn "vẽ lên 1 tấm ảnh cụ thể"). Cơ chế containment/toạ độ gần nhất để học lại là
+CHÍNH G2 phần (1) vừa làm (`FlowCanvas.tsx` tool='frame': bắt pointer trên nền canvas, quy đổi
+`screenToFlowPosition` lúc thả, xem trong `ViewportPortal` như `GroupOverlay`).
+
+**Quyết định kiến trúc**: nét vẽ là dữ liệu FLOW-SPACE (polyline điểm x,y flow-space, KHÔNG phải
+pixel màn hình) → tự đúng theo pan/zoom vĩnh viễn, giống `GroupOverlay`/khung phòng. Render bằng
+1 lớp SVG mới `DrawLayer.tsx` bọc `ViewportPortal`, vẽ toàn bộ nét đã lưu bằng `<polyline>`. Tool
+vẽ dùng CHUNG state `tool` đã có (mở rộng `Tool` thêm `'pen'|'marker'|'highlight'|'eraser'`,
+không tạo state riêng) — nhất quán với `'frame'` đã thêm ở phần (1).
+
+**Việc làm**:
+1. `lib/store.ts`: type `DrawStroke {id,tool:'pen'|'marker'|'highlight',points:{x,y}[],color,
+   width}`, field `strokes: DrawStroke[]`. `Tool` thêm `'pen'|'marker'|'highlight'|'eraser'`.
+   Action `addStroke(stroke)`, `eraseAt(pos)` (xoá NGUYÊN nét nào có điểm nằm trong bán kính tẩy —
+   tẩy kiểu vector "xoá cả nét chạm tới", KHÔNG phải tẩy pixel bitmap — đơn giản, khớp mức MVP).
+   Đi qua ĐỦ 5 chỗ `groups` như phần (1)/(2) để đồng bộ persist.
+2. `components/render-studio/DrawLayer.tsx` (mới): SVG trong `ViewportPortal`, mỗi `DrawStroke`
+   → `<polyline>` với style theo tool — pen: đặc màu accent-ink, opacity 1; marker: opacity ~0.55,
+   nét dày hơn; highlight: opacity ~0.3, RẤT dày, `mixBlendMode:'multiply'` (hiệu ứng dạ quang
+   kinh điển). Nét ĐANG VẼ (chưa thả chuột) là state cục bộ riêng, render đè lên cùng cách.
+3. `components/render-studio/DrawToolbar.tsx` (mới) — thanh dọc TRÁI nổi trên canvas (khác
+   `LeftRail` app-level và `BottomToolbar` — đúng vị trí "toolbar trái" spec chỉ rõ), 4 nút Bút
+   (`Pen`)/Marker (`Highlighter` icon nhạt hơn hoặc `PenTool`)/Tô sáng (`Highlighter`)/Tẩy
+   (`Eraser`) — TỪ lucide, nút ≥34px (đúng spec "Nút to, tối ưu chạm/pen"). + nút "Chọn" reset
+   tool về `'select'`. Chỉ hiện ở mode='render' (canvas Mood+Collab).
+4. `FlowCanvas.tsx`: mở rộng handler pointerdown/move/up đã viết cho `tool==='frame'` sang xử lý
+   thêm 4 tool vẽ mới — khi `tool` ∈ {pen,marker,highlight}: tích luỹ điểm (quy đổi
+   `screenToFlowPosition` MỖI lần move, khác `frame` chỉ quy đổi lúc thả — vẽ tay cần điểm trung
+   gian để đường cong mượt) → thả chuột: `addStroke`. `tool==='eraser'`: mỗi lần move gọi
+   `eraseAt(flowPos)` liên tục (tẩy theo vệt kéo, không cần thả mới tẩy). `panOnDrag=false` cho cả
+   4 tool mới (giống 'frame').
+5. Bỏ NGOÀI phạm vi phần (3) (ghi rõ): **palm-rejection thật** (cần phân biệt `pointerType`
+   'pen' vs 'touch' lúc CÓ CẢ HAI đồng thời — không có thiết bị tablet thật trong môi trường test
+   để kiểm chứng đáng tin cậy, chỉ ghi nhận `e.pointerType` sẵn có trong sự kiện, CHƯA viết logic
+   lọc palm) · **chữ/hình/ảnh trong toolbar trái** (spec liệt "chọn/sticky/chữ/hình/ảnh/comment"
+   nhưng sticky/comment ĐÃ có lối vào riêng — BottomToolbar/CommentPin — không lặp; chữ/hình/ảnh
+   là khả năng MỚI hoàn toàn, chưa có node/tool nào tương ứng, để việc riêng) · **undo/redo cho
+   nét vẽ** (dùng `snapshot()` chung của toàn store — nét vẽ sẽ ĐI KÈM undo/redo hiện có của
+   nodes/edges/groups một cách TỰ NHIÊN vì cùng 1 store, nhưng CHƯA kiểm tra riêng hành vi này).
