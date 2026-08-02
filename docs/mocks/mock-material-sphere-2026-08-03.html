@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Thư viện · Quả cầu vật liệu + tạo theo template D5 — mock hợp đồng</title>
+<!--
+  MOCK VIỆC 4 · QUẢ CẦU VẬT LIỆU — COWORK-UI dựng 03/08/2026
+  Nguồn: SPEC-VAT-LIEU-PBR-IF §2 (quả cầu three.js + RoomEnvironment PMREM chung, cache PNG theo
+  hash(params), 3 cảnh Cầu/Sàn/Vải tự chọn theo danh mục, nấc 100/50/25%) + §3 (tạo vật liệu theo
+  TEMPLATE kiểu D5 ~8 trường, KHÔNG ~40 của V-Ray; normal từ ảnh màu; batch import theo hậu tố).
+  Bối cảnh: Thư viện = MỘT sheet (Hoà chốt 03/08, a73c658) mở đè mọi màn — đây là kệ Vật liệu
+  ở mode Vẽ 3D. Quả cầu trong mock = CSS gradient PLACEHOLDER cho PNG render three.js thật.
+  Token chép nguyên app/globals.css · 2 theme (phím D) · Esc đóng sheet.
+-->
+<style>
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --radius-sm:10px; --radius-md:14px; --radius-lg:20px; --radius-xl:28px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --blur:22px; --blur-strong:40px;
+  --ease-apple:cubic-bezier(0.32,0.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --tap:32px; --row:28px; --gap:8px;
+}
+:root,:root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --dots:#26262d;
+  --mat-header:rgba(20,20,23,.72); --mat-panel:rgba(20,20,23,.68);
+  --mat-card:rgba(26,26,30,.82); --mat-overlay:rgba(6,6,8,.56); --mat-hairline:rgba(255,255,255,.06);
+  --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --dots:#ddd8ce;
+  --mat-header:rgba(250,248,244,.72); --mat-panel:rgba(250,248,244,.7);
+  --mat-card:rgba(255,255,255,.82); --mat-overlay:rgba(60,55,48,.28); --mat-hairline:rgba(0,0,0,.05);
+  --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+}
+@media (hover:none) and (pointer:coarse){ :root{ --tap:44px; --row:44px; --gap:12px } }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--t1);overflow:hidden;
+  font:var(--fw-normal) var(--fs-xs)/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  transition:background-color var(--dur-base) var(--ease-apple),color var(--dur-base) var(--ease-apple)}
+svg{display:block}
+button{font:inherit;color:inherit}
+.i{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.i.s{width:13px;height:13px}
+:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px;border-radius:var(--radius-sm)}
+.pin{position:absolute;z-index:60;display:flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700}
+
+/* Nền: shell mờ phía sau (gợi khung app, không cần chi tiết) */
+.backdrop{position:fixed;inset:0;background:
+  radial-gradient(circle at 1px 1px,var(--dots) 1px,transparent 0) 0 0/24px 24px,var(--bg)}
+.dim{position:fixed;inset:0;background:var(--mat-overlay);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+
+/* ══ SHEET THƯ VIỆN — kính, bo lg (panel kính nổi = PORTAL, luật K4) ══ */
+@keyframes ramp{0%{opacity:0;transform:translate(-50%,-50%) scale(.96)}60%{opacity:1;transform:translate(-50%,-50%) scale(1.008)}100%{transform:translate(-50%,-50%) scale(1)}}
+.sheet{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:1180px;height:720px;
+  background:var(--mat-card);backdrop-filter:saturate(180%) blur(var(--blur-strong));
+  -webkit-backdrop-filter:saturate(180%) blur(var(--blur-strong));
+  border:1px solid var(--mat-hairline);border-radius:var(--radius-lg);box-shadow:var(--shadow-sheet);
+  display:flex;flex-direction:column;overflow:hidden;animation:ramp var(--dur-base) var(--ease-apple)}
+.sh{height:46px;flex:none;display:flex;align-items:center;gap:10px;padding:0 8px 0 16px;
+  border-bottom:1px solid var(--mat-hairline)}
+.sh h1{margin:0;font-size:var(--fs-sm);font-weight:var(--fw-semi)}
+.shelf{display:flex;background:var(--field);border-radius:var(--radius-sm);padding:2px;margin-left:8px}
+.shelf button{border:0;background:transparent;color:var(--t3);font-size:var(--fs-xs);padding:5px 13px;
+  border-radius:8px;cursor:pointer;transition:color .12s var(--ease-apple)}
+.shelf button.on{background:var(--panel);color:var(--t1);font-weight:var(--fw-semi);box-shadow:var(--shadow-node)}
+.sh .x{margin-left:auto;width:30px;height:30px;border:0;background:transparent;color:var(--t3);
+  border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:background .12s var(--ease-apple)}
+.sh .x:hover{background:var(--hover);color:var(--t1)}
+.body{flex:1;display:flex;min-height:0}
+
+/* ── TRÁI: kệ lưới quả cầu ── */
+.rack{flex:1;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--mat-hairline)}
+.tools{flex:none;display:flex;align-items:center;gap:8px;padding:10px 14px}
+.search{width:220px;height:30px;display:flex;align-items:center;gap:7px;background:var(--field);
+  border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 9px;color:var(--t4);font-size:var(--fs-xs)}
+.chips{display:flex;gap:4px}
+.chip{height:26px;border:0;background:var(--field);color:var(--t3);border-radius:13px;padding:0 11px;
+  font-size:var(--fs-2xs);cursor:pointer;transition:background .12s var(--ease-apple),transform .15s var(--ease-apple)}
+.chip:hover{background:var(--hover);transform:scale(1.04)}
+.chip.on{background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semi)}
+.src{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:var(--fs-2xs);color:var(--t4)}
+.src b{color:var(--t3);font-weight:var(--fw-semi)}
+.grid{flex:1;overflow-y:auto;padding:4px 14px 16px;display:grid;
+  grid-template-columns:repeat(5,1fr);gap:10px;align-content:start;scrollbar-width:thin}
+.cell{position:relative;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-md);
+  padding:12px 10px 9px;text-align:center;cursor:pointer;
+  transition:transform .2s var(--ease-apple),border-color .12s var(--ease-apple),box-shadow .2s var(--ease-apple)}
+.cell:hover{transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-node)}
+.cell.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-ring)}
+/* Quả cầu — CSS placeholder cho PNG render three.js (PMREM RoomEnvironment) */
+.sp{width:64px;height:64px;border-radius:50%;margin:0 auto 8px;position:relative;
+  box-shadow:0 8px 14px -6px rgba(0,0,0,.5)}
+.sp::after{content:"";position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle at 32% 26%,rgba(255,255,255,.85) 0%,rgba(255,255,255,.18) 18%,transparent 40%),
+             radial-gradient(circle at 70% 80%,rgba(255,255,255,.12) 0%,transparent 42%),
+             radial-gradient(circle at 50% 115%,rgba(0,0,0,.42) 0%,transparent 55%)}
+.sp.rough::after{background:radial-gradient(circle at 32% 26%,rgba(255,255,255,.4) 0%,rgba(255,255,255,.1) 30%,transparent 55%),
+  radial-gradient(circle at 50% 115%,rgba(0,0,0,.4) 0%,transparent 55%)}
+.cell .nm{font-size:var(--fs-2xs);font-weight:500;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cell .id{font-size:9.5px;color:var(--t4);font-family:ui-monospace,Menlo,monospace;margin-top:1px}
+.cell .bd{position:absolute;top:7px;right:7px;font-size:9px;font-weight:var(--fw-semi);color:var(--t4);
+  background:var(--field);border-radius:6px;padding:1px 5px}
+
+/* ── PHẢI: panel tạo vật liệu (template D5) ── */
+.make{width:316px;flex:none;display:flex;flex-direction:column;min-height:0}
+.mh{flex:none;padding:12px 14px 0}
+.mh h2{margin:0 0 2px;font-size:var(--fs-sm);font-weight:var(--fw-semi)}
+.mh .sub{font-size:var(--fs-2xs);color:var(--t4)}
+.mscroll{flex:1;overflow-y:auto;padding:10px 14px 14px;scrollbar-width:thin}
+.grp{padding:10px 0;border-bottom:1px solid var(--mat-hairline)}
+.grp:first-child{padding-top:0}
+.grp h4{margin:0 0 8px;font-size:var(--fs-2xs);font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t4)}
+/* 8 template — lưới 4×2 */
+.tpl{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.tp{height:52px;border:1px solid var(--border);background:var(--field);border-radius:var(--radius-sm);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;
+  font-size:9.5px;color:var(--t3);transition:border-color .12s var(--ease-apple),background .12s var(--ease-apple)}
+.tp:hover{background:var(--hover)}
+.tp.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semi)}
+.tp .i{width:15px;height:15px}
+/* preview lớn 100% + 3 cảnh */
+.pv{display:flex;gap:12px;align-items:center}
+.bigsp{width:96px;height:96px;border-radius:50%;flex:none;position:relative;
+  background:radial-gradient(circle at 38% 32%,#7a5a3d 0%,#5f4227 55%,#3f2c18 100%);
+  box-shadow:0 12px 20px -8px rgba(0,0,0,.55)}
+.bigsp::after{content:"";position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle at 32% 26%,rgba(255,255,255,.55) 0%,rgba(255,255,255,.12) 22%,transparent 45%),
+             radial-gradient(circle at 50% 118%,rgba(0,0,0,.4) 0%,transparent 55%)}
+.pv .col{flex:1;display:flex;flex-direction:column;gap:6px}
+.scene{display:flex;background:var(--field);border-radius:var(--radius-sm);padding:2px}
+.scene button{flex:1;border:0;background:transparent;color:var(--t3);font-size:var(--fs-2xs);padding:4px 0;
+  border-radius:8px;cursor:pointer}
+.scene button.on{background:var(--panel);color:var(--t1);font-weight:var(--fw-semi);box-shadow:var(--shadow-node)}
+.reshint{font-size:9.5px;color:var(--t4);line-height:1.4}
+/* form ~8 trường */
+.fld{height:28px;background:var(--field);border:1px solid transparent;border-radius:var(--radius-sm);
+  padding:0 9px;display:flex;align-items:center;gap:7px;font-size:var(--fs-xs);margin-bottom:5px;
+  transition:border-color .12s var(--ease-apple)}
+.fld:hover{border-color:var(--border)}
+.fld .k{color:var(--t4);font-size:var(--fs-2xs);font-weight:var(--fw-semi);width:64px;flex:none}
+.fld .v{margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)}
+.fld .swc{width:16px;height:16px;border-radius:5px;background:linear-gradient(135deg,#7a5a3d,#4a3520);
+  border:1px solid var(--border-strong)}
+.range{flex:1;height:3px;border-radius:2px;background:var(--border-strong);position:relative}
+.range i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--accent)}
+.range b{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--t1);
+  transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.ghost{width:100%;height:30px;border:1px dashed var(--border-strong);background:transparent;color:var(--t3);
+  border-radius:var(--radius-sm);font-size:var(--fs-2xs);display:flex;align-items:center;justify-content:center;
+  gap:6px;cursor:pointer;transition:border-color .12s var(--ease-apple),color .12s var(--ease-apple)}
+.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.note9{font-size:9.5px;color:var(--t4);line-height:1.45;margin-top:6px}
+.note9 code{background:var(--field);border-radius:4px;padding:0 4px;font-size:9px}
+.cta{flex:none;padding:12px 14px;border-top:1px solid var(--mat-hairline);display:flex;gap:6px}
+.cta .pri{flex:1;height:34px;border:0;border-radius:var(--radius-sm);background:var(--accent);color:#fff;
+  font-size:var(--fs-xs);font-weight:var(--fw-semi);cursor:pointer;transition:background .12s var(--ease-apple)}
+.cta .pri:hover{background:var(--accent-strong)}
+.cta .sec{height:34px;padding:0 13px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--field);color:var(--t2);font-size:var(--fs-xs);cursor:pointer}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.1s!important}}
+</style>
+</head>
+<body>
+<div class="backdrop"></div>
+<div class="dim"></div>
+
+<div class="sheet">
+  <span class="pin" style="top:-9px;left:-9px">1</span>
+  <div class="sh">
+    <h1>Thư viện</h1>
+    <div class="shelf">
+      <button>Khối</button><button class="on">Vật liệu</button><button>Template</button><button>Brand Kit</button>
+    </div>
+    <button class="x" title="Đóng — Esc"><svg class="i s" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  </div>
+
+  <div class="body">
+    <!-- KỆ VẬT LIỆU -->
+    <div class="rack">
+      <div class="tools">
+        <div class="search"><svg class="i s" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Tìm vật liệu…</div>
+        <div class="chips">
+          <button class="chip on">Tất cả</button><button class="chip">Gỗ</button><button class="chip">Đá</button>
+          <button class="chip">Vải</button><button class="chip">Kim loại</button><button class="chip">Sơn</button>
+        </div>
+        <div class="src" style="position:relative"><span class="pin" style="top:-26px;right:0">2</span>
+          Lưới render <b>25%</b> · panel <b>100%</b> · cache PNG</div>
+      </div>
+
+      <div class="grid">
+        <div class="cell on" style="position:relative"><span class="pin" style="top:-9px;left:-9px">3</span>
+          <div class="sp" style="background:radial-gradient(circle at 38% 32%,#7a5a3d,#5f4227 55%,#3f2c18)"></div>
+          <div class="nm">Gỗ óc chó</div><div class="id">OAK-224</div><span class="bd">ATLAS</span></div>
+        <div class="cell">
+          <div class="sp" style="background:radial-gradient(circle at 38% 32%,#b8ad9e,#948a7c 55%,#6e6559)"></div>
+          <div class="nm">Đá travertine</div><div class="id">STN-081</div><span class="bd">ATLAS</span></div>
+        <div class="cell">
+          <div class="sp rough" style="background:radial-gradient(circle at 38% 32%,#8d8f96,#6a6c73 55%,#4b4d53)"></div>
+          <div class="nm">Bê tông mài</div><div class="id">CON-012</div><span class="bd">IF</span></div>
+        <div class="cell">
+          <div class="sp" style="background:radial-gradient(circle at 38% 32%,#e8e9ec,#b9bcc4 40%,#7d818c 75%,#4e525c)"></div>
+          <div class="nm">Inox xước</div><div class="id">MTL-304</div><span class="bd">IF</span></div>
+        <div class="cell">
+          <div class="sp rough" style="background:radial-gradient(circle at 38% 32%,#9a3f2f,#7c2f22 55%,#571f16)"></div>
+          <div class="nm">Nhung đỏ gạch</div><div class="id">FAB-118</div><span class="bd">ATLAS</span></div>
+        <div class="cell">
+          <div class="sp" style="background:radial-gradient(circle at 38% 32%,#3d4a44,#2d3831 55%,#1d2620)"></div>
+          <div class="nm">Sơn xanh rêu</div><div class="id">PNT-067</div><span class="bd">IF</span></div>
+        <div class="cell">
+          <div class="sp" style="background:radial-gradient(circle at 38% 32%,#cfd8dd,#a9b6bd 50%,#7d8a92);opacity:.82"></div>
+          <div class="nm">Kính mờ</div><div class="id">GLS-021</div><span class="bd">IF</span></div>
+        <div class="cell">
+          <div class="sp rough" style="background:radial-gradient(circle at 38% 32%,#d9cdb8,#b5a88f 55%,#8b7f68)"></div>
+          <div class="nm">Vải bố kem</div><div class="id">FAB-042</div><span class="bd">ATLAS</span></div>
+        <div class="cell">
+          <div class="sp" style="background:radial-gradient(circle at 38% 32%,#4a3b2e,#33271d 55%,#201811)"></div>
+          <div class="nm">Gỗ hun khói</div><div class="id">OAK-311</div><span class="bd">ATLAS</span></div>
+        <div class="cell">
+          <div class="sp" style="background:radial-gradient(circle at 38% 32%,#c8b89a,#a3906c 55%,#78684a)"></div>
+          <div class="nm">Đá cát vàng</div><div class="id">STN-104</div><span class="bd">ATLAS</span></div>
+      </div>
+    </div>
+
+    <!-- PANEL TẠO VẬT LIỆU — template D5 -->
+    <div class="make">
+      <div class="mh" style="position:relative">
+        <span class="pin" style="top:10px;right:10px">4</span>
+        <h2>Tạo vật liệu</h2>
+        <div class="sub">Chọn template — mở đúng trường cần chỉnh, còn lại mặc định thông minh</div>
+      </div>
+      <div class="mscroll">
+        <div class="grp">
+          <h4>Template</h4>
+          <div class="tpl">
+            <button class="tp on"><svg class="i" viewBox="0 0 24 24"><path d="M4 20c2-6 4-9 8-9s6 3 8 9"/><path d="M12 11V4"/><path d="M8 6c1.5 1 2.5 1 4 0s2.5-1 4 0"/></svg>Gỗ</button>
+            <button class="tp"><svg class="i" viewBox="0 0 24 24"><path d="M8 3l-5 6 9 12 9-12-5-6z"/><path d="M3 9h18M8 3l4 6 4-6M12 21l-4-12M12 21l4-12"/></svg>Đá</button>
+            <button class="tp"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 010 18"/></svg>Sơn</button>
+            <button class="tp"><svg class="i" viewBox="0 0 24 24"><path d="M4 6c3 2 5 2 8 0s5-2 8 0M4 12c3 2 5 2 8 0s5-2 8 0M4 18c3 2 5 2 8 0s5-2 8 0"/></svg>Vải</button>
+            <button class="tp"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9l16 11M4 15l10 5"/></svg>Kim loại</button>
+            <button class="tp"><svg class="i" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 7l-2 4M14 5l-4 8"/></svg>Kính</button>
+            <button class="tp"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>Phát sáng</button>
+            <button class="tp"><svg class="i" viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 01-12 0c0-4 6-11 6-11z"/></svg>Nước</button>
+          </div>
+        </div>
+
+        <div class="grp" style="position:relative">
+          <span class="pin" style="top:8px;right:0">5</span>
+          <h4>Xem trước</h4>
+          <div class="pv">
+            <div class="bigsp"></div>
+            <div class="col">
+              <div class="scene"><button class="on">Cầu</button><button>Sàn</button><button>Vải</button></div>
+              <div class="reshint">Cảnh tự chọn theo danh mục — nhóm "Sàn" mở cảnh Sàn. Render 1 lần / lần đổi tham số.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grp">
+          <h4>Thông số · gỗ</h4>
+          <div class="fld"><span class="k">Màu gốc</span><span class="swc" style="background:linear-gradient(135deg,#7a5a3d,#4a3520)"></span><span class="v">#6B4A2F</span></div>
+          <div class="fld"><span class="k">Nhám</span><div class="range"><i style="width:62%"></i><b style="left:62%"></b></div><span class="v">0.62</span></div>
+          <div class="fld"><span class="k">Kim loại</span><div class="range"><i style="width:0%"></i><b style="left:0%"></b></div><span class="v">0.00</span></div>
+          <div class="fld"><span class="k">Normal</span><div class="range"><i style="width:40%"></i><b style="left:40%"></b></div><span class="v">0.40</span></div>
+          <div class="fld"><span class="k">Lặp ô</span><span class="v">600 × 600</span></div>
+          <div class="fld"><span class="k">Xoay vân</span><span class="v">0°</span></div>
+          <button class="ghost" style="position:relative"><span class="pin" style="top:-9px;right:-9px">6</span>
+            <svg class="i s" viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4"/><rect x="4" y="17" width="16" height="4" rx="1"/></svg>
+            Tạo normal từ ảnh màu</button>
+        </div>
+
+        <div class="grp" style="border-bottom:0">
+          <h4>Nhập nhanh</h4>
+          <button class="ghost"><svg class="i s" viewBox="0 0 24 24"><path d="M4 20h16M4 4h16M9 4v16M4 12h5"/></svg>
+            Nhập bộ PBR theo tên file</button>
+          <div class="note9" style="position:relative"><span class="pin" style="top:-4px;right:0">7</span>
+            Nhận hậu tố <code>_BaseColor</code> <code>_Roughness</code> <code>_Normal</code> — chuẩn Poliigon / ambientCG. Kéo cả thư mục vào đây.</div>
+        </div>
+      </div>
+      <div class="cta">
+        <button class="sec">Huỷ</button>
+        <button class="pri">Tạo · lưu vào kệ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase(), r=document.documentElement;
+  if(k==='d'){r.dataset.theme = r.dataset.theme==='light'?'dark':'light'}
+});
+</script>
+</body>
+</html>
