@@ -2401,3 +2401,70 @@ lặp lại `rm -f` (đã thử, luôn "Operation not permitted", không phải 
 
 **Đã cập nhật:** task tracker mục PHU #3 → completed. Chuyển sang mục 4 (schema PBR) theo
 đúng thứ tự hàng đợi §3.
+
+---
+
+## [02/08 tối, chế độ tự chạy] PHU mục 4 XONG — Schema matId PBR + export V-Ray/D5
+
+**Commit:** `72023c261b8f281319397e14c93d42af4df3c613` trên nhánh `feat/pbr-material-schema`
+trong `.worktrees/pbr-schema` (base `6ce940f`, tạo worktree mới vì `so-lenh` đã dùng cho
+mục 3). **CHƯA merge vào main.**
+
+**Đã làm đúng 3 việc §4 của `SPEC-VAT-LIEU-PBR-IF.md`:**
+1. `lib/cad/materials.ts` — thêm `pbr?: MaterialPbr` optional (type định nghĩa ở
+   `lib/materials/schema.ts` để tách khỏi phần 2D-hatch của file này). THÊM CỘT, không phá
+   cột cũ — 12 preset MATERIALS hiện có không cần sửa gì.
+2. `lib/materials/pbr-from-category.ts` — suy roughness/metallic từ chuỗi Danh mục tự do
+   (Gỗ→0.6 · Đá bóng→0.15 · Vải→0.9 đúng nguyên văn ví dụ spec, ~10 nhóm khác suy thêm cùng
+   logic: Kim loại/Vải/Thảm/Da thật/Kính/Gạch/Sơn). Luôn trả `suyDoan: true`. CỐ Ý không đụng
+   `atlas-material-map.ts`/`AtlasMaterialUpsertData` — giữ tách THỊ GIÁC/THƯƠNG MẠI theo luật
+   2.1.9.i đã chốt (không tự ý mở rộng phạm vi bảng thương mại).
+3. `lib/materials/export-vray.ts` + `export-d5.ts` — dịch đúng 6 dòng bảng Chaos §1 cho
+   V-Ray (roughness truyền THẲNG không đảo vì bật "Use Roughness" · metallic 0/1 passthrough
+   · specular→Fresnel IOR bằng công thức đảo ngược F0 · normal/height nạp linear tangent-
+   space · emissive→Self-Illumination+GI · glass→Refraction+IOR+Fog); D5 gần như passthrough
+   (đã metal/rough chuẩn theo spec §1).
+
+**⚠️ 2 điểm thành thật cần Hoà biết (KHÔNG giấu, đúng §0 LUẬT TRUNG THỰC):**
+- `export-vray.ts`: bảng Chaos §1 KHÔNG có dòng cho `clearcoat`/`sheen` (dù matId có 2 field
+  này ở phần "[mở rộng]") — tôi CỐ Ý không xuất 2 field đó sang V-Ray (tránh bịa tên tham số
+  VRayMtl chưa tra doc), chỉ liệt kê chúng vào `chuaXuatDoThieuDoc: [...]` để ai đọc code
+  biết đang thiếu chứ không phải quên. Cần nghiên cứu thêm doc Chaos về Coat/Sheen layer nếu
+  muốn xuất đủ.
+- `export-d5.ts`: spec chỉ trích dẫn "D5 Material manual" ở mức KẾT LUẬN (D5 = metal/rough
+  thuần), KHÔNG có bảng tên-field D5 API đã xác minh như đã tra cho V-Ray. Tên field tôi đặt
+  (`albedoSrgb`/`metalness`...) là ĐẶT HỢP LÝ theo UI D5 công khai quan sát được, CHƯA phải
+  trích dẫn chính thức — đã ghi rõ trong docstring đầu file, cần đối chiếu lại nếu sau này
+  nối D5 SDK/plugin thật.
+
+**Giới hạn suy đoán danh mục đã ghi rõ trong code:** sau khi bỏ dấu, "đá" và "da" (leather)
+trùng thành cùng chuỗi "da" — hàm CỐ Ý không suy đoán khi chỉ có 1 từ trơ ("Đá" hoặc "Da"
+đứng một mình → rơi fallback trung tính 0.5), chỉ suy khi có đủ cụm ngữ cảnh ("đá tự
+nhiên"/"da thật"...). Thà không đoán còn hơn đoán sai một nửa số lần.
+
+**Kiểm sạch:** `tsc --noEmit -p .` sạch (cả 3 file mới + `materials.ts` sửa) · `eslint`
+sạch · test riêng 87/87 pass (30 pbr-from-category + 31 export-vray + 26 export-d5) ·
+`npm test` TOÀN REPO exit 0 (đối chiếu kỹ vì sợ field `pbr?` optional mới làm vỡ
+`material-texture.test.ts` — chạy riêng xác nhận vẫn 30/30, không đụng gì).
+
+**Đã cập nhật:** task tracker mục PHU #4 → completed.
+
+**⛔ CHƯA thêm dòng §1 `SO-KIEM-TONG.md` như luật §4 đòi — báo đúng sự thật:** lúc định làm,
+`git status` ở main cho thấy `docs/SO-KIEM-TONG.md` (+ nhiều file `docs/BAO-CAO-COWORK-*`
+khác) đang có SỬA CHƯA COMMIT ngay trong working tree main — một phiên khác (rất có thể
+Cowork, đúng mô tả "TỔNG bơm mỗi ca" trong chính file đó) đang dùng dở. Sửa+commit đè lên
+lúc này rủi ro cuốn theo/làm rối bản nháp của phiên kia (dù kỹ thuật build tree thủ công tôi
+đang dùng CÓ THỂ tách riêng, nhưng rủi ro nhầm lẫn cao hơn lợi ích) — nên CHỦ ĐỘNG KHÔNG đụng
+`SO-KIEM-TONG.md`, để CHINH/Cowork (đúng vai gác cổng docs theo §3 mục 5b) tự gộp khi họ
+rảnh tay và biết rõ bản nháp kia đang ở đâu. 2 dòng §1 ĐỀ NGHỊ thêm (Hoà/CHINH/Cowork tự
+quyết dùng nguyên văn hay sửa):
+
+| Sổ lệnh CAD gom 97 alias + `run()` dispatch thành 1 nguồn | `lib/commands/registry.ts` | 🟡 `4eb94c3` trên **feat/so-lenh-registry** (`.worktrees/so-lenh`), chưa merge | test 56/56 pass |
+| Schema matId PBR (glTF metal/rough) + export V-Ray/D5 | `lib/materials/{schema,export-vray,export-d5,pbr-from-category}.ts` | 🟡 `72023c2` trên **feat/pbr-material-schema** (`.worktrees/pbr-schema`), chưa merge | test 87/87 pass |
+
+Cả 2 nhánh còn nằm trong `.worktrees/` — CHƯA merge main, an toàn (nhánh mới hoàn toàn,
+không đè lên gì). Do phiên đã dài (2 mục nghiên cứu+code+test+commit liên tiếp + xử lý 3 lần
+vướng khoá git FUSE ở 3 worktree khác nhau), chốt phiên tại đây theo đúng lệnh "Context ~85%
+→ chốt phiên" — CÒN hàng đợi (mục 5 CAD gap-check · mục 6 guide/snap · mục 7 BOQ glue), phiên
+sau đọc lại §3 lấy tiếp mục 5, KHÔNG phải "HẾT VIỆC" (hàng đợi chưa cạn, chỉ là dừng chủ động
+đúng ngưỡng context).
