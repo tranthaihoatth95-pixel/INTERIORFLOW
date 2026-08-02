@@ -16,9 +16,13 @@ interface Props {
 }
 
 /**
- * Modal "+ Publish lên kệ" — portal ra body (LUẬT PORTAL, `docs/00-CHOT.md` K4), kính lỏng
+ * Modal "Đưa lên kệ" — portal ra body (LUẬT PORTAL, `docs/00-CHOT.md` K4), kính lỏng
  * (`backdrop-filter` + biên sáng, SPEC-DESIGN-SYSTEM-IF §2b). Submit chỉ ghi trạng thái CHỜ DUYỆT
- * cục bộ — publish thật ("chủ studio duyệt") chưa có backend, xem docs/BAO-CAO-G4.md.
+ * cục bộ — publish thật ("chủ studio duyệt") chưa có backend, xem docs/BAO-CAO-G4-LIB.md.
+ *
+ * 03/08: TÊN DUY NHẤT là "Đưa lên kệ" — trước đây có 2 tên cho cùng 1 việc ("Publish lên kệ" ở
+ * trang cũ vs "Đưa lên kệ" ở sheet). Chữ "publish" là jargon, không lộ ra UI
+ * (`docs/SPEC-NGON-NGU-CHI-DAN.md` — từ điển nội bộ→người dùng).
  */
 export function PublishModal({ open, defaultStage, onClose, onSubmit }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -60,7 +64,7 @@ export function PublishModal({ open, defaultStage, onClose, onSubmit }: Props) {
         }}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-[15px] font-semibold" style={{ color: 'var(--t1)' }}>Publish lên kệ</h2>
+          <h2 className="text-[15px] font-semibold" style={{ color: 'var(--t1)' }}>Đưa lên kệ</h2>
           <button type="button" onClick={onClose} className="rounded-full p-1" style={{ color: 'var(--t4)' }} aria-label="Đóng">
             <X size={16} />
           </button>

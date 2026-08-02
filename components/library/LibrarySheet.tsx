@@ -35,8 +35,16 @@ export const LIBRARY_INSTANTIATE_EVENT = 'if:library-instantiate';
 export const LIBRARY_APPLY_EVENT = 'if:library-apply';
 
 /**
- * THƯ VIỆN — sheet kính TRƯỢT LÊN từ đáy (không phải panel hẹp, không phải trang riêng).
+ * THƯ VIỆN — sheet kính TRƯỢT LÊN từ đáy. Đây là **NƠI DUY NHẤT** của thư viện trong app
+ * (Hoà chốt 03/08): không có trang `/library` riêng, không có panel thứ hai. Lý do: thư viện chỉ
+ * có nghĩa khi KÉO được vào chỗ đang làm — sheet luôn có bàn làm việc thật nằm ngay dưới, còn
+ * trang riêng thì không (nó đã phải chế ra "vùng thả mô phỏng", nay xoá hẳn).
+ *
  * Port nguyên văn `docs/mocks/mock-if-3chang.html` (xem `library-sheet-css.ts`).
+ *
+ * Kệ TỰ LỌC theo chặng đang mở (contextual shelf) — chặng lấy từ state thật của app do nơi mount
+ * truyền vào (`StageShell active`), KHÔNG đọc query param (`?stage=` đã bỏ 03/08: URL và tab đang
+ * sáng có thể lệch nhau ⇒ trạng thái mâu thuẫn). Muốn xem toàn kho thì dùng chip "Tất cả".
  *
  * Ba động tác đúng `docs/SPEC-STAGE-LIBRARIES.md`:
  *  · KÉO–THẢ  = instantiate → 1 bản làm việc, sửa KHÔNG đụng bản gốc (template gốc read-only).

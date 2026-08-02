@@ -31,6 +31,29 @@ export function openLibrarySheet(detail: OpenLibraryDetail = {}): void {
   window.dispatchEvent(new CustomEvent<OpenLibraryDetail>(OPEN_EVENT, { detail }));
 }
 
+/** Khoá "mở Thư viện ngay khi trang sau tải xong" — dùng cho deep-link `/library` đã bỏ (route đó
+ * redirect về trang trước rồi mở sheet). Phải qua `sessionStorage` vì điều hướng có thể là TẢI
+ * TRANG CỨNG, lúc đó mọi listener/timer của trang cũ đã chết. */
+const PENDING_KEY = 'if:open-library-on-load';
+
+export function markOpenLibraryOnLoad(): void {
+  try {
+    window.sessionStorage.setItem(PENDING_KEY, '1');
+  } catch {
+    // private-mode/quota — mất khoá thì cùng lắm là không tự mở, không gãy gì
+  }
+}
+
+function consumeOpenLibraryOnLoad(): boolean {
+  try {
+    if (window.sessionStorage.getItem(PENDING_KEY) !== '1') return false;
+    window.sessionStorage.removeItem(PENDING_KEY); // dùng 1 lần, không dính ở lần tải sau
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Trạng thái đóng/mở của sheet + phím tắt.
  * - `L` mở/đóng (khớp mock: `if(k==='l')`), CHỈ khi không đang gõ trong ô nhập.
@@ -49,6 +72,8 @@ export function useLibrarySheetState() {
       setOpen(true);
     };
     window.addEventListener(OPEN_EVENT, onOpen);
+    // Đến từ deep-link `/library` cũ → mở ngay khi trang đích đã tải xong.
+    if (consumeOpenLibraryOnLoad()) setOpen(true);
     return () => window.removeEventListener(OPEN_EVENT, onOpen);
   }, []);
 

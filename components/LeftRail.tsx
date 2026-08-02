@@ -10,6 +10,7 @@ import {
   Boxes,
 } from 'lucide-react';
 import { useFlowStore, type Panel } from '@/lib/store';
+import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import { useT } from '@/lib/i18n';
 import { useDismissable } from '@/lib/useDismissable';
 import { cn } from '@/lib/utils';
@@ -100,8 +101,8 @@ function RailButton({
  * StageShell (03/08): rail nay song o CA 3 chang qua prop `active`.
  * - Tong quan / Du an & Flow: Dashboard + FlowsPanel mount trong StageShell -> hoat dong moi chang.
  * - Files: noi route /files (G4 da co route; Hoa chot bo trang thai "sap co" 03/08).
- * - Thu vien: o Render mo NodeLibraryPanel (nhu cau tai cho cua canvas node); o CAD/Present
- *   panel do khong mount -> dieu huong /library (Master Library route that).
+ * - Thu vien: MO SHEET o moi chang (openLibrarySheet) — khong dieu huong, khong doi ten theo
+ *   chang. Trang /library da xoa 03/08 (Hoa chot: thu vien la MOT noi duy nhat = sheet).
  */
 export function LeftRail({ active = 'render' }: { active?: AppChromeActive } = {}) {
   const panel = useFlowStore((s) => s.panel);
@@ -131,13 +132,14 @@ export function LeftRail({ active = 'render' }: { active?: AppChromeActive } = {
     { icon: LayoutDashboard, label: ['Tổng quan — Dashboard project & team', 'Overview — project & team dashboard'], action: () => openOnCanvas(() => setDashboardOpen(true)), active: onCanvas && dashboardOpen },
     { icon: FolderKanban, label: ['Dự án & Flow', 'Projects & Flows'], panel: 'flows', action: () => openOnCanvas(() => setPanel('flows')), active: onCanvas && panel === 'flows' },
     { icon: FolderOpen, label: ['Files', 'Files'], action: () => router.push('/files'), active: pathname?.startsWith('/files') ?? false },
-    {
-      icon: Boxes,
-      label: active === 'render' ? (['Thư viện Node', 'Node Library'] as [string, string]) : (['Thư viện', 'Library'] as [string, string]),
-      panel: 'library',
-      action: () => (active === 'render' ? setPanel('library') : router.push('/library')),
-      active: active === 'render' && panel === 'library',
-    },
+    // 03/08 (Hoà chốt) — THƯ VIỆN LÀ MỘT NƠI DUY NHẤT, VÀ NÓ LÀ SHEET. Trước đây mục này vừa đổi
+    // tên theo chặng ("Thư viện Node" ở Render / "Thư viện" ở chặng khác) vừa đổi hành vi (mở
+    // panel vs điều hướng `/library`) ⇒ 3 tên cho 1 thứ + 2 nơi chứa. Nay: MỘT tên "Thư viện",
+    // MỘT hành vi (mở sheet), không điều hướng. `NodeLibraryPanel` vẫn vào được qua Command
+    // Palette ("Mở Node Library") và RenderToolModeOverlay — đã grep, không mồ côi.
+    // Chặng lấy từ STATE THẬT của shell (`active`), không từ query param — sheet tự lọc kệ theo
+    // chặng đang mở. 'photo' không phải 1 trong 3 chặng có kệ riêng ⇒ về 'render' (chặng dựng ảnh).
+    { icon: Boxes, label: ['Thư viện', 'Library'], action: () => openLibrarySheet({ stage: active === 'photo' ? 'render' : active }) },
   ];
 
   // Menu tài khoản — avatar NGOÀI capsule, tự tính anchor riêng (mở XUỐNG dưới, khác `UserChip`

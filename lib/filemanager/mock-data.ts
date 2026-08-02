@@ -224,7 +224,7 @@ export const FM_FILES: FmFile[] = [
     description: 'Brief khách hàng, đồng bộ từ Drive.',
   },
 
-  // Library/Materials — matId trùng Kệ Thư viện
+  // Library/Materials — matId trùng Thư viện
   {
     id: 'f-mat-1',
     folderId: 'lib-materials',

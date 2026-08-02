@@ -1,42 +1,33 @@
 'use client';
 
-import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { LibraryShell } from '@/components/library/LibraryShell';
-import { LibrarySheet } from '@/components/library/LibrarySheet';
-import { openLibrarySheet } from '@/lib/library/use-library-sheet';
-import type { StageKey } from '@/lib/library/types';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { markOpenLibraryOnLoad } from '@/lib/library/use-library-sheet';
 
 /**
- * `/library` = Master Library dạng TRANG (kho đầy đủ). Thư viện dạng SHEET trượt lên là cửa dùng
- * NHANH trong lúc làm việc — chỗ ở thật của nó là `StageShell` (mọi chặng), NGOÀI vùng code G4.
- * Mount ở đây để chạy/nghiệm thu được thật; `?stage=cad|render|present` đổi kệ theo chặng.
- * Xem `docs/BAO-CAO-G4-LIB.md` cho 1 dòng CHINH cần thêm vào StageShell.
+ * `/library` KHÔNG còn là trang (Hoà chốt 03/08 — "Thư viện là MỘT NƠI DUY NHẤT, và nó là SHEET").
+ *
+ * Lý do bỏ trang: thư viện chỉ có nghĩa khi KÉO được vào chỗ đang làm. Trang riêng không có chỗ để
+ * kéo — bằng chứng là chính nó phải chế ra "Vùng thả mô phỏng (demo)". Sheet thì luôn có bàn làm
+ * việc thật nằm ngay dưới.
+ *
+ * Deep-link cũ (bookmark, link trong doc) không được rơi vào trang trắng: quay lại trang trước rồi
+ * MỞ SHEET. Không có lịch sử để quay lại (mở tab mới thẳng vào `/library`) thì về `/`.
  */
-function LibraryPageInner() {
-  const params = useSearchParams();
-  const raw = params.get('stage');
-  const stage: StageKey = raw === 'cad' || raw === 'present' ? raw : 'render';
+export default function LibraryRedirect() {
+  const router = useRouter();
 
-  return (
-    <>
-      <LibraryShell />
-      <LibrarySheet stage={stage} />
-      <button
-        type="button"
-        onClick={() => openLibrarySheet()}
-        className="fixed bottom-5 right-5 z-10 flex h-10 items-center gap-2 rounded-full bg-[var(--accent)] px-4 text-[12.5px] font-semibold text-white shadow-[var(--shadow-pop)] transition-colors hover:bg-[var(--accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
-      >
-        Thư viện <kbd className="rounded bg-white/20 px-1.5 py-0.5 text-[10px]">L</kbd>
-      </button>
-    </>
-  );
-}
+  useEffect(() => {
+    // Ý ĐỊNH "mở Thư viện" ghi vào sessionStorage TRƯỚC khi điều hướng, sheet đọc lúc mount.
+    //
+    // Vì sao không hẹn giờ rồi gọi `openLibrarySheet()`: gõ thẳng `/library` (bookmark, link ngoài)
+    // là TẢI TRANG CỨNG, `router.back()` cũng tải cứng trang trước ⇒ mọi timer/listener của trang
+    // này chết theo trang, sự kiện không bao giờ tới. Đã bắt được đúng ca này khi verify (bật về
+    // `/files` nhưng sheet im). `sessionStorage` sống xuyên cả 2 kiểu điều hướng.
+    markOpenLibraryOnLoad();
+    if (window.history.length > 1) router.back();
+    else router.replace('/');
+  }, [router]);
 
-export default function LibraryPage() {
-  return (
-    <Suspense>
-      <LibraryPageInner />
-    </Suspense>
-  );
+  return null;
 }

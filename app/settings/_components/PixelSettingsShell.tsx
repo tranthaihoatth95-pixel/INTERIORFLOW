@@ -11,6 +11,7 @@ import { RawStyle } from '@/components/filemanager/RawStyle';
 import { SETTINGS_MOCK_CSS } from '../_lib/settings-mock-css';
 import { useSettingsLocalState } from '../_lib/local-state';
 import { CanvasWallpaper } from './CanvasWallpaper';
+import { LibrarySheet } from '@/components/library/LibrarySheet';
 import { ProfileCard } from './ProfileCard';
 import { AppearanceCard } from './AppearanceCard';
 import { StorageCard } from './StorageCard';
@@ -30,6 +31,9 @@ export function PixelSettingsShell() {
     <div className="if-settings-outer">
       <RawStyle css={SETTINGS_MOCK_CSS} />
       <CanvasWallpaper />
+      {/* Như `/files`: trang này dùng `LeftRail` nhưng không qua `StageShell`, phải tự mount sheet
+          thì nút "Thư viện" ở rail mới hoạt động. */}
+      <LibrarySheet stage="render" />
       <div className="if-settings-app">
         {/* Rail DÙNG CHUNG toàn app — G4 bỏ rail riêng 03/08 ("đừng dựng rail thứ hai"). Cài đặt
             giờ vào qua menu avatar cuối rail (AccountMenu), không còn nút ⚙ riêng. */}

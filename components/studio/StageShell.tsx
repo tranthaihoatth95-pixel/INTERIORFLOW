@@ -27,6 +27,7 @@ import { AppChrome, type AppChromeActive } from '@/components/studio/AppChrome';
 import { LeftRail } from '@/components/LeftRail';
 import { Dashboard } from '@/components/Dashboard';
 import { FlowsPanel } from '@/components/FlowsPanel';
+import { LibrarySheet } from '@/components/library/LibrarySheet';
 
 interface Props {
   active: AppChromeActive;
@@ -68,6 +69,10 @@ export function StageShell({ active, children, inspector, statusBar, bottomExtra
       {/* Overlay/panel dùng chung — tự gate state bên trong, mount 1 lần cho cả 3 chặng */}
       <Dashboard />
       <FlowsPanel />
+      {/* Thư viện = sheet, NƠI DUY NHẤT (Hoà chốt 03/08 — trang /library đã xoá). Tự gate state
+          qua `openLibrarySheet()`/phím L, nên mount 1 lần ở đây là có ở cả 3 chặng, cùng chỗ.
+          'photo' không có kệ riêng ⇒ dùng kệ chặng dựng ảnh. */}
+      <LibrarySheet stage={active === 'photo' ? 'render' : active} />
     </div>
   );
 }

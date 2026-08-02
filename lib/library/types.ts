@@ -1,4 +1,6 @@
-// lib/library/types.ts — Kệ Thư viện (Master Library), kiểu dữ liệu mock cục bộ.
+// lib/library/types.ts — Thư viện (tên nội bộ/spec: Master Library), kiểu dữ liệu mock cục bộ.
+// ⚠️ "Master Library"/"Kệ Thư viện" KHÔNG lộ ra UI — UI chỉ dùng đúng 1 tên: "Thư viện"
+// (docs/SPEC-NGON-NGU-CHI-DAN.md, từ điển nội bộ→người dùng; Hoà chốt 03/08).
 // Nguồn: docs/SPEC-STAGE-LIBRARIES.md + docs/mocks/library-mock-note.md.
 
 export type ScopeLevel = 'chung' | 'studio' | 'chang' | 'du_an';

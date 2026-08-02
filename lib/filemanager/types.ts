@@ -57,7 +57,7 @@ export interface FmFile {
   /** ảnh/preview — 2 màu gradient thay ảnh thật (mock, không cần asset nhị phân). */
   thumbnail?: [string, string];
   description: string;
-  /** chỉ có ở file loại 'material' — khớp matId ATLAS dùng chung với Kệ Thư viện (G4). */
+  /** chỉ có ở file loại 'material' — khớp matId ATLAS dùng chung với Thư viện (G4). */
   matId?: string;
   brand?: string;
   price?: string;
