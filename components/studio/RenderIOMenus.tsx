@@ -54,7 +54,7 @@ export function RenderIOMenus() {
   const exportPdf = async () => {
     const slides = collectSlides();
     if (!slides.length) {
-      flash(false, 'Chưa có slide nào đã render — chạy node Export Deck / Slide Composer trước.');
+      flash(false, tr("Chưa có slide nào — dùng công cụ 'Export Deck / Slide Composer' trước.", "No slides yet — use the 'Export Deck / Slide Composer' tool first."));
       return;
     }
     setBusy('pdf');
@@ -73,7 +73,7 @@ export function RenderIOMenus() {
   const exportPptx = async () => {
     const slides = collectSlides();
     if (!slides.length) {
-      flash(false, 'Chưa có slide nào đã render — chạy node Export Deck / Slide Composer trước.');
+      flash(false, tr("Chưa có slide nào — dùng công cụ 'Export Deck / Slide Composer' trước.", "No slides yet — use the 'Export Deck / Slide Composer' tool first."));
       return;
     }
     setBusy('pptx');
@@ -95,51 +95,51 @@ export function RenderIOMenus() {
   const importItems: FileItem[] = [
     {
       id: 'image',
-      label: 'Ảnh (tạo node Import Image)',
-      sub: 'Chọn nhiều ảnh — mỗi ảnh 1 node gắn sẵn trên canvas',
+      label: tr('Ảnh (tạo khối Nhập ảnh)', 'Images (creates an Import Image block)'),
+      sub: tr('Chọn nhiều ảnh — mỗi ảnh 1 khối gắn sẵn trên canvas', 'Pick multiple images — each becomes 1 block, ready on the canvas'),
       icon: <ImageIcon size={15} />,
       onSelect: () => fileRef.current?.click(),
     },
     {
       id: 'flow',
-      label: 'Mở flow (.json)',
+      label: tr('Mở bảng làm việc (.json)', 'Open board (.json)'),
       icon: <FileUp size={15} />,
       onSelect: () => {},
       disabled: true,
-      disabledReason: 'Chưa hỗ trợ — flow lưu trên server, chưa xuất/nhập ra file rời',
+      disabledReason: tr('Chưa hỗ trợ — bảng làm việc lưu trên server, chưa xuất/nhập ra file rời', 'Not supported yet — boards live on the server, no file export/import yet'),
     },
   ];
 
   const exportItems: FileItem[] = [
     {
       id: 'pdf',
-      label: 'PDF thuyết trình',
-      sub: 'Gom slide đã render trong flow · 16:9 1920×1080, nhiều trang',
+      label: tr('PDF thuyết trình', 'Presentation PDF'),
+      sub: tr('Gom slide đã render trong bảng làm việc · 16:9 1920×1080, nhiều trang', 'Collects rendered slides from the board · 16:9 1920×1080, multi-page'),
       icon: <FileDown size={15} />,
       onSelect: exportPdf,
     },
     {
       id: 'pptx',
-      label: 'PowerPoint (.pptx)',
-      sub: 'Mỗi slide 1 ảnh full-bleed · khổ 16:9',
+      label: tr('PowerPoint (.pptx)', 'PowerPoint (.pptx)'),
+      sub: tr('Mỗi slide 1 ảnh full-bleed · khổ 16:9', 'Each slide is 1 full-bleed image · 16:9'),
       icon: <FileText size={15} />,
       onSelect: exportPptx,
     },
     {
       id: 'flow-export',
-      label: 'Flow (.json)',
+      label: tr('Bảng làm việc (.json)', 'Board (.json)'),
       icon: <FileUp size={15} />,
       onSelect: () => {},
       disabled: true,
-      disabledReason: 'Chưa hỗ trợ — flow lưu trên server, chưa xuất ra file rời',
+      disabledReason: tr('Chưa hỗ trợ — bảng làm việc lưu trên server, chưa xuất ra file rời', 'Not supported yet — boards live on the server, no file export yet'),
     },
     {
       id: 'print300',
-      label: 'In 300dpi (A3/A4)',
+      label: tr('In 300dpi (A3/A4)', 'Print at 300dpi (A3/A4)'),
       icon: <Printer size={15} />,
       onSelect: () => {},
       disabled: true,
-      disabledReason: 'Chưa khả dụng — ảnh render hiện ~1920px (~116dpi ở khổ A3)',
+      disabledReason: tr('Chưa khả dụng — ảnh render hiện ~1920px (~116dpi ở khổ A3)', 'Not available yet — rendered images are ~1920px (~116dpi at A3)'),
     },
   ];
 
@@ -155,7 +155,7 @@ export function RenderIOMenus() {
         disabled={!!busy}
         aria-haspopup="menu"
         aria-expanded={open}
-        title={tr('Nhập ảnh · mở flow · xuất PDF/PPTX/in ấn', 'Import images · open flow · export PDF/PPTX/print')}
+        title={tr('Nhập ảnh · mở bảng làm việc · xuất PDF/PPTX/in ấn', 'Import images · open board · export PDF/PPTX/print')}
         className="flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-[12px] font-medium text-[var(--t2)] transition-colors hover:bg-[var(--hover)] disabled:opacity-60"
       >
         <Files size={13} />

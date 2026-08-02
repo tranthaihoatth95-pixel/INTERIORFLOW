@@ -22,6 +22,7 @@ import { useEffect, useState } from 'react';
 import { Minus, X } from 'lucide-react';
 import { useToolModeUi, useIsSmallScreenForCanvas } from '@/lib/render-studio/tool-mode-ui';
 import { taskCardById } from '@/lib/render-studio/task-cards';
+import { useT } from '@/lib/i18n';
 import ToolModeForm from './ToolModeForm';
 
 export default function ToolWindow({ cardId }: { cardId: string }) {
@@ -32,6 +33,7 @@ export default function ToolWindow({ cardId }: { cardId: string }) {
   const setSessionNodeRefs = useToolModeUi((s) => s.setSessionNodeRefs);
   const smallScreen = useIsSmallScreenForCanvas();
   const card = taskCardById(cardId);
+  const tr = useT();
 
   if (!mounted || !card) return null;
 
@@ -85,8 +87,8 @@ export default function ToolWindow({ cardId }: { cardId: string }) {
           <button
             type="button"
             onClick={() => backToHome()}
-            title="Thu lại thành node nhỏ"
-            aria-label="Thu lại"
+            title={tr('Thu lại thành khối nhỏ', 'Collapse to a small block')}
+            aria-label={tr('Thu lại', 'Collapse')}
             style={{ padding: 6, borderRadius: 8, color: 'var(--t3)' }}
           >
             <Minus size={14} />

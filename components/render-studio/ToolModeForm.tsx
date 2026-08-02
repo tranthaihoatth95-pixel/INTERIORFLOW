@@ -19,6 +19,7 @@ import { exportMeasurementSpecSheet } from '@/lib/render-studio/measurement-spec
 import { getActiveBrandKit } from '@/lib/present-editor/brand-kit';
 import { ANCHOR_CONFIG, type TieredMeasurement, type AnchorKind, type Pt2D } from '@/lib/vision/single-view-metrology';
 import type { ParamDef } from '@/lib/types';
+import { useT } from '@/lib/i18n';
 
 /** Tham số của node "Đo món đồ" GOM vào "Tinh chỉnh" thu gọn — người dùng bấm Render trước, ra
  * kết quả rồi mới cần sờ tới (30/07, Hoà chỉ ra bản trước bày cả 2 slider ra trước khi chạy). */
@@ -33,6 +34,7 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
   const backToHome = useToolModeUi((s) => s.backToHome);
   const openCanvas = useToolModeUi((s) => s.openCanvas);
   const smallScreen = useIsSmallScreenForCanvas();
+  const tr = useT();
 
   // LỖ RÒ 1 (2.2.77, 29/07, docs/CHOT-SO-MA-2026-07-29.md §D) — ảnh đã thả + node graph refs
   // sống Ở STORE (useToolModeUi), KHÔNG phải `useState`/`useRef` cục bộ trong component này.
@@ -421,7 +423,7 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
                 <button
                   type="button"
                   onClick={openCanvas}
-                  title="Xem/chỉnh node phía sau thẻ này trên canvas"
+                  title={tr('Xem/chỉnh khối phía sau thẻ này trên canvas', 'View/edit the block behind this card on the canvas')}
                   style={{
                     fontSize: 12,
                     color: 'var(--t3)',
