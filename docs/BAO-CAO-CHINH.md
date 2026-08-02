@@ -1115,3 +1115,28 @@ H/G canvas của tôi), sửa vào có thể đụng file đang có edit dở c�
 - Ngoài phạm vi phần (1): Scene Objects/outliner (chưa có mock duyệt bố cục) · click-to-assign vật
   liệu lên mặt 3D thật (cần raycast, đổi `Scene3DViewer`) · nội dung thật cho Tạo/Sửa/Camera/Hiện ·
   ViewCube/axis gizmo (viewport hiện tại chưa có, `Scene3DViewer` props không hỗ trợ — việc riêng).
+
+## G3 phần (1) — Command Panel shell + tab Vật liệu — XONG
+- Commit `09c4816` (`components/render-studio/Command3DPanel.tsx` mới,
+  `lib/render-studio/use-materials.ts` mới, `NodeLibraryPanel.tsx`, `Render3DModeSkeleton.tsx`).
+- Code đúng thiết kế: sidebar 5 tab đúng bố cục mock, tab Vật liệu tái dùng hook `useMaterials`
+  (tách từ G2 phần (5), NodeLibraryPanel giờ dùng lại thay vì tự fetch — xoá trùng lặp thật, không
+  chỉ refactor cho đẹp).
+- Verify browser thật: chuyển sang mode "Vẽ 3D" qua `lib/stage-mode.ts` (localStorage key
+  `interiorflow.stagemode.render` + reload — nút UI có quirk lần bấm đầu không đăng ký trên tab
+  hoàn toàn mới, không tái hiện ổn định, không phải do code phần (1); dùng đường ổn định để verify
+  tiếp, không chặn tiến độ). Command Panel hiện đúng 5 tab, chuyển tab "Tạo" → placeholder đúng
+  chữ, chuyển lại "Vật liệu" → 2 vật liệu thật (An Cường AC-ENG-OAK15, Stone World SW-TRV-BE) hiện
+  dạng lưới 3 cột đúng mock. Bấm swatch → `className` đổi đúng sang viền `border-[var(--accent)]`
+  (xác nhận qua DOM, không chỉ nhìn ảnh). Dark theme: viền accent + nền panel đọc rõ. Console 0
+  error suốt cả phiên verify (mở tab mới → chuyển mode → đổi tab → bấm swatch → dark theme → reset).
+- 💭 Quirk phụ (không phải bug code phần (1), ghi lại để nhớ): nút "Vẽ 3D"/"Thư viện Node" ở UI
+  đôi khi cần bấm 2 lần trên TAB HOÀN TOÀN MỚI mới đăng ký (nghi lớp hover/tooltip che 1 frame đầu
+  — đã gặp y hệt ở G3 phần (1) và trước đó lúc mở panel Thư viện Node cho G2 phần (5)/(6), không
+  tái hiện ổn định để định vị root cause). Từ giờ verify browser: nếu click đầu vào 1 toggle/nút
+  quan trọng không thấy đổi trạng thái ngay, thử lại 1 lần hoặc đọc thẳng qua store trước khi kết
+  luận là bug code.
+
+Tiếp theo: **G3 phần (2)** — theo TICKET-CHANG2-BUILD, sau Command Panel shell là các tab còn lại
+(Tạo/Sửa/Camera/Hiện) hoặc Scene Objects/outliner — sẽ khảo sát + viết thiết kế trước khi code,
+đúng kỷ luật đã áp dụng.
