@@ -519,9 +519,27 @@ cổng 3000 đang bị phiên khác chiếm) — thêm entry trong `.claude/laun
 - 💭 Đã dọn: reset `localStorage.interiorflow.theme` về `'auto'` sau khi test dark theme (server
   verify phụ, origin riêng `127.0.0.1:3001`, KHÔNG lẫn vào state phiên chính cổng 3000).
 
-## HẾT K4 + G1 — cả 2 việc dở phiên trước ĐÃ XONG TRỌN, không còn gì dở lại
-4 commit code (`498e248` chore server phụ · `e1aa92c` K4 · `edd57aa` K4 follow-up · `e74485a` G1)
-đều `git commit -- <pathspec>` scoped đúng file, không đụng `docs/00-CHOT.md`/2 file mới của Hoà
+## G1b — chỉnh vị trí nút "Vẽ 3D" (Hoà bắt lỗi sau khi xem báo cáo G1) — XONG
+- Commit `2daf089` (`BottomToolbar.tsx` + `Render3DToggleButton.tsx`).
+- G1 ban đầu đặt nút cố định góc phải màn hình (`right:16`) — SAI spec
+  (`SPEC-CHANG2-UI-2MODE.md` §1: "Cạnh nó [thanh zoom/pan] là 1 nút rời gạt Vẽ 3D"). Nguyên nhân
+  không ghép được bằng CSS flex thuần: `BottomToolbar` và nút này KHÔNG cùng cây DOM cha (khác
+  positioned-ancestor — `BottomToolbar` neo theo `wrapperRef` riêng của `FlowCanvas`, nút neo theo
+  container ngoài cùng CHỨA CẢ `LeftRail`).
+- Sửa: đo trực tiếp `getBoundingClientRect()` của `BottomToolbar` (gắn `id="if-bottom-toolbar"`
+  mới) rồi tự quy đổi sang toạ độ `left` của CHÍNH containing-block nút này (`offsetParent`).
+  `ResizeObserver` gắn trên CHA của toolbar (bắt đúng SIZE thật đổi khi sidebar mount/unmount —
+  bản thân toolbar không đổi size khi bị đẩy, chỉ đổi VỊ TRÍ, `ResizeObserver` không bắt được đổi
+  vị trí thuần) + `window resize`. Giữ nguyên `left` đo lần cuối khi toolbar vắng mặt (mode Vẽ 3D)
+  — tránh nút nhảy vị trí lúc gạt mode.
+- Verify browser thật (dự án mẫu): gap đo được ĐÚNG 10px cả lúc đóng/mở sidebar Node Library (mở
+  sidebar → toolbar bị đẩy phải → nút bám theo đúng, vẫn gap=10px). Toggle Vẽ 3D 2 chiều: vị trí
+  nút GIỮ NGUYÊN `(906,640)` trước/sau — không nhảy. 0 console error (tab mới, tránh bẫy buffer
+  console tồn đọng đã ghi ở K4). tsc/eslint sạch, `npm test` 0 fail.
+
+## HẾT K4 + G1 + G1b — cả 3 việc ĐÃ XONG TRỌN, không còn gì dở lại
+5 commit code (`498e248` chore server phụ · `e1aa92c` K4 · `edd57aa` K4 follow-up · `e74485a` G1 ·
+`2daf089` G1b) đều `git commit -- <pathspec>` scoped đúng file, không đụng `docs/00-CHOT.md`/2 file mới của Hoà
 (để nguyên theo đúng ghi chú phiên trước). Tiếp theo đúng thứ tự đã giao: G2 (Mood+Collab canvas)
 → G3 (Vẽ 3D Command Panel + Scene Objects) → G4 (Present chọn 5 loại) → G5 (kệ + pattern nâng),
 theo `docs/TICKET-CHANG2-BUILD-2026-08-02.md`. Chưa tự bắt đầu G2 — dừng ở đây báo cáo trước.
