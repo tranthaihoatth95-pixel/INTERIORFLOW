@@ -445,3 +445,83 @@ không bị tính là "bấm ra ngoài" rồi tự đóng.
   Hoà/phiên khác — để nguyên, không tự ý thêm vào commit của tôi.
 - Không có lệnh máy thật nào bị chặn (`prisma`/`migrate`/`merge`) — dừng phiên thuần theo yêu cầu
   Hoà, không phải vì hỏng 2 lần hay cần Hoà quyết.
+
+---
+
+## [phiên tiếp] K4 xong + G1 xong (nối đúng chỗ DỞ 1/DỞ 2 để lại) — cả 2 XONG, không còn dở
+Đọc đúng thứ tự đầu phiên (`CLAUDE.md` → `STATUS.md` → `docs/00-CHOT.md` → mục cuối file này) rồi
+tiếp tục từ 2 việc DỞ. Verify browser qua server phụ `interiorflow-verify` (cổng auto, KHÔNG đụng
+cổng 3000 đang bị phiên khác chiếm) — thêm entry trong `.claude/launch.json`, commit riêng
+`498e248`.
+
+### K4 (hotfix "kính lồng kính" header) — XONG
+- Commit `e1aa92c` (portal thật) + `edd57aa` (follow-up tránh warning framer-motion, phát hiện
+  lúc verify browser — xem dưới).
+- **Portal 2 dropdown** (`MoreMenu`/`UserChip`, `AppChrome.tsx`) ra `document.body` qua
+  `createPortal`, định vị `position:fixed` theo `getBoundingClientRect()` nút bấm (hook dùng chung
+  `useMenuAnchor()`), `z-[80]`. Giữ NGUYÊN animation `motion.div` cũ theo đúng kế hoạch phiên
+  trước — không đổi sang `Popover.tsx` (thiếu AnimatePresence enter/exit tích hợp). `useDismissable`
+  nhận 2 ref riêng (`triggerRef` nút + `menuRef` panel đã portal).
+- 💭 **Phát hiện phụ lúc verify (đã sửa ngay, không để lại)**: đặt `ref={menuRef}` thẳng trên
+  `motion.div` (con trực tiếp `AnimatePresence`) gây console warning "ref is not a prop" — framer-
+  motion's `PopChild` clone con lúc exit, đọc `props.ref` kiểu React 18 cũ. Sửa: dời `ref` xuống 1
+  div con `display:'contents'` (không đổi layout/animation gì), `motion.div` ngoài giữ nguyên
+  style định vị + animate. Xác nhận sạch bằng tab browser MỚI (tab cũ giữ log tồn đọng không xoá
+  khi navigate — bẫy verify, ghi lại phòng lặp lại: **luôn mở tab mới khi cần console "sạch từ
+  đầu"**, đừng tin `navigate` xoá console buffer).
+- Verify browser thật (dự án mẫu, qua `getComputedStyle` + click JS-dispatch PointerEvent thật —
+  `computer` tool coordinate-click không ổn định khi viewport report lệch, xem dưới): panel đúng
+  `position:fixed`, `parentIsBody:true`, `z-index:80`, `backdrop-filter: saturate(1.8) blur(22px)`
+  ở CẢ light (`background:rgba(...,0.68)`)/dark theme (`rgba(20,20,23,.68)`). Outside-click dismiss
+  đúng (test bằng `PointerEvent` thật dispatch qua JS — `Escape` phím qua `computer.key` KHÔNG
+  đóng được dù outside-click đóng đúng, nghi ngờ artifact automation tool không bắn KeyboardEvent
+  đúng cách document nhận capture-phase; KHÔNG phải lỗi code — outside-click là đường chính, đã
+  xác nhận chắc).
+- 💭 **Bẫy verify mới phát hiện, ghi lại cho phiên sau**: viewport "báo" bởi `read_page`
+  (vd "1280x720") có lúc LỆCH với `window.innerWidth/innerHeight` thật (vd 769x803) — coordinate
+  click theo toạ độ `read_page` báo có thể trật hoàn toàn (bấm nhầm nút MobileMenu thay vì
+  AppChrome desktop cluster khi viewport thật < 1024 breakpoint `lg`). Cách né chắc nhất: đọc
+  `window.innerWidth` qua `javascript_tool` trước, và với nút cụ thể thì `querySelector` +
+  `getBoundingClientRect()` + dispatch `PointerEvent`/`MouseEvent` thật thay vì tin toạ độ từ
+  `read_page`/`computer` ref.
+
+### G1 (bottom bar giữ nguyên + nút rời gạt Vẽ 3D) — XONG, đã tìm ra + sửa đúng gốc bug để lại
+- Commit `e74485a` (`ModeShell.tsx` + `HomeScreen.tsx` + `Render3DToggleButton.tsx` mới).
+- **Gốc bug đã tìm ra** (phiên trước mới ghi triệu chứng, chưa rõ nguyên nhân): `content(mode)`
+  của `ModeShell` (Fragment gồm `NodeLibraryPanel`/`GalleryPanel`/`LibraryPanel`/`FlowsPanel`/
+  `FlowCanvas`/`RenderToolModeOverlay`/`ChatPanel`) TRƯỚC H1 (`git show c72cfbf~1`) là con TRỰC
+  TIẾP của `<div className="relative flex min-h-0 flex-1">` — flex ROW THẬT, đúng lý do các panel
+  `w-64/w-72 flex flex-col` (sidebar dock) đứng CẠNH `FlowCanvas`'s `wrapperRef`
+  (`relative flex-1`) chứ không hề dùng `position:absolute/fixed`. H1 lồng thêm `ModeShell` giữa
+  chừng — div bọc `content()` bên trong nó (`position:relative,flex:1,minHeight:0`) KHÔNG
+  `display:flex` → mất ngữ cảnh flex row → panel xếp chồng DỌC (block flow bình thường) +
+  `wrapperRef` của `FlowCanvas` MẤT `flex-1` (cha không phải flex container) → sập `height:0` →
+  MỌI định vị `absolute bottom-*` bên trong (BottomToolbar, `Render3DToggleButton` KHÔNG bị vì nó
+  đứng NGOÀI `content()`) bắn thẳng lên NGOÀI viewport — đúng y triệu chứng phiên trước ghi
+  (`top≈-10`).
+- **Sửa**: thêm `display:'flex'` (ROW mặc định, KHÔNG đổi `flexDirection`) vào `motion.div` bọc
+  `content(active)` trong `ModeShell.tsx` — phục hồi ĐÚNG ngữ cảnh flex row gốc trước H1, không
+  phải bịa cấu trúc mới. Test giả thuyết sai đầu tiên (chủ động ghi lại tránh lặp lỗi): thử
+  `flexDirection:'column'` trước — SAI, làm sidebar panel xếp cạnh nhau đúng nhưng theo hướng dọc
+  thay vì `FlowCanvas` chiếm không gian còn lại theo hàng ngang như thiết kế gốc; phải đối chiếu
+  `git show c72cfbf~1` mới thấy đúng là ROW.
+- Verify browser thật (dự án mẫu, đo bằng `getBoundingClientRect()` qua JS — KHÔNG dùng toạ độ ảnh
+  chụp do bẫy viewport-mismatch ghi ở mục K4 trên): TRƯỚC fix `BottomToolbar` `rect.y=-10`,
+  `parentElement height=0`; SAU fix `rect.y=710`, `parentHeight=720` (đúng, trong khung hình,
+  cạnh đáy). Toggle "Vẽ 3D" 2 chiều: bấm sang → crossfade ĐÚNG (2 nhánh chồng lên nhau lúc chuyển,
+  chụp giữa transition thấy CẢ 2 nội dung mờ chồng — đúng nghĩa "crossfade" đã đặc tả, không phải
+  cắt-rồi-hiện) → `Render3DModeSkeleton` hiện đúng ("Chưa có bản vẽ..." vì Doc mẫu trống, đúng kỳ
+  vọng) → bấm lại "Render + Mood + Collab" → `BottomToolbar`/minimap trở lại ĐÚNG vị trí
+  (`rect.y=730`, viewport 800 lúc đó). 0 console error (đã loại trừ log tồn đọng bằng tab mới —
+  xem bẫy ở mục K4).
+- Test: `tsc --noEmit` + `eslint` sạch (`AppChrome.tsx`/`ModeShell.tsx`/`HomeScreen.tsx`/
+  `Render3DToggleButton.tsx`). `npm test` toàn repo 0 fail.
+- 💭 Đã dọn: reset `localStorage.interiorflow.theme` về `'auto'` sau khi test dark theme (server
+  verify phụ, origin riêng `127.0.0.1:3001`, KHÔNG lẫn vào state phiên chính cổng 3000).
+
+## HẾT K4 + G1 — cả 2 việc dở phiên trước ĐÃ XONG TRỌN, không còn gì dở lại
+4 commit code (`498e248` chore server phụ · `e1aa92c` K4 · `edd57aa` K4 follow-up · `e74485a` G1)
+đều `git commit -- <pathspec>` scoped đúng file, không đụng `docs/00-CHOT.md`/2 file mới của Hoà
+(để nguyên theo đúng ghi chú phiên trước). Tiếp theo đúng thứ tự đã giao: G2 (Mood+Collab canvas)
+→ G3 (Vẽ 3D Command Panel + Scene Objects) → G4 (Present chọn 5 loại) → G5 (kệ + pattern nâng),
+theo `docs/TICKET-CHANG2-BUILD-2026-08-02.md`. Chưa tự bắt đầu G2 — dừng ở đây báo cáo trước.
