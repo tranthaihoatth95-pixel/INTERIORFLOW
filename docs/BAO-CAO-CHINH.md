@@ -354,3 +354,94 @@ loại 34 node) + H3 (bỏ tab ngang) — 4 commit code + 4 commit docs, `tsc`/`
 mỗi bước, verify browser thật mỗi bước, không đụng vùng E (present-editor). H4 (Present chọn 5
 loại hồ sơ) HOÃN đúng chỉ đạo Hoà — chờ code phụ xong P6 + merge present-editor mới làm, tránh
 giẫm chân. Chờ Hoà duyệt hoặc giao việc mới.
+
+---
+
+## [chuỗi G] CHỐT PHIÊN — 2 việc đang DỞ, KHÔNG commit (chưa đủ điều kiện "xong")
+
+Hoà giao chuỗi G (build UI chặng 2, G1→G5) rồi HOTFIX K4 chen trước. Đang làm G1 thì rẽ sang K4;
+dừng phiên giữa K4 theo yêu cầu Hoà "chốt phiên". Cả 2 đều CHƯA đủ điều kiện commit (tsc/eslint
+sạch nhưng còn lỗi/thiếu thật) — **không commit ẩu**, ghi rõ trạng thái để phiên sau tiếp đúng chỗ.
+
+### DỞ 1 — G1 (bottom bar giữ nguyên + nút rời gạt Vẽ 3D)
+**File đã sửa** (chưa commit): `components/shell/ModeShell.tsx` · `components/home/HomeScreen.tsx`
+· `components/render-studio/Render3DToggleButton.tsx` (mới).
+
+**Đã làm:**
+- `ModeShell.tsx`: thêm `hideBuiltInSwitcher` (nơi gọi tự vẽ nút chuyển mode riêng, tắt segmented
+  control có sẵn) + bọc nội dung bằng `AnimatePresence`/`motion.div` crossfade (`springPop`, guard
+  reduce-motion) — đúng `SPEC-DESIGN-SYSTEM-IF.md` §3 "gạt mode = crossfade cả shell".
+- `Render3DToggleButton.tsx` mới: "1 nút RỜI" (không phải pill 2 nút) cạnh `BottomToolbar`, dùng
+  chung cả 2 mode (đứng ngoài `ModeShell.content()`), gọi `useStageMode('render')`.
+- `HomeScreen.tsx`: nối `hideBuiltInSwitcher` + mount `<Render3DToggleButton />`.
+- `tsc`/`eslint` sạch trên cả 3 file. **CHƯA chạy lại `npm test` sau bug tìm thấy** (xem dưới).
+
+**⛔ BUG PHÁT HIỆN lúc verify browser — CHƯA SỬA:** `BottomToolbar` (`.if-bottombar` đầu tiên,
+thanh zoom/pan React Flow) render LỆCH LÊN NGOÀI MÀN HÌNH (`getBoundingClientRect().top ≈ -10`,
+tức nằm TRÊN mép viewport, không thấy được) sau khi thêm `motion.div{position:absolute;inset:0}`
+bọc `content(active)` trong `ModeShell.tsx`. Nút "Vẽ 3D" mới (dùng chung className `.if-bottombar`
+nhưng KHÔNG nằm trong wrapper mới) vẫn hiện đúng vị trí — chỉ `BottomToolbar` (bên trong
+`content()`) bị ảnh hưởng. Nghi ngờ: lớp `position:absolute;inset:0` mới bọc quanh `FlowCanvas`
+làm React Flow tính sai chiều cao container khi định vị `BottomToolbar` (vốn `position:absolute;
+bottom:4` neo theo container CHA của nó bên trong `FlowCanvas.tsx`, không phải theo `ModeShell`).
+
+**Đã thử:** `git stash` để so sánh A/B xem bug có phải do `ModeShell` gây ra không — VỪA `stash`
+xong (chưa kịp `pop` lại để xác nhận) thì bị ngắt bởi HOTFIX K4 chen ngang. **Đã `git stash pop`
+lại đúng bản DỞ này** (không mất việc) nhưng CHƯA xác nhận lại nguồn gốc bug.
+
+**Còn phải làm khi tiếp tục:**
+1. Xác nhận bug có phải do lớp `motion.div` mới trong `ModeShell.tsx` gây ra không (test lại bằng
+   cách bỏ tạm `position:absolute;inset:0` khỏi `motion.div`, xem `BottomToolbar` có về đúng chỗ).
+2. Nếu đúng — sửa cách bọc (có thể chỉ cần `position:relative` thay vì `absolute;inset:0`, hoặc
+   set `height:100%` tường minh thay vì trông cậy `inset:0`).
+3. Chạy lại `npx tsc --noEmit` + `eslint` + `npm test` sạch.
+4. Verify browser lại: `BottomToolbar` đúng vị trí bottom-center, nút "Vẽ 3D" đúng vị trí
+   bottom-right, bấm gạt mode → crossfade mượt (không giật), cả 2 nút cùng hiện ở cả 2 mode.
+5. Commit riêng G1.
+
+### DỞ 2 — K4 (hotfix "kính lồng kính" ở header — 2 dropdown AppChrome.tsx)
+**File đã sửa** (chưa commit): `components/studio/AppChrome.tsx` — **CHỈ MỚI thêm 2 dòng import**
+(`useLayoutEffect` từ 'react', `createPortal` từ 'react-dom') — **CHƯA viết logic portal thật**,
+2 dropdown (`MoreMenu()` ~dòng 276-345, `UserChip()` ~dòng 427-498) vẫn y nguyên code cũ (render
+tại chỗ trong `<header>` kính, CHƯA sửa bug). `eslint` hiện ĐANG BÁO LỖI 2 import chưa dùng —
+**đúng, vì logic thật chưa viết**, không phải regression.
+
+**Đã đọc:** `docs/TICKET-FIX-KINH-HEADER-2026-08-02.md` (gốc bug: `mat-panel` dropdown là CON của
+`<header class="mat-header">` có riêng `backdrop-filter` → kính lồng kính, blur menu chỉ sample
+trong phạm vi header, không thấy canvas dưới) + đã đọc kỹ code 2 dropdown thật trong AppChrome.tsx.
+
+**Kế hoạch đã quyết (chưa code):** PORTAL cả 2 dropdown ra `document.body` — KHÔNG dùng lại
+`components/ui/Popover.tsx` nguyên trạng (Popover không có animation enter/exit tích hợp sẵn theo
+kiểu `AnimatePresence` giữ component mở trong lúc exit — dùng thẳng sẽ MẤT animation hiện có, trái
+yêu cầu ticket "giữ animation như cũ"). Thay vào đó: giữ NGUYÊN khối `motion.div` animation/class
+hiện tại của từng menu, chỉ đổi (a) bọc bằng `createPortal(..., document.body)`, (b) đổi định vị
+từ `absolute right-0 top-9` (neo trong DOM cha) sang `position:fixed` với `top`/`right` tính từ
+`triggerRef.current.getBoundingClientRect()` lúc mở, (c) `useDismissable` cần THÊM ref thứ 2 (ref
+của menu đã portal) vào mảng `refs` — hiện `refs:[ref]` gộp chung cả nút+menu trong 1 wrapper div,
+portal ra ngoài thì menu không còn nằm trong subtree đó nữa, phải khai riêng để bấm-trong-menu
+không bị tính là "bấm ra ngoài" rồi tự đóng.
+
+**Còn phải làm khi tiếp tục:**
+1. Viết state `anchorRect` (top/right) cho từng menu, cập nhật lúc `setOpen(true)` (đọc
+   `buttonRef.current.getBoundingClientRect()`).
+2. `createPortal` khối `motion.div` ra `document.body`, đổi class định vị → `style={{position:
+   'fixed', top, right}}`, `zIndex` nâng lên `80` (ticket yêu cầu `z-[80]`).
+3. Thêm `menuRef` riêng, truyền `refs:[buttonRef, menuRef]` vào `useDismissable`.
+4. Làm cho CẢ 2 menu (`MoreMenu`, `UserChip`) — cùng khuôn, tránh lặp code khác nhau.
+5. `tsc`/`eslint`/`npm test` sạch.
+6. Verify browser: mở từng menu ĐÈ LÊN node có nút "Đưa sang Presenting" → thấy BLUR mờ chữ node
+   phía sau, không còn xuyên nét rõ. Test cả light/dark theme (theme toggle nằm trong MoreMenu).
+7. Nếu portal làm vỡ anchor/animation sau 2 lần thử → fallback (b) của ticket: nền đặc
+   `var(--panel)` cho dropdown, bỏ kính riêng menu, ghi rõ lý do.
+8. Commit riêng: `fix(chrome): K4 portal dropdown khoi header kinh`.
+
+**Sau khi K4 xong:** quay lại DỞ 1 (G1) hoàn thiện, rồi tiếp G2→G5 theo đúng thứ tự Hoà giao
+(`docs/TICKET-CHANG2-BUILD-2026-08-02.md`). Không tự ý đổi thứ tự.
+
+### Trạng thái khác cần biết
+- `docs/00-CHOT.md` đang có thay đổi CHƯA COMMIT của phiên/người khác (thấy qua `git status`,
+  KHÔNG phải tôi sửa) — để nguyên, không đụng.
+- `docs/TICKET-FIX-KINH-HEADER-2026-08-02.md` + `docs/if-design-system.pdf` là file MỚI của
+  Hoà/phiên khác — để nguyên, không tự ý thêm vào commit của tôi.
+- Không có lệnh máy thật nào bị chặn (`prisma`/`migrate`/`merge`) — dừng phiên thuần theo yêu cầu
+  Hoà, không phải vì hỏng 2 lần hay cần Hoà quyết.
