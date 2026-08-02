@@ -8,7 +8,11 @@
 ## ✅ XONG (02/08, mã commit — chi tiết đủ trong message từng commit + CHANGELOG)
 - **3D-1** (`d9eea9b`+`d5f6700`): three.js viewer mode orbit + nút "Xem 3D" node "Bản vẽ → 3D".
   FPS thật: gộp theo màu 4 draw call/0.087ms/khung, không gộp 2011/2.73ms — vẫn realtime.
-  walk/campath/section: TODO 3D-2..3D-4.
+- **3D-2..3D-5 ĐÃ CÓ SẴN TỪ TRƯỚC** (`d7dff63`/`4c81469`/`87c2e78`/`2881c32`) — mục "⬜ CHƯA BẮT ĐẦU"
+  bản cũ SAI, đã sửa (02/08 tối). **Mới**: đổi chữ ký `captureSequence()` sang streaming `onFrame`+
+  `AbortSignal`+`frameCount` (yêu cầu Hoà, tránh gom RAM) + `planCaptureSequenceFrames()` thuần có
+  test (26/26). ⚠️ CHƯA đo được thời gian thật qua browser (sandbox không giữ được dev server sống
+  qua các lần gọi) — bench sẵn ở `app/dev-bench-3d-2/`, chờ chạy tay. Chi tiết đủ → `CHANGELOG.md`.
 - **Wire nút "PDF in 300dpi (A3/A4)"** (`2a252c9`) — mở khoá theo khổ giấy, verify cả 2 nhánh.
 - **Đo ESRGAN thật** (Hoà duyệt ~4cr) — TB 9.7s/ảnh · scale ×4 đúng lý thuyết. Số đầu (512/896px)
   KHÔNG đạt 300dpi A3 — nhưng đó chỉ là 2 cỡ test tuỳ chọn, KHÔNG phải trần thật của tầng free.
@@ -30,11 +34,9 @@ không hard-navigate) sang trang cần test. Ghi vào TECH-DEBT nếu có ca th�
 AI ở Settings không ăn" — nghi đúng nguyên nhân này (route không qua Home).
 
 ## ⬜ CHƯA BẮT ĐẦU (hàng đợi đã biết)
-- **3D-2** (mode campath + captureSequence, mở khoá video bậc 2-b) → 3D-3 (depth/lineart) → 3D-4
-  (section/walk) — thứ tự cố định, `docs/SPEC-3D-CORE.md` §4. camPath ăn `CamPathResult`
-  (`lib/cad/campath.ts`, KHÔNG phải "SampledCamPath" spec gọi nhầm tên — đã sửa khi làm 3D-1).
 - Menu "3D — sắp có (Phase 3–4)" đã có sẵn trong header canvas (`ref` thấy khi verify) — CHƯA nối
-  vào Scene3DViewer/3D-1, có thể là chỗ nối tự nhiên cho 3D-2 hoặc việc riêng, xem trước khi làm.
+  vào Scene3DViewer (3D-2..5 giờ đã xong hết, không còn "chờ mode" nữa) — việc nối menu này là việc
+  UI riêng, chưa ai làm, xem trước khi động vào.
 - V1.1 so le nội thất theo cửa chính · V2.1 look-at khoá điểm/khoá zone + panel chỉnh tốc độ/lens.
 - Liên kết sống CAD→deck (moat) — sau P1-P3.
 - Toàn bộ mục dưới "Chờ USER quyết" (chưa đổi) vẫn còn nguyên.
@@ -48,6 +50,14 @@ AI ở Settings không ăn" — nghi đúng nguyên nhân này (route không qua
   trong bench 3D-1, ghi `TECH-DEBT.md`, chưa phải bug chặn.
 - File scratch bench 3D-1 đã xoá sạch, ảnh test P3-2 đã xoá khỏi dự án mẫu, mức AI đã trả về
   "oneAI" (mặc định gốc) trước khi rời — dự án mẫu sạch, không còn dấu vết verify.
+- **`npx tsc --noEmit -p .` (toàn repo) KHÔNG chạy xong trong sandbox Cowork này** — luôn hết giờ
+  lệnh (>40-45s, kể cả bật `incremental`) dù `tsconfig.tsbuildinfo` có sẵn từ trước. Dùng tsc SCOPED
+  (config tạm `include` đúng vài file đang sửa, xem `tsconfig.scoped.json` cách làm) để kiểm nhanh
+  thay vì `-p .` — ghi lại đây để phiên sau khỏi mất công thử lại y hệt.
+- **2 file scratch KẸT lại, sandbox không xoá được** (FUSE, cùng loại cũ) — đã dọn rỗng nội dung,
+  Hoà `rm` tay: `tsconfig.scoped.json` (tsc scoped tạm, xem trên) · `app/dev-bench-3d-2/page.tsx`
+  (bench đo `captureSequence`, xem mục 3D-2 phía trên — CHỈ xoá SAU KHI đã chạy lấy số thật, đừng
+  xoá trước).
 
 ## Worktree đang mở
 - **`interiorflow-g4`** (nhánh `nhanh-g4`) — ĐÃ merge vào `main` (`12223cf`), nhưng KHÔNG xoá worktree:

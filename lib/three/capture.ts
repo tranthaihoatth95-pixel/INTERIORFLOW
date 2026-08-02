@@ -187,34 +187,119 @@ export function captureFrame(scene: Scene3DData, spec: CameraSpec, out: CaptureO
   return png;
 }
 
+/** 1 khung đã LẬP KẾ HOẠCH (thuần, chưa render) — `index`/`tSec` để nơi gọi đặt tên file/log tiến
+ * độ, `pose` sẵn sàng gán thẳng vào `camera.position`/`camera.lookAt()`. */
+export interface CaptureSequencePlanFrame {
+  index: number;
+  tSec: number;
+  pose: { position: THREE.Vector3; target: THREE.Vector3 };
+}
+
 /**
- * Chụp cả dải khung hình dọc đường cam ở `fps` cho trước — nuôi video bậc 2-b (SPEC-3D-CORE §0
- * dòng "video bậc 2-b … xuất khung hình"). Dựng renderer/scene 1 LẦN, tái dùng cho mọi khung
- * (rẻ hơn hẳn gọi `captureFrame` lặp lại N lần — không build lại hình học mỗi khung).
+ * Lập danh sách khung hình cho `captureSequence` — TÁCH RIÊNG khỏi phần WebGL thật (3D-2, 03/08,
+ * theo yêu cầu test "đếm đúng số khung, kiểm camera đúng vị trí đầu/giữa/cuối") vì `captureFrame`/
+ * `captureSequence` gốc cần `WebGLRenderer`/canvas thật, KHÔNG chạy được dưới sucrase-node (xem
+ * đầu `capture.test.ts`) — còn hàm này chỉ toán thuần (`camPathSampleToThree`/`sampleCamPathAt`,
+ * cả hai đã thuần từ trước), test được như mọi hàm khác trong file.
+ *
+ * Hai chế độ đặt SỐ KHUNG, chọn qua có/không truyền `frameCountOverride` (đúng yêu cầu Hoà 03/08
+ * "tuỳ chọn fps + số frame"):
+ *  - KHÔNG truyền (mặc định, hành vi gốc 3D-2 giữ nguyên): số khung = `round(totalDurationSec ×
+ *    fps)`, mỗi khung cách nhau đúng `1/fps` giây — khung CUỐI có thể hụt vài phần nghìn giây so
+ *    với `totalDurationSec` nếu không chia hết (giống mọi bộ đếm khung theo fps thông thường).
+ *  - CÓ truyền — ép ĐÚNG số khung đó, dàn ĐỀU trên toàn bộ `[0, totalDurationSec]` (khung đầu
+ *    luôn t=0, khung cuối luôn t=totalDurationSec CHÍNH XÁC, không lệ thuộc `fps`) — dùng khi cần
+ *    xem trước nhanh vài khung (vd 5 khung) mà không đợi lập hết dải fps đầy đủ, hoặc khi cần
+ *    khung cuối chạm đúng mốc cuối đường cam (ca test bắt buộc "vị trí đúng ở khung cuối").
  */
-export function captureSequence(scene: Scene3DData, path: CamPathResult, fps: number, out: CaptureOut): string[] {
-  if (out.kind !== 'png') throw new Error(`captureSequence: chỉ hỗ trợ kind 'png' (được "${out.kind}") — depth/lineart theo dải khung chưa có nhu cầu, dùng captureFrame() cho từng khung riêng nếu cần.`);
+export function planCaptureSequenceFrames(path: CamPathResult, fps: number, frameCountOverride?: number): CaptureSequencePlanFrame[] {
   if (fps <= 0) throw new Error('fps phải > 0.');
+  if (frameCountOverride !== undefined && frameCountOverride < 1) throw new Error('frameCountOverride phải ≥ 1.');
+  const frameCount = Math.max(1, frameCountOverride ?? Math.round(path.totalDurationSec * fps));
+  const frames: CaptureSequencePlanFrame[] = [];
+  for (let i = 0; i < frameCount; i++) {
+    const t =
+      frameCountOverride !== undefined
+        ? frameCount > 1
+          ? (i / (frameCount - 1)) * path.totalDurationSec
+          : 0
+        : Math.min(i / fps, path.totalDurationSec);
+    frames.push({ index: i, tSec: t, pose: camPathSampleToThree(sampleCamPathAt(path, t)) });
+  }
+  return frames;
+}
+
+/** 1 khung ĐÃ RENDER xong, trả về NGAY qua `onFrame` (không giữ lại trong mảng nội bộ nào của
+ * `captureSequence` — nơi gọi tự quyết dùng xong `dataUrl` thế nào: ghi file, tải lên, hay tự gom
+ * mảng nếu THẬT SỰ cần, nhưng khi đó là lựa chọn của nơi gọi, không phải ép buộc từ API). */
+export interface CaptureSequenceFrame {
+  index: number;
+  tSec: number;
+  dataUrl: string;
+}
+
+export interface CaptureSequenceOptions {
+  fps: number;
+  /** ép đúng số khung — xem `planCaptureSequenceFrames`. Bỏ trống = hành vi gốc (suy từ fps). */
+  frameCount?: number;
+  w: number;
+  h: number;
+  /** gọi lại NGAY sau khi render xong 1 khung, TRƯỚC khi render khung kế — đây là điểm "stream",
+   * không có mảng nào bên trong hàm này giữ hết mọi `dataUrl` cùng lúc (cảnh mật độ cao 3D-1 đo
+   * ~2000 entity/24k tam giác đã nặng cho 1 khung; giữ hàng trăm khung PNG base64 cùng lúc trong
+   * RAM là bài toán khác hẳn, không giải ở đây — để nơi gọi tự lo, ví dụ ghi từng khung ra đĩa). */
+  onFrame: (frame: CaptureSequenceFrame) => void;
+  /** huỷ giữa chừng — kiểm TRƯỚC mỗi khung (không huỷ được giữa 1 khung đang render dở, khung đó
+   * vẫn hoàn tất bình thường rồi mới dừng ở khung kế). */
+  signal?: AbortSignal;
+}
+
+export interface CaptureSequenceResult {
+  /** số khung THẬT SỰ đã render (< kế hoạch nếu bị huỷ giữa chừng). */
+  frameCount: number;
+  aborted: boolean;
+}
+
+/**
+ * Chụp cả dải khung hình dọc đường cam — nuôi video bậc 2-b (SPEC-3D-CORE §0 dòng "video bậc 2-b
+ * … xuất khung hình"). Dựng renderer/scene 1 LẦN, tái dùng cho mọi khung (rẻ hơn hẳn gọi
+ * `captureFrame` lặp lại N lần — không build lại hình học mỗi khung).
+ *
+ * ⚠️ Đổi chữ ký so với bản 3D-2 gốc (`d7dff63`, trả thẳng `string[]`) theo yêu cầu Hoà 03/08:
+ * KHÔNG gom hết khung vào 1 mảng RAM (mặt bằng mật độ cao nhiều khung × PNG lớn có thể rất nặng)
+ * — đổi sang callback `onFrame` từng khung (stream) + `AbortSignal` huỷ giữa chừng + tuỳ chọn ép
+ * số khung qua `frameCount`. Đây là lần đổi chữ ký "hợp đồng" mà `SPEC-3D-CORE.md` §3 yêu cầu
+ * phải qua duyệt trước khi đổi — Hoà đã ra yêu cầu trực tiếp 03/08, coi như đã duyệt. CHƯA có nơi
+ * gọi nào khác ngoài `capture.test.ts`/file này tại thời điểm đổi (đã grep xác nhận), nên đổi
+ * thẳng, không giữ chữ ký cũ song song.
+ */
+export function captureSequence(scene: Scene3DData, path: CamPathResult, opts: CaptureSequenceOptions): CaptureSequenceResult {
+  const plan = planCaptureSequenceFrames(path, opts.fps, opts.frameCount);
   const canvas = document.createElement('canvas');
-  canvas.width = out.w;
-  canvas.height = out.h;
+  canvas.width = opts.w;
+  canvas.height = opts.h;
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
-  renderer.setSize(out.w, out.h, false);
-  const camera = new THREE.PerspectiveCamera(60, out.w / out.h, 0.05, 500);
+  renderer.setSize(opts.w, opts.h, false);
+  const camera = new THREE.PerspectiveCamera(60, opts.w / opts.h, 0.05, 500);
   const { three, dispose } = buildOffscreenScene(scene);
 
-  const frameCount = Math.max(1, Math.round(path.totalDurationSec * fps));
-  const frames: string[] = [];
-  for (let i = 0; i < frameCount; i++) {
-    const t = Math.min(i / fps, path.totalDurationSec);
-    const pose = camPathSampleToThree(sampleCamPathAt(path, t));
-    camera.position.copy(pose.position);
-    camera.lookAt(pose.target);
-    renderer.render(three, camera);
-    frames.push(canvas.toDataURL('image/png'));
+  let rendered = 0;
+  let aborted = false;
+  try {
+    for (const frame of plan) {
+      if (opts.signal?.aborted) {
+        aborted = true;
+        break;
+      }
+      camera.position.copy(frame.pose.position);
+      camera.lookAt(frame.pose.target);
+      renderer.render(three, camera);
+      opts.onFrame({ index: frame.index, tSec: frame.tSec, dataUrl: canvas.toDataURL('image/png') });
+      rendered += 1;
+    }
+  } finally {
+    dispose();
+    renderer.dispose();
   }
-
-  dispose();
-  renderer.dispose();
-  return frames;
+  return { frameCount: rendered, aborted };
 }
