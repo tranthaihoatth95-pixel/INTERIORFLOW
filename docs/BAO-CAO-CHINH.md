@@ -1061,3 +1061,19 @@ phần 1(+) commit code + báo cáo riêng, verify browser thật đầy đủ:
 Tiếp theo trong `TICKET-CHANG2-BUILD-2026-08-02.md`: **G3 — Vẽ 3D** (Command Panel + Scene
 Objects). Sẽ khảo sát hạ tầng 3D hiện có (`SPEC-3D-CORE.md`, 3D-1 đã xong theo STATUS.md) trước
 khi thiết kế, đúng kỷ luật đã áp dụng suốt G2.
+
+## 🟡 PHÁT HIỆN — STATUS.md sai lệch với code thật (không tự sửa, báo để Hoà/phiên kia biết)
+Khảo sát trước G3 phát hiện `STATUS.md` (mục "⬜ CHƯA BẮT ĐẦU" + "📌 CÂU HỎI ĐANG ĐỂ NGỎ", nội
+dung thuộc domain 3D-core/P3 — KHÔNG phải phần việc H/G canvas của tôi, xem `docs/CHOT-...` header
+"Hai phiên chung `.git`") đang **SAI so với `git log` thật**:
+- `STATUS.md:11` ghi "walk/campath/section: TODO 3D-2..3D-4" nhưng git đã có `d7dff63` (3D-2
+  campath+captureSequence), `87c2e78` (3D-4 section+walk), `2881c32` (3D-5 push-pull massing) —
+  cả 3 đã XONG, không còn TODO.
+- `STATUS.md:33-35` liệt 3D-2/3D-3/3D-4 vào "⬜ CHƯA BẮT ĐẦU" — sai tương tự, `lib/three/capture.ts`
+  xác nhận 3D-3 (depth/lineart) cũng đã có code.
+- Gap `STATUS.md:62` ("CamPathPreview+CamPathControlPanel CHƯA wire vào /cad-editor") đã ĐÓNG bởi
+  `bc3d3e7` ("D5 — nối CamPathPreview + CamPathControlPanel vào /cad-editor thật") — không còn gap.
+**KHÔNG tự sửa STATUS.md** — nội dung này thuộc việc của phiên "code chính" (3D-core/P3, khác domain
+H/G canvas của tôi), sửa vào có thể đụng file đang có edit dở của phiên kia (đúng cảnh báo
+`.git/index.lock` đã ghi sẵn trong STATUS.md). Ghi ở đây để Hoà/phiên kia thấy khi đọc — đúng luật
+"tài liệu sai → báo ngay, không im lặng" (`docs/CLAUDE.md`).
