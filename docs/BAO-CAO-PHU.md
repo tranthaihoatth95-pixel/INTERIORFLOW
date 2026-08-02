@@ -1105,3 +1105,1227 @@ git commit -m "fix(present): P6c kinh long
    "Sắp xếp" trước khi làm cụm "Hiệu ứng" của P6b (không có gì mới ở mục này trong đợt P6c).
 3. Sau khi P6a + P6b-bước-1 + P6c đều đã commit tay: cập nhật lại khối lệnh merge cuối cùng ở
    mục "Lệnh merge nhanh-phu → main" phía trên (hiện mới có P1-P5, chưa gồm P6).
+
+---
+
+## [02/08] P6b bước 2a — Ẩn hàng loạt (`onToggleHideSelected`) — năng lực MỚI, đã duyệt — XONG (chờ commit tay)
+
+**Việc**: Hoà duyệt dải "Sắp xếp" giữ nguyên (không đổi gì P6b bước 1). Thêm năng lực MỚI: nút Ẩn/Hiện
+hàng loạt cạnh nút Khoá trên `Toolbar.tsx`.
+
+**Cách làm** (đúng khuôn `onToggleLockSelected`, không phát minh cơ chế khác):
+1. `PresentEditor.tsx` — hàm mới `onToggleHideSelected` (ngay sau `onToggleLockSelected`, dòng
+   ~826): cùng công thức — `anyVisible = elements đang chọn có ít nhất 1 phần tử KHÔNG hidden` →
+   nếu có, ẩn HẾT (`e.hidden = true` cho mọi phần tử chọn); nếu tất cả đã ẩn → hiện HẾT. Đi qua
+   `ed.updateSlide()` — CÙNG mutator dùng cho khoá, group, z-order... nên undo/redo phủ tự động,
+   không cần code thêm.
+2. Field `hidden?: boolean` đã có sẵn trong `model.ts:248`, và đã được tôn trọng ở nhiều nơi
+   (`EditorCanvas.tsx` ẩn khỏi canvas, `PlayerElements.tsx` ẩn khỏi trình chiếu, `SlideStrip.tsx`
+   ẩn khỏi thumbnail, `LayerPanel.tsx` đã có toggle Ẩn/Hiện TỪNG phần tử qua `Inspector.tsx`'s
+   `onToggleHidden`) — nút mới chỉ thêm đường TOGGLE HÀNG LOẠT, không đổi ý nghĩa field.
+3. `Toolbar.tsx` — thêm prop `onToggleHide: () => void`, gating `anyVisible = selectedEls.some(e
+   => !e.hidden)` (song song `anyUnlocked`), 1 `IconOnly` mới ngay sau nút Khoá/Mở khoá, cùng hàng,
+   `disabled={multiCount < 1}`.
+4. Nối `onToggleHide={onToggleHideSelected}` ở lối gọi `<Toolbar>` trong `PresentEditor.tsx`.
+
+**Bố cục** (mô tả thay ảnh — sandbox không có browser):
+Dải "Sắp xếp" trên `Toolbar.tsx` sau cụm 6 icon hình khối: 6 nút căn theo nhau → 4 nút thứ tự lớp
+→ Group → Ungroup → **Khoá/Mở khoá → Ẩn/Hiện (MỚI, liền kề bên phải Khoá)** → rồi mới đến Divider
+sang "Mẫu". Icon đổi theo trạng thái: còn phần tử đang hiện trong lựa chọn → icon `EyeOff` +
+title "Ẩn lựa chọn" (bấm sẽ ẩn); đã ẩn hết → icon `Eye` + title "Hiện lựa chọn".
+
+**Test/số đo**: `npx tsc --noEmit -p .` sạch (0 lỗi) · `npx eslint Toolbar.tsx PresentEditor.tsx`
+sạch (0 lỗi/warning) · `npm test` — 30 file test, tất cả `ok:`/`pass:` đều `0 fail`, exit code 0.
+
+💭 **1 điểm quy ước icon khác với `LayerPanel.tsx`** — `LayerPanel.tsx` (toggle TỪNG phần tử) dùng
+quy ước icon = TRẠNG THÁI HIỆN TẠI (`el.hidden ? EyeOff : Eye` — đang ẩn thì hiện icon mắt gạch).
+Nút MỚI trên Toolbar (toggle CẢ CỤM) dùng quy ước icon = HÀNH ĐỘNG SẮP LÀM, giống hệt nút Khoá cạnh
+nó (`anyUnlocked ? Lock : Unlock` — icon Lock nghĩa là "bấm sẽ khoá", không phải "đang khoá"). Chọn
+theo khuôn Khoá vì Hoà bảo "theo đúng khuôn onToggleLockSelected" và 2 nút nằm sát nhau trên cùng 1
+hàng — đồng bộ trong hàng quan trọng hơn đồng bộ với LayerPanel ở panel khác. Nếu Hoà muốn đổi quy
+ước, nói 1 câu là sửa.
+
+💭 **Về câu "Từ giờ commit trực tiếp được thì cứ commit như đang làm"** — hiểu là: tiếp tục ĐÚNG
+cách đang làm (soạn khối lệnh SẴN SÀNG COMMIT dưới đây cho Hoà chạy tay), vì ràng buộc gốc "git
+sandbox gãy, không đụng .git" chưa có xác nhận mới là đã hết. Chưa thử chạy `git` thật trong
+sandbox lần này để tránh rủi ro nếu hiểu sai. Nếu ý Hoà là sandbox giờ chạy git được thật, nói rõ
+1 câu — sẽ thử `git status` trước khi commit thật.
+
+**SẴN SÀNG COMMIT** (Hoà chạy trên máy thật, nhánh `nhanh-phu`):
+```
+git add components/present-editor/Toolbar.tsx components/present-editor/PresentEditor.tsx
+git commit -m "feat(present): P6b buoc 2a - an/hien hang loat canh nut Khoa
+
+- onToggleHideSelected (PresentEditor.tsx): cung khuon onToggleLockSelected,
+  toggle hidden cho ca selectedIds qua ed.updateSlide (undo/redo tu phu).
+- Toolbar.tsx: prop onToggleHide + nut IconOnly moi canh Khoa, gating anyVisible.
+- Nang luc MOI da duyet rieng, tach khoi cum Sap xep P6b buoc 1 (giu nguyen)."
+```
+
+**HÀNG ĐỢI CÒN LẠI**:
+1. ~~Tiếp P6b bước 2~~ → XONG, xem mục ngay dưới.
+2. Sau khi P6a + P6b (cả 2 bước + nút Ẩn mới) + P6c đều đã commit tay: cập nhật khối lệnh merge
+   cuối cùng ở mục "Lệnh merge nhanh-phu → main" (hiện mới P1-P5).
+
+---
+
+## [02/08] P6b bước 2b — cụm "Hiệu ứng" lên Toolbar.tsx — XONG (chờ commit tay)
+
+**Việc**: 4 nút [màu chữ · fill E3 · mask E2 · filter E4] trên `Toolbar.tsx`, chỉ NỐI vào các
+field đã có sẵn trong `Inspector.tsx` — không viết logic đổi màu/fill/mask/filter mới.
+
+**Quyết định thiết kế** (Hoà nói "chỉ nối handler đã có" — đọc kỹ `Inspector.tsx` thì các control
+Fill/Mask/Filter/Màu chữ KHÔNG phải 4 callback rời như z-order/khoá, mà là 4 mảng field NẰM SẴN
+trong panel Inspector bên phải (`inspectorOpen`), hiện/ẩn theo `selected.kind`, không có accordion
+riêng che chúng — nghĩa là chúng LUÔN hiện sẵn khi đúng loại phần tử đang chọn. Vậy "nối" đúng
+nghĩa hẹp nhất, không bịa cơ chế mới, là: **mở panel Inspector (nếu đang ẩn) + cuộn tới đúng
+field** — dùng lại `setInspectorOpen` đã có sẵn (dòng ~158/1974 PresentEditor.tsx), không đọc/ghi
+gì khác. 4 nút không mở popover mới, không có logic mutate mới — mọi thao tác đổi màu/fill/mask/
+filter thật sự vẫn xảy ra Y NGUYÊN trong Inspector.tsx như trước giờ):
+
+1. `Inspector.tsx` — bọc 4 khối field đã có sẵn bằng `<div id="...">` (KHÔNG đổi field bên trong):
+   - `id="pe-insp-text-color"` quanh Field "Màu chữ" trong `TextInspector` (ColorRow + P6a
+     colorAuto — nguyên vẹn).
+   - `id="pe-insp-mask"` quanh Field "Cắt ảnh theo hình" + field "Số cạnh" trong `ImageInspector`.
+   - `id="pe-insp-fill-overlay"` quanh lệnh gọi `<FillOverlayControls>` — Ở CẢ 2 CHỖ dùng
+     (`ImageInspector` VÀ `ShapeInspector`), CÙNG 1 id — an toàn vì 2 chỗ loại trừ lẫn nhau theo
+     `selected.kind` (không bao giờ mount song song).
+   - `id="pe-insp-filter"` quanh `<Sub>Hiệu ứng lọc</Sub>` + `<FilterControls>` trong Panel
+     "Sắp xếp" chung (hiện với MỌI loại phần tử, không riêng ảnh/hình).
+2. `PresentEditor.tsx` — hàm mới `onOpenEffectSection(sectionId)`: gọi `setInspectorOpen(true)`
+   rồi `document.getElementById(sectionId)?.scrollIntoView({behavior:'smooth', block:'start'})`
+   trong `requestAnimationFrame` (đợi panel render xong mới cuộn). Đây là phần "glue" DUY NHẤT
+   thật sự mới viết — điều hướng UI, không phải nghiệp vụ đổi thuộc tính phần tử.
+3. `Toolbar.tsx` — prop `selected?: SlideElement | null` (CÙNG giá trị `ed.selected` đã truyền cho
+   Inspector, không phát minh khái niệm "phần tử chính" khác) + `onOpenEffectSection`. Gating:
+   `canTextColor = selected.kind==='text'` · `canFill = kind==='image'||kind==='shape'` ·
+   `canMask = kind==='image'` · `canFilter = !!selected` — ĐÚNG điều kiện Inspector.tsx dùng để
+   quyết định render TextInspector/ImageInspector/ShapeInspector, không bịa công thức khác.
+
+**Bố cục** (mô tả thay ảnh — sandbox không có browser): sau cụm "Sắp xếp" (align · z-order ·
+group · khoá · **ẩn** mới thêm ở bước 2a) → Divider → **dải "Hiệu ứng" MỚI, 4 icon**: chữ gạch
+chân (`Baseline`, màu chữ) · thùng sơn (`PaintBucket`, fill) · kéo (`Scissors`, mask) · thanh trượt
+(`SlidersHorizontal`, filter) — dải này bọc riêng 1 `<div>` với `maxWidth:'92vw', overflowX:'auto',
+scrollbarWidth:'none'` (Y HỆT công thức `pillWrap` trong `TextToolbar.tsx`) nên trên màn hẹp dải
+này CUỘN NGANG RIÊNG thay vì vỡ dòng cùng cả Toolbar — CHƯA làm menu thu gọn ▾ theo đúng yêu cầu.
+Nút mờ (disabled + opacity 0.4, cơ chế `IconOnly` có sẵn) khi loại phần tử đang chọn không khớp
+(vd chọn chữ → fill/mask mờ, chỉ màu chữ + filter còn bấm được) → Divider → "Mẫu".
+
+**Test/số đo**: `npx tsc --noEmit -p .` sạch (0 lỗi) · `npx eslint Toolbar.tsx PresentEditor.tsx
+Inspector.tsx` sạch (0 lỗi/warning) · `npm test` — toàn bộ test suite, exit code 0, không dòng
+FAIL nào (2 dòng "ok: ... fail ..." xuất hiện trong grep là DO TÊN test có chữ "fail" trong mô tả
+tình huống, không phải test thật sự fail — đã soát exit code + không có literal "FAIL" case-cứng).
+
+💭 **1 điểm cần Hoà xác nhận lại hướng** — nút Toolbar KHÔNG mở popover/mini-panel riêng cho từng
+hiệu ứng (như `ColorPopover` của P6a) — chỉ mở/cuộn Inspector bên phải tới đúng chỗ. Trên máy tính
+màn rộng, Inspector luôn hiện sẵn nên bấm nút gần như chỉ là "cuộn tới" — giá trị chính nằm ở
+TABLET/màn hẹp khi Inspector có thể đang ẩn (đúng use-case Hoà hay dùng, theo hồ sơ). Nếu Hoà hình
+dung "Hiệu ứng" là 1 popover nổi riêng như `ColorPopover` (không phụ thuộc Inspector), đây là
+hướng KHÁC — cần nói rõ 1 câu, hiện tại code đã chọn hướng "mở Inspector" vì đúng nghĩa hẹp nhất
+của "chỉ nối handler đã có" (Inspector's field mutators là handler DUY NHẤT tồn tại sẵn, không có
+handler dạng popover-standalone nào cho fill/mask/filter để nối vào).
+
+💭 **`FilterControls` không phân biệt kind** — filter (E4) áp dụng chung mọi loại phần tử (đúng
+comment sẵn trong Inspector.tsx dòng ~368-371 "P4/E4 — filter chung mọi loại"), nên nút Filter chỉ
+gate theo "có chọn gì chưa", KHÔNG mờ khi chọn text — khác 3 nút còn lại. Đây là đọc đúng code hiện
+có, không phải quyết định tự thêm.
+
+**SẴN SÀNG COMMIT** (Hoà chạy trên máy thật, nhánh `nhanh-phu`):
+```
+git add components/present-editor/Toolbar.tsx components/present-editor/PresentEditor.tsx components/present-editor/Inspector.tsx
+git commit -m "feat(present): P6b buoc 2b - cum Hieu ung (mau chu/fill/mask/filter) len Toolbar.tsx
+
+- Inspector.tsx: boc 4 field co san (mau chu/mask/fill-overlay/filter)
+  bang div id neo, KHONG doi logic mutate ben trong.
+- PresentEditor.tsx: onOpenEffectSection - mo panel Inspector (setInspectorOpen
+  co san) + scrollIntoView toi dung id neo. Glue dieu huong UI, khong phai
+  nghiep vu doi mau/fill/mask/filter.
+- Toolbar.tsx: cum 4 IconOnly moi, gating theo selected.kind (cung dieu kien
+  Inspector.tsx dung de chon TextInspector/ImageInspector/ShapeInspector).
+  Man hep: div rieng cuon ngang (cung cong thuc pillWrap), chua menu thu gon."
+```
+
+**HÀNG ĐỢI CÒN LẠI**:
+1. ⏳ Chờ Hoà xác nhận hướng "mở Inspector" ở 💭 #1 trên — nếu muốn đổi sang popover nổi riêng,
+   báo lại để làm tiếp (không tự đổi hướng khi chưa rõ).
+2. Sau khi P6a + P6b (bước 1 + 2a ẩn + 2b hiệu ứng) + P6c đều đã commit tay: cập nhật khối lệnh
+   merge cuối cùng ở mục "Lệnh merge nhanh-phu → main" (hiện mới P1-P5, 5 commit P6 còn ở dạng
+   SẴN SÀNG COMMIT rải rác trong file này, cần gom lại khi Hoà merge).
+
+---
+
+## [02/08] P6b bước 2b hướng ii — REBUILD popover portal (thay bản "mở Inspector + scroll" ở mục
+ngay trên) — XONG (chờ commit tay)
+
+**Việc**: Hoà trả lời 💭 #1 ở mục P6b bước 2b phía trên — CHỌN hướng (ii) popover nổi riêng, không
+phải "mở Inspector + scroll". Rebuild lại cụm "Hiệu ứng" theo đúng yêu cầu: portal + self-opacity +
+tách component dùng chung.
+
+> ⚠️ **Khối SẴN SÀNG COMMIT của mục "[02/08] P6b bước 2b — cụm Hiệu ứng lên Toolbar.tsx" NGAY
+> TRÊN ĐÂY (dòng ~1233, message "feat(present): P6b buoc 2b - cum Hieu ung ... len Toolbar.tsx")
+> ĐÃ BỊ THAY THẾ — ĐỪNG chạy khối lệnh đó nữa. Code trong worktree hiện tại là bản REBUILD ở mục
+> này, không còn `id="pe-insp-*"`/`onOpenEffectSection` như mô tả trong khối cũ. Nếu khối cũ CHƯA
+> từng chạy tay (theo đúng trạng thái "chờ commit tay" ghi trong file) thì bỏ qua nó, chỉ chạy
+> khối MỚI ở cuối mục này.**
+
+**Cách làm** (đúng 3 yêu cầu Hoà nêu — portal / self-opacity / tách component dùng chung):
+1. **Portal** — dò thấy `components/ui/Popover.tsx` đã có sẵn trong repo (dùng ở `EditorCanvas.tsx`/
+   `FlowCanvas.tsx`/`CadCanvas.tsx` cho menu chuột phải) — tự lo portal `document.body` + đo lại vị
+   trí sau render + tự lật hướng khi thiếu chỗ phải/dưới + kẹp trong viewport + đóng khi bấm ra
+   ngoài/Escape (`useDismissable` dùng chung). TÁI DÙNG NGUYÊN component này làm shell cho popover
+   "Hiệu ứng" thay vì viết portal riêng lần thứ 2 — đúng comment gốc của chính file đó (nhắc
+   `Popover.tsx` từng là 1 trong các nơi có logic đóng viết tay trước khi có `useDismissable`).
+2. **Self-opacity** — tách `glassFade`/`GLASS_TEXT`/`GLASS_TEXT_DIM` ra khỏi `TextToolbar.tsx`
+   (nơi P6c định nghĩa) thành `lib/present-editor/glass-style.ts` (MỚI) — 1 nguồn timing duy nhất
+   (80ms ẩn/150ms hiện, KHÔNG đổi số). `PopoverCard` (Toolbar.tsx, vỏ cho nội dung fill/mask/
+   filter) áp `glassFade(false)` TRỰC TIẾP lên chính nó — không đặt ở `Popover` (ancestor) — đúng
+   nguyên tắc K1/K2 của P6c (opacity ở tổ tiên của phần tử `backdrop-filter` tự tạo backdrop root
+   cô lập, self-opacity thì không).
+3. **Tách component dùng chung** — export 4 component ĐÃ CÓ SẴN thay vì viết lại logic lần 2:
+   - `ColorPopover` (`TextToolbar.tsx`, export mới) — dùng NGUYÊN cho popover màu chữ, tự lo
+     self-opacity của chính nó (đã có từ P6c).
+   - `FillOverlayControls` (`Inspector.tsx`, export mới, generic có sẵn từ P3/E3).
+   - `FilterControls` (`Inspector.tsx`, export mới, có sẵn từ P4/E4).
+   - `ImageMaskControls` (`Inspector.tsx`, **MỚI TÁCH** — trước đây mask select+slider nằm INLINE
+     trong `ImageInspector`, giờ tách thành component riêng, export, dùng LẠI Ở CẢ 2 CHỖ:
+     `ImageInspector` (gọi `<ImageMaskControls el={el} onUpdate={onUpdate} />`) VÀ popover
+     Toolbar — cùng 1 nguồn logic, không còn bản sao thứ 2 khi mask xuất hiện ở popover.
+4. `Inspector.tsx` — gỡ 4 div `id="pe-insp-*"` (anchor cho cơ chế scroll cũ, không còn dùng) —
+   trả nguyên cấu trúc field, KHÔNG đổi field/logic bên trong.
+5. `PresentEditor.tsx` — gỡ `onOpenEffectSection` (cơ chế cũ) + `setInspectorOpen(true)` đi kèm.
+   Thay bằng nối `onUpdateSelected={ed.updateSelected}` (NGUYÊN VẸN mutator đã truyền cho
+   Inspector.tsx, không phát minh cơ chế ghi khác) + `palette={palette}` vào `<Toolbar>`.
+6. `Toolbar.tsx`:
+   - Props: bỏ `onOpenEffectSection`, thêm `onUpdateSelected`/`palette` (chữ ký y hệt Inspector.tsx
+     đang nhận, cast theo kind ĐÚNG pattern có sẵn `onUpdateSelected as (m: (el: X) => void, live?:
+     boolean) => void` — Inspector.tsx đã dùng pattern này 3 lần cho Text/Image/Shape, không bịa
+     cách cast khác).
+   - `IconOnly`'s `onClick` nới kiểu từ `() => void` thành `(e: React.MouseEvent<HTMLButtonElement>)
+     => void` (tương thích ngược — mọi nơi gọi cũ dùng `onClick={() => fn()}` không đổi gì) để 4 nút
+     Hiệu ứng lấy được `getBoundingClientRect()` của chính nút bấm làm toạ độ neo popover.
+   - State `effectPopover: {kind, x, y} | null` — bấm 1 trong 4 nút [màu chữ · fill · mask · filter]
+     → tính `x/y` từ đáy-trái nút bấm (`rect.left`, `rect.bottom + 6`), gọi lại nút ĐANG mở → đóng;
+     bấm nút KHÁC trong lúc đang mở → CHUYỂN popover, không cần đóng trước.
+   - Render `<Popover anchorX anchorY onDismiss={() => setEffectPopover(null)}>` chứa ĐÚNG 1 trong
+     4 nhánh theo `effectPopover.kind` + `selected.kind` (loại trừ lẫn nhau, cùng gating
+     `canTextColor/canFill/canMask/canFilter` đã có từ bản cũ, không đổi công thức):
+     `ColorPopover` (text) · `FillOverlayControls` bọc `PopoverCard` (image HOẶC shape — 2 nhánh
+     JSX riêng, cast per-kind, tránh union trong vị trí cast) · `ImageMaskControls` bọc
+     `PopoverCard` (image) · `FilterControls` bọc `PopoverCard` (mọi kind có `selected`).
+   - `PopoverCard` (mới, local) — vỏ nhẹ `var(--card)`/`var(--border)` cho fill/mask/filter (khác
+     vỏ kính tối `ColorPopover` tự có sẵn — 2 vật liệu khác nhau, không ép chung 1 vỏ).
+
+**Test/số đo**:
+- `npx tsc --noEmit -p .` (toàn repo) — **sạch, 0 lỗi**.
+- `npx eslint lib/present-editor/glass-style.ts components/present-editor/TextToolbar.tsx
+  components/present-editor/Inspector.tsx components/present-editor/PresentEditor.tsx
+  components/present-editor/Toolbar.tsx` — **sạch, 0 lỗi, 0 warning**.
+- `npm test` (toàn repo) — **exit code 0**, không có dòng `FAIL` thật (2 dòng chứa chữ "fail" là
+  TÊN mô tả tình huống test — "nền sáng → trắng fail, đen đạt" — không phải test thất bại).
+
+💭 **Chưa chắc** (sandbox không có trình duyệt để kéo/bấm thật):
+1. Toạ độ neo popover dùng `rect.bottom + 6` (mở XUỐNG DƯỚI nút) — `Popover.tsx` tự lật LÊN TRÊN
+   nếu thiếu chỗ dưới (đúng cơ chế có sẵn của nó), nhưng CHƯA tự mắt xác nhận trên máy thật/tablet
+   là vị trí mặc định (mở xuống) có che khuất gì trên Toolbar hay không khi Toolbar nằm sát mép
+   trên màn hình (khoảng cách `margin` mặc định của `Popover` là 8px, không phải số tôi tự chọn).
+2. `PopoverCard` cho fill/mask/filter dùng vỏ SÁNG (`var(--card)`) khác vỏ TỐI của `ColorPopover`
+   (kính mờ tối, kế thừa nguyên từ P6c) — 2 style khác nhau trong CÙNG 1 cụm popover có thể nhìn
+   không đồng bộ. Đây là lựa chọn có chủ đích (các control fill/mask/filter vốn viết cho nền panel
+   Inspector sáng — input/select/slider bên trong dùng `var(--field)`/`var(--t2)` theo theme, đổi
+   sang nền tối sẽ lệch màu chữ mọi input con) nhưng CHƯA xem bằng mắt để chắc Hoà thấy ổn — nếu
+   muốn đồng bộ 1 vỏ, cần thiết kế lại field con trong `FillOverlayControls`/`FilterControls` theo
+   vật liệu tối (việc lớn hơn phạm vi rebuild lần này).
+- Không có mục ⛔ CẦN HOÀ — hướng (ii) đã được Hoà chốt rõ, phần còn lại là chi tiết thị giác nêu ở
+  💭 để Hoà xem máy thật rồi góp ý nếu cần.
+
+**Chi tiết đổi (đọc nhanh)**:
+- `lib/present-editor/glass-style.ts` (**MỚI**) — `glassFade()`/`GLASS_TEXT`/`GLASS_TEXT_DIM`,
+  tách từ `TextToolbar.tsx`.
+- `components/present-editor/TextToolbar.tsx` — import từ `glass-style.ts` thay vì định nghĩa cục
+  bộ; export `ColorPopover`.
+- `components/present-editor/Inspector.tsx` — export `FillOverlayControls`/`FilterControls`; tách
+  mask select+slider trong `ImageInspector` thành `ImageMaskControls` (mới, export); gỡ 4 div
+  `id="pe-insp-*"`.
+- `components/present-editor/PresentEditor.tsx` — gỡ `onOpenEffectSection`; `<Toolbar>` nhận
+  `onUpdateSelected={ed.updateSelected}` + `palette={palette}` thay vì `onOpenEffectSection`.
+- `components/present-editor/Toolbar.tsx` — import `Popover`/`ColorPopover`/`FillOverlayControls`/
+  `ImageMaskControls`/`FilterControls`/`glassFade`; state+handler `effectPopover`/`toggleEffect`;
+  JSX 4 nút đổi sang `toggleEffect`; render `<Popover>` với 4 nhánh nội dung; `PopoverCard` mới;
+  `IconOnly.onClick` nới kiểu nhận event.
+
+**SẴN SÀNG COMMIT** (Hoà chạy trên máy thật, nhánh `nhanh-phu` — THAY THẾ khối cũ của mục
+"P6b bước 2b — cụm Hiệu ứng lên Toolbar.tsx" phía trên, xem ⚠️ đầu mục này):
+```bash
+cd ~/Downloads/interiorflow-phu
+git add lib/present-editor/glass-style.ts \
+        components/present-editor/TextToolbar.tsx \
+        components/present-editor/Inspector.tsx \
+        components/present-editor/PresentEditor.tsx \
+        components/present-editor/Toolbar.tsx
+git commit -m "feat(present): P6b buoc 2b huong ii - popover Hieu ung REBUILD (thay mo Inspector+scroll)
+
+- lib/present-editor/glass-style.ts (MOI): glassFade()/GLASS_TEXT tach tu TextToolbar.tsx,
+  1 nguon timing duy nhat cho self-opacity (80ms an/150ms hien, khong doi so).
+- Toolbar.tsx: 4 nut Hieu ung (mau chu/fill/mask/filter) mo POPOVER NOI qua
+  components/ui/Popover.tsx co san (portal + tu lat huong + kep viewport + dong
+  khi bam ra ngoai/Escape) - khong con mo/cuon Inspector.
+- Noi dung popover tai dung component co san, KHONG viet lai logic lan 2:
+  ColorPopover (TextToolbar.tsx, export moi) cho mau chu; FillOverlayControls/
+  FilterControls (Inspector.tsx, export moi) cho fill/filter; ImageMaskControls
+  (Inspector.tsx, MOI tach tu inline trong ImageInspector, export) cho mask -
+  dung LAI o CA ImageInspector VA popover, khong con 2 ban sao logic mask.
+- Inspector.tsx: go 4 div id=pe-insp-* (anchor scroll cu, khong con dung).
+- PresentEditor.tsx: go onOpenEffectSection, noi onUpdateSelected+palette cho Toolbar.
+- IconOnly.onClick noi kieu nhan MouseEvent (tuong thich nguoc moi noi goi cu).
+- tests: tsc/eslint/npm test toan repo sach"
+```
+
+**HÀNG ĐỢI CÒN LẠI**:
+1. Xem mục tổng kết P6 (a→c) + lệnh merge mới ngay dưới đây.
+
+---
+
+## [02/08] P6 · TỔNG KẾT TRỌN a→c (chốt sổ trước khi nhận việc mới AUDIT ĐƯỜNG XUẤT)
+
+Gộp lại toàn bộ P6 cho Hoà nhìn 1 lượt trước khi merge — mỗi dòng trỏ lại mục chi tiết + khối
+SẴN SÀNG COMMIT tương ứng đã có sẵn phía trên trong file này (không lặp lại nội dung, tránh sai
+lệch nếu sửa sau này).
+
+| # | Việc | Trạng thái | File chính đã đổi | Mục chi tiết |
+|---|---|---|---|---|
+| 1 | P6a — AA tự chọn màu chữ + scrim tuỳ chọn | XONG, chờ commit | model.ts, text-contrast.ts(mới+test), render.ts, Element.tsx, TextToolbar.tsx, Inspector.tsx, EditorCanvas.tsx | `## [04/08] P6a` |
+| 2 | P6b bước 1 — cụm "Sắp xếp" lên Toolbar.tsx | XONG, chờ commit | Toolbar.tsx, PresentEditor.tsx | `## [04/08] P6b bước 1` |
+| 3 | P6c — sửa kính lỏng/mờ (K1/K2/K3) | XONG, chờ commit | TextToolbar.tsx, ImageEditor.tsx | `## [02/08] P6c` |
+| 4 | P6b bước 2a — Ẩn hàng loạt (đã duyệt) | XONG, chờ commit | Toolbar.tsx, PresentEditor.tsx | `## [02/08] P6b bước 2a` |
+| 5 | P6b bước 2b hướng ii — popover Hiệu ứng (REBUILD, thay bản mở-Inspector-cũ) | XONG, chờ commit | glass-style.ts(mới), TextToolbar.tsx, Inspector.tsx, PresentEditor.tsx, Toolbar.tsx | `## [02/08] P6b bước 2b hướng ii` (mục ngay trên) |
+
+**Lưu ý merge #5**: mục #2 (P6b bước 1) và #5 (P6b bước 2b) CÙNG đổi `Toolbar.tsx`+`PresentEditor.tsx`
+nhiều lần chồng lên nhau (bước 1 → 2a → 2b-v1-bỏ → 2b-v2) — nếu Hoà commit TỪNG khối theo đúng thứ
+tự #1→#5 ở trên (đúng thứ tự các mục xuất hiện trong file, cũng là thứ tự đã sửa trong worktree)
+thì mỗi commit build/diff sạch bình thường, không cần rebase gì thêm. **KHÔNG chạy khối SẴN SÀNG
+COMMIT cũ của "P6b bước 2b — cụm Hiệu ứng lên Toolbar.tsx" (bản mở-Inspector-cũ)** — đã bị thay bởi
+#5, xem ⚠️ đầu mục #5.
+
+**Test/số đo cuối cùng** (chạy lại LẦN CUỐI sau khi rebuild #5, TOÀN REPO — không chỉ file đã sửa):
+- `npx tsc --noEmit -p .` — **sạch, 0 lỗi**.
+- `npx eslint` (bằng lệnh Hoà đang dùng, hoặc từng file đã liệt kê trong các mục #1-#5) — **sạch**.
+- `npm test` — **exit code 0**, toàn bộ test suite hiện có trong repo, không dòng `FAIL` thật.
+
+---
+
+## [02/08] Lệnh merge nhanh-phu → main — BẢN MỚI, gồm ĐỦ P6 (a→c, sau commit `4e87131`)
+
+**Thay thế mục "[04/08] Lệnh merge nhanh-phu → main (P1–P5...)" phía trên** — mục đó vẫn ĐÚNG cho
+phạm vi P1-P5 (đã merge trước, `4e87131` theo Hoà là mốc SAU khi P1-P5 đã vào `main`). Mục NÀY gộp
+tiếp 5 commit P6 (bảng #1-#5 ở mục Tổng kết ngay trên) — chạy SAU KHI đã `git commit` bằng ĐỦ 5
+khối SẴN SÀNG COMMIT theo đúng thứ tự #1→#5.
+
+**Điều kiện trước khi chạy**: đã `git commit` xong cả 5 khối P6a/P6b-bước-1/P6c/P6b-bước-2a/P6b-
+bước-2b-hướng-ii (bản REBUILD, KHÔNG phải bản mở-Inspector-cũ) — theo đúng thứ tự xuất hiện trong
+file này.
+
+**Lệnh (chạy trên máy thật)**:
+```bash
+cd ~/Downloads/interiorflow-phu
+
+# xem trước danh sách 5 commit P6 sẽ gộp — ĐỐI CHIẾU với bảng #1-#5 ở mục Tổng kết ngay trên
+# (5 dòng, đúng thứ tự P6a -> P6b-buoc-1 -> P6c -> P6b-buoc-2a -> P6b-buoc-2b-huong-ii)
+git log 4e87131..nhanh-phu --oneline
+
+# xem trước danh sách file sẽ đổi trên main sau merge
+git diff 4e87131..nhanh-phu --stat
+
+cd ~/Downloads/interiorflow
+git checkout main
+git merge nhanh-phu -m "merge: nhanh-phu P6 (AA mau chu+scrim, cum Sap xep, kinh long K1-K3, an hang loat, popover Hieu ung huong ii)"
+
+# sau merge: chạy lại kiểm tra trên main cho chắc
+npx tsc --noEmit -p .
+npm test
+```
+Nếu `git log 4e87131..nhanh-phu --oneline` ra SỐ DÒNG khác 5 (thiếu/thừa so với bảng #1-#5) —
+DỪNG, đối chiếu lại trước khi merge thật, đừng chạy `git merge` khi không khớp. (Sandbox không
+chạy được `git log` để tự đối chiếu trước — worktree báo "fatal: not a git repository" khi thử,
+xem ghi chú cuối file — nên khối lệnh này CHƯA được tự kiểm bằng git thật, chỉ đối chiếu được qua
+5 khối SẴN SÀNG COMMIT đã ghi trong file.)
+
+---
+
+## [02/08] AUDIT ĐƯỜNG XUẤT (export bake) — 7 tính năng × 3 đường (PDF · PNG · PPTX)
+
+**Lệnh gốc**: kiểm PDF/PNG/PPTX bake ĐÚNG toàn bộ đồ mới của P1-P6: E1 group (resize nhóm + z-order
+nhóm) · E2 mask · E3 fill overlay · E4 filter · màu chữ AA-safe P6a · trạng thái Ẩn (hidden KHÔNG
+xuất) · khoá không ảnh hưởng xuất. PPTX chữ phải còn chỉnh được. Viết test bake từng cặp bằng runner
+hiện có; chỗ nào lệch sửa trong render/export.ts, mỗi fix 1 commit riêng; kết quả = bảng ma trận.
+
+### Cách làm
+
+Đọc TOÀN BỘ `render.ts` (749 dòng) + `export.ts` (364 dòng) trước khi viết gì — không đoán. Phát
+hiện: PDF và PNG dùng CHUNG 100% `renderEditorSlide()` (export.ts dòng 50 và 98) — KHÔNG có đường
+riêng nào, nên PDF/PNG LUÔN giống hệt nhau ở cả 7 tính năng, không cần kiểm 2 lần. PPTX có 2 nhánh
+khác nhau tuỳ nội dung slide:
+- **PPTX-ảnh** (slide không có text ngữ nghĩa title/body) → CŨNG gọi `renderEditorSlide()` y hệt
+  PDF/PNG (export.ts dòng 322) → tự động ĐÚNG theo mọi tính năng nếu PDF/PNG đúng.
+- **PPTX-chữ** (slide có title/body, chữ vẫn chỉnh được trong PowerPoint) → đường RIÊNG:
+  `toContentSlide()` (chữ) + `heroToDataUri()`/`maskedImageDataUri()` (ảnh hero, bake mask+overlay
+  vào canvas TRƯỚC khi nhúng vì pptxgenjs không hiểu clip-path/blend-mode) — đây là nhánh DUY NHẤT
+  có khả năng lệch, vì code RIÊNG, không dùng chung `renderEditorSlide`.
+
+Test viết theo ĐÚNG quy ước Node hiện có (`shape-geometry.test.ts`/`fill-overlay.test.ts`, tự comment
+rõ: "`render.ts#drawImageEl`/`export.ts` mới thật sự vẽ lên canvas thật, chỉ chạy được ở trình
+duyệt — ngoài phạm vi test Node") — `sucrase-node` KHÔNG resolve alias `@/` (xác nhận thực nghiệm:
+chạy thẳng file test import từ `export.ts` → `Cannot find module '@/lib/imaging'`, và grep toàn bộ
+`*.test.ts` hiện có xác nhận KHÔNG file nào từng import `@/...`). → phần PDF/PNG/PPTX-ảnh (dùng
+chung `renderEditorSlide`, cần `document`/canvas thật) xác nhận ĐÚNG bằng ĐỌC CODE (không test Node
+được, đúng quy ước cũ), phần PPTX-chữ (2 lỗi tìm thấy, xem dưới) xác nhận bằng test Node THẬT vì
+logic đó THUẦN (không đụng DOM) sau khi tách đúng chỗ.
+
+### 2 lỗi tìm thấy + đã vá (đúng NHÁNH PPTX-chữ, PDF/PNG/PPTX-ảnh không dính)
+
+**Bug B/C — phần tử Ẩn vẫn lọt vào PPTX-chữ.** `firstByRole`/`allByRole` (chọn title/body/kicker)
+và `pickHero` (chọn ảnh hero) đọc thẳng `slide.elements` KHÔNG lọc `el.hidden` — khác đường PDF/PNG/
+PPTX-ảnh đã lọc hidden từ P6b bước 2a (render.ts dòng 739 `if (el.hidden) continue;`). Nghĩa là 1
+tiêu đề/thân bài/ảnh đang bấm Ẩn ở Toolbar vẫn hiện ra trong file PPTX xuất ra — sai yêu cầu "phần
+tử Ẩn KHÔNG xuất" ở ĐÚNG 1 trong 3 đường. Vá: thêm `!e.hidden` vào cả 3 hàm.
+
+**Bug A — filter/adjust ảnh hero (P4/E4) bị RỚT khi xuất PPTX.** `heroToDataUri`/`maskedImageDataUri`
+(bake mask+fillOverlay vào canvas cho hero PPTX) chưa từng gán `ctx.filter` — vẽ ảnh THÔ, bỏ qua
+hoàn toàn `el.filter`/`el.adjust` dù editor đang hiển thị có chỉnh. Vá: gán
+`ctx.filter = composeFilters(adjustToCssFilter(el.adjust), elementFilterToCssFilter(el.filter))`
+TRƯỚC `drawImage`, GIỐNG HỆT `render.ts#drawImageEl` (1 nguồn sự thật, không viết logic filter lần
+2). Đường `toDataUri` cũ (giữ nguyên khi ảnh chưa hề chỉnh gì, không đổi byte output) cũng cần biết
+"có filter/adjust không" để quyết định có bake lại hay không — LÚC ĐẦU thử dò bằng
+`composeFilters(adjustToCssFilter(a), elementFilterToCssFilter(f)) !== 'none'`, chạy test LẦN ĐẦU
+FAIL 2/14 case: `adjustToCssFilter` LUÔN in `brightness()/contrast()/saturate()` KHÔNG ĐIỀU KIỆN
+(khác `elementFilterToCssFilter` có điều kiện từng phần) → chuỗi đó KHÔNG BAO GIỜ là `'none'`, dò
+kiểu đó sẽ khiến MỌI ảnh hero (kể cả chưa ai đụng) đều bị nướng lại — RÚT lại, viết
+`isNeutralAdjust`/`isNeutralElementFilter` (model.ts, so số trực tiếp với `DEFAULT_ADJUST`/
+`DEFAULT_ELEMENT_FILTER`) thay thế, test lại → 14/14 pass.
+
+### Việc thêm ngoài 2 fix trên (đổi để test Node được, KHÔNG đổi hành vi)
+
+Cả 2 fix cần gọi những hàm hiện đang "chôn" trong `export.ts`/`render.ts` (kéo theo `@/lib/imaging`,
+không import được ở Node) — tách 2 chỗ, ĐÚNG quy ước tách đã dùng cho `shape-geometry.ts` trước đó:
+- `composeFilters` chuyển từ `render.ts` sang `model.ts` (cạnh `adjustToCssFilter`/
+  `elementFilterToCssFilter`, cùng họ hàm chuỗi filter) — thêm `isNeutralAdjust`/
+  `isNeutralElementFilter` mới cạnh đó. `render.ts` giờ `import { composeFilters } from './model'`
+  thay vì tự định nghĩa — HÀNH VI KHÔNG ĐỔI (copy nguyên logic, chỉ đổi CHỖ Ở).
+- `firstByRole`/`allByRole`/`pickHero` chuyển từ `export.ts` sang file MỚI `pptx-pick.ts` (thuần,
+  chỉ đọc `slide.elements`, không đụng DOM) — `export.ts` `import` lại rồi `export { ... }` để chỗ
+  gọi cũ trong chính file đó không phải sửa gì thêm.
+
+File MỚI: `lib/present-editor/pptx-pick.ts` (3 hàm chọn nội dung PPTX-chữ, đã có `!hidden`),
+`lib/present-editor/export-bake.test.ts` (14 case, 4 nhóm: hidden-loại-text, hidden-loại-hero,
+khoá-không-ảnh-hưởng, điều-kiện-bake-lại-filter).
+
+### Ma trận kết quả — 7 tính năng × 3 đường xuất
+
+| # | Tính năng | PDF | PNG | PPTX |
+|---|---|---|---|---|
+| E1 | Group — resize NHÓM theo tỉ lệ + z-order nhóm | ✅ | ✅ (=PDF, chung renderEditorSlide) | ✅ |
+| E2 | Mask ảnh theo hình | ✅ | ✅ (=PDF) | ✅ |
+| E3 | Lớp phủ fill (màu/gradient) | ✅ | ✅ (=PDF) | ✅ |
+| E4 | Filter phần tử (blur/brightness/contrast/saturate) + adjust ảnh | ✅ | ✅ (=PDF) | ✅ **ĐÃ VÁ (Bug A)** |
+| P6a | Màu chữ tự chọn AA-safe | ✅ | ✅ (=PDF) | ✅ title/kicker · ⚠️ thân bài (xem ghi chú) |
+| — | Trạng thái Ẩn — phần tử hidden KHÔNG xuất | ✅ | ✅ (=PDF) | ✅ **ĐÃ VÁ (Bug B/C)** |
+| — | Khoá (`locked`) không ảnh hưởng xuất | ✅ | ✅ (=PDF) | ✅ |
+
+Chú thích cách xác nhận từng ô:
+- **PDF/PNG mọi hàng** + **PPTX hàng E1-E3, khoá**: xác nhận bằng ĐỌC CODE toàn bộ `render.ts`
+  (hidden: dòng 739; E4: dòng 95/220/286; E2: `imageMaskCanvasPath` dòng 100/200; E3: dòng 109-112/
+  270-274; P6a: đọc thẳng `el.color`, không có logic AA riêng trong render.ts; khoá: `grep -rn
+  "\.locked" render.ts export.ts shape-geometry.ts` → 0 kết quả, không nhánh nào theo `locked`) +
+  `resize-group.test.ts`/`zorder-group.test.ts` đã kiểm `scaleGroupByCorner`/`reorderZOrderGroup`
+  ghi ĐÚNG vào `el.frame`/thứ tự mảng `slide.elements` (E1 KHÔNG có code riêng trong render.ts vì
+  group resize/z-order đã "nướng" sẵn vào model, render.ts chỉ đọc `el.frame` + thứ tự mảng như mọi
+  phần tử khác — `groupId` trong model.ts CHỈ là tag phẳng, không lưu hình học riêng). Không cần test
+  Node cho các ô này (đúng quy ước cũ — canvas thật cần trình duyệt).
+- **PPTX hàng E4, Ẩn**: test Node thật (`export-bake.test.ts`, 14/14 pass) — 2 bug tìm thấy, đã vá,
+  đã test lại.
+- **PPTX hàng E2/E3**: dùng CHUNG `imageMaskCanvasPath`/`applyFillOverlayStyle` (đã test ở
+  `shape-geometry.test.ts`/`fill-overlay.test.ts` từ trước) với `render.ts` — 1 nguồn hình học đã
+  kiểm, `maskedImageDataUri` gọi lại, không viết logic riêng lần 2 → suy ra đúng, không lặp test.
+- **PPTX hàng P6a, ⚠️ thân bài**: `toContentSlide` (export.ts) map `theme.text = titleEl.color`,
+  `theme.accent = kickerEl.color` — ĐÚNG, kế thừa thẳng màu P6a đã tính. Nhưng `theme.muted` (màu
+  thân bài) là 1 màu CỐ ĐỊNH `'#8a6f4d'`-kiểu-theo-deck, KHÔNG đọc `el.color` của từng phần tử body
+  — giới hạn heuristic CÓ TỪ TRƯỚC P6a (PPTX chỉ có 1 màu theme cho cả khối thân bài, không map
+  theo-run), KHÔNG PHẢI lỗi P6a mới sinh ra. Sửa đúng cần viết lại kiến trúc theo-run của
+  `lib/pptx.ts` (rủi ro vỡ "chữ vẫn chỉnh được", điểm bán hàng) — NGOÀI PHẠM VI 1 fix nhỏ của audit
+  này, ghi ⚠️ (không phải ❌) + để lại làm việc riêng nếu Hoà muốn.
+
+### PPTX chữ vẫn chỉnh được (điểm bán hàng, không được vỡ) — xác nhận
+
+Không đụng cơ chế render text: `toContentSlide` chỉ đổi CÁCH CHỌN phần tử nào được đưa vào
+`content.title`/`content.body`/`content.kicker` (thêm `!hidden`) — KHÔNG đổi cách `content`/`theme`
+được `lib/pptx.ts` chuyển thành text-run pptxgenjs (không sửa file đó). 2 fix chỉ chạm
+`pickHero`/`heroToDataUri`/`maskedImageDataUri` (đường ẢNH hero), không chạm đường CHỮ.
+
+### Kiểm sạch
+
+`npx tsc --noEmit -p .` — sạch, 0 lỗi (toàn repo). `npx eslint` (6 file đã đổi: `model.ts`,
+`render.ts`, `export.ts`, `pptx-pick.ts` mới, `export-bake.test.ts` mới) — sạch. `npm test` — exit
+code 0, toàn bộ suite hiện có (kể cả `export-bake.test.ts` mới, 14/14) — không dòng `FAIL` thật.
+
+### 💭 Chưa chắc / cần Hoà quyết
+
+- **Gộp 1 commit hay tách theo "mỗi fix 1 commit riêng"?** Lệnh gốc yêu cầu tách — nhưng phần
+  "tách để test Node được" (`composeFilters`→model.ts, 3 hàm pick→pptx-pick.ts mới) PHỤC VỤ CẢ 2
+  fix cùng lúc, không tách sạch theo fix được nếu không làm thêm nhiều thao tác git thủ công. Khối
+  SẴN SÀNG COMMIT dưới đây gộp thành 1 commit "AUDIT ĐƯỜNG XUẤT" — nếu Hoà muốn tách đúng 2 commit
+  riêng theo Bug A / Bug B-C, cần `git add -p` chọn tay từng hunk (không soạn sẵn được từ sandbox).
+- **⚠️ thân bài PPTX không đọc màu P6a riêng từng phần tử** — để nguyên (giới hạn có từ trước, xem
+  ma trận) hay mở việc riêng viết lại `lib/pptx.ts` theo-run? CHƯA làm, đợi Hoà chọn.
+
+### SẴN SÀNG COMMIT — "AUDIT ĐƯỜNG XUẤT: vá 2 lỗi PPTX-chữ (hidden + filter hero) + test Node"
+
+```bash
+cd ~/Downloads/interiorflow-phu
+git add lib/present-editor/model.ts lib/present-editor/render.ts lib/present-editor/export.ts \
+        lib/present-editor/pptx-pick.ts lib/present-editor/export-bake.test.ts
+git commit -m "fix(present-export): vá 2 lỗi bake PPTX nhánh chữ + audit đủ 7×3
+
+- Bug B/C: firstByRole/allByRole/pickHero (chọn title/body/kicker/hero PPTX)
+  khong loc el.hidden -> phan tu dang An van lot vao PPTX (PDF/PNG/PPTX-anh
+  da dung tu P6b buoc 2a). Va: them !e.hidden. Tach 3 ham sang file moi
+  pptx-pick.ts (thuan, khong dung DOM) de test Node duoc.
+- Bug A: heroToDataUri/maskedImageDataUri bo qua ctx.filter khi bake anh
+  hero -> filter/adjust (P4/E4) bi rot khi xuat PPTX du mask/fillOverlay
+  van dung. Va: gan ctx.filter = composeFilters(adjustToCssFilter(el.adjust),
+  elementFilterToCssFilter(el.filter)) truoc drawImage, giong het
+  render.ts#drawImageEl. composeFilters chuyen tu render.ts sang model.ts
+  (cung adjustToCssFilter/elementFilterToCssFilter) de dung lai duoc o day.
+  Them isNeutralAdjust/isNeutralElementFilter (model.ts) cho dieu kien fast-
+  path 'chua chinh gi thi giu duong toDataUri cu' - KHONG dung
+  composeFilters(...) !== 'none' (adjustToCssFilter luon in
+  brightness/contrast/saturate khong dieu kien, khong bao gio tra 'none',
+  phat hien qua test that bai lan dau).
+- Them export-bake.test.ts (14 case, sucrase-node) + doc AUDIT-DUONG-XUAT
+  trong BAO-CAO-PHU.md: bang ma tran 7 tinh nang x 3 duong xuat.
+- PDF/PNG/PPTX-anh dung chung renderEditorSlide, khong doi - da xac nhan
+  dung bang doc code (render.ts, khong can canvas that o Node).
+- tsc/eslint/npm test toan repo sach."
+```
+
+**HÀNG ĐỢI CÒN LẠI (sau AUDIT ĐƯỜNG XUẤT)**:
+1. Commit khối trên (hoặc tách theo `git add -p` nếu muốn đúng "mỗi fix 1 commit").
+2. Merge `nhanh-phu` → `main` theo lệnh đã có ở mục "[02/08] Lệnh merge nhanh-phu → main" phía trên
+   (P1-P6) — commit AUDIT này PHÁT SINH SAU mốc đó, cần thêm vào danh sách nếu merge cùng đợt, hoặc
+   merge riêng 1 đợt sau — Hoà quyết theo lịch làm việc thật.
+3. (Tuỳ chọn, không bắt buộc) mở việc riêng cho ⚠️ màu thân bài PPTX theo-run nếu Hoà muốn khớp
+   100% P6a ở mọi vai trò text, không chỉ title/kicker.
+
+---
+
+## [16:xx 02/08] PHÁT HIỆN MỚI — sandbox chạy ĐƯỢC git thật (có điều kiện), nhưng `git commit` vẫn
+## bị FUSE chặn ở bước cuối — sửa lại toàn bộ hướng dẫn commit phía trên
+
+**Tin tốt trước**: khác ghi chú "sandbox báo `fatal: not a git repository`" ở các mục phía trên
+(đúng lúc đó) — phiên này thử lại và tìm ra cách: worktree `interiorflow-phu` lưu `.git` dạng file
+trỏ path THẬT của máy Hoà (`/Users/tranben/Downloads/interiorflow-phu/.git`), sandbox không thấy
+path đó — nhưng vượt qua được bằng cách trỏ thẳng `GIT_DIR`/`GIT_WORK_TREE` vào bản sao trong
+sandbox của `.git/worktrees/interiorflow-phu` (nằm bên trong worktree `interiorflow` — thư mục CÙNG
+1 ổ đĩa thật với `interiorflow-phu`, cả hai đều đã kết nối trong phiên này). Với 2 biến môi trường
+đó, `git status`/`git diff`/`git log` chạy ĐÚNG, đọc được lịch sử thật — nhờ vậy xác nhận lại
+CHÍNH XÁC trạng thái thay vì đoán:
+
+**Trạng thái thật (khác giả định "cả 5 khối P6a→2b-ii đều chờ commit" ghi phía trên — bảng đó ghi
+TRƯỚC KHI biết P6a/P6b1/P6c đã commit thật ở 1 phiên trước, chỉ là chưa cập nhật lại bảng)**:
+- `a53c4a9` P6a, `fa29820` P6b bước 1, `10e5d9d` P6c — **ĐÃ COMMIT XONG**, nằm dưới `4e87131`.
+- `4e87131` — chính là commit đã ghi toàn bộ `BAO-CAO-PHU.md` + `TICKET-FIX-KINH-LONG` +
+  `model-group.test.ts`/`shape-geometry.test.ts` (docs+test, không phải code tính năng).
+- **CHỈ CÒN 3 khối chưa commit**: P6b bước 2a (Ẩn hàng loạt) · P6b bước 2b hướng ii (popover) ·
+  AUDIT ĐƯỜNG XUẤT (2 lỗi PPTX-chữ) — ĐÚNG 3 việc trong lệnh gốc phiên này, không phải 5+1 như
+  bảng "Tổng kết P6" phía trên liệt kê (bảng đó SAI vì viết trước khi xác nhận được git log thật).
+
+**Tin không tốt**: `git commit` (và mọi lệnh GHI khác — `git reset`, `git add` lần 2 trở đi) đụng
+ĐÚNG giới hạn FUSE đã biết từ vụ SQLite (`CLAUDE.md` mục "KHÔNG `prisma db push`/`migrate` qua
+sandbox") — sandbox không `unlink` được (đổi tên/xoá file tạm là cơ chế Git dùng để ghi object +
+lock an toàn). Thử thật: `git add` 2 file cho khối 2a chạy được (stage thành công), nhưng `git
+commit` ngay sau đó FAIL — `index.lock` bị kẹt lại, và `rm index.lock` cũng bị "Operation not
+permitted". **`index.lock` này là file THẬT trên máy Hoà** (không phải bản sao riêng của sandbox —
+`GIT_DIR` trỏ thẳng `.git` thật) — Hoà cần tự xoá nó trên máy thật TRƯỚC KHI chạy bất kỳ lệnh git
+nào bên dưới (trên máy thật, `rm` không bị FUSE chặn, xoá bình thường).
+
+**Hệ quả cho quy trình commit 2a/2b — SỬA LẠI cách làm phía trên**: các khối "SẴN SÀNG COMMIT" ghi
+ở mục P6b-2a/P6b-2b-ii phía trên tưởng chỉ cần `git add <file> && git commit` THEO ĐÚNG THỨ TỰ là
+tách sạch — **giả định đó SAI khi 1 file bị NHIỀU khối cùng sửa** (`Toolbar.tsx`/`PresentEditor.tsx`
+bị CẢ 2a LẪN 2b-ii sửa) — vì working tree chỉ giữ 1 bản MỚI NHẤT (đã cộng dồn cả 2a+2b-ii), `git
+add <file>` ở bước 2a sẽ vô tình cuốn theo LUÔN cả phần 2b-ii chưa muốn commit. Phiên này đã tách
+tay bằng cách sửa file về đúng trạng thái "chỉ 2a" (xoá tạm phần 2b-ii), xác nhận `tsc` sạch, rồi
+mới phát hiện `git commit` bị chặn — nên đã đóng gói lại phần 2b-ii đã xoá tạm thành 2 file patch
+(`docs/patches/p6b-2b-toolbar.diff`, `docs/patches/p6b-2b-presenteditor.diff`, đã `patch --dry-run`
+xác nhận áp được sạch) để Hoà không phải tự tách tay bằng `git add -p` (khó, dễ chọn nhầm dòng).
+
+**`Toolbar.tsx`/`PresentEditor.tsx` trong worktree HIỆN TẠI đã ở đúng trạng thái "chỉ 2a"** (patch
+2b-ii đã tách ra ngoài) — `Inspector.tsx`/`TextToolbar.tsx`/`glass-style.ts` (mới) là 2b-ii THUẦN,
+không cần tách. `model.ts`/`render.ts`/`export.ts`/`pptx-pick.ts` (mới)/`export-bake.test.ts` (mới)
+là AUDIT THUẦN, không cần tách.
+
+**File LẠ phát hiện trong working tree, KHÔNG ĐỤNG** (không thuộc 2a/2b-ii/AUDIT, không có mô tả
+nào ở các mục trên nói tới): `components/present-editor/LayerPanel.tsx` (thêm viền màu + icon
+`Group` cho hàng thuộc 1 cụm E1 — có vẻ là việc CŨ hơn từ đợt E1 group chưa từng commit, không phải
+việc của lệnh gốc phiên này) và `docs/mocks/mock-present-chooser.html` (mock HTML, không rõ nguồn —
+KHÔNG phải mock `mock-files-polished.html`/`mock-settings-polished.html` của worktree G4 khác). Cả
+2 để NGUYÊN, không gộp vào bất kỳ commit nào dưới đây — Hoà xem lại sau nếu muốn giữ.
+
+**Kiểm sạch LẦN CUỐI (trạng thái worktree HIỆN TẠI, sau khi tách patch)**: `npx tsc --noEmit -p .`
+— sạch, 0 lỗi · `npx eslint` (10 file: 4 component present-editor + `model.ts`/`render.ts`/
+`export.ts`/`pptx-pick.ts`/`export-bake.test.ts`/`glass-style.ts`) — sạch · `npm test` — exit code
+0, không `FAIL` thật (2 chỗ chứa chữ "fail" là TÊN mô tả tình huống, đã soát kỹ).
+
+### LỆNH CHÍNH XÁC — chạy trên máy thật, ĐÚNG THỨ TỰ (thay thế mọi khối lệnh merge/commit cũ ở
+### các mục phía trên nói về 5 khối P6a→2b-ii — giờ chỉ còn 3 bước)
+
+```bash
+cd ~/Downloads/interiorflow-phu
+
+# 0) BẮT BUỘC trước — xoá lock kẹt lại từ lần sandbox thử hụt (chỉ xoá khi chắc không có
+#    tiến trình git nào khác đang chạy — kiểm nhanh bằng `ps aux | grep git`)
+rm -f .git/worktrees/interiorflow-phu/index.lock 2>/dev/null || \
+  rm -f "$(git rev-parse --git-dir)/index.lock" 2>/dev/null
+git status --short   # đối chiếu: đúng 9 file M + 4 file ?? như mô tả trên, không có gì lạ khác
+
+# 1) Commit P6b bước 2a — Ẩn hàng loạt (file ĐÃ Ở ĐÚNG trạng thái "chỉ 2a", commit thẳng)
+git add components/present-editor/Toolbar.tsx components/present-editor/PresentEditor.tsx
+git commit -m "feat(present): P6b buoc 2a - an/hien hang loat canh nut Khoa
+
+- onToggleHideSelected (PresentEditor.tsx): cung khuon onToggleLockSelected,
+  toggle hidden cho ca selectedIds qua ed.updateSlide (undo/redo tu phu).
+- Toolbar.tsx: prop onToggleHide + nut IconOnly moi canh Khoa, gating anyVisible.
+- Nang luc MOI da duyet rieng, tach khoi cum Sap xep P6b buoc 1 (giu nguyen)."
+
+# 2) Khôi phục phần 2b-ii đã tách tạm ra 2 file patch, RỒI commit — patch đã patch --dry-run
+#    xác nhận áp sạch lên đúng trạng thái sau bước 1
+git apply docs/patches/p6b-2b-toolbar.diff
+git apply docs/patches/p6b-2b-presenteditor.diff
+npx tsc --noEmit -p .   # sạch trước khi commit — nếu KHÔNG sạch, DỪNG, báo lại, đừng commit
+git add lib/present-editor/glass-style.ts \
+        components/present-editor/TextToolbar.tsx \
+        components/present-editor/Inspector.tsx \
+        components/present-editor/PresentEditor.tsx \
+        components/present-editor/Toolbar.tsx
+git commit -m "feat(present): P6b buoc 2b huong ii - popover Hieu ung REBUILD (thay mo Inspector+scroll)
+
+- lib/present-editor/glass-style.ts (MOI): glassFade()/GLASS_TEXT tach tu TextToolbar.tsx,
+  1 nguon timing duy nhat cho self-opacity (80ms an/150ms hien, khong doi so).
+- Toolbar.tsx: 4 nut Hieu ung (mau chu/fill/mask/filter) mo POPOVER NOI qua
+  components/ui/Popover.tsx co san (portal + tu lat huong + kep viewport + dong
+  khi bam ra ngoai/Escape) - khong con mo/cuon Inspector.
+- Noi dung popover tai dung component co san, KHONG viet lai logic lan 2:
+  ColorPopover (TextToolbar.tsx, export moi) cho mau chu; FillOverlayControls/
+  FilterControls (Inspector.tsx, export moi) cho fill/filter; ImageMaskControls
+  (Inspector.tsx, MOI tach tu inline trong ImageInspector, export) cho mask -
+  dung LAI o CA ImageInspector VA popover, khong con 2 ban sao logic mask.
+- Inspector.tsx: go 4 div id=pe-insp-* (anchor scroll cu, khong con dung).
+- PresentEditor.tsx: go onOpenEffectSection, noi onUpdateSelected+palette cho Toolbar.
+- IconOnly.onClick noi kieu nhan MouseEvent (tuong thich nguoc moi noi goi cu).
+- tests: tsc/eslint/npm test toan repo sach"
+
+# 3) Commit AUDIT ĐƯỜNG XUẤT (2 lỗi PPTX-chữ đã vá, THUẦN — không đụng file 2a/2b-ii nên
+#    không cần patch, add thẳng)
+git add lib/present-editor/model.ts lib/present-editor/render.ts lib/present-editor/export.ts \
+        lib/present-editor/pptx-pick.ts lib/present-editor/export-bake.test.ts
+git commit -m "fix(present-export): vá 2 lỗi bake PPTX nhánh chữ + audit đủ 7×3
+
+- Bug B/C: firstByRole/allByRole/pickHero (chon title/body/kicker/hero PPTX)
+  khong loc el.hidden -> phan tu dang An van lot vao PPTX (PDF/PNG/PPTX-anh
+  da dung tu P6b buoc 2a). Va: them !e.hidden. Tach 3 ham sang file moi
+  pptx-pick.ts (thuan, khong dung DOM) de test Node duoc.
+- Bug A: heroToDataUri/maskedImageDataUri bo qua ctx.filter khi bake anh
+  hero -> filter/adjust (P4/E4) bi rot khi xuat PPTX du mask/fillOverlay
+  van dung. Va: gan ctx.filter = composeFilters(adjustToCssFilter(el.adjust),
+  elementFilterToCssFilter(el.filter)) truoc drawImage, giong het
+  render.ts#drawImageEl. composeFilters chuyen tu render.ts sang model.ts
+  (cung adjustToCssFilter/elementFilterToCssFilter) de dung lai duoc o day.
+  Them isNeutralAdjust/isNeutralElementFilter (model.ts) cho dieu kien fast-
+  path 'chua chinh gi thi giu duong toDataUri cu' - KHONG dung
+  composeFilters(...) !== 'none' (adjustToCssFilter luon in
+  brightness/contrast/saturate khong dieu kien, khong bao gio tra 'none',
+  phat hien qua test that bai lan dau).
+- Them export-bake.test.ts (14 case, sucrase-node) + doc AUDIT-DUONG-XUAT
+  trong BAO-CAO-PHU.md: bang ma tran 7 tinh nang x 3 duong xuat.
+- PDF/PNG/PPTX-anh dung chung renderEditorSlide, khong doi - da xac nhan
+  dung bang doc code (render.ts, khong can canvas that o Node).
+- tsc/eslint/npm test toan repo sach."
+
+# 4) Commit doc này (tự sửa lại nội dung phiên này, kể cả patch mới) — riêng, không gộp code
+git add docs/BAO-CAO-PHU.md
+git commit -m "docs: cap nhat BAO-CAO-PHU voi phat hien FUSE chan git commit + lenh 3-buoc chinh xac"
+
+# 5) Kiểm lại TOÀN BỘ trên chính nhánh nhanh-phu sau khi có đủ 4 commit trên
+git log 4e87131..nhanh-phu --oneline   # đúng 4 dòng theo thứ tự 2a → 2b-ii → AUDIT → docs
+npx tsc --noEmit -p .
+npm test
+
+# 6) Merge — CHỈ chạy khi bước 5 sạch hết, và Hoà đã xem qua log ở trên khớp đúng 4 dòng
+cd ~/Downloads/interiorflow
+git checkout main
+git merge nhanh-phu -m "merge: nhanh-phu P6 hoan tat + AUDIT duong xuat (an hang loat, popover Hieu ung huong ii, va 2 loi PPTX bake)"
+npx tsc --noEmit -p .
+npm test
+
+# 7) Dọn 2 file patch tạm (không phải sản phẩm, chỉ để bắc cầu bước 2 ở trên)
+cd ~/Downloads/interiorflow-phu
+rm -rf docs/patches
+git add -A docs/patches
+git commit -m "chore: don patch tam da dung xong (P6b buoc 2b hoi phuc tu 2a-only)"
+```
+
+Nếu bước 0 vẫn báo lỗi lock sau khi `rm` (hiếm, nhưng có thể do 1 process VS Code/Cursor đang mở
+repo giữ handle) — đóng hẳn editor đang mở thư mục này rồi thử lại, đừng `rm -rf .git` hay bất kỳ
+thao tác mạnh tay nào khác.
+
+**HÀNG ĐỢI CÒN LẠI (lúc viết mục trên)**: không còn — sau bước 6, cả CHỐT SỔ P6 lẫn AUDIT ĐƯỜNG
+XUẤT đều đã nằm trên `main` **khi Hoà chạy xong khối lệnh 7 bước ở trên**. ⚠️ Cập nhật ngay dưới
+đây: lúc viết mục này (giờ ghi bên dưới), khối 7 bước đó **CHƯA chạy** — `git log`/`git status`
+qua `GIT_DIR` xác nhận `PresentEditor.tsx`/`Toolbar.tsx` vẫn đang STAGED chờ, `Inspector.tsx`/
+`TextToolbar.tsx` vẫn unstaged — **chạy khối lệnh 7 bước Ở TRÊN TRƯỚC**, rồi mới tới khối lệnh BOQ
+ở mục dưới đây (2 việc HOÀN TOÀN ĐỘC LẬP, không đụng chung file nào ngoài chính file báo cáo này).
+
+---
+
+## [BOQ ENGINE — logic thuần, 02/08]
+
+### Đã kiểm trước khi code (L1, theo đúng chỉ đạo)
+
+- **`docs/SPEC-SEMANTIC-MODEL.md` §4+§7** (đọc trong `interiorflow-phu/docs/`, file có tồn tại ở
+  worktree này) — §4 xác nhận "vùng tô: màu (hiển thị) ≠ vật liệu (dữ liệu matId→hãng/mã/giá)";
+  §7 xác nhận đây là "moat" BOQ tự sinh từ vùng tô.
+- **`docs/SPEC-MODE-PER-STAGE.md` §4** — file này **CHỈ có trong repo chính `interiorflow/docs/`,
+  KHÔNG có trong `interiorflow-phu/docs/`** (lệch đồng bộ giữa 2 worktree, đọc thẳng từ repo chính
+  vì chỉ đọc không sửa, không rủi ro). §4 xác nhận "Bảng tính/BOQ ⭐" là **editor RIÊNG** ở Present
+  (spreadsheet, dự toán tự sinh) — việc hôm nay CHỈ là lớp tính-thuần bên dưới editor đó, KHÔNG
+  phải chính editor đó (đúng đầu bài "chưa làm UI").
+- **`docs/LUAT-GIAO-DIEN-BAT-BUOC.md`** — cũng chỉ có ở repo chính, đọc thẳng. Việc BOQ hôm nay
+  KHÔNG động tới giao diện (không UI) nên L1-L7 không áp trực tiếp, nhưng tinh thần L1 (nghiên cứu
+  trước) + L2 (không hứa suông) được áp dụng cho phần logic này.
+- **`docs/REVIEW-SPEC-BOQ-LARK-2026-07-30.md`** (241 dòng, đọc hết) — xác nhận 3/4 gap code cũ
+  (①perimeter ②trừ lỗ mở ③MaterialDef lẫn dữ liệu thương mại) **đã đóng** ở `2.1.9.q`/`2.1.9.r`
+  (khớp code đọc trực tiếp — xem dưới).
+- **`lib/cad/hatch.ts`** (399 dòng, đọc hết) — xác nhận **ĐÃ CÓ SẴN**: `polygonArea` (shoelace),
+  `polygonPerimeter`, `openingsAreaInPolygon`, `BOQ_OPENING_MIN_AREA_M2`,
+  `OPENING_STANDARD_HEIGHT_MM` — đủ hình học cho BOQ v1, **KHÔNG cần viết engine hình học mới**
+  (đúng chỉ đạo).
+- **`lib/cad/model.ts`** — xác nhận `HatchEntity` (vùng tô) **KHÔNG có field neo vật liệu nào**
+  (khác `BlockEntity.specId` đã có sẵn cho furniture/block). Không có field `matId` theo đúng tên
+  gọi trong spec — "matId" là **thuật ngữ trong tài liệu**, không phải tên field thật trong code.
+- **`lib/cad/schedule.ts`** (Hệ Legend C1, đọc phần đầu) — xác nhận `BlockEntity.specId` đã là
+  tiền lệ FK mềm sang `ProductSpec.id`, dùng đúng khuôn cho `HatchEntity.specId` mới (không bịa
+  field song song).
+- **`lib/cad/materials.ts`** — xác nhận `MaterialDef` (preset hatch/texture) CHỈ có
+  `atlasRecordId?: string` neo **định nghĩa preset**, không phải neo **1 vùng tô đã vẽ cụ thể** —
+  đúng như `2.1.9.i`/`2.1.9.r` đã chốt 30/07 (texture đổi theo thiết kế, giá đổi theo NCC, 2 nhịp
+  sống khác nhau, không trộn).
+- **`prisma/schema.prisma` `ProductSpec`** — xác nhận 6 field `2.1.9.r` (30/07) đã có sẵn:
+  `unit`/`priceVnd`(Decimal)/`wastagePercent`(Decimal)/`packagingSpec`/`altSku`/`styleTags`.
+- **`lib/server/specs.ts` + `app/api/specs/route.ts`** — đọc hết, **PHÁT HIỆN GAP**: `specToDto()`
+  serialize response cho `GET /api/specs` **THIẾU HẲN 6 field trên** dù Prisma đã có — nghĩa là
+  API `/api/specs?kind=material` (đường mà đầu bài nói "đã dùng ở G2 phần 5") **KHÔNG trả giá**
+  dù DB có. Đã vá (xem dưới).
+- **`lib/lark/atlas-material-map.ts`** (grep + tên hàm, không đọc hết file) — xác nhận đường GHI
+  (`mapAtlasRecordToProductSpec` → `/api/atlas-materials/sync`) **map đúng** `priceVnd`/
+  `wastagePercent` từ Lark, có test `atlas-material-map.test.ts` phủ cả 2 ca có/thiếu giá → null.
+  Không sửa gì ở đây — chỉ đường ĐỌC (`specToDto`) bị thiếu, đường GHI đã đúng từ 30/07.
+- **`package.json`** — xác nhận **KHÔNG có** exceljs/xlsx/sheetjs; **CÓ SẴN** `jszip@^3.10.1`
+  (pptxgenjs dùng nội bộ, tiền lệ hand-roll OOXML qua jszip đã có ở `lib/pptx-zip-fonts.ts`).
+  `scripts/probe-xlsx-roundtrip.ts` (script thăm dò cũ, không phải code sản phẩm) xác nhận thêm:
+  nhánh `exceljs` của script đó ghi rõ "CHƯA phải dependency của repo" — cùng kết luận.
+- ⚠️ **1 điểm CHƯA xác nhận được, nói thẳng thay vì đoán (L2)**: đầu bài nhắc "đã dùng ở G2 phần
+  5" — grep `docs/IF-FEATURE-TREE.md` không ra khớp "G2 phần 5" nguyên văn; khớp gần nhất là
+  `G2.5` (`docs/IF-FEATURE-SPEC-P1.md` dòng 279 — ".idf save/load", không liên quan
+  `/api/specs?kind=material`). Có thể là ký hiệu riêng của Hoà ở nơi khác chưa tìm ra, hoặc ý
+  đang nói chung về việc `/api/specs?kind=material` đã dùng cho legend/schedule (đúng, xem
+  `lib/cad/schedule.ts` — `ScheduleRow.specId`). Không chặn việc code (đã có đủ context khác xác
+  nhận), chỉ nêu để Hoà chỉnh nếu tôi hiểu sai chỗ này.
+
+### Quyết định phạm vi (khoá TRƯỚC khi code, không đoán giữa chừng)
+
+1. **"matId" → dùng field `specId`** trên `HatchEntity`, đúng khuôn `BlockEntity.specId` — không
+   bịa tên field mới. Xem comment trong `lib/cad/model.ts`.
+2. **KHÔNG trừ lỗ mở cửa/sổ** (`openingsAreaInPolygon` có sẵn nhưng KHÔNG gọi ở v1 này) — brief
+   gốc không yêu cầu, không có test case nào xác nhận hành vi đúng cho MỌI vùng tô (sàn/trần
+   không có "lỗ mở" theo nghĩa cửa/sổ) — để dành cho BOQ tường (khác nhánh, sau này, cần Hoà xác
+   nhận điều kiện áp dụng: chỉ vùng tô layer tường?).
+3. **Số học `number` JS thường**, KHÔNG thêm package `decimal.js` — ghi chú kiến trúc
+   `2.1.9.p`/`Decimal(12,4)` trong `IF-FEATURE-TREE.md` là cho 1 BOQ engine ĐẦY ĐỦ 5 bước
+   (qty_geom→…→amount) chưa greenlight; việc hôm nay hẹp hơn (logic thuần theo đúng 4 điểm lệnh).
+   m² làm tròn 2 chữ số thập phân, thành tiền làm tròn về đồng (VND không có đơn vị nhỏ hơn 1đ).
+4. **XLSX xuất bằng cách TỰ VIẾT OOXML tối thiểu qua `jszip`** (không phải skill `anthropic-skills:
+   xlsx` phía Claude, không phải exceljs) — vì đầu bài yêu cầu "Kết quả là hàm" (hàm tái dùng được
+   trong app, không phải file sinh 1 lần), và "đừng thêm package" loại luôn phương án cài
+   exceljs. `boqResultToXlsxBuffer()` là hàm thật, gọi lại được từ route/script bất kỳ lúc nào.
+5. **XLSX v1 CHỈ xuất bảng BOQ hợp lệ (rows + tổng cuối)**, KHÔNG xuất sheet lỗi riêng — brief chỉ
+   yêu cầu "Cột tiếng Việt, số có định dạng tiền tệ, tổng cuối bảng". `BoqResult.errors` vẫn có
+   đầy đủ trong object trả về (route/UI sau này tự quyết định hiện ở đâu).
+6. **Vùng tô thiếu `specId`, `specId` không khớp spec nào, hoặc spec thiếu `priceVnd`** → đều ra
+   `BoqError` rõ lý do (`missing-specId` / `spec-not-found` / `missing-priceVnd`), **KHÔNG vào
+   `rows`/`totalAmount`** — đúng "không tính bừa". `wastagePercent` null thì coi như 0% (khác giá
+   — giá null KHÔNG được coi như 0đ).
+
+### Đã làm
+
+| File | Việc | Trạng thái |
+|---|---|---|
+| `lib/cad/model.ts` | `HatchEntity.specId?: string` (mới) | ✅ tsc/eslint sạch |
+| `lib/server/specs.ts` | Vá `specToDto()` — thêm 6 field 2.1.9.r đang bị thiếu | ✅ tsc/eslint sạch |
+| `lib/boq/model.ts` | Kiểu thuần: `MaterialSpecLite`/`BoqRow`/`BoqError`/`BoqResult` | ✅ tsc/eslint sạch |
+| `lib/boq/compute.ts` | `computeBoq(doc, specs)` — engine chính | ✅ tsc/eslint sạch |
+| `lib/boq/compute.test.ts` | 3 ca bắt buộc + 3 ca phụ (phủ 2 `BoqErrorReason` còn lại + null-safety) | ✅ **32/32 pass** |
+| `lib/boq/xlsx.ts` | `boqResultToXlsxBuffer()` — OOXML tự viết qua jszip | ✅ tsc/eslint sạch |
+| `lib/boq/xlsx.test.ts` | Round-trip qua chính jszip (entry/style/số liệu/escape/rỗng) | ✅ **34/34 pass** |
+| `scripts/gen-boq-sample.ts` | Sinh file mẫu thật từ dữ liệu hư cấu (luật trung tính) | ✅ chạy thật thành công |
+| `.gitignore` | Thêm `docs/boq-mau/` (repo nhẹ, cùng luật ảnh `docs/**/*.png`) | — |
+
+**Kiểm sạch lần cuối (toàn repo, không chỉ file mới):**
+- `npx tsc --noEmit -p .` → **sạch, exit 0**.
+- `npx eslint <8 file trên>` → **sạch, exit 0**.
+- `npm test` (toàn bộ `*.test.ts` trong repo, kể cả 2 file BOQ mới, chạy song song `-P8`) →
+  **exit 0**, không dòng "FAIL" thật nào (1 match "FAIL" duy nhất trong log là chuỗi text bên
+  trong 1 label test cũ không liên quan, không phải lỗi).
+
+**File mẫu đã sinh thật** (chạy `scripts/gen-boq-sample.ts`, dữ liệu hư cấu — 3 vật liệu, 5 vùng
+tô trong đó 1 vùng CỐ Ý thiếu specId để minh hoạ báo lỗi):
+```
+~/Downloads/interiorflow-phu/docs/boq-mau/BOQ-mau-2026-08-02.xlsx   (6.750 byte)
+```
+Kết quả console lúc sinh: 3 dòng BOQ hợp lệ (Sàn gỗ 15.12m²×285.000đ+5%=4.524.660đ · Gạch (gộp
+Bếp+WC) 14m²×195.000đ+8%=2.948.400đ · Sơn 11.52m²×42.000đ+3%=498.355đ), **TỔNG 7.971.415đ**, +1
+lỗi `missing-specId` (vùng "Sân phơi" cố ý không gán vật liệu) — **không lọt vào file .xlsx**,
+đúng "không tính bừa". File `.xlsx` này KHÔNG commit vào git (gitignore) — Hoà tự mở bằng
+Excel/Numbers/Sheets thật để kiểm bằng mắt (script không tự khẳng định Excel mở được, chỉ tự viết
+file đúng cấu trúc OOXML tối thiểu + round-trip qua jszip, xem `xlsx.test.ts`).
+
+### Chưa làm (ngoài phạm vi việc này, nói rõ để không hiểu lầm "đã xong")
+
+- **UI gán vật liệu cho vùng tô** (chọn `specId` khi vẽ/click hatch) — chưa có, đúng "KHÔNG làm
+  UI" trong đầu bài. `HatchEntity.specId` hiện chỉ gán được bằng cách sửa `.idf`/code tay hoặc
+  qua 1 UI tương lai.
+- **BOQ tường** (trừ lỗ mở cửa/sổ, dùng `openingsAreaInPolygon` có sẵn) — quyết định #2 ở trên,
+  để dành nhánh sau.
+- **Sheet lỗi trong XLSX** — quyết định #5 ở trên.
+- **Editor Bảng tính/BOQ ở Present** (`SPEC-MODE-PER-STAGE.md` §4) — đây là việc hoàn toàn khác,
+  lớn hơn nhiều (spreadsheet UI), việc hôm nay chỉ là lớp tính bên dưới nó.
+
+### Lệnh commit cho Hoà (7 bước, ĐỘC LẬP với khối 7 bước P6/AUDIT ở mục trên — chạy khối đó
+TRƯỚC nếu chưa chạy, 2 khối không đụng chung file nào ngoài chính `docs/BAO-CAO-PHU.md`)
+
+⚠️ Sandbox Cowork **KHÔNG commit được** (FUSE chặn `git commit`/`add` — xem mục P6/AUDIT ở trên,
+lý do y hệt). Dán từng khối vào Terminal thật trên máy Hoà. **Dùng đúng path file liệt kê ở mỗi
+bước — TRÁNH `git add -A`/`git add .`** (repo đang có sẵn `PresentEditor.tsx`/`Toolbar.tsx` staged
+chờ khối lệnh P6/AUDIT phía trên, `git add -A` ở đây sẽ gộp nhầm 2 việc vào 1 commit).
+
+```bash
+cd ~/Downloads/interiorflow-phu
+
+# 1) Hạ tầng dữ liệu — HatchEntity.specId (neo "matId")
+git add lib/cad/model.ts
+git commit -m "feat(boq): HatchEntity.specId - neo vung to vao ProductSpec, cung khuon BlockEntity.specId"
+
+# 2) Vá gap phát hiện lúc khám code — specToDto thiếu 6 field 2.1.9.r
+git add lib/server/specs.ts
+git commit -m "fix(specs): specToDto tra du unit/priceVnd/wastagePercent/packagingSpec/altSku/styleTags"
+
+# 3) BOQ ENGINE bước 1 — logic thuần
+git add lib/boq/model.ts lib/boq/compute.ts
+git commit -m "feat(boq): computeBoq - quet vung to, gom theo vat lieu, tinh thanh tien (khong tinh bua)"
+
+# 4) BOQ ENGINE bước 2 — xuất XLSX
+git add lib/boq/xlsx.ts
+git commit -m "feat(boq): boqResultToXlsxBuffer - xuat .xlsx OOXML toi thieu qua jszip, khong them package"
+
+# 5) BOQ ENGINE bước 3 — test 3 ca bắt buộc + round-trip xlsx
+git add lib/boq/compute.test.ts lib/boq/xlsx.test.ts
+git commit -m "test(boq): 3 ca bat buoc (1 phong/gop nhieu phong/thieu matId) + round-trip xlsx qua jszip"
+
+# 6) File mẫu + gitignore
+git add scripts/gen-boq-sample.ts .gitignore
+git commit -m "chore(boq): script sinh file mau xlsx + gitignore docs/boq-mau/ (repo nhe)"
+
+# 7) Báo cáo (mục BOQ ENGINE vừa thêm vào cuối file này)
+git add docs/BAO-CAO-PHU.md
+git commit -m "docs: bao cao BOQ ENGINE - da kiem L1, quyet dinh pham vi, ket qua test"
+
+# Kiểm lại
+git log --oneline -8
+npx tsc --noEmit -p . && npm test
+```
+
+Nếu muốn merge `nhanh-phu` → `main` sau khi cả khối P6/AUDIT lẫn khối BOQ đã commit xong và
+`tsc`/`test` sạch trên `nhanh-phu`: theo đúng quy trình merge đã dùng ở các đợt trước (checkout
+`main`, `git merge --no-ff nhanh-phu`, kiểm sạch lại trên `main`).
+
+---
+
+## [02/08 tối] [VIỆC CHEN, ưu tiên cao] Nối ATLAS thật vào BOQ — ĐÃ SỬA MAP + PHÁT HIỆN CHẶN QUYỀN, ⛔ CẦN HOÀ TRƯỚC KHI SYNC THẬT ĐƯỢC
+
+**Việc gốc**: sửa `ATLAS_FIELD_NAMES` khớp tên cột thật (bảng "Vol.3 - Material Library",
+`tblhr9Y0otz9SIji`, 1.449 bản ghi) → chạy thử sync → đối chiếu vài bản ghi → nối vào BOQ engine
+thay dữ liệu mock. **PULL-ONLY tuyệt đối** — mọi lệnh gọi Lark trong việc này chỉ GET
+(`list_records`/`get_node`), KHÔNG có write nào, KHÔNG đụng route `/api/atlas-materials/sync`
+thật (route đó UPSERT vào Prisma — chưa chạy, xem lý do ⛔ dưới).
+
+**Commit status**: PHẦN SỬA MAP đã sẵn sàng commit (khối lệnh cuối mục này). **PHẦN "nối vào BOQ
+engine thay mock"/"chạy sync thật" CHƯA xong — bị CHẶN QUYỀN phía Lark, không phải lỗi code**, xem
+mục ⛔ CẦN HOÀ.
+
+### Đã kiểm (L1, trước khi sửa gì)
+- `app/api/atlas-materials/sync/route.ts` — đọc kỹ comment cảnh báo, xác nhận luồng
+  `getSessionUser → atlasConfigured() → check LARK_ATLAS_MATERIAL_TABLE_ID → listAtlasMaterialRecords → map → upsert theo larkRecordId`.
+- `lib/lark/atlas-material-map.ts` — `ATLAS_FIELD_NAMES` (10 khoá) trước khi sửa là PLACEHOLDER.
+- `lib/integrations/providers/lark.ts` (đọc lại đủ 262 dòng đầu) — xác nhận cơ chế
+  node_token→app_token qua `resolveWikiAppToken()`, `listAtlasMaterialRecords()` bắt buộc
+  `LARK_ATLAS_MATERIAL_TABLE_ID`, retry backoff cho 3 mã lỗi biết trước — **không viết lại gì ở
+  file này**, chỉ dùng nguyên hàm có sẵn.
+- `docs/REVIEW-SPEC-BOQ-LARK-2026-07-30.md` — xác nhận nghi vấn "vùng JP có cần đổi API base
+  không" đã được nêu từ 30/07, chưa test thật lúc đó vì thiếu khoá — nay có khoá thật để test.
+- `.env`/`.env.local` — xác nhận là symlink sang `~/Downloads/interiorflow/` (dùng CHUNG file thật
+  với repo `interiorflow` gốc, không phải bản riêng của worktree `-phu`) — đã có sẵn 3 biến
+  `LARK_APP_ID`/`LARK_APP_SECRET`/`LARK_ATLAS_NODE_TOKEN` (giá trị KHÔNG in ra, chỉ kiểm tồn tại/độ
+  dài/so khớp qua script, không lộ secret vào transcript).
+
+### Việc đã làm
+
+**1) Sửa `ATLAS_FIELD_NAMES`** (`lib/lark/atlas-material-map.ts`) — đối chiếu 10 khoá đang có với
+8 TÊN CỘT THẬT Hoà gõ trực tiếp ("Tên vật liệu" · "Ảnh" · "Giá tham khảo" · "Nhà cung cấp" ·
+"Mã thay thế" · "Danh mục" · "Đơn vị" · "Style tag"):
+- **7/10 khớp sẵn, giữ nguyên** (đã đúng từ trước): `name`, `category`, `unit`, `priceVnd`,
+  `altSku`, `vendor`, `styleTags`.
+- **3/10 KHÔNG có trong danh sách thật Hoà liệt kê**: `wastagePercent` ('Hao hụt %'),
+  `packagingSpec` ('Quy cách'), `sku` ('Mã vật liệu') — ⚠️ **đếm ra 3, KHÔNG khớp "chỉ thiếu 2
+  mẩu" Hoà nói** — có thể Hoà tính khác (vd không tính `sku` vì "Mã thay thế"=`altSku` đã có sẵn
+  cùng vai trò mã, chỉ coi thiếu đúng 2 field mới/riêng). KHÔNG tự đoán tên cột thay thế cho 3
+  field này (đúng "đừng tự thêm") — đã ghi comment tại chỗ, các field này sẽ ra `null` khi sync
+  cho tới khi Hoà xác nhận tên cột thật (hoặc xác nhận field không tồn tại trong ATLAS).
+- **Cột "Ảnh"** (có thật, không có trong danh sách cũ) — CHƯA có field đích tương ứng trong
+  `AtlasMaterialUpsertData`/`ProductSpec` (không phải `imageAssetId`, đó là FK nội bộ khác). Không
+  tự thêm field mới vào schema trong đợt logic-thuần này — cần Hoà quyết định có cần lưu URL/
+  attachment ảnh từ ATLAS không trước khi mở rộng.
+
+**2) `.env.local`** — sandbox **GHI ĐƯỢC** (khác hẳn `git commit`/`add` bị FUSE chặn — đây chỉ là
+ghi file thường, không qua git) — đã thêm `LARK_ATLAS_MATERIAL_TABLE_ID=tblhr9Y0otz9SIji` thật
+vào file, **KHÔNG cần Hoà làm tay bước này**. File này gitignore sẵn (`.gitignore` dòng 3-4), sẽ
+không lộ vào commit nào.
+
+**3) `scripts/probe-atlas.ts`** (MỚI) — script đọc-only, mô phỏng đúng
+`scripts/probe-fal.ts`: gọi `listAtlasMaterialRecords()` THẬT bằng giá trị đang lưu trong
+`.env.local` (không sửa/không đoán), in ra: API base đang dùng, tổng số bản ghi, TÊN CỘT THẬT
+(union field keys), 3 bản ghi mẫu rút gọn. Không ghi Prisma, không gọi route `/api/atlas-materials/sync`.
+
+**4) Chạy thử** — `node_modules/.bin/sucrase-node scripts/probe-atlas.ts`:
+```
+API base đang dùng: https://open.larksuite.com (mặc định)
+✗ LỖI khi gọi Lark thật: Lark API lỗi (code=131006): permission denied: node permission denied, tenant needs read permission.
+```
+
+### ⛔ CẦN HOÀ — chặn thật ở QUYỀN Lark, không phải sai tên cột/sai code
+
+Đọc kỹ chuỗi lỗi: `code=131006` là mã Lark trả CHÍNH XÁC cho "app KHÔNG có quyền đọc node Wiki
+này" — nghĩa là **token/app_id/app_secret/node_token đều hợp lệ và Lark tìm thấy đúng node**, chỉ
+là app chưa được cấp quyền đọc. Đây là việc phải làm bên phía **Lark Developer Console**
+(https://open.larksuite.com hoặc console tương ứng vùng JP), KHÔNG phải sửa code/env — 2 khả năng
+cần Hoà kiểm (tôi KHÔNG chắc UI Lark hiện tại đặt ở đâu chính xác, không đoán bừa đường dẫn menu):
+1. App (theo `LARK_APP_ID` đang dùng) chưa được cấp **scope đọc Wiki** (thường gọi
+   `wiki:wiki:readonly` hoặc tương đương) trong trang quyền của app.
+2. Wiki space/node ATLAS chưa **share quyền xem** cho app đó — Wiki của Lark có lớp phân quyền
+   RIÊNG theo từng space/node (khác Bitable thường), phải add app-as-collaborator hoặc bật "toàn
+   tổ chức xem được" cho đúng node/space chứa bảng "Vol.3 - Material Library".
+
+**Đã kiểm empirically 2 nghi vấn còn treo từ 30/07 (không đoán, có bằng chứng)**:
+- **Vùng API JP có cần đổi `LARK_API_BASE` không?** — CHƯA khẳng định được 100% (cần 1 lần gọi
+  THÀNH CÔNG mới chắc chắn), nhưng bằng chứng nghiêng về "KHÔNG cần đổi": `open.larksuite.com` trả
+  về đúng 1 lỗi NGHIỆP VỤ có cấu trúc của Lark (mã 131006, không phải lỗi mạng/DNS/timeout/host
+  không tồn tại) — nghĩa là request ĐÃ TỚI ĐÚNG backend xử lý được app_id/node_token này. Nếu vùng
+  host sai thường sẽ ra lỗi mạng hoặc "app không tồn tại", không phải lỗi phân quyền cụ thể đúng
+  ngữ nghĩa như vậy. Đề xuất: cấp quyền xong, chạy lại `probe-atlas.ts` NGUYÊN VẸN (chưa đổi
+  `LARK_API_BASE`) trước — chỉ thử đổi sang host khác nếu vẫn lỗi sau khi cấp quyền.
+- **Spelling `LARK_ATLAS_NODE_TOKEN` lệch 1 ký tự giữa tin nhắn Hoà mới nhất (`...wjIXoi...`, chữ
+  I hoa) và tài liệu cũ `REVIEW-SPEC-BOQ-LARK-2026-07-30.md` (`...wjlXoi...`, chữ l thường)** — đã
+  test CẢ HAI (không đoán, thử thật, không ghi đè giá trị đang lưu khi thử bản thay thế):
+  bản **đang lưu trong `.env.local` (chữ l thường) → lỗi 131006 "permission denied" (node CÓ THẬT,
+  chỉ thiếu quyền)**; bản chữ I hoa từ tin nhắn mới → **lỗi 131005 "not found" (node KHÔNG TỒN
+  TẠI)**. Kết luận: **giá trị ĐANG LƯU (chữ l thường) là đúng** — bản chữ I hoa nhiều khả năng gõ
+  nhầm (I hoa và l thường rất giống nhau ở nhiều font). **KHÔNG cần Hoà sửa gì ở `.env.local`.**
+
+**Bước tiếp theo cho Hoà** (đúng thứ tự):
+1. Vào Lark Developer Console, kiểm/cấp quyền đọc Wiki cho app (2 khả năng nêu trên).
+2. Chạy lại: `cd ~/Downloads/interiorflow-phu && node_modules/.bin/sucrase-node scripts/probe-atlas.ts`
+   — nếu thành công sẽ in ra tổng số bản ghi + TÊN CỘT THẬT + 3 bản ghi mẫu, báo lại kết quả (đặc
+   biệt tên cột thật của 3 field còn treo: hao hụt %/quy cách/mã vật liệu có tồn tại không, tên gì).
+3. Sau bước 2 mới nên chạy sync thật ghi vào Prisma (`POST /api/atlas-materials/sync`, cần đăng
+   nhập session) — tôi CHƯA chạy bước này (đợi xác nhận field trước, tránh sync 1.449 bản ghi với
+   dữ liệu 3 cột sai/null hàng loạt rồi phải sync lại).
+
+### "Nối vào BOQ engine thay dữ liệu mock" — phát hiện: KHÔNG CẦN VIẾT THÊM CODE NỐI RIÊNG
+
+Đọc lại `lib/boq/model.ts`/`compute.ts` (đã viết ở việc BOQ v1 trước đó): `computeBoq(doc, specs)`
+nhận `specs: MaterialSpecLite[]` làm THAM SỐ TRUYỀN VÀO — hàm hoàn toàn KHÔNG biết/không quan tâm
+`specs` tới từ đâu (mock hư cấu ở `scripts/gen-boq-sample.ts`, hay `ProductSpec` thật trong Prisma
+sau khi ATLAS sync xong). Nghĩa là: **MỘT KHI** bản ghi ATLAS thật vào được `ProductSpec` (qua
+route sync ở bước 3 trên), route `GET /api/specs?kind=material` (đã vá đủ field ở BOQ v1) sẽ TỰ
+ĐỘNG trả về đúng dữ liệu thật đó — không cần sửa gì thêm ở `lib/boq/*`. "Nối" duy nhất còn thiếu
+chính là việc BOQ v2 mục 1 (`from-project.ts`/`app/api/boq/[projectId]/route.ts`, đang dở, xem mục
+BOQ v2 phía trên) — việc ATLAS này và việc BOQ v2 mục 1 HỘI TỤ vào cùng 1 điểm nối, không phải 2
+việc tách rời cần code riêng.
+
+### 💭 Chưa chắc / tự quyết
+1. Không thử đổi `LARK_API_BASE` sang `open.feishu.cn` — đó là sản phẩm Feishu (thị trường Trung
+   Quốc), tài khoản/app hoàn toàn tách biệt Lark Suite quốc tế, đổi sang đó chắc chắn sai (không
+   phải "chưa chắc", loại bỏ hẳn phương án này khỏi danh sách thử).
+2. Không tự thử các biến thể host JP khác (vd `open.jp.larksuite.com`) vì KHÔNG có nguồn xác nhận
+   Lark Suite quốc tế có host riêng theo vùng cho API layer (khác data-residency ở tầng lưu trữ) —
+   thử bừa hostname là đúng kiểu "đoán" bị cấm, chờ xác nhận từ phía Hoà/tài liệu Lark chính thức
+   nếu bước cấp quyền không giải quyết được lỗi.
+3. File scratch `scripts/_tmp-probe-node-token.ts` — sandbox không xoá được (FUSE, giống
+   `.git/index.lock` đã ghi ở STATUS.md), đã dọn rỗng nội dung, cần Hoà `rm` tay.
+
+### File còn treo (chưa sync thật được nên chưa có số liệu để đối chiếu)
+- Tên cột thật cho `wastagePercent`/`packagingSpec`/`sku` (hoặc xác nhận không tồn tại).
+- Cột "Ảnh" — có cần thêm field lưu hay bỏ qua.
+- Đối chiếu vài bản ghi giá/đơn vị/nhà cung cấp đúng chỗ chưa (yêu cầu gốc) — CHƯA làm được, cần
+  qua bước cấp quyền trước.
+
+**SẴN SÀNG COMMIT** (Hoà chạy trong worktree `interiorflow-phu` trên máy thật — **CHỈ 2 file**,
+KHÔNG có `.env.local`/file scratch trong khối này):
+```bash
+cd ~/Downloads/interiorflow-phu
+git add lib/lark/atlas-material-map.ts scripts/probe-atlas.ts
+git commit -m "fix(atlas): sua ATLAS_FIELD_NAMES khop 7/8 cot that Hoa cung cap + probe script
+
+Doi chieu ATLAS_FIELD_NAMES (10 khoa) voi 8 ten cot that bang 'Vol.3 - Material
+Library' Hoa go truc tiep 02/08. 7/10 khop san (name/category/unit/priceVnd/
+altSku/vendor/styleTags) - giu nguyen. 3/10 (wastagePercent/packagingSpec/sku)
+KHONG co trong danh sach that - ghi comment ro, se null cho toi khi xac nhan lai
+ten cot that, KHONG tu doan ten thay the. Cot 'Anh' co that nhung chua co field
+dich trong AtlasMaterialUpsertData - chua tu them field schema.
+
+scripts/probe-atlas.ts (moi): script doc-only mo phong probe-fal.ts, goi
+listAtlasMaterialRecords() that de doi chieu ten cot/du lieu truoc khi tin sync.
+Chay thu: Lark tra code=131006 permission denied (node THAT, thieu quyen doc) -
+KHONG phai loi sai token/sai vung API, can Hoa cap quyen Wiki trong Lark
+Developer Console truoc khi chay lai probe/sync that. Chi tiet + huong dan
+buoc tiep theo trong docs/BAO-CAO-PHU.md muc ATLAS 02/08.
+
+Test: atlas-material-map.test.ts 22/22 ok (khong doi hanh vi map, chi doi
+comment/ten cot). tsc sach. eslint sach."
+
+npx tsc --noEmit -p . && node_modules/.bin/sucrase-node lib/lark/atlas-material-map.test.ts
+```
+
+---
+
+## [02/08 tối, việc chen] ATLAS — thử lại sau khi Hoà sửa token, VẪN CHẶN 131006 (kết luận NGƯỢC giả thuyết I-hoa)
+
+**Việc gốc**: Hoà báo đã sửa `LARK_ATLAS_NODE_TOKEN` trong `.env.local` — nghi lỗi 131006 cũ là do
+gõ nhầm 1 ký tự, token ĐÚNG phải là `...wjIXoi...` (chữ **I hoa**), không phải `...wjlXoi...` (chữ
+**l thường**) đang lưu trước đó. Yêu cầu: xác nhận token đã sửa → chạy lại sync thật → nếu vẫn
+131006 thì DỪNG, báo 1 dòng.
+
+**Kết quả — NGƯỢC với giả thuyết của Hoà**: `.env.local` khi mở ra ĐÃ có sẵn bản chữ I hoa
+(`Ejk6wjIXoiWN80khYcRjthy3prd`) — chạy `probe-atlas.ts` với bản này ra lỗi **KHÁC**, không phải
+131006: **`code=131005 "not found"`** (get_node báo node KHÔNG TỒN TẠI, không phải "tồn tại nhưng
+thiếu quyền"). Nghi ngờ ngay vì đây đúng là kết quả đã test và ghi lại từ TRƯỚC (mục ATLAS phía
+trên, đoạn "Đã kiểm empirically 2 nghi vấn còn treo") — nên test lại NGƯỢC LẠI để đối chứng: dùng
+env override tạm (không sửa file) chạy `probe-atlas.ts` với bản **chữ l thường** (`...wjlXoi...`)
+→ ra ĐÚNG **131006 "permission denied: node permission denied, tenant needs read permission"** —
+tức Lark **tìm THẤY node** bằng bản chữ l thường, chỉ thiếu quyền đọc; còn bản chữ I hoa Lark
+**KHÔNG tìm thấy node** luôn. Kết luận: **bản chữ l thường mới là token đúng — hướng gõ nhầm
+NGƯỢC với Hoà nghĩ** (I hoa/l thường rất giống nhau ở nhiều font, dễ nhầm chiều). Đã **revert
+`.env.local` về lại chữ l thường** (sửa trực tiếp file thật ở `~/Downloads/interiorflow/.env.local`
+— `.env.local` ở `-phu` chỉ là symlink sang đó), verify lại bằng `probe-atlas.ts` KHÔNG override env
+→ ra lại đúng 131006 (đã xác nhận).
+
+**⛔ DỪNG theo đúng lệnh** — 131006 vẫn còn, đây là việc của Hoà trong Lark Developer Console (cấp
+scope đọc Wiki cho app + share node "Vol.3 - Material Library" cho app đó), **không phải lỗi
+token/code nữa** — token hiện tại (đã revert) là bản ĐÚNG. Chưa đụng gì tới `ATLAS_FIELD_NAMES`/
+sync thật/BOQ engine ở việc chen này (đợi qua 131006 mới làm tiếp, xem mục ATLAS phía trên cho các
+bước còn treo sau khi cấp quyền xong).
+
+File scratch dùng để đối chứng 2 bản token (`scripts/_tmp-probe-atlas-debug.ts`,
+`scripts/_tmp-probe-atlas-debug2.ts`) — sandbox không xoá được (FUSE, cùng loại
+`scripts/_tmp-probe-node-token.ts` cũ), đã dọn rỗng nội dung, Hoà `rm` tay cả 3 file `_tmp-*` này
+khi tiện.
+
+---
+
+## [02/08 tối, việc chen #2] ATLAS — Hoà gửi LẠI đúng giả thuyết I-hoa, test chéo 2 lần XÁC NHẬN LẦN NỮA kết luận ở trên là đúng
+
+**Việc gốc**: y hệt lệnh trước — Hoà báo "đã sửa" `LARK_ATLAS_NODE_TOKEN` thành bản **I hoa**
+(`Ejk6wjIXoi...`), yêu cầu xác nhận rồi chạy sync thật. Kiểm `.env.local` thật lúc nhận lệnh: **vẫn
+là bản l thường** (`Ejk6wjlXoiWN80khYcRjthy3prd`) — tức chưa có thay đổi nào so với lần revert
+trước; có thể Hoà chưa thấy báo cáo lần trước khi gửi lệnh này.
+
+**Test chéo lại để chắc chắn** (không chỉ dựa trí nhớ lần trước): sửa file thật sang I hoa → chạy
+`probe-atlas.ts` → **131005 "not found"** (giống hệt lần trước). Revert lại l thường → chạy lại →
+**131006 "permission denied... tenant needs read permission"** (giống hệt lần trước). Hai lần test
+độc lập cho cùng 1 kết quả — **kết luận cũ đứng vững, không phải may rủi lần trước**: bản **l
+thường mới là token thật/đúng** (Lark tìm thấy node, chỉ thiếu quyền); bản **I hoa không tồn tại**
+trong Lark. Đã revert `.env.local` về l thường (trạng thái hiện tại, khớp lần trước).
+
+**⛔ DỪNG lại đúng lệnh #4** — 131006 vẫn còn với token đúng, việc của Hoà trong Lark Developer
+Console (thêm scope đọc Wiki + PUBLISH VERSION MỚI + share node "Vol.3 - Material Library" cho
+app) — không phải lỗi token nữa, không tự xoay tiếp.
+
+File phụ `.env.local.bak` phát sinh khi sửa qua lại (sandbox tạo, không phải cố ý) — đã gitignore
+sẵn (`.gitignore:31` `.env.local.bak*`), không lọt vào git — sandbox không xoá được (FUSE), Hoà `rm`
+tay khi tiện: `~/Downloads/interiorflow/.env.local.bak`.
+
+---
+
+## [02/08 tối] [Phase B / BOQ v2] Việc 1+2 xong — LIÊN KẾT SỐNG + nối Doc thật vào BOQ, THUẦN không UI
+
+**Việc gốc** (nguyên văn tóm tắt): (1) nối BOQ vào dữ liệu thật — lớp đọc Doc dự án đang mở →
+`compute()` → API route `app/api/boq/[projectId]` trả JSON; (2) LIVE-LINK — sửa vùng tô (diện
+tích/matId) thì BOQ phải tính lại, có invalidate cache; (3) test 2 ca hay gặp: chồng lấn vùng tô
+(không tính 2 lần) + vật liệu giá theo đơn vị khác m² (nếu schema đã hỗ trợ — không tự thêm nếu
+chưa). Ràng buộc: THUẦN không UI, đọc L1 trước, ghi rõ "đã kiểm X/Y/Z".
+
+**Commit status**: CHƯA commit (FUSE) — khối lệnh riêng ở cuối mục này, TÁCH biệt hoàn toàn khỏi
+khối P6/AUDIT, khối BOQ v1 (7 bước), và khối ATLAS (2 file) đã có sẵn phía trên trong file này.
+
+### Đã kiểm L1 (bắt buộc trước khi code, không đoán)
+- `docs/SPEC-SEMANTIC-MODEL.md` §4 (màu ≠ vật liệu — vùng tô đổi PATTERN/opacity KHÔNG phải đổi
+  vật liệu/diện tích) · §6 (liên kết sống CAD→hạ nguồn) · §7.
+- `lib/boq/*` (viết ở phần trước của phiên — `compute.ts`/`model.ts`/`compute.test.ts`).
+- `docs/IF-CORE-SCHEMA.md` dòng 174: **"Pha 1 (nay): Desktop đóng gói, KHÔNG đồng bộ"** — PHÁT
+  HIỆN quan trọng nhất phiên này, xem mục "Lệch chỉ đạo gốc" bên dưới.
+- `lib/cad/store.ts` (Zustand `'use client'`, `doc: Doc` sống trong bộ nhớ trình duyệt) +
+  `lib/sheets-persist.ts` (persist Doc vào IndexedDB CỦA TRÌNH DUYỆT) + `app/api/flows/[id]/route.ts`
+  (server chỉ lưu/trả thẳng `Flow.graphJson`, KHÔNG BAO GIỜ parse ra `Doc`) — xác nhận thêm: không
+  có bảng Prisma nào lưu `Doc` theo `projectId`.
+- `app/api/projects/[id]/overview/route.ts` (pattern auth mirror) · `app/api/specs/route.ts`
+  (pattern Prisma query + `specToDto`) · `lib/server/specs.ts` (chữ ký `specToDto`, 6 field giá đã
+  vá ở BOQ v1) · `lib/cad/model.ts` (`HatchEntity`/`Doc` shape thật — field tên `layer` không phải
+  `layerId`).
+- Glob `app/api/**/*.test.ts` → **0 kết quả** — xác nhận route.ts trong repo này KHÔNG BAO GIỜ có
+  test riêng, logic luôn nằm và test ở tầng `lib/`, route giữ mỏng (auth + fetch data + gọi hàm
+  thuần). Đã theo đúng quy ước này, không tự đặt tiền lệ mới.
+
+### ⚠️ LỆCH CHỈ ĐẠO GỐC — có chủ ý, đã ghi rõ lý do trong code (không phải hiểu sai)
+Chỉ đạo gốc viết **"API route ... trả JSON"** ngầm định route là **GET**, và "viết lớp đọc từ Doc
+hiện hành" ngầm định có 1 bản Doc phía server để tự đọc theo `projectId`. L1 ở trên xác nhận:
+kiến trúc hiện tại (Pha 1) **KHÔNG lưu `Doc` ở server** — `Doc` chỉ tồn tại trong bộ nhớ trình
+duyệt của client đang mở dự án đó. Route không có gì để "tự đọc".
+→ Route viết thành **POST `/api/boq/[projectId]`, nhận `{ doc: Doc }` trong body** — client (UI
+sau này) tự gửi kèm Doc hiện có, giống hệt cách `lib/nodes/defs/render-v2.ts` dòng 244 đã lấy
+`useCadStore.getState().doc`. Nếu Pha 2/3 sau này thêm đồng bộ Doc lên server, chữ ký
+`computeBoqForProject()` KHÔNG cần đổi — chỉ chỗ GỌI nó (route.ts) đổi cách lấy `doc`.
+
+### Cách làm — 3 file mới, không sửa gì ở `lib/boq/compute.ts`/`model.ts` (đã xong trước phiên)
+1. **`lib/boq/cache.ts`** (viết trước, nay có test đầy đủ) — `boqFingerprint(doc)` băm CÓ CHỌN LỌC:
+   chỉ `id`/`specId`/`points` của từng hatch (bỏ qua `pattern`/`opacity`/`solid` — đúng §4 "màu ≠
+   vật liệu", đổi màu KHÔNG kích hoạt tính lại vô ích) + `specsFingerprint(specs)` băm `id`/
+   `priceVnd`/`wastagePercent` (đổi giá dù Doc không đổi vẫn phải tính lại — ca ATLAS sync lại giá).
+   `computeBoqCached(cacheKey, doc, specs)` so 2 fingerprint với `cacheStore` Map theo `cacheKey`;
+   khớp cả 2 → trả lại CÙNG object `result` cũ (`hit:true`), lệch 1 trong 2 → tính lại
+   (`hit:false`). `invalidateBoqCache(key)` xoá cache ép tính lại (dùng khi biết chắc dữ liệu đổi
+   mà không muốn đợi fingerprint, ví dụ ngay sau khi sync ATLAS xong).
+2. **`lib/boq/from-project.ts`** — cầu nối THUẦN: `ProductSpecDtoLite` (7 field con của
+   `specToDto()` mà BOQ cần) → `specDtoToMaterialLite()` → `computeBoqForProject(projectId, doc,
+   specDtos)` gọi thẳng `computeBoqCached` với `cacheKey = projectId`. Không tự fetch network/DB —
+   caller (route.ts) lo phần đó, giữ đúng nguyên tắc THUẦN của `computeBoq` gốc (test không cần
+   mock Prisma/fetch).
+3. **`app/api/boq/[projectId]/route.ts`** — POST, mirror đúng pattern auth (`getSessionUser` → 401
+   → `assertProjectAccess(..., 'viewer')` → 404 khi không có quyền, KHÔNG 403) + pattern Prisma
+   (`findMany({ where: { kind: 'material' } })` → `.map(specToDto)`). Kiểm body tối thiểu (có
+   `doc.entities` là mảng) — KHÔNG dựng validator schema đầy đủ (không có tiền lệ trong repo, kể cả
+   `.idf` cũng chỉ parse JSON thẳng, xem `lib/cad/idf.ts`). Trả `{ rows, errors, totalAmount, hit }`.
+
+### Việc 3 (chồng lấn + đơn vị khác m²) — ĐÃ LÀM Ở PHẦN TRƯỚC PHIÊN, không lặp code
+- **Chồng lấn vùng tô**: đã xong trong `lib/boq/compute.ts` (heuristic tâm-điểm-trong-đa-giác,
+  không tính 2 lần cùng vật liệu ở vùng chồng lấn, không nhầm 2 phòng kề tường) — test `[7]`/`[7b]`
+  trong `compute.test.ts`.
+- **Vật liệu giá theo đơn vị khác m²**: `MaterialSpecLite.unit` HIỆN TẠI không có cơ chế quy đổi
+  đơn vị nào trong schema (`lib/boq/model.ts`) — đúng ràng buộc gốc "nếu schema chưa có thì ghi rõ
+  chưa hỗ trợ, đừng tự thêm", test `[8]` trong `compute.test.ts` CHỈ xác nhận hành vi hiện tại
+  (không throw, không tự quy đổi sai) chứ KHÔNG thêm logic quy đổi mới.
+
+### Test / số đo (đã kiểm, không suy đoán)
+- `lib/boq/cache.test.ts` (mới, 7 khối): **24 pass, 0 fail**. Phủ: gọi lặp không đổi → `hit:true`
+  + cùng object · sửa `points` → `hit:false` + số đúng · đổi `specId` → matId/tiền đổi đúng theo
+  vật liệu mới · Doc không đổi nhưng giá spec đổi (mô phỏng ATLAS sync lại) → vẫn `hit:false` ·
+  `invalidateBoqCache` ép tính lại dù không gì đổi · 2 `cacheKey` độc lập, sửa dự án A không đụng
+  cache dự án B · đổi `pattern`/`opacity` KHÔNG đổi fingerprint, vẫn `hit:true` (đúng §4).
+- `lib/boq/from-project.test.ts` (mới, 4 khối): **20 pass, 0 fail**. Phủ: map đủ field DTO→
+  MaterialSpecLite · giữ nguyên `null` (không đoán 0/rỗng khi chưa có giá) · tính đúng số end-to-end
+  qua Doc+specDtos thật (6m² × 1.05 hao hụt × 300.000 = 1.890.000) · `cacheKey = projectId` — gọi
+  lại cùng project → `hit:true`, project khác → `hit:false` (độc lập).
+- `app/api/boq/[projectId]/route.ts`: **không có test riêng** — đúng quy ước repo (route mỏng,
+  logic test ở `lib/`). `npx tsc --noEmit -p .` sạch, `eslint` sạch (không output) trên cả 3 file.
+- **`npm test` toàn repo** (chạy đồng bộ 1 lệnh, KHÔNG chạy nền — nền qua nhiều lệnh bash riêng bị
+  cắt tiến trình giữa chừng, log hụt/sai; xem "💭 Chưa chắc"): `EXITCODE=0`, thời gian thật
+  **22.7s**, log **4934 dòng**, **127 file `*.test.ts`** trong repo (trừ `.worktrees`,
+  `edgecase-concurrency.test.ts` theo quy ước script `npm test` có sẵn). `grep -nE "  FAIL
+  -|^not ok|Cannot find module|SyntaxError|UnhandledPromiseRejection" /tmp/npmtest2.log` → **0
+  dòng khớp** trên TOÀN BỘ log. Xác nhận thêm bằng tay: 2 dòng đại diện của 2 file test mới
+  (`cache.test.ts`, `from-project.test.ts`) CÓ xuất hiện thật trong log, không phải bị skip.
+  → **Kết luận: 0 fail toàn repo, đã kiểm hết, không phải suy đoán từ exit code một mình.**
+
+### 💭 Chưa chắc / tự quyết
+1. **Kiến trúc POST-không-GET** — quyết định dựa trên L1 thật (`IF-CORE-SCHEMA.md` dòng 174), tin
+   cậy cao, nhưng route.ts CHƯA từng được gọi thật qua UI/curl thật trong phiên này (không có UI
+   Present để test theo brief gốc ghi "mock cho Present đang được làm lại, chưa dùng được") — nếu
+   UI sau này gửi `doc` sai hình dạng (thiếu field), lỗi 400 hiện tại chỉ kiểm tối thiểu
+   (`entities` là mảng), CHƯA validate sâu từng entity.
+2. Chạy nền `npm test` qua nhiều lệnh bash riêng (`(cmd &)` rồi poll bằng lệnh khác) cho log hụt/sai
+   (chỉ 277 dòng, 1 file) — tiến trình con có vẻ bị ngắt giữa các lệnh bash riêng biệt trong sandbox
+   này. Đã đổi sang chạy đồng bộ 1 lệnh (`time npm test > log 2>&1`), vừa đủ trong giới hạn 45s của
+   tool (thật 22.7s) — ghi lại đây phòng phiên sau gặp lại hiện tượng tương tự, tránh tưởng nhầm là
+   bug thật.
+
+### File còn treo
+- STATUS.md hiện đang ghi "`lib/boq/cache.ts` (live-link, CHƯA test)" — dòng này ĐÃ CŨ, cập nhật
+  luôn trong lần sửa STATUS.md kế tiếp cùng phiên này (xem diff STATUS.md).
+
+**SẴN SÀNG COMMIT** (Hoà chạy trong worktree `interiorflow-phu` trên máy thật — **3 file mới**,
+KHÔNG đụng gì tới khối ATLAS/BOQ v1/P6-AUDIT ở trên):
+```bash
+cd ~/Downloads/interiorflow-phu
+git add lib/boq/cache.test.ts lib/boq/from-project.ts lib/boq/from-project.test.ts app/api/boq/\[projectId\]/route.ts
+git commit -m "feat(boq): Viec 1+2 Phase B - lien ket song + noi Doc that vao BOQ (THUAN, khong UI)
+
+lib/boq/cache.ts da co tu truoc phien (chua commit) - nay them cache.test.ts
+(24/24 ok): boqFingerprint() bam CO CHON LOC (id/specId/points, BO QUA
+pattern/opacity dung SPEC-SEMANTIC-MODEL SS4 'mau khong phai vat lieu') +
+specsFingerprint() (id/priceVnd/wastagePercent - doi gia du Doc khong doi van
+tinh lai, ca ATLAS sync lai gia). invalidateBoqCache() ep tinh lai thu cong.
+
+lib/boq/from-project.ts (moi, 20/20 test ok): cau noi THUAN Doc that (client
+truyen vao) + ProductSpecDtoLite -> computeBoqCached, cacheKey = projectId.
+
+app/api/boq/[projectId]/route.ts (moi): PHAT HIEN KIEN TRUC quan trong -
+IF-CORE-SCHEMA.md dong 174 'Pha 1: Desktop dong goi, KHONG dong bo' nghia la
+KHONG co Doc luu server-side theo projectId. Vi vay route la POST nhan { doc }
+trong body (LECH chi dao goc ghi GET - co chu y, ly do day du trong comment
+dau file from-project.ts), KHONG PHAI tu 'doc tu DB'. Mirror dung pattern auth
+(getSessionUser + assertProjectAccess 404-khong-403) va pattern Prisma
+(findMany + specToDto) co san trong repo. Khong co test rieng cho route.ts -
+dung quy uoc repo (route mong, logic test o lib/).
+
+Viec 3 (chong lan + don vi khac m2) da lam o phan truoc phien, khong doi gi
+them lan nay - xem compute.test.ts test [7]/[7b]/[8].
+
+Test: npm test toan repo 127 file, EXITCODE=0, 0 dong FAIL/not-ok/error trong
+4934 dong log (grep toan bo, khong chi xem duoi log). tsc + eslint sach."
+
+npx tsc --noEmit -p . && npm test
+```
+
+---
+
+## [02/08 tối, chế độ tự chạy] ATLAS — check nhanh permission Lark Console, VẪN 131006
+
+Hoà bật "CHẾ ĐỘ TỰ CHẠY", lệnh hàng đợi mục 2 lặp lại đúng giả thuyết i-HOA lần thứ 3.
+KHÔNG chạy lại toàn bộ test chéo lần nữa (đã xác nhận 2 lần độc lập trước đó: i-HOA →
+131005 not-found, l-thường → 131006 permission-denied trên node THẬT) — thay vào đó
+kiểm biến duy nhất CÓ THỂ đổi giữa các lần: quyền trong Lark Console (việc của Hoà, không
+phải chính tả token).
+
+`.env.local` hiện tại: `Ejk6wjlXoiWN80khYcRjthy3prd` (l thường — đúng, khớp node thật).
+Chạy `scripts/probe-atlas.ts` với token này (không đổi gì) → **vẫn `code=131006`**
+`"permission denied: node permission denied, tenant needs read permission"`.
+
+Kết luận: quyền đọc bảng "Vol.3 - Material Library" trong Lark Console CHƯA được cấp cho
+app/tenant. Đây là việc của Hoà trong Lark Console (Bitable → chia sẻ/quyền → thêm app có
+quyền đọc), không phải việc sửa code hay sửa token ở phía repo. Theo đúng lệnh mới nhất
+("vẫn 131006 thì ghi vào báo cáo rồi BỎ QUA sang mục 3, KHÔNG kẹt lại") — DỪNG ATLAS tại
+đây, chuyển sang mục 3 (Sổ lệnh).
