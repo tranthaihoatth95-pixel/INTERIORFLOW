@@ -823,6 +823,22 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     });
   }, [ed]);
 
+  /**
+   * P6b bước 2a — ẩn/hiện CẢ CỤM đang chọn. Cùng khuôn `onToggleLockSelected`: còn ≥1 phần tử
+   * ĐANG HIỆN trong lựa chọn → ẩn HẾT; đã ẩn hết → hiện HẾT. Đi qua `ed.updateSlide` nên undo/redo
+   * phủ tự động (giống khoá).
+   */
+  const onToggleHideSelected = useCallback(() => {
+    if (!ed.selectedIds.length) return;
+    const ids = new Set(ed.selectedIds);
+    const anyVisible = (ed.slide?.elements ?? []).some((e) => ids.has(e.id) && !e.hidden);
+    ed.updateSlide((s) => {
+      s.elements.forEach((e) => {
+        if (ids.has(e.id)) e.hidden = anyVisible;
+      });
+    });
+  }, [ed]);
+
   const onSelectNext = useCallback(
     (dir: 1 | -1) => {
       const els = ed.slide?.elements ?? [];
@@ -1621,6 +1637,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         onGroup={onGroupSelected}
         onUngroup={onUngroupSelected}
         onToggleLock={onToggleLockSelected}
+        onToggleHide={onToggleHideSelected}
       />
 
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
