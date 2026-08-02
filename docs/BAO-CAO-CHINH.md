@@ -730,3 +730,467 @@ vì đặt trong chính node = tự động neo đúng vị trí theo pan/zoom/k
    có nút thả cảm xúc/đếm vote trên sticky/comment — cần thiết kế UI mới, chưa có trong bất kỳ
    component nào hiện tại) · sửa/xoá TỪNG comment theo quyền tác giả (v1: ai cũng xoá được bất kỳ
    comment nào, khớp mức đơn giản hiện có của sticky note — không kiểm tra ownership).
+
+## G2 phần (2) — comment neo vào node ID thật — XONG
+- Commit `066d48b` (`lib/store.ts` + `CommentPin.tsx` mới + `InteriorNode.tsx` + `NoteNode.tsx`).
+- Code đúng thiết kế đã mô tả. Tái dùng `formatBackupRelativeTime()` có sẵn trong
+  `lib/cad/backup-diff.ts` (tên hàm mang chữ "Backup" nhưng logic hoàn toàn generic, nhận
+  `timestampMs`+`nowMs` — đúng luật "một cỗ máy nhiều mặt tiền", không viết lại bộ định dạng giờ
+  tương đối lần 2).
+- 💭 **Phát hiện lúc verify, KHÔNG phải bug**: lần đầu bấm mở, badge đo được `computed opacity:0`
+  dù `className` đã đúng `opacity-100` — nghi ngờ ban đầu là bug thật, đào sâu bằng cách so
+  `nodeEl`/`pin` inline style (không có gì bất thường) → reload trang → `opacity:1` đúng ngay.
+  Kết luận: Tailwind JIT (Next dev) cần 1 nhịp compile CSS cho class MỚI xuất hiện lần đầu trong
+  file `CommentPin.tsx` vừa tạo — không phải lỗi logic. Cũng thấy toast "1 error" thoáng qua lúc
+  đó (Next dev overlay, tự hết sau khi HMR ổn định, tab mới hoàn toàn sạch, `preview_logs` xác
+  nhận server không có lỗi thật). Ghi lại: **gặp opacity/lỗi lạ ngay sau khi tạo FILE MỚI → thử
+  reload trước khi kết luận là bug**, cùng họ với các bẫy HMR/dev-server đã ghi trước đó trong
+  phiên.
+- Verify browser thật (dự án mẫu): tạo node test → `addComment` qua store đúng (author lấy từ
+  `user.name` đăng nhập) → badge đếm đúng "1" → click thật (dispatch toạ độ chính xác dù zoom nhỏ)
+  mở đúng `Popover` hiện tác giả/giờ tương đối/nội dung + ô gửi. `removeComment` + `deleteNode`
+  dọn sạch đúng. 0 console error (tab sạch). tsc/eslint sạch (1 lỗi `meta` pre-existing
+  `InteriorNode.tsx`, xác nhận qua `git stash`). `npm test` 0 fail.
+- 💭 Dữ liệu dự án mẫu hiện có 3 node "lạ" từ trước (`note_msbbav2i_0`/`node_msbbe0yo_1` ở
+  y≈-6150/-9261, `node_msbc60ns_2` ở y≈-50202) khiến "Fit view" không hội tụ tốt (kẹt ở
+  `minZoom=0.15`) — KHÔNG xoá vì không chắc provenance (2 cái đầu có thể là "2 node" đã thấy từ
+  đầu phiên trước tôi động vào gì; cái thứ 3 khả nghi là artifact test nhưng không chắc 100%).
+  Ghi lại để Hoà tự quyết có dọn không — không tự ý xoá dữ liệu không chắc chắn là của mình.
+
+## G2 phần (3) — toolbar bút tablet (bút·marker·highlight·tẩy) — THIẾT KẾ (viết trước khi code)
+**Khảo sát lại**: `SketchCanvas.tsx`/`MaskPainterModal.tsx`/`AnnotateModal.tsx` đều là canvas 2D
+CỠ CỐ ĐỊNH (vẽ lên 1 tấm ảnh/khung tĩnh) — KHÔNG chạy trong không gian flow-space vô hạn
+(pan/zoom) của `FlowCanvas`. Không tái dùng trực tiếp được cho "vẽ tay lên MẶT PHẲNG canvas Mood+
+Collab" (khác hẳn "vẽ lên 1 tấm ảnh cụ thể"). Cơ chế containment/toạ độ gần nhất để học lại là
+CHÍNH G2 phần (1) vừa làm (`FlowCanvas.tsx` tool='frame': bắt pointer trên nền canvas, quy đổi
+`screenToFlowPosition` lúc thả, xem trong `ViewportPortal` như `GroupOverlay`).
+
+**Quyết định kiến trúc**: nét vẽ là dữ liệu FLOW-SPACE (polyline điểm x,y flow-space, KHÔNG phải
+pixel màn hình) → tự đúng theo pan/zoom vĩnh viễn, giống `GroupOverlay`/khung phòng. Render bằng
+1 lớp SVG mới `DrawLayer.tsx` bọc `ViewportPortal`, vẽ toàn bộ nét đã lưu bằng `<polyline>`. Tool
+vẽ dùng CHUNG state `tool` đã có (mở rộng `Tool` thêm `'pen'|'marker'|'highlight'|'eraser'`,
+không tạo state riêng) — nhất quán với `'frame'` đã thêm ở phần (1).
+
+**Việc làm**:
+1. `lib/store.ts`: type `DrawStroke {id,tool:'pen'|'marker'|'highlight',points:{x,y}[],color,
+   width}`, field `strokes: DrawStroke[]`. `Tool` thêm `'pen'|'marker'|'highlight'|'eraser'`.
+   Action `addStroke(stroke)`, `eraseAt(pos)` (xoá NGUYÊN nét nào có điểm nằm trong bán kính tẩy —
+   tẩy kiểu vector "xoá cả nét chạm tới", KHÔNG phải tẩy pixel bitmap — đơn giản, khớp mức MVP).
+   Đi qua ĐỦ 5 chỗ `groups` như phần (1)/(2) để đồng bộ persist.
+2. `components/render-studio/DrawLayer.tsx` (mới): SVG trong `ViewportPortal`, mỗi `DrawStroke`
+   → `<polyline>` với style theo tool — pen: đặc màu accent-ink, opacity 1; marker: opacity ~0.55,
+   nét dày hơn; highlight: opacity ~0.3, RẤT dày, `mixBlendMode:'multiply'` (hiệu ứng dạ quang
+   kinh điển). Nét ĐANG VẼ (chưa thả chuột) là state cục bộ riêng, render đè lên cùng cách.
+3. `components/render-studio/DrawToolbar.tsx` (mới) — thanh dọc TRÁI nổi trên canvas (khác
+   `LeftRail` app-level và `BottomToolbar` — đúng vị trí "toolbar trái" spec chỉ rõ), 4 nút Bút
+   (`Pen`)/Marker (`Highlighter` icon nhạt hơn hoặc `PenTool`)/Tô sáng (`Highlighter`)/Tẩy
+   (`Eraser`) — TỪ lucide, nút ≥34px (đúng spec "Nút to, tối ưu chạm/pen"). + nút "Chọn" reset
+   tool về `'select'`. Chỉ hiện ở mode='render' (canvas Mood+Collab).
+4. `FlowCanvas.tsx`: mở rộng handler pointerdown/move/up đã viết cho `tool==='frame'` sang xử lý
+   thêm 4 tool vẽ mới — khi `tool` ∈ {pen,marker,highlight}: tích luỹ điểm (quy đổi
+   `screenToFlowPosition` MỖI lần move, khác `frame` chỉ quy đổi lúc thả — vẽ tay cần điểm trung
+   gian để đường cong mượt) → thả chuột: `addStroke`. `tool==='eraser'`: mỗi lần move gọi
+   `eraseAt(flowPos)` liên tục (tẩy theo vệt kéo, không cần thả mới tẩy). `panOnDrag=false` cho cả
+   4 tool mới (giống 'frame').
+5. Bỏ NGOÀI phạm vi phần (3) (ghi rõ): **palm-rejection thật** (cần phân biệt `pointerType`
+   'pen' vs 'touch' lúc CÓ CẢ HAI đồng thời — không có thiết bị tablet thật trong môi trường test
+   để kiểm chứng đáng tin cậy, chỉ ghi nhận `e.pointerType` sẵn có trong sự kiện, CHƯA viết logic
+   lọc palm) · **chữ/hình/ảnh trong toolbar trái** (spec liệt "chọn/sticky/chữ/hình/ảnh/comment"
+   nhưng sticky/comment ĐÃ có lối vào riêng — BottomToolbar/CommentPin — không lặp; chữ/hình/ảnh
+   là khả năng MỚI hoàn toàn, chưa có node/tool nào tương ứng, để việc riêng) · **undo/redo cho
+   nét vẽ** (dùng `snapshot()` chung của toàn store — nét vẽ sẽ ĐI KÈM undo/redo hiện có của
+   nodes/edges/groups một cách TỰ NHIÊN vì cùng 1 store, nhưng CHƯA kiểm tra riêng hành vi này).
+
+## G2 phần (3) — toolbar bút tablet — XONG
+- Commit `cc190d3` (`lib/store.ts` + `DrawLayer.tsx`/`DrawToolbar.tsx` mới + `FlowCanvas.tsx`).
+- Code đúng thiết kế đã mô tả.
+- 💭 **Sửa lại giả định SAI trong thiết kế phần (3) trước khi code** (phát hiện lúc verify, ghi rõ
+  thay vì lặng lẽ sửa): dòng "undo/redo cho nét vẽ ... nhét vào TỰ NHIÊN vì cùng 1 store" ở mục
+  "NGOÀI PHẠM VI" phía trên là SUY ĐOÁN CHƯA KIỂM CHỨNG. Đọc thẳng code `snapshot()`/`undo()`
+  (`lib/store.ts`) mới thấy `HistoryEntry` CHỈ theo dõi `{nodes,edges}` — `groups`/`comments`/
+  `strokes` gọi `get().snapshot()` (đúng khuôn) nhưng bản thân undo/redo KHÔNG hề khôi phục lại
+  DỮ LIỆU của chính chúng khi lùi bước — đây là giới hạn CÓ SẴN của toàn hệ (đã tồn tại từ
+  `groups` trước cả khi tôi động vào, không phải lỗi riêng của `strokes`). KHÔNG mở rộng sửa cả
+  hệ undo (ảnh hưởng `groups`/`comments`, việc lớn hơn hẳn phạm vi phần (3)) — chỉ sửa lại đúng
+  câu chữ trong tài liệu, để nguyên hành vi.
+- 💭 **Bẫy timing LẶP LẠI** (cùng họ với phần (1)): dispatch `PointerEvent` NGAY sau khi bấm nút
+  đổi tool trong `DrawToolbar` (không chờ) → nét vẽ đầu tiên vẫn dùng tool CŨ (đọc closure `tool`
+  chưa kịp cập nhật). Thêm `await wait(~100ms)` SAU MỖI lần bấm nút đổi tool (không chỉ giữa các
+  bước vẽ) mới đúng. Ghi lại lần nữa vì đây LÀ LẦN THỨ HAI gặp đúng bẫy này trong phiên — nên nhớ
+  MẶC ĐỊNH cho MỌI test tương tác canvas sau này: bấm nút → đợi → mới dispatch bước kế.
+- Verify browser thật (dự án mẫu, đã dọn strokes test): cả 4 tool tạo/xoá nét đúng qua store, SVG
+  render đúng vị trí/màu/độ dày/blend từng tool (chụp ảnh xác nhận trực quan — marker tím mờ,
+  highlight vàng dày dạ quang). Tẩy đúng nét trúng (không đụng nét khác). Dark theme giữ chất
+  lượng capsule/blur. 0 console error. tsc/eslint sạch. `npm test` 0 fail.
+
+## G2 phần (4) — presence online/offline + mời — THIẾT KẾ (viết trước khi code)
+**Khảo sát trước khi thiết kế** (Explore agent đọc code thật): `PresenceBar.tsx` hiện tại CHỈ hiện
+người có CURSOR SỐNG (poll 900ms, server tự prune sau 6s không hoạt động) — chấm xanh CỨNG cho
+MỌI người trong `others`, KHÔNG có khái niệm "offline" (đã rời thì biến mất hẳn, không hiện xám).
+Tìm thấy 3 nguồn dữ liệu CÓ SẴN quan trọng, tránh viết lại:
+- `prisma.ProjectMember` (`prisma/schema.prisma:105`) — roster THẬT của dự án (khác cursor sống),
+  API `GET/POST /api/projects/[id]/members` đã có đủ (trả `members[]`, `myRole`, `canManage`).
+- `/api/dashboard` — field `team[]` có sẵn `online: boolean` (so `lastSeenAt` với ngưỡng 2 phút,
+  route.ts) — nguồn "ai trong hệ thống, ai online gần đây" ĐÃ TÍNH SẴN, không cần tính lại.
+- **Mời**: KHÔNG có cơ chế email-invite nào trong repo (đã grep). `POST /api/projects/[id]/members`
+  chỉ nhận `userId` CÓ SẴN trong bảng User + yêu cầu `role=owner` mới gọi được — không tạo tài
+  khoản mới, không gửi email. `ProjectMembersPanel.tsx` (Dashboard) ĐÃ dùng đúng luồng này với
+  `teamUsers` lấy từ `data.team` của `/api/dashboard`.
+
+**Quyết định kiến trúc**: "mời (+)" trong MVP này = **thêm thành viên CÓ SẴN trong hệ thống vào dự
+án đang mở** (dùng THẲNG `POST /api/projects/[id]/members`, KHÔNG xây email-invite mới — việc đó
+lớn hơn hẳn 1 phần của G2, cần hạ tầng gửi mail + token + trang đăng ký, ngoài phạm vi). Ghi rõ
+ràng trong UI đây là "thêm người đã có tài khoản", không phải mời email — tránh hứa quá mức luật
+"hành động trước, cơ chế sau" của `SPEC-NGON-NGU-CHI-DAN`.
+
+**Việc làm**:
+1. `PresenceBar.tsx`: fetch `GET /api/projects/{currentProjectId}/members` (poll nhẹ, KHÔNG cần
+   900ms như cursor — 30s đủ, đây là roster ít đổi) → cross-reference với `others` (cursor sống,
+   ĐÃ có sẵn từ `useCollabStore`) để suy "online" = có cursor sống HOẶC là chính user hiện tại;
+   "offline" = member nhưng không có cursor sống. Render 2 nhóm: online (chấm emerald, khuôn cũ)
+   trước, offline (avatar xám mờ, không chấm hoặc chấm xám) sau.
+2. Nút "+ " CHỈ hiện khi `canManage` (owner, đúng luật API — ẩn hẳn với người không có quyền,
+   không hiện nút rồi báo lỗi 403 sau khi bấm). Bấm mở `Popover` (có sẵn) fetch `/api/dashboard`
+   MỘT LẦN lúc mở (không poll) → lọc `team` bỏ người ĐÃ là member → danh sách bấm "Thêm" gọi
+   `POST /api/projects/{id}/members` (`role:'viewer'` mặc định, an toàn nhất) → refetch members.
+3. Bỏ NGOÀI phạm vi phần (4) (ghi rõ): **email-invite thật** (tạo tài khoản mới qua email, cần hạ
+   tầng gửi mail — KHÔNG có trong repo) · **đổi role thành viên từ PresenceBar** (đã có
+   `ProjectMembersPanel.tsx` ở Dashboard làm việc này đầy đủ hơn, không lặp lại UI) · **share
+   roles Viewer/Commenter/Editor riêng cho canvas** (SPEC-CHANG2-UI-2MODE §3 liệt đây là khái
+   niệm KHÁC `ProjectMember` role hiện có — "collab-share, KHÁC phân quyền IF1/IF2" — cần thiết kế
+   mới, không có hạ tầng nào khớp sẵn, để việc riêng).
+
+## G2 phần (4) — presence online/offline + mời — XONG
+- Commit `0cfdd62` (`components/collab/PresenceBar.tsx`, viết lại toàn bộ).
+- Code đúng thiết kế đã mô tả ở trên: gộp cursor sống (`others`/`meId`) + roster
+  `ProjectMember` (`GET /api/projects/{id}/members`, poll 30s) → online trước/offline sau,
+  chấm emerald/xám. Nút "+" chỉ hiện khi `canManage`, mở `Popover` (portal có sẵn) lọc
+  `team` từ `/api/dashboard` bỏ người đã là member, bấm "Thêm" gọi
+  `POST /api/projects/{id}/members` role viewer mặc định.
+- 💭 **2 bug thật phát hiện lúc verify browser** (đã sửa, chi tiết kỹ thuật trong commit
+  `0cfdd62`):
+  1. Avatar offline hiện sai `opacity:1` thay vì `.45` — `animate={{opacity:1}}` cứng của
+     framer-motion đè mất `style={{opacity:.45}}` tĩnh cùng property (framer-motion tự đặt
+     inline style cho property nó đang animate, luôn thắng style tĩnh dù đặt sau trong JSX).
+     Sửa: chuyển điều kiện `p.online?1:.45` vào trong `animate`, bỏ khỏi `style` tĩnh.
+  2. Console warning "Function components cannot be given refs... Check the render method of
+     `PopChild`" — do tách avatar thành component `Avatar({p})` riêng, làm CON TRỰC TIẾP của
+     `<AnimatePresence mode="popLayout">`; `AnimatePresence`/`PopChild` cần gắn ref thẳng lên
+     con để quản lý animation thoát (exit), thất bại im lặng (chỉ warning dev) với function
+     component thường (không `forwardRef`). Sửa: bỏ component `Avatar` riêng, inline lại JSX
+     thẳng vào `.map()` bên trong `AnimatePresence` — đúng cấu trúc bản GỐC trước khi tôi tách
+     ra (không phải lỗi có sẵn, lỗi do chính bước viết lại của tôi, đã tự phát hiện + sửa
+     trước khi báo xong).
+- Verify browser thật (project "Test B3 (phục hồi backup)", `canManage:true` vì `myRole:owner`
+  của user demo trên project này): thêm thành viên "hoa" qua popover mời → `POST members`
+  thành công, list cập nhật đúng. `getComputedStyle` xác nhận opacity self=1, hoa(offline)=0.45
+  — cả hai lần: lần đầu trên tab cũ (nghi ngờ vì tab tái dùng giữ buffer console cũ), lần hai
+  trên **tab hoàn toàn mới** (đúng quy ước "console phải sạch từ đầu" của phiên) → console
+  0 error, xác nhận dứt điểm bug #2 đã hết. Dark theme: nền kính tối đúng
+  (`rgba(26,26,30,.82)`), opacity giữ nguyên đúng. tsc/eslint/`npm test` sạch (0 fail, exit 0).
+  Dọn dữ liệu test: xoá "hoa" khỏi `ProjectMember` của "Test B3" qua `DELETE
+  /api/projects/{id}/members?userId=...` (xác nhận roster về lại đúng 1 member owner ban đầu).
+- **Lưu ý cho phần sau**: `currentProjectId` mặc định `null` cho "Dự án mẫu" (flow trần, không
+  có `Project` DB record bọc ngoài) — `PresenceBar` tự ẩn khi không đủ điều kiện
+  (`people.length<=1 && !canManage`), đúng hành vi mong muốn, không phải bug.
+
+## G2 phần (5) — swatch vật liệu matId — THIẾT KẾ (viết trước khi code)
+**Khảo sát trước khi thiết kế** (2 agent Explore đọc code thật, không đoán):
+- `SPEC-CHANG2-UI-2MODE.md:26` — yêu cầu đúng nguyên văn: "Swatch vật liệu | mang `matId`
+  (hãng·mã·giá/m²) — kéo vào mang dữ liệu, không chỉ ảnh". `matId` cũng nằm trong spine chung
+  (`:12-13`, "Thư viện (matId chung)") và trong "moat vật liệu: V-Ray/D5/IF hợp nhất bằng matId"
+  (`:42`).
+- **`matId` = khoá `ProductSpec{kind:'material'}`** (`prisma/schema.prisma:356-390`, bảng THẬT
+  duy nhất cho vật liệu sau khi gộp `MaterialRef`, đã chốt Q-L2/2.1.9.i) — **KHÔNG phải**
+  `MaterialDef` (`lib/cad/materials.ts`, vật liệu THỊ GIÁC cho Hatch CAD, cố ý tách khỏi thương
+  mại). API `GET /api/specs?kind=material` (`app/api/specs/route.ts`) ĐÃ CÓ SẴN, trả đủ
+  `id/name/brand/sku/colorHex/priceNote` — dùng thẳng, không viết API mới.
+  ⚠️ Phát hiện phụ (không sửa, ngoài phạm vi): `specToDto` (`lib/server/specs.ts:18-47`) CHƯA trả
+  `priceVnd`/`unit`/`wastagePercent` (field thêm sau ở 2.1.9.r) — dùng `priceNote` (text tự do,
+  đã có, đúng convention "hiển thị, không parse số") cho hiển thị giá/m² là đủ cho phần (5), việc
+  bổ sung DTO field số thật để dành cho BOQ thật sau.
+- **Cỗ máy tái dùng** ("một cỗ máy, nhiều mặt tiền"): node `util.materialnote`
+  (`lib/nodes/defs/material-notes.ts`) ĐÃ render đúng 1 thẻ ảnh tên/mã/NCC/hex/note — chỉ THIẾU
+  field `matId` để neo về `ProductSpec` thật. KHÔNG viết node/engine mới.
+- **Cơ chế kéo-thả tái dùng**: `NodeLibraryPanel.tsx` đã có `DND_MIME` ('application/
+  interiorflow-node') nối sẵn vào `FlowCanvas.onDrop` (`addNode(defType,pos)`); nhánh
+  `ASSET_MIME` (`components/LibraryPanel.tsx`) cho thấy khuôn "tạo node RỒI updateParam ngay
+  sau" (`FlowCanvas.tsx:325-343`) — áp đúng khuôn này cho MIME mới, không phát minh cơ chế khác.
+
+**Quyết định kiến trúc**:
+1. `lib/nodes/defs/material-notes.ts`: thêm field `matId` — **KHÔNG khai trong `params:
+   ParamDef[]`** (nên KHÔNG hiện ô nhập tay vô nghĩa trong panel thuộc tính — xác nhận qua code
+   `InteriorNode.tsx:307`/`ToolModeForm.tsx:164` chỉ render field theo `def.params`, trong khi
+   `execute()` nhận NGUYÊN `node.data.params` đầy đủ — `lib/execution.ts:145` — nên field không
+   khai báo vẫn "đi theo" node, chỉ ẩn khỏi form). `renderMaterialCard` thêm dòng hiển thị
+   `matId` (nếu có) trên thẻ — đúng yêu cầu "mang dữ liệu, không chỉ ảnh": nhìn thẻ vẫn thấy mã
+   ATLAS thật, không chỉ hình.
+2. Thêm khu **"Vật liệu"** vào `NodeLibraryPanel.tsx`, đặt NGAY SAU khu "Mood + Cộng tác" (đúng
+   vị trí khái niệm — swatch phục vụ canvas Mood, không phải node xử lý) — cùng điều kiện hiện
+   `phase.id==='render' && !query.trim()`. Fetch 1 lần `GET /api/specs?kind=material` lúc mount
+   (không cần poll — vật liệu đổi chậm, giống lý do bỏ poll nhanh ở phần (4)). Mỗi vật liệu = 1
+   chip: ô màu `colorHex` (fallback xám) + tên + `brand·sku` + `priceNote` rút gọn. Bấm = thêm
+   node `util.materialnote` giữa canvas rồi tự điền params (giống hành vi "bấm để thêm" của
+   `NodeCard`, ưu tiên cảm ứng). Kéo = set ĐỒNG THỜI 2 MIME lên `dataTransfer`: `DND_MIME` =
+   `'util.materialnote'` (để nhánh cũ trong `FlowCanvas.onDrop` tạo đúng loại node) + MIME MỚI
+   `application/interiorflow-material` (export từ `NodeLibraryPanel.tsx`, đặt tên `MAT_MIME`) =
+   JSON `{matId,name,code,supplier,hex,note}`.
+3. `FlowCanvas.tsx::onDrop`: SAU nhánh `DND_MIME` hiện có (đã `addNode` xong), kiểm thêm
+   `MAT_MIME` — nếu có, parse JSON rồi gọi `updateParam` cho từng field lên node vừa tạo (đúng
+   khuôn `ASSET_MIME` đã làm ở dòng 341-343: `nodes.at(-1)` lấy node vừa thêm). Additive thuần —
+   không đổi nhánh cũ.
+4. **Ref #3/#5 áp dụng thế nào** (theo chỉ đạo "G2 tiếp tục thì áp #3/#5"): #3 ("Canvas edit nền
+   đen ... → Mood+Collab đã có, xác nhận hướng") — ĐÃ ĐÚNG hướng hiện tại (chrome tối trung tính,
+   ảnh/nội dung nổi bật), KHÔNG cần sửa code, chỉ xác nhận. #5 (ambient-tint LẤY màu TỪ ảnh bên
+   trong thẻ) — áp cho "thẻ ẢNH" (Gallery/File Manager/moodboard photo card); swatch vật liệu ở
+   đây là Ô MÀU PHẲNG từ `colorHex` (không phải ảnh chụp) nên ambient-tint (trích màu từ ảnh) KHÔNG
+   khớp kỹ thuật — màu chip CHÍNH LÀ `colorHex`, không cần trích xuất gì thêm. Ghi rõ thay vì áp
+   gượng ép: #5 để dành đúng lúc động tới thẻ ảnh render/moodboard thật.
+5. Ngoài phạm vi phần (5) (ghi rõ, không mở rộng): sửa `specToDto` thêm `priceVnd/unit` số thật
+   (việc BOQ riêng) · picker tìm-kiếm/lọc vật liệu (2 bản ghi hiện có, chưa cần) · đồng bộ 2 chiều
+   matId↔ATLAS khi sửa tay trên node (đã có triết lý "sửa tay không bị AI ghi đè" — giữ nguyên,
+   node chỉ SAO CHÉP dữ liệu lúc kéo, không giữ liên kết sống).
+
+## G2 phần (5) — swatch vật liệu matId — XONG
+- Commit `a0b6968` (`components/NodeLibraryPanel.tsx`, `components/FlowCanvas.tsx`,
+  `lib/nodes/defs/material-notes.ts`).
+- Code đúng thiết kế đã mô tả ở trên: kệ "Vật liệu" mới trong khu Mood + Cộng tác, fetch
+  `GET /api/specs?kind=material` thật, mỗi swatch bấm/kéo đều tạo `util.materialnote` mang
+  `matId` (không có ô nhập tay — chỉ tự điền, đúng ý "mang dữ liệu, không chỉ ảnh").
+- Verify browser thật (dự án mẫu, panel "Thư viện Node"): 2 vật liệu thật trong DB hiện đúng
+  (An Cường AC-ENG-OAK15 · Stone World SW-TRV-BE, đủ tên/brand/sku/hex/priceNote). Test CẢ 2
+  đường tạo node:
+  1. **Bấm** — `onAddMaterial` → node mới `params: {matId, name, code, supplier, hex, note}`
+     đúng dữ liệu ATLAS.
+  2. **Kéo-thả thật** — giả lập `DragEvent`+`DataTransfer` thật (không phải gọi hàm tắt), dispatch
+     `dragstart` trên chip rồi `drop` lên `.react-flow__pane` → xác nhận `dataTransfer.types` có
+     ĐỦ cả `application/interiorflow-node` + `application/interiorflow-material`, node tạo ra
+     đúng params như đường bấm — xác nhận `FlowCanvas.onDrop` đọc đúng `MAT_MIME` mới.
+  `execute()` chạy qua `window.__nodeRegistry` (dev-only expose có sẵn, không phải hack riêng) ra
+  đúng thẻ ảnh (chèn `<img>` xem trực tiếp) + `text` có `matId cmrykxtvg...` — card hiện đủ swatch
+  màu/tên/mã·NCC/hex/**dòng matId (badge nâu)**/giá tham khảo, đúng bố cục dự kiến. Dark theme:
+  chip đọc rõ, viền/hover đúng token. Console 0 error. tsc sạch, eslint sạch (lỗi
+  `GripVertical` unused-var xác nhận CÓ SẴN từ trước, không phải do phần (5) — kiểm bằng `git
+  stash` rồi chạy lại eslint). `npm test` 0 fail.
+- 💭 **Dọn phụ**: lệnh `sqlite3 dev.db` lúc khảo sát vô tình tạo file rỗng `dev.db` ở gốc repo
+  (DB thật nằm `prisma/dev.db`, khác file) — đã `rm` trước khi commit, không lọt vào git.
+- Ref áp dụng đúng chỉ đạo: #3 xác nhận Mood+Collab hiện tại đã đúng hướng (không sửa code).
+  #5 (ambient-tint) CHỦ ĐỘNG KHÔNG áp — swatch là ô màu phẳng từ `colorHex`, không phải ảnh chụp
+  cần trích màu nền; để đúng lúc cho thẻ ảnh Gallery/File Manager/moodboard thật.
+
+## G2 phần (6) — mindmap template tuỳ chọn kéo từ kệ — CHƯA BẮT ĐẦU
+Tiếp theo trong hàng đợi G2 (6 phần theo TICKET-CHANG2-BUILD). Sẽ khảo sát trước khi thiết kế
+(SPEC-STAGE-LIBRARIES.md phần mindmap template + hạ tầng kệ Thư viện hiện có) rồi viết note thiết
+kế vào đây trước khi code, đúng quy tắc đã áp dụng suốt G2.
+
+## G2 phần (6) — mindmap template tuỳ chọn kéo từ kệ — THIẾT KẾ (viết trước khi code)
+**Khảo sát trước khi thiết kế**:
+- `SPEC-CHANG2-UI-2MODE.md:27` — nguyên văn: "Mindmap = 1 TUỲ CHỌN | canvas trống mặc định tự
+  do; khung lập luận kéo từ **kệ Thư viện** (nhiều form — `SPEC-STAGE-LIBRARIES`)".
+- `SPEC-STAGE-LIBRARIES.md:26` — chặng 2 kệ "Form lập luận (nhiều loại)" liệt kê **6 form**: Khung
+  concept 5 nhánh · Ma trận so sánh phương án · 6 chiếc mũ · SWOT không gian · Bảng tiêu chí chọn
+  vật liệu · Mood→Concept map — "chốt 02/08" (§"✅ 3 điểm"), nhưng đây là **kệ Thư viện ĐẦY ĐỦ**
+  (Master Library, 4 mức phạm vi, publish có chủ duyệt versioned) — quy mô LỚN HƠN HẲN "G2 phần
+  (6)" (1 trong 6 mục của canvas Mood+Collab). Ghi đã có sẵn từ phần (1): "Kéo-thả từ kệ
+  (`NodeLibraryPanel.tsx` → `FlowCanvas.tsx onDrop`): cơ chế `DND_MIME` áp dụng được thẳng cho
+  mindmap template sau này" — xác nhận hướng tái dùng.
+- **Quyết định phạm vi** (đúng kỷ luật đã áp dụng suốt G2 — mỗi phần chỉ làm ĐÚNG phần việc của
+  canvas, không xây cả hệ Kệ Thư viện lớn): phần (6) chỉ làm **1 template mindmap kinh điển nhất**
+  trong 6 form — "**Khung concept 5 nhánh**" (đúng nghĩa "mindmap": 1 tâm + N nhánh toả ra, khớp
+  chữ "mindmap" trong tên phần việc nhất). **5 form còn lại** (Ma trận so sánh, 6 chiếc mũ, SWOT,
+  Bảng tiêu chí, Mood→Concept) để dành cho việc riêng "xây kệ Thư viện chặng 2 đầy đủ" — không mở
+  rộng phạm vi phần (6). "Mindmap = TUỲ CHỌN" đã đúng nghĩa: canvas KHÔNG ép, chỉ thêm 1 lối tắt
+  kéo/bấm để dựng khung sẵn, người dùng tự do sửa/xoá/bỏ qua hoàn toàn.
+- **Nguyên liệu tái dùng, KHÔNG viết node/type mới**: `note` (React Flow type riêng, KHÔNG phải
+  `NodeDefinition`) + action có sẵn `addNote(position)` + `updateNote(id, text)` (`lib/store.ts`).
+  Khuôn y hệt `demoSketchToRender` đã có trong `NodeLibraryPanel.tsx` (gọi `addNode` nhiều lần,
+  đọc `nodes.at(-1)` lấy id vừa tạo, không cần store action mới). "Khung concept 5 nhánh" = 1 note
+  tâm ("Ý tưởng chính") + 5 note nhánh xếp toả tròn (lượng giác quanh tâm, bán kính cố định) —
+  **không nối dây** (React Flow edges chỉ nối node `interior` có port, `note` không có port — nối
+  dây giả cho note ngoài phạm vi, hình toả tròn tự nó đã đọc ra "mindmap" không cần đường nối).
+  5 nhánh gợi ý (trung tính, đúng "không áp gu" — LUẬT NỀN TẢNG): "Không gian & công năng" · "Ánh
+  sáng" · "Vật liệu & màu sắc" · "Phong cách/gu" · "Cảm xúc mong muốn" — 5 trục phổ quát của MỌI ý
+  tưởng nội thất, không phải gu/phong cách cụ thể nào.
+- **Vị trí + cơ chế**: 1 chip mới trong `NodeLibraryPanel.tsx`, khu **"Form lập luận"** riêng (sau
+  khu "Vật liệu", đúng thứ tự Mood+Collab → Vật liệu → Form lập luận trong SPEC-STAGE-LIBRARIES
+  liệt kê). Bấm = gọi thẳng hàm instantiate tại tâm canvas (khuôn `quickSketch`/
+  `demoSketchToRender`). Kéo = MIME mới `application/interiorflow-mindmap` (chỉ cần 1 giá trị cố
+  định `'concept-5-nhanh'`, chưa cần đa template) đi cùng cơ chế `FlowCanvas.onDrop` đã có (thêm
+  nhánh mới, không đụng nhánh cũ) — dùng ĐÚNG vị trí thả (`pos`) làm tâm thay vì tâm canvas cố
+  định như đường bấm.
+- **Hàm dùng chung 2 đường** (tránh trùng logic bấm/kéo): viết 1 hàm thuần
+  `lib/render-studio/mindmap-templates.ts::instantiateConceptMindmap(center, {addNote,
+  updateNote})` — cả `NodeLibraryPanel` (bấm) và `FlowCanvas` (kéo) cùng gọi, không lặp code toạ
+  độ lượng giác ở 2 nơi.
+- Ngoài phạm vi (ghi rõ): 5 form lập luận còn lại · hệ Kệ Thư viện đầy đủ (publish/versioning/4
+  mức phạm vi) · nối dây giữa các note mindmap · undo gộp 1 bước cho cả cụm 6 note (giống giới hạn
+  đã ghi ở phần (1)/(3), `addNote` tự `snapshot()` mỗi lần gọi — 6 bước undo riêng, chấp nhận theo
+  đúng tiền lệ `demoSketchToRender`).
+
+## G2 phần (6) — mindmap template tuỳ chọn kéo từ kệ — XONG
+- Commit `5fbd9a1` (`lib/render-studio/mindmap-templates.ts` mới, `components/NodeLibraryPanel.tsx`,
+  `components/FlowCanvas.tsx`).
+- Code đúng thiết kế đã mô tả ở trên: kệ "Form lập luận" mới, 1 chip "Khung concept 5 nhánh",
+  bấm/kéo đều gọi `instantiateConceptMindmap` dựng 6 `note` (1 tâm + 5 nhánh toả tròn).
+- Verify browser thật: **bấm** — tạo đúng 6 note tại giữa canvas, tâm "Ý tưởng chính" + 5 nhánh
+  đúng nội dung (Không gian & công năng / Ánh sáng / Vật liệu & màu sắc / Phong cách·gu / Cảm xúc
+  mong muốn), toạ độ xác nhận đúng bán kính 260 (nhánh đầu tại góc 12h: y = center.y − 260, khớp
+  số đo thật). **Kéo-thả thật** — giả lập `DragEvent`+`DataTransfer` thật (dragstart trên chip →
+  drop lên `.react-flow__pane`, dataTransfer.types xác nhận đúng `application/interiorflow-mindmap`)
+  → cụm mới dựng ĐÚNG TẠI VỊ TRÍ THẢ (khác tâm canvas của đường bấm) — xác nhận `FlowCanvas.onDrop`
+  đọc đúng MIME mới, không lẫn nhánh `DND_MIME`/`MAT_MIME` cũ. Dark theme: chip nét đứt đọc rõ.
+  Console 0 error. tsc sạch, `npm test` 0 fail. Dọn 12 note test (2 lần thử × 6 note) về đúng 3
+  node gốc của "Dự án mẫu" sau verify.
+- 💭 Lưu ý nhỏ lúc verify (không phải bug): nút "Thư viện Node" ở rail trái đôi lúc cần bấm 2 lần
+  mới mở panel trên tab mới hoàn toàn tinh — nghi hiệu ứng hover/tooltip che mất target đúng 1
+  frame đầu, không tái hiện lại được ổn định, không liên quan code phần (6) (dùng
+  `setPanel('library')` trực tiếp qua store để verify tiếp, không chặn tiến độ).
+
+---
+
+# G2 — TỔNG KẾT (6/6 phần XONG)
+Toàn bộ 6 phần của canvas Mood+Collab (`docs/TICKET-CHANG2-BUILD-2026-08-02.md`) đã xong, mỗi
+phần 1(+) commit code + báo cáo riêng, verify browser thật đầy đủ:
+1. Khung canvas + frame theo phòng (`NodeGroup.rect`, `createRoomFrame`)
+2. Sticky + comment neo object (`CanvasComment`, `CommentPin`)
+3. Toolbar bút tablet (pen/marker/highlight/eraser, `DrawLayer`/`DrawToolbar`)
+4. Presence online/offline + mời (`PresenceBar` viết lại, `ProjectMember` roster)
+5. Swatch vật liệu matId (`ProductSpec` thật, `util.materialnote` + matId)
+6. Mindmap tuỳ chọn (Khung concept 5 nhánh, `instantiateConceptMindmap`)
+
+Tiếp theo trong `TICKET-CHANG2-BUILD-2026-08-02.md`: **G3 — Vẽ 3D** (Command Panel + Scene
+Objects). Sẽ khảo sát hạ tầng 3D hiện có (`SPEC-3D-CORE.md`, 3D-1 đã xong theo STATUS.md) trước
+khi thiết kế, đúng kỷ luật đã áp dụng suốt G2.
+
+## 🟡 PHÁT HIỆN — STATUS.md sai lệch với code thật (không tự sửa, báo để Hoà/phiên kia biết)
+Khảo sát trước G3 phát hiện `STATUS.md` (mục "⬜ CHƯA BẮT ĐẦU" + "📌 CÂU HỎI ĐANG ĐỂ NGỎ", nội
+dung thuộc domain 3D-core/P3 — KHÔNG phải phần việc H/G canvas của tôi, xem `docs/CHOT-...` header
+"Hai phiên chung `.git`") đang **SAI so với `git log` thật**:
+- `STATUS.md:11` ghi "walk/campath/section: TODO 3D-2..3D-4" nhưng git đã có `d7dff63` (3D-2
+  campath+captureSequence), `87c2e78` (3D-4 section+walk), `2881c32` (3D-5 push-pull massing) —
+  cả 3 đã XONG, không còn TODO.
+- `STATUS.md:33-35` liệt 3D-2/3D-3/3D-4 vào "⬜ CHƯA BẮT ĐẦU" — sai tương tự, `lib/three/capture.ts`
+  xác nhận 3D-3 (depth/lineart) cũng đã có code.
+- Gap `STATUS.md:62` ("CamPathPreview+CamPathControlPanel CHƯA wire vào /cad-editor") đã ĐÓNG bởi
+  `bc3d3e7` ("D5 — nối CamPathPreview + CamPathControlPanel vào /cad-editor thật") — không còn gap.
+**KHÔNG tự sửa STATUS.md** — nội dung này thuộc việc của phiên "code chính" (3D-core/P3, khác domain
+H/G canvas của tôi), sửa vào có thể đụng file đang có edit dở của phiên kia (đúng cảnh báo
+`.git/index.lock` đã ghi sẵn trong STATUS.md). Ghi ở đây để Hoà/phiên kia thấy khi đọc — đúng luật
+"tài liệu sai → báo ngay, không im lặng" (`docs/CLAUDE.md`).
+
+## G3 phần (1) — Command Panel shell + tab Vật liệu — THIẾT KẾ (viết trước khi code)
+**Khảo sát trước khi thiết kế** (Explore agent đọc code thật):
+- `SPEC-CHANG2-UI-2MODE.md:30-43` — Command Panel = sidebar 5 tab **Tạo·Sửa·Vật liệu·Camera·Hiện**
+  (kiểu 3ds Max). `docs/mocks/mock-ve-3d.html` (Hoà đã xem qua, "✅ Vẽ 3D CHỐT qua mock" —
+  `00-CHOT.md`) vẽ đúng bố cục: sidebar rộng 256px bên trái viewport, tab "Vật liệu" đang mở minh
+  hoạ — search + 3 sub-tab nguồn (V-Ray/D5/IF·ATLAS) + lưới swatch matId + hint "chọn→click lên
+  mặt để gán". **Mock KHÔNG vẽ Scene Objects/outliner** (chỉ nhắc bằng chữ ở §5 spec) — để dành
+  phần sau, không đoán bố cục chưa được duyệt.
+- **Trạng thái code hiện tại**: `Render3DModeSkeleton.tsx` là viewport TOÀN MÀN (không sidebar),
+  chỉ có hint box nổi + `<Scene3DViewer mode="massing">` + `<ModeSwitchBar/>`. Chưa có Command
+  Panel nào — đúng như 00-CHOT ghi "chưa nối vào Scene3DViewer/3D-1".
+- **Tái dùng trực tiếp** ("một cỗ máy, nhiều mặt tiền"): tab "Vật liệu" của Command Panel dùng
+  ĐÚNG nguồn dữ liệu vừa xây ở G2 phần (5) — `GET /api/specs?kind=material` (ProductSpec/ATLAS
+  thật, đã có UI swatch matId trong `NodeLibraryPanel`). Mock hiện 3 "nguồn" (V-Ray/D5/IF·ATLAS)
+  nhưng field `vendor`/`brand` không phân biệt "nguồn phần mềm" — DB thật hiện chỉ có 2 bản ghi,
+  chưa đủ dữ liệu để phân 3 tab con có ý nghĩa. **Quyết định**: phần (1) hiện MỘT danh sách matId
+  thật (không chia sub-tab V-Ray/D5/IF giả — tránh tạo phân loại KHÔNG dữ liệu đứng sau), giữ đúng
+  câu "IF không chạy engine V-Ray — chỉ mở catalog để gán" (dòng 43): phân loại theo nguồn phần
+  mềm là việc CỦA ATLAS đồng bộ dữ liệu, không phải UI tự bịa nhãn.
+- **Việc làm phần (1)** (chỉ dựng SHELL + 1 tab thật, 4 tab còn lại placeholder — đúng tinh thần
+  SKELETON đã ghi trong chính file `Render3DModeSkeleton.tsx`):
+  1. `components/render-studio/Command3DPanel.tsx` (mới) — sidebar 256px, 5 tab (icon+label, tab
+     active = `box-shadow` dưới đúng token accent, khớp `.ctabs button.on` mock). State tab cục bộ
+     component (`useState`), KHÔNG cần lưu store (chưa có gì phụ thuộc tab đang mở giữa các nơi
+     khác — thêm sau nếu cần).
+  2. Tab "Vật liệu": fetch `/api/specs?kind=material` (y hệt logic đã viết ở `NodeLibraryPanel`,
+     KHÔNG copy-paste 2 lần — tách hàm fetch dùng chung nếu hợp lý, xem lúc code). Lưới 3 cột
+     swatch (khác layout list dọc của kệ Mood — đúng mock `.mgrid`), bấm 1 swatch = đặt
+     "vật liệu đang chọn" (state cục bộ, CHƯA gán lên mặt nào — click-to-assign lên mesh 3D là
+     việc của phần sau, cần `Scene3DViewer` hỗ trợ raycast chọn mặt, chưa có).
+  3. 4 tab còn lại (Tạo/Sửa/Camera/Hiện): placeholder rõ ràng ("Sắp có" + mô tả 1 dòng đúng
+     `SPEC-NGON-NGU-CHI-DAN`), KHÔNG giả vờ hoạt động — đúng luật "không nút giả" (tránh hứa quá).
+  4. `Render3DModeSkeleton.tsx`: bọc lại thành flex-row (sidebar + viewport flex-1), viewport giữ
+     nguyên logic hint/Scene3DViewer/ModeSwitchBar hiện có, chỉ đổi layout bao ngoài.
+- Ngoài phạm vi phần (1): Scene Objects/outliner (chưa có mock duyệt bố cục) · click-to-assign vật
+  liệu lên mặt 3D thật (cần raycast, đổi `Scene3DViewer`) · nội dung thật cho Tạo/Sửa/Camera/Hiện ·
+  ViewCube/axis gizmo (viewport hiện tại chưa có, `Scene3DViewer` props không hỗ trợ — việc riêng).
+
+## G3 phần (1) — Command Panel shell + tab Vật liệu — XONG
+- Commit `09c4816` (`components/render-studio/Command3DPanel.tsx` mới,
+  `lib/render-studio/use-materials.ts` mới, `NodeLibraryPanel.tsx`, `Render3DModeSkeleton.tsx`).
+- Code đúng thiết kế: sidebar 5 tab đúng bố cục mock, tab Vật liệu tái dùng hook `useMaterials`
+  (tách từ G2 phần (5), NodeLibraryPanel giờ dùng lại thay vì tự fetch — xoá trùng lặp thật, không
+  chỉ refactor cho đẹp).
+- Verify browser thật: chuyển sang mode "Vẽ 3D" qua `lib/stage-mode.ts` (localStorage key
+  `interiorflow.stagemode.render` + reload — nút UI có quirk lần bấm đầu không đăng ký trên tab
+  hoàn toàn mới, không tái hiện ổn định, không phải do code phần (1); dùng đường ổn định để verify
+  tiếp, không chặn tiến độ). Command Panel hiện đúng 5 tab, chuyển tab "Tạo" → placeholder đúng
+  chữ, chuyển lại "Vật liệu" → 2 vật liệu thật (An Cường AC-ENG-OAK15, Stone World SW-TRV-BE) hiện
+  dạng lưới 3 cột đúng mock. Bấm swatch → `className` đổi đúng sang viền `border-[var(--accent)]`
+  (xác nhận qua DOM, không chỉ nhìn ảnh). Dark theme: viền accent + nền panel đọc rõ. Console 0
+  error suốt cả phiên verify (mở tab mới → chuyển mode → đổi tab → bấm swatch → dark theme → reset).
+- 💭 Quirk phụ (không phải bug code phần (1), ghi lại để nhớ): nút "Vẽ 3D"/"Thư viện Node" ở UI
+  đôi khi cần bấm 2 lần trên TAB HOÀN TOÀN MỚI mới đăng ký (nghi lớp hover/tooltip che 1 frame đầu
+  — đã gặp y hệt ở G3 phần (1) và trước đó lúc mở panel Thư viện Node cho G2 phần (5)/(6), không
+  tái hiện ổn định để định vị root cause). Từ giờ verify browser: nếu click đầu vào 1 toggle/nút
+  quan trọng không thấy đổi trạng thái ngay, thử lại 1 lần hoặc đọc thẳng qua store trước khi kết
+  luận là bug code.
+
+Tiếp theo: **G3 phần (2)** — theo TICKET-CHANG2-BUILD, sau Command Panel shell là các tab còn lại
+(Tạo/Sửa/Camera/Hiện) hoặc Scene Objects/outliner — sẽ khảo sát + viết thiết kế trước khi code,
+đúng kỷ luật đã áp dụng.
+
+## 🐛 BUG THẬT — avatar mất chất 3D — ĐÃ SỬA
+Hoà báo trực tiếp kèm chẩn đoán có số (đọc `docs/LUAT-GIAO-DIEN-BAT-BUOC.md` +
+`docs/BAI-HOC-02-08-2026.md` trước khi sửa, đúng luật). Commit `8baab50`
+(`components/avatar/AvatarRenderer.tsx`, `components/avatar/AvatarBuilder.tsx`).
+
+**Nguyên nhân gốc** (đúng như Hoà chẩn đoán, đã tự kiểm lại code trước khi sửa):
+1. `AvatarRenderer.tsx:66` `hi = detail ?? size > 48` — mọi nơi gọi thật (grep toàn repo, chỉ 3
+   chỗ: `AppChrome.tsx:490` size=24, `MobileMenu.tsx:144` size=36, `AccountSettings.tsx:35`
+   size=44) đều `<=48` → filter nỉ/blur/contact-shadow không bao giờ chạy.
+2. `viewBox="0 0 200 240"` (5:6) nhưng `width={size} height={size}` (1:1) → letterbox hai bên.
+
+**Sửa đúng 3 điểm Hoà yêu cầu**:
+- Ngưỡng `size >= 32` (từ `>48`). **Đo chi phí TRƯỚC khi hạ** (không đoán): grep xác nhận KHÔNG
+  có nơi nào trong app render avatar dạng danh sách nhiều-cái — cả 3 chỗ gọi (+3 chỗ trong
+  `AvatarBuilder` preview) đều đơn lẻ → hạ ngưỡng không có rủi ro hiệu năng đo được ở hiện trạng.
+  Đo thật bằng số (50 bản sao SVG felt-filter thật size=44, insert+forced-layout):
+  **có filter 1.294ms/avatar · không filter 0.612ms/avatar · chênh 0.682ms/avatar** — 50 avatar
+  cùng lúc chỉ +34ms tổng, nhẹ.
+- `AvatarBuilder.tsx` size=200 (picker chính) → thêm `detail` rõ ràng, không chỉ dựa ngưỡng.
+- `height={size * 1.2}` (khớp đúng 200:240) thay `height={size}` — **không đụng viewBox/toạ độ
+  14 lớp** (mắt y112/mũi y128/miệng y142/cằm y161 giữ nguyên, xác nhận qua test
+  `avatar renderer geometry` 54/54 pass, không lệch số nào).
+
+**Verify browser thật** (`/settings/avatar` AvatarBuilder, `/settings` AccountSettings, header
+chip AppChrome — sáng + tối):
+| size gọi thật | width | height (đo DOM) | felt filter |
+|---|---|---|---|
+| 24 (AppChrome header) | 24 | 28.8 | tắt (đúng, <32) |
+| 28 (AvatarBuilder preview nhỏ) | 28 | 33.6 | tắt (đúng, <32) |
+| 44 (AccountSettings) | 44 | 52.8 | **bật** (đúng, >=32 — bug case Hoà nêu) |
+| 48 (AvatarBuilder preview) | 48 | 57.6 | **bật** (đúng, >=32 — bug case Hoà nêu) |
+| 200 (AvatarBuilder picker chính) | 200 | 240 | **bật** (detail rõ ràng) |
+
+Mọi `height` đều đúng CHÍNH XÁC `size × 1.2` — không lệch pixel nào. Mắt thấy trực tiếp trong
+phiên: hat/tóc/áo ở size 44/48/200 đọc rõ vân nỉ (feDiffuseLighting + displacement), size 24/28
+phẳng có chủ đích (đúng thiết kế ngưỡng, chi tiết dưới ngưỡng nhìn không ra nên tắt cho nhẹ).
+Dark theme: đọc rõ, contact-shadow/rim-light vẫn đúng hướng sáng trên-trái. Console 0 error.
+
+⚠️ **Không nhúng ảnh PNG vào `BAO-CAO-CHINH.md`** — tool browser trong phiên không có cơ chế lưu
+screenshot ra file đĩa để nhúng (chỉ trả ảnh inline trong hội thoại), và repo có luật 01/08 "gỡ
+ảnh, giữ report.md" (dọn trung tính, tránh phình `docs/`) — bằng chứng thay bằng SỐ ĐO DOM khách
+quan, tái lập được (bảng trên) thay vì ảnh nhị phân. Nếu Hoà cần xem trực tiếp, mở
+`/settings/avatar` + `/settings` trên máy thật là thấy ngay, đúng avatar vừa sửa.
+
+💭 **Phát hiện phụ** (không sửa, ghi lại): `MobileMenu.tsx` (dùng `UserAvatar size=36`) có vẻ đã
+bị `MoreMenu` "universal" (comment `AppChrome.tsx:24`: *"MoreMenu (kèm link Cài đặt) giờ
+universal"*) thay thế trên thực tế — thử nhiều cách ở viewport mobile 375px không kích hoạt được
+UI trigger `title="Thêm"` của `MobileMenu` (không tìm thấy trong accessibility tree). Component
+vẫn được mount (`AppChrome.tsx:288 <MobileMenu active={active} />`) nên KHÔNG phải dead code theo
+nghĩa "không compile", nhưng nghi đường vào UI đã bị che/thay — nếu đúng thì `size=36` không còn
+là bug case thật (không ai nhìn thấy). Không mở rộng điều tra (ngoài phạm vi "1 commit" của yêu
+cầu này) — cờ lại đây để Hoà/phiên sau xác nhận, không ảnh hưởng gì tới bản sửa avatar vừa xong
+(logic sửa tập trung 1 chỗ trong `AvatarRenderer.tsx`, áp dụng đồng nhất bất kể caller).

@@ -23,7 +23,9 @@ import { type Phase, isPhase, phaseFromNodes } from '@/lib/phases';
 import { type Lang, DEFAULT_LANG, LANG_KEY, isLang } from '@/lib/lang';
 
 export type FlowNode = Node<InteriorNodeData>;
-export type Tool = 'select' | 'pan' | 'frame';
+export type Tool = 'select' | 'pan' | 'frame' | 'pen' | 'marker' | 'highlight' | 'eraser';
+/** G2 phần (3) — 3 tool vẽ tạo nét (khác 'eraser', không tạo `DrawStroke`). */
+export type DrawTool = 'pen' | 'marker' | 'highlight';
 export type Panel = 'library' | 'search' | 'gallery' | 'assets' | 'flows' | null;
 export type ThemePref = 'auto' | 'light' | 'dark';
 /** 3 chặng mềm của cùng 1 pipeline (Concept → Render → Present) — xem lib/phases.ts.
@@ -115,6 +117,10 @@ interface FlowState {
   snapGrid: boolean;
   /** nhóm node (grouping) — mỗi group gom nodeIds + label, có thể collapse */
   groups: NodeGroup[];
+  /** G2 phần (2) — comment neo vào 1 node ID thật (khác `CommentLayer.tsx`, neo % viewport). */
+  comments: CanvasComment[];
+  /** G2 phần (3) — nét vẽ tay (bút/marker/highlight), toạ độ flow-space — tự đúng theo pan/zoom. */
+  strokes: DrawStroke[];
   past: HistoryEntry[];
   future: HistoryEntry[];
 
@@ -205,9 +211,40 @@ interface FlowState {
    * thêm vào `nodeIds` của khung đó, rơi ra ngoài thì tự gỡ. CHỈ áp cho group có `rect` (khung
    * phòng) — group thường (`groupSelected`) do user tự chọn thủ công, không tự động mutate. */
   syncRoomMembership: (nodeId: string, pos: { x: number; y: number }) => void;
+  /** G2 phần (2) — thêm comment neo vào `nodeId` (tác giả = `user?.name` hoặc "Khách"). */
+  addComment: (nodeId: string, text: string) => void;
+  /** G2 phần (2) — xoá 1 comment theo id (v1: không kiểm ownership, khớp mức đơn giản sticky note). */
+  removeComment: (id: string) => void;
+  /** G2 phần (3) — lưu 1 nét vẽ ĐÃ XONG (thả chuột) — điểm trung gian tích luỹ ở state cục bộ
+   * component, chỉ gọi action này 1 lần lúc thả, không gọi mỗi lần di chuột. */
+  addStroke: (stroke: Omit<DrawStroke, 'id'>) => void;
+  /** G2 phần (3) — tẩy kiểu vector: xoá NGUYÊN nét nào có điểm nằm trong bán kính `radius` quanh
+   * `pos` (flow-space) — không phải tẩy pixel bitmap, khớp mức MVP. Gọi liên tục lúc kéo tẩy. */
+  eraseAt: (pos: { x: number; y: number }, radius: number) => void;
 }
 
 export type DemoKind = 'sketch' | 'bedroom' | 'slide' | 'concept';
+
+/** G2 phần (3) — 1 nét vẽ tay, điểm lưu FLOW-SPACE (không phải pixel màn hình) — tự đúng theo
+ * pan/zoom vĩnh viễn, giống `NodeGroup.rect`/`CanvasComment` neo theo dữ liệu thật, không toạ độ
+ * màn hình tạm thời. */
+export interface DrawStroke {
+  id: string;
+  tool: DrawTool;
+  points: { x: number; y: number }[];
+  color: string;
+  width: number;
+}
+
+/** G2 phần (2) — comment neo vào 1 node ID thật (canvas Render) — KHÁC `CommentLayer.tsx` (đó
+ * neo theo % toạ độ viewport + DOM elementHint, không phải ID node thật). */
+export interface CanvasComment {
+  id: string;
+  nodeId: string;
+  author: string;
+  text: string;
+  createdAt: number;
+}
 
 /** Nhóm node trên canvas — gom nhiều node, label + collapse. */
 export interface NodeGroup {
@@ -290,6 +327,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   paletteOpen: false,
   snapGrid: false,
   groups: [],
+  comments: [],
+  strokes: [],
   past: [],
   future: [],
 
@@ -410,6 +449,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         nodes?: FlowNode[];
         edges?: Edge[];
         groups?: NodeGroup[];
+        comments?: CanvasComment[];
+        strokes?: DrawStroke[];
       };
       const nodes = (graph.nodes ?? []).map((n) => ({
         ...n,
@@ -422,6 +463,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         },
       }));
       const groups = Array.isArray(graph.groups) ? graph.groups : [];
+      const comments = Array.isArray(graph.comments) ? graph.comments : [];
+      const strokes = Array.isArray(graph.strokes) ? graph.strokes : [];
       // An toàn dữ liệu cũ: node hidden=true nhưng KHÔNG thuộc group đang collapsed nào
       // (flow lưu từ trước khi `groups` được persist, hoặc dữ liệu đã kẹt do bug cũ)
       // → hiện lại, tránh node biến mất vĩnh viễn không cách nào lấy lại qua UI.
@@ -444,6 +487,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         ...(projectId !== undefined ? { currentProjectId: projectId } : {}),
         shareToken,
         groups,
+        comments,
+        strokes,
         past: [],
         future: [],
         ...(inferred ? { workspace: inferred } : {}),
@@ -516,6 +561,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         nodes?: FlowNode[];
         edges?: Edge[];
         groups?: NodeGroup[];
+        comments?: CanvasComment[];
+        strokes?: DrawStroke[];
       };
       if (!Array.isArray(saved.nodes) || !saved.nodes.length) return;
       // node đang chạy dở lúc reload → về idle
@@ -530,6 +577,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         },
       }));
       const groups = Array.isArray(saved.groups) ? saved.groups : [];
+      const comments = Array.isArray(saved.comments) ? saved.comments : [];
+      const strokes = Array.isArray(saved.strokes) ? saved.strokes : [];
       // An toàn dữ liệu cũ: node hidden=true nhưng KHÔNG thuộc group đang collapsed nào
       // (bản lưu từ trước khi `groups` được persist, hoặc dữ liệu đã kẹt do bug cũ)
       // → hiện lại, tránh node biến mất vĩnh viễn không cách nào lấy lại qua UI.
@@ -545,6 +594,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         flowName: saved.flowName ?? 'Untitled flow',
         credits: typeof saved.credits === 'number' ? saved.credits : 120,
         groups,
+        comments,
+        strokes,
       });
     } catch {
       // save hỏng → bỏ qua, bắt đầu flow trống
@@ -1031,6 +1082,37 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       }),
     }));
   },
+
+  // G2 phần (2) — comment neo vào node ID thật (khác CommentLayer.tsx, xem CanvasComment).
+  addComment: (nodeId, text) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const author = useFlowStore.getState().user?.name ?? 'Khách';
+    set((s) => ({
+      comments: [...s.comments, { id: nextId('cmt'), nodeId, author, text: trimmed, createdAt: Date.now() }],
+    }));
+  },
+  removeComment: (id) => {
+    set((s) => ({ comments: s.comments.filter((c) => c.id !== id) }));
+  },
+
+  // G2 phần (3) — nét vẽ tay flow-space (xem DrawStroke).
+  addStroke: (stroke) => {
+    if (stroke.points.length < 2) return; // 1 điểm (bấm-thả tại chỗ) không phải nét — bỏ qua
+    get().snapshot();
+    set((s) => ({ strokes: [...s.strokes, { ...stroke, id: nextId('stroke') }] }));
+  },
+  // KHÔNG tự snapshot() ở đây — gọi liên tục lúc kéo tẩy (mỗi lần di chuột), tự snapshot mỗi
+  // lần sẽ tạo NHIỀU bước undo cho 1 lượt kéo tẩy. Nơi gọi (`FlowCanvas.tsx`) snapshot() ĐÚNG 1
+  // LẦN lúc bắt đầu kéo (pointerdown), khớp khuôn `onNodeDragStart={() => snapshot()}` có sẵn.
+  eraseAt: (pos, radius) => {
+    const r2 = radius * radius;
+    const hit = (p: { x: number; y: number }) => (p.x - pos.x) ** 2 + (p.y - pos.y) ** 2 <= r2;
+    set((s) => {
+      const remaining = s.strokes.filter((st) => !st.points.some(hit));
+      return remaining.length === s.strokes.length ? s : { strokes: remaining };
+    });
+  },
 }));
 
 // ===== Autosave (Phase 3-lite): debounce 2s vào localStorage =====
@@ -1038,14 +1120,14 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let quotaWarned = false;
 
 function persistNow() {
-  const { flowName, credits, nodes, edges, groups, user, currentFlowId } = useFlowStore.getState();
+  const { flowName, credits, nodes, edges, groups, comments, strokes, user, currentFlowId } = useFlowStore.getState();
 
   // Đã đăng nhập + có flow server → autosave lên DB
   if (user && currentFlowId) {
     fetch(`/api/flows/${currentFlowId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ graphJson: JSON.stringify({ nodes, edges, groups }), name: flowName }),
+      body: JSON.stringify({ graphJson: JSON.stringify({ nodes, edges, groups, comments, strokes }), name: flowName }),
     }).catch(() => {});
     return;
   }
@@ -1062,7 +1144,7 @@ function persistNow() {
       owner = 'anon';
     }
   }
-  const payload = { version: 1, owner, flowName, credits, nodes, edges, groups };
+  const payload = { version: 1, owner, flowName, credits, nodes, edges, groups, comments, strokes };
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
   } catch {
@@ -1094,7 +1176,9 @@ if (typeof window !== 'undefined') {
       state.edges === prev.edges &&
       state.flowName === prev.flowName &&
       state.credits === prev.credits &&
-      state.groups === prev.groups
+      state.groups === prev.groups &&
+      state.comments === prev.comments &&
+      state.strokes === prev.strokes
     )
       return;
     if (saveTimer) clearTimeout(saveTimer);

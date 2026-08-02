@@ -12,7 +12,7 @@ import {
   useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useFlowStore, type FlowNode, type Tool } from '@/lib/store';
+import { useFlowStore, type FlowNode, type Tool, type DrawTool } from '@/lib/store';
 import { stageTransition } from '@/lib/motion';
 import { DEFAULT_PHASE } from '@/lib/phases';
 import { getDefinition } from '@/lib/nodes/registry';
@@ -20,16 +20,25 @@ import { InteriorNode } from '@/components/nodes/InteriorNode';
 import { NoteNode } from '@/components/nodes/NoteNode';
 import { BottomToolbar } from '@/components/BottomToolbar';
 import DemoLauncher from '@/components/DemoLauncher';
-import { DND_MIME } from '@/components/NodeLibraryPanel';
+import { DND_MIME, MAT_MIME, MINDMAP_MIME } from '@/components/NodeLibraryPanel';
+import { instantiateConceptMindmap, MINDMAP_TEMPLATE_ID } from '@/lib/render-studio/mindmap-templates';
 import { ASSET_MIME } from '@/components/LibraryPanel';
 import { CATEGORY_META } from '@/lib/types';
 import { PresenceBar } from '@/components/collab/PresenceBar';
 import { GroupOverlay } from '@/components/nodes/GroupOverlay';
+import { DrawLayer } from '@/components/render-studio/DrawLayer';
+import DrawToolbar from '@/components/render-studio/DrawToolbar';
 import { useCollabStore } from '@/lib/collabStore';
 import { classifyWheel, findScrollableAncestor, normalizeWheelDelta, zoomAtPoint } from '@/lib/input/wheel';
 import Popover from '@/components/ui/Popover';
 
 const nodeTypes = { interior: InteriorNode, note: NoteNode };
+
+// G2 phần (3) — hằng số vẽ tay, module-level (không đổi giữa các render — hoisting ra ngoài
+// component để useCallback không phải liệt kê làm dependency, tránh tạo lại hàm mỗi render).
+const DRAW_COLOR: Record<DrawTool, string> = { pen: '#2b2b30', marker: '#6a57f5', highlight: '#f5c542' };
+const DRAW_WIDTH = 2;
+const ERASE_RADIUS = 24; // bán kính tẩy, đơn vị flow-space
 
 /** Style item menu nạp nhanh — cùng nhịp cỡ với MenuItem trong EditorCanvas.tsx (VIỆC 2). */
 const quickLoadItemStyle: React.CSSProperties = {
@@ -192,6 +201,11 @@ export function FlowCanvas() {
   // `screenToFlowPosition`, xem `onFramePointerUp`).
   const [frameDraft, setFrameDraft] = useState<{ start: { x: number; y: number }; now: { x: number; y: number } } | null>(null);
 
+  // G2 phần (3) — tool='pen'|'marker'|'highlight': tích luỹ điểm FLOW-SPACE trực tiếp (khác
+  // frameDraft — vẽ tay cần nhiều điểm trung gian cho đường cong mượt, quy đổi mỗi lần di chuột
+  // chứ không phải 1 lần lúc thả). `DrawLayer.tsx` render `liveStroke` này đè lên các nét đã lưu.
+  const [drawDraft, setDrawDraft] = useState<{ tool: DrawTool; points: { x: number; y: number }[] } | null>(null);
+
   const onPointerMove = useCallback(
     (e: React.PointerEvent) => {
       const p = screenToFlowPosition({ x: e.clientX, y: e.clientY });
@@ -200,40 +214,62 @@ export function FlowCanvas() {
         const rect = wrapperRef.current?.getBoundingClientRect();
         if (rect) setFrameDraft((d) => (d ? { ...d, now: { x: e.clientX - rect.left, y: e.clientY - rect.top } } : d));
       }
+      if (drawDraft) setDrawDraft((d) => (d ? { ...d, points: [...d.points, p] } : d));
+      // eraser giữ chuột kéo qua đâu tẩy tới đó (e.buttons===1 = nút trái đang nhấn khi move).
+      if (tool === 'eraser' && e.buttons === 1) useFlowStore.getState().eraseAt(p, ERASE_RADIUS);
     },
-    [screenToFlowPosition, setLocalCursor, frameDraft],
+    [screenToFlowPosition, setLocalCursor, frameDraft, drawDraft, tool],
   );
 
-  const onFramePointerDown = useCallback(
+  const onCanvasPointerDown = useCallback(
     (e: React.PointerEvent) => {
-      if (tool !== 'frame') return;
       // Chỉ bắt khi bấm lên NỀN canvas thật (react-flow__pane) — bấm trúng node/edge/toolbar nổi
       // thì để hành vi mặc định (chọn/kéo node) chạy bình thường.
       if (!(e.target as HTMLElement).classList.contains('react-flow__pane')) return;
-      const rect = wrapperRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const p = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      setFrameDraft({ start: p, now: p });
+      if (tool === 'frame') {
+        const rect = wrapperRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const p = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        setFrameDraft({ start: p, now: p });
+      } else if (tool === 'pen' || tool === 'marker' || tool === 'highlight') {
+        const p = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+        setDrawDraft({ tool, points: [p] });
+      } else if (tool === 'eraser') {
+        snapshot(); // ĐÚNG 1 lần lúc bắt đầu kéo — khuôn `onNodeDragStart={() => snapshot()}`.
+        const p = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+        useFlowStore.getState().eraseAt(p, ERASE_RADIUS);
+      }
     },
-    [tool],
+    [tool, screenToFlowPosition, snapshot],
   );
 
-  const onFramePointerUp = useCallback(() => {
-    if (!frameDraft) return;
-    const rect = wrapperRef.current?.getBoundingClientRect();
-    setFrameDraft(null);
-    if (!rect) return;
-    const p1 = screenToFlowPosition({ x: frameDraft.start.x + rect.left, y: frameDraft.start.y + rect.top });
-    const p2 = screenToFlowPosition({ x: frameDraft.now.x + rect.left, y: frameDraft.now.y + rect.top });
-    const width = Math.abs(p2.x - p1.x);
-    const height = Math.abs(p2.y - p1.y);
-    if (width < 24 || height < 24) return; // quá nhỏ — coi như bấm nhầm, không tạo khung
-    useFlowStore.getState().createRoomFrame(
-      { x: Math.min(p1.x, p2.x), y: Math.min(p1.y, p2.y), width, height },
-      'Phòng mới',
-    );
-    useFlowStore.getState().setTool('select'); // thao tác 1-lần — tự về select, khuôn addNode() cũ.
-  }, [frameDraft, screenToFlowPosition]);
+  const onCanvasPointerUp = useCallback(() => {
+    if (frameDraft) {
+      const rect = wrapperRef.current?.getBoundingClientRect();
+      setFrameDraft(null);
+      if (rect) {
+        const p1 = screenToFlowPosition({ x: frameDraft.start.x + rect.left, y: frameDraft.start.y + rect.top });
+        const p2 = screenToFlowPosition({ x: frameDraft.now.x + rect.left, y: frameDraft.now.y + rect.top });
+        const width = Math.abs(p2.x - p1.x);
+        const height = Math.abs(p2.y - p1.y);
+        if (width >= 24 && height >= 24) {
+          // quá nhỏ — coi như bấm nhầm, không tạo khung
+          useFlowStore.getState().createRoomFrame(
+            { x: Math.min(p1.x, p2.x), y: Math.min(p1.y, p2.y), width, height },
+            'Phòng mới',
+          );
+          useFlowStore.getState().setTool('select'); // thao tác 1-lần — tự về select, khuôn addNode() cũ.
+        }
+      }
+    }
+    if (drawDraft) {
+      useFlowStore.getState().addStroke({ tool: drawDraft.tool, points: drawDraft.points, color: DRAW_COLOR[drawDraft.tool], width: DRAW_WIDTH });
+      setDrawDraft(null);
+      // KHÔNG setTool('select') — vẽ tay là tool "dính" (sticky), vẽ liên tiếp nhiều nét như
+      // Miro/Figma thật, khác 'frame' (thao tác 1-lần). Đổi tool là hành động chủ động của user
+      // (bấm nút khác trong DrawToolbar).
+    }
+  }, [frameDraft, drawDraft, screenToFlowPosition]);
 
   // Type-safe ports: chỉ cho nối cùng dataType
   const isValidConnection: IsValidConnection<Edge> = useCallback(
@@ -284,6 +320,35 @@ export function FlowCanvas() {
       const defType = e.dataTransfer.getData(DND_MIME);
       if (defType) {
         addNode(defType, pos);
+        // G2 phần (5) — swatch vật liệu ĐI KÈM DND_MIME (không thay thế): sau khi tạo đúng
+        // loại node (`util.materialnote`), đọc thêm matId/name/code/... để updateParam ngay,
+        // đúng khuôn nhánh ASSET_MIME bên dưới (nodes.at(-1) lấy node vừa thêm).
+        const matJson = e.dataTransfer.getData(MAT_MIME);
+        if (matJson) {
+          try {
+            const p = JSON.parse(matJson) as Record<string, string>;
+            const store = useFlowStore.getState();
+            const newNode = store.nodes.at(-1);
+            if (newNode) {
+              for (const [k, v] of Object.entries(p)) store.updateParam(newNode.id, k, v);
+            }
+          } catch {
+            // JSON hỏng (kéo thả lạ) — bỏ qua, node vẫn tồn tại trống params, không crash.
+          }
+        }
+        return;
+      }
+      // G2 phần (6) — "Form lập luận" kéo từ kệ: MIME riêng (không đi qua DND_MIME vì mindmap
+      // dựng từ nhiều `note`, không phải 1 NodeDefinition qua addNode). Dùng đúng vị trí thả làm
+      // tâm, khác đường bấm (luôn dựng giữa canvas).
+      const mindmapId = e.dataTransfer.getData(MINDMAP_MIME);
+      if (mindmapId === MINDMAP_TEMPLATE_ID) {
+        const store = useFlowStore.getState();
+        instantiateConceptMindmap(pos, {
+          addNote: store.addNote,
+          updateNote: store.updateNote,
+          getLastNodeId: () => useFlowStore.getState().nodes.at(-1)?.id,
+        });
         return;
       }
       // asset từ thư viện team → tải file, tạo node Import Image gắn sẵn ảnh
@@ -401,8 +466,8 @@ export function FlowCanvas() {
     <div
       ref={wrapperRef}
       onPointerMove={onPointerMove}
-      onPointerDown={onFramePointerDown}
-      onPointerUp={onFramePointerUp}
+      onPointerDown={onCanvasPointerDown}
+      onPointerUp={onCanvasPointerUp}
       className="relative flex-1 bg-[var(--bg)]"
     >
       <ReactFlow<FlowNode>
@@ -424,9 +489,9 @@ export function FlowCanvas() {
           e.dataTransfer.dropEffect = 'move';
         }}
         deleteKeyCode={['Backspace', 'Delete']}
-        // tool='frame' — tắt cả pan-kéo và rubber-band select mặc định, nhường quyền bắt pointer
-        // cho onFramePointerDown/Up (vẽ khung) ở div cha.
-        panOnDrag={tool === 'frame' ? false : tool === 'pan' ? [0, 1, 2] : [1, 2]}
+        // tool='frame'|'pen'|'marker'|'highlight'|'eraser' — tắt cả pan-kéo và rubber-band select
+        // mặc định, nhường quyền bắt pointer cho onCanvasPointerDown/Up (vẽ khung/nét) ở div cha.
+        panOnDrag={tool === 'pan' ? [0, 1, 2] : tool === 'select' ? [1, 2] : false}
         selectionOnDrag={tool === 'select'}
         panOnScroll
         zoomOnPinch
@@ -441,7 +506,7 @@ export function FlowCanvas() {
         proOptions={{ hideAttribution: false }}
         defaultEdgeOptions={{ type: 'default' }}
         connectionLineStyle={{ stroke: '#8b7cf7', strokeWidth: 2 }}
-        className={tool === 'pan' ? 'cursor-grab' : tool === 'frame' ? 'cursor-crosshair' : ''}
+        className={tool === 'pan' ? 'cursor-grab' : tool === 'select' ? '' : 'cursor-crosshair'}
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="var(--dots)" />
         {/* Ẩn khi canvas ít node — viewport gần như trùng khung minimap, chỉ thấy 1 khối đen rỗng */}
@@ -466,7 +531,7 @@ export function FlowCanvas() {
       </ReactFlow>
 
       {/* G2 phần (1) — preview khung phòng đang kéo-vẽ (toạ độ MÀN HÌNH tương đối wrapperRef,
-          xem chú thích frameDraft phía trên). pointer-events-none — không chặn onFramePointerUp
+          xem chú thích frameDraft phía trên). pointer-events-none — không chặn onCanvasPointerUp
           bắt trên chính div cha. */}
       {frameDraft && (
         <div
@@ -482,6 +547,14 @@ export function FlowCanvas() {
 
       {/* Group overlay — vẽ khung bao quanh nhóm node (tự bọc ViewportPortal bên trong) */}
       <GroupOverlay />
+
+      {/* G2 phần (3) — nét vẽ tay đã lưu + nét đang vẽ dở (flow-space, tự bọc ViewportPortal). */}
+      <DrawLayer
+        liveStroke={
+          drawDraft ? { id: '__live__', tool: drawDraft.tool, points: drawDraft.points, color: DRAW_COLOR[drawDraft.tool], width: DRAW_WIDTH } : null
+        }
+      />
+      <DrawToolbar />
 
       {/* Collab: 7.4.11 (29/07) — LiveCursors TẠM ẨN, phương án A đã duyệt
           (docs/CHOT-SO-MA-2026-07-29.md §D): con trỏ hứa đồng bộ real-time nhưng

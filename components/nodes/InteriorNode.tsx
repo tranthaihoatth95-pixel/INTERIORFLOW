@@ -17,6 +17,7 @@ import { useSketchStore } from '@/lib/sketch/sketchStore';
 import { useSmartSelectStore } from '@/lib/smartselect/smartSelectStore';
 import { useWarpStore } from '@/lib/warp/warpStore';
 import { useSourceImage } from '@/lib/nodes/source-image';
+import CommentPin from '@/components/nodes/CommentPin';
 
 const PORT_GAP = 26;
 const PORT_TOP = 46;
@@ -256,11 +257,14 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
       initial="hidden"
       animate="visible"
       className={cn(
-        'mat-card w-64 rounded-[16px] border shadow-xl shadow-black/30 transition-colors',
+        'group relative mat-card w-64 rounded-[16px] border shadow-xl shadow-black/30 transition-colors',
         selected ? 'border-[var(--accent-ring)]' : 'border-[var(--mat-hairline)]',
         status === 'error' && 'border-red-500/60',
       )}
     >
+      {/* G2 phần (2) — comment neo vào node này (badge góc phải-trên, xem CommentPin.tsx). */}
+      <CommentPin nodeId={id} />
+
       {/* header — icon flat, nhãn dùng font hệ thống app (2.2.85, 30/07: bỏ font mono —
           SF Mono/Cascadia Code/Fira Code thiếu glyph dấu tiếng Việt tổ hợp, xung khắc với
           luật thoại 2.2.69 "Việt dẫn · Anh theo") */}

@@ -5,6 +5,7 @@ import type { NodeProps } from '@xyflow/react';
 import { X } from 'lucide-react';
 import { useFlowStore, type FlowNode } from '@/lib/store';
 import { cn } from '@/lib/utils';
+import CommentPin from '@/components/nodes/CommentPin';
 
 function NoteNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
   const updateNote = useFlowStore((s) => s.updateNote);
@@ -16,6 +17,9 @@ function NoteNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
         selected ? 'border-amber-500' : 'border-amber-300/60',
       )}
     >
+      {/* G2 phần (2) — comment neo vào sticky note này. */}
+      <CommentPin nodeId={id} />
+
       <button
         title="Xoá ghi chú"
         onClick={() => deleteNode(id)}

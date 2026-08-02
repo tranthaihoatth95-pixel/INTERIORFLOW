@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Rendering — bản xem thử H3</title>
+<style>
+  :root{
+    --bg:#eceae7; --panel:#ffffff; --line:#e6e3de; --ink:#2b2b30; --mut:#9a9aa2;
+    --mut2:#c3c1bc; --accent:#6a57f5; --accent-soft:#efeafe; --chip:#f4f2ef;
+    --ok:#1f9d6b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink)}
+  .note{max-width:1180px;margin:18px auto 8px;padding:0 16px}
+  .note h1{font-size:15px;margin:0 0 6px;font-weight:650}
+  .note p{font-size:12.5px;color:#6b6b73;margin:0;line-height:1.55}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
+  .legend span{display:flex;align-items:center;gap:6px;font-size:12px;color:#4a4a52}
+  .pin{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;flex:none}
+  .pin.red{background:#d9534f}
+
+  .app{max-width:1180px;margin:10px auto 40px;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(40,38,35,.10)}
+  /* top bar */
+  .top{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:650}
+  .brand .mk{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:12px}
+  .btn{padding:6px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;color:#3a3a42;font-size:12.5px;cursor:default}
+  .proj{color:#6b6b73}
+  .switch{margin:0 auto;display:flex;gap:4px;background:var(--chip);border-radius:11px;padding:4px}
+  .switch button{border:0;background:transparent;padding:7px 14px;border-radius:8px;font-size:12.5px;color:#6b6b73;display:flex;align-items:center;gap:6px;cursor:default}
+  .switch button.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.10)}
+  .top .right{display:flex;align-items:center;gap:8px}
+  .avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#c9a27a,#9a6b43)}
+
+  /* removed strip banner */
+  .removed{position:relative;margin:0;border-bottom:1px dashed #d9534f;background:repeating-linear-gradient(135deg,#fbeceb,#fbeceb 8px,#f7e2e0 8px,#f7e2e0 16px);height:34px;display:flex;align-items:center;gap:8px;padding:0 14px;color:#a23b37;font-size:11.5px}
+  .removed .pin{position:static}
+
+  .body{display:flex;min-height:520px}
+  /* icon rail */
+  .rail{width:46px;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:16px;padding:14px 0;color:var(--mut2)}
+  .rail .ic{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .rail .ic.on{background:var(--accent-soft);color:var(--accent)}
+  /* sidebar */
+  .side{width:250px;border-right:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:12px;overflow:auto}
+  .search{border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:12px;color:var(--mut)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chips b{font-weight:500;font-size:11px;padding:4px 9px;border:1px solid var(--line);border-radius:20px;color:#6b6b73;background:#fff}
+  .chips b.on{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+  .zone .zt{font-size:10.5px;letter-spacing:.06em;color:var(--mut);font-weight:700;margin:2px 0 8px;display:flex;align-items:center;gap:6px}
+  .zone{border:1px dashed transparent;border-radius:12px;padding:8px;margin:0 -4px}
+  .zone.hl{border-color:var(--accent);background:#faf9ff}
+  .card{border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-bottom:7px;background:#fff}
+  .card .t{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:7px}
+  .card .s{font-size:11px;color:var(--mut);margin-top:3px;line-height:1.4}
+  .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .cr{margin-left:auto;font-size:10px;color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:1px 5px}
+
+  /* canvas */
+  .canvas{flex:1;position:relative;background:
+     radial-gradient(circle at 1px 1px,#dedbd6 1px,transparent 0) 0 0/22px 22px,#f3f1ee;overflow:hidden}
+  /* floating glass tool window */
+  .win{position:absolute;left:90px;top:70px;width:430px;background:rgba(255,255,255,.72);backdrop-filter:blur(14px);
+       border:1px solid rgba(255,255,255,.9);box-shadow:0 18px 50px rgba(40,38,35,.18);border-radius:16px;overflow:hidden}
+  .win .wh{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(0,0,0,.06);font-size:12.5px;font-weight:600}
+  .win .wh .x{margin-left:auto;color:var(--mut);font-size:13px}
+  .win .wh .play{width:22px;height:22px;border-radius:7px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px}
+  .win .wb{padding:12px}
+  .drop{border:1.5px dashed var(--mut2);border-radius:12px;height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--mut);font-size:12px}
+  .presets{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .preset{border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center;font-size:12px;background:#fff}
+  .preset.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+  /* ports */
+  .port{position:absolute;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--accent);top:50%;transform:translateY(-50%)}
+  .port.l{left:-7px}.port.r{right:-7px}
+
+  /* bottom bar */
+  .bottombar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:10px}
+  .modepill{display:flex;gap:4px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:5px;box-shadow:0 6px 20px rgba(40,38,35,.12)}
+  .modepill button{border:0;background:transparent;padding:8px 16px;border-radius:18px;font-size:12.5px;color:#6b6b73;display:flex;align-items:center;gap:6px;cursor:default}
+  .modepill button.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+  /* the 1 detached button */
+  .modetoggle{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:8px 14px;box-shadow:0 6px 20px rgba(40,38,35,.12);font-size:12.5px;font-weight:600}
+  .sw{width:34px;height:20px;border-radius:20px;background:#dcdad5;position:relative;flex:none}
+  .sw::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:2px;left:2px;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+  .vitals{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);font-size:10px;color:var(--mut);display:flex;align-items:center;gap:5px}
+
+  .callpin{position:absolute;z-index:5}
+</style>
+</head>
+<body>
+
+<div class="note">
+  <h1>InteriorFlow · chặng Rendering — bản xem thử (đề xuất H3)</h1>
+  <p>So với bản hiện tại: <b>chỉ 2 thay đổi</b> — gỡ thanh tab tool ngang trên đầu, và gộp mode về <b>1 nút rời bật/tắt “Vẽ 3D”</b>. Sidebar 3 vùng + thanh dưới giữ nguyên. Không đập gì khác.</p>
+  <div class="legend">
+    <span><i class="pin red">1</i> Đã gỡ thanh tab ngang (trùng Node Master)</span>
+    <span><i class="pin">2</i> Tool sống ở sidebar → bấm/kéo ra window</span>
+    <span><i class="pin">3</i> 1 nút rời bật/tắt mode “Vẽ 3D”</span>
+  </div>
+</div>
+
+<div class="app">
+  <!-- TOP BAR -->
+  <div class="top">
+    <div class="brand"><span class="mk">▤</span> InteriorFlow</div>
+    <span class="btn">Tệp ▾</span>
+    <span class="proj">Dự án mẫu</span>
+    <div class="switch">
+      <button>◱ CAD · Phác thảo</button>
+      <button class="on">◈ Rendering</button>
+      <button>▭ Presenting</button>
+    </div>
+    <div class="right">
+      <span class="proj">— 02</span>
+      <span class="btn">Việc ▾</span>
+      <span class="btn">⌂</span>
+      <span class="btn">···</span>
+      <span class="avatar"></span>
+    </div>
+  </div>
+
+  <!-- REMOVED STRIP (annotation) -->
+  <div class="removed">
+    <span class="pin red">1</span>
+    <s>Sketch→Ảnh thật · Grey-box→Nội thất · Đổi phong cách · Đổi ánh sáng/giờ · Sửa một mảng · … · Phóng to in</s>
+    &nbsp;— thanh tab ngang này <b>ĐÃ GỠ</b> (tool đã có sẵn ở sidebar, không cần lặp)
+  </div>
+
+  <div class="body">
+    <!-- ICON RAIL -->
+    <div class="rail">
+      <div class="ic">▦</div><div class="ic">▭</div><div class="ic">⌕</div>
+      <div class="ic">↺</div><div class="ic on">⬢</div><div class="ic">▤</div>
+      <div class="ic">▧</div><div class="ic">◲</div><div class="ic">◍</div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="side">
+      <div class="search">⌕ Tìm node…</div>
+      <div class="chips"><b>Tất cả</b><b>Đầu vào</b><b>Chỉnh sửa</b><b class="on">Bố cục</b><b>Vật liệu</b><b>Tiện ích</b></div>
+
+      <div class="zone">
+        <div class="zt">◍ MOOD + COLLAB</div>
+        <div class="card"><div class="t"><span class="dot" style="background:#e07b53"></span>Tạo moodboard</div><div class="s">Text → 4 ảnh concept · nhanh, rẻ</div></div>
+        <div class="card"><div class="t"><span class="dot" style="background:#e07b53"></span>Ảnh tham chiếu gu</div><div class="s">Trích palette · vật liệu từ thư viện</div></div>
+        <div class="card"><div class="t"><span class="dot" style="background:#e07b53"></span>Ghi chú</div></div>
+      </div>
+
+      <div class="zone hl">
+        <div class="zt"><span class="pin">2</span> NODE MASTER — mở tool window</div>
+        <div class="card"><div class="t"><span class="dot" style="background:var(--accent)"></span>Sketch → Ảnh thật</div><div class="s">Line/SketchUp → render photoreal</div></div>
+        <div class="card"><div class="t"><span class="dot" style="background:var(--accent)"></span>Khối trắng → Ảnh thật</div><div class="s">Clay/3ds → render, khoá hình</div></div>
+        <div class="card"><div class="t"><span class="dot" style="background:var(--accent)"></span>Đổi ánh sáng/giờ</div><div class="s">Daylight · Sunset · đêm…</div></div>
+        <div class="card"><div class="t"><span class="dot" style="background:var(--accent)"></span>Đổi phong cách<span class="cr">3cr</span></div></div>
+      </div>
+
+      <div class="zone">
+        <div class="zt">● NODE THƯỜNG</div>
+        <div class="card"><div class="t"><span class="dot" style="background:#1f9d6b"></span>Nhập ảnh</div></div>
+        <div class="card"><div class="t"><span class="dot" style="background:#1f9d6b"></span>Tiện ích · Output</div></div>
+      </div>
+    </div>
+
+    <!-- CANVAS -->
+    <div class="canvas">
+      <!-- floating glass tool window -->
+      <div class="win">
+        <span class="port l"></span><span class="port r"></span>
+        <div class="wh"><span class="play">▶</span> Đổi ánh sáng/giờ <span class="x">✕</span></div>
+        <div class="wb">
+          <div class="drop">⤒<br>Thả ảnh vào đây</div>
+          <div class="presets">
+            <div class="preset on">☀ Daylight</div>
+            <div class="preset">⛅ Sunset</div>
+            <div class="preset">☾ Đèn vàng đêm</div>
+            <div class="preset">◐ Studio soft</div>
+          </div>
+        </div>
+      </div>
+      <div class="callpin" style="left:530px;top:76px">
+        <span class="pin">2</span>
+      </div>
+
+      <!-- BOTTOM BAR -->
+      <div class="bottombar">
+        <div class="modepill">
+          <button class="on">◍ Render + Mood + Collab</button>
+        </div>
+        <div class="modetoggle">
+          <span class="pin">3</span>
+          <span>Vẽ 3D</span>
+          <span class="sw"></span>
+        </div>
+      </div>
+      <div class="vitals">◍ Vitals</div>
+    </div>
+  </div>
+</div>
+
+<div class="note" style="margin-top:0">
+  <p><b>Đọc mock:</b> ① thanh gạch đỏ = phần đã bỏ. ② tool trong Node Master, bấm/kéo → hiện <b>window kính</b> (có ▶ play · ✕ · cổng nối 2 bên) ngay trên canvas. ③ thanh dưới giữ nguyên nhãn “Render + Mood + Collab”, cạnh nó là <b>1 nút rời</b> gạt bật/tắt “Vẽ 3D”. Bật gạt → cả giao diện chuyển sang vẽ 3D.</p>
+</div>
+
+</body>
+</html>

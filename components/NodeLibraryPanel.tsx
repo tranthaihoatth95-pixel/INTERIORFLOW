@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReactFlow } from '@xyflow/react';
-import { X, GripVertical, Star, Plus, Command, Paintbrush, Wand2, Users, Sparkles, StickyNote } from 'lucide-react';
+import { X, GripVertical, Star, Plus, Command, Paintbrush, Wand2, Users, Sparkles, StickyNote, Palette, Network } from 'lucide-react';
 import { NODE_DEFINITIONS, NODE_REGISTRY } from '@/lib/nodes/registry';
 import { nodeIconFor } from '@/components/nodes/NodeIcons';
 import { useFlowStore } from '@/lib/store';
@@ -21,9 +21,25 @@ import { cn } from '@/lib/utils';
 import { sidebarZoneOf } from '@/lib/render-studio/sidebar-zones';
 import { TASK_CARDS } from '@/lib/render-studio/task-cards';
 import { useToolModeUi } from '@/lib/render-studio/tool-mode-ui';
+import { instantiateConceptMindmap, MINDMAP_TEMPLATE_ID } from '@/lib/render-studio/mindmap-templates';
+import { useMaterials, type MaterialSpecLite } from '@/lib/render-studio/use-materials';
 import { useT } from '@/lib/i18n';
 
 export const DND_MIME = 'application/interiorflow-node';
+/**
+ * G2 phần (5) (`docs/SPEC-CHANG2-UI-2MODE.md` §3 "Swatch vật liệu mang matId — kéo vào mang
+ * dữ liệu, không chỉ ảnh"): đi KÈM `DND_MIME` (không thay thế) khi kéo 1 vật liệu thật từ
+ * `/api/specs?kind=material` — `FlowCanvas.onDrop` đọc thêm MIME này để `updateParam` ngay sau
+ * khi tạo node `util.materialnote`, đúng khuôn `ASSET_MIME` đã có (components/LibraryPanel.tsx).
+ */
+export const MAT_MIME = 'application/interiorflow-material';
+/**
+ * G2 phần (6) (`docs/SPEC-CHANG2-UI-2MODE.md:27` "Mindmap = 1 TUỲ CHỌN"): đi KÈM `DND_MIME`
+ * KHÔNG được (mindmap dựng bằng nhiều `note`, không phải 1 `NodeDefinition` type qua `addNode`)
+ * — MIME RIÊNG, giá trị = id template cố định (`MINDMAP_TEMPLATE_ID`). `FlowCanvas.onDrop` đọc
+ * để gọi `instantiateConceptMindmap` tại đúng vị trí thả.
+ */
+export const MINDMAP_MIME = 'application/interiorflow-mindmap';
 
 const ALL_TAG = 'all' as const;
 
@@ -33,6 +49,7 @@ export function NodeLibraryPanel() {
   const setPaletteOpen = useFlowStore((s) => s.setPaletteOpen);
   const addNode = useFlowStore((s) => s.addNode);
   const addNote = useFlowStore((s) => s.addNote);
+  const updateNote = useFlowStore((s) => s.updateNote);
   const updateParam = useFlowStore((s) => s.updateParam);
   const aiTier = useFlowStore((s) => s.aiTier);
   const workspace = useFlowStore((s) => s.workspace);
@@ -135,6 +152,31 @@ export function NodeLibraryPanel() {
   // registry thật, "note" KHÔNG phải NodeDefinition (type React Flow riêng) nên thêm bằng nút
   // riêng (addNote), không qua NodeCard.
   const moodDefs = useMemo(() => (phase.id === 'render' ? NODE_DEFINITIONS.filter((d) => sidebarZoneOf(d.type) === 'mood') : []), [phase]);
+  // G2 phần (5) — kệ "Vật liệu" (matId thật, ProductSpec{kind:'material'} qua /api/specs, KHÔNG
+  // phải MaterialDef thị giác của CAD). Fetch 1 lần, không poll — vật liệu đổi chậm (cùng lý do
+  // bỏ poll nhanh ở PresenceBar phần (4)). Chỉ hiện ở chặng Render, cùng khu Mood + Cộng tác.
+  const materials = useMaterials(phase.id === 'render');
+  const materialToParams = useCallback(
+    (m: MaterialSpecLite) => ({
+      matId: m.id,
+      name: m.name,
+      code: m.sku ?? '',
+      supplier: m.brand ?? '',
+      hex: m.colorHex ?? '',
+      note: m.priceNote ? `Giá tham khảo: ${m.priceNote}` : '',
+    }),
+    [],
+  );
+  const onAddMaterial = useCallback(
+    (m: MaterialSpecLite) => {
+      addNode('util.materialnote', centerPos());
+      const created = useFlowStore.getState().nodes.at(-1);
+      if (!created) return;
+      const p = materialToParams(m);
+      for (const [k, v] of Object.entries(p)) updateParam(created.id, k, v);
+    },
+    [addNode, centerPos, materialToParams, updateParam],
+  );
   // H2 — vùng ② Node MASTER: đúng thứ tự TASK_CARDS, chỉ node còn tồn tại trong registry (phòng
   // khi task-cards.ts trỏ nhầm type — không throw, tự bỏ qua).
   const masterDefs = useMemo(
@@ -150,6 +192,15 @@ export function NodeLibraryPanel() {
     [masterCardIdByNodeType, selectCard],
   );
   const onAddNote = useCallback(() => addNote(centerPos()), [addNote, centerPos]);
+
+  // G2 phần (6) — "Khung concept 5 nhánh" (mindmap tuỳ chọn, xem lib/render-studio/mindmap-templates.ts)
+  const onAddMindmap = useCallback(() => {
+    instantiateConceptMindmap(centerPos(), {
+      addNote,
+      updateNote,
+      getLastNodeId: () => useFlowStore.getState().nodes.at(-1)?.id,
+    });
+  }, [centerPos, addNote, updateNote]);
 
   return (
     <>
@@ -267,6 +318,67 @@ export function NodeLibraryPanel() {
                 <StickyNote size={13} className="shrink-0" />
                 {tr('Ghi chú', 'Note')}
               </button>
+            </div>
+            <div className="mt-3 border-t border-[var(--border)]" />
+          </div>
+        )}
+
+        {/* G2 phần (5) — kệ Vật liệu (matId thật, ATLAS/ProductSpec) — cùng khu Mood + Cộng tác
+            vì swatch phục vụ canvas Mood, không phải node xử lý. */}
+        {materials.length > 0 && !query.trim() && (
+          <div>
+            <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t3)]">
+              <Palette size={10} />
+              {tr('Vật liệu', 'Materials')}
+            </p>
+            <div className="space-y-1">
+              {materials.map((m) => (
+                <MaterialSwatchChip key={m.id} material={m} onAdd={onAddMaterial} toParams={materialToParams} />
+              ))}
+            </div>
+            <div className="mt-3 border-t border-[var(--border)]" />
+          </div>
+        )}
+
+        {/* G2 phần (6) — "Form lập luận": mindmap TUỲ CHỌN, kéo/bấm mới dựng, canvas trống mặc
+            định. Chỉ 1 template (Khung concept 5 nhánh) — 5 form còn lại của SPEC-STAGE-LIBRARIES
+            là việc riêng "xây kệ Thư viện chặng 2 đầy đủ", ngoài phạm vi phần (6). */}
+        {phase.id === 'render' && !query.trim() && (
+          <div>
+            <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t3)]">
+              <Network size={10} />
+              {tr('Form lập luận', 'Reasoning frames')}
+            </p>
+            <div className="space-y-1">
+              <div
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData(MINDMAP_MIME, MINDMAP_TEMPLATE_ID);
+                  e.dataTransfer.effectAllowed = 'copy';
+                }}
+                onClick={onAddMindmap}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onAddMindmap();
+                  }
+                }}
+                className="group flex cursor-pointer items-start gap-2 rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-2 transition-transform hover:border-[var(--accent-ring)] hover:scale-[1.015] active:scale-[0.99]"
+                title={tr('Bấm để thêm vào giữa canvas · hoặc kéo thả để đặt đúng chỗ — không bắt buộc, xoá/sửa tự do', 'Click to add to the canvas center · or drag to place — optional, freely edit/delete')}
+              >
+                <Network size={14} className="mt-0.5 shrink-0 text-[var(--t3)]" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11.5px] font-medium tracking-[-.005em] text-[var(--t1)]">{tr('Khung concept 5 nhánh', '5-branch concept frame')}</p>
+                  <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-[var(--t4)]">
+                    {tr('1 ý tưởng chính + 5 nhánh gợi ý — dựng xong sửa/xoá tự do', '1 main idea + 5 suggested branches — freely edit/delete after')}
+                  </p>
+                </div>
+                <span className="ml-auto grid h-5 w-5 shrink-0 place-items-center rounded-md text-[var(--t5)] opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-[var(--accent)]">
+                  <Plus size={13} />
+                </span>
+              </div>
             </div>
             <div className="mt-3 border-t border-[var(--border)]" />
           </div>
@@ -397,6 +509,59 @@ function NodeCard({
           <Plus size={13} />
         </span>
       </div>
+    </div>
+  );
+}
+
+/**
+ * G2 phần (5) — 1 chip vật liệu THẬT (ATLAS `ProductSpec.id` = matId). Bấm = thêm ngay (khuôn
+ * `NodeCard`). Kéo = set ĐỒNG THỜI `DND_MIME` ('util.materialnote', để nhánh cũ trong
+ * `FlowCanvas.onDrop` tạo đúng loại node) + `MAT_MIME` (JSON đủ field, đọc ngay sau đó để
+ * `updateParam` — khuôn `ASSET_MIME` đã có, xem `FlowCanvas.tsx`).
+ */
+function MaterialSwatchChip({
+  material,
+  onAdd,
+  toParams,
+}: {
+  material: MaterialSpecLite;
+  onAdd: (m: MaterialSpecLite) => void;
+  toParams: (m: MaterialSpecLite) => Record<string, string>;
+}) {
+  const swatchColor = material.colorHex && /^#?[0-9a-fA-F]{6}$/.test(material.colorHex) ? material.colorHex : 'var(--border-strong)';
+  const meta = [material.brand, material.sku].filter(Boolean).join(' · ');
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData(DND_MIME, 'util.materialnote');
+        e.dataTransfer.setData(MAT_MIME, JSON.stringify(toParams(material)));
+        e.dataTransfer.effectAllowed = 'copy';
+      }}
+      onClick={() => onAdd(material)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onAdd(material);
+        }
+      }}
+      className="group flex cursor-pointer items-center gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 transition-transform hover:border-[var(--accent-ring)] hover:scale-[1.015] active:scale-[0.99]"
+      title="Bấm để thêm vào giữa canvas · hoặc kéo thả để đặt đúng chỗ — mang theo matId thật"
+    >
+      <span className="h-6 w-6 shrink-0 rounded-full border border-[var(--border)]" style={{ background: swatchColor }} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[11.5px] font-medium tracking-[-.005em] text-[var(--t1)]">{material.name}</p>
+        {(meta || material.priceNote) && (
+          <p className="mt-0.5 truncate text-[10px] leading-snug text-[var(--t4)]">
+            {[meta, material.priceNote].filter(Boolean).join('  ·  ')}
+          </p>
+        )}
+      </div>
+      <span className="ml-auto grid h-5 w-5 shrink-0 place-items-center rounded-md text-[var(--t5)] opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-[var(--accent)]">
+        <Plus size={13} />
+      </span>
     </div>
   );
 }

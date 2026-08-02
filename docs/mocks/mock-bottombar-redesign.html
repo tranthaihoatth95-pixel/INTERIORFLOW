@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Bottom bar — redesign chuyên nghiệp</title>
+<style>
+  :root{
+    --panel:#fff; --line:#e6e3de; --ink:#2b2b30; --mut:#8a8a92;
+    --accent:#6a57f5; --accent-soft:#efeafe; --chip:#f1efec;
+    --sh:0 8px 24px rgba(40,38,35,.14), 0 1px 2px rgba(40,38,35,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#eceae7;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink)}
+  .wrap{max-width:900px;margin:0 auto;padding:28px 18px 60px}
+  h1{font-size:17px;margin:0 0 4px}
+  .lead{font-size:12.5px;color:#6b6b73;margin:0 0 26px;line-height:1.5}
+  h2{font-size:13px;margin:30px 0 6px;display:flex;align-items:center;gap:8px}
+  .rec{font-size:9px;font-weight:700;color:#fff;background:var(--accent);border-radius:5px;padding:2px 7px}
+  .why{font-size:11.5px;color:#6b6b73;margin:0 0 14px;line-height:1.5}
+  .stage{background:radial-gradient(circle at 1px 1px,#dcd9d3 1px,transparent 0) 0 0/22px 22px,#f3f1ee;border:1px solid var(--line);border-radius:14px;height:130px;position:relative}
+
+  /* ============ shared atoms ============ */
+  .bar{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:flex;align-items:center;height:44px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);padding:0 6px}
+  .bt{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14.5px;color:#5a5a62;flex:none}
+  .bt.on{background:var(--accent-soft);color:var(--accent)}
+  .pct{font-size:12px;color:#4a4a52;min-width:40px;text-align:center;font-variant-numeric:tabular-nums}
+  .div{width:1px;height:20px;background:var(--line);margin:0 5px;flex:none}
+
+  /* A · segmented mode trong CÙNG bar */
+  .seg{display:flex;background:var(--chip);border-radius:10px;padding:3px;margin-left:5px}
+  .seg button{border:0;display:flex;align-items:center;gap:6px;padding:0 12px;height:28px;border-radius:8px;font-size:12px;color:#6b6b73;background:transparent;font-weight:500}
+  .seg button.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  .seg button.on3d{background:var(--accent);color:#fff;font-weight:600}
+
+  /* B · switch thật, cùng khối */
+  .modecell{display:flex;align-items:center;gap:8px;padding:0 10px 0 12px;font-size:12px;font-weight:600;color:#4a4a52}
+  .sw{width:36px;height:22px;border-radius:22px;background:#d8d5d0;position:relative;transition:background .2s;flex:none}
+  .sw::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:2px;left:2px;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .2s}
+  .sw.on{background:var(--accent)}
+  .sw.on::after{left:16px}
+
+  .old{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:flex;align-items:center;gap:10px}
+  .oldbar{display:flex;align-items:center;gap:2px;background:#fff;border:1px solid var(--line);border-radius:26px;padding:6px 10px;box-shadow:0 6px 20px rgba(40,38,35,.14);font-size:12px;color:#5a5a62}
+  .oldbar span{padding:2px 5px}
+  .oldpill{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px;font-size:12px;box-shadow:0 3px 10px rgba(40,38,35,.10)}
+  .x{position:absolute;right:12px;top:10px;font-size:10.5px;color:#c0392b;background:#fdecea;border-radius:6px;padding:2px 8px}
+  .checklist{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:26px}
+  .checklist h3{font-size:12.5px;margin:0 0 8px}
+  .checklist li{font-size:11.5px;color:#4a4a52;margin-bottom:5px;line-height:1.45}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Bottom bar — thiết kế lại cho chuyên nghiệp</h1>
+  <p class="lead">Nguyên tắc sửa: <b>MỘT khối duy nhất</b> — mọi control đáy cùng cao độ 44px, cùng họ bo góc (14 ngoài / 9 trong), <b>một</b> bóng đổ, nhịp cách đều 5px. Mode không phải "chip dán thêm" mà là <b>công dân hạng nhất</b> của bar.</p>
+
+  <h2>Hiện tại — cái đang bị chê <span class="x" style="position:static">ngô nghê</span></h2>
+  <div class="stage">
+    <div class="old">
+      <div class="oldbar"><span>➤</span><span>✋</span><span>▢</span>|<span>↶</span><span>↷</span>|<span>−</span><span>15%</span><span>+</span><span>⛶</span>|<span>▦</span><span>⌘</span></div>
+      <div class="oldpill">◳ Vẽ 3D</div>
+    </div>
+    <div class="x">2 mảnh rời · lệch cao độ · lệch bo góc · 2 bóng khác nhau</div>
+  </div>
+
+  <h2>Phương án A · Segmented mode TRONG bar <span class="rec">ĐỀ XUẤT</span></h2>
+  <p class="why">Gộp làm một: cụm điều hướng | zoom | <b>segmented [Node · Vẽ 3D]</b> — đúng ngữ nghĩa "2 chế độ của cùng canvas" (kiểu Figma Design/Dev, Apple segmented). Bật 3D → segment nhuộm accent, cả shell đổi. Một khối, một bóng, một nhịp.</p>
+  <div class="stage">
+    <div class="bar">
+      <span class="bt on">➤</span><span class="bt">✋</span><span class="bt">▢</span>
+      <span class="div"></span>
+      <span class="bt">↶</span><span class="bt">↷</span>
+      <span class="div"></span>
+      <span class="bt">−</span><span class="pct">15%</span><span class="bt">+</span><span class="bt">⛶</span>
+      <span class="div"></span>
+      <span class="bt">▦</span>
+      <div class="seg">
+        <button class="on">◍ Node</button>
+        <button>◳ Vẽ 3D</button>
+      </div>
+    </div>
+  </div>
+  <div class="stage" style="margin-top:10px">
+    <div class="bar">
+      <span class="bt on">➤</span><span class="bt">✋</span><span class="bt">▢</span>
+      <span class="div"></span>
+      <span class="bt">↶</span><span class="bt">↷</span>
+      <span class="div"></span>
+      <span class="bt">−</span><span class="pct">15%</span><span class="bt">+</span><span class="bt">⛶</span>
+      <span class="div"></span>
+      <span class="bt">▦</span>
+      <div class="seg">
+        <button>◍ Node</button>
+        <button class="on3d">◳ Vẽ 3D</button>
+      </div>
+    </div>
+    <div class="x" style="background:#efeafe;color:#5a49d6">trạng thái ĐANG BẬT 3D — segment nhuộm accent</div>
+  </div>
+
+  <h2>Phương án B · Switch thật, nhưng CÙNG khối</h2>
+  <p class="why">Giữ ẩn dụ "gạt" Hoà thích, nhưng hết cảnh 2 pill rời: switch nằm trong cùng bar, sau vạch chia — cùng 44px, cùng bóng. Gọn hơn A một chút, nhưng nhãn "Vẽ 3D" chỉ 1 trạng thái chữ (A đọc rõ cả 2 mode hơn).</p>
+  <div class="stage">
+    <div class="bar">
+      <span class="bt on">➤</span><span class="bt">✋</span><span class="bt">▢</span>
+      <span class="div"></span>
+      <span class="bt">↶</span><span class="bt">↷</span>
+      <span class="div"></span>
+      <span class="bt">−</span><span class="pct">15%</span><span class="bt">+</span><span class="bt">⛶</span>
+      <span class="div"></span>
+      <span class="bt">▦</span>
+      <span class="div"></span>
+      <div class="modecell">Vẽ 3D <span class="sw on"></span></div>
+    </div>
+  </div>
+
+  <div class="checklist">
+    <h3>☑ Luật "chống ngô nghê" — ghi vào Design System (áp mọi UI về sau)</h3>
+    <ul style="margin:0;padding-left:16px">
+      <li><b>Một khối một bóng:</b> control cùng chức năng đứng cùng bar — cấm pill rời lệch cao độ/bo góc/bóng.</li>
+      <li><b>Nhịp cố định:</b> cao 44 · nút 34 · icon 15 · cách 5 · bo 14/9 — không số lẻ tuỳ hứng.</li>
+      <li><b>Không icon emoji-tạp:</b> một bộ icon duy nhất (lucide), 1 cỡ, 1 độ đậm.</li>
+      <li><b>Trạng thái nói bằng màu nền</b> (accent-soft/accent), không nói bằng viền đậm hay chữ hoa.</li>
+      <li><b>Chữ tabular-nums</b> cho số (15% không nhảy khi đổi 100%).</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
