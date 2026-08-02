@@ -615,3 +615,53 @@ phiên trước).
 `2daf089` G1b · `e1aaf6a` G1c · `5649f14` G1d) đều `git commit -- <pathspec>` scoped đúng file.
 Tiếp theo quay lại G2 (Mood+Collab canvas) → G3 → G4 → G5 theo
 `docs/TICKET-CHANG2-BUILD-2026-08-02.md`.
+
+---
+
+## G2 — khảo sát hạ tầng có sẵn (trước khi code, theo yêu cầu Hoà)
+Dùng Explore agent đọc code thật (không suy đoán) trước khi thiết kế G2. Tóm tắt phần LIÊN QUAN
+phần (1):
+- **Group/frame ĐÃ CÓ**: `NodeGroup` (`lib/store.ts:206-213`) — `{id,label,nodeIds,collapsed,
+  center?}`, action `groupSelected/ungroupById/renameGroup/toggleGroupCollapse`
+  (`lib/store.ts:924-980`), vẽ bằng `GroupOverlay.tsx` (khung dashed quanh bbox node thành viên).
+  NHƯNG `groupSelected` ép ≥2 node ĐÃ CÓ SẴN mới tạo được group (`if (selected.length<2) return`)
+  — không có khái niệm "khung trống vẽ trước, thả node vào sau" kiểu Miro/Figma frame.
+- **matId**: 0 kết quả toàn repo — khái niệm hoàn toàn mới, chưa có gì để nối (phần (5) sẽ cần
+  tạo field mới, không phải việc của phần (1)).
+- **mindmap**: 0 kết quả — hoàn toàn mới (phần (6), không phải phần (1)).
+- **Kéo-thả từ kệ** (`NodeLibraryPanel.tsx` → `FlowCanvas.tsx onDrop`): cơ chế `DND_MIME` áp dụng
+  được thẳng cho mindmap template sau này (phần (6)), không liên quan phần (1).
+- Presence/sticky/comment đã có (dùng cho phần (2)/(4) sau) — không động tới ở phần (1).
+
+## G2 phần (1) — khung canvas + frame theo phòng — THIẾT KẾ (viết trước khi code, theo yêu cầu)
+**Quyết định kiến trúc**: KHÔNG viết canvas Miro riêng — dùng THẲNG `FlowCanvas` (React Flow) hiện
+tại làm "canvas kiểu Miro" (đúng luật gộp tính năng CLAUDE.md "một cỗ máy nhiều mặt tiền" + luật
+gốc SPEC-CHANG2-UI-2MODE "gạt mode chỉ đổi canvas+sidebar, không dựng lại shell"). "Frame theo
+phòng" = MỞ RỘNG `NodeGroup` có sẵn, KHÔNG tạo hệ thống group thứ 2.
+
+**Việc làm**:
+1. `lib/store.ts`: `NodeGroup` thêm `rect?: {x,y,width,height}` (khung vẽ TRƯỚC, độc lập vị trí
+   node — khác `center` suy từ node thành viên của group cũ) + `roomKind?: string` (đánh dấu đây
+   là "khung phòng", khác group thường). Action mới `createRoomFrame(rect, label)` (không ép ≥2
+   node — tạo group `nodeIds:[]`). Action mới `syncRoomMembership(nodeId, pos)` — gọi lúc node vừa
+   kéo-thả xong, kiểm tâm node có rơi vào rect phòng nào không, tự thêm/gỡ khỏi `nodeIds` (CHỈ áp
+   cho group có `rect` — group thường do user tự chọn, không tự động mutate).
+2. `GroupOverlay.tsx`: `GroupRect` ưu tiên vẽ theo `group.rect` khi có (bỏ early-return khi 0
+   member — khung phòng phải hiện NGAY CẢ KHI RỖNG, đó là điểm khác biệt cốt lõi so với group cũ).
+   Thêm `<datalist>` gợi ý tên phòng (Phòng khách/Bếp/Phòng ngủ/Phòng tắm/Sân vườn/Phòng làm
+   việc/Ban công/Khác) vào input đổi tên ĐÃ CÓ SẴN (double-click label) — không viết popover mới.
+3. `BottomToolbar.tsx`: thêm nút "Khung" (icon `Frame` lucide) giữa Pan và Sticky note — đúng thứ
+   tự SPEC-CHANG2-UI-2MODE §1 "➤ chọn · ✋ pan · ▢ frame". `Tool` type thêm `'frame'`.
+4. `FlowCanvas.tsx`: khi `tool==='frame'`, bấm-kéo trên NỀN canvas (check `target.classList.
+   contains('react-flow__pane')`, không bấm trúng node) vẽ preview rect (state cục bộ, toạ độ
+   MÀN HÌNH tương đối `wrapperRef` — đơn giản hơn ViewportPortal vì preview không cần chính xác
+   theo flow-space lúc đang kéo) → thả chuột: quy đổi 2 góc qua `screenToFlowPosition`, tạo room
+   frame qua `createRoomFrame`, `setTool('select')` (khuôn có sẵn: thao tác 1-lần xong tự về
+   select). `onNodeDragStop` mới gọi `syncRoomMembership`. `panOnDrag`/`selectionOnDrag` tắt khi
+   `tool==='frame'` (nhường quyền bắt pointer cho logic vẽ khung).
+5. Bỏ NGOÀI phạm vi phần (1) (ghi rõ, không lặng lẽ bỏ qua): kéo-thả DI CHUYỂN/resize khung SAU
+   khi đã tạo (chỉ tạo 1 lần bằng kéo-vẽ, sau đó cố định — dùng nút "Gỡ group" có sẵn để xoá làm
+   lại nếu cần) · animation kính/motion riêng cho khung (dùng style tĩnh giống `GroupOverlay` cũ,
+   chưa theo token `SPEC-DESIGN-SYSTEM-IF` §2d vì group/frame là "canvas content" không phải
+   "vỏ app" — §2d áp cho bar/pill nổi, khung phòng là panel-content nên giữ bo góc thường theo §2,
+   không capsule).
