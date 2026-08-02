@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Upload, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Upload, ChevronDown, Sun, Sunset, Moon, Lightbulb } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { runNode } from '@/lib/execution';
 import { getDefinition, defaultParams } from '@/lib/nodes/registry';
@@ -325,9 +325,18 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
             )}
 
             <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {primaryParams.map((p) => (
-                <ParamControl key={p.id} param={p} value={values[p.id]} onChange={(v) => setValues((s) => ({ ...s, [p.id]: v }))} />
-              ))}
+              {primaryParams.map((p) =>
+                // Tinh chỉnh 02/08 (docs/CHOT-RENDER-TOOL-WINDOW-2026-08-01.md "MODE-DRIVEN SHELL")
+                // — "Đổi ánh sáng/giờ → bảng THẺ giờ trong ngày, không phải slider chung" (ví dụ
+                // ĐÍCH DANH Hoà nêu). Đúng đến từng tool này — thẻ/param khác giữ ParamControl
+                // chung (sketch2render/clay2render/styletransfer Hoà đã xác nhận "như đang có,
+                // đúng cho tool này"; đo món đồ đã có UI khoanh tay riêng bên dưới).
+                card.id === 'relight' && p.id === 'lighting' && p.kind === 'select' ? (
+                  <LightingCardPicker key={p.id} value={String(values[p.id] ?? p.options[0])} options={p.options} onChange={(v) => setValues((s) => ({ ...s, [p.id]: v }))} />
+                ) : (
+                  <ParamControl key={p.id} param={p} value={values[p.id]} onChange={(v) => setValues((s) => ({ ...s, [p.id]: v }))} />
+                ),
+              )}
             </div>
 
             {advancedParams.length > 0 && (
@@ -560,6 +569,52 @@ function MeasurementExportButton({
     >
       {busy ? 'Đang dựng spec sheet…' : '⬇ Xuất Spec Sheet'}
     </button>
+  );
+}
+
+const LIGHTING_ICON: Record<string, typeof Sun> = {
+  Daylight: Sun,
+  Sunset: Sunset,
+  'Đèn vàng ấm ban đêm': Moon,
+  'Studio soft light': Lightbulb,
+};
+
+/** Bảng thẻ giờ trong ngày cho "Đổi ánh sáng/giờ" — thay `<select>` chung bằng lựa chọn TRỰC QUAN
+ * theo đúng việc (mode-driven shell, xem nơi gọi). Vẫn ghi vào ĐÚNG param `lighting` — không đổi
+ * gì ở tầng thực thi (`ai.relight`, `lib/nodes/registry.ts`), chỉ đổi CÁCH CHỌN. */
+function LightingCardPicker({ value, options, onChange }: { value: string; options: readonly string[]; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <div style={{ fontSize: 11, color: 'var(--t3)', marginBottom: 6 }}>Ánh sáng</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+        {options.map((o) => {
+          const Icon = LIGHTING_ICON[o] ?? Sun;
+          const active = value === o;
+          return (
+            <button
+              key={o}
+              type="button"
+              onClick={() => onChange(o)}
+              aria-pressed={active}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 6,
+                padding: '12px 8px',
+                borderRadius: 10,
+                border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+                background: active ? 'color-mix(in srgb, var(--accent) 12%, var(--panel))' : 'var(--panel)',
+                color: active ? 'var(--t1)' : 'var(--t2)',
+              }}
+            >
+              <Icon size={20} />
+              <span style={{ fontSize: 11, textAlign: 'center', lineHeight: 1.3 }}>{o}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
