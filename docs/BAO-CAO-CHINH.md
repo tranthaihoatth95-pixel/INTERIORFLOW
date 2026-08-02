@@ -1026,3 +1026,38 @@ kế vào đây trước khi code, đúng quy tắc đã áp dụng suốt G2.
   mức phạm vi) · nối dây giữa các note mindmap · undo gộp 1 bước cho cả cụm 6 note (giống giới hạn
   đã ghi ở phần (1)/(3), `addNote` tự `snapshot()` mỗi lần gọi — 6 bước undo riêng, chấp nhận theo
   đúng tiền lệ `demoSketchToRender`).
+
+## G2 phần (6) — mindmap template tuỳ chọn kéo từ kệ — XONG
+- Commit `5fbd9a1` (`lib/render-studio/mindmap-templates.ts` mới, `components/NodeLibraryPanel.tsx`,
+  `components/FlowCanvas.tsx`).
+- Code đúng thiết kế đã mô tả ở trên: kệ "Form lập luận" mới, 1 chip "Khung concept 5 nhánh",
+  bấm/kéo đều gọi `instantiateConceptMindmap` dựng 6 `note` (1 tâm + 5 nhánh toả tròn).
+- Verify browser thật: **bấm** — tạo đúng 6 note tại giữa canvas, tâm "Ý tưởng chính" + 5 nhánh
+  đúng nội dung (Không gian & công năng / Ánh sáng / Vật liệu & màu sắc / Phong cách·gu / Cảm xúc
+  mong muốn), toạ độ xác nhận đúng bán kính 260 (nhánh đầu tại góc 12h: y = center.y − 260, khớp
+  số đo thật). **Kéo-thả thật** — giả lập `DragEvent`+`DataTransfer` thật (dragstart trên chip →
+  drop lên `.react-flow__pane`, dataTransfer.types xác nhận đúng `application/interiorflow-mindmap`)
+  → cụm mới dựng ĐÚNG TẠI VỊ TRÍ THẢ (khác tâm canvas của đường bấm) — xác nhận `FlowCanvas.onDrop`
+  đọc đúng MIME mới, không lẫn nhánh `DND_MIME`/`MAT_MIME` cũ. Dark theme: chip nét đứt đọc rõ.
+  Console 0 error. tsc sạch, `npm test` 0 fail. Dọn 12 note test (2 lần thử × 6 note) về đúng 3
+  node gốc của "Dự án mẫu" sau verify.
+- 💭 Lưu ý nhỏ lúc verify (không phải bug): nút "Thư viện Node" ở rail trái đôi lúc cần bấm 2 lần
+  mới mở panel trên tab mới hoàn toàn tinh — nghi hiệu ứng hover/tooltip che mất target đúng 1
+  frame đầu, không tái hiện lại được ổn định, không liên quan code phần (6) (dùng
+  `setPanel('library')` trực tiếp qua store để verify tiếp, không chặn tiến độ).
+
+---
+
+# G2 — TỔNG KẾT (6/6 phần XONG)
+Toàn bộ 6 phần của canvas Mood+Collab (`docs/TICKET-CHANG2-BUILD-2026-08-02.md`) đã xong, mỗi
+phần 1(+) commit code + báo cáo riêng, verify browser thật đầy đủ:
+1. Khung canvas + frame theo phòng (`NodeGroup.rect`, `createRoomFrame`)
+2. Sticky + comment neo object (`CanvasComment`, `CommentPin`)
+3. Toolbar bút tablet (pen/marker/highlight/eraser, `DrawLayer`/`DrawToolbar`)
+4. Presence online/offline + mời (`PresenceBar` viết lại, `ProjectMember` roster)
+5. Swatch vật liệu matId (`ProductSpec` thật, `util.materialnote` + matId)
+6. Mindmap tuỳ chọn (Khung concept 5 nhánh, `instantiateConceptMindmap`)
+
+Tiếp theo trong `TICKET-CHANG2-BUILD-2026-08-02.md`: **G3 — Vẽ 3D** (Command Panel + Scene
+Objects). Sẽ khảo sát hạ tầng 3D hiện có (`SPEC-3D-CORE.md`, 3D-1 đã xong theo STATUS.md) trước
+khi thiết kế, đúng kỷ luật đã áp dụng suốt G2.
