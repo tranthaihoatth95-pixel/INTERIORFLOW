@@ -18,6 +18,7 @@ import { Box } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import { docToObjScene, toScene3DData } from '@/lib/three/cad-to-obj';
 import ModeSwitchBar from '@/components/render-studio/ModeSwitchBar';
+import Command3DPanel from '@/components/render-studio/Command3DPanel';
 
 const Scene3DViewer = dynamic(() => import('@/components/three/Scene3DViewer'), {
   ssr: false,
@@ -49,38 +50,41 @@ export default function Render3DModeSkeleton() {
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', background: 'var(--bg)' }}>
-      <div
-        style={{
-          position: 'absolute',
-          top: 56,
-          left: 12,
-          zIndex: 20,
-          maxWidth: 320,
-          padding: '8px 12px',
-          borderRadius: 10,
-          border: '1px solid var(--border)',
-          background: 'color-mix(in srgb, var(--panel) 90%, transparent)',
-          backdropFilter: 'blur(14px)',
-          fontSize: 11,
-          color: 'var(--t3)',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 6,
-        }}
-      >
-        <Box size={13} style={{ marginTop: 1, flexShrink: 0 }} color="var(--accent)" />
-        <span>Khối đùn từ bản vẽ CAD (chặng 1) — kéo MẶT TRÊN 1 tường để đổi cao độ, ghi thẳng vào Doc. Cấu kiện/IFC (B2-B4) chưa làm.</span>
-      </div>
-      {!scene ? (
-        <div style={{ display: 'grid', placeItems: 'center', width: '100%', height: '100%', color: 'var(--t3)', fontSize: 12, textAlign: 'center', padding: 24 }}>
-          Chưa có bản vẽ — mở chặng CAD, vẽ tường (lệnh W) rồi quay lại đây.
+    <div style={{ display: 'flex', width: '100%', height: '100%', minHeight: 0, background: 'var(--bg)' }}>
+      <Command3DPanel />
+      <div style={{ position: 'relative', flex: 1, minWidth: 0, height: '100%' }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: 56,
+            left: 12,
+            zIndex: 20,
+            maxWidth: 320,
+            padding: '8px 12px',
+            borderRadius: 10,
+            border: '1px solid var(--border)',
+            background: 'color-mix(in srgb, var(--panel) 90%, transparent)',
+            backdropFilter: 'blur(14px)',
+            fontSize: 11,
+            color: 'var(--t3)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 6,
+          }}
+        >
+          <Box size={13} style={{ marginTop: 1, flexShrink: 0 }} color="var(--accent)" />
+          <span>Khối đùn từ bản vẽ CAD (chặng 1) — kéo MẶT TRÊN 1 tường để đổi cao độ, ghi thẳng vào Doc. Cấu kiện/IFC (B2-B4) chưa làm.</span>
         </div>
-      ) : (
-        <Scene3DViewer scene={scene} mode="massing" onPushPull={handlePushPull} />
-      )}
+        {!scene ? (
+          <div style={{ display: 'grid', placeItems: 'center', width: '100%', height: '100%', color: 'var(--t3)', fontSize: 12, textAlign: 'center', padding: 24 }}>
+            Chưa có bản vẽ — mở chặng CAD, vẽ tường (lệnh W) rồi quay lại đây.
+          </div>
+        ) : (
+          <Scene3DViewer scene={scene} mode="massing" onPushPull={handlePushPull} />
+        )}
 
-      <ModeSwitchBar />
+        <ModeSwitchBar />
+      </div>
     </div>
   );
 }

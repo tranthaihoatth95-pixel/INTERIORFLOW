@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReactFlow } from '@xyflow/react';
 import { X, GripVertical, Star, Plus, Command, Paintbrush, Wand2, Users, Sparkles, StickyNote, Palette, Network } from 'lucide-react';
@@ -22,6 +22,7 @@ import { sidebarZoneOf } from '@/lib/render-studio/sidebar-zones';
 import { TASK_CARDS } from '@/lib/render-studio/task-cards';
 import { useToolModeUi } from '@/lib/render-studio/tool-mode-ui';
 import { instantiateConceptMindmap, MINDMAP_TEMPLATE_ID } from '@/lib/render-studio/mindmap-templates';
+import { useMaterials, type MaterialSpecLite } from '@/lib/render-studio/use-materials';
 import { useT } from '@/lib/i18n';
 
 export const DND_MIME = 'application/interiorflow-node';
@@ -39,15 +40,6 @@ export const MAT_MIME = 'application/interiorflow-material';
  * để gọi `instantiateConceptMindmap` tại đúng vị trí thả.
  */
 export const MINDMAP_MIME = 'application/interiorflow-mindmap';
-
-interface MaterialSpecLite {
-  id: string;
-  name: string;
-  brand: string | null;
-  sku: string | null;
-  colorHex: string | null;
-  priceNote: string | null;
-}
 
 const ALL_TAG = 'all' as const;
 
@@ -163,14 +155,7 @@ export function NodeLibraryPanel() {
   // G2 phần (5) — kệ "Vật liệu" (matId thật, ProductSpec{kind:'material'} qua /api/specs, KHÔNG
   // phải MaterialDef thị giác của CAD). Fetch 1 lần, không poll — vật liệu đổi chậm (cùng lý do
   // bỏ poll nhanh ở PresenceBar phần (4)). Chỉ hiện ở chặng Render, cùng khu Mood + Cộng tác.
-  const [materials, setMaterials] = useState<MaterialSpecLite[]>([]);
-  useEffect(() => {
-    if (phase.id !== 'render') return;
-    fetch('/api/specs?kind=material')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setMaterials(data?.specs ?? []))
-      .catch(() => {});
-  }, [phase.id]);
+  const materials = useMaterials(phase.id === 'render');
   const materialToParams = useCallback(
     (m: MaterialSpecLite) => ({
       matId: m.id,
