@@ -21,7 +21,7 @@
  * slot) đổi, đúng Trụ 1 "ổ cố định, ruột thay đổi".
  */
 
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { AppChrome, type AppChromeActive } from '@/components/studio/AppChrome';
@@ -90,6 +90,47 @@ export function AppShell({
   // `NodeLibraryPanel` (card icon+mô tả+badge cr) làm ruột Navigator, cần THỞ hơn 214 mặc định.
   const navigatorWidth = active === 'render' ? 280 : undefined;
   const openLibrary = onOpenLibrary ?? (() => openLibrarySheet({ stage: libStage }));
+
+  /* CHINH-4 — phím tắt panel toàn app (`SPEC-PANEL-ROLLOUT-IDF` §4a):
+   *   B = thu/mở Navigator · I = thu/mở Inspector · ⌘\ = ẩn/hiện CẢ HAI (zen).
+   * Luật va phím (suy từ §4e đã chốt cho L): chặng Vẽ có type-anywhere nuốt MỌI chữ trần
+   * (`CadCanvas.tsx` — gõ B là bắt đầu lệnh BLOCK…), nên ở CAD hai phím này cần ⇧ (⇧B/⇧I),
+   * chặng khác phím trần. Nghe ở DOCUMENT CAPTURE + stopPropagation khi ăn phím — chạy TRƯỚC
+   * listener window-bubble của CadCanvas, không seed nhầm chữ vào ô lệnh. Guard gõ chữ
+   * (INPUT/TEXTAREA/contentEditable) như mọi hotkey khác trong app. */
+  const [inspectorHidden, setInspectorHidden] = useState(false);
+  const zenRef = useRef(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const typing = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+      if (typing) return;
+      // ⌘\ — ẩn cả hai panel, bấm lại hiện lại (deterministic qua detail.set).
+      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+        e.preventDefault();
+        e.stopPropagation();
+        const zen = !zenRef.current;
+        zenRef.current = zen;
+        window.dispatchEvent(new CustomEvent('if:navigator-toggle', { detail: { set: zen } }));
+        setInspectorHidden(zen);
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k !== 'b' && k !== 'i') return;
+      // CAD: chỉ ăn khi có ⇧ (phím trần thuộc type-anywhere gõ lệnh — §0c luật 2); chặng khác:
+      // chỉ phím trần (⇧ để dành tổ hợp khác).
+      const needShift = active === 'cad';
+      if (e.shiftKey !== needShift) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (k === 'b') window.dispatchEvent(new CustomEvent('if:navigator-toggle', { detail: {} }));
+      else setInspectorHidden((h) => !h);
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => document.removeEventListener('keydown', onKey, true);
+  }, [active]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden', background: 'var(--bg)' }}>
       <AppChrome active={active} logoMenu />
@@ -107,7 +148,7 @@ export function AppShell({
           )}
         </div>
         <InspectorSlot title={inspectorTitle} sub={inspectorSub} onClose={onCloseInspector}>
-          {inspector}
+          {inspectorHidden ? undefined : inspector}
         </InspectorSlot>
       </div>
       {bottomExtra}

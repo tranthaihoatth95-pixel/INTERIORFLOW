@@ -56,7 +56,8 @@ export const LIBRARY_APPLY_EVENT = 'if:library-apply';
  */
 export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   const tr = useT();
-  const { open, setOpen, shelfId: requestedShelf, stageOverride } = useLibrarySheetState();
+  // CHINH-4: truyền stage để hook xử va phím L theo chặng (§4e — CAD: ⇧L, chặng khác: L trần).
+  const { open, setOpen, shelfId: requestedShelf, stageOverride } = useLibrarySheetState(stage);
   const { state, addPublishDraft } = useLibraryLocalState();
 
   const activeStage: StageKey = stageOverride ?? stage;

@@ -56,10 +56,13 @@ function consumeOpenLibraryOnLoad(): boolean {
 
 /**
  * Trạng thái đóng/mở của sheet + phím tắt.
- * - `L` mở/đóng (khớp mock: `if(k==='l')`), CHỈ khi không đang gõ trong ô nhập.
+ * - Phím Thư viện (khớp mock `if(k==='l')`), CHỈ khi không đang gõ trong ô nhập. CHINH-4 xử va
+ *   phím theo `SPEC-PANEL-ROLLOUT-IDF` §4e: ở chặng VẼ, `L` là lệnh ĐƯỜNG (muscle memory
+ *   AutoCAD, type-anywhere của CadCanvas nuốt chữ trần) → Thư viện = `⇧L`; hai chặng kia `L`
+ *   trần như cũ. `stage` truyền từ `LibrarySheet` (AppShell biết chặng).
  * - `Escape` đóng — nghe ở pha bắt (capture) để ô tìm kiếm bên trong sheet không nuốt mất phím.
  */
-export function useLibrarySheetState() {
+export function useLibrarySheetState(stage?: StageKey) {
   const [open, setOpen] = useState(false);
   const [shelfId, setShelfId] = useState<string | null>(null);
   const [stageOverride, setStageOverride] = useState<StageKey | null>(null);
@@ -90,11 +93,21 @@ export function useLibrarySheetState() {
         return;
       }
       if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key.toLowerCase() === 'l') setOpen((o) => !o);
+      if (e.key.toLowerCase() === 'l') {
+        // §4e: chặng Vẽ cần ⇧ (L trần = lệnh ĐƯỜNG của type-anywhere); chặng khác phím trần.
+        const needShift = stage === 'cad';
+        if (e.shiftKey !== needShift) return;
+        // Capture ở document chạy TRƯỚC listener window-bubble của CadCanvas — chặn lan để ⇧L
+        // không bị type-anywhere seed nhầm "L" vào ô lệnh (CadCanvas đã bỏ qua chữ có ⇧, chặn
+        // thêm ở đây cho chắc cả 2 chiều).
+        e.preventDefault();
+        e.stopPropagation();
+        setOpen((o) => !o);
+      }
     };
     document.addEventListener('keydown', onKey, true);
     return () => document.removeEventListener('keydown', onKey, true);
-  }, []);
+  }, [stage]);
 
   return { open, setOpen, shelfId, setShelfId, stageOverride };
 }

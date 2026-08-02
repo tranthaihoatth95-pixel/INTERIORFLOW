@@ -67,6 +67,7 @@ export function AppChrome({ active, logoMenu }: Props) {
   const [editing, setEditing] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [logoMenuOpen, setLogoMenuOpen] = useState(false);
+  const onPickRef = useRef<(p: Phase) => void>(() => {});
   const logoRef = useRef<HTMLButtonElement>(null);
   const logoMenuRef = useRef<HTMLDivElement>(null);
   const [logoAnchor, setLogoAnchor] = useState<{ top: number; left: number } | null>(null);
@@ -111,6 +112,14 @@ export function AppChrome({ active, logoMenu }: Props) {
         e.preventDefault();
         setShortcutsOpen((v) => !v);
       }
+      // CHINH-4 (SPEC-PANEL-ROLLOUT-IDF §4a) — ⌘1/⌘2/⌘3 sang chặng Vẽ · Dựng ảnh · Trình bày.
+      // Đặt ở AppChrome (không phải AppShell) vì pickStage cần đủ bộ {active,pathname,router,
+      // begin} đã wire sẵn tại đây — không nhân đôi dây.
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === '1' || e.key === '2' || e.key === '3')) {
+        e.preventDefault();
+        const target: Phase = e.key === '1' ? 'concept' : e.key === '2' ? 'render' : 'present';
+        onPickRef.current(target);
+      }
     };
     const onOpenEvent = () => setShortcutsOpen(true);
     window.addEventListener('keydown', onKey);
@@ -123,6 +132,9 @@ export function AppChrome({ active, logoMenu }: Props) {
 
   // Điều hướng chặng — logic dùng chung với MobileMenu's PhaseRow, xem lib/studio/stage-nav.ts.
   const onPick = (p: Phase) => pickStage(p, { active, pathname, router, begin });
+  // Ref cho handler ⌘1-3 (effect deps rỗng, mount 1 lần) — luôn trỏ bản onPick mới nhất
+  // (active/pathname đổi theo điều hướng).
+  onPickRef.current = onPick;
 
   /**
    * 30/07 — THANG ƯU TIÊN NHƯỜNG CHỖ khi hẹp dần (PatternFly priority+, IF theo từ 2.2.60).

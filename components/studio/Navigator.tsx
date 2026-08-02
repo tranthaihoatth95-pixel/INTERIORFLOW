@@ -79,6 +79,22 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
     });
   };
 
+  // CHINH-4 (SPEC-PANEL-ROLLOUT-IDF §4a) — phím B thu/mở Navigator từ AppShell. CustomEvent
+  // (khuôn `if:library-open`) vì AppShell không giữ state collapsed (sống ở đây + localStorage).
+  // detail.set: ép trạng thái (⌘\ cần deterministic), thiếu thì toggle.
+  useEffect(() => {
+    const onToggle = (e: Event) => {
+      const set = (e as CustomEvent<{ set?: boolean }>).detail?.set;
+      setCollapsed((c) => {
+        const next = set ?? !c;
+        localStorage.setItem(STORAGE_KEY, next ? '1' : '0');
+        return next;
+      });
+    };
+    window.addEventListener('if:navigator-toggle', onToggle);
+    return () => window.removeEventListener('if:navigator-toggle', onToggle);
+  }, []);
+
   const avatarRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
