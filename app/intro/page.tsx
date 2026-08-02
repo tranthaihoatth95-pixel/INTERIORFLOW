@@ -25,7 +25,7 @@ export default function IntroPage() {
 
   if (!ready) {
     return (
-      <main style={{ minHeight: '100vh', background: '#F1ECE3' }} />
+      <main style={{ minHeight: '100vh', background: 'var(--bg)' }} />
     );
   }
 

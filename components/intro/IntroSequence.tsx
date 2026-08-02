@@ -44,10 +44,16 @@ function reducer(s: State, a: Action): State {
 
 const SCENE_DURATIONS = [15000, 10000, 25000, 10000]; // ms
 
-const BEIGE = '#F1ECE3';
-const NAVY = '#002850';
-const ORANGE = '#F06020';
-const INK = '#1B1512';
+/* 03/08 fix trung tính (AUDIT-BRAND-PII 🔴): bỏ bộ hex thương hiệu TTT (beige/navy/cam/ink),
+ * thay bằng token IF — intro đổi theo theme app luôn (trước bị khoá cứng bảng màu TTT).
+ * Cảnh 0 là "màn tối cinematic" nên dùng CẶP ĐẢO t1/bg (nền = --t1, chữ = --bg) — đảo chiều
+ * đúng ở CẢ 2 theme thay vì hardcode màu tối. */
+const SURFACE = 'var(--bg)';
+const HEADING = 'var(--t1)';
+const ACCENT = 'var(--accent)';
+const INK = 'var(--t1)';
+const INVERT_BG = 'var(--t1)';
+const INVERT_FG = 'var(--bg)';
 
 export function IntroSequence() {
   const router = useRouter();
@@ -78,9 +84,9 @@ export function IntroSequence() {
       style={{
         position: 'fixed',
         inset: 0,
-        background: state.phase === 0 ? '#2a2f36' : BEIGE,
+        background: state.phase === 0 ? INVERT_BG : SURFACE,
         overflow: 'hidden',
-        fontFamily: 'Archivo, -apple-system, system-ui, sans-serif',
+        fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
         color: INK,
         transition: 'background 1.5s ease',
       }}
@@ -98,8 +104,8 @@ export function IntroSequence() {
           right: 32,
           zIndex: 100,
           background: 'transparent',
-          border: `1px solid ${state.phase === 0 ? '#fff8' : INK}`,
-          color: state.phase === 0 ? '#fff' : INK,
+          border: `1px solid ${state.phase === 0 ? 'color-mix(in srgb, var(--bg) 55%, transparent)' : INK}`,
+          color: state.phase === 0 ? INVERT_FG : INK,
           padding: '8px 16px',
           fontSize: 11,
           letterSpacing: '0.18em',
@@ -162,11 +168,11 @@ function Scene1({ reduce }: { reduce: boolean }) {
           left: 0,
           right: 0,
           textAlign: 'center',
-          color: '#e5e7eb',
+          color: INVERT_FG,
         }}
       >
         <div style={{ fontSize: 22, fontWeight: 400, letterSpacing: '-0.01em', lineHeight: 1.4 }}>
-          "Mười file. Năm tool. Ba lần sếp hỏi <em style={{ color: ORANGE, fontStyle: 'normal' }}>'chưa xong à?'</em>"
+          "Mười file. Năm tool. Ba lần sếp hỏi <em style={{ color: ACCENT, fontStyle: 'normal' }}>'chưa xong à?'</em>"
         </div>
         <div style={{ fontSize: 13, opacity: 0.6, marginTop: 12, letterSpacing: '0.08em' }}>
           Ten files. Five tools. Three deadlines missed.
@@ -190,7 +196,7 @@ function Scene2({ reduce }: { reduce: boolean }) {
       {/* Grid paper backdrop */}
       <div style={{
         position: 'absolute', inset: 0,
-        backgroundImage: `linear-gradient(${INK}0d 1px, transparent 1px), linear-gradient(90deg, ${INK}0d 1px, transparent 1px)`,
+        backgroundImage: 'linear-gradient(color-mix(in srgb, var(--t1) 5%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--t1) 5%, transparent) 1px, transparent 1px)',
         backgroundSize: '40px 40px',
       }} />
       <motion.div
@@ -212,7 +218,7 @@ function Scene2({ reduce }: { reduce: boolean }) {
         style={{ textAlign: 'center', zIndex: 2 }}
       >
         <LogoIF size={260} />
-        <div style={{ fontSize: 14, letterSpacing: '0.18em', color: NAVY, marginTop: 16, textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 14, letterSpacing: '0.18em', color: HEADING, marginTop: 16, textTransform: 'uppercase' }}>
           Một dòng chảy · One flow
         </div>
       </motion.div>
@@ -233,7 +239,7 @@ function Scene3({ reduce }: { reduce: boolean }) {
       style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 32 }}
     >
       <div style={{
-        fontSize: 11, letterSpacing: '0.24em', color: ORANGE,
+        fontSize: 11, letterSpacing: '0.24em', color: ACCENT,
         textTransform: 'uppercase', marginBottom: 8,
       }}>
         Ba màn — Một mạch · Three stages, one flow
@@ -251,7 +257,7 @@ function Scene3({ reduce }: { reduce: boolean }) {
             <Monitor size={140} />
             <div style={{
               fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase',
-              color: NAVY, fontWeight: 500,
+              color: HEADING, fontWeight: 500,
             }}>{label}</div>
           </motion.div>
         ))}
@@ -323,7 +329,7 @@ function Scene4({ reduce, onCta }: { reduce: boolean; onCta: () => void }) {
       >
         <div style={{ fontSize: 24, lineHeight: 1.4, color: INK, fontWeight: 500 }}>
           Sáng tạo là của bạn.<br />
-          <span style={{ color: ORANGE }}>Còn lại · IF lo.</span>
+          <span style={{ color: ACCENT }}>Còn lại · IF lo.</span>
         </div>
         <div style={{ fontSize: 12, opacity: 0.55, marginTop: 12, letterSpacing: '0.06em' }}>
           Create freely. We handle the rest.
@@ -339,8 +345,8 @@ function Scene4({ reduce, onCta }: { reduce: boolean; onCta: () => void }) {
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.98 }}
         style={{
-          background: NAVY,
-          color: BEIGE,
+          background: ACCENT,
+          color: '#FFFFFF',
           border: 'none',
           padding: '14px 32px',
           fontSize: 13,

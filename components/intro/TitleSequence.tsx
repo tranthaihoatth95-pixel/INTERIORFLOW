@@ -29,40 +29,44 @@ import { useLang } from '@/lib/i18n';
 const COPPER = '#c79a63';
 
 type Work = {
-  src: string;
+  /** CSS background (gradient trừu tượng) — xem ghi chú fix trung tính ở WORKS. */
+  art: string;
   title: { vi: string; en: string };
   meta: { vi: string; en: string };
 };
 
-// 6 "bức tranh" — ảnh render mẫu trong public/detech (bộ ảnh dùng tạm), quiet-luxury.
+// 6 "bức tranh" — 03/08 fix trung tính (AUDIT-BRAND-PII 🔴): bỏ ảnh render dự án khách thật
+// (/detech/*), thay bằng GRADIENT vật liệu trừu tượng (đá · đồng · gỗ · nước — tông trung tính,
+// không thương hiệu nào). Card giữ nguyên bố cục/caption; khi có bộ ảnh license thì chỉ cần thay
+// field `art` bằng ảnh, không đổi cấu trúc.
 const WORKS: Work[] = [
   {
-    src: '/detech/lobby-water.png',
+    art: 'linear-gradient(160deg, #d8cbb8 0%, #b7a687 55%, #8f7f63 100%)',
     title: { vi: 'Sảnh khách sạn 5★', en: 'Five-star hotel lobby' },
     meta: { vi: 'Đá travertine · Mặt nước tĩnh', en: 'Travertine · Still water' },
   },
   {
-    src: '/detech/tower-dusk.png',
+    art: 'linear-gradient(200deg, #c79a63 0%, #7d5a38 48%, #2e2318 100%)',
     title: { vi: 'Tháp hạng A lúc hoàng hôn', en: 'Grade-A tower at dusk' },
     meta: { vi: 'Kiến trúc · Ánh đồng', en: 'Architecture · Copper light' },
   },
   {
-    src: '/detech/apt-1.png',
+    art: 'linear-gradient(150deg, #8a5a34 0%, #6a4526 50%, #3f2a17 100%)',
     title: { vi: 'Penthouse', en: 'Penthouse' },
     meta: { vi: 'Căn hộ · Gỗ óc chó', en: 'Residence · Walnut' },
   },
   {
-    src: '/detech/wellness.png',
+    art: 'linear-gradient(170deg, #e8e4dd 0%, #cfc9bf 55%, #a89f92 100%)',
     title: { vi: 'Wellness & Spa', en: 'Wellness & Spa' },
     meta: { vi: 'Thư giãn · Đá ấm', en: 'Calm · Warm stone' },
   },
   {
-    src: '/detech/pool-zen.png',
+    art: 'linear-gradient(185deg, #9fb8b5 0%, #5f7f7c 55%, #2f4341 100%)',
     title: { vi: 'Hồ bơi thiền', en: 'Zen pool' },
     meta: { vi: 'Resort · Đường nước', en: 'Resort · Waterline' },
   },
   {
-    src: '/detech/lounge-green.png',
+    art: 'linear-gradient(165deg, #9baa8e 0%, #6b7c60 55%, #39442f 100%)',
     title: { vi: 'Lounge xanh', en: 'Green lounge' },
     meta: { vi: 'Sảnh chờ · Mảng cây', en: 'Lounge · Greenery' },
   },
@@ -173,15 +177,16 @@ export function TitleSequence({ onFinish }: { onFinish: () => void }) {
         if (leaving) finish();
       }}
     >
-      {/* ===== NỀN PHÒNG GALLERY — ảnh thật blur sâu như DOF ===== */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <motion.img
-        src="/detech/meditation.jpg"
-        alt=""
+      {/* ===== NỀN PHÒNG GALLERY — 03/08 fix trung tính: gradient tối ấm thay ảnh khách
+          (trước là /detech/meditation.jpg blur 26px — blur sâu vậy thì gradient cho hiệu quả
+          thị giác tương đương, không cần ảnh). Giữ nhịp thở scale y nguyên. ===== */}
+      <motion.div
         aria-hidden
-        draggable={false}
-        className="absolute inset-0 h-full w-full object-cover"
-        style={{ filter: 'blur(26px) brightness(0.48) saturate(0.85)' }}
+        className="absolute inset-0 h-full w-full"
+        style={{
+          background:
+            'radial-gradient(120% 90% at 30% 30%, #3a3128 0%, #241f19 45%, #14110d 100%)',
+        }}
         initial={{ scale: 1.16 }}
         animate={reduce ? { scale: 1.16 } : { scale: [1.16, 1.22, 1.16] }}
         transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
@@ -274,7 +279,7 @@ export function TitleSequence({ onFinish }: { onFinish: () => void }) {
             const isCenter = off === 0;
             return (
               <motion.div
-                key={w.src}
+                key={w.title.en}
                 className="col-start-1 row-start-1 overflow-hidden"
                 style={{
                   width: 'clamp(250px, 56vw, 500px)',
@@ -295,8 +300,7 @@ export function TitleSequence({ onFinish }: { onFinish: () => void }) {
                 }}
                 transition={cardTransition}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={w.src} alt={w.title[lang]} draggable={false} className="h-full w-full object-cover" />
+                <div role="img" aria-label={w.title[lang]} className="h-full w-full" style={{ background: w.art }} />
 
                 {/* caption KÍNH dưới card — chỉ rõ ở card trung tâm */}
                 <motion.div
