@@ -55,10 +55,22 @@ xác nhận) — đã cấp lại đủ lúc 08:57. Log cũ giữ nguyên theo l
   THỤ khi nối dây thật, đã ghi rõ trong code comment, chưa biết ControlNet cụ thể nào sẽ dùng nên
   chưa đảo sẵn.
 
+## [09:12] C4 (V2.1) — look-at chế độ 2/3 + panel tốc độ/ống kính — XONG
+- Commit: `32eb5b3`.
+- Test: 40/40 (`campath.test.ts`, +8 ca lookAt). Verify browser thật (scratch, đã xoá): cả 3 chế
+  độ render đúng — tangent khớp baseline cũ, khoá-điểm kéo chốt sống cập nhật hướng nhìn, khoá-zone
+  chọn "Bếp" tự tính đúng tâm hình chữ nhật.
+- 💭 2 component (`CamPathPreview`/`CamPathControlPanel`) đã sẵn sàng nhưng CHƯA có trang host
+  thật gọi cùng nhau trong `/cad-editor` — cùng tình trạng "B rút gọn" đã ghi từ trước khi
+  `CamPathPreview` mới tạo. Cần 1 việc riêng (ngoài C1-C7) để wire vào UI thật nếu Hoà muốn dùng
+  được ngay, không chỉ là component sẵn sàng.
+- 💭 Kỹ thuật gỡ khi verify: `computer.left_click_drag` của bộ công cụ browser KHÔNG bắn
+  PointerEvent thật (chỉ test được qua dispatch PointerEvent thủ công + chờ giữa các bước) — ghi
+  lại cho phiên sau đỡ mất thời gian dò lại nếu cần test kéo-thả tương tự.
+
 ## HÀNG ĐỢI CÒN LẠI (ghi đè mỗi lần xong 1 việc — nguồn sự thật duy nhất, không sống trong chat)
-- **C4** (V2.1 look-at chế độ 2/3 + panel tốc độ/ống kính) — ĐANG LÀM.
-- **C5** (V1.1 so le nội thất theo khoảng cách tới cửa chính) — CHƯA BẮT ĐẦU.
+- **C5** (V1.1 so le nội thất theo khoảng cách tới cửa chính) — ĐANG LÀM.
 - **C6** (gỡ brand-kit trùng khỏi repo chính) — **CHỜ**: đã kiểm `~/Downloads/interiorflow-phu`
   (worktree `nhanh-phu`) — `docs/BAO-CAO-PHU.md` CHƯA tồn tại, `git log` trên nhánh đó cũng không
   thấy commit VIỆC 5 mới (chỉ có 2 commit cũ 31/07). Điều kiện Hoà đặt ra CHƯA thoả — không chạy
-  `git checkout --` xoá bản trùng. Sẽ tự kiểm lại nếu quay lại hàng đợi này.
+  `git checkout --` xoá bản trùng. Sẽ tự kiểm lại khi quay lại hàng đợi này (sau C5).
