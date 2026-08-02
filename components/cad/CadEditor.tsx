@@ -70,6 +70,7 @@ import CadTouchDock from './CadTouchDock';
 import MaterialPalette from './MaterialPalette';
 import AiBriefPanel from './AiBriefPanel';
 import { ZonePanel, ZonesLegend } from './ZonePanel';
+import CamPathPanel from './CamPathPanel';
 // Hệ Legend C1+C2 (docs/PROPOSAL-LEGEND-SYSTEM.md) — panel Thống kê · Schedule + Chú giải.
 import SchedulePanel from './SchedulePanel';
 // VIỆC 4 (Sprint ĐỔ NỀN 2) — T4: panel lịch sử Undo/Redo (past/future đã có sẵn ở lib/cad/store.ts).
@@ -114,6 +115,15 @@ export default function CadEditor() {
   const [zonePanelClosed, setZonePanelClosed] = useState(false);
   useEffect(() => {
     if (cadTool === 'zone' || cadTool === 'arrow') setZonePanelClosed(false);
+  }, [cadTool]);
+
+  // D5 (`docs/BAO-CAO-CHINH.md`, gap C4) — CÙNG khuôn zonePanelClosed: hiện khi đang ở tool
+  // "Đường cam" HOẶC Doc đã có ≥1 đường cam vẽ sẵn (mở lại xem/chỉnh sau khi rời tool), đóng được
+  // bằng ✕, tự mở lại khi chọn lại tool campath.
+  const hasCampathEntity = useCadStore((s) => s.doc.entities.some((e) => e.campath));
+  const [camPathPanelClosed, setCamPathPanelClosed] = useState(false);
+  useEffect(() => {
+    if (cadTool === 'campath') setCamPathPanelClosed(false);
   }, [cadTool]);
 
   // Tầng 1 onboarding — "Mở dự án mẫu để xem thử" (WelcomeIntro) tạo 1 flow trống rồi điều
@@ -510,6 +520,11 @@ export default function CadEditor() {
           <ZonePanel onClose={() => setZonePanelClosed(true)} onExportPresent={exportZoneMapToPresent} />
         )}
         <ZonesLegend />
+        {/* D5 — Đường cam (V2): xem thử + chỉnh tay tốc độ/ống kính/điểm ngắm, hiện khi đang vẽ
+            hoặc Doc đã có sẵn đường cam. */}
+        {(cadTool === 'campath' || hasCampathEntity) && !camPathPanelClosed && (
+          <CamPathPanel onClose={() => setCamPathPanelClosed(true)} />
+        )}
         {scheduleOpen && <SchedulePanel onClose={() => setScheduleOpen(false)} />}
         {historyOpen && <HistoryPanel onClose={() => setHistoryOpen(false)} />}
         <LayerPanel />
