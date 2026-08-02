@@ -311,3 +311,33 @@ app.width=1440 can giua) - glyph/emoji lam icon (doi het sang lucide-
 react). tsc/eslint/test sach, verify 4 anh sang/toi 1440x900 (mo ta chi
 tiet + do DOM container trong BAO-CAO-FM.md)."
 ```
+
+---
+
+## VÒNG 5 — 7 lỗi Hoà tự kiểm trên `/files`
+
+| # | Lỗi | Sửa | Verify |
+|---|---|---|---|
+| 1 | Màn gốc trống 70% dưới — `isEmpty` có `!isRootView` chặn hẳn khối trống ở root | Bỏ điều kiện, đổi tên `showEmptyBlock = files.length===0 && uploading.length===0` (áp mọi cấp) · di chuyển khối xuống DƯỚI dãy folder chip · copy riêng cho root ("Chọn 1 thư mục để xem file") | Ảnh root: fan+heading hiện ngay dưới 5 folder chip, không còn khoảng trắng |
+| 2 | Nút Tải lên xám như disabled | Đổi từ `disabled={!canUpload}` (luôn render, mờ khi false) → chỉ RENDER nút khi `canUpload` true, bỏ hẳn CSS `:disabled` | Ảnh trong `01-input`/`02-cad`: nút đen đậm, chữ sáng, không mờ. Ở root: nút biến mất hẳn (đúng — root không có "nơi" để tải lên) |
+| 3 | Ring gauge có viền lạ + toán làm tròn | `RING_C = 2·π·26 = 163.3628…` (không làm tròn 163 như mock) + kỹ thuật `strokeDasharray={C} strokeDashoffset={C·(1-pct)}` thay vì chia 2 đoạn · thêm `outline:none` cho `.ring` | Đo DOM: `dasharray=163.3628…`, `dashoffset` khớp đúng công thức, không lệch làm tròn |
+| 4 | Rail bubble active tràn mép trái | `.ri` 44px→42px (chừa biên an toàn cho `scale(1.12)`) + `transform-origin:center` tường minh | Đo DOM thật: `leftGap=6.48px`, `rightGap=6.48px` — bằng nhau tuyệt đối |
+| 5 | Inspector rỗng chỉ 1 câu vô dụng | Khi có thư mục đang mở: hiện tên thư mục + "N file · size" (từ `folderStats` thật) + tối đa 3 file gần nhất trong thư mục (bấm chọn thẳng). Root: giữ câu gợi ý ngắn (không có "thư mục" cụ thể để tóm tắt) | Ảnh `Nord Villa`: card hiện "10 file · 98 MB" + "Nord Villa.idf · 18 MB" bấm được |
+| 6 | Avatar rơi đáy màn | `.rail .bottom{margin-top:auto}` → `margin-top:12px` (cố định, không đẩy xuống cuối flex) | Đo DOM: `avatarTop - railcapBottom = 12px` đúng tuyệt đối |
+| 7 | Breadcrumb gốc chỉ "Files" trơ | Thêm `· {n} thư mục · {formatBytes(tổng)}` khi `isRootView` | Ảnh: "Files · 5 thư mục · 4.2 GB" |
+
+**Verify 2 theme ở 1440×900** (cùng hạn chế công cụ đã ghi ở vòng 4 — không lưu ảnh ra file, xem
+trực tiếp trong transcript phiên): root Sáng, folder-có-file Sáng, root Tối, tất cả console sạch
+(`read_console_messages` không có lỗi ở mọi bước). Riêng bug #3/#4/#6 đã đo bằng
+`getBoundingClientRect()`/thuộc tính SVG thật (không chỉ nhìn ảnh) — số liệu ghi ở bảng trên.
+
+`tsc --noEmit` 0 lỗi · `next lint` sạch (`components/filemanager`) · `npm test` exit 0 (không có
+suite fail nào trong repo, `grep "[1-9]* fail"` không khớp dòng nào).
+
+### SẴN SÀNG COMMIT — vòng 5
+
+```bash
+cd ~/Downloads/interiorflow-g4
+git add components/filemanager docs/BAO-CAO-FM.md
+git commit -m "fix(files): 7 loi tu kiem - empty state goc, nut tai len, ring gauge, rail, inspector"
+```

@@ -26,12 +26,17 @@ export const FILES_MOCK_CSS = `
 
 .if-files-app .rail{width:76px;display:flex;flex-direction:column;align-items:center;padding:18px 0}
 .if-files-app .railcap{background:var(--panel);border:1px solid var(--border);border-radius:30px;box-shadow:var(--shadow-node);display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 8px}
-.if-files-app .ri{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--t3);position:relative;text-decoration:none}
+/* bug #4 tự kiểm: bubble active tràn mép trái — nút 44px + scale(1.12) sát mép trong capsule
+   padding 8px hai bên; giảm nút xuống 42px (chừa biên an toàn) + margin:0 + transform-origin
+   giữa tường minh (mặc định đã là center, khai báo rõ để loại trừ nghi ngờ). */
+.if-files-app .ri{width:42px;height:42px;margin:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--t3);position:relative;text-decoration:none;transform-origin:center}
 .if-files-app .ri.on{background:var(--t1);color:var(--panel);transform:scale(1.12);box-shadow:0 4px 12px rgba(38,38,43,.30)}
-.if-files-app .ri .tip{position:absolute;left:54px;background:var(--t1);color:var(--panel);font-size:10.5px;border-radius:7px;padding:3px 9px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s}
+.if-files-app .ri .tip{position:absolute;left:52px;background:var(--t1);color:var(--panel);font-size:10.5px;border-radius:7px;padding:3px 9px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s}
 .if-files-app .ri:hover .tip{opacity:1}
 .if-files-app .railcap .sep{width:26px;height:1px;background:var(--border);margin:4px 0}
-.if-files-app .rail .bottom{margin-top:auto}
+/* bug #6 tự kiểm: avatar rơi đáy màn (margin-top:auto đẩy xuống cuối .rail) — đổi sang cách
+   railcap đúng 12px cố định, cùng trục dọc (align-items:center của .rail đã lo phần ngang). */
+.if-files-app .rail .bottom{margin-top:12px}
 .if-files-app .avatar{width:40px;height:40px;border-radius:50%;border:2px solid var(--panel);box-shadow:var(--shadow-node);overflow:hidden;display:block}
 
 .if-files-app .main{flex:1;display:flex;flex-direction:column;padding:26px 30px 22px 10px;min-width:0;position:relative}
@@ -46,8 +51,12 @@ export const FILES_MOCK_CSS = `
 .if-files-app .viewseg{display:flex;background:var(--field);border-radius:11px;padding:3px}
 .if-files-app .viewseg span{width:32px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;color:var(--t3);cursor:pointer}
 .if-files-app .viewseg span.on{background:var(--panel);color:var(--t1);box-shadow:0 1px 3px rgba(0,0,0,.10)}
+/* bug #2 tự kiểm: nút Tải lên trông "xám như disabled" — gốc là render disabled+opacity:.4 ở
+   root/thư mục chỉ đọc (đúng ý là ẩn hẳn khi không dùng được, không phải mờ đi trông như hỏng).
+   JSX giờ chỉ render nút này khi canUpload=true, nên bỏ hẳn state disabled/opacity ở CSS —
+   nút hiện ra LUÔN ở trạng thái đúng mock (nền đậm/chữ sáng theo cặp --t1/--panel, đổi đúng cả
+   2 theme, không hardcode #fff — tránh lặp lại bug tương phản đã sửa ở vòng trước). */
 .if-files-app .upbtn{display:flex;align-items:center;gap:7px;background:var(--t1);color:var(--panel);border:0;border-radius:19px;height:38px;padding:0 18px;font-size:12.5px;font-weight:600;box-shadow:0 4px 14px rgba(38,38,43,.25);cursor:pointer}
-.if-files-app .upbtn:disabled{opacity:.4;cursor:not-allowed}
 
 .if-files-app .folders{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
 .if-files-app .fol{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:10px 14px;box-shadow:var(--shadow-node);font-size:12.5px;cursor:pointer;text-align:left}
@@ -83,7 +92,10 @@ export const FILES_MOCK_CSS = `
 .if-files-app .insp{width:308px;padding:26px 26px 22px 0;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
 .if-files-app .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-node);padding:16px}
 .if-files-app .storrow{display:flex;align-items:center;gap:14px}
-.if-files-app .ring{width:64px;height:64px;flex:none}
+/* bug #3 tự kiểm: outline/focus ring lạ quanh gauge — SVG không tabIndex nên không tự nhận
+   focus, nhưng vẫn khoá hẳn outline phòng trình duyệt/extension áp focus-visible mặc định. */
+.if-files-app .ring{width:64px;height:64px;flex:none;outline:none}
+.if-files-app .ring:focus{outline:none}
 .if-files-app .stor .big{font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--t1)}
 .if-files-app .stor .small{font-size:11px;color:var(--t2)}
 .if-files-app .bars{margin-top:12px;display:flex;flex-direction:column;gap:8px}
@@ -106,7 +118,10 @@ export const FILES_MOCK_CSS = `
 .if-files-app .tabs span.on{background:var(--panel);color:var(--t1);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .if-files-app .desc{font-size:12px;color:var(--t3);line-height:1.55;margin-top:10px}
 .if-files-app .openbtn{width:100%;margin-top:14px;background:var(--accent);color:#fff;border:0;border-radius:12px;height:40px;font-size:12.5px;font-weight:600;box-shadow:0 5px 16px rgba(106,87,245,.32);cursor:pointer}
-.if-files-app .empty-insp{padding:16px;text-align:center;font-size:12.5px;color:var(--t2)}
+/* bug #5 tự kiểm: card rỗng chỉ 1 câu trơ — giờ chứa tóm tắt thư mục + tối đa 3 file (JSX), CSS
+   bỏ ép text-align:center toàn khối (chỉ dòng "chọn thư mục" ở root mới tự canh giữa qua style
+   riêng trong JSX). */
+.if-files-app .empty-insp{padding:16px;font-size:12.5px;color:var(--t2)}
 
 /* KHÔNG display:flex ở đây — biến .if-files-app (con) thành flex-item khiến width:auto co lại
    theo nội dung (shrink-to-fit) thay vì lấp đầy rồi bị max-width chặn ở 1440, PHÁ luôn margin:0

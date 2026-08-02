@@ -56,11 +56,17 @@ export function FileManagerShell() {
   const byRoot = useMemo(() => storageByRoot(), []);
   const isRootView = currentFolderId === null;
   const canUpload = !isRootView && currentFolder?.permission === 'rw';
-  const isEmpty = !isRootView && subfolders.length === 0 && files.length === 0 && uploading.length === 0;
+  // Khối trống hiện bất kể root/lá — chỉ cần KHÔNG có file lẻ ở cấp này (bug #1 tự kiểm: root
+  // luôn có files.length=0 vì chỉ chứa thư mục con, nhưng trước đây `!isRootView` chặn hẳn khối
+  // này ở root → 70% màn trống trơn dưới dãy folder chip).
+  const showEmptyBlock = files.length === 0 && uploading.length === 0;
 
   const usedTotal = byRoot.projects + byRoot.backups + byRoot.library + byRoot.knowledge + byRoot.system;
   const pct = Math.min(100, (usedTotal / STORAGE_QUOTA_BYTES) * 100);
-  const ringDash = 163 * (pct / 100);
+  // Chu vi thật C = 2πr (r=26), KHÔNG lấy tròn 163 của mock nữa — dùng dashoffset thay vì chia 2
+  // đoạn dasharray (bug #3 tự kiểm: vòng phải khép kín mượt, không lệch do làm tròn).
+  const RING_C = 2 * Math.PI * 26;
+  const ringOffset = RING_C * (1 - pct / 100);
 
   const bars = [
     { k: 'Dự án', v: byRoot.projects, color: '#6a57f5' },
@@ -122,9 +128,11 @@ export function FileManagerShell() {
                 <span className={view === 'grid' ? 'on' : ''} onClick={() => setView('grid')}><LayoutGrid size={14} /></span>
                 <span className={view === 'list' ? 'on' : ''} onClick={() => setView('list')}><List size={14} /></span>
               </div>
-              <button type="button" className="upbtn" disabled={!canUpload} onClick={() => fileInputRef.current?.click()}>
-                <Upload size={14} /> Tải lên
-              </button>
+              {canUpload && (
+                <button type="button" className="upbtn" onClick={() => fileInputRef.current?.click()}>
+                  <Upload size={14} /> Tải lên
+                </button>
+              )}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -141,6 +149,9 @@ export function FileManagerShell() {
 
           <div className="crumbs">
             <button type="button" className="c" onClick={() => setCurrentFolderId(null)}>Files</button>
+            {isRootView && (
+              <span>&nbsp;· {subfolders.length} thư mục · {formatBytes(usedTotal)}</span>
+            )}
             {path.map((p, i) => (
               <span key={p.id} style={{ display: 'contents' }}>
                 {' › '}
@@ -178,25 +189,8 @@ export function FileManagerShell() {
             </div>
           )}
 
-          {isEmpty && (
-            <div className="empty">
-              <div className="fan">
-                <div className="ph p1" />
-                <div className="ph p2" />
-                <div className="ph p3" />
-              </div>
-              <h2>Chưa có file trong {currentFolder?.name}</h2>
-              <p>{canUpload ? 'Kéo file vào đây — bản vẽ, ảnh khảo sát, brief của khách.' : 'Thư mục chỉ đọc — chưa có nội dung.'}</p>
-              {canUpload && (
-                <button type="button" className="cta" onClick={() => fileInputRef.current?.click()}>
-                  Chọn file từ máy <small>hoặc kéo thả</small>
-                </button>
-              )}
-            </div>
-          )}
-
           {!isRootView && files.length > 0 && (
-            <div className="folders" style={{ marginTop: isEmpty ? 0 : 22 }}>
+            <div className="folders" style={{ marginTop: 22 }}>
               {files.map((f) => (
                 <button type="button" key={f.id} className="fol" onClick={() => setSelected(f)} style={{ borderColor: selected?.id === f.id ? '#6a57f5' : undefined }}>
                   <span className="ic" style={{ background: '#e6e3de' }} />
@@ -206,6 +200,32 @@ export function FileManagerShell() {
                   </span>
                 </button>
               ))}
+            </div>
+          )}
+
+          {showEmptyBlock && (
+            <div className="empty">
+              <div className="fan">
+                <div className="ph p1" />
+                <div className="ph p2" />
+                <div className="ph p3" />
+              </div>
+              {isRootView ? (
+                <>
+                  <h2>Chọn 1 thư mục để xem file</h2>
+                  <p>Files chỉ chứa thư mục — file thật nằm bên trong từng dự án.</p>
+                </>
+              ) : (
+                <>
+                  <h2>Chưa có file trong {currentFolder?.name}</h2>
+                  <p>{canUpload ? 'Kéo file vào đây — bản vẽ, ảnh khảo sát, brief của khách.' : 'Thư mục chỉ đọc — chưa có nội dung.'}</p>
+                </>
+              )}
+              {canUpload && (
+                <button type="button" className="cta" onClick={() => fileInputRef.current?.click()}>
+                  Chọn file từ máy <small>hoặc kéo thả</small>
+                </button>
+              )}
             </div>
           )}
 
@@ -226,9 +246,12 @@ export function FileManagerShell() {
         <div className="insp">
           <div className="card stor">
             <div className="storrow">
-              <svg className="ring" viewBox="0 0 64 64">
+              <svg className="ring" viewBox="0 0 64 64" focusable="false">
                 <circle cx="32" cy="32" r="26" fill="none" stroke="var(--field)" strokeWidth="8" />
-                <circle cx="32" cy="32" r="26" fill="none" stroke="var(--accent)" strokeWidth="8" strokeLinecap="round" strokeDasharray={`${ringDash} ${163 - ringDash}`} transform="rotate(-90 32 32)" />
+                <circle
+                  cx="32" cy="32" r="26" fill="none" stroke="var(--accent)" strokeWidth="8" strokeLinecap="round"
+                  strokeDasharray={RING_C} strokeDashoffset={ringOffset} transform="rotate(-90 32 32)"
+                />
               </svg>
               <div>
                 <div className="big">{formatBytes(usedTotal)}</div>
@@ -247,7 +270,37 @@ export function FileManagerShell() {
           </div>
 
           {!selected ? (
-            <div className="card empty-insp">Chọn 1 file để xem chi tiết.</div>
+            <div className="card empty-insp">
+              {isRootView || !currentFolder ? (
+                <p style={{ margin: 0, textAlign: 'center', color: 'var(--t2)' }}>Chọn 1 thư mục rồi chọn file để xem chi tiết.</p>
+              ) : (
+                <>
+                  <p style={{ margin: '0 0 10px', fontWeight: 600, color: 'var(--t1)' }}>{currentFolder.name}</p>
+                  <p style={{ margin: '0 0 12px', color: 'var(--t2)' }}>
+                    {(() => {
+                      const st = folderStats(currentFolder.id, state.uploaded);
+                      return `${st.count} file · ${formatBytes(st.bytes)}`;
+                    })()}
+                  </p>
+                  {files.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, textAlign: 'left' }}>
+                      <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--t3)' }}>File trong thư mục</span>
+                      {files.slice(0, 3).map((f) => (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => setSelected(f)}
+                          style={{ display: 'flex', justifyContent: 'space-between', gap: 8, background: 'var(--field)', border: 0, borderRadius: 8, padding: '6px 9px', fontSize: 11.5, color: 'var(--t1)', cursor: 'pointer', textAlign: 'left' }}
+                        >
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
+                          <span style={{ color: 'var(--t3)', flexShrink: 0 }}>{formatBytes(f.sizeBytes)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           ) : (
             <div className="card">
               <div className="fprev"><div className="doc">{(selected.ext || 'FILE').toUpperCase()}</div></div>
