@@ -20,7 +20,7 @@ import { InteriorNode } from '@/components/nodes/InteriorNode';
 import { NoteNode } from '@/components/nodes/NoteNode';
 import { BottomToolbar } from '@/components/BottomToolbar';
 import DemoLauncher from '@/components/DemoLauncher';
-import { DND_MIME } from '@/components/NodeLibraryPanel';
+import { DND_MIME, MAT_MIME } from '@/components/NodeLibraryPanel';
 import { ASSET_MIME } from '@/components/LibraryPanel';
 import { CATEGORY_META } from '@/lib/types';
 import { PresenceBar } from '@/components/collab/PresenceBar';
@@ -319,6 +319,22 @@ export function FlowCanvas() {
       const defType = e.dataTransfer.getData(DND_MIME);
       if (defType) {
         addNode(defType, pos);
+        // G2 phần (5) — swatch vật liệu ĐI KÈM DND_MIME (không thay thế): sau khi tạo đúng
+        // loại node (`util.materialnote`), đọc thêm matId/name/code/... để updateParam ngay,
+        // đúng khuôn nhánh ASSET_MIME bên dưới (nodes.at(-1) lấy node vừa thêm).
+        const matJson = e.dataTransfer.getData(MAT_MIME);
+        if (matJson) {
+          try {
+            const p = JSON.parse(matJson) as Record<string, string>;
+            const store = useFlowStore.getState();
+            const newNode = store.nodes.at(-1);
+            if (newNode) {
+              for (const [k, v] of Object.entries(p)) store.updateParam(newNode.id, k, v);
+            }
+          } catch {
+            // JSON hỏng (kéo thả lạ) — bỏ qua, node vẫn tồn tại trống params, không crash.
+          }
+        }
         return;
       }
       // asset từ thư viện team → tải file, tạo node Import Image gắn sẵn ảnh

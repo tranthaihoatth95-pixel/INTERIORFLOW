@@ -39,6 +39,7 @@ async function renderMaterialCard(opt: {
   hex: string;
   note: string;
   swatch?: string;
+  matId?: string;
 }): Promise<string> {
   const W = 480;
   const H = 320;
@@ -95,6 +96,14 @@ async function renderMaterialCard(opt: {
     ctx.fillText(normHex(opt.hex).toUpperCase(), PAD, y);
     y += 20;
   }
+  // matId neo về ProductSpec ATLAS thật — hiện làm badge nhỏ để thẻ "mang dữ liệu, không chỉ
+  // ảnh" (SPEC-CHANG2-UI-2MODE §3), không lẫn với hex/mã tự do phía trên.
+  if (opt.matId) {
+    ctx.font = '600 11px system-ui, sans-serif';
+    ctx.fillStyle = '#9b7a4a';
+    ctx.fillText(`matId ${opt.matId}`, PAD, y);
+    y += 20;
+  }
   if (opt.note) {
     ctx.font = '12px system-ui, sans-serif';
     ctx.fillStyle = '#8a8378';
@@ -138,17 +147,22 @@ export const materialNoteNodes: NodeDefinition[] = [
       const code = String(params.code ?? '').trim();
       const supplier = String(params.supplier ?? '').trim();
       const note = String(params.note ?? '').trim();
+      // matId KHÔNG khai trong params[] (không có ô nhập tay — chỉ tự điền lúc kéo swatch thật
+      // từ /api/specs?kind=material) nhưng vẫn "đi theo" node.data.params đầy đủ, đọc thẳng.
+      const matId = String(params.matId ?? '').trim();
       const image = await renderMaterialCard({
         name,
         code,
         supplier,
         hex,
         note,
+        matId,
         swatch: inputs.swatch ? String(inputs.swatch.value) : undefined,
       });
       onProgress(1);
       const descParts = [name, code, supplier].filter(Boolean);
       if (isHex(hex)) descParts.push(normHex(hex));
+      if (matId) descParts.push(`matId ${matId}`);
       const text = note ? `${descParts.join(' · ')} — ${note}` : descParts.join(' · ');
       const out: Record<string, PortValue> = {
         image: { dataType: 'image', value: image },
