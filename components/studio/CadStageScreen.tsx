@@ -50,12 +50,23 @@ export default function CadStageScreen() {
   // Tiêu đề Inspector — 1 vật chọn thì tên rõ theo type, nhiều vật thì đếm số (khớp mock
   // "Phòng khách"/"24.6 m²" — ở đây chưa có mô hình "tên vật" đầy đủ như mock giả định, dùng
   // nhãn theo LOẠI entity, trung thực hơn là bịa tên phòng không có thật).
+  // CHINH-5 (SPEC-PANEL-ROLLOUT §3 hàng "Lớp: Tường"): sub = CHẤM MÀU lớp + TÊN lớp (học Figma),
+  // không nhãn "Lớp:", không lộ id thô (`l-wall`) như bản đầu.
   const { title, sub } = useMemo(() => {
     if (selection.length === 0) return { title: undefined, sub: undefined };
     if (selection.length > 1) return { title: tr(`${selection.length} đối tượng`, `${selection.length} objects`), sub: undefined };
     const e = doc.entities.find((x) => x.id === selection[0]);
-    return { title: e ? tr(entityTypeLabel(e.type), e.type) : undefined, sub: e?.layer };
-  }, [selection, doc.entities, tr]);
+    const layer = e ? doc.layers.find((l) => l.id === e.layer) : undefined;
+    return {
+      title: e ? tr(entityTypeLabel(e.type), e.type) : undefined,
+      sub: layer ? (
+        <span className="flex items-center gap-1.5" title={tr('Lớp', 'Layer')}>
+          <span className="h-2 w-2 shrink-0 rounded-[3px]" style={{ background: layer.color }} />
+          {layer.name}
+        </span>
+      ) : undefined,
+    };
+  }, [selection, doc.entities, doc.layers, tr]);
 
   return (
     <AppShell

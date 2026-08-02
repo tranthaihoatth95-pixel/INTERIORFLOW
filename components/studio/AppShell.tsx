@@ -53,7 +53,7 @@ interface Props {
   /** Ổ ④ — CHỈ truyền khi có vật được chọn; AppShell tự ẩn hẳn khung khi `undefined`/`null`. */
   inspector?: ReactNode;
   inspectorTitle?: string;
-  inspectorSub?: string;
+  inspectorSub?: ReactNode;
   onCloseInspector?: () => void;
   /** Ổ ⑤ — dock kính nổi, AppShell định vị absolute giữa-dưới Stage. */
   toolbelt?: ReactNode;
@@ -171,7 +171,7 @@ function InspectorSlot({
 }: {
   children?: ReactNode;
   title?: string;
-  sub?: string;
+  sub?: ReactNode;
   onClose?: () => void;
 }) {
   const reduceMotion = useReducedMotion();
@@ -190,7 +190,7 @@ function InspectorSlot({
           {(title || onClose) && (
             <div className="flex h-[34px] shrink-0 items-center gap-1.5 border-b border-[var(--mat-hairline)] px-3">
               {title && <h2 className="min-w-0 flex-1 truncate text-[14px] font-semibold tracking-tight text-[var(--t1)]">{title}</h2>}
-              {sub && <span className="shrink-0 font-mono text-[11px] text-[var(--t3)]">{sub}</span>}
+              {sub && <span className="shrink-0 text-[11px] text-[var(--t3)]">{sub}</span>}
               {onClose && (
                 <button
                   type="button"
