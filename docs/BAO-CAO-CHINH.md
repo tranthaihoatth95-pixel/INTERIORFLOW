@@ -1397,3 +1397,45 @@ nút toggle trên tab browser mới đôi khi không đăng ký (đọc store th
   registry.ts`) · Trụ 3 Inspector tự sinh schema · tab ngang 34px trên canvas (CadSheets đã có
   tab riêng, chưa chuẩn hoá về khung chung) · danh sách trang thật cho PresentNavigator ·
   click-để-focus node từ RenderNavigator · Layer State đỉnh Navigator (tính năng mới, cần model).
+
+---
+
+## [TỰ CHẠY · CHINH-1] Merge nhanh-g4 XONG · nhanh-phu ABORT (mìn thật, vùng PHU) + bench 3D-2
+- Commit `3c8dae6` (merge g4) + `1873cbe` (bench 3D-2).
+- **nhanh-g4 → main XONG, xử mìn đúng hướng giao**: `LeftRail.tsx`/`StageShell.tsx` GIỮ XOÁ
+  (git rm bản g4 để lại), port hành vi: `AppShell` mount `<LibrarySheet stage={libStage}/>` vào
+  ổ overlay dùng chung (cạnh Dashboard/FlowsPanel — 1 lần cho CẢ 5 màn, mapping photo→render giữ
+  từ bản g4); `AppShell.onOpenLibrary` thành optional mặc định `openLibrarySheet({stage})` — nút
+  "Thư viện" đáy Navigator MỞ SHEET mọi màn; `AppLogoMenu` mục Thư viện cùng 1 hành vi (bỏ nhánh
+  "Thư viện Node"/router.push cũ — NodeLibraryPanel vẫn vào được qua ⌘K, grep G4 xác nhận);
+  bỏ 2 mount lẻ g4 đặt ở `/files`+`PixelSettingsShell` (trước cần vì 2 trang không qua
+  StageShell); 4 call site bỏ prop `onOpenLibrary` (hết `router.push('/library')`).
+- Nhận trọn code mới g4: LibrarySheet/BulkIngest/shelves/use-library-sheet (sheet kính, phím L +
+  Escape capture, deep-link qua sessionStorage) · CommandPanel/Viewport3D/ObjectProperties +
+  ve3d-css + lib/three/materials + mode-render-3d (Vẽ 3D — CHƯA mount, việc G4 sau merge theo
+  queue của họ; `mode-render-3d.ts` có TODO(CHINH) nối `defineMode` — registry đã có ở
+  `lib/shell/mode-registry.ts`, G4 nối khi mount) · xoá 6 file library cũ + mock-data.
+- tsc/eslint sạch · npm test 0 fail · **verify browser thật đủ đề bài**: nút Thư viện mở sheet ở
+  CẢ 5 màn (Render/CAD/Present qua client-side, /files·/settings hard-nav) — kệ tự lọc ĐÚNG chặng
+  ("Kệ chặng Vẽ"/"Dựng ảnh"/"Trình bày") · Esc đóng (data-open=false + inert; vệt sheet còn thấy
+  là transition đóng băng do rAF-throttle sandbox đã biết, state đúng) · deep-link `/library` →
+  redirect về trang trước + sheet TỰ MỞ (sessionStorage). Console: chỉ còn loop
+  `EditorCanvas.tsx:53` present-editor ĐÃ BIẾT của phiên phụ, 0 lỗi mới.
+- **Bench 3D-2**: COMMIT (không xoá) `app/dev-bench-3d-2/` — STATUS.md ghi rõ CHỜ Hoà chạy lấy
+  số thật rồi mới xoá; commit để hết untracked noise + tái lập được. `tsconfig.scoped.json`
+  KHÔNG đụng (file scratch phiên Cowork, STATUS ghi Hoà rm tay).
+- ⛔ **nhanh-phu KHÔNG merge được — MÌN THẬT, trái sổ ghi "sạch không mìn", đã `git merge
+  --abort` (main sạch lại, tsc pass)**. 2 lỗi, đều vùng PHU (`lib/*`), tôi không được sửa (§2):
+  1. `lib/boq/cache.ts:34` (+ toàn bộ test BOQ) đọc `h.specId` trên **HatchEntity** — field
+     `specId` chỉ tồn tại trên **BlockEntity** (`lib/cad/model.ts:285`), CẢ trên chính nhánh
+     nhanh-phu (đã xem `git show nhanh-phu:lib/cad/model.ts` — HatchEntity không có specId).
+     Nhánh phu TỰ NÓ không typecheck — nghi tsc-scoped của phiên phu bỏ sót (STATUS có ghi họ
+     phải dùng tsc scoped vì `-p .` timeout sandbox).
+  2. `app/api/boq/[projectId]/route.ts:54`: kiểu trả về Prisma select thiếu
+     `unit/priceVnd/wastagePercent` so với `ProductSpecDtoLite` — schema.prisma ĐÃ có 3 cột
+     (dòng 389-391) nên nghi select thiếu cột HOẶC Prisma client generate cũ.
+  → Việc của PHU: thêm `specId?: string` vào HatchEntity (additive, đúng thiết kế comment trong
+  cache.ts) + sửa select/generate. Merge lại sau khi nhánh phu tsc sạch.
+- Kỹ thuật: `.git` chung nhiều phiên — gặp `HEAD.lock`/`packed-refs.lock` stale (30-40 phút,
+  lsof chỉ com.apple giữ fd đọc) → rename `*.stale-<pid>` theo convention sẵn trong `.git/`,
+  không rm.
