@@ -4,9 +4,9 @@
  * LUẬT TRUNG TÍNH: mọi id/tên/nhãn trong fixture HƯ CẤU 100% (không tên studio/khách thật).
  */
 import {
-  classifyDrawOnBatch, planDrawOn, DRAW_ON_BATCH_ORDER, DRAW_ON_BATCH_DURATION_SEC,
+  classifyDrawOnBatch, planDrawOn, findMainDoor, DRAW_ON_BATCH_ORDER, DRAW_ON_BATCH_DURATION_SEC,
 } from './plan-drawon';
-import type { Doc, Entity, Layer, LineEntity, PolylineEntity, TextEntity, DimEntity, ZoneEntity } from './model';
+import type { Doc, Entity, Layer, LineEntity, PolylineEntity, TextEntity, DimEntity, ZoneEntity, HatchEntity, BlockEntity } from './model';
 
 let pass = 0;
 let fail = 0;
@@ -39,6 +39,12 @@ function zone(id: string, layerId: string): ZoneEntity {
 }
 function docOf(entities: Entity[], layers: Layer[]): Pick<Doc, 'entities' | 'layers'> {
   return { entities, layers };
+}
+function hatch(id: string, layerId: string, points: { x: number; y: number }[], elementType?: Entity['elementType']): HatchEntity {
+  return { id, type: 'hatch', layer: layerId, points, solid: true, elementType };
+}
+function block(id: string, layerId: string, blockId: string, at: { x: number; y: number }, extra?: Partial<BlockEntity>): BlockEntity {
+  return { id, type: 'block', layer: layerId, block: blockId, at, rot: 0, sx: 1, sy: 1, elementType: blockId.startsWith('door') ? 'door' : 'furniture', ...extra };
 }
 
 /* ── [1] classifyDrawOnBatch — đúng bảng §1.1, đủ 8 elementType + null/undefined ── */
@@ -219,10 +225,66 @@ function testMeasure2000() {
   console.log(`  💭 Thời lượng VIDEO (totalDurationSec) = ${plan.totalDurationSec}s — CỐ ĐỊNH theo thiết kế, không phụ thuộc N entity (xem JSDoc planDrawOn).`);
 }
 
+/* ── [5] V1.1 — so le nội thất theo khoảng cách tới cửa chính (C5, 02/08) ── */
+function roomWalls(layerId = 'l1'): HatchEntity[] {
+  // phòng 6000×4000mm, mỗi tường 1 hatch mỏng dọc biên — union bbox ≈ (-100,-100)..(6100,4100)
+  return [
+    hatch('wS', layerId, [{ x: 0, y: -100 }, { x: 6000, y: -100 }, { x: 6000, y: 0 }, { x: 0, y: 0 }], 'wall'),
+    hatch('wN', layerId, [{ x: 0, y: 4000 }, { x: 6000, y: 4000 }, { x: 6000, y: 4100 }, { x: 0, y: 4100 }], 'wall'),
+    hatch('wW', layerId, [{ x: -100, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 4000 }, { x: -100, y: 4000 }], 'wall'),
+    hatch('wE', layerId, [{ x: 6000, y: 0 }, { x: 6100, y: 0 }, { x: 6100, y: 4000 }, { x: 6000, y: 4000 }], 'wall'),
+  ];
+}
+
+function testFindMainDoor() {
+  console.log('\n[5a] findMainDoor — door rộng nhất TRÊN BIÊN NGOÀI, bỏ qua door nội bộ dù rộng hơn');
+  const walls = roomWalls();
+  const shellBox = { minX: -100, minY: -100, maxX: 6100, maxY: 4100 };
+
+  const doorMain = block('doorMain', 'l1', 'door', { x: 3000, y: 0 }); // biên Nam, w=900
+  const doorWc = block('doorWc', 'l1', 'doorWC', { x: 0, y: 2000 }); // biên Tây, w=700 — hẹp hơn
+  const doorInteriorWide = block('doorInterior', 'l1', 'door', { x: 3000, y: 2000 }, { sx: 1.5 }); // GIỮA phòng, w hiệu dụng 1350 — RỘNG NHẤT nhưng KHÔNG chạm biên
+
+  const found = findMainDoor([doorMain, doorWc, doorInteriorWide], shellBox);
+  ok('chọn đúng door biên Nam (rộng nhất TRONG SỐ door chạm biên), bỏ qua door nội bộ rộng hơn', !!found && found.x === 3000 && found.y === 0);
+
+  ok('không door nào → null', findMainDoor([], shellBox) === null);
+  ok('shellBox null (bản vẽ không tường) → null', findMainDoor([doorMain], null) === null);
+  ok('chỉ toàn door nội bộ (không door nào chạm biên) → null', findMainDoor([doorInteriorWide], shellBox) === null);
+  void walls;
+}
+
+function testFurnitureStagger() {
+  console.log('\n[5b] planDrawOn — đợt ③ so le theo khoảng cách tới cửa chính');
+  const layers = [layer('l1')];
+  const walls = roomWalls();
+  const mainDoor = block('doorMain', 'l1', 'door', { x: 3000, y: 0 });
+  // Thêm doc THEO THỨ TỰ f1,f2,f3 — nhưng khoảng cách tới cửa (3000,0) là f2 < f1 < f3, nên nếu
+  // so le đúng, thứ tự OUTPUT phải là f2,f1,f3 (KHÁC thứ tự input — chứng minh có sắp lại thật,
+  // không phải trùng hợp giữ nguyên thứ tự mảng gốc).
+  const f1 = block('f1', 'l1', 'sofa2', { x: 5500, y: 3500 }); // xa cửa nhất trong 3 món (~4301mm)
+  const f2 = block('f2', 'l1', 'coffeeTable', { x: 3200, y: 300 }); // gần cửa nhất (~360mm)
+  const f3 = block('f3', 'l1', 'armchair', { x: 100, y: 3800 }); // xa nhất (~4780mm)
+
+  const plan = planDrawOn(docOf([...walls, mainDoor, f1, f2, f3], layers));
+  const furnitureGroup = plan.groups.find((g) => g.batch === 'furniture')!;
+  ok(`thứ tự output = [f2,f1,f3] theo khoảng cách tăng dần tới cửa chính (được [${furnitureGroup.entityIds.join(',')}])`, furnitureGroup.entityIds.join(',') === 'f2,f1,f3');
+
+  // ca fallback: KHÔNG có door nào → V1.1 rơi về V1 (giữ nguyên thứ tự mảng gốc f1,f2,f3)
+  const planNoDoor = planDrawOn(docOf([...walls, f1, f2, f3], layers));
+  const furnitureNoDoor = planNoDoor.groups.find((g) => g.batch === 'furniture')!;
+  ok('không có cửa chính → rơi về V1 (giữ thứ tự mảng gốc f1,f2,f3)', furnitureNoDoor.entityIds.join(',') === 'f1,f2,f3');
+
+  // đổi thứ tự KHÔNG đổi mốc thời gian đợt (vẫn 4 đợt, vẫn 9.5s tổng, chỉ đổi entity NÀO ở vị trí nào)
+  ok('tổng thời lượng KHÔNG đổi dù so le nội thất', planDrawOn(docOf([...walls, mainDoor, f1, f2, f3], layers)).totalDurationSec === DRAW_ON_BATCH_DURATION_SEC.shell + DRAW_ON_BATCH_DURATION_SEC.openings + DRAW_ON_BATCH_DURATION_SEC.furniture + DRAW_ON_BATCH_DURATION_SEC.zones + DRAW_ON_BATCH_DURATION_SEC.annotations);
+}
+
 testClassify();
 testPlanBasic();
 testNoEntityDropped();
 testMeasure2000();
+testFindMainDoor();
+testFurnitureStagger();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

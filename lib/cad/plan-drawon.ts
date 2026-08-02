@@ -13,7 +13,9 @@
  * file này — đó là phần C (xem thử), chỉ làm sau khi A+B (file này + test) xanh, xem cây tính năng.
  */
 
-import type { Doc, Entity, Layer } from './model';
+import type { Doc, Entity, Layer, Pt, Box } from './model';
+import { entityBox } from './model';
+import { BLOCK_MAP } from './furniture';
 import { computeElementRevealTimings, type ElementRevealTiming } from '../present-editor/motion-present';
 import type { EditorSlide, ElementReveal } from '../present-editor/model';
 
@@ -105,6 +107,68 @@ export function classifyDrawOnBatch(entity: Entity, layerLineweightMm: number): 
   }
 }
 
+/** Dư dả cho "trên biên ngoài" (V1.1) — độ dày tường thật (thường 100-300mm) + sai số người vẽ
+ * đặt cửa không tuyệt đối áp mép tường. Rộng rãi cố ý: bỏ sót 1 cửa ngoài biên thật hiếm hại hơn
+ * là chọn nhầm cửa nội bộ làm "cửa chính". */
+const MAIN_DOOR_BOUNDARY_TOLERANCE_MM = 600;
+
+/** Điểm đại diện 1 entity để tính khoảng cách (V1.1) — block dùng thẳng `at` (tâm đặt thật, chính
+ * xác hơn bbox với block đã xoay); loại khác dùng tâm bbox. `null` nếu không tính được hình học
+ * (entity hỏng/rỗng — an toàn bỏ qua, không throw giữa hàng nghìn entity). */
+function entityCenterPt(e: Entity): Pt | null {
+  if (e.type === 'block') return e.at;
+  const b = entityBox(e);
+  if (!Number.isFinite(b.minX)) return null;
+  return { x: (b.minX + b.maxX) / 2, y: (b.minY + b.maxY) / 2 };
+}
+
+function unionBox(entities: Entity[]): Box | null {
+  let box: Box | null = null;
+  for (const e of entities) {
+    const b = entityBox(e);
+    if (!Number.isFinite(b.minX)) continue;
+    if (!box) box = { ...b };
+    else {
+      box.minX = Math.min(box.minX, b.minX);
+      box.minY = Math.min(box.minY, b.minY);
+      box.maxX = Math.max(box.maxX, b.maxX);
+      box.maxY = Math.max(box.maxY, b.maxY);
+    }
+  }
+  return box;
+}
+
+/**
+ * Cửa chính (V1.1, §1.1 "so le theo khoảng cách tới cửa chính") — door BlockEntity RỘNG NHẤT nằm
+ * TRÊN BIÊN NGOÀI mặt bằng. "Biên ngoài" = bbox của đợt ① Vỏ (tường·cột·sàn·dầm — KHÔNG dùng bbox
+ * toàn bộ entity, nội thất/ghi chú có thể vượt ra ngoài bao tường); "trên biên" = tâm cửa cách 1
+ * trong 4 cạnh bbox đó ≤ `MAIN_DOOR_BOUNDARY_TOLERANCE_MM`. Không có `shellBox` (bản vẽ không
+ * tường) hoặc không cửa nào chạm biên → `null`, caller rơi về V1 rải đều (đúng yêu cầu Hoà "không
+ * có thì giữ rải đều như V1").
+ */
+export function findMainDoor(doors: Entity[], shellBox: Box | null): Pt | null {
+  if (!shellBox || !Number.isFinite(shellBox.minX)) return null;
+  let bestAt: Pt | null = null;
+  let bestW = -Infinity;
+  for (const d of doors) {
+    if (d.type !== 'block') continue; // cửa luôn là BlockEntity (BLOCK_MAP door/doorRoom/doorWC…)
+    const def = BLOCK_MAP[d.block];
+    if (!def) continue;
+    const onBoundary =
+      Math.abs(d.at.x - shellBox.minX) <= MAIN_DOOR_BOUNDARY_TOLERANCE_MM ||
+      Math.abs(d.at.x - shellBox.maxX) <= MAIN_DOOR_BOUNDARY_TOLERANCE_MM ||
+      Math.abs(d.at.y - shellBox.minY) <= MAIN_DOOR_BOUNDARY_TOLERANCE_MM ||
+      Math.abs(d.at.y - shellBox.maxY) <= MAIN_DOOR_BOUNDARY_TOLERANCE_MM;
+    if (!onBoundary) continue;
+    const w = def.w * Math.abs(d.sx || 1);
+    if (w > bestW) {
+      bestW = w;
+      bestAt = d.at;
+    }
+  }
+  return bestAt;
+}
+
 /** lineweight hiệu dụng của 1 entity: override riêng entity (hiếm) → lineweight layer → mặc định. */
 /** Export để `DrawOnPreview` (phần C) tính độ dày nét ISO 128 — dùng LẠI, không suy ra lần 2. */
 export function lineweightOf(entity: Entity, layerById: Map<string, Layer>): number {
@@ -183,9 +247,11 @@ export interface PlanDrawOnResult {
  *   lượng PHẢI giãn theo độ chi tiết mặt bằng (mặt bằng phức tạp thì video dài hơn), mô hình này
  *   sai và cần đổi hướng. Nêu rõ để duyệt lại, không tự chốt.
  *
- * CHƯA LÀM (nêu rõ, không giấu): §1.1 ghi đợt Nội thất "so le theo khoảng cách tới cửa chính" —
- * bản này CHƯA tính khoảng cách, entity trong mỗi đợt giữ nguyên THỨ TỰ MẢNG GỐC của `doc.entities`
- * (giống 4 đợt còn lại). Đổi thứ tự trong 1 đợt không đụng public shape của hàm này, làm sau được.
+ * V1.1 (02/08, C5): đợt ③ Nội thất SO LE theo khoảng cách tới **cửa chính** (`findMainDoor()` ở
+ * trên — door rộng nhất trên biên ngoài, bbox đợt ① Vỏ) thay vì giữ nguyên thứ tự mảng gốc — gần
+ * cửa reveal TRƯỚC (cảm giác "bước vào phòng, nội thất gần cửa hiện trước"). Không tìm được cửa
+ * chính (không có door / không door nào chạm biên ngoài) → RƠI VỀ V1 (giữ thứ tự mảng gốc, rải
+ * đều) — không throw, không suy đoán bừa. 4 đợt còn lại KHÔNG đổi, vẫn giữ thứ tự mảng gốc.
  */
 export function planDrawOn(doc: Pick<Doc, 'entities' | 'layers'>): PlanDrawOnResult {
   const layerById = new Map(doc.layers.map((l) => [l.id, l] as const));
@@ -195,6 +261,18 @@ export function planDrawOn(doc: Pick<Doc, 'entities' | 'layers'>): PlanDrawOnRes
     const lw = lineweightOf(entity, layerById);
     const batch = classifyDrawOnBatch(entity, lw);
     byBatch.get(batch)!.push(entity);
+  }
+
+  // V1.1 — so le đợt ③ theo khoảng cách tới cửa chính (xem JSDoc hàm + findMainDoor()).
+  const mainDoorAt = findMainDoor(byBatch.get('openings')!, unionBox(byBatch.get('shell')!));
+  if (mainDoorAt) {
+    const furniture = byBatch.get('furniture')!;
+    const distOf = new Map<string, number>();
+    for (const e of furniture) {
+      const c = entityCenterPt(e);
+      distOf.set(e.id, c ? Math.hypot(c.x - mainDoorAt.x, c.y - mainDoorAt.y) : Infinity);
+    }
+    furniture.sort((a, b) => distOf.get(a.id)! - distOf.get(b.id)!);
   }
 
   const elements: DrawOnFeedElement[] = [];
