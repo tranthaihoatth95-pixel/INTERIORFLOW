@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { LayoutDashboard, FolderKanban, FolderOpen, Boxes } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
+import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import { useT } from '@/lib/i18n';
 import { easeApple } from '@/lib/motion';
 import type { RefObject } from 'react';
@@ -33,9 +34,7 @@ interface Props {
   anchorRect: AnchorRect | null;
   onDismiss: () => void;
   menuRef: RefObject<HTMLDivElement>;
-  /** Chặng đang mở — quyết định "Thư viện" điều hướng route hay mở panel trong canvas (khớp
-   * hành vi cũ của LeftRail: Render có NodeLibraryPanel tại chỗ, CAD/Present không có nên đi
-   * thẳng `/library`). */
+  /** Chặng đang mở — sheet Thư viện tự lọc kệ theo chặng. */
   stage: 'cad' | 'render' | 'present';
 }
 
@@ -61,10 +60,12 @@ export function AppLogoMenu({ open, anchorRect, onDismiss, menuRef, stage }: Pro
       label: tr('Files', 'Files'),
       action: () => router.push('/files'),
     },
+    // 03/08 (Hoà chốt, `a73c658` g4) — MỘT tên "Thư viện", MỘT hành vi (mở sheet), mọi chặng.
+    // `NodeLibraryPanel` vẫn vào được qua Command Palette — không mồ côi (grep của G4 xác nhận).
     {
       icon: Boxes,
-      label: stage === 'render' ? tr('Thư viện Node', 'Node Library') : tr('Thư viện', 'Library'),
-      action: () => (stage === 'render' ? setPanel('library') : router.push('/library')),
+      label: tr('Thư viện', 'Library'),
+      action: () => openLibrarySheet({ stage }),
     },
   ];
 

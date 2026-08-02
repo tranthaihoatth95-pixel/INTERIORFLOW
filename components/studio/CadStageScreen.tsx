@@ -31,7 +31,6 @@ import { StageIntroCard } from '@/components/onboarding/StageIntroCard';
 import { useFlowStore } from '@/lib/store';
 import { useCadStore } from '@/lib/cad/store';
 import { effectiveUserId } from '@/lib/resume';
-import { useRouter } from 'next/navigation';
 import { useT } from '@/lib/i18n';
 
 export default function CadStageScreen() {
@@ -40,7 +39,6 @@ export default function CadStageScreen() {
   // không bao giờ hiện cho user mở thẳng `/projects/[id]/cad` (F5, bookmark, tab mới).
   const storeUserId = useFlowStore((s) => s.user?.id);
   const userId = effectiveUserId(storeUserId);
-  const router = useRouter();
   const tr = useT();
 
   const doc = useCadStore((s) => s.doc);
@@ -65,7 +63,6 @@ export default function CadStageScreen() {
       navigator={<LayerPanel />}
       navigatorAddLabel={tr('Lớp mới', 'New layer')}
       onNavigatorAdd={addLayer}
-      onOpenLibrary={() => router.push('/library')}
       inspector={selection.length > 0 ? <SelectionInfoPanel /> : undefined}
       inspectorTitle={title}
       inspectorSub={sub}

@@ -15,7 +15,6 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import PresentSheets from '@/components/present-editor/PresentSheets';
 import { makeSampleDeck } from '@/lib/present-editor/sample';
 import { AppShell } from '@/components/studio/AppShell';
@@ -41,14 +40,12 @@ export default function PresentStageScreen() {
   // playing nay ở store dùng chung để đọc được từ NGOÀI PresentEditor).
   const playing = usePlayStatus((s) => s.playing);
   const tr = useT();
-  const router = useRouter();
   return (
     <AppShell
       active="present"
       statusBar={<StatusBar stage="present" hidden={playing} />}
       navigator={<PresentNavigator />}
       navigatorAddLabel={tr('Trang mới', 'New page')}
-      onOpenLibrary={() => router.push('/library')}
     >
       {/* C-4: vào chặng bằng crossfade + scale "dynamic wallpaper" (StageEnter). */}
       <StageEnter style={{ display: 'block' }}>

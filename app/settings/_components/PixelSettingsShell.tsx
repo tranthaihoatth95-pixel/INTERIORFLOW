@@ -29,6 +29,8 @@ export function PixelSettingsShell() {
     <div className="if-settings-outer">
       <RawStyle css={SETTINGS_MOCK_CSS} />
       <CanvasWallpaper />
+      {/* LibrarySheet KHÔNG mount lẻ ở đây nữa (bản g4 cũ phải tự mount vì trang không qua
+          StageShell) — nay `/settings` bọc trong AppShell, sheet mount 1 lần ở đó cho CẢ 5 màn. */}
       <div className="if-settings-app">
         {/* Rail (`components/LeftRail.tsx`) — XOÁ 03/08: `/settings` nay bọc trong `<AppShell>`
             (`app/settings/page.tsx`), Navigator = `SettingsNavigator` (nhảy neo tới từng nhóm,

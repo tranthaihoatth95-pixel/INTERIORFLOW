@@ -28,6 +28,9 @@ import { AppChrome, type AppChromeActive } from '@/components/studio/AppChrome';
 import { Navigator } from '@/components/studio/Navigator';
 import { Dashboard } from '@/components/Dashboard';
 import { FlowsPanel } from '@/components/FlowsPanel';
+import { LibrarySheet } from '@/components/library/LibrarySheet';
+import { openLibrarySheet } from '@/lib/library/use-library-sheet';
+import type { StageKey } from '@/lib/library/types';
 import { tweenBase } from '@/lib/motion';
 
 const INSPECTOR_WIDTH = 236;
@@ -40,7 +43,11 @@ interface Props {
   navigator: ReactNode;
   navigatorAddLabel: string;
   onNavigatorAdd?: () => void;
-  onOpenLibrary: () => void;
+  /** Ghi đè hành vi nút "Thư viện" đáy Navigator — MẶC ĐỊNH (không truyền) mở `LibrarySheet`
+   * (Hoà chốt 03/08 "Thư viện là MỘT nơi duy nhất, và nó là sheet" — `a73c658` trên g4).
+   * Chỉ truyền khi có lý do thật; đừng truyền `router.push('/library')` (route đó nay chỉ là
+   * redirect mở sheet). */
+  onOpenLibrary?: () => void;
   /** Ổ ④ — CHỈ truyền khi có vật được chọn; AppShell tự ẩn hẳn khung khi `undefined`/`null`. */
   inspector?: ReactNode;
   inspectorTitle?: string;
@@ -73,11 +80,15 @@ export function AppShell({
   bottomExtra,
   toolbar,
 }: Props) {
+  // AppChromeActive → StageKey của Thư viện: photo không có kệ riêng → dùng kệ chặng dựng ảnh
+  // (cùng mapping bản g4 cũ đặt trong StageShell trước khi file đó bị xoá).
+  const libStage: StageKey = active === 'cad' ? 'cad' : active === 'present' ? 'present' : 'render';
+  const openLibrary = onOpenLibrary ?? (() => openLibrarySheet({ stage: libStage }));
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden', background: 'var(--bg)' }}>
       <AppChrome active={active} logoMenu />
       <div className="relative flex min-h-0 flex-1">
-        <Navigator addLabel={navigatorAddLabel} onAdd={onNavigatorAdd} onOpenLibrary={onOpenLibrary}>
+        <Navigator addLabel={navigatorAddLabel} onAdd={onNavigatorAdd} onOpenLibrary={openLibrary}>
           {navigator}
         </Navigator>
         <div className="relative flex min-w-0 flex-1 flex-col">
@@ -95,8 +106,12 @@ export function AppShell({
       </div>
       {bottomExtra}
       {statusBar}
+      {/* Ổ overlay dùng chung — tự gate state bên trong, mount 1 lần cho CẢ 5 màn. */}
       <Dashboard />
       <FlowsPanel />
+      {/* Thư viện = sheet, NƠI DUY NHẤT (Hoà chốt 03/08, `a73c658` — trang /library chỉ còn
+          redirect). Tự gate qua `openLibrarySheet()`/phím L/Escape (use-library-sheet.ts). */}
+      <LibrarySheet stage={libStage} />
     </div>
   );
 }

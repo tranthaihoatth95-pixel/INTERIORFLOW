@@ -10,7 +10,6 @@
  * NGUYÊN logic, không xoá tính năng đang chạy thật (xem comment trong PixelSettingsShell.tsx).
  */
 
-import { useRouter } from 'next/navigation';
 import { PixelSettingsShell } from './_components/PixelSettingsShell';
 import { SettingsNavigator } from './_components/SettingsNavigator';
 import { AppShell } from '@/components/studio/AppShell';
@@ -25,13 +24,11 @@ import { useT } from '@/lib/i18n';
  */
 export default function SettingsPage() {
   const tr = useT();
-  const router = useRouter();
   return (
     <AppShell
       active="render"
       navigator={<SettingsNavigator />}
       navigatorAddLabel={tr('Cài đặt', 'Settings')}
-      onOpenLibrary={() => router.push('/library')}
     >
       <div className="min-h-0 flex-1 overflow-y-auto">
         <PixelSettingsShell />

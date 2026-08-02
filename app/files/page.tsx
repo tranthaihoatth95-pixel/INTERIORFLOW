@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/studio/AppShell';
 import { FilesNavigator } from '@/components/filemanager/FilesNavigator';
 import { FileManagerShell } from '@/components/filemanager/FileManagerShell';
@@ -21,7 +20,6 @@ import { useT } from '@/lib/i18n';
 export default function FilesPage() {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const tr = useT();
-  const router = useRouter();
 
   return (
     <>
@@ -30,9 +28,6 @@ export default function FilesPage() {
         active="render"
         navigator={<FilesNavigator currentFolderId={currentFolderId} onSelect={setCurrentFolderId} />}
         navigatorAddLabel={tr('Thư mục mới', 'New folder')}
-        /* Chưa có tính năng tạo thư mục thật (`lib/filemanager/*` không có hàm nào) — để trống
-           thay vì giả (Navigator tự làm mờ nút khi `onNavigatorAdd` undefined). */
-        onOpenLibrary={() => router.push('/library')}
       >
         <div className="min-h-0 flex-1 overflow-y-auto">
           <FileManagerShell currentFolderId={currentFolderId} onSelectFolder={setCurrentFolderId} />
