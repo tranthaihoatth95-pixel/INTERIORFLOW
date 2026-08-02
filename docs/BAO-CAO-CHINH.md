@@ -1439,3 +1439,39 @@ nút toggle trên tab browser mới đôi khi không đăng ký (đọc store th
 - Kỹ thuật: `.git` chung nhiều phiên — gặp `HEAD.lock`/`packed-refs.lock` stale (30-40 phút,
   lsof chỉ com.apple giữ fd đọc) → rename `*.stale-<pid>` theo convention sẵn trong `.git/`,
   không rm.
+
+---
+
+## [TỰ CHẠY đêm 04/08] CHỐT PHIÊN CHINH (~85% context) — 1b + CHINH-3 XONG, hàng đợi còn 4·5
+**Commit phiên tự chạy** (theo thứ tự): `3c8dae6` merge g4 (sheet Thư viện + Vẽ 3D components) ·
+`1873cbe` bench 3D-2 · `46f559b` báo cáo CHINH-1 · `7847969` CHINH-3 panel thò thụt ·
+`a3d8abd` 1b GẤP RenderNavigator catalog · `2208345` BAO-CAO-DEM · `349db14` dòng §1 sổ tổng.
+
+**KHỐI KHỞI ĐỘNG PHIÊN CHINH KẾ TIẾP (đọc xong là chạy được ngay):**
+1. Đọc `SO-KIEM-TONG.md` (§2 CHINH · §3 · §4a đêm) → `00-CHOT.md` → file này mục cuối.
+2. Trạng thái: main = `349db14`+, CHƯA PUSH (push bị permission classifier chặn phía Claude —
+   Hoà/phiên có quyền chạy `git push origin main`). tsc/eslint/test sạch tại `a3d8abd`.
+3. Hàng đợi CHINH còn (theo §3 cũ, đối chiếu lại sổ trước khi làm — Cowork có thể đã bơm mới):
+   - **#4 phím tắt toàn app** (`SPEC-PANEL-ROLLOUT-IDF` §4): ⌘K nối `CommandPalette.tsx` có sẵn
+     (hiện chỉ sống ở HomeScreen — cần nâng lên AppShell) · B/I/⌘\ (B đã có phím trong title
+     Navigator, CHƯA bind thật) · ⌘1-3 · va phím L: chặng Vẽ L=đường, Thư viện=⇧L (sổ lệnh PHU
+     chưa có → làm khung phím trong AppShell trước, TODO nối registry).
+   - **#5 bảng chữ→icon** (§3 spec): áp Inspector + Settings — LƯU Ý vùng: Inspector CAD =
+     CadInspectorPages (CHINH, sửa được), ruột box trong `components/cad/CadEditor.tsx` (3 box đã
+     export) — sửa ruột box là chạm cad, ghi rõ nếu làm; Settings = vùng G4, chỉ giao phiếu.
+   - Toolbelt ổ ⑤: gộp CadToolbar + CadTouchDock vào dock kính (sửa luôn bug toolbar tràn đè
+     Inspector — ghi ở BAO-CAO-DEM).
+   - Nối `resetAllRolloutLayouts()` vào Cài đặt (vùng G4 — soạn phiếu, đừng tự sửa).
+4. Mìn/bẫy còn nóng: nhanh-phu CHƯA merge (2 lỗi type vùng PHU, chi tiết mục CHINH-1 phía trên —
+   chờ PHU sửa `HatchEntity.specId` + Prisma select rồi merge lại) · 2 dev server chung repo →
+   nghẹt thì restart + xoá `.next/cache/webpack` · lock `.git` stale → rename `*.stale-<pid>`,
+   ĐỪNG rm · TUYỆT ĐỐI `git commit -- <pathspec>` (đã dính 1 lần, đã sửa) · click đầu tab mới
+   không ăn → element.click() qua JS · `visibilityState==='hidden'` đóng băng animation khi
+   verify — đo computed style/state, đừng tin mắt.
+5. Xung đột spec ĐANG MỞ (cần Cowork/Hoà phân xử): `SPEC-PANEL-ROLLOUT-IDF` §2c "không chọn gì →
+   thuộc tính khung nhìn" ↔ `SPEC-CAD-SHELL-V3` luật 4 + `SPEC-HA-TANG` Trụ 1 "Inspector chỉ hiện
+   khi có chọn". Đang theo phe 2-đánh-1 (ẩn khi không chọn) — đổi chỉ 1 dòng gate ở
+   CadStageScreen.
+
+HẾT PHIÊN CHINH ~00:0x giờ đêm 04/08 (1b GẤP xong, CHINH-3 xong; #4/#5 chưa bắt đầu — context
+hết trước, KHÔNG phải cạn hàng đợi).
