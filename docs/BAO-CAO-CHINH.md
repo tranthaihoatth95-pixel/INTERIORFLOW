@@ -982,3 +982,47 @@ ràng trong UI đây là "thêm người đã có tài khoản", không phải m
 Tiếp theo trong hàng đợi G2 (6 phần theo TICKET-CHANG2-BUILD). Sẽ khảo sát trước khi thiết kế
 (SPEC-STAGE-LIBRARIES.md phần mindmap template + hạ tầng kệ Thư viện hiện có) rồi viết note thiết
 kế vào đây trước khi code, đúng quy tắc đã áp dụng suốt G2.
+
+## G2 phần (6) — mindmap template tuỳ chọn kéo từ kệ — THIẾT KẾ (viết trước khi code)
+**Khảo sát trước khi thiết kế**:
+- `SPEC-CHANG2-UI-2MODE.md:27` — nguyên văn: "Mindmap = 1 TUỲ CHỌN | canvas trống mặc định tự
+  do; khung lập luận kéo từ **kệ Thư viện** (nhiều form — `SPEC-STAGE-LIBRARIES`)".
+- `SPEC-STAGE-LIBRARIES.md:26` — chặng 2 kệ "Form lập luận (nhiều loại)" liệt kê **6 form**: Khung
+  concept 5 nhánh · Ma trận so sánh phương án · 6 chiếc mũ · SWOT không gian · Bảng tiêu chí chọn
+  vật liệu · Mood→Concept map — "chốt 02/08" (§"✅ 3 điểm"), nhưng đây là **kệ Thư viện ĐẦY ĐỦ**
+  (Master Library, 4 mức phạm vi, publish có chủ duyệt versioned) — quy mô LỚN HƠN HẲN "G2 phần
+  (6)" (1 trong 6 mục của canvas Mood+Collab). Ghi đã có sẵn từ phần (1): "Kéo-thả từ kệ
+  (`NodeLibraryPanel.tsx` → `FlowCanvas.tsx onDrop`): cơ chế `DND_MIME` áp dụng được thẳng cho
+  mindmap template sau này" — xác nhận hướng tái dùng.
+- **Quyết định phạm vi** (đúng kỷ luật đã áp dụng suốt G2 — mỗi phần chỉ làm ĐÚNG phần việc của
+  canvas, không xây cả hệ Kệ Thư viện lớn): phần (6) chỉ làm **1 template mindmap kinh điển nhất**
+  trong 6 form — "**Khung concept 5 nhánh**" (đúng nghĩa "mindmap": 1 tâm + N nhánh toả ra, khớp
+  chữ "mindmap" trong tên phần việc nhất). **5 form còn lại** (Ma trận so sánh, 6 chiếc mũ, SWOT,
+  Bảng tiêu chí, Mood→Concept) để dành cho việc riêng "xây kệ Thư viện chặng 2 đầy đủ" — không mở
+  rộng phạm vi phần (6). "Mindmap = TUỲ CHỌN" đã đúng nghĩa: canvas KHÔNG ép, chỉ thêm 1 lối tắt
+  kéo/bấm để dựng khung sẵn, người dùng tự do sửa/xoá/bỏ qua hoàn toàn.
+- **Nguyên liệu tái dùng, KHÔNG viết node/type mới**: `note` (React Flow type riêng, KHÔNG phải
+  `NodeDefinition`) + action có sẵn `addNote(position)` + `updateNote(id, text)` (`lib/store.ts`).
+  Khuôn y hệt `demoSketchToRender` đã có trong `NodeLibraryPanel.tsx` (gọi `addNode` nhiều lần,
+  đọc `nodes.at(-1)` lấy id vừa tạo, không cần store action mới). "Khung concept 5 nhánh" = 1 note
+  tâm ("Ý tưởng chính") + 5 note nhánh xếp toả tròn (lượng giác quanh tâm, bán kính cố định) —
+  **không nối dây** (React Flow edges chỉ nối node `interior` có port, `note` không có port — nối
+  dây giả cho note ngoài phạm vi, hình toả tròn tự nó đã đọc ra "mindmap" không cần đường nối).
+  5 nhánh gợi ý (trung tính, đúng "không áp gu" — LUẬT NỀN TẢNG): "Không gian & công năng" · "Ánh
+  sáng" · "Vật liệu & màu sắc" · "Phong cách/gu" · "Cảm xúc mong muốn" — 5 trục phổ quát của MỌI ý
+  tưởng nội thất, không phải gu/phong cách cụ thể nào.
+- **Vị trí + cơ chế**: 1 chip mới trong `NodeLibraryPanel.tsx`, khu **"Form lập luận"** riêng (sau
+  khu "Vật liệu", đúng thứ tự Mood+Collab → Vật liệu → Form lập luận trong SPEC-STAGE-LIBRARIES
+  liệt kê). Bấm = gọi thẳng hàm instantiate tại tâm canvas (khuôn `quickSketch`/
+  `demoSketchToRender`). Kéo = MIME mới `application/interiorflow-mindmap` (chỉ cần 1 giá trị cố
+  định `'concept-5-nhanh'`, chưa cần đa template) đi cùng cơ chế `FlowCanvas.onDrop` đã có (thêm
+  nhánh mới, không đụng nhánh cũ) — dùng ĐÚNG vị trí thả (`pos`) làm tâm thay vì tâm canvas cố
+  định như đường bấm.
+- **Hàm dùng chung 2 đường** (tránh trùng logic bấm/kéo): viết 1 hàm thuần
+  `lib/render-studio/mindmap-templates.ts::instantiateConceptMindmap(center, {addNote,
+  updateNote})` — cả `NodeLibraryPanel` (bấm) và `FlowCanvas` (kéo) cùng gọi, không lặp code toạ
+  độ lượng giác ở 2 nơi.
+- Ngoài phạm vi (ghi rõ): 5 form lập luận còn lại · hệ Kệ Thư viện đầy đủ (publish/versioning/4
+  mức phạm vi) · nối dây giữa các note mindmap · undo gộp 1 bước cho cả cụm 6 note (giống giới hạn
+  đã ghi ở phần (1)/(3), `addNote` tự `snapshot()` mỗi lần gọi — 6 bước undo riêng, chấp nhận theo
+  đúng tiền lệ `demoSketchToRender`).
