@@ -1,7 +1,7 @@
 'use client';
 
 import { useLayoutEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -112,11 +112,25 @@ export function LeftRail({ active = 'render' }: { active?: AppChromeActive } = {
   const tr = useT();
   const reduceMotion = useReducedMotion();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // 03/08 (đề xuất G4, BAO-CAO-FM.md mục "openOnCanvas") — Dashboard/FlowsPanel CHỈ mount trong
+  // StageShell (canvas: '/', '/projects/[id]/cad|render|present'…) — đứng ở '/files' hay
+  // '/settings' (2 route DUY NHẤT dùng LeftRail mà KHÔNG qua StageShell) bấm 2 nút này chỉ đổi
+  // state trong store, không có gì hiện ra, giống nút hỏng. G4 đề xuất chặn theo `pathname==='/'`
+  // — SAI vì StageShell (có FlowsPanel/Dashboard) cũng sống ở `/projects/[id]/*`, không chỉ '/'
+  // (xem app/page.tsx — Task #21 ĐỔ NỀN 1B). Sửa đúng: liệt kê ĐÚNG 2 route không có StageShell
+  // thay vì đoán theo '/'.
+  const onCanvas = !(pathname?.startsWith('/files') || pathname?.startsWith('/settings'));
+  const openOnCanvas = (open: () => void) => {
+    open();
+    if (!onCanvas) router.push('/');
+  };
 
   const items: NavItem[] = [
-    { icon: LayoutDashboard, label: ['Tổng quan — Dashboard project & team', 'Overview — project & team dashboard'], action: () => setDashboardOpen(true), active: dashboardOpen },
-    { icon: FolderKanban, label: ['Dự án & Flow', 'Projects & Flows'], panel: 'flows', action: () => setPanel('flows'), active: panel === 'flows' },
-    { icon: FolderOpen, label: ['Files', 'Files'], action: () => router.push('/files') },
+    { icon: LayoutDashboard, label: ['Tổng quan — Dashboard project & team', 'Overview — project & team dashboard'], action: () => openOnCanvas(() => setDashboardOpen(true)), active: onCanvas && dashboardOpen },
+    { icon: FolderKanban, label: ['Dự án & Flow', 'Projects & Flows'], panel: 'flows', action: () => openOnCanvas(() => setPanel('flows')), active: onCanvas && panel === 'flows' },
+    { icon: FolderOpen, label: ['Files', 'Files'], action: () => router.push('/files'), active: pathname?.startsWith('/files') ?? false },
     {
       icon: Boxes,
       label: active === 'render' ? (['Thư viện Node', 'Node Library'] as [string, string]) : (['Thư viện', 'Library'] as [string, string]),

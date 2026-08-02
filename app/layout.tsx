@@ -7,6 +7,7 @@ import { PWARegister } from '@/components/PWARegister';
 import { ResumeTracker } from '@/components/entry/ResumeTracker';
 import { StoreHydrator } from '@/components/entry/StoreHydrator';
 import StageTransitionProvider from '@/components/studio/StageTransitionProvider';
+import { CanvasWallpaper } from '@/app/settings/_components/CanvasWallpaper';
 
 // Font hệ thống TTT Design System — Be Vietnam Pro (hỗ trợ dấu tiếng Việt đầy đủ).
 const beVietnamPro = Be_Vietnam_Pro({
@@ -77,6 +78,9 @@ try{if(!localStorage.getItem('interiorflow.vitals.stage_drop_cleaned_v1')){local
             (kể cả deep-link) — phải đứng TRƯỚC children để store có giá trị đúng khi trang con
             đọc ngay lúc mount. Render null. */}
         <StoreHydrator />
+        {/* G4 (03/08): áp lại hình nền canvas đã lưu ngay khi app mở, kể cả tải lại cứng thẳng
+            vào trang canvas — xem app/settings/_components/CanvasWallpaper.tsx. Render null. */}
+        <CanvasWallpaper />
         <StageTransitionProvider>{children}</StageTransitionProvider>
         <PWARegister />
         {/* B-3: ghi route đang đứng theo user (resume đúng chỗ khi login lại) — render null */}
