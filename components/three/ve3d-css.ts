@@ -129,13 +129,24 @@ export const VE3D_CSS = `
 .if-ve3d .viewcube{position:absolute;right:18px;top:16px;width:60px;height:60px;z-index:4}
 .if-ve3d .viewcube button{position:absolute;border:0;background:none;padding:0;cursor:pointer}
 .if-ve3d .axisg{position:absolute;left:22px;bottom:22px;width:90px;height:90px;z-index:4;pointer-events:none}
+/* ⚠️ Overlay trong viewport KHÔNG dùng màu theo theme.
+   Scene3DViewer.tsx:105 đặt nền cảnh CỨNG #2a2d33 — luôn TỐI ở cả 2 theme (code 3D-1..3D-5
+   có sẵn, việc này không được sửa). Nếu overlay chạy theo theme thì bản Sáng ra chữ mờ trên nền
+   tối, bản Tối ra nút tối trên nền tối — sai cả hai chiều (đã thấy khi verify). Nên chốt: kính
+   TỐI + chữ sáng cố định, tương phản đảm bảo bất kể theme. Đây là ngoại lệ CÓ CĂN CỨ với luật
+   "màu qua biến", không phải tiện tay hardcode. */
+.if-ve3d .vpover{background:rgba(20,22,26,.72);backdrop-filter:blur(var(--blur)) saturate(140%);
+  -webkit-backdrop-filter:blur(var(--blur)) saturate(140%);border:1px solid rgba(255,255,255,.14);color:#e8e8ee}
 .if-ve3d .vplabel{position:absolute;left:14px;top:14px;z-index:4;display:flex;align-items:center;gap:6px;
-  background:var(--mat-panel);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
-  border:1px solid var(--mat-hairline);border-radius:var(--radius-sm);font-size:var(--fs-2xs);
-  padding:4px 9px;color:var(--t2)}
-.if-ve3d .vpnote{position:absolute;left:14px;bottom:14px;z-index:4;font-size:10.5px;color:var(--t4);
-  background:var(--mat-panel);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
-  border:1px solid var(--mat-hairline);border-radius:var(--radius-sm);padding:5px 9px;max-width:250px;line-height:1.45}
+  border-radius:var(--radius-sm);font-size:var(--fs-2xs);padding:4px 9px}
+.if-ve3d .vpnote{position:absolute;left:14px;bottom:14px;z-index:4;font-size:10.5px;
+  border-radius:var(--radius-sm);padding:5px 9px;max-width:250px;line-height:1.45}
+.if-ve3d .vpnote b{color:#fff}
+/* nút hướng nhìn trong viewport — cùng kính tối, không dùng .row (theo theme) */
+.if-ve3d .vbtn{height:22px;padding:0 9px;border-radius:var(--radius-sm);font-size:10px;
+  font-weight:var(--fw-semi);cursor:pointer;transition:background-color .12s var(--ease-apple)}
+.if-ve3d .vbtn:hover{background:rgba(255,255,255,.16)}
+.if-ve3d .vbtn:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
 
 /* ══════ OBJECT PROPERTIES (ổ ④ inspector) ══════ */
 .if-ve3d.objp{width:100%;height:100%;overflow-y:auto;background:var(--panel);padding:12px;
