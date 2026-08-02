@@ -28,7 +28,8 @@
  * "Run flow" Command Palette) + hàng đợi trong menu "Việc" — xem lib/execution.ts.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Coins, Share2, ChevronDown, MessageCircle, LogOut, Check, MoreHorizontal,
@@ -61,6 +62,32 @@ import { useDismissable } from '@/lib/useDismissable';
 import type { AppChromeActive } from '@/components/studio/AppChromeTypes';
 
 export type { AppChromeActive };
+
+/**
+ * K4 (`docs/TICKET-FIX-KINH-HEADER-2026-08-02.md`) — 2 dropdown `mat-panel` (MoreMenu/UserChip)
+ * TRƯỚC là con của `<header class="mat-header">` (cũng có backdrop-filter riêng) → "kính lồng
+ * kính": blur của menu chỉ sample trong phạm vi header, không thấy canvas dưới, chữ node xuyên
+ * qua rõ nét. Sửa: PORTAL panel ra `document.body`, định vị `position:fixed` theo
+ * `getBoundingClientRect()` của nút bấm — thoát hẳn khỏi backdrop root của header. Animation
+ * `motion.div` GIỮ NGUYÊN (không đổi sang Popover.tsx — component đó không có
+ * AnimatePresence enter/exit tích hợp kiểu này, dùng thẳng sẽ mất animation hiện có).
+ */
+function useMenuAnchor() {
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [anchorRect, setAnchorRect] = useState<{ top: number; right: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const el = triggerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setAnchorRect({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
+  }, [open]);
+
+  return { triggerRef, menuRef, open, setOpen, anchorRect };
+}
 
 interface Props {
   active: AppChromeActive;
@@ -276,18 +303,18 @@ export function AppChrome({ active }: Props) {
 function MoreMenu() {
   const tr = useT();
   const credits = useFlowStore((s) => s.credits);
-  const [open, setOpen] = useState(false);
   const router = useRouter();
-  const ref = useRef<HTMLDivElement>(null);
+  const { triggerRef, menuRef, open, setOpen, anchorRect } = useMenuAnchor();
 
   // 2.2.90 ĐỢT 2 (01/08) — thay backdrop `fixed inset-0` (chặn click xuyên qua toàn màn hình,
   // đóng bằng onClick) bằng hook dùng chung (đóng bằng pointerdown-outside, KHÔNG chặn click
   // xuyên qua — bấm 1 phát vào nút khác vừa đóng menu này VỪA chạy nút kia luôn, đúng hành vi
   // MenuButton/IOMenu đã có). Thêm luôn Escape (trước MoreMenu không có).
-  useDismissable({ open, onDismiss: () => setOpen(false), refs: [ref] });
+  // K4 — 2 ref riêng (nút + panel đã portal), panel không còn nằm trong subtree của nút.
+  useDismissable({ open, onDismiss: () => setOpen(false), refs: [triggerRef, menuRef] });
 
   return (
-    <div ref={ref} className="relative shrink-0">
+    <div ref={triggerRef} className="relative shrink-0">
       <motion.button
         {...pressable}
         onClick={() => setOpen((o) => !o)}
@@ -303,43 +330,49 @@ function MoreMenu() {
         <MoreHorizontal size={15} />
       </motion.button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.18, ease: easeApple }}
-            className="mat-panel absolute right-0 top-9 z-40 w-56 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
-          >
-            <div className="mb-2 flex items-center justify-between rounded-[10px] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
-              <span className="flex items-center gap-1.5">
-                <Coins size={13} className="text-amber-400" />
-                {tr('Tín dụng', 'Credits')}
-              </span>
-              <span className="font-semibold text-[var(--t1)]">{credits}</span>
-            </div>
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {open && anchorRect && (
+              <motion.div
+                ref={menuRef}
+                initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                transition={{ duration: 0.18, ease: easeApple }}
+                style={{ position: 'fixed', top: anchorRect.top, right: anchorRect.right }}
+                className="mat-panel z-[80] w-56 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
+              >
+                <div className="mb-2 flex items-center justify-between rounded-[10px] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
+                  <span className="flex items-center gap-1.5">
+                    <Coins size={13} className="text-amber-400" />
+                    {tr('Tín dụng', 'Credits')}
+                  </span>
+                  <span className="font-semibold text-[var(--t1)]">{credits}</span>
+                </div>
 
-            <div className="flex items-center gap-1.5">
-              <ThemeToggle />
-              <ShareButton />
-              <ChatToggle />
-            </div>
+                <div className="flex items-center gap-1.5">
+                  <ThemeToggle />
+                  <ShareButton />
+                  <ChatToggle />
+                </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                router.push('/settings');
-              }}
-              className="mt-2 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-0.5 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
-            >
-              <SettingsIcon size={13} />
-              {tr('Cài đặt', 'Settings')}
-            </button>
-          </motion.div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    router.push('/settings');
+                  }}
+                  className="mt-2 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-0.5 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
+                >
+                  <SettingsIcon size={13} />
+                  {tr('Cài đặt', 'Settings')}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -429,14 +462,13 @@ function UserChip() {
   const setUser = useFlowStore((s) => s.setUser);
   const router = useRouter();
   const tr = useT();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const { triggerRef, menuRef, open, setOpen, anchorRect } = useMenuAnchor();
   // 2.2.90 ĐỢT 2 (01/08) — thay backdrop `fixed inset-0` bằng hook dùng chung, cùng lý do đã
-  // ghi ở MoreMenu() phía trên (click-xuyên-qua + thêm Escape).
-  useDismissable({ open, onDismiss: () => setOpen(false), refs: [ref] });
+  // ghi ở MoreMenu() phía trên (click-xuyên-qua + thêm Escape). K4 — 2 ref riêng, xem MoreMenu().
+  useDismissable({ open, onDismiss: () => setOpen(false), refs: [triggerRef, menuRef] });
   if (!user) return null;
   return (
-    <div ref={ref} className="relative shrink-0">
+    <div ref={triggerRef} className="relative shrink-0">
       <motion.button
         {...pressable}
         onClick={() => setOpen((o) => !o)}
@@ -455,44 +487,50 @@ function UserChip() {
         <span className="hidden max-w-24 truncate sm:inline">{user.name}</span>
       </motion.button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.18, ease: easeApple }}
-            className="mat-panel absolute right-0 top-9 z-40 w-48 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
-          >
-            <div className="truncate px-2 py-1.5 text-xs text-[var(--t3)]" title={`${user.name} · ${user.email}`}>
-              {user.name}
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                router.push('/settings/avatar');
-              }}
-              className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
-            >
-              {tr('Đổi avatar', 'Change avatar')}
-            </button>
-            {/* Ngăn cách phía trên — hành động phá huỷ tách khỏi mục thường, khớp yêu cầu. */}
-            <button
-              type="button"
-              onClick={async () => {
-                setOpen(false);
-                await fetch('/api/auth/me', { method: 'DELETE' });
-                setUser(null);
-              }}
-              className="mt-1 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-2 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-red-400"
-            >
-              <LogOut size={13} />
-              {tr('Đăng xuất', 'Sign out')}
-            </button>
-          </motion.div>
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {open && anchorRect && (
+              <motion.div
+                ref={menuRef}
+                initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                transition={{ duration: 0.18, ease: easeApple }}
+                style={{ position: 'fixed', top: anchorRect.top, right: anchorRect.right }}
+                className="mat-panel z-[80] w-48 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
+              >
+                <div className="truncate px-2 py-1.5 text-xs text-[var(--t3)]" title={`${user.name} · ${user.email}`}>
+                  {user.name}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    router.push('/settings/avatar');
+                  }}
+                  className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
+                >
+                  {tr('Đổi avatar', 'Change avatar')}
+                </button>
+                {/* Ngăn cách phía trên — hành động phá huỷ tách khỏi mục thường, khớp yêu cầu. */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setOpen(false);
+                    await fetch('/api/auth/me', { method: 'DELETE' });
+                    setUser(null);
+                  }}
+                  className="mt-1 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-2 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-red-400"
+                >
+                  <LogOut size={13} />
+                  {tr('Đăng xuất', 'Sign out')}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
     </div>
   );
 }
