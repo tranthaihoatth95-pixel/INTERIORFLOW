@@ -28,10 +28,25 @@ import {
   FileUp,
   FileJson,
   Printer,
+  ArrowUp,
+  ArrowDown,
+  ChevronsUp,
+  ChevronsDown,
+  AlignStartVertical,
+  AlignCenterVertical,
+  AlignEndVertical,
+  AlignStartHorizontal,
+  AlignCenterHorizontal,
+  AlignEndHorizontal,
+  Group,
+  Ungroup,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 import IOMenu from '@/components/ui/IOMenu';
 import Tooltip from '@/components/ui/Tooltip';
-import type { ShapeKind } from '@/lib/present-editor/model';
+import type { EditorSlide, ShapeKind } from '@/lib/present-editor/model';
+import type { AlignMode as GroupAlignMode } from '@/lib/present-editor/align';
 
 interface Props {
   onAddText: () => void;
@@ -64,12 +79,38 @@ interface Props {
   busy: string | null;
   /** kết quả export gần nhất (thành công/lỗi) — hiện toast ngắn cạnh nút Export. */
   exportMsg?: { ok: boolean; text: string } | null;
+
+  /* P6b bước 1 (04/08, TICKET-PRESENT-UI-GON) — cụm "Sắp xếp" (align · z-order · group · khoá).
+   * KHÔNG có logic mới — 5 callback dưới đây là NGUYÊN VẸN các hàm đã có sẵn trong
+   * PresentEditor.tsx (đang dùng cho Inspector.tsx: onZOrder/onAlignSelection/onGroupSelected/
+   * onUngroupSelected/onToggleLockSelected), Toolbar chỉ NỐI thêm 1 lối gọi khác, không tự viết
+   * cơ chế mới. `slide`+`selectedIds` truyền thô để Toolbar tự đếm gating (multiCount/
+   * selectedGroupCount/anyUnlocked) — CÙNG công thức Inspector.tsx đã dùng, không phát minh
+   * công thức khác. */
+  /** slide đang mở — chỉ để ĐẾM gating cho cụm Sắp xếp (không đọc/ghi gì khác). */
+  slide?: EditorSlide | null;
+  /** id các phần tử đang chọn — cùng nguồn `ed.selectedIds` truyền cho Inspector. */
+  selectedIds: string[];
+  onZOrder: (dir: 'front' | 'back' | 'forward' | 'backward') => void;
+  /** Căn NHIỀU phần tử đã chọn theo bounding box CHUNG của chính chúng (cần ≥2, xem Inspector.tsx). */
+  onAlignSelection: (mode: GroupAlignMode) => void;
+  onGroup: () => void;
+  onUngroup: () => void;
+  /** khoá/mở khoá cả lựa chọn — 1 nút, đổi icon/nhãn theo trạng thái (xem `anyUnlocked` bên dưới). */
+  onToggleLock: () => void;
 }
 
 export default function Toolbar(p: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const idfpFileRef = useRef<HTMLInputElement>(null);
   const [libOpen, setLibOpen] = useState(false);
+
+  // P6b bước 1 — gating cụm "Sắp xếp", CÙNG công thức Inspector.tsx đang dùng (không bịa công
+  // thức khác cho 2 chỗ hiện cùng 1 khái niệm) — xem Inspector.tsx dòng ~204-213/425-431.
+  const selectedEls = (p.slide?.elements ?? []).filter((e) => p.selectedIds.includes(e.id));
+  const multiCount = p.selectedIds.length;
+  const selectedGroupCount = new Set(selectedEls.map((e) => e.groupId).filter(Boolean)).size;
+  const anyUnlocked = selectedEls.some((e) => !e.locked);
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -219,6 +260,103 @@ export default function Toolbar(p: Props) {
       </IconOnly>
       <IconOnly onClick={() => p.onAddShape('line')} title="Đường thẳng">
         <Minus size={15} />
+      </IconOnly>
+
+      <Divider />
+      {/* P6b bước 1 — cụm "Sắp xếp": căn theo nhau · thứ tự lớp · nhóm/bỏ nhóm · khoá. Logic
+       * NGUYÊN VẸN từ PresentEditor.tsx (đã dùng cho Inspector.tsx) — chỉ nối thêm 1 lối gọi. */}
+      <IconOnly
+        onClick={() => p.onAlignSelection('left')}
+        title="Căn trái theo nhau (cần ≥2 đối tượng)"
+        disabled={multiCount < 2}
+      >
+        <AlignStartVertical size={15} />
+      </IconOnly>
+      <IconOnly
+        onClick={() => p.onAlignSelection('hcenter')}
+        title="Căn giữa ngang theo nhau (cần ≥2 đối tượng)"
+        disabled={multiCount < 2}
+      >
+        <AlignCenterVertical size={15} />
+      </IconOnly>
+      <IconOnly
+        onClick={() => p.onAlignSelection('right')}
+        title="Căn phải theo nhau (cần ≥2 đối tượng)"
+        disabled={multiCount < 2}
+      >
+        <AlignEndVertical size={15} />
+      </IconOnly>
+      <IconOnly
+        onClick={() => p.onAlignSelection('top')}
+        title="Căn trên theo nhau (cần ≥2 đối tượng)"
+        disabled={multiCount < 2}
+      >
+        <AlignStartHorizontal size={15} />
+      </IconOnly>
+      <IconOnly
+        onClick={() => p.onAlignSelection('vcenter')}
+        title="Căn giữa dọc theo nhau (cần ≥2 đối tượng)"
+        disabled={multiCount < 2}
+      >
+        <AlignCenterHorizontal size={15} />
+      </IconOnly>
+      <IconOnly
+        onClick={() => p.onAlignSelection('bottom')}
+        title="Căn dưới theo nhau (cần ≥2 đối tượng)"
+        disabled={multiCount < 2}
+      >
+        <AlignEndHorizontal size={15} />
+      </IconOnly>
+
+      <IconOnly
+        onClick={() => p.onZOrder('front')}
+        title="Đưa lên trước cùng"
+        disabled={multiCount < 1}
+      >
+        <ChevronsUp size={15} />
+      </IconOnly>
+      <IconOnly
+        onClick={() => p.onZOrder('forward')}
+        title="Tiến 1 bậc"
+        disabled={multiCount < 1}
+      >
+        <ArrowUp size={15} />
+      </IconOnly>
+      <IconOnly
+        onClick={() => p.onZOrder('backward')}
+        title="Lùi 1 bậc"
+        disabled={multiCount < 1}
+      >
+        <ArrowDown size={15} />
+      </IconOnly>
+      <IconOnly
+        onClick={() => p.onZOrder('back')}
+        title="Đưa ra sau cùng"
+        disabled={multiCount < 1}
+      >
+        <ChevronsDown size={15} />
+      </IconOnly>
+
+      <IconOnly
+        onClick={p.onGroup}
+        title="Gộp các phần tử đang chọn thành 1 cụm (cần ≥2 đối tượng)"
+        disabled={multiCount < 2}
+      >
+        <Group size={15} />
+      </IconOnly>
+      <IconOnly
+        onClick={p.onUngroup}
+        title="Rã cụm của lựa chọn hiện tại"
+        disabled={selectedGroupCount < 1}
+      >
+        <Ungroup size={15} />
+      </IconOnly>
+      <IconOnly
+        onClick={p.onToggleLock}
+        title={anyUnlocked ? 'Khoá lựa chọn' : 'Mở khoá lựa chọn'}
+        disabled={multiCount < 1}
+      >
+        {anyUnlocked ? <Lock size={15} /> : <Unlock size={15} />}
       </IconOnly>
 
       <Divider />

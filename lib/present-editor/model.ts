@@ -29,6 +29,11 @@ export type ShapeKind = 'rect' | 'ellipse' | 'line' | 'triangle' | 'polygon' | '
 /**
  * Gradient MỜ (opacity) có hướng cho shape — phủ 1 lớp fade lên fill.
  * Chỉ đổi độ mờ theo trục, KHÔNG đổi màu (màu vẫn là fill). Phản chiếu render.ts + Element.
+ *
+ * @deprecated (P3/E3, 02/08) — giữ nguyên cho `.idfp` cũ mở được y hệt (KHÔNG xoá/đổi hành vi),
+ * nhưng UI mới nên dùng `FillOverlay` (kind='gradient') — 2 màu riêng + opacity + blend, mạnh
+ * hơn (OpacityGradient chỉ mờ dần 1 màu fill có sẵn, không đổi màu). Xem CHOT-NGUYEN-LIEU-EDITOR
+ * §1 E3 "OpacityGradient hiện tại giữ nguyên (backward-compat), đánh dấu deprecated".
  */
 export type GradientDirection = 'ltr' | 'rtl' | 'ttb' | 'btt' | 'center' | 'edges';
 export interface OpacityGradient {
@@ -36,6 +41,38 @@ export interface OpacityGradient {
   /** độ mờ đầu (0..1) và cuối (0..1) của dải fade. */
   from: number;
   to: number;
+}
+
+/**
+ * Lớp phủ FILL (P3/E3) — khái niệm THỐNG NHẤT cho `ShapeElement` + `ImageElement`: 1 lớp
+ * màu/gradient ĐÈ LÊN fill/ảnh gốc, độ mờ + kiểu hoà trộn RIÊNG. Giải 2 ô ⬜ của audit
+ * (28/07): "gradient màu" (kind='gradient', 2 màu thật) và "overlay" (kind='color', vd phủ
+ * đen mờ lên ảnh cho chữ đè lên dễ đọc). KHÁC `OpacityGradient` (ở trên, deprecated) — cái đó
+ * chỉ mờ DẦN 1 màu fill có sẵn (không đổi màu); cái NÀY là 1 LỚP ĐỘC LẬP, màu riêng, không phụ
+ * thuộc màu fill/ảnh bên dưới. Text KHÔNG dùng field này (cố tình KHÔNG khai ở `BaseElement`,
+ * chỉ khai riêng trên `ImageElement`/`ShapeElement`, tránh mở khả năng gán nhầm cho
+ * `TextElement` — chữ đã có `TextFx.gradient`/`TextFx.blend` riêng, xem trên).
+ */
+export type FillOverlayKind = 'color' | 'gradient';
+/**
+ * Bảng hoà trộn AN TOÀN — TÁI DÙNG đúng bộ `TextFx.blend` (dưới) để cả app chỉ có 1 bảng chọn
+ * duy nhất (canvas `globalCompositeOperation` + CSS `mix-blend-mode` cùng hiểu các từ khoá này
+ * y hệt nhau). 'normal'/bỏ trống = đè bình thường (canvas mặc định 'source-over').
+ */
+export type FillBlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'difference' | 'luminosity';
+export interface FillOverlay {
+  kind: FillOverlayKind;
+  /** màu đơn (kind='color') hoặc màu ĐẦU dải gradient (kind='gradient'). */
+  color: string;
+  /** màu CUỐI dải gradient — CHỈ dùng khi kind='gradient'. */
+  colorTo?: string;
+  /** hướng gradient — tái dùng `GradientDirection` đã có, không thêm bảng hướng thứ 2. Bỏ qua
+   * khi kind='color'. Bỏ trống khi kind='gradient' = mặc định 'ltr'. */
+  direction?: GradientDirection;
+  /** độ mờ lớp phủ (0..1) — NHÂN với `opacity` của chính element (2 lớp mờ cộng dồn, không
+   * thay thế). */
+  opacity: number;
+  blend?: FillBlendMode;
 }
 
 /** Kiểu danh sách của text element. */
@@ -125,6 +162,47 @@ export const DEFAULT_ADJUST: ImageAdjust = {
   temperature: 0,
 };
 
+/**
+ * P4/E4 — Filter CHUNG cho MỌI loại phần tử (text/shape/ảnh), `docs/CHOT-NGUYEN-LIEU-EDITOR-
+ * 2026-08-01.md` mục E4: `blur · brightness · contrast · saturate` — KHÁC `ImageAdjust` ở trên
+ * (vốn CHỈ áp cho `ImageElement`/nền slide, không có `blur`, có thêm `temperature` mà E4 không
+ * cần). Đúng chỗ hổng `AUDIT-EDITOR-TOOLKIT.md` §"Làm mờ" nêu: KHÔNG có `blur()` nào áp lên nội
+ * dung ảnh/shape/text theo ý người dùng — trước đó `blur` duy nhất trong file là độ nhoè CỦA
+ * bóng đổ (`TextShadowLayer.blur`), không phải blur độc lập trên phần tử. `ImageAdjust` GIỮ
+ * NGUYÊN không đổi (backward-compat) — 2 field độc lập, có thể cùng áp lên 1 `ImageElement`
+ * (CSS/canvas filter ghép chuỗi, xem `elementFilterToCssFilter`/`render.ts#drawImageEl`).
+ */
+export interface ElementFilter {
+  blur: number; // px (0 = không mờ)
+  brightness: number; // % (100 = gốc)
+  contrast: number; // % (100 = gốc)
+  saturate: number; // % (100 = gốc)
+}
+
+export const DEFAULT_ELEMENT_FILTER: ElementFilter = {
+  blur: 0,
+  brightness: 100,
+  contrast: 100,
+  saturate: 100,
+};
+
+/**
+ * Chuỗi CSS filter từ `ElementFilter` — dùng cho hiển thị live (`Element.tsx`) VÀ tái dựng khi
+ * export (`render.ts`, gán thẳng `ctx.filter` — Canvas hỗ trợ CÙNG cú pháp filter với CSS, xem
+ * `adjustToCssFilter` ở trên cùng quy ước). Bỏ trống HOẶC mọi giá trị ở mức GỐC (identity: blur 0,
+ * còn lại 100%) → `'none'` — HÀNH VI CŨ giữ nguyên cho phần tử chưa từng chỉnh filter (field mới
+ * additive, `.idfp` cũ không có `filter` vẫn render y hệt trước).
+ */
+export function elementFilterToCssFilter(f: ElementFilter | undefined): string {
+  if (!f) return 'none';
+  const parts: string[] = [];
+  if (f.blur > 0) parts.push(`blur(${f.blur}px)`);
+  if (f.brightness !== 100) parts.push(`brightness(${f.brightness}%)`);
+  if (f.contrast !== 100) parts.push(`contrast(${f.contrast}%)`);
+  if (f.saturate !== 100) parts.push(`saturate(${f.saturate}%)`);
+  return parts.length ? parts.join(' ') : 'none';
+}
+
 /** Vùng crop tính theo phần trăm của ảnh gốc (0..1). Mặc định = toàn ảnh. */
 export interface CropRect {
   x: number; // 0..1
@@ -134,6 +212,21 @@ export interface CropRect {
 }
 
 export const FULL_CROP: CropRect = { x: 0, y: 0, w: 1, h: 1 };
+
+/**
+ * Hình mask hợp lệ cho ẢNH (P1/E2, `docs/CHOT-NGUYEN-LIEU-EDITOR-2026-08-01.md`) — tập con của
+ * `ShapeKind`, KHÔNG gồm 'rect' (= không cần mask, dùng `radius` như cũ) hay 'line' (không phải
+ * vùng khép kín, không cắt ảnh được). 'ellipse' vẽ bằng CSS `ellipse()`/canvas `ctx.ellipse()`
+ * riêng (khớp box kể cả không vuông); 3 kiểu còn lại TÁI DÙNG NGUYÊN `polygonPoints01`/
+ * `shapeClipPath` đã có cho `ShapeElement` — xem `lib/present-editor/shape-geometry.ts`.
+ */
+export type ImageMaskShape = 'ellipse' | 'triangle' | 'polygon' | 'arrow';
+
+export interface ImageMask {
+  shape: ImageMaskShape;
+  /** số cạnh khi shape = 'polygon' (3..12, xem `clampSides`). Bỏ trống = 5 (ngũ giác). */
+  sides?: number;
+}
 
 /** Khung hình học chung — % của sân khấu. */
 export interface Frame {
@@ -173,6 +266,22 @@ interface BaseElement {
    * Có giá trị → GHI ĐÈ mức trễ tự suy từ `revealOrder` (stagger mặc định). Bỏ trống = tự tính.
    */
   revealDelay?: number;
+  /**
+   * P2/E1 (nhóm) — id cụm chung, tự sinh (`newId('grp')`), KHÔNG phải id element. Nhiều phần tử
+   * cùng `groupId` = 1 cụm: click 1 phần tử trong cụm → chọn CẢ cụm; khoá/xoá/nhân bản/dời áp
+   * dụng cho cả cụm khi đang chọn cả cụm (xem `PresentEditor.tsx#onSelectGroupAware` +
+   * `onToggleLockSelected`). Bỏ trống = không thuộc cụm nào (HÀNH VI CŨ — `.idfp` cũ không có
+   * field này vẫn mở/chạy y hệt trước, mọi phần tử độc lập). Nhân bản (`onDuplicateSelected`/
+   * `onPaste`) ánh xạ sang groupId MỚI cho lô bản sao — KHÔNG kế thừa nguyên id gốc (tránh gộp
+   * lầm bản sao vào cụm cũ) và KHÔNG xoá trắng (tránh rã lầm cụm của bản sao).
+   */
+  groupId?: string;
+  /**
+   * P4/E4 — filter CHUNG cho mọi loại phần tử (blur/brightness/contrast/saturate, xem
+   * `ElementFilter` ở trên). Bỏ trống = KHÔNG áp filter (HÀNH VI CŨ, `.idfp` cũ không có field
+   * này vẫn render y hệt trước — additive, không phá vỡ file cũ).
+   */
+  filter?: ElementFilter;
 }
 
 export interface ImageElement extends BaseElement {
@@ -197,6 +306,16 @@ export interface ImageElement extends BaseElement {
   diskPath?: string;
   /** true = lần "Cập nhật liên kết" gần nhất user không chọn lại (huỷ) hoặc chọn nhầm file khác. */
   diskPathMissing?: boolean;
+  /**
+   * Mask ảnh theo hình (P1/E2) — cắt ảnh theo tròn/tam giác/đa giác/mũi tên thay vì chỉ bo góc
+   * chữ nhật. Bỏ trống = ảnh chữ nhật/bo góc như cũ (KHÔNG đổi hành vi mặc định — additive). Có
+   * mask → `radius` bị BỎ QUA (2 cơ chế cắt không hợp lý cộng dồn, mask chiếm quyền — xem
+   * Element.tsx#ImageInner + render.ts#drawImageEl, phải sửa ĐỒNG BỘ CẢ HAI + export.ts cho PPTX).
+   */
+  mask?: ImageMask;
+  /** Lớp phủ FILL (P3/E3) — màu/gradient đè lên ảnh, vd tối ảnh cho chữ đè lên dễ đọc. Vẽ ĐÈ
+   * lên ảnh, giới hạn trong đúng vùng đã clip (mask nếu có, không thì khung/bo góc như cũ). */
+  fillOverlay?: FillOverlay;
 }
 
 export interface TextElement extends BaseElement {
@@ -233,6 +352,32 @@ export interface TextElement extends BaseElement {
    * Xem `TextFx` phía trên + lib/present-editor/text-fx.ts.
    */
   fx?: TextFx;
+  /**
+   * P6a (04/08, TICKET-PRESENT-UI-GON, Hoà chốt) — TRUE nếu `color` hiện tại do HỆ THỐNG tự
+   * chọn (carve-out CÓ ĐIỀU KIỆN của luật cũ "không tự đổi màu chữ" — xem Element.tsx#TextInner
+   * và lib/present-editor/text-contrast.ts). Mặc định TRUE cho text MỚI (`makeText()`) — hệ tự
+   * dò AA khi chữ đè ảnh và màu hiện có KHÔNG đạt, chọn trắng/đen/màu deck (ưu tiên đúng thứ tự
+   * đó), CHỈ khi thiếu mới đụng. Ngay khi người dùng tự bấm color-picker 1 lần (TextToolbar.tsx/
+   * Inspector.tsx) → hệ đặt về FALSE VĨNH VIỄN, không bao giờ tự sửa lại màu đó nữa. Phần tử CŨ
+   * (mở lại .idfp trước 04/08) không có field này → undefined → coi như FALSE, giữ nguyên hành
+   * vi/màu đã có — không hồi tố.
+   */
+  colorAuto?: boolean;
+  /**
+   * P6a (04/08) — bật lại vệt sương (scrim) sau chữ khi đè ảnh, hành vi CŨ trước ticket này.
+   * Mặc định TẮT (undefined/false) kể từ 04/08 — đổi hành vi CÓ CHỦ Ý theo ticket, KHÔNG hồi tố
+   * cho slide cũ (mở lại .idfp cũ vẫn ra đúng y như trước: không field này = không có sương y
+   * hệt hành vi cũ vốn cũng phụ thuộc `overImage`, không phải field, nên .idfp cũ không đổi gì
+   * khi mở lại — chỉ có DECK MỚI TẠO SAU NGÀY NÀY mới thấy sương tắt mặc định). true = bật.
+   */
+  scrimEnabled?: boolean;
+  /**
+   * P6a (04/08) — TRUE khi hệ đã tự chọn màu (colorAuto) nhưng NGAY CẢ ứng viên tốt nhất
+   * (trắng/đen/màu deck) vẫn KHÔNG đạt AA trên nền đo được — thêm text-shadow MẢNH để tách chữ
+   * khỏi nền, theo đúng "text-shadow mảnh chỉ khi vẫn thiếu" trong ticket. Chỉ hệ tự đặt (cùng
+   * lúc với colorAuto correction), không có control tay riêng.
+   */
+  autoShadow?: boolean;
 }
 
 export interface ShapeElement extends BaseElement {
@@ -244,8 +389,11 @@ export interface ShapeElement extends BaseElement {
   radius?: number; // bo góc rect
   /** số cạnh cho shape 'polygon' (3..12). Bỏ trống = 5 (ngũ giác). */
   sides?: number;
-  /** gradient MỜ có hướng phủ lên fill (tuỳ chọn). */
+  /** @deprecated gradient MỜ có hướng phủ lên fill — dùng `fillOverlay` (kind='gradient') cho
+   * UI mới, field này giữ nguyên chỉ để `.idfp` cũ mở đúng (xem `OpacityGradient` ở trên). */
   gradient?: OpacityGradient;
+  /** Lớp phủ FILL (P3/E3) — màu/gradient ĐỘC LẬP đè lên `fill`, độ mờ + hoà trộn riêng. */
+  fillOverlay?: FillOverlay;
 }
 
 export type SlideElement = ImageElement | TextElement | ShapeElement;
@@ -399,6 +547,9 @@ export function makeText(partial: Partial<TextElement> = {}): TextElement {
     bullet: false,
     role: 'free',
     opacity: 1,
+    // P6a (04/08) — text MỚI mặc định để hệ tự dò AA khi đè ảnh (xem TextElement.colorAuto).
+    // `...partial` đứng SAU nên caller (template/region-layout) vẫn override được nếu cần.
+    colorAuto: true,
     ...partial,
   };
 }
@@ -482,6 +633,30 @@ export function duplicateElement(el: SlideElement, offset = true): SlideElement 
   }
   copy.locked = false; // bản sao luôn mở khoá cho tiện chỉnh
   return copy;
+}
+
+/**
+ * Nhân bản 1 LÔ phần tử (Ctrl+D nhiều phần tử đang chọn / dán nhiều phần tử đã sao chép) —
+ * ánh xạ groupId CŨ → groupId MỚI nhất quán TRONG LÔ này (P2/E1 "nhóm"). Bản sao của các phần
+ * tử cùng cụm gốc vẫn dính cụm VỚI NHAU, nhưng KHÔNG kế thừa đúng groupId gốc (tránh gộp lầm
+ * bản sao vào cụm cũ đang tồn tại) và KHÔNG bị xoá trắng groupId (tránh rã lầm cụm của bản
+ * sao). Phần tử không thuộc cụm nào (`groupId` rỗng) thì bản sao cũng vậy — không đổi hành vi
+ * cho deck cũ trước tính năng nhóm.
+ */
+export function duplicateElementsPreservingGroups(els: SlideElement[], offset = true): SlideElement[] {
+  const groupMap = new Map<string, string>();
+  return els.map((el) => {
+    const copy = duplicateElement(el, offset);
+    if (el.groupId) {
+      let ng = groupMap.get(el.groupId);
+      if (!ng) {
+        ng = newId('grp');
+        groupMap.set(el.groupId, ng);
+      }
+      copy.groupId = ng;
+    }
+    return copy;
+  });
 }
 
 /** Chuỗi CSS filter từ ImageAdjust — dùng cho hiển thị live VÀ tái dựng khi export. */

@@ -29,7 +29,14 @@ import type {
   ElementReveal,
 } from '@/lib/present-editor/model';
 import { AnimatePresence } from 'framer-motion';
-import { makeText, makeImage, makeShape, newId, duplicateElement } from '@/lib/present-editor/model';
+import {
+  makeText,
+  makeImage,
+  makeShape,
+  newId,
+  duplicateElement,
+  duplicateElementsPreservingGroups,
+} from '@/lib/present-editor/model';
 import type { EmbeddedFont } from '@/lib/present-editor/model';
 import { registerFonts } from '@/lib/present-editor/custom-fonts';
 import {
@@ -83,6 +90,8 @@ import StagePresetPanel from './StagePresetPanel';
 import ReplaceImageDialog from './ReplaceImageDialog';
 import { reflowDeckForStage } from '@/lib/present-editor/reflow';
 import { alignFrames, distributeFrames, type AlignMode as GroupAlignMode, type DistributeAxis } from '@/lib/present-editor/align';
+import { groupBoundingBox, scaleGroupByCorner, scaleMemberFrame, type GroupFrame } from '@/lib/present-editor/resize-group';
+import { reorderZOrderGroup } from '@/lib/present-editor/zorder-group';
 import { stageFor, PAPER_SIZE_MM, type StagePresetId } from '@/lib/present-editor/stage-presets';
 import { LayoutTemplate, Images, Wand2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 
@@ -482,6 +491,13 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
   const groupStartRef = useRef<Record<string, Frame> | null>(null);
   const groupLastDelta = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
 
+  // E1 bổ sung (02/08) — RESIZE NHÓM theo tỉ lệ: chụp khung bao + frame/fontSize từng phần tử
+  // lúc bắt đầu kéo góc (ref, giống groupStartRef ở trên nhưng cho resize thay vì dời).
+  const groupResizeStartRef = useRef<{
+    bbox: GroupFrame;
+    members: Record<string, { frame: Frame; fontSize?: number }>;
+  } | null>(null);
+
   /** vùng "còn liên quan tới selection" — canvas (stage + toolbar nổi) và Inspector (phải).
    * Click ngoài CẢ HAI (vd sidebar Magic/Reference/Motion bên trái, header) = bỏ chọn. */
   const canvasAreaRef = useRef<HTMLElement | null>(null);
@@ -595,6 +611,43 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     [ed],
   );
 
+  /** E1 bổ sung (02/08) — kéo GÓC khung bao cả cụm (EditorCanvas#GroupResizeOverlay) → scale
+   * CẢ CỤM theo tỉ lệ: mọi phần tử con giữ vị trí tương đối trong khung bao + kích thước riêng
+   * cùng nhân 1 hệ số `scale`, chữ (`fontSize`) cũng nhân theo (xem `resize-group.ts`). Phần tử
+   * KHOÁ bị loại khỏi lô scale (giống `onFrameMany` loại khoá khỏi dời nhóm) — chốt giữa chuỗi,
+   * giải quyết mục ⛔ "resize cả cụm" P2 để lại (docs/BAO-CAO-PHU.md mục P2). */
+  const onGroupResize = useCallback(
+    (handle: 'nw' | 'ne' | 'sw' | 'se', dxPct: number, live: boolean) => {
+      const s = ed.slide;
+      if (!s) return;
+      if (!groupResizeStartRef.current) {
+        const members: Record<string, { frame: Frame; fontSize?: number }> = {};
+        const frames: GroupFrame[] = [];
+        for (const id of ed.selectedIds) {
+          const el = s.elements.find((e) => e.id === id);
+          if (el && !el.locked) {
+            members[id] = { frame: { ...el.frame }, fontSize: el.kind === 'text' ? el.fontSize : undefined };
+            frames.push(el.frame);
+          }
+        }
+        groupResizeStartRef.current = { bbox: groupBoundingBox(frames), members };
+      }
+      const { bbox, members } = groupResizeStartRef.current;
+      const { bbox: newBbox, scale } = scaleGroupByCorner(bbox, handle, dxPct);
+      ed.updateSlide((sl) => {
+        for (const el of sl.elements) {
+          const m = members[el.id];
+          if (!m) continue;
+          const res = scaleMemberFrame(m.frame, bbox, newBbox, scale, m.fontSize);
+          el.frame = { ...el.frame, x: res.frame.x, y: res.frame.y, w: res.frame.w, h: res.frame.h };
+          if (el.kind === 'text' && res.fontSize !== undefined) el.fontSize = res.fontSize;
+        }
+      }, live);
+      if (!live) groupResizeStartRef.current = null;
+    },
+    [ed],
+  );
+
   const onAltDrag = useCallback(
     (id: string) => {
       const el = ed.slide?.elements.find((e) => e.id === id);
@@ -640,17 +693,17 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     [ed],
   );
 
+  // z-order NHÓM (chốt 04/08, docs/CHOT-NGUYEN-LIEU-EDITOR-2026-08-01.md mục "z-order nhóm") —
+  // dùng `ed.selectedIds` (mảng, luôn đúng dù chọn 1 hay nhiều) THAY VÌ `ed.selectedId` (vốn chỉ
+  // là phần tử được chọn CUỐI CÙNG, xem useEditor.ts — trước đây multi-select bấm Tiến/Lùi chỉ
+  // dịch ĐÚNG 1 phần tử đó, các phần tử khác trong lô chọn im lìm, bug ngầm không báo lỗi). Toán
+  // THUẦN nằm ở `reorderZOrderGroup` (zorder-group.ts) — cả cụm dịch bậc CÙNG NHAU, giữ nguyên
+  // thứ tự nội bộ (chuẩn Figma).
   const onZOrder = useCallback(
     (dir: 'front' | 'back' | 'forward' | 'backward') => {
-      if (!ed.selectedId) return;
+      if (!ed.selectedIds.length) return;
       ed.updateSlide((s) => {
-        const i = s.elements.findIndex((e) => e.id === ed.selectedId);
-        if (i < 0) return;
-        const [el] = s.elements.splice(i, 1);
-        if (dir === 'front') s.elements.push(el);
-        else if (dir === 'back') s.elements.unshift(el);
-        else if (dir === 'forward') s.elements.splice(Math.min(i + 1, s.elements.length), 0, el);
-        else s.elements.splice(Math.max(i - 1, 0), 0, el);
+        s.elements = reorderZOrderGroup(s.elements, ed.selectedIds, dir);
       });
     },
     [ed],
@@ -681,7 +734,8 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     if (!ed.selectedIds.length) return;
     const originals = (ed.slide?.elements ?? []).filter((e) => ed.selectedIds.includes(e.id));
     if (!originals.length) return;
-    const copies = originals.map((e) => duplicateElement(e));
+    // groupId ánh xạ sang lô MỚI (P2/E1) — xem duplicateElementsPreservingGroups.
+    const copies = duplicateElementsPreservingGroups(originals);
     ed.updateSlide((s) => {
       s.elements.push(...copies);
     });
@@ -696,11 +750,79 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
 
   const onPaste = useCallback(() => {
     if (!clipboardRef.current?.length) return;
-    const copies = clipboardRef.current.map((e) => duplicateElement(e));
+    // groupId ánh xạ sang lô MỚI (P2/E1) — dán 2 lần không gộp chung 1 cụm.
+    const copies = duplicateElementsPreservingGroups(clipboardRef.current);
     ed.updateSlide((s) => {
       s.elements.push(...copies);
     });
     ed.selectMany(copies.map((c) => c.id));
+  }, [ed]);
+
+  /**
+   * P2/E1 (nhóm) — click chọn 1 phần tử trong cụm → chọn CẢ cụm (khớp Figma). Đặt Ở ĐÂY (bọc
+   * quanh `ed.select`) thay vì sửa trong `useEditor.ts` để LayerPanel vẫn dùng `ed.select` THẲNG
+   * (chọn TỪNG dòng riêng, khớp cách các trình layer khác cho chọn 1 lớp trong cụm mà không kéo
+   * cả cụm) — chỉ canvas (click + chuột phải, đều đi qua prop `onSelect` này) mới chọn cả cụm.
+   */
+  const onSelectGroupAware = useCallback(
+    (id: string | null) => {
+      if (!id) {
+        ed.select(null);
+        return;
+      }
+      const el = ed.slide?.elements.find((e) => e.id === id);
+      if (el?.groupId) {
+        const ids = (ed.slide?.elements ?? []).filter((e) => e.groupId === el.groupId).map((e) => e.id);
+        ed.selectMany(ids);
+      } else {
+        ed.select(id);
+      }
+    },
+    [ed],
+  );
+
+  /** P2/E1 — gộp các phần tử đang chọn (≥2) thành 1 cụm mới. */
+  const onGroupSelected = useCallback(() => {
+    if (ed.selectedIds.length < 2) return;
+    const gid = newId('grp');
+    const ids = new Set(ed.selectedIds);
+    ed.updateSlide((s) => {
+      s.elements.forEach((e) => {
+        if (ids.has(e.id)) e.groupId = gid;
+      });
+    });
+  }, [ed]);
+
+  /** P2/E1 — rã MỌI cụm có mặt trong lựa chọn hiện tại (kể cả khi chọn nhiều cụm cùng lúc). */
+  const onUngroupSelected = useCallback(() => {
+    const gids = new Set(
+      (ed.slide?.elements ?? [])
+        .filter((e) => ed.selectedIds.includes(e.id) && e.groupId)
+        .map((e) => e.groupId as string),
+    );
+    if (!gids.size) return;
+    ed.updateSlide((s) => {
+      s.elements.forEach((e) => {
+        if (e.groupId && gids.has(e.groupId)) e.groupId = undefined;
+      });
+    });
+  }, [ed]);
+
+  /**
+   * P2/E1 — khoá/mở khoá CẢ CỤM đang chọn (trước đây chỉ khoá 1 phần tử "chính" qua
+   * `ed.updateSelected`, không cascade). Quy ước: còn ≥1 phần tử MỞ khoá trong lựa chọn → khoá
+   * HẾT; đã khoá hết → mở HẾT (khớp Figma — tránh trạng thái lẫn lộn khó hiểu khi bấm 1 nút).
+   * Dùng CHUNG cho cả nút Khoá trong Inspector lẫn menu chuột phải trên canvas.
+   */
+  const onToggleLockSelected = useCallback(() => {
+    if (!ed.selectedIds.length) return;
+    const ids = new Set(ed.selectedIds);
+    const anyUnlocked = (ed.slide?.elements ?? []).some((e) => ids.has(e.id) && !e.locked);
+    ed.updateSlide((s) => {
+      s.elements.forEach((e) => {
+        if (ids.has(e.id)) e.locked = anyUnlocked;
+      });
+    });
   }, [ed]);
 
   const onSelectNext = useCallback(
@@ -1534,6 +1656,13 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         onOpenSorter={() => setSorterOpen(true)}
         busy={busy}
         exportMsg={exportMsg}
+        slide={ed.slide}
+        selectedIds={ed.selectedIds}
+        onZOrder={onZOrder}
+        onAlignSelection={onAlignSelection}
+        onGroup={onGroupSelected}
+        onUngroup={onUngroupSelected}
+        onToggleLock={onToggleLockSelected}
       />
 
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
@@ -1697,11 +1826,12 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
               stage={stage}
               fonts={ed.deck.fonts}
               selectedIds={ed.selectedIds}
-              onSelect={ed.select}
+              onSelect={onSelectGroupAware}
               onToggleSelect={ed.toggleSelect}
               onSelectMany={ed.selectMany}
               onFrame={onFrame}
               onFrameMany={onFrameMany}
+              onGroupResize={onGroupResize}
               onAltDrag={onAltDrag}
               onEditTextCommit={onEditTextCommit}
               onEditImage={(id) => setImageEditId(id)}
@@ -1711,7 +1841,9 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
               onDuplicate={onDuplicateSelected}
               onDelete={onDeleteSelected}
               onZOrder={onZOrder}
-              onToggleLock={() => ed.updateSelected((el) => (el.locked = !el.locked))}
+              onToggleLock={onToggleLockSelected}
+              onGroup={onGroupSelected}
+              onUngroup={onUngroupSelected}
               onUpdateText={onUpdateText}
               onUpdateShape={onUpdateShape}
               brand={ed.deck.brand}
@@ -1844,6 +1976,9 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
                   onDistributeSelection={onDistributeSelection}
                   onDuplicate={onDuplicateSelected}
                   onDelete={onDeleteSelected}
+                  onToggleLockSelected={onToggleLockSelected}
+                  onGroup={onGroupSelected}
+                  onUngroup={onUngroupSelected}
                   onOpenImageEditor={(id) => setImageEditId(id)}
                   onOpenAdvancedEditor={openAdvancedEditor}
                   linkedAssets={linkedAssets}

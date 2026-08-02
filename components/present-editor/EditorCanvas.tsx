@@ -15,11 +15,15 @@
  * Sửa chữ: nhấp đúp → textarea phủ khung. Sửa ảnh: nhấp đúp → onEditImage.
  */
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { EditorSlide, Frame, TextElement, ShapeElement, SlideElement, DeckWatermark } from '@/lib/present-editor/model';
 import { adjustToCssFilter } from '@/lib/present-editor/model';
 import { STAGE_PRESETS, type StageSize } from '@/lib/present-editor/stage-presets';
 import { extractTextFormat, applyTextFormat, type TextFormat } from '@/lib/present-editor/format-painter';
+import { groupBoundingBox } from '@/lib/present-editor/resize-group';
+import { useFloatingToolbarVisibility } from '@/lib/useFloatingToolbarVisibility';
+import { readImageRegion } from '@/lib/adaptive-contrast';
+import { findTextBackdrop, resolveAutoTextColor } from '@/lib/present-editor/text-contrast';
 import Element, { textOverImage, type Guides } from './Element';
 import TextToolbar from './TextToolbar';
 import ShapeQuickPanel from './ShapeQuickPanel';
@@ -48,6 +52,9 @@ interface Props {
   onFrame: (id: string, frame: Frame, live: boolean) => void;
   /** dời cả nhóm đang chọn theo delta % (cộng dồn từ frame lúc bắt đầu). */
   onFrameMany: (dxPct: number, dyPct: number, live: boolean) => void;
+  /** E1 bổ sung (02/08) — kéo GÓC khung bao cả cụm (multi) → scale theo tỉ lệ. Không truyền =
+   * không hiện khung bao/handle resize nhóm (chỉ còn dời cả nhóm qua onFrameMany như cũ). */
+  onGroupResize?: (handle: 'nw' | 'ne' | 'sw' | 'se', dxPct: number, live: boolean) => void;
   onAltDrag: (id: string) => void;
   onEditTextCommit: (id: string, text: string) => void;
   onEditImage: (id: string) => void;
@@ -62,6 +69,9 @@ interface Props {
   onDelete: () => void;
   onZOrder: (dir: 'front' | 'back' | 'forward' | 'backward') => void;
   onToggleLock: () => void;
+  /** P2/E1 (nhóm) — gộp ≥2 phần tử đang chọn / rã cụm hiện tại. */
+  onGroup?: () => void;
+  onUngroup?: () => void;
   /** cập nhật 1 text element cụ thể (cho thanh chữ nổi). */
   onUpdateText?: (id: string, mutate: (el: TextElement) => void, live?: boolean) => void;
   /** cập nhật 1 shape cụ thể (cho bảng chỉnh shape khi chuột phải). */
@@ -104,6 +114,7 @@ export default function EditorCanvas({
   onSelectMany,
   onFrame,
   onFrameMany,
+  onGroupResize,
   onAltDrag,
   onEditTextCommit,
   onEditImage,
@@ -113,6 +124,8 @@ export default function EditorCanvas({
   onDelete,
   onZOrder,
   onToggleLock,
+  onGroup,
+  onUngroup,
   onUpdateText,
   onUpdateShape,
   onReplaceImage,
@@ -172,6 +185,78 @@ export default function EditorCanvas({
           | TextElement
           | undefined)
       : undefined;
+
+  // P5/2.2.91 — toolbar-nổi-theo-selection (hiện chỉ TextToolbar, nguyên liệu dùng chung cho
+  // CAD/Render sau này) tự thu khi kéo (di chuyển HOẶC tay nắm resize/xoay) — `dragActive` do
+  // MỌI <Element> báo qua `onDragActiveChange` (chỉ 1 element kéo được tại 1 thời điểm nhờ
+  // pointer capture, không cần phân biệt element nào). Vị trí "sống" tính lại mỗi render như cũ
+  // (không đổi công thức, giữ NGUYÊN `Math.max/min` clamp + luật lật xuống `y < 16`) — hook LO
+  // phần đóng băng trong lúc kéo (chi tiết ④, xem `useFloatingToolbarVisibility.ts`).
+  const [dragActive, setDragActive] = useState(false);
+  const liveTextToolbarPos = soleTextEl
+    ? {
+        left: Math.max(14, Math.min(86, soleTextEl.frame.x + soleTextEl.frame.w / 2)),
+        top:
+          soleTextEl.frame.y < 16
+            ? soleTextEl.frame.y + soleTextEl.frame.h
+            : soleTextEl.frame.y,
+        below: soleTextEl.frame.y < 16,
+      }
+    : { left: 0, top: 0, below: false };
+  const { hidden: textToolbarHidden, pos: textToolbarPos } = useFloatingToolbarVisibility(
+    dragActive,
+    liveTextToolbarPos,
+  );
+
+  // P6a — tự sửa màu chữ khi FAIL contrast WCAG AA với nền/ảnh đo được (chỉ áp cho text có
+  // colorAuto === true, tức text MỚI tạo qua makeText() — file cũ colorAuto=undefined KHÔNG bị
+  // đụng tới; user tự chọn màu qua TextToolbar/Inspector → colorAuto khoá về false VĨNH VIỄN nên
+  // hiệu ứng này không bao giờ đè lên lựa chọn tay). "Đo một lần, ghi vào dữ liệu" — SlideStrip/
+  // PlayerElements/render.ts/export.ts đều chỉ ĐỌC `el.color`/`el.autoShadow` đã lưu, không cần
+  // đo lại. Chữ ký phụ thuộc là CHUỖI đã làm tròn % khung (không phải object `slide` sống) để
+  // effect KHÔNG chạy lại mỗi khung hình khi đang kéo/resize — chỉ chạy lại khi vị trí/kích thước
+  // đổi ĐỦ để lệch số nguyên %, hoặc khi danh sách text/ảnh nền thực sự đổi.
+  const autoColorSignature = useMemo(
+    () =>
+      JSON.stringify(
+        slide.elements
+          .filter((e): e is TextElement => e.kind === 'text' && e.colorAuto === true)
+          .map((e) => [
+            e.id,
+            e.color,
+            Math.round(e.frame.x),
+            Math.round(e.frame.y),
+            Math.round(e.frame.w),
+            Math.round(e.frame.h),
+          ]),
+      ) + '|' + (slide.backgroundImage ?? ''),
+    [slide.elements, slide.backgroundImage],
+  );
+
+  useEffect(() => {
+    if (!onUpdateText) return;
+    let cancelled = false;
+    for (const el of slide.elements) {
+      if (el.kind !== 'text' || el.colorAuto !== true) continue;
+      const backdrop = findTextBackdrop(el, slide.elements, slide.backgroundImage ?? null);
+      if (!backdrop) continue;
+      readImageRegion(backdrop.src, backdrop.region).then((reading) => {
+        if (cancelled || !reading) return;
+        const fix = resolveAutoTextColor(el, reading, palette?.[0]);
+        if (!fix) return;
+        onUpdateText(el.id, (t) => {
+          // Trong lúc chờ đo, user có thể đã tự chọn màu (colorAuto → false) — bỏ qua, không đè.
+          if (t.colorAuto !== true) return;
+          t.color = fix.color;
+          t.autoShadow = fix.autoShadow;
+        });
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- phụ thuộc thật là autoColorSignature (đã làm tròn), không phải slide sống.
+  }, [autoColorSignature, onUpdateText, palette]);
 
   // px trong stage → % sân khấu.
   function toPct(clientX: number, clientY: number) {
@@ -341,6 +426,7 @@ export default function EditorCanvas({
           onFrameMany={onFrameMany}
           onAltDrag={() => onAltDrag(el.id)}
           onGuides={setGuides}
+          onDragActiveChange={setDragActive}
           onEditText={(id) => {
             const t = slide.elements.find((x) => x.id === id) as TextElement | undefined;
             if (t) setEditing({ id, text: t.text });
@@ -360,6 +446,18 @@ export default function EditorCanvas({
           }}
         />
         ),
+      )}
+
+      {/* E1 bổ sung (02/08) — khung bao + 4 handle góc khi chọn NHIỀU phần tử: kéo góc = scale
+          cả cụm theo tỉ lệ (khác kéo thân element = dời cả nhóm, xem Element.tsx#onFrameMany). */}
+      {multi && onGroupResize && (
+        <GroupResizeOverlay
+          bbox={groupBoundingBox(
+            slide.elements.filter((e) => selectedIds.includes(e.id)).map((e) => e.frame),
+          )}
+          stageRef={stageRef}
+          onGroupResize={onGroupResize}
+        />
       )}
 
       {/* khung marquee */}
@@ -414,6 +512,15 @@ export default function EditorCanvas({
               <MenuSep />
               <MenuItem shortcut="⌘⇧]" onClick={() => { onZOrder('front'); setMenu(null); }}>Đưa lên trước</MenuItem>
               <MenuItem shortcut="⌘⇧[" onClick={() => { onZOrder('back'); setMenu(null); }}>Đưa xuống sau</MenuItem>
+              {(onGroup || onUngroup) && (selectedIds.length > 1 || slide.elements.some((e) => selectedIds.includes(e.id) && e.groupId)) && (
+                <>
+                  <MenuSep />
+                  {onGroup && selectedIds.length > 1 && <MenuItem onClick={() => { onGroup(); setMenu(null); }}>Nhóm</MenuItem>}
+                  {onUngroup && slide.elements.some((e) => selectedIds.includes(e.id) && e.groupId) && (
+                    <MenuItem onClick={() => { onUngroup(); setMenu(null); }}>Bỏ nhóm</MenuItem>
+                  )}
+                </>
+              )}
             </>
           ) : (
             <>
@@ -436,6 +543,15 @@ export default function EditorCanvas({
               <MenuItem onClick={() => { onToggleLock(); setMenu(null); }}>
                 {menu.locked ? 'Mở khoá' : 'Khoá'}
               </MenuItem>
+              {(onGroup || onUngroup) && (selectedIds.length > 1 || slide.elements.some((e) => selectedIds.includes(e.id) && e.groupId)) && (
+                <>
+                  <MenuSep />
+                  {onGroup && selectedIds.length > 1 && <MenuItem onClick={() => { onGroup(); setMenu(null); }}>Nhóm</MenuItem>}
+                  {onUngroup && slide.elements.some((e) => selectedIds.includes(e.id) && e.groupId) && (
+                    <MenuItem onClick={() => { onUngroup(); setMenu(null); }}>Bỏ nhóm</MenuItem>
+                  )}
+                </>
+              )}
               <MenuItem danger shortcut="⌫" onClick={() => { onDelete(); setMenu(null); }}>Xoá</MenuItem>
             </>
           )}
@@ -518,13 +634,10 @@ export default function EditorCanvas({
         {soleTextEl && onUpdateText && (
           <TextToolbar
             el={soleTextEl}
-            leftPct={Math.max(14, Math.min(86, soleTextEl.frame.x + soleTextEl.frame.w / 2))}
-            topPct={
-              soleTextEl.frame.y < 16
-                ? soleTextEl.frame.y + soleTextEl.frame.h
-                : soleTextEl.frame.y
-            }
-            below={soleTextEl.frame.y < 16}
+            leftPct={textToolbarPos.left}
+            topPct={textToolbarPos.top}
+            below={textToolbarPos.below}
+            hidden={textToolbarHidden}
             stageWidthPx={widthPx}
             onUpdate={(mutate, live) => onUpdateText(soleTextEl.id, mutate, live)}
             brand={brand}
@@ -535,6 +648,102 @@ export default function EditorCanvas({
           />
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * E1 bổ sung (02/08) — khung bao quanh CẢ NHÓM đang chọn (multi) + 4 handle GÓC: kéo → scale cả
+ * cụm theo tỉ lệ (docs/CHOT-NGUYEN-LIEU-EDITOR-2026-08-01.md, chốt giữa chuỗi 02/08 — "kéo góc
+ * nhóm → SCALE CẢ CỤM theo tỉ lệ, KHÔNG phải khung đổi con giữ nguyên"). Khác Element.tsx (resize
+ * 1 phần tử, 8 handle + xoay): ở đây CHỈ 4 GÓC — không có cạnh (n/s/e/w) và không có xoay, chuẩn
+ * multi-select resize Figma/Canva (chỉ góc mới scale đồng bộ 2 trục, tránh resize tự do 1 trục
+ * làm méo bố cục tương đối giữa các phần tử con). Khung bao tự vẽ NGOÀI (không chiếm pointer),
+ * chỉ 4 handle góc bắt sự kiện — giống cách Element.tsx tách outline (pointerEvents:'none') khỏi
+ * handle bắt kéo.
+ */
+function GroupResizeOverlay({
+  bbox,
+  stageRef,
+  onGroupResize,
+}: {
+  bbox: { x: number; y: number; w: number; h: number };
+  stageRef: React.RefObject<HTMLDivElement>;
+  onGroupResize: (handle: 'nw' | 'ne' | 'sw' | 'se', dxPct: number, live: boolean) => void;
+}) {
+  const dragRef = useRef<{ handle: 'nw' | 'ne' | 'sw' | 'se'; startX: number; lastDx: number } | null>(null);
+
+  function onDown(e: React.PointerEvent, handle: 'nw' | 'ne' | 'sw' | 'se') {
+    e.stopPropagation();
+    try {
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      /* con trỏ không còn active (hiếm) — bỏ qua, vẫn kéo được qua move handler */
+    }
+    dragRef.current = { handle, startX: e.clientX, lastDx: 0 };
+  }
+  function onMove(e: React.PointerEvent) {
+    const st = dragRef.current;
+    const rect = stageRef.current?.getBoundingClientRect();
+    if (!st || !rect) return;
+    const dxPct = ((e.clientX - st.startX) / rect.width) * 100;
+    st.lastDx = dxPct;
+    onGroupResize(st.handle, dxPct, true);
+  }
+  function onUp(e: React.PointerEvent) {
+    const st = dragRef.current;
+    if (!st) return;
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+    // commit lần cuối bằng delta THẬT của lần move gần nhất (không dùng hack "0 = giữ nguyên"
+    // như onFrameMany — ở đây đơn giản hơn: cứ truyền đúng số đo được).
+    onGroupResize(st.handle, st.lastDx, false);
+    dragRef.current = null;
+  }
+
+  const handles: Array<'nw' | 'ne' | 'sw' | 'se'> = ['nw', 'ne', 'sw', 'se'];
+  const off = -6;
+  const pos: Record<string, CSSProperties> = {
+    nw: { left: off, top: off, cursor: 'nwse-resize' },
+    ne: { right: off, top: off, cursor: 'nesw-resize' },
+    sw: { left: off, bottom: off, cursor: 'nesw-resize' },
+    se: { right: off, bottom: off, cursor: 'nwse-resize' },
+  };
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: `${bbox.x}%`,
+        top: `${bbox.y}%`,
+        width: `${bbox.w}%`,
+        height: `${bbox.h}%`,
+        pointerEvents: 'none',
+      }}
+    >
+      <div style={{ position: 'absolute', inset: 0, outline: '1.5px dashed var(--accent-ring)' }} />
+      {handles.map((h) => (
+        <span
+          key={h}
+          onPointerDown={(e) => onDown(e, h)}
+          onPointerMove={onMove}
+          onPointerUp={onUp}
+          style={{
+            position: 'absolute',
+            width: 12,
+            height: 12,
+            background: 'var(--panel)',
+            border: '2px solid var(--accent)',
+            borderRadius: 3,
+            zIndex: 2,
+            pointerEvents: 'auto',
+            ...pos[h],
+          }}
+        />
+      ))}
     </div>
   );
 }
