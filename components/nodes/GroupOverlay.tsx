@@ -13,9 +13,13 @@ import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, X } from 'lucide-react';
 import { ViewportPortal } from '@xyflow/react';
 import { useFlowStore, type NodeGroup } from '@/lib/store';
+import { cn } from '@/lib/utils';
 
 const PAD = 24;
 const LABEL_H = 28;
+/** G2 phần (1) — gợi ý tên phòng cho khung phòng (SPEC-CHANG2-UI-2MODE §3 "gom mood theo phòng
+ * khách/bếp/master") — datalist trên input đổi tên CÓ SẴN, không viết popover chọn riêng. */
+const ROOM_NAME_PRESETS = ['Phòng khách', 'Bếp', 'Phòng ngủ', 'Phòng tắm', 'Phòng làm việc', 'Sân vườn', 'Ban công'];
 
 function GroupRect({ group }: { group: NodeGroup }) {
   const nodes = useFlowStore((s) => s.nodes);
@@ -56,19 +60,31 @@ function GroupRect({ group }: { group: NodeGroup }) {
     );
   }
 
-  if (!members.length) return null;
+  // G2 phần (1) — khung phòng (`group.rect` tường minh) PHẢI hiện kể cả 0 node thành viên (đó là
+  // điểm cốt lõi: khung vẽ trước, thả node vào sau) — group thường (bbox suy từ node) thì vẫn cần
+  // ≥1 member mới có gì để tính bbox, giữ nguyên early-return cũ.
+  if (!group.rect && !members.length) return null;
 
-  // Bounding box bao quanh các node (tính cả kích thước node ~256x120)
+  // Bounding box bao quanh các node (tính cả kích thước node ~256x120) — dùng khi KHÔNG có rect
+  // tường minh (group thường). Có `rect` (khung phòng) thì dùng thẳng, không tính lại từ member.
   const NODE_W = 256;
   const NODE_H = 120;
-  const minX = Math.min(...members.map((n) => n.position.x)) - PAD;
-  const minY = Math.min(...members.map((n) => n.position.y)) - PAD - LABEL_H;
-  const maxX = Math.max(...members.map((n) => n.position.x + NODE_W)) + PAD;
-  const maxY = Math.max(...members.map((n) => n.position.y + NODE_H)) + PAD;
+  const box = group.rect
+    ? { minX: group.rect.x, minY: group.rect.y - LABEL_H, maxX: group.rect.x + group.rect.width, maxY: group.rect.y + group.rect.height }
+    : {
+        minX: Math.min(...members.map((n) => n.position.x)) - PAD,
+        minY: Math.min(...members.map((n) => n.position.y)) - PAD - LABEL_H,
+        maxX: Math.max(...members.map((n) => n.position.x + NODE_W)) + PAD,
+        maxY: Math.max(...members.map((n) => n.position.y + NODE_H)) + PAD,
+      };
+  const { minX, minY, maxX, maxY } = box;
 
   return (
     <div
-      className="absolute rounded-xl border border-dashed border-[var(--accent-ring)]/40 bg-[var(--accent)]/[0.04]"
+      className={cn(
+        'absolute rounded-xl border bg-[var(--accent)]/[0.04]',
+        group.rect ? 'border-solid border-[var(--accent-ring)]/60' : 'border-dashed border-[var(--accent-ring)]/40',
+      )}
       style={{
         left: minX,
         top: minY,
@@ -93,6 +109,7 @@ function GroupRect({ group }: { group: NodeGroup }) {
         {editing ? (
           <input
             autoFocus
+            list="if-room-name-presets"
             className="nodrag w-24 rounded border border-[var(--border)] bg-[var(--field)] px-1 py-0.5 text-[10px] text-[var(--t1)] outline-none"
             defaultValue={group.label}
             onBlur={(e) => {
@@ -131,6 +148,13 @@ export function GroupOverlay() {
   if (!groups.length) return null;
   return (
     <ViewportPortal>
+      {/* 1 datalist DÙNG CHUNG mọi input đổi tên (nhiều group cùng lúc không tạo id trùng trong
+          DOM) — xem `list="if-room-name-presets"` trên input ở GroupRect(). */}
+      <datalist id="if-room-name-presets">
+        {ROOM_NAME_PRESETS.map((name) => (
+          <option key={name} value={name} />
+        ))}
+      </datalist>
       {groups.map((g) => (
         <GroupRect key={g.id} group={g} />
       ))}

@@ -12,7 +12,7 @@ import {
   useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useFlowStore, type FlowNode } from '@/lib/store';
+import { useFlowStore, type FlowNode, type Tool } from '@/lib/store';
 import { stageTransition } from '@/lib/motion';
 import { DEFAULT_PHASE } from '@/lib/phases';
 import { getDefinition } from '@/lib/nodes/registry';
@@ -186,13 +186,54 @@ export function FlowCanvas() {
     return () => collabStop();
   }, [user?.id, user?.name, currentFlowId, collabStart, collabStop]);
 
+  // G2 phần (1) — tool='frame': kéo-vẽ khung phòng trên NỀN canvas (không trúng node/edge).
+  // Preview vẽ bằng toạ độ MÀN HÌNH tương đối `wrapperRef` (đơn giản hơn ViewportPortal — preview
+  // đang kéo không cần chính xác flow-space, chỉ quy đổi 1 LẦN lúc thả chuột qua
+  // `screenToFlowPosition`, xem `onFramePointerUp`).
+  const [frameDraft, setFrameDraft] = useState<{ start: { x: number; y: number }; now: { x: number; y: number } } | null>(null);
+
   const onPointerMove = useCallback(
     (e: React.PointerEvent) => {
       const p = screenToFlowPosition({ x: e.clientX, y: e.clientY });
       setLocalCursor(p.x, p.y);
+      if (frameDraft) {
+        const rect = wrapperRef.current?.getBoundingClientRect();
+        if (rect) setFrameDraft((d) => (d ? { ...d, now: { x: e.clientX - rect.left, y: e.clientY - rect.top } } : d));
+      }
     },
-    [screenToFlowPosition, setLocalCursor],
+    [screenToFlowPosition, setLocalCursor, frameDraft],
   );
+
+  const onFramePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (tool !== 'frame') return;
+      // Chỉ bắt khi bấm lên NỀN canvas thật (react-flow__pane) — bấm trúng node/edge/toolbar nổi
+      // thì để hành vi mặc định (chọn/kéo node) chạy bình thường.
+      if (!(e.target as HTMLElement).classList.contains('react-flow__pane')) return;
+      const rect = wrapperRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const p = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      setFrameDraft({ start: p, now: p });
+    },
+    [tool],
+  );
+
+  const onFramePointerUp = useCallback(() => {
+    if (!frameDraft) return;
+    const rect = wrapperRef.current?.getBoundingClientRect();
+    setFrameDraft(null);
+    if (!rect) return;
+    const p1 = screenToFlowPosition({ x: frameDraft.start.x + rect.left, y: frameDraft.start.y + rect.top });
+    const p2 = screenToFlowPosition({ x: frameDraft.now.x + rect.left, y: frameDraft.now.y + rect.top });
+    const width = Math.abs(p2.x - p1.x);
+    const height = Math.abs(p2.y - p1.y);
+    if (width < 24 || height < 24) return; // quá nhỏ — coi như bấm nhầm, không tạo khung
+    useFlowStore.getState().createRoomFrame(
+      { x: Math.min(p1.x, p2.x), y: Math.min(p1.y, p2.y), width, height },
+      'Phòng mới',
+    );
+    useFlowStore.getState().setTool('select'); // thao tác 1-lần — tự về select, khuôn addNode() cũ.
+  }, [frameDraft, screenToFlowPosition]);
 
   // Type-safe ports: chỉ cho nối cùng dataType
   const isValidConnection: IsValidConnection<Edge> = useCallback(
@@ -300,7 +341,7 @@ export function FlowCanvas() {
   // Keyboard (đồng bộ Mac ⌘ / Windows Ctrl): mod+D nhân bản, mod+Z undo, mod+⇧Z & mod+Y redo, Space giữ = pan tạm
   useEffect(() => {
     let spaceHeld = false;
-    let toolBeforeSpace: 'select' | 'pan' = 'select';
+    let toolBeforeSpace: Tool = 'select';
     const handler = (e: KeyboardEvent) => {
       const inField =
         e.target instanceof HTMLElement &&
@@ -357,7 +398,13 @@ export function FlowCanvas() {
   }, [screenToFlowPosition, addNote]);
 
   return (
-    <div ref={wrapperRef} onPointerMove={onPointerMove} className="relative flex-1 bg-[var(--bg)]">
+    <div
+      ref={wrapperRef}
+      onPointerMove={onPointerMove}
+      onPointerDown={onFramePointerDown}
+      onPointerUp={onFramePointerUp}
+      className="relative flex-1 bg-[var(--bg)]"
+    >
       <ReactFlow<FlowNode>
         nodes={nodes}
         edges={edges}
@@ -367,6 +414,9 @@ export function FlowCanvas() {
         onConnect={onConnect}
         isValidConnection={isValidConnection}
         onNodeDragStart={() => snapshot()}
+        // G2 phần (1) — sau khi thả node, tự cập nhật thành viên khung phòng (rơi vào rect nào
+        // thì gia nhập, ra ngoài thì rời) — CHỈ áp cho group có `rect` (xem syncRoomMembership).
+        onNodeDragStop={(_, node) => useFlowStore.getState().syncRoomMembership(node.id, node.position)}
         onPaneContextMenu={onPaneContextMenu}
         onDrop={onDrop}
         onDragOver={(e) => {
@@ -374,7 +424,9 @@ export function FlowCanvas() {
           e.dataTransfer.dropEffect = 'move';
         }}
         deleteKeyCode={['Backspace', 'Delete']}
-        panOnDrag={tool === 'pan' ? [0, 1, 2] : [1, 2]}
+        // tool='frame' — tắt cả pan-kéo và rubber-band select mặc định, nhường quyền bắt pointer
+        // cho onFramePointerDown/Up (vẽ khung) ở div cha.
+        panOnDrag={tool === 'frame' ? false : tool === 'pan' ? [0, 1, 2] : [1, 2]}
         selectionOnDrag={tool === 'select'}
         panOnScroll
         zoomOnPinch
@@ -389,7 +441,7 @@ export function FlowCanvas() {
         proOptions={{ hideAttribution: false }}
         defaultEdgeOptions={{ type: 'default' }}
         connectionLineStyle={{ stroke: '#8b7cf7', strokeWidth: 2 }}
-        className={tool === 'pan' ? 'cursor-grab' : ''}
+        className={tool === 'pan' ? 'cursor-grab' : tool === 'frame' ? 'cursor-crosshair' : ''}
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="var(--dots)" />
         {/* Ẩn khi canvas ít node — viewport gần như trùng khung minimap, chỉ thấy 1 khối đen rỗng */}
@@ -412,6 +464,21 @@ export function FlowCanvas() {
           />
         )}
       </ReactFlow>
+
+      {/* G2 phần (1) — preview khung phòng đang kéo-vẽ (toạ độ MÀN HÌNH tương đối wrapperRef,
+          xem chú thích frameDraft phía trên). pointer-events-none — không chặn onFramePointerUp
+          bắt trên chính div cha. */}
+      {frameDraft && (
+        <div
+          className="pointer-events-none absolute z-10 rounded-md border-2 border-dashed border-[var(--accent)] bg-[var(--accent)]/10"
+          style={{
+            left: Math.min(frameDraft.start.x, frameDraft.now.x),
+            top: Math.min(frameDraft.start.y, frameDraft.now.y),
+            width: Math.abs(frameDraft.now.x - frameDraft.start.x),
+            height: Math.abs(frameDraft.now.y - frameDraft.start.y),
+          }}
+        />
+      )}
 
       {/* Group overlay — vẽ khung bao quanh nhóm node (tự bọc ViewportPortal bên trong) */}
       <GroupOverlay />

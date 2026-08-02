@@ -9,7 +9,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { MousePointer2, Hand, StickyNote, Undo2, Redo2, Minus, Plus, Maximize, LayoutGrid, Grid3x3, Command } from 'lucide-react';
+import { MousePointer2, Hand, Frame as FrameIcon, StickyNote, Undo2, Redo2, Minus, Plus, Maximize, LayoutGrid, Grid3x3, Command } from 'lucide-react';
 import { useReactFlow, useViewport } from '@xyflow/react';
 import { useFlowStore } from '@/lib/store';
 import { springSheet, easeApple } from '@/lib/motion';
@@ -81,6 +81,11 @@ export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
       </Btn>
       <Btn title="Pan (Space giữ / H)" active={tool === 'pan'} onClick={() => setTool('pan')}>
         <Hand size={15} />
+      </Btn>
+      {/* G2 phần (1) — kéo-vẽ khung phòng trên nền canvas (SPEC-CHANG2-UI-2MODE §1 thứ tự
+          "chọn · pan · frame"). Logic vẽ ở FlowCanvas.tsx (pointerdown/move/up khi tool='frame'). */}
+      <Btn title="Khung phòng — kéo vẽ khung trên nền canvas" active={tool === 'frame'} onClick={() => setTool('frame')}>
+        <FrameIcon size={15} />
       </Btn>
       <Btn title="Sticky note" onClick={onAddNote}>
         <StickyNote size={15} />

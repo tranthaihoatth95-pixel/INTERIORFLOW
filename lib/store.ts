@@ -23,7 +23,7 @@ import { type Phase, isPhase, phaseFromNodes } from '@/lib/phases';
 import { type Lang, DEFAULT_LANG, LANG_KEY, isLang } from '@/lib/lang';
 
 export type FlowNode = Node<InteriorNodeData>;
-export type Tool = 'select' | 'pan';
+export type Tool = 'select' | 'pan' | 'frame';
 export type Panel = 'library' | 'search' | 'gallery' | 'assets' | 'flows' | null;
 export type ThemePref = 'auto' | 'light' | 'dark';
 /** 3 chặng mềm của cùng 1 pipeline (Concept → Render → Present) — xem lib/phases.ts.
@@ -198,6 +198,13 @@ interface FlowState {
   renameGroup: (groupId: string, label: string) => void;
   /** Thu gọn / mở rộng group */
   toggleGroupCollapse: (groupId: string) => void;
+  /** G2 phần (1) — tạo "khung phòng" (Miro-style frame): khung TRỐNG vẽ trước, khác `groupSelected`
+   * (ép ≥2 node có sẵn). `rect` là toạ độ flow-space cố định của khung. */
+  createRoomFrame: (rect: { x: number; y: number; width: number; height: number }, label: string) => void;
+  /** G2 phần (1) — gọi sau khi 1 node vừa kéo-thả xong: node rơi vào rect khung phòng nào thì tự
+   * thêm vào `nodeIds` của khung đó, rơi ra ngoài thì tự gỡ. CHỈ áp cho group có `rect` (khung
+   * phòng) — group thường (`groupSelected`) do user tự chọn thủ công, không tự động mutate. */
+  syncRoomMembership: (nodeId: string, pos: { x: number; y: number }) => void;
 }
 
 export type DemoKind = 'sketch' | 'bedroom' | 'slide' | 'concept';
@@ -210,6 +217,10 @@ export interface NodeGroup {
   collapsed: boolean;
   /** Vị trí lưu khi collapse (tâm group) */
   center?: { x: number; y: number };
+  /** G2 phần (1) — khung phòng: rect TƯỜNG MINH (khác group thường suy bbox từ `nodeIds`), cho
+   * phép khung TỒN TẠI TRƯỚC khi có node nào bên trong (kéo-vẽ khung trống rồi thả node vào sau,
+   * kiểu Miro/Figma frame). Có field này ⇒ đây là "khung phòng", không phải group chọn tay. */
+  rect?: { x: number; y: number; width: number; height: number };
 }
 
 // Dev-only: expose store cho debugging (window.__flowStore)
@@ -980,6 +991,45 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         ),
       }));
     }
+  },
+
+  // G2 phần (1) — khung phòng (rect-based group, xem NodeGroup.rect).
+  createRoomFrame: (rect, label) => {
+    get().snapshot();
+    const groupId = nextId('grp');
+    set((s) => ({
+      groups: [
+        ...s.groups,
+        {
+          id: groupId,
+          label,
+          nodeIds: [],
+          collapsed: false,
+          center: { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 },
+          rect,
+        },
+      ],
+    }));
+  },
+  syncRoomMembership: (nodeId, pos) => {
+    const { groups } = get();
+    if (!groups.some((g) => g.rect)) return; // không có khung phòng nào — khỏi set() vô ích
+    // Cùng ước lượng kích thước node với GroupOverlay.tsx (NODE_W/NODE_H) — dùng TÂM node để xét
+    // "nằm trong khung", không phải góc trên-trái (khớp cảm giác kéo-thả trực quan hơn).
+    const NODE_W = 256;
+    const NODE_H = 120;
+    const cx = pos.x + NODE_W / 2;
+    const cy = pos.y + NODE_H / 2;
+    set((s) => ({
+      groups: s.groups.map((g) => {
+        if (!g.rect) return g;
+        const inside = cx >= g.rect.x && cx <= g.rect.x + g.rect.width && cy >= g.rect.y && cy <= g.rect.y + g.rect.height;
+        const has = g.nodeIds.includes(nodeId);
+        if (inside && !has) return { ...g, nodeIds: [...g.nodeIds, nodeId] };
+        if (!inside && has) return { ...g, nodeIds: g.nodeIds.filter((id) => id !== nodeId) };
+        return g;
+      }),
+    }));
   },
 }));
 
