@@ -1194,3 +1194,40 @@ nghĩa "không compile", nhưng nghi đường vào UI đã bị che/thay — n�
 là bug case thật (không ai nhìn thấy). Không mở rộng điều tra (ngoài phạm vi "1 commit" của yêu
 cầu này) — cờ lại đây để Hoà/phiên sau xác nhận, không ảnh hưởng gì tới bản sửa avatar vừa xong
 (logic sửa tập trung 1 chỗ trong `AvatarRenderer.tsx`, áp dụng đồng nhất bất kể caller).
+
+## AVATAR MEMOJI — VIỆC 1 + VIỆC 2 + fix trung tính — XONG (3 commit)
+Chuỗi lệnh Hoà 03/08 (`docs/CHOT-AVATAR-MEMOJI-2026-08-02.md`, thay hướng "búp bê nỉ" cũ):
+- **VIỆC 1** `83127a1` — `AvatarRenderer.tsx` bỏ hẳn 2 filter nỉ (feTurbulence/feDisplacementMap),
+  da gradient 3 chặng mềm tâm lệch 38%/32%, highlight ≤18%, bóng ≤12%, tóc gradient dọc khối
+  mượt, mày dày 9px bo tròn, mắt 1 chấm sáng + mí trên dày, MŨI 3 lớp nhô ra (bump+highlight+
+  bóng đế), cổ mảnh 32. Toạ độ 14 lớp giữ nguyên 100% (test geometry 54/54). Tự chấm bảng §3b
+  trong commit message — mức đạt: "flat-3D" đúng cảnh báo thành thật của chính CHOT doc; 2 mục
+  🟡: mũi ở tông da tối hơi nhạt (tinh chỉnh khi làm VIỆC 3 thumbnail), tỉ lệ đầu ~60% (ngưỡng
+  dưới của 60-65%, không đổi HEAD rx/ry vì kéo theo dịch toàn bộ toạ độ đã bị cấm).
+- **Fix trung tính** `815cdce` — `/settings/avatar` + `AvatarBuilder`: gỡ 5 hex TTT khỏi chrome
+  trang (#F1ECE3/#F06020/#002850/#5A5C5F/#1B1512 → var(--bg/--panel/--t1/--t3/--border/--accent)),
+  bỏ song ngữ nhồi ("CÀI ĐẶT · SETTINGS"…) qua `useT`. Bug phụ được sửa ăn theo: dark theme trang
+  này trước bị KHOÁ SÁNG do hardcode hex. KHÔNG đụng palette avatar character (lib/avatar.ts
+  BASE_TONES/HAIR_COLORS/SHIRT_COLORS + màu mũ/phụ kiện trong renderer) — audit 25/07
+  (`AUDIT-BRAND-PII.md` dòng 59) đã kết luận "để nguyên + lý do" cho nhóm này (lựa chọn tuỳ biến
+  của user cho nhân vật, không phải chrome app).
+- **VIỆC 2** `4d29fe3` (+nền `bcc6f4e` rail đồng tâm 44/8/30) — avatar rail 44px = đúng cỡ nút,
+  nút ⚙ + ⋯ (MoreMenu) gom hết vào `AccountMenu` (credits/share/chat chuyển nguyên văn). Số đo
+  DOM cuối: 4 nút 44×44 · gaps [13(quanh vạch),6,6] · vạch 24 · capsule 60 · avatar 44×44 · gap
+  12 · cùng trục. Menu đủ 8 mục + credits. Header desktop hết nút ⋯ (nút "Thêm" còn lại là
+  MobileMenu <lg, đúng chủ đích).
+
+### 🔴 PHÁT HIỆN HẠ TẦNG — server treo 2 lần phiên này, root cause: 2 dev server CÙNG repo
+Cả 2 lần server 3001 chết dần (mọi request timeout, CPU 0%, LISTEN vẫn mở): thư mục
+`/Downloads/interiorflow` đang có **2 next dev cùng chạy** (port 3000 của phiên khác + 3001 của
+tôi) → **chung `.next/`** → 2 process ghi đè/rename cache pack của nhau (log lặp:
+`PackFileCacheStrategy ENOENT rename .pack.gz_ -> .pack.gz`) → nghẹt. KHÔNG phải bug code (đã
+loại trừ: server mới sạch chạy tốt cùng code). **Cần Hoà quyết**: (a) 2 phiên chung repo thì
+dùng CHUNG 1 server (ai cần thì mở cùng port), hoặc (b) set `distDir` riêng theo port (đổi
+next.config — đụng hạ tầng chung, tôi không tự quyết). Tạm thời tôi restart server 3001 khi nghẹt.
+
+### ⚠️ CẢNH BÁO CHO PHIÊN CODE PHỤ (present-editor)
+Console lỗi lặp: **"Maximum update depth exceeded" tại `EditorCanvas`**
+(`components/present-editor/EditorCanvas.tsx:53`, route `/projects/[id]/present`) — setState
+loop trong useEffect. Ngoài domain của tôi (được dặn tránh present-editor), KHÔNG sửa — phiên
+phụ xem stack đầy đủ trong console khi mở route present.
