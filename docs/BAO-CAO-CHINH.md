@@ -822,3 +822,40 @@ không tạo state riêng) — nhất quán với `'frame'` đã thêm ở phầ
   render đúng vị trí/màu/độ dày/blend từng tool (chụp ảnh xác nhận trực quan — marker tím mờ,
   highlight vàng dày dạ quang). Tẩy đúng nét trúng (không đụng nét khác). Dark theme giữ chất
   lượng capsule/blur. 0 console error. tsc/eslint sạch. `npm test` 0 fail.
+
+## G2 phần (4) — presence online/offline + mời — THIẾT KẾ (viết trước khi code)
+**Khảo sát trước khi thiết kế** (Explore agent đọc code thật): `PresenceBar.tsx` hiện tại CHỈ hiện
+người có CURSOR SỐNG (poll 900ms, server tự prune sau 6s không hoạt động) — chấm xanh CỨNG cho
+MỌI người trong `others`, KHÔNG có khái niệm "offline" (đã rời thì biến mất hẳn, không hiện xám).
+Tìm thấy 3 nguồn dữ liệu CÓ SẴN quan trọng, tránh viết lại:
+- `prisma.ProjectMember` (`prisma/schema.prisma:105`) — roster THẬT của dự án (khác cursor sống),
+  API `GET/POST /api/projects/[id]/members` đã có đủ (trả `members[]`, `myRole`, `canManage`).
+- `/api/dashboard` — field `team[]` có sẵn `online: boolean` (so `lastSeenAt` với ngưỡng 2 phút,
+  route.ts) — nguồn "ai trong hệ thống, ai online gần đây" ĐÃ TÍNH SẴN, không cần tính lại.
+- **Mời**: KHÔNG có cơ chế email-invite nào trong repo (đã grep). `POST /api/projects/[id]/members`
+  chỉ nhận `userId` CÓ SẴN trong bảng User + yêu cầu `role=owner` mới gọi được — không tạo tài
+  khoản mới, không gửi email. `ProjectMembersPanel.tsx` (Dashboard) ĐÃ dùng đúng luồng này với
+  `teamUsers` lấy từ `data.team` của `/api/dashboard`.
+
+**Quyết định kiến trúc**: "mời (+)" trong MVP này = **thêm thành viên CÓ SẴN trong hệ thống vào dự
+án đang mở** (dùng THẲNG `POST /api/projects/[id]/members`, KHÔNG xây email-invite mới — việc đó
+lớn hơn hẳn 1 phần của G2, cần hạ tầng gửi mail + token + trang đăng ký, ngoài phạm vi). Ghi rõ
+ràng trong UI đây là "thêm người đã có tài khoản", không phải mời email — tránh hứa quá mức luật
+"hành động trước, cơ chế sau" của `SPEC-NGON-NGU-CHI-DAN`.
+
+**Việc làm**:
+1. `PresenceBar.tsx`: fetch `GET /api/projects/{currentProjectId}/members` (poll nhẹ, KHÔNG cần
+   900ms như cursor — 30s đủ, đây là roster ít đổi) → cross-reference với `others` (cursor sống,
+   ĐÃ có sẵn từ `useCollabStore`) để suy "online" = có cursor sống HOẶC là chính user hiện tại;
+   "offline" = member nhưng không có cursor sống. Render 2 nhóm: online (chấm emerald, khuôn cũ)
+   trước, offline (avatar xám mờ, không chấm hoặc chấm xám) sau.
+2. Nút "+ " CHỈ hiện khi `canManage` (owner, đúng luật API — ẩn hẳn với người không có quyền,
+   không hiện nút rồi báo lỗi 403 sau khi bấm). Bấm mở `Popover` (có sẵn) fetch `/api/dashboard`
+   MỘT LẦN lúc mở (không poll) → lọc `team` bỏ người ĐÃ là member → danh sách bấm "Thêm" gọi
+   `POST /api/projects/{id}/members` (`role:'viewer'` mặc định, an toàn nhất) → refetch members.
+3. Bỏ NGOÀI phạm vi phần (4) (ghi rõ): **email-invite thật** (tạo tài khoản mới qua email, cần hạ
+   tầng gửi mail — KHÔNG có trong repo) · **đổi role thành viên từ PresenceBar** (đã có
+   `ProjectMembersPanel.tsx` ở Dashboard làm việc này đầy đủ hơn, không lặp lại UI) · **share
+   roles Viewer/Commenter/Editor riêng cho canvas** (SPEC-CHANG2-UI-2MODE §3 liệt đây là khái
+   niệm KHÁC `ProjectMember` role hiện có — "collab-share, KHÁC phân quyền IF1/IF2" — cần thiết kế
+   mới, không có hạ tầng nào khớp sẵn, để việc riêng).
