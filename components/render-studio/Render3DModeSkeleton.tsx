@@ -17,6 +17,7 @@ import dynamic from 'next/dynamic';
 import { Box } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import { docToObjScene, toScene3DData } from '@/lib/three/cad-to-obj';
+import ModeSwitchBar from '@/components/render-studio/ModeSwitchBar';
 
 const Scene3DViewer = dynamic(() => import('@/components/three/Scene3DViewer'), {
   ssr: false,
@@ -78,6 +79,8 @@ export default function Render3DModeSkeleton() {
       ) : (
         <Scene3DViewer scene={scene} mode="massing" onPushPull={handlePushPull} />
       )}
+
+      <ModeSwitchBar />
     </div>
   );
 }

@@ -11,8 +11,9 @@
  * chỗ trống hiện nội dung", không biết gì về nội dung từng mode.
  *
  * G1 (`docs/SPEC-CHANG2-UI-2MODE.md` §1, `docs/SPEC-DESIGN-SYSTEM-IF.md` §3) — 2 điểm chỉnh cho
- * chặng Render: `hideBuiltInSwitcher` (nơi gọi tự vẽ "1 nút RỜI" ngoài `<BottomToolbar>` thay vì
- * dùng segmented control có sẵn ở đây — xem `Render3DToggleButton.tsx`), và nội dung đổi mode
+ * chặng Render: `hideBuiltInSwitcher` (nơi gọi tự vẽ công tắc đổi mode RIÊNG thay vì dùng segmented
+ * control có sẵn ở đây — G1c: công tắc giờ sống trong `ModeSwitchCell.tsx`, gắn cuối
+ * `<BottomToolbar>`/trong `<ModeSwitchBar>` tuỳ mode, xem 2 file đó), và nội dung đổi mode
  * CROSSFADE spring (không giật khô) — `AnimatePresence mode="wait"` + `springPop`, tắt hẳn khi
  * `prefers-reduced-motion` (guard, thắng tất cả đúng luật thiết kế).
  */
