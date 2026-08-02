@@ -18,5 +18,13 @@ Một khu **File Manager + Cài đặt** hợp nhất (hạ tầng xuyên app �
 - Theme áp cấp **app** hay cấp **dự án** (Brand Kit đã có màu dự án — tránh trùng)?
 - "Thư mục trỏ" nối thế nào với `QUYET-DINH-HA-TANG` (đĩa là nguồn sự thật · Drive/Git bridge)?
 
+## Layout CHỐT HƯỚNG (Hoà 02/08 — ref Elementor "Documents": *"phân vùng đẹp và rõ"*)
+**3 khu — trái/giữa/phải:**
+- **TRÁI · nav:** Dashboard · Dự án · Files · **Store = Master Library** · Cài đặt + Integrations (Drive·git·Notion) + Log out.
+- **GIỮA · duyệt:** Folders (thẻ có avatar cộng sự) · Files (lưới thumbnail / list toggle · nút Upload). *IF twist:* icon nguồn (Drive/git/Notion) · "Added By" avatar · asset mang `matId`.
+- **PHẢI · inspector:** File information (preview · tên/size · tab Description/Comments · thread comment) · **Dung lượng (gauge)**. *IF twist:* material → matId·hãng·giá · gauge kiểu **Vitals** · comment = collab trên file.
+
+Khớp **Node Inspector (panel phải)** (nghiên cứu đối thủ #3) + ref Knowledge Base → File Manager thống nhất "3 khu" với cả app. Chi tiết editor vẫn **thiết kế sau**.
+
 ---
 *Cowork ghi 02/08/2026 — NOTE hướng, chưa phải spec. Nhắc lại khi quay lại thiết kế khu này.*

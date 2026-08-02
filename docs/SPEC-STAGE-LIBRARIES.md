@@ -41,10 +41,10 @@ Template gốc = **read-only master, một chiều** (đúng luật Brand Kit `_
 ## Kệ CHUNG (mọi chặng, không lặp)
 Vật liệu (ATLAS `matId`) · Brand Kit (dự án) · Asset/ảnh (File Manager) · Font·màu·theme.
 
-## ⛔ 3 câu treo — CẦN HOÀ mổ xẻ
-1. **Danh sách form lập luận chặng 2** — thêm/bớt form nào ngoài 6 cái trên?
-2. **Phạm vi template** — 3 mức (Chung/Riêng chặng/Riêng dự án) đủ chưa, hay thêm **Riêng studio** (dùng chung nhiều dự án)?
-3. **Ai được publish lên kệ** — chỉ Hoà, hay cả studio (có duyệt)?
+## ✅ 3 điểm — CHỐT 02/08 (đề xuất Cowork, Hoà duyệt qua mock Kệ)
+1. **Form lập luận chặng 2 = 6 mẫu** (giữ): Khung concept 5 nhánh · Ma trận so sánh phương án · 6 chiếc mũ · SWOT không gian · Bảng tiêu chí chọn vật liệu · Mood→Concept map. Thêm sau khi cần.
+2. **Phạm vi template = 4 MỨC**: Chung · **Studio** (dùng lại mọi dự án) · Riêng chặng · Riêng dự án.
+3. **Publish = cả studio, CHỦ DUYỆT** trước khi lên kệ chung (không tự do, tránh loạn kệ).
 
 ---
 *Cowork ghi 02/08/2026 theo yêu cầu Hoà. Chốt 3 câu treo xong thì đây thành spec đầy đủ.*

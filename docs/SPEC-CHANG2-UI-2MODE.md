@@ -42,5 +42,16 @@ chưa PBR — `SPEC-3D-CORE` §6). Sidebar = **Command Panel** (học 3ds Max, g
 ⭐ **Moat vật liệu:** V-Ray/D5/IF hợp nhất bằng **`matId`** — chọn 1 vật liệu ở IF, khớp cả khi render AI của IF
 LẪN khi xuất D5/Chaos. IF **không chạy engine V-Ray** — chỉ mở **catalog** để gán; photoreal để D5 (cửa bậc 5).
 
+## 5 · Pattern học đối thủ node-canvas (Flora·Weavy·Krea·Flowith·ComfyUI) — Hoà giao 02/08
+✅ **Vẽ 3D Hoà CHỐT qua mock 02/08** (giữ top·rail·thanh zoom/pan dưới + nút gạt Vẽ 3D; viewport trục toạ+ViewCube+gizmo; Command Panel V-Ray/D5/IF).
+Bổ sung áp dụng (chi tiết `NGHIEN-CUU-NODE-CANVAS-DOITHU-2026-08-02.md`):
+- **Cổng nối CÓ KIỂU** (ảnh/mask/vật liệu/params) — nối sai kiểu là chặn.
+- **Node Inspector nhẹ (panel phải)** cho params nhanh — KHÔNG thay tool-window.
+- **"Turn into"**: output render → node kế (Upscale · Video Motion · trích màu).
+- **Command bar ngôn ngữ tự nhiên** sửa node đang chọn (LLM ra lệnh — `SEMANTIC-MODEL` §8).
+- **(Vẽ 3D) Scene Objects (outliner) + Object Properties** thêm vào Command Panel (học Unity).
+- **Nguồn ảnh** node Nhập ảnh = File Manager · Master Library · URL · Canvas · Drive.
+- Presence + credits/queue nối Vitals; Style Presets thiên **phong cách nội thất**.
+
 ---
 *Cowork ghi 02/08/2026 theo chốt Hoà. Mock nguồn: mood-collab · ve3d (đã gửi Hoà xem).*
