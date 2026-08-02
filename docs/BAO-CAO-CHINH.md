@@ -1475,3 +1475,26 @@ nút toggle trên tab browser mới đôi khi không đăng ký (đọc store th
 
 HẾT PHIÊN CHINH ~00:0x giờ đêm 04/08 (1b GẤP xong, CHINH-3 xong; #4/#5 chưa bắt đầu — context
 hết trước, KHÔNG phải cạn hàng đợi).
+
+---
+
+## [ĐẢO NGƯỢC theo lệnh Hoà trực tiếp] Navigator Render — gắn NGUYÊN NodeLibraryPanel (`739960c`)
+Hoà BÁC bản 1b (`a3d8abd`) ngay khi thấy ảnh: "Navigator chặng Render dạng list chữ NGHÈO hơn
+bản cũ" — lần 2 vi phạm §0d (lần 1: rail lèo tèo→rối rắm, 03/08). Bài học: đồng nhất hoá KHÔNG
+được làm nghèo tiện dụng — "ổ cố định, ruột thay đổi" nghĩa ruột ĐƯỢC PHÉP giàu khác nhau theo
+chặng, không phải ép mọi Navigator thành list chữ giống nhau.
+
+**Đảo đúng lệnh** (không tự diễn giải thêm): `NodeLibraryPanel.tsx` thêm prop `embedded` (mặc
+định `false` giữ nguyên hành vi sheet-trượt cũ cho 2 nơi gọi còn lại — Command Palette, RenderToolModeOverlay).
+`embedded=true` chỉ bỏ khung/gate ngoài (AnimatePresence, w-64, nút đóng), MỌI nội dung bên trong
+(search/chip/Mood+Cộng tác/Vật liệu thật/Master card/nhóm tag/mindmap) giữ NGUYÊN — đúng nghĩa
+"GẮN, không viết lại". `Navigator.tsx` thêm prop `width` (mặc định 214), `AppShell` set 280 riêng
+cho `active==='render'`. Xoá hẳn `RenderNavigator.tsx` (bản list-chữ bị bác).
+
+Verify: 280px đúng DOM, card đầy đủ y hệt bản trước merge, bấm card ra NODE THẬT trên canvas
+(không phải chỉ highlight), dark theme rõ. Đã dọn node/theme test.
+
+**Bài học ghi cho bản thân**: trước khi "đồng nhất hoá" 1 mảng đã có UI giàu (card/icon/mô tả)
+thành khuôn chung của những mảng khác (danh sách chữ đơn giản như CAD Lớp) — PHẢI dừng hỏi thay
+vì tự suy diễn "đồng nhất = giống hình dạng". Layer panel CAD vốn ĐÃ là list chữ từ đầu nên đúng
+khuôn; NodeLibraryPanel vốn ĐÃ là card giàu — ép nó xuống list chữ là hạ cấp, không phải đồng nhất.
