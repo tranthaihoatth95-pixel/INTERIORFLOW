@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Đổi avatar — vật mẫu</title>
+<style>
+  /* ==== CHỈ DÙNG BIẾN CỦA APP (app/globals.css) — KHÔNG hex thương hiệu, KHÔNG màu tự chế ==== */
+  :root{
+    --bg:#edebe7; --panel:#fff; --card:#faf9f7; --field:#f3f1ee; --hover:#e9e6e1;
+    --border:#e4e1db; --border-strong:#cfcbc3;
+    --t1:#26262b; --t2:#4a4a52; --t3:#8f8f97;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --radius-sm:10px; --radius-md:14px; --radius-lg:20px; --radius-xl:28px;
+    --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+    --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+    --shadow-pop:0 8px 30px -8px rgba(40,38,35,.22);
+  }
+  [data-theme="dark"]{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8;
+    --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--t1);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:28px 24px 60px}
+  .themebar{display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px}
+  .themebar button{border:1px solid var(--border);background:var(--panel);color:var(--t2);border-radius:var(--radius-sm);padding:6px 12px;font-size:var(--fs-xs);cursor:pointer}
+
+  h1{font-size:var(--fs-xl);margin:0 0 4px;letter-spacing:-.02em;color:var(--t1)}
+  .sub{font-size:var(--fs-sm);color:var(--t3);margin-bottom:22px}
+
+  .sheet{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-xl);
+         box-shadow:var(--shadow-pop);overflow:hidden;display:grid;grid-template-columns:300px 1fr}
+
+  /* ---- TRÁI: xem trước ---- */
+  .left{padding:26px 22px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:16px;background:var(--card)}
+  .preview{width:172px;height:172px;border-radius:50%;background:var(--field);border:1px solid var(--border);
+           display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:11px;text-align:center;padding:14px}
+  .sizes{display:flex;align-items:flex-end;gap:12px}
+  .sz{border-radius:50%;background:var(--field);border:1px solid var(--border)}
+  .sz.a{width:44px;height:44px}.sz.b{width:28px;height:28px}.sz.c{width:20px;height:20px}
+  .szlb{font-size:10px;color:var(--t3);text-align:center;margin-top:5px}
+  .leftbtns{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:auto}
+  .btn{border-radius:var(--radius-md);height:40px;font-size:var(--fs-sm);font-weight:600;border:1px solid var(--border);
+       background:var(--panel);color:var(--t1);cursor:pointer;transition:background var(--dur-fast) var(--ease-apple)}
+  .btn:hover{background:var(--hover)}
+  .btn.primary{background:var(--accent);color:#fff;border-color:transparent}
+
+  /* ---- PHẢI: chọn ---- */
+  .right{padding:18px 22px 24px;min-width:0}
+  .tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:12px;border-bottom:1px solid var(--border);scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:none;display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--radius-md);
+       background:transparent;border:0;color:var(--t3);font-size:11px;cursor:pointer;transition:background var(--dur-fast) var(--ease-apple)}
+  .tab:hover{background:var(--hover)}
+  .tab.on{background:var(--field);color:var(--t1);font-weight:600}
+  .tab svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+
+  .grp{margin-top:18px}
+  .grp h3{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin:0 0 10px;font-weight:700}
+
+  /* dãy màu = chấm tròn */
+  .dots{display:flex;gap:10px;flex-wrap:wrap}
+  .dot{width:34px;height:34px;border-radius:50%;border:2px solid transparent;cursor:pointer;position:relative;
+       box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);transition:transform var(--dur-fast) var(--ease-apple)}
+  .dot:hover{transform:scale(1.04)}
+  .dot.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft), inset 0 0 0 1px rgba(0,0,0,.06)}
+
+  /* lưới lựa chọn = THUMBNAIL AVATAR THẬT (không số, không chữ) */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
+  .opt{aspect-ratio:1;border-radius:var(--radius-lg);background:var(--field);border:2px solid transparent;
+       display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;
+       transition:transform var(--dur-fast) var(--ease-apple),border-color var(--dur-fast) var(--ease-apple)}
+  .opt:hover{transform:scale(1.04)}
+  .opt.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .opt .ph{width:62px;height:62px;border-radius:50%;background:var(--card);border:1px dashed var(--border-strong);
+           display:flex;align-items:center;justify-content:center;font-size:8.5px;color:var(--t3);text-align:center;line-height:1.25;padding:6px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;transform:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="themebar">
+    <button onclick="document.documentElement.dataset.theme='light'">Sáng</button>
+    <button onclick="document.documentElement.dataset.theme='dark'">Tối</button>
+  </div>
+
+  <h1>Avatar của bạn</h1>
+  <div class="sub">Chọn khuôn mặt, tóc, kính, áo — dùng cho hồ sơ và bình luận trong nhóm.</div>
+
+  <div class="sheet">
+    <!-- TRÁI -->
+    <div class="left">
+      <div class="preview">&lt;AvatarRenderer size={172} detail /&gt;<br>— avatar thật, cập nhật tức thì</div>
+      <div>
+        <div class="sizes">
+          <div><div class="sz a"></div><div class="szlb">44</div></div>
+          <div><div class="sz b"></div><div class="szlb">28</div></div>
+          <div><div class="sz c"></div><div class="szlb">20</div></div>
+        </div>
+      </div>
+      <div class="leftbtns">
+        <button class="btn">Ngẫu nhiên</button>
+        <button class="btn primary">Xong</button>
+      </div>
+    </div>
+
+    <!-- PHẢI -->
+    <div class="right">
+      <div class="tabs">
+        <button class="tab on">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Khuôn mặt
+        </button>
+        <button class="tab">
+          <svg viewBox="0 0 24 24"><path d="M4 13a8 8 0 0116 0"/><path d="M4 13v4M20 13v4"/><path d="M8 5c2-2 6-2 8 0"/></svg>
+          Tóc
+        </button>
+        <button class="tab">
+          <svg viewBox="0 0 24 24"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M2.5 11.5L4 11M21.5 11.5L20 11"/></svg>
+          Kính
+        </button>
+        <button class="tab">
+          <svg viewBox="0 0 24 24"><path d="M3 14h18"/><path d="M6 14a6 6 0 0112 0"/></svg>
+          Mũ
+        </button>
+        <button class="tab">
+          <svg viewBox="0 0 24 24"><path d="M8 4l4 3 4-3 4 3v14H4V7z"/></svg>
+          Áo
+        </button>
+        <button class="tab">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 14c1.6 1.4 4.4 1.4 6 0M9 10h.01M15 10h.01"/></svg>
+          Biểu cảm
+        </button>
+      </div>
+
+      <div class="grp">
+        <h3>Tông da</h3>
+        <div class="dots">
+          <span class="dot on" style="background:#f2d3b8"></span>
+          <span class="dot" style="background:#e3b48c"></span>
+          <span class="dot" style="background:#c68b5e"></span>
+          <span class="dot" style="background:#8d5a3a"></span>
+          <span class="dot" style="background:#f7e4d2"></span>
+          <span class="dot" style="background:#a06b45"></span>
+        </div>
+      </div>
+
+      <div class="grp">
+        <h3>Kiểu tóc</h3>
+        <div class="grid">
+          <div class="opt on"><div class="ph">avatar thật · tóc 1</div></div>
+          <div class="opt"><div class="ph">tóc 2</div></div>
+          <div class="opt"><div class="ph">tóc 3</div></div>
+          <div class="opt"><div class="ph">tóc 4</div></div>
+          <div class="opt"><div class="ph">tóc 5</div></div>
+          <div class="opt"><div class="ph">tóc 6</div></div>
+          <div class="opt"><div class="ph">tóc 7</div></div>
+          <div class="opt"><div class="ph">tóc 8</div></div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <h3>Màu tóc</h3>
+        <div class="dots">
+          <span class="dot" style="background:#1b1614"></span>
+          <span class="dot on" style="background:#5a3a24"></span>
+          <span class="dot" style="background:#c9a227"></span>
+          <span class="dot" style="background:#a8442a"></span>
+          <span class="dot" style="background:#9aa0a6"></span>
+          <span class="dot" style="background:#e8e2d6"></span>
+          <span class="dot" style="background:#2f6f63"></span>
+          <span class="dot" style="background:#c96a9a"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

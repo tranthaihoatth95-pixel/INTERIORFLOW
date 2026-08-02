@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { AvatarBuilder } from '@/components/avatar/AvatarBuilder';
 import { AvatarConfig, DEFAULT_AVATAR, serializeAvatar } from '@/lib/avatar';
 import { useFlowStore } from '@/lib/store';
+import { useT } from '@/lib/i18n';
 
 export default function AvatarSettingsPage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function AvatarSettingsPage() {
   const setUser = useFlowStore((s) => s.setUser);
   const [config, setConfig] = useState<AvatarConfig | null>(null);
   const [saving, setSaving] = useState(false);
+  const tr = useT();
 
   useEffect(() => {
     fetch('/api/user/avatar')
@@ -45,7 +47,7 @@ export default function AvatarSettingsPage() {
     <main
       style={{
         minHeight: '100vh',
-        background: '#F1ECE3',
+        background: 'var(--bg)',
         padding: '64px 24px',
         display: 'flex',
         flexDirection: 'column',
@@ -59,29 +61,29 @@ export default function AvatarSettingsPage() {
             fontSize: 10,
             letterSpacing: '0.24em',
             textTransform: 'uppercase',
-            color: '#F06020',
+            color: 'var(--accent)',
             marginBottom: 6,
           }}
         >
-          Cài đặt · Settings
+          {tr('Cài đặt', 'Settings')}
         </div>
         <h1
           style={{
             fontSize: 32,
             fontWeight: 500,
             margin: 0,
-            color: '#002850',
+            color: 'var(--t1)',
             letterSpacing: '-0.01em',
           }}
         >
-          Avatar của bạn · Your avatar
+          {tr('Avatar của bạn', 'Your avatar')}
         </h1>
-        <p style={{ color: '#5A5C5F', fontSize: 14, marginTop: 8 }}>
-          Chọn khuôn mặt, tóc, kính, áo — dùng cho hồ sơ và bình luận trong nhóm.
+        <p style={{ color: 'var(--t3)', fontSize: 14, marginTop: 8 }}>
+          {tr('Chọn khuôn mặt, tóc, kính, áo — dùng cho hồ sơ và bình luận trong nhóm.', 'Pick your face, hair, glasses, outfit — used for your profile and comments in the team.')}
         </p>
       </header>
 
-      {config ? <AvatarBuilder value={config} onSave={save} saving={saving} /> : <div>Đang tải…</div>}
+      {config ? <AvatarBuilder value={config} onSave={save} saving={saving} /> : <div style={{ color: 'var(--t3)' }}>{tr('Đang tải…', 'Loading…')}</div>}
     </main>
   );
 }

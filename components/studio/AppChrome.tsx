@@ -29,12 +29,8 @@
  */
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Coins, Share2, ChevronDown, MessageCircle, LogOut, Check, MoreHorizontal,
-  Settings as SettingsIcon,
-} from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useFlowStore } from '@/lib/store';
 import { AiStatusDot } from '@/components/settings/AiDependencySettings';
@@ -42,17 +38,16 @@ import { DEFAULT_PHASE, STAGE_TINT, type Phase } from '@/lib/phases';
 import StageSwitcher from '@/components/studio/StageSwitcher';
 import { UploadButton } from '@/components/studio/UploadButton';
 import { RenderIOMenus } from '@/components/studio/RenderIOMenus';
-import { toggleShare } from '@/lib/workspace';
 import { TasksDropdown } from '@/components/TasksDropdown';
 import { MobileMenu } from '@/components/MobileMenu';
-import { nextThemePref, themeIconFor } from '@/lib/theme-toggle';
-import { pressable, pressableIcon, easeApple } from '@/lib/motion';
+import { pressable } from '@/lib/motion';
 import { useStageTransition } from '@/components/studio/StageTransitionProvider';
 import { stageHrefFrom } from '@/lib/project-scope';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { IFLogo } from '@/components/entry/IFLogo';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
+import { AccountMenu } from '@/components/AccountMenu';
 import { HomeButton } from '@/components/studio/HomeButton';
 import { requestGallery } from '@/lib/resume';
 import SessionWatch from '@/components/studio/SessionWatch';
@@ -277,7 +272,6 @@ export function AppChrome({ active }: Props) {
         )}
 
         <HomeButton compact />
-        <MoreMenu />
         <UserChip />
       </div>
 
@@ -293,170 +287,6 @@ export function AppChrome({ active }: Props) {
 }
 
 /**
- * MoreMenu — popover "⋯" gom control phụ (credits · theme · share · chat · settings). Universal
- * 4 route (30/07) — trước chỉ có ở Header, StudioBar không có đường tới /settings/Share/Credits/
- * logout nào cả (UserChip cũng thiếu, xem bên dưới). Theme ở ĐÂY, không tách nút đứng riêng ở
- * cụm phải: thử tách riêng đã vỡ bất biến priority+ (2.2.60) ở 1024px — nút luôn-hiện mới chiếm
- * thêm ~32-40px làm "Chạy flow" bị đè sau "Tệp"; bản gốc Header.tsx để theme trong ⋯ vì đúng lý do
- * đó, giữ nguyên cấu trúc an toàn này.
- */
-function MoreMenu() {
-  const tr = useT();
-  const credits = useFlowStore((s) => s.credits);
-  const router = useRouter();
-  const { triggerRef, menuRef, open, setOpen, anchorRect } = useMenuAnchor();
-
-  // 2.2.90 ĐỢT 2 (01/08) — thay backdrop `fixed inset-0` (chặn click xuyên qua toàn màn hình,
-  // đóng bằng onClick) bằng hook dùng chung (đóng bằng pointerdown-outside, KHÔNG chặn click
-  // xuyên qua — bấm 1 phát vào nút khác vừa đóng menu này VỪA chạy nút kia luôn, đúng hành vi
-  // MenuButton/IOMenu đã có). Thêm luôn Escape (trước MoreMenu không có).
-  // K4 — 2 ref riêng (nút + panel đã portal), panel không còn nằm trong subtree của nút.
-  useDismissable({ open, onDismiss: () => setOpen(false), refs: [triggerRef, menuRef] });
-
-  return (
-    <div ref={triggerRef} className="relative shrink-0">
-      <motion.button
-        {...pressable}
-        onClick={() => setOpen((o) => !o)}
-        title={tr('Thêm', 'More')}
-        aria-expanded={open}
-        className={cn(
-          'grid h-8 w-8 place-items-center rounded-[10px] border transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
-          open
-            ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
-            : 'border-[var(--border)] text-[var(--t2)] hover:bg-[var(--hover)]',
-        )}
-      >
-        <MoreHorizontal size={15} />
-      </motion.button>
-
-      {typeof document !== 'undefined' &&
-        createPortal(
-          <AnimatePresence>
-            {open && anchorRect && (
-              // ref ĐẶT Ở DIV CON (display:contents, không ảnh hưởng layout) — không đặt thẳng
-              // trên motion.div: AnimatePresence/PopChild clone con trực tiếp lúc exit, đọc
-              // `props.ref` kiểu cũ gây warning "ref is not a prop" (thấy lúc verify K4). Panel
-              // vẫn định vị/animate qua motion.div, chỉ mượn div con để useDismissable có DOM ref.
-              <motion.div
-                initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                transition={{ duration: 0.18, ease: easeApple }}
-                style={{ position: 'fixed', top: anchorRect.top, right: anchorRect.right }}
-                className="mat-panel z-[80] w-56 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
-              >
-                <div ref={menuRef} style={{ display: 'contents' }}>
-                  <div className="mb-2 flex items-center justify-between rounded-[10px] bg-[var(--field)] px-2.5 py-1.5 text-xs text-[var(--t2)]">
-                    <span className="flex items-center gap-1.5">
-                      <Coins size={13} className="text-amber-400" />
-                      {tr('Tín dụng', 'Credits')}
-                    </span>
-                    <span className="font-semibold text-[var(--t1)]">{credits}</span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <ThemeToggle />
-                    <ShareButton />
-                    <ChatToggle />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpen(false);
-                      router.push('/settings');
-                    }}
-                    className="mt-2 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-0.5 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-[var(--t1)]"
-                  >
-                    <SettingsIcon size={13} />
-                    {tr('Cài đặt', 'Settings')}
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>,
-          document.body,
-        )}
-    </div>
-  );
-}
-
-function ShareButton() {
-  const shareToken = useFlowStore((s) => s.shareToken);
-  const currentFlowId = useFlowStore((s) => s.currentFlowId);
-  const [copied, setCopied] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const tr = useT();
-
-  const onClick = async () => {
-    if (!currentFlowId || busy) return;
-    setBusy(true);
-    try {
-      let token = shareToken;
-      if (!token) token = await toggleShare();
-      if (token) {
-        await navigator.clipboard.writeText(`${location.origin}/share/${token}`).catch(() => {});
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1600);
-      }
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <motion.button
-      {...pressable}
-      onClick={onClick}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        if (shareToken) toggleShare();
-      }}
-      title={
-        shareToken
-          ? tr(
-              'Đã bật share — bấm để copy link cho khách (chuột phải: tắt share)',
-              'Sharing on — click to copy the guest link (right-click: turn off)',
-            )
-          : tr('Bật share link read-only cho khách xem flow', 'Turn on a read-only share link for guests')
-      }
-      className={cn(
-        'flex shrink-0 items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)]',
-        shareToken
-          ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
-          : 'border-[var(--border)] text-[var(--t2)] hover:bg-[var(--hover)]',
-      )}
-    >
-      {copied ? <Check size={13} /> : <Share2 size={13} />}
-      <span className="hidden md:inline">{copied ? tr('Đã copy', 'Copied') : tr('Chia sẻ', 'Share')}</span>
-    </motion.button>
-  );
-}
-
-function ChatToggle() {
-  const chatOpen = useFlowStore((s) => s.chatOpen);
-  const setChatOpen = useFlowStore((s) => s.setChatOpen);
-  const tr = useT();
-  return (
-    <motion.button
-      {...pressableIcon}
-      whileHover={{ scale: 1.06 }}
-      onClick={() => setChatOpen(!chatOpen)}
-      title={tr('Chat nội bộ team', 'Team chat')}
-      className={cn(
-        'grid h-8 w-8 shrink-0 place-items-center rounded-[10px] border transition-colors',
-        chatOpen
-          ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
-          : 'border-[var(--border)] text-[var(--t3)] hover:bg-[var(--hover)] hover:text-[var(--t1)]',
-      )}
-    >
-      <MessageCircle size={14} />
-    </motion.button>
-  );
-}
-
-/**
  * 30/07 — bậc ② thang ưu tiên nhường chỗ (xem comment đầu <header>): "Đăng xuất" KHÔNG còn là nút
  * rời cạnh avatar — vào trong menu bấm-avatar-để-mở, chuẩn Google/Figma/Notion/Slack/GitHub cho
  * hành động PHÁ HUỶ (mất phiên) không đặt trần trụi ngoài thanh. Không phải responsive (không ẩn
@@ -464,9 +294,6 @@ function ChatToggle() {
  */
 function UserChip() {
   const user = useFlowStore((s) => s.user);
-  const setUser = useFlowStore((s) => s.setUser);
-  const router = useRouter();
-  const tr = useT();
   const { triggerRef, menuRef, open, setOpen, anchorRect } = useMenuAnchor();
   // 2.2.90 ĐỢT 2 (01/08) — thay backdrop `fixed inset-0` bằng hook dùng chung, cùng lý do đã
   // ghi ở MoreMenu() phía trên (click-xuyên-qua + thêm Escape). K4 — 2 ref riêng, xem MoreMenu().
@@ -492,95 +319,13 @@ function UserChip() {
         <span className="hidden max-w-24 truncate sm:inline">{user.name}</span>
       </motion.button>
 
-      {typeof document !== 'undefined' &&
-        createPortal(
-          <AnimatePresence>
-            {open && anchorRect && (
-              // ref ở div con display:contents — xem chú thích trong MoreMenu() (tránh warning
-              // "ref is not a prop" của AnimatePresence/PopChild khi ref đặt thẳng trên motion.div).
-              <motion.div
-                initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                transition={{ duration: 0.18, ease: easeApple }}
-                style={{ position: 'fixed', top: anchorRect.top, right: anchorRect.right }}
-                className="mat-panel z-[80] w-48 rounded-[14px] border border-[var(--border)] p-2 shadow-xl"
-              >
-                <div ref={menuRef} style={{ display: 'contents' }}>
-                  <div className="truncate px-2 py-1.5 text-xs text-[var(--t3)]" title={`${user.name} · ${user.email}`}>
-                    {user.name}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpen(false);
-                      router.push('/settings/avatar');
-                    }}
-                    className="flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[11.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)]"
-                  >
-                    {tr('Đổi avatar', 'Change avatar')}
-                  </button>
-                  {/* Ngăn cách phía trên — hành động phá huỷ tách khỏi mục thường, khớp yêu cầu. */}
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setOpen(false);
-                      await fetch('/api/auth/me', { method: 'DELETE' });
-                      setUser(null);
-                    }}
-                    className="mt-1 flex w-full items-center gap-2 rounded-[10px] border-t border-[var(--border)] px-2 pt-2 text-[11.5px] text-[var(--t3)] transition-colors hover:text-red-400"
-                  >
-                    <LogOut size={13} />
-                    {tr('Đăng xuất', 'Sign out')}
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>,
-          document.body,
-        )}
+      <AccountMenu
+        open={open}
+        anchorRect={anchorRect ? { top: anchorRect.top, right: anchorRect.right } : null}
+        onDismiss={() => setOpen(false)}
+        menuRef={menuRef}
+      />
     </div>
   );
 }
 
-/** Nút đổi theme — sống trong popover MoreMenu (⋯), không đứng riêng ở cụm phải (xem ghi chú
- * ở MoreMenu() phía trên: đứng riêng vỡ bất biến priority+ ở 1024px). */
-function ThemeToggle() {
-  const pref = useFlowStore((s) => s.themePref);
-  const applied = useFlowStore((s) => s.appliedTheme);
-  const setThemePref = useFlowStore((s) => s.setThemePref);
-  const tr = useT();
-  const next = nextThemePref(pref);
-  const Icon = themeIconFor(pref);
-  return (
-    <motion.button
-      {...pressableIcon}
-      whileHover={{ scale: 1.06 }}
-      onClick={() => setThemePref(next)}
-      title={
-        pref === 'auto'
-          ? tr(
-              `Theme: tự động theo giờ (sáng 6h30–18h) — đang ${applied === 'light' ? 'sáng' : 'tối'}. Bấm để chuyển.`,
-              `Theme: auto by time (light 6:30–18:00) — now ${applied === 'light' ? 'light' : 'dark'}. Click to switch.`,
-            )
-          : tr(
-              `Theme: ${pref === 'light' ? 'sáng' : 'tối'} cố định. Bấm để chuyển.`,
-              `Theme: ${pref === 'light' ? 'light' : 'dark'} fixed. Click to switch.`,
-            )
-      }
-      className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] border border-[var(--border)] text-[var(--t3)] transition-colors duration-200 ease-[cubic-bezier(.32,.72,0,1)] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
-    >
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.span
-          key={pref}
-          initial={{ opacity: 0, rotate: -30, scale: 0.8 }}
-          animate={{ opacity: 1, rotate: 0, scale: 1 }}
-          exit={{ opacity: 0, rotate: 30, scale: 0.8 }}
-          transition={{ duration: 0.2, ease: easeApple }}
-        >
-          <Icon size={14} />
-        </motion.span>
-      </AnimatePresence>
-    </motion.button>
-  );
-}

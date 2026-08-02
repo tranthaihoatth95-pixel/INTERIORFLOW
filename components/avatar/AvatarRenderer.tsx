@@ -1,17 +1,20 @@
 'use client';
 
 /**
- * AvatarRenderer — chân dung SVG 200×240 phong cách "búp bê nhựa/nỉ 3D":
- * chibi đầu to, khối tròn căng, đổ bóng mềm kiểu studio (nguồn sáng TRÊN-TRÁI, bóng
- * dịu DƯỚI-PHẢI), da mịn hồng hào có má ửng, nền trơn sáng, biểu cảm tiết chế.
+ * AvatarRenderer — chân dung SVG 200×240 phong cách MẶT NGƯỜI KIỂU APPLE MEMOJI (đổi hướng
+ * 03/08, xem `docs/CHOT-AVATAR-MEMOJI-2026-08-02.md` — thay hẳn hướng "búp bê nhựa/nỉ 3D" cũ,
+ * KHÔNG phải chỉnh tiếp): da mịn không nhiễu, khối mượt có volume (không vẽ sợi), màu phẳng +
+ * chuyển sắc rất nhẹ, không viền outline đậm, mắt có tròng + đúng 1 chấm sáng, biểu cảm tối giản.
  *
  * Nguyên tắc kỹ thuật:
  *  · Thuần SVG — KHÔNG ảnh ngoài, KHÔNG webfont, KHÔNG package mới.
- *  · Khối cầu (đầu/thân) dựng bằng radial gradient nhiều chặng + highlight chuyên biệt
- *    + contact shadow (dưới chân tóc, dưới cằm, dưới vai) blur mềm.
- *  · Cảm giác lông/nỉ ở tóc & áo bằng feTurbulence + feDisplacementMap biên độ nhỏ.
- *  · HIỆU NĂNG: avatar sẽ render nhiều lần trong danh sách người dùng. Mọi filter
- *    (turbulence/blur) CHỈ bật khi `size > 48`; nhỏ hơn dùng bản phẳng — vẫn đủ nét.
+ *  · Khối cầu (đầu/thân) dựng bằng radial gradient 3 chặng RẤT MỀM (không còn 5 chặng tương
+ *    phản mạnh của bản nỉ cũ) + highlight rộng mờ (≤18% opacity) + bóng khuếch tán blur lớn
+ *    (≤12% opacity, dưới chân tóc/cằm/vai).
+ *  · KHÔNG còn `feTurbulence`/`feDisplacementMap` (chất lông/nỉ đã bỏ hẳn — đây là lý do đổi
+ *    hướng, xem CHOT doc). Filter còn lại chỉ có `feGaussianBlur` thuần (rẻ, không cần gate theo
+ *    size nữa) — `detail`/`size` giữ trong Props cho tương thích ngược với nơi gọi cũ, không còn
+ *    tác dụng chọn filter (không có gì đắt để bật/tắt).
  *    Mọi id trong <defs> gắn `useId()` nên nhiều instance không giẫm chân nhau.
  *
  * Layer: nền → tóc sau → thân/áo → phụ kiện → bóng cằm → cổ → đầu → tai/khuyên →
@@ -33,7 +36,8 @@ interface Props {
   /** Vòng viền hairline quanh khung tròn. */
   frame?: boolean;
   className?: string;
-  /** Ép bật/tắt filter nỉ + blur. Mặc định: chỉ bật khi size > 48. */
+  /** LEGACY (03/08 đổi hướng Memoji — filter nỉ đã bỏ hẳn, không còn gì đắt để gate theo size).
+   *  Giữ prop để không vỡ nơi gọi cũ, không còn tác dụng bên trong component. */
   detail?: boolean;
   /** Nhãn cho screen reader; bỏ trống = aria-hidden. */
   title?: string;
@@ -63,13 +67,7 @@ export function AvatarRenderer({
   title,
 }: Props) {
   const uid = useId().replace(/:/g, '');
-  // Ngưỡng hạ từ >48 xuống >=32 (bug 03/08: mọi nơi gọi thật đều <=48 → filter nỉ/blur/contact
-  // shadow KHÔNG BAO GIỜ chạy, avatar phẳng lì). Đo chi phí thật trước khi hạ: KHÔNG có nơi nào
-  // trong repo render avatar dạng LIST nhiều-cái-cùng-lúc (grep AvatarRenderer/UserAvatar — chỉ
-  // 3 chỗ gọi, mỗi chỗ 1 avatar đơn lẻ: chip header/mobile menu/settings) — nên hạ ngưỡng không
-  // có rủi ro hiệu năng đo được ở hiện trạng. Nếu sau này có danh sách nhiều avatar (team list…),
-  // đo lại và cân nhắc props riêng cho ngữ cảnh list.
-  const hi = detail ?? size >= 32;
+  void detail; // legacy — xem ghi chú ở Props.
 
   const skin = BASE_TONES[config.base] ?? BASE_TONES[2];
   const hair = HAIR_COLORS[config.hairColor] ?? HAIR_COLORS.brown;
@@ -79,10 +77,9 @@ export function AvatarRenderer({
 
   const id = (k: string) => `${k}-${uid}`;
   const url = (k: string) => `url(#${id(k)})`;
-  const feltF = hi ? url('felt') : undefined;
-  const fuzzF = hi ? url('fuzz') : undefined;
-  const softF = hi ? url('soft') : undefined;
-  const blushF = hi ? url('blush') : undefined;
+  // Filter còn lại CHỈ là feGaussianBlur thuần (rẻ) — luôn bật, không còn gate theo size/hi.
+  const softF = url('soft');
+  const blushF = url('blush');
 
   const lip = mix(skin, '#A0403C', 0.6);
   const ink = '#231B17';
@@ -112,41 +109,42 @@ export function AvatarRenderer({
           <stop offset="100%" stopColor={dark ? lighten(bg, 0.16) : darken(bg, 0.19)} />
         </radialGradient>
 
-        {/* Da: khối cầu — sáng trên-trái, 5 chặng, tối sâu dưới-phải. */}
-        <radialGradient id={id('skin')} cx="0.33" cy="0.22" r="0.98">
-          <stop offset="0%" stopColor={lighten(skin, 0.32)} />
-          <stop offset="26%" stopColor={lighten(skin, 0.14)} />
-          <stop offset="54%" stopColor={skin} />
-          <stop offset="82%" stopColor={darken(skin, 0.16)} />
-          <stop offset="100%" stopColor={darken(skin, 0.36)} />
+        {/* Da MỀM kiểu Memoji (03/08): 3 chặng rất nhẹ, KHÔNG còn 5-chặng tương phản mạnh của
+            bản nỉ cũ. Tâm lệch cx38%/cy32% (đúng số bóc từ ảnh Memoji thật, §3b) tạo volume một
+            phía tự nhiên mà không cần nhiễu/texture gì thêm. */}
+        <radialGradient id={id('skin')} cx="0.38" cy="0.32" r="0.95">
+          <stop offset="0%" stopColor={lighten(skin, 0.16)} />
+          <stop offset="55%" stopColor={skin} />
+          <stop offset="100%" stopColor={darken(skin, 0.12)} />
         </radialGradient>
 
-        {/* Highlight chuyên dụng cho khối cầu (specular mềm). */}
+        {/* Highlight rộng mờ (specular mềm) — opacity trần 18% (bản nỉ cũ đỉnh .32, "nhựa bóng"
+            sai chất — đã hạ đúng số §1). */}
         <radialGradient id={id('spec')} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.32" />
-          <stop offset="52%" stopColor="#FFFFFF" stopOpacity="0.1" />
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.18" />
+          <stop offset="60%" stopColor="#FFFFFF" stopOpacity="0.06" />
           <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
         </radialGradient>
 
-        {/* Rim light hắt từ dưới-phải — tách khối khỏi nền. */}
+        {/* Rim light hắt từ dưới-phải — tách khối khỏi nền, giữ rất nhẹ. */}
         <linearGradient id={id('rim')} x1="1" y1="0.95" x2="0.25" y2="0.15">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.18" />
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.14" />
           <stop offset="40%" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
 
-        {/* Tóc nỉ: sáng đỉnh, tối gáy. */}
-        <radialGradient id={id('hair')} cx="0.32" cy="0.14" r="0.95">
-          <stop offset="0%" stopColor={lighten(hair, 0.28)} />
-          <stop offset="28%" stopColor={lighten(hair, 0.1)} />
-          <stop offset="62%" stopColor={hair} />
-          <stop offset="100%" stopColor={darken(hair, 0.45)} />
-        </radialGradient>
+        {/* Tóc: KHỐI mượt có volume — gradient DỌC (không còn radial-lệch-góc tương phản mạnh
+            của bản nỉ) để highlight chạy dọc theo khối tóc, mềm hơn hẳn. */}
+        <linearGradient id={id('hair')} x1="0.3" y1="0" x2="0.55" y2="1">
+          <stop offset="0%" stopColor={lighten(hair, 0.18)} />
+          <stop offset="45%" stopColor={hair} />
+          <stop offset="100%" stopColor={darken(hair, 0.2)} />
+        </linearGradient>
 
-        {/* Áo nỉ: chéo trên-trái → dưới-phải. */}
+        {/* Áo: chéo trên-trái → dưới-phải, chuyển sắc nhẹ hơn bản nỉ cũ. */}
         <linearGradient id={id('shirt')} x1="0.12" y1="0" x2="0.92" y2="1">
-          <stop offset="0%" stopColor={lighten(shirt, 0.24)} />
-          <stop offset="38%" stopColor={shirt} />
-          <stop offset="100%" stopColor={darken(shirt, 0.5)} />
+          <stop offset="0%" stopColor={lighten(shirt, 0.18)} />
+          <stop offset="42%" stopColor={shirt} />
+          <stop offset="100%" stopColor={darken(shirt, 0.28)} />
         </linearGradient>
 
         {/* Mặt kính tối + khung nhựa đen bóng. */}
@@ -161,53 +159,15 @@ export function AvatarRenderer({
           <stop offset="100%" stopColor="#0D0E12" />
         </linearGradient>
 
-        {hi && (
-          <>
-            {/*
-             * NỈ — làm hai việc cùng lúc, thiếu một trong hai là ra "icon vector mượt":
-             *  1. mép vải lởm chởm: feDisplacementMap với nhiễu KÉO DỌC (baseFrequency
-             *     "0.42 0.85" — tần số ngang thấp, dọc cao) nên biên gợn thành túm sợi.
-             *     Bản cũ dùng nhiễu ĐẲNG HƯỚNG 0.9 ⇒ chỉ ra hạt lăn tăn như noise ảnh.
-             *  2. mặt vải có nap: feDiffuseLighting trên nhiễu tần số cao → bản đồ gồ ghề,
-             *     cắt vào trong hình rồi blend `overlay` nên vùng trung tính giữ nguyên
-             *     màu, chỉ nhấn sáng/tối theo thớ. Đây mới là thứ đọc ra "xơ vải".
-             */}
-            <filter id={id('felt')} x="-16%" y="-16%" width="132%" height="132%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.42 0.85" numOctaves="2" seed="11" result="warp" />
-              <feDisplacementMap in="SourceGraphic" in2="warp" scale="3.2" xChannelSelector="R" yChannelSelector="G" result="edge" />
-              <feTurbulence type="fractalNoise" baseFrequency="2.1" numOctaves="4" seed="5" result="nap" />
-              <feDiffuseLighting in="nap" lightingColor="#FFFFFF" surfaceScale="1.6" diffuseConstant="1" result="litRaw">
-                <feDistantLight azimuth="225" elevation="55" />
-              </feDiffuseLighting>
-              {/* Nén bản đồ sáng về quanh mức trung tính 0.5. KHÔNG có bước này thì
-                  feDiffuseLighting ra gần TRẮNG, blend `overlay` kéo bạc hết màu bên dưới
-                  (đo thật: tóc đen ra xám bê tông). Đo trên 4 nền (đen · bạc · kem · nâu) chọn slope 0.9. */}
-              <feComponentTransfer in="litRaw" result="lit">
-                <feFuncR type="linear" slope="0.9" intercept="0.05" />
-                <feFuncG type="linear" slope="0.9" intercept="0.05" />
-                <feFuncB type="linear" slope="0.9" intercept="0.05" />
-              </feComponentTransfer>
-              <feComposite in="lit" in2="edge" operator="in" result="litIn" />
-              <feBlend in="litIn" in2="edge" mode="overlay" result="tex" />
-              <feComposite in="tex" in2="edge" operator="in" />
-            </filter>
-
-            {/* XƠ VẢI ở viền: bản sao tóc/áo vẽ LÓT BÊN DƯỚI, méo mạnh (scale 9) + nhoè
-                nhẹ ⇒ quầng sợi lởm chởm nhô ra ngoài mép — thứ ảnh tham chiếu có rõ ở
-                tóc và áo len. Chỉ dựng khi `hi` nên cỡ nhỏ không tốn gì. */}
-            <filter id={id('fuzz')} x="-26%" y="-26%" width="152%" height="152%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.26 0.72" numOctaves="3" seed="23" result="w" />
-              <feDisplacementMap in="SourceGraphic" in2="w" scale="6" xChannelSelector="R" yChannelSelector="G" result="d" />
-              <feGaussianBlur in="d" stdDeviation="0.7" />
-            </filter>
-            <filter id={id('soft')} x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="5" />
-            </filter>
-            <filter id={id('blush')} x="-70%" y="-70%" width="240%" height="240%">
-              <feGaussianBlur stdDeviation="5" />
-            </filter>
-          </>
-        )}
+        {/* 03/08 — bỏ hẳn 2 filter nỉ (feTurbulence/feDisplacementMap tạo chất lông/xơ vải, xem
+            CHOT-AVATAR-MEMOJI). Chỉ còn feGaussianBlur thuần cho bóng khuếch tán — blur LỚN hơn
+            bản cũ (5→8) đúng yêu cầu "blur lớn, opacity ≤12%". */}
+        <filter id={id('soft')} x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="8" />
+        </filter>
+        <filter id={id('blush')} x="-70%" y="-70%" width="240%" height="240%">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>
 
         <clipPath id={id('frame')}>
           <circle cx="100" cy="120" r="96" />
@@ -223,47 +183,26 @@ export function AvatarRenderer({
       <g clipPath={`url(#${id('frame')})`}>
         <circle cx="100" cy="120" r="96" fill={url('bg')} />
 
-        {/* Bóng đổ của cả khối tượng lên phông — nhấc nhân vật khỏi nền */}
-        <ellipse
-          cx="114"
-          cy="120"
-          rx="74"
-          ry="72"
-          fill="#241C18"
-          opacity={hi ? 0.13 : 0.07}
-          filter={softF}
-        />
+        {/* Bóng đổ của cả khối tượng lên phông — nhấc nhân vật khỏi nền. Opacity trần 12% đúng
+            §1 (bản nỉ cũ 13%, gần chạm trần — hạ nhẹ cho chắc). */}
+        <ellipse cx="114" cy="120" rx="74" ry="72" fill="#241C18" opacity="0.1" filter={softF} />
 
-        {/* Tóc lớp sau (tóc dài, đuôi, búi phía sau đầu) — quầng xơ lót dưới rồi khối nỉ */}
-        {hi && (
-          <g filter={fuzzF} stroke={hair} strokeWidth="3.5" strokeLinejoin="round" opacity="0.8">
-            <HairBack hair={config.hair} fill={hair} shade={hair} />
-          </g>
-        )}
-        <g filter={feltF}>
-          <HairBack hair={config.hair} fill={url('hair')} shade={darken(hair, 0.45)} />
-        </g>
+        {/* Tóc lớp sau — khối liền, KHÔNG còn quầng xơ vải lót dưới (đã bỏ hẳn, xem CHOT-AVATAR-
+            MEMOJI §1 "tóc là KHỐI mượt có volume, không vẽ sợi"). */}
+        <HairBack hair={config.hair} fill={url('hair')} shade={darken(hair, 0.22)} />
 
         {/* Thân + áo + phụ kiện */}
-        <Torso shirt={config.shirt} fill={url('shirt')} base={shirt} feltF={feltF} fuzzF={fuzzF} softF={softF} hi={hi} />
-        <Accessory kind={config.accessory} feltF={feltF} />
+        <Torso shirt={config.shirt} fill={url('shirt')} base={shirt} softF={softF} />
+        <Accessory kind={config.accessory} />
 
-        {/* Contact shadow: đầu đổ bóng xuống ngực (dịu, lệch phải) */}
-        <ellipse
-          cx="103"
-          cy="172"
-          rx="44"
-          ry="13"
-          fill="#231B17"
-          opacity={hi ? 0.24 : 0.13}
-          filter={softF}
-        />
+        {/* Contact shadow: đầu đổ bóng xuống ngực (dịu, lệch phải, phủ lên cổ đúng §3b) */}
+        <ellipse cx="103" cy="172" rx="44" ry="13" fill="#231B17" opacity="0.12" filter={softF} />
 
-        {/* Cổ + bóng dưới cằm */}
-        <path d="M80 130 L80 172 Q100 184 120 172 L120 130 Z" fill={darken(skin, 0.24)} />
-        <path d="M80 130 Q100 156 120 130 L120 142 Q100 166 80 142 Z" fill={darken(skin, 0.44)} opacity="0.8" />
+        {/* Cổ MẢNH hơn bản cũ (80–120 rộng 40 ⇒ 84–116 rộng 32, đúng "cổ mảnh" §3b) + bóng cằm phủ lên cổ */}
+        <path d="M84 130 L84 172 Q100 182 116 172 L116 130 Z" fill={darken(skin, 0.18)} />
+        <path d="M84 130 Q100 152 116 130 L116 140 Q100 160 84 140 Z" fill={darken(skin, 0.34)} opacity="0.7" />
 
-        {/* Đầu — khối cầu chính */}
+        {/* Đầu — khối cầu chính, VOLUME một phía qua gradient lệch tâm (đã đặt ở <defs>) */}
         <ellipse cx={HEAD.cx} cy={HEAD.cy} rx={HEAD.rx} ry={HEAD.ry} fill={url('skin')} />
 
         {/* Tai + khuyên — tựa ĐÚNG mép đầu (mép sọ mới ở x 42/158) nên nhô ra nửa vành,
@@ -274,40 +213,34 @@ export function AvatarRenderer({
         <ellipse cx="159" cy="117" rx="3.6" ry="6" fill={darken(skin, 0.3)} opacity="0.4" />
         <EarringShape kind={config.earring} />
 
-        {/* Ánh sáng + bóng trên khối cầu đầu */}
+        {/* Ánh sáng + bóng trên khối cầu đầu — bóng cạnh hạ về ≤12% (đúng §1/§3b), gradient
+            da lệch tâm ở <defs> đã gánh phần lớn cảm giác volume nên lớp này chỉ CHỐT thêm nhẹ. */}
         <g clipPath={`url(#${id('head')})`}>
-          <ellipse cx="72" cy="72" rx="33" ry="25" fill={url('spec')} transform="rotate(-22 72 72)" />
+          <ellipse cx="72" cy="72" rx="34" ry="27" fill={url('spec')} transform="rotate(-22 72 72)" />
           <ellipse cx={HEAD.cx} cy={HEAD.cy} rx={HEAD.rx} ry={HEAD.ry} fill={url('rim')} />
-          {/* bóng chìm mép phải + dưới */}
-          <ellipse cx="158" cy="116" rx="24" ry="48" fill={darken(skin, 0.5)} opacity="0.2" filter={softF} />
-          <ellipse cx="100" cy="170" rx="52" ry="18" fill={darken(skin, 0.5)} opacity="0.22" filter={softF} />
-          {/* bóng chân tóc hắt xuống trán — mấu chốt cảm giác 3D */}
+          {/* bóng chìm mép phải + dưới — trần 12% */}
+          <ellipse cx="158" cy="116" rx="24" ry="48" fill={darken(skin, 0.5)} opacity="0.1" filter={softF} />
+          <ellipse cx="100" cy="170" rx="52" ry="18" fill={darken(skin, 0.5)} opacity="0.12" filter={softF} />
+          {/* bóng chân tóc hắt xuống trán, phủ nhẹ lên trán đúng §3b — trần 12% */}
           <HairShadow hair={config.hair} filter={softF} skin={skin} />
         </g>
 
         {/* Má ửng + tàn nhang */}
-        <BlushShape kind={config.blush} skin={skin} filter={blushF} hi={hi} />
+        <BlushShape kind={config.blush} skin={skin} filter={blushF} />
         {config.freckles && <Freckles skin={skin} />}
 
-        {/* Mày · mắt · mũi · miệng */}
+        {/* Mày dày mượt bo tròn 2 đầu · mắt tròng to + 1 chấm sáng + mí trên dày · mũi NHÔ RA
+            (dấu hiệu nhận Memoji rõ nhất, §3b ⭐) · miệng có độ dày */}
         <Brows expression={config.expression} color={darken(hair, 0.22)} />
         <Eyes expression={config.expression} ink={ink} />
-        <ellipse cx="100" cy="129" rx="7" ry="5.2" fill={darken(skin, 0.22)} opacity="0.5" />
-        <ellipse cx="97.6" cy="127.2" rx="2.8" ry="2" fill="#FFFFFF" opacity="0.32" />
+        <Nose skin={skin} filter={softF} />
         <Mouth expression={config.expression} lip={lip} ink={ink} />
 
-        {/* Tóc lớp trước — quầng xơ lót dưới rồi khối nỉ */}
-        {hi && (
-          <g filter={fuzzF} stroke={hair} strokeWidth="3.5" strokeLinejoin="round" opacity="0.8">
-            <HairFront hair={config.hair} fill={hair} shade={hair} glow={hair} />
-          </g>
-        )}
-        <g filter={feltF}>
-          <HairFront hair={config.hair} fill={url('hair')} shade={darken(hair, 0.45)} glow={lighten(hair, 0.4)} />
-        </g>
+        {/* Tóc lớp trước — khối liền, không quầng xơ */}
+        <HairFront hair={config.hair} fill={url('hair')} shade={darken(hair, 0.22)} glow={lighten(hair, 0.28)} />
 
         {/* Mũ / headwear */}
-        <HatShape hat={config.hat} feltF={feltF} />
+        <HatShape hat={config.hat} />
 
         {/* Kính — trên cùng của khuôn mặt */}
         <GlassesShape
@@ -315,7 +248,6 @@ export function AvatarRenderer({
           lens={url('lens')}
           frameFill={url('rimplastic')}
           lensClip={`url(#${id('lensL')})`}
-          hi={hi}
         />
       </g>
 
@@ -343,36 +275,21 @@ function Torso({
   shirt,
   fill,
   base,
-  feltF,
-  fuzzF,
   softF,
-  hi,
 }: {
   shirt: AvatarConfig['shirt'];
   fill: string;
   base: string;
-  feltF?: string;
-  fuzzF?: string;
   softF?: string;
-  hi: boolean;
 }) {
-  const shade = darken(base, 0.36);
-  const light = lighten(base, 0.32);
-  const soft = shirt === 'sweater' || shirt === 'hoodie' || shirt === 'turtleneck';
+  const shade = darken(base, 0.3);
+  const light = lighten(base, 0.24);
   return (
     <g>
-      {/* Áo len/nỉ: quầng xơ lót dưới cổ và vai — vải dệt không có mép cắt trơn */}
-      {soft && hi && (
-        <g filter={fuzzF} stroke={base} strokeWidth="4" strokeLinejoin="round" opacity="0.9">
-          <path d={TORSO} fill={base} />
-        </g>
-      )}
-      <g filter={soft ? feltF : undefined}>
-        <path d={TORSO} fill={fill} />
-      </g>
+      <path d={TORSO} fill={fill} />
       {/* rim light vai trái + bóng vai phải — khối vai tròn, mép mềm */}
-      <ellipse cx="26" cy="208" rx="32" ry="30" fill={light} opacity={hi ? 0.4 : 0.24} filter={softF} />
-      <ellipse cx="176" cy="206" rx="34" ry="32" fill={shade} opacity={hi ? 0.5 : 0.3} filter={softF} />
+      <ellipse cx="26" cy="208" rx="32" ry="30" fill={light} opacity="0.3" filter={softF} />
+      <ellipse cx="176" cy="206" rx="34" ry="32" fill={shade} opacity="0.35" filter={softF} />
 
       {shirt === 'hoodie' && (
         <>
@@ -385,8 +302,8 @@ function Torso({
       )}
 
       {shirt === 'turtleneck' && (
-        <g filter={feltF}>
-          {/* cổ lọ nỉ — ống cao ôm cổ, có nếp gấp (đúng ảnh tham chiếu) */}
+        <g>
+          {/* cổ lọ ôm cổ, có nếp gấp */}
           <path d="M72 138 Q100 158 128 138 L128 176 Q100 196 72 176 Z" fill={fill} />
           <path d="M72 158 Q100 178 128 158 L128 168 Q100 188 72 168 Z" fill={shade} opacity="0.5" />
           <path d="M74 142 Q100 162 126 142" stroke={light} strokeWidth="2.4" fill="none" opacity="0.55" />
@@ -469,16 +386,16 @@ function Torso({
         <path d="M78 165 Q100 186 122 165" stroke={shade} strokeWidth="3.4" fill="none" opacity="0.7" strokeLinecap="round" />
       )}
 
-      {hi && <ellipse cx="76" cy="200" rx="34" ry="18" fill="#FFFFFF" opacity="0.1" filter={softF} />}
+      <ellipse cx="76" cy="200" rx="34" ry="18" fill="#FFFFFF" opacity="0.08" filter={softF} />
     </g>
   );
 }
 
-function Accessory({ kind, feltF }: { kind: AvatarConfig['accessory']; feltF?: string }) {
+function Accessory({ kind }: { kind: AvatarConfig['accessory'] }) {
   switch (kind) {
     case 'scarf':
       return (
-        <g filter={feltF}>
+        <g>
           <path d="M66 166 Q100 194 134 166 L136 184 Q100 212 64 184 Z" fill="#B4593A" />
           <path d="M116 196 L128 240 L148 240 L126 190 Z" fill="#9C4A2E" />
           <path d="M66 176 Q100 202 134 176" stroke="#8F4227" strokeWidth="1.8" fill="none" opacity="0.55" />
@@ -525,7 +442,7 @@ function HairShadow({ hair, filter, skin }: { hair: AvatarConfig['hair']; filter
   };
   const y = line[hair] ?? 70;
   return (
-    <ellipse cx="100" cy={y + 5} rx="55" ry="14" fill={darken(skin, 0.55)} opacity="0.3" filter={filter} />
+    <ellipse cx="100" cy={y + 5} rx="55" ry="14" fill={darken(skin, 0.55)} opacity="0.12" filter={filter} />
   );
 }
 
@@ -794,18 +711,16 @@ function BlushShape({
   kind,
   skin,
   filter,
-  hi,
 }: {
   kind: AvatarConfig['blush'];
   skin: string;
   filter?: string;
-  hi: boolean;
 }) {
   if (kind === 'none') return null;
   const strong = kind === 'strong';
   const c = mix(skin, '#E8746A', strong ? 0.58 : 0.36);
   return (
-    <g filter={filter} opacity={(strong ? 0.85 : 0.62) * (hi ? 1 : 0.7)}>
+    <g filter={filter} opacity={strong ? 0.7 : 0.5}>
       <ellipse cx="62" cy="134" rx={strong ? 17 : 14} ry={strong ? 11 : 8.5} fill={c} />
       <ellipse cx="138" cy="134" rx={strong ? 17 : 14} ry={strong ? 11 : 8.5} fill={c} />
     </g>
@@ -828,13 +743,14 @@ function Freckles({ skin }: { skin: string }) {
   );
 }
 
+/** Mày kiểu Memoji: khối DÀY bo tròn 2 đầu (§3b) — strokeWidth 9 (bản cũ 5, đọc ra nét mảnh). */
 function Brows({ expression, color }: { expression: AvatarConfig['expression']; color: string }) {
   const props = {
     stroke: color,
-    strokeWidth: 5,
+    strokeWidth: 9,
     fill: 'none',
     strokeLinecap: 'round' as const,
-    opacity: 0.9,
+    opacity: 0.85,
   };
   switch (expression) {
     case 'frown':
@@ -875,14 +791,22 @@ function Brows({ expression, color }: { expression: AvatarConfig['expression']; 
   }
 }
 
+/** Mắt kiểu Memoji: tròng to + ĐÚNG 1 chấm sáng (bản cũ có 2, bỏ chấm phụ) + mí trên dày rõ
+ * (cung stroke phủ đỉnh tròng — §3b "mí trên dày rõ", không vẽ lông mi rời). */
 function Eyes({ expression, ink }: { expression: AvatarConfig['expression']; ink: string }) {
   const L = 100 - EYE_DX;
   const R = 100 + EYE_DX;
   const eye = (cx: number) => (
     <g key={cx}>
       <ellipse cx={cx} cy={EYE_Y} rx="8.4" ry="9.6" fill={ink} />
+      <path
+        d={`M${cx - 8.6} ${EYE_Y - 1} Q${cx} ${EYE_Y - 11} ${cx + 8.6} ${EYE_Y - 1}`}
+        stroke={ink}
+        strokeWidth="3.4"
+        fill="none"
+        strokeLinecap="round"
+      />
       <circle cx={cx - 2.8} cy={EYE_Y - 3.4} r="3" fill="#FFFFFF" opacity="0.95" />
-      <circle cx={cx + 3} cy={EYE_Y + 3.6} r="1.5" fill="#FFFFFF" opacity="0.5" />
     </g>
   );
   if (expression === 'grin') {
@@ -901,10 +825,11 @@ function Eyes({ expression, ink }: { expression: AvatarConfig['expression']; ink
   );
 }
 
+/** Miệng nhỏ, môi có độ dày (§3b) — stroke width nhích lên (4→5) so bản cũ, vẫn tối giản. */
 function Mouth({ expression, lip, ink }: { expression: AvatarConfig['expression']; lip: string; ink: string }) {
   switch (expression) {
     case 'smile':
-      return <path d="M86 143 Q100 157 114 143" stroke={lip} strokeWidth="4" fill="none" strokeLinecap="round" />;
+      return <path d="M86 143 Q100 157 114 143" stroke={lip} strokeWidth="5" fill="none" strokeLinecap="round" />;
     case 'grin':
       return (
         <g>
@@ -920,11 +845,11 @@ function Mouth({ expression, lip, ink }: { expression: AvatarConfig['expression'
         </g>
       );
     case 'frown':
-      return <path d="M87 150 Q100 139 113 150" stroke={lip} strokeWidth="4" fill="none" strokeLinecap="round" />;
+      return <path d="M87 150 Q100 139 113 150" stroke={lip} strokeWidth="5" fill="none" strokeLinecap="round" />;
     case 'smirk':
       return (
         <g>
-          <path d="M85 147 Q100 150 116 138" stroke={lip} strokeWidth="4" fill="none" strokeLinecap="round" />
+          <path d="M85 147 Q100 150 116 138" stroke={lip} strokeWidth="5" fill="none" strokeLinecap="round" />
           <circle cx="118" cy="137" r="2" fill={darken(lip, 0.25)} opacity="0.6" />
         </g>
       );
@@ -933,11 +858,27 @@ function Mouth({ expression, lip, ink }: { expression: AvatarConfig['expression'
       // mím môi — đường ngang hơi trề + bóng dưới môi
       return (
         <g>
-          <path d="M87 144 Q100 149 113 144" stroke={lip} strokeWidth="4.2" fill="none" strokeLinecap="round" />
+          <path d="M87 144 Q100 149 113 144" stroke={lip} strokeWidth="5" fill="none" strokeLinecap="round" />
           <path d="M92 152 Q100 155 108 152" stroke={ink} strokeWidth="1.8" fill="none" opacity="0.13" strokeLinecap="round" />
         </g>
       );
   }
+}
+
+/** Mũi kiểu Memoji ⭐ (§3b — "dấu hiệu nhận dạng rõ nhất"): khối tròn NHÔ RA = bump sáng hơn da
+ * + highlight nhỏ trên sống + bóng mềm ngay dưới. 3 lớp này CÙNG NHAU mới đọc ra "nhô ra" trên
+ * mặt phẳng SVG — thiếu 1 lớp là tụt về "vệt mờ" như bản cũ (2 ellipse tối, không đọc ra khối). */
+function Nose({ skin, filter }: { skin: string; filter?: string }) {
+  return (
+    <g>
+      {/* bóng mềm ngay dưới cánh mũi — chân đế của khối */}
+      <ellipse cx="100" cy="132" rx="6.5" ry="3.4" fill={darken(skin, 0.32)} opacity="0.28" filter={filter} />
+      {/* khối bump — sáng hơn da nền 1 chút, đọc ra bề mặt hướng lên đón sáng */}
+      <ellipse cx="99.5" cy="126" rx="5.6" ry="6.4" fill={lighten(skin, 0.05)} opacity="0.9" />
+      {/* highlight trên sống mũi */}
+      <ellipse cx="98" cy="122.5" rx="1.6" ry="3.6" fill="#FFFFFF" opacity="0.4" />
+    </g>
+  );
 }
 
 function EarringShape({ kind }: { kind: AvatarConfig['earring'] }) {
@@ -1001,13 +942,11 @@ function GlassesShape({
   lens,
   frameFill,
   lensClip,
-  hi,
 }: {
   glasses: AvatarConfig['glasses'];
   lens: string;
   frameFill: string;
   lensClip: string;
-  hi: boolean;
 }) {
   const ink = '#1A1C21';
   const mirror = 'matrix(-1 0 0 1 200 0)';
@@ -1020,7 +959,7 @@ function GlassesShape({
         {/* mặt kính TRONG MỜ — để hai con mắt vẽ bên dưới vẫn đọc được */}
         <path d={CATEYE_LENS} fill={lens} opacity="0.45" />
         {/* phản chiếu cửa sổ mờ (2 vệt chéo) */}
-        <g clipPath={lensClip} opacity={hi ? 0.16 : 0.12}>
+        <g clipPath={lensClip} opacity="0.14">
           <path d="M50 132 L70 92 L76 92 L56 134 Z" fill="#FFFFFF" />
           <path d="M84 94 L88 94 L68 130 L64 130 Z" fill="#FFFFFF" opacity="0.6" />
         </g>
@@ -1168,7 +1107,7 @@ function GlassesShape({
 
 /* ═══════════════════════ Mũ / headwear ═══════════════════════ */
 
-function HatShape({ hat, feltF }: { hat: AvatarConfig['hat']; feltF?: string }) {
+function HatShape({ hat }: { hat: AvatarConfig['hat'] }) {
   const navy = '#002850';
   const navyLight = '#1B4470';
   const navyDark = '#00172E';
@@ -1186,7 +1125,7 @@ function HatShape({ hat, feltF }: { hat: AvatarConfig['hat']; feltF?: string }) 
       );
     case 'beanie':
       return (
-        <g filter={feltF}>
+        <g>
           <path d="M36 80 Q36 40 100 36 Q164 40 164 80 Z" fill={navy} />
           <path d="M46 74 Q44 46 90 38 Q66 48 60 74 Z" fill={navyLight} opacity="0.55" />
           <rect x="30" y="70" width="140" height="20" rx="9" fill={navyLight} />
@@ -1206,7 +1145,7 @@ function HatShape({ hat, feltF }: { hat: AvatarConfig['hat']; feltF?: string }) 
       );
     case 'bucket':
       return (
-        <g filter={feltF}>
+        <g>
           <path d="M46 68 Q44 34 100 30 Q156 34 154 68 Z" fill="#7E8F72" />
           <path d="M54 64 Q52 40 94 32 Q72 42 66 64 Z" fill="#9BAA8E" opacity="0.6" />
           <path d="M20 68 Q100 56 180 68 Q176 94 100 100 Q24 94 20 68 Z" fill="#6B7C60" />
@@ -1215,7 +1154,7 @@ function HatShape({ hat, feltF }: { hat: AvatarConfig['hat']; feltF?: string }) 
       );
     case 'beret':
       return (
-        <g filter={feltF}>
+        <g>
           <path d="M32 62 Q32 30 106 28 Q170 32 162 56 Q148 76 100 78 Q46 78 32 62 Z" fill="#8E2C3A" />
           <path d="M46 54 Q48 34 96 30 Q70 40 60 58 Z" fill="#B4525E" opacity="0.6" />
           <circle cx="128" cy="31" r="7" fill="#6E1F2B" />
@@ -1235,7 +1174,7 @@ function HatShape({ hat, feltF }: { hat: AvatarConfig['hat']; feltF?: string }) 
       );
     case 'hairband':
       return (
-        <g filter={feltF}>
+        <g>
           <path d="M32 82 Q100 38 168 82 L168 94 Q100 50 32 94 Z" fill="#F06020" />
           <path d="M36 82 Q100 44 164 82" stroke="#FF8A50" strokeWidth="3" fill="none" opacity="0.7" />
         </g>

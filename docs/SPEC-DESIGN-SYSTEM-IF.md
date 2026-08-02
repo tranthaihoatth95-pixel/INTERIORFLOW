@@ -19,7 +19,7 @@
 **Trục 3D:** X `#e05c5c` · Y `#3fb984` · Z `#4a78e0`. **Badge phạm vi:** Chung(lá)·Studio(tím)·Chặng(dương)·Dự án(cam).
 
 ## 2 · Hình khối
-Bo góc **6/9/12/16** (chip·nút·card·panel). Bóng card `0 6px 16px rgba(40,38,35,.14)`; panel `0 12px 40px rgba(40,38,35,.10)`. Nút chạm tablet **≥34px**. Chữ system sans, 9–17.
+Bo góc **10 / 14 / 20 / 28** (`--radius-sm/md/lg/xl`) — ⚠️ **SỬA 02/08: lấy theo `app/globals.css` THẬT, spec cũ ghi 6/9/12/16 là Cowork tự chế, sai**. Cỡ chữ **12/14/16/20/28** (`--fs-xs…xl`), weight 400/600. Nhoè: `--blur 22px` · `--blur-strong 40px`. Nhịp: `--ease-apple cubic-bezier(.32,.72,0,1)` · `--dur-fast .18s` · `--dur-base .32s`. Bóng card `0 6px 16px rgba(40,38,35,.14)`; panel `0 12px 40px rgba(40,38,35,.10)`. Nút chạm tablet **≥34px**. Chữ system sans, 9–17.
 
 ## 2b · Ngôn ngữ bề mặt (Hoà note 02/08)
 - **Apple system design (HIG)** làm chuẩn cảm giác: rõ, phẳng, ít viền, spacing thở.
@@ -38,7 +38,9 @@ Bo góc **6/9/12/16** (chip·nút·card·panel). Bóng card `0 6px 16px rgba(40,
 - **Thang shape**: icon nét VUÔNG → panel/nút BO GÓC → bar/pill nổi = **CAPSULE** (bo = cao/2) → núm/avatar/badge chấm = **TRÒN**.
 - **Bo ĐỒNG TÂM** *(concentric)*: bo-trong = bo-ngoài − khoảng-đệm. Ví dụ chuẩn bottom bar: bar cao 44 → r22, đệm 5 → nút 34 → r17 (tự thành capsule) → track switch 22/r11 → núm tròn 18.
 - Panel chữ nhật lớn (sidebar, window, card) vẫn theo bo 12/16 §2 — capsule chỉ dành cho BAR/PILL NỔI.
-- Corner mượt kiểu Apple *(continuous corner/squircle)* khi nền tảng cho phép.
+- **Squircle (đường cong liên tục)** — Apple KHÔNG dùng bo tròn thường; cung liên tục để cạnh thẳng nối vào góc không bị "gãy". CSS thường chưa làm được: khối LỚN (thẻ, panel, ảnh bìa) dùng mask SVG/`corner-shape` nếu trình duyệt hỗ trợ; nút/chip nhỏ giữ `border-radius` thường (mắt không phân biệt được, không đáng đánh đổi hiệu năng).
+
+✅ **Kiểm chứng 02/08 (Hoà hỏi "cái nào đúng Apple hơn?")**: thang **10/14/20/28 ĐÚNG Apple** — 10 = sheet iOS/cửa sổ macOS · 14 = hộp thoại cảnh báo iOS · 20/28 = thẻ lớn/widget. Thang 6/9/12/16 mà Cowork từng ghi là nhịp **Material/Tailwind**, không phải Apple. Code `globals.css` đúng ngay từ đầu.
 
 ## 2e · LUẬT PORT MOCK → CODE (bài học /settings tối 02/08)
 1. Hex trong mock = giá trị của THEME SÁNG. Khi port, **map hết sang CSS var app** (`globals.css`): #edebe7→nền · #fff→panel/--mat-card · #e4e1db→--border · #26262b→--t1 · #8f8f97→--t2 · #6a57f5→--accent · #efeafe→--accent-soft. **Cấm hardcode hex trong component.**
