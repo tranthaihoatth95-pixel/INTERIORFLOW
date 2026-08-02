@@ -167,7 +167,9 @@ export default function BrandKitPanel({ deck, onClose, onApply }: Props) {
           ? 'CHƯA ghi được vào thư mục dự án — mất quyền truy cập (thường do vừa tải lại trang). Vào Cài đặt → Lưu trữ, bấm "Kiểm tra kết nối thư mục" để cấp lại quyền, rồi quay lại bấm Lưu.'
           : res.reason === 'no-project-id'
             ? 'CHƯA ghi được vào thư mục dự án — không xác định được dự án đang mở.'
-            : 'CHƯA ghi được vào thư mục dự án — lỗi đĩa, thử lại.';
+            : res.reason === 'no-kit'
+              ? 'CHƯA ghi được vào thư mục dự án — chưa có Brand Kit nào đang chọn, thử bấm Lưu lại.'
+              : 'CHƯA ghi được vào thư mục dự án — lỗi đĩa, thử lại.';
       setDiskMsg({ kind: 'error', text });
     });
   }
