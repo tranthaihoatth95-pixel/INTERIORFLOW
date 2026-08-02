@@ -6,59 +6,59 @@
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
 ## ✅ XONG (02/08, mã commit — chi tiết đủ trong message từng commit + CHANGELOG)
-- **3D-1** (`d9eea9b`+`d5f6700`, `SPEC-3D-CORE.md` §4): `three@0.185.1`+`@types/three` pin chính
-  xác · `cad-to-obj.ts` thêm `groups`/`Scene3DData` (spec giả định sai — ObjScene trước chỉ có
-  text, đã bổ sung, 29/29 test cũ pass y hệt) · `Scene3DViewer.tsx` mode orbit + nút "Xem 3D"
-  trong node "Bản vẽ → 3D". FPS thật (bench tạm, đã xoá): 2040 entity/24k tam giác — gộp theo màu
-  4 draw call/0.087ms/khung; không gộp 2011 draw call/2.73ms/khung, vẫn realtime. walk/campath/
-  section: TODO 3D-2..3D-4.
-- **Wire nút "PDF in 300dpi (A3/A4)"** (`2a252c9`) — hết tranh chấp ĐỢT 3. Mở khoá theo
-  `printReady` (khổ A4/A3), tooltip trung thực. Verify browser thật cả 2 nhánh (xuất thành công ở
-  A3 · khoá đúng khi đổi 16:9), trả state gốc.
-- **Đo ESRGAN thật** (Hoà duyệt ~4cr) — SỐ THẬT: **8.7s** (nguồn 512px) / **10.6s** (896px), TB
-  **9.7s/ảnh** (models.ts ước 15s, thật nhanh hơn) · scale ×4 đúng lý thuyết: 512→2048px,
-  896→3584px · dpi trên A3: **124dpi**/**217dpi** — **CẢ HAI KHÔNG ĐẠT 300dpi trên A3**; trên A4:
-  175/**307dpi** (chỉ 896px+ vượt 300, chỉ ở A4). ⚠️ Pipeline ESRGAN ×4 hiện tại KHÔNG đủ cho lời
-  hứa "300dpi trên A3" trừ khi nguồn ≥~1230px ngang / scale >4 / chỉ hứa cho A4 — CHƯA code tích
-  hợp, chờ Hoà chọn hướng trước khi viết `ai.upscale` + cache theo img id.
+- **3D-1** (`d9eea9b`+`d5f6700`): three.js viewer mode orbit + nút "Xem 3D" node "Bản vẽ → 3D".
+  FPS thật: gộp theo màu 4 draw call/0.087ms/khung, không gộp 2011/2.73ms — vẫn realtime.
+  walk/campath/section: TODO 3D-2..3D-4.
+- **Wire nút "PDF in 300dpi (A3/A4)"** (`2a252c9`) — mở khoá theo khổ giấy, verify cả 2 nhánh.
+- **Đo ESRGAN thật** (Hoà duyệt ~4cr) — TB 9.7s/ảnh · scale ×4 đúng lý thuyết. Số đầu (512/896px)
+  KHÔNG đạt 300dpi A3 — nhưng đó chỉ là 2 cỡ test tuỳ chọn, KHÔNG phải trần thật của tầng free.
+- **P3 phần 2** (`8b7e282`) — Hoà chốt hướng "chuẩn nguồn in": nguồn ≥~1240px (tầng free xuất
+  1344px, ĐỦ) → A3 300dpi đạt bằng ×4. `lib/present-editor/print-upscale.ts` (targetPx suy từ
+  frame% × mm giấy thật, planSteps 0/1/2 = ×4 rồi ×2 phần thiếu) + `upscale-cache.ts` (IndexedDB,
+  key = hash SHA-256 src, mỗi ảnh trả tiền 1 lần) + `export.ts` tự upscale trước khi render +
+  `PresentEditor.tsx` hiện giá/thời gian ước qua `window.confirm` trước khi trừ credit thật.
+  Verify browser thật: credit spend/refund atomic đúng (mọi lỗi đều hoàn), export không crash khi
+  upscale lỗi. Chi tiết sự cố khi verify (vượt phạm vi duyệt, đã dừng kịp, net -4cr ví demo) → xem
+  message commit `8b7e282`, không lặp lại ở đây.
 
-## 🟡 DANG DỞ / CHỜ QUYẾT
-- **P3 phần 2 tích hợp** — có số thật ở trên, CHƯA code. Cần Hoà chọn hướng (đổi kích nguồn tối
-  thiểu / chấp nhận scale khác / chỉ hứa 300dpi cho A4) trước khi viết `ai.upscale` + cache.
-- **KHÔNG PHẢI CỦA TÔI, đang dở trong working tree, CHƯA commit — đừng đụng khi chưa hỏi rõ**:
-  `BrandKitPanel.tsx` + `lib/present-editor/brand-kit-disk.ts(.test.ts)` (VIỆC 5 code phụ) ·
-  `docs/SPEC-SEMANTIC-MODEL.md` (sửa nhỏ nằm sẵn, file này của Hoà) · `AGENTKIENIFARCHITECT.md` ·
-  `KE_HOACH_3_NGAY_SHIP_IF1.md` · `if-design-system.pdf` (3 file dán gốc repo, chưa rõ còn cần
-  không — KHÔNG tự xoá, hỏi Hoà).
+## 🟡 PHÁT HIỆN QUAN TRỌNG — đọc trước khi verify browser bất kỳ tính năng dùng `aiTier`/`credits`
+`useFlowStore.hydrate()` (đọc `aiTier`/`credits`/theme từ localStorage) **CHỈ được gọi từ
+`components/home/HomeScreen.tsx`**. Vào THẲNG URL con (vd `/present-editor`, hard reload/navigate
+mới) → store luôn về mặc định (`aiTier=2`), BỎ QUA mọi thứ đã lưu trong Settings. Cách verify
+đúng: mở `/` (hoặc để app tự resume) trước, RỒI điều hướng bằng click UI thật (client-side route,
+không hard-navigate) sang trang cần test. Ghi vào TECH-DEBT nếu có ca thật user report "đổi mức
+AI ở Settings không ăn" — nghi đúng nguyên nhân này (route không qua Home).
 
 ## ⬜ CHƯA BẮT ĐẦU (hàng đợi đã biết)
-- 3D-2 (mode campath + captureSequence, mở khoá video bậc 2-b) → 3D-3 (depth/lineart) → 3D-4
-  (section/walk) — thứ tự cố định, xem `docs/SPEC-3D-CORE.md` §4.
+- **3D-2** (mode campath + captureSequence, mở khoá video bậc 2-b) → 3D-3 (depth/lineart) → 3D-4
+  (section/walk) — thứ tự cố định, `docs/SPEC-3D-CORE.md` §4. camPath ăn `CamPathResult`
+  (`lib/cad/campath.ts`, KHÔNG phải "SampledCamPath" spec gọi nhầm tên — đã sửa khi làm 3D-1).
+- Menu "3D — sắp có (Phase 3–4)" đã có sẵn trong header canvas (`ref` thấy khi verify) — CHƯA nối
+  vào Scene3DViewer/3D-1, có thể là chỗ nối tự nhiên cho 3D-2 hoặc việc riêng, xem trước khi làm.
 - V1.1 so le nội thất theo cửa chính · V2.1 look-at khoá điểm/khoá zone + panel chỉnh tốc độ/lens.
-- Liên kết sống CAD→deck (moat, `NGHIEN-CUU-PRESENT-VS-DOI-THU-2026-08-01.md` §4) — sau P1-P3.
-- Toàn bộ mục dưới "Chờ USER quyết" (chưa đổi) vẫn còn nguyên, chưa ai động thêm.
+- Liên kết sống CAD→deck (moat) — sau P1-P3.
+- Toàn bộ mục dưới "Chờ USER quyết" (chưa đổi) vẫn còn nguyên.
 
-## 🔴 PHIÊN SAU PHẢI BIẾT (chưa nằm ở docs khác)
-- **`.git/index.lock` stale LẦN 4** phiên này (không do tôi tạo) — xử lý đúng cách (`ps aux | grep
-  git` xác nhận rồi mới `rm`). Đáng báo Hoà, nghi 1 tool/agent crash giữa `git commit` trong sandbox.
-- **`findHatchBoundary`** (`cad-to-obj.ts`, code CŨ) treo >2 phút ở mật độ phòng cực cao (289 phòng
-  nhỏ × 578 block) — né được trong bench, ghi `TECH-DEBT.md`, chưa phải bug chặn.
-- **Code phụ dùng CHUNG working directory** (không worktree riêng) — lọc kỹ theo tên file trước
-  khi commit hàng loạt, không `git add -A`.
-- File scratch bench 3D-1 (`app/dev-bench-3d`, `scripts/_tmp-*`) đã xoá sạch — nếu thấy sót đầu
-  phiên sau thì xoá ngay, không phải sản phẩm.
+## 🔴 PHIÊN SAU PHẢI BIẾT
+- **`.git/index.lock` stale LẦN 5** phiên này — hai phiên (tôi + code phụ) giờ **CHUNG 1 .git**,
+  Hoà đã báo trực tiếp. Luật mới: commit theo CỤM NGẮN, không giữ lock lâu giữa các bước; nếu file
+  đang STAGED sẵn (không phải của mình) → **dùng `git commit -- <pathspec>` giới hạn đúng file
+  mình**, TUYỆT ĐỐI không `git add -A`/commit trơn (sẽ cuỗm cả staged của phiên kia).
+- **`findHatchBoundary`** (`cad-to-obj.ts`, code CŨ) treo >2 phút ở mật độ phòng cực cao — né được
+  trong bench 3D-1, ghi `TECH-DEBT.md`, chưa phải bug chặn.
+- File scratch bench 3D-1 đã xoá sạch, ảnh test P3-2 đã xoá khỏi dự án mẫu, mức AI đã trả về
+  "oneAI" (mặc định gốc) trước khi rời — dự án mẫu sạch, không còn dấu vết verify.
 
 ## Nợ kỹ thuật
-→ `docs/TECH-DEBT.md` (30/07, giữ STATUS dưới 800 từ).
+→ `docs/TECH-DEBT.md`.
 
 ## Chờ USER quyết
-- **P3 phần 2 hướng dpi A3** (mới, xem trên) · **4.1.f thi công** (đổi hình dạng `brand-kit.json`)
-  · **`knowledge/ttt-design-system/`** vi phạm LUẬT TRUNG TÍNH · **④ `FlowVersion`** không phải
-  thủ phạm `dev.db` phình · **NT1/NT5**/**T3/T4** dời sau · **Figma** MCP lỗi, đường vòng đã có ·
-  **DWG** hướng GPL chưa chốt + `2.1.6.d` 🔴 bug Nhập DWG treo vĩnh viễn chưa ai động · Treo: VIỆC
-  4 cũ, #14, Xlsx probe · 3 nhánh `worktree-agent-*` merged còn local · Sprint BOQ ĐỢT 3
-  greenlight sau ĐỢT DEMO · `2.2.16-2.2.21`/12 file SPEC-TỔNG §9/`2.2.83` chưa quyết. Chi tiết mỗi
-  mục → CHANGELOG/`IF-FEATURE-TREE.md` (không lặp lại giải thích ở đây, tránh phình STATUS).
+- **4.1.f thi công** (đổi hình dạng `brand-kit.json`) · **`knowledge/ttt-design-system/`** vi phạm
+  LUẬT TRUNG TÍNH · **④ `FlowVersion`** không phải thủ phạm `dev.db` phình · **NT1/NT5**/**T3/T4**
+  dời sau · **Figma** MCP lỗi, đường vòng đã có · **DWG** hướng GPL chưa chốt + `2.1.6.d` 🔴 bug
+  Nhập DWG treo vĩnh viễn chưa ai động · Treo: VIỆC 4 cũ, #14, Xlsx probe · 3 nhánh
+  `worktree-agent-*` merged còn local · Sprint BOQ ĐỢT 3 greenlight sau ĐỢT DEMO ·
+  `2.2.16-2.2.21`/12 file SPEC-TỔNG §9/`2.2.83` chưa quyết. Chi tiết → CHANGELOG/`IF-FEATURE-TREE.md`.
 
 ## Quy tắc session
 *(worktree/LUẬT NỀN TẢNG → `CLAUDE.md`. Chi tiết đầy đủ → memory: `feedback-docs-never-overwrite`,
@@ -69,3 +69,5 @@
 4. **KHÔNG `prisma db push`/`migrate` qua sandbox** (FUSE chặn khoá file SQLite) — soạn lệnh sẵn
    cho Hoà chạy máy thật. Backup: `sqlite3 dev.db ".backup 'ten'"`, không `cp`. Chi tiết →
    `docs/00-CHOT.md` mục "LUẬT VẬN HÀNH".
+5. **Hai phiên chung `.git`** (mới 02/08) — commit cụm ngắn, `git commit -- <pathspec>` khi có
+   file staged của phiên khác, không giữ lock lâu.
