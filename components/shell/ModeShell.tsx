@@ -26,8 +26,9 @@ export interface ModeShellProps<M extends string> {
   content: (mode: M) => ReactNode;
   /** hiện cạnh thanh chọn mode (vd nút "Mở canvas", badge trạng thái) — tuỳ chọn. */
   toolbarExtra?: ReactNode;
-  /** neo thanh chọn mode trên/dưới — mặc định 'top'. Render dùng 'bottom' vì 'top' đang bị
-   * `RenderToolTabs` (D3) chiếm gần hết bề rộng — xem RenderToolModeOverlay.tsx. */
+  /** neo thanh chọn mode trên/dưới — mặc định 'top'. Render dùng 'bottom': `top` là chỗ dải
+   * cảnh báo LỖ RÒ 2 nổi lên (hiếm, chỉ khi graph phức tạp — xem RenderToolModeOverlay.tsx),
+   * tránh 2 thứ tranh cùng 1 chỗ dù không phải lúc nào cũng đụng nhau. */
   barPosition?: 'top' | 'bottom';
   className?: string;
 }

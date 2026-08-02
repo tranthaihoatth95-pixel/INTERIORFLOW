@@ -2,24 +2,26 @@
 
 /**
  * components/render-studio/RenderToolModeOverlay.tsx — lớp phủ Tool Mode lên TRÊN node graph
- * (VIỆC B, 28/07 · dựng lại D3 01/08 theo `docs/CHOT-RENDER-TOOL-WINDOW-2026-08-01.md`: tool
- * window = subgraph node phóng to). Mount làm anh em với `<FlowCanvas />` trong HomeScreen.tsx —
- * NHƯNG khác bản cũ ở đúng điểm bug `2.2.92` từng mắc: KHÔNG còn `position:absolute;inset:0`
- * phủ kín canvas. `RenderToolTabs` chỉ là 1 dải mỏng neo trên đầu (canvas LUÔN lộ ra, bấm được
- * ngay cả khi chưa mở tool nào); `ToolWindow` (khi có tool mở) portal ra ngoài, nổi lên trên chứ
- * không "khoá" canvas ở dưới. `2.2.92` (overlay "Chọn việc muốn làm" che popover) coi như đóng
- * theo đúng cách mô hình mới yêu cầu — không còn overlay full-bleed nào ở đây nữa.
+ * (VIỆC B, 28/07 · dựng lại D3 01/08 theo `docs/CHOT-RENDER-TOOL-WINDOW-2026-08-01.md`, dựng lại
+ * LẦN 2 ở H3 02/08 theo `docs/TICKET-UI-HATANG-2026-08-02.md`: "tool = NODE side trái, kéo/thả xổ
+ * ra WINDOW — KHÔNG tab ngang"). Mount làm anh em với `<FlowCanvas />` trong HomeScreen.tsx.
  *
- * Màn ≤7 inch: window tự phóng toàn màn (`ToolWindow` tự xử lý) — không ép "canvas cấm vào" như
- * bản cũ NỮA (nút "Mở canvas" trong `RenderToolTabs` vẫn bấm được), nhưng đổi máy nhỏ khi đang ở
- * canvas vẫn tự về Tool Mode như hành vi cũ (giữ nguyên, an toàn hơn cho thao tác chạm).
+ * H3 GỠ HẲN `RenderToolTabs` (thanh tab ngang D3) — cửa vào tool window giờ là sidebar 3 vùng
+ * (`NodeLibraryPanel.tsx`, H2), KHÔNG còn thanh tab trên đầu. `ToolWindow` vẫn portal ra ngoài,
+ * nổi lên trên canvas chứ không "khoá" canvas ở dưới — `2.2.92` (overlay che kín canvas) vẫn
+ * ĐÓNG (không còn dải nào chiếm `top:0` toàn bề rộng như D3's `RenderToolTabs` nữa — H3 dọn dứt
+ * điểm, kể cả phần chừa chỗ cho nó trong `ModeShell` cũng gỡ theo, xem HomeScreen.tsx).
+ *
+ * "Mở canvas" (nút cũ trong `RenderToolTabs`) — KHÔNG cần thay thế: canvas giờ LUÔN lộ ra (D3),
+ * đóng `ToolWindow` (nút ✕/▁ trên header) đã đủ "quay lại canvas thuần". Luồng canvas-handoff
+ * (`materialswap`/`furniture`/`localedit` — cần vẽ mask tay) vẫn tự chuyển `view:'canvas'` qua
+ * `openCanvas()` trong `ToolModeForm.tsx`, không phụ thuộc gì vào file này.
  */
 
 import { useEffect } from 'react';
 import { useToolModeUi, useIsSmallScreenForCanvas } from '@/lib/render-studio/tool-mode-ui';
 import { useFlowStore } from '@/lib/store';
 import { detectGraphPattern } from '@/lib/render-studio/graph-pattern';
-import RenderToolTabs from './RenderToolTabs';
 import ToolWindow from './ToolWindow';
 
 export default function RenderToolModeOverlay() {
@@ -61,12 +63,35 @@ export default function RenderToolModeOverlay() {
   // gì bị "giấu" — chỉ báo khi nodeCount thật sự > 1.
   const notice =
     !selectedCardId && nodePattern.kind === 'complex' && nodePattern.nodeCount > 1
-      ? `Flow này có ${nodePattern.nodeCount} node — Tool Mode chỉ hiện được 1 việc, mở canvas để xem đủ.`
+      ? `Flow này có ${nodePattern.nodeCount} node — chọn "Node MASTER" ở sidebar bên trái chỉ hiện được 1 việc, mở Node Library để xem đủ.`
       : undefined;
 
   return (
     <>
-      <RenderToolTabs notice={notice} />
+      {/* H3 — dải mỏng thay RenderToolTabs (đã gỡ), CHỈ hiện khi có cảnh báo LỖ RÒ 2 (đa số thời
+          gian KHÔNG có gì ở đây — canvas hoàn toàn trống, đúng "không tab ngang"). */}
+      {notice && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 32,
+            maxWidth: 'min(560px, calc(100vw - 32px))',
+            padding: '6px 12px',
+            borderRadius: 8,
+            border: '1px solid var(--border)',
+            background: 'color-mix(in srgb, var(--panel) 92%, transparent)',
+            backdropFilter: 'blur(14px)',
+            color: 'var(--t2)',
+            fontSize: 11.5,
+            textAlign: 'center',
+          }}
+        >
+          {notice}
+        </div>
+      )}
       {view === 'form' && selectedCardId && <ToolWindow cardId={selectedCardId} />}
     </>
   );
