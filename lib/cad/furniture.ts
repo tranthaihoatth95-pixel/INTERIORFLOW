@@ -40,6 +40,10 @@ export interface BlockDef {
   clearance?: ClearanceZone[];
   /** B2.4 — info panel: giá, mã, nhà cung cấp */
   meta?: ShapeMeta;
+  /** `docs/SO-KIEM-TONG.md` §7 "cửa/cửa sổ hosted" — đánh dấu block nào là cửa/cửa sổ để
+   * `lib/cad/hosting.ts` biết cần suy `hostId`/khoét hốc tường thật. undefined = block thường
+   * (nội thất/thiết bị), KHÔNG hosted. */
+  hosted?: 'door' | 'window';
 }
 
 /* helper dựng hình trong local mm, gốc tâm */
@@ -596,29 +600,29 @@ export const BLOCKS: BlockDef[] = [
     anchors: [{ kind: 'wall-back', pt: { x: 0, y: -150 }, normal: { x: 0, y: -1 } }],
   },
   {
-    id: 'door', name: 'Cửa mở 900 (cửa chính)', group: 'Kiến trúc', w: 900, h: 900, prims: door(900),
+    id: 'door', name: 'Cửa mở 900 (cửa chính)', group: 'Kiến trúc', w: 900, h: 900, prims: door(900), hosted: 'door',
     clearance: [{ x: 0, y: 450, w: 900, h: 900, reason: 'Vùng quét cánh cửa' }],
   },
   {
-    id: 'doorRoom', name: 'Cửa mở 800 (cửa phòng)', group: 'Kiến trúc', w: 800, h: 800, prims: door(800),
+    id: 'doorRoom', name: 'Cửa mở 800 (cửa phòng)', group: 'Kiến trúc', w: 800, h: 800, prims: door(800), hosted: 'door',
     clearance: [{ x: 0, y: 400, w: 800, h: 800, reason: 'Vùng quét cánh cửa' }],
   },
   {
-    id: 'doorWC', name: 'Cửa mở 700 (cửa WC)', group: 'Kiến trúc', w: 700, h: 700, prims: door(700),
+    id: 'doorWC', name: 'Cửa mở 700 (cửa WC)', group: 'Kiến trúc', w: 700, h: 700, prims: door(700), hosted: 'door',
     clearance: [{ x: 0, y: 350, w: 700, h: 700, reason: 'Vùng quét cánh cửa' }],
   },
   {
-    id: 'doubleDoor', name: 'Cửa 2 cánh', group: 'Kiến trúc', w: 1600, h: 800, prims: doubleDoor(1600),
+    id: 'doubleDoor', name: 'Cửa 2 cánh', group: 'Kiến trúc', w: 1600, h: 800, prims: doubleDoor(1600), hosted: 'door',
     clearance: [{ x: 0, y: 400, w: 1600, h: 800, reason: 'Vùng quét 2 cánh cửa' }],
   },
-  { id: 'slidingDoor', name: 'Cửa trượt', group: 'Kiến trúc', w: 1800, h: 160, prims: slidingDoor(1800) },
+  { id: 'slidingDoor', name: 'Cửa trượt', group: 'Kiến trúc', w: 1800, h: 160, prims: slidingDoor(1800), hosted: 'door' },
   {
-    id: 'glassDoor', name: 'Cửa kính', group: 'Kiến trúc', w: 900, h: 900, prims: glassDoor(900),
+    id: 'glassDoor', name: 'Cửa kính', group: 'Kiến trúc', w: 900, h: 900, prims: glassDoor(900), hosted: 'door',
     clearance: [{ x: 0, y: 450, w: 900, h: 900, reason: 'Vùng quét cánh cửa' }],
   },
-  { id: 'window', name: 'Cửa sổ', group: 'Kiến trúc', w: 1200, h: 100, prims: window2(1200) },
-  { id: 'slidingWindow', name: 'Cửa sổ trượt', group: 'Kiến trúc', w: 1200, h: 100, prims: slidingWindow(1200) },
-  { id: 'fixedWindow', name: 'Cửa sổ cố định', group: 'Kiến trúc', w: 1200, h: 100, prims: fixedWindow(1200) },
+  { id: 'window', name: 'Cửa sổ', group: 'Kiến trúc', w: 1200, h: 100, prims: window2(1200), hosted: 'window' },
+  { id: 'slidingWindow', name: 'Cửa sổ trượt', group: 'Kiến trúc', w: 1200, h: 100, prims: slidingWindow(1200), hosted: 'window' },
+  { id: 'fixedWindow', name: 'Cửa sổ cố định', group: 'Kiến trúc', w: 1200, h: 100, prims: fixedWindow(1200), hosted: 'window' },
   {
     id: 'straightStairs', name: 'Thang thẳng', group: 'Cầu thang', w: 1000, h: 3000, prims: straightStairs(),
     clearance: [{ x: 0, y: 1700, w: 1000, h: 400, reason: 'Chiều cao đầu (headroom) tối thiểu ở chiếu tới' }],

@@ -13,6 +13,7 @@ import type { Doc, Entity, Layer, LineType, Viewport, HatchPattern, MarkupPin, P
 import { emptyDoc, ZONE_DEFAULT_OPACITY } from './model';
 import { pasteEntities } from './geometry';
 import { cutHoleInWall as cutHoleInWallCmd, type CutHoleOpts } from './commands';
+import { syncHostedOpenings, expandDeleteWithHostedChildren } from './hosting';
 
 // Dev-only: expose store cho debugging (window.__cadStore) — cùng pattern với
 // window.__flowStore trong lib/store.ts, không lọt vào bản build production.
@@ -497,12 +498,19 @@ export const useCadStore = create<CadState>((set, get) => ({
 
   addEntity: (e) => {
     get().snapshot();
-    set((s) => ({ doc: { ...s.doc, entities: [...s.doc.entities, e] } }));
+    // CÙNG lý do `addEntities` — đây mới là đường THẬT đặt cửa/cửa sổ (`CadCanvas.tsx` tool
+    // "block" gọi `addEntity` đơn lẻ, không phải `addEntities`), bỏ sót ở đây = VIỆC 1 vô tác dụng
+    // trên luồng đặt cửa thật.
+    set((s) => ({ doc: syncHostedOpenings({ ...s.doc, entities: [...s.doc.entities, e] }) }));
   },
   addEntities: (es) => {
     if (!es.length) return;
     get().snapshot();
-    set((s) => ({ doc: { ...s.doc, entities: [...s.doc.entities, ...es] } }));
+    // VIỆC "cửa/cửa sổ hosted" (SO-KIEM-TONG §7) — MỌI lần thêm entity đều reconcile lại quan hệ
+    // host (block cửa/cửa sổ MỚI thêm có thể vừa rơi vào 1 tường; tường MỚI thêm cũng có thể vừa
+    // "nuốt" 1 cửa/cửa sổ đã đứng sẵn đó). `syncHostedOpenings` idempotent — gọi thừa không hại gì
+    // khi `es` không đụng gì tới cửa/cửa sổ/tường.
+    set((s) => ({ doc: syncHostedOpenings({ ...s.doc, entities: [...s.doc.entities, ...es] }) }));
   },
   updateEntities: (es) => {
     // Không sửa entity thuộc layer đang KHOÁ (thói quen CAD: layer khoá = bất khả xâm phạm).
@@ -511,7 +519,9 @@ export const useCadStore = create<CadState>((set, get) => ({
     if (!editable.length) return;
     get().snapshot();
     const map = new Map(editable.map((e) => [e.id, e]));
-    set((s) => ({ doc: { ...s.doc, entities: s.doc.entities.map((e) => map.get(e.id) ?? e) } }));
+    // Reconcile host — cửa/cửa sổ vừa bị KÉO (đổi `at`/`rot`) có thể đã rời tường cũ/sang tường
+    // khác; xem comment `addEntities` ở trên.
+    set((s) => ({ doc: syncHostedOpenings({ ...s.doc, entities: s.doc.entities.map((e) => map.get(e.id) ?? e) }) }));
   },
   cutHoleInWall: (wallId, opts, kind = 'subtract') => {
     const wall = get().doc.entities.find((e) => e.id === wallId);
@@ -538,13 +548,24 @@ export const useCadStore = create<CadState>((set, get) => ({
     );
     if (!removable.size) return;
     get().snapshot();
-    set((s) => ({ doc: { ...s.doc, entities: s.doc.entities.filter((e) => !removable.has(e.id)) }, selection: [] }));
+    // "Xoá tường → xoá theo cửa/cửa sổ con" (kinh Revit, SO-KIEM-TONG §7 VIỆC 1) — mở rộng tập
+    // xoá TRƯỚC khi lọc, rồi `syncHostedOpenings` dọn nốt cutter/ops mồ côi (cửa/cửa sổ bị xoá
+    // trực tiếp cũng dọn được cutter của nó qua đường này, không cần nhánh riêng).
+    const expanded = expandDeleteWithHostedChildren(removable, get().doc);
+    set((s) => ({
+      doc: syncHostedOpenings({ ...s.doc, entities: s.doc.entities.filter((e) => !expanded.has(e.id)) }),
+      selection: [],
+    }));
   },
   removeIds: (ids) => {
     const set0 = new Set(ids);
     if (!set0.size) return;
     get().snapshot();
-    set((s) => ({ doc: { ...s.doc, entities: s.doc.entities.filter((e) => !set0.has(e.id)) }, selection: [] }));
+    const expanded = expandDeleteWithHostedChildren(set0, get().doc);
+    set((s) => ({
+      doc: syncHostedOpenings({ ...s.doc, entities: s.doc.entities.filter((e) => !expanded.has(e.id)) }),
+      selection: [],
+    }));
   },
 
   select: (ids, additive) =>
@@ -616,11 +637,16 @@ export const useCadStore = create<CadState>((set, get) => ({
     set((s) => {
       if (s.doc.layers.length <= 1) return s;
       get().snapshot();
+      // Xoá cả layer có thể xoá luôn tường trên đó — cùng luật cascade "xoá tường → xoá cửa/cửa
+      // sổ con" (expand trước khi lọc), rồi sync dọn cutter/ops mồ côi.
+      const removedIds = new Set(s.doc.entities.filter((e) => e.layer === id).map((e) => e.id));
+      const expanded = expandDeleteWithHostedChildren(removedIds, s.doc);
       return {
-        doc: {
-          entities: s.doc.entities.filter((e) => e.layer !== id),
+        doc: syncHostedOpenings({
+          ...s.doc,
+          entities: s.doc.entities.filter((e) => !expanded.has(e.id) && e.layer !== id),
           layers: s.doc.layers.filter((l) => l.id !== id),
-        },
+        }),
         currentLayer: s.currentLayer === id ? s.doc.layers.find((l) => l.id !== id)!.id : s.currentLayer,
       };
     }),

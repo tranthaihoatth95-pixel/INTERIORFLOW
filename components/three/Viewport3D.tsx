@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useRef } from 'react';
 import type { Scene3DData } from '@/lib/three/cad-to-obj';
 import type { Scene3DMode, Scene3DCameraApi } from './Scene3DViewer';
+import type { ViewDir } from './ViewCube3D';
 import { RawStyle } from './RawStyle';
 import { VE3D_CSS } from './ve3d-css';
 
@@ -18,7 +19,7 @@ const Scene3DViewer = dynamic(() => import('./Scene3DViewer'), {
 });
 const ViewCube3D = dynamic(() => import('./ViewCube3D'), { ssr: false });
 
-export type { ViewDir } from './ViewCube3D';
+export type { ViewDir };
 
 export interface Viewport3DProps {
   scene: Scene3DData;

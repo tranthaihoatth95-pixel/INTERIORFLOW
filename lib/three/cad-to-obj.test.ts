@@ -4,7 +4,8 @@
  */
 import type { Doc, Entity, HatchEntity } from '../cad/model';
 import { DEFAULT_LAYERS } from '../cad/model';
-import { wallChain } from '../cad/commands';
+import { wallChain, wallSegment } from '../cad/commands';
+import { syncHostedOpenings } from '../cad/hosting';
 import { docToObjScene, blockFootprint, furnitureHeightMm, cadAxesToThree, cadToThreeM, clampWallHeight, boxPositionsMm } from './cad-to-obj';
 import { presetCamera, parseCameraSpec, placeCamera, fovFromLens, CAMERA_PRESETS } from './camera';
 
@@ -356,6 +357,45 @@ console.log('boxPositionsMm — tam-giác-hoá lăng trụ THUẦN, không qua O
   ok('toạ độ x trong [0,1] (mm→m)', xs.every((v) => v >= 0 && v <= 1));
   ok('toạ độ y (cao) trong [0,1] (mm→m)', ys.every((v) => v >= 0 && v <= 1));
   ok('đa giác <3 điểm trả rỗng, không sập', boxPositionsMm([{ x: 0, y: 0 }], 0, 1000).length === 0);
+}
+
+console.log('docToObjScene — SO-KIEM-TONG §7 "cửa/cửa sổ hosted": lỗ THẬT + cửa có hình 3D (VIỆC 2+3)');
+{
+  const [hatch, poly] = wallSegment({ x: 0, y: 0 }, { x: 4000, y: 0 }, 200, 'l-wall');
+  const door: Entity = { id: 'door-1', type: 'block', layer: 'l-furniture', block: 'door', at: { x: 1000, y: 0 }, rot: 0, sx: 1, sy: 1 };
+  const win: Entity = { id: 'win-1', type: 'block', layer: 'l-furniture', block: 'window', at: { x: 3000, y: 0 }, rot: 0, sx: 1, sy: 1 };
+  const doc: Doc = { entities: [hatch, poly, door, win], layers: DEFAULT_LAYERS.map((l) => ({ ...l })) };
+  // đúng luồng thật: store luôn chạy syncHostedOpenings trước khi render — test qua ĐÚNG cổng đó,
+  // không tự chế Doc "đã host sẵn" tay (K1 — một đường tính, kể cả trong test).
+  const synced = syncHostedOpenings(doc);
+  const scene = docToObjScene(synced, { wallHeightMm: 2700, theme: 'warm' });
+
+  const wallGroup = scene.groups.find((g) => g.name === 'Wall_1')!;
+  const cutterIds = Object.keys(wallGroup.opCutters ?? {});
+  ok('tường mang đúng 2 op boolean (cửa + cửa sổ)', wallGroup.ops?.length === 2);
+  ok('opCutters có hình học cho CẢ 2 lỗ, không rỗng', cutterIds.length === 2 && cutterIds.every((k) => (wallGroup.opCutters![k].length) > 0));
+
+  ok('cửa có 2 group (khung + cánh), đều mang entityId đúng', scene.groups.some((g) => g.name === 'Door_1_khung' && g.entityId === 'door-1') && scene.groups.some((g) => g.name === 'Door_1_canh' && g.entityId === 'door-1'));
+  ok('cửa sổ có 1 group, mang entityId đúng', scene.groups.some((g) => g.name === 'Window_1' && g.entityId === 'win-1'));
+
+  // cửa sổ: z thật (Y-up trong OBJ, đơn vị mét) phải nằm trong [0.9, 2.1] (sillMm=900,headMm=2100) —
+  // KHÔNG còn khối "800→2200" cũ đè lên tường.
+  const winGroup = scene.groups.find((g) => g.name === 'Window_1')!;
+  const winYs: number[] = [];
+  for (let i = 1; i < winGroup.positions.length; i += 3) winYs.push(winGroup.positions[i]);
+  ok(`cửa sổ đúng cao độ bệ/đỉnh 0.9–2.1m (được ${Math.min(...winYs).toFixed(2)}–${Math.max(...winYs).toFixed(2)})`, Math.abs(Math.min(...winYs) - 0.9) < 1e-6 && Math.abs(Math.max(...winYs) - 2.1) < 1e-6);
+
+  // cửa: cánh (panel) phải chạm sàn z=0 (sillMm=0) — khác cửa sổ có bệ.
+  const doorPanel = scene.groups.find((g) => g.name === 'Door_1_canh')!;
+  const panelYs: number[] = [];
+  for (let i = 1; i < doorPanel.positions.length; i += 3) panelYs.push(doorPanel.positions[i]);
+  ok('cánh cửa chạm sàn (z min = 0)', Math.min(...panelYs) === 0);
+
+  // đối chứng: cùng Doc nhưng KHÔNG sync (mô phỏng gọi thẳng docToObjScene không qua store) →
+  // không có ops nào cả — chứng minh lỗ THẬT tới từ syncHostedOpenings, không phải "tự nhiên có".
+  const sceneUnsynced = docToObjScene(doc, { wallHeightMm: 2700, theme: 'warm' });
+  const wallUnsynced = sceneUnsynced.groups.find((g) => g.name === 'Wall_1')!;
+  ok('Doc CHƯA qua sync → tường không có ops (chứng minh sync là nguồn của lỗ)', wallUnsynced.ops === undefined);
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);

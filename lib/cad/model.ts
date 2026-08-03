@@ -206,6 +206,16 @@ interface Base {
    * khớp với `ops`. undefined = tất cả đang bật. Chưa có UI bật/tắt (N5, khai cùng đợt để không
    * đẻ field rời sau này). */
   opsDisabled?: number[];
+
+  /** VIỆC "cửa/cửa sổ hosted" (`docs/SO-KIEM-TONG.md` §7) — cao độ ĐÁY (mm, tính từ sàn z=0) của
+   * khối/hốc mà entity này biểu diễn. Chỉ có ý nghĩa khi entity đóng vai trò CUTTER (`lib/three/
+   * cad-to-obj.ts` `cutterPositionsMm` đọc field này làm z0 thay vì luôn cắt từ sàn — trước đây
+   * hardcode z0=0, đúng cho cửa nhưng SAI cho cửa sổ có bệ cao) — undefined = 0 (giữ nguyên hành
+   * vi cũ, `.idf` cũ không có field vẫn parse/dựng đúng như trước). Cùng tên/tinh thần field
+   * `elevationMm` mà `SPEC-VE-REVIT-MODE.md` §A3.3 đã đề xuất cho lớp hoàn thiện (ốp lửng) — TÁI
+   * DÙNG một field cho nhiều vai trò cutter/covering, không đẻ field song song (đúng khuôn
+   * `heightMm` đã dùng cho cả tường lẫn cutter). */
+  elevationMm?: number;
 }
 
 /** NC-12 §4.2 — một bậc trong ngăn xếp dựng hình 3D. Thuần dữ liệu JSON, KHÔNG chứa hình học đã
@@ -310,6 +320,17 @@ export interface BlockEntity extends Base {
    * này. Optional + chỉ là chuỗi id ⇒ `.idf` cũ không có field vẫn parse bình thường (nguyên
    * tắc additive như elementType/storey); DXF export bỏ qua (không phá round-trip). */
   specId?: string;
+
+  // ---- MỚI (`docs/SO-KIEM-TONG.md` §7 "cửa/cửa sổ hosted" — đúng kinh Revit: cửa/cửa sổ là
+  // CON của tường, không phải khối rời) ----
+  /** id của `HatchEntity` tường CHỦ — chỉ có ý nghĩa khi `block` là cửa/cửa sổ (`BlockDef.hosted`,
+   * `lib/cad/furniture.ts`). KHÔNG bao giờ gõ tay: `lib/cad/hosting.ts` `syncHostedOpenings()` tự
+   * suy ra bằng vị trí (điểm `at` có nằm trong dải bề dày hatch tường không) mỗi khi entity được
+   * thêm/sửa, và tự xoá field này khi block bị kéo ra khỏi mọi tường. undefined = không phải cửa/
+   * cửa sổ, HOẶC là cửa/cửa sổ nhưng chưa/không nằm trên tường nào (đặt rời, vẫn hợp lệ — không ép
+   * buộc). `.idf` cũ không có field này ⇒ coi như chưa host, `syncHostedOpenings()` tự suy lại lần
+   * mở đầu tiên (an toàn ngược, không cần bump IDF_VERSION). */
+  hostId?: string;
 }
 
 /**

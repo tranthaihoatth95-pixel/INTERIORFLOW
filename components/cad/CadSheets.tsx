@@ -42,6 +42,7 @@ import { exportSheetSetPdf } from '@/lib/cad/pdf';
 import { buildIfpack, restoreIfpack } from '@/lib/cad/ifpack';
 import { startAutoBackup, type AutoBackupSession } from '@/lib/cad/auto-backup';
 import { backfillRoomTypes } from '@/lib/cad/standards/checker';
+import { syncHostedOpenings } from '@/lib/cad/hosting';
 import { useSheetsBucketId } from '@/lib/scope';
 import { markBucketHydrated } from '@/lib/cad/cad-doc-hydration';
 import { useFlowStore } from '@/lib/store';
@@ -103,7 +104,10 @@ function blankSnapshot(): CadSnapshot {
  * nhãn phòng cũ chưa có field này (xem checker.ts). Idempotent, no-op nếu đã backfill trước đó. */
 function snapshotFromPersisted(p: PersistedCadSheet): CadSnapshot {
   return {
-    doc: backfillRoomTypes(p.doc),
+    // VIỆC "cửa/cửa sổ hosted" (SO-KIEM-TONG §7) — cùng khuôn `backfillRoomTypes`: sheet cũ lưu
+    // TRƯỚC khi có `hostId` (hoặc cutter bị lệch vì tường/cửa đã đổi ở phiên trước khi sync chưa
+    // chạy) tự suy/dựng lại đúng ngay lần mở đầu tiên, không cần migrate dữ liệu riêng.
+    doc: syncHostedOpenings(backfillRoomTypes(p.doc)),
     past: [],
     future: [],
     viewport: p.viewport,
@@ -284,7 +288,7 @@ export default function CadSheets() {
     const kept = parsedSheets.slice(0, MAX_SHEETS);
     snaps.current = {};
     for (const s of kept) {
-      const doc = backfillRoomTypes(s.doc);
+      const doc = syncHostedOpenings(backfillRoomTypes(s.doc));
       snaps.current[s.id] = {
         doc,
         past: [],

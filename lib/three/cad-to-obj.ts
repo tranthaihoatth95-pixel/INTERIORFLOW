@@ -16,9 +16,11 @@
  * Thuần TS (không DOM) — test: node_modules/.bin/sucrase-node lib/three/cad-to-obj.test.ts
  */
 import type { Doc, Entity, HatchEntity, BlockEntity, Pt, BuildOp } from '../cad/model';
-import { entityBox, type Box } from '../cad/model';
+import { entityBox, blockToWorld, type Box } from '../cad/model';
 import { BLOCK_MAP } from '../cad/furniture';
 import { findHatchBoundary, polygonArea, pointInPolygon } from '../cad/hatch';
+import { effectiveBlockSize } from '../cad/shape-interactions';
+import { isHostableBlock, inferWallHost, OPENING_ELEVATION, estimateWallThicknessMm, DEFAULT_WALL_THICKNESS_MM } from '../cad/hosting';
 import { hexToRgb } from '../gu/color-psychology';
 
 /** Diện tích CÓ DẤU (shoelace) — polygonArea của hatch.ts trả trị tuyệt đối nên tự tính. */
@@ -385,24 +387,36 @@ export function blockFootprint(b: BlockEntity): [Pt, Pt, Pt, Pt] | null {
 }
 
 /** NC-12 §4.2 — cutter của bậc `{op:'boolean', withRef}`: entity KHÁC trong CÙNG `Doc` (K1, không
- * type hình học riêng cho "cutter"). Hôm nay hỗ trợ `RectEntity` (footprint chữ nhật + `Base.
- * heightMm` RIÊNG = chiều cao khối cắt — undefined thì tràn hết cao tường `wallH`, tức "hốc từ
- * sàn tới trần"). Trả `null` nếu không tra được/không phải rect — nơi gọi (`buildOpCutters`) tự bỏ
- * qua bậc đó thay vì sập (N4: thiếu dữ liệu thì giữ nguyên, không gán bừa/suy đoán). CHƯA hỗ trợ
- * cao độ đáy riêng (`elevationMm`) — cutter luôn cắt từ z=0, ghi rõ để phiên sau không tưởng đã
- * làm (N5); đủ cho ca "khoét hốc từ sàn" của nghiệm thu VIỆC 3, chưa đủ cho gờ chỉ lưng chừng
- * tường (cần thêm field, để dành khi có UI thật đòi hỏi — K4). */
+ * type hình học riêng cho "cutter"). Hỗ trợ 2 dạng: `RectEntity` (footprint chữ nhật, cutter tay
+ * "Khoét hốc") và `PolylineEntity` đóng kín (footprint ĐÃ XOAY, cutter cửa/cửa sổ hosted —
+ * `lib/cad/hosting.ts` `buildOpeningCutter`, luôn xoay theo đúng góc block chứ không chỉ trục
+ * thẳng như rect). Trả `null` nếu không tra được/không phải 1 trong 2 dạng trên — nơi gọi
+ * (`buildOpCutters`) tự bỏ qua bậc đó thay vì sập (N4: thiếu dữ liệu thì giữ nguyên, không gán
+ * bừa/suy đoán).
+ *
+ * Cao độ: z0 = `e.elevationMm ?? 0` (VIỆC "cửa/cửa sổ hosted" — trước đây luôn cắt từ sàn, SAI cho
+ * cửa sổ có bệ cao; docstring cũ ở đây đã ghi trước "để dành khi có UI thật đòi hỏi", nay tới lúc
+ * dùng), z1 = z0 + (`e.heightMm` ?? phần tường còn lại phía trên z0). KHÔNG dùng `clampWallHeight()`
+ * — đó là ngưỡng cho TƯỜNG (2-6m), cutter có thể chỉ vài trăm mm. */
 function cutterPositionsMm(ref: string, doc: Doc, wallH: number): number[] | null {
   const e = doc.entities.find((x) => x.id === ref);
-  if (!e || e.type !== 'rect') return null;
-  const poly: Pt[] = [
-    { x: e.x, y: e.y },
-    { x: e.x + e.w, y: e.y },
-    { x: e.x + e.w, y: e.y + e.h },
-    { x: e.x, y: e.y + e.h },
-  ];
-  const cutH = e.heightMm ?? wallH; // KHÔNG dùng clampWallHeight() — đó là ngưỡng cho TƯỜNG (2-6m), cutter có thể chỉ vài trăm mm.
-  return boxPositionsMm(poly, 0, cutH);
+  if (!e) return null;
+  let poly: Pt[];
+  if (e.type === 'rect') {
+    poly = [
+      { x: e.x, y: e.y },
+      { x: e.x + e.w, y: e.y },
+      { x: e.x + e.w, y: e.y + e.h },
+      { x: e.x, y: e.y + e.h },
+    ];
+  } else if (e.type === 'polyline' && e.closed && e.points.length >= 3) {
+    poly = e.points;
+  } else {
+    return null;
+  }
+  const z0 = e.elevationMm ?? 0;
+  const z1 = z0 + (e.heightMm ?? Math.max(0, wallH - z0));
+  return boxPositionsMm(poly, z0, z1);
 }
 
 /** NC-12 §4.3 — gom hình học cutter cho MỌI bậc `boolean` trong `ops` của 1 entity, khoá theo
@@ -470,7 +484,10 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     const def = BLOCK_MAP[b.block];
     return def && def.group !== 'Kiến trúc';
   });
-  const windows = blocks.filter((b) => b.block === 'window');
+  // VIỆC "cửa/cửa sổ hosted" (SO-KIEM-TONG §7) — TẤT CẢ block cửa/cửa sổ (trước đây chỉ mỗi
+  // block === 'window' đúng nghĩa đen được vẽ; 8 biến thể còn lại — cửa mọi loại, cửa sổ trượt/cố
+  // định — hoàn toàn VÔ HÌNH trong 3D, đúng lỗi Hoà chỉ ra).
+  const hostedBlocks = blocks.filter((b) => isHostableBlock(b.block));
 
   const structural = wallHatches.length
     ? (wallHatches as Entity[])
@@ -571,12 +588,59 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     builder.box4(base, 0, furnitureHeightMm(def.id));
   });
 
-  // ---- Cửa sổ: tấm kính proxy (bệ 800 → 2200) ----
-  windows.forEach((b, i) => {
-    const base = blockFootprint(b);
-    if (!base) return;
-    builder.object(`Window_${i + 1}`, mats.wall, { storey: b.storey });
-    builder.box4(base, 800, Math.min(2200, H - 200));
+  // ---- Cửa/cửa sổ HOSTED (SO-KIEM-TONG §7) — lỗ đã khoét THẬT vào tường qua `ops[]` boolean ở
+  // vòng lặp tường trên (`buildOpCutters` đọc đúng cutter `lib/cad/hosting.ts` sinh, KHÔNG viết
+  // đường dựng thứ hai — K1). Ở đây chỉ dựng phần NHÌN THẤY lắp VÀO lỗ đó: cửa sổ = tấm kính mỏng
+  // (không còn khối đứng chồng lên tường như trước), cửa = khung + cánh đơn giản. Toạ độ LOCAL
+  // (x = dọc bề rộng, y = xuyên bề dày tường) map sang world bằng ĐÚNG `blockToWorld` mà
+  // `blockFootprint`/cutter dùng — không tự chế phép biến hình khác.
+  const wallsById = new Map(wallHatches.map((w) => [w.id, w] as const));
+  let windowIdx = 0;
+  let doorIdx = 0;
+  const quad = (b: BlockEntity, xMin: number, xMax: number, yMin: number, yMax: number): [Pt, Pt, Pt, Pt] => {
+    const local: Pt[] = [
+      { x: xMin, y: yMin },
+      { x: xMax, y: yMin },
+      { x: xMax, y: yMax },
+      { x: xMin, y: yMax },
+    ];
+    return local.map((p) => blockToWorld(p, { at: b.at, rot: b.rot, sx: 1, sy: 1 })) as [Pt, Pt, Pt, Pt];
+  };
+  hostedBlocks.forEach((b) => {
+    const kind = isHostableBlock(b.block);
+    if (!kind) return;
+    const hostWallId = inferWallHost(b.at, doc, wallsById);
+    const hostWall = hostWallId ? wallsById.get(hostWallId) : undefined;
+    const { sillMm, headMm } = OPENING_ELEVATION[kind];
+    const width = effectiveBlockSize(b).w;
+    const thickness = hostWall ? estimateWallThicknessMm(hostWall.points) : DEFAULT_WALL_THICKNESS_MM;
+    const hw = width / 2;
+    const ht = thickness / 2;
+
+    if (kind === 'window') {
+      windowIdx += 1;
+      // tấm kính mỏng LẮP VÀO lỗ — dày tối đa 30mm hoặc hết bề dày tường (tường rất mỏng), không
+      // còn "đè tường" như khối proxy cũ (§ VIỆC 2).
+      const paneT = Math.min(30, thickness) / 2;
+      builder.object(`Window_${windowIdx}`, mats.wall, { entityId: b.id, storey: b.storey, specId: b.specId });
+      builder.box4(quad(b, -hw, hw, -paneT, paneT), sillMm, headMm);
+      return;
+    }
+
+    // Cửa (§ VIỆC 3) — khung (2 nẹp đứng + 1 nẹp ngang trên) + cánh đơn giản, khối xám phẳng,
+    // KHÔNG PBR (`docs/SPEC-3D-CORE.md` §6 — đẹp là việc D5, IF chỉ cần đúng hình học tối thiểu).
+    doorIdx += 1;
+    const frameT = Math.min(60, Math.max(20, hw)); // nẹp 60mm, tự co với cửa rất hẹp (hiếm)
+    const meta = { entityId: b.id, storey: b.storey, specId: b.specId };
+    builder.object(`Door_${doorIdx}_khung`, mats.wall, meta);
+    builder.box4(quad(b, -hw, -hw + frameT, -ht, ht), sillMm, headMm); // nẹp trái
+    builder.box4(quad(b, hw - frameT, hw, -ht, ht), sillMm, headMm); // nẹp phải
+    builder.box4(quad(b, -hw + frameT, hw - frameT, -ht, ht), headMm - frameT, headMm); // nẹp trên (lanh tô)
+    const panelGap = 5;
+    const panelHalfW = Math.max(20, hw - frameT - panelGap);
+    const panelT = Math.min(40, thickness) / 2;
+    builder.object(`Door_${doorIdx}_canh`, mats.furn, meta);
+    builder.box4(quad(b, -panelHalfW, panelHalfW, -panelT, panelT), sillMm, headMm - frameT); // cánh cửa
   });
 
   const stats: SceneStats = {
