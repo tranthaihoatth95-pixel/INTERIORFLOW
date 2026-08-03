@@ -97,3 +97,32 @@ Ghi chú nhận lệnh: Hoà dán cả CỤM 5 dòng nhận vai (NC·UI·VẼ·D
 3. **Sửa quy trình dispatch cho COWORK-NC** — xem Nghi vấn dưới, tránh lặp lãng phí công sức lần nữa (và kiểm xem 4 vai UI/VẼ/DỰNG/TRÌNH có bị lặp tương tự không).
 **Nghi vấn liên vai (đúng 1 câu cho Hoà chuyển TỔNG):** Cơ chế "Hạm đội Cowork" vừa lặp dispatch — 2 phiên COWORK-NC nhận đúng 1 brief ĐỢT 3 cùng lúc (bằng chứng: sổ này đổi nội dung giữa 2 lần đọc trong cùng 1 phiên) — có phải TỔNG đang bơm việc theo chu kỳ cố định mà không kiểm phiên nào đã nhận, và nếu đúng thì 4 vai còn lại (UI/VẼ/DỰNG/TRÌNH) có cùng rủi ro?
 **Hàng đợi còn lại:** trống — phiên NC kế tiếp đọc file này rồi nhận đề tài MỚI thật từ TỔNG/Hoà, không nhận lại nguyên văn brief ĐỢT 3 (đã xong đủ, xem bảng trên).
+
+---
+
+## ĐỢT 4 — NC-11 · IFC + NGHỊ ĐỊNH BIM VIỆT NAM — 03/08/2026
+**Giao bởi:** `CHOT-TEN-CHANG-MODE-2026-08-03.md` §6 mục 2 (Hoà chốt trực tiếp: *"chuẩn ifc theo nghị định nữa"*).
+
+| # | Đề tài | Nuôi cho | Trạng thái |
+|---|---|---|---|
+| NC-11 | ① Nghị định BIM VN (IFC có bắt buộc không) · ② IFC 4.3 cho nội thất · ③ thư viện JS đọc-ghi IFC + giấy phép · ④ bảng ánh xạ entity IF ↔ IFC | `SPEC-TANG-DU-LIEU-CAU-KIEN` §2.4 (`'covering'` chờ chốt) · `lib/cad/model.ts` · `LICENSE-NOTES.md` | ✅ `nc/NC-11-ifc-nghi-dinh-bim-2026-08-03.md` |
+
+### Ba câu trả lời gọn
+1. **① IFC CÓ BẮT BUỘC — và luật vừa ĐỔI.** `NĐ 175/2024/NĐ-CP` (từng ghi cứng "IFC 4.0" + trần 500 MB/tệp) **đã hết hiệu lực 01/7/2026**. Luật hiện hành là **`NĐ 217/2026/NĐ-CP` Điều 8 khoản 3 điểm a**: *"Dữ liệu BIM được nộp theo các định dạng chuẩn mở **IFC** hoặc các định dạng mở khác phù hợp…"* — bỏ ghim phiên bản, bỏ trần dung lượng, **bỏ điều kiện "dự án nhóm B trở lên"**, ngưỡng còn lại là **công trình cấp II trở lên**, không phân biệt vốn công/tư. `QĐ 258/QĐ-TTg` chỉ là lộ trình, KHÔNG phải nguồn quy định định dạng. ⚠️ Nghĩa vụ nộp đặt lên **chủ đầu tư** — studio nội thất bị chạm **gián tiếp qua hợp đồng** (Điều 8.2), không trực tiếp. Marketing phải nói đúng chỗ này.
+2. **③ THẮNG: `web-ifc` (ThatOpen) — MPL-2.0.** Đọc + ghi (`CreateModel`/`WriteLine`/`SaveModel` có thật trong `.d.ts`), schema `IFC2X3|IFC4|IFC4X3`, wasm **1,30 MB** (đo thật từ tarball npm 0.0.77, 06/3/2026). MPL copyleft **theo file** ⇒ IF đóng nguồn được, chỉ cần đừng fork-sửa rồi giấu. **LOẠI `xeokit-sdk` (AGPL-3.0 — lan qua mạng, nuốt cả bản web)**; `IfcOpenShell` (LGPL-3.0, ~10 MB qua pyodide) để dự phòng server-side; `web-ifc-three` đã chết (bản cuối 01/2024).
+3. **④ `elementType:'covering'` — CÓ, THÊM.** `IfcCovering` là entity IFC hạng nhất, ví dụ chính hãng đúng 4 thứ IF làm (ốp tường · sàn · trần thả · phào/len). Ép thành `slab` là **sai tiền BOQ** (IfcSlab tính m³ kết cấu, IfcCovering tính m² `Qto_CoveringBaseQuantities`). **NHƯNG phải kèm `coveringKind?: 'ceiling'|'flooring'|'cladding'|'molding'|'skirtingboard'|'topping'`** — vì `IfcCovering` luôn cần `PredefinedType`, thiếu field này exporter buộc phải ĐOÁN (vi phạm luật "không đoán mò").
+
+### Đề xuất cho COWORK-TỔNG (TỔNG duyệt mới ghi vào `00-CHOT`)
+1. +1 dòng `00-CHOT`: "`docs/nc/NC-11-ifc-nghi-dinh-bim-2026-08-03.md` — luật hiện hành là **NĐ 217/2026/NĐ-CP Điều 8** (không phải NĐ 175, đã hết hiệu lực 01/7/2026); IFC là định dạng nộp bắt buộc; chọn `web-ifc` MPL-2.0; duyệt thêm `elementType:'covering'` + `coveringKind`."
+2. **Báo COWORK-DỰNG / PHU: câu chờ ở `SPEC-TANG-DU-LIEU-CAU-KIEN` §2.4 ĐÃ CÓ TRẢ LỜI** — thêm `'covering'`, kèm `coveringKind`, và cập nhật luôn nhánh suy đoán §2.3.b (suy được `covering` nhưng KHÔNG suy `coveringKind`, để undefined + gắn `inferred`).
+3. **Việc rẻ làm ngay (PHU, 1 dòng):** `lib/cad/model.ts:101` nhãn `'Nội thất · IfcFurnishingElement'` **SAI** — buildingSMART đánh `IfcFurnishingElement` *"deprecated for instantiation"*. Đổi thành `'Nội thất · IfcFurniture'`.
+4. **Cảnh báo giấy phép (bài học libredwg):** `LICENSE-NOTES.md` còn 4 dòng nghĩa vụ ⬜ CHƯA LÀM cho GPL-3 của libredwg. Đừng thêm dependency thứ 2 (web-ifc) trước khi có trang "Third-party licenses" trong app — gộp thành MỘT việc cho CHINH.
+5. **10 khoản IF còn thiếu để xuất IFC hợp lệ** (bảng §4.2 của bài) — 5 khoản mức 🔴 chặn: cây `IfcProject→Site→Building→Storey` (`Doc` hiện KHÔNG có bảng tầng), `IfcUnitAssignment`, `IfcGuid` bền, `thicknessMm`, `IfcOpeningElement` cho cửa.
+
+**Nghi vấn liên vai (1 câu cho Hoà):** xuất IFC có nên **mặc định loại bỏ giá** không? IFC không có Pset chuẩn nào chứa giá (giá thuộc `IfcCostItem`), và file IFC thường gửi thẳng cho chủ đầu tư/tổng thầu — xuất kèm `priceVnd` là lộ giá vốn. Đề xuất: mặc định KHÔNG kèm giá, có công tắc riêng.
+
+### CHỐT PHIÊN — 03/08/2026 (COWORK-NC, đợt 4)
+**Đã xong:** NC-11 đủ 4 phần đề bài, tra tận nguồn (vanban.chinhphu.vn · qlda.gxd.vn toàn văn NĐ 217 · ifc43-docs.standards.buildingsmart.org · registry npm + tarball đo thật · thảo luận license GitHub của IfcOpenShell).
+**Phát hiện ngoài đề bài (đáng giá nhất):** đề bài giả định NĐ 175/2024 — nhưng nó **đã hết hiệu lực 5 tuần trước ngày viết bài**. Nếu tin brief mà không kiểm thì cả bài sẽ trích luật chết.
+**Dang dở / chưa verify (ghi rõ, không giấu):** ⓐ PDF ký số NĐ 217 là ảnh scan, chưa đối chiếu bằng mắt; ⓑ chưa đọc được toàn văn hướng dẫn kỹ thuật BIM của Bộ Xây dựng ⇒ chưa biết VN có đòi MVD/IDS/Pset cụ thể không; ⓒ **chưa chạy thử web-ifc lần nào** — mọi số là số đo gói, không phải kết quả chạy; ⓓ ánh xạ PBR→`IfcSurfaceStyleRendering` là SUY ĐOÁN.
+**Hàng đợi còn lại:** trống — chờ TỔNG bơm đợt 5.

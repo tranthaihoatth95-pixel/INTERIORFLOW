@@ -124,3 +124,66 @@ phân biệt rõ 4 thứ đang mang tiếng "vật liệu" (`MaterialDef` · `.p
 Việc đợt 5 của vai xong. Không đụng `lib/`/`components/`/`app/` — đúng luật hạm đội.
 Phiên sau nhận vai COWORK-DỰNG: đọc `SPEC-TANG-DU-LIEU-CAU-KIEN.md` §0 (bảng hiện trạng code) +
 §9 (lộ trình P0-P7) trước, **đừng grep lại từ đầu**. Việc kế tiếp = `SPEC-DUNG-3D-THONG-NHAT.md`.
+
+---
+
+## CA 04/08 (đợt 4) — `SPEC-DUNG-3D-THONG-NHAT.md` (581 dòng)
+
+**Việc:** #3 của `CHOT-TEN-CHANG-MODE-2026-08-03.md` §6 — spec mode 3D thống nhất, không mode con.
+Đọc trước: `SO-KIEM-TONG` §0→§0d · `CHOT-TEN-CHANG-MODE` VÒNG CUỐI + §5 · `SPEC-TANG-DU-LIEU-CAU-KIEN`
+(spec nền cùng vai) · `SPEC-HA-TANG-UI-IF` 4 trụ · `SPEC-DUNG-PIPELINE-RENDER-AI`.
+Code đã đọc thật: `lib/commands/registry.ts` (389d) · `vcb.ts` · `components/three/*` (CommandPanel
+415d · Viewport3D 162d · ObjectProperties 177d · Scene3DViewer 359d) · `render-studio/Command3DPanel.tsx`
+· `Render3DModeSkeleton.tsx` · `lib/three/cad-to-obj.ts` · `mode-render-3d.ts` · `lib/shell/mode-registry.ts`
+· `lib/shortcuts.ts` · `AppShell.tsx` · `lib/nodes/defs/render-v2.ts`.
+
+### Nội dung spec
+§1 khai báo mode `3d` theo Trụ 4 + bảng so với mode `node` (6 ổ) · §2 **bộ 10 công cụ tối thiểu**
++ 27 lệnh khác, có phím tắt + alias + id registry · §3 push/pull + gizmo + ô nhập số quy về **một
+luật ba dòng** (cái nào hiện lúc nào · gõ số áp ra sao · ghi Doc theo hợp đồng 5 bước đã chạy đúng)
+· §4 chọn-theo-ngữ-nghĩa neo `specId → elementType+wallKind → block` · §5 cây TẦNG › PHÒNG › VẬT
+· §6 Inspector tự sinh theo 6 loại đối tượng · §7 nút "Dựng ảnh" (dựng sẵn chuỗi 3 node, không
+bấm-là-ra-ảnh) · §8 đủ §0c ba mảng · §9 KHÔNG LÀM có lý do · §10 lộ trình D0-D15 · §11 5 câu treo.
+
+### 12 phát hiện khi đọc code (H1-H12, đều grep được)
+1. **H1 — sổ lệnh có ĐÚNG 0 lệnh 3D.** 55 CommandDef đều `stage==cad`. 17 chuỗi `render.3d.*` đang
+   được `CommandPanel.tsx` gọi chỉ là string trong component, không nơi nào khai. ⇒ phải thêm **37**
+   `CommandDef`; `when` parser + `WhenCtx` đã đủ, **0 thay đổi cơ chế**.
+2. **H2 — `findByAlias()` không lọc `when`** ⇒ thêm alias 3D trùng chữ CAD (`M`/`W`/`S`/`C`/`T`) sẽ
+   che lệnh CAD im lặng. Bug thật, phải vá (D3) + đai an toàn: alias 3D có hậu tố `3`.
+3. **H3 — `defineMode()` có 0 nơi gọi.** Docstring `mode-registry.ts` tự nhận đã đăng ký mode `cad`;
+   grep `getMode(` = 0. Trụ 4 mới chỉ có trên giấy. Kèm H4: hai bản khai mode lệch nhau (3 trường
+   kiểu ReactNode vs 6 trường kiểu string).
+4. **H5 — hai CommandPanel song song.** Bản `components/three/CommandPanel.tsx` (5 tab đủ) + 
+   `ObjectProperties.tsx` = **592 dòng code tốt KHÔNG mount ở đâu**; app thật chạy
+   `render-studio/Command3DPanel.tsx` với 3/5 tab placeholder. Khoá tab còn lệch (`tao` vs `create`).
+5. **H6 — gizmo hiện tại là hình vẽ, không phải công cụ**: SVG cố định giữa viewport, không bám vật,
+   bấm là nhích cứng 100mm, không kéo, không nhập số.
+6. **H7 — 3D vẫn không đọc `storey`/`elementType`/`specId`**, `entityId` vẫn chỉ có ở nhóm tường,
+   tên nhóm vẫn `Wall_${i+1}` (bom Đ2). Đúng như spec nền ghi 03/08 — chưa ai vá.
+7. **H8 — dropdown lọc tầng ở tab "Hiện" không bao giờ hiện** vì `SceneObject.storey` luôn undefined
+   (hệ quả H7). Cây theo tầng của mock chưa có nền dữ liệu.
+8. **H9 — va phím `B`**: AppShell ăn phím trần B/I ở mọi chặng trừ CAD ⇒ `B` (thùng sơn kiểu
+   SketchUp/D5) sẽ thu Navigator. Sửa 1 dòng `AppShell.tsx:126` (mở rộng luật ⇧ đã có, không đẻ luật mới).
+9. **H10/H11 — ⌘K chưa tới chặng 3D** (nhãn tự khai trong `shortcuts.ts`) và **0 phím tắt nào cho 3D**.
+10. **H12** — token trục khai cứng hex trong `ve3d-css.ts`, tên `--ax-*` lệch với `--axis-*` của spec.
+11. Cầu 3D→AI **đã có và tất định**: `three.cad2fbx` đọc thẳng Doc, `three.camera`, `captureFrame()`
+    → §7 dùng lại, cấm đẻ đường thứ ba.
+12. VCB lõi (`lib/commands/vcb.ts`) đã có đủ `3x` `/3` số mm dấu phẩy VN → §3.2 không viết parser mới.
+
+### CHƯA VERIFY (ghi thẳng theo §0)
+- Push/pull chỉ nhận **mặt trên tường** (`worldNormal.y<0.5 → return`), kẹp cứng 2-6m — chưa thử tay
+  kéo mặt sàn/trần/đồ.
+- Chưa grep đủ sâu `useFlowStore` xem có hàm dựng-sẵn-node-graph + nối dây từ ngoài không (§7.2 · D14).
+- Chưa đối chiếu `AUDIT-GESTURES-INPUT.md` cho phần cử chỉ tablet (§8.3).
+
+### Việc còn chặn
+- §11 5 câu treo cần Hoà/TỔNG chốt (rõ nhất: phím `B`, và cây 2 bậc chạy trước hay chờ `RoomEntity`).
+- `'covering'` vẫn chờ NC-11 ⇒ panel lớp hoàn thiện (§6.2) chưa code được.
+- Việc 🟡 #5 của §6 `CHOT-TEN-CHANG-MODE` (đính chính đầu `SPEC-CHANG2-UI-2MODE.md`) — Cowork không
+  sửa file vai khác, đã nhắc lại ở §12 spec mới, cần TỔNG chèn.
+
+### CHỐT PHIÊN
+Không đụng `lib/` `components/` `app/` — chỉ ghi `docs/`. Không chạy git (luật phiên Cowork).
+Phiên sau nhận vai COWORK-DỰNG: đọc `SPEC-DUNG-3D-THONG-NHAT.md` §0 (bảng H1-H12) + §10 (D0-D15)
+trước, **đừng grep lại từ đầu**.

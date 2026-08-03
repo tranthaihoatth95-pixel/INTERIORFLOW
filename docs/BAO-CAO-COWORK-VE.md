@@ -128,3 +128,79 @@ Theo đúng chỉ dẫn: bỏ qua việc ②, không bịa phiếu khuyết.
 - Đề nghị TỔNG: (a) xác nhận PHU đọc CẢ HAI phiếu registry (cũ 04/08 + mới 03/08) trước khi code,
   chọn 1 hướng cho D/WIN; (b) cân nhắc escalate việc gap-check 10 khuyết CAD cho PHU — đã treo
   4 lần kiểm liên tiếp không nhúc nhích.
+
+---
+
+## PHIÊN 03/08 — ĐỢT 5 · BỔ SUNG TRỌNG TÂM NỘI THẤT vào `SPEC-VE-REVIT-MODE.md`
+
+**Việc nhận:** `SO-KIEM-TONG.md` §3 đợt 5 / `CHOT-TEN-CHANG-MODE-2026-08-03.md` §6 mục 4 —
+append phần trọng tâm NỘI THẤT (tủ bếp · trần · sàn lát · lớp hoàn thiện là chính; tường/cửa là
+vỏ chứa), KHÔNG đập bản cũ (§0d).
+
+**Đã làm:** append `# PHỤ LỤC 03/08 — TRỌNG TÂM NỘI THẤT (đợt 5)` (§A0-§A13) vào cuối
+`SPEC-VE-REVIT-MODE.md`. File 151 → **694 dòng**; §0-§8 bản gốc **nguyên vẹn từng dòng** (kiểm lại
+sau khi ghi). Không đụng `lib/`/`components/`, không chạy lệnh git.
+
+### Đã spec 6 hạng mục + 1 trục phân loại
+- **Trục nền §A1 "KIỂU ĐO"** (MẶT · TUYẾN · CỤM · CÁI · VỎ CHỨA) — thay câu hỏi *"hình này là hình gì"*
+  (nguồn của bug đùn sơn) bằng *"hạng mục này đo bằng gì"*. 3 luật N1-N3.
+- **§A2 Ranh giới Nội thất ↔ Kỹ thuật:** Nội thất sở hữu **hạng mục thi công**, Kỹ thuật sở hữu **tờ bản vẽ**.
+  Ba câu "không ôm": không dựng tờ · không hiện giá · không render.
+- **§A3 Lớp hoàn thiện** (sơn/ốp/giấy) — kèm **vá tối thiểu** cho bug §0.3.
+- **§A4 Sàn lát** — hướng lát · gốc lát · mạch · kiểu lát · hao hụt theo kiểu lát · số thùng (CEIL).
+- **§A5 Trần** — mỗi cấp = 1 vùng có `elevationMm` riêng; **BOQ 2 dòng: m² trần + m² CỔ TRẦN**.
+- **§A6 Tủ bếp** — `CabinetRun` + `CabinetModule` đối xứng khuôn `WallRun`; 1 cụm → 4-6 dòng BOQ khác đơn vị.
+- **§A7 Phào / len chân tường** — m dài, không vẽ lên mặt bằng.
+- **§A8 Đồ rời** — đường ống gần đủ, thiếu đúng 2 mắt xích.
+- **§A9** bảng tái-dùng (20 mục có `file:dòng`) + **thiếu thật T1-T15** · **§A10** 6 lệnh mới + §0c ba mảng ·
+  **§A11** lộ trình đan vào P0-P7 spec nền + **12 ca nghiệm thu đo được** · **§A12** 5 câu treo · **§A13** không-làm.
+
+### Phát hiện đáng chú ý khi đọc code (đều có bằng chứng lệnh)
+1. 🔴 **Vá bug đùn-sơn rẻ hơn tưởng — làm được NGAY, không cần chờ NC-11.**
+   `commands.ts:64` `wallSegment()` trả hatch đúng 5 field, **không có `specId`**; còn `HatchEntity.specId`
+   (`model.ts:318`) sinh ra chính là để neo vật liệu. ⇒ luật *"hatch có `specId` ⇒ không bao giờ là tường"*
+   loại đúng 100% vùng đã gán vật liệu và **không thể** loại nhầm tường cũ. Đề xuất chèn **P0.5** giữa
+   P0/P1 của `SPEC-TANG-DU-LIEU-CAU-KIEN` §9.
+2. 🔴 **`edgeMask` KHÔNG đủ cho len chân tường.** `polygonPerimeter(poly, edgeMask?)` (`hatch.ts:72`)
+   bật/tắt **cả cạnh**, trong khi cửa 900 nằm **giữa** cạnh 5000 (phải ra 4100). ⇒ thiếu thật hàm
+   `openingsWidthOnBoundary()`, đối xứng `openingsAreaInPolygon` (`hatch.ts:112`) đã có.
+3. 🔴 **BOQ engine chưa có nhánh `m` và `cai`.** `BoqRow` (`lib/boq/model.ts`) chỉ có field số lượng `m2`;
+   `computeBoq` (`compute.ts:89`) chỉ quét `HatchEntity`. ⇒ **chặn cứng cùng lúc** tủ bếp · phào · đồ rời.
+   Đây là việc lớn nhất bị bỏ sót trong định vị BIM nội thất.
+4. **Kích thước viên (mm) không tồn tại trong `materials.ts`.** `MaterialDef` (`materials.ts:31-66`) chỉ có
+   `patternScale` (tỉ lệ nét hatch tương đối), không có mm — trong khi `SPEC-TANG-DU-LIEU-CAU-KIEN` §7 đòi
+   *"tiling size (mm) là bắt buộc"*. Chốt: đọc từ `ProductSpec.w/d`, **không đẻ field thứ hai**.
+5. **Hai nguồn cho cùng con số cao đồ.** `furnitureHeightMm()` (`cad-to-obj.ts:167-178`) hardcode if/else
+   theo tiền tố id (`sofa*`→800…) trong khi `ProductSpec.hUp` đã khai *"cao thật 3D"*. Vá 1 dòng, additive.
+6. **Trần hiện là 1 tấm bbox toàn nhà** (`cad-to-obj.ts:421-424`, `prism(floorPoly, H, H+100)`) — không phòng,
+   không cao độ, không vật liệu. Spec giữ nó làm **fallback** (§0d), không đập.
+7. **SUY ĐOÁN (chưa verify): đèn `mep.ts` biến mất khỏi 3D** — `cad-to-obj.ts:357-360` lọc theo `BLOCK_MAP`
+   của `furniture.ts:639`, mà 4 ký hiệu đèn (`mep.ts:84-96`) không nằm trong map đó. PHU verify 2 phút.
+8. **Tin tốt — không phải xây từ đầu:** `polygonPerimeter` + `openingsAreaInPolygon` +
+   `OPENING_STANDARD_HEIGHT_MM` + `BOQ_OPENING_MIN_AREA_M2` đã có sẵn (`hatch.ts:72/112/97/84`);
+   `ProductSpec` đã có `unit`('m2'|'m'|'cai'|'bo'|'m3') · `wastagePercent` · `packagingSpec`;
+   `SPEC_KINDS` đã có `millwork`/`fixture`/`lighting` (`lib/server/specs.ts:6`) ⇒ **không cần đổi schema DB**.
+
+### Chuyển cho phiên CODE (theo thứ tự, đã đan vào P0-P7 spec nền)
+| Bậc | Việc | Ai | Cỡ |
+|---|---|---|---|
+| **P0.5** | **T1** — vá lọc tường bằng `specId` (`cad-to-obj.ts:350-355`) | PHU | rất nhỏ, giá trị cao nhất |
+| P1.5 | **T12** `hUp` · **T13** 3 layer hoàn thiện · **T15** hằng số nghề vào CONFIG | PHU | rất nhỏ, gộp 1 commit |
+| P5.5 | **T2** `covering`+`coveringHost` · **T3** `thicknessMm`/`elevationMm`/`roomId` · **T4** `openingsWidthOnBoundary` | PHU | nhỏ (T2 chờ NC-11) |
+| P6 | **T9** 3D dán MẶT (không `prism`) · **T10** trần theo vùng | PHU | trung bình |
+| **P6.5** | **T5** BOQ nhánh `m` + `cai` — mở khoá tủ bếp/phào/đồ rời | PHU | **trung bình, chặn cứng 3 hạng mục** |
+| P7+ | **T11** `CabinetRun` → **T6/T7** tham số lát → **T8** `tileGrid` (pha 2) | PHU | T11 lớn nhất |
+| — | 6 lệnh mới `FINISH·FLOORFIN·CEILREG·CAB·SKIRT·CORNICE` vào `registry.ts` (`when: mode=='revit'`) | PHU (lib) + CHINH (nối `CadEditor.run()`) | nhỏ |
+| — | Verify **SUY ĐOÁN #7** (đèn mất khỏi 3D) | PHU | 2 phút |
+
+### Cần TỔNG/Hoà chốt (§A12) — 5 câu
+(A) `coveringHost` field riêng hay chẻ `elementType`? · (B) bảng hao hụt theo kiểu lát — số của ai? ·
+(C) tủ bếp báo giá m dài hay m² cánh+thùng? · (D) `CabinetRun` bảng phụ hay entity union? ·
+(E) phào/len **không vẽ lên mặt bằng** — đúng ý Hoà chưa?
+
+### Trung thực (§0)
+- Không chạy app, không chạy test — Cowork không code. Mọi kết luận runtime là **đọc code**, chỗ nào
+  chưa chắc đã ghi **SUY ĐOÁN** ngay trong spec (§A0 có bảng ký hiệu mức tin cậy).
+- Mọi con số nghề Cowork tự đề xuất đều gắn nhãn **SỐ ĐỀ XUẤT** + yêu cầu vào CONFIG, không hardcode.
+- Không đụng file của vai khác. Không chạy git (theo lệnh phiên). File docs mới/sửa chờ CHINH gom
+  commit theo hàng đợi CHINH mục 5b.

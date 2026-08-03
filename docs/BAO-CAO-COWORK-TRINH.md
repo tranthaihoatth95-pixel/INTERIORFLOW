@@ -130,3 +130,60 @@
   thực tế đã xong.
 - **Nghi vấn chuyển TỔNG:** có — hàng đợi §3 `SO-KIEM-TONG.md` bị lỗi thời cho vai COWORK-TRÌNH (xem mục ĐỢT 4
   trên), nên rà lại trước khi bơm đợt kế để tránh lặp lần 3.
+
+## ĐỢT 5 (03/08 — nâng spec thành phiếu code + trả lời §0.6)
+**Nhận 2 việc:** ① nâng `SPEC-TRINH-BOQ-EDITOR` (+ Video nếu đủ điều kiện) thành phiếu code · ② trả lời phát
+hiện §0.6 `SPEC-TANG-DU-LIEU-CAU-KIEN` (Trình bày cầm bản sao chết). Đọc trước khi làm: `SO-KIEM-TONG` §0/§0b/
+§0c/§0d · báo cáo này · 2 spec của mình · `CHOT-TEN-CHANG-MODE` VÒNG CUỐI (luật ba-ống-kính-một-nguồn) ·
+`SPEC-TANG-DU-LIEU-CAU-KIEN` §0.6. **KHÔNG chạy git** (lệnh phiên) — mọi khẳng định dưới là **đọc code thật
+trên cây làm việc**, hash commit chỉ chép theo dispatch, ghi rõ CHƯA tự verify.
+
+### ① BOQ → `docs/PHIEU-TRINH-BOQ-EDITOR.md` (MỚI) — **11 việc code B0–B11**
+Thứ tự chốt: **B0→B1→B2→B3→B4→B5→B6→B8→B10→B7→B9→(B11 gated)**. Mỗi việc có file đích + nghiệm thu đo được +
+chủ (G4 = UI trong `components/present-editor/boq/*`, PHU = `lib/boq/*`). §A liệt kê **13 hàm/đường đã có sẵn**
+kèm số dòng để tái dùng (`computeBoq:89` · `computeBoqCached:68` · `computeBoqForProject:66` ·
+`boqResultToXlsxBuffer:162` · `POST /api/boq/[projectId]:25` · `useCadStore.select` · `loadSheets` · …).
+**3 điểm spec phải sửa vì code nói khác (§0 trung thực):**
+| # | Spec viết | Code thật | Xử |
+|---|---|---|---|
+| 1 | xlsx "đã có SUM() — PHU kiểm" | `xlsx.ts:93` ghi TỔNG bằng **số chết**; grep `SUM\|<f>\|formula` = **0** | **tôi tự verify xong** → hết chờ PHU, thành việc code **B8** |
+| 2 | truy vết `entityIds` "cần hỏi CHINH" | `useCadStore.select(ids)` đã có, `SchedulePanel.tsx:153` đã dùng | hết chờ CHINH → **B4** |
+| 3 | group theo **phòng** | `HatchEntity` không có `roomId`; `Base.storey:162` có; phòng chỉ suy từ nhãn text | v1 nhóm theo **tầng + hạng mục**; nhóm-theo-phòng = v2 có cờ `inferred` (L4) |
+**Còn chờ:** chỉ **B11 (mini-DSL ƒx)** — `BAO-CAO-PHU.md` grep `DSL` = 0, PHU chưa trả lời. 10/11 việc code được ngay.
+**2 câu hỏi chặn cho TỔNG/Hoà (§E phiếu):** dự án nhiều bản vẽ thì BOQ tính theo sheet đang mở hay gộp cả dự án ·
+bảng BOQ có phải 1 "hồ sơ" lưu như deck không (ảnh hưởng chỗ lưu override sửa-tay).
+
+### ① Video — **KHÔNG nâng phiếu, đúng luật chờ-X**
+Kiểm tươi 03/08: `grep -ci "beat|mp4|webcodecs|muxer" docs/BAO-CAO-PHU.md` = **0** · `package.json` không có
+`web-audio-beat-detector`/`essentia.js`/`mp4-muxer`/`ffmpeg.wasm`. **PHU chưa thẩm định cả 2 điểm §8**
+(lib dò beat · đường xuất MP4) → §5 và §7 của spec Video **không có nền để viết nghiệm thu đo được**; đẩy phiếu
+lúc này = phiếu không code được. Giữ nguyên `SPEC-TRINH-VIDEO-EDITOR.md`, không sửa 1 chữ.
+
+### ② §0.6 → `docs/SPEC-TRINH-ONG-KINH-DU-LIEU.md` (MỚI) — đề xuất chờ TỔNG duyệt
+**3 sự thật bổ sung cho §0.6 (kiểm code):** (a) payload **CÓ** mang `snapshot: JSON.stringify(doc)`
+(`CadEditor.tsx:393`) nhưng bên nhận `PresentEditor.tsx:321` gọi `consumeCadPresentHandoff()` → **chỉ lấy
+`dataUrl`, vứt snapshot** — cửa mở sẵn, chưa ai bước qua; (b) **đọc snapshot vẫn SAI** — bản sao đông lạnh trong
+sessionStorage vẫn là bản sao (L6), chép "dữ liệu" không đỡ hơn chép "ảnh"; (c) `grep computeBoq|api/boq` trong
+`components/` = **0** → lời hứa `SPEC-SEMANTIC-MODEL` §6 "sửa bản vẽ → deck tự cập nhật" hiện **chưa có đường code nào**.
+**Ranh giới đề xuất (1 dòng):** *Ảnh là SẢN PHẨM, không bao giờ là NGUỒN — cái người ta ngắm thì ảnh hợp lệ,
+cái người ta đọc để ra tiền thì phải sống.* Phép thử: **"số này in ra khách chỉ tay vào cãi được không?"**
+| 🟩 Ảnh hợp lệ (KHÔNG phải lỗi) | 🟨 Ảnh có công thức | 🟥 Bắt buộc dữ liệu sống |
+|---|---|---|
+| render 3D · moodboard · ảnh chụp · ảnh mẫu vật liệu · chữ/hình của deck | mặt bằng/mặt cắt dán vào deck · bản đồ zone | m² · mã SKU/NCC · đơn giá · hao hụt · thành tiền/tổng · số lượng thống kê · biến `{{...}}` văn bản |
+Ranh giới thật nằm ở **"nội dung này có phải HÀM của Doc không"** + **"người ta ngắm hay đọc nó"**.
+**3 việc sửa, không đập cái đang chạy (§0d):** T1 ống kính dữ liệu = đúng việc **B0** phiếu BOQ (không cần sửa
+`present-handoff`) · T2 ảnh dẫn xuất mang **recipe** gắn vào `deck.linkedAssets` đã có (`linked-assets.ts:122`)
++ nút "Làm mới từ bản vẽ" + chỉ dấu cũ bằng `boqFingerprint` — **không tự render lại sau lưng** (L5) · T3 danh sách
+không-làm. Kèm đề xuất **bỏ `snapshot` khỏi `present-handoff`** (giảm bản sao) — nhưng đây là lật ý phiên 23/07
+nên **treo chờ Hoà/TỔNG**, không tự quyết (§4a).
+**Điểm đáng lưu ý cho TỔNG:** `SPEC-TANG-DU-LIEU-CAU-KIEN` §9 xếp **P7 sau P5 (RoomEntity)** — nhưng T1/B0
+**không cần** RoomEntity (BOQ chỉ cần `HatchEntity.specId` đã có) ⇒ đề xuất cho P7/T1 **chạy ngay, không chờ P5**.
+
+### Chốt đợt 5
+- **File mới:** `docs/PHIEU-TRINH-BOQ-EDITOR.md` (173 dòng) · `docs/SPEC-TRINH-ONG-KINH-DU-LIEU.md` (106 dòng).
+  Sửa: file này. **Không đụng `lib/` `components/`** (Cowork không code).
+- **CHƯA VERIFY (ghi thẳng):** commit `892c927` chưa tự kiểm bằng git (lệnh phiên cấm) — chỉ xác nhận **file có
+  mặt trên cây làm việc** · chưa chạy app/test lần nào · ô nghiệm thu trong phiếu là để **người code đo**, không
+  phải kết quả đã đo.
+- **Chờ người khác:** PHU (mini-DSL B11 · 2 điểm Video §8) · TỔNG/Hoà (2 câu §E phiếu BOQ + 3 câu §5 spec ống
+  kính) · G4 nhận phiếu BOQ · CHINH commit gộp docs (§3-5b sổ tổng — phiên Cowork không chạy git).

@@ -110,3 +110,40 @@ cho chip/icon-button nhỏ ③ duyệt ảnh 2 theme của 2 mock (BOQ+Video) n�
 thể đang chờ để port.
 **Phiên UI sau đọc:** file này → nếu Hoà đã duyệt/chê 2 mock thì ghi "ĐÃ DUYỆT" vào README trước khi mở
 việc "Mock Vitals nâng cấp" (việc đầu tiên còn treo, đúng ghi chú đợt 3).
+
+---
+
+## ĐỢT 5 — KHOÁ BỘ TÊN + RÀ NHÃN MOCK (COWORK-UI, 03/08/2026)
+
+**Đọc trước khi làm (§0b bước 1):** `SO-KIEM-TONG §0/§0b/§0c/§0d` · `CHOT-TEN-CHANG-MODE-2026-08-03.md` **trọn file** (4 vòng đặt tên, mục "VÒNG CUỐI" là bản đè) · `SPEC-NGON-NGU-CHI-DAN.md` · `mocks/README-mocks.md` · phụ lục cuối `HAM-DOI-COWORK.md` (xưởng mock chính nay là **Claude Design**, COWORK-UI soạn prompt thay vì viết HTML tay).
+
+### VIỆC 1 ✅ — Khoá bộ tên vào từ điển
+Append mục **§6 "BỘ TÊN CHÍNH THỨC"** vào `SPEC-NGON-NGU-CHI-DAN.md` (không sửa đè §1-§5), gồm:
+- **§6.1** bảng tên chốt: InteriorFlow · **2D Kỹ thuật · 3D Thiết kế · Trình bày** (header hẹp 2D · 3D · Trình bày) · mode 2D **Sơ phác ↔ Kỹ thuật** · mode 3D **Node ↔ 3D** · Trình bày không mode. Ghi rõ **luật cấm-jargon KHÔNG áp cho tên riêng** nên `InteriorFlow` hợp lệ.
+- **§6.2** danh sách 5 bộ tên **ĐÃ BỎ** kèm lý do (3 vòng của Hoà + nhãn code EN + `BIM`) — giữ dấu vết để không có vòng 5.
+- **§6.3** luật đổi tên: phải qua Hoà · phiên đề xuất tên mới bắt buộc tham chiếu §6.2 · đổi nhãn không đổi khoá kỹ thuật (`sketch/pro/revit`, route) · nhắc luật "ba ống kính một nguồn dữ liệu".
+- **§6.4** bảng **từ cấm ↔ từ thay** 15 dòng để phiên sau tra nhanh, có nêu ngoại lệ hợp lệ ("Node" là tên mode chặng 3D; "Vẽ" làm nhãn nhóm công cụ; "Dựng ảnh AI" là tên khối).
+- **§6.5** quy trình nghiệm thu nhãn bằng grep 8 chữ.
+
+### VIỆC 2 ✅ — Rà nhãn toàn bộ mock (LIỆT KÊ, KHÔNG SỬA)
+Bảng **file → dòng → chữ sai → chữ đúng** đã ghi vào `docs/mocks/README-mocks.md` mục mới "🏷 RÀ NHÃN CHẶNG/MODE — 03/08/2026" (append).
+- **19/27 file `.html` dính nhãn cũ**, **78 dòng khớp grep**, trong đó **72 dòng phải đổi** + **6 dòng dương tính giả** (đã liệt kê riêng, giải thích vì sao giữ).
+- **Nặng nhất:** `mock-designsystem-stagemap.html` **10 dòng** — kế đó `mock-ve-3d.html` 9 · `mock-render-layout-H3.html` 9 · `mock-if-3chang.html` 8 (5 thật) · `mock-mood-collab-g2-2026-08-03.html` 8.
+- Mở rộng grep so với phiếu: thêm `Vẽ 3D` (nhãn mode chặng 2, nay phải là `3D`) và `Present` (EN cùng họ `Presenting`) — cùng một lỗi, bỏ sót thì phiên sau rà lại lần nữa.
+- **Không đụng file mock nào** (chờ TỔNG duyệt) và **không đụng `lib/` `components/`**.
+
+### Phát hiện cần TỔNG/Hoà quyết
+1. **`mock-cad-revit-2026-08-03.html` là ca nặng nhất về ngữ nghĩa**, không phải số dòng: cả mock dựng quanh mode **"Cấu kiện"** nay **không còn tồn tại** (mode chặng 2D chỉ còn Sơ phác ↔ Kỹ thuật). Đổi chữ không cứu được. Cần quyết: giữ làm tham khảo rồi **cắt đôi theo chiều** (mặt bằng/ký hiệu/thống kê → 2D Kỹ thuật; khối/đặt đồ/vật liệu → 3D Thiết kế), hay dựng lại. COWORK-UI không tự quyết (§0d).
+2. **Ưu tiên sửa nhãn:** 8 file trong mục ✅ HIỆN HÀNH của README-mocks (có người port) — phần còn lại nằm ở 🕰 LỊCH SỬ / ⚠️ LỖI THỜI, ưu tiên thấp.
+3. Nhiều dòng khớp là **comment HTML / thuyết minh "Đọc mock" / biến JS**, không phải nhãn hiển thị — đã liệt kê nhưng đánh dấu để TỔNG quyết có sửa không.
+4. **`SPEC-NGON-NGU-CHI-DAN §3` (từ điển cũ) vs §6 mới:** đã ghi luật xử va — §6 thắng ở lớp tên chặng/mode/app, §3 giữ nguyên cho lớp thuật ngữ cơ chế.
+
+### Trung thực (§0)
+- **`mock-3d-thong-nhat.html` CHƯA TỒN TẠI** — `ls docs/mocks/` xác nhận. Việc nó mang nhãn cũ "Vẽ · Dựng ảnh · Trình bày" là **theo phiếu giao việc, chưa tự kiểm được**; đã ghi dòng "⏳ CHỜ EXPORT" trong bảng, phiên sau grep lại khi file về.
+- Mọi con số trong bảng là **đếm bằng `grep -c`/`grep -n` thật**, không ước lượng. Cột "chữ đúng" là **suy ra từ §6.4**, không phải Hoà đọc từng dòng.
+- KHÔNG chạy git (nhiều phiên dùng chung). 2 file docs sửa ở trạng thái untracked/dirty — nhờ **CHINH** gom commit theo việc 5b hàng đợi.
+
+### CHỐT PHIÊN [đợt 5]
+**Đã xong:** việc 1 (§6 vào `SPEC-NGON-NGU-CHI-DAN.md`) + việc 2 (bảng rà 19 file vào `mocks/README-mocks.md`).
+**Chờ TỔNG/Hoà:** ① duyệt cho sửa nhãn 8 mock HIỆN HÀNH ② quyết số phận `mock-cad-revit-2026-08-03.html` (mode Cấu kiện đã chết) ③ export `mock-3d-thong-nhat.html` về `docs/mocks/` để rà nốt.
+**Phiên UI sau đọc:** `SPEC-NGON-NGU-CHI-DAN §6` TRƯỚC KHI đặt bất kỳ tên nào — bốn vòng đặt tên đã đóng, đề xuất tên mới không tham chiếu §6.2 sẽ bị trả về.
