@@ -300,6 +300,14 @@ export interface HatchEntity extends Base {
   /** Zone tool (N1) — độ mờ per-entity 0–1, thay hardcode globalAlpha 0.9 trong render.ts.
    * Thiếu ⇒ 0.9 (GIỮ NGUYÊN hành vi cũ, backward-compat). Chỉ áp cho SOLID/DOTS. */
   opacity?: number;
+  /** BOQ ENGINE (02/08) — FK mềm ProductSpec.id, neo vùng tô này vào 1 vật liệu thật (kind
+   * 'material'). Đây là hiện thân của "matId" nói ở `SPEC-SEMANTIC-MODEL.md` §4/§7 — dùng lại
+   * ĐÚNG tên field + khuôn `BlockEntity.specId` phía trên (không bịa field song song mới) để
+   * cùng 1 cơ chế tra ProductSpec ở mọi loại entity. Optional, additive: `.idf` cũ không có field
+   * vẫn parse bình thường; undefined = vùng tô CHƯA gán vật liệu — `lib/boq/` phải báo lỗi rõ,
+   * KHÔNG tự suy đoán/tính bừa (xem lib/boq/compute.ts). Chưa có UI gán ở IF1; hạ tầng dữ liệu
+   * đi trước, UI gán vật liệu cho vùng tô là việc khác, không thuộc phạm vi việc này. */
+  specId?: string;
 }
 
 /* ───────── Zone tool (N1 — GAP-COLOR-FILL) — entity ellipse/arrow/zone ───────── */
