@@ -29,6 +29,8 @@ import { BLOCK_MAP } from '@/lib/cad/furniture';
 import { ROOM_NAME_RE, isWallLikeEntity } from '@/lib/cad/standards/checker';
 import { InspectorPages, type InspectorPage } from '@/components/studio/InspectorPages';
 import { RolloutGroup, Rollout } from '@/components/studio/Rollout';
+import WallFinishBox from '@/components/studio/WallFinishBox';
+import SelectSameKindButton from '@/components/studio/SelectSameKindButton';
 
 export function CadInspectorPages() {
   const doc = useCadStore((s) => s.doc);
@@ -102,6 +104,18 @@ export function CadInspectorPages() {
           <Rollout id="walltype" title="Loại tường">
             <div style={{ padding: 10 }}>
               <WallTypePanel key={`wall-${wallLikeEntity.id}`} entity={wallLikeEntity} onApply={updateEntities} />
+            </div>
+          </Rollout>
+          {/* VIỆC 2①③ (PHIEU-CODE-IF-DOT6 NHÓM B) — port mock-2d-ky-thuat.html, xem docstring
+              WallFinishBox.tsx/SelectSameKindButton.tsx cho lý do disabled + luật port L2. */}
+          <Rollout id="finish" title="Lớp hoàn thiện">
+            <div style={{ padding: 10 }}>
+              <WallFinishBox key={`finish-${wallLikeEntity.id}`} />
+            </div>
+          </Rollout>
+          <Rollout id="select-same" title="Chọn theo loại">
+            <div style={{ padding: 10 }}>
+              <SelectSameKindButton key={`same-${wallLikeEntity.id}`} doc={doc} entity={wallLikeEntity} />
             </div>
           </Rollout>
           <Rollout id="bim" title="BIM · IFC">

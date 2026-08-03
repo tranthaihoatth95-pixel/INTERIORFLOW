@@ -31,6 +31,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Loader2, Save, ShieldAlert, HardDriveDownload, Users } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { useCadLiveStatus } from '@/lib/cad/live-status';
+import { useCadStore, type SnapSettings } from '@/lib/cad/store';
 import { useSaveStatus } from '@/lib/save-status';
 import { useProjectPresence } from '@/lib/project-presence-ui';
 import { useVitalsUi } from '@/lib/vitals-ui';
@@ -41,6 +42,28 @@ import type { Phase } from '@/lib/phases';
 interface Props {
   stage: Phase;
   hidden?: boolean;
+}
+
+/** VIỆC 2① (`docs/PHIEU-CODE-IF-DOT6-2026-08-03.md` NHÓM B, port `mocks/mock-2d-ky-thuat.html`
+ * dòng "Bắt điểm: Đầu mút, Giữa cạnh") — nhãn Việt cho từng LOẠI điểm bắt (`SnapSettings`,
+ * `lib/cad/store.ts`). Bỏ `enabled`/`grid` (2 công tắc, không phải "loại điểm"). Danh sách hiển
+ * thị = danh sách THẬT đang bật (đọc `snap` sống từ store, không phải chuỗi tĩnh chép từ mock —
+ * mock chỉ minh hoạ 2/9 loại, dữ liệu thật ở đây luôn khớp cấu hình snap hiện tại). */
+const SNAP_KIND_LABEL: Record<keyof Omit<SnapSettings, 'enabled' | 'grid'>, string> = {
+  endpoint: 'Đầu mút',
+  midpoint: 'Giữa cạnh',
+  center: 'Tâm',
+  intersection: 'Giao điểm',
+  quadrant: 'Góc phần tư',
+  node: 'Node',
+  nearest: 'Gần nhất',
+  perpendicular: 'Vuông góc',
+  tangent: 'Tiếp tuyến',
+};
+
+function activeSnapKindsLabel(snap: SnapSettings): string {
+  const active = (Object.keys(SNAP_KIND_LABEL) as (keyof typeof SNAP_KIND_LABEL)[]).filter((k) => snap[k]);
+  return active.length > 0 ? active.map((k) => SNAP_KIND_LABEL[k]).join(', ') : 'không loại nào';
 }
 
 const HOVER_DELAY_MS = 150;
@@ -57,6 +80,7 @@ export default function StatusBar({ stage, hidden }: Props) {
   const flowRuns = useFlowStore((s) => s.flowRuns);
   const cursorWorld = useCadLiveStatus((s) => s.cursorWorld);
   const lastViolationCount = useCadLiveStatus((s) => s.lastViolationCount);
+  const snap = useCadStore((s) => s.snap);
   const saveState = useSaveStatus((s) => s.status);
   const lastSavedAt = useSaveStatus((s) => s.lastSavedAt);
   const diskStatus = useSaveStatus((s) => s.diskStatus);
@@ -142,6 +166,11 @@ export default function StatusBar({ stage, hidden }: Props) {
         {stage === 'concept' && cursorWorld && (
           <span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
             X {Math.round(cursorWorld.x)}&nbsp;&nbsp;Y {Math.round(cursorWorld.y)} mm
+          </span>
+        )}
+        {stage === 'concept' && (
+          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title="Cấu hình bắt điểm đang bật — đổi ở nút nam châm trên Toolbelt">
+            {snap.enabled ? `Bắt điểm: ${activeSnapKindsLabel(snap)}` : 'Bắt điểm: tắt'}
           </span>
         )}
       </div>
