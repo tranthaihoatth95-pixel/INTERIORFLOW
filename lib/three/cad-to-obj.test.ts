@@ -2,7 +2,7 @@
  * lib/three/cad-to-obj.test.ts — kiểm TẦNG LÕI Bản vẽ → 3D + camera tất định. Chạy:
  *   node_modules/.bin/sucrase-node lib/three/cad-to-obj.test.ts
  */
-import type { Doc, Entity } from '../cad/model';
+import type { Doc, Entity, HatchEntity } from '../cad/model';
 import { DEFAULT_LAYERS } from '../cad/model';
 import { wallChain } from '../cad/commands';
 import { docToObjScene, blockFootprint, furnitureHeightMm, cadAxesToThree, cadToThreeM, clampWallHeight } from './cad-to-obj';
@@ -95,6 +95,81 @@ console.log('docToObjScene — biên & lỗi rõ ràng');
   };
   const s = docToObjScene(onlyFurn, {});
   ok('không tường → vẫn ra scene + warning', s.stats.walls === 0 && s.warnings.length > 0 && s.stats.furniture === 1);
+}
+
+console.log('docToObjScene — SPEC-TANG-DU-LIEU-CAU-KIEN §2.3: khai báo `elementType` thắng suy đoán (regression §0.3)');
+{
+  // §0.3 — mảng "tô sơn" (preset Sơn trắng: hatchPattern SOLID, solid:true) ở GIỮA phòng, layer
+  // THƯỜNG (không phải l-wall) — đúng dữ liệu handleHatch() sinh khi applyMaterial('son-trang').
+  // TRƯỚC vá: nhánh `|| e.pattern === 'SOLID' || e.solid === true` khiến nó bị đùn thành khối
+  // tường cao 2.7m giữa phòng. SAU vá: elementType undefined + không nằm layer tường → bỏ qua.
+  const paintPatch: HatchEntity = {
+    id: 'paint-1',
+    type: 'hatch',
+    layer: 'l-furniture',
+    points: [
+      { x: 1500, y: 1000 },
+      { x: 2500, y: 1000 },
+      { x: 2500, y: 2000 },
+      { x: 1500, y: 2000 },
+    ],
+    solid: true,
+    pattern: 'SOLID',
+    patternScale: 1,
+    patternAngle: 0,
+  };
+  const doc: Doc = { entities: [...demoDoc().entities, paintPatch], layers: DEFAULT_LAYERS.map((l) => ({ ...l })) };
+  const scene = docToObjScene(doc, { wallHeightMm: 2700, theme: 'warm' });
+  ok('mảng sơn SOLID không trên layer tường → KHÔNG đùn khối (4 tường thật, không dư)', scene.stats.walls === 4);
+  ok('không có group nào mang entityId của mảng sơn', !scene.groups.some((g) => g.entityId === 'paint-1'));
+
+  // Khai báo elementType:'wall' rõ ràng (dù pattern KHÔNG phải SOLID, layer KHÔNG phải l-wall)
+  // → vẫn PHẢI dựng thành tường — khai báo thắng suy đoán, đúng luật L3, bước 1 thang §2.3.
+  const declaredWall: HatchEntity = {
+    id: 'declared-wall-1',
+    type: 'hatch',
+    layer: 'l-furniture',
+    elementType: 'wall',
+    points: [
+      { x: -1000, y: -1000 },
+      { x: -800, y: -1000 },
+      { x: -800, y: -800 },
+      { x: -1000, y: -800 },
+    ],
+    pattern: 'ANSI31',
+  };
+  const doc2: Doc = { entities: [...demoDoc().entities, declaredWall], layers: DEFAULT_LAYERS.map((l) => ({ ...l })) };
+  const scene2 = docToObjScene(doc2, { wallHeightMm: 2700, theme: 'warm' });
+  ok('elementType:"wall" khai báo (pattern/layer khác) → VẪN dựng tường (5 tường)', scene2.stats.walls === 5);
+  ok('group tường mới mang đúng entityId khai báo, KHÔNG gắn inferred', scene2.groups.some((g) => g.entityId === 'declared-wall-1' && g.inferred === undefined));
+
+  // Khai báo elementType:null ("đã kiểm, không phải cấu kiện") trên layer tường thật + SOLID
+  // → PHẢI loại khỏi tường — bước 2 thang §2.3, dừng ngay không suy đoán tiếp dù layer khớp.
+  const notAWall: HatchEntity = {
+    id: 'not-a-wall-1',
+    type: 'hatch',
+    layer: 'l-wall',
+    elementType: null,
+    points: [
+      { x: 5000, y: 5000 },
+      { x: 5200, y: 5000 },
+      { x: 5200, y: 5200 },
+      { x: 5000, y: 5200 },
+    ],
+    solid: true,
+    pattern: 'SOLID',
+  };
+  const doc3: Doc = { entities: [...demoDoc().entities, notAWall], layers: DEFAULT_LAYERS.map((l) => ({ ...l })) };
+  const scene3 = docToObjScene(doc3, { wallHeightMm: 2700, theme: 'warm' });
+  ok('elementType:null trên layer tường + SOLID → VẪN loại (4 tường, không dư)', scene3.stats.walls === 4);
+
+  // Tường CŨ không có elementType (undefined), chỉ có layer 'l-wall' (file .idf trước khi có
+  // trường elementType) — phải suy đoán qua tên layer VÀ gắn cờ inferred (L4, lộ mặt suy đoán).
+  const legacyDoc = demoDoc();
+  const legacyWall = legacyDoc.entities.find((e) => e.type === 'hatch' && e.layer === 'l-wall') as HatchEntity;
+  const sceneLegacy = docToObjScene(legacyDoc, { wallHeightMm: 2700, theme: 'warm' });
+  const legacyGroup = sceneLegacy.groups.find((g) => g.entityId === legacyWall.id)!;
+  ok('tường cũ (elementType chưa gán) vẫn suy đoán qua layer VÀ gắn cờ inferred', legacyGroup.inferred === true);
 }
 
 console.log('blockFootprint + furnitureHeightMm');

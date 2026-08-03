@@ -133,8 +133,8 @@ Mỗi ca audit TỔNG chọn ≥1 gói, grep code đối chiếu TỪNG luật c
 | Hạng mục | Spec | Mock | Code | Audit | Ghi chú |
 |---|---|---|---|---|---|
 | Tầng dữ liệu chung 3 ống kính | ✅ SPEC-TANG-DU-LIEU-CAU-KIEN 396d | — | ⬜ | ✅ **TỔNG verify code 03/08** | 7 luật L1-L7 kiểm được bằng grep |
-| 🔴 BUG sơn SOLID bị đùn thành tường 2.7m | ✅ §0.3 | — | ⬜ PHU verify tay rồi vá | ✅ xác nhận `cad-to-obj.ts:353` + `materials.ts:149,160,171` | món hàng chính của IF lại sai nhất |
-| Ống kính 3D đọc `elementType` (nay ĐOÁN lại) | ✅ §2.3 thang ưu tiên | — | ⬜ | ✅ grep: 1 hit trong comment | bỏ nhánh `solid===true`/`!pattern` |
+| 🔴 BUG sơn SOLID bị đùn thành tường 2.7m | ✅ §0.3 | — | ✅ PHU vá `cad-to-obj.ts` | ✅ verify tay UI thật (cổng 3001) + verify hàm `docToObjScene` — trước vá `Wall_5` cao 2.7m, sau vá hết | test 46/46 (8 mới) — xem `BAO-CAO-PHU.md` mục "VIỆC 1+2" |
+| Ống kính 3D đọc `elementType` (nay ĐOÁN lại) | ✅ §2.3 thang ưu tiên | — | ✅ (phạm vi hẹp: lọc tường) | ✅ `elementType==='wall'` thắng, `null` loại, `undefined` mới suy đoán layer + gắn `inferred` | CHƯA làm `inferElementType()` đầy đủ (nhánh `specId`/block) — vẫn ⬜, để P1 |
 | `entityId` cho MỌI nhóm 3D (nay chỉ tường) | ✅ §0.4 | — | ⬜ G4 | ✅ `cad-to-obj.ts:416` | chọn ghế 3D → mở Inspector được |
 | Entity `room` (phòng có id bền) | ✅ §6 | — | ⬜ | ✅ §0.5 xác nhận 3 dạng rời | nơi BIM nội thất phải sống |
 | `elementType:'covering'` (IfcCovering) | 🔨 chờ NC-11 | — | ⬜ | — | KHÔNG code trước |
