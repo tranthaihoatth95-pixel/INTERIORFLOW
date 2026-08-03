@@ -333,3 +333,33 @@ Mỗi luật kèm ca bệnh thật đã xảy ra, để phiên sau hiểu vì sa
 boolean CSG thật (`ops[]`) — hạ tầng ĐÚNG HƯỚNG để sau này gắn ngữ nghĩa "cửa hosted", nhưng chưa
 ai nối dây. Việc C2 (nhóm nút "Cấu kiện" mờ trong Command3DPanel) bám đúng bảng này để không hứa
 suông.
+
+## §7b · Cập nhật dòng "Cửa/cửa sổ HOSTED" (04/08, commit `d57067a`) — nối dây, không xây mới
+Dòng `§7` phía trên GIỮ NGUYÊN (append-only, đúng hiện trạng 03/08 đêm). Trạng thái MỚI sau
+`d57067a` (`feat(3d): cửa/cửa sổ HOSTED...`):
+
+| Cơ chế Revit | Chặng 2D | Chặng 3D |
+|---|---|---|
+| **Cửa/cửa sổ HOSTED** | ✅ ĐỦ — `BlockEntity.hostId?: string` (`model.ts`) suy tự động qua `lib/cad/hosting.ts` `syncHostedOpenings()` (điểm đặt nằm trong biên tường, không bắt chọn tay); chạy sau MỌI mutation doc (`store.ts` addEntity/addEntities/updateEntities/deleteSelected/removeIds/removeLayer + `CadSheets.tsx` snapshotFromPersisted/applyIdfSheets); xoá tường → `expandDeleteWithHostedChildren()` kéo theo xoá cửa/cửa sổ con + cutter. 28 test (`hosting.test.ts`) | ✅ ĐỦ cho hình khối cơ bản — cửa sổ hết là khối kính chồng lên tường: sinh `BuildOp boolean subtract` thật vào `ops[]` tường chủ (kích thước từ block, cao độ bệ/đỉnh `OPENING_ELEVATION`), kính chỉ còn tấm lắp vào lỗ. Cửa có khung+cánh (box4 xám, không PBR). `cutterPositionsMm` (`cad-to-obj.ts`) mở rộng nhận cutter polyline XOAY TỰ DO (không chỉ rect trục thẳng) + đọc `elevationMm` làm z0. 7 test (`cad-to-obj.test.ts`). CÒN THIẾU: chưa phân biệt Type/Instance (mỗi block vẫn override riêng, không có catalog chung) — đúng hiện trạng dòng "Type vs Instance" §7 gốc, KHÔNG đổi |
+
+**Nghiệm thu đã làm**: tiêm tường+cửa+cửa sổ qua `window.__cadStore` trên route `/render` (3D
+Thiết kế) dự án mẫu → xem 3D thấy lỗ THẬT xuyên tường + cánh cửa nhô khỏi mặt tường (ảnh chụp,
+xác nhận trực quan); state-level xác nhận `hostId` đúng + `wall.ops` có đủ 2 op boolean; xoá tường
+qua `removeIds()` → `door-1/win-1/opening-door-1/opening-win-1` biến mất theo TRONG STATE lẫn TRÊN
+MÀN HÌNH. `npx tsc --noEmit -p .` toàn repo sạch (nhân tiện sửa 1 lỗi tsc có trước —
+`components/three/Viewport3D.tsx` `export type {X} from 'Y'` không đưa X vào scope cục bộ, vỡ từ
+PHIẾU ĐỢT 7 nhóm B `68c6950`). `npm test`: 1 fail DUY NHẤT là ca đã biết trước đó (nội thất
+massing-mode cố tình bỏ `entityId`, không liên quan việc này).
+
+🔴 **SỰ CỐ RÚT KINH NGHIỆM (không phải mất dữ liệu thật)**: lúc nghiệm thu, tôi tiêm doc test bằng
+`window.__cadStore.getState().setState({doc: wallDoc, ...})` — GHI ĐÈ TOÀN BỘ `doc.entities` thay
+vì chỉ thêm — xoá mất nội dung thật đang có của "Dự án mẫu" (2 `Khối 1` + các entity khác) TRONG
+CACHE IndexedDB (`interiorflow-sheets`) của **trình duyệt sandbox Claude Browser dùng để verify**
+(đã xác nhận: DB này không có bất kỳ file-handle nào nối đĩa thật — `interiorflow-root`/
+`interiorflow-backup` đều rỗng — nên KHÔNG đụng tới `ban-ve.idf` trên đĩa thật của Hoà; persistence
+CAD sheet cũng thuần client, không gọi API server nào nên `dev.db`/Prisma không bị ảnh hưởng).
+Rủi ro thực tế: nếu ai mở lại "Dự án mẫu" TRONG CHÍNH trình duyệt sandbox này (không phải máy
+thật của Hoà) sẽ thấy bản vẽ 1 chỉ còn `cutter-1-b6mb`. **Luật rút ra cho phiên sau**: khi tiêm
+doc test qua store để verify, dùng `addEntities()`/`updateEntities()` (cộng thêm), KHÔNG BAO GIỜ
+`setState({doc: ...})` ghi đè nguyên `doc` trên route có autosave đang mount — kể cả trên dự án
+mẫu.

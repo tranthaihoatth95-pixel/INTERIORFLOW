@@ -5,6 +5,22 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## ✅ XONG (04/08 — cửa/cửa sổ HOSTED, `d57067a`, chi tiết đủ trong message commit + `SO-KIEM-TONG.md` §7b)
+- Nối dây `docs/SO-KIEM-TONG.md` §7 dòng "Cửa/cửa sổ HOSTED" (2D ⬜→✅, 3D 🟡→✅ khối cơ bản): `Block
+  Entity.hostId` suy tự động qua `lib/cad/hosting.ts` `syncHostedOpenings()` (chạy sau mọi mutation
+  doc) · xoá tường kéo theo xoá cửa/cửa sổ con (`expandDeleteWithHostedChildren`) · cửa sổ hết là
+  khối kính chồng — sinh `BuildOp boolean subtract` thật vào `ops[]` tường chủ, kính chỉ còn tấm lắp
+  lỗ · cửa có khung+cánh 3D (xám, không PBR). Đi qua đúng `ops[]`/`buildOpCutters` sẵn có (NC-12),
+  không đường dựng thứ hai. 35 test mới, tsc -p . toàn repo sạch (tiện sửa 1 lỗi tsc có trước ở
+  `Viewport3D.tsx`, không liên quan). Nghiệm thu browser thật: lỗ thật xuyên tường + cánh cửa nhô ra
+  (ảnh chụp) · xoá tường → cửa/cửa sổ biến mất theo (state + màn hình).
+- 🔴 **Sự cố rút kinh nghiệm** (không phải mất dữ liệu thật, xem §7b để đọc đủ): lúc tiêm doc test
+  để verify, dùng `setState({doc:...})` GHI ĐÈ nguyên `doc` thay vì cộng thêm — xoá mất nội dung
+  thật của "Dự án mẫu" trong cache IndexedDB **của trình duyệt sandbox** (đã xác nhận không đụng đĩa
+  thật/`dev.db` — trình duyệt sandbox không nối file-handle nào, CAD sheet cũng không gọi API
+  server). Luật rút ra: verify bằng tiêm store → luôn `addEntities()`, KHÔNG BAO GIỜ `setState({doc})`
+  ghi đè trên route có autosave mount.
+
 ## ✅ XONG (03/08 đêm khuya muộn — NC-13 multi-sheet BƯỚC 1+2, DỪNG chờ Hoà duyệt trước bước 3)
 - **BƯỚC 1**: khai kiểu đích `Sheet`/`Viewport2D`/`SheetTitleBlock` vào `lib/cad/model.ts` (cuối
   file, sau `fitScaleLabel`) — CHỈ KHAI KIỂU, chưa nơi nào dùng, `CadSheets.tsx` không đụng.
@@ -42,27 +58,6 @@
   timeout lần nào trong phiên này (3 lần chạy, mỗi lần vài chục giây). Sửa lại ghi chú cũ bên dưới
   (mục "🔴 PHIÊN SAU PHẢI BIẾT") — có thể do phiên trước chạy foreground bị cap 40-45s của Bash tool
   chứ không phải bản thân lệnh treo.
-
-## ✅ XONG (03/08 đêm muộn — sửa bug MẤT DỮ LIỆU mode 3D, chi tiết đủ trong message commit)
-- **Mode "3D Thiết kế" giờ ĐÃ autosave** (bug có từ push-pull 3D-5, phát hiện khi verify VIỆC dưới)
-  — `useCad3DAutosave()` nối lại ĐÚNG `lib/sheets-persist.ts` (không cơ chế lưu thứ hai), gọi ở
-  gốc `Render3DModeSkeleton.tsx`. Cốt lõi thuần `lib/cad/cad3d-autosave-core.ts` (13 test tích hợp
-  thật, chờ debounce 1200ms THẬT) + `lib/cad/cad-doc-hydration.ts` (cờ chống race 2D↔3D). Verify
-  browser thật: khoét hốc → F5 (URL y hệt) → hốc còn nguyên (IndexedDB + UI khớp). `tsc --noEmit`
-  toàn repo: đúng 1 lỗi, KHÔNG phải của việc này (`Viewport3D.tsx` `ViewDir` — phiên KHÁC đang sửa
-  đồng thời, file không đụng tới). Chi tiết → `docs/TECH-DEBT.md`, `docs/SO-KIEM-TONG.md` §1.
-
-## ✅ XONG (03/08 đêm — NC-12 bộ lệnh 3D VIỆC 1-3, chi tiết đủ trong message commit)
-- **`three-mesh-bvh`+`three-bvh-csg`** cài (MIT, NC-12 §1.6 chốt) · **`Base.ops?: BuildOp[]`**
-  (`model.ts`, đúng 3 phép `extrude`/`boolean`/`arrayLinear`, optional/additive, KHÔNG bump
-  `IDF_VERSION`) · **boolean THẬT**: `lib/three/csg.ts` (cổng duy nhất gọi thư viện) +
-  `lib/three/build-ops.ts` (cache runtime theo entityId+hash, KHÔNG vào Doc) + `cad-to-obj.ts`
-  dựng cutter (`boxPositionsMm`) + `lib/cad/commands.ts` `cutHoleInWall` (thuần) + store method
-  cùng tên + nút thật "Khoét hốc" trong `Object3DInspector.tsx`. 30 test mới (4 file), tsc scoped
-  sạch. Verify browser: click thật → `ops` ghi đúng vào Doc trong bộ nhớ (entities 117→118), CSG
-  chạy thật (không lỗi). **Phát hiện lỗi CÓ TRƯỚC (không do việc này)**: mode "3D Thiết kế" không
-  autosave IndexedDB (autosaver chỉ sống trong `CadSheets.tsx`, không mount ở stage 3D) — ăn luôn
-  cả push-pull 3D-5 đã ship. Chi tiết → `docs/TECH-DEBT.md`.
 
 ## 🟡 PHÁT HIỆN QUAN TRỌNG — đọc trước khi verify browser bất kỳ tính năng dùng `aiTier`/`credits`
 `useFlowStore.hydrate()` (đọc `aiTier`/`credits`/theme từ localStorage) **CHỈ được gọi từ

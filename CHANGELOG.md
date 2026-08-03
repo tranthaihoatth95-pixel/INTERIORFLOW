@@ -14,6 +14,18 @@ Dời từ STATUS.md (03/08, dọn cho dưới 800 từ) — chi tiết đủ n�
   = hash SHA-256 src) + `export.ts` tự upscale trước khi render + confirm giá/thời gian trước khi
   trừ credit thật. Verify: credit spend/refund atomic đúng, export không crash khi upscale lỗi.
 
+## 03/08 — NC-12 bộ lệnh 3D VIỆC 1-3 (boolean CSG thật) + sửa bug mất dữ liệu mode 3D
+
+Dời từ STATUS.md (04/08, dọn cho dưới 800 từ):
+- **NC-12 VIỆC 1-3**: `three-mesh-bvh`+`three-bvh-csg` (MIT) · `Base.ops?: BuildOp[]` (`model.ts`,
+  3 phép `extrude`/`boolean`/`arrayLinear`, optional/additive) · boolean THẬT: `lib/three/csg.ts` +
+  `lib/three/build-ops.ts` (cache runtime, KHÔNG vào Doc) + `cad-to-obj.ts` dựng cutter + `lib/cad/
+  commands.ts` `cutHoleInWall` + nút "Khoét hốc" (`Object3DInspector.tsx`). 30 test, tsc scoped sạch.
+- **Sửa bug MẤT DỮ LIỆU mode 3D**: mode "3D Thiết kế" không autosave IndexedDB (bug có từ push-pull
+  3D-5) — `useCad3DAutosave()` nối lại đúng `lib/sheets-persist.ts`, gọi ở gốc
+  `Render3DModeSkeleton.tsx`. `lib/cad/cad3d-autosave-core.ts` (13 test, debounce 1200ms thật) +
+  `lib/cad/cad-doc-hydration.ts` (cờ chống race 2D↔3D). Verify: khoét hốc → F5 → hốc còn nguyên.
+
 ## 03/08 — BOQ editor B0-B6+B10 + xlsx SUM sống B8 (TRÌNH-CODE)
 
 Dời từ STATUS.md (03/08, dọn cho dưới 800 từ) — chi tiết đủ → `docs/PHIEU-TRINH-BOQ-EDITOR.md`,
