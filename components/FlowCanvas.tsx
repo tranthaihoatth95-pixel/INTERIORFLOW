@@ -529,7 +529,12 @@ export function FlowCanvas() {
         /* Bán kính bắt kết nối rộng hơn (mặc định 20) → chạm-kéo nối edge dễ
            trúng port trên màn cảm ứng foldable mà không cần ngắm chính xác. */
         connectionRadius={38}
+        /* DỌN ĐỊA TẦNG (Hoà 04/08, bug BAO-CAO-DEM 23:1x mục 3): fitView với 0 node kéo viewport
+           về minZoom (0.15 = "15%" trong ảnh Hoà chê) — canvas trống phải đứng ở 100%. fitView
+           là prop lúc mount: có node thì fit như cũ, trống thì bỏ qua (React Flow mặc định zoom 1). */
         fitView={nodes.length > 0}
+        /* Gộp khi merge 03/08 (TỔNG): 2 prop từ nhanh-g4 (G4-1a) — fit không phóng quá 100%,
+           viewport mặc định đứng 100%. Cùng mục tiêu với fix CHINH-6, không mâu thuẫn. */
         fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         proOptions={{ hideAttribution: false }}

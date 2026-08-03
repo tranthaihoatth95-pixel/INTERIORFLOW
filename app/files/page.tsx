@@ -28,6 +28,7 @@ export default function FilesPage() {
         active="render"
         navigator={<FilesNavigator currentFolderId={currentFolderId} onSelect={setCurrentFolderId} />}
         navigatorAddLabel={tr('Thư mục mới', 'New folder')}
+        navigatorCollapsedLabel={tr('Thư mục', 'Folders')}
       >
         <div className="min-h-0 flex-1 overflow-y-auto">
           <FileManagerShell currentFolderId={currentFolderId} onSelectFolder={setCurrentFolderId} />

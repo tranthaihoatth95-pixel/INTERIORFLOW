@@ -2119,7 +2119,10 @@ export default function CadCanvas() {
       // dòng lệnh (chuẩn AutoCAD) mà KHÔNG cần click ô lệnh trước. Các hotkey 1 phím ngữ
       // cảnh (c/r/f/e) đã xử lý phía trên nên không bị phá; số vẫn vào dynBuf như cũ.
       if (
-        !e.ctrlKey && !e.metaKey && !e.altKey &&
+        // CHINH-4 (`SPEC-PANEL-ROLLOUT-IDF` §4e): thêm `!e.shiftKey` — chữ CÓ ⇧ để dành cho
+        // phím tắt tầng app trong chặng Vẽ (⇧L Thư viện · ⇧B Navigator · ⇧I Inspector), vì chữ
+        // TRẦN thuộc type-anywhere (L=đường…). Không ai gõ lệnh AutoCAD bằng Shift — không mất gì.
+        !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey &&
         /^[a-zA-Z]$/.test(e.key) &&
         isIdle()
       ) {

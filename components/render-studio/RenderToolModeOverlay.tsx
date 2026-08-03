@@ -58,9 +58,11 @@ export default function RenderToolModeOverlay() {
   if (!hydrated) return null; // chờ đọc xong localStorage — tránh flash sai view lúc SSR/hydrate.
   if (view === 'canvas') return null; // canvas thuần, ẩn hẳn cả thanh tab.
 
-  // Banner "Công cụ đầy đủ nằm trong Thư viện khối" ĐÃ XOÁ HẲN (Hoà chốt 04/08 "MỘT thư viện
-  // chặng 2": không banner — panel Thư viện khối ở sidebar là cửa duy nhất, không cần rao).
-  // LỖ RÒ 2 (2.2.77) vẫn kín bằng effect tự-mở-lại tool ở trên; graph phức tạp không khớp mẫu
-  // thì canvas tự nói (node hiện đủ trên canvas), không cần dải nhắc.
+  // 🔴 DỌN ĐỊA TẦNG (Hoà chốt 04/08): banner "Còn công cụ khác chưa hiện / Xem tất cả" XOÁ HẲN
+  // mọi biến thể — Thư viện khối giờ LUÔN hiện ở Navigator (ổ ②, embedded), không còn gì "chưa
+  // hiện" để nhắc; cảnh báo LỖ RÒ 2 hết đối tượng. Chỉ còn vai trò mount ToolWindow + auto-mở
+  // lại tool khớp mẫu (effect trên).
+  // (Merge 03/08 TỔNG quyết: bản banner bên nhanh-g4 — sửa báo động giả + ngôn ngữ G1d — BỎ,
+  //  vì quyết định XOÁ HẲN banner của Hoà mới hơn; luật ngôn ngữ §4 vẫn áp cho chỗ khác.)
   return <>{view === 'form' && selectedCardId && <ToolWindow cardId={selectedCardId} />}</>;
 }

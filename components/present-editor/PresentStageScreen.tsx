@@ -46,6 +46,7 @@ export default function PresentStageScreen() {
       statusBar={<StatusBar stage="present" hidden={playing} />}
       navigator={<PresentNavigator />}
       navigatorAddLabel={tr('Trang mới', 'New page')}
+      navigatorCollapsedLabel={tr('Trang', 'Pages')}
     >
       {/* C-4: vào chặng bằng crossfade + scale "dynamic wallpaper" (StageEnter). */}
       <StageEnter style={{ display: 'block' }}>

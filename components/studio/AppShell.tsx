@@ -21,7 +21,7 @@
  * slot) đổi, đúng Trụ 1 "ổ cố định, ruột thay đổi".
  */
 
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { AppChrome, type AppChromeActive } from '@/components/studio/AppChrome';
@@ -42,6 +42,8 @@ interface Props {
    * component riêng (chặng chỉ truyền phần list + 2 handler add/library). */
   navigator: ReactNode;
   navigatorAddLabel: string;
+  /** Nhãn dải mỏng khi Navigator thu gọn (§2f SPEC-PANEL-ROLLOUT-IDF) — "Lớp"/"Khối"/"Trang"… */
+  navigatorCollapsedLabel?: string;
   onNavigatorAdd?: () => void;
   /** Ghi đè hành vi nút "Thư viện" đáy Navigator — MẶC ĐỊNH (không truyền) mở `LibrarySheet`
    * (Hoà chốt 03/08 "Thư viện là MỘT nơi duy nhất, và nó là sheet" — `a73c658` trên g4).
@@ -51,7 +53,7 @@ interface Props {
   /** Ổ ④ — CHỈ truyền khi có vật được chọn; AppShell tự ẩn hẳn khung khi `undefined`/`null`. */
   inspector?: ReactNode;
   inspectorTitle?: string;
-  inspectorSub?: string;
+  inspectorSub?: ReactNode;
   onCloseInspector?: () => void;
   /** Ổ ⑤ — dock kính nổi, AppShell định vị absolute giữa-dưới Stage. */
   toolbelt?: ReactNode;
@@ -69,6 +71,7 @@ export function AppShell({
   children,
   navigator,
   navigatorAddLabel,
+  navigatorCollapsedLabel,
   onNavigatorAdd,
   onOpenLibrary,
   inspector,
@@ -83,12 +86,56 @@ export function AppShell({
   // AppChromeActive → StageKey của Thư viện: photo không có kệ riêng → dùng kệ chặng dựng ảnh
   // (cùng mapping bản g4 cũ đặt trong StageShell trước khi file đó bị xoá).
   const libStage: StageKey = active === 'cad' ? 'cad' : active === 'present' ? 'present' : 'render';
+  // Hoà 04/08 (BÁC bản Render list-chữ, SO-KIEM-TONG §0d) — chặng Render gắn NGUYÊN
+  // `NodeLibraryPanel` (card icon+mô tả+badge cr) làm ruột Navigator, cần THỞ hơn 214 mặc định.
+  const navigatorWidth = active === 'render' ? 280 : undefined;
   const openLibrary = onOpenLibrary ?? (() => openLibrarySheet({ stage: libStage }));
+
+  /* CHINH-4 — phím tắt panel toàn app (`SPEC-PANEL-ROLLOUT-IDF` §4a):
+   *   B = thu/mở Navigator · I = thu/mở Inspector · ⌘\ = ẩn/hiện CẢ HAI (zen).
+   * Luật va phím (suy từ §4e đã chốt cho L): chặng Vẽ có type-anywhere nuốt MỌI chữ trần
+   * (`CadCanvas.tsx` — gõ B là bắt đầu lệnh BLOCK…), nên ở CAD hai phím này cần ⇧ (⇧B/⇧I),
+   * chặng khác phím trần. Nghe ở DOCUMENT CAPTURE + stopPropagation khi ăn phím — chạy TRƯỚC
+   * listener window-bubble của CadCanvas, không seed nhầm chữ vào ô lệnh. Guard gõ chữ
+   * (INPUT/TEXTAREA/contentEditable) như mọi hotkey khác trong app. */
+  const [inspectorHidden, setInspectorHidden] = useState(false);
+  const zenRef = useRef(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const typing = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+      if (typing) return;
+      // ⌘\ — ẩn cả hai panel, bấm lại hiện lại (deterministic qua detail.set).
+      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+        e.preventDefault();
+        e.stopPropagation();
+        const zen = !zenRef.current;
+        zenRef.current = zen;
+        window.dispatchEvent(new CustomEvent('if:navigator-toggle', { detail: { set: zen } }));
+        setInspectorHidden(zen);
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k !== 'b' && k !== 'i') return;
+      // CAD: chỉ ăn khi có ⇧ (phím trần thuộc type-anywhere gõ lệnh — §0c luật 2); chặng khác:
+      // chỉ phím trần (⇧ để dành tổ hợp khác).
+      const needShift = active === 'cad';
+      if (e.shiftKey !== needShift) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (k === 'b') window.dispatchEvent(new CustomEvent('if:navigator-toggle', { detail: {} }));
+      else setInspectorHidden((h) => !h);
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => document.removeEventListener('keydown', onKey, true);
+  }, [active]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden', background: 'var(--bg)' }}>
       <AppChrome active={active} logoMenu />
       <div className="relative flex min-h-0 flex-1">
-        <Navigator addLabel={navigatorAddLabel} onAdd={onNavigatorAdd} onOpenLibrary={openLibrary}>
+        <Navigator addLabel={navigatorAddLabel} collapsedLabel={navigatorCollapsedLabel} onAdd={onNavigatorAdd} onOpenLibrary={openLibrary} width={navigatorWidth}>
           {navigator}
         </Navigator>
         <div className="relative flex min-w-0 flex-1 flex-col">
@@ -101,7 +148,7 @@ export function AppShell({
           )}
         </div>
         <InspectorSlot title={inspectorTitle} sub={inspectorSub} onClose={onCloseInspector}>
-          {inspector}
+          {inspectorHidden ? undefined : inspector}
         </InspectorSlot>
       </div>
       {bottomExtra}
@@ -124,7 +171,7 @@ function InspectorSlot({
 }: {
   children?: ReactNode;
   title?: string;
-  sub?: string;
+  sub?: ReactNode;
   onClose?: () => void;
 }) {
   const reduceMotion = useReducedMotion();
@@ -143,7 +190,7 @@ function InspectorSlot({
           {(title || onClose) && (
             <div className="flex h-[34px] shrink-0 items-center gap-1.5 border-b border-[var(--mat-hairline)] px-3">
               {title && <h2 className="min-w-0 flex-1 truncate text-[14px] font-semibold tracking-tight text-[var(--t1)]">{title}</h2>}
-              {sub && <span className="shrink-0 font-mono text-[11px] text-[var(--t3)]">{sub}</span>}
+              {sub && <span className="shrink-0 text-[11px] text-[var(--t3)]">{sub}</span>}
               {onClose && (
                 <button
                   type="button"

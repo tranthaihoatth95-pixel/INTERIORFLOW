@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Dựng ảnh · Mood+Collab (G2) — mock hợp đồng · 2 theme</title>
+<!--
+  MOCK G2 · MOOD+COLLAB — COWORK-UI dựng 03/08/2026
+  Nguồn: SPEC-CHANG2-UI-2MODE §3 · TICKET-CHANG2-BUILD G2 · SPEC-DESIGN-SYSTEM-IF (§2c/§2d/§4)
+         SPEC-HOVER-FOCUS-IDF · SPEC-MAT-DO-CON-TRO · AppShell.tsx (6 ổ thật trên main)
+  Luật tuân thủ:
+  - Token CHÉP NGUYÊN app/globals.css (dark+light, dark mặc định). KHÔNG hex tự chế cho chrome UI.
+  - Gradient trong ảnh mood / ô palette = PLACEHOLDER NỘI DUNG người dùng, không phải màu UI.
+  - Màu loại node (--c-*) lấy từ SPEC-DESIGN-SYSTEM-IF §1 "Màu loại".
+  - Icon: lucide thật qua CDN (phiên code port sang lucide-react cùng tên icon).
+  - Khung 6 ổ: ①Header 42 · ②Navigator 214 · ③Stage · ④Inspector 236 · ⑤Toolbelt kính · ⑥Status 26.
+  - Toolbelt: bar capsule 44/r22, đệm 5, nút 34/r17, switch track 22/r11, núm 18 (bo đồng tâm §2d);
+    switch "Vẽ 3D" CÙNG KHỐI bar (Hoà chốt B).
+-->
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  /* ═══ TOKEN — chép nguyên app/globals.css (dark mặc định) ═══ */
+  :root{
+    --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14);
+    --accent-ring:rgba(106,87,245,.55); --accent-warm:#c79a63;
+    --radius-sm:10px; --radius-md:14px; --radius-lg:20px; --radius-xl:28px;
+    --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px; --fs-2xs:11px;
+    --fw-normal:400; --fw-semi:600;
+    --blur:22px; --blur-strong:40px;
+    --ease-apple:cubic-bezier(0.32,0.72,0,1); --dur-fast:0.18s; --dur-base:0.32s;
+    --tap:32px; --row:28px; --gap:8px;
+
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --dots:#26262d; --minimap-mask:rgba(12,12,14,.7);
+    --mat-header:rgba(20,20,23,.72); --mat-panel:rgba(20,20,23,.68);
+    --mat-card:rgba(26,26,30,.82); --mat-overlay:rgba(6,6,8,.56);
+    --mat-hairline:rgba(255,255,255,.06);
+    --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
+    --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+    --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+    --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+
+    /* Màu loại — SPEC-DESIGN-SYSTEM-IF §1 (không phải tự chế) */
+    --c-mood:#e8804d; --c-master:#6a57f5; --c-node:#3fb984; --c-logic:#4a90e2; --c-comment:#e86a9a;
+  }
+  [data-theme="light"]{
+    --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+    --border:#e3ded4; --border-strong:#cbc4b6;
+    --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+    --dots:#ddd8ce; --minimap-mask:rgba(242,239,233,.72);
+    --mat-header:rgba(250,248,244,.72); --mat-panel:rgba(250,248,244,.7);
+    --mat-card:rgba(255,255,255,.82); --mat-overlay:rgba(60,55,48,.28);
+    --mat-hairline:rgba(0,0,0,.05);
+    --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+    --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+    --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+    --danger:#c9341d; --warning:#9a6304; --success:#107043;
+  }
+  /* Mật độ cảm ứng — SPEC-MAT-DO-CON-TRO (cùng điều kiện globals.css:1030) */
+  @media (hover:none) and (pointer:coarse){
+    :root{--tap:44px; --row:44px; --gap:12px}
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--t1);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    transition:background var(--dur-base) var(--ease-apple)}
+  .lucide{width:15px;height:15px;stroke-width:1.8}
+
+  /* ═══ Chú giải đầu trang (ngoài app) ═══ */
+  .note{width:1440px;margin:18px auto 8px;padding:0 4px}
+  .head{display:flex;align-items:center;gap:12px}
+  .note h1{font-size:15px;margin:0;font-weight:650}
+  .theme-toggle{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t3)}
+  .tt-track{width:44px;height:24px;border-radius:12px;background:var(--field);border:1px solid var(--border);
+    position:relative;cursor:pointer;transition:background .12s}
+  .tt-knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--accent);
+    transition:left var(--dur-fast) var(--ease-apple)}
+  [data-theme="light"] .tt-knob{left:22px}
+  .note p{font-size:12.5px;color:var(--t3);margin:6px 0 0;line-height:1.55}
+  .legend{display:flex;gap:12px 16px;flex-wrap:wrap;margin-top:10px}
+  .legend span{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2)}
+  .pin{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;
+    background:var(--accent);color:#fff;font-size:11px;font-weight:700;flex:none;z-index:40}
+  .pin.abs{position:absolute}
+
+  /* ═══ VỎ APP — 6 Ổ ═══ */
+  .app{width:1440px;margin:10px auto 40px;background:var(--bg);border:1px solid var(--border);
+    border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow-sheet);position:relative}
+
+  /* ① Header 42 */
+  .hd{height:42px;display:flex;align-items:center;gap:10px;padding:0 10px;
+    background:var(--mat-header);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+    border-bottom:1px solid var(--mat-hairline);position:relative;z-index:20}
+  .logo{width:26px;height:26px;border-radius:8px;border:1.5px solid var(--t1);display:flex;align-items:center;
+    justify-content:center;font-size:12px;font-weight:700;cursor:pointer}
+  .docname{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--t2);cursor:pointer;
+    padding:5px 8px;border-radius:9px;transition:background .12s}
+  .docname:hover{background:var(--hover)}
+  .docname .lucide{width:13px;height:13px;color:var(--t4)}
+  .seg{margin:0 auto;display:flex;gap:4px;background:var(--field);border-radius:11px;padding:3px}
+  .seg button{border:0;background:transparent;height:28px;padding:0 14px;border-radius:8px;font-size:12.5px;
+    color:var(--t3);cursor:pointer;transition:background .12s,color .12s}
+  .seg button.on{background:var(--card);color:var(--t1);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+  .hd .right{display:flex;align-items:center;gap:8px}
+
+  /* Presence — on màu / off xám + mời (SPEC-DESIGN-SYSTEM-IF §4) */
+  .presence{display:flex;align-items:center;background:var(--field);border-radius:16px;padding:3px;position:relative}
+  .av{width:26px;height:26px;border-radius:50%;border:2px solid var(--panel);margin-left:-7px;position:relative;flex:none}
+  .av:first-child{margin-left:0}
+  .av.a1{background:linear-gradient(135deg,#c9a27a,#9a6b43)}
+  .av.a2{background:linear-gradient(135deg,#7a9ac9,#436b9a)}
+  .av.a3{background:linear-gradient(135deg,#c97a9a,#9a4368)}
+  .av.off{background:linear-gradient(135deg,#8a8a90,#5a5a60);filter:grayscale(1) opacity(.6)}
+  .onl{position:absolute;right:-1px;bottom:-1px;width:8px;height:8px;border-radius:50%;
+    background:var(--success);border:1.5px solid var(--panel)}
+  .invite{width:26px;height:26px;border-radius:50%;background:var(--hover);color:var(--t2);border:0;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:2px;transition:background .12s}
+  .invite:hover{background:var(--accent-soft);color:var(--accent)}
+  .invite .lucide{width:13px;height:13px}
+  .share-btn{height:28px;display:flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:0;
+    padding:0 12px;border-radius:14px;font-size:12.5px;font-weight:600;cursor:pointer;transition:background .12s}
+  .share-btn:hover{background:var(--accent-strong)}
+  .share-btn .lucide{width:13px;height:13px}
+  .me{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#57b58a,#2e7a58);border:2px solid var(--panel)}
+
+  /* Share popover — panel kính nổi PHẢI portal (TICKET-FIX-KINH-HEADER K4) */
+  .share-pop{position:absolute;top:46px;right:44px;width:264px;background:var(--mat-panel);
+    backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+    border:1px solid var(--mat-hairline);border-radius:var(--radius-md);box-shadow:var(--shadow-pop);
+    padding:10px;z-index:30}
+  .share-pop .ti{font-size:12.5px;font-weight:600;margin-bottom:8px}
+  .inv-row{display:flex;gap:6px;margin-bottom:8px}
+  .inv-row input{flex:1;height:28px;background:var(--field);border:1px solid var(--border);border-radius:9px;
+    padding:0 9px;font-size:12px;color:var(--t1);outline:none}
+  .inv-row input::placeholder{color:var(--t4)}
+  .inv-row button{height:28px;padding:0 10px;border-radius:9px;border:0;background:var(--accent);color:#fff;
+    font-size:12px;font-weight:600;cursor:pointer}
+  .p-row{display:flex;align-items:center;gap:8px;height:var(--row);min-height:28px;padding:0 4px;border-radius:8px;font-size:12px}
+  .p-row:hover{background:var(--hover)}
+  .p-row .nm{color:var(--t1)}
+  .p-row .sub{color:var(--t4);font-size:10.5px}
+  .role{margin-left:auto;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--t3);
+    background:var(--field);border:1px solid var(--border);border-radius:7px;padding:2px 7px;cursor:pointer}
+  .role .lucide{width:11px;height:11px}
+  .role-menu{margin:6px 0 2px;border:1px solid var(--border);border-radius:9px;overflow:hidden}
+  .rm-row{display:flex;align-items:center;gap:8px;padding:6px 9px;font-size:12px;cursor:pointer;transition:background .12s}
+  .rm-row:hover{background:var(--hover)}
+  .rm-row.on{background:var(--accent-soft);color:var(--accent)}
+  .rm-row .lucide{width:13px;height:13px}
+  .rm-row .d{font-size:10px;color:var(--t4);margin-left:auto}
+  .rm-row.on .d{color:var(--accent)}
+  .copy{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--t3);padding:6px 4px 2px;cursor:pointer}
+  .copy:hover{color:var(--t1)}
+  .copy .lucide{width:12px;height:12px}
+
+  /* Thân = ② + ③ + ④ */
+  .bd{display:flex;height:812px}
+
+  /* ② Navigator 214 */
+  .nav{width:214px;flex:none;background:var(--panel);border-right:1px solid var(--border);
+    display:flex;flex-direction:column}
+  .nav .search{margin:10px 10px 6px;height:28px;display:flex;align-items:center;gap:6px;background:var(--field);
+    border:1px solid var(--border);border-radius:9px;padding:0 8px;font-size:12px;color:var(--t4)}
+  .nav .search .lucide{width:13px;height:13px}
+  .nav .scroll{flex:1;overflow:auto;padding:4px 10px}
+  .zt{font-size:10px;letter-spacing:.06em;color:var(--t4);font-weight:700;margin:10px 2px 6px;
+    display:flex;align-items:center;gap:6px}
+  .zt .dot{width:7px;height:7px;border-radius:50%}
+  .ncard{display:flex;align-items:center;gap:8px;height:var(--row);min-height:30px;padding:0 8px;margin-bottom:3px;
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:grab;
+    transition:transform 200ms var(--ease-apple),background .12s;font-size:12.5px}
+  .ncard:hover{background:var(--hover);transform:scale(1.02)}
+  .ncard .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .ncard .cr{margin-left:auto;font-size:9.5px;color:var(--t4);border:1px solid var(--border);border-radius:6px;padding:0 5px}
+  .ncard .lucide{width:13px;height:13px;color:var(--t3);margin-left:auto}
+  .tmpl{display:flex;align-items:center;gap:7px;padding:7px 9px;margin-bottom:3px;border:1px dashed var(--accent);
+    border-radius:var(--radius-sm);background:var(--accent-soft);font-size:11.5px;color:var(--accent);
+    font-weight:600;cursor:grab}
+  .tmpl .opt{margin-left:auto;font-size:8.5px;background:var(--accent);color:#fff;border-radius:5px;padding:1px 5px}
+  .nav .foot{padding:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
+  .nav .foot button{height:32px;border-radius:9px;font-size:12.5px;display:flex;align-items:center;
+    justify-content:center;gap:6px;cursor:pointer;transition:background .12s;border:0}
+  .add{background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .add:hover{background:var(--accent);color:#fff}
+  .lib{background:var(--field);color:var(--t2);border:1px solid var(--border) !important}
+  .lib:hover{background:var(--hover)}
+  .nav .foot .lucide{width:14px;height:14px}
+
+  /* ③ Stage — canvas Miro */
+  .stage{flex:1;position:relative;overflow:hidden;
+    background:radial-gradient(circle at 1px 1px,var(--dots) 1px,transparent 0) 0 0/24px 24px,var(--bg)}
+
+  /* Toolbar bút tablet (trái) — nút 34, panel kính bo 14/9 */
+  .pen{position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;
+    background:var(--mat-panel);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+    border:1px solid var(--mat-hairline);border-radius:var(--radius-md);padding:5px;box-shadow:var(--shadow-pop);z-index:7}
+  .pt{width:34px;height:34px;border-radius:9px;border:0;background:transparent;color:var(--t2);display:flex;
+    align-items:center;justify-content:center;cursor:pointer;transition:background .12s,color .12s}
+  .pt:hover{background:var(--hover)}
+  .pt.on{background:var(--accent-soft);color:var(--accent)}
+  .pen .sep{height:1px;background:var(--mat-hairline);margin:1px 4px}
+
+  /* Frame theo PHÒNG */
+  .frame{position:absolute;border:1.5px solid var(--border-strong);border-radius:var(--radius-sm)}
+  .frame .fl{position:absolute;top:-11px;left:12px;background:var(--panel);border:1px solid var(--border);
+    border-radius:7px;padding:1px 9px;font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--t3)}
+  .frame.live{border-color:var(--accent);border-style:dashed}
+  .frame.live .fl{color:var(--accent);border-color:var(--accent)}
+
+  /* Ảnh mood (gradient = placeholder ảnh) */
+  .imgc{position:absolute;width:118px;border-radius:var(--radius-sm);overflow:hidden;background:var(--card);
+    box-shadow:var(--shadow-node);z-index:3;transition:transform 200ms var(--ease-apple)}
+  .imgc:hover{transform:translateY(-2px) scale(1.02)}
+  .imgc .im{height:74px}
+  .imgc .cap{font-size:9.5px;color:var(--t3);padding:4px 7px}
+  .react{position:absolute;right:5px;top:5px;display:flex;gap:3px;z-index:4}
+  .rc{display:flex;align-items:center;gap:3px;background:var(--mat-card);backdrop-filter:blur(8px);
+    border:1px solid var(--mat-hairline);border-radius:10px;padding:1px 6px;font-size:9.5px;color:var(--t2);
+    cursor:pointer;transition:transform 150ms var(--ease-apple)}
+  .rc:hover{transform:scale(1.04)}
+  .rc .lucide{width:10px;height:10px}
+  .rc.me{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+
+  /* Swatch vật liệu matId */
+  .mat{position:absolute;width:132px;background:var(--card);border-radius:var(--radius-sm);overflow:hidden;
+    box-shadow:var(--shadow-node);z-index:3;cursor:pointer;border:1px solid var(--border);
+    transition:transform 200ms var(--ease-apple)}
+  .mat:hover{transform:translateY(-2px) scale(1.02)}
+  .mat.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-ring),var(--shadow-node)}
+  .mat .sw{height:34px}
+  .mat .mb{padding:5px 8px 7px}
+  .mat .mn{font-size:11px;font-weight:600;color:var(--t1)}
+  .mat .mrow{display:flex;align-items:center;gap:5px;margin-top:3px}
+  .mat .mid{font-size:9px;color:var(--accent);background:var(--accent-soft);border-radius:5px;padding:0 5px}
+  .mat .pr{font-size:9px;color:var(--t4)}
+
+  /* Sticky — nền mix từ --warning (không hex mới) */
+  .sticky{position:absolute;width:110px;background:color-mix(in srgb,var(--warning) 26%,var(--card));
+    border-radius:6px;padding:8px 9px;font-size:10.5px;line-height:1.4;color:var(--t1);
+    box-shadow:var(--shadow-node);transform:rotate(-2deg);z-index:4}
+
+  /* Comment pin + thread @mention */
+  .cmt{position:absolute;z-index:6}
+  .cpin{width:24px;height:24px;border-radius:50% 50% 50% 4px;background:var(--c-comment);color:#fff;
+    display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-node);cursor:pointer}
+  .cpin .lucide{width:12px;height:12px}
+  .thr{position:absolute;left:30px;top:-6px;width:172px;background:var(--mat-card);backdrop-filter:blur(var(--blur));
+    -webkit-backdrop-filter:blur(var(--blur));border:1px solid var(--mat-hairline);border-radius:var(--radius-sm);
+    padding:8px 9px;box-shadow:var(--shadow-pop);font-size:10.5px}
+  .thr .who{font-weight:700;font-size:10px;color:var(--t2);display:flex;align-items:center;gap:5px}
+  .thr .who .res{margin-left:auto;width:18px;height:18px;border-radius:50%;background:var(--field);color:var(--t3);
+    display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .thr .who .res:hover{background:var(--success);color:#fff}
+  .thr .who .res .lucide{width:10px;height:10px}
+  .thr .tx{color:var(--t2);margin:3px 0 6px;line-height:1.4}
+  .thr .tx b{color:var(--accent);font-weight:600}
+  .thr input{width:100%;height:24px;background:var(--field);border:1px solid var(--border);border-radius:7px;
+    padding:0 7px;font-size:10px;color:var(--t1);outline:none}
+  .thr input::placeholder{color:var(--t4)}
+
+  /* Mindmap template (tuỳ chọn) */
+  .mmc{position:absolute;background:var(--accent);color:#fff;border-radius:var(--radius-sm);padding:9px 13px;
+    font-size:12.5px;font-weight:700;box-shadow:0 8px 22px -6px var(--accent-ring);z-index:5;text-align:center}
+  .mmc .sub{font-size:9.5px;font-weight:500;opacity:.85;margin-top:2px}
+  .mmn{position:absolute;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius-sm);
+    padding:6px 10px;font-size:11px;color:var(--t1);box-shadow:var(--shadow-node);z-index:5}
+  .mmn .h{font-size:9px;color:var(--t4)}
+  .mtag{position:absolute;font-size:8.5px;font-weight:700;letter-spacing:.04em;color:var(--accent);
+    background:var(--accent-soft);border:1px dashed var(--accent);border-radius:6px;padding:2px 7px;z-index:5}
+  svg.links{position:absolute;inset:0;z-index:2;pointer-events:none}
+  svg.links path{stroke:var(--border-strong);stroke-width:1.5;fill:none}
+
+  /* Palette live-link */
+  .pal{display:flex;gap:5px;position:absolute}
+  .pal i{width:26px;height:26px;border-radius:8px;display:block}
+  .pump{position:absolute;height:28px;display:flex;align-items:center;gap:6px;background:var(--accent);color:#fff;
+    border:0;border-radius:14px;padding:0 12px;font-size:11.5px;font-weight:600;cursor:pointer;z-index:5;
+    transition:background .12s}
+  .pump:hover{background:var(--accent-strong)}
+  .pump .lucide{width:12px;height:12px}
+
+  /* Con trỏ tên (named cursor) */
+  .cur{position:absolute;z-index:8;pointer-events:none}
+  .cur svg{width:14px;height:14px;fill:var(--c-logic)}
+  .cur .tag{margin:-3px 0 0 10px;background:var(--c-logic);color:#fff;font-size:9px;font-weight:600;
+    border-radius:6px;padding:1px 6px;display:inline-block}
+
+  /* ⑤ Toolbelt — capsule 44/r22 · nút 34/r17 · switch 22/r11 · núm 18 (bo đồng tâm) */
+  .belt{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);height:44px;border-radius:22px;
+    display:flex;align-items:center;gap:2px;padding:0 5px;background:var(--mat-panel);
+    backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+    border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop);z-index:9}
+  .bt{width:34px;height:34px;border-radius:17px;border:0;background:transparent;color:var(--t2);display:flex;
+    align-items:center;justify-content:center;cursor:pointer;transition:background .12s,color .12s}
+  .bt:hover{background:var(--hover)}
+  .bt.on{background:var(--accent-soft);color:var(--accent)}
+  .belt .sep{width:1px;height:20px;background:var(--mat-hairline);margin:0 3px}
+  .zoom{font-size:11.5px;color:var(--t2);min-width:44px;text-align:center;font-variant-numeric:tabular-nums}
+  .m3d{display:flex;align-items:center;gap:7px;padding:0 10px 0 8px;font-size:12px;color:var(--t2);cursor:pointer}
+  .m3d .track{width:34px;height:22px;border-radius:11px;background:var(--field);border:1px solid var(--border);
+    position:relative;transition:background .12s}
+  .m3d .knob{position:absolute;top:1px;left:1px;width:18px;height:18px;border-radius:50%;background:var(--t4);
+    transition:left var(--dur-fast) var(--ease-apple),background .12s}
+  .m3d:hover .track{background:var(--hover)}
+
+  /* ④ Inspector 236 */
+  .insp{width:236px;flex:none;background:var(--panel);border-left:1px solid var(--border);display:flex;
+    flex-direction:column}
+  .insp .ih{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border)}
+  .insp .ih .t{font-size:12.5px;font-weight:600}
+  .insp .ih .s{font-size:10px;color:var(--t4)}
+  .insp .ih .x{margin-left:auto;width:24px;height:24px;border-radius:8px;border:0;background:transparent;
+    color:var(--t3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s}
+  .insp .ih .x:hover{background:var(--hover)}
+  .insp .ih .x .lucide{width:13px;height:13px}
+  .insp .body{padding:12px;overflow:auto}
+  .prev{height:72px;border-radius:var(--radius-sm);background:linear-gradient(120deg,#6b4a2f,#8a6238 45%,#5c3d24);
+    margin-bottom:10px}
+  .iname{font-size:13px;font-weight:600}
+  .ichip{display:inline-block;font-size:9.5px;color:var(--accent);background:var(--accent-soft);border-radius:6px;
+    padding:1px 7px;margin:5px 0 10px}
+  .kv{display:flex;justify-content:space-between;font-size:11.5px;height:var(--row);min-height:26px;
+    align-items:center;border-bottom:1px solid var(--border)}
+  .kv .k{color:var(--t4)}
+  .kv .v{color:var(--t1);font-variant-numeric:tabular-nums}
+  .ibtn{width:100%;height:32px;border-radius:9px;border:0;font-size:12.5px;font-weight:600;cursor:pointer;
+    margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .12s}
+  .ibtn.pri{background:var(--accent);color:#fff}
+  .ibtn.pri:hover{background:var(--accent-strong)}
+  .ibtn.sec{background:var(--field);color:var(--t2);border:1px solid var(--border)}
+  .ibtn.sec:hover{background:var(--hover)}
+  .ibtn .lucide{width:13px;height:13px}
+  .ihint{font-size:10px;color:var(--t4);line-height:1.45;margin-top:10px}
+
+  /* ⑥ Status 26 */
+  .st{height:26px;display:flex;align-items:center;gap:14px;padding:0 12px;background:var(--panel);
+    border-top:1px solid var(--border);font-size:10.5px;color:var(--t3)}
+  .vit{display:flex;align-items:center;gap:6px;color:var(--t2)}
+  .vg{width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--accent) 0%,transparent 62%),
+    radial-gradient(circle at 70% 75%,var(--accent-ring) 0%,transparent 55%),var(--field);
+    border:1px solid var(--accent-ring)}
+  .st .r{margin-left:auto;display:flex;gap:14px;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+
+<div class="note">
+  <div class="head">
+    <h1>Dựng ảnh · mode Render+Mood+Collab — mock G2 (hợp đồng port)</h1>
+    <div class="theme-toggle">Tối
+      <div class="tt-track" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='light'?'':'light'"><div class="tt-knob"></div></div>
+    Sáng</div>
+  </div>
+  <p>Khung AppShell 6 ổ thật trên main (Header 42 · Navigator 214 · Stage · Inspector 236 · Toolbelt kính · Status 26).
+  Token chép nguyên <code>app/globals.css</code>, Tối mặc định. Gradient trong ảnh/palette = placeholder nội dung người dùng.</p>
+  <div class="legend">
+    <span><i class="pin">1</i> Presence on/off + mời (+)</span>
+    <span><i class="pin">2</i> Share Viewer·Commenter·Editor (kính, PORTAL)</span>
+    <span><i class="pin">3</i> Toolbar bút tablet, nút 34</span>
+    <span><i class="pin">4</i> Frame theo PHÒNG</span>
+    <span><i class="pin">5</i> Swatch matId → Inspector</span>
+    <span><i class="pin">6</i> Sticky · comment @mention · reaction</span>
+    <span><i class="pin">7</i> Mindmap = template TUỲ CHỌN</span>
+    <span><i class="pin">8</i> Live-link: palette → Bơm vào Render</span>
+    <span><i class="pin">9</i> Toolbelt + gạt "Vẽ 3D" cùng khối, bo đồng tâm</span>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- ① HEADER 42 -->
+  <div class="hd">
+    <div class="logo">IF</div>
+    <div class="docname">Căn hộ Nguyên Đán · Mood <i data-lucide="chevron-down"></i></div>
+    <div class="seg">
+      <button>Vẽ</button><button class="on">Dựng ảnh</button><button>Trình bày</button>
+    </div>
+    <div class="right">
+      <div class="presence">
+        <i class="pin abs" style="top:-8px;left:-8px">1</i>
+        <div class="av a1" title="Hoà — online"><span class="onl"></span></div>
+        <div class="av a2" title="Lan — online"><span class="onl"></span></div>
+        <div class="av a3" title="Minh — online"><span class="onl"></span></div>
+        <div class="av off" title="Khách A — offline"></div>
+        <button class="invite" title="Mời người mới"><i data-lucide="plus"></i></button>
+      </div>
+      <button class="share-btn"><i data-lucide="share-2"></i>Chia sẻ</button>
+      <div class="me" title="Bạn"></div>
+    </div>
+  </div>
+
+  <!-- SHARE POPOVER (kính · portal ra body — TICKET-FIX-KINH-HEADER K4) -->
+  <div class="share-pop">
+    <i class="pin abs" style="top:-8px;left:-8px">2</i>
+    <div class="ti">Chia sẻ bảng Mood</div>
+    <div class="inv-row"><input placeholder="Email hoặc tên…"><button>Mời</button></div>
+    <div class="p-row"><span class="nm">Lan</span><span class="sub">· trong studio</span>
+      <span class="role">Editor <i data-lucide="chevron-down"></i></span></div>
+    <div class="p-row"><span class="nm">Khách A</span><span class="sub">· ngoài studio</span>
+      <span class="role" style="color:var(--accent)">Commenter <i data-lucide="chevron-down"></i></span></div>
+    <div class="role-menu">
+      <div class="rm-row"><i data-lucide="eye"></i>Viewer<span class="d">chỉ xem</span></div>
+      <div class="rm-row on"><i data-lucide="message-square"></i>Commenter<span class="d">góp ý, không sửa</span></div>
+      <div class="rm-row"><i data-lucide="pencil"></i>Editor<span class="d">sửa mọi thứ</span></div>
+    </div>
+    <div class="copy"><i data-lucide="link-2"></i>Chép link mời</div>
+  </div>
+
+  <div class="bd">
+
+    <!-- ② NAVIGATOR 214 — Node Library 3 vùng -->
+    <div class="nav">
+      <div class="search"><i data-lucide="search"></i>Tìm node…</div>
+      <div class="scroll">
+        <div class="zt"><span class="dot" style="background:var(--c-mood)"></span>MOOD + CỘNG TÁC</div>
+        <div class="ncard"><span class="dot" style="background:var(--c-mood)"></span>Moodboard</div>
+        <div class="ncard"><span class="dot" style="background:var(--c-mood)"></span>Bảng gu · palette</div>
+        <div class="ncard"><span class="dot" style="background:var(--c-mood)"></span>Ghi chú</div>
+        <div class="tmpl"><i data-lucide="git-fork"></i>Mindmap concept<span class="opt">TUỲ CHỌN</span></div>
+
+        <div class="zt"><span class="dot" style="background:var(--c-master)"></span>NODE MASTER</div>
+        <div class="ncard"><span class="dot" style="background:var(--c-master)"></span>Sketch2Photo<span class="cr">2 cr</span></div>
+        <div class="ncard"><span class="dot" style="background:var(--c-master)"></span>Nâng nét ×4<span class="cr">1 cr</span></div>
+        <div class="ncard"><span class="dot" style="background:var(--c-master)"></span>Video motion<span class="cr">4 cr</span></div>
+
+        <div class="zt"><span class="dot" style="background:var(--c-node)"></span>NODE THƯỜNG</div>
+        <div class="ncard"><span class="dot" style="background:var(--c-node)"></span>Nhập ảnh</div>
+        <div class="ncard"><span class="dot" style="background:var(--c-node)"></span>Ghép ảnh</div>
+        <div class="ncard"><span class="dot" style="background:var(--c-node)"></span>Chú thích</div>
+      </div>
+      <div class="foot">
+        <button class="add"><i data-lucide="plus"></i>Thêm node</button>
+        <button class="lib"><i data-lucide="library-big"></i>Thư viện</button>
+      </div>
+    </div>
+
+    <!-- ③ STAGE — canvas Miro -->
+    <div class="stage">
+
+      <!-- Toolbar bút tablet -->
+      <div class="pen">
+        <i class="pin abs" style="top:-8px;left:-8px">3</i>
+        <button class="pt on" title="Chọn — V"><i data-lucide="mouse-pointer-2"></i></button>
+        <button class="pt" title="Bút — P"><i data-lucide="pen-line"></i></button>
+        <button class="pt" title="Marker"><i data-lucide="brush"></i></button>
+        <button class="pt" title="Highlight"><i data-lucide="highlighter"></i></button>
+        <button class="pt" title="Tẩy — E"><i data-lucide="eraser"></i></button>
+        <div class="sep"></div>
+        <button class="pt" title="Sticky — S"><i data-lucide="sticky-note"></i></button>
+        <button class="pt" title="Chữ — T"><i data-lucide="type"></i></button>
+        <button class="pt" title="Hình — R"><i data-lucide="square"></i></button>
+        <button class="pt" title="Ảnh"><i data-lucide="image"></i></button>
+        <button class="pt" title="Comment — C"><i data-lucide="message-circle"></i></button>
+      </div>
+
+      <!-- Nhánh mindmap -->
+      <svg class="links">
+        <path d="M 306 588 C 350 588 360 556 402 548"/>
+        <path d="M 306 606 C 350 610 360 640 402 648"/>
+      </svg>
+
+      <!-- FRAME PHÒNG KHÁCH -->
+      <div class="frame" style="left:82px;top:36px;width:428px;height:300px">
+        <span class="fl">PHÒNG KHÁCH</span>
+        <i class="pin abs" style="top:-9px;right:-9px">4</i>
+      </div>
+      <div class="imgc" style="left:104px;top:64px">
+        <div class="im" style="background:linear-gradient(130deg,#b99a6f,#8a6b47 55%,#6f5438)"></div>
+        <div class="cap">Sofa vải thô · ấm</div>
+        <div class="react">
+          <span class="rc me"><i data-lucide="heart"></i>3</span>
+          <span class="rc"><i data-lucide="thumbs-up"></i>2</span>
+        </div>
+      </div>
+      <div class="imgc" style="left:238px;top:96px">
+        <div class="im" style="background:linear-gradient(130deg,#9aa5ad,#6f7a83 55%,#4e575e)"></div>
+        <div class="cap">Đá ốp lò sưởi</div>
+        <div class="react"><span class="rc"><i data-lucide="heart"></i>1</span></div>
+      </div>
+      <div class="mat sel" style="left:130px;top:212px">
+        <i class="pin abs" style="top:-9px;left:-9px">5</i>
+        <div class="sw" style="background:linear-gradient(120deg,#6b4a2f,#8a6238 45%,#5c3d24)"></div>
+        <div class="mb">
+          <div class="mn">Gỗ óc chó tự nhiên</div>
+          <div class="mrow"><span class="mid">OAK-224</span><span class="pr">1,24tr/m²</span></div>
+        </div>
+      </div>
+      <div class="mat" style="left:282px;top:236px">
+        <div class="sw" style="background:linear-gradient(120deg,#c8c3bb,#a9a49b 50%,#8f8a80)"></div>
+        <div class="mb">
+          <div class="mn">Đá honed xám</div>
+          <div class="mrow"><span class="mid">STN-081</span><span class="pr">2,10tr/m²</span></div>
+        </div>
+      </div>
+      <div class="sticky" style="left:404px;top:70px">Tông ấm — gỗ + vải thô, tránh bóng loáng</div>
+      <div class="cmt" style="left:436px;top:196px">
+        <i class="pin abs" style="top:-9px;left:-9px">6</i>
+        <div class="cpin"><i data-lucide="message-circle"></i></div>
+        <div class="thr">
+          <div class="who">Lan · 5 phút<span class="res" title="Đánh dấu xong"><i data-lucide="check"></i></span></div>
+          <div class="tx"><b>@Hoà</b> đá này bóng quá — đổi bản honed?</div>
+          <input placeholder="Trả lời…">
+        </div>
+      </div>
+
+      <!-- FRAME BẾP -->
+      <div class="frame" style="left:600px;top:36px;width:300px;height:236px">
+        <span class="fl">BẾP</span>
+      </div>
+      <div class="imgc" style="left:622px;top:66px">
+        <div class="im" style="background:linear-gradient(130deg,#4e5a52,#39443d 55%,#28312b)"></div>
+        <div class="cap">Tủ bếp xanh rêu</div>
+        <div class="react"><span class="rc"><i data-lucide="thumbs-up"></i>4</span></div>
+      </div>
+      <div class="mat" style="left:754px;top:92px">
+        <div class="sw" style="background:linear-gradient(120deg,#d9d2c5,#c2baa9 50%,#a89f8c)"></div>
+        <div class="mb">
+          <div class="mn">Đá thạch anh kem</div>
+          <div class="mrow"><span class="mid">QTZ-142</span><span class="pr">3,45tr/m²</span></div>
+        </div>
+      </div>
+      <div class="sticky" style="left:636px;top:186px;transform:rotate(1.5deg)">Mặt bàn sáng màu cho bếp thiếu nắng</div>
+
+      <!-- FRAME GU · PALETTE (live-link) -->
+      <div class="frame live" style="left:600px;top:318px;width:300px;height:132px">
+        <span class="fl">GU · PALETTE — ĐÃ CHỐT</span>
+        <i class="pin abs" style="top:-9px;right:-9px">8</i>
+      </div>
+      <div class="pal" style="left:624px;top:352px">
+        <i style="background:#8a6238" title="Nội dung dự án"></i>
+        <i style="background:#4e5a52"></i>
+        <i style="background:#d9d2c5"></i>
+        <i style="background:#a9a49b"></i>
+        <i style="background:#2f2a24"></i>
+      </div>
+      <button class="pump" style="left:624px;top:398px"><i data-lucide="arrow-right"></i>Bơm vào Render</button>
+
+      <!-- MINDMAP TEMPLATE (tuỳ chọn) -->
+      <span class="mtag" style="left:190px;top:512px">TEMPLATE · KÉO TỪ KỆ</span>
+      <i class="pin abs" style="left:166px;top:508px">7</i>
+      <div class="mmc" style="left:180px;top:552px">Concept · Nguyên Đán<div class="sub">ấm — mộc — tĩnh</div></div>
+      <div class="mmn" style="left:402px;top:530px">Ấm mộc<div class="h">gỗ · vải thô · nâu đất</div></div>
+      <div class="mmn" style="left:402px;top:630px">Tối giản<div class="h">ít vật · nhiều khoảng thở</div></div>
+
+      <!-- Con trỏ tên -->
+      <div class="cur" style="left:342px;top:300px">
+        <svg viewBox="0 0 24 24"><path d="M4 2l16 8-7 2-3 7z"/></svg>
+        <span class="tag">Lan</span>
+      </div>
+
+      <!-- ⑤ TOOLBELT -->
+      <div class="belt">
+        <i class="pin abs" style="top:-9px;left:-9px">9</i>
+        <button class="bt on" title="Chọn — V"><i data-lucide="mouse-pointer-2"></i></button>
+        <button class="bt" title="Pan — H"><i data-lucide="hand"></i></button>
+        <button class="bt" title="Frame — F"><i data-lucide="frame"></i></button>
+        <span class="sep"></span>
+        <button class="bt" title="Hoàn tác — ⌘Z"><i data-lucide="undo-2"></i></button>
+        <button class="bt" title="Làm lại — ⇧⌘Z"><i data-lucide="redo-2"></i></button>
+        <span class="sep"></span>
+        <button class="bt" title="Thu nhỏ"><i data-lucide="minus"></i></button>
+        <span class="zoom">100%</span>
+        <button class="bt" title="Phóng to"><i data-lucide="plus"></i></button>
+        <button class="bt" title="Vừa màn — ⇧1"><i data-lucide="maximize"></i></button>
+        <span class="sep"></span>
+        <button class="bt" title="Lưới"><i data-lucide="grid-3x3"></i></button>
+        <button class="bt" title="Phím tắt — ⌘K"><i data-lucide="command"></i></button>
+        <span class="sep"></span>
+        <span class="m3d" title="Gạt sang mode Vẽ 3D">
+          <i data-lucide="box" style="width:14px;height:14px"></i>Vẽ 3D
+          <span class="track"><span class="knob"></span></span>
+        </span>
+      </div>
+    </div>
+
+    <!-- ④ INSPECTOR 236 — hiện vì đang chọn swatch -->
+    <div class="insp">
+      <div class="ih">
+        <div><div class="t">Vật liệu</div><div class="s">đang chọn · 1 swatch</div></div>
+        <button class="x" title="Đóng — Esc"><i data-lucide="x"></i></button>
+      </div>
+      <div class="body">
+        <div class="prev"></div>
+        <div class="iname">Gỗ óc chó tự nhiên</div>
+        <span class="ichip">matId · OAK-224</span>
+        <div class="kv"><span class="k">Hãng</span><span class="v">An Cường</span></div>
+        <div class="kv"><span class="k">Mã</span><span class="v">AC-OAK-224</span></div>
+        <div class="kv"><span class="k">Giá</span><span class="v">1.240.000đ/m²</span></div>
+        <div class="kv"><span class="k">Khổ</span><span class="v">1220×2440</span></div>
+        <div class="kv"><span class="k">Nhóm</span><span class="v">Ốp tường</span></div>
+        <button class="ibtn pri"><i data-lucide="wand-sparkles"></i>Gán vào render</button>
+        <button class="ibtn sec"><i data-lucide="repeat-2"></i>Đổi vật liệu</button>
+        <div class="ihint">Swatch mang dữ liệu thật — kéo vào frame là mang theo hãng·mã·giá. Sang mode Vẽ 3D, swatch này thành vật liệu gán mặt.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑥ STATUS 26 -->
+  <div class="st">
+    <span class="vit"><span class="vg"></span>Vitals</span>
+    <span>3 người trong Mood · Lưu 2 phút trước</span>
+    <span class="r"><span>Credits 128</span><span>Hàng đợi 0</span></span>
+  </div>
+</div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>

@@ -67,5 +67,26 @@ Cùng một hình học áp cho CẢ HAI tầng:
    - **Template Kệ Thư viện (form lập luận, moodboard)**: node/nhánh/badge theo đúng token + thang shape.
 3. Hệ quả: checklist §2c là **cửa nghiệm thu** cho mọi output thiết kế — kể cả thứ AI sinh; sản phẩm "đầy tay như Canva" nhưng kỷ luật hình học như Apple. Đây là điểm bán hàng, không phải trang trí.
 
+## 6 · TOKEN INFERENCE + TRỤC — COWORK-UI chốt 04/08 (việc 0 đợt 2, theo `SPEC-VE-INFERENCE` §2 · TỔNG duyệt)
+
+**Nguyên tắc chốt (qua §0b đủ 3 bước):** ① KHÔNG sinh màu mới ở theme Tối — 6 token trỏ về giá trị ĐÃ CÓ trong hệ (trục 3D §1); ② theo 00-CHOT "trục 2D dùng CÙNG token trục 3D, không sinh cặp thứ hai" → `--axis-*` là token chính thức cho CẢ 2D lẫn 3D; ③ muscle memory SketchUp giữ nguyên (endpoint lục · midpoint lam · on-edge đỏ · trục X đỏ/Y lục); ④ theme Sáng đậm hoá cùng hue để glyph đạt ≥3:1 (WCAG 1.4.11 non-text) trên nền `--bg` sáng — cùng logic globals.css đã làm với `--success` (#46b876→#107043).
+
+| Token | Tối (`#0c0c0e`) | Sáng (`#f2efe9`) | Áp cho | Nguồn giá trị |
+|---|---|---|---|---|
+| `--snap-point` | `#3fb984` | `#1c8a5b` | endpoint · node | = trục Y (SketchUp: endpoint lục) |
+| `--snap-derived` | `#4a78e0` | `#2f5bc4` | midpoint · center · quadrant | = trục Z — 2D không có Z, tái dùng an toàn (SketchUp: midpoint lam) |
+| `--snap-edge` | `#e05c5c` | `#c23f3f` | nearest · intersection · perpendicular · tangent | = trục X (SketchUp: on-edge đỏ) |
+| `--snap-grid` | `var(--accent-soft)` | `var(--accent-soft)` | grid | lưới là nền, mờ theo accent |
+| `--axis-x` | `#e05c5c` | `#c23f3f` | đường gióng ngang + trục X 3D | §1 trục 3D |
+| `--axis-y` | `#3fb984` | `#1c8a5b` | đường gióng dọc + trục Y 3D | §1 trục 3D |
+| (`--axis-z`) | `#4a78e0` | `#2f5bc4` | trục Z 3D (đặt tên luôn cho đủ bộ) | §1 trục 3D |
+
+**Xử va màu (đã cân nhắc, không phải bỏ sót):**
+- Lục snap `#3fb984` ≠ `--success #46b876` — hai lục KHÁC ngữ cảnh (glyph tại con trỏ giữa canvas vs badge/chấm trạng thái trong panel), không bao giờ đứng cạnh nhau; SketchUp cũng chấp nhận endpoint lục = trục Y lục, phân biệt bằng HÌNH (chấm vs đường). Điều bị cấm là hai lục XẤP XỈ trong cùng canvas — vì vậy snap-point = axis-y ĐÚNG 1 giá trị, không lấy `#35b46f` đề xuất cũ (xấp xỉ mà không bằng).
+- Đỏ snap-edge `#e05c5c` ≠ `--danger #e5674f` (đỏ-cam) — danger chỉ sống trong chrome UI/toast, không vẽ lên canvas.
+- Contrast đã tính (non-text ≥3:1): Tối 7.6/4.4/5.2 · Sáng 3.75/5.0/4.4.
+
+**Handoff:** ① CHINH thêm 7 biến trên vào `app/globals.css` cả 2 khối theme (vùng CHINH — Cowork không chạm css app); ② PHU/CHINH khi nối `drawSnap` đổi fallback trong `var(--snap-point, …)` theo bảng này (fallback cũ `#35b46f`/`#d05b5b`/`#3f8fd6` trong SPEC-VE-INFERENCE là đề xuất thô, đã thay); ③ mock nào vẽ inference từ nay dùng đúng 7 biến này.
+
 ---
 *Cowork ghi 02/08/2026. Nguồn token cho code — cùng tinh thần SyncWork (1 accent, motion spring) nhưng IF là hệ token RIÊNG.*

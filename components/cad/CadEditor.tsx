@@ -616,6 +616,15 @@ function ScaleMenu() {
 }
 
 /* ───────── Panel Layer ───────── */
+/** CHINH-5 — dash pattern cho preview nét (px SVG, chỉ để NHÌN — pattern render thật của canvas
+ * nằm ở lib/cad/render.ts, không đọc chung vì đơn vị khác: mm giấy vs px preview 30px). */
+const LINETYPE_DASH: Record<string, string | undefined> = {
+  continuous: undefined,
+  hidden: '4 3',
+  center: '8 3 2 3',
+  dashed: '5 3',
+  phantom: '8 3 2 3 2 3',
+};
 /**
  * 03/08 StageShell buoc 3 (SPEC-APP-SHELL-CHUNG §3): panel Lop KHONG con noi de canvas —
  * EXPORT de CadStageScreen dat vao slot `inspector` cua StageShell (khung phai co dinh 280,
@@ -663,7 +672,28 @@ export function LayerPanel() {
                   <Trash2 size={13} />
                 </button>
               </div>
-              <div style={{ display: 'flex', gap: 4, marginTop: 3, paddingLeft: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3, paddingLeft: 24 }}>
+                {/* CHINH-5 (SPEC-PANEL-ROLLOUT §3 "Nét: liền" → VẼ THẲNG kiểu nét, học AutoCAD):
+                    preview SVG sống theo lineType + lineweight — nhìn 1 phát biết nét gì, dày
+                    bao nhiêu, không phải đọc chữ. 2 <select> GIỮ để đổi giá trị (native select
+                    không vẽ được stroke trong option — preview đứng cạnh là dạng khả thi không
+                    phải dựng dropdown tự chế). */}
+                <svg
+                  width="30"
+                  height="10"
+                  aria-hidden
+                  style={{ flexShrink: 0 }}
+                >
+                  <line
+                    x1="1"
+                    y1="5"
+                    x2="29"
+                    y2="5"
+                    stroke="var(--t2)"
+                    strokeWidth={Math.max(1, (l.lineweight ?? 0.25) * 4)}
+                    strokeDasharray={LINETYPE_DASH[l.lineType ?? 'continuous']}
+                  />
+                </svg>
                 <select
                   value={l.lineweight ?? 0.25}
                   onChange={(e) => updateLayer(l.id, { lineweight: parseFloat(e.target.value) })}
@@ -1956,7 +1986,7 @@ export function SelectionInfoPanel() {
  * Gán cho TẤT CẢ entity đang chọn qua updateEntities (đã snapshot → Undo được, tôn trọng layer
  * khoá). 'null' = "đã kiểm, KHÔNG phải phần tử BIM"; bỏ chọn = xoá về undefined (chưa gán) —
  * đúng ngữ nghĩa 3 trạng thái của model.ts. */
-function BimAssignBox({ selected, onApply }: { selected: Entity[]; onApply: (es: Entity[]) => void }) {
+export function BimAssignBox({ selected, onApply }: { selected: Entity[]; onApply: (es: Entity[]) => void }) {
   const commonStorey = selected.every((e) => e.storey === selected[0].storey) ? selected[0].storey ?? '' : '';
   const sameType = selected.every((e) => e.elementType === selected[0].elementType);
   const commonType = sameType ? selected[0].elementType : undefined;
@@ -2015,7 +2045,7 @@ function BimAssignBox({ selected, onApply }: { selected: Entity[]; onApply: (es:
  * roomType lên entity qua updateEntities (đã snapshot → Undo được, tôn trọng layer khoá) — từ
  * đây đổi text label KHÔNG còn làm mất công năng phòng (trước đây classifyRoom() suy luận lại
  * từ text MỖI LẦN checker chạy, không có gì được lưu bền). Pill list đơn giản, chưa cần cầu kỳ. */
-function RoomTypeBox({ entity, onApply }: { entity: TextEntity; onApply: (es: Entity[]) => void }) {
+export function RoomTypeBox({ entity, onApply }: { entity: TextEntity; onApply: (es: Entity[]) => void }) {
   const current = entity.roomType ?? classifyRoom(entity.text.trim());
   return (
     <div style={{ ...panel, position: 'relative', width: '100%', padding: '8px 10px' }}>
@@ -2057,7 +2087,7 @@ function RoomTypeBox({ entity, onApply }: { entity: TextEntity; onApply: (es: En
  * gán hiện rõ "chưa phân loại", không đoán mò từ hình học vì không có DCEL outer-boundary utility
  * nào trong app này để suy luận tường ngoài đáng tin cậy). Gán qua updateEntities (đã snapshot →
  * Undo được, tôn trọng layer khoá) — cùng pattern RoomTypeBox/BimAssignBox. */
-function WallTypePanel({ entity, onApply }: { entity: Entity; onApply: (es: Entity[]) => void }) {
+export function WallTypePanel({ entity, onApply }: { entity: Entity; onApply: (es: Entity[]) => void }) {
   const kind = entity.wallKind;
   const structural = entity.wallStructural ?? false;
   const [thickness, setThickness] = useState(entity.wallThicknessMm != null ? String(entity.wallThicknessMm) : '');

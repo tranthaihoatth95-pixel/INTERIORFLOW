@@ -1397,3 +1397,182 @@ nút toggle trên tab browser mới đôi khi không đăng ký (đọc store th
   registry.ts`) · Trụ 3 Inspector tự sinh schema · tab ngang 34px trên canvas (CadSheets đã có
   tab riêng, chưa chuẩn hoá về khung chung) · danh sách trang thật cho PresentNavigator ·
   click-để-focus node từ RenderNavigator · Layer State đỉnh Navigator (tính năng mới, cần model).
+
+---
+
+## [TỰ CHẠY · CHINH-1] Merge nhanh-g4 XONG · nhanh-phu ABORT (mìn thật, vùng PHU) + bench 3D-2
+- Commit `3c8dae6` (merge g4) + `1873cbe` (bench 3D-2).
+- **nhanh-g4 → main XONG, xử mìn đúng hướng giao**: `LeftRail.tsx`/`StageShell.tsx` GIỮ XOÁ
+  (git rm bản g4 để lại), port hành vi: `AppShell` mount `<LibrarySheet stage={libStage}/>` vào
+  ổ overlay dùng chung (cạnh Dashboard/FlowsPanel — 1 lần cho CẢ 5 màn, mapping photo→render giữ
+  từ bản g4); `AppShell.onOpenLibrary` thành optional mặc định `openLibrarySheet({stage})` — nút
+  "Thư viện" đáy Navigator MỞ SHEET mọi màn; `AppLogoMenu` mục Thư viện cùng 1 hành vi (bỏ nhánh
+  "Thư viện Node"/router.push cũ — NodeLibraryPanel vẫn vào được qua ⌘K, grep G4 xác nhận);
+  bỏ 2 mount lẻ g4 đặt ở `/files`+`PixelSettingsShell` (trước cần vì 2 trang không qua
+  StageShell); 4 call site bỏ prop `onOpenLibrary` (hết `router.push('/library')`).
+- Nhận trọn code mới g4: LibrarySheet/BulkIngest/shelves/use-library-sheet (sheet kính, phím L +
+  Escape capture, deep-link qua sessionStorage) · CommandPanel/Viewport3D/ObjectProperties +
+  ve3d-css + lib/three/materials + mode-render-3d (Vẽ 3D — CHƯA mount, việc G4 sau merge theo
+  queue của họ; `mode-render-3d.ts` có TODO(CHINH) nối `defineMode` — registry đã có ở
+  `lib/shell/mode-registry.ts`, G4 nối khi mount) · xoá 6 file library cũ + mock-data.
+- tsc/eslint sạch · npm test 0 fail · **verify browser thật đủ đề bài**: nút Thư viện mở sheet ở
+  CẢ 5 màn (Render/CAD/Present qua client-side, /files·/settings hard-nav) — kệ tự lọc ĐÚNG chặng
+  ("Kệ chặng Vẽ"/"Dựng ảnh"/"Trình bày") · Esc đóng (data-open=false + inert; vệt sheet còn thấy
+  là transition đóng băng do rAF-throttle sandbox đã biết, state đúng) · deep-link `/library` →
+  redirect về trang trước + sheet TỰ MỞ (sessionStorage). Console: chỉ còn loop
+  `EditorCanvas.tsx:53` present-editor ĐÃ BIẾT của phiên phụ, 0 lỗi mới.
+- **Bench 3D-2**: COMMIT (không xoá) `app/dev-bench-3d-2/` — STATUS.md ghi rõ CHỜ Hoà chạy lấy
+  số thật rồi mới xoá; commit để hết untracked noise + tái lập được. `tsconfig.scoped.json`
+  KHÔNG đụng (file scratch phiên Cowork, STATUS ghi Hoà rm tay).
+- ⛔ **nhanh-phu KHÔNG merge được — MÌN THẬT, trái sổ ghi "sạch không mìn", đã `git merge
+  --abort` (main sạch lại, tsc pass)**. 2 lỗi, đều vùng PHU (`lib/*`), tôi không được sửa (§2):
+  1. `lib/boq/cache.ts:34` (+ toàn bộ test BOQ) đọc `h.specId` trên **HatchEntity** — field
+     `specId` chỉ tồn tại trên **BlockEntity** (`lib/cad/model.ts:285`), CẢ trên chính nhánh
+     nhanh-phu (đã xem `git show nhanh-phu:lib/cad/model.ts` — HatchEntity không có specId).
+     Nhánh phu TỰ NÓ không typecheck — nghi tsc-scoped của phiên phu bỏ sót (STATUS có ghi họ
+     phải dùng tsc scoped vì `-p .` timeout sandbox).
+  2. `app/api/boq/[projectId]/route.ts:54`: kiểu trả về Prisma select thiếu
+     `unit/priceVnd/wastagePercent` so với `ProductSpecDtoLite` — schema.prisma ĐÃ có 3 cột
+     (dòng 389-391) nên nghi select thiếu cột HOẶC Prisma client generate cũ.
+  → Việc của PHU: thêm `specId?: string` vào HatchEntity (additive, đúng thiết kế comment trong
+  cache.ts) + sửa select/generate. Merge lại sau khi nhánh phu tsc sạch.
+- Kỹ thuật: `.git` chung nhiều phiên — gặp `HEAD.lock`/`packed-refs.lock` stale (30-40 phút,
+  lsof chỉ com.apple giữ fd đọc) → rename `*.stale-<pid>` theo convention sẵn trong `.git/`,
+  không rm.
+
+---
+
+## [TỰ CHẠY đêm 04/08] CHỐT PHIÊN CHINH (~85% context) — 1b + CHINH-3 XONG, hàng đợi còn 4·5
+**Commit phiên tự chạy** (theo thứ tự): `3c8dae6` merge g4 (sheet Thư viện + Vẽ 3D components) ·
+`1873cbe` bench 3D-2 · `46f559b` báo cáo CHINH-1 · `7847969` CHINH-3 panel thò thụt ·
+`a3d8abd` 1b GẤP RenderNavigator catalog · `2208345` BAO-CAO-DEM · `349db14` dòng §1 sổ tổng.
+
+**KHỐI KHỞI ĐỘNG PHIÊN CHINH KẾ TIẾP (đọc xong là chạy được ngay):**
+1. Đọc `SO-KIEM-TONG.md` (§2 CHINH · §3 · §4a đêm) → `00-CHOT.md` → file này mục cuối.
+2. Trạng thái: main = `349db14`+, CHƯA PUSH (push bị permission classifier chặn phía Claude —
+   Hoà/phiên có quyền chạy `git push origin main`). tsc/eslint/test sạch tại `a3d8abd`.
+3. Hàng đợi CHINH còn (theo §3 cũ, đối chiếu lại sổ trước khi làm — Cowork có thể đã bơm mới):
+   - **#4 phím tắt toàn app** (`SPEC-PANEL-ROLLOUT-IDF` §4): ⌘K nối `CommandPalette.tsx` có sẵn
+     (hiện chỉ sống ở HomeScreen — cần nâng lên AppShell) · B/I/⌘\ (B đã có phím trong title
+     Navigator, CHƯA bind thật) · ⌘1-3 · va phím L: chặng Vẽ L=đường, Thư viện=⇧L (sổ lệnh PHU
+     chưa có → làm khung phím trong AppShell trước, TODO nối registry).
+   - **#5 bảng chữ→icon** (§3 spec): áp Inspector + Settings — LƯU Ý vùng: Inspector CAD =
+     CadInspectorPages (CHINH, sửa được), ruột box trong `components/cad/CadEditor.tsx` (3 box đã
+     export) — sửa ruột box là chạm cad, ghi rõ nếu làm; Settings = vùng G4, chỉ giao phiếu.
+   - Toolbelt ổ ⑤: gộp CadToolbar + CadTouchDock vào dock kính (sửa luôn bug toolbar tràn đè
+     Inspector — ghi ở BAO-CAO-DEM).
+   - Nối `resetAllRolloutLayouts()` vào Cài đặt (vùng G4 — soạn phiếu, đừng tự sửa).
+4. Mìn/bẫy còn nóng: nhanh-phu CHƯA merge (2 lỗi type vùng PHU, chi tiết mục CHINH-1 phía trên —
+   chờ PHU sửa `HatchEntity.specId` + Prisma select rồi merge lại) · 2 dev server chung repo →
+   nghẹt thì restart + xoá `.next/cache/webpack` · lock `.git` stale → rename `*.stale-<pid>`,
+   ĐỪNG rm · TUYỆT ĐỐI `git commit -- <pathspec>` (đã dính 1 lần, đã sửa) · click đầu tab mới
+   không ăn → element.click() qua JS · `visibilityState==='hidden'` đóng băng animation khi
+   verify — đo computed style/state, đừng tin mắt.
+5. Xung đột spec ĐANG MỞ (cần Cowork/Hoà phân xử): `SPEC-PANEL-ROLLOUT-IDF` §2c "không chọn gì →
+   thuộc tính khung nhìn" ↔ `SPEC-CAD-SHELL-V3` luật 4 + `SPEC-HA-TANG` Trụ 1 "Inspector chỉ hiện
+   khi có chọn". Đang theo phe 2-đánh-1 (ẩn khi không chọn) — đổi chỉ 1 dòng gate ở
+   CadStageScreen.
+
+HẾT PHIÊN CHINH ~00:0x giờ đêm 04/08 (1b GẤP xong, CHINH-3 xong; #4/#5 chưa bắt đầu — context
+hết trước, KHÔNG phải cạn hàng đợi).
+
+---
+
+## [ĐẢO NGƯỢC theo lệnh Hoà trực tiếp] Navigator Render — gắn NGUYÊN NodeLibraryPanel (`739960c`)
+Hoà BÁC bản 1b (`a3d8abd`) ngay khi thấy ảnh: "Navigator chặng Render dạng list chữ NGHÈO hơn
+bản cũ" — lần 2 vi phạm §0d (lần 1: rail lèo tèo→rối rắm, 03/08). Bài học: đồng nhất hoá KHÔNG
+được làm nghèo tiện dụng — "ổ cố định, ruột thay đổi" nghĩa ruột ĐƯỢC PHÉP giàu khác nhau theo
+chặng, không phải ép mọi Navigator thành list chữ giống nhau.
+
+**Đảo đúng lệnh** (không tự diễn giải thêm): `NodeLibraryPanel.tsx` thêm prop `embedded` (mặc
+định `false` giữ nguyên hành vi sheet-trượt cũ cho 2 nơi gọi còn lại — Command Palette, RenderToolModeOverlay).
+`embedded=true` chỉ bỏ khung/gate ngoài (AnimatePresence, w-64, nút đóng), MỌI nội dung bên trong
+(search/chip/Mood+Cộng tác/Vật liệu thật/Master card/nhóm tag/mindmap) giữ NGUYÊN — đúng nghĩa
+"GẮN, không viết lại". `Navigator.tsx` thêm prop `width` (mặc định 214), `AppShell` set 280 riêng
+cho `active==='render'`. Xoá hẳn `RenderNavigator.tsx` (bản list-chữ bị bác).
+
+Verify: 280px đúng DOM, card đầy đủ y hệt bản trước merge, bấm card ra NODE THẬT trên canvas
+(không phải chỉ highlight), dark theme rõ. Đã dọn node/theme test.
+
+**Bài học ghi cho bản thân**: trước khi "đồng nhất hoá" 1 mảng đã có UI giàu (card/icon/mô tả)
+thành khuôn chung của những mảng khác (danh sách chữ đơn giản như CAD Lớp) — PHẢI dừng hỏi thay
+vì tự suy diễn "đồng nhất = giống hình dạng". Layer panel CAD vốn ĐÃ là list chữ từ đầu nên đúng
+khuôn; NodeLibraryPanel vốn ĐÃ là card giàu — ép nó xuống list chữ là hạ cấp, không phải đồng nhất.
+
+---
+
+## [TỰ CHẠY tiếp] CHINH-4 + CHINH-5 XONG — hàng đợi §3 CHINH cạn (trừ việc chờ)
+- **CHINH-4 phím tắt** (`2649287`): B/I/⌘\ ở AppShell (document capture, thắng type-anywhere
+  CadCanvas) · ⌘1-3 ở AppChrome (pickStage đã wire sẵn) · va phím L xử đúng §4e — CAD: ⇧L Thư
+  viện + L trần = lệnh ĐƯỜNG; 2 chặng kia L trần. Suy luật ⇧ cho cả B/I ở CAD (type-anywhere nuốt
+  chữ trần — gõ B là bắt đầu lệnh). `CadCanvas.tsx` +1 điều kiện `!e.shiftKey` vào type-anywhere
+  (thuộc phạm vi việc "xử va L" được giao — chữ CÓ ⇧ nay để dành phím tắt tầng app). ⌘K KHÔNG
+  nâng lên AppShell đợt này: CommandPalette cần ReactFlowProvider (chỉ HomeScreen có) — palette
+  đa-màn là việc riêng khi sổ lệnh PHU xong, ghi TODO.
+  Verify thật đủ ma trận: Render B/L/⌘\ · CAD ⇧L mở + L trần KHÔNG mở + ⇧B thu + ⇧I được ăn
+  (preventDefault xác nhận; DOM unmount không quan sát được do exit-animation đóng băng rAF
+  sandbox đã biết) + i trần vào type-anywhere · ⌘2 điều hướng thật CAD→Render.
+- **CHINH-5 chữ→icon** (`59702d6`): phần TRONG vùng — sub Inspector = chấm màu + TÊN lớp (hết id
+  thô `l-wall`, hàng "Lớp: Tường" §3) · LayerPanel preview nét SVG sống theo lineType/lineweight
+  (hàng "Nét: liền" §3, select giữ để đổi — native select không vẽ stroke trong option được).
+  **BÀN GIAO G4/PHU (ngoài vùng, không tự làm)**: "Đổ bóng: Có"→icon (ObjectProperties.tsx,
+  three) · chấm đồng bộ + chip engine IF/V-Ray/D5 + xích đứt --warning (material/present) ·
+  Settings icon-hoá + nút "Đặt lại bố cục panel" (nối `resetAllRolloutLayouts()` đã export sẵn
+  từ `components/studio/Rollout.tsx`).
+- Hàng đợi §3 CHINH sau 2 việc này: #1 merge nhanh-phu vẫn ⛔ chờ PHU sửa 2 lỗi type (đã ghi) ·
+  Toolbelt ổ ⑤ gộp CadToolbar/CadTouchDock (việc lớn kế tiếp, sửa luôn bug toolbar tràn đè
+  Inspector) · palette đa-màn chờ sổ lệnh PHU.
+
+---
+
+## [Lệnh Hoà trực tiếp] CHINH-6 — DỌN ĐỊA TẦNG Render (`efa434c`) — XONG cả 4 mục
+1. Cột "Đầu vào" XOÁ khỏi layout nghỉ NodeLibraryPanel (chip + nhóm tag) → thay bằng nhóm
+   **"TRÊN BẢNG"** đứng đầu: đếm số, mỗi hàng = node đang trên canvas, bấm = focus (setCenter
+   zoom 100%). Capability giữ: gõ tìm là nhóm input hiện lại + ⌘K đủ danh mục.
+2. Ổ Navigator Render = CHÍNH panel Thư viện khối — một cột duy nhất (xác nhận screenshot).
+3. Banner "Còn công cụ khác chưa hiện / Xem tất cả" XOÁ HẲN (RenderToolModeOverlay chỉ còn mount
+   ToolWindow + auto-mở tool khớp mẫu).
+4. `fitView={nodes.length > 0}` — canvas trống đứng 100%, hết tụt minZoom 15%.
+- **PHÁT HIỆN GỐC "zoom 15%" của ảnh Hoà chê**: dự án mẫu có node RÁC nằm rất xa cụm chính
+  (1 note ở y≈−6000 + moodboard/guref thừa — dấu vết test phiên nào đó trước) → fitView thu nhỏ
+  hết cỡ để ôm trọn. Fix (4) chỉ xử ca canvas TRỐNG; muốn dự án mẫu hết 15% cần DỌN node rác —
+  tôi KHÔNG tự xoá (dữ liệu dự án, không chắc của phiên nào), giờ nhóm "Trên bảng" nhìn thấy +
+  bấm tới tận nơi là dọn được trong 30 giây. Đề nghị Hoà/phiên trực dọn.
+- Verify browser thật đủ 4 mục + click-focus đo transform. tsc/eslint/test sạch.
+
+---
+
+# CHỐT PHIÊN CHINH 04/08 (~80% context, lệnh Hoà)
+
+**Phiên này giao–nhận đủ, KHÔNG việc dở.** Chuỗi commit (đều đã PUSH origin/main, tới `490623e`):
+- `739960c`+`65dd355` — ĐẢO theo lệnh Hoà: Navigator Render = NodeLibraryPanel NGUYÊN BẢN
+  (`embedded` prop), 280px, xoá bản list-chữ. Bài học §0d ghi sổ.
+- `2649287` — CHINH-4 phím tắt: B/I/⌘\ (AppShell, document-capture thắng type-anywhere) ·
+  ⌘1-3 (AppChrome) · va L §4e (CAD ⇧L, type-anywhere bỏ chữ có ⇧).
+- `59702d6` — CHINH-5 chữ→icon phần trong vùng: sub Inspector = chấm màu + TÊN lớp · preview
+  nét SVG LayerPanel. Bàn giao G4/PHU phần ngoài vùng (đã kê ở mục trước).
+- `efa434c` — CHINH-6 dọn địa tầng Render: 1 cột trái · nhóm "Trên bảng" (đếm + click-focus) ·
+  xoá cột "Đầu vào" layout nghỉ · xoá banner "Còn công cụ khác" · fitView chỉ khi có node.
+- `490623e` — dòng §1 sổ tổng (kèm cập nhật Cowork đang chờ trong worktree, cùng flow `349db14`).
+
+## KHỐI KHỞI ĐỘNG PHIÊN CHINH KẾ TIẾP
+1. Đọc `SO-KIEM-TONG.md` (§0d MỚI — giữ cái đang tốt · §2 CHINH · §3 · §4) → `00-CHOT.md` →
+   file này từ mục "CHỐT PHIÊN CHINH 04/08" ngược lên.
+2. **main = `490623e`, ĐÃ PUSH, cây sạch (phần code).** tsc/test sạch tại `efa434c`.
+3. Hàng đợi CHINH còn (đối chiếu lại §3 — Cowork bơm mỗi ca):
+   a. **Toolbelt ổ ⑤** — gộp `CadToolbar` (pill top, tràn phải ĐÈ Inspector khi mở — bug ghi
+      nhiều lần) + `CadTouchDock` vào dock kính giữa-dưới của AppShell. Việc lớn nhất còn lại.
+   b. **⛔ merge nhanh-phu** — chờ PHU sửa 2 lỗi type (HatchEntity.specId + Prisma select, kê đủ
+      ở mục CHINH-1). Kiểm `git log nhanh-phu -1` trước.
+   c. Palette ⌘K đa-màn — chờ sổ lệnh PHU (`lib/commands/registry.ts`).
+   d. Phím tắt per-panel §2f + tooltip hiện phím (⇧B/⇧I chưa ghi vào title nút Navigator).
+4. Bẫy nóng: `.git` CHUNG nhiều phiên — `git commit -- <pathspec>` TUYỆT ĐỐI (dính 1 lần đã
+   sửa) · lock stale → rename `*.stale-<pid>` · server nghẹt → restart + xoá
+   `.next/cache/webpack` · click đầu tab mới không ăn → `element.click()` JS · exit-animation
+   đóng băng rAF sandbox → verify bằng state/computed-style, đừng tin DOM unmount.
+5. Việc CHỜ NGƯỜI KHÁC đã kê: node RÁC dự án mẫu (gốc zoom 15%, Hoà/trực dọn — "Trên bảng"
+   bấm tới tận nơi) · bàn giao G4 (icon-hoá ObjectProperties/Settings + nút "Đặt lại bố cục
+   panel" nối `resetAllRolloutLayouts()`) · xung đột spec Inspector-khi-không-chọn (§2c
+   PANEL-ROLLOUT ↔ CAD-SHELL-V3 luật 4, đang theo phe ẩn).
+
+HẾT PHIÊN CHINH — không nhận thêm việc theo lệnh chốt.
