@@ -19,7 +19,7 @@
  * Tóc = kiểu + màu · Kính · Mũ · Áo = kiểu + màu + phụ kiện · Biểu cảm.
  */
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import {
   AvatarConfig,
   ACCESSORY_STYLES,
@@ -78,9 +78,16 @@ const TAB_ICONS: Record<TabId, ReactNode> = {
   ),
 };
 
+/** Tên nhóm của `Opt`/`Dot` đang render — để hộp "Đang chọn" biết ghi nhãn nào mà không phải
+ *  truyền lại `group` ở từng lệnh gọi (Group đã có `title` sẵn, chỉ cần đọc lại qua context). */
+const GroupTitleCtx = createContext('');
+
 export function AvatarBuilder({ value, onChange, onSave, onSkip, seedId = 'seed', saving }: Props) {
   const [config, setConfig] = useState<AvatarConfig>(value ?? DEFAULT_AVATAR);
   const [tab, setTab] = useState<TabId>('face');
+  /* port mock-if-anh-dai-dien-v2.html — hộp "Đang chọn" theo nhóm+giá trị vừa bấm, chỉ hiển thị,
+     không phải field mới trong AvatarConfig. */
+  const [lastPicked, setLastPicked] = useState<{ group: string; value: string } | null>(null);
   const tr = useT();
 
   const update = <K extends keyof AvatarConfig>(k: K, v: AvatarConfig[K]) => {
@@ -112,11 +119,15 @@ export function AvatarBuilder({ value, onChange, onSave, onSkip, seedId = 'seed'
    * config thật không đổi) — ô đó để xem kiểu tóc, đội mũ che hết thì 16 ô như nhau. */
   const Opt = <K extends keyof AvatarConfig>({ k, v }: { k: K; v: AvatarConfig[K] }) => {
     const active = config[k] === v;
+    const groupTitle = useContext(GroupTitleCtx);
     const preview: AvatarConfig = { ...config, [k]: v, ...(k === 'hair' ? { hat: 'none' as const } : null) };
     return (
       <button
         type="button"
-        onClick={() => update(k, v)}
+        onClick={() => {
+          update(k, v);
+          setLastPicked({ group: groupTitle, value: String(v) });
+        }}
         aria-pressed={active}
         className={cn('if-avb-opt', active && 'on')}
       >
@@ -127,21 +138,29 @@ export function AvatarBuilder({ value, onChange, onSave, onSkip, seedId = 'seed'
     );
   };
 
-  const Dot = <K extends keyof AvatarConfig>({ k, v, color }: { k: K; v: AvatarConfig[K]; color: string }) => (
-    <button
-      type="button"
-      onClick={() => update(k, v)}
-      aria-pressed={config[k] === v}
-      className={cn('if-avb-dot', config[k] === v && 'on')}
-      style={{ background: color }}
-    />
-  );
+  const Dot = <K extends keyof AvatarConfig>({ k, v, color, square }: { k: K; v: AvatarConfig[K]; color: string; square?: boolean }) => {
+    const groupTitle = useContext(GroupTitleCtx);
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          update(k, v);
+          setLastPicked({ group: groupTitle, value: String(v) });
+        }}
+        aria-pressed={config[k] === v}
+        className={cn('if-avb-dot', square && 'sq', config[k] === v && 'on')}
+        style={{ background: color }}
+      />
+    );
+  };
 
   const Group = ({ title, children }: { title: string; children: ReactNode }) => (
-    <div className="if-avb-grp">
-      <h3>{title}</h3>
-      {children}
-    </div>
+    <GroupTitleCtx.Provider value={title}>
+      <div className="if-avb-grp">
+        <h3>{title}</h3>
+        {children}
+      </div>
+    </GroupTitleCtx.Provider>
   );
 
   return (
@@ -177,6 +196,9 @@ export function AvatarBuilder({ value, onChange, onSave, onSkip, seedId = 'seed'
           box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);transition:transform .18s cubic-bezier(.32,.72,0,1);padding:0}
         .if-avb-dot:hover{transform:scale(1.04)}
         .if-avb-dot.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft), inset 0 0 0 1px rgba(0,0,0,.06)}
+        .if-avb-dot.sq{border-radius:10px}
+        .if-avb-picked{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;line-height:1.5;color:var(--t3)}
+        .if-avb-picked b{color:var(--t1);font-weight:600}
         .if-avb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
         .if-avb-opt{aspect-ratio:1;border-radius:20px;background:var(--field);border:2px solid transparent;
           display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;padding:0;
@@ -238,12 +260,19 @@ export function AvatarBuilder({ value, onChange, onSave, onSkip, seedId = 'seed'
           ))}
         </div>
 
+        {lastPicked && (
+          <div className="if-avb-picked">
+            <span>{tr('Đang chọn', 'Selected')}</span>
+            <b>{lastPicked.group} · {lastPicked.value}</b>
+          </div>
+        )}
+
         {tab === 'face' && (
           <>
             <Group title={tr('Tông da', 'Skin tone')}>
               <div className="if-avb-dots">
                 {SKIN_TONES.map((t) => (
-                  <Dot key={t} k="base" v={t} color={BASE_TONES[t]} />
+                  <Dot key={t} k="base" v={t} color={BASE_TONES[t]} square />
                 ))}
               </div>
             </Group>

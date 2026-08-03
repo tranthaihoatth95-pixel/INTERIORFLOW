@@ -19,6 +19,7 @@ import {
   Info,
   Link2,
   Send,
+  FolderPlus,
 } from 'lucide-react';
 import VitalsIcon from '@/components/studio/VitalsIcon';
 import { VitalsBubble, VitalsTyping } from '@/components/studio/VitalsChatBubble';
@@ -987,6 +988,17 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               >
                 {timeAgo(f.updatedAt, en)}
               </span>
+              {/* "Bản N" — port mock-if-du-an-v2.html section 03 (FlowRow.version, dữ liệu thật). */}
+              <span
+                className="shrink-0 rounded-full px-2 py-0.5 text-[length:var(--fs-xs)] tabular-nums"
+                style={{
+                  ...adaptiveTextStyle(plan, true),
+                  background: plan.tone === 'light' ? 'rgba(255,255,255,0.1)' : 'rgba(20,17,13,0.08)',
+                  border: `1px solid ${plan.tone === 'light' ? 'rgba(255,255,255,0.14)' : 'rgba(20,17,13,0.16)'}`,
+                }}
+              >
+                {en ? `v${f.version}` : `Bản ${f.version}`}
+              </span>
             </div>
           </div>
 
@@ -1084,6 +1096,37 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           <ArrowRight size={13} />
         </motion.button>
       </div>
+    </div>
+  );
+
+  /* port mock-if-du-an-v2.html màn 02 "Chưa có dự án nào" — trước đây flows=[] chỉ còn lại
+     đúng 1 tile "+ Dự án mới" đơn độc trôi nổi giữa carousel/grid rỗng (không có empty-state
+     riêng). Chỉ 1 CTA thật ("Dự án mới", tái dùng `choose` sẵn có) — KHÔNG thêm nút "Mở bản vẽ
+     có sẵn" của mock vì luồng nhập DWG đang treo (STATUS.md 2.1.6.d), chưa có gì đứng sau nút đó. */
+  const emptyBlock = (
+    <div className="flex max-w-sm flex-col items-center gap-4 rounded-[var(--radius-xl)] px-8 py-10 text-center" style={glass}>
+      <div className="grid h-14 w-14 place-items-center rounded-full" style={{ background: 'rgba(106,87,245,0.14)', color: ACCENT }}>
+        <FolderPlus size={22} />
+      </div>
+      <div>
+        <p className="text-[length:var(--fs-sm)] font-semibold text-[var(--t1)]">
+          {en ? 'No projects yet' : 'Chưa có dự án nào'}
+        </p>
+        <p className="mt-1.5 text-[length:var(--fs-xs)] leading-relaxed text-[var(--t4)]">
+          {en ? 'Create your first project to start drawing.' : 'Tạo dự án đầu tiên để bắt đầu vẽ.'}
+        </p>
+      </div>
+      <motion.button
+        {...pressable}
+        type="button"
+        disabled={busy}
+        onClick={() => void choose({ kind: 'new' })}
+        className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--fs-xs)] font-semibold disabled:opacity-60"
+        style={{ background: ACCENT, color: '#fff' }}
+      >
+        {busy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+        {en ? 'New project' : 'Dự án mới'}
+      </motion.button>
     </div>
   );
 
@@ -1451,7 +1494,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   void choose({ kind: 'flow', flow: f });
                 }
               }}
-              className="group cursor-pointer overflow-hidden text-left"
+              className="group cursor-pointer overflow-hidden text-left transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5"
               style={{
                 borderRadius: 'var(--radius-xl)',
                 border: '1px solid rgba(127,127,127,0.25)',
@@ -1555,6 +1598,9 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 <div className="mt-1.5 flex items-center justify-between gap-2">
                   <span className="min-w-0 truncate text-[length:var(--fs-xs)] text-white/50">
                     {f.project ? f.project.name : timeAgo(f.updatedAt, en)}
+                  </span>
+                  <span className="shrink-0 text-[length:var(--fs-xs)] tabular-nums text-white/40">
+                    {en ? `v${f.version}` : `Bản ${f.version}`}
                   </span>
                   {avatarRow(membersOf(f), { ownerId: f.userId })}
                 </div>
@@ -1856,6 +1902,8 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           errorBlock
         ) : flows === null ? (
           loadingBlock
+        ) : flows.length === 0 ? (
+          emptyBlock
         ) : reduce ? (
           flatList
         ) : effectiveGrid ? (

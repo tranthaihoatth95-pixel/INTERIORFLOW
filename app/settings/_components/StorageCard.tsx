@@ -5,6 +5,12 @@ import { FolderOpen } from 'lucide-react';
 import { chooseRootFolder, rootFolderName, rootFolderSupported, testStorageConnection, type ConnectionTestResult } from '@/lib/root-folder';
 import { useFlowStore } from '@/lib/store';
 import { useT } from '@/lib/i18n';
+import { storageByRoot } from '@/lib/filemanager/queries';
+import { formatBytes } from '@/lib/filemanager/types';
+import { FM_FILES } from '@/lib/filemanager/mock-data';
+
+/** Cùng hạn mức với `FileManagerShell.tsx` (ring dung lượng ở /files) — một nguồn số duy nhất. */
+const STORAGE_QUOTA_BYTES = 10 * 1024 * 1024 * 1024;
 
 function connectionResultText(res: ConnectionTestResult, tr: (vi: string, en: string) => string): string {
   if (res.ok) return tr('Ghi/đọc thử thành công.', 'Write/read test succeeded.');
@@ -46,6 +52,9 @@ export function StorageCard({
   const [busy, setBusy] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const byRoot = storageByRoot();
+  const usedTotal = byRoot.projects + byRoot.backups + byRoot.library + byRoot.knowledge + byRoot.system;
 
   useEffect(() => {
     setSupported(rootFolderSupported());
@@ -109,6 +118,16 @@ export function StorageCard({
 
       <div style={{ height: 14 }} />
 
+      <div className="noterow">
+        <span className="k"><b>{tr('Đã dùng', 'Used')}</b><span>{tr('trên toàn bộ Files', 'across all of Files')}</span></span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)' }}>
+          {formatBytes(usedTotal)} / {formatBytes(STORAGE_QUOTA_BYTES)}
+        </span>
+      </div>
+      <div className="noterow">
+        <span className="k"><b>{tr('Số tệp', 'Files')}</b><span>{tr('dự án + thư viện', 'projects + library')}</span></span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)' }}>{FM_FILES.length}</span>
+      </div>
       <div className="noterow">
         <span className="k"><b>{tr('Ngôn ngữ', 'Language')}</b><span>{tr('chữ trong app', 'app text')}</span></span>
         <span className="seg">
