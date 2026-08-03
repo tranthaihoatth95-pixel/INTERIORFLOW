@@ -1539,3 +1539,40 @@ khuôn; NodeLibraryPanel vốn ĐÃ là card giàu — ép nó xuống list ch�
   tôi KHÔNG tự xoá (dữ liệu dự án, không chắc của phiên nào), giờ nhóm "Trên bảng" nhìn thấy +
   bấm tới tận nơi là dọn được trong 30 giây. Đề nghị Hoà/phiên trực dọn.
 - Verify browser thật đủ 4 mục + click-focus đo transform. tsc/eslint/test sạch.
+
+---
+
+# CHỐT PHIÊN CHINH 04/08 (~80% context, lệnh Hoà)
+
+**Phiên này giao–nhận đủ, KHÔNG việc dở.** Chuỗi commit (đều đã PUSH origin/main, tới `490623e`):
+- `739960c`+`65dd355` — ĐẢO theo lệnh Hoà: Navigator Render = NodeLibraryPanel NGUYÊN BẢN
+  (`embedded` prop), 280px, xoá bản list-chữ. Bài học §0d ghi sổ.
+- `2649287` — CHINH-4 phím tắt: B/I/⌘\ (AppShell, document-capture thắng type-anywhere) ·
+  ⌘1-3 (AppChrome) · va L §4e (CAD ⇧L, type-anywhere bỏ chữ có ⇧).
+- `59702d6` — CHINH-5 chữ→icon phần trong vùng: sub Inspector = chấm màu + TÊN lớp · preview
+  nét SVG LayerPanel. Bàn giao G4/PHU phần ngoài vùng (đã kê ở mục trước).
+- `efa434c` — CHINH-6 dọn địa tầng Render: 1 cột trái · nhóm "Trên bảng" (đếm + click-focus) ·
+  xoá cột "Đầu vào" layout nghỉ · xoá banner "Còn công cụ khác" · fitView chỉ khi có node.
+- `490623e` — dòng §1 sổ tổng (kèm cập nhật Cowork đang chờ trong worktree, cùng flow `349db14`).
+
+## KHỐI KHỞI ĐỘNG PHIÊN CHINH KẾ TIẾP
+1. Đọc `SO-KIEM-TONG.md` (§0d MỚI — giữ cái đang tốt · §2 CHINH · §3 · §4) → `00-CHOT.md` →
+   file này từ mục "CHỐT PHIÊN CHINH 04/08" ngược lên.
+2. **main = `490623e`, ĐÃ PUSH, cây sạch (phần code).** tsc/test sạch tại `efa434c`.
+3. Hàng đợi CHINH còn (đối chiếu lại §3 — Cowork bơm mỗi ca):
+   a. **Toolbelt ổ ⑤** — gộp `CadToolbar` (pill top, tràn phải ĐÈ Inspector khi mở — bug ghi
+      nhiều lần) + `CadTouchDock` vào dock kính giữa-dưới của AppShell. Việc lớn nhất còn lại.
+   b. **⛔ merge nhanh-phu** — chờ PHU sửa 2 lỗi type (HatchEntity.specId + Prisma select, kê đủ
+      ở mục CHINH-1). Kiểm `git log nhanh-phu -1` trước.
+   c. Palette ⌘K đa-màn — chờ sổ lệnh PHU (`lib/commands/registry.ts`).
+   d. Phím tắt per-panel §2f + tooltip hiện phím (⇧B/⇧I chưa ghi vào title nút Navigator).
+4. Bẫy nóng: `.git` CHUNG nhiều phiên — `git commit -- <pathspec>` TUYỆT ĐỐI (dính 1 lần đã
+   sửa) · lock stale → rename `*.stale-<pid>` · server nghẹt → restart + xoá
+   `.next/cache/webpack` · click đầu tab mới không ăn → `element.click()` JS · exit-animation
+   đóng băng rAF sandbox → verify bằng state/computed-style, đừng tin DOM unmount.
+5. Việc CHỜ NGƯỜI KHÁC đã kê: node RÁC dự án mẫu (gốc zoom 15%, Hoà/trực dọn — "Trên bảng"
+   bấm tới tận nơi) · bàn giao G4 (icon-hoá ObjectProperties/Settings + nút "Đặt lại bố cục
+   panel" nối `resetAllRolloutLayouts()`) · xung đột spec Inspector-khi-không-chọn (§2c
+   PANEL-ROLLOUT ↔ CAD-SHELL-V3 luật 4, đang theo phe ẩn).
+
+HẾT PHIÊN CHINH — không nhận thêm việc theo lệnh chốt.
