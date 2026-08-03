@@ -5,6 +5,21 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## ✅ XONG (03/08 đêm khuya muộn — NC-13 multi-sheet BƯỚC 1+2, DỪNG chờ Hoà duyệt trước bước 3)
+- **BƯỚC 1**: khai kiểu đích `Sheet`/`Viewport2D`/`SheetTitleBlock` vào `lib/cad/model.ts` (cuối
+  file, sau `fitScaleLabel`) — CHỈ KHAI KIỂU, chưa nơi nào dùng, `CadSheets.tsx` không đụng.
+- **BƯỚC 2**: `lib/cad/sheet-migrate.ts` — bộ chuyển 1 chiều `mergeIdfSheetsToDoc()`: N sheet cũ
+  (mỗi sheet 1 `Doc` riêng) → 1 `Doc` gộp (dịch offset xếp hàng ngang theo bbox thật, không chồng)
+  + 1 `Sheet`/1 `Viewport2D` tỉ lệ 1:100 mặc định. Đổi tên id entity/markup/photo có tiền tố theo
+  sheet (an toàn kể cả 2 sheet trùng id gốc), `ops[].withRef` (NC-12 boolean) ánh xạ lại đúng
+  trong cùng sheet, layer dedupe theo id. `lib/cad/sheet-migrate.test.ts` — 22/22 test pass (không
+  rơi rớt entity · không chồng nhau · id/ops remap đúng · layer dedupe · Sheet/Viewport2D sinh
+  đúng hình dạng · sheet rỗng không crash · **`.idf` cũ đọc được nguyên vẹn qua `importIdf()` rồi
+  mới đưa qua bộ chuyển, không sửa `idf.ts`**). `tsc --noEmit` toàn repo sạch.
+- **DỪNG THEO YÊU CẦU** — KHÔNG làm bước 3 (đổi `SheetTabBar` đọc `Sheet[]`), bước 4 (gỡ
+  `MAX_SHEETS`), bước 5 (bump `IDF_VERSION`). Lý do: bước 3 đổi kiến trúc UI lớn, cần Hoà nghiệm
+  thu thiết kế trước khi động.
+
 ## ✅ XONG (03/08 đêm khuya — PHIẾU ĐỢT 7 chặng 3D: ViewCube thật + 3 lỗi UI + đối chiếu Revit)
 - **Nhóm A** (`ccf9d46`): bảng "TRÌNH TỰ" kéo-thả tự do + thu gọn 1 dòng (khác nút ✕ = ẩn hẳn) ·
   chip Vitals StatusBar thêm viền/nền accent + chấm sống pulse 2s · thanh cuộn tối đúng cả 2 theme.

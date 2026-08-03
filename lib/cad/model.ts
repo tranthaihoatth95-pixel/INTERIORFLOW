@@ -830,3 +830,58 @@ export function fitScaleLabel(box: Box | null, paperMm: [number, number], margin
   const rounded = n >= 10 ? Math.round(n) : Math.round(n * 10) / 10;
   return `1:${rounded}`;
 }
+
+/* ───────────────────────── NC-13 (docs/nc/NC-13-multisheet-autodesk-2026-08-03.md) —
+   Sheet/Viewport2D kiểu Autodesk (model space ↔ paper space) ─────────────────────────
+   BƯỚC 1 (2026-08-03) — CHỈ KHAI KIỂU. Chưa ai dùng: `CadSheets.tsx` vẫn hoán store theo
+   `Doc[]` như cũ (mỗi sheet 1 Doc riêng), KHÔNG đụng. Hai type dưới đây mô tả mô hình ĐÍCH
+   (§3 NC-13): MỘT Doc duy nhất (đúng luật K1 — một nguồn, xem SO-KIEM-TONG.md §6d) + N Sheet
+   NHẸ (chỉ metadata) mỗi Sheet có 1+ Viewport2D LÀ CỬA SỔ soi vào đúng Doc đó, không giữ bản
+   sao hình học. Xem `lib/cad/sheet-migrate.ts` (BƯỚC 2) cho bộ chuyển từ mô hình cũ sang đây. */
+
+/** Khung tên tối thiểu — field nào chưa có giá trị thì để chuỗi rỗng, KHÔNG optional (khớp §3:
+ * mọi Sheet đều CÓ khung tên, chỉ là có thể trống, không phải "có Sheet không có khung tên"). */
+export interface SheetTitleBlock {
+  project: string;
+  drawnBy: string;
+  date: string;
+  revision: string;
+}
+
+/**
+ * Ô nhìn TRÊN GIẤY — soi vào Doc, KHÔNG chứa bản sao hình học (đúng nguyên lý Autodesk §1 NC-13:
+ * "giấy không bao giờ giữ bản sao hình học"). Sửa Doc → mọi Viewport2D đang soi vào chỗ đó tự
+ * đổi theo, vì chỉ lưu toạ độ nhìn chứ không lưu entity.
+ */
+export interface Viewport2D {
+  id: string;
+  /** vị trí + kích thước ô nhìn TRÊN TỜ GIẤY, mm giấy (gốc trên-trái, khớp quy ước layout PDF
+   * hiện có — KHÁC trục Y-up của world mm bên dưới, cố ý: đây là toạ độ GIẤY không phải WORLD). */
+  rectOnPaper: { x: number; y: number; w: number; h: number };
+  /** điểm world (mm, Y-up, cùng hệ `Doc.entities`) đặt ở TÂM ô nhìn — "nhìn vào chỗ nào của Doc". */
+  centerMm: Pt;
+  /** TỈ LỆ IN — N của "1:N" (giống `Doc.printScale`/`STANDARD_SCALES`, KHÔNG phải zoom màn hình,
+   * KHÔNG phải phân số 1/N — lưu thẳng N, vd 100 nghĩa là 1:100). */
+  scale: number;
+  locked: boolean;
+  /** tắt/bật lớp riêng cho ô này (kiểu Revit view filter) — khoá = `Layer.id`, `false` = ẩn ở
+   * viewport NÀY thôi (không đụng `Layer.visible` chung của Doc). Thiếu key = theo Layer chung. */
+  layerOverrides?: Record<string, boolean>;
+}
+
+/**
+ * MỘT TỜ trong bộ hồ sơ — metadata NHẸ (vài trăm byte), không ôm Doc/undo nào (đây là điểm khác
+ * mô hình cũ `IdfSheetData` ở `idf.ts`, vốn mỗi sheet giữ nguyên 1 `Doc` — xem NC-13 §2 "Hậu quả
+ * kéo theo"). Không giới hạn số Sheet (bỏ hẳn `MAX_SHEETS` — việc đó thuộc BƯỚC 4, CHƯA làm).
+ */
+export interface Sheet {
+  id: string;
+  name: string;
+  /** số hiệu tờ hiển thị trên khung tên, vd "A-01" — KHÁC `id` (id là khoá kỹ thuật, number là
+   * chữ người dùng gõ/đánh số lại tuỳ ý, có thể trùng tạm thời khi đang sắp xếp lại thứ tự). */
+  number: string;
+  paper: PaperKey;
+  orientation: PaperOrientation;
+  titleBlock: SheetTitleBlock;
+  viewports: Viewport2D[];
+}
