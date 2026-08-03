@@ -436,3 +436,72 @@ khi ATLAS trả `colorHex` thật cho từng vật liệu.
 - **A. Một Thư viện ở chặng 2**: xoá banner "Công cụ đầy đủ nằm trong Thư viện khối" · sheet chỉ
   mở từ nút đáy sidebar · tab Vật liệu có nút "Xem cả kho". CHƯA ĐỘNG.
 - **CHINH-5 bàn giao**: icon-hoá ObjectProperties + chip engine + Settings. CHƯA ĐỘNG.
+
+---
+
+# PHIÊN G4 — 05/08/2026 · QUẢ CẦU §2c XONG + gói Thư viện + nhận CHINH-5
+
+## ✅ VIỆC 1 — Quả cầu §2c (`9fa870b`): THỦ PHẠM KHÔNG PHẢI CÔNG THỨC
+
+Cô lập từng biến trên browser thật (127.0.0.1:3004, reload sạch sau mỗi vòng, đếm `<img>` dataURL):
+- Vòng 1 `environmentRotation` + `environmentIntensity` → 12/12 cầu vẫn render. VÔ TỘI.
+- Vòng 2 + nền radial `CanvasTexture` → 12/12. VÔ TỘI.
+- Vòng 3 + render 2× rồi `drawImage` sau `setSize` → 12/12. VÔ TỘI.
+
+**Thủ phạm thật: RÒ WEBGL CONTEXT QUA HMR.** `rig` là biến module — mỗi lần Fast Refresh thay
+`material-preview.ts` là tạo `WebGLRenderer` MỚI, cái cũ không ai dispose. Phiên trước sửa file
+nhiều vòng liên tiếp trong một phiên dev → vượt trần ~16 WebGL context của Chrome →
+`new WebGLRenderer()` ném lỗi ngay trong `getRig()` → `rig=false` VĨNH VIỄN → mọi lần gọi sau
+trả null im lặng (warn chỉ bắn đúng 1 lần, chìm trong log Fast Refresh). Đó là lý do rollback
+(kèm reload) lại chạy ngay. **Chốt chống tái phát: rig găm vào `globalThis`** — module thay bao
+nhiêu lần vẫn đúng 1 context (đã ghi cảnh báo đầu file).
+
+Công thức §2c áp đủ (theo bản thử phiên trước, giữ nguyên tinh thần): NeutralToneMapping +
+exposure 1.0 · env 1.1 + xoay vệt sáng trên-trái · nền radial #8a8a8a→#4a4a4a · đĩa bóng tiếp
+đất 2.2× bake 1 lần · fov 30 (0,0.9,5) · cầu 64×32 · render 2× thu nhỏ · vải giữ hình cầu ·
+kính có thẻ checker · đá mài bóng (rough .1 + clearcoat .7) tách hẳn sơn matte (rough .95).
+
+**Nghiệm thu đo thật**: 12/12 cầu render (đếm DOM) · "Sơn trắng ngà vs Đá Calacatta": đá có
+hotspot specular max 254 + 0.58% pixel gần trắng, sơn max 241 + 0% (matte tuyệt đối) + ấm hơn
+17 điểm R−B — khác rõ cả bóng lẫn tông · "Kính mờ" thấy checker sau lưng rõ. 2 theme OK.
+⚠️ Còn đúng như dự báo: "Gạch terrazzo" ≈ "Đá Calacatta" (cùng loại stone → cùng tông) — chỉ
+hết khi ATLAS trả `colorHex` thật từng món (luật tông-theo-loại giữ nguyên, không bịa màu).
+
+## ✅ VIỆC 2 — Gói "MỘT Thư viện ở chặng 2" (`0569a91`)
+
+- **Banner xoá hẳn** khỏi `RenderToolModeOverlay` (main cũng đã xoá độc lập ở CHINH-6 — merge
+  về sau chỉ còn 1 bản, conflict comment đã xử theo bản TỔNG).
+- **Nút "Xem cả kho"** ở tab Vật liệu `Command3DPanel` → `openLibrarySheet({shelfId:'common-atlas'})`.
+  Verify: bấm trong mode Vẽ 3D mở đúng kệ Vật liệu ATLAS, 12/12 cầu, cả 2 theme.
+- **Audit cửa mở sheet** (yêu cầu "chỉ mở từ nút đáy"): còn đúng 4 cửa, đều user-initiated —
+  nút đáy sidebar (AppShell) · menu logo (chốt Hoà 03/08 "MỘT tên Thư viện", file CHINH nên không
+  đụng) · phím L · deep-link `/library` một lần. KHÔNG có đường tự bung nào.
+
+## ✅ VIỆC 3 — Nhận bàn giao CHINH-5 (`d143684`, sau merge main `c0fcd7d`)
+
+- Merge `main` → `nhanh-g4` (cần Rollout.tsx + Settings bản main): 1 conflict comment ở
+  RenderToolModeOverlay (2 bên cùng xoá banner) — lấy bản TỔNG.
+- **ObjectProperties icon-hoá** theo bảng SPEC-PANEL-ROLLOUT §3: Trạng thái = chấm tròn
+  xanh/cam + tooltip + sr-only · "Xuất sang" = 3 chip `IF · V-Ray · D5` đều sáng · cảnh báo
+  tách bản vẽ = icon xích đứt --warning, câu đầy đủ ở tooltip. CSS mới `.dot/.chips/.chip.lit/
+  .warn.mini` trong `ve3d-css.ts` (token sẵn có).
+  ⚠️ TRUNG THỰC: hàng "Đổ bóng/Nhận bóng" trong bảng spec KHÔNG tồn tại trong code (grep 0) —
+  không có gì để đổi; khi nào có toggle bóng thì làm icon từ đầu. Và `ObjectProperties` CHƯA
+  mount ở màn nào (chờ CHINH cắm ổ Inspector) → phần này chỉ kiểm được bằng tsc/lint, CHINH cắm
+  là thấy icon.
+- **Settings**: hàng "Bố cục panel" đầu khu Nâng cao + nút "Đặt lại bố cục panel" gọi
+  `resetAllRolloutLayouts()` (chỉ GỌI export sẵn, không sửa file CHINH). Verify thật: gieo khoá
+  `interiorflow.rollout.v1.test-fake` → bấm → khoá bị xoá (0 còn lại), nhãn đổi "Đã đặt lại" 2.5s.
+
+## Ghi chú vận hành phiên này
+- **Browser pane click flaky**: nhiều click toạ độ/ref không dispatch được sau reload (nút thật
+  không bị che — `elementFromPoint` trả đúng nút). Xử bằng lặp read_page→ref-click; riêng nút
+  reset Settings phải verify qua `btn.click()` DOM (logic + wiring thật, chỉ bỏ qua tầng giả lập
+  chuột của pane — không phải lỗi app).
+- tsc toàn repo 0 lỗi sau từng việc · lint sạch các file sửa · dự án mẫu trả về trạng thái cũ
+  (2D mode, theme Sáng, card chào đã gọi lại, không node rác mới).
+- Dev server 3004 vẫn chạy nền cho phiên sau (`lsof -tiTCP:3004 | xargs kill` nếu cần).
+
+## Hàng đợi G4 còn lại (đọc §3 sổ tổng trước khi làm)
+- Mood+Collab G2 trọn gói (khảo sát sẵn ở mục 04/08, đừng làm lại) · Present chooser (H4) ·
+  empty state toàn app · Material Editor §3b (UI q7 mock chưa có).
