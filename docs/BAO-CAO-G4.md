@@ -837,3 +837,134 @@ tsc 0 lỗi (từ đầu, không phải sửa-rồi-mới-sạch) · lint sạch
 - Dự án mẫu còn 1 tường test (từ VIỆC 1 phiên trước, nay có thêm storey='GF') — không xoá được do
   hành động Delete/BackSpace bị lớp an toàn chặn (đúng luật, không tìm đường vòng) — vô hại, chỉ
   là metadata, đã khai báo minh bạch qua nhiều phiên.
+
+---
+
+# CHỐT PHIÊN G4 — 05/08/2026 (context 92%, dừng theo lệnh Hoà)
+
+## ✅ XONG (đủ tsc/lint/test + verify browser thật cả 2 theme)
+1. **VIỆC 1 (A2)** — xoá `CommandPanel.tsx`+`ObjectProperties.tsx` mồ côi, giữ `Command3DPanel.tsx`,
+   migrate khoá tab tiếng Việt. `adb8d67`+`4518bd6`.
+2. **VIỆC 2 (D1 + §5+§6+§7)** — `docToObjScene()` đọc storey/specId thật · cây đối tượng theo
+   tầng · panel thuộc tính · nút "Dựng ảnh" gạt mode thật. `adb8d67`+`4518bd6`.
+3. **VIỆC 3 — 5 lỗi UI Trình bày (L1-L5)**: code đã có từ phiên trước (`174c1b7`…`06a502d`), phiên
+   này **verify browser thật xong cả 5, cả 2 theme** (L1 đơn vị đúng · L2 đo rect 0px chồng lấn ·
+   L3 bóng chữ tự bật sớm · L4 popover đóng-mở đúng · L5 bóng-cuộn + scrollbar-gutter). Không còn
+   mục nào ghi "CHƯA verify" trong nhóm này nữa.
+4. Docs cập nhật + commit: `BAO-CAO-G4.md` · `SO-KIEM-TONG.md` §1 (thêm dòng, không xoá dòng cũ) ·
+   `CHECKLIST-TONG.md` (2 hàng mới + cập nhật cột Code/Audit). `63577c0`.
+
+Cây `nhanh-g4` **sạch tuyệt đối** lúc chốt (`git status --short` rỗng), tsc 0 lỗi.
+
+## ⬜ CÒN (đọc mục "CHƯA LÀM / còn treo" phía trên trước, đây chỉ tóm tắt độ ưu tiên)
+1. Chọn nội thất/cửa sổ trong 3D — **có thể đã được PHU giải quyết một phần trên `main`**, đọc
+   bẫy #1 dưới TRƯỚC KHI làm lại.
+2. Chuỗi 3-node dựng-sẵn khi bấm "Dựng ảnh" (§7.2) — chặn ở việc kiểm `addNodes`-với-dây-nối-sẵn.
+3. D8 (ô nhập số VCB trong viewport), D13 (Inspector tự sinh theo schema §6.2), D15 (đường chạm
+   tablet) — chưa động tới, đúng thứ tự lộ trình spec (D7 gizmo thật chưa xong nên D8 chưa nên
+   bắt đầu).
+4. Mood+Collab G2 trọn gói · Present chooser (H4) · empty state toàn app · Material Editor §3b —
+   hàng đợi cũ từ phiên 04/08, chưa ai động (xem mục "Hàng đợi G4 còn lại" phía trên).
+
+## 🔴 BẪY PHIÊN SAU PHẢI ĐỌC TRƯỚC KHI ĐỘNG VÀO `lib/three/cad-to-obj.ts` HOẶC MERGE MAIN
+
+### Bẫy #1 — `main` đã có commit ĐỤNG ĐÚNG CHỖ tôi vừa sửa, khác hướng
+Trong lúc tôi làm phiên này, `main` tiến thêm 8 commit (từ `a253c03` → `ccea29b`), trong đó
+**`1c0b91d` "A4 — gán entityId cho MỌI nhóm 3D"** sửa **CHÍNH XÁC** vùng tôi vừa chạm
+(`lib/three/cad-to-obj.ts`, các lệnh gọi `builder.object(...)` cho Furn_i/Window_i) nhưng theo
+**hướng ngược lại quyết định của tôi**:
+- Tôi: KHÔNG gán `entityId` cho Furn_i/Window_i vì phát hiện `Scene3DViewer.tsx:201` +
+  `buildMassingWalls()` sẽ làm chúng **biến mất khỏi cảnh** ở mode massing (ghi thành cảnh báo
+  comment tại chỗ, coi là việc riêng "chưa làm").
+- PHU (main, `1c0b91d`): **sửa đúng gốc** — thêm hàm dùng chung `isMassingWallGroup()` (kiểm CẢ
+  `entityId` LẪN `heightMm`) cho cả `buildMassingWalls()` lẫn `Scene3DViewer.tsx`, RỒI MỚI gán
+  `entityId` an toàn cho mọi nhóm. Đây là bản đầy đủ hơn — cảnh báo "chưa làm" của tôi ở mục CHƯA
+  LÀM phía trên **có thể đã LỖI THỜI**, PHU đã giải quyết đúng bài toán tôi né.
+
+**Việc phiên sau PHẢI làm trước khi merge**: đọc kỹ diff `1c0b91d` (đặc biệt hàm mới
+`isMassingWallGroup()` nó thêm ở đâu — nghi `lib/three/obj-scene-to-geometry.ts` hoặc
+`Scene3DViewer.tsx`), rồi **hợp nhất TAY** với thay đổi của tôi trên CÙNG các dòng
+`builder.object('Furn_...'/'Window_...', ...)` — giữ CẢ hai: `storey`/`specId` (tôi thêm) VÀ
+`entityId` (PHU thêm, nếu hàm `isMassingWallGroup()` của họ đã làm nó an toàn). Đây **không phải**
+conflict Git tự động phát hiện được gọn (2 bên sửa gần nhau, có thể merge im lặng sai) — phải đọc
+bằng mắt, không tin merge tự động.
+
+**Hệ quả tốt nếu đúng**: nếu PHU đã làm xong, thì "cây theo tầng" của tôi + "chọn nội thất trong
+3D" của PHU CỘNG LẠI = mục CHƯA LÀM #1 ("Chọn nội thất/cửa sổ trong khung nhìn 3D") có thể ĐÃ XONG
+mà không cần code thêm gì — chỉ cần verify browser sau khi merge.
+
+### Bẫy #2 — D2 (37 CommandDef `render.3d.*`) VẪN CHƯA có trên main
+Đã kiểm `grep -c "render.3d\." lib/commands/registry.ts` trên `main` = **0**. `A1` (`ee85c3f`,
+`findByAlias()` lọc theo `when(ctx)`) đã xong nên KHÔNG còn bị chặn về mặt kỹ thuật, nhưng **chưa
+ai khai 37 lệnh** — nghĩa là tab "Tạo"/"Camera" của `Command3DPanel` vẫn đúng phải giữ placeholder
+trung thực (đừng tưởng D2 xong mà thêm nút gọi `onCommand` — vẫn sẽ là nút giả cho tới khi D2 làm).
+
+### Bẫy #3 — "Chọn tất cả cùng loại" (§4, D12) đợi G4, không đợi PHU nữa
+`main` (`ccea29b`) tự ghi nhận: A4 (PHU) xong nhưng **KHÔNG ĐỦ** mở khoá "Chọn hết cùng loại" —
+điều kiện thật là **Đ3/P3 (selection sống ở `useCadStore`, việc của G4, chưa làm)**. Đừng chờ PHU
+làm tiếp phần này — quả bóng đang ở sân G4.
+
+### Bẫy #4 — sự cố quy trình đã xảy ra 1 lần, tránh lặp
+`git commit` không giới hạn pathspec đã gộp nhầm việc xoá 2 file mồ côi vào commit `adb8d67`
+(chỉ định danh cho storey/specId). Luôn `git commit -- <pathspec>` đích danh, kiểm `git status`
+TRƯỚC mỗi lần add, đừng tin file đang stage khớp đúng ý định.
+
+### Bẫy #5 — docs có thể conflict khi merge
+`nhanh-g4` và `main` **CÙNG SỬA** `SO-KIEM-TONG.md` và `CHECKLIST-TONG.md` trong cùng khung giờ
+(`ccea29b` bên main, `63577c0` bên tôi) — 2 file này gần như chắc chắn conflict khi merge. Xử theo
+đúng convention từng file: `SO-KIEM-TONG.md` §1 append-only (giữ CẢ HAI dòng mới, không dòng nào
+thắng dòng nào) · `CHECKLIST-TONG.md` mỗi hàng độc lập theo hạng mục, so dòng-theo-dòng để giữ cả
+hai cập nhật, không lấy nguyên 1 bên.
+
+## 📋 KHỐI KHỞI ĐỘNG CHO PHIÊN G4 KẾ NHIỆM
+
+**Thứ tự đọc** (đúng luật `SO-KIEM-TONG.md` §4):
+1. `docs/SO-KIEM-TONG.md` §0→§0d (luật trung thực/nghiên cứu-trước/giữ-cái-tốt/ba-mảng) → §1 (2
+   dòng mới nhất, về A2 + cây theo tầng) → §2 (vùng mảng G4) → §3 (hàng đợi).
+2. `docs/00-CHOT.md` (sổ mục lục quyết định).
+3. **File này (`BAO-CAO-G4.md`) từ mục "CHỐT PHIÊN G4 — 05/08/2026" NGƯỢC LÊN** — đọc hết 5 bẫy
+   trên TRƯỚC KHI chạm `lib/three/cad-to-obj.ts` hoặc chạy `git merge main`.
+4. `docs/PHIEU-CODE-IF-DOT6-2026-08-03.md` — đọc lại NHÓM C (hàng đợi cũ còn nợ), đối chiếu với
+   bẫy #2/#3 ở trên: dòng "G4: 5 lỗi UI Trình bày" nay **XONG**, gạch bỏ khỏi hàng đợi.
+5. `docs/SPEC-DUNG-3D-THONG-NHAT.md` §10 (bảng lộ trình D0-D15) — đối chiếu bẫy #1: D0/D9/D10/D14
+   phần nút có thể đã XONG (tôi + PHU cộng lại), kiểm bằng browser trước khi báo cáo lại là "đã
+   xong" hay "còn thiếu X".
+
+**`main` đang ở commit**: `ccea29b` (8 commit mới hơn lần `nhanh-g4` merge gần nhất `a253c03`).
+**`nhanh-g4` đang ở commit**: `63577c0`, cây sạch, CHƯA push origin, CHƯA merge main.
+
+**Hàng đợi PHU còn theo phiếu** (không phải việc G4, chỉ để biết bối cảnh): BOQ B7/B9 còn treo
+(B0-B6+B8+B10 đã xong) · sửa nhãn `model.ts:101` `IfcFurnishingElement`→`IfcFurniture` (NC-11,
+chưa ai làm) · GPL-3.0 `@mlightcad/libredwg-web` vẫn chờ Hoà quyết trước phát hành.
+
+## 🔧 KHỐI LỆNH MERGE — CHO HOÀ CHẠY TAY, KHÔNG TỰ MERGE LÚC CHỐT PHIÊN
+
+Worktree `~/Downloads/interiorflow-g4` (nhánh `nhanh-g4`) hiện **CHƯA merge vào main** — 3 commit
+mới (`adb8d67`·`4518bd6`·`63577c0`) đứng riêng. Theo đúng luật `CLAUDE.md` "không tự merge/push
+main nếu chưa hỏi" + bẫy #1/#5 ở trên (đụng độ ngữ nghĩa thật trong `cad-to-obj.ts`, không phải
+conflict Git tự nhận diện gọn), lệnh dưới đây **CHỈ chuẩn bị, KHÔNG tự chạy**:
+
+```bash
+cd ~/Downloads/interiorflow
+
+# 1. Xem trước phạm vi đụng độ TRƯỚC khi merge thật (đọc bằng mắt, đừng bỏ qua)
+git diff a253c03 main -- lib/three/cad-to-obj.ts
+git log --oneline a253c03..main -- lib/three/
+
+# 2. Merge thật (chạy trong worktree g4, KHÔNG phải repo chính)
+cd ~/Downloads/interiorflow-g4
+git fetch . main
+git merge main
+# — nếu conflict trong lib/three/cad-to-obj.ts: hợp nhất TAY theo Bẫy #1 (giữ storey/specId CỦA
+#   NHÁNH NÀY + entityId CỦA MAIN trên cùng dòng builder.object(...), không lấy nguyên 1 bên)
+# — nếu conflict trong docs/SO-KIEM-TONG.md hoặc docs/CHECKLIST-TONG.md: hợp nhất theo Bẫy #5
+
+# 3. Sau merge sạch — chạy đủ 3 lệnh trước khi coi là xong
+npx tsc --noEmit -p .
+npm test
+# rồi verify browser thật /projects/.../render, mode Vẽ 3D, tab Hiện — xem nội thất có
+# chọn được trong khung nhìn 3D chưa (câu hỏi mở của Bẫy #1)
+
+# 4. Merge xong + test sạch mới push
+git push origin nhanh-g4
+```
