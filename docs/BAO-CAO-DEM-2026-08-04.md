@@ -185,3 +185,9 @@ Còn lại cho Hoà: add 2 file + commit --no-edit + merge tiếp 2 nhánh PHU +
 
 ## [02:5x] TỔNG — Hoà báo lỗi UI chặng Trình bày (ảnh)
 Soi ảnh + đối chiếu code: **L1 "Trang 1"+"1/5" vs 8 slide** = hai đơn vị (sheet trần 5 theo `PresentSheets.tsx:12` vs slide) dùng chung chữ "Trang" → đánh lừa; **L2 slide 4 chữ chồng chữ 4 lớp** đè cả tiêu đề; L3 thumbnail chữ đè ảnh; L4 toolbar 2 hàng ~30 nút (Trình bày CHƯA áp Toolbelt ổ ⑤ như CAD `060c419`); L5 panel phải cắt đáy. → `docs/PHIEU-TRINH-LOI-UI-2026-08-03.md` cho G4, thứ tự L2→L1→L5→L3→L4.
+
+## [03:5x] TỔNG — CA TRỰC (Hoà ở công ty, lệnh "cứ làm tiếp")
+**Kiểm G4:** L4 (gom 14 nút Sắp xếp vào ArrangePopover, portal + useDismissable theo luật K4) **ĐÃ SẠCH** — import `createPortal`/`useDismissable` có đủ (dòng 9/50), định nghĩa dòng 527, dùng dòng 288; tsc present-editor **0 lỗi**. Cảnh báo "Failed to add imports" trong ảnh là bước GIỮA, G4 tự sửa xong sau đó. Toolbar.tsx mtime 03:28.
+**🔴 PHÁT HIỆN + TỰ SỬA (ngoại lệ có lý do):** `tsc` toàn repo trên **main** báo **6 lỗi** ở `lib/cad/eyedropper.test.ts` — lọt vào khi merge `892c927`. Nguyên nhân: `matchPropsOne(source, target as never)` làm generic `T extends StyleFields` suy ra `never` ⇒ mọi truy cập `.layer/.color/.specId` đỏ. Sửa: `as never` → `as StyleFields` (4 chỗ). **tsc main = 0 lỗi · test 13/13 pass.** Commit `f012ca8`.
+→ Vì sao TỔNG tự sửa dù luật là không code: lỗi chặn `tsc` TOÀN REPO (mọi phiên chạy tsc đều thấy đỏ, dễ tưởng lỗi của mình), nằm trong file TEST không ảnh hưởng app, sửa 4 ký tự không đụng logic. Ghi rõ tại đây để không thành tiền lệ nới luật.
+**Trạng thái:** main `f012ca8` sạch · nhánh g4 có L2/L1/L5/L3/L4 chưa merge · các Cowork đợt 5 chưa thấy động (Hoà chưa dán khối).

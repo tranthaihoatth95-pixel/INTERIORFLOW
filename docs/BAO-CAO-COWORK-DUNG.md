@@ -72,3 +72,55 @@ Không đụng `lib/`/`components/`/`app/` — đúng luật hạm đội. HẾT
 COWORK-DỰNG (`HAM-DOI-COWORK.md` VAI 5). Phiên sau nhận vai này: đọc 3 file `SPEC-DUNG-*.md` trước
 khi nhận việc mới, đừng đọc lại toàn bộ quá trình search — bảng §0/§0.x trong mỗi spec đã tóm tắt
 hiện trạng code tại thời điểm 04/08.
+
+---
+
+## Phiên 2 — 03/08/2026 · ĐỢT 5
+
+### Đã đọc
+`HAM-DOI-COWORK.md` → `CHOT-TEN-CHANG-MODE-2026-08-03.md` (mục **VÒNG CUỐI**) →
+`SO-KIEM-TONG.md` §3 đợt 5 → `SPEC-SEMANTIC-MODEL.md` · `SPEC-3D-CORE.md` · `SPEC-CHANG2-UI-2MODE.md`
+→ đọc code: `lib/cad/model.ts` · `lib/three/cad-to-obj.ts` · `lib/cad/materials.ts` ·
+`prisma/schema.prisma` (ProductSpec) · `lib/boq/compute.ts` · `lib/cad/present-handoff.ts` ·
+`components/three/Scene3DViewer.tsx` (chỉ đọc, không sửa).
+
+### Việc đợt 5 — XONG: `docs/SPEC-TANG-DU-LIEU-CAU-KIEN.md`
+Trả lời đủ 6 câu hỏi TỔNG giao (entity nào mang ngữ nghĩa · 2D render thành gì · 3D render thành gì ·
+cơ chế đổi theo · cái gì chỉ sống 1 chặng · neo vào `model.ts` + matId PBR).
+
+**4 phát hiện đáng giá nhất (đều có file:dòng trong spec, không suy đoán):**
+1. 🔴 **Ống kính 3D KHÔNG đọc ngữ nghĩa — nó đoán lại.** `docToObjScene()` không có 1 dòng nào đọc
+   `elementType`/`storey`/`specId` (chữ `elementType` chỉ xuất hiện trong comment dòng 71). Nó suy
+   "tường" từ TÊN LAYER + kiểu hatch. ⇒ **2D và 3D đang có hai định nghĩa khác nhau về "tường"**,
+   lệch âm thầm — đúng thứ luật VÒNG CUỐI cấm.
+2. 🔴 **Khuyết cụ thể suy ra từ code:** 3 preset sơn (`materials.ts:146-177`) có `hatchPattern:'SOLID'`;
+   bộ lọc tường (`cad-to-obj.ts:350-355`) có nhánh `|| e.pattern === 'SOLID'` **không xét layer**
+   ⇒ vùng **tô sơn bị đùn thành khối tường cao 2.7m**. Nặng vì lớp hoàn thiện chính là hạng mục
+   CHÍNH của định vị BIM nội thất. **Chưa chạy tay** — để P0 cho PHU verify, không vá mù.
+3. **"Phòng" không phải thứ có thật trong dữ liệu** — tồn tại 3 dạng rời (text có `roomType` /
+   `ZoneEntity` / polygon dò lại runtime), không dạng nào có id bền + biên + chỗ treo vật liệu.
+   ⇒ trần·sàn lát·phào **không có chỗ để gắn** ⇒ moat BIM nội thất chưa có nền dữ liệu. Đề xuất
+   `RoomEntity` ở §6 (kèm câu hỏi treo: entity mới hay bảng phụ `Doc.rooms` — tôi nghiêng bảng phụ).
+4. **Đường ghi-ngược ĐÚNG đã tồn tại** — `onPushPull` (`Scene3DViewer.tsx:20,61,266`): kéo thì chỉ
+   đổi hiển thị, **nhả chuột mới ghi Doc một lần**. Lấy làm hợp đồng mẫu 5 bước cho mọi thao tác
+   ghi-ngược sau (§4.2), thay vì nghĩ ra cơ chế mới.
+
+Ngoài ra: chốt `specId` là **neo vật liệu DUY NHẤT** (cảnh báo phiên sau đừng đẻ field `matId`
+song song — `SPEC-SEMANTIC-MODEL` gọi "matId", code hiện thực bằng `specId`, **cùng một thứ**), và
+phân biệt rõ 4 thứ đang mang tiếng "vật liệu" (`MaterialDef` · `.pbr` · `ProductSpec` · `SceneTheme`).
+
+### Việc còn dở / chặn
+- `SPEC-DUNG-3D-THONG-NHAT.md` (đợt 4, 🔴) **CHƯA viết** — cố ý: bộ công cụ 3D phụ thuộc tập cấu
+  kiện chốt ở §2/§6 spec này. Viết trước là phải sửa lại. Phiên sau làm khi §2/§6 được duyệt.
+- §2.4 đề xuất thêm `'covering'` vào `ElementType` (IfcCovering — lớp hoàn thiện) **chờ NC-11** của
+  COWORK-NC. Không code trước.
+- 4 câu hỏi treo ở §11 cần TỔNG/Hoà chốt (rõ nhất là câu 2: `RoomEntity` vào `Entity` union hay
+  bảng phụ — ảnh hưởng round-trip DXF/`.idf`).
+- Đề nghị gửi TỔNG (không tự sửa file vai khác): chèn 1 dòng đính chính đầu `SPEC-CHANG2-UI-2MODE.md`
+  (tên "2MODE" nay sai) và `SPEC-3D-CORE.md` §0 (cách gọi "IF hai tầng IF1/IF2" lỗi thời — luật kỹ
+  thuật §1-§4 vẫn đúng nguyên). Chi tiết ở §12 của spec mới.
+
+### CHỐT PHIÊN
+Việc đợt 5 của vai xong. Không đụng `lib/`/`components/`/`app/` — đúng luật hạm đội.
+Phiên sau nhận vai COWORK-DỰNG: đọc `SPEC-TANG-DU-LIEU-CAU-KIEN.md` §0 (bảng hiện trạng code) +
+§9 (lộ trình P0-P7) trước, **đừng grep lại từ đầu**. Việc kế tiếp = `SPEC-DUNG-3D-THONG-NHAT.md`.
