@@ -43,6 +43,7 @@ import { buildIfpack, restoreIfpack } from '@/lib/cad/ifpack';
 import { startAutoBackup, type AutoBackupSession } from '@/lib/cad/auto-backup';
 import { backfillRoomTypes } from '@/lib/cad/standards/checker';
 import { useSheetsBucketId } from '@/lib/scope';
+import { markBucketHydrated } from '@/lib/cad/cad-doc-hydration';
 import { useFlowStore } from '@/lib/store';
 import { createProject } from '@/lib/workspace';
 import { saveSheets } from '@/lib/sheets-persist';
@@ -319,6 +320,7 @@ export default function CadSheets() {
     prevBucketRef.current = bucketId;
     if (!userId) {
       setHydratedFor(bucketId); // chưa đăng nhập → thuần in-memory (y bản cũ)
+      markBucketHydrated(bucketId); // lib/cad/cad3d-autosave.ts đọc cờ này — không có gì để nạp lại
       return;
     }
     let cancelled = false;
@@ -360,6 +362,7 @@ export default function CadSheets() {
         window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
       }
       setHydratedFor(bucketId);
+      markBucketHydrated(bucketId); // lib/cad/cad3d-autosave.ts: mode 3D tin thẳng store, khỏi nạp lại
     });
     return () => {
       cancelled = true;

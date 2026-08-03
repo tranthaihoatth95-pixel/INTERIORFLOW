@@ -45,19 +45,21 @@
   × 578 block nội thất — mỗi block gọi 1 lần, mỗi lần quét toàn bộ `traceDoc`. Bản vẽ thật hiếm
   đạt mật độ này (chưa phải bug chặn) nhưng nếu có ca thật cần: cache biên phòng theo room thay vì
   dò lại mỗi block, hoặc index không gian (spatial hash) cho `traceDoc`.
-- 🔴 **Mode "3D Thiết kế" KHÔNG autosave xuống IndexedDB** — phát hiện 03/08 lúc verify browser
-  NC-12 VIỆC 3 (nút "Khoét hốc"). Bằng chứng: `useCadStore.getState().cutHoleInWall(...)` sửa
-  đúng `doc` trong bộ nhớ (`entities.length` 117→118, `wall.ops` ghi đúng) nhưng đợi 3-10 giây (kể
-  cả ở lại tab 3D lẫn quay về tab "2D Kỹ thuật") thì bản ghi trong IndexedDB (`interiorflow-sheets`)
-  vẫn y hệt trước khi sửa — `ts` không đổi. Nguyên nhân (đọc code, không suy đoán): autosaver
-  (`useCadStore.subscribe(...)` gọi `saver.touch()`) sống TRONG `components/cad/CadSheets.tsx`
-  (`useEffect` dòng ~440), mà `CadSheets` CHỈ mount ở stage "2D Kỹ thuật" (`CadStageScreen.tsx`) —
-  stage "3D Thiết kế" (`Render3DModeSkeleton.tsx`) sửa CÙNG `useCadStore` singleton nhưng KHÔNG có
-  subscription nào lắng nghe khi `CadSheets` chưa mount. **Đây là lỗi CÓ TRƯỚC, không phải do NC-12
-  VIỆC 3 gây ra** — `Render3DModeSkeleton.tsx` `onPushPull`/`onTaoTuong` cũng gọi thẳng
-  `useCadStore.getState().updateEntities(...)`/`addEntities(...)` (grep xác nhận, KHÔNG import
-  `sheets-persist`), nên tính năng push-pull 3D-5 ĐÃ SHIP trước đó nhiều khả năng dính CÙNG lỗi —
-  kéo cao tường trong mode 3D rồi rời route mà chưa quay lại 2D có thể MẤT thay đổi. Cách sửa gợi
-  ý: nâng subscription autosave lên tầng cao hơn CadSheets (VD `CadStageScreen`/route layout dùng
-  chung cho cả 3 chặng), hoặc thêm autosave riêng trong `Render3DModeSkeleton.tsx` cùng khuôn.
-  CHƯA sửa (ngoài phạm vi NC-12) — cần TỔNG/Hoà quyết ai làm.
+- ✅ **ĐÃ SỬA (03/08 đêm)** ~~🔴 Mode "3D Thiết kế" KHÔNG autosave xuống IndexedDB~~ — phát hiện
+  03/08 lúc verify browser NC-12 VIỆC 3 (nút "Khoét hốc"). Nguyên nhân gốc (đọc code): autosaver
+  (`useCadStore.subscribe(...)` + `createSheetsAutosaver(...)`) sống TRONG
+  `components/cad/CadSheets.tsx`, chỉ mount ở stage "2D Kỹ thuật" (route `/cad` riêng, KHÔNG
+  layout chung với `/render`) — mode 3D sửa CÙNG `useCadStore` singleton nhưng không ai lắng nghe.
+  Lỗi CÓ TRƯỚC NC-12 (push-pull 3D-5 đã ship dính cùng lỗi, `Render3DModeSkeleton.tsx` gọi thẳng
+  `updateEntities`/`addEntities` không qua persistence nào).
+  **Sửa**: `useCad3DAutosave()` (hook, gọi ở gốc `Render3DModeSkeleton.tsx`) nối lại ĐÚNG
+  `loadSheets`/`saveSheets`/`createSheetsAutosaver` (`lib/sheets-persist.ts`, KHÔNG cơ chế lưu thứ
+  hai — K1), cùng khoá bucket `CadSheets` dùng. Cốt lõi thuần `lib/cad/cad3d-autosave-core.ts`
+  (tách theo khuôn `lib/scope-core.ts`/`lib/scope.ts` — không đụng `next/navigation`/React nên
+  test được bằng sucrase-node) + cờ chia sẻ `lib/cad/cad-doc-hydration.ts` (module-level, không
+  persist) chống race "vừa rời 2D, autosave chưa kịp ghi, mode 3D đã nạp lại bản cũ đè lên".
+  13 ca test tích hợp thật (`cad3d-autosave-core.test.ts`, IndexedDB/localStorage fake tối giản
+  cùng khuôn `sheets-persist.test.ts`, KHÔNG jsdom/fake-indexeddb — chờ debounce THẬT 1200ms).
+  Verify browser thật: khoét hốc → F5 (URL y hệt) → hốc còn nguyên (IndexedDB + UI khớp, cutter
+  entity còn, `wall.ops` còn). Tiện thể sửa `lib/resume.ts` import `@/lib/phases` → `./phases`
+  (mechanical, cùng file — cần relative để module này test được bằng sucrase-node).

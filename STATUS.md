@@ -5,6 +5,15 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## ✅ XONG (03/08 đêm muộn — sửa bug MẤT DỮ LIỆU mode 3D, chi tiết đủ trong message commit)
+- **Mode "3D Thiết kế" giờ ĐÃ autosave** (bug có từ push-pull 3D-5, phát hiện khi verify VIỆC dưới)
+  — `useCad3DAutosave()` nối lại ĐÚNG `lib/sheets-persist.ts` (không cơ chế lưu thứ hai), gọi ở
+  gốc `Render3DModeSkeleton.tsx`. Cốt lõi thuần `lib/cad/cad3d-autosave-core.ts` (13 test tích hợp
+  thật, chờ debounce 1200ms THẬT) + `lib/cad/cad-doc-hydration.ts` (cờ chống race 2D↔3D). Verify
+  browser thật: khoét hốc → F5 (URL y hệt) → hốc còn nguyên (IndexedDB + UI khớp). `tsc --noEmit`
+  toàn repo: đúng 1 lỗi, KHÔNG phải của việc này (`Viewport3D.tsx` `ViewDir` — phiên KHÁC đang sửa
+  đồng thời, file không đụng tới). Chi tiết → `docs/TECH-DEBT.md`, `docs/SO-KIEM-TONG.md` §1.
+
 ## ✅ XONG (03/08 đêm — NC-12 bộ lệnh 3D VIỆC 1-3, chi tiết đủ trong message commit)
 - **`three-mesh-bvh`+`three-bvh-csg`** cài (MIT, NC-12 §1.6 chốt) · **`Base.ops?: BuildOp[]`**
   (`model.ts`, đúng 3 phép `extrude`/`boolean`/`arrayLinear`, optional/additive, KHÔNG bump

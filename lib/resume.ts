@@ -12,7 +12,7 @@
  * Ghi khi auth thành công; chỉ là id định danh cục bộ, không phải dữ liệu nhạy cảm.
  */
 
-import { isPhase, type Phase } from '@/lib/phases';
+import { isPhase, type Phase } from './phases';
 
 const RESUME_PREFIX = 'interiorflow.resume.';
 const TOUR_PREFIX = 'interiorflow.tourDone.';
