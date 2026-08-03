@@ -393,3 +393,46 @@ Cảnh chỉ có 1 khối lẻ thì camera áp rất sát và khối nằm LỆC
 dùng `(cx, cz, cy)` trong khi phép chiếu CAD→three là `(x, cao, −y)` ⇒ trục thứ ba phải là `−cy`.
 Hành vi engine có từ 3D-1; đụng vào là đổi khung hình của cả campath/capture. Đã ghi comment cảnh
 báo ngay tại dòng đó trong `Scene3DViewer.tsx`.
+
+## 🔴 BUG card "Bắt đầu dựng không gian" không tắt được — ĐÃ SỬA (04/08)
+
+Đủ 4 đường thoát, verify từng cái bằng thao tác thật:
+1. **Nút ✕** góc trên phải card.
+2. **Esc** đóng · **bấm ra ngoài card** đóng (listener `pointerdown` pha BẮT, cùng họ sự kiện
+   `lib/useDismissable` của app).
+3. **Nhớ** qua `localStorage if.ve3d.welcome_hidden_v1` — reload không hiện lại; thay bằng **nút
+   "?"** góc dưới phải để gọi lại (đóng gì cũng phải mở lại được).
+4. **Không chặn viewport**: đo `getComputedStyle` — overlay `pointer-events:none`, chỉ card
+   `auto`. Orbit/pan không vướng.
+Tự ẩn khi có khối đầu tiên: giữ nguyên (`soKhoi > 0`).
+Verify: Esc → `cardConHien:false` + `localStorage=1` + nút "?" xuất hiện · bấm "?" → card về ·
+bấm ra ngoài → đóng lại · reload → không hiện, nút "?" còn · theme Tối OK.
+
+## ⚠️ QUẢ CẦU theo công thức §2c — THỬ RỒI TRẢ LẠI, CHƯA XONG (trung thực)
+
+Đã dựng đủ theo công thức: `NeutralToneMapping` + exposure 1.0 · `environmentIntensity 1.1` +
+`environmentRotation` (đưa vệt sáng lên góc trên-trái) · nền xám radial `#8a8a8a→#4a4a4a` ·
+đĩa bóng tiếp đất 2.2× bake 1 lần · fov 30 vị trí (0,0.9,5) · sphere 64×32 · render 2× rồi thu
+nhỏ · vải KHÔNG bóp hình học · kính có thẻ checker sau lưng.
+
+**Kết quả: mọi quả cầu NGỪNG render** (12/12 ô rơi về vân procedural, `renderMaterialPreview`
+trả null mà KHÔNG ném lỗi ra console — đã thêm `console.warn` ở cả 2 nhánh catch mà vẫn im).
+Chưa tìm ra nguyên nhân trong ngân sách phiên này. **Đã `git checkout` trả `material-preview.ts`
+về bản chạy được (de82ed7) — verify lại 12/12 cầu hiện đủ.** Bản thử giữ nguyên ở
+`scratchpad/material-preview-2c-attempt.ts` để phiên sau soi tiếp (nghi: một trong
+`environmentRotation` / `background` CanvasTexture / `drawImage` từ renderer canvas sau khi đổi
+`setSize`).
+
+**Đã giữ lại phần an toàn**: tách tông đá (trắng LẠNH `#eceae6`) khỏi sơn (trắng ngà ẤM
+`#e7dfd0`) trong `thumb-kinds.ts`. Nhưng **CHƯA ĐẠT nghiệm thu** "Sơn trắng ngà vs Đá Calacatta
+khác nhau rõ": đo pixel vùng cầu, hai ô mới lệch ~7/255 độ sáng — mắt thường vẫn thấy na ná.
+Muốn đạt phải có nền xám + roughness tách biệt, tức đúng gói §2c đang treo.
+
+**Phát hiện kèm**: "Gạch terrazzo" và "Đá Calacatta" ra ảnh Y HỆT nhau (cùng loại `stone` → cùng
+tông → cùng tham số). Đây là hệ quả trực tiếp của luật "tông theo LOẠI, không theo món" — chỉ hết
+khi ATLAS trả `colorHex` thật cho từng vật liệu.
+
+## ⬜ CHƯA LÀM (bàn giao thẳng, không giấu)
+- **A. Một Thư viện ở chặng 2**: xoá banner "Công cụ đầy đủ nằm trong Thư viện khối" · sheet chỉ
+  mở từ nút đáy sidebar · tab Vật liệu có nút "Xem cả kho". CHƯA ĐỘNG.
+- **CHINH-5 bàn giao**: icon-hoá ObjectProperties + chip engine + Settings. CHƯA ĐỘNG.

@@ -18,7 +18,7 @@
  * Nguồn dữ liệu vẫn là Doc chặng 1 (`docToObjScene`) — luật một nguồn, mode KHÔNG giữ bản 3D riêng.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Boxes, Check, Hammer, X } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import { docToObjScene, toScene3DData } from '@/lib/three/cad-to-obj';
@@ -28,6 +28,7 @@ import ModeSwitchBar from '@/components/render-studio/ModeSwitchBar';
 import Command3DPanel, { type Command3DTab } from '@/components/render-studio/Command3DPanel';
 
 const GUIDE_HIDDEN_KEY = 'if.ve3d.guide_hidden_v1';
+const WELCOME_HIDDEN_KEY = 'if.ve3d.welcome_hidden_v1';
 
 /** Tường mẫu 4m khi bấm "Dựng khối đầu tiên" — dùng ĐÚNG hàm engine `wallSegment()` của chặng Vẽ
  * (không tự chế hình học), dày 220mm, đặt ở gốc toạ độ để camera đang khung sẵn nhìn thấy ngay. */
@@ -39,14 +40,60 @@ export default function Render3DModeSkeleton() {
   const [nhayNutTuong, setNhayNutTuong] = useState(false);
   const [matDangCam, setMatDangCam] = useState<string | null>(null);
   const [guideHidden, setGuideHidden] = useState(false);
+  const [welcomeHidden, setWelcomeHidden] = useState(false);
+  const welcomeRef = useRef<HTMLDivElement>(null);
+  const soKhoiRef = useRef(0);
 
   useEffect(() => {
     try {
       setGuideHidden(localStorage.getItem(GUIDE_HIDDEN_KEY) === '1');
+      setWelcomeHidden(localStorage.getItem(WELCOME_HIDDEN_KEY) === '1');
     } catch {
-      /* localStorage bị chặn — cứ hiện trình tự, không phải lỗi chặn việc */
+      /* localStorage bị chặn — cứ hiện, không phải lỗi chặn việc */
     }
   }, []);
+
+  /** Đóng card chào + NHỚ lựa chọn. Gọi được từ 4 đường: nút ✕, Esc, bấm ra ngoài card, và
+   * (gián tiếp) khi dựng xong khối đầu tiên — lúc đó card tự biến mất vì `soKhoi > 0`. */
+  const dongCardChao = useCallback(() => {
+    setWelcomeHidden(true);
+    try {
+      localStorage.setItem(WELCOME_HIDDEN_KEY, '1');
+    } catch {
+      /* không lưu được thì phiên sau hiện lại — không chặn việc */
+    }
+  }, []);
+
+  const moLaiCardChao = useCallback(() => {
+    setWelcomeHidden(false);
+    try {
+      localStorage.removeItem(WELCOME_HIDDEN_KEY);
+    } catch {
+      /* bỏ qua */
+    }
+  }, []);
+
+  // Esc đóng card chào (đường thoát #2). Chỉ gắn khi card đang hiện — không để listener rác.
+  useEffect(() => {
+    if (welcomeHidden || soKhoiRef.current > 0) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') dongCardChao();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [welcomeHidden, dongCardChao]);
+
+  // Bấm RA NGOÀI card thì đóng (đường thoát #3) — pha BẮT, cùng họ sự kiện `pointerdown` mà
+  // `lib/useDismissable` dùng cho mọi lớp nổi của app (00-CHOT "hạ tầng đóng lớp").
+  useEffect(() => {
+    if (welcomeHidden) return;
+    const onDown = (e: PointerEvent) => {
+      const card = welcomeRef.current;
+      if (card && !card.contains(e.target as Node)) dongCardChao();
+    };
+    window.addEventListener('pointerdown', onDown, true);
+    return () => window.removeEventListener('pointerdown', onDown, true);
+  }, [welcomeHidden, dongCardChao]);
 
   const scene = useMemo(() => {
     if (!doc.entities.length) return null;
@@ -58,6 +105,7 @@ export default function Render3DModeSkeleton() {
   }, [doc]);
 
   const soKhoi = scene?.groups.length ?? 0;
+  soKhoiRef.current = soKhoi;
   const coBanVe = doc.entities.length > 0;
   // Doc CAD chưa có field vật liệu (grep matId trong lib/cad = 0) ⇒ tín hiệu khả dụng duy nhất
   // hôm nay là "người dùng đã chọn vật liệu trong panel". Khi gán-lên-mặt (raycast) xong thì đổi
@@ -129,22 +177,39 @@ export default function Render3DModeSkeleton() {
           ground
           label={soKhoi > 0 ? 'Khối xám · chưa vật liệu' : 'Không gian trống'}
         >
-          {soKhoi === 0 && (
+          {soKhoi === 0 && !welcomeHidden && (
             <div
+              // pointer-events:none ⇒ overlay KHÔNG chặn orbit/pan; chỉ CARD bắt chuột (đường
+              // thoát #4). Bấm ra ngoài card đóng được nhờ listener pointerdown ở dưới, không
+              // phải nhờ overlay hứng sự kiện.
               style={{
                 position: 'absolute', inset: 0, zIndex: 6, display: 'grid', placeItems: 'center',
                 pointerEvents: 'none', padding: 24,
               }}
             >
               <div
+                ref={welcomeRef}
                 style={{
-                  pointerEvents: 'auto', textAlign: 'center', maxWidth: 360, padding: '18px 20px 20px',
+                  position: 'relative', pointerEvents: 'auto', textAlign: 'center', maxWidth: 360, padding: '18px 20px 20px',
                   borderRadius: 'var(--radius-lg)', border: '1px solid var(--mat-hairline)',
                   background: 'color-mix(in srgb, var(--panel) 88%, transparent)',
                   backdropFilter: 'blur(var(--blur))', WebkitBackdropFilter: 'blur(var(--blur))',
                   boxShadow: 'var(--shadow-pop)',
                 }}
               >
+                <button
+                  type="button"
+                  onClick={dongCardChao}
+                  title="Đóng"
+                  aria-label="Đóng"
+                  style={{
+                    position: 'absolute', top: 8, right: 8, width: 24, height: 24, display: 'grid',
+                    placeItems: 'center', border: 0, background: 'none', color: 'var(--t4)',
+                    borderRadius: 7, cursor: 'pointer',
+                  }}
+                >
+                  <X size={13} />
+                </button>
                 <p style={{ margin: 0, fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semi)', color: 'var(--t1)' }}>
                   Bắt đầu dựng không gian
                 </p>
@@ -180,6 +245,26 @@ export default function Render3DModeSkeleton() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Nút gọi lại card chào sau khi đã đóng (đường thoát #3 nói "nhớ", nên phải có lối
+              quay lại — SPEC-NGON-NGU: đóng thứ gì cũng phải mở lại được). */}
+          {soKhoi === 0 && welcomeHidden && (
+            <button
+              type="button"
+              onClick={moLaiCardChao}
+              title="Hiện lại gợi ý bắt đầu"
+              aria-label="Hiện lại gợi ý bắt đầu"
+              style={{
+                position: 'absolute', right: 14, bottom: 74, zIndex: 6, width: 26, height: 26,
+                borderRadius: 999, border: '1px solid var(--mat-hairline)',
+                background: 'color-mix(in srgb, var(--panel) 82%, transparent)',
+                backdropFilter: 'blur(var(--blur))', WebkitBackdropFilter: 'blur(var(--blur))',
+                color: 'var(--t3)', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              ?
+            </button>
           )}
 
           {/* ── TRÌNH TỰ 3 BƯỚC — xương sống của mode, góc dưới trái ── */}

@@ -35,9 +35,9 @@ export function isMaterialKind(kind: ThumbKind): boolean {
  * vi: vật liệu là vật thật, không phải chrome của app). */
 const TINT: Partial<Record<ThumbKind, { base: string; line: string; hi: string }>> = {
   wood: { base: '#a07c53', line: '#7d5c3a', hi: '#c2a077' },
-  stone: { base: '#cfc9bd', line: '#a9a294', hi: '#e8e4dc' },
+  stone: { base: '#eceae6', line: '#b9b5ad', hi: '#ffffff' }, // đá mài: trắng LẠNH, bóng
   metal: { base: '#b0b4b9', line: '#8d9298', hi: '#dfe3e7' },
-  paint: { base: '#ddd8d0', line: '#c2bcb2', hi: '#f2efe9' },
+  paint: { base: '#e7dfd0', line: '#cfc6b6', hi: '#f6f1e7' }, // sơn: trắng ngà ẤM, matte
   fabric: { base: '#bdb09a', line: '#9b8f7c', hi: '#d8cdb9' },
   glass: { base: '#bcd0d6', line: '#9db4bc', hi: '#e7f1f4' },
 };

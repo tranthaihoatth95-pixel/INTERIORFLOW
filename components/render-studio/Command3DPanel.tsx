@@ -163,11 +163,8 @@ function MaterialTab({ onPick }: { onPick?: (id: string) => void }) {
                   colorA: swatchColor.startsWith('#') ? swatchColor : '#9a9a9a',
                   colorB: darken(swatchColor.startsWith('#') ? swatchColor : '#9a9a9a'),
                   kind: kindFromName(m.name),
-                  // MỌI vật liệu cùng MỘT kiểu xem trước (Hoà 04/08): trước đây đoán theo tên
-                  // ("Sàn gỗ sồi" → cảnh Sàn phẳng, "Đá travertine" → quả cầu) nên hàng swatch
-                  // lổn nhổn hai kiểu, không đọc được là cùng một danh mục. Cảnh Sàn/Vải vẫn còn
-                  // trong `material-preview.ts` cho panel chi tiết chọn TAY sau này.
-                  scene: 'sphere',
+                  // Cùng MỘT kiểu xem trước cho mọi vật liệu — `sceneForKind` chỉ trả quả cầu.
+                  scene: sceneForKind(kindFromName(m.name)),
                 }}
                 fallback={swatchColor}
                 size={88}

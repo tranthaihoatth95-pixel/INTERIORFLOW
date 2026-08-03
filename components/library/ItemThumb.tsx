@@ -17,7 +17,7 @@
 
 import { Armchair, AppWindow, Cuboid, DoorOpen, Droplets, FileText, Gem, LayoutTemplate, PaintRoller, Ruler, Shirt, TreePine } from 'lucide-react';
 import MaterialSphere from '@/components/three/MaterialSphere';
-import type { PreviewKind } from '@/components/three/material-preview';
+import { sceneForKind, type PreviewKind } from '@/components/three/material-preview';
 import { KIND_LABEL, isMaterialKind, thumbTexture, tintFor, type ThumbKind } from '@/lib/library/thumb-kinds';
 import type { SheetItem } from '@/lib/library/shelves';
 import { useT } from '@/lib/i18n';
@@ -67,16 +67,18 @@ export function ItemThumb({ item, children }: { item: SheetItem; children?: Reac
   if (isMaterialKind(kind) && SPHERE_SHELVES.has(item.shelfId)) {
     const [colorA, colorB] = tintFor(kind);
     const previewKind = kind as PreviewKind; // 6 loại vật liệu trùng tên với PreviewKind
-    // MỌI vật liệu cùng MỘT kiểu xem trước (Hoà 04/08) — trước đây đoán theo tên nên kệ lổn nhổn
-    // cầu/mặt-phẳng/nệm. Cảnh Sàn/Vải giữ trong `material-preview.ts` cho panel chi tiết chọn TAY.
-    const scene = 'sphere' as const;
+    // MỌI vật liệu cùng MỘT kiểu xem trước (Hoà 04/08): `sceneForKind` nay chỉ trả cầu — kính
+    // thêm thẻ checker sau lưng để đọc độ trong, KHÔNG còn đoán "sàn" theo tên món.
+    const scene = sceneForKind(previewKind);
     return (
       <MaterialSphere
         className="th"
         title={title}
         spec={{ id: item.code, colorA, colorB, kind: previewKind, scene }}
         fallback={texture}
-        backdrop="var(--field)"
+        // nền xám trung tính khớp rìa nền đã bake trong PNG (fit=contain nên hai bên
+        // còn hở) — KHÔNG dùng --field: nền sáng theo theme làm cầu trắng biến mất.
+        backdrop="#4a4a4a"
         size={120}
         resolution={0.5}
         fit="contain"
