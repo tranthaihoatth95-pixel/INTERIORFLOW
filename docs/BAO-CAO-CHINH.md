@@ -1801,3 +1801,59 @@ dày", 2 tooltip đúng nội dung mới, cả 2 theme đúng token (không hex 
   mẫu · xung đột spec Inspector-khi-không-chọn.
 - MỚI: cân nhắc bản "chọn hết cùng loại" 2D-only (xem đề nghị VIỆC 2③ trên) — chờ TỔNG/Hoà
   quyết trước khi làm.
+
+---
+
+# PHIÊN CHINH 05/08 (tiếp) — 3 việc Hoà giao giữa phiên
+
+## A · Kính card đăng nhập lag/nháy (`b0f4f06`)
+Chẩn đoán Hoà đưa (opacity trên `.lq-card`) ĐÚNG nhưng **thiếu 1 chỗ**: `LoginScreen.tsx:151`
+wrapper bọc `<LoginForm>` dùng `variants={rise(...)}` — `rise()` (lib/motion.ts) cũng có
+opacity 0→1, và đây là **ANCESTOR** của `.lq-card`. Sửa mỗi chỗ 1 thì vẫn còn lỗi y hệt
+(P6c K1/K2 đã xác nhận: opacity ở TỔ TIÊN tạo backdrop root cô lập, self-opacity thì không).
+Bỏ opacity ở CẢ 2, giữ dịch chuyển `y`. Thêm `riseNoFade()` — 1 nguồn duy nhất cho mọi wrapper
+bọc khối kính, tránh mỗi nơi tự chế lại.
+Grep toàn repo giao `opacity anim` × `backdrop-filter`: 9 file còn lại đều là **self-opacity**
+(an toàn theo P6c) → không sửa. 2 file có lỗi cùng loại (`TitleSequence.tsx:173`,
+`IntroSequence.tsx:199`) nhưng **không còn được mount** (dead code) → không sửa để không lan
+phạm vi, đã ghi vào §1 sổ.
+Verify: đo chuỗi tổ tiên `.lq-card` → toàn bộ opacity=1, computed `backdrop-filter` đúng ngay
+khi card có mặt; chụp cả 2 theme.
+
+## B · Vitals: popover trong suốt + 2 bản (`a065f9f`)
+**① Trong suốt** — gốc: popover mượn `.lq-card`, vốn là kính RẤT TRONG cho card đăng nhập nổi
+trên ẢNH. Nổi trên toolbar/thumbnail dày chữ thì chữ chồng chữ. Sửa: class riêng `.vitals-pop`
+(nền đặc 96% `--panel` + blur + `--border-strong` + `--shadow-pop` + phủ tối 8%). Đo tương phản
+chữ: **15.66:1** (ngưỡng 4.5:1).
+**② Hai Vitals** — đo browser: chỉ MỘT panel **mở** tại 1 thời điểm (gate `anchor` chạy đúng),
+nhưng cả 2 nơi mount đều tồn tại → người dùng thấy 2 lối vào (y=39 đỉnh + y=1048 đáy).
+Theo Hoà chốt: giữ bản header (ổ ①), gỡ bản StatusBar. **Bỏ hẳn `anchor` khỏi store** — chỉ còn
+1 nơi mount thì `anchor` thành state chết, để lại sẽ gây bug im lặng. StatusBar GIỮ ô gõ nhanh
+kiểu Siri (đúng dặn dò "đừng xoá mù"), chỉ gọi `open()`; `initialInput`/`autoSend` nối vào panel
+header. `VitalsIcon` tĩnh ở 2 chỗ: không đụng.
+Verify: grep `<VitalsGesturePanel` = đúng 1 nơi · gõ ở đáy màn → 1 panel mọc ở header (y=49) ·
+⌘J ở CAD → 1 panel · cả 2 theme.
+
+## C · Backend AUDIT §2 (`ee7ee41`)
+1. **`middleware.ts` (MỚI)** — lưới đỡ cho `/api/*`, trừ `auth/*` · `health` · `share/[token]`.
+   Là lưới đỡ, KHÔNG thay cửa chính: Edge không chạy Prisma nên chỉ verify chữ ký token; route
+   vẫn phải tự `getSessionUser()` (đã ghi rõ trong file để không ai xoá nhầm).
+   `health` để công khai dù audit gợi ý gate — đó là endpoint kiểm server sống lúc CHƯA đăng
+   nhập được, gate thì mất công dụng. Ghi lý do tại chỗ.
+2. **Siết "đăng nhập là toàn quyền"** — `specs/[id]` PATCH/DELETE · `lark-user-map` POST/DELETE ·
+   2 route sync: đòi `User.isAdmin`, dùng đúng cửa repo đã có (không bịa cơ chế thứ hai).
+3. **`dashboard`** — chỉ trả `credits` của chính mình.
+   🔴 **ĐÍNH CHÍNH AUDIT**: §2.4 ghi "credits/isAdmin là thừa cho UI" — **SAI với `isAdmin`**:
+   `Dashboard.tsx:451` dùng thật để hiện icon vương miện. Tôi GIỮ `isAdmin`, chỉ siết `credits`,
+   và sửa client (`credits?: number` + chỉ render khi có) để không vỡ UI. Muốn giấu luôn vai
+   admin thì phải bỏ cả icon vương miện — việc UI riêng, không làm âm thầm.
+4. **`flows/[id]` PUT** — `projectId` đi qua `assertProjectAccess(..., 'drafter')`.
+   Sửa LUÔN `flows/route.ts` POST (audit §2.5 có nhắc) — không thì tạo flow thẳng vào project
+   người khác vẫn lách được cửa PUT.
+Verify curl thật (demo `isAdmin=false`): không cookie → health/providers 200, còn lại 401 · có
+cookie → 200 (không chặn oan) · 5 route admin → 403 · dashboard chỉ lộ credit của mình · PUT
+flow sang project người khác → 404, sang project mình → 200, gỡ (null) → 200.
+
+**CHƯA LÀM** (ngoài phạm vi 3 việc được giao, ghi để phiên sau): §2.3a notebook dùng
+`Project.userId` thay `ProjectMember` (thành viên bị chặn oan) · §2.6 không rate limit đăng
+nhập · §2.4 còn `POST /api/specs` + `DELETE /api/comments?id=` chưa siết.
