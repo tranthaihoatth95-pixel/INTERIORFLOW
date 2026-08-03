@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
+import { refundCreditsForJobRef } from '@/lib/server/credits';
 
 /**
  * POST { action: 'spend'|'refund', amount, reason, jobRef? }
  * spend: kiểm tra số dư, trừ, ghi transaction — trả credits mới. 402 nếu thiếu.
+ * refund: BẮT BUỘC `jobRef` khớp đúng 1 giao dịch TRỪ (amount<0) của CHÍNH user này, và jobRef đó
+ * CHƯA được hoàn lần nào — hoàn tối đa bằng số đã trừ (không tin `amount` client gửi). Vá lỗ
+ * "tự nạp credit vô hạn" (`docs/AUDIT-BACKEND-2026-08-03.md` §5.1/R1) — trước đây refund cộng
+ * thẳng `amount` client khai, không đối chiếu gì.
  */
 export async function POST(req: Request) {
   const user = await getSessionUser();
@@ -28,10 +33,14 @@ export async function POST(req: Request) {
       data: { userId: user.id, amount: -amt, reason: String(reason ?? 'spend'), jobRef },
     });
   } else {
-    await prisma.user.update({ where: { id: user.id }, data: { credits: { increment: amt } } });
-    await prisma.creditTransaction.create({
-      data: { userId: user.id, amount: amt, reason: String(reason ?? 'refund'), jobRef },
-    });
+    const ref = typeof jobRef === 'string' ? jobRef.trim() : '';
+    if (!ref) {
+      return NextResponse.json({ error: 'refund cần jobRef khớp đúng giao dịch trừ tương ứng.' }, { status: 400 });
+    }
+    const result = await refundCreditsForJobRef(user.id, ref, amt, String(reason ?? 'refund'));
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
   }
   const fresh = await prisma.user.findUnique({ where: { id: user.id } });
   return NextResponse.json({ credits: fresh?.credits ?? 0 });

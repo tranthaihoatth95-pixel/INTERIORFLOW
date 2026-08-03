@@ -140,3 +140,10 @@ Mỗi ca audit TỔNG chọn ≥1 gói, grep code đối chiếu TỪNG luật c
 | `entityId` cho MỌI nhóm 3D (nay chỉ tường) | ✅ §0.4 | — | ✅ PHU (Furn_i/Window_i) | ✅ test `cad-to-obj.test.ts`+`obj-scene-to-geometry.test.ts` (60/60) | Floor/Room_i CỐ Ý còn trống (không có entity nguồn, xem §0.5) — chờ §6 RoomEntity. Tiện thể vá thêm regression `Scene3DViewer.tsx:201` (mode massing từng làm biến mất nội thất) |
 | Entity `room` (phòng có id bền) | ✅ §6 | — | ⬜ | ✅ §0.5 xác nhận 3 dạng rời | nơi BIM nội thất phải sống |
 | `elementType:'covering'` (IfcCovering) | 🔨 chờ NC-11 | — | ⬜ | — | KHÔNG code trước |
+
+## 10 · AUDIT BACKEND (`docs/AUDIT-BACKEND-2026-08-03.md`) — 3 lỗ 🔴 ưu tiên 1
+| Hạng mục | Ở đâu | Code | Test | Ghi chú |
+|---|---|---|---|---|
+| R1 — refund tự nạp credit vô hạn | `credits/route.ts:30-34` §5.1 | ✅ | ✅ `lib/server/credits.test.ts` 12/12 | Tách logic sang `refundCreditsForJobRef()` (đối chiếu jobRef+trần theo số đã trừ+1 lần/jobRef) — route chỉ gọi hàm |
+| R2 — `/api/jobs` không kiểm/trừ credit | `jobs/route.ts:7-55` §5.2 | ⬜ | ⬜ | đang làm |
+| R3 — upload không whitelist MIME → XSS lưu trữ | `library/route.ts:63-73`+`library/[id]/file/route.ts:16` §6.2 | ⬜ | ⬜ | chưa làm |

@@ -2656,3 +2656,56 @@ stage==render` hay tương đương) bản thân nó cũng CHƯA làm — A1 ch�
 tự thêm lệnh 3D nào (chưa có yêu cầu cụ thể lệnh gì, tránh bịa).
 
 **Commit:** `lib/commands/registry.ts` + `lib/commands/registry.test.ts`.
+
+---
+
+## PHU — AUDIT-BACKEND-2026-08-03 · Lỗ 🔴 #1 — refund credits tự nạp vô hạn (§5.1/R1)
+
+Đọc `docs/AUDIT-BACKEND-2026-08-03.md` — 3 lỗ 🔴 làm theo đúng thứ tự, mỗi lỗ 1 commit. Lỗ #1 trước.
+
+**Bug xác nhận đúng như audit:** `app/api/credits/route.ts:30-34` (bản cũ) — nhánh `refund` cộng
+thẳng `amt` (client tự khai qua body, không trần) vào `User.credits`, ghi 1 `CreditTransaction`,
+KHÔNG đối chiếu `jobRef` với bất kỳ giao dịch trừ nào, không kiểm đã hoàn chưa. `curl -X POST
+/api/credits -d '{"action":"refund","amount":999999}'` → cộng thẳng triệu credit.
+
+**Đã vá:** tách logic refund ra `lib/server/credits.ts` — hàm mới `refundCreditsForJobRef(userId,
+jobRef, requestedAmount, reason)`, ĐỦ CẢ 3 điều kiện mới hoàn:
+1. Có đúng 1 `CreditTransaction` TRỪ (`amount<0`) cùng `userId`+`jobRef` — không có → từ chối.
+2. jobRef đó CHƯA từng được hoàn (không có dòng `amount>0` nào cùng jobRef) → có rồi thì từ chối
+   (mỗi jobRef hoàn đúng 1 lần, kể cả khi lần đầu chỉ hoàn MỘT PHẦN — xem test "hoàn 1 phần").
+3. Số hoàn = `min(amount client xin, |amount đã trừ|)` — không bao giờ hoàn nhiều hơn đã trừ.
+
+Toàn bộ đối chiếu + ghi hoàn bọc trong `prisma.$transaction` — SQLite khoá ghi cả file trong lúc
+transaction chạy nên 2 lời gọi refund CÙNG jobRef bắn song song vẫn tuần tự hoá đúng: lượt sau
+thấy dòng "đã hoàn" của lượt trước và bị chặn ở điều kiện 2 (chống race double-refund).
+`app/api/credits/route.ts` nay chỉ parse body + gọi hàm — route mỏng, logic test được độc lập.
+
+**Quyết định tự chọn (khai thật, không hỏi lại giữa chừng đúng luật CLAUDE.md):**
+- **Đổi import `lib/server/credits.ts` từ alias `@/lib/server/db` sang tương đối `./db`** — file
+  này TRƯỚC ĐÂY không chạy được qua `sucrase-node` (alias chỉ resolve qua bundler Next.js, đúng
+  quy ước đã ghi ở `lib/commands/registry.ts`). Đổi để viết được test thật (Prisma thật trên
+  `dev.db`, không mock) thay vì chỉ test bằng tay qua curl+dev server. Hành vi runtime không đổi
+  (cùng file `db.ts`, chỉ khác đường import).
+- **Không đụng nhánh `spend`** (chỉ audit chỉ đích danh dòng 30-34 = nhánh refund) và **không đụng
+  `refundCredits()` cũ** (hàm đơn giản không đối chiếu jobRef, dùng cho `render/premium` — nơi
+  refund LUÔN xảy ra trong CÙNG request đã spend, không có đường nào gọi refund đó độc lập nên
+  không cần đối chiếu). Chỉ route công khai `/api/credits` (client tự gọi RIÊNG, tách rời khỏi
+  lúc spend) mới cần soi jobRef — đúng đường tấn công audit mô tả.
+
+**Kiểm sạch:** `lib/server/credits.test.ts` (MỚI, Prisma THẬT trên `dev.db` — tạo user tạm, dọn
+sạch bằng `try/finally` + `onDelete:Cascade`, xác nhận sau khi chạy `sqlite3 dev.db` không còn
+user rác) — 12 ca: từ chối khi không có giao dịch trừ khớp · **refund xin 999999 nhưng chỉ trừ 4
+→ hoàn ĐÚNG 4** (ca chính audit yêu cầu) · hoàn lần 2 cùng jobRef bị chặn · không hoàn chéo sang
+jobRef của user khác · hoàn một phần (3 < 8 đã trừ) vẫn khoá jobRef không cho hoàn thêm lần 2.
+**12/12 pass.** `npx tsc --noEmit` scoped (`credits/route.ts`+`credits.ts`+`credits.test.ts`+
+`render/premium/route.ts` để chắc không vỡ `refundCredits()` cũ) — sạch.
+
+**Chưa làm:** chưa đụng `/api/jobs` (lỗ #2, làm tiếp theo đúng thứ tự) — hiện `/api/jobs` vẫn
+CHƯA gọi credit gì cả, nên `jobRef` mà lỗ #1 đòi hỏi cho refund thực tế CHƯA có route nào tự sinh
+ra một cách server-controlled (client vẫn tự đặt `jobRef` khi gọi `/api/credits` spend/refund từ
+`lib/execution.ts`) — đây CHÍNH LÀ lý do lỗ #2 phải làm ngay sau, không phải 2 việc tách rời.
+
+**Commit:** `app/api/credits/route.ts` + `lib/server/credits.ts` + `lib/server/credits.test.ts`
+(mới) + `docs/CHECKLIST-TONG.md`. Pathspec riêng — `git status` lúc này còn `app/globals.css` ·
+`components/studio/StageSwitcher.tsx` · `components/studio/VitalsGesture.tsx` ·
+`docs/BAO-CAO-DEM-2026-08-04.md` · `docs/mocks/Vitals v2.dc.html` đang mở bởi phiên khác, KHÔNG đụng.
