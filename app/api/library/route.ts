@@ -4,6 +4,7 @@ import path from 'path';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
 import { imgIdFromKey } from '@/lib/img-id';
+import { sniffKind, isRasterImageKind, SNIFFED_MIME } from '@/lib/server/mime-sniff';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
@@ -62,11 +63,22 @@ export async function POST(req: Request) {
   }
   const match = /^data:([^;]+);base64,(.+)$/.exec(dataUrl);
   if (!match) return NextResponse.json({ error: 'dataUrl không hợp lệ.' }, { status: 400 });
-  const [, mime, b64] = match;
+  const [, , b64] = match;
   const buf = Buffer.from(b64, 'base64');
   if (buf.length > 25 * 1024 * 1024) {
     return NextResponse.json({ error: 'File quá 25MB.' }, { status: 413 });
   }
+  // Whitelist MIME đọc MAGIC BYTES thật (§6.2 R3, `docs/AUDIT-BACKEND-2026-08-03.md`) — KHÔNG
+  // tin `mime` client khai trong prefix dataUrl (đúng gốc lỗ XSS lưu trữ: trước đây lưu thẳng
+  // chuỗi client gửi, không đối chiếu nội dung thật). Thư viện CHỈ nhận ảnh raster.
+  const kind = sniffKind(buf);
+  if (!isRasterImageKind(kind)) {
+    return NextResponse.json(
+      { error: 'Loại file không được phép — Thư viện chỉ nhận ảnh (PNG/JPEG/WEBP/GIF/AVIF).' },
+      { status: 400 },
+    );
+  }
+  const mime = SNIFFED_MIME[kind];
   await mkdir(UPLOAD_DIR, { recursive: true });
   const ext = mime.split('/')[1]?.replace(/[^a-z0-9]/gi, '') || 'bin';
   const filename = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}.${ext}`;

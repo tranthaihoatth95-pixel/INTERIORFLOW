@@ -21,6 +21,7 @@ import { getSessionUser } from '@/lib/server/auth';
 import { extractPdf, extractImage, extractPlain, type ExtractResult } from '@/lib/notebook/extract';
 import { chunkPages, chunkText } from '@/lib/notebook/chunk';
 import { embedTexts, NoEmbedProviderError } from '@/lib/notebook/embed';
+import { sniffKind, isRasterImageKind, SNIFFED_MIME } from '@/lib/server/mime-sniff';
 import { resolveNotebookProjectId } from '@/lib/notebook/resolveProject';
 
 const MAX_PDF = 20 * 1024 * 1024;
@@ -51,6 +52,8 @@ function extForMime(mime: string | null | undefined, fallback = 'bin'): string {
   if (mime.includes('png')) return 'png';
   if (mime.includes('jpeg') || mime.includes('jpg')) return 'jpg';
   if (mime.includes('webp')) return 'webp';
+  if (mime.includes('gif')) return 'gif';
+  if (mime.includes('avif')) return 'avif';
   return fallback;
 }
 
@@ -159,9 +162,23 @@ export async function POST(req: Request, { params }: { params: { projectId: stri
           { status: 413 },
         );
       }
-      mimeType = f.type || null;
       sizeBytes = f.size;
       fileBuf = new Uint8Array(await f.arrayBuffer());
+      // Whitelist MIME đọc MAGIC BYTES thật (§6.2 R3) — KHÔNG tin `f.type` (nhãn trình duyệt tự
+      // suy từ tên file/extension, client tự sửa được), và KHÔNG tin `kind` client tự khai (trước
+      // đây 'kind'==='pdf' đi thẳng vào `extractPdf()` mà không hề kiểm byte đầu THẬT là PDF).
+      const sniffed = sniffKind(Buffer.from(fileBuf));
+      if (kind === 'pdf') {
+        if (sniffed !== 'pdf') {
+          return NextResponse.json({ error: 'File không phải PDF thật (đối chiếu byte đầu thất bại).' }, { status: 400 });
+        }
+        mimeType = SNIFFED_MIME.pdf;
+      } else if (kind === 'image') {
+        if (!isRasterImageKind(sniffed)) {
+          return NextResponse.json({ error: 'File không phải ảnh hợp lệ (PNG/JPEG/WEBP/GIF/AVIF).' }, { status: 400 });
+        }
+        mimeType = SNIFFED_MIME[sniffed];
+      }
       if (!title) title = f.name;
     }
   } else {

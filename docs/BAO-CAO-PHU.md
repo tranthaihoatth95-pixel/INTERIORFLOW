@@ -2801,3 +2801,82 @@ tự sửa 2 node đó (ngoài phạm vi lệnh giao, và sửa thế nào — m
 `lark-tasks/sync`, `lark-user-map`, `specs/[id]`) đang được MỘT PHIÊN KHÁC sửa — đúng khớp mục Y1
 của audit này (gate quyền `isAdmin`) — có vẻ 2 phiên đang chạy song song trên CÙNG file audit,
 KHÔNG đụng gì của họ.
+
+---
+
+## PHU — AUDIT-BACKEND-2026-08-03 · Lỗ 🔴 #3 — upload không whitelist MIME → XSS lưu trữ (§6.2/R3)
+
+**Bug xác nhận đúng như audit:** `library/route.ts:60-73` (bản cũ) chỉ kiểm regex cú pháp
+`^data:([^;]+);base64,(.+)$` — `mime` là CHUỖI CLIENT TỰ KHAI trong prefix `dataUrl`, lưu thẳng
+vào DB, không đối chiếu byte thật. `library/[id]/file/route.ts:16` trả lại đúng `asset.mime` đó,
+không `nosniff`, không `attachment`. Kịch bản: POST `dataUrl:"data:text/html;base64,<script>…"`
+→ mở `/api/library/<id>/file` → script chạy trên chính origin app, `fetch()` được mọi API với tư
+cách nạn nhân (`DELETE /api/specs/[id]`, `refund` credits…). Cùng lỗ ở
+`notebook/[projectId]/source/route.ts:162` (`mimeType = f.type` — nhãn browser tự suy, client sửa
+được) + `.../file/route.ts:42-48` (trả `inline` luôn, không `nosniff`).
+
+**Đã vá — whitelist đọc MAGIC BYTES thật, không tin nhãn client (`lib/server/mime-sniff.ts`,
+MODULE MỚI dùng chung cho cả 2 nơi, tránh lặp lại kiểu "2 nơi tự đoán rồi lệch nhau" đã gặp vài
+lần trong đợt này):**
+- `sniffKind(buf)` — đọc byte đầu, nhận diện PNG/JPEG/GIF/WEBP/AVIF/PDF bằng SIGNATURE thật (PNG 8
+  byte cố định, JPEG `FF D8 FF`, GIF `GIF87a`/`GIF89a`, WEBP `RIFF…WEBP`, PDF `%PDF`, AVIF quét
+  brand `ftyp` ISOBMFF) — trả `null` nếu KHÔNG khớp gì (HTML/SVG/JS đều rơi vào đây, đúng ý đồ).
+- `library/route.ts` POST — sniff xong, CHỈ chấp nhận ảnh raster (png/jpeg/gif/webp/avif); không
+  khớp → 400. **LƯU MIME ĐÃ SNIFF, không lưu chuỗi client khai.**
+- `library/[id]/file/route.ts` GET — sniff LẠI byte thật MỖI LẦN trả file (không tin cột `mime`
+  trong DB — phòng dữ liệu cũ từ trước khi vá), luôn kèm `X-Content-Type-Options: nosniff`; không
+  phải ảnh raster → `Content-Type: application/octet-stream` + `Content-Disposition: attachment`.
+- `notebook/[projectId]/source/route.ts` POST (nhánh multipart) — `kind==='pdf'` phải sniff ra
+  đúng `pdf`; `kind==='image'` phải sniff ra ảnh raster — sai loại nào cũng 400, không tin `f.type`
+  lẫn `kind` client khai. Mở rộng `extForMime()` thêm gif/avif cho khớp whitelist mới (trước đó
+  thiếu, sẽ ra đuôi file `.bin` sai dù nội dung đúng).
+- `notebook/.../[sourceId]/file/route.ts` GET — sniff lại, `nosniff` luôn.
+
+**⚠️ 1 điểm CHỦ ĐỘNG lệch so với văn tự lệnh giao (khai thật, có lý do, không phải bỏ sót):**
+lệnh nói "Content-Disposition: attachment cho mọi loại không phải ảnh" — áp NGUYÊN VĂN cho
+notebook sẽ ép CẢ PDF thành `attachment` (tải xuống thay vì xem trong app), phá `NotebookSourceViewer`
+vốn hiển thị PDF inline — đây là nhu cầu CHÍNH ĐÁNG của notebook (khác `library` vốn chỉ nhận
+ảnh). Lý do PDF an toàn hơn HTML/SVG để giữ `inline`: PDF render trong renderer riêng của trình
+duyệt (PDFium/pdf.js), SANDBOX tách khỏi origin trang — không thực thi script với quyền của trang
+host như HTML/SVG nhúng trực tiếp (chính audit §6.2 cũng chỉ nêu HTML/SVG là vector, không nhắc
+PDF). Quyết định: notebook coi ảnh VÀ PDF (đã sniff đúng) là "an toàn xem inline"; CHỈ ép
+`attachment` cho thứ KHÁC CẢ HAI loại đó (không nên xảy ra sau khi có whitelist upload, nhưng vẫn
+xử lý phòng dữ liệu cũ).
+
+**Verify LIVE qua HTTP thật (dev server riêng cổng 3001, tài khoản test tạm, xoá sạch sau khi
+xong):**
+1. `curl POST /api/library` với `dataUrl:"data:image/png;base64,<HTML thật>"` (đúng kịch bản audit
+   mô tả) → **400 "Loại file không được phép…"** — không lưu gì vào DB/đĩa.
+2. `curl POST /api/library` với PNG THẬT (1×1, base64 hợp lệ) → 200, lấy `id` → `curl -I
+   /api/library/<id>/file` → **`x-content-type-options: nosniff`** có mặt, `content-type:
+   image/png` đúng — chứng minh KHÔNG phá đường upload/xem ảnh hợp lệ.
+3. `curl -F "kind=image" -F "file=@evil.png"` (nội dung thật là HTML, đuôi giả `.png`) vào
+   `/api/notebook/.../source` → **400 "File không phải ảnh hợp lệ…"**.
+4. `curl -F "kind=pdf" -F "file=@evil.pdf"` (nội dung thật là HTML) → **400 "File không phải PDF
+   thật…"**.
+5. Dọn sạch: xoá asset/user test tạo ra ở bước 2 (asset DB row + file vật lý trong `uploads/`,
+   user + `CreditTransaction` liên quan — nhắc lại đúng cạm bẫy đã ghi ở lỗ #2: `sqlite3` CLI xoá
+   tay KHÔNG tự cascade, phải xoá tay `CreditTransaction` riêng). Notebook 2 lần thử ở bước 3-4 đều
+   bị chặn TRƯỚC khi ghi DB/đĩa nên không có gì phải dọn ở đó — xác nhận `NotebookSource` vẫn 0
+   dòng sau khi test xong.
+
+**Kiểm sạch:**
+- `lib/server/mime-sniff.test.ts` (MỚI) — 22 ca: đúng 6 định dạng thật theo byte · chặn HTML thô ·
+  chặn SVG có `<script>` · **đúng kịch bản audit: dataUrl khai `image/png` nhưng byte thật là HTML
+  → sniff ra `null`, không tin nhãn** · chuỗi rỗng không throw · PDF không tính là ảnh raster (cho
+  quyết định inline/attachment) · map đủ 6 kind sang MIME chuẩn. **22/22 pass.**
+- `npx tsc --noEmit` scoped (`mime-sniff.ts`+test+4 route sửa) — sạch.
+- 1 asset ảnh thật (`image/avif`) đã có sẵn trong `dev.db` TRƯỚC khi vá — kiểm riêng: `avif` đã có
+  trong whitelist mới (không nằm trong danh sách gốc `comments/route.ts` chỉ png/jpe?g/webp/gif,
+  CHỦ ĐỘNG thêm vì đã có dữ liệu thật dùng nó — không thêm sẽ khoá mất 1 ảnh hợp lệ đang chạy).
+
+**Commit:** `lib/server/mime-sniff.ts` + `.test.ts` (mới) + `app/api/library/route.ts` +
+`app/api/library/[id]/file/route.ts` + `app/api/notebook/[projectId]/source/route.ts` +
+`app/api/notebook/[projectId]/source/[sourceId]/file/route.ts` + `docs/CHECKLIST-TONG.md`.
+Pathspec riêng — `git status` lúc này còn `docs/BAO-CAO-COWORK-UI.md` ·
+`docs/BAO-CAO-DEM-2026-08-04.md` · `docs/mocks/README-mocks.md` ·
+`docs/AUDIT-MOCK-MANPHU-2026-08-03.md` · `docs/mocks/Vitals v2.dc.html` mở bởi phiên khác, KHÔNG đụng.
+
+**Cả 3 lỗ 🔴 của `AUDIT-BACKEND-2026-08-03.md` đã xong** (R1 `7b6e4e6`, R2 `6705266`, R3 commit
+này) — hàng đợi còn lại của audit (🟡 Y1-Y12, 🟢 G1-G7) chưa động tới, phiên khác có vẻ đang làm
+Y1 song song (xem ghi chú ở mục lỗ #2).
