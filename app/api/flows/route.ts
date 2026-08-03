@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
+import { assertProjectAccess, accessErrorPayload } from '@/lib/server/access';
 import { HIDDEN_NOTEBOOK_PREFIX } from '@/lib/notebook/resolveProject';
 
 /** Danh sách flow của user (kèm project). Card dự án cần thêm coverUrl + status + roster team. */
@@ -82,11 +83,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ project });
   }
 
+  // 05/08 (`docs/AUDIT-BACKEND-2026-08-03.md` §2.5, cùng lỗ với `flows/[id]` PUT) — tạo flow
+  // THẲNG vào 1 project cũng phải kiểm quyền project đích, không thì lách được cửa PUT.
+  const newProjectId = body.projectId ?? null;
+  if (typeof newProjectId === 'string' && newProjectId) {
+    try {
+      await assertProjectAccess(user.id, newProjectId, 'drafter');
+    } catch (e) {
+      const p = accessErrorPayload(e);
+      if (p) return NextResponse.json({ error: p.message }, { status: p.status });
+      throw e;
+    }
+  } else if (newProjectId !== null) {
+    return NextResponse.json({ error: 'projectId không hợp lệ.' }, { status: 400 });
+  }
+
   const flow = await prisma.flow.create({
     data: {
       userId: user.id,
       name: String(body.name ?? 'Untitled flow'),
-      projectId: body.projectId ?? null,
+      projectId: newProjectId,
       graphJson: typeof body.graphJson === 'string' ? body.graphJson : '{"nodes":[],"edges":[]}',
       lastEditedBy: user.id,
     },

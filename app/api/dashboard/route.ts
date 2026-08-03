@@ -68,10 +68,19 @@ export async function GET() {
     }),
   ]);
 
+  // 05/08 (`docs/AUDIT-BACKEND-2026-08-03.md` §2.4) — `credits` là SỐ DƯ TÀI CHÍNH của từng
+  // người: chỉ trả của CHÍNH MÌNH, người khác nhận `undefined`. Không phải chuyện bí mật tuyệt
+  // đối trong app nội bộ, nhưng cũng không có lý do gì để mọi người thấy ví của nhau.
+  //
+  // ⚠️ ĐÍNH CHÍNH AUDIT (§2.4 ghi "credits/isAdmin là thừa cho UI"): SAI với `isAdmin` — grep
+  // `components/Dashboard.tsx:451` cho thấy UI dùng thật để hiện icon vương miện cạnh tên admin
+  // (tính năng có chủ ý, không phải rác). Vai admin trong team nội bộ cũng không phải dữ liệu
+  // nhạy cảm như số dư. Vì vậy GIỮ `isAdmin`, chỉ siết `credits`. Nếu Hoà vẫn muốn giấu luôn
+  // vai admin thì phải bỏ cả icon vương miện ở client — việc UI riêng, không làm âm thầm ở đây.
   const team = users.map((u) => ({
     id: u.id,
     name: u.name,
-    credits: u.credits,
+    ...(u.id === user.id ? { credits: u.credits } : {}),
     isAdmin: u.isAdmin,
     lastSeenAt: u.lastSeenAt,
     online: now - new Date(u.lastSeenAt).getTime() < ONLINE_MS,

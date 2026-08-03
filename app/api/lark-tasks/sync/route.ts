@@ -14,10 +14,17 @@ export const dynamic = 'force-dynamic';
  *
  * getSessionUser() bắt buộc DÒNG ĐẦU TIÊN — bài học P0 đã lặp lại nhiều lần trong dự án
  * (RESEARCH-ACCESS-CONTROL.md §4.1/§4.2: /api/comments từng thiếu auth).
+ *
+ * 05/08 (`docs/AUDIT-BACKEND-2026-08-03.md` §2.4) — THÊM cửa admin: trước đây ai đăng nhập cũng
+ * kích được full sync, đốt quota Lark của cả công ty (không có rate limit). Sync là thao tác
+ * VẬN HÀNH trên dữ liệu dùng chung → cùng cửa `User.isAdmin` với specs/lark-user-map.
  */
 export async function POST() {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  if (!user.isAdmin) {
+    return NextResponse.json({ error: 'Chỉ admin được chạy đồng bộ Lark.' }, { status: 403 });
+  }
 
   const cfg = getProvider('lark');
   if (!cfg || !cfg.configured()) {

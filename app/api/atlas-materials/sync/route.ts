@@ -22,6 +22,12 @@ export const dynamic = 'force-dynamic';
 export async function POST() {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  // 05/08 (`docs/AUDIT-BACKEND-2026-08-03.md` §2.4) — như `/api/lark-tasks/sync`: sync là thao
+  // tác VẬN HÀNH trên kho vật liệu dùng chung (ghi đè ProductSpec toàn công ty) + đốt quota
+  // Lark, nên đòi admin. Cùng cửa `User.isAdmin`, không bịa cơ chế thứ hai.
+  if (!user.isAdmin) {
+    return NextResponse.json({ error: 'Chỉ admin được chạy đồng bộ ATLAS.' }, { status: 403 });
+  }
 
   if (!atlasConfigured()) {
     return NextResponse.json(

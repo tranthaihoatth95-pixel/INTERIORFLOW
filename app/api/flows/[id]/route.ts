@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
+import { assertProjectAccess, accessErrorPayload } from '@/lib/server/access';
 import { planFlowVersionRetention } from '@/lib/flow-version-retention';
 
 async function ownFlow(id: string) {
@@ -74,7 +75,29 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const data: Record<string, unknown> = { rev: { increment: 1 }, lastEditedBy: r.user.id };
   if (typeof body.graphJson === 'string') data.graphJson = body.graphJson;
   if (typeof body.name === 'string') data.name = body.name;
-  if ('projectId' in body) data.projectId = body.projectId ?? null;
+  // 05/08 (`docs/AUDIT-BACKEND-2026-08-03.md` §2.5) — TRƯỚC ĐÂY gán `projectId` BẤT KỲ mà không
+  // kiểm quyền trên project ĐÍCH: người ngoài dự án gán flow rác của mình vào projectId của dự
+  // án khách → flow đó hiện trong `projects/[id]/overview` của nạn nhân (route đó chỉ lọc theo
+  // projectId). Không đọc trộm được gì nhưng là GHI CHÉO RANH GIỚI DỰ ÁN.
+  // Nay đi qua `assertProjectAccess` — cùng cửa duy nhất mọi route khác dùng (lib/server/access.ts),
+  // KHÔNG tự query ProjectMember tại đây. Mức 'drafter' theo đúng chỉ định của audit §2.5.
+  // Gỡ flow khỏi dự án (`projectId: null`) không cần quyền gì thêm — đó là flow của chính mình
+  // (`ownFlow` đã chặn ở trên), đem về kho cá nhân là quyền của chủ flow.
+  if ('projectId' in body) {
+    const target = body.projectId ?? null;
+    if (typeof target === 'string' && target) {
+      try {
+        await assertProjectAccess(r.user.id, target, 'drafter');
+      } catch (e) {
+        const p = accessErrorPayload(e);
+        if (p) return NextResponse.json({ error: p.message }, { status: p.status });
+        throw e;
+      }
+    } else if (target !== null) {
+      return NextResponse.json({ error: 'projectId không hợp lệ.' }, { status: 400 });
+    }
+    data.projectId = target;
+  }
   if (typeof body.coverUrl === 'string') data.coverUrl = body.coverUrl.slice(0, 500);
   if (typeof body.status === 'string') data.status = body.status.slice(0, 160);
   const flow = await prisma.flow.update({ where: { id: r.flow.id }, data });

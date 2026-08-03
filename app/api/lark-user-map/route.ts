@@ -10,10 +10,26 @@ export const dynamic = 'force-dynamic';
  * DASHBOARD.md §3 câu hỏi (f)). CHỈ ghi vào Prisma nội bộ — không đụng Larkbase.
  *
  * ⚠️ KHÔNG dùng cho phân quyền truy cập app (đã chốt tách biệt hoàn toàn — §2.3 quyết định 1).
+ *
+ * 05/08 (`docs/AUDIT-BACKEND-2026-08-03.md` §2.4) — ĐÒI ADMIN: trước đây ai đăng nhập cũng ánh
+ * xạ/gỡ được Lark account ↔ User.id của NGƯỜI KHÁC, dẫn tới sai quy kết "Chủ trì" trên bảng
+ * nhân sự. Cùng cửa `User.isAdmin` với `library/[id]`/`comments` (không bịa cơ chế thứ hai).
  */
+function requireAdmin(user: { isAdmin: boolean } | null) {
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  if (!user.isAdmin) {
+    return NextResponse.json(
+      { error: 'Chỉ admin được gán/gỡ ánh xạ tài khoản Lark.' },
+      { status: 403 },
+    );
+  }
+  return null;
+}
+
 export async function POST(req: Request) {
   const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const denied = requireAdmin(user);
+  if (denied) return denied;
 
   const body = await req.json().catch(() => ({}));
   const larkAccount = typeof body?.larkAccount === 'string' ? body.larkAccount.trim() : '';
@@ -36,7 +52,8 @@ export async function POST(req: Request) {
 /** DELETE — gỡ 1 ánh xạ (sửa nhầm). Body { larkAccount }. */
 export async function DELETE(req: Request) {
   const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const denied = requireAdmin(user);
+  if (denied) return denied;
   const body = await req.json().catch(() => ({}));
   const larkAccount = typeof body?.larkAccount === 'string' ? body.larkAccount.trim() : '';
   if (!larkAccount) return NextResponse.json({ error: 'Thiếu larkAccount.' }, { status: 400 });

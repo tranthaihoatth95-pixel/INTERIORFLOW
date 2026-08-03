@@ -16,7 +16,10 @@ import { useDismissable } from '@/lib/useDismissable';
 
 /* ---------- kiểu dữ liệu trả về từ /api/dashboard ---------- */
 interface Member {
-  id: string; name: string; credits: number; isAdmin: boolean;
+  id: string; name: string;
+  /** CHỈ có ở chính mình — server không trả số dư của người khác (AUDIT-BACKEND §2.4). */
+  credits?: number;
+  isAdmin: boolean;
   lastSeenAt: string; online: boolean; flowCount: number; projectCount: number;
 }
 interface ProjectRow {
@@ -454,9 +457,14 @@ export function Dashboard({
                               {m.online ? 'online' : timeAgo(m.lastSeenAt)} · {m.flowCount} flow
                             </div>
                           </div>
-                          <span className="flex shrink-0 items-center gap-1 text-[11px] text-[var(--t3)]">
-                            <Coins size={12} className="text-amber-400" /> {m.credits}
-                          </span>
+                          {/* 05/08 (AUDIT-BACKEND §2.4) — server chỉ trả `credits` của CHÍNH
+                              mình; hàng của người khác không có field này nên không render ô
+                              trống/`undefined`. Số dư của người khác không còn lộ ra client. */}
+                          {m.credits !== undefined && (
+                            <span className="flex shrink-0 items-center gap-1 text-[11px] text-[var(--t3)]">
+                              <Coins size={12} className="text-amber-400" /> {m.credits}
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
