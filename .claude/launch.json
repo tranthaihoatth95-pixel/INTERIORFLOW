@@ -16,6 +16,14 @@
       "port": 3001,
       "autoPort": true,
       "cwd": "/Users/tranben/Downloads/interiorflow"
+    },
+    {
+      "name": "interiorflow-g4",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3004,
+      "autoPort": true,
+      "cwd": "/Users/tranben/Downloads/interiorflow-g4"
     }
   ]
 }
