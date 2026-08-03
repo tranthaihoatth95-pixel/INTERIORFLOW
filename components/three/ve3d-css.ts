@@ -173,6 +173,17 @@ export const VE3D_CSS = `
   background:color-mix(in srgb,var(--success) 12%,transparent);border:1px solid color-mix(in srgb,var(--success) 30%,transparent);
   border-radius:var(--radius-sm);padding:7px 9px}
 .if-ve3d .ok svg{flex:none;margin-top:1px}
+/* CHINH-5 chữ→icon (SPEC-PANEL-ROLLOUT §3): chấm trạng thái · chip engine · xích đứt gọn */
+.if-ve3d .dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
+.if-ve3d .dot.sync{background:var(--success)}
+.if-ve3d .dot.detached{background:var(--warning)}
+.if-ve3d .chips{display:flex;gap:5px;align-items:center}
+.if-ve3d .chip{font-size:9.5px;font-weight:var(--fw-semi);letter-spacing:.02em;padding:2px 7px;
+  border-radius:999px;border:1px solid var(--border);color:var(--t1);background:var(--field)}
+.if-ve3d .chip.lit{border-color:color-mix(in srgb,var(--success) 45%,transparent);
+  color:var(--success);background:color-mix(in srgb,var(--success) 10%,transparent)}
+.if-ve3d .warn.mini{padding:5px 8px;align-items:center;gap:6px}
+.if-ve3d .warn.mini svg{margin-top:0}
 .if-ve3d .tgl{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--t2)}
 .if-ve3d .sw2{width:34px;height:20px;border-radius:9999px;background:var(--border-strong);position:relative;flex:none;
   border:0;cursor:pointer;padding:0;transition:background-color .15s}

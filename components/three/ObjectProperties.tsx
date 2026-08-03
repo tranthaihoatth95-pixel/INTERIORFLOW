@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, Link2, Eye } from 'lucide-react';
+import { AlertTriangle, Eye, Unlink } from 'lucide-react';
 import { findMaterial } from '@/lib/three/materials';
 import type { SelectedBox } from './CommandPanel';
 import { RawStyle } from './RawStyle';
@@ -63,12 +63,14 @@ export function ObjectProperties({
       <div className="grp">
         <div className="gh">Kích thước</div>
         {linked && (
-          <div className="warn">
-            <AlertTriangle size={13} strokeWidth={2} />
-            <span>
-              Khối này sinh từ bản vẽ <b>{source.drawingName}</b>. Sửa kích thước ở đây sẽ{' '}
-              <b>tách khỏi bản vẽ</b> — đổi bên bản vẽ sẽ không còn tự cập nhật sang.
-            </span>
+          // CHINH-5 chữ→icon (SPEC-PANEL-ROLLOUT §3): "Sửa ở đây: tách khỏi bản vẽ" = icon xích
+          // đứt + --warning, câu đầy đủ nằm ở tooltip (luật §3.5: icon bắt buộc có tooltip Việt).
+          <div
+            className="warn mini"
+            title={`Khối này sinh từ bản vẽ ${source.drawingName}. Sửa kích thước ở đây sẽ tách khỏi bản vẽ — đổi bên bản vẽ sẽ không còn tự cập nhật sang.`}
+          >
+            <Unlink size={13} strokeWidth={2} aria-hidden />
+            <span>Sửa ở đây = tách khỏi bản vẽ</span>
           </div>
         )}
         <div className="fields">
@@ -110,9 +112,15 @@ export function ObjectProperties({
             Chưa gán — mở tab Vật liệu
           </button>
         )}
-        <div className="ok">
-          <Link2 size={13} strokeWidth={2} />
-          <span>Xuất sang <b>D5</b> hoặc <b>V-Ray</b> giữ nguyên mã — không phải gán lại.</span>
+        {/* CHINH-5 chữ→icon: câu "Xuất sang D5 · V-Ray giữ nguyên" → 3 chip engine, cái nào giữ
+            được mã thì SÁNG (matId là chuẩn chung nên cả 3 sáng — moat, xem SPEC-VAT-LIEU §1). */}
+        <div className="kv">
+          <span className="k">Xuất sang</span>
+          <span className="chips" style={{ marginLeft: 'auto' }} title="Mã matId giữ nguyên khi xuất sang D5 hoặc V-Ray — không phải gán lại.">
+            {(['IF', 'V-Ray', 'D5'] as const).map((eng) => (
+              <span key={eng} className="chip lit">{eng}</span>
+            ))}
+          </span>
         </div>
       </div>
 
@@ -122,10 +130,17 @@ export function ObjectProperties({
         {source ? (
           <>
             <div className="kv"><span className="k">Sinh từ</span><span className="v">{source.drawingName}</span></div>
+            {/* CHINH-5 chữ→icon: trạng thái = CHẤM TRÒN màu + tooltip (xanh = đồng bộ, cam = đã
+                tách) — câu đầy đủ trong title, người dùng trỏ vào là đọc được. */}
             <div className="kv">
               <span className="k">Trạng thái</span>
-              <span className="v" style={{ color: source.detached ? 'var(--warning)' : 'var(--success)' }}>
-                {source.detached ? 'Đã tách khỏi bản vẽ' : 'Đang đồng bộ với bản vẽ'}
+              <span
+                className="v"
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                title={source.detached ? 'Đã tách khỏi bản vẽ — đổi bên bản vẽ 2D không còn cập nhật sang.' : 'Đang đồng bộ với bản vẽ.'}
+              >
+                <span className={source.detached ? 'dot detached' : 'dot sync'} aria-hidden />
+                <span className="sr-only">{source.detached ? 'Đã tách khỏi bản vẽ' : 'Đang đồng bộ với bản vẽ'}</span>
               </span>
             </div>
             {source.detached && (

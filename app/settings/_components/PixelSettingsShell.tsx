@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, LogOut } from 'lucide-react';
+import { ArrowLeft, Check, LogOut, PanelsTopLeft } from 'lucide-react';
+import { resetAllRolloutLayouts } from '@/components/studio/Rollout';
 import { useFlowStore } from '@/lib/store';
 import { AiDependencySettings } from '@/components/settings/AiDependencySettings';
 import { GuModelSettings } from '@/components/settings/GuModelSettings';
@@ -19,6 +21,34 @@ import { StorageCard } from './StorageCard';
  * lucide-react (docs/LUAT-GIAO-DIEN-BAT-BUOC.md L4), không glyph. AI/Gu/Trải nghiệm (mock không
  * vẽ) dời xuống khu "Nâng cao" — tính năng thật, KHÔNG xoá (L6).
  */
+function ResetPanelLayoutRow() {
+  const [done, setDone] = useState(false);
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)', display: 'flex', alignItems: 'center', gap: 7 }}>
+          <PanelsTopLeft size={13} /> Bố cục panel
+        </div>
+        <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--t2)' }}>
+          Panel nào lỡ thu/kéo mất chỗ — đưa mọi panel về bố cục mặc định.
+        </p>
+      </div>
+      <button
+        type="button"
+        className="ghost"
+        style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6 }}
+        onClick={() => {
+          resetAllRolloutLayouts();
+          setDone(true);
+          window.setTimeout(() => setDone(false), 2500);
+        }}
+      >
+        {done ? <><Check size={13} /> Đã đặt lại</> : 'Đặt lại bố cục panel'}
+      </button>
+    </div>
+  );
+}
+
 export function PixelSettingsShell() {
   const router = useRouter();
   const user = useFlowStore((s) => s.user);
@@ -80,6 +110,11 @@ export function PixelSettingsShell() {
               Chưa có trong bản mẫu pixel — giữ nguyên tính năng cũ, chưa đổi giao diện.
             </p>
             <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* CHINH-5 bàn giao G4: nút nối `resetAllRolloutLayouts()` (export sẵn từ
+                  components/studio/Rollout.tsx — G4 chỉ GỌI, không sửa file CHINH). Xoá mọi khoá
+                  bố cục rollout đã nhớ (mở/đóng · thứ tự kéo · ghim) → panel về mặc định,
+                  đúng SPEC-PANEL-ROLLOUT §2b "luôn nhìn thấy được". */}
+              <ResetPanelLayoutRow />
               <AiDependencySettings />
               <GuModelSettings />
               <ExperienceSettings />
