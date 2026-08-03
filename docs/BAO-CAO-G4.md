@@ -141,3 +141,298 @@ G4 chỉ ĐỌC file này, không tạo/sửa, không đưa vào lệnh commit t
 Đã chụp 6 màn hình trong lúc verify (Render tab mặc định · card selected + inspector · CAD tab ·
 Publish modal mở · sau khi publish (chip chờ duyệt) · Tất cả tab nhóm theo chặng · dark theme) —
 không đính kèm file ảnh vào repo (đúng luật không rác `docs/`), mô tả bằng chữ ở mục Verify trên.
+
+---
+
+# CHỐT PHIÊN G4 — 03/08/2026 (theo SO-KIEM-TONG.md §4)
+
+> Phiên G4 đóng tại đây. Phiên G4 MỚI: đọc `docs/SO-KIEM-TONG.md` (trên main) → `docs/00-CHOT.md`
+> → file này, đúng thứ tự §4.1. Việc kế tiếp nhận từ §3 sổ tổng: **MaterialSphere quả cầu vật liệu**
+> (`SPEC-VAT-LIEU-PBR-IF` §2), rồi Mood+Collab G2.
+
+## Nhánh `nhanh-g4` tại thời điểm chốt
+
+HEAD = `245b96b`, cây sạch, 37 commit chưa push (push kèm lần chốt này). Các cụm việc phiên này,
+mới → cũ:
+
+| Cụm | Commit | Báo cáo chi tiết |
+|---|---|---|
+| **Mode Vẽ 3D (G3)**: CommandPanel 5 tab · Viewport3D (bọc `Scene3DViewer` sẵn có + trục/ViewCube/gizmo) · ObjectProperties 4 nhóm + khai báo mode Trụ 4 | `20e935d` · `f6868e7` · `245b96b` | mục dưới đây (phiên chốt trước khi kịp viết vòng riêng) |
+| **Thư viện = MỘT sheet** (xoá trang `/library`, 1 tên "Thư viện", 1 nút "Đưa lên kệ") | `a73c658` (+ 4 commit sheet trước đó `8e04f85`…`c4ab1d9`) | `docs/BAO-CAO-G4-LIB.md` |
+| File Manager + Settings (rail chung · list view · tải lên thật · hình nền canvas) | đã merge main `12223cf` | `docs/BAO-CAO-FM.md` |
+| Kệ Thư viện trang (vòng 1 — **đã khai tử** bởi `a73c658`) | `6ba1ecb` | phần đầu file này (giữ làm lịch sử) |
+
+## Mode Vẽ 3D — tóm tắt nghiệm thu (3 commit cuối phiên)
+
+- **Ranh giới giữ đúng**: chỉ file MỚI trong `components/three/*` + `lib/three/materials.ts` +
+  `lib/three/mode-render-3d.ts`. KHÔNG đụng `components/studio/*`, KHÔNG sửa engine 3D-1..3D-5
+  sẵn có. 3 component nhận props tự render, không biết gì về shell — CHINH cắm vào AppShell là chạy.
+- **⭐ Moat matId verify bằng DOM**: đổi engine IF→D5 chỉ đổi tên hiển thị (Gỗ óc chó →
+  Wood_Walnut_01), `matId` W-102 giữ nguyên, lựa chọn không mất. Dòng "Mã matId giữ nguyên khi
+  xuất sang D5 hoặc V-Ray" hiện ở cả hint tab Vật liệu lẫn Inspector.
+- **Nhóm Nguồn** (ObjectProperties): cảnh báo `--warning` TRƯỚC khi sửa khối còn đồng bộ bản vẽ
+  ("sửa ở đây sẽ TÁCH khỏi bản vẽ") và SAU khi tách — verify đủ 3 trạng thái nguồn.
+- **3 bug thật bắt khi verify** (đã sửa, console sạch tab mới): matId bị `overflow:hidden` cắt
+  ("W-102"→"102", span inline trôi dòng) · `<title>` SVG gây hydration mismatch (React 18, bỏ
+  hẳn dùng `aria-label`) · overlay theo theme vô dụng vì nền cảnh `Scene3DViewer` hardcode
+  `#2a2d33` → chốt kính tối cố định, ngoại lệ có căn cứ ghi comment.
+- `defineMode` registry CHƯA tồn tại (grep 0 kết quả) → `RENDER_3D_MODE` object thuần đúng hình
+  dạng Trụ 4 + TODO trỏ CHINH trong `lib/three/mode-render-3d.ts`, không tự chế cơ chế.
+- tsc 0 lỗi · lint sạch · test exit 0 · verify DOM thật từng tab, 2 theme (Tối trước), bàn phím.
+
+## ⚠️ MERGE BLOCKER cho ai merge `nhanh-g4` → main
+
+Main (`3a92170`) đã **XOÁ `LeftRail.tsx` + `StageShell.tsx`**; nhánh này còn 2 commit SỬA đúng 2
+file đó (`a73c658` mount `LibrarySheet` vào StageShell + nút Thư viện trong LeftRail). Merge sẽ ra
+**modify/delete conflict** — đúng ghi chú sổ tổng §1 "main đã xoá StageShell → cần luật xử mount".
+Cách xử khi merge (đề xuất, người merge quyết):
+1. Nhận xoá 2 file (`git rm`) — phần code sheet trong `components/library/*` không mất gì.
+2. Mount lại `<LibrarySheet stage={...}/>` vào chỗ tương đương của **AppShell 6 ổ** (overlay dùng
+   chung, cạnh Dashboard/FlowsPanel cũ) + nút "Thư viện" ở Navigator gọi `openLibrarySheet()`
+   (`lib/library/use-library-sheet.ts` — không phụ thuộc shell, cắm đâu cũng chạy).
+3. `/files`/`/settings` đã tự mount sheet riêng (`app/files/page.tsx`, `PixelSettingsShell`) —
+   phần đó không dính conflict.
+
+## Bàn giao phiên G4 mới — việc 1: MaterialSphere (§3 sổ tổng)
+
+Đọc `SPEC-VAT-LIEU-PBR-IF` §2 (trên main — nhánh này CHƯA có, **merge main trước khi làm**, xử
+conflict theo mục trên). Đầu bài sổ tổng: `MaterialSphere.tsx` (three.js sphere + RoomEnvironment
+PMREM dùng chung + cache PNG theo hash) · gắn vào Thư viện sheet mode Vẽ 3D + tab Vật liệu
+CommandPanel · 3 cảnh Cầu/Sàn/Vải tự chọn theo danh mục · lưới 25%, chi tiết 100%. Chỗ gắn có sẵn:
+`components/three/CommandPanel.tsx` (swatch `.msw` tab Vật liệu — thay `background:gradient` bằng
+ảnh cầu) + `components/library/LibrarySheet.tsx` (ô `.it` kệ vật liệu). Catalog matId mock ở
+`lib/three/materials.ts` — `MATERIALS[].swatch` là gradient tạm, đúng chỗ để thay bằng render cầu.
+Dùng chung 1 renderer/PMREM cho mọi cầu (đừng dựng N canvas — bài học FPS ghi ở `SPEC-3D-CORE`).
+
+---
+
+# PHIÊN G4 — 04/08/2026 (đêm) · VIỆC 1a GẤP: 5 lỗi UI chặng Render
+
+Nguồn việc: `SO-KIEM-TONG.md` §3 G4-1a + `BAO-CAO-DEM-2026-08-04.md` mục 23:1x (điểm 2–6).
+Bước 0 đã chạy: merge `main` → `nhanh-g4` (`02b2b39`, sạch, không conflict).
+
+## Đã sửa (4 file, ngoài vùng cứng G4 gốc nhưng được phiếu giao việc TỔNG giao đích danh)
+
+1. **Toolbar bút hết đứng thường trực** — `DrawToolbar.tsx` return null khi tool không thuộc
+   {pen·marker·highlight·eraser}; **lối vào mới**: nút "Bút vẽ tay" thêm vào `BottomToolbar.tsx`
+   (cạnh Khung phòng, active khi bất kỳ tool vẽ nào bật) — không mất tính năng, chỉ đổi lối vào
+   (chống rớt §1 giữ nguyên: bảng bút + DrawLayer còn sống, thoát bằng nút "Chọn" trong bảng).
+2. **Canvas trống hết tụt 15%** — `FlowCanvas.tsx`: `fitView` chỉ bật khi có node
+   (`fitView={nodes.length>0}` + `defaultViewport zoom 1` + effect fit-một-lần `maxZoom:1` cho
+   ca hydrate muộn). **Phát hiện thêm khi verify**: đổi flow KHÔNG remount canvas → viewport flow
+   cũ dính lại; đã xử: đổi `currentFlowId` → reset cờ fit, flow trống thì `setViewport zoom 1`.
+3. **Banner đổi khuôn** — `RenderToolModeOverlay.tsx`: "Còn công cụ khác chưa hiện." →
+   "Công cụ đầy đủ nằm trong Thư viện khối." + nút "Mở thư viện" (khuôn Nhắc trạng thái
+   SPEC-NGON-NGU §2, tên panel đúng chữ trên UI).
+4. **Empty state khuôn Trống có NÚT** — `FlowCanvas.tsx`: "Canvas đang trống — kéo khối từ
+   Thư viện vào đây" + nút "Mở Thư viện khối" (mở đúng panel) + demo chips giữ nguyên; bỏ jargon
+   "Node Library"/"rail trái" (từ điển §3).
+5. **Minimap + attribution** — minimap đã có guard `nodes.length >= 3` từ trước (không sửa);
+   attribution React Flow GIỮ theo license nhưng chuyển `bottom-left` + style trong suốt/9px/55%
+   (bỏ nền trắng lộ ở theme Tối). Lưu ý kỹ thuật: selector `.react-flow__attribution` không viết
+   được bằng arbitrary variant Tailwind (underscore→space) → dùng `<style>` cục bộ trong wrapper.
+
+## Verify browser thật (127.0.0.1:3004, login demo, cả 2 theme Sáng/Tối)
+
+- Dock: nút Bút bật bảng bút mép trái (5 nút, active accent) · "Chọn" tắt bảng — DOM đếm 0.
+- Flow trống: zoom đứng 100%, empty state + nút hoạt động (mở Thư viện khối), minimap ẩn,
+  banner ẩn. Flow có node: banner hiện, nút mở đúng panel. Console: 0 lỗi runtime mới sau reload
+  (chỉ còn vết compile cũ của chính phiên — đã sửa trong phiên).
+- Verify bằng flow test "Untitled flow" tự tạo → ĐÃ XOÁ sau khi xong (stub `window.confirm`
+  tạm để bấm nút Xoá flow vì browser pane nuốt dialog native — restore ngay). Theme trả về Sáng.
+
+## 🔴 PHÁT HIỆN CHO TỔNG/PHU — nguyên nhân THẬT của ảnh "zoom 15% trống trơn" của Hoà
+
+Dự án mẫu (flow đang mở mặc định) có **3 node toạ độ văng cực xa**: y = −6150 / −9261 /
+**−50202** (đo DOM). fitView đúng logic với bbox đó → kẹt minZoom 15%, node bé đến vô hình,
+minimap "trông như trống" dù có 3 node (guard ≥3 nên vẫn hiện). Tức là NGOÀI lỗi UI đã sửa,
+còn **lỗi DỮ LIỆU demo** (nghi do kéo node ở zoom cực nhỏ hoặc import lệch) — thuộc lõi dữ
+liệu (PHU/TỔNG quyết): cần sanitize vị trí node khi load/save. G4 không tự sửa (ngoài mảng).
+
+## Ghi chú vận hành phiên này
+
+- Worktree G4 thiếu `.env` → login API 500. Đã `cp .env` từ repo chính (DATABASE_URL trỏ tuyệt
+  đối `prisma/dev.db` repo chính — đúng file gitignore, không vào git). Server 3004 cũ (khởi động
+  không env) đã kill, chạy lại `npm run dev -p 3004` nền — **đang chạy tiếp cho phiên sau**.
+- `preview_start` không nhận cwd ngoài project root → server chạy qua Bash nền (bất khả kháng,
+  log ở scratchpad phiên).
+
+## VIỆC 1 (§3 G4): MaterialSphere — quả cầu vật liệu (SPEC-VAT-LIEU-PBR-IF §2)
+
+**File mới**: `components/three/material-preview.ts` (lõi render + cache) ·
+`components/three/MaterialSphere.tsx` (component <img> + fallback gradient).
+**Gắn vào 3 nơi**: `components/three/CommandPanel.tsx` tab Vật liệu (bản G4, chờ CHINH nối) ·
+`components/render-studio/Command3DPanel.tsx` tab Vật liệu (bản ĐANG MOUNT trên main — thêm để
+tính năng nhìn thấy được ngay, ship-trước) · `components/library/LibrarySheet.tsx` kệ
+`render-mat` + `common-atlas` (badge phạm vi giữ nguyên, kệ khác + hatch 2D giữ swatch phẳng
+đúng spec "chặng Vẽ 2D giữ swatch phẳng").
+
+Đúng spec §2: MỘT WebGLRenderer + MỘT env PMREM `RoomEnvironment` dùng chung (không dựng N
+canvas — bài học FPS SPEC-3D-CORE) · render 1 lần/бộ tham số → PNG cache theo hash(params)
+(Map in-memory — chưa IndexedDB vì mỗi lượt render <5ms, không đáng ghi đĩa) · 3 cảnh
+Cầu/Sàn/Vải tự chọn theo danh mục (vải→Vải; tên có sàn/gạch/lát→Sàn) · nấc phân giải 25% cho
+lưới, 100% để dành panel chi tiết — **sàn 56px** (thấy khi verify: 120px ô × 25% = 30px nguồn
+→ nhuyễn mất highlight; 56px vẫn rẻ). Fallback = gradient swatch cũ khi WebGL tắt/SSR.
+
+**PBR tạm suy từ loại bề mặt** (W/S/M/P/F/G từ matId · từ khoá tên cho ATLAS thật) vì schema
+matId+PBR là việc PHU (§3 PHU-4) — khi PHU xong thì thay `materialFromSpec`/`kindFromName`
+bằng đọc cột PBR thật, chỗ gắn không đổi.
+
+**Verify browser thật (127.0.0.1:3004, 2 theme)**: Command3DPanel 2 vật liệu ATLAS thật ra cầu
+("Đá traverti…" = cầu highlight, "Sàn gỗ sồi" = cảnh sàn phối cảnh vì tên có "Sàn") · kệ Thư viện
+12 món ra cầu/sàn/vải đúng loại, badge nguyên · DOM đếm 14 ảnh PNG 56px · dark theme đọc rõ ·
+lint/tsc/test sạch. Ghi chú: fetch `/api/specs` sau hard-reload URL con trả rỗng 1 lần (khớp
+cảnh báo hydrate STATUS.md — không phải lỗi mới, toggle lại mode là có).
+
+## CHỐT PHIÊN G4 — 04/08/2026 (theo SO-KIEM-TONG §4)
+
+Nhánh `nhanh-g4` HEAD = `14d3ec6`, cây sạch. Phiên này: `02b2b39` (merge main) → `7ac431c`
+(G4-1a 5 lỗi UI) → `14d3ec6` (MaterialSphere). Đã thêm 2 dòng vào §1 sổ tổng (chống rớt).
+
+**Hàng đợi G4 còn lại** (đọc lại §3 sổ tổng trước khi làm):
+- Việc 2 — **BỎ QUA phiên này**: "chờ CHINH merge xong" mới verify Vẽ 3D trên main. `git log main`
+  còn `1873cbe`, chưa có commit merge nhanh-g4 ⇒ điều kiện chưa đủ, đúng luật bỏ qua.
+- Việc 3 — **Mood+Collab G2 trọn gói** (việc kế tiếp cho phiên G4 mới): `lib/collab/` (presence
+  store · share roles Viewer/Commenter/Editor · comment anchor) + UI theo ticket G2. **Đã khảo
+  sát sẵn cho phiên sau, đừng làm lại**: `lib/collabStore.ts` (147 dòng, poll cursor, KHÔNG có
+  role) · `components/collab/PresenceBar.tsx` (online/offline + mời — nhưng POST cứng
+  `role:'viewer'`, chưa cho chọn) · `components/collab/LiveCursors.tsx` (TẠM ẨN có chủ đích,
+  xem chú thích trong FlowCanvas — đừng bật lại nếu chưa đồng bộ node/edge) ·
+  `components/CommentLayer.tsx` (ghim theo % VIEWPORT + route, dùng cho góp ý app — KHÁC comment
+  neo vào node/flow-space mà G2 cần, đừng nhầm là đã có) · role hợp lệ đã có ở server:
+  `prisma/schema.prisma:109` `'owner'|'crea'|'drafter'|'bim'|'viewer'` + `app/api/projects/[id]/
+  members/route.ts` (có `isProjectRole`) ⇒ 3 vai Viewer/Commenter/Editor của spec PHẢI ánh xạ
+  vào bộ role sẵn có này, không đẻ bộ thứ hai.
+- Việc 4 (Present chooser) · việc 5 (empty state toàn app) — chưa động.
+
+**Môi trường bàn giao**: dev server G4 đang chạy nền ở `127.0.0.1:3004` (worktree này, có `.env`
+vừa copy — file gitignore, không vào git). Kill bằng `lsof -tiTCP:3004 | xargs kill` nếu cần.
+
+## 🔴 4 FIX THƯ VIỆN (Hoà chê cách Thư viện xuất hiện — 04/08)
+
+**① Xoá 12 gradient giả.** `lib/library/shelves.ts` bỏ hẳn bảng `SWATCH`; mỗi món khai `kind`
+(LOẠI) thay cho một gradient bịa. Ô xem trước đi theo bậc thang trong `components/library/
+ItemThumb.tsx`: **(c)** `item.imageUrl` (ATLAS sync có cột Ảnh — trường đã khai, chưa nối) →
+**(a)** quả cầu render thật (chỉ kệ vật liệu) → **(b)** vân procedural theo loại + icon loại
+(`lib/library/thumb-kinds.ts`: gỗ=vân dọc · đá=lấm tấm · vải=dệt chéo · kim loại=xước góc hẹp ·
+kính=vệt sáng chéo · sơn=ánh mềm; loại phi-vật-liệu=lưới/nhịp trung tính theo token).
+**Luật chống tái phạm**: tông màu gắn theo LOẠI, không theo từng món — mọi món gỗ chung một tông
+tới khi ATLAS trả màu thật, thà nói đúng "đây là nhóm gỗ" còn hơn bịa 12 màu.
+
+**② Scrim.** Bug thật, không phải chỉnh mắt: scrim z-index 20 chép từ mock, nhưng app thật có
+`.mat-header` z-30 ⇒ **header đứng TRÊN scrim, nửa màn không hề tối** (đo bằng `elementFromPoint`:
+điểm header trả về chính header). Sửa: scrim z-90 / sheet z-91 (dải modal của app: Lightbox z-60,
+menu z-80, dưới PublishModal z-190 + toast z-200 của chính Thư viện). Sau sửa `elementFromPoint`
+tại header/sidebar/canvas đều trả `scrim`. Đậm thêm 12% so với token `--mat-overlay` (token .28
+hợp modal nhỏ; sheet này chiếm 74% màn).
+
+**③ Ba tầng nền.** Sheet trước dùng `--mat-card` (Sáng = trắng .82) còn card dùng `--field`
+(#f4f1eb) ⇒ hai lớp gần trùng, phẳng lì. Nay: **nền `--bg` < sheet `--panel` < card `--card` +
+viền `--border`**. Đo thật (Sáng) 242,239,233 → 250,248,244 → 255,255,255 + viền 227,222,212;
+(Tối) 12,12,14 → 20,20,23 → 26,26,30 + viền 42,42,49. Kính giữ nhưng chỉ còn 6% trong suốt +
+blur — đúng `SPEC-APPLE-MOTION-MATERIAL` ("kính là gia vị, đọc được TRƯỚC").
+
+**④ Gộp vật liệu về MỘT kệ.** Kệ chặng Dựng ảnh nay chỉ còn **Preset dựng ảnh · Template
+moodboard · Chuỗi khối sẵn · Form lập luận**; toàn bộ 12 món vật liệu chuyển sang kệ chung
+**Vật liệu ATLAS (1449)** — hết cảnh cùng một kho hiện hai chỗ, đếm 1449 hai lần. Kệ mặc định
+chặng Dựng ảnh đổi thành Preset. `SPHERE_SHELVES` chỉ gồm `common-atlas`.
+
+### 4 lỗi tự bắt khi verify (không ai giao, sửa luôn)
+1. **Quả cầu tràn khung**: fov 32° ở khoảng cách 3.05 chỉ thấy cao 1.75 đơn vị < đường kính cầu
+   2.0 ⇒ ô xem trước ra hình vuông bo góc, mất rìa Fresnel. Lùi camera 4.6 (vải 4.3).
+2. **Ảnh mờ**: nấc 25% × 120px = 30px nguồn, phóng lên Retina thành vệt. Nay nhân DPR + sàn 96px
+   (cache theo key nên mỗi tham số chỉ render 1 lần).
+3. **`objectFit:cover` cắt chỏm cầu** → thêm prop `fit`, kệ dùng `contain` (cảnh Sàn vẫn `cover`).
+4. **Vân bám `--t5`** (Sáng #b8b1a7) pha loãng trên `--field` là mất hút → đổi bám `--t3`.
+Kèm 1 lỗi của chính tôi: backtick trong comment CSS làm đứt template literal (Build Error, sửa ngay).
+
+**Nghiệm thu**: tsc 0 lỗi · lint sạch · test 0 fail · verify browser `127.0.0.1:3004` CẢ 2 THEME
+(kệ vật liệu ra cầu đúng loại gồm cảnh Vải cho vải và cảnh Sàn cho gạch terrazzo; kệ preset/
+template ra vân + icon; scrim phủ toàn màn; 3 tầng nền đo bằng `getComputedStyle`).
+
+## 🔴 MODE VẼ 3D — dựng lại trải nghiệm mở màn (Hoà chê "rối rắm, không hệ thống", 04/08)
+
+**① Sân khấu luôn hiện.** `Render3DModeSkeleton` bỏ nhánh "chưa có bản vẽ → hiện câu chữ", nay
+LUÔN render `Viewport3D` (thêm `EMPTY_SCENE_3D` bbox 8×8m để camera khung sẵn một khoảng
+người-ở-được). Thêm prop `Scene3DViewer.ground`: lưới sàn 200×200 + `THREE.Fog` làm ĐƯỜNG CHÂN
+TRỜI. **Mặc định TẮT** — mọi chỗ chụp ảnh (campath/capture/xuất) không được dính lưới vào khung.
+
+**② Hết nói chuyện nội bộ với người dùng.** Xoá 2 câu: "Cấu kiện/IFC (B2-B4) chưa làm" (banner
+canvas) và "chưa làm — cần chọn mặt trong khung nhìn 3D, việc riêng" (tab Vật liệu). Sự thật kỹ
+thuật chuyển thành comment code tại chỗ. Tab Vật liệu nay chỉ còn 1 câu hành động: "Chọn vật liệu
+để cầm, rồi bấm lên mặt khối."
+
+**③ Empty state làm được việc TẠI CHỖ.** "Bắt đầu dựng không gian" + 2 nút:
+· **Đùn từ bản vẽ** — đặt `heightMm=2700` cho nét hatch/polyline chưa đùn, ghi thẳng vào Doc
+  (một nguồn); disabled kèm lý do khi bản vẽ trống.
+· **Dựng khối đầu tiên** — mở tab **Tạo** + **nháy nút Tường**. Tab Tạo trước đây là câu "sắp có"
+  suông, nay có nút Tường THẬT: gọi engine `wallSegment()` của chặng Vẽ (không tự chế hình học),
+  đoạn 4m dày 220. 5 khối còn lại (Hộp/Sàn/Cửa/Cửa sổ/Mái) giữ chỗ dạng disabled có lý do —
+  không nút giả. **Không còn câu "sang chặng CAD vẽ rồi quay lại".**
+
+**④ Trình tự 3 bước** góc dưới trái: ① Dựng khối → ② Gán vật liệu → ③ Đặt máy quay, tự đánh dấu
+(gạch ngang + tick accent), có nút ẩn nhớ qua localStorage `if.ve3d.guide_hidden_v1`.
+⚠️ TRUNG THỰC: bước ② hiện bắt tín hiệu "đã CHỌN vật liệu trong panel" chứ không phải "đã gán vào
+khối" — `grep matId lib/cad/*` = 0, Doc CAD chưa có field vật liệu. Khi gán-lên-mặt (raycast) xong
+thì đổi tín hiệu sang dữ liệu Doc (đã ghi TODO tại chỗ).
+
+**⑤ Mọi vật liệu cùng MỘT kiểu xem trước.** Bỏ đoán-theo-tên (`floorHint`) ở cả `Command3DPanel`
+lẫn kệ Thư viện: trước đây "Sàn gỗ sồi" ra cảnh Sàn phẳng còn "Đá travertine" ra quả cầu, nhìn
+lổn nhổn hai kiểu. Nay tất cả là quả cầu; cảnh Sàn/Vải vẫn nằm trong `material-preview.ts` cho
+panel chi tiết CHỌN TAY sau này.
+
+**Verify browser (127.0.0.1:3004, 2 theme)**: mở Vẽ 3D lúc 0 khối → THẤY lưới sàn + chân trời +
+trục XYZ + ViewCube + nhãn "Không gian trống" + thẻ "Bắt đầu dựng không gian" + trình tự 3 bước.
+Bấm "Dựng khối đầu tiên" → tab Tạo mở, nút Tường nháy → bấm Tường → khối hiện thật, nhãn đổi
+"Khối xám · chưa vật liệu", bước ① tự tick. Đo `getBoundingClientRect`: trình tự ban đầu ĐÈ LÊN
+trục XYZ (bottom 74) → dời lên 156, đo lại `chongLan=false`. Tường test đã XOÁ khỏi dự án mẫu
+(chặng Vẽ → chọn tất cả → Delete), bản vẽ trở lại rỗng như trước. tsc/lint/test sạch.
+
+### ⚠️ Tồn tại phát hiện khi verify — KHÔNG sửa ở phiếu này (ngoài phạm vi, để PHU quyết)
+Cảnh chỉ có 1 khối lẻ thì camera áp rất sát và khối nằm LỆCH TÂM khung. Nghi `controls.target`
+dùng `(cx, cz, cy)` trong khi phép chiếu CAD→three là `(x, cao, −y)` ⇒ trục thứ ba phải là `−cy`.
+Hành vi engine có từ 3D-1; đụng vào là đổi khung hình của cả campath/capture. Đã ghi comment cảnh
+báo ngay tại dòng đó trong `Scene3DViewer.tsx`.
+
+## 🔴 BUG card "Bắt đầu dựng không gian" không tắt được — ĐÃ SỬA (04/08)
+
+Đủ 4 đường thoát, verify từng cái bằng thao tác thật:
+1. **Nút ✕** góc trên phải card.
+2. **Esc** đóng · **bấm ra ngoài card** đóng (listener `pointerdown` pha BẮT, cùng họ sự kiện
+   `lib/useDismissable` của app).
+3. **Nhớ** qua `localStorage if.ve3d.welcome_hidden_v1` — reload không hiện lại; thay bằng **nút
+   "?"** góc dưới phải để gọi lại (đóng gì cũng phải mở lại được).
+4. **Không chặn viewport**: đo `getComputedStyle` — overlay `pointer-events:none`, chỉ card
+   `auto`. Orbit/pan không vướng.
+Tự ẩn khi có khối đầu tiên: giữ nguyên (`soKhoi > 0`).
+Verify: Esc → `cardConHien:false` + `localStorage=1` + nút "?" xuất hiện · bấm "?" → card về ·
+bấm ra ngoài → đóng lại · reload → không hiện, nút "?" còn · theme Tối OK.
+
+## ⚠️ QUẢ CẦU theo công thức §2c — THỬ RỒI TRẢ LẠI, CHƯA XONG (trung thực)
+
+Đã dựng đủ theo công thức: `NeutralToneMapping` + exposure 1.0 · `environmentIntensity 1.1` +
+`environmentRotation` (đưa vệt sáng lên góc trên-trái) · nền xám radial `#8a8a8a→#4a4a4a` ·
+đĩa bóng tiếp đất 2.2× bake 1 lần · fov 30 vị trí (0,0.9,5) · sphere 64×32 · render 2× rồi thu
+nhỏ · vải KHÔNG bóp hình học · kính có thẻ checker sau lưng.
+
+**Kết quả: mọi quả cầu NGỪNG render** (12/12 ô rơi về vân procedural, `renderMaterialPreview`
+trả null mà KHÔNG ném lỗi ra console — đã thêm `console.warn` ở cả 2 nhánh catch mà vẫn im).
+Chưa tìm ra nguyên nhân trong ngân sách phiên này. **Đã `git checkout` trả `material-preview.ts`
+về bản chạy được (de82ed7) — verify lại 12/12 cầu hiện đủ.** Bản thử giữ nguyên ở
+`scratchpad/material-preview-2c-attempt.ts` để phiên sau soi tiếp (nghi: một trong
+`environmentRotation` / `background` CanvasTexture / `drawImage` từ renderer canvas sau khi đổi
+`setSize`).
+
+**Đã giữ lại phần an toàn**: tách tông đá (trắng LẠNH `#eceae6`) khỏi sơn (trắng ngà ẤM
+`#e7dfd0`) trong `thumb-kinds.ts`. Nhưng **CHƯA ĐẠT nghiệm thu** "Sơn trắng ngà vs Đá Calacatta
+khác nhau rõ": đo pixel vùng cầu, hai ô mới lệch ~7/255 độ sáng — mắt thường vẫn thấy na ná.
+Muốn đạt phải có nền xám + roughness tách biệt, tức đúng gói §2c đang treo.
+
+**Phát hiện kèm**: "Gạch terrazzo" và "Đá Calacatta" ra ảnh Y HỆT nhau (cùng loại `stone` → cùng
+tông → cùng tham số). Đây là hệ quả trực tiếp của luật "tông theo LOẠI, không theo món" — chỉ hết
+khi ATLAS trả `colorHex` thật cho từng vật liệu.
+
+## ⬜ CHƯA LÀM (bàn giao thẳng, không giấu)
+- **A. Một Thư viện ở chặng 2**: xoá banner "Công cụ đầy đủ nằm trong Thư viện khối" · sheet chỉ
+  mở từ nút đáy sidebar · tab Vật liệu có nút "Xem cả kho". CHƯA ĐỘNG.
+- **CHINH-5 bàn giao**: icon-hoá ObjectProperties + chip engine + Settings. CHƯA ĐỘNG.

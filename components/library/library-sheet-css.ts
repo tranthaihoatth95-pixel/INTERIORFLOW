@@ -17,15 +17,28 @@
 //  (= công thức `.mat-card` sẵn có: nền --mat-card + blur-strong).
 export const LIBRARY_SHEET_CSS = `
 .if-lib-root{--fs-2xs:11px}
-.if-lib-root .mat-sheet{background:var(--mat-card);backdrop-filter:saturate(180%) blur(var(--blur-strong));-webkit-backdrop-filter:saturate(180%) blur(var(--blur-strong))}
+/* 🔴 SỬA 04/08 (Hoà chê "không thấy tầng"): sheet cũ nền --mat-card = trắng .82 ở theme Sáng,
+   card lại nền --field #f4f1eb ⇒ hai lớp gần trùng, nhìn phẳng lì. Đổi sang thang 3 tầng
+   nền(--bg) < sheet(--panel) < card(--card). Giữ kính nhưng chỉ còn là GIA VỊ (6% trong suốt +
+   blur) — đúng SPEC-APPLE-MOTION-MATERIAL "kính là gia vị, đọc được TRƯỚC" (iOS 27 tự sửa). */
+.if-lib-root .mat-sheet{background:color-mix(in srgb, var(--panel) 94%, transparent);
+     backdrop-filter:saturate(180%) blur(var(--blur-strong));-webkit-backdrop-filter:saturate(180%) blur(var(--blur-strong))}
 .if-lib-root *{box-sizing:border-box}
 
-.if-lib-root .scrim{position:fixed;inset:0;background:var(--mat-overlay);opacity:0;pointer-events:none;z-index:20;
+/* 🔴 SỬA 04/08 (Hoà: "nền sau sheet phải tối xuống rõ"): z-index cũ 20/21 chép từ mock — nhưng
+   trong app THẬT .mat-header là z-30 nên header ĐỨNG TRÊN scrim, nửa màn không hề tối (đo bằng
+   elementFromPoint). Sheet là lớp modal ⇒ vào đúng dải modal của app (Lightbox/MoodboardModal
+   z-60, menu z-80) nhưng dưới PublishModal z-190 + toast z-200 của chính Thư viện. */
+/* Đậm thêm 12% so với token: --mat-overlay (Sáng chỉ .28) hợp với modal NHỎ; sheet này chiếm
+   74% chiều cao nên nền còn lại phải lùi hẳn ra sau mới đọc được lớp trên. Vẫn lấy token làm
+   MÀU gốc để đồng bộ theme, chỉ chồng thêm một lớp tối mỏng. */
+.if-lib-root .scrim{position:fixed;inset:0;
+       background:linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.12)),var(--mat-overlay);opacity:0;pointer-events:none;z-index:90;
        transition:opacity var(--dur-base) var(--ease-apple);border:0;padding:0}
 .if-lib-root .scrim[data-open="true"]{opacity:1;pointer-events:auto}
 .if-lib-root .lib{position:fixed;left:50%;bottom:0;transform:translate(-50%,100%);width:min(980px,94vw);height:min(560px,74vh);
      border-radius:var(--radius-xl) var(--radius-xl) 0 0;border:1px solid var(--mat-hairline);border-bottom:0;
-     box-shadow:var(--shadow-sheet);z-index:21;display:flex;flex-direction:column;overflow:hidden;
+     box-shadow:var(--shadow-sheet);z-index:91;display:flex;flex-direction:column;overflow:hidden;
      transition:transform var(--dur-base) var(--ease-apple)}
 .if-lib-root .lib[data-open="true"]{transform:translate(-50%,0)}
 .if-lib-root .grab{height:16px;flex:none;display:flex;align-items:center;justify-content:center}
@@ -56,18 +69,26 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .chip.on{background:var(--accent);color:#fff;font-weight:var(--fw-semi)}
 .if-lib-root .grid{flex:1;overflow-y:auto;padding:12px 14px 16px;display:grid;
       grid-template-columns:repeat(auto-fill,minmax(122px,1fr));gap:11px;align-content:start}
-.if-lib-root .it{border-radius:var(--radius-md);overflow:hidden;background:var(--field);border:1px solid var(--border);
+.if-lib-root .it{border-radius:var(--radius-md);overflow:hidden;background:var(--card);border:1px solid var(--border);
     text-align:left;padding:0;cursor:grab;transition:transform .2s var(--ease-apple),box-shadow .2s var(--ease-apple),border-color .15s}
 .if-lib-root .it:hover{transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-pop);border-color:var(--border-strong)}
 .if-lib-root .it:active{transform:scale(.99);transition-duration:.09s}
 .if-lib-root .it:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
-.if-lib-root .it .th{height:76px;position:relative;display:flex;align-items:center;justify-content:center;color:var(--t5)}
+.if-lib-root .it .th{height:76px;position:relative;display:flex;align-items:center;justify-content:center;color:var(--t5);
+     border-bottom:1px solid var(--border)}
+/* icon LOẠI ở ô chưa có ảnh/quả cầu — đủ đọc trên vân, không át vân */
+.if-lib-root .it .th .kicon{opacity:.5;color:var(--t2)}
 .if-lib-root .it .mt{padding:7px 9px 9px}
 .if-lib-root .it .mt .a{font-size:var(--fs-2xs);font-weight:var(--fw-semi);color:var(--t2);overflow:hidden;
            text-overflow:ellipsis;white-space:nowrap}
 .if-lib-root .it .mt .b{font-size:var(--fs-2xs);color:var(--t5);margin-top:2px;font-family:ui-monospace,Menlo,monospace}
+/* q0b (ca trực 02:xx bắt): badge dùng blur(10px) SỐ CỨNG — vi phạm luật kính lỏng "mọi giá trị
+   kính đi từ token". Nay suy từ --blur (22px): badge chỉ cao 15px nên lấy MỘT NỬA token, blur
+   nguyên 22px trên vệt 15px thì nhoè hết chữ. Chia từ token nên đổi token là đổi theo, không
+   còn con số rời. Kèm -webkit- (bài học K3: thiếu prefix ⇒ tablet không blur). */
 .if-lib-root .badge{position:absolute;top:6px;right:6px;height:15px;padding:0 5px;border-radius:5px;background:var(--mat-card);
-       backdrop-filter:blur(10px);color:var(--t3);font-size:9px;font-weight:700;display:flex;align-items:center;
+       backdrop-filter:blur(calc(var(--blur) / 2));-webkit-backdrop-filter:blur(calc(var(--blur) / 2));
+       color:var(--t3);font-size:9px;font-weight:700;display:flex;align-items:center;
        letter-spacing:.03em}
 .if-lib-root .badge.st{color:var(--accent-warm)}
 .if-lib-root .libft{flex:none;height:38px;display:flex;align-items:center;gap:10px;padding:0 14px;

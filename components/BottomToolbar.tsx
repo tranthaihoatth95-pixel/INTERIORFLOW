@@ -9,7 +9,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { MousePointer2, Hand, Frame as FrameIcon, StickyNote, Undo2, Redo2, Minus, Plus, Maximize, LayoutGrid, Grid3x3, Command } from 'lucide-react';
+import { MousePointer2, Hand, Frame as FrameIcon, Pen, StickyNote, Undo2, Redo2, Minus, Plus, Maximize, LayoutGrid, Grid3x3, Command } from 'lucide-react';
 import { useReactFlow, useViewport } from '@xyflow/react';
 import { useFlowStore } from '@/lib/store';
 import { springSheet, easeApple } from '@/lib/motion';
@@ -86,6 +86,15 @@ export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
           "chọn · pan · frame"). Logic vẽ ở FlowCanvas.tsx (pointerdown/move/up khi tool='frame'). */}
       <Btn title="Khung phòng — kéo vẽ khung trên nền canvas" active={tool === 'frame'} onClick={() => setTool('frame')}>
         <FrameIcon size={15} />
+      </Btn>
+      {/* G4-1a (đêm 04/08) — lối vào bảng bút vẽ tay: DrawToolbar không còn đứng thường trực,
+          chỉ hiện khi 1 tool vẽ active. Nút này bật tool 'pen' → bảng bút trồi ra mép trái. */}
+      <Btn
+        title="Bút vẽ tay — mở bảng bút (bút/marker/tô sáng/tẩy)"
+        active={tool === 'pen' || tool === 'marker' || tool === 'highlight' || tool === 'eraser'}
+        onClick={() => setTool('pen')}
+      >
+        <Pen size={15} />
       </Btn>
       <Btn title="Sticky note" onClick={onAddNote}>
         <StickyNote size={15} />

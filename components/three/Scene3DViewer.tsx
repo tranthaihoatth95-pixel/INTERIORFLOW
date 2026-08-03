@@ -59,13 +59,18 @@ export interface Scene3DViewerProps {
    * `CHOT-HUONG-3D-2026-08-01.md`). Đọc qua ref (giống `onFrame`) — KHÔNG nằm trong deps effect
    * chính để đổi ref mỗi render không dựng lại toàn cảnh. */
   onPushPull?: (entityId: string, newHeightMm: number) => void;
+  /** SÂN KHẤU: lưới sàn + đường chân trời. Mở mode Vẽ 3D lúc CHƯA có khối nào vẫn phải thấy mình
+   * đang đứng trong một không gian (chuẩn Blender/SketchUp mở file trống — Hoà chê 04/08 "rối
+   * rắm, không hệ thống"). MẶC ĐỊNH TẮT vì mọi nơi CHỤP ẢNH (campath/capture/xuất) không được
+   * dính lưới vào khung hình. */
+  ground?: boolean;
   className?: string;
 }
 
 const IMPLEMENTED_MODES: Scene3DMode[] = ['orbit', 'campath', 'section', 'walk', 'massing'];
 const WALK_SPEED_M_PER_SEC = 1.5; // ~tốc độ đi bộ chậm, cùng cảm giác tempo với campath 1200mm/s
 
-export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame, onPushPull, className }: Scene3DViewerProps) {
+export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame, onPushPull, ground = false, className }: Scene3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const campathActive = mode === 'campath' && !!camPath?.samples.length;
   const sectionActive = mode === 'section' && !!sectionMm;
@@ -104,6 +109,18 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     const three = new THREE.Scene();
     three.background = new THREE.Color('#2a2d33');
 
+    // SÂN KHẤU (ground) — lưới sàn 1m/10m + sương xa làm ĐƯỜNG CHÂN TRỜI (lưới tan dần thay vì
+    // cắt cụt ở rìa). Chỉ thêm object, không đụng cách dựng khối/camera phía dưới.
+    if (ground) {
+      const grid = new THREE.GridHelper(200, 200, 0x5a6472, 0x3a4048);
+      const gridMat = grid.material as THREE.Material & { transparent: boolean; opacity: number; depthWrite: boolean };
+      gridMat.transparent = true;
+      gridMat.opacity = 0.55;
+      gridMat.depthWrite = false; // lưới nằm dưới khối, không "ăn" vào mặt khối khi nhìn xiên
+      three.add(grid);
+      three.fog = new THREE.Fog(0x2a2d33, 18, 90);
+    }
+
     const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 500);
 
     // Khung camera bao trọn bbox mặt bằng (mm → m) — bù xuống 1 chút trên cao nhìn xuống, đúng
@@ -111,6 +128,10 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     const { minX, minY, maxX, maxY } = scene.bboxMm;
     const cx = (minX + maxX) / 2 / 1000;
     const cy = (minY + maxY) / 2 / 1000;
+    // ⚠️ TỒN TẠI (thấy khi verify 04/08, KHÔNG sửa ở phiếu này): cảnh chỉ có 1 bức tường lẻ thì
+    // camera áp rất sát và khối nằm LỆCH TÂM khung — nghi `controls.target` dùng (cx, cz, cy)
+    // trong khi phép chiếu CAD→three là (x, cao, −y), tức trục thứ 3 phải là −cy. Đây là hành vi
+    // engine có sẵn từ 3D-1, đụng vào là đổi khung hình của cả campath/capture ⇒ để PHU quyết.
     const halfDiag = Math.max(0.5, Math.hypot(maxX - minX, maxY - minY) / 2 / 1000);
     const cz = scene.sizeM.h / 2;
 
@@ -326,7 +347,7 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     // lần đổi (không incremental-update riêng clippingPlanes) — chấp nhận được ở V1 (rebuild
     // scene vài chục ms, xem bench 3D-1), tối ưu sau nếu UI thật thấy giật khi kéo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, mode, camPath, sectionMm]);
+  }, [scene, mode, camPath, sectionMm, ground]);
 
   return <div ref={containerRef} className={className} style={{ width: '100%', height: '100%', minHeight: 320, position: 'relative' }} />;
 }

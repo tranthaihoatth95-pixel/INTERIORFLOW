@@ -24,6 +24,9 @@ Append-only: chỉ thêm dòng, đổi trạng thái có ngày; không xoá dòn
 | Settings + hình nền canvas áp thật | `app/settings/*` + `CanvasWallpaper` trong `app/layout.tsx` | ✅ đã wire `e6edcf1` | đổi hình nền → reload cứng |
 | Thư viện = MỘT sheet (trang /library khai tử) | `a73c658` trên **nhanh-g4, CHƯA merge** | 🟡 chờ merge (main đã xoá StageShell → cần luật xử mount) | `git log nhanh-g4 -1 -- components/library/LibrarySheet.tsx` |
 | Mode Vẽ 3D: CommandPanel·Viewport3D·ObjectProperties | `20e935d f6868e7 245b96b` trên **nhanh-g4** | 🟡 xong, chờ merge | `git log nhanh-g4 -3` |
+| **MaterialSphere quả cầu vật liệu** (1 renderer PMREM chung · 3 cảnh Cầu/Sàn/Vải · cache PNG) — gắn Command3DPanel + kệ vật liệu sheet + CommandPanel G4 | `14d3ec6` trên **nhanh-g4** (04/08) | 🟡 xong, chờ merge | mở mode Vẽ 3D tab Vật liệu |
+| **Ô xem trước Thư viện = bậc thang** (ảnh ATLAS → quả cầu → vân procedural theo loại + icon; hết 12 gradient giả) · **vật liệu gộp về MỘT kệ chung ATLAS** · scrim/3-tầng-nền đúng | `1bb3e5c` trên **nhanh-g4** (04/08) | 🟡 xong, chờ merge | mở Thư viện, kệ Vật liệu ATLAS |
+| **5 lỗi UI chặng Render (G4-1a đêm 04/08)** — toolbar bút theo tool · canvas trống 100% · banner/empty state khuôn ngôn ngữ · attribution gọn | `7ac431c` trên **nhanh-g4** | 🟡 xong, chờ merge — kèm phát hiện DỮ LIỆU demo hỏng (node y=−50202, BAO-CAO-G4) | mở Rendering, canvas trống |
 | AppShell 6 ổ phủ CẢ 5 màn, LeftRail + StageShell ĐÃ XOÁ | `9fe8be8 3a92170` | ✅ (nút Thư viện chờ nối sheet sau merge g4) | grep LeftRail = 0 |
 | Intro trung tính (hết màu/ảnh TTT) | `components/intro/*` | ✅ `63cc673` | grep detech/F06020 intro |
 | Layer State + lớp/nét/ẩn/khoá chặng Vẽ | sidebar CAD | ✅ (ảnh Hoà) | mở CAD |

@@ -11,7 +11,6 @@ import {
   SCOPE_BADGE_TEXT,
   SCOPE_CHIPS,
   STAGE_SHELVES,
-  SWATCH,
   itemsFor,
   type ScopeChip,
   type SheetItem,
@@ -19,6 +18,7 @@ import {
 import { useLibrarySheetState } from '@/lib/library/use-library-sheet';
 import { useLibraryLocalState } from '@/lib/library/local-state';
 import { RawStyle } from '@/components/filemanager/RawStyle';
+import { ItemThumb } from './ItemThumb';
 import { LIBRARY_SHEET_CSS } from './library-sheet-css';
 import { LibraryToastHost, pushLibraryToast } from './LibraryToast';
 import { PublishModal } from './PublishModal';
@@ -225,9 +225,11 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                   onClick={() => use(it)}
                   onDoubleClick={() => pushLibraryToast(tr(`Xem trước: ${it.name} · ${it.code}`, `Preview: ${it.name} · ${it.code}`))}
                 >
-                  <span className="th" style={{ background: SWATCH[it.swatch] }}>
+                  {/* Ô xem trước theo BẬC THANG ảnh-thật → quả-cầu → vân-procedural (xem
+                      `ItemThumb.tsx`); badge phạm vi đè lên trên, không đổi. */}
+                  <ItemThumb item={it}>
                     <span className={it.scope === 'studio' ? 'badge st' : 'badge'}>{SCOPE_BADGE_TEXT[it.scope]}</span>
-                  </span>
+                  </ItemThumb>
                   <span className="mt">
                     <span className="a" style={{ display: 'block' }}>{it.name}</span>
                     <span className="b" style={{ display: 'block' }}>{it.code}</span>

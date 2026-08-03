@@ -71,9 +71,32 @@ export function FlowCanvas() {
   const workspace = useFlowStore((s) => s.workspace);
   const setPanel = useFlowStore((s) => s.setPanel);
   const updateParam = useFlowStore((s) => s.updateParam);
+  const currentFlowId = useFlowStore((s) => s.currentFlowId);
 
-  const { screenToFlowPosition, getViewport, setViewport } = useReactFlow();
+  const { screenToFlowPosition, getViewport, setViewport, fitView } = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  /* G4-1a (đêm 04/08, BAO-CAO-DEM mục 3) — canvas TRỐNG thì đứng ở zoom 100% (defaultViewport),
+   * KHÔNG fitView (fitView trên 0 node tụt thẳng về minZoom 0.15 → "zoom 15% trống trơn").
+   * Có node (kể cả hydrate muộn sau mount) → fit MỘT lần, maxZoom 1 để 1-2 node không bị
+   * phóng đại sát mặt. Prop `fitView={nodes.length > 0}` lo ca "đã có node ngay lúc mount". */
+  const didFitRef = useRef(false);
+  useEffect(() => {
+    if (didFitRef.current || nodes.length === 0) return;
+    didFitRef.current = true;
+    // chờ 1 frame cho React Flow đo xong kích thước node rồi mới fit
+    requestAnimationFrame(() => fitView({ padding: 0.2, maxZoom: 1 }));
+  }, [nodes.length, fitView]);
+
+  /* Đổi flow KHÔNG remount canvas → viewport flow cũ dính lại (thấy khi verify: flow mới trống
+   * vẫn 15% thừa hưởng từ flow trước). Đổi currentFlowId → cho fit lại; flow trống → về 100%. */
+  const prevFlowIdRef = useRef(currentFlowId);
+  useEffect(() => {
+    if (prevFlowIdRef.current === currentFlowId) return;
+    prevFlowIdRef.current = currentFlowId;
+    didFitRef.current = false;
+    if (useFlowStore.getState().nodes.length === 0) setViewport({ x: 0, y: 0, zoom: 1 });
+  }, [currentFlowId, setViewport]);
 
   /* NT3 (VIỆC ①, 28/07) — chuột phải trên NỀN canvas (không phải trên node) → menu nạp nhanh
    * tại chỗ con trỏ: Thêm ảnh từ máy · Từ thư viện · Dán URL. Tái dùng Popover.tsx (VIỆC 2) —
@@ -166,8 +189,8 @@ export function FlowCanvas() {
   }, [getViewport, setViewport]);
 
   // ===== Collab thời-gian-thực (presence + live cursor, KHÔNG AI) =====
+  // (currentFlowId đã select ở đầu component — dùng chung cho cả reset-viewport lẫn collab)
   const user = useFlowStore((s) => s.user);
-  const currentFlowId = useFlowStore((s) => s.currentFlowId);
   const collabStart = useCollabStore((s) => s.start);
   const collabStop = useCollabStore((s) => s.stop);
   const setLocalCursor = useCollabStore((s) => s.setLocalCursor);
@@ -468,8 +491,12 @@ export function FlowCanvas() {
       onPointerMove={onPointerMove}
       onPointerDown={onCanvasPointerDown}
       onPointerUp={onCanvasPointerUp}
-      className="relative flex-1 bg-[var(--bg)]"
+      className="flow-canvas-wrap relative flex-1 bg-[var(--bg)]"
     >
+      {/* G4-1a — attribution React Flow: GIỮ theo license nhưng kín đáo (bỏ nền trắng — lộ rõ ở
+          theme Tối). Selector có "__" nên không viết được bằng arbitrary variant Tailwind
+          (underscore bị đổi thành space) → style tag cục bộ. */}
+      <style>{`.flow-canvas-wrap .react-flow__attribution{background:transparent;font-size:9px;opacity:.55}`}</style>
       <ReactFlow<FlowNode>
         nodes={nodes}
         edges={edges}
@@ -506,7 +533,14 @@ export function FlowCanvas() {
            về minZoom (0.15 = "15%" trong ảnh Hoà chê) — canvas trống phải đứng ở 100%. fitView
            là prop lúc mount: có node thì fit như cũ, trống thì bỏ qua (React Flow mặc định zoom 1). */
         fitView={nodes.length > 0}
+        /* Gộp khi merge 03/08 (TỔNG): 2 prop từ nhanh-g4 (G4-1a) — fit không phóng quá 100%,
+           viewport mặc định đứng 100%. Cùng mục tiêu với fix CHINH-6, không mâu thuẫn. */
+        fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         proOptions={{ hideAttribution: false }}
+        /* attribution GIỮ theo license React Flow (không ẩn) nhưng đặt gọn góc trái dưới —
+           góc phải dưới là chỗ MiniMap, khi map ẩn chữ đứng trơ một mình (Hoà chê 04/08). */
+        attributionPosition="bottom-left"
         defaultEdgeOptions={{ type: 'default' }}
         connectionLineStyle={{ stroke: '#8b7cf7', strokeWidth: 2 }}
         className={tool === 'pan' ? 'cursor-grab' : tool === 'select' ? '' : 'cursor-crosshair'}
@@ -668,10 +702,18 @@ export function FlowCanvas() {
       {nodes.length === 0 && (
         <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center">
           <div className="max-w-[520px] text-center">
-            <p className="text-sm text-[var(--t4)]">Canvas trống</p>
-            <p className="mt-1 text-xs text-[var(--t5)]">
-              Mở <span className="text-[var(--t3)]">Node Library</span> ở rail trái để kéo node — hoặc bắt đầu bằng 1 demo thực tế:
-            </p>
+            {/* G4-1a (đêm 04/08, BAO-CAO-DEM mục 5) — khuôn "Trống" SPEC-NGON-NGU §2: 1 câu mời
+                + NÚT bắt đầu. Bỏ jargon "Node Library" (từ điển §3: node = khối; tên thật trên
+                UI là "Thư viện khối", xem NodeLibraryPanel). */}
+            <p className="text-sm text-[var(--t4)]">Canvas đang trống — kéo khối từ Thư viện vào đây</p>
+            <button
+              type="button"
+              onClick={() => setPanel('library')}
+              className="pointer-events-auto mt-3 rounded-full border border-[var(--accent-ring)] bg-[var(--accent-soft)] px-4 py-1.5 text-xs font-semibold text-[var(--accent)]"
+            >
+              Mở Thư viện khối
+            </button>
+            <p className="mt-3 text-xs text-[var(--t5)]">hoặc bắt đầu bằng 1 demo thực tế:</p>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={workspace ?? DEFAULT_PHASE}

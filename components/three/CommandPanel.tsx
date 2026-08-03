@@ -14,6 +14,8 @@ import {
 } from '@/lib/three/materials';
 import { RawStyle } from './RawStyle';
 import { VE3D_CSS } from './ve3d-css';
+import MaterialSphere from './MaterialSphere';
+import { colorsFromGradient, kindFromMatId } from './material-preview';
 
 export type CommandTab = 'tao' | 'sua' | 'vatlieu' | 'camera' | 'hien';
 
@@ -285,7 +287,20 @@ export function CommandPanel({
                         title={`${displayName(m, engine)} · ${m.matId}`}
                         onClick={() => onPickMaterial?.(m.matId)}
                       >
-                        <span className="th" style={{ background: m.swatch }} />
+                        {/* G4 (SPEC-VAT-LIEU-PBR-IF §2) — quả cầu render thật thay ô gradient
+                            phẳng; lưới cuộn nấc 25%, fallback = gradient cũ (chờ render/WebGL tắt). */}
+                        <MaterialSphere
+                          className="th"
+                          spec={{
+                            id: m.matId,
+                            colorA: colorsFromGradient(m.swatch)[0],
+                            colorB: colorsFromGradient(m.swatch)[1],
+                            kind: kindFromMatId(m.matId),
+                          }}
+                          fallback={m.swatch}
+                          size={92}
+                          resolution={0.25}
+                        />
                         <span className="mn">{displayName(m, engine)}</span>
                         <span className="id">{m.matId}</span>
                       </button>
