@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InteriorFlow · Bảng công cụ 3D</title>
+<style>
+:root,[data-theme="dark"]{--bg:#0d0d10;--panel:#15151a;--panel-2:#191920;--card:#1b1b21;--card-lit:#22222b;--field:#1a1a20;--hover:#26262f;--border:#2b2b34;--border-strong:#3c3c47;--edge:rgba(255,255,255,.07);--t1:#f4f4f7;--t2:#d4d4db;--t3:#a6a6b1;--t4:#8b8b96;--t5:#74747f;--sh-near:0 2px 3px rgba(0,0,0,.5);--sh-far:0 16px 34px -12px rgba(0,0,0,.72);--sh-in:inset 0 2px 4px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.03);--ov:rgba(24,24,30,.97);--ov-2:#20202a;--ov-3:#262631;--ov-line:rgba(255,255,255,.13);--ov-t1:#f5f5f8;--ov-t3:#a8a8b3;--dock:rgba(28,28,36,.92);--hatch:repeating-linear-gradient(45deg,#1f1f27 0 10px,#191920 10px 20px);--danger:#e5674f;--room:#23232c}
+[data-theme="kem"]{--bg:#f0ece4;--panel:#f9f6f0;--panel-2:#fcfaf5;--card:#fffdf8;--card-lit:#fffefb;--field:#ece7dd;--hover:#e6e0d4;--border:#e0d9cc;--border-strong:#c6bfae;--edge:rgba(255,255,255,.9);--t1:#1d1a15;--t2:#443f36;--t3:#5c564b;--t4:#6b655a;--t5:#6f6859;--sh-near:0 2px 3px rgba(72,60,42,.13);--sh-far:0 16px 34px -14px rgba(72,60,42,.24);--sh-in:inset 0 2px 4px rgba(72,60,42,.14),inset 0 0 0 1px rgba(255,255,255,.7);--ov:rgba(255,253,248,.97);--ov-2:#f6f2e9;--ov-3:#efeae0;--ov-line:rgba(45,38,26,.13);--ov-t1:#1b1811;--ov-t3:#5f594e;--dock:rgba(252,250,245,.93);--hatch:repeating-linear-gradient(45deg,#ece7dd 0 10px,#fffdf8 10px 20px);--danger:#b8442b;--room:#e7e1d5}
+:root{--accent:#6a57f5;--accent-2:#8574ff;--accent-deep:#553ff3;--accent-soft:rgba(106,87,245,.15);--ease:cubic-bezier(.32,.72,0,1)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;font-size:13px;font-weight:400;line-height:1.55;padding:34px 36px 70px}
+a{color:var(--accent);text-decoration:none;line-height:1.55}a:hover{color:var(--accent-deep)}
+h1{margin:0;font-size:27px;font-weight:600;line-height:1.5;letter-spacing:-.02em}
+h2{margin:0;font-size:17px;font-weight:600;line-height:1.5}
+.wrap{width:1280px;margin:0 auto}
+.num{font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;line-height:1.5}
+.tr{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:6px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700;line-height:1.5;letter-spacing:.05em}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:32px;padding:0 15px;border:1px solid var(--border-strong);border-radius:9px;background:linear-gradient(180deg,var(--card-lit),var(--card));color:var(--t2);font-family:inherit;font-size:12px;font-weight:600;line-height:1.5;cursor:pointer;box-shadow:var(--sh-near),inset 0 1px 0 var(--edge);transition:background .16s var(--ease),color .16s var(--ease)}
+.btn:hover{background:var(--hover);color:var(--t1)}
+.btn-p{border-color:var(--accent-deep);background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#fff;box-shadow:var(--sh-near),0 10px 22px -10px rgba(106,87,245,.75),inset 0 1px 0 rgba(255,255,255,.28)}
+.frame{border:1px solid var(--border-strong);border-radius:18px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column;position:relative;box-shadow:var(--sh-near),var(--sh-far),inset 0 1px 0 var(--edge)}
+.fh{height:42px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:linear-gradient(180deg,var(--panel-2),var(--panel));border-bottom:1px solid var(--border);position:relative;z-index:6;box-shadow:inset 0 1px 0 var(--edge)}
+.logo{width:20px;height:20px;flex:none;border-radius:6px;background:linear-gradient(160deg,var(--accent-2),var(--accent-deep));box-shadow:0 2px 5px -1px rgba(106,87,245,.6),inset 0 1px 0 rgba(255,255,255,.35)}
+.pname{font-size:13px;font-weight:600;line-height:1.5;letter-spacing:-.01em;color:var(--t1)}
+.stage{display:flex;gap:2px;padding:2px;margin-left:14px;border-radius:9px;background:var(--field);border:1px solid var(--border);box-shadow:var(--sh-in)}
+.stage b{height:24px;padding:0 11px;display:inline-flex;align-items:center;border-radius:7px;font-size:12px;font-weight:500;line-height:1.5;color:var(--t3);cursor:pointer}
+.stage b.on{background:linear-gradient(180deg,var(--card-lit),var(--card));color:var(--t1);font-weight:600;box-shadow:var(--sh-near),inset 0 1px 0 var(--edge)}
+.av{border-radius:50%;background:linear-gradient(160deg,var(--card-lit),var(--field));border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;line-height:1.5;color:var(--t2);flex:none;box-shadow:inset 0 1px 0 var(--edge)}
+.avs{display:flex}.avs .av{width:24px;height:24px;font-size:10px;margin-left:-6px}.avs .av:first-child{margin-left:0}
+.fbody{flex:1;min-height:0;display:flex;position:relative}
+.rail{width:214px;flex:none;display:flex;flex-direction:column;min-height:0;background:var(--panel);border-right:1px solid var(--border)}
+.center{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;position:relative;background:var(--bg)}
+.side{width:236px;flex:none;display:flex;flex-direction:column;min-height:0;background:var(--panel);border-left:1px solid var(--border)}
+.fstat{height:26px;flex:none;display:flex;align-items:center;gap:15px;padding:0 12px;background:var(--panel);border-top:1px solid var(--border);color:var(--t4);font-size:11px;line-height:1.5;position:relative;z-index:6}
+.gtitle{padding:11px 10px 6px;font-size:9px;font-weight:700;line-height:1.5;letter-spacing:.07em;text-transform:uppercase;color:var(--t5);display:flex;align-items:baseline;gap:6px}
+.gtitle em{font-style:normal;font-size:9px;line-height:1.5;color:var(--t5);margin-left:auto;font-variant-numeric:tabular-nums}
+.strip{display:flex;flex-wrap:wrap;gap:5px;padding:0 7px 8px}
+.tool{width:55px;min-height:46px;flex:none;display:flex;align-items:center;justify-content:center;text-align:center;padding:5px 4px;border-radius:9px;border:1px solid var(--border);background:linear-gradient(168deg,var(--card-lit),var(--card));box-shadow:var(--sh-near),inset 0 1px 0 var(--edge);font-size:10px;font-weight:600;line-height:1.5;color:var(--t2);cursor:pointer;transition:transform .14s var(--ease),border-color .14s var(--ease),color .14s var(--ease)}
+.tool:hover{transform:translateY(-2px);border-color:var(--border-strong);color:var(--t1)}
+.tool.live{border-color:var(--accent);color:var(--t1);box-shadow:0 0 0 1px var(--accent),var(--sh-near),inset 0 1px 0 var(--edge)}
+.tool.live.on{background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#fff;border-color:var(--accent-deep)}
+.tool.off{cursor:not-allowed;color:var(--t4);box-shadow:none;background:var(--field);border-color:var(--border)}
+.tool.off:hover{transform:none;border-color:var(--border);color:var(--t3)}
+.why{flex:none;min-height:56px;padding:9px 11px;border-top:1px solid var(--border);background:var(--panel-2)}
+.why b{display:block;font-size:11px;font-weight:600;line-height:1.55;color:var(--t1)}
+.why span{display:block;font-size:10px;line-height:1.6;color:var(--t4);margin-top:3px;text-wrap:pretty}
+.count{margin:10px 10px 2px;padding:8px 10px;border-radius:10px;background:var(--field);border:1px solid var(--border);box-shadow:var(--sh-in)}
+.count b{display:block;font-size:11px;font-weight:600;line-height:1.55;color:var(--t1);font-variant-numeric:tabular-nums}
+.count span{display:block;font-size:10px;line-height:1.6;color:var(--t4);margin-top:2px}
+.view{flex:1;min-height:0;position:relative;overflow:hidden;background:linear-gradient(180deg,color-mix(in oklab,var(--bg) 82%,#000) 0%,var(--bg) 58%)}
+[data-theme="kem"] .view{background:linear-gradient(180deg,#e8e2d6,var(--bg) 58%)}
+.grid3{position:absolute;left:0;right:0;bottom:0;height:56%;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:44px 30px;transform:perspective(520px) rotateX(58deg);transform-origin:bottom center;opacity:.8}
+.mass{position:absolute;border:1px solid var(--border-strong);background:linear-gradient(150deg,color-mix(in oklab,var(--room) 74%,#fff),var(--room));box-shadow:var(--sh-near),var(--sh-far),inset 0 1px 0 var(--edge)}
+.dock{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:4px;padding:6px;border:1px solid var(--ov-line);border-radius:15px;background:var(--dock);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);box-shadow:var(--sh-near),0 20px 44px -12px rgba(0,0,0,.6),inset 0 1px 0 var(--edge)}
+.dock button{width:34px;height:34px;border:0;border-radius:10px;background:transparent;color:var(--ov-t3);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dock button:hover{background:var(--hover);color:var(--ov-t1)}
+.dock button.on{background:var(--accent-soft);color:var(--accent-2)}
+[data-theme="kem"] .dock button.on{color:var(--accent-deep)}
+.dock .sep{width:1px;height:22px;background:var(--ov-line);margin:0 4px;flex:none}
+.dock .sync{padding:0 10px 0 4px;font-size:11px;line-height:1.5;color:var(--ov-t3);font-variant-numeric:tabular-nums}
+.sh{padding:11px 12px 7px;font-size:9px;font-weight:700;line-height:1.5;letter-spacing:.07em;text-transform:uppercase;color:var(--t5)}
+.crow{display:flex;align-items:center;gap:10px;min-height:38px;padding:6px 12px;border-bottom:1px solid var(--border)}
+.crow .cl{flex:1;min-width:0}
+.crow .cn{font-size:12px;font-weight:600;line-height:1.55;color:var(--t1)}
+.crow .cs{font-size:10px;line-height:1.6;color:var(--t4);text-wrap:pretty}
+.crow.off .cn{color:var(--t4)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;padding:2px 12px 10px}
+.chip{min-width:40px;height:28px;padding:0 9px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:linear-gradient(180deg,var(--card-lit),var(--card));box-shadow:var(--sh-near),inset 0 1px 0 var(--edge);font-size:11px;font-weight:600;line-height:1.5;color:var(--t2);cursor:pointer;font-variant-numeric:tabular-nums}
+.chip:hover{background:var(--hover);color:var(--t1)}
+.chip.on{background:linear-gradient(180deg,var(--accent-2),var(--accent));border-color:var(--accent-deep);color:#fff}
+.chip.off{cursor:not-allowed;background:var(--field);box-shadow:none;color:var(--t4);border-color:var(--border)}
+.sw2{width:44px;height:26px;flex:none;border-radius:14px;background:var(--field);border:1px solid var(--border-strong);position:relative;cursor:pointer;box-shadow:var(--sh-in)}
+.sw2::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:linear-gradient(180deg,#fff,#d9d9e2);box-shadow:0 2px 4px rgba(0,0,0,.4);transition:transform .2s var(--ease)}
+.sw2.on{background:linear-gradient(180deg,var(--accent-2),var(--accent));border-color:var(--accent-deep)}
+.sw2.on::after{transform:translateX(18px)}
+.sw2.off{cursor:not-allowed;background:var(--field);box-shadow:none}
+.sw2.off::after{background:var(--t5);box-shadow:none}
+.fld{min-width:66px;height:28px;padding:0 10px;display:inline-flex;align-items:center;justify-content:flex-end;border-radius:8px;background:var(--field);border:1px solid var(--border);box-shadow:var(--sh-in);font-size:11px;font-weight:600;line-height:1.5;color:var(--t2);font-variant-numeric:tabular-nums}
+.tbl{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.tcard{border:1px solid var(--border);border-radius:14px;background:linear-gradient(168deg,var(--card-lit),var(--card));box-shadow:var(--sh-near),var(--sh-far),inset 0 1px 0 var(--edge);overflow:hidden}
+.tcard header{padding:11px 13px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:8px}
+.tcard header span{font-size:12px;font-weight:600;line-height:1.5;color:var(--t1)}
+.tcard header em{font-style:normal;margin-left:auto;font-size:10px;line-height:1.5;color:var(--t5);font-variant-numeric:tabular-nums}
+.li{display:flex;align-items:flex-start;gap:9px;padding:8px 13px;border-bottom:1px solid var(--border)}
+.li:last-child{border-bottom:0}
+.li .st{margin-top:1px;flex:none;width:52px;height:18px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;font-size:9px;font-weight:700;line-height:1.5;letter-spacing:.02em}
+.li .st.y{background:var(--accent);color:#fff}
+.li .st.n{background:var(--field);border:1px solid var(--border);color:var(--t4)}
+.li .nm{font-size:11px;font-weight:600;line-height:1.55;color:var(--t1)}
+.li.off .nm{color:var(--t3)}
+.li .rs{font-size:10px;line-height:1.6;color:var(--t5);text-wrap:pretty}
+.slabel{display:flex;align-items:baseline;gap:10px;margin-bottom:11px}
+.note{font-size:11px;line-height:1.6;color:var(--t5);text-wrap:pretty}
+.sub{font-size:11px;line-height:1.6;color:var(--t4);text-wrap:pretty}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms !important}}
+</style>
+</head>
+<body>
+<div class="wrap" style="margin-bottom:24px;display:flex;align-items:flex-end;justify-content:space-between;gap:30px">
+  <div style="min-width:0">
+    <div style="display:flex;align-items:center;gap:11px">
+      <div class="logo" style="width:26px;height:26px;border-radius:8px"></div>
+      <h1>InteriorFlow · Bảng công cụ 3D</h1>
+      <span class="tag">PLACEHOLDER</span>
+    </div>
+    <div class="sub" style="margin-top:8px;font-size:12px;max-width:900px;color:var(--t3)">Vẽ hết mọi lệnh, kể cả lệnh chưa code. Lệnh mờ là chưa dựng được, rê chuột hiện lý do ngắn ở đáy panel. Hiện 3 trên 51 lệnh khối và 3 trên 9 mục camera đã dùng được.</div>
+  </div>
+  <button class="btn" id="themeBtn" type="button">Đổi sang nền Kem</button>
+</div>
+<div class="wrap slabel"><span class="mono" style="font-size:11px;font-weight:700;color:var(--t5)">01</span><span style="font-size:13px;font-weight:600;line-height:1.5;color:var(--t2)">Panel công cụ · sáu nhóm</span><span class="note">Cột trái 214 · camera bên phải 236</span></div>
+<div class="wrap frame" style="height:840px">
+  <div class="fh">
+    <div class="logo"></div>
+    <span class="pname">InteriorFlow</span>
+    <span style="font-size:13px;line-height:1.5;color:var(--t3)">· Căn hộ Thảo Điền</span>
+    <div class="stage"><b>2D</b><b class="on">3D</b><b>Trình bày</b></div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+      <span class="avs"><span class="av">NT</span><span class="av">LH</span><span class="av">PQ</span></span>
+      <div class="av" style="width:26px;height:26px;font-size:11px;margin-left:6px">NT</div>
+    </div>
+  </div>
+  <div class="fbody">
+    <div class="rail">
+      <div class="count"><b>3 / 51 lệnh dùng được</b><span>Lệnh mờ là chưa dựng, rê chuột xem lý do</span></div>
+      <div style="flex:1;min-height:0;overflow:auto">
+      <div class="gtitle"><span>① Hình phẳng · làm tiết diện</span><em>0 / 13</em></div>
+      <div class="strip">
+        <span class="tool off" data-why="Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn" data-name="Đường" title="Đường — Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn">Đường</span>
+        <span class="tool off" data-why="Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn" data-name="Đường gấp" title="Đường gấp — Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn">Đường gấp</span>
+        <span class="tool off" data-why="Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn" data-name="Chữ nhật" title="Chữ nhật — Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn">Chữ nhật</span>
+        <span class="tool off" data-why="Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn" data-name="Tròn" title="Tròn — Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn">Tròn</span>
+        <span class="tool off" data-why="Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn" data-name="Cung" title="Cung — Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn">Cung</span>
+        <span class="tool off" data-why="Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn" data-name="Elip" title="Elip — Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn">Elip</span>
+        <span class="tool off" data-why="Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn" data-name="Đa giác" title="Đa giác — Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn">Đa giác</span>
+        <span class="tool off" data-why="Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn" data-name="Đường cong" title="Đường cong — Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn">Đường cong</span>
+        <span class="tool off" data-why="Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn" data-name="Giãn biên" title="Giãn biên — Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn">Giãn biên</span>
+        <span class="tool off" data-why="Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn" data-name="Cắt / nối" title="Cắt / nối — Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn">Cắt / nối</span>
+        <span class="tool off" data-why="Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn" data-name="Bo góc" title="Bo góc — Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn">Bo góc</span>
+        <span class="tool off" data-why="Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn" data-name="Vát góc" title="Vát góc — Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn">Vát góc</span>
+        <span class="tool off" data-why="Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn" data-name="Đối xứng" title="Đối xứng — Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn">Đối xứng</span>
+      </div>
+      <div class="gtitle"><span>② Khối cơ bản</span><em>0 / 9</em></div>
+      <div class="strip">
+        <span class="tool off" data-why="Chưa dựng được — tạm ghép từ hộp đùn thẳng" data-name="Hộp" title="Hộp — Chưa dựng được — tạm ghép từ hộp đùn thẳng">Hộp</span>
+        <span class="tool off" data-why="Chưa dựng được — tạm ghép từ hộp đùn thẳng" data-name="Trụ" title="Trụ — Chưa dựng được — tạm ghép từ hộp đùn thẳng">Trụ</span>
+        <span class="tool off" data-why="Chưa dựng được — tạm ghép từ hộp đùn thẳng" data-name="Nón" title="Nón — Chưa dựng được — tạm ghép từ hộp đùn thẳng">Nón</span>
+        <span class="tool off" data-why="Chưa dựng được — tạm ghép từ hộp đùn thẳng" data-name="Cầu" title="Cầu — Chưa dựng được — tạm ghép từ hộp đùn thẳng">Cầu</span>
+        <span class="tool off" data-why="Chưa dựng được — tạm ghép từ hộp đùn thẳng" data-name="Xuyến" title="Xuyến — Chưa dựng được — tạm ghép từ hộp đùn thẳng">Xuyến</span>
+        <span class="tool off" data-why="Chưa dựng được — tạm ghép từ hộp đùn thẳng" data-name="Ống" title="Ống — Chưa dựng được — tạm ghép từ hộp đùn thẳng">Ống</span>
+        <span class="tool off" data-why="Chưa dựng được — tạm ghép từ hộp đùn thẳng" data-name="Mặt phẳng" title="Mặt phẳng — Chưa dựng được — tạm ghép từ hộp đùn thẳng">Mặt phẳng</span>
+        <span class="tool off" data-why="Chưa dựng được — tạm ghép từ hộp đùn thẳng" data-name="Chóp" title="Chóp — Chưa dựng được — tạm ghép từ hộp đùn thẳng">Chóp</span>
+        <span class="tool off" data-why="Chưa dựng được — tạm ghép từ hộp đùn thẳng" data-name="Nêm" title="Nêm — Chưa dựng được — tạm ghép từ hộp đùn thẳng">Nêm</span>
+      </div>
+      <div class="gtitle"><span>③ Sinh khối từ tiết diện</span><em>2 / 7</em></div>
+      <div class="strip">
+        <span class="tool live" data-why="Dùng được — chọn tiết diện rồi kéo cao độ" data-name="Đùn thẳng" title="Đùn thẳng — Dùng được — chọn tiết diện rồi kéo cao độ">Đùn thẳng</span>
+        <span class="tool live" data-why="Dùng được — kéo mặt khối lên hoặc xuống" data-name="Kéo-đẩy cao độ" title="Kéo-đẩy cao độ — Dùng được — kéo mặt khối lên hoặc xuống">Kéo-đẩy cao độ</span>
+        <span class="tool off" data-why="Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ" data-name="Xoay tròn" title="Xoay tròn — Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ">Xoay tròn</span>
+        <span class="tool off" data-why="Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ" data-name="Quét theo đường" title="Quét theo đường — Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ">Quét theo đường</span>
+        <span class="tool off" data-why="Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ" data-name="Nối tiết diện" title="Nối tiết diện — Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ">Nối tiết diện</span>
+        <span class="tool off" data-why="Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ" data-name="Vát cạnh" title="Vát cạnh — Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ">Vát cạnh</span>
+        <span class="tool off" data-why="Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ" data-name="Tạo vỏ dày" title="Tạo vỏ dày — Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ">Tạo vỏ dày</span>
+      </div>
+      <div class="gtitle"><span>④ Biến đổi</span><em>0 / 8</em></div>
+      <div class="strip">
+        <span class="tool off" data-why="Chưa dựng được — nhân bản tay ở chặng 2D" data-name="Đối xứng" title="Đối xứng — Chưa dựng được — nhân bản tay ở chặng 2D">Đối xứng</span>
+        <span class="tool off" data-why="Chưa dựng được — nhân bản tay ở chặng 2D" data-name="Nhân bản thẳng" title="Nhân bản thẳng — Chưa dựng được — nhân bản tay ở chặng 2D">Nhân bản thẳng</span>
+        <span class="tool off" data-why="Chưa dựng được — nhân bản tay ở chặng 2D" data-name="Nhân bản tròn" title="Nhân bản tròn — Chưa dựng được — nhân bản tay ở chặng 2D">Nhân bản tròn</span>
+        <span class="tool off" data-why="Chưa dựng được — nhân bản tay ở chặng 2D" data-name="Nhân bản theo đường" title="Nhân bản theo đường — Chưa dựng được — nhân bản tay ở chặng 2D">Nhân bản theo đường</span>
+        <span class="tool off" data-why="Chưa dựng được — nhân bản tay ở chặng 2D" data-name="Uốn cong" title="Uốn cong — Chưa dựng được — nhân bản tay ở chặng 2D">Uốn cong</span>
+        <span class="tool off" data-why="Chưa dựng được — nhân bản tay ở chặng 2D" data-name="Vuốt thon" title="Vuốt thon — Chưa dựng được — nhân bản tay ở chặng 2D">Vuốt thon</span>
+        <span class="tool off" data-why="Chưa dựng được — nhân bản tay ở chặng 2D" data-name="Xoắn" title="Xoắn — Chưa dựng được — nhân bản tay ở chặng 2D">Xoắn</span>
+        <span class="tool off" data-why="Chưa dựng được — nhân bản tay ở chặng 2D" data-name="Lồng biến dạng" title="Lồng biến dạng — Chưa dựng được — nhân bản tay ở chặng 2D">Lồng biến dạng</span>
+      </div>
+      <div class="gtitle"><span>⑤ Cắt gộp</span><em>0 / 4</em></div>
+      <div class="strip">
+        <span class="tool off" data-why="Chưa dựng được — tách khối bằng Tường rồi đùn" data-name="Hợp" title="Hợp — Chưa dựng được — tách khối bằng Tường rồi đùn">Hợp</span>
+        <span class="tool off" data-why="Chưa dựng được — tách khối bằng Tường rồi đùn" data-name="Trừ" title="Trừ — Chưa dựng được — tách khối bằng Tường rồi đùn">Trừ</span>
+        <span class="tool off" data-why="Chưa dựng được — tách khối bằng Tường rồi đùn" data-name="Giao" title="Giao — Chưa dựng được — tách khối bằng Tường rồi đùn">Giao</span>
+        <span class="tool off" data-why="Chưa dựng được — tách khối bằng Tường rồi đùn" data-name="Tách" title="Tách — Chưa dựng được — tách khối bằng Tường rồi đùn">Tách</span>
+      </div>
+      <div class="gtitle"><span>⑥ Cấu kiện</span><em>1 / 10</em></div>
+      <div class="strip">
+        <span class="tool live" data-why="Dùng được — vẽ trục tường rồi đặt chiều cao" data-name="Tường" title="Tường — Dùng được — vẽ trục tường rồi đặt chiều cao">Tường</span>
+        <span class="tool off" data-why="Chưa dựng được — hiện dùng Tường hoặc khối đùn" data-name="Cửa" title="Cửa — Chưa dựng được — hiện dùng Tường hoặc khối đùn">Cửa</span>
+        <span class="tool off" data-why="Chưa dựng được — hiện dùng Tường hoặc khối đùn" data-name="Cửa sổ" title="Cửa sổ — Chưa dựng được — hiện dùng Tường hoặc khối đùn">Cửa sổ</span>
+        <span class="tool off" data-why="Chưa dựng được — hiện dùng Tường hoặc khối đùn" data-name="Cầu thang thẳng" title="Cầu thang thẳng — Chưa dựng được — hiện dùng Tường hoặc khối đùn">Cầu thang thẳng</span>
+        <span class="tool off" data-why="Chưa dựng được — hiện dùng Tường hoặc khối đùn" data-name="Cầu thang gấp" title="Cầu thang gấp — Chưa dựng được — hiện dùng Tường hoặc khối đùn">Cầu thang gấp</span>
+        <span class="tool off" data-why="Chưa dựng được — hiện dùng Tường hoặc khối đùn" data-name="Cầu thang xoắn" title="Cầu thang xoắn — Chưa dựng được — hiện dùng Tường hoặc khối đùn">Cầu thang xoắn</span>
+        <span class="tool off" data-why="Chưa dựng được — hiện dùng Tường hoặc khối đùn" data-name="Lan can" title="Lan can — Chưa dựng được — hiện dùng Tường hoặc khối đùn">Lan can</span>
+        <span class="tool off" data-why="Chưa dựng được — hiện dùng Tường hoặc khối đùn" data-name="Phào chỉ" title="Phào chỉ — Chưa dựng được — hiện dùng Tường hoặc khối đùn">Phào chỉ</span>
+        <span class="tool off" data-why="Chưa dựng được — hiện dùng Tường hoặc khối đùn" data-name="Trần thả" title="Trần thả — Chưa dựng được — hiện dùng Tường hoặc khối đùn">Trần thả</span>
+        <span class="tool off" data-why="Chưa dựng được — hiện dùng Tường hoặc khối đùn" data-name="Tủ bếp" title="Tủ bếp — Chưa dựng được — hiện dùng Tường hoặc khối đùn">Tủ bếp</span>
+      </div>
+      </div>
+      <div class="why" id="why"><b>Rê chuột lên một lệnh</b><span>Lý do lệnh chưa dựng hiện ở đây.</span></div>
+    </div>
+    <div class="center">
+      <div class="view">
+        <div class="grid3"></div>
+        <div class="mass" style="left:14%;top:30%;width:30%;height:36%;border-radius:3px"></div>
+        <div class="mass" style="left:44%;top:38%;width:20%;height:28%;border-radius:3px"></div>
+        <div class="mass" style="left:62%;top:26%;width:22%;height:40%;border-radius:3px"></div>
+        <div class="mass" style="left:20%;top:22%;width:16%;height:12%;border-radius:3px;opacity:.7"></div>
+        <div style="position:absolute;left:18px;top:14px;display:flex;flex-direction:column;gap:5px">
+          <span class="tag" style="background:var(--accent);color:#fff;height:20px">Đang dùng · Tường</span>
+          <span class="note" style="color:var(--t4)">Chiều cao 2 700 · dày 100</span>
+        </div>
+        <div style="position:absolute;right:18px;top:14px;text-align:right">
+          <div class="note" style="color:var(--t4)">Tiêu cự 50 mm · tầm mắt 1 650</div>
+          <div class="note" style="color:var(--t5)">PLACEHOLDER</div>
+        </div>
+      </div>
+      <div class="dock">
+        <button type="button" title="Dự án"><svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5.5h4l1.4 1.6h7.6v7.4H2.5z"/></svg></button>
+        <button type="button" title="Thư viện" class="on"><svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3.5 3.5h3v11h-3zM8 3.5h3v11H8zM12.5 4.6l2.6.7-2 10.3-2.6-.7z"/></svg></button>
+        <button type="button" title="Lịch"><svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2.8" y="4" width="12.4" height="10.6" rx="2"/><path d="M2.8 7.4h12.4M6.4 2.6v2.4M11.6 2.6v2.4"/></svg></button>
+        <button type="button" title="Nhóm"><svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="7" cy="6.6" r="2.6"/><path d="M2.6 14.6c.6-2.6 2.3-4 4.4-4s3.8 1.4 4.4 4M12.3 5.2a2.3 2.3 0 0 1 0 4.4M13.4 14.6c-.2-1.3-.6-2.4-1.2-3.2"/></svg></button>
+        <button type="button" title="Trợ lý"><svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M9 3.2l1.5 3.3 3.3 1.5-3.3 1.5L9 12.8 7.5 9.5 4.2 8l3.3-1.5z"/></svg></button>
+        <div class="sep"></div>
+        <button type="button" title="Cài đặt"><svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="9" cy="9" r="2.4"/><path d="M9 2.4v1.8M9 13.8v1.8M2.4 9h1.8M13.8 9h1.8M4.4 4.4l1.3 1.3M12.3 12.3l1.3 1.3M13.6 4.4l-1.3 1.3M5.7 12.3l-1.3 1.3"/></svg></button>
+        <span class="sync">Đồng bộ 16:04</span>
+      </div>
+    </div>
+    <div class="side">
+      <div style="flex:none;min-height:42px;display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border)">
+        <span style="color:var(--t3);display:flex"><svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 6h2.2l1.1-1.7h5.6L12.6 6h2.8v8.2H2.6z"/><circle cx="9" cy="10" r="2.5"/></svg></span>
+        <span style="font-size:12px;font-weight:600;line-height:1.55;color:var(--t1)">Camera</span>
+        <span class="tag" style="margin-left:auto">3 / 9</span>
+      </div>
+      <div style="flex:1;min-height:0;overflow:auto">
+        <div class="sh">Ống kính</div>
+      <div class="crow" data-why="Dùng được — đổi tiêu cự ống kính ảo" data-name="Tiêu cự" title="Tiêu cự — Dùng được — đổi tiêu cự ống kính ảo">
+        <span class="cl"><span class="cn" style="display:block">Tiêu cự</span></span>
+      </div>
+      <div class="chips" data-cam="on"><span class="chip">18</span><span class="chip">24</span><span class="chip">35</span><span class="chip on">50</span><span class="chip">85</span></div>
+      <div class="crow off" data-why="Chưa dựng được — xuất ảnh rồi chỉnh ngoài app" data-name="Chỉnh đứng hai điểm tụ" title="Chỉnh đứng hai điểm tụ — Chưa dựng được — xuất ảnh rồi chỉnh ngoài app">
+        <span class="cl"><span class="cn" style="display:block">Chỉnh đứng hai điểm tụ</span><span class="cs" style="display:block">Chưa dựng được</span></span>
+        <span class="sw2 off"></span>
+      </div>
+      <div class="crow" data-why="Dùng được — cao độ mắt người đứng" data-name="Tầm mắt" title="Tầm mắt — Dùng được — cao độ mắt người đứng">
+        <span class="cl"><span class="cn" style="display:block">Tầm mắt</span><span class="cs" style="display:block">Dùng được</span></span>
+        <span class="fld">1 650 mm</span>
+      </div>
+        <div class="sh">Khung ảnh</div>
+      <div class="crow" data-why="Dùng được — khung xuất ảnh trình bày" data-name="Tỉ lệ khung" title="Tỉ lệ khung — Dùng được — khung xuất ảnh trình bày">
+        <span class="cl"><span class="cn" style="display:block">Tỉ lệ khung</span></span>
+      </div>
+      <div class="chips" data-cam="on"><span class="chip on">16:9</span><span class="chip">3:2</span><span class="chip">4:5</span><span class="chip">1:1</span><span class="chip">A3 ngang</span></div>
+      <div class="crow off" data-why="Chưa dựng được — xuất ảnh rồi chỉnh ngoài app" data-name="Khung an toàn" title="Khung an toàn — Chưa dựng được — xuất ảnh rồi chỉnh ngoài app">
+        <span class="cl"><span class="cn" style="display:block">Khung an toàn</span><span class="cs" style="display:block">Chưa dựng được</span></span>
+        <span class="sw2 off"></span>
+      </div>
+      <div class="crow off" data-why="Chưa dựng được — xuất ảnh rồi chỉnh ngoài app" data-name="Xoá phông" title="Xoá phông — Chưa dựng được — xuất ảnh rồi chỉnh ngoài app">
+        <span class="cl"><span class="cn" style="display:block">Xoá phông</span><span class="cs" style="display:block">Chưa dựng được</span></span>
+        <span class="sw2 off"></span>
+      </div>
+      <div class="crow off" data-why="Chưa dựng được — xuất ảnh rồi chỉnh ngoài app" data-name="Dịch trục" title="Dịch trục — Chưa dựng được — xuất ảnh rồi chỉnh ngoài app">
+        <span class="cl"><span class="cn" style="display:block">Dịch trục</span><span class="cs" style="display:block">Chưa dựng được</span></span>
+        <span class="fld">0 · 0 mm</span>
+      </div>
+        <div class="sh">Điểm nhìn</div>
+      <div class="crow off" data-why="Chưa dựng được — xuất ảnh rồi chỉnh ngoài app" data-name="Lưu điểm nhìn có tên" title="Lưu điểm nhìn có tên — Chưa dựng được — xuất ảnh rồi chỉnh ngoài app">
+        <span class="cl"><span class="cn" style="display:block">Lưu điểm nhìn có tên</span><span class="cs" style="display:block">Chưa dựng được</span></span>
+        <button class="btn" type="button" style="height:28px;padding:0 11px;font-size:11px;cursor:not-allowed;color:var(--t4);background:var(--field);border-color:var(--border);box-shadow:none">Lưu điểm nhìn</button>
+      </div>
+      <div class="crow off" data-why="Chưa dựng được — xuất ảnh rồi chỉnh ngoài app" data-name="Đường quay" title="Đường quay — Chưa dựng được — xuất ảnh rồi chỉnh ngoài app">
+        <span class="cl"><span class="cn" style="display:block">Đường quay</span><span class="cs" style="display:block">Chưa dựng được</span></span>
+        <button class="btn" type="button" style="height:28px;padding:0 11px;font-size:11px;cursor:not-allowed;color:var(--t4);background:var(--field);border-color:var(--border);box-shadow:none">Vẽ đường quay</button>
+      </div>
+      <div class="crow off" data-why="Chưa dựng được — xuất ảnh rồi chỉnh ngoài app" data-name="Điểm nhìn đã lưu"><span class="cl"><span class="cn" style="display:block">Phòng khách · góc trái</span><span class="cs" style="display:block">PLACEHOLDER</span></span></div>
+      <div class="crow off" data-why="Chưa dựng được — xuất ảnh rồi chỉnh ngoài app" data-name="Điểm nhìn đã lưu"><span class="cl"><span class="cn" style="display:block">Bếp · chính diện</span><span class="cs" style="display:block">PLACEHOLDER</span></span></div>
+      <div class="crow off" data-why="Chưa dựng được — xuất ảnh rồi chỉnh ngoài app" data-name="Điểm nhìn đã lưu"><span class="cl"><span class="cn" style="display:block">Ban công · PLACEHOLDER</span><span class="cs" style="display:block">PLACEHOLDER</span></span></div>
+      </div>
+      <div style="flex:none;padding:10px;border-top:1px solid var(--border)"><div class="note">Tầm mắt 1 650 · tiêu cự 50 mm</div></div>
+    </div>
+  </div>
+  <div class="fstat"><span class="num">Chặng 3D</span><span class="num">3 / 51 lệnh dùng được</span><span class="num">Tiêu cự 50 mm</span><span class="num">Đồng bộ 16:04</span><span class="num" style="margin-left:auto">PLACEHOLDER</span></div>
+</div>
+<div style="height:38px"></div>
+<div class="wrap slabel"><span class="mono" style="font-size:11px;font-weight:700;color:var(--t5)">02</span><span style="font-size:13px;font-weight:600;line-height:1.5;color:var(--t2)">Bảng kiểm lệnh</span><span class="note">Đọc một lượt là biết còn thiếu gì</span></div>
+<div class="wrap tbl">
+  <div class="tcard">
+    <header><span>① Hình phẳng · làm tiết diện</span><em>0 / 13</em></header>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Đường</span><span class="rs" style="display:block">Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Đường gấp</span><span class="rs" style="display:block">Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Chữ nhật</span><span class="rs" style="display:block">Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Tròn</span><span class="rs" style="display:block">Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Cung</span><span class="rs" style="display:block">Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Elip</span><span class="rs" style="display:block">Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Đa giác</span><span class="rs" style="display:block">Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Đường cong</span><span class="rs" style="display:block">Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Giãn biên</span><span class="rs" style="display:block">Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Cắt / nối</span><span class="rs" style="display:block">Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Bo góc</span><span class="rs" style="display:block">Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Vát góc</span><span class="rs" style="display:block">Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Đối xứng</span><span class="rs" style="display:block">Chưa dựng được — vẽ tiết diện ở chặng 2D rồi đùn</span></span></div>
+  </div>
+  <div class="tcard">
+    <header><span>② Khối cơ bản</span><em>0 / 9</em></header>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Hộp</span><span class="rs" style="display:block">Chưa dựng được — tạm ghép từ hộp đùn thẳng</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Trụ</span><span class="rs" style="display:block">Chưa dựng được — tạm ghép từ hộp đùn thẳng</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Nón</span><span class="rs" style="display:block">Chưa dựng được — tạm ghép từ hộp đùn thẳng</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Cầu</span><span class="rs" style="display:block">Chưa dựng được — tạm ghép từ hộp đùn thẳng</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Xuyến</span><span class="rs" style="display:block">Chưa dựng được — tạm ghép từ hộp đùn thẳng</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Ống</span><span class="rs" style="display:block">Chưa dựng được — tạm ghép từ hộp đùn thẳng</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Mặt phẳng</span><span class="rs" style="display:block">Chưa dựng được — tạm ghép từ hộp đùn thẳng</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Chóp</span><span class="rs" style="display:block">Chưa dựng được — tạm ghép từ hộp đùn thẳng</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Nêm</span><span class="rs" style="display:block">Chưa dựng được — tạm ghép từ hộp đùn thẳng</span></span></div>
+  </div>
+  <div class="tcard">
+    <header><span>③ Sinh khối từ tiết diện</span><em>2 / 7</em></header>
+    <div class="li"><span class="st y">Dùng được</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Đùn thẳng</span><span class="rs" style="display:block">Dùng được — chọn tiết diện rồi kéo cao độ</span></span></div>
+    <div class="li"><span class="st y">Dùng được</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Kéo-đẩy cao độ</span><span class="rs" style="display:block">Dùng được — kéo mặt khối lên hoặc xuống</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Xoay tròn</span><span class="rs" style="display:block">Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Quét theo đường</span><span class="rs" style="display:block">Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Nối tiết diện</span><span class="rs" style="display:block">Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Vát cạnh</span><span class="rs" style="display:block">Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Tạo vỏ dày</span><span class="rs" style="display:block">Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ</span></span></div>
+  </div>
+  <div class="tcard">
+    <header><span>④ Biến đổi</span><em>0 / 8</em></header>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Đối xứng</span><span class="rs" style="display:block">Chưa dựng được — nhân bản tay ở chặng 2D</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Nhân bản thẳng</span><span class="rs" style="display:block">Chưa dựng được — nhân bản tay ở chặng 2D</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Nhân bản tròn</span><span class="rs" style="display:block">Chưa dựng được — nhân bản tay ở chặng 2D</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Nhân bản theo đường</span><span class="rs" style="display:block">Chưa dựng được — nhân bản tay ở chặng 2D</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Uốn cong</span><span class="rs" style="display:block">Chưa dựng được — nhân bản tay ở chặng 2D</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Vuốt thon</span><span class="rs" style="display:block">Chưa dựng được — nhân bản tay ở chặng 2D</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Xoắn</span><span class="rs" style="display:block">Chưa dựng được — nhân bản tay ở chặng 2D</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Lồng biến dạng</span><span class="rs" style="display:block">Chưa dựng được — nhân bản tay ở chặng 2D</span></span></div>
+  </div>
+  <div class="tcard">
+    <header><span>⑤ Cắt gộp</span><em>0 / 4</em></header>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Hợp</span><span class="rs" style="display:block">Chưa dựng được — tách khối bằng Tường rồi đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Trừ</span><span class="rs" style="display:block">Chưa dựng được — tách khối bằng Tường rồi đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Giao</span><span class="rs" style="display:block">Chưa dựng được — tách khối bằng Tường rồi đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Tách</span><span class="rs" style="display:block">Chưa dựng được — tách khối bằng Tường rồi đùn</span></span></div>
+  </div>
+  <div class="tcard">
+    <header><span>⑥ Cấu kiện</span><em>1 / 10</em></header>
+    <div class="li"><span class="st y">Dùng được</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Tường</span><span class="rs" style="display:block">Dùng được — vẽ trục tường rồi đặt chiều cao</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Cửa</span><span class="rs" style="display:block">Chưa dựng được — hiện dùng Tường hoặc khối đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Cửa sổ</span><span class="rs" style="display:block">Chưa dựng được — hiện dùng Tường hoặc khối đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Cầu thang thẳng</span><span class="rs" style="display:block">Chưa dựng được — hiện dùng Tường hoặc khối đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Cầu thang gấp</span><span class="rs" style="display:block">Chưa dựng được — hiện dùng Tường hoặc khối đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Cầu thang xoắn</span><span class="rs" style="display:block">Chưa dựng được — hiện dùng Tường hoặc khối đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Lan can</span><span class="rs" style="display:block">Chưa dựng được — hiện dùng Tường hoặc khối đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Phào chỉ</span><span class="rs" style="display:block">Chưa dựng được — hiện dùng Tường hoặc khối đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Trần thả</span><span class="rs" style="display:block">Chưa dựng được — hiện dùng Tường hoặc khối đùn</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Tủ bếp</span><span class="rs" style="display:block">Chưa dựng được — hiện dùng Tường hoặc khối đùn</span></span></div>
+  </div>
+  <div class="tcard">
+    <header><span>Camera</span><em>3 / 9</em></header>
+    <div class="li"><span class="st y">Dùng được</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Tiêu cự</span><span class="rs" style="display:block">Dùng được — đổi tiêu cự ống kính ảo</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Chỉnh đứng hai điểm tụ</span><span class="rs" style="display:block">Chưa dựng được — xuất ảnh rồi chỉnh ngoài app</span></span></div>
+    <div class="li"><span class="st y">Dùng được</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Tầm mắt</span><span class="rs" style="display:block">Dùng được — cao độ mắt người đứng</span></span></div>
+    <div class="li"><span class="st y">Dùng được</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Tỉ lệ khung</span><span class="rs" style="display:block">Dùng được — khung xuất ảnh trình bày</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Khung an toàn</span><span class="rs" style="display:block">Chưa dựng được — xuất ảnh rồi chỉnh ngoài app</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Xoá phông</span><span class="rs" style="display:block">Chưa dựng được — xuất ảnh rồi chỉnh ngoài app</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Dịch trục</span><span class="rs" style="display:block">Chưa dựng được — xuất ảnh rồi chỉnh ngoài app</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Lưu điểm nhìn có tên</span><span class="rs" style="display:block">Chưa dựng được — xuất ảnh rồi chỉnh ngoài app</span></span></div>
+    <div class="li off"><span class="st n">Chưa</span><span style="flex:1;min-width:0"><span class="nm" style="display:block">Đường quay</span><span class="rs" style="display:block">Chưa dựng được — xuất ảnh rồi chỉnh ngoài app</span></span></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var KEY="if-theme", root=document.documentElement;
+  function lab(t){return t==="dark"?"Đổi sang nền Kem":"Đổi sang nền Tối";}
+  function set(t){root.setAttribute("data-theme",t);try{localStorage.setItem(KEY,t);}catch(e){}var b=document.getElementById("themeBtn");if(b){b.textContent=lab(t);}}
+  var saved=null;try{saved=localStorage.getItem(KEY);}catch(e){}
+  set(saved==="kem"?"kem":"dark");
+  function only(n,sel,scope){[].forEach.call((scope||n.parentNode).querySelectorAll(sel),function(c){c.classList.remove("on");});n.classList.add("on");}
+  var why=document.getElementById("why");
+  function showWhy(name,text){if(!why){return;}why.firstElementChild.textContent=name;why.lastElementChild.textContent=text;}
+  document.addEventListener("mouseover",function(e){
+    var n=e.target.closest("[data-why]");
+    if(n){showWhy(n.getAttribute("data-name"),n.getAttribute("data-why"));}
+  });
+  document.addEventListener("click",function(e){
+    var t=e.target;
+    if(t.closest("#themeBtn")){set(root.getAttribute("data-theme")==="dark"?"kem":"dark");return;}
+    var tl=t.closest(".tool");
+    if(tl){
+      if(tl.classList.contains("off")){showWhy(tl.getAttribute("data-name"),tl.getAttribute("data-why"));return;}
+      [].forEach.call(document.querySelectorAll(".tool.live"),function(c){c.classList.remove("on");});
+      tl.classList.add("on");showWhy(tl.getAttribute("data-name"),tl.getAttribute("data-why"));return;}
+    var ch=t.closest(".chip");
+    if(ch){if(ch.classList.contains("off")){return;}only(ch,".chip");return;}
+    var sw=t.closest(".sw2"); if(sw&&!sw.classList.contains("off")){sw.classList.toggle("on");return;}
+    var sg=t.closest(".stage b"); if(sg){only(sg,"b");return;}
+    var dk=t.closest(".dock button"); if(dk){only(dk,"button");return;}
+  });
+})();
+</script>
+</body>
+</html>

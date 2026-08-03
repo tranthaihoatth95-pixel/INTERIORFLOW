@@ -579,3 +579,13 @@ Token `--tap:44px`/`--row:44px` tự bật qua `(hover:none) and (pointer:coarse
 *COWORK-DỰNG soạn 04/08/2026. Nền: `SPEC-TANG-DU-LIEU-CAU-KIEN.md` (§2.2 · §4.2 · §8) ·
 `SPEC-HA-TANG-UI-IF.md` (4 trụ) · `SPEC-DUNG-PIPELINE-RENDER-AI.md` (§7).
 Mọi con số/dòng code trong §0 đọc trực tiếp từ repo 04/08; chỗ chưa chạy tay ghi "CHƯA VERIFY".*
+
+---
+# 🔴 ĐÍNH CHÍNH 03/08 — §2.3 và §9 CỦA FILE NÀY ĐÃ LỖI THỜI, KHÔNG ĐƯỢC THI HÀNH
+**Hoà bác trực tiếp 03/08:** *"Modifier stack, boolean mesh chi tiết nên giữ, dựng nội thất mà không có mấy cái đó là vứt."*
+| Câu SAI trong file này | Nay là |
+|---|---|
+| §2.3 "Boolean KHÔNG vào bộ công cụ" | ❌ HUỶ — **Boolean BẮT BUỘC CÓ** (khoét ổ điện · gờ chỉ tủ · hốc âm tường). Thư viện chốt: **`three-bvh-csg` MIT**, 119ms ở 65k tam giác, giữ UV/material, 33,5 KB gzip (đo thật, `NC-12`) |
+| §9 "KHÔNG làm modifier stack của Max" | ❌ HUỶ — **CÓ làm**, lưu dạng `ops?: BuildOp[]` trên `Base` (`model.ts`), **lưu THAM SỐ không lưu mesh**. `Doc` không đổi cấu trúc ⇒ K1 thoả, `.idf` cũ parse nguyên vẹn |
+**Nguồn chuẩn thay thế:** `docs/SPEC-DUNG-BO-LENH-3D.md` (6 tầng lệnh) + `docs/nc/NC-12-bo-lenh-3d-2026-08-03.md` (số liệu + giấy phép).
+**Lý do TỔNG từng đề xuất cắt (ghi lại để không lặp):** nghĩ "AI vẽ ảnh cuối nên khỏi cần dựng sâu" — quên rằng **AI không bịa được hình khối, nó chỉ tô lên hình mình đưa**. Ranh giới đúng là: **cắt phần RENDER (đèn IES/GI/exposure), giữ trọn phần DỰNG HÌNH.**
