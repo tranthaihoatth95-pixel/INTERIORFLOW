@@ -19,6 +19,7 @@ import { Plus, Pencil, Palette, Camera, Eye, Square } from 'lucide-react';
 import { useMaterials } from '@/lib/render-studio/use-materials';
 import MaterialSphere from '@/components/three/MaterialSphere';
 import { darken, kindFromName, sceneForKind } from '@/components/three/material-preview';
+import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -136,6 +137,15 @@ function MaterialTab({ onPick }: { onPick?: (id: string) => void }) {
       <p className="px-0.5 text-[10.5px] leading-relaxed text-[var(--t4)]">
         {tr('Chọn vật liệu để cầm, rồi bấm lên mặt khối.', 'Pick a material, then click a face.')}
       </p>
+      {/* MỘT thư viện chặng 2 (Hoà chốt 04/08): tab này chỉ là kệ nhanh — kho đầy đủ (1449 món
+          ATLAS) nằm trong sheet Thư viện, mở đúng kệ vật liệu bằng cửa chung openLibrarySheet. */}
+      <button
+        type="button"
+        onClick={() => openLibrarySheet({ shelfId: 'common-atlas' })}
+        className="w-full rounded-[9px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-[10.5px] font-medium text-[var(--t2)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]"
+      >
+        {tr('Xem cả kho', 'Browse the full library')}
+      </button>
       {materials.length === 0 && (
         <p className="px-1 text-center text-[11px] text-[var(--t5)]">{tr('Chưa có vật liệu trong ATLAS.', 'No materials in ATLAS yet.')}</p>
       )}
