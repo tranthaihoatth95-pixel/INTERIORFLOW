@@ -34,6 +34,8 @@ interface Props {
   onReorder: (from: number, to: number) => void;
   /** nhãn nút thêm (tooltip). */
   addLabel?: string;
+  /** Chữ ở góc phải. Bỏ trống = `số sheet/trần` như cũ (CAD dùng bản này). */
+  status?: string;
 }
 
 export default function SheetTabBar({
@@ -46,6 +48,7 @@ export default function SheetTabBar({
   onClose,
   onReorder,
   addLabel = 'Thêm sheet',
+  status,
 }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -209,7 +212,11 @@ export default function SheetTabBar({
 
       <div style={{ flex: 1 }} />
       <span style={{ fontSize: 11, color: 'var(--t4)', flex: '0 0 auto', paddingRight: 4 }}>
-        {sheets.length}/{max}
+        {/* L1 (phiếu 03/08): mẫu "1/5" đánh lừa — người đọc tưởng "trang 1 trong 5 trang tài
+            liệu", thật ra là "sheet 1 / trần 5 sheet", trong khi dải dưới có 8 slide. Bên gọi
+            truyền `status` để nói đúng đơn vị của mình (Present: "8 slide"); trần chỉ nhắc khi
+            CHẠM trần. Không truyền `status` thì giữ nguyên hành vi cũ (CAD không đổi gì). */}
+        {status ?? `${sheets.length}/${max}`}
       </span>
     </div>
   );

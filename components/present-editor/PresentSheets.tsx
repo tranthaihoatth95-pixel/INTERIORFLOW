@@ -101,7 +101,7 @@ function blankDeck(n: number): EditorDeck {
   const base: EditorDeck = {
     id: newId('deck'),
     brand: '',
-    project: `Trang ${n}`,
+    project: `Hồ sơ ${n}`,
     fonts: 'Editorial',
     palette: [...BLANK_PALETTE],
     slides: [blankSlide()],
@@ -200,7 +200,7 @@ async function resolveAndSyncPresentDisk(
   if (resolution.reason === 'disk-incomplete') {
     setDiskStatus(
       'error',
-      `Tệp trên đĩa chỉ có ${parsed.sheets.length} trang, ít hơn ${cacheSheets.length} đang mở trong máy — có thể ghi dở/hỏng. ĐANG GIỮ bản trong máy, không tự ghi đè lên đĩa.`,
+      `Tệp trên đĩa chỉ có ${parsed.sheets.length} hồ sơ, ít hơn ${cacheSheets.length} đang mở trong máy — có thể ghi dở/hỏng. ĐANG GIỮ bản trong máy, không tự ghi đè lên đĩa.`,
     );
     return null;
   }
@@ -221,7 +221,7 @@ const nextId = () => `presheet-${seq++}`;
 
 export default function PresentSheets({ initialDeck }: Props) {
   const [sheets, setSheets] = useState<Sheet[]>([
-    { id: 'presheet-0', name: 'Trang 1', deck: initialDeck },
+    { id: 'presheet-0', name: 'Hồ sơ 1', deck: initialDeck },
   ]);
   const [activeId, setActiveId] = useState('presheet-0');
   // deck "sống" mới nhất của sheet đang mở (ref → không render thừa mỗi lần deck đổi).
@@ -237,6 +237,12 @@ export default function PresentSheets({ initialDeck }: Props) {
    * hay không. Không đổi id sheet (giữ nguyên fidelity với file .idfp).
    */
   const [importGen, setImportGen] = useState(0);
+  /**
+   * L1 (phiếu 03/08): chỉ số góc phải phải nói đúng ĐƠN VỊ người dùng đang nhìn — dải dưới là
+   * SLIDE, nên đếm slide, không phải "sheet/trần sheet". Đây là state (không phải ref) vì con số
+   * hiện trên màn hình phải đổi theo; `liveDeck` vẫn là ref cho đường lưu (không render thừa).
+   */
+  const [slideCount, setSlideCount] = useState(initialDeck.slides.length);
 
   // ---- Persistence (J-3): refs gương cho autosaver + cờ hydrate ----
   const userIdRef = useRef<string | null>(null);
@@ -285,7 +291,7 @@ export default function PresentSheets({ initialDeck }: Props) {
     // Lần mount đầu KHÔNG dọn — giữ `initialDeck` mà trang truyền vào.
     if (prevBucketRef.current !== null && prevBucketRef.current !== bucketId) {
       const fresh = blankDeck(1);
-      setSheets([{ id: 'presheet-0', name: 'Trang 1', deck: fresh }]);
+      setSheets([{ id: 'presheet-0', name: 'Hồ sơ 1', deck: fresh }]);
       setActiveId('presheet-0');
       liveDeck.current = fresh;
     }
@@ -463,7 +469,7 @@ export default function PresentSheets({ initialDeck }: Props) {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
-      window.dispatchEvent(new CustomEvent('present:idfp-export-done', { detail: { ok: true, text: `Đã xuất project.idfp — ${idfpSheets.length} trang.` } }));
+      window.dispatchEvent(new CustomEvent('present:idfp-export-done', { detail: { ok: true, text: `Đã xuất project.idfp — ${idfpSheets.length} hồ sơ.` } }));
     };
 
     const onImportIdfp = (ev: Event) => {
@@ -485,7 +491,7 @@ export default function PresentSheets({ initialDeck }: Props) {
       window.dispatchEvent(new CustomEvent('present:idfp-import-done', {
         detail: {
           ok: true,
-          text: `Đã mở "${detail.fileName}" — ${keptCount} trang${droppedCount > 0 ? ` (bỏ ${droppedCount} trang vượt trần ${MAX_SHEETS})` : ''}.`,
+          text: `Đã mở "${detail.fileName}" — ${keptCount} hồ sơ${droppedCount > 0 ? ` (bỏ ${droppedCount} hồ sơ vượt trần ${MAX_SHEETS})` : ''}.`,
         },
       }));
     };
@@ -518,6 +524,8 @@ export default function PresentSheets({ initialDeck }: Props) {
     setSheets(committed);
     const target = committed.find((s) => s.id === id);
     liveDeck.current = target?.deck ?? initialDeck;
+    // đổi hồ sơ → chỉ số slide phải theo hồ sơ MỚI ngay, không đợi `onDeckChange` đầu tiên
+    setSlideCount(liveDeck.current.slides.length);
     setActiveId(id);
   };
 
@@ -527,7 +535,7 @@ export default function PresentSheets({ initialDeck }: Props) {
     const deck = blankDeck(sheets.length + 1);
     const committed = commitActive(sheets);
     liveDeck.current = deck;
-    setSheets([...committed, { id, name: `Trang ${sheets.length + 1}`, deck }]);
+    setSheets([...committed, { id, name: `Hồ sơ ${sheets.length + 1}`, deck }]);
     setActiveId(id);
   };
 
@@ -566,7 +574,10 @@ export default function PresentSheets({ initialDeck }: Props) {
         onRename={renameSheet}
         onClose={closeSheet}
         onReorder={reorder}
-        addLabel="Thêm trang trình bày"
+        addLabel="Thêm hồ sơ trình bày"
+        // "8 slide" — đúng thứ đang thấy ở dải dưới. Trần 5 CHỈ nhắc khi đã chạm trần (trước đó
+        // nói ra chỉ làm người dùng bận tâm về một giới hạn chưa gặp).
+        status={`${slideCount} slide${sheets.length >= MAX_SHEETS ? ` · tối đa ${MAX_SHEETS} hồ sơ` : ''}`}
       />
       <div style={{ flex: 1, minHeight: 0 }}>
         {/* Chỉ mount editor SAU hydrate: deck khôi phục phải vào từ initialDeck (key=activeId).
@@ -578,6 +589,7 @@ export default function PresentSheets({ initialDeck }: Props) {
             initialDeck={active.deck}
             onDeckChange={(d) => {
               liveDeck.current = d;
+              setSlideCount(d.slides.length);
               saverRef.current?.touch();
               diskWriterRef.current?.touch();
             }}
