@@ -13,11 +13,20 @@ export const dynamic = 'force-dynamic';
  *
  * getSessionUser() bắt buộc DÒNG ĐẦU TIÊN (bài học P0, xem route sync task/HR).
  *
- * ⚠️ CHƯA CHẠY THẬT LẦN NÀO — chặn ở `atlasConfigured()` (thiếu 3 khoá Lark) VÀ
- * `LARK_ATLAS_MATERIAL_TABLE_ID` (chưa có, chưa từng verify field thật qua MCP). Route này ĐÚNG
- * cấu trúc/logic (test qua `mapAtlasRecordToProductSpec`, 22/22) nhưng field mapping
- * (`ATLAS_FIELD_NAMES`, xem `lib/lark/atlas-material-map.ts`) là PLACEHOLDER — phải đối chiếu
- * tên cột thật trước khi tin số liệu sync ra.
+ * ⚠️ ĐÃ THỬ CHẠY THẬT LẦN ĐẦU (04/08) — VẪN CHƯA VÀO ĐƯỢC DB, chặn ở bước SỚM HƠN dự kiến:
+ * `getAtlasAppToken()` → `resolveWikiAppToken(LARK_ATLAS_NODE_TOKEN)` gọi
+ * `GET /open-apis/wiki/v2/spaces/get_node` — Lark trả **code 131006**
+ * `"permission denied: node permission denied, tenant needs read permission."` (tenant_access_token
+ * đổi THÀNH CÔNG, lỗi xảy ra Ở BƯỚC SAU — không phải thiếu khoá/env). Nguyên nhân đúng như
+ * `docs/INTEGRATIONS.md` §ATLAS bước 4 đã cảnh báo trước: app Lark (`App ID cli_aae1f2a68178de15`)
+ * CHƯA được mời làm collaborator có quyền đọc trên trang Wiki chứa ATLAS Material Library (hoặc
+ * app chưa publish/enable trong tổ chức) — cần Hoà vào Lark, mở đúng trang Wiki đó → *** (góc
+ * phải) → Advanced permissions/Share → thêm app theo App ID trên. Vì lỗi xảy ra trước khi gọi
+ * `list_records`, **field mapping `ATLAS_FIELD_NAMES` (`lib/lark/atlas-material-map.ts`) VẪN
+ * CHƯA verify được** — chưa có bản ghi thật nào để đối chiếu tên cột.
+ * (Lưu ý phụ: `LARK_ATLAS_BASE_TOKEN` trong `.env.local` là placeholder văn bản `"bascn..."`
+ * — KHÔNG phải token thật, và code không đọc biến này ở đâu cả; biến thật sự dùng là
+ * `LARK_ATLAS_NODE_TOKEN`, đã có và đúng định dạng.)
  */
 export async function POST() {
   const user = await getSessionUser();
