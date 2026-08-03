@@ -258,5 +258,36 @@ console.log('cadAxesToThree/cadToThreeM — quy ước trục CAD→three.js (3D
   ok('gốc toạ độ về gốc', JSON.stringify(cadToThreeM(0, 0, 0)) === JSON.stringify([0, 0, 0]));
 }
 
+console.log('docToObjScene — storey (SPEC-DUNG-3D-THONG-NHAT §5.1/D1)');
+{
+  // Doc mẫu KHÔNG gán storey — .idf cũ, mọi group phải undefined (không suy đoán, không bịa).
+  const sceneNoStorey = docToObjScene(demoDoc(), { wallHeightMm: 2700, theme: 'warm' });
+  ok('không gán storey ở Doc → mọi group storey undefined', sceneNoStorey.groups.every((g) => g.storey === undefined));
+
+  // Gán storey cho 1 tường + 1 block — group tương ứng phải mang ĐÚNG giá trị đó, group khác
+  // (Floor — hình học tổng hợp, không có 1 entity nguồn) vẫn undefined.
+  const doc = demoDoc();
+  const wallId = doc.entities.find((e) => e.type === 'hatch')!.id;
+  const furnId = 'b1';
+  const docWithStorey: Doc = {
+    ...doc,
+    entities: doc.entities.map((e) => {
+      if (e.id === wallId) return { ...e, storey: 'GF' };
+      if (e.id === furnId) return { ...e, storey: 'GF' };
+      return e;
+    }),
+  };
+  const scene = docToObjScene(docWithStorey, { wallHeightMm: 2700, theme: 'warm' });
+  const wallGroup = scene.groups.find((g) => g.entityId === wallId);
+  const furnGroup = scene.groups.find((g) => g.name.startsWith('Furn_1_'));
+  const floorGroup = scene.groups.find((g) => g.name === 'Floor');
+  ok('group tường mang đúng storey của entity gốc', wallGroup?.storey === 'GF');
+  ok('group nội thất mang đúng storey của entity gốc', furnGroup?.storey === 'GF');
+  ok('group Floor (hình học tổng hợp, không 1 entity nguồn) KHÔNG suy đoán storey', floorGroup?.storey === undefined);
+  // Tường KHÁC (Wall_2..4) không gán storey riêng → vẫn undefined, không "lây" từ tường đã gán.
+  const otherWalls = scene.groups.filter((g) => g.name.startsWith('Wall_') && g.entityId !== wallId);
+  ok('tường khác không gán storey → vẫn undefined, không lây lan', otherWalls.every((g) => g.storey === undefined));
+}
+
 console.log(`\n${pass} pass, ${fail} fail`);
 if (fail) process.exit(1);
