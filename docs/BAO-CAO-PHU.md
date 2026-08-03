@@ -2618,3 +2618,41 @@ tên sẽ vỡ mọi chỗ đang so `g.name === 'Wall_1'` (kể cả 2 test cũ)
 **Commit:** `lib/three/cad-to-obj.ts` + `.test.ts` + `lib/three/obj-scene-to-geometry.ts` +
 `.test.ts` (mới) + `components/three/Scene3DViewer.tsx`. Pathspec riêng — lúc commit `git status`
 còn nhiều file `lib/present-editor/boq-*` đang mở bởi phiên khác (có vẻ TRÌNH), KHÔNG đụng.
+
+---
+
+## PHU — A1 — `findByAlias()` không lọc `when(ctx)` (chặn việc thêm lệnh 3D)
+
+Grep xác nhận đúng bug nêu trong phiếu: `findByAlias()` (`lib/commands/registry.ts`) khớp alias
+xong trả về NGAY — khác hẳn `cmdsFor(ctx)` ngay phía trên nó trong cùng file, hàm đó ĐÃ lọc đúng
+qua `c.when(ctx)`. `findByAlias` không nhận `ctx` nào cả (0 tham số ngoài `raw`).
+
+**Vì sao "chặn mọi việc thêm lệnh 3D":** khi sổ lệnh có thêm entry mới `when: stage==render`
+(lệnh riêng cho Vẽ 3D), gõ đúng alias đó ở màn 2D (`stage==cad`) đáng lẽ phải KHÔNG khớp — nhưng
+`findByAlias` không hề nhìn ngữ cảnh nên vẫn trả về CommandDef và `.run()` được, chạy nhầm dispatch
+của 1 chặng khác lên state của chặng đang mở. Cùng rủi ro chiều ngược: 1 alias Pro-only (Fillet,
+Offset…) gõ được ở Sketch mode dù `cmdsFor()` (dùng cho mọi mặt hiện KHÁC) đã đúng đắn ẩn nó đi —
+2 đường tra cứu cùng 1 sổ lệnh mà lệch nhau, đúng bệnh "2 nơi tự đoán" đã lặp lại vài lần trong
+đợt này (SPEC-TANG-DU-LIEU-CAU-KIEN cũng nêu chính xác kiểu lỗi này ở nơi khác).
+
+**Đã vá:** `ctx: WhenCtx` thành tham số BẮT BUỘC (không phải optional) — cân nhắc kỹ trước khi
+chọn bắt buộc thay vì optional-mặc-định-permissive: `findByAlias` hiện **KHÔNG có lời gọi thật
+nào ngoài file test** (`grep` xác nhận — TODO cuối file đã ghi rõ việc nối vào `CadEditor.tsx`
+"là bước sau, tách riêng"), nên không có rủi ro vỡ hành vi production nào; bắt buộc `ctx` chặn
+đứng khả năng ai đó (kể cả việc "thêm lệnh 3D" đang chờ) vô tình gọi lại kiểu cũ và tái tạo đúng
+bug này. Logic: khớp alias trước, rồi `found.when(ctx) ? found : undefined` — cùng 1 nguồn gate
+với `cmdsFor`, không viết lại luật khác.
+
+**Kiểm sạch:** `registry.test.ts` — 22 lời gọi `findByAlias(...)` cũ (mục [5] `run()`) đều thiếu
+`ctx`, phải sửa hết (thêm `CAD_PRO_CTX` — superset an toàn vì mục đó test dispatch, không test
+gate) + mục [4] thêm 4 ca regression đúng bug: gõ 'F' (Fillet, Pro-only) ở Sketch (`proToolsAllowed:
+false`) → `undefined`; gõ 'L' (lệnh CAD) với `stage:'render'` → `undefined`. **60/60 pass** (56 cũ
++ 4 mới). `npx tsc --noEmit` scoped sạch (bắt buộc `ctx` là breaking change chữ ký — tsc xác nhận
+không còn lời gọi nào thiếu tham số ngoài phạm vi đã sửa).
+
+**Chưa làm:** chưa nối `findByAlias` vào `CadEditor.tsx`'s `run()` thật (TODO #1 cuối file, tự
+nhận "bước sau" — ngoài phạm vi A1, A1 chỉ vá đúng hàm bị báo sai). Việc "thêm lệnh 3D" (`when:
+stage==render` hay tương đương) bản thân nó cũng CHƯA làm — A1 chỉ dọn đúng cái chặn đường, không
+tự thêm lệnh 3D nào (chưa có yêu cầu cụ thể lệnh gì, tránh bịa).
+
+**Commit:** `lib/commands/registry.ts` + `lib/commands/registry.test.ts`.

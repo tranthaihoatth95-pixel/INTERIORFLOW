@@ -123,15 +123,27 @@ function testCmdsFor() {
 }
 
 /* ── 4) findByAlias ───────────────────────────────────────────────────────── */
+const CAD_CTX = { stage: 'cad' };
+const CAD_PRO_CTX = { stage: 'cad', proToolsAllowed: true };
+
 function testFindByAlias() {
   console.log('\n[4] findByAlias — khớp alias thật, không phân biệt hoa/thường đầu vào');
 
-  ok("'L' → cad.draw.line", findByAlias('L')?.id === 'cad.draw.line');
-  ok("'line' (thường) → cad.draw.line", findByAlias('line')?.id === 'cad.draw.line');
-  ok("'  W  ' (khoảng trắng thừa) → cad.draw.wall", findByAlias('  W  ')?.id === 'cad.draw.wall');
-  ok("'DAL' → cad.dim.linear (gộp cùng DIM)", findByAlias('DAL')?.id === 'cad.dim.linear');
-  ok("'OFFSET' → cad.edit.offset (gộp cùng O)", findByAlias('OFFSET')?.id === 'cad.edit.offset');
-  ok("alias không tồn tại → undefined", findByAlias('KHONGTONTAI') === undefined);
+  ok("'L' → cad.draw.line", findByAlias('L', CAD_CTX)?.id === 'cad.draw.line');
+  ok("'line' (thường) → cad.draw.line", findByAlias('line', CAD_CTX)?.id === 'cad.draw.line');
+  ok("'  W  ' (khoảng trắng thừa) → cad.draw.wall", findByAlias('  W  ', CAD_CTX)?.id === 'cad.draw.wall');
+  ok("'DAL' → cad.dim.linear (gộp cùng DIM)", findByAlias('DAL', CAD_PRO_CTX)?.id === 'cad.dim.linear');
+  ok("'OFFSET' → cad.edit.offset (gộp cùng O)", findByAlias('OFFSET', CAD_PRO_CTX)?.id === 'cad.edit.offset');
+  ok("alias không tồn tại → undefined", findByAlias('KHONGTONTAI', CAD_CTX) === undefined);
+
+  // A1 (phiếu 03/08) — regression đúng cái BUG đã vá: TRƯỚC đây findByAlias khớp alias xong trả
+  // về NGAY, không lọc qua `when(ctx)` như `cmdsFor` — gõ 1 alias Pro-only vẫn chạy được ở
+  // Sketch mode (proToolsAllowed=false), và alias của lệnh CAD vẫn khớp dù `stage` không phải
+  // 'cad' (chặn việc thêm lệnh 3D: 1 alias trùng chữ khai `when: stage==render` sẽ lẫn với CAD).
+  ok("'F' (Fillet, Pro-only) → undefined khi stage=cad NHƯNG proToolsAllowed=false (Sketch)", findByAlias('F', { stage: 'cad', proToolsAllowed: false }) === undefined);
+  ok("'F' (Fillet, Pro-only) → khớp khi proToolsAllowed=true (Pro mode)", findByAlias('F', CAD_PRO_CTX)?.id === 'cad.edit.fillet');
+  ok("'L' (lệnh CAD cơ bản) → undefined khi stage KHÁC 'cad' (render/present)", findByAlias('L', { stage: 'render' }) === undefined);
+  ok("'L' → vẫn khớp bình thường khi đúng stage='cad' (không Pro cũng đủ, line không phải Pro-only)", findByAlias('L', CAD_CTX)?.id === 'cad.draw.line');
 }
 
 /* ── 5) run() — spot-check từng kiểu dispatch, đối chiếu store thật ───────── */
@@ -141,83 +153,83 @@ function testRun() {
   const reset = () => useCadStore.getState().setTool('select');
 
   reset();
-  findByAlias('L')!.run();
+  findByAlias('L', CAD_PRO_CTX)!.run();
   ok("activate thường: 'L' → tool='line'", useCadStore.getState().tool === 'line');
 
   reset();
-  findByAlias('W')!.run({ arg: '250' });
+  findByAlias('W', CAD_PRO_CTX)!.run({ arg: '250' });
   ok("arg-preseed: 'W 250' → wallThickness=250", useCadStore.getState().wallThickness === 250);
   ok("arg-preseed: 'W 250' → tool='wall'", useCadStore.getState().tool === 'wall');
 
   reset();
   const wallBefore = useCadStore.getState().wallThickness;
-  findByAlias('WALL')!.run(); // không đối số → giữ nguyên wallThickness, chỉ đổi tool
+  findByAlias('WALL', CAD_PRO_CTX)!.run(); // không đối số → giữ nguyên wallThickness, chỉ đổi tool
   ok("'WALL' không đối số → wallThickness không đổi", useCadStore.getState().wallThickness === wallBefore);
   ok("'WALL' không đối số → tool='wall'", useCadStore.getState().tool === 'wall');
 
   reset();
-  findByAlias('F')!.run({ arg: '50' });
+  findByAlias('F', CAD_PRO_CTX)!.run({ arg: '50' });
   ok("'F 50' → filletRadius=50, tool='fillet'", useCadStore.getState().filletRadius === 50 && useCadStore.getState().tool === 'fillet');
 
   reset();
-  findByAlias('CHA')!.run({ arg: '30', arg2: '20' });
+  findByAlias('CHA', CAD_PRO_CTX)!.run({ arg: '30', arg2: '20' });
   ok("'CHA 30 20' → chamferD1=30, chamferD2=20 (2 giá trị khác nhau)", useCadStore.getState().chamferD1 === 30 && useCadStore.getState().chamferD2 === 20);
   reset();
-  findByAlias('CHA')!.run({ arg: '15' });
+  findByAlias('CHA', CAD_PRO_CTX)!.run({ arg: '15' });
   ok("'CHA 15' (thiếu arg2) → chamferD1=chamferD2=15 (mirror đúng logic gốc CadEditor.tsx)", useCadStore.getState().chamferD1 === 15 && useCadStore.getState().chamferD2 === 15);
 
   reset();
-  findByAlias('H')!.run({ arg: 'ansi32', arg2: '2.5' });
+  findByAlias('H', CAD_PRO_CTX)!.run({ arg: 'ansi32', arg2: '2.5' });
   ok("'H ansi32 2.5' → hatchPattern=ANSI32 (không phân biệt hoa/thường)", useCadStore.getState().hatchPattern === 'ANSI32');
   ok("'H ansi32 2.5' → hatchScale=2.5", useCadStore.getState().hatchScale === 2.5);
 
   reset();
-  findByAlias('POL')!.run({ arg: '6' });
+  findByAlias('POL', CAD_PRO_CTX)!.run({ arg: '6' });
   ok("'POL 6' → polygonSides=6", useCadStore.getState().polygonSides === 6);
 
   reset();
-  findByAlias('DO')!.run({ arg: '50', arg2: '150' });
+  findByAlias('DO', CAD_PRO_CTX)!.run({ arg: '50', arg2: '150' });
   ok("'DO 50 150' → donutInnerR=50, donutOuterR=150", useCadStore.getState().donutInnerR === 50 && useCadStore.getState().donutOuterR === 150);
 
   reset();
-  findByAlias('LEN')!.run({ arg: '100' });
+  findByAlias('LEN', CAD_PRO_CTX)!.run({ arg: '100' });
   ok("'LEN 100' → lengthenDelta=100", useCadStore.getState().lengthenDelta === 100);
 
   // pendingBlock — run() KHÔNG gọi setTool trực tiếp, nhưng setPendingBlock() trong store TỰ
   // đổi tool sang 'block' (store.ts dòng ~611-616, cố ý — cho status-bar phản hồi rõ khi vào
   // chế độ đặt block, xem comment gốc tại đó). Test đối chiếu ĐÚNG hành vi thật này.
   reset();
-  findByAlias('D')!.run();
+  findByAlias('D', CAD_PRO_CTX)!.run();
   ok("'D' (door) → pendingBlock='door', tool đổi sang 'block' (side-effect cố ý của store)", useCadStore.getState().pendingBlock === 'door' && useCadStore.getState().tool === 'block');
-  findByAlias('WIN')!.run();
+  findByAlias('WIN', CAD_PRO_CTX)!.run();
   ok("'WIN' → pendingBlock='window'", useCadStore.getState().pendingBlock === 'window');
   useCadStore.getState().setPendingBlock(null);
 
   // config-only — KHÔNG setTool.
   reset();
   const dimStyleBefore = useCadStore.getState().dimStyle;
-  findByAlias('DIMTXT')!.run({ arg: '150' });
+  findByAlias('DIMTXT', CAD_PRO_CTX)!.run({ arg: '150' });
   ok("'DIMTXT 150' → dimStyle.textHeight=150, arrowSize/dimScale không đổi", useCadStore.getState().dimStyle.textHeight === 150 && useCadStore.getState().dimStyle.arrowSize === dimStyleBefore.arrowSize);
   ok("'DIMTXT 150' → tool KHÔNG đổi", useCadStore.getState().tool === 'select');
-  findByAlias('DIMASZ')!.run({ arg: '90' });
+  findByAlias('DIMASZ', CAD_PRO_CTX)!.run({ arg: '90' });
   ok("'DIMASZ 90' → dimStyle.arrowSize=90", useCadStore.getState().dimStyle.arrowSize === 90);
-  findByAlias('DIMSCALE')!.run({ arg: '1.5' });
+  findByAlias('DIMSCALE', CAD_PRO_CTX)!.run({ arg: '1.5' });
   ok("'DIMSCALE 1.5' → dimStyle.dimScale=1.5", useCadStore.getState().dimStyle.dimScale === 1.5);
-  findByAlias('HANGLE')!.run({ arg: '45' });
+  findByAlias('HANGLE', CAD_PRO_CTX)!.run({ arg: '45' });
   ok("'HANGLE 45' → hatchAngle=45", useCadStore.getState().hatchAngle === 45);
 
   // POLAR — 2 nhánh: có arg → set step + bật; không arg → toggle.
   useCadStore.getState().setPolarTracking(false);
-  findByAlias('POLAR')!.run({ arg: '15' });
+  findByAlias('POLAR', CAD_PRO_CTX)!.run({ arg: '15' });
   ok("'POLAR 15' → polarStep=15, polarTracking=true", useCadStore.getState().polarStep === 15 && useCadStore.getState().polarTracking === true);
   const trackingBefore = useCadStore.getState().polarTracking;
-  findByAlias('POLAR')!.run();
+  findByAlias('POLAR', CAD_PRO_CTX)!.run();
   ok("'POLAR' không đối số → toggle polarTracking", useCadStore.getState().polarTracking === !trackingBefore);
 
   // Action trực tiếp — undo/redo/delete không throw khi gọi trên state trống.
-  ok('undo() không throw khi past rỗng', (() => { try { findByAlias('U')!.run(); return true; } catch { return false; } })());
-  ok('redo() không throw khi future rỗng', (() => { try { findByAlias('RE')!.run(); return true; } catch { return false; } })());
-  ok('delete() không throw khi selection rỗng', (() => { try { findByAlias('E')!.run(); return true; } catch { return false; } })());
+  ok('undo() không throw khi past rỗng', (() => { try { findByAlias('U', CAD_PRO_CTX)!.run(); return true; } catch { return false; } })());
+  ok('redo() không throw khi future rỗng', (() => { try { findByAlias('RE', CAD_PRO_CTX)!.run(); return true; } catch { return false; } })());
+  ok('delete() không throw khi selection rỗng', (() => { try { findByAlias('E', CAD_PRO_CTX)!.run(); return true; } catch { return false; } })());
 
   // Zoom Extents — dispatch CustomEvent thật trên window (stub tối thiểu, Node không có window).
   const events: string[] = [];
@@ -229,7 +241,7 @@ function testRun() {
   (globalThis as { CustomEvent?: new (type: string) => { type: string } }).CustomEvent =
     (globalThis as { CustomEvent?: new (type: string) => { type: string } }).CustomEvent ??
     (class { type: string; constructor(type: string) { this.type = type; } } as unknown as new (type: string) => { type: string });
-  findByAlias('Z')!.run();
+  findByAlias('Z', CAD_PRO_CTX)!.run();
   ok("'Z' → dispatch CustomEvent 'cad:zoom-extents' lên window", events.includes('cad:zoom-extents'));
 
   reset();

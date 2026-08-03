@@ -350,11 +350,20 @@ export function cmdsFor(ctx: WhenCtx): CommandDef[] {
 }
 
 /** Tra theo alias gõ tay (HOA) — dùng thay `matchCommands()`/map cũ trong CadEditor.tsx khi
- * bước sau nối registry vào status-bar thật. Trả cả CommandDef lẫn chính alias khớp (để biết
- * người dùng gõ alias nào, phục vụ gợi ý). */
-export function findByAlias(raw: string): CommandDef | undefined {
+ * bước sau nối registry vào status-bar thật.
+ *
+ * `ctx` là tham số BẮT BUỘC (A1, phiếu 03/08) — TRƯỚC đây hàm này khớp alias xong trả về
+ * NGAY, không lọc qua `cmd.when(ctx)` như `cmdsFor()` đã làm đúng. Hệ quả: gõ 1 alias Pro-only
+ * (vd 'F'/Fillet, 'OFFSET') vẫn chạy được dù đang ở Sketch mode (`proToolsAllowed=false`) —
+ * đúng lỗ hổng chặn việc thêm LỆNH 3D: khi sổ lệnh có thêm entry `when: stage==render`, gõ 1
+ * alias trùng chữ ở màn 2D (stage==cad) đáng lẽ phải KHÔNG khớp thì vẫn lọt qua vì hàm chưa hề
+ * nhìn tới `ctx`. Bắt buộc `ctx` (không phải optional) để không ai vô tình gọi lại kiểu cũ —
+ * mọi lời gọi PHẢI tự hỏi "đang ở ngữ cảnh nào" trước khi tra alias, giống `cmdsFor(ctx)`. */
+export function findByAlias(raw: string, ctx: WhenCtx): CommandDef | undefined {
   const c = raw.trim().toUpperCase();
-  return COMMANDS.find((cmd) => cmd.aliases.includes(c));
+  const found = COMMANDS.find((cmd) => cmd.aliases.includes(c));
+  if (!found) return undefined;
+  return found.when(ctx) ? found : undefined;
 }
 
 /** Toàn bộ alias đã khai — dùng cho test đối chiếu 1:1 với CAD_COMMANDS (không mất lệnh nào). */
