@@ -53,6 +53,30 @@ V-Ray phơi ~40 tham số; D5/Enscape chọn ~8 và designer nội thất đủ 
 mở đúng bộ trường cần chỉnh, còn lại mặc định thông minh. Có "Tạo normal từ ảnh màu" (D5 có, rẻ).
 Đường nhập nhanh: **Batch import bộ PBR theo hậu tố tên file** (`_BaseColor/_Roughness/_Normal…`) — chuẩn Poliigon/ambientCG.
 
+## 3b · MATERIAL EDITOR — CHỈNH ĐƯỢC, chuẩn D5/V-Ray (Hoà chốt 04/08 đêm: "quả cầu phải edit được")
+Quả cầu không chỉ để NGẮM — bấm vào là mở **editor chỉnh tham số, quả cầu render lại sống** theo từng kéo slider.
+
+**Bố cục (học V-Ray Asset Editor + D5 material inspector):**
+- Trái/trên: **quả cầu live** — re-render khi tham số đổi (debounce ~300ms) · nút ghim (pin) giữ preview khi
+  chọn vật liệu khác (V-Ray) · nấc phân giải 100/50/25% (van chi phí, V-Ray) · chọn cảnh Cầu/Sàn/Vải.
+- Phải/dưới: **bộ trường D5-style** (~8 trường, KHÔNG phải ~40 của V-Ray):
+  | Trường | Widget |
+  |---|---|
+  | Template | dropdown Gỗ·Đá·Sơn·Vải·Kim loại·Kính·Phát sáng·Nước — đổi template = đổi bộ trường hiện |
+  | Base Color | ô màu + slot map (map nhân màu như D5) |
+  | Roughness | slider 0-1 + slot map |
+  | Metallic | slider 0/1 (giá trị giữa cảnh báo — luật VRayMtl) |
+  | Specular | slider (F0 0-8%, chuẩn D5/glTF) |
+  | Normal | slot map + cường độ + nút **"Tạo normal từ ảnh màu"** (D5 có, rẻ) |
+  | AO · Emissive | slot map + nhân · màu/Kelvin + cường độ + Cast Shadow (D5) |
+  | Opacity | slider + mode Cutout/Blend |
+  | UV | Stretch · Offset · Rotate 0-360 · **Triplanar** (+blend) — global, học D5 |
+- **Per-map adjust** (D5): Inverted · Contrast · Hue ±180 · Saturation · Brightness — mỗi map một cụm gấp được.
+- Chân: **Nhân bản · Đưa lên kệ (publish, chủ duyệt) · Đặt lại** + dòng "matId giữ nguyên khi xuất D5/V-Ray".
+- **Batch import PBR** theo hậu tố tên file (_BaseColor/_Roughness/_Normal/_AO/_Height) — chuẩn Poliigon/ambientCG.
+**Luật:** sửa vật liệu CHUNG/STUDIO → tự nhân bản thành bản DỰ ÁN (không phá gốc — luật template read-only master).
+Editor mở từ: bấm quả cầu trong Thư viện · ô Vật liệu trong Inspector · tab Vật liệu CommandPanel.
+
 ## 4 · SOI LOGIC IF HIỆN TẠI — 3 việc phải sửa
 1. `lib/cad/materials.ts` hiện chỉ có màu/hatch 2D — **thiếu trường PBR**. Mở rộng schema matId theo §1
    (không phá cột cũ, thêm cột mới).

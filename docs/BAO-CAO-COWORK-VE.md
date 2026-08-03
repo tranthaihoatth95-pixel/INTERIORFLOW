@@ -40,7 +40,29 @@
 ### Nghi vấn liên vai (Hoà chuyển TỔNG khi tiện)
 - Token màu inference (4 nhóm + 2 trục) chưa có trong `globals.css` — spec đặt TÊN token + giá trị đề xuất, **giá trị cuối thuộc SPEC-DESIGN-SYSTEM-IF của COWORK-UI** (TỔNG duyệt). Một câu cần chuyển: *"COWORK-UI chốt giá trị 6 token `--snap-*`/`--axis-*` theo §2 SPEC-VE-INFERENCE rồi ghi vào SPEC-DESIGN-SYSTEM-IF."*
 
-### CHỐT PHIÊN
+### CHỐT PHIÊN (đợt 1)
 - Xong: nhận vai · khảo sát code 2 vòng · `SPEC-VE-INFERENCE.md` (TỔNG duyệt ĐẠT) · `SPEC-VE-REVIT-MODE.md` (chờ hậu kiểm ca đêm) · sổ này.
 - Dở: việc 3 hàng đợi vẫn CHẶN chờ PHU grep §4 — hết việc khả thi trong hàng đợi vai.
 - Không đụng file vai khác, không code. Token `--snap-*`/`--axis-*` đã thành việc 0 của COWORK-UI (TỔNG bơm) — 2 spec dùng `var()` có fallback, không chờ.
+
+---
+
+## PHIÊN 04/08 (cùng session) — hàng đợi đợt 2
+
+### Việc 4 ✅ — `SPEC-VE-LAYOUT-PAPER.md`
+- §0b đủ 3 bước: SEARCH grep pdf.ts/model.ts/CadSheets · NGHIÊN CỨU đọc trọn `NC-xuat-pdf-in` · NGƯỜI DÙNG = hoạ viên nộp hồ sơ.
+- **Kiểm thật phát hiện `SPEC-CAD-MODES` (26/07) LỖI THỜI 2 mục** (luật §0 — kiểm bằng lệnh rồi mới nói): "Xuất bộ hồ sơ ⬜" thật ra ĐÃ CÓ (`buildSheetSetPdf` pdf.ts:490 — mục lục + bookmark + khổ/tỉ lệ riêng từng tờ, 2.1.8.k) · "tỉ lệ 🟡" đã có nền đủ (`printScale`+`fixedScaleViewport`+`fitsAtScale`). Lỗ thủng thật đúng 1 thứ: các tờ không nhìn cùng model.
+- Spec chốt: layout = LOẠI TAB MỚI cạnh model tab (additive vào CadSheets) · `ViewportEntity` type mới (hưởng free select/grips/undo) · **VP mặc định KHOÁ, không MSPACE-trong-VP** (né nỗi sợ lớn nhất của dân AutoCAD, theo chuẩn Revit/ArchiCAD) · đồng bộ model→layout zero-code (render đọc doc đích qua resolver lúc vẽ) · preset xuất "In văn phòng"/"Gửi nhà in" theo NC-5, KHÔNG bleed cho hồ sơ CAD · DXF paper space = pha 2 ghi rõ.
+
+### Việc 5 ✅ — `SPEC-VE-SKETCH-TOUCH.md`
+- Khảo sát: pinch 2 ngón + `pointers` map + dock 6 nút `cad:synth-key` + Delete FAB ĐÃ CÓ — spec chỉ đắp 5 lớp thiếu.
+- Chốt: pen-priority + palm rejection 2 tầng (pen active nuốt touch mới + 300ms sau pen-up) · 2-chạm-undo/3-chạm-redo (sửa DUY NHẤT điểm kích hoạt pinch: thêm ngưỡng 8px/250ms) · radial 8 múi giữ-450ms, vị trí múi cố định theo nhóm (12h=chốt, 6h=huỷ), gọi qua sổ lệnh surface 'radial' · nắn nét `recognizeStroke` lib thuần có bảng ngưỡng · snap ×1.5 pen/×2.5 ngón · **pressure KHÔNG đổi lineweight entity CAD** (chỉ markup) · §0c: mọi cử chỉ có nút tương đương (dock +Undo/Redo).
+
+### Đề xuất cho `00-CHOT.md` (TỔNG duyệt mới ghi)
+- [04/08] `SPEC-VE-LAYOUT-PAPER.md` (COWORK-VẼ): layout tab + ViewportEntity khoá mặc định, in đúng thước, preset 2 nút — kèm ĐÍNH CHÍNH `SPEC-CAD-MODES` §4: bộ hồ sơ + tỉ lệ đã có sẵn trong code, chỉ thiếu layout.
+- [04/08] `SPEC-VE-SKETCH-TOUCH.md` (COWORK-VẼ): pen-priority/palm · tap-undo · radial 8 múi · nắn nét · snap theo pointer — Sketch-only, chuột/Pro 0 thay đổi.
+
+### CHỐT PHIÊN — **HẾT VIỆC 23:41 02/08** (giờ máy; nhãn ca đêm 04/08 theo sổ TỔNG)
+- Hàng đợi vai VẼ: 1✅ 2✅ 4✅ 5✅ · 3⛔ (vẫn chờ PHU grep §4 — kiểm lại lần 2 phiên này, BAO-CAO-PHU chưa có).
+- 4 spec của vai đều là file MỚI trong `docs/` chưa vào git — CHINH gom theo mục 5b của họ ("gác cổng docs").
+- Nghi vấn lặp lần 3 đã ghi ở cả 3 spec: `components/cad/*` (CadCanvas·CadSheets·CadTouchDock) CHƯA gán chủ mảng trong §2 — TỔNG cần chốt một lần để 3 spec có người wiring.

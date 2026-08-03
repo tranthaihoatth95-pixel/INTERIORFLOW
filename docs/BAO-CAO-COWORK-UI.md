@@ -38,3 +38,11 @@
 **Dở dang:** việc 3 (5 editor Trình bày) — HOÃN chờ NC-2/NC-3 + COWORK-TRÌNH rà ticket cũ; cần TỔNG quyết.
 **Chờ Hoà:** ① duyệt ảnh 2 theme của 3 mock (G2 gấp nhất — G4 đang chờ port) · ② quyết `mapa-de-zonas.html` vi phạm TTT · ③ TỔNG duyệt tên 3 mode chặng Vẽ "Phác · Kỹ thuật · Cấu kiện".
 **Phiên UI sau đọc:** file này → README-mocks.md → mock nào Hoà đã duyệt thì ghi "ĐÃ DUYỆT" vào README.
+
+## ĐỢT 2 (bơm đêm 04/08 — SO-KIEM-TONG §3 mục COWORK-UI)
+- [đợt 2] **Việc 0 ✅ — chốt 7 token inference/trục** vào `SPEC-DESIGN-SYSTEM-IF` §6 (mục mới, append). Nguyên tắc: KHÔNG màu mới ở theme Tối — snap-point=trục Y `#3fb984` · snap-derived=trục Z `#4a78e0` (2D không có Z, tái dùng) · snap-edge=trục X `#e05c5c` · snap-grid=`--accent-soft`; đặt tên chính thức `--axis-x/y/z` dùng chung 2D+3D ("không sinh cặp thứ hai"). Theme Sáng đậm hoá cùng hue đạt ≥3:1 non-text: `#1c8a5b`/`#2f5bc4`/`#c23f3f` (cùng logic --success của globals). KHÔNG lấy `#35b46f`/`#d05b5b`/`#3f8fd6` đề xuất thô của SPEC-VE-INFERENCE — hai-màu-xấp-xỉ trong cùng canvas là điều cấm. Xử va: lục snap ≠ --success (khác ngữ cảnh glyph/badge, như SketchUp chấp nhận endpoint lục = trục Y lục); đỏ snap-edge ≠ --danger (danger không vẽ lên canvas). Contrast đã tính ghi trong spec. **Handoff: CHINH thêm 7 biến vào globals.css 2 theme · PHU đổi fallback drawSnap theo bảng §6.**
+- [đợt 2] 🔔 **BÁO TỔNG:** G4 mục 4 ghi "Port `docs/mocks/mock-present-chooser.html`" nhưng file này **CHƯA TỒN TẠI** (kiểm `ls` — mock mới nhất vẫn là 3 file 03/08 của tôi). G4 sẽ vấp. Ai dựng: G4 tự dựng theo PHIEU-PRESENT-G4 (cơ chế mới §2) hay COWORK-UI dựng? Chờ TỔNG phân.
+- [đợt 2] HẾT VIỆC — hàng đợi UI đợt 2 chỉ có việc 0, đã xong. Việc 3 cũ (5 editor) vẫn hoãn: NC-2/NC-3 đã về nhưng spec TRÌNH (BOQ·Video·A3) đang viết — mock editor đợi spec đó là đúng thứ tự, tránh dựng 2 lần.
+
+## ĐỀ XUẤT CHO 00-CHOT (đợt 2)
+- Dòng đề xuất: `SPEC-DESIGN-SYSTEM-IF §6` — 7 token `--snap-*`/`--axis-*` 2 theme chốt theo nguyên tắc không-màu-mới, chờ TỔNG duyệt + CHINH nạp globals.css.

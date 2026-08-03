@@ -34,3 +34,24 @@
 **Nghi vấn liên vai (1 câu cho Hoà chuyển TỔNG):** NC-1 §3.6 đề xuất wire `CamPathPreview` (gap V2.1 trong STATUS) — việc này nằm vùng code CHINH hay G4? TỔNG phân khi ra phiếu.
 **Bài NC bổ sung nếu cần (chưa làm, chờ lệnh):** onboarding app cùng ngành (D5/SketchUp first-run) · pipeline in đối thủ nội thất (Foyr/Coohom) · in thử thật 1 deck + 1 bản vẽ tại nhà in.
 **Hàng đợi còn lại:** trống. Phiên NC kế tiếp đọc file này → nhận đề tài mới từ TỔNG/Hoà.
+
+## ĐỢT 2 (TỔNG bơm — sổ ghi "đêm 04/08", giờ thật phiên này 02/08 ~23:30)
+| # | Đề tài | Nuôi cho | Trạng thái |
+|---|---|---|---|
+| NC-6 | Quyền Lark Wiki/Base — gỡ kẹt 131006 (checklist từng-nút-bấm cho Hoà) | PHU mục 2 ATLAS sync 1449 bản ghi | ✅ `nc/NC-lark-permission-2026-08-02.md` |
+| NC-7 | PM app cho studio nhỏ (Lark Base Gantt/Kanban · Linear/Asana/Notion · resource handbook) | ArchiNote v1, ≤15 mục | ✅ `nc/NC-pm-studio-nho-2026-08-02.md` |
+
+- [02/08 23:34] Nhận đợt 2 từ `SO-KIEM-TONG` §3. Ghi nhận luật mới §0 trung thực · §0b nghiên-cứu-trước-khi-quyết (chuẩn 5 bài NC được nêu làm chuẩn hệ) · §0c ba mảng.
+- [02/08 23:40] ✅ NC-6 xong → `nc/NC-lark-permission-2026-08-02.md`. Chẩn đoán: 131006 = "wiki NODE permission denied" — kẹt ở LỚP ③ (app chưa là MEMBER của wiki space), không phải thiếu scope. Bản đồ 3 lớp quyền (scope → version published → resource membership) + checklist A/B/C/D từng nút bấm: A=Console thêm scope wiki+base rồi PHÁT HÀNH VERSION MỚI (scope không ăn nếu không publish — luật chính hãng), B=thêm app vào wiki space Members (bí thì đường vòng bot-qua-group), C=Base thường phải Share trực tiếp, D=verify + bảng đọc lỗi. Kèm 3 đề xuất code nhỏ cho PHU (dịch mã lỗi ra thông điệp hành-động-được).
+- [02/08 23:42] ✅ NC-7 xong → `nc/NC-pm-studio-nho-2026-08-02.md`. Đã grep khung `SPEC-ARCHINOTE-DETAIL-v1` trước (5 module) — bài rót vào module ①+③, không lật kiến trúc. Số cứng Lark Base: free 2.000 dòng/bảng · automation 1.000 lượt/tháng (ảnh hưởng thiết kế hợp đồng B2 + batch sync). 2 app đáng chép: Monograph (PHASE là đơn vị hạng nhất, timesheet tự gắn phase — nhưng bị chê reporting + giá) · Float (workload lưới người×tuần = màn đắt nhất mà Lark Base không dựng nổi). 14 mục "Điều ArchiNote nên làm" + moat: THU tự động từ IF qua bảng PROJECT_STATUS.
+- **[02/08 23:42] HẾT VIỆC đợt 2** — NC-6 + NC-7 ✅. Hàng đợi trống.
+
+## CHỐT PHIÊN đợt 2 — 02/08/2026 23:42
+**Đã xong:** đợt 2 trọn 2/2 (NC-6 Lark permission · NC-7 PM studio nhỏ). Tổng phiên: **7 bài NC** trong `docs/nc/`.
+**Dang dở:** không.
+**Đề xuất cho COWORK-TỔNG:**
+1. +1 dòng `00-CHOT` (gộp với đề xuất đợt 1): "`docs/nc/` — 7 bài NC 02/08: 5 bài đợt 1 + NC-lark-permission (checklist gỡ 131006 cho Hoà) + NC-pm-studio-nho (14 mục nuôi ArchiNote v1)."
+2. **NC-6 là việc CHẶN của Hoà** — chuyển checklist §2 (A→D) cho Hoà làm trên Developer Console + Lark client; xong thì PHU mục 2 (ATLAS sync 1449 bản ghi) tự thông.
+3. NC-7 chuyển cho phiên ARCHINOTE khi khối copy spec (⛔ hàng đợi ARCHINOTE) được Hoà chạy.
+**Nghi vấn liên vai:** không phát sinh mới.
+**Hàng đợi còn lại:** trống — phiên NC kế đọc file này rồi nhận đề tài từ TỔNG/Hoà. Gợi ý đề tài dự trữ (chưa làm, chờ duyệt): onboarding app cùng ngành (D5/SketchUp first-run) · pipeline in Foyr/Coohom · Lark Base Gantt dependencies kiểm tận mắt (1 phút của Hoà).

@@ -54,9 +54,23 @@
 - [—] **Xong việc bơm 1:** `docs/PHIEU-PRESENT-G4.md` — 6 việc code V1-V6 (thứ tự V2→V3→V1→V4→V6→V5) + khối nghiệm thu N1-N4. V6 đánh dấu GỘP-H4 khớp việc 4 hàng đợi G4; V5 (sửa-tại-chỗ giết 4 tầng) có CỔNG Hoà duyệt ảnh trước merge; V2 buộc luật portal K4.
 - [—] **Xong việc bơm 3:** `docs/SPEC-TRINH-MATERIAL-A3.md` — giữ ranh giới 2.1.9.i (MaterialDef thị giác ≠ ProductSpec thương mại, đọc qua neo `atlasRecordId`) · 8 cột ATLAS đúng tên trong `atlas-material-map` · tái dùng present-editor engine (`docType:'material-board'` additive, khổ A3 đã có từ `2a252c9`) · live-link một-nguồn + card mồ côi --warning · xuất qua print-upscale P3. 1 câu treo §9 (ẩn NCC bản khách?) — không chặn code.
 
+## ĐỢT 2 (bơm mục 4 — MỞ KHOÁ khi NC-2/NC-3 về)
+- [—] Đọc `§0/§0b/§0c` (luật trung thực · 3 bước trước khi quyết · 3 mảng không bỏ sót) + trọn `NC-spreadsheet-nhung` + `NC-timeline-editor` + mục "Điều IF nên làm" của `NC-xuat-pdf-in`. SEARCH code: `lib/boq` 12 file/1322 dòng (`49ebadd` — BoqRow ĐÃ đúng 8 cột Việt + entityIds + BoqError message Việt) · `campath.ts` có `LookAtMode 'zone'` · `capture.ts` streaming.
+- [—] **Xong `SPEC-TRINH-BOQ-EDITOR.md`:** tuyên bố records-có-schema KHÔNG-Excel (NC#1) · 6 kiểu cột Grist-min trần 30 công bố sớm · mini-DSL ƒx theo cột · **live-link = trigger-formula** (sửa tay + badge + revert, đúng CHOT-TACH-AI) · subtotal = summary-bar né bẫy Airtable · xuất xlsx SUM() sống · phủ §0c. 2 việc chờ PHU thẩm định (parse mini-DSL · kiểm SUM() output hiện tại).
+- [—] **Xong `SPEC-TRINH-VIDEO-EDITOR.md`:** SHOT CÓ TÊN dạng tile (moat ngữ nghĩa campath) · 3 tầng cố định không quản track · timeline collapsed mặc định · beat snap kiểu Canva-free · xuất MP4 sạch 0-credit (đòn vào vụ paywall CapCut) · luật thiêng thấy-=-xuất thành test bắt buộc · phủ §0c. 2 việc chờ PHU thẩm định (lib dò beat · đường xuất WebCodecs/mp4-muxer + map sample→zone).
+- **Ghi nhận cho TỔNG (1 câu):** 5 loại hồ sơ giờ 4/5 có spec hoặc đang xây (Deck xây · A3 · BOQ · Video có spec) — riêng **"Văn bản/Word biểu mẫu" chưa ai giao việc spec**, không tự bịa ngoài hàng đợi, chờ TỔNG bơm nếu cần.
+
 ## CHỐT PHIÊN [04/08 đêm — giờ máy 02/08 23:2x]
 - **Đã xong phiên này:** nhận vai · việc 3 gốc (rà sống/chết 18 mục) · 3 việc bơm đêm (phiếu G4 + verify 3🟡 + spec Material A3). Sản phẩm: `BAO-CAO-COWORK-TRINH.md` · `PHIEU-PRESENT-G4.md` · `SPEC-TRINH-MATERIAL-A3.md`.
-- **HẾT VIỆC 23:2x** — hàng đợi cạn theo §3: việc BOQ editor (chờ NC-3) · Video editor (chờ NC-2) vẫn ⛔.
+- ~~HẾT VIỆC 23:2x đợt 1~~ → đợt 2 bơm mục 4, đã chạy xong (xem mục ĐỢT 2 trên).
+- **HẾT VIỆC đợt 2 (giờ máy 02/08 23:3x)** — hàng đợi §3 của TRÌNH cạn: cả 5 việc đã giao đều xong (phiếu G4 · verify 3🟡 · spec A3 · spec BOQ · spec Video).
 - **Việc dở:** không.
-- **Chờ người khác:** NC ra NC-2/NC-3 → phiên TRÌNH sau viết 2 spec editor còn lại · G4 nhận `PHIEU-PRESENT-G4` (V6 khớp việc 4 của G4) · Hoà trả lời §9 spec A3 lúc rảnh.
-- **Nghi vấn chuyển TỔNG:** không phát sinh mới.
+- **Chờ người khác:** PHU thẩm định 4 điểm (mini-DSL + SUM() của BOQ · lib beat + đường MP4 của Video) trước khi 2 spec thành phiếu code · G4 nhận `PHIEU-PRESENT-G4` · Hoà trả lời §9 spec A3 lúc rảnh.
+- **Nghi vấn chuyển TỔNG:** "Văn bản/Word biểu mẫu" là loại hồ sơ duy nhất chưa có việc spec — bơm cho TRÌNH phiên sau nếu muốn đủ 5/5.
+- ⚠️ **SỰ CỐ COMMIT ĐỢT 2 (trung thực §0):** 3 file ĐÃ STAGED + nội dung an toàn trên đĩa, nhưng `git commit` fail — `.git/next-index-6.lock` (rác FUSE đợt 1, sandbox không unlink được) + `index.lock` mới sinh. HEAD lúc đó là `6ce940f` của phiên CHINH (2 phiên đụng nhau). KHÔNG retry theo luật. **Lệnh soạn sẵn cho Hoà chạy máy thật:**
+  ```
+  cd ~/Downloads/interiorflow
+  rm -f .git/index.lock .git/next-index-6.lock
+  git commit -m "docs(trinh): dot 2 - spec BOQ + Video tu NC-2/NC-3, chot phien" -- docs/BAO-CAO-COWORK-TRINH.md docs/SPEC-TRINH-BOQ-EDITOR.md docs/SPEC-TRINH-VIDEO-EDITOR.md
+  ```
+  (Chạy khi chắc không phiên nào đang thao tác git. File này sửa sau khi staged nên commit xong sẽ còn 1 phần modified — commit lần nữa cùng pathspec hoặc kệ, phiên sau gom.)
