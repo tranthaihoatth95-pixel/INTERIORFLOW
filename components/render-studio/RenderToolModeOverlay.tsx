@@ -22,7 +22,6 @@ import { useEffect } from 'react';
 import { useToolModeUi, useIsSmallScreenForCanvas } from '@/lib/render-studio/tool-mode-ui';
 import { useFlowStore } from '@/lib/store';
 import { detectGraphPattern } from '@/lib/render-studio/graph-pattern';
-import { useT } from '@/lib/i18n';
 import ToolWindow from './ToolWindow';
 
 export default function RenderToolModeOverlay() {
@@ -35,8 +34,6 @@ export default function RenderToolModeOverlay() {
   const smallScreen = useIsSmallScreenForCanvas();
   const nodes = useFlowStore((s) => s.nodes);
   const edges = useFlowStore((s) => s.edges);
-  const setPanel = useFlowStore((s) => s.setPanel);
-  const tr = useT();
 
   useEffect(() => {
     hydrate();
@@ -61,60 +58,9 @@ export default function RenderToolModeOverlay() {
   if (!hydrated) return null; // chờ đọc xong localStorage — tránh flash sai view lúc SSR/hydrate.
   if (view === 'canvas') return null; // canvas thuần, ẩn hẳn cả thanh tab.
 
-  // 30/07 — sửa báo động giả (Luật Đồng Bộ #6): `detectGraphPattern()` trả 'complex' cho CẢ
-  // trường hợp 1 node mồ côi (nodeCount=1, không khớp mẫu ảnh→AI). Với đúng 1 node thì KHÔNG có
-  // gì bị "giấu" — chỉ báo khi nodeCount thật sự > 1.
-  // G1d (`docs/SPEC-NGON-NGU-CHI-DAN.md` §4 — chính câu Hoà chê "nói vậy chả ai hiểu gì cả"):
-  // BỎ câu giải thích cơ chế ("chọn Node MASTER ở sidebar... mở Node Library") — thay bằng khuôn
-  // "Nhắc trạng thái" (§2): 1 câu kết quả + nút làm ngay, không thuật ngữ nội bộ (Từ điển §3).
-  const showNotice = !selectedCardId && nodePattern.kind === 'complex' && nodePattern.nodeCount > 1;
-
-  return (
-    <>
-      {/* H3 — dải mỏng thay RenderToolTabs (đã gỡ), CHỈ hiện khi có cảnh báo LỖ RÒ 2 (đa số thời
-          gian KHÔNG có gì ở đây — canvas hoàn toàn trống, đúng "không tab ngang"). */}
-      {showNotice && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 12,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 32,
-            maxWidth: 'min(560px, calc(100vw - 32px))',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '6px 8px 6px 12px',
-            borderRadius: 8,
-            border: '1px solid var(--border)',
-            background: 'color-mix(in srgb, var(--panel) 92%, transparent)',
-            backdropFilter: 'blur(14px)',
-            color: 'var(--t2)',
-            fontSize: 11.5,
-          }}
-        >
-          <span>{tr('Còn công cụ khác chưa hiện.', "More tools aren't shown.")}</span>
-          <button
-            type="button"
-            onClick={() => setPanel('library')}
-            style={{
-              flexShrink: 0,
-              padding: '4px 10px',
-              borderRadius: 999,
-              border: '1px solid var(--accent-ring)',
-              background: 'var(--accent-soft)',
-              color: 'var(--accent)',
-              fontSize: 11,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            {tr('Xem tất cả', 'View all')}
-          </button>
-        </div>
-      )}
-      {view === 'form' && selectedCardId && <ToolWindow cardId={selectedCardId} />}
-    </>
-  );
+  // 🔴 DỌN ĐỊA TẦNG (Hoà chốt 04/08): banner "Còn công cụ khác chưa hiện / Xem tất cả" XOÁ HẲN
+  // mọi biến thể — Thư viện khối giờ LUÔN hiện ở Navigator (ổ ②, embedded), không còn gì "chưa
+  // hiện" để nhắc; cảnh báo LỖ RÒ 2 hết đối tượng. Chỉ còn vai trò mount ToolWindow + auto-mở
+  // lại tool khớp mẫu (effect trên).
+  return <>{view === 'form' && selectedCardId && <ToolWindow cardId={selectedCardId} />}</>;
 }

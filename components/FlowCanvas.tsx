@@ -502,7 +502,10 @@ export function FlowCanvas() {
         /* Bán kính bắt kết nối rộng hơn (mặc định 20) → chạm-kéo nối edge dễ
            trúng port trên màn cảm ứng foldable mà không cần ngắm chính xác. */
         connectionRadius={38}
-        fitView
+        /* DỌN ĐỊA TẦNG (Hoà 04/08, bug BAO-CAO-DEM 23:1x mục 3): fitView với 0 node kéo viewport
+           về minZoom (0.15 = "15%" trong ảnh Hoà chê) — canvas trống phải đứng ở 100%. fitView
+           là prop lúc mount: có node thì fit như cũ, trống thì bỏ qua (React Flow mặc định zoom 1). */
+        fitView={nodes.length > 0}
         proOptions={{ hideAttribution: false }}
         defaultEdgeOptions={{ type: 'default' }}
         connectionLineStyle={{ stroke: '#8b7cf7', strokeWidth: 2 }}

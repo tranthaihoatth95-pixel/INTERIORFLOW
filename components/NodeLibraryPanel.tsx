@@ -72,7 +72,19 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
   const tr = useT();
   const [query, setQuery] = useState('');
   const [activeTag, setActiveTag] = useState<NodeTag | typeof ALL_TAG>(ALL_TAG);
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, setCenter } = useReactFlow();
+  // DỌN ĐỊA TẦNG (Hoà 04/08) — nhóm "Trên bảng" đầu panel: node ĐANG có trên canvas, bấm = focus.
+  const canvasNodes = useFlowStore((s) => s.nodes);
+  const focusNode = useCallback(
+    (id: string) => {
+      const n = useFlowStore.getState().nodes.find((x) => x.id === id);
+      if (!n) return;
+      const w = n.measured?.width ?? 256;
+      const h = n.measured?.height ?? 120;
+      void setCenter(n.position.x + w / 2, n.position.y + h / 2, { zoom: 1, duration: 300 });
+    },
+    [setCenter],
+  );
 
   // Vị trí giữa canvas (khớp CommandPalette) — node thêm bằng CLICK rơi vào giữa tầm nhìn.
   const centerPos = useCallback(() => {
@@ -152,7 +164,11 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = NODE_DEFINITIONS.filter((d) => matchesQuery(d, q) && !hiddenByTier(d) && !hiddenBySidebarZone(d));
-    const tagsToShow = activeTag === ALL_TAG ? TAG_ORDER : [activeTag];
+    // DỌN ĐỊA TẦNG (Hoà chốt 04/08): XOÁ cột "Đầu vào" khỏi layout nghỉ — node đầu vào đang dùng
+    // đã thấy ở nhóm "Trên bảng" đầu panel; thêm mới vẫn được qua TÌM KIẾM (gõ là hiện lại nhóm
+    // input — capability không mất) + ⌘K palette (liệt kê đủ NODE_DEFINITIONS, độc lập file này).
+    const restingTags = TAG_ORDER.filter((t) => t !== 'input');
+    const tagsToShow = activeTag === ALL_TAG ? (q ? TAG_ORDER : restingTags) : [activeTag];
     return tagsToShow
       .map((tag) => ({ tag, defs: filtered.filter((d) => tagsFor(d.type).includes(tag)) }))
       .filter((g) => g.defs.length > 0);
@@ -239,7 +255,8 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
           >
             Tất cả
           </button>
-          {TAG_ORDER.map((tag) => (
+          {/* Chip "Đầu vào" bỏ cùng cột (DỌN ĐỊA TẦNG 04/08) — xem comment trong `groups`. */}
+          {TAG_ORDER.filter((t) => t !== 'input').map((tag) => (
             <button
               key={tag}
               onClick={() => setActiveTag(tag)}
@@ -286,6 +303,43 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-2.5 pb-4">
+        {/* DỌN ĐỊA TẦNG (Hoà chốt 04/08, thay cột "Đầu vào" đã xoá) — nhóm "TRÊN BẢNG" đứng ĐẦU:
+            node đang có trên canvas (đầu vào đã thả, node AI đang chạy…), đếm số ở header, bấm 1
+            hàng = focus node đó trên canvas (setCenter React Flow). Ẩn khi đang tìm — cùng luật
+            soft-focus với các nhóm pinned khác. */}
+        {canvasNodes.length > 0 && !query.trim() && (
+          <div>
+            <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t3)]">
+              {tr('Trên bảng', 'On canvas')}
+              <span className="ml-auto font-semibold tabular-nums">{canvasNodes.length}</span>
+            </p>
+            <div className="space-y-1">
+              {canvasNodes.map((n) => {
+                const defType = n.data?.defType as string | undefined;
+                const def = defType ? NODE_REGISTRY[defType] : undefined;
+                const label = def?.title ?? (n.type === 'note' ? tr('Ghi chú', 'Note') : (defType ?? n.type ?? ''));
+                return (
+                  <button
+                    key={n.id}
+                    type="button"
+                    onClick={() => focusNode(n.id)}
+                    title={tr('Bấm để nhìn tới khối này trên bảng', 'Click to focus this block on the canvas')}
+                    className="flex w-full items-center gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5 text-left transition-colors hover:border-[var(--accent-ring)]"
+                  >
+                    {(() => {
+                      if (!defType) return <StickyNote size={13} className="shrink-0 text-[var(--t3)]" />;
+                      const Icon = nodeIconFor(defType);
+                      return <Icon size={13} className="shrink-0 text-[var(--t3)]" />;
+                    })()}
+                    <span className="min-w-0 flex-1 truncate text-[11.5px] font-medium text-[var(--t1)]">{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-3 border-t border-[var(--border)]" />
+          </div>
+        )}
+
         {/* H2 (docs/SPEC-MODE-PER-STAGE.md §2) — vùng ① Mood + Collab: moodboard cộng tác kiểu
             Miro (ai.moodboard, reference/gu, note). Chỉ hiện chặng Render, không tìm kiếm (soft
             focus, giống khối ★ bên dưới — ẩn khi đang gõ tìm để đỡ rối). */}
