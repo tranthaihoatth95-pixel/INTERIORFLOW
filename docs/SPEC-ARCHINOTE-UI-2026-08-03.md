@@ -18,7 +18,7 @@
 ## §2 · MÀU — hai app hai nhiệt độ
 | | InteriorFlow | ArchiNote |
 |---|---|---|
-| Chủ đạo | tím lạnh `#6a57f5` | **kem + vàng ấm** |
+| Chủ đạo | tím lạnh `#6a57f5` | **KEM là nền và thân — vàng CHỈ điểm nhấn** |
 | Nền mặc định | tối | **sáng** (cảm giác giấy) |
 | Vai của tím | nhân vật chính | **nhấn rất nhẹ** — chấm trạng thái, icon nhỏ, viền mảnh; không nền lớn |
 
@@ -28,6 +28,14 @@
 3. Chữ trên nền vàng = mực đậm, KHÔNG phải trắng.
 4. Trạng thái phân biệt bằng **sáng-tối trước**, màu là lớp phụ (người mù màu vẫn dùng được).
 5. Ngoài nắng: nền kem đậm hơn một bậc, mực đen hơn, chữ to hơn app máy tính một bậc.
+
+**⚠️ SỬA 03/08 (Hoà: "vàng giấy quá"): TỈ LỆ MÀU KIỂU APPLE.**
+Không phải "kem + vàng" ngang nhau. Đúng là: **kem/trắng ngà chiếm ~90% mặt phẳng · sắc độ xám ấm lo toàn bộ phân cấp · vàng ≤5% diện tích · tím ≤1%**.
+- Vàng CHỈ xuất hiện ở: nút chính đang mời bấm · vạch mảnh của mục đang chọn · chấm trạng thái · dải tiến độ. Hết.
+- **Không** nền vàng cho khối lớn, **không** thẻ vàng, **không** tiêu đề vàng, **không** đường kẻ vàng chạy dài.
+- Phân cấp bằng **sắc độ + khoảng trắng + cỡ chữ** trước; màu là thứ cuối cùng mới dùng.
+- Phép thử: chụp màn hình rồi khử màu — nếu vẫn đọc được thứ tự quan trọng thì đạt. Nếu mất màu là loạn thì đang dựa vào màu quá nhiều.
+- Nhiều khoảng trống hơn mình tưởng là đúng; chật chội mới là sai.
 
 **Màu chuyển & kính:** chỉ chuyển trong CÙNG sắc (kem→vàng nhạt), nhẹ tới mức gần như không nhận ra — cảm giác giấy có ánh sáng chiếu, không phải nền gradient. Kính chỉ cho lớp NỔI, cấm kính lồng kính.
 
