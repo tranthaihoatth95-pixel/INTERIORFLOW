@@ -180,8 +180,13 @@ export function LoginForm({
   return (
     <motion.form
       onSubmit={submit}
-      initial={{ opacity: 0, y: reduce ? 0 : 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      // Kính lỏng nháy đục lúc vào màn (SO-KIEM-TONG §1) — KHÔNG được animate opacity trên
+      // `.lq-card` (mang backdrop-filter): opacity<1 tự tạo backdrop root cô lập (spec
+      // filter-effects-2), mất nền thật trong lúc fade rồi đục ập vào khi opacity chạm 1.
+      // Chỉ còn dịch chuyển y (transform, không tạo backdrop root) — card đục đúng ngay từ
+      // khung hình đầu, không có giai đoạn trong-rồi-đục. Cùng nguyên tắc K1/K2 (P6c).
+      initial={{ y: reduce ? 0 : 10 }}
+      animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: easeApple, delay: 0.12 }}
       style={{
         ['--fc' as string]: 'var(--accent-ring)',

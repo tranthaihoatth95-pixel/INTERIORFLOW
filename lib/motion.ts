@@ -221,6 +221,21 @@ export const rise = (amplitude: number, delay = 0, blur = false): Variants => ({
   },
 });
 
+/**
+ * Biến thể KHÔNG fade của `rise()` — dùng khi phần tử này bọc (là TỔ TIÊN của) một phần tử có
+ * `backdrop-filter`. Opacity < 1 ở BẤT KỲ tổ tiên nào tự tạo "backdrop root" cô lập (spec
+ * filter-effects-2), khiến backdrop-filter bên trong mất nền thật trong lúc fade rồi "đục ập
+ * vào" khi opacity chạm 1 — đúng cơ chế đã xác nhận ở P6c K1/K2 (`docs/BAO-CAO-PHU.md`: "opacity
+ * ở tổ tiên tạo backdrop root cô lập... self-opacity thì không") và lặp lại ở màn đăng nhập
+ * (`SO-KIEM-TONG.md` §1). CHỈ còn dịch chuyển `y` (transform, không tạo backdrop root) — không
+ * opacity, không blur-in. Component có backdrop-filter tự fade thì fade Ở CHÍNH NÓ (self-opacity
+ * an toàn), KHÔNG ở đây.
+ */
+export const riseNoFade = (amplitude: number, delay = 0): Variants => ({
+  hidden: { y: amplitude },
+  visible: { y: 0, transition: { duration: 0.55 + amplitude / 90, ease: easeApple, delay } },
+});
+
 /** True nếu user bật Reduce Motion (SSR-safe). Bọc quanh animation nặng để tôn trọng. */
 export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined' || !window.matchMedia) return false;

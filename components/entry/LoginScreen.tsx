@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { rise } from '@/lib/motion';
+import { rise, riseNoFade } from '@/lib/motion';
 import {
   AdaptiveScrim,
   adaptiveTextStyle,
@@ -146,8 +146,12 @@ export function LoginScreen({ onAuthed, notice }: { onAuthed: () => void; notice
             </motion.p>
           )}
 
-          {/* form kính (C-1) — element vừa, biên độ vừa */}
-          <motion.div variants={rise(amp(18), 0.14)} className="flex w-full justify-center text-left">
+          {/* form kính (C-1) — element vừa, biên độ vừa.
+              SO-KIEM-TONG §1: wrapper này là TỔ TIÊN của `.lq-card` (backdrop-filter trong
+              LoginForm.tsx) — dùng `riseNoFade` (không opacity) thay `rise()`, tránh chính
+              wrapper này tạo backdrop root cô lập làm kính đục lúc mount (cơ chế K1/K2 P6c).
+              `.lq-card` tự lo phần dịch chuyển y của riêng nó, ở đây chỉ còn khoảng thở layout. */}
+          <motion.div variants={riseNoFade(amp(18), 0.14)} className="flex w-full justify-center text-left">
             <LoginForm onAuthed={onAuthed} reduce={!!reduce} lang={lang} cardPlan={cardPlan} cardTint={cardTint} />
           </motion.div>
         </motion.div>
