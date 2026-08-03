@@ -1,0 +1,158 @@
+<!-- @dsCard group="InteriorFlow" -->
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InteriorFlow · Design System Seed — nguồn sự thật cho Claude Design</title>
+<style>
+/* ═══ TOKEN THẬT của app (chép từ app/globals.css — KHÔNG đổi số) ═══ */
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --radius-sm:10px; --radius-md:14px; --radius-lg:20px; --radius-xl:28px; /* bo đồng tâm: trong = ngoài − đệm */
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --blur:22px; --blur-strong:40px;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --tap:32px; --row:28px; --gap:8px; /* desktop; cảm ứng: 44/44/12 qua (hover:none) and (pointer:coarse) */
+}
+:root,[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --mat-panel:rgba(20,20,23,.68); --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65); --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --mat-panel:rgba(250,248,244,.7); --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22); --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);padding:36px;
+  font:var(--fw-normal) var(--fs-sm)/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased}
+h1{font-size:var(--fs-xl);letter-spacing:-.02em;margin:0 0 4px}
+.sub{color:var(--t3);margin-bottom:28px;font-size:var(--fs-xs)}
+h2{font-size:var(--fs-2xs);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin:30px 0 12px}
+.grid{display:grid;gap:10px}
+.themebtn{position:fixed;top:18px;right:18px;height:30px;padding:0 12px;border:1px solid var(--border);
+  background:var(--panel);color:var(--t2);border-radius:var(--radius-sm);font-size:var(--fs-2xs);cursor:pointer}
+
+/* thẻ màu */
+.sw{display:flex;flex-direction:column;gap:6px}
+.sw i{height:52px;border-radius:var(--radius-sm);border:1px solid var(--mat-hairline)}
+.sw b{font-size:var(--fs-2xs);font-weight:var(--fw-semi)}
+.sw span{font-size:10px;color:var(--t4);font-family:ui-monospace,Menlo,monospace}
+
+/* LUẬT — Claude Design phải đọc các câu này như quy tắc sinh UI */
+.rules{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px}
+.rules li{margin:7px 0;color:var(--t2);font-size:var(--fs-xs)}
+.rules b{color:var(--t1)}
+
+/* mẫu component */
+.btn{height:var(--tap);padding:0 16px;border-radius:var(--radius-sm);border:0;font:var(--fw-semi) var(--fs-xs) inherit;cursor:pointer;
+  transition:background var(--dur-fast) var(--ease-apple)}
+.btn.primary{background:var(--accent);color:#fff}.btn.primary:hover{background:var(--accent-strong)}
+.btn.ghost{background:var(--field);color:var(--t1);border:1px solid var(--border)}.btn.ghost:hover{background:var(--hover)}
+.iconbtn{width:var(--tap);height:var(--tap);border-radius:var(--radius-sm);border:0;background:transparent;color:var(--t3);cursor:pointer}
+.iconbtn:hover{background:var(--hover);color:var(--t1)}
+.seg{display:inline-flex;background:var(--field);border-radius:var(--radius-sm);padding:2px}
+.seg button{border:0;background:transparent;color:var(--t3);font-size:var(--fs-xs);padding:5px 14px;border-radius:8px;cursor:pointer}
+.seg .on{background:var(--panel);color:var(--t1);font-weight:var(--fw-semi);box-shadow:var(--shadow-node)}
+.fld{height:28px;background:var(--field);border:1px solid transparent;border-radius:var(--radius-sm);padding:0 9px;
+  display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-xs)}
+.fld:focus-within{border-color:var(--accent)}
+.fld .k{color:var(--t4);font-size:var(--fs-2xs);font-weight:var(--fw-semi)}
+.fld .v{font-family:ui-monospace,Menlo,monospace;color:var(--t1)}
+.chip{display:inline-flex;align-items:center;height:24px;padding:0 11px;border-radius:20px;background:var(--field);
+  color:var(--t3);font-size:var(--fs-2xs)}
+.chip.on{background:var(--accent);color:#fff;font-weight:var(--fw-semi)}
+.badge{display:inline-flex;height:15px;padding:0 5px;border-radius:5px;background:var(--mat-card);color:var(--t3);
+  font-size:9px;font-weight:700;align-items:center;letter-spacing:.03em}
+.glass{background:var(--mat-panel);backdrop-filter:saturate(180%) blur(var(--blur));-webkit-backdrop-filter:saturate(180%) blur(var(--blur));
+  border:1px solid var(--mat-hairline);border-radius:var(--radius-md);box-shadow:var(--shadow-pop)}
+.dock{display:inline-flex;gap:1px;padding:4px}
+.ndcard{width:190px;border-radius:var(--radius-md);background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow-node);overflow:hidden}
+.ndcard .h{height:26px;display:flex;align-items:center;gap:6px;padding:0 9px;border-bottom:1px solid var(--mat-hairline);
+  font-size:var(--fs-2xs);font-weight:var(--fw-semi);color:var(--t2)}
+.ndcard .h i{width:7px;height:7px;border-radius:2px;background:var(--success)}
+.ndcard .body{padding:9px;font-size:var(--fs-2xs);color:var(--t4)}
+.lay{height:var(--row);display:flex;align-items:center;gap:var(--gap);padding:0 10px;border-left:2px solid transparent;font-size:var(--fs-xs)}
+.lay:hover{background:var(--hover)}
+.lay.on{background:var(--accent-soft);border-left-color:var(--accent);color:var(--accent);font-weight:var(--fw-semi)}
+.lay .dot{width:10px;height:10px;border-radius:3px;background:#c79a63}
+
+/* mini AppShell — hình học 6 ổ */
+.shell{display:grid;grid-template-rows:26px 1fr 16px;grid-template-columns:120px 1fr 130px;height:190px;
+  border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;font-size:9px;color:var(--t4)}
+.shell>div{display:flex;align-items:center;justify-content:center;border:0 solid var(--border)}
+.s-top{grid-column:1/4;background:var(--panel);border-bottom-width:1px}
+.s-nav{background:var(--panel);border-right-width:1px}
+.s-stage{background:var(--bg);position:relative}
+.s-insp{background:var(--panel);border-left-width:1px}
+.s-foot{grid-column:1/4;background:var(--panel);border-top-width:1px}
+.s-dock{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);padding:3px 10px;border-radius:9px;font-size:8px}
+</style>
+</head>
+<body>
+<button class="themebtn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='light'?'dark':'light'">Đổi Sáng/Tối</button>
+
+<h1>InteriorFlow — Design System</h1>
+<div class="sub">Nguồn sự thật cho MỌI UI sinh ra. App desktop cho studio nội thất: 3 chặng Vẽ → Dựng ảnh → Trình bày. Tối là theme mặc định.</div>
+
+<h2>Luật bất biến (đọc như quy tắc sinh, không phải gợi ý)</h2>
+<ol class="rules">
+  <li><b>Khung 6 ổ cố định:</b> Header 42px · Navigator trái 214px (Render: 280px) · Stage · Inspector phải 236px (chỉ hiện khi có chọn) · Toolbelt = dock kính nổi giữa-dưới canvas · Status bar 26px. Vị trí ổ không bao giờ đổi giữa các chặng — chỉ ruột đổi.</li>
+  <li><b>Bo góc đồng tâm Apple:</b> chỉ dùng 10/14/20/28. Bo trong = bo ngoài − đệm (dock bo 14 đệm 4 → nút trong bo 10).</li>
+  <li><b>Chữ:</b> thang 11/12/14/16/20/28, SF Pro/system. Số đo kỹ thuật dùng mono + tabular, cách nghìn bằng khoảng trắng: <b>5 200</b> · <b>24.60 m²</b> · <b>32 287 500 ₫</b>.</li>
+  <li><b>Kính (Liquid Glass):</b> chỉ ở lớp NỔI (dock, sheet, popover) — đọc-được-trước, kính là gia vị. Cấm kính lồng kính. Panel dock sát mép = đặc, không kính.</li>
+  <li><b>Hover:</b> nút icon & hàng danh sách chỉ ĐỔI NỀN 100-120ms, CẤM scale. Thẻ nội dung: lift −2px + scale 1.02, 200ms. Swatch nhỏ đơn lẻ: scale 1.04. Vào chậm ra nhanh. Chọn = viền trái accent 2px (hàng) hoặc viền + halo (thẻ).</li>
+  <li><b>Motion:</b> ease cubic-bezier(.32,.72,0,1) · nhanh .18s · nền .32s. Popover vào bằng ramp (.96→1.008→1). Tôn trọng prefers-reduced-motion.</li>
+  <li><b>Một accent duy nhất #6a57f5.</b> Trạng thái nói bằng màu nền dịu (#46b876/#d9a34a/#e5674f), không icon chói. CẤM hex ngoài bảng token, CẤM màu thương hiệu khách (#F06020/#002850/#1B1512).</li>
+  <li><b>Ngôn ngữ UI:</b> tiếng Việt tự nhiên, ≤12 từ, luôn kèm NÚT hành động. Cấm jargon nội bộ (node → "khối", flow → "bảng làm việc"). Không nói chuyện dev với người dùng.</li>
+  <li><b>Ba mảng bắt buộc mọi màn:</b> phím tắt hiện trong tooltip · lệnh gõ được ở status bar · đường cảm ứng thay thế cho mọi hover (nút 44px khi pointer:coarse).</li>
+</ol>
+
+<h2>Màu — Tối (mặc định) & Sáng (bấm nút đổi)</h2>
+<div class="grid" style="grid-template-columns:repeat(6,1fr)">
+  <div class="sw"><i style="background:var(--bg)"></i><b>bg</b><span>#0c0c0e · #f2efe9</span></div>
+  <div class="sw"><i style="background:var(--panel)"></i><b>panel</b><span>#141417 · #faf8f4</span></div>
+  <div class="sw"><i style="background:var(--card)"></i><b>card</b><span>#1a1a1e · #ffffff</span></div>
+  <div class="sw"><i style="background:var(--field)"></i><b>field</b><span>#202024 · #f4f1eb</span></div>
+  <div class="sw"><i style="background:var(--accent)"></i><b>accent</b><span>#6a57f5</span></div>
+  <div class="sw"><i style="background:linear-gradient(90deg,var(--success),var(--warning),var(--danger))"></i><b>trạng thái</b><span>46b876 · d9a34a · e5674f</span></div>
+</div>
+
+<h2>Khung 6 ổ — hình học AppShell</h2>
+<div class="shell">
+  <div class="s-top">Header 42 — logo · tên dự án · segmented 3 chặng · 2 nút</div>
+  <div class="s-nav">Navigator 214<br>(danh sách/section)</div>
+  <div class="s-stage">Stage<div class="s-dock glass">dock kính</div></div>
+  <div class="s-insp">Inspector 236<br>(chỉ khi có chọn)</div>
+  <div class="s-foot">Status 26 — gõ lệnh · tỉ lệ · Vitals · đã lưu</div>
+</div>
+
+<h2>Component mẫu</h2>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+  <button class="btn primary">Đưa lên kệ</button>
+  <button class="btn ghost">Nhân bản</button>
+  <button class="iconbtn" title="Cài đặt — ,">⚙</button>
+  <span class="seg"><button class="on">Vẽ</button><button>Dựng ảnh</button><button>Trình bày</button></span>
+  <span class="fld"><span class="k">R</span><span class="v">5 200</span></span>
+  <span class="chip on">Tất cả</span><span class="chip">Studio</span>
+  <span class="badge">CHẶNG</span>
+</div>
+<div style="display:flex;gap:14px;margin-top:14px;flex-wrap:wrap;align-items:flex-start">
+  <div class="ndcard"><div class="h"><i></i>Dựng ảnh AI</div><div class="body">Bắc Âu ấm · 4 ảnh · 8cr</div></div>
+  <div style="width:214px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-md);padding:4px 0">
+    <div class="lay on"><span class="dot" style="background:#f5f5f7"></span>Tường</div>
+    <div class="lay"><span class="dot"></span>Đồ rời</div>
+    <div class="lay"><span class="dot" style="background:#46b876"></span>Đồ cố định</div>
+  </div>
+  <div class="glass dock"><button class="iconbtn">▮</button><button class="iconbtn" style="background:var(--accent);color:#fff">✏</button><button class="iconbtn">▭</button><button class="iconbtn">⋯</button></div>
+</div>
+</body>
+</html>

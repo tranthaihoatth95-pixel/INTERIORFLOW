@@ -64,3 +64,6 @@ Kết nối thư mục ~/Downloads/interiorflow, đọc docs/HAM-DOI-COWORK.md v
 
 ---
 *COWORK-TỔNG lập 03/08/2026. Sửa hiến chương phải qua Hoà + TỔNG.*
+
+## PHỤ LỤC 03/08 — COWORK-UI đổi xưởng (Hoà chốt)
+Claude Design (Anthropic Labs, Beta) = xưởng dựng mock chính. Quy trình: phiếu mock → soạn PROMPT (đính kèm `docs/IF-design-system-seed.html`, chọn design system "InteriorFlow") → xuất standalone HTML → `docs/mocks/` → audit A4 (token · 2 theme · mật độ · PLACEHOLDER cho vùng tạm) → code port L2 như cũ. Viết HTML tay chỉ khi cần port chi tiết hoặc app trượt nghiệm thu 2 vòng.
