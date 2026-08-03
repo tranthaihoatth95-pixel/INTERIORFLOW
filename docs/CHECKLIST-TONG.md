@@ -147,3 +147,21 @@ Mỗi ca audit TỔNG chọn ≥1 gói, grep code đối chiếu TỪNG luật c
 | R1 — refund tự nạp credit vô hạn | `credits/route.ts:30-34` §5.1 | ✅ | ✅ `lib/server/credits.test.ts` 12/12 | Tách logic sang `refundCreditsForJobRef()` (đối chiếu jobRef+trần theo số đã trừ+1 lần/jobRef) — route chỉ gọi hàm |
 | R2 — `/api/jobs` không kiểm/trừ credit | `jobs/route.ts:7-55` §5.2 | ✅ | ✅ `tiers.test.ts` 20/20 + `credits.test.ts` 14/14 + curl thật (402 + spend/refund) | `spendCredits`/`refundCredits` mẫu `render/premium`; bỏ trừ trùng ở `execution.ts` (double-charge); bảng giá `TASK_CREDIT_COST` — 3 task (`removeBg`/`materialSwap`/`segment`) từng MIỄN PHÍ khi gọi nội bộ (idmask/localedit/smartselect) nay tính phí luôn — **cần Hoà chốt**, xem `lib/ai/tiers.ts` |
 | R3 — upload không whitelist MIME → XSS lưu trữ | `library/route.ts:63-73`+`library/[id]/file/route.ts:16` §6.2 | ✅ | ✅ `mime-sniff.test.ts` 22/22 + curl thật (HTML giả PNG/PDF bị chặn cả 2 route) | Whitelist đọc MAGIC BYTES (`lib/server/mime-sniff.ts`, mới) — áp cho `library` (chỉ ảnh) VÀ `notebook` (ảnh+PDF, PDF vẫn `inline` vì browser sandbox riêng, khác HTML/SVG) |
+
+## 10 · MÀN CLAUDE DESIGN 03/08 — MOCK vs CODE THẬT (TỔNG kiểm 08:5x, đo bằng lệnh)
+**Cách đọc:** "code thật" = đã có `page.tsx`/component chạy được trong app. Mock KHÔNG phải để dựng mới — là để **NÂNG CẤP** cái đang có (§0d cấm đập).
+| Màn | Mock (byte) | Code thật | Đã port? | Việc |
+|---|---|---|---|---|
+| **Tệp** | 80 471 ✅ sạch nhất (649 `var(--)`, khung 6 ổ đủ 4 trạng thái) | `app/files/page.tsx` 39d | ⬜ | 🟡 nâng cấp — mock DÙNG ĐƯỢC |
+| **Bảng nút** | 54 766 ✅ (465 `var(--)`) | `components/FlowCanvas.tsx` | ⬜ | 🟡 nâng cấp — mock DÙNG ĐƯỢC |
+| **Thư viện** | 56 624 ⚠️ cụt đuôi d543 + thiếu `<script>`, 51 hex ngoài `:root` | `app/library/page.tsx` 33d | ⬜ | 🔴 sửa mock trước · **+ gói MỘT-THƯ-VIỆN chặng 3D (Hoà chê "3 thư viện vô duyên")** |
+| **Nút tổng** | 60 488 ⚠️ G2 nặng nhất, 19 lần hardcode 44px, thiếu khung 6 ổ | ❌ **CHƯA CÓ CODE** | ⬜ | 🔴 màn DUY NHẤT phải dựng MỚI |
+| **Dự án** | 572 🔴 **EXPORT HỎNG** (đứt giữa `--t3:#9e`) | `app/projects/[id]/` | ⬜ | 🔴 Claude Design dựng lại |
+| **Cài đặt** | 904 🔴 **EXPORT HỎNG** | `app/settings/page.tsx` 39d | ⬜ | 🔴 dựng lại |
+| **Ảnh đại diện** | 3 383 🔴 **EXPORT HỎNG** (rỗng ruột) | `app/settings/avatar/page.tsx` 89d | ⬜ | 🔴 dựng lại |
+| **Vitals v2** | 50 707 ✅ | `VitalsGesture.tsx` 381d — popover ĐÃ vá `a065f9f` | 🟡 một phần | 🔴 `VitalsIcon.tsx` **còn 3 hit `#F06020/#002850`** = chỗ DUY NHẤT trong app phá luật màu · 4 trạng thái chưa có |
+| 2D Kỹ thuật | 78 534 ✅ | — | ✅ `bc2654c` | Lớp hoàn thiện · Bắt điểm · Chọn hết cùng loại |
+| 3D Thiết kế | 72 679 ⚠️ 4 nhãn chặng cũ | — | ⬜ | G4 đang nhận |
+| Trình bày | 67 760 ✅ | — | ✅ BOQ `4991340` | live-link + SUM() sống |
+**🔴 CHẶN CHUNG:** `docs/mocks/support.js` **KHÔNG TỒN TẠI** nhưng **16 mock gọi** → nút đổi theme chết, 131 hover chết. Mọi mock export Claude Design mới verify 2 theme ở mức khai báo CSS, **chưa ai thấy theme sáng chạy thật**.
+**🟡 BẪY PORT:** mock tự sửa token dùng chung (`--mat-card` .82→.62 · `--mat-panel` .68→.78 · `--row` 28→44) · 162 chỗ `font:` rút gọn thiếu `/line-height` → cắt dấu tiếng Việt · 33 lớp nổi <92% nền đặc · 48 hex cứng trùng token.
