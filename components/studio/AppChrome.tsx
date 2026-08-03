@@ -40,10 +40,12 @@ import { useStageTransition } from '@/components/studio/StageTransitionProvider'
 import { stageHrefFrom } from '@/lib/project-scope';
 import { useT } from '@/lib/i18n';
 import { IFLogo } from '@/components/entry/IFLogo';
-import { requestGallery } from '@/lib/resume';
+import { goHomeConfirmed } from '@/lib/resume';
 import SessionWatch from '@/components/studio/SessionWatch';
 import ShortcutsPanel from '@/components/ShortcutsPanel';
 import { AppLogoMenu } from '@/components/studio/AppLogoMenu';
+import { HomeButton } from '@/components/studio/HomeButton';
+import { LeaveConfirmBar } from '@/components/studio/LeaveConfirmBar';
 import { useDismissable } from '@/lib/useDismissable';
 import { activeToPhase, pickStage } from '@/lib/studio/stage-nav';
 import type { AppChromeActive } from '@/components/studio/AppChromeTypes';
@@ -160,6 +162,11 @@ export function AppChrome({ active, logoMenu }: Props) {
       className={`mat-header relative z-30 flex items-center gap-2 border-b border-[var(--border)] px-2 sm:gap-3 sm:px-3 ${logoMenu ? 'h-[42px]' : 'h-12'}`}
       style={{ borderBottomColor: `color-mix(in srgb, ${tint} 55%, var(--border))` }}
     >
+      {/* VIỆC 1 UI (04/08, docs/SO-KIEM-TONG.md) — khi logo mở AppLogoMenu (không tự về Gallery
+          nữa), "đường về Gallery" mất lối: 4 mục trong menu chỉ mở panel đè lên, không mục nào
+          rời chặng. HomeButton (đã có sẵn, trước KHÔNG nơi nào mount) đứng BÊN TRÁI logo bù lại
+          đúng 1 lối đi thẳng — không viết nút mới. */}
+      {logoMenu && <HomeButton compact />}
       <button
         ref={logoRef}
         type="button"
@@ -168,8 +175,7 @@ export function AppChrome({ active, logoMenu }: Props) {
             setLogoMenuOpen((o) => !o);
             return;
           }
-          requestGallery();
-          if (active !== 'render') router.push('/');
+          goHomeConfirmed(router, { push: active !== 'render' });
         }}
         title={logoMenu ? tr('Tổng quan · Dự án · Files · Thư viện', 'Overview · Projects · Files · Library') : 'Về Gallery — InteriorFlow'}
         aria-expanded={logoMenu ? logoMenuOpen : undefined}
@@ -249,8 +255,11 @@ export function AppChrome({ active, logoMenu }: Props) {
           (sm:hidden trước đây, nay lg:hidden) đã có sẵn Tasks+Home+account+actions trong bottom
           sheet — chỉ cần đẩy cùng mốc, không viết UI mới. */}
       {/* 03/08 SPEC-APP-SHELL-CHUNG §2 — CẮT khỏi header: "Việc ▾" → RenderDocBar (toolbar
-          chặng render) · nút ⌂ Home (TRÙNG logo góc trái, cùng về Gallery) · avatar UserChip
-          (avatar duy nhất ở RAIL, mở AccountMenu — CHOT-AVATAR-MEMOJI §2). */}
+          chặng render) · avatar UserChip (avatar duy nhất ở RAIL, mở AccountMenu —
+          CHOT-AVATAR-MEMOJI §2). Nút ⌂ Home từng cắt vì "TRÙNG logo góc trái" — ĐÚNG khi logo tự
+          về Gallery (`logoMenu` false), nhưng SAI khi logo mở `AppLogoMenu` thay vào đó
+          (`logoMenu` true): logo không còn dẫn về Gallery nữa, `HomeButton` phía trên bù lại
+          đúng lối đó, KHÔNG còn trùng (VIỆC 1 UI, 04/08). */}
 
       {/* SessionWatch — universal (30/07, sửa lỗi: trước chỉ StudioBar có, route `/` không báo
           hết phiên giữa chừng). Dải báo fixed đáy màn, không chặn thao tác. */}
@@ -259,6 +268,7 @@ export function AppChrome({ active, logoMenu }: Props) {
       <MobileMenu active={active} />
 
       <ShortcutsPanel open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} active={active} />
+      <LeaveConfirmBar />
     </header>
   );
 }

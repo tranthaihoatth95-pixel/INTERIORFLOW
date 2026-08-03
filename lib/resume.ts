@@ -12,7 +12,9 @@
  * Ghi khi auth thành công; chỉ là id định danh cục bộ, không phải dữ liệu nhạy cảm.
  */
 
+import { create } from 'zustand';
 import { isPhase, type Phase } from './phases';
+import { useSaveStatus } from './save-status';
 
 const RESUME_PREFIX = 'interiorflow.resume.';
 const TOUR_PREFIX = 'interiorflow.tourDone.';
@@ -291,4 +293,53 @@ export function consumeForceGallery(): boolean {
   } catch {
     return false;
   }
+}
+
+/* ---------- Xác nhận rời trang khi có thay đổi CHƯA LƯU (VIỆC 1 UI, 04/08) ----------
+ * `goHomeConfirmed()` là CỬA DUY NHẤT rời chặng về Gallery — `HomeButton.tsx` và mục "Về Thư
+ * viện dự án" (`AppLogoMenu.tsx`) đều gọi hàm này, không tự viết `router.push('/')` riêng.
+ *
+ * Tín hiệu "chưa lưu" bám ĐÚNG `useSaveStatus` sẵn có (autosaver CAD/Present, `status==='saving'`
+ * = còn thay đổi đang chờ debounce ghi) — KHÔNG dựng cơ chế theo dõi dirty mới. Render (flow
+ * graph) chưa có autosave debounce tương đương nên `status` không bao giờ là 'saving' ở đó — đi
+ * thẳng, không hỏi (đúng hiện trạng StatusBar, không bịa trạng thái cho chặng chưa có).
+ *
+ * Không dùng `window.confirm` (chặn thread JS, treo webview nhúng — cùng lý do CadEditor.tsx đã
+ * bỏ, xem `ConfirmBar` ở đó) — `useLeaveConfirm` là store xếp hàng 1 hành động đang chờ, UI hỏi
+ * thật nằm ở `components/studio/LeaveConfirmBar.tsx` (portal, mount 1 lần trong `AppChrome`).
+ */
+interface LeaveConfirmState {
+  /** hành động đang chờ xác nhận (điều hướng thật) — null = không có hộp hỏi nào đang mở. */
+  pending: (() => void) | null;
+  ask: (action: () => void) => void;
+  confirm: () => void;
+  cancel: () => void;
+}
+
+export const useLeaveConfirm = create<LeaveConfirmState>((set, get) => ({
+  pending: null,
+  ask: (action) => set({ pending: action }),
+  confirm: () => {
+    const { pending } = get();
+    set({ pending: null });
+    pending?.();
+  },
+  cancel: () => set({ pending: null }),
+}));
+
+/**
+ * Về Gallery — hỏi trước nếu có thay đổi chưa lưu, KHÔNG lặng lẽ rời trang.
+ * `push:false` (chỉ AppChrome dùng, route '/' bấm logo khi ĐANG Ở '/' — HomeScreen tự lắng
+ * `GO_HOME_EVENT` đổi view tại chỗ, `router.push('/')` sẽ là điều hướng thừa/no-op).
+ */
+export function goHomeConfirmed(router: { push: (href: string) => void }, opts?: { push?: boolean }): void {
+  const navigate = () => {
+    requestGallery();
+    if (opts?.push !== false) router.push('/');
+  };
+  if (useSaveStatus.getState().status === 'saving') {
+    useLeaveConfirm.getState().ask(navigate);
+    return;
+  }
+  navigate();
 }

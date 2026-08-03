@@ -15,11 +15,12 @@
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { LayoutDashboard, FolderKanban, FolderOpen, Boxes } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, FolderOpen, Boxes, Home } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import { useT } from '@/lib/i18n';
 import { easeApple } from '@/lib/motion';
+import { goHomeConfirmed } from '@/lib/resume';
 import type { RefObject } from 'react';
 
 interface AnchorRect {
@@ -43,6 +44,15 @@ export function AppLogoMenu({ open, anchorRect, onDismiss, menuRef, stage }: Pro
   const setDashboardOpen = useFlowStore((s) => s.setDashboardOpen);
   const router = useRouter();
   const tr = useT();
+
+  // VIỆC 1 UI (04/08) — mục DUY NHẤT trong menu này thật sự RỜI chặng (4 mục còn lại chỉ mở
+  // panel/sheet đè lên, ở nguyên route). Tách riêng khỏi mảng `items` dưới để vẽ có gạch phân
+  // cách — không lẫn với "Thư viện" (asset/vật liệu, item khác, ở lại route).
+  const goHomeItem = {
+    icon: Home,
+    label: tr('Về Thư viện dự án', 'Back to project library'),
+    action: () => goHomeConfirmed(router),
+  };
 
   const items = [
     {
@@ -83,6 +93,18 @@ export function AppLogoMenu({ open, anchorRect, onDismiss, menuRef, stage }: Pro
               className="mat-panel z-[80] w-52 rounded-[14px] border border-[var(--border)] p-1.5 shadow-xl"
             >
               <div ref={menuRef} style={{ display: 'contents' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    goHomeItem.action();
+                    onDismiss();
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-[12.5px] text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+                >
+                  <goHomeItem.icon size={15} strokeWidth={1.75} className="shrink-0 text-[var(--t4)]" />
+                  {goHomeItem.label}
+                </button>
+                <div className="mx-2 my-1 h-px bg-[var(--border)]" />
                 {items.map((it) => (
                   <button
                     key={it.label}
