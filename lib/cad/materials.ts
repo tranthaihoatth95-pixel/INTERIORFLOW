@@ -19,6 +19,7 @@
  */
 
 import type { HatchPattern } from './model';
+import type { MaterialPbr } from '../materials/schema';
 
 export type MaterialCategory = 'Sàn' | 'Tường/Ốp' | 'Sơn';
 
@@ -53,6 +54,14 @@ export interface MaterialDef {
    * nhau, cố ý KHÔNG trộn (2.1.9.i chốt 30/07). undefined = chưa gán/chưa cần BOQ cho preset này.
    */
   atlasRecordId?: string;
+  /**
+   * PBR render-thật — `SPEC-VAT-LIEU-PBR-IF` §1/§4 (03/08, CHỐT). THÊM CỘT, KHÔNG PHÁ CỘT CŨ:
+   * optional, mọi preset trong MATERIALS bên dưới KHÔNG cần sửa gì vẫn hợp lệ (texture CSS
+   * procedural ở trên vẫn là preview 2D mặc định — `pbr` chỉ dùng khi dựng QUẢ CẦU xem trước
+   * render thật ở chặng Vẽ 3D / xuất `export-vray.ts`/`export-d5.ts`, xem `lib/materials/schema.ts`).
+   * Chưa preset nào set trường này — dựng dần khi có bộ tham số PBR đo/chọn thật cho từng preset.
+   */
+  pbr?: MaterialPbr;
 }
 
 export const MATERIALS: MaterialDef[] = [
