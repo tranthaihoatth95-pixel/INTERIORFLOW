@@ -5,7 +5,8 @@
  * Thêm chữ / ảnh / hình, mở template, undo/redo, xuất PDF & PPTX.
  */
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ArrowLeft,
   Type,
@@ -46,6 +47,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import IOMenu from '@/components/ui/IOMenu';
+import { useDismissable } from '@/lib/useDismissable';
 import Tooltip from '@/components/ui/Tooltip';
 import type { EditorSlide, ShapeKind } from '@/lib/present-editor/model';
 import type { AlignMode as GroupAlignMode } from '@/lib/present-editor/align';
@@ -110,6 +112,9 @@ export default function Toolbar(p: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const idfpFileRef = useRef<HTMLInputElement>(null);
   const [libOpen, setLibOpen] = useState(false);
+  // L4 — cụm Sắp xếp gom vào popover (xem chú thích tại nút).
+  const [arrangeOpen, setArrangeOpen] = useState(false);
+  const arrangeBtnRef = useRef<HTMLSpanElement>(null);
 
   // P6b bước 1 — gating cụm "Sắp xếp", CÙNG công thức Inspector.tsx đang dùng (không bịa công
   // thức khác cho 2 chỗ hiện cùng 1 khái niệm) — xem Inspector.tsx dòng ~204-213/425-431.
@@ -270,6 +275,17 @@ export default function Toolbar(p: Props) {
       </IconOnly>
 
       <Divider />
+      {/* L4 (phiếu 03/08): 14 nút căn-lề/thứ-tự/nhóm/khoá/ẩn từng trải ngang làm toolbar tràn
+          xuống HÀNG THỨ HAI và đè cả Inspector. Nay gom vào MỘT nút "Sắp xếp" mở popover —
+          §0d: không bỏ nút nào, mọi lệnh vẫn tới được trong 2 thao tác (mở popover → bấm), và
+          Inspector vẫn giữ nguyên bản sao của cụm này cho ai quen dùng bên phải. */}
+      <span ref={arrangeBtnRef} style={{ display: 'inline-flex' }}>
+        <Btn onClick={() => setArrangeOpen((v) => !v)} active={arrangeOpen} title="Sắp xếp — căn lề · thứ tự lớp · nhóm · khoá · ẩn">
+          <AlignCenterHorizontal size={15} /> Sắp xếp
+        </Btn>
+      </span>
+      {arrangeOpen && (
+        <ArrangePopover anchorRef={arrangeBtnRef} onDismiss={() => setArrangeOpen(false)}>
       {/* P6b bước 1 — cụm "Sắp xếp": căn theo nhau · thứ tự lớp · nhóm/bỏ nhóm · khoá. Logic
        * NGUYÊN VẸN từ PresentEditor.tsx (đã dùng cho Inspector.tsx) — chỉ nối thêm 1 lối gọi. */}
       <IconOnly
@@ -374,6 +390,8 @@ export default function Toolbar(p: Props) {
         {anyVisible ? <EyeOff size={15} /> : <Eye size={15} />}
       </IconOnly>
 
+      </ArrangePopover>
+      )}
       <Divider />
       <Btn onClick={p.onToggleTemplates} active={p.templatesOpen} title="Chọn mẫu bố cục">
         <LayoutTemplate size={15} /> Mẫu
@@ -497,6 +515,62 @@ function IconOnly({
         {children}
       </button>
     </Tooltip>
+  );
+}
+
+/**
+ * L4 — bảng "Sắp xếp" nổi dưới nút cùng tên. PORTAL ra `body` theo LUẬT PANEL NỔI (docs/00-CHOT
+ * K4: panel kính lồng trong chrome kính thì `backdrop-filter` của cha chặn blur của con). Đóng
+ * bằng Escape / bấm ra ngoài qua `useDismissable` — cùng họ sự kiện với mọi lớp đóng-mở của app,
+ * không tự chế listener riêng.
+ */
+function ArrangePopover({
+  anchorRef,
+  onDismiss,
+  children,
+}: {
+  anchorRef: React.RefObject<HTMLSpanElement | null>;
+  onDismiss: () => void;
+  children: React.ReactNode;
+}) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+
+  useEffect(() => {
+    const r = anchorRef.current?.getBoundingClientRect();
+    if (!r) return;
+    // ghim mép trái theo nút, tự lùi vào trong nếu sát mép phải màn hình
+    const width = 236;
+    setPos({ left: Math.min(r.left, window.innerWidth - width - 12), top: r.bottom + 6 });
+  }, [anchorRef]);
+
+  useDismissable({ open: true, onDismiss, refs: [panelRef, anchorRef] });
+
+  if (typeof document === 'undefined' || !pos) return null;
+  return createPortal(
+    <div
+      ref={panelRef}
+      role="group"
+      aria-label="Sắp xếp"
+      style={{
+        position: 'fixed',
+        left: pos.left,
+        top: pos.top,
+        zIndex: 80,
+        width: 236,
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 6,
+        padding: 10,
+        borderRadius: 12,
+        border: '1px solid var(--border)',
+        background: 'var(--panel)',
+        boxShadow: 'var(--shadow-lg, 0 12px 32px rgba(0,0,0,.18))',
+      }}
+    >
+      {children}
+    </div>,
+    document.body,
   );
 }
 
