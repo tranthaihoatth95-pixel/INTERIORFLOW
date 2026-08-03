@@ -14,7 +14,7 @@ function ok(label: string, cond: boolean) {
 {
   const source = { layer: 'l-wall-2', color: '#ff0000', lineweight: 2, lineType: 'dashed', specId: 'spec-gach' };
   const target = { id: 'e1', type: 'hatch', points: [{ x: 0, y: 0 }], layer: 'l-floor', specId: undefined };
-  const out = matchPropsOne(source, target as never);
+  const out = matchPropsOne(source, target as StyleFields);
   ok('layer copy đúng', out.layer === 'l-wall-2');
   ok('color copy đúng', (out as StyleFields).color === '#ff0000');
   ok('specId copy đúng', out.specId === 'spec-gach');
@@ -26,7 +26,7 @@ function ok(label: string, cond: boolean) {
 {
   const source = { layer: 'l-a' }; // specId undefined trên nguồn
   const target = { id: 'e2', type: 'hatch', specId: 'spec-cu-can-mat' };
-  const out = matchPropsOne(source, target as never);
+  const out = matchPropsOne(source, target as StyleFields);
   ok('specId đích bị xoá theo nguồn (match thật, không giữ giá trị cũ)', out.specId === undefined);
 }
 
@@ -34,7 +34,7 @@ function ok(label: string, cond: boolean) {
 {
   const source = { layer: 'l-b', color: '#00ff00', specId: 'spec-x' };
   const target = { id: 'e3', type: 'block', layer: 'l-old', color: '#0000ff', specId: 'spec-giu-nguyen' };
-  const out = matchPropsOne(source, target as never, ['layer']);
+  const out = matchPropsOne(source, target as StyleFields, ['layer']);
   ok('chỉ layer đổi', out.layer === 'l-b');
   ok('color GIỮ NGUYÊN (không nằm trong fields hẹp)', out.color === '#0000ff');
   ok('specId GIỮ NGUYÊN (không nằm trong fields hẹp)', out.specId === 'spec-giu-nguyen');
@@ -48,7 +48,7 @@ function ok(label: string, cond: boolean) {
     { id: 'e5', type: 'hatch', layer: 'l-y' },
   ];
   const targetsSnapshot = JSON.stringify(targets);
-  const out = matchProps(source, targets as never);
+  const out = matchProps(source, targets as StyleFields[]);
   ok('cả 2 đích đổi layer', out[0].layer === 'l-c' && out[1].layer === 'l-c');
   ok('mảng targets gốc KHÔNG bị sửa tại chỗ (immutable)', JSON.stringify(targets) === targetsSnapshot);
   ok('trả về ĐỐI TƯỢNG MỚI (khác reference)', out[0] !== targets[0]);
