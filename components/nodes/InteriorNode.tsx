@@ -22,7 +22,10 @@ import CommentPin from '@/components/nodes/CommentPin';
 const PORT_GAP = 26;
 const PORT_TOP = 46;
 
-function ParamField({
+/** Export cho `MacroNodeFace.tsx` (VIỆC "Nút tổng") — mặt nút tổng lộ tham số của NHIỀU node con
+ * khác nhau, tái dùng đúng control này thay vì viết lại slider/select/text riêng (tránh 2 bản
+ * lệch nhau). Hành vi/props giữ nguyên 100% cho InteriorNode. */
+export function ParamField({
   nodeId,
   param,
   value,

@@ -29,6 +29,8 @@ import { ASSET_MIME } from '@/components/LibraryPanel';
 import { CATEGORY_META, type NodeCategory, type NodeDefinition } from '@/lib/types';
 import { PresenceBar } from '@/components/collab/PresenceBar';
 import { GroupOverlay } from '@/components/nodes/GroupOverlay';
+import { MacroSelectionToolbar } from '@/components/nodes/MacroSelectionToolbar';
+import { MacroShelf } from '@/components/nodes/MacroShelf';
 import { DrawLayer } from '@/components/render-studio/DrawLayer';
 import DrawToolbar from '@/components/render-studio/DrawToolbar';
 import { useCollabStore } from '@/lib/collabStore';
@@ -633,6 +635,11 @@ export function FlowCanvas() {
 
       {/* Group overlay — vẽ khung bao quanh nhóm node (tự bọc ViewportPortal bên trong) */}
       <GroupOverlay />
+
+      {/* NÚT TỔNG (docs/mocks/mock-if-nut-tong.html) — pill "Gom thành nút tổng" khi chọn ≥2 node
+          + kệ "Nút tổng của tôi" (chỉ hiện khi flow đã có ≥1 nút tổng). */}
+      <MacroSelectionToolbar />
+      <MacroShelf />
 
       {/* G2 phần (3) — nét vẽ tay đã lưu + nét đang vẽ dở (flow-space, tự bọc ViewportPortal). */}
       <DrawLayer

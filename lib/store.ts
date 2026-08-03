@@ -209,6 +209,14 @@ interface FlowState {
   renameGroup: (groupId: string, label: string) => void;
   /** Thu gọn / mở rộng group */
   toggleGroupCollapse: (groupId: string) => void;
+  /** NÚT TỔNG — thêm 1 `NodeGroup` đã dựng SẴN (lib/nodes/macro.ts tính `exposedParams`/
+   * `boundaryInputs`/`boundaryOutputs` thuần, hàm này chỉ đẩy vào state — xem lý do tách ở
+   * macro.ts: registry.ts dùng import `@/...` không chạy được trong bộ test độc lập). */
+  addGroup: (group: NodeGroup) => void;
+  /** +1 vào `usageCount` — gọi mỗi lần bấm "Chạy nút tổng". */
+  bumpGroupUsage: (groupId: string) => void;
+  /** Bật/tắt `shared` — nút "Chia sẻ cho studio" trên kệ Nút tổng của tôi. */
+  setGroupShared: (groupId: string, shared: boolean) => void;
   /** G2 phần (1) — tạo "khung phòng" (Miro-style frame): khung TRỐNG vẽ trước, khác `groupSelected`
    * (ép ≥2 node có sẵn). `rect` là toạ độ flow-space cố định của khung. */
   createRoomFrame: (rect: { x: number; y: number; width: number; height: number }, label: string) => void;
@@ -263,6 +271,30 @@ export interface NodeGroup {
    * phép khung TỒN TẠI TRƯỚC khi có node nào bên trong (kéo-vẽ khung trống rồi thả node vào sau,
    * kiểu Miro/Figma frame). Có field này ⇒ đây là "khung phòng", không phải group chọn tay. */
   rect?: { x: number; y: number; width: number; height: number };
+  /** NÚT TỔNG (macro node dùng lại được, `docs/mocks/mock-if-nut-tong.html`) — group thường
+   * (⌘G/`groupSelected`) không có field này, hành vi cũ GIỮ NGUYÊN 100%. `true` ⇒ `GroupOverlay`
+   * đổi cách vẽ: collapsed → mặt nút tổng (`MacroNodeFace`, lộ đúng `exposedParams`, có nút
+   * "Chạy") thay vì badge nhỏ; expanded → khung ĐẶC (không kính, tránh "kính lồng kính") thay vì
+   * khung viền mờ. Node con vẫn là node THẬT trong `nodes[]` — xem `lib/nodes/macro.ts`. */
+  isMacro?: boolean;
+  /** Mô tả ngắn tuỳ chọn (đặt lúc tạo, state ② mock) — hiện làm tooltip trên mặt nút tổng. */
+  description?: string;
+  /** Icon nhận diện — khoá trong `MACRO_ICONS` (`lib/nodes/macro.ts`), không phải chuỗi tự do. */
+  icon?: string;
+  /** Tham số của node con được ĐƯA RA NGOÀI mặt nút tổng — đọc/ghi THẲNG vào node con thật qua
+   * `updateParam()` (không giữ bản sao giá trị ⇒ không lệch, không mất dữ liệu lúc thu/mở). */
+  exposedParams?: { nodeId: string; paramId: string; label: string }[];
+  /** Cổng biên (cạnh nối 1 đầu trong 1 đầu ngoài nhóm lúc TẠO) — chỉ để VẼ chấm cổng trên mặt nút
+   * tổng lúc thu gọn (thông tin, không phải Handle kéo-nối được — muốn nối lại phải mở ra xem
+   * bên trong). Tính 1 lần lúc tạo, không tính lại theo thời gian thực — xem cảnh báo trong báo
+   * cáo phiên về giới hạn này. */
+  boundaryInputs?: { portId: string; childNodeId: string; childHandleId: string; dataType: DataType }[];
+  boundaryOutputs?: { portId: string; childNodeId: string; childHandleId: string; dataType: DataType }[];
+  /** Số lần đã bấm "Chạy nút tổng" — kệ "Nút tổng của tôi" hiện "Đã dùng N lần". */
+  usageCount?: number;
+  /** Đã bấm "Chia sẻ cho studio" — v1: cờ hiển thị tại chỗ, CHƯA có phân phối nhiều người dùng
+   * thật (cần backend riêng, khai thật trong báo cáo — không giả vờ đã chia sẻ thật). */
+  shared?: boolean;
 }
 
 // Dev-only: expose store cho debugging (window.__flowStore)
@@ -1049,6 +1081,30 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         ),
       }));
     }
+  },
+  addGroup: (group) => {
+    get().snapshot();
+    // `group.collapsed` có thể đã `true` ngay lúc tạo (NÚT TỔNG tạo xong là thu gọn luôn, xem
+    // MacroCreateDialog) — phải tự ẩn node con NGAY, không đợi `toggleGroupCollapse` (hàm đó chỉ
+    // xử lý lúc BẤM ĐỔI trạng thái, không chạy khi group vừa được thêm mới ở trạng thái collapsed
+    // sẵn). Thiếu bước này thì node con vẫn hiện dù group ghi `collapsed:true` — đã bắt được lúc
+    // verify browser thật.
+    set((s) => ({
+      groups: [...s.groups, group],
+      nodes: group.collapsed
+        ? s.nodes.map((n) => (group.nodeIds.includes(n.id) ? { ...n, hidden: true } : n))
+        : s.nodes,
+    }));
+  },
+  bumpGroupUsage: (groupId) => {
+    set((s) => ({
+      groups: s.groups.map((g) => (g.id === groupId ? { ...g, usageCount: (g.usageCount ?? 0) + 1 } : g)),
+    }));
+  },
+  setGroupShared: (groupId, shared) => {
+    set((s) => ({
+      groups: s.groups.map((g) => (g.id === groupId ? { ...g, shared } : g)),
+    }));
   },
 
   // G2 phần (1) — khung phòng (rect-based group, xem NodeGroup.rect).

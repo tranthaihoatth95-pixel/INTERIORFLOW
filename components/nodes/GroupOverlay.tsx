@@ -10,16 +10,79 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, X, Box, CircleDot, Layers as LayersIcon, Sparkle, Grid3x3, Minimize2 } from 'lucide-react';
 import { ViewportPortal } from '@xyflow/react';
 import { useFlowStore, type NodeGroup } from '@/lib/store';
+import { MacroNodeFace } from '@/components/nodes/MacroNodeFace';
+import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+
+const MACRO_ICON_MAP: Record<string, typeof Box> = { box: Box, sun: CircleDot, layers: LayersIcon, sparkle: Sparkle, grid: Grid3x3 };
 
 const PAD = 24;
 const LABEL_H = 28;
 /** G2 phần (1) — gợi ý tên phòng cho khung phòng (SPEC-CHANG2-UI-2MODE §3 "gom mood theo phòng
  * khách/bếp/master") — datalist trên input đổi tên CÓ SẴN, không viết popover chọn riêng. */
 const ROOM_NAME_PRESETS = ['Phòng khách', 'Bếp', 'Phòng ngủ', 'Phòng tắm', 'Phòng làm việc', 'Sân vườn', 'Ban công'];
+
+/** NÚT TỔNG mở ra xem bên trong (state ④ `mock-if-nut-tong.html`) — nền ĐẶC `var(--panel)`
+ * (KHÔNG `mat-*`/backdrop-filter: mock ghi rõ "để không có kính lồng kính" — chính node con bên
+ * trong đã dùng `mat-card` kính riêng, khung cha kính nữa sẽ chồng kính lên kính). Header 44px
+ * pointer-events auto (icon/tên/"Thu gọn lại"), phần thân `pointerEvents:none` (không chặn kéo/
+ * chọn node con render đè lên trên bởi lớp node bình thường của React Flow). */
+function MacroExpandedFrame({
+  group,
+  minX,
+  minY,
+  maxX,
+  maxY,
+}: {
+  group: NodeGroup;
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}) {
+  const tr = useT();
+  const toggleGroupCollapse = useFlowStore((s) => s.toggleGroupCollapse);
+  const Icon = MACRO_ICON_MAP[group.icon ?? ''] ?? Box;
+  const HEADER_H = 44;
+
+  return (
+    <div
+      className="absolute overflow-hidden rounded-[20px] border-[1.5px] border-[var(--accent)] bg-[var(--panel)] shadow-[var(--shadow-pop)]"
+      style={{
+        left: minX,
+        top: minY - HEADER_H,
+        width: maxX - minX,
+        height: maxY - minY + HEADER_H,
+        zIndex: 4,
+        pointerEvents: 'none',
+      }}
+    >
+      <div
+        className="flex items-center gap-2.5 border-b border-[var(--border)] bg-[var(--card)] px-3.5"
+        style={{ height: HEADER_H, pointerEvents: 'auto' }}
+      >
+        <span className="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-[9px] bg-[var(--accent-soft)]">
+          <Icon size={15} className="text-[var(--accent)]" />
+        </span>
+        <span className="text-[13px] font-semibold leading-[1.5] tracking-tight text-[var(--t1)]">{group.label}</span>
+        <span className="text-[11px] leading-[1.5] text-[var(--t4)]">
+          {tr(`Đang xem bên trong · ${group.nodeIds.length} nút con`, `Viewing inside · ${group.nodeIds.length} child nodes`)}
+        </span>
+        <button
+          type="button"
+          onClick={() => toggleGroupCollapse(group.id)}
+          className="nodrag ml-auto flex h-7 items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-3 text-[11px] font-semibold leading-[1.5] text-[var(--t1)] transition-colors hover:bg-[var(--hover)]"
+        >
+          <Minimize2 size={13} />
+          {tr('Thu gọn lại', 'Collapse')}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function GroupRect({ group }: { group: NodeGroup }) {
   const nodes = useFlowStore((s) => s.nodes);
@@ -34,6 +97,8 @@ function GroupRect({ group }: { group: NodeGroup }) {
   );
 
   if (group.collapsed) {
+    // NÚT TỔNG (isMacro) — mặt riêng (MacroNodeFace) thay badge nhỏ, xem file đó.
+    if (group.isMacro) return <MacroNodeFace group={group} />;
     // Collapsed badge tại vị trí tâm đã lưu
     const cx = group.center?.x ?? 0;
     const cy = group.center?.y ?? 0;
@@ -78,6 +143,14 @@ function GroupRect({ group }: { group: NodeGroup }) {
         maxY: Math.max(...members.map((n) => n.position.y + NODE_H)) + PAD,
       };
   const { minX, minY, maxX, maxY } = box;
+
+  // NÚT TỔNG mở ra xem bên trong (state ④ mock) — khung ĐẶC (var(--panel), không backdrop-filter)
+  // + header riêng (icon/tên/"Thu gọn lại"), tránh "kính lồng kính" (mock ghi rõ: "Khung mở là
+  // mặt đặc, không phải kính"). Node con vẫn render Ở TRÊN bởi lớp node bình thường của React
+  // Flow (khung này chỉ là NỀN, `pointerEvents:none` như khung group thường).
+  if (group.isMacro) {
+    return <MacroExpandedFrame group={group} minX={minX} minY={minY} maxX={maxX} maxY={maxY} />;
+  }
 
   return (
     <div
