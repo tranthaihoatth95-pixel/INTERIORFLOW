@@ -128,23 +128,29 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     const { minX, minY, maxX, maxY } = scene.bboxMm;
     const cx = (minX + maxX) / 2 / 1000;
     const cy = (minY + maxY) / 2 / 1000;
-    // ⚠️ TỒN TẠI (thấy khi verify 04/08, KHÔNG sửa ở phiếu này): cảnh chỉ có 1 bức tường lẻ thì
-    // camera áp rất sát và khối nằm LỆCH TÂM khung — nghi `controls.target` dùng (cx, cz, cy)
-    // trong khi phép chiếu CAD→three là (x, cao, −y), tức trục thứ 3 phải là −cy. Đây là hành vi
-    // engine có sẵn từ 3D-1, đụng vào là đổi khung hình của cả campath/capture ⇒ để PHU quyết.
+    // ✅ SỬA (03/08, phán quyết PHU — xác minh bằng số, xem BAO-CAO-PHU.md): đúng như nghi ngờ.
+    // `bboxMm` là toạ độ CAD THÔ (chưa qua `cadAxesToThree`), trong khi hình học thật
+    // (`ObjBuilder.vert()`, `cad-to-obj.ts`) đã trừ dấu `z_three = -y_cad`. Camera dùng `+cy`
+    // (chưa đảo) ⇒ target/vị trí nằm ở phía ĐỐI DIỆN hình học thật qua trục z — khớp đúng triệu
+    // chứng "camera áp sát + lệch tâm" khi bbox không đối xứng qua CAD-Y=0 (vd 1 tường lẻ). Đảo
+    // `cy` → `-cy` ở 4 chỗ dưới (walk vị trí/lookAt, orbit vị trí, controls.target). KHÔNG đụng
+    // campath/walk per-frame: `camPathSampleToThree()` (`lib/three/capture.ts`) và
+    // `walkControls`/tick() tự lái camera mỗi khung qua `cadToThreeM()` riêng, không đọc cx/cy/cz
+    // ở khối này — fix chỉ đổi khung camera BAN ĐẦU lúc mount (orbit/section/massing hết lệch tâm,
+    // walk đứng đúng vị trí trong mặt bằng thay vì lệch phía đối diện).
     const halfDiag = Math.max(0.5, Math.hypot(maxX - minX, maxY - minY) / 2 / 1000);
     const cz = scene.sizeM.h / 2;
 
     if (walkActive) {
       // Đứng giữa mặt bằng, mắt cố định 1650mm (EYE_HEIGHT_MM, CÙNG số campath) — nhìn ngang.
-      camera.position.set(cx, EYE_HEIGHT_MM / 1000, cy);
-      camera.lookAt(cx + 1, EYE_HEIGHT_MM / 1000, cy);
+      camera.position.set(cx, EYE_HEIGHT_MM / 1000, -cy);
+      camera.lookAt(cx + 1, EYE_HEIGHT_MM / 1000, -cy);
     } else {
-      camera.position.set(cx + halfDiag * 1.1, cz + halfDiag * 0.9, cy + halfDiag * 1.1);
+      camera.position.set(cx + halfDiag * 1.1, cz + halfDiag * 0.9, -cy + halfDiag * 1.1);
     }
 
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(cx, cz, cy);
+    controls.target.set(cx, cz, -cy);
     controls.enableDamping = true;
     controls.enabled = !walkActive && !campathActive; // walk/campath tự lái camera, orbit nhường
     controls.update();
