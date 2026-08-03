@@ -45,15 +45,23 @@ interface Props {
    * tốt"): chặng Render gắn NGUYÊN `NodeLibraryPanel` (card icon+mô tả+badge) cần THỞ hơn danh
    * sách chữ CAD/Present — 280px, số ghi ở nơi gọi (`AppShell.tsx`). */
   width?: number;
+  /** Chặng Vẽ có type-anywhere nuốt chữ trần nên phím panel/Thư viện cần ⇧ (§4e — cùng luật đã
+   * áp trong `AppShell.tsx` và `use-library-sheet.ts`). Bật cờ này để tooltip hiện ĐÚNG phím
+   * người dùng phải bấm ở chặng đó: ⇧B/⇧L thay vì B/L. */
+  shiftHotkeys?: boolean;
 }
 
-export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, collapsedLabel, width = DEFAULT_WIDTH }: Props) {
+export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, collapsedLabel, width = DEFAULT_WIDTH, shiftHotkeys = false }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [peek, setPeek] = useState(false);
   const user = useFlowStore((s) => s.user);
   const router = useRouter();
   const tr = useT();
+  // Tooltip PHẢI ghi đúng phím của chặng đang mở (§0c mảng 1 "tooltip hiện phím"): chặng Vẽ
+  // ⇧B/⇧L, chặng khác B/L.
+  const kPanel = shiftHotkeys ? '⇧B' : 'B';
+  const kLibrary = shiftHotkeys ? '⇧L' : 'L';
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -122,7 +130,7 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
         <button
           type="button"
           onClick={toggle}
-          title={tr('Mở lại bảng — B', 'Expand panel — B')}
+          title={tr(`Mở lại bảng — ${kPanel}`, `Expand panel — ${kPanel}`)}
           className="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] text-[var(--t3)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel)]"
         >
           <ChevronLeft size={15} className="rotate-180" />
@@ -172,7 +180,7 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
         <button
           type="button"
           onClick={onOpenLibrary}
-          title={tr('Thư viện', 'Library')}
+          title={tr(`Thư viện — ${kLibrary}`, `Library — ${kLibrary}`)}
           className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded-[10px] text-[11px] text-[var(--t3)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
         >
           <Library size={13} />
@@ -181,7 +189,7 @@ export function Navigator({ children, topState, addLabel, onAdd, onOpenLibrary, 
         <button
           type="button"
           onClick={toggle}
-          title={tr('Thu gọn — B', 'Collapse — B')}
+          title={tr(`Thu gọn — ${kPanel}`, `Collapse — ${kPanel}`)}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] text-[var(--t3)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
         >
           <ChevronLeft size={13} />

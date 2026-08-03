@@ -26,6 +26,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { AppChrome, type AppChromeActive } from '@/components/studio/AppChrome';
 import { Navigator } from '@/components/studio/Navigator';
+import { AppCommandPalette } from '@/components/studio/AppCommandPalette';
 import { Dashboard } from '@/components/Dashboard';
 import { FlowsPanel } from '@/components/FlowsPanel';
 import { LibrarySheet } from '@/components/library/LibrarySheet';
@@ -135,7 +136,7 @@ export function AppShell({
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden', background: 'var(--bg)' }}>
       <AppChrome active={active} logoMenu />
       <div className="relative flex min-h-0 flex-1">
-        <Navigator addLabel={navigatorAddLabel} collapsedLabel={navigatorCollapsedLabel} onAdd={onNavigatorAdd} onOpenLibrary={openLibrary} width={navigatorWidth}>
+        <Navigator addLabel={navigatorAddLabel} collapsedLabel={navigatorCollapsedLabel} onAdd={onNavigatorAdd} onOpenLibrary={openLibrary} width={navigatorWidth} shiftHotkeys={active === 'cad'}>
           {navigator}
         </Navigator>
         <div className="relative flex min-w-0 flex-1 flex-col">
@@ -149,7 +150,7 @@ export function AppShell({
             </div>
           )}
         </div>
-        <InspectorSlot title={inspectorTitle} sub={inspectorSub} onClose={onCloseInspector}>
+        <InspectorSlot title={inspectorTitle} sub={inspectorSub} onClose={onCloseInspector} hotkey={active === 'cad' ? '⇧I' : 'I'}>
           {inspectorHidden ? undefined : inspector}
         </InspectorSlot>
       </div>
@@ -161,6 +162,10 @@ export function AppShell({
       {/* Thư viện = sheet, NƠI DUY NHẤT (Hoà chốt 03/08, `a73c658` — trang /library chỉ còn
           redirect). Tự gate qua `openLibrarySheet()`/phím L/Escape (use-library-sheet.ts). */}
       <LibrarySheet stage={libStage} />
+      {/* Palette ⌘K ĐA MÀN (Trụ 2 mặt hiện `palette`) — nối sổ lệnh `lib/commands/registry.ts`.
+          Palette cũ `components/CommandPalette.tsx` cần ReactFlow nên chỉ sống ở Home; cái này
+          không phụ thuộc ReactFlow nên phủ cả 5 màn dùng AppShell. */}
+      <AppCommandPalette active={active} />
     </div>
   );
 }
@@ -170,11 +175,15 @@ function InspectorSlot({
   title,
   sub,
   onClose,
+  hotkey,
 }: {
   children?: ReactNode;
   title?: string;
   sub?: ReactNode;
   onClose?: () => void;
+  /** Phím ẩn/hiện Inspector của chặng đang mở (CAD ⇧I, chặng khác I) — tooltip phải ghi đúng
+   * phím người dùng bấm được, §0c mảng 1. */
+  hotkey?: string;
 }) {
   const reduceMotion = useReducedMotion();
   return (
@@ -197,7 +206,7 @@ function InspectorSlot({
                 <button
                   type="button"
                   onClick={onClose}
-                  title="Đóng"
+                  title={hotkey ? `Đóng — ẩn/hiện bằng ${hotkey}` : 'Đóng'}
                   className="ml-auto grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[8px] text-[var(--t4)] transition-colors duration-[120ms] hover:bg-[var(--hover)] hover:text-[var(--t1)]"
                 >
                   <X size={14} />
