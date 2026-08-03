@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14);
+  --radius-sm:10px; --radius-md:14px; --radius-lg:20px; --radius-xl:28px;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --tap:32px; --row:28px; --gap:8px;
+}
+:root,[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --mat-panel:rgba(20,20,23,.68); --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65); --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --hatch:repeating-linear-gradient(45deg,#202024 0 9px,#1a1a1e 9px 18px);
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --mat-panel:rgba(250,248,244,.7); --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22); --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --hatch:repeating-linear-gradient(45deg,#f4f1eb 0 9px,#ffffff 9px 18px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--accent-strong)}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms !important}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--bg);padding:36px 40px 72px;font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
+
+  <div style="width:1440px;margin:0 auto 30px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
+    <div style="min-width:0">
+      <div style="display:flex;align-items:center;gap:11px">
+        <div style="width:26px;height:26px;border-radius:8px;background:var(--accent);flex:none"></div>
+        <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.02em">Trình bày</h1>
+        <span style="display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:6px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700;letter-spacing:.03em">PLACEHOLDER</span>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--t3);max-width:820px;text-wrap:pretty">Chặng Trình bày · cùng khung sáu ổ với hai màn trước. Chọn loại hồ sơ, rồi mở soạn thảo ngay trong cùng khung.</div>
+    </div>
+    <button onClick="{{ toggleTheme }}" style="height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font:600 12px inherit;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">{{ themeLabel }}</button>
+  </div>
+
+  <div style="width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:44px">
+
+    <div data-screen-label="01">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">01</span>
+        <span style="font-size:12px;font-weight:600;color:var(--t2)">Chọn loại hồ sơ</span>
+        <span style="font-size:11px;color:var(--t4)">Năm thẻ lớn · bên dưới là hồ sơ gần đây · cột phải để trống</span>
+      </div>
+      <div style="display:flex;height:820px;border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-pop)">
+        <div style="width:100%;height:100%;display:grid;grid-template-rows:42px 1fr 26px;grid-template-columns:214px 1fr 236px;background:var(--bg);overflow:hidden">
+
+          <header style="grid-column:1/4;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 10px 0 12px;background:var(--panel);border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:9px;min-width:0">
+              <div style="width:20px;height:20px;border-radius:6px;background:var(--accent);flex:none"></div>
+              <span style="font-size:14px;font-weight:600;white-space:nowrap;letter-spacing:-.01em">{{ project }}</span>
+              <span style="display:inline-flex;align-items:center;height:15px;padding:0 5px;border-radius:5px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700">PLACEHOLDER</span>
+            </div>
+            <div style="display:inline-flex;background:var(--field);border-radius:10px;padding:2px">
+              <button style="border:0;background:transparent;color:var(--t3);font:400 12px inherit;padding:4px 16px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)" style-hover="color:var(--t1)">2D</button>
+              <button style="border:0;background:transparent;color:var(--t3);font:400 12px inherit;padding:4px 16px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)" style-hover="color:var(--t1)">3D</button>
+              <button style="border:0;background:var(--panel);color:var(--t1);font:600 12px inherit;padding:4px 16px;border-radius:8px;cursor:pointer;box-shadow:var(--shadow-node)">Trình bày</button>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px">
+              <span style="font-size:11px;color:var(--t4)">Tự lưu</span>
+              <div style="width:26px;height:26px;border-radius:50%;background:var(--field);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--t2)">NT</div>
+            </div>
+          </header>
+
+          <nav style="background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0">
+            <div style="height:34px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid var(--border);flex:none">
+              <span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4)">Hồ sơ dự án</span>
+            </div>
+            <div style="flex:1;min-height:0;overflow:hidden;padding:4px 0">
+              <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--accent-soft);border-left:2px solid var(--accent)">
+                <span style="width:10px;height:10px;border-radius:3px;background:var(--accent);flex:none"></span>
+                <span style="flex:1;font-size:12px;font-weight:600;color:var(--accent)">Tất cả hồ sơ</span>
+                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--accent)">23</span>
+              </div>
+              <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                <span style="width:10px;height:10px;border-radius:3px;background:var(--t2);flex:none"></span>
+                <span style="flex:1;font-size:12px;color:var(--t2)">Thuyết trình</span>
+                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">6</span>
+              </div>
+              <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                <span style="width:10px;height:10px;border-radius:3px;background:#c79a63;flex:none"></span>
+                <span style="flex:1;font-size:12px;color:var(--t2)">Bảng vật liệu</span>
+                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">4</span>
+              </div>
+              <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                <span style="width:10px;height:10px;border-radius:3px;background:var(--success);flex:none"></span>
+                <span style="flex:1;font-size:12px;color:var(--t2)">Bảng khối lượng</span>
+                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">3</span>
+              </div>
+              <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                <span style="width:10px;height:10px;border-radius:3px;background:var(--t2);flex:none"></span>
+                <span style="flex:1;font-size:12px;color:var(--t2)">Văn bản</span>
+                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">8</span>
+              </div>
+              <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                <span style="width:10px;height:10px;border-radius:3px;background:var(--warning);flex:none"></span>
+                <span style="flex:1;font-size:12px;color:var(--t2)">Video</span>
+                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">2</span>
+              </div>
+
+              <div style="height:22px;display:flex;align-items:center;padding:14px 12px 0;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t5)">Trạng thái</div>
+              <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                <span style="width:7px;height:7px;border-radius:50%;background:var(--warning);flex:none"></span>
+                <span style="flex:1;font-size:12px;color:var(--t2)">Đang soạn</span>
+                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">5</span>
+              </div>
+              <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                <span style="width:7px;height:7px;border-radius:50%;background:var(--success);flex:none"></span>
+                <span style="flex:1;font-size:12px;color:var(--t2)">Đã gửi khách</span>
+                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">18</span>
+              </div>
+            </div>
+            <div style="height:30px;display:flex;align-items:center;padding:0 12px;border-top:1px solid var(--border);font-size:11px;color:var(--t4);flex:none">23 hồ sơ · PLACEHOLDER</div>
+          </nav>
+
+          <main style="position:relative;background:var(--bg);overflow:hidden;display:flex;flex-direction:column">
+            <div style="flex:1;min-height:0;padding:26px 28px 96px;display:flex;flex-direction:column;gap:22px">
+
+              <div style="display:flex;align-items:flex-end;gap:12px">
+                <div style="min-width:0">
+                  <div style="font-size:20px;font-weight:600;letter-spacing:-.01em">Tạo hồ sơ mới</div>
+                  <div style="font-size:11px;color:var(--t4);margin-top:2px">Chọn một loại để bắt đầu · dữ liệu lấy thẳng từ mô hình</div>
+                </div>
+                <div style="margin-left:auto;display:flex;align-items:center;gap:8px;height:32px;width:240px;padding:0 12px;border-radius:10px;background:var(--field);border:1px solid transparent;transition:border-color .18s var(--ease-apple)" style-focus-within="border-color:var(--accent)">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5 14 14" stroke-linecap="round"></path></svg>
+                  <span style="font-size:12px;color:var(--t4)">Tìm hồ sơ trong dự án</span>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px">
+
+                <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s var(--ease-apple),box-shadow .2s var(--ease-apple)" style-hover="transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-pop)">
+                  <div style="height:118px;border-bottom:1px solid var(--border);background:var(--field);padding:12px;display:flex;flex-direction:column;gap:5px">
+                    <div style="flex:1;border-radius:6px;background:var(--hatch);border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
+                      <span style="font-size:8px;font-weight:700;letter-spacing:.06em;color:var(--t4)">PLACEHOLDER</span>
+                    </div>
+                    <div style="display:flex;gap:5px;height:20px">
+                      <div style="flex:1;border-radius:4px;background:var(--card);border:1px solid var(--border)"></div>
+                      <div style="flex:1;border-radius:4px;background:var(--card);border:1px solid var(--border)"></div>
+                      <div style="flex:1;border-radius:4px;background:var(--card);border:1px solid var(--border)"></div>
+                    </div>
+                  </div>
+                  <div style="padding:11px 12px 13px">
+                    <div style="font-size:13px;font-weight:600">Thuyết trình</div>
+                    <div style="font-size:11px;color:var(--t4);margin-top:4px;line-height:1.5;text-wrap:pretty">Bộ trang chiếu kể ý tưởng cho khách.</div>
+                    <div style="font-size:11px;color:var(--t5);margin-top:8px">6 bản đã tạo</div>
+                  </div>
+                </div>
+
+                <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s var(--ease-apple),box-shadow .2s var(--ease-apple)" style-hover="transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-pop)">
+                  <div style="height:118px;border-bottom:1px solid var(--border);background:var(--field);padding:12px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:6px">
+                    <span style="border-radius:50%;background:radial-gradient(circle at 34% 28%,#c79a63,#8a6a44)"></span>
+                    <span style="border-radius:50%;background:radial-gradient(circle at 34% 28%,var(--t1),var(--t3))"></span>
+                    <span style="border-radius:50%;background:radial-gradient(circle at 34% 28%,var(--t3),var(--t5))"></span>
+                    <span style="border-radius:50%;background:radial-gradient(circle at 34% 28%,var(--t2),var(--t4))"></span>
+                    <span style="border-radius:50%;background:radial-gradient(circle at 34% 28%,#9db3a0,#5d7263)"></span>
+                    <span style="border-radius:6px;background:var(--hatch);border:1px solid var(--border)"></span>
+                  </div>
+                  <div style="padding:11px 12px 13px">
+                    <div style="font-size:13px;font-weight:600">Bảng vật liệu A3</div>
+                    <div style="font-size:11px;color:var(--t4);margin-top:4px;line-height:1.5;text-wrap:pretty">Mẫu vật liệu xếp trên khổ giấy A3.</div>
+                    <div style="font-size:11px;color:var(--t5);margin-top:8px">4 bản đã tạo</div>
+                  </div>
+                </div>
+
+                <div style="background:var(--card);border:1px solid var(--accent);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:0 0 0 4px var(--accent-soft);transition:transform .2s var(--ease-apple),box-shadow .2s var(--ease-apple)" style-hover="transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-pop),0 0 0 4px var(--accent-soft)">
+                  <div style="height:118px;border-bottom:1px solid var(--border);background:var(--field);padding:12px;display:flex;flex-direction:column;gap:4px">
+                    <div style="display:flex;gap:4px;height:14px">
+                      <div style="flex:2;border-radius:3px;background:var(--accent-soft)"></div>
+                      <div style="flex:1;border-radius:3px;background:var(--accent-soft)"></div>
+                      <div style="flex:1;border-radius:3px;background:var(--accent-soft)"></div>
+                    </div>
+                    <div style="display:flex;gap:4px;height:12px"><div style="flex:2;border-radius:3px;background:var(--card)"></div><div style="flex:1;border-radius:3px;background:var(--card)"></div><div style="flex:1;border-radius:3px;background:var(--card)"></div></div>
+                    <div style="display:flex;gap:4px;height:12px"><div style="flex:2;border-radius:3px;background:var(--card)"></div><div style="flex:1;border-radius:3px;background:var(--card)"></div><div style="flex:1;border-radius:3px;background:var(--card)"></div></div>
+                    <div style="display:flex;gap:4px;height:12px"><div style="flex:2;border-radius:3px;background:var(--card)"></div><div style="flex:1;border-radius:3px;background:var(--card)"></div><div style="flex:1;border-radius:3px;background:var(--card)"></div></div>
+                    <div style="display:flex;gap:4px;height:12px"><div style="flex:2;border-radius:3px;background:var(--card)"></div><div style="flex:1;border-radius:3px;background:var(--card)"></div><div style="flex:1;border-radius:3px;background:var(--card)"></div></div>
+                    <div style="margin-top:auto;display:flex;gap:4px;height:14px"><div style="flex:3;border-radius:3px;background:transparent"></div><div style="flex:1;border-radius:3px;background:var(--accent);opacity:.75"></div></div>
+                  </div>
+                  <div style="padding:11px 12px 13px">
+                    <div style="font-size:13px;font-weight:600">Bảng khối lượng</div>
+                    <div style="font-size:11px;color:var(--t4);margin-top:4px;line-height:1.5;text-wrap:pretty">Bóc khối lượng và tính thành tiền.</div>
+                    <div style="font-size:11px;color:var(--t5);margin-top:8px">3 bản đã tạo</div>
+                  </div>
+                </div>
+
+                <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s var(--ease-apple),box-shadow .2s var(--ease-apple)" style-hover="transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-pop)">
+                  <div style="height:118px;border-bottom:1px solid var(--border);background:var(--field);padding:14px 22px;display:flex;align-items:stretch">
+                    <div style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:9px;display:flex;flex-direction:column;gap:5px">
+                      <span style="height:5px;width:60%;border-radius:2px;background:var(--t4)"></span>
+                      <span style="height:3px;width:100%;border-radius:2px;background:var(--border-strong)"></span>
+                      <span style="height:3px;width:100%;border-radius:2px;background:var(--border-strong)"></span>
+                      <span style="height:3px;width:84%;border-radius:2px;background:var(--border-strong)"></span>
+                      <span style="height:3px;width:92%;border-radius:2px;background:var(--border-strong)"></span>
+                      <span style="height:3px;width:46%;border-radius:2px;background:var(--border-strong)"></span>
+                    </div>
+                  </div>
+                  <div style="padding:11px 12px 13px">
+                    <div style="font-size:13px;font-weight:600">Văn bản, biểu mẫu</div>
+                    <div style="font-size:11px;color:var(--t4);margin-top:4px;line-height:1.5;text-wrap:pretty">Hợp đồng, biên bản, phiếu duyệt mẫu.</div>
+                    <div style="font-size:11px;color:var(--t5);margin-top:8px">8 bản đã tạo</div>
+                  </div>
+                </div>
+
+                <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s var(--ease-apple),box-shadow .2s var(--ease-apple)" style-hover="transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-pop)">
+                  <div style="position:relative;height:118px;border-bottom:1px solid var(--border);background:var(--hatch);display:flex;align-items:center;justify-content:center">
+                    <span style="width:38px;height:38px;border-radius:50%;background:var(--mat-card);border:1px solid var(--mat-hairline);display:flex;align-items:center;justify-content:center">
+                      <svg width="15" height="15" viewBox="0 0 16 16"><path d="M5.5 3.4 12.4 8 5.5 12.6z" style="fill:var(--t1)"></path></svg>
+                    </span>
+                    <span style="position:absolute;left:8px;bottom:8px;font-size:8px;font-weight:700;letter-spacing:.06em;color:var(--t4);background:var(--mat-card);padding:3px 6px;border-radius:5px">PLACEHOLDER</span>
+                  </div>
+                  <div style="padding:11px 12px 13px">
+                    <div style="font-size:13px;font-weight:600">Video</div>
+                    <div style="font-size:11px;color:var(--t4);margin-top:4px;line-height:1.5;text-wrap:pretty">Đoạn phim đi xuyên qua không gian.</div>
+                    <div style="font-size:11px;color:var(--t5);margin-top:8px">2 bản đã tạo</div>
+                  </div>
+                </div>
+
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:10px;min-height:0">
+                <div style="display:flex;align-items:baseline;gap:10px">
+                  <span style="font-size:14px;font-weight:600;letter-spacing:-.01em">Hồ sơ gần đây</span>
+                  <span style="font-size:11px;color:var(--t4)">PLACEHOLDER</span>
+                </div>
+                <div style="border:1px solid var(--border);border-radius:14px;background:var(--panel);overflow:hidden">
+                  <div style="display:grid;grid-template-columns:1fr 150px 130px 150px;gap:12px;height:30px;align-items:center;padding:0 14px;background:var(--field);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t4)">
+                    <span>Tên hồ sơ</span><span>Loại</span><span>Sửa lần cuối</span><span>Người sửa</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 150px 130px 150px;gap:12px;height:38px;align-items:center;padding:0 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                    <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:var(--success);flex:none"></span><span style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Khối lượng hoàn thiện tầng trệt</span></span>
+                    <span style="font-size:12px;color:var(--t3)">Bảng khối lượng</span>
+                    <span style="font:400 12px ui-monospace,Menlo,monospace;color:var(--t3)">14:32</span>
+                    <span style="font-size:12px;color:var(--t3)">Ngọc Trâm</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 150px 130px 150px;gap:12px;height:38px;align-items:center;padding:0 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                    <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:var(--accent);flex:none"></span><span style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Trình bày phương án hai cho khách</span></span>
+                    <span style="font-size:12px;color:var(--t3)">Thuyết trình</span>
+                    <span style="font:400 12px ui-monospace,Menlo,monospace;color:var(--t3)">Hôm qua</span>
+                    <span style="font-size:12px;color:var(--t3)">Minh Khoa</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 150px 130px 150px;gap:12px;height:38px;align-items:center;padding:0 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                    <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:#c79a63;flex:none"></span><span style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Bảng vật liệu phòng khách</span></span>
+                    <span style="font-size:12px;color:var(--t3)">Bảng vật liệu</span>
+                    <span style="font:400 12px ui-monospace,Menlo,monospace;color:var(--t3)">3 ngày</span>
+                    <span style="font-size:12px;color:var(--t3)">Ngọc Trâm</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 150px 130px 150px;gap:12px;height:38px;align-items:center;padding:0 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                    <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:var(--t3);flex:none"></span><span style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Biên bản duyệt mẫu đợt một</span></span>
+                    <span style="font-size:12px;color:var(--t3)">Văn bản</span>
+                    <span style="font:400 12px ui-monospace,Menlo,monospace;color:var(--t3)">5 ngày</span>
+                    <span style="font-size:12px;color:var(--t3)">Thu Hà</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 150px 130px 150px;gap:12px;height:38px;align-items:center;padding:0 14px;cursor:pointer;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                    <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:var(--warning);flex:none"></span><span style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Phim đi xuyên căn hộ, bản nháp</span></span>
+                    <span style="font-size:12px;color:var(--t3)">Video</span>
+                    <span style="font:400 12px ui-monospace,Menlo,monospace;color:var(--t3)">Tuần trước</span>
+                    <span style="font-size:12px;color:var(--t3)">Minh Khoa</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:1px;padding:4px;border-radius:14px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
+              <button title="Tạo hồ sơ mới — N" style="height:var(--tap);padding:0 13px;display:flex;align-items:center;gap:7px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:600 12px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg>
+                Hồ sơ mới
+              </button>
+              <div style="width:1px;height:20px;background:var(--mat-hairline);margin:0 5px"></div>
+              <button title="Xem dạng lưới — 1" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:var(--field);color:var(--t1);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="5" height="5" rx="1"></rect><rect x="9" y="2" width="5" height="5" rx="1"></rect><rect x="2" y="9" width="5" height="5" rx="1"></rect><rect x="9" y="9" width="5" height="5" rx="1"></rect></svg></button>
+              <button title="Xem dạng danh sách — 2" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 4.5h10M3 8h10M3 11.5h10"></path></svg></button>
+              <div style="width:1px;height:20px;background:var(--mat-hairline);margin:0 5px"></div>
+              <button title="Chia sẻ cho khách — S" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V3M5 6l3-3 3 3"></path><path d="M3 10v3h10v-3"></path></svg></button>
+              <button title="Xuất tệp — E" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v8M5 8l3 3 3-3"></path><path d="M3 13h10"></path></svg></button>
+            </div>
+          </main>
+
+          <aside style="background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;min-height:0;overflow:hidden">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:0 28px;text-align:center">
+              <svg width="34" height="34" viewBox="0 0 16 16" fill="none" stroke="var(--t5)" stroke-width="1.1"><path d="M3 2.5h7l3 3v8H3z"></path><path d="M9.6 2.6v3.2h3.2"></path></svg>
+              <div style="font-size:12px;font-weight:600;color:var(--t3)">Chưa chọn hồ sơ nào</div>
+              <div style="font-size:11px;color:var(--t4);line-height:1.55;text-wrap:pretty">Bấm một thẻ hoặc một dòng để xem và sửa thông tin hồ sơ.</div>
+            </div>
+            <div style="border-top:1px solid var(--border);padding:10px 12px;display:flex;align-items:center;gap:8px">
+              <span style="font-size:11px;color:var(--t5)">Mẹo</span>
+              <span style="font-size:11px;color:var(--t4)">Bấm hai lần để mở soạn thảo</span>
+            </div>
+          </aside>
+
+          <footer style="grid-column:1/4;display:flex;align-items:center;gap:14px;padding:0 10px 0 8px;background:var(--panel);border-top:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:6px;height:18px;padding:0 8px;border-radius:8px;background:var(--field);min-width:230px">
+              <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">›</span>
+              <span style="font-size:11px;color:var(--t4)">Gõ lệnh hoặc tên hồ sơ rồi bấm Enter</span>
+            </div>
+            <span style="font-size:11px;color:var(--t3)">Chọn một loại hồ sơ để bắt đầu</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--t4)">23 hồ sơ · 5 đang soạn</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t4)"><span style="width:6px;height:6px;border-radius:50%;background:var(--success)"></span>Đã lưu 14:32</span>
+          </footer>
+
+        </div>
+      </div>
+    </div>
+
+    <div data-screen-label="02">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">02</span>
+        <span style="font-size:12px;font-weight:600;color:var(--t2)">Đang soạn bảng khối lượng</span>
+        <span style="font-size:11px;color:var(--t4)">Một ô đang sửa tay, có dấu hiệu nhỏ báo đã rời khỏi mô hình</span>
+      </div>
+      <div style="display:flex;height:820px;border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-pop)">
+        <div style="width:100%;height:100%;display:grid;grid-template-rows:42px 1fr 26px;grid-template-columns:214px 1fr 236px;background:var(--bg);overflow:hidden">
+
+          <header style="grid-column:1/4;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 10px 0 12px;background:var(--panel);border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:9px;min-width:0">
+              <div style="width:20px;height:20px;border-radius:6px;background:var(--accent);flex:none"></div>
+              <span style="font-size:14px;font-weight:600;white-space:nowrap;letter-spacing:-.01em">{{ project }}</span>
+              <span style="color:var(--t5)">›</span>
+              <span style="font-size:12px;color:var(--t3);white-space:nowrap">Khối lượng hoàn thiện tầng trệt</span>
+            </div>
+            <div style="display:inline-flex;background:var(--field);border-radius:10px;padding:2px">
+              <button style="border:0;background:transparent;color:var(--t3);font:400 12px inherit;padding:4px 16px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)" style-hover="color:var(--t1)">2D</button>
+              <button style="border:0;background:transparent;color:var(--t3);font:400 12px inherit;padding:4px 16px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)" style-hover="color:var(--t1)">3D</button>
+              <button style="border:0;background:var(--panel);color:var(--t1);font:600 12px inherit;padding:4px 16px;border-radius:8px;cursor:pointer;box-shadow:var(--shadow-node)">Trình bày</button>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px">
+              <span style="font-size:11px;color:var(--t4)">Tự lưu</span>
+              <div style="width:26px;height:26px;border-radius:50%;background:var(--field);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--t2)">NT</div>
+            </div>
+          </header>
+
+          <nav style="background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0">
+            <div style="height:34px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid var(--border);flex:none">
+              <span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4)">Nhóm hạng mục</span>
+            </div>
+            <div style="flex:1;min-height:0;overflow:hidden;padding:4px 0">
+              <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--accent-soft);border-left:2px solid var(--accent)">
+                <span style="width:10px;height:10px;border-radius:3px;background:var(--accent);flex:none"></span>
+                <span style="flex:1;font-size:12px;font-weight:600;color:var(--accent)">Hoàn thiện tường</span>
+                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--accent)">6</span>
+              </div>
+              <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                <span style="width:10px;height:10px;border-radius:3px;background:#c79a63;flex:none"></span>
+                <span style="flex:1;font-size:12px;color:var(--t2)">Hoàn thiện sàn</span>
+                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">4</span>
+              </div>
+              <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                <span style="width:10px;height:10px;border-radius:3px;background:var(--t2);flex:none"></span>
+                <span style="flex:1;font-size:12px;color:var(--t2)">Trần và đèn</span>
+                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">5</span>
+              </div>
+              <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                <span style="width:10px;height:10px;border-radius:3px;background:var(--success);flex:none"></span>
+                <span style="flex:1;font-size:12px;color:var(--t2)">Đồ rời</span>
+                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">7</span>
+              </div>
+              <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                <span style="width:10px;height:10px;border-radius:3px;background:var(--warning);flex:none"></span>
+                <span style="flex:1;font-size:12px;color:var(--t2)">Nhân công</span>
+                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">3</span>
+              </div>
+
+              <div style="height:22px;display:flex;align-items:center;padding:14px 12px 0;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t5)">Nguồn số liệu</div>
+              <div style="padding:6px 12px 0;display:flex;flex-direction:column;gap:7px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="width:7px;height:7px;border-radius:50%;background:var(--success);flex:none"></span>
+                  <span style="flex:1;font-size:11px;color:var(--t3)">Lấy từ mô hình</span>
+                  <span style="font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">22</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="width:7px;height:7px;border-radius:50%;background:var(--warning);flex:none"></span>
+                  <span style="flex:1;font-size:11px;color:var(--t3)">Đã sửa tay</span>
+                  <span style="font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">3</span>
+                </div>
+              </div>
+            </div>
+            <div style="height:30px;display:flex;align-items:center;padding:0 12px;border-top:1px solid var(--border);font-size:11px;color:var(--t4);flex:none">25 dòng · PLACEHOLDER</div>
+          </nav>
+
+          <main style="position:relative;background:var(--bg);overflow:hidden;display:flex;flex-direction:column">
+            <div style="flex:1;min-height:0;padding:22px 26px 96px;display:flex;flex-direction:column;gap:14px">
+
+              <div style="display:flex;align-items:flex-end;gap:12px">
+                <div style="min-width:0">
+                  <div style="font-size:20px;font-weight:600;letter-spacing:-.01em">Khối lượng hoàn thiện tầng trệt</div>
+                  <div style="font-size:11px;color:var(--t4);margin-top:2px">Số liệu nối thẳng với mô hình · sửa mô hình là bảng tự đổi</div>
+                </div>
+                <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:20px;background:var(--field);color:var(--t3);font-size:11px">
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--warning)"></span>3 ô đã sửa tay
+                  </span>
+                  <button style="height:32px;padding:0 15px;display:flex;align-items:center;gap:7px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:600 12px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v8M5 8l3 3 3-3M3 13h10"></path></svg>
+                    Xuất bảng tính
+                  </button>
+                </div>
+              </div>
+
+              <div style="flex:1;min-height:0;border:1px solid var(--border);border-radius:14px;background:var(--panel);overflow:hidden;display:flex;flex-direction:column">
+                <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;gap:0;height:32px;align-items:center;background:var(--field);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t4)">
+                  <span style="padding:0 10px">Mã</span>
+                  <span style="padding:0 10px">Hạng mục</span>
+                  <span style="padding:0 10px">Đơn vị</span>
+                  <span style="padding:0 10px;text-align:right">Khối lượng</span>
+                  <span style="padding:0 10px;text-align:right">Đơn giá</span>
+                  <span style="padding:0 10px;text-align:right">Thành tiền</span>
+                </div>
+
+                <div style="flex:1;min-height:0;overflow:hidden">
+                  <div style="height:26px;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--card);border-bottom:1px solid var(--border)">
+                    <span style="width:8px;height:8px;border-radius:2px;background:var(--accent)"></span>
+                    <span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t2)">Hoàn thiện tường</span>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">01</span>
+                    <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Sơn tường trong nhà, hai nước</span></span>
+                    <span style="padding:0 10px;color:var(--t3)">mét vuông</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">184.20</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">92 000</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">16 946 400</span>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">02</span>
+                    <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Ốp gỗ sồi mặt tường phòng khách</span></span>
+                    <span style="padding:0 10px;color:var(--t3)">mét vuông</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">26.40</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">1 250 000</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">33 000 000</span>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;background:var(--accent-soft)">
+                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--accent)">03</span>
+                    <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--warning);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600">Bả matit và xử lý chân tường</span></span>
+                    <span style="padding:0 10px;color:var(--t3)">mét dài</span>
+                    <span style="padding:0 10px;position:relative;display:flex;align-items:center;justify-content:flex-end">
+                      <span style="position:relative;display:inline-flex;align-items:center;justify-content:flex-end;height:24px;min-width:78px;padding:0 8px;border-radius:8px;background:var(--card);border:1px solid var(--accent);box-shadow:0 0 0 3px var(--accent-soft);font:600 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">
+                        48.60
+                        <span style="position:absolute;top:-3px;right:-3px;width:7px;height:7px;border-radius:50%;background:var(--warning);border:1.5px solid var(--panel)"></span>
+                      </span>
+                    </span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">145 000</span>
+                    <span style="padding:0 10px;text-align:right;font:600 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">7 047 000</span>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">04</span>
+                    <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Nẹp chân tường nhôm mờ</span></span>
+                    <span style="padding:0 10px;color:var(--t3)">mét dài</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">52.80</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">186 000</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">9 820 800</span>
+                  </div>
+
+                  <div style="height:26px;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--card);border-bottom:1px solid var(--border)">
+                    <span style="width:8px;height:8px;border-radius:2px;background:#c79a63"></span>
+                    <span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t2)">Hoàn thiện sàn</span>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">05</span>
+                    <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Sàn gỗ sồi ghép thanh, dày 15</span></span>
+                    <span style="padding:0 10px;color:var(--t3)">mét vuông</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">44.75</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">1 480 000</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">66 230 000</span>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">06</span>
+                    <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Gạch nung phòng tắm, chống trượt</span></span>
+                    <span style="padding:0 10px;color:var(--t3)">mét vuông</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">9.80</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">620 000</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">6 076 000</span>
+                  </div>
+
+                  <div style="height:26px;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--card);border-bottom:1px solid var(--border)">
+                    <span style="width:8px;height:8px;border-radius:2px;background:var(--t3)"></span>
+                    <span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t2)">Trần và đèn</span>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">07</span>
+                    <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Trần thạch cao phẳng, khung chìm</span></span>
+                    <span style="padding:0 10px;color:var(--t3)">mét vuông</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">72.95</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">385 000</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">28 085 750</span>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">08</span>
+                    <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--warning);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Đèn thả trần bàn ăn, ba bóng</span></span>
+                    <span style="padding:0 10px;color:var(--t3)">bộ</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">1</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">8 400 000</span>
+                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">8 400 000</span>
+                  </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:40px;align-items:center;background:var(--field);border-top:1px solid var(--border-strong)">
+                  <span></span>
+                  <span style="padding:0 10px;font-size:12px;font-weight:600">Tổng cộng trước thuế</span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span style="padding:0 10px;text-align:right;font:600 14px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">175 605 950</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:1px;padding:4px;border-radius:14px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
+              <button title="Thêm dòng — Enter" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg></button>
+              <button title="Thêm nhóm hạng mục — G" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h7M2.5 11.5h7"></path></svg></button>
+              <div style="width:1px;height:20px;background:var(--mat-hairline);margin:0 5px"></div>
+              <button title="Lấy lại số từ mô hình — R" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8a5 5 0 1 1-1.8-3.8"></path><path d="M13 1.8V5H9.8"></path></svg></button>
+              <button title="Công thức — F" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4 13c1.6 0 2-1 2.2-2.6L7.4 3.9C7.6 2.6 8.4 2 9.6 2M4.6 7.4h5.2"></path></svg></button>
+              <button title="Định dạng số — ," style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 4.5h10M3 8h10M3 11.5h6"></path></svg></button>
+              <div style="width:1px;height:20px;background:var(--mat-hairline);margin:0 5px"></div>
+              <button title="Xuất bảng tính — E" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v8M5 8l3 3 3-3M3 13h10"></path></svg></button>
+            </div>
+          </main>
+
+          <aside style="background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;min-height:0;overflow:hidden">
+            <div style="height:42px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--border);flex:none">
+              <span style="width:10px;height:10px;border-radius:3px;background:var(--accent);flex:none"></span>
+              <span style="flex:1;font-size:14px;font-weight:600;letter-spacing:-.01em">Dòng 03</span>
+              <span style="display:inline-flex;align-items:center;height:15px;padding:0 5px;border-radius:5px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700">PLACEHOLDER</span>
+            </div>
+
+            <div style="padding:12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:9px;background:var(--field)">
+              <span style="width:7px;height:7px;border-radius:50%;background:var(--warning);flex:none;margin-top:5px"></span>
+              <div style="min-width:0">
+                <div style="font-size:12px;font-weight:600;color:var(--t1)">Ô khối lượng đã sửa tay</div>
+                <div style="font-size:11px;color:var(--t4);margin-top:3px;line-height:1.5;text-wrap:pretty">Số này không còn theo mô hình. Mô hình cho <span style="font:400 11px ui-monospace,Menlo,monospace">44.20</span>.</div>
+                <button style="margin-top:8px;height:26px;padding:0 11px;border:1px solid var(--border);border-radius:8px;background:var(--panel);color:var(--t1);font:600 11px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover)">Lấy lại số từ mô hình</button>
+              </div>
+            </div>
+
+            <div style="padding:12px;border-bottom:1px solid var(--border)">
+              <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:8px">Giá trị</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="height:28px;background:var(--field);border-radius:10px;padding:0 9px;display:flex;align-items:center;justify-content:space-between">
+                  <span style="font-size:11px;font-weight:600;color:var(--t4)">Đơn vị</span>
+                  <span style="font-size:12px;color:var(--t1)">mét dài</span>
+                </div>
+                <div style="height:28px;background:var(--field);border:1px solid var(--accent);border-radius:10px;padding:0 9px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 0 0 3px var(--accent-soft)">
+                  <span style="font-size:11px;font-weight:600;color:var(--accent)">Khối lượng</span>
+                  <span style="font:600 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--accent)">48.60</span>
+                </div>
+                <div style="height:28px;background:var(--field);border-radius:10px;padding:0 9px;display:flex;align-items:center;justify-content:space-between">
+                  <span style="font-size:11px;font-weight:600;color:var(--t4)">Đơn giá</span>
+                  <span style="font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">145 000</span>
+                </div>
+                <div style="height:28px;background:var(--field);border-radius:10px;padding:0 9px;display:flex;align-items:center;justify-content:space-between">
+                  <span style="font-size:11px;font-weight:600;color:var(--t4)">Thành tiền</span>
+                  <span style="font:600 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">7 047 000</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="padding:12px;border-bottom:1px solid var(--border)">
+              <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:8px">Lấy từ</div>
+              <div style="display:flex;align-items:center;gap:9px;height:34px;padding:0 9px;background:var(--field);border-radius:10px;cursor:pointer" style-hover="background:var(--hover)">
+                <span style="width:8px;height:8px;border-radius:2px;background:var(--accent);flex:none"></span>
+                <span style="flex:1;min-width:0;font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">9 tường ngăn, tầng trệt</span>
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5"></path></svg>
+              </div>
+              <div style="font-size:11px;color:var(--t4);margin-top:7px">Bấm để xem các tường này trong mô hình</div>
+            </div>
+
+            <div style="padding:12px">
+              <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:8px">Ghi chú</div>
+              <div style="min-height:56px;padding:9px;background:var(--field);border-radius:10px;font-size:11px;color:var(--t3);line-height:1.55;text-wrap:pretty">Cộng thêm phần chân tường bếp theo yêu cầu của khách. PLACEHOLDER</div>
+            </div>
+          </aside>
+
+          <footer style="grid-column:1/4;display:flex;align-items:center;gap:14px;padding:0 10px 0 8px;background:var(--panel);border-top:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:6px;height:18px;padding:0 8px;border-radius:8px;background:var(--field);min-width:230px">
+              <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">›</span>
+              <span style="font-size:11px;color:var(--t4)">Gõ lệnh hoặc số rồi bấm Enter</span>
+            </div>
+            <span style="font-size:11px;color:var(--t3)">Đang sửa ô Khối lượng, dòng 03</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--warning)">3 ô đã rời khỏi mô hình</span>
+            <span style="font-size:11px;color:var(--t4)">25 dòng</span>
+            <span style="font:400 11px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t4)">Tổng 175 605 950 ₫</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t4)"><span style="width:6px;height:6px;border-radius:50%;background:var(--success)"></span>Đã lưu 14:32</span>
+          </footer>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Tối&quot;,&quot;Kem&quot;],&quot;default&quot;:&quot;Tối&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Giao diện&quot;},&quot;projectName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Căn hộ Thảo Điền&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Nội dung&quot;}}">
+class Component extends DCLogic {
+  state = { theme: null };
+  componentDidMount() { this.apply(); }
+  componentDidUpdate() { this.apply(); }
+  apply() { document.documentElement.dataset.theme = this.theme(); }
+  theme() { return this.state.theme || (this.props.theme === 'Kem' ? 'light' : 'dark'); }
+  renderVals() {
+    const t = this.theme();
+    return {
+      themeLabel: t === 'dark' ? 'Đổi sang nền Kem' : 'Đổi sang nền Tối',
+      toggleTheme: () => this.setState({ theme: t === 'dark' ? 'light' : 'dark' }),
+      project: this.props.projectName || 'Căn hộ Thảo Điền'
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1576,3 +1576,138 @@ khuôn; NodeLibraryPanel vốn ĐÃ là card giàu — ép nó xuống list ch�
    PANEL-ROLLOUT ↔ CAD-SHELL-V3 luật 4, đang theo phe ẩn).
 
 HẾT PHIÊN CHINH — không nhận thêm việc theo lệnh chốt.
+
+---
+
+# PHIÊN CHINH 05/08 — Toolbelt ổ ⑤ · palette ⌘K đa màn · tooltip phím tắt
+
+**Vào phiên:** kiểm 3 nhánh đã vào main — `nhanh-g4`, `feat/so-lenh-registry`,
+`feat/pbr-material-schema` đều OK (`git merge-base --is-ancestor` cả ba), main tại `c1cf8cd`.
+Không phải dừng chờ Hoà.
+
+## (a) Toolbelt ổ ⑤ — `060c419`
+`components/cad/CadToolbelt.tsx` (MỚI) = MỘT khối kính giữa-dưới Stage, mount qua prop
+`toolbelt` của AppShell ở `CadStageScreen`. Gộp `CadToolbar` + `CadTouchDock`; hai file đó nay
+chỉ render HÀNG NÚT, bỏ `position:absolute`/vỏ kính riêng.
+- **Bug "toolbar tràn phải đè Inspector" chết từ gốc**: pill cũ tự absolute với
+  `maxWidth: calc(100vw - 32px)` — 100vw KHÔNG trừ cột Inspector. Nay dock nằm TRONG Stage
+  (flex sibling của Inspector) nên không thể lấn. Đo thật 1440×900 lúc Inspector mở:
+  dock right **1192** < inspector left **1202**; dock bottom **818** < CommandLine top **839**.
+- Sketch = 2 hàng bo 24 (hàng 2 là cụm cảm ứng), Pro/Revit = 1 hàng capsule 999 (§2c
+  một-khối-một-bóng). `marginBottom: 34` để nổi trên `CommandLine` in-flow.
+- Nút Nội thất/Vật liệu bắc cầu `cad:toggle-furniture`/`cad:toggle-material` về CadEditor
+  (2 state panel nằm sâu trong đó) — verify cả 2 panel mở thật.
+
+## (b) Palette ⌘K đa màn — `components/studio/AppCommandPalette.tsx`
+File MỚI, KHÔNG sửa `components/CommandPalette.tsx`: file cũ gọi `useReactFlow()` nên chỉ chạy
+trong ReactFlowProvider của Home — chính là lý do ⌘K xưa nay chết ở `/cad`, `/files`,
+`/settings`. Palette Home giữ nguyên (§0d). Palette mới mount trong AppShell ⇒ phủ cả 5 màn.
+- Nguồn lệnh: `cmdsFor(ctx)` của `lib/commands/registry.ts` (PHU, `4eb94c3`) — ctx =
+  chặng + `cadMode` + `shouldShowProTools(role, stage, cadMode)`, đúng hợp đồng registry
+  "nơi gọi tính sẵn `proToolsAllowed`" — cộng nhóm "Chuyển & giao diện" của vỏ app.
+- 🔴 **Lỗi thật tìm ra khi verify** (không phải suy đoán): ở `/projects/[id]/cad` có listener
+  capture khác NUỐT Enter trước khi tới React root ⇒ `onKeyDown` của ô input không bao giờ
+  chạy, chọn xong bấm ↵ đứng im. Đã chuyển ↑↓/↵ lên **document-capture + stopPropagation**
+  (cùng cơ chế ⌘K/B/I), state gương qua `stateRef` để listener gắn 1 lần vẫn đọc được
+  filtered/idx mới. Bỏ hẳn `onKeyDown` trên input để không có 2 nguồn xử lý cùng phím.
+- Đo thật: `/cad` ⌘K ra **34 mục** (8 vỏ app + 26 lệnh hợp ctx sketch) · gõ "duong tron" không
+  dấu → còn đúng 1 mục · ↵ chạy thật (nút Circle chuyển ghost `rgba(106,87,245,.14)`) ·
+  `/files` ra 8 mục vỏ app · ↵ trên "Sang chặng Dựng ảnh" đổi path thật. Cả 2 theme.
+
+## (c) Tooltip ghi phím tắt
+`Navigator` nhận prop `shiftHotkeys` (AppShell truyền `active === 'cad'`): title nút hiện
+ĐÚNG phím của chặng — CAD "Thư viện — ⇧L" / "Thu gọn — ⇧B", chặng khác L/B trần (§4e).
+Nút đóng Inspector: "Đóng — ẩn/hiện bằng ⇧I / I".
+
+## Sự cố vận hành phải biết
+1. **Dev server cổng 3000 TREO** (pid 95741, chạy 16 tiếng, `curl` 90s không phản hồi) → đã
+   kill + xoá `.next/cache/webpack`. **Hậu quả tự gây**: server ĐANG SỐNG ở cổng **51117**
+   (cùng repo) mất chunk ⇒ ChunkLoadError; phải nạp lại từng route cho Next biên dịch lại.
+   Bài học: đừng xoá `.next/cache/webpack` khi còn server khác chạy trên cùng thư mục.
+2. **`.git` lock lần 6**: 09:19 có phiên KHÁC commit `091734e` (docs TRÌNH) — `index.lock` +
+   `HEAD.lock` lúc đó là lock THẬT của họ, không stale. Tôi đã lỡ đổi tên `index.lock` trước
+   khi kiểm `git log` (may là commit của họ đã landed). **Luật bổ sung cho phiên sau: trước
+   khi động vào lock, chạy `git log --oneline -1` xem có commit MỚI vừa xuất hiện không —
+   có = phiên khác đang chạy, PHẢI chờ, không được đổi tên/xoá.**
+3. Cây làm việc còn `components/three/Scene3DViewer.tsx` modified của phiên khác — không đụng.
+
+## Hàng đợi CHINH còn lại
+- ⛔ merge `nhanh-phu` — vẫn chờ PHU sửa 2 lỗi type (kê ở mục CHINH-1).
+- Phím tắt per-panel §2f (rollout: mở hết/thu hết/solo bằng phím).
+- Chữ→icon phần ngoài vùng đã bàn giao G4/PHU (chưa nhận lại).
+- Việc chờ người khác (không đổi): node RÁC dự án mẫu · xung đột spec Inspector-khi-không-chọn.
+
+---
+
+# PHIÊN CHINH 05/08 tiếp — Đợt 5: đổi NHÃN 3 chặng theo bộ tên chính thức
+
+Đọc `SO-KIEM-TONG.md §3 ĐỢT 5` + `CHOT-TEN-CHANG-MODE-2026-08-03.md` mục "VÒNG CUỐI" trước khi
+làm. Việc: đổi NHÃN HIỂN THỊ "Drafting CAD/Rendering/Presenting" (và tàn dư "Dựng ảnh" round 2)
+→ **2D Kỹ thuật · 3D Thiết kế · Trình bày**, **TUYỆT ĐỐI KHÔNG đổi khoá kỹ thuật**
+(`sketch/pro/revit`, `concept/render/present`, `CadStage 'sketch'/'technical'/'bim'`).
+
+## Phát hiện quan trọng trước khi sửa
+4 chỗ ticket nêu (StageSwitcher/VitalsGesture/AppCommandPalette/ReferencePane) chỉ là phần nổi.
+`lib/phases.ts` — cụ thể `PHASES[].label` — mới là **nguồn gốc thật**: 8 file khác
+(`MobileMenu.tsx`, `StageSelect.tsx`, `LoginScreen.tsx`, `StageTransition.tsx`,
+`InspectorPages.tsx`, `ConceptForm.tsx`, `present-editor/Inspector.tsx`,
+`present-editor/SpecForm.tsx`) đọc thẳng `PHASE_MAP[id].label`/`p.label` — sửa `lib/phases.ts`
+là ĐỦ, không cần sờ 8 file đó (đúng tinh thần "một nguồn, nhiều mặt hiện").
+
+## Việc đã làm
+1. **`lib/phases.ts`** — `PHASES[].label` (3 giá trị) + `phaseLabel()` (biến thể theo cadStage
+   cho chặng 1). Quyết định tự chọn: `bim` gộp chung nhãn `'2D Kỹ thuật · Kỹ thuật'` với
+   `technical` — BIM/cấu kiện KHÔNG còn là mode/chặng riêng theo VÒNG CUỐI (nay là tầng dữ
+   liệu), không bịa nhãn "BIM" hiển thị cho người dùng nữa.
+2. **StageSwitcher.tsx** `WIDEST_LABEL` — ghost-width dùng biến thể dài nhất
+   `'2D Kỹ thuật · Kỹ thuật'` (thay `'CAD · Phác thảo'` cũ).
+3. **VitalsGesture.tsx** `STAGE_LABEL`.
+4. **AppCommandPalette.tsx** — `go.cad`/`go.render` label mới, keywords GIỮ CẢ từ khoá vòng
+   trước (cad/drafting/dung anh) để tìm không hụt trong lúc chuyển tên; `go.present` không đổi
+   (đã đúng "Trình bày"/"Presenting" từ trước).
+5. **ReferencePane.tsx** hint trống.
+6. **Sweep repo-wide** (grep `Rendering|Presenting|Dựng ảnh|CAD ·`, triage TỪNG match loại bỏ
+   false-positive `CanvasRenderingContext2D` + comment code nội bộ không hiển thị): sửa 15 file
+   UI-facing thật — `app/projects/[id]/overview/page.tsx` (STAGE_LABEL trang tổng quan),
+   `ShortcutsPanel.tsx` (SCOPE_LABEL), `ProjectSelect.tsx` (2 câu hint Vitals xoay vòng),
+   `IntroSequence.tsx` (Scene3 — đổi luôn sang bản header hẹp `['2D','3D','Trình bày']`),
+   `CadEditor.tsx` (menu "Đưa ảnh bản vẽ sang…"), `ZonePanel.tsx` (nút + tooltip "Xuất Trình
+   bày"), `NodeExtras.tsx` (nút/toast "Đưa sang Trình bày"), `StageIntroCard.tsx` (dòng
+   onboarding chặng 1), `present-editor/Toolbar.tsx` (2 tooltip nhập/xuất), `PresentDeck.tsx`,
+   `LibrarySheet.tsx` (STAGE_CAPTION — tiện thể sửa luôn `cad: 'Kệ chặng Vẽ'` tàn dư round-2
+   thành `'Kệ chặng 2D Kỹ thuật'` dù không nằm trong 4 từ khoá grep, cùng dict nên sửa chung
+   cho nhất quán), `StagePresetPanel.tsx`, `lib/present-demo.ts` (chữ trên slide demo),
+   `lib/shortcuts.ts` (mô tả phím ⌘J), `lib/ai/chat-assist.ts` (2 đoạn SYSTEM PROMPT gửi cho
+   Vitals AI — sửa vì nội dung này định hình LỜI Vitals nói với người dùng, coi là "nhãn hiển
+   thị" gián tiếp), `AppChrome.tsx` (1 comment kề sát tính năng ⌘1-3 vừa đổi tên).
+   KHÔNG đụng: pure code comment không hiển thị người dùng ở ~20 file khác (IOMenu.tsx,
+   RenderDocBar.tsx, access-policy.ts, wheel.ts, HomeScreen.tsx, HistoryPanel.tsx,
+   PresentSheets.tsx, PresentStageScreen.tsx, ai-layout-feedback.ts, pattern-warp.ts,
+   shelves.ts, cad/render.ts, app/*/page.tsx doc-comment đầu file…) — để dành, không phải bỏ
+   sót; grep lại xác nhận toàn bộ match còn lại đều là comment/false-positive.
+
+## Quyết định tự chọn (chưa có trong bộ tên chính thức, Hoà duyệt lại nếu cần)
+- **Tên tiếng Anh** chưa được chốt ở đâu (VÒNG CUỐI chỉ cho tên Việt). Tự chọn:
+  `2D Technical` / `3D Design` / giữ nguyên `Presenting`. Áp nhất quán ở mọi cặp vi/en.
+- **Nhãn chặng 1 theo cadStage**: `sketch → '2D Kỹ thuật · Sơ phác'`,
+  `technical/bim → '2D Kỹ thuật · Kỹ thuật'` (gộp bim+technical, lý do ghi trong code).
+
+## Verify
+- tsc scoped (21 file vừa sửa) SẠCH · `npm test` 34+14+… tất cả nhóm đều "0 fail".
+- **Browser thật** (127.0.0.1:3000, demo@if.local, dự án mẫu, 1440×900): header 3 tab hiện
+  đúng **"2D Kỹ thuật · Sơ phác | 3D Thiết kế | Trình bày"**; tab title/tooltip đúng
+  `"2D Kỹ thuật · Sơ phác — Import CAD 2D…"` v.v.; ⌘K palette 5 mục đầu đúng nhãn mới
+  (`Sang chặng 2D Kỹ thuật⌘1` · `Sang chặng 3D Thiết kế⌘2` · …); bấm tab "3D Thiết kế" chuyển
+  chặng thật, header giữ nguyên nhãn đúng ở chặng mới.
+- KHÔNG verify được: kéo-thả handle Vitals gesture panel qua automation (pointer-drag không
+  bắt được threshold của `createStageDragTracker`) — đã xác nhận bằng type-check + đọc code
+  thay vì browser thật cho riêng phần này, ghi rõ để không claim "đã verify browser" sai.
+
+## Commit
+`docs(chot)` + `feat(shell)` — xem hash trong lệnh `git log` cuối báo cáo dưới (nếu `.git` bị
+khoá bởi phiên khác, xem ghi chú "Sự cố vận hành phải biết" mục cũ — luật: kiểm `git log
+--oneline -1` trước khi đụng lock, thấy commit MỚI thì PHẢI chờ).
+
+## Hàng đợi CHINH sau đợt này
+- Việc cũ chưa đổi: `⛔ merge nhanh-phu` · phím tắt per-panel §2f · chữ→icon phần ngoài vùng ·
+  node RÁC dự án mẫu · xung đột spec Inspector-khi-không-chọn.

@@ -35,11 +35,12 @@ const PANEL_W = 1000;
 const ROW_H = 30;
 const KEY_COL = 118;
 
+// 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md).
 const SCOPE_LABEL: Record<ShortcutScope, { vi: string; en: string }> = {
   'toàn cục': { vi: 'Toàn cục', en: 'Global' },
-  cad: { vi: 'Drafting CAD', en: 'Drafting CAD' },
-  render: { vi: 'Rendering', en: 'Rendering' },
-  present: { vi: 'Presenting', en: 'Presenting' },
+  cad: { vi: '2D Kỹ thuật', en: '2D Technical' },
+  render: { vi: '3D Thiết kế', en: '3D Design' },
+  present: { vi: 'Trình bày', en: 'Presenting' },
 };
 
 /** `active==='photo'` chưa có scope riêng trong lib/shortcuts.ts (ngoài phạm vi sprint này) —

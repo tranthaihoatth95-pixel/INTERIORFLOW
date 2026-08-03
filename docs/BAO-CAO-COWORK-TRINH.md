@@ -80,3 +80,110 @@
   git commit -m "docs(trinh): dot 2 - spec BOQ + Video tu NC-2/NC-3, chot phien" -- docs/BAO-CAO-COWORK-TRINH.md docs/SPEC-TRINH-BOQ-EDITOR.md docs/SPEC-TRINH-VIDEO-EDITOR.md
   ```
   (Chạy khi chắc không phiên nào đang thao tác git. File này sửa sau khi staged nên commit xong sẽ còn 1 phần modified — commit lần nữa cùng pathspec hoặc kệ, phiên sau gom.)
+
+## ĐỢT 4 (dispatch mới nhận nguyên văn "VIỆC ĐỢT 3" — PHÁT HIỆN GIAO TRÙNG)
+- [03/08] Nhận vai với nguyên văn việc ①+② của ĐỢT 3 (spec Văn bản/biểu mẫu `SPEC-TRINH-VANBAN-BIEUAMAU.md` +
+  kiểm PHU thẩm định 4 điểm). Theo §4 LUẬT THAY PHIÊN ("`git log --all --oneline -- <path>` — việc có thể đã
+  xong, bài học 3D-2 giao trùng 03/08"): chạy lệnh git THẬT trước khi viết bất kỳ file nào, không tin chữ báo
+  cáo cũ suông.
+- **Việc ① — ĐÃ XONG TỪ TRƯỚC, KHÔNG LÀM LẠI:** `git log --oneline --all -- docs/SPEC-TRINH-VANBAN-EDITOR.md`
+  (chạy qua sandbox bash, repo mount tại `/sessions/beautiful-ecstatic-volta/mnt/interiorflow`, branch hiện tại
+  `main`) → commit `091734e` "docs(trinh): dot 3 - SPEC-TRINH-VANBAN-EDITOR (bieu mau A4, bien tu dien, du 5/5
+  loai ho so), viec 2 skip cho PHU" **ĐÃ NẰM TRÊN MAIN**. Đọc lại toàn văn file (62 dòng) — khớp 100% yêu cầu
+  vừa nhận: `docType:'document'` additive · khổ A4 dọc · 3 template Báo giá/Hợp đồng/Thuyết minh song ngữ ·
+  biến `{{...}}` tự điền từ `BrandKit` (`lib/present-editor/brand-kit.ts:35`) + `BoqResult.totalAmount` · badge
+  sửa-đè cùng cơ chế trigger-formula BOQ · cùng khuôn 3 spec anh em (Material A3/BOQ/Video). **KHÔNG tạo
+  `SPEC-TRINH-VANBAN-BIEUAMAU.md` trùng nội dung** — làm vậy vi phạm thẳng bài học "giao trùng việc 3D-2 đã
+  xong" (§0 `SO-KIEM-TONG`) và tạo rủi ro 2 file cùng đặc tả 1 docType trôi dạt (drift) theo thời gian. Tên file
+  cũ giữ hậu tố `-EDITOR` — đã nhất quán với `SPEC-TRINH-BOQ-EDITOR.md`/`SPEC-TRINH-VIDEO-EDITOR.md`, không cần
+  đổi tên.
+- **Việc ② — kiểm TƯƠI lại (không tin kết luận cũ suông), VẪN CHƯA ĐỦ ĐIỀU KIỆN:** 2 lượt grep trên toàn bộ
+  `docs/`: lượt 1 đúng 4 từ khoá đề bài + biến thể lib (`mini-DSL|SUM\(|beat|MP4|mp4-muxer|WebCodecs|
+  web-audio-beat-detector|essentia`) → 20 file khớp, **`BAO-CAO-PHU.md` KHÔNG có trong danh sách**; lượt 2
+  case-insensitive nới rộng (`DSL|SUM|beat|MP4|dò beat|xuất video`) chạy riêng trên `BAO-CAO-PHU.md` → **0
+  match**. Đọc thêm toàn văn `BAO-CAO-PHU.md` (1108 dòng, mtime 02/08 13:21 — không đổi so với lần đọc trước)
+  xác nhận nội dung chỉ có P1-P4 + P6c (mask ảnh · nhóm phần tử · resize nhóm theo tỉ lệ · z-order nhóm · lớp
+  phủ fill · filter phần tử · fix kính lỏng) — KHÔNG đụng BOQ mini-DSL/SUM() lẫn video beat-detect/MP4 export.
+  **PHU CHƯA thẩm định bất kỳ điểm nào trong 4 điểm** → bỏ qua việc ②, giữ nguyên §8 của
+  `SPEC-TRINH-BOQ-EDITOR.md` và §8 của `SPEC-TRINH-VIDEO-EDITOR.md` y nguyên (mỗi phiếu vẫn đúng 2 việc "chờ
+  PHU thẩm định trước khi lên phiếu code"). KHÔNG tạo `PHIEU-TRINH-BOQ-VIDEO-CODE-2026-08-03.md`.
+- **Kiểm phụ (freshness — không đổi kết luận nhưng đáng ghi):** grep `docType` trong `lib/present-editor/*` = 0
+  kết quả — field additive mà 3 spec (Material A3 §4.1, Văn bản §2) đề xuất dùng chung CHƯA được G4 code, đúng
+  như spec mô tả (là đề xuất cho tương lai, không phải hiện trạng đã có) — không có trôi dạt cần sửa spec.
+- **Ghi nhận cho TỔNG/Hoà (nghi vấn vai khác — đúng quy ước đầu file: "ghi đây + 1 câu cho Hoà chuyển
+  TỔNG"):** dòng "ĐỢT 3 — COWORK-TRÌNH" trong `SO-KIEM-TONG.md` §3 (bảng cuối file, mục "ĐỢT 3 (TỔNG bơm ~02:1x
+  ...)") mô tả đúng việc ①+② vừa bị giao lại — đã HOÀN TẤT từ 03/08 (commit `091734e`) nhưng chưa được đánh dấu
+  xong/gỡ khỏi hàng đợi, nên phiên này nhận trùng. Đề nghị TỔNG cập nhật hoặc gỡ dòng đó trước khi bơm đợt kế,
+  tránh giao trùng lần 3 (tiền lệ: 3D-2 03/08 + Văn bản lần này 03/08).
+
+## CHỐT PHIÊN [03/08 — dispatch trùng ĐỢT 3]
+- **Đã xong phiên này:** KHÔNG bằng cách viết spec mới, mà bằng cách xác minh việc đã xong + đóng vòng lặp
+  trùng lặp TRƯỚC khi tốn công viết trùng. Việc ① xác nhận ĐÃ CÓ, ĐÃ COMMIT MAIN (không cần làm) · việc ② xác
+  nhận VẪN CHƯA ĐỦ ĐIỀU KIỆN (bỏ qua đúng luật chờ-X, đã kiểm tươi bằng 2 lượt grep + đọc toàn văn báo cáo PHU).
+- **File tạo mới:** 0 (cố ý — tạo thêm sẽ trùng nội dung `SPEC-TRINH-VANBAN-EDITOR.md`, vi phạm luật chống
+  trùng việc). Chỉ cập nhật `BAO-CAO-COWORK-TRINH.md` (file này, mục ĐỢT 4 trên).
+- **Việc dở:** không — cả ① và ② đều đã có kết luận rõ ràng (① xong từ trước / ② chưa đủ điều kiện, đã kiểm
+  tươi bằng lệnh thật, không phải suy đoán).
+- **Chờ người khác:** PHU thẩm định 4 điểm (mini-DSL parse · SUM() xlsx output hiện tại · lib dò beat
+  `web-audio-beat-detector`/`essentia.js` · đường xuất MP4 WebCodecs+mp4-muxer/ffmpeg.wasm) rồi COWORK-TRÌNH
+  đợt sau mới nâng BOQ/Video thành phiếu code · TỔNG rà lại dòng ĐỢT 3 trong `SO-KIEM-TONG.md` §3 cho khớp
+  thực tế đã xong.
+- **Nghi vấn chuyển TỔNG:** có — hàng đợi §3 `SO-KIEM-TONG.md` bị lỗi thời cho vai COWORK-TRÌNH (xem mục ĐỢT 4
+  trên), nên rà lại trước khi bơm đợt kế để tránh lặp lần 3.
+
+## ĐỢT 5 (03/08 — nâng spec thành phiếu code + trả lời §0.6)
+**Nhận 2 việc:** ① nâng `SPEC-TRINH-BOQ-EDITOR` (+ Video nếu đủ điều kiện) thành phiếu code · ② trả lời phát
+hiện §0.6 `SPEC-TANG-DU-LIEU-CAU-KIEN` (Trình bày cầm bản sao chết). Đọc trước khi làm: `SO-KIEM-TONG` §0/§0b/
+§0c/§0d · báo cáo này · 2 spec của mình · `CHOT-TEN-CHANG-MODE` VÒNG CUỐI (luật ba-ống-kính-một-nguồn) ·
+`SPEC-TANG-DU-LIEU-CAU-KIEN` §0.6. **KHÔNG chạy git** (lệnh phiên) — mọi khẳng định dưới là **đọc code thật
+trên cây làm việc**, hash commit chỉ chép theo dispatch, ghi rõ CHƯA tự verify.
+
+### ① BOQ → `docs/PHIEU-TRINH-BOQ-EDITOR.md` (MỚI) — **11 việc code B0–B11**
+Thứ tự chốt: **B0→B1→B2→B3→B4→B5→B6→B8→B10→B7→B9→(B11 gated)**. Mỗi việc có file đích + nghiệm thu đo được +
+chủ (G4 = UI trong `components/present-editor/boq/*`, PHU = `lib/boq/*`). §A liệt kê **13 hàm/đường đã có sẵn**
+kèm số dòng để tái dùng (`computeBoq:89` · `computeBoqCached:68` · `computeBoqForProject:66` ·
+`boqResultToXlsxBuffer:162` · `POST /api/boq/[projectId]:25` · `useCadStore.select` · `loadSheets` · …).
+**3 điểm spec phải sửa vì code nói khác (§0 trung thực):**
+| # | Spec viết | Code thật | Xử |
+|---|---|---|---|
+| 1 | xlsx "đã có SUM() — PHU kiểm" | `xlsx.ts:93` ghi TỔNG bằng **số chết**; grep `SUM\|<f>\|formula` = **0** | **tôi tự verify xong** → hết chờ PHU, thành việc code **B8** |
+| 2 | truy vết `entityIds` "cần hỏi CHINH" | `useCadStore.select(ids)` đã có, `SchedulePanel.tsx:153` đã dùng | hết chờ CHINH → **B4** |
+| 3 | group theo **phòng** | `HatchEntity` không có `roomId`; `Base.storey:162` có; phòng chỉ suy từ nhãn text | v1 nhóm theo **tầng + hạng mục**; nhóm-theo-phòng = v2 có cờ `inferred` (L4) |
+**Còn chờ:** chỉ **B11 (mini-DSL ƒx)** — `BAO-CAO-PHU.md` grep `DSL` = 0, PHU chưa trả lời. 10/11 việc code được ngay.
+**2 câu hỏi chặn cho TỔNG/Hoà (§E phiếu):** dự án nhiều bản vẽ thì BOQ tính theo sheet đang mở hay gộp cả dự án ·
+bảng BOQ có phải 1 "hồ sơ" lưu như deck không (ảnh hưởng chỗ lưu override sửa-tay).
+
+### ① Video — **KHÔNG nâng phiếu, đúng luật chờ-X**
+Kiểm tươi 03/08: `grep -ci "beat|mp4|webcodecs|muxer" docs/BAO-CAO-PHU.md` = **0** · `package.json` không có
+`web-audio-beat-detector`/`essentia.js`/`mp4-muxer`/`ffmpeg.wasm`. **PHU chưa thẩm định cả 2 điểm §8**
+(lib dò beat · đường xuất MP4) → §5 và §7 của spec Video **không có nền để viết nghiệm thu đo được**; đẩy phiếu
+lúc này = phiếu không code được. Giữ nguyên `SPEC-TRINH-VIDEO-EDITOR.md`, không sửa 1 chữ.
+
+### ② §0.6 → `docs/SPEC-TRINH-ONG-KINH-DU-LIEU.md` (MỚI) — đề xuất chờ TỔNG duyệt
+**3 sự thật bổ sung cho §0.6 (kiểm code):** (a) payload **CÓ** mang `snapshot: JSON.stringify(doc)`
+(`CadEditor.tsx:393`) nhưng bên nhận `PresentEditor.tsx:321` gọi `consumeCadPresentHandoff()` → **chỉ lấy
+`dataUrl`, vứt snapshot** — cửa mở sẵn, chưa ai bước qua; (b) **đọc snapshot vẫn SAI** — bản sao đông lạnh trong
+sessionStorage vẫn là bản sao (L6), chép "dữ liệu" không đỡ hơn chép "ảnh"; (c) `grep computeBoq|api/boq` trong
+`components/` = **0** → lời hứa `SPEC-SEMANTIC-MODEL` §6 "sửa bản vẽ → deck tự cập nhật" hiện **chưa có đường code nào**.
+**Ranh giới đề xuất (1 dòng):** *Ảnh là SẢN PHẨM, không bao giờ là NGUỒN — cái người ta ngắm thì ảnh hợp lệ,
+cái người ta đọc để ra tiền thì phải sống.* Phép thử: **"số này in ra khách chỉ tay vào cãi được không?"**
+| 🟩 Ảnh hợp lệ (KHÔNG phải lỗi) | 🟨 Ảnh có công thức | 🟥 Bắt buộc dữ liệu sống |
+|---|---|---|
+| render 3D · moodboard · ảnh chụp · ảnh mẫu vật liệu · chữ/hình của deck | mặt bằng/mặt cắt dán vào deck · bản đồ zone | m² · mã SKU/NCC · đơn giá · hao hụt · thành tiền/tổng · số lượng thống kê · biến `{{...}}` văn bản |
+Ranh giới thật nằm ở **"nội dung này có phải HÀM của Doc không"** + **"người ta ngắm hay đọc nó"**.
+**3 việc sửa, không đập cái đang chạy (§0d):** T1 ống kính dữ liệu = đúng việc **B0** phiếu BOQ (không cần sửa
+`present-handoff`) · T2 ảnh dẫn xuất mang **recipe** gắn vào `deck.linkedAssets` đã có (`linked-assets.ts:122`)
++ nút "Làm mới từ bản vẽ" + chỉ dấu cũ bằng `boqFingerprint` — **không tự render lại sau lưng** (L5) · T3 danh sách
+không-làm. Kèm đề xuất **bỏ `snapshot` khỏi `present-handoff`** (giảm bản sao) — nhưng đây là lật ý phiên 23/07
+nên **treo chờ Hoà/TỔNG**, không tự quyết (§4a).
+**Điểm đáng lưu ý cho TỔNG:** `SPEC-TANG-DU-LIEU-CAU-KIEN` §9 xếp **P7 sau P5 (RoomEntity)** — nhưng T1/B0
+**không cần** RoomEntity (BOQ chỉ cần `HatchEntity.specId` đã có) ⇒ đề xuất cho P7/T1 **chạy ngay, không chờ P5**.
+
+### Chốt đợt 5
+- **File mới:** `docs/PHIEU-TRINH-BOQ-EDITOR.md` (173 dòng) · `docs/SPEC-TRINH-ONG-KINH-DU-LIEU.md` (106 dòng).
+  Sửa: file này. **Không đụng `lib/` `components/`** (Cowork không code).
+- **CHƯA VERIFY (ghi thẳng):** commit `892c927` chưa tự kiểm bằng git (lệnh phiên cấm) — chỉ xác nhận **file có
+  mặt trên cây làm việc** · chưa chạy app/test lần nào · ô nghiệm thu trong phiếu là để **người code đo**, không
+  phải kết quả đã đo.
+- **Chờ người khác:** PHU (mini-DSL B11 · 2 điểm Video §8) · TỔNG/Hoà (2 câu §E phiếu BOQ + 3 câu §5 spec ống
+  kính) · G4 nhận phiếu BOQ · CHINH commit gộp docs (§3-5b sổ tổng — phiên Cowork không chạy git).

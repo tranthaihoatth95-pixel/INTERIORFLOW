@@ -73,6 +73,10 @@ export interface SceneGroup {
   /** 3D-5 — cao độ (mm) ĐÃ DÙNG để đùn group tường này (đọc từ `entity.heightMm` hoặc mặc định
    * scene) — viewer 3D dùng số này làm mốc scale khi kéo-đẩy, KHÔNG tính lại từ hình học. */
   heightMm?: number;
+  /** SPEC-TANG-DU-LIEU-CAU-KIEN §2.3/L4 — group này được XẾP LOẠI bằng SUY ĐOÁN (tên layer),
+   * không phải `elementType` khai báo. Cờ RUNTIME (không lưu vào `.idf`) để UI hiện badge
+   * "suy đoán" (P3, chưa làm) — undefined = khai báo (chắc chắn) hoặc không áp dụng. */
+  inferred?: true;
 }
 
 export interface ObjScene {
@@ -187,19 +191,20 @@ class ObjBuilder {
   faces = 0;
   private posByIndex: number[][] = []; // posByIndex[i] = vị trí (m, Y-up) của vertex OBJ #(i+1)
   private groupList: SceneGroup[] = [];
-  private cur: { name: string; colorHex: string; tris: number[]; entityId?: string; heightMm?: number } | null = null;
+  private cur: { name: string; colorHex: string; tris: number[]; entityId?: string; heightMm?: number; inferred?: true } | null = null;
 
   constructor(mtlFile: string) {
     this.lines.push('# InteriorFlow — OBJ sinh tất định từ bản vẽ CAD (mm → m)');
     this.lines.push(`mtllib ${mtlFile}`);
   }
 
-  /** `entityId`/`heightMm` (3D-5 push-pull) — chỉ tường truyền vào, group khác bỏ trống. */
-  object(name: string, mat: Mat, meta?: { entityId?: string; heightMm?: number }) {
+  /** `entityId`/`heightMm` (3D-5 push-pull) — chỉ tường truyền vào, group khác bỏ trống.
+   * `inferred` (§2.3/L4) — group xếp loại bằng suy đoán tên layer, không phải `elementType`. */
+  object(name: string, mat: Mat, meta?: { entityId?: string; heightMm?: number; inferred?: true }) {
     this.lines.push(`o ${name}`);
     this.lines.push(`usemtl ${mat.name}`);
     this.flushGroup();
-    this.cur = { name, colorHex: mat.hex, tris: [], entityId: meta?.entityId, heightMm: meta?.heightMm };
+    this.cur = { name, colorHex: mat.hex, tris: [], entityId: meta?.entityId, heightMm: meta?.heightMm, inferred: meta?.inferred };
   }
 
   private flushGroup() {
@@ -210,6 +215,7 @@ class ObjBuilder {
         positions: this.cur.tris,
         entityId: this.cur.entityId,
         heightMm: this.cur.heightMm,
+        inferred: this.cur.inferred,
       });
     }
     this.cur = null;
@@ -346,13 +352,18 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
   const mats = themeMats(theme, opts.palette ?? []);
   const warnings: string[] = [];
 
+  // SPEC-TANG-DU-LIEU-CAU-KIEN §2.3 — thang ưu tiên "khai báo thắng suy đoán" (luật L3), thay
+  // nhánh `||` cũ (e.solid===true / e.pattern==='SOLID' / !e.pattern) — gốc khuyết §0.3: một mảng
+  // HATCH tô SOLID bất kỳ (vd preset sơn "Sơn trắng", KHÔNG nằm trên layer tường) từng bị coi là
+  // tường và đùn khối 2.7m giữa phòng. Nay: có `elementType` thì NGHE NÓ, hết — chỉ khi
+  // `elementType` CHƯA GÁN (undefined) mới lùi về suy đoán tạm qua tên layer (giữ cho `.idf` cũ),
+  // và suy đoán đó phải gắn cờ `inferred` (L4) ở nơi tạo group bên dưới.
   const wallLayers = wallLayerIds(doc);
-  const wallHatches = doc.entities.filter(
-    (e): e is HatchEntity =>
-      e.type === 'hatch' &&
-      (wallLayers.has(e.layer) || e.solid === true || e.pattern === 'SOLID' || !e.pattern) &&
-      e.points.length >= 3,
-  );
+  const wallHatches = doc.entities.filter((e): e is HatchEntity => {
+    if (e.type !== 'hatch' || e.points.length < 3) return false;
+    if (e.elementType !== undefined) return e.elementType === 'wall'; // khai báo (kể cả null) thắng, DỪNG
+    return wallLayers.has(e.layer); // undefined → suy đoán tạm theo tên layer
+  });
   const blocks = doc.entities.filter((e): e is BlockEntity => e.type === 'block');
   const furnitureBlocks = blocks.filter((b) => {
     const def = BLOCK_MAP[b.block];
@@ -413,7 +424,8 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
   // Doc quyết, 3D chỉ đọc lại (luật một nguồn, `CHOT-HUONG-3D-2026-08-01.md`). ----
   wallHatches.forEach((h, i) => {
     const wallH = clampWallHeight(h.heightMm ?? H);
-    builder.object(`Wall_${i + 1}`, mats.wall, { entityId: h.id, heightMm: wallH });
+    const inferred = h.elementType === undefined ? true : undefined;
+    builder.object(`Wall_${i + 1}`, mats.wall, { entityId: h.id, heightMm: wallH, ...(inferred ? { inferred } : {}) });
     builder.prism(h.points, 0, wallH);
   });
 

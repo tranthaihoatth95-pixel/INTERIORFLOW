@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14);
+  --ease-apple:cubic-bezier(.32,.72,0,1); --tap:32px; --row:28px;
+}
+:root,[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --mat-panel:rgba(20,20,23,.72); --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.08);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65); --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --hatch:repeating-linear-gradient(45deg,#202024 0 9px,#1a1a1e 9px 18px);
+  --mark:rgba(106,87,245,.28);
+  --shell:#18181c; --shell-edge:#2e2e35; --crease:rgba(255,255,255,.09);
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --mat-panel:rgba(250,248,244,.78); --mat-card:rgba(255,255,255,.86); --mat-hairline:rgba(33,30,25,.08);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22); --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --hatch:repeating-linear-gradient(45deg,#f4f1eb 0 9px,#ffffff 9px 18px);
+  --mark:rgba(106,87,245,.20);
+  --shell:#c9c3b8; --shell-edge:#a8a196; --crease:rgba(33,30,25,.10);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--accent-strong)}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms !important}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--bg);padding:36px 40px 72px;font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
+
+  <div style="width:1400px;margin:0 auto 30px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
+    <div style="min-width:0">
+      <div style="display:flex;align-items:center;gap:11px">
+        <div style="width:26px;height:26px;border-radius:8px;background:var(--accent);flex:none"></div>
+        <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.02em">Sổ tay</h1>
+        <span style="display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:6px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700;letter-spacing:.03em">PLACEHOLDER</span>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--t3);max-width:900px;text-wrap:pretty">Ghi chú lẫn ảnh, chữ, ghi âm và việc cần làm. Dựng trong ba khung máy: máy tính bảng ngang, điện thoại dọc, và điện thoại gập ở cả hai trạng thái.</div>
+    </div>
+    <button onClick="{{ toggleTheme }}" style="height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font:600 12px inherit;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">{{ themeLabel }}</button>
+  </div>
+
+  <div style="width:1400px;margin:0 auto;display:flex;flex-direction:column;gap:52px">
+
+    <div data-screen-label="01">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">
+        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">01</span>
+        <span style="font-size:12px;font-weight:600;color:var(--t2)">Máy tính bảng ngang · tỉ lệ 4 trên 3</span>
+        <span style="font-size:11px;color:var(--t4)">Ba vùng: vùng làm việc · công cụ đáy · tấm trượt từ phải</span>
+      </div>
+
+      <div style="width:1136px;padding:22px;border-radius:34px;background:var(--shell);box-shadow:var(--shadow-pop),inset 0 0 0 1px var(--shell-edge)">
+        <div style="position:relative;width:1092px;height:819px;border-radius:16px;overflow:hidden;background:var(--bg);box-shadow:inset 0 0 0 1px rgba(0,0,0,.4)">
+
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column">
+            <div style="height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid var(--border);background:var(--panel)">
+              <button style="width:32px;height:32px;border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 3.5 5 8l4.5 4.5"></path></svg></button>
+              <span style="font-size:12px;color:var(--t3)">Căn hộ Thảo Điền</span>
+              <span style="color:var(--t5)">›</span>
+              <span style="font-size:12px;font-weight:600;color:var(--t2)">Khảo sát hiện trạng</span>
+              <span style="margin-left:auto;font-size:11px;color:var(--t4)">Sửa lúc 14:32</span>
+              <button style="height:32px;padding:0 14px;border:1px solid var(--border);border-radius:10px;background:var(--field);color:var(--t1);font:600 12px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover)">Chia sẻ</button>
+            </div>
+
+            <div style="flex:1;min-height:0;display:flex;overflow:hidden">
+              <div style="flex:1;min-width:0;overflow:hidden;padding:26px 0 96px;display:flex;justify-content:center">
+                <div style="width:560px;position:relative">
+                  <div style="font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1.28">Khảo sát hiện trạng căn hộ tầng trệt</div>
+                  <div style="display:flex;align-items:center;gap:9px;margin-top:7px;font-size:11px;color:var(--t4)"><span>Thứ ba, 14 tháng 7</span><span>·</span><span>Ngọc Trâm</span><span>·</span><span>4 mục đính kèm</span></div>
+
+                  <div style="margin-top:18px;font-size:16px;line-height:1.7;color:var(--t2);text-wrap:pretty">Trần thật thấp hơn bản vẽ khoảng <span style="font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">120</span> mi-li-mét. <span style="background:var(--mark);color:var(--t1);border-radius:3px;padding:1px 2px">Dầm ngang chạy qua giữa phòng khách, phải hạ trần hoặc đổi vị trí đèn thả.</span> Chủ nhà muốn giữ nguyên vị trí bếp.</div>
+
+                  <div style="position:absolute;left:74px;top:150px;display:flex;align-items:center;gap:1px;padding:4px;border-radius:14px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
+                    <button title="Đậm" style="width:44px;height:44px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:700 15px inherit;cursor:pointer">B</button>
+                    <button title="Nghiêng" style="width:44px;height:44px;border:0;border-radius:10px;background:transparent;color:var(--t2);font:400 15px inherit;font-style:italic;cursor:pointer">I</button>
+                    <button title="Gạch chân" style="width:44px;height:44px;border:0;border-radius:10px;background:transparent;color:var(--t2);font:400 15px inherit;text-decoration:underline;cursor:pointer">U</button>
+                    <span style="width:1px;height:20px;background:var(--mat-hairline);margin:0 5px"></span>
+                    <button title="Tô nền chữ" style="width:44px;height:44px;border:0;border-radius:10px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center"><span style="width:16px;height:16px;border-radius:5px;background:var(--mark);border:1px solid var(--accent)"></span></button>
+                    <button title="Chuyển thành việc cần làm" style="width:44px;height:44px;border:0;border-radius:10px;background:transparent;color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="11" height="11" rx="2.6"></rect><path d="M5.4 8.2 7.2 10l3.4-3.6"></path></svg></button>
+                  </div>
+
+                  <div style="margin-top:20px;border-radius:20px;overflow:hidden;border:1px solid var(--border);background:var(--card)">
+                    <div style="height:230px;background:var(--hatch);display:flex;align-items:center;justify-content:center"><span style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--t4);background:var(--card);padding:4px 9px;border-radius:6px">PLACEHOLDER</span></div>
+                    <div style="display:flex;align-items:center;gap:9px;padding:10px 14px;border-top:1px solid var(--border)">
+                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.4"><rect x="2" y="3.5" width="12" height="9" rx="1.6"></rect><path d="M2 10 5.5 7l2.5 2.5L10.5 7 14 10"></path></svg>
+                      <span style="flex:1;font-size:12px;color:var(--t3)">Dầm ngang phòng khách</span>
+                      <span style="font:400 11px ui-monospace,Menlo,monospace;color:var(--t5)">09:41</span>
+                    </div>
+                  </div>
+
+                  <div style="margin-top:12px;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;border:1px solid var(--border);background:var(--card)">
+                    <button style="width:44px;height:44px;flex:none;border:0;border-radius:50%;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 16 16"><path d="M5.5 3.4 12.4 8 5.5 12.6z" style="fill:currentColor"></path></svg></button>
+                    <div style="flex:1;min-width:0">
+                      <div style="display:flex;align-items:flex-end;gap:2px;height:28px">
+                        <span style="flex:1;height:24%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:58%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:88%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:44%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:72%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:100%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:36%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:64%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:28%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:80%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:48%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:92%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:32%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:68%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:40%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:76%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:52%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:84%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:26%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:60%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:44%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:88%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:34%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:70%;border-radius:1px;background:var(--t5)"></span>
+                      </div>
+                      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--t4)"><span>Lời chủ nhà nói tại chỗ</span><span style="font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">0:38 / 2:14</span></div>
+                    </div>
+                  </div>
+
+                  <div style="margin-top:20px;font-size:19px;font-weight:600;letter-spacing:-.01em">Việc cần làm</div>
+                  <div style="margin-top:8px;display:flex;flex-direction:column;gap:2px">
+                    <div style="display:flex;align-items:center;gap:11px;min-height:44px;padding:6px 8px;border-radius:14px">
+                      <span style="width:20px;height:20px;flex:none;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5 6.5 11.5 12.5 5"></path></svg></span>
+                      <span style="flex:1;font-size:15px;color:var(--t4);text-decoration:line-through">Đo lại chiều cao trần ba điểm</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:11px;min-height:44px;padding:6px 8px;border-radius:14px">
+                      <span style="width:20px;height:20px;flex:none;border-radius:7px;border:1.6px solid var(--border-strong)"></span>
+                      <span style="flex:1;font-size:15px;color:var(--t1)">Hỏi kỹ sư điện về hộp kỹ thuật</span>
+                      <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:20px;background:var(--field);color:var(--warning);font-size:11px">Mai</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="width:300px;flex:none;border-left:1px solid var(--border);background:var(--panel);box-shadow:-14px 0 30px -18px rgba(0,0,0,.7);display:flex;flex-direction:column">
+                <div style="height:48px;flex:none;display:flex;align-items:center;gap:9px;padding:0 8px 0 16px;border-bottom:1px solid var(--border)">
+                  <span style="flex:1;font-size:13px;font-weight:600">Việc cần làm</span>
+                  <span style="display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:20px;background:var(--field);color:var(--t3);font-size:11px">2 chưa xong</span>
+                  <button title="Đóng tấm" style="width:36px;height:36px;border:0;border-radius:12px;background:transparent;color:var(--t4);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
+                </div>
+                <div style="flex:1;min-height:0;padding:10px;display:flex;flex-direction:column;gap:6px">
+                  <div style="display:flex;align-items:flex-start;gap:10px;padding:11px;border-radius:14px;background:var(--card);border:1px solid var(--border)">
+                    <span style="width:20px;height:20px;flex:none;border-radius:7px;border:1.6px solid var(--border-strong)"></span>
+                    <span style="flex:1;min-width:0"><span style="display:block;font-size:13px;color:var(--t1);line-height:1.45">Hỏi kỹ sư điện về hộp kỹ thuật</span><span style="display:block;font-size:11px;color:var(--warning);margin-top:3px">Hạn ngày mai</span></span>
+                  </div>
+                  <div style="display:flex;align-items:flex-start;gap:10px;padding:11px;border-radius:14px;background:var(--card);border:1px solid var(--border)">
+                    <span style="width:20px;height:20px;flex:none;border-radius:7px;border:1.6px solid var(--border-strong)"></span>
+                    <span style="flex:1;min-width:0"><span style="display:block;font-size:13px;color:var(--t1);line-height:1.45">Chụp thêm mặt tường bếp phía bắc</span><span style="display:block;font-size:11px;color:var(--t4);margin-top:3px">Chưa đặt hạn</span></span>
+                  </div>
+                  <div style="display:flex;align-items:flex-start;gap:10px;padding:11px;border-radius:14px;background:var(--field);opacity:.7">
+                    <span style="width:20px;height:20px;flex:none;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5 6.5 11.5 12.5 5"></path></svg></span>
+                    <span style="flex:1;font-size:13px;color:var(--t4);text-decoration:line-through;line-height:1.45">Đo lại chiều cao trần ba điểm</span>
+                  </div>
+                </div>
+                <div style="padding:10px;border-top:1px solid var(--border)">
+                  <button style="width:100%;height:44px;border:0;border-radius:14px;background:var(--accent);color:#fff;font:600 13px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">Thêm việc mới</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="position:absolute;left:calc(50% - 150px);bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;padding:5px;border-radius:20px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
+            <button title="Tiêu đề" style="width:52px;height:44px;border:0;border-radius:14px;background:transparent;color:var(--t2);font:600 16px inherit;cursor:pointer">Aa</button>
+            <button title="Nội dung" style="width:52px;height:44px;border:0;border-radius:14px;background:var(--accent);color:#fff;font:400 13px inherit;cursor:pointer">Aa</button>
+            <span style="width:1px;height:22px;background:var(--mat-hairline);margin:0 6px"></span>
+            <button title="Đậm" style="width:44px;height:44px;border:0;border-radius:14px;background:transparent;color:var(--t2);font:700 15px inherit;cursor:pointer">B</button>
+            <button title="Nghiêng" style="width:44px;height:44px;border:0;border-radius:14px;background:transparent;color:var(--t2);font:400 15px inherit;font-style:italic;cursor:pointer">I</button>
+            <button title="Danh sách" style="width:44px;height:44px;border:0;border-radius:14px;background:transparent;color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="3" cy="4.5" r="1.1" style="fill:currentColor;stroke:none"></circle><circle cx="3" cy="8" r="1.1" style="fill:currentColor;stroke:none"></circle><circle cx="3" cy="11.5" r="1.1" style="fill:currentColor;stroke:none"></circle><path d="M6.5 4.5H14M6.5 8H14M6.5 11.5H14"></path></svg></button>
+            <span style="width:1px;height:22px;background:var(--mat-hairline);margin:0 6px"></span>
+            <button title="Thêm ghi âm" style="height:44px;padding:0 14px;display:flex;align-items:center;gap:8px;border:0;border-radius:14px;background:var(--field);color:var(--t1);font:600 12px inherit;cursor:pointer"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="5.6" y="1.8" width="4.8" height="8" rx="2.4"></rect><path d="M3.2 7.4a4.8 4.8 0 0 0 9.6 0M8 12.2v2"></path></svg>Ghi âm</button>
+            <button title="Thêm ảnh" style="height:44px;padding:0 14px;display:flex;align-items:center;gap:8px;border:0;border-radius:14px;background:var(--field);color:var(--t1);font:600 12px inherit;cursor:pointer"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3.5" width="12" height="9" rx="1.8"></rect><path d="M2 10 5.5 7l2.5 2.5L10.5 7 14 10"></path></svg>Ảnh</button>
+            <button title="Thêm việc" style="height:44px;padding:0 14px;display:flex;align-items:center;gap:8px;border:0;border-radius:14px;background:var(--field);color:var(--t1);font:600 12px inherit;cursor:pointer"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="11" height="11" rx="2.6"></rect><path d="M5.4 8.2 7.2 10l3.4-3.6"></path></svg>Việc</button>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:center;margin-top:9px"><span style="width:64px;height:4px;border-radius:2px;background:var(--shell-edge)"></span></div>
+      </div>
+    </div>
+
+    <div data-screen-label="02">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">
+        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">02</span>
+        <span style="font-size:12px;font-weight:600;color:var(--t2)">Điện thoại dọc · tỉ lệ 19,5 trên 9</span>
+        <span style="font-size:11px;color:var(--t4)">Một cột · thanh điều hướng đáy bốn mục · công cụ là tấm trượt lên</span>
+      </div>
+
+      <div style="display:flex;gap:34px;align-items:flex-start">
+        <div style="width:417px;padding:12px;border-radius:56px;background:var(--shell);box-shadow:var(--shadow-pop),inset 0 0 0 1px var(--shell-edge)">
+          <div style="position:relative;width:393px;height:852px;border-radius:44px;overflow:hidden;background:var(--bg)">
+
+            <div style="position:absolute;left:0;right:0;top:0;height:54px;z-index:3;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 6px;pointer-events:none">
+              <span style="font:600 13px -apple-system,'SF Pro Text',sans-serif;color:var(--t1)">9:41</span>
+              <span style="display:flex;align-items:center;gap:5px">
+                <svg width="16" height="11" viewBox="0 0 16 11"><path d="M1 8h2v3H1zM5 5.5h2V11H5zM9 3h2v8H9zM13 .5h2V11h-2z" style="fill:var(--t1)"></path></svg>
+                <svg width="22" height="11" viewBox="0 0 22 11"><rect x="1" y="1" width="17" height="9" rx="2.6" style="fill:none;stroke:var(--t1);stroke-width:1;opacity:.5"></rect><rect x="2.6" y="2.6" width="12" height="5.8" rx="1.4" style="fill:var(--t1)"></rect><path d="M19.6 4v3a2 2 0 0 0 0-3" style="fill:var(--t1);opacity:.5"></path></svg>
+              </span>
+            </div>
+            <div style="position:absolute;left:50%;top:12px;width:108px;height:32px;margin-left:-54px;border-radius:20px;background:#000;z-index:4"></div>
+
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding-top:54px">
+              <div style="height:46px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--border);background:var(--panel)">
+                <button style="width:36px;height:36px;border:0;border-radius:12px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 3.5 5 8l4.5 4.5"></path></svg></button>
+                <span style="flex:1;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Khảo sát hiện trạng</span>
+                <button style="width:36px;height:36px;border:0;border-radius:12px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="3.4" r="1.3" style="fill:currentColor"></circle><circle cx="8" cy="8" r="1.3" style="fill:currentColor"></circle><circle cx="8" cy="12.6" r="1.3" style="fill:currentColor"></circle></svg></button>
+              </div>
+
+              <div style="flex:1;min-height:0;overflow:hidden;padding:16px 16px 0">
+                <div style="font-size:22px;font-weight:600;letter-spacing:-.01em;line-height:1.3">Khảo sát hiện trạng căn hộ tầng trệt</div>
+                <div style="margin-top:6px;font-size:11px;color:var(--t4)">Thứ ba, 14 tháng 7 · Ngọc Trâm</div>
+                <div style="margin-top:14px;font-size:15px;line-height:1.65;color:var(--t2);text-wrap:pretty">Trần thật thấp hơn bản vẽ khoảng <span style="font-family:ui-monospace,Menlo,monospace;color:var(--t1)">120</span> mi-li-mét. <span style="background:var(--mark);color:var(--t1);border-radius:3px;padding:1px 2px">Dầm ngang chạy qua giữa phòng khách.</span></div>
+
+                <div style="margin-top:13px;border-radius:20px;overflow:hidden;border:1px solid var(--border);background:var(--card)">
+                  <div style="height:150px;background:var(--hatch);display:flex;align-items:center;justify-content:center"><span style="font-size:9px;font-weight:700;letter-spacing:.06em;color:var(--t4);background:var(--card);padding:3px 8px;border-radius:5px">PLACEHOLDER</span></div>
+                </div>
+
+                <div style="margin-top:11px;display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card)">
+                  <button style="width:44px;height:44px;flex:none;border:0;border-radius:50%;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 16 16"><path d="M5.5 3.4 12.4 8 5.5 12.6z" style="fill:currentColor"></path></svg></button>
+                  <div style="flex:1;min-width:0">
+                    <div style="display:flex;align-items:flex-end;gap:2px;height:24px">
+                      <span style="flex:1;height:30%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:68%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:44%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:92%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:36%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:74%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:52%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:86%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:28%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:64%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:40%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:78%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:34%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:70%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:48%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:82%;border-radius:1px;background:var(--t5)"></span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:10px;color:var(--t4)"><span>Lời chủ nhà</span><span style="font-family:ui-monospace,Menlo,monospace">0:38 / 2:14</span></div>
+                  </div>
+                </div>
+
+                <div style="margin-top:16px;font-size:17px;font-weight:600">Việc cần làm</div>
+                <div style="margin-top:6px;display:flex;flex-direction:column">
+                  <div style="display:flex;align-items:center;gap:11px;min-height:44px">
+                    <span style="width:20px;height:20px;flex:none;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5 6.5 11.5 12.5 5"></path></svg></span>
+                    <span style="flex:1;font-size:14px;color:var(--t4);text-decoration:line-through">Đo lại chiều cao trần ba điểm</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:11px;min-height:44px">
+                    <span style="width:20px;height:20px;flex:none;border-radius:7px;border:1.6px solid var(--border-strong)"></span>
+                    <span style="flex:1;font-size:14px;color:var(--t1)">Hỏi kỹ sư điện về hộp kỹ thuật</span>
+                    <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:20px;background:var(--field);color:var(--warning);font-size:11px">Mai</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="flex:none;margin:0 10px 8px;border-radius:24px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop);padding:8px">
+                <div style="display:flex;justify-content:center;margin-bottom:8px"><span style="width:34px;height:4px;border-radius:2px;background:var(--border-strong)"></span></div>
+                <div style="display:flex;gap:6px;margin-bottom:6px">
+                  <button style="flex:1;height:44px;border:0;border-radius:14px;background:var(--field);color:var(--t2);font:600 13px inherit;cursor:pointer">Tiêu đề</button>
+                  <button style="flex:1;height:44px;border:0;border-radius:14px;background:var(--accent);color:#fff;font:600 13px inherit;cursor:pointer">Nội dung</button>
+                  <button style="width:44px;height:44px;border:0;border-radius:14px;background:var(--field);color:var(--t2);font:700 14px inherit;cursor:pointer">B</button>
+                  <button style="width:44px;height:44px;border:0;border-radius:14px;background:var(--field);color:var(--t2);font:400 14px inherit;font-style:italic;cursor:pointer">I</button>
+                </div>
+                <div style="display:flex;gap:6px">
+                  <button style="flex:1;height:44px;display:flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:14px;background:var(--field);color:var(--t1);font:600 12px inherit;cursor:pointer"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="5.6" y="1.8" width="4.8" height="8" rx="2.4"></rect><path d="M3.2 7.4a4.8 4.8 0 0 0 9.6 0M8 12.2v2"></path></svg>Ghi âm</button>
+                  <button style="flex:1;height:44px;display:flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:14px;background:var(--field);color:var(--t1);font:600 12px inherit;cursor:pointer"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3.5" width="12" height="9" rx="1.8"></rect><path d="M2 10 5.5 7l2.5 2.5L10.5 7 14 10"></path></svg>Ảnh</button>
+                  <button style="flex:1;height:44px;display:flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:14px;background:var(--accent);color:#fff;font:600 12px inherit;cursor:pointer"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="11" height="11" rx="2.6"></rect><path d="M5.4 8.2 7.2 10l3.4-3.6"></path></svg>Việc</button>
+                </div>
+              </div>
+
+              <div style="height:62px;flex:none;display:flex;align-items:flex-start;padding:6px 8px 0;background:var(--panel);border-top:1px solid var(--border)">
+                <button style="flex:1;height:48px;border:0;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font:inherit">
+                  <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="1.5"><rect x="2.5" y="2" width="11" height="12" rx="2.4"></rect><path d="M5 5.5h6M5 8h6M5 10.5h3.5"></path></svg>
+                  <span style="font-size:10px;color:var(--accent);font-weight:600">Sổ tay</span>
+                </button>
+                <button style="flex:1;height:48px;border:0;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font:inherit">
+                  <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.5"><rect x="2" y="3.5" width="12" height="9" rx="1.8"></rect><path d="M2 10 5.5 7l2.5 2.5L10.5 7 14 10"></path></svg>
+                  <span style="font-size:10px;color:var(--t4)">Ảnh</span>
+                </button>
+                <button style="flex:1;height:48px;border:0;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font:inherit">
+                  <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="11" height="11" rx="2.6"></rect><path d="M5.4 8.2 7.2 10l3.4-3.6"></path></svg>
+                  <span style="font-size:10px;color:var(--t4)">Việc</span>
+                </button>
+                <button style="flex:1;height:48px;border:0;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font:inherit">
+                  <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.5"><circle cx="7.2" cy="7.2" r="4.7"></circle><path d="M10.8 10.8 13.8 13.8" stroke-linecap="round"></path></svg>
+                  <span style="font-size:10px;color:var(--t4)">Tìm</span>
+                </button>
+              </div>
+
+              <div style="height:22px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--panel)"><span style="width:136px;height:5px;border-radius:3px;background:var(--t4);opacity:.55"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="width:300px;padding-top:14px;font-size:12px;color:var(--t4);line-height:1.7;text-wrap:pretty">
+          <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px">Khác gì bản máy tính bảng</div>
+          Công cụ chữ thành tấm trượt lên từ đáy, ngay trên thanh điều hướng bốn mục. Mọi nút cao 44 điểm ảnh. Tấm việc cần làm không nằm cạnh nữa mà là một mục riêng trong thanh đáy.
+        </div>
+      </div>
+    </div>
+
+    <div data-screen-label="03">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">
+        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">03</span>
+        <span style="font-size:12px;font-weight:600;color:var(--t2)">Điện thoại gập · gập lại và mở ra</span>
+        <span style="font-size:11px;color:var(--t4)">Mở ra: nửa trái ghi chú, nửa phải công cụ · nếp gập không cắt qua chữ hay nút</span>
+      </div>
+
+      <div style="display:flex;gap:40px;align-items:flex-start">
+
+        <div style="flex:none">
+          <div style="font-size:11px;color:var(--t4);margin-bottom:10px">Gập lại · màn ngoài 21 trên 9</div>
+          <div style="width:384px;padding:12px;border-radius:44px;background:var(--shell);box-shadow:var(--shadow-pop),inset 0 0 0 1px var(--shell-edge)">
+            <div style="position:relative;width:360px;height:840px;border-radius:34px;overflow:hidden;background:var(--bg)">
+              <div style="position:absolute;left:50%;top:14px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:#000;z-index:3"></div>
+
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding-top:38px">
+                <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 20px 10px">
+                  <span style="font:600 12px -apple-system,'SF Pro Text',sans-serif;color:var(--t1)">9:41</span>
+                  <span style="font-size:11px;color:var(--t4)">Sổ tay</span>
+                </div>
+
+                <div style="flex:1;min-height:0;padding:8px 14px 0;display:flex;flex-direction:column;gap:10px">
+                  <div style="font-size:19px;font-weight:600;letter-spacing:-.01em;line-height:1.3">Khảo sát hiện trạng</div>
+                  <div style="font-size:11px;color:var(--t4);margin-top:-6px">Thứ ba, 14 tháng 7</div>
+
+                  <div style="border-radius:18px;border:1px solid var(--border);background:var(--card);padding:12px">
+                    <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t4);margin-bottom:8px">Việc còn lại</div>
+                    <div style="display:flex;align-items:center;gap:10px;min-height:44px">
+                      <span style="width:20px;height:20px;flex:none;border-radius:7px;border:1.6px solid var(--border-strong)"></span>
+                      <span style="flex:1;font-size:13px;color:var(--t1);line-height:1.4">Hỏi kỹ sư điện về hộp kỹ thuật</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;min-height:44px">
+                      <span style="width:20px;height:20px;flex:none;border-radius:7px;border:1.6px solid var(--border-strong)"></span>
+                      <span style="flex:1;font-size:13px;color:var(--t1);line-height:1.4">Chụp thêm tường bếp</span>
+                    </div>
+                  </div>
+
+                  <div style="border-radius:18px;border:1px solid var(--border);background:var(--card);padding:12px;display:flex;align-items:center;gap:11px">
+                    <button style="width:44px;height:44px;flex:none;border:0;border-radius:50%;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 16 16"><path d="M5.5 3.4 12.4 8 5.5 12.6z" style="fill:currentColor"></path></svg></button>
+                    <div style="flex:1;min-width:0">
+                      <div style="display:flex;align-items:flex-end;gap:2px;height:20px">
+                        <span style="flex:1;height:34%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:72%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:46%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:90%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:38%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:66%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:50%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:84%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:30%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:62%;border-radius:1px;background:var(--t5)"></span>
+                      </div>
+                      <div style="font-size:10px;color:var(--t4);margin-top:5px">Lời chủ nhà · 2:14</div>
+                    </div>
+                  </div>
+
+                  <div style="border-radius:18px;overflow:hidden;border:1px solid var(--border)">
+                    <div style="height:120px;background:var(--hatch);display:flex;align-items:center;justify-content:center"><span style="font-size:9px;font-weight:700;letter-spacing:.06em;color:var(--t4);background:var(--card);padding:3px 8px;border-radius:5px">PLACEHOLDER</span></div>
+                  </div>
+                </div>
+
+                <div style="flex:none;padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px">
+                  <button style="width:100%;height:56px;display:flex;align-items:center;justify-content:center;gap:9px;border:0;border-radius:20px;background:var(--accent);color:#fff;font:600 15px inherit;cursor:pointer">
+                    <svg width="19" height="19" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="5.6" y="1.8" width="4.8" height="8" rx="2.4"></rect><path d="M3.2 7.4a4.8 4.8 0 0 0 9.6 0M8 12.2v2"></path></svg>
+                    Ghi âm nhanh
+                  </button>
+                  <div style="display:flex;gap:8px">
+                    <button style="flex:1;height:48px;border:0;border-radius:16px;background:var(--field);color:var(--t1);font:600 13px inherit;cursor:pointer">Chụp ảnh</button>
+                    <button style="flex:1;height:48px;border:0;border-radius:16px;background:var(--field);color:var(--t1);font:600 13px inherit;cursor:pointer">Thêm việc</button>
+                  </div>
+                </div>
+
+                <div style="height:20px;flex:none;display:flex;align-items:center;justify-content:center"><span style="width:110px;height:4px;border-radius:2px;background:var(--t4);opacity:.5"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:none">
+          <div style="font-size:11px;color:var(--t4);margin-bottom:10px">Mở ra · màn trong 9 trên 8</div>
+          <div style="width:924px;padding:12px;border-radius:34px;background:var(--shell);box-shadow:var(--shadow-pop),inset 0 0 0 1px var(--shell-edge)">
+            <div style="position:relative;width:900px;height:800px;border-radius:24px;overflow:hidden;background:var(--bg)">
+              <div style="position:absolute;right:20px;top:14px;width:9px;height:9px;border-radius:50%;background:#000;z-index:3"></div>
+              <div style="position:absolute;left:450px;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--crease);z-index:2;pointer-events:none"></div>
+
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding-top:34px">
+                <div style="height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid var(--border);background:var(--panel)">
+                  <span style="font:600 12px -apple-system,'SF Pro Text',sans-serif;color:var(--t1)">9:41</span>
+                  <span style="color:var(--t5)">·</span>
+                  <span style="font-size:12px;color:var(--t3)">Căn hộ Thảo Điền</span>
+                  <span style="color:var(--t5)">›</span>
+                  <span style="font-size:12px;font-weight:600;color:var(--t2)">Khảo sát hiện trạng</span>
+                  <span style="margin-left:auto;font-size:11px;color:var(--t4)">Sửa lúc 14:32</span>
+                </div>
+
+                <div style="flex:1;min-height:0;display:flex;overflow:hidden">
+                  <div style="width:450px;flex:none;min-width:0;padding:20px 34px 20px 20px;overflow:hidden">
+                    <div style="font-size:22px;font-weight:600;letter-spacing:-.01em;line-height:1.3">Khảo sát hiện trạng căn hộ tầng trệt</div>
+                    <div style="margin-top:6px;font-size:11px;color:var(--t4)">Thứ ba, 14 tháng 7 · Ngọc Trâm</div>
+                    <div style="margin-top:14px;font-size:15px;line-height:1.65;color:var(--t2);text-wrap:pretty">Trần thật thấp hơn bản vẽ khoảng <span style="font-family:ui-monospace,Menlo,monospace;color:var(--t1)">120</span> mi-li-mét. <span style="background:var(--mark);color:var(--t1);border-radius:3px;padding:1px 2px">Dầm ngang chạy qua giữa phòng khách.</span></div>
+
+                    <div style="margin-top:14px;border-radius:20px;overflow:hidden;border:1px solid var(--border);background:var(--card)">
+                      <div style="height:190px;background:var(--hatch);display:flex;align-items:center;justify-content:center"><span style="font-size:9px;font-weight:700;letter-spacing:.06em;color:var(--t4);background:var(--card);padding:3px 8px;border-radius:5px">PLACEHOLDER</span></div>
+                    </div>
+
+                    <div style="margin-top:12px;display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card)">
+                      <button style="width:44px;height:44px;flex:none;border:0;border-radius:50%;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 16 16"><path d="M5.5 3.4 12.4 8 5.5 12.6z" style="fill:currentColor"></path></svg></button>
+                      <div style="flex:1;min-width:0">
+                        <div style="display:flex;align-items:flex-end;gap:2px;height:24px">
+                          <span style="flex:1;height:30%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:68%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:44%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:92%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:36%;border-radius:1px;background:var(--accent)"></span><span style="flex:1;height:74%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:52%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:86%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:28%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:64%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:40%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:78%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:34%;border-radius:1px;background:var(--t5)"></span><span style="flex:1;height:70%;border-radius:1px;background:var(--t5)"></span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:10px;color:var(--t4)"><span>Lời chủ nhà</span><span style="font-family:ui-monospace,Menlo,monospace">0:38 / 2:14</span></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="width:450px;flex:none;min-width:0;padding:20px 20px 20px 34px;overflow:hidden;display:flex;flex-direction:column;gap:14px">
+                    <div style="border-radius:20px;border:1px solid var(--border);background:var(--panel);padding:14px">
+                      <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t4);margin-bottom:10px">Cỡ chữ</div>
+                      <div style="display:flex;gap:6px">
+                        <button style="flex:1;height:44px;border:0;border-radius:14px;background:var(--field);color:var(--t2);font:600 15px inherit;cursor:pointer">Tiêu đề</button>
+                        <button style="flex:1;height:44px;border:0;border-radius:14px;background:var(--field);color:var(--t2);font:600 13px inherit;cursor:pointer">Phụ</button>
+                        <button style="flex:1;height:44px;border:0;border-radius:14px;background:var(--accent);color:#fff;font:600 13px inherit;cursor:pointer">Nội dung</button>
+                        <button style="flex:1;height:44px;border:0;border-radius:14px;background:var(--field);color:var(--t2);font:400 11px inherit;cursor:pointer">Nhỏ</button>
+                      </div>
+                      <div style="display:flex;gap:6px;margin-top:8px">
+                        <button style="width:44px;height:44px;border:0;border-radius:14px;background:var(--field);color:var(--t2);font:700 15px inherit;cursor:pointer">B</button>
+                        <button style="width:44px;height:44px;border:0;border-radius:14px;background:var(--field);color:var(--t2);font:400 15px inherit;font-style:italic;cursor:pointer">I</button>
+                        <button style="width:44px;height:44px;border:0;border-radius:14px;background:var(--field);color:var(--t2);font:400 15px inherit;text-decoration:underline;cursor:pointer">U</button>
+                        <button style="width:44px;height:44px;border:0;border-radius:14px;background:var(--field);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="3" cy="4.5" r="1.1" style="fill:currentColor;stroke:none"></circle><circle cx="3" cy="8" r="1.1" style="fill:currentColor;stroke:none"></circle><circle cx="3" cy="11.5" r="1.1" style="fill:currentColor;stroke:none"></circle><path d="M6.5 4.5H14M6.5 8H14M6.5 11.5H14"></path></svg></button>
+                        <button style="width:44px;height:44px;border:0;border-radius:14px;background:var(--field);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2.5 4h11M2.5 8h7M2.5 12h9"></path></svg></button>
+                      </div>
+                    </div>
+
+                    <div style="flex:1;min-height:0;border-radius:20px;border:1px solid var(--border);background:var(--panel);padding:14px;display:flex;flex-direction:column">
+                      <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:10px">
+                        <span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t4)">Việc cần làm</span>
+                        <span style="font-size:11px;color:var(--t5)">2 chưa xong</span>
+                      </div>
+                      <div style="display:flex;flex-direction:column;gap:6px">
+                        <div style="display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border-radius:14px;background:var(--card);border:1px solid var(--border)">
+                          <span style="width:20px;height:20px;flex:none;border-radius:7px;border:1.6px solid var(--border-strong)"></span>
+                          <span style="flex:1;font-size:13px;color:var(--t1)">Hỏi kỹ sư điện về hộp kỹ thuật</span>
+                          <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:20px;background:var(--field);color:var(--warning);font-size:11px">Mai</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border-radius:14px;background:var(--card);border:1px solid var(--border)">
+                          <span style="width:20px;height:20px;flex:none;border-radius:7px;border:1.6px solid var(--border-strong)"></span>
+                          <span style="flex:1;font-size:13px;color:var(--t1)">Chụp thêm mặt tường bếp</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border-radius:14px;background:var(--field);opacity:.7">
+                          <span style="width:20px;height:20px;flex:none;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5 6.5 11.5 12.5 5"></path></svg></span>
+                          <span style="flex:1;font-size:13px;color:var(--t4);text-decoration:line-through">Đo lại chiều cao trần</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style="display:flex;gap:8px">
+                      <button style="flex:1;height:52px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:18px;background:var(--field);color:var(--t1);font:600 13px inherit;cursor:pointer"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="5.6" y="1.8" width="4.8" height="8" rx="2.4"></rect><path d="M3.2 7.4a4.8 4.8 0 0 0 9.6 0M8 12.2v2"></path></svg>Ghi âm</button>
+                      <button style="flex:1;height:52px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:18px;background:var(--field);color:var(--t1);font:600 13px inherit;cursor:pointer"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3.5" width="12" height="9" rx="1.8"></rect><path d="M2 10 5.5 7l2.5 2.5L10.5 7 14 10"></path></svg>Ảnh</button>
+                      <button style="flex:1;height:52px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:18px;background:var(--accent);color:#fff;font:600 13px inherit;cursor:pointer"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="11" height="11" rx="2.6"></rect><path d="M5.4 8.2 7.2 10l3.4-3.6"></path></svg>Việc</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="height:22px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--panel);border-top:1px solid var(--border)"><span style="width:130px;height:4px;border-radius:2px;background:var(--t4);opacity:.5"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Tối&quot;,&quot;Kem&quot;],&quot;default&quot;:&quot;Kem&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Giao diện&quot;}}">
+class Component extends DCLogic {
+  state = { theme: null };
+  componentDidMount() { this.apply(); }
+  componentDidUpdate() { this.apply(); }
+  apply() { document.documentElement.dataset.theme = this.theme(); }
+  theme() { return this.state.theme || (this.props.theme === 'Kem' ? 'light' : 'dark'); }
+  renderVals() {
+    const t = this.theme();
+    return {
+      themeLabel: t === 'dark' ? 'Đổi sang nền Kem' : 'Đổi sang nền Tối',
+      toggleTheme: () => this.setState({ theme: t === 'dark' ? 'light' : 'dark' })
+    };
+  }
+}
+</script>
+</body>
+</html>

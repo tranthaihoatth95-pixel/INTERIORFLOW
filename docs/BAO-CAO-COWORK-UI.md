@@ -46,3 +46,104 @@
 
 ## ĐỀ XUẤT CHO 00-CHOT (đợt 2)
 - Dòng đề xuất: `SPEC-DESIGN-SYSTEM-IF §6` — 7 token `--snap-*`/`--axis-*` 2 theme chốt theo nguyên tắc không-màu-mới, chờ TỔNG duyệt + CHINH nạp globals.css.
+
+## ĐỢT 3 (SO-KIEM-TONG §3 bảng đợt 3)
+- [đợt 3] **① ✅ `mocks/mock-trinh-boq-2026-08-04.html`** — theo SPEC-TRINH-BOQ-EDITOR đọc trọn: khuôn mách nước "không phải Excel" · banner 3 lỗi + 3 dòng lỗi cuối bảng đúng 4 loại BoqError với nút hành động, tổng KHÔNG gồm lỗi · 8 cột cố định + popover thêm cột 6 kiểu công bố trần 22/30 · popover ƒx trên header Thành tiền (chỉ đọc, mini-DSL ghi chú) · cell m² sửa tay: chấm vàng + revert + drift "máy 42,5" + Inspector truy vết đầy đủ · subtotal engine 2 group + summary-bar grand total · status bar mách "3 vùng lỗi / đang sửa tay 1 ô" · tabular-nums toàn số. PLACEHOLDER ghi trong comment + Inspector (nút "Xem trên bản vẽ" chờ CAD expose). 8 pin.
+- [đợt 3] **② ✅ `mocks/mock-trinh-video-2026-08-04.html`** — theo SPEC-TRINH-VIDEO-EDITOR đọc trọn: dải SHOT CÓ TÊN kiểu storyboard (không track vô danh), tên gợi ý từ zone ghi trong Inspector · 3 tầng cố định shot/nhạc/chữ · timeline collapsed + handle "Kéo mở timeline chi tiết" · trim handle 2 đầu + bong bóng "−2,4s" · pill nhạc waveform + 5 beat snap + nút Hít beat/Chia đều theo beat, nhãn "của bạn" (không thư viện nhạc) · tiêu đề theo shot 2 kiểu anim + 2 vị trí preset · chuyển cảnh 3 lựa chọn giữa các tile · nút "Xuất MP4 · 0 credit" + exit path CapCut/Premiere ngay ebar · status bar "đang kéo −2,4s / beat snap BẬT / Tổng 0:48". PLACEHOLDER gradient thay footage. 8 pin.
+- [đợt 3] **③ ✅ README-mocks** +2 dòng hiện hành.
+- [đợt 3] HẾT VIỆC đợt 3. **Việc 6 (nối hàng đợi — Mock Vitals nâng cấp theo SPEC-APPLE-MOTION §4b): ĐỂ PHIÊN UI SAU** — "linh hồn app, làm kỹ như avatar" không nên dựng lúc context phiên này đã cao (~75-80%); phiên tươi làm mới xứng. Đây là việc ĐẦU TIÊN của phiên UI kế.
+- [đợt 3] Ghi chú thay phiên: Hoà dán 10 dòng nhận vai (5 vai × 2) vào phiên này — phiên giữ đúng 1 vai UI theo hiến chương, các dòng NC/VẼ/DỰNG/TRÌNH cần dán vào phiên MỚI riêng.
+
+## ĐỢT 4 (phiên UI mới — nhận phiếu giao việc trùng đợt 3, phát hiện ĐÃ XONG trước khi dựng)
+- [đợt 4] Nhận việc y hệt đợt 3 (mock BOQ + Video + README) từ phiếu giao mới, không biết đợt 3 đã chạy.
+  **SEARCH trước khi dựng (đúng §0b bước 1)**: `ls docs/mocks/` + đọc `BAO-CAO-COWORK-UI.md` chính mình →
+  thấy `mock-trinh-boq-2026-08-04.html` + `mock-trinh-video-2026-08-04.html` đã tồn tại, README đã ghi ✅
+  HIỆN HÀNH. KHÔNG dựng lại từ đầu (§0d — không đập cái đang tốt). **Ghi nhận lệch sổ**: `SO-KIEM-TONG.md`
+  §3 bảng ĐỢT 3 dòng COWORK-UI CHƯA đánh dấu ✅ cho việc này dù báo cáo mình (đợt 3) đã ✅ — đề nghị TỔNG cập
+  nhật bảng đó; mình không tự sửa vì không sở hữu `SO-KIEM-TONG.md` (§2 phân mảng).
+- [đợt 4] Audit thật thay vì tin chữ báo cáo cũ (đúng §0 luật trung thực — số đo được, không phải số đẹp):
+  đối chiếu 2 mock với `SPEC-TRINH-BOQ-EDITOR.md`/`SPEC-TRINH-VIDEO-EDITOR.md` đọc trọn — nội dung ①②
+  (summary-bar/6 cột/badge sửa-tay · shot tên/3 tầng/collapsed) ĐÚNG spec. Đối chiếu token bằng grep trực
+  tiếp `app/globals.css` (không tin CSS chép trong mock) — accent/bo 10-14-20-28/tap-row-gap/danger-warning-
+  success cả 2 theme KHỚP CHÍNH XÁC, không hex tự chế.
+  **Phát hiện lỗ hổng thật (§0c mục 1 — phím tắt)**: cả 2 file KHÔNG có kbd hint/⌘K/legend nào dù
+  `SPEC-TRINH-BOQ-EDITOR §9.1` + `SPEC-TRINH-VIDEO-EDITOR §10.1` liệt kê rõ danh sách phím bắt buộc. Mảng 2
+  (lệnh tương tác — status bar mách trạng thái) và mảng 3 (cảm ứng — token đổi qua `pointer:coarse` +
+  KHÔNG giấu chức năng sau hover, kiểm cụ thể `.rv`/`.fx`/`th.addc` luôn hiện, `.shot .hL/.hR` hiện khi
+  `.on` selected không chỉ khi hover, đúng SPEC-HOVER §3.7) đã đạt từ bản đầu.
+- [đợt 4] **VÁ, không dựng lại** (đúng §0d): thêm nút "Tìm lệnh ⌘K" ở header + khối "Phím tắt" trong
+  Inspector (pin 9-10) cho CẢ 2 file — dùng nền `--card` cho kbd chip để tương phản trong cả 2 ngữ cảnh
+  (`.cmdk` nền field lẫn Inspector nền panel). Danh sách phím lấy ĐÚNG từ spec chữ (BOQ: ↑↓←→·Enter·Tab·
+  ⌘Z·⌘K — Video: Space·S·←→·⇧←→·Delete·⌘Z·⌘K), không bịa thêm phím ngoài spec. Không đổi bố cục/nội dung cũ.
+- [đợt 4] 2 điểm nhỏ ghi nhận, KHÔNG chặn/chưa sửa: (a) vài bo góc chrome <32px (nút/chip) trong 2 file —
+  và có vẻ cả các mock COWORK-UI trước — dùng số lẻ 6-9px, không khớp thang 10/14/20/28 lẫn công thức đồng
+  tâm (`--radius` chỉ định nghĩa cho panel; capsule/pill có công thức nửa-chiều-cao riêng) — chưa có thang
+  micro-radius chính thức cho chip/icon-button nhỏ nên chưa tự sửa, cần TỔNG/Hoà chốt 1 lần dùng chung;
+  (b) `SPEC-MAT-DO-CON-TRO.md` chữ ghi "5 token --tap/--row/--gap/--pad-card/--fs-ui" nhưng grep
+  `app/globals.css` thật chỉ thấy 3 token đầu — 2 mock ĐÚNG khi chỉ dùng 3 token có thật (ưu tiên code thật
+  hơn spec chữ, đúng §0b bước 1), nhưng spec chữ đang lệch code, đề xuất sửa bên dưới cho phiên sau khỏi
+  hoang mang đi tìm token chưa tồn tại.
+- [đợt 4] `README-mocks.md`: thêm mục "🔍 GHI CHÚ AUDIT" (append, không sửa 2 dòng bảng cũ) ghi lại toàn bộ
+  phát hiện trên + đối chiếu SPEC-APP-SHELL-CHUNG (đúng) / SPEC-PANEL-ROLLOUT-IDF (Inspector 2 mock này
+  chưa áp rollout — spec đó gắn Inspector CAD, tạm coi ngoài phạm vi Present-stage) / SPEC-MAT-DO-CON-TRO
+  (đúng, xem ghi chú (b)) theo đúng yêu cầu phiếu giao việc đợt này.
+- [đợt 4] HẾT VIỆC đợt 4. Việc 6 hàng đợi cũ (Mock Vitals nâng cấp theo SPEC-APPLE-MOTION §4b) vẫn ĐỂ
+  PHIÊN UI SAU đúng ghi chú đợt 3 — phiên này dồn context cho audit sâu + vá, không mở việc nặng mới.
+
+## ĐỀ XUẤT CHO 00-CHOT (đợt 4)
+- `SPEC-MAT-DO-CON-TRO.md`: sửa câu "5 token --tap/--row/--gap/--pad-card/--fs-ui" → ghi rõ 3 token
+  `--tap/--row/--gap` ĐÃ vào `app/globals.css`, còn `--pad-card`/`--fs-ui` là đề xuất CHƯA vào code — tránh
+  phiên sau tưởng đã có mà đi tìm token không tồn tại.
+- `SO-KIEM-TONG.md` §3 bảng ĐỢT 3 dòng COWORK-UI: đổi trạng thái thành ✅ xong (2 mock + README, nay đã vá
+  thêm phím tắt đợt 4) — TỔNG ghi khi duyệt, mình không tự sửa file này.
+
+## CHỐT PHIÊN [đợt 4]
+**Đã xong:** audit thật + vá lỗ hổng "phím tắt" (§0c) cho `mock-trinh-boq-2026-08-04.html` +
+`mock-trinh-video-2026-08-04.html` (việc nội dung đợt 3 vốn đã ✅ trước đó — phiên này KHÔNG dựng lại, chỉ
+kiểm bằng grep/đọc spec thật rồi sửa đúng 1 gap cụ thể) + `README-mocks.md` thêm mục audit.
+**Không việc nào bị chặn vì thiếu spec nguồn** — cả 2 spec (`SPEC-TRINH-BOQ-EDITOR.md`,
+`SPEC-TRINH-VIDEO-EDITOR.md`) đã tồn tại đầy đủ từ đợt 3.
+**Lệch chuẩn hợp đồng cần Hoà lưu ý** (không chặn, ghi để biết): bo góc chip/nút nhỏ <32px chưa theo thang
+chính thức nào (mục đợt 4 ghi chú a).
+**Chờ Hoà/TỔNG:** ① cập nhật `SO-KIEM-TONG.md` §3 dòng COWORK-UI đợt 3 thành ✅ ② quyết thang bo góc micro
+cho chip/icon-button nhỏ ③ duyệt ảnh 2 theme của 2 mock (BOQ+Video) nếu chưa duyệt lần nào — G4/TRÌNH có
+thể đang chờ để port.
+**Phiên UI sau đọc:** file này → nếu Hoà đã duyệt/chê 2 mock thì ghi "ĐÃ DUYỆT" vào README trước khi mở
+việc "Mock Vitals nâng cấp" (việc đầu tiên còn treo, đúng ghi chú đợt 3).
+
+---
+
+## ĐỢT 5 — KHOÁ BỘ TÊN + RÀ NHÃN MOCK (COWORK-UI, 03/08/2026)
+
+**Đọc trước khi làm (§0b bước 1):** `SO-KIEM-TONG §0/§0b/§0c/§0d` · `CHOT-TEN-CHANG-MODE-2026-08-03.md` **trọn file** (4 vòng đặt tên, mục "VÒNG CUỐI" là bản đè) · `SPEC-NGON-NGU-CHI-DAN.md` · `mocks/README-mocks.md` · phụ lục cuối `HAM-DOI-COWORK.md` (xưởng mock chính nay là **Claude Design**, COWORK-UI soạn prompt thay vì viết HTML tay).
+
+### VIỆC 1 ✅ — Khoá bộ tên vào từ điển
+Append mục **§6 "BỘ TÊN CHÍNH THỨC"** vào `SPEC-NGON-NGU-CHI-DAN.md` (không sửa đè §1-§5), gồm:
+- **§6.1** bảng tên chốt: InteriorFlow · **2D Kỹ thuật · 3D Thiết kế · Trình bày** (header hẹp 2D · 3D · Trình bày) · mode 2D **Sơ phác ↔ Kỹ thuật** · mode 3D **Node ↔ 3D** · Trình bày không mode. Ghi rõ **luật cấm-jargon KHÔNG áp cho tên riêng** nên `InteriorFlow` hợp lệ.
+- **§6.2** danh sách 5 bộ tên **ĐÃ BỎ** kèm lý do (3 vòng của Hoà + nhãn code EN + `BIM`) — giữ dấu vết để không có vòng 5.
+- **§6.3** luật đổi tên: phải qua Hoà · phiên đề xuất tên mới bắt buộc tham chiếu §6.2 · đổi nhãn không đổi khoá kỹ thuật (`sketch/pro/revit`, route) · nhắc luật "ba ống kính một nguồn dữ liệu".
+- **§6.4** bảng **từ cấm ↔ từ thay** 15 dòng để phiên sau tra nhanh, có nêu ngoại lệ hợp lệ ("Node" là tên mode chặng 3D; "Vẽ" làm nhãn nhóm công cụ; "Dựng ảnh AI" là tên khối).
+- **§6.5** quy trình nghiệm thu nhãn bằng grep 8 chữ.
+
+### VIỆC 2 ✅ — Rà nhãn toàn bộ mock (LIỆT KÊ, KHÔNG SỬA)
+Bảng **file → dòng → chữ sai → chữ đúng** đã ghi vào `docs/mocks/README-mocks.md` mục mới "🏷 RÀ NHÃN CHẶNG/MODE — 03/08/2026" (append).
+- **19/27 file `.html` dính nhãn cũ**, **78 dòng khớp grep**, trong đó **72 dòng phải đổi** + **6 dòng dương tính giả** (đã liệt kê riêng, giải thích vì sao giữ).
+- **Nặng nhất:** `mock-designsystem-stagemap.html` **10 dòng** — kế đó `mock-ve-3d.html` 9 · `mock-render-layout-H3.html` 9 · `mock-if-3chang.html` 8 (5 thật) · `mock-mood-collab-g2-2026-08-03.html` 8.
+- Mở rộng grep so với phiếu: thêm `Vẽ 3D` (nhãn mode chặng 2, nay phải là `3D`) và `Present` (EN cùng họ `Presenting`) — cùng một lỗi, bỏ sót thì phiên sau rà lại lần nữa.
+- **Không đụng file mock nào** (chờ TỔNG duyệt) và **không đụng `lib/` `components/`**.
+
+### Phát hiện cần TỔNG/Hoà quyết
+1. **`mock-cad-revit-2026-08-03.html` là ca nặng nhất về ngữ nghĩa**, không phải số dòng: cả mock dựng quanh mode **"Cấu kiện"** nay **không còn tồn tại** (mode chặng 2D chỉ còn Sơ phác ↔ Kỹ thuật). Đổi chữ không cứu được. Cần quyết: giữ làm tham khảo rồi **cắt đôi theo chiều** (mặt bằng/ký hiệu/thống kê → 2D Kỹ thuật; khối/đặt đồ/vật liệu → 3D Thiết kế), hay dựng lại. COWORK-UI không tự quyết (§0d).
+2. **Ưu tiên sửa nhãn:** 8 file trong mục ✅ HIỆN HÀNH của README-mocks (có người port) — phần còn lại nằm ở 🕰 LỊCH SỬ / ⚠️ LỖI THỜI, ưu tiên thấp.
+3. Nhiều dòng khớp là **comment HTML / thuyết minh "Đọc mock" / biến JS**, không phải nhãn hiển thị — đã liệt kê nhưng đánh dấu để TỔNG quyết có sửa không.
+4. **`SPEC-NGON-NGU-CHI-DAN §3` (từ điển cũ) vs §6 mới:** đã ghi luật xử va — §6 thắng ở lớp tên chặng/mode/app, §3 giữ nguyên cho lớp thuật ngữ cơ chế.
+
+### Trung thực (§0)
+- **`mock-3d-thong-nhat.html` CHƯA TỒN TẠI** — `ls docs/mocks/` xác nhận. Việc nó mang nhãn cũ "Vẽ · Dựng ảnh · Trình bày" là **theo phiếu giao việc, chưa tự kiểm được**; đã ghi dòng "⏳ CHỜ EXPORT" trong bảng, phiên sau grep lại khi file về.
+- Mọi con số trong bảng là **đếm bằng `grep -c`/`grep -n` thật**, không ước lượng. Cột "chữ đúng" là **suy ra từ §6.4**, không phải Hoà đọc từng dòng.
+- KHÔNG chạy git (nhiều phiên dùng chung). 2 file docs sửa ở trạng thái untracked/dirty — nhờ **CHINH** gom commit theo việc 5b hàng đợi.
+
+### CHỐT PHIÊN [đợt 5]
+**Đã xong:** việc 1 (§6 vào `SPEC-NGON-NGU-CHI-DAN.md`) + việc 2 (bảng rà 19 file vào `mocks/README-mocks.md`).
+**Chờ TỔNG/Hoà:** ① duyệt cho sửa nhãn 8 mock HIỆN HÀNH ② quyết số phận `mock-cad-revit-2026-08-03.html` (mode Cấu kiện đã chết) ③ export `mock-3d-thong-nhat.html` về `docs/mocks/` để rà nốt.
+**Phiên UI sau đọc:** `SPEC-NGON-NGU-CHI-DAN §6` TRƯỚC KHI đặt bất kỳ tên nào — bốn vòng đặt tên đã đóng, đề xuất tên mới không tham chiếu §6.2 sẽ bị trả về.

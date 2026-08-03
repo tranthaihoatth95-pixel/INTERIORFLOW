@@ -149,3 +149,129 @@ toolbar neo+minimap · bug camera lệch tâm · 2 lỗi type nhanh-phu). Checkl
 
 ## [01:3x] TỔNG — khối merge DƯƠNG TÍNH GIẢ MỘT NỬA (tiền lệ §0 nối tiếp "THANH CONG")
 Merge nhanh-g4 FAIL ("local changes would be overwritten": BAO-CAO-COWORK-TRINH + 2 SPEC-TRINH dở trong working tree main) → cả 3 merge không chạy. Commit sổ pathspec VẪN vào (`4e7e6ab`, push OK) → câu kiểm `grep "audit 3 phien"` chỉ kiểm commit sổ, KHÔNG kiểm merge → in ✅ gây hiểu nhầm. **Lỗi TỔNG soạn câu kiểm.** Luật mới: kiểm merge phải dùng `git merge-base --is-ancestor <nhánh> main`. Khối gỡ: commit docs Cowork dở trước → merge lại 3 nhánh → kiểm ancestor từng nhánh.
+
+## [01:4x] TỔNG — gỡ CONFLICT merge nhanh-g4 (2 file, 3 vùng)
+Hoà chạy khối gỡ merge → conflict thật: `FlowCanvas.tsx` (fitView) + `RenderToolModeOverlay.tsx` (banner). Push giữa chừng đẩy `b2f4400` (commit docs) — app VỠ tạm vì marker trong working tree (dev server báo TS1185). TỔNG tự resolve trực tiếp trên file (không git qua VM):
+- FlowCanvas: **GỘP** — giữ comment CHINH-6 + lấy 2 prop G4-1a (`fitViewOptions maxZoom 1`, `defaultViewport zoom 1`) — cùng mục tiêu chống zoom 15%, không mâu thuẫn.
+- RenderToolModeOverlay: **lấy HEAD (xoá hẳn banner)** — quyết định Hoà 04/08 "1 màn 1 cột" MỚI HƠN bản sửa-banner của G4-1a (sửa báo động giả thành vô nghĩa khi banner không còn). Ghi chú tại chỗ trong code.
+Còn lại cho Hoà: add 2 file + commit --no-edit + merge tiếp 2 nhánh PHU + push + kiểm ancestor.
+[01:5x] Claude Design ra "Avatar Bust Rig" v1 (memoji 3D + panel skin/hair/glasses/hat/shirt + Copy config map biến cho app — đúng hướng tích hợp). Hoà duyệt hướng, lệnh cải thiện: BỎ THÂN chỉ giữ đầu + THÊM nhiều cấu kiện tuỳ biến. TỔNG soạn prompt v2 (12 nhóm cấu kiện, nền đĩa tròn thay áo, blink idle, giữ config JSON). Đích: export HTML → docs/mocks/avatar-bust-rig.html → G4 tích hợp Avatar3D.tsx sau.
+
+## [02:1x] TỔNG — đánh giá tiến độ + bơm đợt 3 cho 5 Cowork (lệnh Hoà)
+**Vật chứng mới:** main giờ chứa CẢ quả cầu `9fa870b` (thủ phạm = rò WebGL context qua HMR — công thức §2c VÔ TỘI, G4 kế nhiệm tìm ra) + gói Một-Thư-viện-chặng-2 `0569a91`. Phiên CHINH kế nhiệm ĐANG chạy Toolbelt ổ ⑤ (CadToolbelt.tsx mới + 6 file M trong working tree). Checklist điền 12 ô. TRÌNH sự cố commit đợt 2 tự giải quyết (b2f4400 đã gom).
+**5 Cowork:** NC hết việc (7 bài) · UI hết việc (3 mock + 7 token — chờ Hoà duyệt ảnh) · VẼ hết việc khả thi (4 spec) · TRÌNH hết việc (5/5 — thiếu spec "Văn bản") · DỰNG CHƯA MỞ PHIÊN. → Bơm ĐỢT 3 vào SO-KIEM-TONG §3 (bảng trên), 5 quyết định duyệt ghi 00-CHOT (tên 3 mode · 7 token · chủ mảng cad/* · bỏ mock chooser · dòng nc/).
+**Chờ Hoà (sáng):** duyệt ảnh 2-theme 3 mock UI (G2 gấp — G4 chờ port) · quyết mapa-de-zonas.html (vi phạm màu TTT — UI đề nghị dời ra ngoài repo, TỔNG KHÔNG tự dời vì đụng nội dung repo) · Lark Console NC-6 A→D · dán khối PHU kế nhiệm (2 lỗi type + camera) · Vitals + avatar Claude Design đang chạy.
+
+## [02:2x] TỔNG — kiểm "xong hết rồi" (lệnh Hoà)
+**Vào git rồi:** `060c419` Toolbelt ổ ⑤ (main). **Chưa vào git — 4 khối:** ⌘K đa-màn `AppCommandPalette.tsx` 273d untracked + AppShell/Navigator M (CHINH) · fix camera `Scene3DViewer.tsx` M (PHU sửa trên main, tự khai chưa commit) · nhanh-g4 2 commit (`d143684` icon-hoá ObjectProperties/Settings + `7476ac1` báo cáo) · nhanh-phu 3 commit (`4641163` GỠ MÌN 2 lỗi type BOQ + `804952f` lib eyedropper/VCB 32/32 test + báo cáo).
+**Cột mốc:** ⛔ BOQ merge-gate treo từ 04/08 ĐÃ GỠ. Gap-check 10 khuyết đủ: 8/10 chưa có, ⑥ có sẵn, ⑤ CommentPin phủ khác dạng → mở khoá COWORK-VẼ việc 3.
+**Đánh giá:** hàng đợi CHINH (a·b·c) xong 3/3 trong 1 phiên; PHU xong 3/3 việc giao. Không phiên nào tự nhận việc ngoài phiếu. Checklist +6 dòng mục §7.
+**Rủi ro đã cảnh báo Hoà:** commit khi phiên còn đang gõ → cuốn file dở; PHU tự khai còn `index.lock` chết + file dirty lạ ở worktree phu (present-editor/lark/atlas — KHÔNG ai được tự dọn, chờ Hoà xác nhận).
+
+## [02:3x] TỔNG — Hoà xác nhận cho dọn lock + PHÁT HIỆN Cowork đợt 3 ĐANG CHẠY
+**Đợt 3 đã sống chỉ sau ~20 phút bơm:** TRÌNH commit `091734e` SPEC-TRINH-VANBAN-EDITOR → **đủ 5/5 loại hồ sơ** · NC đang viết `nc/NC-firstrun-cung-nganh` · VẼ ra `PHIEU-REGISTRY-VE-2026-08-04.md` · UI dựng `mocks/mock-trinh-boq-2026-08-04.html`. 4/5 vai chạy (DỰNG chưa thấy).
+**⚠️ ĐIỀU CHỈNH LỆNH:** khối gom `docs/` ở tin 02:2x TẠM HOÃN — commit `docs/` lúc này sẽ cuốn file đang viết dở của 4 Cowork. Chỉ commit pathspec CODE (palette + camera) + merge 2 nhánh. Docs gom sau khi các Cowork chốt phiên.
+**Lock:** main `.git` có HEAD/index/next-index-6/7.lock — **KHÔNG xoá** vì Cowork đang commit thật (lock sống). Rác an toàn: `worktrees/dot-b/*.stale-*` (16 file rename cũ) · worktree `pbr-schema`+`so-lenh` đã merge xong → prune được · `worktrees/interiorflow-phu` lock chết (PHU đã chốt phiên).
+
+## [02:37] TỔNG — CA TRỰC: máy Hoà VẪN THỨC, 5 Cowork chạy full, nhưng **HEAD.lock CHẾT CHẶN MỌI COMMIT**
+**Bridge sống.** mtime docs 02:29–02:36 → cả 5 vai đang viết thật: **DỰNG ĐÃ MỞ PHIÊN LẦN ĐẦU** (`SPEC-DUNG-CAMERA` 17.7KB + `SPEC-DUNG-NODE-PORT` 18.1KB) · NC +2 bài (firstrun cùng ngành · conflict simultaneous-edit) · UI +2 mock (BOQ · Video) · VẼ +2 phiếu registry · TRÌNH cập nhật.
+**🔴 SỰ CỐ:** `.git/HEAD.lock` sinh 02:19, đến 02:37 vẫn 0 byte = **CHẾT 18 phút**. Đây là lý do KHÔNG commit nào sau `091734e` dù 5 vai làm việc liên tục — mọi `git commit` của họ đang fail. Rủi ro: các phiên chốt phiên rồi tắt, công sức nằm ngoài git.
+**Trạng thái treo:** `AppCommandPalette.tsx` đã `A` (add được) nhưng chưa commit · camera fix chưa commit · nhanh-g4 + nhanh-phu vẫn CHƯA merge (kiểm ancestor).
+**Hành động:** KHÔNG bơm việc mới (5 vai đang đầy tải). Nhắn Hoà 1 khối cứu duy nhất: xoá HEAD.lock + next-index rác → commit code → merge 2 nhánh → gom docs.
+
+## [02:41] TỔNG — ✅ GỠ XONG NÚT THẮT LỚN NHẤT
+`dd3f584` ⌘K đa-màn · `e142f3c` camera · `1d727a7` merge g4 · `892c927` merge phu (**19 file/2992 dòng**: trọn lib/boq + eyedropper + vcb + route API). **origin/main = 892c927, đã push, ancestor xác nhận CẢ 2 nhánh trong main, lock sạch hết.** BOQ hết ⛔ sau 2 ngày treo. Auto-merge 3 file va (PresentEditor·Toolbar·model.ts) không conflict.
+**Cowork đợt 3 gần cạn:** DỰNG xong trọn 3/3 hàng đợi gốc ngay phiên đầu (+BAO-CAO-COWORK-DUNG.md) · NC 10 bài · UI 2 mock · VẼ 2 phiếu · TRÌNH 5/5. Docs của họ CHƯA commit (đang viết) — để họ tự chốt, TỔNG không gom.
+
+## [02:5x] TỔNG — Hoà báo lỗi UI chặng Trình bày (ảnh)
+Soi ảnh + đối chiếu code: **L1 "Trang 1"+"1/5" vs 8 slide** = hai đơn vị (sheet trần 5 theo `PresentSheets.tsx:12` vs slide) dùng chung chữ "Trang" → đánh lừa; **L2 slide 4 chữ chồng chữ 4 lớp** đè cả tiêu đề; L3 thumbnail chữ đè ảnh; L4 toolbar 2 hàng ~30 nút (Trình bày CHƯA áp Toolbelt ổ ⑤ như CAD `060c419`); L5 panel phải cắt đáy. → `docs/PHIEU-TRINH-LOI-UI-2026-08-03.md` cho G4, thứ tự L2→L1→L5→L3→L4.
+
+## [03:5x] TỔNG — CA TRỰC (Hoà ở công ty, lệnh "cứ làm tiếp")
+**Kiểm G4:** L4 (gom 14 nút Sắp xếp vào ArrangePopover, portal + useDismissable theo luật K4) **ĐÃ SẠCH** — import `createPortal`/`useDismissable` có đủ (dòng 9/50), định nghĩa dòng 527, dùng dòng 288; tsc present-editor **0 lỗi**. Cảnh báo "Failed to add imports" trong ảnh là bước GIỮA, G4 tự sửa xong sau đó. Toolbar.tsx mtime 03:28.
+**🔴 PHÁT HIỆN + TỰ SỬA (ngoại lệ có lý do):** `tsc` toàn repo trên **main** báo **6 lỗi** ở `lib/cad/eyedropper.test.ts` — lọt vào khi merge `892c927`. Nguyên nhân: `matchPropsOne(source, target as never)` làm generic `T extends StyleFields` suy ra `never` ⇒ mọi truy cập `.layer/.color/.specId` đỏ. Sửa: `as never` → `as StyleFields` (4 chỗ). **tsc main = 0 lỗi · test 13/13 pass.** Commit `f012ca8`.
+→ Vì sao TỔNG tự sửa dù luật là không code: lỗi chặn `tsc` TOÀN REPO (mọi phiên chạy tsc đều thấy đỏ, dễ tưởng lỗi của mình), nằm trong file TEST không ảnh hưởng app, sửa 4 ký tự không đụng logic. Ghi rõ tại đây để không thành tiền lệ nới luật.
+**Trạng thái:** main `f012ca8` sạch · nhánh g4 có L2/L1/L5/L3/L4 chưa merge · các Cowork đợt 5 chưa thấy động (Hoà chưa dán khối).
+
+## [04:0x] TỔNG — AUDIT 5 COWORK (lệnh Hoà "tụi nó xong rồi")
+### ✅ COWORK-DỰNG — `SPEC-TANG-DU-LIEU-CAU-KIEN.md` 396 dòng · ĐẠT XUẤT SẮC, vai làm tốt nhất từ đầu dự án
+TỔNG **verify tận code từng tuyên bố**, không tin lời:
+| Tuyên bố của DỰNG | Vật chứng TỔNG kiểm | Kết luận |
+|---|---|---|
+| §0.2 ống kính 3D KHÔNG đọc ngữ nghĩa | `grep elementType lib/three/` → **đúng 1 hit, nằm trong COMMENT** (cad-to-obj.ts:71) | ✅ ĐÚNG |
+| §0.3 🔴 vùng tô SƠN bị đùn thành tường 2.7m | `cad-to-obj.ts:353` điều kiện lọc có `\|\| e.pattern === 'SOLID' \|\| !e.pattern`; `materials.ts:149,160,171` — **3 preset sơn đều `hatchPattern:'SOLID'`** | ✅ ĐÚNG — **BUG THẬT, CHƯA AI BIẾT** |
+| §0.4 entityId chỉ có ở nhóm tường | `cad-to-obj.ts:416` chỉ `Wall_${i}` truyền `entityId`; dòng 197 comment tự khai | ✅ ĐÚNG |
+**Vì sao xuất sắc:** không mô tả lại spec cũ mà ĐỌC CODE tìm ra bệnh — và bệnh nặng đúng chỗ định vị mới: *món hàng chính của IF (lớp hoàn thiện · sơn · ốp) lại là món 3D hiểu sai nhất*. Tự khai "chưa chạy tay, PHU verify trước khi vá — đừng vá mù" (§0 trung thực). 7 luật L1–L7 kiểm được bằng grep (vd L6: cấm mọi hàm tên `syncXtoY`). Phân biệt `null` ≠ `undefined` cho elementType. Field mới đều chỉ ra nơi tiêu thụ (luật L7). `'covering'` đề xuất nhưng CHỜ NC-11, không code trước.
+### Bốn vai còn lại — XONG ĐỢT 3-4, CHƯA nhận đợt 5 (mtime 02:3x-02:5x, không động sau đó)
+NC 3 bài (firstrun · presence · conflict-simultaneous-edit) · UI 2 mock (BOQ 428d · Video 386d) · VẼ 2 phiếu registry (43d + 348d) · TRÌNH spec Văn bản (đủ 5/5 hồ sơ). Tất cả đã vào git `e8dd6bc`. → Hoà chưa dán khối đợt 5 cho 4 vai này.
+### 🔴 VIỆC PHÁT SINH TỪ AUDIT (ưu tiên cao)
+1. **PHU verify tay bug sơn-thành-tường** (5 phút: tô sơn lên 1 mảng tường → sang 3D xem có khối lạ cao 2.7m) rồi vá theo §2.3 (bỏ 2 nhánh `solid===true` và `!pattern`).
+2. **G4 gán `entityId` cho MỌI nhóm** (sàn·phòng·nội thất·cửa sổ), không riêng tường — nay đã có nơi tiêu thụ (§8), hết lý do để trống.
+3. NC-11 gấp hơn tưởng: `'covering'` chờ nó mới chốt được.
+
+## [04:3x] TỔNG — TỰ CHẠY 5 VAI COWORK BẰNG AGENT PHỤ (Hoà: "BẠN GIAO ĐI NHÉ")
+**Cơ chế mới:** TỔNG spawn agent phụ ngay trong phiên, agent đọc repo qua device bridge, viết spec, KHÔNG chạy git (tránh vỡ lock). Hoà không phải dán gì. Đã chạy 5/5 vai. **Ghi thành luật vận hành: vai Cowork = agent phụ của TỔNG; CHINH/PHU/G4 vẫn là phiên Claude Code trên máy Hoà (TỔNG không mở được).**
+
+### 🔴 BỐN PHÁT HIỆN HẠ TẦNG — nặng hơn mọi việc đang làm
+| # | Phát hiện | Vật chứng | Hệ quả |
+|---|---|---|---|
+| A | **Trụ 4 CHỈ CÓ TRÊN GIẤY** — `defineMode()` có **0 nơi gọi**, `getMode(` grep = 0; đang có HAI bản khai mode lệch nhau (3 trường ReactNode vs 6 trường string) | DỰNG grep `mode-registry.ts` | Cơ chế mode xuyên app chưa tồn tại thật |
+| B | **592 dòng code tốt không ai dùng** — `components/three/CommandPanel.tsx` (5 tab đủ) + `ObjectProperties.tsx` KHÔNG mount ở đâu; app chạy `render-studio/Command3DPanel.tsx` với 3/5 tab placeholder, khoá tab lệch (`tao` vs `create`) | DỰNG | Đúng bệnh §1 sổ chống rớt — làm rồi mà rớt |
+| C | **Sổ lệnh có ĐÚNG 0 lệnh 3D** (55 CommandDef đều `stage==cad`) và **`findByAlias()` không lọc `when`** | DỰNG grep `registry.ts` | Thêm alias 3D trùng chữ CAD (M/W/S/C/T) sẽ **che lệnh CAD im lặng** — phải vá TRƯỚC khi thêm lệnh |
+| D | **`xlsx.ts:93` ghi dòng TỔNG bằng SỐ CHẾT**, grep `SUM\|<f>\|formula` = 0 — spec ghi "đã có SUM(), chờ PHU kiểm" là SAI | TRÌNH | Hết chờ PHU, thành việc code B8 |
+
+### Sản phẩm 5 vai (đợt 5)
+| Vai | File | Điểm chính |
+|---|---|---|
+| **NC** | `nc/NC-11-ifc-nghi-dinh-bim-2026-08-03.md` 279d | 🔴 **NĐ 175/2024 HẾT HIỆU LỰC 01/7/2026** → `NĐ 217/2026` Điều 8.3.a: IFC nêu đích danh, **bỏ điều kiện nhóm B**, ngưỡng = công trình **cấp II trở lên không phân biệt vốn công/tư**. Thư viện thắng **web-ifc MPL-2.0, wasm 1,3MB** (loại xeokit AGPL). `'covering'` **CÓ**, kèm `coveringKind`. Bắt lỗi `model.ts:101` ghi `IfcFurnishingElement` — buildingSMART đã deprecated, đúng là `IfcFurniture` |
+| **DỰNG** | `SPEC-DUNG-3D-THONG-NHAT.md` 581d | 10 công cụ (V·P·M·Q·S·W·R·B·T·C) + 27 lệnh = **37 CommandDef mới**. Phím `B` va với B=thu Navigator → câu hỏi §11.1 cho Hoà |
+| **UI** | `SPEC-NGON-NGU-CHI-DAN` §6 + `mocks/README-mocks.md` | Khoá bộ tên (bảng từ cấm↔từ thay 15 dòng). **19/27 mock dính nhãn cũ, 72 dòng phải đổi**. Nặng nhất `mock-designsystem-stagemap` 10d. ⚠️ `mock-cad-revit` cả mock dựng quanh mode "Cấu kiện" nay đã chết — đổi chữ không cứu, cần Hoà quyết |
+| **TRÌNH** | `PHIEU-TRINH-BOQ-EDITOR.md` 173d + `SPEC-TRINH-ONG-KINH-DU-LIEU.md` | **11 việc B0-B11**, 10/11 code được ngay. Video **KHÔNG nâng phiếu** (PHU chưa thẩm định, khai thật). Ranh giới ảnh-vs-dữ-liệu: *"Ảnh là SẢN PHẨM, không bao giờ là NGUỒN"* — phép thử **"số này in ra khách chỉ tay vào cãi được không?"** |
+| **VẼ** | (đợt trước) | cách vá bug sơn rẻ hơn: hatch có `specId` ⇒ không phải tường |
+
+### Việc TỔNG phải quyết/chuyển tiếp
+1. 🔴 Vá `findByAlias()` lọc `when` TRƯỚC khi ai thêm lệnh 3D — chuyển PHU.
+2. 🔴 Quyết số phận `components/three/CommandPanel.tsx` + `ObjectProperties.tsx` (592 dòng mồ côi): mount thay `Command3DPanel` hay xoá — chuyển CHINH khảo sát.
+3. `defineMode()` chưa ai gọi — Trụ 4 phải có việc code thật, không thì spec mode vô nghĩa.
+4. Phím `B` va (thùng sơn 3D ↔ thu Navigator) — Hoà quyết.
+5. `mock-cad-revit` chết theo mode "Cấu kiện" — Hoà quyết dựng lại hay bỏ.
+
+## [05:1x] TỔNG — AUDIT A4 MOCK CLAUDE DESIGN + đổi tên file
+Hoà export 2 file từ Claude Design (`Không gian 3D.dc.html`, `Frame3D.dc.html`) → TỔNG đổi tên chuẩn: `mocks/mock-3d-thong-nhat.html` (72.7KB) · `mocks/mock-3d-frame.html` (60.7KB).
+| Tiêu chí A4 | mock-3d-thong-nhat | mock-3d-frame |
+|---|---|---|
+| Hex TTT cấm (#F06020/#002850/#1B1512/#F1ECE3) | ✅ **0** | ✅ **0** |
+| Dùng `var(--…)` | ✅ 227 chỗ | ✅ 244 chỗ |
+| 2 theme (`data-theme`) | ✅ 2 | ⚠️ **0 — chỉ 1 theme** |
+| PLACEHOLDER dán nhãn | ✅ 12 | ⚠️ 3 |
+| **Nhãn chặng CŨ** ("Dựng ảnh"/"Vẽ") | 🔴 **4 chỗ** | 🔴 **4 chỗ** |
+→ **Kết luận: ĐẠT phần token/màu (điểm mạnh nhất — 0 hex tự chế, dùng biến gần như trọn), TRƯỢT phần nhãn.** Cả 2 file còn nhãn chặng cũ; `mock-3d-frame` thiếu theme thứ hai. Phải sửa trước khi cho code port (luật L2 port-nguyên-văn sẽ nuốt luôn nhãn sai — đúng tiền lệ "12 gradient placeholder").
+**Vào sổ mocks:** cần thêm 2 dòng vào `mocks/README-mocks.md` khi các vai rảnh.
+
+## [05:5x] TỔNG — AUDIT A4 TRỌN BỘ 3 MÀN CLAUDE DESIGN
+Đổi tên chuẩn: `mock-2d-ky-thuat.html` (78.5KB) · `mock-3d-thong-nhat.html` (72.7KB) · `mock-trinh-bay.html` (67.8KB).
+| Tiêu chí | 2D | 3D | Trình bày |
+|---|---|---|---|
+| Hex TTT cấm | ✅ 0 | ✅ 0 | ✅ 0 |
+| Dùng `var(--)` | ✅ 346 | ✅ 227 | ✅ 313 |
+| Đủ 2 theme | ✅ | ✅ | ✅ |
+| PLACEHOLDER dán nhãn | ✅ 8 | ✅ 12 | ✅ 9 |
+| Nhãn chặng CŨ | ✅ 0 | 🔴 **4** | ✅ 0 |
+| Khung 6 ổ (42/214/236/26) | ✅ đủ 4 số | ✅ đủ 4 số | ✅ đủ 4 số |
+**Kết luận: 2D và Trình bày ĐẠT TRỌN. 3D còn 4 chỗ nhãn cũ (file export trước lúc chốt tên) — sửa 4 chuỗi là đạt.**
+**Chất lượng nghiệp vụ (TỔNG kiểm tay, không tin mắt):**
+- BOQ editor: cộng tay 8 dòng = `175 605 950` **khớp tổng in trên mock**; dòng 03 `48.60 × 145 000 = 7 047 000` **khớp**. Mock có số học đúng — hiếm.
+- Dựng đúng cơ chế live-link của `SPEC-TRINH-BOQ-EDITOR`: ô sửa tay viền tím + chấm cam → panel phải "Số này không còn theo mô hình. Mô hình cho 44.20" + nút "Lấy lại số từ mô hình" + **"LẤY TỪ: 9 tường ngăn, tầng trệt →"** (đường lần ngược = qua phép thử *"khách chỉ tay vào cãi được không"*). Sidebar đếm `Lấy từ mô hình 22 / Đã sửa tay 3`.
+- Có sẵn đơn vị **mét dài** — đúng lỗ hổng COWORK-VẼ chỉ ra (BOQ chưa tính phào chỉ/nẹp chân tường).
+- Màn 2D: panel phải có **LỚP HOÀN THIỆN mặt A / mặt B** (tường 2 mặt 2 vật liệu) = đúng BIM nội thất; nút **"Chọn hết cùng loại — 9 tường ngăn dày 160"** = đúng chọn-theo-ngữ-nghĩa; thanh dưới có **"Bắt điểm: Đầu mút, Giữa cạnh"**.
+- Lỗi đã báo Hoà và Design đã sửa: dòng "Đơn vị mi-li-mét · 6.32 m²" mâu thuẫn nhãn/giá trị.
+**→ Bộ 3 màn đủ điều kiện ra MỘT phiếu port duy nhất cho phiên code (sau khi sửa 4 nhãn ở màn 3D).**
+
+## [06:xx] TỔNG — CHỐT HỆ GIAO DIỆN ARCHINOTE + luật kéo thả cảm ứng
+Hoà chốt liên tiếp qua chat, TỔNG gom thành `docs/SPEC-ARCHINOTE-UI-2026-08-03.md` (nguồn chuẩn mới):
+1. **PHÂN VỊ**: IF = MÁY PHÁT (máy tính, tạo sản phẩm) · ArchiNote = **MÁY THU (điện thoại**, thu số đo/ảnh/ghi âm/tri thức). Chung nguồn sự thật qua ATLAS/Lark, không gọi thẳng nhau. Cảm ứng IF = vẽ chính xác ≠ cảm ứng ArchiNote = ghi nhanh → **chỉ HỌC, không bê nguyên**.
+2. **MÀU**: ArchiNote **kem + vàng ấm, nền sáng**; tím chỉ nhấn rất nhẹ. Luật cứng: **vàng/kem không bao giờ làm màu chữ** (không đạt 4.5:1) — chỉ nền khối/vạch/nhấn.
+3. **MOBILE**: nút chính ≥56px ở nửa dưới màn · ba chạm/ba giây · chạy được khi mất mạng.
+4. **KÉO THẢ CẢM ỨNG**: giữ 250ms mới nhấc (tránh cướp cuộn) · vật nhấc lên trên ngón 40px · danh sách tự dạt tạo khe hở · kéo mép tự cuộn · **CẤM kéo thả là đường duy nhất** (công trường tay bẩn/găng/màn ướt). Điểm hay nhất: lưới tải việc **hiện % tải MỚI ngay lúc còn đang kéo**.
+5. **ICON**: icon hoá thứ lặp hằng ngày, **cấm icon hoá nút quyết định** (Xoá · Gửi khách · Xuất hồ sơ).
+6. **BENTO**: chỉ cho màn tổng quan; **cấm cho màn làm việc** — vùng vẽ phải liền khối.
+7. Đọc 14 ảnh tham khảo theo Luật #7, ghi bảng "lấy cơ chế gì" tại §9 spec.

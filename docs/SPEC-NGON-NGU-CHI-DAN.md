@@ -45,3 +45,68 @@
 
 ---
 *Cowork soạn 02/08/2026 theo yêu cầu Hoà. Nối SPEC-DESIGN-SYSTEM-IF §5 (chữ cũng là thiết kế) · LUAT-CHU-VIET-7.1.23.*
+
+---
+
+# 6 · BỘ TÊN CHÍNH THỨC (COWORK-UI append 03/08/2026 — việc 8 của `CHOT-TEN-CHANG-MODE-2026-08-03`)
+
+> Nguồn chuẩn: `docs/CHOT-TEN-CHANG-MODE-2026-08-03.md` mục **"VÒNG CUỐI 03/08 — ĐÈ LÊN TOÀN BỘ VÒNG TRƯỚC"** (Hoà gật).
+> Mục này **append**, không sửa đè §1-§5. Có xung đột giữa §3 (Từ điển cũ) và §6 → **§6 thắng** cho lớp tên chặng/mode/app.
+
+## 6.1 · Bảng tên chốt — DÙNG NGUYÊN VĂN, KHÔNG BIẾN THỂ
+| Lớp | Tên chốt | Header hẹp | Ghi chú |
+|---|---|---|---|
+| Ứng dụng | **InteriorFlow** | IF | Giữ tiếng Anh. **Luật cấm-jargon KHÔNG áp cho tên riêng/thương hiệu** (Figma/Notion cũng không dịch tên riêng). Đổi tên = đổi logo + repo + đuôi `.idfp` + toàn bộ docs, và mất lợi thế nếu bán quốc tế. |
+| Chặng 1 | **2D Kỹ thuật** | **2D** | "Kỹ thuật" = trục đúng-sai: đúng thước, đúng lớp, xuất hồ sơ. |
+| Chặng 2 | **3D Thiết kế** | **3D** | "Thiết kế" = trục đẹp-xấu: khối, ánh sáng, vật liệu, phối cảnh. |
+| Chặng 3 | **Trình bày** | **Trình bày** | Không rút gọn thêm. |
+| Mode chặng 2D | **Sơ phác ↔ Kỹ thuật** | — | Đúng 2 chế độ đối nhau. Mode "Kỹ thuật" bổ sung phần 3D-CAD. |
+| Mode chặng 3D | **Node ↔ 3D** | — | Đúng 2 chế độ đối nhau. |
+| Mode chặng Trình bày | **KHÔNG CÓ MODE** | — | Không được thêm. |
+
+**Nguyên tắc đặt tên (dùng để thẩm mọi đề xuất sau):** đặt theo **CHIỀU KHÔNG GIAN + MỤC ĐÍCH**, KHÔNG theo động tác tay. `2D`/`3D` là ký hiệu quốc tế, không phải jargon chữ → không phạm §1 luật 2.
+**Không có mode thứ ba lửng lơ ở bất kỳ chặng nào.** Mỗi chặng đúng 2 chế độ đối nhau, hoặc không mode.
+
+## 6.2 · Tên ĐÃ BỎ — giữ dấu vết để KHÔNG đặt lại vòng 5
+Bộ tên hiện hành là kết quả **bốn vòng** đặt đi đặt lại trong cùng ngày 03/08. Ba bộ dưới đây **đã bị Hoà bác**, phiên sau đề xuất lại = lặp việc đã đóng:
+
+| Vòng | Bộ tên đã bỏ | Lý do bỏ (nguyên văn/tóm) |
+|---|---|---|
+| 1 | ❌ **Phác · Kỹ thuật · Cấu kiện** | "Cấu kiện" nghe nặng xây dựng, lệch định vị **BIM nội thất**. |
+| 2 | ❌ **Vẽ · Dựng ảnh · Trình bày** | "Dựng ảnh" bỏ rơi khối 3D + video — chặng 2 nay gánh cả ba. |
+| 3 | ❌ **Vẽ · Dựng · Trình bày** | Hoà: *"vẽ với dựng trong ngôn ngữ design là 1"* — tự tạo mập mờ. |
+| — | ❌ **Rendering · Presenting · CAD** (nhãn code cũ) | Tiếng Anh lộ UI, phạm §1 luật 2. |
+| — | ❌ **BIM** làm nhãn UI | Jargon Anh. Chỉ dùng trong docs kỹ thuật. |
+
+## 6.3 · ⚖️ LUẬT ĐỔI TÊN
+1. **Muốn đổi bất kỳ tên nào ở §6.1 phải qua Hoà.** Không phiên nào — Cowork hay Code, kể cả TỔNG — được tự đặt lại.
+2. Phiên nào đề xuất tên mới **bắt buộc đọc §6.2 trước** và nói rõ vì sao lý do bỏ cũ không còn đúng. Đề xuất không tham chiếu §6.2 → audit đánh 🔴 trả về.
+3. Đổi tên hiển thị **KHÔNG được đổi khoá kỹ thuật** (`CadMode` = `sketch/pro/revit`, route `/cad` `/` `/present-editor`) — đổi khoá = vỡ persist.
+4. Luật nền đi kèm (từ cùng file chốt): **ba chặng là ba ỐNG KÍNH soi vào MỘT nguồn dữ liệu, không phải ba kho dữ liệu.** Đề xuất "đồng bộ / copy / xuất-nhập dữ liệu giữa các chặng" là sai từ gốc.
+
+## 6.4 · BẢNG TỪ CẤM ↔ TỪ THAY (tra nhanh khi rà nhãn)
+| Từ CẤM lộ UI | Thay bằng | Ghi chú |
+|---|---|---|
+| `Rendering` | **3D Thiết kế** (hẹp: 3D) | |
+| `Presenting` · `Present` | **Trình bày** | |
+| `CAD` · `CAD · Phác thảo` | **2D Kỹ thuật** (hẹp: 2D) · **2D Kỹ thuật · Sơ phác** | Chữ `CAD` vẫn dùng trong code/docs (`lib/cad/*`, route `/cad`) — chỉ cấm lộ ra nhãn UI. |
+| `Dựng ảnh` (nhãn chặng) | **3D Thiết kế** | Nếu là **tên khối/node** ("Dựng ảnh AI") thì KHÔNG thuộc diện này — đó là tên chức năng, không phải tên chặng. |
+| `Dựng` (nhãn chặng) | **3D Thiết kế** | Bỏ ở vòng 3. |
+| `Vẽ` (nhãn chặng) | **2D Kỹ thuật** | Chữ "Vẽ" làm **nhãn nhóm công cụ** trong toolbar thì GIỮ — không phải tên chặng. |
+| `Vẽ 3D` (nhãn mode chặng 2) | **3D** (cặp **Node ↔ 3D**) | |
+| `Bảng` · `Board` · `Render+Mood+Collab` (nhãn mode chặng 2) | **Node** | |
+| `Phác thảo` · `Phác` (nhãn mode) | **Sơ phác** | |
+| `Chuyên` · `Pro` · `Revit` (nhãn mode) | **Kỹ thuật** | Khoá kỹ thuật `pro`/`revit` giữ nguyên. |
+| `Cấu kiện` (nhãn mode) | **BỎ HẲN** — không có mode thứ ba | Dữ liệu cấu kiện là **tầng dưới của cả ba chặng**, không phải một mode. Phần Revit cắt đôi: mặt bằng/ký hiệu/thống kê → 2D Kỹ thuật; khối/đặt đồ/vật liệu → 3D Thiết kế. |
+| `BIM` | **không lộ UI** | Chỉ dùng trong docs kỹ thuật + spec. Với người dùng nói "đồ nội thất · lớp hoàn thiện · tủ bếp · trần · sàn". |
+| `IFC` · `Pset` · `IfcCovering`… | **không lộ UI** | Docs kỹ thuật + nhãn xuất file. |
+| `Flow` · `graph` | **bảng làm việc** | Đã có §3, nhắc lại. |
+| `Node` (khối thường) | **khối** | Đã có §3. LƯU Ý: **"Node" làm TÊN MODE chặng 3D là hợp lệ** (§6.1) — ngoại lệ duy nhất. |
+
+## 6.5 · Nghiệm thu nhãn (dùng cho mọi mock + màn app mới)
+Grep 8 chữ này ra **0 kết quả** ở vùng nhãn hiển thị mới đạt:
+`Rendering` · `Presenting` · `Dựng ảnh` · `CAD ·` · `Phác thảo` · `Cấu kiện` · `Vẽ 3D` · `Dựng`
+(chữ `Vẽ` và `Present` phải soi bằng mắt — có trường hợp hợp lệ, xem §6.4).
+
+---
+*COWORK-UI append 03/08/2026 — việc 8 bảng §C `CHOT-TEN-CHANG-MODE-2026-08-03`. Không sửa §1-§5.*

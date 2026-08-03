@@ -51,7 +51,7 @@ export const SHORTCUTS: ShortcutEntry[] = [
     scope: 'toàn cục', keys: ['mod', 'K'],
     label: 'Bảng lệnh nhanh (⚠ hiện chỉ hoạt động ở Trang chủ/màn hình Ý tưởng, chưa có ở CAD/Present)',
   },
-  { scope: 'toàn cục', keys: ['mod', 'J'], label: 'Chuyển chặng Drafting CAD ↔ Rendering ↔ Presenting' },
+  { scope: 'toàn cục', keys: ['mod', 'J'], label: 'Chuyển chặng 2D Kỹ thuật ↔ 3D Thiết kế ↔ Trình bày' },
 
   // ── CAD ───────────────────────────────────────────────────────────────────────────────────
   { scope: 'cad', keys: ['mod', 'Z'], label: 'Hoàn tác', group: 'Sửa' },

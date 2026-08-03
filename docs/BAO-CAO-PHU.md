@@ -2468,3 +2468,101 @@ vướng khoá git FUSE ở 3 worktree khác nhau), chốt phiên tại đây th
 → chốt phiên" — CÒN hàng đợi (mục 5 CAD gap-check · mục 6 guide/snap · mục 7 BOQ glue), phiên
 sau đọc lại §3 lấy tiếp mục 5, KHÔNG phải "HẾT VIỆC" (hàng đợi chưa cạn, chỉ là dừng chủ động
 đúng ngưỡng context).
+
+---
+
+## PHU — VIỆC 1+2 `SPEC-TANG-DU-LIEU-CAU-KIEN.md` §0.3/§2.3 — P0 verify tay + P1 vá bug sơn SOLID đùn thành tường
+
+### VIỆC 1 — verify tay: TÁI HIỆN ĐƯỢC, đúng như spec đoán
+
+**Đường verify tay qua UI thật (không mock):** dev server riêng `interiorflow-verify` (cổng
+3001, `127.0.0.1`) — LÝ DO đổi cổng: cổng 3000 (`interiorflow-main`) đang là dev server của
+MỘT PHIÊN KHÁC đang sửa dở hàng loạt file shell (`AppChrome.tsx`/`CadEditor.tsx`/
+`IntroSequence.tsx`/`ZonePanel.tsx`…) — verify ở đó gặp lỗi hydration thật (`Warning: An error
+occurred during hydration` + trang trắng/đen ngẫu nhiên), không liên quan gì tới bug đang tìm.
+Tự khởi `interiorflow-verify` (đọc cùng `.claude/launch.json` có sẵn) thì ổn định hoàn toàn.
+
+Thao tác thật trên `Dự án mẫu` → chặng **2D Kỹ thuật**: lệnh **ROOM** vẽ phòng chữ nhật 4.7×2.2m
+("PHÒNG · 10.3 m²", 4 tường tự sinh) → mở panel **Vật liệu (Hatch)** → tab **Sơn** → chọn
+**"Sơn trắng"** (preset `son-trang`, `hatchPattern:'SOLID'`) → tool tự chuyển sang **Hatch** →
+click 1 điểm trong phòng → status bar báo *"Hatch: đã tô vật liệu 'Sơn trắng' (4 đỉnh biên)"*
+(tô nguyên cả phòng vì `findHatchBoundary` bắt biên kín gần nhất — đúng cơ chế Hatch cũ, không
+phải lỗi mới). Sang **3D Thiết kế → bật toggle "Vẽ 3D"** → viewport dựng khối thật từ ĐÚNG Doc
+vừa vẽ (tooltip "Khối xám · chưa vật liệu — matId chỉ lưu, ảnh thật do D5 dựng").
+
+⚠️ **Phần CHƯA verify được bằng mắt qua camera 3D**: điều khiển camera (scroll zoom/orbit) của
+viewport "Vẽ 3D" không phản hồi ổn định qua automation trong phiên này (nhiều lần scroll/drag
+không đổi khung hình, có lúc timeout) — không lấy được ảnh chụp trực quan "khối tường lạ 2.7m
+giữa phòng". Bù lại bằng **verify mức hàm — cùng đúng code production, cùng đúng Doc thật**:
+script gọi thẳng `docToObjScene()` + preset `MATERIALS` (`lib/cad/materials.ts`) tái tạo NGUYÊN
+VĂN kịch bản trên (phòng 4×3m + 1 mảng hatch SOLID preset "Sơn trắng" giữa phòng, layer
+`l-furniture` — đúng dữ liệu `handleHatch()` sinh ra):
+
+```
+TRƯỚC vá: stats.walls = 5 (4 tường thật + "Wall_5" chính là mảng sơn, đỉnh cao 2.7m)
+SAU vá:   stats.walls = 4 (mảng sơn không sinh group nào)
+```
+
+**Kết luận VIỆC 1: xác nhận đúng spec §0.3 — tô mảng sơn SOLID (không nằm trên layer tường)
+BỊ đùn thành khối tường cao 2.7m.** Khai thật: bằng chứng gồm (a) UI thật đến bước dựng khối 3D
+từ đúng Doc, và (b) tái hiện số liệu chính xác bằng hàm production thật `docToObjScene()` — CHƯA
+có ảnh chụp trực quan khối 3D sai vì giới hạn điều khiển camera của automation, không phải vì
+bug không tồn tại (bằng chứng code + hàm đã đủ rõ, xem log verify script phía dưới).
+
+Dọn sạch sau verify: chọn hết (⌘A) + xoá 11 entity vừa tạo trên `Dự án mẫu` (bản vẽ 1), đã lưu
+lại về canvas trống — đúng luật "dự án mẫu sạch, không dấu vết verify" (`STATUS.md`).
+
+### VIỆC 2 — vá theo thang ưu tiên §2.3
+
+**`lib/three/cad-to-obj.ts`** — đổi điều kiện lọc "cái gì là tường" trong `docToObjScene()`:
+
+- **Trước:** `wallLayers.has(e.layer) || e.solid === true || e.pattern === 'SOLID' || !e.pattern`
+  — bất kỳ hatch SOLID/không-pattern nào, layer nào, đều bị coi là tường.
+- **Sau:** đọc `e.elementType` trước (luật L3 — khai báo thắng suy đoán): `elementType==='wall'`
+  → tường (khai báo, DỪNG); `elementType` là giá trị khác (kể cả `null` = "đã kiểm, không phải
+  cấu kiện") → loại, DỪNG; `elementType === undefined` (chưa gán, file `.idf` cũ) → lùi về suy
+  đoán tạm qua **tên layer** (`wallLayers`) — nhánh DUY NHẤT còn giữ lại.
+
+⚠️ **1 điểm lệch so với chữ trong lệnh, khai thật:** lệnh gốc chỉ nói "bỏ hẳn 2 nhánh
+`e.solid === true` và `!e.pattern`" (không nhắc `e.pattern === 'SOLID'`). Tôi bỏ CẢ BA — vì
+chính §0.3 (điều tra gốc của cùng spec) chỉ đích danh `e.pattern === 'SOLID'` là nhánh gây bug
+("cad-to-obj.ts:350-355 — điều kiện lọc tường có nhánh `|| e.pattern === 'SOLID'`, không xét
+layer, không xét elementType"), và preset "Sơn trắng" luôn set cả `solid:true` LẪN
+`pattern:'SOLID'` cùng lúc — chỉ bỏ 2/3 nhánh thì bug KHÔNG hết (verify script xác nhận: bỏ đúng
+2 nhánh theo văn tự lệnh vẫn ra `Wall_5`). Giữ `e.pattern==='SOLID'` sẽ mâu thuẫn thẳng với mục
+đích của chính VIỆC 2 — nên tôi ưu tiên đúng KẾT QUẢ đã verify ở VIỆC 1 hơn là đúng từng chữ.
+
+**Cờ `inferred` (L4 — suy đoán phải lộ mặt):** thêm `inferred?: true` vào `SceneGroup` (runtime,
+KHÔNG lưu `.idf`) + `ObjBuilder.object()` nhận `meta.inferred`. Tường suy đoán qua tên layer
+(`elementType` chưa gán) → group mang `inferred: true`; tường khai báo `elementType:'wall'` rõ
+ràng → không gắn cờ. Đây là chỗ TIÊU THỤ đầu tiên cho §2.4 (badge "suy đoán" ở UI là việc P3,
+CHƯA làm — chỉ mới có dữ liệu để P3 đọc).
+
+**KHÔNG làm** (đúng phạm vi hẹp của VIỆC 2, để dành đúng lộ trình §9):
+- Chưa viết hàm `inferElementType()` đầy đủ theo §2.3 (nhánh b/c/d dùng `specId`/`BLOCK_MAP`) —
+  đó là P1 trong lộ trình, phạm vi rộng hơn 1 dòng lệnh giao. VIỆC 2 chỉ sửa ĐÚNG điều kiện lọc
+  tường tại `cad-to-obj.ts:353` như lệnh nêu rõ số dòng.
+- Chưa xoá nhánh tên-layer (giữ tạm cho `.idf` cũ đúng như lệnh dặn, hẹn xoá ở P4).
+- Chưa đụng `Đ1-Đ3` (entityId cho MỌI group) — ngoài phạm vi lệnh này.
+
+**Kiểm sạch:**
+- `node_modules/.bin/sucrase-node lib/three/cad-to-obj.test.ts` — thêm 8 test mới (regression
+  §0.3 + 3 ca thang ưu tiên §2.3: khai báo `wall` thắng dù pattern/layer khác · khai báo `null`
+  loại dù layer/pattern khớp tường · tường cũ không `elementType` vẫn suy đoán + gắn `inferred`).
+  **46/46 pass** (38 cũ + 8 mới), không ca nào cũ bị vỡ (đặc biệt: 4 tường `wallChain` sinh ra
+  vẫn nhận đúng qua nhánh layer-name, vì chúng chưa có `elementType`).
+- `npx tsc --noEmit` scoped (`cad-to-obj.ts`+test+3 file viewer tiêu thụ `SceneGroup`/
+  `docToObjScene`) — sạch, xoá `tsconfig.scoped.json` tạm ngay sau khi chạy xong (không để rác).
+- Grep 6 file tiêu thụ khác (`NodeExtras.tsx`/`Scene3DPreviewModal.tsx`/`Viewport3D.tsx`/
+  `Scene3DViewer.tsx`/`render-v2.ts`/`Render3DModeSkeleton.tsx`/`section.ts`/`capture.ts`) — đều
+  chỉ đọc `SceneGroup`/gọi `docToObjScene()` theo đúng chữ ký cũ, không đổi field bắt buộc nào
+  (chỉ THÊM field optional `inferred?`) → không breaking, không cần sửa file nào trong nhóm này.
+
+**Commit:** giới hạn đúng `lib/three/cad-to-obj.ts` + `lib/three/cad-to-obj.test.ts` (pathspec
+riêng — `git status` lúc commit còn nhiều file khác đang mở bởi phiên Cowork khác:
+`docs/BAO-CAO-COWORK-*`, `docs/SPEC-NGON-NGU-CHI-DAN.md`, `docs/SPEC-VE-REVIT-MODE.md`,
+`docs/mocks/README-mocks.md`, `docs/PHIEU-TRINH-BOQ-EDITOR.md`, `docs/nc/NC-11-*` — KHÔNG đụng).
+
+**Đề nghị cho phiên sau / TỔNG:** P3 (badge UI "suy đoán" đọc cờ `inferred` mới thêm) và P1 đầy
+đủ (`inferElementType()` với nhánh `specId`/`BLOCK_MAP`) vẫn còn nguyên trong hàng đợi §9, chưa
+đụng tới.

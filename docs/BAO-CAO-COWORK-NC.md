@@ -55,3 +55,74 @@
 3. NC-7 chuyển cho phiên ARCHINOTE khi khối copy spec (⛔ hàng đợi ARCHINOTE) được Hoà chạy.
 **Nghi vấn liên vai:** không phát sinh mới.
 **Hàng đợi còn lại:** trống — phiên NC kế đọc file này rồi nhận đề tài từ TỔNG/Hoà. Gợi ý đề tài dự trữ (chưa làm, chờ duyệt): onboarding app cùng ngành (D5/SketchUp first-run) · pipeline in Foyr/Coohom · Lark Base Gantt dependencies kiểm tận mắt (1 phút của Hoà).
+
+## ĐỢT 3 (TỔNG bơm — sổ ghi "03/08 ~02:1x", nhận SÁNG 03/08 ~09:00 giờ thật)
+Ghi chú nhận lệnh: Hoà dán cả CỤM 5 dòng nhận vai (NC·UI·VẼ·DỰNG·TRÌNH) vào phiên này — theo hiến chương "mỗi phiên đúng 1 dòng", phiên này chỉ nhận dòng **NC**; 4 dòng kia cần dán vào 4 phiên mới (đã báo Hoà).
+*(Đính chính §0: dòng tiêu đề cũ ước "nhận 02/08 ~23:5x" là SAI — kiểm `date` lúc xong NC-9 ra 03/08 09:21 sáng; 2 file NC-8/NC-9 đã đổi tên sang `2026-08-03` cho đúng ngày.)*
+| # | Đề tài | Nuôi cho | Trạng thái |
+|---|---|---|---|
+| NC-8 | First-run app CÙNG NGÀNH: D5 Render · SketchUp · Enscape (màn đầu, template gallery, sample project) | Smart Tour v2 + empty-state Vẽ 3D | ✅ `nc/NC-firstrun-cung-nganh-2026-08-03.md` |
+| NC-9 | Presence/collab Figma/Miro/FigJam (avatar dải, cursor, follow mode, comment thread) | code G2 của G4 | ✅ `nc/NC-presence-collab-2026-08-03.md` |
+
+- [03/08 ~09:00] Nhận đợt 3. ✅ NC-8 → `nc/NC-firstrun-cung-nganh-2026-08-03.md`: cùng ngành hội tụ "scene mẫu mở-là-nghịch-được", KHÔNG tour; 2 phát minh đáng chép: chọn ĐƠN VỊ là nghi thức mở đầu (SketchUp template) + **Instructor gắn theo TOOL** (animation + modifier keys + phím — nâng cấp thẳng cho §0c mảng 2); Enscape dạy "nút xám phải có lý do". 7 đề xuất §2.
+- [03/08 09:21] ✅ NC-9 → `nc/NC-presence-collab-2026-08-03.md`: kiến trúc Figma — presence (cursor·selection·viewport) là DỮ LIỆU PHÙ DU tách khỏi persistence, cursor throttle ~80ms local-first; reaction G2 nên là STAMP-GẮN-OBJECT (FigJam) = dữ liệu duyệt phương án đếm được; comment pin bám object + Resolve ẩn-không-xoá + notification mặc định mentions-only; toggle ẩn cursor ĐƯỢC NHỚ (sửa pain Figma bị than). 11 đề xuất §4 rót thẳng vào phiếu G2 của G4.
+- **[03/08 09:21] HẾT VIỆC đợt 3** — NC-8 + NC-9 ✅. Hàng đợi trống.
+
+## CHỐT PHIÊN đợt 3 — 03/08/2026 09:2x
+**Đã xong:** đợt 3 trọn 2/2. Tổng phiên NC (3 đợt): **9 bài** trong `docs/nc/`.
+**Dang dở:** không.
+**Đề xuất cho COWORK-TỔNG:**
+1. Dòng `00-CHOT` cập nhật: "`docs/nc/` — 9 bài NC (02–03/08): camera-campath · timeline · spreadsheet · onboarding · xuất-PDF · lark-permission · pm-studio-nhỏ · firstrun-cùng-ngành · presence-collab."
+2. Báo **G4**: NC-9 đã về — phiếu G2 (mục 3 hàng đợi G4) nên đọc `NC-presence-collab` §4 trước khi dựng `lib/collab/` (nhất là #1 ephemeral-vs-persist và #6 stamp-gắn-object).
+3. Báo **G4/CHINH** (empty state, mục 5 G4): đọc `NC-firstrun-cung-nganh` §2.3–2.5 (2 nút + cảnh mẫu + nút xám có lý do).
+4. Nhắc lại 2 việc treo từ đợt 1–2: Hoà chạy checklist Lark (`NC-lark-permission` §2) · 4 dòng vai UI/VẼ/DỰNG/TRÌNH cần dán vào 4 phiên mới.
+**Hàng đợi còn lại:** trống — chờ TỔNG bơm đợt 4 hoặc Hoà giao trực tiếp.
+
+## ⚠️ PHIÊN THỨ 2 NHẬN TRÙNG BRIEF ĐỢT 3 — 03/08/2026 (bằng chứng chạy song song thật)
+**Phát hiện:** một phiên COWORK-NC KHÁC (tôi) nhận đúng nguyên văn brief ĐỢT 3 (① first-run cùng ngành, ② presence/collab) — y hệt brief mà mục ngay trên đây đã làm và CHỐT PHIÊN lúc 09:2x sáng nay. Bằng chứng đây KHÔNG phải suy đoán: tôi đọc `docs/nc/*.md` lúc bắt đầu → chỉ thấy 8 file (thiếu `NC-presence-collab`); grep code xong quay lại đọc thì đã thấy file đó xuất hiện; đến lúc APPEND vào chính sổ này thì bị lỗi "File has been modified since read" — đọc lại thì thấy mục CHỐT PHIÊN đợt 3 (09:2x) đã được điền đầy đủ. Tức là **2 phiên COWORK-NC chạy đúng lúc nhau, cùng nhận 1 brief**, chỉ lệch nhau khoảng chục phút.
+**Xử lý theo §0b ("đừng viết lại cái đã có") + §0 (luật trung thực):** KHÔNG viết lại NC-8/NC-9 (đã đọc trọn cả hai, xác nhận đạt chuẩn — nguồn thật, số liệu thật, "Điều IF nên làm" đầy đủ). Thay vào đó soi đúng **1 câu NC-9 tự loại khỏi phạm vi** ở dòng "Giới hạn nghiên cứu": *"cơ chế CRDT/conflict-resolution của document sync KHÔNG nằm trong bài này"*. Grep `app/api/flows/[id]/route.ts` + `lib/store.ts` để trả lời đúng câu đó thì phát hiện đây **không phải câu hỏi lý thuyết**: autosave `graphJson` (debounce 2s, gộp `nodes+edges+groups+comments+strokes` vào 1 blob) ghi đè thẳng qua `prisma.flow.update` mà **không so `rev`** dù field này đã có sẵn và đang được tăng — tức 2 người sửa cùng flow (đúng kịch bản G2 hứa hẹn) có thể **mất dữ liệu thật, im lặng, không cảnh báo, không có bản cứu** (vì `FlowVersion` chỉ tạo khi bấm tay "Đánh dấu bản này", không tạo khi autosave). Viết bài mới đúng lỗ hổng đó, so 4 mô hình ngành (Figma property-level CRDT · Miro object-lock + 2 thread cộng đồng thật · Revit worksharing borrow/Editing-Request — muscle memory kiến trúc sư · bài học phản diện Webflow nhiều năm than trước khi vá bằng Page branching) + kịch bản cụ thể dựng trên đúng code IF + 6 đề xuất xếp độ khẩn.
+
+| # | Đề tài | Nuôi cho | Trạng thái |
+|---|---|---|---|
+| NC-10 | Xung đột khi 2 người sửa `graphJson` đồng thời (Figma CRDT · Miro lock · Revit worksharing · bài học Webflow) — đúng lỗ hổng NC-9 tự loại khỏi phạm vi | G2 Mood+Collab + autosave `graphJson` (`lib/store.ts` + `app/api/flows/[id]/route.ts`) | ✅ `nc/NC-conflict-simultaneous-edit-2026-08-03.md` |
+
+**Vì sao chỉ 1 file mới, không phải 2 như brief yêu cầu:** đã kiểm kỹ — mọi câu hỏi cụ thể của đề bài ① (wizard/progressive disclosure · template gallery · sample project · cách dạy thao tác cơ bản) đều đã có câu trả lời đầy đủ trong `NC-firstrun-cung-nganh-2026-08-03.md`. Thử tìm góc phụ "viewport 3D trống theo đúng nghĩa đen" (SketchUp scale-figure, Blender default cube) nhưng nguồn tra được mỏng, không có "than phiền cộng đồng thật" đạt chuẩn hệ (`SO-KIEM-TONG` §0b) — quyết định KHÔNG ép viết để tránh bài chung chung/PR. Ưu tiên 1 bài có sức nặng thật hơn 2 bài trong đó 1 bài là lấp chỗ trống cho đủ số.
+
+### CHỐT PHIÊN — 03/08/2026 (phiên thứ 2, bài bổ sung)
+**Đã xong:** xác minh ĐỢT 3 (① + ②) đã xong bởi phiên COWORK-NC song song — đọc trọn cả 2 file để verify, không chỉ tin tên file/dòng ✅ trong sổ. Vì §0b cấm viết lại cái đã có, đào đúng lỗ hổng NC-9 tự khai + grep code thật xác nhận đây là rủi ro CÓ THẬT (không phải giả thuyết) → viết `nc/NC-conflict-simultaneous-edit-2026-08-03.md` (NC-10).
+**Dang dở:** không.
+**Đề xuất cho COWORK-TỔNG (TỔNG duyệt mới ghi vào `00-CHOT`):**
+1. +1 dòng `00-CHOT`: "`docs/nc/NC-conflict-simultaneous-edit-2026-08-03.md` (NC-10) — autosave `graphJson` (`lib/store.ts` ~dòng 1118-1130 + `app/api/flows/[id]/route.ts` ~dòng 74-81) ghi-đè-mù, không kiểm `rev` dù field đã có sẵn → rủi ro mất dữ liệu THẬT khi G2 cho nhiều người sửa cùng flow. Đề xuất: dùng `rev` làm optimistic-concurrency guard + toast 'có người vừa sửa' + tải lại, TRƯỚC khi G2 mở nhiều người dùng thật."
+2. **Báo PHU/G4 trực tiếp** (không chỉ nằm trong sổ NC) — NC-10 §3 mục 1+2+4 nên vào hàng đợi G4/PHU mức 🔴: đây là lỗi mất-dữ-liệu-im-lặng, KHÔNG thuộc diện an toàn của cơ chế "ship trước sửa sau" (dữ liệu mất không "sửa sau" được).
+3. **Sửa quy trình dispatch cho COWORK-NC** — xem Nghi vấn dưới, tránh lặp lãng phí công sức lần nữa (và kiểm xem 4 vai UI/VẼ/DỰNG/TRÌNH có bị lặp tương tự không).
+**Nghi vấn liên vai (đúng 1 câu cho Hoà chuyển TỔNG):** Cơ chế "Hạm đội Cowork" vừa lặp dispatch — 2 phiên COWORK-NC nhận đúng 1 brief ĐỢT 3 cùng lúc (bằng chứng: sổ này đổi nội dung giữa 2 lần đọc trong cùng 1 phiên) — có phải TỔNG đang bơm việc theo chu kỳ cố định mà không kiểm phiên nào đã nhận, và nếu đúng thì 4 vai còn lại (UI/VẼ/DỰNG/TRÌNH) có cùng rủi ro?
+**Hàng đợi còn lại:** trống — phiên NC kế tiếp đọc file này rồi nhận đề tài MỚI thật từ TỔNG/Hoà, không nhận lại nguyên văn brief ĐỢT 3 (đã xong đủ, xem bảng trên).
+
+---
+
+## ĐỢT 4 — NC-11 · IFC + NGHỊ ĐỊNH BIM VIỆT NAM — 03/08/2026
+**Giao bởi:** `CHOT-TEN-CHANG-MODE-2026-08-03.md` §6 mục 2 (Hoà chốt trực tiếp: *"chuẩn ifc theo nghị định nữa"*).
+
+| # | Đề tài | Nuôi cho | Trạng thái |
+|---|---|---|---|
+| NC-11 | ① Nghị định BIM VN (IFC có bắt buộc không) · ② IFC 4.3 cho nội thất · ③ thư viện JS đọc-ghi IFC + giấy phép · ④ bảng ánh xạ entity IF ↔ IFC | `SPEC-TANG-DU-LIEU-CAU-KIEN` §2.4 (`'covering'` chờ chốt) · `lib/cad/model.ts` · `LICENSE-NOTES.md` | ✅ `nc/NC-11-ifc-nghi-dinh-bim-2026-08-03.md` |
+
+### Ba câu trả lời gọn
+1. **① IFC CÓ BẮT BUỘC — và luật vừa ĐỔI.** `NĐ 175/2024/NĐ-CP` (từng ghi cứng "IFC 4.0" + trần 500 MB/tệp) **đã hết hiệu lực 01/7/2026**. Luật hiện hành là **`NĐ 217/2026/NĐ-CP` Điều 8 khoản 3 điểm a**: *"Dữ liệu BIM được nộp theo các định dạng chuẩn mở **IFC** hoặc các định dạng mở khác phù hợp…"* — bỏ ghim phiên bản, bỏ trần dung lượng, **bỏ điều kiện "dự án nhóm B trở lên"**, ngưỡng còn lại là **công trình cấp II trở lên**, không phân biệt vốn công/tư. `QĐ 258/QĐ-TTg` chỉ là lộ trình, KHÔNG phải nguồn quy định định dạng. ⚠️ Nghĩa vụ nộp đặt lên **chủ đầu tư** — studio nội thất bị chạm **gián tiếp qua hợp đồng** (Điều 8.2), không trực tiếp. Marketing phải nói đúng chỗ này.
+2. **③ THẮNG: `web-ifc` (ThatOpen) — MPL-2.0.** Đọc + ghi (`CreateModel`/`WriteLine`/`SaveModel` có thật trong `.d.ts`), schema `IFC2X3|IFC4|IFC4X3`, wasm **1,30 MB** (đo thật từ tarball npm 0.0.77, 06/3/2026). MPL copyleft **theo file** ⇒ IF đóng nguồn được, chỉ cần đừng fork-sửa rồi giấu. **LOẠI `xeokit-sdk` (AGPL-3.0 — lan qua mạng, nuốt cả bản web)**; `IfcOpenShell` (LGPL-3.0, ~10 MB qua pyodide) để dự phòng server-side; `web-ifc-three` đã chết (bản cuối 01/2024).
+3. **④ `elementType:'covering'` — CÓ, THÊM.** `IfcCovering` là entity IFC hạng nhất, ví dụ chính hãng đúng 4 thứ IF làm (ốp tường · sàn · trần thả · phào/len). Ép thành `slab` là **sai tiền BOQ** (IfcSlab tính m³ kết cấu, IfcCovering tính m² `Qto_CoveringBaseQuantities`). **NHƯNG phải kèm `coveringKind?: 'ceiling'|'flooring'|'cladding'|'molding'|'skirtingboard'|'topping'`** — vì `IfcCovering` luôn cần `PredefinedType`, thiếu field này exporter buộc phải ĐOÁN (vi phạm luật "không đoán mò").
+
+### Đề xuất cho COWORK-TỔNG (TỔNG duyệt mới ghi vào `00-CHOT`)
+1. +1 dòng `00-CHOT`: "`docs/nc/NC-11-ifc-nghi-dinh-bim-2026-08-03.md` — luật hiện hành là **NĐ 217/2026/NĐ-CP Điều 8** (không phải NĐ 175, đã hết hiệu lực 01/7/2026); IFC là định dạng nộp bắt buộc; chọn `web-ifc` MPL-2.0; duyệt thêm `elementType:'covering'` + `coveringKind`."
+2. **Báo COWORK-DỰNG / PHU: câu chờ ở `SPEC-TANG-DU-LIEU-CAU-KIEN` §2.4 ĐÃ CÓ TRẢ LỜI** — thêm `'covering'`, kèm `coveringKind`, và cập nhật luôn nhánh suy đoán §2.3.b (suy được `covering` nhưng KHÔNG suy `coveringKind`, để undefined + gắn `inferred`).
+3. **Việc rẻ làm ngay (PHU, 1 dòng):** `lib/cad/model.ts:101` nhãn `'Nội thất · IfcFurnishingElement'` **SAI** — buildingSMART đánh `IfcFurnishingElement` *"deprecated for instantiation"*. Đổi thành `'Nội thất · IfcFurniture'`.
+4. **Cảnh báo giấy phép (bài học libredwg):** `LICENSE-NOTES.md` còn 4 dòng nghĩa vụ ⬜ CHƯA LÀM cho GPL-3 của libredwg. Đừng thêm dependency thứ 2 (web-ifc) trước khi có trang "Third-party licenses" trong app — gộp thành MỘT việc cho CHINH.
+5. **10 khoản IF còn thiếu để xuất IFC hợp lệ** (bảng §4.2 của bài) — 5 khoản mức 🔴 chặn: cây `IfcProject→Site→Building→Storey` (`Doc` hiện KHÔNG có bảng tầng), `IfcUnitAssignment`, `IfcGuid` bền, `thicknessMm`, `IfcOpeningElement` cho cửa.
+
+**Nghi vấn liên vai (1 câu cho Hoà):** xuất IFC có nên **mặc định loại bỏ giá** không? IFC không có Pset chuẩn nào chứa giá (giá thuộc `IfcCostItem`), và file IFC thường gửi thẳng cho chủ đầu tư/tổng thầu — xuất kèm `priceVnd` là lộ giá vốn. Đề xuất: mặc định KHÔNG kèm giá, có công tắc riêng.
+
+### CHỐT PHIÊN — 03/08/2026 (COWORK-NC, đợt 4)
+**Đã xong:** NC-11 đủ 4 phần đề bài, tra tận nguồn (vanban.chinhphu.vn · qlda.gxd.vn toàn văn NĐ 217 · ifc43-docs.standards.buildingsmart.org · registry npm + tarball đo thật · thảo luận license GitHub của IfcOpenShell).
+**Phát hiện ngoài đề bài (đáng giá nhất):** đề bài giả định NĐ 175/2024 — nhưng nó **đã hết hiệu lực 5 tuần trước ngày viết bài**. Nếu tin brief mà không kiểm thì cả bài sẽ trích luật chết.
+**Dang dở / chưa verify (ghi rõ, không giấu):** ⓐ PDF ký số NĐ 217 là ảnh scan, chưa đối chiếu bằng mắt; ⓑ chưa đọc được toàn văn hướng dẫn kỹ thuật BIM của Bộ Xây dựng ⇒ chưa biết VN có đòi MVD/IDS/Pset cụ thể không; ⓒ **chưa chạy thử web-ifc lần nào** — mọi số là số đo gói, không phải kết quả chạy; ⓓ ánh xạ PBR→`IfcSurfaceStyleRendering` là SUY ĐOÁN.
+**Hàng đợi còn lại:** trống — chờ TỔNG bơm đợt 5.

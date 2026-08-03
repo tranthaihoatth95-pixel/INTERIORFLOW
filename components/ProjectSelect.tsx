@@ -378,12 +378,12 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
       en
         ? [
             'Ask Vitals — materials & interior style advice…',
-            'How do Drafting CAD · Rendering · Presenting work?',
+            'How do 2D Technical · 3D Design · Presenting work?',
             'Quiet-luxury layout ideas for your space…',
           ]
         : [
             'Hỏi Vitals — tư vấn vật liệu, phong cách nội thất…',
-            'Cách dùng Drafting CAD · Rendering · Presenting?',
+            'Cách dùng 2D Kỹ thuật · 3D Thiết kế · Trình bày?',
             'Gợi ý bố cục quiet-luxury cho không gian của bạn…',
           ],
     [en],

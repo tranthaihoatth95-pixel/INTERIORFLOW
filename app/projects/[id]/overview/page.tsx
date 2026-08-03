@@ -48,10 +48,11 @@ interface OverviewData {
   flows: OverviewFlow[];
 }
 
+// 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md).
 const STAGE_LABEL: Record<string, [string, string]> = {
-  concept: ['Drafting CAD', 'Drafting CAD'],
-  render: ['Rendering', 'Rendering'],
-  present: ['Presenting', 'Presenting'],
+  concept: ['2D Kỹ thuật', '2D Technical'],
+  render: ['3D Thiết kế', '3D Design'],
+  present: ['Trình bày', 'Presenting'],
 };
 
 export default function ProjectOverviewPage() {

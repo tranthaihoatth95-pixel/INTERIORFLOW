@@ -22,23 +22,25 @@ export interface PhaseMeta {
 
 export const PHASES: PhaseMeta[] = [
   {
-    // NB: giữ id 'concept' để KHÔNG vỡ store/localStorage cũ, nhưng chặng 1 đã đổi
-    // bản chất → "Drafting CAD" (trình vẽ mặt bằng 2D ở /cad-editor, không phải canvas node).
-    // 20/07: nhãn hiển thị đổi Layout CAD → Drafting CAD (bộ 3 cùng dạng V-ing; giữ chữ "CAD"
-    // làm từ neo cho người dùng Việt trong nghề). ID GIỮ NGUYÊN.
+    // NB: giữ id 'concept' để KHÔNG vỡ store/localStorage cũ — chỉ NHÃN hiển thị đổi.
+    // 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md mục "VÒNG CUỐI"):
+    // "Drafting CAD" → "2D Kỹ thuật" (đặt theo CHIỀU KHÔNG GIAN + MỤC ĐÍCH, không theo động
+    // tác tay — 2D/3D là ký hiệu quốc tế, không phải jargon). ID GIỮ NGUYÊN.
     id: 'concept',
     icon: 'concept',
-    label: 'Drafting CAD',
+    label: '2D Kỹ thuật',
     tagline: 'Import CAD 2D · vẽ sơ phác · bố trí furniture',
-    blurb: 'Dựng mặt bằng 2D: mở/vẽ CAD, bố trí nội thất, rồi đưa layout sang Rendering tô vật liệu.',
+    blurb: 'Dựng mặt bằng 2D: mở/vẽ CAD, bố trí nội thất, rồi đưa layout sang 3D Thiết kế tô vật liệu.',
     // Chặng này chạy ở route riêng (/cad-editor), không có node ưu tiên trên canvas.
     featured: [],
     demo: 'concept',
   },
   {
+    // 03/08 CHỐT TÊN vòng cuối — "Rendering" → "3D Thiết kế" (mode Node ↔ 3D, xem
+    // CHOT-TEN-CHANG-MODE-2026-08-03.md). ID 'render' GIỮ NGUYÊN.
     id: 'render',
     icon: 'render',
-    label: 'Rendering',
+    label: '3D Thiết kế',
     tagline: 'Clay → photoreal · chỉnh cục bộ',
     blurb: 'Sản xuất phối cảnh: clay/sketch → AI photoreal, đổi vật liệu, ánh sáng, upscale.',
     featured: [
@@ -69,9 +71,11 @@ export const PHASES: PhaseMeta[] = [
     demo: 'bedroom',
   },
   {
+    // 03/08 CHỐT TÊN vòng cuối — "Presenting" → "Trình bày" (không mode, xem file trên). ID
+    // 'present' GIỮ NGUYÊN.
     id: 'present',
     icon: 'present',
-    label: 'Presenting',
+    label: 'Trình bày',
     tagline: 'Slide · board · spec vật liệu',
     blurb: 'Đóng gói cho khách: dàn slide 16:9, board, xuất deck PDF, chú thích vật liệu.',
     featured: ['slide.concept', 'slide.composer', 'slide.deck', 'out.board', 'out.gallery', 'util.annotate'],
@@ -115,17 +119,19 @@ export function isPhase(v: unknown): v is Phase {
 
 /**
  * IF2-nền — nhãn hiển thị của chặng, TỰ ĐỔI theo CAD stage cho phase 'concept':
- *   stage='sketch'    → 'CAD · Phác thảo'
- *   stage='technical' → 'CAD · Kỹ thuật'
- *   stage='bim'       → 'CAD · BIM'
+ *   stage='sketch'    → '2D Kỹ thuật · Sơ phác'
+ *   stage='technical' → '2D Kỹ thuật · Kỹ thuật'
+ *   stage='bim'       → '2D Kỹ thuật · Kỹ thuật' (BIM/cấu kiện KHÔNG còn là mode/chặng riêng
+ *                        từ 03/08 CHỐT TÊN vòng cuối — nay là TẦNG DỮ LIỆU nằm dưới cả ba
+ *                        chặng, xem CHOT-TEN-CHANG-MODE-2026-08-03.md — nên dùng chung nhãn
+ *                        'Kỹ thuật' với 'technical', KHÔNG bịa nhãn "BIM" cho người dùng thấy)
  * Các phase khác giữ nguyên label tĩnh trong PHASES. `cadStage` optional để không phá caller cũ
  * (thiếu ⇒ fallback về `PHASE_MAP[id].label` như trước).
  */
 export function phaseLabel(id: Phase, cadStage?: 'sketch' | 'technical' | 'bim'): string {
   if (id !== 'concept' || !cadStage) return PHASE_MAP[id].label;
-  if (cadStage === 'technical') return 'CAD · Kỹ thuật';
-  if (cadStage === 'bim') return 'CAD · BIM';
-  return 'CAD · Phác thảo';
+  if (cadStage === 'technical' || cadStage === 'bim') return '2D Kỹ thuật · Kỹ thuật';
+  return '2D Kỹ thuật · Sơ phác';
 }
 
 /**
@@ -137,7 +143,7 @@ export function phaseLabel(id: Phase, cadStage?: 'sketch' | 'technical' | 'bim')
  * slide.* như một chặng canvas. Vì vậy phần suy diễn CHỈ xét 'render': mở một flow (kể cả
  * flow nhiều node slide.*) không bao giờ ép workspace='present' để pill Present sáng nhầm
  * khi đang ở canvas. Có node render → 'render'; không có → null (giữ nguyên chặng hiện tại).
- * Chặng 'concept' = Drafting CAD ở route riêng, cũng không có node canvas nên không tính ở đây.
+ * Chặng 'concept' = 2D Kỹ thuật ở route riêng, cũng không có node canvas nên không tính ở đây.
  */
 export function phaseFromNodes(defTypes: string[]): Phase | null {
   if (defTypes.length === 0) return null;

@@ -235,3 +235,32 @@ lật quyết định Hoà đã đích thân chốt (chỉ được treo + ghi c
   · State: reload cứng giữ được gì (bài học hydrate/aiTier trong STATUS) · hai tab cùng mở · quyền share đúng vai?
   · Ngược spec ngữ nghĩa: có vi phạm SEMANTIC-MODEL (thêm lớp nghĩa chưa có nơi tiêu thụ)? có gọi API chéo app (A5.1)?
   · Câu hỏi bắt buộc tự trả lời trước khi ✅: **"Nếu tôi muốn làm nó SAI, tôi bấm gì?"** — thử đúng cái đó.
+
+## §3 · ĐỢT 3 (TỔNG bơm 03/08 ~02:1x — sau merge lớn fbd9cc1/fdc5c0c/c1cf8cd + g4 mới 9fa870b/0569a91)
+| Vai | Hàng đợi đợt 3 (làm theo thứ tự) |
+|---|---|
+| **COWORK-NC** | ① First-run/onboarding app cùng ngành: D5 Render · SketchUp · Enscape (màn đầu, template gallery, sample project) — nuôi Smart Tour v2 + empty-state Vẽ 3D. ② Presence/collab trong Figma/Miro/FigJam (avatar dải, cursor người khác, follow mode, comment thread) — nuôi code G2 của G4. |
+| **COWORK-UI** | MỞ KHOÁ việc 3 cũ: mock 2 editor Trình bày theo spec ĐÃ CÓ — ① BOQ editor theo SPEC-TRINH-BOQ-EDITOR (summary-bar, 6 kiểu cột, badge sửa-tay) ② Video editor theo SPEC-TRINH-VIDEO-EDITOR (shot có tên, 3 tầng, timeline collapsed). Chuẩn hợp đồng như cũ + vùng tạm ghi PLACEHOLDER. ③ Cập nhật README-mocks. (Deck·A3·Văn bản: chưa dựng.) |
+| **COWORK-VẼ** | Rà khớp 4 spec VẼ (INFERENCE·REVIT·LAYOUT·SKETCH) × lib/commands/registry.ts (97 alias vừa merge): bảng lệnh nào thiếu alias/surface/tham số → phiếu bổ sung registry cho PHU. Việc 3 cũ (10 khuyết) vẫn chờ PHU gap-check. |
+| **COWORK-DỰNG** | MỞ PHIÊN LẦN ĐẦU — hàng đợi gốc trong HAM-DOI-COWORK §VAI 5: ① SPEC-DUNG-NODE-PORT (cổng có kiểu, Turn-into) ② SPEC-DUNG-CAMERA (NC-1 ĐÃ VỀ — hết chờ; ăn CamPathResult lib/cad/campath.ts, tầm mắt 1650) ③ bản đồ pipeline render AI (prompt đi đâu, ảnh về đâu, credit trừ đâu). |
+| **COWORK-TRÌNH** | ① Spec loại hồ sơ thứ 5: "Văn bản/biểu mẫu" (đơn giá, hợp đồng, thuyết minh — present-editor docType mới, khổ A4, biến dự án tự điền) — đủ 5/5. ② Nếu PHU đã thẩm định 4 điểm (mini-DSL·SUM()·beat·MP4): nâng 2 spec BOQ/Video thành phiếu code. |
+
+## §3 · ĐỢT 4 (03/08 — sau khi Hoà chốt tên chặng/BIM nội thất/3D thống nhất)
+**Đọc `docs/CHOT-TEN-CHANG-MODE-2026-08-03.md` TRƯỚC KHI LÀM.**
+| Vai | Việc |
+|---|---|
+| **COWORK-NC** | **NC-11 (🔴 ưu tiên 1):** ① QĐ 258/QĐ-TTg + văn bản hướng dẫn: mốc thời gian nào bắt buộc BIM cho loại công trình nào, hồ sơ nộp gồm gì, có bắt buộc định dạng IFC không (kiểm tận nguồn thuvienphapluat/baochinhphu, KHÔNG tin bài blog). ② IFC 4.3 lớp cho NỘI THẤT: IfcFurniture/Type · IfcCovering/Type · IfcSpace · IfcMaterialLayerSet · Pset nào chứa hãng/mã/giá. ③ Thư viện JS đọc-ghi IFC (IfcOpenShell-wasm · web-ifc · that-open) — dung lượng, giấy phép, có ghi được không hay chỉ đọc. ④ Bảng ánh xạ đề xuất: entity IF hiện có (`model.ts` elementType/wallKind + matId PBR) ↔ lớp IFC. |
+| **COWORK-DỰNG** | **`SPEC-DUNG-3D-THONG-NHAT.md` (🔴):** một giao diện 3D duy nhất, KHÔNG mode con — theo bảng chắt điểm sáng §5 của file CHỐT. Phải trả lời: bộ công cụ tối thiểu là gì · push/pull + gizmo + nhập số sống chung ra sao · chọn-theo-ngữ-nghĩa lấy dữ liệu từ đâu · nút sang render AI đặt chỗ nào · §0c ba mảng (phím tắt · lệnh · chạm). Kèm đính chính đầu `SPEC-CHANG2-UI-2MODE` (tên "2MODE" nay sai). |
+| **COWORK-VẼ** | Bổ sung `SPEC-VE-REVIT-MODE` §mới **trọng tâm NỘI THẤT**: tủ bếp · trần · sàn lát · lớp hoàn thiện là hạng mục chính; tường/cửa là vỏ chứa. Append, KHÔNG đập bản cũ (§0d). |
+| **COWORK-UI** | Sau khi NC-11 về: rà nhãn 3 chặng + 2 chế độ trong toàn bộ mock, ra danh sách file cần sửa chữ. |
+| **COWORK-TRÌNH** | Giữ hàng đợi cũ (nâng 2 spec BOQ/Video thành phiếu code khi PHU thẩm định xong). |
+
+## §3 · ĐỢT 5 (03/08 — sau khi Hoà chốt bộ tên vòng cuối)
+**BẮT BUỘC đọc `docs/CHOT-TEN-CHANG-MODE-2026-08-03.md` mục "VÒNG CUỐI" trước khi làm.**
+| Vai | Việc |
+|---|---|
+| **CHINH** | Đổi NHÃN HIỂN THỊ theo bộ tên mới: `StageSwitcher.tsx:49-51` · `VitalsGesture.tsx:50` · `AppCommandPalette.tsx:128-129` · `ReferencePane.tsx:84` · grep toàn repo `Rendering|Presenting|Dựng ảnh|CAD ·` ở nhãn UI. **TUYỆT ĐỐI KHÔNG đổi khoá kỹ thuật** `sketch/pro/revit` · `concept/render/present` (vỡ persist người dùng). Nhãn dài: "2D Kỹ thuật/3D Thiết kế/Trình bày"; header hẹp: "2D/3D/Trình bày". |
+| **COWORK-UI** | Thêm mục "BỘ TÊN CHÍNH THỨC" vào `SPEC-NGON-NGU-CHI-DAN` (khoá lại, phiên sau không đặt vòng 5) + rà nhãn trong toàn bộ `docs/mocks/`, ra danh sách file cần sửa chữ. |
+| **COWORK-DỰNG** | 🔴 **Việc quan trọng nhất hiện nay: `SPEC-TANG-DU-LIEU-CAU-KIEN.md`** — tầng dữ liệu cấu kiện dùng chung 3 chặng (một Doc, ba ống kính). Phải trả lời: entity nào mang ngữ nghĩa · chặng 2D render nó thành gì · chặng 3D render nó thành gì · sửa bên này bên kia đổi theo bằng cơ chế nào (**KHÔNG đồng bộ 2 chiều — chỉ một bản, đọc lúc vẽ**) · cái gì CHỈ sống ở 1 chặng (ký hiệu 2D, ánh sáng 3D) · neo vào `model.ts` elementType/wallKind/storey + matId PBR (`892c927`). Đây là spec nền cho `SPEC-DUNG-3D-THONG-NHAT`. |
+| **COWORK-VẼ** | Bổ sung `SPEC-VE-REVIT-MODE` phần trọng tâm NỘI THẤT (tủ bếp·trần·sàn lát·lớp hoàn thiện là chính; tường/cửa là vỏ chứa). Append, không đập (§0d). |
+| **COWORK-NC** | NC-11 IFC/QĐ 258 (giữ nguyên đợt 4). |

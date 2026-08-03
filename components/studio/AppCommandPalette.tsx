@@ -124,8 +124,10 @@ export function AppCommandPalette({ active }: { active: AppChromeActive }) {
     const libStage: StageKey = active === 'cad' ? 'cad' : active === 'present' ? 'present' : 'render';
     const shellGroup = tr('Chuyển & giao diện', 'Navigate & interface');
     const shell: Row[] = [
-      { id: 'go.cad', label: tr('Sang chặng Vẽ (CAD)', 'Go to Drafting (CAD)'), hint: '⌘1', group: shellGroup, keywords: 'cad drafting ve chuyen chang stage', run: act(() => router.push('/cad-editor')) },
-      { id: 'go.render', label: tr('Sang chặng Dựng ảnh', 'Go to Rendering'), hint: '⌘2', group: shellGroup, keywords: 'render dung anh chuyen chang stage', run: act(() => router.push('/')) },
+      // 03/08 CHỐT TÊN vòng cuối: nhãn "2D Kỹ thuật/3D Thiết kế/Trình bày" — keywords giữ cả từ
+      // khoá vòng trước (cad/drafting/render/dung anh) để tìm không bị hụt trong lúc chuyển tên.
+      { id: 'go.cad', label: tr('Sang chặng 2D Kỹ thuật', 'Go to 2D Technical'), hint: '⌘1', group: shellGroup, keywords: 'cad drafting 2d ky thuat ve chuyen chang stage', run: act(() => router.push('/cad-editor')) },
+      { id: 'go.render', label: tr('Sang chặng 3D Thiết kế', 'Go to 3D Design'), hint: '⌘2', group: shellGroup, keywords: 'render rendering dung anh 3d thiet ke chuyen chang stage', run: act(() => router.push('/')) },
       { id: 'go.present', label: tr('Sang chặng Trình bày', 'Go to Presenting'), hint: '⌘3', group: shellGroup, keywords: 'present trinh bay deck chuyen chang stage', run: act(() => router.push('/present-editor')) },
       // Phím Thư viện: chặng Vẽ ⇧L, chặng khác L trần (§4e — `use-library-sheet.ts` tự gate y hệt).
       { id: 'shell.library', label: tr('Mở Thư viện', 'Open Library'), hint: active === 'cad' ? '⇧L' : 'L', group: shellGroup, keywords: 'thu vien library kho vat lieu template', run: act(() => openLibrarySheet({ stage: libStage })) },

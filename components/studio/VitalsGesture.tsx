@@ -44,11 +44,12 @@ export function wasVitalsUsed() {
   return vitalsUsed;
 }
 
-/** Nhãn hiển thị theo chặng — dùng ở header panel để user biết đang hỏi Vitals ở đâu. */
+/** Nhãn hiển thị theo chặng — dùng ở header panel để user biết đang hỏi Vitals ở đâu.
+ * 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md). */
 const STAGE_LABEL: Record<Phase, string> = {
-  concept: 'Drafting CAD',
-  render: 'Rendering',
-  present: 'Presenting',
+  concept: '2D Kỹ thuật',
+  render: '3D Thiết kế',
+  present: 'Trình bày',
 };
 
 const STAGE_PLACEHOLDER: Record<Phase, string> = {
