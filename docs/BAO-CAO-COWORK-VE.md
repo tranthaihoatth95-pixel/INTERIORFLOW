@@ -62,7 +62,69 @@
 - [04/08] `SPEC-VE-LAYOUT-PAPER.md` (COWORK-VẼ): layout tab + ViewportEntity khoá mặc định, in đúng thước, preset 2 nút — kèm ĐÍNH CHÍNH `SPEC-CAD-MODES` §4: bộ hồ sơ + tỉ lệ đã có sẵn trong code, chỉ thiếu layout.
 - [04/08] `SPEC-VE-SKETCH-TOUCH.md` (COWORK-VẼ): pen-priority/palm · tap-undo · radial 8 múi · nắn nét · snap theo pointer — Sketch-only, chuột/Pro 0 thay đổi.
 
+---
+
+## ĐỢT 3 (cùng session — TỔNG bơm ~02:1x)
+### ✅ Rà 4 spec VẼ × `lib/commands/registry.ts` (389 dòng, sau merge) → `PHIEU-REGISTRY-VE-2026-08-04.md` giao PHU
+- **Va chạm bắt được:** `cad.draw.door`/`window` (alias D/WIN) đã tồn tại nhưng = block RỜI — spec REVIT cần hosted. Xử: giữ id/alias, `run` phân nhánh theo `ctx.mode` (1 lệnh 1 nhãn, không tách def).
+- Thiếu: 4 lệnh mới (`RS`·`RU`·`VP`·`TB`) + surface `'radial'` + nhóm `cad.act.*` cho múi radial (synth-key cùng nhánh CadTouchDock). `WhenCtx.mode` đã đủ, không cần mở rộng ctx. VCB/cử chỉ/Shift xác nhận KHÔNG thuộc registry (§4 phiếu).
+- Lưu ý phiên nhận 5 dòng dán: phiên này chỉ nhận đúng dòng VẼ theo hiến chương "mỗi phiên 1 vai" — 4 dòng NC/UI/DỰNG/TRÌNH cần dán vào 4 phiên riêng.
+
 ### CHỐT PHIÊN — **HẾT VIỆC 23:41 02/08** (giờ máy; nhãn ca đêm 04/08 theo sổ TỔNG)
 - Hàng đợi vai VẼ: 1✅ 2✅ 4✅ 5✅ · 3⛔ (vẫn chờ PHU grep §4 — kiểm lại lần 2 phiên này, BAO-CAO-PHU chưa có).
 - 4 spec của vai đều là file MỚI trong `docs/` chưa vào git — CHINH gom theo mục 5b của họ ("gác cổng docs").
 - Nghi vấn lặp lần 3 đã ghi ở cả 3 spec: `components/cad/*` (CadCanvas·CadSheets·CadTouchDock) CHƯA gán chủ mảng trong §2 — TỔNG cần chốt một lần để 3 spec có người wiring.
+
+---
+
+## ĐỢT 4 (phiên mới, session Cowork riêng) — §0 LUẬT TRUNG THỰC: phát hiện TRÙNG VIỆC với ĐỢT 3
+
+### ⚠️ Sự cố quy trình — ghi nhận không giấu
+Bước đầu bắt buộc có yêu cầu Glob `docs/BAO-CAO-COWORK-VE.md` "đọc để biết đã làm gì, tránh
+lặp" — tôi Glob (kiểm file tồn tại) nhưng **không Read nội dung TRƯỚC khi bắt tay việc ①**, nên
+không thấy mục "ĐỢT 3" (trên) đã làm ĐÚNG việc "rà 4 spec VẼ × `registry.ts`" và đã ra
+`PHIEU-REGISTRY-VE-2026-08-04.md`. Chỉ phát hiện ra SAU KHI viết xong 1 phiếu mới
+(`PHIEU-VE-REGISTRY-BOSUNG-2026-08-03.md`). Xử lý: **không xoá phiếu cũ** (append-only), đã thêm
+khối ghi chú ⚠️ đầu phiếu mới trỏ sang phiếu cũ + liệt kê rõ chỗ giống (kiểm chứng độc lập 2 lần,
+đáng tin hơn) và chỗ khác (3 lệnh radial mới phiếu cũ chưa có: Nhân bản/Khoá-Mở/Snap± · cảnh báo
+`CadEditor.tsx` chưa nối `findByAlias()` nên registry mới chỉ ăn qua ⌘K · 2 hướng xử D/WIN khác
+nhau, chưa chốt hướng nào). PHU/TỔNG cần đọc CẢ HAI phiếu, không chỉ 1.
+
+### Việc ① — rà 4 spec VẼ × `lib/commands/registry.ts` → `PHIEU-VE-REGISTRY-BOSUNG-2026-08-03.md`
+- Tự đếm lại `CAD_COMMANDS` bằng grep (không tin số cũ): pattern thô ra 98 dòng, trừ 1 dòng khai
+  báo type (dòng 18, không phải entry) = **97 alias, đúng số cũ, không lệch**.
+- SPEC-VE-INFERENCE: không thiếu gì ở registry (cơ chế nằm dưới CadCanvas, không sinh alias mới).
+- SPEC-VE-REVIT-MODE: thiếu `roomsep`/`roomupdate` (2 lệnh mới hoàn toàn) + thiếu when-guard
+  `mode==revit` (WhenCtx.mode đã có dữ liệu thật qua AppCommandPalette nhưng chưa ai dùng) + cảnh
+  báo mâu thuẫn tiềm tàng giữa spec §7 ("door/window chỉ revit") và registry hiện tại (D/WIN sống
+  ở mọi mode từ trước — đổi theo nghĩa đen sẽ RỚT tính năng generic-block ở Sketch/Pro).
+- SPEC-VE-LAYOUT-PAPER: thiếu `VP`/`TB` (2 lệnh mới) — xác nhận `titleBlockPro()` đã chạy được
+  nhưng chỉ qua nút UI riêng trong CadEditor.tsx, không qua sổ lệnh gõ tay. Xác nhận
+  `shouldShowProTools()` coi revit như pro (store.ts:144) nên `proToolsAllowed` tự động = {pro,
+  revit}, khớp yêu cầu spec — chỉ thiếu field `sheetKind` (tab model/layout) trong WhenCtx.
+- SPEC-VE-SKETCH-TOUCH: thiếu giá trị `'radial'` trong type `Surface` + 3 lệnh thực sự thiếu
+  (Nhân bản — thiếu cả store action; Khoá/Mở — mơ hồ tầng model, `Base` entity không có field
+  `locked`, chỉ `Layer` có; Snap± — store action `setSnap()` đã có sẵn, chỉ thiếu CommandDef,
+  **làm ngay được không cần hỏi ai**).
+- Phát hiện thêm (không có ở phiếu cũ): `registry.ts` **chưa được `CadEditor.tsx` dùng** để
+  dispatch gõ-lệnh ở status-bar (`findByAlias` = 0 nơi gọi ngoài chính registry/test) — mọi lệnh
+  mới thêm vào registry chỉ hiện ở ⌘K palette cho tới khi CHINH nối `CadEditor.tsx`'s `run()` map
+  (vùng CHINH, PHU không tự sửa) hoặc TỔNG ưu tiên TODO#1 sẵn có cuối `registry.ts`.
+
+### Việc ② — gap-check 10 khuyết ①-⑩ SPEC-LENH-VE-IF §4 → **KHÔNG LÀM ĐƯỢC, CHƯA MỞ KHOÁ**
+Đọc hết `docs/BAO-CAO-PHU.md` (1108 dòng, toàn bộ file) + grep từ khoá `gap-check|eyedropper|
+VCB|khuyết|①…⑩` = chỉ 2 match không liên quan (dòng 608-614, đánh số chú thích trong mục P5
+"toolbar nổi", không phải danh sách 10 khuyết CAD). Toàn bộ nội dung `BAO-CAO-PHU.md` là công
+việc **present-editor** (P1-P6c: mask ảnh, group/resize nhóm, fill overlay, z-order nhóm, filter
+phần tử, toolbar nổi, AA màu chữ, kính lỏng) — **không có dòng nào về gap-check CAD**. Đây là lần
+**THỨ TƯ liên tiếp** (đợt 1 dòng 30, đợt 2/3 dòng 74, đợt này) tình trạng "PHU chưa gap-check"
+không đổi qua nhiều phiên — đáng để TỔNG/Hoà biết đây là điểm nghẽn dai, không phải PHU quên ghi.
+Theo đúng chỉ dẫn: bỏ qua việc ②, không bịa phiếu khuyết.
+
+### CHỐT PHIÊN
+- Xong: việc ① (1 file phiếu mới, có ghi chú liên kết phiếu cũ) · sổ này.
+- Không làm: việc ② (lý do trên, không phải lỗi của phiên này).
+- Không đụng file vai khác, không code (đúng luật hạm đội). Không xoá/sửa đè phiếu cũ nào.
+- Đề nghị TỔNG: (a) xác nhận PHU đọc CẢ HAI phiếu registry (cũ 04/08 + mới 03/08) trước khi code,
+  chọn 1 hướng cho D/WIN; (b) cân nhắc escalate việc gap-check 10 khuyết CAD cho PHU — đã treo
+  4 lần kiểm liên tiếp không nhúc nhích.

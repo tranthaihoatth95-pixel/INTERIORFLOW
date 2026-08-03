@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IF · Trình bày · Video editor — mock hợp đồng</title>
+<!--
+  MOCK ĐỢT 3.② · VIDEO EDITOR (loại hồ sơ #5, tầng ② DỰNG) — COWORK-UI dựng 04/08/2026
+  Nguồn: SPEC-TRINH-VIDEO-EDITOR (đọc trọn) · luật CHOT-VIDEO-2-TANG (chỉ EDIT, không engine).
+  Thể hiện đúng spec:
+  §1 SHOT CÓ TÊN dạng dải tile storyboard (không track vô danh) · §2 cấu trúc CỐ ĐỊNH 3 tầng
+  §3 timeline collapsed mặc định + handle mở · §4 trim hiện số giây · §5 pill nhạc + beat snap
+  + "Chia đều theo beat" · §6 tiêu đề theo shot 2 kiểu anim · §7 chuyển cảnh 3 lựa chọn + xuất
+  MP4 0-credit không watermark + exit path · §10 status bar mách trạng thái.
+  PLACEHOLDER: thumbnail/preview = gradient thay footage thật; waveform = thanh giả lập.
+  Token chép nguyên app/globals.css · 2 theme (phím D) · khung AppShell 6 ổ (42/214/236/26).
+  [VÁ — phiên UI sau, đối chiếu §0c] §10.1 phím tắt trước đây chỉ nằm trong spec chữ, mock CHƯA hiện —
+  thêm nút "Tìm lệnh ⌘K" header (pin 9) + khối "Phím tắt" Inspector (pin 10): Space·S·←→·⇧←→·Delete·⌘Z·⌘K.
+  Không đổi bố cục/nội dung đã có.
+-->
+<style>
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --radius-sm:10px; --radius-md:14px; --radius-lg:20px; --radius-xl:28px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --blur:22px; --blur-strong:40px;
+  --ease-apple:cubic-bezier(0.32,0.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --tap:32px; --row:28px; --gap:8px;
+}
+:root,:root[data-theme='dark']{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --dots:#26262d;
+  --mat-header:rgba(20,20,23,.72); --mat-panel:rgba(20,20,23,.68);
+  --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --shadow-sheet:0 12px 40px -12px rgba(0,0,0,.7);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+  --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+}
+:root[data-theme='light']{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --dots:#ddd8ce;
+  --mat-header:rgba(250,248,244,.72); --mat-panel:rgba(250,248,244,.7);
+  --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --shadow-sheet:0 12px 40px -14px rgba(60,52,40,.28);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+  --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --danger:#c9341d; --warning:#9a6304; --success:#107043;
+}
+@media (hover:none) and (pointer:coarse){ :root{ --tap:44px; --row:44px; --gap:12px } }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--t1);overflow:hidden;
+  font:var(--fw-normal) var(--fs-xs)/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  transition:background-color var(--dur-base) var(--ease-apple),color var(--dur-base) var(--ease-apple)}
+svg{display:block}
+button{font:inherit;color:inherit}
+.i{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.i.s{width:13px;height:13px}
+:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px;border-radius:var(--radius-sm)}
+.num{font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,monospace}
+.pin{position:absolute;z-index:60;display:flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700}
+.app{display:flex;flex-direction:column;height:100vh}
+
+.top{height:42px;flex:none;display:flex;align-items:center;gap:10px;padding:0 10px;
+  background:var(--mat-header);backdrop-filter:saturate(180%) blur(var(--blur));
+  -webkit-backdrop-filter:saturate(180%) blur(var(--blur));border-bottom:1px solid var(--mat-hairline)}
+.logo{width:24px;height:24px;border-radius:var(--radius-sm);background:var(--t1);color:var(--bg);
+  display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xs);font-weight:800;border:0;cursor:pointer}
+.doc{display:flex;align-items:center;gap:5px;padding:5px 9px;border:0;background:transparent;
+  border-radius:var(--radius-sm);color:var(--t1);font-size:var(--fs-xs);cursor:pointer}
+.doc:hover{background:var(--hover)}
+.seg{margin-left:auto;display:flex;background:var(--field);border-radius:var(--radius-sm);padding:2px}
+.seg button{border:0;background:transparent;color:var(--t3);font-size:var(--fs-xs);padding:5px 14px;border-radius:8px;cursor:pointer}
+.seg button.on{background:var(--panel);color:var(--t1);font-weight:var(--fw-semi);box-shadow:var(--shadow-node)}
+.mid{flex:1;display:flex;min-height:0}
+
+.side{width:214px;flex:none;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sech{height:24px;display:flex;align-items:center;padding:0 10px;color:var(--t4);font-size:var(--fs-2xs);
+  font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-top:7px}
+.sech .n{margin-left:auto;font-variant-numeric:tabular-nums}
+.lay{height:var(--row);display:flex;align-items:center;gap:8px;padding:0 10px;cursor:pointer;
+  border-left:2px solid transparent}
+.lay:hover{background:var(--hover)}
+.lay.on{background:var(--accent-soft);border-left-color:var(--accent)}
+.lay.on .nm{color:var(--accent);font-weight:var(--fw-semi)}
+.lay .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lay .i{width:14px;height:14px;color:var(--t4);flex:none}
+.list{flex:1;overflow-y:auto}
+.sideft{flex:none;border-top:1px solid var(--mat-hairline);padding:8px;display:flex;flex-direction:column;gap:6px}
+.sideft button{height:32px;border-radius:9px;font-size:var(--fs-xs);display:flex;align-items:center;
+  justify-content:center;gap:6px;cursor:pointer;border:0}
+.add{background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semi)}
+.lib{background:var(--field);color:var(--t2);border:1px solid var(--border) !important}
+
+/* ③ Stage */
+.stage{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+.ebar{height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--panel);
+  border-bottom:1px solid var(--border)}
+.ebar .ti{font-size:var(--fs-sm);font-weight:var(--fw-semi)}
+.ebar .r{margin-left:auto;display:flex;gap:6px;align-items:center}
+.eb{height:28px;display:flex;align-items:center;gap:6px;padding:0 11px;border-radius:var(--radius-sm);
+  font-size:var(--fs-2xs);cursor:pointer;border:1px solid var(--border);background:var(--field);color:var(--t2)}
+.eb:hover{background:var(--hover)}
+.eb.pri{background:var(--accent);border-color:transparent;color:#fff;font-weight:var(--fw-semi)}
+.exitp{font-size:9.5px;color:var(--t4)}
+
+/* Bảng lệnh + phím tắt (§0c mảng 1 — vá) */
+.cmdk{position:relative;display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--field);color:var(--t3);
+  font-size:var(--fs-2xs);cursor:pointer;transition:background .12s var(--ease-apple)}
+.cmdk:hover{background:var(--hover);color:var(--t1)}
+.cmdk kbd,.kbdrow kbd{font:inherit;background:var(--card);border:1px solid var(--border-strong);
+  border-radius:5px;padding:1px 6px;font-size:10px;color:var(--t2);font-family:ui-monospace,Menlo,monospace}
+.kbdrow{display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:var(--fs-2xs);color:var(--t3)}
+
+/* Preview */
+.pvwrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;padding:14px}
+.player{width:min(640px,80%);aspect-ratio:16/9;border-radius:var(--radius-md);position:relative;overflow:hidden;
+  background:linear-gradient(130deg,#3a3f47,#23272e 55%,#15181d);box-shadow:var(--shadow-node)}
+.player .cap{position:absolute;left:18px;bottom:38px;font-size:var(--fs-md);font-weight:var(--fw-semi);color:#fff;
+  text-shadow:0 1px 8px rgba(0,0,0,.5)}
+.player .ph{position:absolute;left:0;right:0;bottom:0;height:30px;display:flex;align-items:center;gap:8px;
+  padding:0 10px;background:linear-gradient(transparent,rgba(0,0,0,.55))}
+.player .ph .i{color:#fff;cursor:pointer}
+.player .tc{color:#fff;font-size:var(--fs-2xs)}
+.player .bar{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.25);position:relative}
+.player .bar i{position:absolute;left:0;top:0;bottom:0;width:34%;background:var(--accent);border-radius:2px}
+
+/* ═══ VÙNG DỰNG — 3 tầng cố định (§2), collapsed (§3) ═══ */
+.deck{flex:none;background:var(--panel);border-top:1px solid var(--border);padding:10px 14px 8px;position:relative}
+.grab{position:absolute;left:50%;top:-9px;transform:translateX(-50%);height:18px;display:flex;align-items:center;
+  gap:6px;background:var(--field);border:1px solid var(--border);border-radius:9px;padding:0 10px;
+  font-size:9.5px;color:var(--t4);cursor:ns-resize}
+/* Tầng 1: dải shot */
+.shots{display:flex;align-items:stretch;gap:4px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.shot{position:relative;width:150px;flex:none;border-radius:var(--radius-sm);overflow:hidden;background:var(--card);
+  border:1px solid var(--border);cursor:grab;transition:transform .2s var(--ease-apple)}
+.shot:hover{transform:translateY(-2px)}
+.shot.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-ring)}
+.shot .th{height:56px}
+.shot .nm{display:flex;align-items:center;gap:5px;padding:4px 7px;font-size:var(--fs-2xs);color:var(--t2)}
+.shot .nm .i{width:11px;height:11px;color:var(--t4);flex:none}
+.shot .du{margin-left:auto;color:var(--t4);font-size:9.5px}
+/* handle trim 2 đầu (§4) */
+.shot .hL,.shot .hR{position:absolute;top:0;bottom:0;width:9px;display:flex;align-items:center;
+  justify-content:center;cursor:ew-resize;background:color-mix(in srgb,var(--accent) 55%,transparent);opacity:0}
+.shot .hL{left:0;border-radius:var(--radius-sm) 0 0 var(--radius-sm)}
+.shot .hR{right:0;border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.shot.on .hL,.shot.on .hR,.shot:hover .hL,.shot:hover .hR{opacity:1}
+.shot .hL::after,.shot .hR::after{content:"";width:2px;height:14px;border-radius:1px;background:#fff}
+.dragsec{position:absolute;right:-4px;top:-22px;background:var(--accent);color:#fff;font-size:9.5px;font-weight:600;
+  border-radius:6px;padding:1px 6px}
+/* nút chuyển cảnh giữa 2 shot (§7) */
+.tr{width:22px;flex:none;align-self:center;display:flex;align-items:center;justify-content:center}
+.tr button{width:20px;height:20px;border-radius:50%;border:1px solid var(--border);background:var(--field);
+  color:var(--t4);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:8px}
+.tr button:hover{color:var(--accent);border-color:var(--accent)}
+.tr .i{width:10px;height:10px}
+/* Tầng 2: pill nhạc + beat (§5) */
+.music{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.mtag{width:16px;flex:none;text-align:center;color:var(--t4);font-size:var(--fs-2xs)}
+.mpill{flex:1;height:26px;border-radius:13px;background:color-mix(in srgb,var(--accent) 12%,var(--card));
+  border:1px solid var(--border);position:relative;display:flex;align-items:center;padding:0 12px;overflow:hidden}
+.mpill .wf{position:absolute;inset:4px 8px;display:flex;align-items:center;gap:2px;opacity:.55}
+.mpill .wf i{flex:1;background:var(--accent);border-radius:1px}
+.mpill .beat{position:absolute;top:1px;width:4px;height:4px;border-radius:50%;background:var(--warning)}
+.mpill .fn{position:relative;font-size:9.5px;color:var(--t3);background:var(--mat-card);border-radius:6px;padding:0 6px}
+.mbtn{height:26px;flex:none;display:flex;align-items:center;gap:5px;padding:0 10px;border-radius:13px;
+  border:1px solid var(--border);background:var(--field);color:var(--t2);font-size:9.5px;cursor:pointer}
+.mbtn.on{background:var(--accent-soft);color:var(--accent);border-color:transparent;font-weight:var(--fw-semi)}
+/* Tầng 3: track chữ (§6) */
+.texts{display:flex;align-items:center;gap:8px}
+.tpx{height:22px;border-radius:8px;background:var(--field);border:1px dashed var(--border-strong);
+  display:flex;align-items:center;gap:5px;padding:0 9px;font-size:9.5px;color:var(--t3)}
+.tpx.has{border-style:solid;color:var(--t2)}
+.tpx .i{width:10px;height:10px;color:var(--t4)}
+
+/* ④ Inspector */
+.insp{width:236px;flex:none;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column}
+.ihead{height:34px;flex:none;display:flex;align-items:center;gap:7px;padding:0 6px 0 12px;border-bottom:1px solid var(--mat-hairline)}
+.ihead h2{margin:0;font-size:var(--fs-sm);font-weight:var(--fw-semi)}
+.ihead .sub{font-size:var(--fs-2xs);color:var(--t3);font-family:ui-monospace,Menlo,monospace}
+.ihead .x{margin-left:auto;width:26px;height:26px;border:0;background:transparent;color:var(--t4);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer}
+.ihead .x:hover{background:var(--hover);color:var(--t1)}
+.grp2{padding:11px 12px;border-bottom:1px solid var(--mat-hairline)}
+.grp2 h4{margin:0 0 8px;font-size:var(--fs-2xs);font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t4)}
+.fld{height:28px;background:var(--field);border:1px solid transparent;border-radius:var(--radius-sm);padding:0 9px;
+  display:flex;align-items:center;gap:6px;font-size:var(--fs-xs);margin-bottom:5px}
+.fld:hover{border-color:var(--border)}
+.fld .k{color:var(--t4);font-size:var(--fs-2xs);font-weight:var(--fw-semi);width:52px;flex:none}
+.fld .v{margin-left:auto;color:var(--t1)}
+.seg3{display:flex;background:var(--field);border-radius:var(--radius-sm);padding:2px;gap:2px}
+.seg3 button{flex:1;border:0;background:transparent;color:var(--t3);font-size:var(--fs-2xs);padding:5px 0;
+  border-radius:8px;cursor:pointer}
+.seg3 button.on{background:var(--panel);color:var(--t1);font-weight:var(--fw-semi);box-shadow:var(--shadow-node)}
+.hint{font-size:9.5px;color:var(--t4);line-height:1.45;margin-top:7px}
+
+.foot{height:26px;flex:none;display:flex;align-items:center;gap:14px;padding:0 12px;background:var(--panel);
+  border-top:1px solid var(--border);font-size:var(--fs-2xs);color:var(--t4)}
+.foot .live{color:var(--accent)}
+.foot .r{margin-left:auto;display:flex;gap:14px}
+.vt{display:flex;align-items:center;gap:5px;color:var(--t3)}
+.vtd{width:7px;height:7px;border-radius:2px;background:var(--success)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.1s!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <button class="logo">IF</button>
+    <button class="doc">Căn hộ Thảo Điền · VID-01<svg class="i s" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    <button class="cmdk" title="Mở bảng lệnh"><span class="pin" style="top:-9px;left:-9px">9</span><svg class="i s" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Tìm lệnh<kbd>⌘K</kbd></button>
+    <div class="seg"><button>Vẽ</button><button>Dựng ảnh</button><button class="on">Trình bày</button></div>
+  </header>
+
+  <div class="mid">
+    <aside class="side">
+      <div class="sech">Hồ sơ dự án<span class="n">4</span></div>
+      <div class="list">
+        <div class="lay"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg><span class="nm">Deck-01 · Concept</span></div>
+        <div class="lay"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg><span class="nm">MB-01 · Vật liệu A3</span></div>
+        <div class="lay"><svg class="i" viewBox="0 0 24 24"><path d="M3 5h18M3 10h18M3 15h18M3 20h12"/></svg><span class="nm">BOQ-01 · Dự toán</span></div>
+        <div class="lay on"><svg class="i" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21"/></svg><span class="nm">VID-01 · Walkthrough</span></div>
+      </div>
+      <div class="sideft">
+        <button class="add"><svg class="i s" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Hồ sơ mới</button>
+        <button class="lib"><svg class="i s" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Thư viện</button>
+      </div>
+    </aside>
+
+    <main class="stage">
+      <div class="ebar">
+        <span class="ti">Video walkthrough</span>
+        <div class="r">
+          <span class="exitp">Cần hiệu ứng nâng cao? Mang MP4 sang CapCut/Premiere.</span>
+          <button class="eb"><svg class="i s" viewBox="0 0 24 24"><path d="M9 18V6l12-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Thêm nhạc</button>
+          <button class="eb pri" style="position:relative"><span class="pin" style="top:-9px;right:-9px">8</span>
+            <svg class="i s" viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4"/><rect x="4" y="17" width="16" height="4" rx="1"/></svg>Xuất MP4 · 0 credit</button>
+        </div>
+      </div>
+
+      <div class="pvwrap">
+        <div class="player">
+          <!-- PLACEHOLDER: gradient thay footage -->
+          <div class="cap">Quanh đảo bếp</div>
+          <div class="ph">
+            <svg class="i s" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21"/></svg>
+            <span class="tc num">0:16 / 0:48</span>
+            <div class="bar"><i></i></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VÙNG DỰNG 3 TẦNG -->
+      <div class="deck">
+        <div class="grab" style="cursor:ns-resize"><span class="pin" style="position:static;width:16px;height:16px">3</span>
+          Kéo mở timeline chi tiết</div>
+
+        <!-- Tầng 1: dải shot có tên -->
+        <div class="shots">
+          <div class="shot" style="position:relative"><span class="pin" style="top:-9px;left:-9px">1</span>
+            <div class="th" style="background:linear-gradient(130deg,#4a4237,#31291f)"></div>
+            <div class="nm"><svg class="i" viewBox="0 0 24 24"><path d="M17 3a2.8 2.8 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>Vào cửa chính<span class="du num">0:09</span></div>
+            <span class="hL"></span><span class="hR"></span>
+          </div>
+          <div class="tr"><button title="Chuyển cảnh: cắt thẳng"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v18"/></svg></button></div>
+          <div class="shot on" style="position:relative">
+            <div class="dragsec num" style="position:absolute"><span class="pin" style="top:-2px;left:-26px">4</span>−2,4s</div>
+            <div class="th" style="background:linear-gradient(130deg,#3a4a42,#232e28)"></div>
+            <div class="nm"><svg class="i" viewBox="0 0 24 24"><path d="M17 3a2.8 2.8 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>Quanh đảo bếp<span class="du num">0:14</span></div>
+            <span class="hL"></span><span class="hR"></span>
+          </div>
+          <div class="tr"><button title="Chuyển cảnh: fade đen" style="position:relative"><span class="pin" style="top:-24px;left:-2px">7</span><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 010 16z" fill="currentColor" stroke="none"/></svg></button></div>
+          <div class="shot">
+            <div class="th" style="background:linear-gradient(130deg,#47404f,#2b2733)"></div>
+            <div class="nm"><svg class="i" viewBox="0 0 24 24"><path d="M17 3a2.8 2.8 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>Phòng khách<span class="du num">0:13</span></div>
+            <span class="hL"></span><span class="hR"></span>
+          </div>
+          <div class="tr"><button title="Chuyển cảnh: fade trắng"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></button></div>
+          <div class="shot">
+            <div class="th" style="background:linear-gradient(130deg,#4f4438,#332b22)"></div>
+            <div class="nm"><svg class="i" viewBox="0 0 24 24"><path d="M17 3a2.8 2.8 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>Ngủ master · tiếp<span class="du num">0:12</span></div>
+            <span class="hL"></span><span class="hR"></span>
+          </div>
+        </div>
+
+        <!-- Tầng 2: nhạc + beat -->
+        <div class="music" style="position:relative"><span class="pin" style="top:2px;left:-9px">5</span>
+          <span class="mtag">♪</span>
+          <div class="mpill">
+            <div class="wf">
+              <i style="height:30%"></i><i style="height:60%"></i><i style="height:45%"></i><i style="height:80%"></i><i style="height:35%"></i><i style="height:65%"></i><i style="height:50%"></i><i style="height:75%"></i><i style="height:40%"></i><i style="height:60%"></i><i style="height:30%"></i><i style="height:70%"></i><i style="height:55%"></i><i style="height:45%"></i><i style="height:80%"></i><i style="height:38%"></i><i style="height:62%"></i><i style="height:48%"></i><i style="height:72%"></i><i style="height:42%"></i>
+            </div>
+            <span class="beat" style="left:18%"></span><span class="beat" style="left:36%"></span>
+            <span class="beat" style="left:54%"></span><span class="beat" style="left:72%"></span><span class="beat" style="left:90%"></span>
+            <span class="fn">ambient-loop.mp3 · của bạn</span>
+          </div>
+          <button class="mbtn on"><svg class="i s" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Hít beat</button>
+          <button class="mbtn"><svg class="i s" viewBox="0 0 24 24"><path d="M8 3v18M16 3v18M3 8h18M3 16h18"/></svg>Chia đều theo beat</button>
+        </div>
+
+        <!-- Tầng 3: chữ theo shot -->
+        <div class="texts" style="position:relative"><span class="pin" style="top:0;left:-9px">6</span>
+          <span class="mtag">T</span>
+          <div class="tpx has" style="width:150px"><svg class="i" viewBox="0 0 24 24"><path d="M4 6V4h16v2M12 4v16M9 20h6"/></svg>Vào cửa chính</div>
+          <div class="tpx has" style="width:150px"><svg class="i" viewBox="0 0 24 24"><path d="M4 6V4h16v2M12 4v16M9 20h6"/></svg>Quanh đảo bếp</div>
+          <div class="tpx" style="width:150px">+ tiêu đề</div>
+          <div class="tpx" style="width:150px">+ tiêu đề</div>
+        </div>
+        <span class="pin" style="position:absolute;right:6px;bottom:64px">2</span>
+      </div>
+    </main>
+
+    <!-- ④ Inspector — shot đang chọn -->
+    <aside class="insp">
+      <div class="ihead">
+        <h2>Shot</h2><span class="sub">2 / 4</span>
+        <button class="x"><svg class="i s" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="grp2">
+        <h4>Tên · tự gợi ý từ zone</h4>
+        <div class="fld"><span class="v" style="margin:0">Quanh đảo bếp</span>
+          <svg class="i s" viewBox="0 0 24 24" style="margin-left:auto;color:var(--t4)"><path d="M17 3a2.8 2.8 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg></div>
+        <div class="hint">Gợi ý từ campath đi qua zone "Bếp" — sửa tay tuỳ ý.</div>
+      </div>
+      <div class="grp2">
+        <h4>Trim</h4>
+        <div class="fld"><span class="k">Vào</span><span class="v num">0:01,2</span></div>
+        <div class="fld"><span class="k">Ra</span><span class="v num">0:15,6</span></div>
+        <div class="fld"><span class="k">Dài</span><span class="v num">0:14,4</span></div>
+        <div class="hint">S = cắt tại playhead (khi timeline mở). Xoá shot tự khép khoảng trống.</div>
+      </div>
+      <div class="grp2">
+        <h4>Chuyển cảnh ra</h4>
+        <div class="seg3"><button>Cắt</button><button class="on">Fade đen</button><button>Fade trắng</button></div>
+      </div>
+      <div class="grp2">
+        <h4>Tiêu đề</h4>
+        <div class="fld"><span class="v" style="margin:0">Quanh đảo bếp</span></div>
+        <div class="seg3" style="margin-bottom:5px"><button class="on">Fade + rise</button><button>Crossfade</button></div>
+        <div class="seg3"><button class="on">Dưới trái</button><button>Giữa</button></div>
+        <div class="hint">Spring theo SPEC-APPLE-MOTION — reduce-motion thắng, thành cắt thẳng.</div>
+      </div>
+      <div class="grp2" style="position:relative"><span class="pin" style="top:8px;right:8px">10</span>
+        <h4>Phím tắt</h4>
+        <div class="kbdrow"><span>Play / Pause</span><kbd>Space</kbd></div>
+        <div class="kbdrow"><span>Cắt tại playhead</span><kbd>S</kbd></div>
+        <div class="kbdrow"><span>Nhích khung hình</span><kbd>←→</kbd></div>
+        <div class="kbdrow"><span>Nhích 1 giây</span><kbd>⇧←→</kbd></div>
+        <div class="kbdrow"><span>Xoá shot</span><kbd>Delete</kbd></div>
+        <div class="kbdrow"><span>Hoàn tác</span><kbd>⌘Z</kbd></div>
+        <div class="kbdrow"><span>Bảng lệnh</span><kbd>⌘K</kbd></div>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="foot">
+    <span class="live num">đang kéo: −2,4s</span>
+    <span>beat snap BẬT · dung sai 150ms</span>
+    <div class="r">
+      <span class="num">Tổng 0:48</span>
+      <span class="vt"><span class="vtd"></span>Vitals</span>
+      <span>Đã lưu 09:31</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+addEventListener('keydown',e=>{
+  if(e.key.toLowerCase()==='d'){const r=document.documentElement;r.dataset.theme=r.dataset.theme==='light'?'dark':'light'}
+});
+</script>
+</body>
+</html>

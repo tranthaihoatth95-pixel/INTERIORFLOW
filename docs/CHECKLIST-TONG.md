@@ -9,17 +9,17 @@
 | AppShell 6 ổ (5 màn) | ✅ | ✅ | 🔵 `9fe8be8 3a92170` | ⬜ | đo DOM 6 ổ 5 màn |
 | Menu logo + Navigator + đáy cố định | ✅ | ✅ | 🔵 | ⬜ | |
 | Panel thò thụt (rollout·grip·ghim·dải trang) | ✅ PANEL-ROLLOUT | — | 🔵 CHINH-3 `6ce940f` đêm 04/08 | ⬜ | audit ca tới |
-| Sổ lệnh registry (1 khai → 6 mặt) | ✅ HA-TANG Trụ 2 | — | 🔵 `4eb94c3` feat/so-lenh CHƯA merge · 56/56 test | ⬜ | |
-| Phím tắt toàn app (B/I/⌘\\/⌘1-3, xử va L bằng ⇧) | ✅ PANEL §4 | — | 🔵 `2649287` | ⚠️ A1✓A3✓ — ⌘K đa-màn TODO chờ sổ lệnh PHU | §0c-1 |
+| Sổ lệnh registry (1 khai → 6 mặt) | ✅ HA-TANG Trụ 2 | — | 🔵 merged `fdc5c0c` · 56/56 test | ⬜ | ⌘K đa-màn nối rồi (AppCommandPalette 273d, chưa commit) |
+| Phím tắt toàn app (B/I/⌘\\/⌘1-3, xử va L bằng ⇧) | ✅ PANEL §4 | — | 🔵 `2649287` | ⚠️ A1✓A3✓ — ⌘K đa-màn ĐÃ dựng (AppCommandPalette.tsx, sống 5 màn) chờ commit+audit | §0c-1 |
 | Token mật độ + cảm ứng coarse | ✅ MAT-DO + snap/axis vào DS (11 chỗ, UI q0 xong) | — | 🔵 vào globals | ⬜ | §0c-3 |
-| Thư viện = 1 sheet (kệ theo chặng, 4 phạm vi) | ✅ | ✅ | 🔵 merge `3c8dae6` | ⬜ | nút mở ở 5 màn — kiểm |
+| Thư viện = 1 sheet (kệ theo chặng, 4 phạm vi) | ✅ | ✅ | 🔵 `3c8dae6`+`0569a91` (chặng 2: hết banner, nút Xem cả kho) | ⬜ | nút mở ở 5 màn — kiểm |
 | File Manager (list/upload/real-fs) | ✅ | ✅ | 🔵 `12223cf` | ⬜ | |
 | Settings + wallpaper canvas | ✅ | ✅ | 🔵 | ⬜ | |
 | Inspector tự sinh từ schema (subtype) | ✅ HA-TANG Trụ 3 | — | ⬜ G4 sau | ⬜ | |
-| **Vitals nâng cấp (khuôn Siri iOS27)** | ✅ APPLE-MOTION §4b + APP-SHELL §4 | 🔨 UI q6 (nền cũ vitals-v3/prototype có sẵn) | ⬜ | ⬜ | Hoà nhắc đêm 04/08 |
-| Toolbelt ổ ⑤ (gộp CadToolbar/CadTouchDock + fix toolbar tràn đè Inspector) | ✅ HA-TANG Trụ 1 | — | ⬜ CHINH kế | ⬜ | việc lớn kế của CHINH |
-| ⌘K palette đa-màn (nâng lên AppShell) | — | — | ⛔ chờ sổ lệnh PHU + ReactFlowProvider đa-màn | ⬜ | TODO ghi trong CHINH-4 |
-| Settings icon-hoá + nút "Đặt lại bố cục panel" | — | — | ⬜ G4 (bàn giao CHINH-5, hàm resetAllRolloutLayouts đã export) | ⬜ | |
+| **Vitals nâng cấp (khuôn Siri iOS27)** | ✅ APPLE-MOTION §4b + APP-SHELL §4 | 🔨 Claude Design đang dựng (prompt đã giao 01:4x) | ⬜ | ⬜ | Hoà nhắc đêm 04/08 |
+| Toolbelt ổ ⑤ (gộp CadToolbar/CadTouchDock + fix toolbar tràn đè Inspector) | ✅ HA-TANG Trụ 1 | — | 🔵 `060c419` main (05/08) | ⬜ | đo thật: dock r=1192 < inspector l=1202 ⇒ hết đè; Sketch 2 hàng bo24 · Pro capsule 999 |
+| ⌘K palette đa-màn (nâng lên AppShell) | ✅ HA-TANG Trụ 2 (mặt `palette`) | — | 🔵 `AppCommandPalette.tsx` main (05/08) — nối `cmdsFor()` registry, phủ cả 5 màn | ⬜ | palette Home (ReactFlow) giữ nguyên; ↑↓/↵ phải ở document-capture vì CAD nuốt Enter |
+| Settings icon-hoá + nút "Đặt lại bố cục panel" | — | — | 🔵 G4 `d143684` nhanh-g4 (05/08) — nút nối resetAllRolloutLayouts, verify xoá khoá thật; kèm icon-hoá ObjectProperties (chấm+chip+xích đứt, CHƯA mount chờ CHINH cắm) | ⬜ | hàng "Đổ bóng" spec chưa có trong code |
 | Collab G2 (presence·mời·sticky·share) | ✅ ticket G2 | 🔵 mock-mood-collab-g2 | ⬜ G4 q3 | ⬜ | tính năng Hoà sợ mất |
 | Đăng nhập/Gallery/Notebook/Journey/Tour | — | — | ✅ cũ | — | giữ sống §1 |
 | Auto-backup + Recovery modal | — | — | ✅ cũ | — | thêm vào §1 chống rớt (04/08) |
@@ -47,28 +47,28 @@
 | Node graph + sidebar 3 vùng | ✅ CHANG2 | ✅ | ✅ cũ | — | Navigator RỖNG sau merge = 🔥 CHINH 1b |
 | 5 lỗi UI Render (toolbar nổi·zoom 15%·banner·empty·minimap) | — | — | 🔨 G4 1a | ⬜ | BAO-CAO-DEM 23:1x |
 | Navigator Render = NodeLibraryPanel nguyên bản | — | — | ✅ `739960c` đảo + `efa434c` dọn địa tầng (1 cột · Trên bảng · zoom 100% · hết banner) | ✅ **Hoà nghiệm thu MẮT 04/08** + vật chứng grep | gốc zoom 15% = node rác, đã ghi |
-| Cổng nối có kiểu + Turn-into | 🔨 DỰNG q1 | — | ⬜ | ⬜ | |
-| Mode Vẽ 3D (CommandPanel·Viewport·ObjProps) | ✅ | ✅ | 🔵 merge rồi | ⬜ | mở màn+card `de82ed7`+`5e2fdd2` NHÁNH g4 CHƯA merge — audit git 01:2x |
+| Cổng nối có kiểu + Turn-into | 🔵 SPEC-DUNG-NODE-PORT 18KB | — | ⬜ | ⬜ | DỰNG phiên đầu 03/08 |
+| Mode Vẽ 3D (CommandPanel·Viewport·ObjProps) | ✅ | ✅ | 🔵 merge rồi | ⬜ | mở màn+card ĐÃ merge main `fbd9cc1` — chờ mắt Hoà |
 | Mở màn Vẽ 3D (sân khấu luôn hiện + 3 bước + nút dựng tại chỗ) | — | — | 🔵 G4 tối 04/08 | ⚠️ verify DOM của G4; chờ mắt Hoà | |
 | Card chào "Bắt đầu dựng không gian" tắt được (✕/Esc/nhớ) | — | — | 🔵 (grep welcome_hidden+Escape wt) | ⬜ | bug Hoà báo, G4 sửa |
 | Toolbar bút neo mép CANVAS (đang đè panel) + minimap ẩn khi trống | — | — | ⬜ G4 | ⬜ | ảnh Hoà 04/08 |
 | 🔴 Bug camera 1-khối lệch tâm (nghi cy → −cy trong controls.target) | — | — | ⬜ PHU quyết (đụng engine campath/capture) | ⬜ | G4 phát hiện, ghi comment Scene3DViewer.tsx |
 | 2 lỗi type nhanh-phu (chặn merge BOQ vào main) | — | — | ⬜ PHU GẤP | ⬜ | chi tiết trong BAO-CAO-CHINH |
-| Quả cầu vật liệu (PMREM, 3 cảnh) | ✅ VAT-LIEU §2 | 🔵 mock-material-sphere | 🔨 G4 q1 (§2c thử → 12/12 cầu ngừng render → ROLLBACK de82ed7; bản thử scratchpad/material-preview-2c-attempt.ts — kiểm 01:2x) | ⬜ | |
+| Quả cầu vật liệu (PMREM, 3 cảnh) | ✅ VAT-LIEU §2 | 🔵 mock-material-sphere | 🔵 G4 `9fa870b` ĐÃ merge main — §2c ĐỦ công thức; thủ phạm vụ "12/12 ngừng render" = RÒ WEBGL CONTEXT qua HMR (3 nghi can công thức đều vô tội, cô lập từng biến); chốt chống tái phát: rig găm globalThis | ⬜ | nghiệm thu đo pixel: đá hotspot 254 vs sơn matte 241 + ấm 17 điểm; kính có checker |
 | **Material Editor chỉnh được** (D5-style + sphere live + per-map + publish) | ✅ VAT-LIEU §3b (04/08) | ⬜ UI q7 | ⬜ G4 q1 | ⬜ | Hoà chốt: edit như V-Ray/D5 |
-| matId PBR schema + export V-Ray/D5 | ✅ VAT-LIEU §1§4 | — | 🔵 `72023c2` feat/pbr-schema CHƯA merge · 87/87 test | ⬜ | moat |
+| matId PBR schema + export V-Ray/D5 | ✅ VAT-LIEU §1§4 | — | 🔵 merged `c1cf8cd` · 87/87 test | ⬜ | moat |
 | ATLAS↔Lark sync 1449 | ✅ | — | ⛔ 131006 | ⬜ | 🔵 NC-lark-permission 55d SẴN SÀNG — Hoà bấm Console theo checklist sáng |
-| Camera/campath UI + capture | 🔵 NC-1 về | — | lib ✅ `d7dff63 57ed9b8` | ⬜ | spec DỰNG q2 |
+| Camera/campath UI + capture | 🔵 SPEC-DUNG-CAMERA 17.7KB | — | lib ✅ `d7dff63 57ed9b8` | ⬜ | spec DỰNG q2 |
 | Mood+Collab canvas (bút·frame phòng·swatch matId) | ✅ ticket G2 | 🔵 | ⬜ | ⬜ | |
 
 ## 4 · CHẶNG TRÌNH BÀY — 5 hồ sơ
 | Hạng mục | Spec | Mock | Code | Audit | Ghi chú |
 |---|---|---|---|---|---|
-| Màn chọn 5 loại hồ sơ (H4, gộp #3 AI) | ✅ phiếu TRÌNH | ✅ mock-present-chooser | ⬜ G4 q4 | ⬜ | |
+| Màn chọn 5 loại hồ sơ (H4, gộp #3 AI) | ✅ phiếu TRÌNH | — BỎ mock (file không tồn tại, UI báo 04/08) → code thẳng PHIEU-PRESENT-G4 | ⬜ G4 q4 | ⬜ | |
 | Deck editor (E-sprint P1-P5 + P6a) | ✅ | ✅ | ✅ | — | 7 mục sống → PHIEU-PRESENT-G4 |
 | 7 mục sống Present (photo-editor 4 tầng...) | ✅ PHIEU-PRESENT-G4 | — | ⬜ G4 sau | ⬜ | |
-| Bảng vật liệu A3 | 🔵 TRINH-MATERIAL-A3 | — | ⬜ | ⬜ | |
-| BOQ editor (spreadsheet) | 🔵 SPEC-TRINH-BOQ-EDITOR 58d | — | lib ✅ `49ebadd` chờ merge | ⬜ | ⛔ mìn nhanh-phu — ca audit #1 |
+| Bảng vật liệu A3 | ✅ SPEC-TRINH-MATERIAL-A3 (git b2f4400) | — | ⬜ | ⬜ | |
+| BOQ editor (spreadsheet) | ✅ SPEC-TRINH-BOQ-EDITOR (git b2f4400) | — | lib ✅ ĐÃ VÀO MAIN `892c927` (19 file/2992 dòng: cache·compute·from-project·xlsx + route API) | ⬜ | ✅ hết ⛔ — editor UI là việc kế |
 | Văn bản song ngữ editor (hồ sơ thứ 5) | ⬜ TRÌNH q5 (bơm 04/08) | ⬜ UI q3 | ⬜ | ⬜ | hư cấu 100% — luật trung tính |
 | Video editor (timeline CapCut) | 🔵 SPEC-TRINH-VIDEO-EDITOR 67d | — | capture ✅ | ⬜ | không viết engine |
 | Xuất PDF/in đúng khổ | 🔵 NC-xuat-pdf | — | print-upscale ✅ `8b7e282` | ⬜ | |
@@ -108,3 +108,22 @@ Mỗi ca audit TỔNG chọn ≥1 gói, grep code đối chiếu TỪNG luật c
 | Swatch vật liệu mang matId (hãng·mã·giá/m²) — kéo vào mang DỮ LIỆU | ⬜ G4 | ⬜ |
 | Mindmap = template kéo từ kệ (6 form lập luận), canvas trống mặc định | ⬜ G4 | ⬜ |
 | Live-link: gu/palette board chốt → bơm thẳng vào Render | ⬜ G4 | ⬜ |
+
+## 7 · BỔ SUNG 03/08 02:2x (đợt "xong hết rồi")
+| Hạng mục | Spec | Mock | Code | Audit | Ghi chú |
+|---|---|---|---|---|---|
+| Toolbelt ổ ⑤ (gộp CadToolbar+CadTouchDock) | ✅ HA-TANG | ✅ v5 | 🔵 `060c419` main | ⬜ | hết bug toolbar đè Inspector — kiểm mắt |
+| Palette ⌘K đa-màn (5 màn, không ReactFlow) | ✅ PANEL §4 | — | ✅ `dd3f584` merged main — sống 5 màn | ⬜ | file mới, không đụng CommandPalette cũ (§0d) |
+| Camera cy→−cy (phán quyết PHU) | — | — | ✅ `e142f3c` merged main | ⬜ | campath/capture xác nhận không vỡ |
+| Eyedropper ① + VCB ② (lõi lib) | ✅ LENH-VE §4 | — | 🔵 `892c927` ĐÃ vào main, 32/32 test — CHƯA có UI | ⬜ | UI để CHINH/G4 nối |
+| Gap-check 10 khuyết ①-⑩ | ✅ | — | kết quả: 8/10 chưa có · ⑥ có · ⑤ dạng khác (CommentPin) | ✅ PHU grep | mở khoá COWORK-VẼ việc 3 |
+| Icon-hoá ObjectProperties + Settings (bàn giao CHINH-5) | ✅ | — | 🔵 `1d727a7` ĐÃ vào main | ⬜ | |
+
+## 8 · SẢN PHẨM COWORK ĐỢT 3 (03/08 02:2x–02:4x — chưa vào git, các vai đang viết)
+| Sản phẩm | Vai | Ghi chú |
+|---|---|---|
+| SPEC-DUNG-NODE-PORT.md · SPEC-DUNG-CAMERA.md · SPEC-DUNG-PIPELINE-RENDER-AI.md | DỰNG | **phiên đầu tiên — hàng đợi gốc 3/3 xong** |
+| NC-firstrun-cung-nganh · NC-presence-collab · NC-conflict-simultaneous-edit | NC | bài 3 tự mở rộng (nuôi Collab G2) — 10 bài NC |
+| mock-trinh-boq · mock-trinh-video | UI | mở khoá việc 3 cũ |
+| PHIEU-REGISTRY-VE · PHIEU-VE-REGISTRY-BOSUNG | VẼ | rà 4 spec × 97 alias |
+| SPEC-TRINH-VANBAN-EDITOR `091734e` | TRÌNH | ✅ đã git — đủ 5/5 loại hồ sơ |

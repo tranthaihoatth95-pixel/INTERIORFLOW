@@ -149,3 +149,39 @@ toolbar neo+minimap · bug camera lệch tâm · 2 lỗi type nhanh-phu). Checkl
 
 ## [01:3x] TỔNG — khối merge DƯƠNG TÍNH GIẢ MỘT NỬA (tiền lệ §0 nối tiếp "THANH CONG")
 Merge nhanh-g4 FAIL ("local changes would be overwritten": BAO-CAO-COWORK-TRINH + 2 SPEC-TRINH dở trong working tree main) → cả 3 merge không chạy. Commit sổ pathspec VẪN vào (`4e7e6ab`, push OK) → câu kiểm `grep "audit 3 phien"` chỉ kiểm commit sổ, KHÔNG kiểm merge → in ✅ gây hiểu nhầm. **Lỗi TỔNG soạn câu kiểm.** Luật mới: kiểm merge phải dùng `git merge-base --is-ancestor <nhánh> main`. Khối gỡ: commit docs Cowork dở trước → merge lại 3 nhánh → kiểm ancestor từng nhánh.
+
+## [01:4x] TỔNG — gỡ CONFLICT merge nhanh-g4 (2 file, 3 vùng)
+Hoà chạy khối gỡ merge → conflict thật: `FlowCanvas.tsx` (fitView) + `RenderToolModeOverlay.tsx` (banner). Push giữa chừng đẩy `b2f4400` (commit docs) — app VỠ tạm vì marker trong working tree (dev server báo TS1185). TỔNG tự resolve trực tiếp trên file (không git qua VM):
+- FlowCanvas: **GỘP** — giữ comment CHINH-6 + lấy 2 prop G4-1a (`fitViewOptions maxZoom 1`, `defaultViewport zoom 1`) — cùng mục tiêu chống zoom 15%, không mâu thuẫn.
+- RenderToolModeOverlay: **lấy HEAD (xoá hẳn banner)** — quyết định Hoà 04/08 "1 màn 1 cột" MỚI HƠN bản sửa-banner của G4-1a (sửa báo động giả thành vô nghĩa khi banner không còn). Ghi chú tại chỗ trong code.
+Còn lại cho Hoà: add 2 file + commit --no-edit + merge tiếp 2 nhánh PHU + push + kiểm ancestor.
+[01:5x] Claude Design ra "Avatar Bust Rig" v1 (memoji 3D + panel skin/hair/glasses/hat/shirt + Copy config map biến cho app — đúng hướng tích hợp). Hoà duyệt hướng, lệnh cải thiện: BỎ THÂN chỉ giữ đầu + THÊM nhiều cấu kiện tuỳ biến. TỔNG soạn prompt v2 (12 nhóm cấu kiện, nền đĩa tròn thay áo, blink idle, giữ config JSON). Đích: export HTML → docs/mocks/avatar-bust-rig.html → G4 tích hợp Avatar3D.tsx sau.
+
+## [02:1x] TỔNG — đánh giá tiến độ + bơm đợt 3 cho 5 Cowork (lệnh Hoà)
+**Vật chứng mới:** main giờ chứa CẢ quả cầu `9fa870b` (thủ phạm = rò WebGL context qua HMR — công thức §2c VÔ TỘI, G4 kế nhiệm tìm ra) + gói Một-Thư-viện-chặng-2 `0569a91`. Phiên CHINH kế nhiệm ĐANG chạy Toolbelt ổ ⑤ (CadToolbelt.tsx mới + 6 file M trong working tree). Checklist điền 12 ô. TRÌNH sự cố commit đợt 2 tự giải quyết (b2f4400 đã gom).
+**5 Cowork:** NC hết việc (7 bài) · UI hết việc (3 mock + 7 token — chờ Hoà duyệt ảnh) · VẼ hết việc khả thi (4 spec) · TRÌNH hết việc (5/5 — thiếu spec "Văn bản") · DỰNG CHƯA MỞ PHIÊN. → Bơm ĐỢT 3 vào SO-KIEM-TONG §3 (bảng trên), 5 quyết định duyệt ghi 00-CHOT (tên 3 mode · 7 token · chủ mảng cad/* · bỏ mock chooser · dòng nc/).
+**Chờ Hoà (sáng):** duyệt ảnh 2-theme 3 mock UI (G2 gấp — G4 chờ port) · quyết mapa-de-zonas.html (vi phạm màu TTT — UI đề nghị dời ra ngoài repo, TỔNG KHÔNG tự dời vì đụng nội dung repo) · Lark Console NC-6 A→D · dán khối PHU kế nhiệm (2 lỗi type + camera) · Vitals + avatar Claude Design đang chạy.
+
+## [02:2x] TỔNG — kiểm "xong hết rồi" (lệnh Hoà)
+**Vào git rồi:** `060c419` Toolbelt ổ ⑤ (main). **Chưa vào git — 4 khối:** ⌘K đa-màn `AppCommandPalette.tsx` 273d untracked + AppShell/Navigator M (CHINH) · fix camera `Scene3DViewer.tsx` M (PHU sửa trên main, tự khai chưa commit) · nhanh-g4 2 commit (`d143684` icon-hoá ObjectProperties/Settings + `7476ac1` báo cáo) · nhanh-phu 3 commit (`4641163` GỠ MÌN 2 lỗi type BOQ + `804952f` lib eyedropper/VCB 32/32 test + báo cáo).
+**Cột mốc:** ⛔ BOQ merge-gate treo từ 04/08 ĐÃ GỠ. Gap-check 10 khuyết đủ: 8/10 chưa có, ⑥ có sẵn, ⑤ CommentPin phủ khác dạng → mở khoá COWORK-VẼ việc 3.
+**Đánh giá:** hàng đợi CHINH (a·b·c) xong 3/3 trong 1 phiên; PHU xong 3/3 việc giao. Không phiên nào tự nhận việc ngoài phiếu. Checklist +6 dòng mục §7.
+**Rủi ro đã cảnh báo Hoà:** commit khi phiên còn đang gõ → cuốn file dở; PHU tự khai còn `index.lock` chết + file dirty lạ ở worktree phu (present-editor/lark/atlas — KHÔNG ai được tự dọn, chờ Hoà xác nhận).
+
+## [02:3x] TỔNG — Hoà xác nhận cho dọn lock + PHÁT HIỆN Cowork đợt 3 ĐANG CHẠY
+**Đợt 3 đã sống chỉ sau ~20 phút bơm:** TRÌNH commit `091734e` SPEC-TRINH-VANBAN-EDITOR → **đủ 5/5 loại hồ sơ** · NC đang viết `nc/NC-firstrun-cung-nganh` · VẼ ra `PHIEU-REGISTRY-VE-2026-08-04.md` · UI dựng `mocks/mock-trinh-boq-2026-08-04.html`. 4/5 vai chạy (DỰNG chưa thấy).
+**⚠️ ĐIỀU CHỈNH LỆNH:** khối gom `docs/` ở tin 02:2x TẠM HOÃN — commit `docs/` lúc này sẽ cuốn file đang viết dở của 4 Cowork. Chỉ commit pathspec CODE (palette + camera) + merge 2 nhánh. Docs gom sau khi các Cowork chốt phiên.
+**Lock:** main `.git` có HEAD/index/next-index-6/7.lock — **KHÔNG xoá** vì Cowork đang commit thật (lock sống). Rác an toàn: `worktrees/dot-b/*.stale-*` (16 file rename cũ) · worktree `pbr-schema`+`so-lenh` đã merge xong → prune được · `worktrees/interiorflow-phu` lock chết (PHU đã chốt phiên).
+
+## [02:37] TỔNG — CA TRỰC: máy Hoà VẪN THỨC, 5 Cowork chạy full, nhưng **HEAD.lock CHẾT CHẶN MỌI COMMIT**
+**Bridge sống.** mtime docs 02:29–02:36 → cả 5 vai đang viết thật: **DỰNG ĐÃ MỞ PHIÊN LẦN ĐẦU** (`SPEC-DUNG-CAMERA` 17.7KB + `SPEC-DUNG-NODE-PORT` 18.1KB) · NC +2 bài (firstrun cùng ngành · conflict simultaneous-edit) · UI +2 mock (BOQ · Video) · VẼ +2 phiếu registry · TRÌNH cập nhật.
+**🔴 SỰ CỐ:** `.git/HEAD.lock` sinh 02:19, đến 02:37 vẫn 0 byte = **CHẾT 18 phút**. Đây là lý do KHÔNG commit nào sau `091734e` dù 5 vai làm việc liên tục — mọi `git commit` của họ đang fail. Rủi ro: các phiên chốt phiên rồi tắt, công sức nằm ngoài git.
+**Trạng thái treo:** `AppCommandPalette.tsx` đã `A` (add được) nhưng chưa commit · camera fix chưa commit · nhanh-g4 + nhanh-phu vẫn CHƯA merge (kiểm ancestor).
+**Hành động:** KHÔNG bơm việc mới (5 vai đang đầy tải). Nhắn Hoà 1 khối cứu duy nhất: xoá HEAD.lock + next-index rác → commit code → merge 2 nhánh → gom docs.
+
+## [02:41] TỔNG — ✅ GỠ XONG NÚT THẮT LỚN NHẤT
+`dd3f584` ⌘K đa-màn · `e142f3c` camera · `1d727a7` merge g4 · `892c927` merge phu (**19 file/2992 dòng**: trọn lib/boq + eyedropper + vcb + route API). **origin/main = 892c927, đã push, ancestor xác nhận CẢ 2 nhánh trong main, lock sạch hết.** BOQ hết ⛔ sau 2 ngày treo. Auto-merge 3 file va (PresentEditor·Toolbar·model.ts) không conflict.
+**Cowork đợt 3 gần cạn:** DỰNG xong trọn 3/3 hàng đợi gốc ngay phiên đầu (+BAO-CAO-COWORK-DUNG.md) · NC 10 bài · UI 2 mock · VẼ 2 phiếu · TRÌNH 5/5. Docs của họ CHƯA commit (đang viết) — để họ tự chốt, TỔNG không gom.
+
+## [02:5x] TỔNG — Hoà báo lỗi UI chặng Trình bày (ảnh)
+Soi ảnh + đối chiếu code: **L1 "Trang 1"+"1/5" vs 8 slide** = hai đơn vị (sheet trần 5 theo `PresentSheets.tsx:12` vs slide) dùng chung chữ "Trang" → đánh lừa; **L2 slide 4 chữ chồng chữ 4 lớp** đè cả tiêu đề; L3 thumbnail chữ đè ảnh; L4 toolbar 2 hàng ~30 nút (Trình bày CHƯA áp Toolbelt ổ ⑤ như CAD `060c419`); L5 panel phải cắt đáy. → `docs/PHIEU-TRINH-LOI-UI-2026-08-03.md` cho G4, thứ tự L2→L1→L5→L3→L4.

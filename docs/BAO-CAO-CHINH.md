@@ -1576,3 +1576,63 @@ khuôn; NodeLibraryPanel vốn ĐÃ là card giàu — ép nó xuống list ch�
    PANEL-ROLLOUT ↔ CAD-SHELL-V3 luật 4, đang theo phe ẩn).
 
 HẾT PHIÊN CHINH — không nhận thêm việc theo lệnh chốt.
+
+---
+
+# PHIÊN CHINH 05/08 — Toolbelt ổ ⑤ · palette ⌘K đa màn · tooltip phím tắt
+
+**Vào phiên:** kiểm 3 nhánh đã vào main — `nhanh-g4`, `feat/so-lenh-registry`,
+`feat/pbr-material-schema` đều OK (`git merge-base --is-ancestor` cả ba), main tại `c1cf8cd`.
+Không phải dừng chờ Hoà.
+
+## (a) Toolbelt ổ ⑤ — `060c419`
+`components/cad/CadToolbelt.tsx` (MỚI) = MỘT khối kính giữa-dưới Stage, mount qua prop
+`toolbelt` của AppShell ở `CadStageScreen`. Gộp `CadToolbar` + `CadTouchDock`; hai file đó nay
+chỉ render HÀNG NÚT, bỏ `position:absolute`/vỏ kính riêng.
+- **Bug "toolbar tràn phải đè Inspector" chết từ gốc**: pill cũ tự absolute với
+  `maxWidth: calc(100vw - 32px)` — 100vw KHÔNG trừ cột Inspector. Nay dock nằm TRONG Stage
+  (flex sibling của Inspector) nên không thể lấn. Đo thật 1440×900 lúc Inspector mở:
+  dock right **1192** < inspector left **1202**; dock bottom **818** < CommandLine top **839**.
+- Sketch = 2 hàng bo 24 (hàng 2 là cụm cảm ứng), Pro/Revit = 1 hàng capsule 999 (§2c
+  một-khối-một-bóng). `marginBottom: 34` để nổi trên `CommandLine` in-flow.
+- Nút Nội thất/Vật liệu bắc cầu `cad:toggle-furniture`/`cad:toggle-material` về CadEditor
+  (2 state panel nằm sâu trong đó) — verify cả 2 panel mở thật.
+
+## (b) Palette ⌘K đa màn — `components/studio/AppCommandPalette.tsx`
+File MỚI, KHÔNG sửa `components/CommandPalette.tsx`: file cũ gọi `useReactFlow()` nên chỉ chạy
+trong ReactFlowProvider của Home — chính là lý do ⌘K xưa nay chết ở `/cad`, `/files`,
+`/settings`. Palette Home giữ nguyên (§0d). Palette mới mount trong AppShell ⇒ phủ cả 5 màn.
+- Nguồn lệnh: `cmdsFor(ctx)` của `lib/commands/registry.ts` (PHU, `4eb94c3`) — ctx =
+  chặng + `cadMode` + `shouldShowProTools(role, stage, cadMode)`, đúng hợp đồng registry
+  "nơi gọi tính sẵn `proToolsAllowed`" — cộng nhóm "Chuyển & giao diện" của vỏ app.
+- 🔴 **Lỗi thật tìm ra khi verify** (không phải suy đoán): ở `/projects/[id]/cad` có listener
+  capture khác NUỐT Enter trước khi tới React root ⇒ `onKeyDown` của ô input không bao giờ
+  chạy, chọn xong bấm ↵ đứng im. Đã chuyển ↑↓/↵ lên **document-capture + stopPropagation**
+  (cùng cơ chế ⌘K/B/I), state gương qua `stateRef` để listener gắn 1 lần vẫn đọc được
+  filtered/idx mới. Bỏ hẳn `onKeyDown` trên input để không có 2 nguồn xử lý cùng phím.
+- Đo thật: `/cad` ⌘K ra **34 mục** (8 vỏ app + 26 lệnh hợp ctx sketch) · gõ "duong tron" không
+  dấu → còn đúng 1 mục · ↵ chạy thật (nút Circle chuyển ghost `rgba(106,87,245,.14)`) ·
+  `/files` ra 8 mục vỏ app · ↵ trên "Sang chặng Dựng ảnh" đổi path thật. Cả 2 theme.
+
+## (c) Tooltip ghi phím tắt
+`Navigator` nhận prop `shiftHotkeys` (AppShell truyền `active === 'cad'`): title nút hiện
+ĐÚNG phím của chặng — CAD "Thư viện — ⇧L" / "Thu gọn — ⇧B", chặng khác L/B trần (§4e).
+Nút đóng Inspector: "Đóng — ẩn/hiện bằng ⇧I / I".
+
+## Sự cố vận hành phải biết
+1. **Dev server cổng 3000 TREO** (pid 95741, chạy 16 tiếng, `curl` 90s không phản hồi) → đã
+   kill + xoá `.next/cache/webpack`. **Hậu quả tự gây**: server ĐANG SỐNG ở cổng **51117**
+   (cùng repo) mất chunk ⇒ ChunkLoadError; phải nạp lại từng route cho Next biên dịch lại.
+   Bài học: đừng xoá `.next/cache/webpack` khi còn server khác chạy trên cùng thư mục.
+2. **`.git` lock lần 6**: 09:19 có phiên KHÁC commit `091734e` (docs TRÌNH) — `index.lock` +
+   `HEAD.lock` lúc đó là lock THẬT của họ, không stale. Tôi đã lỡ đổi tên `index.lock` trước
+   khi kiểm `git log` (may là commit của họ đã landed). **Luật bổ sung cho phiên sau: trước
+   khi động vào lock, chạy `git log --oneline -1` xem có commit MỚI vừa xuất hiện không —
+   có = phiên khác đang chạy, PHẢI chờ, không được đổi tên/xoá.**
+3. Cây làm việc còn `components/three/Scene3DViewer.tsx` modified của phiên khác — không đụng.
+
+## Hàng đợi CHINH còn lại
+- ⛔ merge `nhanh-phu` — vẫn chờ PHU sửa 2 lỗi type (kê ở mục CHINH-1).
+- Phím tắt per-panel §2f (rollout: mở hết/thu hết/solo bằng phím).
+- Chữ→icon phần ngoài vùng đã bàn giao G4/PHU (chưa nhận lại).
+- Việc chờ người khác (không đổi): node RÁC dự án mẫu · xung đột spec Inspector-khi-không-chọn.

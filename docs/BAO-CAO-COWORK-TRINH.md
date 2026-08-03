@@ -80,3 +80,53 @@
   git commit -m "docs(trinh): dot 2 - spec BOQ + Video tu NC-2/NC-3, chot phien" -- docs/BAO-CAO-COWORK-TRINH.md docs/SPEC-TRINH-BOQ-EDITOR.md docs/SPEC-TRINH-VIDEO-EDITOR.md
   ```
   (Chạy khi chắc không phiên nào đang thao tác git. File này sửa sau khi staged nên commit xong sẽ còn 1 phần modified — commit lần nữa cùng pathspec hoặc kệ, phiên sau gom.)
+
+## ĐỢT 4 (dispatch mới nhận nguyên văn "VIỆC ĐỢT 3" — PHÁT HIỆN GIAO TRÙNG)
+- [03/08] Nhận vai với nguyên văn việc ①+② của ĐỢT 3 (spec Văn bản/biểu mẫu `SPEC-TRINH-VANBAN-BIEUAMAU.md` +
+  kiểm PHU thẩm định 4 điểm). Theo §4 LUẬT THAY PHIÊN ("`git log --all --oneline -- <path>` — việc có thể đã
+  xong, bài học 3D-2 giao trùng 03/08"): chạy lệnh git THẬT trước khi viết bất kỳ file nào, không tin chữ báo
+  cáo cũ suông.
+- **Việc ① — ĐÃ XONG TỪ TRƯỚC, KHÔNG LÀM LẠI:** `git log --oneline --all -- docs/SPEC-TRINH-VANBAN-EDITOR.md`
+  (chạy qua sandbox bash, repo mount tại `/sessions/beautiful-ecstatic-volta/mnt/interiorflow`, branch hiện tại
+  `main`) → commit `091734e` "docs(trinh): dot 3 - SPEC-TRINH-VANBAN-EDITOR (bieu mau A4, bien tu dien, du 5/5
+  loai ho so), viec 2 skip cho PHU" **ĐÃ NẰM TRÊN MAIN**. Đọc lại toàn văn file (62 dòng) — khớp 100% yêu cầu
+  vừa nhận: `docType:'document'` additive · khổ A4 dọc · 3 template Báo giá/Hợp đồng/Thuyết minh song ngữ ·
+  biến `{{...}}` tự điền từ `BrandKit` (`lib/present-editor/brand-kit.ts:35`) + `BoqResult.totalAmount` · badge
+  sửa-đè cùng cơ chế trigger-formula BOQ · cùng khuôn 3 spec anh em (Material A3/BOQ/Video). **KHÔNG tạo
+  `SPEC-TRINH-VANBAN-BIEUAMAU.md` trùng nội dung** — làm vậy vi phạm thẳng bài học "giao trùng việc 3D-2 đã
+  xong" (§0 `SO-KIEM-TONG`) và tạo rủi ro 2 file cùng đặc tả 1 docType trôi dạt (drift) theo thời gian. Tên file
+  cũ giữ hậu tố `-EDITOR` — đã nhất quán với `SPEC-TRINH-BOQ-EDITOR.md`/`SPEC-TRINH-VIDEO-EDITOR.md`, không cần
+  đổi tên.
+- **Việc ② — kiểm TƯƠI lại (không tin kết luận cũ suông), VẪN CHƯA ĐỦ ĐIỀU KIỆN:** 2 lượt grep trên toàn bộ
+  `docs/`: lượt 1 đúng 4 từ khoá đề bài + biến thể lib (`mini-DSL|SUM\(|beat|MP4|mp4-muxer|WebCodecs|
+  web-audio-beat-detector|essentia`) → 20 file khớp, **`BAO-CAO-PHU.md` KHÔNG có trong danh sách**; lượt 2
+  case-insensitive nới rộng (`DSL|SUM|beat|MP4|dò beat|xuất video`) chạy riêng trên `BAO-CAO-PHU.md` → **0
+  match**. Đọc thêm toàn văn `BAO-CAO-PHU.md` (1108 dòng, mtime 02/08 13:21 — không đổi so với lần đọc trước)
+  xác nhận nội dung chỉ có P1-P4 + P6c (mask ảnh · nhóm phần tử · resize nhóm theo tỉ lệ · z-order nhóm · lớp
+  phủ fill · filter phần tử · fix kính lỏng) — KHÔNG đụng BOQ mini-DSL/SUM() lẫn video beat-detect/MP4 export.
+  **PHU CHƯA thẩm định bất kỳ điểm nào trong 4 điểm** → bỏ qua việc ②, giữ nguyên §8 của
+  `SPEC-TRINH-BOQ-EDITOR.md` và §8 của `SPEC-TRINH-VIDEO-EDITOR.md` y nguyên (mỗi phiếu vẫn đúng 2 việc "chờ
+  PHU thẩm định trước khi lên phiếu code"). KHÔNG tạo `PHIEU-TRINH-BOQ-VIDEO-CODE-2026-08-03.md`.
+- **Kiểm phụ (freshness — không đổi kết luận nhưng đáng ghi):** grep `docType` trong `lib/present-editor/*` = 0
+  kết quả — field additive mà 3 spec (Material A3 §4.1, Văn bản §2) đề xuất dùng chung CHƯA được G4 code, đúng
+  như spec mô tả (là đề xuất cho tương lai, không phải hiện trạng đã có) — không có trôi dạt cần sửa spec.
+- **Ghi nhận cho TỔNG/Hoà (nghi vấn vai khác — đúng quy ước đầu file: "ghi đây + 1 câu cho Hoà chuyển
+  TỔNG"):** dòng "ĐỢT 3 — COWORK-TRÌNH" trong `SO-KIEM-TONG.md` §3 (bảng cuối file, mục "ĐỢT 3 (TỔNG bơm ~02:1x
+  ...)") mô tả đúng việc ①+② vừa bị giao lại — đã HOÀN TẤT từ 03/08 (commit `091734e`) nhưng chưa được đánh dấu
+  xong/gỡ khỏi hàng đợi, nên phiên này nhận trùng. Đề nghị TỔNG cập nhật hoặc gỡ dòng đó trước khi bơm đợt kế,
+  tránh giao trùng lần 3 (tiền lệ: 3D-2 03/08 + Văn bản lần này 03/08).
+
+## CHỐT PHIÊN [03/08 — dispatch trùng ĐỢT 3]
+- **Đã xong phiên này:** KHÔNG bằng cách viết spec mới, mà bằng cách xác minh việc đã xong + đóng vòng lặp
+  trùng lặp TRƯỚC khi tốn công viết trùng. Việc ① xác nhận ĐÃ CÓ, ĐÃ COMMIT MAIN (không cần làm) · việc ② xác
+  nhận VẪN CHƯA ĐỦ ĐIỀU KIỆN (bỏ qua đúng luật chờ-X, đã kiểm tươi bằng 2 lượt grep + đọc toàn văn báo cáo PHU).
+- **File tạo mới:** 0 (cố ý — tạo thêm sẽ trùng nội dung `SPEC-TRINH-VANBAN-EDITOR.md`, vi phạm luật chống
+  trùng việc). Chỉ cập nhật `BAO-CAO-COWORK-TRINH.md` (file này, mục ĐỢT 4 trên).
+- **Việc dở:** không — cả ① và ② đều đã có kết luận rõ ràng (① xong từ trước / ② chưa đủ điều kiện, đã kiểm
+  tươi bằng lệnh thật, không phải suy đoán).
+- **Chờ người khác:** PHU thẩm định 4 điểm (mini-DSL parse · SUM() xlsx output hiện tại · lib dò beat
+  `web-audio-beat-detector`/`essentia.js` · đường xuất MP4 WebCodecs+mp4-muxer/ffmpeg.wasm) rồi COWORK-TRÌNH
+  đợt sau mới nâng BOQ/Video thành phiếu code · TỔNG rà lại dòng ĐỢT 3 trong `SO-KIEM-TONG.md` §3 cho khớp
+  thực tế đã xong.
+- **Nghi vấn chuyển TỔNG:** có — hàng đợi §3 `SO-KIEM-TONG.md` bị lỗi thời cho vai COWORK-TRÌNH (xem mục ĐỢT 4
+  trên), nên rà lại trước khi bơm đợt kế để tránh lặp lần 3.

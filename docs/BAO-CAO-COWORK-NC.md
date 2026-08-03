@@ -55,3 +55,45 @@
 3. NC-7 chuyển cho phiên ARCHINOTE khi khối copy spec (⛔ hàng đợi ARCHINOTE) được Hoà chạy.
 **Nghi vấn liên vai:** không phát sinh mới.
 **Hàng đợi còn lại:** trống — phiên NC kế đọc file này rồi nhận đề tài từ TỔNG/Hoà. Gợi ý đề tài dự trữ (chưa làm, chờ duyệt): onboarding app cùng ngành (D5/SketchUp first-run) · pipeline in Foyr/Coohom · Lark Base Gantt dependencies kiểm tận mắt (1 phút của Hoà).
+
+## ĐỢT 3 (TỔNG bơm — sổ ghi "03/08 ~02:1x", nhận SÁNG 03/08 ~09:00 giờ thật)
+Ghi chú nhận lệnh: Hoà dán cả CỤM 5 dòng nhận vai (NC·UI·VẼ·DỰNG·TRÌNH) vào phiên này — theo hiến chương "mỗi phiên đúng 1 dòng", phiên này chỉ nhận dòng **NC**; 4 dòng kia cần dán vào 4 phiên mới (đã báo Hoà).
+*(Đính chính §0: dòng tiêu đề cũ ước "nhận 02/08 ~23:5x" là SAI — kiểm `date` lúc xong NC-9 ra 03/08 09:21 sáng; 2 file NC-8/NC-9 đã đổi tên sang `2026-08-03` cho đúng ngày.)*
+| # | Đề tài | Nuôi cho | Trạng thái |
+|---|---|---|---|
+| NC-8 | First-run app CÙNG NGÀNH: D5 Render · SketchUp · Enscape (màn đầu, template gallery, sample project) | Smart Tour v2 + empty-state Vẽ 3D | ✅ `nc/NC-firstrun-cung-nganh-2026-08-03.md` |
+| NC-9 | Presence/collab Figma/Miro/FigJam (avatar dải, cursor, follow mode, comment thread) | code G2 của G4 | ✅ `nc/NC-presence-collab-2026-08-03.md` |
+
+- [03/08 ~09:00] Nhận đợt 3. ✅ NC-8 → `nc/NC-firstrun-cung-nganh-2026-08-03.md`: cùng ngành hội tụ "scene mẫu mở-là-nghịch-được", KHÔNG tour; 2 phát minh đáng chép: chọn ĐƠN VỊ là nghi thức mở đầu (SketchUp template) + **Instructor gắn theo TOOL** (animation + modifier keys + phím — nâng cấp thẳng cho §0c mảng 2); Enscape dạy "nút xám phải có lý do". 7 đề xuất §2.
+- [03/08 09:21] ✅ NC-9 → `nc/NC-presence-collab-2026-08-03.md`: kiến trúc Figma — presence (cursor·selection·viewport) là DỮ LIỆU PHÙ DU tách khỏi persistence, cursor throttle ~80ms local-first; reaction G2 nên là STAMP-GẮN-OBJECT (FigJam) = dữ liệu duyệt phương án đếm được; comment pin bám object + Resolve ẩn-không-xoá + notification mặc định mentions-only; toggle ẩn cursor ĐƯỢC NHỚ (sửa pain Figma bị than). 11 đề xuất §4 rót thẳng vào phiếu G2 của G4.
+- **[03/08 09:21] HẾT VIỆC đợt 3** — NC-8 + NC-9 ✅. Hàng đợi trống.
+
+## CHỐT PHIÊN đợt 3 — 03/08/2026 09:2x
+**Đã xong:** đợt 3 trọn 2/2. Tổng phiên NC (3 đợt): **9 bài** trong `docs/nc/`.
+**Dang dở:** không.
+**Đề xuất cho COWORK-TỔNG:**
+1. Dòng `00-CHOT` cập nhật: "`docs/nc/` — 9 bài NC (02–03/08): camera-campath · timeline · spreadsheet · onboarding · xuất-PDF · lark-permission · pm-studio-nhỏ · firstrun-cùng-ngành · presence-collab."
+2. Báo **G4**: NC-9 đã về — phiếu G2 (mục 3 hàng đợi G4) nên đọc `NC-presence-collab` §4 trước khi dựng `lib/collab/` (nhất là #1 ephemeral-vs-persist và #6 stamp-gắn-object).
+3. Báo **G4/CHINH** (empty state, mục 5 G4): đọc `NC-firstrun-cung-nganh` §2.3–2.5 (2 nút + cảnh mẫu + nút xám có lý do).
+4. Nhắc lại 2 việc treo từ đợt 1–2: Hoà chạy checklist Lark (`NC-lark-permission` §2) · 4 dòng vai UI/VẼ/DỰNG/TRÌNH cần dán vào 4 phiên mới.
+**Hàng đợi còn lại:** trống — chờ TỔNG bơm đợt 4 hoặc Hoà giao trực tiếp.
+
+## ⚠️ PHIÊN THỨ 2 NHẬN TRÙNG BRIEF ĐỢT 3 — 03/08/2026 (bằng chứng chạy song song thật)
+**Phát hiện:** một phiên COWORK-NC KHÁC (tôi) nhận đúng nguyên văn brief ĐỢT 3 (① first-run cùng ngành, ② presence/collab) — y hệt brief mà mục ngay trên đây đã làm và CHỐT PHIÊN lúc 09:2x sáng nay. Bằng chứng đây KHÔNG phải suy đoán: tôi đọc `docs/nc/*.md` lúc bắt đầu → chỉ thấy 8 file (thiếu `NC-presence-collab`); grep code xong quay lại đọc thì đã thấy file đó xuất hiện; đến lúc APPEND vào chính sổ này thì bị lỗi "File has been modified since read" — đọc lại thì thấy mục CHỐT PHIÊN đợt 3 (09:2x) đã được điền đầy đủ. Tức là **2 phiên COWORK-NC chạy đúng lúc nhau, cùng nhận 1 brief**, chỉ lệch nhau khoảng chục phút.
+**Xử lý theo §0b ("đừng viết lại cái đã có") + §0 (luật trung thực):** KHÔNG viết lại NC-8/NC-9 (đã đọc trọn cả hai, xác nhận đạt chuẩn — nguồn thật, số liệu thật, "Điều IF nên làm" đầy đủ). Thay vào đó soi đúng **1 câu NC-9 tự loại khỏi phạm vi** ở dòng "Giới hạn nghiên cứu": *"cơ chế CRDT/conflict-resolution của document sync KHÔNG nằm trong bài này"*. Grep `app/api/flows/[id]/route.ts` + `lib/store.ts` để trả lời đúng câu đó thì phát hiện đây **không phải câu hỏi lý thuyết**: autosave `graphJson` (debounce 2s, gộp `nodes+edges+groups+comments+strokes` vào 1 blob) ghi đè thẳng qua `prisma.flow.update` mà **không so `rev`** dù field này đã có sẵn và đang được tăng — tức 2 người sửa cùng flow (đúng kịch bản G2 hứa hẹn) có thể **mất dữ liệu thật, im lặng, không cảnh báo, không có bản cứu** (vì `FlowVersion` chỉ tạo khi bấm tay "Đánh dấu bản này", không tạo khi autosave). Viết bài mới đúng lỗ hổng đó, so 4 mô hình ngành (Figma property-level CRDT · Miro object-lock + 2 thread cộng đồng thật · Revit worksharing borrow/Editing-Request — muscle memory kiến trúc sư · bài học phản diện Webflow nhiều năm than trước khi vá bằng Page branching) + kịch bản cụ thể dựng trên đúng code IF + 6 đề xuất xếp độ khẩn.
+
+| # | Đề tài | Nuôi cho | Trạng thái |
+|---|---|---|---|
+| NC-10 | Xung đột khi 2 người sửa `graphJson` đồng thời (Figma CRDT · Miro lock · Revit worksharing · bài học Webflow) — đúng lỗ hổng NC-9 tự loại khỏi phạm vi | G2 Mood+Collab + autosave `graphJson` (`lib/store.ts` + `app/api/flows/[id]/route.ts`) | ✅ `nc/NC-conflict-simultaneous-edit-2026-08-03.md` |
+
+**Vì sao chỉ 1 file mới, không phải 2 như brief yêu cầu:** đã kiểm kỹ — mọi câu hỏi cụ thể của đề bài ① (wizard/progressive disclosure · template gallery · sample project · cách dạy thao tác cơ bản) đều đã có câu trả lời đầy đủ trong `NC-firstrun-cung-nganh-2026-08-03.md`. Thử tìm góc phụ "viewport 3D trống theo đúng nghĩa đen" (SketchUp scale-figure, Blender default cube) nhưng nguồn tra được mỏng, không có "than phiền cộng đồng thật" đạt chuẩn hệ (`SO-KIEM-TONG` §0b) — quyết định KHÔNG ép viết để tránh bài chung chung/PR. Ưu tiên 1 bài có sức nặng thật hơn 2 bài trong đó 1 bài là lấp chỗ trống cho đủ số.
+
+### CHỐT PHIÊN — 03/08/2026 (phiên thứ 2, bài bổ sung)
+**Đã xong:** xác minh ĐỢT 3 (① + ②) đã xong bởi phiên COWORK-NC song song — đọc trọn cả 2 file để verify, không chỉ tin tên file/dòng ✅ trong sổ. Vì §0b cấm viết lại cái đã có, đào đúng lỗ hổng NC-9 tự khai + grep code thật xác nhận đây là rủi ro CÓ THẬT (không phải giả thuyết) → viết `nc/NC-conflict-simultaneous-edit-2026-08-03.md` (NC-10).
+**Dang dở:** không.
+**Đề xuất cho COWORK-TỔNG (TỔNG duyệt mới ghi vào `00-CHOT`):**
+1. +1 dòng `00-CHOT`: "`docs/nc/NC-conflict-simultaneous-edit-2026-08-03.md` (NC-10) — autosave `graphJson` (`lib/store.ts` ~dòng 1118-1130 + `app/api/flows/[id]/route.ts` ~dòng 74-81) ghi-đè-mù, không kiểm `rev` dù field đã có sẵn → rủi ro mất dữ liệu THẬT khi G2 cho nhiều người sửa cùng flow. Đề xuất: dùng `rev` làm optimistic-concurrency guard + toast 'có người vừa sửa' + tải lại, TRƯỚC khi G2 mở nhiều người dùng thật."
+2. **Báo PHU/G4 trực tiếp** (không chỉ nằm trong sổ NC) — NC-10 §3 mục 1+2+4 nên vào hàng đợi G4/PHU mức 🔴: đây là lỗi mất-dữ-liệu-im-lặng, KHÔNG thuộc diện an toàn của cơ chế "ship trước sửa sau" (dữ liệu mất không "sửa sau" được).
+3. **Sửa quy trình dispatch cho COWORK-NC** — xem Nghi vấn dưới, tránh lặp lãng phí công sức lần nữa (và kiểm xem 4 vai UI/VẼ/DỰNG/TRÌNH có bị lặp tương tự không).
+**Nghi vấn liên vai (đúng 1 câu cho Hoà chuyển TỔNG):** Cơ chế "Hạm đội Cowork" vừa lặp dispatch — 2 phiên COWORK-NC nhận đúng 1 brief ĐỢT 3 cùng lúc (bằng chứng: sổ này đổi nội dung giữa 2 lần đọc trong cùng 1 phiên) — có phải TỔNG đang bơm việc theo chu kỳ cố định mà không kiểm phiên nào đã nhận, và nếu đúng thì 4 vai còn lại (UI/VẼ/DỰNG/TRÌNH) có cùng rủi ro?
+**Hàng đợi còn lại:** trống — phiên NC kế tiếp đọc file này rồi nhận đề tài MỚI thật từ TỔNG/Hoà, không nhận lại nguyên văn brief ĐỢT 3 (đã xong đủ, xem bảng trên).
