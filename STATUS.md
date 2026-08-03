@@ -5,6 +5,14 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## ✅ XONG (03/08, TRÌNH-CODE — chi tiết đủ trong message commit)
+- **BOQ editor B0-B6+B10** (`4991340`) + **xlsx SUM sống B8** (`18afba3`) — `docs/PHIEU-TRINH-BOQ-EDITOR.md`.
+  Live-link override (sửa tay ô m²/đơn giá, badge+revert+cảnh báo) · group theo tầng · truy vết
+  ngược "Xem trên bản vẽ" · treo tạm nút BOQ trong `PresentNavigator` (chờ H4 5-loại-hồ-sơ) ·
+  27+36 test pass, tsc scoped sạch. Bắt+sửa 1 bug thật lúc verify browser (vòng lặp vô hạn
+  `useT()` trong `useCallback` deps). **CHƯA làm**: B7 cột tuỳ biến · B9 in PDF (treo, ghi rõ).
+  B11 (mini-DSL) vẫn GATED chờ PHU đúng như phiếu.
+
 ## ✅ XONG (02/08, mã commit — chi tiết đủ trong message từng commit + CHANGELOG)
 - **3D-1** (`d9eea9b`+`d5f6700`): three.js viewer mode orbit + nút "Xem 3D" node "Bản vẽ → 3D".
   FPS thật: gộp theo màu 4 draw call/0.087ms/khung, không gộp 2011/2.73ms — vẫn realtime.
