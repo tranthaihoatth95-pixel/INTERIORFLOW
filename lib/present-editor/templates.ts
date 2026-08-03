@@ -15,6 +15,7 @@
 import type { FontPairing } from '@/lib/slides';
 import type { GuAsset } from '@/lib/gu';
 import { paletteRoles } from './theme-roles';
+import { DECK_STANDARDS } from './standards';
 import {
   type EditorSlide,
   type SlideElement,
@@ -191,6 +192,33 @@ export function imgAt(ctx: TemplateContext, i: number): string | undefined {
   const imgs = ctx.images?.filter(Boolean) ?? [];
   if (!imgs.length) return undefined;
   return imgs[i % imgs.length];
+}
+
+/**
+ * Cỡ chữ lớn nhất (theo %H sân khấu) mà `chars` ký tự còn nằm TRỌN trong khung `frameW × frameH`.
+ *
+ * Vì sao cần: template đặt khung cố định, còn nội dung thì do người dùng/AI đưa vào — chữ dài
+ * hơn dự kiến sẽ tràn khung và ĐÈ lên khối dưới (lỗi L2 phiếu 03/08). Thà chữ nhỏ hơn một nấc
+ * còn hơn chồng chữ. Dùng đúng công thức ước lượng wrap của `layout-check.ts`
+ * (`charsPerPctWBody`) để hai bên không lệch nhau: hàm này ngăn tràn, hàm kia cảnh báo tràn.
+ *
+ * `min` là sàn đọc được — chạm sàn mà vẫn tràn thì trả `min`, `evaluateSlide()` sẽ cảnh báo
+ * (đúng luật: cảnh báo cho người, không tự ý cắt nội dung của họ).
+ */
+export function fitFontSize(
+  chars: number,
+  frameW: number,
+  frameH: number,
+  preferred: number,
+  lineHeight = 1.4,
+  min = 1.1,
+): number {
+  const perLine = Math.max(1, frameW * DECK_STANDARDS.type.charsPerPctWBody);
+  for (let size = preferred; size >= min; size -= 0.1) {
+    const lines = Math.ceil(chars / perLine);
+    if (lines * size * lineHeight <= frameH) return Math.round(size * 10) / 10;
+  }
+  return min;
 }
 
 /* --------------------------- BUILTIN --------------------------- */
@@ -1045,17 +1073,26 @@ export const BUILTIN_TEMPLATES: EditorTemplate[] = [
             tracking: 1,
           }),
         );
-        els.push(
-          makeText({
-            text: '•  Không gian chuẩn mực\n•  Ít mà đúng',
-            role: 'body',
-            frame: { x, y: 77, w: colW, h: 12, rotation: 0 },
-            fontSize: 1.6,
-            color: c.muted,
-            align: 'center',
-            lineHeight: 1.4,
-          }),
-        );
+        // L2 (phiếu 03/08): trước đây CHUỖI CỨNG "• Không gian chuẩn mực / • Ít mà đúng" được
+        // đẩy vào CẢ 4 cột → deck nào cũng lặp y hệt 4 lần, và text dài thì tràn khung 12%H
+        // chồng lên hàng dưới. Nay bullet chỉ vẽ khi có DỮ LIỆU THẬT (4 mục sau của ctx.body,
+        // tức body[4..7] đi kèm 4 nhãn cột body[0..3]) — không có thì bỏ trống, không bịa.
+        const note = ctx.body?.[4 + i]?.replace(/^[-•]\s*/, '');
+        if (note) {
+          els.push(
+            makeText({
+              text: `•  ${note}`,
+              role: 'body',
+              frame: { x, y: 77, w: colW, h: 12, rotation: 0 },
+              // tự co cỡ chữ theo độ dài để KHÔNG tràn khung (cùng công thức ước lượng wrap của
+              // layout-check.ts): số dòng × cỡ × lineHeight phải ≤ chiều cao khung.
+              fontSize: fitFontSize(note.length + 3, colW, 12, 1.6, 1.4),
+              color: c.muted,
+              align: 'center',
+              lineHeight: 1.4,
+            }),
+          );
+        }
       }
       return { id: newId('sld'), background: c.light, elements: els, templateId: 'grid4-philosophy' };
     },
