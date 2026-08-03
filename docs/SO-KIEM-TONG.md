@@ -31,7 +31,9 @@ Append-only: chỉ thêm dòng, đổi trạng thái có ngày; không xoá dòn
 | Kính lỏng K1-K4 + luật portal | `globals.css` + spec | ✅ | — |
 | Tooltip tĩnh cảm ứng | `globals.css:1030` | ✅ | — |
 | Gallery/Notebook/Login/Journey/Smart Tour | các nhánh đã merge | ✅ | mở app |
+| Auto-backup + Recovery (`lib/cad/auto-backup.ts` + modal) | code cũ | ✅ sống | `ls` 2 file |
 | Panel thò thụt: Rollout (tiêu đề/grip/chuột phải/ghim/nhớ theo LOẠI VẬT) + InspectorPages Rhino + dải thu gọn CÓ NHÃN | `components/studio/Rollout.tsx`·`InspectorPages.tsx`·`CadInspectorPages.tsx` | ✅ `7847969` (04/08 đêm) | chọn entity CAD → Inspector; thu Navigator |
+| Phím tắt toàn app (B/I/⌘\\/⌘1-3 · CAD ⇧-biến-thể · va L xử theo §4e) + Render 1-cột (Trên bảng · hết banner · fitView có điều kiện) | `AppShell.tsx`·`AppChrome.tsx`·`NodeLibraryPanel.tsx`·`FlowCanvas.tsx` | ✅ `2649287`·`59702d6`·`efa434c` (04/08) | bấm B/⇧L từng chặng · mở Render nhìn 1 cột |
 | **Điều còn TREO chờ Hoà** | avatar 3D (mua/thuê/Blender) · Google Flow video intro · quyền Wiki Lark · dọn `public/detech` 22MB | ⏳ | `00-CHOT.md` |
 
 ## §2 · PHÂN MẢNG — mỗi phiên một vùng, không ai đụng ai (Hoà duyệt 03/08)
@@ -53,6 +55,12 @@ Mock từ nay: Cowork viết **đặc tả mock bằng chữ** trong phiếu gia
 đọc lại mục của mình dưới đây → lấy việc KẾ TIẾP theo thứ tự → lặp. Việc nào ghi ⛔ hoặc "chờ X"
 mà X chưa xong thì BỎ QUA sang việc sau. Cạn hàng đợi → ghi "HẾT VIỆC <giờ>" vào báo cáo + chốt phiên.
 CẤM bịa việc ngoài hàng đợi. CẤM chạm vùng phiên khác (§2).
+
+### CHINH — 🔴 ƯU TIÊN SÁNG 04/08 (Hoà chốt: 1 màn = 1 cột trái)
+0a. DỌN ĐỊA TẦNG chặng Render: XOÁ cột "ĐẦU VÀO" Navigator (node trên bảng → nhóm "Trên bảng"
+    đầu panel Thư viện khối, bấm = focus canvas) · ổ Navigator chặng Render = CHÍNH panel Thư viện
+    khối, MỘT cột, không lồng đè · XOÁ mọi banner "Còn công cụ.../Công cụ đầy đủ..." ·
+    canvas trống zoom 100% (bug fitView 15%). Verify: mở Render đếm được ĐÚNG MỘT lớp cột trái.
 
 ### CHINH
 1. **Merge nhanh-g4 RỒI nhanh-phu vào main** (nhanh-phu = BOQ `49ebadd`, sạch, toàn file mới — không mìn). Mìn của nhanh-g4: nhanh-g4 mount `<LibrarySheet/>` vào `StageShell.tsx` — main ĐÃ XOÁ file đó.
@@ -82,10 +90,25 @@ CẤM bịa việc ngoài hàng đợi. CẤM chạm vùng phiên khác (§2).
    ① eyedropper thuộc tính và ② VCB gõ-số-sau (nhận `3x` `/3`) — UI để CHINH/G4 nối.
 6. LIB tiếp `SPEC-LENH-VE-IF` §4: ③ đường gióng thước dây (guide store + snap) · ⑥ chia đều N dọc path — thuần lib + test.
 7. Nối `lib/boq/from-project` vào Doc thật của FlowCanvas (cầu glue thuần, UI để G4).
+8. 🔴 Bug 2.1.6.d Nhập DWG treo vĩnh viễn (STATUS ghi, chưa ai động): tái hiện bằng file mẫu →
+   tìm vòng lặp trong `lib/cad/dwg-worker.ts`/`dwg.ts` → fix + timeout guard + test. Bug đỏ lâu nhất repo.
+
+### G4 — 🔴 ƯU TIÊN SÁNG 04/08 (Hoà chốt trực tiếp, làm TRƯỚC mọi việc cũ)
+0a. MỘT THƯ VIỆN Ở CHẶNG 2: panel "Thư viện khối" sidebar là DUY NHẤT · sheet chỉ mở từ nút đáy
+    (kho lớn/nạp/publish), KHÔNG tự bung · XOÁ banner "Công cụ đầy đủ..." · tab Vật liệu Command3DPanel
+    = browse tại chỗ kiểu D5 + nút "Xem cả kho" mở sheet.
+0b. QUẢ CẦU LÀM LẠI theo công thức nghiên cứu V-Ray/D5 (BAO-CAO-DEM mục sáng 04/08 có đủ số):
+    NeutralToneMapping (CẤM ACES) · PMREM RoomEnvironment 0.04, intensity 1.1, xoay panel sáng
+    lên góc trên-trái · NỀN XÁM #606060/radial (CẤM trắng) · checker xám cho vật liệu trong suốt ·
+    bóng tiếp đất đĩa gradient 2.2× cầu op .35-.5 bake 1 lần · camera fov 30, (0,0.9,5), cầu 75-80%
+    khung · sphere 64×32, render 2× thu nhỏ · scene Vải đang MÉO ellipse — bỏ bóp hình học ·
+    terrazzo ra Ô TRỐNG — kiểm hàng đợi/cache. NGHIỆM THU: Sơn trắng ngà vs Đá Calacatta phải
+    nhìn KHÁC NHAU rõ trên nền xám.
 
 ### G4 (làm hết thì lấy tiếp 4-5)
 1a. 🔥 GẤP (đêm 04/08, xem BAO-CAO-DEM mục 23:1x): sửa 5 lỗi UI chặng Render — toolbar bút chỉ hiện khi active · canvas trống zoom 100% không fitView · banner 'Còn công cụ khác' đổi khuôn mách-nước-có-nút hoặc bỏ · empty state có chỉ dẫn + NÚT · minimap ẩn khi trống, attribution React Flow đặt gọn đúng license.
-1. Quả cầu vật liệu `SPEC-VAT-LIEU-PBR-IF` §2: `components/three/MaterialSphere.tsx` — three.js sphere +
+0b. (gói kính, 2 phút) library-sheet-css.ts:70 badge blur(10px) SỐ CỨNG → var(--blur) hoặc BỎ kính trên badge (kính là gia vị, badge nhỏ không cần) · cân nhắc dùng class .mat-sheet chung của globals thay vì định nghĩa lại cục bộ (nợ kỹ thuật, không gấp).
+1. Quả cầu vật liệu `SPEC-VAT-LIEU-PBR-IF` §2 **+ §3b MATERIAL EDITOR** (Hoà chốt 04/08: quả cầu phải EDIT được — panel chỉnh D5-style, sphere live re-render, per-map adjust, sửa vật liệu chung tự nhân bản thành bản dự án): `components/three/MaterialSphere.tsx` — three.js sphere +
    RoomEnvironment PMREM DÙNG CHUNG + cache PNG theo hash(params) · 3 cảnh Cầu/Sàn/Vải tự chọn theo danh mục ·
    lưới 25% chi tiết 100% · gắn vào Thư viện sheet (mode Vẽ 3D) + tab Vật liệu CommandPanel.
 2. (chờ CHINH merge xong) Verify Vẽ 3D sống trên main: CommandPanel/Viewport3D/ObjectProperties render trong AppShell
@@ -95,14 +118,39 @@ CẤM bịa việc ngoài hàng đợi. CẤM chạm vùng phiên khác (§2).
 4. Port `docs/mocks/mock-present-chooser.html` thành màn chọn 5 loại hồ sơ (H4) — trong AppShell, đúng token, 2 theme. GỘP #3 tách-lối-vào-AI theo phiếu PHIEU-PRESENT-G4 của COWORK-TRÌNH (TỔNG duyệt đêm 04/08).
 5. Empty state toàn app theo `SPEC-NGON-NGU-CHI-DAN` khuôn "trống" (luôn có NÚT): canvas 3 chặng · /files · Thư viện · Trình bày.
 
+### COWORK-NC (bơm đêm 04/08 — đợt 2, xếp theo độ kẹt thật)
+6. **NC-6 · Quyền Lark Wiki/Base** (GỠ KẸT 131006 — ưu tiên 1): cơ chế permission app Lark — scope wiki:readonly
+   vs bitable read · vì sao PHẢI publish version mới scope mới ăn · share wiki space cho app (lớp quyền riêng) ·
+   tenant access token vs user token · mã lỗi 131006/99991672 nghĩa gì. ĐẦU RA: checklist từng-nút-bấm trong
+   Developer Console để Hoà làm 1 lần là xong, có ảnh/đường dẫn menu. Nguồn: open.larksuite.com docs + cộng đồng.
+7. **NC-7 · PM app cho studio nhỏ** (nuôi ArchiNote v1): Lark Base Gantt/Kanban làm được gì/không được gì ·
+   pattern Linear/Asana/Notion cho studio 5-15 người · sổ tay tài nguyên (resource handbook) app nào làm hay.
+   ĐẦU RA: "Điều ArchiNote nên làm" ≤15 mục có căn cứ.
+
 ### COWORK-UI (bơm đêm 04/08)
 0. ƯU TIÊN NHANH: chốt giá trị 6 token `--snap-*`/`--axis-*` (theo SPEC-VE-INFERENCE §2 của COWORK-VẼ) vào `SPEC-DESIGN-SYSTEM-IF` — đủ 2 theme, đối chiếu bảng màu inference SketchUp (xanh lá endpoint · lam midpoint · đỏ trục X...) nhưng phải hoà với accent tím của IF, tránh trùng màu trạng thái --success/--warning. Code đang dùng var() có fallback nên không ai chờ — nhưng chốt sớm tránh nợ.
+
+### COWORK-UI (nối hàng đợi — bơm 04/08 đêm)
+6. **Mock Vitals nâng cấp** (Hoà nhắc đêm 04/08): theo `SPEC-APPLE-MOTION-MATERIAL` §4b (Siri iOS 27 làm khuôn
+   — glow viền màn, orb thở, vào/ra bằng ramp) + `SPEC-APP-SHELL-CHUNG` §4 (Vitals thường trực ở Status bar,
+   bung thành panel chat). Đủ 2 theme, port được. Đây là LINH HỒN app — làm kỹ như làm avatar.
 
 ### COWORK-TRÌNH (bơm đêm 04/08 — không chờ NC nữa)
 1. Viết `docs/PHIEU-PRESENT-G4.md`: gom 7 mục sống thành phiếu code chi tiết cho G4 (đặc tả từng mục + nghiệm thu + thứ tự; #3 đánh dấu GỘP-H4). Chính bạn vừa rà nên viết rẻ nhất.
 2. Verify 3 mục 🟡 bằng ĐỌC CODE (picker ≤2 click · export bake · ảnh Hoà khoanh): kết luận được thì kết luận, cần browser thật thì ghi thành mục nghiệm thu trong phiếu G4.
 3. Viết `SPEC-TRINH-MATERIAL-A3.md`: editor Bảng vật liệu A3 (loại hồ sơ #2) — lưới ô, nhãn (tên·mã·giá·NCC từ 8 cột ATLAS đã biết), khổ in A3, nguồn matId. KHÔNG cần chờ NC.
-4. Việc 1·2 cũ (BOQ/Video editor spec) vẫn chờ NC-2/NC-3 — khi NC về thì làm tiếp.
+4. ✅ MỞ KHOÁ (NC-2 timeline + NC-3 spreadsheet ĐÃ VỀ, xem docs/nc/): làm việc 1 SPEC-TRINH-BOQ-EDITOR (đọc NC-spreadsheet-nhung trước) rồi việc 2 SPEC-TRINH-VIDEO-EDITOR (đọc NC-timeline-editor trước). Ăn cả NC-xuat-pdf-in cho phần khổ in/dpi.
+
+### COWORK-VẼ (bơm đêm 04/08 — đợt 2)
+4. **SPEC-VE-LAYOUT-PAPER.md** — lấp LỖ THỦNG LỚN NHẤT của mode Chuyên (SPEC-CAD-MODES §4 tự ghi:
+   "Pro hiện KHÔNG có Layout/Paper Space — mà đó chính là thứ định nghĩa Pro"): paper space vs model space ·
+   khung tên + tỉ lệ viewport · in PDF đúng khổ (đọc docs/nc/NC-xuat-pdf-in trước) · đối chiếu CadSheets.tsx
+   hiện có (đã là tab bản vẽ — thiếu gì để thành layout in được?). Theo §0b: nghĩ như hoạ viên nộp hồ sơ.
+
+5. **SPEC-VE-SKETCH-TOUCH.md** (§0c mảng 3 — đừng để desktop-first nuốt mất tablet): radial menu quanh ngón
+   (giữ lâu hiện) · cử chỉ 2 ngón zoom/pan + 2 chạm undo + 3 chạm redo · palm rejection + nhận bút (lực/nghiêng) ·
+   vẽ tay tự nắn thẳng · snap dung sai lớn — nền có sẵn SPEC-CAD-MODES §3 + NC-onboarding; đối chiếu
+   CadTouchDock.tsx + foldable.css đã có trong code. Theo §0b: nghĩ như KTS cầm iPad ngoài công trường.
 
 ### ARCHINOTE (repo ttt-tasks)
 1. ⛔ chờ Hoà chạy khối copy 9 spec (`LENH-PHIEN-2026-08-03.md` §4). Có docs/ rồi thì: duyệt 3 câu như khối cũ, làm 1+2, báo cáo.
@@ -128,6 +176,24 @@ STATUS.md ghi sai "chưa bắt đầu". Cả ba đều do TIN CHỮ mà không K
 Đề xuất không đủ 3 bước → audit đánh 🔴 trả về làm lại. Tiền lệ: rail "lèo tèo" rồi lại "rối rắm"
 (03/08) — cả hai lần đều do thiếu bước 2-3 trước khi dựng.
 
+## §0d · LUẬT GIỮ CÁI ĐANG TỐT (Hoà đặt 01:xx 04/08 sau khi BÁC bản Navigator list-chữ)
+**Đồng nhất hoá KHÔNG được làm nghèo tiện dụng.** "Ổ cố định, ruột thay đổi" nghĩa là ruột được phép
+GIÀU theo chặng (card icon, mô tả, badge) — không phải ép mọi ruột thành danh sách chữ giống nhau.
+Cái đang tốt (Hoà đã duyệt/quen tay) = nền để BUILD LÊN, không phải thứ để thay bằng bản "sạch hơn".
+Nguyên văn Hoà: "chỉ cần build từ đó lên... mình nhận không ra app luôn." Đập-làm-lại phần đang dùng được
+= 🔴 tự động, bất kể lý do kiến trúc. Đây là lần 2 (lần 1: rail lèo tèo→rối rắm). Không có lần 3.
+
+## §0c · BA MẢNG KHÔNG ĐƯỢC BỎ SÓT (Hoà đặt 04/08 — audit A7 bắt buộc)
+Mọi màn/tính năng mới PHẢI nghiệm thu đủ 3 mảng, thiếu 1 = 🔴 chưa xong:
+1. **PHÍM TẮT** — mọi lệnh có phím theo sổ lệnh + bảng `SPEC-PANEL-ROLLOUT-IDF` §4; tooltip hiện phím;
+   `:focus-visible` đi được bằng Tab; ⌘K palette tìm ra lệnh.
+2. **LỆNH TƯƠNG TÁC** — gõ lệnh (L·PL·REC·ROOM...) + gõ-số-SAU-thao-tác (`3x` `/3`) + inference
+   theo `SPEC-VE-INFERENCE`; status bar luôn mách lệnh đang chờ gì.
+3. **UI CẢM ỨNG** — token `--tap 44/--row 44` tự bật qua `(hover:none) and (pointer:coarse)`;
+   CẤM chức năng chỉ-hover/chỉ-chuột-phải (phải có đường chạm: bấm giữ, nút hiện sẵn — SPEC-HOVER §3.7);
+   Sketch mode tablet theo `SPEC-CAD-MODES` §3 (bút · palm rejection · cử chỉ · radial menu) là hạng mục SỐNG,
+   không phải "để sau".
+
 ## §4a · UỶ QUYỀN ĐÊM 03→04/08 (Hoà chốt trước khi ngủ)
 COWORK-TỔNG được **quyết thay Hoà** trong đêm với điều kiện Hoà đặt (nguyên văn): *"trước khi quyết định
 nhớ search kỹ, đọc sổ luật"* — tức mỗi quyết định phải (a) grep/git kiểm hiện trạng, (b) đối chiếu
@@ -140,7 +206,29 @@ lật quyết định Hoà đã đích thân chốt (chỉ được treo + ghi c
 2. Trước khi làm gì: `git log --all --oneline -- <path>` — việc có thể đã xong (bài học 3D-2 giao trùng 03/08).
 3. Chỉ sửa trong mảng §2. Buộc phải chạm mảng khác → DỪNG, ghi vào báo cáo.
 4. Chốt phiên ~85% context: cập nhật `BAO-CAO-<mảng>` + nếu tính năng mới thành hình thì THÊM DÒNG vào §1 sổ này + commit + push.
-5. Cowork trực ca: kiểm §1 (chống rớt) trước, việc mới sau.
+5. Cowork trực ca: kiểm §1 (chống rớt) trước, việc mới sau. Mỗi ca audit CẬP NHẬT `docs/CHECKLIST-TONG.md` (bản đồ sống Spec→Mock→Code→Audit từng hạng mục) — phiên xong việc tự đổi ô mình, TỔNG đối soát bằng git/grep.
 
 ---
 *Cowork lập 03/08/2026 theo lệnh Hoà. File này là hợp đồng giữa các phiên — sửa §2 phải qua Hoà.*
+
+---
+
+## §5 · CHECKLIST AUDIT CỦA TỔNG — A1→A8 (vai: KIẾN TRÚC SƯ TRƯỞNG, Hoà dặn 04/08: "thật khó vào")
+Áp cho MỌI việc báo xong. Thiếu bước nào audit bước đó, verdict không nể nang (§0).
+- **A1 Commit thật** — git log, message khớp việc, diff đúng phạm vi.
+- **A2 Test/tsc** — theo log báo cáo + grep chọn lọc số đáng ngờ (đếm lại, không tin chữ).
+- **A3 Chống rớt cục bộ** — tính năng vùng đó còn sống (grep/lệnh kiểm §1).
+- **A4 Đúng spec bề mặt** — token var(), 2 theme (Tối trước), hover đúng bảng, ngôn ngữ không jargon, §0b đủ 3 bước.
+- **A5 Vùng mảng** — git show --stat không lấn §2.
+- **A6 Verdict** — ✅ĐẠT / ⚠️ĐẠT-ghi-chú / 🔴SỬA → 🔴 = phiếu sửa bơm đầu hàng đợi phiên đó.
+- **A7 Ba mảng §0c** — phím tắt · lệnh tương tác · đường cảm ứng. Thiếu 1 = 🔴.
+- **A-NGƯỢC (mỗi ca ≥1 gói):** đối chiếu NGƯỢC spec→code theo `CHECKLIST-TONG` §6 — grep từng luật con, điền cột Audit. Lời dặn/chủ đề của Hoà = cả GÓI việc nhỏ, cấm nén thành 1 dòng rồi quên ruột.
+- **A8 LOGIC — soi như kiến trúc sư trưởng phản biện (Hoà đặt 04/08):**
+  · Dữ liệu chảy đúng không: matId xuyên chặng còn nguyên? đổi chặng/mode có RỚT dữ liệu? undo được không?
+  · Số có ĐÚNG không: BOQ tự cộng lại 1 ca mẫu bằng tay (diện tích × đơn giá × hao hụt), campath đúng số frame,
+    credit trừ/hoàn atomic?
+  · Edge case: rỗng · 1 phần tử · rất nhiều · tên tiếng Việt có dấu · số 0 · huỷ giữa chừng · mất mạng/API lỗi
+    — app nói gì với người dùng lúc đó (khuôn lỗi SPEC-NGON-NGU)?
+  · State: reload cứng giữ được gì (bài học hydrate/aiTier trong STATUS) · hai tab cùng mở · quyền share đúng vai?
+  · Ngược spec ngữ nghĩa: có vi phạm SEMANTIC-MODEL (thêm lớp nghĩa chưa có nơi tiêu thụ)? có gọi API chéo app (A5.1)?
+  · Câu hỏi bắt buộc tự trả lời trước khi ✅: **"Nếu tôi muốn làm nó SAI, tôi bấm gì?"** — thử đúng cái đó.
