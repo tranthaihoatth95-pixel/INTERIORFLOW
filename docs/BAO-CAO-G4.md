@@ -688,3 +688,152 @@ Ghi chú cho Hoà: 4 commit `L1-L5` an toàn để chạy (đã tsc/lint sạch,
 ## Hàng đợi G4 còn lại (đọc §3 sổ tổng trước khi làm)
 - Mood+Collab G2 trọn gói (khảo sát sẵn ở mục 04/08, đừng làm lại) · Present chooser (H4) ·
   empty state toàn app · Material Editor §3b (UI q7 mock chưa có).
+
+---
+
+# PHIÊN G4 — 05/08/2026 (tiếp) · A2 CommandPanel mồ côi + port màn 3D thống nhất + verify L1-L5
+
+Đọc trước theo đúng lệnh: `SO-KIEM-TONG.md` §0→§0d · `PHIEU-CODE-IF-DOT6-2026-08-03.md` ·
+`SPEC-DUNG-3D-THONG-NHAT.md`. 3 file này **chưa có trong worktree g4** lúc mở phiên (main đã
+thêm 11 commit từ lần merge trước) — commit các fix Present L1-L5 còn treo (tsc/lint/test sạch
+sẵn từ phiên trước) rồi mới `git merge main` để lấy tài liệu, tránh xung đột trên working tree bẩn.
+Merge sạch, không conflict.
+
+## ✅ VIỆC 1 — A2 "592 dòng mồ côi": quyết (b), xoá 2 file
+
+`components/three/CommandPanel.tsx` (415 dòng, 5 tab đủ, khoá `tao/sua/vatlieu/camera/hien`) +
+`ObjectProperties.tsx` (177 dòng) KHÔNG mount ở đâu. App thật chạy
+`components/render-studio/Command3DPanel.tsx` (khoá tiếng Anh lệch, 3/5 tab placeholder).
+
+**Bằng chứng quyết định** (khảo sát cả hai trước khi chọn, đúng §0b):
+- `CommandPanel.tsx` tab Vật liệu dùng `materialsIn()` — `lib/three/materials.ts`, **catalog TĨNH
+  10 item hardcode**.
+- `Command3DPanel.tsx` tab Vật liệu dùng `useMaterials()` — **fetch THẬT** `/api/specs?kind=material`
+  (ATLAS), đã verify browser nhiều lần các phiên trước.
+- `Command3DPanel` + `Render3DModeSkeleton` là hệ THẬT: welcome-card onboarding wired thật
+  (localStorage nhớ lựa chọn) · nút Tường gọi đúng engine `wallSegment()` ghi Doc có undo ·
+  "Xem cả kho" nối `openLibrarySheet` (cơ chế MỘT thư viện, Hoà chốt 04/08).
+- `CommandPanel.tsx` tab Tạo: 6 nút đều gọi `onCommand(cmd)` vào một bộ điều phối lệnh **CHƯA TỒN
+  TẠI** (H1 trong spec: "sổ lệnh có ĐÚNG 0 lệnh 3D") — mount thẳng sẽ là **nút giả** (bấm không
+  làm gì), vi phạm luật "không nút giả" nặng hơn giữ nguyên trạng.
+
+**Quyết định: (b)** — giữ `Command3DPanel.tsx` (đang chạy, tốt hơn thật, không phải chỉ vì "đang
+mount"), migrate khoá tab sang tiếng Việt theo spec M3 (`tao/sua/vatlieu/camera/hien` — grep xác
+nhận không có localStorage lưu tab nên không cần migrate dữ liệu), xoá hẳn 2 file mồ côi (grep xác
+nhận 0 importer thật, chỉ tự-tham-chiếu lẫn nhau qua `type SelectedBox`).
+
+**Sự cố quy trình (khai thật)**: `git commit` không giới hạn pathspec đã vô tình gộp việc xoá 2
+file mồ côi CHUNG với commit storey/specId (`adb8d67`) — do lệnh `git rm -q` xoá file từ TRƯỚC đó
+trong phiên vẫn còn staged, `git commit` không kèm `-- pathspec` sẽ commit TOÀN BỘ index chứ không
+chỉ phần vừa `git add`. Đúng luật `CLAUDE.md` "luôn `git commit -- pathspec` đích danh" — lần này
+sai luật, ghi lại để không lặp. Không ảnh hưởng nội dung (cả hai thay đổi đều đúng, chỉ lẫn message).
+
+**Verify browser thật** (127.0.0.1:3004, cả 2 theme): 5 tab đổi khoá vẫn hiện đúng UI cũ (Tạo có
+nút Tường thật · Sửa/Camera/Hiện giữ hành vi) — bấm "Dựng khối đầu tiên" → `setTab('tao')` chạy
+đúng (trước sửa dùng `'create'`) → bấm nút Tường → khối thật xuất hiện trong Doc, bước ① tự tick.
+Không vỡ hành vi nào sau khi đổi khoá.
+
+## ✅ VIỆC 2 — Port màn 3D thống nhất (mock `mock-3d-thong-nhat.html`)
+
+**⚠️ 4 chỗ nhãn chặng cũ trong mock đã kiểm, KHÔNG port nguyên văn**: grep ra đúng 4 chuỗi
+`"Vẽ"`/`"Dựng ảnh"` — nhưng chỉ **2 chỗ thật sự là nhãn chặng cũ** (segment control đầu trang,
+dòng 82-83 mock: "Vẽ"/"Dựng ảnh" = tên 2 chặng đầu kiểu cũ, phải thành "2D Kỹ thuật"/"3D Thiết
+kế"). **2 chỗ còn lại** (dòng 244+246, nút nổi "Dựng ảnh AI") **KHÔNG phải nhãn chặng** — đó là
+tên HÀNH ĐỘNG của nút, và chính `SPEC-DUNG-3D-THONG-NHAT` §7.1 xác nhận tên đúng là **"Dựng ảnh"**
+(bỏ "AI" — spec dùng chữ này làm chuẩn). Code port của tôi không copy chuỗi nào từ mock — viết
+tên mới đúng theo spec (`2D Kỹ thuật`/`3D Thiết kế` đã có sẵn trong header app; nút "Dựng ảnh" viết
+mới) nên không dính lỗi cũ. Không sửa file `.html` gốc — mock là tài liệu tham chiếu lịch sử, chỉ
+đọc không port nguyên văn (đúng luật port: "port nguyên văn TOKEN, không port nguyên văn NHÃN cũ").
+
+### D1 (tiên quyết) — `docToObjScene()` đọc `storey`/`specId` thật
+
+H7 trong spec ghi đúng: "3D vẫn KHÔNG đọc `storey`" — grep trước khi sửa = đúng 1 comment, 0 dòng
+code. Thêm `storey?`/`specId?` vào `SceneGroup`, đọc NGUYÊN VĂN từ entity gốc (`h.storey`/`b.storey`,
+`h.specId`/`b.specId`) cho 3 loại group sinh từ MỘT entity thật (tường/nội thất/cửa sổ). Sàn/Phòng/
+Trần là hình học TỔNG HỢP (bbox/dò biên gộp nhiều entity) — KHÔNG suy đoán, để trống có chủ đích.
+
+**Suýt phá vỡ engine, đã bắt kịp trước khi lên browser**: định gán thêm `entityId` cho group Nội
+thất (để chọn được trong 3D, đồng bộ với tường) — nhưng đọc kỹ `Scene3DViewer.tsx:201` thì MỌI
+group có `entityId` bị loại khỏi đường dựng hình TĨNH khi `mode='massing'` (coi là đang chỉnh),
+rồi `buildMassingWalls()` lại đòi `heightMm` mới đưa vào đường TƯƠNG TÁC — nội thất không có
+`heightMm` ⇒ rơi vào khe hở giữa hai đường, **biến mất khỏi cảnh hoàn toàn**. Revert ngay, ghi
+cảnh báo thành comment tại chỗ trong `cad-to-obj.ts` để phiên sau không lặp lại.
+
+**Test mới** (`cad-to-obj.test.ts`, 5 case): không gán storey → mọi group `undefined` (không bịa)
+· tường/nội thất mang đúng storey entity gốc · Floor không suy đoán · tường khác không "lây"
+storey. 51/51 pass (46 cũ + 5 mới). `npm test` toàn repo sau đó: **115/115 file pass, 0 fail**.
+
+### Cây đối tượng theo TẦNG + panel thuộc tính + nút "Dựng ảnh" (tab "Hiện" của `Command3DPanel`)
+
+- **Cây**: gom `scene.groups` theo `storey` thật, bucket "Chưa xếp tầng" luôn ở CUỐI kèm nút
+  **"Gán tầng trệt cho N khối"** — số N tự tính từ chính bucket (`rows.length`), không truyền
+  count riêng để tránh lệch số giữa nhãn và nút. Bấm nút ghi THẬT vào `doc.entities` (không qua
+  group/entityId — nội thất/cửa sổ chưa có entityId trong group nên đây là đường DUY NHẤT chạm
+  đúng entity), `docToObjScene` phản xạ lại tự động (luật một nguồn).
+- **Ẩn/hiện THẬT**: `Render3DModeSkeleton` lọc `scene.groups` theo tập tên đang ẩn TRƯỚC khi đưa
+  vào `Viewport3D` — không phải cờ trang trí trên hàng cây.
+- **Chọn = xem thuộc tính**, khác chọn-để-gán-vật-liệu (tab Vật liệu). CHỈ group có `entityId`
+  (hôm nay = tường) đẩy tiếp thành `Viewport3D.selectedId` → gizmo THẬT (tái dùng hạ tầng có sẵn,
+  không bịa mới). Group khác (nội thất/cửa sổ/sàn/phòng) vẫn xem được thuộc tính, panel tự nói rõ
+  "Chưa chọn được trong khung nhìn 3D — chỉ xem thuộc tính" — trung thực, không giả vờ có tương
+  tác chưa xây.
+- **Panel thuộc tính**: Cao (thật, `group.heightMm`) · Tầng (thật, `group.storey`) · quả cầu vật
+  liệu tra `specId` qua `useMaterials()` (ATLAS thật, nâng lên top-level dùng chung với tab Vật
+  liệu — tránh fetch 2 lần cùng API).
+- **Nút "Dựng ảnh"** (đúng CHỮ spec §7.1, không phải "Dựng ảnh AI" của mock cũ): làm ĐÚNG phần
+  spec đã xác nhận có thật — gạt mode qua `useStageMode('render')` (không đổi chặng, không mất
+  ngữ cảnh). Chuỗi 3 node dựng-sẵn-dây-nối (§7.2 đầy đủ) **KHÔNG làm** — chính spec tự ghi "⚠️
+  CHƯA VERIFY: chưa có hàm dựng-sẵn-node-graph từ ngoài" — không bịa phần chưa xác nhận.
+
+**Verify browser thật** (127.0.0.1:3004, cả 2 theme, dự án mẫu có 1 tường test từ phiên trước):
+- Tab Hiện hiện bucket "CHƯA XẾP TẦNG (2)": Sàn + Tường 1.
+- Bấm "Gán tầng trệt cho 2 khối" → Tường 1 chuyển bucket "GF" THẬT (Doc ghi thật, phản xạ tự động)
+  · Sàn ở lại "Chưa xếp tầng" ĐÚNG LÝ (hình học tổng hợp, không có entity nguồn — không phải bug).
+- Chọn "Tường 1" → panel hiện Cao **2.700 mm** thật · Tầng **GF** thật · "Chưa gán vật liệu"
+  (đúng, chưa ai gán specId) · **gizmo 3 trục THẬT hiện trong khung nhìn** (ảnh chụp xác nhận).
+- Bấm "Ẩn" → tường **biến mất khỏi khung nhìn thật** (chỉ còn mép sàn) · bấm lại → hiện lại đúng.
+- Bấm "Dựng ảnh" → **gạt sang mode node thật** (canvas đổi sang node graph, "Vẽ 3D" switch tắt).
+- Dark theme: toàn bộ cây/panel/nút đọc rõ, không vỡ layout.
+
+tsc 0 lỗi (từ đầu, không phải sửa-rồi-mới-sạch) · lint sạch mọi file sửa.
+
+## ✅ VIỆC 3 — Verify browser 5 lỗi UI Trình bày (L1-L5, code đã commit phiên trước)
+
+`git log --all -- components/present-editor/` xác nhận: L1-L5 đã code + commit phiên trước
+(`174c1b7`…`06a502d`) nhưng ghi rõ "CHƯA verify browser". Phiên này verify đủ cả 5, cả 2 theme:
+
+- **L1**: tab đầu đọc **"Hồ sơ 1"** (không phải "Trang 1") · góc phải đọc **"8 slide"** (không
+  phải "1/5") — đúng đơn vị người dùng đang nhìn.
+- **L2**: slide 4 "Triết lý thiết kế" — đo `getBoundingClientRect` 14 khối bullet trong DOM,
+  **0px chồng lấn** (đạt tiêu chí phiếu "<2px"), 4 nội dung cột khác nhau (không còn lặp chuỗi
+  cứng "Không gian chuẩn mực/Ít mà đúng" ×4).
+- **L3**: thumbnail slide 3 "Không gian sống kể…" — đọc computed style xác nhận `text-shadow`
+  2 lớp bóng tối ĐÃ đắp lên chữ trắng dù slide chưa từng mở tới (đúng cơ chế mới: bật sớm khi đè
+  ảnh mà màu chưa ai chốt).
+- **L4**: bấm nút "Sắp xếp" → popover 14 nút mở đúng vị trí dưới nút, không cắt mép màn hình ·
+  Esc đóng đúng (qua `useDismissable`).
+- **L5**: đọc computed style aside Inspector — `scrollbar-gutter: stable` · `padding-bottom: 28px`
+  · `background-attachment: local, local, scroll, scroll` (đúng 4 lớp bóng-cuộn đã code) — panel
+  vẫn cuộn được (`scrollHeight > clientHeight`), chỉ thêm dấu hiệu còn nội dung, không giả vờ nội
+  dung dài vừa khung.
+
+## Commit phiên này (đã push local trên `nhanh-g4`, chưa merge main)
+
+| Commit | Nội dung |
+|---|---|
+| `adb8d67` | storey+specId vào SceneGroup (D1) **+ xoá 2 file mồ côi** (lẫn message, xem "sự cố quy trình" trên) |
+| `4518bd6` | khoá tab tiếng Việt + cây đối tượng theo tầng + panel thuộc tính + nút Dựng ảnh |
+
+## ⬜ CHƯA LÀM / còn treo (khai thật)
+- Chọn nội thất/cửa sổ trong khung nhìn 3D — cần mở rộng CẢ `Scene3DViewer.tsx` (đường tĩnh) LẪN
+  `buildMassingWalls()` (đường tương tác) cho đúng, không phải chỉ thêm entityId (đã ghi cảnh báo
+  tại chỗ trong code). Việc riêng, không nhỏ.
+- Chuỗi 3 node dựng-sẵn-dây-nối khi bấm "Dựng ảnh" (§7.2 đầy đủ) — chặn ở việc xác minh
+  `addNodes`-với-dây-nối-sẵn có tồn tại không (spec tự ghi CHƯA VERIFY).
+- Bậc PHÒNG trong cây (chỉ có TẦNG › VẬT, 2 bậc — đúng spec §5.2 "chạy 2 bậc trước", chờ
+  `RoomEntity` — câu treo §11.2 spec, chưa Hoà chốt).
+- Nhãn hàng trong cây dùng số thứ tự (Tường 1/2…) chứ không phải tên phòng thật (Tường Bắc/Tây
+  như mock) — vì `RoomEntity`/hướng tường chưa có trong Doc, KHÔNG bịa hướng.
+- Dự án mẫu còn 1 tường test (từ VIỆC 1 phiên trước, nay có thêm storey='GF') — không xoá được do
+  hành động Delete/BackSpace bị lớp an toàn chặn (đúng luật, không tìm đường vòng) — vô hại, chỉ
+  là metadata, đã khai báo minh bạch qua nhiều phiên.

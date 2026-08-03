@@ -49,7 +49,8 @@
 | 5 lỗi UI Render (toolbar nổi·zoom 15%·banner·empty·minimap) | — | — | 🔨 G4 1a | ⬜ | BAO-CAO-DEM 23:1x |
 | Navigator Render = NodeLibraryPanel nguyên bản | — | — | ✅ `739960c` đảo + `efa434c` dọn địa tầng (1 cột · Trên bảng · zoom 100% · hết banner) | ✅ **Hoà nghiệm thu MẮT 04/08** + vật chứng grep | gốc zoom 15% = node rác, đã ghi |
 | Cổng nối có kiểu + Turn-into | 🔵 SPEC-DUNG-NODE-PORT 18KB | — | ⬜ | ⬜ | DỰNG phiên đầu 03/08 |
-| Mode Vẽ 3D (CommandPanel·Viewport·ObjProps) | ✅ | ✅ | 🔵 merge rồi | ⬜ | mở màn+card ĐÃ merge main `fbd9cc1` — chờ mắt Hoà |
+| Mode Vẽ 3D (CommandPanel·Viewport·ObjProps) | ✅ | ✅ | ✅ **A2 quyết 05/08** (`adb8d67`·`4518bd6` nhanh-g4): `CommandPanel.tsx`+`ObjectProperties.tsx` (592 dòng mồ côi, KHÔNG mount) ĐÃ XOÁ — `Command3DPanel.tsx` (data ATLAS thật) thay thế, khoá tab đổi `tao/sua/vatlieu/camera/hien` theo spec M3 | ✅ verify browser 2 theme, wiring dựng-tường vẫn sống sau đổi khoá | lý do chọn: `useMaterials()` thật vs `materialsIn()` tĩnh 10 item — xem BAO-CAO-G4 |
+| Cây đối tượng theo TẦNG + panel thuộc tính + nút "Dựng ảnh" (tab Hiện) | ✅ SPEC-DUNG-3D-THONG-NHAT §5+§6+§7 | 🔵 mock-3d-thong-nhat | ✅ `adb8d67`·`4518bd6` nhanh-g4 — `docToObjScene` đọc storey/specId thật (D1) · cây gom bucket + gán hàng loạt ghi Doc thật · ẩn/hiện lọc thật · chọn tường → gizmo thật (tái dùng selectedId có sẵn) · nút Dựng ảnh gạt mode thật | ✅ verify browser 2 theme (05/08): bucket chuyển GF thật, gizmo hiện thật, ẩn/hiện thật, đổi mode thật | nội thất/cửa sổ CHƯA chọn được (thiếu entityId trong group — cố ý, xem cảnh báo cad-to-obj.ts) |
 | Mở màn Vẽ 3D (sân khấu luôn hiện + 3 bước + nút dựng tại chỗ) | — | — | 🔵 G4 tối 04/08 | ⚠️ verify DOM của G4; chờ mắt Hoà | |
 | Card chào "Bắt đầu dựng không gian" tắt được (✕/Esc/nhớ) | — | — | 🔵 (grep welcome_hidden+Escape wt) | ⬜ | bug Hoà báo, G4 sửa |
 | Toolbar bút neo mép CANVAS (đang đè panel) + minimap ẩn khi trống | — | — | ⬜ G4 | ⬜ | ảnh Hoà 04/08 |
@@ -66,6 +67,7 @@
 | Hạng mục | Spec | Mock | Code | Audit | Ghi chú |
 |---|---|---|---|---|---|
 | Màn chọn 5 loại hồ sơ (H4, gộp #3 AI) | ✅ phiếu TRÌNH | — BỎ mock (file không tồn tại, UI báo 04/08) → code thẳng PHIEU-PRESENT-G4 | ⬜ G4 q4 | ⬜ | |
+| 5 lỗi UI Trình bày (L1 đơn vị Hồ sơ/slide · L2 bullet lặp+tràn · L3 tương phản thumbnail · L4 toolbar popover · L5 Inspector cuộn) | ✅ PHIEU-TRINH-LOI-UI-2026-08-03 | — | ✅ `174c1b7`·`e5421f3`·`0f60cc9`·`6a05a8b`·`06a502d` nhanh-g4 | ✅ verify browser 05/08, cả 2 theme — L2 đo rect 0px chồng, L5 đo computed style bóng-cuộn | |
 | Deck editor (E-sprint P1-P5 + P6a) | ✅ | ✅ | ✅ | — | 7 mục sống → PHIEU-PRESENT-G4 |
 | 7 mục sống Present (photo-editor 4 tầng...) | ✅ PHIEU-PRESENT-G4 | — | ⬜ G4 sau | ⬜ | |
 | Bảng vật liệu A3 | ✅ SPEC-TRINH-MATERIAL-A3 (git b2f4400) | — | ⬜ | ⬜ | |
