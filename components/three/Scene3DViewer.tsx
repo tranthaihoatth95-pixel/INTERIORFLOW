@@ -34,6 +34,7 @@
  * tải ngay khi mở app (xem cách `PresentEditor` đã lày làm với `PresentSheets.tsx`).
  */
 import { useEffect, useRef } from 'react';
+import type { MutableRefObject } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
@@ -44,6 +45,18 @@ import { sectionPlane, type SectionSpec } from '@/lib/three/section';
 import type { CamPathResult } from '@/lib/cad/campath';
 
 export type Scene3DMode = 'orbit' | 'walk' | 'campath' | 'section' | 'massing';
+
+/** PHIẾU ĐỢT 7 NHÓM B — cầu nối camera SỐNG cho ViewCube3D (`ViewCube3D.tsx`) đọc mỗi khung hình
+ * (copy quaternion để cube xoay đồng bộ) và ghi trực tiếp (orbit khi kéo cube, bay tới khi bấm
+ * mặt/cạnh/góc). Component này KHÔNG biết gì về ViewCube — chỉ xuất object sống qua ref khi
+ * camera/controls dựng xong, xoá khi unmount. `OrbitControls.update()` mỗi khung (đã có sẵn trong
+ * tick() dưới) tự đọc lại `camera.position`/`controls.target` hiện tại, nên ViewCube3D được phép
+ * ghi thẳng vào `camera.position` giữa 2 lần update — cách an toàn chuẩn của OrbitControls khi
+ * điều khiển camera từ bên ngoài. */
+export interface Scene3DCameraApi {
+  camera: THREE.PerspectiveCamera;
+  controls: OrbitControls;
+}
 
 export interface Scene3DViewerProps {
   scene: Scene3DData;
@@ -65,12 +78,15 @@ export interface Scene3DViewerProps {
    * dính lưới vào khung hình. */
   ground?: boolean;
   className?: string;
+  /** PHIẾU ĐỢT 7 NHÓM B — nơi ghi `{camera,controls}` sống cho ViewCube3D, xem comment
+   * `Scene3DCameraApi` trên. Optional — nơi gọi không cần ViewCube (vd chụp ảnh) khỏi phải truyền. */
+  cameraApiRef?: MutableRefObject<Scene3DCameraApi | null>;
 }
 
 const IMPLEMENTED_MODES: Scene3DMode[] = ['orbit', 'campath', 'section', 'walk', 'massing'];
 const WALK_SPEED_M_PER_SEC = 1.5; // ~tốc độ đi bộ chậm, cùng cảm giác tempo với campath 1200mm/s
 
-export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame, onPushPull, ground = false, className }: Scene3DViewerProps) {
+export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame, onPushPull, ground = false, className, cameraApiRef }: Scene3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const campathActive = mode === 'campath' && !!camPath?.samples.length;
   const sectionActive = mode === 'section' && !!sectionMm;
@@ -154,6 +170,8 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     controls.enableDamping = true;
     controls.enabled = !walkActive && !campathActive; // walk/campath tự lái camera, orbit nhường
     controls.update();
+
+    if (cameraApiRef) cameraApiRef.current = { camera, controls };
 
     // Mode walk (3D-4) — PointerLockControls chuẩn three (KHÔNG tự viết vector nhìn/di chuyển).
     // Cần cú click (kích hoạt Pointer Lock API) — hint phủ toàn khung, ẩn khi đã lock.
@@ -323,6 +341,7 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     raf = requestAnimationFrame(tick);
 
     return () => {
+      if (cameraApiRef) cameraApiRef.current = null;
       cancelAnimationFrame(raf);
       ro.disconnect();
       controls.dispose();

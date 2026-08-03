@@ -126,8 +126,9 @@ export const VE3D_CSS = `
 /* ══════ VIEWPORT 3D (ổ ③ canvas) ══════ */
 .if-ve3d.vp3d{position:relative;width:100%;height:100%;overflow:hidden;background:var(--bg)}
 .if-ve3d .vpscene{position:absolute;inset:0}
-.if-ve3d .viewcube{position:absolute;right:18px;top:16px;width:60px;height:60px;z-index:4}
-.if-ve3d .viewcube button{position:absolute;border:0;background:none;padding:0;cursor:pointer}
+/* PHIẾU ĐỢT 7 NHÓM B — 96×96 (spec), khung ViewCube3D thật (renderer riêng, xem ViewCube3D.tsx);
+   không còn <button> con — cube tự vẽ nhãn bằng texture, tự bắt pointer trên canvas của nó. */
+.if-ve3d .viewcube{position:absolute;right:12px;top:12px;width:96px;height:96px;z-index:4}
 .if-ve3d .axisg{position:absolute;left:22px;bottom:22px;width:90px;height:90px;z-index:4;pointer-events:none}
 /* ⚠️ Overlay trong viewport KHÔNG dùng màu theo theme.
    Scene3DViewer.tsx:105 đặt nền cảnh CỨNG #2a2d33 — luôn TỐI ở cả 2 theme (code 3D-1..3D-5
@@ -142,12 +143,6 @@ export const VE3D_CSS = `
 .if-ve3d .vpnote{position:absolute;left:14px;bottom:14px;z-index:4;font-size:10.5px;
   border-radius:var(--radius-sm);padding:5px 9px;max-width:250px;line-height:1.45}
 .if-ve3d .vpnote b{color:#fff}
-/* nút hướng nhìn trong viewport — cùng kính tối, không dùng .row (theo theme) */
-.if-ve3d .vbtn{height:22px;padding:0 9px;border-radius:var(--radius-sm);font-size:10px;
-  font-weight:var(--fw-semi);cursor:pointer;transition:background-color .12s var(--ease-apple)}
-.if-ve3d .vbtn:hover{background:rgba(255,255,255,.16)}
-.if-ve3d .vbtn:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
-
 /* ══════ OBJECT PROPERTIES (ổ ④ inspector) ══════ */
 .if-ve3d.objp{width:100%;height:100%;overflow-y:auto;background:var(--panel);padding:12px;
   display:flex;flex-direction:column;gap:12px}

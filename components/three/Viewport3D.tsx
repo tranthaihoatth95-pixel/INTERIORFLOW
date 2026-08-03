@@ -1,27 +1,24 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useState } from 'react';
+import { useRef } from 'react';
 import type { Scene3DData } from '@/lib/three/cad-to-obj';
-import type { Scene3DMode } from './Scene3DViewer';
+import type { Scene3DMode, Scene3DCameraApi } from './Scene3DViewer';
 import { RawStyle } from './RawStyle';
 import { VE3D_CSS } from './ve3d-css';
 
 /**
- * `Scene3DViewer` kéo theo `three` (~170KB gzip) ⇒ BẮT BUỘC nạp động, `ssr:false`
- * (ghi rõ trong chính đầu file đó). Không import tĩnh, không thì mở app là tải three ngay.
+ * `Scene3DViewer`/`ViewCube3D` kéo theo `three` (~170KB gzip) ⇒ BẮT BUỘC nạp động, `ssr:false`
+ * (ghi rõ trong chính đầu 2 file đó). Không import tĩnh, không thì mở app là tải three ngay —
+ * kể cả kiểu `Scene3DCameraApi` cũng chỉ `import type` (xoá lúc build, không kéo runtime).
  */
 const Scene3DViewer = dynamic(() => import('./Scene3DViewer'), {
   ssr: false,
   loading: () => <div className="vpscene" aria-hidden />,
 });
+const ViewCube3D = dynamic(() => import('./ViewCube3D'), { ssr: false });
 
-/** Hướng nhìn ViewCube — 5 mặt theo brief. */
-export type ViewDir = 'tren' | 'duoi' | 'trai' | 'phai' | 'truoc';
-
-const VIEW_LABEL: Record<ViewDir, string> = {
-  tren: 'TRÊN', duoi: 'DƯỚI', trai: 'TRÁI', phai: 'PHẢI', truoc: 'TRƯỚC',
-};
+export type { ViewDir } from './ViewCube3D';
 
 export interface Viewport3DProps {
   scene: Scene3DData;
@@ -73,51 +70,31 @@ export function Viewport3D({
   ground = false,
   children,
 }: Viewport3DProps) {
-  const [view, setView] = useState<ViewDir>('tren');
-
-  const pickView = (d: ViewDir) => {
-    setView(d);
-    onViewChange?.(d);
-  };
+  // PHIẾU ĐỢT 7 NHÓM B — cầu nối camera SỐNG cho ViewCube3D, xem comment `Scene3DCameraApi`
+  // (`Scene3DViewer.tsx`). Viewport3D chỉ CHUYỂN TIẾP ref, không tự đọc/ghi vào đây.
+  const cameraApiRef = useRef<Scene3DCameraApi | null>(null);
 
   return (
     <div className="if-ve3d vp3d">
       <RawStyle css={VE3D_CSS} />
 
-      <Scene3DViewer scene={scene} mode={mode} onPushPull={onPushPull} ground={ground} className="vpscene" />
+      <Scene3DViewer
+        scene={scene}
+        mode={mode}
+        onPushPull={onPushPull}
+        ground={ground}
+        className="vpscene"
+        cameraApiRef={cameraApiRef}
+      />
 
       <div className="vplabel vpover">{label}</div>
 
       {children}
 
-      {/* ── ViewCube (góc trên phải) — 3 mặt hình thoi + 5 hướng bấm được ── */}
-      <svg className="viewcube" viewBox="0 0 60 60" role="group" aria-label="Hướng nhìn">
-        <polygon points="30,6 54,20 30,34 6,20" fill="var(--accent-soft)" stroke="var(--accent)" strokeOpacity=".35" />
-        <polygon points="6,20 30,34 30,56 6,42" fill="var(--accent-soft)" fillOpacity=".7" stroke="var(--accent)" strokeOpacity=".35" />
-        <polygon points="54,20 30,34 30,56 54,42" fill="var(--accent-soft)" fillOpacity=".45" stroke="var(--accent)" strokeOpacity=".35" />
-        <text x="30" y="23" fontSize="7.5" fill="var(--accent)" textAnchor="middle" fontWeight="700">
-          {VIEW_LABEL[view]}
-        </text>
-        {/* vùng bấm: mặt trên = TRÊN, mặt trái = TRÁI, mặt phải = PHẢI */}
-        <polygon points="30,6 54,20 30,34 6,20" fill="transparent" style={{ cursor: 'pointer' }} role="button" aria-label="Nhìn từ trên" onClick={() => pickView('tren')} />
-        <polygon points="6,20 30,34 30,56 6,42" fill="transparent" style={{ cursor: 'pointer' }} role="button" aria-label="Nhìn từ trái" onClick={() => pickView('trai')} />
-        <polygon points="54,20 30,34 30,56 54,42" fill="transparent" style={{ cursor: 'pointer' }} role="button" aria-label="Nhìn từ phải" onClick={() => pickView('phai')} />
-      </svg>
-
-      {/* 2 hướng còn lại không có mặt riêng trên khối lập phương chiếu 3 mặt ⇒ để nút chữ,
-          không giấu sau hover (SPEC-HOVER §3.7: cấm giấu chức năng sau hover). */}
-      <div style={{ position: 'absolute', right: 18, top: 82, zIndex: 4, display: 'flex', gap: 4 }}>
-        {(['truoc', 'duoi'] as ViewDir[]).map((d) => (
-          <button
-            key={d}
-            type="button"
-            onClick={() => pickView(d)}
-            className="vbtn vpover"
-          >
-            {VIEW_LABEL[d]}
-          </button>
-        ))}
-      </div>
+      {/* ── ViewCube 3D THẬT (góc trên phải) — xoay theo camera, 26 vùng bấm/kéo. Thay bản SVG
+          2D tĩnh cũ (3 hình thoi toạ độ chết + 2 nút chữ TRƯỚC/DƯỚI rời) — cube nay phủ đủ cả
+          6 mặt · 12 cạnh · 8 góc, không cần 2 nút chữ đứng ngoài nữa. ── */}
+      <ViewCube3D className="viewcube" cameraApiRef={cameraApiRef} onPick={onViewChange} />
 
       {/* ── Trục toạ độ (góc dưới trái) — X đỏ · Y xanh lá · Z xanh dương, đúng mock ── */}
       <svg className="axisg" viewBox="0 0 90 90" aria-label="Trục toạ độ X Y Z">
