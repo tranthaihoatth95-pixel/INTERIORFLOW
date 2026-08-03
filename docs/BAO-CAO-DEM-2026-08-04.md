@@ -207,3 +207,71 @@ NC 3 bài (firstrun · presence · conflict-simultaneous-edit) · UI 2 mock (BOQ
 1. **PHU verify tay bug sơn-thành-tường** (5 phút: tô sơn lên 1 mảng tường → sang 3D xem có khối lạ cao 2.7m) rồi vá theo §2.3 (bỏ 2 nhánh `solid===true` và `!pattern`).
 2. **G4 gán `entityId` cho MỌI nhóm** (sàn·phòng·nội thất·cửa sổ), không riêng tường — nay đã có nơi tiêu thụ (§8), hết lý do để trống.
 3. NC-11 gấp hơn tưởng: `'covering'` chờ nó mới chốt được.
+
+## [04:3x] TỔNG — TỰ CHẠY 5 VAI COWORK BẰNG AGENT PHỤ (Hoà: "BẠN GIAO ĐI NHÉ")
+**Cơ chế mới:** TỔNG spawn agent phụ ngay trong phiên, agent đọc repo qua device bridge, viết spec, KHÔNG chạy git (tránh vỡ lock). Hoà không phải dán gì. Đã chạy 5/5 vai. **Ghi thành luật vận hành: vai Cowork = agent phụ của TỔNG; CHINH/PHU/G4 vẫn là phiên Claude Code trên máy Hoà (TỔNG không mở được).**
+
+### 🔴 BỐN PHÁT HIỆN HẠ TẦNG — nặng hơn mọi việc đang làm
+| # | Phát hiện | Vật chứng | Hệ quả |
+|---|---|---|---|
+| A | **Trụ 4 CHỈ CÓ TRÊN GIẤY** — `defineMode()` có **0 nơi gọi**, `getMode(` grep = 0; đang có HAI bản khai mode lệch nhau (3 trường ReactNode vs 6 trường string) | DỰNG grep `mode-registry.ts` | Cơ chế mode xuyên app chưa tồn tại thật |
+| B | **592 dòng code tốt không ai dùng** — `components/three/CommandPanel.tsx` (5 tab đủ) + `ObjectProperties.tsx` KHÔNG mount ở đâu; app chạy `render-studio/Command3DPanel.tsx` với 3/5 tab placeholder, khoá tab lệch (`tao` vs `create`) | DỰNG | Đúng bệnh §1 sổ chống rớt — làm rồi mà rớt |
+| C | **Sổ lệnh có ĐÚNG 0 lệnh 3D** (55 CommandDef đều `stage==cad`) và **`findByAlias()` không lọc `when`** | DỰNG grep `registry.ts` | Thêm alias 3D trùng chữ CAD (M/W/S/C/T) sẽ **che lệnh CAD im lặng** — phải vá TRƯỚC khi thêm lệnh |
+| D | **`xlsx.ts:93` ghi dòng TỔNG bằng SỐ CHẾT**, grep `SUM\|<f>\|formula` = 0 — spec ghi "đã có SUM(), chờ PHU kiểm" là SAI | TRÌNH | Hết chờ PHU, thành việc code B8 |
+
+### Sản phẩm 5 vai (đợt 5)
+| Vai | File | Điểm chính |
+|---|---|---|
+| **NC** | `nc/NC-11-ifc-nghi-dinh-bim-2026-08-03.md` 279d | 🔴 **NĐ 175/2024 HẾT HIỆU LỰC 01/7/2026** → `NĐ 217/2026` Điều 8.3.a: IFC nêu đích danh, **bỏ điều kiện nhóm B**, ngưỡng = công trình **cấp II trở lên không phân biệt vốn công/tư**. Thư viện thắng **web-ifc MPL-2.0, wasm 1,3MB** (loại xeokit AGPL). `'covering'` **CÓ**, kèm `coveringKind`. Bắt lỗi `model.ts:101` ghi `IfcFurnishingElement` — buildingSMART đã deprecated, đúng là `IfcFurniture` |
+| **DỰNG** | `SPEC-DUNG-3D-THONG-NHAT.md` 581d | 10 công cụ (V·P·M·Q·S·W·R·B·T·C) + 27 lệnh = **37 CommandDef mới**. Phím `B` va với B=thu Navigator → câu hỏi §11.1 cho Hoà |
+| **UI** | `SPEC-NGON-NGU-CHI-DAN` §6 + `mocks/README-mocks.md` | Khoá bộ tên (bảng từ cấm↔từ thay 15 dòng). **19/27 mock dính nhãn cũ, 72 dòng phải đổi**. Nặng nhất `mock-designsystem-stagemap` 10d. ⚠️ `mock-cad-revit` cả mock dựng quanh mode "Cấu kiện" nay đã chết — đổi chữ không cứu, cần Hoà quyết |
+| **TRÌNH** | `PHIEU-TRINH-BOQ-EDITOR.md` 173d + `SPEC-TRINH-ONG-KINH-DU-LIEU.md` | **11 việc B0-B11**, 10/11 code được ngay. Video **KHÔNG nâng phiếu** (PHU chưa thẩm định, khai thật). Ranh giới ảnh-vs-dữ-liệu: *"Ảnh là SẢN PHẨM, không bao giờ là NGUỒN"* — phép thử **"số này in ra khách chỉ tay vào cãi được không?"** |
+| **VẼ** | (đợt trước) | cách vá bug sơn rẻ hơn: hatch có `specId` ⇒ không phải tường |
+
+### Việc TỔNG phải quyết/chuyển tiếp
+1. 🔴 Vá `findByAlias()` lọc `when` TRƯỚC khi ai thêm lệnh 3D — chuyển PHU.
+2. 🔴 Quyết số phận `components/three/CommandPanel.tsx` + `ObjectProperties.tsx` (592 dòng mồ côi): mount thay `Command3DPanel` hay xoá — chuyển CHINH khảo sát.
+3. `defineMode()` chưa ai gọi — Trụ 4 phải có việc code thật, không thì spec mode vô nghĩa.
+4. Phím `B` va (thùng sơn 3D ↔ thu Navigator) — Hoà quyết.
+5. `mock-cad-revit` chết theo mode "Cấu kiện" — Hoà quyết dựng lại hay bỏ.
+
+## [05:1x] TỔNG — AUDIT A4 MOCK CLAUDE DESIGN + đổi tên file
+Hoà export 2 file từ Claude Design (`Không gian 3D.dc.html`, `Frame3D.dc.html`) → TỔNG đổi tên chuẩn: `mocks/mock-3d-thong-nhat.html` (72.7KB) · `mocks/mock-3d-frame.html` (60.7KB).
+| Tiêu chí A4 | mock-3d-thong-nhat | mock-3d-frame |
+|---|---|---|
+| Hex TTT cấm (#F06020/#002850/#1B1512/#F1ECE3) | ✅ **0** | ✅ **0** |
+| Dùng `var(--…)` | ✅ 227 chỗ | ✅ 244 chỗ |
+| 2 theme (`data-theme`) | ✅ 2 | ⚠️ **0 — chỉ 1 theme** |
+| PLACEHOLDER dán nhãn | ✅ 12 | ⚠️ 3 |
+| **Nhãn chặng CŨ** ("Dựng ảnh"/"Vẽ") | 🔴 **4 chỗ** | 🔴 **4 chỗ** |
+→ **Kết luận: ĐẠT phần token/màu (điểm mạnh nhất — 0 hex tự chế, dùng biến gần như trọn), TRƯỢT phần nhãn.** Cả 2 file còn nhãn chặng cũ; `mock-3d-frame` thiếu theme thứ hai. Phải sửa trước khi cho code port (luật L2 port-nguyên-văn sẽ nuốt luôn nhãn sai — đúng tiền lệ "12 gradient placeholder").
+**Vào sổ mocks:** cần thêm 2 dòng vào `mocks/README-mocks.md` khi các vai rảnh.
+
+## [05:5x] TỔNG — AUDIT A4 TRỌN BỘ 3 MÀN CLAUDE DESIGN
+Đổi tên chuẩn: `mock-2d-ky-thuat.html` (78.5KB) · `mock-3d-thong-nhat.html` (72.7KB) · `mock-trinh-bay.html` (67.8KB).
+| Tiêu chí | 2D | 3D | Trình bày |
+|---|---|---|---|
+| Hex TTT cấm | ✅ 0 | ✅ 0 | ✅ 0 |
+| Dùng `var(--)` | ✅ 346 | ✅ 227 | ✅ 313 |
+| Đủ 2 theme | ✅ | ✅ | ✅ |
+| PLACEHOLDER dán nhãn | ✅ 8 | ✅ 12 | ✅ 9 |
+| Nhãn chặng CŨ | ✅ 0 | 🔴 **4** | ✅ 0 |
+| Khung 6 ổ (42/214/236/26) | ✅ đủ 4 số | ✅ đủ 4 số | ✅ đủ 4 số |
+**Kết luận: 2D và Trình bày ĐẠT TRỌN. 3D còn 4 chỗ nhãn cũ (file export trước lúc chốt tên) — sửa 4 chuỗi là đạt.**
+**Chất lượng nghiệp vụ (TỔNG kiểm tay, không tin mắt):**
+- BOQ editor: cộng tay 8 dòng = `175 605 950` **khớp tổng in trên mock**; dòng 03 `48.60 × 145 000 = 7 047 000` **khớp**. Mock có số học đúng — hiếm.
+- Dựng đúng cơ chế live-link của `SPEC-TRINH-BOQ-EDITOR`: ô sửa tay viền tím + chấm cam → panel phải "Số này không còn theo mô hình. Mô hình cho 44.20" + nút "Lấy lại số từ mô hình" + **"LẤY TỪ: 9 tường ngăn, tầng trệt →"** (đường lần ngược = qua phép thử *"khách chỉ tay vào cãi được không"*). Sidebar đếm `Lấy từ mô hình 22 / Đã sửa tay 3`.
+- Có sẵn đơn vị **mét dài** — đúng lỗ hổng COWORK-VẼ chỉ ra (BOQ chưa tính phào chỉ/nẹp chân tường).
+- Màn 2D: panel phải có **LỚP HOÀN THIỆN mặt A / mặt B** (tường 2 mặt 2 vật liệu) = đúng BIM nội thất; nút **"Chọn hết cùng loại — 9 tường ngăn dày 160"** = đúng chọn-theo-ngữ-nghĩa; thanh dưới có **"Bắt điểm: Đầu mút, Giữa cạnh"**.
+- Lỗi đã báo Hoà và Design đã sửa: dòng "Đơn vị mi-li-mét · 6.32 m²" mâu thuẫn nhãn/giá trị.
+**→ Bộ 3 màn đủ điều kiện ra MỘT phiếu port duy nhất cho phiên code (sau khi sửa 4 nhãn ở màn 3D).**
+
+## [06:xx] TỔNG — CHỐT HỆ GIAO DIỆN ARCHINOTE + luật kéo thả cảm ứng
+Hoà chốt liên tiếp qua chat, TỔNG gom thành `docs/SPEC-ARCHINOTE-UI-2026-08-03.md` (nguồn chuẩn mới):
+1. **PHÂN VỊ**: IF = MÁY PHÁT (máy tính, tạo sản phẩm) · ArchiNote = **MÁY THU (điện thoại**, thu số đo/ảnh/ghi âm/tri thức). Chung nguồn sự thật qua ATLAS/Lark, không gọi thẳng nhau. Cảm ứng IF = vẽ chính xác ≠ cảm ứng ArchiNote = ghi nhanh → **chỉ HỌC, không bê nguyên**.
+2. **MÀU**: ArchiNote **kem + vàng ấm, nền sáng**; tím chỉ nhấn rất nhẹ. Luật cứng: **vàng/kem không bao giờ làm màu chữ** (không đạt 4.5:1) — chỉ nền khối/vạch/nhấn.
+3. **MOBILE**: nút chính ≥56px ở nửa dưới màn · ba chạm/ba giây · chạy được khi mất mạng.
+4. **KÉO THẢ CẢM ỨNG**: giữ 250ms mới nhấc (tránh cướp cuộn) · vật nhấc lên trên ngón 40px · danh sách tự dạt tạo khe hở · kéo mép tự cuộn · **CẤM kéo thả là đường duy nhất** (công trường tay bẩn/găng/màn ướt). Điểm hay nhất: lưới tải việc **hiện % tải MỚI ngay lúc còn đang kéo**.
+5. **ICON**: icon hoá thứ lặp hằng ngày, **cấm icon hoá nút quyết định** (Xoá · Gửi khách · Xuất hồ sơ).
+6. **BENTO**: chỉ cho màn tổng quan; **cấm cho màn làm việc** — vùng vẽ phải liền khối.
+7. Đọc 14 ảnh tham khảo theo Luật #7, ghi bảng "lấy cơ chế gì" tại §9 spec.
