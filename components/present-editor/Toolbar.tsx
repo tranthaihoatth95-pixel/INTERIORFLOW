@@ -42,6 +42,8 @@ import {
   Ungroup,
   Lock,
   Unlock,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import IOMenu from '@/components/ui/IOMenu';
 import Tooltip from '@/components/ui/Tooltip';
@@ -98,6 +100,10 @@ interface Props {
   onUngroup: () => void;
   /** khoá/mở khoá cả lựa chọn — 1 nút, đổi icon/nhãn theo trạng thái (xem `anyUnlocked` bên dưới). */
   onToggleLock: () => void;
+  /* P6b bước 2a (02/08, duyệt riêng — năng lực MỚI, không phải nối dây) — ẩn/hiện cả lựa chọn,
+   * 1 nút cạnh Khoá, cùng khuôn toggle-cả-cụm với onToggleLock. */
+  /** ẩn/hiện cả lựa chọn — 1 nút, đổi icon/nhãn theo trạng thái (xem `anyVisible` bên dưới). */
+  onToggleHide: () => void;
 }
 
 export default function Toolbar(p: Props) {
@@ -111,6 +117,7 @@ export default function Toolbar(p: Props) {
   const multiCount = p.selectedIds.length;
   const selectedGroupCount = new Set(selectedEls.map((e) => e.groupId).filter(Boolean)).size;
   const anyUnlocked = selectedEls.some((e) => !e.locked);
+  const anyVisible = selectedEls.some((e) => !e.hidden);
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -357,6 +364,14 @@ export default function Toolbar(p: Props) {
         disabled={multiCount < 1}
       >
         {anyUnlocked ? <Lock size={15} /> : <Unlock size={15} />}
+      </IconOnly>
+      {/* P6b bước 2a — Ẩn hàng loạt, cạnh Khoá theo đúng vị trí Hoà duyệt. */}
+      <IconOnly
+        onClick={p.onToggleHide}
+        title={anyVisible ? 'Ẩn lựa chọn' : 'Hiện lựa chọn'}
+        disabled={multiCount < 1}
+      >
+        {anyVisible ? <EyeOff size={15} /> : <Eye size={15} />}
       </IconOnly>
 
       <Divider />

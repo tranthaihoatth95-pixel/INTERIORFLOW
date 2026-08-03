@@ -14,13 +14,27 @@ export function specSafeArr(s: string): string[] {
   }
 }
 
-/** Serialize 1 row Prisma cho client — materials/finishes JSON string → mảng an toàn. */
+/** Kiểu cấu trúc tối thiểu cho Decimal Prisma (priceVnd/wastagePercent) — KHÔNG import
+ * `@prisma/client` vào file này (giữ đúng phong cách duck-typing sẵn có, file này vốn 0 import) —
+ * `Prisma.Decimal` có `.toString()` nên `Number(...)` convert đúng, tránh sai số nhị phân của
+ * việc tự parse chuỗi. */
+type DecimalLike = { toString(): string } | number | string;
+
+/** Serialize 1 row Prisma cho client — materials/finishes JSON string → mảng an toàn.
+ * 02/08 BOQ ENGINE — vá gap: 6 field 2.1.9.r (unit/priceVnd/wastagePercent/packagingSpec/
+ * altSku/styleTags) đã có trong Prisma schema từ 30/07 nhưng DTO này CHƯA trả — nghĩa là
+ * GET /api/specs?kind=material không có giá dù DB đã có (Atlas sync ghi đúng, chỉ đường ĐỌC
+ * thiếu). BOQ engine (lib/boq/) cần priceVnd/wastagePercent thật từ API này nên vá tại đây,
+ * KHÔNG đụng specNormalize/specPatch (ghi ProductSpec đi qua Lark sync — atlas-materials/sync —
+ * không qua POST/PATCH tay, xem lib/lark/atlas-material-map.ts). */
 export function specToDto(s: {
   id: string; kind: string; name: string; nameEn: string | null; brand: string | null;
   sku: string | null; vendor: string | null; w: number | null; d: number | null; hUp: number | null;
   materials: string; finishes: string; colorHex: string | null; imageAssetId: string | null;
   drawingBlock: string | null; priceNote: string | null; currency: string | null; note: string | null;
   larkRecordId: string | null; createdAt: Date; syncedAt: Date | null;
+  unit?: string | null; priceVnd?: DecimalLike | null; wastagePercent?: DecimalLike | null;
+  packagingSpec?: string | null; altSku?: string | null; styleTags?: string | null;
 }) {
   return {
     id: s.id,
@@ -44,6 +58,13 @@ export function specToDto(s: {
     larkRecordId: s.larkRecordId,
     createdAt: s.createdAt,
     syncedAt: s.syncedAt,
+    // ── 2.1.9.r (vá 02/08) ──
+    unit: s.unit ?? null,
+    priceVnd: s.priceVnd == null ? null : Number(s.priceVnd),
+    wastagePercent: s.wastagePercent == null ? null : Number(s.wastagePercent),
+    packagingSpec: s.packagingSpec ?? null,
+    altSku: s.altSku ?? null,
+    styleTags: specSafeArr(s.styleTags ?? ''),
   };
 }
 
