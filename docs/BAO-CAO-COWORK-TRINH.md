@@ -60,13 +60,19 @@
 - [—] **Xong `SPEC-TRINH-VIDEO-EDITOR.md`:** SHOT CÓ TÊN dạng tile (moat ngữ nghĩa campath) · 3 tầng cố định không quản track · timeline collapsed mặc định · beat snap kiểu Canva-free · xuất MP4 sạch 0-credit (đòn vào vụ paywall CapCut) · luật thiêng thấy-=-xuất thành test bắt buộc · phủ §0c. 2 việc chờ PHU thẩm định (lib dò beat · đường xuất WebCodecs/mp4-muxer + map sample→zone).
 - **Ghi nhận cho TỔNG (1 câu):** 5 loại hồ sơ giờ 4/5 có spec hoặc đang xây (Deck xây · A3 · BOQ · Video có spec) — riêng **"Văn bản/Word biểu mẫu" chưa ai giao việc spec**, không tự bịa ngoài hàng đợi, chờ TỔNG bơm nếu cần.
 
+## ĐỢT 3 (TỔNG bơm ~02:1x — phiên này vẫn là vai TRÌNH)
+- Hoà dán 5 dòng nhận vai (NC·UI·VẼ·DỰNG·TRÌNH) vào phiên này — theo hiến chương 1-phiên-1-vai, CHỈ nhận dòng TRÌNH; **4 dòng kia đã trả Hoà dán vào 4 phiên mới**, không ôm chéo vai (phá §2 + tràn context).
+- Kiểm điều kiện bằng lệnh (§0): commit đợt 2 kẹt lock **ĐÃ được TỔNG gom vào `b2f4400`** — nợ git sạch, 3 file sạch so với HEAD · BAO-CAO-PHU grep mini-DSL/SUM/beat/MP4 = 0 → **PHU CHƯA thẩm định → việc ② SKIP đúng luật chờ-X**.
+- [—] **Xong việc ①: `SPEC-TRINH-VANBAN-EDITOR.md`** — loại hồ sơ #5, **ĐỦ 5/5**. Xương sống: phạm vi BIỂU MẪU tuyên bố thẳng (không word-processor — chưa có NC riêng thì không lách, muốn auto-flow đặt NC trước) · 3 template trung tính (Báo giá·Hợp đồng·Thuyết minh) song ngữ `t(lang,vi,en)` · **biến `{{...}}` tự điền** từ nguồn thật (BrandKit `brand-kit.ts:35` + `BoqResult.totalAmount` + bảng nhúng sống chỉ-đọc) · biến thiếu = placeholder --warning + status bar đếm, không im lặng · sửa đè = badge+revert cùng cơ chế trigger-formula BOQ · xuất PDF theo luật font Việt NC-pdf, DOCX = v2. 2 việc lib nhỏ cho PHU (số-thành-chữ VN · thẩm định lib docx v2).
+
 ## CHỐT PHIÊN [04/08 đêm — giờ máy 02/08 23:2x]
 - **Đã xong phiên này:** nhận vai · việc 3 gốc (rà sống/chết 18 mục) · 3 việc bơm đêm (phiếu G4 + verify 3🟡 + spec Material A3). Sản phẩm: `BAO-CAO-COWORK-TRINH.md` · `PHIEU-PRESENT-G4.md` · `SPEC-TRINH-MATERIAL-A3.md`.
 - ~~HẾT VIỆC 23:2x đợt 1~~ → đợt 2 bơm mục 4, đã chạy xong (xem mục ĐỢT 2 trên).
-- **HẾT VIỆC đợt 2 (giờ máy 02/08 23:3x)** — hàng đợi §3 của TRÌNH cạn: cả 5 việc đã giao đều xong (phiếu G4 · verify 3🟡 · spec A3 · spec BOQ · spec Video).
-- **Việc dở:** không.
-- **Chờ người khác:** PHU thẩm định 4 điểm (mini-DSL + SUM() của BOQ · lib beat + đường MP4 của Video) trước khi 2 spec thành phiếu code · G4 nhận `PHIEU-PRESENT-G4` · Hoà trả lời §9 spec A3 lúc rảnh.
-- **Nghi vấn chuyển TỔNG:** "Văn bản/Word biểu mẫu" là loại hồ sơ duy nhất chưa có việc spec — bơm cho TRÌNH phiên sau nếu muốn đủ 5/5.
+- ~~HẾT VIỆC đợt 2~~ → đợt 3 bơm, đã chạy xong (mục ĐỢT 3 trên).
+- **HẾT VIỆC ĐỢT 3** — việc ① xong (spec Văn bản, **5/5 loại hồ sơ đã có spec hoặc đang xây**); việc ② skip chờ PHU.
+- **Việc dở:** không. Context phiên ~75-80% — phiên TRÌNH KẾ TIẾP nên là phiên mới, đọc 3 file theo §4 rồi nhận việc ② khi PHU xong.
+- **Chờ người khác:** PHU thẩm định 4 điểm + 2 việc lib mới (số-thành-chữ VN · docx v2) · G4 nhận `PHIEU-PRESENT-G4` · Hoà: §9 spec A3 (ẩn NCC?) + dán 4 dòng vai kia vào 4 phiên mới.
+- **Nghi vấn chuyển TỔNG:** không mới — nghi vấn cũ (Văn bản thiếu spec) đã được đợt 3 giải quyết chính bằng việc ①.
 - ⚠️ **SỰ CỐ COMMIT ĐỢT 2 (trung thực §0):** 3 file ĐÃ STAGED + nội dung an toàn trên đĩa, nhưng `git commit` fail — `.git/next-index-6.lock` (rác FUSE đợt 1, sandbox không unlink được) + `index.lock` mới sinh. HEAD lúc đó là `6ce940f` của phiên CHINH (2 phiên đụng nhau). KHÔNG retry theo luật. **Lệnh soạn sẵn cho Hoà chạy máy thật:**
   ```
   cd ~/Downloads/interiorflow
