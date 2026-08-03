@@ -12,13 +12,20 @@
  * VIỆC 2 mở rộng (03/08) — `<AppShell>` thay `<StageShell>` (Hoà: rail capsule biến mất khỏi
  * CẢ app, không chỉ chặng Vẽ). Navigator = `PresentNavigator` (placeholder trung thực — xem
  * comment trong file đó). Nội dung `PresentSheets` giữ NGUYÊN.
+ *
+ * B1 (`docs/PHIEU-TRINH-BOQ-EDITOR.md`) — thêm `mode` cục bộ 'deck'|'boq' để treo tạm màn BOQ
+ * (xem TODO(H4) trong `PresentNavigator.tsx`): CHƯA có màn chọn 5 loại hồ sơ (H4) nên chưa thể
+ * "nối vào" theo đúng nghĩa route riêng — đây là state-lift TỐI THIỂU, chỉ ở component này (KHÔNG
+ * đụng `PresentSheets`/`PresentEditor` đang chạy — §0d), xoá khi H4 xong.
  */
 
+import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import PresentSheets from '@/components/present-editor/PresentSheets';
 import { makeSampleDeck } from '@/lib/present-editor/sample';
 import { AppShell } from '@/components/studio/AppShell';
 import { PresentNavigator } from '@/components/present-editor/PresentNavigator';
+import { BoqScreen } from '@/components/present-editor/boq/BoqScreen';
 import StatusBar from '@/components/studio/StatusBar';
 import { StageEnter } from '@/components/studio/StageTransition';
 import { CommentLayer } from '@/components/CommentLayer';
@@ -31,11 +38,16 @@ import { useT } from '@/lib/i18n';
 
 export default function PresentStageScreen() {
   const [deck] = useState(makeSampleDeck);
+  const [mode, setMode] = useState<'deck' | 'boq'>('deck');
   // Route studio KHÔNG nạp `user` vào store khi vào bằng hard-reload/URL trực tiếp — rơi về
   // lastUserId (cùng pattern PresentSheets.tsx/ResumeTracker), nếu không StageIntroCard im
   // lặng không bao giờ hiện cho user mở thẳng `/projects/[id]/present`.
   const storeUserId = useFlowStore((s) => s.user?.id);
   const userId = effectiveUserId(storeUserId);
+  // `/projects/[id]/present` cho `id` thật; route toàn cục cũ `/present-editor` không có — B0
+  // (`getProjectDoc`) coi projectId rỗng là "chưa xác định dự án", trả source:'none' đúng nghĩa.
+  const params = useParams<{ id?: string }>();
+  const projectId = params?.id ?? '';
   // VIỆC A3 (28/07): StatusBar tự ẩn khi trình chiếu toàn màn hình (SlidePlayer che hết,
   // playing nay ở store dùng chung để đọc được từ NGOÀI PresentEditor).
   const playing = usePlayStatus((s) => s.playing);
@@ -44,14 +56,18 @@ export default function PresentStageScreen() {
     <AppShell
       active="present"
       statusBar={<StatusBar stage="present" hidden={playing} />}
-      navigator={<PresentNavigator />}
+      navigator={<PresentNavigator boqActive={mode === 'boq'} onOpenBoq={() => setMode(mode === 'boq' ? 'deck' : 'boq')} />}
       navigatorAddLabel={tr('Trang mới', 'New page')}
       navigatorCollapsedLabel={tr('Trang', 'Pages')}
     >
       {/* C-4: vào chặng bằng crossfade + scale "dynamic wallpaper" (StageEnter). */}
       <StageEnter style={{ display: 'block' }}>
-        {/* Tầng multi-sheet (phụ-thêm): thanh tab + PresentEditor. 1 sheet ⇒ y hệt bản cũ. */}
-        <PresentSheets initialDeck={deck} />
+        {mode === 'boq' && userId ? (
+          <BoqScreen projectId={projectId} userId={userId} />
+        ) : (
+          /* Tầng multi-sheet (phụ-thêm): thanh tab + PresentEditor. 1 sheet ⇒ y hệt bản cũ. */
+          <PresentSheets initialDeck={deck} />
+        )}
       </StageEnter>
       <ChatPanel />
       <CommentLayer />
