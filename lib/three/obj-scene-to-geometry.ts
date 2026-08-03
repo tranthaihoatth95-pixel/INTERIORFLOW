@@ -9,6 +9,7 @@
  */
 import * as THREE from 'three';
 import type { Scene3DData, SceneGroup } from './cad-to-obj';
+import { geometryOf, resolveGroupGeometry } from './build-ops';
 
 export interface BuiltGroup {
   name: string;
@@ -16,12 +17,12 @@ export interface BuiltGroup {
   colorHex: string;
 }
 
-function geometryOf(positions: number[]): THREE.BufferGeometry {
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
-  geometry.computeVertexNormals();
-  geometry.computeBoundingSphere();
-  return geometry;
+/** Group có `ops` boolean cần CSG riêng (`resolveGroupGeometry`, `build-ops.ts`) — KHÔNG gộp
+ * chung màu với group khác (gộp là concat `positions` thô, hình học đã boolean không còn là
+ * mảng vị trí gốc để concat kiểu đó). Số tường có khoét thường vài chục, chấp nhận thêm vài draw
+ * call như đã chấp nhận cho `buildMassingWalls`. */
+function hasOpsGeometry(g: SceneGroup): boolean {
+  return !!g.ops?.some((op) => op.op === 'boolean');
 }
 
 /**
@@ -30,11 +31,18 @@ function geometryOf(positions: number[]): THREE.BufferGeometry {
  * sổ) đã dùng chung 1 màu phẳng — gộp theo màu tương đương gộp theo lớp, không mất chi tiết hình
  * ảnh (không PBR nên không có gì để phân biệt giữa 2 khối cùng màu ngoài hình dạng, vẫn giữ
  * nguyên qua concat vertex). Biến ~2000 object (worst case: 1 group/entity) thành ~6 draw call.
+ * NC-12 §4 — group có `ops` boolean tách riêng (xem `hasOpsGeometry`), dựng qua CSG thật, không
+ * lọt vào đường concat này.
  */
 export function buildMergedGeometries(scene: Scene3DData): BuiltGroup[] {
   const byColor = new Map<string, SceneGroup[]>();
+  const opsGroups: SceneGroup[] = [];
   for (const g of scene.groups) {
     if (!g.positions.length) continue;
+    if (hasOpsGeometry(g)) {
+      opsGroups.push(g);
+      continue;
+    }
     const arr = byColor.get(g.colorHex);
     if (arr) arr.push(g);
     else byColor.set(g.colorHex, [g]);
@@ -49,6 +57,9 @@ export function buildMergedGeometries(scene: Scene3DData): BuiltGroup[] {
       off += g.positions.length;
     }
     out.push({ name: `merged_${colorHex}`, geometry: geometryOf(positions), colorHex });
+  }
+  for (const g of opsGroups) {
+    out.push({ name: g.name, geometry: resolveGroupGeometry(g), colorHex: g.colorHex });
   }
   return out;
 }
@@ -86,7 +97,12 @@ export function buildMassingWalls(scene: Scene3DData): MassingWall[] {
   const out: MassingWall[] = [];
   for (const g of scene.groups) {
     if (!isMassingWallGroup(g) || !g.positions.length) continue;
-    out.push({ entityId: g.entityId!, baseHeightMm: g.heightMm!, geometry: geometryOf(g.positions), colorHex: g.colorHex });
+    // NC-12 §4 — tường có `ops` boolean (đã khoét) phải hiện ĐÚNG hình cắt trong mode `massing`
+    // luôn, không chỉ ở scene tĩnh (`buildMergedGeometries`) — dùng chung `resolveGroupGeometry`
+    // để 2 đường không lệch nhau (luật K1 "một nguồn"). Kéo-đẩy (push-pull) sau đó scale.y mesh
+    // này tạm thời méo hố khoét trong lúc kéo — chấp nhận được, `pointerup` ghi `heightMm` mới
+    // vào Doc rồi `useScene3D()` tính lại `scene` → hình cắt đúng lại (xem Scene3DViewer.tsx).
+    out.push({ entityId: g.entityId!, baseHeightMm: g.heightMm!, geometry: resolveGroupGeometry(g), colorHex: g.colorHex });
   }
   return out;
 }

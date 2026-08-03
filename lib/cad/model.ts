@@ -187,7 +187,34 @@ interface Base {
    * `IF_CAMPATH`). Cờ đặt TRÊN entity (không suy từ tên layer) để round-trip DXF an toàn khi
    * layer bị đổi tên tay — xem `applyIfXdata`/`xdataPairs` (`dxf.ts`), cùng khuôn `elementType`. */
   campath?: true;
+
+  /** NC-12 (`docs/nc/NC-12-bo-lenh-3d-2026-08-03.md` §4.2) — NGĂN XẾP DỰNG HÌNH 3D (tầng ③④⑤
+   * `SPEC-DUNG-BO-LENH-3D`). undefined = không có ngăn xếp, ống kính 3D dựng đúng như hôm nay
+   * (lăng trụ theo `heightMm`) — `.idf` cũ parse nguyên vẹn, không cần bump `IDF_VERSION` (field
+   * optional/additive, cùng khuôn `storey`/`elementType`). LƯU THAM SỐ, KHÔNG BAO GIỜ lưu mesh —
+   * hình học derive sống trong cache runtime (`lib/three/build-ops.ts`), không vào `Doc`/`.idf`
+   * (K1: một Doc, không kho thứ hai). Đợt đầu chỉ khai ĐÚNG 3 phép có nơi tiêu thụ ngay (luật K4/
+   * L7 — 11 phép còn lại của NC-12 §4.2 CHƯA khai vào type cho tới khi có UI thật):
+   *  - `extrude` — đã là đường mặc định của `docToObjScene` (đùn theo `heightMm`); khai tên cho
+   *    đủ tầng ③, KHÔNG cần derive logic riêng (base geometry ĐÃ LÀ kết quả extrude).
+   *  - `boolean` — khoét ổ điện/gờ chỉ tủ/hốc âm tường (`lib/three/csg.ts` + `build-ops.ts`).
+   *  - `arrayLinear` — nan chớp/song sắt lặp (tái dùng luật của `modify.ts` `arrayRect()` ở 2D);
+   *    KHAI TYPE cho đủ nhưng CHƯA nối derive/render (chưa có UI sinh ra op này — N5). */
+  ops?: BuildOp[];
+
+  /** true = bậc thứ i của `ops` đang TẮT (mắt nhắm, kiểu modifier stack Max/Blender). Chỉ số
+   * khớp với `ops`. undefined = tất cả đang bật. Chưa có UI bật/tắt (N5, khai cùng đợt để không
+   * đẻ field rời sau này). */
+  opsDisabled?: number[];
 }
+
+/** NC-12 §4.2 — một bậc trong ngăn xếp dựng hình 3D. Thuần dữ liệu JSON, KHÔNG chứa hình học đã
+ * tính (xem docstring `Base.ops`). `withRef`/`pathRef`/`sectionRefs` là id của entity KHÁC trong
+ * CÙNG `Doc` (K1 — một nguồn, không type hình học riêng). */
+export type BuildOp =
+  | { op: 'extrude'; h: number; bevel?: number }
+  | { op: 'boolean'; kind: 'union' | 'subtract' | 'intersect'; withRef: string }
+  | { op: 'arrayLinear'; n: number; dx: number; dy: number; dz: number };
 
 export interface LineEntity extends Base {
   type: 'line';

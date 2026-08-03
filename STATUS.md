@@ -5,6 +5,18 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## ✅ XONG (03/08 đêm — NC-12 bộ lệnh 3D VIỆC 1-3, chi tiết đủ trong message commit)
+- **`three-mesh-bvh`+`three-bvh-csg`** cài (MIT, NC-12 §1.6 chốt) · **`Base.ops?: BuildOp[]`**
+  (`model.ts`, đúng 3 phép `extrude`/`boolean`/`arrayLinear`, optional/additive, KHÔNG bump
+  `IDF_VERSION`) · **boolean THẬT**: `lib/three/csg.ts` (cổng duy nhất gọi thư viện) +
+  `lib/three/build-ops.ts` (cache runtime theo entityId+hash, KHÔNG vào Doc) + `cad-to-obj.ts`
+  dựng cutter (`boxPositionsMm`) + `lib/cad/commands.ts` `cutHoleInWall` (thuần) + store method
+  cùng tên + nút thật "Khoét hốc" trong `Object3DInspector.tsx`. 30 test mới (4 file), tsc scoped
+  sạch. Verify browser: click thật → `ops` ghi đúng vào Doc trong bộ nhớ (entities 117→118), CSG
+  chạy thật (không lỗi). **Phát hiện lỗi CÓ TRƯỚC (không do việc này)**: mode "3D Thiết kế" không
+  autosave IndexedDB (autosaver chỉ sống trong `CadSheets.tsx`, không mount ở stage 3D) — ăn luôn
+  cả push-pull 3D-5 đã ship. Chi tiết → `docs/TECH-DEBT.md`.
+
 ## ✅ XONG (03/08, TRÌNH-CODE — chi tiết đủ trong message commit)
 - **BOQ editor B0-B6+B10** (`4991340`) + **xlsx SUM sống B8** (`18afba3`) — `docs/PHIEU-TRINH-BOQ-EDITOR.md`.
   Live-link override (sửa tay ô m²/đơn giá, badge+revert+cảnh báo) · group theo tầng · truy vết

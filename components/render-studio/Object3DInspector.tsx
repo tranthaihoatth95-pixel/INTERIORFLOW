@@ -19,6 +19,8 @@ import { useScene3D } from '@/lib/render-studio/use-scene3d';
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
 import { kindOfGroup, labelOfGroup, KIND_LABEL_VI, KIND_LABEL_EN, KIND_DOT } from '@/lib/render-studio/group-kind';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
+import { useCadStore } from '@/lib/cad/store';
+import { entityBox } from '@/lib/cad/model';
 import { useT } from '@/lib/i18n';
 
 export function Object3DInspector() {
@@ -87,6 +89,8 @@ export function Object3DInspector() {
         </button>
       </div>
 
+      {kind === 'wall' && selected.entityId && <CutHoleAction wallId={selected.entityId} />}
+
       {/* Trung thực (luật §0): chỉ tường có entityId hôm nay → chỉ tường có gizmo thật trong
           khung nhìn khi chọn ở đây (xem cảnh báo tại cad-to-obj.ts vì sao nội thất/cửa sổ chưa
           nối). Không giấu giới hạn này. */}
@@ -96,5 +100,44 @@ export function Object3DInspector() {
           : tr('Chưa chọn được trong khung nhìn 3D — chỉ xem thuộc tính.', 'Not selectable in the 3D view yet — properties only.')}
       </p>
     </div>
+  );
+}
+
+/**
+ * NC-12 VIỆC 3 — nút THẬT (không phải placeholder) khoét 1 hốc mẫu vào tường đang chọn, ghi
+ * `{op:'boolean', kind:'subtract'}` lên `ops` của tường (`useCadStore.cutHoleInWall`, bọc
+ * `lib/cad/commands.ts` `cutHoleInWall` thuần). Kích thước/vị trí hốc là MẶC ĐỊNH tính từ bbox
+ * tường (xuyên hết bề dày, dài 600mm hoặc nửa chiều dài tường, cao 1200mm từ sàn) — SỬA ĐƯỢC sau
+ * bằng cách sửa CHÍNH cutter (1 `RectEntity` bình thường) qua công cụ 2D CAD sẵn có, đúng nghiệm
+ * thu VIỆC 3 ("sửa được kích thước hốc"). Chưa có UI kéo-thả định vị hốc trong khung nhìn 3D —
+ * ghi rõ (N5), việc đó để dành đợt sau khi có pick-2-object thật trong `Scene3DViewer.tsx`.
+ */
+function CutHoleAction({ wallId }: { wallId: string }) {
+  const tr = useT();
+  const cutHoleInWall = useCadStore((s) => s.cutHoleInWall);
+  const wall = useCadStore((s) => s.doc.entities.find((e) => e.id === wallId));
+  if (!wall) return null;
+
+  const handleCut = () => {
+    const box = entityBox(wall);
+    const spanX = box.maxX - box.minX;
+    const spanY = box.maxY - box.minY;
+    const cx = (box.minX + box.maxX) / 2;
+    const cy = (box.minY + box.maxY) / 2;
+    const thinIsX = spanX <= spanY; // tường mỏng theo trục X ⇒ chạy dọc theo Y
+    const along = Math.min(600, (thinIsX ? spanY : spanX) * 0.5) || 400;
+    const w = thinIsX ? spanX + 40 : along; // +40mm mỗi bên: xuyên thủng hết bề dày, không sót vách mỏng
+    const h = thinIsX ? along : spanY + 40;
+    cutHoleInWall(wallId, { x: cx - w / 2, y: cy - h / 2, w, h, heightMm: 1200 }, 'subtract');
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCut}
+      className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-[11px] font-semibold text-[var(--t1)] transition-colors hover:bg-[var(--hover)]"
+    >
+      {tr('Khoét hốc (mẫu 600×1200mm)', 'Cut a recess (sample 600×1200mm)')}
+    </button>
   );
 }

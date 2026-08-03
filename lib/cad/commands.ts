@@ -419,3 +419,51 @@ export function addPresentationKit(doc: Doc, box: Box, info: TitleBlockInfo): En
   void doc;
   return out;
 }
+
+/* ───────────────────────── BOOLEAN 3D — khoét/hợp/giao khối (NC-12 VIỆC 3) ─────────────────────────
+ * Nghiệm thu: khoét 1 hốc trên tường → lưu .idf → mở lại → hốc còn nguyên (ops sống trong Doc,
+ * xem `Base.ops` model.ts) VÀ sửa được kích thước hốc (sửa `w`/`h`/`heightMm` của CHÍNH cutter —
+ * một `RectEntity` bình thường trong Doc, sửa được bằng công cụ 2D CAD sẵn có, không cần UI mới).
+ */
+
+/** Tham số hốc/khối cắt — toạ độ world (mm), CÙNG hệ với `wall.points`. `heightMm` thiếu = tràn
+ * hết cao tường (xem `cutterPositionsMm`, `lib/three/cad-to-obj.ts` — cutter không tự suy cao độ
+ * ở tầng này, THUẦN data, không đụng `docToObjScene`). */
+export interface CutHoleOpts {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  heightMm?: number;
+  /** layer của cutter — mặc định lấy đúng layer của tường (cùng nhóm hiện/ẩn/khoá). */
+  layer?: string;
+}
+
+/**
+ * Khoét/hợp/giao 1 khối vào `wall` — tạo CUTTER (`RectEntity` MỚI, entity thật trong CÙNG Doc,
+ * K1: không type hình học riêng cho "khối cắt") rồi thêm 1 bậc `{op:'boolean', kind, withRef}`
+ * vào `wall.ops` (NC-12 §4.2). THUẦN (không đụng store/React, không tính hình học 3D — đó là
+ * việc của tầng ba.js `lib/three/build-ops.ts` lúc render) — nơi gọi (`useCadStore.cutHoleInWall`)
+ * chịu trách nhiệm ghi 2 entity này vào Doc + 1 snapshot undo, cùng khuôn mọi hàm khác trong file.
+ */
+export function cutHoleInWall(
+  wall: Entity,
+  opts: CutHoleOpts,
+  kind: 'union' | 'subtract' | 'intersect' = 'subtract',
+): { cutter: Entity; updatedWall: Entity } {
+  const cutter: Entity = {
+    id: newId('cutter'),
+    type: 'rect',
+    layer: opts.layer ?? wall.layer,
+    x: opts.x,
+    y: opts.y,
+    w: opts.w,
+    h: opts.h,
+    ...(opts.heightMm !== undefined ? { heightMm: opts.heightMm } : {}),
+  };
+  const updatedWall: Entity = {
+    ...wall,
+    ops: [...(wall.ops ?? []), { op: 'boolean', kind, withRef: cutter.id }],
+  };
+  return { cutter, updatedWall };
+}

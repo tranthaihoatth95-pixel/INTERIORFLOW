@@ -12,6 +12,7 @@ import { create } from 'zustand';
 import type { Doc, Entity, Layer, LineType, Viewport, HatchPattern, MarkupPin, PhotoEmbed, SiteImage, ZoneGroup, PaperKey, PaperOrientation } from './model';
 import { emptyDoc, ZONE_DEFAULT_OPACITY } from './model';
 import { pasteEntities } from './geometry';
+import { cutHoleInWall as cutHoleInWallCmd, type CutHoleOpts } from './commands';
 
 // Dev-only: expose store cho debugging (window.__cadStore) — cùng pattern với
 // window.__flowStore trong lib/store.ts, không lọt vào bản build production.
@@ -293,6 +294,11 @@ interface CadState {
   deleteSelected: () => void;
   removeIds: (ids: string[]) => void;
 
+  /** NC-12 VIỆC 3 — khoét/hợp/giao 1 khối vào tường `wallId` (`lib/cad/commands.ts` `cutHoleInWall`
+   * thuần, đây chỉ ghi vào Doc + 1 snapshot undo, cùng khuôn `onPushPull`/§4.4). Không tìm thấy
+   * `wallId` (đã xoá/đổi id) → bỏ qua, không sập. */
+  cutHoleInWall: (wallId: string, opts: CutHoleOpts, kind?: 'union' | 'subtract' | 'intersect') => void;
+
   select: (ids: string[], additive?: boolean) => void;
   clearSelection: () => void;
 
@@ -506,6 +512,21 @@ export const useCadStore = create<CadState>((set, get) => ({
     get().snapshot();
     const map = new Map(editable.map((e) => [e.id, e]));
     set((s) => ({ doc: { ...s.doc, entities: s.doc.entities.map((e) => map.get(e.id) ?? e) } }));
+  },
+  cutHoleInWall: (wallId, opts, kind = 'subtract') => {
+    const wall = get().doc.entities.find((e) => e.id === wallId);
+    if (!wall) return;
+    if (lockedLayerIds(get().doc).has(wall.layer)) return;
+    const { cutter, updatedWall } = cutHoleInWallCmd(wall, opts, kind);
+    // MỘT snapshot cho cả 2 entity (cutter mới + tường sửa `ops`) — đúng luật §4.4 NC-12 "sửa
+    // tham số ở bậc nào cũng chỉ là MỘT thao tác có snapshot", không phải 2 lần undo rời rạc.
+    get().snapshot();
+    set((s) => ({
+      doc: {
+        ...s.doc,
+        entities: [...s.doc.entities.map((e) => (e.id === wallId ? updatedWall : e)), cutter],
+      },
+    }));
   },
   deleteSelected: () => {
     // Chỉ xoá entity KHÔNG thuộc layer khoá (phòng thủ — select() đã lọc, nhưng chắc chắn).

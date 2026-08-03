@@ -5,7 +5,7 @@
 import type { Doc, Entity, HatchEntity } from '../cad/model';
 import { DEFAULT_LAYERS } from '../cad/model';
 import { wallChain } from '../cad/commands';
-import { docToObjScene, blockFootprint, furnitureHeightMm, cadAxesToThree, cadToThreeM, clampWallHeight } from './cad-to-obj';
+import { docToObjScene, blockFootprint, furnitureHeightMm, cadAxesToThree, cadToThreeM, clampWallHeight, boxPositionsMm } from './cad-to-obj';
 import { presetCamera, parseCameraSpec, placeCamera, fovFromLens, CAMERA_PRESETS } from './camera';
 
 let pass = 0;
@@ -314,6 +314,48 @@ console.log('docToObjScene — storey (SPEC-DUNG-3D-THONG-NHAT §5.1/D1)');
   // Tường KHÁC (Wall_2..4) không gán storey riêng → vẫn undefined, không "lây" từ tường đã gán.
   const otherWalls = scene.groups.filter((g) => g.name.startsWith('Wall_') && g.entityId !== wallId);
   ok('tường khác không gán storey → vẫn undefined, không lây lan', otherWalls.every((g) => g.storey === undefined));
+}
+
+console.log('docToObjScene — ops boolean (NC-12 VIỆC 3): Wall group mang ops + opCutters đúng withRef');
+{
+  const doc = demoDoc();
+  const wall = doc.entities.find((e): e is HatchEntity => e.type === 'hatch')!;
+  const cutter: Entity = { id: 'cutter-x', type: 'rect', layer: wall.layer, x: 1700, y: -20, w: 600, h: 240, heightMm: 1200 };
+  const docWithOps: Doc = {
+    ...doc,
+    entities: [
+      ...doc.entities.map((e) => (e.id === wall.id ? { ...e, ops: [{ op: 'boolean' as const, kind: 'subtract' as const, withRef: cutter.id }] } : e)),
+      cutter,
+    ],
+  };
+  const scene = docToObjScene(docWithOps, { wallHeightMm: 2700, theme: 'warm' });
+  const wallGroup = scene.groups.find((g) => g.entityId === wall.id)!;
+  ok('group tường mang đúng ops', wallGroup.ops?.length === 1 && wallGroup.ops[0].op === 'boolean');
+  ok('opCutters có đúng khoá withRef', !!wallGroup.opCutters && Object.keys(wallGroup.opCutters).length === 1 && wallGroup.opCutters['cutter-x'] !== undefined);
+  ok('cutter positions tam-giác-hoá (bội số 9: 3 đỉnh × 3 toạ độ)', (wallGroup.opCutters!['cutter-x'].length % 9) === 0 && wallGroup.opCutters!['cutter-x'].length > 0);
+  // Tường KHÔNG có ops (Wall_2..4) không có opCutters — không "lây" cutter của tường khác.
+  const otherWalls = scene.groups.filter((g) => g.name.startsWith('Wall_') && g.entityId !== wall.id);
+  ok('tường khác không có ops/opCutters', otherWalls.every((g) => g.ops === undefined && g.opCutters === undefined));
+}
+
+console.log('boxPositionsMm — tam-giác-hoá lăng trụ THUẦN, không qua ObjBuilder');
+{
+  const box = boxPositionsMm(
+    [
+      { x: 0, y: 0 },
+      { x: 1000, y: 0 },
+      { x: 1000, y: 1000 },
+      { x: 0, y: 1000 },
+    ],
+    0,
+    1000,
+  );
+  ok('12 tam giác (2 đáy/đỉnh + 4 mặt bên × 2) × 3 đỉnh × 3 toạ độ = 108 số', box.length === 108);
+  const xs = box.filter((_, i) => i % 3 === 0);
+  const ys = box.filter((_, i) => i % 3 === 1);
+  ok('toạ độ x trong [0,1] (mm→m)', xs.every((v) => v >= 0 && v <= 1));
+  ok('toạ độ y (cao) trong [0,1] (mm→m)', ys.every((v) => v >= 0 && v <= 1));
+  ok('đa giác <3 điểm trả rỗng, không sập', boxPositionsMm([{ x: 0, y: 0 }], 0, 1000).length === 0);
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);

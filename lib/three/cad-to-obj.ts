@@ -15,7 +15,7 @@
  *
  * Thuần TS (không DOM) — test: node_modules/.bin/sucrase-node lib/three/cad-to-obj.test.ts
  */
-import type { Doc, Entity, HatchEntity, BlockEntity, Pt } from '../cad/model';
+import type { Doc, Entity, HatchEntity, BlockEntity, Pt, BuildOp } from '../cad/model';
 import { entityBox, type Box } from '../cad/model';
 import { BLOCK_MAP } from '../cad/furniture';
 import { findHatchBoundary, polygonArea, pointInPolygon } from '../cad/hatch';
@@ -30,6 +30,35 @@ function signedArea(poly: Pt[]): number {
     a += p.x * q.y - q.x * p.y;
   }
   return a / 2;
+}
+
+/**
+ * NC-12 §4.2/§4.3 — tam-giác-hoá 1 lăng trụ đứng (mm, CAD Y-lên) → mảng vị trí phẳng (m, Y-up),
+ * CÙNG quy ước toạ độ với `ObjBuilder.vert()`/`prism()` bên dưới ((x, cao, -y)) và CÙNG thứ tự
+ * tam-giác-hoá (đáy quạt lộn ngược, đỉnh quạt, cạnh bên 2 tam giác/mặt — khớp `fanTriangles()`).
+ * KHÔNG dùng `ObjBuilder` (không cần ghi dòng OBJ/giữ state) — dùng cho hình học "modifier"
+ * (cutter của phép boolean, `opCutters` trong `SceneGroup`) chỉ cần feed thẳng vào CSG ở tầng
+ * ba.js (`lib/three/build-ops.ts`), không xuất OBJ text.
+ */
+export function boxPositionsMm(poly: Pt[], z0: number, z1: number): number[] {
+  if (poly.length < 3) return [];
+  const pts = signedArea(poly) < 0 ? [...poly].reverse() : poly;
+  const toM = (p: Pt, z: number): [number, number, number] => [p.x / 1000, z / 1000, -p.y / 1000];
+  const bot = pts.map((p) => toM(p, z0));
+  const top = pts.map((p) => toM(p, z1));
+  const out: number[] = [];
+  const pushTri = (a: number[], b: number[], c: number[]) => out.push(...a, ...b, ...c);
+  const fan = (ring: number[][]) => {
+    for (let i = 1; i < ring.length - 1; i++) pushTri(ring[0], ring[i], ring[i + 1]);
+  };
+  fan([...bot].reverse()); // đáy úp xuống — cùng chiều `prism()`
+  fan(top); // đỉnh ngửa lên
+  for (let i = 0; i < pts.length; i++) {
+    const j = (i + 1) % pts.length;
+    pushTri(bot[i], bot[j], top[j]);
+    pushTri(bot[i], top[j], top[i]);
+  }
+  return out;
 }
 
 export type SceneTheme = 'clay' | 'warm' | 'gu';
@@ -93,6 +122,19 @@ export interface SceneGroup {
    * NHAT §6) tra `ProductSpec` qua id này để vẽ quả cầu vật liệu — undefined = CHƯA gán, hiện
    * đúng trạng thái "chưa gán vật liệu", không suy đoán/không hiện quả cầu giả. */
   specId?: string;
+  /** NC-12 §4.2 — `Base.ops` của entity gốc, đọc NGUYÊN VĂN (chỉ tường/`HatchEntity` truyền vào
+   * hôm nay, cùng điều kiện với `entityId`/`heightMm`). Tầng ba.js (`lib/three/build-ops.ts`) đọc
+   * field này để biết có cần chạy CSG hay không — file NÀY (`cad-to-obj.ts`) KHÔNG import `three`,
+   * chỉ truyền dữ liệu qua, đúng ranh giới "thuần TS" đã ghi ở đầu file. */
+  ops?: BuildOp[];
+  /** NC-12 §4.2/§4.3 — hình học (mm→m, Y-up, đã tam-giác-hoá — CÙNG khuôn `positions`) của MỖI
+   * entity được tham chiếu bởi 1 bậc `{op:'boolean', withRef}` trong `ops` phía trên, khoá theo
+   * đúng `withRef` đó. Dựng SẴN Ở ĐÂY (không phải bên `build-ops.ts`) để tầng ba.js không cần đọc
+   * lại `Doc`/entity gốc — chỉ cần `geometryOf()` thẳng mảng số này rồi gọi CSG. Cutter (vd
+   * `RectEntity` khoét hốc) không tự đứng thành 1 `SceneGroup` riêng (không gọi `builder.object()`
+   * cho nó) — nó KHÔNG render độc lập, chỉ là dữ liệu modifier, đúng cách Blender ẩn object cutter
+   * của boolean modifier. */
+  opCutters?: Record<string, number[]>;
 }
 
 export interface ObjScene {
@@ -207,7 +249,7 @@ class ObjBuilder {
   faces = 0;
   private posByIndex: number[][] = []; // posByIndex[i] = vị trí (m, Y-up) của vertex OBJ #(i+1)
   private groupList: SceneGroup[] = [];
-  private cur: { name: string; colorHex: string; tris: number[]; entityId?: string; heightMm?: number; inferred?: true; storey?: string; specId?: string } | null = null;
+  private cur: { name: string; colorHex: string; tris: number[]; entityId?: string; heightMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]> } | null = null;
 
   constructor(mtlFile: string) {
     this.lines.push('# InteriorFlow — OBJ sinh tất định từ bản vẽ CAD (mm → m)');
@@ -217,12 +259,13 @@ class ObjBuilder {
   /** `entityId`/`heightMm` (3D-5 push-pull) — chỉ tường truyền vào, group khác bỏ trống.
    * `inferred` (§2.3/L4) — group xếp loại bằng suy đoán tên layer, không phải `elementType`.
    * `storey` (SPEC-DUNG-3D-THONG-NHAT §5.1/D1) — tầng của entity gốc, group hình học tổng hợp
-   * (Sàn/Phòng/Trần) không truyền. */
-  object(name: string, mat: Mat, meta?: { entityId?: string; heightMm?: number; inferred?: true; storey?: string; specId?: string }) {
+   * (Sàn/Phòng/Trần) không truyền. `ops`/`opCutters` (NC-12 §4.2/§4.3) — ngăn xếp dựng hình +
+   * hình học cutter đã tam-giác-hoá sẵn (`boxPositionsMm`), tầng ba.js đọc để chạy CSG. */
+  object(name: string, mat: Mat, meta?: { entityId?: string; heightMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]> }) {
     this.lines.push(`o ${name}`);
     this.lines.push(`usemtl ${mat.name}`);
     this.flushGroup();
-    this.cur = { name, colorHex: mat.hex, tris: [], entityId: meta?.entityId, heightMm: meta?.heightMm, inferred: meta?.inferred, storey: meta?.storey, specId: meta?.specId };
+    this.cur = { name, colorHex: mat.hex, tris: [], entityId: meta?.entityId, heightMm: meta?.heightMm, inferred: meta?.inferred, storey: meta?.storey, specId: meta?.specId, ops: meta?.ops, opCutters: meta?.opCutters };
   }
 
   private flushGroup() {
@@ -236,6 +279,8 @@ class ObjBuilder {
         inferred: this.cur.inferred,
         storey: this.cur.storey,
         specId: this.cur.specId,
+        ops: this.cur.ops,
+        opCutters: this.cur.opCutters,
       });
     }
     this.cur = null;
@@ -337,6 +382,42 @@ export function blockFootprint(b: BlockEntity): [Pt, Pt, Pt, Pt] | null {
     return { x: b.at.x + sxp * cos - syp * sin, y: b.at.y + sxp * sin + syp * cos };
   });
   return out as [Pt, Pt, Pt, Pt];
+}
+
+/** NC-12 §4.2 — cutter của bậc `{op:'boolean', withRef}`: entity KHÁC trong CÙNG `Doc` (K1, không
+ * type hình học riêng cho "cutter"). Hôm nay hỗ trợ `RectEntity` (footprint chữ nhật + `Base.
+ * heightMm` RIÊNG = chiều cao khối cắt — undefined thì tràn hết cao tường `wallH`, tức "hốc từ
+ * sàn tới trần"). Trả `null` nếu không tra được/không phải rect — nơi gọi (`buildOpCutters`) tự bỏ
+ * qua bậc đó thay vì sập (N4: thiếu dữ liệu thì giữ nguyên, không gán bừa/suy đoán). CHƯA hỗ trợ
+ * cao độ đáy riêng (`elevationMm`) — cutter luôn cắt từ z=0, ghi rõ để phiên sau không tưởng đã
+ * làm (N5); đủ cho ca "khoét hốc từ sàn" của nghiệm thu VIỆC 3, chưa đủ cho gờ chỉ lưng chừng
+ * tường (cần thêm field, để dành khi có UI thật đòi hỏi — K4). */
+function cutterPositionsMm(ref: string, doc: Doc, wallH: number): number[] | null {
+  const e = doc.entities.find((x) => x.id === ref);
+  if (!e || e.type !== 'rect') return null;
+  const poly: Pt[] = [
+    { x: e.x, y: e.y },
+    { x: e.x + e.w, y: e.y },
+    { x: e.x + e.w, y: e.y + e.h },
+    { x: e.x, y: e.y + e.h },
+  ];
+  const cutH = e.heightMm ?? wallH; // KHÔNG dùng clampWallHeight() — đó là ngưỡng cho TƯỜNG (2-6m), cutter có thể chỉ vài trăm mm.
+  return boxPositionsMm(poly, 0, cutH);
+}
+
+/** NC-12 §4.3 — gom hình học cutter cho MỌI bậc `boolean` trong `ops` của 1 entity, khoá theo
+ * đúng `withRef` (khớp field `SceneGroup.opCutters`). `undefined` nếu `ops` không có bậc boolean
+ * nào hoặc không cutter nào tra được — `object()` nhận `undefined` cũng như không truyền gì. */
+function buildOpCutters(ops: BuildOp[] | undefined, doc: Doc, wallH: number): Record<string, number[]> | undefined {
+  const boolOps = ops?.filter((op) => op.op === 'boolean');
+  if (!boolOps?.length) return undefined;
+  const out: Record<string, number[]> = {};
+  for (const op of boolOps) {
+    if (op.op !== 'boolean') continue;
+    const positions = cutterPositionsMm(op.withRef, doc, wallH);
+    if (positions) out[op.withRef] = positions;
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 function docBbox(entities: Entity[]): Box | null {
@@ -453,7 +534,16 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
   wallHatches.forEach((h, i) => {
     const wallH = clampWallHeight(h.heightMm ?? H);
     const inferred = h.elementType === undefined ? true : undefined;
-    builder.object(`Wall_${i + 1}`, mats.wall, { entityId: h.id, heightMm: wallH, storey: h.storey, specId: h.specId, ...(inferred ? { inferred } : {}) });
+    const opCutters = buildOpCutters(h.ops, doc, wallH);
+    builder.object(`Wall_${i + 1}`, mats.wall, {
+      entityId: h.id,
+      heightMm: wallH,
+      storey: h.storey,
+      specId: h.specId,
+      ops: h.ops,
+      opCutters,
+      ...(inferred ? { inferred } : {}),
+    });
     builder.prism(h.points, 0, wallH);
   });
 
