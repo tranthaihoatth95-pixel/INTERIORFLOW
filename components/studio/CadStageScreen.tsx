@@ -17,9 +17,20 @@
  *     `selection.length===0 → null`), CHỈ hiện khi có chọn — không còn nổi đè canvas.
  *   · Toolbelt (ổ ⑤, gộp `CadTouchDock`) CHƯA chuyển — việc riêng kế tiếp (giữ `CadTouchDock`
  *     nổi trong canvas như cũ ở bước này, tránh 1 commit đụng quá nhiều).
+ *
+ * 05/08 VIỆC A3 (`docs/PHIEU-CODE-IF-DOT6-2026-08-03.md`, Trụ 4) — Navigator/canvas không còn
+ * literal JSX rải trong component: khai 2 mode `2d/sketch`/`2d/pro` qua `defineMode()` ở MODULE
+ * SCOPE (chạy trước khi `CadStageScreen` render lần đầu), component chỉ `requireMode(modeId)`.
+ * Cả 2 mode dùng CHUNG `CAD_NAVIGATOR`/`CAD_CANVAS` — đúng hành vi THẬT hôm nay (Sketch/Pro chỉ
+ * khác BỘ CÔNG CỤ trong `CadToolbar`, không khác Navigator/canvas) — khai đủ 4 thứ không có
+ * nghĩa là bịa ra khác biệt chưa tồn tại. `cadMode==='revit'` GỘP vào `'2d/pro'` (cùng cách
+ * `phaseLabel()` gộp cadStage `technical`/`bim` — BIM/Cấu kiện không còn là mode Trụ-4 riêng từ
+ * VÒNG CUỐI 03/08, xem `docs/CHOT-TEN-CHANG-MODE-2026-08-03.md`). `cadMode` (khoá kỹ thuật
+ * `sketch`/`pro`/`revit`, persist localStorage) GIỮ NGUYÊN — chỉ map sang `ModeId` lúc tra
+ * registry, không đổi khoá lưu.
  */
 
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import CadSheets from '@/components/cad/CadSheets';
 import CadToolbelt from '@/components/cad/CadToolbelt';
 import { LayerPanel } from '@/components/cad/CadEditor';
@@ -31,9 +42,35 @@ import StatusBar from '@/components/studio/StatusBar';
 import { AppShell } from '@/components/studio/AppShell';
 import { StageIntroCard } from '@/components/onboarding/StageIntroCard';
 import { useFlowStore } from '@/lib/store';
-import { useCadStore } from '@/lib/cad/store';
+import { useCadStore, type CadMode } from '@/lib/cad/store';
+import { defineMode, requireMode, type ModeId } from '@/lib/shell/mode-registry';
 import { effectiveUserId } from '@/lib/resume';
 import { useT } from '@/lib/i18n';
+
+const CAD_NAVIGATOR: ReactNode = <LayerPanel />;
+const CAD_CANVAS: ReactNode = <FoldableDualPane primary={<CadSheets />} secondary={<ReferencePane />} />;
+
+defineMode('2d/sketch', {
+  stage: 'cad',
+  label: ['Sơ phác', 'Sketch'],
+  navigator: CAD_NAVIGATOR,
+  canvas: CAD_CANVAS,
+  shelves: ['cad-kyhieu', 'cad-room'],
+  commands: 'cad.sketch.*',
+});
+defineMode('2d/pro', {
+  stage: 'cad',
+  label: ['Kỹ thuật', 'Technical'],
+  navigator: CAD_NAVIGATOR,
+  canvas: CAD_CANVAS,
+  shelves: ['cad-kyhieu', 'cad-sheet', 'cad-room', 'cad-hatch', 'cad-form'],
+  commands: 'cad.pro.*',
+});
+
+/** `revit` gộp vào `'2d/pro'` — xem docstring đầu file. */
+function cadModeToModeId(m: CadMode): ModeId {
+  return m === 'sketch' ? '2d/sketch' : '2d/pro';
+}
 
 export default function CadStageScreen() {
   // Route studio KHÔNG nạp `user` vào store khi vào bằng hard-reload/URL trực tiếp — rơi về
@@ -47,6 +84,9 @@ export default function CadStageScreen() {
   const selection = useCadStore((s) => s.selection);
   const addLayer = useCadStore((s) => s.addLayer);
   const clearSelection = useCadStore((s) => s.clearSelection);
+  // Trụ 4 A3 — đọc khai báo thay vì hardcode navigator/canvas; xem defineMode() đầu file.
+  const cadMode = useCadStore((s) => s.cadMode);
+  const mode = requireMode(cadModeToModeId(cadMode));
 
   // Tiêu đề Inspector — 1 vật chọn thì tên rõ theo type, nhiều vật thì đếm số (khớp mock
   // "Phòng khách"/"24.6 m²" — ở đây chưa có mô hình "tên vật" đầy đủ như mock giả định, dùng
@@ -73,7 +113,7 @@ export default function CadStageScreen() {
     <AppShell
       active="cad"
       statusBar={<StatusBar stage="concept" />}
-      navigator={<LayerPanel />}
+      navigator={mode.navigator}
       navigatorAddLabel={tr('Lớp mới', 'New layer')}
       navigatorCollapsedLabel={tr('Lớp', 'Layers')}
       onNavigatorAdd={addLayer}
@@ -89,7 +129,7 @@ export default function CadStageScreen() {
     >
       <StageEnter>
         {/* Tầng multi-sheet (phụ-thêm): thanh tab + CadEditor. 1 sheet ⇒ y hệt bản cũ. */}
-        <FoldableDualPane primary={<CadSheets />} secondary={<ReferencePane />} />
+        {mode.canvas}
       </StageEnter>
       {/* Tầng 2 onboarding — thẻ giới thiệu lần đầu chặng CAD (góc màn, không chặn thao tác). */}
       <StageIntroCard stage="cad" userId={userId} />

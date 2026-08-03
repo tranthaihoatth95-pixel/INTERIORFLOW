@@ -13,7 +13,7 @@
  * đúng dự án của URL qua `ensureProjectScope`. Logic nghiệp vụ canvas giữ nguyên 100%.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { ReactFlowProvider } from '@xyflow/react';
 import { Loader2 } from 'lucide-react';
@@ -58,6 +58,8 @@ import {
 import { ensureProjectScope } from '@/lib/project-scope';
 import { stableProjectRouteId } from '@/lib/scope';
 import { stageRoutePath } from '@/lib/scope-core';
+import { defineMode, requireMode, type ModeId } from '@/lib/shell/mode-registry';
+import type { RenderStageMode } from '@/lib/stage-mode';
 
 /**
  * Ngưỡng bề rộng phân biệt màn HẸP (cover foldable / điện thoại) vs màn ĐỦ RỘNG.
@@ -66,6 +68,63 @@ import { stageRoutePath } from '@/lib/scope-core';
  * app" nên kể cả màn hẹp cũng không kẹt.
  */
 const COVER_MAX_WIDTH = 480;
+
+/**
+ * 05/08 VIỆC A3 (`docs/PHIEU-CODE-IF-DOT6-2026-08-03.md`, Trụ 4) — khai 2 mode chặng Dựng
+ * (3D Thiết kế) qua `defineMode()` thay cho `if (mode === 'render') … else …` từng nằm thẳng
+ * trong `content={(mode) => …}` của `<ModeShell>` bên dưới.
+ *
+ * `RENDER_NAVIGATOR` dùng CHUNG 1 tham chiếu cho cả `3d/node` lẫn `3d/3d` — đúng hành vi THẬT
+ * hôm nay: Navigator KHÔNG đổi theo renderMode (comment gốc "ĐỘC LẬP với renderMode" — xem
+ * AppShell bên dưới). `Command3DPanel` của mode 3D sống RIÊNG bên trong `Render3DModeSkeleton`,
+ * chưa đi qua ổ Navigator của AppShell — đó là nợ kiến trúc A2 trong phiếu (592 dòng
+ * CommandPanel/ObjectProperties mồ côi), KHÔNG sửa ở việc A3 này (một lúc một việc).
+ *
+ * `renderMode` (`'render'|'model3d'`, `lib/stage-mode.ts`) là KHOÁ KỸ THUẬT đã persist
+ * localStorage — GIỮ NGUYÊN, chỉ map sang `ModeId` Trụ-4 lúc tra registry (cùng cách
+ * `CadStageScreen.tsx` map `cadMode` → `ModeId`).
+ */
+const RENDER_NAVIGATOR: ReactNode = <NodeLibraryPanel embedded />;
+const RENDER_NODE_CANVAS: ReactNode = (
+  <>
+    {/* NodeLibraryPanel giờ sống Ở NAVIGATOR (embedded, xem RENDER_NAVIGATOR trên) — KHÔNG mount
+        thêm bản sheet-trượt ở đây nữa (tránh 2 bản SketchStudioModal/SmartSelectModal/
+        WarpCornersModal cùng lúc — cả 3 modal đó mount BÊN TRONG NodeLibraryPanel, xem
+        component). Command Palette "Mở Node Library" giờ vô hại/không còn tác dụng hiển thị
+        (Navigator luôn hiện sẵn) — chưa dọn action đó, không phải regression, panel không
+        "mất" mà LUÔN ở đó. */}
+    <GalleryPanel />
+    <LibraryPanel />
+    {/* Cả 3 chặng đều là canvas node (Present sang studio riêng). Nút Tải lên/Concept = moodboard. */}
+    <FlowCanvas />
+    <RenderToolModeOverlay />
+    <ChatPanel />
+  </>
+);
+
+defineMode('3d/node', {
+  stage: 'render',
+  label: ['Node', 'Node'],
+  navigator: RENDER_NAVIGATOR,
+  canvas: RENDER_NODE_CANVAS,
+  shelves: ['render-preset', 'render-mood', 'render-chain', 'render-form'],
+  commands: 'render.node.*',
+});
+defineMode('3d/3d', {
+  stage: 'render',
+  label: ['3D', '3D'],
+  navigator: RENDER_NAVIGATOR,
+  canvas: <Render3DModeSkeleton />,
+  // 'camera'/'massing' trong ví dụ Trụ 4 của spec chưa có id kệ thật trong lib/library/shelves.ts
+  // (chỉ 'common-atlas' tồn tại) — khai đúng cái CÓ THẬT, không bịa id chưa tồn tại.
+  shelves: ['common-atlas'],
+  commands: 'render.3d.*',
+});
+
+/** `'render'` (canvas node) → `'3d/node'`, `'model3d'` (Vẽ 3D) → `'3d/3d'`. */
+function renderModeToModeId(m: RenderStageMode): ModeId {
+  return m === 'render' ? '3d/node' : '3d/3d';
+}
 
 /**
  * Hook đọc bề rộng viewport — SSR-safe (khởi tạo undefined, đo trong effect để tránh
@@ -577,12 +636,15 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
             tính theo `active==='render'`) cho card thở, ĐỘC LẬP với renderMode — Command3DPanel
             của mode 'model3d' vẫn sống trong Render3DModeSkeleton như cũ, không lồng 2 sidebar.
             ⚠️ CHƯA kiểm lại canh giữa "Vẽ 3D" toggle trong ModeSwitchBar.tsx (trước neo theo bề
-            rộng LeftRail cũ ~76px, Navigator nay 280px — xem lại nếu lệch tâm khi verify). */}
+            rộng LeftRail cũ ~76px, Navigator nay 280px — xem lại nếu lệch tâm khi verify).
+            05/08 VIỆC A3 — `navigator` giờ đọc `RENDER_NAVIGATOR` (module const đầu file, CÙNG
+            tham chiếu được khai trong `defineMode('3d/node'|'3d/3d', …)`) thay vì literal JSX
+            riêng ở đây — một nguồn, không phải hai chỗ viết cùng một sự thật. */}
         <AppShell
           active="render"
           toolbar={<RenderDocBar />}
           statusBar={<StatusBar stage="render" hidden={presentModeOpen} />}
-          navigator={<NodeLibraryPanel embedded />}
+          navigator={RENDER_NAVIGATOR}
           navigatorAddLabel="Khối mới"
           navigatorCollapsedLabel="Khối"
         >
@@ -607,7 +669,11 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
               TRONG mỗi canvas riêng (cuối `<BottomToolbar>` ở mode 'render' · `<ModeSwitchBar>`
               trong `Render3DModeSkeleton` ở mode 'model3d'), KHÔNG còn nút rời mount ở đây —
               tránh lệch tâm ngang do khác positioned-ancestor với `LeftRail` (xem ghi chú
-              `ModeSwitchBar.tsx`). */}
+              `ModeSwitchBar.tsx`).
+              05/08 VIỆC A3 (Trụ 4) — `content` giờ CHỈ tra `requireMode(renderModeToModeId(mode))
+              .canvas`, không còn `mode === 'render' ? … : …` literal ở đây; 2 nhánh JSX đã dời
+              vào `defineMode('3d/node'|'3d/3d', …)` đầu file (RENDER_NODE_CANVAS/
+              `<Render3DModeSkeleton/>`). */}
           <ModeShell
             hideBuiltInSwitcher
             modes={[
@@ -616,26 +682,7 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
             ]}
             active={renderMode}
             onChange={setRenderMode}
-            content={(mode) =>
-              mode === 'render' ? (
-                <>
-                  {/* NodeLibraryPanel giờ sống Ở NAVIGATOR (embedded, xem <AppShell> trên) —
-                      KHÔNG mount thêm bản sheet-trượt ở đây nữa (tránh 2 bản SketchStudioModal/
-                      SmartSelectModal/WarpCornersModal cùng lúc — cả 3 modal đó mount BÊN TRONG
-                      NodeLibraryPanel, xem component). Command Palette "Mở Node Library" giờ vô
-                      hại/không còn tác dụng hiển thị (Navigator luôn hiện sẵn) — chưa dọn action
-                      đó, không phải regression, panel không "mất" mà LUÔN ở đó. */}
-                  <GalleryPanel />
-                  <LibraryPanel />
-                  {/* Cả 3 chặng đều là canvas node (Present sang studio riêng). Nút Tải lên/Concept = moodboard. */}
-                  <FlowCanvas />
-                  <RenderToolModeOverlay />
-                  <ChatPanel />
-                </>
-              ) : (
-                <Render3DModeSkeleton />
-              )
-            }
+            content={(mode) => requireMode(renderModeToModeId(mode)).canvas}
           />
         </AppShell>
         <MaskPainterModal />
