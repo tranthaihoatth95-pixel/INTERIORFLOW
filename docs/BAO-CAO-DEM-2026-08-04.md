@@ -191,3 +191,19 @@ Soi ảnh + đối chiếu code: **L1 "Trang 1"+"1/5" vs 8 slide** = hai đơn v
 **🔴 PHÁT HIỆN + TỰ SỬA (ngoại lệ có lý do):** `tsc` toàn repo trên **main** báo **6 lỗi** ở `lib/cad/eyedropper.test.ts` — lọt vào khi merge `892c927`. Nguyên nhân: `matchPropsOne(source, target as never)` làm generic `T extends StyleFields` suy ra `never` ⇒ mọi truy cập `.layer/.color/.specId` đỏ. Sửa: `as never` → `as StyleFields` (4 chỗ). **tsc main = 0 lỗi · test 13/13 pass.** Commit `f012ca8`.
 → Vì sao TỔNG tự sửa dù luật là không code: lỗi chặn `tsc` TOÀN REPO (mọi phiên chạy tsc đều thấy đỏ, dễ tưởng lỗi của mình), nằm trong file TEST không ảnh hưởng app, sửa 4 ký tự không đụng logic. Ghi rõ tại đây để không thành tiền lệ nới luật.
 **Trạng thái:** main `f012ca8` sạch · nhánh g4 có L2/L1/L5/L3/L4 chưa merge · các Cowork đợt 5 chưa thấy động (Hoà chưa dán khối).
+
+## [04:0x] TỔNG — AUDIT 5 COWORK (lệnh Hoà "tụi nó xong rồi")
+### ✅ COWORK-DỰNG — `SPEC-TANG-DU-LIEU-CAU-KIEN.md` 396 dòng · ĐẠT XUẤT SẮC, vai làm tốt nhất từ đầu dự án
+TỔNG **verify tận code từng tuyên bố**, không tin lời:
+| Tuyên bố của DỰNG | Vật chứng TỔNG kiểm | Kết luận |
+|---|---|---|
+| §0.2 ống kính 3D KHÔNG đọc ngữ nghĩa | `grep elementType lib/three/` → **đúng 1 hit, nằm trong COMMENT** (cad-to-obj.ts:71) | ✅ ĐÚNG |
+| §0.3 🔴 vùng tô SƠN bị đùn thành tường 2.7m | `cad-to-obj.ts:353` điều kiện lọc có `\|\| e.pattern === 'SOLID' \|\| !e.pattern`; `materials.ts:149,160,171` — **3 preset sơn đều `hatchPattern:'SOLID'`** | ✅ ĐÚNG — **BUG THẬT, CHƯA AI BIẾT** |
+| §0.4 entityId chỉ có ở nhóm tường | `cad-to-obj.ts:416` chỉ `Wall_${i}` truyền `entityId`; dòng 197 comment tự khai | ✅ ĐÚNG |
+**Vì sao xuất sắc:** không mô tả lại spec cũ mà ĐỌC CODE tìm ra bệnh — và bệnh nặng đúng chỗ định vị mới: *món hàng chính của IF (lớp hoàn thiện · sơn · ốp) lại là món 3D hiểu sai nhất*. Tự khai "chưa chạy tay, PHU verify trước khi vá — đừng vá mù" (§0 trung thực). 7 luật L1–L7 kiểm được bằng grep (vd L6: cấm mọi hàm tên `syncXtoY`). Phân biệt `null` ≠ `undefined` cho elementType. Field mới đều chỉ ra nơi tiêu thụ (luật L7). `'covering'` đề xuất nhưng CHỜ NC-11, không code trước.
+### Bốn vai còn lại — XONG ĐỢT 3-4, CHƯA nhận đợt 5 (mtime 02:3x-02:5x, không động sau đó)
+NC 3 bài (firstrun · presence · conflict-simultaneous-edit) · UI 2 mock (BOQ 428d · Video 386d) · VẼ 2 phiếu registry (43d + 348d) · TRÌNH spec Văn bản (đủ 5/5 hồ sơ). Tất cả đã vào git `e8dd6bc`. → Hoà chưa dán khối đợt 5 cho 4 vai này.
+### 🔴 VIỆC PHÁT SINH TỪ AUDIT (ưu tiên cao)
+1. **PHU verify tay bug sơn-thành-tường** (5 phút: tô sơn lên 1 mảng tường → sang 3D xem có khối lạ cao 2.7m) rồi vá theo §2.3 (bỏ 2 nhánh `solid===true` và `!pattern`).
+2. **G4 gán `entityId` cho MỌI nhóm** (sàn·phòng·nội thất·cửa sổ), không riêng tường — nay đã có nơi tiêu thụ (§8), hết lý do để trống.
+3. NC-11 gấp hơn tưởng: `'covering'` chờ nó mới chốt được.

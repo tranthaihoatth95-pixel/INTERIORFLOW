@@ -127,3 +127,13 @@ Mỗi ca audit TỔNG chọn ≥1 gói, grep code đối chiếu TỪNG luật c
 | mock-trinh-boq · mock-trinh-video | UI | mở khoá việc 3 cũ |
 | PHIEU-REGISTRY-VE · PHIEU-VE-REGISTRY-BOSUNG | VẼ | rà 4 spec × 97 alias |
 | SPEC-TRINH-VANBAN-EDITOR `091734e` | TRÌNH | ✅ đã git — đủ 5/5 loại hồ sơ |
+
+## 9 · TẦNG DỮ LIỆU CẤU KIỆN (đợt 5 — nền của cả app)
+| Hạng mục | Spec | Mock | Code | Audit | Ghi chú |
+|---|---|---|---|---|---|
+| Tầng dữ liệu chung 3 ống kính | ✅ SPEC-TANG-DU-LIEU-CAU-KIEN 396d | — | ⬜ | ✅ **TỔNG verify code 03/08** | 7 luật L1-L7 kiểm được bằng grep |
+| 🔴 BUG sơn SOLID bị đùn thành tường 2.7m | ✅ §0.3 | — | ⬜ PHU verify tay rồi vá | ✅ xác nhận `cad-to-obj.ts:353` + `materials.ts:149,160,171` | món hàng chính của IF lại sai nhất |
+| Ống kính 3D đọc `elementType` (nay ĐOÁN lại) | ✅ §2.3 thang ưu tiên | — | ⬜ | ✅ grep: 1 hit trong comment | bỏ nhánh `solid===true`/`!pattern` |
+| `entityId` cho MỌI nhóm 3D (nay chỉ tường) | ✅ §0.4 | — | ⬜ G4 | ✅ `cad-to-obj.ts:416` | chọn ghế 3D → mở Inspector được |
+| Entity `room` (phòng có id bền) | ✅ §6 | — | ⬜ | ✅ §0.5 xác nhận 3 dạng rời | nơi BIM nội thất phải sống |
+| `elementType:'covering'` (IfcCovering) | 🔨 chờ NC-11 | — | ⬜ | — | KHÔNG code trước |
