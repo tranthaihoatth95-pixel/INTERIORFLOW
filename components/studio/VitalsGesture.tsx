@@ -213,8 +213,13 @@ export default function VitalsGesturePanel({
         pointerEvents: open ? 'auto' : 'none',
       }}
     >
-      <div className="lq-card" style={{ borderRadius: 16, overflow: 'hidden' }}>
-        <div className="lq-content">
+      {/* 05/08 — ĐỔI `.lq-card` → `.vitals-pop` (globals.css): `.lq-card` là kính RẤT TRONG cho
+          card đăng nhập nổi trên ảnh; popover này nổi trên toolbar/thumbnail dày chữ nên chữ
+          chồng chữ, không đọc được (Hoà báo ở chặng Trình bày). `.vitals-pop` = nền đặc 96% +
+          blur + viền + bóng, chữ có nền của chính nó. Bỏ luôn `.lq-content` (chỉ để thêm
+          text-shadow cho chữ nổi trên kính trong — thừa khi nền đã đặc). */}
+      <div className="vitals-pop">
+        <div>
           <div
             style={{
               display: 'flex',

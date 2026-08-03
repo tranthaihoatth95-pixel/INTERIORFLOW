@@ -602,6 +602,44 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   text-shadow: none;
 }
 
+/* ---------- Vitals popover — LỚP NỔI TRÊN UI DÀY ĐẶC (05/08, Hoà báo "chữ chồng chữ") ----------
+   Trước đây popover Vitals mượn `.lq-card`. SAI NGỮ CẢNH: `.lq-card` sinh ra cho card đăng nhập
+   nổi trên ẢNH NỀN — cố ý rất trong (tint alpha 0.14/0.07, xem §.lq-card trên) để khoe ảnh, và
+   ở màn đó phía sau chỉ có ảnh nên vẫn đọc được. Popover Vitals thì nổi trên TOOLBAR/THUMBNAIL
+   dày chữ (chặng Trình bày) — cùng độ trong đó khiến chữ popover chồng lên chữ nền, không đọc
+   được (ảnh Hoà: "Hỏi Vitals" đè "Nhận diện", "Brand guideline…" đè "16:9"/"Xem lưới").
+
+   Luật cho LỚP NỔI (khác lớp trang trí): nền ĐẶC ≥92% để chữ có nền của chính nó, blur chỉ còn
+   là gia vị (đúng SPEC-APPLE-MOTION-MATERIAL: "kính là gia vị, đọc được TRƯỚC" — iOS 27 đã tự
+   sửa Liquid Glass vì lý do y hệt). Chữ trong popover ăn `--t1..--t5` của theme, vốn đã đạt
+   ≥4.5:1 với `--panel`/`--card` — nền đặc ở đây CHÍNH LÀ 2 token đó nên tương phản được bảo toàn
+   theo hệ, không phải số bịa riêng. KHÔNG text-shadow (thừa khi nền đã đặc, chỉ làm chữ bẩn). */
+.vitals-pop {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  /* nền ĐẶC 96% — đục hơn ngưỡng 92% yêu cầu, vẫn thấy thoáng nhẹ nền sau ở rìa blur */
+  background: color-mix(in srgb, var(--panel) 96%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-pop), 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+/* Lớp phủ tối 8% phía sau — tách popover khỏi nền rối, KHÔNG chặn thao tác (pointer-events:none)
+   và KHÔNG phủ toàn màn (chỉ nằm trong popover, dưới nội dung). */
+.vitals-pop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+  z-index: 0;
+}
+.vitals-pop > * {
+  position: relative;
+  z-index: 1;
+}
+
 /* ---------- Vitals typing indicator (3 chấm iMessage) ----------
    Chấm nhấp nháy lệch pha; prefers-reduced-motion: ẩn chấm, hiện text tĩnh (fallback).
 */

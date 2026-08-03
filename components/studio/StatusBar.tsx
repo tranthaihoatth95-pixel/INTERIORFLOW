@@ -35,7 +35,6 @@ import { useCadStore, type SnapSettings } from '@/lib/cad/store';
 import { useSaveStatus } from '@/lib/save-status';
 import { useProjectPresence } from '@/lib/project-presence-ui';
 import { useVitalsUi } from '@/lib/vitals-ui';
-import VitalsGesturePanel from './VitalsGesture';
 import VitalsIcon from './VitalsIcon';
 import type { Phase } from '@/lib/phases';
 
@@ -87,12 +86,11 @@ export default function StatusBar({ stage, hidden }: Props) {
   const diskMessage = useSaveStatus((s) => s.diskMessage);
   const otherTabOpen = useProjectPresence((s) => s.otherTabOpen);
 
-  const panelOpen = useVitalsUi((s) => s.panelOpen && s.anchor === 'statusbar');
-  const initialInput = useVitalsUi((s) => s.initialInput);
-  const autoSend = useVitalsUi((s) => s.autoSend);
+  // 05/08 — panel Vitals nay mount DUY NHẤT ở `StageSwitcher.tsx` (ổ ① header). Ở đây chỉ ĐỌC
+  // `panelOpen` để ô gõ nhanh không tự co lại khi panel đang mở, và gọi `open()` khi người dùng
+  // gửi câu hỏi. KHÔNG mount panel (xem lib/vitals-ui.ts + SO-KIEM-TONG §1).
+  const panelOpen = useVitalsUi((s) => s.panelOpen);
   const openVitals = useVitalsUi((s) => s.open);
-  const closeVitals = useVitalsUi((s) => s.close);
-  const consumeInitial = useVitalsUi((s) => s.consumeInitial);
 
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState('');
@@ -119,7 +117,7 @@ export default function StatusBar({ stage, hidden }: Props) {
   const submit = () => {
     const text = draft.trim();
     setDraft('');
-    openVitals('statusbar', text, text.length > 0);
+    openVitals(text, text.length > 0);
   };
 
   // 2.2.86 (30/07) — đếm theo FlowRun (lượt chạy), khớp badge "Việc" ở AppChrome.tsx (Luật Đồng
@@ -242,19 +240,11 @@ export default function StatusBar({ stage, hidden }: Props) {
           )}
         </div>
 
-        <VitalsGesturePanel
-          originPx={null}
-          open={panelOpen}
-          direction="up"
-          stage={stage}
-          initialInput={initialInput}
-          autoSend={autoSend}
-          onConsumeInitial={consumeInitial}
-          onClose={() => {
-            closeVitals();
-            setExpanded(false);
-          }}
-        />
+        {/* 05/08 — ĐÃ GỠ `<VitalsGesturePanel>` khỏi đây (Hoà chốt: giữ MỘT bản ở header).
+            Panel mount duy nhất tại `StageSwitcher.tsx`; ô gõ nhanh trên đây gọi `openVitals()`
+            và panel ở header nhận `initialInput`/`autoSend`. Ô gõ + hover-nở kiểu Siri GIỮ
+            NGUYÊN — đó là cơ chế riêng (gõ thẳng, không phải mở panel rồi mới gõ), không phải
+            bản sao của panel. */}
       </div>
 
       {/* PHẢI — trạng thái hệ thống */}

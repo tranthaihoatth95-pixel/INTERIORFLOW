@@ -75,21 +75,24 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   const handleRef = useRef<HTMLDivElement>(null);
 
   const [dragging, setDragging] = useState(false);
-  // VIỆC A (28/07): panelOpen/anchor nâng lên store dùng chung (lib/vitals-ui.ts) — StatusBar
-  // (điểm gọi chính thức mới, giữa status bar) cũng mở/đóng panel này qua `open()`/`toggle()`.
-  // `anchor` phân biệt NƠI panel mọc ra (StageSwitcher này, đỉnh màn = 'gesture' · StatusBar,
-  // đáy màn = 'statusbar') — component nào KHÔNG khớp anchor thì KHÔNG mount panel, tránh 2
-  // popover chồng nhau. Cử chỉ kéo tay/chạm ở DƯỚI ĐÂY giữ nguyên 100% hành vi cũ, luôn dùng
-  // anchor='gesture'; ⌘J/Ctrl+J đổi sang neo 'statusbar' (điểm gọi chính thức mới).
-  const panelOpen = useVitalsUi((s) => s.panelOpen && s.anchor === 'gesture');
+  // VIỆC A (28/07): panelOpen nâng lên store dùng chung (lib/vitals-ui.ts) — ô gõ nhanh ở
+  // `StatusBar.tsx` cũng mở panel này qua `open()`.
+  // 05/08 (Hoà chốt "hai Vitals cùng lúc"): panel mount DUY NHẤT ở đây (ổ ① header, đúng
+  // `SPEC-HA-TANG-UI-IF` Trụ 1 + mock Claude Design). `anchor` đã BỎ khỏi store — trước đó nó
+  // chọn 1 trong 2 nơi mount, mà hai nơi mount là hai nguồn cho một panel (gate anchor giữ chỉ
+  // một cái MỞ nhưng người dùng vẫn thấy 2 lối vào trên màn). StatusBar nay chỉ gọi `open()`,
+  // không mount gì.
+  const panelOpen = useVitalsUi((s) => s.panelOpen);
   const openShared = useVitalsUi((s) => s.open);
   const closeShared = useVitalsUi((s) => s.close);
+  const initialInput = useVitalsUi((s) => s.initialInput);
+  const autoSend = useVitalsUi((s) => s.autoSend);
+  const consumeInitial = useVitalsUi((s) => s.consumeInitial);
   const setPanelOpen = useCallback(
     (v: boolean | ((prev: boolean) => boolean)) => {
       const cur = useVitalsUi.getState();
-      const curForThisAnchor = cur.panelOpen && cur.anchor === 'gesture';
-      const next = typeof v === 'function' ? (v as (prev: boolean) => boolean)(curForThisAnchor) : v;
-      if (next) openShared('gesture');
+      const next = typeof v === 'function' ? (v as (prev: boolean) => boolean)(cur.panelOpen) : v;
+      if (next) openShared();
       else closeShared();
     },
     [openShared, closeShared],
@@ -198,13 +201,12 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
 
   // ⌘J (Mac) / Ctrl+J (Win) — mở/đóng Vitals, cả 3 chặng (StageSwitcher mount ở cả 3).
   // Đã grep trước: repo chưa dùng phím 'j' ở đâu khác — không đè phím tắt sẵn có.
-  // VIỆC A (28/07): neo 'statusbar' — StatusBar (điểm gọi chính thức) tự mount panel của NÓ khi
-  // store báo mở, StageSwitcher không cần biết/làm gì thêm ở đây (không đụng dragging cục bộ).
+  // 05/08: `toggle()` không còn tham số anchor (panel chỉ mount ở đây) — mở đúng panel này.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && (e.key === 'j' || e.key === 'J')) {
         e.preventDefault();
-        useVitalsUi.getState().toggle('statusbar');
+        useVitalsUi.getState().toggle();
         markVitalsUsed();
         try {
           localStorage.setItem(FIRST_DONE_KEY, '1');
@@ -384,11 +386,17 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
           )}
         </AnimatePresence>
 
-        {/* Panel chat Vitals — pre-mount khi dragging, chỉ open khi threshold hit. */}
+        {/* Panel chat Vitals — NƠI MOUNT DUY NHẤT trong app (05/08, Hoà chốt; xem
+            lib/vitals-ui.ts + SO-KIEM-TONG §1). Pre-mount khi dragging, chỉ open khi threshold
+            hit. `initialInput`/`autoSend` đến từ ô gõ nhanh ở StatusBar — người dùng gõ ở đáy
+            màn, câu hỏi chạy vào panel này. */}
         {shouldMountPanel && (
           <VitalsGesturePanel
             originPx={originPx}
             open={panelOpen}
+            initialInput={initialInput}
+            autoSend={autoSend}
+            onConsumeInitial={consumeInitial}
             onClose={() => {
               setPanelOpen(false);
               setDragging(false);
