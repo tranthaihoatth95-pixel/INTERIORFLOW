@@ -27,6 +27,7 @@
 | Rà jargon toàn app (từ điển NGON-NGU) | ✅ | — | — | 🔨 ca audit A4 quét grep | "Master Library" từng lộ |
 | Smart Tour v2 (ăn NC-onboarding) | 🔵 NC-4 về | ⬜ | ✅ v1 cũ | ⬜ | sáng phân chủ |
 | Bộ tên chính thức 2D Kỹ thuật/3D Thiết kế/Trình bày — đổi NHÃN hiển thị khắp app | ✅ CHOT-TEN vòng cuối | — | 🔵 `lib/phases.ts` (nguồn gốc) + 20 file UI đồng bộ theo (đợt 5, 05/08) | ⬜ | khoá kỹ thuật GIỮ NGUYÊN; verify browser thật header+palette+tab tooltip đúng nhãn mới |
+| Trụ 4 mode registry (`defineMode`/`getMode`, MỘT khuôn) — A3 phiếu ĐỢT6 | ✅ HA-TANG Trụ 4 | — | 🔵 `6b5af10` — 4 mode thật `2d/sketch·2d/pro·3d/node·3d/3d`, xoá bản `ModeDefinition` cũ trùng | ⬜ | verify browser: round-trip Node↔Vẽ3D + Sketch↔Pro không crash; `if(mode===)` duy nhất (HomeScreen ModeShell) đã thay bằng `requireMode()` |
 
 ## 2 · CHẶNG VẼ (CAD) — 3 mode
 | Hạng mục | Spec | Mock | Code | Audit | Ghi chú |
@@ -41,6 +42,7 @@
 | BOQ groundwork (đo bóc hình học) | ✅ | — | ✅ `80b0c96` | — | |
 | 🔴 Bug Nhập DWG treo vĩnh viễn (2.1.6.d) | — | — | ⬜ PHU q8 (bơm 04/08) | ⬜ | bug đỏ STATUS chưa ai động |
 | findHatchBoundary treo >2' mật độ cao | — | — | ⬜ TECH-DEBT | — | né được, chưa chặn |
+| Port mock-2d-ky-thuat.html: Lớp hoàn thiện · Bắt điểm status bar · Chọn hết cùng loại | ✅ PHIEU-DOT6 NHÓM B | ✅ mock-2d-ky-thuat (audit A4 ĐẠT) | 🔵 `bc2654c` | ⬜ | Bắt điểm+đếm "chọn hết cùng loại" là dữ liệu THẬT; Lớp hoàn thiện + nút chọn = disabled kèm lý do (data model 2-mặt chưa chốt · chờ Đ3/P3-G4, KHÔNG phải "chờ A4" — A4 đã xong) |
 
 ## 3 · CHẶNG DỰNG ẢNH — 2 mode
 | Hạng mục | Spec | Mock | Code | Audit | Ghi chú |

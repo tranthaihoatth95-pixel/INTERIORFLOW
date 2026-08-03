@@ -1711,3 +1711,93 @@ khoá bởi phiên khác, xem ghi chú "Sự cố vận hành phải biết" m�
 ## Hàng đợi CHINH sau đợt này
 - Việc cũ chưa đổi: `⛔ merge nhanh-phu` · phím tắt per-panel §2f · chữ→icon phần ngoài vùng ·
   node RÁC dự án mẫu · xung đột spec Inspector-khi-không-chọn.
+
+---
+
+# PHIÊN CHINH — PHIEU-CODE-IF-DOT6 VIỆC 1 (A3) + VIỆC 2 (port mock-2d-ky-thuat)
+
+Đọc `SO-KIEM-TONG.md §0→§0d` · `PHIEU-CODE-IF-DOT6-2026-08-03.md` · `CHOT-TEN-CHANG-MODE
+-2026-08-03.md` mục VÒNG CUỐI trước khi làm, đúng lệnh giao.
+
+## VIỆC 1 — A3: hợp nhất Trụ 4 mode registry (`6b5af10`)
+SEARCH trước khi code xác nhận đúng vật chứng nêu trong phiếu: `defineMode`/`getMode` 0 nơi
+gọi thật, 2 khuôn khai mode lệch nhau (`ModeConfig` cũ 3 trường ReactNode THIẾU `canvas`;
+`ModeDefinition` ở `lib/three/mode-render-3d.ts` đủ 6 trường nhưng `navigator`/`canvas` khai
+kiểu `string` — repo không có cơ chế resolve tên→component nào, chỉ là mô tả trên giấy).
+
+**Quyết định tự chọn**: hợp nhất theo hướng `ModeDefinition` (6 trường: stage/label/
+navigator/canvas/shelves/commands, đúng ví dụ code Trụ 4 trong spec) NHƯNG đổi
+`navigator`/`canvas` sang kiểu `ReactNode` (như `ModeConfig` cũ) thay vì `string` — vì
+component đã dựng sẵn gọi được ngay, không cần thêm 1 tầng registry tên→component. Xoá hẳn
+`lib/three/mode-render-3d.ts` (0 người import, đã grep xác nhận trước khi xoá).
+
+Khai thật 4 mode `2d/sketch · 2d/pro · 3d/node · 3d/3d` ngay tại module-scope của 2 màn đang
+dùng (`CadStageScreen.tsx`, `HomeScreen.tsx`) — không dựng file registry tập trung riêng vì sẽ
+kéo cả import CAD lẫn Render vào chung 1 chunk (rủi ro phình bundle 2 route không liên quan).
+`HomeScreen.tsx`'s `ModeShell content={(mode) => mode==='render'?...:...}` — ternary duy nhất
+thật sự tồn tại trong 2 màn — đã thay bằng `requireMode(...).canvas`. `CadStageScreen.tsx`
+KHÔNG có ternary cũ (navigator/canvas vốn đã dùng chung cho Sketch/Pro) nhưng vẫn nối qua
+registry để tương lai không ai thêm `if (cadMode===...)` mới ở đó.
+
+`cadMode`/`renderMode` (khoá kỹ thuật đã persist localStorage) **GIỮ NGUYÊN** — chỉ map sang
+`ModeId` lúc tra registry (`cadModeToModeId()`/`renderModeToModeId()`, 2 hàm thuần 1 dòng).
+`revit` gộp vào `'2d/pro'` — cùng cách `phaseLabel()` (phiên trước) gộp cadStage
+`technical`/`bim`: BIM/Cấu kiện không còn là mode Trụ-4 riêng từ VÒNG CUỐI 03/08.
+
+Verify: tsc scoped 7 file sạch (chỉ còn lỗi pre-existing `utif` — đối chiếu bằng `git stash`
+xác nhận KHÔNG do tôi gây ra) · `npm test` toàn bộ nhóm 0 fail · **browser thật**
+127.0.0.1:3000: chuyển Node↔Vẽ 3D (nút "Vẽ 3D" chặng Dựng) round-trip không crash, không
+remount lạ; chuyển Sketch↔Pro (CadToolbar) canvas/navigator giữ nguyên đúng thiết kế, chỉ
+toolbar đổi bộ công cụ.
+
+## VIỆC 2 — port `mocks/mock-2d-ky-thuat.html` (`bc2654c`)
+Port đúng 3 thứ theo thứ tự giao, KHÔNG port thêm gì khác trong mock (Kích thước/Tầng đã có
+component riêng, không thuộc phạm vi).
+
+**② Bắt điểm + toạ độ** — toạ độ X/Y **đã có sẵn** trong `StatusBar.tsx` (VIỆC A 28/07, đọc
+`useCadLiveStatus`). Chỉ thêm "Bắt điểm: …" cạnh đó, đọc THẬT từ `useCadStore.snap`
+(9 loại bật/tắt), KHÔNG chép chuỗi tĩnh "Đầu mút, Giữa cạnh" từ mock (mock chỉ minh hoạ 2/9
+loại cho gọn hình).
+
+**① Lớp hoàn thiện** (`WallFinishBox.tsx`, rollout mới trong `CadInspectorPages.tsx` trang
+"Loại tường") — đã đọc hết `lib/cad/model.ts` trước khi code: KHÔNG có field "vật liệu theo
+TỪNG MẶT tường" (gần nhất là `HatchEntity.specId` — 1 giá trị CHUNG cho cả đoạn poché, không
+phải 2 mặt riêng). Đúng luật port L2 (mock ghi badge PLACEHOLDER ở tiêu đề aside, áp cho cả
+panel) — 2 dòng mặt A/B hiện **"— chưa gán —"** (quy ước đã dùng sẵn trong app,
+`CadEditor.tsx:2040`), KHÔNG bịa tên vật liệu giả như mock ("Sơn trắng ngà"/"Ốp gỗ sồi" là
+demo copy của mock, không phải dữ liệu port được). Nút "Đổi lớp hoàn thiện" disabled kèm
+`title` giải thích cần chốt data model 2-mặt trước (TỔNG/Hoà quyết, ngoài phạm vi port UI).
+
+**③ Chọn hết cùng loại** (`SelectSameKindButton.tsx`) — 🔴 **phát hiện quan trọng, đã sửa lý
+do disabled cho đúng sự thật**: nhiệm vụ giao ghi "chờ PHU xong A4". SEARCH trước khi code
+(§0b) phát hiện A4 (`lib/three/cad-to-obj.ts`, gán entityId mọi nhóm 3D) **ĐÃ XONG**
+(`1c0b91d`, PHU — rất mới). Đọc kỹ `SPEC-TANG-DU-LIEU-CAU-KIEN.md` §8-§9 thì A4 chỉ là điều
+kiện CẦN (P2 trong lộ trình), không phải ĐỦ — điều kiện thật khoá tính năng là **Đ3
+"selectedIds sống ở tầng Doc"** (P3, giao **G4**, CHƯA làm). Nút vẫn disabled (đúng lệnh giao
+"trước đó dựng UI và để disabled") nhưng `title` ghi ĐÚNG lý do hiện tại (Đ3/P3-G4), KHÔNG
+copy nguyên văn "chờ A4" đã lỗi thời — nếu để vậy sẽ vi phạm §0 luật trung thực. Phần ĐẾM
+("N tường … dày …mm") vẫn làm THẬT (đọc `doc.entities`, không cần A4/Đ3) — chỉ HÀNH VI BẤM
+(đặt `selection`) bị khoá, tránh tự chế 1 cơ chế chọn song song với Đ3 sắp tới (§10 cấm đồng
+bộ 2 chiều/2 nguồn).
+
+**Đề nghị cho TỔNG/Hoà**: xét xem có greenlight bản "chọn hết cùng loại" CHỈ-2D (dùng
+`doc.entities.filter` + 1 store action `setSelection` mới, không xuyên 3D) làm TRƯỚC khi chờ
+Đ3 đầy đủ hay không — về mặt kỹ thuật khả thi ngay (dữ liệu đã đủ), nhưng tôi chủ động KHÔNG
+tự quyết vì đó là mở rộng phạm vi ngoài "port UI" đã giao.
+
+Verify: tsc scoped sạch (cùng 1 lỗi pre-existing) · `npm test` 0 fail · **browser thật**: chọn
+1 tường demo qua `window.__cadStore` (click canvas SVG thu nhỏ trong sandbox không đủ tin cậy
+để nhắm đúng pixel), Inspector hiện đủ 3 phần, đếm thật "29 tường chưa phân loại, chưa khai độ
+dày", 2 tooltip đúng nội dung mới, cả 2 theme đúng token (không hex cứng).
+
+## Sự cố/ghi chú vận hành
+- `docs/AUDIT-BACKEND-2026-08-03.md` xuất hiện untracked, KHÔNG phải tôi tạo — để nguyên,
+  không đụng, không đưa vào commit của mình (đúng luật "file lạ không phải do mình tạo →
+  để nguyên").
+- `.git` không có lock rác trong suốt phiên này — 2 commit chạy thẳng.
+
+## Hàng đợi CHINH còn lại (không đổi so với chốt trước)
+- `⛔ merge nhanh-phu` · phím tắt per-panel §2f · chữ→icon phần ngoài vùng · node RÁC dự án
+  mẫu · xung đột spec Inspector-khi-không-chọn.
+- MỚI: cân nhắc bản "chọn hết cùng loại" 2D-only (xem đề nghị VIỆC 2③ trên) — chờ TỔNG/Hoà
+  quyết trước khi làm.
