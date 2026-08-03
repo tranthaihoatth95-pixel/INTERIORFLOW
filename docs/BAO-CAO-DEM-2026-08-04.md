@@ -275,3 +275,24 @@ Hoà chốt liên tiếp qua chat, TỔNG gom thành `docs/SPEC-ARCHINOTE-UI-202
 5. **ICON**: icon hoá thứ lặp hằng ngày, **cấm icon hoá nút quyết định** (Xoá · Gửi khách · Xuất hồ sơ).
 6. **BENTO**: chỉ cho màn tổng quan; **cấm cho màn làm việc** — vùng vẽ phải liền khối.
 7. Đọc 14 ảnh tham khảo theo Luật #7, ghi bảng "lấy cơ chế gì" tại §9 spec.
+
+## [07:5x] TỔNG — AUDIT ĐỢT 6 (nhóm A hạ tầng + port mock)
+| Việc | Commit | TỔNG verify bằng code | Kết |
+|---|---|---|---|
+| **A1** findByAlias lọc `when` | `ee85c3f` | `registry.ts:362-367` — nhận `ctx: WhenCtx`, `return found.when(ctx) ? found : undefined`. Test **60 ok/0 fail** | ✅ ĐẠT — gỡ bom che-lệnh-CAD |
+| **A3** Trụ 4 mode registry | `6b5af10` | hợp nhất 2 bản khai lệch, khai thật 4 mode | ✅ |
+| **A4** entityId mọi nhóm 3D | `1c0b91d` | `cad-to-obj.ts` — Wall/Furn/Window CÓ id; **Floor/Ceiling/Room KHÔNG** — nhưng có comment dòng 396-399 giải thích đúng: chúng là bbox tổng hợp/dò runtime, **chưa có entity nguồn** (chờ §6 RoomEntity). Không phải bỏ sót | ✅ ĐẠT + khai thật |
+| **B8** xlsx SUM() sống | `18afba3` | test **36 pass/0 fail** | ✅ |
+| BOQ editor + live-link | `4991340`+`3da6361` | B0-B6+B10+B8 xong, B7/B9 tự khai treo | ✅ |
+| Port mock 2D | `bc2654c`+`ccea29b` | Lớp hoàn thiện · Bắt điểm status bar · Chọn hết cùng loại | ✅ |
+**tsc toàn repo 0 lỗi · cad-to-obj 50 pass · xlsx 36 pass · registry 60 ok.** Cây sạch, không file dirty.
+**Điểm đáng khen:** A4 không làm bừa cho đủ chỉ tiêu — chỗ nào chưa có entity nguồn thì ghi lý do tại chỗ, đúng §0.
+
+## [08:0x] TỔNG — 🔴 AUDIT BACKEND (agent COWORK-BACKEND, `docs/AUDIT-BACKEND-2026-08-03.md` 492 dòng)
+**3 lỗ NGUY HIỂM — ưu tiên trên mọi tính năng mới:**
+1. 🔴 **Tự nạp credit vô hạn** — `app/api/credits/route.ts:30-34`: nhánh `action:'refund'` cộng thẳng `amount` từ body, không trần, không đối chiếu `jobRef` với giao dịch trừ nào. Bất kỳ tài khoản đăng nhập nào POST `{"action":"refund","amount":1000000}` là có triệu credit rồi tiêu vào fal/NVIDIA **tiền thật**.
+2. 🔴 **`/api/jobs` đốt tiền provider mà KHÔNG trừ credit** — `app/api/jobs/route.ts:7-55`: chặn ẩn danh/tier nhưng không một dòng đụng credit; kế toán nằm ở CLIENT (`lib/execution.ts:108-137`). Gọi thẳng route = đốt balance fal, credit không giảm. Nghịch lý: `render/premium:39-44` đã làm đúng và còn ghi comment "client bypass được" — bài học chưa áp.
+3. 🔴 **XSS lưu trữ qua upload thư viện** — `library/route.ts:63-73` + `library/[id]/file/route.ts:16`: không whitelist MIME (client tự khai), tải về trả đúng Content-Type đó, không nosniff, không attachment. Upload HTML có script → mở link → chạy trên origin app, fetch được mọi API với tư cách nạn nhân (gồm lỗ #1). `comments/route.ts:39` đã whitelist đúng — chưa áp cho library/notebook.
+**Sát nút:** SSRF `library/clip/route.ts:30` (fetch URL người dùng, không chặn host nội bộ, không timeout — trong khi `stock-photos/proxy` đã có sẵn `isFetchableImageUrl`) · `render/premium` lặp 120s trên hạ tầng cắt 60s → trừ 4 credit, mất ảnh, nhánh hoàn tiền không bao giờ chạy.
+**Phân quyền:** ✅ **KHÔNG có IDOR đọc chéo dự án** — `lib/server/access.ts:32-54` là cửa duy nhất, làm đúng cả 4 việc khó (lọc deletedAt, admin=owner, **404 thay 403**, ROLE_RANK). Nhưng 4 khuyết khác: không có `middleware.ts` (51/55 route tự gọi getSessionUser) · **"đăng nhập là toàn quyền" trên dữ liệu chung** (ai cũng DELETE `/api/specs/[id]` xoá giá vật liệu cả công ty, PATCH sửa `priceVnd` → sai tiền BOQ âm thầm) · notebook dùng sai nguồn chân lý (`resolveProject.ts:39` kiểm `Project.userId` thay `ProjectMember` → thành viên bị âm thầm chuyển bucket riêng, thấy kho trống) · `PUT /api/flows/[id]:77` gán `projectId` bất kỳ không kiểm quyền.
+**Sạch:** 0 SQL thô · 0 path traversal · 0 secret ra client · token OAuth AES-256-GCM · không log dữ liệu nhạy cảm. **4 route chết:** atlas-materials/sync · auth/apple (stub 503) · boq/[projectId] (chờ nối UI, không xoá) · integrations connect/disconnect (CHƯA VERIFY).

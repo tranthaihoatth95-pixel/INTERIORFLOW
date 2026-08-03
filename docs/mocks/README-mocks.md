@@ -177,3 +177,30 @@ và `mock-trinh-video-2026-08-04.html` **đã có từ đợt 3** — không d�
 
 ---
 *COWORK-UI rà 03/08/2026 (việc 2). Append-only.*
+
+---
+
+## 🔍 AUDIT A4 · 7 MOCK MÀN PHỤ (COWORK-UI 03/08/2026) — chi tiết ở `docs/AUDIT-MOCK-MANPHU-2026-08-03.md`
+Append-only. Mỗi ô là số đo bằng lệnh. **Chưa file nào port được ngay.**
+
+| File | Hạng | Số thật | Phải sửa gì trước khi port |
+|---|---|---|---|
+| `mock-if-du-an.html` | 🔴 | 22 dòng · 572B · `var(--`=**0** · hex TTT 0 | **EXPORT HỎNG** — cắt cụt giữa token `--t3:#9e` (dòng 19), 0 dòng giao diện. Không audit nội dung được. Export lại. |
+| `mock-if-cai-dat.html` | 🔴 | 26 dòng · 904B · `var(--`=**0** · hex TTT 0 | **EXPORT HỎNG** — cắt giữa `--hatch:repeating-linear-gradient(...` (dòng 23). Thêm: dòng 14 `--row:44px` sai mặc định (globals = 28px). Export lại. |
+| `mock-if-anh-dai-dien.html` | 🔴 | 60 dòng · `var(--`=19 · hex ngoài `:root`=**0** (sạch nhất) · 2 theme khai đủ | **RỖNG RUỘT** — có header + khung 1180×820, 0 ô ghép avatar, 0 nút Lưu. Export lại phần ruột; thêm `/1.5` cho `font:600 12px inherit` (dòng 55). |
+| `mock-if-thu-vien.html` | 🔴 | 545 dòng · `var(--`=407 · hex ngoài `:root`=**51** (22 trùng token) · PLACEHOLDER 3 | Cụt đuôi dòng 543 + **thiếu `<script>`** · G2: tấm nổi dòng 92 `--mat-panel` **78%** → ≥92% · token `--mat-panel` .78/.82 lệch globals (.68/.7) · 44 `font:` thiếu `/1.5` · `#f5f5f7`→`var(--t1)`, `#c79a63`→`var(--accent-warm)` · khai `--swatch-bg/--ink/--scrim` vào globals. |
+| `mock-if-nut-tong.html` | 🔴 | 513 dòng · `var(--`=447 · hex ngoài `:root`=17 · PLACEHOLDER 6 · khung: chỉ 236px, **0 lần 42px** | **G2 nặng nhất:** modal dòng 165 `--mat-panel` **72%** + 13 card node `--mat-card` **62%** (dòng 79·87·95·103·111·293·302·349·414·422·430·442·451) → tất cả ≥92%/≥82% · 4 hàng `opacity:.5` trong modal (226·240·254·261) chữ mờ trên kính · **19 lần hardcode `44px`, `var(--row)`=0** → đổi hết · thiếu khung 6 ổ + thiếu bộ chuyển chặng · 17 `font:` thiếu `/1.5`. |
+| `mock-if-bang-nut.html` | 🟡 | 562 dòng · `var(--`=**465** · hex ngoài `:root`=9 · PLACEHOLDER 6 · **khung 6 ổ đủ 4/4** (dòng 68) · chặng `2D·3D·Trình bày` ✅ | Sửa lúc port: `--mat-card` .62→.82 (14 card, dòng 151·165·183·204·219·235·260·350·366·387·411·424·445·469) · bảng lệnh dòng 479 (68%) → ≥92% · 24 `font:` thiếu `/1.5` · bỏ 4 bí danh `--p-img/-mask/-mat/-num` (= accent/warning/success/t3) · 7 hex → `var()` · thêm phím tắt (`<kbd>`=0). |
+| `mock-if-tep.html` | 🟡 | 783 dòng · `var(--`=**649** (nhiều nhất) · hex ngoài `:root`=**9** (ít nhất trong nhóm có ruột) · PLACEHOLDER 7 · **khung 6 ổ đủ 4/4 ở CẢ 4 trạng thái** (dòng 64·346·537·623) · `--mat-*` khớp globals | Gần port được nhất. Sửa: **76** `font:` thiếu `/1.5` (nhiều nhất bộ, nặng ở mono 10px) · popover dòng 701 `--mat-panel` 68% → ≥92% · 8 hex → `var()` · khai `--hatch`/`--ink` vào globals · thêm gợi ý phím + ⌘K (`⌘`=0, `Esc`=0). |
+
+### Đạt chung cả 7
+- **Hex TTT `#F06020` `#002850` `#1B1512` `#F1ECE3` = 0/0/0/0** — sạch tuyệt đối.
+- **Nhãn chặng cũ = 0** (`Rendering`·`Presenting`·`CAD ·`·`>Vẽ<`). 12 khớp `Dựng ảnh` ở `bang-nut`(7)/`nut-tong`(5) là **tên NODE**, dương tính giả theo §6.4 — **giữ nguyên**, cùng loại với `mock-if-3chang:376·464·661`.
+- **K4 ✅** — `Xoá` (tep:320·511) có chữ; 2 nút chỉ-icon đều là "Đóng" kèm `title` + Esc.
+- **G1 ✅** — 4 keyframes duy nhất (`bn-spin`·`bn-dash`·`bn-halo`·`nt-halo`) đều transform/stroke-dashoffset/box-shadow, **0 animate opacity** trên kính.
+- **Accent ✅** — chỉ `#6a57f5`; `#c79a63` = `--accent-warm` thật của globals (dòng 26), không phải accent lạ.
+
+### 🔴 CHẶN CHUNG — `support.js` KHÔNG TỒN TẠI
+`ls docs/mocks/support.js` → không có, nhưng **16 file** khai `<script src="./support.js">`: 7 mock trên + `mock-2d-ky-thuat` · `mock-3d-frame` · `mock-3d-thong-nhat` · `mock-trinh-bay` · `mock-an-bang-theo-doi` · `mock-an-ghi-chu-viet-tay` · `mock-an-so-tay` · `mock-an-thu-vien-tri-thuc` · `Vitals v2.dc`.
+⇒ nút đổi theme không chạy · **131 `style-hover` chết** · `{{ project }}`/`{{ themeLabel }}` in ra nguyên ngoặc.
+⇒ **Tiêu chí "đủ 2 theme" của mọi mock export Claude Design mới verify ở mức KHAI BÁO CSS — CHƯA VERIFY được bằng mắt.** Cần TỔNG/Hoà xin lại `support.js` cùng lúc với 3 file export hỏng.

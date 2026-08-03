@@ -147,3 +147,42 @@ Bảng **file → dòng → chữ sai → chữ đúng** đã ghi vào `docs/moc
 **Đã xong:** việc 1 (§6 vào `SPEC-NGON-NGU-CHI-DAN.md`) + việc 2 (bảng rà 19 file vào `mocks/README-mocks.md`).
 **Chờ TỔNG/Hoà:** ① duyệt cho sửa nhãn 8 mock HIỆN HÀNH ② quyết số phận `mock-cad-revit-2026-08-03.html` (mode Cấu kiện đã chết) ③ export `mock-3d-thong-nhat.html` về `docs/mocks/` để rà nốt.
 **Phiên UI sau đọc:** `SPEC-NGON-NGU-CHI-DAN §6` TRƯỚC KHI đặt bất kỳ tên nào — bốn vòng đặt tên đã đóng, đề xuất tên mới không tham chiếu §6.2 sẽ bị trả về.
+
+---
+
+## [AUDIT A4] 7 MOCK MÀN PHỤ — 03/08/2026
+Đầy đủ: **`docs/AUDIT-MOCK-MANPHU-2026-08-03.md`**. Phạm vi: `mock-if-{du-an,cai-dat,tep,thu-vien,anh-dai-dien,bang-nut,nut-tong}.html` — 7 mock chưa ai kiểm. Không sửa mock, không chạy git.
+
+### Kết luận
+- **PORT ĐƯỢC NGAY: 0/7.**
+- **Sửa bề mặt rồi port (2):** `mock-if-tep` · `mock-if-bang-nut` — khung 6 ổ đủ 42/214/236/26, bộ tên chặng `2D·3D·Trình bày` đúng, K4 + G1 đạt.
+- **Phải sửa/dựng lại trước (5):** `du-an` (22 dòng) · `cai-dat` (26 dòng) · `anh-dai-dien` (60 dòng, rỗng ruột) — **3 file này KHÔNG CÓ GIAO DIỆN, bị cắt cụt lúc export**; `thu-vien` (cụt đuôi + thiếu `<script>` + G2) · `nut-tong` (G2 nặng + 19 lần hardcode 44px + thiếu khung 6 ổ).
+
+### Số thật đáng nhớ
+| Tiêu chí | Kết quả |
+|---|---|
+| Hex TTT cấm (`#F06020 #002850 #1B1512 #F1ECE3`) | **0/0/0/0 — cả 7 file sạch tuyệt đối** |
+| Nhãn chặng cũ (`Rendering`·`Presenting`·`CAD ·`·`>Vẽ<`) | **0/7** — 12 khớp `Dựng ảnh` đều là **tên NODE** (§6.4, dương tính giả) |
+| `var(--` | tep 649 · bang-nut 465 · nut-tong 447 · thu-vien 407 · anh-dai-dien 19 · **du-an 0 · cai-dat 0** |
+| Hex tự chế ngoài `:root` | thu-vien **51** (22 trùng token) · nut-tong 17 · tep 9 · bang-nut 9 · anh-dai-dien 0 |
+| Khung 6 ổ đủ 4 số | **tep ✅ (×4 trạng thái)** · bang-nut ✅ · thu-vien ⚠️ thiếu 42/26 · nut-tong ⚠️ chỉ 236 · 3 file cụt ❌ |
+| PLACEHOLDER | tep 7 · bang-nut 6 · nut-tong 6 · thu-vien 3 · anh-dai-dien 1 |
+| K4 (nút quyết định có chữ) | **✅ 7/7** — `Xoá` ở tep:320·511 có chữ; 2 nút chỉ-icon đều là "Đóng" có title+Esc |
+| G1 (animate opacity trên kính) | **✅ 7/7** — 4 keyframes tồn tại đều là transform/dash/box-shadow |
+
+### 3 lỗi phổ biến nhất
+1. **`font:` rút gọn thiếu `/line-height`** — **162 chỗ / 5 file** (tep 76 · thu-vien 44 · bang-nut 24 · nut-tong 17 · anh-dai-dien 1). `grep 'text-\['` = 0 vì mock dùng inline style, nhưng shorthand `font:600 11px inherit` **đặt lại line-height về normal** → đúng cơ chế G4 cắt dấu tiếng Việt. Sửa: thêm `/1.5`.
+2. **Lớp nổi dưới 92% nền đặc (G2)** — **33 phần tử / 4 file**: 27 card node trên `--mat-card` **62%** (bang-nut 14 · nut-tong 13, tự hạ khỏi `.82` của globals) + modal `nut-tong:165` **72%** + tấm `thu-vien:92` **78%** + popover `tep:701` 68% + bảng lệnh `bang-nut:479` 68%.
+3. **Hex viết cứng trùng đúng giá trị token** — **48 chỗ / 5 file** (`#f5f5f7`→`var(--t1)`, `#c79a63`→`var(--accent-warm)`, `#0a0a0c`, `#f2efe9`…).
+
+### Phát hiện chặn — cần TỔNG/Hoà xử
+1. 🔴 **`docs/mocks/support.js` KHÔNG TỒN TẠI** nhưng **16 mock** `<script src="./support.js">` (7 file này + `mock-2d-ky-thuat` · `mock-3d-frame` · `mock-3d-thong-nhat` · `mock-trinh-bay` · 4 mock `mock-an-*` · `Vitals v2.dc`). Hệ quả: nút đổi theme không chạy, **131 thuộc tính `style-hover` chết**, `{{ project }}` in ra nguyên ngoặc. ⇒ **Tiêu chí "đủ 2 theme" mới verify được ở mức KHAI BÁO CSS; chưa file nào verify được bằng mắt.**
+2. 🔴 **3 mock export hỏng** (`du-an` 572B · `cai-dat` 904B · `anh-dai-dien` 3.4KB) + `thu-vien` mất đuôi. Cần export lại từ nguồn — COWORK-UI không dựng mock (§2).
+3. 🟡 **Token dùng chung bị mock tự sửa giá trị:** `--mat-card` .82→**.62** (bang-nut·nut-tong) · `--mat-panel` .68→.78/.72 (thu-vien·nut-tong) · `--row` 28→**44** (cai-dat:14). Port nguyên = mang giá trị sai vào app.
+4. 🟡 **Token mới chưa có trong `globals.css`:** `--scrim` `--hatch` `--ink` `--swatch-bg` — nên chốt vào globals thay vì mỗi mock tự khai. 4 biến `--p-img/-mask/-mat/-num` chỉ là bí danh của `--accent`/`--warning`/`--success`/`--t3` → bỏ.
+5. 🟡 **§0c mảng 1 (phím tắt) thiếu ở cả 7:** `<kbd>` = 0/7 · `⌘` = 1 lần duy nhất · không có lối vào ⌘K. Cùng lỗ hổng đã vá cho 2 mock Trình bày đợt 3.
+
+### Trung thực (§0)
+- Mọi con số từ `grep -o | wc -l` / `grep -c` chạy trên file thật; token đối chiếu bằng cách grep thẳng `app/globals.css` (`--mat-panel:.68` dòng 93 · `--mat-card:.82` dòng 94 · `--accent-warm:#c79a63` dòng 26 · `--row:28px` dòng 61), không tin CSS chép trong mock.
+- **CHƯA VERIFY:** hiển thị thật 2 theme/hover (chặn bởi `support.js`) · tỉ số tương phản chữ trên kính (các số 62%/68%/72%/78% là **độ đục nền đọc từ CSS**, không phải tỉ số tương phản đo được) · nội dung `du-an`/`cai-dat`/`anh-dai-dien` (không có ruột).
+- KHÔNG chạy git. `docs/AUDIT-MOCK-MANPHU-2026-08-03.md` + 2 file docs sửa đang untracked/dirty — nhờ **CHINH** gom commit (hàng đợi 5b).
