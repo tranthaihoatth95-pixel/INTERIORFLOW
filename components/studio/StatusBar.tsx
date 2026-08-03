@@ -199,8 +199,12 @@ export default function StatusBar({ stage, hidden }: Props) {
             height: 24,
             padding: expanded ? '0 4px 0 10px' : '0 12px',
             borderRadius: 999,
-            border: '1px solid var(--border)',
-            background: expanded ? 'var(--field)' : 'transparent',
+            // PHIẾU ĐỢT 7 A2 — chip chìm hẳn vào StatusBar (viền `--border` mờ + nền trong suốt lúc
+            // rảnh), không ai thấy đây là điểm gọi CHÍNH THỨC. Viền tím cố định + nền tím nhạt lúc
+            // rảnh cho nó nổi lên khỏi thanh trạng thái; lúc nở thì đổi sang `--field` (đủ tương
+            // phản cho input, không lẫn với 2 vùng chữ khác trên bar).
+            border: '1px solid var(--accent)',
+            background: expanded ? 'var(--field)' : 'var(--accent-soft)',
             color: 'var(--accent)',
             cursor: 'pointer',
             width: expanded ? 280 : 92,
@@ -236,7 +240,17 @@ export default function StatusBar({ stage, hidden }: Props) {
               <span style={{ fontSize: 9.5, color: 'var(--t4)', whiteSpace: 'nowrap', paddingRight: 4 }}>⌘J</span>
             </>
           ) : (
-            <span style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>Vitals</span>
+            <>
+              <span style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>Vitals</span>
+              {/* chấm sống — tái dùng đúng cỗ máy `vitals-state-dot--idle` (VitalsStateBadge.tsx),
+                  chỉ ghi đè nhịp thở 2s theo brief thay vì 4.4s mặc định; reduced-motion đã tắt
+                  animation qua class này ở globals.css nên không cần xử lý riêng ở đây. */}
+              <span
+                className="vitals-state-dot vitals-state-dot--idle"
+                style={{ width: 6, height: 6, animationDuration: '2s' }}
+                aria-hidden="true"
+              />
+            </>
           )}
         </div>
 

@@ -289,13 +289,15 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
+  /* PHIẾU ĐỢT 7 A3 — var(--border-strong) cũ ra TRẮNG CHÓI trên nền tối chặng 3D (Viewport3D nền
+     cứng #2a2d33 + cột cây tầng dark). --t3 mờ + trộn transparent giữ được cả 2 theme. */
+  background: color-mix(in srgb, var(--t3) 45%, transparent);
   border-radius: 8px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--t4);
+  background: var(--t3);
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-track {

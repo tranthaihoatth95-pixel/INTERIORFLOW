@@ -19,8 +19,10 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { Boxes, Check, Hammer, Sparkles, X } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
+import { useCad3DAutosave } from '@/lib/cad/cad3d-autosave';
 import { useStageMode } from '@/lib/stage-mode';
 import { useT } from '@/lib/i18n';
 import { wallSegment } from '@/lib/cad/commands';
@@ -31,13 +33,22 @@ import ModeSwitchBar from '@/components/render-studio/ModeSwitchBar';
 import Command3DPanel, { type Command3DTab } from '@/components/render-studio/Command3DPanel';
 
 const GUIDE_HIDDEN_KEY = 'if.ve3d.guide_hidden_v1';
+const GUIDE_POS_KEY = 'if.ve3d.guide_pos_v1';
 const WELCOME_HIDDEN_KEY = 'if.ve3d.welcome_hidden_v1';
+
+interface GuidePos {
+  left: number;
+  top: number;
+}
 
 /** Tường mẫu 4m khi bấm "Dựng khối đầu tiên" — dùng ĐÚNG hàm engine `wallSegment()` của chặng Vẽ
  * (không tự chế hình học), dày 220mm, đặt ở gốc toạ độ để camera đang khung sẵn nhìn thấy ngay. */
 const FIRST_WALL = { from: { x: 0, y: 0 }, to: { x: 4000, y: 0 }, thicknessMm: 220 };
 
 export default function Render3DModeSkeleton() {
+  // Sửa "mode 3D không autosave" (docs/TECH-DEBT.md) — nối lại autosave CAD sẵn có
+  // (lib/sheets-persist.ts) vào Doc; mount/unmount đúng lúc mode 3D bật/tắt.
+  useCad3DAutosave();
   const doc = useCadStore((s) => s.doc);
   const { setMode } = useStageMode('render');
   const tr = useT();
@@ -51,16 +62,86 @@ export default function Render3DModeSkeleton() {
   const hiddenGroupNames = useTree3DUi((s) => s.hiddenNames);
   const selectedGroupName = useTree3DUi((s) => s.selectedName);
   const [guideHidden, setGuideHidden] = useState(false);
+  // PHIẾU ĐỢT 7 A1 — bảng TRÌNH TỰ đóng đinh `left:12;bottom:156` đè lên vùng nhìn khối. Kéo được
+  // (di chuyển tự do) + thu gọn còn 1 dòng khi bấm nhãn (KHÁC nút ✕ = ẩn hẳn, giữ nguyên bên dưới).
+  const [guidePos, setGuidePos] = useState<GuidePos | null>(null);
+  const [guideCollapsed, setGuideCollapsed] = useState(false);
   const [welcomeHidden, setWelcomeHidden] = useState(false);
   const welcomeRef = useRef<HTMLDivElement>(null);
   const soKhoiRef = useRef(0);
+  const guideRef = useRef<HTMLDivElement>(null);
+  const viewportWrapRef = useRef<HTMLDivElement>(null);
+  const guideDragRef = useRef<{ id: number; startX: number; startY: number; startLeft: number; startTop: number; moved: boolean } | null>(null);
 
   useEffect(() => {
     try {
       setGuideHidden(localStorage.getItem(GUIDE_HIDDEN_KEY) === '1');
       setWelcomeHidden(localStorage.getItem(WELCOME_HIDDEN_KEY) === '1');
+      const savedPos = localStorage.getItem(GUIDE_POS_KEY);
+      if (savedPos) {
+        const parsed = JSON.parse(savedPos) as GuidePos;
+        if (typeof parsed?.left === 'number' && typeof parsed?.top === 'number') setGuidePos(parsed);
+      }
     } catch {
-      /* localStorage bị chặn — cứ hiện, không phải lỗi chặn việc */
+      /* localStorage bị chặn hoặc dữ liệu hỏng — cứ hiện ở vị trí mặc định, không phải lỗi chặn việc */
+    }
+  }, []);
+
+  /** pointerdown trên thanh tiêu đề (bọc icon+nhãn, KHÔNG bọc nút ✕ — click ✕ vẫn chỉ ẩn hẳn,
+   * không kéo/thu gọn theo). Kéo thật (> 3px) thì di chuyển bảng, kẹp trong lòng viewport; bấm
+   * đứng yên (không kéo) thì đổi vai trò thành thu-gọn/mở-lại — cả 2 dùng CHUNG 3 pointer handler
+   * để không phải phân biệt 2 bộ listener cho 2 trạng thái mở/gọn. */
+  const onGuideHeaderPointerDown = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    const panel = guideRef.current;
+    const wrap = viewportWrapRef.current;
+    if (!panel || !wrap) return;
+    const panelRect = panel.getBoundingClientRect();
+    const wrapRect = wrap.getBoundingClientRect();
+    guideDragRef.current = {
+      id: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startLeft: panelRect.left - wrapRect.left,
+      startTop: panelRect.top - wrapRect.top,
+      moved: false,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }, []);
+
+  const onGuideHeaderPointerMove = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    const ds = guideDragRef.current;
+    const wrap = viewportWrapRef.current;
+    const panel = guideRef.current;
+    if (!ds || ds.id !== e.pointerId || !wrap || !panel) return;
+    const dx = e.clientX - ds.startX;
+    const dy = e.clientY - ds.startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) ds.moved = true;
+    if (!ds.moved) return;
+    const wrapRect = wrap.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+    const left = Math.max(0, Math.min(ds.startLeft + dx, wrapRect.width - panelRect.width));
+    const top = Math.max(0, Math.min(ds.startTop + dy, wrapRect.height - panelRect.height));
+    setGuidePos({ left, top });
+  }, []);
+
+  const onGuideHeaderPointerUp = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    const ds = guideDragRef.current;
+    if (!ds || ds.id !== e.pointerId) return;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    guideDragRef.current = null;
+    if (ds.moved) {
+      setGuidePos((pos) => {
+        if (pos) {
+          try {
+            localStorage.setItem(GUIDE_POS_KEY, JSON.stringify(pos));
+          } catch {
+            /* không lưu được thì phiên sau về vị trí mặc định — không chặn việc */
+          }
+        }
+        return pos;
+      });
+    } else {
+      setGuideCollapsed((c) => !c);
     }
   }, []);
 
@@ -187,7 +268,7 @@ export default function Render3DModeSkeleton() {
         onPickMaterial={setMatDangCam}
       />
 
-      <div style={{ position: 'relative', flex: 1, minWidth: 0, height: '100%' }}>
+      <div ref={viewportWrapRef} style={{ position: 'relative', flex: 1, minWidth: 0, height: '100%' }}>
         <Viewport3D
           scene={visibleScene ?? EMPTY_SCENE_3D}
           selectedId={viewportSelectedId}
@@ -286,38 +367,62 @@ export default function Render3DModeSkeleton() {
             </button>
           )}
 
-          {/* ── TRÌNH TỰ 3 BƯỚC — xương sống của mode, góc dưới trái ── */}
+          {/* ── TRÌNH TỰ 3 BƯỚC — xương sống của mode, kéo thả tự do (mặc định góc dưới trái) ── */}
           {!guideHidden && (
             <div
+              ref={guideRef}
+              className="vitals-pop"
               style={{
-                // bottom 156 = 54 (chỗ trục XYZ đứng) + 90 (chiều cao trục) + 12 thở. Đo bằng
-                // getBoundingClientRect lúc verify: để 74 là trình tự ĐÈ LÊN trục, mất luôn XYZ.
-                position: 'absolute', left: 12, bottom: 156, zIndex: 6, padding: '9px 10px 9px 11px',
-                borderRadius: 'var(--radius-md)', border: '1px solid var(--mat-hairline)',
-                background: 'color-mix(in srgb, var(--panel) 82%, transparent)',
-                backdropFilter: 'blur(var(--blur))', WebkitBackdropFilter: 'blur(var(--blur))',
-                display: 'flex', flexDirection: 'column', gap: 5, minWidth: 156,
+                position: 'absolute', zIndex: 6,
+                ...(guidePos
+                  ? { left: guidePos.left, top: guidePos.top }
+                  // bottom 156 = 54 (chỗ trục XYZ đứng) + 90 (chiều cao trục) + 12 thở — mặc định
+                  // TRƯỚC khi kéo lần nào; sau khi kéo thì luôn dùng toạ độ đã lưu (left/top).
+                  : { left: 12, bottom: 156 }),
+                padding: guideCollapsed ? '6px 11px' : '9px 10px 9px 11px',
+                display: 'flex', flexDirection: 'column', gap: guideCollapsed ? 0 : 5,
+                minWidth: guideCollapsed ? 0 : 156,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Boxes size={12} color="var(--t4)" />
-                <span style={{ fontSize: 'var(--fs-3xs, 10px)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--t4)', fontWeight: 700 }}>
-                  Trình tự
-                </span>
-                <button
-                  type="button"
-                  onClick={anTrinhTu}
-                  title="Ẩn trình tự"
-                  aria-label="Ẩn trình tự"
+                <div
+                  onPointerDown={onGuideHeaderPointerDown}
+                  onPointerMove={onGuideHeaderPointerMove}
+                  onPointerUp={onGuideHeaderPointerUp}
+                  onPointerCancel={onGuideHeaderPointerUp}
+                  title={guideCollapsed ? 'Kéo để di chuyển · bấm để mở lại' : 'Kéo để di chuyển · bấm để thu gọn'}
                   style={{
-                    marginLeft: 'auto', width: 18, height: 18, display: 'grid', placeItems: 'center', border: 0,
-                    background: 'none', color: 'var(--t4)', cursor: 'pointer', borderRadius: 5,
+                    display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0,
+                    cursor: 'grab', touchAction: 'none', userSelect: 'none',
                   }}
                 >
-                  <X size={11} />
-                </button>
+                  <Boxes size={12} color="var(--t4)" style={{ flexShrink: 0 }} />
+                  {guideCollapsed ? (
+                    <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--t2)', whiteSpace: 'nowrap' }}>
+                      ✓{buoc.filter((b) => b.xong).length}/3 · Trình tự
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 'var(--fs-3xs, 10px)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--t4)', fontWeight: 700 }}>
+                      Trình tự
+                    </span>
+                  )}
+                </div>
+                {!guideCollapsed && (
+                  <button
+                    type="button"
+                    onClick={anTrinhTu}
+                    title="Ẩn trình tự"
+                    aria-label="Ẩn trình tự"
+                    style={{
+                      marginLeft: 'auto', width: 18, height: 18, display: 'grid', placeItems: 'center', border: 0,
+                      background: 'none', color: 'var(--t4)', cursor: 'pointer', borderRadius: 5, flexShrink: 0,
+                    }}
+                  >
+                    <X size={11} />
+                  </button>
+                )}
               </div>
-              {buoc.map((b, i) => (
+              {!guideCollapsed && buoc.map((b, i) => (
                 <div key={b.chu} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <span
                     style={{
