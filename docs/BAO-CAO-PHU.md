@@ -2709,3 +2709,95 @@ ra một cách server-controlled (client vẫn tự đặt `jobRef` khi gọi `/
 (mới) + `docs/CHECKLIST-TONG.md`. Pathspec riêng — `git status` lúc này còn `app/globals.css` ·
 `components/studio/StageSwitcher.tsx` · `components/studio/VitalsGesture.tsx` ·
 `docs/BAO-CAO-DEM-2026-08-04.md` · `docs/mocks/Vitals v2.dc.html` đang mở bởi phiên khác, KHÔNG đụng.
+
+---
+
+## PHU — AUDIT-BACKEND-2026-08-03 · Lỗ 🔴 #2 — `/api/jobs` không kiểm/trừ credit (§5.2/R2)
+
+**Bug xác nhận đúng như audit:** `app/api/jobs/route.ts:7-55` (bản cũ) — có chặn ẩn danh, chặn
+tier, chặn video-tier-thấp, nhưng KHÔNG một dòng nào đụng credit. Kế toán CHỈ nằm ở client
+(`lib/execution.ts` gọi `/api/credits` action `spend` RỒI MỚI gọi `def.execute()`, mà
+`def.execute()` cuối cùng gọi `/api/jobs`). `curl -X POST /api/jobs {...}` lặp lại → đốt balance
+fal/ComfyUI thật, credit không giảm 1 đơn vị nào — verify LIVE bên dưới xác nhận đúng lỗ hổng này
+tồn tại trước khi vá (xem mục "Verify LIVE").
+
+**Đã vá — mẫu y hệt `render/premium/route.ts:39-44` (đúng như lệnh giao chỉ định):**
+- `lib/ai/tiers.ts` — thêm bảng giá `TASK_CREDIT_COST: Record<AiTask, number>` + `costOfTask()`.
+  Số ĐÚNG BẰNG `creditCost` đã khai ở node tương ứng (`lib/nodes/registry.ts`/`defs/*.ts`, đối
+  chiếu tay 03/08 — không suy đoán số mới). KHÔNG đổi theo `tier` (giữ đúng hành vi hiện tại: tier
+  2 oneAI "0đ thật" vẫn tốn credit như tier 4 fal — credit là đồng hồ đo mức DÙNG app, không phải
+  giá tiền provider; đổi việc đó là quyết định giá, ngoài phạm vi vá bảo mật).
+- `app/api/jobs/route.ts` — sau `providerConfigured()`, TRƯỚC `submitJob()`: `spendCredits(user.id,
+  costOfTask(task), …)` — atomic compare-and-set (dùng lại `lib/server/credits.ts` có sẵn từ
+  R1/premium, không viết logic mới), thiếu credit → 402 kèm `code:'INSUFFICIENT_CREDITS'`.
+  `submitJob()` ném lỗi → `refundCredits()` rồi mới trả lỗi cho client — Cùng cặp
+  spend-trước/refund-khi-lỗi, KHÔNG cần đối chiếu `jobRef` (khác R1: ở đây spend và refund luôn
+  xảy ra trong CÙNG 1 request, không có đường nào gọi refund tách rời như route `/api/credits`
+  công khai — nên dùng thẳng `refundCredits()` đơn giản, không cần bản `refundCreditsForJobRef`).
+
+**Sự cố phát hiện GIỮA CHỪNG — double-charge (không có trong phiếu, tự tìm thấy khi rà tác dụng
+phụ, giống cách A4 tìm ra bug `Scene3DViewer.tsx`):** nếu chỉ thêm spend vào `/api/jobs` mà KHÔNG
+đụng gì khác, mọi lượt chạy AI qua UI thật (đã đăng nhập) sẽ bị trừ **2 LẦN** — 1 lần ở
+`lib/execution.ts` (POST `/api/credits` spend TRƯỚC khi gọi `def.execute()`), 1 lần Ở NGAY BÊN
+TRONG `/api/jobs` (khi `def.execute()` gọi tới `runImageJob`). Đã vá bằng cách bỏ hẳn nhánh trừ
+phía client (`lib/execution.ts`) khi ĐÃ đăng nhập — server (`/api/jobs`) nay là nguồn TRỪ/HOÀN
+DUY NHẤT; client chỉ còn LÀM MỚI số hiển thị (`refreshServerCredits()`, 1 lần GET `/api/credits`
+sau khi `execute()` xong, thành công hay lỗi). Ví LOCAL (chưa đăng nhập, không đi qua server) giữ
+NGUYÊN 100% — không đụng, không liên quan bug này.
+
+**Sự cố phụ #2 — thông báo sai khi hết credit:** message 402 mới ("Hết credits…") chứa chữ
+"credit" nên rơi vào nhánh regex CŨ của `friendlyAiError()` (dành cho hết balance **fal.ai**) →
+sẽ hiện nhầm "nạp credit tại fal.ai/dashboard/billing" cho lỗi credit NỘI BỘ app — sai hoàn toàn,
+gây hiểu lầm đi nạp nhầm chỗ. Vá bằng cách gắn `code:'INSUFFICIENT_CREDITS'` lên lỗi, `execNode()`
+kiểm mã này TRƯỚC khi gọi `friendlyAiError`, hiện thẳng thông báo đúng, bỏ qua nhánh regex sai.
+
+**⚠️ Đánh đổi ĐÃ BIẾT, KHAI THẬT, chưa tự quyết (cần Hoà chốt sau — không phải bỏ sót):** đọc kỹ
+`lib/nodes/defs/render-v2.ts` (`ai.idmask`, `ai.localedit`, cả hai `creditCost:0`) và
+`components/smartselect/SmartSelectModal.tsx:286` phát hiện CẢ BA gọi `runImageJob()` với task
+`removeBg`/`materialSwap`/`segment` như PHẦN THƯỞNG/tầng nâng cao KHÔNG TÍNH TIỀN theo thiết kế
+gốc (comment gốc ghi rõ "không tính credit lần chạy lại"). Bảng giá mới tính theo TASK (server
+không biết node nào gọi) nên CẢ BA sẽ bắt đầu tốn credit khi thành công — đây là ĐÁNH ĐỔI BẮT
+BUỘC của việc đóng lỗ R2: 1 task đã lên giá thì KHÔNG THỂ vừa chặn được curl-thẳng vừa cho phép 1
+nơi khác gọi miễn phí (máy chủ không phân biệt được ai gọi). Ưu tiên đóng lỗ bảo mật (R2, 🔴) hơn
+giữ đúng trải nghiệm "0đ" của 2 node phụ — đã ghi rõ trong `lib/ai/tiers.ts` để không giấu, CHƯA
+tự sửa 2 node đó (ngoài phạm vi lệnh giao, và sửa thế nào — miễn phí hẳn hay rate-limit — là quyết
+định của Hoà).
+
+**Verify LIVE qua HTTP thật (dev server riêng cổng 3001, KHÔNG dùng chung cổng 3000 — phiên khác
+đang chạy đó, tránh chồng lấn):**
+1. Tạo tài khoản test tạm (`register` → 200 credits mặc định), ép credits=0 bằng `sqlite3` trực
+   tiếp (KHÔNG đụng tài khoản demo chung) → `curl POST /api/jobs` → **402
+   `{"error":"Hết credits — liên hệ admin nạp thêm.","code":"INSUFFICIENT_CREDITS"}`** đúng y hệt
+   dự kiến, số dư không đổi.
+2. Ép credits=10 → `curl POST /api/jobs` (task `moodboard`, tier 2/comfyui — `COMFYUI_URL` trỏ
+   `127.0.0.1:8188`, KHÔNG có gì lắng nghe cổng đó trong sandbox nên `submitJob` chắc chắn lỗi
+   `fetch failed`, AN TOÀN — không đốt tiền thật) → **502 `fetch failed`**, sổ cái ghi đúng 2 dòng
+   `-2` (spend) rồi `+2` (refund), số dư về lại ĐÚNG 10 — chứng minh cặp spend/refund atomic chạy
+   thật qua route HTTP, không chỉ đúng ở tầng hàm.
+3. **CHƯA verify được** nhánh submit THÀNH CÔNG thật qua fal (fal.ai CÓ cấu hình `FAL_KEY` thật
+   trong `.env.local` — cố ý KHÔNG gọi để tránh tốn tiền fal thật; nhánh này đã có bằng chứng gián
+   tiếp qua unit test `spendCredits`/`credits.test.ts`, chỉ chưa đi hết đường HTTP thật).
+4. Dọn sạch: xoá tài khoản test (`sqlite3 DELETE User` — phát hiện xoá tay qua sqlite3 CLI KHÔNG
+   tự cascade `CreditTransaction` như Prisma vẫn làm, vì CLI không bật `PRAGMA foreign_keys`; phải
+   `DELETE` tay thêm bảng đó — ghi lại đây phòng phiên sau gặp lại đúng cạm bẫy). Xác nhận lại
+   bằng `sqlite3 dev.db` — 0 dòng còn sót. 3 tài khoản `%test%` còn lại trong DB là seed CŨ có
+   trước phiên này (`createdAt` tháng 07) — không đụng.
+
+**Kiểm sạch:**
+- `lib/ai/tiers.test.ts` (MỚI) — đối chiếu ĐỦ 17/17 `AiTask` có giá, khớp tay từng số với node
+  gốc, không task nào giá 0. **20/20 pass.**
+- `lib/server/credits.test.ts` — thêm 1 ca RACE: bắn ĐỒNG THỜI (`Promise.all`, không tuần tự) 5
+  lượt `spendCredits` giá 4 trên số dư 10 → đúng 2 lượt thành công, số dư cuối = 2 (không âm,
+  không lệch) — nghiệm thu trực tiếp yêu cầu "chặn gọi song song tiêu quá số dư". **14/14 pass**
+  (12 cũ của R1 + 2 mới).
+- Đổi import `lib/ai/tiers.ts` từ alias `@/lib/ai/models` sang tương đối `./models` (cùng lý do
+  R1: cần chạy được qua `sucrase-node` để viết test thật).
+- `npx tsc --noEmit` scoped (`jobs/route.ts`+`tiers.ts`+`execution.ts`+`credits.ts`+3 file
+  `defs/*.ts` dùng `runImageJob`+`registry.ts`) — sạch.
+
+**Commit:** `app/api/jobs/route.ts` + `lib/ai/tiers.ts` + `lib/ai/tiers.test.ts` (mới) +
+`lib/execution.ts` + `lib/server/credits.test.ts` + `docs/CHECKLIST-TONG.md`. Pathspec riêng —
+`git status` lúc này còn 6 route khác (`atlas-materials/sync`, `dashboard`, `flows/[id]`,
+`lark-tasks/sync`, `lark-user-map`, `specs/[id]`) đang được MỘT PHIÊN KHÁC sửa — đúng khớp mục Y1
+của audit này (gate quyền `isAdmin`) — có vẻ 2 phiên đang chạy song song trên CÙNG file audit,
+KHÔNG đụng gì của họ.

@@ -89,6 +89,18 @@ async function main() {
     ok('gọi refund LẦN 2 (dù chưa hoàn đủ) → vẫn bị chặn, đúng luật 1 lần/jobRef', r2.ok === false);
   });
 
+  console.log('spendCredits — gọi SONG SONG không tiêu quá số dư (R2: /api/jobs mượn atomic này)');
+  await withTempUser(10, async (userId) => {
+    // Số dư 10, giá 1 lượt = 4 → chỉ đủ cho ĐÚNG 2 lượt (8), lượt thứ 3 phải bị từ chối. Bắn
+    // ĐỒNG THỜI 5 lượt (Promise.all, không await tuần tự) — compare-and-set `updateMany` của
+    // spendCredits phải tự tuần tự hoá đúng ở tầng DB, không cần khoá tay ở đây.
+    const results = await Promise.all(Array.from({ length: 5 }, () => spendCredits(userId, 4, 'race test', `race-${Math.random()}`)));
+    const succeeded = results.filter(Boolean).length;
+    ok('5 lượt trừ 4 credit song song, số dư 10 → ĐÚNG 2 lượt thành công (không phải 3+)', succeeded === 2);
+    const bal = (await prisma.user.findUnique({ where: { id: userId } }))!.credits;
+    ok('số dư cuối = 10 - 2×4 = 2 (không âm, không lệch)', bal === 2);
+  });
+
   console.log(`\n${pass} pass, ${fail} fail`);
   if (fail) process.exit(1);
   await prisma.$disconnect();

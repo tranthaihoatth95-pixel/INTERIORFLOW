@@ -4,6 +4,7 @@ import type { Edge } from '@xyflow/react';
 import type { Job, PortValue } from '@/lib/types';
 import { getDefinition } from '@/lib/nodes/registry';
 import { useFlowStore, nextId, type FlowNode } from '@/lib/store';
+import { AiJobError } from '@/lib/ai/client';
 
 function isFlowNode(n: FlowNode) {
   return n.type === 'interior';
@@ -104,36 +105,19 @@ async function execNode(nodeId: string): Promise<boolean> {
   store.addJob(job);
   store.setRunState(nodeId, { status: 'queued', progress: 0, error: undefined });
 
-  // Trừ credits — server-side ledger nếu đã đăng nhập, local nếu chưa
-  if (def.creditCost > 0) {
-    if (useFlowStore.getState().user) {
-      try {
-        const res = await fetch('/api/credits', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'spend', amount: def.creditCost, reason: def.title, jobRef: job.id }),
-        });
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          const msg = body.error ?? 'Hết credits.';
-          store.setRunState(nodeId, { status: 'error', error: msg });
-          store.updateJob(job.id, { status: 'error', finishedAt: Date.now(), error: msg });
-          return false;
-        }
-        store.setCredits(body.credits);
-      } catch {
-        store.setRunState(nodeId, { status: 'error', error: 'Mất kết nối server credits.' });
-        store.updateJob(job.id, { status: 'error', finishedAt: Date.now(), error: 'Mất kết nối.' });
-        return false;
-      }
-    } else {
-      if (useFlowStore.getState().credits < def.creditCost) {
-        store.setRunState(nodeId, { status: 'error', error: 'Hết credits.' });
-        store.updateJob(job.id, { status: 'error', finishedAt: Date.now(), error: 'Hết credits.' });
-        return false;
-      }
-      store.spendCredits(def.creditCost);
+  const isLoggedIn = Boolean(useFlowStore.getState().user);
+  // Trừ credits — CHỈ khi CHƯA đăng nhập (ví local, client tự giữ sổ). Đăng nhập rồi thì KHÔNG
+  // tự trừ ở đây nữa: `/api/jobs` (gọi bên trong `def.execute()` qua `runImageJob`) nay TỰ
+  // spend/refund credit nguyên tử tại server (vá `docs/AUDIT-BACKEND-2026-08-03.md` §5.2/R2 —
+  // trước route đó không đụng credit, kế toán chỉ ở client, curl thẳng bypass được). Trừ ở CẢ
+  // hai nơi sẽ tính tiền 2 LẦN cho cùng 1 lượt chạy — bỏ hẳn nhánh trừ phía client khi đăng nhập.
+  if (def.creditCost > 0 && !isLoggedIn) {
+    if (useFlowStore.getState().credits < def.creditCost) {
+      store.setRunState(nodeId, { status: 'error', error: 'Hết credits.' });
+      store.updateJob(job.id, { status: 'error', finishedAt: Date.now(), error: 'Hết credits.' });
+      return false;
     }
+    store.spendCredits(def.creditCost);
   }
 
   try {
@@ -150,27 +134,40 @@ async function execNode(nodeId: string): Promise<boolean> {
     });
     store.setRunState(nodeId, { status: 'done', progress: 1, outputs, inputHash: hash });
     store.updateJob(job.id, { status: 'done', finishedAt: Date.now() });
+    if (def.creditCost > 0 && isLoggedIn) void refreshServerCredits();
     return true;
   } catch (err) {
-    const message = friendlyAiError(err instanceof Error ? err.message : String(err));
+    // 402 từ /api/jobs (server hết credit) — thông báo trực tiếp, KHÔNG qua friendlyAiError:
+    // message chứa chữ "credit" sẽ bị nhánh fal.ai (regex) nuốt mất, hiện nhầm "nạp credit tại
+    // fal.ai/dashboard/billing" — sai hoàn toàn (đây là credit NỘI BỘ app, không phải fal.ai).
+    const insufficientCredits = err instanceof AiJobError && err.code === 'INSUFFICIENT_CREDITS';
+    const message = insufficientCredits
+      ? 'Hết credits — liên hệ admin nạp thêm.'
+      : friendlyAiError(err instanceof Error ? err.message : String(err));
     store.setRunState(nodeId, { status: 'error', error: message });
     store.updateJob(job.id, { status: 'error', finishedAt: Date.now(), error: message });
-    // Hoàn credit khi job lỗi
+    // Hoàn credit khi job lỗi — LOCAL: cộng lại ngay (đã tự trừ ở trên). ĐĂNG NHẬP: `/api/jobs`
+    // đã tự hoàn atomically bên trong route (xem catch của `submitJob` ở đó) — không tự cộng lại
+    // ở đây nữa (tránh cộng 2 lần), chỉ làm mới số hiển thị cho khớp server.
     if (def.creditCost > 0) {
-      if (useFlowStore.getState().user) {
-        fetch('/api/credits', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'refund', amount: def.creditCost, reason: `Hoàn: ${def.title} lỗi`, jobRef: job.id }),
-        })
-          .then((r) => r.json())
-          .then((b) => typeof b.credits === 'number' && store.setCredits(b.credits))
-          .catch(() => {});
-      } else {
-        useFlowStore.setState((s) => ({ credits: s.credits + def.creditCost }));
-      }
+      if (isLoggedIn) void refreshServerCredits();
+      else useFlowStore.setState((s) => ({ credits: s.credits + def.creditCost }));
     }
     return false;
+  }
+}
+
+/** Làm mới số dư hiển thị từ server sau khi 1 lượt chạy AI kết thúc (thành công hay lỗi) — server
+ * (`/api/jobs`, `/api/credits`) đã là nguồn sự thật DUY NHẤT cho việc trừ/hoàn khi đã đăng nhập;
+ * hàm này CHỈ đọc lại số, không tự trừ/cộng gì (tránh lệch sổ 2 nguồn). Lỗi mạng thì im lặng bỏ
+ * qua — không chặn kết quả job chỉ vì không refresh được số hiển thị. */
+async function refreshServerCredits(): Promise<void> {
+  try {
+    const res = await fetch('/api/credits');
+    const body = await res.json().catch(() => ({}));
+    if (res.ok && typeof body.credits === 'number') useFlowStore.getState().setCredits(body.credits);
+  } catch {
+    // im lặng — chỉ là làm mới hiển thị
   }
 }
 

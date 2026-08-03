@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { isAiTask, taskMediaType } from '@/lib/ai/models';
-import { isAiTier, isOneAiEngine, resolveModel, TIERS } from '@/lib/ai/tiers';
+import { isAiTier, isOneAiEngine, resolveModel, costOfTask, TIERS } from '@/lib/ai/tiers';
 import { providerConfigured, submitJob } from '@/lib/ai/providers';
 import { getSessionUser } from '@/lib/server/auth';
+import { spendCredits, refundCredits } from '@/lib/server/credits';
 
 export async function POST(req: Request) {
   // Chặn người vô danh submit job (đốt balance fal). Chỉ user đăng nhập.
@@ -47,10 +48,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: hint, code: 'PROVIDER_NOT_CONFIGURED' }, { status: 503 });
   }
 
+  // Kế toán TẠI SERVER (vá §5.2/R2 — trước đây route này không đụng credit gì, kế toán chỉ ở
+  // client `lib/execution.ts`, curl thẳng vào đây đốt provider thật mà không mất credit nào).
+  // Mẫu y hệt `render/premium/route.ts:39-44`: trừ TRƯỚC (atomic compare-and-set trong
+  // `spendCredits`, chặn được gọi song song tiêu quá số dư), submit lỗi thì hoàn.
+  const cost = costOfTask(task);
+  if (cost > 0) {
+    const paid = await spendCredits(user.id, cost, `jobs.${task}`);
+    if (!paid) {
+      return NextResponse.json({ error: 'Hết credits — liên hệ admin nạp thêm.', code: 'INSUFFICIENT_CREDITS' }, { status: 402 });
+    }
+  }
+
   try {
     const jobId = await submitJob(provider, model, input);
     return NextResponse.json({ jobId, task, provider });
   } catch (err) {
+    if (cost > 0) await refundCredits(user.id, cost, `refund jobs.${task} — submit lỗi`);
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Submit job thất bại.' }, { status: 502 });
   }
 }

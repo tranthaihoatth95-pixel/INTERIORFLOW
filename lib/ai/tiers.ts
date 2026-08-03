@@ -2,8 +2,11 @@
  * Núm "mức phụ thuộc AI" — 4 mức, ánh xạ thẳng vào provider adapter.
  * Xem docs/STRATEGY-ai-tiers-and-safety.md. Không import provider ở đây
  * (dùng được cả client lẫn server); chỉ khai báo metadata + resolve model.
+ *
+ * Import TƯƠNG ĐỐI (không alias '@/') — file test được thẳng qua `sucrase-node`
+ * (`tiers.test.ts`), alias chỉ resolve qua bundler Next.js (cùng quy ước `lib/commands/registry.ts`).
  */
-import { AI_TASKS, type AiTask, type TaskModel } from '@/lib/ai/models';
+import { AI_TASKS, type AiTask, type TaskModel } from './models';
 
 export type AiTier = 1 | 2 | 3 | 4;
 /** null = mức 1 (Không AI) — không có provider */
@@ -95,6 +98,56 @@ export function isOneAiEngine(v: unknown): v is OneAiEngine {
 }
 export function isOneAiRuntime(v: unknown): v is OneAiRuntime {
   return v === 'webgpu' || v === 'server';
+}
+
+/**
+ * Giá credit theo `task` — kế toán TẠI SERVER cho `/api/jobs` (vá `docs/AUDIT-BACKEND-2026-08-03.md`
+ * §5.2/R2: trước đây route này KHÔNG đụng credit gì cả, kế toán chỉ nằm ở client
+ * `lib/execution.ts` — gọi thẳng `/api/jobs` bằng curl đốt provider thật mà không mất 1 credit).
+ * Số ĐÚNG BẰNG `creditCost` khai ở node tương ứng trong `lib/nodes/registry.ts`/`defs/*.ts` (đối
+ * chiếu 03/08, 1 nguồn giá — không suy đoán số mới). KHÔNG đổi theo `tier`: credit hôm nay là
+ * đồng hồ đo mức DÙNG trong app (không phải giá tiền provider thật) — dùng oneAI (tier 2, "0đ"
+ * provider thật) vẫn tốn credit y như fal (tier 4, tốn tiền thật), đúng hành vi khách đang thấy;
+ * đổi việc đó là quyết định GIÁ, không phải vá bảo mật, không tự ý đổi ở đây.
+ *
+ * ⚠️ Đánh đổi ĐÃ BIẾT, cần Hoà chốt sau (không tự quyết, chỉ ghi rõ để không giấu — cùng tinh
+ * thần audit §5.3 "cần Hoà chốt"): 3 nơi gọi `runImageJob` KHÔNG qua `lib/execution.ts` (nên
+ * trước đây KHÔNG tính credit theo thiết kế, xem comment tại chỗ gọi):
+ *  - `ai.idmask`/`ai.localedit` (`lib/nodes/defs/render-v2.ts`, `creditCost:0`) gọi
+ *    `runImageJob('removeBg'|'materialSwap', …)` như 1 TẦNG NÂNG CAO TUỲ CHỌN, lỗi thì rơi về
+ *    tầng lõi tất định (try/catch nuốt lỗi, không crash).
+ *  - `ai.smartselect`'s modal (`components/smartselect/SmartSelectModal.tsx:286`) gọi
+ *    `runImageJob('segment', …)` với comment gốc "không tính credit lần chạy lại".
+ * Bảng giá này tính theo TASK (không biết ai gọi) nên CẢ BA sẽ bắt đầu tốn credit khi thành công.
+ * Đây là ĐÁNH ĐỔI BẮT BUỘC của việc đóng lỗ R2: 1 task ĐÃ ĐƯỢC GIÁ thì không thể vừa chặn được
+ * abuse trực tiếp (curl thẳng `/api/jobs`) vừa cho phép gọi miễn phí từ 1 nơi khác — máy chủ
+ * không phân biệt được lời gọi nào "chính chủ enhancement" hay "curl trần". Ưu tiên đóng lỗ bảo
+ * mật (R2 là 🔴) hơn giữ đúng nguyên trải nghiệm "0đ" của 2 node phụ này.
+ */
+export const TASK_CREDIT_COST: Record<AiTask, number> = {
+  sketch2render: 4,
+  clay2render: 4,
+  exterior: 4,
+  styleTransfer: 3,
+  staging: 3,
+  moodboard: 2,
+  pattern: 3,
+  patternRef: 3,
+  upscale: 2,
+  materialSwap: 4,
+  furnitureEdit: 4,
+  relight: 3,
+  removeBg: 1,
+  segment: 1,
+  image2video: 8,
+  image2videoMaster: 8,
+  text2video: 8,
+};
+
+/** Giá credit của 1 lượt `/api/jobs` cho `task` này — 0 nếu task lạ (không nên xảy ra, `isAiTask`
+ * đã gate trước khi gọi hàm này). */
+export function costOfTask(task: AiTask): number {
+  return TASK_CREDIT_COST[task] ?? 0;
 }
 
 /** Provider cho tier. Với oneAI (mức 2) phụ thuộc engine đang chọn. */
