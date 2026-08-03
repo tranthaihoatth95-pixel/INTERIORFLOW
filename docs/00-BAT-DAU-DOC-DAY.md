@@ -92,3 +92,25 @@ File này là CỬA VÀO. Đọc hết file này (3 phút) rồi mới mở file
 | Lỗ backend | `docs/AUDIT-BACKEND-2026-08-03.md` |
 | Mock nào dùng được | `docs/AUDIT-MOCK-MANPHU-2026-08-03.md` · `docs/mocks/README-mocks.md` |
 | ArchiNote | `ttt-tasks/docs/SPEC-ARCHINOTE-UI-2026-08-03.md` (repo KHÁC) |
+
+---
+## §9 · LUẬT **THIẾT KẾ TRƯỚC — TÍNH NĂNG FILL SAU** *(Hoà đặt 03/08, luật chống quên mạnh nhất)*
+> Nguyên văn: *"những gì đã nghiên cứu sẽ được thiết kế trước lên giao diện để chống quên, tính năng sẽ theo đó mà fill đầy — gần giống cơ chế cây thư mục hệ gia phả nhưng ở cấp frontier, và chắc chắn không bỏ sót được luôn."*
+
+**Cơ chế:** nghiên cứu xong → **vẽ ngay lên giao diện** (mock/nút/panel/ô trống có nhãn) → tính năng điền vào sau.
+Giao diện trở thành **cây gia phả nhìn thấy được** của toàn bộ tính năng: mở app ra là thấy còn thiếu gì, không cần tra sổ.
+
+| Vì sao mạnh hơn checklist | |
+|---|---|
+| Checklist nằm trong file, phải nhớ mở | Giao diện **đập vào mắt mỗi lần dùng app** |
+| Sót một dòng thì không ai biết | Sót một nút thì **thấy ngay chỗ trống** |
+| Người ngoài không đọc được | Hoà nhìn màn hình là biết tiến độ, không cần hỏi |
+
+**Cách thi hành — bắt buộc:**
+1. Nghiên cứu (NC) xong → COWORK-UI/Claude Design **dựng ngay khung giao diện đủ CẢ những phần chưa code**.
+2. Phần chưa có tính năng: **nút/ô hiện dạng `disabled` KÈM LÝ DO tại chỗ** — *"Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ"*. **CẤM nút giả bấm không ra gì** (mẫu đúng đã có: `Command3DPanel.tsx:113,139`).
+3. Mỗi ô trống trên giao diện = **một dòng trong `CHECKLIST-TONG.md`**. Hai bên phải khớp 1-1; lệch là có thứ bị rớt.
+4. Phiên code KHÔNG được xoá ô trống cho gọn mắt — ô trống là **bằng chứng còn việc**. Muốn bỏ phải trình TỔNG kèm lý do.
+5. Áp cho CẢ hai app: IF và ArchiNote.
+
+**Ca bệnh làm luật này ra đời:** 6 tầng lệnh dựng hình 3D (`SPEC-DUNG-BO-LENH-3D`) nghiên cứu xong nhưng **giao diện chỉ có nút Tường** — 5 khối còn lại disabled, còn extrude/lathe/sweep/loft/boolean/symmetry/array **không hề xuất hiện trên màn**. Không ai nhìn ra đang thiếu gì cho tới khi Hoà tự nhớ ra và hỏi.
