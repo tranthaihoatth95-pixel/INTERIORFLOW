@@ -19,6 +19,7 @@ Hoà: *"sơ phác idea và chế độ kỹ thuật chuyên sâu"*.
 ⇒ Tên chặng phải TRUNG TÍNH cho cả hai (Vẽ·Dựng ảnh·Trình bày đạt). Không được đặt tên nghiêng về một phía (vd "Bản vẽ kỹ thuật" làm người sơ phác thấy bị ép).
 
 ## 3 · BIM CỦA IF = **BIM NỘI THẤT** (định vị lại — QUAN TRỌNG)
+> ⚠️ **ĐÍNH CHÍNH 03/08 (Hoà nói rõ):** đọc mục này là "nội thất = ĐIỂM NHẤN, chỗ đầu tư sâu", KHÔNG phải "kiến trúc bị hạ". Kiến trúc vẫn làm đủ, đúng chuẩn. Cấm lấy chữ "phụ" bên dưới làm cớ cắt tính năng kiến trúc.
 Hoà: *"bim chuyên nội thất là chính, kiến trúc là phụ, revit giờ vẽ hỗ trợ nội thất là chính rồi"*.
 ⇒ Mode **Cấu kiện** (chặng Vẽ) đổi trọng tâm: tường/cửa/sàn chỉ là VỎ CHỨA; hạng mục chính là **đồ nội thất · lớp hoàn thiện · tủ bếp · trần · sàn lát**. `SPEC-VE-REVIT-MODE.md` viết theo trọng tâm kiến trúc → phải bổ sung, KHÔNG đập (§0d).
 ⇒ Đây cũng là **moat**: Revit/ArchiCAD làm kiến trúc tốt, làm nội thất dở. IF đi đúng chỗ trống.
