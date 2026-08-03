@@ -502,6 +502,189 @@ hết khi ATLAS trả `colorHex` thật từng món (luật tông-theo-loại gi
   (2D mode, theme Sáng, card chào đã gọi lại, không node rác mới).
 - Dev server 3004 vẫn chạy nền cho phiên sau (`lsof -tiTCP:3004 | xargs kill` nếu cần).
 
+---
+
+# PHIÊN G4 — 05/08/2026 (tiếp) · PHIẾU 🔴 5 LỖI UI CHẶNG TRÌNH BÀY
+
+Nguồn: `docs/PHIEU-TRINH-LOI-UI-2026-08-03.md`. Thứ tự làm theo phiếu: **L2 → L1 → L5 → L3 → L4**.
+Bước 0: `git log --all -- components/present-editor/` — không ai đụng vùng này từ khi merge
+`nhanh-phu`/E-sprint (commit gần nhất `10e5d9d` "P6c kính lồng", đã cũ) → an toàn vào việc.
+
+## Trạng thái khai thật: 4/5 XONG Ở TẦNG LOGIC + tsc/lint sạch, **CHƯA verify browser 2 theme**
+Phiên bị ngắt giữa lúc dựng L4 (script sửa import bị chặn tay), rồi nhận lệnh ưu tiên "đưa cây về
+biên dịch được, không nhận việc mới". Đã xác nhận cây SẠCH (chi tiết dưới) nhưng **chưa kịp mở
+`127.0.0.1:3004` xem bằng mắt** — đây là việc còn treo, không phải việc quên.
+
+### ✅ L2 — Slide "Triết lý thiết kế" chữ chồng chữ (`lib/present-editor/templates.ts` +
+`akh-sample.ts`, test mới `templates-fit.test.ts`)
+Nguyên nhân gốc: bullet `"• Không gian chuẩn mực\n• Ít mà đúng"` là **CHUỖI CỨNG** đóng đinh
+trong `grid4-philosophy.build()`, bơm giống hệt vào cả 4 cột — không đến từ dữ liệu ctx, nên deck
+nào cũng lặp y hệt 4 lần và tràn khung 12%H khi text dài hơn dự kiến (đè lên nhãn cột phía trên).
+Sửa: bullet nay đọc từ `ctx.body[4+i]` (4 ghi chú thật, đi kèm 4 nhãn cột `body[0..3]`) — không
+có dữ liệu thì BỎ TRỐNG, không bịa. Thêm `fitFontSize()` (hàm thuần, cùng công thức ước lượng wrap
+`charsPerPctWBody` với `layout-check.ts` để hai bên không lệch nhau) tự co cỡ chữ để không tràn
+khung dù ghi chú dài bất thường. Deck mẫu AKH-IKI cập nhật `body` đủ 8 mục (4 nhãn + 4 ghi chú
+riêng biệt, không lặp).
+**Nghiệm thu tầng thuần** (`templates-fit.test.ts`, 9/9 ok): không tự bịa nội dung khi thiếu dữ
+liệu · 4 bullet nội dung khác nhau · không cặp khung nào chồng nhau (đo như phiếu: overlap <0.2%,
+gần tương đương "<2px" của nghiệm thu DOM) · ghi chú dài bất thường không kích cảnh báo tràn của
+`layout-check.ts`. **CHƯA đo `getBoundingClientRect` trên DOM thật** — phiếu yêu cầu đúng phép đo
+này, việc còn lại cho lượt verify browser.
+
+### ✅ L1 — "Trang 1" + "1/5" đánh lừa đơn vị (`PresentSheets.tsx` + `SheetTabBar.tsx`)
+`SheetTabBar` (dùng chung CAD + Present) nay nhận prop `status?: string` tuỳ chọn — không có thì
+giữ nguyên `${sheets.length}/${max}` cũ (CAD không đổi gì, chỉ Present truyền). Present đổi tên
+sheet mặc định "Trang N" → **"Hồ sơ N"** (mọi chỗ sinh tên + 3 câu toast Nhập/Xuất/mở-vượt-trần
+đều đổi theo, tránh nửa Việt-Anh lẫn "trang" cũ mới). Góc phải nay hiện **"N slide"** (đếm
+`deck.slides.length`, cập nhật qua `onDeckChange` + tức thời khi `switchTo` đổi hồ sơ) — trần 5
+CHỈ nối thêm `"· tối đa 5 hồ sơ"` khi ĐÃ chạm trần, không nhắc sớm.
+**CHƯA verify DOM**: cần mở đúng dự án mẫu 8-slide, đọc tab + góc phải bằng mắt.
+
+### ✅ L5 — Panel phải bị cắt đáy (`PresentEditor.tsx`, khối `<aside>` Inspector)
+Đo DOM thật (trước khi sửa) xác nhận: `aside` **ĐÃ** `overflowY:auto` và cuộn được thật
+(`scrollHeight 395 > clientHeight 302`) — không phải thiếu cuộn, mà thiếu **DẤU HIỆU** còn nội
+dung dưới mép (macOS ẩn thanh cuộn khi không rê chuột → dòng hướng dẫn "Chọn một phần tử…" nằm
+sát mép trông y như bị cắt cứng). Sửa bằng CSS thuần, không thêm state: `scrollbarGutter:stable`
+(chừa sẵn rãnh, không giật khi thanh cuộn hiện) + bóng-cuộn 4-lớp gradient (2 lớp `background-
+attachment:local` màu nền phủ kín khi vừa khung, 2 lớp `scroll` là vệt mờ chỉ lộ ra khi còn nội
+dung ở mép). `paddingBottom` tăng lên 28px cho thoáng.
+**Đã đo trước khi sửa, CHƯA đo lại sau khi sửa** trên browser thật.
+
+### ✅ L3 — Thumbnail chữ đè ảnh không tương phản (`Element.tsx`, `TextInner`)
+Nguyên nhân gốc: `resolveAutoTextColor` (chọn màu chữ đọc được khi đè ảnh) chỉ chạy trong
+`EditorCanvas` cho **slide đang mở** — slide 3 (và bản thu nhỏ của nó ở `SlideStrip`) chưa ai mở
+tới thì giữ nguyên màu trắng gốc của template, đè lên ảnh sáng = không đọc được. KHÔNG sửa cơ chế
+đo màu (đúng auto-color, tốn hơn nhiều nếu chạy cho mọi slide ẩn) — chỉ mở rộng điều kiện bật
+**bóng AA mảnh sẵn có của P6a** (`autoShadowCss`): trước đây chỉ bật khi `el.autoShadow` (đã đo
+và chốt), nay bật SỚM HƠN khi đang đè ảnh mà màu CHƯA ai chốt (`colorAuto === true`) — cùng một
+bóng, chỉ đổi thời điểm bật. Màu chốt xong thì điều kiện tự tắt, không chồng hiệu ứng.
+**CHƯA verify browser** — cần mở slide 3 lẫn thumbnail của nó, cả 2 theme.
+
+### 🟡 L4 — Toolbar 2 hàng ~30 nút → popover "Sắp xếp" (`Toolbar.tsx`) — XONG CODE, ⬜ CHƯA VERIFY
+Gom 14 nút (căn-lề × 6 · thứ tự lớp × 4 · nhóm/rã nhóm × 2 · khoá · ẩn) vào 1 nút **"Sắp xếp"**
+mở `ArrangePopover` — portal ra `body` (luật K4, panel kính không lồng trong chrome kính) +
+`useDismissable` (Esc/bấm ngoài, cùng họ sự kiện toàn app). §0d: KHÔNG xoá nút nào — Inspector.tsx
+vẫn giữ nguyên bản sao của cụm này (đã có từ P6b) cho ai quen dùng bên phải, popover chỉ là LỐI
+VÀO THỨ HAI từ toolbar trên. Còn lại 6 nút gốc + Divider (Chữ·Ảnh·5 hình·Mẫu·Undo/Redo·…) giữ
+nguyên vị trí cũ.
+**Sự cố khai thật**: giữa lúc dựng xong JSX + component `ArrangePopover`, một lệnh sửa import bị
+chặn tay (Bash tool call), rồi nhận ngay chỉ đạo ưu tiên "dừng nhận việc mới, đưa cây về biên dịch
+được". Kiểm lại thì import ĐÃ áp dụng đúng từ trước đó (không mất khi bị chặn) — `tsc --noEmit -p .`
+xác nhận sạch, đọc lại toàn bộ JSX quanh `ArrangePopover` xác nhận thẻ mở/đóng cân bằng, không cần
+rollback. **Chỉ còn thiếu bước cuối: chưa mở browser bấm thử nút "Sắp xếp" — chưa ai NHÌN THẤY nó
+chạy.**
+
+## Kiểm biên dịch (đúng yêu cầu, chạy trước khi báo cáo)
+- `npx tsc --noEmit -p .` toàn repo → **1 lỗi duy nhất**, cả 6 dòng đều ở `lib/cad/eyedropper.test.ts`
+  — **đã đối chiếu `diff` với bản trên `main`: BIT-FOR-BIT GIỐNG HỆT**, tức lỗi có sẵn trên `main`
+  từ trước (nhánh PHU, commit `804952f`), không phải do phiên này gây ra, và ngoài vùng cứng G4
+  (`§2 SO-KIEM-TONG`) — không tự sửa.
+- 7 file tôi sửa (`Toolbar/Element/PresentEditor/PresentSheets.tsx` · `SheetTabBar.tsx` ·
+  `templates/akh-sample.ts`) — **0 lỗi tsc, 0 cảnh báo lint** (`next lint --file` từng file).
+- `templates-fit.test.ts` (test mới, L2) — 9/9 ok. `npm test` toàn repo — 34+14 ok, 0 fail
+  (không có test nào vỡ vì đổi `SheetTabBar`/`Element.tsx`).
+
+## ⬜ VIỆC CÒN TREO CHO LƯỢT KẾ (không giấu)
+1. **Verify browser thật, CẢ 2 THEME**, đúng phiếu — đây là việc DUY NHẤT còn thiếu để đóng phiếu
+   này. Mở `127.0.0.1:3004` (dev server vẫn chạy nền), đăng nhập demo, vào dự án mẫu → chặng
+   Trình bày:
+   - L2: slide 4 "Triết lý thiết kế" — đo `getBoundingClientRect` 4 khối bullet, xác nhận không
+     cặp nào chồng >2px (test thuần đã xác nhận ở mức logic, cần xác nhận lại trên DOM thật).
+   - L1: tab đầu đọc "Hồ sơ 1", góc phải đọc "8 slide" (không phải "1/5").
+   - L5: cuộn Inspector xuống đáy, đọc trọn dòng "Chọn một phần tử trên slide để chỉnh. Kéo…".
+   - L3: thumbnail slide 3 "Không gian sống kể…" — chữ đọc được trên ảnh, cả canvas lẫn dải dưới.
+   - L4: bấm nút "Sắp xếp" → popover 14 nút mở đúng vị trí, không bị cắt mép màn hình, Esc/bấm
+     ngoài đóng được, mọi nút bên trong vẫn hoạt động y hệt bản cũ trong Inspector.
+2. Nếu verify phát hiện lệch — sửa tại chỗ, KHÔNG mở việc mới ngoài phiếu này.
+3. Sau verify: cập nhật lại mục này thành ĐÃ XONG + xoá dòng "chưa verify" ở từng L.
+
+## Khối lệnh commit (Hoà chạy tay — worktree không tự commit được)
+
+```bash
+cd ~/Downloads/interiorflow-g4
+git add lib/present-editor/templates.ts lib/present-editor/akh-sample.ts lib/present-editor/templates-fit.test.ts
+git commit -m "fix(present): L2 - bullet slide triet ly doc du lieu that, tu co chu chong tran
+
+Chuoi cung '• Khong gian chuan muc / • It ma dung' bi bom vao CA 4 cot trong
+grid4-philosophy.build() -> deck nao cung lap y het 4 lan, text dai hon du
+kien thi tran khung 12%H de len nhan cot phia tren (PHIEU-TRINH-LOI-UI
+2026-08-03 muc L2). Sua: bullet doc tu ctx.body[4+i] (4 ghi chu that di kem
+4 nhan cot body[0..3]), thieu du lieu thi BO TRONG khong bia. Them ham thuan
+fitFontSize() (cung cong thuc uoc luong wrap charsPerPctWBody voi layout-
+check.ts) tu co chu de khong tran khung. Deck mau AKH-IKI cap nhat 8 muc
+(4 nhan + 4 ghi chu rieng, khong lap).
+
+Test moi templates-fit.test.ts 9/9 ok: khong tu bia noi dung khi thieu du
+lieu, 4 bullet khac nhau, khong khung nao chong nhau, ghi chu dai bat thuong
+khong tran. CHUA verify DOM that (getBoundingClientRect) - lam o luot sau.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
+
+git add components/present-editor/PresentSheets.tsx components/studio/SheetTabBar.tsx
+git commit -m "fix(present): L1 - Trang N/1-5 danh lua don vi -> Ho so N/N slide
+
+SheetTabBar (dung chung CAD+Present) them prop status? tuy chon - khong
+truyen thi giu nguyen \${sheets.length}/\${max} cu (CAD khong doi). Present
+doi ten sheet mac dinh 'Trang N' -> 'Ho so N' (PHIEU-TRINH-LOI-UI 2026-08-03
+muc L1: nguoi doc '1/5' tuong dang o trang 1/5 trang tai lieu, that ra la
+sheet 1/tran 5 sheet, con day duoi co 8 SLIDE - hai don vi khac nhau dung
+chung 1 chu). Goc phai nay hien 'N slide' (dem deck.slides.length, cap nhat
+qua onDeckChange + tuc thoi khi doi ho so); tran 5 CHI noi khi DA cham tran.
+
+CHUA verify DOM that. Lam o luot sau.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
+
+git add components/present-editor/PresentEditor.tsx
+git commit -m "fix(present): L5 - panel phai (Inspector) them dau hieu con cuon duoc
+
+Do DOM truoc khi sua xac nhan aside DA overflowY:auto va cuon duoc that
+(scrollHeight 395 > clientHeight 302) - thieu la DAU HIEU con noi dung duoi
+mep (macOS an thanh cuon khi khong re chuot). PHIEU-TRINH-LOI-UI 2026-08-03
+muc L5. Sua thuan CSS, khong them state: scrollbarGutter:stable + bong-cuon
+4-lop gradient (2 lop background-attachment:local phu kin khi vua khung,
+2 lop scroll la vet mo lo ra khi con noi dung o mep). paddingBottom 28px.
+
+CHUA do lai DOM sau khi sua. Lam o luot sau.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
+
+git add components/present-editor/Element.tsx
+git commit -m "fix(present): L3 - thumbnail/slide chua mo: chu de anh khong tuong phan
+
+resolveAutoTextColor (chon mau doc duoc khi de anh) chi chay trong
+EditorCanvas cho slide DANG MO - slide chua ai mo (va thumbnail cua no o
+SlideStrip) giu nguyen mau trang goc template, de len anh sang = khong doc
+duoc (PHIEU-TRINH-LOI-UI 2026-08-03 muc L3). KHONG sua co che do mau (dung,
+ton hon nhieu neu chay cho moi slide an) - chi mo rong dieu kien bat bong AA
+manh san co cua P6a (autoShadowCss): truoc chi bat khi el.autoShadow (da do
+va chot), nay bat SOM HON khi dang de anh ma mau CHUA ai chot (colorAuto).
+Mau chot xong thi dieu kien tu tat, khong chong hieu ung.
+
+CHUA verify browser (slide 3 + thumbnail, 2 theme). Lam o luot sau.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
+
+git add components/present-editor/Toolbar.tsx
+git commit -m "fix(present): L4 - toolbar 2 hang ~30 nut -> gom popover 'Sap xep'
+
+14 nut (can-le x6, thu tu lop x4, nhom/ra nhom x2, khoa, an) gom vao 1 nut
+'Sap xep' mo ArrangePopover - portal ra body (luat K4 SO-KIEM-TONG: panel
+kinh khong long trong chrome kinh) + useDismissable (Esc/bam ngoai, cung ho
+su kien toan app). PHIEU-TRINH-LOI-UI 2026-08-03 muc L4, §0d: KHONG xoa nut
+nao - Inspector.tsx van giu ban sao cum nay (co tu P6b) cho ai quen dung ben
+phai, popover la LOI VAO THU HAI tu toolbar tren.
+
+tsc --noEmit -p . sach (1 loi con lai o lib/cad/eyedropper.test.ts DA DOI
+CHIEU giong het main, khong lien quan file nay). CHUA verify browser bam
+thu nut Sap xep - chua ai NHIN THAY no chay. Lam o luot sau, UU TIEN TRUOC
+khi lam viec khac."
+```
+
+Ghi chú cho Hoà: 4 commit `L1-L5` an toàn để chạy (đã tsc/lint sạch, test không vỡ). Commit L4
+(Toolbar) khuyên **verify browser trước khi push lên nhánh chung** — đây là phần rủi ro nhất
+(popover mới, chưa ai nhìn thấy chạy thật), dù tsc/lint đã sạch.
+
 ## Hàng đợi G4 còn lại (đọc §3 sổ tổng trước khi làm)
 - Mood+Collab G2 trọn gói (khảo sát sẵn ở mục 04/08, đừng làm lại) · Present chooser (H4) ·
   empty state toàn app · Material Editor §3b (UI q7 mock chưa có).
