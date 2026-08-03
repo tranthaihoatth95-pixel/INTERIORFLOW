@@ -37,6 +37,9 @@ import { Dashboard } from '@/components/Dashboard';
 import StatusBar from '@/components/studio/StatusBar';
 import RenderToolModeOverlay from '@/components/render-studio/RenderToolModeOverlay';
 import Render3DModeSkeleton from '@/components/render-studio/Render3DModeSkeleton';
+import { Object3DTree } from '@/components/render-studio/Object3DTree';
+import { Object3DInspector } from '@/components/render-studio/Object3DInspector';
+import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
 import ModeShell from '@/components/shell/ModeShell';
 import { useStageMode, useHydrateRenderMode } from '@/lib/stage-mode';
 import PresentOverlay from '@/components/present/PresentOverlay';
@@ -74,17 +77,22 @@ const COVER_MAX_WIDTH = 480;
  * (3D Thiết kế) qua `defineMode()` thay cho `if (mode === 'render') … else …` từng nằm thẳng
  * trong `content={(mode) => …}` của `<ModeShell>` bên dưới.
  *
- * `RENDER_NAVIGATOR` dùng CHUNG 1 tham chiếu cho cả `3d/node` lẫn `3d/3d` — đúng hành vi THẬT
- * hôm nay: Navigator KHÔNG đổi theo renderMode (comment gốc "ĐỘC LẬP với renderMode" — xem
- * AppShell bên dưới). `Command3DPanel` của mode 3D sống RIÊNG bên trong `Render3DModeSkeleton`,
- * chưa đi qua ổ Navigator của AppShell — đó là nợ kiến trúc A2 trong phiếu (592 dòng
- * CommandPanel/ObjectProperties mồ côi), KHÔNG sửa ở việc A3 này (một lúc một việc).
+ * VIỆC "MỘT THƯ VIỆN" (`PHIEU-CODE-IF-DOT6`, 05/08 — SỬA lại đoạn dưới đây, trước ghi "Navigator
+ * KHÔNG đổi theo renderMode... đúng hành vi THẬT", nay KHÔNG còn đúng nữa): `RENDER_NAVIGATOR`
+ * (NodeLibraryPanel, có kệ Vật liệu ATLAS riêng) và `Command3DPanel` bên trong
+ * `Render3DModeSkeleton` (cũng có tab Vật liệu riêng) từng CÙNG HIỆN một lúc ở mode '3d/3d' — Hoà
+ * chụp màn bắt được vật liệu hiện Ở BA CHỖ (sidebar trái · panel giữa · sheet Thư viện). Navigator
+ * nay ĐỔI theo renderMode: `3d/node` (canvas node) vẫn `RENDER_NAVIGATOR` như cũ; `3d/3d` (Vẽ 3D)
+ * đổi sang `RENDER_3D_NAVIGATOR` (`Object3DTree` — cây đối tượng theo tầng, không có kệ vật liệu
+ * nào cả, xoá đúng 1 trong 3 chỗ). Panel thuộc tính của vật đang chọn (kích thước/vật liệu quả
+ * cầu/tầng) dời sang ổ ④ Inspector (`Object3DInspector`, xem `inspectorContent` dưới `<AppShell>`).
  *
  * `renderMode` (`'render'|'model3d'`, `lib/stage-mode.ts`) là KHOÁ KỸ THUẬT đã persist
  * localStorage — GIỮ NGUYÊN, chỉ map sang `ModeId` Trụ-4 lúc tra registry (cùng cách
  * `CadStageScreen.tsx` map `cadMode` → `ModeId`).
  */
 const RENDER_NAVIGATOR: ReactNode = <NodeLibraryPanel embedded />;
+const RENDER_3D_NAVIGATOR: ReactNode = <Object3DTree />;
 const RENDER_NODE_CANVAS: ReactNode = (
   <>
     {/* NodeLibraryPanel giờ sống Ở NAVIGATOR (embedded, xem RENDER_NAVIGATOR trên) — KHÔNG mount
@@ -113,7 +121,7 @@ defineMode('3d/node', {
 defineMode('3d/3d', {
   stage: 'render',
   label: ['3D', '3D'],
-  navigator: RENDER_NAVIGATOR,
+  navigator: RENDER_3D_NAVIGATOR,
   canvas: <Render3DModeSkeleton />,
   // 'camera'/'massing' trong ví dụ Trụ 4 của spec chưa có id kệ thật trong lib/library/shelves.ts
   // (chỉ 'common-atlas' tồn tại) — khai đúng cái CÓ THẬT, không bịa id chưa tồn tại.
@@ -147,6 +155,9 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
   // mặc định, hành vi cũ nguyên vẹn) ↔ 'model3d' (Vẽ 3D, skeleton mới — xem components/render-studio/Render3DModeSkeleton.tsx).
   useHydrateRenderMode();
   const { mode: renderMode, setMode: setRenderMode } = useStageMode('render');
+  // VIỆC "MỘT THƯ VIỆN" — quyết định hiện/ẩn khung Inspector (ổ ④) cho mode 'model3d': chỉ khi đã
+  // chọn một khối trong cây (`Object3DTree`, ổ ② — state chia sẻ qua `useTree3DUi`).
+  const selected3DName = useTree3DUi((s) => s.selectedName);
   // Màn ngoài (cover) hẹp → chỉ cho XEM Dashboard; mọi thao tác ở màn trong.
   const isCover = useIsCoverScreen();
   // Sau khi auth thành công → hiện màn CHỌN DỰ ÁN (ProjectSelect) trước canvas.
@@ -629,24 +640,26 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
         className="h-[100dvh] overflow-hidden bg-[var(--bg)]"
       >
         {/* VIỆC 2 mở rộng (03/08) — <AppShell> thay <StageShell> (Hoà: rail capsule biến mất
-            khỏi CẢ app).
-            🔴 04/08 — Hoà BÁC bản Navigator "list-chữ" tự viết lại (nghèo hơn bản cũ, SO-KIEM-TONG
-            §0d "giữ cái đang tốt"): Navigator = `NodeLibraryPanel` NGUYÊN BẢN (`embedded` prop mới
-            — xem component đó) gắn thẳng vào ổ ②, KHÔNG viết lại nội dung. Rộng 280 (AppShell tự
-            tính theo `active==='render'`) cho card thở, ĐỘC LẬP với renderMode — Command3DPanel
-            của mode 'model3d' vẫn sống trong Render3DModeSkeleton như cũ, không lồng 2 sidebar.
-            ⚠️ CHƯA kiểm lại canh giữa "Vẽ 3D" toggle trong ModeSwitchBar.tsx (trước neo theo bề
-            rộng LeftRail cũ ~76px, Navigator nay 280px — xem lại nếu lệch tâm khi verify).
-            05/08 VIỆC A3 — `navigator` giờ đọc `RENDER_NAVIGATOR` (module const đầu file, CÙNG
-            tham chiếu được khai trong `defineMode('3d/node'|'3d/3d', …)`) thay vì literal JSX
-            riêng ở đây — một nguồn, không phải hai chỗ viết cùng một sự thật. */}
+            khỏi CẢ app). Navigator = `NodeLibraryPanel` NGUYÊN BẢN (`embedded` prop mới — xem
+            component đó) gắn thẳng vào ổ ②, KHÔNG viết lại nội dung. Rộng 280 (AppShell tự tính
+            theo `active==='render'`) cho card thở.
+            05/08 VIỆC A3 — `navigator` đọc `requireMode(renderModeToModeId(renderMode)).navigator`
+            (registry Trụ 4, CÙNG nguồn với `content` bên dưới) thay vì literal JSX riêng ở đây.
+            05/08 VIỆC "MỘT THƯ VIỆN" (`PHIEU-CODE-IF-DOT6`, sửa lại phần trên) — navigator giờ THẬT
+            SỰ đổi theo renderMode (trước đây registry đã khai đúng nhưng nơi gọi vẫn đọc thẳng
+            `RENDER_NAVIGATOR` tĩnh — nợ đã ghi ở comment cũ, nay khép): mode 'model3d' (Vẽ 3D)
+            dùng `RENDER_3D_NAVIGATOR` (cây đối tượng), không còn kệ Vật liệu NodeLibraryPanel
+            song song với tab Vật liệu của Command3DPanel. Inspector (ổ ④, vốn KHÔNG dùng cho chặng
+            Render trước đây) nay có nội dung CHỈ ở mode 'model3d' khi đã chọn một khối
+            (`Object3DInspector`) — AppShell tự ẩn hẳn khung khi `undefined` (không CSS-ẩn). */}
         <AppShell
           active="render"
           toolbar={<RenderDocBar />}
           statusBar={<StatusBar stage="render" hidden={presentModeOpen} />}
-          navigator={RENDER_NAVIGATOR}
+          navigator={requireMode(renderModeToModeId(renderMode)).navigator}
           navigatorAddLabel="Khối mới"
           navigatorCollapsedLabel="Khối"
+          inspector={renderMode === 'model3d' && selected3DName ? <Object3DInspector /> : undefined}
         >
           {/* mỗi panel tự quản AnimatePresence riêng (iOS sheet, key duy nhất) */}
 

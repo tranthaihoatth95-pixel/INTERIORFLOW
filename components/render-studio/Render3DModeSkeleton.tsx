@@ -18,13 +18,14 @@
  * Nguồn dữ liệu vẫn là Doc chặng 1 (`docToObjScene`) — luật một nguồn, mode KHÔNG giữ bản 3D riêng.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Boxes, Check, Hammer, Sparkles, X } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import { useStageMode } from '@/lib/stage-mode';
 import { useT } from '@/lib/i18n';
-import { docToObjScene, toScene3DData } from '@/lib/three/cad-to-obj';
 import { wallSegment } from '@/lib/cad/commands';
+import { useScene3D } from '@/lib/render-studio/use-scene3d';
+import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
 import { Viewport3D, EMPTY_SCENE_3D } from '@/components/three/Viewport3D';
 import ModeSwitchBar from '@/components/render-studio/ModeSwitchBar';
 import Command3DPanel, { type Command3DTab } from '@/components/render-studio/Command3DPanel';
@@ -43,11 +44,12 @@ export default function Render3DModeSkeleton() {
   const [tab, setTab] = useState<Command3DTab>('vatlieu');
   const [nhayNutTuong, setNhayNutTuong] = useState(false);
   const [matDangCam, setMatDangCam] = useState<string | null>(null);
-  // VIỆC 2 (SPEC-DUNG-3D-THONG-NHAT §5+§6, 05/08) — cây đối tượng tab Hiện: tên group đang ẨN
-  // (lọc THẬT khỏi scene đưa vào Viewport3D, không phải cờ trang trí) + group đang chọn để xem
-  // thuộc tính (khác `matDangCam` — đó là vật liệu đang CẦM để gán lên mặt).
-  const [hiddenGroupNames, setHiddenGroupNames] = useState<Set<string>>(new Set());
-  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
+  // VIỆC "MỘT THƯ VIỆN" (`PHIEU-CODE-IF-DOT6`, 05/08) — cây đối tượng + panel thuộc tính dời sang
+  // Navigator/Inspector (`Object3DTree.tsx`/`Object3DInspector.tsx`, ổ SIBLING của AppShell, xem
+  // `HomeScreen.tsx`) — tên group ẩn/đang chọn nay sống ở store chia sẻ `useTree3DUi`, không phải
+  // `useState` cục bộ (2 ổ kia không chung cây React cha gần để nhận props).
+  const hiddenGroupNames = useTree3DUi((s) => s.hiddenNames);
+  const selectedGroupName = useTree3DUi((s) => s.selectedName);
   const [guideHidden, setGuideHidden] = useState(false);
   const [welcomeHidden, setWelcomeHidden] = useState(false);
   const welcomeRef = useRef<HTMLDivElement>(null);
@@ -104,51 +106,25 @@ export default function Render3DModeSkeleton() {
     return () => window.removeEventListener('pointerdown', onDown, true);
   }, [welcomeHidden, dongCardChao]);
 
-  const scene = useMemo(() => {
-    if (!doc.entities.length) return null;
-    try {
-      return toScene3DData(docToObjScene(doc, { wallHeightMm: 2700, theme: 'warm' }));
-    } catch {
-      return null; // Doc lỗi hình học — vẫn giữ sân khấu, không sập cả mode
-    }
-  }, [doc]);
+  const scene = useScene3D();
 
   const soKhoi = scene?.groups.length ?? 0;
   soKhoiRef.current = soKhoi;
   const coBanVe = doc.entities.length > 0;
 
-  // VIỆC 2 — lọc THẬT khỏi cảnh đưa vào Viewport3D theo tên group đang ẩn (không phải cờ trang
-  // trí trên hàng cây). `groups` nguyên vẹn (không lọc) vẫn đưa xuống Command3DPanel để cây liệt
-  // kê đủ, kể cả hàng đang ẩn (mờ đi, không biến mất khỏi DANH SÁCH — chỉ biến mất khỏi KHUNG NHÌN).
-  const visibleScene = useMemo(() => {
-    if (!scene || hiddenGroupNames.size === 0) return scene;
-    return { ...scene, groups: scene.groups.filter((g) => !hiddenGroupNames.has(g.name)) };
-  }, [scene, hiddenGroupNames]);
-
-  const toggleGroupHidden = useCallback((name: string) => {
-    setHiddenGroupNames((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
-      return next;
-    });
-  }, []);
+  // Lọc THẬT khỏi cảnh đưa vào Viewport3D theo tên group đang ẩn (state chia sẻ `useTree3DUi`,
+  // xem trên) — không phải cờ trang trí. Không dùng useMemo riêng vì `hiddenGroupNames` đổi ít
+  // (bấm tay), phép lọc rẻ, tính lại mỗi render cũng không đáng lo.
+  const visibleScene = !scene || hiddenGroupNames.size === 0
+    ? scene
+    : { ...scene, groups: scene.groups.filter((g) => !hiddenGroupNames.has(g.name)) };
 
   // Chỉ group có entityId (hôm nay = tường, xem cảnh báo `cad-to-obj.ts`) mới đẩy tiếp thành
-  // Viewport3D.selectedId — group khác chọn được để XEM thuộc tính nhưng chưa có gizmo thật
-  // (Command3DPanel tự nói rõ điều này trong panel, không giả vờ).
+  // Viewport3D.selectedId — group khác chọn được để XEM thuộc tính (ở Object3DInspector) nhưng
+  // chưa có gizmo thật.
   const selectedGroup = scene?.groups.find((g) => g.name === selectedGroupName) ?? null;
   const viewportSelectedId = selectedGroup?.entityId ?? null;
 
-  // "Gán tầng trệt hàng loạt" (SPEC §5.2 mục 2) — thao tác trên CHÍNH Doc (tường=hatch,
-  // nội thất/cửa sổ=block), không qua group/entityId (nội thất/cửa sổ chưa có entityId trong
-  // group — xem cảnh báo `cad-to-obj.ts`) nên đây là đường DUY NHẤT chạm được đúng entity.
-  const assignGroundStorey = useCallback(() => {
-    const store = useCadStore.getState();
-    const need = store.doc.entities.filter((e) => (e.type === 'hatch' || e.type === 'block') && e.storey === undefined);
-    if (!need.length) return;
-    store.updateEntities(need.map((e) => ({ ...e, storey: 'GF' })));
-  }, []);
   // Doc CAD chưa có field vật liệu (grep matId trong lib/cad = 0) ⇒ tín hiệu khả dụng duy nhất
   // hôm nay là "người dùng đã chọn vật liệu trong panel". Khi gán-lên-mặt (raycast) xong thì đổi
   // tín hiệu này sang dữ liệu Doc, đừng để nó mãi là state phiên.
@@ -209,12 +185,6 @@ export default function Render3DModeSkeleton() {
         nhayNutTuong={nhayNutTuong}
         onTaoTuong={taoTuongMau}
         onPickMaterial={setMatDangCam}
-        groups={scene?.groups ?? []}
-        hiddenNames={hiddenGroupNames}
-        onToggleHidden={toggleGroupHidden}
-        selectedGroupName={selectedGroupName}
-        onSelectGroup={setSelectedGroupName}
-        onAssignStorey={assignGroundStorey}
       />
 
       <div style={{ position: 'relative', flex: 1, minWidth: 0, height: '100%' }}>
