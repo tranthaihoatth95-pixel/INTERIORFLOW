@@ -68,15 +68,25 @@ export interface MassingWall {
   colorHex: string;
 }
 
+/** Group nào đủ điều kiện tách thành mesh push-pull riêng (mode `massing`) — PHẢI có `entityId`
+ * (SPEC-TANG-DU-LIEU-CAU-KIEN §0.4/§8 Đ1, nay gán cho CẢ Furn_i/Window_i, không chỉ Wall_i) VÀ
+ * `heightMm` (chỉ Wall_i có — cao độ đùn để tính scale khi kéo). Kiểm CẢ HAI, không chỉ
+ * `entityId`, để Furn_i/Window_i (có entityId, KHÔNG có heightMm) không lọt vào đây lẫn bị loại
+ * khỏi scene tĩnh — 1 hàm dùng chung cho `buildMassingWalls` VÀ `Scene3DViewer.tsx` (đúng luật
+ * "1 nguồn", tránh 2 nơi tự đoán rồi lệch nhau như đã từng xảy ra với "tường"). */
+export function isMassingWallGroup(g: SceneGroup): boolean {
+  return g.entityId !== undefined && g.heightMm !== undefined;
+}
+
 /** 1 mesh/tường RIÊNG, gắn `entityId` — nền cho raycasting push-pull (3D-5, mode `massing`
- * `Scene3DViewer.tsx`). Chỉ tường (group có `entityId`, do `docToObjScene()` gắn) — số lượng
- * thường vài chục, không phải ~2000 entity toàn bản vẽ, nên KHÔNG cần gộp draw-call như
- * `buildMergedGeometries` (quyết định #2 SPEC-3D-CORE chỉ áp cho hiển thị TĨNH). */
+ * `Scene3DViewer.tsx`). Chỉ tường (group có `entityId` VÀ `heightMm`, do `docToObjScene()` gắn)
+ * — số lượng thường vài chục, không phải ~2000 entity toàn bản vẽ, nên KHÔNG cần gộp draw-call
+ * như `buildMergedGeometries` (quyết định #2 SPEC-3D-CORE chỉ áp cho hiển thị TĨNH). */
 export function buildMassingWalls(scene: Scene3DData): MassingWall[] {
   const out: MassingWall[] = [];
   for (const g of scene.groups) {
-    if (!g.entityId || !g.positions.length || g.heightMm === undefined) continue;
-    out.push({ entityId: g.entityId, baseHeightMm: g.heightMm, geometry: geometryOf(g.positions), colorHex: g.colorHex });
+    if (!isMassingWallGroup(g) || !g.positions.length) continue;
+    out.push({ entityId: g.entityId!, baseHeightMm: g.heightMm!, geometry: geometryOf(g.positions), colorHex: g.colorHex });
   }
   return out;
 }

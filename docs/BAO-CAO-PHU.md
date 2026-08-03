@@ -2566,3 +2566,55 @@ riêng — `git status` lúc commit còn nhiều file khác đang mở bởi phi
 **Đề nghị cho phiên sau / TỔNG:** P3 (badge UI "suy đoán" đọc cờ `inferred` mới thêm) và P1 đầy
 đủ (`inferElementType()` với nhánh `specId`/`BLOCK_MAP`) vẫn còn nguyên trong hàng đợi §9, chưa
 đụng tới.
+
+---
+
+## PHU — A4 (`SPEC-TANG-DU-LIEU-CAU-KIEN.md` §0.4/§8 Đ1) — gán `entityId` cho MỌI nhóm 3D
+
+Grep xác nhận đúng như phiếu giao: trước khi sửa, `entityId` chỉ gán ở nhánh `Wall_${i+1}`
+(`cad-to-obj.ts`) — Floor/Room_i/Furn_i/Window_i đều để trống.
+
+**Đã làm** (`lib/three/cad-to-obj.ts`):
+- `Furn_i_*` (nội thất) → `entityId: b.id` (đúng `BlockEntity` nguồn).
+- `Window_i` (cửa sổ) → `entityId: b.id` (đúng `BlockEntity` nguồn).
+- `Floor` và `Room_i`: **CỐ Ý chưa gán** — khai thật lý do, không phải bỏ sót:
+  - `Floor` là bbox nở 50mm của TOÀN BỘ tường — không ứng với 1 entity riêng nào trong Doc.
+  - `Room_i` là polygon dò qua `findHatchBoundary` MỖI LẦN dựng scene — chính §0.5 của spec này
+    đã ghi rõ nó "không id bền, đổi theo số đồ trong phòng". Gán entityId giả (vd theo furniture
+    kích hoạt dò biên) sẽ SAI ngữ nghĩa — neo nhầm vào phòng thay vì cái đồ đó. Cả hai đợi
+    `RoomEntity` thật (§6, P5 — vẫn ⬜, chưa ai code) mới có id bền để gán.
+  - Đ1 tự nó chỉ đòi entityId khi group "ứng với 1 entity" — không đọc là "mọi group phải bịa
+    ra 1 entityId bằng mọi giá".
+
+**Sự cố phát hiện GIỮA CHỪNG (không có trong phiếu, tự tìm thấy khi rà tác dụng phụ) —
+`components/three/Scene3DViewer.tsx:201`:** dòng lọc scene tĩnh ở mode `massing` (3D-5 push-pull)
+viết `scene.groups.filter((g) => !g.entityId)` — đúng lúc CHỈ Wall_i có `entityId` thì lọc này
+đúng (tường tách riêng mesh kéo-thả, còn lại vào scene tĩnh gộp màu). Nay Furn_i/Window_i CŨNG có
+`entityId` → lọc này sẽ loại LUÔN nội thất+cửa sổ khỏi scene tĩnh; và `buildMassingWalls()`
+(`obj-scene-to-geometry.ts`) lại đòi thêm `heightMm` (chỉ Wall_i có) nên nội thất/cửa sổ KHÔNG lọt
+vào đó để trở thành mesh kéo-thả — **kết quả: ở mode `massing`, nội thất và cửa sổ biến mất khỏi
+màn hình.** Đã vá bằng 1 hàm dùng chung `isMassingWallGroup(g)` (đòi CẢ `entityId` LẪN `heightMm`)
+— gọi từ cả `buildMassingWalls()` và dòng lọc scene tĩnh ở `Scene3DViewer.tsx`, đúng luật "1
+nguồn" (2 nơi tự đoán riêng là gốc mọi bug tương tự ở spec này).
+
+**Kiểm sạch:**
+- `cad-to-obj.test.ts` — thêm 4 test (entityId đúng cho Furn/Window; Floor/Room_i xác nhận VẪN
+  không có entityId, khoá lại chủ đích không phải thiếu sót). **50/50 pass.**
+- `obj-scene-to-geometry.test.ts` (MỚI, chưa có test file nào cho module này trước đây) — 10 test:
+  `isMassingWallGroup` đúng 4 ca (wall/furn/window/floor) · `buildMassingWalls` chỉ nhặt đúng
+  tường dù furn/window có entityId · có 1 ca ĐỐI CHỨNG chạy lại đúng công thức lọc CŨ
+  (`!g.entityId`) để chứng minh nó sẽ loại oan furn+window — không chỉ khai bằng lời, có số. **10/10
+  pass.**
+- `npx tsc --noEmit` scoped (2 file sửa + 9 file tiêu thụ `SceneGroup`/`Scene3DData`) — sạch.
+- Test `three` chạy được thẳng qua `sucrase-node` không cần DOM/WebGL (đã probe riêng trước khi
+  viết test — `BufferGeometry` là JS thuần, không đụng canvas thật).
+
+**Chưa làm (đúng phạm vi A4, không lấn A khác):** Đ2 (đổi tên group từ `Wall_${i+1}` sang
+`Wall_${entityId}` — spec tự gọi đây là "bom hẹn giờ" khi số thứ tự đổi lúc thêm/xoá entity)
+KHÔNG đụng — không nằm trong yêu cầu A4 ("gán entityId", không phải "đổi cách đặt tên"), và đổi
+tên sẽ vỡ mọi chỗ đang so `g.name === 'Wall_1'` (kể cả 2 test cũ) mà không ai yêu cầu. Đ3
+(`selectedIds` xuyên ống kính) và Đ5 (`RoomEntity.id` làm khoá nhóm) cũng ngoài phạm vi A4.
+
+**Commit:** `lib/three/cad-to-obj.ts` + `.test.ts` + `lib/three/obj-scene-to-geometry.ts` +
+`.test.ts` (mới) + `components/three/Scene3DViewer.tsx`. Pathspec riêng — lúc commit `git status`
+còn nhiều file `lib/present-editor/boq-*` đang mở bởi phiên khác (có vẻ TRÌNH), KHÔNG đụng.

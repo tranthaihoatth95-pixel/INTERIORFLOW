@@ -135,6 +135,6 @@ Mỗi ca audit TỔNG chọn ≥1 gói, grep code đối chiếu TỪNG luật c
 | Tầng dữ liệu chung 3 ống kính | ✅ SPEC-TANG-DU-LIEU-CAU-KIEN 396d | — | ⬜ | ✅ **TỔNG verify code 03/08** | 7 luật L1-L7 kiểm được bằng grep |
 | 🔴 BUG sơn SOLID bị đùn thành tường 2.7m | ✅ §0.3 | — | ✅ PHU vá `cad-to-obj.ts` | ✅ verify tay UI thật (cổng 3001) + verify hàm `docToObjScene` — trước vá `Wall_5` cao 2.7m, sau vá hết | test 46/46 (8 mới) — xem `BAO-CAO-PHU.md` mục "VIỆC 1+2" |
 | Ống kính 3D đọc `elementType` (nay ĐOÁN lại) | ✅ §2.3 thang ưu tiên | — | ✅ (phạm vi hẹp: lọc tường) | ✅ `elementType==='wall'` thắng, `null` loại, `undefined` mới suy đoán layer + gắn `inferred` | CHƯA làm `inferElementType()` đầy đủ (nhánh `specId`/block) — vẫn ⬜, để P1 |
-| `entityId` cho MỌI nhóm 3D (nay chỉ tường) | ✅ §0.4 | — | ⬜ G4 | ✅ `cad-to-obj.ts:416` | chọn ghế 3D → mở Inspector được |
+| `entityId` cho MỌI nhóm 3D (nay chỉ tường) | ✅ §0.4 | — | ✅ PHU (Furn_i/Window_i) | ✅ test `cad-to-obj.test.ts`+`obj-scene-to-geometry.test.ts` (60/60) | Floor/Room_i CỐ Ý còn trống (không có entity nguồn, xem §0.5) — chờ §6 RoomEntity. Tiện thể vá thêm regression `Scene3DViewer.tsx:201` (mode massing từng làm biến mất nội thất) |
 | Entity `room` (phòng có id bền) | ✅ §6 | — | ⬜ | ✅ §0.5 xác nhận 3 dạng rời | nơi BIM nội thất phải sống |
 | `elementType:'covering'` (IfcCovering) | 🔨 chờ NC-11 | — | ⬜ | — | KHÔNG code trước |

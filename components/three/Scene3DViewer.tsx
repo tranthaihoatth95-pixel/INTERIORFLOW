@@ -37,7 +37,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
-import { buildMergedGeometries, buildMassingWalls } from '@/lib/three/obj-scene-to-geometry';
+import { buildMergedGeometries, buildMassingWalls, isMassingWallGroup } from '@/lib/three/obj-scene-to-geometry';
 import { clampWallHeight, type Scene3DData } from '@/lib/three/cad-to-obj';
 import { camPathSampleToThree, sampleCamPathAt, EYE_HEIGHT_MM } from '@/lib/three/capture';
 import { sectionPlane, type SectionSpec } from '@/lib/three/section';
@@ -198,7 +198,11 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     // tường nào bị kéo) — loại khỏi đường gộp-theo-màu (quyết định #2 chỉ tối ưu hiển thị TĨNH,
     // massing cần tương tác từng khối). Số tường thường vài chục — 1 draw call/tường chấp nhận
     // được ở chế độ chỉnh sửa (khác hẳn cảnh quan sát ngàn entity).
-    const staticScene = massingActive ? { ...scene, groups: scene.groups.filter((g) => !g.entityId) } : scene;
+    // Lọc bằng `isMassingWallGroup` (entityId VÀ heightMm), KHÔNG chỉ `!g.entityId` — từ khi
+    // SPEC-TANG-DU-LIEU-CAU-KIEN §8 Đ1 gán entityId cho CẢ Furn_i/Window_i, lọc theo mỗi
+    // entityId sẽ vô tình loại luôn nội thất/cửa sổ khỏi scene tĩnh (chúng không có heightMm nên
+    // cũng không lọt vào `buildMassingWalls` bên dưới ⇒ biến mất khỏi màn hình).
+    const staticScene = massingActive ? { ...scene, groups: scene.groups.filter((g) => !isMassingWallGroup(g)) } : scene;
     const built = buildMergedGeometries(staticScene);
     const group = new THREE.Group();
     for (const b of built) {

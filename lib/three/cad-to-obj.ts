@@ -66,9 +66,12 @@ export interface SceneGroup {
   name: string;
   colorHex: string;
   positions: number[];
-  /** 3D-5 push-pull — id của `Entity` gốc (Doc chặng 1) sinh ra group này. Chỉ đặt cho group
-   * TƯỜNG (đóng vai trò đùn khối chỉnh được); group khác (sàn/phòng/nội thất/cửa sổ) để trống —
-   * chưa có nơi tiêu thụ nên chưa gán, tránh đoán mò (giữ đúng luật `storey`/`elementType`). */
+  /** id của `Entity` gốc (Doc chặng 1) sinh ra group này — SPEC-TANG-DU-LIEU-CAU-KIEN §0.4/§8
+   * Đ1: "mọi SceneGroup phải có entityId". Đặt cho MỌI group ứng với đúng 1 entity thật
+   * (Wall_i ← hatch tường, 3D-5 push-pull; Furn_i/Window_i ← BlockEntity). Vẫn để trống ở
+   * `Floor`/`Room_i` — CẢ HAI đều là hình học TÍNH TOÁN (bbox toàn tường / dò biên runtime),
+   * KHÔNG ứng với 1 entity riêng nào trong Doc hôm nay (Floor chưa có slab entity; Room_i theo
+   * §0.5 "không id bền, đổi theo số đồ trong phòng" — chờ §6 `RoomEntity`, P5, chưa code). */
   entityId?: string;
   /** 3D-5 — cao độ (mm) ĐÃ DÙNG để đùn group tường này (đọc từ `entity.heightMm` hoặc mặc định
    * scene) — viewer 3D dùng số này làm mốc scale khi kéo-đẩy, KHÔNG tính lại từ hình học. */
@@ -390,11 +393,19 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     { x: bbox.maxX + pad, y: bbox.maxY + pad },
     { x: bbox.minX - pad, y: bbox.maxY + pad },
   ];
+  // Floor KHÔNG gán entityId — bbox nở 50mm của TOÀN BỘ tường, không phải hình học của 1 entity
+  // riêng lẻ nào trong Doc (không như Wall_i/Furn_i/Window_i đều bắt nguồn từ đúng 1 entity).
+  // Đ1 (SPEC-TANG-DU-LIEU-CAU-KIEN §8) chỉ đòi "mọi group PHẢI có entityId" khi group đó THỰC SỰ
+  // ứng với entity — Floor chưa có entity nguồn (chờ §6 RoomEntity/slab entity, P5, chưa code).
   builder.object('Floor', mats.floor);
   builder.prism(floorPoly, -100, 0);
 
   // ---- Phòng: dò biên qua findHatchBoundary tại tâm mỗi block nội thất (import-only) ----
   // Sàn phòng nổi 2mm trên slab → vật liệu phòng đọc được trong Max/Blender.
+  // Room_i CŨNG chưa gán entityId — đúng như §0.5 đã ghi rõ: polygon này TÍNH LẠI mỗi lần dựng
+  // (không id bền, đổi theo số đồ trong phòng), không phải entity thật trong Doc. Gán entityId
+  // giả (vd theo furniture kích hoạt) sẽ SAI — nó neo vào phòng chứ không phải cái đồ đó. Chờ
+  // §6 `RoomEntity` (P5, chưa code) mới có id thật để gán ở đây.
   const roomPolys: Pt[][] = [];
   const traceDoc: Doc = {
     layers: doc.layers,
@@ -436,11 +447,13 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
   }
 
   // ---- Nội thất: proxy box đúng footprint ----
+  // Đ1 (§8) — gán entityId = đúng BlockEntity nguồn: vá khuyết §0.4, mở khoá chọn 1 cái ghế
+  // trong 3D → nối lại Doc (Inspector sửa specId, "chọn hết cùng loại" theo b.block ở Doc).
   furnitureBlocks.forEach((b, i) => {
     const base = blockFootprint(b);
     if (!base) return;
     const def = BLOCK_MAP[b.block];
-    builder.object(`Furn_${i + 1}_${def.id}`, mats.furn);
+    builder.object(`Furn_${i + 1}_${def.id}`, mats.furn, { entityId: b.id });
     builder.box4(base, 0, furnitureHeightMm(def.id));
   });
 
@@ -448,7 +461,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
   windows.forEach((b, i) => {
     const base = blockFootprint(b);
     if (!base) return;
-    builder.object(`Window_${i + 1}`, mats.wall);
+    builder.object(`Window_${i + 1}`, mats.wall, { entityId: b.id });
     builder.box4(base, 800, Math.min(2200, H - 200));
   });
 

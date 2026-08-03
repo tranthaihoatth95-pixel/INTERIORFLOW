@@ -76,6 +76,33 @@ console.log('docToObjScene — groups (nguyên liệu viewer 3D, SPEC-3D-CORE §
   ok('tổng số tam giác toàn scene khớp verts/faces cùng cấp độ lớn (không rỗng, không nổ số)', scene.groups.reduce((n, g) => n + g.positions.length / 9, 0) > scene.stats.faces * 0.5);
 }
 
+console.log('docToObjScene — SPEC-TANG-DU-LIEU-CAU-KIEN §0.4/§8 Đ1: entityId cho MỌI nhóm ứng với 1 entity');
+{
+  const corners = [
+    { x: 0, y: 0 },
+    { x: 4000, y: 0 },
+    { x: 4000, y: 3000 },
+    { x: 0, y: 3000 },
+  ];
+  const entities: Entity[] = [
+    ...wallChain(corners, 200, 'l-wall', true),
+    { id: 'sofa-a', type: 'block', layer: 'l-furniture', block: 'sofa2', at: { x: 1200, y: 800 }, rot: 0, sx: 1, sy: 1 },
+    { id: 'win-a', type: 'block', layer: 'l-window', block: 'window', at: { x: 2000, y: 0 }, rot: 0, sx: 1, sy: 1 },
+  ];
+  const doc: Doc = { entities, layers: DEFAULT_LAYERS.map((l) => ({ ...l })) };
+  const scene = docToObjScene(doc, { wallHeightMm: 2700, theme: 'warm' });
+
+  const furn = scene.groups.find((g) => g.name.startsWith('Furn_'))!;
+  ok('group nội thất mang đúng entityId của BlockEntity nguồn', furn.entityId === 'sofa-a');
+  const win = scene.groups.find((g) => g.name.startsWith('Window_'))!;
+  ok('group cửa sổ mang đúng entityId của BlockEntity nguồn', win.entityId === 'win-a');
+
+  const floor = scene.groups.find((g) => g.name === 'Floor')!;
+  ok('Floor CHƯA gán entityId — không ứng với 1 entity riêng (bbox toàn tường)', floor.entityId === undefined);
+  const room = scene.groups.find((g) => g.name.startsWith('Room_'));
+  ok('Room_i (nếu dò được) CHƯA gán entityId — dò lại runtime, không id bền (§0.5, chờ §6 RoomEntity)', !room || room.entityId === undefined);
+}
+
 console.log('docToObjScene — biên & lỗi rõ ràng');
 {
   let threw = '';
