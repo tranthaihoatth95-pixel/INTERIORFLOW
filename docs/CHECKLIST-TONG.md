@@ -26,6 +26,7 @@
 | Empty states toàn app (khuôn "trống" có NÚT) | ✅ NGON-NGU | — | ⬜ G4 q5 | ⬜ | Hoà chê banner mơ hồ |
 | Rà jargon toàn app (từ điển NGON-NGU) | ✅ | — | — | 🔨 ca audit A4 quét grep | "Master Library" từng lộ |
 | Smart Tour v2 (ăn NC-onboarding) | 🔵 NC-4 về | ⬜ | ✅ v1 cũ | ⬜ | sáng phân chủ |
+| Bộ tên chính thức 2D Kỹ thuật/3D Thiết kế/Trình bày — đổi NHÃN hiển thị khắp app | ✅ CHOT-TEN vòng cuối | — | 🔵 `lib/phases.ts` (nguồn gốc) + 20 file UI đồng bộ theo (đợt 5, 05/08) | ⬜ | khoá kỹ thuật GIỮ NGUYÊN; verify browser thật header+palette+tab tooltip đúng nhãn mới |
 
 ## 2 · CHẶNG VẼ (CAD) — 3 mode
 | Hạng mục | Spec | Mock | Code | Audit | Ghi chú |
