@@ -39,16 +39,17 @@ const ICON: Record<Phase, typeof PencilRuler> = { concept: PencilRuler, render: 
 /**
  * 7.3.31 (30/07) — bản CHỮ ĐẬM RỘNG NHẤT mỗi nút chặng CÓ THỂ hiện, dùng làm `data-label` ghost
  * (xem `.stage-btn::before` ở globals.css) để chiếm sẵn chỗ, không đổi bề rộng khi active/
- * inactive hay khi đổi cadStage. Render/Present chỉ có 1 nhãn — dùng chính nó. CAD có 3 biến
- * thể theo cadStage ('CAD · Phác thảo'/'CAD · Kỹ thuật'/'CAD · BIM') — 'Phác thảo' dài nhất
- * trong 3, dùng cố định làm ghost dù cadStage đang là gì (cadStage hiện luôn = 'sketch' trong
- * thực tế — `setStage()` KHÔNG được gọi ở đâu trong UI, `cadStageFromProjectStage()` chỉ có
- * trong test — nên đây là phòng xa cho lúc field này được nối thật, không đổi gì hôm nay).
+ * inactive hay khi đổi cadStage. Render/Present chỉ có 1 nhãn — dùng chính nó. 2D Kỹ thuật có
+ * 2 biến thể theo cadStage (`phaseLabel()`, lib/phases.ts — 03/08 CHỐT TÊN vòng cuối, bim gộp
+ * chung nhãn với technical) — '2D Kỹ thuật · Kỹ thuật' dài hơn '2D Kỹ thuật · Sơ phác', dùng cố
+ * định làm ghost dù cadStage đang là gì (cadStage hiện luôn = 'sketch' trong thực tế —
+ * `setStage()` KHÔNG được gọi ở đâu trong UI, `cadStageFromProjectStage()` chỉ có trong test —
+ * nên đây là phòng xa cho lúc field này được nối thật, không đổi gì hôm nay).
  */
 const WIDEST_LABEL: Record<Phase, string> = {
-  concept: 'CAD · Phác thảo',
-  render: 'Rendering',
-  present: 'Presenting',
+  concept: '2D Kỹ thuật · Kỹ thuật',
+  render: '3D Thiết kế',
+  present: 'Trình bày',
 };
 
 const HINT_SEEN_KEY = 'interiorflow.vitals.gesture_hint_seen';

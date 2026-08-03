@@ -24,9 +24,11 @@ import { LibraryToastHost, pushLibraryToast } from './LibraryToast';
 import { PublishModal } from './PublishModal';
 import { BulkIngestMode } from './BulkIngestMode';
 
+// 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md) — "Vẽ"/"Dựng ảnh" là tên
+// round trước, nay đồng bộ theo bộ tên chính thức.
 const STAGE_CAPTION: Record<StageKey, [string, string]> = {
-  cad: ['Kệ chặng Vẽ', 'Drawing stage shelf'],
-  render: ['Kệ chặng Dựng ảnh', 'Rendering stage shelf'],
+  cad: ['Kệ chặng 2D Kỹ thuật', '2D Technical stage shelf'],
+  render: ['Kệ chặng 3D Thiết kế', '3D Design stage shelf'],
   present: ['Kệ chặng Trình bày', 'Presenting stage shelf'],
 };
 

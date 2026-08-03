@@ -121,7 +121,7 @@ export const DEMO_DECK: PresentDeck = {
       theme: PRESENT_DARK,
       kicker: 'ATELIER NORD · 2026',
       title: 'Cảm ơn đã lắng nghe',
-      body: ['Sẵn sàng trao đổi phương án chi tiết', 'InteriorFlow — chặng Presenting'],
+      body: ['Sẵn sàng trao đổi phương án chi tiết', 'InteriorFlow — chặng Trình bày'],
       hero: 4,
     },
   ],

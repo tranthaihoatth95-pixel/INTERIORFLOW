@@ -176,7 +176,7 @@ export default function Toolbar(p: Props) {
       <IOMenu
         kind="import"
         size="md"
-        title="Nhập file vào chặng Presenting"
+        title="Nhập file vào chặng Trình bày"
         items={[
           {
             id: 'image',
@@ -212,7 +212,7 @@ export default function Toolbar(p: Props) {
         size="md"
         align="left"
         variant="accent"
-        title="Xuất file từ chặng Presenting"
+        title="Xuất file từ chặng Trình bày"
         busy={p.busy}
         resultMsg={p.exportMsg}
         items={[

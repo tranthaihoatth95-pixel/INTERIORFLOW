@@ -229,7 +229,8 @@ function Scene2({ reduce }: { reduce: boolean }) {
 /* ═════════════════ Scene 3: 3 stages ═════════════════ */
 
 function Scene3({ reduce }: { reduce: boolean }) {
-  const stages = ['Drafting', 'Rendering', 'Presenting'];
+  // 03/08 CHỐT TÊN vòng cuối — bản header hẹp "2D/3D/Trình bày" (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md).
+  const stages = ['2D', '3D', 'Trình bày'];
   return (
     <motion.div
       initial={{ opacity: 0 }}

@@ -246,7 +246,7 @@ function DeckActions({ slidesJson, deckName }: { slidesJson: string; deckName: s
 }
 
 /**
- * Nút TƯỜNG MINH "Đưa sang Presenting →" trên node slide.* đã render (quyết định user #4 — Sprint 2).
+ * Nút TƯỜNG MINH "Đưa sang Trình bày →" trên node slide.* đã render (quyết định user #4 — Sprint 2).
  * Bấm: stash ảnh (lib/present-editor/handoff, consume-once) → toast nhỏ "Đã gửi N ảnh…" →
  * điều hướng /present-editor (delay ngắn để user kịp thấy xác nhận). Ảnh vào RỔ REFERENCE
  * của Present (human-in-loop kéo vào slide), không tự chèn vào deck.
@@ -269,7 +269,7 @@ function SendToPresent({ images, nodeId }: { images: string[]; nodeId: string })
   if (sent !== null) {
     return (
       <p className="nodrag flex w-full items-center justify-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 py-1.5 text-[11px] text-emerald-300">
-        <Check size={12} /> Đã gửi {sent} ảnh sang Presenting…
+        <Check size={12} /> Đã gửi {sent} ảnh sang Trình bày…
       </p>
     );
   }
@@ -285,7 +285,7 @@ function SendToPresent({ images, nodeId }: { images: string[]; nodeId: string })
         timerRef.current = setTimeout(() => router.push('/present-editor'), 650);
       }}
     >
-      <Presentation size={12} /> Đưa sang Presenting →
+      <Presentation size={12} /> Đưa sang Trình bày →
     </button>
   );
 }

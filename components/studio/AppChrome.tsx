@@ -112,7 +112,8 @@ export function AppChrome({ active, logoMenu }: Props) {
         e.preventDefault();
         setShortcutsOpen((v) => !v);
       }
-      // CHINH-4 (SPEC-PANEL-ROLLOUT-IDF §4a) — ⌘1/⌘2/⌘3 sang chặng Vẽ · Dựng ảnh · Trình bày.
+      // CHINH-4 (SPEC-PANEL-ROLLOUT-IDF §4a) — ⌘1/⌘2/⌘3 sang chặng 2D Kỹ thuật · 3D Thiết kế ·
+      // Trình bày (03/08 CHỐT TÊN vòng cuối).
       // Đặt ở AppChrome (không phải AppShell) vì pickStage cần đủ bộ {active,pathname,router,
       // begin} đã wire sẵn tại đây — không nhân đôi dây.
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === '1' || e.key === '2' || e.key === '3')) {
