@@ -312,3 +312,24 @@ Mỗi luật kèm ca bệnh thật đã xảy ra, để phiên sau hiểu vì sa
 | K3 | **Bento chỉ cho màn tổng quan.** Màn làm việc (2D·3D·bảng nút·ảnh 360·ghi chú) vùng vẽ phải liền một khối — bento chia đều sự chú ý, còn lúc vẽ thì không muốn chia gì cả. |
 | K4 | **Cấm icon hoá nút quyết định** (Xoá · Gửi khách · Xuất hồ sơ). Icon cho việc lặp hằng ngày; chữ cho việc bấm sai là trả giá. |
 | K5 | **Kéo thả không bao giờ là đường DUY NHẤT** — luôn có nút bấm tương đương (công trường tay bẩn, găng tay, màn ướt). |
+
+## §7 · PHIẾU ĐỢT 7 NHÓM C, VIỆC C1 (03/08 đêm) — đối chiếu cơ chế Revit: 2D đã có? 3D đã có?
+Đọc `docs/SPEC-VE-REVIT-MODE.md` (toàn văn, gồm phụ lục trọng tâm nội thất) + `lib/cad/model.ts`
+(field thật trên `Base`, grep xác nhận) + `lib/three/cad-to-obj.ts` (dựng 3D thật). Bảng dưới là
+**HIỆN TRẠNG CODE 03/08**, không phải đề xuất — mọi dòng của `SPEC-VE-REVIT-MODE` §0-§8/§A1-§A6 là
+**ĐỀ XUẤT chưa code** trừ khi bảng ghi rõ file:dòng. ✅ đủ · 🟡 một phần · ⬜ chưa có.
+
+| Cơ chế Revit | Chặng 2D đã có? | Chặng 3D đã có? |
+|---|---|---|
+| **Location line tường** (tim/mặt trái/mặt phải; đổi bề dày thì tim ĐỨNG YÊN) | ⬜ CHƯA — `wallChain()`/`wallSegment()` sinh hatch+polyline rồi VỨT tim ngay (đúng như `SPEC-VE-REVIT-MODE.md` §1 mục "Thiếu thật" tự ghi); grep `WallRun`/`locationLine` trong `model.ts` = 0 kết quả | ⬜ CHƯA — `docToObjScene` chỉ đùn thẳng `h.points` (poché đã vẽ) theo `heightMm`, không có khái niệm tim để tham chiếu |
+| **Cửa/cửa sổ HOSTED** (con của đúng 1 tường, đục lỗ thật, chết theo khi xoá tường) | ⬜ CHƯA — cửa/cửa sổ là `BlockEntity` ký hiệu rời, không có liên kết dữ liệu tới tường chủ; xoá tường không kéo theo xoá cửa | 🟡 MỘT PHẦN — `ops[]`/`buildOpCutters` (NC-12, `27d8c6d`, `lib/three/cad-to-obj.ts` gọi trong vòng lặp `wallHatches`) đã có boolean CSG cắt hốc THẬT vào khối tường qua nút tay "Khoét hốc" (`Object3DInspector.tsx`) — nhưng là thao tác CHUNG, chưa gắn ngữ nghĩa "đây là cửa/cửa sổ"; cửa sổ hôm nay dựng bằng khối kính proxy ĐỨNG CHỒNG lên tường (`cad-to-obj.ts:575` `Window_i` = `box4`), KHÔNG khoét lỗ; cửa hoàn toàn chưa có hình 3D nào |
+| **Type vs Instance** (đổi 1 Type → mọi bản sao đổi theo; instance override thắng) | ⬜ CHƯA — không có `WallType`/catalog nào tồn tại; `wallKind`·`wallThicknessMm`·`heightMm` nằm thẳng trên TỪNG entity — 100% instance, không có "1 chỗ đổi cả dự án đổi" | ⬜ CHƯA — 3D chỉ đọc lại đúng field instance đó (`h.heightMm`), không biết type là gì |
+| **Tham số cấu kiện** (bề dày/cao độ/vật liệu lõi-hoàn thiện có cấu trúc) | 🟡 MỘT PHẦN — `Base` đã có `elementType`·`wallKind`·`wallStructural`·`wallThicknessMm`·`heightMm`·`specId` (`model.ts:160-193`) đủ cho tường ĐƠN GIẢN; cấu kiện kiểu CỤM (tủ bếp `CabinetRun`, trần nhiều cấp) mới là ĐỀ XUẤT ở phụ lục §A5/§A6, chưa có dòng code nào | 🟡 MỘT PHẦN — `Base.ops?: BuildOp[]` (`extrude`/`boolean`/`arrayLinear`, `27d8c6d` — phiên song song đêm nay) là bước tham số hoá 3D ĐẦU TIÊN, đọc lại đúng Doc chứ không lưu mesh — nhưng mới 3 phép, chưa có khái niệm "cấu kiện" bậc cụm nhiều khối con |
+| **Level/tầng** (object Level thật mang cao độ + thứ tự, cấu kiện gán vào Level) | 🟡 MỘT PHẦN — `Base.storey?: string` (`model.ts:162`) CHỈ LÀ NHÃN chuỗi tự do, không phải object Level mang cao độ; gán tay hoặc nút "Gán tầng trệt" (`Object3DTree.tsx`) | 🟡 MỘT PHẦN — nhóm cảnh theo `storey` thật (mọi `builder.object(...)` trong `cad-to-obj.ts` đều kèm `storey: h.storey`/`b.storey`, `Object3DTree.tsx` bucket UI theo đúng field này) — nhưng KHÔNG dựng nhiều tầng chồng cao độ khác nhau, mọi khối vẫn đùn chung từ z=0 |
+| **Constraint theo cao độ** (đáy/đỉnh cấu kiện GẮN vào cao độ Level — Level đổi thì cấu kiện đổi theo) | ⬜ CHƯA — `heightMm` là số tuyệt đối gõ/kéo tay trên từng entity, không tham chiếu Level nào | ⬜ CHƯA — cùng lý do; không có Level để constraint vào |
+
+**Kết luận 1 dòng:** chặng 3D mới có "khối trơn + gizmo" (đúng nhận xét của Hoà mở đầu phiếu này) —
+6/6 cơ chế Revit cốt lõi đều CHƯA ĐẦY ĐỦ ở cả 2D lẫn 3D; điểm sáng duy nhất mới có đêm nay là
+boolean CSG thật (`ops[]`) — hạ tầng ĐÚNG HƯỚNG để sau này gắn ngữ nghĩa "cửa hosted", nhưng chưa
+ai nối dây. Việc C2 (nhóm nút "Cấu kiện" mờ trong Command3DPanel) bám đúng bảng này để không hứa
+suông.

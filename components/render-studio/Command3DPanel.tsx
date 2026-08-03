@@ -24,7 +24,10 @@
  */
 
 import { useState } from 'react';
-import { Plus, Pencil, Palette, Camera, Square } from 'lucide-react';
+import {
+  Plus, Pencil, Palette, Camera, Square, DoorClosed, AppWindow, TrendingUp,
+  CornerUpRight, RotateCw, Fence, Minus, PanelTop, Archive,
+} from 'lucide-react';
 import { useMaterials, type MaterialSpecLite } from '@/lib/render-studio/use-materials';
 import MaterialSphere from '@/components/three/MaterialSphere';
 import { darken, kindFromName, sceneForKind } from '@/components/three/material-preview';
@@ -107,6 +110,27 @@ export default function Command3DPanel({
 /** Tab TẠO — trước đây là câu "sắp có" suông (Hoà: "rối rắm, không hệ thống"). Nay dựng được
  * TẠI CHỖ: nút Tường gọi engine `wallSegment()` của chặng Vẽ qua nơi mount. Các khối còn lại giữ
  * chỗ dạng disabled — thà nói thẳng "chưa dựng được" còn hơn nút bấm không ra gì. */
+/** NHÓM C, VIỆC C2 (`docs/PHIEU-CODE-IF-DOT7-3D-2026-08-03.md`) — đúng tầng ⑥ "Cấu kiện tham số"
+ * của `docs/SPEC-DUNG-BO-LENH-3D.md` (bảng 6 tầng). §9 *"thiết kế trước — tính năng fill sau"*:
+ * vẽ ĐỦ cả tầng lên giao diện ngay cả khi chưa code, KHÔNG ẩn/bỏ sót — ô mờ là bằng chứng còn
+ * việc, không phải chỗ trống cho gọn mắt. `tuong` là NGOẠI LỆ DUY NHẤT trong danh sách này đã
+ * dựng thật (nút "Tường" phía trên) — hiện ở đây với label khớp tầng ⑥ nhưng KHÔNG mờ/disabled,
+ * bấm gọi lại đúng `onTaoTuong` (không tự chế hành vi thứ hai). 9 mục còn lại mờ thật, chờ
+ * `ops[]` (VIỆC 3 phiên boolean, `27d8c6d`) đủ để gắn ngữ nghĩa cấu kiện lên đó.
+ */
+const CAU_KIEN_TANG_6: { id: string; vi: string; en: string; icon: typeof Square; lam?: boolean }[] = [
+  { id: 'tuong', vi: 'Tường', en: 'Wall', icon: Square, lam: true },
+  { id: 'cua', vi: 'Cửa', en: 'Door', icon: DoorClosed },
+  { id: 'cuaso', vi: 'Cửa sổ', en: 'Window', icon: AppWindow },
+  { id: 'thang-thang', vi: 'Cầu thang thẳng', en: 'Straight stair', icon: TrendingUp },
+  { id: 'thang-gap', vi: 'Cầu thang gấp khúc', en: 'Switchback stair', icon: CornerUpRight },
+  { id: 'thang-xoan', vi: 'Cầu thang xoắn', en: 'Spiral stair', icon: RotateCw },
+  { id: 'lancan', vi: 'Lan can', en: 'Railing', icon: Fence },
+  { id: 'phaochi', vi: 'Phào chỉ', en: 'Moulding', icon: Minus },
+  { id: 'tranthar', vi: 'Trần thả', en: 'Drop ceiling', icon: PanelTop },
+  { id: 'tubep', vi: 'Tủ bếp module', en: 'Kitchen cabinet module', icon: Archive },
+];
+
 function CreateTab({ nhayNutTuong, onTaoTuong }: { nhayNutTuong: boolean; onTaoTuong?: () => void }) {
   const tr = useT();
   const CHUA_CO: [string, string][] = [
@@ -143,6 +167,36 @@ function CreateTab({ nhayNutTuong, onTaoTuong }: { nhayNutTuong: boolean; onTaoT
             {tr(vi, en)}
           </button>
         ))}
+      </div>
+
+      <div className="space-y-2 border-t border-[var(--border)] pt-3">
+        <p className="px-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--t4)]">
+          {tr('Cấu kiện', 'Building components')}
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {CAU_KIEN_TANG_6.map(({ id, vi, en, icon: Icon, lam }) => (
+            <button
+              key={id}
+              type="button"
+              disabled={!lam}
+              onClick={lam ? onTaoTuong : undefined}
+              title={
+                lam
+                  ? tr('Đoạn 4m, dày 220 — sửa được sau', '4m segment, 220 thick — editable')
+                  : tr('Chưa dựng — đợi ops[] (VIỆC 3 phiên boolean)', 'Not built yet — waiting on ops[] (boolean-session VIỆC 3)')
+              }
+              className={cn(
+                'flex aspect-square flex-col items-center justify-center gap-1.5 rounded-[9px] border p-1 text-center text-[9.5px] font-medium transition-colors',
+                lam
+                  ? 'cursor-pointer border-[var(--border)] bg-[var(--panel)] text-[var(--t2)] hover:border-[var(--accent-ring)] hover:text-[var(--accent)]'
+                  : 'cursor-not-allowed border-dashed border-[var(--border)] text-[var(--t5)] opacity-45',
+              )}
+            >
+              <Icon size={15} strokeWidth={1.7} />
+              <span className="leading-tight">{tr(vi, en)}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
