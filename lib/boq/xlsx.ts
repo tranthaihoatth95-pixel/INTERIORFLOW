@@ -59,6 +59,14 @@ function numberCell(colN: number, rowN: number, value: number, style: number): s
   return `<c r="${cellRef(colN, rowN)}" s="${style}"><v>${value}</v></c>`;
 }
 
+/** Ô công thức OOXML: `<f>` là công thức sống Excel/LibreOffice tự chạy lại khi sửa dữ liệu; `<v>`
+ * giữ giá trị cache (đúng bằng số ta đã tính) để file mở ra có số ngay, không cần Excel tính lại
+ * trước. Dùng cho dòng TỔNG — B8, sửa lỗi "tổng là số chết" (`docs/PHIEU-TRINH-BOQ-EDITOR.md` B8). */
+function formulaCell(colN: number, rowN: number, formula: string, cachedValue: number, style: number): string {
+  if (!Number.isFinite(cachedValue)) throw new Error(`boqResultToXlsxBuffer: giá trị số không hợp lệ tại ${cellRef(colN, rowN)}: ${cachedValue}`);
+  return `<c r="${cellRef(colN, rowN)}" s="${style}"><f>${xmlEscape(formula)}</f><v>${cachedValue}</v></c>`;
+}
+
 const HEADERS = ['Mã vật liệu', 'Tên vật liệu', 'NCC', 'Mã SP', 'Diện tích (m²)', 'Đơn giá (đ)', 'Hao hụt (%)', 'Thành tiền (đ)'];
 const COL_COUNT = HEADERS.length; // 8 — khớp {matId, tên, NCC, mã, m², đơn giá, hao hụt %, thành tiền}
 
@@ -87,10 +95,15 @@ function buildSheetXml(result: BoqResult): string {
   }
 
   // Dòng tổng cuối bảng (bold) — CHỈ cộng result.rows (đã tự loại vùng lỗi từ computeBoq, xem
-  // model.ts BoqResult.totalAmount doc).
+  // model.ts BoqResult.totalAmount doc). SỐNG: SUM() thật trên dải "Thành tiền" (cột H) của các
+  // dòng dữ liệu — sửa 1 ô trong Excel/LibreOffice thì tổng tự đổi theo, không còn là số chết
+  // (B8). Bảng 0 dòng thì KHÔNG có dải nào để SUM (H2:H1 vô nghĩa) → giữ số 0 tĩnh.
   const totalRow = r;
+  const totalCell = result.rows.length > 0
+    ? formulaCell(8, totalRow, `SUM(${cellRef(8, 2)}:${cellRef(8, totalRow - 1)})`, result.totalAmount, STYLE.BOLD_VND)
+    : numberCell(8, totalRow, result.totalAmount, STYLE.BOLD_VND);
   rows.push(
-    `<row r="${totalRow}">${textCell(1, totalRow, 'TỔNG CỘNG', STYLE.BOLD)}${numberCell(8, totalRow, result.totalAmount, STYLE.BOLD_VND)}</row>`,
+    `<row r="${totalRow}">${textCell(1, totalRow, 'TỔNG CỘNG', STYLE.BOLD)}${totalCell}</row>`,
   );
 
   const cols = Array.from({ length: COL_COUNT }, (_, i) => {

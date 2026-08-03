@@ -77,7 +77,12 @@ async function main() {
   console.log('\n[7] style index');
   ok('header dùng style bold (s="1")', /r="A1" t="inlineStr" s="1"/.test(sheet));
   ok('đơn giá dùng style tiền tệ (s="3")', /<c r="F2" s="3">/.test(sheet));
-  ok('dòng tổng dùng style bold-VND (s="4")', /s="4"><v>4890000<\/v>/.test(sheet));
+  ok('dòng tổng dùng style bold-VND (s="4")', /s="4"><f>SUM\(H2:H3\)<\/f><v>4890000<\/v>/.test(sheet));
+
+  /* ═══ [7b] B8 — tổng SỐNG bằng SUM(), không phải số chết (docs/PHIEU-TRINH-BOQ-EDITOR.md B8) ═══ */
+  console.log('\n[7b] B8 — dòng tổng là công thức SUM() sống');
+  ok('có công thức SUM( trên cột Thành tiền', sheet.includes('<f>SUM(H2:H3)</f>'));
+  ok('vẫn giữ <v> cache = tổng đúng (mở file thấy số ngay)', /<f>SUM\(H2:H3\)<\/f><v>4890000<\/v>/.test(sheet));
 
   /* ═══ [8] styles.xml có đủ numFmt tiền tệ + m² ═══ */
   console.log('\n[8] styles.xml');
