@@ -265,3 +265,39 @@ lật quyết định Hoà đã đích thân chốt (chỉ được treo + ghi c
 | **COWORK-DỰNG** | 🔴 **Việc quan trọng nhất hiện nay: `SPEC-TANG-DU-LIEU-CAU-KIEN.md`** — tầng dữ liệu cấu kiện dùng chung 3 chặng (một Doc, ba ống kính). Phải trả lời: entity nào mang ngữ nghĩa · chặng 2D render nó thành gì · chặng 3D render nó thành gì · sửa bên này bên kia đổi theo bằng cơ chế nào (**KHÔNG đồng bộ 2 chiều — chỉ một bản, đọc lúc vẽ**) · cái gì CHỈ sống ở 1 chặng (ký hiệu 2D, ánh sáng 3D) · neo vào `model.ts` elementType/wallKind/storey + matId PBR (`892c927`). Đây là spec nền cho `SPEC-DUNG-3D-THONG-NHAT`. |
 | **COWORK-VẼ** | Bổ sung `SPEC-VE-REVIT-MODE` phần trọng tâm NỘI THẤT (tủ bếp·trần·sàn lát·lớp hoàn thiện là chính; tường/cửa là vỏ chứa). Append, không đập (§0d). |
 | **COWORK-NC** | NC-11 IFC/QĐ 258 (giữ nguyên đợt 4). |
+
+## §6 · LUẬT RÚT TỪ THỰC CHIẾN 03/08 — áp cho MỌI phiên, kể cả COWORK-TỔNG
+Mỗi luật kèm ca bệnh thật đã xảy ra, để phiên sau hiểu vì sao chứ không chỉ tuân.
+
+### §6a · TIỀN VÀ QUYỀN — ba luật không được phá
+| # | Luật | Ca bệnh |
+|---|---|---|
+| T1 | **Kế toán tiền phải ở SERVER.** Client chỉ được HIỂN THỊ số dư, không được là nơi quyết định trừ. | `/api/jobs` chặn ẩn danh/tier nhưng **0 dòng đụng credit** — kế toán nằm ở `lib/execution.ts` (client). Gọi thẳng route = đốt tiền provider, credit không giảm |
+| T2 | **Không tin số tiền client gửi.** Mọi thao tác cộng tiền phải đối chiếu sổ cái + chống hoàn 2 lần + chạy trong giao dịch nguyên tử. | `credits/route.ts` cũ cộng thẳng `amount` từ body → tự nạp triệu credit. Đã vá `7b6e4e6` |
+| T3 | **Không tin loại tệp client khai.** Whitelist MIME phía server bằng magic bytes; trả `nosniff` + `attachment` cho mọi thứ không phải ảnh. | upload thư viện nhận `mime` client tự khai, tải về trả đúng loại đó → XSS lưu trữ chạy trên origin app |
+
+### §6b · GIAO DIỆN — bốn luật từ bốn lỗi Hoà bắt được bằng mắt
+| # | Luật | Ca bệnh |
+|---|---|---|
+| G1 | **CẤM `animate opacity` trên phần tử có `backdrop-filter`** (và trên mọi tổ tiên của nó). Muốn fade thì fade lớp cha KHÔNG có kính, hoặc fade nội dung bên trong. | card đăng nhập "vào 1 giây rồi mới đục" — opacity<1 tạo backdrop root cô lập, kính mất nền thật trong lúc fade. Đã vá `b0f4f06`, cùng bệnh P6c present-editor |
+| G2 | **Lớp nổi phải có NỀN ĐẶC ≥92%**, kính chỉ là lớp phụ. Chữ đạt 4.5:1 với nền CỦA CHÍNH NÓ, không phải nền trang. | popover Vitals trong suốt, chữ chồng lên toolbar. Vá bằng class riêng `.vitals-pop` — **phân loại kính theo cái nằm SAU nó**, không dùng chung một class |
+| G3 | **Cấm mount cùng một panel ở hai ổ khác nhau.** | `VitalsGesturePanel` mount ở cả `StatusBar` lẫn `StageSwitcher` → hai Vitals trên màn. Loại lỗi đọc từng file đều thấy đúng, chạy lên mới lộ |
+| G4 | **Mọi `text-[Npx]` phải kèm `leading-`.** Chữ Việt có dấu chồng cần line-height ≥1.5; cú pháp arbitrary của Tailwind chỉ đặt cỡ chữ, line-height thừa kế từ cha → cắt dấu. | banner phiên đăng nhập bị cắt ngang chữ |
+| G5 | **z-index phải có thang khai báo**, không rải số tuỳ hứng. | banner `z-60` trùng đúng `zIndex 60` của VitalsGesture — ai đè ai tuỳ thứ tự DOM |
+
+### §6c · NGHIỆM THU — cấm nói "xong" khi chưa đo
+| # | Luật |
+|---|---|
+| N1 | **Báo cáo của phiên KHÔNG phải bằng chứng.** TỔNG audit phải mở code đọc tận dòng, hoặc chạy test/grep. Đã bắt được: "spec ghi đã có SUM()" (thật ra số chết) · "sửa 3 lỗ" (thật ra 1/3). |
+| N2 | **Đếm bằng grep, đừng đếm bằng trí nhớ.** `grep -c` trước khi khẳng định "đã gán cho mọi nhóm". |
+| N3 | **Vá thì phải VERIFY TAY trước.** Không tái hiện được lỗi thì DỪNG, báo lại — đừng vá mù. |
+| N4 | **Làm đủ chỉ tiêu ≠ làm đúng.** Chỗ nào chưa có dữ liệu nguồn thì ghi lý do tại chỗ, đừng gán bừa cho đủ (mẫu tốt: `cad-to-obj.ts:396` giải thích vì sao Floor không có entityId). |
+
+### §6d · KIẾN TRÚC — ranh giới đã chốt
+| # | Luật |
+|---|---|
+| K1 | **Ba chặng là ba ỐNG KÍNH soi vào một nguồn, không phải ba kho.** Cấm mọi hàm `syncXtoY` giữa các chặng. |
+| K2 | **IF = máy PHÁT (máy tính) · ArchiNote = máy THU (điện thoại).** Cơ chế cảm ứng chỉ HỌC chéo, không bê nguyên: IF cảm ứng để vẽ CHÍNH XÁC, ArchiNote để ghi NHANH. |
+| K3 | **Bento chỉ cho màn tổng quan.** Màn làm việc (2D·3D·bảng nút·ảnh 360·ghi chú) vùng vẽ phải liền một khối — bento chia đều sự chú ý, còn lúc vẽ thì không muốn chia gì cả. |
+| K4 | **Cấm icon hoá nút quyết định** (Xoá · Gửi khách · Xuất hồ sơ). Icon cho việc lặp hằng ngày; chữ cho việc bấm sai là trả giá. |
+| K5 | **Kéo thả không bao giờ là đường DUY NHẤT** — luôn có nút bấm tương đương (công trường tay bẩn, găng tay, màn ướt). |
