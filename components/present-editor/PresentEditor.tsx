@@ -1972,9 +1972,27 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
                 width: inspectorW,
                 flex: `0 0 ${inspectorW}px`,
                 borderLeft: '1px solid var(--border)',
-                background: 'var(--panel)',
                 padding: 14,
+                // L5 (phiếu 03/08 "panel phải bị cắt đáy"): đo thật thì aside ĐÃ `overflowY:auto`
+                // và cuộn được (scrollHeight 395 > clientHeight 302) — cái thiếu là DẤU HIỆU còn
+                // nội dung phía dưới: macOS ẩn thanh cuộn khi không rê chuột, nên dòng hướng dẫn
+                // nằm dưới mép trông y như bị cắt cụt. Hai thứ sửa đúng bệnh đó:
+                //  · `scrollbarGutter:stable` — chừa sẵn rãnh, nội dung không nhảy khi cuộn hiện.
+                //  · bóng-cuộn: 2 lớp `local` (màu nền, trôi theo nội dung) che 2 lớp `scroll`
+                //    (vệt mờ, đứng yên). Nội dung vừa khung → lớp local phủ kín, KHÔNG thấy vệt;
+                //    còn nội dung → lớp local trôi đi, lộ vệt ở mép. Thuần CSS, không state.
+                paddingBottom: 28,
                 overflowY: 'auto',
+                scrollbarGutter: 'stable',
+                backgroundColor: 'var(--panel)',
+                backgroundImage:
+                  'linear-gradient(var(--panel) 40%, transparent), linear-gradient(transparent, var(--panel) 60%),' +
+                  'radial-gradient(farthest-side at 50% 0, rgba(0,0,0,.16), transparent),' +
+                  'radial-gradient(farthest-side at 50% 100%, rgba(0,0,0,.16), transparent)',
+                backgroundPosition: 'top, bottom, top, bottom',
+                backgroundSize: '100% 22px, 100% 22px, 100% 9px, 100% 9px',
+                backgroundRepeat: 'no-repeat',
+                backgroundAttachment: 'local, local, scroll, scroll',
               }}
             >
               {ed.slide && (
