@@ -19,6 +19,10 @@
  * Chỉ hiện ở Sketch. Pro (chuột + bàn phím) ẩn hẳn cho sạch — xem CadToolbar.
  * Gu: cùng ngôn ngữ pill liquid-glass + hairline 1px của CadToolbar, KHÔNG thêm màu mới.
  * Vùng chạm ≥ 44×44px (chuẩn cảm ứng).
+ *
+ * Toolbelt ổ ⑤: từ chỗ pill nổi góc dưới-trái canvas → nay là HÀNG 2 của dock kính chung
+ * (`CadToolbelt.tsx`, một-khối-một-bóng §2c) — component này chỉ còn render hàng nút,
+ * vỏ kính + định vị do dock lo.
  */
 
 import { Crosshair, Gauge, Terminal, Hand, Check, X } from 'lucide-react';
@@ -48,20 +52,11 @@ export default function CadTouchDock() {
     <div
       aria-label="Cụm nút cảm ứng (Sketch)"
       style={{
-        position: 'absolute',
-        left: 14,
-        bottom: 14,
-        zIndex: 22,
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: 4,
         padding: 5,
-        borderRadius: 999,
-        background: 'color-mix(in srgb, var(--panel) 78%, transparent)',
-        backdropFilter: 'blur(18px) saturate(1.4)',
-        WebkitBackdropFilter: 'blur(18px) saturate(1.4)',
-        border: '1px solid var(--border)',
-        boxShadow: '0 8px 30px rgba(0,0,0,.22)',
         // Nút bấm nhanh liên tiếp không bị trình duyệt trễ 300ms / phóng to 2 chạm.
         touchAction: 'manipulation',
       }}

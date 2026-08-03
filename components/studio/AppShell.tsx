@@ -143,7 +143,9 @@ export function AppShell({
           {children}
           {toolbelt && (
             <div className="pointer-events-none absolute inset-x-0 bottom-4 z-[6] flex justify-center">
-              <div className="pointer-events-auto">{toolbelt}</div>
+              {/* maxWidth chặn dock rộng hơn Stage (bug cũ "toolbar tràn phải đè Inspector" là
+                  do pill tự đo theo 100vw — Stage mới là khung đúng, Inspector là cột riêng). */}
+              <div className="pointer-events-auto" style={{ maxWidth: 'calc(100% - 24px)' }}>{toolbelt}</div>
             </div>
           )}
         </div>

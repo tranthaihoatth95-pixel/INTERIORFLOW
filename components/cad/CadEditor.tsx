@@ -65,8 +65,6 @@ import {
   type AcUnitProximityCheck,
 } from '@/lib/cad/mep-suggest';
 import CadCanvas from './CadCanvas';
-import CadToolbar from './CadToolbar';
-import CadTouchDock from './CadTouchDock';
 import MaterialPalette from './MaterialPalette';
 import AiBriefPanel from './AiBriefPanel';
 import { ZonePanel, ZonesLegend } from './ZonePanel';
@@ -81,6 +79,18 @@ export default function CadEditor() {
   const router = useRouter();
   const [furnitureOpen, setFurnitureOpen] = useState(false);
   const [materialOpen, setMaterialOpen] = useState(false);
+  // Toolbelt ổ ⑤ (CadToolbelt trong AppShell) không với tới 2 state panel cục bộ này →
+  // bắc cầu CustomEvent, cùng pattern 'cad:import-request' bên dưới.
+  useEffect(() => {
+    const onFurniture = () => setFurnitureOpen((o) => !o);
+    const onMaterial = () => setMaterialOpen((o) => !o);
+    window.addEventListener('cad:toggle-furniture', onFurniture);
+    window.addEventListener('cad:toggle-material', onMaterial);
+    return () => {
+      window.removeEventListener('cad:toggle-furniture', onFurniture);
+      window.removeEventListener('cad:toggle-material', onMaterial);
+    };
+  }, []);
   const [standardsOpen, setStandardsOpen] = useState(false);
   const [autoLabelOpen, setAutoLabelOpen] = useState(false);
   const [mepOpen, setMepOpen] = useState(false);
@@ -499,13 +509,10 @@ export default function CadEditor() {
       {/* vùng canvas + panel */}
       <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
         <CadCanvas />
-        <CadToolbar
-          onToggleFurniture={() => setFurnitureOpen((o) => !o)}
-          onToggleMaterial={() => setMaterialOpen((o) => !o)}
-        />
-        {/* Sketch = chế độ cảm ứng (ArcSite): cụm nút thay 4 phím chỉ có trên bàn phím vật lý
-            (F8 Ortho · F12 Dynamic Input · gõ-lệnh · Space pan). Pro tự ẩn — xem CadTouchDock. */}
-        <CadTouchDock />
+        {/* Toolbelt ổ ⑤ — CadToolbar + CadTouchDock KHÔNG còn nổi trong canvas: nay gộp thành
+            dock kính giữa-dưới Stage (`CadToolbelt.tsx`), mount ở `CadStageScreen` qua prop
+            `toolbelt` của AppShell. Nút Nội thất/Vật liệu bắc cầu về đây qua 2 CustomEvent
+            `cad:toggle-furniture`/`cad:toggle-material` (listener ở effect phía trên). */}
         {furnitureOpen && <FurniturePanel onClose={() => setFurnitureOpen(false)} />}
         {materialOpen && <MaterialPalette onClose={() => setMaterialOpen(false)} />}
         {standardsOpen && <StandardsPanel onClose={() => setStandardsOpen(false)} />}

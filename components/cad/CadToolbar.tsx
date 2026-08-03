@@ -219,25 +219,17 @@ export default function CadToolbar({
       ref={scrollRef}
       className={`cad-pill-scroll${overflowing ? ' is-overflowing' : ''}`}
       style={{
-        position: 'absolute',
-        top: 14,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 20,
-        // Sprint 9 — Pro vẫn có thể rộng hơn viewport hẹp (nợ kỹ thuật cũ "toolbar tràn màn
-        // hẹp"). Thay vì để pill tràn 2 bên (đẩy ModeSwitch/Undo ra ngoài mép, không bấm được),
-        // giới hạn maxWidth + cuộn ngang — nội dung luôn bắt đầu từ trái (ModeSwitch/DRAW luôn
-        // thấy được ngay), phần Pro dài hơn thì cuộn thay vì vô hình.
+        // Toolbelt ổ ⑤ (SPEC-HA-TANG-UI-IF Trụ 1): KHÔNG tự định vị nữa — vỏ kính + vị trí
+        // giữa-dưới Stage do `CadToolbelt.tsx` (mount qua prop `toolbelt` của AppShell) lo.
+        // Trước đây pill tự absolute top-giữa với maxWidth 100vw nên khi Inspector mở thì tràn
+        // phải ĐÈ lên Inspector (bug ghi nhiều lần) — nay maxWidth 100% của Stage, hết đè.
+        // Sprint 9 — Pro rộng hơn viewport hẹp: giới hạn maxWidth + cuộn ngang — nội dung luôn
+        // bắt đầu từ trái (ModeSwitch/DRAW thấy ngay), phần Pro dài hơn thì cuộn thay vì vô hình.
         // 19/07 — scrollbar mặc định thô nằm giữa pill đã ẩn qua .cad-pill-scroll (globals.css).
-        maxWidth: 'calc(100vw - 32px)',
+        maxWidth: '100%',
         overflowX: 'auto',
         overflowY: 'hidden',
         borderRadius: 999,
-        background: 'color-mix(in srgb, var(--panel) 78%, transparent)',
-        backdropFilter: 'blur(18px) saturate(1.4)',
-        WebkitBackdropFilter: 'blur(18px) saturate(1.4)',
-        border: '1px solid var(--border)',
-        boxShadow: '0 8px 30px rgba(0,0,0,.22)',
       }}
     >
     <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: 6, width: 'max-content' }}>

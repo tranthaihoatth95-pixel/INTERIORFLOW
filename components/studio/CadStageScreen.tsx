@@ -21,6 +21,7 @@
 
 import { useMemo } from 'react';
 import CadSheets from '@/components/cad/CadSheets';
+import CadToolbelt from '@/components/cad/CadToolbelt';
 import { LayerPanel } from '@/components/cad/CadEditor';
 import { CadInspectorPages } from '@/components/studio/CadInspectorPages';
 import { StageEnter } from '@/components/studio/StageTransition';
@@ -82,6 +83,9 @@ export default function CadStageScreen() {
       inspectorTitle={title}
       inspectorSub={sub}
       onCloseInspector={selection.length > 0 ? clearSelection : undefined}
+      /* Ổ ⑤ Toolbelt — dock kính gộp CadToolbar + CadTouchDock, hết đè Inspector (việc a
+         hàng đợi CHINH, xem đầu CadToolbelt.tsx). */
+      toolbelt={<CadToolbelt />}
     >
       <StageEnter>
         {/* Tầng multi-sheet (phụ-thêm): thanh tab + CadEditor. 1 sheet ⇒ y hệt bản cũ. */}
