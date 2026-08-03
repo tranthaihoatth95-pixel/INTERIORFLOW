@@ -1522,3 +1522,20 @@ khuôn; NodeLibraryPanel vốn ĐÃ là card giàu — ép nó xuống list ch�
 - Hàng đợi §3 CHINH sau 2 việc này: #1 merge nhanh-phu vẫn ⛔ chờ PHU sửa 2 lỗi type (đã ghi) ·
   Toolbelt ổ ⑤ gộp CadToolbar/CadTouchDock (việc lớn kế tiếp, sửa luôn bug toolbar tràn đè
   Inspector) · palette đa-màn chờ sổ lệnh PHU.
+
+---
+
+## [Lệnh Hoà trực tiếp] CHINH-6 — DỌN ĐỊA TẦNG Render (`efa434c`) — XONG cả 4 mục
+1. Cột "Đầu vào" XOÁ khỏi layout nghỉ NodeLibraryPanel (chip + nhóm tag) → thay bằng nhóm
+   **"TRÊN BẢNG"** đứng đầu: đếm số, mỗi hàng = node đang trên canvas, bấm = focus (setCenter
+   zoom 100%). Capability giữ: gõ tìm là nhóm input hiện lại + ⌘K đủ danh mục.
+2. Ổ Navigator Render = CHÍNH panel Thư viện khối — một cột duy nhất (xác nhận screenshot).
+3. Banner "Còn công cụ khác chưa hiện / Xem tất cả" XOÁ HẲN (RenderToolModeOverlay chỉ còn mount
+   ToolWindow + auto-mở tool khớp mẫu).
+4. `fitView={nodes.length > 0}` — canvas trống đứng 100%, hết tụt minZoom 15%.
+- **PHÁT HIỆN GỐC "zoom 15%" của ảnh Hoà chê**: dự án mẫu có node RÁC nằm rất xa cụm chính
+  (1 note ở y≈−6000 + moodboard/guref thừa — dấu vết test phiên nào đó trước) → fitView thu nhỏ
+  hết cỡ để ôm trọn. Fix (4) chỉ xử ca canvas TRỐNG; muốn dự án mẫu hết 15% cần DỌN node rác —
+  tôi KHÔNG tự xoá (dữ liệu dự án, không chắc của phiên nào), giờ nhóm "Trên bảng" nhìn thấy +
+  bấm tới tận nơi là dọn được trong 30 giây. Đề nghị Hoà/phiên trực dọn.
+- Verify browser thật đủ 4 mục + click-focus đo transform. tsc/eslint/test sạch.
