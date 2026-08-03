@@ -61,6 +61,14 @@
   --row: 28px;
   --gap: 8px;
   --fs-2xs: 11px;
+
+  /* Placeholder chưa-tải (badge PLACEHOLDER trên ảnh/vật liệu chưa có asset thật) +
+     alias --ink cho nét vẽ minh hoạ (SVG mặt bằng…) — port từ mock-if-tep.html sau audit
+     A4 (docs/AUDIT-MOCK-MANPHU-2026-08-03.md §2.6): mock tự khai biến này cục bộ, đưa
+     vào globals để không mỗi mock định nghĩa một giá trị khác. Dùng var(--field)/--card
+     nên tự đổi đúng theo theme, không cần khối riêng cho light/dark. */
+  --hatch: repeating-linear-gradient(45deg, var(--field) 0 9px, var(--card) 9px 18px);
+  --ink: var(--t1);
 }
 @media (hover: none) and (pointer: coarse) {
   :root {
@@ -251,6 +259,28 @@ body {
   background: var(--mat-overlay);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+}
+
+/* Node đang chạy — viền phát sáng lặp lại (port mock-if-bang-nut.html màn 02, InteriorNode.tsx).
+   Cùng công thức box-shadow-pulse với .vitals-state-ring bên dưới — KHÔNG animate opacity trên
+   phần tử có backdrop-filter (mat-card có backdrop-filter, luật G1 SO-KIEM-TONG.md §6b). */
+.node-running-halo {
+  animation: node-running-ring 1.6s ease-in-out infinite;
+}
+@keyframes node-running-ring {
+  0%,
+  100% {
+    box-shadow: var(--shadow-pop), 0 0 0 0 var(--accent-ring);
+  }
+  50% {
+    box-shadow: var(--shadow-pop), 0 0 0 3px var(--accent-ring);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .node-running-halo {
+    animation: none;
+    box-shadow: var(--shadow-pop), 0 0 0 2px var(--accent-ring);
+  }
 }
 
 /* scrollbar tối giản, overlay kiểu macOS */

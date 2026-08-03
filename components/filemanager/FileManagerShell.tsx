@@ -1,11 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LayoutGrid, List, Upload, Lock, FolderOpen, HardDriveDownload } from 'lucide-react';
+import { LayoutGrid, List, Upload, Lock, FolderOpen, HardDriveDownload, Search, Image as ImageIcon } from 'lucide-react';
 import { childFolders, filesInFolder, folderPath, folderStats, storageByRoot } from '@/lib/filemanager/queries';
 import { useFileManagerLocalState, kindFromName } from '@/lib/filemanager/local-state';
-import type { FmFile } from '@/lib/filemanager/types';
-import { formatBytes } from '@/lib/filemanager/types';
+import type { FmFile, FmFileKind } from '@/lib/filemanager/types';
+import { formatBytes, FM_KIND_LABEL } from '@/lib/filemanager/types';
 import { listRealFiles, realFsMessage, writeFileToRoot, type RealFsFailure } from '@/lib/filemanager/real-fs';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
 import { RawStyle } from './RawStyle';
@@ -27,6 +27,47 @@ interface UploadingItem {
 const STORAGE_QUOTA_BYTES = 10 * 1024 * 1024 * 1024;
 const LIFECYCLE_TAG: Record<FmFile['lifecycle'], string> = { nhap: 'NHÁP', chinh_thuc: 'CHÍNH THỨC', luu_tru: 'LƯU TRỮ' };
 
+/** Card lưới cho FILE (khác `.fol` của thư mục) — port `mock-if-tep.html` màn 01, đã audit
+ *  A4 (docs/AUDIT-MOCK-MANPHU-2026-08-03.md). Ảnh là icon THEO LOẠI (chung cho mọi file cùng
+ *  `kind`), KHÔNG bịa hình minh hoạ riêng cho từng file — chỉ `image`/`material` dùng đúng
+ *  `f.thumbnail` khi có, không có thì hiện hatch+PLACEHOLDER (không giả vờ là ảnh thật). */
+function FileThumb({ f }: { f: FmFile }) {
+  if (f.kind === 'image') {
+    if (f.thumbnail) {
+      return <span className="fcimg" style={{ background: `linear-gradient(135deg, ${f.thumbnail[0]}, ${f.thumbnail[1]})` }} />;
+    }
+    return (
+      <span className="fchatch">
+        <ImageIcon size={18} />
+        <span className="fcph">PLACEHOLDER</span>
+      </span>
+    );
+  }
+  if (f.kind === 'material') {
+    const [c1, c2] = f.thumbnail ?? ['#c79a63', '#8a6a44'];
+    return <span className="fcsphere" style={{ background: `radial-gradient(circle at 34% 28%, ${c1}, ${c2})` }} />;
+  }
+  if (f.kind === 'idf' || f.kind === 'cad') {
+    return (
+      <span className="fcplan">
+        <svg width="64" height="44" viewBox="0 0 200 120" fill="var(--ink)">
+          <rect x="26" y="18" width="148" height="5" />
+          <rect x="26" y="97" width="148" height="5" />
+          <rect x="26" y="18" width="5" height="84" />
+          <rect x="169" y="18" width="5" height="84" />
+          <rect x="98" y="23" width="5" height="34" />
+        </svg>
+      </span>
+    );
+  }
+  const badgeColor: Partial<Record<FmFile['kind'], string>> = { pdf: 'var(--danger)', sheet: 'var(--success)', video: 'var(--accent)' };
+  return (
+    <span className="fcdoc">
+      <span className="fcdocbadge" style={{ color: badgeColor[f.kind] ?? 'var(--t3)' }}>{(f.ext || f.kind).toUpperCase().slice(0, 4)}</span>
+    </span>
+  );
+}
+
 interface Props {
   /** Hoà 03/08 — Navigator (`FilesNavigator`, ổ ② `AppShell`) và nội dung chính giờ là 2 ANH EM
    * cùng đọc `currentFolderId` từ `app/files/page.tsx` (nguồn chung), thay vì state riêng —
@@ -44,10 +85,14 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
   const [dragOver, setDragOver] = useState(false);
   const [realFiles, setRealFiles] = useState<FmFile[]>([]);
   const [fsNote, setFsNote] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [kindFilter, setKindFilter] = useState<FmFileKind | 'all'>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const setCurrentFolderId = (id: string | null) => {
     setSelected(null);
+    setSearch('');
+    setKindFilter('all');
     onSelectFolder(id);
   };
 
@@ -66,6 +111,19 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
     const realNames = new Set(realFiles.map((f) => f.name));
     return [...mock, ...session.filter((f) => !realNames.has(f.name)), ...realFiles];
   }, [currentFolderId, state.uploaded, realFiles]);
+
+  /** Chip lọc — CHỈ hiện loại thật sự có trong thư mục đang mở (không hardcode 3 chip cứng
+   *  như mock, xem bảng so sánh docs/AUDIT-MOCK-MANPHU-2026-08-03.md §2.10). */
+  const availableKinds = useMemo(() => {
+    const seen = new Set<FmFileKind>();
+    for (const f of files) seen.add(f.kind);
+    return Array.from(seen);
+  }, [files]);
+
+  const filteredFiles = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return files.filter((f) => (kindFilter === 'all' || f.kind === kindFilter) && (!q || f.name.toLowerCase().includes(q)));
+  }, [files, search, kindFilter]);
 
   /** Đọc lại file thật dưới thư mục đang mở. */
   const refreshReal = useCallback(async () => {
@@ -163,6 +221,7 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
     >
       <span className="ficon">{(f.ext || '—').toUpperCase().slice(0, 4)}</span>
       <span className="fnamecell">{f.name}</span>
+      <span className="ftype">{FM_KIND_LABEL[f.kind]}</span>
       <span className="fmeta">{f.addedByName}</span>
       <span className="fsize">{formatBytes(f.sizeBytes)}</span>
     </button>
@@ -247,6 +306,30 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
             </p>
           )}
 
+          {!isRootView && files.length > 0 && (
+            <div className="searchrow">
+              <div className="searchbox">
+                <Search size={13} />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Tìm tệp trong thư mục"
+                  aria-label="Tìm tệp trong thư mục"
+                />
+              </div>
+              {availableKinds.length > 1 && (
+                <div className="chiprow" role="group" aria-label="Lọc theo loại">
+                  <button type="button" className={kindFilter === 'all' ? 'chip on' : 'chip'} onClick={() => setKindFilter('all')}>Tất cả</button>
+                  {availableKinds.map((k) => (
+                    <button key={k} type="button" className={kindFilter === k ? 'chip on' : 'chip'} onClick={() => setKindFilter(k)}>
+                      {FM_KIND_LABEL[k]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {subfolders.length > 0 && (
             <div className={view === 'grid' ? 'folders' : 'folders list'}>
               {subfolders.map((f) => {
@@ -265,20 +348,24 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
             </div>
           )}
 
-          {!isRootView && files.length > 0 && (
+          {!isRootView && files.length > 0 && filteredFiles.length === 0 && (
+            <div className="noresults">Không tìm thấy tệp phù hợp với bộ lọc.</div>
+          )}
+
+          {!isRootView && filteredFiles.length > 0 && (
             view === 'grid' ? (
-              <div className="folders" style={{ marginTop: 22 }}>
-                {files.map((f) => (
+              <div className="filegrid" style={{ marginTop: 22 }}>
+                {filteredFiles.map((f) => (
                   <button
                     type="button"
                     key={f.id}
-                    className={`fol${selected?.id === f.id ? ' sel' : ''}`}
+                    className={`filecard${selected?.id === f.id ? ' sel' : ''}`}
                     onClick={() => setSelected(f)}
                   >
-                    <span className="ic file" />
-                    <span>
+                    <span className="fcthumb"><FileThumb f={f} /></span>
+                    <span className="fcbody">
                       <b>{f.name}</b>
-                      <span className="m">{formatBytes(f.sizeBytes)} · {f.addedByName}</span>
+                      <span className="m"><span>{formatBytes(f.sizeBytes)}</span><span>{f.addedByName}</span></span>
                     </span>
                   </button>
                 ))}
@@ -286,9 +373,9 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
             ) : (
               <div className="filelist">
                 <div className="filehead">
-                  <span>Tên</span><span>Người thêm</span><span>Dung lượng</span>
+                  <span>Tên</span><span>Loại</span><span>Người thêm</span><span>Dung lượng</span>
                 </div>
-                {files.map(fileRow)}
+                {filteredFiles.map(fileRow)}
               </div>
             )
           )}
@@ -323,19 +410,28 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
             <div className="dropveil">Thả file vào {currentFolder?.name}</div>
           )}
 
-          {uploading.map((u) => (
-            <div className="uptoast" key={u.id}>
-              <div className="fic"><span className="badge">{(u.name.split('.').pop() || 'FILE').toUpperCase()}</span></div>
-              <div className="meta">
-                <div className="nm">{u.name}</div>
-                <div className="sz">
-                  {formatBytes(u.size)} · {u.error ? u.error : u.done ? 'đã ghi xuống đĩa' : 'đang ghi…'}
-                </div>
-                <div className="track"><i style={{ width: u.done ? '100%' : '45%' }} /></div>
+          {uploading.length > 0 && (
+            <div className="uptoast">
+              <div className="uphead">
+                Đang tải lên {uploading.length} tệp · {uploading.filter((u) => u.done).length}/{uploading.length}
               </div>
-              <div className="pc">{u.done ? (u.error ? '!' : '✓') : '…'}</div>
+              <div className="uplist">
+                {uploading.map((u) => (
+                  <div className="upitem" key={u.id}>
+                    <div className="fic"><span className="badge">{(u.name.split('.').pop() || 'FILE').toUpperCase()}</span></div>
+                    <div className="meta">
+                      <div className="nm">{u.name}</div>
+                      <div className="sz">
+                        {formatBytes(u.size)} · {u.error ? u.error : u.done ? 'đã ghi xuống đĩa' : 'đang ghi…'}
+                      </div>
+                      <div className="track"><i style={{ width: u.done ? '100%' : '45%' }} /></div>
+                    </div>
+                    <div className="pc">{u.done ? (u.error ? '!' : '✓') : '…'}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          )}
         </div>
 
         <div className="insp">

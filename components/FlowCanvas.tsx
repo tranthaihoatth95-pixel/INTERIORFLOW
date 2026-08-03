@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ReactFlow,
@@ -9,21 +9,24 @@ import {
   MiniMap,
   type IsValidConnection,
   type Edge,
+  type OnConnectStart,
   useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useFlowStore, type FlowNode, type Tool, type DrawTool } from '@/lib/store';
 import { stageTransition } from '@/lib/motion';
 import { DEFAULT_PHASE } from '@/lib/phases';
-import { getDefinition } from '@/lib/nodes/registry';
+import { getDefinition, NODE_DEFINITIONS } from '@/lib/nodes/registry';
+import { nodeScore } from '@/lib/nodes/search';
 import { InteriorNode } from '@/components/nodes/InteriorNode';
+import { nodeIconFor } from '@/components/nodes/NodeIcons';
 import { NoteNode } from '@/components/nodes/NoteNode';
 import { BottomToolbar } from '@/components/BottomToolbar';
 import DemoLauncher from '@/components/DemoLauncher';
 import { DND_MIME, MAT_MIME, MINDMAP_MIME } from '@/components/NodeLibraryPanel';
 import { instantiateConceptMindmap, MINDMAP_TEMPLATE_ID } from '@/lib/render-studio/mindmap-templates';
 import { ASSET_MIME } from '@/components/LibraryPanel';
-import { CATEGORY_META } from '@/lib/types';
+import { CATEGORY_META, type NodeCategory, type NodeDefinition } from '@/lib/types';
 import { PresenceBar } from '@/components/collab/PresenceBar';
 import { GroupOverlay } from '@/components/nodes/GroupOverlay';
 import { DrawLayer } from '@/components/render-studio/DrawLayer';
@@ -39,6 +42,11 @@ const nodeTypes = { interior: InteriorNode, note: NoteNode };
 const DRAW_COLOR: Record<DrawTool, string> = { pen: '#2b2b30', marker: '#6a57f5', highlight: '#f5c542' };
 const DRAW_WIDTH = 2;
 const ERASE_RADIUS = 24; // bán kính tẩy, đơn vị flow-space
+
+/** Menu thêm nút chuột phải (mock-if-bang-nut.html màn 04) — CÙNG thứ tự nhóm với ⌘K
+ *  (CommandPalette.tsx CATEGORY_ORDER), không tự đặt taxonomy mới theo mock (xem báo cáo
+ *  so sánh: đổi nhóm theo vai-trò-pipeline là quyết định nội dung riêng, ngoài phạm vi việc này). */
+const NODE_CATEGORY_ORDER = ['INPUT', 'AI_GENERATE', 'AI_EDIT', 'SLIDE', 'UTILITY', 'OUTPUT'] as const;
 
 /** Style item menu nạp nhanh — cùng nhịp cỡ với MenuItem trong EditorCanvas.tsx (VIỆC 2). */
 const quickLoadItemStyle: React.CSSProperties = {
@@ -105,7 +113,9 @@ export function FlowCanvas() {
    * đổi trong lúc menu đang mở. */
   const [quickLoadMenu, setQuickLoadMenu] = useState<{ clientX: number; clientY: number; flowPos: { x: number; y: number } } | null>(null);
   const [pasteUrl, setPasteUrl] = useState('');
+  const [nodeQuery, setNodeQuery] = useState('');
   const quickLoadFileRef = useRef<HTMLInputElement>(null);
+  const aiTier = useFlowStore((s) => s.aiTier);
 
   const onPaneContextMenu = useCallback(
     (e: React.MouseEvent | MouseEvent) => {
@@ -113,9 +123,30 @@ export function FlowCanvas() {
       const flowPos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
       setQuickLoadMenu({ clientX: e.clientX, clientY: e.clientY, flowPos });
       setPasteUrl('');
+      setNodeQuery('');
     },
     [screenToFlowPosition],
   );
+
+  /** Danh mục nút cho menu chuột phải — tái dùng NODE_DEFINITIONS + nodeScore (CÙNG kho tìm
+   *  kiếm với ⌘K/Node Library, lib/nodes/search.ts), không viết bộ lọc riêng lần 3. Mức 1
+   *  (Không AI) ẩn node AI, đúng khuôn CommandPalette.tsx. */
+  const nodeMenuGroups = useMemo(() => {
+    const noAi = aiTier === 1;
+    const pool = NODE_DEFINITIONS.filter((d) => !(noAi && (d.category === 'AI_GENERATE' || d.category === 'AI_EDIT')));
+    const q = nodeQuery.trim();
+    const scored = pool
+      .map((d) => ({ d, score: nodeScore(d, q) }))
+      .filter((x) => x.score >= 0)
+      .sort((a, b) => b.score - a.score);
+    const byCat = new Map<NodeCategory, { d: NodeDefinition; score: number }[]>();
+    for (const item of scored) {
+      const arr = byCat.get(item.d.category);
+      if (arr) arr.push(item);
+      else byCat.set(item.d.category, [item]);
+    }
+    return NODE_CATEGORY_ORDER.filter((c) => byCat.has(c)).map((c) => ({ category: c as NodeCategory, items: byCat.get(c)! }));
+  }, [aiTier, nodeQuery]);
 
   const addImageNodeAt = useCallback(
     (dataUrl: string, flowPos: { x: number; y: number }) => {
@@ -316,6 +347,22 @@ export function FlowCanvas() {
     [setConnectError],
   );
 
+  /* Kéo dây từ 1 cổng — ghi kiểu dữ liệu cổng nguồn vào store để InteriorNode tô sáng cổng
+     nhận cùng kiểu / mờ cổng khác kiểu trong lúc kéo (mock-if-bang-nut.html màn 03). */
+  const setConnectFromType = useFlowStore((s) => s.setConnectFromType);
+  const onConnectStart: OnConnectStart = useCallback(
+    (_event, { nodeId, handleId }) => {
+      if (!nodeId || !handleId) return;
+      const node = useFlowStore.getState().nodes.find((n) => n.id === nodeId);
+      if (!node) return;
+      const nodeDef = getDefinition(node.data.defType);
+      const port = [...nodeDef.outputs, ...nodeDef.inputs].find((p) => p.id === handleId);
+      if (port) setConnectFromType(port.dataType);
+    },
+    [setConnectFromType],
+  );
+  const onConnectEnd = useCallback(() => setConnectFromType(null), [setConnectFromType]);
+
   const notice = useFlowStore((s) => s.notice);
   const setNotice = useFlowStore((s) => s.setNotice);
 
@@ -505,6 +552,8 @@ export function FlowCanvas() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         isValidConnection={isValidConnection}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
         onNodeDragStart={() => snapshot()}
         // G2 phần (1) — sau khi thả node, tự cập nhật thành viên khung phòng (rơi vào rect nào
         // thì gia nhập, ra ngoài thì rời) — CHỈ áp cho group có `rect` (xem syncRoomMembership).
@@ -610,7 +659,7 @@ export function FlowCanvas() {
           anchorY={quickLoadMenu.clientY}
           onDismiss={() => setQuickLoadMenu(null)}
           style={{
-            width: 220,
+            width: 264,
             background: 'var(--panel)',
             border: '1px solid var(--border)',
             borderRadius: 12,
@@ -679,6 +728,82 @@ export function FlowCanvas() {
             >
               Dán
             </button>
+          </div>
+
+          {/* Hợp nhất với danh mục nút của CommandPalette (⌘K, cùng NODE_DEFINITIONS/nodeScore) —
+              trước đây menu này CHỈ có 3 mục ảnh, phải mở ⌘K riêng để thêm node khác
+              (mock-if-bang-nut.html màn 04). Không sửa CommandPalette.tsx (vẫn phục vụ ⌘K toàn cục). */}
+          <div style={{ height: 1, background: 'var(--border)', margin: '4px 4px' }} />
+          <div style={{ padding: '6px 8px 4px' }}>
+            <input
+              value={nodeQuery}
+              onChange={(e) => setNodeQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setQuickLoadMenu(null);
+              }}
+              placeholder="Tìm nút để thêm…"
+              style={{
+                width: '100%',
+                padding: '5px 8px',
+                borderRadius: 7,
+                border: '1px solid var(--border)',
+                background: 'var(--field)',
+                color: 'var(--t1)',
+                fontSize: 12,
+                outline: 'none',
+              }}
+            />
+          </div>
+          <div style={{ maxHeight: 240, overflowY: 'auto' }}>
+            {nodeMenuGroups.length === 0 && (
+              <p style={{ margin: 0, padding: '10px 12px', fontSize: 11.5, color: 'var(--t5)', textAlign: 'center' }}>
+                Không có nút nào khớp “{nodeQuery}”.
+              </p>
+            )}
+            {nodeMenuGroups.map(({ category, items }) => (
+              <div key={category}>
+                <p style={{ margin: 0, padding: '6px 12px 3px', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--t5)' }}>
+                  {CATEGORY_META[category].label}
+                </p>
+                {items.map(({ d }) => {
+                  const Icon = nodeIconFor(d.type);
+                  return (
+                    <button
+                      key={d.type}
+                      type="button"
+                      onClick={() => {
+                        if (!quickLoadMenu) return;
+                        addNode(d.type, quickLoadMenu.flowPos);
+                        setQuickLoadMenu(null);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        width: '100%',
+                        height: 32,
+                        textAlign: 'left',
+                        padding: '0 12px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: 'transparent',
+                        color: 'var(--t1)',
+                        fontSize: 12.5,
+                        cursor: 'pointer',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--field)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <Icon size={13} className="shrink-0" />
+                      <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title}</span>
+                      {d.creditCost > 0 && (
+                        <span style={{ flex: 'none', fontSize: 10, color: 'var(--t4)', fontVariantNumeric: 'tabular-nums' }}>{d.creditCost}cr</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </Popover>
       )}

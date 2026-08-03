@@ -63,6 +63,21 @@ export interface FmFile {
   price?: string;
 }
 
+/** Nhãn hiển thị cho chip lọc/cột "Loại" — port mock-if-tep.html (đo động theo `f.kind`
+ *  thật, không hardcode 3 chip cứng như mock, xem docs/AUDIT-MOCK-MANPHU-2026-08-03.md). */
+export const FM_KIND_LABEL: Record<FmFileKind, string> = {
+  idf: 'Bản vẽ',
+  cad: 'CAD',
+  image: 'Ảnh',
+  pdf: 'PDF',
+  doc: 'Văn bản',
+  sheet: 'Bảng tính',
+  video: 'Video',
+  material: 'Vật liệu',
+  archive: 'Nén',
+  other: 'Khác',
+};
+
 export const FM_ROOT_META: Record<FmRootKind, { label: string; permission: FmPermission; hint: string }> = {
   projects: { label: 'Projects', permission: 'rw', hint: 'Đọc-ghi — dự án của bạn.' },
   library: { label: 'Library', permission: 'rw', hint: 'Đọc-ghi — dùng chung mọi dự án.' },

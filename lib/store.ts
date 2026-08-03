@@ -11,7 +11,7 @@ import {
   type EdgeChange,
   type Connection,
 } from '@xyflow/react';
-import type { InteriorNodeData, Job, FlowRun, NodeRunState } from '@/lib/types';
+import type { InteriorNodeData, Job, FlowRun, NodeRunState, DataType } from '@/lib/types';
 import { DATA_TYPE_COLORS } from '@/lib/types';
 import { getDefinition, defaultParams } from '@/lib/nodes/registry';
 import {
@@ -77,6 +77,10 @@ interface FlowState {
   connectError: string | null;
   /** Thông báo trung tính/thành công (vd smart-import đã chuyển định dạng) — banner xanh, tự tắt. */
   notice: string | null;
+  /** kiểu dữ liệu của cổng NGUỒN đang kéo dây nối (null = không kéo) — FlowCanvas set qua
+   *  onConnectStart/onConnectEnd, InteriorNode đọc để tô sáng cổng hợp lệ/mờ cổng sai kiểu
+   *  trong lúc kéo (port mock-if-bang-nut.html màn 03). */
+  connectFromType: DataType | null;
   /** nodeId đang mở Mask Painter modal */
   maskEditorNodeId: string | null;
   /** 'auto' = sáng 6h30–18h, tối ngoài giờ đó */
@@ -139,6 +143,7 @@ interface FlowState {
   setMoodboardOpen: (open: boolean) => void;
   setConnectError: (msg: string | null) => void;
   setNotice: (msg: string | null) => void;
+  setConnectFromType: (dataType: DataType | null) => void;
   setMaskEditorNodeId: (nodeId: string | null) => void;
   setAnnotateNodeId: (nodeId: string | null) => void;
   setLightboxUrl: (url: string | null) => void;
@@ -308,6 +313,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   moodboardOpen: false,
   connectError: null,
   notice: null,
+  connectFromType: null,
   maskEditorNodeId: null,
   annotateNodeId: null,
   lightboxUrl: null,
@@ -406,6 +412,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   setMoodboardOpen: (moodboardOpen) => set({ moodboardOpen }),
   setConnectError: (connectError) => set({ connectError }),
   setNotice: (notice) => set({ notice }),
+  setConnectFromType: (connectFromType) => set({ connectFromType }),
   setMaskEditorNodeId: (maskEditorNodeId) => set({ maskEditorNodeId }),
   setAnnotateNodeId: (annotateNodeId) => set({ annotateNodeId }),
   setLightboxUrl: (lightboxUrl) => set({ lightboxUrl }),

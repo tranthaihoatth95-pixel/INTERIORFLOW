@@ -67,7 +67,7 @@ export const FILES_MOCK_CSS = `
 /* DANH SÁCH — SPEC-HOVER §2 "Ô danh sách": CHỈ đổi nền 100ms, KHÔNG scale (lặp nhiều lần),
    đang chọn = viền trái accent 2px. */
 .if-files-app .filelist{margin-top:22px;border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;background:var(--panel)}
-.if-files-app .filehead,.if-files-app .filerow{display:grid;grid-template-columns:1fr 130px 90px;align-items:center;gap:10px;padding:9px 14px;font-size:12px;text-align:left}
+.if-files-app .filehead,.if-files-app .filerow{display:grid;grid-template-columns:1fr 90px 120px 90px;align-items:center;gap:10px;padding:9px 14px;font-size:12px;text-align:left}
 .if-files-app .filehead{background:var(--field);color:var(--t3);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em}
 .if-files-app .filehead span:last-child,.if-files-app .filerow .fsize{text-align:right;font-variant-numeric:tabular-nums}
 .if-files-app .filerow{width:100%;border:0;border-top:1px solid var(--border);border-left:2px solid transparent;background:none;color:var(--t1);cursor:pointer;transition:background-color .1s}
@@ -76,8 +76,56 @@ export const FILES_MOCK_CSS = `
 .if-files-app .filerow.sel{border-left-color:var(--accent);background:var(--accent-soft)}
 .if-files-app .filerow .ficon{display:none}
 .if-files-app .filerow .fnamecell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
-.if-files-app .filerow .fmeta{color:var(--t3);font-size:11px}
+.if-files-app .filerow .ftype,.if-files-app .filerow .fmeta{color:var(--t3);font-size:11px}
 .if-files-app .filerow .fsize{color:var(--t2);font-size:11px}
+
+/* Tìm + lọc — port mock-if-tep.html toolbar (docs/AUDIT-MOCK-MANPHU §2.10: chip ĐỘNG theo
+   loại thật có trong thư mục, không hardcode 3 chip cứng của mock). */
+.if-files-app .searchrow{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.if-files-app .searchbox{display:flex;align-items:center;gap:7px;height:32px;width:230px;padding:0 11px;border-radius:var(--radius-md);background:var(--field);border:1px solid transparent;color:var(--t4);transition:border-color .18s var(--ease-apple)}
+.if-files-app .searchbox:focus-within{border-color:var(--accent);color:var(--t2)}
+.if-files-app .searchbox input{flex:1;min-width:0;border:0;background:none;outline:none;font-size:12px;color:var(--t1)}
+.if-files-app .searchbox input::placeholder{color:var(--t4)}
+.if-files-app .chiprow{display:flex;gap:6px;flex-wrap:wrap}
+.if-files-app .chip{height:24px;padding:0 11px;border-radius:9999px;border:0;background:var(--field);color:var(--t3);font-size:11px;cursor:pointer;transition:background-color .12s,color .12s}
+.if-files-app .chip:hover{background:var(--hover)}
+.if-files-app .chip.on{background:var(--accent);color:#fff;font-weight:600}
+.if-files-app .chip:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
+.if-files-app .noresults{margin-top:22px;padding:20px;text-align:center;font-size:12.5px;color:var(--t3);border:1px dashed var(--border);border-radius:var(--radius-md)}
+
+/* Card lưới FILE — port mock-if-tep.html màn 01 (khác .fol thư mục: thumbnail 118px theo
+   loại thay vì pill icon nhỏ). */
+.if-files-app .filegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.if-files-app .filecard{display:flex;flex-direction:column;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;cursor:pointer;padding:0;transition:transform .2s cubic-bezier(.32,.72,0,1),box-shadow .2s,border-color .15s}
+.if-files-app .filecard:hover{transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-pop)}
+.if-files-app .filecard:active{transform:scale(.99);transition-duration:.09s}
+.if-files-app .filecard:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.if-files-app .filecard.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.if-files-app .fcthumb{height:104px;border-bottom:1px solid var(--border);background:var(--field);display:flex;align-items:center;justify-content:center;flex:none}
+.if-files-app .fcimg{width:100%;height:100%;display:block}
+.if-files-app .fchatch{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--hatch);color:var(--t4)}
+.if-files-app .fcph{font-size:9px;font-weight:700;letter-spacing:.06em;color:var(--t4);background:var(--mat-card);padding:3px 7px;border-radius:5px}
+.if-files-app .fcsphere{width:48px;height:48px;border-radius:50%;box-shadow:var(--shadow-node)}
+.if-files-app .fcplan{width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:.85}
+.if-files-app .fcdoc{width:44px;height:54px;border-radius:var(--radius-sm);background:var(--card);border:1px solid var(--border-strong);display:flex;align-items:flex-end;justify-content:center;padding-bottom:7px}
+.if-files-app .fcdocbadge{font-size:9.5px;font-weight:700;letter-spacing:.05em;font-family:ui-monospace,Menlo,monospace}
+.if-files-app .fcbody{padding:9px 10px 10px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.if-files-app .fcbody b{font-size:12px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.if-files-app .fcbody .m{display:flex;justify-content:space-between;gap:6px;font-size:10.5px;color:var(--t4)}
+
+/* Toast tải lên — GỘP THÀNH 1 khối (trước đây mỗi file 1 div cùng toạ độ tuyệt đối, chồng
+   lấn khi tải ≥2 file cùng lúc — bug thật, không chỉ thẩm mỹ, xem báo cáo so sánh). */
+.if-files-app .uptoast{position:absolute;right:20px;bottom:20px;display:flex;flex-direction:column;background:var(--mat-panel);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid var(--mat-hairline);border-radius:var(--radius-lg);box-shadow:var(--shadow-pop);min-width:320px;max-width:360px;z-index:6;overflow:hidden}
+.if-files-app .uphead{padding:11px 14px;font-size:11.5px;font-weight:600;color:var(--t2);border-bottom:1px solid var(--mat-hairline)}
+.if-files-app .uplist{display:flex;flex-direction:column;max-height:260px;overflow-y:auto}
+.if-files-app .upitem{display:flex;align-items:center;gap:12px;padding:10px 14px}
+.if-files-app .upitem+.upitem{border-top:1px solid var(--mat-hairline)}
+.if-files-app .upitem .fic{width:38px;height:44px;border-radius:var(--radius-sm);background:var(--field);border:1px solid var(--border);position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;flex:none}
+.if-files-app .upitem .badge{font-size:7.5px;font-weight:800;letter-spacing:.05em;background:var(--t1);color:var(--panel);border-radius:4px;padding:1px 5px}
+.if-files-app .upitem .meta{flex:1;min-width:0}
+.if-files-app .upitem .nm{font-size:12.5px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.if-files-app .upitem .sz{font-size:10.5px;color:var(--t2);margin-top:1px}
+.if-files-app .upitem .pc{font-size:13px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;flex:none}
 
 .if-files-app .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;border-radius:var(--radius-lg);border:1.5px dashed transparent;transition:border-color .15s,background-color .15s}
 .if-files-app .empty.dragover{border-color:var(--accent);background:var(--accent-soft)}
@@ -96,15 +144,8 @@ export const FILES_MOCK_CSS = `
 
 .if-files-app .dropveil{position:absolute;inset:18px;border:2px dashed var(--accent);background:var(--accent-soft);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--accent);pointer-events:none;z-index:5}
 
-.if-files-app .uptoast{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:var(--mat-panel);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid var(--mat-hairline);border-radius:var(--radius-lg);padding:10px 14px;box-shadow:var(--shadow-pop);min-width:330px;z-index:6}
-.if-files-app .uptoast .fic{width:38px;height:44px;border-radius:var(--radius-sm);background:var(--field);border:1px solid var(--border);position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;flex:none}
-.if-files-app .uptoast .badge{font-size:7.5px;font-weight:800;letter-spacing:.05em;background:var(--t1);color:var(--panel);border-radius:4px;padding:1px 5px}
-.if-files-app .uptoast .meta{flex:1;min-width:0}
-.if-files-app .uptoast .nm{font-size:12.5px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.if-files-app .uptoast .sz{font-size:10.5px;color:var(--t2);margin-top:1px}
 .if-files-app .track{height:5px;border-radius:5px;background:var(--field);margin-top:7px;overflow:hidden}
 .if-files-app .track i{display:block;height:100%;border-radius:5px;background:var(--accent);transition:width .3s ease-out}
-.if-files-app .uptoast .pc{font-size:13px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
 
 .if-files-app .insp{width:308px;padding:26px 26px 22px 0;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
 .if-files-app .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-node);padding:16px}

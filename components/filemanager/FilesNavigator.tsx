@@ -29,7 +29,7 @@ export function FilesNavigator({ currentFolderId, onSelect }: Props) {
         type="button"
         onClick={() => onSelect(null)}
         className={cn(
-          'flex h-[28px] w-full items-center gap-2 rounded-[8px] px-2 text-[12px] transition-colors duration-100',
+          'flex h-[var(--row)] w-full items-center gap-2 rounded-[8px] px-2 text-[12px] transition-colors duration-100',
           currentFolderId === null ? 'bg-[var(--accent-soft)] font-semibold text-[var(--accent)]' : 'text-[var(--t2)] hover:bg-[var(--hover)]',
         )}
       >
@@ -45,7 +45,7 @@ export function FilesNavigator({ currentFolderId, onSelect }: Props) {
               type="button"
               onClick={() => onSelect(root.id)}
               className={cn(
-                'flex h-[28px] w-full items-center gap-1.5 rounded-[8px] px-2 text-[12px] transition-colors duration-100',
+                'flex h-[var(--row)] w-full items-center gap-1.5 rounded-[8px] px-2 text-[12px] transition-colors duration-100',
                 currentFolderId === root.id ? 'bg-[var(--accent-soft)] font-semibold text-[var(--accent)]' : 'text-[var(--t2)] hover:bg-[var(--hover)]',
               )}
             >
@@ -59,7 +59,7 @@ export function FilesNavigator({ currentFolderId, onSelect }: Props) {
                 type="button"
                 onClick={() => onSelect(c.id)}
                 className={cn(
-                  'flex h-[26px] w-full items-center gap-1.5 rounded-[8px] py-0 pl-7 pr-2 text-[11.5px] transition-colors duration-100',
+                  'flex h-[var(--row)] w-full items-center gap-1.5 rounded-[8px] py-0 pl-7 pr-2 text-[11.5px] transition-colors duration-100',
                   currentFolderId === c.id ? 'bg-[var(--accent-soft)] font-semibold text-[var(--accent)]' : 'text-[var(--t3)] hover:bg-[var(--hover)]',
                 )}
               >

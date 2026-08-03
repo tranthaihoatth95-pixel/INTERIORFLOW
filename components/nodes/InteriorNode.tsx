@@ -250,16 +250,23 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
   const deleteNode = useFlowStore((s) => s.deleteNode);
   const { status, progress, error } = data.run;
   const busy = status === 'running' || status === 'queued';
+  /* Đang kéo dây từ MỘT cổng nguồn ở đâu đó trên canvas (FlowCanvas onConnectStart/onConnectEnd
+     ghi vào store) — sáng cổng NHẬN cùng kiểu dữ liệu, mờ cổng khác kiểu (mock-if-bang-nut.html
+     màn 03). CHỈ áp cho cổng target (input) — cổng nguồn không phải đích thả dây. */
+  const connectFromType = useFlowStore((s) => s.connectFromType);
+  const dragging = connectFromType !== null;
 
   return (
     <motion.div
       variants={nodePop}
       initial="hidden"
       animate="visible"
+      style={{ boxShadow: 'var(--shadow-pop)' }}
       className={cn(
-        'group relative mat-card w-64 rounded-[16px] border shadow-xl shadow-black/30 transition-colors',
+        'group relative mat-card w-64 rounded-[14px] border transition-colors',
         selected ? 'border-[var(--accent-ring)]' : 'border-[var(--mat-hairline)]',
         status === 'error' && 'border-red-500/60',
+        status === 'running' && 'node-running-halo',
       )}
     >
       {/* G2 phần (2) — comment neo vào node này (badge góc phải-trên, xem CommentPin.tsx). */}
@@ -273,6 +280,12 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
         <span className="flex-1 truncate text-[11.5px] font-medium tracking-[-.005em] text-[var(--t1)]">
           {def.title}
         </span>
+        {status === 'queued' && (
+          <span className="text-[10px] text-[var(--t4)]">đang chờ</span>
+        )}
+        {status === 'running' && (
+          <span className="text-[10px] font-semibold tabular-nums text-[var(--accent)]">{Math.round(progress * 100)}%</span>
+        )}
         {def.creditCost > 0 && (
           <span className="rounded bg-[var(--hover)] px-1.5 py-0.5 text-[10px] tabular-nums text-[var(--t3)]">
             {def.creditCost}cr
@@ -328,22 +341,28 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
       </div>
 
       {/* ports */}
-      {def.inputs.map((port, i) => (
-        <Handle
-          key={port.id}
-          id={port.id}
-          type="target"
-          position={Position.Left}
-          style={{
-            top: PORT_TOP + i * PORT_GAP,
-            background: DATA_TYPE_COLORS[port.dataType],
-            width: 10,
-            height: 10,
-            border: '2px solid var(--bg)',
-          }}
-          title={`${port.label} · ${port.dataType}`}
-        />
-      ))}
+      {def.inputs.map((port, i) => {
+        const isMatch = port.dataType === connectFromType;
+        return (
+          <Handle
+            key={port.id}
+            id={port.id}
+            type="target"
+            position={Position.Left}
+            style={{
+              top: PORT_TOP + i * PORT_GAP,
+              background: DATA_TYPE_COLORS[port.dataType],
+              width: dragging && isMatch ? 13 : 10,
+              height: dragging && isMatch ? 13 : 10,
+              border: dragging && isMatch ? '2px solid var(--accent)' : '2px solid var(--bg)',
+              boxShadow: dragging && isMatch ? '0 0 0 3px var(--accent-soft)' : undefined,
+              filter: dragging && !isMatch ? 'grayscale(0.9) brightness(0.55)' : undefined,
+              transition: 'width .15s var(--ease-apple), height .15s var(--ease-apple), box-shadow .15s var(--ease-apple), filter .15s var(--ease-apple), border-color .15s var(--ease-apple)',
+            }}
+            title={`${port.label} · ${port.dataType}${dragging ? (isMatch ? ' · nhận được' : ' · khác kiểu') : ''}`}
+          />
+        );
+      })}
       {def.outputs.map((port, i) => (
         <Handle
           key={port.id}
