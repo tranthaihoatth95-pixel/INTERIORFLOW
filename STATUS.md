@@ -5,6 +5,29 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## ✅ XONG (03/08 đêm khuya — PHIẾU ĐỢT 7 chặng 3D: ViewCube thật + 3 lỗi UI + đối chiếu Revit)
+- **Nhóm A** (`ccf9d46`): bảng "TRÌNH TỰ" kéo-thả tự do + thu gọn 1 dòng (khác nút ✕ = ẩn hẳn) ·
+  chip Vitals StatusBar thêm viền/nền accent + chấm sống pulse 2s · thanh cuộn tối đúng cả 2 theme.
+- **Nhóm B** (`68c6950`): **ViewCube 3D THẬT** thay SVG tĩnh cũ — `components/three/ViewCube3D.tsx`
+  (renderer riêng 96×96, khối 26 vùng kiểu Rubik's cube, camera cube copy quaternion camera chính
+  mỗi khung → xoay đồng bộ khi orbit) · bấm 1 vùng = bay camera tới bằng slerp ~350ms · kéo trên
+  cube = orbit camera chính (giống SketchUp) · nhãn TRÊN/DƯỚI/TRƯỚC/SAU/TRÁI/PHẢI. `Scene3DViewer`
+  xuất `Scene3DCameraApi` qua `cameraApiRef` làm cầu nối. Verify browser thật: orbit chuột → cube
+  xoay theo · kéo cube → camera orbit · bấm mặt cube → bay tới top-down mượt, không lỗi console.
+  **Không quay được gif** (không có công cụ ghi màn hình khả dụng ở surface trình duyệt chính;
+  claude-in-chrome không nhận input trong sandbox phiên này dù đã thử nhiều cách) — bằng chứng thay
+  thế là chuỗi screenshot trong transcript phiên.
+- **Nhóm C** (`f796fef`): VIỆC C1 — bảng đối chiếu 6 cơ chế Revit (location line·cửa hosted·
+  type/instance·tham số cấu kiện·level/tầng·constraint cao độ) × 2D/3D vào `docs/SO-KIEM-TONG.md`
+  §7 — **cả 6 đều CHƯA ĐẦY ĐỦ ở cả 2 chặng**, điểm sáng duy nhất là `ops[]` boolean (NC-12) làm nền
+  cho cửa hosted sau này. VIỆC C2 — nhóm nút "Cấu kiện" (đúng tầng ⑥ `SPEC-DUNG-BO-LENH-3D.md`)
+  trong `Command3DPanel.tsx`: Tường (đã dựng, bấm được) + 9 mục còn lại (Cửa·Cửa sổ·Cầu thang
+  thẳng/gấp/xoắn·Lan can·Phào chỉ·Trần thả·Tủ bếp module) mờ + tooltip đúng lý do, không ẩn/bỏ sót.
+- `npx tsc --noEmit -p .` toàn repo SẠCH sau cả 3 nhóm, chạy NỀN (`run_in_background`) — KHÔNG bị
+  timeout lần nào trong phiên này (3 lần chạy, mỗi lần vài chục giây). Sửa lại ghi chú cũ bên dưới
+  (mục "🔴 PHIÊN SAU PHẢI BIẾT") — có thể do phiên trước chạy foreground bị cap 40-45s của Bash tool
+  chứ không phải bản thân lệnh treo.
+
 ## ✅ XONG (03/08 đêm muộn — sửa bug MẤT DỮ LIỆU mode 3D, chi tiết đủ trong message commit)
 - **Mode "3D Thiết kế" giờ ĐÃ autosave** (bug có từ push-pull 3D-5, phát hiện khi verify VIỆC dưới)
   — `useCad3DAutosave()` nối lại ĐÚNG `lib/sheets-persist.ts` (không cơ chế lưu thứ hai), gọi ở
@@ -25,34 +48,6 @@
   chạy thật (không lỗi). **Phát hiện lỗi CÓ TRƯỚC (không do việc này)**: mode "3D Thiết kế" không
   autosave IndexedDB (autosaver chỉ sống trong `CadSheets.tsx`, không mount ở stage 3D) — ăn luôn
   cả push-pull 3D-5 đã ship. Chi tiết → `docs/TECH-DEBT.md`.
-
-## ✅ XONG (03/08, TRÌNH-CODE — chi tiết đủ trong message commit)
-- **BOQ editor B0-B6+B10** (`4991340`) + **xlsx SUM sống B8** (`18afba3`) — `docs/PHIEU-TRINH-BOQ-EDITOR.md`.
-  Live-link override (sửa tay ô m²/đơn giá, badge+revert+cảnh báo) · group theo tầng · truy vết
-  ngược "Xem trên bản vẽ" · treo tạm nút BOQ trong `PresentNavigator` (chờ H4 5-loại-hồ-sơ) ·
-  27+36 test pass, tsc scoped sạch. Bắt+sửa 1 bug thật lúc verify browser (vòng lặp vô hạn
-  `useT()` trong `useCallback` deps). **CHƯA làm**: B7 cột tuỳ biến · B9 in PDF (treo, ghi rõ).
-  B11 (mini-DSL) vẫn GATED chờ PHU đúng như phiếu.
-
-## ✅ XONG (02/08, mã commit — chi tiết đủ trong message từng commit + CHANGELOG)
-- **3D-1** (`d9eea9b`+`d5f6700`): three.js viewer mode orbit + nút "Xem 3D" node "Bản vẽ → 3D".
-  FPS thật: gộp theo màu 4 draw call/0.087ms/khung, không gộp 2011/2.73ms — vẫn realtime.
-- **3D-2..3D-5 ĐÃ CÓ SẴN TỪ TRƯỚC** (`d7dff63`/`4c81469`/`87c2e78`/`2881c32`) — mục "⬜ CHƯA BẮT ĐẦU"
-  bản cũ SAI, đã sửa (02/08 tối). **Mới**: đổi chữ ký `captureSequence()` sang streaming `onFrame`+
-  `AbortSignal`+`frameCount` (yêu cầu Hoà, tránh gom RAM) + `planCaptureSequenceFrames()` thuần có
-  test (26/26). ⚠️ CHƯA đo được thời gian thật qua browser (sandbox không giữ được dev server sống
-  qua các lần gọi) — bench sẵn ở `app/dev-bench-3d-2/`, chờ chạy tay. Chi tiết đủ → `CHANGELOG.md`.
-- **Wire nút "PDF in 300dpi (A3/A4)"** (`2a252c9`) — mở khoá theo khổ giấy, verify cả 2 nhánh.
-- **Đo ESRGAN thật** (Hoà duyệt ~4cr) — TB 9.7s/ảnh · scale ×4 đúng lý thuyết. Số đầu (512/896px)
-  KHÔNG đạt 300dpi A3 — nhưng đó chỉ là 2 cỡ test tuỳ chọn, KHÔNG phải trần thật của tầng free.
-- **P3 phần 2** (`8b7e282`) — Hoà chốt hướng "chuẩn nguồn in": nguồn ≥~1240px (tầng free xuất
-  1344px, ĐỦ) → A3 300dpi đạt bằng ×4. `lib/present-editor/print-upscale.ts` (targetPx suy từ
-  frame% × mm giấy thật, planSteps 0/1/2 = ×4 rồi ×2 phần thiếu) + `upscale-cache.ts` (IndexedDB,
-  key = hash SHA-256 src, mỗi ảnh trả tiền 1 lần) + `export.ts` tự upscale trước khi render +
-  `PresentEditor.tsx` hiện giá/thời gian ước qua `window.confirm` trước khi trừ credit thật.
-  Verify browser thật: credit spend/refund atomic đúng (mọi lỗi đều hoàn), export không crash khi
-  upscale lỗi. Chi tiết sự cố khi verify (vượt phạm vi duyệt, đã dừng kịp, net -4cr ví demo) → xem
-  message commit `8b7e282`, không lặp lại ở đây.
 
 ## 🟡 PHÁT HIỆN QUAN TRỌNG — đọc trước khi verify browser bất kỳ tính năng dùng `aiTier`/`credits`
 `useFlowStore.hydrate()` (đọc `aiTier`/`credits`/theme từ localStorage) **CHỈ được gọi từ
@@ -79,10 +74,11 @@ AI ở Settings không ăn" — nghi đúng nguyên nhân này (route không qua
   trong bench 3D-1, ghi `TECH-DEBT.md`, chưa phải bug chặn.
 - File scratch bench 3D-1 đã xoá sạch, ảnh test P3-2 đã xoá khỏi dự án mẫu, mức AI đã trả về
   "oneAI" (mặc định gốc) trước khi rời — dự án mẫu sạch, không còn dấu vết verify.
-- **`npx tsc --noEmit -p .` (toàn repo) KHÔNG chạy xong trong sandbox Cowork này** — luôn hết giờ
-  lệnh (>40-45s, kể cả bật `incremental`) dù `tsconfig.tsbuildinfo` có sẵn từ trước. Dùng tsc SCOPED
-  (config tạm `include` đúng vài file đang sửa, xem `tsconfig.scoped.json` cách làm) để kiểm nhanh
-  thay vì `-p .` — ghi lại đây để phiên sau khỏi mất công thử lại y hệt.
+- 🟢 **ĐÍNH CHÍNH (03/08 đêm khuya, PHIẾU ĐỢT 7):** ghi chú cũ "`tsc --noEmit -p .` không chạy xong
+  trong sandbox" — chạy **NỀN** (`Bash run_in_background:true`) thì XONG BÌNH THƯỜNG, không timeout
+  (thử 3 lần, mỗi lần vài chục giây). Nghi vấn cũ chỉ đúng khi chạy FOREGROUND (Bash tool cap mặc
+  định 40-45s không đủ cho lần compile đầu nguội cache). Tsc scoped (`tsconfig.scoped.json`) vẫn
+  dùng tốt cho vòng lặp sửa nhanh, nhưng KHÔNG còn đúng là "buộc phải dùng vì -p . không chạy được".
 - **2 file scratch KẸT lại, sandbox không xoá được** (FUSE, cùng loại cũ) — đã dọn rỗng nội dung,
   Hoà `rm` tay: `tsconfig.scoped.json` (tsc scoped tạm, xem trên) · `app/dev-bench-3d-2/page.tsx`
   (bench đo `captureSequence`, xem mục 3D-2 phía trên — CHỈ xoá SAU KHI đã chạy lấy số thật, đừng

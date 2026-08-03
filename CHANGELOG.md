@@ -1,5 +1,28 @@
 # CHANGELOG — InteriorFlow (lịch sử đã xong; KHÔNG đọc mỗi đầu phiên — chỉ khi được yêu cầu)
 
+## 02/08 — 3D-1 viewer orbit + 3D-2..5 xác nhận đã có sẵn + PDF 300dpi + ESRGAN đo thật + P3 phần 2 upscale in
+
+Dời từ STATUS.md (03/08, dọn cho dưới 800 từ) — chi tiết đủ nằm trong message commit từng mục:
+- **3D-1** (`d9eea9b`+`d5f6700`): three.js viewer mode orbit + nút "Xem 3D". FPS: gộp theo màu 4 draw
+  call/0.087ms/khung, không gộp 2011/2.73ms — vẫn realtime.
+- **3D-2..3D-5 ĐÃ CÓ SẴN TỪ TRƯỚC** (`d7dff63`/`4c81469`/`87c2e78`/`2881c32`). Mới thêm: đổi chữ ký
+  `captureSequence()` sang streaming `onFrame`+`AbortSignal`+`frameCount` (tránh gom RAM) +
+  `planCaptureSequenceFrames()` thuần có test (26/26).
+- Wire nút "PDF in 300dpi (A3/A4)" (`2a252c9`) — mở khoá theo khổ giấy, verify cả 2 nhánh.
+- Đo ESRGAN thật (Hoà duyệt ~4cr) — TB 9.7s/ảnh · scale ×4 đúng lý thuyết.
+- P3 phần 2 (`8b7e282`) — `lib/present-editor/print-upscale.ts` + `upscale-cache.ts` (IndexedDB, key
+  = hash SHA-256 src) + `export.ts` tự upscale trước khi render + confirm giá/thời gian trước khi
+  trừ credit thật. Verify: credit spend/refund atomic đúng, export không crash khi upscale lỗi.
+
+## 03/08 — BOQ editor B0-B6+B10 + xlsx SUM sống B8 (TRÌNH-CODE)
+
+Dời từ STATUS.md (03/08, dọn cho dưới 800 từ) — chi tiết đủ → `docs/PHIEU-TRINH-BOQ-EDITOR.md`,
+message commit `4991340`/`18afba3`. Live-link override (sửa tay ô m²/đơn giá, badge+revert+cảnh báo)
+· group theo tầng · truy vết ngược "Xem trên bản vẽ" · treo tạm nút BOQ trong `PresentNavigator`
+(chờ H4 5-loại-hồ-sơ) · 27+36 test pass. Bắt+sửa 1 bug thật lúc verify browser (vòng lặp vô hạn
+`useT()` trong `useCallback` deps). CHƯA làm: B7 cột tuỳ biến · B9 in PDF (treo, ghi rõ). B11
+(mini-DSL) GATED chờ PHU.
+
 ## 02/08 tối — 3D-2: sửa STATUS.md sai (3D-2..5 thật ra ĐÃ XONG) + đổi captureSequence sang streaming
 
 **Phát hiện trước khi viết gì**: nhận việc "làm 3D-2" theo đúng chỉ đạo (`docs/SPEC-3D-CORE.md` §4),
