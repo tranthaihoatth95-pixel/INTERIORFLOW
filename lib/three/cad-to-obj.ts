@@ -80,6 +80,19 @@ export interface SceneGroup {
    * không phải `elementType` khai báo. Cờ RUNTIME (không lưu vào `.idf`) để UI hiện badge
    * "suy đoán" (P3, chưa làm) — undefined = khai báo (chắc chắn) hoặc không áp dụng. */
   inferred?: true;
+  /** SPEC-DUNG-3D-THONG-NHAT §5.1/D1 — tầng chứa entity gốc (`Base.storey`, VD 'GF'/'L1'), đọc
+   * NGUYÊN VĂN, không suy đoán theo cao độ (H7/D1: "không có DCEL đáng tin để suy luận"). Chỉ đặt
+   * cho group SINH TỪ MỘT ENTITY THẬT (tường/nội thất/cửa sổ — cùng điều kiện với `entityId` ở
+   * trên, dù `entityId` hiện chỉ gán cho tường); Sàn/Phòng/Trần là hình học TỔNG HỢP (bbox/dò biên
+   * nhiều entity gộp lại) nên không có MỘT storey nguồn để gán — để trống, KHÔNG suy đoán từ storey
+   * của entity gần nhất. undefined = chưa xếp tầng (`.idf` cũ, hoặc entity chưa gán storey) — nơi
+   * tiêu thụ (cây "Hiện") phải gom nhóm "Chưa xếp tầng", không được im lặng bỏ qua (§5.2 mục 2). */
+  storey?: string;
+  /** FK mềm `ProductSpec.id` (`Base.specId` — BOQ ENGINE) đọc NGUYÊN VĂN từ entity gốc, cùng điều
+   * kiện với `storey` ở trên (chỉ group sinh từ MỘT entity thật). Panel phải (SPEC-DUNG-3D-THONG-
+   * NHAT §6) tra `ProductSpec` qua id này để vẽ quả cầu vật liệu — undefined = CHƯA gán, hiện
+   * đúng trạng thái "chưa gán vật liệu", không suy đoán/không hiện quả cầu giả. */
+  specId?: string;
 }
 
 export interface ObjScene {
@@ -194,7 +207,7 @@ class ObjBuilder {
   faces = 0;
   private posByIndex: number[][] = []; // posByIndex[i] = vị trí (m, Y-up) của vertex OBJ #(i+1)
   private groupList: SceneGroup[] = [];
-  private cur: { name: string; colorHex: string; tris: number[]; entityId?: string; heightMm?: number; inferred?: true } | null = null;
+  private cur: { name: string; colorHex: string; tris: number[]; entityId?: string; heightMm?: number; inferred?: true; storey?: string; specId?: string } | null = null;
 
   constructor(mtlFile: string) {
     this.lines.push('# InteriorFlow — OBJ sinh tất định từ bản vẽ CAD (mm → m)');
@@ -202,12 +215,14 @@ class ObjBuilder {
   }
 
   /** `entityId`/`heightMm` (3D-5 push-pull) — chỉ tường truyền vào, group khác bỏ trống.
-   * `inferred` (§2.3/L4) — group xếp loại bằng suy đoán tên layer, không phải `elementType`. */
-  object(name: string, mat: Mat, meta?: { entityId?: string; heightMm?: number; inferred?: true }) {
+   * `inferred` (§2.3/L4) — group xếp loại bằng suy đoán tên layer, không phải `elementType`.
+   * `storey` (SPEC-DUNG-3D-THONG-NHAT §5.1/D1) — tầng của entity gốc, group hình học tổng hợp
+   * (Sàn/Phòng/Trần) không truyền. */
+  object(name: string, mat: Mat, meta?: { entityId?: string; heightMm?: number; inferred?: true; storey?: string; specId?: string }) {
     this.lines.push(`o ${name}`);
     this.lines.push(`usemtl ${mat.name}`);
     this.flushGroup();
-    this.cur = { name, colorHex: mat.hex, tris: [], entityId: meta?.entityId, heightMm: meta?.heightMm, inferred: meta?.inferred };
+    this.cur = { name, colorHex: mat.hex, tris: [], entityId: meta?.entityId, heightMm: meta?.heightMm, inferred: meta?.inferred, storey: meta?.storey, specId: meta?.specId };
   }
 
   private flushGroup() {
@@ -219,6 +234,8 @@ class ObjBuilder {
         entityId: this.cur.entityId,
         heightMm: this.cur.heightMm,
         inferred: this.cur.inferred,
+        storey: this.cur.storey,
+        specId: this.cur.specId,
       });
     }
     this.cur = null;
@@ -436,7 +453,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
   wallHatches.forEach((h, i) => {
     const wallH = clampWallHeight(h.heightMm ?? H);
     const inferred = h.elementType === undefined ? true : undefined;
-    builder.object(`Wall_${i + 1}`, mats.wall, { entityId: h.id, heightMm: wallH, ...(inferred ? { inferred } : {}) });
+    builder.object(`Wall_${i + 1}`, mats.wall, { entityId: h.id, heightMm: wallH, storey: h.storey, specId: h.specId, ...(inferred ? { inferred } : {}) });
     builder.prism(h.points, 0, wallH);
   });
 
@@ -453,7 +470,14 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     const base = blockFootprint(b);
     if (!base) return;
     const def = BLOCK_MAP[b.block];
-    builder.object(`Furn_${i + 1}_${def.id}`, mats.furn, { entityId: b.id });
+    // ⚠️ KHÔNG truyền entityId ở đây (dù có b.id thật): `Scene3DViewer.tsx:201` loại MỌI group có
+    // entityId khỏi đường dựng hình TĨNH khi mode='massing' (coi đó là tường đang chỉnh), rồi
+    // `buildMassingWalls()` lại yêu cầu `heightMm` mới đưa vào đường TƯƠNG TÁC — group nội thất
+    // không có heightMm ⇒ rơi vào khe hở giữa hai đường, BIẾN MẤT khỏi cảnh hoàn toàn. Đã thử và
+    // phát hiện lỗi này khi viết code (chưa từng lên browser) — chừa lại làm bằng chứng cho vòng
+    // sau: muốn nội thất chọn được trong 3D phải mở rộng CẢ HAI hàm trên cho đúng, không phải chỉ
+    // thêm entityId ở đây.
+    builder.object(`Furn_${i + 1}_${def.id}`, mats.furn, { storey: b.storey, specId: b.specId });
     builder.box4(base, 0, furnitureHeightMm(def.id));
   });
 
@@ -461,7 +485,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
   windows.forEach((b, i) => {
     const base = blockFootprint(b);
     if (!base) return;
-    builder.object(`Window_${i + 1}`, mats.wall, { entityId: b.id });
+    builder.object(`Window_${i + 1}`, mats.wall, { storey: b.storey });
     builder.box4(base, 800, Math.min(2200, H - 200));
   });
 

@@ -77,7 +77,18 @@ export function makeAkhIkiDeck(): EditorDeck {
     tpl('grid4-philosophy').build({
       kicker: 'Triết lý thiết kế',
       title: 'LUMEN VILLA — Moodboard',
-      body: ['Mang lại giá trị', 'Cá nhân trong cộng đồng', 'Cân bằng & bền vững', 'Phát triển theo tầng sống'],
+      // 4 nhãn cột + 4 ghi chú tương ứng (body[4..7]) — mỗi cột một ý RIÊNG, không lặp
+      // (L2 phiếu 03/08: bullet cũ là chuỗi cứng giống hệt nhau ở cả 4 cột).
+      body: [
+        'Mang lại giá trị',
+        'Cá nhân trong cộng đồng',
+        'Cân bằng & bền vững',
+        'Phát triển theo tầng sống',
+        'Bền vật liệu, bền công năng',
+        'Riêng tư trong không gian chung',
+        'Ánh sáng và cây xanh dẫn nhịp',
+        'Đủ chỗ cho ba thế hệ',
+      ],
       images: [DEMO.mood1, DEMO.mood2, DEMO.mood3, DEMO.mood4],
       palette: P,
     }),

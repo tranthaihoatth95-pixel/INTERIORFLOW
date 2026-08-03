@@ -27,11 +27,22 @@ import { easeApple } from '@/lib/motion';
 import { useFlowStore } from '@/lib/store';
 import { brandContextForVitals } from '@/lib/present-editor/brand-kit';
 import { useDismissable } from '@/lib/useDismissable';
-import VitalsIcon from './VitalsIcon';
 import { VitalsBubble, VitalsTyping } from './VitalsChatBubble';
+import { VitalsStateDot, type VitalsState } from './VitalsStateBadge';
 
 // 27/07 chốt design tokens: --accent (tím) là accent CHÍNH THỨC toàn app.
 const ACCENT = 'var(--accent)';
+
+/** 05/08 VIỆC 1 (c) — gợi ý mở đầu theo chặng, PORT mock `Vitals v2.dc.html` màn "02" nhưng
+ * SỬA layout: mock xếp 4 gợi ý thành cột dọc chiếm gần hết popover (lối bày điện thoại) — trên
+ * desktop popover chỉ rộng 380px, đủ chỗ vẫn còn phải cuộn thread bên dưới. Đổi thành ĐÚNG 2
+ * gợi ý/chặng, viên nhỏ xếp NGANG (không phải danh sách dọc). Chỉ hiện khi chưa có hội thoại
+ * (`!hasThread`) — bấm gửi thẳng câu hỏi, không phải điền vào ô rồi bấm lần nữa. */
+const STAGE_SUGGESTIONS: Record<Phase, [string, string]> = {
+  concept: ['Đạt TCVN chưa?', 'Thiếu ký hiệu gì?'],
+  render: ['Vật liệu hợp gu chưa?', 'Ánh sáng ổn chưa?'],
+  present: ['Bố cục ổn chưa?', 'Đúng bộ nhận diện?'],
+};
 
 /** Lịch sử hội thoại sống ở mức MODULE — panel unmount không mất, reload mới mất. */
 let vitalsSession: ChatTurn[] = [];
@@ -176,6 +187,12 @@ export default function VitalsGesturePanel({
 
   const hasThread = messages.length > 0 || sending || !!error;
 
+  /* 05/08 VIỆC 1 (b) — nguồn thật DUY NHẤT hiện có là `sending` (đang chờ fetch, không streaming)
+   * → map thẳng 'answering' (khớp nhãn VitalsTyping cũ). 'listening'/'thinking' chưa có nguồn
+   * thật (không voice input, không streaming 2 pha) nên không gán ở đây — xem comment đầu
+   * VitalsStateBadge.tsx. */
+  const vitalsState: VitalsState = sending ? 'answering' : 'idle';
+
   return (
     <motion.div
       ref={rootRef}
@@ -240,7 +257,7 @@ export default function VitalsGesturePanel({
                 color: 'var(--t4)',
               }}
             >
-              <VitalsIcon size={12} style={{ color: ACCENT }} />
+              <VitalsStateDot state={vitalsState} size={7} />
               Vitals · {STAGE_LABEL[stage]}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -284,6 +301,37 @@ export default function VitalsGesturePanel({
             </button>
             </div>
           </div>
+
+          {!hasThread && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '8px 10px 4px' }}>
+              {STAGE_SUGGESTIONS[stage].map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => void send(q)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    height: 26,
+                    padding: '0 10px',
+                    maxWidth: '100%',
+                    borderRadius: 13,
+                    border: '1px solid rgba(127,127,127,0.2)',
+                    background: 'transparent',
+                    color: 'var(--t2)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  <span style={{ width: 5, height: 5, borderRadius: 2, background: ACCENT, flex: 'none' }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {hasThread && (
             <div

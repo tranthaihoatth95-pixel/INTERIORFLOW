@@ -19,8 +19,10 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Boxes, Check, Hammer, X } from 'lucide-react';
+import { Boxes, Check, Hammer, Sparkles, X } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
+import { useStageMode } from '@/lib/stage-mode';
+import { useT } from '@/lib/i18n';
 import { docToObjScene, toScene3DData } from '@/lib/three/cad-to-obj';
 import { wallSegment } from '@/lib/cad/commands';
 import { Viewport3D, EMPTY_SCENE_3D } from '@/components/three/Viewport3D';
@@ -36,9 +38,16 @@ const FIRST_WALL = { from: { x: 0, y: 0 }, to: { x: 4000, y: 0 }, thicknessMm: 2
 
 export default function Render3DModeSkeleton() {
   const doc = useCadStore((s) => s.doc);
-  const [tab, setTab] = useState<Command3DTab>('material');
+  const { setMode } = useStageMode('render');
+  const tr = useT();
+  const [tab, setTab] = useState<Command3DTab>('vatlieu');
   const [nhayNutTuong, setNhayNutTuong] = useState(false);
   const [matDangCam, setMatDangCam] = useState<string | null>(null);
+  // VIỆC 2 (SPEC-DUNG-3D-THONG-NHAT §5+§6, 05/08) — cây đối tượng tab Hiện: tên group đang ẨN
+  // (lọc THẬT khỏi scene đưa vào Viewport3D, không phải cờ trang trí) + group đang chọn để xem
+  // thuộc tính (khác `matDangCam` — đó là vật liệu đang CẦM để gán lên mặt).
+  const [hiddenGroupNames, setHiddenGroupNames] = useState<Set<string>>(new Set());
+  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
   const [guideHidden, setGuideHidden] = useState(false);
   const [welcomeHidden, setWelcomeHidden] = useState(false);
   const welcomeRef = useRef<HTMLDivElement>(null);
@@ -107,6 +116,39 @@ export default function Render3DModeSkeleton() {
   const soKhoi = scene?.groups.length ?? 0;
   soKhoiRef.current = soKhoi;
   const coBanVe = doc.entities.length > 0;
+
+  // VIỆC 2 — lọc THẬT khỏi cảnh đưa vào Viewport3D theo tên group đang ẩn (không phải cờ trang
+  // trí trên hàng cây). `groups` nguyên vẹn (không lọc) vẫn đưa xuống Command3DPanel để cây liệt
+  // kê đủ, kể cả hàng đang ẩn (mờ đi, không biến mất khỏi DANH SÁCH — chỉ biến mất khỏi KHUNG NHÌN).
+  const visibleScene = useMemo(() => {
+    if (!scene || hiddenGroupNames.size === 0) return scene;
+    return { ...scene, groups: scene.groups.filter((g) => !hiddenGroupNames.has(g.name)) };
+  }, [scene, hiddenGroupNames]);
+
+  const toggleGroupHidden = useCallback((name: string) => {
+    setHiddenGroupNames((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }, []);
+
+  // Chỉ group có entityId (hôm nay = tường, xem cảnh báo `cad-to-obj.ts`) mới đẩy tiếp thành
+  // Viewport3D.selectedId — group khác chọn được để XEM thuộc tính nhưng chưa có gizmo thật
+  // (Command3DPanel tự nói rõ điều này trong panel, không giả vờ).
+  const selectedGroup = scene?.groups.find((g) => g.name === selectedGroupName) ?? null;
+  const viewportSelectedId = selectedGroup?.entityId ?? null;
+
+  // "Gán tầng trệt hàng loạt" (SPEC §5.2 mục 2) — thao tác trên CHÍNH Doc (tường=hatch,
+  // nội thất/cửa sổ=block), không qua group/entityId (nội thất/cửa sổ chưa có entityId trong
+  // group — xem cảnh báo `cad-to-obj.ts`) nên đây là đường DUY NHẤT chạm được đúng entity.
+  const assignGroundStorey = useCallback(() => {
+    const store = useCadStore.getState();
+    const need = store.doc.entities.filter((e) => (e.type === 'hatch' || e.type === 'block') && e.storey === undefined);
+    if (!need.length) return;
+    store.updateEntities(need.map((e) => ({ ...e, storey: 'GF' })));
+  }, []);
   // Doc CAD chưa có field vật liệu (grep matId trong lib/cad = 0) ⇒ tín hiệu khả dụng duy nhất
   // hôm nay là "người dùng đã chọn vật liệu trong panel". Khi gán-lên-mặt (raycast) xong thì đổi
   // tín hiệu này sang dữ liệu Doc, đừng để nó mãi là state phiên.
@@ -133,7 +175,7 @@ export default function Render3DModeSkeleton() {
 
   /** Dựng khối đầu tiên: mở tab Tạo + nháy nút Tường (SPEC-NGON-NGU: chỉ đúng MỘT việc kế tiếp). */
   function dungKhoiDauTien() {
-    setTab('create');
+    setTab('tao');
     setNhayNutTuong(true);
   }
 
@@ -167,11 +209,18 @@ export default function Render3DModeSkeleton() {
         nhayNutTuong={nhayNutTuong}
         onTaoTuong={taoTuongMau}
         onPickMaterial={setMatDangCam}
+        groups={scene?.groups ?? []}
+        hiddenNames={hiddenGroupNames}
+        onToggleHidden={toggleGroupHidden}
+        selectedGroupName={selectedGroupName}
+        onSelectGroup={setSelectedGroupName}
+        onAssignStorey={assignGroundStorey}
       />
 
       <div style={{ position: 'relative', flex: 1, minWidth: 0, height: '100%' }}>
         <Viewport3D
-          scene={scene ?? EMPTY_SCENE_3D}
+          scene={visibleScene ?? EMPTY_SCENE_3D}
+          selectedId={viewportSelectedId}
           mode="massing"
           onPushPull={handlePushPull}
           ground
@@ -319,6 +368,34 @@ export default function Render3DModeSkeleton() {
             </div>
           )}
         </Viewport3D>
+
+        {/* VIỆC 2 (SPEC-DUNG-3D-THONG-NHAT §7.1, 05/08) — nút "Dựng ảnh" tím nổi, góc phải-dưới,
+            trên ModeSwitchBar. Tên đúng CHỮ spec dùng ("Dựng ảnh", không phải "Dựng ảnh AI" —
+            mock còn ghi kiểu cũ, xem BAO-CAO-G4 mục 4 chỗ nhãn chặng cũ đã sửa khi port).
+            §7.2 chốt hành vi ĐẦY ĐỦ là gạt mode + dựng SẴN chuỗi 3 node đã nối dây (camera →
+            cad2fbx → ai.clay2render) — nhưng chính spec tự ghi "⚠️ CHƯA VERIFY: chưa có hàm dựng-
+            sẵn-node-graph từ ngoài (addNodes với dây nối sẵn)". KHÔNG bịa phần đó. Nút hôm nay
+            làm ĐÚNG phần đã xác nhận có thật: gạt sang mode `node` CÙNG chặng qua `useStageMode`
+            (không đổi chặng, không mất ngữ cảnh — đúng luật "một sổ, nhiều mặt hiện") — người
+            dùng tự kéo 3 khối có sẵn trong Thư viện. Dựng-sẵn-chuỗi là việc kế tiếp, có chủ. */}
+        <button
+          type="button"
+          onClick={() => setMode('render')}
+          title={tr(
+            'Sang bảng dựng (Node) để lắp chuỗi camera → khối 3D → render AI. Dựng sẵn dây nối — việc kế tiếp, chưa làm.',
+            'Switch to the Node board to assemble camera → 3D block → render AI. Pre-wired chain — not built yet.',
+          )}
+          style={{
+            position: 'absolute', right: 18, bottom: 76, zIndex: 6,
+            height: 38, padding: '0 18px', display: 'flex', alignItems: 'center', gap: 9,
+            border: 0, borderRadius: 'var(--radius-md)', background: 'var(--accent)', color: '#fff',
+            fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            boxShadow: '0 10px 30px -10px var(--accent-ring), var(--shadow-pop)',
+          }}
+        >
+          <Sparkles size={16} strokeWidth={2} />
+          {tr('Dựng ảnh', 'Render')}
+        </button>
 
         <ModeSwitchBar />
       </div>

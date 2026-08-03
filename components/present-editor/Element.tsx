@@ -590,9 +590,16 @@ function TextInner({ el, fonts, overImage }: { el: TextElement; fonts: string; o
      CHÍNH LÀ đơn vị đó (khung sân khấu đặt containerType:'size') ⇒ dùng thẳng, không quy đổi.
      Nhờ vậy cùng một đoạn style chạy đúng ở editor, player VÀ thumbnail 150px. */
   const fxShadow = shadowCss(fx?.shadows, { unit: 'cqh' });
+  /* L3 (phiếu 03/08 — "thumbnail slide 3 chữ đè ảnh, không nền/không tương phản"):
+     `resolveAutoTextColor` chỉ chạy trong `EditorCanvas` cho slide ĐANG MỞ, nên slide chưa ai mở
+     (và bản thu nhỏ của nó ở SlideStrip) vẫn giữ màu gốc của template — chữ trắng trên ảnh sáng =
+     không đọc được. Khi chữ ĐANG đè ảnh mà màu VẪN chưa ai chốt (`colorAuto === true`), đắp bóng
+     AA mảnh — đúng bóng mà P6a dùng, chỉ là bật sớm hơn. Màu chốt xong (`colorAuto` false) thì
+     điều kiện tắt, không chồng thêm gì; ai đã bật `autoShadow` cũng không bị nhân đôi. */
+  const shadowNow = el.autoShadow || (overImage && el.colorAuto === true);
   // thứ tự: hiệu ứng chữ TRƯỚC (trên cùng) → sương tương phản (nếu bật tay) → bóng AA mảnh P6a
   const textShadow =
-    [fxShadow, plan?.textShadow, el.autoShadow ? autoShadowCss(el.color) : undefined]
+    [fxShadow, plan?.textShadow, shadowNow ? autoShadowCss(el.color) : undefined]
       .filter(Boolean)
       .join(', ') || undefined;
   const hasStroke = Boolean(fx?.strokeWidth && fx.strokeWidth > 0);

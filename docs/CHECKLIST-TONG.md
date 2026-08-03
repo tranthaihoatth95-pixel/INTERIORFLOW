@@ -16,7 +16,7 @@
 | File Manager (list/upload/real-fs) | ✅ | ✅ | 🔵 `12223cf` | ⬜ | |
 | Settings + wallpaper canvas | ✅ | ✅ | 🔵 | ⬜ | |
 | Inspector tự sinh từ schema (subtype) | ✅ HA-TANG Trụ 3 | — | ⬜ G4 sau | ⬜ | |
-| **Vitals nâng cấp (khuôn Siri iOS27)** | ✅ APPLE-MOTION §4b + APP-SHELL §4 | 🔨 Claude Design đang dựng (prompt đã giao 01:4x) | ⬜ | ⬜ | Hoà nhắc đêm 04/08 |
+| **Vitals nâng cấp (khuôn Siri iOS27)** | ✅ APPLE-MOTION §4b + APP-SHELL §4 | ✅ `Vitals v2.dc.html` (Claude Design) | 🔵 VIỆC 1(a)(b)(c) trên `nhanh-g4` (05/08, chưa merge) — icon bỏ gradient TTT · `VitalsStateBadge.tsx` 4 trạng thái (idle/answering nối thật vào `sending`, listening/thinking export sẵn CHƯA có nguồn thật) · gợi ý 2 viên ngang trong popover. ⚠️ Phần "mount 1 nơi + bỏ anchor + popover nền đục" là WIP RIÊNG trên `main` (uncommitted, `VitalsGesture.tsx`/`StatusBar.tsx`/`vitals-ui.ts`/`.vitals-pop`) — KHÔNG đụng ở đây để tránh xung đột kiến trúc, xem kỹ khi merge 2 nhánh | ⬜ verify browser 2 theme (tự làm, chưa qua audit A1-A8 hình thức) | grep `F06020\|002850` trong file Vitals-scoped = 0 |
 | Toolbelt ổ ⑤ (gộp CadToolbar/CadTouchDock + fix toolbar tràn đè Inspector) | ✅ HA-TANG Trụ 1 | — | 🔵 `060c419` main (05/08) | ⬜ | đo thật: dock r=1192 < inspector l=1202 ⇒ hết đè; Sketch 2 hàng bo24 · Pro capsule 999 |
 | ⌘K palette đa-màn (nâng lên AppShell) | ✅ HA-TANG Trụ 2 (mặt `palette`) | — | 🔵 `AppCommandPalette.tsx` main (05/08) — nối `cmdsFor()` registry, phủ cả 5 màn | ⬜ | palette Home (ReactFlow) giữ nguyên; ↑↓/↵ phải ở document-capture vì CAD nuốt Enter |
 | Settings icon-hoá + nút "Đặt lại bố cục panel" | — | — | 🔵 G4 `d143684` nhanh-g4 (05/08) — nút nối resetAllRolloutLayouts, verify xoá khoá thật; kèm icon-hoá ObjectProperties (chấm+chip+xích đứt, CHƯA mount chờ CHINH cắm) | ⬜ | hàng "Đổ bóng" spec chưa có trong code |
@@ -51,7 +51,8 @@
 | 5 lỗi UI Render (toolbar nổi·zoom 15%·banner·empty·minimap) | — | — | 🔨 G4 1a | ⬜ | BAO-CAO-DEM 23:1x |
 | Navigator Render = NodeLibraryPanel nguyên bản | — | — | ✅ `739960c` đảo + `efa434c` dọn địa tầng (1 cột · Trên bảng · zoom 100% · hết banner) | ✅ **Hoà nghiệm thu MẮT 04/08** + vật chứng grep | gốc zoom 15% = node rác, đã ghi |
 | Cổng nối có kiểu + Turn-into | 🔵 SPEC-DUNG-NODE-PORT 18KB | — | ⬜ | ⬜ | DỰNG phiên đầu 03/08 |
-| Mode Vẽ 3D (CommandPanel·Viewport·ObjProps) | ✅ | ✅ | 🔵 merge rồi | ⬜ | mở màn+card ĐÃ merge main `fbd9cc1` — chờ mắt Hoà |
+| Mode Vẽ 3D (CommandPanel·Viewport·ObjProps) | ✅ | ✅ | ✅ **A2 quyết 05/08** (`adb8d67`·`4518bd6` nhanh-g4): `CommandPanel.tsx`+`ObjectProperties.tsx` (592 dòng mồ côi, KHÔNG mount) ĐÃ XOÁ — `Command3DPanel.tsx` (data ATLAS thật) thay thế, khoá tab đổi `tao/sua/vatlieu/camera/hien` theo spec M3 | ✅ verify browser 2 theme, wiring dựng-tường vẫn sống sau đổi khoá | lý do chọn: `useMaterials()` thật vs `materialsIn()` tĩnh 10 item — xem BAO-CAO-G4 |
+| Cây đối tượng theo TẦNG + panel thuộc tính + nút "Dựng ảnh" (tab Hiện) | ✅ SPEC-DUNG-3D-THONG-NHAT §5+§6+§7 | 🔵 mock-3d-thong-nhat | ✅ `adb8d67`·`4518bd6` nhanh-g4 — `docToObjScene` đọc storey/specId thật (D1) · cây gom bucket + gán hàng loạt ghi Doc thật · ẩn/hiện lọc thật · chọn tường → gizmo thật (tái dùng selectedId có sẵn) · nút Dựng ảnh gạt mode thật | ✅ verify browser 2 theme (05/08): bucket chuyển GF thật, gizmo hiện thật, ẩn/hiện thật, đổi mode thật | nội thất/cửa sổ CHƯA chọn được (thiếu entityId trong group — cố ý, xem cảnh báo cad-to-obj.ts) |
 | Mở màn Vẽ 3D (sân khấu luôn hiện + 3 bước + nút dựng tại chỗ) | — | — | 🔵 G4 tối 04/08 | ⚠️ verify DOM của G4; chờ mắt Hoà | |
 | Card chào "Bắt đầu dựng không gian" tắt được (✕/Esc/nhớ) | — | — | 🔵 (grep welcome_hidden+Escape wt) | ⬜ | bug Hoà báo, G4 sửa |
 | Toolbar bút neo mép CANVAS (đang đè panel) + minimap ẩn khi trống | — | — | ⬜ G4 | ⬜ | ảnh Hoà 04/08 |
@@ -68,6 +69,7 @@
 | Hạng mục | Spec | Mock | Code | Audit | Ghi chú |
 |---|---|---|---|---|---|
 | Màn chọn 5 loại hồ sơ (H4, gộp #3 AI) | ✅ phiếu TRÌNH | — BỎ mock (file không tồn tại, UI báo 04/08) → code thẳng PHIEU-PRESENT-G4 | ⬜ G4 q4 | ⬜ | |
+| 5 lỗi UI Trình bày (L1 đơn vị Hồ sơ/slide · L2 bullet lặp+tràn · L3 tương phản thumbnail · L4 toolbar popover · L5 Inspector cuộn) | ✅ PHIEU-TRINH-LOI-UI-2026-08-03 | — | ✅ `174c1b7`·`e5421f3`·`0f60cc9`·`6a05a8b`·`06a502d` nhanh-g4 | ✅ verify browser 05/08, cả 2 theme — L2 đo rect 0px chồng, L5 đo computed style bóng-cuộn | |
 | Deck editor (E-sprint P1-P5 + P6a) | ✅ | ✅ | ✅ | — | 7 mục sống → PHIEU-PRESENT-G4 |
 | 7 mục sống Present (photo-editor 4 tầng...) | ✅ PHIEU-PRESENT-G4 | — | ⬜ G4 sau | ⬜ | |
 | Bảng vật liệu A3 | ✅ SPEC-TRINH-MATERIAL-A3 (git b2f4400) | — | ⬜ | ⬜ | |
