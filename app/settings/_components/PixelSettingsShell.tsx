@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, LogOut, PanelsTopLeft } from 'lucide-react';
+import { ArrowLeft, Check, LogOut, PanelsTopLeft, Boxes } from 'lucide-react';
 import { resetAllRolloutLayouts } from '@/components/studio/Rollout';
 import { useFlowStore } from '@/lib/store';
 import { AiDependencySettings } from '@/components/settings/AiDependencySettings';
@@ -45,6 +45,33 @@ function ResetPanelLayoutRow() {
         }}
       >
         {done ? <><Check size={13} /> Đã đặt lại</> : 'Đặt lại bố cục panel'}
+      </button>
+    </div>
+  );
+}
+
+/** VIỆC 3 (04/08, `docs/PHIEU-CODE-IF-KHO-VAT-LIEU-V1.md`) — lối vào MÀN QUẢN LÝ KHO VẬT LIỆU
+ * (`/materials`). Đặt ở "Nâng cao" cùng cách `ResetPanelLayoutRow` — kho vật liệu là dữ liệu
+ * thương mại dùng chung studio, gần với "cấu hình vận hành" hơn là cài đặt cá nhân/giao diện. */
+function MaterialsWarehouseRow() {
+  const router = useRouter();
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)', display: 'flex', alignItems: 'center', gap: 7 }}>
+          <Boxes size={13} /> Kho vật liệu
+        </div>
+        <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--t2)' }}>
+          Thêm/sửa/xoá vật liệu, giá, nhà cung cấp — nhập cả bằng Excel/CSV.
+        </p>
+      </div>
+      <button
+        type="button"
+        className="ghost"
+        style={{ flexShrink: 0 }}
+        onClick={() => router.push('/materials')}
+      >
+        Mở kho vật liệu
       </button>
     </div>
   );
@@ -116,6 +143,7 @@ export function PixelSettingsShell() {
                   bố cục rollout đã nhớ (mở/đóng · thứ tự kéo · ghim) → panel về mặc định,
                   đúng SPEC-PANEL-ROLLOUT §2b "luôn nhìn thấy được". */}
               <ResetPanelLayoutRow />
+              <MaterialsWarehouseRow />
               <AiDependencySettings />
               <GuModelSettings />
               <ExperienceSettings />

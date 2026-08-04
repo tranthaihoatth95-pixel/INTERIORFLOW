@@ -35,6 +35,7 @@ export function specToDto(s: {
   larkRecordId: string | null; createdAt: Date; syncedAt: Date | null;
   unit?: string | null; priceVnd?: DecimalLike | null; wastagePercent?: DecimalLike | null;
   packagingSpec?: string | null; altSku?: string | null; styleTags?: string | null;
+  scope?: string; ownerId?: string | null; supplierId?: string | null; verified?: boolean;
 }) {
   return {
     id: s.id,
@@ -65,6 +66,14 @@ export function specToDto(s: {
     packagingSpec: s.packagingSpec ?? null,
     altSku: s.altSku ?? null,
     styleTags: specSafeArr(s.styleTags ?? ''),
+    // ── Kho vật liệu IF v1 VIỆC 1 (04/08, `docs/PHIEU-CODE-IF-KHO-VAT-LIEU-V1.md`) — vá tại đây
+    // theo ĐÚNG lý do đã ghi ở khối trên: cột đã có trong Prisma schema từ trước, DTO chưa trả.
+    // VIỆC 1 CHỈ khai cột (chưa code chức năng global) — VIỆC 3 (màn quản lý) là nơi tiêu thụ
+    // ĐẦU TIÊN, nên vá đường ĐỌC ở đây trước khi màn quản lý cần tới.
+    scope: s.scope ?? 'studio',
+    ownerId: s.ownerId ?? null,
+    supplierId: s.supplierId ?? null,
+    verified: s.verified ?? false,
   };
 }
 
@@ -72,9 +81,23 @@ const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null
 const int = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : null);
 const arr = (v: unknown) =>
   JSON.stringify(Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []);
+/** Decimal (priceVnd) — Prisma Decimal field nhận number/string trực tiếp, KHÔNG cần import
+ * `Prisma.Decimal` (đúng phong cách duck-typing sẵn có của file này). Chuỗi có dấu phẩy thập
+ * phân kiểu VN ("1250000,50") được đổi sang dấu chấm trước khi ép số. */
+const dec = (v: unknown): number | null => {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string' && v.trim()) {
+    const n = Number(v.trim().replace(',', '.'));
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+};
 
-/** Ép field body POST về đúng kiểu cột — bỏ qua field lạ (không mass-assign). */
-export function specNormalize(b: Record<string, unknown>, kind: string, name: string) {
+/** Ép field body POST về đúng kiểu cột — bỏ qua field lạ (không mass-assign).
+ * `ownerId` KHÔNG đọc từ body (client không được tự khai chủ sở hữu) — luôn là user đang đăng
+ * nhập, đúng ngữ nghĩa VIỆC 1 (`ownerId = null` ⇒ kho chung, CHƯA code ở đợt này). `scope` cũng
+ * ép cứng `'studio'` — tầng `'global'` chưa có UI/luật duyệt, không cho client tự đặt. */
+export function specNormalize(b: Record<string, unknown>, kind: string, name: string, ownerId: string) {
   return {
     kind,
     name,
@@ -93,15 +116,22 @@ export function specNormalize(b: Record<string, unknown>, kind: string, name: st
     priceNote: str(b.priceNote),
     currency: str(b.currency),
     note: str(b.note),
+    unit: str(b.unit),
+    priceVnd: dec(b.priceVnd),
+    supplierId: str(b.supplierId),
+    scope: 'studio',
+    ownerId,
   };
 }
 
-/** Patch PATCH — CHỈ field có mặt trong body mới được sửa (partial update). */
+/** Patch PATCH — CHỈ field có mặt trong body mới được sửa (partial update). `scope`/`ownerId`
+ * KHÔNG sửa được qua đây (chuyển chủ sở hữu không phải tính năng đợt này). */
 export function specPatch(b: Record<string, unknown>) {
   const out: Record<string, unknown> = {};
-  const strKeys = ['nameEn', 'brand', 'sku', 'vendor', 'colorHex', 'imageAssetId', 'drawingBlock', 'priceNote', 'currency', 'note'];
+  const strKeys = ['nameEn', 'brand', 'sku', 'vendor', 'colorHex', 'imageAssetId', 'drawingBlock', 'priceNote', 'currency', 'note', 'unit', 'supplierId'];
   for (const k of strKeys) if (k in b) out[k] = str(b[k]);
   for (const k of ['w', 'd', 'hUp']) if (k in b) out[k] = int(b[k]);
+  if ('priceVnd' in b) out.priceVnd = dec(b.priceVnd);
   for (const k of ['materials', 'finishes']) if (k in b) out[k] = arr(b[k]);
   if (typeof b.name === 'string' && b.name.trim()) out.name = b.name.trim();
   if (typeof b.kind === 'string' && (SPEC_KINDS as readonly string[]).includes(b.kind)) out.kind = b.kind;

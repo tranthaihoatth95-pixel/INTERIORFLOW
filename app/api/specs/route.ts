@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Thiếu name.' }, { status: 400 });
   }
   const spec = await prisma.productSpec.create({
-    data: specNormalize(body as Record<string, unknown>, kind, name.trim()),
+    data: specNormalize(body as Record<string, unknown>, kind, name.trim(), user.id),
   });
   return NextResponse.json({ spec: specToDto(spec) }, { status: 201 });
 }
