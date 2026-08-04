@@ -127,6 +127,8 @@ trước khi:
 4. [ ] Quét transitive license sạch + có gate trong CI.
 5. [ ] **MỚI (§9)**: chốt 1 trong 3 hướng Pantone TCX trước khi hiển thị mã Pantone cho khách hàng
    thật — hiện tại chỉ dùng nội bộ/dev là an toàn, RỦI RO nằm ở lúc bật tính năng cho user cuối.
+6. [ ] **MỚI (§10)**: KHÔNG nạp block CAD từ 7 nguồn cấm liệt kê ở §10 vào `lib/cad/furniture.ts`
+   hay bất kỳ file thư viện block nào — kiểm bằng mắt mọi lần nhập block hàng loạt (C2a).
 
 ## 9. Bảng Pantone TCX (`lib/gu/pantone-tcx.json`, F3b — 05/08) — nguồn CHƯA rõ giấy phép
 
@@ -160,6 +162,35 @@ giống cách §8 xử lý GPL):
 (c) Đổi hướng SẢN PHẨM: bỏ nhãn "Pantone", dùng bảng tên màu TỰ ĐẶT (giữ nguyên kiến trúc
     `nearestPantone`, chỉ đổi `pantone-tcx.json` sang bảng tên trung tính) — an toàn tuyệt đối,
     tốn công đặt lại ~2000 tên.
+
+## 10. Thư viện block CAD (C2a mở rộng `furniture.ts`) — 7 NGUỒN CẤM, đã đọc điều khoản gốc (05/08)
+
+**TUYỆT ĐỐI KHÔNG nạp block/ký hiệu 2D-3D từ 7 nguồn sau vào `lib/cad/furniture.ts`, `lib/cad/
+mep.ts`, hay bất kỳ file thư viện block nào của IF:**
+
+| Nguồn | Điều khoản chặn |
+|---|---|
+| **BIMobject** | Cấm thẳng *"incorporate into a product you provide to a third party"* — nghĩa đen là cấm chính việc IF đang định làm (nạp vào sản phẩm bán cho studio khác). Cấm luôn train AI trên nội dung của họ. |
+| **CADforum** | ToS cấm redistribute nội dung tải về ngoài mục đích dùng cá nhân trong CAD của người tải. |
+| **Bibliocad** | Cấm redistribute/bán lại block dưới mọi hình thức, kể cả "đã chỉnh sửa". |
+| **DWGmodels** | Cùng dòng cấm redistribute như Bibliocad — kho chia sẻ cộng đồng, không phải kho cấp phép lại. |
+| **ARCAT** | Nội dung do NHÀ SẢN XUẤT sở hữu (manufacturer content) — ARCAT chỉ trung gian phân phối cho MỘT lần dùng trong hồ sơ dự án, không cấp quyền nhúng vào phần mềm bán ra. |
+| **Show It Better** | Bản quyền tác giả gốc (nhiều nghệ sĩ khác nhau), giấy phép chỉ cho dùng trong bản vẽ trình bày, không cho đóng gói lại thành thư viện phân phối. |
+| **cad-blocks.net** | Kho tải cộng đồng không có cấp phép lại (no relicensing) — giống nhóm Bibliocad/DWGmodels. |
+| **Skalgubbar** (entourage người) | CC BY-NC — cấm dùng THƯƠNG MẠI (NC = NonCommercial), IF định bán nên KHÔNG dùng được dù có ghi nguồn. |
+
+**Dùng được** (đã kiểm giấy phép, an toàn cho sản phẩm thương mại):
+- **Openclipart** — CC0 (Public Domain), không điều kiện.
+- **Tabler Icons / Lucide / Iconoir** — MIT, cho phép dùng thương mại + sửa đổi, chỉ cần giữ
+  notice bản quyền trong mã nguồn (không cần hiện ra UI).
+
+**Ranh giới quan trọng — SỐ ĐO khác HÌNH VẼ:**
+Kích thước/tỉ lệ trong Neufert, Panero & Zelnik (*Human Dimension & Interior Space*), hay
+dimensions.com là **SỰ THẬT khách quan** (con người cao bao nhiêu, bồn cầu tiêu chuẩn rộng bao
+nhiêu mm) — **không có bản quyền**, tự do dùng để tự vẽ block mới ở `lib/cad/furniture.ts`/
+`lib/cad/mep.ts` (đúng cách `lib/cad/standards/neufert.ts` đã làm). Điều bị cấm là **đồ lại
+NGUYÊN VĂN hình vẽ/block đã có sẵn** từ 7 nguồn trên — đó là tác phẩm có bản quyền của người vẽ,
+khác với con số đo đạc phía sau nó.
 
 ---
 

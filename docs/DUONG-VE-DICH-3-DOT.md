@@ -91,9 +91,46 @@ sửa thành 5: thêm "Đặt đèn" trước Đặt máy quay, thêm "Dựng �
 | # | Việc | Ghi chú |
 |---|---|---|
 | C1 | **Đổ 1449 món ATLAS** | qua cửa Excel đã có — Hoà tự làm 10 phút |
-| C2 | **Thư viện block CAD** kiểu 3dsky | bàn ghế cây xe người 2D + model 3D. Mock thư viện trống đã có |
+| C2a | **Mở rộng thư viện block** (`lib/cad/furniture.ts` + file mới) | Thiết bị vệ sinh · thiết bị bếp + module tủ · cây · người (entourage) · ký hiệu bản vẽ — chi tiết dưới bảng |
+| C2b | **Type/Instance + module ghép** | `ProductSpec` thêm `views`/`modules`/`rules` Json — chi tiết dưới bảng |
+| C2c | **Doc mẫu** (RẺ NHẤT, GIÁ TRỊ CAO NHẤT) | File `.idf` mẫu = mặt bằng hoàn chỉnh, KHÔNG phải block — chi tiết dưới bảng |
+| C2d | **Chi tiết cấu tạo** (2D thuần, KHÔNG 3D) | Chân tường · trần giật cấp · khe co giãn… — loại riêng ngoài kiến trúc parametric |
 | C3 | **Web Clipper** | dán link web NCC → bóc tên/ảnh/giá. NCC Việt Nam có web, không có API |
 | C4 | **Tầng ① nhà cung cấp** | `scope='global'` — 4 cột schema đã khai sẵn |
+
+**C2 KHÔNG phải làm lại từ đầu — CHỈ MỞ RỘNG cái đã có** (đính chính 05/08, TỔNG từng đề xuất nhầm
+"Kiểm khoảng" như tính năng mới): `lib/cad/standards/` đã có **16 file** (Neufert · chuẩn VN điện/
+nước/PCCC/tiếp cận · checker · fix-suggest…) và `lib/cad/furniture.ts:40` đã có
+`clearance?: ClearanceZone[]` (`shared-types.ts`) — vùng trống bắt buộc quanh shape ĐÃ code, có
+`clearanceWorldPolygon()` ở `shape-interactions.ts`. C2a chỉ **thêm block mới** vào cơ chế sẵn có.
+
+**C2a chi tiết — thêm vào `furniture.ts` + file mới:**
+- Thiết bị vệ sinh: bồn cầu · lavabo · sen · bồn tắm · tiểu nam · vách kính
+- Thiết bị bếp: bếp · hút mùi · chậu · tủ lạnh · lò · máy rửa chén + module tủ bếp 300/400/450/600/800/900
+- Cây: chậu bàn · chậu sàn · cây lớn · dây leo (2 mức chi tiết)
+- Người: đứng/đi/ngồi/ngồi bệt — vai 450-500, đầu Ø180-200, cờ `isEntourage:true` → KHÔNG vào BOQ
+- Ký hiệu: mũi tên bắc · cao độ · mặt cắt · triển khai · trục · khung tên · thước tỉ lệ · mẫu gạch ISO128
+- ⚠️ **LUẬT BẢN QUYỀN nguồn block — xem `docs/LICENSE-NOTES.md §10`**: TUYỆT ĐỐI KHÔNG nạp block từ
+  BIMobject · CADforum · Bibliocad · DWGmodels · ARCAT · cad-blocks.net · Show It Better ·
+  Skalgubbar — cả 7 nguồn đều cấm redistribute trong sản phẩm bán ra (BIMobject cấm thẳng
+  "incorporate into a product you provide to a third party" + cấm train AI). Dùng được: Openclipart
+  (CC0) · Tabler/Lucide/Iconoir (MIT). SỐ ĐO (Neufert/Panero/dimensions.com) là sự thật, không có
+  bản quyền — chỉ cấm đồ lại HÌNH VẼ có sẵn.
+
+**C2b chi tiết** — `ProductSpec` (`prisma/schema.prisma`, model `ProductSpec` hiện ~dòng 359) thêm:
+```
+views   Json?  // {top, front, side}
+modules Json?  // [{code,w,d,h}]
+rules   Json?  // luật ráp
+```
+Ví dụ phải chạy được: sofa modular 190+150=413cm, cấu hình SX/DX (trái/phải).
+
+**C2c chi tiết** — Doc mẫu, KHÔNG phải block: phòng ngủ khách sạn 3 hạng · sảnh khách sạn · office
+hybrid · phòng họp · văn phòng mở · bếp bar. Mở file `.idf` mẫu ra là mặt bằng HOÀN CHỈNH, người
+dùng xoá bớt/sửa lại — không phải kéo từng block rời.
+
+**C2d chi tiết** — 2D thuần, KHÔNG dựng 3D: chân tường · trần giật cấp · khe co giãn · hộp gen ·
+vách kính khung mảnh · sàn nâng. Loại riêng, nằm NGOÀI kiến trúc parametric (khác C2a/C2b).
 
 ### Nhóm D · Trình chiếu & xuất
 | # | Việc | Ghi chú |
@@ -132,10 +169,10 @@ sửa thành 5: thêm "Đặt đèn" trước Đặt máy quay, thêm "Dựng �
 ### Nhóm G · Cảm ứng & bút — 14 việc, chi tiết ở `NC-14-CAM-UNG.md §5`
 | # | Việc | Ghi chú |
 |---|---|---|
-| G1 | `touch-action:none` + overscroll + `user-select` trên mọi canvas | [NỀN] |
-| G2 | Chuyển sang Pointer Events + `setPointerCapture` + `pointercancel` | [NỀN] |
-| G3 | `lib/input/` — bảng phân vai pen=vẽ / touch=camera | [NỀN] |
-| G4 | `lib/input/const.ts` — 500ms, slop 8px MÀN HÌNH, hit-radius 22px | [NỀN] |
+| G1 | `touch-action:none` + `overscroll-behavior:none` + `user-select:none` trên canvas **cả 3 chặng** | [NỀN] **PHẢI đặt sẵn trong CSS** — đổi lúc `pointerdown` là MUỘN (spec W3C: trình duyệt chốt hành vi cử chỉ ngay lúc chạm đầu tiên) |
+| G2 | Chuyển sang Pointer Events + `setPointerCapture` + `pointercancel` | [NỀN] chuột/bút **phải gọi `setPointerCapture` bằng tay** (touch tự có ngầm định) · `pointercancel` phải **ROLLBACK nét đang vẽ dở**, không để nét cụt nằm lại trong Doc |
+| G3 | `lib/input/` — bảng phân vai `pointerType`: `'pen'`=vẽ · `'touch'`=camera | [NỀN] **palm rejection web**: hễ có sự kiện pen thì BỎ mọi touch trong **800ms** kế tiếp (tì cổ tay lên màn khi vẽ bút) |
+| G4 | `lib/input/const.ts` — long-press 500ms, slop 8px MÀN HÌNH, hit-radius 22px | [NỀN] slop/hit-radius đo bằng **px màn hình ⇒ phải CHIA cho zoom** khi quy về toạ độ mm, nếu không thì zoom càng sâu ngưỡng càng phình |
 | G5 | 2 ngón = undo · 3 ngón = redo, giữ để lặp | |
 | G6 | Chữ báo snap đặt lệch khỏi điểm chạm | |
 | G7 | Chạm nhãn kích thước → numpad, nhận phép tính (`3500/2`) | |
