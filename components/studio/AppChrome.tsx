@@ -352,6 +352,7 @@ export function AppChrome({ active, logoMenu }: Props) {
 
       <ShortcutsPanel open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} active={active} />
       <LeaveConfirmBar />
+      <LockScreen />
     </header>
   );
 }

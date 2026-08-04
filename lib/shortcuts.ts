@@ -37,11 +37,16 @@ export interface ShortcutEntry {
   disabledReason?: string;
 }
 
-/** '⌘Z'/'Ctrl+Z' · 'F8'/'F8' · '⌘⇧S'/'Ctrl+Shift+S' — cùng quy ước modKey/modShiftKey (lib/kbd.ts). */
+/**
+ * '⌘Z'/'Ctrl+Z' · 'F8'/'F8' · '⌘⇧S'/'Ctrl+Shift+S' — cùng quy ước modKey/modShiftKey (lib/kbd.ts).
+ * Token 'ctrl' RIÊNG (khác 'mod') — chỉ dùng cho ⌃⌘Q khoá màn (VIỆC 3, cố ý bắt CẢ Ctrl LẪN ⌘
+ * cùng lúc, đúng phím khoá màn thật của macOS) — luôn hiện '⌃' bất kể nền tảng, vì đây vốn là
+ * phím kiểu Mac, không có quy ước Windows tương đương để dịch sang.
+ */
 export function formatShortcutKeys(keys: KeyToken[], isMac: boolean): string {
   const MOD = isMac ? '⌘' : 'Ctrl';
   const SHIFT = isMac ? '⇧' : 'Shift';
-  const parts = keys.map((t) => (t === 'mod' ? MOD : t === 'shift' ? SHIFT : t));
+  const parts = keys.map((t) => (t === 'mod' ? MOD : t === 'shift' ? SHIFT : t === 'ctrl' ? '⌃' : t));
   return isMac ? parts.join('') : parts.join('+');
 }
 
@@ -64,6 +69,10 @@ export const SHORTCUTS: ShortcutEntry[] = [
   {
     scope: 'toàn cục', keys: ['mod', '\\'],
     label: 'Ẩn/hiện CẢ Navigator lẫn Inspector (chế độ zen) — AppShell.tsx, có sẵn từ trước',
+  },
+  {
+    scope: 'toàn cục', keys: ['ctrl', 'mod', 'Q'],
+    label: 'Khoá màn (kiểu macOS) — ép lưu ngay trước khi khoá, mở khoá = đăng nhập lại',
   },
 
   // ── CAD ───────────────────────────────────────────────────────────────────────────────────

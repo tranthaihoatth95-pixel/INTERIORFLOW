@@ -393,9 +393,20 @@ model ProductSpec {
   altSku         String? // mã thay thế/tương đương khi hết hàng — text tự do, chưa chuẩn hoá thành bảng riêng
   styleTags      String   @default("") // JSON string[] — cùng mẫu materials/finishes ở trên, mầm STYLE_DNA nối Gu Engine
 
+  // ── Kho vật liệu IF v1 (04/08, docs/PHIEU-CODE-IF-KHO-VAT-LIEU-V1.md VIỆC 1) — khai chỗ cho
+  // kho 3 tầng (① chung / ② studio / ③ dự án chỉ tham chiếu). CHỈ khai cột, CHƯA code chức năng
+  // cho scope='global' — lý do: IF có 0 studio ngoài TTT, chưa phá được vòng con-gà-quả-trứng.
+  // Khai sớm để tránh phải migrate dữ liệu của MỌI khách hàng khi có nhà cung cấp đầu tiên.
+  scope      String   @default("studio") // 'global' | 'studio'
+  ownerId    String? // null = kho chung; ngược lại = studio sở hữu
+  supplierId String? // hãng cung cấp — chưa có bảng Supplier riêng, để string trước
+  verified   Boolean  @default(false) // IF đã duyệt chưa — chỉ có nghĩa khi scope='global'
+
   @@index([kind])
   @@index([sku])
   @@index([drawingBlock])
+  @@index([scope])
+  @@index([ownerId])
 }
 
 // Ánh xạ TAY 1 lần: "Tài khoản" Larkbase (vd "An.LNT") ↔ User.id nội bộ IF — Larkbase KHÔNG

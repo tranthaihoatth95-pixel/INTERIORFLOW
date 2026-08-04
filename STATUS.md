@@ -5,6 +5,13 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## 🟡 ĐANG CHẠY (04/08 — KHO VẬT LIỆU IF v1, VIỆC 1 xong — DỪNG theo lệnh, chờ Hoà trước VIỆC 2)
+`docs/PHIEU-CODE-IF-KHO-VAT-LIEU-V1.md` VIỆC 1: thêm 4 cột `scope`/`ownerId`/`supplierId`/`verified`
+vào `model ProductSpec` (`prisma/schema.prisma`) — khai chỗ cho kho 3 tầng, CHƯA code chức năng
+`global`. `npx prisma validate` sạch. **CHƯA chạy migrate/db push/generate** — theo luật "KHÔNG
+prisma db push/migrate qua sandbox" (mục Quy tắc session #4): lệnh soạn sẵn cho Hoà chạy máy thật
+(xem cuối báo cáo phiên). Không đụng `components/cad/CadSheets.tsx`.
+
 ## 🟡 ĐANG CHẠY (04/08 — PHIẾU ĐỢT 8 multi-sheet BƯỚC 3, D1 XONG — chưa commit, dừng chờ Hoà duyệt trước D2/D3)
 `components/cad/CadSheets.tsx` + `components/cad/CadCanvas.tsx` — bỏ hẳn "hoán store" khi đổi tab
 (mỗi sheet ôm 1 Doc riêng, K1 vi phạm) → `useCadStore` giờ giữ ĐÚNG 1 `doc`/`past`/`future` xuyên
