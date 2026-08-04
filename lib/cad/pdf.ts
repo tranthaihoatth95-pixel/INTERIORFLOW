@@ -103,10 +103,35 @@ export interface CadPdfOptions {
   /** tiêu đề in góc dưới-trái trang (VD tên project + sheet). */
   title?: string;
   dimStyle?: CadPdfDimStyle;
+  /** P4 (04/08) — "số tờ" trong khung tên (VD "Tờ 2/5"). `buildSheetSetPdf()` TỰ điền 2 field
+   * này cho mỗi trang theo đúng thứ tự thật (không cần caller tự đếm) — `buildCadPdf()` (1 tờ
+   * đơn lẻ, chưa nối bộ hồ sơ, xem đầu file NC-xuat-pdf) chỉ vẽ khi caller CHỦ ĐỘNG truyền vào. */
+  sheetIndex?: number;
+  sheetCount?: number;
+  /** P4 (04/08) — "phiên bản"/revision bản vẽ (VD "Rev A", "v2") — KHÔNG có field tương đương ở
+   * `TitleBlockInfoPro` (lib/cad/commands.ts, ngoài vùng file `lib/cad/pdf*.ts` của đợt này) nên
+   * hiện tại chỉ vẽ được ở dòng ghi chú cuối trang (`pdfFooterLine`), không phải TRONG khung tên
+   * bằng entity thật — cần P nào sở hữu commands.ts/TitleBlockInfoPro thêm field `version` rồi
+   * nối UI mới lên được khung tên đúng nghĩa. Ghi rõ giới hạn, không giả vờ đã đủ. */
+  version?: string;
 }
 
 const MM_PER_PT = 25.4 / 72;
 const mmToPt = (mm: number) => Math.max(4, mm / MM_PER_PT);
+
+/**
+ * P4 (04/08) — bề dày nét TỐI THIỂU đảm bảo còn nhìn thấy khi in thật (yêu cầu "hairline không
+ * được biến mất khi in"). Trước đây sàn là 0.03mm — DƯỚI CẢ lineweight ISO 128 mảnh nhất trong
+ * hệ thống (`STANDARD_LINEWEIGHTS[0]` = 0.13mm, `model.ts`) nên chỉ có ý nghĩa chặn giá trị 0/âm
+ * từ dữ liệu hỏng, KHÔNG đảm bảo in ra còn thấy: máy in văn phòng/RIP phổ thông (300-600dpi) hay
+ * làm mất/đứt nét dưới ~0.1mm do dot-gain, trong khi PDF vector không có "hairline 0-width tự
+ * đảm bảo 1px thiết bị" đúng NGHĨA plot CAD (0-width là "mảnh nhất máy render được", không phải
+ * "đúng bề dày mm đã khai" — sai mục đích ISO 128 là in ĐÚNG mm thật). Chọn 0.1mm: dưới lineweight
+ * chuẩn mảnh nhất (0.13mm, còn margin cho dữ liệu cũ/tuỳ chỉnh nhỏ hơn chuẩn) nhưng đủ dày để máy
+ * in phổ thông không đánh rơi — không phải số tự bịa, khớp thực hành "hairline in ấn" phổ biến
+ * (Illustrator/InDesign mặc định coi <0.1mm là rủi ro mất nét khi in offset/laser).
+ */
+export const MIN_PRINTABLE_LINE_MM = 0.1;
 
 function layerColorOf(doc: Doc, e: Entity, fallback: string): string {
   if (e.color) return e.color;
@@ -114,7 +139,9 @@ function layerColorOf(doc: Doc, e: Entity, fallback: string): string {
   return lay?.color ?? fallback;
 }
 
-/** Lineweight HIỆU DỤNG = mm trên giấy thật (KHÔNG nhân v.scale — xem comment đầu file). */
+/** Lineweight HIỆU DỤNG = mm trên giấy thật (KHÔNG nhân v.scale — xem comment đầu file). Sàn
+ * 0.05mm ở đây chỉ chặn giá trị 0/âm hỏng dữ liệu — sàn IN-ẤN THẬT (đảm bảo không mất nét khi in)
+ * nằm ở `setStroke()`/`MIN_PRINTABLE_LINE_MM`, LUÔN cao hơn (0.1mm) nên áp dụng sau cùng. */
 function lineWidthMmOf(doc: Doc, e: Entity): number {
   const lay = doc.layers.find((l) => l.id === e.layer);
   return Math.max(0.05, e.lineweight ?? lay?.lineweight ?? 0.25);
@@ -149,7 +176,7 @@ type JsPdf = any;
 
 function setStroke(pdf: JsPdf, color: string, widthMm: number) {
   pdf.setDrawColor(color);
-  pdf.setLineWidth(Math.max(0.03, widthMm));
+  pdf.setLineWidth(Math.max(MIN_PRINTABLE_LINE_MM, widthMm));
 }
 
 function polylinePdf(pdf: JsPdf, pts: Pt[], closed: boolean) {
@@ -426,11 +453,28 @@ function drawDocOntoPdfPage(pdf: JsPdf, doc: Doc, pw: number, ph: number, opts: 
     if (lay && !lay.visible) continue; // layer ẩn trong app → không vẽ vào PDF (xem giới hạn OCG đầu file)
     drawEntityPdf(pdf, v, doc, e, ds);
   }
-  if (opts.title) {
+  const footer = pdfFooterLine(opts);
+  if (footer) {
     pdf.setFontSize(9);
     pdf.setTextColor('#888888');
-    pdf.text(opts.title, margin, ph - 6);
+    pdf.text(footer, margin, ph - 6);
   }
+}
+
+/**
+ * P4 (04/08) — dòng ghi chú cuối trang: tiêu đề · "Tờ N/M" · "Rev X" nếu caller truyền
+ * `sheetIndex`/`sheetCount`/`version`. Tách THÀNH HÀM THUẦN (không phụ thuộc jsPDF) để test được
+ * trực tiếp — chữ vào PDF qua font nhúng tiếng Việt (`ensureVietnameseFont`) không phải WinAnsi
+ * ASCII nên KHÔNG đọc lại được từ content stream đã render (xem `pdf-print-fidelity.test.ts`),
+ * test tầng chữ phải chặn Ở ĐÂY, trước khi đưa vào `pdf.text()`.
+ * null khi không có gì để ghi (giữ hành vi cũ — trang KHÔNG có `opts.title` thì không vẽ dòng nào).
+ */
+export function pdfFooterLine(opts: CadPdfOptions): string | null {
+  const parts: string[] = [];
+  if (opts.title) parts.push(opts.title);
+  if (opts.sheetIndex && opts.sheetCount) parts.push(`Tờ ${opts.sheetIndex}/${opts.sheetCount}`);
+  if (opts.version) parts.push(`Rev ${opts.version}`);
+  return parts.length ? parts.join(' · ') : null;
 }
 
 /**
@@ -548,7 +592,9 @@ export async function buildSheetSetPdf(sheets: SheetSetEntry[], opts: CadPdfOpti
   sheets.forEach((s, i) => {
     const { pw, ph, orientation } = pageFormatOf(s.doc, opts);
     pdf.addPage([pw, ph], orientation);
-    drawDocOntoPdfPage(pdf, s.doc, pw, ph, { ...opts, title: s.name });
+    // P4 (04/08) — "số tờ" khung tên: bộ hồ sơ BIẾT thứ tự/tổng số tờ thật (sheets[]), tự điền
+    // sheetIndex/sheetCount cho MỖI trang — caller không cần tự đếm, không lệch với mục lục ở trên.
+    drawDocOntoPdfPage(pdf, s.doc, pw, ph, { ...opts, title: s.name, sheetIndex: i + 1, sheetCount: sheets.length });
     pdf.outline.add(null, s.name, { pageNumber: i + 2 });
   });
 
