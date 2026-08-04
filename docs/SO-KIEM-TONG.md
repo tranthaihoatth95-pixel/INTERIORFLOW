@@ -582,3 +582,38 @@ mới (1 fail cũ đã biết `cad-to-obj.test.ts` entityId nội thất, không
 - Chưa chụp được 1 ca "huỷ THÀNH CÔNG mượt" (chỉ chụp được lúc đang chạy + lúc treo) — vì file lớn
   duy nhất có sẵn để test (21MB) chính là file gây treo; cần thử với file cỡ trung (5-10MB) ở
   phiên sau để tách bạch "Huỷ luôn treo" khỏi "chỉ file cực lớn mới treo".
+
+## §11b · P1 — verify DWG lần 2 ĐỘC LẬP (04/08 tối muộn, phiên P5 song song — bổ sung §11, không lặp)
+
+Phiên P5 chạy verify độc lập CÙNG TỐI (không biết §11 đang được viết — hai phiên chung `.git`
+đúng nghĩa đen), môi trường khác: worktree riêng `.worktrees/p5-verify` (tách hẳn `.next` — cách
+này THOÁT được sạch lỗi "chung .next/cache" ghi cuối §11, khuyên phiên sau verify kiểu này),
+server 3006, cùng bộ file thật Zalo. Kết quả TRÙNG §11 ở: tiến độ thật theo giai đoạn
+(`dwg_read_data` → `convertEx`, đếm giây thật) · lỗi chữ ký rõ ("thấy "?0Uz??" thay vì "AC10xx"")
+· file cắt cụt còn header → vào êm "0 đối tượng" (cùng phát hiện, cùng đánh giá gây-hiểu-lầm).
+Số liệu MỚI trả lời đúng câu hỏi bỏ ngỏ cuối §11:
+
+1. **Huỷ KHÔNG "luôn treo" — file 9.7MB (`01_BeachClub_TangHam.dwg`) bấm Huỷ ở giây ~2.5 (đang
+   `convertEx`) → huỷ MƯỢT tức thì**: pill biến mất ngay, status "Không đọc được …: Đã huỷ nhập
+   … theo yêu cầu.", UI không khựng giây nào (ảnh trong transcript phiên P5). Ghép với §11 (huỷ
+   21MB → treo ≥2') ⇒ ranh giới nằm giữa 10–21MB, khớp giả thuyết chi phí dọn WASM heap tỉ lệ
+   theo cỡ file.
+2. 🔴 **KHÔNG huỷ cũng treo — pha SAU worker**: nhập trọn vẹn (không bấm gì) 21MB → main thread
+   kẹt 100% CPU ≥9 phút không ra kết quả; 9.7MB → ≥5 phút; **cả 1.2MB (`MAT BANG TONG TRET VP294
+   MO RONG.dwg`) cũng kẹt >2.5 phút** — trong khi §11 nhập 224KB ra "315 đối tượng" ngon lành.
+   Timeout cứng 60s KHÔNG cứu được các ca này: hang nằm SAU khi worker trả kết quả (timeout đã
+   clear; timer chết cùng main thread) — nghi `importDoc`/dwg-map/`syncHostedOpenings`/render đầu
+   tiên với số entity thật của bản vẽ studio. ⚠️ CAVEAT thật thà: máy lúc đo đang gánh 3 dev
+   server + 1 renderer ma 100% CPU của tab bị đóng — con số phút KHÔNG sạch, nhưng "1.2MB kẹt
+   >2.5 phút" thì tải máy không giải thích nổi một mình. CẦN 1 phiên máy rảnh profile đúng pha
+   sau-worker (Performance trace lúc nhập 1-10MB) trước khi kết luận thủ phạm — chưa ghi bug cho
+   hàm cụ thể nào, không đoán mò.
+3. Ca "thành công trọn vẹn file cỡ trung" vì thế CHƯA chụp được ở phiên P5 (mọi file ≥1.2MB đều
+   kẹt ở pha sau-worker trên máy đang tải) — §11 đã có ca thành công 224KB làm bằng chứng đường
+   thành công; việc còn thiếu là số đo pha sau-worker trên máy rảnh, KHÔNG phải verify lại nút.
+
+Dọn sạch sau verify: worktree `p5-verify` đã xoá (không force, đã checkout lại file mượn +
+gỡ `.env`/symlink trước), server 3006 + HTTP server tạm 8765 đã tắt, entry launch.json tạm đã gỡ.
+CÒN 1 dòng `Flow` test `cmseovw360001w9hryuiqcyam` ("Untitled flow", 0 FlowVersion) trong
+`prisma/dev.db` — lệnh DELETE bị sandbox chặn, Hoà xoá tay khi tiện:
+`sqlite3 prisma/dev.db "DELETE FROM Flow WHERE id='cmseovw360001w9hryuiqcyam';"`
