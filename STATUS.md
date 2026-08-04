@@ -5,6 +5,40 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## ✅ XONG (04/08 — P3 KHO VẬT LIỆU VIỆC 3+4: màn quản lý + nhập Excel/CSV, `0120987`)
+`docs/PHIEU-CODE-IF-KHO-VAT-LIEU-V1.md` — VIỆC 1 (4 cột schema) đã xong từ trước (`9710611`).
+**VIỆC 3**: `components/materials/*` (MaterialsScreen/Table/FormModal) — thêm/sửa/xoá/tìm/lọc/
+gắn ảnh, dùng ĐÚNG API sẵn có `GET/POST /api/specs` + `PATCH/DELETE /api/specs/:id` (không route
+mới). Mở từ Settings → Nâng cao → "Mở kho vật liệu" (`app/materials/page.tsx`, N6: grep xác nhận
+`PixelSettingsShell.tsx` → router.push('/materials') → MaterialsScreen → MaterialTable/FormModal/
+ImportWizard, chuỗi đủ).
+**VIỆC 4**: `MaterialImportWizard.tsx` + `lib/materials/warehouse/*` — đọc xlsx/csv (thêm dep
+`xlsx`), nhận diện định dạng qua `lib/gateway/detect.ts` CÓ SẴN (KHÔNG viết cửa nhận diện thứ
+hai, đúng chỉ đạo phiếu) → ghép cột tay (đoán qua từ khoá VI/EN + nhớ theo chữ ký tiêu đề,
+`column-mapping.ts`) → xem trước 20 dòng báo lỗi rõ dòng nào hỏng → ghép ảnh thư mục theo SKU
+trùng tên file. **Bug thật bắt được lúc viết test**: SheetJS đọc CSV không tự nhận UTF-8 → mọi
+ký tự có dấu tiếng Việt mojibake ("Mã" → "MÃ£") — sửa bằng tự giải mã UTF-8 trước khi đưa
+`XLSX.read`; nhánh xlsx (ZIP+XML) không bị lỗi này, XML tự khai UTF-8 sẵn.
+`lib/server/specs.ts`: vá `specToDto/specNormalize/specPatch` thêm `unit/priceVnd/scope/ownerId/
+supplierId/verified` (cột VIỆC 1 đã khai DB, chưa ai đọc/ghi qua API) — `ownerId` LUÔN ép theo
+session user (client không tự khai), `scope` ép cứng `'studio'` (tầng `global` chưa có luật
+duyệt, đúng luật §9 phiếu). Đặt `lib/materials/warehouse/` làm subfolder RIÊNG trong
+`lib/materials/` — không trộn file phẳng với `lib/materials/schema.ts` (đó là matId PBR thị
+giác, đây là ProductSpec thương mại, đúng luật 2.1.9.i "cố ý không trộn").
+53 test mới pass (`column-mapping`/`apply-import`/`image-match`/`xlsx-parse`), `npx tsc --noEmit
+-p .` sạch phần của mình, `npm test` 0 fail mới (chỉ còn 1 fail cũ đã biết, `cad-to-obj.test.ts`,
+không liên quan). Verify browser thật (127.0.0.1:3000): thêm tay 1 vật liệu → hiện đúng bảng ·
+sửa giá vật liệu có sẵn → đúng chặn 403 "chỉ admin" (hành vi cũ, không phải bug) · nhập CSV 3
+dòng (dấu tiếng Việt) → tự map đúng 8/8 cột, 2 dòng hợp lệ vào kho, 1 dòng thiếu "Tên" báo lỗi
+rõ, không chặn 2 dòng còn lại. Đã xoá sạch dữ liệu test khỏi `dev.db` (query xác nhận 0 dòng còn
+lại) sau khi verify.
+🔴 **Hai phiên chung `.git` — lần này va ngay lúc code, không phải sau khi commit**: `tsc` phát
+hiện `components/cad/CadToolbar.tsx` đổi lỗi TS giữa 2 lần chạy liên tiếp (khác bug set mỗi lần)
+— phiên khác đang sửa DWG (`lib/cad/dwg-map.ts`/`dwg-worker.ts`/`dwg.ts` + `dwg.test.ts` mới,
+đúng mục "2.1.6.d bug Nhập DWG" trong STATUS.md "Chờ USER quyết") SONG SONG lúc tôi verify. Đã
+lọc chắc chắn lỗi tsc CHỈ nằm ở file đó (0 lỗi còn lại khi loại `CadToolbar.tsx` khỏi output) —
+không đụng, không commit file của họ, commit của tôi giới hạn đúng pathspec 8 mục việc mình.
+
 ## ✅ XONG (04/08 — P7 ĐỔI TÊN 3 chặng: 2D Kỹ thuật/3D Thiết kế/Trình bày → Thiết kế 2D/Thiết kế 3D/Trình chiếu)
 Hoà chốt: IF1/IF2 nay gộp chung nên ngữ nghĩa nhãn cần RỘNG hơn. Đổi CHỈ NHÃN hiển thị — khoá kỹ
 thuật `concept/render/present`·`sketch/pro/revit`·`node/3d` GIỮ NGUYÊN TUYỆT ĐỐI (verify: không
