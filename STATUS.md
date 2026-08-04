@@ -5,6 +5,27 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## 🟡 ĐANG CHẠY (04/08 — PHIẾU ĐỢT 8 multi-sheet BƯỚC 3, D1 XONG — chưa commit, dừng chờ Hoà duyệt trước D2/D3)
+`components/cad/CadSheets.tsx` + `components/cad/CadCanvas.tsx` — bỏ hẳn "hoán store" khi đổi tab
+(mỗi sheet ôm 1 Doc riêng, K1 vi phạm) → `useCadStore` giờ giữ ĐÚNG 1 `doc`/`past`/`future` xuyên
+suốt phiên; `sheets` chỉ còn metadata `Sheet`/`Viewport2D` (model.ts, Bước 1+2 cũ). Đổi tab = bay
+camera tới `centerMm` viewport (sự kiện `cad:goto-box` mới, không đụng Doc). Verify browser thật
+(dự án test tạo riêng, không đụng "Dự án mẫu"): vẽ tường ở tab 1 → sang tab 2 thấy ngay (tiêm qua
+`window.__cadStore.addEntities()`, KHÔNG `setState({doc})` ghi đè) · Undo ở tab 1 xoá đúng thao tác
+cuối dù thao tác đó làm lúc đang ở tab 2 → 1 dòng lịch sử chung, đúng AutoCAD.
+**Quyết định tự chọn (chưa hỏi lại, xem lý do đủ trong code comment đầu `CadSheets.tsx`):** ĐỊNH
+DẠNG LƯU (.idf/IndexedDB/.ifpack/backup) CHƯA đổi cấu trúc ở D1 — lý do: `lib/cad/cad3d-autosave-
+core.ts` (autosave riêng mode 3D, vừa xong `d57067a`) đọc/ghi CHUNG bucket IndexedDB và có logic
+"chỉ cập nhật đúng 1 sheet đang hoạt động, giữ nguyên sheet khác" — nếu D1 ghi N sheet cùng trỏ 1
+Doc, logic đó dễ làm chúng lệch nhau rồi hồi sinh bản cũ khi gộp lại (rủi ro nhân đôi hình học).
+An toàn hơn: LUÔN lưu/xuất ĐÚNG 1 sheet (tab đang mở, mang trọn Doc chung); nhiều tab UI trong 1
+phiên CHƯA persist qua reload (session-only, việc D3). Mở `.idf`/cache CŨ có N sheet khác Doc (từ
+trước luật này) → tự gộp về 1 Doc bằng `mergeIdfSheetsToDoc()` đã có + đã test, không rơi rớt entity.
+`npx tsc --noEmit -p .` sạch · `sheet-migrate.test.ts` 22/22 · `cad3d-autosave-core.test.ts` 13/13
+(test này verify ĐÚNG cái invariant D1 không được phá — pass nghĩa là mode 3D không bị ảnh hưởng).
+**CHƯA LÀM**: D2 (gỡ trần `MAX_SHEETS=5` cả CadSheets + PresentSheets) · D3 (bump `IDF_VERSION` +
+tách N sheet thật theo công thức offset Q1 khi mở file cũ, thay vì gộp về 1 như D1 đang làm tạm).
+
 ## ✅ XONG (04/08 — cửa/cửa sổ HOSTED, `d57067a`, chi tiết đủ trong message commit + `SO-KIEM-TONG.md` §7b)
 - Nối dây `docs/SO-KIEM-TONG.md` §7 dòng "Cửa/cửa sổ HOSTED" (2D ⬜→✅, 3D 🟡→✅ khối cơ bản): `Block
   Entity.hostId` suy tự động qua `lib/cad/hosting.ts` `syncHostedOpenings()` (chạy sau mọi mutation

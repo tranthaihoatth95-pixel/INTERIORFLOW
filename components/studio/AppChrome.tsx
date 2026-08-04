@@ -46,6 +46,9 @@ import ShortcutsPanel from '@/components/ShortcutsPanel';
 import { AppLogoMenu } from '@/components/studio/AppLogoMenu';
 import { HomeButton } from '@/components/studio/HomeButton';
 import { LeaveConfirmBar } from '@/components/studio/LeaveConfirmBar';
+import { LockScreen } from '@/components/studio/LockScreen';
+import { useLockScreen, lockScreenNow, getLockIdleMinutes } from '@/lib/lockscreen';
+import { getLastUserId } from '@/lib/resume';
 import { useDismissable } from '@/lib/useDismissable';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import { activeToPhase, pickStage } from '@/lib/studio/stage-nav';
@@ -113,6 +116,13 @@ export function AppChrome({ active, logoMenu }: Props) {
   // không có state cục bộ của AppChrome), cùng pattern cad:*-request đã dùng khắp app.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // VIỆC 3 UI (04/08) — ⌃⌘Q khoá màn NGAY, kể cả đang gõ dở (đúng hành vi macOS thật, phím
+      // này không bao giờ gõ ra ký tự nên an toàn đặt TRƯỚC input-guard bên dưới).
+      if (e.ctrlKey && e.metaKey && e.key.toLowerCase() === 'q') {
+        e.preventDefault();
+        lockScreenNow();
+        return;
+      }
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
       if (((e.metaKey || e.ctrlKey) && e.key === '/') || e.key === '?') {
@@ -157,6 +167,53 @@ export function AppChrome({ active, logoMenu }: Props) {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('shortcuts:open', onOpenEvent);
     };
+  }, []);
+
+  /**
+   * VIỆC 3 UI (04/08) — tự khoá màn sau N phút không thao tác (mặc định
+   * `DEFAULT_LOCK_IDLE_MINUTES`, chỉnh ở Cài đặt → `getLockIdleMinutes`/`setLockIdleMinutes`,
+   * lib/lockscreen.ts). Đặt lại hẹn giờ ở MỌI hoạt động thật (chuột/phím/chạm/cuộn) — đọc số
+   * phút LẠI TỪ ĐẦU mỗi lần đặt hẹn giờ (không cache), để đổi trong Cài đặt có hiệu lực ngay ở
+   * lần hoạt động kế tiếp, không cần tải lại trang.
+   */
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const reset = () => {
+      if (timer) clearTimeout(timer);
+      if (useLockScreen.getState().locked) return;
+      const userId = useFlowStore.getState().user?.id ?? getLastUserId() ?? '';
+      const minutes = getLockIdleMinutes(userId);
+      timer = setTimeout(() => lockScreenNow(), minutes * 60_000);
+    };
+    const events: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'pointerdown', 'wheel', 'touchstart'];
+    events.forEach((ev) => window.addEventListener(ev, reset, { passive: true }));
+    reset();
+    return () => {
+      if (timer) clearTimeout(timer);
+      events.forEach((ev) => window.removeEventListener(ev, reset));
+    };
+  }, []);
+
+  /**
+   * VIỆC 3 UI (04/08) — "khoá rồi thì mọi phím tắt khác phải tắt, trừ phím mở khoá". Chặn ở
+   * CAPTURE PHASE trên `window` — theo thứ tự lan truyền DOM thật, listener capture trên
+   * `window` LUÔN chạy TRƯỚC mọi listener khác trong app (kể cả các listener capture trên
+   * `document` mà AppShell.tsx (B/I) và use-library-sheet.ts (L) đang dùng, và mọi listener
+   * bubble trên `window`/`document`) — `stopImmediatePropagation()` ở đây chặn TRỌN VẸN, không
+   * cần sửa từng file rải rác (đúng ràng buộc "đăng ký một chỗ" của VIỆC 2, áp dụng lại ở đây).
+   * Chừa lối cho chính LockScreen (ô mật khẩu bên trong `[data-lockscreen-root]`) — không thì
+   * người dùng không gõ được mật khẩu để mở khoá.
+   */
+  useEffect(() => {
+    const blocker = (e: KeyboardEvent) => {
+      if (!useLockScreen.getState().locked) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[data-lockscreen-root]')) return;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', blocker, true);
+    return () => window.removeEventListener('keydown', blocker, true);
   }, []);
 
   // Điều hướng chặng — logic dùng chung với MobileMenu's PhaseRow, xem lib/studio/stage-nav.ts.

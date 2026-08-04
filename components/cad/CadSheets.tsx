@@ -3,28 +3,47 @@
 /**
  * components/cad/CadSheets.tsx — Tầng MULTI-SHEET (phụ-thêm) cho chặng CAD.
  *
- * `useCadStore` là singleton toàn cục → không thể mount nhiều CadEditor cô lập. Giải pháp:
- * giữ ĐÚNG 1 CadEditor mounted, mỗi lần đổi tab thì HOÁN nội dung store (doc + undo + viewport
- * + layer + selection). Snapshot mỗi sheet giữ trong ref (không gây re-render).
+ * NC-13 BƯỚC 3 (docs/PHIEU-CODE-IF-DOT8-MULTISHEET-2026-08-03.md, D1) — ĐÃ BỎ hoán store: trước
+ * đây mỗi sheet ôm nguyên 1 `Doc` + undo history riêng, đổi tab thì HOÁN nguyên state vào
+ * `useCadStore` (ngược luật K1 — đẻ N nguồn). Từ nay: `useCadStore` giữ ĐÚNG 1 `doc`/`past`/
+ * `future`/`currentLayer`/`selection` xuyên suốt phiên làm việc — KHÔNG BAO GIỜ bị hoán khi đổi
+ * tab. `sheets` ở component này chỉ còn là METADATA (`Sheet`/`Viewport2D`, `lib/cad/model.ts`):
+ * tên, khổ giấy, khung tên, và Ô NHÌN (`centerMm`+tỉ lệ in) — không giữ bản sao hình học nào.
+ * Đổi tab = đổi khung nhìn (pan/zoom camera tới `centerMm` của viewport, xem `goToSheetView()` +
+ * sự kiện `cad:goto-box` ở `CadCanvas.tsx`), KHÔNG đụng `Doc`. Hệ quả đúng ý (và đã verify): sửa
+ * hình ở tab này, sang tab khác thấy đổi theo ngay — vì giờ chỉ có MỘT Doc. Undo/redo cũng thành
+ * MỘT dòng lịch sử chung (đúng AutoCAD — undo không theo tab/layout).
  *
- * PERSISTENCE (J-3 Sprint 2 — quyết định #6 "nhớ chính xác từng sheet"):
- * cả bộ sheet (doc + tên + viewport + layer hiện hành, TRẦN 5) serialize vào IndexedDB
- * theo khoá `userId::/cad-editor` (lib/sheets-persist). Reload → khôi phục đúng bộ sheet
- * + sheet đang mở (ưu tiên resume.sheetId của lib/resume nếu còn tồn tại). Autosave
- * debounce ≥1s nghe cả store CAD lẫn thao tác tab; KHÔNG lưu undo-history/selection
- * (reload = lịch sử mới, giống mở file). Không có userId (chưa đăng nhập) → thuần in-memory y bản cũ.
+ * PHẠM VI D1 (CHƯA làm — đợi D3, xem phiếu): định dạng LƯU (.idf trên đĩa, bản ghi IndexedDB,
+ * .ifpack, backup) CHƯA đổi cấu trúc — mỗi bản ghi vẫn là mảng `{id,name,doc}` (giữ nguyên để
+ * KHÔNG đụng `lib/cad/cad3d-autosave-core.ts`, autosave riêng của mode 3D đọc/ghi CHUNG bucket
+ * IndexedDB này và có logic "chỉ cập nhật đúng 1 sheet đang hoạt động, giữ nguyên các sheet khác"
+ * — nếu bản ghi có N sheet cùng trỏ 1 Doc, logic đó dễ làm chúng LỆCH NHAU rồi hồi sinh bản cũ khi
+ * gộp lại). Giải pháp AN TOÀN cho D1: LUÔN ghi/xuất ĐÚNG 1 sheet (tab đang mở, mang trọn `Doc`
+ * chung) — nhiều tab UI trong 1 phiên là dữ liệu PHIÊN LÀM VIỆC (session-only), CHƯA persist tab
+ * thứ 2 trở đi qua reload. Mở file/.idf/.ifpack CŨ có N sheet mỗi sheet 1 Doc khác nhau (từ trước
+ * luật này) → GỘP về 1 Doc chung bằng bộ chuyển đã có + đã test (`lib/cad/sheet-migrate.ts` Bước
+ * 2, `mergeIdfSheetsToDoc()`), bảo toàn mọi entity, không rơi rớt — chỉ còn 1 tab sau khi gộp (tách
+ * lại thành N tab đúng Q1 là việc D3). Bump `IDF_VERSION` + đường nạp/backup file cũ có báo UI
+ * cũng là D3 — D1 KHÔNG đụng `lib/cad/idf.ts`.
  *
- * 1 sheet ⇒ hành vi y hệt bản cũ (export PNG/DXF, "Đưa sang Render" đều đọc active doc).
- * Kéo-gộp single-window = pha 2 (docs/MULTI-SHEET-PROPOSAL.md §6).
+ * PERSISTENCE (J-3 Sprint 2 — quyết định #6 "nhớ chính xác từng sheet", đã thu hẹp theo D1 ở
+ * trên): bộ sheet (đúng 1 tab, doc + tên + viewport + layer hiện hành) serialize vào IndexedDB
+ * theo khoá `userId::/cad-editor` (lib/sheets-persist). Reload → khôi phục Doc + layer hiện hành.
+ * Autosave debounce ≥1s nghe cả store CAD lẫn thao tác tab. Không có userId (chưa đăng nhập) →
+ * thuần in-memory y bản cũ.
+ *
+ * 1 sheet ⇒ hành vi y hệt bản cũ (export PNG/DXF, "Đưa sang Render" đều đọc active doc — nay LUÔN
+ * đúng vì chỉ có 1 doc). Kéo-gộp single-window = pha 2 (docs/MULTI-SHEET-PROPOSAL.md §6).
  */
 
 import { useEffect, useRef, useState } from 'react';
 import CadEditor from './CadEditor';
 import BackupRecoveryModal from './BackupRecoveryModal';
 import SheetTabBar, { type SheetTab } from '@/components/studio/SheetTabBar';
-import { useCadStore } from '@/lib/cad/store';
-import type { Doc, Viewport } from '@/lib/cad/model';
-import { emptyDoc } from '@/lib/cad/model';
+import { useCadStore, newId } from '@/lib/cad/store';
+import type { Doc, Viewport, Sheet, PaperKey, PaperOrientation } from '@/lib/cad/model';
+import { emptyDoc, docBox, paperSizeMm, defaultPaperOrientation } from '@/lib/cad/model';
 import { getLastUserId, loadResume, saveResume } from '@/lib/resume';
 import {
   createSheetsAutosaver,
@@ -34,6 +53,7 @@ import {
   type SheetsRecord,
 } from '@/lib/sheets-persist';
 import { exportIdf, importIdf, lastImportIdfError, type IdfSheetData } from '@/lib/cad/idf';
+import { mergeIdfSheetsToDoc } from '@/lib/cad/sheet-migrate';
 import { rootFolderChosen, getProjectFolderHandle, writeTextFile, readTextFile } from '@/lib/root-folder';
 import { resolveSourceOfTruth, createDiskWriter, watchProjectPresence, type DiskWriter } from '@/lib/disk-sync';
 import { useProjectPresence } from '@/lib/project-presence-ui';
@@ -55,17 +75,9 @@ const MAX_SHEETS = 5;
 const ROUTE = '/cad-editor' as const;
 const DEFAULT_VIEWPORT: Viewport = { scale: 0.08, panX: 300, panY: 400 };
 
-/** Lát cắt store mà mỗi sheet CAD sở hữu riêng (serialize được). */
-interface CadSnapshot {
-  doc: Doc;
-  past: Doc[];
-  future: Doc[];
-  viewport: Viewport;
-  currentLayer: string;
-  selection: string[];
-}
-
-/** Hình hài 1 sheet trong IndexedDB — doc + tên + viewport (KHÔNG undo/selection). */
+/** Hình hài 1 sheet trong IndexedDB — doc + tên + viewport (KHÔNG undo/selection). Giữ NGUYÊN
+ * hình dạng cũ (id/name/doc/viewport/currentLayer) — `lib/cad/cad3d-autosave-core.ts` khai lại
+ * đúng shape này riêng (private, không import từ đây) và giả định nó không đổi. */
 interface PersistedCadSheet {
   id: string;
   name: string;
@@ -73,58 +85,6 @@ interface PersistedCadSheet {
   viewport: Viewport;
   currentLayer: string;
   [k: string]: unknown;
-}
-
-function captureStore(): CadSnapshot {
-  const s = useCadStore.getState();
-  return {
-    doc: s.doc,
-    past: s.past,
-    future: s.future,
-    viewport: s.viewport,
-    currentLayer: s.currentLayer,
-    selection: s.selection,
-  };
-}
-
-function blankSnapshot(): CadSnapshot {
-  const doc = emptyDoc();
-  return {
-    doc,
-    past: [],
-    future: [],
-    viewport: { ...DEFAULT_VIEWPORT },
-    currentLayer: doc.layers[0]?.id ?? 'l-wall',
-    selection: [],
-  };
-}
-
-/** Snapshot dựng lại từ bản ghi IDB — undo-history + selection bắt đầu mới.
- * backfillRoomTypes(): choke point DUY NHẤT của đường autosave-restore — gán 1 LẦN roomType cho
- * nhãn phòng cũ chưa có field này (xem checker.ts). Idempotent, no-op nếu đã backfill trước đó. */
-function snapshotFromPersisted(p: PersistedCadSheet): CadSnapshot {
-  return {
-    // VIỆC "cửa/cửa sổ hosted" (SO-KIEM-TONG §7) — cùng khuôn `backfillRoomTypes`: sheet cũ lưu
-    // TRƯỚC khi có `hostId` (hoặc cutter bị lệch vì tường/cửa đã đổi ở phiên trước khi sync chưa
-    // chạy) tự suy/dựng lại đúng ngay lần mở đầu tiên, không cần migrate dữ liệu riêng.
-    doc: syncHostedOpenings(backfillRoomTypes(p.doc)),
-    past: [],
-    future: [],
-    viewport: p.viewport,
-    currentLayer: p.currentLayer ?? p.doc.layers?.[0]?.id ?? 'l-wall',
-    selection: [],
-  };
-}
-
-function applySnapshot(t: CadSnapshot) {
-  useCadStore.setState({
-    doc: t.doc,
-    past: t.past,
-    future: t.future,
-    viewport: t.viewport,
-    currentLayer: t.currentLayer,
-    selection: t.selection,
-  });
 }
 
 /**
@@ -245,14 +205,107 @@ async function resolveAndSyncCadDisk(
 let seq = 1;
 const nextId = () => `cadsheet-${seq++}`;
 
+/** Ô nhìn mặc định của 1 Sheet mới — khổ A3, tỉ lệ in 1:100, tâm đặt ở giữa bbox Doc hiện có
+ * (Doc rỗng → gốc toạ độ). Chỉ ảnh hưởng "đổi tab thì camera bay tới đâu" (`goToSheetView`), KHÔNG
+ * liên quan gì tới hình học lưu trong Doc. */
+function defaultSheet(name: string, doc: Doc, id?: string): Sheet {
+  const paper: PaperKey = 'A3';
+  const orientation: PaperOrientation = defaultPaperOrientation(paper);
+  const [paperW, paperH] = paperSizeMm(paper, orientation);
+  const box = docBox(doc);
+  return {
+    id: id ?? nextId(),
+    name,
+    number: '',
+    paper,
+    orientation,
+    titleBlock: { project: '', drawnBy: '', date: '', revision: '' },
+    viewports: [
+      {
+        id: newId('vp'),
+        rectOnPaper: { x: 15, y: 15, w: paperW - 30, h: paperH - 30 },
+        centerMm: box ? { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 } : { x: 0, y: 0 },
+        scale: 100,
+        locked: false,
+      },
+    ],
+  };
+}
+
+/** ÁP 1 Doc mới làm nguồn sự thật DUY NHẤT của store — undo-history bắt đầu mới (đúng ý "mở
+ * file/đổi dự án = phiên làm việc mới", giống bản cũ). ĐƯỜNG DUY NHẤT được phép gán `doc` từ bên
+ * ngoài thao tác vẽ — mọi nơi cần nạp Doc (mount, import .idf, phục hồi ifpack/backup, đổi dự án)
+ * đều gọi qua đây, không tự `setState({doc:...})` rải rác (Luật Đồng Bộ #6). */
+function resetStoreWithDoc(doc: Doc, opts?: { viewport?: Viewport; currentLayer?: string }) {
+  useCadStore.setState({
+    doc,
+    past: [],
+    future: [],
+    viewport: opts?.viewport ?? { ...DEFAULT_VIEWPORT },
+    currentLayer: opts?.currentLayer ?? doc.layers[0]?.id ?? 'l-wall',
+    selection: [],
+  });
+}
+
+/**
+ * Gộp danh sách sheet kiểu CŨ (`IdfSheetData[]`, mỗi phần tử 1 Doc riêng — từ .idf/.ifpack/backup/
+ * cache trước luật MỘT Doc) thành ĐÚNG 1 Doc chung + Sheet[] metadata. 0-1 phần tử: không cần gộp,
+ * giữ nguyên id/tên cũ (resume/id tra cứu vẫn khớp). ≥2 phần tử: gộp bằng bộ chuyển đã test
+ * (`sheet-migrate.ts` Bước 2) — bảo toàn MỌI entity, không rơi rớt; kết quả CHỈ 1 Sheet (tách lại
+ * N tab đúng thuật toán Q1 của phiếu là việc D3, chưa làm ở đây).
+ */
+function docAndSheetsFromIdf(idfSheets: IdfSheetData[]): { doc: Doc; sheets: Sheet[] } {
+  if (idfSheets.length === 0) {
+    const doc = emptyDoc();
+    return { doc, sheets: [defaultSheet('Bản vẽ 1', doc)] };
+  }
+  if (idfSheets.length === 1) {
+    const doc = syncHostedOpenings(backfillRoomTypes(idfSheets[0].doc));
+    return { doc, sheets: [defaultSheet(idfSheets[0].name, doc, idfSheets[0].id)] };
+  }
+  const cleaned = idfSheets.map((s) => ({ ...s, doc: backfillRoomTypes(s.doc) }));
+  const merged = mergeIdfSheetsToDoc(cleaned);
+  return { doc: syncHostedOpenings(merged.doc), sheets: [merged.sheet] };
+}
+
+/** Bản ghi 1-sheet để xuất/ghi đĩa (.idf/.ifpack/backup) — LUÔN đúng 1 phần tử mang trọn Doc
+ * chung hiện tại (xem docstring đầu file — an toàn cho `cad3d-autosave-core.ts` + không tự nhân
+ * đôi nội dung nếu lỡ re-import). */
+function singleIdfSheet(id: string, name: string): IdfSheetData[] {
+  return [{ id, name, doc: useCadStore.getState().doc }];
+}
+
+/** Đổi tab = đổi KHUNG NHÌN — bay camera 2D tới vùng world mà Viewport2D của sheet đang soi vào
+ * (tâm `centerMm`, bề rộng/cao = khổ giấy × tỉ lệ in), KHÔNG đụng Doc/undo. `CadCanvas.tsx` nghe
+ * sự kiện `cad:goto-box` (cùng khuôn `cad:zoom-extents`/`cad:zoom-to` đã có). */
+function goToSheetView(sheet: Sheet | undefined) {
+  if (typeof window === 'undefined') return;
+  const vp = sheet?.viewports[0];
+  if (!sheet || !vp) {
+    window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+    return;
+  }
+  const [paperW, paperH] = paperSizeMm(sheet.paper, sheet.orientation);
+  const worldW = paperW * vp.scale;
+  const worldH = paperH * vp.scale;
+  window.dispatchEvent(
+    new CustomEvent('cad:goto-box', {
+      detail: {
+        minX: vp.centerMm.x - worldW / 2,
+        minY: vp.centerMm.y - worldH / 2,
+        maxX: vp.centerMm.x + worldW / 2,
+        maxY: vp.centerMm.y + worldH / 2,
+      },
+    }),
+  );
+}
+
 export default function CadSheets() {
   const router = useRouter();
   // Sheet 1 = trạng thái store hiện có (giữ nguyên bản demo/blank đang mở).
-  const [sheets, setSheets] = useState<SheetTab[]>([{ id: 'cadsheet-0', name: 'Bản vẽ 1' }]);
+  const [sheets, setSheets] = useState<Sheet[]>(() => [defaultSheet('Bản vẽ 1', emptyDoc(), 'cadsheet-0')]);
   const [activeId, setActiveId] = useState('cadsheet-0');
   const [backupBrowserOpen, setBackupBrowserOpen] = useState(false);
-  // Snapshot nội dung từng sheet (ref → không render thừa). Sheet đang mở = store thật.
-  const snaps = useRef<Record<string, CadSnapshot>>({});
 
   // ---- Persistence (J-3): refs gương cho autosaver đọc mà không re-subscribe ----
   const userIdRef = useRef<string | null>(null);
@@ -280,46 +333,32 @@ export default function CadSheets() {
   /**
    * B4 (4.1.d) — ÁP dữ liệu `.idf` đã parse vào state sống — ĐÚNG 1 đường dùng chung cho cả
    * nhập thủ công (`onImportIdf`) LẪN nạp tự động khi đĩa thắng lúc mount (Luật Đồng Bộ #6:
-   * không viết đường thứ hai). CAD dùng Zustand (`applySnapshot` → `setState`) nên KHÔNG dính
-   * lớp lỗi remount/id-trùng của B2 (đó là đặc thù kiến trúc key-remount riêng của Present) —
-   * nhưng vẫn giữ NGUYÊN TẮC "1 đường áp dụng duy nhất" để không phải verify lại 2 lần.
+   * không viết đường thứ hai). Gộp N sheet cũ thành 1 Doc chung (`docAndSheetsFromIdf`) rồi ÁP
+   * NGUYÊN — zoom-extents để thấy hết (không goToSheetView: mở file muốn thấy TOÀN BỘ, không
+   * phải đúng khung 1 viewport mặc định).
    */
-  const applyIdfSheets = (parsedSheets: IdfSheetData[]): { keptCount: number; droppedCount: number } => {
-    const kept = parsedSheets.slice(0, MAX_SHEETS);
-    snaps.current = {};
-    for (const s of kept) {
-      const doc = syncHostedOpenings(backfillRoomTypes(s.doc));
-      snaps.current[s.id] = {
-        doc,
-        past: [],
-        future: [],
-        viewport: { ...DEFAULT_VIEWPORT },
-        currentLayer: doc.layers[0]?.id ?? 'l-wall',
-        selection: [],
-      };
-    }
-    seq = Math.max(seq, nextSeqFrom(kept.map((s) => s.id), 'cadsheet'));
-    const nextSheets = kept.map(({ id, name }) => ({ id, name }));
-    setSheets(nextSheets);
-    const firstId = nextSheets[0].id;
-    setActiveId(firstId);
-    applySnapshot(snaps.current[firstId]);
+  const applyIdfSheets = (parsedSheets: IdfSheetData[]): { mergedFromCount: number } => {
+    const { doc, sheets: newSheets } = docAndSheetsFromIdf(parsedSheets);
+    seq = Math.max(seq, nextSeqFrom(newSheets.map((s) => s.id), 'cadsheet'));
+    setSheets(newSheets);
+    setActiveId(newSheets[0].id);
+    resetStoreWithDoc(doc);
     if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
-    return { keptCount: kept.length, droppedCount: parsedSheets.length - kept.length };
+    return { mergedFromCount: parsedSheets.length };
   };
 
-  /** KHÔI PHỤC 1 lần lúc mount: IDB → bộ sheet + sheet active (ưu tiên resume.sheetId). */
+  /** KHÔI PHỤC 1 lần lúc mount: IDB → Doc chung + sheet active (ưu tiên resume.sheetId nếu còn). */
   useEffect(() => {
     const userId = getLastUserId();
     userIdRef.current = userId;
     // ĐỔI DỰ ÁN giữa phiên (client-nav /projects/A/cad → /projects/B/cad, component KHÔNG
-    // remount): dọn tab + snapshot + canvas trước, để bản vẽ dự án cũ không nằm lại dưới URL
+    // remount): dọn tab + doc + canvas trước, để bản vẽ dự án cũ không nằm lại dưới URL
     // dự án mới. Lần mount đầu KHÔNG dọn — giữ nguyên bản demo/blank store đang mở.
     if (prevBucketRef.current !== null && prevBucketRef.current !== bucketId) {
-      snaps.current = {};
-      setSheets([{ id: 'cadsheet-0', name: 'Bản vẽ 1' }]);
+      const blank = emptyDoc();
+      setSheets([defaultSheet('Bản vẽ 1', blank, 'cadsheet-0')]);
       setActiveId('cadsheet-0');
-      applySnapshot(blankSnapshot());
+      resetStoreWithDoc(blank);
     }
     prevBucketRef.current = bucketId;
     if (!userId) {
@@ -330,7 +369,7 @@ export default function CadSheets() {
     let cancelled = false;
     void loadSheets<PersistedCadSheet>(userId, ROUTE, bucketId).then(async (rec) => {
       if (cancelled) return;
-      const valid = rec?.sheets.filter((s) => s.doc && s.viewport).slice(0, MAX_SHEETS) ?? [];
+      const valid = rec?.sheets.filter((s) => s.doc && s.viewport) ?? [];
 
       // B4 (4.1.d) — quyết định NGUỒN NÀO thắng TRƯỚC khi áp bất kỳ state nào, tránh 1 khung
       // hình hiện cache rồi ngay sau đó bị đĩa ghi đè (nhấp nháy). `cacheTs=0` khi CHƯA có bản
@@ -352,17 +391,27 @@ export default function CadSheets() {
         applyIdfSheets(diskSheets);
         saverRef.current?.touch(); // đồng bộ ngược lại IndexedDB — cache luôn ấm cho lần mở kế
       } else if (rec && valid.length > 0) {
-        for (const s of valid) snaps.current[s.id] = snapshotFromPersisted(s);
-        seq = Math.max(seq, nextSeqFrom(valid.map((s) => s.id), 'cadsheet'));
-        // sheet active: resume trỏ tận sheet nếu id còn sống, kế đến activeId đã lưu.
+        const { doc, sheets: newSheets } = docAndSheetsFromIdf(cacheSheets);
+        seq = Math.max(seq, nextSeqFrom(newSheets.map((s) => s.id), 'cadsheet'));
+        // sheet active: resume trỏ tận sheet nếu id còn sống, kế đến activeId đã lưu. Sau khi gộp
+        // (>1 sheet cũ) không id nào khớp nữa → rơi đúng vào newSheets[0] (chỉ còn 1 sheet).
         const resumeSheet = loadResume(userId)?.sheetId;
         const wantId =
-          (resumeSheet && valid.some((s) => s.id === resumeSheet) && resumeSheet) ||
-          (valid.some((s) => s.id === rec.activeId) && rec.activeId) ||
-          valid[0].id;
-        setSheets(valid.map(({ id, name }) => ({ id, name })));
+          (resumeSheet && newSheets.some((s) => s.id === resumeSheet) && resumeSheet) ||
+          (newSheets.some((s) => s.id === rec.activeId) && rec.activeId) ||
+          newSheets[0].id;
+        const activeOriginal = valid.find((s) => s.id === wantId) ?? valid[0];
+        setSheets(newSheets);
         setActiveId(wantId);
-        applySnapshot(snaps.current[wantId]);
+        resetStoreWithDoc(doc, { currentLayer: activeOriginal.currentLayer });
+        if (cacheSheets.length > 1) {
+          // Cache CŨ (trước luật MỘT Doc) có nhiều sheet khác Doc — vừa gộp về 1, ghi lại NGAY để
+          // lần sau không phải gộp lại nữa (saverRef có thể chưa sẵn sàng ở đúng dòng này — effect
+          // autosave bên dưới còn chưa mount lần đầu; best-effort, autosave bình thường sẽ chốt
+          // lại ở lần sửa/đổi tab kế tiếp nếu dòng này không kịp).
+          saverRef.current?.touch();
+          diskWriterRef.current?.touch();
+        }
         window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
       }
       setHydratedFor(bucketId);
@@ -378,29 +427,30 @@ export default function CadSheets() {
     const userId = userIdRef.current;
     if (!hydrated || !userId) return;
     const getRecord = (): SheetsRecord | null => {
-      snaps.current[activeIdRef.current] = captureStore(); // sheet đang mở = store thật
+      const active = sheetsRef.current.find((sh) => sh.id === activeIdRef.current) ?? sheetsRef.current[0];
+      if (!active) return null;
+      const s = useCadStore.getState();
+      // D1 (xem docstring đầu file) — LUÔN ghi ĐÚNG 1 sheet mang trọn Doc chung. Metadata các tab
+      // khác (nếu có, trong phiên) chưa persist qua reload — việc đó thuộc D3.
       return {
         v: 1,
-        activeId: activeIdRef.current,
+        activeId: active.id,
         ts: Date.now(),
-        sheets: sheetsRef.current.slice(0, MAX_SHEETS).map((s) => {
-          const snap = snaps.current[s.id] ?? blankSnapshot();
-          return { id: s.id, name: s.name, doc: snap.doc, viewport: snap.viewport, currentLayer: snap.currentLayer };
-        }),
+        sheets: [{ id: active.id, name: active.name, doc: s.doc, viewport: s.viewport, currentLayer: s.currentLayer }],
       };
     };
     // B1 (30/07, docs/CAT-PHAM-VI-3-NGAY-2026-07-30.md §1) — backup .ifpack ra thư mục thứ 2
     // trên máy (khác nơi IDB lưu), giữ 5 bản gần nhất. Chạy mỗi 10 phút + mỗi lần autosave IDB
     // thật sự ghi xong (`onSaved` bên dưới) — app này không có nút "Lưu tay" riêng, autosave
     // debounce là tín hiệu "vừa lưu" duy nhất. Chưa bật (chưa chọn thư mục) → tự bỏ qua, im lặng.
-    const backup = startAutoBackup(() => ({
-      sheets: sheetsRef.current.slice(0, MAX_SHEETS).map((s) => {
-        const snap = snaps.current[s.id] ?? blankSnapshot();
-        return { id: s.id, name: s.name, doc: snap.doc };
-      }),
-      projectId: bucketId || userId,
-      projectName: useFlowStore.getState().flowName || 'InteriorFlow project',
-    }));
+    const backup = startAutoBackup(() => {
+      const active = sheetsRef.current.find((sh) => sh.id === activeIdRef.current) ?? sheetsRef.current[0];
+      return {
+        sheets: active ? singleIdfSheet(active.id, active.name) : [],
+        projectId: bucketId || userId,
+        projectName: useFlowStore.getState().flowName || 'InteriorFlow project',
+      };
+    });
     backupSessionRef.current = backup;
 
     const saver = createSheetsAutosaver(userId, ROUTE, getRecord, {
@@ -423,11 +473,8 @@ export default function CadSheets() {
       async () => {
         if (!bucketId || !(await rootFolderChosen())) return { ok: true, reason: 'off' };
         const projectName = useFlowStore.getState().flowName || 'InteriorFlow project';
-        snaps.current[activeIdRef.current] = captureStore();
-        const idfSheets: IdfSheetData[] = sheetsRef.current.slice(0, MAX_SHEETS).map((s) => {
-          const snap = snaps.current[s.id] ?? blankSnapshot();
-          return { id: s.id, name: s.name, doc: snap.doc };
-        });
+        const active = sheetsRef.current.find((sh) => sh.id === activeIdRef.current) ?? sheetsRef.current[0];
+        const idfSheets: IdfSheetData[] = active ? singleIdfSheet(active.id, active.name) : [];
         const wrote = await writeIdfToDisk(bucketId, projectName, idfSheets, { create: true });
         return wrote ? { ok: true } : { ok: false, reason: 'write-failed' };
       },
@@ -503,46 +550,31 @@ export default function CadSheets() {
     saveResume(userId, { route: ROUTE, sheetId: activeId });
   }, [activeId, hydrated]);
 
+  /** Đổi tab = đổi KHUNG NHÌN — KHÔNG đụng Doc/undo (xem docstring đầu file + `goToSheetView`). */
   const switchTo = (id: string) => {
     if (id === activeId) return;
-    snaps.current[activeId] = captureStore();
-    const target = snaps.current[id] ?? blankSnapshot();
-    applySnapshot(target);
     setActiveId(id);
-    // Canh khung cho vừa bản vẽ mới (CadCanvas nghe sự kiện này).
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
-    }
+    goToSheetView(sheets.find((s) => s.id === id));
   };
 
   const addSheet = () => {
     if (sheets.length >= MAX_SHEETS) return;
-    snaps.current[activeId] = captureStore();
-    const id = nextId();
-    const snap = blankSnapshot();
-    snaps.current[id] = snap;
-    setSheets((prev) => [...prev, { id, name: `Bản vẽ ${prev.length + 1}` }]);
-    applySnapshot(snap);
-    setActiveId(id);
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
-    }
+    const doc = useCadStore.getState().doc;
+    const sheet = defaultSheet(`Bản vẽ ${sheets.length + 1}`, doc);
+    setSheets((prev) => [...prev, sheet]);
+    setActiveId(sheet.id);
+    goToSheetView(sheet);
   };
 
   const closeSheet = (id: string) => {
     if (sheets.length <= 1) return;
     const idx = sheets.findIndex((s) => s.id === id);
     const rest = sheets.filter((s) => s.id !== id);
-    delete snaps.current[id];
     setSheets(rest);
     if (id === activeId) {
       const neighbor = rest[Math.max(0, idx - 1)];
-      const target = snaps.current[neighbor.id] ?? blankSnapshot();
-      applySnapshot(target);
       setActiveId(neighbor.id);
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
-      }
+      goToSheetView(neighbor);
     }
   };
 
@@ -564,11 +596,8 @@ export default function CadSheets() {
    */
   useEffect(() => {
     const onExportIdf = () => {
-      snaps.current[activeIdRef.current] = captureStore(); // đồng bộ sheet đang mở trước khi gom
-      const idfSheets = sheetsRef.current.map((s) => {
-        const snap = snaps.current[s.id] ?? blankSnapshot();
-        return { id: s.id, name: s.name, doc: snap.doc };
-      });
+      const active = sheetsRef.current.find((s) => s.id === activeIdRef.current) ?? sheetsRef.current[0];
+      const idfSheets = singleIdfSheet(active?.id ?? 'cadsheet-0', active?.name ?? 'Bản vẽ 1');
       const json = exportIdf(idfSheets);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -579,19 +608,17 @@ export default function CadSheets() {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
-      useCadStore.getState().setStatus(`Đã xuất project.idf — ${idfSheets.length} bản vẽ.`);
+      useCadStore.getState().setStatus('Đã xuất project.idf.');
     };
 
     /**
      * 2.1.8.k (30/07) — bộ hồ sơ PDF nhiều tờ: CÙNG lý do bắc cầu như .idf ở trên (CadEditor
-     * không giữ sheets[]). Đồng bộ sheet đang mở TRƯỚC khi gom, y hệt onExportIdf.
+     * không giữ sheets[]). PDF là sản phẩm CUỐI (không re-import) nên xuất theo ĐÚNG số tab UI
+     * hiện có — mỗi trang cùng đọc chung 1 Doc (D3 mới cắt riêng theo từng Viewport2D).
      */
     const onExportSheetSetPdf = () => {
-      snaps.current[activeIdRef.current] = captureStore();
-      const idfSheets = sheetsRef.current.map((s) => {
-        const snap = snaps.current[s.id] ?? blankSnapshot();
-        return { id: s.id, name: s.name, doc: snap.doc };
-      });
+      const doc = useCadStore.getState().doc;
+      const idfSheets: IdfSheetData[] = sheetsRef.current.map((s) => ({ id: s.id, name: s.name, doc }));
       useCadStore.getState().setStatus('Đang dựng bộ hồ sơ PDF…');
       void exportSheetSetPdf(idfSheets, 'drawing-set.pdf', { title: useFlowStore.getState().flowName || 'InteriorFlow — Drafting CAD' })
         .then(() => {
@@ -615,13 +642,15 @@ export default function CadSheets() {
       }
       // B4 (4.1.d) — dùng ĐÚNG 1 đường áp dụng sheet đã parse, chung với nạp tự động khi đĩa
       // thắng lúc mount (xem docstring applyIdfSheets — Luật Đồng Bộ #6).
-      const { keptCount, droppedCount } = applyIdfSheets(parsed.sheets);
+      const { mergedFromCount } = applyIdfSheets(parsed.sheets);
       saverRef.current?.touch(); // ghi ngay vào IDB, không đợi debounce thao tác kế tiếp
       diskWriterRef.current?.touch(); // B4 — cũng đánh dấu đĩa cần ghi lại (nhịp riêng, không ngay lập tức)
       useCadStore
         .getState()
         .setStatus(
-          `Đã mở "${detail.fileName}" — ${keptCount} bản vẽ${droppedCount > 0 ? ` (bỏ ${droppedCount} sheet vượt trần ${MAX_SHEETS})` : ''}.`,
+          mergedFromCount > 1
+            ? `Đã mở "${detail.fileName}" — gộp ${mergedFromCount} bản vẽ cũ thành 1 (tách lại nhiều tờ là việc đợt sau).`
+            : `Đã mở "${detail.fileName}".`,
         );
     };
 
@@ -634,11 +663,8 @@ export default function CadSheets() {
      * "đang import" đặc biệt nào ở CadEditor).
      */
     const onExportIfpack = () => {
-      snaps.current[activeIdRef.current] = captureStore();
-      const idfSheets = sheetsRef.current.map((s) => {
-        const snap = snaps.current[s.id] ?? blankSnapshot();
-        return { id: s.id, name: s.name, doc: snap.doc };
-      });
+      const active = sheetsRef.current.find((s) => s.id === activeIdRef.current) ?? sheetsRef.current[0];
+      const idfSheets = singleIdfSheet(active?.id ?? 'cadsheet-0', active?.name ?? 'Bản vẽ 1');
       const projectId = bucketIdRef.current || userIdRef.current || 'local';
       const projectName = useFlowStore.getState().flowName || 'InteriorFlow project';
       void buildIfpack(idfSheets, { id: projectId, name: projectName })
@@ -651,7 +677,7 @@ export default function CadSheets() {
           a.click();
           a.remove();
           setTimeout(() => URL.revokeObjectURL(url), 2000);
-          useCadStore.getState().setStatus(`Đã xuất project.ifpack — ${idfSheets.length} bản vẽ + ảnh markup.`);
+          useCadStore.getState().setStatus('Đã xuất project.ifpack.');
         })
         .catch(() => {
           useCadStore.getState().setStatus('Xuất .ifpack thất bại — thử lại.');
@@ -679,21 +705,22 @@ export default function CadSheets() {
           useCadStore.getState().setStatus('Không tạo được dự án mới để phục hồi — thử lại.');
           return;
         }
-        const kept = restored.sheets.slice(0, MAX_SHEETS);
+        // Bản .ifpack có thể từ TRƯỚC luật MỘT Doc (N sheet, mỗi sheet 1 Doc) — gộp về 1 Doc chung
+        // trước khi ghi vào dự án mới, KHÔNG rơi rớt entity nào (docAndSheetsFromIdf, xem đầu file).
+        const { doc, sheets: newSheets } = docAndSheetsFromIdf(restored.sheets);
         const record: SheetsRecord<PersistedCadSheet> = {
           v: 1,
-          activeId: kept[0]?.id ?? 'cadsheet-0',
+          activeId: newSheets[0].id,
           ts: Date.now(),
-          sheets: kept.map((s) => {
-            const doc = backfillRoomTypes(s.doc);
-            return {
-              id: s.id,
-              name: s.name,
+          sheets: [
+            {
+              id: newSheets[0].id,
+              name: newSheets[0].name,
               doc,
               viewport: { ...DEFAULT_VIEWPORT },
               currentLayer: doc.layers[0]?.id ?? 'l-wall',
-            };
-          }),
+            },
+          ],
         };
         await saveSheets(userId, ROUTE, record, created.id);
         const warn = restored.integrityWarnings.length ? ` (⚠ ${restored.integrityWarnings.length} cảnh báo toàn vẹn)` : '';
@@ -728,21 +755,20 @@ export default function CadSheets() {
           useCadStore.getState().setStatus('Không tạo được dự án mới để phục hồi — thử lại.');
           return;
         }
-        const kept = detail.sheets.slice(0, MAX_SHEETS);
+        const { doc, sheets: newSheets } = docAndSheetsFromIdf(detail.sheets);
         const record: SheetsRecord<PersistedCadSheet> = {
           v: 1,
-          activeId: kept[0]?.id ?? 'cadsheet-0',
+          activeId: newSheets[0].id,
           ts: Date.now(),
-          sheets: kept.map((s) => {
-            const doc = backfillRoomTypes(s.doc);
-            return {
-              id: s.id,
-              name: s.name,
+          sheets: [
+            {
+              id: newSheets[0].id,
+              name: newSheets[0].name,
               doc,
               viewport: { ...DEFAULT_VIEWPORT },
               currentLayer: doc.layers[0]?.id ?? 'l-wall',
-            };
-          }),
+            },
+          ],
         };
         await saveSheets(userId, ROUTE, record, created.id);
         const warn = detail.degraded ? ` (⚠ không ráp trọn tới đúng điểm bạn chọn — dừng ở mốc "${detail.recoveredAsOf ?? '?'}" gần nhất ráp được)` : '';
@@ -794,7 +820,7 @@ export default function CadSheets() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <SheetTabBar
-        sheets={sheets}
+        sheets={sheets.map(({ id, name }): SheetTab => ({ id, name }))}
         activeId={activeId}
         max={MAX_SHEETS}
         onSelect={switchTo}
