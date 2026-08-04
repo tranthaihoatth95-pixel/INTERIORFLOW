@@ -77,7 +77,8 @@ interface ManualAnchorPayload {
 export const metrologyNodes: NodeDefinition[] = [
   {
     type: 'vision.measureobject',
-    title: 'Đo món đồ · Measure Object',
+    title: 'Ghi kích thước',
+    titleEn: 'Dimension Annotation',
     category: 'UTILITY',
     description:
       'Chọn loại đồ → tách món (nếu được) → suy Rộng×Sâu×Cao thật (mm), có sai số + phân nhóm 🟢 ĐO/🟡 SUY. ' +

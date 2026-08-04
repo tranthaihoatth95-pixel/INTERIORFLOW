@@ -204,7 +204,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   // ============ INPUT ============
   {
     type: 'input.image',
-    title: 'Nhập ảnh · Import Image',
+    title: 'Nhập ảnh',
+    titleEn: 'Import Image',
     category: 'INPUT',
     description: 'Upload ảnh hiện trạng, sketch hoặc CAD export (PNG/JPG)',
     inputs: [],
@@ -219,7 +220,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'input.prompt',
-    title: 'Nhập prompt · Text Prompt',
+    title: 'Nhập prompt',
+    titleEn: 'Text Prompt',
     category: 'INPUT',
     description: 'Prompt mô tả không gian, vật liệu, ánh sáng',
     inputs: [],
@@ -242,7 +244,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'input.stylepreset',
-    title: 'Chọn phong cách · Style Preset',
+    title: 'Chọn phong cách',
+    titleEn: 'Style Preset',
     category: 'INPUT',
     description: 'Chọn phong cách → tự sinh prompt template nội thất',
     inputs: [],
@@ -263,7 +266,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'input.roominfo',
-    title: 'Thông tin phòng · Room Info',
+    title: 'Thông tin phòng',
+    titleEn: 'Room Info',
     category: 'INPUT',
     description: 'Loại phòng, diện tích, hướng sáng, trần cao → context prompt',
     inputs: [],
@@ -287,7 +291,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   // ============ AI GENERATE ============
   {
     type: 'ai.sketch2render',
-    title: 'Sketch → Ảnh thật · Sketch to Render',
+    title: 'Sketch → Ảnh thật',
+    titleEn: 'Sketch to Render',
     category: 'AI_GENERATE',
     description: 'Line drawing / SketchUp export → render photoreal, giữ đúng hình khối (FLUX Canny)',
     inputs: [
@@ -326,7 +331,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'ai.clay2render',
-    title: 'Khối trắng → Ảnh thật · Clay to Render',
+    title: 'Khối trắng → Ảnh thật',
+    titleEn: 'Clay to Render',
     category: 'AI_GENERATE',
     description: 'Clay/khối trắng (3ds Max) → render thực, khoá hình học bằng ControlNet Depth. Ổn định nhất cho archviz.',
     inputs: [
@@ -366,7 +372,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'ai.emptystaging',
-    title: 'Phòng trống → Bày đồ · Empty Room Staging',
+    title: 'Phòng trống → Bày đồ',
+    titleEn: 'Empty Room Staging',
     category: 'AI_GENERATE',
     description: 'Ảnh phòng trống → phòng có nội thất theo style (virtual staging)',
     inputs: [
@@ -395,7 +402,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'ai.styletransfer',
-    title: 'Đổi phong cách · Style Transfer',
+    title: 'Đổi phong cách',
+    titleEn: 'Style Transfer',
     category: 'AI_GENERATE',
     description: 'Render lại cùng góc phòng theo style khác (FLUX img2img, strength 0.55–0.7)',
     inputs: [
@@ -423,7 +431,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'ai.moodboard',
-    title: 'Tạo moodboard · Create Moodboard',
+    title: 'Tạo moodboard',
+    titleEn: 'Create Moodboard',
     category: 'AI_GENERATE',
     description: 'Text → 4 ảnh concept (FLUX schnell, nhanh + rẻ)',
     inputs: [{ id: 'prompt', label: 'Prompt', dataType: 'text' }],
@@ -447,7 +456,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'ai.exterior',
-    title: 'Render mặt tiền · Exterior Render',
+    title: 'Render mặt tiền',
+    titleEn: 'Exterior Render',
     category: 'AI_GENERATE',
     description: 'Sketch/massing mặt tiền → render exterior photoreal (FLUX Canny)',
     inputs: [
@@ -485,7 +495,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'ai.image2video',
-    title: 'Ảnh → Video · Image to Video',
+    title: 'Ảnh → Video',
+    titleEn: 'Image to Video',
     category: 'AI_GENERATE',
     description: 'Ảnh render → clip walkthrough nội thất (Kling image-to-video). Cần FAL_KEY + số dư.',
     inputs: [
@@ -529,7 +540,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'ai.text2video',
-    title: 'Chữ → Video · Text to Video',
+    title: 'Chữ → Video',
+    titleEn: 'Text to Video',
     category: 'AI_GENERATE',
     description: 'Prompt → clip concept nội thất (Kling text-to-video). Cần FAL_KEY + số dư.',
     inputs: [{ id: 'prompt', label: 'Prompt', dataType: 'text' }],
@@ -560,7 +572,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   // ============ AI EDIT ============
   {
     type: 'ai.materialswap',
-    title: 'Đổi vật liệu · Material Swap',
+    title: 'Đổi vật liệu',
+    titleEn: 'Material Swap',
     category: 'AI_EDIT',
     description: 'Mask vùng (sàn/tường/tủ) + prompt vật liệu mới → inpaint (FLUX Fill)',
     inputs: [
@@ -594,7 +607,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'ai.furniture',
-    title: 'Sửa đồ nội thất · Furniture Edit',
+    title: 'Sửa đồ nội thất',
+    titleEn: 'Furniture Edit',
     category: 'AI_EDIT',
     description: 'Inpaint xoá đồ hoặc thêm đồ vào vùng mask (FLUX Fill)',
     inputs: [
@@ -628,7 +642,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'ai.relight',
-    title: 'Đổi ánh sáng · Relight',
+    title: 'Đổi ánh sáng',
+    titleEn: 'Relight',
     category: 'AI_EDIT',
     description: 'Đổi ánh sáng: daylight / sunset / đèn vàng ấm ban đêm (IC-Light v2)',
     inputs: [{ id: 'image', label: 'Image', dataType: 'image' }],
@@ -662,7 +677,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'ai.upscale',
-    title: 'Phóng to ảnh · Upscale',
+    title: 'Phóng to ảnh',
+    titleEn: 'Upscale',
     category: 'AI_EDIT',
     description: 'ESRGAN upscale — xuất in ấn, đủ 300dpi để in khổ lớn', // 30/07: bỏ gắn cứng A3, xem task-cards.ts
     inputs: [{ id: 'image', label: 'Image', dataType: 'image' }],
@@ -693,7 +709,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'ai.removebg',
-    title: 'Cắt nền · Remove BG',
+    title: 'Cắt nền',
+    titleEn: 'Remove BG',
     category: 'AI_EDIT',
     description: 'Tách sản phẩm / đồ nội thất khỏi nền (BiRefNet v2)',
     inputs: [{ id: 'image', label: 'Image', dataType: 'image' }],
@@ -711,7 +728,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   // ============ SLIDE DECK ============
   {
     type: 'slide.concept',
-    title: 'Nội dung concept · Concept Content',
+    title: 'Nội dung concept',
+    titleEn: 'Concept Content',
     category: 'SLIDE',
     description: 'Nội dung concept: kicker + tiêu đề + các ý chính → nguồn cho Slide Composer',
     inputs: [],
@@ -741,7 +759,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'slide.composer',
-    title: 'Dựng slide · Slide Composer',
+    title: 'Dựng slide',
+    titleEn: 'Slide Composer',
     category: 'SLIDE',
     description: 'Nội dung + ảnh ref (màu/brand) + ảnh hero → 1 slide 16:9 hoàn chỉnh (local, 0 credit)',
     inputs: [
@@ -781,7 +800,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'slide.deck',
-    title: 'Xuất deck · Export Deck',
+    title: 'Xuất deck',
+    titleEn: 'Export Deck',
     category: 'SLIDE',
     description: 'Gom tối đa 6 slide → tải PDF thuyết trình 16:9',
     inputs: [
@@ -811,7 +831,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   // ============ UTILITY ============
   {
     type: 'util.maskpainter',
-    title: 'Vẽ mask · Mask Painter',
+    title: 'Vẽ mask',
+    titleEn: 'Mask Painter',
     category: 'UTILITY',
     description: 'Vẽ mask trực tiếp trên ảnh (brush trong modal) — chạy local, 0 credit',
     inputs: [{ id: 'image', label: 'Image', dataType: 'image' }],
@@ -827,7 +848,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'util.edit',
-    title: 'Chỉnh ảnh tay · Manual Edit',
+    title: 'Chỉnh ảnh tay',
+    titleEn: 'Manual Edit',
     category: 'UTILITY',
     description: 'Tự chỉnh sáng/tương phản/bão hoà/nhiệt màu — tức thì, không chờ AI, 0 credit',
     inputs: [{ id: 'image', label: 'Image', dataType: 'image' }],
@@ -854,7 +876,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'util.palette',
-    title: 'Bảng màu · Color Palette',
+    title: 'Bảng màu',
+    titleEn: 'Color Palette',
     category: 'UTILITY',
     description: 'Trích 6 màu chủ đạo + mã HEX — chạy local, 0 credit',
     inputs: [{ id: 'image', label: 'Image', dataType: 'image' }],
@@ -871,7 +894,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'util.compare',
-    title: 'So sánh ảnh · Compare Images',
+    title: 'So sánh ảnh',
+    titleEn: 'Compare Images',
     category: 'UTILITY',
     description: 'Slider so sánh trước / sau ngay trên node',
     inputs: [
@@ -888,7 +912,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'util.annotate',
-    title: 'Ghi chú lên ảnh · Annotate',
+    title: 'Ghi chú lên ảnh',
+    titleEn: 'Annotate',
     category: 'UTILITY',
     description: 'Vẽ / ghi chú lên ảnh (feedback khách) — modal, 0 credit',
     inputs: [{ id: 'image', label: 'Image', dataType: 'image' }],
@@ -905,7 +930,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   // ============ OUTPUT ============
   {
     type: 'out.moodboard',
-    title: 'Ghép moodboard · Moodboard Collage',
+    title: 'Ghép moodboard',
+    titleEn: 'Moodboard Collage',
     category: 'OUTPUT',
     description: 'Gom nhiều ảnh reference → 1 trang moodboard editorial (lưới + palette đá ấm). Không AI, dựng ngay trong app.',
     inputs: [
@@ -950,7 +976,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'out.board',
-    title: 'Xuất board · Export Board',
+    title: 'Xuất board',
+    titleEn: 'Export Board',
     category: 'OUTPUT',
     description: 'Ghép tối đa 4 output thành presentation board — tải PNG / PDF',
     inputs: [
@@ -983,7 +1010,8 @@ const CORE_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     type: 'out.gallery',
-    title: 'Lưu vào Gallery · Save to Gallery',
+    title: 'Lưu vào Gallery',
+    titleEn: 'Save to Gallery',
     category: 'OUTPUT',
     description: 'Lưu output vào Gallery (local) — bản DB/project sẽ vào ở Phase 3',
     inputs: [{ id: 'image', label: 'Image', dataType: 'image' }],

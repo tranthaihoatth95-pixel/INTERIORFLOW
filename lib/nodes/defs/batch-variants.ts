@@ -70,7 +70,8 @@ async function renderVariant(
 export const batchVariantNodes: NodeDefinition[] = [
   {
     type: 'ai.batchvariants',
-    title: 'Sinh nhiều phương án · Batch Variants',
+    title: 'Sinh nhiều phương án',
+    titleEn: 'Batch Variants',
     category: 'AI_GENERATE',
     description: 'Render 2–4 biến thể phong cách song song từ cùng 1 ảnh/prompt — duyệt nhanh trước khi chốt hướng.',
     inputs: [

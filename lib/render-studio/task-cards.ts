@@ -93,7 +93,9 @@ export const TASK_CARDS: TaskCard[] = [
   },
   {
     id: 'localedit',
-    label: 'Chỉnh cục bộ',
+    // 05/08 — nhãn theo thuật ngữ ngành AI ảnh (xem lib/nodes/defs/render-v2.ts).
+    // `id`/`nodeType` GIỮ NGUYÊN (đổi = vỡ flow đã lưu + `taskCardById`).
+    label: 'Sửa vùng',
     desc: 'Vẽ vùng cần sửa rồi chỉnh sáng/tương phản/bão hoà tại chỗ — cần vẽ tay trên canvas',
     nodeType: 'ai.localedit',
     formKind: 'canvas-handoff',
@@ -111,7 +113,9 @@ export const TASK_CARDS: TaskCard[] = [
     // 2.2.88 (30/07) — docs/TU-VAN-ANH-SANG-BAN-VE-2026-07-30.md §4 "Lát cắt 1". Node
     // `vision.measureobject` (2.2.87, lib/nodes/defs/metrology.ts) — 0 credit, tất định.
     id: 'measureobject',
-    label: 'Đo món đồ',
+    // 05/08 — "Metrology/đo món đồ" là đo lường công nghiệp, sai ngành; việc thật là ghi kích
+    // thước lên ảnh. `id`/`nodeType` GIỮ NGUYÊN.
+    label: 'Ghi kích thước',
     desc: 'Khoanh 1 món trong ảnh → rộng × sâu × cao kèm sai số — cần ảnh thấy rõ cạnh tường/sàn',
     nodeType: 'vision.measureobject',
   },

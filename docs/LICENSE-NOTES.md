@@ -125,6 +125,41 @@ trước khi:
 2. [ ] Trang "Third-party licenses" có đủ GPL-3 text + notices (nếu còn conveying).
 3. [ ] Quyết định dứt điểm về bản Electron (loại package / plugin user tự cài / tuân thủ đầy đủ).
 4. [ ] Quét transitive license sạch + có gate trong CI.
+5. [ ] **MỚI (§9)**: chốt 1 trong 3 hướng Pantone TCX trước khi hiển thị mã Pantone cho khách hàng
+   thật — hiện tại chỉ dùng nội bộ/dev là an toàn, RỦI RO nằm ở lúc bật tính năng cho user cuối.
+
+## 9. Bảng Pantone TCX (`lib/gu/pantone-tcx.json`, F3b — 05/08) — nguồn CHƯA rõ giấy phép
+
+**Việc**: `lib/gu/pantone.ts` `nearestPantone(hex)` tra mã Pantone TCX gần nhất theo ΔE*76 (LAB),
+dùng cho cột "Pantone" ở màn Moodboard (F3a). Dữ liệu ở `lib/gu/pantone-tcx.json` — **2310 mã**
+(mã · tên · hex), biên soạn lại từ repo GitHub cộng đồng `Margaret2/pantone-colors` (`pantone-
+numbers.json`, truy cập 05/08/2026).
+
+⚠️ **KHÔNG PHẢI dữ liệu có giấy phép rõ ràng**:
+- Repo nguồn **không có file LICENSE** (`GET /repos/.../license` trả `null` qua GitHub API) — theo
+  mặc định GitHub ToS mục D.5, không có license nghĩa là "xem được/fork được trên GitHub" nhưng
+  **KHÔNG tự động có quyền dùng lại trong dự án khác**.
+- README của chính repo nguồn tự ghi: *"Color names are copyright Pantone; the hex numbers are
+  freely available on their website."* — tức tác giả repo cũng thừa nhận TÊN màu là tài sản Pantone,
+  chỉ HEX được xem là "công khai để tham chiếu" (không phải tuyên bố cấp phép chính thức).
+- Bảng TCX (Textile Color eXtended, hệ Fashion+Home) là hệ màu THƯƠNG MẠI của Pantone LLC — mã số +
+  tên gọi hệ thống có thể vướng nhãn hiệu/bản quyền tuỳ mức độ dùng (đặc biệt khi SẢN PHẨM BÁN RA
+  hiển thị nguyên "Pantone 13-0752" như tính năng chính, không chỉ tham chiếu nội bộ).
+
+**Trạng thái hiện tại**: dùng làm dữ liệu PHÁT TRIỂN/thử nghiệm (giống cách GPL DWG bị cô lập ở
+Worker — xem §1-§4), KHÔNG phải quyết định "được phép ship". `nearestPantone()`/kiến trúc code đã
+đúng và tái dùng được ngay khi có nguồn dữ liệu hợp lệ (chỉ cần thay `pantone-tcx.json`, không đổi
+API hàm) — tách data khỏi logic đúng mục đích này.
+
+**3 hướng trước khi phát hành thương mại có tính năng Pantone** (chưa chọn, cần luật sư/Hoà quyết,
+giống cách §8 xử lý GPL):
+(a) Mua giấy phép chính thức (Pantone Connect API/SDK, hoặc Color Manager) — chuẩn nhất, có API
+    trả `code`/`name` hợp pháp, thay `pantone-tcx.json` bằng lời gọi API đó.
+(b) Xin phép bằng văn bản tác giả `Margaret2/pantone-colors` + tự ý thức đây vẫn KHÔNG giải quyết
+    được gốc rễ (tác giả đó cũng không sở hữu quyền với tên Pantone).
+(c) Đổi hướng SẢN PHẨM: bỏ nhãn "Pantone", dùng bảng tên màu TỰ ĐẶT (giữ nguyên kiến trúc
+    `nearestPantone`, chỉ đổi `pantone-tcx.json` sang bảng tên trung tính) — an toàn tuyệt đối,
+    tốn công đặt lại ~2000 tên.
 
 ---
 

@@ -280,7 +280,9 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
           luật thoại 2.2.69 "Việt dẫn · Anh theo") */}
       <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2">
         {(() => { const Icon = nodeIconFor(data.defType); return <Icon size={14} className="shrink-0 text-[var(--t2)]" />; })()}
-        <span className="flex-1 truncate text-[11.5px] font-medium tracking-[-.005em] text-[var(--t1)]">
+        {/* nhãn chỉ tiếng Việt (05/08) — tên tiếng Anh của công cụ ở tooltip, giống thẻ trong
+            bảng chọn node (components/NodeLibraryPanel.tsx `NodeCard`). */}
+        <span className="flex-1 truncate text-[11.5px] font-medium tracking-[-.005em] text-[var(--t1)]" title={def.titleEn}>
           {def.title}
         </span>
         {status === 'queued' && (

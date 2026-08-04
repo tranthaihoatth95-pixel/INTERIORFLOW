@@ -14,7 +14,7 @@ import { WarpCornersModal } from '@/components/warp/WarpCornersModal';
 import { nodeMatches } from '@/lib/nodes/search';
 import { modKey } from '@/lib/kbd';
 import type { NodeDefinition } from '@/lib/types';
-import { TAG_ORDER, TAG_META, tagsFor, type NodeTag } from '@/lib/nodes/tags';
+import { GROUP_ORDER, GROUP_META, groupOf, type NodeGroup } from '@/lib/nodes/groups';
 import { PHASE_MAP, DEFAULT_PHASE } from '@/lib/phases';
 import { sheetSlide, staggerList, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -41,7 +41,7 @@ export const MAT_MIME = 'application/interiorflow-material';
  */
 export const MINDMAP_MIME = 'application/interiorflow-mindmap';
 
-const ALL_TAG = 'all' as const;
+const ALL_GROUP = 'all' as const;
 
 interface Props {
   /** Hoà 04/08 (BÁC bản Navigator list-chữ, `docs/SO-KIEM-TONG.md` §0d "giữ cái đang tốt") —
@@ -71,7 +71,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
   const selectCard = useToolModeUi((s) => s.selectCard);
   const tr = useT();
   const [query, setQuery] = useState('');
-  const [activeTag, setActiveTag] = useState<NodeTag | typeof ALL_TAG>(ALL_TAG);
+  const [activeGroup, setActiveGroup] = useState<NodeGroup | typeof ALL_GROUP>(ALL_GROUP);
   const { screenToFlowPosition, setCenter } = useReactFlow();
   // DỌN ĐỊA TẦNG (Hoà 04/08) — nhóm "Trên bảng" đầu panel: node ĐANG có trên canvas, bấm = focus.
   const canvasNodes = useFlowStore((s) => s.nodes);
@@ -159,26 +159,39 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, noAi, query]);
 
-  // Nhóm theo TAG chức năng (không phải category kỹ thuật) — 1 node nhiều tag thì xuất
-  // hiện ở nhiều nhóm, giúp tìm theo "việc muốn làm" thay vì tầng hệ thống.
+  // Nhóm theo BƯỚC QUY TRÌNH archviz (Hoà 05/08, `lib/nodes/groups.ts`): Nguồn → Gu → Máy quay
+  // → Dựng ảnh → Sửa ảnh → Hồ sơ. Thay hệ 7 tag kỹ thuật cũ (input/ai-generate/edit/…) — mỗi
+  // node đứng ĐÚNG 1 nhóm nên không còn cảnh 1 node hiện ở 2-3 chỗ.
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = NODE_DEFINITIONS.filter((d) => matchesQuery(d, q) && !hiddenByTier(d) && !hiddenBySidebarZone(d));
-    // DỌN ĐỊA TẦNG (Hoà chốt 04/08): XOÁ cột "Đầu vào" khỏi layout nghỉ — node đầu vào đang dùng
-    // đã thấy ở nhóm "Trên bảng" đầu panel; thêm mới vẫn được qua TÌM KIẾM (gõ là hiện lại nhóm
-    // input — capability không mất) + ⌘K palette (liệt kê đủ NODE_DEFINITIONS, độc lập file này).
-    const restingTags = TAG_ORDER.filter((t) => t !== 'input');
-    const tagsToShow = activeTag === ALL_TAG ? (q ? TAG_ORDER : restingTags) : [activeTag];
-    return tagsToShow
-      .map((tag) => ({ tag, defs: filtered.filter((d) => tagsFor(d.type).includes(tag)) }))
+    // Cột "Đầu vào" từng bị bỏ ở layout nghỉ (Hoà 04/08 — trùng nhóm "Trên bảng"). Nay ① NGUỒN
+    // KHÔNG phải cột đó: nó là bước quy trình, chứa cả Tạo ảnh từ chữ · Phác tay · Bản vẽ → 3D
+    // (không node nào là "đầu vào thuần"), nên hiện đủ 6 nhóm cả lúc nghỉ lẫn lúc tìm.
+    const groupsToShow = activeGroup === ALL_GROUP ? GROUP_ORDER : [activeGroup];
+    return groupsToShow
+      .map((group) => ({ group, defs: filtered.filter((d) => groupOf(d.type) === group) }))
       .filter((g) => g.defs.length > 0);
+    // `phase` PHẢI có trong deps: `hiddenBySidebarZone` đọc `phase.id` (ẩn node đã có vùng riêng
+    // Mood/Công cụ ở chặng Render). Thiếu nó thì danh sách giữ nguyên kết quả tính lúc mới mount
+    // — bắt được lúc verify 05/08: đổi sang chặng 3D thì khối ★ cập nhật (memo `featured` có
+    // `phase`) mà 6 nhóm bên dưới vẫn lặp lại node Mood/Công cụ của chặng cũ.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, noAi, activeTag]);
+  }, [query, noAi, activeGroup, phase]);
 
   // H2 — vùng ① Mood + Collab (moodboard/reference/gu) — chỉ ai.moodboard + input.guref khớp
   // registry thật, "note" KHÔNG phải NodeDefinition (type React Flow riêng) nên thêm bằng nút
   // riêng (addNote), không qua NodeCard.
-  const moodDefs = useMemo(() => (phase.id === 'render' ? NODE_DEFINITIONS.filter((d) => sidebarZoneOf(d.type) === 'mood') : []), [phase]);
+  // Lọc thêm theo ô tìm kiếm: 2 vùng ghim (Mood, Công cụ) trước đây bị ẨN HẲN khi đang gõ, mà
+  // node của chúng cũng KHÔNG lọt vào 6 nhóm bên dưới (hiddenBySidebarZone) ⇒ ở chặng 3D, gõ
+  // tên 12 node Công cụ / 2 node Mood ra "Không tìm thấy khối nào" dù node có thật (bắt được
+  // lúc verify 05/08: gõ "inpainting" = node Sửa vùng → 0 kết quả). Nay vùng ghim tự thu hẹp
+  // theo truy vấn thay vì biến mất.
+  const moodDefs = useMemo(
+    () => (phase.id === 'render' ? NODE_DEFINITIONS.filter((d) => sidebarZoneOf(d.type) === 'mood' && matchesQuery(d, query.trim().toLowerCase())) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [phase, query],
+  );
   // G2 phần (5) — kệ "Vật liệu" (matId thật, ProductSpec{kind:'material'} qua /api/specs, KHÔNG
   // phải MaterialDef thị giác của CAD). Fetch 1 lần, không poll — vật liệu đổi chậm (cùng lý do
   // bỏ poll nhanh ở PresenceBar phần (4)). Chỉ hiện ở chặng Render, cùng khu Mood + Cộng tác.
@@ -207,8 +220,12 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
   // H2 — vùng ② Node MASTER: đúng thứ tự TASK_CARDS, chỉ node còn tồn tại trong registry (phòng
   // khi task-cards.ts trỏ nhầm type — không throw, tự bỏ qua).
   const masterDefs = useMemo(
-    () => (phase.id === 'render' ? TASK_CARDS.map((c) => NODE_REGISTRY[c.nodeType]).filter((d): d is NodeDefinition => Boolean(d)) : []),
-    [phase],
+    () =>
+      phase.id === 'render'
+        ? TASK_CARDS.map((c) => NODE_REGISTRY[c.nodeType]).filter((d): d is NodeDefinition => Boolean(d) && matchesQuery(d, query.trim().toLowerCase()))
+        : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [phase, query],
   );
   const masterCardIdByNodeType = useMemo(() => new Map(TASK_CARDS.map((c) => [c.nodeType, c.id])), []);
   const onOpenMaster = useCallback(
@@ -242,33 +259,32 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
           onChange={(e) => setQuery(e.target.value)}
         />
 
-        {/* chip lọc theo tag chức năng — 1 chip đang active tại 1 thời điểm, gọn cho panel hẹp */}
+        {/* chip lọc theo bước quy trình — 1 chip đang active tại 1 thời điểm, gọn cho panel hẹp */}
         <div className="flex flex-wrap gap-1">
           <button
-            onClick={() => setActiveTag(ALL_TAG)}
+            onClick={() => setActiveGroup(ALL_GROUP)}
             className={cn(
               'rounded-full border px-2 py-0.5 text-[10px] transition-colors',
-              activeTag === ALL_TAG
+              activeGroup === ALL_GROUP
                 ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
                 : 'border-[var(--border)] text-[var(--t4)] hover:bg-[var(--hover)]',
             )}
           >
-            Tất cả
+            {tr('Tất cả', 'All')}
           </button>
-          {/* Chip "Đầu vào" bỏ cùng cột (DỌN ĐỊA TẦNG 04/08) — xem comment trong `groups`. */}
-          {TAG_ORDER.filter((t) => t !== 'input').map((tag) => (
+          {GROUP_ORDER.map((group) => (
             <button
-              key={tag}
-              onClick={() => setActiveTag(tag)}
+              key={group}
+              onClick={() => setActiveGroup(group)}
               className={cn(
                 'flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] transition-colors',
-                activeTag === tag
+                activeGroup === group
                   ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)]'
                   : 'border-[var(--border)] text-[var(--t4)] hover:bg-[var(--hover)]',
               )}
             >
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: TAG_META[tag].color }} />
-              {TAG_META[tag].label}
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: GROUP_META[group].color }} />
+              {tr(GROUP_META[group].label, GROUP_META[group].labelEn)}
             </button>
           ))}
         </div>
@@ -343,7 +359,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
         {/* H2 (docs/SPEC-MODE-PER-STAGE.md §2) — vùng ① Mood + Collab: moodboard cộng tác kiểu
             Miro (ai.moodboard, reference/gu, note). Chỉ hiện chặng Render, không tìm kiếm (soft
             focus, giống khối ★ bên dưới — ẩn khi đang gõ tìm để đỡ rối). */}
-        {moodDefs.length > 0 && !query.trim() && (
+        {moodDefs.length > 0 && (
           <div>
             <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t3)]">
               <Users size={10} />
@@ -429,7 +445,7 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
 
         {/* H2 §2 — vùng ② Node MASTER: bắt buộc mở tool window để thao tác (ToolWindow, D3) —
             bấm thẻ ở đây KHÔNG thả node AI trần lên canvas như thẻ thường (xem onOpenMaster). */}
-        {masterDefs.length > 0 && !query.trim() && (
+        {masterDefs.length > 0 && (
           <div>
             <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t3)]">
               <Sparkles size={10} />
@@ -459,21 +475,24 @@ export function NodeLibraryPanel({ embedded = false }: Props = {}) {
             <div className="mt-3 border-t border-[var(--border)]" />
           </div>
         )}
-        {groups.map(({ tag, defs }) => (
-          <div key={tag}>
+        {groups.map(({ group, defs }) => (
+          <div key={group}>
             <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--t4)]">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: TAG_META[tag].color }} />
-              {TAG_META[tag].label}
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: GROUP_META[group].color }} />
+              {tr(GROUP_META[group].label, GROUP_META[group].labelEn)}
             </p>
             {/* stagger nhẹ — item hiện lần lượt như list iOS */}
             <motion.div className="space-y-1" variants={staggerList} initial="hidden" animate="visible">
               {defs.map((def) => (
-                <NodeCard key={`${tag}-${def.type}`} def={def} onAdd={onAdd} />
+                <NodeCard key={`${group}-${def.type}`} def={def} onAdd={onAdd} />
               ))}
             </motion.div>
           </div>
         ))}
-        {groups.length === 0 && (
+        {/* "Không tìm thấy" chỉ khi KHÔNG vùng nào có kết quả — vùng ghim Mood/Công cụ nay cũng
+            lọc theo truy vấn nên đếm cả chúng, không thì gõ "inpainting" ra 1 kết quả mà vẫn
+            kèm dòng "Không tìm thấy khối nào." ngay dưới (mâu thuẫn, thấy khi verify 05/08). */}
+        {groups.length === 0 && moodDefs.length === 0 && masterDefs.length === 0 && (
           <p className="px-1 pt-4 text-center text-xs text-[var(--t5)]">{tr('Không tìm thấy khối nào.', 'No blocks found.')}</p>
         )}
         <p className="px-1 pt-2 text-[10px] leading-relaxed text-[var(--t5)]">
@@ -547,6 +566,13 @@ function NodeCard({
    * tại, vốn chỉ hiểu "thả ra = tạo node"). */
   draggableOverride?: boolean;
 }) {
+  const tr = useT();
+  // VIỆC 1 (05/08): nhãn CHỈ tiếng Việt, ngắn — tên tiếng Anh của công cụ ('Batch Variants',
+  // 'Inpainting'…) xuống TOOLTIP, đúng khuôn thanh tool 2D ("Đường (L)"). Giao diện EN đảo lại:
+  // hiện tên EN, tooltip mang tên VI — không mất chữ nào ở bất kỳ ngôn ngữ nào.
+  const label = tr(def.title, def.titleEn ?? def.title);
+  const otherName = tr(def.titleEn ?? '', def.title);
+  const hint = draggableOverride ? 'Bấm để thêm vào giữa canvas · hoặc kéo thả để đặt đúng chỗ' : 'Bấm để mở cửa sổ công cụ';
   return (
     <div
       draggable={draggableOverride}
@@ -568,11 +594,11 @@ function NodeCard({
         }
       }}
       className="group flex cursor-pointer items-start gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 transition-transform hover:border-[var(--accent-ring)] hover:scale-[1.015] active:scale-[0.99]"
-      title={draggableOverride ? 'Bấm để thêm vào giữa canvas · hoặc kéo thả để đặt đúng chỗ' : 'Bấm để mở cửa sổ công cụ'}
+      title={otherName ? `${otherName}\n${hint}` : hint}
     >
       {(() => { const Icon = nodeIconFor(def.type); return <Icon size={14} className="mt-0.5 shrink-0 text-[var(--t3)]" />; })()}
       <div className="min-w-0 flex-1">
-        <p className="text-[11.5px] font-medium tracking-[-.005em] text-[var(--t1)]">{def.title}</p>
+        <p className="text-[11.5px] font-medium tracking-[-.005em] text-[var(--t1)]">{label}</p>
         <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-[var(--t4)]">{def.description}</p>
       </div>
       <div className="ml-auto flex shrink-0 flex-col items-end gap-1">

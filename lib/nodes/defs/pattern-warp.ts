@@ -122,7 +122,8 @@ export const patternWarpNodes: NodeDefinition[] = [
   // ══════════════ 1) SMART SELECT ══════════════
   {
     type: 'ai.smartselect',
-    title: 'Chọn vùng thông minh · Smart Select',
+    title: 'Chọn vùng thông minh',
+    titleEn: 'Smart Select',
     category: 'AI_EDIT',
     description:
       'Bấm vào vật thể (hoặc kéo 1 khung) → chọn đúng biên bằng SAM 2, brush tinh chỉnh mép. Ra mask nối thẳng vào Material Swap / Furniture.',
@@ -163,7 +164,8 @@ export const patternWarpNodes: NodeDefinition[] = [
   // ══════════════ 2) PATTERN STUDIO ══════════════
   {
     type: 'ai.pattern',
-    title: 'Hoa văn · Pattern Studio',
+    title: 'Hoạ tiết',
+    titleEn: 'Pattern',
     category: 'AI_GENERATE',
     description:
       'Hoa văn cho vách · giấy dán tường · thảm · gạch · rèm. Nối ẢNH MẪU vào input Reference để giữ đúng motif (Chăm/Khmer/Đông Sơn…) — chỉ tả bằng chữ thì AI hay chệch sang mandala/damask.',
@@ -213,11 +215,11 @@ export const patternWarpNodes: NodeDefinition[] = [
 
       // Mức 1 (Không AI): node AI khoá — báo rõ, không mock lén (khớp registry.ts).
       if (!providerForTier(ctx.aiTier, ctx.oneAiEngine)) {
-        throw new Error('Đang ở mức "Không AI" — Pattern Studio cần model sinh ảnh. Đổi mức AI ở header.');
+        throw new Error('Đang ở mức "Không AI" — Hoạ tiết cần model sinh ảnh. Đổi mức AI ở header.');
       }
       if (!(await providerReady(ctx))) {
         throw new Error(
-          'Chưa nối được provider AI (thiếu FAL_KEY / ComfyUI chưa chạy). Pattern Studio không mock vì hoa văn giả không dùng được cho hồ sơ.',
+          'Chưa nối được provider AI (thiếu FAL_KEY / ComfyUI chưa chạy). Hoạ tiết không mock vì hoa văn giả không dùng được cho hồ sơ.',
         );
       }
 
@@ -283,7 +285,8 @@ export const patternWarpNodes: NodeDefinition[] = [
   // ══════════════ 3) PERSPECTIVE WARP ══════════════
   {
     type: 'util.warp',
-    title: 'Nắn phối cảnh · Perspective Warp',
+    title: 'Nắn phối cảnh',
+    titleEn: 'Perspective Warp',
     category: 'UTILITY',
     description:
       'Kéo 4 góc để dán pattern/ảnh lên mặt vách NGHIÊNG trong ảnh phối cảnh. Vùng ngoài trong suốt → nối vào Ghép ảnh (Composite). Tức thì, 0 credit.',

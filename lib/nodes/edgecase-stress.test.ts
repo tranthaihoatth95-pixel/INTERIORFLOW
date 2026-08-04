@@ -20,11 +20,15 @@
  * thật của thuật toán (cycle-safe DFS, "first edge wins" khi nhiều input trùng), không
  * phải hành vi mong muốn chưa có.
  *
- * Phần [1]-[2] dùng CODE THẬT 100% (import trực tiếp, không sao chép) — `lib/nodes/tags.ts`
- * (tagsFor fallback) và `lib/phases.ts` (phaseFromNodes) đều THUẦN, không đụng '@/' nên
+ * Phần [1]-[2] dùng CODE THẬT 100% (import trực tiếp, không sao chép) — `lib/nodes/groups.ts`
+ * (groupOf fallback) và `lib/phases.ts` (phaseFromNodes) đều THUẦN, không đụng '@/' nên
  * import được thẳng.
+ *
+ * 05/08: `lib/nodes/tags.ts` (7 tag kỹ thuật, 1 node nhiều tag) ĐÃ THAY bằng
+ * `lib/nodes/groups.ts` (6 nhóm theo bước quy trình archviz, 1 node đúng 1 nhóm) — phần [1]
+ * đổi theo, khoá đúng bất biến mới: fallback không bao giờ làm node biến mất khỏi bảng chọn.
  */
-import { tagsFor, NODE_TAGS, type NodeTag } from './tags';
+import { groupOf, NODE_GROUP, GROUP_ORDER, type NodeGroup } from './groups';
 import { phaseFromNodes, PHASE_MAP } from '../phases';
 
 let pass = 0;
@@ -34,16 +38,18 @@ function ok(label: string, cond: boolean) {
   else { fail += 1; console.log(`  FAIL - ${label}`); }
 }
 
-/* ══════════════════ [1] tagsFor — CODE THẬT (lib/nodes/tags.ts) ══════════════════ */
-console.log('[1] tagsFor — node type biên (không có trong NODE_TAGS)');
+/* ══════════════════ [1] groupOf — CODE THẬT (lib/nodes/groups.ts) ══════════════════ */
+console.log('[1] groupOf — node type biên (không có trong NODE_GROUP)');
 {
-  ok('node type KHÔNG tồn tại trong registry thật → fallback ["utility"]', JSON.stringify(tagsFor('does.not.exist')) === JSON.stringify(['utility']));
-  ok('node type rỗng "" → fallback ["utility"]', JSON.stringify(tagsFor('')) === JSON.stringify(['utility']));
-  ok('node type SAI HOA/thường (case-sensitive, không khớp key thật) → fallback', JSON.stringify(tagsFor('AI.CLAY2RENDER')) === JSON.stringify(['utility']));
-  ok('node type thật đa-tag (ai.styletransfer) → ĐÚNG 2 tag thật, không rơi về fallback', JSON.stringify(tagsFor('ai.styletransfer')) === JSON.stringify(['ai-generate', 'edit']));
-  // mọi entry trong NODE_TAGS phải có ít nhất 1 tag hợp lệ (không rỗng) — bất biến dữ liệu thật.
-  const allValid = Object.entries(NODE_TAGS).every(([, tags]) => tags.length > 0);
-  ok('mọi node type khai báo trong NODE_TAGS đều có ≥1 tag (không entry rỗng)', allValid);
+  ok('node type KHÔNG tồn tại trong registry thật → fallback "edit" (không biến mất khỏi bảng chọn)', groupOf('does.not.exist') === 'edit');
+  ok('node type rỗng "" → fallback "edit"', groupOf('') === 'edit');
+  ok('node type SAI HOA/thường (case-sensitive, không khớp key thật) → fallback', groupOf('AI.CLAY2RENDER') === 'edit');
+  ok('node type thật (ai.styletransfer) → ĐÚNG nhóm khai báo, không rơi về fallback', groupOf('ai.styletransfer') === 'render');
+  ok('5 node đổi tên 05/08 vẫn xếp đúng bước quy trình', groupOf('ai.idmask') === 'edit' && groupOf('ai.localedit') === 'edit' && groupOf('vision.measureobject') === 'doc' && groupOf('input.guref') === 'gu' && groupOf('ai.pattern') === 'gu');
+  // mọi entry trong NODE_GROUP phải trỏ tới 1 nhóm CÓ THẬT trong GROUP_ORDER — sai chính tả
+  // khoá nhóm sẽ làm cả cụm node rơi khỏi mọi cột của bảng chọn mà không ai thấy.
+  const allValid = Object.entries(NODE_GROUP).every(([, g]) => GROUP_ORDER.includes(g as NodeGroup));
+  ok('mọi node type khai báo trong NODE_GROUP đều trỏ nhóm hợp lệ', allValid);
 }
 
 /* ══════════════════ [2] phaseFromNodes — CODE THẬT (lib/phases.ts) ══════════════════ */

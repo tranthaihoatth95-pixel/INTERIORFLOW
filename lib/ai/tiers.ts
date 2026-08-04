@@ -110,19 +110,21 @@ export function isOneAiRuntime(v: unknown): v is OneAiRuntime {
  * provider thật) vẫn tốn credit y như fal (tier 4, tốn tiền thật), đúng hành vi khách đang thấy;
  * đổi việc đó là quyết định GIÁ, không phải vá bảo mật, không tự ý đổi ở đây.
  *
- * ⚠️ Đánh đổi ĐÃ BIẾT, cần Hoà chốt sau (không tự quyết, chỉ ghi rõ để không giấu — cùng tinh
- * thần audit §5.3 "cần Hoà chốt"): 3 nơi gọi `runImageJob` KHÔNG qua `lib/execution.ts` (nên
- * trước đây KHÔNG tính credit theo thiết kế, xem comment tại chỗ gọi):
- *  - `ai.idmask`/`ai.localedit` (`lib/nodes/defs/render-v2.ts`, `creditCost:0`) gọi
- *    `runImageJob('removeBg'|'materialSwap', …)` như 1 TẦNG NÂNG CAO TUỲ CHỌN, lỗi thì rơi về
- *    tầng lõi tất định (try/catch nuốt lỗi, không crash).
- *  - `ai.smartselect`'s modal (`components/smartselect/SmartSelectModal.tsx:286`) gọi
- *    `runImageJob('segment', …)` với comment gốc "không tính credit lần chạy lại".
- * Bảng giá này tính theo TASK (không biết ai gọi) nên CẢ BA sẽ bắt đầu tốn credit khi thành công.
- * Đây là ĐÁNH ĐỔI BẮT BUỘC của việc đóng lỗ R2: 1 task ĐÃ ĐƯỢC GIÁ thì không thể vừa chặn được
- * abuse trực tiếp (curl thẳng `/api/jobs`) vừa cho phép gọi miễn phí từ 1 nơi khác — máy chủ
- * không phân biệt được lời gọi nào "chính chủ enhancement" hay "curl trần". Ưu tiên đóng lỗ bảo
- * mật (R2 là 🔴) hơn giữ đúng nguyên trải nghiệm "0đ" của 2 node phụ này.
+ * ✅ ĐÃ CHỐT GIÁ 05/08 (Hoà giao TỔNG quyết — đóng dòng "cần Hoà chốt" cũ): 3 task
+ * `removeBg`/`materialSwap`/`segment` MIỄN PHÍ khi được một luồng lớn gọi NỘI BỘ
+ * (`internal:true` — dựng ảnh/idmask/localedit/smartselect dùng chúng như bước phụ), TÍNH PHÍ
+ * khi người dùng mở thẳng công cụ đó (`internal` vắng mặt/false). Credit của cả luồng trừ MỘT
+ * LẦN ở kết quả cuối (task chính của luồng, vd sketch2render=4). Lý do: giá khớp với thứ người
+ * dùng cảm thấy mình mua — họ mua MỘT tấm ảnh, không mua ba lượt gọi mô hình.
+ * Xem `INTERNAL_FREE_TASKS` + `costOfTask(task, {internal})` bên dưới; cờ đi từ chỗ gọi
+ * (`runImageJob(..., internal)`) → body `/api/jobs` → `costOfTask`.
+ *
+ * ⚠️ Đánh đổi ĐÃ BIẾT của quyết định này (ghi rõ, không giấu): cờ `internal` do CLIENT khai —
+ * curl thẳng `/api/jobs` với `internal:true` sẽ chạy free 3 task trong danh sách (nặng nhất là
+ * materialSwap, giá niêm yết 4). R2 vẫn ĐÓNG cho mọi task NGOÀI danh sách (render/video đắt
+ * tiền — `costOfTask` chỉ miễn phí task nằm trong whitelist, cờ không zero được task khác) và
+ * vẫn phải đăng nhập mới gọi được. Muốn bịt nốt cần hạ tầng "job cha–con" server-side (server
+ * tự biết lời gọi nào thuộc luồng nào) — chưa có, không tự chế ở đây.
  */
 export const TASK_CREDIT_COST: Record<AiTask, number> = {
   sketch2render: 4,
@@ -144,9 +146,27 @@ export const TASK_CREDIT_COST: Record<AiTask, number> = {
   text2video: 8,
 };
 
+/**
+ * 3 task "bước phụ" — miễn phí khi luồng lớn gọi NỘI BỘ (chốt giá 05/08, xem docblock bảng giá):
+ *  - `ai.idmask` gọi `removeBg` (BiRefNet tách nền) để tinh vùng — `lib/nodes/defs/render-v2.ts`
+ *  - `ai.localedit` gọi `materialSwap` (FLUX Fill inpaint) làm tầng AI — cùng file trên
+ *  - SmartSelect modal gọi `segment` (SAM) tạo mask — `components/smartselect/SmartSelectModal.tsx`
+ * Danh sách là WHITELIST cứng: cờ `internal` không miễn phí được task nào ngoài đây (giữ R2 đóng
+ * cho render/video đắt tiền).
+ */
+export const INTERNAL_FREE_TASKS: ReadonlySet<AiTask> = new Set<AiTask>([
+  'removeBg',
+  'materialSwap',
+  'segment',
+]);
+
 /** Giá credit của 1 lượt `/api/jobs` cho `task` này — 0 nếu task lạ (không nên xảy ra, `isAiTask`
- * đã gate trước khi gọi hàm này). */
-export function costOfTask(task: AiTask): number {
+ * đã gate trước khi gọi hàm này).
+ * `opts.internal` = lời gọi là bước phụ bên trong một luồng lớn → 3 task trong
+ * `INTERNAL_FREE_TASKS` về 0 (giá khớp với thứ người dùng cảm thấy mình mua — họ mua MỘT tấm
+ * ảnh, không mua ba lượt gọi mô hình); task ngoài danh sách giữ nguyên giá dù cờ là gì. */
+export function costOfTask(task: AiTask, opts?: { internal?: boolean }): number {
+  if (opts?.internal && INTERNAL_FREE_TASKS.has(task)) return 0;
   return TASK_CREDIT_COST[task] ?? 0;
 }
 

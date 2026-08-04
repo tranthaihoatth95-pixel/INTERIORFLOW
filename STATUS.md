@@ -1,5 +1,45 @@
 # STATUS — InteriorFlow
 
+## ✅ XONG (05/08 — ĐẶT LẠI TÊN NODE: tách VI/EN · 6 nhóm quy trình · 5 tên sai ngành, CHƯA COMMIT theo luật V6)
+VIỆC 1: `NodeDefinition.titleEn` (mới, optional — `lib/types.ts`) · tách **46 nhãn** `'Việt · English'`
+→ `title` chỉ tiếng Việt + `titleEn` ra TOOLTIP (bảng chọn node + mặt node trên canvas). EN interface
+đảo lại (hiện tên EN, tooltip VI) — không mất chữ ở ngôn ngữ nào. Tên EN vào kho tìm kiếm
+(`search.ts` + ⌘K `CommandPalette`) nên gõ "batch variants"/"inpainting" vẫn ra đúng node.
+VIỆC 2: `lib/nodes/groups.ts` MỚI (6 nhóm quy trình archviz: Nguồn·Gu·Máy quay·Dựng ảnh·Sửa ảnh·Hồ sơ,
+**1 node = 1 nhóm**) THAY `lib/nodes/tags.ts` (7 tag kỹ thuật, đã xoá — chỉ `NodeLibraryPanel` +
+`edgecase-stress.test.ts` dùng, cả 2 chuyển sang groups). Xếp đủ **cả 46 node** registry, không chỉ 18.
+VIỆC 3: 5 tên sai ngành → `Mặt nạ đối tượng`(Object Mask) · `Sửa vùng`(Inpainting) · `Ghi kích thước`
+(Dimension Annotation) · `Bảng gu`(Style Reference) · `Hoạ tiết`(Pattern); nhãn cũ giữ trong `keywords.ts`
+để người quen tên cũ vẫn tìm ra; đồng bộ `task-cards.ts` + chuỗi lỗi/mô tả nhắc tên cũ.
+⛔ **id kỹ thuật KHỚP 100%** (diff `type: '...'` trước/sau = rỗng, 46/46) — không đụng tên file/key registry.
+Verify browser thật (127.0.0.1:3002, server riêng phiên này): 6 nhóm + 6 chip hiện đúng thứ tự quy trình
+· nhãn VI ngắn, `title` attr mang tên EN (đọc DOM 60 thẻ) · gõ "object mask"/"inpainting" ra đúng node ·
+EN interface đổi cả chip lẫn nhãn thẻ · 0 lỗi console. `tsc -p .` sạch · `npm test` chỉ 1 fail CŨ đã biết
+(`cad-to-obj` entityId nội thất) · +4 test `search.test.ts`, phần [1] `edgecase-stress` viết lại theo groups.
+🟡 **3 sửa phụ bắt được LÚC VERIFY** (pre-existing, ghi rõ để Hoà biết đã đụng): (1) memo `groups` thiếu
+`phase` trong deps → đổi chặng thì 6 nhóm giữ kết quả cũ, lặp node vùng Mood/Công cụ; (2) 2 vùng ghim
+Mood/Công cụ bị ẩn hẳn khi đang gõ mà node của chúng cũng không lọt vào 6 nhóm ⇒ ở chặng 3D gõ tên 12
+node Công cụ ra "Không tìm thấy khối nào" — nay vùng ghim tự lọc theo truy vấn; (3) dòng "Không tìm thấy"
+nay đếm cả vùng ghim, không hiện sai khi có kết quả.
+⚠️ **Cần Hoà biết**: cột "Đầu vào" từng bị bỏ ở layout nghỉ (Hoà 04/08) — nay ① NGUỒN hiện lại vì nó là
+BƯỚC quy trình (chứa Tạo ảnh từ chữ · Phác tay · Bản vẽ → 3D), không phải cột "đầu vào thuần" cũ.
+
+## ✅ XONG (05/08 — P12 chốt giá 3 task AI internal-free, CHƯA COMMIT theo luật V6)
+Chốt giá Hoà giao TỔNG quyết: `removeBg`·`materialSwap`·`segment` MIỄN PHÍ khi luồng lớn gọi
+NỘI BỘ, TÍNH PHÍ khi mở thẳng công cụ — "họ mua MỘT tấm ảnh, không mua ba lượt gọi mô hình".
+Làm: `INTERNAL_FREE_TASKS` (whitelist cứng 3 task) + `costOfTask(task,{internal})` (`lib/ai/
+tiers.ts`) · cờ đi `runImageJob(...,internal)` → body `/api/jobs` → `costOfTask` (`lib/ai/
+client.ts` + `app/api/jobs/route.ts`, NGOÀI vùng khai báo nhưng bắt buộc — cờ không tự tới
+server được, ghi rõ lý do) · bật `internal:true` đúng 3 chỗ: idmask `removeBg` + localedit
+`materialSwap` (`render-v2.ts`) + SmartSelect `segment` (khôi phục đúng ý gốc "không tính
+credit lần chạy lại"). `furnitureextract` GIỮ tính phí (removeBg = chính sản phẩm nút đó).
+`lib/server/credits.ts` KHÔNG cần sửa (`spendCredits` sẵn no-op khi amount=0). Test
+`tiers.test.ts` 31/31 (cả 2 đường + chốt an toàn: cờ không miễn phí được task ngoài whitelist)
+· `tsc -p .` toàn repo sạch. Audit R2 đã ghi dòng chốt (hết "cần Hoà chốt"). ⚠️ Đánh đổi đã
+ghi docblock: cờ do client khai ⇒ curl `internal:true` free được đúng 3 task này (nặng nhất
+materialSwap 4); task đắt render/video vẫn chặn. VIỆC 2 (E4-E7 vào DUONG-VE-DICH): **đã có
+sẵn trong working tree do phiên khác ghi, khớp brief 1-1 — không ghi trùng.**
+
 ## 🔴 XONG MỘT PHẦN (04/08 tối — P1-VERIFY nhập DWG bằng file thật, chi tiết `SO-KIEM-TONG.md` §11)
 Verify `2236e0d` bằng 34 file .dwg thật + phát hiện khoảng trống: `openDwgFile()` có sẵn
 `opts.signal`/`opts.onProgress` nhưng chưa nút nào gọi tới — nối vào `CadEditor.tsx` (state
@@ -7,14 +47,25 @@ Verify `2236e0d` bằng 34 file .dwg thật + phát hiện khoảng trống: `op
 (`Small office.dwg` 224KB → 315 đối tượng, đúng) · **tiến độ sống** (`ID-02-GN-200-00-001.dwg`
 21MB → status cập nhật mỗi giây đúng giai đoạn `convertEx`) · **file hỏng báo lỗi rõ** (2 biến thể
 chữ ký sai → thông báo có tên file cụ thể, đúng yêu cầu).
-🔴 **PHÁT HIỆN BUG MỚI, chưa sửa**: bấm Huỷ giữa lúc `convertEx` file 21MB đang chạy → **tab treo
-cứng thật sự ≥2 phút** (không phải treo im lặng như bug gốc — giờ không phản hồi bất kỳ input
-nào), tái hiện 2/2 lần ở 2 server độc lập. Nghi chi phí `worker.terminate()` giải phóng WASM heap
-lớn, chưa chứng minh được (không lấy được performance trace vì tab treo). Ghi `docs/TECH-DEBT.md`
-+ `SO-KIEM-TONG.md` §11 — cần Hoà duyệt hướng sửa trước khi động tiếp (chặn Huỷ file lớn, hay đổi
-ngữ nghĩa Huỷ sang "bỏ qua kết quả" thay vì `terminate()` ngay). Phụ: file .dwg cắt cụt còn header
-→ vào êm "0 đối tượng" thay vì báo lỗi rõ (không sai kỹ thuật nhưng dễ hiểu lầm, ghi TECH-DEBT).
-`tsc`/`dwg.test.ts` (21/21)/`npm test` sạch, không hồi quy.
+🟡 **BUG "Huỷ = treo tab": ĐÃ SỬA theo hướng Hoà chốt, nghiệm thu CÒN THIẾU** (chi tiết `SO-KIEM-
+TONG.md` §11d). Hoà chốt: **Huỷ = BỎ RƠI worker, không `terminate()`**. Sửa xong ở `lib/cad/dwg.ts`
+(`finish(settle, orphan)` + `orphanDwgWorker()` gỡ listener, trần 2 worker mồ côi, `console.warn`
+để debug) — code đã nằm trong `dace0c4` (bị cuốn theo commit docs phiên khác, lần thứ 5, không mất
+dữ liệu). `tsc` sạch · `dwg.test.ts` 21/21.
+🔴 **CHƯA đo/chụp được "huỷ 9.7MB → UI sẵn sàng <1s"** như nghiệm thu yêu cầu: verify lại chính file
+đó thì tab mất phản hồi CDP **ngay khi vừa dispatch**, chưa kịp bấm nút Huỷ (khác §11c — ở đó bấm
+được rồi mới treo). Đo `ps`: renderer giữ ~100% một lõi liên tục, **elapsed 19:13 / CPU time 14:00**
+mới can thiệp. **2 phát hiện MỚI nặng hơn §11c**: (1) nhánh `hardTimeout` 60s tự động gọi
+`terminate()` mà CPU vẫn full tải ~18 phút sau mốc đó ⇒ `terminate()` không cắt được vòng WASM này;
+(2) **đóng hẳn tab cũng KHÔNG giải phóng renderer** — phải `kill -9` tầng OS. ⇒ Giả định nền của
+hướng "bỏ rơi" (*trình duyệt tự dọn khi tab đóng*) CHƯA chắc đúng cho ca vòng lặp nặng: worker mồ
+côi có thể ăn nguyên 1 lõi vĩnh viễn; trần 2 worker chặn được RAM, KHÔNG chặn được CPU.
+→ **Chờ Hoà quyết tiếp** (3 lựa chọn ghi ở §11d): (a) áp `orphan` cho cả nhánh timeout tự động ·
+(b) cảnh báo/chặn theo ngưỡng dung lượng trước khi nhập · (c) chấp nhận, chỉ ghi TECH-DEBT.
+Phụ (cũ, chưa đổi): file .dwg cắt cụt còn header → vào êm "0 đối tượng" thay vì báo lỗi rõ.
+🔴 **VI PHẠM TRUNG TÍNH cần Hoà xử lý**: `public/__dwg-cancel-test.dwg` (9.7MB = bản sao hồ sơ khách
+thật `01_BeachClub_TangHam.dwg`) **đã bị `add -A` của phiên khác commit vào lịch sử git** (`dace0c4`).
+Bản trên đĩa nay đã mất (không phải phiên này xoá). Cần `git filter-repo` trước phát hành — xem §11d.
 
 ## ✅ XONG (04/08 — P5 luật kính lỏng + khuôn EmptyState toàn app)
 VIỆC 1: `.glass-float`/`.glass-float--bar` vào `globals.css` (cạnh `.vitals-pop`) — panel 34% +
@@ -397,8 +448,9 @@ AI ở Settings không ăn" — nghi đúng nguyên nhân này (route không qua
 - **4.1.f thi công** (đổi hình dạng `brand-kit.json`) · **`knowledge/ttt-design-system/`** vi phạm
   LUẬT TRUNG TÍNH · **④ `FlowVersion`** không phải thủ phạm `dev.db` phình · **NT1/NT5**/**T3/T4**
   dời sau · **Figma** MCP lỗi, đường vòng đã có · **DWG** hướng GPL chưa chốt + `2.1.6.d` gốc đã
-  vá (timeout/tiến độ/lỗi rõ) nhưng 🔴 bug MỚI "Huỷ giữa chừng file lớn = treo cứng tab" — xem
-  entry P1-VERIFY đầu STATUS.md, chờ Hoà chọn hướng sửa · Treo: VIỆC 4 cũ, #14, Xlsx probe · 3 nhánh
+  vá (timeout/tiến độ/lỗi rõ) + "Huỷ = bỏ rơi worker" ĐÃ SỬA theo hướng Hoà chốt, nhưng 🔴 nghiệm
+  thu "<1s" chưa đo được + phát hiện `terminate()`/đóng tab đều KHÔNG cắt được vòng WASM nặng —
+  xem `SO-KIEM-TONG.md` §11d, chờ Hoà chọn 1 trong 3 hướng tiếp · Treo: VIỆC 4 cũ, #14, Xlsx probe · 3 nhánh
   `worktree-agent-*` merged còn local · Sprint BOQ ĐỢT 3 greenlight sau ĐỢT DEMO ·
   `2.2.16-2.2.21`/12 file SPEC-TỔNG §9/`2.2.83` chưa quyết. Chi tiết → CHANGELOG/`IF-FEATURE-TREE.md`.
 

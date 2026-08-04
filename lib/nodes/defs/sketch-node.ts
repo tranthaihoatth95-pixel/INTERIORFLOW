@@ -10,7 +10,8 @@ import type { NodeDefinition } from '@/lib/types';
 export const sketchNodes: NodeDefinition[] = [
   {
     type: 'util.sketchpad',
-    title: 'Vẽ tay tự do · Free Sketch',
+    title: 'Vẽ tay tự do',
+    titleEn: 'Free Sketch',
     category: 'UTILITY',
     description:
       'Vẽ phác tay tự do (brush/eraser/đường thẳng/hình khối, palette màu vật liệu) — mở Sketch Studio trên node. 0 credit.',

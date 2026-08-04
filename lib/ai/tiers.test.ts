@@ -5,7 +5,7 @@
  * Chạy: node_modules/.bin/sucrase-node lib/ai/tiers.test.ts
  */
 import { AI_TASKS, type AiTask } from './models';
-import { TASK_CREDIT_COST, costOfTask } from './tiers';
+import { TASK_CREDIT_COST, INTERNAL_FREE_TASKS, costOfTask } from './tiers';
 
 let pass = 0;
 let fail = 0;
@@ -50,6 +50,32 @@ console.log('TASK_CREDIT_COST — đủ mọi AiTask, khớp đúng creditCost c
   }
 
   ok('mọi giá đều > 0 (không có task "miễn phí ngầm" — R2 đóng đúng lỗ curl-thẳng)', allTasks.every((t) => costOfTask(t) > 0));
+}
+
+console.log('\ncostOfTask cờ internal — chốt giá 05/08: bước phụ trong luồng miễn phí, gọi trực tiếp tính tiền');
+{
+  // (giá khớp với thứ người dùng cảm thấy mình mua — họ mua MỘT tấm ảnh, không mua ba lượt gọi mô hình)
+  const freeTasks: AiTask[] = ['removeBg', 'materialSwap', 'segment'];
+  ok('INTERNAL_FREE_TASKS đúng 3 task đã chốt, không hơn', INTERNAL_FREE_TASKS.size === 3 && freeTasks.every((t) => INTERNAL_FREE_TASKS.has(t)));
+
+  // Đường 1 — người dùng gọi TRỰC TIẾP (không cờ / internal:false): trừ đủ giá niêm yết.
+  for (const t of freeTasks) {
+    ok(`trực tiếp "${t}" (không opts) = ${TASK_CREDIT_COST[t]}`, costOfTask(t) === TASK_CREDIT_COST[t]);
+    ok(`trực tiếp "${t}" (internal:false) = ${TASK_CREDIT_COST[t]}`, costOfTask(t, { internal: false }) === TASK_CREDIT_COST[t]);
+  }
+
+  // Đường 2 — luồng lớn gọi NỘI BỘ (internal:true): 3 task whitelist về 0.
+  for (const t of freeTasks) {
+    ok(`nội bộ "${t}" (internal:true) = 0`, costOfTask(t, { internal: true }) === 0);
+  }
+
+  // Chốt an toàn: cờ internal KHÔNG miễn phí được task NGOÀI whitelist — nếu không thì curl
+  // `internal:true` mở lại toàn bộ lỗ R2 cho render/video đắt tiền.
+  const others = (Object.keys(AI_TASKS) as AiTask[]).filter((t) => !freeTasks.includes(t));
+  ok(
+    `task ngoài whitelist (${others.length} task): internal:true vẫn trừ đủ giá`,
+    others.every((t) => costOfTask(t, { internal: true }) === TASK_CREDIT_COST[t]),
+  );
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);

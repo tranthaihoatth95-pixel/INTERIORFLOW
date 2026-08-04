@@ -138,8 +138,10 @@ export function CommandPalette() {
       group: CATEGORY_META[d.category].label,
       icon: Boxes,
       // keywords VI/EN của node (lib/nodes/keywords.ts) vào kho chữ tìm kiếm — gõ "vách",
-      // "tách nền", "hoa văn"… ra đúng node thay vì 0 kết quả.
-      keywords: `${d.description} ${d.type} ${keywordsFor(d.type, d.keywords).join(' ')} thêm node add`,
+      // "tách nền", "hoa văn"… ra đúng node thay vì 0 kết quả. `titleEn` BẮT BUỘC có mặt: từ
+      // 05/08 tên tiếng Anh tách khỏi `label` (nhãn nay chỉ tiếng Việt), thiếu nó thì gõ
+      // "batch variants"/"inpainting" ở ⌘K ra 0 kết quả.
+      keywords: `${d.titleEn ?? ''} ${d.description} ${d.type} ${keywordsFor(d.type, d.keywords).join(' ')} thêm node add`,
       run: run(() => s.addNode(d.type, centerPos())),
     }));
 

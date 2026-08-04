@@ -48,6 +48,19 @@ ok('"chọn vùng" → Smart Select', nodeMatches(smart, 'chọn vùng'));
 ok('"magic wand" (EN) → Smart Select', nodeMatches(smart, 'magic wand'));
 ok('không liên quan thì KHÔNG khớp', !nodeMatches(upscale, 'hoa văn'));
 
+/* 05/08 — nhãn tách VI/EN (`title` chỉ tiếng Việt, tên tiếng Anh sang `titleEn`). Kho chữ
+   tìm kiếm PHẢI gộp `titleEn`, không thì gõ tên tiếng Anh của công cụ ra 0 kết quả. */
+console.log('titleEn — tên tiếng Anh vẫn tìm được sau khi tách khỏi nhãn');
+function defEn(type: string, title: string, titleEn: string, description = '') {
+  return { type, title, titleEn, description } as unknown as Parameters<typeof nodeMatches>[0];
+}
+const batch = defEn('ai.batchvariants', 'Sinh nhiều phương án', 'Batch Variants');
+const inpaint = defEn('ai.localedit', 'Sửa vùng', 'Inpainting');
+ok('"batch variants" (EN, không còn trong title) → node Sinh nhiều phương án', nodeMatches(batch, 'batch variants'));
+ok('"inpainting" (thuật ngữ ngành) → node Sửa vùng', nodeMatches(inpaint, 'inpainting'));
+ok('nhãn tiếng Việt mới vẫn khớp', nodeMatches(inpaint, 'sua vung'));
+ok('node KHÔNG khai titleEn vẫn không throw', nodeMatches(def('x.y', 'Chỉ tiếng Việt'), 'tieng viet'));
+
 console.log('nodeScore — thứ tự');
 ok('title bắt đầu bằng query = 3 điểm', nodeScore(def('x.y', 'Upscale 4K'), 'upscale') === 3);
 ok('chỉ keywords khớp = 1 điểm', nodeScore(upscale, 'phóng to') === 1);

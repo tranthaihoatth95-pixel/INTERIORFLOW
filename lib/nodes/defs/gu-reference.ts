@@ -16,7 +16,8 @@ const LABEL_TO_USAGE: Record<string, string> = Object.fromEntries(USAGES.map((u)
 export const guReferenceNodes: NodeDefinition[] = [
   {
     type: 'input.guref',
-    title: 'Ảnh tham chiếu gu · Gu Reference',
+    title: 'Bảng gu',
+    titleEn: 'Style Reference',
     category: 'INPUT',
     description:
       'Trích gu (palette · vật liệu · phong cách) từ thư viện Reference đã lưu → mẩu prompt, nối vào node AI khác.',

@@ -686,6 +686,151 @@ là `2236e0d`/`0154770` (không đổi phiên này — đây là commit VERIFY, 
 chỉ đúng tại thời điểm ghi — `git log -- docs/SO-KIEM-TONG.md` là nguồn xác nhận cuối, không chép
 tay số cũ nếu đọc lại sau, đúng luật "Git là sự thật duy nhất".
 
+## §11d · P1 — Hoà chốt hướng §11c: "Huỷ = bỏ rơi worker, không `terminate()`" — SỬA XONG,
+NGHIỆM THU "<1s" KHÔNG LÀM ĐƯỢC, phát hiện bằng chứng NẶNG HƠN §11c (05/08 sáng sớm)
+
+**Sửa** (`lib/cad/dwg.ts`, đã nằm trong `dace0c4` — bị cuốn theo commit docs của phiên khác, xem
+mục "hai phiên chung git" cuối phần này): `finish(settle, orphan=false)` thêm tham số `orphan` —
+đường Huỷ do người dùng bấm (`opts.signal` abort) gọi `finish(..., true)` → `orphanDwgWorker()` gỡ
+`onmessage`/`onerror` rồi BỎ ROI worker (không `terminate()`), trả UI về sẵn sàng ngay; tối đa 2
+worker mồ côi cùng lúc, con thứ 3 mới `terminate()` con CŨ NHẤT. Đường lỗi/hardTimeout tự động vẫn
+gọi `worker.terminate()` bình thường (orphan mặc định `false` — xem phát hiện phụ bên dưới, đây
+CHƯA được áp cùng cơ chế). `npx tsc --noEmit -p .` sạch · `lib/cad/dwg.test.ts` 21/21 pass.
+
+🔴 **Nghiệm thu "huỷ 9.7MB → UI sẵn sàng <1s, đo + chụp" KHÔNG LÀM ĐƯỢC — không phải bỏ sót, mà vì
+gặp đúng lúc file test rơi vào ca NẶNG HƠN cả mốc §11c từng ghi, không tài nào bấm được nút Huỷ**:
+1. Cùng file `01_BeachClub_TangHam.dwg` (9.7MB, bản đã lưu sẵn ở `public/__dwg-cancel-test.dwg` từ
+   phiên trước — 9.699.556 byte, khớp size gốc) nạp qua đúng kỹ thuật §11c (`fetch()` → `DataTransfer`
+   → dispatch `change` lên `<input type=file accept=.dwg>`, tên đổi thành `progress-cancel-medium.dwg`)
+   vào project "Untitled flow" mới, cổng `3001`.
+2. **Tab mất phản hồi CDP gần như NGAY sau khi dispatch** — chưa kịp đọc lại DOM để tìm toạ độ nút
+   "Huỷ" thì `javascript_exec`/`screenshot`/`computer` đã bắt đầu timeout liên tục (kể cả biểu thức
+   JS trần trụi `document.title`) → KHÔNG có cách nào bấm Huỷ qua tool, khác hẳn §11c (ở đó bấm được
+   Huỷ, chỉ là bấm xong mới treo).
+3. Đo bằng `ps` (PID renderer riêng của đúng 1 tab, xác nhận qua `tabs_create` tab khác cùng server
+   vẫn khoẻ mạnh song song — cùng cách đối chứng §11c dùng): CPU giữ ~97–100% một lõi LIÊN TỤC, đo
+   lặp lại 10 lần cách nhau 10s không hề hạ; tại thời điểm can thiệp: **elapsed 19:13, CPU time
+   14:00** — vượt xa mốc "≥6 phút" §11c từng ghi cho ĐÚNG file này.
+4. **Phát hiện phụ quan trọng** — nhánh `hardTimeout` 60s (`DEFAULT_DWG_IMPORT_TIMEOUT_MS`) đáng lẽ
+   đã tự bắn ở giây 60 và gọi `worker.terminate()` (nhánh này KHÔNG dùng `orphan:true`, xem "Sửa" ở
+   trên) — nhưng CPU vẫn full tải suốt ~18 phút SAU mốc đó khi tôi can thiệp. Tức là với file này,
+   `terminate()` (dù tự động hay do người từng đo ở §11c) không thực sự cắt được vòng WASM đang chạy.
+5. **MỚI, chưa ai ghi**: thử `tabs_close` đóng hẳn tab (không phải chỉ mất focus) — vẫn KHÔNG giải
+   phóng được tiến trình renderer (`ps -p <pid>` sau khi đóng tab vẫn thấy CPU 99.5%, elapsed tăng
+   tiếp). Phải `kill -9` ở tầng OS mới dừng hẳn.
+
+**Đọc thế nào**: không đủ bằng chứng để khẳng định 100% đây LÀ vòng lặp C vô hạn tuyệt đối trong
+`convertEx` (đúng luật §0 không suy diễn quá xa — không lấy được CPU profile vì tool điều khiển
+cũng không chọc vào được tab lúc đó, giống hệt giới hạn §11/P1-VERIFY đã ghi ở đầu STATUS.md). Nhưng
+bằng chứng MỚI — `worker.terminate()` (nhánh tự động) không cắt được SAU 60s, và **đóng hẳn tab**
+cũng không cắt được — cho thấy: dù Hoà chọn "bỏ rơi worker" đúng hướng để UI CHÍNH không bị kẹt theo
+(worker mồ côi không còn giữ `onmessage`/`onerror`, luồng chính rảnh tay ngay khi gọi được `finish`),
+giả định nền của hướng đó — *"để trình duyệt tự dọn khi worker tự xong hoặc khi tab đóng"* — **CHƯA
+CHẮC đúng cho ca vòng lặp thật sự nặng**: worker mồ côi có thể tiếp tục ăn nguyên 1 lõi CPU cho đến
+khi tắt hẳn tiến trình trình duyệt, không phải "tự dọn" khi tab đóng như kỳ vọng. Trần "tối đa 2
+worker mồ côi" (`ORPHANED_DWG_WORKERS`) giới hạn được RAM giữ lại (không cho `postMessage` khổng lồ
+tích luỹ), nhưng KHÔNG giới hạn được CPU nếu rơi đúng ca này — 2 worker mồ côi kiểu này ăn nguyên 2
+lõi vĩnh viễn.
+
+**Việc CHƯA làm được, cần Hoà quyết tiếp** (không tự chọn vì đây là đánh đổi UX/rủi ro tài nguyên,
+đúng §0b): (a) áp `orphan:true` luôn cho nhánh `hardTimeout` tự động để nhất quán với nhánh Huỷ tay
+— dù theo phát hiện #4 ở trên, orphan cũng không chắc giải phóng được CPU ở ca vòng lặp thật, chỉ
+chắc chắn giải phóng được LUỒNG CHÍNH (mục tiêu Hoà đặt ra khi chốt hướng này); (b) cảnh báo/chặn
+trước khi nhập file vượt một ngưỡng dung lượng nhất định, tránh rơi vào ca này; (c) chấp nhận rủi ro
+như hiện tại (đã đúng yêu cầu chính — UI KHÔNG bị kẹt khi bấm Huỷ trong ca thường), chỉ ghi nhận ca
+hiếm này vào `TECH-DEBT.md`. Nghiệm thu "đo + chụp <1s" xin để lại cho lần verify sau với file KHÔNG
+rơi vào ca vòng lặp nặng (vd. file cỡ vừa từng đo ổn định ở §11/§11b) — dùng lại file 9.7MB này tiếp
+tục sẽ tốn thêm nhiều phút mỗi lần mà không chắc đo được đúng thứ cần đo.
+
+**Dọn sau verify**: `kill -9` PID renderer bị kẹt (đã xác nhận biến mất qua `ps`) · dừng Monitor CPU
+đang theo dõi. KHÔNG đụng `dev.db`, KHÔNG tạo/sửa project nào ngoài "Untitled flow" test đã có noise
+tương tự từ trước (đúng khuôn §11c).
+
+🔴 **VI PHẠM LUẬT TRUNG TÍNH do phiên khác gây ra — CẦN HOÀ XỬ LÝ, phiên này KHÔNG tự sửa**: file
+`public/__dwg-cancel-test.dwg` **9.699.556 byte = bản sao `01_BeachClub_TangHam.dwg`, HỒ SƠ DỰ ÁN
+KHÁCH THẬT**, trước phiên này đang untracked — nay **ĐÃ BỊ COMMIT VÀO LỊCH SỬ GIT** trong `dace0c4`
+(cùng commit `add -A` đã cuốn `lib/cad/dwg.ts`, xem mục "hai phiên chung git" dưới). Xác nhận bằng
+`git cat-file -s dace0c4:public/__dwg-cancel-test.dwg` → đúng 9.699.556 byte. Bản trên đĩa hiện đã
+biến mất (`git status` báo ` D`) — **KHÔNG phải phiên này xoá**, không rõ phiên nào, không tự khôi
+phục cũng không tự `git rm` (đụng vào là rewrite/đổi lịch sử của phiên khác). Đây đúng loại dữ liệu
+`CLAUDE.md` mục "dữ liệu tham khảo đã TÁCH RA NGOÀI repo" cấm để trong repo (hồ sơ khách Sungroup
+Beach Club) và `docs/AUDIT-BRAND-PII.md` liệt kê phải dọn ⇒ phải xử lý bằng `git filter-repo`
+TRƯỚC KHI phát hành, cùng đợt với các mục TTT còn sót. Ghi ra đây để không rơi mất.
+
+🔴 **Hai phiên chung `.git` LẦN THỨ 5 (đúng dịp luật V6 vừa chốt để ngăn việc này)** — code sửa
+`lib/cad/dwg.ts` của phiên này bị cuốn vào commit `dace0c4` ("docs: mo khoa duong ve dich...") của
+một phiên khác đang chạy song song (họ `add -A` thay vì giới hạn pathspec). Đã đọc lại nội dung file
+thật khớp 100% với sửa dự định (`grep orphanDwgWorker`/`git log -S` xác nhận) — KHÔNG mất dữ liệu,
+chỉ lệch tên commit, không rewrite lịch sử. Theo **luật V6 mới** (`docs/00-BAT-DAU-DOC-DAY.md`,
+chốt ngay trong lúc phiên này đang chạy, commit `754c8e6`): **phiên này KHÔNG tự `git add`/`commit`/
+`push` bất kỳ gì** — chỉ sửa file rồi báo cáo (`lib/cad/dwg.ts` đã có sẵn trong `dace0c4`, không
+cần sửa lại; 2 file docs này — `SO-KIEM-TONG.md` + `STATUS.md` — để nguyên chưa commit, Hoà xem rồi
+tự quyết commit).
+
+## §11e · P1 — ĐỐI CHỨNG ĐỘC LẬP §11d: treo KHÔNG do nút Huỷ, treo do CHÍNH `convertEx`
+(05/08 sáng sớm, phiên khác chạy song song §11d — trùng kết luận, thêm 1 phép đo §11d KHÔNG có)
+
+Phiên này nhận đúng chỉ đạo Hoà ("Huỷ = bỏ rơi worker") và sửa `lib/cad/dwg.ts` y hệt §11d mô tả
+(cùng nội dung `orphanDwgWorker`/`finish(settle, orphan)` — hai phiên sửa trùng nhau, đã đọc lại
+file trên đĩa xác nhận khớp, KHÔNG chồng chéo hỏng). `npx tsc --noEmit -p .` sạch (exit 0).
+
+🔴 **PHÉP ĐO MỚI — ĐỐI CHỨNG KHÔNG BẤM HUỶ** (§11d không làm được vì tab chết trước khi bấm được):
+1. **Tab A** — nạp `01_BeachClub_TangHam.dwg` (9.7MB) rồi BẤM Huỷ thật lúc status đang ở
+   `convertEx` (bấm được, chụp được màn hình trước khi bấm: thanh nổi "Đang nhập DWG… [Huỷ]" +
+   status `…(đang chuyển sang danh sách đối tượng (convertEx) — bước hay chậm nhất, 3s)`).
+   → Tab treo cứng ngay sau khi bấm. Khớp §11c.
+2. **Tab B (ĐỐI CHỨNG, MỚI)** — tab thứ hai, cùng server/cùng project, nạp CÙNG file đó nhưng
+   **KHÔNG bấm Huỷ, không đụng gì cả**, để chạy tự nhiên.
+   → **Tab B cũng treo cứng y hệt** (`javascript_exec` cả biểu thức `1+1` cũng timeout 45s).
+3. Đo `ps`: 1 tiến trình renderer giữ **96.6% CPU** liên tục; hệ thống lúc đó chỉ còn **32% RAM
+   trống, 297.588 pageouts** (đang swap nặng).
+
+**Ý nghĩa — điểm này QUAN TRỌNG, sửa lại giả định nền của cả §11c lẫn §11d**: vì tab KHÔNG bấm Huỷ
+cũng treo hệt tab có bấm Huỷ, **nút Huỷ / `worker.terminate()` KHÔNG phải nguyên nhân gây treo**.
+Nguyên nhân là chính vòng `convertEx` (WASM) ăn trọn 1 lõi + swap nặng, treo cả tiến trình renderer
+— đúng như §11d suy ra từ phía khác (terminate tự động sau 60s không cắt được, đóng tab không cắt
+được). Hai phiên đi hai đường, gặp cùng một kết luận.
+
+⇒ Hệ quả cho hướng Hoà đã chốt: sửa "bỏ rơi worker" **vẫn đúng và nên giữ** (nó gỡ LUỒNG CHÍNH khỏi
+phụ thuộc worker, đúng mục tiêu), nhưng nó **không thể chữa được ca này** vì ca này không phải lỗi
+của `terminate()`. Nghiệm thu "<1s" **không thể đạt bằng file 9.7MB này** — không phải do sửa sai,
+mà do renderer chết vì WASM trước khi UI kịp phản hồi bất cứ điều gì. Muốn nghiệm thu "<1s" đúng
+nghĩa phải dùng file KHÔNG rơi vào ca nặng (§11d cũng đề xuất y vậy).
+
+⇒ Việc thật còn lại KHÔNG phải "sửa nút Huỷ" mà là **chặn/cảnh báo trước khi nhập file rơi vào ca
+nặng** (đề xuất (b) của §11d) — vì một khi `convertEx` đã vào vòng nặng thì không cơ chế nào ở tầng
+JS cứu được nữa. Chờ Hoà quyết, phiên này KHÔNG tự làm.
+
+**Đối chứng ĐỘC LẬP LẦN 4 (phiên thứ 4 cùng chủ đề, sáng 05/08), CỦNG CỐ kết luận "không phải do
+Huỷ" bằng 1 file NHỎ HƠN HẲN**: audit code trước — `orphanDwgWorker`/`finish(settle, orphan)` đã
+đúng như §11d/§11e mô tả, `tsc --noEmit -p .` sạch, `dwg.test.ts` 21/21 — KHÔNG cần sửa gì thêm.
+Verify: nạp `01_ETOWN_T7 0625.dwg` (**3.5MB — nhỏ hơn 9.7MB gần 3 lần, thuộc nhóm file "luôn an
+toàn" đo được ở phiên gốc §11c**, KHÔNG bấm Huỷ, không đụng gì) → **renderer treo y hệt** (CPU dao
+động 10–120% một lõi liên tục ~8 phút, RSS tăng dần 650MB→800MB+, `javascript_exec`/`screenshot`
+timeout kể cả `1+1`) — tab khác cùng server vẫn khoẻ (đối chứng). `kill -9` sau ~8 phút, không tự
+hồi phục — khớp §11d/§11e, không phải ca hiếm. Máy lúc đo: nhiều phiên Cowork + server dev chạy
+song song (đã thấy `curl` tới server của chính phiên này cũng timeout 15-20s một thời điểm, phải
+khởi động lại server mới đo tiếp được) — cùng bối cảnh "RAM thấp, swap nặng" §11e đã đo bằng số
+(32% RAM trống, 297K pageouts). KẾT LUẬN: ranh giới "file nào an toàn" ĐÃ SỤP — không còn file nào
+chắc chắn an toàn khi máy đang tải nặng như hiện tại, kể cả file trước đây luôn ổn định. Việc chặn/
+cảnh báo theo dung lượng (đề xuất (b)) vì thế cũng KHÔNG đủ tự nó — cần thêm góc "máy đang tải" mà
+tầng JS của app không đo được (đó là tài nguyên hệ điều hành, ngoài tầm `lib/cad/dwg*.ts`). Không
+tự chọn hướng, chỉ ghi thêm dữ liệu cho Hoà quyết. Dọn: `kill -9` renderer treo + tắt server test +
+HTTP file server tạm, không tạo/sửa gì trong `public/` (rút kinh nghiệm từ phát hiện rác §11e).
+
+🔴 **RÁC PHẢI DỌN — file khách thật LỌT VÀO GIT (nặng hơn ghi chú §11d)**: §11d ghi
+`public/__dwg-cancel-test.dwg` là *"untracked, có sẵn từ trước phiên này"* — **SAI cả hai vế**:
+(a) file này do phiên §11e TỰ TẠO tối nay (`cp` từ `~/Documents/Zalo Received Files/`) để phục vụ
+`fetch()` qua HTTP, không hề có sẵn; (b) nó **KHÔNG untracked — đã bị commit vào `dace0c4`**
+(kiểm: `git cat-file -s HEAD:public/__dwg-cancel-test.dwg` = 9.699.556 byte).
+Đây là **bản vẽ dự án khách THẬT (Sungroup Beach Club, mặt bằng tầng hầm)** nay nằm trong lịch sử
+git — vi phạm LUẬT TRUNG TÍNH (`docs/AUDIT-BRAND-PII.md`) và cộng 9.7MB vào repo. Phiên này đã
+`rm` khỏi thư mục làm việc (trạng thái ` D`, **CHƯA commit** — đúng luật V6) nhưng **xoá khỏi LỊCH
+SỬ thì cần `filter-repo`, là quyền của Hoà** (`docs/00-CHOT.md` đã xếp việc này vào "ngay trước khi
+giao repo ra ngoài"). Lần verify sau cần file test thì chép lại từ nguồn gốc ngoài repo, **đừng đặt
+vào `public/`** — nên dùng thư mục scratchpad phiên + `file_upload`, hoặc thêm `public/__*.dwg` vào
+`.gitignore` trước.
+
 ## §12 · P2 — D2 đợt 8: GỠ TRẦN MAX_SHEETS (04/08 đêm, commit `b46fa30`)
 
 Hoà duyệt: LÀM D2, HOÃN D3 (đổi định dạng file chờ studio thật dùng thử). Vùng sửa 5 file:

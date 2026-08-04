@@ -283,7 +283,9 @@ export function SmartSelectModal() {
           label: p.include ? 1 : 0,
         }));
       }
-      const urls = await runImageJob('segment', input, setProgress, aiTier, oneAiEngine);
+      // internal: segment là bước phụ của luồng SmartSelect (giữ đúng ý gốc "không tính credit
+      // lần chạy lại") — không trừ credit, chốt giá 05/08, xem TASK_CREDIT_COST lib/ai/tiers.ts.
+      const urls = await runImageJob('segment', input, setProgress, aiTier, oneAiEngine, true);
       const maskUrl = urls[0];
       if (!maskUrl) throw new Error('Model không trả về mask.');
       const m = new Image();

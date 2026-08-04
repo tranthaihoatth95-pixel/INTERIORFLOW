@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Căn hộ Thảo Điền · Hồ sơ trình khách — InteriorFlow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* TẦNG 1 BRAND — chỉ INK #14110d + CREAM #f6f2ea (và alpha của ink). KHÔNG tím. */
+:root{--ink:#14110d;--cream:#f6f2ea;--ease:cubic-bezier(.32,.72,0,1)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--ink);-webkit-font-smoothing:antialiased}
+body{font-family:"Be Vietnam Pro",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:15px;font-weight:400;line-height:1.6}
+a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}a:hover{color:rgba(20,17,13,.7)}
+.mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:11px;font-weight:500;letter-spacing:.26em;text-transform:uppercase;line-height:1.6}
+.wrap{max-width:1120px;margin:0 auto;padding:0 32px}
+
+/* đầu trang */
+.top{display:flex;align-items:center;gap:14px;padding-top:26px}
+.top .logo{width:38px;height:38px;color:var(--ink);flex:0 0 auto}
+.top .wm{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.top .sp{flex:1}
+.top .mono{color:rgba(20,17,13,.55)}
+.hero{padding-top:74px;padding-bottom:58px;text-align:center}
+.hero .mono{color:rgba(20,17,13,.55)}
+.hero h1{margin:18px 0 0;font-size:44px;font-weight:600;line-height:1.25;letter-spacing:-.02em;text-wrap:balance}
+.hero .meta{margin-top:14px;color:rgba(20,17,13,.62);font-size:15px}
+.hero .meta b{color:var(--ink);font-weight:500}
+.rule{width:44px;height:2px;margin:34px auto 0;background:var(--ink)}
+
+/* bàn + tờ hồ sơ */
+.desk{background:rgba(20,17,13,.045);border-top:1px solid rgba(20,17,13,.12);border-bottom:1px solid rgba(20,17,13,.12);padding:58px 0 44px}
+.viewer{position:relative;max-width:1120px;margin:0 auto;padding:0 92px}
+.sheet{position:relative;width:100%;aspect-ratio:1188/840;background:var(--cream);box-shadow:0 1px 0 rgba(20,17,13,.18),0 26px 60px -18px rgba(20,17,13,.38);cursor:zoom-in;outline:none}
+.sheet svg{display:block;width:100%;height:100%}
+.sheet.turn{animation:turn .34s var(--ease)}
+@keyframes turn{from{opacity:0;transform:perspective(1600px) rotateY(-7deg);transform-origin:0 50%}to{opacity:1;transform:perspective(1600px) rotateY(0)}}
+.nav{position:absolute;top:50%;display:flex;align-items:center;justify-content:center;width:52px;height:52px;margin-top:-26px;border:1.5px solid rgba(20,17,13,.35);border-radius:50%;background:var(--cream);color:var(--ink);cursor:pointer;transition:border-color .15s var(--ease),background .15s var(--ease)}
+.nav:hover{border-color:var(--ink)}
+.nav:disabled{opacity:.25;cursor:not-allowed}
+.nav.prev{left:16px}.nav.next{right:16px}
+.pgr{display:flex;align-items:center;justify-content:center;gap:22px;margin-top:26px}
+.pgr .mono{color:rgba(20,17,13,.6)}
+.dots{display:flex;gap:9px}
+.dots button{width:8px;height:8px;padding:0;border:1.5px solid var(--ink);border-radius:50%;background:transparent;cursor:pointer;transition:background .15s var(--ease)}
+.dots button[aria-current="true"]{background:var(--ink)}
+.hint{margin-top:10px;text-align:center;color:rgba(20,17,13,.42);font-size:12.5px}
+
+/* phóng to */
+.zoom{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(20,17,13,.92);cursor:zoom-out;padding:30px}
+.zoom.on{display:flex}
+.zoom .big{width:min(94vw,133vh);aspect-ratio:1188/840;background:var(--cream);box-shadow:0 40px 120px rgba(0,0,0,.6)}
+.zoom .big svg{display:block;width:100%;height:100%}
+.zoom .x{position:absolute;right:26px;top:22px;display:flex;align-items:center;gap:9px;border:0;background:transparent;color:var(--cream);font-family:inherit;font-size:13px;font-weight:500;letter-spacing:.04em;cursor:pointer;padding:10px}
+
+/* cuối trang */
+.foot{display:grid;grid-template-columns:1fr 1fr;gap:70px;padding-top:64px;padding-bottom:30px}
+@media(max-width:860px){.foot{grid-template-columns:1fr;gap:44px}.viewer{padding:0 60px}}
+.foot .mono{color:rgba(20,17,13,.55)}
+.foot h2{margin:14px 0 10px;font-size:22px;font-weight:600;line-height:1.35;letter-spacing:-.01em}
+.foot p{margin:0 0 22px;color:rgba(20,17,13,.66);font-size:14.5px;line-height:1.65;text-wrap:pretty}
+.dl{display:inline-flex;align-items:center;gap:12px;height:52px;padding:0 26px;border:1.5px solid var(--ink);background:var(--ink);color:var(--cream);font-family:inherit;font-size:14.5px;font-weight:600;letter-spacing:.01em;cursor:pointer;transition:background .15s var(--ease),color .15s var(--ease)}
+.dl:hover{background:transparent;color:var(--ink)}
+.dl-meta{margin-top:12px;color:rgba(20,17,13,.5);font-size:12.5px}
+.fb textarea,.fb input{display:block;width:100%;padding:13px 14px;border:1.5px solid rgba(20,17,13,.3);background:transparent;color:var(--ink);font-family:inherit;font-size:14px;font-weight:400;line-height:1.55;outline:none;transition:border-color .15s var(--ease)}
+.fb textarea{height:118px;resize:none}
+.fb input{margin-top:10px;height:46px}
+.fb textarea:focus,.fb input:focus{border-color:var(--ink)}
+.fb textarea::placeholder,.fb input::placeholder{color:rgba(20,17,13,.4)}
+.fb .send{display:inline-flex;align-items:center;gap:10px;height:46px;margin-top:14px;padding:0 22px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s var(--ease),color .15s var(--ease)}
+.fb .send:hover{background:var(--ink);color:var(--cream)}
+.fb .ok{display:none;padding:18px 0 0;font-size:14.5px;font-weight:500}
+.fb.sent form{display:none}.fb.sent .ok{display:block}
+.base{display:flex;align-items:center;gap:16px;padding-top:26px;padding-bottom:34px;border-top:1px solid rgba(20,17,13,.14)}
+.base .mono{color:rgba(20,17,13,.45)}
+.base .sp{flex:1}
+
+/* ghi chú mock — không thuộc trang khách */
+.mocknote{background:var(--ink);color:rgba(246,242,234,.75);padding:26px 0 34px;font-size:12px;line-height:1.65}
+.mocknote .mono{color:rgba(246,242,234,.5);margin-bottom:10px}
+.mocknote ul{margin:0;padding-left:18px}
+.mocknote li{margin-top:4px}
+.mocknote b{color:var(--cream);font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="wrap top">
+  <svg class="logo" viewBox="0 0 44 44" fill="none" stroke="currentColor" aria-hidden="true">
+    <rect x=".5" y=".5" width="43" height="43" stroke-width="1" opacity=".85"/>
+    <path d="M15.75 13 V31" stroke-width="1.5"/>
+    <path d="M20.5 13.75 H29" stroke-width="1.5"/>
+    <path d="M20.5 21.5 H27" stroke-width="1.5"/>
+  </svg>
+  <span class="wm">InteriorFlow</span>
+  <span class="sp"></span>
+  <span class="mono">Hồ sơ chia sẻ · không cần đăng nhập</span>
+</div>
+
+<div class="wrap hero">
+  <div class="mono">Atelier Mộ · hồ sơ trình khách</div>
+  <h1>Căn hộ Thảo Điền · 96m²</h1>
+  <p class="meta">Chặng <b>Hồ sơ thi công</b> · phát hành <b>04·08·2026</b> · 6 tờ</p>
+  <div class="rule"></div>
+</div>
+
+<div class="desk">
+  <div class="viewer">
+    <div class="sheet" id="sheet" role="button" tabindex="0" aria-label="Phóng to tờ hiện tại"></div>
+    <button class="nav prev" id="prev" aria-label="Tờ trước">
+      <svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2.5L5 8.5l6 6"/></svg>
+    </button>
+    <button class="nav next" id="next" aria-label="Tờ sau">
+      <svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5l6 6-6 6"/></svg>
+    </button>
+  </div>
+  <div class="pgr">
+    <span class="mono" id="counter">Tờ 01 / 06</span>
+    <span class="dots" id="dots"></span>
+    <span class="mono" id="pgname">Bìa</span>
+  </div>
+  <p class="hint">Chạm vào tờ để phóng to · phím ← → để lật</p>
+</div>
+
+<div class="wrap foot">
+  <div>
+    <div class="mono">Tải về</div>
+    <h2>Trọn bộ hồ sơ, bản in</h2>
+    <p>Một tệp PDF đóng dấu chặng và ngày phát hành — đúng từng nét với các tờ đang xem.</p>
+    <button class="dl" id="dl">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 1.5v8M4 6.5l3.5 3.5L11 6.5M2 13h11"/></svg>
+      Tải PDF · 6 tờ
+    </button>
+    <p class="dl-meta">A3 ngang · 12,8 MB · bản phát hành 04·08·2026</p>
+  </div>
+  <div class="fb" id="fb">
+    <div class="mono">Góp ý</div>
+    <h2>Gửi lời nhắn cho studio</h2>
+    <form id="fbForm">
+      <textarea placeholder="Điều anh chị muốn điều chỉnh — ví dụ: đổi vải sofa sang tông sáng hơn…" required></textarea>
+      <input type="text" placeholder="Tên anh chị (không bắt buộc)">
+      <button class="send" type="submit">Gửi góp ý
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 1L7 12.5 5.8 7.8 1 6.3z"/></svg>
+      </button>
+    </form>
+    <p class="ok">Đã gửi. Atelier Mộ sẽ hồi âm qua email trong hôm nay — cảm ơn anh chị.</p>
+  </div>
+</div>
+
+<div class="wrap base">
+  <span class="mono">Tạo bởi InteriorFlow</span>
+  <span class="sp"></span>
+  <span class="mono">if.design/share/m4Xb9</span>
+</div>
+
+<div class="zoom" id="zoom" aria-hidden="true">
+  <button class="x" id="zx">Đóng ✕</button>
+  <div class="big" id="big"></div>
+</div>
+
+<div class="mocknote">
+  <div class="wrap">
+    <div class="mono">Ghi chú mock — không thuộc trang khách</div>
+    <ul>
+      <li><b>Tầng 1 brand:</b> chỉ ink <b>#14110d</b> + cream <b>#f6f2ea</b> và alpha của ink — không có tím ở bất kỳ trạng thái nào.</li>
+      <li>Khách <b>không đăng nhập</b>, không có công cụ sửa; token <code>/share/m4Xb9</code> và hạn dùng lấy từ popover mời (mock-if-cong-tac).</li>
+      <li>Nút <b>Tải PDF</b> và <b>Gửi góp ý</b> chưa nối backend — trong mock chỉ đổi trạng thái tại chỗ.</li>
+      <li>Các tờ là SVG nét thật của hồ sơ; phiên code thay bằng trang render từ Doc, giữ nguyên khung tên.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+var INK='#14110d';
+/* khung tên chung — mọi tờ */
+function tblock(no,name){
+  return '<g font-family="SF Mono,ui-monospace,Menlo,monospace" fill="'+INK+'">'
+  +'<rect x="806" y="716" width="346" height="88" fill="none" stroke="'+INK+'" stroke-width="2"/>'
+  +'<path d="M806,746 L1152,746 M806,776 L1152,776 M986,716 L986,804" stroke="'+INK+'" stroke-width="1.2" fill="none"/>'
+  +'<text x="818" y="736" font-size="12" letter-spacing="2">ATELIER MỘ</text>'
+  +'<text x="998" y="736" font-size="12" letter-spacing="2">THẢO ĐIỀN 96M²</text>'
+  +'<text x="818" y="766" font-size="12" letter-spacing="2">'+name+'</text>'
+  +'<text x="998" y="766" font-size="12" letter-spacing="2">TL 1:50</text>'
+  +'<text x="818" y="796" font-size="12" letter-spacing="2">04·08·2026</text>'
+  +'<text x="998" y="796" font-size="12" letter-spacing="2">TỜ '+no+'/06</text>'
+  +'</g>';
+}
+function frame(inner,no,name){
+  return '<svg viewBox="0 0 1188 840" aria-hidden="true">'
+  +'<rect x="0" y="0" width="1188" height="840" fill="#f6f2ea"/>'
+  +'<rect x="36" y="36" width="1116" height="768" fill="none" stroke="'+INK+'" stroke-width="2.5"/>'
+  +inner+tblock(no,name)+'</svg>';
+}
+function dim(x1,y1,x2,y2,label,vert){
+  var mx=(x1+x2)/2,my=(y1+y2)/2;
+  return '<g stroke="'+INK+'" stroke-width="1.4" fill="none">'
+  +'<path d="M'+x1+','+y1+' L'+x2+','+y2+'"/>'
+  +(vert?'<path d="M'+(x1-6)+','+y1+' L'+(x1+6)+','+y1+' M'+(x2-6)+','+y2+' L'+(x2+6)+','+y2+'"/>'
+        :'<path d="M'+x1+','+(y1-6)+' L'+x1+','+(y1+6)+' M'+x2+','+(y2-6)+' L'+x2+','+(y2+6)+'"/>')
+  +'</g>'
+  +'<text x="'+(vert?x1-14:mx)+'" y="'+(vert?my:y1-10)+'" font-family="SF Mono,ui-monospace,Menlo,monospace" font-size="15" fill="'+INK+'" text-anchor="middle"'+(vert?' transform="rotate(-90 '+(x1-14)+' '+my+')"':'')+'>'+label+'</text>';
+}
+var PAGES=[
+ {name:'Bìa',svg:function(){return frame(
+   '<g fill="'+INK+'">'
+   +'<rect x="96" y="96" width="64" height="64" fill="none" stroke="'+INK+'" stroke-width="2"/>'
+   +'<path d="M119,113 L119,143 M127,114 L140,114 M127,127 L137,127" stroke="'+INK+'" stroke-width="2.4" fill="none"/>'
+   +'<text x="96" y="300" font-family="SF Mono,ui-monospace,Menlo,monospace" font-size="15" letter-spacing="5">HỒ SƠ TRÌNH KHÁCH · CHẶNG HỒ SƠ THI CÔNG</text>'
+   +'<text x="92" y="386" font-family="Be Vietnam Pro,sans-serif" font-size="64" font-weight="600" letter-spacing="-1">Căn hộ Thảo Điền</text>'
+   +'<text x="96" y="440" font-family="Be Vietnam Pro,sans-serif" font-size="26" font-weight="400" opacity=".72">96m² · hai phòng ngủ · Atelier Mộ</text>'
+   +'<path d="M96,492 L164,492" stroke="'+INK+'" stroke-width="3"/>'
+   +'<g font-family="SF Mono,ui-monospace,Menlo,monospace" font-size="15" letter-spacing="2">'
+   +'<text x="96" y="560">02 · MẶT BẰNG BỐ TRÍ</text>'
+   +'<text x="96" y="596">03 · MẶT ĐỨNG BẾP</text>'
+   +'<text x="96" y="632">04 · PHỐI CẢNH NÉT</text>'
+   +'<text x="440" y="560">05 · BẢNG VẬT LIỆU</text>'
+   +'<text x="440" y="596">06 · KHỐI LƯỢNG TRÍCH</text>'
+   +'</g></g>','01','BÌA');}},
+ {name:'Mặt bằng bố trí',svg:function(){return frame(
+   '<g fill="none" stroke="'+INK+'">'
+   +'<rect x="140" y="130" width="820" height="520" stroke-width="7"/>'
+   +'<rect x="154" y="144" width="792" height="492" stroke-width="1.6"/>'
+   +'<path d="M640,144 L640,636" stroke-width="3" stroke-dasharray="3 8"/>'
+   +'<path d="M330,650 L330,636 M430,650 L430,636" stroke-width="7"/>'
+   +'<path d="M330,644 L330,544" stroke-width="1.4"/>'
+   +'<path d="M330,544 A100,100 0 0 1 430,644" stroke-width="1.4"/>'
+   +'<rect x="196" y="196" width="120" height="300" rx="12" stroke-width="2.4"/>'
+   +'<path d="M226,196 L226,496" stroke-width="1.4"/>'
+   +'<circle cx="430" cy="350" r="62" stroke-width="2.4"/>'
+   +'<rect x="200" y="180" width="380" height="360" stroke-width="1.4" stroke-dasharray="8 8" opacity=".55"/>'
+   +'<rect x="908" y="196" width="26" height="240" stroke-width="2.4"/>'
+   +'<rect x="700" y="530" width="220" height="86" stroke-width="2.4"/>'
+   +'<circle cx="760" cy="300" r="70" stroke-width="2.4"/>'
+   +'<path d="M718,258 L802,342 M802,258 L718,342" stroke-width="1.2" opacity=".6"/>'
+   +'</g>'
+   +dim(140,96,960,96,'9 600')
+   +dim(104,130,104,650,'6 400',true)
+   +'<g font-family="SF Mono,ui-monospace,Menlo,monospace" font-size="14" fill="'+INK+'" letter-spacing="2">'
+   +'<text x="250" y="590">PHÒNG KHÁCH</text><text x="700" y="480">BẾP · ĂN</text>'
+   +'<text x="196" y="176" font-size="12" opacity=".7">SF-01</text>'
+   +'<text x="398" y="292" font-size="12" opacity=".7">TB-03</text>'
+   +'<text x="214" y="560" font-size="12" opacity=".7">RG-02</text>'
+   +'</g>','02','MẶT BẰNG');}},
+ {name:'Mặt đứng bếp',svg:function(){return frame(
+   '<g fill="none" stroke="'+INK+'">'
+   +'<path d="M150,660 L1040,660" stroke-width="4"/>'
+   +'<rect x="190" y="180" width="760" height="480" stroke-width="2.4"/>'
+   +'<rect x="190" y="540" width="760" height="120" stroke-width="2"/>'
+   +'<path d="M290,540 L290,660 M420,540 L420,660 M550,540 L550,660 M700,540 L700,660 M830,540 L830,660" stroke-width="1.4"/>'
+   +'<rect x="190" y="180" width="300" height="130" stroke-width="2"/>'
+   +'<path d="M290,180 L290,310 M390,180 L390,310" stroke-width="1.4"/>'
+   +'<rect x="650" y="180" width="300" height="130" stroke-width="2"/>'
+   +'<path d="M750,180 L750,310 M850,180 L850,310" stroke-width="1.4"/>'
+   +'<rect x="500" y="200" width="140" height="70" stroke-width="2"/>'
+   +'<path d="M540,270 L540,330 M600,270 L600,330" stroke-width="1.2" stroke-dasharray="4 6"/>'
+   +'<rect x="470" y="480" width="200" height="60" stroke-width="2"/>'
+   +'<path d="M190,430 L950,430" stroke-width="1.2" stroke-dasharray="10 8" opacity=".5"/>'
+   +'</g>'
+   +dim(1000,180,1000,660,'2 700',true)
+   +dim(1046,540,1046,660,'900',true)
+   +dim(190,140,950,140,'7 600')
+   +'<g font-family="SF Mono,ui-monospace,Menlo,monospace" font-size="13" fill="'+INK+'" letter-spacing="2" opacity=".75">'
+   +'<text x="196" y="330">TỦ TRÊN · MDF SƠN KEM-04</text>'
+   +'<text x="196" y="686">TỦ DƯỚI · ÓC CHÓ WN-2</text>'
+   +'<text x="476" y="470" font-size="12">BẾP TỪ + HÚT MÙI</text>'
+   +'</g>','03','MẶT ĐỨNG');}},
+ {name:'Phối cảnh nét',svg:function(){return frame(
+   '<g fill="none" stroke="'+INK+'" stroke-width="1.8">'
+   +'<rect x="424" y="270" width="340" height="230" stroke-width="2.4"/>'
+   +'<path d="M120,120 L424,270 M1068,120 L764,270 M120,700 L424,500 M1068,700 L764,500" stroke-width="2.4"/>'
+   +'<path d="M120,700 L1068,700" stroke-width="0"/>'
+   +'<path d="M220,652 L424,532 M330,598 L424,548" stroke-width="1.2" opacity=".5"/>'
+   +'<path d="M860,598 L764,548 M964,652 L764,532" stroke-width="1.2" opacity=".5"/>'
+   +'<rect x="470" y="300" width="120" height="90" stroke-width="1.6"/>'
+   +'<path d="M470,345 L590,345 M530,300 L530,390" stroke-width="1.2"/>'
+   +'<path d="M180,560 L360,560 L400,505 L400,430 L360,415 L180,415 Z" stroke-width="2.2"/>'
+   +'<path d="M180,490 L360,490 L400,455" stroke-width="1.4"/>'
+   +'<path d="M200,560 L200,620 M340,560 L340,614" stroke-width="2"/>'
+   +'<ellipse cx="560" cy="580" rx="95" ry="26" stroke-width="2"/>'
+   +'<path d="M530,600 L526,646 M592,598 L598,642" stroke-width="1.8"/>'
+   +'<path d="M690,120 L690,388" stroke-width="1.4"/>'
+   +'<path d="M664,388 L716,388 L724,420 L656,420 Z" stroke-width="1.8"/>'
+   +'</g>'
+   +'<g font-family="SF Mono,ui-monospace,Menlo,monospace" font-size="13" fill="'+INK+'" letter-spacing="2" opacity=".75">'
+   +'<text x="120" y="106">PHỐI CẢNH MỘT ĐIỂM TỤ · PHÒNG KHÁCH</text>'
+   +'</g>','04','PHỐI CẢNH');}},
+ {name:'Bảng vật liệu',svg:function(){return frame(
+   '<defs>'
+   +'<pattern id="h1" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M0,12 L12,0" stroke="'+INK+'" stroke-width="1.2"/></pattern>'
+   +'<pattern id="h2" width="10" height="10" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.3" fill="'+INK+'"/></pattern>'
+   +'<pattern id="h3" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M0,12 L12,0 M0,0 L12,12" stroke="'+INK+'" stroke-width=".9"/></pattern>'
+   +'<pattern id="h4" width="9" height="9" patternUnits="userSpaceOnUse"><path d="M0,0 L0,9" stroke="'+INK+'" stroke-width="1.1"/></pattern>'
+   +'<pattern id="h5" width="14" height="14" patternUnits="userSpaceOnUse"><path d="M0,14 L14,0" stroke="'+INK+'" stroke-width=".7"/><path d="M-3,7 L7,-3" stroke="'+INK+'" stroke-width=".7"/></pattern>'
+   +'<pattern id="h6" width="16" height="8" patternUnits="userSpaceOnUse"><path d="M0,4 Q4,0 8,4 T16,4" stroke="'+INK+'" stroke-width=".9" fill="none"/></pattern>'
+   +'</defs>'
+   +'<text x="96" y="118" font-family="SF Mono,ui-monospace,Menlo,monospace" font-size="15" fill="'+INK+'" letter-spacing="4">BẢNG VẬT LIỆU · TRÍCH</text>'
+   +[['h1','VẢI BOUCLÉ','KEM-04 · SOFA SF-01'],['h2','ÓC CHÓ TỰ NHIÊN','WN-2 · BÀN TB-03'],['h3','SỒI GHÉP THANH','OK-1 · SÀN'],
+     ['h4','MDF SƠN MỜ','KEM-04 · TỦ BẾP'],['h5','LEN DỆT PHẲNG','RG-02 · THẢM'],['h6','ĐÁ THẠCH ANH','QZ-1 · MẶT BẾP']]
+   .map(function(m,i){
+     var x=96+(i%3)*346,y=170+Math.floor(i/3)*258;
+     return '<rect x="'+x+'" y="'+y+'" width="300" height="150" fill="url(#'+m[0]+')" stroke="'+INK+'" stroke-width="2"/>'
+     +'<text x="'+x+'" y="'+(y+184)+'" font-family="Be Vietnam Pro,sans-serif" font-size="19" font-weight="600" fill="'+INK+'">'+m[1]+'</text>'
+     +'<text x="'+x+'" y="'+(y+210)+'" font-family="SF Mono,ui-monospace,Menlo,monospace" font-size="13" letter-spacing="2" fill="'+INK+'" opacity=".65">'+m[2]+'</text>';
+   }).join(''),'05','VẬT LIỆU');}},
+ {name:'Khối lượng trích',svg:function(){return frame(
+   '<text x="96" y="118" font-family="SF Mono,ui-monospace,Menlo,monospace" font-size="15" fill="'+INK+'" letter-spacing="4">KHỐI LƯỢNG · TRÍCH 6 DÒNG</text>'
+   +'<g stroke="'+INK+'" fill="none"><path d="M96,150 L1092,150" stroke-width="2.4"/><path d="M96,196 L1092,196" stroke-width="2.4"/>'
+   +'<path d="M96,196 M96,252 L1092,252 M96,308 L1092,308 M96,364 L1092,364 M96,420 L1092,420 M96,476 L1092,476 M96,532 L1092,532" stroke-width="1"/>'
+   +'<path d="M150,150 L150,532 M560,150 L560,532 M800,150 L800,532 M930,150 L930,532" stroke-width="1"/></g>'
+   +'<g font-family="SF Mono,ui-monospace,Menlo,monospace" font-size="13" fill="'+INK+'" letter-spacing="1.5">'
+   +'<g opacity=".6"><text x="108" y="178">#</text><text x="166" y="178">HẠNG MỤC</text><text x="576" y="178">VẬT LIỆU</text><text x="816" y="178">SL</text><text x="946" y="178">ĐƠN VỊ</text></g>'
+   +[['01','Sofa Sail 3 chỗ · SF-01','Bouclé Kem-04','1','cái'],
+     ['02','Bàn cà phê Ø900 · TB-03','Óc chó WN-2','1','cái'],
+     ['03','Thảm dệt 2400×1600 · RG-02','Len RG-02','1','tấm'],
+     ['04','Sàn sồi ghép thanh','Sồi OK-1','54','m²'],
+     ['05','Tủ bếp trên + dưới','MDF + WN-2','7,6','md'],
+     ['06','Mặt bếp thạch anh','QZ-1','3,2','m²']]
+   .map(function(r,i){var y=234+i*56;
+     return '<text x="108" y="'+y+'">'+r[0]+'</text><text x="166" y="'+y+'" font-family="Be Vietnam Pro,sans-serif" letter-spacing="0" font-size="15">'+r[1]+'</text><text x="576" y="'+y+'">'+r[2]+'</text><text x="816" y="'+y+'">'+r[3]+'</text><text x="946" y="'+y+'">'+r[4]+'</text>';
+   }).join('')
+   +'</g>'
+   +'<text x="96" y="580" font-family="SF Mono,ui-monospace,Menlo,monospace" font-size="12" fill="'+INK+'" opacity=".55" letter-spacing="2">BẢNG ĐẦY ĐỦ 42 DÒNG NẰM TRONG PDF TẢI VỀ</text>','06','KHỐI LƯỢNG');}}
+];
+
+var cur=0,sheet=document.getElementById('sheet'),dots=document.getElementById('dots');
+PAGES.forEach(function(p,i){
+  var b=document.createElement('button');
+  b.setAttribute('aria-label','Tờ '+(i+1)+' — '+p.name);
+  b.addEventListener('click',function(){go(i)});
+  dots.appendChild(b);
+});
+function pad(n){return (n<10?'0':'')+n}
+function go(i){
+  cur=Math.max(0,Math.min(PAGES.length-1,i));
+  sheet.innerHTML=PAGES[cur].svg();
+  sheet.classList.remove('turn');void sheet.offsetWidth;sheet.classList.add('turn');
+  document.getElementById('counter').textContent='Tờ '+pad(cur+1)+' / '+pad(PAGES.length);
+  document.getElementById('pgname').textContent=PAGES[cur].name;
+  document.getElementById('prev').disabled=cur===0;
+  document.getElementById('next').disabled=cur===PAGES.length-1;
+  dots.querySelectorAll('button').forEach(function(d,j){d.setAttribute('aria-current',j===cur?'true':'false')});
+}
+document.getElementById('prev').addEventListener('click',function(){go(cur-1)});
+document.getElementById('next').addEventListener('click',function(){go(cur+1)});
+window.addEventListener('keydown',function(e){
+  if(document.getElementById('zoom').classList.contains('on')&&e.key==='Escape'){zoomOff();return;}
+  if(e.target.matches('textarea,input'))return;
+  if(e.key==='ArrowLeft')go(cur-1);
+  if(e.key==='ArrowRight')go(cur+1);
+});
+/* phóng to */
+var zoom=document.getElementById('zoom'),big=document.getElementById('big');
+function zoomOn(){big.innerHTML=PAGES[cur].svg();zoom.classList.add('on');zoom.setAttribute('aria-hidden','false');}
+function zoomOff(){zoom.classList.remove('on');zoom.setAttribute('aria-hidden','true');}
+sheet.addEventListener('click',zoomOn);
+sheet.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();zoomOn();}});
+zoom.addEventListener('click',zoomOff);
+/* góp ý + tải */
+document.getElementById('fbForm').addEventListener('submit',function(e){
+  e.preventDefault();document.getElementById('fb').classList.add('sent');
+});
+document.getElementById('dl').addEventListener('click',function(){
+  this.innerHTML='Đang chuẩn bị tệp…';var b=this;
+  setTimeout(function(){b.innerHTML='Tải PDF · 6 tờ';},1400);
+});
+go(0);
+</script>
+</body>
+</html>

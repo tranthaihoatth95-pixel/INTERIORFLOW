@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   // Chặn người vô danh submit job (đốt balance fal). Chỉ user đăng nhập.
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  let body: { task?: string; input?: Record<string, unknown>; tier?: number; engine?: string };
+  let body: { task?: string; input?: Record<string, unknown>; tier?: number; engine?: string; internal?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -52,7 +52,10 @@ export async function POST(req: Request) {
   // client `lib/execution.ts`, curl thẳng vào đây đốt provider thật mà không mất credit nào).
   // Mẫu y hệt `render/premium/route.ts:39-44`: trừ TRƯỚC (atomic compare-and-set trong
   // `spendCredits`, chặn được gọi song song tiêu quá số dư), submit lỗi thì hoàn.
-  const cost = costOfTask(task);
+  // `internal:true` = bước phụ trong một luồng lớn → 3 task whitelist miễn phí (chốt giá 05/08,
+  // xem docblock TASK_CREDIT_COST) — giá khớp với thứ người dùng cảm thấy mình mua: họ mua MỘT
+  // tấm ảnh, không mua ba lượt gọi mô hình.
+  const cost = costOfTask(task, { internal: body.internal === true });
   if (cost > 0) {
     const paid = await spendCredits(user.id, cost, `jobs.${task}`);
     if (!paid) {

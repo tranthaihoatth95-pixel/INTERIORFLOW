@@ -26,10 +26,14 @@ export function normalizeSearch(s: string): string {
     .trim();
 }
 
-/** Kho chữ tìm kiếm của 1 node (đã chuẩn hoá): title + description + type + keywords. */
+/**
+ * Kho chữ tìm kiếm của 1 node (đã chuẩn hoá): title + titleEn + description + type + keywords.
+ * `titleEn` BẮT BUỘC có trong kho: từ 05/08 tên tiếng Anh không còn nằm trong `title` nữa
+ * (tách ra tooltip) — thiếu nó thì gõ "batch variants"/"inpainting" ra 0 kết quả.
+ */
 export function searchTextFor(def: NodeDefinition): string {
   return normalizeSearch(
-    [def.title, def.description, def.type, ...keywordsFor(def.type, def.keywords)].join(' '),
+    [def.title, def.titleEn ?? '', def.description, def.type, ...keywordsFor(def.type, def.keywords)].join(' '),
   );
 }
 

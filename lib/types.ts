@@ -46,7 +46,18 @@ export interface ExecContext {
 
 export interface NodeDefinition {
   type: string;
+  /**
+   * NHÃN HIỂN THỊ — CHỈ TIẾNG VIỆT, ngắn (đổi 05/08: trước đây trộn 'Việt · English' trong cùng
+   * một nhãn, dài gấp đôi và vỡ khuôn "≤12 từ" của `SPEC-NGON-NGU-CHI-DAN`). Tên tiếng Anh của
+   * công cụ chuyển sang `titleEn` → hiện ở TOOLTIP, cùng khuôn thanh tool 2D ("Đường (L)").
+   */
   title: string;
+  /**
+   * Tên tiếng Anh (thuật ngữ ngành: 'Inpainting', 'Object Mask'…) — dùng cho tooltip, cho giao
+   * diện EN (`useT`), và làm từ khoá tìm kiếm (`lib/nodes/search.ts` gộp vào kho chữ). OPTIONAL:
+   * node không khai thì mọi chỗ tự lùi về `title` (không nơi nào hiện chuỗi rỗng).
+   */
+  titleEn?: string;
   category: NodeCategory;
   description: string;
   inputs: PortDef[];

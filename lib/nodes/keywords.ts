@@ -5,7 +5,7 @@
  * người dùng gõ theo việc muốn làm ("vách", "sửa tường", "tách nền", "phóng to", "hoa văn").
  * Trước đây search chỉ khớp title/description/type → gõ mấy từ đó ra 0 kết quả.
  *
- * Đặt ở file riêng (cùng seam với `lib/nodes/tags.ts`) để KHÔNG phải sửa 9 file `defs/*.ts`
+ * Đặt ở file riêng (cùng seam với `lib/nodes/groups.ts`) để KHÔNG phải sửa 9 file `defs/*.ts`
  * — tránh xung đột khi nhiều worktree chạy song song. Node vẫn có thể tự khai
  * `keywords` trong NodeDefinition; `keywordsFor()` ưu tiên khai báo tại node rồi mới tới bảng này.
  */
@@ -16,7 +16,7 @@ export const NODE_KEYWORDS: Record<string, string[]> = {
   'input.prompt': ['prompt', 'mô tả', 'nhập chữ', 'viết mô tả', 'text', 'câu lệnh'],
   'input.stylepreset': ['phong cách', 'style', 'gu', 'preset', 'japandi', 'scandinavian', 'indochine', 'wabi sabi'],
   'input.roominfo': ['phòng', 'diện tích', 'hướng nắng', 'trần cao', 'thông tin phòng', 'room', 'area'],
-  'input.guref': ['gu', 'reference', 'thư viện tham khảo', 'ảnh mẫu', 'ref', 'moodboard ref', 'style ref'],
+  'input.guref': ['gu', 'bảng gu', 'reference', 'style reference', 'moodboard', 'thư viện tham khảo', 'ảnh mẫu', 'ref', 'moodboard ref', 'style ref'],
 
   // ---- AI Generate ----
   'ai.sketch2render': ['sketch', 'vẽ tay', 'nét chì', 'phác', 'line', 'render từ sketch', 'sketchup', 'canny', 'ảnh thật'],
@@ -38,10 +38,11 @@ export const NODE_KEYWORDS: Record<string, string[]> = {
   'ai.relight': ['ánh sáng', 'đổi sáng', 'sáng tối', 'đèn', 'nắng', 'ban đêm', 'relight', 'lighting'],
   'ai.upscale': ['phóng to', 'nét hơn', 'rõ hơn', 'độ phân giải', '4k', 'in ấn', '300dpi', 'upscale', 'resolution'],
   'ai.removebg': ['tách nền', 'xoá nền', 'cắt nền', 'bỏ nền', 'cutout', 'background', 'remove bg', 'tách đồ'],
-  'ai.idmask': ['phân vùng', 'chia vùng', 'nhận diện vùng', 'segment', 'mask tự động', 'id mask'],
+  // giữ cả tên CŨ ('phân vùng ID') sau khi đổi nhãn 05/08 → người quen tên cũ vẫn tìm ra.
+  'ai.idmask': ['phân vùng', 'phân vùng id', 'mặt nạ', 'mặt nạ đối tượng', 'object mask', 'chia vùng', 'nhận diện vùng', 'segment', 'mask tự động', 'id mask'],
   'ai.furnitureextract': ['tách nội thất', 'lấy món đồ', 'cắt đồ', 'extract', 'trích đồ'],
   'ai.smartselect': ['chọn vùng', 'chọn thông minh', 'tách vùng', 'magic wand', 'sam', 'segment', 'khoanh vùng tự động', 'chọn tường', 'chọn vách', 'chọn đúng biên', 'mask tự động', 'chọn nhanh'],
-  'ai.localedit': ['chỉnh cục bộ', 'sửa một chỗ', 'sửa vùng', 'local edit', 'retouch', 'sửa chi tiết'],
+  'ai.localedit': ['chỉnh cục bộ', 'sửa một chỗ', 'sửa vùng', 'local edit', 'inpaint', 'inpainting', 'retouch', 'sửa chi tiết'],
 
   // ---- Slide / Present ----
   'slide.concept': ['nội dung slide', 'tiêu đề', 'concept', 'text slide', 'thuyết trình'],
@@ -64,6 +65,9 @@ export const NODE_KEYWORDS: Record<string, string[]> = {
   // ---- 3D / CAD ----
   'three.camera': ['góc máy', 'camera', 'view', 'góc nhìn', 'tiêu cự', 'lens'],
   'three.cad2fbx': ['cad', 'bản vẽ', 'dwg', 'dxf', '3d', 'obj', 'fbx', 'dựng khối', 'mô hình'],
+  // `vision.measureobject` trước không có entry — search chỉ dựa vào title, mà title vừa đổi
+  // ('Đo món đồ' → 'Ghi kích thước') nên phải khai tay, giữ luôn tên cũ + 'metrology'.
+  'vision.measureobject': ['ghi kích thước', 'kích thước', 'đo món đồ', 'đo đạc', 'đo', 'rộng cao sâu', 'dimension', 'measure', 'metrology', 'size'],
 
   // ---- Output ----
   'out.moodboard': ['moodboard', 'collage', 'bảng vật liệu', 'ghép nhiều ảnh', 'trang mood', 'board'],

@@ -42,11 +42,14 @@ export async function runImageJob(
   onProgress: (p: number) => void,
   tier: AiTier,
   engine?: OneAiEngine,
+  /** true = bước phụ bên trong một luồng lớn → 3 task trong `INTERNAL_FREE_TASKS` (tiers.ts)
+   * không trừ credit; luồng trừ MỘT LẦN ở kết quả cuối. Gọi trực tiếp như công cụ riêng: bỏ trống. */
+  internal?: boolean,
 ): Promise<string[]> {
   const submitRes = await fetch('/api/jobs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ task, input: absolutizeInput(input), tier, engine }),
+    body: JSON.stringify({ task, input: absolutizeInput(input), tier, engine, internal: internal || undefined }),
   });
   const submitBody = await submitRes.json().catch(() => ({}));
   if (!submitRes.ok) {
