@@ -262,9 +262,19 @@ vào `model ProductSpec` (`prisma/schema.prisma`) — khai chỗ cho kho 3 tần
 prisma db push/migrate qua sandbox" (mục Quy tắc session #4): lệnh soạn sẵn cho Hoà chạy máy thật
 (xem cuối báo cáo phiên). Không đụng `components/cad/CadSheets.tsx`.
 
-## 🟡 ĐANG CHẠY (04/08 — PHIẾU ĐỢT 8 multi-sheet BƯỚC 3, D1 XONG + ĐÃ COMMIT (`f77ce9d`, lẫn vào
-commit khác — hai phiên chung `.git`) — dừng chờ Hoà duyệt trước D2/D3, phiên sau đã đọc lại +
-verify độc lập xác nhận đúng, xem `docs/SO-KIEM-TONG.md` §9)
+## ✅ XONG (04/08 đêm — ĐỢT 8 multi-sheet D2: GỠ TRẦN MAX_SHEETS, `b46fa30`, sổ §12; D3 HOÃN)
+Hoà duyệt D2 + hoãn D3 (đổi định dạng file người dùng — chờ studio thật dùng thử mới làm).
+D2: `SheetTabBar.tsx` prop `max` thành optional (không truyền = không trần) · `CadSheets.tsx`
+3 chỗ · `PresentSheets.tsx` 9 chỗ (bỏ 4 `slice(0,5)` nạp/autosave/đĩa/import + thông báo vượt
+trần + status) — đọc kỹ từng chỗ, không áp máy móc (Present mỗi sheet vẫn ôm deck, khác CAD).
+Nghiệm thu browser thật (127.0.0.1:3002, dự án test riêng): CAD 13 tờ + Present 12 hồ sơ không
+chặn/không chậm · `.idf` cũ 5 sheet mở đủ 5/5 entity (gộp 1 Doc đúng D1, thông báo rõ) · tsc
+sạch · 22/22 + 13/13 test cũ pass · lỗi console duy nhất là bug CŨ `EditorCanvas.tsx` đã ghi sổ.
+Rác cần Hoà dọn tay: 1 Flow test `cmser4yxk0001w97ydu3oy6je` trong `dev.db` (lệnh DELETE soạn ở
+sổ §12). Nghi vấn NGOÀI phạm vi: click chuyển chặng Present→2D không điều hướng (phải hard-nav),
+chưa rõ bug thật hay sandbox — ghi §12, chưa sửa.
+
+## 🟡 D1 ĐỢT 8 (bối cảnh — đã xong từ trước, giữ ghi chú gốc)
 `components/cad/CadSheets.tsx` + `components/cad/CadCanvas.tsx` — bỏ hẳn "hoán store" khi đổi tab
 (mỗi sheet ôm 1 Doc riêng, K1 vi phạm) → `useCadStore` giờ giữ ĐÚNG 1 `doc`/`past`/`future` xuyên
 suốt phiên; `sheets` chỉ còn metadata `Sheet`/`Viewport2D` (model.ts, Bước 1+2 cũ). Đổi tab = bay
