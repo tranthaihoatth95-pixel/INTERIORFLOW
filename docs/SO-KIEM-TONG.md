@@ -497,3 +497,88 @@ không đụng z-index/Lockscreen) — nghi lỗi có sẵn, chưa ai bắt đư
 đang mở chặng 3D. Ghi `TECH-DEBT.md` để phiên khác tra.
 
 chờ Hoà duyệt trước khi làm tiếp (RÀNG BUỘC trong phiếu: "Làm D1 → báo cáo → mới sang D2, D3").
+
+## §11 · P1 — VERIFY THẬT nhập DWG bằng file .dwg thật (04/08 tối, tiếp `2236e0d`)
+
+Việc cũ (`2236e0d` "wip: P1 dwg timeout") đã có 15 chỗ timeout/abort/progress/cancel trong
+`lib/cad/dwg.ts`/`dwg-worker.ts`/`dwg-map.ts` + `dwg.test.ts` (21/21) — CHƯA verify bằng file thật
+qua UI. Phiên này verify + phát hiện 1 khoảng trống thật: `opts.signal`/`opts.onProgress` đã sẵn
+trong `openDwgFile()` nhưng **CHƯA nối vào nút nào** — `CadEditor.tsx` gọi `openDwgFile(f)` KHÔNG
+truyền `opts`, không có UI Huỷ nào tồn tại. Nối dây tối thiểu (component thuộc vùng CHINH, đúng
+ranh giới §2): `onImportDwgFile` tạo `AbortController`, truyền `{signal}`; thêm 1 thanh nổi "Đang
+nhập DWG… [Huỷ]" (cùng khuôn `handoffMsg` có sẵn) hiện khi có lượt import đang chạy, bấm gọi
+`.abort()`. Tiến độ ("đang chuyển sang danh sách đối tượng (convertEx)…") ĐÃ hiện sẵn qua
+`useCadStore.status`/`CommandLine` — không cần thêm UI, `openDwgFile()` tự ghi status mỗi giây
+(đã có từ `2236e0d`).
+
+**Verify browser thật** (127.0.0.1:3001, dự án test riêng tạo mới — không đụng "Dự án mẫu"), 3 file
+.dwg THẬT lấy từ `~/Documents/Zalo Received Files` (dự án thật của studio, đúng luật N3 — nạp qua
+`DataTransfer` + dispatch `change` trên input thật, tương đương chọn file qua OS picker, KHÔNG mô
+phỏng gọi thẳng hàm):
+
+1. **Thành công** — `Small office.dwg` (224KB, sha256 `b8399b07…`): "Đã mở Small office.dwg — 315
+   đối tượng. (2/34 đối tượng chưa hỗ trợ đã bỏ qua…)" — bản vẽ hiện đúng trên canvas (tủ, kệ sách,
+   ghi chú, kích thước). Ảnh chụp trong transcript phiên.
+2. **Tiến độ có thật + Huỷ** — `ID-02-GN-200-00-001.dwg` (21MB, sha256 `033d0dff…`, đúng file
+   "chậm nhất 39s" ghi trong docstring `dwg.ts`): thanh "Đang nhập DWG… [Huỷ]" hiện ngay, status
+   sống cập nhật mỗi giây đúng giai đoạn thật ("đang chuyển sang danh sách đối tượng (convertEx) —
+   bước hay chậm nhất, Ns") — KHÔNG phải % giả. Ảnh chụp lúc 13s trong transcript phiên.
+   🔴 **Bấm nút Huỷ thật khi đang giữa `convertEx` của file 21MB này → tab trình duyệt TREO CỨNG
+   (main thread không phản hồi cả `screenshot`/`javascript_exec`/click) trong ≥2 phút, tái hiện
+   ĐÚNG 2/2 lần thử (2 phiên server độc lập, log server bên dưới sạch cả 2 lần — không phải do lỗi
+   biên dịch/hai-phiên-chung-.next, LÀ THẬT).** `finish()` trong `openDwgFile()` gọi
+   `worker.terminate()` (đồng bộ, rẻ về lý thuyết) rồi `reject()` — code JS ở lời gọi Huỷ tự nó
+   không nặng; nghi ngờ chi phí thật nằm ở **giải phóng bộ nhớ WASM linear memory cỡ lớn** (file
+   21MB → heap `convertEx` phồng to) chặn main thread khi trình duyệt dọn Worker — ĐÂY LÀ GIẢ
+   THUYẾT, chưa chứng minh được bằng profiler trong phiên này (tab treo nên không lấy được
+   performance trace). **KẾT LUẬN: nút Huỷ đúng dây (bấm → gọi đúng `.abort()`, cơ chế test unit
+   đã xác nhận đúng) nhưng CHƯA AN TOÀN cho file lớn thật — huỷ giữa chừng file 21MB tệ hơn cả
+   "treo vĩnh viễn" gốc vì giờ THẬT SỰ treo cứng UI, không chỉ đứng im lặng.** Không tự sửa thêm
+   (ngoài khả năng chẩn đoán chắc chắn trong phiên này, cần Chrome DevTools performance profile —
+   không lấy được vì tab treo không phản hồi cả CDP) — ghi rõ KHÔNG giả vờ đã xong theo §0.
+3. **File hỏng → báo lỗi rõ** — 2 biến thể tự tạo (không phải suy đoán, đã đọc code
+   `describeDwgHeader`/`dwg-map.ts` để biết đúng định dạng cần phá):
+   - `corrupted-badmagic.dwg` (copy `success-small.dwg`, ghi đè 6 byte chữ ký đầu bằng `XX9999`):
+     "Không đọc được "corrupted-badmagic.dwg": File không có chữ ký DWG hợp lệ (thấy "XX9999" thay
+     vì "AC10xx" ở đầu file) — chắc chắn không phải file .dwg, hoặc file đã hỏng/bị cắt cụt giữa
+     chừng." — RÕ, đúng yêu cầu (nói rõ phần hỏng, không nuốt).
+   - `corrupted-random.dwg` (40 byte `/dev/urandom`, không có chữ ký DWG nào): cùng thông báo,
+     đúng cơ chế.
+   🟡 **Phát hiện phụ (KHÔNG phải yêu cầu ban đầu, cần Hoà biết)**: cắt cụt file thật giữ nguyên
+   300 byte đầu (`head -c 300`, còn nguyên chữ ký + header hợp lệ, mất phần thân) → **KHÔNG báo
+   lỗi** — vào êm với "Đã mở corrupted.dwg — 0 đối tượng." Đây là hành vi HỢP LÝ về mặt kỹ thuật
+   (header đọc được, thân rỗng → 0 đối tượng đúng nghĩa đen, không phải bug) nhưng có thể GÂY HIỂU
+   LẦM cho người dùng thật (tưởng file rỗng thật, không biết file đã bị cắt cụt) — khác use case
+   "file .dwg không phải .dwg" (bắt được rõ) với "file .dwg thật nhưng bị cắt cụt giữa chừng" (im
+   lặng thành 0 đối tượng). Chưa sửa — ghi vào `docs/TECH-DEBT.md` để cân nhắc: có nên cảnh báo khi
+   `totalEntityCount` xa mức thường gặp so với kích thước file, hay chấp nhận "0 đối tượng" là đủ
+   rõ ràng.
+
+**Môi trường verify gặp trở ngại lớn — ghi lại để phiên sau đỡ mất thời gian**: hai/ba phiên
+Cowork CHUNG một `.next/cache` (không phải worktree riêng) trong lúc verify → server dev port 3001
+crash lặp lại nhiều lần với đúng lỗi kinh điển "Cannot read properties of undefined (reading
+'call')"/ENOENT rename `.pack.gz_` — ĐÃ XÁC NHẬN không liên quan code DWG (log stack trace luôn
+trỏ vào module resolution ngẫu nhiên, không phải `dwg.ts`/`CadEditor.tsx` logic). Đã thử tách
+`distDir` riêng (`next.config.mjs` + `NEXT_DIST_DIR`) — dựng được server sạch nhưng gặp bug KHÁC
+(client hydration treo ở fallback spinner, RSC stream không finish) — **đã revert hết** (không có
+gì đọng lại trong `next.config.mjs`/`tsconfig.json`, `git diff` xác nhận sạch). Ghi nhận: phiên
+COWORK-P5 sau đó tự chuyển sang `.worktrees/p5-verify` (thấy trong `.claude/launch.json` diff, entry
+`interiorflow-p5-wt`, KHÔNG phải tôi thêm) — đúng hướng giải quyết lâu dài, nên làm TỪ ĐẦU phiên
+sau thay vì chữa cháy giữa chừng.
+
+**Việc đã làm** (đúng vùng — chỉ `CadEditor.tsx` nối dây UI, không đụng `lib/cad/dwg*.ts`/`dxf*.ts`
+vì cơ chế đã đúng từ trước): thêm state `dwgImportAbort` + thanh "Đang nhập DWG… [Huỷ]" + truyền
+`{signal}` vào `openDwgFile()`. `npx tsc --noEmit -p .` sạch, `dwg.test.ts` 21/21, `npm test` 0 fail
+mới (1 fail cũ đã biết `cad-to-obj.test.ts` entityId nội thất, không liên quan).
+
+**CHƯA LÀM / cần Hoà quyết**:
+- 🔴 Bug treo cứng tab khi Huỷ giữa chừng file lớn — CẦN sửa trước khi coi P1 đóng, vì nó tạo ra
+  trải nghiệm TỆ HƠN bug gốc. Hướng nghi vấn: giới hạn kích thước file trước khi cho Huỷ (cảnh báo
+  "đợi xong, đừng huỷ" khi file quá lớn?), hoặc chuyển việc dọn WASM heap sang tự nhiên (không ép
+  `terminate()` giữa chừng, chỉ đánh dấu "đã huỷ" và bỏ qua kết quả khi worker tự xong) — cách 2
+  an toàn hơn vì tránh đúng chi phí terminate() nghi ngờ, nhưng cần Hoà duyệt hướng trước khi sửa
+  (đổi ngữ nghĩa "huỷ" từ dừng ngay → dừng lắng nghe kết quả).
+- 🟡 "0 đối tượng" khi file bị cắt cụt giữa chừng (không phải chưa quyết định gấp, ghi TECH-DEBT).
+- Chưa chụp được 1 ca "huỷ THÀNH CÔNG mượt" (chỉ chụp được lúc đang chạy + lúc treo) — vì file lớn
+  duy nhất có sẵn để test (21MB) chính là file gây treo; cần thử với file cỡ trung (5-10MB) ở
+  phiên sau để tách bạch "Huỷ luôn treo" khỏi "chỉ file cực lớn mới treo".

@@ -70,3 +70,15 @@
   minh sâu nguyên nhân gốc (nghi: huỷ giữa chừng bằng Esc để lại state numeric-input/Số liệu dở
   dang, `findSnap` nhận endpoint list rỗng/undefined) — cần phiên khác tái hiện đúng chuỗi thao
   tác rồi đọc `query.ts` quanh dòng 335 để sửa.
+- 🔴 **Huỷ nhập DWG giữa chừng làm TREO CỨNG tab** (`lib/cad/dwg.ts` `openDwgFile()` +
+  `CadEditor.tsx` nút Huỷ mới nối, `docs/SO-KIEM-TONG.md` §11, 04/08) — verify browser thật bằng
+  file 21MB thật (`ID-02-GN-200-00-001.dwg`), bấm Huỷ giữa lúc `convertEx` chạy → tab không phản
+  hồi ≥2 phút, tái hiện 2/2 lần. Nghi chi phí giải phóng WASM linear memory lớn khi
+  `worker.terminate()`, chưa chứng minh được (không lấy được performance trace vì tab treo).
+  TỆ HƠN bug gốc "treo im lặng" vì giờ treo THẬT SỰ không phản hồi input. Cần Hoà duyệt hướng sửa
+  trước khi động: (a) chặn nút Huỷ khi file quá lớn (chỉ cho chờ) hay (b) đổi ngữ nghĩa Huỷ từ
+  "dừng ngay bằng terminate()" sang "đánh dấu huỷ, bỏ qua kết quả khi worker tự xong tự nhiên".
+- 🟡 File .dwg thật bị cắt cụt giữa chừng (còn nguyên chữ ký + header, mất thân) → nhập ÊM, báo
+  "0 đối tượng" thay vì báo lỗi rõ file đã hỏng (`docs/SO-KIEM-TONG.md` §11, 04/08). Không sai kỹ
+  thuật (header đọc được thật) nhưng dễ gây hiểu lầm "file rỗng thật". Chưa quyết có cần cảnh báo
+  thêm khi kích thước file lớn nhưng `totalEntityCount` = 0 hay không.

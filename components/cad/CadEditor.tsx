@@ -99,6 +99,11 @@ export default function CadEditor() {
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [handoffMsg, setHandoffMsg] = useState('');
+  // P1 verify (04/08) — cơ chế signal/onProgress đã sẵn ở lib/cad/dwg.ts openDwgFile(), CHỈ thiếu
+  // nút "Huỷ" thật nối vào UI (đúng mục "CHƯA LÀM" STATUS.md). Giữ AbortController ở state (không
+  // ref) để nút Huỷ re-render đúng lúc — dwgImportAbort !== null nghĩa là đang có 1 lượt nhập DWG
+  // chạy, bấm gọi .abort() → openDwgFile tự reject với dwgCancelledMessage().
+  const [dwgImportAbort, setDwgImportAbort] = useState<AbortController | null>(null);
   // Batch 19/07 — thay window.confirm/prompt (chặn thread JS, treo webview nhúng — cùng lớp bug
   // room tool ở CadCanvas) bằng UI nổi non-blocking. Semantics giữ nguyên: OK chạy hành động,
   // Huỷ/Escape không làm gì.
@@ -333,7 +338,9 @@ export default function CadEditor() {
     e.target.value = '';
     if (!f) return;
     useCadStore.getState().setStatus(`Đang đọc ${f.name}…`);
-    openDwgFile(f)
+    const controller = new AbortController();
+    setDwgImportAbort(controller);
+    openDwgFile(f, { signal: controller.signal })
       .then(({ doc, skippedEntityCount, totalEntityCount }) => {
         useCadStore.getState().importDoc(doc, 'replace');
         const skipNote = skippedEntityCount > 0 ? ` (${skippedEntityCount}/${totalEntityCount} đối tượng chưa hỗ trợ đã bỏ qua — INSERT/DIMENSION/… xem docs/LICENSE-NOTES.md)` : '';
@@ -342,7 +349,8 @@ export default function CadEditor() {
       })
       .catch((err: Error) => {
         useCadStore.getState().setStatus(`Không đọc được "${f.name}": ${err.message}`);
-      });
+      })
+      .finally(() => setDwgImportAbort(null));
   };
 
   // "Đưa sang Render →"
@@ -539,6 +547,20 @@ export default function CadEditor() {
         {handoffMsg && (
           <div style={{ position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 30, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 14px', fontSize: 12.5, color: 'var(--t2)' }}>
             {handoffMsg}
+          </div>
+        )}
+        {/* P1 verify (04/08) — nút "Huỷ" thật cho nhập DWG, cùng vị trí/khuôn handoffMsg. Chỉ hiện
+            khi đang có 1 lượt openDwgFile() chạy (dwgImportAbort !== null). */}
+        {dwgImportAbort && (
+          <div style={{ position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 30, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px 8px 14px', fontSize: 12.5, color: 'var(--t2)', display: 'flex', alignItems: 'center', gap: 10 }}>
+            Đang nhập DWG…
+            <button
+              type="button"
+              onClick={() => dwgImportAbort.abort()}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--t1)', fontSize: 12, cursor: 'pointer' }}
+            >
+              <X size={13} /> Huỷ
+            </button>
           </div>
         )}
         {/* Hộp xác nhận nổi non-blocking (Mở bản demo / Mở .idf) — thay window.confirm. */}

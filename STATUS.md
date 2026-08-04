@@ -1,5 +1,21 @@
 # STATUS — InteriorFlow
 
+## 🔴 XONG MỘT PHẦN (04/08 tối — P1-VERIFY nhập DWG bằng file thật, chi tiết `SO-KIEM-TONG.md` §11)
+Verify `2236e0d` bằng 34 file .dwg thật + phát hiện khoảng trống: `openDwgFile()` có sẵn
+`opts.signal`/`opts.onProgress` nhưng chưa nút nào gọi tới — nối vào `CadEditor.tsx` (state
+`dwgImportAbort` + thanh nổi "Đang nhập DWG… [Huỷ]"). Verify browser thật 3 ca: **thành công**
+(`Small office.dwg` 224KB → 315 đối tượng, đúng) · **tiến độ sống** (`ID-02-GN-200-00-001.dwg`
+21MB → status cập nhật mỗi giây đúng giai đoạn `convertEx`) · **file hỏng báo lỗi rõ** (2 biến thể
+chữ ký sai → thông báo có tên file cụ thể, đúng yêu cầu).
+🔴 **PHÁT HIỆN BUG MỚI, chưa sửa**: bấm Huỷ giữa lúc `convertEx` file 21MB đang chạy → **tab treo
+cứng thật sự ≥2 phút** (không phải treo im lặng như bug gốc — giờ không phản hồi bất kỳ input
+nào), tái hiện 2/2 lần ở 2 server độc lập. Nghi chi phí `worker.terminate()` giải phóng WASM heap
+lớn, chưa chứng minh được (không lấy được performance trace vì tab treo). Ghi `docs/TECH-DEBT.md`
++ `SO-KIEM-TONG.md` §11 — cần Hoà duyệt hướng sửa trước khi động tiếp (chặn Huỷ file lớn, hay đổi
+ngữ nghĩa Huỷ sang "bỏ qua kết quả" thay vì `terminate()` ngay). Phụ: file .dwg cắt cụt còn header
+→ vào êm "0 đối tượng" thay vì báo lỗi rõ (không sai kỹ thuật nhưng dễ hiểu lầm, ghi TECH-DEBT).
+`tsc`/`dwg.test.ts` (21/21)/`npm test` sạch, không hồi quy.
+
 ## ✅ XONG (04/08 — P5 luật kính lỏng + khuôn EmptyState toàn app)
 VIỆC 1: `.glass-float`/`.glass-float--bar` vào `globals.css` (cạnh `.vitals-pop`) — panel 34% +
 blur(--blur) saturate(1.3) + gờ trên sáng hơn (t1 26% vs 14%) + shadow 0 8px 32px; áp ĐÚNG 4 chỗ:
@@ -108,10 +124,9 @@ như cũ (1 tham số) vẫn chạy y nguyên — chỉ tự động được b�
 Test mới `lib/cad/dwg.test.ts` (21/21, các hàm thuần format thông báo — không test được
 `openDwgFile`/Worker thật vì `dwg.ts` chứa `import.meta`, giống lý do `dwg-map.ts` tách riêng từ
 đầu) + `dwg-flatten.test.ts` cũ 36/36 không hồi quy. `tsc --noEmit -p .` sạch.
-**CHƯA LÀM** (ngoài vùng file ticket): nút "Huỷ" thật + thanh tiến độ riêng trong `CadEditor.tsx`
-(cơ chế `signal`/`onProgress` đã sẵn, chỉ cần nối) · chưa xác nhận được TRUE infinite loop trong
-`convertEx` (nếu tái diễn với timeout 60s vẫn "treo" → là bug C thật trong libredwg-web, cần báo
-upstream, không phải thiếu timeout nữa).
+**CHƯA LÀM lúc đó** (nút Huỷ + verify thật) → đã làm + phát hiện bug MỚI, xem entry P1-VERIFY phía
+trên đầu file · chưa xác nhận được TRUE infinite loop trong `convertEx` (nếu tái diễn với timeout
+60s vẫn "treo" → là bug C thật trong libredwg-web, cần báo upstream, không phải thiếu timeout nữa).
 
 ## ✅ XONG (04/08 — P4 xuất PDF: sàn nét in an toàn + số tờ/phiên bản, `df6ca85`)
 Brief P4 mô tả "xuất PDF hiện là chụp màn hình" — **SAI so code thật** (đã kiểm `git log` trước
@@ -371,8 +386,9 @@ AI ở Settings không ăn" — nghi đúng nguyên nhân này (route không qua
 ## Chờ USER quyết
 - **4.1.f thi công** (đổi hình dạng `brand-kit.json`) · **`knowledge/ttt-design-system/`** vi phạm
   LUẬT TRUNG TÍNH · **④ `FlowVersion`** không phải thủ phạm `dev.db` phình · **NT1/NT5**/**T3/T4**
-  dời sau · **Figma** MCP lỗi, đường vòng đã có · **DWG** hướng GPL chưa chốt + `2.1.6.d` 🔴 bug
-  Nhập DWG treo vĩnh viễn chưa ai động · Treo: VIỆC 4 cũ, #14, Xlsx probe · 3 nhánh
+  dời sau · **Figma** MCP lỗi, đường vòng đã có · **DWG** hướng GPL chưa chốt + `2.1.6.d` gốc đã
+  vá (timeout/tiến độ/lỗi rõ) nhưng 🔴 bug MỚI "Huỷ giữa chừng file lớn = treo cứng tab" — xem
+  entry P1-VERIFY đầu STATUS.md, chờ Hoà chọn hướng sửa · Treo: VIỆC 4 cũ, #14, Xlsx probe · 3 nhánh
   `worktree-agent-*` merged còn local · Sprint BOQ ĐỢT 3 greenlight sau ĐỢT DEMO ·
   `2.2.16-2.2.21`/12 file SPEC-TỔNG §9/`2.2.83` chưa quyết. Chi tiết → CHANGELOG/`IF-FEATURE-TREE.md`.
 
