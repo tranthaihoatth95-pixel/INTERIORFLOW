@@ -8,6 +8,7 @@
  * phần tử (kể cả quanh vạch chia) — không số lẻ tuỳ hứng (§2c luật 2).
  */
 
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MousePointer2, Hand, Frame as FrameIcon, Pen, StickyNote, Undo2, Redo2, Minus, Plus, Maximize, LayoutGrid, Grid3x3, Command } from 'lucide-react';
 import { useReactFlow, useViewport } from '@xyflow/react';
@@ -30,6 +31,43 @@ export function BottomToolbar({ onAddNote }: { onAddNote: () => void }) {
   const setPaletteOpen = useFlowStore((s) => s.setPaletteOpen);
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const { zoom } = useViewport();
+
+  // VIỆC 2 UI (04/08, docs/SO-KIEM-TONG.md) — ⌘9 vừa khung · ⌘=/⌘- phóng-thu · ⌘' bật/tắt snap
+  // lưới · Esc về công cụ Chọn. Đăng ký NGAY ĐÂY (không rải thêm file) vì `zoomIn`/`zoomOut`/
+  // `fitView` (useReactFlow) và `toggleSnap`/`setTool` (useFlowStore) đã sẵn trong scope — cùng
+  // đúng hàm nút "Zoom in"/"Zoom out"/"Fit view"/"Snap lưới" bên dưới gọi, không viết luồng thứ 2.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key === '9') {
+        e.preventDefault();
+        fitView({ padding: 0.2 });
+        return;
+      }
+      if (mod && (e.key === '=' || e.key === '+')) {
+        e.preventDefault();
+        zoomIn();
+        return;
+      }
+      if (mod && e.key === '-') {
+        e.preventDefault();
+        zoomOut();
+        return;
+      }
+      if (mod && e.key === "'") {
+        e.preventDefault();
+        toggleSnap();
+        return;
+      }
+      if (!mod && e.key === 'Escape') {
+        setTool('select');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [fitView, zoomIn, zoomOut, toggleSnap, setTool]);
 
   // §2d bo đồng tâm: bar r22, đệm 5 → nút r17 (=22−5, tự thành capsule ở kích 34).
   const btnClass = (active = false, disabled = false) =>

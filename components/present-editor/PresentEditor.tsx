@@ -1413,7 +1413,22 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         onPaste();
         return;
       }
-      // zoom canvas: Ctrl/Cmd + '=' (phím '+' không Shift) / '-' / '0' (về Fit) — chuẩn Figma/PS.
+      // VIỆC 2 UI (04/08) — ⌘G/⇧⌘G nối vào đúng onGroupSelected/onUngroupSelected sẵn có
+      // (trước chỉ bấm được qua menu chuột phải trên EditorCanvas.tsx) — không viết luồng nhóm
+      // thứ hai. ⇧ kiểm TRƯỚC vì 'G'/'g' đều khớp cả 2 nhánh.
+      if (mod && e.shiftKey && (e.key === 'g' || e.key === 'G')) {
+        e.preventDefault();
+        onUngroupSelected();
+        return;
+      }
+      if (mod && (e.key === 'g' || e.key === 'G')) {
+        e.preventDefault();
+        onGroupSelected();
+        return;
+      }
+      // zoom canvas: Ctrl/Cmd + '=' (phím '+' không Shift) / '-' / '9' (về Fit) — chuẩn Figma/PS.
+      // VIỆC 2 UI (04/08) — ĐỔI TỪ ⌘0 SANG ⌘9: ⌘0 nay là phím TOÀN CỤC "về Gallery"
+      // (AppChrome.tsx, docs/SO-KIEM-TONG.md) — nhường chỗ.
       if (mod && (e.key === '=' || e.key === '+')) {
         e.preventDefault();
         zoomIn();
@@ -1424,7 +1439,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         zoomOut();
         return;
       }
-      if (mod && e.key === '0') {
+      if (mod && e.key === '9') {
         e.preventDefault();
         zoomReset();
         return;
@@ -1465,6 +1480,8 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     onZOrder,
     onNudge,
     onSelectNext,
+    onGroupSelected,
+    onUngroupSelected,
     imageEditId,
     playing,
     sorterOpen,

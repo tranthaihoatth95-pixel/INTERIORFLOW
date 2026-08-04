@@ -47,6 +47,7 @@ import { AppLogoMenu } from '@/components/studio/AppLogoMenu';
 import { HomeButton } from '@/components/studio/HomeButton';
 import { LeaveConfirmBar } from '@/components/studio/LeaveConfirmBar';
 import { useDismissable } from '@/lib/useDismissable';
+import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import { activeToPhase, pickStage } from '@/lib/studio/stage-nav';
 import type { AppChromeActive } from '@/components/studio/AppChromeTypes';
 
@@ -70,6 +71,10 @@ export function AppChrome({ active, logoMenu }: Props) {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [logoMenuOpen, setLogoMenuOpen] = useState(false);
   const onPickRef = useRef<(p: Phase) => void>(() => {});
+  // VIỆC 2 UI (04/08) — ref cho handler ⌘0/⌘B/⌘L (effect deps rỗng, cùng lý do onPickRef trên:
+  // tránh re-subscribe mỗi lần active đổi, luôn đọc closure mới nhất).
+  const activeRef = useRef(active);
+  activeRef.current = active;
   const logoRef = useRef<HTMLButtonElement>(null);
   const logoMenuRef = useRef<HTMLDivElement>(null);
   const [logoAnchor, setLogoAnchor] = useState<{ top: number; left: number } | null>(null);
@@ -122,6 +127,27 @@ export function AppChrome({ active, logoMenu }: Props) {
         e.preventDefault();
         const target: Phase = e.key === '1' ? 'concept' : e.key === '2' ? 'render' : 'present';
         onPickRef.current(target);
+      }
+      // VIỆC 2 UI (04/08, docs/SO-KIEM-TONG.md) — 3 phím toàn cục mới, ĐĂNG KÝ Ở ĐÂY (AppChrome
+      // đã là điểm tập trung của ⌘/, ⌘1-3 — không mở thêm listener rời). ⌘0 tái dùng đúng cửa
+      // "về Gallery" của VIỆC 1 (goHomeConfirmed, hỏi trước nếu chưa lưu). ⌘B/⌘L tái dùng đúng sự
+      // kiện/hàm sẵn có của phím trần B (AppShell.tsx `if:navigator-toggle`) và L (`openLibrarySheet`,
+      // lib/library/use-library-sheet.ts) — không viết luồng toggle/mở-sheet thứ hai.
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key === '0') {
+        e.preventDefault();
+        goHomeConfirmed(router, { push: activeRef.current !== 'render' });
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('if:navigator-toggle', { detail: {} }));
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        const a = activeRef.current;
+        openLibrarySheet({ stage: a === 'render' ? 'render' : a === 'present' ? 'present' : 'cad' });
+        return;
       }
     };
     const onOpenEvent = () => setShortcutsOpen(true);

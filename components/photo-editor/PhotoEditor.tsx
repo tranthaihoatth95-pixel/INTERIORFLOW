@@ -69,7 +69,8 @@ export default function PhotoEditor({ initialDoc, onWriteBack }: Props) {
    * Phím tắt kiểu Photoshop (PS-7 Việc 1) — copy pattern keydown của CadCanvas
    * (components/cad/CadCanvas.tsx ~1381-1411): 1 effect, 1 listener window, chặn khi đang
    * gõ INPUT/TEXTAREA (rename lớp, dán URL ảnh…), nhận cả metaKey (Mac) lẫn ctrlKey (Win).
-   *  - ⌘/Ctrl+Z: undo · ⌘/Ctrl+⇧+Z hoặc ⌘/Ctrl+Y: redo · ⌘/Ctrl+0: vừa khung (fit).
+   *  - ⌘/Ctrl+Z: undo · ⌘/Ctrl+⇧+Z hoặc ⌘/Ctrl+Y: redo · ⌘/Ctrl+9: vừa khung (fit).
+   *    (VIỆC 2 UI 04/08 — đổi từ ⌘0 sang ⌘9: ⌘0 nay là phím toàn cục "về Gallery", AppChrome.tsx.)
    *  - Phím chữ không kèm modifier: chọn tool (V/B/E/S/J/M/L — xem lib/photo-editor/hotkeys.ts).
    *  - [ / ]: giảm/tăng cỡ cọ.
    */
@@ -89,7 +90,7 @@ export default function PhotoEditor({ initialDoc, onWriteBack }: Props) {
         ed.redo();
         return;
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === '0') {
+      if ((e.metaKey || e.ctrlKey) && e.key === '9') {
         e.preventDefault();
         setFitSignal((s) => s + 1);
         return;

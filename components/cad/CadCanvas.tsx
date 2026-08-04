@@ -401,6 +401,23 @@ export default function CadCanvas() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /** NC-13 Bước 3 (CadSheets.tsx, đổi tab sheet) — bay camera tới ĐÚNG vùng world (mm) mà
+   * Viewport2D của sheet đang soi vào, khác `cad:zoom-to` (chỉ recenter, giữ scale hiện tại):
+   * ở đây fit CẢ vùng (dùng scale mới) như `zoomExtents()` nhưng với 1 box tuỳ ý thay vì docBox. */
+  useEffect(() => {
+    const onGotoBox = (ev: Event) => {
+      const detail = (ev as CustomEvent<Box>).detail;
+      if (!detail) return;
+      const { setViewport } = useCadStore.getState();
+      const { W, H } = screenSize();
+      setViewport(fitBox(detail, W, H, 80));
+      ix.current.redraw = true;
+    };
+    window.addEventListener('cad:goto-box', onGotoBox);
+    return () => window.removeEventListener('cad:goto-box', onGotoBox);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function screenSize() {
     const c = canvasRef.current;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -1997,12 +2014,14 @@ export default function CadCanvas() {
         cadMenuDuplicate();
         return;
       }
-      // 2.1.11.c (31/07, Sprint "Lộ nền" VIỆC 4) — ⌘0/⌘=/⌘- discoverable cho zoom, khuôn giống
-      // PhotoEditor.tsx (⌘0 fit) + PresentEditor.tsx (⌘=/⌘- phóng/thu). Vừa khung KHÔNG PHẢI
-      // tính năng mới — CAD đã có SẴN phím `f` (zoomExtents(), xem nhánh bên dưới) + nút toolbar
+      // 2.1.11.c (31/07, Sprint "Lộ nền" VIỆC 4) — ⌘9/⌘=/⌘- discoverable cho zoom, khuôn giống
+      // PhotoEditor.tsx + PresentEditor.tsx (⌘=/⌘- phóng/thu). Vừa khung KHÔNG PHẢI tính năng
+      // mới — CAD đã có SẴN phím `f` (zoomExtents(), xem nhánh bên dưới) + nút toolbar
       // "Zoom Extents" (CadToolbar.tsx, event cad:zoom-extents), chỉ thiếu lối vào kiểu ⌘-combo
-      // quen thuộc với người dùng ứng dụng khác — KHÔNG xoá `f`, thêm ⌘0 chạy song song.
-      if ((e.metaKey || e.ctrlKey) && e.key === '0') {
+      // quen thuộc với người dùng ứng dụng khác — KHÔNG xoá `f`, thêm ⌘9 chạy song song.
+      // VIỆC 2 UI (04/08) — ĐỔI TỪ ⌘0 SANG ⌘9: ⌘0 nay là phím TOÀN CỤC "về Gallery"
+      // (AppChrome.tsx, docs/SO-KIEM-TONG.md) — nhường chỗ, không đụng lib/cad/model.ts.
+      if ((e.metaKey || e.ctrlKey) && e.key === '9') {
         e.preventDefault();
         zoomExtents();
         return;

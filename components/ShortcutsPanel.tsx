@@ -288,9 +288,16 @@ function GroupHeader({ title }: { title: string }) {
   );
 }
 
-function RowShell({ keyNode, desc }: { keyNode: React.ReactNode; desc: string }) {
+/**
+ * VIỆC 2 UI (04/08) — hàng "chưa nối" (§9 `docs/00-BAT-DAU-DOC-DAY.md`: hiện mờ kèm lý do,
+ * KHÔNG giấu). Hàng vẫn cao ĐÚNG `ROW_H` — không phá lưới cố định của bản mẫu Hoà gửi (đầu
+ * file) — lý do đủ nằm trong `title` (tooltip hover) + đuôi " — chưa nối" ngắn LUÔN hiện, không
+ * cần hover mới thấy có vấn đề.
+ */
+function RowShell({ keyNode, desc, disabled, reason }: { keyNode: React.ReactNode; desc: string; disabled?: boolean; reason?: string }) {
   return (
     <div
+      title={disabled ? reason : undefined}
       style={{
         display: 'grid',
         gridTemplateColumns: `${KEY_COL}px 1fr`,
@@ -298,6 +305,8 @@ function RowShell({ keyNode, desc }: { keyNode: React.ReactNode; desc: string })
         height: ROW_H,
         padding: '0 12px',
         gap: 8,
+        opacity: disabled ? 0.45 : 1,
+        cursor: disabled ? 'help' : undefined,
       }}
     >
       <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12, fontWeight: 600, color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -305,6 +314,7 @@ function RowShell({ keyNode, desc }: { keyNode: React.ReactNode; desc: string })
       </div>
       <div style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--t2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {desc}
+        {disabled && <span style={{ color: 'var(--t4)' }}> — chưa nối</span>}
       </div>
     </div>
   );
@@ -340,7 +350,7 @@ function ShortcutGroupBox({ title, items, isMac }: { title: string; items: Short
       <GroupHeader title={title} />
       <div style={{ padding: '3px 0' }}>
         {items.map((it, i) => (
-          <RowShell key={i} keyNode={formatShortcutKeys(it.keys, isMac)} desc={it.label} />
+          <RowShell key={i} keyNode={formatShortcutKeys(it.keys, isMac)} desc={it.label} disabled={it.disabled} reason={it.disabledReason} />
         ))}
       </div>
     </div>
