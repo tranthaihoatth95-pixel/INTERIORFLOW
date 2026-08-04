@@ -893,7 +893,7 @@ export interface Viewport2D {
 /**
  * MỘT TỜ trong bộ hồ sơ — metadata NHẸ (vài trăm byte), không ôm Doc/undo nào (đây là điểm khác
  * mô hình cũ `IdfSheetData` ở `idf.ts`, vốn mỗi sheet giữ nguyên 1 `Doc` — xem NC-13 §2 "Hậu quả
- * kéo theo"). Không giới hạn số Sheet (bỏ hẳn `MAX_SHEETS` — việc đó thuộc BƯỚC 4, CHƯA làm).
+ * kéo theo"). Không giới hạn số Sheet (`MAX_SHEETS` đã gỡ hẳn ở D2 đợt 8, 04/08).
  */
 export interface Sheet {
   id: string;

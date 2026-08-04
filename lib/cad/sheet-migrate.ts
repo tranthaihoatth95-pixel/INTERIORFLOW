@@ -3,9 +3,9 @@
  * bộ chuyển MỘT CHIỀU từ mô hình sheet CŨ (mỗi sheet = 1 `Doc` độc lập, `IdfSheetData` ở `idf.ts`)
  * sang mô hình ĐÍCH (MỘT `Doc` chung, đúng luật K1, + 1 `Sheet`/`Viewport2D` — `model.ts`, BƯỚC 1).
  *
- * KHÔNG được gọi từ đâu trong app (BƯỚC 3-5 — đổi `SheetTabBar`/gỡ `MAX_SHEETS`/bump `IDF_VERSION`
- * — CHƯA làm, chờ Hoà nghiệm thu thiết kế). File này CHỈ để bộ chuyển tồn tại + có test chứng
- * minh nó bảo toàn dữ liệu, sẵn sàng cho BƯỚC 5 gọi vào khi migrate `.idf` cũ.
+ * Nơi gọi thật: `CadSheets.tsx` (D1 đợt 8 — gộp bản ghi/.idf CŨ nhiều Doc về 1 Doc chung lúc
+ * nạp). `MAX_SHEETS` cũng đã gỡ (D2, 04/08). Còn lại bump `IDF_VERSION` + tách N sheet theo
+ * offset Q1 khi mở file cũ = D3, HOÃN chờ studio thật dùng thử (quyết định Hoà 04/08).
  *
  * THUẦN (không React/DOM) — chạy test bằng `node_modules/.bin/sucrase-node
  * lib/cad/sheet-migrate.test.ts`, giống `dxf.roundtrip.test.ts`.

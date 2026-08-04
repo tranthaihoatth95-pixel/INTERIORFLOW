@@ -73,7 +73,6 @@ import { ensureProjectScope } from '@/lib/project-scope';
 import { resolveSourceOfTruth, createDiskWriter, watchProjectPresence, type DiskWriter } from '@/lib/disk-sync';
 import { useProjectPresence } from '@/lib/project-presence-ui';
 
-const MAX_SHEETS = 5;
 const ROUTE = '/present-editor' as const;
 const BLANK_PALETTE = ['#EFE9DC', '#C2AD86', '#8A6A3A', '#6E4A2E', '#3B352F', '#28211A'];
 
@@ -270,16 +269,16 @@ export default function PresentSheets({ initialDeck }: Props) {
    * lẫn tự động từ đĩa) đều ĐI QUA đúng chỗ tăng `importGen`, không cần nhớ ghép lại mỗi lần viết
    * đường nạp mới.
    */
-  const applyIdfpSheets = (parsedSheets: IdfpSheetData[]): { keptCount: number; droppedCount: number } => {
-    const kept = parsedSheets.slice(0, MAX_SHEETS);
-    seq = Math.max(seq, nextSeqFrom(kept.map((s) => s.id), 'presheet'));
-    const nextSheets: Sheet[] = kept.map(({ id, name, deck }) => ({ id, name, deck }));
+  const applyIdfpSheets = (parsedSheets: IdfpSheetData[]): { keptCount: number } => {
+    // D2 đợt 8: hết trần 5 — nhận đủ mọi hồ sơ trong file, không cắt bớt nữa.
+    seq = Math.max(seq, nextSeqFrom(parsedSheets.map((s) => s.id), 'presheet'));
+    const nextSheets: Sheet[] = parsedSheets.map(({ id, name, deck }) => ({ id, name, deck }));
     setSheets(nextSheets);
     const firstId = nextSheets[0].id;
     setActiveId(firstId);
     liveDeck.current = nextSheets[0].deck;
     setImportGen((g) => g + 1); // ép remount PresentEditor dù id trùng — xem docstring B2/importGen
-    return { keptCount: kept.length, droppedCount: parsedSheets.length - kept.length };
+    return { keptCount: nextSheets.length };
   };
 
   /** KHÔI PHỤC 1 lần lúc mount: IDB → bộ sheet + sheet active (ưu tiên resume.sheetId). */
@@ -304,7 +303,7 @@ export default function PresentSheets({ initialDeck }: Props) {
     void loadSheets<PersistedPresentSheet>(userId, ROUTE, bucketId).then(async (rec) => {
       if (cancelled) return;
       const valid =
-        rec?.sheets.filter((s) => s.deck && Array.isArray(s.deck.slides)).slice(0, MAX_SHEETS) ?? [];
+        rec?.sheets.filter((s) => s.deck && Array.isArray(s.deck.slides)) ?? [];
 
       // B4 (4.1.d) — quyết định NGUỒN NÀO thắng TRƯỚC khi áp bất kỳ state nào (tránh nhấp nháy
       // cache→đĩa). `cacheTs=0` khi CHƯA có bản ghi IndexedDB nào — B5 "copy thư mục dự án sang
@@ -356,7 +355,7 @@ export default function PresentSheets({ initialDeck }: Props) {
       v: 1,
       activeId: activeIdRef.current,
       ts: Date.now(),
-      sheets: sheetsRef.current.slice(0, MAX_SHEETS).map((s) => ({
+      sheets: sheetsRef.current.map((s) => ({
         id: s.id,
         name: s.name,
         // sheet đang mở → deck sống mới nhất (state sheets chỉ commit lúc đổi tab)
@@ -382,7 +381,7 @@ export default function PresentSheets({ initialDeck }: Props) {
       async () => {
         if (!bucketId || !(await rootFolderChosen())) return { ok: true, reason: 'off' };
         const projectName = useFlowStore.getState().flowName || 'InteriorFlow project';
-        const idfpSheets: IdfpSheetData[] = sheetsRef.current.slice(0, MAX_SHEETS).map((s) => ({
+        const idfpSheets: IdfpSheetData[] = sheetsRef.current.map((s) => ({
           id: s.id,
           name: s.name,
           deck: s.id === activeIdRef.current ? liveDeck.current : s.deck,
@@ -485,13 +484,14 @@ export default function PresentSheets({ initialDeck }: Props) {
       }
       // B4 (4.1.d) — dùng ĐÚNG 1 đường áp dụng sheet đã parse, chung với nạp tự động khi đĩa
       // thắng lúc mount (xem docstring applyIdfpSheets — Luật Đồng Bộ #6).
-      const { keptCount, droppedCount } = applyIdfpSheets(parsed.sheets);
+      const { keptCount } = applyIdfpSheets(parsed.sheets);
       saverRef.current?.touch(); // ghi ngay vào IDB, không đợi debounce thao tác kế tiếp
       diskWriterRef.current?.touch(); // B4 — cũng đánh dấu đĩa cần ghi lại (nhịp riêng)
       window.dispatchEvent(new CustomEvent('present:idfp-import-done', {
         detail: {
           ok: true,
-          text: `Đã mở "${detail.fileName}" — ${keptCount} hồ sơ${droppedCount > 0 ? ` (bỏ ${droppedCount} hồ sơ vượt trần ${MAX_SHEETS})` : ''}.`,
+          // D2 đợt 8: hết trần 5 hồ sơ — không còn nhánh "bỏ N hồ sơ vượt trần".
+          text: `Đã mở "${detail.fileName}" — ${keptCount} hồ sơ.`,
         },
       }));
     };
@@ -530,7 +530,9 @@ export default function PresentSheets({ initialDeck }: Props) {
   };
 
   const addSheet = () => {
-    if (sheets.length >= MAX_SHEETS) return;
+    // D2 đợt 8: KHÔNG còn trần số hồ sơ. Khác CAD (sheet = metadata), mỗi hồ sơ Present ôm
+    // nguyên 1 deck — nhưng deck chỉ nặng theo số slide người dùng thật sự tạo, trần cứng 5
+    // không bảo vệ gì thêm mà chỉ chặn studio nhiều hồ sơ.
     const id = nextId();
     const deck = blankDeck(sheets.length + 1);
     const committed = commitActive(sheets);
@@ -568,16 +570,14 @@ export default function PresentSheets({ initialDeck }: Props) {
       <SheetTabBar
         sheets={sheets}
         activeId={activeId}
-        max={MAX_SHEETS}
         onSelect={switchTo}
         onAdd={addSheet}
         onRename={renameSheet}
         onClose={closeSheet}
         onReorder={reorder}
         addLabel="Thêm hồ sơ trình bày"
-        // "8 slide" — đúng thứ đang thấy ở dải dưới. Trần 5 CHỈ nhắc khi đã chạm trần (trước đó
-        // nói ra chỉ làm người dùng bận tâm về một giới hạn chưa gặp).
-        status={`${slideCount} slide${sheets.length >= MAX_SHEETS ? ` · tối đa ${MAX_SHEETS} hồ sơ` : ''}`}
+        // "8 slide" — đúng thứ đang thấy ở dải dưới (L1 phiếu 03/08). Trần 5 đã gỡ ở D2 đợt 8.
+        status={`${slideCount} slide`}
       />
       <div style={{ flex: 1, minHeight: 0 }}>
         {/* Chỉ mount editor SAU hydrate: deck khôi phục phải vào từ initialDeck (key=activeId).

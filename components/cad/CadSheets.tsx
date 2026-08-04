@@ -71,7 +71,6 @@ import { saveSheets } from '@/lib/sheets-persist';
 import { useSaveStatus } from '@/lib/save-status';
 import { useRouter } from 'next/navigation';
 
-const MAX_SHEETS = 5;
 const ROUTE = '/cad-editor' as const;
 const DEFAULT_VIEWPORT: Viewport = { scale: 0.08, panX: 300, panY: 400 };
 
@@ -558,7 +557,8 @@ export default function CadSheets() {
   };
 
   const addSheet = () => {
-    if (sheets.length >= MAX_SHEETS) return;
+    // D2 đợt 8: KHÔNG còn trần số tờ — sau D1 mỗi sheet chỉ là metadata vài trăm byte (tên +
+    // khung nhìn), thêm tờ không nhân đôi hình học nên hết lý do chặn.
     const doc = useCadStore.getState().doc;
     const sheet = defaultSheet(`Bản vẽ ${sheets.length + 1}`, doc);
     setSheets((prev) => [...prev, sheet]);
@@ -822,7 +822,6 @@ export default function CadSheets() {
       <SheetTabBar
         sheets={sheets.map(({ id, name }): SheetTab => ({ id, name }))}
         activeId={activeId}
-        max={MAX_SHEETS}
         onSelect={switchTo}
         onAdd={addSheet}
         onRename={renameSheet}

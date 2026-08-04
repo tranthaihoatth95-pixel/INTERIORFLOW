@@ -8,7 +8,7 @@
  * editor bên dưới.
  *
  * - Click tab: chọn. Double-click: đổi tên tại chỗ (Enter/blur lưu, Esc huỷ).
- * - Nút "+": thêm sheet; ẩn khi đạt `max`.
+ * - Nút "+": thêm sheet; mờ khi đạt `max` (bên gọi không truyền `max` = không trần, D2 đợt 8).
  * - Nút "×": đóng; ẩn khi chỉ còn 1 sheet.
  * - Kéo-thả tab trái/phải: onReorder(from, to). (Kéo-gộp single-window = pha 2, xem docs/MULTI-SHEET-PROPOSAL.md.)
  */
@@ -24,8 +24,9 @@ export interface SheetTab {
 interface Props {
   sheets: SheetTab[];
   activeId: string;
-  /** số sheet tối đa (giai đoạn đầu = 5). */
-  max: number;
+  /** Số sheet tối đa. BỎ TRỐNG = không trần (D2 đợt 8 multi-sheet: sheet nay chỉ là metadata
+   * vài trăm byte sau D1, hết lý do chặn). Giữ prop cho bên gọi nào còn muốn tự đặt trần. */
+  max?: number;
   onSelect: (id: string) => void;
   onAdd: () => void;
   onRename: (id: string, name: string) => void;
@@ -75,7 +76,7 @@ export default function SheetTabBar({
     setEditingId(null);
   };
 
-  const canAdd = sheets.length < max;
+  const canAdd = max == null || sheets.length < max;
   const canClose = sheets.length > 1;
 
   return (
@@ -214,9 +215,9 @@ export default function SheetTabBar({
       <span style={{ fontSize: 11, color: 'var(--t4)', flex: '0 0 auto', paddingRight: 4 }}>
         {/* L1 (phiếu 03/08): mẫu "1/5" đánh lừa — người đọc tưởng "trang 1 trong 5 trang tài
             liệu", thật ra là "sheet 1 / trần 5 sheet", trong khi dải dưới có 8 slide. Bên gọi
-            truyền `status` để nói đúng đơn vị của mình (Present: "8 slide"); trần chỉ nhắc khi
-            CHẠM trần. Không truyền `status` thì giữ nguyên hành vi cũ (CAD không đổi gì). */}
-        {status ?? `${sheets.length}/${max}`}
+            truyền `status` để nói đúng đơn vị của mình (Present: "8 slide"). Không truyền
+            `status`: có `max` thì giữ mẫu cũ, không trần (D2) thì chỉ đếm. */}
+        {status ?? (max != null ? `${sheets.length}/${max}` : `${sheets.length} sheet`)}
       </span>
     </div>
   );
