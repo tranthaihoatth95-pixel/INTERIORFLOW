@@ -20,6 +20,8 @@ import {
   Link2,
   Send,
   FolderPlus,
+  LayoutGrid,
+  GalleryHorizontal,
 } from 'lucide-react';
 import VitalsIcon from '@/components/studio/VitalsIcon';
 import { VitalsBubble, VitalsTyping } from '@/components/studio/VitalsChatBubble';
@@ -515,35 +517,33 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
   );
   const effectiveGrid = viewOverride === 'grid' ? true : viewOverride === 'carousel' ? false : manyMode;
 
-  /** Segmented 2-ô 🎠/🔲 — cùng khuôn `LangToggle` (role="group", ô đang chọn nổi bật). Vô
-   * hiệu hoá TOÀN BỘ control khi reduce-motion (không phải giấu đi) + title giải thích tại sao. */
+  /** MỘT nút toggle bật/tắt (không segmented) — icon phẳng lucide cho biết BẤM SẼ SANG kiểu nào:
+   * đang lưới → `GalleryHorizontal` (bấm sang carousel) · đang carousel → `LayoutGrid` (bấm về lưới).
+   * Vô hiệu hoá khi reduce-motion (không phải giấu đi) + title giải thích tại sao. */
   const viewToggle = (
-    <div
-      role="group"
+    <button
+      type="button"
+      disabled={!!reduce}
+      onClick={() => setViewOverride(effectiveGrid ? 'carousel' : 'grid')}
       aria-label={en ? 'Gallery layout' : 'Kiểu hiển thị Gallery'}
-      title={reduce ? (en ? 'Reduced motion is on — flat list only.' : 'Đang bật giảm chuyển động — chỉ có danh sách phẳng.') : undefined}
-      className="inline-flex shrink-0 items-center gap-0.5 rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-0.5"
-      style={reduce ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
+      title={
+        reduce
+          ? en
+            ? 'Reduced motion is on — flat list only.'
+            : 'Đang bật giảm chuyển động — chỉ có danh sách phẳng.'
+          : effectiveGrid
+            ? en
+              ? 'Switch to 3D carousel'
+              : 'Chuyển sang carousel 3D'
+            : en
+              ? 'Switch to grid'
+              : 'Chuyển về lưới'
+      }
+      className="inline-flex shrink-0 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--field)] p-2 text-[var(--t3)] transition-colors hover:text-[var(--t1)] disabled:cursor-not-allowed"
+      style={reduce ? { opacity: 0.45 } : undefined}
     >
-      {(['carousel', 'grid'] as const).map((mode) => {
-        const on = !effectiveGrid === (mode === 'carousel');
-        return (
-          <button
-            key={mode}
-            type="button"
-            disabled={!!reduce}
-            onClick={() => setViewOverride(mode)}
-            aria-pressed={on}
-            title={mode === 'carousel' ? (en ? '3D carousel' : 'Carousel 3D') : (en ? 'Grid' : 'Lưới')}
-            className={`flex items-center gap-1 rounded-[7px] px-2.5 py-1.5 text-[13px] transition-colors disabled:cursor-not-allowed ${
-              on ? 'bg-[var(--card)] text-[var(--t1)] shadow-sm' : 'text-[var(--t4)] hover:text-[var(--t2)]'
-            }`}
-          >
-            <span aria-hidden="true">{mode === 'carousel' ? '🎠' : '🔲'}</span>
-          </button>
-        );
-      })}
-    </div>
+      {effectiveGrid ? <GalleryHorizontal size={16} aria-hidden="true" /> : <LayoutGrid size={16} aria-hidden="true" />}
+    </button>
   );
 
   /* ---------- Ambient cover glow (tvOS-style) — nền trang "lan toả" theo ảnh bìa card đang focus ----------
@@ -1956,7 +1956,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         ) : reduce ? (
           flatList
         ) : effectiveGrid ? (
-          // >8 dự án (J-4c) HOẶC user bấm toggle 🔲 — grid + tìm kiếm/lọc
+          // >8 dự án (J-4c) HOẶC user bấm toggle sang lưới — grid + tìm kiếm/lọc
           searchGrid
         ) : (
           <>
