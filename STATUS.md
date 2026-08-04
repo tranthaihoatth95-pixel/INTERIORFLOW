@@ -5,6 +5,36 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## ✅ XONG (04/08 — mở rộng BOQ editor: quy cách/đơn vị · nhóm theo phòng · in A4 ngang)
+BOQ editor UI **đã có sẵn từ trước** (`4991340`, B0-B6+B10, `components/present-editor/boq/*` —
+STATUS.md cũ KHÔNG ghi việc này, chỉ phát hiện qua đọc `git log` trực tiếp) — không tạo bản song
+song ở `components/boq/*`/`app/(boq)/*` như chỉ đạo gốc ghi, mà MỞ RỘNG bản có sẵn (đúng luật
+"một cỗ máy nhiều mặt tiền"), KHÔNG đụng `lib/boq/*` (tầng tính). Thêm: 2 cột **Quy cách/Đơn vị**
+(JOIN hiển thị theo `matId` qua `GET /api/specs`, `lib/present-editor/boq-spec-extra.ts`, MỚI) ·
+**nhóm theo Phòng** (`groupBoqRowsByRoom`, `boq-group.ts` — tái dùng `findRoomLabels`/
+`pointInPolygon` có sẵn, KHÔNG viết engine hình học mới; SUY ĐOÁN khi không dò được biên khép kín
+→ cờ `inferred` lộ badge, đúng luật `SPEC-TANG-DU-LIEU-CAU-KIEN`) toggle song song với nhóm theo
+Tầng cũ · **in A4 ngang** (`@media print` cô lập bảng, `@page{size:A4 landscape}`, đủ "in văn
+phòng" — preset "gửi nhà in" +bleed/crop-marks CHƯA làm, B9 đầy đủ theo phiếu để sau). Tiện sửa
+1 bug thật: `BoqErrorRows` colSpan hardcode=9 trong khi bảng lúc đó 8 cột (nay 10, export hằng
+`BOQ_TABLE_COLUMN_COUNT` để không lệch lại) · phát hiện thêm `boq-group.ts` dùng alias `@/...`
+nên `.test.ts` của nó **chưa từng chạy được** qua `sucrase-node`/`npm test` dù commit trước ghi
+"27/27 pass" — đổi sang import tương đối theo đúng quy ước `boq-overrides.ts`.
+Verify: `tsc --noEmit -p .` sạch · `boq-group.test.ts` 25/25 (thêm 15 ca phòng) · `boq-spec-
+extra.test.ts` 13/13 (mới) · 4 file test `lib/boq/*` cũ vẫn xanh · browser thật (127.0.0.1:3001,
+demo@if.local, "Dự án mẫu" → 2D Kỹ thuật → Trình bày → Bảng khối lượng BOQ): 10 cột hiện đúng thứ
+tự, toggle Tầng↔Phòng không vỡ, không lỗi console liên quan BOQ. "Dự án mẫu" hiện **0 entities**
+(sheet rỗng) nên chưa xem được số liệu thật/badge suy đoán trên UI — chỉ xác nhận cấu trúc không
+vỡ, KHÔNG bơm dữ liệu test vào dự án mẫu (tránh lặp sự cố cũ). 1 lỗi console KHÔNG liên quan đã
+thấy sẵn (`EditorCanvas.tsx` "Maximum update depth exceeded", chặng Trình bày mode Deck) — CHƯA
+sửa, đúng §0d "không đụng Deck editor đang chạy", không phải do việc này gây ra.
+🔴 **Hai phiên chung `.git` tái diễn LẦN NỮA** (giữa lúc code): làm việc xong phát hiện `git log`
+đã có 2 commit MỚI của phiên khác (`39c55a5 wip`, `a40adf2 docs: khoa duong ve dich...`) **cuốn
+theo toàn bộ file BOQ của tôi** (kể cả 1 bản sửa `boq-group.ts` họ tự làm thêm — đã đọc diff, TRÙNG
+KHỚP với sửa alias tôi vừa làm, không xung đột) — **đã push lên `origin/main`** trước khi tôi kịp
+biết. Không phải tôi chạy git, không mất nội dung (đã grep xác nhận file trên đĩa đúng), chỉ lệch
+tên commit — không rewrite lịch sử. Không có gì để tôi tự commit thêm (đã nằm trong 2 commit trên).
+
 ## ✅ XONG (04/08 — sửa hero ProjectSelect chìm vào wallpaper tối)
 `components/ProjectSelect.tsx` — hero (pill chào/tiêu đề/mô tả/2 nút "Chi tiết"·"Đồng bộ tiến độ"/
 Vitals AI) trước đè `--t1`/`--t4` (token theo THEME) lên ảnh nền "ambient" (cover dự án đang
