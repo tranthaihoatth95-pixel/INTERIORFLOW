@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>InteriorFlow · AI dựng ảnh — Thiết kế 3D</title>
+<style>
+:root{--bg:#0d0d10;--panel:#15151a;--panel-2:#191920;--card:#1b1b21;--card-lit:#22222b;--field:#1a1a20;--hover:#26262f;--border:#2b2b34;--border-strong:#3c3c47;--edge:rgba(255,255,255,.07);
+--t1:#f4f4f7;--t2:#d4d4db;--t3:#a6a6b1;--t4:#8b8b96;--t5:#71717c;
+--sh-near:0 2px 3px rgba(0,0,0,.5);--sh-far:0 24px 60px -16px rgba(0,0,0,.8);
+--accent:#8b7cf7;--accent-2:#a99cff;--accent-deep:#6d5cf0;--accent-soft:rgba(139,124,247,.16);
+--ok:#4ec98a;--ease:cubic-bezier(.32,.72,0,1)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;font-size:13px;font-weight:400;line-height:1.55;padding:36px 40px 90px}
+a{color:var(--accent);text-decoration:none}a:hover{color:var(--accent-2)}
+.wrap{max-width:1400px;margin:0 auto}
+h1{margin:12px 0 0;font-size:26px;font-weight:600;line-height:1.4;letter-spacing:-.02em}
+.sub{margin:8px 0 0;max-width:780px;color:var(--t3);font-size:13px;line-height:1.6;text-wrap:pretty}
+.tag{display:inline-flex;align-items:center;height:19px;padding:0 8px;border-radius:6px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700;line-height:1;letter-spacing:.06em}
+
+/* ── khung màn ── */
+.stage{margin-top:28px;min-width:1240px;overflow:hidden;border:1px solid var(--border);border-radius:16px;background:var(--bg)}
+body{overflow-x:auto}
+.bar{display:flex;align-items:center;gap:10px;height:48px;padding:0 16px;border-bottom:1px solid var(--border);background:var(--panel)}
+.bar .name{white-space:nowrap;color:var(--t2);font-size:12.5px;font-weight:600}
+.bar .chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border:1px solid var(--accent-deep);border-radius:11px;background:var(--accent-soft);color:var(--accent-2);font-size:11px;font-weight:650;line-height:1;white-space:nowrap}
+.bar .sp{flex:1}
+.bar .doc{display:inline-flex;align-items:center;gap:6px;color:var(--t4);font-size:11px;white-space:nowrap}
+.bar .doc .dot{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+.cols{display:grid;grid-template-columns:268px 1fr 268px;gap:14px;padding:14px;min-height:700px}
+.pane{display:flex;flex-direction:column;gap:16px;min-width:0;padding:14px;border:1px solid var(--border);border-radius:13px;background:var(--panel)}
+.sec{display:flex;flex-direction:column;gap:9px}
+.sec .h{color:var(--t5);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+
+/* trái: preset */
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pre{position:relative;display:flex;flex-direction:column;gap:0;overflow:hidden;padding:0;border:1px solid var(--border);border-radius:10px;background:var(--card);cursor:pointer;text-align:left;font-family:inherit;transition:border-color .15s var(--ease)}
+.pre:hover{border-color:var(--border-strong)}
+.pre[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.pre .th{height:44px}
+.pre .nm{padding:6px 9px 7px;color:var(--t2);font-size:11px;font-weight:600;line-height:1.3}
+.pre[aria-pressed="true"] .nm{color:var(--t1)}
+/* ô lệnh */
+.prompt{position:relative;border:1px solid var(--border-strong);border-radius:11px;background:var(--field);box-shadow:inset 0 1px 3px rgba(0,0,0,.4)}
+.prompt textarea{display:block;width:100%;height:108px;padding:10px 11px 34px;border:0;background:transparent;color:var(--t1);font-family:inherit;font-size:12.5px;font-weight:450;line-height:1.55;resize:none;outline:none}
+.prompt textarea::placeholder{color:var(--t5)}
+.prompt:focus-within{border-color:var(--accent)}
+.bold-btn{position:absolute;right:8px;bottom:8px;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border:1px solid var(--border-strong);border-radius:8px;background:var(--card);color:var(--t2);font-family:inherit;font-size:11px;font-weight:650;line-height:1;cursor:pointer}
+/* nút chưa code: mờ + lý do (§9) */
+.off{opacity:.42;cursor:not-allowed !important}
+.why{margin-top:5px;color:var(--t5);font-size:10.5px;line-height:1.45}
+.why b{color:var(--t4);font-weight:650}
+/* segmented */
+.seg{display:flex;gap:2px;padding:2px;border:1px solid var(--border);border-radius:10px;background:var(--field)}
+.seg button{flex:1;height:30px;border:0;border-radius:8px;background:transparent;color:var(--t3);font-family:inherit;font-size:12px;font-weight:600;line-height:1;cursor:pointer;transition:background .15s var(--ease),color .15s var(--ease)}
+.seg button:hover{color:var(--t1)}
+.seg button[aria-pressed="true"]{background:linear-gradient(180deg,var(--card-lit),var(--card));color:var(--t1);box-shadow:var(--sh-near),inset 0 1px 0 var(--edge)}
+.seg-note{margin:0;color:var(--t5);font-size:11px;line-height:1.5;text-wrap:pretty}
+.seg-note b{color:var(--t3);font-weight:650}
+
+/* giữa: canvas trước/sau */
+.mid{display:flex;flex-direction:column;gap:10px;min-width:0}
+.canvas{position:relative;flex:1;overflow:hidden;border:1px solid var(--border);border-radius:13px;background:#0a0a0d;touch-action:none}
+.ly{position:absolute;inset:0}
+.ly svg{display:block;width:100%;height:100%}
+#rend{clip-path:inset(0 54% 0 0)}
+.split{position:absolute;top:0;bottom:0;width:0;cursor:ew-resize}
+.split .line{position:absolute;left:-1px;top:0;bottom:0;width:2px;background:rgba(244,244,247,.9);box-shadow:0 0 10px rgba(0,0,0,.6)}
+.split .grip{position:absolute;left:50%;top:50%;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1.5px solid rgba(20,17,13,.15);border-radius:50%;background:#f4f4f7;color:#3a3a44;transform:translate(-50%,-50%);box-shadow:0 4px 14px rgba(0,0,0,.5)}
+.cvlabel{position:absolute;bottom:12px;display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:12px;background:rgba(13,13,16,.72);color:var(--t2);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;backdrop-filter:blur(6px);pointer-events:none;white-space:nowrap}
+.cvlabel.l{left:12px}.cvlabel.r{right:12px}
+.preci{position:absolute;left:12px;top:12px;display:none;align-items:center;gap:7px;height:26px;padding:0 11px;border:1px solid var(--accent-deep);border-radius:13px;background:rgba(13,13,16,.78);color:var(--accent-2);font-size:11px;font-weight:650;backdrop-filter:blur(6px);pointer-events:none;white-space:nowrap}
+.preci .lock{width:10px;height:10px}
+.canvas[data-mode="precision"] .preci{display:inline-flex}
+#dims{position:absolute;inset:0;opacity:0;transition:opacity .25s var(--ease);pointer-events:none}
+.canvas[data-dims="1"] #dims{opacity:1}
+.strip{display:flex;align-items:center;gap:10px;color:var(--t5);font-size:11px;line-height:1.4}
+.strip .k{display:inline-flex;align-items:center;gap:6px;color:var(--t4)}
+.strip .sw{width:10px;height:10px;border-radius:3px;border:1px solid rgba(255,255,255,.2)}
+
+/* phải */
+.models{display:flex;flex-direction:column;gap:7px}
+.mo{display:grid;grid-template-columns:16px 1fr;gap:10px;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:var(--card);cursor:pointer;text-align:left;font-family:inherit;transition:border-color .15s var(--ease)}
+.mo:hover{border-color:var(--border-strong)}
+.mo[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.mo .rad{width:14px;height:14px;margin-top:2px;border:1.5px solid var(--border-strong);border-radius:50%}
+.mo[aria-pressed="true"] .rad{border-color:var(--accent);box-shadow:inset 0 0 0 3.5px var(--accent)}
+.mo .nm{display:block;color:var(--t1);font-size:12.5px;font-weight:650;line-height:1.35}
+.mo .de{display:block;margin-top:2px;color:var(--t4);font-size:11px;font-weight:400;line-height:1.45}
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper button{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border:1px solid var(--border-strong);border-radius:8px;background:var(--card);color:var(--t2);font-family:inherit;font-size:15px;font-weight:600;line-height:1;cursor:pointer}
+.stepper button:hover{background:var(--hover)}
+.stepper button:disabled{opacity:.35;cursor:not-allowed}
+.stepper .n{min-width:20px;text-align:center;color:var(--t1);font-size:14px;font-weight:650;font-variant-numeric:tabular-nums}
+/* khối moat */
+.moat{padding:12px;border:1px solid var(--accent-deep);border-radius:12px;background:linear-gradient(180deg,rgba(139,124,247,.1),rgba(139,124,247,.04))}
+.moat .top{display:flex;align-items:center;gap:10px}
+.moat .ttl{flex:1;color:var(--t1);font-size:12.5px;font-weight:650;line-height:1.35}
+.moat .de{margin:8px 0 0;color:var(--t3);font-size:11.5px;line-height:1.55;text-wrap:pretty}
+.moat .de b{color:var(--accent-2);font-weight:650}
+.sw2{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.sw2 .s{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border:1px solid var(--border);border-radius:11px;background:rgba(13,13,16,.5);color:var(--t3);font-size:10.5px;font-weight:600;line-height:1;white-space:nowrap}
+.sw2 .c{width:10px;height:10px;border-radius:3px;border:1px solid rgba(255,255,255,.22)}
+.tgl{position:relative;width:40px;height:24px;border:0;border-radius:12px;background:var(--border-strong);cursor:pointer;transition:background .18s var(--ease);flex:0 0 auto;padding:0}
+.tgl::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .18s var(--ease)}
+.tgl[aria-pressed="true"]{background:var(--accent)}
+.tgl[aria-pressed="true"]::after{transform:translateX(16px)}
+.gen{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:40px;margin-top:auto;border:1px solid var(--accent-deep);border-radius:11px;background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#13111d;font-family:inherit;font-size:13px;font-weight:700;line-height:1;cursor:pointer;box-shadow:0 3px 14px rgba(139,124,247,.28)}
+
+/* chú thích + spec */
+.notes{margin:14px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+.notes li{position:relative;display:block;padding-left:15px;color:var(--t3);font-size:11.5px;line-height:1.55;text-wrap:pretty}
+.notes li::before{content:"";position:absolute;left:3px;top:8px;width:5px;height:5px;border-radius:50%;background:var(--border-strong)}
+.notes b{color:var(--t2);font-weight:650}
+.spec{margin-top:34px;padding:20px 22px;border:1px solid var(--border);border-radius:14px;background:var(--panel)}
+.spec h2{margin:0 0 4px;font-size:14px;font-weight:650;line-height:1.4}
+.spec p{margin:0 0 12px;color:var(--t4);font-size:12px;line-height:1.6}
+.spec code{padding:1px 5px;border-radius:5px;background:var(--field);color:var(--accent-2);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px}
+.spec .cols2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px}
+.warn{padding:12px 14px;border:1px solid var(--accent-deep);border-radius:11px;background:var(--accent-soft);color:var(--t2);font-size:12px;line-height:1.6}
+.warn b{color:var(--accent-2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="tag">CHẶNG THIẾT KẾ 3D · MÀN AI DỰNG ẢNH</span>
+  <h1>AI dựng ảnh trên khối bản vẽ</h1>
+  <p class="sub">Ba cột: mẫu phong cách + ô lệnh · khung trước/sau kéo được · chọn model. Khối viền tím bên phải là <b style="color:var(--t2);font-weight:600">moat của IF</b>: bật "Hiện số đo" để ảnh render mang đường kích thước, swatch vật liệu và mã món <b style="color:var(--t2);font-weight:600">đọc thẳng từ bản vẽ</b>. Kéo tay nắm giữa khung để lau qua lại giữa khối xám và render.</p>
+
+  <div class="stage">
+    <div class="bar">
+      <span class="name">Căn hộ Thảo Điền · 96m²</span>
+      <span class="chip">Chặng: Thiết kế 3D</span>
+      <span class="sp"></span>
+      <span class="doc"><span class="dot"></span>Doc đồng bộ 14:20 · SF-01 · TB-03 · RG-02</span>
+    </div>
+    <div class="cols">
+
+      <!-- TRÁI -->
+      <div class="pane">
+        <div class="sec">
+          <span class="h">Mẫu phong cách</span>
+          <div class="presets" id="presets">
+            <button class="pre" aria-pressed="true"><span class="th" style="background:linear-gradient(135deg,#d9c9a8,#8a6f4d 55%,#3f3428)"></span><span class="nm">Japandi</span></button>
+            <button class="pre" aria-pressed="false"><span class="th" style="background:linear-gradient(135deg,#eef0ee,#b9c4c9 55%,#7d8a93)"></span><span class="nm">Bắc Âu sáng</span></button>
+            <button class="pre" aria-pressed="false"><span class="th" style="background:linear-gradient(135deg,#caa678,#7c4a2d 55%,#241a12)"></span><span class="nm">Óc chó tối</span></button>
+            <button class="pre" aria-pressed="false"><span class="th" style="background:linear-gradient(135deg,#d7cbb4,#9d8458 55%,#4c5940)"></span><span class="nm">Indochine</span></button>
+            <button class="pre" aria-pressed="false"><span class="th" style="background:linear-gradient(135deg,#9aa0a6,#5b6066 55%,#2a2d31)"></span><span class="nm">Industrial</span></button>
+            <button class="pre" aria-pressed="false"><span class="th" style="background:linear-gradient(135deg,#f3ddba,#e0a468 55%,#8a4b2e)"></span><span class="nm">Ánh chiều</span></button>
+          </div>
+        </div>
+        <div class="sec">
+          <span class="h">Lệnh</span>
+          <div class="prompt">
+            <textarea spellcheck="false">Phòng khách 24m², sofa vải cam đất, sàn gỗ sồi, nắng chiều xiên qua rèm voan, cây xanh góc phải.</textarea>
+            <button class="bold-btn off" disabled title="Chưa nối AI viết lệnh">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5.9l1.1 3 3 1.1-3 1.1-1.1 3-1.1-3-3-1.1 3-1.1z"/></svg>
+              Viết đậm
+            </button>
+          </div>
+          <p class="why"><b>Mờ theo §9:</b> "Viết đậm" chưa nối AI viết lệnh — chờ phiên code.</p>
+        </div>
+        <div class="sec">
+          <span class="h">Cách dựng</span>
+          <div class="seg" id="modeSeg">
+            <button data-m="concept" aria-pressed="false">Concept</button>
+            <button data-m="precision" aria-pressed="true">Precision</button>
+          </div>
+          <p class="seg-note" id="modeNote"><b>Precision:</b> giữ đúng hình học bản vẽ — tường, khối, vị trí món không được xê dịch; AI chỉ thay vật liệu và ánh sáng.</p>
+        </div>
+      </div>
+
+      <!-- GIỮA -->
+      <div class="mid">
+        <div class="canvas" id="cv" data-mode="precision" data-dims="0">
+          <div class="ly" id="clay"></div>
+          <div class="ly" id="rend"></div>
+          <div class="split" id="split" style="left:46%">
+            <span class="line"></span>
+            <span class="grip" aria-hidden="true">
+              <svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2L1 7l4 5M11 2l4 5-4 5"/></svg>
+            </span>
+          </div>
+          <span class="cvlabel l">Khối bản vẽ</span>
+          <span class="cvlabel r">Render AI</span>
+          <span class="preci">
+            <svg class="lock" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1.5" y="4.2" width="7" height="4.6" rx="1"/><path d="M3 4V3a2 2 0 0 1 4 0v1"/></svg>
+            Precision · hình học khoá theo bản vẽ
+          </span>
+        </div>
+        <div class="strip">
+          <span class="k"><span class="sw" style="background:#cf6b3f"></span>Vải bouclé · Kem-04</span>
+          <span class="k"><span class="sw" style="background:#7a4b2c"></span>Óc chó · WN-2</span>
+          <span class="k"><span class="sw" style="background:#b07a4e"></span>Sồi tự nhiên · OK-1</span>
+          <span style="flex:1"></span>
+          <span>kéo tay nắm để so trước/sau</span>
+        </div>
+      </div>
+
+      <!-- PHẢI -->
+      <div class="pane">
+        <div class="sec">
+          <span class="h">Model AI</span>
+          <div class="models" id="models">
+            <button class="mo" aria-pressed="false"><span class="rad"></span><span><span class="nm">Phác nhanh</span><span class="de">Duyệt ý tưởng trong họp — ~8 giây một ảnh, hình học lỏng.</span></span></button>
+            <button class="mo" aria-pressed="true"><span class="rad"></span><span><span class="nm">Studio</span><span class="de">Trình khách — giữ vật liệu và ánh sáng đúng với bản vẽ.</span></span></button>
+            <button class="mo" aria-pressed="false"><span class="rad"></span><span><span class="nm">Cinema</span><span class="de">Ảnh cận cho marketing — chậm và tốn credit, chỉ dùng ảnh chốt.</span></span></button>
+          </div>
+        </div>
+        <div class="sec">
+          <span class="h">Độ phân giải</span>
+          <div class="seg" id="resSeg">
+            <button aria-pressed="false">1K</button>
+            <button aria-pressed="true">2K</button>
+            <button aria-pressed="false">4K</button>
+          </div>
+        </div>
+        <div class="sec">
+          <span class="h">Số ảnh</span>
+          <div class="stepper">
+            <button id="minus" aria-label="Bớt một ảnh">−</button>
+            <span class="n" id="count">2</span>
+            <button id="plus" aria-label="Thêm một ảnh">+</button>
+            <span style="color:var(--t5);font-size:11px">tối đa 4 mỗi lượt</span>
+          </div>
+        </div>
+        <!-- MOAT -->
+        <div class="moat">
+          <div class="top">
+            <span class="ttl">Hiện số đo trên render</span>
+            <button class="tgl" id="dimTgl" aria-pressed="false" aria-label="Hiện số đo trên render"></button>
+          </div>
+          <p class="de">Đường kích thước, swatch vật liệu và mã món <b>đọc từ bản vẽ (Doc)</b> — không gõ tay. Bản vẽ đổi thì số trên ảnh <b>tự đổi theo</b>. Không tool AI nào khác làm được vì chúng không giữ hình học.</p>
+          <div class="sw2">
+            <span class="s"><span class="c" style="background:#cf6b3f"></span>SF-01 · 2200</span>
+            <span class="s"><span class="c" style="background:#7a4b2c"></span>TB-03 · Ø900</span>
+            <span class="s"><span class="c" style="background:#d8c8ae"></span>RG-02 · 2400</span>
+          </div>
+        </div>
+        <button class="gen off" id="gen" disabled title="Chưa nối pipeline render">Tạo 2 ảnh · 2K · Studio</button>
+        <p class="why" style="margin-top:-8px"><b>Mờ theo §9:</b> chưa nối pipeline render.</p>
+      </div>
+    </div>
+  </div>
+
+  <ul class="notes">
+    <li><b>Thanh trượt trước/sau:</b> lớp render phủ trùng lớp khối, lau bằng <b>clip-path</b>; tay nắm tròn <b>44px</b> kéo được bằng chuột lẫn ngón tay. Overlay số đo nằm trong lớp render nên lau theo cùng nhịp.</li>
+    <li>Màu trong khung là <b>nội dung ảnh</b> (cam đất, gỗ, kem) — không phải token UI, phiên code không lấy các mã này làm màu hệ thống. UI quanh khung chỉ dùng token app + tím <b>#8b7cf7</b>.</li>
+    <li><b>§9 — nút mờ vì chưa code:</b> "Viết đậm" (chưa nối AI viết lệnh) và "Tạo ảnh" (chưa nối pipeline). Mỗi nút mờ đều kèm một dòng lý do ngay dưới.</li>
+  </ul>
+
+  <div class="spec">
+    <h2>Quy cách màn AI dựng ảnh</h2>
+    <p>Ghi để phiên code sau không đoán lại.</p>
+    <div class="cols2">
+      <div>
+        <ul class="notes" style="margin:0">
+          <li><b>Precision</b> khoá hình học: gửi kèm depth + line map từ khối 3D; AI chỉ đổi vật liệu, ánh sáng. <b>Concept</b> cho AI vẽ thoáng, chip khoá trên canvas tắt.</li>
+          <li>Preset phong cách chỉ <b>ghép thêm vào lệnh</b>, không ghi đè phần người dùng gõ.</li>
+          <li>Nhãn nút Tạo ảnh ghép sống: <code>Tạo {số} ảnh · {độ phân giải} · {model}</code>.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="warn">
+          <b>Overlay số đo là dữ liệu, không phải hình vẽ.</b><br>
+          Mỗi callout bám một <code>itemId</code> trong Doc (SF-01, TB-03, RG-02…): kích thước, tên vật liệu, mã swatch đọc từ Doc lúc render overlay — <b>cấm nhập tay</b>. Doc đổi (sofa 2200 → 2400) thì overlay tự đổi, ảnh không cần render lại. Xuất ảnh có 2 lựa chọn: ảnh sạch / ảnh kèm overlay (cho board vật liệu kiểu SAIL LOUNGE).
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── cảnh minh hoạ: một hình học, hai bộ màu (khối xám / render ấm) ── */
+function scene(clay){
+  var P=clay?{
+    wall:'#b4b1ab',wallLo:'#a5a29c',floor:'#9c9993',plank:'#8f8c86',rug:'#a9a6a0',
+    sofa:'#c4c1bb',sofaLo:'#b2afa9',cushion:'#cbc8c2',pillow:'#bebbb5',
+    wood:'#aeaba5',woodLo:'#9b9892',sky:'#c8c5c0',shaft:'rgba(255,255,255,.14)',
+    leaf:'#a5a29c',pot:'#9c9993',lamp:'#8f8c86',ao:'rgba(0,0,0,.16)',line:'rgba(0,0,0,.1)'
+  }:{
+    wall:'#ead9bf',wallLo:'#dcc7a8',floor:'#b07a4e',plank:'#9a683f',rug:'#d8c8ae',
+    sofa:'#cf6b3f',sofaLo:'#b25733',cushion:'#e08350',pillow:'#efe3cd',
+    wood:'#7a4b2c',woodLo:'#5e3820',sky:'#f6e6c4',shaft:'rgba(255,213,150,.32)',
+    leaf:'#5f7a4a',pot:'#8a5a3a',lamp:'#3a2e24',ao:'rgba(40,20,8,.22)',line:'rgba(60,35,15,.18)'
+  };
+  return '<svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
+  +'<rect x="0" y="0" width="1200" height="560" fill="'+P.wall+'"/>'
+  +'<rect x="0" y="0" width="1200" height="180" fill="'+P.wallLo+'" opacity=".35"/>'
+  +'<rect x="0" y="560" width="1200" height="240" fill="'+P.floor+'"/>'
+  +'<path d="M0,620 L1200,608 M0,680 L1200,664 M0,748 L1200,728" stroke="'+P.plank+'" stroke-width="3" fill="none"/>'
+  +'<rect x="884" y="64" width="232" height="356" fill="'+P.sky+'" stroke="'+P.woodLo+'" stroke-width="10"/>'
+  +'<path d="M1000,64 L1000,420 M884,240 L1116,240" stroke="'+P.woodLo+'" stroke-width="7"/>'
+  +'<polygon points="884,120 1116,64 1030,720 660,780" fill="'+P.shaft+'"/>'
+  +'<polygon points="290,606 890,606 950,758 230,758" fill="'+P.rug+'"/>'
+  +'<ellipse cx="550" cy="612" rx="270" ry="26" fill="'+P.ao+'"/>'
+  +'<rect x="330" y="380" width="420" height="70" rx="16" fill="'+P.sofa+'"/>'
+  +'<rect x="310" y="408" width="48" height="152" rx="14" fill="'+P.sofaLo+'"/>'
+  +'<rect x="722" y="408" width="48" height="152" rx="14" fill="'+P.sofaLo+'"/>'
+  +'<rect x="352" y="448" width="186" height="44" rx="14" fill="'+P.cushion+'"/>'
+  +'<rect x="544" y="448" width="186" height="44" rx="14" fill="'+P.cushion+'"/>'
+  +'<rect x="352" y="486" width="378" height="76" rx="12" fill="'+P.sofa+'"/>'
+  +'<rect x="380" y="404" width="64" height="52" rx="10" transform="rotate(-8 412 430)" fill="'+P.pillow+'"/>'
+  +'<path d="M366,562 L360,596 M492,562 L490,596 M600,562 L602,596 M716,562 L722,596" stroke="'+P.woodLo+'" stroke-width="9" stroke-linecap="round" fill="none"/>'
+  +'<ellipse cx="640" cy="700" rx="118" ry="27" fill="'+P.ao+'"/>'
+  +'<ellipse cx="640" cy="668" rx="112" ry="24" fill="'+P.wood+'"/>'
+  +'<path d="M600,686 L594,718 M686,684 L692,716" stroke="'+P.woodLo+'" stroke-width="8" stroke-linecap="round" fill="none"/>'
+  +'<path d="M560,0 L560,152" stroke="'+P.lamp+'" stroke-width="3" fill="none"/>'
+  +'<polygon points="518,152 602,152 616,212 504,212" fill="'+P.lamp+'"/>'
+  +'<ellipse cx="1010" cy="732" rx="66" ry="14" fill="'+P.ao+'"/>'
+  +'<polygon points="978,650 1046,650 1038,726 986,726" fill="'+P.pot+'"/>'
+  +'<path d="M1012,652 Q980,570 940,556 M1012,652 Q1016,556 1060,530 M1012,652 Q1046,584 1092,580" stroke="'+P.leaf+'" stroke-width="12" stroke-linecap="round" fill="none"/>'
+  +'<path d="M0,560 L1200,560" stroke="'+P.line+'" stroke-width="2"/>'
+  +'</svg>';
+}
+document.getElementById('clay').innerHTML=scene(true);
+var rend=document.getElementById('rend');
+rend.innerHTML=scene(false)
+/* overlay số đo — đọc từ Doc, lau theo lớp render */
++'<svg id="dims" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
++'<g stroke="#fdfcf9" stroke-width="2.5" fill="none" opacity=".95">'
++'<path d="M310,338 L310,358 M770,338 L770,358 M310,348 L770,348"/>'
++'<path d="M806,380 L826,380 M806,596 L826,596 M816,380 L816,596"/>'
++'<path d="M528,640 L752,696" stroke-dasharray="7 7" opacity=".8"/>'
++'<path d="M413,430 L266,282 M640,668 L868,742"/>'
++'</g>'
++'<g font-family="ui-monospace,Menlo,Consolas,monospace" font-size="21" font-weight="700">'
++'<rect x="496" y="318" width="88" height="34" rx="8" fill="rgba(15,12,10,.82)"/><text x="540" y="341" fill="#fdfcf9" text-anchor="middle">2 200</text>'
++'<rect x="836" y="470" width="66" height="34" rx="8" fill="rgba(15,12,10,.82)"/><text x="869" y="493" fill="#fdfcf9" text-anchor="middle">820</text>'
++'<rect x="596" y="642" width="88" height="34" rx="8" fill="rgba(15,12,10,.82)"/><text x="640" y="665" fill="#fdfcf9" text-anchor="middle">Ø 900</text>'
++'</g>'
++'<g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif">'
++'<rect x="96" y="196" width="330" height="88" rx="12" fill="rgba(15,12,10,.86)"/>'
++'<rect x="112" y="214" width="22" height="22" rx="6" fill="#cf6b3f" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>'
++'<text x="146" y="231" fill="#fdfcf9" font-size="21" font-weight="650">SF-01 · Sofa Sail 3 chỗ</text>'
++'<text x="146" y="262" fill="rgba(253,252,249,.66)" font-size="18">Vải bouclé · Kem-04 · 2200×880</text>'
++'<rect x="836" y="726" width="286" height="58" rx="12" fill="rgba(15,12,10,.86)"/>'
++'<rect x="850" y="742" width="20" height="20" rx="6" fill="#7a4b2c" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>'
++'<text x="880" y="758" fill="#fdfcf9" font-size="20" font-weight="650">TB-03 · Bàn óc chó</text>'
++'<text x="880" y="778" fill="rgba(253,252,249,.66)" font-size="16">WN-2 · Ø900 · cao 380</text>'
++'<rect x="806" y="30" width="330" height="40" rx="20" fill="rgba(15,12,10,.86)"/>'
++'<circle cx="828" cy="50" r="5" fill="#4ec98a"/>'
++'<text x="844" y="57" fill="rgba(253,252,249,.85)" font-size="18" font-weight="600">Đọc từ bản vẽ · đồng bộ 14:20</text>'
++'</g>'
++'</svg>';
+
+/* thanh trượt trước/sau */
+var cv=document.getElementById('cv'),split=document.getElementById('split'),pct=46;
+function setPct(p){
+  pct=Math.max(4,Math.min(96,p));
+  rend.style.clipPath='inset(0 '+(100-pct)+'% 0 0)';
+  split.style.left=pct+'%';
+}
+setPct(46);
+split.addEventListener('pointerdown',function(e){
+  e.preventDefault();split.setPointerCapture(e.pointerId);
+  function mv(ev){var r=cv.getBoundingClientRect();setPct((ev.clientX-r.left)/r.width*100);}
+  function up(){split.removeEventListener('pointermove',mv);split.removeEventListener('pointerup',up);}
+  split.addEventListener('pointermove',mv);split.addEventListener('pointerup',up);
+});
+
+/* segmented + preset + model: chọn một trong nhóm */
+function group(id,fn){
+  var box=document.getElementById(id);
+  box.addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b||b.disabled)return;
+    box.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed','false')});
+    b.setAttribute('aria-pressed','true');if(fn)fn(b);
+  });
+}
+group('presets');group('models',syncGen);group('resSeg',syncGen);
+group('modeSeg',function(b){
+  var m=b.getAttribute('data-m');
+  cv.setAttribute('data-mode',m);
+  document.getElementById('modeNote').innerHTML=m==='precision'
+   ?'<b>Precision:</b> giữ đúng hình học bản vẽ — tường, khối, vị trí món không được xê dịch; AI chỉ thay vật liệu và ánh sáng.'
+   :'<b>Concept:</b> AI vẽ thoáng để lấy không khí — hình học có thể lệch, không dùng cho hồ sơ.';
+});
+
+/* công tắc số đo */
+var tgl=document.getElementById('dimTgl');
+tgl.addEventListener('click',function(){
+  var on=tgl.getAttribute('aria-pressed')!=='true';
+  tgl.setAttribute('aria-pressed',on?'true':'false');
+  cv.setAttribute('data-dims',on?'1':'0');
+});
+
+/* số ảnh + nhãn nút tạo */
+var n=2,cnt=document.getElementById('count'),minus=document.getElementById('minus'),plus=document.getElementById('plus');
+function syncGen(){
+  cnt.textContent=n;minus.disabled=n<=1;plus.disabled=n>=4;
+  var res=document.querySelector('#resSeg [aria-pressed="true"]').textContent;
+  var mo=document.querySelector('#models [aria-pressed="true"] .nm').textContent;
+  document.getElementById('gen').textContent='Tạo '+n+' ảnh · '+res+' · '+mo;
+}
+minus.addEventListener('click',function(){if(n>1){n--;syncGen();}});
+plus.addEventListener('click',function(){if(n<4){n++;syncGen();}});
+syncGen();
+</script>
+</body>
+</html>

@@ -366,6 +366,55 @@ export interface HatchEntity extends Base {
   specId?: string;
 }
 
+/* ───────── WallRun (P11, `SPEC-VE-REVIT-MODE.md` §2) — location line của tường ───────── */
+
+/**
+ * Cạnh nào của tường ĐỨNG YÊN khi đổi bề dày (đúng khái niệm Location Line của Revit). "trái/
+ * phải" tính THEO CHIỀU VẼ `path` (từ điểm đầu → điểm cuối, quay 90° CCW ra "trái" — chuẩn world
+ * Y-up của file này), KHÔNG đoán trong/ngoài công trình (app này không có DCEL suy luận exterior
+ * đáng tin cậy — cùng lý do `WallKind` phía trên không tự suy đoán).
+ *  - 'center' — `path` là TIM tường, bề dày chia đều 2 bên.
+ *  - 'left'/'right' — `path` CHÍNH LÀ mặt đó, bề dày dồn hết sang phía kia.
+ */
+export type WallLocationLine = 'center' | 'left' | 'right';
+
+/**
+ * `SPEC-VE-REVIT-MODE.md` §2 — lớp THAM SỐ đứng TRÊN lớp hình học hatch+polyline hiện có. Trước
+ * đây `wallChain()`/`wallSegment()` sinh hình rồi VỨT path ngay (mỗi đoạn độc lập, không sửa lại
+ * được — xem `SO-KIEM-TONG.md` §7 dòng "Location line tường"). `WallRun` giữ `path` SỐNG làm
+ * nguồn sự thật parametric: đổi `thicknessMm`/`locationLine` rồi regen geometry (`commands.ts`
+ * `regenWallRun`) mà cạnh `locationLine` đang chọn ĐỨNG YÊN đúng toạ độ — path không đổi, chỉ
+ * offset ra biên đổi theo `t` mới (xem công thức `wallLocationOffsets` ở `commands.ts`).
+ *
+ * TỐI GIẢN cho ĐÚNG việc này (P11, "cơ chế đầu tiên") — CHƯA có:
+ *  - `typeId`/`WallType` catalog (Type/Instance, §6 SPEC-VE-REVIT-MODE) — `thicknessMm` nằm
+ *    thẳng trên run như instance, chưa có "1 chỗ đổi cả dự án đổi theo".
+ *  - `openings` hosted cửa/cửa sổ (§4) — hosted hiện đi qua `BlockEntity.hostId`/`hosting.ts`,
+ *    KHÔNG liên quan gì tới WallRun (2 cơ chế độc lập, chưa nối).
+ *  - Nối tự sạch nhiều đoạn (§3 miter/bevel/T-trim) — mỗi đoạn `path` hiện sinh quad ĐỘC LẬP
+ *    (giống `wallChain` cũ), góc nối có thể còn hở/chồng — việc RIÊNG, chưa làm ở đây.
+ *  - Level/tầng constraint (§7 SO-KIEM-TONG) — WallRun không tham chiếu Level nào.
+ *
+ * additive: field mới trong `Doc`, `.idf` cũ không có `wallRuns` vẫn parse bình thường (mảng rỗng/
+ * undefined = doc chưa có run nào — tường cũ vẫn tồn tại dưới dạng hatch+polyline rời như trước,
+ * KHÔNG ép migrate lên WallRun).
+ */
+export interface WallRun {
+  id: string;
+  /** đường tham chiếu — CHÍNH LÀ cạnh `locationLine` đang chọn (không LUÔN LUÔN là tim hình học;
+   * khi `locationLine` là 'left'/'right' thì `path` nằm đúng mặt đó, xem docstring type ở trên).
+   * Đây là dữ liệu SỐNG duy nhất — `entityIds` chỉ là bản DERIVE, xoá đi sinh lại mỗi lần regen,
+   * không bao giờ là nguồn sự thật (K1 — một nguồn). */
+  path: Pt[];
+  closed: boolean;
+  thicknessMm: number;
+  locationLine: WallLocationLine;
+  layer: string;
+  /** id các entity (hatch+polyline, 2 cái mỗi đoạn `path`) hiện đang THỂ HIỆN run này — regen
+   * xoá đúng đám id cũ, thay bằng đám id mới trong MỘT snapshot (không rơi rớt entity mồ côi). */
+  entityIds: string[];
+}
+
 /* ───────── Zone tool (N1 — GAP-COLOR-FILL) — entity ellipse/arrow/zone ───────── */
 
 /** Ellipse THẬT (khác tool 'ellipse' cũ vốn xấp xỉ PolylineEntity 48 điểm): tâm + 2 bán trục
@@ -556,6 +605,10 @@ export interface Doc {
    * Lưu trong Doc ⇒ tự vào .idf, per-sheet. .idf cũ không có field này ⇒ khung tên trống, hợp lệ.
    */
   studioName?: string;
+  /** P11 (`SPEC-VE-REVIT-MODE.md` §2) — tường mode Revit giữ tim/location line sống (xem
+   * `WallRun` phía trên). undefined/mảng rỗng = doc chưa có run nào — tường vẽ ở sketch/pro
+   * (`wallChain`/`wallSegment`) KHÔNG tạo WallRun, vẫn là hatch+polyline rời như trước. */
+  wallRuns?: WallRun[];
 }
 
 /* ───────────────────────── B1 — tỉ lệ bản vẽ chuẩn + khổ giấy (paper-space cơ bản) ───────────────────────── */

@@ -67,6 +67,7 @@ Design · Presenting; rút gọn: 2D · 3D · Trình chiếu) · 2 chế độ c
 | **N3** | **Vá thì VERIFY TAY trước.** Không tái hiện được lỗi thì DỪNG, báo lại — đừng vá mù. |
 | **N4** | **Làm đủ chỉ tiêu ≠ làm đúng.** Chỗ nào chưa có dữ liệu nguồn thì ghi lý do tại chỗ, đừng gán bừa. *(Mẫu tốt: `cad-to-obj.ts:396` giải thích vì sao Floor không có `entityId`.)* |
 | **N6** | **Tạo component mới thì phải CHỨNG MINH có nơi mount** — dán kết quả `grep -rn "<TênComponent>" --include=*.tsx components/ app/` vào báo cáo. Đã bắt 2 lần trong 2 ngày: `LeftRail.tsx` (144 dòng, xoá khỏi git ở `3a92170` nhưng còn nằm trên đĩa 8 ngày) · `HomeButton.tsx` (viết cẩn thận, xử lý đúng bẫy `enterAfterAuth()`, KHÔNG file nào gọi ⇒ app mất luôn đường về Gallery). Hệ đang sinh code nhanh hơn tốc độ nối dây. |
+| **N7** | **Grep phải đúng CHỈ BÁO của việc đang kiểm, không phải chỉ báo gần đúng.** Sai 3 lần liên tiếp 04/08: COWORK-TỔNG dùng `grep -c MAX_SHEETS` để kết luận "D1 multi-sheet chưa làm" — nhưng `MAX_SHEETS` thuộc **D2**. Lại thấy `doc: Doc` ở `CadSheets.tsx:84` mà không đọc nó nằm trong `interface PersistedCadSheet` (shape IndexedDB, phạm vi **D3**). ⇒ Trước khi kết luận từ grep: **đọc dòng đó nằm trong hàm/interface nào**. ⇒ **Brief của TỔNG cũng phải kiểm, không phải sự thật** — git + code là sự thật duy nhất. (Phiên P2 làm đúng: không tin brief, kiểm code trước rồi mới trả lời.) |
 | **N5** | **Khai thật cái chưa xong.** Chỗ chưa kiểm được ghi "CHƯA VERIFY". Thà thiếu còn hơn bịa. |
 
 ---

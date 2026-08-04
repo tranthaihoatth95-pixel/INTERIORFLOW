@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InteriorFlow — Intro</title>
+<style>
+:root{
+  --ink:#14110d;
+  --cream:#f6f2ea;
+  --plaster:#c9c0ae;
+  --wood-lit:#e8e1d4;
+  --wood-mid:#b5ab99;
+  --wood-dark:#6e665a;
+  --ink-70:rgba(20,17,13,.70);
+  --ink-46:rgba(20,17,13,.46);
+  --ink-28:rgba(20,17,13,.28);
+  --ttt-cam:rgba(240,96,32,.10);
+  --ttt-navy:rgba(0,40,80,.22);
+  --ui-font:"Be Vietnam Pro","Be Vietnam",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --mono-font:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --ease-cine:cubic-bezier(.24,.8,.16,1);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--ink);overflow:hidden}
+body{
+  font-family:var(--ui-font);
+  font-size:15px;
+  font-weight:400;
+  line-height:1.6;
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+a{color:var(--ink);text-decoration:none;line-height:1.6}
+a:hover{color:var(--ink-70)}
+
+.gate{
+  position:relative;
+  width:min(100vw,calc(100vh * 2.39));
+  aspect-ratio:2.39 / 1;
+  overflow:hidden;
+  background:var(--plaster);
+  isolation:isolate;
+}
+.plaster{
+  position:absolute;
+  inset:-2%;
+  background:
+    radial-gradient(120% 92% at 14% 6%, rgba(219,211,196,.92), rgba(219,211,196,0) 60%),
+    radial-gradient(90% 120% at 88% 96%, var(--ttt-navy), rgba(0,40,80,0) 58%),
+    radial-gradient(70% 90% at 24% 90%, var(--ttt-cam), rgba(240,96,32,0) 60%),
+    linear-gradient(168deg,#d2c9b7 0%,#c9c0ae 46%,#bcb3a1 100%);
+}
+.plaster::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.86' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='180' height='180' filter='url(%23n)' opacity='.5'/></svg>");
+  background-size:180px 180px;
+  mix-blend-mode:multiply;
+  opacity:.17;
+}
+.vig{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:7;
+  background:radial-gradient(118% 92% at 48% 44%, rgba(20,17,13,0) 38%, rgba(20,17,13,.13) 72%, rgba(20,17,13,.34) 100%);
+}
+.grain{
+  position:absolute;
+  inset:-60px;
+  z-index:8;
+  pointer-events:none;
+  opacity:.28;
+  mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23g)' opacity='.62'/></svg>");
+  background-size:140px 140px;
+  animation:filmjit 620ms steps(1,end) infinite;
+}
+@keyframes filmjit{
+  0%{transform:translate3d(0,0,0)}
+  20%{transform:translate3d(-14px,9px,0)}
+  40%{transform:translate3d(11px,-12px,0)}
+  60%{transform:translate3d(-8px,-7px,0)}
+  80%{transform:translate3d(13px,6px,0)}
+  100%{transform:translate3d(0,0,0)}
+}
+.amb{
+  position:absolute;
+  inset:0;
+  z-index:2;
+  pointer-events:none;
+  background:linear-gradient(100deg,rgba(246,242,234,0) 34%,rgba(255,252,246,.42) 50%,rgba(246,242,234,0) 66%);
+  mix-blend-mode:screen;
+  opacity:0;
+  transform:translate3d(-46%,0,0);
+}
+.amb.a1{animation:ambsweep 1000ms var(--ease-cine) 900ms both}
+.amb.a2{animation:ambsweep 1000ms var(--ease-cine) 2000ms both}
+.amb.a3{animation:ambsweep 1000ms var(--ease-cine) 3100ms both}
+@keyframes ambsweep{
+  0%{opacity:0;transform:translate3d(-46%,0,0)}
+  22%{opacity:.9}
+  78%{opacity:.9}
+  100%{opacity:0;transform:translate3d(46%,0,0)}
+}
+
+.cam{
+  position:absolute;
+  inset:0;
+  z-index:3;
+  transform-origin:46% 58%;
+  animation:cam 9000ms linear both,artdim 900ms var(--ease-cine) 5300ms forwards;
+}
+@keyframes artdim{0%{opacity:1}100%{opacity:.3}}
+@keyframes cam{
+  0%{transform:scale(1.075) translate3d(-1.1%,.5%,0)}
+  100%{transform:scale(1.005) translate3d(.7%,-.2%,0)}
+}
+.cam svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+.blk{opacity:0;animation:blkin 900ms var(--ease-cine) 260ms both}
+@keyframes blkin{
+  0%{opacity:0;transform:translate3d(0,14px,0)}
+  100%{opacity:1;transform:translate3d(0,0,0)}
+}
+
+.sh{opacity:0}
+.sh1{animation:s1 1100ms var(--ease-cine) 1300ms both,cv1 900ms var(--ease-cine) 4400ms both,up 900ms var(--ease-cine) 4400ms forwards}
+.sh2{animation:s1 1100ms var(--ease-cine) 2400ms both,cv2 900ms var(--ease-cine) 4400ms both,up 900ms var(--ease-cine) 4400ms forwards}
+.sh3{animation:s3 700ms var(--ease-cine) 3500ms both,cv3 900ms var(--ease-cine) 4400ms both}
+@keyframes s1{0%{opacity:0}32%{opacity:1}72%{opacity:1}100%{opacity:.26}}
+@keyframes s3{0%{opacity:0}100%{opacity:1}}
+@keyframes up{0%{opacity:.26}100%{opacity:1}}
+.det{animation:detdim 900ms var(--ease-cine) 4400ms forwards}
+@keyframes detdim{0%{opacity:1}100%{opacity:.2}}
+@keyframes cv1{0%{transform:translate3d(-34px,-26px,0)}100%{transform:translate3d(0,0,0)}}
+@keyframes cv2{0%{transform:translate3d(26px,18px,0)}100%{transform:translate3d(0,0,0)}}
+@keyframes cv3{0%{transform:translate3d(40px,-14px,0)}100%{transform:translate3d(0,0,0)}}
+
+.lb{opacity:0}
+.lb text{
+  font-family:var(--mono-font);
+  font-size:15px;
+  font-weight:400;
+  letter-spacing:.26em;
+  text-transform:uppercase;
+  fill:var(--ink-46);
+}
+.lb1{animation:lseq 1100ms var(--ease-cine) 1300ms both}
+.lb2{animation:lseq 1100ms var(--ease-cine) 2400ms both}
+.lb3{animation:s3 700ms var(--ease-cine) 3500ms both,lbout 400ms var(--ease-cine) 4400ms forwards}
+@keyframes lseq{0%{opacity:0}30%{opacity:1}70%{opacity:1}100%{opacity:0}}
+@keyframes lbout{0%{opacity:1}100%{opacity:0}}
+
+.gloss{opacity:0}
+.g1{animation:gl 1000ms var(--ease-cine) 900ms both}
+.g2{animation:gl 1000ms var(--ease-cine) 2000ms both}
+.g3{animation:gl 1000ms var(--ease-cine) 3100ms both}
+@keyframes gl{
+  0%{opacity:0;transform:translate3d(-540px,0,0)}
+  18%{opacity:1}
+  82%{opacity:1}
+  100%{opacity:0;transform:translate3d(780px,0,0)}
+}
+
+.type{
+  position:absolute;
+  left:0;right:0;
+  bottom:15.5%;
+  z-index:5;
+  text-align:center;
+  padding:0 6%;
+}
+.type h1{
+  margin:0;
+  font-family:var(--ui-font);
+  font-size:clamp(26px,3.5vw,54px);
+  font-weight:500;
+  line-height:1.34;
+  letter-spacing:-.018em;
+  color:var(--ink);
+  text-wrap:balance;
+  opacity:0;
+  animation:tin 780ms var(--ease-cine) 6200ms both,tout 420ms var(--ease-cine) 7520ms forwards;
+}
+@keyframes tin{
+  0%{opacity:0;transform:translate3d(0,16px,0);filter:blur(5px)}
+  100%{opacity:1;transform:translate3d(0,0,0);filter:blur(0)}
+}
+@keyframes tout{0%{opacity:1}100%{opacity:0;transform:translate3d(0,-8px,0)}}
+
+.lock{
+  position:absolute;
+  left:0;right:0;
+  bottom:11.5%;
+  z-index:6;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+  opacity:0;
+  animation:lin 760ms var(--ease-cine) 7980ms both;
+}
+@keyframes lin{
+  0%{opacity:0;transform:translate3d(0,12px,0)}
+  100%{opacity:1;transform:translate3d(0,0,0)}
+}
+.lock .scrim{
+  position:absolute;
+  left:50%;top:50%;
+  width:min(760px,64%);
+  height:240%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  background:radial-gradient(56% 52% at 50% 50%, rgba(207,199,183,.95) 0%, rgba(203,194,177,.82) 46%, rgba(201,192,174,0) 100%);
+}
+.lock .mark{position:relative;display:flex;align-items:center;gap:16px;color:var(--ink)}
+.lock .mark svg{display:block;width:clamp(30px,2.9vw,44px);height:auto}
+.lock .wm{
+  font-family:var(--ui-font);
+  font-size:clamp(19px,2vw,31px);
+  font-weight:500;
+  line-height:1.4;
+  letter-spacing:-.012em;
+  color:var(--ink);
+}
+.lock .tl{
+  position:relative;
+  font-family:var(--mono-font);
+  font-size:11px;
+  font-weight:400;
+  line-height:1.5;
+  letter-spacing:.26em;
+  text-transform:uppercase;
+  color:var(--ink-46);
+}
+
+.skip{
+  position:absolute;
+  right:2.6%;
+  bottom:8%;
+  z-index:9;
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  height:32px;
+  padding:0 14px;
+  border:1px solid var(--ink-28);
+  border-radius:999px;
+  background:rgba(219,211,196,.66);
+  color:var(--ink-70);
+  font-family:var(--mono-font);
+  font-size:11px;
+  font-weight:400;
+  line-height:1.5;
+  letter-spacing:.26em;
+  text-transform:uppercase;
+  white-space:nowrap;
+  cursor:pointer;
+  -webkit-backdrop-filter:blur(6px);
+  backdrop-filter:blur(6px);
+  transition:color .2s var(--ease-cine),border-color .2s var(--ease-cine);
+}
+.skip:hover{color:var(--ink);border-color:var(--ink-46)}
+.skip i{width:5px;height:5px;border-radius:50%;background:currentColor;flex:none;opacity:.6}
+
+body.done .cam,
+body.done .amb,
+body.done .sh,
+body.done .det,
+body.done .lb,
+body.done .gloss,
+body.done .blk,
+body.done .type h1,
+body.done .lock,
+body.done .grain{
+  animation-duration:1ms !important;
+  animation-delay:0ms !important;
+}
+@media (prefers-reduced-motion:reduce){
+  .cam,.amb,.sh,.det,.lb,.gloss,.blk,.type h1,.lock,.grain{
+    animation-duration:1ms !important;
+    animation-delay:0ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="plaster"></div>
+
+  <div class="cam">
+    <svg viewBox="0 0 1400 586" preserveAspectRatio="xMidYMid slice" aria-label="Một cái ghế, ba hình chiếu">
+      <defs>
+        <!-- gỗ sồi nhạt -->
+        <linearGradient id="wTop" x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stop-color="#f0eade"/>
+          <stop offset=".52" stop-color="#e8e1d4"/>
+          <stop offset="1" stop-color="#cdc4b2"/>
+        </linearGradient>
+        <linearGradient id="wLeft" x1="0" y1="0" x2="1" y2="0.4">
+          <stop offset="0" stop-color="#c9bfad"/>
+          <stop offset=".6" stop-color="#b5ab99"/>
+          <stop offset="1" stop-color="#a1977f"/>
+        </linearGradient>
+        <linearGradient id="wRight" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#7d7568"/>
+          <stop offset="1" stop-color="#6e665a"/>
+        </linearGradient>
+        <linearGradient id="wLeg" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#ded6c7"/>
+          <stop offset=".46" stop-color="#b5ab99"/>
+          <stop offset="1" stop-color="#6e665a"/>
+        </linearGradient>
+        <linearGradient id="wLegBack" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#a89e8c"/>
+          <stop offset="1" stop-color="#6e665a"/>
+        </linearGradient>
+        <linearGradient id="wRail" x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0" stop-color="#e8e1d4"/>
+          <stop offset=".55" stop-color="#c4baa8"/>
+          <stop offset="1" stop-color="#8f8677"/>
+        </linearGradient>
+
+        <linearGradient id="gGloss" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="rgba(246,242,234,0)"/>
+          <stop offset=".42" stop-color="rgba(255,252,246,.34)"/>
+          <stop offset=".54" stop-color="rgba(255,255,250,.55)"/>
+          <stop offset="1" stop-color="rgba(246,242,234,0)"/>
+        </linearGradient>
+
+        <linearGradient id="gNear" x1="680" y1="230" x2="1060" y2="420" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#fff" stop-opacity="1"/>
+          <stop offset=".38" stop-color="#fff" stop-opacity=".55"/>
+          <stop offset=".84" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <mask id="mNear"><rect x="0" y="0" width="1400" height="700" fill="url(#gNear)"/></mask>
+
+        <filter id="blurFar" x="-30%" y="-30%" width="180%" height="180%"><feGaussianBlur stdDeviation="8"/></filter>
+        <filter id="blurNear" x="-30%" y="-30%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+        <filter id="blurLine" x="-30%" y="-30%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.5"/></filter>
+        <filter id="blurFoot" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
+
+        <filter id="rough">
+          <feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="4" stitchTiles="stitch" result="n"/>
+          <feColorMatrix in="n" type="saturate" values="0"/>
+        </filter>
+
+        <!-- silhouette ghế, dùng cho ánh sáng quét và lớp nhám -->
+        <g id="chairSil">
+          <polygon points="277,414 486,333 709,419 709,457 500,538 277,452"/>
+          <polygon points="297,408 487,331 487,190 297,267"/>
+          <polygon points="288,255 495,175 495,201 288,281"/>
+          <polygon points="292,344 491,267 491,283 292,360"/>
+          <polygon points="478,177 496,177 493,588 481,588"/>
+          <polygon points="288,251 306,251 303,661 291,661"/>
+          <polygon points="681,457 698,457 695,666 684,666"/>
+          <polygon points="491,538 509,538 506,747 494,747"/>
+        </g>
+
+        <mask id="mChair">
+          <g transform="translate(145,-60) scale(0.66)" fill="#fff">
+            <polygon points="277,414 486,333 709,419 709,457 500,538 277,452"/>
+            <polygon points="297,408 487,331 487,190 297,267"/>
+            <polygon points="491,538 508,538 505,747 494,747"/>
+            <polygon points="681,457 698,457 695,666 684,666"/>
+            <polygon points="288,436 305,436 302,661 291,661"/>
+            <polygon points="478,362 495,362 492,588 481,588"/>
+            <polygon points="288,251 306,251 306,440 288,440"/>
+            <polygon points="478,177 496,177 496,366 478,366"/>
+            <polygon points="288,255 495,175 495,201 288,281"/>
+            <polygon points="292,344 491,267 491,283 292,360"/>
+          </g>
+        </mask>
+      </defs>
+
+      <!-- ══ BA CÁI BÓNG = BA HÌNH CHIẾU ══ -->
+
+      <!-- ② GIỮA · silhouette nhìn nghiêng, khối đặc -->
+      <g class="sh sh2">
+        <g transform="matrix(0.55,0.10,-0.30,0.42,731.7,90.5)">
+          <g opacity="0.26" filter="url(#blurFar)"><use href="#chairSil" fill="#14110d"/></g>
+          <g mask="url(#mNear)">
+            <g opacity="0.42" filter="url(#blurNear)"><use href="#chairSil" fill="#14110d"/></g>
+          </g>
+        </g>
+      </g>
+
+      <!-- ① TRÁI · nét, nhìn từ trên xuống (plan view) -->
+      <g class="sh sh1">
+        <g transform="matrix(0.819,0.2652,0.3276,0.5616,716.3,238.2)" fill="none"
+           stroke="rgba(20,17,13,.62)" stroke-width="6">
+          <rect x="0" y="0" width="225" height="240" rx="14"/>
+          <path d="M14,26 Q112.5,-4 211,26"/>
+          <path d="M14,26 L14,8 M211,26 L211,8"/>
+          <circle cx="26" cy="26" r="7"/>
+          <circle cx="199" cy="26" r="7"/>
+          <circle cx="26" cy="214" r="7"/>
+          <circle cx="199" cy="214" r="7"/>
+          <path d="M0,62 L225,62" stroke-width="3.5" stroke-dasharray="13 11" stroke-opacity=".7"/>
+        </g>
+      </g>
+
+      <!-- ③ PHẢI · nhìn từ trước (elevation) trong khung hồ sơ -->
+      <g class="sh sh3">
+        <g transform="matrix(0.819,0.2652,0.3276,0.5616,680,180)">
+          <rect x="-34" y="-34" width="300" height="512" fill="rgba(232,225,212,.18)"
+                stroke="rgba(20,17,13,.55)" stroke-width="7"/>
+          <g class="det" fill="none" stroke="rgba(20,17,13,.58)" stroke-width="6">
+            <rect x="0" y="0" width="225" height="24"/>
+            <rect x="0" y="94" width="225" height="18"/>
+            <rect x="0" y="185" width="225" height="22"/>
+            <path d="M8,24 L8,185 M28,24 L28,185 M197,24 L197,185 M217,24 L217,185"/>
+            <path d="M8,207 L8,410 M28,207 L28,410 M197,207 L197,410 M217,207 L217,410"/>
+          </g>
+          <g class="det" fill="none" stroke="rgba(20,17,13,.44)" stroke-width="4.5">
+            <path d="M0,440 L225,440"/>
+            <path d="M0,428 L0,452 M225,428 L225,452"/>
+            <path d="M-20,410 L-20,0 M-32,410 L-8,410 M-32,0 L-8,0"/>
+          </g>
+          <g fill="none" stroke="rgba(20,17,13,.5)" stroke-width="5.5">
+            <rect x="146" y="432" width="120" height="46"/>
+            <path d="M146,447 L266,447 M146,462 L266,462 M186,432 L186,478"/>
+          </g>
+        </g>
+      </g>
+
+      <!-- nhãn ba chặng -->
+      <g class="lb lb1"><text x="850" y="558" text-anchor="middle">Thiết kế 2D</text></g>
+      <g class="lb lb2"><text x="850" y="558" text-anchor="middle">Thiết kế 3D</text></g>
+      <g class="lb lb3"><text x="850" y="558" text-anchor="middle">Trình chiếu</text></g>
+
+      <!-- ══ MỘT CÁI GHẾ ══ -->
+      <g class="blk">
+        <!-- penumbra nối chân ghế sang vùng hình chiếu -->
+        <ellipse cx="690" cy="348" rx="140" ry="48" transform="rotate(-20 690 348)"
+                 fill="rgba(20,17,13,.17)" filter="url(#blurFar)"/>
+        <g transform="translate(145,-60) scale(0.66)">
+          <!-- bóng chân ghế: đậm sát điểm tiếp đất -->
+          <ellipse cx="500" cy="747" rx="30" ry="10" fill="rgba(20,17,13,.30)" filter="url(#blurFoot)"/>
+          <ellipse cx="690" cy="666" rx="30" ry="10" fill="rgba(20,17,13,.26)" filter="url(#blurFoot)"/>
+          <ellipse cx="296" cy="661" rx="30" ry="10" fill="rgba(20,17,13,.26)" filter="url(#blurFoot)"/>
+          <ellipse cx="487" cy="588" rx="30" ry="10" fill="rgba(20,17,13,.22)" filter="url(#blurFoot)"/>
+
+          <!-- chân sau + trụ lưng -->
+          <polygon points="478,177 496,177 493,588 481,588" fill="url(#wLegBack)"/>
+          <polygon points="288,251 306,251 303,661 291,661" fill="url(#wLeg)"/>
+
+          <!-- nan lưng ngang -->
+          <path d="M292,344 L491,267 L491,283 L292,360 Z" fill="url(#wRail)"/>
+          <path d="M288,255 Q392,213 495,175 L495,201 Q392,239 288,281 Z" fill="url(#wRail)"/>
+          <path d="M288,255 Q392,213 495,175" fill="none" stroke="rgba(246,242,234,.55)" stroke-width="1.4"/>
+
+          <!-- lưng ghế: mảng đặc cao trội, ghế ngồi nhìn ngang -->
+          <polygon points="297,408 487,331 487,190 297,267" fill="url(#wLeft)"/>
+          <path d="M297,267 L487,190" fill="none" stroke="rgba(246,242,234,.4)" stroke-width="1.2"/>
+
+          <!-- chân trước -->
+          <polygon points="681,457 698,457 695,666 684,666" fill="url(#wLeg)"/>
+
+          <!-- mặt ngồi -->
+          <polygon points="277,414 500,500 709,419 486,333" fill="url(#wTop)"/>
+          <polygon points="277,414 500,500 500,538 277,452" fill="url(#wLeft)"/>
+          <polygon points="500,500 709,419 709,457 500,538" fill="url(#wRight)"/>
+          <path d="M277,414 L500,500 L709,419" fill="none" stroke="rgba(246,242,234,.5)" stroke-width="1.2"/>
+          <path d="M277,414 L486,333 L709,419" fill="none" stroke="rgba(246,242,234,.34)" stroke-width="1"/>
+          <path d="M500,500 L500,538" fill="none" stroke="rgba(20,17,13,.24)" stroke-width="1.2"/>
+
+          <!-- chân trước gần -->
+          <polygon points="491,538 509,538 506,747 494,747" fill="url(#wLeg)"/>
+          <path d="M491,538 L494,747" fill="none" stroke="rgba(246,242,234,.42)" stroke-width="1"/>
+        </g>
+
+        <!-- độ nhám bề mặt gỗ -->
+        <g mask="url(#mChair)" opacity=".26" style="mix-blend-mode:overlay">
+          <rect x="300" y="30" width="340" height="420" filter="url(#rough)"/>
+        </g>
+
+        <!-- ánh sáng quét đi qua mặt ghế -->
+        <g mask="url(#mChair)">
+          <rect class="gloss g1" x="200" y="10" width="250" height="470" fill="url(#gGloss)"/>
+          <rect class="gloss g2" x="200" y="10" width="250" height="470" fill="url(#gGloss)"/>
+          <rect class="gloss g3" x="200" y="10" width="250" height="470" fill="url(#gGloss)"/>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <div class="amb a1"></div>
+  <div class="amb a2"></div>
+  <div class="amb a3"></div>
+
+  <div class="type"><h1>Một khối. Ba cách nhìn.</h1></div>
+
+  <div class="lock">
+    <div class="scrim"></div>
+    <div class="mark">
+      <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" aria-hidden="true">
+        <rect x=".5" y=".5" width="43" height="43" stroke-width="1" opacity=".85"/>
+        <path d="M15.75 13 V31" stroke-width="1.5"/>
+        <path d="M20.5 13.75 H29" stroke-width="1.5"/>
+        <path d="M20.5 21.5 H27" stroke-width="1.5"/>
+      </svg>
+      <span class="wm">InteriorFlow</span>
+    </div>
+    <div class="tl">Từ nét đầu đến bàn giao</div>
+  </div>
+
+  <div class="vig"></div>
+  <div class="grain"></div>
+
+  <button class="skip" id="skip" type="button"><i></i>Bỏ qua</button>
+</div>
+
+<script>
+(function(){
+  var b=document.body,done=false;
+  function fin(){
+    if(done)return;done=true;
+    b.classList.add('done');
+  }
+  document.getElementById('skip').addEventListener('click',function(e){e.stopPropagation();fin();});
+  window.addEventListener('keydown',fin);
+  document.getElementById('gate').addEventListener('pointerdown',fin);
+})();
+</script>
+</body>
+</html>

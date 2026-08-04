@@ -110,13 +110,17 @@ h1{margin:0;font-size:26px;font-weight:600;line-height:1.4;letter-spacing:-.02em
 .pad .row{grid-template-columns:22px 80px 1fr;min-height:48px}
 .pad .inp{height:44px}
 .pad .seg button{height:38px;font-size:13px}
-.pad .exp button{height:34px;padding:0 13px;font-size:12.5px}
+.pad .exp button{position:relative;height:36px;padding:0 13px;font-size:12.5px}
 .pad .linkchip{height:40px}
-.pad .copy{height:32px;padding:0 11px;font-size:11.5px}
+.pad .copy{position:relative;height:34px;min-width:34px;padding:0 11px;font-size:11.5px}
+/* vùng chạm 44 nhưng giữ hình 34 — không phá nhịp hàng */
+.pad .copy::after,.pad .chip .x::after,.pad .exp button::after{content:"";position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)}
+.pad .exp button{position:relative;height:36px}
+.pad .chip .x{position:relative}
 .pad .send{height:44px;padding:0 20px;font-size:13.5px}
 .pad .sug button{padding:9px 8px}
 .pad .chip{height:32px;padding:0 9px 0 5px}
-.pad .chip .x{width:22px;height:22px}
+.pad .chip .x{position:relative;width:26px;height:26px}
 .pad .av{width:28px;height:28px;font-size:10.5px}
 .pad .bar{height:54px}
 .pad .ghost,.pad .share{height:38px;font-size:13px}
@@ -177,7 +181,7 @@ h1{margin:0;font-size:26px;font-weight:600;line-height:1.4;letter-spacing:-.02em
         <div class="pop" id="popP" style="right:14px;top:65px"></div>
       </div>
       <ul class="notes">
-        <li>Cùng bố cục, chỉ giãn chiều cao: ô nhập <b>44</b>, segmented <b>38</b>, nút gửi <b>44</b>, avatar <b>28</b>. Không đổi thứ tự hàng, không đổi số cột.</li>
+        <li>Cùng bố cục, chỉ giãn chiều cao: ô nhập <b>44</b>, segmented <b>38</b>, nút gọi <b>44</b>, avatar <b>28</b>. Nút nhỏ (Chép, bỏ chọn, hạn dùng) giữ hình nhỏ nhưng có <b>vùng chạm 44×44</b> trùm ra ngoài. Không đổi thứ tự hàng, không đổi số cột.</li></li>
         <li>Gợi ý người trong studio mở bằng bàn phím ngoài (↑↓ Enter) hoặc chạm; hàng gợi ý cao <b>44</b> khi chạm.</li>
       </ul>
     </div>

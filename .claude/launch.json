@@ -16,6 +16,14 @@
       "port": 3001,
       "autoPort": true,
       "cwd": "."
+    },
+    {
+      "name": "interiorflow-p2",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3002,
+      "autoPort": true,
+      "cwd": "."
     }
   ]
 }

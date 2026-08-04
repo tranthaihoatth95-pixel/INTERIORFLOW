@@ -62,6 +62,29 @@ import { useCadStore } from './store';
 export { dwgRawDocToDoc, describeDwgHeader, dwgTimeoutMessage, dwgCancelledMessage, dwgProgressMessage, DEFAULT_DWG_IMPORT_TIMEOUT_MS } from './dwg-map';
 export type { DwgRawDoc, DwgStage } from './dwg-map';
 
+/**
+ * P1-VERIFY (04/08, SO-KIEM-TONG §11c) — huỷ MỘT worker đang chặn giữa `convertEx` bằng
+ * `worker.terminate()` treo cứng tab thật (>6') trên file 9.7MB, tái hiện 3 lần độc lập. Hoà
+ * chốt đánh đổi: khi người dùng bấm Huỷ, BỎ ROI worker thay vì giết nó — không còn lắng nghe kết
+ * quả của nó nữa, để trình duyệt tự dọn khi worker tự xong hoặc khi tab đóng. Giữ tối đa 2 worker
+ * mồ côi cùng lúc; cái thứ 3 trở đi mới `terminate()` con CŨ NHẤT (chấp nhận rủi ro treo nhỏ đó,
+ * đổi lấy chặn rò RAM vô hạn nếu người dùng bấm Huỷ liên tục).
+ */
+const ORPHANED_DWG_WORKERS: Worker[] = [];
+
+function orphanDwgWorker(worker: Worker, fileName: string, stage: DwgStage, elapsedMs: number) {
+  worker.onmessage = null;
+  worker.onerror = null;
+  ORPHANED_DWG_WORKERS.push(worker);
+  console.warn(
+    `[dwg] Worker đọc "${fileName}" bị huỷ giữa giai đoạn "${stage}" (${Math.round(elapsedMs / 1000)}s) — ` +
+      `bỏ rơi thay vì terminate() để tránh treo tab (SO-KIEM-TONG §11c). Đang có ${ORPHANED_DWG_WORKERS.length} worker mồ côi.`
+  );
+  while (ORPHANED_DWG_WORKERS.length > 2) {
+    ORPHANED_DWG_WORKERS.shift()?.terminate();
+  }
+}
+
 /** Bản sao CỐ Ý của `DwgWorkerMessage` (`dwg-worker.ts`) — KHÔNG import trực tiếp file đó (luật
  * cô lập GPL đã ghi ở đầu `dwg-worker.ts`: không ai được import module ấy). Cùng khuôn với
  * `DwgWorkerResponse`/`DwgRawDoc` đã trùng lặp có chủ đích giữa `dwg-map.ts` và `dwg-worker.ts`
@@ -137,13 +160,19 @@ export function openDwgFile(file: File, opts: OpenDwgOptions = {}): Promise<Open
       }
     }, 1000);
 
-    const finish = (settle: () => void) => {
+    // `orphan: true` CHỈ dùng cho đường Huỷ do người dùng bấm — xem `orphanDwgWorker` ở trên vì
+    // sao KHÔNG terminate() ở đây (khác timeout/lỗi worker, vẫn terminate() bình thường).
+    const finish = (settle: () => void, orphan = false) => {
       if (settled) return;
       settled = true;
       clearInterval(heartbeat);
       clearTimeout(hardTimeout);
       if (opts.signal && onAbort) opts.signal.removeEventListener('abort', onAbort);
-      worker.terminate();
+      if (orphan) {
+        orphanDwgWorker(worker, file.name, stage, Date.now() - startedAt);
+      } else {
+        worker.terminate();
+      }
       settle();
     };
 
@@ -153,10 +182,10 @@ export function openDwgFile(file: File, opts: OpenDwgOptions = {}): Promise<Open
 
     if (opts.signal) {
       if (opts.signal.aborted) {
-        finish(() => reject(new Error(dwgCancelledMessage(file))));
+        finish(() => reject(new Error(dwgCancelledMessage(file))), true);
         return;
       }
-      onAbort = () => finish(() => reject(new Error(dwgCancelledMessage(file))));
+      onAbort = () => finish(() => reject(new Error(dwgCancelledMessage(file))), true);
       opts.signal.addEventListener('abort', onAbort);
     }
 

@@ -10,7 +10,7 @@
  * CadEditor/CadCanvas không phình.
  */
 
-import type { Doc, Entity, Box, Pt } from './model';
+import type { Doc, Entity, Box, Pt, WallRun, WallLocationLine } from './model';
 import { newId } from './store';
 import { BLOCK_MAP } from './furniture';
 
@@ -72,6 +72,102 @@ export function wallChain(points: { x: number; y: number }[], t: number, layer: 
   for (let i = 0; i < points.length - 1; i++) out.push(...wallSegment(points[i], points[i + 1], t, layer));
   if (closed && points.length > 2) out.push(...wallSegment(points[points.length - 1], points[0], t, layer));
   return out;
+}
+
+/* ───────────────────────── WallRun — location line tường (P11, `SPEC-VE-REVIT-MODE.md` §2) ───────────────────────── */
+
+/**
+ * Offset [trái, phải] của 1 đoạn `path` ra 2 biên tường theo `locationLine` (dấu theo pháp tuyến
+ * TRÁI của chiều vẽ a→b — quay 90° CCW từ hướng đi, chuẩn world Y-up của file này, xem `nx/ny`
+ * trong `wallSegment` phía trên: đây CHÍNH LÀ pháp tuyến đó, chỉ khác là KHÔNG nhân sẵn t/2).
+ * 'left'/'right': path CHÍNH LÀ biên đó → offset phía mình = 0, dồn hết bề dày `t` sang phía kia.
+ * Đây là cơ chế "location line đứng yên khi đổi bề dày": `path` không đổi theo `t`, chỉ 2 số offset
+ * này đổi — cạnh có offset 0 luôn trùng khớp `path` bất kể `t` là bao nhiêu.
+ */
+export function wallLocationOffsets(t: number, loc: WallLocationLine): { left: number; right: number } {
+  if (loc === 'left') return { left: 0, right: -t };
+  if (loc === 'right') return { left: t, right: 0 };
+  return { left: t / 2, right: -t / 2 };
+}
+
+/**
+ * 1 đoạn tường a→b theo `locationLine` — thay `wallSegment` (LUÔN center) khi cần path đứng yên
+ * ở 1 biên. Entity sinh ra mang `elementType:'wall'`/`wallThicknessMm` (IF2-nền, đúng khuôn
+ * `Base` — xem model.ts) để Navigator/BOQ đọc được ngay, không đợi gán tay. `wallSegment` cũ GIỮ
+ * NGUYÊN, KHÔNG đụng (sketch/pro vẫn dùng y như trước — nguyên tắc 3 SPEC-VE-REVIT-MODE §0).
+ */
+export function wallSegmentOutline(a: Pt, b: Pt, t: number, layer: string, loc: WallLocationLine = 'center'): Entity[] {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len;
+  const ny = dx / len;
+  const { left, right } = wallLocationOffsets(t, loc);
+  const p1 = { x: a.x + nx * left, y: a.y + ny * left };
+  const p2 = { x: b.x + nx * left, y: b.y + ny * left };
+  const p3 = { x: b.x + nx * right, y: b.y + ny * right };
+  const p4 = { x: a.x + nx * right, y: a.y + ny * right };
+  return [
+    { id: newId('e'), type: 'hatch', layer, points: [p1, p2, p3, p4], solid: true, elementType: 'wall', wallThicknessMm: t },
+    { id: newId('e'), type: 'polyline', layer, points: [p1, p2, p3, p4], closed: true, elementType: 'wall', wallThicknessMm: t },
+  ];
+}
+
+/**
+ * Sinh geometry (hatch+polyline mỗi đoạn) cho TOÀN BỘ `path` của 1 WallRun — dùng chung cho tạo
+ * mới lẫn regen. THUẦN, luôn cấp id MỚI (`newId`) — caller (store, ngoài phạm vi file này) chịu
+ * trách nhiệm xoá `entityIds` cũ khỏi `Doc` trong CÙNG snapshot (xem `regenWallRun`). CHƯA nối
+ * tự sạch nhiều đoạn (§3 SPEC-VE-REVIT-MODE, miter/bevel/T-trim) — mỗi đoạn sinh quad ĐỘC LẬP như
+ * `wallChain` cũ, việc RIÊNG, không làm ở đây.
+ */
+export function wallRunOutlineEntities(
+  run: Pick<WallRun, 'path' | 'thicknessMm' | 'locationLine' | 'layer' | 'closed'>,
+): Entity[] {
+  const { path, thicknessMm, locationLine, layer, closed } = run;
+  const out: Entity[] = [];
+  for (let i = 0; i < path.length - 1; i++) out.push(...wallSegmentOutline(path[i], path[i + 1], thicknessMm, layer, locationLine));
+  if (closed && path.length > 2) out.push(...wallSegmentOutline(path[path.length - 1], path[0], thicknessMm, layer, locationLine));
+  return out;
+}
+
+/** Tạo WallRun mới + geometry ban đầu — mặt tiền tương đương `wallChain()` cũ nhưng GIỮ `path`
+ * sống (mode revit dùng hàm này thay `wallChain`, xem SPEC-VE-REVIT-MODE §2 "Vẽ ở mode nào"). */
+export function createWallRun(
+  path: Pt[],
+  thicknessMm: number,
+  layer: string,
+  locationLine: WallLocationLine = 'center',
+  closed = false,
+): { run: WallRun; entities: Entity[] } {
+  const entities = wallRunOutlineEntities({ path, thicknessMm, locationLine, layer, closed });
+  const run: WallRun = {
+    id: newId('wr'),
+    path,
+    closed,
+    thicknessMm,
+    locationLine,
+    layer,
+    entityIds: entities.map((e) => e.id),
+  };
+  return { run, entities };
+}
+
+/**
+ * Đổi tham số 1 WallRun (`path`/`thicknessMm`/`locationLine`/`closed`) rồi SINH LẠI geometry —
+ * đúng quy tắc regen `SPEC-VE-REVIT-MODE.md` §2: "mọi sửa đổi → xoá entityIds cũ, sinh mới, ghi
+ * lại entityIds — MỘT snapshot cho cả cụm". THUẦN — không đụng `doc.entities` (đúng ranh giới đầu
+ * file "gọi từ CadCanvas/CadEditor rồi addEntities()"); caller tự xoá `removedEntityIds` khỏi Doc
+ * + push `entities` mới trong CÙNG 1 lệnh undo (chưa wire — CadCanvas/store là việc khác, ngoài
+ * `vùng: lib/cad/model.ts · lib/cad/commands.ts` của phiếu này).
+ */
+export function regenWallRun(
+  run: WallRun,
+  patch: Partial<Pick<WallRun, 'path' | 'thicknessMm' | 'locationLine' | 'closed'>>,
+): { run: WallRun; entities: Entity[]; removedEntityIds: string[] } {
+  const next: WallRun = { ...run, ...patch };
+  const entities = wallRunOutlineEntities(next);
+  next.entityIds = entities.map((e) => e.id);
+  return { run: next, entities, removedEntityIds: run.entityIds };
 }
 
 /* ───────────────────────── ROOM — phòng chữ nhật + nhãn + diện tích ───────────────────────── */
