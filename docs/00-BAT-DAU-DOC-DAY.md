@@ -82,6 +82,23 @@ Design · Presenting; rút gọn: 2D · 3D · Trình chiếu) · 2 chế độ c
 8. Port mock theo **L2 port-nguyên-văn token**, NHƯNG vùng nào mock ghi `PLACEHOLDER` thì **không port thành dữ liệu thật** *(tiền lệ: 12 gradient placeholder)*.
 
 ---
+**V6 — PHIÊN CODE KHÔNG TỰ COMMIT.** *(Hoà chốt 04/08 chiều, sau sự cố lần thứ 4)*
+Sự cố hai-phiên-chung-`.git` đã lặp **4 lần**: `f77ce9d` (D1 bị cuốn) · commit BOQ · `2de4abf` ·
+`080e78c`. Chưa mất dữ liệu lần nào — nhưng cả 4 đều rơi vào file *docs*. Rơi vào file *code*
+là mất thật.
+
+Từ nay:
+1. **Phiên code CHỈ sửa file rồi BÁO CÁO.** Không `git add`, không `git commit`, không `git push`.
+   Báo rõ: đã sửa những file nào.
+2. **Hoà là người commit + push**, sau khi các phiên đã báo xong.
+3. Phiên nào BẮT BUỘC phải commit (ví dụ cần hash để ghi sổ) thì trước đó phải:
+   - `git status --short` → đọc HẾT. Thấy file NGOÀI vùng của mình đang `M`/`??` ⇒ **DỪNG**, báo TỔNG.
+   - Gặp `index.lock`: kiểm sống/chết trước khi xoá — `ls -l .git/index.lock`
+     (0 byte + cũ hơn 5 phút = chết) và `pgrep -fl "git (commit|add)"`. Lock **SỐNG ⇒ chờ**, không xoá.
+   - ⚠️ `git commit -- <path>` **KHÔNG an toàn**: nó vẫn cuốn thay đổi chưa commit của phiên khác
+     trên cùng file đó vào commit của mình (đúng ca `080e78c`).
+   - Commit xong ghi trong báo cáo: commit những file nào, có cuốn theo gì không.
+
 ## §7 · AI LÀM GÌ
 | Vai | Là gì | Làm gì |
 |---|---|---|
