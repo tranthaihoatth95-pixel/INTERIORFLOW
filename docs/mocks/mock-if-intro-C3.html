@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>InteriorFlow — Intro C3 · đúng Design System v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ══════════════════════════════════════════════════════════
+     TẦNG 1 — BRAND / ENTRY  (Design System v1 §05)
+     Chỉ INK #14110d và CREAM #f6f2ea.
+     TUYỆT ĐỐI KHÔNG dùng tím accent #8b7cf7 — đây là cửa ngõ vào app.
+     Không #000 / #fff tuyệt đối.
+     ══════════════════════════════════════════════════════════ */
+  :root{
+    --ink:#14110d;
+    --cream:#f6f2ea;
+    --preset:#16130f;      /* preset nền login */
+    --font-sans:"Be Vietnam Pro",-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+    --font-mono:"SF Mono","SFMono-Regular",ui-monospace,Menlo,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden;background:var(--ink)}
+
+  /* khung 2.39:1 */
+  .frame{
+    position:fixed;left:0;right:0;top:50%;
+    height:min(41.8vw,100vh);transform:translateY(-50%);
+    overflow:hidden;background:var(--preset);
+  }
+  .bar{position:fixed;left:0;right:0;height:50vh;background:var(--ink);z-index:40;pointer-events:none}
+  .bar.top{top:calc(50% - min(20.9vw,50vh));transform:translateY(-100%);
+           animation:barIn 1100ms cubic-bezier(.22,1,.36,1) forwards}
+  .bar.bot{bottom:calc(50% - min(20.9vw,50vh));transform:translateY(100%);
+           animation:barIn 1100ms cubic-bezier(.22,1,.36,1) forwards}
+  @keyframes barIn{to{transform:translateY(0)}}
+
+  /* nền — cam/navy TTT chỉ dạng rgba rất nhẹ, đúng preset login */
+  .set{
+    position:absolute;inset:0;
+    background:
+      radial-gradient(58% 96% at 26% 12%, rgba(240,96,32,.10) 0%, rgba(240,96,32,0) 58%),
+      radial-gradient(70% 110% at 78% 92%, rgba(0,40,80,.22) 0%, rgba(0,40,80,0) 62%),
+      radial-gradient(62% 120% at 44% 20%, #241f19 0%, #1a1613 46%, var(--preset) 100%);
+    transition:background 2200ms cubic-bezier(.4,0,.2,1);
+  }
+  body.dark .set{
+    background:radial-gradient(62% 120% at 44% 20%, #1a1714 0%, #16130f 52%, #0f0d0b 100%);
+  }
+
+  .key{
+    position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(44% 68% at var(--kx,18%) 6%,
+               rgba(246,242,234,.20) 0%, rgba(246,242,234,0) 62%);
+    transition:background 2600ms cubic-bezier(.45,0,.25,1),opacity 1800ms ease;
+  }
+
+  .camera{
+    position:absolute;inset:0;
+    transform:scale(1.055) translate(9px,5px);
+    transition:transform 7200ms cubic-bezier(.32,0,.24,1);
+  }
+  body.push .camera{transform:scale(1) translate(0,0)}
+
+  .stage{position:absolute;left:50%;top:50%;width:820px;height:520px;margin:-260px 0 0 -410px}
+
+  /* ── BA CÁI BÓNG ── */
+  .shadow{
+    position:absolute;left:50%;top:50%;width:184px;height:184px;margin:-92px 0 0 -92px;
+    opacity:0;
+    transition:opacity 1400ms ease,transform 1800ms cubic-bezier(.25,1,.35,1);
+  }
+  .shadow svg{width:100%;height:100%;overflow:visible}
+  #sh1{transform:translate(-252px,124px) skewX(-32deg) scaleY(.5)}
+  #sh2{transform:translate(  10px,158px) skewX(  3deg) scaleY(.4)}
+  #sh3{transform:translate( 272px,120px) skewX( 31deg) scaleY(.5)}
+  .shadow.on{opacity:1}
+  body.merge .shadow{transform:translate(4px,156px) skewX(2deg) scaleY(.36)}
+  body.merge #sh1,body.merge #sh3{opacity:.4}
+
+  /* ── KHỐI ── */
+  .solid{
+    position:absolute;left:50%;top:50%;width:192px;height:192px;margin:-122px 0 0 -96px;
+    opacity:0;transition:opacity 1600ms ease;
+    animation:breathe 9s ease-in-out infinite;
+  }
+  .solid.on{opacity:1}
+  @keyframes breathe{0%,100%{margin-top:-122px}50%{margin-top:-127px}}
+  .solid svg{width:100%;height:100%;overflow:visible}
+
+  /* ── NHÃN ba chặng — font mono, đúng spec nhãn login ── */
+  .tag{
+    position:absolute;top:50%;margin-top:132px;
+    font-family:var(--font-mono);
+    font-size:11px;letter-spacing:.26em;text-transform:uppercase;
+    color:rgba(246,242,234,.34);
+    opacity:0;white-space:nowrap;transform:translateX(-50%);
+    transition:opacity 1000ms ease;
+  }
+  .tag.on{opacity:1}
+  body.merge .tag{opacity:0}
+  #t1{left:calc(50% - 252px)} #t2{left:calc(50% + 10px)} #t3{left:calc(50% + 272px)}
+
+  /* ── CHỮ ── */
+  .line{
+    position:absolute;left:0;right:0;bottom:12%;text-align:center;
+    font-family:var(--font-sans);
+    font-size:clamp(19px,2vw,29px);
+    font-weight:300;
+    letter-spacing:.005em;
+    color:rgba(246,242,234,.93);
+    opacity:0;filter:blur(6px);
+    transition:opacity 1400ms ease,filter 1400ms ease;
+    z-index:20;
+  }
+  .line.on{opacity:1;filter:blur(0)}
+
+  /* ── KHOÁ SỔ: logo IF thật ── */
+  .brand{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:22px;opacity:0;pointer-events:none;
+    transition:opacity 1600ms ease;z-index:25;
+  }
+  .brand.on{opacity:1;pointer-events:auto}
+
+  /* logo framed — dựng đúng path IFLogo.tsx, viewBox 0 0 44 44 */
+  .iflogo{width:52px;height:52px;color:var(--cream)}
+  .iflogo svg{width:100%;height:100%;display:block}
+
+  .wordmark{
+    font-family:var(--font-mono);
+    font-size:11px;letter-spacing:.26em;text-transform:uppercase;
+    color:rgba(246,242,234,.4);
+  }
+  .tagline{
+    font-family:var(--font-sans);
+    font-size:15px;font-weight:300;letter-spacing:.01em;
+    color:rgba(246,242,234,.62);margin-top:2px;
+  }
+  .btn{
+    margin-top:12px;padding:11px 34px;border-radius:999px;
+    border:1px solid rgba(246,242,234,.18);background:transparent;
+    color:var(--cream);
+    font-family:var(--font-sans);font-size:13px;font-weight:400;letter-spacing:.04em;
+    cursor:pointer;transition:background 300ms ease,border-color 300ms ease;
+  }
+  .btn:hover{background:rgba(246,242,234,.07);border-color:rgba(246,242,234,.42)}
+
+  .grain{
+    position:absolute;inset:-50%;pointer-events:none;opacity:.045;z-index:30;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");
+    animation:grain 700ms steps(3) infinite;
+  }
+  @keyframes grain{0%{transform:translate(0,0)}33%{transform:translate(-3%,2%)}66%{transform:translate(2%,-3%)}}
+
+  .vig{
+    position:absolute;inset:0;pointer-events:none;z-index:28;
+    background:radial-gradient(78% 96% at 50% 46%,rgba(20,17,13,0) 40%,rgba(20,17,13,.55) 100%);
+  }
+
+  .skip{
+    position:fixed;bottom:22px;right:30px;z-index:50;
+    font-family:var(--font-mono);
+    font-size:11px;letter-spacing:.26em;text-transform:uppercase;
+    color:rgba(246,242,234,.28);background:none;border:none;cursor:pointer;
+    transition:color 400ms ease;
+  }
+  .skip:hover{color:rgba(246,242,234,.7)}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <div class="set"></div>
+  <div class="key" id="key"></div>
+
+  <div class="camera">
+    <div class="stage">
+
+      <!-- bóng 1 · NÉT -->
+      <div class="shadow" id="sh1"><svg viewBox="0 0 190 190">
+        <g fill="none" stroke="rgba(246,242,234,.4)" stroke-width="1.1">
+          <path d="M95 16 L170 59 L170 145 L95 188 L20 145 L20 59 Z"/>
+          <path d="M95 16 L95 102 M95 102 L170 59 M95 102 L20 59"/>
+        </g></svg></div>
+
+      <!-- bóng 2 · KHỐI ĐẶC -->
+      <div class="shadow" id="sh2"><svg viewBox="0 0 190 190">
+        <path d="M95 16 L170 59 L170 145 L95 188 L20 145 L20 59 Z" fill="rgba(20,17,13,.55)"/>
+      </svg></div>
+
+      <!-- bóng 3 · KHUNG HỒ SƠ -->
+      <div class="shadow" id="sh3"><svg viewBox="0 0 190 190">
+        <path d="M95 16 L170 59 L170 145 L95 188 L20 145 L20 59 Z"
+              fill="rgba(246,242,234,.05)" stroke="rgba(246,242,234,.34)" stroke-width=".9"/>
+        <path d="M34 138 L156 138 M156 138 L156 122" fill="none"
+              stroke="rgba(246,242,234,.34)" stroke-width=".9"/>
+      </svg></div>
+
+      <!-- KHỐI — đơn sắc INK/CREAM, không màu lạ -->
+      <div class="solid" id="solid"><svg viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="fT" x1=".1" y1="0" x2=".9" y2="1">
+            <stop offset="0" stop-color="#f6f2ea"/><stop offset="1" stop-color="#cec7bb"/>
+          </linearGradient>
+          <linearGradient id="fL" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#8b8378"/><stop offset="1" stop-color="#5b544b"/>
+          </linearGradient>
+          <linearGradient id="fR" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#4a443c"/><stop offset="1" stop-color="#2c2823"/>
+          </linearGradient>
+        </defs>
+        <path d="M100 16 L175 59 L100 102 L25 59 Z" fill="url(#fT)"/>
+        <path d="M25 59 L100 102 L100 188 L25 145 Z" fill="url(#fL)"/>
+        <path d="M175 59 L100 102 L100 188 L175 145 Z" fill="url(#fR)"/>
+        <!-- khe sáng CREAM trên cạnh đứng — KHÔNG dùng tím (§05 ranh giới) -->
+        <path d="M100 16 L100 102" stroke="#f6f2ea" stroke-width="1" opacity="0">
+          <animate attributeName="opacity" values="0;0;.85;.45" dur="7s" begin="3.4s" fill="freeze"/>
+        </path>
+      </svg></div>
+
+      <div class="tag" id="t1">2D Kỹ thuật</div>
+      <div class="tag" id="t2">3D Thiết kế</div>
+      <div class="tag" id="t3">Trình bày</div>
+    </div>
+  </div>
+
+  <div class="line" id="line">Một khối. Ba cách nhìn.</div>
+
+  <div class="brand" id="brand">
+    <!-- LOGO IF · biến thể framed · dựng đúng toạ độ IFLogo.tsx -->
+    <div class="iflogo">
+      <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" aria-label="InteriorFlow">
+        <rect x="0.5" y="0.5" width="43" height="43" stroke-width="1" opacity="0.85"/>
+        <path d="M15.75 13 V31" stroke-width="1.5"/>
+        <path d="M20.5 13.75 H29" stroke-width="1.5"/>
+        <path d="M20.5 21.5 H27" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="wordmark">InteriorFlow</div>
+    <div class="tagline">Từ nét đầu đến bàn giao</div>
+    <button class="btn" onclick="location.reload()">Xem lại</button>
+  </div>
+
+  <div class="vig"></div>
+  <div class="grain"></div>
+</div>
+
+<div class="bar top"></div>
+<div class="bar bot"></div>
+<button class="skip" id="skip">Bỏ qua</button>
+
+<script>
+(function(){
+  var t=[],done=false,key=document.getElementById('key');
+  function at(ms,fn){ t.push(setTimeout(fn,ms)); }
+  function on(id){ var e=document.getElementById(id); if(e) e.classList.add('on'); }
+  function off(id){ var e=document.getElementById(id); if(e) e.classList.remove('on'); }
+
+  at(200,  function(){ document.body.classList.add('push'); });
+  at(700,  function(){ on('solid'); });
+  at(1500, function(){ key.style.setProperty('--kx','18%'); on('sh1'); on('t1'); });
+  at(2600, function(){ key.style.setProperty('--kx','50%'); on('sh2'); on('t2'); });
+  at(3700, function(){ key.style.setProperty('--kx','82%'); on('sh3'); on('t3'); });
+  /* khoảng lặng 900ms */
+  at(5000, function(){ on('line'); });
+  at(6600, function(){ document.body.classList.add('merge'); });
+  at(7300, function(){ off('line'); document.body.classList.add('dark'); key.style.opacity='.2'; });
+  at(8500, function(){ on('brand'); done=true; });
+
+  function skip(){
+    t.forEach(clearTimeout);
+    off('line'); ['t1','t2','t3'].forEach(off);
+    document.body.classList.add('push','merge','dark');
+    key.style.opacity='.2';
+    on('solid'); on('sh1'); on('sh2'); on('sh3'); on('brand'); done=true;
+  }
+  document.getElementById('skip').addEventListener('click',skip);
+  window.addEventListener('keydown',function(){ if(!done) skip(); });
+  window.addEventListener('touchstart',function(){ if(!done) skip(); });
+})();
+</script>
+</body>
+</html>

@@ -91,5 +91,54 @@ console.log('resolveGroupGeometry — withRef không tra được cutter: bỏ q
   ok('giữ nguyên hình học gốc (bậc thiếu dữ liệu bị bỏ qua)', resolved !== null && resolved.attributes.position.count === geometryOf(wallPositions).attributes.position.count);
 }
 
+console.log('resolveGroupGeometry — VIỆC 1 (nối arrayLinear thật): nhân bản N lần, dịch theo (dx,dy,dz) mm');
+{
+  const postPoly = [
+    { x: -30, y: -30 },
+    { x: 30, y: -30 },
+    { x: 30, y: 30 },
+    { x: -30, y: 30 },
+  ];
+  const postPositions = boxPositionsMm(postPoly, 0, 900);
+  const groupArrayed: SceneGroup = {
+    name: 'Wall_9', colorHex: '#e8e4dc', positions: postPositions, entityId: 'post-1', heightMm: 900,
+    ops: [{ op: 'arrayLinear', n: 5, dx: 300, dy: 0, dz: 0 }],
+  };
+  const plain = geometryOf(postPositions);
+  const resolved = resolveGroupGeometry(groupArrayed);
+  ok('n=5 bản ⇒ 5× số vertex bản gốc', resolved.attributes.position.count === plain.attributes.position.count * 5);
+
+  // Bản đầu (i=0) giữ NGUYÊN vị trí gốc (không dịch) — dò vertex x=-0.03 (mm→m của -30) còn tồn tại.
+  const xs: number[] = [];
+  for (let i = 0; i < resolved.attributes.position.count; i++) xs.push(resolved.attributes.position.getX(i));
+  ok('bản đầu KHÔNG dịch (còn x=-0.03m gốc)', xs.some((x) => Math.abs(x - -0.03) < 1e-6));
+  // dx=300mm CAD (trục X) → three.js X cũng +0.3m/bản (cadToThreeM giữ trục X) — bản cuối (i=4)
+  // dịch 4×0.3=1.2m, vertex x=-30mm gốc trở thành -30mm+1200mm=1170mm=1.17m.
+  ok('bản cuối (i=4) dịch đúng 4×300mm=1.2m theo trục X', xs.some((x) => Math.abs(x - 1.17) < 1e-6));
+}
+
+console.log('resolveGroupGeometry — arrayLinear n<=1 KHÔNG đổi hình (bỏ qua, đúng "n<=1 = tắt mảng")');
+{
+  const wallPositions2 = boxPositionsMm(wallPoly, 0, 2700);
+  const groupN1: SceneGroup = {
+    name: 'Wall_8', colorHex: '#e8e4dc', positions: wallPositions2, entityId: 'wall-8', heightMm: 2700,
+    ops: [{ op: 'arrayLinear', n: 1, dx: 300, dy: 0, dz: 0 }],
+  };
+  const plain = geometryOf(wallPositions2);
+  const resolved = resolveGroupGeometry(groupN1);
+  ok('n=1 giữ nguyên số vertex (không nhân bản)', resolved.attributes.position.count === plain.attributes.position.count);
+}
+
+console.log('resolveGroupGeometry — arrayLinear + boolean cùng lúc: khoét TRƯỚC rồi mới nhân bản');
+{
+  const groupBoth: SceneGroup = {
+    ...groupWithOps, // đã có ops:[boolean subtract] + opCutters ở trên
+    ops: [...groupWithOps.ops!, { op: 'arrayLinear', n: 3, dx: 0, dy: 0, dz: 1000 }],
+  };
+  const booleanOnly = resolveGroupGeometry(groupWithOps);
+  const both = resolveGroupGeometry(groupBoth);
+  ok('kết quả 3× số vertex của bản ĐÃ khoét (không phải khoét sau khi nhân 3)', both.attributes.position.count === booleanOnly.attributes.position.count * 3);
+}
+
 console.log(`\n${pass} pass, ${fail} fail`);
 if (fail > 0) process.exit(1);

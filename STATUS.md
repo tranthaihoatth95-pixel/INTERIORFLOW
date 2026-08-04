@@ -5,6 +5,37 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## ✅ XONG (04/08 — SPEC-DUNG-BO-LENH-3D VIỆC 1+2: nối extrude+arrayLinear thật)
+`ops[]` trước chỉ boolean chạy thật (27d8c6d) — extrude/arrayLinear mới khai TYPE. Nay nối THẬT cả
+2: **extrude** (bevel vát cạnh trên) áp ở `lib/three/cad-to-obj.ts` `ObjBuilder.prismBeveled()` (cần
+đa giác gốc `h.points`, làm TRƯỚC khi xuống triangle soup — khác boolean/arrayLinear chạy ở tầng
+ba.js) + `insetPolygonMm()` co đa giác (chép cục bộ công thức `offsetEntity` hatch của
+`geometry.ts`, TRÁNH kéo `lib/cad/store.ts` vào module "thuần TS không DOM"). **arrayLinear**
+(nhân bản dãy) áp ở `lib/three/build-ops.ts` `resolveGroupGeometry()` — SAU boolean (khoét trước,
+nhân bản sau, đúng thứ tự modifier stack) — `repeatGeometry()` nối N bản dịch theo `cadToThreeM()`
+(tái dùng phép đổi trục có sẵn). `lib/cad/commands.ts` thêm `setEntityBevel`/`setEntityArrayLinear`
+(sửa-tại-chỗ, không cộng dồn — khác `cutHoleInWall` cố ý cộng dồn) + `railingPosts()` (dựng 1 cột
+qua `wallSegment()` + gắn arrayLinear, dùng cho nút "Lan can"). VIỆC 2: `Object3DInspector.tsx`
+thêm `BevelAction`/`ArrayAction` cạnh `CutHoleAction` (chọn tường → panel phải) · `Command3DPanel.tsx`
+mở khoá nút **"Lan can"** (tầng ⑥, gọi `railingPosts` qua `Render3DModeSkeleton.tsx`), 8 nút cấu
+kiện còn lại đổi từ lý do chung "đợi ops[]" sang lý do ĐÚNG riêng từng mục (cửa/cửa sổ: đã dựng
+được qua thư viện đồ, chỉ chưa nối nút này; cầu thang/tủ bếp: chưa có lệnh tham số tầng ⑥; phào chỉ:
+cần sweep chưa có; trần thả: cần khối nổi chưa có cơ chế) — sửa luôn câu "sua" tab cũ SAI (nói
+"Bevel... sắp có" dù không có nút bevel nào ở tab đó, bevel thật nằm ở Inspector). CHƯA CÓ tay vịn
+ngang cho lan can (tường luôn đùn từ sàn z=0, chưa có khối nổi — ghi rõ trong code, không giấu).
+Test mới: `commands.test.ts` (+26), `cad-to-obj.test.ts` (+5, bevel), `build-ops.test.ts` (+5,
+arrayLinear+compose với boolean) — toàn bộ pass, `npx tsc --noEmit -p .` sạch, `npm test` chỉ còn
+đúng 1 fail cũ đã biết (entityId nội thất, không liên quan). Verify browser thật (127.0.0.1:3000,
+"Dự án mẫu"): bấm "Lan can" → 9 cột thật xuất hiện trong cây đối tượng · Inspector 3 nút Khoét
+hốc/Vát cạnh/Nhân bản dãy đổi nhãn đúng theo state · gộp cả 3 ops (boolean+extrude+arrayLinear)
+trên cùng 1 entity không lỗi console — đã xoá sạch entity test khỏi "Dự án mẫu" sau khi verify
+(qua `window.__cadStore.removeIds`, không đụng `setState` ghi đè).
+🔴 **Hai phiên chung `.git` tái diễn**: 7/9 file việc này (mọi thứ trừ `STATUS.md` + 2 file test
+`cad-to-obj.test.ts`/`build-ops.test.ts`) bị cuốn vào commit `a40adf2` "khoa duong ve dich 3 dot"
+của phiên khác (họ `git add -A` thay vì giới hạn pathspec, đúng luật cấm ở `CLAUDE.md`). Đã verify
+lại nội dung file thật khớp 100% (đọc code + chạy lại `tsc`/3 file test — sạch/pass) — KHÔNG mất
+dữ liệu, chỉ lệch tên/nhãn commit. Không rewrite lịch sử.
+
 ## ✅ XONG (04/08 — mở rộng BOQ editor: quy cách/đơn vị · nhóm theo phòng · in A4 ngang)
 BOQ editor UI **đã có sẵn từ trước** (`4991340`, B0-B6+B10, `components/present-editor/boq/*` —
 STATUS.md cũ KHÔNG ghi việc này, chỉ phát hiện qua đọc `git log` trực tiếp) — không tạo bản song

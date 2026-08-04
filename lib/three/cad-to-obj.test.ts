@@ -7,6 +7,7 @@ import { DEFAULT_LAYERS } from '../cad/model';
 import { wallChain, wallSegment } from '../cad/commands';
 import { syncHostedOpenings } from '../cad/hosting';
 import { docToObjScene, blockFootprint, furnitureHeightMm, cadAxesToThree, cadToThreeM, clampWallHeight, boxPositionsMm } from './cad-to-obj';
+import type { SceneGroup } from './cad-to-obj';
 import { presetCamera, parseCameraSpec, placeCamera, fovFromLens, CAMERA_PRESETS } from './camera';
 
 let pass = 0;
@@ -396,6 +397,47 @@ console.log('docToObjScene — SO-KIEM-TONG §7 "cửa/cửa sổ hosted": lỗ 
   const sceneUnsynced = docToObjScene(doc, { wallHeightMm: 2700, theme: 'warm' });
   const wallUnsynced = sceneUnsynced.groups.find((g) => g.name === 'Wall_1')!;
   ok('Doc CHƯA qua sync → tường không có ops (chứng minh sync là nguồn của lỗ)', wallUnsynced.ops === undefined);
+}
+
+console.log('docToObjScene — VIỆC 1 (nối extrude thật): tường vát cạnh trên (bevel) qua ops[]');
+{
+  const [hatch, poly] = wallSegment({ x: 0, y: 0 }, { x: 4000, y: 0 }, 200, 'l-wall');
+  const plainDoc: Doc = { entities: [hatch, poly], layers: DEFAULT_LAYERS.map((l) => ({ ...l })) };
+  const plainScene = docToObjScene(plainDoc, { wallHeightMm: 2700, theme: 'warm' });
+  const plainWall = plainScene.groups.find((g) => g.name === 'Wall_1')!;
+
+  const beveled: Entity = { ...hatch, heightMm: 2700, ops: [{ op: 'extrude', h: 2700, bevel: 30 }] };
+  const beveledDoc: Doc = { entities: [beveled, poly], layers: DEFAULT_LAYERS.map((l) => ({ ...l })) };
+  const scene = docToObjScene(beveledDoc, { wallHeightMm: 2700, theme: 'warm' });
+  const wallGroup = scene.groups.find((g) => g.name === 'Wall_1')!;
+
+  ok('tường vát có NHIỀU tam giác hơn (thêm dải vát)', wallGroup.positions.length > plainWall.positions.length);
+
+  const topXs = (positions: number[]) => {
+    const xs: number[] = [];
+    for (let i = 0; i < positions.length; i += 3) if (Math.abs(positions[i + 1] - 2.7) < 1e-6) xs.push(positions[i]);
+    return xs;
+  };
+  const topBeveled = topXs(wallGroup.positions);
+  const topPlain = topXs(plainWall.positions);
+  ok('đỉnh vát KHÔNG chạm hết mép x=0/4000m như bản chưa vát (đã co vào)', Math.min(...topBeveled) > Math.min(...topPlain) && Math.max(...topBeveled) < Math.max(...topPlain));
+
+  const hasMidRing = wallGroup.positions.some((_, i) => i % 3 === 1 && Math.abs(wallGroup.positions[i] - 2.67) < 1e-6);
+  ok('có vòng vertex ở z=2.67m (mép dưới dải vát, wallH−bevel)', hasMidRing);
+
+  // bevel lớn hơn wall chịu được (150mm > nửa bề rộng 100mm) → insetPolygonMm lật chiều, rơi về
+  // prism thường — KHÔNG sập, KHÔNG vẽ bevel giả.
+  const overBeveled: Entity = { ...hatch, heightMm: 2700, ops: [{ op: 'extrude', h: 2700, bevel: 150 }] };
+  const overDoc: Doc = { entities: [overBeveled, poly], layers: DEFAULT_LAYERS.map((l) => ({ ...l })) };
+  let threw = false;
+  let overWall: SceneGroup | undefined;
+  try {
+    overWall = docToObjScene(overDoc, { wallHeightMm: 2700, theme: 'warm' }).groups.find((g) => g.name === 'Wall_1');
+  } catch {
+    threw = true;
+  }
+  ok('bevel quá lớn KHÔNG sập', !threw);
+  ok('bevel quá lớn → rơi về prism thường (cùng số vertex bản không vát)', overWall !== undefined && overWall.positions.length === plainWall.positions.length);
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);
