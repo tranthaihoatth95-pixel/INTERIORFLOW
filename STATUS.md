@@ -5,6 +5,24 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## ✅ XONG (04/08 — sửa hero ProjectSelect chìm vào wallpaper tối)
+`components/ProjectSelect.tsx` — hero (pill chào/tiêu đề/mô tả/2 nút "Chi tiết"·"Đồng bộ tiến độ"/
+Vitals AI) trước đè `--t1`/`--t4` (token theo THEME) lên ảnh nền "ambient" (cover dự án đang
+focus, carousel-only) → theme sáng làm `--t1` gần đen chìm mất chữ trên wallpaper tối. Fix: thêm
+`heroPlan = useAdaptiveContrast(...)` (đo đúng vùng hero, `overlay` gộp đúng 2 lớp CSS ambient đã
+đắp — brightness(0.5) + rgba(8,7,5,0.55) ⇒ alpha gộp 0.775), áp `adaptiveTextStyle(heroPlan)` cho
+mọi chữ hero — CHỈ khi `showAmbient` (carousel), grid/mobile/reduce giữ nguyên token cũ (không có
+wallpaper thì không cần thích ứng). Verify: `npx tsc --noEmit -p .` sạch, `npx tsx lib/adaptive-
+contrast.test.ts` 28/28 pass. Browser thật (127.0.0.1:3000, demo@if.local): tái hiện bug trước
+(ép `--t1` → chữ biến mất trên wallpaper tối, N3), rồi xác nhận fix (cream + shadow, đọc được) ở
+CẢ 2 theme (light/dark, qua `window.__flowStore.setThemePref`) trên cùng ảnh thật `render_10.jpeg`.
+Không đủ đa dạng ảnh thật trong dữ liệu demo (carousel bị kẹt `active` không tiến — nghi do poll
+flows định kỳ reset index, KHÔNG liên quan fix này) nên bổ sung bằng toán đúng thuật toán production
+(`readImageRegion` sampling) trên cả 5 cover thật có sẵn (`render_00/03/04/05/10`, luminance thô
+0.209–0.449, độ rối 0.019–0.273) — composited luminance luôn ≤0.101 (trần lý thuyết 0.225 < ngưỡng
+0.42) nên tone LUÔN là kem, đúng thiết kế lớp phủ tối cố định của ambient. Không tạo flow/dữ liệu
+lạ trong `dev.db` (đã kiểm `createdAt` sau khi verify).
+
 ## ✅ XONG (04/08 — BA VIỆC UI: đường về Gallery · phím tắt tập trung · Lockscreen, `docs/SO-KIEM-TONG.md` §8)
 - **VIỆC 1**: `HomeButton.tsx` (có sẵn, trước mồ côi) mount vào `AppChrome.tsx` cạnh logo + mục
   "Về Thư viện dự án" trong `AppLogoMenu.tsx` — cả 2 qua `goHomeConfirmed()` (`lib/resume.ts`),

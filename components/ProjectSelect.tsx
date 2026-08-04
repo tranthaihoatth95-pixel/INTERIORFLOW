@@ -243,6 +243,24 @@ const captionGlassBase: React.CSSProperties = {
 const CAPTION_REGION = { x: 0, y: 0.6, w: 1, h: 0.4 };
 
 /**
+ * Vùng hero (pill chào + tiêu đề + mô tả + 2 nút + thanh Vitals AI) trên ẢNH NỀN "ambient"
+ * (cover ảnh dự án đang focus, phủ full viewport — xem `ambientSrc`). Lấy dải rộng phía
+ * trên-giữa vì nội dung hero luôn nằm ở đầu khối được căn giữa; blur(80px) của ambient đã
+ * làm phẳng chi tiết nên không cần chính xác tuyệt đối (cùng triết lý CAPTION_REGION).
+ */
+const HERO_REGION = { x: 0.15, y: 0, w: 0.7, h: 0.55 };
+
+/**
+ * Ambient hiển thị = ảnh gốc qua `brightness(0.5)` rồi phủ thêm `rgba(8,7,5,0.55)` (xem JSX
+ * showAmbient bên dưới) — TƯƠNG ĐƯƠNG một lớp phủ đen PHẲNG duy nhất ở alpha gộp
+ * 1 − (1−0.5)×(1−0.55) ≈ 0.775 (brightness(0.5) toán học giống hệt blend về đen 50%,
+ * vì kênh màu chỉ nhân 0.5). Composite 1 lần cho `useAdaptiveContrast` thay vì đo ảnh gốc
+ * trần — nếu không, ảnh sáng sẽ bị đọc nhầm là "nền sáng" trong khi mắt thấy nền đã tối đi
+ * rất nhiều qua 2 lớp phủ đó.
+ */
+const HERO_AMBIENT_OVERLAY = { luminance: 0, alpha: 0.775 };
+
+/**
  * Vỏ caption của một card — hook đo tương phản phải nằm trong component RIÊNG vì các card
  * được render trong vòng lặp (không gọi hook trong map được).
  */
@@ -541,6 +559,18 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
     if (focused && focused.kind === 'flow') setAmbientSrc(coverOf(focused.flow));
   }, [active, items]);
   const showAmbient = !loadError && flows !== null && !effectiveGrid && !reduce;
+
+  /** Kế hoạch tương phản cho hero (pill chào/tiêu đề/mô tả/2 nút/Vitals AI) — CHỈ đo khi
+   * ambient thật sự hiện (carousel + có ảnh); grid/mobile/reduce dùng nền phẳng var(--bg),
+   * giữ nguyên token --t1/--t4 sẵn có (không có wallpaper thì không có gì để thích ứng). */
+  const heroPlan = useAdaptiveContrast({
+    src: ambientSrc,
+    region: HERO_REGION,
+    enabled: showAmbient,
+    shape: 'halo',
+    baseAlpha: 0.22,
+    overlay: HERO_AMBIENT_OVERLAY,
+  });
 
   const projOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -1681,24 +1711,34 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         transition={{ duration: 0.6, ease: easeApple }}
         className="relative z-10 flex w-full max-w-5xl flex-col items-center"
       >
-        {/* pill kính chào user + tiêu đề (kiểu thanh kính TitleSequence) */}
-        <div className="mb-8 flex flex-col items-center text-center sm:mb-10">
+        {/* pill kính chào user + tiêu đề (kiểu thanh kính TitleSequence) — đè lên ẢNH NỀN
+            ambient khi carousel hiện, nên MÀU CHỮ đi qua heroPlan (đo nền thật) thay vì
+            token --t1/--t4 cứng theo theme (bug: wallpaper tối làm --t4 chìm mất chữ). Khi
+            không có ambient (grid/mobile/reduce), giữ nguyên token cũ — không có gì để
+            thích ứng trên nền phẳng var(--bg). */}
+        <div
+          className="relative mb-8 flex flex-col items-center rounded-[32px] px-4 py-3 text-center sm:mb-10"
+          style={showAmbient ? { background: heroPlan.scrim } : undefined}
+        >
           <div className="flex items-center gap-2 rounded-full px-4 py-1.5" style={glass}>
             <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: ACCENT }} />
             <span
               className="text-[length:var(--fs-xs)] uppercase text-[var(--t4)]"
-              style={{ letterSpacing: '0.28em' }}
+              style={{ letterSpacing: '0.28em', ...(showAmbient ? adaptiveTextStyle(heroPlan, true) : null) }}
             >
               {firstName ? (en ? `Hi ${firstName}` : `Chào ${firstName}`) : 'InteriorFlow'}
             </span>
           </div>
           <h1
             className="mt-4 text-[length:var(--fs-xl)] font-semibold leading-tight text-[var(--t1)] sm:text-[length:var(--fs-xl)]"
-            style={{ letterSpacing: '-0.028em' }}
+            style={{ letterSpacing: '-0.028em', ...(showAmbient ? adaptiveTextStyle(heroPlan) : null) }}
           >
             {en ? 'Pick a project to begin' : 'Chọn dự án để bắt đầu'}
           </h1>
-          <p className="mt-2.5 max-w-md text-[length:var(--fs-sm)] leading-relaxed text-[var(--t4)]">
+          <p
+            className="mt-2.5 max-w-md text-[length:var(--fs-sm)] leading-relaxed text-[var(--t4)]"
+            style={showAmbient ? adaptiveTextStyle(heroPlan, true) : undefined}
+          >
             {en
               ? 'Open a flow and land straight on the canvas — Concept · Render · Present live in the header.'
               : 'Mở một flow là vào thẳng canvas — Concept · Render · Present nằm sẵn trên thanh Header.'}
@@ -1707,13 +1747,15 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           {/* "Chi tiết" (toàn bộ, không lọc) + "Đồng bộ tiến độ" — 2 điểm neo cố định đầu
               Gallery (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.2(b)/§2.5). Nút Đồng bộ
               disabled + tooltip rõ khi Lark chưa cấu hình (health-check qua registry, KHÔNG
-              throw lỗi khó hiểu — đúng pattern các integration khác đã có). */}
+              throw lỗi khó hiểu — đúng pattern các integration khác đã có). Trên ambient,
+              màu chữ khoá theo heroPlan nên hover:text-[var(--t1)] tạm im (inline style luôn
+              thắng pseudo-class) — chấp nhận được, đọc được > hiệu ứng hover. */}
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             <button
               type="button"
               onClick={() => openDashboardTab('board', null)}
               className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)]"
-              style={glass}
+              style={showAmbient ? { ...glass, ...adaptiveTextStyle(heroPlan) } : glass}
             >
               <Info size={13} />
               {en ? 'Details' : 'Chi tiết'}
@@ -1730,7 +1772,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                   : undefined
               }
               className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-[var(--t2)] transition-colors hover:text-[var(--t1)] disabled:cursor-not-allowed disabled:opacity-45"
-              style={glass}
+              style={showAmbient ? { ...glass, ...adaptiveTextStyle(heroPlan) } : glass}
             >
               {syncing ? <Loader2 size={13} className="animate-spin" /> : <Link2 size={13} />}
               {en ? 'Sync progress' : 'Đồng bộ tiến độ'}
@@ -1741,7 +1783,10 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             {!loadError && flows !== null && !effectiveGrid && viewToggle}
           </div>
           {syncMsg && (
-            <p className="mt-2 text-[length:var(--fs-xs)] text-[var(--t4)]">
+            <p
+              className="mt-2 text-[length:var(--fs-xs)] text-[var(--t4)]"
+              style={showAmbient ? adaptiveTextStyle(heroPlan, true) : undefined}
+            >
               {syncMsg}
             </p>
           )}
@@ -1755,7 +1800,9 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
           <div
             className="flex items-center gap-2.5 rounded-full py-2 pl-4 pr-2"
             style={{
-              background: 'transparent',
+              // ảnh nền quá nhiễu → mượn plan.scrim của hero làm màng sương rất nhẹ, đỡ
+              // thêm cho textShadow của từng chữ (đã áp ở input/label/placeholder bên dưới).
+              background: showAmbient ? heroPlan.scrim : 'transparent',
               border: '1px solid rgba(127,127,127,0.32)',
               backdropFilter: 'blur(var(--blur-strong)) saturate(150%)',
               WebkitBackdropFilter: 'blur(var(--blur-strong)) saturate(150%)',
@@ -1764,7 +1811,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
             <VitalsIcon size={15} className="shrink-0" style={{ color: ACCENT }} />
             <span
               className="shrink-0 text-[length:var(--fs-xs)] uppercase text-[var(--t4)]"
-              style={{ letterSpacing: '0.22em' }}
+              style={{ letterSpacing: '0.22em', ...(showAmbient ? adaptiveTextStyle(heroPlan, true) : null) }}
             >
               Vitals AI
             </span>
@@ -1791,6 +1838,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                 aria-label="Vitals AI"
                 placeholder=""
                 className="w-full bg-transparent text-[length:var(--fs-sm)] text-[var(--t1)] focus:outline-none disabled:opacity-60"
+                style={showAmbient ? adaptiveTextStyle(heroPlan) : undefined}
               />
               {/* placeholder động xoay vòng — chỉ hiện khi ô trống */}
               {chatInput === '' && (
@@ -1803,6 +1851,7 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
                       exit={{ opacity: 0, y: reduce ? 0 : -7 }}
                       transition={{ duration: reduce ? 0 : 0.35, ease: easeApple }}
                       className="truncate text-[length:var(--fs-sm)] text-[var(--t4)]"
+                      style={showAmbient ? adaptiveTextStyle(heroPlan, true) : undefined}
                     >
                       {vitalsHints[hintIdx % vitalsHints.length]}
                     </motion.span>
