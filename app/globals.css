@@ -1212,6 +1212,22 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
 .if-tooltip-tag.if-tooltip-visible.if-tooltip-bottom {
   transform: translate(calc(-50% + var(--tt-offset)), 7px);
 }
+/* LỖI 4 (P8, 04/08) — side='right'/'left': neo cạnh nút (KHÔNG canh giữa) — dùng cho lưới nút
+   hẹp (vd Command3DPanel) nơi tag canh-giữa-phía-trên đủ rộng để đè lên nút liền kề. `left` là
+   cạnh LẬT của `right` khi Tooltip.tsx tính không đủ chỗ bên phải (pickHorizontalSide) — cùng
+   biến `--tt-offset-y` kẹp dọc tránh tràn mép trên/dưới viewport. */
+.if-tooltip-tag.if-tooltip-right {
+  transform: translate(8px, calc(-50% + var(--tt-offset-y)));
+}
+.if-tooltip-tag.if-tooltip-left {
+  transform: translate(calc(-100% - 8px), calc(-50% + var(--tt-offset-y)));
+}
+.if-tooltip-tag.if-tooltip-visible.if-tooltip-right {
+  transform: translate(11px, calc(-50% + var(--tt-offset-y)));
+}
+.if-tooltip-tag.if-tooltip-visible.if-tooltip-left {
+  transform: translate(calc(-100% - 11px), calc(-50% + var(--tt-offset-y)));
+}
 /* (Khối reduced-motion riêng cho .if-tooltip-tag đã bỏ 20/07: khối `*` ở đầu file đã phủ
    duration LẪN delay, khối này không thêm gì mà còn gây hiểu nhầm là tooltip cần luật riêng.) */
 

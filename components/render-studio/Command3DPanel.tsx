@@ -34,6 +34,7 @@ import { darken, kindFromName, sceneForKind } from '@/components/three/material-
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import Tooltip from '@/components/ui/Tooltip';
 
 /**
  * Tab do NƠI MOUNT giữ (mode Vẽ 3D cần mở thẳng tab Tạo khi bấm "Dựng khối đầu tiên").
@@ -189,6 +190,17 @@ const CAU_KIEN_TANG_6: { id: string; vi: string; en: string; icon: typeof Square
   },
 ];
 
+/** LỖI 1 (P8, 04/08, Hoà chụp màn 3D) — Tường/Cửa/Cửa sổ trước xuất hiện Ở CẢ HAI nhóm (nút
+ * Tường đứng riêng + lưới "chưa có" Hộp/Sàn/Cửa/Cửa sổ/Mái, VÀ LẶP LẠI trong lưới "Cấu kiện" tầng
+ * ⑥ bên dưới). GỘP LÀM MỘT: nhóm ⑥ tầng "Cấu kiện" (`CAU_KIEN_TANG_6`) là nguồn DUY NHẤT cho
+ * Tường/Cửa/Cửa sổ (đúng `docs/SPEC-DUNG-BO-LENH-3D.md`) — nút Tường đứng riêng ở trên XOÁ, thay
+ * bằng cell 'tuong' trong lưới ⑥ (vẫn giữ hiệu ứng nháy `nhayNutTuong` khi cần chỉ dẫn, chỉ đổi
+ * VỊ TRÍ hiển thị). Hộp/Sàn/Mái là KHỐI CƠ BẢN (hình khối generic, KHÔNG phải cấu kiện tham số
+ * tầng ⑥) — tách hẳn nhóm riêng "Khối cơ bản", không trộn 2 khái niệm khác tầng vào chung 1 lưới. */
+const KHOI_CO_BAN: [string, string][] = [
+  ['Hộp', 'Box'], ['Sàn', 'Floor'], ['Mái', 'Roof'],
+];
+
 function CreateTab({
   nhayNutTuong,
   onTaoTuong,
@@ -204,40 +216,25 @@ function CreateTab({
     lancan: ['9 cột 60×60mm cách 300mm — chưa có tay vịn ngang (N5)', '9 posts 60×60mm at 300mm spacing — no top rail yet (N5)'],
   };
   const tr = useT();
-  const CHUA_CO: [string, string][] = [
-    ['Hộp', 'Box'], ['Sàn', 'Floor'], ['Cửa', 'Door'], ['Cửa sổ', 'Window'], ['Mái', 'Roof'],
-  ];
   return (
     <div className="space-y-3">
-      <button
-        type="button"
-        onClick={onTaoTuong}
-        className={cn(
-          'flex w-full items-center gap-2.5 rounded-[10px] border px-3 py-2.5 text-left transition-colors',
-          nhayNutTuong
-            ? 'animate-pulse border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
-            : 'border-[var(--border)] bg-[var(--field)] text-[var(--t1)] hover:border-[var(--accent-ring)]',
-        )}
-      >
-        <Square size={16} strokeWidth={1.7} />
-        <span>
-          <span className="block text-[11.5px] font-semibold">{tr('Tường', 'Wall')}</span>
-          <span className="block text-[10px] text-[var(--t4)]">{tr('Đoạn 4m, dày 220 — sửa được sau', '4m segment, 220 thick — editable')}</span>
-        </span>
-      </button>
-
-      <div className="grid grid-cols-2 gap-2">
-        {CHUA_CO.map(([vi, en]) => (
-          <button
-            key={vi}
-            type="button"
-            disabled
-            title={tr('Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ', 'Not available yet — use Wall or extrude from the drawing')}
-            className="cursor-not-allowed rounded-[9px] border border-dashed border-[var(--border)] px-2 py-2 text-[10.5px] text-[var(--t5)]"
-          >
-            {tr(vi, en)}
-          </button>
-        ))}
+      <div className="space-y-2">
+        <p className="px-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--t4)]">
+          {tr('Khối cơ bản', 'Basic blocks')}
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {KHOI_CO_BAN.map(([vi, en]) => (
+            <Tooltip key={vi} side="right" label={tr('Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ', 'Not available yet — use Wall or extrude from the drawing')}>
+              <button
+                type="button"
+                disabled
+                className="flex aspect-square w-full cursor-not-allowed flex-col items-center justify-center rounded-[9px] border border-dashed border-[var(--border)] px-2 py-2 text-[10.5px] text-[var(--t5)]"
+              >
+                {tr(vi, en)}
+              </button>
+            </Tooltip>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-2 border-t border-[var(--border)] pt-3">
@@ -245,28 +242,39 @@ function CreateTab({
           {tr('Cấu kiện', 'Building components')}
         </p>
         <div className="grid grid-cols-3 gap-2">
-          {CAU_KIEN_TANG_6.map(({ id, vi, en, icon: Icon, lam, reason }) => (
-            <button
-              key={id}
-              type="button"
-              disabled={!lam}
-              onClick={lam ? CAU_KIEN_HANDLER[id] : undefined}
-              title={
-                lam
-                  ? tr(...(CAU_KIEN_TIP[id] ?? ['Sửa được sau', 'Editable afterwards']))
-                  : tr(...(reason ?? ['Chưa dựng được', 'Not available yet']))
-              }
-              className={cn(
-                'flex aspect-square flex-col items-center justify-center gap-1.5 rounded-[9px] border p-1 text-center text-[9.5px] font-medium transition-colors',
-                lam
-                  ? 'cursor-pointer border-[var(--border)] bg-[var(--panel)] text-[var(--t2)] hover:border-[var(--accent-ring)] hover:text-[var(--accent)]'
-                  : 'cursor-not-allowed border-dashed border-[var(--border)] text-[var(--t5)] opacity-45',
-              )}
-            >
-              <Icon size={15} strokeWidth={1.7} />
-              <span className="leading-tight">{tr(vi, en)}</span>
-            </button>
-          ))}
+          {CAU_KIEN_TANG_6.map(({ id, vi, en, icon: Icon, lam, reason }) => {
+            // Tường vừa gộp về đây (LỖI 1) — GIỮ hiệu ứng nháy chỉ dẫn `nhayNutTuong` (trước ở
+            // nút đứng riêng), chỉ đổi CHỖ hiển thị, không đổi Ý NGHĨA của tín hiệu đó.
+            const nhay = id === 'tuong' && nhayNutTuong;
+            return (
+              <Tooltip
+                key={id}
+                side="right"
+                label={
+                  lam
+                    ? tr(...(CAU_KIEN_TIP[id] ?? ['Sửa được sau', 'Editable afterwards']))
+                    : tr(...(reason ?? ['Chưa dựng được', 'Not available yet']))
+                }
+              >
+                <button
+                  type="button"
+                  disabled={!lam}
+                  onClick={lam ? CAU_KIEN_HANDLER[id] : undefined}
+                  className={cn(
+                    'flex aspect-square w-full flex-col items-center justify-center gap-1.5 rounded-[9px] border p-1 text-center text-[9.5px] font-medium transition-colors',
+                    nhay
+                      ? 'animate-pulse cursor-pointer border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                      : lam
+                        ? 'cursor-pointer border-[var(--border)] bg-[var(--panel)] text-[var(--t2)] hover:border-[var(--accent-ring)] hover:text-[var(--accent)]'
+                        : 'cursor-not-allowed border-dashed border-[var(--border)] text-[var(--t5)] opacity-45',
+                  )}
+                >
+                  <Icon size={15} strokeWidth={1.7} />
+                  <span className="leading-tight">{tr(vi, en)}</span>
+                </button>
+              </Tooltip>
+            );
+          })}
         </div>
       </div>
     </div>

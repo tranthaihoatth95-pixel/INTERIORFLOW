@@ -25,14 +25,19 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { clampHorizontalOffset } from '@/lib/ui/tooltip-position';
+import { clampHorizontalOffset, pickHorizontalSide } from '@/lib/ui/tooltip-position';
 
 interface TooltipProps {
   /** tên chức năng hiện trên tag (tiếng Việt, ngắn gọn). */
   label: string;
   children: React.ReactNode;
-  /** tag hiện phía trên (mặc định) hay phía dưới icon — dùng 'bottom' cho hàng nút sát mép trên màn hình. */
-  side?: 'top' | 'bottom';
+  /**
+   * tag hiện phía trên (mặc định) hay phía dưới icon — dùng 'bottom' cho hàng nút sát mép trên
+   * màn hình. 'right' (LỖI 4, P8 04/08) — neo cạnh PHẢI nút thay vì canh giữa phía trên; dùng cho
+   * lưới nút NHỎ/HẸP (vd lưới 3 cột `Command3DPanel.tsx`) nơi tag `top` canh giữa đủ rộng để đè
+   * lên nút liền kề. Tự LẬT sang trái khi không đủ chỗ bên phải (`pickHorizontalSide`).
+   */
+  side?: 'top' | 'bottom' | 'right';
   /** tắt tooltip hoàn toàn (vẫn render children bình thường) — vd nút đã có UI hint khác. */
   disabled?: boolean;
   /** style bổ sung cho span bọc ngoài (hiếm khi cần — component vốn chỉ display:inline-flex). */
@@ -46,20 +51,26 @@ interface TooltipProps {
   touchLabel?: string;
 }
 
+type RenderSide = 'top' | 'bottom' | 'right' | 'left';
+
 interface Anchor {
-  /** tâm ngang icon (viewport px) — neo để tag canh giữa. */
+  /** neo ngang (viewport px) — tâm icon cho top/bottom, mép trái/phải icon cho right/left. */
   left: number;
-  /** mép trên/dưới icon tuỳ `side` (viewport px). */
+  /** neo dọc (viewport px) — mép trên/dưới icon cho top/bottom, tâm icon cho right/left. */
   y: number;
-  /** lệch ngang (px) cộng thêm để tag không tràn mép trái/phải viewport. */
-  offset: number;
+  /** lệch ngang (px) cộng thêm để tag không tràn mép trái/phải viewport (mode top/bottom). */
+  offsetX: number;
+  /** lệch dọc (px) cộng thêm để tag không tràn mép trên/dưới viewport (mode right/left). */
+  offsetY: number;
+  /** cạnh THẬT SỰ dùng để vẽ — khác `side` yêu cầu khi 'right' phải LẬT sang 'left' (hết chỗ). */
+  renderSide: RenderSide;
 }
 
 export default function Tooltip({ label, children, side = 'top', disabled, style, touchLabel }: TooltipProps) {
   const wrapRef = useRef<HTMLSpanElement>(null);
   const tagRef = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
-  const [anchor, setAnchor] = useState<Anchor>({ left: 0, y: 0, offset: 0 });
+  const [anchor, setAnchor] = useState<Anchor>({ left: 0, y: 0, offsetX: 0, offsetY: 0, renderSide: side });
   // mounted-gate chuẩn: server luôn render false, client vẫn render false ở lần
   // hydrate ĐẦU TIÊN (khớp cây DOM server) — chỉ bật true trong useEffect (chạy
   // SAU khi mount xong), từ đó mới cho phép createPortal ra document.body. Tránh
@@ -72,10 +83,38 @@ export default function Tooltip({ label, children, side = 'top', disabled, style
     const wrap = wrapRef.current;
     if (!wrap || typeof window === 'undefined') return;
     const wrapRect = wrap.getBoundingClientRect();
+    const tagRect = tagRef.current?.getBoundingClientRect();
+
+    if (side === 'right') {
+      // LỖI 4 (P8) — neo cạnh nút thay vì canh giữa: tránh tag rộng đè lên nút LIỀN KỀ trong
+      // lưới hẹp. `pickHorizontalSide` tự lật sang trái khi không đủ chỗ (vd nút sát mép phải
+      // panel/viewport).
+      const tagWidth = tagRect?.width ?? 0;
+      const tagHeight = tagRect?.height ?? 0;
+      const renderSide = pickHorizontalSide(wrapRect.left, wrapRect.right, tagWidth, window.innerWidth);
+      const centerY = wrapRect.top + wrapRect.height / 2;
+      const offsetY = clampHorizontalOffset(centerY, tagHeight / 2, window.innerHeight);
+      setAnchor({
+        left: renderSide === 'right' ? wrapRect.right : wrapRect.left,
+        y: centerY,
+        offsetX: 0,
+        offsetY,
+        renderSide,
+      });
+      setOpen(true);
+      return;
+    }
+
     const centerX = wrapRect.left + wrapRect.width / 2;
-    const tagWidth = tagRef.current?.getBoundingClientRect().width ?? 0;
-    const offset = clampHorizontalOffset(centerX, tagWidth / 2, window.innerWidth);
-    setAnchor({ left: centerX, y: side === 'top' ? wrapRect.top : wrapRect.bottom, offset });
+    const tagWidth = tagRect?.width ?? 0;
+    const offsetX = clampHorizontalOffset(centerX, tagWidth / 2, window.innerWidth);
+    setAnchor({
+      left: centerX,
+      y: side === 'top' ? wrapRect.top : wrapRect.bottom,
+      offsetX,
+      offsetY: 0,
+      renderSide: side,
+    });
     setOpen(true);
   }, [side]);
 
@@ -105,12 +144,13 @@ export default function Tooltip({ label, children, side = 'top', disabled, style
           <span
             role="tooltip"
             ref={tagRef}
-            className={`if-tooltip-tag if-tooltip-${side}${open ? ' if-tooltip-visible' : ''}`}
+            className={`if-tooltip-tag if-tooltip-${anchor.renderSide}${open ? ' if-tooltip-visible' : ''}`}
             style={
               {
                 left: anchor.left,
                 top: anchor.y,
-                '--tt-offset': `${anchor.offset}px`,
+                '--tt-offset': `${anchor.offsetX}px`,
+                '--tt-offset-y': `${anchor.offsetY}px`,
               } as React.CSSProperties
             }
           >

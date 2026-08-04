@@ -154,7 +154,13 @@ export default function ViewCube3D({ cameraApiRef, onPick, size = 96, className 
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(size, size, false);
+    // LỖI 3 (P8, 04/08) — `setSize(size, size, false)` CHỈ set buffer vẽ (canvas.width/height =
+    // size×pixelRatio), KHÔNG set canvas.style.width/height. Canvas không có CSS ràng buộc thì
+    // hiển thị đúng bằng ATTRIBUTE width/height (vd 96×2=192px trên màn 2x) — to gấp đôi khung
+    // `.viewcube` 96×96 thật, tràn ra ngoài (đã đo `getBoundingClientRect()` xác nhận canvas
+    // 192×192 trong khung 96×96). `setSize(size, size)` (updateStyle mặc định true) set ĐÚNG CẢ
+    // hai — buffer nét theo pixelRatio, style khoá cứng 96×96 CSS px bất kể DPR màn hình.
+    renderer.setSize(size, size);
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene(); // background null — trong suốt, đè lên viewport chính
