@@ -618,6 +618,72 @@ CÒN 1 dòng `Flow` test `cmseovw360001w9hryuiqcyam` ("Untitled flow", 0 FlowVer
 `prisma/dev.db` — lệnh DELETE bị sandbox chặn, Hoà xoá tay khi tiện:
 `sqlite3 prisma/dev.db "DELETE FROM Flow WHERE id='cmseovw360001w9hryuiqcyam';"`
 
+## §11c · P1 — verify DWG lần 3 ĐỘC LẬP (04/08 đêm khuya, sau §11/§11b — HOÀ yêu cầu chụp màn hình
+đủ 3 ca + ghi hash + commit riêng) — **CA "HUỶ SẠCH" KHÔNG XONG, tái hiện đúng bug §11 NẶNG HƠN**
+
+Môi trường: server riêng `interiorflow-verify` autoPort → cổng `61903` (3000/3001/3002 đã bị 3
+phiên khác chiếm, KHÔNG tách worktree được vì đã chạm trần 5 worktree của dự án — đúng luật
+`CLAUDE.md`, chấp nhận rủi ro `.next/cache` chung như §11 cảnh báo thay vì xin dọn worktree giữa
+lúc verify). Dự án test mới ("Untitled flow", KHÔNG đụng "Dự án mẫu"). File thật lấy lại ĐÚNG từ
+`~/Documents/Zalo Received Files` (luật N3): `Small office.dwg` (224KB, ca thành công) ·
+`01_BeachClub_TangHam.dwg` (9.7MB, ĐÚNG file §11b báo "huỷ mượt tức thì") · 1 bản chữ ký hỏng tự
+tạo từ `Small office.dwg` (ghi đè 6 byte đầu `XX9999`) + 1 bản thân hỏng (giữ chữ ký AC1032 thật,
+random hoá byte 100–20000). Nạp qua `fetch()` một HTTP server tạm cục bộ (CORS mở) rồi `DataTransfer`
++ dispatch `change` lên đúng `<input type=file accept=.dwg>` — tương đương chọn qua OS picker,
+KHÔNG mô phỏng gọi thẳng hàm, cùng kỹ thuật §11 đã dùng.
+
+1. **Ca "tiến độ thật, không treo im lặng" — CHỤP ĐƯỢC, rõ ràng nhất từ trước tới giờ**: nhập
+   `progress-cancel-medium.dwg` (bản đổi tên của `01_BeachClub_TangHam.dwg`, 9.7MB) → **1 tấm ảnh
+   duy nhất** vừa hiện thanh nổi "Đang nhập DWG… [Huỷ]" vừa hiện status bar sống: *"Đang đọc
+   progress-cancel-medium.dwg… (đang chuyển sang danh sách đối tượng (convertEx) — bước hay chậm
+   nhất, 4s)"* — đúng giai đoạn thật + giây thật, không phải % giả, đúng thiết kế `dwg.ts`/
+   `dwg-worker.ts` trong `2236e0d`. Ca `Small office.dwg` (224KB) thành công tức thì, canvas hiện
+   đúng bản vẽ thật (tủ, kệ sách, ghế, kích thước) — khớp `315 đối tượng` §11 đã báo.
+2. 🔴 **Ca "Huỷ giữa chừng → dừng sạch" — KHÔNG chụp được, vì bấm Huỷ TÁI HIỆN ĐÚNG bug §11**:
+   bấm nút Huỷ lúc `progress-cancel-medium.dwg` (9.7MB) đang giữa `convertEx` (giây ~15-20) →
+   **toàn bộ tab KHÔNG phản hồi bất kỳ lệnh nào** (`screenshot`/`javascript_exec` timeout liên tục,
+   kể cả biểu thức `1+1` trần trụi) — đo bằng đồng hồ thật: **CHỜ >6 PHÚT VẪN CHƯA HỒI PHỤC** tại
+   thời điểm viết dòng này (NẶNG HƠN mốc "≥2 phút" §11 ghi, và KHÁC hẳn kết quả "huỷ mượt tức thì"
+   §11b báo cho **CHÍNH FILE NÀY** — cùng file, khác lần chạy, khác kết quả). Đối chứng quan trọng:
+   server Next.js (`curl` HTTP 200 vài chục ms) và tab MỚI mở (`tabs_create`, cùng server, cùng
+   project qua auto-resume) **hoàn toàn khoẻ mạnh trong lúc tab cũ treo cứng** — xác nhận CHẮC CHẮN
+   đây là hang trong RENDERER của đúng 1 tab (không phải server, không phải toàn bộ Chrome, không
+   phải do việc verify của tôi tạo file/HTTP server tạm) — khớp giả thuyết §11 "chi phí dọn WASM
+   heap lớn khi `worker.terminate()`". SỐ LIỆU MỚI: ranh giới "huỷ mượt" §11b từng đo (9.7MB an
+   toàn) **KHÔNG ổn định** — phụ thuộc tải máy lúc bấm (phiên này máy đang chạy ĐỒNG THỜI 4
+   `next-server` của nhiều phiên Cowork khác, nặng hơn hẳn môi trường §11b) — CỦNG CỐ kết luận cũ
+   "không có ngưỡng kích thước an toàn cố định", KHÔNG có gì mới để đổi hướng sửa (vẫn 2 lựa chọn
+   §11 đã nêu, chưa Hoà chọn). Dùng tab MỚI (renderer riêng) để tiếp tục việc còn lại — tab cũ để
+   nguyên, không ép `preview_stop`/kill vì đó là hành vi đúng của bug đang cần giữ nguyên hiện
+   trường nếu Hoà muốn tự xem.
+3. **Ca "file hỏng → báo lỗi rõ" — CHỤP ĐƯỢC, đúng yêu cầu**: chữ ký sai →
+   `Không đọc được "corrupted-badmagic.dwg": File không có chữ ký DWG hợp lệ (thấy "XX9999" thay vì
+   "AC10xx" ở đầu file) — chắc chắn không phải file .dwg, hoặc file đã hỏng/bị cắt cụt giữa chừng.`
+   (đọc nguyên văn từ DOM, không phải suy đoán) — có TÊN FILE, có CHỮ KÝ THẬT tìm thấy, đúng yêu
+   cầu Hoà "phiên bản DWG nào" (ở đây đúng là KHÔNG có phiên bản nào — chữ ký sai nên báo đúng vậy,
+   không bịa). Thử thêm 1 biến thể MỚI (khác §11/§11b): giữ nguyên chữ ký AC1032 thật, random hoá
+   byte 100–20000 (thân hỏng chứ không cắt cụt) → **CÙNG hành vi đã biết** "Đã mở corrupted-body.dwg
+   — 0 đối tượng" (không báo lỗi) — TÁI XÁC NHẬN (không phải phát hiện mới) mục TECH-DEBT §11 đã
+   ghi: libredwg-web quá "khoan dung" với thân hỏng bất kể kiểu hỏng nào (cắt cụt hay random hoá).
+
+**KẾT LUẬN CHO YÊU CẦU "chụp đủ 3 ca" của Hoà**: làm được 2/3 (tiến độ thật · lỗi rõ) — ca thứ 3
+"huỷ sạch" đổi thành bằng chứng THỨ BA, ĐỘC LẬP, NẶNG HƠN cho đúng bug §11 chưa sửa. KHÔNG có
+screenshot "huỷ mượt" ở phiên này vì nó không xảy ra — không dựng ảnh giả/không thử lại nhiều lần
+để "săn" một lần may mắn (đúng luật N3/§0 không giả vờ). Việc đóng P1 vẫn treo ở đúng chỗ §11 để
+lại: cần Hoà chọn hướng (a) chặn Huỷ khi file quá lớn hay (b) đổi ngữ nghĩa Huỷ thành "đánh dấu bỏ
+qua kết quả" thay vì `terminate()` ngay — phiên này KHÔNG tự chọn thay vì đợi vì đây là quyết định
+đánh đổi UX (huỷ chậm mà chắc, hay huỷ nhanh mà đôi khi treo) chứ không phải lỗi kỹ thuật đơn thuần.
+
+Dọn sau verify: HTTP server tạm (cổng `62014`, phục vụ 4 file `.dwg` test từ scratchpad) đã tắt.
+Project test ("Untitled flow", tạo mới phiên này) để nguyên trong Gallery — cùng dạng noise vô hại
+đã có sẵn trước khi phiên này bắt đầu (2 "Untitled flow" khác đã tồn tại từ trước), không phải dữ
+liệu nhạy cảm, không đụng "Dự án mẫu". KHÔNG xoá/sửa gì trong `dev.db` phiên này (chỉ đọc, không
+ghi qua API nào ngoài autosave IndexedDB phía client của chính project test).
+
+**Hash tại thời điểm ghi dòng này**: `HEAD` = xem `git log -1` lúc commit đi kèm dòng này (commit
+docs này sẽ TỰ chứa đúng hash — không chép tay số cũ, tránh lệch khi phiên khác đang song song
+push commit lên `main`, đúng luật "Git là sự thật duy nhất").
+
 ## §12 · P2 — D2 đợt 8: GỠ TRẦN MAX_SHEETS (04/08 đêm, commit `b46fa30`)
 
 Hoà duyệt: LÀM D2, HOÃN D3 (đổi định dạng file chờ studio thật dùng thử). Vùng sửa 5 file:

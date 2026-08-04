@@ -78,6 +78,10 @@
   TỆ HƠN bug gốc "treo im lặng" vì giờ treo THẬT SỰ không phản hồi input. Cần Hoà duyệt hướng sửa
   trước khi động: (a) chặn nút Huỷ khi file quá lớn (chỉ cho chờ) hay (b) đổi ngữ nghĩa Huỷ từ
   "dừng ngay bằng terminate()" sang "đánh dấu huỷ, bỏ qua kết quả khi worker tự xong tự nhiên".
+  **Tái hiện lần 3 ĐỘC LẬP (`docs/SO-KIEM-TONG.md` §11c, 04/08 đêm khuya) NẶNG HƠN**: CÙNG file
+  9.7MB mà §11b từng báo "huỷ mượt tức thì" nay treo cứng **>6 phút chưa hồi** (máy tải nặng hơn —
+  4 dev server chạy song song) — xác nhận KHÔNG có ngưỡng kích thước an toàn cố định, phụ thuộc
+  tải máy lúc bấm. Không đổi hướng khuyến nghị (vẫn (a)/(b) ở trên, chờ Hoà chọn).
 - 🟡 File .dwg thật bị cắt cụt giữa chừng (còn nguyên chữ ký + header, mất thân) → nhập ÊM, báo
   "0 đối tượng" thay vì báo lỗi rõ file đã hỏng (`docs/SO-KIEM-TONG.md` §11, 04/08). Không sai kỹ
   thuật (header đọc được thật) nhưng dễ gây hiểu lầm "file rỗng thật". Chưa quyết có cần cảnh báo
