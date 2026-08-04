@@ -45,11 +45,13 @@ const ICON: Record<Phase, typeof PencilRuler> = { concept: PencilRuler, render: 
  * định làm ghost dù cadStage đang là gì (cadStage hiện luôn = 'sketch' trong thực tế —
  * `setStage()` KHÔNG được gọi ở đâu trong UI, `cadStageFromProjectStage()` chỉ có trong test —
  * nên đây là phòng xa cho lúc field này được nối thật, không đổi gì hôm nay).
+ * 04/08 [P7 ĐỔI TÊN] — 2D Kỹ thuật→Thiết kế 2D · 3D Thiết kế→Thiết kế 3D · Trình bày→Trình
+ * chiếu (chỉ đổi nhãn, `phaseLabel()` là nguồn thật — xem lib/phases.ts).
  */
 const WIDEST_LABEL: Record<Phase, string> = {
-  concept: '2D Kỹ thuật · Kỹ thuật',
-  render: '3D Thiết kế',
-  present: 'Trình bày',
+  concept: 'Thiết kế 2D · Kỹ thuật',
+  render: 'Thiết kế 3D',
+  present: 'Trình chiếu',
 };
 
 const HINT_SEEN_KEY = 'interiorflow.vitals.gesture_hint_seen';

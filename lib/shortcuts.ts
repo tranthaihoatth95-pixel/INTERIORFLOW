@@ -60,9 +60,9 @@ export const SHORTCUTS: ShortcutEntry[] = [
   },
   {
     scope: 'toàn cục', keys: ['mod', 'K'],
-    label: 'Bảng lệnh nhanh — AppCommandPalette.tsx, mount trong AppShell (mọi route dùng AppShell: 2D Kỹ thuật · 3D Thiết kế · Trình bày · Files · Cài đặt)',
+    label: 'Bảng lệnh nhanh — AppCommandPalette.tsx, mount trong AppShell (mọi route dùng AppShell: Thiết kế 2D · Thiết kế 3D · Trình chiếu · Files · Cài đặt)',
   },
-  { scope: 'toàn cục', keys: ['mod', 'J'], label: 'Chuyển chặng 2D Kỹ thuật ↔ 3D Thiết kế ↔ Trình bày' },
+  { scope: 'toàn cục', keys: ['mod', 'J'], label: 'Chuyển chặng Thiết kế 2D ↔ Thiết kế 3D ↔ Trình chiếu' },
   { scope: 'toàn cục', keys: ['mod', '0'], label: 'Về Thư viện dự án (Gallery) — hỏi trước nếu còn thay đổi chưa lưu' },
   { scope: 'toàn cục', keys: ['mod', 'B'], label: 'Ẩn/hiện khung Navigator (trái)' },
   { scope: 'toàn cục', keys: ['mod', 'L'], label: 'Mở sheet Thư viện (khối/vật liệu/template — tự lọc theo chặng đang mở)' },
@@ -193,7 +193,7 @@ SHORTCUTS.push(
   { scope: 'present', keys: ['mod', '9'], label: 'Vừa khung', group: 'Xem' },
   {
     scope: 'present', keys: ['mod', "'"], label: 'Bật/tắt lưới', group: 'Xem',
-    disabled: true, disabledReason: 'Trình bày chưa có lưới nền bật/tắt được',
+    disabled: true, disabledReason: 'Trình chiếu chưa có lưới nền bật/tắt được',
   },
   { scope: 'present', keys: ['Esc'], label: 'Bỏ chọn / thoát chế độ đang chỉnh', group: 'Sửa' },
 );

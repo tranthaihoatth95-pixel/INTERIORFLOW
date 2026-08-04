@@ -29,7 +29,7 @@ const COPY: Record<OnboardingStage, StageCopy> = {
     lines: [
       { vi: 'Vẽ mặt bằng ở đây.', en: 'Draft your floor plan here.' },
       { vi: 'Gõ L vẽ tường · F8 khoá ngang dọc', en: 'Press L to draw walls · F8 locks horizontal/vertical' },
-      { vi: 'Xong bấm Đưa sang 3D Thiết kế', en: 'When done, press "Send to 3D Design"' },
+      { vi: 'Xong bấm Đưa sang Thiết kế 3D', en: 'When done, press "Send to 3D Design"' },
     ],
     before: '/onboarding/cad-before.svg',
     after: '/onboarding/cad-after.svg',

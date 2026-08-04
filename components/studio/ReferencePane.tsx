@@ -81,7 +81,7 @@ export default function ReferencePane() {
         {state === 'auth' && <Hint>Đăng nhập để xem thư viện Reference của team.</Hint>}
         {state === 'error' && <Hint>Không tải được thư viện — thử mở lại sau.</Hint>}
         {state === 'ok' && assets.length === 0 && (
-          <Hint>Thư viện trống — tải ảnh tham khảo ở chặng 3D Thiết kế/Trình bày.</Hint>
+          <Hint>Thư viện trống — tải ảnh tham khảo ở chặng Thiết kế 3D/Trình chiếu.</Hint>
         )}
         {state === 'ok' && assets.length > 0 && (
           <div

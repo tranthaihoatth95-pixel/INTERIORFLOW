@@ -11,9 +11,16 @@ File này là CỬA VÀO. Đọc hết file này (3 phút) rồi mới mở file
 | Thiết bị | máy tính (tablet phụ) | **điện thoại** |
 | Nền mặc định | **TỐI**, accent tím `#6a57f5` | **KEM SÁNG**, vàng ấm ≤5%, tím ≤1% |
 | Trợ lý tên là | **Vitals** | **Trợ lý** (KHÔNG gọi Vitals) |
-| Có 3 chặng? | **CÓ**: 2D Kỹ thuật · 3D Thiết kế · Trình bày | **KHÔNG** |
+| Có 3 chặng? | **CÓ**: Thiết kế 2D · Thiết kế 3D · Trình chiếu | **KHÔNG** |
 
-**Bộ tên chính thức, dùng nguyên văn:** app **InteriorFlow** · 3 chặng **2D Kỹ thuật · 3D Thiết kế · Trình bày** (rút gọn: 2D · 3D · Trình bày) · 2 chế độ chặng 2D **Sơ phác ↔ Kỹ thuật** · 2 chế độ chặng 3D **Node ↔ 3D**.
+**Bộ tên chính thức, dùng nguyên văn (04/08 [P7 ĐỔI TÊN] — Hoà chốt, IF1/IF2 gộp chung nên ngữ**
+**nghĩa nhãn cần RỘNG hơn "kỹ thuật"; bản 03/08 CHỐT TÊN vòng cuối bên dưới GIỮ LÀM LỊCH SỬ):**
+app **InteriorFlow** · 3 chặng **Thiết kế 2D · Thiết kế 3D · Trình chiếu** (EN: 2D Design · 3D
+Design · Presenting; rút gọn: 2D · 3D · Trình chiếu) · 2 chế độ chặng 2D **Sơ phác ↔ Kỹ thuật** ·
+2 chế độ chặng 3D **Node ↔ 3D**.
+> Tên cũ (03/08 CHỐT TÊN vòng cuối, nay đã đổi nhãn — KHÔNG dùng nữa, chỉ giữ để tra lịch sử):
+> app **InteriorFlow** · 3 chặng **2D Kỹ thuật · 3D Thiết kế · Trình bày** (rút gọn: 2D · 3D ·
+> Trình bày) · 2 chế độ chặng 2D **Sơ phác ↔ Kỹ thuật** · 2 chế độ chặng 3D **Node ↔ 3D**.
 ❌ CẤM chữ: "Vẽ" · "Dựng ảnh" · "Rendering" · "Presenting" · "CAD ·" · "Cấu kiện" (làm nhãn mode).
 ⚠️ Khoá kỹ thuật trong code **GIỮ NGUYÊN** `sketch/pro/revit` · `concept/render/present` — đổi khoá = vỡ dữ liệu người dùng đã lưu.
 

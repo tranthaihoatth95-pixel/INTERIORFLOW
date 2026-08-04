@@ -26,11 +26,15 @@ export const PHASES: PhaseMeta[] = [
     // 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md mục "VÒNG CUỐI"):
     // "Drafting CAD" → "2D Kỹ thuật" (đặt theo CHIỀU KHÔNG GIAN + MỤC ĐÍCH, không theo động
     // tác tay — 2D/3D là ký hiệu quốc tế, không phải jargon). ID GIỮ NGUYÊN.
+    // 04/08 [P7 ĐỔI TÊN] — "2D Kỹ thuật" → "Thiết kế 2D" (EN "2D Technical" → "2D Design"),
+    // Hoà chốt: IF1/IF2 nay gộp chung nên ngữ nghĩa nhãn phải RỘNG hơn "kỹ thuật" đơn thuần
+    // (chặng này còn gồm cả Sơ phác, không chỉ vẽ kỹ thuật). ID/khoá mode (sketch/pro/revit)
+    // GIỮ NGUYÊN TUYỆT ĐỐI — chỉ đổi NHÃN hiển thị.
     id: 'concept',
     icon: 'concept',
-    label: '2D Kỹ thuật',
+    label: 'Thiết kế 2D',
     tagline: 'Import CAD 2D · vẽ sơ phác · bố trí furniture',
-    blurb: 'Dựng mặt bằng 2D: mở/vẽ CAD, bố trí nội thất, rồi đưa layout sang 3D Thiết kế tô vật liệu.',
+    blurb: 'Dựng mặt bằng 2D: mở/vẽ CAD, bố trí nội thất, rồi đưa layout sang Thiết kế 3D tô vật liệu.',
     // Chặng này chạy ở route riêng (/cad-editor), không có node ưu tiên trên canvas.
     featured: [],
     demo: 'concept',
@@ -38,9 +42,11 @@ export const PHASES: PhaseMeta[] = [
   {
     // 03/08 CHỐT TÊN vòng cuối — "Rendering" → "3D Thiết kế" (mode Node ↔ 3D, xem
     // CHOT-TEN-CHANG-MODE-2026-08-03.md). ID 'render' GIỮ NGUYÊN.
+    // 04/08 [P7 ĐỔI TÊN] — "3D Thiết kế" → "Thiết kế 3D" (EN "3D Design" GIỮ NGUYÊN, chỉ đảo
+    // thứ tự VI cho khớp cặp "Thiết kế 2D/Thiết kế 3D"). ID 'render' GIỮ NGUYÊN.
     id: 'render',
     icon: 'render',
-    label: '3D Thiết kế',
+    label: 'Thiết kế 3D',
     tagline: 'Clay → photoreal · chỉnh cục bộ',
     blurb: 'Sản xuất phối cảnh: clay/sketch → AI photoreal, đổi vật liệu, ánh sáng, upscale.',
     featured: [
@@ -73,9 +79,11 @@ export const PHASES: PhaseMeta[] = [
   {
     // 03/08 CHỐT TÊN vòng cuối — "Presenting" → "Trình bày" (không mode, xem file trên). ID
     // 'present' GIỮ NGUYÊN.
+    // 04/08 [P7 ĐỔI TÊN] — "Trình bày" → "Trình chiếu" (EN "Presenting" GIỮ NGUYÊN). ID
+    // 'present' GIỮ NGUYÊN.
     id: 'present',
     icon: 'present',
-    label: 'Trình bày',
+    label: 'Trình chiếu',
     tagline: 'Slide · board · spec vật liệu',
     blurb: 'Đóng gói cho khách: dàn slide 16:9, board, xuất deck PDF, chú thích vật liệu.',
     featured: ['slide.concept', 'slide.composer', 'slide.deck', 'out.board', 'out.gallery', 'util.annotate'],
@@ -119,19 +127,21 @@ export function isPhase(v: unknown): v is Phase {
 
 /**
  * IF2-nền — nhãn hiển thị của chặng, TỰ ĐỔI theo CAD stage cho phase 'concept':
- *   stage='sketch'    → '2D Kỹ thuật · Sơ phác'
- *   stage='technical' → '2D Kỹ thuật · Kỹ thuật'
- *   stage='bim'       → '2D Kỹ thuật · Kỹ thuật' (BIM/cấu kiện KHÔNG còn là mode/chặng riêng
+ *   stage='sketch'    → 'Thiết kế 2D · Sơ phác'
+ *   stage='technical' → 'Thiết kế 2D · Kỹ thuật'
+ *   stage='bim'       → 'Thiết kế 2D · Kỹ thuật' (BIM/cấu kiện KHÔNG còn là mode/chặng riêng
  *                        từ 03/08 CHỐT TÊN vòng cuối — nay là TẦNG DỮ LIỆU nằm dưới cả ba
  *                        chặng, xem CHOT-TEN-CHANG-MODE-2026-08-03.md — nên dùng chung nhãn
  *                        'Kỹ thuật' với 'technical', KHÔNG bịa nhãn "BIM" cho người dùng thấy)
+ * 04/08 [P7 ĐỔI TÊN] — tiền tố '2D Kỹ thuật' → 'Thiết kế 2D' (xem PHASES[0] ở trên), hậu tố
+ * '· Sơ phác'/'· Kỹ thuật' GIỮ NGUYÊN (đó là tên MODE, không phải tên chặng).
  * Các phase khác giữ nguyên label tĩnh trong PHASES. `cadStage` optional để không phá caller cũ
  * (thiếu ⇒ fallback về `PHASE_MAP[id].label` như trước).
  */
 export function phaseLabel(id: Phase, cadStage?: 'sketch' | 'technical' | 'bim'): string {
   if (id !== 'concept' || !cadStage) return PHASE_MAP[id].label;
-  if (cadStage === 'technical' || cadStage === 'bim') return '2D Kỹ thuật · Kỹ thuật';
-  return '2D Kỹ thuật · Sơ phác';
+  if (cadStage === 'technical' || cadStage === 'bim') return 'Thiết kế 2D · Kỹ thuật';
+  return 'Thiết kế 2D · Sơ phác';
 }
 
 /**
@@ -143,7 +153,7 @@ export function phaseLabel(id: Phase, cadStage?: 'sketch' | 'technical' | 'bim')
  * slide.* như một chặng canvas. Vì vậy phần suy diễn CHỈ xét 'render': mở một flow (kể cả
  * flow nhiều node slide.*) không bao giờ ép workspace='present' để pill Present sáng nhầm
  * khi đang ở canvas. Có node render → 'render'; không có → null (giữ nguyên chặng hiện tại).
- * Chặng 'concept' = 2D Kỹ thuật ở route riêng, cũng không có node canvas nên không tính ở đây.
+ * Chặng 'concept' = Thiết kế 2D ở route riêng, cũng không có node canvas nên không tính ở đây.
  */
 export function phaseFromNodes(defTypes: string[]): Phase | null {
   if (defTypes.length === 0) return null;

@@ -451,8 +451,8 @@ export default function CadEditor() {
             // segmented chuyển chặng ở header). NĂNG LỰC handoff-ảnh (stash ảnh bản vẽ sang
             // chặng sau — thứ segmented KHÔNG làm) GIỮ NGUYÊN, chuyển vào menu Xuất — đúng ngữ
             // nghĩa "xuất bản vẽ đi nơi khác".
-            { id: 'to-render', label: 'Đưa ảnh bản vẽ sang 3D Thiết kế', sub: 'Kết xuất layout thành node Import Image ở chặng 3D Thiết kế', icon: <ArrowRight size={15} />, onSelect: toRender },
-            { id: 'to-present', label: 'Đưa ảnh bản vẽ sang Trình bày', sub: 'Chụp bản vẽ hiện tại thành 1 slide mới (không đè slide có sẵn)', icon: <ArrowRight size={15} />, onSelect: toPresent },
+            { id: 'to-render', label: 'Đưa ảnh bản vẽ sang Thiết kế 3D', sub: 'Kết xuất layout thành node Import Image ở chặng Thiết kế 3D', icon: <ArrowRight size={15} />, onSelect: toRender },
+            { id: 'to-present', label: 'Đưa ảnh bản vẽ sang Trình chiếu', sub: 'Chụp bản vẽ hiện tại thành 1 slide mới (không đè slide có sẵn)', icon: <ArrowRight size={15} />, onSelect: toPresent },
             {
               id: 'auto-backup',
               label: backupOn ? 'Backup tự động: đang bật' : 'Bật backup tự động',

@@ -3,8 +3,9 @@
 /**
  * components/cad/ZonePanel.tsx — Zone tool (24/07, GAP-COLOR-FILL N3):
  *  - ZonePanel: cấu hình zone/arrow (6 nhóm chức năng VN hoá · kiểu biên oval/polygon · opacity
- *    · mũi tên 2 đầu) + lớp ảnh aerial site (upload/fit/scale/move/opacity) + nút "Xuất Trình bày"
- *    (render zone map + legend → slide mới ở chặng Trình bày).
+ *    · mũi tên 2 đầu) + lớp ảnh aerial site (upload/fit/scale/move/opacity) + nút "Xuất Trình
+ *    chiếu" (render zone map + legend → slide mới ở chặng Trình chiếu — nhãn đổi 04/08
+ *    [P7 ĐỔI TÊN], cũ là "Trình bày").
  *  - ZonesLegend: chú giải chấm màu tự sinh từ các zone đang có trong doc — KÉO ĐƯỢC quanh
  *    canvas, click 1 zone để chọn + zoom tới.
  * UI nội bộ theo ngôn ngữ panel sẵn có của CadEditor (var(--panel)/keyline mảnh) — TTT design
@@ -226,14 +227,14 @@ export function ZonePanel({ onClose, onExportPresent }: { onClose: () => void; o
         )}
       </div>
 
-      {/* ── Xuất Trình bày ── (03/08 CHỐT TÊN vòng cuối) */}
+      {/* ── Xuất Trình chiếu ── (03/08 CHỐT TÊN vòng cuối · 04/08 [P7 ĐỔI TÊN] Trình bày→Trình chiếu) */}
       <button
         type="button"
         onClick={onExportPresent}
-        title="Render zone map + legend thành 1 slide mới ở chặng Trình bày"
+        title="Render zone map + legend thành 1 slide mới ở chặng Trình chiếu"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 8, padding: '7px 0', borderRadius: 8, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
       >
-        Xuất Trình bày <ArrowRight size={13} />
+        Xuất Trình chiếu <ArrowRight size={13} />
       </button>
     </div>
   );

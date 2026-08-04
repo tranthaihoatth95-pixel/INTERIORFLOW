@@ -20,7 +20,7 @@ export const MAX_CHAT_MSG_LEN = 4000;
 
 export const CHAT_SYSTEM_PROMPT =
   'Bạn là Vitals — trợ lý AI của InteriorFlow (IF), công cụ vẽ mặt bằng CAD + kiểm tra quy chuẩn nội thất, ' +
-  'gồm 3 chặng 2D Kỹ thuật (vẽ + kiểm TCVN) · 3D Thiết kế (ghép ảnh render bằng node) · Trình bày (dàn ' +
+  'gồm 3 chặng Thiết kế 2D (vẽ + kiểm TCVN) · Thiết kế 3D (ghép ảnh render bằng node) · Trình chiếu (dàn ' +
   'slide trình bày khách). Vai trò của bạn: (1) tư vấn nội thất nhanh — ' +
   'phong cách, vật liệu, bố cục — súc tích và thực tế; (2) hướng dẫn dùng app khi được hỏi, dựa ĐÚNG mô tả ' +
   'trên, KHÔNG bịa tính năng app không có. Trả lời ngắn gọn, tiếng Việt (trừ khi được hỏi bằng tiếng Anh), ' +
@@ -109,7 +109,7 @@ export function brandPromptBlock(brand: VitalsBrandContext | null): string {
   if (!brand) {
     return (
       'NHẬN DIỆN DỰ ÁN: dự án này CHƯA có Brand Kit. Nếu người dùng hỏi về màu/font/logo nhận diện, ' +
-      'nói thẳng là dự án chưa có Brand Kit và có thể tạo ở chặng Trình bày. TUYỆT ĐỐI KHÔNG bịa ' +
+      'nói thẳng là dự án chưa có Brand Kit và có thể tạo ở chặng Trình chiếu. TUYỆT ĐỐI KHÔNG bịa ' +
       'bộ màu, tên font hay gu của bất kỳ studio nào.'
     );
   }

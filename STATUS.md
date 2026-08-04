@@ -5,6 +5,54 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## ✅ XONG (04/08 — P7 ĐỔI TÊN 3 chặng: 2D Kỹ thuật/3D Thiết kế/Trình bày → Thiết kế 2D/Thiết kế 3D/Trình chiếu)
+Hoà chốt: IF1/IF2 nay gộp chung nên ngữ nghĩa nhãn cần RỘNG hơn. Đổi CHỈ NHÃN hiển thị — khoá kỹ
+thuật `concept/render/present`·`sketch/pro/revit`·`node/3d` GIỮ NGUYÊN TUYỆT ĐỐI (verify: không
+đụng dòng nào ngoài `label:`/chuỗi hiển thị). Nguồn gốc `lib/phases.ts` (comment append-only, giữ
+lịch sử tên cũ) + ~20 file UI đồng bộ theo: `ShortcutsPanel`·`AppCommandPalette`·`StageSwitcher`·
+`VitalsGesture`·`LibrarySheet`·`CadEditor`·`ZonePanel`·`Toolbar` (present-editor)·`NodeExtras`·
+`StageIntroCard`·`StagePresetPanel`·`IntroSequence`·`ReferencePane`·`PresentDeck`·`overview/page`
+·`lib/shortcuts.ts`·`lib/ai/chat-assist.ts`·`lib/present-demo.ts`. Docs: `00-BAT-DAU-DOC-DAY.md`
+(bộ tên chính thức, bản cũ giữ làm blockquote lịch sử) · `SPEC-MODE-PER-STAGE.md` (ghi chú đầu
+file) · `CHECKLIST-TONG.md` (1 dòng changelog cuối file, không sửa đè hàng cũ).
+`components/ProjectSelect.tsx` **CHƯA đổi** (thuộc vùng P5, bỏ qua tránh conflict theo đúng luật
+hai-phiên-chung-git — 1 dòng "Cách dùng 2D Kỹ thuật · 3D Thiết kế · Trình bày?" còn sót).
+`npx tsc --noEmit -p .` sạch (chạy nền, exit 0). Verify browser thật (127.0.0.1:3001, cổng riêng
+phiên này, KHÔNG đụng cổng 3000/3004 đang chạy): header StageSwitcher, ⌘K palette, tab-tooltip
+(title attr đọc qua `read_page`), toolbar Nhập/Xuất present-editor — cả 3 chặng đúng nhãn mới ở
+2 route (`/present-editor`, `/cad-editor`) + màn Cài đặt. Chưa bấm riêng toggle EN qua UI (scroll
+bị kẹt trong sandbox) nhưng chuỗi EN đã sửa đúng theo yêu cầu (chỉ "2D Technical"→"2D Design" đổi,
+"3D Design"/"Presenting" giữ nguyên) — xác nhận bằng đọc lại source, chưa xác nhận bằng mắt UI.
+
+## ✅ XONG (04/08 — P1 bug đỏ 2.1.6.d "nhập DWG treo vĩnh viễn": timeout+tiến độ+huỷ+lỗi rõ)
+TÁI HIỆN bằng **34 file .dwg THẬT** (`~/Documents/Zalo Received Files` — dự án thật của studio,
+không phải file tự chế, đúng luật N3): 4/34 file (11–21MB) vượt 25s không phản hồi; đo lại kỹ hơn
+(không giới hạn) xác nhận KHÔNG phải vòng lặp vô hạn tuyệt đối trong các case đã thử — nhưng tốn
+tới **39 giây** (file 21MB) và thời gian KHÔNG ổn định giữa các lần chạy (cùng 1 file: <10s hoặc
+>25s tuỳ tải máy), với ZERO tiến độ/timeout/huỷ trước đó — đúng cảm giác "treo vĩnh viễn" người
+dùng mô tả. Đo chính xác nút cổ chai: `dwg_read_data` luôn nhanh (vài giây kể cả 21MB), chậm là
+`convertEx`. Không loại trừ file khác gây vòng lặp C thật sự (ngoài tầm sửa — code C biên dịch
+WASM) — cách phòng thủ đúng bất kể nguyên nhân là timeout cứng từ NGOÀI.
+Sửa (`lib/cad/dwg.ts`+`dwg-worker.ts`+`dwg-map.ts`, đúng vùng giao — không đụng `dxf*.ts` vì không
+cần, không đụng `cad-to-obj.ts`/`findHatchBoundary` như cảnh báo vì KHÔNG liên quan): **timeout
+cứng** mặc định 60s (`DEFAULT_DWG_IMPORT_TIMEOUT_MS`, chỉnh được qua `opts.timeoutMs`) — CHỈ làm
+được từ main thread qua `worker.terminate()` (đã đọc `.d.ts` thật: `dwg_read_data`/`convertEx`
+ĐỒNG BỘ, không callback/progress hook nào, worker không thể tự huỷ giữa chừng) · **tiến độ CÓ
+THẬT** — worker báo 2 mốc giai đoạn thật (`reading`/`converting`, KHÔNG phải % giả) + heartbeat
+elapsed-time mỗi 1s từ main thread, mặc định ghi thẳng `useCadStore.setStatus()` (làm NGAY trong
+`dwg.ts` vì ticket giới hạn vùng file, không được sửa `CadEditor.tsx`) · **huỷ được** qua
+`opts.signal` (AbortController, cơ chế sẵn — nút "Huỷ" thật cần sửa CadEditor.tsx, ngoài vùng file
+ticket này) · **lỗi rõ hơn** — mọi thông báo lỗi/timeout nay có tên file, kích thước, phiên bản DWG
+đọc từ header (bảng `DWG_VERSION_NAMES`), và ĐANG Ở GIAI ĐOẠN NÀO khi treo. `openDwgFile(f)` gọi
+như cũ (1 tham số) vẫn chạy y nguyên — chỉ tự động được bảo vệ thêm, không phá caller cũ.
+Test mới `lib/cad/dwg.test.ts` (21/21, các hàm thuần format thông báo — không test được
+`openDwgFile`/Worker thật vì `dwg.ts` chứa `import.meta`, giống lý do `dwg-map.ts` tách riêng từ
+đầu) + `dwg-flatten.test.ts` cũ 36/36 không hồi quy. `tsc --noEmit -p .` sạch.
+**CHƯA LÀM** (ngoài vùng file ticket): nút "Huỷ" thật + thanh tiến độ riêng trong `CadEditor.tsx`
+(cơ chế `signal`/`onProgress` đã sẵn, chỉ cần nối) · chưa xác nhận được TRUE infinite loop trong
+`convertEx` (nếu tái diễn với timeout 60s vẫn "treo" → là bug C thật trong libredwg-web, cần báo
+upstream, không phải thiếu timeout nữa).
+
 ## ✅ XONG (04/08 — P4 xuất PDF: sàn nét in an toàn + số tờ/phiên bản, `df6ca85`)
 Brief P4 mô tả "xuất PDF hiện là chụp màn hình" — **SAI so code thật** (đã kiểm `git log` trước
 khi sửa): `lib/cad/pdf.ts` từ lâu đã là **vector plot thật** (từng Entity vẽ lại bằng API hình học

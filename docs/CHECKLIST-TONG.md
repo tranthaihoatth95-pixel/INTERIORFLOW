@@ -168,3 +168,12 @@ Mỗi ca audit TỔNG chọn ≥1 gói, grep code đối chiếu TỪNG luật c
 | Trình bày | 67 760 ✅ | — | ✅ BOQ `4991340` | live-link + SUM() sống |
 **🔴 CHẶN CHUNG:** `docs/mocks/support.js` **KHÔNG TỒN TẠI** nhưng **16 mock gọi** → nút đổi theme chết, 131 hover chết. Mọi mock export Claude Design mới verify 2 theme ở mức khai báo CSS, **chưa ai thấy theme sáng chạy thật**.
 **🟡 BẪY PORT:** mock tự sửa token dùng chung (`--mat-card` .82→.62 · `--mat-panel` .68→.78 · `--row` 28→44) · 162 chỗ `font:` rút gọn thiếu `/line-height` → cắt dấu tiếng Việt · 33 lớp nổi <92% nền đặc · 48 hex cứng trùng token.
+
+## Changelog
+[04/08 P7 ĐỔI TÊN] Hoà chốt đổi nhãn 3 chặng (IF1/IF2 gộp chung, ngữ nghĩa rộng hơn): **2D Kỹ
+thuật → Thiết kế 2D** (EN "2D Technical" → "2D Design") · **3D Thiết kế → Thiết kế 3D** (EN "3D
+Design" giữ nguyên) · **Trình bày → Trình chiếu** (EN "Presenting" giữ nguyên). Nguồn gốc
+`lib/phases.ts` + ~20 file UI (header/⌘K palette/StatusBar/ShortcutsPanel/Vitals/CadEditor/
+ZonePanel/…) đồng bộ theo — khoá kỹ thuật `concept/render/present`·`sketch/pro/revit`·`node/3d`
+GIỮ NGUYÊN TUYỆT ĐỐI. `components/ProjectSelect.tsx` (dòng "Cách dùng 2D Kỹ thuật · 3D Thiết kế
+· Trình bày?") CHƯA đổi — file thuộc vùng P5, bỏ qua tránh conflict, để P5 làm khi rảnh tay.

@@ -126,9 +126,11 @@ export function AppCommandPalette({ active }: { active: AppChromeActive }) {
     const shell: Row[] = [
       // 03/08 CHỐT TÊN vòng cuối: nhãn "2D Kỹ thuật/3D Thiết kế/Trình bày" — keywords giữ cả từ
       // khoá vòng trước (cad/drafting/render/dung anh) để tìm không bị hụt trong lúc chuyển tên.
-      { id: 'go.cad', label: tr('Sang chặng 2D Kỹ thuật', 'Go to 2D Technical'), hint: '⌘1', group: shellGroup, keywords: 'cad drafting 2d ky thuat ve chuyen chang stage', run: act(() => router.push('/cad-editor')) },
-      { id: 'go.render', label: tr('Sang chặng 3D Thiết kế', 'Go to 3D Design'), hint: '⌘2', group: shellGroup, keywords: 'render rendering dung anh 3d thiet ke chuyen chang stage', run: act(() => router.push('/')) },
-      { id: 'go.present', label: tr('Sang chặng Trình bày', 'Go to Presenting'), hint: '⌘3', group: shellGroup, keywords: 'present trinh bay deck chuyen chang stage', run: act(() => router.push('/present-editor')) },
+      // 04/08 [P7 ĐỔI TÊN]: 2D Kỹ thuật→Thiết kế 2D · 3D Thiết kế→Thiết kế 3D · Trình bày→Trình
+      // chiếu — keywords cộng thêm "thiet ke 2d/3d"/"trinh chieu", GIỮ nguyên keywords cũ.
+      { id: 'go.cad', label: tr('Sang chặng Thiết kế 2D', 'Go to 2D Design'), hint: '⌘1', group: shellGroup, keywords: 'cad drafting 2d ky thuat thiet ke ve chuyen chang stage', run: act(() => router.push('/cad-editor')) },
+      { id: 'go.render', label: tr('Sang chặng Thiết kế 3D', 'Go to 3D Design'), hint: '⌘2', group: shellGroup, keywords: 'render rendering dung anh 3d thiet ke chuyen chang stage', run: act(() => router.push('/')) },
+      { id: 'go.present', label: tr('Sang chặng Trình chiếu', 'Go to Presenting'), hint: '⌘3', group: shellGroup, keywords: 'present trinh bay trinh chieu deck chuyen chang stage', run: act(() => router.push('/present-editor')) },
       // Phím Thư viện: chặng Vẽ ⇧L, chặng khác L trần (§4e — `use-library-sheet.ts` tự gate y hệt).
       { id: 'shell.library', label: tr('Mở Thư viện', 'Open Library'), hint: active === 'cad' ? '⇧L' : 'L', group: shellGroup, keywords: 'thu vien library kho vat lieu template', run: act(() => openLibrarySheet({ stage: libStage })) },
       { id: 'shell.files', label: tr('Mở Quản lý tệp', 'Open File Manager'), group: shellGroup, keywords: 'file manager tep quan ly', run: act(() => router.push('/files')) },

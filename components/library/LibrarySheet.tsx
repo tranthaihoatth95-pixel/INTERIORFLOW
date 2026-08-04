@@ -27,9 +27,9 @@ import { BulkIngestMode } from './BulkIngestMode';
 // 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md) — "Vẽ"/"Dựng ảnh" là tên
 // round trước, nay đồng bộ theo bộ tên chính thức.
 const STAGE_CAPTION: Record<StageKey, [string, string]> = {
-  cad: ['Kệ chặng 2D Kỹ thuật', '2D Technical stage shelf'],
-  render: ['Kệ chặng 3D Thiết kế', '3D Design stage shelf'],
-  present: ['Kệ chặng Trình bày', 'Presenting stage shelf'],
+  cad: ['Kệ chặng Thiết kế 2D', '2D Design stage shelf'],
+  render: ['Kệ chặng Thiết kế 3D', '3D Design stage shelf'],
+  present: ['Kệ chặng Trình chiếu', 'Presenting stage shelf'],
 };
 
 /** Sự kiện cho canvas/inspector (NGOÀI vùng code G4) tiêu thụ — xem docs/BAO-CAO-G4-LIB.md. */

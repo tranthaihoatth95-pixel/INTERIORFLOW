@@ -3,6 +3,9 @@
 > Hoà chốt 02/08. **Nguồn DUY NHẤT** cho: mode mỗi chặng · sidebar 3 vùng node · tool=window ·
 > hạ tầng xuyên app · Present đa hồ sơ. Mọi chặng theo cùng một cơ chế, không rải rác.
 > ⚠️ **Đây là GIAO DIỆN HẠ TẦNG — làm TRƯỚC tính năng lẻ** (Hoà nhấn: hạ tầng trước, tránh làm lại).
+> [04/08 P7 ĐỔI TÊN] Tên tắt "CAD/Render/Present" dưới đây là KHOÁ NỘI BỘ (không đổi). NHÃN
+> hiển thị cho người dùng đã đổi: CAD→**Thiết kế 2D** · Render→**Thiết kế 3D** ·
+> Present→**Trình chiếu** (nguồn thật `lib/phases.ts`, xem `docs/00-BAT-DAU-DOC-DAY.md`).
 
 ## 1 · MODE MỖI CHẶNG — bật/tắt = ĐỔI CẢ GIAO DIỆN (không thêm nút)
 

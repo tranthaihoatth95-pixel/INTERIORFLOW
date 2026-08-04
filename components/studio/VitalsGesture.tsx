@@ -56,11 +56,12 @@ export function wasVitalsUsed() {
 }
 
 /** Nhãn hiển thị theo chặng — dùng ở header panel để user biết đang hỏi Vitals ở đâu.
- * 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md). */
+ * 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md).
+ * 04/08 [P7 ĐỔI TÊN] — 2D Kỹ thuật→Thiết kế 2D · 3D Thiết kế→Thiết kế 3D · Trình bày→Trình chiếu. */
 const STAGE_LABEL: Record<Phase, string> = {
-  concept: '2D Kỹ thuật',
-  render: '3D Thiết kế',
-  present: 'Trình bày',
+  concept: 'Thiết kế 2D',
+  render: 'Thiết kế 3D',
+  present: 'Trình chiếu',
 };
 
 const STAGE_PLACEHOLDER: Record<Phase, string> = {
