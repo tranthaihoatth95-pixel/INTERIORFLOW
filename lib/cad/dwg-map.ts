@@ -62,6 +62,77 @@ export interface DwgRawDoc {
 
 export type DwgWorkerResponse = { ok: true; doc: DwgRawDoc } | { ok: false; error: string };
 
+/* ───────────────────────── P1 (STATUS.md 2.1.6.d) — timeout/tiến độ/lỗi nhập DWG ─────────────────────────
+ * Đặt Ở ĐÂY (không phải dwg.ts) vì CÙNG LÝ DO tách file ở đầu file này: THUẦN, không `import.meta`,
+ * test được dưới sucrase-node (`lib/cad/dwg.test.ts`). dwg.ts (Worker orchestration) import + dùng
+ * lại nguyên các hàm/hằng số này — không viết logic thứ hai.
+ */
+
+/** 60s mặc định (đề xuất của chủ dự án) — lớn hơn HẲN case chậm nhất đo được thật (39s, file
+ * .dwg thật 21MB phức tạp — xem docstring `openDwgFile` ở dwg.ts để biết cách đo), đủ dư cho biến
+ * động tải máy mà vẫn đủ ngắn để không cảm giác "treo vĩnh viễn". */
+export const DEFAULT_DWG_IMPORT_TIMEOUT_MS = 60_000;
+
+export type DwgStage = 'spawning' | 'reading' | 'converting';
+
+export const DWG_STAGE_LABEL: Record<DwgStage, string> = {
+  spawning: 'đang khởi tạo worker đọc DWG',
+  reading: 'đang đọc nhị phân DWG (dwg_read_data)',
+  converting: 'đang chuyển sang danh sách đối tượng (convertEx) — bước hay chậm nhất',
+};
+
+/** Bảng mã phiên bản DWG (byte 0-5 file, "ACxxyy") → tên quen thuộc — CHỈ liệt các mã phổ biến
+ * chắc chắn (thống nhất giữa mọi tool DWG công khai: ODA/LibreDWG), mã lạ thì hiện nguyên chữ ký
+ * thô, KHÔNG đoán bừa tên phiên bản. TRÙNG với bảng riêng trong `dwg-worker.ts` (bản sao có chủ
+ * đích — worker không được import file này lẫn ngược lại, xem luật cô lập GPL ở đầu file đó). */
+const DWG_VERSION_NAMES: Record<string, string> = {
+  AC1032: 'AutoCAD 2018–2024',
+  AC1027: 'AutoCAD 2013–2017',
+  AC1024: 'AutoCAD 2010–2012',
+  AC1021: 'AutoCAD 2007–2009',
+  AC1018: 'AutoCAD 2004–2006',
+  AC1015: 'AutoCAD 2000–2002',
+  AC1014: 'AutoCAD R14',
+  AC1012: 'AutoCAD R13',
+};
+
+/** Đọc 6 byte đầu (chữ ký DWG) — dùng làm giàu thông báo lỗi/timeout (yêu cầu §5 "phiên bản DWG
+ * nào?"). THUẦN — chỉ cần ArrayBuffer, không phụ thuộc Worker/File. */
+export function describeDwgHeader(buffer: ArrayBuffer): string {
+  if (buffer.byteLength < 6) return 'file quá ngắn để đọc được chữ ký DWG';
+  const head = new TextDecoder('ascii').decode(new Uint8Array(buffer, 0, 6));
+  if (!/^AC\d{4}$/.test(head)) {
+    return `chữ ký đầu file không phải DWG hợp lệ ("${head.replace(/[^\x20-\x7e]/g, '?')}")`;
+  }
+  const name = DWG_VERSION_NAMES[head];
+  return name ? `${head} · ${name}` : `${head} (phiên bản chưa rõ tên)`;
+}
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function dwgTimeoutMessage(file: { name: string; size: number }, timeoutMs: number, stage: DwgStage, headerInfo: string): string {
+  return (
+    `Nhập "${file.name}" (${formatBytes(file.size)}, ${headerInfo}) quá ${Math.round(timeoutMs / 1000)}s chưa xong ` +
+    `(${DWG_STAGE_LABEL[stage]}) — đã huỷ. Thư viện đọc DWG chạy 1 lệnh đồng bộ, không có cách huỷ giữa chừng nên ` +
+    `chỉ có thể chờ đủ thời gian rồi buộc dừng worker. File có thể quá lớn/phức tạp, hoặc chứa dữ liệu khiến thư ` +
+    `viện đọc bị kẹt ở bước "${stage === 'converting' ? 'chuyển đổi entity' : 'đọc nhị phân'}" — thử lại với file ` +
+    `nhỏ hơn hoặc tăng thời gian chờ, hoặc xuất lại bản vẽ từ CAD gốc.`
+  );
+}
+
+export function dwgCancelledMessage(file: { name: string }): string {
+  return `Đã huỷ nhập "${file.name}" theo yêu cầu.`;
+}
+
+/** Dùng cho cả progress callback lẫn heartbeat status bar mặc định (xem `openDwgFile` ở dwg.ts). */
+export function dwgProgressMessage(file: { name: string }, stage: DwgStage, elapsedMs: number): string {
+  return `Đang đọc ${file.name}… (${DWG_STAGE_LABEL[stage]}, ${Math.round(elapsedMs / 1000)}s)`;
+}
+
 /* ───────────────────────── mapping DwgRawDoc → Doc (giống pattern buildEntity/ensureLayer của
    dxf.ts, khác biệt DUY NHẤT đáng chú ý: góc ARC của libredwg-web đã là RADIAN sẵn — không nhân
    π/180 như khi đọc DXF ASCII, xem ghi chú trong dwg-worker.ts) ───────────────────────────── */

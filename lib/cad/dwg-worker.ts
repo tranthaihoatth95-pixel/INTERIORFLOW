@@ -92,6 +92,20 @@ export type DwgWorkerResponse =
   | { ok: true; doc: DwgRawDoc }
   | { ok: false; error: string };
 
+/**
+ * P1 (bug đỏ STATUS.md 2.1.6.d) — worker giờ gửi 2 LOẠI message thay vì chỉ 1 kết quả cuối:
+ * `progress` báo ĐÃ CHUYỂN GIAI ĐOẠN THẬT (không phải % giả — `dwg_read_data`/`convertEx` của
+ * libredwg-web là 2 lời gọi ĐỒNG BỘ, không có hook progress nào, xem `lib/cad/dwg.ts` docstring
+ * `openDwgFile`), `result` là kết quả cuối (khuôn `DwgWorkerResponse` cũ, chỉ thêm field `kind`
+ * để 2 loại phân biệt được trong `worker.onmessage`). Đo THẬT bằng 34 file .dwg thật (dự án thật,
+ * `~/Documents/Zalo Received Files`) xác nhận: giai đoạn chậm/có thể "treo" tới nhiều chục giây
+ * là `convertEx` — `dwg_read_data` luôn xong trong vài giây kể cả file 21MB. Biết đúng giai đoạn
+ * giúp `dwg.ts` báo lỗi timeout đúng chỗ ("đang convertEx" chứ không mập mờ "đang đọc file").
+ */
+export type DwgWorkerMessage =
+  | { kind: 'progress'; stage: 'reading' | 'converting' }
+  | ({ kind: 'result' } & DwgWorkerResponse);
+
 /** true nếu tất cả boundary edge của HATCH là đoạn thẳng (Line, type 1) — an toàn để nối thành
  * đa giác điểm; có cung/spline thì bỏ qua path đó (tránh suy đoán hình cung sai). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -215,16 +229,48 @@ function mapEntityMulti(e: any): DwgRawEntity[] {
  * TRƯỚC khi đưa vào WASM parser. Lý do thêm bước này: bản thân libredwg-web (WASM) khá "khoan
  * dung" — thử với 1 file .txt giả .dwg thực tế cho thấy `dwg_read_data` vẫn trả về con trỏ hợp
  * lệ (không undefined) nhưng dữ liệu rỗng, khiến app tưởng "mở thành công 0 đối tượng" thay vì
- * báo lỗi rõ ràng. Chặn sớm ở đây để lỗi hiện ra đúng như yêu cầu (không crash, KHÔNG mập mờ). */
-function hasDwgMagic(buffer: ArrayBuffer): boolean {
-  if (buffer.byteLength < 6) return false;
+ * báo lỗi rõ ràng. Chặn sớm ở đây để lỗi hiện ra đúng như yêu cầu (không crash, KHÔNG mập mờ).
+ * Trả về CHÍNH chữ ký đọc được (không chỉ true/false) — dùng để hiện tên phiên bản trong lỗi
+ * (P1, yêu cầu §5 "báo lỗi rõ — phiên bản DWG nào?"), và để lỗi "không đúng header" cho NGƯỜI
+ * DÙNG THẤY chữ ký thật sự tìm được thay vì chỉ nói chung chung "sai". */
+function readDwgMagic(buffer: ArrayBuffer): string | null {
+  if (buffer.byteLength < 6) return null;
   const head = new TextDecoder('ascii').decode(new Uint8Array(buffer, 0, 6));
-  return /^AC\d{4}$/.test(head);
+  return /^AC\d{4}$/.test(head) ? head : null;
 }
 
-async function parseDwg(buffer: ArrayBuffer): Promise<DwgWorkerResponse> {
-  if (!hasDwgMagic(buffer)) {
-    return { ok: false, error: 'File không có chữ ký DWG hợp lệ (thiếu header "AC10xx") — chắc chắn không phải file .dwg, hoặc file đã hỏng.' };
+/** Bảng mã phiên bản DWG (byte 0-5, "ACxxyy") → tên quen thuộc — CHỈ liệt các mã phổ biến chắc
+ * chắn (thống nhất giữa mọi tool DWG công khai: ODA/LibreDWG), mã lạ thì hiện nguyên chữ ký thô,
+ * KHÔNG đoán bừa tên phiên bản. */
+const DWG_VERSION_NAMES: Record<string, string> = {
+  AC1032: 'AutoCAD 2018–2024',
+  AC1027: 'AutoCAD 2013–2017',
+  AC1024: 'AutoCAD 2010–2012',
+  AC1021: 'AutoCAD 2007–2009',
+  AC1018: 'AutoCAD 2004–2006',
+  AC1015: 'AutoCAD 2000–2002',
+  AC1014: 'AutoCAD R14',
+  AC1012: 'AutoCAD R13',
+};
+
+function describeDwgVersion(magic: string): string {
+  const name = DWG_VERSION_NAMES[magic];
+  return name ? `${magic} · ${name}` : `${magic} (phiên bản chưa rõ tên)`;
+}
+
+/**
+ * P1 (STATUS.md 2.1.6.d) — đo THẬT bằng 34 file .dwg thật xác nhận `dwg_read_data` luôn nhanh
+ * (vài giây kể cả file 21MB), giai đoạn chậm/dễ "treo" là `convertEx` bên dưới (tới 39s ở file
+ * thật lớn/nhiều entity trong phép đo). `onStage` báo ĐÚNG lúc chuyển giai đoạn — xem docstring
+ * `DwgWorkerMessage` — để nơi gọi (`dwg.ts`) biết CHÍNH XÁC bước nào đang chạy khi hết giờ.
+ */
+async function parseDwg(buffer: ArrayBuffer, onStage: (stage: 'reading' | 'converting') => void): Promise<DwgWorkerResponse> {
+  const magic = readDwgMagic(buffer);
+  if (!magic) {
+    const shown = buffer.byteLength < 6
+      ? '(file rỗng hoặc ngắn hơn 6 byte)'
+      : `"${new TextDecoder('ascii').decode(new Uint8Array(buffer, 0, 6)).replace(/[^\x20-\x7e]/g, '?')}"`;
+    return { ok: false, error: `File không có chữ ký DWG hợp lệ (thấy ${shown} thay vì "AC10xx" ở đầu file) — chắc chắn không phải file .dwg, hoặc file đã hỏng/bị cắt cụt giữa chừng.` };
   }
   // Import động NGAY TRONG hàm — package GPL chỉ được tải khi thực sự cần parse (worker script
   // vẫn phải bundle nó, nhưng import động giúp rõ ràng đây là điểm-vào-duy-nhất về mặt runtime).
@@ -234,16 +280,18 @@ async function parseDwg(buffer: ArrayBuffer): Promise<DwgWorkerResponse> {
   // Emscripten tự suy ra vị trí script khi bundler (webpack/Turbopack) đổi tên/di chuyển file.
   const libredwg = await LibreDwg.create('/wasm');
 
+  onStage('reading');
   let dataPtr: number | undefined;
   try {
     dataPtr = libredwg.dwg_read_data(buffer, Dwg_File_Type.DWG);
   } catch (err) {
-    return { ok: false, error: `libredwg-web ném lỗi khi đọc file: ${err instanceof Error ? err.message : String(err)}` };
+    return { ok: false, error: `libredwg-web ném lỗi khi đọc file (chữ ký ${describeDwgVersion(magic)}): ${err instanceof Error ? err.message : String(err)}` };
   }
   if (dataPtr === undefined) {
-    return { ok: false, error: 'Không đọc được file .dwg — sai định dạng, file hỏng, hoặc phiên bản DWG chưa được libredwg-web hỗ trợ.' };
+    return { ok: false, error: `Không đọc được file .dwg (chữ ký ${describeDwgVersion(magic)}) — sai định dạng, file hỏng, hoặc phiên bản DWG chưa được libredwg-web hỗ trợ.` };
   }
 
+  onStage('converting');
   try {
     const { database, stats } = libredwg.convertEx(dataPtr);
     const layers: DwgRawLayer[] = (database.tables?.LAYER?.entries ?? []).map((l) => ({
@@ -280,7 +328,7 @@ async function parseDwg(buffer: ArrayBuffer): Promise<DwgWorkerResponse> {
       doc: { entities, layers, blocks, skippedEntityCount: skipped, totalEntityCount: database.entities.length },
     };
   } catch (err) {
-    return { ok: false, error: `Lỗi khi chuyển đổi dữ liệu DWG đã đọc: ${err instanceof Error ? err.message : String(err)}` };
+    return { ok: false, error: `Lỗi khi chuyển đổi dữ liệu DWG đã đọc (chữ ký ${describeDwgVersion(magic)}): ${err instanceof Error ? err.message : String(err)}` };
   } finally {
     try {
       libredwg.dwg_free(dataPtr);
@@ -292,10 +340,10 @@ async function parseDwg(buffer: ArrayBuffer): Promise<DwgWorkerResponse> {
 
 ctx.onmessage = async (e: MessageEvent<{ buffer: ArrayBuffer }>) => {
   try {
-    const result = await parseDwg(e.data.buffer);
-    ctx.postMessage(result);
+    const result = await parseDwg(e.data.buffer, (stage) => ctx.postMessage({ kind: 'progress', stage } satisfies DwgWorkerMessage));
+    ctx.postMessage({ kind: 'result', ...result } satisfies DwgWorkerMessage);
   } catch (err) {
-    const resp: DwgWorkerResponse = { ok: false, error: `Lỗi worker DWG: ${err instanceof Error ? err.message : String(err)}` };
+    const resp: DwgWorkerMessage = { kind: 'result', ok: false, error: `Lỗi worker DWG: ${err instanceof Error ? err.message : String(err)}` };
     ctx.postMessage(resp);
   }
 };

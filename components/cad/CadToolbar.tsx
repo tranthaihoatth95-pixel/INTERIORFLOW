@@ -16,11 +16,12 @@ import {
   Radius, Diameter, DraftingCompass, ChevronsRight, GitBranch, PaintBucket,
   CircleDashed, LocateFixed, Palette, StickyNote,
   Pentagon, Ellipse, Donut, SplinePointer, Slash, Divide,
-  Blend, MoveUpRight, Video,
+  Blend, MoveUpRight, Video, ArrowDownRight,
 } from 'lucide-react';
 import { useCadStore, type Tool, type CadMode } from '@/lib/cad/store';
 import { useModKey, useModShiftKey } from '@/lib/kbd';
 import Tooltip from '@/components/ui/Tooltip';
+import Popover from '@/components/ui/Popover';
 
 /** Rút gọn nhãn nút (bỏ mô tả dài sau " (" / " — ") thành nhãn ngắn cho tag hover. */
 function shortLabel(title: string): string {
@@ -41,23 +42,23 @@ interface ToolBtn {
 /** Sprint 9 — Sketch: bộ vẽ tối thiểu đúng triết lý Phase 1 ("Sketch, không phải Draft"). */
 const DRAW: ToolBtn[] = [
   { tool: 'select', icon: MousePointer2, label: 'Chọn', key: 'Esc' },
-  { tool: 'line', icon: Minus, label: 'Line', key: 'L' },
-  { tool: 'rect', icon: Square, label: 'Rect', key: 'REC' },
-  { tool: 'circle', icon: Circle, label: 'Circle', key: 'C' },
+  { tool: 'line', icon: Minus, label: 'Đường', key: 'L' },
+  { tool: 'rect', icon: Square, label: 'Chữ nhật', key: 'REC' },
+  { tool: 'circle', icon: Circle, label: 'Tròn', key: 'C' },
 ];
 /** Sprint 9 — Pro: biến thể vẽ chính xác hơn (Sprint 10 Việc 1 + phần còn lại của DRAW cũ). */
 const DRAW_PRO: ToolBtn[] = [
-  { tool: 'polyline', icon: Waypoints, label: 'Polyline', key: 'PL' },
-  { tool: 'circle3p', icon: CircleDashed, label: 'Circle 3-điểm — click 3 điểm trên đường tròn', key: 'C3P' },
-  { tool: 'arc', icon: Spline, label: 'Arc 3 điểm', key: 'A' },
-  { tool: 'arccenter', icon: LocateFixed, label: 'Arc tâm+góc — click tâm → điểm đầu → điểm cuối', key: 'ARCC' },
+  { tool: 'polyline', icon: Waypoints, label: 'Đường gấp', key: 'PL' },
+  { tool: 'circle3p', icon: CircleDashed, label: 'Tròn 3 điểm — click 3 điểm trên đường tròn', key: 'C3P' },
+  { tool: 'arc', icon: Spline, label: 'Cung 3 điểm', key: 'A' },
+  { tool: 'arccenter', icon: LocateFixed, label: 'Cung tâm+góc — click tâm → điểm đầu → điểm cuối', key: 'ARCC' },
 ];
 /** Sprint 10 — Việc 2/3: Polygon đều · Ellipse · Donut · Spline · Xline — hình học chính xác mở rộng. Pro-only (Sprint 9). */
 const SHAPES2: ToolBtn[] = [
-  { tool: 'polygon', icon: Pentagon, label: 'Polygon đều — click tâm → bán kính (POL <n> đổi số cạnh)', key: 'POL' },
-  { tool: 'ellipse', icon: Ellipse, label: 'Ellipse — click tâm → góc xác định 2 bán trục', key: 'EL' },
+  { tool: 'polygon', icon: Pentagon, label: 'Đa giác đều — click tâm → bán kính (POL <n> đổi số cạnh)', key: 'POL' },
+  { tool: 'ellipse', icon: Ellipse, label: 'Elip — click tâm → góc xác định 2 bán trục', key: 'EL' },
   { tool: 'donut', icon: Donut, label: 'Donut — click tâm để đặt (DO <trong> <ngoài> đổi bán kính)', key: 'DO' },
-  { tool: 'spline', icon: SplinePointer, label: 'Spline — click các control point; Enter/double-click kết thúc', key: 'SPL' },
+  { tool: 'spline', icon: SplinePointer, label: 'Cong — click các control point; Enter/double-click kết thúc', key: 'SPL' },
   { tool: 'xline', icon: Slash, label: 'Xline — đường tham chiếu kéo dài vô hạn 2 đầu (layer "Tham chiếu")', key: 'XL' },
   { tool: 'divide', icon: Divide, label: 'Divide/Measure — chia đều N đoạn hoặc đo khoảng cách cố định', key: 'DIV' },
 ];
@@ -67,15 +68,28 @@ const ARCH: ToolBtn[] = [
   { tool: 'hatch', icon: PaintBucket, label: 'Hatch — pick-point tô vùng kín (H ANSI31/ANSI32/ANSI37/SOLID/DOTS)', key: 'H' },
 ];
 const EDIT: ToolBtn[] = [
-  { tool: 'move', icon: Move, label: 'Move', key: 'M' },
-  { tool: 'copy', icon: Copy, label: 'Copy', key: 'CO' },
-  { tool: 'rotate', icon: RotateCw, label: 'Rotate', key: 'RO' },
-  { tool: 'mirror', icon: FlipHorizontal2, label: 'Mirror', key: 'MI' },
+  { tool: 'move', icon: Move, label: 'Dời', key: 'M' },
+  { tool: 'copy', icon: Copy, label: 'Chép', key: 'CO' },
+  { tool: 'rotate', icon: RotateCw, label: 'Xoay', key: 'RO' },
+  { tool: 'mirror', icon: FlipHorizontal2, label: 'Lật', key: 'MI' },
 ];
 const MEASURE: ToolBtn[] = [
   { tool: 'measure', icon: MoveDiagonal, label: 'Đo nhanh', key: 'DI' },
-  { tool: 'text', icon: Type, label: 'Text', key: 'T' },
+  { tool: 'text', icon: Type, label: 'Chữ', key: 'T' },
 ];
+
+/** VIỆC 3 (ticket "THANH TOOL 2D DESIGN", 04/08) — nhóm "VẼ" gộp DRAW+DRAW_PRO+SHAPES2 (14 lệnh),
+ * chỉ phơi 6 lệnh hay dùng (Chọn·Đường·Chữ nhật·Tròn·Đường gấp·Cung) trực tiếp trên toolbelt —
+ * 8 lệnh còn lại (hình học chính xác ít dùng) CẤT vào panel "còn nữa" (nút ↘ luôn hiện, không
+ * nấp sau hover — SPEC-HOVER §3.7), mở qua Popover dùng chung (components/ui/Popover.tsx).
+ * Sketch mode KHÔNG có nút ↘ vì DRAW_PRO/SHAPES2 vốn đã ẩn ở Sketch (triết lý "vẽ tối thiểu"
+ * giữ nguyên — xem comment DRAW phía trên), nên không có gì để "còn nữa". */
+const VE_DIRECT_PRO: ToolBtn[] = [DRAW[0], DRAW[1], DRAW[2], DRAW[3], DRAW_PRO[0], DRAW_PRO[2]];
+const VE_MORE: ToolBtn[] = [DRAW_PRO[1], DRAW_PRO[3], ...SHAPES2];
+
+/** VIỆC 2 — 6 lệnh dùng nhiều nhất (Chọn·Đường·Đường gấp·Tường·Phòng·Hatch) nút TO hơn ~1.4 lần,
+ * còn lại giữ cỡ hiện tại — xem btnSize()/btn(). */
+const BIG_TOOLS = new Set<Tool>(['select', 'line', 'polyline', 'wall', 'room', 'hatch']);
 /** Pro-only (Sprint 9) — 6 lệnh ghi kích thước kiểu bản vẽ kỹ thuật, không thuộc "sketch nhanh". */
 const DIMENSION: ToolBtn[] = [
   { tool: 'dimension', icon: Ruler, label: 'Dimension aligned', key: 'DAL' },
@@ -144,12 +158,18 @@ export default function CadToolbar({
   const undoLabel = useModKey('Z');
   const redoLabel = useModShiftKey('Z');
   // Hai khác biệt "cầm nắm" giữa 2 mode, gom về đúng 2 biến:
-  //  - b()/icoS : Sketch nút 44px (chuẩn vùng chạm) · Pro nút 34px (mật độ gọn cho chuột).
+  //  - b()/icoS : Sketch nút 44px (chuẩn vùng chạm) · Pro nút 36px (mật độ gọn cho chuột — nâng
+  //               34→36 theo nghiệm thu ticket "THANH TOOL 2D DESIGN": nút thường ≥36px).
   //  - tip()    : Pro gắn thêm phím tắt vào tag hover (tay quen bàn phím thấy ngay phím cần gõ);
   //               Sketch bỏ đi vì trên cảm ứng không có bàn phím để mà gõ phím tắt.
-  const b = (active: boolean, disabled = false) => btn(active, disabled, isPro);
+  // `big` (VIỆC 2) — 6 lệnh hay dùng TO hơn ~1.4 lần, luôn ≥44px dù mode nào.
+  const b = (active: boolean, disabled = false, big = false) => btn(active, disabled, isPro, big);
   const icoS = isPro ? 17 : 19;
-  const tip = (label: string, key?: string) => (isPro && key ? `${label} · ${key}` : label);
+  const icoBig = isPro ? 20 : 24;
+  const rowH = btnSize(isPro, false);
+  // VIỆC 4 — tooltip thống nhất "Nhãn (KHOÁ)" thay vì "Nhãn · KHOÁ" cũ, áp chung cho mọi nút dùng
+  // tip() (khoá lệnh gõ GIỮ NGUYÊN, chỉ đổi định dạng hiển thị).
+  const tip = (label: string, key?: string) => (isPro && key ? `${label} (${key})` : label);
 
   // Nạp lựa chọn Sketch/Pro đã lưu SAU mount (tránh lệch hydration SSR — cùng pattern
   // PresentEditor.tsx). Không có gì lưu (lần đầu/private mode) → giữ mặc định 'sketch' của store.
@@ -198,21 +218,99 @@ export default function CadToolbar({
       {items.map((it) => {
         const Icon = it.icon;
         const on = tool === it.tool;
+        const isBig = BIG_TOOLS.has(it.tool);
         return (
           <Tooltip key={it.tool} label={tip(shortLabel(it.label), it.key)}>
             <button
               type="button"
               onClick={() => setTool(it.tool)}
-              title={`${it.label} · ${it.key}`}
-              style={b(on)}
+              title={`${it.label} (${it.key})`}
+              style={b(on, false, isBig)}
             >
-              <Icon size={icoS} />
+              <Icon size={isBig ? icoBig : icoS} />
             </button>
           </Tooltip>
         );
       })}
     </>
   );
+
+  /** VIỆC 3 — nút "còn nữa" ↘ cho nhóm VẼ: LUÔN hiện (không nấp sau hover, SPEC-HOVER §3.7),
+   * mở panel 8 lệnh vẽ ít dùng qua Popover dùng chung (component có sẵn, portal + tự né mép
+   * viewport — không viết positioning riêng lần 2). */
+  const MoreDrawButton = () => {
+    const [open, setOpen] = useState(false);
+    const btnRef = useRef<HTMLButtonElement>(null);
+    const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+    return (
+      <>
+        <Tooltip label="Còn nữa — lệnh vẽ ít dùng">
+          <button
+            ref={btnRef}
+            type="button"
+            onClick={() => {
+              const r = btnRef.current?.getBoundingClientRect();
+              if (r) setAnchor({ x: r.left, y: r.bottom + 6 });
+              setOpen((v) => !v);
+            }}
+            title="Còn nữa — lệnh vẽ ít dùng (Tròn 3 điểm, Cung tâm+góc, Đa giác, Elip, Donut, Cong, Xline, Divide)"
+            style={b(open)}
+          >
+            <ArrowDownRight size={icoS} />
+          </button>
+        </Tooltip>
+        {open && anchor && (
+          <Popover anchorX={anchor.x} anchorY={anchor.y} onDismiss={() => setOpen(false)}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+                padding: 6,
+                minWidth: 220,
+                borderRadius: 14,
+                background: 'var(--panel)',
+                border: '1px solid var(--border)',
+                boxShadow: '0 8px 30px rgba(0,0,0,.22)',
+              }}
+            >
+              {VE_MORE.map((it) => {
+                const Icon = it.icon;
+                return (
+                  <button
+                    key={it.tool}
+                    type="button"
+                    onClick={() => {
+                      setTool(it.tool);
+                      setOpen(false);
+                    }}
+                    title={`${it.label} (${it.key})`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '7px 10px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: tool === it.tool ? 'var(--accent-soft)' : 'transparent',
+                      color: tool === it.tool ? 'var(--accent)' : 'var(--t1)',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <Icon size={15} />
+                    <span>{shortLabel(it.label)}</span>
+                    <span style={{ marginLeft: 'auto', color: 'var(--t4)', fontSize: 10 }}>{it.key}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </Popover>
+        )}
+      </>
+    );
+  };
 
   return (
     <div
@@ -232,42 +330,61 @@ export default function CadToolbar({
         borderRadius: 999,
       }}
     >
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: 6, width: 'max-content' }}>
-      <ModeSwitch mode={cadMode} onChange={setCadMode} pro={isPro} />
-      <Divider />
-      <Group items={DRAW} />
-      {isPro && <Group items={DRAW_PRO} />}
-      {isPro && <Divider />}
-      {isPro && <Group items={SHAPES2} />}
-      <Divider />
-      <Group items={ARCH} />
-      <Tooltip label="Vật liệu">
-        <button type="button" onClick={onToggleMaterial} title="Vật liệu (Sprint 5) — chọn preset gạch/gỗ/đá/sơn cho Hatch" style={b(false)}>
-          <Palette size={icoS} />
-        </button>
-      </Tooltip>
-      <Tooltip label={tip("Cửa đi", "D")}>
-        <button type="button" onClick={() => setPendingBlock('door')} title="Đặt cửa đi (D) — dùng block cửa có sẵn" style={b(pendingBlock === 'door')}>
-          <DoorOpen size={icoS} />
-        </button>
-      </Tooltip>
-      <Divider />
-      <Group items={EDIT} />
-      {isPro && <Divider />}
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4, padding: 6, width: 'max-content' }}>
+      <div style={{ display: 'flex', alignItems: 'center', height: rowH }}>
+        <ModeSwitch mode={cadMode} onChange={setCadMode} pro={isPro} />
+      </div>
+      <Divider h={rowH} />
+      {/* VIỆC 1 — nhãn nhóm theo NGHỀ (ribbon: chia nhóm phải in nhãn), đặt DƯỚI hàng nút.
+          VẼ = DRAW+DRAW_PRO+SHAPES2 gộp (VIỆC 3): Sketch chỉ có 4 lệnh nền tảng (không dư gì để
+          "còn nữa"); Pro/Revit phơi 6 lệnh hay dùng + nút ↘ mở 8 lệnh còn lại. */}
+      <GroupBlock label="VẼ">
+        {isPro ? (
+          <>
+            <Group items={VE_DIRECT_PRO} />
+            <MoreDrawButton />
+          </>
+        ) : (
+          <Group items={DRAW} />
+        )}
+      </GroupBlock>
+      <Divider h={rowH} />
+      <GroupBlock label="CẤU KIỆN">
+        <Group items={ARCH} />
+      </GroupBlock>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: rowH }}>
+        <Tooltip label="Vật liệu">
+          <button type="button" onClick={onToggleMaterial} title="Vật liệu (Sprint 5) — chọn preset gạch/gỗ/đá/sơn cho Hatch" style={b(false)}>
+            <Palette size={icoS} />
+          </button>
+        </Tooltip>
+        <Tooltip label={tip("Cửa đi", "D")}>
+          <button type="button" onClick={() => setPendingBlock('door')} title="Đặt cửa đi (D) — dùng block cửa có sẵn" style={b(pendingBlock === 'door')}>
+            <DoorOpen size={icoS} />
+          </button>
+        </Tooltip>
+      </div>
+      <Divider h={rowH} />
+      <GroupBlock label="SỬA">
+        <Group items={EDIT} />
+      </GroupBlock>
+      {isPro && <Divider h={rowH} />}
       {isPro && <Group items={MODIFY} />}
-      <Divider />
-      <Group items={MEASURE} />
+      <Divider h={rowH} />
+      <GroupBlock label="ĐO & GHI CHÚ">
+        <Group items={MEASURE} />
+      </GroupBlock>
       {isPro && <Group items={DIMENSION} />}
-      <Divider />
+      <Divider h={rowH} />
       <Group items={ANNOTATE} />
       <Group items={DIAGRAM} />
-      <Divider />
+      <Divider h={rowH} />
       <Tooltip label="Nội thất">
         <button type="button" onClick={onToggleFurniture} title="Thư viện nội thất (block)" style={b(tool === 'block')}>
           <Sofa size={icoS} />
         </button>
       </Tooltip>
-      <Divider />
+      <Divider h={rowH} />
       {/* snap + grid toggle — auto-snap là hành vi mặc định của "Sketch" (IF tự chỉnh), giữ hiện
           ở cả 2 mode. Polar tracking (bắt góc theo độ) là khái niệm CAD hơn → Pro-only. */}
       <Tooltip label={`Bắt điểm: ${snap.enabled ? 'BẬT' : 'tắt'}`}>
@@ -302,7 +419,7 @@ export default function CadToolbar({
           </button>
         </Tooltip>
       )}
-      <Divider />
+      <Divider h={rowH} />
       <Tooltip label={tip("Pan", "Space")}>
         <button type="button" onClick={() => setTool('pan')} title="Pan (space kéo)" style={b(tool === 'pan')}>
           <Hand size={icoS} />
@@ -313,7 +430,7 @@ export default function CadToolbar({
           <Maximize size={icoS} />
         </button>
       </Tooltip>
-      <Divider />
+      <Divider h={rowH} />
       <Tooltip label={tip("Undo", undoLabel)}>
         <button type="button" onClick={undo} disabled={!past} title={`Undo (${undoLabel})`} style={b(false, !past)}>
           <Undo2 size={icoS} />
@@ -329,8 +446,40 @@ export default function CadToolbar({
   );
 }
 
-function Divider() {
-  return <span style={{ width: 1, height: 22, background: 'var(--border)', margin: '0 2px' }} />;
+/** `h` = chiều cao hàng nút hiện tại (rowH trong CadToolbar) — container giờ `alignItems:
+ * 'flex-start'` (VIỆC 1, để nhãn nhóm nằm dưới không kéo lệch mọi nút khác), nên vạch ngăn phải
+ * TỰ nêu chiều cao thay vì trông chờ 'center' canh hộ như trước, nếu không sẽ dán sát mép trên. */
+function Divider({ h = 22 }: { h?: number }) {
+  return <span style={{ width: 1, height: h, background: 'var(--border)', margin: '0 2px' }} />;
+}
+
+/** VIỆC 1 — nhãn nhóm kiểu ribbon: 10px, UPPERCASE, tracking .18em, --t4, đặt DƯỚI hàng nút
+ * (toolbelt IF nổi TRÊN canvas, không phải cố định trên đầu màn hình như ribbon Office). */
+function GroupLabel({ children }: { children: string }) {
+  return (
+    <span
+      style={{
+        fontSize: 10,
+        lineHeight: 1,
+        textTransform: 'uppercase',
+        letterSpacing: '.18em',
+        color: 'var(--t4)',
+        marginTop: 3,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function GroupBlock({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{children}</div>
+      <GroupLabel>{label}</GroupLabel>
+    </div>
+  );
 }
 
 /** Sprint 9 — công tắc 2 chiều Sketch↔Pro (Phương án A đã duyệt). Cùng ngôn ngữ pill/accent với
@@ -381,14 +530,17 @@ function ModeSwitch({ mode, onChange, pro }: { mode: CadMode; onChange: (m: CadM
 }
 
 /** Cạnh nút theo chế độ — Sketch ưu tiên NGÓN TAY (≥44px, chuẩn vùng chạm Apple HIG/Material),
- * Pro ưu tiên chuột nên giữ mật độ gọn như cũ (34px). Đây là khác biệt "cầm nắm" rõ nhất giữa
- * 2 mode; mọi nút trên pill đều đi qua hàm này nên chỉ cần đổi một chỗ. */
-function btnSize(pro: boolean): number {
-  return pro ? 34 : 44;
+ * Pro ưu tiên chuột nên gọn hơn nhưng vẫn ≥36px (nâng từ 34px — nghiệm thu ticket "THANH TOOL
+ * 2D DESIGN" 04/08: "nút thường ≥36px"). Đây là khác biệt "cầm nắm" rõ nhất giữa 2 mode; mọi nút
+ * trên pill đều đi qua hàm này nên chỉ cần đổi một chỗ.
+ * `big` (VIỆC 2, cùng ticket) — 6 lệnh hay dùng nhất TO hơn ~1.4 lần, luôn ≥44px dù mode nào. */
+function btnSize(pro: boolean, big = false): number {
+  const base = pro ? 36 : 44;
+  return big ? Math.max(44, Math.round(base * 1.4)) : base;
 }
 
-function btn(active: boolean, disabled = false, pro = false): React.CSSProperties {
-  const s = btnSize(pro);
+function btn(active: boolean, disabled = false, pro = false, big = false): React.CSSProperties {
+  const s = btnSize(pro, big);
   return {
     display: 'grid',
     placeItems: 'center',
