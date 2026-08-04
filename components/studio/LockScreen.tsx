@@ -12,9 +12,17 @@
  * z-[99] — CAO HƠN mọi overlay khác trong app (LeaveConfirmBar/WelcomeIntro dùng z-[95]) vì đây
  * là lớp chặn TOÀN BỘ tương tác, phải luôn ở trên cùng. Mount 1 lần trong AppChrome.tsx (nơi
  * `useLockScreen` cũng được đọc để bật/tắt phím ⌃⌘Q + hẹn giờ tự khoá — xem AppChrome.tsx).
+ *
+ * PORTAL RA document.body (bắt buộc, đúng luật K4 `docs/00-CHOT.md`: "panel kính nổi PHẢI
+ * portal, không lồng trong chrome kính") — `<header className="mat-header">` có
+ * `backdrop-filter` (app/globals.css), mà `backdrop-filter`/`filter` trên tổ tiên biến nó
+ * thành containing block MỚI cho mọi con `position:fixed` (đặc tả CSS) — lồng trực tiếp trong
+ * header sẽ bị bó khung theo header thay vì phủ hết viewport (bắt được lúc verify browser thật:
+ * lockscreen chỉ hiện 1 mẩu ở góc trên thay vì phủ kín màn hình).
  */
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Lock } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
@@ -43,7 +51,9 @@ export function LockScreen() {
   const tr = useT();
   const time = useClock();
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {locked && (
         <motion.div
@@ -73,6 +83,7 @@ export function LockScreen() {
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

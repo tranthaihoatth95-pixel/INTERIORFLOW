@@ -8,6 +8,7 @@ import { useFlowStore } from '@/lib/store';
 import { AiDependencySettings } from '@/components/settings/AiDependencySettings';
 import { GuModelSettings } from '@/components/settings/GuModelSettings';
 import { ExperienceSettings } from '@/components/settings/ExperienceSettings';
+import { LockScreenSettings } from '@/components/settings/LockScreenSettings';
 import { RawStyle } from '@/components/filemanager/RawStyle';
 import { SETTINGS_MOCK_CSS } from '../_lib/settings-mock-css';
 import { useSettingsLocalState } from '../_lib/local-state';
@@ -118,6 +119,7 @@ export function PixelSettingsShell() {
               <AiDependencySettings />
               <GuModelSettings />
               <ExperienceSettings />
+              <LockScreenSettings />
             </div>
           </div>
         </div>

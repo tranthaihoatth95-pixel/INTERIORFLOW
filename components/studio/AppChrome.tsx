@@ -207,8 +207,10 @@ export function AppChrome({ active, logoMenu }: Props) {
   useEffect(() => {
     const blocker = (e: KeyboardEvent) => {
       if (!useLockScreen.getState().locked) return;
-      const target = e.target as HTMLElement | null;
-      if (target?.closest('[data-lockscreen-root]')) return;
+      // `e.target` có thể là `window`/`document` (không phải `Element`, không có `.closest()`) —
+      // vd keydown khi chưa focus gì cả. Bắt cả 2 ca, không giả định luôn là HTMLElement.
+      const target = e.target;
+      if (target instanceof Element && target.closest('[data-lockscreen-root]')) return;
       e.stopImmediatePropagation();
       e.preventDefault();
     };
