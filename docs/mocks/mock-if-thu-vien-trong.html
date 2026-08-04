@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InteriorFlow · Thư viện — kệ trống</title>
+<style>
+:root,[data-theme="dark"]{--bg:#0d0d10;--panel:#15151a;--panel-2:#191920;--card:#1b1b21;--card-lit:#22222b;--field:#1a1a20;--hover:#26262f;--border:#2b2b34;--border-strong:#3c3c47;--edge:rgba(255,255,255,.07);--t1:#f4f4f7;--t2:#d4d4db;--t3:#a6a6b1;--t4:#8b8b96;--t5:#8a8a95;--sh-near:0 2px 3px rgba(0,0,0,.5);--sh-far:0 16px 34px -12px rgba(0,0,0,.72);--sh-in:inset 0 2px 4px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.03);--shelf:#131318;--shelf-lip:#2f2f39;--dock:rgba(28,28,36,.92);--ov-line:rgba(255,255,255,.13);--ov-t1:#f5f5f8;--ov-t3:#a8a8b3}
+[data-theme="kem"]{--bg:#f0ece4;--panel:#f9f6f0;--panel-2:#fcfaf5;--card:#fffdf8;--card-lit:#fffefb;--field:#ece7dd;--hover:#e6e0d4;--border:#e0d9cc;--border-strong:#c6bfae;--edge:rgba(255,255,255,.9);--t1:#1d1a15;--t2:#443f36;--t3:#5c564b;--t4:#6b655a;--t5:#6f6859;--sh-near:0 2px 3px rgba(72,60,42,.13);--sh-far:0 16px 34px -14px rgba(72,60,42,.24);--sh-in:inset 0 2px 4px rgba(72,60,42,.14),inset 0 0 0 1px rgba(255,255,255,.7);--shelf:#e9e3d7;--shelf-lip:#cdc5b3;--dock:rgba(252,250,245,.93);--ov-line:rgba(45,38,26,.13);--ov-t1:#1b1811;--ov-t3:#5f594e}
+:root{--accent:#6a57f5;--accent-2:#8574ff;--accent-deep:#553ff3;--accent-soft:rgba(106,87,245,.15);--ease:cubic-bezier(.32,.72,0,1)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;font-size:13px;font-weight:400;line-height:1.55;padding:34px 36px 70px}
+a{color:var(--accent);text-decoration:none;line-height:1.55}a:hover{color:var(--accent-deep)}
+h1{margin:0;font-size:27px;font-weight:600;line-height:1.5;letter-spacing:-.02em}
+.wrap{width:1280px;margin:0 auto}
+.head{display:flex;align-items:flex-end;gap:14px;margin-bottom:18px}
+.head p{margin:4px 0 0;font-size:13px;font-weight:400;line-height:1.6;color:var(--t3);max-width:620px;text-wrap:pretty}
+.head .sp{flex:1}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;line-height:1.5}
+.tag{display:inline-flex;align-items:center;height:19px;padding:0 7px;border-radius:6px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700;line-height:1.5;letter-spacing:.05em}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:32px;padding:0 14px;border:1px solid var(--border-strong);border-radius:9px;background:linear-gradient(180deg,var(--card-lit),var(--card));color:var(--t2);font-family:inherit;font-size:12px;font-weight:600;line-height:1.5;cursor:pointer;box-shadow:var(--sh-near),inset 0 1px 0 var(--edge);transition:background .16s var(--ease),color .16s var(--ease)}
+.btn:hover{background:var(--hover);color:var(--t1)}
+.btn-p{border-color:var(--accent-deep);background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#fff;box-shadow:var(--sh-near),0 10px 22px -10px rgba(106,87,245,.75),inset 0 1px 0 rgba(255,255,255,.28)}
+.btn-p:hover{background:linear-gradient(180deg,var(--accent-2),var(--accent-deep));color:#fff}
+.btn-lg{height:40px;padding:0 18px;border-radius:11px;font-size:13px}
+.btn.off{cursor:not-allowed;color:var(--t4);background:var(--field);border-color:var(--border);box-shadow:none}
+.frame{border:1px solid var(--border-strong);border-radius:18px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column;position:relative;box-shadow:var(--sh-near),var(--sh-far),inset 0 1px 0 var(--edge)}
+.frame.desk{height:812px}
+.fh{height:42px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:linear-gradient(180deg,var(--panel-2),var(--panel));border-bottom:1px solid var(--border);position:relative;z-index:6;box-shadow:inset 0 1px 0 var(--edge)}
+.lights{display:flex;gap:7px;margin-right:6px}
+.lights i{width:11px;height:11px;border-radius:50%;background:var(--border-strong);box-shadow:inset 0 1px 0 var(--edge)}
+.logo{width:20px;height:20px;flex:none;border-radius:6px;background:linear-gradient(160deg,var(--accent-2),var(--accent-deep));box-shadow:0 2px 5px -1px rgba(106,87,245,.6),inset 0 1px 0 rgba(255,255,255,.35)}
+.pname{font-size:13px;font-weight:600;line-height:1.5;letter-spacing:-.01em;color:var(--t1)}
+.stage{display:flex;gap:2px;padding:2px;margin-left:14px;border-radius:9px;background:var(--field);border:1px solid var(--border);box-shadow:var(--sh-in)}
+.stage b{height:24px;padding:0 11px;display:inline-flex;align-items:center;border-radius:7px;font-size:12px;font-weight:500;line-height:1.5;color:var(--t3);cursor:pointer}
+.stage b.on{background:linear-gradient(180deg,var(--card-lit),var(--card));color:var(--t1);font-weight:600;box-shadow:var(--sh-near),inset 0 1px 0 var(--edge)}
+.sp{flex:1}
+.av{border-radius:50%;background:linear-gradient(160deg,var(--card-lit),var(--field));border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;line-height:1.5;color:var(--t2);flex:none;box-shadow:inset 0 1px 0 var(--edge);width:24px;height:24px}
+.fbody{flex:1;min-height:0;display:flex;position:relative}
+.rail{width:224px;flex:none;display:flex;flex-direction:column;min-height:0;background:var(--panel);border-right:1px solid var(--border);overflow:auto}
+.center{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;position:relative;background:var(--bg)}
+.side{width:250px;flex:none;display:flex;flex-direction:column;min-height:0;background:var(--panel);border-left:1px solid var(--border);overflow:auto}
+.fstat{height:27px;flex:none;display:flex;align-items:center;gap:16px;padding:0 12px;background:var(--panel);border-top:1px solid var(--border);color:var(--t4);font-size:11px;line-height:1.5;position:relative;z-index:6;font-variant-numeric:tabular-nums}
+.fstat .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none}
+.sect{padding:13px 12px 5px;font-size:9px;font-weight:700;line-height:1.5;letter-spacing:.07em;color:var(--t5);text-transform:uppercase}
+.item{min-height:32px;display:flex;align-items:center;gap:9px;margin:0 6px;padding:5px 9px;border-radius:8px;color:var(--t2);font-size:12px;line-height:1.55;cursor:pointer}
+.item:hover{background:var(--hover);color:var(--t1)}
+.item.on{background:linear-gradient(180deg,var(--card-lit),var(--card));color:var(--t1);font-weight:600;box-shadow:var(--sh-near),inset 0 1px 0 var(--edge)}
+.item .n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .c{font-size:10px;font-weight:600;line-height:1.5;color:var(--t5);font-variant-numeric:tabular-nums}
+.item.sub{margin-left:22px}
+.item.zero .n{color:var(--t4)}
+.tw{width:14px;height:14px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--t5)}
+ic{display:inline-flex;align-items:center;justify-content:center;flex:none;color:currentColor}
+ic svg{display:block}
+/* ── vùng kệ ── */
+.cbar{height:44px;flex:none;display:flex;align-items:center;gap:9px;padding:0 14px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,var(--panel-2),var(--panel))}
+.cbar h2{margin:0;font-size:13px;font-weight:600;line-height:1.5;color:var(--t1)}
+.seg{display:flex;gap:2px;padding:2px;border-radius:9px;background:var(--field);border:1px solid var(--border);box-shadow:var(--sh-in)}
+.seg b{height:24px;padding:0 10px;display:inline-flex;align-items:center;gap:6px;border-radius:7px;font-size:11px;font-weight:500;line-height:1.5;color:var(--t3);cursor:pointer}
+.seg b.on{background:linear-gradient(180deg,var(--card-lit),var(--card));color:var(--t1);font-weight:600;box-shadow:var(--sh-near),inset 0 1px 0 var(--edge)}
+.search{width:200px;height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border:1px solid var(--border);border-radius:9px;background:var(--field);box-shadow:var(--sh-in);color:var(--t5);font-size:11px;line-height:1.5}
+.shelfwrap{flex:1;min-height:0;overflow:auto;padding:22px 26px 26px;background:radial-gradient(120% 80% at 50% 0,rgba(106,87,245,.05),transparent 62%)}
+.shelfhead{display:flex;align-items:flex-end;gap:12px;margin-bottom:14px}
+.shelfhead b{font-size:14px;font-weight:600;line-height:1.5;color:var(--t1)}
+.shelfhead span{font-size:11px;line-height:1.6;color:var(--t4);font-variant-numeric:tabular-nums}
+.unit{margin-bottom:26px}
+.ulab{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.ulab b{font-size:10px;font-weight:700;line-height:1.5;letter-spacing:.07em;text-transform:uppercase;color:var(--t5)}
+.ulab i{flex:1;height:1px;background:var(--border)}
+.ulab em{font-style:normal;font-size:10px;line-height:1.5;color:var(--t5);font-variant-numeric:tabular-nums}
+.shelf{position:relative;padding:12px 12px 16px;border-radius:14px;background:linear-gradient(180deg,var(--shelf),var(--bg));border:1px solid var(--border);box-shadow:var(--sh-in)}
+.shelf::after{content:"";position:absolute;left:10px;right:10px;bottom:5px;height:5px;border-radius:3px;background:linear-gradient(180deg,var(--shelf-lip),transparent);opacity:.85}
+.bays{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.bay{aspect-ratio:4 / 3;border:1px dashed var(--border-strong);border-radius:10px;background:linear-gradient(168deg,rgba(255,255,255,.022),transparent);position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;transition:border-color .16s var(--ease),background .16s var(--ease)}
+[data-theme="kem"] .bay{background:linear-gradient(168deg,rgba(72,60,42,.03),transparent)}
+.bay:hover{border-color:var(--accent);background:var(--accent-soft)}
+.bay .plus{width:22px;height:22px;border-radius:7px;border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;color:var(--t5);background:var(--field)}
+.bay:hover .plus{border-color:var(--accent);color:var(--accent-2);background:rgba(106,87,245,.2)}
+.bay .cap{font-size:9px;font-weight:600;line-height:1.5;letter-spacing:.04em;color:var(--t5);text-transform:uppercase}
+.bay .idx{position:absolute;left:7px;top:6px;font-size:8px;font-weight:700;line-height:1.5;color:var(--t5);opacity:.6;font-variant-numeric:tabular-nums}
+.bay.drop{border-style:solid;border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 1px var(--accent),0 14px 30px -14px rgba(106,87,245,.7)}
+/* ── hai nút làm được việc tại chỗ ── */
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:2px 0 26px}
+.act{display:flex;gap:13px;padding:15px;border-radius:14px;border:1px solid var(--border-strong);background:linear-gradient(168deg,var(--card-lit),var(--card));box-shadow:var(--sh-near),inset 0 1px 0 var(--edge);cursor:pointer;transition:border-color .16s var(--ease),background .16s var(--ease)}
+.act:hover{border-color:var(--accent);background:var(--hover)}
+.act .ai{width:38px;height:38px;flex:none;border-radius:11px;display:flex;align-items:center;justify-content:center;background:var(--field);border:1px solid var(--border-strong);color:var(--t3);box-shadow:var(--sh-in)}
+.act:hover .ai{border-color:var(--accent);color:var(--accent-2);background:rgba(106,87,245,.16)}
+.act .at{flex:1;min-width:0}
+.act .at b{display:block;font-size:13px;font-weight:600;line-height:1.5;color:var(--t1)}
+.act .at span{display:block;margin-top:3px;font-size:11px;font-weight:400;line-height:1.6;color:var(--t4);text-wrap:pretty}
+.act .at em{display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-style:normal;font-size:10px;font-weight:600;line-height:1.5;color:var(--accent-2)}
+[data-theme="kem"] .act .at em{color:var(--accent-deep)}
+.act.prim{border-color:var(--accent-deep);background:linear-gradient(168deg,rgba(106,87,245,.16),rgba(106,87,245,.05))}
+.act.prim .ai{border-color:var(--accent-deep);background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#fff;box-shadow:0 8px 18px -8px rgba(106,87,245,.8),inset 0 1px 0 rgba(255,255,255,.3)}
+/* ── panel phải ── */
+.gh{padding:13px 13px 7px;display:flex;align-items:baseline;gap:7px}
+.gh span{font-size:9px;font-weight:700;line-height:1.5;letter-spacing:.07em;text-transform:uppercase;color:var(--t5)}
+.gh em{font-style:normal;margin-left:auto;font-size:9px;line-height:1.5;color:var(--t5);font-variant-numeric:tabular-nums}
+.pad{padding:0 13px 14px;border-bottom:1px solid var(--border)}
+.empt{padding:2px 0 0}
+.empt .box{height:96px;border:1px dashed var(--border-strong);border-radius:11px;background:var(--field);box-shadow:var(--sh-in);display:flex;align-items:center;justify-content:center;color:var(--t5)}
+.empt p{margin:10px 0 0;font-size:11px;font-weight:400;line-height:1.65;color:var(--t4);text-wrap:pretty}
+.krow{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:11px;line-height:1.6;color:var(--t3)}
+.krow .k{flex:1;min-width:0}
+.krow kbd{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;font-weight:600;line-height:1.5;padding:2px 6px;border-radius:5px;border:1px solid var(--border-strong);background:var(--field);color:var(--t2);box-shadow:var(--sh-in)}
+.note{margin:0;padding:11px 12px;border-radius:11px;border:1px solid var(--border);background:var(--field);box-shadow:var(--sh-in);font-size:11px;font-weight:400;line-height:1.65;color:var(--t4);text-wrap:pretty}
+.note b{color:var(--t2);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+.legend div{display:flex;align-items:center;gap:8px;font-size:11px;line-height:1.6;color:var(--t4)}
+.legend i{width:18px;height:14px;border-radius:4px;flex:none;border:1px dashed var(--border-strong);background:var(--field)}
+.legend i.d{border-style:solid;border-color:var(--accent);background:var(--accent-soft)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="head">
+  <div>
+    <h1>Thư viện — kệ trống</h1>
+    <p>Trạng thái đầu tiên khi studio chưa nạp block nào. Kệ vẫn hiện đủ ngăn để thấy chỗ nào sẽ đựng đồ, và nạp được dữ liệu ngay tại màn này.</p>
+  </div>
+  <div class="sp"></div>
+  <span class="tag">MÀN 1 / 6</span>
+  <button class="btn" id="th">Đổi nền</button>
+</div>
+
+<div class="frame desk">
+  <div class="fh">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="logo"></div>
+    <div class="pname">InteriorFlow</div>
+    <div class="stage">
+      <b>Dự án</b><b class="on">Thư viện</b><b>2D</b><b>3D</b><b>Trình bày</b>
+    </div>
+    <div class="sp"></div>
+    <span class="tag">CHƯA CÓ BLOCK</span>
+    <div class="av">TN</div>
+  </div>
+
+  <div class="fbody">
+    <!-- cột trái · cây phân loại -->
+    <div class="rail">
+      <div class="sect">Phân loại</div>
+      <div class="item on"><ic><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="2.5" width="12" height="11" rx="1.5"/><path d="M2 6h12M6 6v7.5"/></svg></ic><span class="n">Tất cả</span><span class="c">0</span></div>
+
+      <div class="item"><span class="tw"><svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor"><path d="M3 1l5 4-5 4z"/></svg></span><ic><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="5" width="12" height="6" rx="1"/><path d="M4 11v2M12 11v2"/></svg></ic><span class="n">Nội thất 2D</span><span class="c">0</span></div>
+      <div class="item sub zero"><span class="n">bàn</span><span class="c">0</span></div>
+      <div class="item sub zero"><span class="n">ghế</span><span class="c">0</span></div>
+      <div class="item sub zero"><span class="n">sofa</span><span class="c">0</span></div>
+      <div class="item sub zero"><span class="n">giường</span><span class="c">0</span></div>
+      <div class="item sub zero"><span class="n">tủ</span><span class="c">0</span></div>
+      <div class="item sub zero"><span class="n">kệ</span><span class="c">0</span></div>
+      <div class="item sub zero"><span class="n">bàn trà</span><span class="c">0</span></div>
+
+      <div class="item"><span class="tw"><svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor"><path d="M3 1l5 4-5 4z"/></svg></span><ic><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="6.5" r="4"/><path d="M8 10.5V14"/></svg></ic><span class="n">Cảnh quan 2D</span><span class="c">0</span></div>
+      <div class="item"><span class="tw"><svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor"><path d="M3 1l5 4-5 4z"/></svg></span><ic><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 13V3h6l4 4v6z"/><path d="M9 3v4h4"/></svg></ic><span class="n">Ký hiệu CAD</span><span class="c">0</span></div>
+      <div class="item"><span class="tw"><svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor"><path d="M3 1l5 4-5 4z"/></svg></span><ic><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2 13h12M4 13V6h3v7M9 13V3h3v10"/></svg></ic><span class="n">Cấu kiện</span><span class="c">0</span></div>
+      <div class="item"><span class="tw"><svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor"><path d="M3 1l5 4-5 4z"/></svg></span><ic><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2.5 11.5h11M2.5 11.5V8h4v3.5M6.5 8l3-3h4v6.5"/></svg></ic><span class="n">Chi tiết</span><span class="c">0</span></div>
+      <div class="item"><ic><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2.5" y="2.5" width="5" height="5"/><rect x="8.5" y="2.5" width="5" height="5"/><rect x="2.5" y="8.5" width="5" height="5"/><rect x="8.5" y="8.5" width="5" height="5"/></svg></ic><span class="n">Vật liệu</span><span class="tag">ATLAS</span></div>
+
+      <div class="sect">Nguồn</div>
+      <div class="item zero"><ic><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2.5 12.5V4a1 1 0 011-1H7l1.5 1.8h4a1 1 0 011 1v6.7z"/></svg></ic><span class="n">Bộ mẫu IF</span><span class="c">chưa tải</span></div>
+      <div class="item zero"><ic><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 2.5h5l3.5 3.5v7.5H4z"/><path d="M6 9l4 3M10 9l-4 3"/></svg></ic><span class="n">Nhập từ DXF</span><span class="c">0 tệp</span></div>
+      <div class="item zero"><ic><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v6M5 8h6"/></svg></ic><span class="n">Block tự dựng</span><span class="c">0</span></div>
+    </div>
+
+    <!-- giữa · kệ -->
+    <div class="center">
+      <div class="cbar">
+        <h2>Tất cả block</h2>
+        <span class="tag">0 MÓN</span>
+        <div class="sp"></div>
+        <div class="search"><ic><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="7" cy="7" r="4.2"/><path d="M10.2 10.2L13.5 13.5"/></svg></ic><span>Tìm theo tên hoặc mã…</span></div>
+        <div class="seg"><b class="on">Kệ</b><b>Lưới</b><b>Bảng</b></div>
+      </div>
+
+      <div class="shelfwrap">
+        <div class="shelfhead">
+          <b>Kệ block của studio</b>
+          <span>0 / 60 ngăn đã bày · 6 nhóm</span>
+        </div>
+
+        <div class="acts">
+          <div class="act prim">
+            <div class="ai"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M5 2.5h6l4 4v11H5z"/><path d="M11 2.5v4h4"/><path d="M7.5 11l5 4M12.5 11l-5 4"/></svg></div>
+            <div class="at">
+              <b>Nhập từ file DXF</b>
+              <span>Kéo tệp .dxf vào đây, IF tách từng block thành một món và tự đọc kích thước mm.</span>
+              <em>Chọn tệp · hoặc thả vào kệ bên dưới</em>
+            </div>
+          </div>
+          <div class="act">
+            <div class="ai"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 15.5V5a1.2 1.2 0 011.2-1.2h4L10 6h5.8A1.2 1.2 0 0117 7.2v8.3z"/><path d="M10 9.5v4M8 11.5h4"/></svg></div>
+            <div class="at">
+              <b>Tải bộ mẫu IF</b>
+              <span>318 block nội thất, cảnh quan và ký hiệu CAD dựng sẵn theo tỉ lệ mm thật.</span>
+              <em>Tải về máy · 24 MB</em>
+            </div>
+          </div>
+        </div>
+
+        <div class="unit">
+          <div class="ulab"><b>Ngăn 01 · Nội thất 2D</b><i></i><em>0 / 20</em></div>
+          <div class="shelf">
+            <div class="bays" id="b1"></div>
+          </div>
+        </div>
+
+        <div class="unit">
+          <div class="ulab"><b>Ngăn 02 · Cảnh quan 2D</b><i></i><em>0 / 15</em></div>
+          <div class="shelf">
+            <div class="bays" id="b2"></div>
+          </div>
+        </div>
+
+        <div class="unit">
+          <div class="ulab"><b>Ngăn 03 · Ký hiệu CAD</b><i></i><em>0 / 15</em></div>
+          <div class="shelf">
+            <div class="bays" id="b3"></div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <div><i></i>Ngăn trống — thả block vào</div>
+          <div><i class="d"></i>Ngăn đang nhận (khi kéo tới)</div>
+          <div>Tỉ lệ ô 4:3 giống thẻ block thật</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- phải · chi tiết -->
+    <div class="side">
+      <div class="gh"><span>Chi tiết món</span><em>—</em></div>
+      <div class="pad">
+        <div class="empt">
+          <div class="box"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M9 9v11"/></svg></div>
+          <p>Chưa chọn món nào. Bày block lên kệ rồi bấm vào để xem mã, kích thước mm và nhà cung cấp.</p>
+        </div>
+      </div>
+
+      <div class="gh"><span>Nạp dữ liệu</span></div>
+      <div class="pad">
+        <button class="btn btn-p" style="width:100%">Nhập từ file DXF</button>
+        <div style="height:8px"></div>
+        <button class="btn" style="width:100%">Tải bộ mẫu IF · 318 block</button>
+        <div style="height:8px"></div>
+        <button class="btn off" style="width:100%" title="Chưa dựng được — cần nối ATLAS trước">Nối thư viện vật liệu ATLAS</button>
+      </div>
+
+      <div class="gh"><span>Định dạng đọc được</span></div>
+      <div class="pad">
+        <div class="krow"><span class="k">AutoCAD block</span><kbd>DXF</kbd></div>
+        <div class="krow"><span class="k">SketchUp</span><kbd>SKP</kbd></div>
+        <div class="krow"><span class="k">Mô hình BIM</span><kbd>IFC</kbd></div>
+        <div class="krow"><span class="k">Nét vector</span><kbd>SVG</kbd></div>
+      </div>
+
+      <div class="gh"><span>Ghi chú</span></div>
+      <div class="pad" style="border-bottom:0">
+        <p class="note"><b>Kệ không tự dọn.</b> Mỗi ngăn giữ đúng chỗ đã bày, kể cả khi lọc — nên vị trí món luôn quen tay.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="fstat">
+    <span class="dot"></span>
+    <span>Thư viện studio · chưa có block</span>
+    <span>Đơn vị mm</span>
+    <span>Tỉ lệ thẻ 4:3</span>
+    <div class="sp"></div>
+    <span>60 ngăn trống</span>
+    <span>Đồng bộ 14:22</span>
+  </div>
+</div>
+
+</div>
+
+<script>
+(function(){
+  var t=document.getElementById('th');
+  t.addEventListener('click',function(){
+    var r=document.documentElement;
+    r.setAttribute('data-theme',r.getAttribute('data-theme')==='dark'?'kem':'dark');
+  });
+  function fill(id,n,caps){
+    var w=document.getElementById(id),h='';
+    for(var i=0;i<n;i++){
+      h+='<div class="bay"><span class="idx">'+(i+1<10?'0':'')+(i+1)+'</span>'
+        +'<span class="plus"><svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 3v8M3 7h8"/></svg></span>'
+        +'<span class="cap">'+(caps[i]||'trống')+'</span></div>';
+    }
+    w.innerHTML=h;
+  }
+  fill('b1',20,['bàn','ghế','sofa','giường','tủ']);
+  fill('b2',15,['cây','xe','người']);
+  fill('b3',15,['cửa đi','cửa sổ','cầu thang']);
+  var bays=document.querySelectorAll('.bay');
+  bays[0].classList.add('drop');
+  bays.forEach(function(b){
+    b.addEventListener('click',function(){
+      bays.forEach(function(x){x.classList.remove('drop')});
+      b.classList.add('drop');
+    });
+  });
+})();
+</script>
+</body>
+</html>

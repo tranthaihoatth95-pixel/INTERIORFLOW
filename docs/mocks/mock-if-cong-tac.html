@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>InteriorFlow · Cộng tác — ① Popover mời</title>
+<style>
+:root{--bg:#0d0d10;--panel:#15151a;--panel-2:#191920;--card:#1b1b21;--card-lit:#22222b;--field:#1a1a20;--hover:#26262f;--border:#2b2b34;--border-strong:#3c3c47;--edge:rgba(255,255,255,.07);
+--t1:#f4f4f7;--t2:#d4d4db;--t3:#a6a6b1;--t4:#8b8b96;--t5:#71717c;
+--sh-near:0 2px 3px rgba(0,0,0,.5);--sh-far:0 24px 60px -16px rgba(0,0,0,.8);
+--ov:#181820;--ov-2:#20202a;--ov-3:#262631;--ov-line:rgba(255,255,255,.10);
+--accent:#8b7cf7;--accent-2:#a99cff;--accent-deep:#6d5cf0;--accent-soft:rgba(139,124,247,.16);
+--ok:#4ec98a;--wait:#e0a83f;--ease:cubic-bezier(.32,.72,0,1)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;font-size:13px;font-weight:400;line-height:1.55;padding:36px 40px 90px}
+a{color:var(--accent);text-decoration:none}a:hover{color:var(--accent-2)}
+.wrap{max-width:1360px;margin:0 auto}
+h1{margin:0;font-size:26px;font-weight:600;line-height:1.4;letter-spacing:-.02em}
+.sub{margin:8px 0 0;max-width:760px;color:var(--t3);font-size:13px;line-height:1.6;text-wrap:pretty}
+.tag{display:inline-flex;align-items:center;height:19px;padding:0 8px;border-radius:6px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700;line-height:1;letter-spacing:.06em}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:34px;align-items:start}
+@media(max-width:1180px){.grid{grid-template-columns:1fr}}
+.frame{display:flex;flex-direction:column;gap:12px;min-width:0}
+.frame > .cap{display:flex;align-items:center;gap:10px;color:var(--t4);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.stage{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:16px;background:
+ radial-gradient(120% 90% at 78% -10%,rgba(139,124,247,.09),transparent 60%),
+ repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 32px),
+ repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 32px),#101014}
+.stage.desk{height:600px}
+.stage.pad{height:600px}
+/* mini toolbar giả để neo popover */
+.bar{position:absolute;left:0;right:0;top:0;height:46px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--border);background:rgba(21,21,26,.86);backdrop-filter:blur(12px)}
+.bar .name{color:var(--t2);font-size:12px;font-weight:600}
+.bar .sp{flex:1}
+.ghost{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border:1px solid var(--border-strong);border-radius:9px;background:linear-gradient(180deg,var(--card-lit),var(--card));color:var(--t2);font-size:12px;font-weight:600;line-height:1}
+.share{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 13px;border:1px solid var(--accent-deep);border-radius:9px;background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#12101c;font-size:12px;font-weight:700;line-height:1;box-shadow:0 2px 10px rgba(139,124,247,.3)}
+.tip{position:absolute;width:11px;height:11px;transform:rotate(45deg);border-left:1px solid var(--ov-line);border-top:1px solid var(--ov-line);background:var(--ov)}
+
+/* ─── POPOVER ─── */
+.pop{position:absolute;width:352px;padding:16px 0 0;border:1px solid var(--ov-line);border-radius:15px;background:var(--ov);box-shadow:var(--sh-far),0 0 0 1px rgba(0,0,0,.5);color:var(--t1)}
+.pop .hd{padding:0 16px 14px}
+.pop .proj{margin:0;font-size:15px;font-weight:650;line-height:1.35;letter-spacing:-.01em}
+.pop .leg{display:flex;align-items:center;gap:7px;margin-top:5px;color:var(--t4);font-size:11.5px;line-height:1.4}
+.pop .dot{width:4px;height:4px;border-radius:50%;background:var(--t5)}
+.pop .stage-chip{color:var(--accent-2);font-weight:600}
+
+.rows{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:20px 72px 1fr;align-items:center;gap:12px;min-height:40px;padding:0 16px}
+.row .ic{display:flex;align-items:center;justify-content:center;color:var(--t4)}
+.row .lb{color:var(--t4);font-size:12px;line-height:1.4;white-space:nowrap}
+.row .vl{display:flex;align-items:center;gap:8px;min-width:0;color:var(--t1);font-size:12.5px;font-weight:550;line-height:1.4}
+.row.tall{align-items:start;min-height:0;padding-top:9px;padding-bottom:9px}
+.row.tall .ic,.row.tall .lb{padding-top:8px}
+
+.stack{display:flex;align-items:center}
+.stack .av{margin-left:-7px;border:2px solid var(--ov)}
+.stack .av:first-child{margin-left:0}
+.av{position:relative;display:flex;flex:0 0 auto;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;color:#14121c;font-size:9.5px;font-weight:750;line-height:1;letter-spacing:.02em}
+.av.wait{opacity:.62}
+.av.wait::after{content:"";position:absolute;inset:-2px;border:1.5px dashed var(--wait);border-radius:50%}
+.cnt{color:var(--t3);font-size:12px;font-weight:450;line-height:1.4}
+.cnt b{color:var(--t1);font-weight:650}
+.cnt .w{color:var(--wait);font-weight:600}
+
+.fieldbox{position:relative;width:100%}
+.inp{display:flex;align-items:center;gap:8px;width:100%;height:36px;padding:0 10px;border:1px solid var(--border-strong);border-radius:10px;background:var(--ov-2);box-shadow:inset 0 1px 3px rgba(0,0,0,.4);transition:border-color .16s var(--ease),box-shadow .16s var(--ease)}
+.inp:focus-within{border-color:var(--accent);box-shadow:inset 0 1px 3px rgba(0,0,0,.4),0 0 0 3px var(--accent-soft)}
+.inp input{flex:1;min-width:0;border:0;background:transparent;color:var(--t1);font-family:inherit;font-size:12.5px;font-weight:500;line-height:1.4;outline:none}
+.inp input::placeholder{color:var(--t5);font-weight:400}
+.sug{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:6;overflow:hidden;padding:5px;border:1px solid var(--ov-line);border-radius:11px;background:var(--ov-2);box-shadow:var(--sh-far)}
+.sug .h{padding:5px 8px 6px;color:var(--t5);font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+.sug button{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:9px;width:100%;padding:6px 8px;border:0;border-radius:8px;background:transparent;color:var(--t1);font-family:inherit;font-size:12.5px;text-align:left;cursor:pointer}
+.sug button:hover,.sug button[data-cur="1"]{background:var(--ov-3)}
+.sug .nm{min-width:0;font-weight:550;line-height:1.35}
+.sug .nm i{display:block;color:var(--t4);font-size:11px;font-style:normal;font-weight:400;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sug .st{color:var(--t5);font-size:10.5px;font-weight:600;line-height:1}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 6px 0 4px;border:1px solid var(--border-strong);border-radius:14px;background:var(--ov-2);color:var(--t2);font-size:11.5px;font-weight:550;line-height:1}
+.chip .x{display:flex;align-items:center;justify-content:center;width:16px;height:16px;border:0;border-radius:50%;background:transparent;color:var(--t4);cursor:pointer;padding:0}
+.chip .x:hover{background:var(--hover);color:var(--t1)}
+.chip .av{width:18px;height:18px;font-size:8px}
+
+.seg{display:flex;gap:2px;width:100%;padding:2px;border:1px solid var(--border);border-radius:10px;background:var(--ov-2)}
+.seg button{flex:1;height:28px;border:0;border-radius:8px;background:transparent;color:var(--t3);font-family:inherit;font-size:12px;font-weight:600;line-height:1;cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease)}
+.seg button:hover{color:var(--t1)}
+.seg button[aria-pressed="true"]{background:linear-gradient(180deg,var(--card-lit),var(--card));color:var(--t1);box-shadow:var(--sh-near),inset 0 1px 0 var(--edge)}
+.seg-note{margin:6px 0 0;color:var(--t5);font-size:11px;line-height:1.45;text-wrap:pretty}
+
+.link{display:flex;align-items:center;gap:6px;width:100%;min-width:0}
+.linkchip{display:flex;flex:1;align-items:center;gap:7px;min-width:0;height:32px;padding:0 4px 0 9px;border:1px solid var(--border);border-radius:9px;background:var(--ov-2)}
+.linkchip code{flex:1;min-width:0;color:var(--t2);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.copy{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 7px;border:1px solid var(--border-strong);border-radius:7px;background:var(--card);color:var(--t2);font-family:inherit;font-size:11px;font-weight:650;line-height:1;cursor:pointer;white-space:nowrap}
+.copy:hover{background:var(--hover);color:var(--t1)}
+.copy[data-done="1"]{border-color:rgba(78,201,138,.5);color:var(--ok)}
+.exp{display:flex;gap:5px;margin-top:8px}
+.exp button{height:26px;padding:0 10px;border:1px solid var(--border);border-radius:13px;background:transparent;color:var(--t4);font-family:inherit;font-size:11.5px;font-weight:600;line-height:1;cursor:pointer;transition:color .16s var(--ease),border-color .16s var(--ease),background .16s var(--ease)}
+.exp button:hover{color:var(--t2);border-color:var(--border-strong)}
+.exp button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-2)}
+
+.ft{display:flex;align-items:center;gap:10px;margin-top:14px;padding:12px 16px;border-top:1px solid var(--ov-line);background:rgba(255,255,255,.014);border-radius:0 0 14px 14px}
+.ft .hint{flex:1;min-width:0;color:var(--t5);font-size:11px;line-height:1.4}
+.send{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:34px;padding:0 16px;border:1px solid var(--accent-deep);border-radius:10px;background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#13111d;font-family:inherit;font-size:12.5px;font-weight:700;line-height:1;cursor:pointer;box-shadow:0 3px 14px rgba(139,124,247,.28),inset 0 1px 0 rgba(255,255,255,.3)}
+.send:hover{background:linear-gradient(180deg,#b6abff,var(--accent-2))}
+.send:disabled{border-color:var(--border-strong);background:var(--card);color:var(--t5);box-shadow:none;cursor:not-allowed}
+.sent{display:flex;align-items:center;gap:7px;color:var(--ok);font-size:12px;font-weight:600;line-height:1.4}
+
+/* iPad: cùng bố cục, hit target ≥44 */
+.pad .pop{width:404px}
+.pad .row{grid-template-columns:22px 80px 1fr;min-height:48px}
+.pad .inp{height:44px}
+.pad .seg button{height:38px;font-size:13px}
+.pad .exp button{height:34px;padding:0 13px;font-size:12.5px}
+.pad .linkchip{height:40px}
+.pad .copy{height:32px;padding:0 11px;font-size:11.5px}
+.pad .send{height:44px;padding:0 20px;font-size:13.5px}
+.pad .sug button{padding:9px 8px}
+.pad .chip{height:32px;padding:0 9px 0 5px}
+.pad .chip .x{width:22px;height:22px}
+.pad .av{width:28px;height:28px;font-size:10.5px}
+.pad .bar{height:54px}
+.pad .ghost,.pad .share{height:38px;font-size:13px}
+
+/* chú thích */
+.notes{margin:14px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+.notes li{position:relative;display:block;padding-left:15px;color:var(--t3);font-size:11.5px;line-height:1.55;text-wrap:pretty}
+.notes li::before{content:"";position:absolute;left:3px;top:8px;width:5px;height:5px;border-radius:50%;background:var(--border-strong)}
+.notes b{color:var(--t2);font-weight:650}
+.spec{margin-top:40px;padding:20px 22px;border:1px solid var(--border);border-radius:14px;background:var(--panel)}
+.spec h2{margin:0 0 4px;font-size:14px;font-weight:650;line-height:1.4}
+.spec p{margin:0 0 12px;color:var(--t4);font-size:12px;line-height:1.6}
+.spec .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px}
+.spec code{padding:1px 5px;border-radius:5px;background:var(--field);color:var(--accent-2);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px}
+.warn{margin-top:14px;padding:12px 14px;border:1px solid rgba(224,168,63,.32);border-radius:11px;background:rgba(224,168,63,.07);color:var(--t2);font-size:12px;line-height:1.6}
+.warn b{color:var(--wait)}
+.sw{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.sw .s{display:flex;align-items:center;gap:7px;padding:4px 9px 4px 4px;border:1px solid var(--border);border-radius:20px;background:var(--card);color:var(--t3);font-size:11px;line-height:1}
+.sw .s .av{width:22px;height:22px;font-size:9px}
+.sw .s code{font-size:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="tag">MÀN CỘNG TÁC · LƯỢT 1</span>
+  <h1 style="margin-top:12px">① Popover mời cộng tác</h1>
+  <p class="sub">Một cột, nền tối, mỗi hàng là <b style="color:var(--t2);font-weight:600">icon · nhãn xám · giá trị sáng</b> thẳng hàng dọc theo khuôn card Sync. Không viền chia ô, không nền phụ cho từng hàng. Bấm thử: nhập tên vào ô mời, chọn quyền, đổi hạn dùng, chép link, gửi lời mời.</p>
+
+  <div class="grid">
+    <div class="frame">
+      <div class="cap">Desktop · neo dưới nút Chia sẻ</div>
+      <div class="stage desk">
+        <div class="bar">
+          <span class="name">Căn hộ Thảo Điền · 96m²</span>
+          <span class="sp"></span>
+          <span class="ghost">Xuất hồ sơ</span>
+          <span class="share" id="shareBtnD">Chia sẻ</span>
+        </div>
+        <div class="tip" style="right:52px;top:52px"></div>
+        <div class="pop" id="popD" style="right:14px;top:57px"></div>
+      </div>
+      <ul class="notes">
+        <li>Popover rộng <b>352</b>, bo <b>15</b>, neo phải cách mép nút <b>0</b>, cách thanh công cụ <b>11</b>. Mũi nhọn 11×11 thẳng tâm nút.</li>
+        <li>Cột nhãn cố định <b>72</b> để mọi giá trị bắt cùng một đường dọc — kể cả hàng cao (ô nhập, segmented).</li>
+      </ul>
+    </div>
+
+    <div class="frame">
+      <div class="cap">iPad ngang · 1194×834 · hit target ≥44</div>
+      <div class="stage pad">
+        <div class="bar">
+          <span class="name">Căn hộ Thảo Điền · 96m²</span>
+          <span class="sp"></span>
+          <span class="ghost">Xuất hồ sơ</span>
+          <span class="share">Chia sẻ</span>
+        </div>
+        <div class="tip" style="right:58px;top:60px"></div>
+        <div class="pop" id="popP" style="right:14px;top:65px"></div>
+      </div>
+      <ul class="notes">
+        <li>Cùng bố cục, chỉ giãn chiều cao: ô nhập <b>44</b>, segmented <b>38</b>, nút gửi <b>44</b>, avatar <b>28</b>. Không đổi thứ tự hàng, không đổi số cột.</li>
+        <li>Gợi ý người trong studio mở bằng bàn phím ngoài (↑↓ Enter) hoặc chạm; hàng gợi ý cao <b>44</b> khi chạm.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="spec">
+    <h2>Quy cách ①</h2>
+    <p>Ghi để phiên code sau không đoán lại.</p>
+    <div class="cols">
+      <div>
+        <ul class="notes" style="margin:0">
+          <li><b>Thứ tự hàng cố định:</b> Người tham gia → Mời → Quyền → Link chia sẻ → chân popover.</li>
+          <li><b>Quyền</b> là segmented 3 mục <code>xem · gop-y · sua</code>, mặc định <b>Góp ý</b>. Đổi quyền chỉ áp cho người đang mời trong phiên này, không sửa quyền người đã vào.</li>
+          <li><b>Hạn link</b> <code>7d · 30d · vinh-vien</code>, mặc định <b>30 ngày</b>; đổi hạn thì link đổi mã, chip link nhấp một nhịp.</li>
+          <li><b>Người chờ</b> hiện avatar mờ 62% + vành gạch màu <code>--wait</code>, không dùng chữ "pending".</li>
+        </ul>
+      </div>
+      <div>
+        <div class="warn">
+          <b>⚠ Màu người là màu sinh ra từ tên, không phải màu brand.</b><br>
+          <code>hue = hash(tên) % 360</code>, bỏ dải <code>238–276</code> (đụng tím thương hiệu), rồi <code>hsl(hue 58% 62%)</code>. Chữ trên avatar là mực tối <code>#14121c</code>. Tuyệt đối không lấy <code>--accent</code> làm màu người: tím chỉ dành cho hành động của app. Cùng một tên phải luôn ra cùng một màu ở mọi màn (②③ dùng lại đúng hàm này).
+          <div class="sw" id="swatches"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── màu người: hash tên → hue, KHÔNG dùng màu brand ── */
+function hueOf(name){
+  var h=0;for(var i=0;i<name.length;i++){h=(h*31+name.charCodeAt(i))%100000;}
+  var hue=h%360;
+  if(hue>=238&&hue<=276)hue=(hue+70)%360;   /* né tím thương hiệu */
+  return hue;
+}
+function colorOf(name){return 'hsl('+hueOf(name)+' 58% 62%)';}
+function initials(name){
+  var p=name.trim().split(/\s+/);
+  return (p.length>1?p[0][0]+p[p.length-1][0]:p[0].slice(0,2)).toUpperCase();
+}
+
+var STUDIO=[
+  {n:'Trần Mỹ Linh',   r:'Chủ trì thiết kế', e:'linh@ateliermo.vn',  st:'đã vào'},
+  {n:'Phạm Quốc Đạt',  r:'Triển khai 2D',    e:'dat@ateliermo.vn',   st:'đã vào'},
+  {n:'Ngô Bảo Hân',    r:'Dựng hình 3D',     e:'han@ateliermo.vn',   st:'đã vào'},
+  {n:'Lê Thị Kim Chi', r:'Bóc khối lượng',   e:'chi@ateliermo.vn',   st:'chờ'},
+  {n:'Vũ Anh Tuấn',    r:'Giám sát hiện trường', e:'tuan@ateliermo.vn', st:''},
+  {n:'Đỗ Hoàng Nam',   r:'Kỹ thuật điện nước',   e:'nam@ateliermo.vn', st:''},
+  {n:'Bùi Thuỳ Dương', r:'Vật liệu · mẫu',   e:'duong@ateliermo.vn', st:''}
+];
+var IN=STUDIO.filter(function(p){return p.st==='đã vào'});
+var WAIT=STUDIO.filter(function(p){return p.st==='chờ'});
+var LINKS={};
+
+var IC={
+  people:'<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.6" cy="5" r="2.3"/><path d="M1.6 12.6c0-2.2 1.8-3.6 4-3.6s4 1.4 4 3.6"/><path d="M10.2 3.2a2.2 2.2 0 0 1 0 4.1M11.4 9.4c1.3.4 2.1 1.5 2.1 3.2"/></svg>',
+  invite:'<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="1.4" y="3.3" width="12.2" height="8.6" rx="1.6"/><path d="M1.9 4.3l5.6 4 5.6-4"/></svg>',
+  shield:'<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 1.5l4.7 1.7v4.2c0 2.9-2 5-4.7 6.1-2.7-1.1-4.7-3.2-4.7-6.1V3.2z"/><path d="M5.6 7.6l1.5 1.5 2.8-3"/></svg>',
+  link:'<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 8.8L8.8 6.2"/><path d="M5.4 5.1L4.1 6.4a2.6 2.6 0 0 0 3.7 3.7l1.1-1.1"/><path d="M9.6 9.9l1.3-1.3a2.6 2.6 0 0 0-3.7-3.7L6.1 6"/></svg>',
+  copy:'<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.4"/><path d="M8.2 1.2H2.6c-.8 0-1.4.6-1.4 1.4v5.6"/></svg>',
+  check:'<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.4l2.6 2.6L10 3.4"/></svg>',
+  send:'<svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1.2L6 11.6 4.9 7.3 1 5.9z"/></svg>',
+  x:'<svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1.6 1.6l5.8 5.8M7.4 1.6L1.6 7.4"/></svg>'
+};
+
+function av(name,cls){
+  return '<span class="av '+(cls||'')+'" style="background:'+colorOf(name)+'" title="'+name+'">'+initials(name)+'</span>';
+}
+
+var PERMS=[['xem','Xem','Người xem mở được bản vẽ và hồ sơ, không sửa, không ghi chú.'],
+           ['gop-y','Góp ý','Góp ý dán được ghi chú lên bản vẽ, không di chuyển vật, không đổi vật liệu.'],
+           ['sua','Sửa','Người sửa đổi được mô hình, vật liệu và khung tên. Không xoá được chặng đã chốt.']];
+var EXPS=[['7d','7 ngày'],['30d','30 ngày'],['vinh-vien','Vĩnh viễn']];
+
+function Pop(el){
+  var st={q:'',picked:[],perm:'gop-y',exp:'30d',copied:false,sent:false,cur:0,open:false};
+  function link(){return st.exp==='7d'?'if.design/tdien/k7Q2':st.exp==='30d'?'if.design/tdien/m4Xb9':'if.design/tdien/aLw0';}
+  function matches(){
+    if(!st.q.trim())return [];
+    var q=st.q.trim().toLowerCase();
+    return STUDIO.filter(function(p){
+      if(p.st==='đã vào')return false;
+      if(st.picked.indexOf(p.n)>-1)return false;
+      return p.n.toLowerCase().indexOf(q)>-1||p.e.toLowerCase().indexOf(q)>-1||p.r.toLowerCase().indexOf(q)>-1;
+    }).slice(0,4);
+  }
+  function draw(){
+    var ms=matches(),permNote='';
+    PERMS.forEach(function(p){if(p[0]===st.perm)permNote=p[2]});
+    var h='';
+    h+='<div class="hd"><p class="proj">Căn hộ Thảo Điền · 96m²</p>'+
+       '<div class="leg"><span class="stage-chip">Chặng: Hồ sơ thi công</span><span class="dot"></span><span>cập nhật 14:20 hôm nay</span></div></div>';
+    h+='<div class="rows">';
+
+    /* Người tham gia */
+    h+='<div class="row"><span class="ic">'+IC.people+'</span><span class="lb">Người tham gia</span><span class="vl">'+
+       '<span class="stack">'+IN.map(function(p){return av(p.n)}).join('')+WAIT.map(function(p){return av(p.n,'wait')}).join('')+'</span>'+
+       '<span class="cnt"><b>'+IN.length+'</b> đã vào · <span class="w">'+WAIT.length+' chờ</span></span></span></div>';
+
+    /* Mời */
+    h+='<div class="row tall"><span class="ic">'+IC.invite+'</span><span class="lb">Mời</span><span class="vl" style="display:block">'+
+       '<div class="fieldbox"><label class="inp"><input type="text" placeholder="Tên hoặc email…" value="'+st.q.replace(/"/g,'&quot;')+'" data-in></label>';
+    if(ms.length){
+      h+='<div class="sug"><div class="h">Trong studio Atelier Mộ</div>';
+      ms.forEach(function(p,i){
+        h+='<button data-pick="'+p.n+'"'+(i===st.cur?' data-cur="1"':'')+'>'+av(p.n)+
+           '<span class="nm">'+p.n+'<i>'+p.r+' · '+p.e+'</i></span>'+
+           '<span class="st">'+(p.st==='chờ'?'đã gửi':'thêm')+'</span></button>';
+      });
+      h+='</div>';
+    }
+    h+='</div>';
+    if(st.picked.length){
+      h+='<div class="chips">'+st.picked.map(function(n){
+        return '<span class="chip">'+av(n)+n+'<button class="x" data-drop="'+n+'" aria-label="Bỏ '+n+'">'+IC.x+'</button></span>';
+      }).join('')+'</div>';
+    }
+    h+='</span></div>';
+
+    /* Quyền */
+    h+='<div class="row tall"><span class="ic">'+IC.shield+'</span><span class="lb">Quyền</span><span class="vl" style="display:block">'+
+       '<div class="seg">'+PERMS.map(function(p){
+         return '<button data-perm="'+p[0]+'" aria-pressed="'+(st.perm===p[0])+'">'+p[1]+'</button>';
+       }).join('')+'</div><p class="seg-note">'+permNote+'</p></span></div>';
+
+    /* Link chia sẻ */
+    h+='<div class="row tall"><span class="ic">'+IC.link+'</span><span class="lb">Link chia sẻ</span><span class="vl" style="display:block">'+
+       '<div class="link"><span class="linkchip"><code>'+link()+'</code>'+
+       '<button class="copy" data-copy title="'+(st.copied?'Đã chép link':'Chép link')+'" aria-label="'+(st.copied?'Đã chép link':'Chép link')+'"'+(st.copied?' data-done="1"':'')+'>'+(st.copied?IC.check:IC.copy)+'</button></span></div>'+
+       '<div class="exp">'+EXPS.map(function(e){
+         return '<button data-exp="'+e[0]+'" aria-pressed="'+(st.exp===e[0])+'">'+e[1]+'</button>';
+       }).join('')+'</div></span></div>';
+
+    h+='</div>';
+
+    /* chân */
+    h+='<div class="ft">';
+    if(st.sent){
+      h+='<span class="sent">'+IC.check+'Đã gửi '+st.sentN+' lời mời</span><span class="sp" style="flex:1"></span>';
+    }else{
+      h+='<span class="hint">'+(st.picked.length?st.picked.length+' người · quyền '+PERMS.filter(function(p){return p[0]===st.perm})[0][1].toLowerCase():'Chọn người để gửi lời mời')+'</span>';
+    }
+    h+='<button class="send" data-send'+(st.picked.length?'':' disabled')+'>'+IC.send+'Gửi lời mời</button></div>';
+
+    el.innerHTML=h;
+  }
+  el.addEventListener('click',function(e){
+    var t=e.target.closest('[data-perm],[data-exp],[data-pick],[data-drop],[data-copy],[data-send]');
+    if(!t)return;
+    if(t.hasAttribute('data-perm'))st.perm=t.getAttribute('data-perm');
+    else if(t.hasAttribute('data-exp')){st.exp=t.getAttribute('data-exp');st.copied=false;}
+    else if(t.hasAttribute('data-pick')){if(st.picked.indexOf(t.getAttribute('data-pick'))<0)st.picked.push(t.getAttribute('data-pick'));st.q='';st.cur=0;st.sent=false;}
+    else if(t.hasAttribute('data-drop'))st.picked=st.picked.filter(function(n){return n!==t.getAttribute('data-drop')});
+    else if(t.hasAttribute('data-copy')){st.copied=true;setTimeout(function(){st.copied=false;draw();},1600);}
+    else if(t.hasAttribute('data-send')){st.sentN=st.picked.length;st.sent=true;st.picked=[];}
+    draw();
+    var i=el.querySelector('[data-in]');
+    if(i&&(t.hasAttribute('data-pick')||t.hasAttribute('data-drop')))i.focus();
+  });
+  el.addEventListener('input',function(e){
+    if(!e.target.matches('[data-in]'))return;
+    st.q=e.target.value;st.cur=0;draw();
+    var i=el.querySelector('[data-in]');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}
+  });
+  el.addEventListener('keydown',function(e){
+    if(!e.target.matches('[data-in]'))return;
+    var ms=matches();
+    if(e.key==='ArrowDown'&&ms.length){e.preventDefault();st.cur=(st.cur+1)%ms.length;}
+    else if(e.key==='ArrowUp'&&ms.length){e.preventDefault();st.cur=(st.cur-1+ms.length)%ms.length;}
+    else if(e.key==='Enter'&&ms.length){e.preventDefault();if(st.picked.indexOf(ms[st.cur].n)<0)st.picked.push(ms[st.cur].n);st.q='';st.cur=0;st.sent=false;}
+    else if(e.key==='Backspace'&&!st.q&&st.picked.length){st.picked.pop();}
+    else return;
+    draw();
+    var i=el.querySelector('[data-in]');if(i)i.focus();
+  });
+  draw();
+}
+Pop(document.getElementById('popD'));
+Pop(document.getElementById('popP'));
+
+document.getElementById('swatches').innerHTML=['Trần Mỹ Linh','Phạm Quốc Đạt','Ngô Bảo Hân','Lê Thị Kim Chi'].map(function(n){
+  return '<span class="s">'+av(n)+'<code>hsl('+hueOf(n)+' 58% 62%)</code></span>';
+}).join('');
+</script>
+</body>
+</html>
