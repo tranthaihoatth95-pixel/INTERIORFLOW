@@ -77,10 +77,15 @@ function hatchAt(id: string, cx: number, cy: number): Entity {
   return { id, type: 'hatch', layer: 'L', points: [{ x: cx - s, y: cy - s }, { x: cx + s, y: cy - s }, { x: cx + s, y: cy + s }, { x: cx - s, y: cy + s }] } as unknown as Entity;
 }
 
+// Nhãn phòng đặt XA hẳn mọi vùng tô (findHatchBoundary tìm mặt khép kín BAO quanh `t.at` trong
+// TOÀN BỘ entity không-phải-text/block — kể cả chính các hatch này, xem collectBoundarySegments —
+// nên nếu đặt nhãn TRONG 1 hatch, hatch đó vô tình trở thành "biên phòng" và test hoá ra kiểm
+// nhánh khác (chắc chắn) thay vì nhánh suy đoán muốn kiểm ở đây). Không hatch nào bao quanh nhãn
+// ⇒ poly luôn null ⇒ MỌI gán đi qua đúng nhánh "nhãn gần nhất", đúng ý test.
 const roomDoc: Doc = {
   entities: [
-    textRoom('t1', { x: 0, y: 0 }, 'PHÒNG NGỦ'),
-    textRoom('t2', { x: 3000, y: 0 }, 'PHÒNG KHÁCH'),
+    textRoom('t1', { x: 0, y: -1000 }, 'PHÒNG NGỦ'),
+    textRoom('t2', { x: 3000, y: -1000 }, 'PHÒNG KHÁCH'),
     hatchAt('hr1', 50, 50), // gần PHÒNG NGỦ
     hatchAt('hr2', 2950, 50), // gần PHÒNG KHÁCH
   ],

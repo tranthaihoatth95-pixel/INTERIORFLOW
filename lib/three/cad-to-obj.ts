@@ -63,6 +63,36 @@ export function boxPositionsMm(poly: Pt[], z0: number, z1: number): number[] {
   return out;
 }
 
+/** Đa giác co vào trong `d` mm theo pháp tuyến trung bình mỗi đỉnh — CÙNG công thức nhánh 'hatch'
+ * của `offsetEntity()` (`lib/cad/geometry.ts`), CHÉP CỤC BỘ (không import file đó) để tránh kéo
+ * `lib/cad/store.ts` (`geometry.ts` import `newId` từ đó) vào module "thuần TS, không DOM" này —
+ * ranh giới đã ghi rõ ở đầu file. `poly` phải kín (walls luôn vậy). Trả null nếu đa giác suy biến
+ * hoặc `d` lớn hơn đa giác chịu được (chiều tự lật) — nơi gọi (`prismBeveled`) rơi về lăng trụ
+ * thường, không sập/không bevel giả. */
+export function insetPolygonMm(poly: Pt[], d: number): Pt[] | null {
+  if (poly.length < 3 || d <= 0) return null;
+  const pts = signedArea(poly) < 0 ? [...poly].reverse() : poly;
+  const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+  const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+  const out = pts.map((p, i) => {
+    const prev = pts[(i - 1 + pts.length) % pts.length];
+    const next = pts[(i + 1) % pts.length];
+    let nx = -(next.y - prev.y);
+    let ny = next.x - prev.x;
+    const len = Math.hypot(nx, ny) || 1;
+    nx /= len;
+    ny /= len;
+    // pháp tuyến phải hướng VÀO TÂM — pts đã chuẩn hoá CCW nên "vào trong" là 1 phía cố định,
+    // nhưng vẫn kiểm theo tâm cho chắc (đa giác lõm, tâm hình học có thể lệch phía).
+    if ((cx - p.x) * nx + (cy - p.y) * ny < 0) {
+      nx = -nx;
+      ny = -ny;
+    }
+    return { x: p.x + nx * d, y: p.y + ny * d };
+  });
+  return signedArea(out) > 0 ? out : null; // lật chiều ⇒ d quá lớn so với đa giác, huỷ
+}
+
 export type SceneTheme = 'clay' | 'warm' | 'gu';
 
 export interface SceneOptions {
@@ -346,6 +376,39 @@ class ObjBuilder {
     this.prism(base, z0, z1);
   }
 
+  /** NC-12 §4.2 tầng ③ "extrude" — lăng trụ VÁT CẠNH TRÊN (bevel, mm): thân đứng z0→(z1-bevel)
+   * bằng `poly` gốc (giống `prism()`), dải vát (z1-bevel)→z1 nối `poly` gốc (dưới dải) với đa
+   * giác đã co vào `bevel` mm (trên dải, `insetPolygonMm`), nắp trên dùng đa giác đã co — đúng ý
+   * "Bevel" từng ghi treo ở `Object3DInspector`/`Command3DPanel` (PLACEHOLDER_COPY.sua cũ).
+   * bevel<=0 HOẶC đa giác co bị lật chiều (bevel vượt quá nửa bề rộng poly) ⇒ rơi về `prism()`
+   * thường — KHÔNG sập, KHÔNG vẽ bevel giả. */
+  prismBeveled(poly: Pt[], z0: number, z1: number, bevelMm: number) {
+    const bevel = Math.min(bevelMm, Math.max(0, z1 - z0 - 1));
+    const inset = bevel > 0 ? insetPolygonMm(poly, bevel) : null;
+    if (!inset) {
+      this.prism(poly, z0, z1);
+      return;
+    }
+    const pts = signedArea(poly) < 0 ? [...poly].reverse() : poly;
+    const midZ = z1 - bevel;
+    const bot = pts.map((p) => this.vert(p.x, p.y, z0));
+    const mid = pts.map((p) => this.vert(p.x, p.y, midZ));
+    const top = inset.map((p) => this.vert(p.x, p.y, z1));
+    this.face([...bot].reverse()); // đáy úp xuống
+    this.fanTriangles([...bot].reverse());
+    this.face(top); // đỉnh (đã co) ngửa lên
+    this.fanTriangles(top);
+    for (let i = 0; i < pts.length; i++) {
+      const j = (i + 1) % pts.length;
+      // thân đứng z0→midZ
+      this.face([bot[i], bot[j], mid[j], mid[i]]);
+      this.fanTriangles([bot[i], bot[j], mid[j], mid[i]]);
+      // dải vát midZ→z1 (ngoài → trong)
+      this.face([mid[i], mid[j], top[j], top[i]]);
+      this.fanTriangles([mid[i], mid[j], top[j], top[i]]);
+    }
+  }
+
   toString(): string {
     return this.lines.join('\n') + '\n';
   }
@@ -561,7 +624,12 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
       opCutters,
       ...(inferred ? { inferred } : {}),
     });
-    builder.prism(h.points, 0, wallH);
+    // NC-12 §4.2 tầng ③ "extrude" — bevel THẬT (khác `arrayLinear`, tính ở tầng ba.js
+    // `build-ops.ts`): bevel cần ĐA GIÁC gốc của tường, đã mất khi xuống tới triangle soup của
+    // `SceneGroup.positions` — phải áp Ở ĐÂY, nơi còn `h.points`.
+    const bevelOp = h.ops?.find((op): op is Extract<BuildOp, { op: 'extrude' }> => op.op === 'extrude' && (op.bevel ?? 0) > 0);
+    if (bevelOp) builder.prismBeveled(h.points, 0, wallH, bevelOp.bevel!);
+    else builder.prism(h.points, 0, wallH);
   });
 
   // ---- Trần (tuỳ chọn) ----

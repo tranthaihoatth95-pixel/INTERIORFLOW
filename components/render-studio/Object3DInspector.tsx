@@ -89,7 +89,13 @@ export function Object3DInspector() {
         </button>
       </div>
 
-      {kind === 'wall' && selected.entityId && <CutHoleAction wallId={selected.entityId} />}
+      {kind === 'wall' && selected.entityId && (
+        <div className="space-y-2">
+          <CutHoleAction wallId={selected.entityId} />
+          <BevelAction wallId={selected.entityId} />
+          <ArrayAction wallId={selected.entityId} />
+        </div>
+      )}
 
       {/* Trung thực (luật §0): chỉ tường có entityId hôm nay → chỉ tường có gizmo thật trong
           khung nhìn khi chọn ở đây (xem cảnh báo tại cad-to-obj.ts vì sao nội thất/cửa sổ chưa
@@ -138,6 +144,81 @@ function CutHoleAction({ wallId }: { wallId: string }) {
       className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-[11px] font-semibold text-[var(--t1)] transition-colors hover:bg-[var(--hover)]"
     >
       {tr('Khoét hốc (mẫu 600×1200mm)', 'Cut a recess (sample 600×1200mm)')}
+    </button>
+  );
+}
+
+const BEVEL_PRESET_MM = 30;
+
+/**
+ * VIỆC 1 (nối `extrude` thật, `docs/SPEC-DUNG-BO-LENH-3D.md` tầng ③) — nút THẬT tiếp theo
+ * `CutHoleAction`: vát cạnh TRÊN tường đang chọn (`useCadStore.setEntityBevel`, bọc `lib/cad/
+ * commands.ts` `setEntityBevel` thuần → `lib/three/cad-to-obj.ts` `ObjBuilder.prismBeveled` đọc
+ * lại lúc render). Cùng khuôn `CutHoleAction`: preset CỐ ĐỊNH (chưa có thanh trượt nhập tay — N5,
+ * để dành đợt sau), bấm lại để TẮT (xoá bậc `extrude`) thay vì chồng nút riêng.
+ */
+function BevelAction({ wallId }: { wallId: string }) {
+  const tr = useT();
+  const setEntityBevel = useCadStore((s) => s.setEntityBevel);
+  const wall = useCadStore((s) => s.doc.entities.find((e) => e.id === wallId));
+  if (!wall) return null;
+  const current = wall.ops?.find((op) => op.op === 'extrude')?.bevel ?? 0;
+  const applied = current > 0;
+
+  return (
+    <button
+      type="button"
+      onClick={() => setEntityBevel(wallId, applied ? 0 : BEVEL_PRESET_MM)}
+      className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-[11px] font-semibold text-[var(--t1)] transition-colors hover:bg-[var(--hover)]"
+    >
+      {applied
+        ? tr(`Bỏ vát cạnh (đang ${current}mm)`, `Remove bevel (currently ${current}mm)`)
+        : tr(`Vát cạnh trên (mẫu ${BEVEL_PRESET_MM}mm)`, `Bevel top edge (sample ${BEVEL_PRESET_MM}mm)`)}
+    </button>
+  );
+}
+
+const ARRAY_PRESET_N = 5;
+const ARRAY_PRESET_SPACING_MM = 300;
+
+/**
+ * VIỆC 1 (nối `arrayLinear` thật) — nút THẬT nhân bản dãy tường đang chọn dọc trục DÀI của chính
+ * nó (`useCadStore.setEntityArrayLinear` → `lib/three/build-ops.ts` `resolveGroupGeometry` nối
+ * hình học lúc render, KHÔNG ghi N entity rời vào Doc — xem docstring `Base.ops`). Cùng khuôn
+ * `BevelAction`: preset cố định, bấm lại để TẮT.
+ */
+function ArrayAction({ wallId }: { wallId: string }) {
+  const tr = useT();
+  const setEntityArrayLinear = useCadStore((s) => s.setEntityArrayLinear);
+  const wall = useCadStore((s) => s.doc.entities.find((e) => e.id === wallId));
+  if (!wall) return null;
+  const currentN = wall.ops?.find((op) => op.op === 'arrayLinear')?.n ?? 1;
+  const applied = currentN > 1;
+
+  const handleClick = () => {
+    if (applied) {
+      setEntityArrayLinear(wallId, { n: 1, dx: 0, dy: 0, dz: 0 });
+      return;
+    }
+    const box = entityBox(wall);
+    const alongX = box.maxX - box.minX >= box.maxY - box.minY; // dãy chạy theo trục DÀI của tường
+    setEntityArrayLinear(wallId, {
+      n: ARRAY_PRESET_N,
+      dx: alongX ? ARRAY_PRESET_SPACING_MM : 0,
+      dy: alongX ? 0 : ARRAY_PRESET_SPACING_MM,
+      dz: 0,
+    });
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2 py-1.5 text-[11px] font-semibold text-[var(--t1)] transition-colors hover:bg-[var(--hover)]"
+    >
+      {applied
+        ? tr(`Bỏ nhân bản dãy (đang ${currentN} bản)`, `Remove linear array (currently ${currentN})`)
+        : tr(`Nhân bản dãy (mẫu ${ARRAY_PRESET_N}×${ARRAY_PRESET_SPACING_MM}mm)`, `Linear array (sample ${ARRAY_PRESET_N}×${ARRAY_PRESET_SPACING_MM}mm)`)}
     </button>
   );
 }

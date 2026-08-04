@@ -12,7 +12,13 @@ import { create } from 'zustand';
 import type { Doc, Entity, Layer, LineType, Viewport, HatchPattern, MarkupPin, PhotoEmbed, SiteImage, ZoneGroup, PaperKey, PaperOrientation } from './model';
 import { emptyDoc, ZONE_DEFAULT_OPACITY } from './model';
 import { pasteEntities } from './geometry';
-import { cutHoleInWall as cutHoleInWallCmd, type CutHoleOpts } from './commands';
+import {
+  cutHoleInWall as cutHoleInWallCmd,
+  setEntityBevel as setEntityBevelCmd,
+  setEntityArrayLinear as setEntityArrayLinearCmd,
+  type CutHoleOpts,
+  type ArrayLinearOpts,
+} from './commands';
 import { syncHostedOpenings, expandDeleteWithHostedChildren } from './hosting';
 
 // Dev-only: expose store cho debugging (window.__cadStore) — cùng pattern với
@@ -300,6 +306,14 @@ interface CadState {
    * `wallId` (đã xoá/đổi id) → bỏ qua, không sập. */
   cutHoleInWall: (wallId: string, opts: CutHoleOpts, kind?: 'union' | 'subtract' | 'intersect') => void;
 
+  /** VIỆC 1 (nối extrude thật, `docs/SPEC-DUNG-BO-LENH-3D.md`) — vát cạnh trên `entityId`
+   * (`lib/cad/commands.ts` `setEntityBevel` thuần). `bevelMm<=0` tắt vát cạnh (xoá bậc). Không
+   * tìm thấy `entityId` (đã xoá/đổi id) → bỏ qua, không sập, cùng khuôn `cutHoleInWall`. */
+  setEntityBevel: (entityId: string, bevelMm: number) => void;
+  /** VIỆC 1 — nhân bản dãy `entityId` (`lib/cad/commands.ts` `setEntityArrayLinear` thuần).
+   * `opts.n<=1` tắt mảng (xoá bậc). Cùng khuôn `cutHoleInWall`/`setEntityBevel`. */
+  setEntityArrayLinear: (entityId: string, opts: ArrayLinearOpts) => void;
+
   select: (ids: string[], additive?: boolean) => void;
   clearSelection: () => void;
 
@@ -537,6 +551,22 @@ export const useCadStore = create<CadState>((set, get) => ({
         entities: [...s.doc.entities.map((e) => (e.id === wallId ? updatedWall : e)), cutter],
       },
     }));
+  },
+  setEntityBevel: (entityId, bevelMm) => {
+    const entity = get().doc.entities.find((e) => e.id === entityId);
+    if (!entity) return;
+    if (lockedLayerIds(get().doc).has(entity.layer)) return;
+    const updated = setEntityBevelCmd(entity, bevelMm);
+    get().snapshot();
+    set((s) => ({ doc: { ...s.doc, entities: s.doc.entities.map((e) => (e.id === entityId ? updated : e)) } }));
+  },
+  setEntityArrayLinear: (entityId, opts) => {
+    const entity = get().doc.entities.find((e) => e.id === entityId);
+    if (!entity) return;
+    if (lockedLayerIds(get().doc).has(entity.layer)) return;
+    const updated = setEntityArrayLinearCmd(entity, opts);
+    get().snapshot();
+    set((s) => ({ doc: { ...s.doc, entities: s.doc.entities.map((e) => (e.id === entityId ? updated : e)) } }));
   },
   deleteSelected: () => {
     // Chỉ xoá entity KHÔNG thuộc layer khoá (phòng thủ — select() đã lọc, nhưng chắc chắn).

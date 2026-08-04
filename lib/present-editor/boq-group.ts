@@ -16,11 +16,18 @@
  * THUẦN — không đọc override/IDB; nhận `rows` (đã hoặc chưa áp override, không quan trọng với hàm
  * này) + `doc` để tra storey/phòng theo entityIds. CẤM cho công thức đọc subtotal (bẫy Airtable,
  * §6 — đây chỉ là số hiển thị, không phải cell sống cho B7/B11 tham chiếu).
+ *
+ * Import TƯƠNG ĐỐI (không `@/...`) — sửa cùng lúc phát hiện (04/08): file này CÓ `.test.ts` chạy
+ * qua `sucrase-node` thẳng (không qua webpack của Next nên KHÔNG hiểu alias `@/`) — bản trên
+ * `main` trước đó dùng `@/lib/cad/model` nên `npm test`/`sucrase-node` thật ra ĐÃ LỖI
+ * `MODULE_NOT_FOUND` từ trước (đã kiểm: `git show HEAD:lib/present-editor/boq-group.ts` vẫn dùng
+ * alias) dù báo cáo commit trước ghi "27/27 pass" — sửa theo đúng quy ước sibling file cùng vai
+ * trò `boq-overrides.ts` (import tương đối, có test, chạy thật được).
  */
-import type { Doc, Pt } from '@/lib/cad/model';
-import { pointInPolygon } from '@/lib/cad/hatch';
-import { findRoomLabels } from '@/lib/cad/standards/checker';
-import type { BoqRow } from '@/lib/boq/model';
+import type { Doc, Pt } from '../cad/model';
+import { pointInPolygon } from '../cad/hatch';
+import { findRoomLabels } from '../cad/standards/checker';
+import type { BoqRow } from '../boq/model';
 
 export type BoqGroupMode = 'storey' | 'room';
 

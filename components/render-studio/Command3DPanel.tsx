@@ -55,6 +55,9 @@ export interface Command3DPanelProps {
   nhayNutTuong?: boolean;
   /** dựng tường mẫu (nơi mount ghi vào Doc qua engine `wallSegment`, panel không tự ghi). */
   onTaoTuong?: () => void;
+  /** VIỆC 1 (nối `arrayLinear` thật) — dựng lan can mẫu (nơi mount ghi vào Doc qua engine
+   * `railingPosts`, panel không tự ghi — cùng khuôn `onTaoTuong`). */
+  onTaoLanCan?: () => void;
   /** báo lên nơi mount là người dùng ĐÃ chọn vật liệu — mode dùng để đánh dấu bước ②. */
   onPickMaterial?: (id: string) => void;
 }
@@ -71,6 +74,7 @@ export default function Command3DPanel({
   onTabChange,
   nhayNutTuong = false,
   onTaoTuong,
+  onTaoLanCan,
   onPickMaterial,
 }: Command3DPanelProps) {
   const setTab = onTabChange;
@@ -100,7 +104,7 @@ export default function Command3DPanel({
       </div>
       <div className="flex-1 overflow-y-auto p-3">
         {tab === 'vatlieu' && <MaterialTab materials={materials} onPick={onPickMaterial} />}
-        {tab === 'tao' && <CreateTab nhayNutTuong={nhayNutTuong} onTaoTuong={onTaoTuong} />}
+        {tab === 'tao' && <CreateTab nhayNutTuong={nhayNutTuong} onTaoTuong={onTaoTuong} onTaoLanCan={onTaoLanCan} />}
         {tab !== 'vatlieu' && tab !== 'tao' && <PlaceholderTab tab={tab} />}
       </div>
     </div>
@@ -113,25 +117,92 @@ export default function Command3DPanel({
 /** NHÓM C, VIỆC C2 (`docs/PHIEU-CODE-IF-DOT7-3D-2026-08-03.md`) — đúng tầng ⑥ "Cấu kiện tham số"
  * của `docs/SPEC-DUNG-BO-LENH-3D.md` (bảng 6 tầng). §9 *"thiết kế trước — tính năng fill sau"*:
  * vẽ ĐỦ cả tầng lên giao diện ngay cả khi chưa code, KHÔNG ẩn/bỏ sót — ô mờ là bằng chứng còn
- * việc, không phải chỗ trống cho gọn mắt. `tuong` là NGOẠI LỆ DUY NHẤT trong danh sách này đã
- * dựng thật (nút "Tường" phía trên) — hiện ở đây với label khớp tầng ⑥ nhưng KHÔNG mờ/disabled,
- * bấm gọi lại đúng `onTaoTuong` (không tự chế hành vi thứ hai). 9 mục còn lại mờ thật, chờ
- * `ops[]` (VIỆC 3 phiên boolean, `27d8c6d`) đủ để gắn ngữ nghĩa cấu kiện lên đó.
+ * việc, không phải chỗ trống cho gọn mắt.
+ *
+ * VIỆC 1 (nối `extrude`+`arrayLinear` thật, `docs/SPEC-DUNG-BO-LENH-3D.md`) — `lancan` MỞ KHOÁ
+ * thêm (bấm gọi `onTaoLanCan`, engine `railingPosts()` dựng 1 cột + gắn bậc `arrayLinear` thật,
+ * xem `lib/cad/commands.ts`) — đúng ví dụ "nan chớp/song sắt lặp" đã ghi ở `Base.ops`
+ * (`lib/cad/model.ts`). `tuong`/`lancan` là 2 NGOẠI LỆ đã dựng thật trong danh sách này. 8 mục còn
+ * lại vẫn mờ — lý do BÂY GIỜ ĐÃ KHÁC nhau theo TỪNG mục (`reason`, xem bên dưới list này), KHÔNG
+ * còn dùng chung 1 câu "đợi ops[]" như trước (ops[] tầng ③④⑤ đã đủ cả 3 phép — boolean/extrude/
+ * arrayLinear; cái còn thiếu là LỆNH THAM SỐ RIÊNG của từng loại cấu kiện tầng ⑥, hoặc — với cửa/
+ * cửa sổ — chỉ thiếu NỐI nút này vào luồng ĐÃ CHẠY THẬT ở nơi khác).
  */
-const CAU_KIEN_TANG_6: { id: string; vi: string; en: string; icon: typeof Square; lam?: boolean }[] = [
+const CAU_KIEN_TANG_6: { id: string; vi: string; en: string; icon: typeof Square; lam?: boolean; reason?: [string, string] }[] = [
   { id: 'tuong', vi: 'Tường', en: 'Wall', icon: Square, lam: true },
-  { id: 'cua', vi: 'Cửa', en: 'Door', icon: DoorClosed },
-  { id: 'cuaso', vi: 'Cửa sổ', en: 'Window', icon: AppWindow },
-  { id: 'thang-thang', vi: 'Cầu thang thẳng', en: 'Straight stair', icon: TrendingUp },
-  { id: 'thang-gap', vi: 'Cầu thang gấp khúc', en: 'Switchback stair', icon: CornerUpRight },
-  { id: 'thang-xoan', vi: 'Cầu thang xoắn', en: 'Spiral stair', icon: RotateCw },
-  { id: 'lancan', vi: 'Lan can', en: 'Railing', icon: Fence },
-  { id: 'phaochi', vi: 'Phào chỉ', en: 'Moulding', icon: Minus },
-  { id: 'tranthar', vi: 'Trần thả', en: 'Drop ceiling', icon: PanelTop },
-  { id: 'tubep', vi: 'Tủ bếp module', en: 'Kitchen cabinet module', icon: Archive },
+  {
+    id: 'cua', vi: 'Cửa', en: 'Door', icon: DoorClosed,
+    reason: [
+      'Dựng được rồi — kéo khối cửa từ thư viện đồ vào tường, tự khoét lỗ (ops[] boolean). Nút tạo trực tiếp ở đây chưa nối cùng luồng.',
+      'Already works — drag a door block from the library onto a wall, it auto-cuts the opening (ops[] boolean). This create button just isn’t wired to that flow yet.',
+    ],
+  },
+  {
+    id: 'cuaso', vi: 'Cửa sổ', en: 'Window', icon: AppWindow,
+    reason: [
+      'Dựng được rồi — kéo khối cửa sổ từ thư viện đồ vào tường, tự khoét lỗ + lắp kính (ops[] boolean). Nút tạo trực tiếp ở đây chưa nối cùng luồng.',
+      'Already works — drag a window block from the library onto a wall, it auto-cuts the opening and fits glass (ops[] boolean). This create button just isn’t wired to that flow yet.',
+    ],
+  },
+  {
+    id: 'thang-thang', vi: 'Cầu thang thẳng', en: 'Straight stair', icon: TrendingUp,
+    reason: [
+      'Chưa có lệnh tham số cầu thang (tầng ⑥) — extrude/array/boolean đã sẵn, chưa ai ráp thành lệnh riêng loại này.',
+      'No parametric stair command yet (tier ⑥) — extrude/array/boolean already work, nobody has assembled this specific command yet.',
+    ],
+  },
+  {
+    id: 'thang-gap', vi: 'Cầu thang gấp khúc', en: 'Switchback stair', icon: CornerUpRight,
+    reason: [
+      'Chưa có lệnh tham số cầu thang (tầng ⑥) — extrude/array/boolean đã sẵn, chưa ai ráp thành lệnh riêng loại này.',
+      'No parametric stair command yet (tier ⑥) — extrude/array/boolean already work, nobody has assembled this specific command yet.',
+    ],
+  },
+  {
+    id: 'thang-xoan', vi: 'Cầu thang xoắn', en: 'Spiral stair', icon: RotateCw,
+    reason: [
+      'Chưa có lệnh tham số cầu thang (tầng ⑥) — extrude/array/boolean đã sẵn, chưa ai ráp thành lệnh riêng loại này.',
+      'No parametric stair command yet (tier ⑥) — extrude/array/boolean already work, nobody has assembled this specific command yet.',
+    ],
+  },
+  { id: 'lancan', vi: 'Lan can', en: 'Railing', icon: Fence, lam: true },
+  {
+    id: 'phaochi', vi: 'Phào chỉ', en: 'Moulding', icon: Minus,
+    reason: [
+      'Phào chỉ cần lệnh "sweep" (quét tiết diện theo đường) — tầng ③ mới nối extrude/lathe, sweep chưa code.',
+      'Moulding needs a "sweep" command (profile swept along a path) — tier ③ only has extrude/lathe wired so far, sweep isn’t built.',
+    ],
+  },
+  {
+    id: 'tranthar', vi: 'Trần thả', en: 'Drop ceiling', icon: PanelTop,
+    reason: [
+      'Cần khối NỔI (đặt lơ lửng giữa sàn/trần) — tường hôm nay luôn đùn từ sàn z=0, chưa có cơ chế đặt khối treo.',
+      'Needs a floating block (suspended mid-height) — walls today always extrude from the floor (z=0), no mechanism yet for a suspended block.',
+    ],
+  },
+  {
+    id: 'tubep', vi: 'Tủ bếp module', en: 'Kitchen cabinet module', icon: Archive,
+    reason: [
+      'Cần bộ tham số module (rộng/sâu/cao theo chuẩn tủ bếp) — chưa ai ráp thành lệnh, dù mảng (array) đã dùng được để lặp module.',
+      'Needs a module parameter set (width/depth/height per cabinet standard) — nobody has assembled the command yet, even though array can already repeat modules.',
+    ],
+  },
 ];
 
-function CreateTab({ nhayNutTuong, onTaoTuong }: { nhayNutTuong: boolean; onTaoTuong?: () => void }) {
+function CreateTab({
+  nhayNutTuong,
+  onTaoTuong,
+  onTaoLanCan,
+}: {
+  nhayNutTuong: boolean;
+  onTaoTuong?: () => void;
+  onTaoLanCan?: () => void;
+}) {
+  const CAU_KIEN_HANDLER: Partial<Record<string, (() => void) | undefined>> = { tuong: onTaoTuong, lancan: onTaoLanCan };
+  const CAU_KIEN_TIP: Partial<Record<string, [string, string]>> = {
+    tuong: ['Đoạn 4m, dày 220 — sửa được sau', '4m segment, 220 thick — editable'],
+    lancan: ['9 cột 60×60mm cách 300mm — chưa có tay vịn ngang (N5)', '9 posts 60×60mm at 300mm spacing — no top rail yet (N5)'],
+  };
   const tr = useT();
   const CHUA_CO: [string, string][] = [
     ['Hộp', 'Box'], ['Sàn', 'Floor'], ['Cửa', 'Door'], ['Cửa sổ', 'Window'], ['Mái', 'Roof'],
@@ -174,16 +245,16 @@ function CreateTab({ nhayNutTuong, onTaoTuong }: { nhayNutTuong: boolean; onTaoT
           {tr('Cấu kiện', 'Building components')}
         </p>
         <div className="grid grid-cols-3 gap-2">
-          {CAU_KIEN_TANG_6.map(({ id, vi, en, icon: Icon, lam }) => (
+          {CAU_KIEN_TANG_6.map(({ id, vi, en, icon: Icon, lam, reason }) => (
             <button
               key={id}
               type="button"
               disabled={!lam}
-              onClick={lam ? onTaoTuong : undefined}
+              onClick={lam ? CAU_KIEN_HANDLER[id] : undefined}
               title={
                 lam
-                  ? tr('Đoạn 4m, dày 220 — sửa được sau', '4m segment, 220 thick — editable')
-                  : tr('Chưa dựng — đợi ops[] (VIỆC 3 phiên boolean)', 'Not built yet — waiting on ops[] (boolean-session VIỆC 3)')
+                  ? tr(...(CAU_KIEN_TIP[id] ?? ['Sửa được sau', 'Editable afterwards']))
+                  : tr(...(reason ?? ['Chưa dựng được', 'Not available yet']))
               }
               className={cn(
                 'flex aspect-square flex-col items-center justify-center gap-1.5 rounded-[9px] border p-1 text-center text-[9.5px] font-medium transition-colors',
@@ -276,8 +347,15 @@ type PlaceholderKey = Exclude<Tab, 'vatlieu' | 'tao'>;
 
 // Camera GIỮ placeholder (không bịa ô nhập số vô chủ — spec §6.2 cần model camera thật trong Doc
 // trước, hôm nay chưa có; input "sống nhưng không lưu gì" tệ hơn câu "sắp có" trung thực).
+// VIỆC 1 (nối extrude/arrayLinear thật) — sửa lại câu "sua" ĐANG SAI: từng nói "Bevel... sắp có"
+// dù bản thân tab này không chứa nút bevel/khoét hốc/nhân bản dãy (3 nút đó nằm ở Inspector bên
+// phải khi chọn tường, cùng chỗ với `CutHoleAction` boolean đã xong trước đó — panel này chưa
+// từng cập nhật theo). Câu mới không hứa gì tab này KHÔNG chứa — chỉ TRỎ đúng nơi có thật.
 const PLACEHOLDER_COPY: Record<PlaceholderKey, [string, string]> = {
-  sua: ['Đẩy-kéo cao độ đã dùng được ngay trên khối (kéo mặt trên). Bevel/kích thước tay — sắp có.', 'Push-pull height already works on the block (drag the top face). Bevel/manual sizing — coming soon.'],
+  sua: [
+    'Đẩy-kéo cao độ dùng ngay trên khối (kéo mặt trên). Khoét hốc · vát cạnh (bevel) · nhân bản dãy — chọn 1 tường rồi mở panel bên phải. Nhập số tay — sắp có.',
+    'Push-pull height works directly on the block (drag the top face). Cut a hole · bevel · linear array — select a wall, then open the right-side panel. Manual numeric input — coming soon.',
+  ],
   camera: ['Đặt camera · đường cam (campath) — sắp có.', 'Place camera · camera path — coming soon.'],
 };
 

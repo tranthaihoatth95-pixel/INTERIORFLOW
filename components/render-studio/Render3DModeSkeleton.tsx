@@ -25,7 +25,7 @@ import { useCadStore } from '@/lib/cad/store';
 import { useCad3DAutosave } from '@/lib/cad/cad3d-autosave';
 import { useStageMode } from '@/lib/stage-mode';
 import { useT } from '@/lib/i18n';
-import { wallSegment } from '@/lib/cad/commands';
+import { wallSegment, railingPosts } from '@/lib/cad/commands';
 import { useScene3D } from '@/lib/render-studio/use-scene3d';
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
 import { Viewport3D, EMPTY_SCENE_3D } from '@/components/three/Viewport3D';
@@ -44,6 +44,11 @@ interface GuidePos {
 /** Tường mẫu 4m khi bấm "Dựng khối đầu tiên" — dùng ĐÚNG hàm engine `wallSegment()` của chặng Vẽ
  * (không tự chế hình học), dày 220mm, đặt ở gốc toạ độ để camera đang khung sẵn nhìn thấy ngay. */
 const FIRST_WALL = { from: { x: 0, y: 0 }, to: { x: 4000, y: 0 }, thicknessMm: 220 };
+
+/** VIỆC 1 (nối `arrayLinear` thật) — lan can mẫu khi bấm nút "Lan can" (tầng ⑥
+ * `Command3DPanel`): 9 cột 60×60mm cách 300mm dọc 1 đoạn 2,4m gần tường mẫu, dùng ĐÚNG hàm engine
+ * `railingPosts()` (đùn từ `wallSegment()` + gắn bậc `arrayLinear`). */
+const FIRST_RAILING = { from: { x: 0, y: 600 }, to: { x: 2400, y: 600 }, count: 9, spacingMm: 300, postMm: 60, heightMm: 900 };
 
 export default function Render3DModeSkeleton() {
   // Sửa "mode 3D không autosave" (docs/TECH-DEBT.md) — nối lại autosave CAD sẵn có
@@ -243,6 +248,20 @@ export default function Render3DModeSkeleton() {
     setNhayNutTuong(false);
   }
 
+  function taoLanCanMau() {
+    useCadStore.getState().addEntities(
+      railingPosts(
+        FIRST_RAILING.from,
+        FIRST_RAILING.to,
+        FIRST_RAILING.count,
+        FIRST_RAILING.spacingMm,
+        FIRST_RAILING.postMm,
+        FIRST_RAILING.heightMm,
+        useCadStore.getState().currentLayer,
+      ),
+    );
+  }
+
   function anTrinhTu() {
     setGuideHidden(true);
     try {
@@ -265,6 +284,7 @@ export default function Render3DModeSkeleton() {
         onTabChange={setTab}
         nhayNutTuong={nhayNutTuong}
         onTaoTuong={taoTuongMau}
+        onTaoLanCan={taoLanCanMau}
         onPickMaterial={setMatDangCam}
       />
 

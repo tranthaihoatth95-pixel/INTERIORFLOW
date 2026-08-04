@@ -1,9 +1,10 @@
 /**
- * lib/cad/commands.test.ts — NC-12 VIỆC 3: `cutHoleInWall` (thuần, không đụng store/three.js).
- * Chạy: node_modules/.bin/sucrase-node lib/cad/commands.test.ts
+ * lib/cad/commands.test.ts — NC-12 VIỆC 3: `cutHoleInWall` + VIỆC 1 (nối extrude/arrayLinear
+ * thật, `docs/SPEC-DUNG-BO-LENH-3D.md`): `setEntityBevel`/`setEntityArrayLinear`/`railingPosts`
+ * (thuần, không đụng store/three.js). Chạy: node_modules/.bin/sucrase-node lib/cad/commands.test.ts
  */
 import type { HatchEntity } from './model';
-import { cutHoleInWall } from './commands';
+import { cutHoleInWall, setEntityBevel, setEntityArrayLinear, railingPosts } from './commands';
 
 let pass = 0;
 let fail = 0;
@@ -56,6 +57,53 @@ console.log('cutHoleInWall — kind mặc định là subtract khi không truy�
 {
   const { updatedWall } = cutHoleInWall(wall, { x: 0, y: 0, w: 100, h: 100 });
   ok('kind mặc định subtract', (updatedWall.ops![0] as { kind: string }).kind === 'subtract');
+}
+
+console.log('setEntityBevel — đặt/xoá bậc extrude, SỬA tại chỗ (không cộng dồn nhiều bevel)');
+{
+  const beveled = setEntityBevel(wall, 30);
+  ok('thêm ĐÚNG 1 bậc extrude, bevel=30', beveled.ops?.length === 1 && beveled.ops![0].op === 'extrude' && (beveled.ops![0] as { bevel?: number }).bevel === 30);
+  ok('h lấy từ heightMm hiện tại của entity', (beveled.ops![0] as { h: number }).h === 2700);
+  ok('wall gốc KHÔNG bị sửa tại chỗ (thuần)', wall.ops === undefined);
+
+  const rebeveled = setEntityBevel(beveled, 50);
+  ok('gọi lại SỬA giá trị cũ, KHÔNG cộng dồn 2 bậc extrude', rebeveled.ops?.length === 1 && (rebeveled.ops![0] as { bevel?: number }).bevel === 50);
+
+  const cleared = setEntityBevel(rebeveled, 0);
+  ok('bevelMm<=0 XOÁ bậc extrude (không để lại rác bevel:0)', cleared.ops === undefined);
+}
+
+console.log('setEntityBevel — giữ NGUYÊN các bậc khác trong ops (vd boolean đã có sẵn)');
+{
+  const withHole = cutHoleInWall(wall, { x: 500, y: -20, w: 300, h: 240 }, 'subtract').updatedWall;
+  const beveled = setEntityBevel(withHole, 20);
+  ok('vẫn còn bậc boolean cũ + thêm 1 bậc extrude', beveled.ops?.length === 2 && beveled.ops!.some((o) => o.op === 'boolean') && beveled.ops!.some((o) => o.op === 'extrude'));
+}
+
+console.log('setEntityArrayLinear — đặt/xoá bậc arrayLinear, SỬA tại chỗ');
+{
+  const arrayed = setEntityArrayLinear(wall, { n: 5, dx: 300, dy: 0, dz: 0 });
+  ok('thêm ĐÚNG 1 bậc arrayLinear n=5', arrayed.ops?.length === 1 && arrayed.ops![0].op === 'arrayLinear' && (arrayed.ops![0] as { n: number }).n === 5);
+  ok('wall gốc KHÔNG bị sửa tại chỗ (thuần)', wall.ops === undefined);
+
+  const rearrayed = setEntityArrayLinear(arrayed, { n: 8, dx: 250, dy: 0, dz: 0 });
+  ok('gọi lại SỬA giá trị cũ, KHÔNG cộng dồn 2 bậc arrayLinear', rearrayed.ops?.length === 1 && (rearrayed.ops![0] as { n: number }).n === 8);
+
+  const cleared = setEntityArrayLinear(rearrayed, { n: 1, dx: 0, dy: 0, dz: 0 });
+  ok('n<=1 XOÁ bậc arrayLinear', cleared.ops === undefined);
+  ok('n làm tròn số nguyên', setEntityArrayLinear(wall, { n: 4.7, dx: 1, dy: 0, dz: 0 }).ops![0].op === 'arrayLinear' && (setEntityArrayLinear(wall, { n: 4.7, dx: 1, dy: 0, dz: 0 }).ops![0] as { n: number }).n === 5);
+}
+
+console.log('railingPosts — tái dùng wallSegment() dựng 1 cột + gắn arrayLinear dọc a→b');
+{
+  const posts = railingPosts({ x: 0, y: 0 }, { x: 2400, y: 0 }, 9, 300, 60, 900, 'l-wall');
+  ok('trả đúng 2 entity như wallSegment (hatch + polyline)', posts.length === 2 && posts.some((e) => e.type === 'hatch') && posts.some((e) => e.type === 'polyline'));
+  const hatch = posts.find((e) => e.type === 'hatch')!;
+  ok('cột cao 900mm (heightMm riêng, không phải cao tường mặc định)', hatch.heightMm === 900);
+  ok('mang ĐÚNG 1 bậc arrayLinear n=9', hatch.ops?.length === 1 && hatch.ops![0].op === 'arrayLinear' && (hatch.ops![0] as { n: number }).n === 9);
+  ok('mảng chạy dọc trục a→b (dx=300, dy=0 vì a→b nằm ngang)', (hatch.ops![0] as { dx: number; dy: number }).dx === 300 && (hatch.ops![0] as { dy: number }).dy === 0);
+  const widthX = hatch.type === 'hatch' ? Math.max(...hatch.points.map((p) => p.x)) - Math.min(...hatch.points.map((p) => p.x)) : NaN;
+  ok('footprint cột là hình vuông 60×60mm quanh điểm a', Math.abs(widthX - 60) < 1e-9);
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);
