@@ -617,3 +617,33 @@ gỡ `.env`/symlink trước), server 3006 + HTTP server tạm 8765 đã tắt, 
 CÒN 1 dòng `Flow` test `cmseovw360001w9hryuiqcyam` ("Untitled flow", 0 FlowVersion) trong
 `prisma/dev.db` — lệnh DELETE bị sandbox chặn, Hoà xoá tay khi tiện:
 `sqlite3 prisma/dev.db "DELETE FROM Flow WHERE id='cmseovw360001w9hryuiqcyam';"`
+
+## §12 · P2 — D2 đợt 8: GỠ TRẦN MAX_SHEETS (04/08 đêm, commit `b46fa30`)
+
+Hoà duyệt: LÀM D2, HOÃN D3 (đổi định dạng file chờ studio thật dùng thử). Vùng sửa 5 file:
+`SheetTabBar.tsx` (prop `max` thành optional — không truyền = không trần, status mặc định
+"N sheet") · `CadSheets.tsx` (bỏ hằng + guard addSheet + prop max) · `PresentSheets.tsx`
+(9 chỗ: bỏ hằng, 4 chỗ `slice(0,5)` ở nạp-IDB/autosave/ghi-đĩa/import, guard addSheet, prop
+max, thông báo "bỏ N hồ sơ vượt trần", status "· tối đa 5 hồ sơ") · comment lỗi thời ở
+`model.ts:896` + `sheet-migrate.ts:6` sửa theo. KHÔNG máy móc chung 1 bản vá: Present mỗi
+sheet vẫn ôm nguyên deck (khác CAD metadata-sau-D1) — gỡ được vì deck chỉ nặng theo slide
+người dùng thật tạo, trần cứng 5 không bảo vệ gì thêm.
+
+Nghiệm thu (browser thật 127.0.0.1:3002, server riêng P2, dự án test tạo riêng):
+- CAD: bấm "+" tới 13 tờ — không chặn, phản hồi tức thì, không lỗi console.
+- Present: 12 hồ sơ — không chặn; đổi hồ sơ deck chuyển đúng.
+- `.idf` CŨ 5 sheet (tiêm `cad:idf-import-request`, mỗi sheet 1 Doc + 1 line riêng): mở được,
+  ĐỦ 5/5 entity (id prefix `s0-L1…s4-L5` đúng `mergeIdfSheetsToDoc`), thông báo "gộp 5 bản vẽ
+  cũ thành 1 (tách lại nhiều tờ là việc đợt sau)" — không mất gì. Đã dọn entity test bằng
+  `removeIds` (store về 0 entity).
+- `npx tsc --noEmit -p .` sạch (2 lần, sau code + sau comment) · `sheet-migrate.test.ts` 22/22
+  · `cad3d-autosave-core.test.ts` 13/13 · grep `MAX_SHEETS` = 0 trong code (chỉ còn 2 dòng
+  comment lịch sử đã sửa đúng).
+- Lỗi console DUY NHẤT thấy: "Maximum update depth exceeded" tại `EditorCanvas.tsx` chặng
+  Trình chiếu — bug CŨ đã ghi STATUS.md từ phiên BOQ (§0d không đụng Deck editor), có TRƯỚC
+  D2, không phải hồi quy.
+- Ghi chú thật: 1 dự án test "Untitled flow" (id `cmser4yxk0001w97ydu3oy6je`) tạo trong lúc
+  verify còn trong `dev.db` — cùng loại dòng rác Flow phiên P5 ghi cuối §11b, Hoà xoá tay khi
+  tiện. Chuyển chặng Present→2D bằng click UI bị kẹt không điều hướng (thử 3 cách, kể cả
+  `.click()` DOM) — phải hard-navigate `/projects/<id>/cad` để verify import; CHƯA rõ bug thật
+  hay đặc thù sandbox, phiên nào rảnh kiểm lại tay (ngoài phạm vi D2).
