@@ -672,6 +672,29 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   z-index: 1;
 }
 
+/* ---------- LUẬT KÍNH LỎNG `.glass-float` (P5, 04/08) ----------
+   Kính LỎNG (rất trong, 34% panel) — KHÁC `.vitals-pop` (lớp nổi ĐẶC ≥92%, cho panel nhiều chữ).
+   ⛔ CHỈ dùng cho ĐÚNG 4 chỗ: toolbelt trên canvas 3D (ModeSwitchBar) · nút "Dựng ảnh" ·
+   ViewCube · thanh nổi trên ảnh render (Lightbox). Chỗ nào >2 dòng chữ (Inspector, cây tầng,
+   bảng vật liệu, popover Vitals…) → `.vitals-pop`, KHÔNG lấy class này — kính lỏng quá trong,
+   chữ dày sẽ chồng lên nền (đúng lỗi G2 đã vá).
+   ⚠️ backdrop-filter ăn hiệu năng trên canvas WebGL — quá 4 tấm là giật. Thêm tấm thứ 5 = phải
+   gỡ 1 tấm cũ, không cộng dồn.
+   border-top sáng hơn border quanh = gờ sáng giả ánh sáng từ trên (kiểu Apple).
+   Bo góc: khối dùng mặc định var(--radius-lg); THANH/nút capsule thêm `.glass-float--bar` (999px). */
+.glass-float {
+  background: color-mix(in srgb, var(--panel) 34%, transparent);
+  backdrop-filter: blur(var(--blur)) saturate(1.3);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(1.3);
+  border: 1px solid color-mix(in srgb, var(--t1) 14%, transparent);
+  border-top-color: color-mix(in srgb, var(--t1) 26%, transparent);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  border-radius: var(--radius-lg);
+}
+.glass-float--bar {
+  border-radius: 999px;
+}
+
 /* ---------- Vitals typing indicator (3 chấm iMessage) ----------
    Chấm nhấp nháy lệch pha; prefers-reduced-motion: ẩn chấm, hiện text tĩnh (fallback).
 */

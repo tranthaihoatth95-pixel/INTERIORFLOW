@@ -8,6 +8,7 @@ import { useFlowStore } from '@/lib/store';
 import { sheetSlide, pressableIcon } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { loadImage, extractPalette } from '@/lib/imaging';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { USAGES } from '@/lib/refingest';
 import { classifyImage } from '@/lib/classify';
 import {
@@ -273,10 +274,25 @@ export function LibraryPanel() {
       </div>
 
       <div className="grid flex-1 auto-rows-min grid-cols-2 gap-2 overflow-y-auto px-2.5 pb-4">
-        {filtered.length === 0 && (
+        {filtered.length === 0 && items.length > 0 && (
           <p className="col-span-2 px-1 pt-4 text-center text-xs leading-relaxed text-[var(--t5)]">
-            Trống — upload ảnh {cat.toLowerCase()}, cả team dùng chung, kéo thả ra canvas.
+            Không ảnh nào khớp tìm/lọc hiện tại.
           </p>
+        )}
+        {items.length === 0 && (
+          /* P5 (04/08) — khuôn EmptyState chung (mock mock-if-thu-vien-trong): ngăn kệ thật +
+             nút làm được việc TẠI CHỖ (mở popover [+] thêm ảnh có sẵn ngay trên panel này). */
+          <div className="col-span-2">
+            <EmptyState
+              compact
+              ghost="bays"
+              bayCount={4}
+              bayCaptions={['vật liệu', 'không gian', 'bản vẽ', 'furniture']}
+              title="Thư viện ảnh đang trống"
+              desc="Upload ảnh tham khảo — cả team dùng chung, kéo thả thẳng ra canvas."
+              actions={[{ label: 'Thêm ảnh vào thư viện', primary: true, icon: <Plus size={13} />, onClick: () => setAddOpen(true) }]}
+            />
+          </div>
         )}
         {filtered.map((item) => (
           <div

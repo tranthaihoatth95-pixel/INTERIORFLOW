@@ -33,7 +33,9 @@ export function Lightbox() {
             {...pressableIcon}
             whileHover={{ scale: 1.06 }}
             onClick={() => setUrl(null)}
-            className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full border border-[var(--mat-hairline)] bg-[var(--card)]/80 text-[var(--t2)] backdrop-blur transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
+            /* P5 (04/08): kính lỏng `.glass-float--bar` — 1 trong ĐÚNG 4 chỗ được phép (thanh nổi
+               trên ảnh render), luật ở globals.css. Bỏ bg/border/backdrop-blur cũ — class tự mang. */
+            className="glass-float glass-float--bar absolute right-4 top-4 grid h-9 w-9 place-items-center text-[var(--t2)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--t1)]"
           >
             <X size={17} />
           </motion.button>

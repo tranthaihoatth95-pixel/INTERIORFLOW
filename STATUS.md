@@ -1,5 +1,23 @@
 # STATUS — InteriorFlow
 
+## ✅ XONG (04/08 — P5 luật kính lỏng + khuôn EmptyState toàn app)
+VIỆC 1: `.glass-float`/`.glass-float--bar` vào `globals.css` (cạnh `.vitals-pop`) — panel 34% +
+blur(--blur) saturate(1.3) + gờ trên sáng hơn (t1 26% vs 14%) + shadow 0 8px 32px; áp ĐÚNG 4 chỗ:
+`ModeSwitchBar` (toolbelt canvas 3D) · nút "Dựng ảnh" (`Render3DModeSkeleton`, nền accent đặc →
+kính, icon giữ accent) · ViewCube (`Viewport3D`+`ve3d-css` overflow:hidden) · nút đóng `Lightbox`.
+Luật ghi APPEND vào `00-BAT-DAU-DOC-DAY.md` §4 (G9): cấm Inspector/cây tầng/bảng vật liệu/popover
+Vitals (→`.vitals-pop`), trần 4 tấm backdrop trên WebGL. VIỆC 2: khuôn `components/ui/EmptyState.tsx`
+rút từ mock `mock-if-thu-vien-trong.html` (cấu trúc thật ngăn kệ/hàng ghost + ≤2 nút làm việc TẠI
+CHỖ, disabled phải kèm lý do §9) — nối vào `MaterialsScreen` (rỗng thật ≠ lọc rỗng, nút mở form/
+wizard tại chỗ) · `BoqScreen` (docSource none) · `LibraryPanel` (rỗng thật, mở popover [+]) ·
+`GalleryPanel` (disabled kèm lý do — ảnh chỉ vào qua node cùng canvas). Tệp/`FileManagerShell` ĐÃ
+đúng khuôn sẵn (fan giấy + CTA tại chỗ) — không đụng. `tsc -p .` sạch; verify browser thật
+(127.0.0.1:59978, server riêng autoPort vì 3005 bận): 3 chỗ kính đo computed style đúng số cả 2
+theme + Lightbox mounted đúng class; EmptyState chụp Gallery panel + BOQ cả 2 theme, chữ rõ.
+**CHƯA chụp được**: kho vật liệu rỗng (DB demo có 2 vật liệu thật — KHÔNG xoá dữ liệu để dựng ảnh)
+· Trình chiếu không có màn rỗng chạm được (luôn sample deck). Lỗi console duy nhất = `EditorCanvas`
+max-update CŨ đã ghi từ trước, không do việc này.
+
 > ⚠️ Git là sự thật duy nhất — verify SHA bằng `git log`, không chép từ brief/memory.
 > ⚠️ Sản phẩm = **Drafting CAD · Rendering · Presenting** + login/Gallery/Vitals/Notebook.
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.

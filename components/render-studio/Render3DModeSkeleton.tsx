@@ -476,6 +476,10 @@ export default function Render3DModeSkeleton() {
         <button
           type="button"
           onClick={() => setMode('render')}
+          /* P5 (04/08): kính lỏng `.glass-float--bar` — 1 trong ĐÚNG 4 chỗ được phép (nút "Dựng
+             ảnh"), luật ở globals.css. Nền accent đặc cũ → kính; nhận diện tím dồn vào chữ+icon
+             (đạt tương phản nhờ blur + shadow của class, nhãn chỉ 1 dòng — đúng giới hạn kính). */
+          className="glass-float glass-float--bar"
           title={tr(
             'Sang bảng dựng (Node) để lắp chuỗi camera → khối 3D → render AI. Dựng sẵn dây nối — việc kế tiếp, chưa làm.',
             'Switch to the Node board to assemble camera → 3D block → render AI. Pre-wired chain — not built yet.',
@@ -483,12 +487,10 @@ export default function Render3DModeSkeleton() {
           style={{
             position: 'absolute', right: 18, bottom: 76, zIndex: 6,
             height: 38, padding: '0 18px', display: 'flex', alignItems: 'center', gap: 9,
-            border: 0, borderRadius: 'var(--radius-md)', background: 'var(--accent)', color: '#fff',
-            fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            boxShadow: '0 10px 30px -10px var(--accent-ring), var(--shadow-pop)',
+            color: 'var(--t1)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
           }}
         >
-          <Sparkles size={16} strokeWidth={2} />
+          <Sparkles size={16} strokeWidth={2} color="var(--accent)" />
           {tr('Dựng ảnh', 'Render')}
         </button>
 

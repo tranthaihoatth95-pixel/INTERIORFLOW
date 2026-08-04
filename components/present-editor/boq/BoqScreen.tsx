@@ -29,6 +29,7 @@ import type { Doc } from '@/lib/cad/model';
 import { emptyDoc } from '@/lib/cad/model';
 import { BoqTable, type BoqSelectedCell } from './BoqTable';
 import { BoqErrorBanner } from './BoqErrors';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface BoqApiResponse {
   rows: BoqRow[];
@@ -245,11 +246,24 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
           {boq && <div className="if-boq-no-print"><BoqErrorBanner errors={boq.errors} /></div>}
 
           {docSource === 'none' && !loading && (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: 'var(--t4)', fontSize: 13 }}>
-              {tr('Dự án chưa có bản vẽ nào để tính khối lượng.', 'This project has no drawing yet to compute quantities.')}
-              <button type="button" onClick={() => router.push(`/projects/${projectId}/cad`)} style={btnStyle(true)}>
-                {tr('Mở bản vẽ', 'Open drawing')}
-              </button>
+            /* P5 (04/08) — khuôn EmptyState chung (mock mock-if-thu-vien-trong): hàng bảng ghost
+               cho thấy bảng SẼ trông thế nào, kèm việc làm được tại chỗ (tính lại — phòng khi
+               phiên khác vừa vẽ xong). "Mở bản vẽ" giữ làm nút phụ: đó là HÀNH ĐỘNG thật một
+               bước, không phải lời nhắn "sang màn kia rồi quay lại" (thứ luật X2 cấm). */
+            <div style={{ flex: 1, display: 'grid', placeItems: 'center', minHeight: 0, overflow: 'auto' }}>
+              <EmptyState
+                ghost="rows"
+                icon={<FileSpreadsheet size={18} />}
+                title={tr('Chưa có khối lượng để tính', 'No quantities to compute yet')}
+                desc={tr(
+                  'BOQ tự sinh từ vùng tô vật liệu trong bản vẽ — không phải bảng nhập tay. Dự án này chưa có bản vẽ nào, nên bảng còn trống.',
+                  'The BOQ is generated from painted material regions in the drawing — it is not a hand-typed sheet. This project has no drawing yet, so the table is empty.',
+                )}
+                actions={[
+                  { label: tr('Tính lại từ bản vẽ', 'Recompute from drawing'), primary: true, icon: <RefreshCw size={13} />, onClick: () => void compute() },
+                  { label: tr('Mở bản vẽ', 'Open drawing'), onClick: () => router.push(`/projects/${projectId}/cad`) },
+                ]}
+              />
             </div>
           )}
 

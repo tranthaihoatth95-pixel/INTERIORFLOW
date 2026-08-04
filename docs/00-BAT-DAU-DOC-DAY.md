@@ -56,6 +56,7 @@ Design · Presenting; rút gọn: 2D · 3D · Trình chiếu) · 2 chế độ c
 | **G6** | **Cấm icon hoá nút quyết định** (Xoá · Gửi khách · Xuất hồ sơ). Icon cho việc lặp hằng ngày; chữ cho việc bấm sai là trả giá. | |
 | **G7** | **Bento chỉ cho màn TỔNG QUAN.** Màn làm việc (2D·3D·bảng nút·ảnh 360) vùng vẽ phải **liền một khối** — bento chia đều sự chú ý, còn lúc vẽ thì không muốn chia gì cả. | |
 | **G8** | **Kéo thả không bao giờ là đường DUY NHẤT** — luôn có nút bấm tương đương. | công trường tay bẩn, găng tay, màn ướt |
+| **G9** | **[P5 04/08] LUẬT KÍNH LỎNG `.glass-float`** (globals.css, cạnh `.vitals-pop`): nền `color-mix(var(--panel) 34%, transparent)` + `blur(var(--blur)) saturate(1.3)` + viền `--t1` 14% với **gờ trên sáng hơn** (26%, giả ánh sáng từ trên) + `box-shadow 0 8px 32px rgba(0,0,0,.28)`. Bo: khối = `var(--radius-lg)`; thanh/capsule thêm `.glass-float--bar` (999px). **CHỈ đúng 4 chỗ**: toolbelt trên canvas 3D (`ModeSwitchBar`) · nút "Dựng ảnh" (`Render3DModeSkeleton`) · ViewCube (`Viewport3D`) · thanh nổi trên ảnh render (`Lightbox`). **⛔ CẤM** cho Inspector · cây tầng · bảng vật liệu · popover Vitals · mọi panel >2 dòng chữ — chỗ đó dùng `.vitals-pop` (nền đặc ≥96%, sinh ra vì lỗi G2). ⚠️ `backdrop-filter` ăn hiệu năng trên canvas WebGL — **quá 4 tấm là giật**; muốn thêm tấm thứ 5 phải gỡ 1 tấm cũ. | kính lỏng quá trong mà đắp lên panel nhiều chữ = tái phát đúng lỗi G2 "popover trong suốt" |
 
 ---
 ## §5 · LUẬT NGHIỆM THU — cấm nói "xong" khi chưa đo

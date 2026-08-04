@@ -128,7 +128,7 @@ export const VE3D_CSS = `
 .if-ve3d .vpscene{position:absolute;inset:0}
 /* PHIẾU ĐỢT 7 NHÓM B — 96×96 (spec), khung ViewCube3D thật (renderer riêng, xem ViewCube3D.tsx);
    không còn <button> con — cube tự vẽ nhãn bằng texture, tự bắt pointer trên canvas của nó. */
-.if-ve3d .viewcube{position:absolute;right:12px;top:12px;width:96px;height:96px;z-index:4}
+.if-ve3d .viewcube{position:absolute;right:12px;top:12px;width:96px;height:96px;z-index:4;overflow:hidden}
 .if-ve3d .axisg{position:absolute;left:22px;bottom:22px;width:90px;height:90px;z-index:4;pointer-events:none}
 /* ⚠️ Overlay trong viewport KHÔNG dùng màu theo theme.
    Scene3DViewer.tsx:105 đặt nền cảnh CỨNG #2a2d33 — luôn TỐI ở cả 2 theme (code 3D-1..3D-5

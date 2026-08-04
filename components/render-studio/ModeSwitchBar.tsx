@@ -22,8 +22,10 @@ export default function ModeSwitchBar() {
       initial={{ opacity: 0, y: 20, x: '-50%' }}
       animate={{ opacity: 1, y: 0, x: '-50%' }}
       transition={springSheet}
-      className="if-bottombar mat-card pointer-events-auto absolute bottom-4 left-1/2 z-20 flex border border-[var(--mat-hairline)] shadow-[0_8px_24px_rgba(40,38,35,.14)]"
-      style={{ height: 44, borderRadius: 22, padding: 5 }}
+      /* P5 (04/08): kính lỏng `.glass-float--bar` — 1 trong ĐÚNG 4 chỗ được phép (toolbelt trên
+         canvas 3D), xem luật ở globals.css. Bỏ mat-card/border/shadow cũ — class tự mang đủ. */
+      className="if-bottombar glass-float glass-float--bar pointer-events-auto absolute bottom-4 left-1/2 z-20 flex"
+      style={{ height: 44, padding: 5 }}
     >
       <ModeSwitchCell />
     </motion.div>

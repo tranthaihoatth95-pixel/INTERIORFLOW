@@ -12,6 +12,7 @@ import type { MaterialSpecDto } from '@/lib/materials/warehouse/dto';
 import { MaterialTable } from './MaterialTable';
 import { MaterialFormModal } from './MaterialFormModal';
 import { MaterialImportWizard } from './MaterialImportWizard';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export function MaterialsScreen() {
   const tr = useT();
@@ -117,6 +118,25 @@ export function MaterialsScreen() {
       {items === null && !error ? (
         <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--t4)' }}>
           <Loader2 size={20} className="animate-spin" />
+        </div>
+      ) : items !== null && items.length === 0 ? (
+        /* P5 (04/08) — kho RỖNG THẬT (khác "lọc không khớp", nhánh đó vẫn ở MaterialTable):
+           khuôn EmptyState chung (mock mock-if-thu-vien-trong) — hàng bảng ghost + 2 nút làm
+           được việc NGAY TẠI ĐÂY (mở form thêm tay / mở wizard nhập file), không đá đi đâu. */
+        <div style={{ flex: 1, display: 'grid', placeItems: 'center', minHeight: 0, overflow: 'auto' }}>
+          <EmptyState
+            ghost="rows"
+            icon={<FileSpreadsheet size={18} />}
+            title={tr('Kho vật liệu đang trống', 'The materials warehouse is empty')}
+            desc={tr(
+              'Mỗi dòng là một vật liệu thương mại: mã, hãng, kích thước, giá, đơn vị. Thêm tay từng món hoặc nhập cả bảng Excel/CSV — IF tự ghép cột.',
+              'Each row is one commercial material: SKU, brand, size, price, unit. Add items by hand or import a whole Excel/CSV sheet — IF maps the columns.',
+            )}
+            actions={[
+              { label: tr('Nhập Excel/CSV', 'Import Excel/CSV'), primary: true, icon: <FileSpreadsheet size={13} />, onClick: () => setImporting(true) },
+              { label: tr('Thêm vật liệu đầu tiên', 'Add the first material'), icon: <Plus size={13} />, onClick: () => setEditing('new') },
+            ]}
+          />
         </div>
       ) : (
         <MaterialTable items={filtered} onEdit={setEditing} onDelete={(m) => void onDelete(m)} />

@@ -6,6 +6,7 @@ import { X, Trash2, Download } from 'lucide-react';
 import { listGallery, removeFromGallery, type GalleryItem } from '@/lib/gallery';
 import { useFlowStore } from '@/lib/store';
 import { sheetSlide, pressableIcon } from '@/lib/motion';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export function GalleryPanel() {
   const panel = useFlowStore((s) => s.panel);
@@ -47,9 +48,18 @@ export function GalleryPanel() {
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto p-2.5">
         {items.length === 0 && (
-          <p className="px-1 pt-4 text-center text-xs leading-relaxed text-[var(--t5)]">
-            Trống — dùng node <span className="text-[var(--t3)]">Save to Gallery</span> để lưu output vào đây.
-          </p>
+          /* P5 (04/08) — khuôn EmptyState chung: ngăn kệ thật cho thấy ảnh sẽ nằm đâu. Không có
+             nút tại chỗ THẬT (ảnh chỉ vào đây qua node "Save to Gallery" ngay trên canvas cùng
+             màn — không phải đá sang màn khác) → action disabled kèm lý do, đúng luật §9. */
+          <EmptyState
+            compact
+            ghost="bays"
+            bayCount={4}
+            bayCaptions={['render', 'moodboard', 'phối cảnh', 'video']}
+            title="Gallery đang trống"
+            desc="Output lưu từ node “Save to Gallery” trên canvas sẽ xếp vào đây, kéo thả dùng lại được."
+            actions={[{ label: 'Lưu output đầu tiên', disabled: true, disabledReason: 'Bấm nút “Save to Gallery” trên node output ngay trên canvas — panel này chỉ trưng bày.' }]}
+          />
         )}
         {items.map((item) => (
           <motion.div

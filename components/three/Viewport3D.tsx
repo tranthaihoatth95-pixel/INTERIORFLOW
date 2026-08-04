@@ -95,7 +95,9 @@ export function Viewport3D({
       {/* ── ViewCube 3D THẬT (góc trên phải) — xoay theo camera, 26 vùng bấm/kéo. Thay bản SVG
           2D tĩnh cũ (3 hình thoi toạ độ chết + 2 nút chữ TRƯỚC/DƯỚI rời) — cube nay phủ đủ cả
           6 mặt · 12 cạnh · 8 góc, không cần 2 nút chữ đứng ngoài nữa. ── */}
-      <ViewCube3D className="viewcube" cameraApiRef={cameraApiRef} onPick={onViewChange} />
+      {/* P5 (04/08): kính lỏng `.glass-float` — 1 trong ĐÚNG 4 chỗ được phép (ViewCube), luật ở
+          globals.css. Khối vuông → bo mặc định var(--radius-lg) của class. */}
+      <ViewCube3D className="viewcube glass-float" cameraApiRef={cameraApiRef} onPick={onViewChange} />
 
       {/* ── Trục toạ độ (góc dưới trái) — X đỏ · Y xanh lá · Z xanh dương, đúng mock ── */}
       <svg className="axisg" viewBox="0 0 90 90" aria-label="Trục toạ độ X Y Z">
