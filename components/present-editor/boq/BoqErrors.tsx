@@ -41,7 +41,7 @@ export function BoqErrorBanner({ errors }: { errors: BoqError[] }) {
   );
 }
 
-export function BoqErrorRows({ errors, projectId }: { errors: BoqError[]; projectId: string }) {
+export function BoqErrorRows({ errors, projectId, columns }: { errors: BoqError[]; projectId: string; columns: number }) {
   const tr = useT();
   const router = useRouter();
 
@@ -61,7 +61,7 @@ export function BoqErrorRows({ errors, projectId }: { errors: BoqError[]; projec
     <>
       {errors.map((err, i) => (
         <tr key={`${err.reason}-${err.matId ?? i}`} style={{ background: 'color-mix(in srgb, var(--danger) 8%, var(--panel))' }}>
-          <td colSpan={9} style={{ padding: '0 10px', height: 'var(--row, 28px)', color: 'var(--t2)', fontSize: 13 }}>
+          <td colSpan={columns} style={{ padding: '0 10px', height: 'var(--row, 28px)', color: 'var(--t2)', fontSize: 13 }}>
             <AlertTriangle size={12} style={{ color: 'var(--danger)', display: 'inline-block', verticalAlign: -2, marginRight: 6 }} />
             {err.message}
             <button

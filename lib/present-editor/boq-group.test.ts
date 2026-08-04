@@ -2,7 +2,7 @@
  * lib/present-editor/boq-group.test.ts — kiểm B6 group theo tầng (logic thuần). Chạy:
  *   node_modules/.bin/sucrase-node lib/present-editor/boq-group.test.ts
  */
-import { groupBoqRowsByStorey, NO_STOREY_LABEL, MULTI_STOREY_LABEL } from './boq-group';
+import { groupBoqRowsByStorey, groupBoqRowsByRoom, groupBoqRows, NO_STOREY_LABEL, MULTI_STOREY_LABEL, NO_ROOM_LABEL, MULTI_ROOM_LABEL } from './boq-group';
 import type { BoqRow } from '../boq/model';
 import type { Doc, Entity } from '../cad/model';
 
@@ -64,6 +64,85 @@ console.log('\n[4] thứ tự nhóm ổn định = thứ tự gặp lần đầu
 {
   const groups = groupBoqRowsByStorey(rows, doc);
   ok('thứ tự GF, L1, chưa-gán, nhiều-tầng', groups.map((g) => g.key).join(',') === 'GF,L1,__none__,__multi__');
+}
+
+// ─── nhóm theo PHÒNG (04/08, mở rộng) — không có tường khép kín ⇒ findHatchBoundary luôn null
+// ⇒ MỌI gán phòng đi qua nhánh "nhãn gần nhất", đúng ca thật phổ biến (bản vẽ demo/đơn giản chưa
+// đủ tường khép để dò biên) — test khoá đúng hành vi fallback + cờ inferred, không giả vờ chắc.
+function textRoom(id: string, at: { x: number; y: number }, text: string): Entity {
+  return { id, type: 'text', layer: 'L', at, text, h: 200 } as unknown as Entity;
+}
+function hatchAt(id: string, cx: number, cy: number): Entity {
+  const s = 100;
+  return { id, type: 'hatch', layer: 'L', points: [{ x: cx - s, y: cy - s }, { x: cx + s, y: cy - s }, { x: cx + s, y: cy + s }, { x: cx - s, y: cy + s }] } as unknown as Entity;
+}
+
+const roomDoc: Doc = {
+  entities: [
+    textRoom('t1', { x: 0, y: 0 }, 'PHÒNG NGỦ'),
+    textRoom('t2', { x: 3000, y: 0 }, 'PHÒNG KHÁCH'),
+    hatchAt('hr1', 50, 50), // gần PHÒNG NGỦ
+    hatchAt('hr2', 2950, 50), // gần PHÒNG KHÁCH
+  ],
+  layers: [],
+};
+
+const roomRows: BoqRow[] = [
+  { matId: 'r1', ten: 'Sàn ngủ', ncc: '', ma: '', m2: 10, donGia: 100_000, haoHutPhanTram: 0, thanhTien: 1_000_000, entityIds: ['hr1'] },
+  { matId: 'r2', ten: 'Sàn khách', ncc: '', ma: '', m2: 20, donGia: 200_000, haoHutPhanTram: 0, thanhTien: 4_000_000, entityIds: ['hr2'] },
+  { matId: 'r3', ten: 'Vắt 2 phòng', ncc: '', ma: '', m2: 3, donGia: 10_000, haoHutPhanTram: 0, thanhTien: 30_000, entityIds: ['hr1', 'hr2'] },
+  { matId: 'r4', ten: 'Không tìm thấy vùng tô', ncc: '', ma: '', m2: 1, donGia: 1_000, haoHutPhanTram: 0, thanhTien: 1_000, entityIds: ['khong-ton-tai'] },
+];
+
+console.log('\n[5] nhóm theo phòng — gán đúng phòng GẦN NHẤT khi không có biên khép kín, cờ inferred=true');
+{
+  const groups = groupBoqRowsByRoom(roomRows, roomDoc);
+  const ngu = groups.find((g) => g.key === 'PHÒNG NGỦ');
+  const khach = groups.find((g) => g.key === 'PHÒNG KHÁCH');
+  ok('có nhóm PHÒNG NGỦ', !!ngu);
+  ok('có nhóm PHÒNG KHÁCH', !!khach);
+  ok('PHÒNG NGỦ gồm đúng dòng r1', ngu?.rows.map((r) => r.matId).join(',') === 'r1');
+  ok('PHÒNG KHÁCH gồm đúng dòng r2', khach?.rows.map((r) => r.matId).join(',') === 'r2');
+  ok('inferred=true (không có tường khép để dò biên thật)', ngu?.inferred === true && khach?.inferred === true);
+}
+
+console.log('\n[6] nhóm theo phòng — dòng vắt 2 phòng ra nhóm "Nhiều phòng", KHÔNG chia đôi số');
+{
+  const groups = groupBoqRowsByRoom(roomRows, roomDoc);
+  const multi = groups.find((g) => g.label === MULTI_ROOM_LABEL);
+  ok('nhãn "Nhiều phòng" đúng', !!multi);
+  ok('dòng r3 giữ nguyên thanhTien 30.000', multi?.rows[0]?.thanhTien === 30_000);
+}
+
+console.log('\n[7] nhóm theo phòng — entityIds không khớp hatch nào ⇒ "Chưa gán phòng"');
+{
+  const groups = groupBoqRowsByRoom(roomRows, roomDoc);
+  const none = groups.find((g) => g.label === NO_ROOM_LABEL);
+  ok('nhãn "Chưa gán phòng" đúng', !!none);
+  ok('dòng r4 vào nhóm chưa gán', none?.rows[0]?.matId === 'r4');
+}
+
+console.log('\n[8] nhóm theo phòng — dự án KHÔNG có nhãn phòng nào ⇒ tất cả "Chưa gán phòng", không suy đoán mù');
+{
+  const noRoomDoc: Doc = { entities: [hatchAt('h1', 0, 0)], layers: [] };
+  const rows: BoqRow[] = [{ matId: 'x', ten: 'X', ncc: '', ma: '', m2: 1, donGia: 1, haoHutPhanTram: 0, thanhTien: 1, entityIds: ['h1'] }];
+  const groups = groupBoqRowsByRoom(rows, noRoomDoc);
+  ok('1 nhóm "Chưa gán phòng"', groups.length === 1 && groups[0].label === NO_ROOM_LABEL);
+  ok('KHÔNG bật inferred khi không có gì để suy đoán từ', groups[0].inferred === false);
+}
+
+console.log('\n[9] Σ subtotal nhóm-theo-phòng = tổng thanhTien (N3, cùng bất biến như nhóm-theo-tầng)');
+{
+  const groups = groupBoqRowsByRoom(roomRows, roomDoc);
+  const sumGroups = groups.reduce((s, g) => s + g.subtotalAmount, 0);
+  const sumRows = roomRows.reduce((s, r) => s + r.thanhTien, 0);
+  ok(`Σ nhóm (${sumGroups}) = Σ rows (${sumRows})`, sumGroups === sumRows);
+}
+
+console.log('\n[10] groupBoqRows(mode) điều phối đúng hàm');
+{
+  ok('mode=storey', groupBoqRows(rows, doc, 'storey').length === groupBoqRowsByStorey(rows, doc).length);
+  ok('mode=room', groupBoqRows(roomRows, roomDoc, 'room').length === groupBoqRowsByRoom(roomRows, roomDoc).length);
 }
 
 console.log(`\nKẾT QUẢ: ${pass} pass, ${fail} fail`);

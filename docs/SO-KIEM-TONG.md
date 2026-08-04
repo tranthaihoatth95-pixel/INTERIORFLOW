@@ -426,3 +426,33 @@ khả năng phiên kia được giao cùng ticket song song). CHỈ VIỆC 2 (`e
 đúng phiên này. Đã xác nhận nội dung ĐÚNG bằng cách đọc lại file thật sau khi lộ diện (không phải
 đoán) — không mất dữ liệu, chỉ lệch tên commit. Không rewrite lịch sử (không phải commit của
 mình).
+
+## §9 · PHIẾU ĐỢT 8 multi-sheet — D1 xác nhận ĐÃ XONG + ĐÃ COMMIT (04/08, phiên mới đọc lại)
+
+`docs/PHIEU-CODE-IF-DOT8-MULTISHEET-2026-08-03.md` D1 (SheetTabBar đọc `Sheet[]`, bỏ hoán store).
+Phiên này được giao "làm D1 → dừng → báo cáo" nhưng đọc code thấy D1 **đã có sẵn, đúng đặc tả,
+đã nằm trong `f77ce9d`** (commit tên "docs: phieu kho vat lieu..." — lại một ca "hai phiên chung
+`.git`" như §8 đã ghi: code CadSheets.tsx của D1 bị cuốn vào commit của việc khác). Không có gì để
+LÀM thêm — chỉ xác nhận lại bằng cách đọc code thật (không tin comment/STATUS.md suông):
+`switchTo()` trong `CadSheets.tsx:552-557` chỉ gọi `setActiveId` + `goToSheetView`, không đụng
+`useCadStore`; `defaultSheet()` dùng `Doc` chỉ để tính `centerMm` mặc định, không lưu vào `Sheet`;
+`sheets` state khai `Sheet[]` (metadata, `lib/cad/model.ts`) chứ không phải mảng `{doc}` cũ.
+
+Verify độc lập (không chép báo cáo cũ):
+- `npx tsc --noEmit -p .` sạch.
+- `npx tsx lib/cad/sheet-migrate.test.ts` — 22/22 pass.
+- Browser thật (127.0.0.1:3001, demo@if.local, dự án test tự tạo — không đụng "Dự án mẫu"): tạo
+  tab "Bản vẽ 2", tiêm 1 wall entity qua `window.__cadStore.getState().addEntities([...])` (ĐÚNG
+  luật K1 — addEntities chứ không `setState({doc})` ghi đè) lúc đang ở "Bản vẽ 2" → chuyển UI sang
+  tab "Bản vẽ 1" → đọc lại `window.__cadStore.getState().doc.entities` vẫn thấy đúng 1 entity đó
+  (`verify-wall-1`) — xác nhận MỘT Doc chung, đổi tab không hoán state.
+- 🟡 Phát hiện phụ (KHÔNG liên quan D1, không đụng): thao tác canvas thủ công bằng chuột (rect-tool
+  kéo dở rồi Esc) từng gây 1 lỗi runtime `TypeError: trueEndpoints(...) is not iterable` trong
+  `lib/cad/query.ts:335 findSnap()` (gọi từ `CadCanvas.tsx` `updateCursor`/`onPointerDown`) — file
+  này KHÔNG nằm trong commit D1 (`git log` xác nhận lần sửa gần nhất là `a25cb22`, trước D1 nhiều).
+  Nghi là bug edge-case có sẵn khi bắt đầu vẽ rồi huỷ giữa chừng bằng phím tắt, chưa xác minh sâu
+  — ghi vào `TECH-DEBT.md` để phiên khác tra, không tự sửa (ngoài phạm vi D1).
+
+Kết luận: D1 **XONG, đã verify độc lập, KHÔNG cần làm lại**. Theo đúng lệnh "D1 → dừng → báo cáo"
+— chưa động D2 (gỡ `MAX_SHEETS=5`)/D3 (bump `IDF_VERSION` + đường nạp file cũ), 2 việc đó vẫn
+chờ Hoà duyệt trước khi làm tiếp (RÀNG BUỘC trong phiếu: "Làm D1 → báo cáo → mới sang D2, D3").

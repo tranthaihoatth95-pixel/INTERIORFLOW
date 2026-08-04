@@ -19,7 +19,13 @@ import { useCadStore } from '@/lib/cad/store';
 import type { BoqError } from '@/lib/boq/model';
 import type { BoqGroup } from '@/lib/present-editor/boq-group';
 import type { BoqDisplayRow, BoqOverrideField } from '@/lib/present-editor/boq-overrides';
+import type { BoqSpecExtra } from '@/lib/present-editor/boq-spec-extra';
 import { BoqErrorRows } from './BoqErrors';
+
+/** Số cột THẬT của bảng — dùng cho `colSpan` của dòng lỗi/subtotal, TRÁNH lệch số cứng (đã có 1
+ * lỗi thật kiểu này trước khi sửa: `BoqErrorRows` từng hardcode colSpan=9 trong khi bảng chỉ có
+ * 8 cột). Đổi số cột ở HEADER dưới đây thì đổi luôn hằng số này, đừng để 2 nơi tự đếm riêng. */
+export const BOQ_TABLE_COLUMN_COUNT = 10;
 
 function fmtM2(n: number): string {
   return n.toFixed(2);
@@ -38,13 +44,17 @@ interface BoqTableProps {
   errors: BoqError[];
   totalAmount: number;
   projectId: string;
+  /** matId → {unit, quyCach} — JOIN hiển thị cho 2 cột "Quy cách"/"Đơn vị" (`lib/present-editor/
+   * boq-spec-extra.ts`), KHÔNG có trong `BoqRow` engine (`lib/boq/model.ts` cố ý không mang field
+   * này — xem docstring `boq-spec-extra.ts`). matId lạ (chưa fetch xong/không có spec) → '—'. */
+  specExtra: Map<string, BoqSpecExtra>;
   onOverride: (matId: string, field: BoqOverrideField, value: number) => void;
   onRevert: (matId: string, field: BoqOverrideField) => void;
   selected: BoqSelectedCell | null;
   onSelect: (sel: BoqSelectedCell | null) => void;
 }
 
-export function BoqTable({ groups, errors, totalAmount, projectId, onOverride, onRevert, selected, onSelect }: BoqTableProps) {
+export function BoqTable({ groups, errors, totalAmount, projectId, specExtra, onOverride, onRevert, selected, onSelect }: BoqTableProps) {
   const tr = useT();
   const router = useRouter();
   const [editing, setEditing] = useState<BoqSelectedCell | null>(null);
@@ -165,11 +175,14 @@ export function BoqTable({ groups, errors, totalAmount, projectId, onOverride, o
       <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: 13 }}>
         <thead>
           <tr style={{ position: 'sticky', top: 0, background: 'var(--panel)', zIndex: 2 }}>
-            {['#', tr('Tên vật liệu', 'Material'), tr('Mã SKU', 'SKU'), 'NCC', tr('Khối lượng m²', 'Qty m²'), tr('Đơn giá ₫', 'Unit price ₫'), tr('Hao hụt %', 'Wastage %'), tr('Thành tiền ₫', 'Amount ₫')].map((h, i) => (
+            {[
+              '#', tr('Mã', 'Code'), tr('Hạng mục', 'Item'), tr('Quy cách', 'Spec'), tr('Đơn vị', 'Unit'), 'NCC',
+              tr('Khối lượng', 'Qty'), tr('Đơn giá ₫', 'Unit price ₫'), tr('Hao hụt %', 'Wastage %'), tr('Thành tiền ₫', 'Amount ₫'),
+            ].map((h, i) => (
               <th
                 key={h + i}
                 style={{
-                  textAlign: i >= 4 ? 'right' : 'left', padding: '0 10px', height: 30, fontWeight: 600, fontSize: 11,
+                  textAlign: i >= 6 ? 'right' : 'left', padding: '0 10px', height: 30, fontWeight: 600, fontSize: 11,
                   color: 'var(--t4)', borderBottom: '1px solid var(--border-strong, var(--border))', whiteSpace: 'nowrap',
                 }}
               >
@@ -182,30 +195,40 @@ export function BoqTable({ groups, errors, totalAmount, projectId, onOverride, o
           {groups.map((g) => (
             <Fragment key={g.key}>
               <tr>
-                <td colSpan={8} style={{ background: 'var(--field)', color: 'var(--t3)', fontSize: 11, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', height: 26, padding: '0 10px' }}>
+                <td colSpan={BOQ_TABLE_COLUMN_COUNT} style={{ background: 'var(--field)', color: 'var(--t3)', fontSize: 11, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', height: 26, padding: '0 10px' }}>
                   {g.label}
+                  {g.inferred && (
+                    <span style={{ marginLeft: 8, textTransform: 'none', fontWeight: 600, letterSpacing: 0, color: 'var(--warning)' }}>
+                      · {tr('suy đoán theo vị trí', 'inferred from position')}
+                    </span>
+                  )}
                 </td>
               </tr>
-              {g.rows.map((row, i) => (
-                <tr key={row.matId} style={{ height: 'var(--row, 28px)' }}>
-                  <td style={{ padding: '0 10px', color: 'var(--t4)', borderBottom: '1px solid var(--border)' }}>{i + 1}</td>
-                  <td
-                    onClick={() => goToModel(row.entityIds)}
-                    title={tr('Bấm để xem trên bản vẽ', 'Click to view on the drawing')}
-                    style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t1)', cursor: 'pointer' }}
-                  >
-                    {row.ten}
-                  </td>
-                  <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t4)', fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11 }}>{row.ma}</td>
-                  <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t3)' }}>{row.ncc}</td>
-                  <td style={{ padding: 0, borderBottom: '1px solid var(--border)' }}>{cell(row, 'm2')}</td>
-                  <td style={{ padding: 0, borderBottom: '1px solid var(--border)' }}>{cell(row, 'donGia')}</td>
-                  <td style={{ padding: '0 10px', textAlign: 'right', borderBottom: '1px solid var(--border)', color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>{row.haoHutPhanTram}</td>
-                  <td style={{ padding: '0 10px', textAlign: 'right', borderBottom: '1px solid var(--border)', color: 'var(--t1)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(row.thanhTien)}</td>
-                </tr>
-              ))}
+              {g.rows.map((row, i) => {
+                const extra = specExtra.get(row.matId);
+                return (
+                  <tr key={row.matId} style={{ height: 'var(--row, 28px)' }}>
+                    <td style={{ padding: '0 10px', color: 'var(--t4)', borderBottom: '1px solid var(--border)' }}>{i + 1}</td>
+                    <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t4)', fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11 }}>{row.ma || '—'}</td>
+                    <td
+                      onClick={() => goToModel(row.entityIds)}
+                      title={tr('Bấm để xem trên bản vẽ', 'Click to view on the drawing')}
+                      style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t1)', cursor: 'pointer' }}
+                    >
+                      {row.ten}
+                    </td>
+                    <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t3)', fontSize: 12 }}>{extra?.quyCach ?? '—'}</td>
+                    <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t3)' }}>{extra?.unit ?? '—'}</td>
+                    <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t3)' }}>{row.ncc}</td>
+                    <td style={{ padding: 0, borderBottom: '1px solid var(--border)' }}>{cell(row, 'm2')}</td>
+                    <td style={{ padding: 0, borderBottom: '1px solid var(--border)' }}>{cell(row, 'donGia')}</td>
+                    <td style={{ padding: '0 10px', textAlign: 'right', borderBottom: '1px solid var(--border)', color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>{row.haoHutPhanTram}</td>
+                    <td style={{ padding: '0 10px', textAlign: 'right', borderBottom: '1px solid var(--border)', color: 'var(--t1)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(row.thanhTien)}</td>
+                  </tr>
+                );
+              })}
               <tr key={`sub-${g.key}`} style={{ background: 'color-mix(in srgb, var(--accent) 5%, var(--panel))' }}>
-                <td colSpan={4} style={{ padding: '0 10px', color: 'var(--t4)', fontSize: 11, fontWeight: 600, borderBottom: '1px solid var(--border-strong, var(--border))' }}>
+                <td colSpan={6} style={{ padding: '0 10px', color: 'var(--t4)', fontSize: 11, fontWeight: 600, borderBottom: '1px solid var(--border-strong, var(--border))' }}>
                   {tr('Subtotal', 'Subtotal')} · {g.label}
                 </td>
                 <td style={{ padding: '0 10px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', borderBottom: '1px solid var(--border-strong, var(--border))' }}>{fmtM2(g.subtotalM2)}</td>
@@ -214,7 +237,7 @@ export function BoqTable({ groups, errors, totalAmount, projectId, onOverride, o
               </tr>
             </Fragment>
           ))}
-          <BoqErrorRows errors={errors} projectId={projectId} />
+          <BoqErrorRows errors={errors} projectId={projectId} columns={BOQ_TABLE_COLUMN_COUNT} />
         </tbody>
       </table>
       <div style={{ display: 'flex', alignItems: 'center', gap: 18, height: 40, padding: '0 16px', background: 'var(--panel)', borderTop: '1px solid var(--border)', fontSize: 13, color: 'var(--t3)', position: 'sticky', bottom: 0 }}>

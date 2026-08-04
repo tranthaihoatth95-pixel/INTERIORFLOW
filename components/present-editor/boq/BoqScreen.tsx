@@ -12,7 +12,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { RefreshCw, FileSpreadsheet, X } from 'lucide-react';
+import { RefreshCw, FileSpreadsheet, Printer, X } from 'lucide-react';
 import { useT, useLang } from '@/lib/i18n';
 import { useCadStore } from '@/lib/cad/store';
 import type { BoqError, BoqRow } from '@/lib/boq/model';
@@ -23,7 +23,8 @@ import {
   type BoqDisplayRow, type BoqOverrideField, type BoqOverrideMap,
 } from '@/lib/present-editor/boq-overrides';
 import { loadBoqOverrides, saveBoqOverrides } from '@/lib/present-editor/boq-overrides-persist';
-import { groupBoqRowsByStorey } from '@/lib/present-editor/boq-group';
+import { groupBoqRows, type BoqGroupMode } from '@/lib/present-editor/boq-group';
+import { buildBoqSpecExtraMap, type BoqSpecExtra } from '@/lib/present-editor/boq-spec-extra';
 import type { Doc } from '@/lib/cad/model';
 import { emptyDoc } from '@/lib/cad/model';
 import { BoqTable, type BoqSelectedCell } from './BoqTable';
@@ -37,6 +38,7 @@ interface BoqApiResponse {
 }
 
 const COACH_KEY = 'if-boq-coach-dismissed';
+const GROUP_MODE_KEY = 'if-boq-group-mode';
 
 function fmtVnd(n: number): string {
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
@@ -60,10 +62,33 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
   const [selected, setSelected] = useState<BoqSelectedCell | null>(null);
   const [coachDismissed, setCoachDismissed] = useState(true);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [groupMode, setGroupMode] = useState<BoqGroupMode>('storey');
+  const [specExtra, setSpecExtra] = useState<Map<string, BoqSpecExtra>>(new Map());
   const historyRef = useRef<BoqOverrideMap[]>([]);
 
   useEffect(() => {
     try { setCoachDismissed(localStorage.getItem(COACH_KEY) === '1'); } catch { /* private mode — mặc định hiện coach, không crash */ }
+    try {
+      const saved = localStorage.getItem(GROUP_MODE_KEY);
+      if (saved === 'room' || saved === 'storey') setGroupMode(saved);
+    } catch { /* private mode — mặc định 'storey', không crash */ }
+  }, []);
+
+  const changeGroupMode = (mode: BoqGroupMode) => {
+    setGroupMode(mode);
+    try { localStorage.setItem(GROUP_MODE_KEY, mode); } catch { /* tiện nghi, không chặn nếu lưu lỗi */ }
+  };
+
+  // Cột "Quy cách"/"Đơn vị" (JOIN hiển thị, KHÔNG đụng lib/boq/*) — fetch 1 lần, đường có sẵn
+  // dùng ở nhiều nơi khác (vd lib/render-studio/use-materials.ts), tự khai type tối thiểu tại
+  // đây theo đúng quy ước "mỗi consumer tự lấy field mình cần" của lib/boq/from-project.ts.
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/specs?kind=material')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (alive && data?.specs) setSpecExtra(buildBoqSpecExtraMap(data.specs)); })
+      .catch(() => {});
+    return () => { alive = false; };
   }, []);
 
   useEffect(() => {
@@ -131,7 +156,7 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
   }, [persistOverrides]);
 
   const displayRows: BoqDisplayRow[] = boq ? applyBoqOverrides(boq.rows, overrides) : [];
-  const groups = boq ? groupBoqRowsByStorey(displayRows, doc) : [];
+  const groups = boq ? groupBoqRows(displayRows, doc, groupMode) : [];
   const liveTotal = totalWithOverrides(displayRows);
   const counts = countOverrideStatus(displayRows);
   const errorCount = boq?.errors.length ?? 0;
@@ -166,12 +191,33 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
   };
 
   return (
-    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, background: 'var(--bg)' }}>
+    <div className="if-boq-print-root" style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, background: 'var(--bg)' }}>
+      {/* B9 — bố cục in A4 NGANG: cô lập bảng ra khỏi shell khi in (chuẩn "isolate ancestor",
+          KHÔNG cần thư viện PDF riêng — @page landscape + ẩn mọi thứ khác qua class .if-boq-no-print).
+          Đủ cho "in văn phòng"; preset "gửi nhà in" (+bleed/crop marks/pdf-font riêng, B9 đầy đủ
+          theo phiếu) CHƯA làm ở đợt này — ghi rõ, không giả vờ đủ. */}
+      <style>{`
+        @media print {
+          @page { size: A4 landscape; margin: 12mm; }
+          body * { visibility: hidden; }
+          .if-boq-print-root, .if-boq-print-root * { visibility: visible; }
+          .if-boq-print-root { position: absolute; inset: 0; height: auto !important; background: #fff !important; }
+          .if-boq-no-print { display: none !important; }
+          .if-boq-print-root table { font-size: 11px; }
+        }
+      `}</style>
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <div style={{ height: 40, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', background: 'var(--panel)', borderBottom: '1px solid var(--border)' }}>
+          <div className="if-boq-no-print" style={{ height: 40, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', background: 'var(--panel)', borderBottom: '1px solid var(--border)' }}>
             <span style={{ fontSize: 14, fontWeight: 600 }}>{tr('Dự toán vật liệu', 'Bill of quantities')}</span>
+            <div style={{ display: 'flex', gap: 2, background: 'var(--field)', borderRadius: 8, padding: 2, marginLeft: 12 }}>
+              <button type="button" onClick={() => changeGroupMode('storey')} style={segStyle(groupMode === 'storey')}>{tr('Tầng', 'Storey')}</button>
+              <button type="button" onClick={() => changeGroupMode('room')} style={segStyle(groupMode === 'room')}>{tr('Phòng', 'Room')}</button>
+            </div>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+              <button type="button" onClick={() => window.print()} disabled={!boq || loading} style={btnStyle(false)}>
+                <Printer size={13} /> {tr('In A4 ngang', 'Print A4 landscape')}
+              </button>
               <button type="button" onClick={exportXlsx} disabled={!boq || loading} style={btnStyle(false)}>
                 <FileSpreadsheet size={13} /> {tr('Xuất xlsx', 'Export xlsx')}
               </button>
@@ -182,7 +228,7 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
           </div>
 
           {!coachDismissed && (
-            <div style={{ margin: '10px 14px 0', display: 'flex', alignItems: 'center', gap: 9, background: 'var(--accent-soft)', borderRadius: 10, padding: '8px 12px', fontSize: 13 }}>
+            <div className="if-boq-no-print" style={{ margin: '10px 14px 0', display: 'flex', alignItems: 'center', gap: 9, background: 'var(--accent-soft)', borderRadius: 10, padding: '8px 12px', fontSize: 13 }}>
               {tr('Số tự sinh từ vùng tô — không phải Excel.', 'Numbers are generated from painted regions — not a spreadsheet.')}
               <button type="button" onClick={dismissCoach} style={{ marginLeft: 'auto', height: 26, padding: '0 11px', border: 0, borderRadius: 8, background: 'var(--accent)', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
                 {tr('Hiểu rồi', 'Got it')}
@@ -191,12 +237,12 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
           )}
 
           {errorMsg && (
-            <div style={{ margin: '10px 14px 0', display: 'flex', alignItems: 'center', gap: 9, background: 'color-mix(in srgb, var(--danger) 14%, var(--panel))', borderRadius: 10, padding: '8px 12px', fontSize: 13 }}>
+            <div className="if-boq-no-print" style={{ margin: '10px 14px 0', display: 'flex', alignItems: 'center', gap: 9, background: 'color-mix(in srgb, var(--danger) 14%, var(--panel))', borderRadius: 10, padding: '8px 12px', fontSize: 13 }}>
               {errorMsg}
             </div>
           )}
 
-          {boq && <BoqErrorBanner errors={boq.errors} />}
+          {boq && <div className="if-boq-no-print"><BoqErrorBanner errors={boq.errors} /></div>}
 
           {docSource === 'none' && !loading && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: 'var(--t4)', fontSize: 13 }}>
@@ -213,6 +259,7 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
               errors={boq.errors}
               totalAmount={liveTotal}
               projectId={projectId}
+              specExtra={specExtra}
               onOverride={onOverride}
               onRevert={onRevert}
               selected={selected}
@@ -220,7 +267,7 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
             />
           )}
 
-          <div style={{ height: 26, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 14, padding: '0 12px', background: 'var(--panel)', borderTop: '1px solid var(--border)', fontSize: 11, color: 'var(--t4)' }}>
+          <div className="if-boq-no-print" style={{ height: 26, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 14, padding: '0 12px', background: 'var(--panel)', borderTop: '1px solid var(--border)', fontSize: 11, color: 'var(--t4)' }}>
             {errorCount > 0 && <span style={{ color: 'var(--danger)' }}>{tr(`${errorCount} vùng lỗi — bấm để xem`, `${errorCount} error region(s)`)}</span>}
             {counts.handEdited > 0 && <span style={{ color: 'var(--warning)' }}>{tr(`${counts.handEdited} ô đã rời khỏi mô hình`, `${counts.handEdited} cell(s) diverged from the model`)}</span>}
             <span style={{ marginLeft: 'auto' }}>{tr(`Lấy từ mô hình ${counts.fromModel} · Đã sửa tay ${counts.handEdited}`, `From model ${counts.fromModel} · Hand-edited ${counts.handEdited}`)}</span>
@@ -228,7 +275,7 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
           </div>
         </div>
 
-        <aside style={{ width: 236, flexShrink: 0, background: 'var(--panel)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <aside className="if-boq-no-print" style={{ width: 236, flexShrink: 0, background: 'var(--panel)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ height: 34, display: 'flex', alignItems: 'center', padding: '0 12px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t4)' }}>{tr('Ô đang chọn', 'Selected cell')}</span>
             {selected && (
@@ -282,6 +329,13 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
       </div>
     </div>
   );
+}
+
+function segStyle(active: boolean): React.CSSProperties {
+  return {
+    height: 24, padding: '0 10px', border: 0, borderRadius: 6, cursor: 'pointer', fontSize: 11.5, fontWeight: 600,
+    background: active ? 'var(--panel)' : 'transparent', color: active ? 'var(--t1)' : 'var(--t4)',
+  };
 }
 
 function btnStyle(primary: boolean): React.CSSProperties {

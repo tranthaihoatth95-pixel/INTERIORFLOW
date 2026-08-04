@@ -57,7 +57,9 @@ vào `model ProductSpec` (`prisma/schema.prisma`) — khai chỗ cho kho 3 tần
 prisma db push/migrate qua sandbox" (mục Quy tắc session #4): lệnh soạn sẵn cho Hoà chạy máy thật
 (xem cuối báo cáo phiên). Không đụng `components/cad/CadSheets.tsx`.
 
-## 🟡 ĐANG CHẠY (04/08 — PHIẾU ĐỢT 8 multi-sheet BƯỚC 3, D1 XONG — chưa commit, dừng chờ Hoà duyệt trước D2/D3)
+## 🟡 ĐANG CHẠY (04/08 — PHIẾU ĐỢT 8 multi-sheet BƯỚC 3, D1 XONG + ĐÃ COMMIT (`f77ce9d`, lẫn vào
+commit khác — hai phiên chung `.git`) — dừng chờ Hoà duyệt trước D2/D3, phiên sau đã đọc lại +
+verify độc lập xác nhận đúng, xem `docs/SO-KIEM-TONG.md` §9)
 `components/cad/CadSheets.tsx` + `components/cad/CadCanvas.tsx` — bỏ hẳn "hoán store" khi đổi tab
 (mỗi sheet ôm 1 Doc riêng, K1 vi phạm) → `useCadStore` giờ giữ ĐÚNG 1 `doc`/`past`/`future` xuyên
 suốt phiên; `sheets` chỉ còn metadata `Sheet`/`Viewport2D` (model.ts, Bước 1+2 cũ). Đổi tab = bay

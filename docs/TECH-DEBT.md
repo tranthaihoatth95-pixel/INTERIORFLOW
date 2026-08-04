@@ -63,3 +63,10 @@
   Verify browser thật: khoét hốc → F5 (URL y hệt) → hốc còn nguyên (IndexedDB + UI khớp, cutter
   entity còn, `wall.ops` còn). Tiện thể sửa `lib/resume.ts` import `@/lib/phases` → `./phases`
   (mechanical, cùng file — cần relative để module này test được bằng sucrase-node).
+- 🟡 `findSnap()` (`lib/cad/query.ts:335`, gọi từ `CadCanvas.tsx` `updateCursor`/`onPointerDown`)
+  — phát hiện 04/08 lúc verify browser PHIẾU ĐỢT 8 D1 (`docs/SO-KIEM-TONG.md` §9): thao tác
+  Rect-tool kéo dở rồi Esc, rồi click lại vào canvas → `TypeError: trueEndpoints(...) is not
+  iterable`. File này KHÔNG liên quan D1 (lần sửa gần nhất `a25cb22`, trước D1 nhiều). Chưa xác
+  minh sâu nguyên nhân gốc (nghi: huỷ giữa chừng bằng Esc để lại state numeric-input/Số liệu dở
+  dang, `findSnap` nhận endpoint list rỗng/undefined) — cần phiên khác tái hiện đúng chuỗi thao
+  tác rồi đọc `query.ts` quanh dòng 335 để sửa.

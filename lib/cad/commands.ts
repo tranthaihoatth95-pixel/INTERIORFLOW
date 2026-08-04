@@ -467,3 +467,85 @@ export function cutHoleInWall(
   };
   return { cutter, updatedWall };
 }
+
+/* ───────────────────────── BEVEL — vát cạnh trên (NC-12 §4.2 tầng ③ "extrude", SPEC-DUNG-BO-LENH-3D) ─────────────────────────
+ * Nghiệm thu: vát cạnh 1 tường đang chọn → lưu .idf → mở lại → còn nguyên (bậc `extrude` sống
+ * trong `ops`, `lib/three/cad-to-obj.ts` `ObjBuilder.prismBeveled` đọc lại). bevelMm<=0 XOÁ bậc
+ * `extrude` khỏi `ops` (tắt vát cạnh) thay vì để lại rác `bevel:0` — cùng luật "sửa tham số ở bậc
+ * nào cũng chỉ 1 thao tác" đã ghi ở `cutHoleInWall`.
+ */
+
+/** Đặt/xoá bậc `{op:'extrude', bevel}` trên `entity` — GIỮ NGUYÊN mọi bậc khác trong `ops` (chỉ
+ * thay đúng 1 bậc `extrude`, đúng khuôn "modifier stack" NC-12 §4.2: mỗi loại bậc chỉ 1 lần,
+ * gọi lại là SỬA chứ không cộng dồn — khác `cutHoleInWall` cố ý CỘNG DỒN nhiều bậc `boolean`).
+ * `h` lưu THAM KHẢO cao hiện tại của entity lúc đặt (không phải nguồn đọc lại — nguồn đọc lại
+ * dựng hình vẫn là `entity.heightMm`, xem docstring `Base.ops`), tránh field bắt buộc rỗng vô nghĩa. */
+export function setEntityBevel(entity: Entity, bevelMm: number): Entity {
+  const rest = (entity.ops ?? []).filter((op) => op.op !== 'extrude');
+  if (bevelMm <= 0) return { ...entity, ops: rest.length ? rest : undefined };
+  return { ...entity, ops: [...rest, { op: 'extrude', h: entity.heightMm ?? 2700, bevel: bevelMm }] };
+}
+
+/* ───────────────────────── ARRAY LINEAR — nhân bản dãy (NC-12 §4.2 tầng ④ "modifier") ─────────────────────────
+ * Nghiệm thu: áp mảng lên 1 cột/tường mẫu → lưu .idf → mở lại → còn nguyên N bản (ops sống trong
+ * Doc — hình học nhân bản CHỈ tính ở tầng ba.js lúc render, `lib/three/build-ops.ts`
+ * `resolveGroupGeometry`, KHÔNG ghi N entity rời vào Doc — đúng "LƯU THAM SỐ, KHÔNG BAO GIỜ lưu
+ * mesh" đã ghi ở `Base.ops`).
+ */
+export interface ArrayLinearOpts {
+  n: number;
+  dx: number;
+  dy: number;
+  dz: number;
+}
+
+/** Đặt/xoá bậc `{op:'arrayLinear'}` trên `entity` — cùng luật SỬA-tại-chỗ như `setEntityBevel`
+ * (không cộng dồn nhiều bậc arrayLinear). `n<=1` = tắt mảng (xoá bậc), tránh "mảng 1 bản" vô nghĩa. */
+export function setEntityArrayLinear(entity: Entity, opts: ArrayLinearOpts): Entity {
+  const rest = (entity.ops ?? []).filter((op) => op.op !== 'arrayLinear');
+  if (opts.n <= 1) return { ...entity, ops: rest.length ? rest : undefined };
+  return {
+    ...entity,
+    ops: [...rest, { op: 'arrayLinear', n: Math.round(opts.n), dx: opts.dx, dy: opts.dy, dz: opts.dz }],
+  };
+}
+
+/**
+ * "Lan can" mẫu (nút tầng ⑥ Command3DPanel) — dựng 1 CỘT (`wallSegment` vuông postSizeMm ×
+ * postSizeMm, TÁI DÙNG đúng engine tường, không viết hình học mới) rồi gắn bậc `arrayLinear` nhân
+ * bản dọc `a→b`, đúng ví dụ "nan chớp/song sắt lặp" đã ghi ở `Base.ops` (model.ts). Trả về ĐÚNG 2
+ * entity như `wallSegment` (hatch dựng hình + polyline biên) — hatch mang `heightMm`/`ops`, không
+ * sinh N entity rời (luật LƯU THAM SỐ ở trên).
+ *
+ * CHƯA CÓ tay vịn ngang nối các cột — tường/hatch hôm nay LUÔN đùn từ sàn z=0 (`cad-to-obj.ts`
+ * `wallHatches.forEach` hardcode z0=0), chưa có cơ chế đặt khối NỔI ở cao độ giữa không (khác
+ * cutter dùng `elevationMm` — đó chỉ áp cho vai trò CẮT, không áp cho khối DỰNG). Ghi rõ ở đây để
+ * phiên sau không tưởng lầm là đã đủ bộ (§9 "không giấu ô trống") — việc tay vịn để dành đợt sau.
+ */
+export function railingPosts(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  count: number,
+  spacingMm: number,
+  postSizeMm: number,
+  heightMm: number,
+  layer: string,
+): Entity[] {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  const half = postSizeMm / 2;
+  const post = wallSegment(
+    { x: a.x - ux * half, y: a.y - uy * half },
+    { x: a.x + ux * half, y: a.y + uy * half },
+    postSizeMm,
+    layer,
+  );
+  return post.map((e) =>
+    e.type === 'hatch'
+      ? { ...e, heightMm, ops: [{ op: 'arrayLinear' as const, n: count, dx: ux * spacingMm, dy: uy * spacingMm, dz: 0 }] }
+      : e,
+  );
+}
