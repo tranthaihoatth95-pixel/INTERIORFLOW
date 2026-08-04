@@ -5,6 +5,27 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## ✅ XONG (04/08 — P4 xuất PDF: sàn nét in an toàn + số tờ/phiên bản, `df6ca85`)
+Brief P4 mô tả "xuất PDF hiện là chụp màn hình" — **SAI so code thật** (đã kiểm `git log` trước
+khi sửa): `lib/cad/pdf.ts` từ lâu đã là **vector plot thật** (từng Entity vẽ lại bằng API hình học
+jsPDF, không `addImage()`) — A0-A4 × ngang/dọc đã tách trục độc lập (`PAPER_SIZES_MM`/
+`paperSizeMm`, `model.ts`) · **plot-to-scale 1:N thật** (`fixedScaleViewport`/`doc.printScale`,
+`STANDARD_SCALES` gồm đủ 10/20/25/50/100/200/500) · lineweight ISO 128 mm-trên-giấy thật (không
+nhân zoom) · khung tên `titleBlockPro` (`commands.ts`) đã có project/drawing/scale/author/date/
+checker/studio — đã có 24+19 test cũ (`pdf-scale.test.ts`/`pdf-sheetset.test.ts`) pass sẵn.
+**Việc thật còn thiếu** (đúng vùng `lib/cad/pdf*.ts`): (1) sàn bề dày nét mảnh nhất 0.03mm — DƯỚI
+lineweight ISO 128 mảnh nhất (0.13mm), rủi ro mất nét khi in phổ thông → nâng lên
+`MIN_PRINTABLE_LINE_MM=0.1mm` (1 điểm sửa, `setStroke()`); (2) "số tờ"/"phiên bản" trong khung tên
+— thêm `sheetIndex`/`sheetCount`/`version` vào `CadPdfOptions` + `pdfFooterLine()` (hàm thuần),
+`buildSheetSetPdf` TỰ điền theo đúng thứ tự `sheets[]`. **CHƯA nối được vào khung tên ENTITY thật**
+(chỉ vẽ ở dòng ghi chú cuối trang) — `TitleBlockInfoPro`/`titleBlockPro` sống ở `commands.ts`,
+ngoài vùng file P4 được giao; cần phiên khác thêm field `version` rồi nối UI mới đủ.
+Test mới `lib/cad/pdf-print-fidelity.test.ts` (14/14) — **GIẢI MÃ byte content stream PDF thật**
+(không chỉ tin `scaleLabel`): đúng nghiệm thu gốc tường 4000mm @ 1:50 trên A3 → đo được 80.00mm ·
+cả 4 tỉ lệ 20/50/100/200 → 200/80/40/20mm đúng · nét khai 0.01mm vẫn in ra ≥ sàn an toàn (không
+biến mất). `tsc --noEmit -p .` sạch, không hồi quy 2 file test cũ. KHÔNG đụng
+`components/cad/*`/`CadSheets.tsx` (đúng chỉ đạo, nhường P2 multi-sheet Sheet[]).
+
 ## ✅ XONG (04/08 — SPEC-DUNG-BO-LENH-3D VIỆC 1+2: nối extrude+arrayLinear thật)
 `ops[]` trước chỉ boolean chạy thật (27d8c6d) — extrude/arrayLinear mới khai TYPE. Nay nối THẬT cả
 2: **extrude** (bevel vát cạnh trên) áp ở `lib/three/cad-to-obj.ts` `ObjBuilder.prismBeveled()` (cần
