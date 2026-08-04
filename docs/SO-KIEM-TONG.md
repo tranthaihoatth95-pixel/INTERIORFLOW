@@ -456,3 +456,44 @@ Verify độc lập (không chép báo cáo cũ):
 Kết luận: D1 **XONG, đã verify độc lập, KHÔNG cần làm lại**. Theo đúng lệnh "D1 → dừng → báo cáo"
 — chưa động D2 (gỡ `MAX_SHEETS=5`)/D3 (bump `IDF_VERSION` + đường nạp file cũ), 2 việc đó vẫn
 chờ Hoà duyệt trước khi làm tiếp (RÀNG BUỘC trong phiếu: "Làm D1 → báo cáo → mới sang D2, D3").
+
+## §10 · P8 — BỐN LỖI màn Thiết kế 3D (04/08, ảnh Hoà chụp, commit `3305001`)
+
+`components/render-studio/Command3DPanel.tsx` LỖI 1 (nặng nhất, trùng nút): Tường/Cửa/Cửa sổ
+trước ở CẢ hai nhóm (nút Tường đứng riêng + lưới "chưa có" 5 mục, VÀ lặp lại trong lưới Cấu kiện
+tầng ⑥). Gộp về ĐÚNG MỘT nguồn — Cấu kiện. Hộp/Sàn/Mái tách nhóm "Khối cơ bản" riêng (khối hình
+học chung, khác cấu kiện tham số). `nhayNutTuong` (hiệu ứng nháy chỉ dẫn) dời theo nút Tường vào
+lưới, giữ nguyên ý nghĩa.
+
+LỖI 2 (lẫn theme): **KHÔNG tái hiện được** dù kiểm kỹ — `.mat-panel`/`--mat-panel` đúng theo theme
+ở computed style, thử cả 4 tab × 2 theme × 3 độ rộng. Không sửa gì (đúng luật §0 KHÔNG giả vờ đã
+sửa cái không tái hiện được) — nghi phiên khác đã sửa trước hoặc ảnh chụp là khoảnh khắc transition.
+
+`components/three/ViewCube3D.tsx` LỖI 3 (vỡ khung): `setSize(size,size,false)` không set
+`canvas.style.width/height` → canvas hiện theo attribute (96×devicePixelRatio, vd 192px trên màn
+2x), tràn khung 96×96 thật — ĐO được bằng `getBoundingClientRect()`, không đoán. Bỏ `false` — 1
+dòng, buffer vẫn nét, style khoá cứng 96×96 CSS px. Nhãn TRÊN/DƯỚI/TRƯỚC/SAU/TRÁI/PHẢI vốn đã vừa
+texture 128px (đo `measureText`, "TRƯỚC" rộng nhất 76px/128px) — chữ bị cắt là hệ quả canvas tràn
+bị viền ngoài clip, không phải font to.
+
+`components/ui/Tooltip.tsx` LỖI 4 (tooltip đè nút): thêm `side='right'` (neo cạnh nút, tự LẬT
+'left' khi hết chỗ — `pickHorizontalSide` mới, `lib/ui/tooltip-position.ts`), thay `title` gốc
+trình duyệt (không kiểm soát được vị trí) trên toàn lưới Command3DPanel.
+
+Verify: `npx tsc --noEmit -p .` sạch toàn repo · `npm test` 0 fail mới (1 fail cũ đã biết
+`cad-to-obj.test.ts`, không liên quan) · 10/10 `tooltip-position.test.ts` (4 ca mới). Browser thật
+(demo@if.local): đếm text nút trong panel qua DOM — "Tường"/"Cửa"/"Cửa sổ" đúng 1 lần/cái (từ
+danh sách 17 nhãn, không dư) · `canvas.getBoundingClientRect()` ViewCube = đúng 96×96 ở 3 độ rộng
+1400/1000/768px · hover thật (không phải `title` mô phỏng) vào lưới Cấu kiện → tag nổi ra vùng
+canvas bên phải panel, không phủ nút khác — xác nhận bằng screenshot lẫn `getBoundingClientRect()`
+của tag. Cả 2 theme (sáng/tối, `window.__flowStore.setThemePref`).
+
+Phát hiện phụ (KHÔNG sửa, ngoài phạm vi P8): trong lúc verify, app tự khoá màn (Lockscreen 15
+phút không thao tác) — form đăng nhập mở khoá bị **canvas WebGL của viewport 3D che phủ, chặn
+click** (`document.elementFromPoint` xác nhận trả về `<canvas>` thay vì nút "Vào xưởng" dù toạ độ
+đúng tâm nút) — z-index Lockscreen thua canvas Scene3DViewer. Unlock được bằng cách RELOAD trang
+(store `useLockScreen` không persist, về `locked:false`). Không phải do sửa đổi P8 (ViewCube3D
+không đụng z-index/Lockscreen) — nghi lỗi có sẵn, chưa ai bắt được vì khoá màn ít khi trùng lúc
+đang mở chặng 3D. Ghi `TECH-DEBT.md` để phiên khác tra.
+
+chờ Hoà duyệt trước khi làm tiếp (RÀNG BUỘC trong phiếu: "Làm D1 → báo cáo → mới sang D2, D3").
