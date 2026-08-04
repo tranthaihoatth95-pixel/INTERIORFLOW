@@ -5,6 +5,14 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## ✅ XONG (04/08 — P8 sửa 4 lỗi màn Thiết kế 3D, `3305001`+`bdeffd3`, chi tiết `SO-KIEM-TONG.md` §10)
+Trùng nút Tường/Cửa/Cửa sổ (`Command3DPanel.tsx`, gộp về đúng 1 nhóm Cấu kiện, Hộp/Sàn/Mái tách
+"Khối cơ bản") · ViewCube3D vỡ khung (canvas thiếu `style.width/height`, tràn 2x theo DPR — sửa 1
+dòng) · tooltip đè nút (mở rộng `Tooltip.tsx` dùng chung thêm `side='right'` tự lật trái khi hết
+chỗ). LỖI 2 "lẫn theme" KHÔNG tái hiện được dù kiểm kỹ 4 tab × 2 theme × 3 độ rộng — không sửa,
+ghi rõ không giả vờ. Phát hiện phụ NGOÀI phạm vi: Lockscreen bị canvas 3D che mất click (đã tách
+việc riêng, xem task đã spawn). `tsc`/`npm test` sạch, không hồi quy.
+
 ## ✅ XONG (04/08 — P3 KHO VẬT LIỆU VIỆC 3+4: màn quản lý + nhập Excel/CSV, `0120987`)
 `docs/PHIEU-CODE-IF-KHO-VAT-LIEU-V1.md` — VIỆC 1 (4 cột schema) đã xong từ trước (`9710611`).
 **VIỆC 3**: `components/materials/*` (MaterialsScreen/Table/FormModal) — thêm/sửa/xoá/tìm/lọc/
