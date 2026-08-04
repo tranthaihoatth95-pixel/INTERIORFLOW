@@ -363,3 +363,66 @@ thật của Hoà) sẽ thấy bản vẽ 1 chỉ còn `cutter-1-b6mb`. **Luật
 doc test qua store để verify, dùng `addEntities()`/`updateEntities()` (cộng thêm), KHÔNG BAO GIỜ
 `setState({doc: ...})` ghi đè nguyên `doc` trên route có autosave đang mount — kể cả trên dự án
 mẫu.
+
+## §8 · BA VIỆC UI (04/08) — Đường về Gallery · Phím tắt tập trung · Lockscreen
+
+**VIỆC 1 — đường về Gallery**: `HomeButton.tsx` (có sẵn, trước mồ côi) mount vào `AppChrome.tsx`
+bên trái logo khi `logoMenu` bật. `AppLogoMenu.tsx` thêm mục "Về Thư viện dự án" (tách gạch ngang
+khỏi 4 mục cũ). `lib/resume.ts` `goHomeConfirmed(router, {push?})` — cửa DUY NHẤT rời chặng, hỏi
+trước nếu `useSaveStatus().status==='saving'` (chưa lưu xong) qua `useLeaveConfirm` +
+`components/studio/LeaveConfirmBar.tsx` (portal, không `window.confirm`).
+
+**VIỆC 2 — phím tắt tập trung**: `lib/shortcuts.ts` `ShortcutEntry` thêm `disabled/disabledReason`
+(hiện mờ + lý do trong bảng ⌘?, luật §9, không giấu). Đăng ký TOÀN CỤC mới (⌘0/⌘B/⌘L/⌃⌘Q) mở
+rộng ĐÚNG effect có sẵn trong `AppChrome.tsx` — không rải thêm listener. Đổi ⌘0→⌘9 (zoom fit) ở
+CAD/Present/Photo để nhường ⌘0 cho "về Gallery". Wire mới: Render (⌘9/⌘=/⌘-/⌘'/Esc,
+`BottomToolbar.tsx`) + Present ⌘G/⇧⌘G (`PresentEditor.tsx`, nối `onGroupSelected`/
+`onUngroupSelected` có sẵn). ⌘N đánh dấu **disabled** vì Ctrl/Cmd+N do trình duyệt giữ cứng
+(không ghi đè được từ JS, kiểm kỹ trước khi báo — không giả vờ hoạt động).
+
+**VIỆC 3 — Lockscreen**: `lib/lockscreen.ts` (store `useLockScreen` + `lockScreenNow()` ép 2 sự
+kiện force-save có sẵn `cad:force-save-request`/`present:force-save-request` TRƯỚC khi khoá +
+`getLockIdleMinutes`/`setLockIdleMinutes` theo user, mặc định 15 phút) · `components/studio/
+LockScreen.tsx` (blur toàn màn, tên dự án + đồng hồ sống, nhúng THẲNG `LoginForm` có sẵn — mở
+khoá = đăng nhập lại, không tự chế mật khẩu/PIN) · `AppChrome.tsx` thêm 3 effect: ⌃⌘Q (đặt TRƯỚC
+input-guard, giống macOS thật) · hẹn giờ tự khoá (mousemove/keydown/pointerdown/wheel/touchstart
+reset) · chặn TOÀN BỘ phím khác khi đã khoá (capture-phase trên `window`, chừa lối cho input bên
+trong `[data-lockscreen-root]`) · `components/settings/LockScreenSettings.tsx` (số phút + nút
+"Khoá ngay", mount trong `PixelSettingsShell.tsx` khu "Nâng cao").
+
+**2 lỗi bắt được và sửa TRONG PHIÊN, trước khi báo xong (không phải lỗi để lại)**:
+1. `LockScreen` mount trực tiếp trong `<header className="mat-header">` (có `backdrop-filter`)
+   → `backdrop-filter` trên tổ tiên tạo containing block MỚI cho `position:fixed` (đặc tả CSS),
+   lockscreen bị bó khung theo header thay vì phủ viewport. Bắt được lúc chụp ảnh nghiệm thu (chỉ
+   thấy 1 mẩu ở góc trên). Sửa: portal ra `document.body` — đúng luật K4 đã có (`docs/00-CHOT.md`:
+   "panel kính nổi PHẢI portal, không lồng trong chrome kính").
+2. Bộ chặn phím khi khoá gọi `target.closest(...)` không kiểm `target instanceof Element` trước
+   — khi test bằng `window.dispatchEvent` (target lúc đó CHÍNH LÀ `window`, không có `.closest`)
+   ném lỗi, làm phím rò qua. Sửa xong mới phát hiện tiếp: cách TEST bằng `window.dispatchEvent`
+   còn có vấn đề thứ hai — dispatch thẳng trên `window` khiến `window` vừa là target vừa là nơi
+   đăng ký capture/bubble, duyệt theo THỨ TỰ ĐĂNG KÝ (AT_TARGET) thay vì capture-trước-bubble
+   thật (đúng ngữ nghĩa chỉ khi target là 1 phần tử con, `window` là tổ tiên capture) — đổi sang
+   dispatch trên `document.body` (mô phỏng đúng phím thật, có target/focus thật) xác nhận bộ chặn
+   hoạt động ĐÚNG cho tương tác thật.
+
+**Nghiệm thu browser thật** (127.0.0.1, đăng nhập demo@if.local): VIỆC 1 — HomeButton + mục
+AppLogoMenu đều về Gallery đúng; hộp hỏi hiện khi còn thay đổi chưa lưu, "Ở lại"/"Rời trang" đúng
+hành vi. VIỆC 2 — bảng ⌘? liệt kê đủ theo scope (Toàn cục/CAD/Render/Present), enabled/disabled
+khớp code thật; ⌘0/⌘B/⌘L/⌘9(CAD)/⌘=/⌘'(Render)/⌘9(Render)/Esc(Render) test qua dispatch
+KeyboardEvent đều đúng. VIỆC 3 — **kịch bản đầy đủ theo yêu cầu**: tiêm 1 entity "vẽ dở" vào CAD
+→ ⌃⌘Q → xác nhận force-save chạy ("Đã lưu" đổi giờ) → RELOAD TOÀN TRANG (harsher hơn unlock đơn
+thuần) → entity CÒN NGUYÊN → ⌃⌘Q khoá lại → gõ demo@if.local/demo1234 vào LoginForm trong
+lockscreen → "Vào xưởng" → mở khoá về ĐÚNG route cũ, entity còn nguyên. Test riêng: ⌘0 bị chặn
+hoàn toàn khi đã khoá (không navigate). Cài đặt → Nâng cao → "Khoá màn": số phút mặc định 15,
+nút "Khoá ngay" hoạt động đúng, unlock quay lại đúng vị trí Settings.
+
+`npx tsc --noEmit -p .` sạch cả 3 việc. `npm test`: 1 fail duy nhất là ca đã biết trước (massing
+furniture entityId, không liên quan). Không đụng `lib/cad/model.ts`.
+
+🔴 **Hai phiên chung `.git` (đã biết từ trước, tái diễn)**: code VIỆC 1 nằm trong commit `b7b5484`
+("docs: ATLAS duong A...") của phiên kia; code VIỆC 3 nằm rải trong `f77ce9d`/`9710611` ("docs:
+phieu kho vat lieu...") + `c69c491` ("feat(ui): VIEC 3 - lockscreen settings" — TRÙNG tên việc,
+khả năng phiên kia được giao cùng ticket song song). CHỈ VIỆC 2 (`e2f55d6`) là commit sạch của
+đúng phiên này. Đã xác nhận nội dung ĐÚNG bằng cách đọc lại file thật sau khi lộ diện (không phải
+đoán) — không mất dữ liệu, chỉ lệch tên commit. Không rewrite lịch sử (không phải commit của
+mình).

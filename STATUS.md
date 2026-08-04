@@ -5,6 +5,33 @@
 > ⚠️ **ĐỌC `CLAUDE.md` LUẬT NỀN TẢNG**: IF ĐỘC LẬP GLOBAL, không dính TTT. Brand Kit = nhận diện TỪNG DỰ ÁN.
 > Lịch sử → `CHANGELOG.md` (không đọc mỗi phiên).
 
+## ✅ XONG (04/08 — BA VIỆC UI: đường về Gallery · phím tắt tập trung · Lockscreen, `docs/SO-KIEM-TONG.md` §8)
+- **VIỆC 1**: `HomeButton.tsx` (có sẵn, trước mồ côi) mount vào `AppChrome.tsx` cạnh logo + mục
+  "Về Thư viện dự án" trong `AppLogoMenu.tsx` — cả 2 qua `goHomeConfirmed()` (`lib/resume.ts`),
+  hỏi trước nếu còn thay đổi chưa lưu (`LeaveConfirmBar.tsx`, portal, không `window.confirm`).
+- **VIỆC 2**: đăng ký phím tắt TOÀN CỤC mới (⌘0/⌘B/⌘L/⌃⌘Q) tập trung trong đúng effect có sẵn ở
+  `AppChrome.tsx`. Đổi ⌘0→⌘9 (zoom fit CAD/Present/Photo) nhường ⌘0 cho "về Gallery". Bảng ⌘? nay
+  liệt kê phím "chưa nối" MỜ + lý do thay vì giấu (`lib/shortcuts.ts` field `disabled/
+  disabledReason`) — vd ⌘N đánh dấu chưa nối vì trình duyệt giữ cứng, kiểm kỹ không giả vờ chạy.
+- **VIỆC 3**: Lockscreen kiểu macOS — `lib/lockscreen.ts` + `components/studio/LockScreen.tsx`
+  (blur, đồng hồ sống, nhúng `LoginForm` có sẵn — mở khoá = đăng nhập lại, không tự chế mật
+  khẩu/PIN) + `AppChrome.tsx` (⌃⌘Q, hẹn giờ tự khoá mặc định 15 phút, chặn phím khác khi đã khoá)
+  + `components/settings/LockScreenSettings.tsx` (chỉnh số phút, nút "Khoá ngay"). Ép force-save
+  TRƯỚC khi khoá (tái dùng `cad:force-save-request`/`present:force-save-request` có sẵn) — verify
+  bằng RELOAD TOÀN TRANG sau khoá (khắt khe hơn unlock đơn thuần), dữ liệu còn nguyên.
+- Bắt + sửa 2 lỗi ngay trong phiên trước khi báo xong: (1) lockscreen mồ côi trong header có
+  `backdrop-filter` (containing block mới cho `position:fixed`) → portal ra `document.body`,
+  đúng luật K4 đã có. (2) bộ chặn phím khi khoá thiếu guard `instanceof Element` cho
+  `e.target` — vỡ khi test bằng `window.dispatchEvent` (target lúc đó là `window`, không có
+  `.closest`); sửa xong còn phát hiện thêm cách test đó tự nó sai thứ tự capture/bubble, phải
+  dispatch trên `document.body` mới đúng ngữ nghĩa phím thật.
+- `npx tsc --noEmit -p .` sạch, `npm test` chỉ 1 fail cũ đã biết (không liên quan), không đụng
+  `lib/cad/model.ts`.
+- 🔴 **Hai phiên chung `.git` tái diễn**: code 3 việc này bị cuốn rải rác vào commit của phiên
+  khác (`b7b5484`/`f77ce9d`/`9710611`/`c69c491`) — CHỈ VIỆC 2 (`e2f55d6`) là commit sạch của đúng
+  phiên này. Đã đọc lại file thật để xác nhận nội dung ĐÚNG, không mất dữ liệu — chỉ lệch tên
+  commit. Không rewrite lịch sử.
+
 ## 🟡 ĐANG CHẠY (04/08 — KHO VẬT LIỆU IF v1, VIỆC 1 xong — DỪNG theo lệnh, chờ Hoà trước VIỆC 2)
 `docs/PHIEU-CODE-IF-KHO-VAT-LIEU-V1.md` VIỆC 1: thêm 4 cột `scope`/`ownerId`/`supplierId`/`verified`
 vào `model ProductSpec` (`prisma/schema.prisma`) — khai chỗ cho kho 3 tầng, CHƯA code chức năng
