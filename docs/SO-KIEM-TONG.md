@@ -680,9 +680,11 @@ Project test ("Untitled flow", tạo mới phiên này) để nguyên trong Gall
 liệu nhạy cảm, không đụng "Dự án mẫu". KHÔNG xoá/sửa gì trong `dev.db` phiên này (chỉ đọc, không
 ghi qua API nào ngoài autosave IndexedDB phía client của chính project test).
 
-**Hash tại thời điểm ghi dòng này**: `HEAD` = xem `git log -1` lúc commit đi kèm dòng này (commit
-docs này sẽ TỰ chứa đúng hash — không chép tay số cũ, tránh lệch khi phiên khác đang song song
-push commit lên `main`, đúng luật "Git là sự thật duy nhất").
+**Hash**: nội dung §11c này nằm trong commit `96f6d15` ("docs: SO-KIEM-TONG §11c — verify DWG lần
+3 độc lập"), cha trực tiếp `f561edb` (đợt sửa MAX_SHEETS D2, phiên khác). Code DWG đang verify vẫn
+là `2236e0d`/`0154770` (không đổi phiên này — đây là commit VERIFY, không phải commit SỬA). Số này
+chỉ đúng tại thời điểm ghi — `git log -- docs/SO-KIEM-TONG.md` là nguồn xác nhận cuối, không chép
+tay số cũ nếu đọc lại sau, đúng luật "Git là sự thật duy nhất".
 
 ## §12 · P2 — D2 đợt 8: GỠ TRẦN MAX_SHEETS (04/08 đêm, commit `b46fa30`)
 
