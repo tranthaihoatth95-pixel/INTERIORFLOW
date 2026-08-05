@@ -63,3 +63,11 @@ docs/**/*.jpg
 docs/**/*.jpeg
 docs/**/*.webp
 _to_delete/
+
+# ── LUẬT TRUNG TÍNH — tài sản TTT KHÔNG được nằm trong repo IF ──
+# IF là sản phẩm độc lập bán cho mọi studio (LICENSE-NOTES §0).
+# Tài sản riêng của một studio để ở ~/Downloads/_TTT-BRAND/, không phải ở đây.
+docs/mocks/*Ti Share*
+docs/mocks/*Ti Share*/
+docs/mocks/*so-do-to-chuc*
+docs/mocks/*Sơ đồ tổ chức*
