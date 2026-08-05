@@ -1003,7 +1003,14 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
               {f.project?.larkProjectCode && larkSummary?.byCode.get(f.project.larkProjectCode) && (
                 <span
                   className="shrink-0 rounded-full px-2 py-0.5 text-[length:var(--fs-xs)]"
-                  style={{ ...adaptiveTextStyle(plan, true), background: 'rgba(240,96,32,0.16)', border: '1px solid rgba(240,96,32,0.32)' }}
+                  // 05/08 LUẬT TRUNG TÍNH: trước là rgba(240,96,32) = ĐÚNG cam thương hiệu của
+                  // một studio, dạng rgba nên grep hex của AUDIT-BRAND-PII không bắt được. Pill
+                  // này mang nghĩa CẢNH BÁO ⇒ dùng token trạng thái --warning (có sẵn cả 2 theme).
+                  style={{
+                    ...adaptiveTextStyle(plan, true),
+                    background: 'color-mix(in srgb, var(--warning) 16%, transparent)',
+                    border: '1px solid color-mix(in srgb, var(--warning) 32%, transparent)',
+                  }}
                 >
                   {larkSummary.byCode.get(f.project.larkProjectCode)}
                 </span>

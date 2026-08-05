@@ -35,13 +35,22 @@ const ACCENT = 'var(--accent)';
 
 /** 05/08 VIỆC 1 (c) — gợi ý mở đầu theo chặng, PORT mock `Vitals v2.dc.html` màn "02" nhưng
  * SỬA layout: mock xếp 4 gợi ý thành cột dọc chiếm gần hết popover (lối bày điện thoại) — trên
- * desktop popover chỉ rộng 380px, đủ chỗ vẫn còn phải cuộn thread bên dưới. Đổi thành ĐÚNG 2
- * gợi ý/chặng, viên nhỏ xếp NGANG (không phải danh sách dọc). Chỉ hiện khi chưa có hội thoại
- * (`!hasThread`) — bấm gửi thẳng câu hỏi, không phải điền vào ô rồi bấm lần nữa. */
-const STAGE_SUGGESTIONS: Record<Phase, [string, string]> = {
-  concept: ['Đạt TCVN chưa?', 'Thiếu ký hiệu gì?'],
-  render: ['Vật liệu hợp gu chưa?', 'Ánh sáng ổn chưa?'],
-  present: ['Bố cục ổn chưa?', 'Đúng bộ nhận diện?'],
+ * desktop popover chỉ rộng 380px, đủ chỗ vẫn còn phải cuộn thread bên dưới. Viên nhỏ xếp NGANG
+ * (không phải danh sách dọc), tự xuống hàng khi hết chỗ. Chỉ hiện khi chưa có hội thoại
+ * (`!hasThread`) — bấm gửi thẳng câu hỏi, không phải điền vào ô rồi bấm lần nữa.
+ *
+ * 05/08 VIỆC 3 — nâng 2 → **3 gợi ý/chặng**, đóng đúng ô `IF-FEATURE-TREE 6.14` ("§5 mục 2 —
+ * gợi ý theo chặng, 3 nút sẵn mỗi chặng"). Câu chữ đổi từ kiểu HỎI KIỂM ("Đạt TCVN chưa?") sang
+ * kiểu RA VIỆC ("kiểm chuẩn tờ này") theo `SPEC-NGON-NGU-CHI-DAN` luật 1 (hành động trước).
+ *
+ * ⚠️ **CÒN GIẢ, CHƯA NỐI NGỮ CẢNH** (N5 — khai thật): ba câu này là bảng TĨNH theo chặng, chưa
+ * đọc tài liệu đang mở. Ô 6.8 ("gợi ý theo ĐỐI TƯỢNG đang chọn") cần `docContext` của PHU —
+ * `rg -n "docContext" lib components app` = **0 kết quả** lúc viết dòng này, nên chưa nối được.
+ * Khi PHU xong: thay bảng này bằng hàm `suggestionsFor(stage, docContext)`, giữ nguyên phần UI. */
+const STAGE_SUGGESTIONS: Record<Phase, [string, string, string]> = {
+  concept: ['kiểm chuẩn tờ này', 'phòng nào chưa có vật liệu', 'xuất PDF'],
+  render: ['đặt đèn nắng chiều', 'vật liệu sàn phòng ngủ', 'render thử'],
+  present: ['sinh bảng khối lượng', 'thêm trang bìa', 'xuất hồ sơ khách'],
 };
 
 /** Lịch sử hội thoại sống ở mức MODULE — panel unmount không mất, reload mới mất. */

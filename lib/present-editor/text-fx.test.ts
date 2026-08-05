@@ -124,7 +124,7 @@ console.log('[7] gradientCss + preset');
 {
   ok(
     'gradientCss đúng cú pháp CSS',
-    gradientCss({ from: '#002850', to: '#4A6C86', angle: 90 }) === 'linear-gradient(90deg, #002850, #4A6C86)',
+    gradientCss({ from: '#14395C', to: '#4A6C86', angle: 90 }) === 'linear-gradient(90deg, #14395C, #4A6C86)',
   );
 
   const none = FX_PRESETS.find((p) => p.id === 'none')!;

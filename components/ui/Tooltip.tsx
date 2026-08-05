@@ -27,9 +27,29 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { clampHorizontalOffset, pickHorizontalSide } from '@/lib/ui/tooltip-position';
 
+/** Trễ mặc định trước khi tag hiện (ms) — khớp `.if-tooltip-visible { transition-delay }` cũ. */
+export const TOOLTIP_DEFAULT_DELAY_MS = 150;
+/** Giữ ngón bao lâu thì tag hiện trên cảm ứng/bút (ms) — mốc long-press quen thuộc của iOS/Android. */
+export const TOOLTIP_LONG_PRESS_MS = 500;
+/** Sau khi nhấc ngón, tag còn nán lại bấy nhiêu để kịp ĐỌC (ms) — cảm ứng không có "rời chuột". */
+const TOUCH_LINGER_MS = 1800;
+/** Trượt quá bấy nhiêu px trong lúc giữ = người dùng đang CUỘN, không phải hỏi tooltip → huỷ. */
+const LONG_PRESS_SLOP_PX = 8;
+
 interface TooltipProps {
   /** tên chức năng hiện trên tag (tiếng Việt, ngắn gọn). */
   label: string;
+  /**
+   * Mô tả 1-2 dòng giải thích công cụ làm GÌ — dòng dưới, chữ nhạt hơn tiêu đề. Có `desc` (hoặc
+   * `shortcut`) thì tag chuyển sang khuôn "thẻ" (`.if-tooltip-rich`: xuống dòng được, rộng tối đa
+   * 260px) thay vì 1 dòng nowrap. Đây là chỗ THAY cho `title=` HTML dài lê thê — `title=` chậm
+   * 1-2s, không định dạng được, và KHÔNG bao giờ hiện trên cảm ứng.
+   */
+  desc?: string;
+  /** phím tắt hiện dạng phím bấm ở góc phải tiêu đề (vd 'L', '⌘Z', 'Space'). */
+  shortcut?: string;
+  /** trễ trước khi hiện (ms). Mặc định `TOOLTIP_DEFAULT_DELAY_MS`; 0 = hiện ngay. */
+  delayMs?: number;
   children: React.ReactNode;
   /**
    * tag hiện phía trên (mặc định) hay phía dưới icon — dùng 'bottom' cho hàng nút sát mép trên
@@ -49,6 +69,12 @@ interface TooltipProps {
    * khi `label` gốc quá dài (vd "Reference — ảnh / vật liệu") và rail hẹp không đủ chỗ.
    */
   touchLabel?: string;
+  /**
+   * Tắt nhãn TĨNH cảm ứng (`.if-tooltip-static`). Dùng khi phần tử ĐÃ tự hiện chữ tên của nó
+   * (vd nút chặng ở `StageSwitcher` — có icon KÈM chữ), nếu không cảm ứng sẽ thấy tên hai lần.
+   * Tắt nhãn tĩnh KHÔNG làm mất tooltip trên cảm ứng: long-press vẫn mở được thẻ đầy đủ.
+   */
+  hideTouchLabel?: boolean;
 }
 
 type RenderSide = 'top' | 'bottom' | 'right' | 'left';
@@ -66,10 +92,26 @@ interface Anchor {
   renderSide: RenderSide;
 }
 
-export default function Tooltip({ label, children, side = 'top', disabled, style, touchLabel }: TooltipProps) {
+export default function Tooltip({
+  label,
+  desc,
+  shortcut,
+  delayMs = TOOLTIP_DEFAULT_DELAY_MS,
+  children,
+  side = 'top',
+  disabled,
+  style,
+  touchLabel,
+  hideTouchLabel,
+}: TooltipProps) {
   const wrapRef = useRef<HTMLSpanElement>(null);
   const tagRef = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
+  /** true = tag đang mở BẰNG long-press (cảm ứng/bút) → cần bỏ `display:none` của media coarse. */
+  const [touchOpen, setTouchOpen] = useState(false);
+  const pressTimer = useRef<number | null>(null);
+  const lingerTimer = useRef<number | null>(null);
+  const pressOrigin = useRef<{ x: number; y: number } | null>(null);
   const [anchor, setAnchor] = useState<Anchor>({ left: 0, y: 0, offsetX: 0, offsetY: 0, renderSide: side });
   // mounted-gate chuẩn: server luôn render false, client vẫn render false ở lần
   // hydrate ĐẦU TIÊN (khớp cây DOM server) — chỉ bật true trong useEffect (chạy
@@ -118,9 +160,70 @@ export default function Tooltip({ label, children, side = 'top', disabled, style
     setOpen(true);
   }, [side]);
 
-  const close = useCallback(() => setOpen(false), []);
+  const clearTimers = useCallback(() => {
+    if (pressTimer.current !== null) window.clearTimeout(pressTimer.current);
+    if (lingerTimer.current !== null) window.clearTimeout(lingerTimer.current);
+    pressTimer.current = null;
+    lingerTimer.current = null;
+  }, []);
+
+  const close = useCallback(() => {
+    clearTimers();
+    setOpen(false);
+    setTouchOpen(false);
+  }, [clearTimers]);
+
+  // Dọn hẹn giờ khi component biến mất giữa lúc đang giữ ngón (đổi tool, đóng panel…).
+  useEffect(() => clearTimers, [clearTimers]);
+
+  /* ---- Long-press cho CẢM ỨNG & BÚT (§0c mảng 3: `title=` không bao giờ hiện trên iPad).
+     Chuột KHÔNG đi đường này — chuột đã có hover (`onMouseEnter`), thêm nữa là hiện hai lần. */
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (e.pointerType === 'mouse') return;
+      clearTimers();
+      pressOrigin.current = { x: e.clientX, y: e.clientY };
+      pressTimer.current = window.setTimeout(() => {
+        pressTimer.current = null;
+        setTouchOpen(true);
+        reposition();
+      }, TOOLTIP_LONG_PRESS_MS);
+    },
+    [clearTimers, reposition],
+  );
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      // Trượt = đang cuộn danh sách/toolbar, không phải muốn xem tooltip → huỷ hẹn giờ.
+      const from = pressOrigin.current;
+      if (!from || pressTimer.current === null) return;
+      if (Math.abs(e.clientX - from.x) > LONG_PRESS_SLOP_PX || Math.abs(e.clientY - from.y) > LONG_PRESS_SLOP_PX) {
+        clearTimers();
+      }
+    },
+    [clearTimers],
+  );
+
+  const onPointerUp = useCallback(() => {
+    pressOrigin.current = null;
+    if (pressTimer.current !== null) {
+      // Nhấc tay TRƯỚC mốc 500ms ⇒ đó là một cú CHẠM bình thường (bấm nút), không phải long-press.
+      clearTimers();
+      return;
+    }
+    if (!touchOpen) return;
+    // Đã mở rồi: giữ thêm một nhịp cho kịp đọc rồi tự đóng — cảm ứng không có sự kiện "rời chuột".
+    clearTimers();
+    lingerTimer.current = window.setTimeout(() => {
+      lingerTimer.current = null;
+      setOpen(false);
+      setTouchOpen(false);
+    }, TOUCH_LINGER_MS);
+  }, [clearTimers, touchOpen]);
 
   if (disabled || !label) return <>{children}</>;
+
+  const rich = Boolean(desc || shortcut);
 
   return (
     <span
@@ -131,30 +234,57 @@ export default function Tooltip({ label, children, side = 'top', disabled, style
       onMouseLeave={close}
       onFocus={reposition}
       onBlur={close}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={close}
+      /* Long-press trên Android/iPadOS mở menu ngữ cảnh hệ thống ("Sao chép/Tra cứu") đè lên
+         tag vừa hiện — chặn ĐÚNG lúc tag đang mở, các lúc khác vẫn để trình duyệt xử lý bình thường. */
+      onContextMenu={(e) => {
+        if (touchOpen) e.preventDefault();
+      }}
     >
       {children}
       {/* Nhãn TĨNH cho cảm ứng thật — render bình thường trong flow (KHÔNG portal), ẩn hẳn bằng
           CSS mặc định (chuột), chỉ hiện qua @media (hover:none) and (pointer:coarse). Không cần
           mounted-gate vì đây là span thường, không đụng document.body → hydrate khớp ngay từ đầu. */}
-      <span className="if-tooltip-static" aria-hidden="true">
-        {touchLabel ?? label}
-      </span>
+      {!hideTouchLabel && (
+        <span className="if-tooltip-static" aria-hidden="true">
+          {touchLabel ?? label}
+        </span>
+      )}
       {mounted &&
         createPortal(
           <span
             role="tooltip"
             ref={tagRef}
-            className={`if-tooltip-tag if-tooltip-${anchor.renderSide}${open ? ' if-tooltip-visible' : ''}`}
+            className={
+              `if-tooltip-tag if-tooltip-${anchor.renderSide}` +
+              (open ? ' if-tooltip-visible' : '') +
+              (rich ? ' if-tooltip-rich' : '') +
+              (touchOpen ? ' if-tooltip-touch' : '')
+            }
             style={
               {
                 left: anchor.left,
                 top: anchor.y,
                 '--tt-offset': `${anchor.offsetX}px`,
                 '--tt-offset-y': `${anchor.offsetY}px`,
+                '--tt-delay': `${delayMs}ms`,
               } as React.CSSProperties
             }
           >
-            {label}
+            {rich ? (
+              <>
+                <span className="if-tooltip-head">
+                  <span className="if-tooltip-title">{label}</span>
+                  {shortcut && <kbd className="if-tooltip-kbd">{shortcut}</kbd>}
+                </span>
+                {desc && <span className="if-tooltip-desc">{desc}</span>}
+              </>
+            ) : (
+              label
+            )}
           </span>,
           document.body,
         )}

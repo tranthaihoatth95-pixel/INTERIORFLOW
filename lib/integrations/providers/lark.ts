@@ -249,6 +249,38 @@ export async function listAtlasMaterialRecords(): Promise<LarkRecord[]> {
   return listAllRecords(appToken, tableId, 500);
 }
 
+/** Base nào chứa bảng — `atlas` (wiki ATLAS) hoặc `work` (base "Quản lý Công việc"). */
+export type LarkBaseKind = 'atlas' | 'work';
+
+/**
+ * (05/08 — VIỆC 1b bảng màu sơn) Liệt kê bản ghi của MỘT bảng Bitable bất kỳ theo `tableId` do
+ * NGƯỜI DÙNG nhập trong IF.
+ *
+ * Khác 3 hàm trên: chúng gắn cứng vào 3 bảng đã biết (task/HR/ATLAS material). Bảng màu là bảng
+ * do TỪNG STUDIO tự lập, IF không biết trước id — mà **Hoà không dùng được UI Larkbase**, nên
+ * mọi thao tác (nhập id, xem tên cột, ghép cột) phải xong TRONG IF ⇒ cần một cửa đọc theo tham số.
+ *
+ * PULL-ONLY như cả module này (`prisma/schema.prisma` §309-313: Larkbase là nguồn chân lý, IF
+ * KHÔNG BAO GIỜ ghi ngược — không `create_record`/`update_record`). Hàm này chỉ GET, và trong
+ * `lark.ts` KHÔNG có hàm ghi nào để mà gọi nhầm.
+ */
+export async function listBitableRecords(
+  tableId: string,
+  base: LarkBaseKind = 'atlas',
+  pageSize = 500,
+): Promise<LarkRecord[]> {
+  if (!tableId.trim()) throw new Error('Thiếu mã bảng (table_id).');
+  let appToken: string;
+  if (base === 'work') {
+    const t = workAppToken();
+    if (!t) throw new Error('LARK_WORK_APP_TOKEN (hoặc LARK_BASE_APP_TOKEN cũ) chưa cấu hình — xem docs/INTEGRATIONS.md mục Lark.');
+    appToken = t;
+  } else {
+    appToken = await getAtlasAppToken();
+  }
+  return listAllRecords(appToken, tableId.trim(), pageSize);
+}
+
 /* ---------- Field-value normalizers ----------
  * Bitable trả field value ở NHIỀU shape khác nhau tuỳ loại field (Text đơn giản là string,
  * nhưng SingleSelect/User/Formula/DateTime có thể trả object/array tuỳ version API). Báo cáo

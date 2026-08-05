@@ -148,6 +148,56 @@ export const WALL_KIND_OPTIONS: { value: WallKind; label: string }[] = [
   { value: 'interior', label: 'Vách ngăn · Interior' },
 ];
 
+/* ───────── LEVEL / TẦNG (VIỆC 1 — `SO-KIEM-TONG.md` §7 dòng "Level/tầng") ───────── */
+
+/**
+ * TẦNG THẬT — object mang CAO ĐỘ + THỨ TỰ, đúng khái niệm Level của Revit. Đây là bước lên của
+ * `Base.storey` (nhãn chuỗi tự do, `model.ts` phía dưới): `storey='L1'` không nói được L1 cao bao
+ * nhiêu, nên §7 sổ kiểm ghi Level "🟡 MỘT PHẦN — CHỈ LÀ NHÃN, không phải object Level mang cao độ".
+ *
+ * ⛔ KHÔNG XOÁ `storey` — hai field SỐNG SONG SONG, `storey` giữ nguyên cho tương thích ngược
+ * (DXF XDATA `IF_STOREY` ở `dxf.ts:547` · bucket cây đối tượng `Object3DTree.tsx` · nhóm BOQ
+ * `boq-group.ts` — cả ba vẫn đọc `storey`, không phiên nào phải sửa theo). Khi entity có CẢ HAI:
+ * **`levelId` THẮNG** cho mọi câu hỏi về CAO ĐỘ (xem `lib/cad/levels.ts` `resolveElevation`);
+ * `storey` vẫn là nhãn hiển thị/nhóm như cũ.
+ *
+ * additive: `.idf` v1 không có `Doc.levels` vẫn parse (migration v1→v2 tự sinh Level từ tập
+ * `storey` đã dùng — `lib/cad/idf.ts` `IDF_MIGRATIONS[1]`).
+ */
+export interface Level {
+  id: string;
+  /** tên người dùng thấy, VD 'Tầng trệt' / 'GF' / 'Lửng'. KHÔNG phải khoá — trùng tên hợp lệ. */
+  name: string;
+  /** cao độ sàn hoàn thiện của tầng này (mm, world Y-up của `Doc`, gốc = ±0.000 công trình). */
+  elevationMm: number;
+  /** thứ tự xếp trong danh sách tầng (0 = dưới cùng). TÁCH khỏi `elevationMm` có chủ đích: tầng
+   * lửng/tầng kỹ thuật có thể cùng cao độ mà vẫn cần thứ tự cố định do người dùng đặt. */
+  order: number;
+  /** K3 — true = Level SINH TỰ ĐỘNG (migration v1→v2 dựng từ nhãn `storey`, `elevationMm` là 0
+   * mặc định vì file v1 KHÔNG mang thông tin cao độ nào). UI phải hiện "suy đoán — chưa khai cao
+   * độ" để người dùng biết mà sửa; người dùng sửa cao độ thì XOÁ cờ này. undefined = do người
+   * dùng khai thật. */
+  inferred?: true;
+}
+
+/** Ràng buộc GẮN VÀO TẦNG: cao độ cuối = `Level.elevationMm + offsetMm`. Đổi cao độ Level thì mọi
+ * entity gắn vào nó dịch theo — đây là toàn bộ lý do Level tồn tại (§7 dòng "Constraint theo cao
+ * độ": trước đây `heightMm` là số tuyệt đối gõ tay, không tham chiếu Level nào). */
+export interface LevelConstraint {
+  levelId: string;
+  /** lệch so với cao độ Level (mm), âm = thấp hơn Level. 0 = đúng mặt Level. */
+  offsetMm: number;
+}
+
+/**
+ * Ràng buộc ĐỈNH — hai kiểu loại trừ nhau, đúng bộ đôi của Revit:
+ *  - `{ levelId, offsetMm }` — **Up to level**: đỉnh bám tầng trên, tầng đó đổi cao độ thì đỉnh
+ *    đổi theo (tường chạy hết chiều cao thông tầng).
+ *  - `{ heightMm }` — **Unconnected height**: cao cố định tính từ ĐÁY đã resolve, không bám tầng
+ *    nào (vách lửng, tủ bếp, lan can).
+ */
+export type TopConstraint = LevelConstraint | { heightMm: number };
+
 interface Base {
   id: string;
   type: EntityType;
@@ -216,6 +266,29 @@ interface Base {
    * DÙNG một field cho nhiều vai trò cutter/covering, không đẻ field song song (đúng khuôn
    * `heightMm` đã dùng cho cả tường lẫn cutter). */
   elevationMm?: number;
+
+  /** VIỆC 1 — tầng chứa entity, trỏ `Level.id` trong `Doc.levels` (xem `Level` phía trên).
+   * THÊM, KHÔNG THAY `storey`: `storey` là NHÃN (còn nguyên, DXF/BOQ/cây đối tượng vẫn đọc),
+   * `levelId` là THAM CHIẾU mang cao độ. Có cả hai ⇒ `levelId` thắng về CAO ĐỘ. undefined =
+   * chưa gán tầng thật — `resolveElevation()` lùi về `elevationMm` rồi về 0, KHÔNG suy đoán từ
+   * `storey` lúc chạy (việc suy đoán chỉ làm MỘT LẦN ở migration v1→v2, có cờ `Level.inferred`). */
+  levelId?: string;
+
+  /** VIỆC 2 — ĐÁY gắn vào tầng: `Level.elevationMm + offsetMm`. Mạnh hơn `levelId`+`elevationMm`
+   * ở chỗ tách được "thuộc tầng nào" khỏi "cách mặt tầng bao nhiêu" (bệ cửa sổ 900 trên tầng 2:
+   * `{levelId:'L2', offsetMm:900}` — sửa cao độ L2 thì bệ đi theo, vẫn giữ đúng 900). undefined =
+   * dùng chuỗi lùi của `resolveElevation()`. */
+  baseConstraint?: LevelConstraint;
+
+  /** VIỆC 2 — ĐỈNH: bám tầng trên (`{levelId, offsetMm}`) hoặc cao cố định (`{heightMm}`).
+   * undefined = lùi về `heightMm` của chính entity (hành vi hôm nay, `cad-to-obj.ts` đọc
+   * `h.heightMm`) — KHÔNG đổi gì cho dữ liệu cũ. Xem `lib/cad/levels.ts` `computeHeights()`. */
+  topConstraint?: TopConstraint;
+
+  /** VIỆC 3 — trỏ `WallType.id` trong `Doc.wallTypes` (Type/Instance kiểu Revit). Giá trị khai
+   * TRÊN INSTANCE (`wallThicknessMm`/`wallKind`/`specId`) **THẮNG** giá trị của Type — xem
+   * `lib/cad/wall-types.ts` `resolveWallParams()`. undefined = 100% instance như hôm nay. */
+  typeId?: string;
 }
 
 /** NC-12 §4.2 — một bậc trong ngăn xếp dựng hình 3D. Thuần dữ liệu JSON, KHÔNG chứa hình học đã
@@ -415,6 +488,51 @@ export interface WallRun {
   entityIds: string[];
 }
 
+/* ───────── WALL TYPE (VIỆC 3 — Type vs Instance, `SO-KIEM-TONG.md` §7 dòng "Type vs Instance") ───────── */
+
+/**
+ * MỘT LỚP trong cấu tạo tường (lõi + hoàn thiện) — đây là chỗ IF đầu tư sâu hơn thiên hạ theo
+ * định vị "BIM nội thất" (`00-BAT-DAU-DOC-DAY.md` §1): lớp hoàn thiện (ốp gỗ · sơn · gạch) mới là
+ * thứ nội thất quan tâm, Revit gọi là Structure editor.
+ *
+ * Thứ tự trong mảng = thứ tự lớp từ MẶT TRÁI sang MẶT PHẢI theo chiều vẽ (cùng quy ước
+ * `WallLocationLine` phía trên — không đoán trong/ngoài công trình).
+ */
+export interface WallTypeLayer {
+  /** tên lớp người dùng thấy, VD 'Ốp gỗ sồi' / 'Gạch 100' / 'Vữa trát'. */
+  name: string;
+  thicknessMm: number;
+  /** FK mềm `ProductSpec.id` — vật liệu THẬT của lớp này (cùng khuôn `HatchEntity.specId`). */
+  specId?: string;
+  /** true = lớp KẾT CẤU (lõi chịu lực). Nhiều nhất 1 lớp nên đánh dấu — nhưng KHÔNG ép ở tầng
+   * type (không có nơi tiêu thụ để kiểm), `resolveWallParams()` chỉ đọc, không phán. */
+  core?: true;
+}
+
+/**
+ * TYPE tường dùng chung cả dự án — "1 chỗ đổi, mọi bản sao đổi theo". Trước đây `wallKind`/
+ * `wallThicknessMm`/`specId` nằm THẲNG trên từng entity ⇒ 100% instance, đổi bề dày 1 loại tường
+ * phải sửa tay từng đoạn (đúng hiện trạng §7 ghi).
+ *
+ * ⚠️ LUẬT GHI ĐÈ (giống Revit): giá trị khai trên INSTANCE **thắng** giá trị của Type. Type là
+ * MẶC ĐỊNH, không phải xiềng — `resolveWallParams()` trả về cả giá trị cuối lẫn NGUỒN của nó
+ * ('instance' | 'type' | 'none') để UI hiện được chấm "đã override".
+ *
+ * additive: `.idf` cũ không có `Doc.wallTypes` vẫn parse — entity không `typeId` chạy y như trước.
+ */
+export interface WallType {
+  id: string;
+  name: string;
+  /** bề dày TỔNG của type (mm). Khi có `layers`, đây là con số CHÍNH THỨC dùng để dựng hình —
+   * `layers` là cấu tạo chi tiết; lệch tổng thì `resolveWallParams()` báo `layersMismatchMm`,
+   * KHÔNG tự sửa số nào (N4 — không gán bừa). */
+  thicknessMm: number;
+  kind: WallKind;
+  layers?: WallTypeLayer[];
+  /** FK mềm `ProductSpec.id` — vật liệu mặc định của type (instance có `specId` thì instance thắng). */
+  specId?: string;
+}
+
 /* ───────── Zone tool (N1 — GAP-COLOR-FILL) — entity ellipse/arrow/zone ───────── */
 
 /** Ellipse THẬT (khác tool 'ellipse' cũ vốn xấp xỉ PolylineEntity 48 điểm): tâm + 2 bán trục
@@ -609,6 +727,13 @@ export interface Doc {
    * `WallRun` phía trên). undefined/mảng rỗng = doc chưa có run nào — tường vẽ ở sketch/pro
    * (`wallChain`/`wallSegment`) KHÔNG tạo WallRun, vẫn là hatch+polyline rời như trước. */
   wallRuns?: WallRun[];
+  /** VIỆC 1 — danh sách TẦNG THẬT của bản vẽ này (xem `Level`). undefined/rỗng = chưa có tầng
+   * nào; entity vẫn dựng từ z=0 y như hôm nay. `.idf` v1 (không có field này) được migration
+   * v1→v2 sinh tự động từ tập `Base.storey` đã dùng — xem `lib/cad/idf.ts`. */
+  levels?: Level[];
+  /** VIỆC 3 — catalog Type tường dùng chung trong bản vẽ này (xem `WallType`). undefined/rỗng =
+   * chưa có type nào, tường 100% instance như trước. */
+  wallTypes?: WallType[];
 }
 
 /* ───────────────────────── B1 — tỉ lệ bản vẽ chuẩn + khổ giấy (paper-space cơ bản) ───────────────────────── */

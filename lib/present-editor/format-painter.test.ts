@@ -22,7 +22,7 @@ function ok(label: string, cond: boolean) {
   const src = makeText({
     text: 'Nguồn — không được copy sang đích',
     fontSize: 8.4,
-    color: '#f06020',
+    color: '#c66a3a',
     align: 'right',
     bold: true,
     italic: true,
@@ -35,7 +35,7 @@ function ok(label: string, cond: boolean) {
   });
   const fmt = extractTextFormat(src);
   ok('extract: fontSize đúng', fmt.fontSize === 8.4);
-  ok('extract: color đúng', fmt.color === '#f06020');
+  ok('extract: color đúng', fmt.color === '#c66a3a');
   ok('extract: align đúng', fmt.align === 'right');
   ok('extract: bold đúng', fmt.bold === true);
   ok('extract: italic đúng', fmt.italic === true);
@@ -54,7 +54,7 @@ function ok(label: string, cond: boolean) {
 {
   const src = makeText({
     fontSize: 6.2,
-    color: '#002850',
+    color: '#14395c',
     align: 'center',
     bold: true,
     italic: false,
@@ -83,7 +83,7 @@ function ok(label: string, cond: boolean) {
   applyTextFormat(dest, fmt);
 
   ok('apply: fontSize đổi theo nguồn', dest.fontSize === 6.2);
-  ok('apply: color đổi theo nguồn', dest.color === '#002850');
+  ok('apply: color đổi theo nguồn', dest.color === '#14395c');
   ok('apply: align đổi theo nguồn', dest.align === 'center');
   ok('apply: bold đổi theo nguồn', dest.bold === true);
   ok('apply: italic đổi theo nguồn', dest.italic === false);

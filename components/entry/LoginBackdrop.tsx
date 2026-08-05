@@ -5,8 +5,13 @@
  *
  * Sprint 2 · C-2 (gốc): preset gradient trôi chậm + ảnh riêng upload, lưu localStorage.
  * 19/07 (login-v2) — DYNAMIC WALLPAPER mở rộng:
- * - Thư viện ảnh sẵn: 30 render mẫu ở public/wallpapers/ttt-01..30.jpg (1920px, ≤~350KB)
- *   — bộ ảnh dùng TẠM, nhãn UI đã trung tính (xem docs/AUDIT-BRAND-PII.md).
+ * - ⛔ 05/08 — LUẬT TRUNG TÍNH: thư viện 30 ảnh dựng sẵn (public/wallpapers/ttt-01..30.jpg)
+ *   là RENDER DỰ ÁN THẬT của một studio, và đang là NỀN MẶC ĐỊNH của màn đăng nhập — mặt
+ *   tiền đầu tiên của sản phẩm bán ra chạy bằng tài sản khách hàng (AUDIT-BRAND-PII 🔴 #2).
+ *   Ảnh đã chuyển ra ngoài repo; `WALLPAPERS` nay RỖNG và mặc định chuyển sang nền ĐỘNG
+ *   sinh bằng code (không cần asset nào — xem DYNAMIC_BGS bên dưới). Cơ chế thư viện ảnh
+ *   GIỮ NGUYÊN, không xoá: chỉ cần đổ ảnh có giấy phép vào mảng là sống lại nguyên vẹn
+ *   (đúng luật §9 — ô trống là bằng chứng còn việc, không xoá cho gọn mắt).
  * - 25/07: thêm NGUỒN ẢNH NGOÀI (Unsplash · Openverse · dán URL/Pinterest) qua
  *   components/common/StockPhotoPicker — xem docs/IMAGE-SOURCES.md.
  * - Chế độ TĨNH: preset gradient / 1 ảnh thư viện / ảnh upload (như cũ).
@@ -94,11 +99,16 @@ export const BG_PRESETS: BgPreset[] = [
   },
 ];
 
-/** Thư viện ảnh nền sẵn có (30 render mẫu — sắp theo tên). */
-export const WALLPAPERS: { id: string; src: string }[] = Array.from({ length: 30 }, (_, i) => {
-  const id = `ttt-${String(i + 1).padStart(2, '0')}`;
-  return { id, src: `/wallpapers/${id}.jpg` };
-});
+/**
+ * Thư viện ảnh nền DỰNG SẴN — RỖNG từ 05/08 (luật trung tính, xem docblock đầu file).
+ *
+ * Muốn bật lại: đổ ảnh CÓ GIẤY PHÉP PHÁT HÀNH vào `public/wallpapers/` rồi liệt kê id ở
+ * đây (`{ id: 'wall-01', src: '/wallpapers/wall-01.jpg' }`). Mọi thứ còn lại — chọn ảnh
+ * tĩnh, trình chiếu, Ken Burns, đo tương phản — chạy lại ngay, không phải sửa gì thêm.
+ * Trong lúc rỗng, người dùng vẫn có 3 đường ra nền ảnh: ảnh tự upload · ảnh từ Unsplash/
+ * Openverse/URL (StockPhotoPicker) · 5 nền động sinh bằng code.
+ */
+export const WALLPAPERS: { id: string; src: string }[] = [];
 const WALLPAPER_IDS = new Set(WALLPAPERS.map((w) => w.id));
 const wallSrc = (id: string) => `/wallpapers/${id}.jpg`;
 
@@ -159,9 +169,15 @@ function loadChoice(): BgChoice {
   } catch {
     /* hỏng thì về mặc định */
   }
-  // MẶC ĐỊNH (chỉ đạo 19/07): user CHƯA từng chọn nền → TRÌNH CHIẾU bộ 30 ảnh sẵn có
-  // ("như vậy trước để thấy độ đẹp"). User đã lưu lựa chọn thì tôn trọng như cũ (trên).
-  return { kind: 'slideshow', ids: WALLPAPERS.map((w) => w.id), order: 'shuffle' };
+  // MẶC ĐỊNH: user CHƯA từng chọn nền.
+  // - 19/07: TRÌNH CHIẾU bộ 30 ảnh dựng sẵn ("như vậy trước để thấy độ đẹp").
+  // - 05/08 (luật trung tính): bộ ảnh đó đã ra khỏi repo ⇒ mặc định là nền ĐỘNG 'aurora'
+  //   (sinh bằng CSS, 0 asset, cùng tinh thần "mở app ra là thấy đẹp" mà không mượn ảnh
+  //   của ai). Còn ảnh trong thư viện thì QUAY LẠI trình chiếu như cũ — không mất hành vi.
+  if (WALLPAPERS.length > 0) {
+    return { kind: 'slideshow', ids: WALLPAPERS.map((w) => w.id), order: 'shuffle' };
+  }
+  return { kind: 'dynamic', id: 'aurora' };
 }
 
 function saveChoice(c: BgChoice) {
@@ -281,6 +297,10 @@ function SlideshowLayer({
   useEffect(() => {
     let cancelled = false;
     setIdx(null);
+    // Thư viện rỗng (05/08 luật trung tính) → không có ảnh nào để preload. Thoát sớm thay vì
+    // gọi wallSrc(undefined) → src="/wallpapers/undefined.jpg". Nút "Trình chiếu" đã bị khoá
+    // ở picker khi rỗng, đây là chốt chặn thứ hai cho lựa chọn CŨ còn nằm trong localStorage.
+    if (playlist.length === 0) return;
     firstShownRef.current = false; // đổi playlist → ảnh đầu bộ mới lại hiện ngay, không fade
     const img = new window.Image();
     const show = () => {
@@ -632,6 +652,12 @@ export function LoginBackdropPicker({
   const isStill = !isSlideshow && !isDynamic;
   const slideshowIds = isSlideshow ? choice.ids : WALLPAPERS.map((w) => w.id);
   const slideshowOrder = isSlideshow ? choice.order : 'shuffle';
+  /** Thư viện ảnh dựng sẵn rỗng (05/08 luật trung tính) ⇒ chế độ Trình chiếu chưa chạy được.
+   *  KHÔNG ẩn nút — làm mờ + nêu lý do tại chỗ (luật §9 `00-BAT-DAU-DOC-DAY.md`). */
+  const noLibrary = WALLPAPERS.length === 0;
+  const noLibraryReason = en
+    ? 'No built-in photos yet — add your own or pick one from the web.'
+    : 'Chưa có ảnh dựng sẵn — dùng ảnh của bạn hoặc ảnh trên mạng.';
 
   const upload = async (file: File | null) => {
     if (!file) return;
@@ -689,6 +715,8 @@ export function LoginBackdropPicker({
                 </button>
                 <button
                   type="button"
+                  disabled={noLibrary}
+                  title={noLibrary ? noLibraryReason : undefined}
                   onClick={() =>
                     onPick({ kind: 'slideshow', ids: slideshowIds, order: slideshowOrder })
                   }
@@ -696,6 +724,8 @@ export function LoginBackdropPicker({
                   style={{
                     borderColor: isSlideshow ? 'var(--accent)' : 'var(--border)',
                     color: isSlideshow ? 'var(--accent)' : 'var(--t3)',
+                    opacity: noLibrary ? 0.45 : 1,
+                    cursor: noLibrary ? 'not-allowed' : undefined,
                   }}
                 >
                   <Play size={11} />
@@ -800,6 +830,11 @@ export function LoginBackdropPicker({
                   <p className="mb-1.5 mt-2.5 text-[10px] uppercase tracking-[0.14em] text-[var(--t5)]">
                     {en ? 'Image library' : 'Thư viện ảnh'}
                   </p>
+                  {noLibrary && (
+                    <p className="rounded-[9px] border border-dashed border-[var(--border)] px-2.5 py-2 text-[10px] leading-snug text-[var(--t4)]">
+                      {noLibraryReason}
+                    </p>
+                  )}
                   <div className="grid max-h-40 grid-cols-4 gap-1.5 overflow-y-auto pr-0.5">
                     {WALLPAPERS.map((w) => {
                       const on = choice.kind === 'wall' && choice.id === w.id;

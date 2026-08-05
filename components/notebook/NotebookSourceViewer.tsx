@@ -29,7 +29,7 @@ export function NotebookSourceViewer({ projectId, source }: Props) {
           alignItems: 'center',
           justifyContent: 'center',
           borderLeft: '1px solid var(--border)',
-          background: 'var(--surface-page, #F1ECE3)',
+          background: 'var(--surface-page)',
           height: '100%',
           padding: 20,
         }}
@@ -50,7 +50,7 @@ export function NotebookSourceViewer({ projectId, source }: Props) {
         display: 'flex',
         flexDirection: 'column',
         borderLeft: '1px solid var(--border)',
-        background: 'var(--surface-page, #F1ECE3)',
+        background: 'var(--surface-page)',
         height: '100%',
         minHeight: 0,
       }}
@@ -95,7 +95,7 @@ export function NotebookSourceViewer({ projectId, source }: Props) {
               alignItems: 'center',
               gap: 4,
               fontSize: 11,
-              color: 'var(--accent, #F06020)',
+              color: 'var(--accent)',
               marginTop: 4,
               textDecoration: 'none',
             }}

@@ -3,12 +3,18 @@
 /**
  * components/intro/svgs/index.tsx — SVG stylized assets cho Intro Sequence.
  * Tất cả tự vẽ, KHÔNG emoji, KHÔNG asset ngoài. Isometric 30° hint qua transform.
- * Palette: cam #F06020, navy #002850, beige #F1ECE3, ink #1B1512, cool gray #6b7280.
+ * Palette: 3 token minh hoạ của InteriorFlow (globals.css `--illus-*`) + ink #1B1512,
+ * cool gray #6b7280.
+ *
+ * 05/08 — LUẬT TRUNG TÍNH (CLAUDE.md "IF ĐỘC LẬP GLOBAL"): 3 hằng dưới trước đây là
+ * ĐÚNG cam/navy/beige thương hiệu của một studio, hardcode ngay trong file .tsx. Nay
+ * trỏ vào token → nhận diện là của IF, và đổi được một chỗ. Giữ dạng hằng (không đọc
+ * thẳng var trong JS) để mọi `fill=`/`stroke=` bên dưới không phải sửa.
  */
 
-const ORANGE = '#F06020';
-const NAVY = '#002850';
-const BEIGE = '#F1ECE3';
+const ORANGE = 'var(--illus-accent)';
+const NAVY = 'var(--illus-deep)';
+const BEIGE = 'var(--illus-paper)';
 const INK = '#1B1512';
 const COOL = '#6b7280';
 

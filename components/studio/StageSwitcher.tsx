@@ -31,6 +31,7 @@ import { useFlowStore } from '@/lib/store';
 import { springSheet, pressable, easeApple } from '@/lib/motion';
 import { createStageDragTracker } from '@/lib/input/stage-drop';
 import { useVitalsUi } from '@/lib/vitals-ui';
+import Tooltip from '@/components/ui/Tooltip';
 import VitalsGesturePanel, { markVitalsUsed, wasVitalsUsed } from './VitalsGesture';
 
 /** Cùng công thức slug của NotebookButton cũ (đã bỏ khỏi Header). */
@@ -240,18 +241,31 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         aria-label="Chặng làm việc"
         style={{ position: 'relative' }}
       >
-        {PHASES.map((p) => {
+        {PHASES.map((p, i) => {
           const Icon = ICON[p.id];
           const on = p.id === active;
+          const name = phaseLabel(p.id, p.id === 'concept' ? cadStage : undefined);
+          const soon = p.id === 'concept' && (cadStage === 'technical' || cadStage === 'bim');
           return (
-            <motion.button
+            /* VIỆC 2 (05/08) — bỏ `title=` HTML: trễ 1-2s, không tách được tên/mô tả, và CÂM trên
+               cảm ứng (§0c mảng 3). Tooltip dùng chung cho luôn phím tắt ⌘1/⌘2/⌘3 (đăng ký thật ở
+               `AppChrome.tsx:136-138`) — trước đây người dùng không có chỗ nào nhìn ra 3 phím này.
+               `hideTouchLabel`: nút chặng ĐÃ hiện chữ tên sẵn, thêm nhãn tĩnh là lặp tên hai lần.
+               `side="bottom"`: thanh chặng nằm sát mép TRÊN màn, tag hướng lên sẽ tràn khỏi viewport. */
+            <Tooltip
               key={p.id}
+              label={name}
+              desc={soon ? `${p.tagline} · Chặng kỹ thuật/BIM (IF2) sắp có` : p.tagline}
+              shortcut={`⌘${i + 1}`}
+              side="bottom"
+              hideTouchLabel
+            >
+            <motion.button
               type="button"
               role="tab"
               aria-selected={on}
               {...pressable}
               onClick={() => onPick(p.id)}
-              title={`${phaseLabel(p.id, p.id === 'concept' ? cadStage : undefined)} — ${p.tagline}`}
               className="stage-btn"
               data-label={WIDEST_LABEL[p.id]}
               style={{
@@ -287,10 +301,13 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
                     thật (BIM viewer/IFC/clash) chưa build. Đặt ngay cạnh nhãn pill để hoạ viên/
                     khách demo hiểu là tính năng sắp có, không phải lỗi. Class chấm bé xíu, không
                     phá layout thanh pill. */}
-                {p.id === 'concept' && (cadStage === 'technical' || cadStage === 'bim') && (
+                {soon && (
                   <span
+                    /* `title=` gỡ 05/08: Tooltip của chính nút chặng (bọc ngoài) đã nói câu "Chặng
+                       kỹ thuật/BIM (IF2) sắp có" trong dòng mô tả. Để lại `title=` ở đây thì
+                       tooltip HTML chậm của badge sẽ ĐÈ lên tag đẹp vừa hiện — hai tooltip một chỗ.
+                       `aria-label` GIỮ để trình đọc màn hình vẫn đọc được badge. */
                     aria-label="Coming soon · IF2"
-                    title="Chặng kỹ thuật/BIM · Sắp có · Coming soon · IF2"
                     style={{
                       fontSize: 9,
                       fontWeight: 600,
@@ -309,6 +326,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
                 )}
               </span>
             </motion.button>
+            </Tooltip>
           );
         })}
 

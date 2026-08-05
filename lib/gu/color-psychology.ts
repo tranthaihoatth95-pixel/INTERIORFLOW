@@ -118,6 +118,92 @@ export function deltaE(a: Lab, b: Lab): number {
   return Math.hypot(a.L - b.L, a.a - b.a, a.b - b.b);
 }
 
+/**
+ * ΔE00 (CIEDE2000, CIE 142-2001) — kL=kC=kH=1.
+ *
+ * VÌ SAO THÊM, KHÔNG THAY `deltaE` (05/08, phiếu bảng màu sơn VIỆC 2):
+ *   ΔE*76 coi CIELAB là đều nhau mọi hướng — SAI với cảm nhận thật, nặng nhất ở **vùng lam/lục**:
+ *   hai màu xanh lam lệch nhau rõ mắt thường vẫn cho ΔE76 nhỏ (Lab kéo giãn trục b* vùng lam),
+ *   nên "màu gần nhất" tra ra sai hẳn tông. CIEDE2000 vá đúng chỗ đó bằng 4 hiệu chỉnh: bù chroma
+ *   thấp (G, vùng gần trung tính), trọng số S_L/S_C/S_H theo vị trí trong không gian, và số hạng
+ *   xoay R_T cho vùng lam (h′≈275°) — chính là số hạng làm ΔE00 ≠ ΔE76 nhiều nhất ở vùng đó.
+ *   Tra MÃ SƠN thì sai tông là sai đơn hàng thật ⇒ dùng ΔE00.
+ *
+ *   `deltaE` (ΔE76) GIỮ NGUYÊN, không đụng — `paletteMood`/`mixPaletteLab`/`gu.ts` đang dùng nó
+ *   để GOM/BIN palette (bài toán "hai hex này coi như một màu"), ở đó rẻ + tất định là đủ và đổi
+ *   thước đo sẽ đổi kết quả gu đã học của người dùng. Hai thước đo, hai việc khác nhau (K4:
+ *   không thêm thứ không có nơi tiêu thụ — nơi tiêu thụ ΔE00 là `lib/gu/pantone.ts nearestColor`).
+ */
+export function deltaE2000(a: Lab, b: Lab): number {
+  const kL = 1;
+  const kC = 1;
+  const kH = 1;
+  const rad = Math.PI / 180;
+  const deg = 180 / Math.PI;
+
+  const C1 = Math.hypot(a.a, a.b);
+  const C2 = Math.hypot(b.a, b.b);
+  const Cbar = (C1 + C2) / 2;
+  const Cbar7 = Math.pow(Cbar, 7);
+  // G: bù chroma thấp — kéo trục a* ra ở vùng gần trung tính, nơi ΔE76 đánh giá thiếu.
+  const G = 0.5 * (1 - Math.sqrt(Cbar7 / (Cbar7 + Math.pow(25, 7))));
+
+  const a1p = (1 + G) * a.a;
+  const a2p = (1 + G) * b.a;
+  const C1p = Math.hypot(a1p, a.b);
+  const C2p = Math.hypot(a2p, b.b);
+
+  // atan2 trả (-180,180] → đưa về [0,360). Chroma = 0 thì hue vô nghĩa, quy ước 0 (CIE 142-2001).
+  const hue = (y: number, x: number): number => {
+    if (y === 0 && x === 0) return 0;
+    const h = Math.atan2(y, x) * deg;
+    return h >= 0 ? h : h + 360;
+  };
+  const h1p = hue(a.b, a1p);
+  const h2p = hue(b.b, a2p);
+
+  const dLp = b.L - a.L;
+  const dCp = C2p - C1p;
+
+  let dhp: number;
+  if (C1p * C2p === 0) dhp = 0;
+  else {
+    dhp = h2p - h1p;
+    if (dhp > 180) dhp -= 360;
+    else if (dhp < -180) dhp += 360;
+  }
+  const dHp = 2 * Math.sqrt(C1p * C2p) * Math.sin((dhp / 2) * rad);
+
+  const Lbarp = (a.L + b.L) / 2;
+  const Cbarp = (C1p + C2p) / 2;
+
+  let hbarp: number;
+  if (C1p * C2p === 0) hbarp = h1p + h2p;
+  else if (Math.abs(h1p - h2p) <= 180) hbarp = (h1p + h2p) / 2;
+  else if (h1p + h2p < 360) hbarp = (h1p + h2p + 360) / 2;
+  else hbarp = (h1p + h2p - 360) / 2;
+
+  const T =
+    1 -
+    0.17 * Math.cos((hbarp - 30) * rad) +
+    0.24 * Math.cos(2 * hbarp * rad) +
+    0.32 * Math.cos((3 * hbarp + 6) * rad) -
+    0.2 * Math.cos((4 * hbarp - 63) * rad);
+
+  const dTheta = 30 * Math.exp(-Math.pow((hbarp - 275) / 25, 2));
+  const Cbarp7 = Math.pow(Cbarp, 7);
+  const RC = 2 * Math.sqrt(Cbarp7 / (Cbarp7 + Math.pow(25, 7)));
+  const SL = 1 + (0.015 * Math.pow(Lbarp - 50, 2)) / Math.sqrt(20 + Math.pow(Lbarp - 50, 2));
+  const SC = 1 + 0.045 * Cbarp;
+  const SH = 1 + 0.015 * Cbarp * T;
+  const RT = -Math.sin(2 * dTheta * rad) * RC; // số hạng xoay — vùng lam h′≈275°
+
+  const tL = dLp / (kL * SL);
+  const tC = dCp / (kC * SC);
+  const tH = dHp / (kH * SH);
+  return Math.sqrt(tL * tL + tC * tC + tH * tH + RT * tC * tH);
+}
+
 /** HSL từ RGB (h 0..360, s/l 0..1) — dùng cho phân loại tâm-lý-màu theo hue. */
 export function rgbToHsl(c: Rgb): { h: number; s: number; l: number } {
   const r = c.r / 255;

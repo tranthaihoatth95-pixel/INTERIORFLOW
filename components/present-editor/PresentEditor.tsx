@@ -322,11 +322,15 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     if (!dataUrl) return;
     const insertAt = ed.deck.slides.length;
     ed.update((d) => {
-      // Nền CỐ ĐỊNH beige ấm TTT (KHÔNG kế thừa slide[0] — slide đầu deck mẫu có thể là slide
+      // Nền giấy SÁNG cố định (KHÔNG kế thừa slide[0] — slide đầu deck mẫu có thể là slide
       // bìa nền TỐI, kế thừa mù sẽ làm chữ tối-trên-tối vô hình). Ink luôn tối vì nền luôn sáng.
+      // 05/08 — LUẬT TRUNG TÍNH: giá trị cũ là beige thương hiệu của một studio. Nay là giấy
+      // kem trung tính của IF. CỐ Ý không đọc palette Brand Kit ở đây: palette dự án có thể
+      // toàn màu TỐI, lấy mù sẽ tái phát đúng lỗi chữ-tối-trên-nền-tối mà dòng trên đang chặn —
+      // người dùng đổi nền slide này bằng tay như mọi slide khác (model.ts:460 `background`).
       d.slides.push({
         id: newId('sld'),
-        background: '#F1ECE3',
+        background: '#F4F1EA',
         backgroundImage: null,
         elements: [
           makeText({

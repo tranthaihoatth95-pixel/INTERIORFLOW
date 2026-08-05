@@ -1,9 +1,15 @@
 /**
- * lib/gu/pantone.test.ts — F3b: `nearestPantone`/`paletteToPantone` (lib/gu/pantone.ts).
+ * lib/gu/pantone.test.ts — máy tra màu `nearestColor`/`nearestColors` (lib/gu/pantone.ts).
  * Chạy: node_modules/.bin/sucrase-node lib/gu/pantone.test.ts
+ *
+ * ⚠️ VIẾT LẠI 05/08: bản cũ kiểm `pantone-tcx.json` (2310 mã nhúng sẵn) — **bảng đó đã xoá**,
+ * nên mọi test kiểu "đủ 2000 mã", "mã không trùng" không còn nghĩa. Nguồn màu giờ do người dùng
+ * nạp lúc chạy ⇒ test phải dựng nguồn GIẢ ngay trong test, đúng cách một máy tra cắm rời được
+ * kiểm: đưa bảng vào, xem thứ hạng ra có đúng không.
  */
-import { nearestPantone, paletteToPantone } from './pantone';
-import pantoneData from './pantone-tcx.json';
+import { nearestColor, nearestColors, paletteToColors, DEFAULT_MAX_DELTA_E } from './pantone';
+import { hexToRgb, rgbToLab } from './color-psychology';
+import type { ColorEntry, ColorSource } from '../colors/types';
 
 let pass = 0;
 let fail = 0;
@@ -12,65 +18,115 @@ function ok(label: string, cond: boolean) {
   else { fail += 1; console.log(`  FAIL - ${label}`); }
 }
 
-console.log('pantone-tcx.json — dữ liệu thô đúng hình dạng, đủ số lượng, không trùng mã');
-{
-  ok('~2000+ mã (đề bài "~2000")', pantoneData.length >= 2000);
-  ok('mọi entry có đủ code/name/hex', pantoneData.every((e) => typeof e.code === 'string' && e.code && typeof e.name === 'string' && e.name && typeof e.hex === 'string'));
-  ok('mọi hex đúng định dạng #RRGGBB', pantoneData.every((e) => /^#[0-9A-F]{6}$/.test(e.hex)));
-  const codes = new Set(pantoneData.map((e) => e.code));
-  ok('mã KHÔNG trùng nhau (đủ 1-1 với danh sách gốc)', codes.size === pantoneData.length);
+function entry(code: string, name: string, hex: string, brand?: string): ColorEntry {
+  return { code, name, hex, lab: rgbToLab(hexToRgb(hex)!), brand };
+}
+function source(colors: ColorEntry[], id = 'src', name = 'Bảng thử'): ColorSource {
+  return { id, name, colors, origin: 'user-csv', scope: 'studio', updatedAt: 0 };
 }
 
-console.log('nearestPantone — trùng khít trả ĐÚNG mã đó, ΔE=0');
+const BANG = source([
+  entry('S-01', 'Trắng ngà', '#f4f1ea'),
+  entry('S-02', 'Xám khói', '#8d9299'),
+  entry('S-03', 'Xanh rêu', '#4a5d4e'),
+  entry('S-04', 'Nâu đất', '#8a5a3c'),
+  entry('S-05', 'Xanh biển', '#2f5d8a'),
+  entry('S-06', 'Đen mực', '#1b1b1d'),
+]);
+
+console.log('\n[1] Trùng khít → ΔE = 0, đúng mã đó đứng đầu');
 {
-  const sample = pantoneData[100];
-  const m = nearestPantone(sample.hex);
-  ok('trả đúng entry khi hex trùng khít', m?.code === sample.code && m?.name === sample.name);
-  ok('ΔE = 0 khi trùng khít', m?.deltaE === 0);
+  const r = nearestColors('#4a5d4e', BANG);
+  ok('mã đầu bảng đúng', r.matches[0].code === 'S-03');
+  ok('ΔE = 0', r.matches[0].deltaE === 0);
+  ok('nearestDeltaE = 0', r.nearestDeltaE === 0);
+  ok('enough = true', r.enough === true);
+  ok('có ghi tên nguồn để UI nói "gần nhất TRONG bảng nào"', r.sourceName === 'Bảng thử' && r.sourceId === 'src');
 }
 
-console.log('nearestPantone — hex GẦN (lệch nhẹ) vẫn ra ĐÚNG mã đó, ΔE nhỏ nhưng > 0');
+console.log('\n[2] Lệch nhẹ → vẫn ra đúng mã, ΔE nhỏ nhưng > 0');
 {
-  const sample = pantoneData[500];
-  // lệch +1 mỗi kênh RGB — đủ nhỏ để KHÔNG nhảy sang mã khác (2310 mã phủ khá dày nhưng lệch 1
-  // đơn vị mỗi kênh là biến động cực nhỏ, luôn còn trong "vùng hút" của mã gần nhất).
-  const rgb = parseInt(sample.hex.slice(1), 16);
-  const r = Math.min(255, (rgb >> 16) + 1);
-  const g = Math.min(255, ((rgb >> 8) & 0xff) + 1);
-  const b = Math.min(255, (rgb & 0xff) + 1);
-  const nudged = `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
-  const m = nearestPantone(nudged);
-  ok('vẫn khớp đúng mã gốc', m?.code === sample.code);
-  ok('ΔE > 0 (không trùng khít tuyệt đối)', (m?.deltaE ?? -1) > 0);
-  ok('ΔE rất nhỏ (< 1, mắt thường không phân biệt được)', (m?.deltaE ?? 99) < 1);
+  const r = nearestColors('#4b5e4f', BANG); // +1 mỗi kênh
+  ok('vẫn là S-03', r.matches[0].code === 'S-03');
+  ok('0 < ΔE < 1', r.matches[0].deltaE > 0 && r.matches[0].deltaE < 1);
 }
 
-console.log('nearestPantone — hex không hợp lệ trả null, KHÔNG sập');
+console.log('\n[3] TOP N — trả nhiều lựa chọn, KHÔNG một đáp án chắc nịch');
 {
-  ok('chuỗi rác → null', nearestPantone('không-phải-hex') === null);
-  ok('chuỗi rỗng → null', nearestPantone('') === null);
-  ok('thiếu ký tự (#FFFFF, 5 số) → null', nearestPantone('#FFFFF') === null);
-  ok('#FFF (rút gọn 3 ký tự) VẪN hợp lệ — hexToRgb hỗ trợ dạng rút gọn', nearestPantone('#FFF') !== null);
-  ok('#GGGGGG (ký tự sai) → null', nearestPantone('#GGGGGG') === null);
+  const r = nearestColors('#4a5d4e', BANG);
+  ok('mặc định trả 5 kết quả', r.matches.length === 5);
+  ok('mọi kết quả đều KÈM số ΔE', r.matches.every((m) => typeof m.deltaE === 'number'));
+  ok('xếp tăng dần theo ΔE', r.matches.every((m, i) => i === 0 || m.deltaE >= r.matches[i - 1].deltaE));
+
+  ok('limit = 3 → 3 kết quả', nearestColors('#4a5d4e', BANG, { limit: 3 }).matches.length === 3);
+  ok('limit kẹp trên ở 10 (nguồn chỉ có 6 → 6)', nearestColors('#4a5d4e', BANG, { limit: 999 }).matches.length === 6);
+  ok('limit 0 → kẹp về 1, không trả rỗng', nearestColors('#4a5d4e', BANG, { limit: 0 }).matches.length === 1);
 }
 
-console.log('nearestPantone — 2 màu cực trị (đen/trắng tinh) vẫn ra kết quả hợp lệ trong bảng');
+console.log('\n[4] Ngưỡng ΔE — quá xa thì KHÔNG được bày mã ra như đáp án');
 {
-  const black = nearestPantone('#000000');
-  const white = nearestPantone('#FFFFFF');
-  ok('đen tuyệt đối → có kết quả', black !== null);
-  ok('trắng tuyệt đối → có kết quả', white !== null);
-  ok('đen và trắng KHÔNG ra cùng 1 mã', black?.code !== white?.code);
+  // Hồng cánh sen: bảng 6 màu trên không có gì gần.
+  const r = nearestColors('#ff00aa', BANG);
+  ok('nearestDeltaE > ngưỡng 5', (r.nearestDeltaE ?? 0) > DEFAULT_MAX_DELTA_E);
+  ok('enough = false ⇒ UI hiện "không có màu nào đủ gần"', r.enough === false);
+  ok('matches VẪN có dữ liệu để người dùng tự xem nếu muốn', r.matches.length > 0);
+  ok('nearestColor() trả null khi không đủ gần (không bịa mã)', nearestColor('#ff00aa', BANG) === null);
+
+  ok('nới ngưỡng thì enough bật lại', nearestColors('#ff00aa', BANG, { maxDeltaE: 100 }).enough === true);
 }
 
-console.log('paletteToPantone — áp lên cả palette, bỏ qua hex hỏng thay vì sập cả mảng');
+console.log('\n[5] Dùng LAB đã lưu, không tính lại từ hex');
 {
-  const palette = [pantoneData[0].hex, pantoneData[1].hex, 'rác', pantoneData[2].hex];
-  const matches = paletteToPantone(palette);
-  ok('3 hex hợp lệ → 3 kết quả (bỏ qua 1 hex hỏng)', matches.length === 3);
-  ok('đúng thứ tự tương ứng palette (giữ nguyên vị trí các hex hợp lệ)', matches[0].code === pantoneData[0].code && matches[2].code === pantoneData[2].code);
-  ok('mảng rỗng → mảng rỗng, không sập', paletteToPantone([]).length === 0);
+  // Entry cố tình có hex và lab KHÔNG khớp nhau — mô phỏng nguồn có Lab đo thật.
+  const lech: ColorSource = source([
+    { code: 'X', name: 'Lab thật', hex: '#ffffff', lab: rgbToLab(hexToRgb('#000000')!) },
+  ], 'lech', 'Lệch');
+  const r = nearestColors('#000000', lech);
+  ok('xếp hạng theo LAB (ΔE≈0 với đen) chứ không theo hex trắng', r.matches[0].deltaE < 0.01);
 }
 
-console.log(`\n${pass} pass, ${fail} fail`);
+console.log('\n[6] Ca biên');
+{
+  ok('hex sai → matches rỗng, nearestDeltaE null, enough false', (() => {
+    const r = nearestColors('không-phải-hex', BANG);
+    return r.matches.length === 0 && r.nearestDeltaE === null && r.enough === false;
+  })());
+  ok('nguồn rỗng → không sập', (() => {
+    const r = nearestColors('#ffffff', source([], 'empty', 'Rỗng'));
+    return r.matches.length === 0 && r.enough === false;
+  })());
+  ok('entry có hex hỏng bị BỎ QUA, phần còn lại vẫn tra được', (() => {
+    const bad = source([
+      { code: 'BAD', name: 'hỏng', hex: 'zzz' } as unknown as ColorEntry,
+      entry('OK', 'trắng', '#ffffff'),
+    ], 'mix', 'Lẫn');
+    const r = nearestColors('#ffffff', bad);
+    return r.matches.length === 1 && r.matches[0].code === 'OK' && r.enough === true;
+  })());
+  ok('tất định: gọi 2 lần ra cùng thứ tự', (() => {
+    const a = nearestColors('#7f7f7f', BANG).matches.map((m) => m.code).join();
+    const b = nearestColors('#7f7f7f', BANG).matches.map((m) => m.code).join();
+    return a === b;
+  })());
+}
+
+console.log('\n[7] paletteToColors — giữ đúng thứ tự palette, kể cả hex hỏng');
+{
+  const rs = paletteToColors(['#4a5d4e', 'rác', '#f4f1ea'], BANG, { limit: 1 });
+  ok('trả đúng 3 kết quả, không nén mất phần tử', rs.length === 3);
+  ok('phần tử 1 khớp S-03', rs[0].matches[0]?.code === 'S-03');
+  ok('phần tử hỏng ở giữa → rỗng, KHÔNG làm lệch thứ tự', rs[1].matches.length === 0 && rs[1].enough === false);
+  ok('phần tử 3 khớp S-01', rs[2].matches[0]?.code === 'S-01');
+}
+
+console.log('\n[8] Không còn dấu vết bảng nhúng sẵn (VIỆC 3)');
+{
+  const fs = require('node:fs') as typeof import('node:fs');
+  ok('lib/gu/pantone-tcx.json ĐÃ XOÁ khỏi đĩa', !fs.existsSync(`${__dirname}/pantone-tcx.json`));
+  const src = fs.readFileSync(`${__dirname}/pantone.ts`, 'utf8');
+  ok('pantone.ts không import tệp dữ liệu nào', !/from\s+'\.\/[^']*\.json'/.test(src));
+  ok('pantone.ts không còn export nearestPantone (đã đổi thành nearestColor)', !/export function nearestPantone/.test(src));
+}
+
+console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

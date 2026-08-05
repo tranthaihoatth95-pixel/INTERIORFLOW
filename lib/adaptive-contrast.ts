@@ -348,7 +348,7 @@ export function __clearContrastCache() {
  * mờ quá ngưỡng thì tự kéo lên — phân cấp chỉ được phép NHẠT ĐI TRONG GIỚI HẠN,
  * không bao giờ được phép rơi xuống dưới AA.
  *
- * Khi nền quá sáng đến mức ngay cả kem đặc cũng không đủ 4.5 (ttt-06 là ca xấu nhất),
+ * Khi nền quá sáng đến mức ngay cả kem đặc cũng không đủ 4.5 (ảnh mẫu #06 là ca xấu nhất),
  * lever thứ hai vào cuộc: một lớp sương mực RẤT CỤC BỘ trong lòng card, đậm ở giữa —
  * nơi có chữ — và tan ở rìa, nên viền/góc card vẫn nhìn xuyên thấy ảnh. Ưu tiên
  * ĐỌC ĐƯỢC trước, nhưng trả giá ở chỗ ít lộ nhất.
@@ -447,7 +447,7 @@ export function minAlphaForRatio(fg: RGB, bg: RGB, ratio: number): number | null
 export const CARD_STACK = {
   /**
    * PhotoScrim + màng kính hợp lại. HIỆU CHỈNH theo số chủ dự án đo TRỰC TIẾP trên màn
-   * hình: ttt-05 raw 0.1901 → hiệu dụng 0.152. Ở chuỗi này 0.25 cho ~0.146 (lệch <0.01,
+   * hình: ảnh mẫu #05 raw 0.1901 → hiệu dụng 0.152. Ở chuỗi này 0.25 cho ~0.146 (lệch <0.01,
    * nghiêng phía an toàn = coi nền hơi tối hơn thực → không phóng đại tương phản kem).
    * Đây KHÔNG phải alpha CSS của PhotoScrim (radial 0.34→0.62) mà là alpha đen TƯƠNG
    * ĐƯƠNG khi gộp cả kính, để một con số suy ra đúng cái mắt thấy.
@@ -477,7 +477,7 @@ const DESIGN_LUM_MARGIN = 0.02;
 
 /**
  * Ảnh (độ sáng đo được) → độ sáng NGAY SAU CHỮ trong card, TRƯỚC lớp sương nội bộ.
- * Kiểm chứng: ttt-05 đo thô 0.1901 → mô hình cho ~0.146, khớp số 0.152 chủ dự án đo
+ * Kiểm chứng: ảnh mẫu #05 đo thô 0.1901 → mô hình cho ~0.146, khớp số 0.152 chủ dự án đo
  * trực tiếp trên màn hình (lệch < 0.01, nghiêng phía an toàn).
  */
 export function cardBackdropLuminance(rawLuminance: number): number {

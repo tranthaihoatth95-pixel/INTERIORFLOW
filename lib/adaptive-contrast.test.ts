@@ -195,7 +195,7 @@ it('minAlphaForRatio: đủ alpha đạt đúng ngưỡng; bất khả thi → n
   assert.equal(minAlphaForRatio(CREAM, [240, 236, 228], 4.5), null);
 });
 
-it('cardBackdropLuminance khớp số đo chủ dự án: ttt-05 raw 0.1901 → ~0.15 (lệch <0.02)', () => {
+it('cardBackdropLuminance khớp số đo chủ dự án: ảnh mẫu #05 raw 0.1901 → ~0.15 (lệch <0.02)', () => {
   const eff = cardBackdropLuminance(0.1901);
   assert.ok(Math.abs(eff - 0.152) < 0.02, `eff=${eff}`);
 });

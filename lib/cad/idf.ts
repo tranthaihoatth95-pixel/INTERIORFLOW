@@ -14,8 +14,15 @@
  */
 
 import type { Doc } from './model';
+import { upgradeDocLevelsFromStorey } from './levels';
 
-export const IDF_VERSION = 1 as const;
+/**
+ * v2 (VIỆC 1 — TẦNG THẬT): thêm `Doc.levels` + `Base.levelId`. Bump vì file v2 mang cấu trúc mà
+ * app v1 KHÔNG hiểu (nó sẽ bỏ qua `levels` rồi ghi đè mất khi lưu lại) — đúng ca `IDF_VERSION`
+ * sinh ra để chặn. `.idf` v1 vẫn mở được bình thường qua `IDF_MIGRATIONS[1]` (điều kiện SỐNG, có
+ * test riêng ở `levels-idf-v2.test.ts`).
+ */
+export const IDF_VERSION = 2 as const;
 /** Version app hiển thị trong metadata — cập nhật thủ công khi bump app version thật có ý nghĩa
  * (hiện chưa có nguồn version tập trung trong app — package.json version không public ở client). */
 export const IDF_APP_VERSION = 'interiorflow-1.0.0';
@@ -36,13 +43,34 @@ export function __setCurrentIdfVersionForTest(v: number) {
 }
 
 /**
- * Bảng nâng cấp — mỗi entry khoá `fromV` là hàm nâng ĐÚNG 1 BẬC (fromV → fromV+1). Hiện mới có
- * v1 nên khoá `1` chỉ là KHUNG/identity (đổi số hiệu, giữ nguyên dữ liệu) — CHƯA có schema v2
- * thật để biến đổi. Khi ra v2 thật: thay hàm ở khoá `1` bằng phép biến đổi thật (đổi field/cấu
- * trúc), rồi thêm khoá `2` khi ra v3. `migrateIdf` chạy nối tiếp qua bảng này.
+ * v1 → v2: sinh `Doc.levels` từ tập nhãn `Base.storey` đã dùng trong TỪNG sheet, rồi gắn
+ * `levelId` cho đúng những entity mang nhãn đó. Xem `lib/cad/levels.ts`
+ * `upgradeDocLevelsFromStorey` để biết vì sao mọi Level sinh ra có `elevationMm = 0` +
+ * `inferred: true` (tóm tắt: file v1 KHÔNG mang thông tin cao độ nào — đoán 3000/tầng là bịa số
+ * vào hồ sơ kỹ thuật; 0 cũng là con số GIỮ NGUYÊN hành vi dựng hình hôm nay).
+ *
+ * **KHÔNG đụng `storey`** — hai field sống song song (DXF XDATA `IF_STOREY`, cây đối tượng, nhóm
+ * BOQ vẫn đọc `storey`; không phiên nào phải sửa theo).
+ *
+ * Best-effort như phần còn lại của file: sheet/doc hình dạng lạ thì GIỮ NGUYÊN, không ném lỗi —
+ * `importIdf` phía dưới vẫn có vòng lọc `isValidDoc` riêng để bỏ sheet hỏng.
+ */
+function migrateV1ToV2(f: Record<string, unknown>): Record<string, unknown> {
+  const sheets = Array.isArray(f.sheets)
+    ? f.sheets.map((s) => {
+        if (!isPlainObject(s) || !isPlainObject(s.doc)) return s;
+        return { ...s, doc: upgradeDocLevelsFromStorey(s.doc as unknown as Doc) };
+      })
+    : f.sheets;
+  return { ...f, sheets, idfVersion: 2 };
+}
+
+/**
+ * Bảng nâng cấp — mỗi entry khoá `fromV` là hàm nâng ĐÚNG 1 BẬC (fromV → fromV+1). `migrateIdf`
+ * chạy nối tiếp qua bảng này. Thêm khoá `2` khi ra v3.
  */
 const IDF_MIGRATIONS: Record<number, (f: Record<string, unknown>) => Record<string, unknown>> = {
-  1: (f) => ({ ...f, idfVersion: 2 }),
+  1: migrateV1ToV2,
 };
 
 /**
@@ -92,7 +120,7 @@ export interface IdfMeta {
 }
 
 export interface IdfFile {
-  idfVersion: 1;
+  idfVersion: typeof IDF_VERSION;
   meta: IdfMeta;
   sheets: IdfSheetData[];
 }

@@ -162,7 +162,10 @@ export const FX_PRESETS: FxPreset[] = [
     id: 'navy-fade',
     label: 'Chuyển sắc navy · Navy fade',
     hint: 'Navy nhạt dần — tiêu đề chương trên nền sáng.',
-    fx: { gradient: { from: '#002850', to: '#4A6C86', angle: 90 } },
+    // 05/08 LUẬT TRUNG TÍNH: điểm đầu trước là ĐÚNG navy thương hiệu của một studio
+    // (#002850). Đổi sang navy trung tính cùng tông; preset vẫn là 1 lựa chọn trong
+    // danh sách, người dùng chỉnh được — không phải màu ép buộc.
+    fx: { gradient: { from: '#14395C', to: '#4A6C86', angle: 90 } },
   },
   {
     id: 'arc',

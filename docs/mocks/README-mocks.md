@@ -35,10 +35,10 @@
 | `mock-files-polished.html` · `mock-settings-polished.html` | ĐÃ PORT vào app (FM/Settings merged) — giữ lịch sử |
 | `tool-window-sketch2photo.html` | mock nguồn `CHOT-RENDER-TOOL-WINDOW` — bố cục còn giá trị, token làm lại khi port |
 
-## 🔴 VI PHẠM — chờ Hoà xử
-| File | Vấn đề |
-|---|---|
-| `mapa-de-zonas.html` (24/07) | Dùng trọn màu TTT `#F1ECE3 #002850 #F06020` — vi phạm LUẬT TRUNG TÍNH + luật mock. Đề nghị dời ra `~/Downloads/_TTT-BRAND/` như các tài sản TTT khác. COWORK-UI không tự xoá file. |
+## ✅ ĐÃ XỬ LÝ — vi phạm cũ, không còn trong repo
+| File | Vấn đề | Xử lý |
+|---|---|---|
+| `mapa-de-zonas.html` (24/07) | Dùng trọn màu TTT `#F1ECE3 #002850 #F06020` — vi phạm LUẬT TRUNG TÍNH + luật mock. Treo cờ 🔴 từ 24/07, COWORK-UI không tự xoá file. | **05/08 — đã gỡ khỏi working tree**, bản gốc nằm ở `~/Downloads/_TTT-BRAND/from-if-repo/mocks/mapa-de-zonas.html` (đối chiếu shasum khớp trước khi gỡ). Xoá khỏi git là việc của Hoà (luật V6 — phiên code không commit): `git rm docs/mocks/mapa-de-zonas.html`. ⚠️ File vẫn còn trong LỊCH SỬ git — cần `filter-repo` trước khi phát hành, cùng đợt với `public/wallpapers/ttt-*` và `pantone-tcx.json`. |
 
 ## Khác
 `library-mock-note.md` — ghi chú kèm mock library cũ, giữ.

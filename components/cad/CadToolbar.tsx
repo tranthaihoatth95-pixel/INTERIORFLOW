@@ -220,13 +220,17 @@ export default function CadToolbar({
         const on = tool === it.tool;
         const isBig = BIG_TOOLS.has(it.tool);
         return (
-          <Tooltip key={it.tool} label={tip(shortLabel(it.label), it.key)}>
-            <button
-              type="button"
-              onClick={() => setTool(it.tool)}
-              title={`${it.label} (${it.key})`}
-              style={b(on, false, isBig)}
-            >
+          /* 05/08 VIỆC 2 — bỏ `title=` trùng: nút này ĐÃ có Tooltip bọc ngoài, để thêm `title=`
+             thì trình duyệt vẫn bồi thêm tooltip chậm-xấu của nó sau ~1s, chồng lên tag đẹp.
+             Phím tắt tách khỏi nhãn (trước nhét vào chuỗi qua `tip()`) → ô phím riêng bên phải;
+             `it.label` bản ĐẦY ĐỦ nay thành dòng mô tả thay vì chỉ nằm trong `title=` câm. */
+          <Tooltip
+            key={it.tool}
+            label={shortLabel(it.label)}
+            desc={it.label !== shortLabel(it.label) ? it.label : undefined}
+            shortcut={isPro ? it.key : undefined}
+          >
+            <button type="button" onClick={() => setTool(it.tool)} style={b(on, false, isBig)}>
               <Icon size={isBig ? icoBig : icoS} />
             </button>
           </Tooltip>
@@ -244,7 +248,10 @@ export default function CadToolbar({
     const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
     return (
       <>
-        <Tooltip label="Còn nữa — lệnh vẽ ít dùng">
+        <Tooltip
+          label="Còn nữa"
+          desc="Lệnh vẽ ít dùng: Tròn 3 điểm, Cung tâm+góc, Đa giác, Elip, Donut, Cong, Xline, Divide"
+        >
           <button
             ref={btnRef}
             type="button"
@@ -253,7 +260,6 @@ export default function CadToolbar({
               if (r) setAnchor({ x: r.left, y: r.bottom + 6 });
               setOpen((v) => !v);
             }}
-            title="Còn nữa — lệnh vẽ ít dùng (Tròn 3 điểm, Cung tâm+góc, Đa giác, Elip, Donut, Cong, Xline, Divide)"
             style={b(open)}
           >
             <ArrowDownRight size={icoS} />
@@ -277,14 +283,22 @@ export default function CadToolbar({
               {VE_MORE.map((it) => {
                 const Icon = it.icon;
                 return (
-                  <button
+                  /* Hàng trong popover chỉ đủ chỗ cho nhãn NGẮN — tên đầy đủ trước nằm trong
+                     `title=` (câm trên cảm ứng), nay vào dòng mô tả. `side="right"` vì popover
+                     hẹp: tag canh giữa phía trên sẽ đè lên hàng liền kề. */
+                  <Tooltip
                     key={it.tool}
+                    side="right"
+                    label={shortLabel(it.label)}
+                    desc={it.label !== shortLabel(it.label) ? it.label : undefined}
+                    shortcut={it.key}
+                  >
+                  <button
                     type="button"
                     onClick={() => {
                       setTool(it.tool);
                       setOpen(false);
                     }}
-                    title={`${it.label} (${it.key})`}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -303,6 +317,7 @@ export default function CadToolbar({
                     <span>{shortLabel(it.label)}</span>
                     <span style={{ marginLeft: 'auto', color: 'var(--t4)', fontSize: 10 }}>{it.key}</span>
                   </button>
+                  </Tooltip>
                 );
               })}
             </div>

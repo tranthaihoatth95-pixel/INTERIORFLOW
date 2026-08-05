@@ -45,7 +45,7 @@ import { IFLogo } from '@/components/entry/IFLogo';
 /** Vùng ảnh nằm ngay dưới cụm logo + nhãn (tỉ lệ khung hình) — dải giữa, hơi lệch trên. */
 const LOGO_REGION = { x: 0.28, y: 0.26, w: 0.44, h: 0.3 };
 /** Vùng ảnh mà CARD đăng nhập phủ lên (tỉ lệ khung) — giữa màn, hơi dưới tâm. Khớp với
- *  vùng chủ dự án đã đo trên ttt-05 (hiệu dụng 0.152). */
+ *  vùng chủ dự án đã đo trên ảnh mẫu #05 (hiệu dụng 0.152). */
 const CARD_REGION = { x: 0.34, y: 0.38, w: 0.32, h: 0.48 };
 
 /**
@@ -138,7 +138,9 @@ export function LoginScreen({ onAuthed, notice }: { onAuthed: () => void; notice
               className="mt-4 w-full max-w-sm rounded-[10px] border px-3 py-2 text-[12.5px] leading-relaxed"
               style={{
                 borderColor: 'var(--border)',
-                background: 'rgba(240,96,32,0.08)',
+                // 05/08 LUẬT TRUNG TÍNH: trước là rgba(240,96,32) = cam thương hiệu studio ở
+                // dạng rgba (grep hex không bắt). Băng này báo phiên đứt ⇒ token --warning.
+                background: 'color-mix(in srgb, var(--warning) 10%, transparent)',
                 color: 'var(--t2)',
               }}
             >

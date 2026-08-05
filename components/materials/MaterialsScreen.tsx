@@ -6,7 +6,8 @@
  * API sẵn có `GET/POST /api/specs`, `PATCH/DELETE /api/specs/:id` — không route riêng.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, FileSpreadsheet, Search, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Plus, FileSpreadsheet, Search, Loader2, Palette } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import type { MaterialSpecDto } from '@/lib/materials/warehouse/dto';
 import { MaterialTable } from './MaterialTable';
@@ -16,6 +17,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 
 export function MaterialsScreen() {
   const tr = useT();
+  const router = useRouter();
   const [items, setItems] = useState<MaterialSpecDto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -100,6 +102,10 @@ export function MaterialsScreen() {
         )}
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+          {/* Lối vào `/colors` (05/08) — kho vật liệu và bảng màu là hai ngăn cùng một tủ vật tư. */}
+          <button type="button" onClick={() => router.push('/colors')} style={btnStyle(false)}>
+            <Palette size={13} /> {tr('Bảng màu', 'Colour libraries')}
+          </button>
           <button type="button" onClick={() => setImporting(true)} style={btnStyle(false)}>
             <FileSpreadsheet size={13} /> {tr('Nhập Excel/CSV', 'Import Excel/CSV')}
           </button>

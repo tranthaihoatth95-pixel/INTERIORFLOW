@@ -9,8 +9,8 @@
  * - Click source → highlight ở Source viewer bên phải.
  * - Nút ⋯ xoá source.
  *
- * Design: hairline keyline 1px, bo góc gần vuông (rx 0-4), palette TTT
- * (var(--surface-page), var(--border), --t1/t2/t3, cam TTT accent).
+ * Design: hairline keyline 1px, bo góc gần vuông (rx 0-4), token InteriorFlow
+ * (var(--surface-page), var(--border), --t1/t2/t3, var(--accent)).
  */
 
 import { useRef, useState } from 'react';
@@ -101,7 +101,7 @@ export function NotebookSourcesSidebar({
         display: 'flex',
         flexDirection: 'column',
         borderRight: '1px solid var(--border)',
-        background: 'var(--surface-page, #F1ECE3)',
+        background: 'var(--surface-page)',
         minHeight: 0,
         height: '100%',
       }}
@@ -140,8 +140,8 @@ export function NotebookSourcesSidebar({
           }}
           onClick={() => fileRef.current?.click()}
           style={{
-            border: `1px dashed ${dragOver ? 'var(--accent, #F06020)' : 'var(--border)'}`,
-            background: dragOver ? 'color-mix(in srgb, var(--accent, #F06020) 6%, transparent)' : 'transparent',
+            border: `1px dashed ${dragOver ? 'var(--accent)' : 'var(--border)'}`,
+            background: dragOver ? 'color-mix(in srgb, var(--accent) 6%, transparent)' : 'transparent',
             borderRadius: 4,
             padding: '18px 14px',
             textAlign: 'center',
@@ -229,7 +229,7 @@ export function NotebookSourcesSidebar({
                   setDraftTitle('');
                   setDraftBody('');
                 }}
-                style={{ ...pillBtn, background: 'var(--accent, #F06020)', color: '#fff', borderColor: 'transparent' }}
+                style={{ ...pillBtn, background: 'var(--accent)', color: '#fff', borderColor: 'transparent' }}
               >
                 Thêm nguồn
               </button>
@@ -253,7 +253,7 @@ export function NotebookSourcesSidebar({
               border: '1px solid',
               borderColor: filter === f.key ? 'var(--t1)' : 'var(--border)',
               background: filter === f.key ? 'var(--t1)' : 'transparent',
-              color: filter === f.key ? 'var(--surface-page, #F1ECE3)' : 'var(--t2)',
+              color: filter === f.key ? 'var(--surface-page)' : 'var(--t2)',
               borderRadius: 2,
               cursor: 'pointer',
             }}
@@ -284,7 +284,7 @@ export function NotebookSourcesSidebar({
                   padding: '10px 10px',
                   borderTop: '1px solid var(--border)',
                   cursor: 'pointer',
-                  background: selected ? 'color-mix(in srgb, var(--accent, #F06020) 8%, transparent)' : 'transparent',
+                  background: selected ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : 'transparent',
                   position: 'relative',
                 }}
               >
@@ -334,7 +334,7 @@ export function NotebookSourcesSidebar({
                       position: 'absolute',
                       right: 6,
                       top: 32,
-                      background: 'var(--surface-page, #F1ECE3)',
+                      background: 'var(--surface-page)',
                       border: '1px solid var(--border)',
                       borderRadius: 3,
                       padding: 4,
@@ -397,7 +397,7 @@ const inputStyle: React.CSSProperties = {
   fontSize: 12.5,
   padding: '6px 8px',
   border: '1px solid var(--border)',
-  background: 'var(--surface-page, #F1ECE3)',
+  background: 'var(--surface-page)',
   color: 'var(--t1)',
   borderRadius: 2,
   outline: 'none',
