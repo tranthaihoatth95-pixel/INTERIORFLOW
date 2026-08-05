@@ -119,6 +119,7 @@ Từ nay:
 | Việc đang chờ | `docs/PHIEU-CODE-IF-DOT6-2026-08-03.md` · `docs/CHECKLIST-TONG.md` |
 | Lỗ backend | `docs/AUDIT-BACKEND-2026-08-03.md` |
 | Mock nào dùng được | `docs/AUDIT-MOCK-MANPHU-2026-08-03.md` · `docs/mocks/README-mocks.md` |
+| **Hex/tài sản TTT trong repo — VÙNG KHOANH, cấm lan rộng** | **`docs/TRUNG-TINH-VUNG-KHOANH.md`** (Hoà chốt 05/08: nhốt lại, xoá sau, KHÔNG được thêm mới) |
 | ArchiNote | `ttt-tasks/docs/SPEC-ARCHINOTE-UI-2026-08-03.md` (repo KHÁC) |
 
 ---
