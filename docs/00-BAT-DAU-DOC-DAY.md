@@ -83,6 +83,25 @@ Design · Presenting; rút gọn: 2D · 3D · Trình chiếu) · 2 chế độ c
 8. Port mock theo **L2 port-nguyên-văn token**, NHƯNG vùng nào mock ghi `PLACEHOLDER` thì **không port thành dữ liệu thật** *(tiền lệ: 12 gradient placeholder)*.
 
 ---
+**V7 — CHỐNG SÓT TASK KHI BỊ GIAO CHỒNG.** *(Hoà đặt 05/08 — áp cho MỌI Claude trong hệ)*
+
+Hoà giao việc theo dòng suy nghĩ, thường **chèn task mới khi task cũ đang chạy**. Đó là cách làm
+việc bình thường của Hoà, KHÔNG phải lỗi — lỗi là ở phía Claude nếu để rơi.
+
+1. **Task đang làm thì LÀM ĐẾN CÙNG.** Không bỏ dở nhảy sang task mới, trừ khi Hoà nói "dừng".
+2. **Làm xong thì NHÌN LẠI**: trong lúc làm task cũ, Hoà có giao thêm gì không? Liệt kê ra.
+3. **Bị giao quá nhiều thì TỰ ĐỀ XUẤT CÁCH CHỐNG SÓT** — đánh số, xếp thứ tự, ghi rõ cái nào
+   đang chờ điều kiện gì. Không im lặng ôm rồi quên.
+4. **Cuối mỗi lượt trả lời dài: ghi HÀNG ĐỢI** — đã xong gì · đang làm gì · còn treo gì · treo vì ai.
+5. Task treo vì **chờ Hoà** (chờ ảnh, chờ localhost, chờ quyết định) phải ghi rõ **chờ cái gì**,
+   để Hoà biết mình đang chặn ở đâu.
+
+Ca bệnh làm luật này ra đời: phiên 05/08 — Hoà giao ~12 task đan xen (đọc code · đọc luật · chụp
+màn hình · so đối thủ · flow team · avatar · phân quyền · gu Pinterest · bài hệ sinh thái · đánh
+giá · checklist sau ship · dọn file rác). COWORK-TỔNG làm được phần lớn nhưng **để rơi 4 task**
+mà không ai nhắc, cho tới khi Hoà tự nhớ ra và hỏi lại. Ngay sau khi soạn luật này, TỔNG lại
+phạm đúng nó thêm một lần — bị chèn báo cáo phiên code thì nhảy sang xử lý, bỏ dở việc đang làm.
+
 **V6 — PHIÊN CODE KHÔNG TỰ COMMIT.** *(Hoà chốt 04/08 chiều, sau sự cố lần thứ 4)*
 Sự cố hai-phiên-chung-`.git` đã lặp **4 lần**: `f77ce9d` (D1 bị cuốn) · commit BOQ · `2de4abf` ·
 `080e78c`. Chưa mất dữ liệu lần nào — nhưng cả 4 đều rơi vào file *docs*. Rơi vào file *code*
