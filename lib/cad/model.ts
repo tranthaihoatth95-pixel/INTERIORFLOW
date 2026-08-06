@@ -318,6 +318,126 @@ interface Base {
    * test `dxf-insert.test.ts` khẳng định nhãn không rơi qua các cấp lồng.
    */
   srcBlock?: string;
+
+  /**
+   * A1 · G-M1-06 (06/08) — **DANH TÍNH CỦA MỘT BẢN CHÈN**, KHÔNG phải tên block.
+   *
+   * `srcBlock` trả lời "hình này thuộc block TÊN GÌ"; nó KHÔNG tách được bản chèn này với bản
+   * chèn kia. Ca thật đo trên hồ sơ mặt bằng: 1 tên block bị chèn 18 lần ⇒ 828 hình phẳng mang
+   * CÙNG một chuỗi `srcBlock` ⇒ không có cách nào chọn/di chuyển/đếm **MỘT** cấu kiện.
+   * `srcInsertId` là mã DUY NHẤT của TỪNG LẦN CHÈN (kể cả từng ô của mảng rows/cols của cùng một
+   * record INSERT), nên "chọn 1 hình → nở ra đúng cụm của nó" mới làm được.
+   *
+   * Dạng chuỗi (do `lib/cad/dxf.ts` `expandInsert` cấp, xem `INSERT_ID_*` ở đó):
+   *   - `i7`            — bản chèn thứ 7 ở section ENTITIES.
+   *   - `i7#2.1`        — ô (cột 2, hàng 1) của mảng do chính record INSERT đó khai.
+   *   - `i7#2.1/13`     — bản chèn CON (record thứ 13 trong định nghĩa block) nằm trong ô trên.
+   * ⇒ cha–con truy được bằng `parentInsertId()` phía dưới; KHÔNG cần thêm field thứ hai.
+   *
+   * undefined = entity vẽ tay trong app hoặc nằm thẳng ở ENTITIES (không qua INSERT nào).
+   * Additive: `.idf` cũ không có field vẫn parse y nguyên.
+   *
+   * Nơi tiêu thụ (K4 — không khai field chết): `expandIdsByInsertGroup()` ngay dưới (store.ts
+   * `select`/`selectInsertGroup` gọi) · `exportDxfEx()` dựng lại BLOCK+INSERT (G-M1-07).
+   */
+  srcInsertId?: string;
+
+  /**
+   * A5 · G-M1-09 (06/08) — **true = `elementType` do MÁY SUY, không phải người khai.**
+   *
+   * Luật K3: suy đoán phải LỘ RA, không được giả vờ là khai báo. Ngữ nghĩa khớp đúng cờ cùng tên
+   * đang dùng lúc chạy ở `lib/three/cad-to-obj.ts` (`inferred = h.elementType === undefined`) và
+   * `Level.inferred` phía trên — chỉ khác là cờ này LƯU ĐƯỢC (`.idf`, XDATA DXF `IF_INFERRED`).
+   *
+   * Bất biến: `inferred` chỉ có nghĩa khi ĐI KÈM `elementType`. Người dùng gán tay `elementType`
+   * ⇒ PHẢI xoá cờ này (khai báo thắng suy đoán). Bộ suy (`lib/cad/element-infer.ts`) KHÔNG BAO
+   * GIỜ đè lên entity đã có `elementType` sẵn.
+   */
+  inferred?: true;
+
+  /**
+   * A3 · G-M1-08 (06/08) — **id của VẬT CHỦ mà entity này neo vào.** Nâng lên `Base` (trước đây
+   * chỉ khai riêng ở `BlockEntity`, xem dưới — khai báo cũ GIỮ NGUYÊN, cùng kiểu nên hợp lệ) vì
+   * nay có ĐÚNG HAI quan hệ neo, cùng một ngữ nghĩa "con trỏ về vật chủ", cùng một khuôn
+   * reconcile-idempotent-sau-mọi-mutation:
+   *
+   *   - `BlockEntity.hostId`  → id `HatchEntity` TƯỜNG chủ của cửa/cửa sổ (`lib/cad/hosting.ts`
+   *     `syncHostedOpenings`, `SO-KIEM-TONG.md` §7).
+   *   - `HatchEntity.hostId`  → id `PolylineEntity` ĐƯỜNG BAO mà vùng tô (poché) bám theo
+   *     (`lib/cad/poche.ts` `syncPocheAnchors`, G-M1-08). Trước đây hai nửa của một quad tường
+   *     không có gì nối ⇒ dời một nửa là tường rách (đo được 450mm, `docs/M2-OUT.md` §2).
+   *
+   * KHÔNG BAO GIỜ gõ tay — cả hai đều do hàm reconcile tự suy và tự xoá. undefined = chưa neo /
+   * không thuộc quan hệ neo nào (đại đa số entity). `.idf` cũ không có field ⇒ reconcile tự ghép
+   * lại ở lần mở đầu tiên, không cần bump `IDF_VERSION`.
+   */
+  hostId?: string;
+}
+
+/* ───────── A1 — truy vết danh tính bản chèn (dùng chung cho store/export/test) ───────── */
+
+/** Ký tự tách CẤP LỒNG trong `srcInsertId` (block con nằm trong block cha). */
+export const INSERT_ID_NEST_SEP = '/';
+/** Ký tự tách Ô MẢNG (rows/cols) trong `srcInsertId`. */
+export const INSERT_ID_CELL_SEP = '#';
+
+/**
+ * Bản chèn CHA của `srcInsertId` — undefined khi đây đã là bản chèn ở cấp ngoài cùng.
+ * `'i7#2.1/13'` → `'i7#2.1'`; `'i7#2.1'` → undefined (ô mảng vẫn là bản chèn cấp ngoài cùng).
+ */
+export function parentInsertId(insertId: string): string | undefined {
+  const k = insertId.lastIndexOf(INSERT_ID_NEST_SEP);
+  return k < 0 ? undefined : insertId.slice(0, k);
+}
+
+/** Chuỗi tổ tiên từ gần nhất ra ngoài cùng — `['i7#2.1', 'i7']`. Rỗng khi đã ở cấp ngoài cùng. */
+export function insertIdAncestors(insertId: string): string[] {
+  const out: string[] = [];
+  let cur = parentInsertId(insertId);
+  while (cur) { out.push(cur); cur = parentInsertId(cur); }
+  return out;
+}
+
+/**
+ * A2 · người tiêu thụ NGAY của `srcInsertId` — nở tập id đang chọn ra CẢ CỤM của bản chèn.
+ *
+ * Chọn 1 đường trong một bản chèn ⇒ nhận trọn bản chèn đó (đúng cảm giác "một cấu kiện là một
+ * vật"), và CHỈ bản chèn đó — bản chèn khác của CÙNG tên block KHÔNG bị lem vào (đó chính là
+ * điều `srcBlock` không làm được).
+ *
+ * **Mặc định nở ĐÚNG một cấp — bản chèn của chính hình đó, không leo lên cha.** Đo trên hồ sơ
+ * thật mới thấy vì sao: block ẩn danh của AutoCAD lồng rất sâu, leo tới cấp ngoài cùng biến một
+ * cú bấm thành 104 hình thuộc 5 bản chèn khác nhau — người dùng bấm cái ghế mà cầm cả góc phòng.
+ * Muốn hành vi "bấm cái ghế = cầm cả cụm bàn" thì truyền `{ outermost: true }` (leo tới bản chèn
+ * ngoài cùng); đó là lựa chọn của UI, không phải mặc định áp cho mọi đường chọn.
+ *
+ * THUẦN — không đụng store; `ids` không thuộc bản chèn nào thì giữ nguyên, không mất.
+ */
+export function expandIdsByInsertGroup(
+  ids: Iterable<string>,
+  doc: Doc,
+  opts: { outermost?: boolean } = {},
+): string[] {
+  const want = new Set<string>();
+  const byId = new Map(doc.entities.map((e) => [e.id, e]));
+  for (const id of ids) {
+    const e = byId.get(id);
+    if (!e?.srcInsertId) continue;
+    if (!opts.outermost) { want.add(e.srcInsertId); continue; }
+    const chain = insertIdAncestors(e.srcInsertId);
+    want.add(chain.length ? chain[chain.length - 1] : e.srcInsertId);
+  }
+  if (!want.size) return [...ids];
+  const out = new Set<string>(ids);
+  for (const e of doc.entities) {
+    if (!e.srcInsertId) continue;
+    if (want.has(e.srcInsertId)) { out.add(e.id); continue; }
+    if (!opts.outermost) continue;
+    for (const anc of insertIdAncestors(e.srcInsertId)) {
+      if (want.has(anc)) { out.add(e.id); break; }
+    }
+  }
+  return [...out];
 }
 
 /** NC-12 §4.2 — một bậc trong ngăn xếp dựng hình 3D. Thuần dữ liệu JSON, KHÔNG chứa hình học đã
@@ -938,6 +1058,39 @@ function growBox(box: Box, p: Pt) {
   box.minY = Math.min(box.minY, p.y);
   box.maxX = Math.max(box.maxX, p.x);
   box.maxY = Math.max(box.maxY, p.y);
+}
+
+/**
+ * A3 · G-M1-07 — "VÂN TAY" HÌNH HỌC của 1 entity: chuỗi đại diện đúng phần hình (toạ độ/bán
+ * kính/góc/chữ), KHÔNG gồm id·layer·màu·ngữ nghĩa. Đổi màu hay gán `elementType` ⇒ vân tay KHÔNG
+ * đổi; dời/kéo/xoay/sửa đỉnh ⇒ đổi.
+ *
+ * Dùng ở `store.ts` `updateEntities` để trả lời đúng một câu: *hình này có còn y như lúc nạp từ
+ * block không?* Còn ⇒ giữ `srcInsertId`, lúc xuất được dựng lại thành INSERT. Đã sửa ⇒ gỡ
+ * `srcInsertId` (hình đã RỜI khỏi bản chèn), xuất phẳng như trước. Đây là ranh giới "chưa bị sửa"
+ * mà `planReblock` (`dxf.ts`) dựa vào — cố ý đặt ở `model.ts` để CẢ HAI phía đọc cùng một định
+ * nghĩa, không mỗi nơi tự đoán một kiểu.
+ *
+ * Loại hình không liệt kê ⇒ trả chuỗi theo `entityBox` (đủ bắt mọi phép dời/co) — thà nhạy quá
+ * (gỡ nhầm `srcInsertId`, mất block, hình vẫn đúng) còn hơn bỏ sót (giữ block cho hình đã đổi ⇒
+ * xuất ra SAI hình).
+ */
+export function entityGeomSignature(e: Entity): string {
+  const n = (v: number) => (Number.isFinite(v) ? v.toString() : 'x');
+  const pts = (ps: Pt[]) => ps.map((p) => `${n(p.x)},${n(p.y)}`).join(';');
+  switch (e.type) {
+    case 'line': return `line ${n(e.a.x)},${n(e.a.y)} ${n(e.b.x)},${n(e.b.y)}`;
+    case 'polyline': return `poly ${e.closed ? 1 : 0} ${pts(e.points)}`;
+    case 'hatch': return `hatch ${pts(e.points)}`;
+    case 'rect': return `rect ${n(e.x)},${n(e.y)} ${n(e.w)}x${n(e.h)}`;
+    case 'circle': return `circle ${n(e.c.x)},${n(e.c.y)} ${n(e.r)}`;
+    case 'arc': return `arc ${n(e.c.x)},${n(e.c.y)} ${n(e.r)} ${n(e.a1)} ${n(e.a2)}`;
+    case 'text': return `text ${n(e.at.x)},${n(e.at.y)} ${n(e.h)} ${e.text}`;
+    default: {
+      const b = entityBox(e);
+      return `${e.type} ${n(b.minX)},${n(b.minY)} ${n(b.maxX)},${n(b.maxY)}`;
+    }
+  }
 }
 
 /** Bao hình của 1 entity (xấp xỉ với block/text). */

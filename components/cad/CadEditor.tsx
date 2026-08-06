@@ -26,7 +26,17 @@ import MenuButton from '@/components/ui/MenuButton';
 import { useCadStore } from '@/lib/cad/store';
 import { useCadLiveStatus } from '@/lib/cad/live-status';
 import type { HatchPattern } from '@/lib/cad/model';
-import { parseDxf, exportDxfEx, type DxfExportReport } from '@/lib/cad/dxf';
+import { parseDxfEx, exportDxfEx, type DxfExportReport, type DxfLoadReport } from '@/lib/cad/dxf';
+// GỐC B · B1+B2+B3 (06/08, `docs/GAP-IF.md` G-M1-02/03/04) — ba thứ này đã viết xong ở tầng lib
+// từ phiên trước mà KHÔNG có nơi gọi. Đây là nơi gọi: báo cáo nạp (`parseDxfEx`), cụm vẽ chính
+// (`mainClusterBox`) và bộ đọc ngữ nghĩa mặt bằng (`planGridAxes`/`planCoreZones`/
+// `planAreaCrossCheck`). KHÔNG viết lại thuật toán ở đây.
+import {
+  mainClusterBox, planGridAxes, planCoreZones, planAreaCrossCheck,
+  type PlanGrid, type CoreZone, type AreaCrossCheck, type Box as PlanBox,
+} from '@/lib/cad/dxf-plan';
+// Câu trạng thái + luật chọn khung nhìn (dùng CHUNG với phím F ở CadCanvas) — thuần, test được.
+import { importStatusLine, zoomExtentsPlan } from '@/lib/cad/import-summary';
 import { openDwgFile } from '@/lib/cad/dwg';
 import { renderDocToDataURL, renderZoneMapToDataURL } from '@/lib/cad/render';
 import { exportCadToPdf, DEFAULT_PDF_PAPER_MM, DEFAULT_PDF_MARGIN_MM } from '@/lib/cad/pdf';
@@ -43,6 +53,9 @@ import { backupSupported, backupFolderChosen, chooseBackupFolder } from '@/lib/c
 import { getActiveBrandKit } from '@/lib/present-editor/brand-kit';
 import {
   docBox, docScaleLabel, docPaperMm, suggestStandardScale, fitsAtScale, defaultPaperOrientation,
+  // B4 (GỐC B) — người tiêu thụ của `Base.srcInsertId` do GỐC A vừa thêm (model.ts:343). Hàm THUẦN
+  // đã có sẵn ở model.ts:396, KHÔNG viết lại phép nở cụm ở tầng UI.
+  expandIdsByInsertGroup,
   STANDARD_SCALES, PAPER_SIZES_MM, ELEMENT_TYPE_OPTIONS, ROOM_KIND_OPTIONS, WALL_KIND_OPTIONS,
   type PaperKey, type PaperOrientation, type ElementType, type Entity, type TextEntity,
 } from '@/lib/cad/model';
@@ -80,6 +93,7 @@ import HistoryPanel from './HistoryPanel';
 // §0e QUYỀN KIỂM SOÁT — khuôn duyệt DÙNG CHUNG của S5. Xuất DXF làm phẳng block là thay đổi
 // KHÔNG hoàn tác được ở phía file đã tải về, nên phải cho xem con số thật rồi mới quyết.
 import { Checkpoint } from '@/components/studio/Checkpoint';
+import { LibraryDropBridge } from './LibraryDropBridge';
 import type { CheckpointItem } from '@/components/studio/checkpoint-core';
 
 export default function CadEditor() {
@@ -116,6 +130,21 @@ export default function CadEditor() {
   // ref) để nút Huỷ re-render đúng lúc — dwgImportAbort !== null nghĩa là đang có 1 lượt nhập DWG
   // chạy, bấm gọi .abort() → openDwgFile tự reject với dwgCancelledMessage().
   const [dwgImportAbort, setDwgImportAbort] = useState<AbortController | null>(null);
+  // GỐC B1/B3 — BÁO CÁO NẠP DXF. `parseDxfEx()` trả sẵn 7 trường (lib/cad/dxf.ts:452) nhưng trước
+  // phiên này màn CAD gọi bản mỏng `parseDxf()` rồi vứt báo cáo ⇒ người dùng không biết vừa mất gì
+  // (G-M1-02). Giữ ở state để panel hiện được sau khi bản vẽ đã lên màn hình.
+  // `plan` = kết quả đọc ngữ nghĩa mặt bằng (G-M1-03), chạy SAU khi vẽ xong nên ban đầu là null.
+  const [dxfLoad, setDxfLoad] = useState<{
+    fileName: string;
+    report: DxfLoadReport;
+    /** khung bao cụm vẽ chính — null khi bản vẽ không dùng quy ước layer công trình nào đã biết. */
+    clusterBox: PlanBox | null;
+    /** số hình công trình bị bỏ lại ngoài cụm (bản sao parked xa) — G-M1-04. */
+    droppedFar: number;
+    /** true = đã bay tới cụm chính thay vì khung bao toàn bộ (panel phải nói rõ). */
+    zoomedToCluster: boolean;
+    plan: { grid: PlanGrid; cores: CoreZone[]; area: AreaCrossCheck; ms: number } | null;
+  } | null>(null);
   // Batch 19/07 — thay window.confirm/prompt (chặn thread JS, treo webview nhúng — cùng lớp bug
   // room tool ở CadCanvas) bằng UI nổi non-blocking. Semantics giữ nguyên: OK chạy hành động,
   // Huỷ/Escape không làm gì.
@@ -363,16 +392,69 @@ export default function CadEditor() {
   // tự giữ đường "Vẽ nhanh" 1 dòng bên trong cho hành vi cũ, xem components/cad/AiBriefPanel.tsx.
   const aiAssist = () => setAiBriefOpen(true);
 
+  /**
+   * Mở DXF — GỐC B, ba việc nối dây trong đúng một đường nạp (`docs/GAP-IF.md` G-M1-02/03/04):
+   *
+   *  B1 KHÔNG NẠP IM LẶNG — dùng `parseDxfEx()` (bản đầy đủ) thay `parseDxf()` (bản mỏng vứt báo
+   *     cáo). Báo cáo vào `dxfLoad` → panel `DxfImportReportPanel` hiện "đọc được gì / bỏ gì".
+   *  B2 ZOOM ĐÚNG CỤM VẼ CHÍNH — `mainClusterBox()` loại bản sao parked xa (ca thật: cách gốc
+   *     12 km ⇒ khung bao phình ~400×, mở ra màn hình gần như trống). CHỈ bay tới cụm khi nó
+   *     THẬT SỰ khác khung bao toàn bộ; đường thoát "Xem toàn bộ bản vẽ" nằm ngay trên panel.
+   *  B3 ĐỌC NGỮ NGHĨA MẶT BẰNG — `planGridAxes`/`planCoreZones`/`planAreaCrossCheck` chạy SAU
+   *     khi bản vẽ đã lên màn hình (setTimeout 0), không chặn UI. Thời gian đo thật, ghi ra panel.
+   */
   const onImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const doc = parseDxf(String(reader.result));
+        const { doc, report } = parseDxfEx(String(reader.result));
         useCadStore.getState().importDoc(doc, 'replace');
-        useCadStore.getState().setStatus(`Đã mở ${f.name} — ${doc.entities.length} đối tượng. Dùng scale nếu đơn vị lạ.`);
-        window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+
+        // ── B2 · cụm vẽ chính ──────────────────────────────────────────────────────────────
+        // Luật chọn khung nhìn nằm TRONG `zoomExtentsPlan()` (lib/cad/import-summary.ts) — CÙNG
+        // hàm mà phím F / nút "Xem vừa màn" gọi (CadCanvas.zoomExtents). Cố ý không tự tính lại ở
+        // đây: hai chỗ tự tính thì sớm muộn lệch nhau, người dùng nạp file thấy một khung, bấm F
+        // lại thấy khung khác. Hàm đó trả `mode:'full'` khi bản vẽ không dùng quy ước layer công
+        // trình nào nó biết ⇒ giữ NGUYÊN hành vi cũ, không đoán bừa.
+        const main = mainClusterBox(doc);
+        const view = zoomExtentsPlan(doc);
+        const useCluster = view?.mode === 'mainCluster';
+        if (view && useCluster) {
+          window.dispatchEvent(new CustomEvent('cad:goto-box', { detail: view.box }));
+        } else {
+          window.dispatchEvent(new CustomEvent('cad:zoom-extents'));
+        }
+
+        // B1 · câu trạng thái do `importStatusLine()` đúc (hàm thuần, kiểm được bằng file DXF
+        // thật). Nó GỌI TÊN thứ bị bỏ bằng chữ người dùng ("300 điểm đánh dấu, 9 hình elip") thay
+        // vì một con số cộng gộp, và KHÔNG đếm các bản ghi bỏ đi cũng không mất gì trên bản vẽ
+        // (SEQEND/ATTDEF/VIEWPORT — cộng vào là báo động giả). Bảng chi tiết đủ 7 trường vẫn nằm
+        // trong panel "Báo cáo nạp bản vẽ" bên dưới.
+        useCadStore.getState().setStatus(
+          importStatusLine({ fileName: f.name, report, farEntities: view?.farEntities ?? 0 }),
+        );
+        setDxfLoad({
+          fileName: f.name,
+          report,
+          clusterBox: main?.box ?? null,
+          droppedFar: main?.droppedFar ?? 0,
+          zoomedToCluster: useCluster,
+          plan: null,
+        });
+
+        // ── B3 · đọc ngữ nghĩa mặt bằng, KHÔNG chặn vẽ ────────────────────────────────────
+        // setTimeout(0) để trình duyệt vẽ xong bản vẽ + panel rồi mới chạy. Đo thời gian thật,
+        // hiện thẳng trên panel — không ước lượng.
+        window.setTimeout(() => {
+          const t0 = performance.now();
+          const grid = planGridAxes(doc);
+          const cores = planCoreZones(doc);
+          const area = planAreaCrossCheck(doc);
+          const ms = Math.round(performance.now() - t0);
+          setDxfLoad((prev) => (prev && prev.fileName === f.name ? { ...prev, plan: { grid, cores, area, ms } } : prev));
+        }, 0);
       } catch {
         useCadStore.getState().setStatus('Không đọc được DXF (bỏ qua entity lạ).');
       }
@@ -477,6 +559,9 @@ export default function CadEditor() {
 
   return (
     <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+      {/* G-M3-14 (06/08): CHỖ NGHE của sự kiện thả từ Thư viện — trước đây kệ chỉ phát sự kiện,
+       *  không ai nghe, nên món "thả" xong bản vẽ vẫn trống. Không vẽ gì, chỉ nối dây. */}
+      <LibraryDropBridge />
       {/* thanh file — 19/07: GOM NHÓM (yêu cầu user "toolbar tràn ngang, rối mắt").
        *  18 nút bày ngang → 5 nút xổ menu + 2 nút chuyển chặng. Không đổi 1 dòng logic nào:
        *  mỗi item chỉ gọi lại ĐÚNG handler cũ (doExportPng/doExportDxf/… , setXxxOpen).
@@ -663,6 +748,8 @@ export default function CadEditor() {
             }}
           />
         )}
+        {/* GỐC B1+B3 — báo cáo nạp DXF (đọc được gì · bỏ gì · đọc được mặt bằng gì). */}
+        {dxfLoad && <DxfImportReportPanel data={dxfLoad} onClose={() => setDxfLoad(null)} />}
       </div>
 
       {/* command line + status */}
@@ -807,6 +894,242 @@ function DxfExportCheckpoint({
 function sumFlattened(report: DxfExportReport): number {
   return Object.values(report.flattenedBlocks).reduce((a, b) => a + b, 0);
 }
+
+/* ───────── Nhập DXF · BÁO CÁO NẠP (GỐC B — `docs/GAP-IF.md` G-M1-02 · G-M1-03 · G-M1-04)
+ *
+ * Vì sao có: `parseDxfEx()` sinh `DxfLoadReport` đủ 7 trường từ phiên trước, nhưng màn CAD gọi bản
+ * mỏng `parseDxf()` rồi VỨT báo cáo — mở file thiếu một nửa mà chỉ hiện "đã mở N đối tượng". Panel
+ * này là NƠI TIÊU THỤ duy nhất của báo cáo đó, cộng thêm kết quả đọc mặt bằng (`dxf-plan.ts`).
+ *
+ * Vỏ ngoài cố ý CÙNG KHUÔN với `DxfExportCheckpoint` ngay phía trên (panel nổi giữa-trên + nút ✕,
+ * tái dùng `panelHead`/`miniBtn`/`dxfTh`/`dxfTd` sẵn trong file) — không đẻ khuôn thông báo mới.
+ * ⛔ KHÔNG dùng `Checkpoint` ở đây: Checkpoint là khuôn DUYỆT TRƯỚC KHI GHI (§0e), còn bản vẽ ở
+ * đây ĐÃ nạp xong — dựng nút [Nhận] cho việc đã rồi là nút giả (§9).
+ *
+ * Chữ theo `docs/SPEC-NGON-NGU-CHI-DAN.md`: câu ngắn ≤12 từ, hành động trước, không jargon
+ * ("entity" → "hình", "block" giữ vì đúng từ nhà nghề CAD), mỗi việc còn làm được đều có NÚT.
+ * ───────── */
+const DXF_TYPE_VI: Record<string, string> = {
+  line: 'Đoạn thẳng',
+  polyline: 'Đường nhiều đoạn',
+  rect: 'Hình chữ nhật',
+  circle: 'Đường tròn',
+  arc: 'Cung tròn',
+  text: 'Chữ',
+  dim: 'Kích thước',
+  hatch: 'Vùng tô',
+  ellipse: 'Elip',
+  block: 'Khối',
+  arrow: 'Mũi tên',
+  zone: 'Vùng màu',
+};
+
+function DxfImportReportPanel({
+  data, onClose,
+}: {
+  data: {
+    fileName: string;
+    report: DxfLoadReport;
+    clusterBox: PlanBox | null;
+    droppedFar: number;
+    zoomedToCluster: boolean;
+    plan: { grid: PlanGrid; cores: CoreZone[]; area: AreaCrossCheck; ms: number } | null;
+  };
+  onClose: () => void;
+}) {
+  const { report, fileName, plan, clusterBox, droppedFar, zoomedToCluster } = data;
+  const readRows = Object.entries(report.entitiesRead).sort((a, b) => b[1] - a[1]);
+  const skipRows = Object.entries(report.skipped).sort((a, b) => b[1] - a[1]);
+  const skippedTotal = skipRows.reduce((a, [, n]) => a + n, 0);
+  const blockNames = Object.keys(report.blocksExpanded).length;
+  const blockInserts = Object.values(report.blocksExpanded).reduce((a, b) => a + b, 0);
+  const layerCount = Object.keys(report.layers).length;
+
+  return (
+    <div
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+      style={{
+        position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 40,
+        width: 'min(520px, calc(100% - 32px))', maxHeight: 'calc(100% - 100px)', overflowY: 'auto',
+        background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 12,
+        padding: 10, boxShadow: '0 8px 30px rgba(0,0,0,.22)',
+      }}
+    >
+      <div style={panelHead}>
+        <span>Báo cáo nạp bản vẽ</span>
+        <button type="button" onClick={onClose} style={miniBtn} title="Đóng báo cáo">
+          <X size={14} />
+        </button>
+      </div>
+
+      <p style={{ margin: '0 0 8px', fontSize: 12, lineHeight: 1.5, color: 'var(--t1)' }}>
+        Đã đọc <b>{report.totalEntities}</b> hình từ {fileName}.
+        {skippedTotal > 0 ? ` Bỏ qua ${skippedTotal} bản ghi.` : ' Không bỏ sót bản ghi nào.'}
+      </p>
+
+      <Section title="Đọc được">
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5 }}>
+          <thead>
+            <tr>
+              <th style={dxfTh}>Loại hình</th>
+              <th style={{ ...dxfTh, textAlign: 'right' }}>Số hình</th>
+            </tr>
+          </thead>
+          <tbody>
+            {readRows.map(([k, n]) => (
+              <tr key={k}>
+                <td style={dxfTd}>{DXF_TYPE_VI[k] ?? k}</td>
+                <td style={{ ...dxfTd, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{n}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.5, color: 'var(--t4)' }}>
+          {layerCount} lớp · {blockNames} tên block · {blockInserts} lần chèn đã rã thành hình.
+        </p>
+      </Section>
+
+      {skipRows.length > 0 && (
+        <Section title="Bỏ qua — không có trên bản vẽ">
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5 }}>
+            <thead>
+              <tr>
+                <th style={dxfTh}>Loại bản ghi trong file</th>
+                <th style={{ ...dxfTh, textAlign: 'right' }}>Số lượng</th>
+              </tr>
+            </thead>
+            <tbody>
+              {skipRows.map(([k, n]) => (
+                <tr key={k}>
+                  <td style={dxfTd}>{k}</td>
+                  <td style={{ ...dxfTd, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{n}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.5, color: 'var(--t4)' }}>
+            Những loại này IF chưa đọc được. Hình của chúng không nằm trên bản vẽ.
+          </p>
+        </Section>
+      )}
+
+      {report.warnings.length > 0 && (
+        <Section title={`Cảnh báo (${report.warnings.length})`}>
+          <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11.5, lineHeight: 1.55, color: 'var(--t2)' }}>
+            {report.warnings.slice(0, 6).map((w, i) => (
+              <li key={i}>{w}</li>
+            ))}
+          </ul>
+          {report.warnings.length > 6 && (
+            <p style={{ margin: '6px 0 0', fontSize: 11, color: 'var(--t4)' }}>
+              … và {report.warnings.length - 6} cảnh báo nữa.
+            </p>
+          )}
+        </Section>
+      )}
+
+      {/* G-M1-04 — nói rõ đang nhìn cụm nào, và giữ đường về xem toàn bộ. */}
+      {clusterBox && (
+        <Section title="Khung nhìn">
+          <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.55, color: 'var(--t2)' }}>
+            {zoomedToCluster
+              ? 'Đang xem cụm vẽ chính, không phải toàn bộ file.'
+              : 'Đang xem toàn bộ bản vẽ.'}
+            {droppedFar > 0 && ` Có ${droppedFar} hình nằm rất xa cụm này.`}
+          </p>
+        </Section>
+      )}
+
+      {/* G-M1-03 — bộ đọc ngữ nghĩa mặt bằng. Chạy sau khi vẽ xong nên có trạng thái "đang đọc". */}
+      <Section title="Đọc mặt bằng">
+        {!plan ? (
+          <p style={{ margin: 0, fontSize: 11.5, color: 'var(--t4)' }}>Đang đọc lưới trục và lõi cứng…</p>
+        ) : (
+          <>
+            <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '3px 10px', fontSize: 11.5 }}>
+              <dt style={{ color: 'var(--t4)' }}>Lưới trục</dt>
+              <dd style={{ margin: 0, color: 'var(--t2)' }}>
+                {plan.grid.xAxes.length || plan.grid.yAxes.length
+                  ? `${plan.grid.xAxes.length} trục ngang · ${plan.grid.yAxes.length} trục dọc`
+                  : 'Chưa thấy nhãn trục nào'}
+              </dd>
+              <dt style={{ color: 'var(--t4)' }}>Lõi cứng</dt>
+              <dd style={{ margin: 0, color: 'var(--t2)' }}>
+                {plan.cores.length ? `${plan.cores.length} vùng (thang, WC)` : 'Chưa thấy vùng lõi nào'}
+              </dd>
+              <dt style={{ color: 'var(--t4)' }}>Diện tích khai</dt>
+              <dd style={{ margin: 0, color: 'var(--t2)' }}>
+                {plan.area.declaredM2 !== null ? `${plan.area.declaredM2} m² (ghi trong bản vẽ)` : 'Không có số trong bản vẽ'}
+              </dd>
+              <dt style={{ color: 'var(--t4)' }}>Đối chiếu</dt>
+              <dd style={{ margin: 0, color: plan.area.suspect ? 'var(--warning)' : 'var(--t2)' }}>
+                {plan.area.deltaPercent !== null
+                  ? `Lệch ${plan.area.deltaPercent.toFixed(1)}% so với hình vẽ`
+                  : 'Chưa tính được diện tích từ hình vẽ'}
+              </dd>
+            </dl>
+            {plan.area.notes.length > 0 && (
+              <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.5, color: 'var(--t4)' }}>
+                {plan.area.notes.join(' ')}
+              </p>
+            )}
+            <p style={{ margin: '6px 0 0', fontSize: 11, color: 'var(--t4)' }}>Đọc xong trong {plan.ms} ms.</p>
+          </>
+        )}
+      </Section>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 10 }}>
+        {clusterBox && (
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('cad:goto-box', { detail: clusterBox }))}
+            style={dxfLoadBtn}
+          >
+            <Crosshair size={13} /> Về cụm vẽ chính
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent('cad:zoom-extents'))}
+          style={dxfLoadBtn}
+        >
+          <Eye size={13} /> Xem toàn bộ bản vẽ
+        </button>
+        <button type="button" onClick={onClose} style={{ ...dxfLoadBtn, background: 'var(--accent)', color: '#fff', border: 'none' }}>
+          Đóng
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Một mục trong báo cáo nạp — tiêu đề nhỏ + nội dung, dùng lại cho cả 5 mục. */
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ paddingTop: 8, marginTop: 8, borderTop: '1px solid var(--border)' }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t3)', marginBottom: 5 }}>{title}</div>
+      {children}
+    </div>
+  );
+}
+
+const dxfLoadBtn: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 5,
+  borderRadius: 8,
+  padding: '5px 12px',
+  fontSize: 12,
+  background: 'var(--surface)',
+  color: 'var(--t1)',
+  border: '1px solid var(--border)',
+  cursor: 'pointer',
+};
 
 const dxfTh: React.CSSProperties = {
   textAlign: 'left',
@@ -2185,6 +2508,8 @@ export function SelectionInfoPanel() {
 
   return (
     <div style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* B4 — nút "Chọn cả cụm" nằm TRONG `BimAssignBox` (xem lý do ở docblock component đó),
+          không thêm ở đây nữa để khỏi hiện hai lần. */}
       <BimAssignBox key={selection.join('|')} selected={selected} onApply={updateEntities} />
       {roomLabelEntity && (
         <RoomTypeBox
@@ -2212,6 +2537,56 @@ export function SelectionInfoPanel() {
   );
 }
 
+/* ───────── B4 (GỐC B, 06/08) — NGƯỜI TIÊU THỤ của `Base.srcInsertId` (GỐC A) ─────────
+ *
+ * Vì sao có (`docs/GAP-IF.md` G-M1-06): `srcBlock` chỉ nói hình này thuộc block TÊN GÌ, không tách
+ * được bản chèn này với bản chèn kia — ca thật 1 tên block chèn 18 lần ⇒ 828 hình mang cùng một
+ * chuỗi, không chọn/đếm/dời được MỘT cấu kiện. `srcInsertId` (model.ts:343) mới tách được, và
+ * `expandIdsByInsertGroup()` (model.ts:396, hàm THUẦN + đã test ở tầng lib) làm phép nở.
+ *
+ * Ở đây CHỈ nối dây: đọc selection → gọi hàm thuần → `select(ids)`. Không thuật toán mới.
+ * Nút mờ khi không nở thêm được, có kèm lý do (luật §9 — cấm nút giả bấm không ra gì). ───────── */
+function InsertClusterBox({ selected }: { selected: Entity[] }) {
+  const doc = useCadStore((s) => s.doc);
+  const select = useCadStore((s) => s.select);
+
+  const fromInsert = selected.filter((e) => e.srcInsertId);
+  if (!fromInsert.length) return null;
+
+  const ids = selected.map((e) => e.id);
+  const expanded = expandIdsByInsertGroup(ids, doc);
+  const more = expanded.length - ids.length;
+  const blockName = fromInsert[0].srcBlock;
+
+  return (
+    // Không bọc `panel` — component này nằm BÊN TRONG box BIM (panel rồi), lồng hai lớp là vỡ nhịp.
+    <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+      <div style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--t3)', letterSpacing: 0.4, marginBottom: 6 }}>
+        Cụm đã chèn{blockName ? ` — ${blockName}` : ''}
+      </div>
+      <button
+        type="button"
+        disabled={more <= 0}
+        onClick={() => select(expanded, false)}
+        title={more > 0 ? `Chọn trọn cụm này — thêm ${more} hình.` : 'Đã chọn trọn cụm này rồi.'}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          fontSize: 11.5, padding: '5px 8px', borderRadius: 7, border: '1px solid var(--border)',
+          background: 'var(--field)', color: more > 0 ? 'var(--t1)' : 'var(--t4)',
+          cursor: more > 0 ? 'pointer' : 'not-allowed',
+        }}
+      >
+        <Crosshair size={13} /> Chọn cả cụm{more > 0 ? ` (+${more} hình)` : ''}
+      </button>
+      {more <= 0 && (
+        <p style={{ margin: '5px 0 0', fontSize: 10.5, lineHeight: 1.45, color: 'var(--t4)' }}>
+          Đang chọn trọn cụm rồi — không còn hình nào để thêm.
+        </p>
+      )}
+    </div>
+  );
+}
+
 /* ───────── B1 (24/07) — ô gán BIM: storey (tầng) + elementType (IfcElementType) ─────────
  * Gán cho TẤT CẢ entity đang chọn qua updateEntities (đã snapshot → Undo được, tôn trọng layer
  * khoá). 'null' = "đã kiểm, KHÔNG phải phần tử BIM"; bỏ chọn = xoá về undefined (chưa gán) —
@@ -2231,14 +2606,26 @@ export function BimAssignBox({ selected, onApply }: { selected: Entity[]; onAppl
     if (raw === '') elementType = undefined;
     else if (raw === 'null') elementType = null;
     else elementType = raw as ElementType;
-    onApply(selected.map((e) => ({ ...e, elementType })));
+    // B4 — người dùng gán tay thì cờ suy đoán PHẢI mất (bất biến ghi ở model.ts:352
+    // "khai báo thắng suy đoán"). Không xoá ở đây thì badge "suy đoán" đứng lại sai sự thật.
+    onApply(selected.map((e) => ({ ...e, elementType, inferred: undefined })));
   };
   const typeValue = commonType === undefined ? (sameType ? '' : '') : commonType === null ? 'null' : commonType;
+  // B4 · luật K3/L4 — máy suy thì phải LỘ MẶT, không giả vờ là người khai.
+  const inferredCount = selected.filter((e) => e.inferred).length;
 
   return (
     <div style={{ ...panel, position: 'relative', width: '100%', padding: '8px 10px' }}>
-      <div style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--t3)', letterSpacing: 0.4, marginBottom: 6 }}>
-        BIM · IFC — {selected.length} đối tượng
+      <div style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--t3)', letterSpacing: 0.4, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        <span>BIM · IFC — {selected.length} đối tượng</span>
+        {inferredCount > 0 && (
+          <span
+            title="Loại IFC này do máy suy từ tên lớp, chưa ai xác nhận. Chọn lại loại để chốt."
+            style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 999, background: 'var(--field)', border: '1px solid var(--warning)', color: 'var(--warning)', letterSpacing: 0 }}
+          >
+            suy đoán{selected.length > 1 ? ` · ${inferredCount}` : ''}
+          </span>
+        )}
       </div>
       <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
         <label style={{ fontSize: 10.5, color: 'var(--t3)', width: 56, flexShrink: 0 }}>Tầng</label>
@@ -2266,6 +2653,11 @@ export function BimAssignBox({ selected, onApply }: { selected: Entity[]; onAppl
           ))}
         </select>
       </div>
+      {/* B4 — "Chọn cả cụm" ở ĐÂY chứ không ở `SelectionInfoPanel`: Inspector đang chạy thật là
+          `components/studio/CadInspectorPages.tsx`, nó chỉ nhặt `BimAssignBox`/`RoomTypeBox`/
+          `WallTypePanel` (verify browser: box BIM hiện, box thêm vào SelectionInfoPanel KHÔNG).
+          Đặt trong này thì cả hai đường vào Inspector đều thấy, mà vẫn ở trong vùng file được giao. */}
+      <InsertClusterBox selected={selected} />
     </div>
   );
 }

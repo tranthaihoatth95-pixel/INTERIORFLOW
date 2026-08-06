@@ -17,7 +17,20 @@ import { taskCardById } from '@/lib/render-studio/task-cards';
 import { ensureToolModeGraph } from '@/lib/render-studio/tool-mode-graph';
 import { exportMeasurementSpecSheet } from '@/lib/render-studio/measurement-spec-sheet';
 import { getActiveBrandKit } from '@/lib/present-editor/brand-kit';
-import { ANCHOR_CONFIG, type TieredMeasurement, type AnchorKind, type Pt2D } from '@/lib/vision/single-view-metrology';
+import {
+  ANCHOR_CONFIG,
+  FURNITURE_SIZE_PRIORS,
+  type TieredMeasurement,
+  type AnchorKind,
+  type Pt2D,
+  type FurnitureCategory,
+  type MeasurementResult,
+} from '@/lib/vision/single-view-metrology';
+import { buildFurnitureFromMeasurement, orthoViewsToEntities, measurementToTarget } from '@/lib/vision/to-cad';
+import { matchTemplate, readTemplateQueue, writeTemplateQueue, mergeTemplateRequests } from '@/lib/vision/match-template';
+import { loadManifest } from '@/lib/cad/block-library';
+import { useCadStore } from '@/lib/cad/store';
+import { screenToWorld } from '@/lib/cad/model';
 import type { ParamDef } from '@/lib/types';
 import { useT } from '@/lib/i18n';
 
@@ -416,7 +429,16 @@ export default function ToolModeForm({ cardId }: { cardId: string }) {
               </div>
             )}
             {isMeasureCard && measurement && imageDataUrl && (
-              <MeasurementExportButton imageDataUrl={imageDataUrl} measurement={measurement} />
+              <>
+                <MeasurementExportButton imageDataUrl={imageDataUrl} measurement={measurement} />
+                {/* G-M3-03 (06/08) — hai bước cuối của dây chuyền ảnh→bản vẽ (khớp mẫu block ⑤ +
+                    ba hình chiếu ⑥) đã viết xong từ trước nhưng có 0 nơi gọi. Đây là chỗ gọi. */}
+                <MeasurementToCadButtons
+                  measurement={measurement}
+                  categoryLabel={String(values.category ?? '')}
+                  imageDataUrl={imageDataUrl}
+                />
+              </>
             )}
             {!smallScreen && (
               <div style={{ textAlign: 'right', marginTop: 12 }}>
@@ -571,6 +593,136 @@ function MeasurementExportButton({
     >
       {busy ? 'Đang dựng spec sheet…' : '⬇ Xuất Spec Sheet'}
     </button>
+  );
+}
+
+/**
+ * G-M3-03 — HAI NÚT nối "món vừa đo" sang BẢN VẼ THẬT.
+ *
+ * Trước 06/08: `lib/vision/match-template.ts` (⑤) và `lib/vision/ortho-projection.ts` (⑥) đã viết
+ * xong + có test nhưng `grep -rn "match-template\|ortho-projection" components app` = **0 dòng**
+ * ⇒ dây chuyền ảnh→bản vẽ đứt đúng giữa vision và block. Đây là cửa gọi chúng, qua cầu nối thuần
+ * `lib/vision/to-cad.ts` (có test riêng).
+ *
+ * Ghi thẳng vào `useCadStore` — ĐÚNG luật X1 (`docs/00-CHOT.md`): dựng ở chặng nào cũng ghi vào
+ * MỘT `Doc`, không đẻ "model riêng của chặng 3D". Mở chặng Thiết kế 2D là thấy hình ngay.
+ *
+ * ⚠️ Nói rõ giới hạn, không giấu: mặt nạ (silhouette) của bước ③ KHÔNG có trong payload node đo
+ * (`MeasurePayload` chỉ mang cờ `hasSilhouette`), nên mặt đứng dựng từ hộp bao chứ chưa phải
+ * đường bao thật của vật. Muốn có, phải cho node đo xuất mặt nạ ra — việc của lượt sau.
+ */
+function MeasurementToCadButtons({
+  measurement,
+  categoryLabel,
+  imageDataUrl,
+}: {
+  measurement: MeasurePayload;
+  categoryLabel: string;
+  imageDataUrl: string;
+}) {
+  const [busy, setBusy] = useState<'block' | 'ortho' | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  // Node đo ghi LABEL vào param `category` (select hiện label, không phải khoá) — đổi ngược lại
+  // đúng cách `lib/nodes/defs/metrology.ts:113` đang làm, không tự chế bảng thứ hai.
+  const category = (Object.keys(FURNITURE_SIZE_PRIORS) as FurnitureCategory[]).find(
+    (k) => FURNITURE_SIZE_PRIORS[k].label === categoryLabel,
+  );
+
+  const result: MeasurementResult = {
+    width: measurement.width,
+    depth: measurement.depth,
+    height: measurement.height,
+  };
+
+  const dropPoint = () => {
+    const st = useCadStore.getState();
+    return screenToWorld(st.viewport, { x: window.innerWidth / 2, y: window.innerHeight / 2 });
+  };
+
+  const onBuildBlock = async () => {
+    setBusy('block');
+    try {
+      const manifest = await loadManifest().catch(() => null);
+      const built = buildFurnitureFromMeasurement({
+        measurement: result,
+        at: dropPoint(),
+        category,
+        manifest,
+        imageUrl: imageDataUrl,
+        now: Date.now(),
+      });
+      const st = useCadStore.getState();
+      // Số đo hỏng (NaN/vô cực/≤0) ⇒ `entities` rỗng: báo đúng câu giải thích, KHÔNG nói "đã đặt".
+      if (built.invalidDims) {
+        st.setStatus(built.label);
+        setMsg(built.label);
+        return;
+      }
+      st.addEntities(built.entities);
+      st.setStatus(`${built.label} — đã đặt ${built.entities.length} nét vào bản vẽ. ⌘Z để lùi.`);
+      // Trượt ngưỡng ⇒ ghi MỘT DÒNG VIỆC cho thư viện (cơ chế `TemplateRequest` đã có sẵn, trước
+      // nay cũng chưa ai gọi) — thư viện tự lớn theo cách studio dùng thật.
+      if (built.request) writeTemplateQueue(mergeTemplateRequests(readTemplateQueue(), built.request));
+      setMsg(
+        built.usedFallback
+          ? `${built.label}. Đã ghi vào danh sách mẫu cần bổ sung.`
+          : `${built.label} — mở chặng Thiết kế 2D để xem.`,
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const onBuildOrtho = async () => {
+    setBusy('ortho');
+    try {
+      const manifest = await loadManifest().catch(() => null);
+      const match = matchTemplate(measurementToTarget(result), { category, manifest });
+      const built = orthoViewsToEntities(result, dropPoint(), { match });
+      const st = useCadStore.getState();
+      if (built.invalidDims) {
+        st.setStatus(built.warning);
+        setMsg(built.warning);
+        return;
+      }
+      st.addEntities(built.entities);
+      st.setStatus(`Đã đặt 3 hình chiếu (${built.entities.length} nét). ${built.warning} ⌘Z để lùi.`);
+      setMsg(`Mặt bằng · Mặt đứng · Mặt bên đã vào bản vẽ. ${built.warning}`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const btn = (disabled: boolean): React.CSSProperties => ({
+    flex: 1,
+    padding: '9px',
+    borderRadius: 8,
+    border: '1px solid var(--border)',
+    background: 'transparent',
+    color: 'var(--t2)',
+    fontSize: 12.5,
+    fontWeight: 600,
+    cursor: disabled ? 'not-allowed' : 'pointer',
+  });
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button type="button" disabled={busy !== null} onClick={onBuildBlock} style={btn(busy !== null)}>
+          {busy === 'block' ? 'Đang dựng…' : '⬒ Dựng khối trên bản vẽ'}
+        </button>
+        <button type="button" disabled={busy !== null} onClick={onBuildOrtho} style={btn(busy !== null)}>
+          {busy === 'ortho' ? 'Đang dựng…' : '⊞ Ba hình chiếu'}
+        </button>
+      </div>
+      {!category && (
+        <div style={{ fontSize: 11, color: 'var(--t4)', marginTop: 6, lineHeight: 1.5 }}>
+          Chọn "Loại đồ" ở trên để khớp mẫu có căn cứ — chưa chọn thì chỉ ra khối tạm.
+        </div>
+      )}
+      {msg && <div style={{ fontSize: 11.5, color: 'var(--t3)', marginTop: 6, lineHeight: 1.5 }}>{msg}</div>}
+    </div>
   );
 }
 

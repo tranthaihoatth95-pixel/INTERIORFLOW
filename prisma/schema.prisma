@@ -402,6 +402,21 @@ model ProductSpec {
   supplierId String? // hãng cung cấp — chưa có bảng Supplier riêng, để string trước
   verified   Boolean  @default(false) // IF đã duyệt chưa — chỉ có nghĩa khi scope='global'
 
+  // ── Bảng FF&E theo phòng (06/08, G-M3-08 trong docs/GAP-IF.md) — CHỈ KHAI CỘT, CHƯA MIGRATE.
+  // Vấn đề: bản ghi sản phẩm không có trường phòng/vị trí ⇒ bảng FF&E theo phòng không có chỗ
+  // lưu, không thống kê được "phòng này gồm những món nào".
+  // ⚠️ Ranh giới ngữ nghĩa (đọc trước khi dùng): ProductSpec là DANH MỤC — "món này TỒN TẠI, giá
+  // bao nhiêu". Phòng/độ tin cậy vốn thuộc về LẦN XUẤT HIỆN của món trong một dự án (FfeItem,
+  // lib/ffe/item.ts). Hai cột dưới là chỗ cho ca THỰC DỤNG: studio nhập nguyên bảng FF&E của MỘT
+  // dự án vào kho và muốn giữ nguyên cột phòng; KHÔNG phải chỗ để nhét mọi lần xuất hiện. Nhiều
+  // dự án cùng dùng một món thì món ở FfeItem, không nhân bản ProductSpec ra.
+  // 🔴 CHƯA CHẠY `prisma migrate` (luật: sandbox không khoá được file SQLite + phiên khác đang
+  // chạy dev server trên cùng dev.db). Prisma client CHƯA generate ⇒ TUYỆT ĐỐI KHÔNG tham chiếu
+  // `room`/`confidence` qua prisma.productSpec.* cho tới khi chủ dự án chạy lệnh migrate tay —
+  // cờ chặn: `SPEC_ROOM_COLUMN_READY` trong `lib/server/specs.ts`.
+  room       String? // phòng/khu vực, chuỗi tự do theo nhãn phòng trên bản vẽ — KHÔNG ép enum
+  confidence String? // 'measured' | 'inferred' | 'manual' (khớp FfeConfidence, lib/ffe/item.ts)
+
   @@index([kind])
   @@index([sku])
   @@index([drawingBlock])

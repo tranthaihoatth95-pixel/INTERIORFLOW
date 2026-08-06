@@ -38,7 +38,11 @@ const STAGE_CAPTION: Record<StageKey, [string, string]> = {
  * 🔴 05/08 (S3): `grep -rn "LIBRARY_INSTANTIATE_EVENT\|if:library-instantiate" app/ components/ lib/`
  * → CHỈ có chỗ PHÁT, **0 nơi NGHE**. Tức kéo-thả món từ kệ hiện chỉ hiện toast chứ chưa rơi
  * xuống bản vẽ thật. Kệ "Văn phòng · Cụm bàn" bên dưới KHÔNG đi đường này — nó gọi thẳng
- * `useCadStore.addEntities()`, nên thả là có hình ngay. Ghi lại để phiên nối canvas biết. */
+ * `useCadStore.addEntities()`, nên thả là có hình ngay. Ghi lại để phiên nối canvas biết.
+ * ✅ 06/08 (G-M3-14): ĐÃ NỐI. Chỗ nghe = `components/cad/LibraryDropBridge.tsx` (mount trong
+ * `CadEditor`), đối chiếu món qua `lib/cad/library-item-resolve.ts` rồi ghi vào ĐÚNG đường
+ * `addEntities()` nói trên. `LIBRARY_APPLY_EVENT` (áp preset/vật liệu lên vật đang chọn) thì
+ * VẪN CÒN 0 nơi nghe — việc khác, chưa làm, đừng tưởng đã xong theo. */
 export const LIBRARY_INSTANTIATE_EVENT = 'if:library-instantiate';
 export const LIBRARY_APPLY_EVENT = 'if:library-apply';
 
@@ -134,9 +138,24 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   const items = useMemo(() => itemsFor(activeStage, shelfId, chip, query), [activeStage, shelfId, chip, query]);
   const stageShelves = STAGE_SHELVES[activeStage];
 
+  /**
+   * 06/08 (G-M3-14) — SỬA LỜI BÁO NÓI DỐI. Trước: phát sự kiện xong là toast "Đã tạo bản làm
+   * việc…" VÔ ĐIỀU KIỆN, trong khi **0 nơi nghe** ⇒ bản vẽ trống trơn mà app khẳng định đã xong.
+   * Nay: `detail.claimed` do nơi NGHE bật lên (đồng bộ ngay trong listener — `dispatchEvent`
+   * chạy đồng bộ nên đọc được ngay dòng sau). Có người nhận ⇒ ĐỂ HỌ báo kết quả thật (thả được
+   * mấy nét / chưa có hình cho món này — xem `components/cad/LibraryDropBridge.tsx`). Không ai
+   * nhận ⇒ nói thẳng là màn đang mở chưa đón được, kèm việc làm tiếp.
+   */
   const instantiate = (item: SheetItem) => {
-    window.dispatchEvent(new CustomEvent(LIBRARY_INSTANTIATE_EVENT, { detail: item }));
-    pushLibraryToast(tr(`Đã tạo bản làm việc từ "${item.name}" — bản gốc không đổi`, `Created a working copy of "${item.name}" — original untouched`));
+    const detail: SheetItem & { claimed?: boolean } = { ...item, claimed: false };
+    window.dispatchEvent(new CustomEvent(LIBRARY_INSTANTIATE_EVENT, { detail }));
+    if (detail.claimed) return;
+    pushLibraryToast(
+      tr(
+        `Chưa thả "${item.name}" xuống được — màn đang mở không có bản vẽ. Mở chặng Thiết kế 2D rồi thả lại.`,
+        `Can't place "${item.name}" here — this screen has no drawing. Open the 2D Design stage and try again.`,
+      ),
+    );
   };
 
   const applyPreset = (item: SheetItem) => {

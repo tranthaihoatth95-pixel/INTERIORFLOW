@@ -1,15 +1,21 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IF · Cài đặt — bản chuẩn gu</title>
 <style>
-  :root{
+  :root,[data-theme="light"]{
     --bg:#edebe7; --panel:#fff; --line:#e4e1db; --ink:#26262b; --mut:#8f8f97;
     --accent:#6a57f5; --accent-soft:#efeafe; --chip:#f3f1ee;
     --sh:0 8px 24px rgba(40,38,35,.12), 0 1px 2px rgba(40,38,35,.06);
     --sh-soft:0 2px 10px rgba(40,38,35,.06);
+  }
+  [data-theme="dark"]{
+    --bg:#0c0c0e; --panel:#1a1a1e; --line:#2a2a31; --ink:#f5f5f7; --mut:#9e9ea8;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.16); --chip:#202024;
+    --sh:0 8px 24px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4);
+    --sh-soft:0 2px 10px rgba(0,0,0,.35);
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
@@ -66,13 +72,13 @@
   .pathbox .pp{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pathbox .ps{font-size:10.5px;color:#1f9d6b;display:flex;align-items:center;gap:5px;margin-top:1px}
   .pathbox .dot{width:6px;height:6px;border-radius:50%;background:#1f9d6b}
-  .ghost{border:1px solid var(--line);background:#fff;border-radius:11px;height:34px;padding:0 14px;font-size:12px;font-weight:600;color:#3a3a42}
+  .ghost{border:1px solid var(--line);background:var(--panel);border-radius:11px;height:34px;padding:0 14px;font-size:12px;font-weight:600;color:#3a3a42}
   .warn{font-size:10.5px;color:var(--mut);margin-top:9px;line-height:1.5}
 
   /* language + misc */
   .seg{display:flex;background:var(--chip);border-radius:11px;padding:3px;width:max-content}
   .seg span{padding:7px 16px;border-radius:8px;font-size:12px;color:#77777f}
-  .seg span.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.10)}
+  .seg span.on{background:var(--panel);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.10)}
   .noterow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);font-size:12.5px}
   .noterow:first-of-type{border-top:0}
   .noterow .k b{display:block;font-weight:600}
@@ -170,5 +176,13 @@
     </div>
   </div>
 </div>
+<script>
+document.addEventListener('keydown', function (e) {
+  if (e.key === 't' || e.key === 'T') {
+    var r = document.documentElement
+    r.dataset.theme = r.dataset.theme === 'light' ? 'dark' : 'light'
+  }
+})
+</script>
 </body>
 </html>

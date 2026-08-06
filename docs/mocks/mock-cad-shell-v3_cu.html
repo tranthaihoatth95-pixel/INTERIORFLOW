@@ -139,10 +139,10 @@ button{font:inherit;color:inherit}
 
 /* ══ SÂN KHẤU ══ */
 .stage{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;background:var(--bg)}
-.tabs{height:34px;flex:none;display:flex;align-items:flex-end;gap:2px;padding:0 8px;overflow-x:auto;scrollbar-width:none;
+.tabs{height:34px;flex:none;display:flex;align-items:flex-end;gap:2px;padding:0 8px;
       background:var(--panel);border-bottom:1px solid var(--border)}
 /* tab: chữ đậm màu hơn 120ms · chọn = nền trượt (SPEC-HOVER §2) */
-.tab{height:27px;white-space:nowrap;flex:none;display:flex;align-items:center;gap:6px;padding:0 12px;
+.tab{height:27px;display:flex;align-items:center;gap:6px;padding:0 12px;
      border-radius:var(--radius-sm) var(--radius-sm) 0 0;border:1px solid transparent;border-bottom:0;
      background:transparent;color:var(--t3);font-size:var(--fs-xs);cursor:pointer;
      transition:color .12s var(--ease-apple),background .12s var(--ease-apple)}
@@ -158,7 +158,7 @@ button{font:inherit;color:inherit}
   background-image:linear-gradient(var(--grid-a) 1px,transparent 1px),linear-gradient(90deg,var(--grid-a) 1px,transparent 1px),
                    linear-gradient(var(--grid-b) 1px,transparent 1px),linear-gradient(90deg,var(--grid-b) 1px,transparent 1px);
   background-size:22px 22px,22px 22px,110px 110px,110px 110px}
-.plan{position:absolute;left:16%;top:18%;width:48%;height:54%}
+.plan{position:absolute;left:15%;top:17%;width:50%;height:55%}
 .w{position:absolute;background:var(--t1);opacity:.82;border-radius:1px}
 .dm{position:absolute;font-size:var(--fs-2xs);color:var(--t3);font-family:ui-monospace,Menlo,monospace;
     background:var(--bg);padding:0 4px}
@@ -168,7 +168,7 @@ button{font:inherit;color:inherit}
 .sel b{position:absolute;width:7px;height:7px;background:var(--panel);border:1.5px solid var(--accent);border-radius:2px}
 
 /* ══ DOCK — kính, bo 14, đệm 4 ⇒ nút trong bo 10 (§2d đồng tâm) ══ */
-.dock{position:absolute;white-space:nowrap;left:50%;bottom:16px;transform:translateX(-50%);
+.dock{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
       display:flex;align-items:center;gap:1px;padding:4px;
       border:1px solid var(--mat-hairline);border-radius:var(--radius-md);box-shadow:var(--shadow-pop)}
 .dk{width:var(--tap);height:var(--tap);border:0;background:transparent;color:var(--t3);
@@ -179,7 +179,7 @@ button{font:inherit;color:inherit}
 .dk.on{background:var(--accent);color:#fff}
 .dkdiv{width:1px;height:18px;background:var(--mat-hairline);margin:0 5px}
 .dkt{height:var(--tap);border:0;background:transparent;color:var(--t3);border-radius:var(--radius-sm);
-     padding:0 11px;display:flex;align-items:center;font-size:var(--fs-xs);cursor:pointer;white-space:nowrap;
+     padding:0 11px;display:flex;align-items:center;font-size:var(--fs-xs);cursor:pointer;
      transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
 .dkt:hover{background:var(--hover);color:var(--t1)}
 .dkt.on{background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semi)}
@@ -239,12 +239,9 @@ button{font:inherit;color:inherit}
 .vt{display:flex;align-items:center;gap:5px;color:var(--t3);cursor:pointer}
 .vtd{width:7px;height:7px;border-radius:2px;background:var(--warning)}
 
-/* mặc định KHÔNG chọn gì ⇒ inspector không tồn tại trong DOM-flow, canvas rộng hết cỡ */
-.insp{display:none}
-body.has-sel .insp{display:flex}
-/* sidebar thu gọn — phím B, hoặc nút « ở đáy sidebar */
-body.side-off .side{display:none}
-.hint{font-family:ui-monospace,Menlo,monospace;color:var(--t5)}
+.themer{position:fixed;right:10px;bottom:32px;display:flex;gap:4px;z-index:30}
+.themer button{border:1px solid var(--border);background:var(--panel);color:var(--t3);
+               border-radius:8px;padding:3px 9px;font-size:var(--fs-2xs);cursor:pointer}
 
 /* Luật 8 */
 @media (prefers-reduced-motion:reduce){
@@ -254,6 +251,10 @@ body.side-off .side{display:none}
 </style>
 </head>
 <body>
+<!-- ═══ BẢN CŨ (06/08) — đã bị thay bởi "Chế độ Chuyên.dc.html" / "Chế độ Phác thảo.dc.html"
+     (màn 2D Kỹ thuật, 2 mode Chuyên/Phác thảo). ĐỪNG PORT file này — giữ lại chỉ để tham khảo
+     lịch sử thiết kế. Xem README-mocks.md/00-CHOT.md để hiểu bối cảnh. -->
+
 <div class="app">
 
   <header class="top mat-header">
@@ -306,7 +307,6 @@ body.side-off .side{display:none}
       <div class="sideft">
         <button class="sf"><svg class="i s" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Lớp mới</button>
         <button class="sf"><svg class="i s" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M17.5 14v7M14 17.5h7"/></svg>Khối</button>
-        <button class="sf" style="flex:none;width:28px" title="Thu gọn — B"><svg class="i s" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
       </div>
     </aside>
 
@@ -332,7 +332,7 @@ body.side-off .side{display:none}
           <div class="furn" style="right:9%;top:14%;width:19%;height:12%"></div>
           <div class="dm" style="left:17%;top:-19px">5 200</div>
           <div class="dm" style="right:12%;top:-19px">3 800</div>
-          <div class="dm" style="left:8px;top:45%">4 100</div>
+          <div class="dm" style="left:-46px;top:45%">4 100</div>
           <div class="sel" style="left:52%;top:24%;width:30%;height:26%">
             <b style="left:-4px;top:-4px"></b><b style="right:-4px;top:-4px"></b>
             <b style="left:-4px;bottom:-4px"></b><b style="right:-4px;bottom:-4px"></b>
@@ -396,9 +396,7 @@ body.side-off .side{display:none}
   <footer class="foot">
     <span class="cmdl"><kbd>⌘</kbd>Gõ lệnh: L · PL · REC · C · ROOM</span>
     <span>·</span><span>Ortho F8</span><span>Nhập số F12</span>
-    <span class="hint">D đổi nền · S chọn thử · B thu sidebar</span>
     <div class="r">
-      <span>Vùng vẽ <b id="cw" style="color:var(--t2);font-variant-numeric:tabular-nums">—</b></span>
       <span>1:50</span>
       <span class="vt"><span class="vtd"></span>Vitals</span>
       <span>Đã lưu 19:18</span>
@@ -406,19 +404,9 @@ body.side-off .side{display:none}
   </footer>
 </div>
 
-<script>
-addEventListener('keydown',e=>{
-  const k=e.key.toLowerCase(), r=document.documentElement;
-  if(k==='d'){r.dataset.theme = r.dataset.theme==='light'?'dark':'light'}
-  if(k==='s'){document.body.classList.toggle('has-sel')}
-  if(k==='b'){document.body.classList.toggle('side-off')}
-  measure();
-});
-function measure(){
-  const c=document.querySelector('.canvas');
-  document.getElementById('cw').textContent=Math.round(c.getBoundingClientRect().width)+'px';
-}
-addEventListener('resize',measure); addEventListener('load',measure);
-</script>
+<div class="themer">
+  <button onclick="document.documentElement.dataset.theme='light'">Sáng</button>
+  <button onclick="document.documentElement.dataset.theme='dark'">Tối</button>
+</div>
 </body>
 </html>

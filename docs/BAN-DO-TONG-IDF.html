@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IF — Bản đồ tổng</title>
+<style>
+  :root{
+    --bg:#14161a; --panel:#1c1f26; --panel2:#232730; --line:#2e333d;
+    --ink:#e7e9ee; --mut:#9aa1ad; --dim:#6b727e;
+    --ok:#4ea88b; --orphan:#d9a441; --miss:#c8635f; --accent:#6f7bd6;
+    --okbg:#173029; --orbg:#302713; --misbg:#301a19;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    font-size:14px;line-height:1.55;padding:22px 26px 60px}
+  h1{font-size:20px;font-weight:650;margin:0 0 2px}
+  .sub{color:var(--mut);font-size:12.5px;margin-bottom:18px}
+  .row{display:grid;gap:16px}
+  @media(min-width:1000px){.top{grid-template-columns:1.15fr .85fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .card h2{font-size:13px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--mut);margin:0 0 12px}
+  /* headline numbers */
+  .nums{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .num{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:12px 16px;min-width:150px;flex:1}
+  .num b{font-size:26px;font-weight:680;display:block;line-height:1.1}
+  .num span{color:var(--mut);font-size:12px}
+  .num .cap{color:var(--dim);font-size:11px;margin-top:3px;display:block}
+  /* tree */
+  .tree{font-size:13px}
+  .node{display:flex;align-items:center;gap:9px;padding:4px 0;border-bottom:1px solid #22262e}
+  .node:last-child{border-bottom:0}
+  .node .nm{flex:1}
+  .node .path{color:var(--dim);font-size:11px;font-family:ui-monospace,Menlo,monospace}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-ok{background:var(--ok)} .d-or{background:var(--orphan)} .d-mi{background:var(--miss)}
+  .mini{display:inline-flex;gap:6px;align-items:center;font-size:11px;color:var(--mut);
+    background:var(--panel2);border-radius:20px;padding:2px 9px}
+  .grp{margin-top:6px}
+  .grp .gh{display:flex;align-items:center;gap:8px;margin:12px 0 4px;font-weight:600}
+  .gh .path{color:var(--dim);font-size:11px;font-family:ui-monospace,Menlo,monospace;font-weight:400}
+  .counts{display:flex;gap:6px;margin-left:auto}
+  .pill{font-size:11px;padding:1px 8px;border-radius:20px;font-weight:600}
+  .p-ok{background:var(--okbg);color:var(--ok)} .p-or{background:var(--orbg);color:var(--orphan)}
+  .p-mi{background:var(--misbg);color:var(--miss)}
+  /* tasks */
+  .task{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    padding:12px 14px;margin-bottom:12px}
+  .task .th{display:flex;align-items:center;gap:9px;margin-bottom:9px;font-weight:600}
+  .task .th .tag{font-size:11px;color:var(--dim);font-weight:600}
+  .flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .step{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);
+    border-radius:8px;padding:5px 9px;font-size:12px}
+  .step.ok{border-color:#274a40} .step.or{border-color:#4a3d1e} .step.mi{border-color:#4a2a28}
+  .arr{color:var(--dim);font-size:12px}
+  .brk{color:var(--miss);font-size:11px;font-weight:600;margin-left:4px}
+  .gapref{color:var(--dim);font-size:10.5px;font-family:ui-monospace,Menlo,monospace}
+  /* legend */
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:6px;font-size:12px;color:var(--mut)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .note{margin-top:16px;padding:12px 16px;background:var(--panel);border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;font-size:12.5px;color:var(--mut)}
+  .foot{color:var(--dim);font-size:11px;margin-top:22px;text-align:right}
+  .neu{display:inline-flex;align-items:center;gap:7px;background:var(--okbg);color:var(--ok);
+    border-radius:20px;padding:3px 11px;font-size:11.5px;font-weight:600}
+  /* ecosystem band */
+  .eco{display:grid;gap:14px;align-items:stretch}
+  @media(min-width:900px){.eco{grid-template-columns:1fr 1.1fr 1fr}}
+  .eco-node{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:13px 15px}
+  .eco-node.backbone{border-color:#3a3320;background:#22201a}
+  .en-h{display:flex;align-items:center;gap:8px;font-weight:650;font-size:14.5px}
+  .en-role{color:var(--accent);font-size:11px;font-weight:600;letter-spacing:.04em;margin:3px 0 5px}
+  .en-desc{color:var(--mut);font-size:12px;margin-bottom:9px}
+  .en-stat{font-size:11.5px;font-weight:600;padding:5px 9px;border-radius:7px}
+  .st-ok{background:var(--okbg);color:var(--ok)} .st-or{background:var(--orbg);color:var(--orphan)}
+  .eco-mid{display:flex;flex-direction:column;gap:7px;justify-content:center}
+  .spine{text-align:center;color:var(--dim);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+  .spine-lbl{text-align:center;color:var(--dim);font-size:10.5px;margin-top:-3px}
+  .st-mi-t{color:var(--miss)}
+  code{background:#0f1115;border:1px solid var(--line);border-radius:5px;padding:1px 5px;
+    font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
+</style>
+</head>
+<body>
+  <h1>Hệ sinh thái IDF — Bản đồ tổng <span class="neu">● trung tính · không data dự án</span></h1>
+  <div class="sub">Hệ sinh thái (IF · ArchiNote · Larkbase) → cây gia phả IF → 3 task-flow · cập nhật 06/08/2026 · nguồn: GAP map 55 lỗi (5 phiên chẩn đoán)</div>
+
+  <!-- BĂNG HỆ SINH THÁI -->
+  <div class="card" style="margin-bottom:16px">
+    <h2>Hệ sinh thái IDF — ba chân · trạng thái đấu nối</h2>
+    <div class="eco">
+      <div class="eco-node">
+        <div class="en-h"><span class="dot d-or"></span>📱 ArchiNote</div>
+        <div class="en-role">MÁY THU · điện thoại</div>
+        <div class="en-desc">thu số đo · ảnh hiện trường · ghi âm · tri thức</div>
+        <div class="en-stat st-or">CHƯA KHẢO SÁT — cần mở repo, map trước khi đấu nối</div>
+      </div>
+
+      <div class="eco-mid">
+        <div class="spine">⇄ .idf ⇄</div>
+        <div class="spine-lbl">nguồn dữ liệu chung · một chủ đề = một sự thật</div>
+        <div class="eco-node backbone">
+          <div class="en-h"><span class="dot d-or"></span>🗄 Larkbase</div>
+          <div class="en-role">XƯƠNG SỐNG DỮ LIỆU</div>
+          <div class="en-desc">nhân sự · dự án · thư viện vật liệu</div>
+          <div class="en-stat st-or">MỘT PHẦN — connector pull-only (màu/vật liệu) · đấu nối chính CHƯA</div>
+        </div>
+        <div class="spine">⇄ cloud sync ⇄</div>
+        <div class="spine-lbl st-mi-t">sync .idf giữa 2 app — CHƯA có</div>
+      </div>
+
+      <div class="eco-node">
+        <div class="en-h"><span class="dot d-ok"></span>🖥 InteriorFlow (IF)</div>
+        <div class="en-role">MÁY PHÁT · máy tính</div>
+        <div class="en-desc">bản vẽ · mô hình 3D · ảnh · hồ sơ</div>
+        <div class="en-stat st-ok">~75% máy móc · chi tiết bên dưới</div>
+      </div>
+    </div>
+    <div class="note" style="border-left-color:var(--orphan);margin-top:14px">
+      <b>Cần bắt đầu xây + đấu nối (chưa có phiên phụ trách):</b>
+      ① khảo sát ArchiNote (mở repo, lập cây gia phả như IF) ·
+      ② connector Larkbase đầy đủ (nay chỉ pull màu/vật liệu) ·
+      ③ sync <code>.idf</code> hai chiều IF↔ArchiNote qua cloud ·
+      ④ định nghĩa <code>.idf</code> làm hợp đồng dữ liệu chung.
+      <br><b>Trung tính:</b> Larkbase/ArchiNote chở <b>data khách</b> — bản đồ chỉ vẽ <b>đường ống</b>,
+      không vẽ nước. Data khách sống trong <code>.idf</code>/thư mục dự án, không vào repo sản phẩm.
+    </div>
+  </div>
+
+  <div class="nums">
+    <div class="num"><b>~75%</b><span>MÁY MÓC đã dựng</span><span class="cap">158k dòng · thuật toán khó phần lớn đã có</span></div>
+    <div class="num"><b style="color:var(--orphan)">~35%</b><span>KTS làm TRỌN task không gãy</span><span class="cap">cả 3 task gãy giữa chuỗi ở lớp "vật"</span></div>
+    <div class="num"><b style="color:var(--accent)">55→8</b><span>GAP chụm về 8 GỐC</span><span class="cap">phần lớn là NỐI, không phải viết mới</span></div>
+    <div class="num"><b>~½</b><span>thuật toán còn MỒ CÔI</span><span class="cap">viết + test xong · 0 nơi gọi</span></div>
+  </div>
+
+  <div class="row top">
+    <!-- CÂY GIA PHẢ -->
+    <div class="card">
+      <h2>Cây gia phả kiến trúc — tính năng theo hệ con</h2>
+
+      <div class="grp">
+        <div class="gh"><span>🧩 Lõi CAD 2D</span><span class="path">lib/cad</span>
+          <span class="counts"><span class="pill p-ok">6 nối</span><span class="pill p-or">4 mồ côi</span><span class="pill p-mi">3 thiếu</span></span></div>
+        <div class="node"><span class="dot d-ok"></span><span class="nm">Đọc DXF/DWG · làm phẳng block</span><span class="path">dxf.ts</span></div>
+        <div class="node"><span class="dot d-ok"></span><span class="nm">Xuất DXF + cảnh báo mất block</span><span class="path">exportDxfEx</span></div>
+        <div class="node"><span class="dot d-ok"></span><span class="nm">Khung tên · chú giải · cụm bàn</span><span class="path">commands·legend</span></div>
+        <div class="node"><span class="dot d-or"></span><span class="nm">Báo cáo nạp (đọc/mất gì) — tính rồi vứt</span><span class="path">DxfLoadReport</span></div>
+        <div class="node"><span class="dot d-or"></span><span class="nm">Đọc ngữ nghĩa mặt bằng (trục·lõi·diện tích)</span><span class="path">dxf-plan</span></div>
+        <div class="node"><span class="dot d-or"></span><span class="nm">Lọc cụm vẽ chính (chống file phình)</span><span class="path">mainCluster</span></div>
+        <div class="node"><span class="dot d-mi"></span><span class="nm">Danh tính cấu kiện (chọn 1 vật) + elementType</span><span class="path">GỐC A</span></div>
+        <div class="node"><span class="dot d-mi"></span><span class="nm">Đối tượng PHÒNG · diện tích từ hình học</span><span class="path">GỐC A</span></div>
+      </div>
+
+      <div class="grp">
+        <div class="gh"><span>🧊 3D + Trình bày mặt bằng</span><span class="path">lib/three · components/cad</span>
+          <span class="counts"><span class="pill p-ok">3 nối</span><span class="pill p-mi">3 thiếu</span></span></div>
+        <div class="node"><span class="dot d-ok"></span><span class="nm">Dựng khối · cắt lớp · cao độ tầng</span><span class="path">section·levels</span></div>
+        <div class="node"><span class="dot d-ok"></span><span class="nm">Chế độ trình bày · leader · Checkpoint</span><span class="path">plan-present</span></div>
+        <div class="node"><span class="dot d-mi"></span><span class="nm">2D·3D một nguồn (nay đọc hai nửa)</span><span class="path">GỐC A · K1</span></div>
+        <div class="node"><span class="dot d-mi"></span><span class="nm">Hoàn tác ở 3D · xem trước lệnh sửa</span><span class="path">GỐC E</span></div>
+      </div>
+
+      <div class="grp">
+        <div class="gh"><span>👁 Bốc tách ảnh → món (vision)</span><span class="path">lib/vision</span>
+          <span class="counts"><span class="pill p-ok">1 nối</span><span class="pill p-or">2 mồ côi</span><span class="pill p-mi">1 thiếu</span></span></div>
+        <div class="node"><span class="dot d-ok"></span><span class="nm">Đo 1 món từ ảnh (tách nền·hiệu chỉnh)</span><span class="path">metrology</span></div>
+        <div class="node"><span class="dot d-or"></span><span class="nm">Khớp mẫu block + 3 hình chiếu</span><span class="path">match·ortho</span></div>
+        <div class="node"><span class="dot d-mi"></span><span class="nm">Bốc N món/ảnh → danh sách</span><span class="path">GỐC C</span></div>
+      </div>
+
+      <div class="grp">
+        <div class="gh"><span>📋 Bảng khối lượng (BOQ · FF&E)</span><span class="path">lib/boq · present-editor</span>
+          <span class="counts"><span class="pill p-ok">1 nối</span><span class="pill p-mi">4 thiếu</span></span></div>
+        <div class="node"><span class="dot d-ok"></span><span class="nm">BOQ vật liệu theo m² (vùng tô)</span><span class="path">boq/compute</span></div>
+        <div class="node"><span class="dot d-mi"></span><span class="nm">Món rời: đếm cái · phòng · ảnh</span><span class="path">GỐC C</span></div>
+        <div class="node"><span class="dot d-mi"></span><span class="nm">Bảng N món · xuất xlsx nhúng ảnh</span><span class="path">GỐC C</span></div>
+      </div>
+
+      <div class="grp">
+        <div class="gh"><span>📚 Thư viện block</span><span class="path">scripts·public/cad-library</span>
+          <span class="counts"><span class="pill p-ok">1 nối</span><span class="pill p-or">1 mồ côi</span><span class="pill p-mi">2 thiếu</span></span></div>
+        <div class="node"><span class="dot d-ok"></span><span class="nm">54 block · cụm sinh tham số · dây chuyền sinh</span><span class="path">generate-lib</span></div>
+        <div class="node"><span class="dot d-or"></span><span class="nm">Thả món xuống bản vẽ (sự kiện phát, 0 chỗ nghe)</span><span class="path">G-M3-14</span></div>
+        <div class="node"><span class="dot d-mi"></span><span class="nm">Block văn phòng (mới 8) · cụm lễ tân/lounge</span><span class="path">GỐC G</span></div>
+        <div class="node"><span class="dot d-mi"></span><span class="nm">Một cửa thư viện duy nhất (nay 2 cửa)</span><span class="path">GỐC G</span></div>
+      </div>
+
+      <div class="grp">
+        <div class="gh"><span>🎨 Vỏ app · avatar · chuẩn · màu · tiền</span><span class="path">components/studio · lib/*</span>
+          <span class="counts"><span class="pill p-ok">7 nối</span><span class="pill p-or">1 lộ</span></span></div>
+        <div class="node"><span class="dot d-ok"></span><span class="nm">Present templates (21) · màu ΔE · chuẩn VN/ISO</span><span class="path">present·standards</span></div>
+        <div class="node"><span class="dot d-ok"></span><span class="nm">Avatar Memoji (đã trung tính hoá) · kế toán tiền server</span><span class="path">avatar·server</span></div>
+        <div class="node"><span class="dot d-or"></span><span class="nm">Nút mode lộ khoá kỹ thuật Sketch/Pro/Revit</span><span class="path">GỐC H</span></div>
+      </div>
+    </div>
+
+    <!-- BÊN PHẢI: TASK-FLOW -->
+    <div class="card">
+      <h2>3 Task-flow — năng lực chung, chạy qua IF</h2>
+
+      <div class="task">
+        <div class="th">🔧 T1 · Sửa 1 thành phần của thiết kế có sẵn <span class="tag">edit</span></div>
+        <div class="flow">
+          <span class="step ok"><span class="dot d-ok"></span>mở bản vẽ</span><span class="arr">→</span>
+          <span class="step ok"><span class="dot d-ok"></span>vẽ / 2D↔3D</span><span class="arr">→</span>
+          <span class="step mi"><span class="dot d-mi"></span>SỬA 1 cấu kiện <span class="gapref">G-M2-01</span></span>
+          <span class="brk">◀ GÃY: tường không phải 1 vật</span>
+          <span class="arr">→</span>
+          <span class="step mi"><span class="dot d-mi"></span>undo 3D <span class="gapref">G-M2-05</span></span><span class="arr">→</span>
+          <span class="step mi"><span class="dot d-mi"></span>xuất giữ block <span class="gapref">G-M1-07</span></span>
+        </div>
+      </div>
+
+      <div class="task">
+        <div class="th">🖼 T2 · Phối cảnh → bốc fur → bản vẽ + BOQ <span class="tag">extract</span></div>
+        <div class="flow">
+          <span class="step ok"><span class="dot d-ok"></span>nạp ảnh</span><span class="arr">→</span>
+          <span class="step ok"><span class="dot d-ok"></span>bốc 1 món</span>
+          <span class="brk">◀ GÃY: chỉ 1 món/lượt</span>
+          <span class="arr">→</span>
+          <span class="step mi"><span class="dot d-mi"></span>bốc N món <span class="gapref">G-M3-01</span></span><span class="arr">→</span>
+          <span class="step mi"><span class="dot d-mi"></span>bảng món <span class="gapref">G-M3-02</span></span><span class="arr">→</span>
+          <span class="step mi"><span class="dot d-mi"></span>BOQ món rời <span class="gapref">G-M3-09</span></span><span class="arr">→</span>
+          <span class="step mi"><span class="dot d-mi"></span>FF&E có ảnh <span class="gapref">G-M3-11</span></span>
+        </div>
+      </div>
+
+      <div class="task">
+        <div class="th">📐 T3 · Đề bài → zoning → bố trí fur <span class="tag">plan</span></div>
+        <div class="flow">
+          <span class="step mi"><span class="dot d-mi"></span>nhận đề bài <span class="gapref">G-M5-11</span></span>
+          <span class="brk">◀ GÃY sớm: không màn nhận đề</span>
+          <span class="arr">→</span>
+          <span class="step ok"><span class="dot d-ok"></span>đọc DXF</span><span class="arr">→</span>
+          <span class="step or"><span class="dot d-or"></span>đọc ngữ nghĩa <span class="gapref">G-M1-03</span></span><span class="arr">→</span>
+          <span class="step mi"><span class="dot d-mi"></span>stacking <span class="gapref">G-M3-16</span></span><span class="arr">→</span>
+          <span class="step mi"><span class="dot d-mi"></span>zoning</span><span class="arr">→</span>
+          <span class="step or"><span class="dot d-or"></span>rải cụm <span class="gapref">G-M3-14</span></span><span class="arr">→</span>
+          <span class="step mi"><span class="dot d-mi"></span>kết quả kiểm</span>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><span class="dot d-ok"></span>NỐI — là tính năng, chạy được</span>
+        <span><span class="dot d-or"></span>MỒ CÔI — có code, 0 nơi gọi</span>
+        <span><span class="dot d-mi"></span>THIẾU — chưa có / gãy</span>
+      </div>
+
+      <div class="note">
+        <b>Đọc bản đồ:</b> ba task đều gãy ở lớp <b>"vật"</b> — IF đọc được đường nhưng chưa hiểu vật.
+        Điểm gãy T1/T2/T3 phần lớn là <b>THIẾU đối tượng</b> (GỐC A/C) hoặc <b>MỒ CÔI chưa nối</b> (GỐC B).
+        Xong A+B+C thì cả ba task thông tới ~2/3 chuỗi.
+      </div>
+      <div class="note" style="border-left-color:var(--ok)">
+        <b>Vì sao 75% máy ≠ 35% dùng:</b> khoảng cách đó = <b>đống thuật toán mồ côi</b> (viết xong,
+        chưa nối thành tính năng). Việc còn lại phần lớn là <b>NỐI</b>, không phải viết mới.
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">Ước từ GAP map, không phải đo chính xác · số liệu/tên dự án KHÔNG có trong bản này (luật trung tính) · IF · 06/08/2026</div>
+</body>
+</html>

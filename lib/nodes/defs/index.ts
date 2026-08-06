@@ -23,6 +23,7 @@ import { sketchNodes } from './sketch-node';
 import { renderV2Nodes } from './render-v2';
 import { patternWarpNodes } from './pattern-warp';
 import { metrologyNodes } from './metrology';
+import { ffeTableNodes } from './ffe-table';
 
 export const EXTRA_NODES: NodeDefinition[] = [
   ...watermarkNodes,
@@ -35,4 +36,5 @@ export const EXTRA_NODES: NodeDefinition[] = [
   ...renderV2Nodes,
   ...patternWarpNodes,
   ...metrologyNodes,
+  ...ffeTableNodes,
 ];

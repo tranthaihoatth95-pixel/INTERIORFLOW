@@ -58,6 +58,58 @@ const HEAD = { cx: 100, cy: 103, rx: 58, ry: 58 };
 const EYE_Y = 112;
 const EYE_DX = 23;
 
+/* ═══════════════ SỬA 1 (06/08) — DA LÀ MỘT BIẾN ═══════════════
+ *
+ * BUG: `skin` vốn đã là một biến, nhưng 12 chỗ vẽ da mỗi chỗ TỰ BỊA một hệ số riêng
+ * (`darken(skin, .04/.12/.18/.20/.24/.30/.32/.34/.36/.50/.55)`). Hệ quả đọc được bằng mắt:
+ * tai TRÁI `−.04` còn tai PHẢI `−.20` — lệch nhau .16 trong khi khối cầu mặt chỉ đi từ
+ * `+.16` xuống `−.12`, tức **tai phải tối hơn cả chỗ tối nhất của mặt**, đọc ra như hai
+ * mảnh ghép rời chứ không phải cùng một khuôn mặt. Cổ `−.18` cũng không khớp nấc nào của mặt.
+ *
+ * SỬA: đúng MỘT thang `skinRamp(base)` — nơi DUY NHẤT được phép gọi `lighten`/`darken` lên
+ * da. Mọi vùng da chọn một NẤC CÓ TÊN, không ai được viết số rời nữa. Ba nấc `lit/base/shade`
+ * dùng CHUNG cho cả gradient khối cầu mặt lẫn tai lẫn cổ ⇒ tai đúng bằng màu mặt tại vị trí
+ * của nó (trái = sườn sáng `base`, phải = sườn tối `shade`).
+ *
+ * Mỗi phần tử da mang `data-skin="<tên nấc>"` — không phải trang trí: đó là chỗ bấu của
+ * `lib/avatar-invariant.test.ts` để kiểm "không còn màu da nào ngoài thang" ở bản DỰNG THẬT,
+ * thay vì tin vào chú thích. Thuộc tính `data-*` không đổi một pixel hình học nào. */
+export type SkinStep = 'lit' | 'sheen' | 'base' | 'shade' | 'recess' | 'deep' | 'cast';
+
+export function skinRamp(base: string): Record<SkinStep, string> {
+  return {
+    lit: lighten(base, 0.16),    // đỉnh sáng khối cầu
+    sheen: lighten(base, 0.06),  // mặt hướng lên đón sáng (sống mũi)
+    base,                        // tông gốc
+    shade: darken(base, 0.12),   // sườn tối của khối — CHẶNG NGOÀI của gradient mặt
+    recess: darken(base, 0.2),   // vùng lõm/khuất: cổ
+    deep: darken(base, 0.28),    // hốc sâu: lòng tai, nếp cằm, cánh mũi, tàn nhang
+    cast: darken(base, 0.52),    // bóng ĐỔ — luôn đi kèm opacity ≤ .12
+  };
+}
+
+/* ═══════════════ SỬA 2 (06/08) — ĐỘI NÓN THÌ TÓC PHẢI BIẾT ═══════════════
+ *
+ * BUG: `config.hat` CHỈ được truyền cho `<HatShape>`. `HairBack`/`HairFront`/`HairShadow`
+ * không hề nhận nó ⇒ tóc vẽ y hệt nhau dù đội nón hay không, nón chỉ được đắp đè lên trên.
+ * Kiểu tóc có khối cao (đỉnh tóc y≈26–33) chui lên trên cả thân nón, và bóng chân tóc vẫn
+ * hắt xuống trán dù chân tóc đang nằm khuất dưới nón.
+ *
+ * SỬA: mỗi nón khai MÉP DƯỚI phần che kín sọ. Tóc lớp TRƯỚC bị cắt trên mép đó (phần khuất
+ * biến mất), tóc lớp SAU giữ nguyên (đuôi/lọn dài vẫn lộ ra dưới nón — đúng đời thật).
+ * `null` = nón KHÔNG che sọ ⇒ tóc hiện nguyên vẹn: băng đô nằm TRÊN tóc, tai nghe vòng
+ * qua hai bên tóc. Đây là lý do bảng này không thể thay bằng một cờ boolean. */
+export const HAT_COVER_Y: Record<AvatarConfig['hat'], number | null> = {
+  none: null,
+  hairband: null, // băng đô đè lên tóc, không nuốt sọ
+  headphone: null, // gọng vòng qua tóc
+  fedora: 60, // vành mũ y 59..62
+  beanie: 88, // gấu mũ y 70..90
+  cap: 76, // thân mũ tới y=76 (lưỡi trai xuống 96 nhưng không ôm sọ)
+  bucket: 68,
+  beret: 76,
+};
+
 export function AvatarRenderer({
   config,
   size = 96,
@@ -70,6 +122,10 @@ export function AvatarRenderer({
   void detail; // legacy — xem ghi chú ở Props.
 
   const skin = BASE_TONES[config.base] ?? BASE_TONES[2];
+  /** SỬA 1 — thang da DUY NHẤT của bản dựng này. Không ai được `darken(skin, …)` ngoài đây. */
+  const SKIN = skinRamp(skin);
+  /** SỬA 2 — mép dưới phần nón che sọ; `null` = nón không nuốt sọ (hoặc không đội). */
+  const hatCoverY = HAT_COVER_Y[config.hat] ?? null;
   const hair = HAIR_COLORS[config.hairColor] ?? HAIR_COLORS.brown;
   const shirt = SHIRT_COLORS[config.shirtColor] ?? SHIRT_COLORS.orange;
   const bg = BG_COLORS[config.bg] ?? BG_COLORS.cream;
@@ -113,9 +169,9 @@ export function AvatarRenderer({
             bản nỉ cũ. Tâm lệch cx38%/cy32% (đúng số bóc từ ảnh Memoji thật, §3b) tạo volume một
             phía tự nhiên mà không cần nhiễu/texture gì thêm. */}
         <radialGradient id={id('skin')} cx="0.38" cy="0.32" r="0.95">
-          <stop offset="0%" stopColor={lighten(skin, 0.16)} />
-          <stop offset="55%" stopColor={skin} />
-          <stop offset="100%" stopColor={darken(skin, 0.12)} />
+          <stop offset="0%" stopColor={SKIN.lit} data-skin="lit" />
+          <stop offset="55%" stopColor={SKIN.base} data-skin="base" />
+          <stop offset="100%" stopColor={SKIN.shade} data-skin="shade" />
         </radialGradient>
 
         {/* Highlight rộng mờ (specular mềm) — opacity trần 18% (bản nỉ cũ đỉnh .32, "nhựa bóng"
@@ -178,6 +234,12 @@ export function AvatarRenderer({
         <clipPath id={id('lensL')}>
           <path d={CATEYE_LENS} />
         </clipPath>
+        {/* SỬA 2 — cửa sổ "dưới mép nón": chỉ giữ phần tóc lớp trước nằm THẤP hơn mép nón. */}
+        {hatCoverY !== null && (
+          <clipPath id={id('underhat')}>
+            <rect x="0" y={hatCoverY} width="200" height={240 - hatCoverY} />
+          </clipPath>
+        )}
       </defs>
 
       <g clipPath={`url(#${id('frame')})`}>
@@ -189,7 +251,9 @@ export function AvatarRenderer({
 
         {/* Tóc lớp sau — khối liền, KHÔNG còn quầng xơ vải lót dưới (đã bỏ hẳn, xem CHOT-AVATAR-
             MEMOJI §1 "tóc là KHỐI mượt có volume, không vẽ sợi"). */}
-        <HairBack hair={config.hair} fill={url('hair')} shade={darken(hair, 0.22)} />
+        <g data-hair-layer="back">
+          <HairBack hair={config.hair} fill={url('hair')} shade={darken(hair, 0.22)} />
+        </g>
 
         {/* Thân + áo + phụ kiện */}
         <Torso shirt={config.shirt} fill={url('shirt')} base={shirt} softF={softF} />
@@ -199,18 +263,21 @@ export function AvatarRenderer({
         <ellipse cx="103" cy="172" rx="44" ry="13" fill="#231B17" opacity="0.12" filter={softF} />
 
         {/* Cổ MẢNH hơn bản cũ (80–120 rộng 40 ⇒ 84–116 rộng 32, đúng "cổ mảnh" §3b) + bóng cằm phủ lên cổ */}
-        <path d="M84 130 L84 172 Q100 182 116 172 L116 130 Z" fill={darken(skin, 0.18)} />
-        <path d="M84 130 Q100 152 116 130 L116 140 Q100 160 84 140 Z" fill={darken(skin, 0.34)} opacity="0.7" />
+        <path d="M84 130 L84 172 Q100 182 116 172 L116 130 Z" fill={SKIN.recess} data-skin="recess" />
+        <path d="M84 130 Q100 152 116 130 L116 140 Q100 160 84 140 Z" fill={SKIN.deep} data-skin="deep" opacity="0.7" />
 
         {/* Đầu — khối cầu chính, VOLUME một phía qua gradient lệch tâm (đã đặt ở <defs>) */}
         <ellipse cx={HEAD.cx} cy={HEAD.cy} rx={HEAD.rx} ry={HEAD.ry} fill={url('skin')} />
 
         {/* Tai + khuyên — tựa ĐÚNG mép đầu (mép sọ mới ở x 42/158) nên nhô ra nửa vành,
-            thay vì lọt vào trong má như khi sọ còn rộng tới x 37/163 */}
-        <ellipse cx="41" cy="117" rx="9" ry="12.5" fill={darken(skin, 0.04)} />
-        <ellipse cx="159" cy="117" rx="9" ry="12.5" fill={darken(skin, 0.2)} />
-        <ellipse cx="41" cy="117" rx="3.6" ry="6" fill={darken(skin, 0.24)} opacity="0.4" />
-        <ellipse cx="159" cy="117" rx="3.6" ry="6" fill={darken(skin, 0.3)} opacity="0.4" />
+            thay vì lọt vào trong má như khi sọ còn rộng tới x 37/163.
+            SỬA 1: tai TRÁI nằm ở sườn sáng ⇒ `base`, tai PHẢI ở sườn tối ⇒ `shade` — đúng hai
+            nấc mà chính gradient khuôn mặt dùng ở hai phía đó, nên tai không còn "rời" khỏi mặt.
+            Lòng tai là HỐC nên cả hai bên cùng `deep` (hốc không đổi màu theo hướng sáng). */}
+        <ellipse cx="41" cy="117" rx="9" ry="12.5" fill={SKIN.base} data-skin="base" />
+        <ellipse cx="159" cy="117" rx="9" ry="12.5" fill={SKIN.shade} data-skin="shade" />
+        <ellipse cx="41" cy="117" rx="3.6" ry="6" fill={SKIN.deep} data-skin="deep" opacity="0.4" />
+        <ellipse cx="159" cy="117" rx="3.6" ry="6" fill={SKIN.deep} data-skin="deep" opacity="0.4" />
         <EarringShape kind={config.earring} />
 
         {/* Ánh sáng + bóng trên khối cầu đầu — bóng cạnh hạ về ≤12% (đúng §1/§3b), gradient
@@ -219,25 +286,31 @@ export function AvatarRenderer({
           <ellipse cx="72" cy="72" rx="34" ry="27" fill={url('spec')} transform="rotate(-22 72 72)" />
           <ellipse cx={HEAD.cx} cy={HEAD.cy} rx={HEAD.rx} ry={HEAD.ry} fill={url('rim')} />
           {/* bóng chìm mép phải + dưới — trần 12% */}
-          <ellipse cx="158" cy="116" rx="24" ry="48" fill={darken(skin, 0.5)} opacity="0.1" filter={softF} />
-          <ellipse cx="100" cy="170" rx="52" ry="18" fill={darken(skin, 0.5)} opacity="0.12" filter={softF} />
-          {/* bóng chân tóc hắt xuống trán, phủ nhẹ lên trán đúng §3b — trần 12% */}
-          <HairShadow hair={config.hair} filter={softF} skin={skin} />
+          <ellipse cx="158" cy="116" rx="24" ry="48" fill={SKIN.cast} data-skin="cast" opacity="0.1" filter={softF} />
+          <ellipse cx="100" cy="170" rx="52" ry="18" fill={SKIN.cast} data-skin="cast" opacity="0.12" filter={softF} />
+          {/* bóng chân tóc hắt xuống trán, phủ nhẹ lên trán đúng §3b — trần 12%.
+              SỬA 2: chân tóc khuất dưới nón thì KHÔNG còn bóng nào để hắt — `hatCoverY` vào đây. */}
+          <HairShadow hair={config.hair} filter={softF} cast={SKIN.cast} hatCoverY={hatCoverY} />
         </g>
 
         {/* Má ửng + tàn nhang */}
         <BlushShape kind={config.blush} skin={skin} filter={blushF} />
-        {config.freckles && <Freckles skin={skin} />}
+        {config.freckles && <Freckles deep={SKIN.deep} />}
 
         {/* Mày dày mượt bo tròn 2 đầu · mắt tròng to + 1 chấm sáng + mí trên dày · mũi NHÔ RA
             (dấu hiệu nhận Memoji rõ nhất, §3b ⭐) · miệng có độ dày */}
         <Brows expression={config.expression} color={darken(hair, 0.22)} />
         <Eyes expression={config.expression} ink={ink} />
-        <Nose skin={skin} filter={softF} />
+        <Nose sheen={SKIN.sheen} deep={SKIN.deep} filter={softF} />
         <Mouth expression={config.expression} lip={lip} ink={ink} />
 
-        {/* Tóc lớp trước — khối liền, không quầng xơ */}
-        <HairFront hair={config.hair} fill={url('hair')} shade={darken(hair, 0.22)} glow={lighten(hair, 0.28)} />
+        {/* Tóc lớp trước — khối liền, không quầng xơ.
+            SỬA 2: đội nón che sọ ⇒ cắt phần tóc nằm TRÊN mép nón (hết chui qua thân nón),
+            phần dưới mép giữ nguyên nên mai/tóc hai bên vẫn lộ ra. Tóc lớp SAU (`HairBack`,
+            vẽ trước Torso) KHÔNG cắt — đuôi và lọn dài phải còn thấy dưới nón. */}
+        <g clipPath={hatCoverY !== null ? `url(#${id('underhat')})` : undefined} data-hair-layer="front">
+          <HairFront hair={config.hair} fill={url('hair')} shade={darken(hair, 0.22)} glow={lighten(hair, 0.28)} />
+        </g>
 
         {/* Mũ / headwear */}
         <HatShape hat={config.hat} />
@@ -257,7 +330,7 @@ export function AvatarRenderer({
           cy="120"
           r="95.4"
           fill="none"
-          stroke={dark ? '#F1ECE3' : '#231B17'}
+          stroke={dark ? '#F0EDE6' : '#231B17'}
           strokeWidth="1.2"
           opacity="0.25"
         />
@@ -412,8 +485,8 @@ function Accessory({ kind }: { kind: AvatarConfig['accessory'] }) {
     case 'collarPin':
       return (
         <g>
-          <circle cx="122" cy="186" r="4.8" fill="#F06020" />
-          <circle cx="120.6" cy="184.6" r="1.6" fill="#FFE2CE" opacity="0.9" />
+          <circle cx="122" cy="186" r="4.8" fill="#AFB6BD" />
+          <circle cx="120.6" cy="184.6" r="1.6" fill="#E8EDF2" opacity="0.9" />
         </g>
       );
     case 'bowtie':
@@ -434,15 +507,31 @@ function Accessory({ kind }: { kind: AvatarConfig['accessory'] }) {
 /* ═══════════════════════ Tóc ═══════════════════════ */
 
 /** Bóng chân tóc hắt xuống trán — chiều cao đổ bóng theo độ dày mái. */
-function HairShadow({ hair, filter, skin }: { hair: AvatarConfig['hair']; filter?: string; skin: string }) {
-  // y của đường chân tóc giữa trán theo từng kiểu (khớp HairFront bên dưới)
-  const line: Record<number, number> = {
-    1: 70, 2: 72, 3: 60, 4: 76, 5: 58, 6: 78, 7: 70, 8: 68,
-    9: 58, 10: 60, 11: 68, 12: 58, 13: 68, 14: 64, 15: 74, 16: 72,
-  };
-  const y = line[hair] ?? 70;
+/** y của đường chân tóc giữa trán theo từng kiểu (khớp `HairFront` bên dưới). Tách ra khỏi
+ *  `HairShadow` vì SỬA 2 cần so nó với mép nón để biết chân tóc còn nhìn thấy được không. */
+export const HAIRLINE_Y: Record<number, number> = {
+  1: 70, 2: 72, 3: 60, 4: 76, 5: 58, 6: 78, 7: 70, 8: 68,
+  9: 58, 10: 60, 11: 68, 12: 58, 13: 68, 14: 64, 15: 74, 16: 72,
+};
+
+function HairShadow({
+  hair,
+  filter,
+  cast,
+  hatCoverY,
+}: {
+  hair: AvatarConfig['hair'];
+  filter?: string;
+  cast: string;
+  hatCoverY: number | null;
+}) {
+  const y = HAIRLINE_Y[hair] ?? 70;
+  // SỬA 2 — nón trùm QUA chân tóc thì chân tóc không còn tồn tại trên hình, nên bóng nó hắt
+  // xuống trán cũng không được vẽ. Trước đây bóng này luôn vẽ ⇒ đội beanie vẫn thấy một vệt
+  // tối hình vòm giữa trán, không do vật nào trên hình sinh ra.
+  if (hatCoverY !== null && hatCoverY >= y) return null;
   return (
-    <ellipse cx="100" cy={y + 5} rx="55" ry="14" fill={darken(skin, 0.55)} opacity="0.12" filter={filter} />
+    <ellipse cx="100" cy={y + 5} rx="55" ry="14" fill={cast} data-skin="cast" opacity="0.12" filter={filter} />
   );
 }
 
@@ -727,15 +816,15 @@ function BlushShape({
   );
 }
 
-function Freckles({ skin }: { skin: string }) {
-  const c = darken(skin, 0.36);
+function Freckles({ deep }: { deep: string }) {
+  const c = deep;
   const pts: [number, number][] = [
     [72, 130], [79, 137], [65, 141], [86, 132],
     [128, 130], [121, 137], [135, 141], [114, 132],
     [94, 138], [106, 138],
   ];
   return (
-    <g fill={c} opacity="0.45">
+    <g fill={c} data-skin="deep" opacity="0.45">
       {pts.map(([x, y], i) => (
         <circle key={i} cx={x} cy={y} r={1.7} />
       ))}
@@ -868,13 +957,13 @@ function Mouth({ expression, lip, ink }: { expression: AvatarConfig['expression'
 /** Mũi kiểu Memoji ⭐ (§3b — "dấu hiệu nhận dạng rõ nhất"): khối tròn NHÔ RA = bump sáng hơn da
  * + highlight nhỏ trên sống + bóng mềm ngay dưới. 3 lớp này CÙNG NHAU mới đọc ra "nhô ra" trên
  * mặt phẳng SVG — thiếu 1 lớp là tụt về "vệt mờ" như bản cũ (2 ellipse tối, không đọc ra khối). */
-function Nose({ skin, filter }: { skin: string; filter?: string }) {
+function Nose({ sheen, deep, filter }: { sheen: string; deep: string; filter?: string }) {
   return (
     <g>
       {/* bóng mềm ngay dưới cánh mũi — chân đế của khối */}
-      <ellipse cx="100" cy="132" rx="6.5" ry="3.4" fill={darken(skin, 0.32)} opacity="0.28" filter={filter} />
+      <ellipse cx="100" cy="132" rx="6.5" ry="3.4" fill={deep} data-skin="deep" opacity="0.28" filter={filter} />
       {/* khối bump — sáng hơn da nền 1 chút, đọc ra bề mặt hướng lên đón sáng */}
-      <ellipse cx="99.5" cy="126" rx="5.6" ry="6.4" fill={lighten(skin, 0.05)} opacity="0.9" />
+      <ellipse cx="99.5" cy="126" rx="5.6" ry="6.4" fill={sheen} data-skin="sheen" opacity="0.9" />
       {/* highlight trên sống mũi */}
       <ellipse cx="98" cy="122.5" rx="1.6" ry="3.6" fill="#FFFFFF" opacity="0.4" />
     </g>
@@ -1107,10 +1196,16 @@ function GlassesShape({
 
 /* ═══════════════════════ Mũ / headwear ═══════════════════════ */
 
+/**
+ * ⚠️ TRUNG TÍNH (06/08 — cùng đợt với `SHIRT_COLORS` ở `lib/avatar.ts`): navy mũ + dải cam
+ * + quả bông trắng ngà TRƯỚC ĐÂY đúng bằng bộ ba màu thương hiệu của một studio cụ thể.
+ * Nay là ba sắc trung tính cùng họ; `navyLight`/`navyDark` chỉnh theo để thang sáng-tối của
+ * mũ giữ đúng thứ tự (light > navy > dark), không bị đảo.
+ */
 function HatShape({ hat }: { hat: AvatarConfig['hat'] }) {
-  const navy = '#002850';
-  const navyLight = '#1B4470';
-  const navyDark = '#00172E';
+  const navy = '#1E3A5F';
+  const navyLight = '#33608E';
+  const navyDark = '#12253C';
 
   switch (hat) {
     case 'fedora':
@@ -1120,7 +1215,7 @@ function HatShape({ hat }: { hat: AvatarConfig['hat'] }) {
           <ellipse cx="97" cy="59" rx="86" ry="12" fill={navy} />
           <path d="M56 60 Q54 34 100 28 Q146 34 144 60 Z" fill={navy} />
           <path d="M61 57 Q60 38 94 30 Q76 40 72 57 Z" fill={navyLight} opacity="0.6" />
-          <rect x="56" y="47" width="88" height="10" fill="#F06020" opacity="0.92" />
+          <rect x="56" y="47" width="88" height="10" fill="#C08A4E" opacity="0.92" />
         </g>
       );
     case 'beanie':
@@ -1130,7 +1225,7 @@ function HatShape({ hat }: { hat: AvatarConfig['hat'] }) {
           <path d="M46 74 Q44 46 90 38 Q66 48 60 74 Z" fill={navyLight} opacity="0.55" />
           <rect x="30" y="70" width="140" height="20" rx="9" fill={navyLight} />
           <rect x="30" y="70" width="140" height="7" rx="3.5" fill="#3A6394" opacity="0.5" />
-          <circle cx="100" cy="33" r="9" fill="#F1ECE3" />
+          <circle cx="100" cy="33" r="9" fill="#F0EDE6" />
           <circle cx="96.6" cy="30" r="3" fill="#FFFFFF" opacity="0.8" />
         </g>
       );
@@ -1169,14 +1264,14 @@ function HatShape({ hat }: { hat: AvatarConfig['hat'] }) {
           <rect x="18" y="94" width="26" height="40" rx="12" fill="#2C2E33" />
           <rect x="156" y="94" width="26" height="40" rx="12" fill="#1D1F23" />
           <rect x="23" y="99" width="9" height="24" rx="4.5" fill="#5A5C64" opacity="0.55" />
-          <circle cx="169" cy="114" r="4.4" fill="#F06020" />
+          <circle cx="169" cy="114" r="4.4" fill="#4FB286" />
         </g>
       );
     case 'hairband':
       return (
         <g>
-          <path d="M32 82 Q100 38 168 82 L168 94 Q100 50 32 94 Z" fill="#F06020" />
-          <path d="M36 82 Q100 44 164 82" stroke="#FF8A50" strokeWidth="3" fill="none" opacity="0.7" />
+          <path d="M32 82 Q100 38 168 82 L168 94 Q100 50 32 94 Z" fill="#B4593A" />
+          <path d="M36 82 Q100 44 164 82" stroke="#D98363" strokeWidth="3" fill="none" opacity="0.7" />
         </g>
       );
     case 'none':

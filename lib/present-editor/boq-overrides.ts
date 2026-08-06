@@ -61,7 +61,10 @@ export function applyBoqOverrides(rows: BoqRow[], overrides: BoqOverrideMap): Bo
     const donGia = donGiaOv ? donGiaOv.value : row.donGia;
     const thanhTien = Math.round(m2 * (1 + row.haoHutPhanTram / 100) * donGia);
 
-    const out: BoqDisplayRow = { ...row, m2, donGia, thanhTien };
+    // `qty` đi KÈM `m2` (xem docblock `BoqRow.m2`: chúng luôn là MỘT con số, `unit` mới nói nó là
+    // m² hay cái). Không cập nhật `qty` ở đây thì mọi thứ đọc `qty` (xuất xlsx, hồ sơ FF&E) sẽ
+    // dùng số MÁY trong khi bảng hiện số người dùng vừa sửa — đúng kiểu lệch âm thầm G-M3-09.
+    const out: BoqDisplayRow = { ...row, m2, qty: m2, donGia, thanhTien };
     if (m2Ov) out.m2Override = { value: m2Ov.value, machineValue: row.m2, at: m2Ov.at };
     if (donGiaOv) out.donGiaOverride = { value: donGiaOv.value, machineValue: row.donGia, at: donGiaOv.at };
     return out;

@@ -21,6 +21,20 @@ function actionLabel(err: BoqError, tr: (vi: string, en: string) => string): str
       return tr(`Xem ${err.entityIds.length} vùng chồng lấn`, `View ${err.entityIds.length} overlapping region(s)`);
     case 'missing-priceVnd':
       return tr('Mở vật liệu', 'Open material');
+    // 06/08 (G-M3-09) — món rời: đưa thẳng tới CHÍNH những món đang rơi khỏi báo giá, không bắt
+    // người dùng tự đi tìm "cái ghế nào".
+    case 'missing-specId-item':
+      return tr(`Xem ${err.entityIds.length} món chưa gán mã`, `View ${err.entityIds.length} unlinked item(s)`);
+    case 'specId-both-kinds':
+      return tr('Mở kho vật liệu', 'Open material library');
+    // KIỂM PHẢN BIỆN 06/08 — 4 lý do "số sai trông như đúng". Việc phải làm nằm ở KHO (sửa
+    // giá/đơn vị) hay trên BẢN VẼ (vẽ lại vùng tô), nút đưa thẳng tới đúng nơi đó.
+    case 'invalid-geometry':
+      return tr(`Xem ${err.entityIds.length} vùng hỏng`, `View ${err.entityIds.length} broken region(s)`);
+    case 'unit-mismatch':
+    case 'unknown-unit':
+    case 'invalid-price':
+      return tr('Sửa trong kho vật liệu', 'Fix in material library');
   }
 }
 
@@ -48,6 +62,11 @@ export function BoqErrorRows({ errors, projectId, columns }: { errors: BoqError[
   const onAction = (err: BoqError) => {
     if (err.reason === 'missing-priceVnd') {
       router.push('/library');
+      return;
+    }
+    // Trùng mã 2 kiểu / đơn vị sai / giá hỏng ⇒ việc phải làm nằm ở KHO, không phải trên bản vẽ.
+    if (err.reason === 'specId-both-kinds' || err.reason === 'unit-mismatch' || err.reason === 'unknown-unit' || err.reason === 'invalid-price') {
+      router.push('/materials');
       return;
     }
     if (err.entityIds.length) {

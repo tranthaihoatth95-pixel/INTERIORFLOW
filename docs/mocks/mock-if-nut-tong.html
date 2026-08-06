@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="./support.js"></script>
 </head>
 <body>
 <x-dc>
@@ -42,7 +41,7 @@ a:hover{color:var(--accent-strong)}
 </style>
 </helmet>
 
-<div style="min-height:100vh;background:var(--bg);padding:36px 40px 72px;font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
+<div style="min-height:100vh;background:var(--bg);padding:36px 40px 72px;font-weight:400;font-size:14px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
 
   <div style="width:1440px;margin:0 auto 30px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
     <div style="min-width:0">
@@ -53,14 +52,14 @@ a:hover{color:var(--accent-strong)}
       </div>
       <div style="margin-top:8px;font-size:12px;color:var(--t3);max-width:900px;text-wrap:pretty">Gom nhiều nút thành một công cụ dùng lại được. Chỉ những tham số bạn chọn mới hiện ra ngoài, phần còn lại nằm bên trong.</div>
     </div>
-    <button onClick="{{ toggleTheme }}" style="height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font:600 12px inherit;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">{{ themeLabel }}</button>
+    <button id="themeToggleBtn" onclick="var r=document.documentElement,nx=r.dataset.theme==='light'?'dark':'light';r.dataset.theme=nx;this.textContent=nx==='light'?'☀️ Sáng':'🌙 Tối'" style="height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">🌙 Tối</button>
   </div>
 
   <div style="width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:44px">
 
     <div data-screen-label="01">
       <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">01</span>
+        <span style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">01</span>
         <span style="font-size:12px;font-weight:600;color:var(--t2)">Đang chọn năm nút</span>
         <span style="font-size:11px;color:var(--t4)">Viền chọn quanh từng nút · nút nổi hiện ngay dưới vùng chọn</span>
       </div>
@@ -112,18 +111,18 @@ a:hover{color:var(--accent-strong)}
             <div style="height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid var(--mat-hairline)">
               <span style="width:7px;height:7px;border-radius:2px;background:var(--accent)"></span>
               <span style="flex:1;font-size:11px;font-weight:600;color:var(--t1)">Dựng ảnh</span>
-              <span style="font:600 9px ui-monospace,Menlo,monospace;color:var(--t4)">8 cr</span>
+              <span style="font-weight:600;font-size:9px;font-family:ui-monospace,Menlo,monospace;color:var(--t4)">8 cr</span>
             </div>
             <div style="padding:9px"><div style="height:96px;border-radius:10px;background:var(--hatch);border:1px solid var(--border);display:flex;align-items:center;justify-content:center"><span style="font-size:8px;font-weight:700;letter-spacing:.06em;color:var(--t4);background:var(--card);padding:2px 6px;border-radius:4px">PLACEHOLDER</span></div></div>
           </div>
 
           <div style="position:absolute;left:50%;bottom:30px;transform:translateX(-50%);display:flex;align-items:center;gap:1px;padding:4px;border-radius:14px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
             <span style="display:inline-flex;align-items:center;height:32px;padding:0 12px;font-size:11px;color:var(--t3)">Đã chọn 5 nút</span>
-            <button style="height:32px;padding:0 14px;display:flex;align-items:center;gap:7px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:600 12px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
+            <button style="height:32px;padding:0 14px;display:flex;align-items:center;gap:7px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:12px;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"></rect><rect x="9" y="2" width="5" height="5" rx="1"></rect><rect x="2" y="9" width="5" height="5" rx="1"></rect><rect x="9" y="9" width="5" height="5" rx="1" style="fill:currentColor"></rect></svg>
               Gom thành nút tổng
             </button>
-            <button style="height:32px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:var(--t3);font:400 11px inherit;cursor:pointer;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">Bỏ chọn</button>
+            <button style="height:32px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:var(--t3);font-weight:400;font-size:11px;cursor:pointer;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">Bỏ chọn</button>
           </div>
         </div>
 
@@ -155,7 +154,7 @@ a:hover{color:var(--accent-strong)}
 
     <div data-screen-label="02">
       <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">02</span>
+        <span style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">02</span>
         <span style="font-size:12px;font-weight:600;color:var(--t2)">Đặt tên và chọn tham số đưa ra ngoài</span>
         <span style="font-size:11px;color:var(--t4)">Mỗi dòng có công tắc hiện ra ngoài và ô đặt lại tên cho dễ hiểu</span>
       </div>
@@ -254,7 +253,7 @@ a:hover{color:var(--accent-strong)}
               <div style="display:grid;grid-template-columns:150px 1fr 1fr 58px;gap:12px;height:44px;align-items:center;padding:0 12px;border-bottom:1px solid var(--mat-hairline);opacity:.5">
                 <span style="display:flex;align-items:center;gap:7px;min-width:0"><span style="width:7px;height:7px;border-radius:2px;background:var(--accent);flex:none"></span><span style="font-size:12px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Dựng ảnh</span></span>
                 <span style="font-size:12px;color:var(--t4)">Cạnh dài</span>
-                <span style="height:28px;background:var(--field);border-radius:10px;padding:0 9px;display:flex;align-items:center;font:400 12px ui-monospace,Menlo,monospace;color:var(--t4)">1 920</span>
+                <span style="height:28px;background:var(--field);border-radius:10px;padding:0 9px;display:flex;align-items:center;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;color:var(--t4)">1 920</span>
                 <span style="display:flex;justify-content:flex-end"><span style="width:38px;height:22px;border-radius:20px;background:var(--field);border:1px solid var(--border);display:flex;align-items:center;padding:0 2px;cursor:pointer"><span style="width:18px;height:18px;border-radius:50%;background:var(--t4)"></span></span></span>
               </div>
 
@@ -269,8 +268,8 @@ a:hover{color:var(--accent-strong)}
 
           <div style="padding:16px 20px 18px;display:flex;align-items:center;gap:10px">
             <span style="font-size:11px;color:var(--t4)">Tham số không hiện vẫn chạy, chỉ nằm bên trong</span>
-            <button style="margin-left:auto;height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--field);color:var(--t1);font:600 12px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover)">Huỷ</button>
-            <button style="height:32px;padding:0 18px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:600 12px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">Tạo nút tổng</button>
+            <button style="margin-left:auto;height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--field);color:var(--t1);font-weight:600;font-size:12px;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover)">Huỷ</button>
+            <button style="height:32px;padding:0 18px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:12px;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">Tạo nút tổng</button>
           </div>
         </div>
       </div>
@@ -278,7 +277,7 @@ a:hover{color:var(--accent-strong)}
 
     <div data-screen-label="03">
       <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">03</span>
+        <span style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">03</span>
         <span style="font-size:12px;font-weight:600;color:var(--t2)">Nút tổng đã tạo</span>
         <span style="font-size:11px;color:var(--t4)">Tấm kính lớn hơn · chỉ hiện bốn tham số đã chọn đưa ra</span>
       </div>
@@ -317,7 +316,7 @@ a:hover{color:var(--accent-strong)}
                   <span style="display:block;width:48%;height:100%;border-radius:2px;background:var(--accent)"></span>
                   <span style="position:absolute;left:48%;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--card);border:2px solid var(--accent)"></span>
                 </span>
-                <span style="font:400 11px ui-monospace,Menlo,monospace;color:var(--t2);width:30px;text-align:right">1.4</span>
+                <span style="font-weight:400;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t2);width:30px;text-align:right">1.4</span>
               </div>
               <div style="display:flex;align-items:center;gap:10px;height:30px">
                 <span style="width:96px;font-size:11px;color:var(--t4)">Lối trang trí</span>
@@ -336,11 +335,11 @@ a:hover{color:var(--accent-strong)}
               <div style="display:flex;align-items:center;gap:10px;height:30px">
                 <span style="width:96px;font-size:11px;color:var(--t4)">Số ảnh muốn dựng</span>
                 <span style="flex:1;height:28px;background:var(--field);border-radius:10px;padding:0 9px;display:flex;align-items:center;justify-content:space-between">
-                  <span style="font:400 11px ui-monospace,Menlo,monospace;color:var(--t1)">4</span>
+                  <span style="font-weight:400;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t1)">4</span>
                   <span style="font-size:10px;color:var(--t5)">tối đa 8</span>
                 </span>
               </div>
-              <button style="margin-top:2px;height:32px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:600 12px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">Chạy nút tổng</button>
+              <button style="margin-top:2px;height:32px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:12px;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">Chạy nút tổng</button>
             </div>
             <span style="position:absolute;left:-6px;top:119px;width:12px;height:12px;border-radius:50%;background:var(--p-img);border:2px solid var(--bg)"></span>
             <span style="position:absolute;right:-6px;top:119px;width:12px;height:12px;border-radius:50%;background:var(--p-img);border:2px solid var(--bg)"></span>
@@ -351,7 +350,7 @@ a:hover{color:var(--accent-strong)}
               <span style="width:7px;height:7px;border-radius:2px;background:var(--p-img)"></span>
               <span style="font-size:11px;font-weight:600;color:var(--t2)">Nâng nét</span>
             </div>
-            <div style="padding:9px"><div style="display:inline-flex;width:100%;background:var(--field);border-radius:10px;padding:2px"><button style="flex:1;border:0;background:var(--card);color:var(--t1);font:600 11px inherit;padding:5px 0;border-radius:8px;cursor:pointer">2×</button><button style="flex:1;border:0;background:transparent;color:var(--t3);font:400 11px inherit;padding:5px 0;border-radius:8px;cursor:pointer">4×</button></div></div>
+            <div style="padding:9px"><div style="display:inline-flex;width:100%;background:var(--field);border-radius:10px;padding:2px"><button style="flex:1;border:0;background:var(--card);color:var(--t1);font-weight:600;font-size:11px;padding:5px 0;border-radius:8px;cursor:pointer">2×</button><button style="flex:1;border:0;background:transparent;color:var(--t3);font-weight:400;font-size:11px;padding:5px 0;border-radius:8px;cursor:pointer">4×</button></div></div>
             <span style="position:absolute;left:-5px;top:29px;width:10px;height:10px;border-radius:50%;background:var(--p-img);border:2px solid var(--bg)"></span>
           </div>
         </div>
@@ -384,7 +383,7 @@ a:hover{color:var(--accent-strong)}
 
     <div data-screen-label="04">
       <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">04</span>
+        <span style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">04</span>
         <span style="font-size:12px;font-weight:600;color:var(--t2)">Mở ra xem bên trong</span>
         <span style="font-size:11px;color:var(--t4)">Khung mở là mặt đặc, không phải kính, để không có kính lồng kính</span>
       </div>
@@ -397,7 +396,7 @@ a:hover{color:var(--accent-strong)}
               <span style="width:26px;height:26px;border-radius:9px;flex:none;background:var(--accent-soft);display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="1.4"><path d="M8 1.6 14 5v6l-6 3.4L2 11V5z"></path></svg></span>
               <span style="font-size:13px;font-weight:600;letter-spacing:-.01em">Nội thất Bắc Âu</span>
               <span style="font-size:11px;color:var(--t4)">Đang xem bên trong · 5 nút con</span>
-              <button style="margin-left:auto;height:28px;padding:0 12px;display:flex;align-items:center;gap:7px;border:1px solid var(--border);border-radius:10px;background:var(--field);color:var(--t1);font:600 11px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover)">
+              <button style="margin-left:auto;height:28px;padding:0 12px;display:flex;align-items:center;gap:7px;border:1px solid var(--border);border-radius:10px;background:var(--field);color:var(--t1);font-weight:600;font-size:11px;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover)">
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 6H6V2.5M13.5 10H10v3.5"></path></svg>
                 Thu gọn lại
               </button>

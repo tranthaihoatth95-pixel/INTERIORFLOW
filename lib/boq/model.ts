@@ -35,6 +35,15 @@ export interface MaterialSpecLite {
   wastagePercent: number | null;
 }
 
+/**
+ * Nguồn hình học của 1 dòng BOQ (G-M3-09, 06/08):
+ *  - 'area'  — gộp từ `HatchEntity` (vùng tô) ⇒ khối lượng là DIỆN TÍCH m², số thập phân.
+ *  - 'count' — gộp từ `BlockEntity` (món rời: ghế/bàn/đèn…) ⇒ khối lượng là SỐ CÁI, số NGUYÊN.
+ * Hai loại KHÔNG cộng chung được (m² + cái = vô nghĩa) nên chúng là 2 dòng riêng kể cả khi cùng
+ * `specId` — xem `computeBoq` và lỗi `specId-both-kinds`.
+ */
+export type BoqRowKind = 'area' | 'count';
+
 /** 1 dòng BOQ đã gộp theo vật liệu — tên field tiếng Việt khớp yêu cầu gốc
  * `{matId, tên, NCC, mã, m², đơn giá, hao hụt %, thành tiền}`. */
 export interface BoqRow {
@@ -42,11 +51,24 @@ export interface BoqRow {
   ten: string;
   ncc: string;
   ma: string;
+  /**
+   * @deprecated dùng `qty` + `unit`. GIỮ LẠI vì override sửa-tay (`lib/present-editor/
+   * boq-overrides.ts` field `'m2'`), bảng UI và test cũ đều bám tên này — đổi tên là vỡ dữ liệu
+   * override đã lưu trong IndexedDB của người dùng. LUÔN BẰNG `qty`; với dòng `kind:'count'`
+   * con số này là SỐ CÁI, KHÔNG phải mét vuông (đọc `unit` trước khi in ra bất cứ đâu).
+   */
   m2: number;
+  /** Khối lượng THẬT của dòng — đọc CÙNG `unit`. 'm2' ⇒ diện tích; đơn vị đếm ⇒ số nguyên cái/bộ. */
+  qty: number;
+  /** Đơn vị của `qty`: 'm2' cho vùng tô · 'cai'/'bo'/… cho món rời (lấy từ `ProductSpec.unit`
+   * khi đó là đơn vị ĐẾM, ngược lại rơi về `FFE_DEFAULT_UNIT`). Chuỗi tự do như `ProductSpec.unit`. */
+  unit: string;
+  kind: BoqRowKind;
   donGia: number;
   haoHutPhanTram: number;
   thanhTien: number;
-  /** id các HatchEntity đã gộp vào dòng này — để UI sau này highlight/trace ngược bản vẽ. */
+  /** id các entity đã gộp vào dòng này (HatchEntity hoặc BlockEntity) — để UI highlight/trace
+   * ngược bản vẽ. */
   entityIds: string[];
 }
 
@@ -57,7 +79,31 @@ export type BoqErrorReason =
   /** BOQ v2 (Việc 3a, 02/08) — 2+ vùng tô CÙNG vật liệu chồng lấn lên nhau (đè hẳn, không phải
    * chỉ chung 1 cạnh) — không cộng gộp diện tích (sẽ tính khống), báo lỗi để người vẽ tách lại.
    * Xem `lib/boq/compute.ts` hàm `overlaps()`/`findOverlappingPairs()` cho giới hạn heuristic. */
-  | 'overlapping-region';
+  | 'overlapping-region'
+  /** G-M3-09 (06/08) — MÓN RỜI (`BlockEntity`: ghế/bàn/đèn…) chưa gán `specId`. Trước 06/08
+   * `computeBoq` chỉ quét `hatch` nên những món này rơi khỏi báo giá **không một tiếng nào** —
+   * bảng vẫn trông "đủ". Nay luôn có lỗi này để người dùng thấy mình đang thiếu bao nhiêu món. */
+  | 'missing-specId-item'
+  /** G-M3-09 — CÙNG 1 `specId` vừa được dùng cho vùng tô vừa được gán cho món rời ⇒ engine sinh 2
+   * dòng (m² và cái, không cộng chung được) NHƯNG chúng trùng `matId` ⇒ sửa tay 1 ô sẽ áp cho cả
+   * hai dòng (override key theo `matId`). Báo rõ thay vì để người dùng sửa 1 dòng thấy 2 dòng đổi. */
+  | 'specId-both-kinds'
+  /* ─── 4 lý do dưới đây thêm ở vòng KIỂM PHẢN BIỆN 06/08: cùng họ "tiền sai mà KHÔNG có lỗi"
+     với G-M3-09 — engine cho ra con số TRÔNG NHƯ ĐÚNG. Nguyên tắc: thà báo lỗi còn hơn ra số sai. */
+  /** Vùng tô có `specId` nhưng hình học KHÔNG có diện tích (dưới 3 đỉnh, hoặc các đỉnh thẳng hàng
+   * ⇒ `polygonArea` = 0). Trước đây ra 1 dòng `0.00 m²`, thành tiền 0đ, `errors: []` — bảng trông
+   * đủ, tiền thiếu. */
+  | 'invalid-geometry'
+  /** MÓN RỜI trỏ vào spec khai đơn vị ĐO (m2/m/m3/kg…). "1 cái × đơn giá mỗi m²" là con số bịa.
+   * KHÔNG tạo dòng — bắt người dùng sửa đơn vị trong kho hoặc gỡ mã khỏi món. */
+  | 'unit-mismatch'
+  /** Đơn vị IF chưa biết ('thùng', 'kiện'…). VẪN tạo dòng và GIỮ NGUYÊN chữ người dùng viết (không
+   * nuốt thành 'cai'), nhưng cảnh báo để họ đối chiếu đơn giá có đúng theo đơn vị đó không. */
+  | 'unknown-unit'
+  /** `priceVnd`/`wastagePercent` ÂM hoặc không phải số hữu hạn (NaN/undefined lọt qua JSON, hoặc
+   * người dùng gõ `-100000` ở cửa nhập Excel). Trước đây ra thành tiền ÂM / `NaN`, tổng `NaN`,
+   * `errors: []`. */
+  | 'invalid-price';
 
 /** 1 lỗi/vùng KHÔNG tính được — thay vì tính bừa hoặc âm thầm bỏ qua. */
 export interface BoqError {

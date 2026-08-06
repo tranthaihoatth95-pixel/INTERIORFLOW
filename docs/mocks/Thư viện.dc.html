@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="./support.js"></script>
-</head>
-<body>
-<x-dc>
-<helmet>
+<title>IF · Thư viện</title>
 <style>
+
 :root{
   --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14);
   --ease-apple:cubic-bezier(.32,.72,0,1);
@@ -40,9 +37,10 @@ html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:a
 a{color:var(--accent);text-decoration:none}
 a:hover{color:var(--accent-strong)}
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms !important}}
-</style>
-</helmet>
 
+</style>
+</head>
+<body>
 <div style="min-height:100vh;background:var(--bg);padding:36px 40px 72px;font-weight:400;font-size:14px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
 
   <div style="width:1440px;margin:0 auto 26px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
@@ -55,8 +53,8 @@ a:hover{color:var(--accent-strong)}
       <div style="margin-top:8px;font-size:12px;color:var(--t3);max-width:900px;text-wrap:pretty">Người dùng thấy một tấm duy nhất cho cả sáu kệ. Khung sáu ổ: ① thanh trên 42 · ② cột kệ 214 · ③ vùng thẻ · ④ cột thông số 236 · ⑤ dock 58 · ⑥ thanh trạng thái 26. Lưới thẻ và cột thông số nằm ở file con: KeVatLieu · KeDoDac · KeDangGom · CotThongSo.</div>
     </div>
     <div style="display:flex;gap:8px;flex:none">
-      <button onClick="{{ doiKeo }}" style="height:var(--tap);padding:0 14px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;line-height:1.45;font-family:inherit;cursor:pointer;transition:background var(--dur-base) var(--ease-apple)" style-hover="background:var(--hover)">{{ nhanKeo }}</button>
-      <button onClick="{{ doiTheme }}" style="height:var(--tap);padding:0 14px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;line-height:1.45;font-family:inherit;cursor:pointer;transition:background var(--dur-base) var(--ease-apple)" style-hover="background:var(--hover)">Đổi nền</button>
+      <button style="height:var(--tap);padding:0 14px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;line-height:1.45;font-family:inherit;cursor:pointer;transition:background var(--dur-base) var(--ease-apple)" style-hover="background:var(--hover)">Xem trạng thái kéo</button>
+      <button style="height:var(--tap);padding:0 14px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;line-height:1.45;font-family:inherit;cursor:pointer;transition:background var(--dur-base) var(--ease-apple)" style-hover="background:var(--hover)">Đổi nền</button>
     </div>
   </div>
 
@@ -66,7 +64,7 @@ a:hover{color:var(--accent-strong)}
       <div style="height:42px;flex:none;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 10px 0 12px;background:var(--panel);border-bottom:1px solid var(--border)">
         <div style="display:flex;align-items:center;gap:9px;min-width:0">
           <span style="width:20px;height:20px;border-radius:6px;background:var(--accent);flex:none"></span>
-          <span style="font-size:14px;font-weight:600;white-space:nowrap;letter-spacing:-.01em">{{ project }}</span>
+          <span style="font-size:14px;font-weight:600;white-space:nowrap;letter-spacing:-.01em">Căn hộ Thảo Điền</span>
         </div>
         <div style="display:inline-flex;background:var(--field);border-radius:10px;padding:2px">
           <button style="border:0;background:transparent;color:var(--t3);font-weight:400;font-size:12px;line-height:1.45;font-family:inherit;padding:4px 16px;border-radius:8px;cursor:pointer">2D</button>
@@ -88,22 +86,7 @@ a:hover{color:var(--accent-strong)}
           <span>Đang chọn: Tường sau</span>
         </div>
 
-        <sc-if value="{{ dangKeo }}" hint-placeholder-val="{{ false }}">
-          <div style="position:absolute;left:0;right:0;top:96px;bottom:0;pointer-events:none">
-            <div style="position:absolute;left:300px;top:40px;width:452px;height:250px;border-radius:20px;border:1.5px dashed var(--accent);background:var(--accent-soft)"></div>
-            <div style="position:absolute;left:322px;top:60px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)">Thả vào tường sau</div>
-            <div style="position:absolute;left:600px;top:210px;width:150px;border-radius:14px;background:var(--card);border:1px solid var(--accent);box-shadow:var(--shadow-pop);overflow:hidden;transform:rotate(-3deg);opacity:.72">
-              <div style="height:88px;background:var(--field);display:flex;align-items:center;justify-content:center">
-                <svg viewBox="0 0 120 88" style="width:96px;height:70px"><g style="fill:none;stroke:var(--ink);stroke-width:1.6"><rect x="10" y="22" width="100" height="44" rx="4"></rect><rect x="10" y="22" width="100" height="13" rx="4"></rect><path d="M40 35v31M76 35v31"></path></g></svg>
-              </div>
-              <div style="padding:8px 10px 10px;border-top:1px solid var(--border)">
-                <div style="font-size:12px;font-weight:600">Sofa ba chỗ</div>
-                <div style="font-weight:400;font-size:11px;line-height:1.45;font-family:ui-monospace,Menlo,monospace;color:var(--t4);margin-top:3px">2 100 × 900</div>
-              </div>
-            </div>
-          </div>
-        </sc-if>
-
+        
         <div style="position:absolute;inset:0;background:var(--scrim)"></div>
 
         <div style="position:relative;height:722px;border-radius:28px 28px 0 0;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(40px);-webkit-backdrop-filter:saturate(180%) blur(40px);border:1px solid var(--mat-hairline);border-bottom:0;box-shadow:var(--shadow-pop);display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:214px 1fr 236px;overflow:hidden">
@@ -128,41 +111,70 @@ a:hover{color:var(--accent-strong)}
 
           <div style="border-right:1px solid var(--mat-hairline);display:flex;flex-direction:column;min-height:0;padding:8px 0">
             <div style="height:22px;display:flex;align-items:center;padding:0 12px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t5)">Kệ</div>
-            <sc-for list="{{ ke }}" as="k" hint-placeholder-count="6">
-              <button onClick="{{ k.chon }}" style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border:0;border-left:2px solid transparent;background:transparent;color:inherit;font-family:inherit;text-align:left;cursor:pointer;transition:background var(--dur-fast) var(--ease-apple);background:{{ k.nen }};border-left-color:{{ k.vien }}" style-hover="background:var(--hover)">
-                <span style="width:10px;height:10px;flex:none;border-radius:{{ k.tron }};background:{{ k.cham }}"></span>
-                <span style="flex:1;font-size:12px;font-weight:{{ k.dam }};color:{{ k.chu }}">{{ k.ten }}</span>
-                <span style="font-weight:400;font-size:10px;line-height:1.45;font-family:ui-monospace,Menlo,monospace;color:{{ k.chu }}">{{ k.so }}</span>
+            
+              <button style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border:0;border-left:2px solid transparent;background:transparent;color:inherit;font-family:inherit;text-align:left;cursor:pointer;transition:background var(--dur-fast) var(--ease-apple);background:var(--accent-soft);border-left-color:var(--accent)" style-hover="background:var(--hover)">
+                <span style="width:10px;height:10px;flex:none;border-radius:50%;background:var(--accent)"></span>
+                <span style="flex:1;font-size:12px;font-weight:600;color:var(--accent)">Vật liệu</span>
+                <span style="font-weight:400;font-size:10px;line-height:1.45;font-family:ui-monospace,Menlo,monospace;color:var(--accent)">248</span>
               </button>
-            </sc-for>
-
-            <div style="height:22px;display:flex;align-items:center;padding:16px 12px 0;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t5)">{{ tenNhom }}</div>
-            <sc-for list="{{ nhom }}" as="n" hint-placeholder-count="5">
-              <div style="height:24px;display:flex;align-items:center;gap:8px;padding:0 12px 0 22px;font-size:12px;color:var(--t3)">{{ n }}</div>
-            </sc-for>
-
+            
+              <button style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border:0;border-left:2px solid transparent;background:transparent;color:inherit;font-family:inherit;text-align:left;cursor:pointer;transition:background var(--dur-fast) var(--ease-apple);background:transparent;border-left-color:transparent" style-hover="background:var(--hover)">
+                <span style="width:10px;height:10px;flex:none;border-radius:3px;background:var(--t2)"></span>
+                <span style="flex:1;font-size:12px;font-weight:400;color:var(--t2)">Đồ đạc</span>
+                <span style="font-weight:400;font-size:10px;line-height:1.45;font-family:ui-monospace,Menlo,monospace;color:var(--t2)">412</span>
+              </button>
+            
+              <button style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border:0;border-left:2px solid transparent;background:transparent;color:inherit;font-family:inherit;text-align:left;cursor:pointer;transition:background var(--dur-fast) var(--ease-apple);background:transparent;border-left-color:transparent" style-hover="background:var(--hover)">
+                <span style="width:10px;height:10px;flex:none;border-radius:3px;background:var(--success)"></span>
+                <span style="flex:1;font-size:12px;font-weight:400;color:var(--t2)">Khối ba chiều</span>
+                <span style="font-weight:400;font-size:10px;line-height:1.45;font-family:ui-monospace,Menlo,monospace;color:var(--t2)">96</span>
+              </button>
+            
+              <button style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border:0;border-left:2px solid transparent;background:transparent;color:inherit;font-family:inherit;text-align:left;cursor:pointer;transition:background var(--dur-fast) var(--ease-apple);background:transparent;border-left-color:transparent" style-hover="background:var(--hover)">
+                <span style="width:10px;height:10px;flex:none;border-radius:3px;background:var(--t3)"></span>
+                <span style="flex:1;font-size:12px;font-weight:400;color:var(--t2)">Ký hiệu bản vẽ</span>
+                <span style="font-weight:400;font-size:10px;line-height:1.45;font-family:ui-monospace,Menlo,monospace;color:var(--t2)">64</span>
+              </button>
+            
+              <button style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border:0;border-left:2px solid transparent;background:transparent;color:inherit;font-family:inherit;text-align:left;cursor:pointer;transition:background var(--dur-fast) var(--ease-apple);background:transparent;border-left-color:transparent" style-hover="background:var(--hover)">
+                <span style="width:10px;height:10px;flex:none;border-radius:3px;background:var(--k-doc)"></span>
+                <span style="flex:1;font-size:12px;font-weight:400;color:var(--t2)">Mẫu hồ sơ</span>
+                <span style="font-weight:400;font-size:10px;line-height:1.45;font-family:ui-monospace,Menlo,monospace;color:var(--t2)">18</span>
+              </button>
+            
+              <button style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border:0;border-left:2px solid transparent;background:transparent;color:inherit;font-family:inherit;text-align:left;cursor:pointer;transition:background var(--dur-fast) var(--ease-apple);background:transparent;border-left-color:transparent" style-hover="background:var(--hover)">
+                <span style="width:10px;height:10px;flex:none;border-radius:3px;background:var(--warning)"></span>
+                <span style="flex:1;font-size:12px;font-weight:400;color:var(--t2)">Bộ nhận diện</span>
+                <span style="font-weight:400;font-size:10px;line-height:1.45;font-family:ui-monospace,Menlo,monospace;color:var(--t2)">7</span>
+              </button>
+            
+            <div style="height:22px;display:flex;align-items:center;padding:16px 12px 0;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t5)">Nhóm vật liệu</div>
+            
+              <div style="height:24px;display:flex;align-items:center;gap:8px;padding:0 12px 0 22px;font-size:12px;color:var(--t3)">Gỗ tự nhiên</div>
+            
+              <div style="height:24px;display:flex;align-items:center;gap:8px;padding:0 12px 0 22px;font-size:12px;color:var(--t3)">Sơn và vữa</div>
+            
+              <div style="height:24px;display:flex;align-items:center;gap:8px;padding:0 12px 0 22px;font-size:12px;color:var(--t3)">Đá tự nhiên</div>
+            
+              <div style="height:24px;display:flex;align-items:center;gap:8px;padding:0 12px 0 22px;font-size:12px;color:var(--t3)">Vải và da</div>
+            
+              <div style="height:24px;display:flex;align-items:center;gap:8px;padding:0 12px 0 22px;font-size:12px;color:var(--t3)">Kim loại</div>
+            
             <div style="margin-top:auto;padding:10px 12px 0;border-top:1px solid var(--mat-hairline)">
               <button style="width:100%;height:var(--tap);display:flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:10px;background:var(--accent);color:var(--on-accent);font-weight:600;font-size:12px;line-height:1.45;font-family:inherit;cursor:pointer;transition:background var(--dur-base) var(--ease-apple)" style-hover="background:var(--accent-strong)">
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg>
-                {{ nhanThem }}
+                Thêm vật liệu mới
               </button>
             </div>
           </div>
 
           <div style="min-height:0;overflow:hidden;padding:14px 16px">
-            <sc-if value="{{ laVatLieu }}" hint-placeholder-val="{{ true }}">
-              <dc-import name="KeVatLieu" chon-oak="{{ chonOak }}" chon-paint="{{ chonPaint }}" hint-size="100%,100%"></dc-import>
-            </sc-if>
-            <sc-if value="{{ laDoDac }}" hint-placeholder-val="{{ false }}">
-              <dc-import name="KeDoDac" chon-sofa="{{ chonSofa }}" hint-size="100%,100%"></dc-import>
-            </sc-if>
-            <sc-if value="{{ laKeKhac }}" hint-placeholder-val="{{ false }}">
-              <dc-import name="KeDangGom" ten-ke="{{ tenKe }}" so-ke="{{ soKe }}" hint-size="100%,100%"></dc-import>
-            </sc-if>
-          </div>
+            
+              <dc-import name="KeVatLieu" chon-oak="" chon-paint="" hint-size="100%,100%"></dc-import>
+                                              </div>
 
           <div style="border-left:1px solid var(--mat-hairline);min-height:0;overflow:hidden">
-            <dc-import name="CotThongSo" ten="{{ tenChon }}" ma="{{ maChon }}" hang="{{ hangChon }}" nguon="{{ nguonChon }}" don-vi="{{ donViChon }}" gia="{{ giaChon }}" nhan-gia="{{ nhanGia }}" mau="{{ mauChon }}" nham="{{ nham }}" bong="{{ bong }}" hint-size="100%,100%"></dc-import>
+            <dc-import name="CotThongSo" ten="Gỗ sồi ghép thanh" ma="OAK-114" hang="An Cường" nguon="ATLAS" don-vi="mét vuông" gia="1 480 000" nhan-gia="Giá mỗi mét vuông" mau="var(--m-oak)" nham="0.42" bong="0.18" hint-size="100%,100%"></dc-import>
           </div>
 
           <div style="grid-column:1/4;height:58px;display:flex;align-items:center;justify-content:center;gap:1px;padding:0 12px;border-top:1px solid var(--mat-hairline);background:var(--mat-card)">
@@ -181,93 +193,23 @@ a:hover{color:var(--accent-strong)}
       <div style="height:26px;flex:none;display:flex;align-items:center;gap:14px;padding:0 10px 0 8px;background:var(--panel);border-top:1px solid var(--border)">
         <div style="display:flex;align-items:center;gap:6px;height:18px;padding:0 8px;border-radius:8px;background:var(--field);min-width:230px">
           <span style="font-weight:600;font-size:11px;line-height:1.45;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">›</span>
-          <span style="font-size:11px;color:var(--t4)">{{ nhacLenh }}</span>
+          <span style="font-size:11px;color:var(--t4)">Gõ tên vật liệu rồi bấm Enter</span>
         </div>
-        <span style="font-size:11px;color:var(--t3)">Đã chọn: {{ tenChon }} · {{ maChon }}</span>
-        <span style="margin-left:auto;font-size:11px;color:var(--t4)">{{ dongDuoi }}</span>
+        <span style="font-size:11px;color:var(--t3)">Đã chọn: Gỗ sồi ghép thanh · OAK-114</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--t4)">248 mục trong kệ vật liệu</span>
         <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t4)"><span style="width:6px;height:6px;border-radius:50%;background:var(--success)"></span>Đã lưu 14:32</span>
       </div>
     </div>
   </div>
 
 </div>
-</x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;project&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Căn hộ Thảo Điền&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
-class Component extends DCLogic {
-  state = { theme: 'dark', ke: 'vatlieu', chon: 'oak', keo: false };
-
-  componentDidMount() {
-    document.documentElement.setAttribute('data-theme', this.state.theme);
+<script>
+document.addEventListener('keydown', function (e) {
+  if (e.key === 't' || e.key === 'T') {
+    var r = document.documentElement
+    r.dataset.theme = r.dataset.theme === 'light' ? 'dark' : 'light'
   }
-  componentDidUpdate() {
-    document.documentElement.setAttribute('data-theme', this.state.theme);
-  }
-
-  keList() {
-    return [
-      { id: 'vatlieu', ten: 'Vật liệu', so: 248, cham: 'var(--accent)', tron: '50%', nhom: ['Gỗ tự nhiên', 'Sơn và vữa', 'Đá tự nhiên', 'Vải và da', 'Kim loại'], tenNhom: 'Nhóm vật liệu', them: 'Thêm vật liệu mới' },
-      { id: 'dodac', ten: 'Đồ đạc', so: 412, cham: 'var(--t2)', tron: '3px', nhom: ['Phòng khách', 'Phòng ngủ', 'Bếp và ăn', 'Làm việc', 'Ngoài trời'], tenNhom: 'Nhóm đồ đạc', them: 'Thêm đồ đạc mới' },
-      { id: 'khoi', ten: 'Khối ba chiều', so: 96, cham: 'var(--success)', tron: '3px', nhom: ['Khối cơ bản', 'Trần và dầm', 'Cầu thang'], tenNhom: 'Nhóm khối', them: 'Thêm khối mới' },
-      { id: 'kyhieu', ten: 'Ký hiệu bản vẽ', so: 64, cham: 'var(--t3)', tron: '3px', nhom: ['Điện', 'Nước', 'Điều hoà', 'Thoát hiểm'], tenNhom: 'Nhóm ký hiệu', them: 'Thêm ký hiệu mới' },
-      { id: 'hoso', ten: 'Mẫu hồ sơ', so: 18, cham: 'var(--k-doc)', tron: '3px', nhom: ['Khung tên', 'Bố cục view', 'Bảng vật tư'], tenNhom: 'Nhóm mẫu', them: 'Thêm mẫu mới' },
-      { id: 'nhandien', ten: 'Bộ nhận diện', so: 7, cham: 'var(--warning)', tron: '3px', nhom: ['Logo studio', 'Bảng màu', 'Bộ chữ'], tenNhom: 'Nhóm nhận diện', them: 'Thêm bộ mới' }
-    ];
-  }
-
-  monList() {
-    return {
-      oak: { ten: 'Gỗ sồi ghép thanh', ma: 'OAK-114', hang: 'An Cường', mau: 'var(--m-oak)', nguon: 'ATLAS', donVi: 'mét vuông', gia: '1 480 000', nhanGia: 'Giá mỗi mét vuông', nham: '0.42', bong: '0.18' },
-      paint: { ten: 'Sơn trắng ngà mờ', ma: 'PNT-02', hang: 'Dulux', mau: 'var(--m-paint)', nguon: 'ATLAS', donVi: 'lít', gia: '385 000', nhanGia: 'Giá mỗi lít', nham: '0.66', bong: '0.08' },
-      sofa: { ten: 'Sofa ba chỗ', ma: 'FRN-201', hang: 'Nhà Xinh', mau: 'var(--m-linen)', nguon: 'ATLAS', donVi: 'chiếc', gia: '24 900 000', nhanGia: 'Giá mỗi chiếc', nham: '0.71', bong: '0.05' }
-    };
-  }
-
-  renderVals() {
-    const keList = this.keList();
-    const kHien = keList.find(k => k.id === this.state.ke) || keList[0];
-    const mon = this.monList()[this.state.chon] || this.monList().oak;
-
-    return {
-      project: this.props.project ?? 'Căn hộ Thảo Điền',
-      doiTheme: () => this.setState(s => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
-      doiKeo: () => this.setState(s => ({ keo: !s.keo })),
-      nhanKeo: this.state.keo ? 'Tắt trạng thái kéo' : 'Xem trạng thái kéo',
-      dangKeo: this.state.keo,
-
-      ke: keList.map(k => {
-        const on = k.id === this.state.ke;
-        return {
-          ten: k.ten, so: k.so, cham: k.cham, tron: k.tron,
-          nen: on ? 'var(--accent-soft)' : 'transparent',
-          vien: on ? 'var(--accent)' : 'transparent',
-          chu: on ? 'var(--accent)' : 'var(--t2)',
-          dam: on ? 600 : 400,
-          chon: () => this.setState({ ke: k.id, chon: k.id === 'dodac' ? 'sofa' : 'oak' })
-        };
-      }),
-      nhom: kHien.nhom,
-      tenNhom: kHien.tenNhom,
-      nhanThem: kHien.them,
-      tenKe: kHien.ten,
-      soKe: kHien.so,
-
-      laVatLieu: this.state.ke === 'vatlieu',
-      laDoDac: this.state.ke === 'dodac',
-      laKeKhac: this.state.ke !== 'vatlieu' && this.state.ke !== 'dodac',
-
-      chonOak: () => this.setState({ chon: 'oak' }),
-      chonPaint: () => this.setState({ chon: 'paint' }),
-      chonSofa: () => this.setState({ chon: 'sofa' }),
-
-      tenChon: mon.ten, maChon: mon.ma, hangChon: mon.hang, mauChon: mon.mau,
-      nguonChon: mon.nguon, donViChon: mon.donVi, giaChon: mon.gia, nhanGia: mon.nhanGia,
-      nham: mon.nham, bong: mon.bong,
-
-      nhacLenh: this.state.ke === 'dodac' ? 'Gõ tên đồ đạc rồi bấm Enter' : 'Gõ tên vật liệu rồi bấm Enter',
-      dongDuoi: kHien.so + ' mục trong kệ ' + kHien.ten.toLowerCase()
-    };
-  }
-}
+})
 </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
  * Chạy: node_modules/.bin/sucrase-node lib/materials/warehouse/image-match.test.ts
  * Node ≥20 có global `File` (undici) — không cần jsdom cho test này.
  */
-import { matchImagesBySku } from './image-match';
+import { matchImagesBySku, matchImagesForRows, isDirectImageUrl } from './image-match';
 
 let pass = 0;
 let fail = 0;
@@ -38,6 +38,72 @@ function fakeFile(name: string): File {
   const files = [fakeFile('.jpg')];
   const map = matchImagesBySku(files, ['', '  ']);
   ok('SKU rỗng/toàn khoảng trắng không khớp gì', map.size === 0);
+}
+
+// ---- ② (KIỂM PHẢN BIỆN 06/08) CA ĐÃ ĐO: tên file ≠ SKU ⇒ khớp-theo-SKU ra 0/5 ----
+{
+  const files = [
+    fakeFile('ghe-xoay.jpg'), fakeFile('ban-lam-viec.jpg'), fakeFile('tu-ho-so.jpg'),
+    fakeFile('den-ban.jpg'), fakeFile('ke-sach.jpg'),
+  ];
+  const rows = [
+    { rowIndex: 0, sku: 'CH-MESH-01', imageRef: 'ghe-xoay.jpg' },
+    { rowIndex: 1, sku: 'TB-WORK-01', imageRef: 'ban-lam-viec.jpg' },
+    { rowIndex: 2, sku: 'CB-FILE-01', imageRef: 'tu-ho-so' },       // gõ thiếu đuôi
+    { rowIndex: 3, sku: 'LT-DESK-01', imageRef: 'anh/den-ban.JPG' }, // có thư mục + hoa/thường
+    { rowIndex: 4, sku: 'SH-BOOK-01', imageRef: 'ke-sach.jpg' },
+  ];
+
+  // TRƯỚC: chỉ có đường khớp theo SKU
+  const cu = matchImagesBySku(files, rows.map((r) => r.sku));
+  ok('② TRƯỚC: khớp theo SKU ra 0/5 ảnh (đúng số đã đo)', cu.size === 0);
+
+  // SAU: khớp theo cột "Ảnh"
+  const moi = matchImagesForRows(files, rows);
+  ok('② SAU: đủ 5/5 món có ảnh', moi.size === 5);
+  ok('② khớp đúng file cho dòng 0', moi.get(0)?.name === 'ghe-xoay.jpg');
+  ok('② thiếu đuôi vẫn khớp', moi.get(2)?.name === 'tu-ho-so.jpg');
+  ok('② có thư mục + khác hoa/thường vẫn khớp', moi.get(3)?.name === 'den-ban.jpg');
+}
+
+// ---- ② vẫn GIỮ đường cũ: không có cột Ảnh thì rơi về khớp theo SKU ----
+{
+  const files = [fakeFile('SP-1.jpg')];
+  const m = matchImagesForRows(files, [{ rowIndex: 0, sku: 'SP-1' }, { rowIndex: 1, sku: 'SP-2' }]);
+  ok('② không có imageRef → khớp theo SKU như cũ', m.get(0)?.name === 'SP-1.jpg' && !m.has(1));
+}
+
+// ---- ② dòng KHÔNG có SKU vẫn có ảnh được (trước: vĩnh viễn không bao giờ có) ----
+{
+  const files = [fakeFile('ghe.png')];
+  const m = matchImagesForRows(files, [{ rowIndex: 0, imageRef: 'ghe.png' }]);
+  ok('② dòng không SKU vẫn ghép được ảnh', m.get(0)?.name === 'ghe.png');
+}
+
+// ---- ② URL dùng thẳng, KHÔNG đi tìm trong thư mục ----
+{
+  ok('② nhận http/https/data: là URL dùng thẳng',
+    isDirectImageUrl('https://a/b.png') && isDirectImageUrl('http://a/b.png') && isDirectImageUrl('data:image/png;base64,AA'));
+  ok('② tên file KHÔNG bị coi là URL', !isDirectImageUrl('ghe-xoay.jpg'));
+  const m = matchImagesForRows([fakeFile('b.png')], [{ rowIndex: 0, imageRef: 'https://cdn/b.png' }]);
+  ok('② URL không ghép nhầm vào file trùng tên trong thư mục', m.size === 0);
+}
+
+/* ═══ 🔴 KIỂM PHẢN BIỆN VÒNG 2 (06/08) — NFC ≠ NFD làm hỏng ghép ảnh trên máy Mac ═══
+ * macOS/APFS trả tên file dạng NFD, Excel/gõ tay ra NFC — hai chuỗi TRÔNG Y HỆT, `===` thì khác.
+ * Đo được: file `ghế.png` + ô ghi `ghế.png` ⇒ 0 ảnh khớp, không câu nào giải thích. Ca này sẽ
+ * xảy ra với gần như MỌI khách hàng Việt Nam dùng Mac. */
+console.log('\n[NFC/NFD] tên file tiếng Việt phải khớp bất kể dạng chuẩn hoá Unicode');
+{
+  const nfd = (x: string) => x.normalize('NFD');
+  const nfc = (x: string) => x.normalize('NFC');
+  const f = fakeFile(nfd('ghế xoay.png'));
+  const hit = matchImagesForRows([f], [{ rowIndex: 0, imageRef: nfc('ghế xoay.png') }]);
+  ok('file NFD + ô NFC vẫn khớp (trước: 0 ảnh)', hit.get(0) === f);
+
+  const f2 = fakeFile(nfc('tủ hồ sơ.png'));
+  const hit2 = matchImagesForRows([f2], [{ rowIndex: 0, imageRef: nfd('tủ hồ sơ') }]);
+  ok('chiều ngược lại + thiếu đuôi file vẫn khớp', hit2.get(0) === f2);
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);

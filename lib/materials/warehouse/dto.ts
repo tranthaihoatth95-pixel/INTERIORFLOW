@@ -55,7 +55,10 @@ export function imageUrlOf(m: Pick<MaterialSpecDto, 'imageAssetId'>): string | n
   return m.imageAssetId ? `/api/library/${m.imageAssetId}/file` : null;
 }
 
-/** Payload gửi lên POST/PATCH /api/specs từ form tay HOẶC 1 dòng Excel đã ghép cột. */
+/** Payload gửi lên POST/PATCH /api/specs từ form tay HOẶC 1 dòng Excel đã ghép cột.
+ * 06/08 (G-M3-05): thêm `materials`/`finishes`/`colorHex` — 3 cột đã có sẵn trong
+ * `prisma/schema.prisma` model `ProductSpec` và `specNormalize()` đã biết ép kiểu chúng
+ * (`arr()`/`str()`), chỉ là DTO của cửa nhập chưa khai nên không gửi lên bao giờ. */
 export interface MaterialWritePayload {
   name: string;
   sku?: string;
@@ -70,4 +73,22 @@ export interface MaterialWritePayload {
   note?: string;
   imageAssetId?: string;
   supplierId?: string;
+  materials?: string[];
+  finishes?: string[];
+  colorHex?: string;
 }
+
+/**
+ * Loại bản ghi chọn được trên cửa nhập (G-M3-07). Danh sách LẤY TỪ `SPEC_KINDS`
+ * (`lib/server/specs.ts` — nguồn sự thật, cùng thứ API kiểm ở POST /api/specs), KHÔNG chép tay
+ * lại: chép tay là chỗ đẻ ra ca "UI cho chọn nhưng server trả 400".
+ * `lib/server/specs.ts` không import gì cả (file 0-dependency, có ghi trong docblock của nó) nên
+ * kéo vào phía client an toàn, không lôi theo prisma/next.
+ */
+export const IMPORT_KIND_LABEL: Record<string, { vi: string; en: string }> = {
+  material: { vi: 'Vật liệu', en: 'Material' },
+  furniture: { vi: 'Nội thất rời', en: 'Furniture' },
+  lighting: { vi: 'Đèn', en: 'Lighting' },
+  millwork: { vi: 'Đồ gỗ đóng', en: 'Millwork' },
+  fixture: { vi: 'Thiết bị gắn cố định', en: 'Fixture' },
+};

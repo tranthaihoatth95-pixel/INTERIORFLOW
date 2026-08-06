@@ -50,7 +50,12 @@ export async function POST(req: Request, { params }: { params: { projectId: stri
     );
   }
 
-  const specRows = await prisma.productSpec.findMany({ where: { kind: 'material' } });
+  // 06/08 (G-M3-09) — BỎ `where: { kind: 'material' }`. Từ khi `computeBoq` đếm cả MÓN RỜI
+  // (`BlockEntity.specId`), mã hàng của một cái ghế nằm ở `kind:'furniture'`/'lighting'/'fixture'…
+  // — lọc mỗi 'material' thì MỌI món rời rơi vào lỗi 'spec-not-found' (bảng đầy lỗi giả) hoặc, tệ
+  // hơn, người dùng tưởng bảng đúng. Sửa NGOÀI vùng file được giao nhưng BẮT BUỘC: cờ giá không
+  // tự tới engine được nếu server không đọc lên (cùng lý do đã ghi ở P12/`lib/ai/client.ts`).
+  const specRows = await prisma.productSpec.findMany();
   const specDtos: ProductSpecDtoLite[] = specRows.map(specToDto);
 
   const { result, hit } = computeBoqForProject(projectId, doc as Doc, specDtos);

@@ -49,7 +49,11 @@ export function resolveCoordInput(coord: CoordInput, base?: Pt): Pt | null {
 
 /* ───────────────────────── WALL — tường 2 nét + poché ───────────────────────── */
 
-/** 1 đoạn tường tim-tường a→b, bề dày t (mm) → quad tô đặc (hatch) + biên nét mảnh. */
+/** 1 đoạn tường tim-tường a→b, bề dày t (mm) → quad tô đặc (hatch) + biên nét mảnh.
+ *
+ * A3 · G-M1-08 — hai entity này NEO vào nhau ngay từ lúc sinh: `hatch.hostId = polyline.id`
+ * (đường bao là chủ, vùng tô là con — lý do đầy đủ ở đầu `lib/cad/poche.ts`). Trước đây chúng rời
+ * nhau hoàn toàn nên dời một nửa là tường rách. */
 export function wallSegment(a: { x: number; y: number }, b: { x: number; y: number }, t: number, layer: string): Entity[] {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
@@ -60,9 +64,10 @@ export function wallSegment(a: { x: number; y: number }, b: { x: number; y: numb
   const p2 = { x: b.x + nx, y: b.y + ny };
   const p3 = { x: b.x - nx, y: b.y - ny };
   const p4 = { x: a.x - nx, y: a.y - ny };
+  const outlineId = newId('e');
   return [
-    { id: newId('e'), type: 'hatch', layer, points: [p1, p2, p3, p4], solid: true },
-    { id: newId('e'), type: 'polyline', layer, points: [p1, p2, p3, p4], closed: true },
+    { id: newId('e'), type: 'hatch', layer, points: [p1, p2, p3, p4], solid: true, hostId: outlineId },
+    { id: outlineId, type: 'polyline', layer, points: [p1, p2, p3, p4], closed: true },
   ];
 }
 
@@ -107,9 +112,11 @@ export function wallSegmentOutline(a: Pt, b: Pt, t: number, layer: string, loc: 
   const p2 = { x: b.x + nx * left, y: b.y + ny * left };
   const p3 = { x: b.x + nx * right, y: b.y + ny * right };
   const p4 = { x: a.x + nx * right, y: a.y + ny * right };
+  // A3 · G-M1-08 — neo poché vào đường bao ngay lúc sinh (xem `wallSegment` phía trên + poche.ts).
+  const outlineId = newId('e');
   return [
-    { id: newId('e'), type: 'hatch', layer, points: [p1, p2, p3, p4], solid: true, elementType: 'wall', wallThicknessMm: t },
-    { id: newId('e'), type: 'polyline', layer, points: [p1, p2, p3, p4], closed: true, elementType: 'wall', wallThicknessMm: t },
+    { id: newId('e'), type: 'hatch', layer, points: [p1, p2, p3, p4], solid: true, elementType: 'wall', wallThicknessMm: t, hostId: outlineId },
+    { id: outlineId, type: 'polyline', layer, points: [p1, p2, p3, p4], closed: true, elementType: 'wall', wallThicknessMm: t },
   ];
 }
 

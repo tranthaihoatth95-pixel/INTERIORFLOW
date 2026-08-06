@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <title>Vitals — bảng avatar</title>
@@ -7,10 +7,18 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{
+/* --page/--paper/--line-l/--t1l/--t2l KHÔNG phải theme trang — là swatch "bản sáng" cố định
+   dùng để so sánh cạnh bản tối ngay trên cùng 1 trang (§.paper/.ball-l/.bar.l), GIỮ NGUYÊN. */
+:root,[data-theme="dark"]{
   --accent:#6a57f5; --accent-lit:#a99bff; --accent-hot:#e4dfff; --amber:#c79a63;
   --bg:#08080c; --panel:#121218; --panel2:#1a1a21; --line:#26262f; --hair:#1d1d24;
   --t1:#f2f1ee; --t2:#a8a49d; --t3:#6f6b64;
+  --page:#e6e1d9; --paper:#fdfcfa; --line-l:#ddd6cb; --t1l:#1b1916; --t2l:#6b645c;
+}
+[data-theme="light"]{
+  --accent:#6a57f5; --accent-lit:#8a76f0; --accent-hot:#efeafe; --amber:#c79a63;
+  --bg:#f2efe9; --panel:#faf8f4; --panel2:#fffefb; --line:#e3ded4; --hair:#ece7dd;
+  --t1:#211e19; --t2:#5c564b; --t3:#9a938a;
   --page:#e6e1d9; --paper:#fdfcfa; --line-l:#ddd6cb; --t1l:#1b1916; --t2l:#6b645c;
 }
 *{box-sizing:border-box}
@@ -489,6 +497,12 @@ thường là dấu hiệu AI mất tác dụng ngay.<br>
 <script>
   const ap=document.getElementById('ap'), rp=document.getElementById('rp');
   rp.addEventListener('click',()=>{ap.classList.remove('spin-in');void ap.offsetWidth;ap.classList.add('spin-in')});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 't' || e.key === 'T') {
+    var r = document.documentElement
+    r.dataset.theme = r.dataset.theme === 'light' ? 'dark' : 'light'
+  }
+})
 </script>
 </body>
 </html>

@@ -5,6 +5,28 @@
 
 export const SPEC_KINDS = ['furniture', 'material', 'lighting', 'millwork', 'fixture'] as const;
 
+/**
+ * ⛔ CỜ CHẶN — `ProductSpec.room` / `ProductSpec.confidence` (06/08, G-M3-08).
+ *
+ * Hai cột ĐÃ khai trong `prisma/schema.prisma` nhưng **chưa migrate**: sandbox không khoá được
+ * file SQLite và có phiên khác đang chạy dev server trên cùng `dev.db`, nên `prisma migrate` phải
+ * do chủ dự án chạy tay trên máy thật (lệnh soạn sẵn trong báo cáo phiên 06/08). Prisma client
+ * vì thế CHƯA biết hai cột đó.
+ *
+ * Hệ quả bắt buộc, đừng bỏ qua: mọi `prisma.productSpec.create/update/findMany({ where: { room }})`
+ * có nhắc tới `room`/`confidence` sẽ (a) vỡ `tsc` vì client chưa generate, và (b) làm hỏng MỌI
+ * truy vấn ProductSpec của các phiên khác đang chạy. Vì vậy `specNormalize`/`specPatch`/`specToDto`
+ * dưới đây **cố ý KHÔNG đụng tới hai trường này** — không phải quên.
+ *
+ * Trong lúc chờ: cửa nhập bảng giữ `room`/`confidence` trong `FfeTable` (`lib/ffe/item.ts` —
+ * dữ liệu chạy trong app + file dự án), xem `lib/materials/warehouse/apply-import.ts`.
+ *
+ * KHI NÀO BẬT: sau khi chủ dự án chạy migrate xong + `prisma generate`, đổi cờ này thành `true`
+ * rồi thêm `room: str(b.room)` / `confidence: str(b.confidence)` vào `specNormalize` + `specPatch`,
+ * và 2 dòng tương ứng vào `specToDto`. Chưa migrate mà bật cờ = vỡ ngay ở lần ghi đầu tiên.
+ */
+export const SPEC_ROOM_COLUMN_READY = false;
+
 export function specSafeArr(s: string): string[] {
   try {
     const v = JSON.parse(s || '[]');

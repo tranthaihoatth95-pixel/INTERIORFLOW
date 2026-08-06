@@ -55,6 +55,15 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+/** 06/08 (G-M3-09): `subtotalM2` là DIỆN TÍCH — chỉ cộng dòng `kind:'area'`. Từ khi `computeBoq`
+ * sinh cả dòng ĐẾM (cái/bộ), cộng thẳng `row.m2` sẽ ra con số "18 cái + 24,6 m² = 42,6 m²", vô
+ * nghĩa và không ai phát hiện. Dòng đếm vẫn nằm trong nhóm, vẫn cộng vào `subtotalAmount` (tiền
+ * thì cộng chung được) — chỉ không cộng vào ô m². Dòng cũ/dòng test không khai `kind` ⇒ coi như
+ * 'area' (giữ nguyên hành vi trước 06/08, không hồi quy). */
+function areaOf<R extends BoqRow>(row: R): number {
+  return row.kind === 'count' ? 0 : row.m2;
+}
+
 function rowStoreyGroup(entityIds: string[], storeyById: Map<string, string | undefined>): { key: string; label: string; multi: boolean } {
   const storeys = new Set(entityIds.map((id) => storeyById.get(id) || ''));
   if (storeys.size > 1) return { key: MULTI_STOREY_KEY, label: MULTI_STOREY_LABEL, multi: true };
@@ -80,7 +89,7 @@ export function groupBoqRowsByStorey<R extends BoqRow>(rows: R[], doc: Doc): Boq
       order.push(key);
     }
     g.rows.push(row);
-    g.subtotalM2 = round2(g.subtotalM2 + row.m2);
+    g.subtotalM2 = round2(g.subtotalM2 + areaOf(row));
     g.subtotalAmount += row.thanhTien;
   }
 
@@ -133,11 +142,11 @@ function assignRoom(centroid: Pt, rooms: ReturnType<typeof findRoomLabels>): Roo
   return { key: nearest.name, label: nearest.name, inferred: true };
 }
 
-function rowRoomGroup(entityIds: string[], hatchById: Map<string, Pt[]>, rooms: ReturnType<typeof findRoomLabels>): { key: string; label: string; multi: boolean; inferred: boolean } {
+function rowRoomGroup(entityIds: string[], pointById: Map<string, Pt>, rooms: ReturnType<typeof findRoomLabels>): { key: string; label: string; multi: boolean; inferred: boolean } {
   const assigns = entityIds
-    .map((id) => hatchById.get(id))
-    .filter((points): points is Pt[] => !!points && points.length > 0)
-    .map((points) => assignRoom(polygonCentroid(points), rooms));
+    .map((id) => pointById.get(id))
+    .filter((p): p is Pt => !!p)
+    .map((p) => assignRoom(p, rooms));
 
   if (!assigns.length) return { key: NO_ROOM_KEY, label: NO_ROOM_LABEL, multi: false, inferred: false };
   const keys = new Set(assigns.map((a) => a.key));
@@ -149,16 +158,23 @@ function rowRoomGroup(entityIds: string[], hatchById: Map<string, Pt[]>, rooms: 
  * bất biến N3 như `groupBoqRowsByStorey`. */
 export function groupBoqRowsByRoom<R extends BoqRow>(rows: R[], doc: Doc): BoqGroup<R>[] {
   const rooms = findRoomLabels(doc);
-  const hatchById = new Map<string, Pt[]>();
+  // ĐIỂM ĐẠI DIỆN của mỗi entity để hỏi "nằm trong phòng nào": vùng tô → tâm đa giác (như cũ);
+  // MÓN RỜI (`BlockEntity`, 06/08 G-M3-09) → chính điểm đặt `at`. Không thêm món rời vào đây thì
+  // mọi dòng ghế/bàn rơi hết vào "Chưa gán phòng" dù bản vẽ có nhãn phòng đầy đủ — dùng CHUNG
+  // `assignRoom` sẵn có, không viết cỗ máy dò phòng thứ hai.
+  const pointById = new Map<string, Pt>();
   for (const e of doc.entities) {
-    if (e.type === 'hatch') hatchById.set(e.id, e.points);
+    // hatch 0 đỉnh (dữ liệu hỏng) → BỎ, không set: `polygonCentroid` sẽ ra NaN và `pointInPolygon`
+    // với NaN im lặng trả false ⇒ dòng rơi nhóm sai mà không ai biết (giữ đúng guard cũ).
+    if (e.type === 'hatch') { if (e.points.length > 0) pointById.set(e.id, polygonCentroid(e.points)); }
+    else if (e.type === 'block') pointById.set(e.id, e.at);
   }
 
   const order: string[] = [];
   const groups = new Map<string, BoqGroup<R>>();
 
   for (const row of rows) {
-    const { key, label, multi, inferred } = rowRoomGroup(row.entityIds, hatchById, rooms);
+    const { key, label, multi, inferred } = rowRoomGroup(row.entityIds, pointById, rooms);
     let g = groups.get(key);
     if (!g) {
       g = { key, label, multiStorey: multi, inferred, rows: [], subtotalM2: 0, subtotalAmount: 0 };
@@ -166,7 +182,7 @@ export function groupBoqRowsByRoom<R extends BoqRow>(rows: R[], doc: Doc): BoqGr
       order.push(key);
     }
     g.rows.push(row);
-    g.subtotalM2 = round2(g.subtotalM2 + row.m2);
+    g.subtotalM2 = round2(g.subtotalM2 + areaOf(row));
     g.subtotalAmount += row.thanhTien;
   }
 

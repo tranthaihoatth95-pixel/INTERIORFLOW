@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="./support.js"></script>
 </head>
 <body>
 <x-dc>
@@ -50,7 +49,7 @@ a:hover{color:var(--accent-strong)}
 </style>
 </helmet>
 
-<div style="min-height:100vh;background:var(--bg);padding:36px 40px 80px;font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
+<div style="min-height:100vh;background:var(--bg);padding:36px 40px 80px;font-weight:400;font-size:14px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
 
   <div style="width:1180px;margin:0 auto 26px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
     <div style="min-width:0">
@@ -61,7 +60,7 @@ a:hover{color:var(--accent-strong)}
       </div>
       <div style="margin-top:8px;font-size:12px;color:var(--t3);max-width:760px;text-wrap:pretty">Bản sửa lỗi popover trong suốt. Nền đục 96 phần trăm, che hẳn thanh công cụ phía dưới. Kính mờ chỉ là lớp phụ.</div>
     </div>
-    <button onClick="{{ toggleTheme }}" style="height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font:600 12px inherit;cursor:pointer;flex:none" style-hover="background:var(--hover);color:var(--t1)">{{ themeLabel }}</button>
+    <button id="themeToggleBtn" onclick="var r=document.documentElement,nx=r.dataset.theme==='light'?'dark':'light';r.dataset.theme=nx;this.textContent=nx==='light'?'☀️ Sáng':'🌙 Tối'" style="height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;cursor:pointer;flex:none" style-hover="background:var(--hover);color:var(--t1)">🌙 Tối</button>
   </div>
 
   <div style="width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:42px">
@@ -87,7 +86,7 @@ a:hover{color:var(--accent-strong)}
 
     <div data-screen-label="01">
       <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">01</span>
+        <span style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">01</span>
         <span style="font-size:12px;font-weight:600;color:var(--t2)">Viên thu gọn · bốn trạng thái</span>
         <span style="font-size:11px;color:var(--t4)">Phân biệt bằng chuyển động và độ sáng · một sắc tím</span>
       </div>
@@ -146,7 +145,7 @@ a:hover{color:var(--accent-strong)}
 
     <div data-screen-label="02">
       <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">02</span>
+        <span style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">02</span>
         <span style="font-size:12px;font-weight:600;color:var(--t2)">Popover vừa mở · chặng Trình bày</span>
         <span style="font-size:11px;color:var(--t4)">Rộng 380 · cao tối đa 60% khung · cuộn bên trong</span>
       </div>
@@ -154,7 +153,7 @@ a:hover{color:var(--accent-strong)}
 
         <div style="height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--border);position:relative;z-index:4">
           <div style="width:20px;height:20px;border-radius:6px;background:var(--accent)"></div>
-          <span style="font-size:14px;font-weight:600;letter-spacing:-.01em">{{ project }}</span>
+          <span style="font-size:14px;font-weight:600;letter-spacing:-.01em">Dự án mẫu</span>
           <span style="display:inline-flex;align-items:center;height:15px;padding:0 5px;border-radius:5px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700">PLACEHOLDER</span>
           <div style="display:flex;align-items:center;gap:2px;margin-left:18px">
             <span style="height:24px;padding:0 10px;display:inline-flex;align-items:center;border-radius:8px;font-size:12px;color:var(--t4)">Dựng hình</span>
@@ -229,19 +228,19 @@ a:hover{color:var(--accent-strong)}
               </div>
               <div style="font-size:11px;font-weight:600;color:var(--pop-t3);letter-spacing:.02em;margin:14px 2px 8px">Gợi ý cho chặng này</div>
               <div style="display:flex;flex-direction:column;gap:6px">
-                <button style="width:100%;height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;border:1px solid var(--pop-line);border-radius:11px;background:var(--pop-card);color:var(--pop-t1);font:600 12px inherit;cursor:pointer;text-align:left" style-hover="background:var(--pop-hover)">
+                <button style="width:100%;height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;border:1px solid var(--pop-line);border-radius:11px;background:var(--pop-card);color:var(--pop-t1);font-weight:600;font-size:12px;cursor:pointer;text-align:left" style-hover="background:var(--pop-hover)">
                   <span style="width:6px;height:6px;border-radius:2px;background:var(--accent);flex:none"></span>
                   Bố cục slide nào phù hợp mặt bằng?
                 </button>
-                <button style="width:100%;height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;border:1px solid var(--pop-line);border-radius:11px;background:var(--pop-card);color:var(--pop-t1);font:600 12px inherit;cursor:pointer;text-align:left" style-hover="background:var(--pop-hover)">
+                <button style="width:100%;height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;border:1px solid var(--pop-line);border-radius:11px;background:var(--pop-card);color:var(--pop-t1);font-weight:600;font-size:12px;cursor:pointer;text-align:left" style-hover="background:var(--pop-hover)">
                   <span style="width:6px;height:6px;border-radius:2px;background:var(--accent);flex:none"></span>
                   Bộ nhận diện đã dùng đúng chưa?
                 </button>
-                <button style="width:100%;height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;border:1px solid var(--pop-line);border-radius:11px;background:var(--pop-card);color:var(--pop-t1);font:600 12px inherit;cursor:pointer;text-align:left" style-hover="background:var(--pop-hover)">
+                <button style="width:100%;height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;border:1px solid var(--pop-line);border-radius:11px;background:var(--pop-card);color:var(--pop-t1);font-weight:600;font-size:12px;cursor:pointer;text-align:left" style-hover="background:var(--pop-hover)">
                   <span style="width:6px;height:6px;border-radius:2px;background:var(--accent);flex:none"></span>
                   Cỡ chữ tiêu đề có quá nhỏ không?
                 </button>
-                <button style="width:100%;height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;border:1px solid var(--pop-line);border-radius:11px;background:var(--pop-card);color:var(--pop-t1);font:600 12px inherit;cursor:pointer;text-align:left" style-hover="background:var(--pop-hover)">
+                <button style="width:100%;height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;border:1px solid var(--pop-line);border-radius:11px;background:var(--pop-card);color:var(--pop-t1);font-weight:600;font-size:12px;cursor:pointer;text-align:left" style-hover="background:var(--pop-hover)">
                   <span style="width:6px;height:6px;border-radius:2px;background:var(--accent);flex:none"></span>
                   Gộp bốn slide cuối thành một?
                 </button>
@@ -265,7 +264,7 @@ a:hover{color:var(--accent-strong)}
 
     <div data-screen-label="03">
       <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">03</span>
+        <span style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">03</span>
         <span style="font-size:12px;font-weight:600;color:var(--t2)">Đang trả lời</span>
         <span style="font-size:11px;color:var(--t4)">Câu trả lời ngắn · một thẻ nhúng · dòng dẫn nguồn bấm được</span>
       </div>
@@ -273,7 +272,7 @@ a:hover{color:var(--accent-strong)}
 
         <div style="height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--border);position:relative;z-index:4">
           <div style="width:20px;height:20px;border-radius:6px;background:var(--accent)"></div>
-          <span style="font-size:14px;font-weight:600;letter-spacing:-.01em">{{ project }}</span>
+          <span style="font-size:14px;font-weight:600;letter-spacing:-.01em">Dự án mẫu</span>
           <div style="display:flex;align-items:center;gap:2px;margin-left:18px">
             <span style="height:24px;padding:0 10px;display:inline-flex;align-items:center;border-radius:8px;font-size:12px;color:var(--t4)">Dựng hình</span>
             <span style="height:24px;padding:0 10px;display:inline-flex;align-items:center;border-radius:8px;font-size:12px;color:var(--t4)">Hồ sơ</span>
@@ -336,7 +335,7 @@ a:hover{color:var(--accent-strong)}
                 <div style="display:flex;align-items:center;gap:8px;padding:9px 4px 2px">
                   <span style="width:8px;height:8px;border-radius:3px;background:var(--accent);flex:none"></span>
                   <span style="font-size:12px;font-weight:600;color:var(--pop-t1);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Mẫu bố cục · ảnh lớn trái</span>
-                  <span style="font:400 11px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--pop-t3)">16:04</span>
+                  <span style="font-weight:400;font-size:11px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--pop-t3)">16:04</span>
                 </div>
               </div>
               <a href="#" style="margin-top:11px;display:flex;align-items:center;gap:8px;height:34px;padding:0 11px;border-radius:10px;background:var(--pop-field);border:1px solid var(--pop-line);color:var(--accent-lit);font-size:11px" style-hover="background:var(--pop-hover)">
@@ -345,8 +344,8 @@ a:hover{color:var(--accent-strong)}
                 <span style="color:var(--pop-t3)">↗</span>
               </a>
               <div style="display:flex;gap:6px;margin-top:11px">
-                <button style="flex:1;height:34px;border:1px solid var(--pop-line);border-radius:11px;background:var(--pop-card);color:var(--pop-t1);font:600 12px inherit;cursor:pointer" style-hover="background:var(--pop-hover)">Mở hội thoại</button>
-                <button style="flex:1;height:34px;border:0;border-radius:11px;background:var(--accent);color:#fff;font:600 12px inherit;cursor:pointer" style-hover="background:var(--accent-strong)">Áp vào slide</button>
+                <button style="flex:1;height:34px;border:1px solid var(--pop-line);border-radius:11px;background:var(--pop-card);color:var(--pop-t1);font-weight:600;font-size:12px;cursor:pointer" style-hover="background:var(--pop-hover)">Mở hội thoại</button>
+                <button style="flex:1;height:34px;border:0;border-radius:11px;background:var(--accent);color:#fff;font-weight:600;font-size:12px;cursor:pointer" style-hover="background:var(--accent-strong)">Áp vào slide</button>
               </div>
             </div>
           </div>
@@ -362,7 +361,7 @@ a:hover{color:var(--accent-strong)}
 
     <div data-screen-label="04">
       <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">04</span>
+        <span style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">04</span>
         <span style="font-size:12px;font-weight:600;color:var(--t2)">Mở rộng thành khung hội thoại</span>
         <span style="font-size:11px;color:var(--t4)">Chiếm nhiều hơn nhưng vẫn là lớp nổi nền đặc</span>
       </div>
@@ -370,7 +369,7 @@ a:hover{color:var(--accent-strong)}
 
         <div style="height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--border);position:relative;z-index:4">
           <div style="width:20px;height:20px;border-radius:6px;background:var(--accent)"></div>
-          <span style="font-size:14px;font-weight:600;letter-spacing:-.01em">{{ project }}</span>
+          <span style="font-size:14px;font-weight:600;letter-spacing:-.01em">Dự án mẫu</span>
           <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
             <div style="display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 13px;border-radius:20px;background:var(--accent-soft);color:var(--accent-lit)">
               <span style="width:7px;height:7px;border-radius:50%;background:var(--accent-lit);opacity:.7;animation:vt-breathe 4.4s var(--ease) infinite"></span>
@@ -412,10 +411,10 @@ a:hover{color:var(--accent-strong)}
             </div>
 
             <div style="flex:none;display:flex;gap:4px;padding:8px 10px 0">
-              <button style="height:30px;padding:0 14px;border:0;border-radius:9px;background:var(--pop-hover);color:var(--pop-t1);font:600 12px inherit;cursor:pointer">Hỏi AI</button>
-              <button style="height:30px;padding:0 14px;border:0;border-radius:9px;background:transparent;color:var(--pop-t3);font:600 12px inherit;cursor:pointer;display:flex;align-items:center;gap:7px" style-hover="background:var(--pop-card);color:var(--pop-t1)">
+              <button style="height:30px;padding:0 14px;border:0;border-radius:9px;background:var(--pop-hover);color:var(--pop-t1);font-weight:600;font-size:12px;cursor:pointer">Hỏi AI</button>
+              <button style="height:30px;padding:0 14px;border:0;border-radius:9px;background:transparent;color:var(--pop-t3);font-weight:600;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:7px" style-hover="background:var(--pop-card);color:var(--pop-t1)">
                 Nhóm
-                <span style="min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:var(--accent);color:#fff;font:600 10px ui-monospace,Menlo,monospace;display:inline-flex;align-items:center;justify-content:center">3</span>
+                <span style="min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:var(--accent);color:#fff;font-weight:600;font-size:10px;font-family:ui-monospace,Menlo,monospace;display:inline-flex;align-items:center;justify-content:center">3</span>
               </button>
             </div>
 
@@ -426,11 +425,11 @@ a:hover{color:var(--accent-strong)}
               <div style="max-width:86%;padding:9px 13px;border-radius:14px 14px 14px 5px;background:var(--pop-card);border:1px solid var(--pop-line);color:var(--pop-t1);font-size:13px;line-height:1.5;text-wrap:pretty">Tiêu đề 32 hơi nhỏ khi trình chiếu. Nên tăng lên 44.</div>
               <div style="display:flex;gap:7px">
                 <div style="flex:1;border-radius:12px;background:var(--pop-card);border:1px solid var(--pop-line);padding:10px">
-                  <div style="font:600 20px/1 inherit;color:var(--pop-t1);font-variant-numeric:tabular-nums">32</div>
+                  <div style="font-weight:600;font-size:20px;line-height:1;color:var(--pop-t1);font-variant-numeric:tabular-nums">32</div>
                   <div style="font-size:10px;color:var(--pop-t3);margin-top:5px">Hiện tại</div>
                 </div>
                 <div style="flex:1;border-radius:12px;background:var(--accent-soft);border:1px solid var(--pop-line);padding:10px">
-                  <div style="font:600 20px/1 inherit;color:var(--accent-lit);font-variant-numeric:tabular-nums">44</div>
+                  <div style="font-weight:600;font-size:20px;line-height:1;color:var(--accent-lit);font-variant-numeric:tabular-nums">44</div>
                   <div style="font-size:10px;color:var(--pop-t3);margin-top:5px">Đề xuất</div>
                 </div>
               </div>
@@ -471,7 +470,7 @@ a:hover{color:var(--accent-strong)}
 
     <div data-screen-label="05">
       <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">05</span>
+        <span style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">05</span>
         <span style="font-size:12px;font-weight:600;color:var(--t2)">Neo dưới viên · tự lật lên</span>
         <span style="font-size:11px;color:var(--t4)">Thiếu chỗ dưới thì popover lật lên trên viên</span>
       </div>

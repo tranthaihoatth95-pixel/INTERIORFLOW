@@ -16,7 +16,7 @@ import { RefreshCw, FileSpreadsheet, Printer, X } from 'lucide-react';
 import { useT, useLang } from '@/lib/i18n';
 import { useCadStore } from '@/lib/cad/store';
 import type { BoqError, BoqRow } from '@/lib/boq/model';
-import { boqResultToXlsxBuffer } from '@/lib/boq/xlsx';
+import { boqResultToXlsxBuffer, type BoqXlsxImage } from '@/lib/boq/xlsx';
 import { getProjectDoc, type ProjectDocSource } from '@/lib/present-editor/project-doc';
 import {
   applyBoqOverrides, totalWithOverrides, countOverrideStatus, setOverride, revertOverride,
@@ -41,6 +41,43 @@ interface BoqApiResponse {
 const COACH_KEY = 'if-boq-coach-dismissed';
 const GROUP_MODE_KEY = 'if-boq-group-mode';
 
+/** Trần số ảnh nhúng vào 1 file .xlsx — bảng vài trăm dòng × ảnh vài trăm KB sẽ ra file hàng chục
+ * MB và làm treo tab lúc nạp. Vượt trần thì BÁO số ảnh bị bỏ, KHÔNG cắt âm thầm. */
+const XLSX_IMAGE_LIMIT = 60;
+
+/**
+ * Nạp 1 ảnh về dạng `lib/boq/xlsx.ts` cần (byte + đuôi + kích thước GỐC px). Ở tầng client vì
+ * module xuất .xlsx cố ý THUẦN (không fetch/không đọc đĩa — điều kiện để test được).
+ * Trả `null` khi: tải hỏng · không phải PNG/JPEG (Excel không nhận webp/avif đáng tin) · ảnh
+ * không giải mã được. Caller ĐẾM số null và báo cho người dùng, KHÔNG bỏ qua im lặng.
+ */
+async function loadImageForXlsx(url: string): Promise<BoqXlsxImage | null> {
+  let res: Response;
+  try {
+    res = await fetch(url);
+  } catch {
+    return null;
+  }
+  if (!res.ok) return null;
+  const type = (res.headers.get('content-type') ?? '').toLowerCase();
+  const ext: 'png' | 'jpeg' | null = type.includes('png') ? 'png' : (type.includes('jpeg') || type.includes('jpg')) ? 'jpeg' : null;
+  if (!ext) return null;
+  const bytes = new Uint8Array(await res.arrayBuffer());
+
+  // Kích thước GỐC đọc bằng chính bộ giải mã ảnh của trình duyệt — KHÔNG tự parse header PNG/JPEG
+  // (viết parser ảnh là việc riêng, dễ sai với ảnh progressive/EXIF-xoay).
+  const blobUrl = URL.createObjectURL(new Blob([bytes as BlobPart], { type }));
+  const dim = await new Promise<{ w: number; h: number } | null>((resolve) => {
+    const im = new Image();
+    im.onload = () => resolve({ w: im.naturalWidth, h: im.naturalHeight });
+    im.onerror = () => resolve(null);
+    im.src = blobUrl;
+  });
+  URL.revokeObjectURL(blobUrl);
+  if (!dim || !dim.w || !dim.h) return null;
+  return { bytes, ext, wPx: dim.w, hPx: dim.h };
+}
+
 function fmtVnd(n: number): string {
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
@@ -63,6 +100,7 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
   const [selected, setSelected] = useState<BoqSelectedCell | null>(null);
   const [coachDismissed, setCoachDismissed] = useState(true);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [exporting, setExporting] = useState(false);
   const [groupMode, setGroupMode] = useState<BoqGroupMode>('storey');
   const [specExtra, setSpecExtra] = useState<Map<string, BoqSpecExtra>>(new Map());
   const historyRef = useRef<BoqOverrideMap[]>([]);
@@ -80,12 +118,15 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
     try { localStorage.setItem(GROUP_MODE_KEY, mode); } catch { /* tiện nghi, không chặn nếu lưu lỗi */ }
   };
 
-  // Cột "Quy cách"/"Đơn vị" (JOIN hiển thị, KHÔNG đụng lib/boq/*) — fetch 1 lần, đường có sẵn
-  // dùng ở nhiều nơi khác (vd lib/render-studio/use-materials.ts), tự khai type tối thiểu tại
+  // Cột "Quy cách"/"Đơn vị"/"Ảnh" (JOIN hiển thị, KHÔNG đụng lib/boq/*) — fetch 1 lần, đường có
+  // sẵn dùng ở nhiều nơi khác (vd lib/render-studio/use-materials.ts), tự khai type tối thiểu tại
   // đây theo đúng quy ước "mỗi consumer tự lấy field mình cần" của lib/boq/from-project.ts.
+  // 06/08 (G-M3-09/11): BỎ `?kind=material` — bảng nay có cả dòng MÓN RỜI, mã hàng của chúng nằm
+  // ở kind 'furniture'/'lighting'/'fixture'… ⇒ lọc mỗi 'material' thì những dòng đó mất sạch quy
+  // cách + ảnh (ô trống câm). Khớp với route `/api/boq/[projectId]` cũng vừa bỏ bộ lọc kind.
   useEffect(() => {
     let alive = true;
-    fetch('/api/specs?kind=material')
+    fetch('/api/specs')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (alive && data?.specs) setSpecExtra(buildBoqSpecExtraMap(data.specs)); })
       .catch(() => {});
@@ -168,18 +209,58 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
   };
 
   const exportXlsx = async () => {
-    if (!boq) return;
-    const buf = await boqResultToXlsxBuffer({ rows: displayRows, errors: boq.errors, totalAmount: liveTotal });
-    // Uint8Array<ArrayBufferLike> vs BlobPart's ArrayBufferView<ArrayBuffer>: quirk kiểu lib.dom
-    // của TS bản mới (SharedArrayBuffer thiếu vài field so ArrayBuffer) — buf luôn là
-    // ArrayBuffer thật (jszip trả `uint8array`), ép kiểu an toàn, không đổi hành vi runtime.
-    const blob = new Blob([buf as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `BOQ-${projectId}.xlsx`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (!boq || exporting) return;
+    setExporting(true);
+    let skipped = 0;
+    const images = new Map<string, BoqXlsxImage>();
+    try {
+      // G-M3-11 (06/08) — NẠP ẢNH rồi mới xuất. `lib/boq/xlsx.ts` cố ý THUẦN (không fetch bên
+      // trong) nên khâu tải + đo kích thước ảnh nằm ở đây, tầng client. Trần `XLSX_IMAGE_LIMIT`
+      // để bảng vài trăm dòng không kéo hàng trăm ảnh làm treo tab — vượt trần thì BÁO, không
+      // âm thầm cắt.
+      const wanted = displayRows
+        .map((r) => ({ matId: r.matId, url: specExtra.get(r.matId)?.imageUrl ?? null }))
+        .filter((x): x is { matId: string; url: string } => !!x.url);
+      const take = wanted.slice(0, XLSX_IMAGE_LIMIT);
+      skipped = wanted.length - take.length;
+      const loaded = await Promise.all(take.map((x) => loadImageForXlsx(x.url)));
+      loaded.forEach((img, i) => {
+        if (img) images.set(take[i].matId, img);
+        else skipped += 1;
+      });
+    } catch {
+      // Ảnh hỏng/đứt mạng KHÔNG được chặn việc xuất bảng số — xuất tiếp, báo ở dưới.
+      skipped = -1;
+    }
+
+    try {
+      const buf = await boqResultToXlsxBuffer(
+        { rows: displayRows, errors: boq.errors, totalAmount: liveTotal },
+        { images },
+      );
+      // Uint8Array<ArrayBufferLike> vs BlobPart's ArrayBufferView<ArrayBuffer>: quirk kiểu lib.dom
+      // của TS bản mới (SharedArrayBuffer thiếu vài field so ArrayBuffer) — buf luôn là
+      // ArrayBuffer thật (jszip trả `uint8array`), ép kiểu an toàn, không đổi hành vi runtime.
+      const blob = new Blob([buf as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `BOQ-${projectId}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      // Dựng file hỏng ⇒ BÁO, không để nút kẹt "Đang xuất…" vĩnh viễn (không nuốt lỗi).
+      setErrorMsg(tr('Không dựng được file .xlsx — báo lỗi này cho Hoà kèm số dòng bảng.', 'Could not build the .xlsx file — report this along with the table row count.') + ` (${e instanceof Error ? e.message : String(e)})`);
+      setExporting(false);
+      return;
+    }
+    setExporting(false);
+    // Nói thẳng file vừa tải về THIẾU gì — người gửi khách phải biết trước khi bấm Gửi.
+    if (skipped === -1) {
+      setErrorMsg(tr('Đã xuất bảng số, nhưng KHÔNG nhúng được ảnh nào (lỗi tải ảnh). File vẫn dùng được, chỉ thiếu cột ảnh.', 'Exported the table, but no images could be embedded (image load failed). The file is usable, just without the image column.'));
+    } else if (skipped > 0) {
+      setErrorMsg(tr(`Đã xuất file. ${skipped} ảnh KHÔNG nhúng được (quá trần ${XLSX_IMAGE_LIMIT} ảnh, hoặc định dạng ảnh không phải PNG/JPEG).`, `Exported. ${skipped} image(s) could not be embedded (over the ${XLSX_IMAGE_LIMIT}-image cap, or not PNG/JPEG).`));
+    }
   };
 
   const selectedRow = selected ? displayRows.find((r) => r.matId === selected.matId) ?? null : null;
@@ -219,8 +300,8 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
               <button type="button" onClick={() => window.print()} disabled={!boq || loading} style={btnStyle(false)}>
                 <Printer size={13} /> {tr('In A4 ngang', 'Print A4 landscape')}
               </button>
-              <button type="button" onClick={exportXlsx} disabled={!boq || loading} style={btnStyle(false)}>
-                <FileSpreadsheet size={13} /> {tr('Xuất xlsx', 'Export xlsx')}
+              <button type="button" onClick={exportXlsx} disabled={!boq || loading || exporting} style={btnStyle(false)}>
+                <FileSpreadsheet size={13} /> {exporting ? tr('Đang xuất…', 'Exporting…') : tr('Xuất xlsx', 'Export xlsx')}
               </button>
               <button type="button" onClick={() => void compute()} disabled={loading} style={btnStyle(true)}>
                 <RefreshCw size={13} /> {tr('Tính lại từ bản vẽ', 'Recompute from drawing')}

@@ -90,6 +90,9 @@ export const NODE_GROUP: Record<string, NodeGroup> = {
   // ── ⑥ HỒ SƠ — thứ đi ra ngoài cho khách/nhà thầu xem ──
   'util.materialnote': 'doc',
   'vision.measureobject': 'doc',
+  // Bảng món (06/08) — thứ đi ra ngoài cho khách/nhà thầu (hồ sơ FF&E, báo giá), đứng CÙNG chỗ
+  // với khối đo mà nó nhận kết quả. KHÔNG xếp vào ⑤ Sửa ảnh: nó không đụng tới điểm ảnh nào.
+  'util.ffetable': 'doc',
   'util.watermark': 'doc',
   'util.annotate': 'doc',
   'slide.concept': 'doc',

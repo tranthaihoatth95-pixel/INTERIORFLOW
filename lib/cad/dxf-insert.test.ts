@@ -1,10 +1,10 @@
 /**
- * lib/cad/dxf-insert.test.ts — INSERT + BLOCKS (phiếu DXF Nam Long 05/08, VIỆC 1+2).
+ * lib/cad/dxf-insert.test.ts — INSERT + BLOCKS (phiếu DXF trên một bộ hồ sơ thật 05/08, VIỆC 1+2).
  * Chạy: `node_modules/.bin/sucrase-node lib/cad/dxf-insert.test.ts`
  *
  * Test DỰNG DXF BẰNG TAY (chuỗi cặp group code) chứ không round-trip qua `exportDxf` — vì
  * `exportDxf` KHÔNG ghi INSERT (phiếu cấm sửa nó), round-trip sẽ không bao giờ chạm tới đường
- * đang test. Mỗi ca đều là hình dạng có thật trong bộ file Nam Long.
+ * đang test. Mỗi ca đều là hình dạng có thật trong bộ file hồ sơ đã đo.
  */
 
 import { parseDxf, parseDxfEx, cleanDxfText } from './dxf';
@@ -161,7 +161,7 @@ console.log('\n[11] Báo cáo nạp — 7 trường (VIỆC 2)');
   ok('entity chưa đọc được ĐƯỢC ĐẾM, không im lặng', report.skipped.SPLINE === 1, JSON.stringify(report.skipped));
 }
 
-console.log('\n[12] Cảnh báo hình nằm xa vùng vẽ chính (ca thật 04_TANG8: bản sao cách 12 km)');
+console.log('\n[12] Cảnh báo hình nằm xa vùng vẽ chính (ca thật ở một file sàn: bản sao cách 12 km)');
 {
   const { report } = parseDxfEx(dxf('', line(0, 0, 10, 0) + '\n' + line(12_000_000, 0, 12_000_010, 0)));
   ok('bắt được toạ độ vượt 1 km', report.warnings.some((w) => w.includes('1 km')), JSON.stringify(report.warnings));

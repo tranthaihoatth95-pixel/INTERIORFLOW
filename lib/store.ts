@@ -321,7 +321,9 @@ export function edgeStyleFor(dataType: string | undefined) {
   const dt = (dataType ?? 'image') as keyof typeof DATA_TYPE_COLORS;
   const color = DATA_TYPE_COLORS[dt] ?? '#8b7cf7';
   const isVisual = dt === 'image' || dt === 'video';
-  const isData = dt === 'text' || dt === 'number';
+  // 'table' (bảng món FF&E, thêm 06/08) chở DỮ LIỆU chứ không chở hình ⇒ nét đứt cùng nhóm
+  // text/number. Bỏ sót ở đây thì cạnh bảng vẽ nét liền như mask, người dùng đọc nhầm là luồng ảnh.
+  const isData = dt === 'text' || dt === 'number' || dt === 'table';
   return {
     stroke: color,
     strokeWidth: isVisual ? 2 : 1.5,

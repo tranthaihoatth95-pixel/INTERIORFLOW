@@ -106,12 +106,21 @@ export const HAIR_COLORS: Record<HairColor, string> = {
   lilac: '#9A86C4',
 };
 
+/**
+ * ⚠️ TRUNG TÍNH (06/08 — TỔNG quyết, gỡ miễn trừ ở `lib/legal/brand-neutrality.test.ts`).
+ * Ba giá trị `navy` · `orange` · `white` TRƯỚC ĐÂY đúng bằng bộ ba màu thương hiệu của một
+ * studio cụ thể (cam · navy · beige). Lập luận cũ "avatar thuộc UI của app nên được có nhận
+ * diện riêng" KHÔNG đứng: `CLAUDE.md` LUẬT NỀN TẢNG §4 cho phép nhận diện riêng của
+ * **InteriorFlow**, không phải của một studio khách. Nay thay bằng ba màu trung tính cùng
+ * họ (vẫn là navy/cam/trắng ngà) — **KEY KHÔNG ĐỔI** nên avatar đã lưu của người dùng chỉ
+ * đổi sắc độ, không mất lựa chọn.
+ */
 export const SHIRT_COLORS: Record<ShirtColor, string> = {
-  navy: '#002850',
-  orange: '#F06020',
+  navy: '#1E3A5F',
+  orange: '#E07A38',
   beige: '#D8CDB6',
   gray: '#5A5C5F',
-  white: '#F1ECE3',
+  white: '#F7F5F1',
   black: '#22242A',
   cream: '#EFE6D5',
   sage: '#7E8F72',

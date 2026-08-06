@@ -24,17 +24,17 @@
  * DXF là chuỗi cặp (groupCode, value) mỗi cặp 2 dòng. Ta duyệt tuyến tính, gom ENTITIES.
  *
  * ══════════════════════════════════════════════════════════════════════════════════════════
- * 🔴 VÌ SAO PHẢI ĐỌC INSERT (đo trên 6 file DXF THẬT của Nam Long, 05/08 — không phải suy đoán)
+ * 🔴 VÌ SAO PHẢI ĐỌC INSERT (đo trên 6 file DXF THẬT của một bộ hồ sơ, 05/08 — không phải suy đoán)
  *
  * Bản vẽ AutoCAD thật gói gần như TOÀN BỘ hình vào block. Số đo thật (đếm record theo code 0):
  *
- *   file              ENTITIES  parser cũ đọc được   BLOCKS: định nghĩa / INSERT lồng / hình bên trong
- *   03_TANG5B  5,6MB       139        135 (97%)          494 / 535 / ~7.100
- *   04_TANG8   6,6MB       100         92 (92%)          415 / 448 / ~7.200
- *   05_TANG9   9,3MB       173        167 (96%)          488 / 601 / ~19.600
- *   06_TANG10 27,7MB        97         92 (95%)          910 /1560 / ~34.000
- *   07_TANG11 13,2MB        95         90 (95%)          489 / 538 / ~33.000
- *   08_TANG12  5,5MB        24         19 (79%)          234 / 166 / ~5.400
+ *   sàn        ENTITIES  parser cũ đọc được   BLOCKS: định nghĩa / INSERT lồng / hình bên trong
+ *   F1  5,6MB       139        135 (97%)          494 / 535 / ~7.100
+ *   F2  6,6MB       100         92 (92%)          415 / 448 / ~7.200
+ *   F3  9,3MB       173        167 (96%)          488 / 601 / ~19.600
+ *   F4 27,7MB        97         92 (95%)          910 /1560 / ~34.000
+ *   F5 13,2MB        95         90 (95%)          489 / 538 / ~33.000
+ *   F6  5,5MB        24         19 (79%)          234 / 166 / ~5.400
  *
  * ⚠️ Con số "97% đọc được" là ẢO GIÁC NGUY HIỂM: mẫu số chỉ là 97–173 entity ở ENTITIES, mà
  * phần lớn là DIMENSION (71–91 cái) + vài LINE. **Toàn bộ mặt bằng nằm trong 2–6 cái INSERT**
@@ -42,14 +42,18 @@
  * không phải "mất cửa và thiết bị" như phiếu mô tả. Đây là đính chính có vật chứng (§0/N7).
  *
  * ⚠️ POLYLINE/VERTEX: docstring cũ (dòng ngay trên) ghi là ĐỌC ĐƯỢC — **SAI**. `buildEntity`
- * trả `null` cho 'POLYLINE' từ đầu. Riêng 07_TANG11 có 2.700 POLYLINE + 19.583 VERTEX nằm trong
+ * trả `null` cho 'POLYLINE' từ đầu. Riêng F5 có 2.700 POLYLINE + 19.583 VERTEX nằm trong
  * BLOCKS ⇒ chỉ mở INSERT mà không gom VERTEX thì vẫn mất một mảng lớn. Nay gom thật (xem
  * `collapsePolylines`).
  * ══════════════════════════════════════════════════════════════════════════════════════════
  */
 
 import type { Doc, DimEntity, ElementType, Entity, HatchPattern, Layer, LineType, Pt } from './model';
-import { docBox, ellipseBoundaryPoints, zoneBoundaryPoints, zoneCentroid, ZONE_GROUP_META } from './model';
+import {
+  docBox, ellipseBoundaryPoints, zoneBoundaryPoints, zoneCentroid, ZONE_GROUP_META,
+  INSERT_ID_CELL_SEP, INSERT_ID_NEST_SEP,
+} from './model';
+import { inferElementTypes, type ElementInferRule } from './element-infer';
 import { BLOCK_MAP, type Prim } from './furniture';
 
 // Bảng màu ACI cơ bản (index → hex). Đủ 1..9 + vài mã hay gặp; ngoài bảng → xám.
@@ -464,11 +468,25 @@ export interface DxfLoadReport {
   warnings: string[];
   /** tổng số entity nạp được (tiện cho thanh trạng thái, khỏi cộng tay `entitiesRead`). */
   totalEntities: number;
+  /**
+   * A5 · `G-M1-09` — kết quả SUY `elementType` từ tên layer (`lib/cad/element-infer.ts`).
+   * `inferredCount` = số entity vừa được ĐOÁN (đều mang cờ `inferred`, K3);
+   * `byType`/`byLayer` để hiện thẳng "layer nào bị đoán thành gì" cho người dùng sửa lại.
+   * Bỏ suy đoán (`opts.inferRules = null`) ⇒ `inferredCount = 0`, hai bảng rỗng.
+   */
+  elementTypes: { inferredCount: number; declaredCount: number; byType: Record<string, number>; byLayer: Record<string, string> };
 }
 
 /**
  * Làm phẳng 1 INSERT thành các Entity world. Trả về mảng rỗng khi block không tra được (đã ghi
  * cảnh báo) — **KHÔNG đoán hình thay** (luật K3 của phiếu).
+ *
+ * `insertId` (A1 · G-M1-06) = **DANH TÍNH của chính lần chèn này**, do nơi gọi cấp phát; xem
+ * docstring `Base.srcInsertId` (`model.ts`) để biết dạng chuỗi. Ở đây chỉ làm 2 việc với nó:
+ *  - mỗi Ô của mảng rows/cols là MỘT bản chèn riêng ⇒ nối hậu tố `#cột.hàng` (khai mảng 1×1 thì
+ *    giữ nguyên, không rác hậu tố cho ca phổ thông);
+ *  - INSERT lồng bên trong nhận `<ô cha>/<chỉ số record>` ⇒ truy ngược được cha bằng
+ *    `parentInsertId()`, không cần field thứ hai.
  */
 function expandInsert(
   spec: InsertSpec,
@@ -478,6 +496,7 @@ function expandInsert(
   stack: string[],
   ctx: { ensureLayer: (name: string, colorIdx?: number) => string; insertLayerName: string },
   counters: LoadCounters,
+  insertId: string,
 ): Entity[] {
   const key = spec.name.toUpperCase();
   const def = table.get(key);
@@ -500,10 +519,14 @@ function expandInsert(
     return [];
   }
 
+  const multiCell = spec.cols * spec.rows > 1;
   for (let c = 0; c < spec.cols; c++) {
     for (let r = 0; r < spec.rows; r++) {
       const m = matMul(parent, insertMatrix(spec, def.base, c, r));
-      for (const rec of def.records) {
+      // Mỗi ô của mảng rows/cols = MỘT bản chèn riêng (đúng nghĩa: 18 cái ghế xếp hàng là 18 vật).
+      const cellId = multiCell ? `${insertId}${INSERT_ID_CELL_SEP}${c}.${r}` : insertId;
+      for (let ri = 0; ri < def.records.length; ri++) {
+        const rec = def.records[ri];
         if (rec.kind === 'INSERT') {
           const child = readInsert(rec.g);
           if (!child) continue;
@@ -513,7 +536,7 @@ function expandInsert(
               ...ctx,
               // Layer '0' bên trong block THỪA KẾ layer của INSERT cha (quy tắc DXF thật).
               insertLayerName: childLayerRaw === '0' ? ctx.insertLayerName : childLayerRaw,
-            }, counters),
+            }, counters, `${cellId}${INSERT_ID_NEST_SEP}${ri}`),
           );
           continue;
         }
@@ -523,13 +546,13 @@ function expandInsert(
             const spec = dimensionFallbackSpec(rec, table);
             if (spec) {
               counters.skipped.DIMENSION = Math.max(0, (counters.skipped.DIMENSION ?? 1) - 1);
-              out.push(...expandInsert(spec, table, m, depth + 1, nextStack, ctx, counters));
+              out.push(...expandInsert(spec, table, m, depth + 1, nextStack, ctx, counters, `${cellId}${INSERT_ID_NEST_SEP}${ri}`));
             }
           }
           continue;
         }
         const t = transformEntity(built, m, counters.nonUniform);
-        if (t) out.push({ ...t, srcBlock: def.name });
+        if (t) out.push({ ...t, srcBlock: def.name, srcInsertId: cellId });
         else counters.skipped[rec.kind] = (counters.skipped[rec.kind] ?? 0) + 1;
       }
       counters.blocksExpanded[spec.name] = (counters.blocksExpanded[spec.name] ?? 0) + 1;
@@ -598,11 +621,21 @@ export function parseDxf(text: string): Doc {
   return parseDxfEx(text).doc;
 }
 
+/** Tuỳ chọn nạp — additive, mọi nơi gọi cũ `parseDxfEx(text)` giữ nguyên hành vi mặc định. */
+export interface DxfParseOptions {
+  /**
+   * A5 — bảng luật suy `elementType` từ tên layer. Mặc định
+   * `DEFAULT_ELEMENT_INFER_RULES`; truyền bảng RIÊNG của studio để đè; truyền `null` để TẮT hẳn
+   * (nạp thô như trước 06/08). Xem `lib/cad/element-infer.ts`.
+   */
+  inferRules?: ElementInferRule[] | null;
+}
+
 /**
  * Bản đầy đủ: trả Doc **kèm báo cáo nạp** (VIỆC 2). `parseDxf()` chỉ là lớp mỏng gọi hàm này để
  * ~15 chỗ gọi cũ (`CadEditor.tsx:321`, `block-library.ts:88`, 3 file test…) không phải sửa.
  */
-export function parseDxfEx(text: string): { doc: Doc; report: DxfLoadReport } {
+export function parseDxfEx(text: string, opts: DxfParseOptions = {}): { doc: Doc; report: DxfLoadReport } {
   const doc: Doc = { entities: [], layers: [] };
   const layerSet = new Map<string, Layer>();
   const counters: LoadCounters = {
@@ -648,13 +681,18 @@ export function parseDxfEx(text: string): { doc: Doc; report: DxfLoadReport } {
   const [entA, entB] = findSection(pairs, 'ENTITIES');
   const records = entA < 0 ? [] : collapsePolylines(scanRecords(pairs, entA, entB));
 
+  // A1 — bộ cấp phát DANH TÍNH BẢN CHÈN. Đếm theo THỨ TỰ GẶP trong ENTITIES nên ổn định giữa các
+  // lần nạp cùng một file (test và báo cáo đối chiếu được), và duy nhất trong phạm vi 1 Doc.
+  let insertSeq = 0;
+  const nextInsertId = () => `i${++insertSeq}`;
+
   for (const rec of records) {
     if (rec.kind === 'ENDSEC') break;
     if (rec.kind === 'INSERT') {
       const spec = readInsert(rec.g);
       if (!spec) { counters.skipped.INSERT = (counters.skipped.INSERT ?? 0) + 1; continue; }
       const insertLayerName = (rec.g[8]?.[0] ?? '0').trim() || '0';
-      const flat = expandInsert(spec, blockTable, MAT_ID, 0, [], { ensureLayer, insertLayerName }, counters);
+      const flat = expandInsert(spec, blockTable, MAT_ID, 0, [], { ensureLayer, insertLayerName }, counters, nextInsertId());
       for (const e of flat) doc.entities.push(e);
       continue;
     }
@@ -665,7 +703,7 @@ export function parseDxfEx(text: string): { doc: Doc; report: DxfLoadReport } {
       if (spec) {
         counters.skipped.DIMENSION = Math.max(0, (counters.skipped.DIMENSION ?? 1) - 1);
         const insertLayerName = (rec.g[8]?.[0] ?? '0').trim() || '0';
-        for (const e of expandInsert(spec, blockTable, MAT_ID, 0, [], { ensureLayer, insertLayerName }, counters)) doc.entities.push(e);
+        for (const e of expandInsert(spec, blockTable, MAT_ID, 0, [], { ensureLayer, insertLayerName }, counters, nextInsertId())) doc.entities.push(e);
       }
     }
   }
@@ -676,21 +714,31 @@ export function parseDxfEx(text: string): { doc: Doc; report: DxfLoadReport } {
   // (CadEditor.importDoc lấy d.layers[0]) không bị undefined.
   if (doc.layers.length === 0) doc.layers.push({ id: `l-0-${uid}`, name: '0', color: '#c8c4bc', visible: true, locked: false });
 
-  return { doc, report: buildLoadReport(doc, counters) };
+  // A5 · G-M1-09 — SUY `elementType` từ tên layer, LÀM CUỐI CÙNG (sau khi đã có đủ layer + đã đọc
+  // XDATA `IF_ELEMTYPE` của file do chính IF ghi) để "khai báo thắng suy đoán" đúng nghĩa.
+  const inferred = opts.inferRules === null
+    ? { doc, inferredCount: 0, declaredCount: 0, byType: {}, byLayer: {} }
+    : inferElementTypes(doc, opts.inferRules ?? undefined);
+
+  return { doc: inferred.doc, report: buildLoadReport(inferred.doc, counters, inferred) };
 }
 
 /**
  * Ngưỡng "hình nằm xa vùng vẽ chính". 1 km — một sàn văn phòng thật rộng nhất cũng chỉ vài trăm
  * mét, nên vượt 1 km gần như chắc chắn là bản sao cũ/rác parked xa trong model space.
  *
- * 🔴 CÓ THẬT, KHÔNG PHẢI PHÒNG XA: `04_TANG8-TTT.dxf` chèn block "SDG" **ba lần** ở
+ * 🔴 CÓ THẬT, KHÔNG PHẢI PHÒNG XA: một file sàn (F2) chèn cùng một block **ba lần** ở
  * (−12.197.655, −3.125.665) · (−12.197.655, 3.103.980) · (−2.754.482, 12.565.778) mm — tức cách
  * gốc 12 km. Đã đối chiếu file thô: đúng là nội dung file, KHÔNG phải lỗi biến đổi của parser.
  * Không cảnh báo thì khung bao ra 12.311 × 15.492 m và mọi phép tính diện tích sau đó vô nghĩa.
  */
 const ABSURD_COORD_MM = 1e6;
 
-function buildLoadReport(doc: Doc, c: LoadCounters): DxfLoadReport {
+function buildLoadReport(
+  doc: Doc,
+  c: LoadCounters,
+  elem: { inferredCount: number; declaredCount: number; byType: Record<string, number>; byLayer: Record<string, string> },
+): DxfLoadReport {
   const layers: Record<string, number> = {};
   const nameOf = new Map(doc.layers.map((l) => [l.id, l.name]));
   for (const e of doc.entities) {
@@ -723,6 +771,12 @@ function buildLoadReport(doc: Doc, c: LoadCounters): DxfLoadReport {
     ...(bbox ? { bbox } : {}),
     warnings,
     totalEntities: doc.entities.length,
+    elementTypes: {
+      inferredCount: elem.inferredCount,
+      declaredCount: elem.declaredCount,
+      byType: elem.byType,
+      byLayer: elem.byLayer,
+    },
   };
 }
 
@@ -883,6 +937,11 @@ function applyIfXdata(ent: Entity, xd?: string[]): void {
     } else if (s.startsWith('IF_CAMPATH=')) {
       const v = s.slice('IF_CAMPATH='.length).trim();
       if (v === '1') ent.campath = true;
+    } else if (s.startsWith('IF_INFERRED=')) {
+      // A5/K3 — cờ "elementType do máy đoán" phải sống sót vòng xuất–nạp, nếu không thì bản vẽ
+      // quay lại trông như đã được người khai báo chắc chắn. Xem `Base.inferred` (model.ts).
+      const v = s.slice('IF_INFERRED='.length).trim();
+      if (v === '1') ent.inferred = true;
     }
   }
 }
@@ -965,10 +1024,23 @@ function dimBlockGeometry(e: DimEntity, lay: string, aci: number | undefined): s
  * 105 tên block khác nhau** — tức gần như TOÀN BỘ bản vẽ là block.
  */
 export interface DxfExportReport {
-  /** tên block gốc → số entity đã làm phẳng ra từ block đó (đọc `Entity.srcBlock`, model.ts:312). */
+  /**
+   * tên block gốc → số entity CÒN BỊ làm phẳng ra từ block đó.
+   *
+   * A3 (06/08): từ nay chỉ đếm hình KHÔNG dựng lại được thành INSERT — hình đã trở về block
+   * (`preservedBlocks`) KHÔNG nằm ở đây nữa, nếu không thì cảnh báo sẽ doạ người dùng về thứ vừa
+   * được cứu. Hình rơi vào bảng này là hình đã bị sửa/dời (mất `srcInsertId`) hoặc đến từ dữ liệu
+   * cũ chỉ có `srcBlock`.
+   */
   flattenedBlocks: Record<string, number>;
   /** số tên block khác nhau — bằng `Object.keys(flattenedBlocks).length`, để nơi gọi khỏi đếm lại. */
   flattenedBlockCount: number;
+  /** A3 — tên block gốc → số BẢN CHÈN đã ghi lại được thành INSERT thật. */
+  preservedBlocks: Record<string, number>;
+  /** A3 — tổng số record INSERT ghi ra (nghiệm thu G-M1-07 đòi con số này > 0). */
+  insertsWritten: number;
+  /** A3 — số định nghĩa BLOCK ghi ra (chưa tính 2 boilerplate + block ẩn danh của DIMENSION). */
+  blockDefsWritten: number;
   /** câu hiện THẲNG cho người dùng. Rỗng = bản xuất không mất gì. */
   warnings: string[];
 }
@@ -982,6 +1054,194 @@ export interface DxfExportReport {
  */
 export function exportDxf(doc: Doc): string {
   return exportDxfEx(doc).dxf;
+}
+
+/* ═══════════ A3 · G-M1-07 — DỰNG LẠI BLOCK + INSERT LÚC XUẤT ═══════════ */
+
+/** Một định nghĩa BLOCK sẽ ghi ra; `entities` mang toạ độ WORLD của bản chèn CHUẨN (base 0,0). */
+interface ReblockDef { name: string; entities: Entity[] }
+/** Một INSERT sẽ ghi ra. `sx`/`sy` tách riêng vì lật gương = `sy` âm (xem `solveSimilarity`). */
+interface ReblockInsert { defName: string; at: Pt; rotDeg: number; sx: number; sy: number }
+interface ReblockPlan {
+  defs: ReblockDef[];
+  inserts: ReblockInsert[];
+  /** id entity ĐÃ nằm trong một BLOCK ⇒ KHÔNG ghi lại ở section ENTITIES (nếu không là nhân đôi). */
+  blockedIds: Set<string>;
+  /** tên block GỐC → số bản chèn dựng lại được. */
+  preserved: Record<string, number>;
+}
+
+/**
+ * Điểm HÌNH HỌC đại diện của entity, thứ tự ổn định — dùng để dò xem hai bản chèn của cùng một
+ * block có nằm cách nhau đúng một phép dời-xoay-phóng hay không.
+ *
+ * Chỉ lấy điểm THẬT trên hình (tâm, đỉnh, đầu/cuối cung). KHÔNG bịa thêm điểm kiểu "tâm + bán
+ * kính theo trục X" cho đường tròn: điểm bịa đó không xoay theo hình nên sẽ kéo lệch nghiệm bình
+ * phương tối thiểu. Bán kính/chiều cao chữ kiểm riêng bằng `scaleScalars()`.
+ *
+ * `null` = loại hình chưa có cách lấy điểm ⇒ bản chèn chứa nó KHÔNG được dựng lại (thà ghi phẳng
+ * còn hơn ghi sai cấu trúc).
+ */
+function anchorPoints(e: Entity): Pt[] | null {
+  switch (e.type) {
+    case 'line': return [e.a, e.b];
+    case 'polyline': return e.points;
+    case 'hatch': return e.points;
+    case 'rect': return [{ x: e.x, y: e.y }, { x: e.x + e.w, y: e.y }, { x: e.x + e.w, y: e.y + e.h }, { x: e.x, y: e.y + e.h }];
+    case 'circle': return [e.c];
+    case 'arc': return [
+      e.c,
+      { x: e.c.x + e.r * Math.cos(e.a1), y: e.c.y + e.r * Math.sin(e.a1) },
+      { x: e.c.x + e.r * Math.cos(e.a2), y: e.c.y + e.r * Math.sin(e.a2) },
+    ];
+    case 'text': return [e.at];
+    default: return null;
+  }
+}
+
+/** Đại lượng phải PHÓNG THEO đúng hệ số k (bán kính, chiều cao chữ) — kiểm riêng, xem `anchorPoints`. */
+function scaleScalars(e: Entity): number[] {
+  if (e.type === 'circle' || e.type === 'arc') return [e.r];
+  if (e.type === 'text') return [e.h];
+  return [];
+}
+
+/** Sai số cho phép khi đối chiếu hai bản chèn (mm). 1e-4 mm = 0,1 µm — dưới mọi độ chính xác bản
+ * vẽ thật, mà vẫn rộng hơn nhiễu dấu phẩy động của phép nhân ma trận lúc nạp cả trăm lần. */
+const REBLOCK_TOL_MM = 1e-4;
+
+/**
+ * Tìm phép DỜI + XOAY + PHÓNG ĐỀU đưa `P` (bản chuẩn) về `Q` (bản đang xét), bằng nghiệm bình
+ * phương tối thiểu trên số phức: `s = Σ(w·z̄) / Σ|z|²` với z,w là điểm đã trừ trọng tâm.
+ * Trả `null` khi hai bản KHÔNG cùng một phép biến đổi (sai số vượt `REBLOCK_TOL_MM`).
+ */
+function solveSimilarity(P: Pt[], Q: Pt[]): { k: number; rotRad: number; tx: number; ty: number } | null {
+  const n = P.length;
+  if (!n || Q.length !== n) return null;
+  let px = 0, py = 0, qx = 0, qy = 0;
+  for (let i = 0; i < n; i++) { px += P[i].x; py += P[i].y; qx += Q[i].x; qy += Q[i].y; }
+  px /= n; py /= n; qx /= n; qy /= n;
+  let nr = 0, ni = 0, den = 0;
+  for (let i = 0; i < n; i++) {
+    const zx = P[i].x - px, zy = P[i].y - py;
+    const wx = Q[i].x - qx, wy = Q[i].y - qy;
+    nr += wx * zx + wy * zy;
+    ni += wy * zx - wx * zy;
+    den += zx * zx + zy * zy;
+  }
+  // den ≈ 0 ⇒ mọi điểm trùng nhau (bản chèn 1 điểm): chỉ còn phép dời, tỉ lệ 1.
+  const ar = den < 1e-12 ? 1 : nr / den;
+  const ai = den < 1e-12 ? 0 : ni / den;
+  const k = Math.hypot(ar, ai);
+  if (!Number.isFinite(k) || k < 1e-9) return null;
+  const tx = qx - (ar * px - ai * py);
+  const ty = qy - (ai * px + ar * py);
+  for (let i = 0; i < n; i++) {
+    const x = ar * P[i].x - ai * P[i].y + tx;
+    const y = ai * P[i].x + ar * P[i].y + ty;
+    if (Math.abs(x - Q[i].x) > REBLOCK_TOL_MM || Math.abs(y - Q[i].y) > REBLOCK_TOL_MM) return null;
+  }
+  return { k, rotRad: Math.atan2(ai, ar), tx, ty };
+}
+
+/**
+ * Lập KẾ HOẠCH dựng lại BLOCK+INSERT cho `doc` — trả lời câu "xuất ra có còn cấu trúc block không".
+ *
+ * Điều kiện để một hình được đưa trở lại vào block: còn NGUYÊN cả `srcBlock` lẫn `srcInsertId`.
+ * Người dùng sửa/dời hình ⇒ `store.ts` `updateEntities` gỡ `srcInsertId` (hình đó đã rời khỏi bản
+ * chèn) ⇒ nó rơi xuống đường ghi phẳng như trước, và vẫn được đếm vào cảnh báo "đã làm phẳng".
+ *
+ * Cách gom: cùng `srcInsertId` = MỘT bản chèn. Các bản chèn cùng tên block + cùng "vân tay"
+ * (dãy loại hình × layer) thì lấy bản ĐẦU làm ĐỊNH NGHĨA, các bản còn lại chỉ là INSERT có
+ * dời/xoay/phóng — đây mới là thứ trả lại giá trị thật của block (sửa 1 cái, cả loạt đổi theo).
+ * Bản nào không khớp phép biến đổi nào (co giãn không đều…) thì được cấp ĐỊNH NGHĨA RIÊNG —
+ * vẫn còn là block (chọn/dời trọn cụm được), chỉ không dùng chung định nghĩa. Nói thẳng, không giấu.
+ *
+ * Bỏ qua có chủ đích ĐÚNG HAI thứ: block ẩn danh của DIMENSION (`*D…` — nó đã có đường ghi block
+ * riêng ở section BLOCKS, đụng vào là ghi hai lần) và loại hình chưa lấy được điểm neo
+ * (`anchorPoints` = null).
+ *
+ * 🔴 KHÔNG bỏ qua block ẩn danh nói chung. Đo trên hồ sơ thật: `*X…`/`*U…` (AutoCAD sinh khi
+ * người dùng nhóm/khoanh) ôm **9.200/12.274 hình** của một sàn — trong đó có ĐÚNG cái block bị
+ * chèn 18 lần / 828 hình mà `G-M1-06` lấy làm ca bệnh. Lọc theo dấu `*` cho gọn là vứt luôn phần
+ * lớn giá trị của việc này.
+ */
+function planReblock(doc: Doc, layerName: (id: string) => string, reserved: Iterable<string>): ReblockPlan {
+  const plan: ReblockPlan = { defs: [], inserts: [], blockedIds: new Set(), preserved: {} };
+
+  const groups = new Map<string, Entity[]>();
+  for (const e of doc.entities) {
+    if (e.srcBlock === undefined || e.srcInsertId === undefined) continue;
+    if (/^\*D\d+$/i.test(e.srcBlock)) continue; // block ẩn danh của DIMENSION — xem docstring
+    if (!anchorPoints(e)) continue;
+    const g = groups.get(e.srcInsertId);
+    if (g) g.push(e); else groups.set(e.srcInsertId, [e]);
+  }
+  if (!groups.size) return plan;
+
+  // Gom bản chèn theo "vân tay" — cùng tên block + cùng dãy (loại hình × layer) mới có cơ may
+  // dùng chung MỘT định nghĩa. Map giữ thứ tự gặp ⇒ kết quả tất định giữa các lần xuất.
+  const clusters = new Map<string, { srcBlock: string; groups: Entity[][] }>();
+  for (const ents of groups.values()) {
+    const srcBlock = ents[0].srcBlock as string;
+    const key = `${srcBlock}\u0000${ents.map((e) => `${e.type}|${layerName(e.layer)}`).join(',')}`;
+    const c = clusters.get(key);
+    if (c) c.groups.push(ents); else clusters.set(key, { srcBlock, groups: [ents] });
+  }
+
+  const used = new Set<string>(reserved);
+  const uniqueName = (base: string): string => {
+    const b = sanitizeName(base) || 'BLOCK';
+    if (!used.has(b)) { used.add(b); return b; }
+    for (let i = 2; ; i++) {
+      const nm = `${b}_${i}`;
+      if (!used.has(nm)) { used.add(nm); return nm; }
+    }
+  };
+  const anchorsOf = (ents: Entity[]): Pt[] => ents.flatMap((e) => anchorPoints(e) ?? []);
+  const scalarsOf = (ents: Entity[]): number[] => ents.flatMap(scaleScalars);
+  const mirrorY = (pts: Pt[]): Pt[] => pts.map((p) => ({ x: p.x, y: -p.y }));
+  const take = (ents: Entity[], srcBlock: string) => {
+    for (const e of ents) plan.blockedIds.add(e.id);
+    plan.preserved[srcBlock] = (plan.preserved[srcBlock] ?? 0) + 1;
+  };
+
+  for (const cluster of clusters.values()) {
+    const [canon, ...rest] = cluster.groups;
+    const defName = uniqueName(cluster.srcBlock);
+    plan.defs.push({ name: defName, entities: canon });
+    plan.inserts.push({ defName, at: { x: 0, y: 0 }, rotDeg: 0, sx: 1, sy: 1 });
+    take(canon, cluster.srcBlock);
+
+    const canonPts = anchorsOf(canon);
+    const canonScalars = scalarsOf(canon);
+    const canonMirror = mirrorY(canonPts);
+    for (const g of rest) {
+      const q = anchorsOf(g);
+      const qs = scalarsOf(g);
+      let fit = solveSimilarity(canonPts, q);
+      let mirrored = false;
+      if (!fit) { fit = solveSimilarity(canonMirror, q); mirrored = !!fit; }
+      const scalarsOk = fit !== null && canonScalars.length === qs.length
+        && canonScalars.every((v, i) => Math.abs(v * fit!.k - qs[i]) <= REBLOCK_TOL_MM + Math.abs(qs[i]) * 1e-9);
+      if (fit && scalarsOk) {
+        plan.inserts.push({
+          defName,
+          at: { x: fit.tx, y: fit.ty },
+          rotDeg: (fit.rotRad * 180) / Math.PI,
+          sx: fit.k,
+          sy: mirrored ? -fit.k : fit.k,
+        });
+      } else {
+        // Không quy về được phép biến đổi nào — cấp ĐỊNH NGHĨA RIÊNG, vẫn là block thật.
+        const own = uniqueName(cluster.srcBlock);
+        plan.defs.push({ name: own, entities: g });
+        plan.inserts.push({ defName: own, at: { x: 0, y: 0 }, rotDeg: 0, sx: 1, sy: 1 });
+      }
+      take(g, cluster.srcBlock);
+    }
+  }
+  return plan;
 }
 
 /**
@@ -1010,6 +1270,236 @@ export function exportDxfEx(doc: Doc): { dxf: string; report: DxfExportReport } 
   const dimEntities = doc.entities.filter((e): e is DimEntity => e.type === 'dim');
   const dimBlockName = new Map<string, string>();
   dimEntities.forEach((e, i) => dimBlockName.set(e.id, `*D${i + 1}`));
+
+  // A3 · G-M1-07 — kế hoạch dựng lại BLOCK+INSERT (xem `planReblock`). Tên block ẩn danh của
+  // DIMENSION được giữ chỗ trước để không bao giờ đụng tên với block của người dùng.
+  const plan = planReblock(doc, layerName, ['*Model_Space', '*Paper_Space', ...dimBlockName.values()]);
+
+  /**
+   * A3 · G-M1-07 — ghi MỘT DANH SÁCH entity vào `sink`. Trước đây thân hàm này viết thẳng vào
+   * `out`; tách ra vì nay có HAI đích ghi: section ENTITIES (như cũ) và BÊN TRONG định nghĩa
+   * BLOCK dựng lại từ `planReblock()`. Nội dung KHÔNG đổi một dòng logic nào — chỉ đổi đích ghi.
+   */
+  const writeEntitiesInto = (sink: string[], list: Entity[]) => {
+    const writeLine = (a: Pt, b: Pt, lay: string, aci?: number, ovr: string[] = [], xd: string[] = []) => {
+      sink.push(pair(0, 'LINE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(10, a.x), pair(20, a.y), pair(30, 0), pair(11, b.x), pair(21, b.y), pair(31, 0), ...xd);
+    };
+    const writePoly = (pts: Pt[], closed: boolean, lay: string, aci?: number, ovr: string[] = [], xd: string[] = []) => {
+      sink.push(pair(0, 'LWPOLYLINE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(90, pts.length), pair(70, closed ? 1 : 0));
+      pts.forEach((p) => sink.push(pair(10, p.x), pair(20, p.y)));
+      sink.push(...xd);
+    };
+    // B1 (24/07, IF2-nền) — XDATA storey/elementType (đặt CUỐI record entity, chuẩn DXF). Chỉ ghi
+    // khi entity CÓ dữ liệu — file không dùng IF2 giữ nguyên từng byte như cũ (backward-safe).
+    const xdataPairs = (e: Entity): string[] => {
+      const has = e.storey !== undefined || e.elementType !== undefined || e.campath !== undefined;
+      if (!has) return [];
+      const xd: string[] = [pair(1001, 'INTERIORFLOW')];
+      if (e.storey !== undefined) xd.push(pair(1000, `IF_STOREY=${e.storey}`));
+      if (e.elementType !== undefined) xd.push(pair(1000, `IF_ELEMTYPE=${e.elementType === null ? 'null' : e.elementType}`));
+      // A5/K3 — chỉ có nghĩa khi ĐI KÈM elementType (xem `Base.inferred`), nên nằm trong nhánh này.
+      if (e.elementType !== undefined && e.inferred) xd.push(pair(1000, 'IF_INFERRED=1'));
+      if (e.campath !== undefined) xd.push(pair(1000, 'IF_CAMPATH=1'));
+      return xd;
+    };
+    // Override lineweight/linetype RIÊNG của entity (hiếm — mặc định không có, dùng ByLayer).
+    const overridePairs = (e: Entity): string[] => {
+      const out2: string[] = [];
+      if (e.lineweight !== undefined) out2.push(pair(370, lineweightToDxfEnum(e.lineweight)));
+      if (e.lineType !== undefined) out2.push(pair(6, linetypeToDxfName(e.lineType)));
+      return out2;
+    };
+    const writePrim = (prim: Prim, tf: (p: Pt) => Pt, lay: string, aci?: number) => {
+      if (prim.k === 'line') writeLine(tf(prim.a), tf(prim.b), lay, aci);
+      else if (prim.k === 'poly') writePoly(prim.pts.map(tf), !!prim.closed, lay, aci);
+      else if (prim.k === 'circle') {
+        const c = tf(prim.c);
+        sink.push(pair(0, 'CIRCLE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, c.x), pair(20, c.y), pair(30, 0), pair(40, prim.r));
+      } else if (prim.k === 'arc') {
+        const c = tf(prim.c);
+        sink.push(
+          pair(0, 'ARC'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, c.x), pair(20, c.y), pair(30, 0), pair(40, prim.r),
+          pair(50, (prim.a1 * 180) / Math.PI), pair(51, (prim.a2 * 180) / Math.PI),
+        );
+      }
+    };
+
+    for (const e of list) {
+      const lay = layerName(e.layer);
+      const aci = e.color ? hexToAci(e.color) : undefined;
+      const ovr = overridePairs(e);
+      const xd = xdataPairs(e);
+      switch (e.type) {
+        case 'line':
+          writeLine(e.a, e.b, lay, aci, ovr, xd);
+          break;
+        case 'dim': {
+          // Entity DIMENSION thật (Nấc 3) — tham chiếu block ẩn danh đã ghi ở BLOCKS phía trên.
+          const kind = e.kind ?? 'aligned';
+          const bname = dimBlockName.get(e.id) ?? '*D0';
+          const typeCode = kind === 'aligned' ? 1 : kind === 'angular' ? 2 : kind === 'diameter' ? 3 : 4; // radius=4
+          let dimLinePt: Pt;
+          let textAt: Pt;
+          if (kind === 'aligned') {
+            const dx = e.b.x - e.a.x;
+            const dy = e.b.y - e.a.y;
+            const len = Math.hypot(dx, dy) || 1;
+            const nx = -dy / len;
+            const ny = dx / len;
+            dimLinePt = { x: e.a.x + nx * e.off, y: e.a.y + ny * e.off };
+            textAt = { x: (e.a.x + e.b.x) / 2 + nx * e.off, y: (e.a.y + e.b.y) / 2 + ny * e.off };
+          } else if (kind === 'radius' || kind === 'diameter') {
+            dimLinePt = e.b;
+            textAt = { x: (e.a.x + e.b.x) / 2, y: (e.a.y + e.b.y) / 2 };
+          } else {
+            const c = e.c ?? e.a;
+            const ang1 = Math.atan2(e.a.y - c.y, e.a.x - c.x);
+            const ang2 = Math.atan2(e.b.y - c.y, e.b.x - c.x);
+            const r = Math.abs(e.off) || 500;
+            const sweep = (((ang2 - ang1) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+            const mid = ang1 + sweep / 2;
+            dimLinePt = { x: c.x + r * Math.cos(mid), y: c.y + r * Math.sin(mid) };
+            textAt = dimLinePt;
+          }
+          sink.push(
+            pair(0, 'DIMENSION'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []),
+            pair(2, bname),
+            pair(10, dimLinePt.x), pair(20, dimLinePt.y), pair(30, 0),
+            pair(11, textAt.x), pair(21, textAt.y), pair(31, 0),
+            pair(70, typeCode + 32),
+            pair(3, 'Standard'),
+          );
+          if (kind === 'aligned') {
+            sink.push(pair(13, e.a.x), pair(23, e.a.y), pair(33, 0), pair(14, e.b.x), pair(24, e.b.y), pair(34, 0));
+            sink.push(pair(1, `${Math.round(Math.hypot(e.b.x - e.a.x, e.b.y - e.a.y))}`));
+          } else if (kind === 'radius' || kind === 'diameter') {
+            const r = Math.hypot(e.b.x - e.a.x, e.b.y - e.a.y);
+            sink.push(pair(15, e.a.x), pair(25, e.a.y), pair(35, 0));
+            sink.push(pair(40, kind === 'diameter' ? r * 2 : r));
+            sink.push(pair(1, kind === 'diameter' ? `%%c${Math.round(r * 2)}` : `R${Math.round(r)}`));
+          } else if (kind === 'angular' && e.c) {
+            sink.push(pair(13, e.a.x), pair(23, e.a.y), pair(33, 0));
+            sink.push(pair(14, e.b.x), pair(24, e.b.y), pair(34, 0));
+            sink.push(pair(15, e.c.x), pair(25, e.c.y), pair(35, 0));
+            const ang1 = Math.atan2(e.a.y - e.c.y, e.a.x - e.c.x);
+            const ang2 = Math.atan2(e.b.y - e.c.y, e.b.x - e.c.x);
+            const sweep = (((ang2 - ang1) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+            sink.push(pair(1, `${Math.round((sweep * 180) / Math.PI)}%%d`));
+          }
+          break;
+        }
+        case 'polyline':
+          writePoly(e.points, e.closed, lay, aci, ovr, xd);
+          break;
+        case 'rect':
+          writePoly(
+            [{ x: e.x, y: e.y }, { x: e.x + e.w, y: e.y }, { x: e.x + e.w, y: e.y + e.h }, { x: e.x, y: e.y + e.h }],
+            true,
+            lay,
+            aci,
+            ovr,
+            xd,
+          );
+          break;
+        case 'circle':
+          sink.push(pair(0, 'CIRCLE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(10, e.c.x), pair(20, e.c.y), pair(30, 0), pair(40, e.r), ...xd);
+          break;
+        case 'arc':
+          sink.push(
+            pair(0, 'ARC'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(10, e.c.x), pair(20, e.c.y), pair(30, 0), pair(40, e.r),
+            pair(50, (e.a1 * 180) / Math.PI), pair(51, (e.a2 * 180) / Math.PI), ...xd,
+          );
+          break;
+        case 'text':
+          sink.push(pair(0, 'TEXT'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, e.at.x), pair(20, e.at.y), pair(30, 0), pair(40, e.h), pair(1, e.text), ...xd);
+          break;
+        case 'hatch': {
+          if (e.points.length < 2) break;
+          if (!e.pattern) {
+            // Poché tường CŨ (WALL, không có `pattern`) → giữ nguyên hành vi cũ: đường bao
+            // LWPOLYLINE khép kín (không tô — ưu tiên an toàn cấu trúc file).
+            writePoly(e.points, true, lay, aci, ovr);
+            break;
+          }
+          // Nấc 4 — entity HATCH THẬT (tên pattern ANSI31/ANSI32/ANSI37/SOLID/DOTS đều là tên
+          // pattern chuẩn có sẵn trong thư viện acad.pat/ANSI.pat của AutoCAD).
+          const isSolid = e.pattern === 'SOLID';
+          sink.push(
+            pair(0, 'HATCH'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []),
+            pair(10, 0), pair(20, 0), pair(30, 0),
+            pair(210, 0), pair(220, 0), pair(230, 1),
+            pair(2, e.pattern),
+            pair(70, isSolid ? 1 : 0),
+            pair(71, 0),
+            pair(91, 1),
+            pair(92, 7), pair(72, 0), pair(73, 1), pair(93, e.points.length),
+          );
+          for (const p of e.points) sink.push(pair(10, p.x), pair(20, p.y));
+          sink.push(pair(97, 0));
+          sink.push(pair(75, 0), pair(76, 1));
+          if (!isSolid) sink.push(pair(52, e.patternAngle ?? 0), pair(41, e.patternScale ?? 1));
+          sink.push(pair(77, 0), pair(78, 0), pair(98, 0));
+          break;
+        }
+        case 'block': {
+          const def = BLOCK_MAP[e.block];
+          if (!def) break;
+          const tf = (p: Pt) => blockLocalToWorld(p, e.at, e.rot, e.sx, e.sy);
+          for (const prim of def.prims) writePrim(prim, tf, lay, aci);
+          break;
+        }
+        // Zone tool (N2) — DXF tương đương: ellipse → LWPOLYLINE 32 điểm (an toàn mọi bản DXF,
+        // không cần entity ELLIPSE thật); arrow → LWPOLYLINE + 2 LINE đầu mũi tên; zone → HATCH
+        // SOLID (tái dùng cấu trúc HATCH ở case trên) + TEXT nhãn tại centroid.
+        case 'ellipse':
+          writePoly(ellipseBoundaryPoints(e.c, e.rx, e.ry, e.rot ?? 0, 32), true, lay, aci, ovr);
+          break;
+        case 'arrow': {
+          if (e.path.length < 2) break;
+          writePoly(e.path, false, lay, aci, ovr.length ? ovr : [pair(6, linetypeToDxfName(e.lineType ?? 'dashed'))]);
+          const head = (from: Pt, tip: Pt) => {
+            const size = e.headSize ?? 250;
+            const dx = tip.x - from.x;
+            const dy = tip.y - from.y;
+            const len = Math.hypot(dx, dy) || 1;
+            const ux = dx / len;
+            const uy = dy / len;
+            const back = { x: tip.x - ux * size, y: tip.y - uy * size };
+            writeLine({ x: back.x - uy * size * 0.4, y: back.y + ux * size * 0.4 }, tip, lay, aci);
+            writeLine({ x: back.x + uy * size * 0.4, y: back.y - ux * size * 0.4 }, tip, lay, aci);
+          };
+          if (e.headEnd !== false) head(e.path[e.path.length - 2], e.path[e.path.length - 1]);
+          if (e.headStart) head(e.path[1], e.path[0]);
+          break;
+        }
+        case 'zone': {
+          const pts = zoneBoundaryPoints(e, 32);
+          if (pts.length < 3) break;
+          const zoneAci = hexToAci(e.color ?? ZONE_GROUP_META[e.group]?.color ?? '#9a9488');
+          sink.push(
+            pair(0, 'HATCH'), pair(8, lay), pair(62, zoneAci),
+            pair(10, 0), pair(20, 0), pair(30, 0),
+            pair(210, 0), pair(220, 0), pair(230, 1),
+            pair(2, 'SOLID'),
+            pair(70, 1),
+            pair(71, 0),
+            pair(91, 1),
+            pair(92, 7), pair(72, 0), pair(73, 1), pair(93, pts.length),
+          );
+          for (const p of pts) sink.push(pair(10, p.x), pair(20, p.y));
+          sink.push(pair(97, 0));
+          sink.push(pair(75, 0), pair(76, 1));
+          sink.push(pair(77, 0), pair(78, 0), pair(98, 0));
+          const at = e.labelPos ?? zoneCentroid(e);
+          if (e.label) {
+            sink.push(pair(0, 'TEXT'), pair(8, lay), pair(62, zoneAci), pair(10, at.x), pair(20, at.y), pair(30, 0), pair(40, 250), pair(1, e.label.toUpperCase()), pair(72, 1), pair(11, at.x), pair(21, at.y), pair(31, 0));
+          }
+          break;
+        }
+      }
+    }
+  };
+
 
   // TABLES — LAYER + BLOCK_RECORD (chỉ khi có dimension cần block ẩn danh — furniture vẫn
   // phẳng hoá, KHÔNG cần BLOCK_RECORD, xem đầu file).
@@ -1041,11 +1531,12 @@ export function exportDxfEx(doc: Doc): { dxf: string; report: DxfExportReport } 
   out.push(pair(0, 'APPID'), pair(2, 'ACAD'), pair(70, 0));
   out.push(pair(0, 'APPID'), pair(2, 'INTERIORFLOW'), pair(70, 0));
   out.push(pair(0, 'ENDTAB'));
-  if (dimEntities.length) {
-    out.push(pair(0, 'TABLE'), pair(2, 'BLOCK_RECORD'), pair(70, dimEntities.length + 2));
+  if (dimEntities.length || plan.defs.length) {
+    out.push(pair(0, 'TABLE'), pair(2, 'BLOCK_RECORD'), pair(70, dimEntities.length + plan.defs.length + 2));
     out.push(pair(0, 'BLOCK_RECORD'), pair(2, '*Model_Space'));
     out.push(pair(0, 'BLOCK_RECORD'), pair(2, '*Paper_Space'));
     for (const name of dimBlockName.values()) out.push(pair(0, 'BLOCK_RECORD'), pair(2, name));
+    for (const d of plan.defs) out.push(pair(0, 'BLOCK_RECORD'), pair(2, d.name));
     out.push(pair(0, 'ENDTAB'));
   }
   out.push(pair(0, 'ENDSEC'));
@@ -1065,229 +1556,33 @@ export function exportDxfEx(doc: Doc): { dxf: string; report: DxfExportReport } 
     out.push(...dimBlockGeometry(e, lay, aci));
     out.push(pair(0, 'ENDBLK'), pair(8, lay));
   }
+  // A3 — định nghĩa BLOCK của NGƯỜI DÙNG, dựng lại từ `plan`. Hình bên trong giữ ĐÚNG tên layer
+  // thật của nó (không ghi '0'), nên khi nạp lại KHÔNG rơi vào luật kế thừa layer ByBlock ⇒ vòng
+  // xuất–nạp giữ nguyên layer từng hình. Đây là điều kiện để nghiệm thu "khớp 100%".
+  for (const d of plan.defs) {
+    out.push(pair(0, 'BLOCK'), pair(8, '0'), pair(2, d.name), pair(70, 0), pair(10, 0), pair(20, 0), pair(30, 0), pair(3, d.name), pair(1, ''));
+    writeEntitiesInto(out, d.entities);
+    out.push(pair(0, 'ENDBLK'), pair(8, '0'));
+  }
   out.push(pair(0, 'ENDSEC'));
 
   // ENTITIES
   out.push(pair(0, 'SECTION'), pair(2, 'ENTITIES'));
-
-  const writeLine = (a: Pt, b: Pt, lay: string, aci?: number, ovr: string[] = [], xd: string[] = []) => {
-    out.push(pair(0, 'LINE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(10, a.x), pair(20, a.y), pair(30, 0), pair(11, b.x), pair(21, b.y), pair(31, 0), ...xd);
-  };
-  const writePoly = (pts: Pt[], closed: boolean, lay: string, aci?: number, ovr: string[] = [], xd: string[] = []) => {
-    out.push(pair(0, 'LWPOLYLINE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(90, pts.length), pair(70, closed ? 1 : 0));
-    pts.forEach((p) => out.push(pair(10, p.x), pair(20, p.y)));
-    out.push(...xd);
-  };
-  // B1 (24/07, IF2-nền) — XDATA storey/elementType (đặt CUỐI record entity, chuẩn DXF). Chỉ ghi
-  // khi entity CÓ dữ liệu — file không dùng IF2 giữ nguyên từng byte như cũ (backward-safe).
-  const xdataPairs = (e: Entity): string[] => {
-    const has = e.storey !== undefined || e.elementType !== undefined || e.campath !== undefined;
-    if (!has) return [];
-    const xd: string[] = [pair(1001, 'INTERIORFLOW')];
-    if (e.storey !== undefined) xd.push(pair(1000, `IF_STOREY=${e.storey}`));
-    if (e.elementType !== undefined) xd.push(pair(1000, `IF_ELEMTYPE=${e.elementType === null ? 'null' : e.elementType}`));
-    if (e.campath !== undefined) xd.push(pair(1000, 'IF_CAMPATH=1'));
-    return xd;
-  };
-  // Override lineweight/linetype RIÊNG của entity (hiếm — mặc định không có, dùng ByLayer).
-  const overridePairs = (e: Entity): string[] => {
-    const out2: string[] = [];
-    if (e.lineweight !== undefined) out2.push(pair(370, lineweightToDxfEnum(e.lineweight)));
-    if (e.lineType !== undefined) out2.push(pair(6, linetypeToDxfName(e.lineType)));
-    return out2;
-  };
-  const writePrim = (prim: Prim, tf: (p: Pt) => Pt, lay: string, aci?: number) => {
-    if (prim.k === 'line') writeLine(tf(prim.a), tf(prim.b), lay, aci);
-    else if (prim.k === 'poly') writePoly(prim.pts.map(tf), !!prim.closed, lay, aci);
-    else if (prim.k === 'circle') {
-      const c = tf(prim.c);
-      out.push(pair(0, 'CIRCLE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, c.x), pair(20, c.y), pair(30, 0), pair(40, prim.r));
-    } else if (prim.k === 'arc') {
-      const c = tf(prim.c);
-      out.push(
-        pair(0, 'ARC'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, c.x), pair(20, c.y), pair(30, 0), pair(40, prim.r),
-        pair(50, (prim.a1 * 180) / Math.PI), pair(51, (prim.a2 * 180) / Math.PI),
-      );
-    }
-  };
-
-  for (const e of doc.entities) {
-    const lay = layerName(e.layer);
-    const aci = e.color ? hexToAci(e.color) : undefined;
-    const ovr = overridePairs(e);
-    const xd = xdataPairs(e);
-    switch (e.type) {
-      case 'line':
-        writeLine(e.a, e.b, lay, aci, ovr, xd);
-        break;
-      case 'dim': {
-        // Entity DIMENSION thật (Nấc 3) — tham chiếu block ẩn danh đã ghi ở BLOCKS phía trên.
-        const kind = e.kind ?? 'aligned';
-        const bname = dimBlockName.get(e.id) ?? '*D0';
-        const typeCode = kind === 'aligned' ? 1 : kind === 'angular' ? 2 : kind === 'diameter' ? 3 : 4; // radius=4
-        let dimLinePt: Pt;
-        let textAt: Pt;
-        if (kind === 'aligned') {
-          const dx = e.b.x - e.a.x;
-          const dy = e.b.y - e.a.y;
-          const len = Math.hypot(dx, dy) || 1;
-          const nx = -dy / len;
-          const ny = dx / len;
-          dimLinePt = { x: e.a.x + nx * e.off, y: e.a.y + ny * e.off };
-          textAt = { x: (e.a.x + e.b.x) / 2 + nx * e.off, y: (e.a.y + e.b.y) / 2 + ny * e.off };
-        } else if (kind === 'radius' || kind === 'diameter') {
-          dimLinePt = e.b;
-          textAt = { x: (e.a.x + e.b.x) / 2, y: (e.a.y + e.b.y) / 2 };
-        } else {
-          const c = e.c ?? e.a;
-          const ang1 = Math.atan2(e.a.y - c.y, e.a.x - c.x);
-          const ang2 = Math.atan2(e.b.y - c.y, e.b.x - c.x);
-          const r = Math.abs(e.off) || 500;
-          const sweep = (((ang2 - ang1) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-          const mid = ang1 + sweep / 2;
-          dimLinePt = { x: c.x + r * Math.cos(mid), y: c.y + r * Math.sin(mid) };
-          textAt = dimLinePt;
-        }
-        out.push(
-          pair(0, 'DIMENSION'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []),
-          pair(2, bname),
-          pair(10, dimLinePt.x), pair(20, dimLinePt.y), pair(30, 0),
-          pair(11, textAt.x), pair(21, textAt.y), pair(31, 0),
-          pair(70, typeCode + 32),
-          pair(3, 'Standard'),
-        );
-        if (kind === 'aligned') {
-          out.push(pair(13, e.a.x), pair(23, e.a.y), pair(33, 0), pair(14, e.b.x), pair(24, e.b.y), pair(34, 0));
-          out.push(pair(1, `${Math.round(Math.hypot(e.b.x - e.a.x, e.b.y - e.a.y))}`));
-        } else if (kind === 'radius' || kind === 'diameter') {
-          const r = Math.hypot(e.b.x - e.a.x, e.b.y - e.a.y);
-          out.push(pair(15, e.a.x), pair(25, e.a.y), pair(35, 0));
-          out.push(pair(40, kind === 'diameter' ? r * 2 : r));
-          out.push(pair(1, kind === 'diameter' ? `%%c${Math.round(r * 2)}` : `R${Math.round(r)}`));
-        } else if (kind === 'angular' && e.c) {
-          out.push(pair(13, e.a.x), pair(23, e.a.y), pair(33, 0));
-          out.push(pair(14, e.b.x), pair(24, e.b.y), pair(34, 0));
-          out.push(pair(15, e.c.x), pair(25, e.c.y), pair(35, 0));
-          const ang1 = Math.atan2(e.a.y - e.c.y, e.a.x - e.c.x);
-          const ang2 = Math.atan2(e.b.y - e.c.y, e.b.x - e.c.x);
-          const sweep = (((ang2 - ang1) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-          out.push(pair(1, `${Math.round((sweep * 180) / Math.PI)}%%d`));
-        }
-        break;
-      }
-      case 'polyline':
-        writePoly(e.points, e.closed, lay, aci, ovr, xd);
-        break;
-      case 'rect':
-        writePoly(
-          [{ x: e.x, y: e.y }, { x: e.x + e.w, y: e.y }, { x: e.x + e.w, y: e.y + e.h }, { x: e.x, y: e.y + e.h }],
-          true,
-          lay,
-          aci,
-          ovr,
-          xd,
-        );
-        break;
-      case 'circle':
-        out.push(pair(0, 'CIRCLE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(10, e.c.x), pair(20, e.c.y), pair(30, 0), pair(40, e.r), ...xd);
-        break;
-      case 'arc':
-        out.push(
-          pair(0, 'ARC'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(10, e.c.x), pair(20, e.c.y), pair(30, 0), pair(40, e.r),
-          pair(50, (e.a1 * 180) / Math.PI), pair(51, (e.a2 * 180) / Math.PI), ...xd,
-        );
-        break;
-      case 'text':
-        out.push(pair(0, 'TEXT'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), pair(10, e.at.x), pair(20, e.at.y), pair(30, 0), pair(40, e.h), pair(1, e.text), ...xd);
-        break;
-      case 'hatch': {
-        if (e.points.length < 2) break;
-        if (!e.pattern) {
-          // Poché tường CŨ (WALL, không có `pattern`) → giữ nguyên hành vi cũ: đường bao
-          // LWPOLYLINE khép kín (không tô — ưu tiên an toàn cấu trúc file).
-          writePoly(e.points, true, lay, aci, ovr);
-          break;
-        }
-        // Nấc 4 — entity HATCH THẬT (tên pattern ANSI31/ANSI32/ANSI37/SOLID/DOTS đều là tên
-        // pattern chuẩn có sẵn trong thư viện acad.pat/ANSI.pat của AutoCAD).
-        const isSolid = e.pattern === 'SOLID';
-        out.push(
-          pair(0, 'HATCH'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []),
-          pair(10, 0), pair(20, 0), pair(30, 0),
-          pair(210, 0), pair(220, 0), pair(230, 1),
-          pair(2, e.pattern),
-          pair(70, isSolid ? 1 : 0),
-          pair(71, 0),
-          pair(91, 1),
-          pair(92, 7), pair(72, 0), pair(73, 1), pair(93, e.points.length),
-        );
-        for (const p of e.points) out.push(pair(10, p.x), pair(20, p.y));
-        out.push(pair(97, 0));
-        out.push(pair(75, 0), pair(76, 1));
-        if (!isSolid) out.push(pair(52, e.patternAngle ?? 0), pair(41, e.patternScale ?? 1));
-        out.push(pair(77, 0), pair(78, 0), pair(98, 0));
-        break;
-      }
-      case 'block': {
-        const def = BLOCK_MAP[e.block];
-        if (!def) break;
-        const tf = (p: Pt) => blockLocalToWorld(p, e.at, e.rot, e.sx, e.sy);
-        for (const prim of def.prims) writePrim(prim, tf, lay, aci);
-        break;
-      }
-      // Zone tool (N2) — DXF tương đương: ellipse → LWPOLYLINE 32 điểm (an toàn mọi bản DXF,
-      // không cần entity ELLIPSE thật); arrow → LWPOLYLINE + 2 LINE đầu mũi tên; zone → HATCH
-      // SOLID (tái dùng cấu trúc HATCH ở case trên) + TEXT nhãn tại centroid.
-      case 'ellipse':
-        writePoly(ellipseBoundaryPoints(e.c, e.rx, e.ry, e.rot ?? 0, 32), true, lay, aci, ovr);
-        break;
-      case 'arrow': {
-        if (e.path.length < 2) break;
-        writePoly(e.path, false, lay, aci, ovr.length ? ovr : [pair(6, linetypeToDxfName(e.lineType ?? 'dashed'))]);
-        const head = (from: Pt, tip: Pt) => {
-          const size = e.headSize ?? 250;
-          const dx = tip.x - from.x;
-          const dy = tip.y - from.y;
-          const len = Math.hypot(dx, dy) || 1;
-          const ux = dx / len;
-          const uy = dy / len;
-          const back = { x: tip.x - ux * size, y: tip.y - uy * size };
-          writeLine({ x: back.x - uy * size * 0.4, y: back.y + ux * size * 0.4 }, tip, lay, aci);
-          writeLine({ x: back.x + uy * size * 0.4, y: back.y - ux * size * 0.4 }, tip, lay, aci);
-        };
-        if (e.headEnd !== false) head(e.path[e.path.length - 2], e.path[e.path.length - 1]);
-        if (e.headStart) head(e.path[1], e.path[0]);
-        break;
-      }
-      case 'zone': {
-        const pts = zoneBoundaryPoints(e, 32);
-        if (pts.length < 3) break;
-        const zoneAci = hexToAci(e.color ?? ZONE_GROUP_META[e.group]?.color ?? '#9a9488');
-        out.push(
-          pair(0, 'HATCH'), pair(8, lay), pair(62, zoneAci),
-          pair(10, 0), pair(20, 0), pair(30, 0),
-          pair(210, 0), pair(220, 0), pair(230, 1),
-          pair(2, 'SOLID'),
-          pair(70, 1),
-          pair(71, 0),
-          pair(91, 1),
-          pair(92, 7), pair(72, 0), pair(73, 1), pair(93, pts.length),
-        );
-        for (const p of pts) out.push(pair(10, p.x), pair(20, p.y));
-        out.push(pair(97, 0));
-        out.push(pair(75, 0), pair(76, 1));
-        out.push(pair(77, 0), pair(78, 0), pair(98, 0));
-        const at = e.labelPos ?? zoneCentroid(e);
-        if (e.label) {
-          out.push(pair(0, 'TEXT'), pair(8, lay), pair(62, zoneAci), pair(10, at.x), pair(20, at.y), pair(30, 0), pair(40, 250), pair(1, e.label.toUpperCase()), pair(72, 1), pair(11, at.x), pair(21, at.y), pair(31, 0));
-        }
-        break;
-      }
-    }
+  // Hình đã nằm trong BLOCK thì KHÔNG ghi phẳng lần nữa (nếu không là nhân đôi hình học).
+  writeEntitiesInto(out, plan.blockedIds.size ? doc.entities.filter((e) => !plan.blockedIds.has(e.id)) : doc.entities);
+  // INSERT — luôn đặt trên layer '0': hình bên trong block đã khai layer riêng, nên layer của
+  // INSERT chỉ còn ảnh hưởng tới hình khai layer '0', và '0' là đúng thứ chúng vốn có.
+  for (const ins of plan.inserts) {
+    out.push(
+      pair(0, 'INSERT'), pair(8, '0'), pair(2, ins.defName),
+      pair(10, ins.at.x), pair(20, ins.at.y), pair(30, 0),
+      pair(41, ins.sx), pair(42, ins.sy), pair(43, Math.abs(ins.sx) || 1),
+      pair(50, ins.rotDeg),
+    );
   }
 
   out.push(pair(0, 'ENDSEC'), pair(0, 'EOF'));
-  return { dxf: out.join('\n'), report: buildExportReport(doc) };
+  return { dxf: out.join('\n'), report: buildExportReport(doc, plan) };
 }
 
 /**
@@ -1298,10 +1593,11 @@ export function exportDxfEx(doc: Doc): { dxf: string; report: DxfExportReport } 
  * tên hàm/field nội bộ. Kèm tối đa 3 TÊN BLOCK để người dùng đối chiếu được với file gốc của họ —
  * đây là dữ liệu chạy-thời-gian của chính họ, không phải thứ nằm trong repo (§0h).
  */
-function buildExportReport(doc: Doc): DxfExportReport {
+function buildExportReport(doc: Doc, plan: ReblockPlan): DxfExportReport {
   const flattenedBlocks: Record<string, number> = {};
   for (const e of doc.entities) {
     if (e.srcBlock === undefined) continue;
+    if (plan.blockedIds.has(e.id)) continue; // đã trở về BLOCK thật — không phải "làm phẳng"
     flattenedBlocks[e.srcBlock] = (flattenedBlocks[e.srcBlock] ?? 0) + 1;
   }
   const names = Object.keys(flattenedBlocks).sort();
@@ -1314,7 +1610,14 @@ function buildExportReport(doc: Doc): DxfExportReport {
         `cấu trúc block. Hình vẽ giữ nguyên, nhưng không sửa hàng loạt qua block được nữa (${sample}${them}).`,
     );
   }
-  return { flattenedBlocks, flattenedBlockCount: names.length, warnings };
+  return {
+    flattenedBlocks,
+    flattenedBlockCount: names.length,
+    preservedBlocks: plan.preserved,
+    insertsWritten: plan.inserts.length,
+    blockDefsWritten: plan.defs.length,
+    warnings,
+  };
 }
 
 const VN_MAP: Record<string, string> = {

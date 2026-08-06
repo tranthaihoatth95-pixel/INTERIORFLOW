@@ -15,8 +15,8 @@ function ok(label: string, cond: boolean) {
   else { fail += 1; console.log(`  FAIL - ${label}`); }
 }
 
-const rowA: BoqRow = { matId: 'm1', ten: 'Gỗ óc chó', ncc: 'An Cường', ma: 'AC-1', m2: 42.5, donGia: 1_240_000, haoHutPhanTram: 5, thanhTien: 55_335_000, entityIds: ['h1'] };
-const rowB: BoqRow = { matId: 'm2', ten: 'Sàn gỗ sồi', ncc: 'An Cường', ma: 'AC-2', m2: 24.6, donGia: 1_250_000, haoHutPhanTram: 5, thanhTien: 32_287_500, entityIds: ['h2'] };
+const rowA: BoqRow = { matId: 'm1', ten: 'Gỗ óc chó', ncc: 'An Cường', ma: 'AC-1', m2: 42.5, qty: 42.5, unit: 'm2', kind: 'area', donGia: 1_240_000, haoHutPhanTram: 5, thanhTien: 55_335_000, entityIds: ['h1'] };
+const rowB: BoqRow = { matId: 'm2', ten: 'Sàn gỗ sồi', ncc: 'An Cường', ma: 'AC-2', m2: 24.6, qty: 24.6, unit: 'm2', kind: 'area', donGia: 1_250_000, haoHutPhanTram: 5, thanhTien: 32_287_500, entityIds: ['h2'] };
 
 console.log('\n[1] dòng KHÔNG override chạy qua nguyên vẹn (giữ identity)');
 {

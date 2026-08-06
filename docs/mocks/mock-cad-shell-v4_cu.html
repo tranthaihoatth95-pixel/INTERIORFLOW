@@ -47,8 +47,6 @@
   --grid-a:#e6e1d7; --grid-b:#dbd5c8;
 }
 @media (hover:none) and (pointer:coarse){ :root{ --tap:44px; --row:44px; --gap:12px } }
-/* tự thu sidebar khi cửa sổ hẹp — người dùng mở lại bằng phím B / nút ‹ */
-@media (max-width:1279px){ body:not(.side-on) .side{display:none} }
 
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -134,18 +132,6 @@ button{font:inherit;color:inherit}
 .lay.lok .act.lk{color:var(--warning)}
 
 .sideft{flex:none;border-top:1px solid var(--mat-hairline);padding:5px 6px;display:flex;gap:2px}
-.side{position:relative}
-.sideft.acct{order:3;border-top:1px solid var(--border)}
-.me{flex:1;min-width:0;height:30px;display:flex;align-items:center;gap:8px;padding:0 6px;border:0;
-    background:transparent;border-radius:var(--radius-sm);cursor:pointer;
-    transition:background .12s var(--ease-apple)}
-.me:hover{background:var(--hover)}
-.ava{width:22px;height:22px;border-radius:50%;flex:none;
-     background:linear-gradient(145deg,#c79a63,#8d5f3c);box-shadow:inset 0 0 0 1px var(--mat-hairline)}
-.mname{font-size:var(--fs-xs);color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mdot{margin-left:auto;flex:none;min-width:17px;height:17px;padding:0 4px;border-radius:9px;
-      background:var(--field);color:var(--t3);font-size:var(--fs-2xs);font-weight:var(--fw-semi);
-      display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
 .sf{height:28px;flex:1;border:0;background:transparent;color:var(--t3);border-radius:var(--radius-sm);
     display:flex;align-items:center;justify-content:center;gap:6px;font-size:var(--fs-2xs);cursor:pointer;
     transition:background .12s var(--ease-apple),color .12s var(--ease-apple)}
@@ -244,13 +230,12 @@ button{font:inherit;color:inherit}
 .kv.big b{color:var(--accent);font-size:var(--fs-sm)}
 
 /* ══ CHÂN ══ */
-.foot{height:26px;flex:none;display:flex;align-items:center;gap:10px;padding:0 10px;white-space:nowrap;overflow:hidden;
+.foot{height:26px;flex:none;display:flex;align-items:center;gap:10px;padding:0 10px;
       background:var(--panel);border-top:1px solid var(--border);font-size:var(--fs-2xs);color:var(--t4)}
 .cmdl{display:flex;align-items:center;gap:6px;font-family:ui-monospace,Menlo,monospace;color:var(--t3)}
 .cmdl kbd{background:var(--field);border:1px solid var(--border);border-radius:5px;padding:0 4px;
           font-size:var(--fs-2xs);font-family:inherit}
-.foot .r{margin-left:auto;display:flex;align-items:center;gap:14px;flex:none}
-.cmdl{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.foot .r{margin-left:auto;display:flex;align-items:center;gap:14px}
 .vt{display:flex;align-items:center;gap:5px;color:var(--t3);cursor:pointer}
 .vtd{width:7px;height:7px;border-radius:2px;background:var(--warning)}
 
@@ -269,6 +254,10 @@ body.side-off .side{display:none}
 </style>
 </head>
 <body>
+<!-- ═══ BẢN CŨ (06/08) — đã bị thay bởi "Chế độ Chuyên.dc.html" / "Chế độ Phác thảo.dc.html"
+     (màn 2D Kỹ thuật, 2 mode Chuyên/Phác thảo). ĐỪNG PORT file này — giữ lại chỉ để tham khảo
+     lịch sử thiết kế. Xem README-mocks.md/00-CHOT.md để hiểu bối cảnh. -->
+
 <div class="app">
 
   <header class="top mat-header">
@@ -283,7 +272,7 @@ body.side-off .side{display:none}
 
   <div class="mid">
 
-    <aside class="side" style="display:flex;flex-direction:column">
+    <aside class="side">
       <div class="state">
         <button class="statebtn"><span class="dt"></span>Bố trí nội thất
           <svg class="i s car" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -316,14 +305,6 @@ body.side-off .side{display:none}
         <div class="lay mut"><span class="dot" style="background:#6e6e78"></span><span class="nm">Chú thích · không in</span>
           <span class="acts"><button class="act"><svg class="i s" viewBox="0 0 24 24"><path d="M17.9 17.9A10.1 10.1 0 0112 20C5 20 1 13 1 13a18 18 0 014.6-5.3M9.9 4.2A10 10 0 0112 4c7 0 11 7 11 7a18 18 0 01-2.2 3.2M1 1l22 22"/></svg></button>
           <button class="act lk"><svg class="i s" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0"/></svg></button></span></div>
-      </div>
-
-      <div class="sideft acct">
-        <button class="me">
-          <span class="ava"></span><span class="mname">Hoà</span>
-          <span class="mdot" title="3 người đang mở dự án">3</span>
-        </button>
-        <button class="sf" style="flex:none;width:30px" title="Cài đặt"><svg class="i s" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button>
       </div>
 
       <div class="sideft">
@@ -416,10 +397,12 @@ body.side-off .side{display:none}
 
   </div>
 
-  <footer class="foot" title="D đổi nền · S chọn thử · B thu sidebar">
+  <footer class="foot">
     <span class="cmdl"><kbd>⌘</kbd>Gõ lệnh: L · PL · REC · C · ROOM</span>
+    <span>·</span><span>Ortho F8</span><span>Nhập số F12</span>
+    <span class="hint">D đổi nền · S chọn thử · B thu sidebar</span>
     <div class="r">
-      <span id="cw">—</span>
+      <span>Vùng vẽ <b id="cw" style="color:var(--t2);font-variant-numeric:tabular-nums">—</b></span>
       <span>1:50</span>
       <span class="vt"><span class="vtd"></span>Vitals</span>
       <span>Đã lưu 19:18</span>
@@ -432,12 +415,12 @@ addEventListener('keydown',e=>{
   const k=e.key.toLowerCase(), r=document.documentElement;
   if(k==='d'){r.dataset.theme = r.dataset.theme==='light'?'dark':'light'}
   if(k==='s'){document.body.classList.toggle('has-sel')}
-  if(k==='b'){const b=document.body; if(innerWidth<1280){b.classList.toggle('side-on')} else {b.classList.toggle('side-off')}}
+  if(k==='b'){document.body.classList.toggle('side-off')}
   measure();
 });
 function measure(){
   const c=document.querySelector('.canvas');
-  document.getElementById('cw').textContent='Vùng vẽ '+Math.round(c.getBoundingClientRect().width)+'px';
+  document.getElementById('cw').textContent=Math.round(c.getBoundingClientRect().width)+'px';
 }
 addEventListener('resize',measure); addEventListener('load',measure);
 </script>

@@ -1,15 +1,21 @@
 <!doctype html>
-<html lang="vi">
+<html lang="vi" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>InteriorFlow · AI dựng ảnh — Thiết kế 3D</title>
 <style>
-:root{--bg:#0d0d10;--panel:#15151a;--panel-2:#191920;--card:#1b1b21;--card-lit:#22222b;--field:#1a1a20;--hover:#26262f;--border:#2b2b34;--border-strong:#3c3c47;--edge:rgba(255,255,255,.07);
+:root{--ease:cubic-bezier(.32,.72,0,1)}
+:root,[data-theme="dark"]{--bg:#0d0d10;--panel:#15151a;--panel-2:#191920;--card:#1b1b21;--card-lit:#22222b;--field:#1a1a20;--hover:#26262f;--border:#2b2b34;--border-strong:#3c3c47;--edge:rgba(255,255,255,.07);
 --t1:#f4f4f7;--t2:#d4d4db;--t3:#a6a6b1;--t4:#8b8b96;--t5:#71717c;
 --sh-near:0 2px 3px rgba(0,0,0,.5);--sh-far:0 24px 60px -16px rgba(0,0,0,.8);
 --accent:#8b7cf7;--accent-2:#a99cff;--accent-deep:#6d5cf0;--accent-soft:rgba(139,124,247,.16);
---ok:#4ec98a;--ease:cubic-bezier(.32,.72,0,1)}
+--ok:#4ec98a}
+[data-theme="light"]{--bg:#f0ece4;--panel:#f9f6f0;--panel-2:#fcfaf5;--card:#fffdf8;--card-lit:#fffefb;--field:#ece7dd;--hover:#e6e0d4;--border:#e0d9cc;--border-strong:#c6bfae;--edge:rgba(0,0,0,.06);
+--t1:#1d1a15;--t2:#443f36;--t3:#5c564b;--t4:#6b655a;--t5:#847c6e;
+--sh-near:0 2px 3px rgba(72,60,42,.13);--sh-far:0 24px 60px -16px rgba(72,60,42,.26);
+--accent:#8b7cf7;--accent-2:#6d5cf0;--accent-deep:#5b48d9;--accent-soft:rgba(139,124,247,.14);
+--ok:#1f9d6b}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
 body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;font-size:13px;font-weight:400;line-height:1.55;padding:36px 40px 90px}
@@ -397,6 +403,12 @@ function syncGen(){
 minus.addEventListener('click',function(){if(n>1){n--;syncGen();}});
 plus.addEventListener('click',function(){if(n<4){n++;syncGen();}});
 syncGen();
+document.addEventListener('keydown',function(e){
+  if(e.key==='t'||e.key==='T'){
+    var r=document.documentElement;
+    r.dataset.theme=r.dataset.theme==='light'?'dark':'light';
+  }
+});
 </script>
 </body>
 </html>

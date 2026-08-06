@@ -1,14 +1,19 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IF · Mood + Collab (Miro · tablet/pen · mindmap tuỳ chọn) — xem thử</title>
 <style>
-  :root{
+  :root,[data-theme="light"]{
     --bg:#eceae7; --panel:#fff; --line:#e6e3de; --ink:#2b2b30; --mut:#9a9aa2; --mut2:#c3c1bc;
     --accent:#6a57f5; --accent-soft:#efeafe; --chip:#f4f2ef;
-    --y:#ffd64d; --g:#3fb984; --o:#e8804d; --b:#4a90e2; --pink:#e86a9a;
+    --y:#ffd64d; --g:#3fb984; --o:#e8804d; --b:#4a90e2; --pink:#e86a9a; --canvas-bg:#f3f1ee; --canvas-dot:#dcd9d3;
+  }
+  [data-theme="dark"]{
+    --bg:#0c0c0e; --panel:#1a1a1e; --line:#2a2a31; --ink:#f5f5f7; --mut:#9e9ea8; --mut2:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.16); --chip:#202024;
+    --y:#ffd64d; --g:#3fb984; --o:#e8804d; --b:#4a90e2; --pink:#e86a9a; --canvas-bg:#141417; --canvas-dot:#28282e;
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink)}
@@ -24,11 +29,11 @@
   .top{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px}
   .brand{display:flex;align-items:center;gap:8px;font-weight:650}
   .brand .mk{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:12px}
-  .btn{padding:6px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;color:#3a3a42;font-size:12.5px}
+  .btn{padding:6px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:#3a3a42;font-size:12.5px}
   .proj{color:#6b6b73}
   .switch{margin:0 auto;display:flex;gap:4px;background:var(--chip);border-radius:11px;padding:4px}
   .switch button{border:0;background:transparent;padding:7px 14px;border-radius:8px;font-size:12.5px;color:#6b6b73;display:flex;align-items:center;gap:6px}
-  .switch button.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.10)}
+  .switch button.on{background:var(--panel);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.10)}
   .top .right{display:flex;align-items:center;gap:8px}
   .presence{display:flex;align-items:center;gap:7px}
   .pgroup{display:flex;align-items:center;background:#f4f2ef;border-radius:22px;padding:4px}
@@ -53,7 +58,7 @@
   .filter b{font-weight:600;color:var(--accent)}
   .zt{font-size:10.5px;letter-spacing:.06em;color:var(--mut);font-weight:700;margin:6px 0 6px;display:flex;align-items:center;gap:6px}
   .zbox.hl .zt{color:var(--accent)}
-  .card{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px;background:#fff}
+  .card{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px;background:var(--panel)}
   .card .t{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:7px}
   .card .s{font-size:10.5px;color:var(--mut);margin-top:2px;line-height:1.35}
   .dot{width:8px;height:8px;border-radius:50%;flex:none}
@@ -63,9 +68,9 @@
   .tmpl{border:1px dashed var(--accent);border-radius:10px;padding:7px 10px;background:#f7f5ff;font-size:11px;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:6px}
   .tmpl .opt{margin-left:auto;font-size:8.5px;background:var(--accent);color:#fff;border-radius:5px;padding:1px 5px}
 
-  .canvas{flex:1;position:relative;background:radial-gradient(circle at 1px 1px,#dcd9d3 1px,transparent 0) 0 0/24px 24px,#f3f1ee;overflow:hidden}
+  .canvas{flex:1;position:relative;background:radial-gradient(circle at 1px 1px,var(--canvas-dot) 1px,transparent 0) 0 0/24px 24px,var(--canvas-bg);overflow:hidden}
   /* tablet-optimized pen toolbar (touch targets lớn) */
-  .cbar{position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:7px;box-shadow:0 6px 20px rgba(40,38,35,.12);z-index:7}
+  .cbar{position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:7px;box-shadow:0 6px 20px rgba(40,38,35,.12);z-index:7}
   .cbar .ch{font-size:8px;color:var(--mut);font-weight:700;text-align:center;letter-spacing:.03em}
   .cbar .ct{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#5a5a62}
   .cbar .ct.on{background:var(--accent-soft);color:var(--accent)}
@@ -107,9 +112,9 @@
   svg.wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 
   .bottombar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;z-index:9}
-  .modepill{display:flex;background:#fff;border:1px solid var(--line);border-radius:22px;padding:5px;box-shadow:0 6px 20px rgba(40,38,35,.12)}
+  .modepill{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:5px;box-shadow:0 6px 20px rgba(40,38,35,.12)}
   .modepill button{border:0;background:var(--accent-soft);color:var(--accent);font-weight:600;padding:8px 16px;border-radius:18px;font-size:12.5px;display:flex;align-items:center;gap:6px}
-  .modetoggle{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:8px 14px;box-shadow:0 6px 20px rgba(40,38,35,.12);font-size:12.5px;font-weight:600}
+  .modetoggle{display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:8px 14px;box-shadow:0 6px 20px rgba(40,38,35,.12);font-size:12.5px;font-weight:600}
   .swt{width:34px;height:20px;border-radius:20px;background:#dcdad5;position:relative;flex:none}
   .swt::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:2px;left:2px;box-shadow:0 1px 2px rgba(0,0,0,.2)}
 </style>
@@ -259,5 +264,13 @@
   <p><b>Hai điều Hoà nhấn:</b> ① <b>Tablet + bút đầy đủ</b> — toolbar trái có Bút · Marker · Highlight · Tẩy (nút to, chạm/pen thoải mái, palm-rejection); ví dụ khoanh tay cam “thử tông này!” là viết tay bằng pen. ② <b>Mindmap chỉ là 1 tuỳ chọn</b> — canvas trống mặc định là mặt phẳng tự do; khung lập luận kéo vào từ template khi muốn, không bắt buộc. Chất riêng IF vẫn giữ: swatch <code>matId</code> · gu → bơm vào Render.</p>
 </div>
 
+<script>
+document.addEventListener('keydown', function (e) {
+  if (e.key === 't' || e.key === 'T') {
+    var r = document.documentElement
+    r.dataset.theme = r.dataset.theme === 'light' ? 'dark' : 'light'
+  }
+})
+</script>
 </body>
 </html>

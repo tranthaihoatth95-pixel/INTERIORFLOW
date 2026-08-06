@@ -20,7 +20,7 @@ import type { Doc, Entity, TextEntity } from './model';
 import { newId, useCadStore } from './store';
 import { titleBlockPro, titleBlockTTT } from './commands';
 import { applyRealScaleToTitleBlock } from './pdf';
-import { exportDxf, parseDxf } from './dxf';
+import { exportDxf, parseDxf, parseDxfEx } from './dxf';
 import { exportIdf, importIdf } from './idf';
 import { generateLayoutOptions, type TargetRoom } from './ai-assist';
 
@@ -132,8 +132,18 @@ function testIfcSerialization() {
   ok('circle round-trip elementType=column, storey undefined', circle?.elementType === 'column' && circle?.storey === undefined);
   const text = back.entities.find((e) => e.type === 'text');
   ok('text round-trip elementType=null (đã kiểm, không phải BIM)', text?.elementType === null);
-  const plainLine = lines.find((e) => e.storey === undefined && e.elementType === undefined);
-  ok('entity không BIM giữ nguyên undefined (không tự thêm)', !!plainLine);
+  // A5 (06/08, GAP `G-M1-09`) — HÀNH VI ĐÃ ĐỔI CÓ CHỦ ĐÍCH: nạp DXF nay SUY `elementType` từ TÊN
+  // LAYER (`lib/cad/element-infer.ts`), mà layer mặc định ở đây tên 'Tường' ⇒ đường không khai gì
+  // nằm trên đó sẽ được ĐOÁN là tường. Điều test này canh giữ thì KHÔNG đổi — "không được bịa im
+  // lặng" — nên nay kiểm đúng hai vế đó:
+  //   ① suy đoán phải LỘ RA bằng cờ `inferred` (luật K3);
+  //   ② tắt bộ suy (`inferRules:null`) thì vòng XDATA round-trip vẫn KHÔNG tự thêm gì.
+  const guessed = lines.find((e) => e.storey === undefined && e.inferred === true);
+  ok('entity không khai gì → được ĐOÁN theo tên layer VÀ lộ cờ inferred (A5/K3)',
+    !!guessed && guessed.elementType === 'wall');
+  const rawLines = parseDxfEx(dxf, { inferRules: null }).doc.entities.filter((e) => e.type === 'line');
+  ok('tắt bộ suy → entity không BIM giữ nguyên undefined (không tự thêm)',
+    !!rawLines.find((e) => e.storey === undefined && e.elementType === undefined && e.inferred === undefined));
   const campathBack = back.entities.find((e) => e.type === 'polyline' && (e as { campath?: true }).campath === true);
   ok('polyline round-trip giữ campath=true', !!campathBack);
   ok('polyline campath giữ đủ 3 điểm hình học', campathBack?.type === 'polyline' && campathBack.points.length === 3);

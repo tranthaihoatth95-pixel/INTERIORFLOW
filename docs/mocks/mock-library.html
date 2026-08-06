@@ -1,13 +1,18 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IF · Master Library / Kệ Thư viện — xem thử</title>
 <style>
-  :root{
+  :root,[data-theme="light"]{
     --bg:#eceae7; --panel:#fff; --line:#e6e3de; --ink:#2b2b30; --mut:#9a9aa2; --mut2:#c3c1bc;
     --accent:#6a57f5; --accent-soft:#efeafe; --chip:#f4f2ef;
+    --o:#e8804d; --g:#3fb984; --b:#4a90e2; --pink:#e86a9a; --y:#e0a43a;
+  }
+  [data-theme="dark"]{
+    --bg:#0c0c0e; --panel:#1a1a1e; --line:#2a2a31; --ink:#f5f5f7; --mut:#9e9ea8; --mut2:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.16); --chip:#202024;
     --o:#e8804d; --g:#3fb984; --b:#4a90e2; --pink:#e86a9a; --y:#e0a43a;
   }
   *{box-sizing:border-box}
@@ -44,14 +49,14 @@
   .chead h2{font-size:17px;margin:0;font-weight:700}
   .csub{font-size:11.5px;color:var(--mut);margin-bottom:12px}
   .ctabs{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap}
-  .ctabs b{font-weight:500;font-size:11.5px;padding:6px 13px;border:1px solid var(--line);border-radius:20px;color:#6b6b73;background:#fff}
+  .ctabs b{font-weight:500;font-size:11.5px;padding:6px 13px;border:1px solid var(--line);border-radius:20px;color:#6b6b73;background:var(--panel)}
   .ctabs b.on{background:var(--ink);border-color:transparent;color:#fff;font-weight:600}
   .pubbtn{margin-left:auto;background:var(--accent);color:#fff;border:0;border-radius:9px;padding:7px 13px;font-size:12px;font-weight:600}
   .shelf{margin-top:16px}
   .shelf .st{font-size:12px;font-weight:700;color:#3a3a42;margin-bottom:9px;display:flex;align-items:center;gap:7px}
   .shelf .st .cnt{font-size:10px;color:var(--mut);font-weight:500}
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-  .cardt{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  .cardt{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
   .cardt.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
   .cardt .th{height:78px;position:relative;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600}
   .cardt .meta{padding:8px 9px}
@@ -73,14 +78,14 @@
   .prev{height:130px;border-radius:12px;background:linear-gradient(135deg,#efeafe,#e5dcff);position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
   .mini{position:absolute}
   .mmc{background:var(--accent);color:#fff;border-radius:9px;padding:6px 9px;font-size:9px;font-weight:700}
-  .mmn{background:#fff;border:1px solid var(--line);border-radius:7px;padding:3px 6px;font-size:8px;font-weight:600}
+  .mmn{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:3px 6px;font-size:8px;font-weight:600}
   .iname{font-size:14px;font-weight:700}
   .irow{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#4a4a52}
   .irow .k{color:var(--mut);width:64px;flex:none}
   .usebtn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:10px;font-size:12.5px;font-weight:600;width:100%}
   .tabs2{display:flex;gap:4px;background:var(--chip);border-radius:9px;padding:3px}
   .tabs2 b{flex:1;text-align:center;font-size:11px;padding:5px;border-radius:7px;color:#6b6b73;font-weight:500}
-  .tabs2 b.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .tabs2 b.on{background:var(--panel);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
   .cmt{display:flex;gap:8px;font-size:11px}
   .cmt .av{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#3fb984,#2a8f66);flex:none}
   .cmt .who{font-weight:700;font-size:10.5px}
@@ -199,5 +204,13 @@
   <p><b>Đọc mock:</b> ① tab <b>Render</b> đang bật → kệ chỉ hiện món chặng Render (form lập luận · moodboard/preset · vật liệu chung). ② mỗi card có <b>badge phạm vi</b>: Chung / <b>Studio</b> (dùng lại nhiều dự án) / Chặng / Dự án. ③ chọn 1 template → phải hiện inspector + <b>Kéo lên canvas để dùng</b> (instantiate, không đụng gốc). ④ <b>+ Publish lên kệ</b> = đưa bản của mình thành template mới, <b>chủ studio duyệt</b> trước khi lên kệ chung. Vật liệu <code>matId</code> nằm kệ chung, xuyên cả 2 mode + 3 chặng.</p>
 </div>
 
+<script>
+document.addEventListener('keydown', function (e) {
+  if (e.key === 't' || e.key === 'T') {
+    var r = document.documentElement
+    r.dataset.theme = r.dataset.theme === 'light' ? 'dark' : 'light'
+  }
+})
+</script>
 </body>
 </html>

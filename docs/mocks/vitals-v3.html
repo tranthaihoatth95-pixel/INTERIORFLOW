@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <title>Vitals v3 — sau khi tham khảo iOS 27</title>
@@ -7,10 +7,18 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{
+/* --page/--paper/--line-l/--t1l/--t2l KHÔNG phải theme trang — là swatch "bản sáng" cố định
+   dùng để so sánh cạnh bản tối ngay trên cùng 1 trang, GIỮ NGUYÊN. */
+:root,[data-theme="dark"]{
   --accent:#6a57f5; --accent-lit:#a99bff; --accent-hot:#e4dfff; --amber:#c79a63;
   --bg:#08080b; --panel:rgba(255,255,255,.045); --line:rgba(255,255,255,.10); --hair:rgba(255,255,255,.055);
   --t1:#f3f2ef; --t2:#9d9992; --t3:#67635b;
+  --page:#e6e1d9; --paper:#fdfcfa; --line-l:#ddd6cb; --t1l:#1b1916; --t2l:#6b645c;
+}
+[data-theme="light"]{
+  --accent:#6a57f5; --accent-lit:#8a76f0; --accent-hot:#efeafe; --amber:#c79a63;
+  --bg:#f2efe9; --panel:rgba(0,0,0,.035); --line:rgba(0,0,0,.1); --hair:rgba(0,0,0,.06);
+  --t1:#211e19; --t2:#5c564b; --t3:#9a938a;
   --page:#e6e1d9; --paper:#fdfcfa; --line-l:#ddd6cb; --t1l:#1b1916; --t2l:#6b645c;
 }
 *{box-sizing:border-box}
@@ -285,6 +293,12 @@ gPaper.querySelectorAll('.arc ellipse').forEach(e=>e.setAttribute('stroke','#6a5
 gPaper.querySelector('.orbits').style.mixBlendMode='normal';
 gPaper.querySelectorAll('.p').forEach(p=>{p.style.background='radial-gradient(circle,#6a57f5 0%,#6a57f5 58%,transparent 70%)';p.style.boxShadow='none'});
 render();
+document.addEventListener('keydown', function (e) {
+  if (e.key === 't' || e.key === 'T') {
+    var r = document.documentElement
+    r.dataset.theme = r.dataset.theme === 'light' ? 'dark' : 'light'
+  }
+})
 </script>
 </body>
 </html>

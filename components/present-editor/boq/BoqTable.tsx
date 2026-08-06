@@ -19,19 +19,26 @@ import { useCadStore } from '@/lib/cad/store';
 import type { BoqError } from '@/lib/boq/model';
 import type { BoqGroup } from '@/lib/present-editor/boq-group';
 import type { BoqDisplayRow, BoqOverrideField } from '@/lib/present-editor/boq-overrides';
-import type { BoqSpecExtra } from '@/lib/present-editor/boq-spec-extra';
+import { boqUnitLabel, type BoqSpecExtra } from '@/lib/present-editor/boq-spec-extra';
 import { BoqErrorRows } from './BoqErrors';
 
 /** Số cột THẬT của bảng — dùng cho `colSpan` của dòng lỗi/subtotal, TRÁNH lệch số cứng (đã có 1
  * lỗi thật kiểu này trước khi sửa: `BoqErrorRows` từng hardcode colSpan=9 trong khi bảng chỉ có
- * 8 cột). Đổi số cột ở HEADER dưới đây thì đổi luôn hằng số này, đừng để 2 nơi tự đếm riêng. */
-export const BOQ_TABLE_COLUMN_COUNT = 10;
+ * 8 cột). Đổi số cột ở HEADER dưới đây thì đổi luôn hằng số này, đừng để 2 nơi tự đếm riêng.
+ * 06/08 (G-M3-11): 10 → 11, thêm cột "Ảnh". */
+export const BOQ_TABLE_COLUMN_COUNT = 11;
 
 function fmtM2(n: number): string {
   return n.toFixed(2);
 }
 function fmtVnd(n: number): string {
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+/** Món ĐẾM hiện số nguyên ("8"), vùng tô hiện 2 số lẻ ("48.60") — cùng 1 cột "Khối lượng", cột
+ * "Đơn vị" bên cạnh nói rõ nó là m² hay cái. Người dùng sửa tay ra số lẻ trên dòng đếm (vd 8.5
+ * cái) thì VẪN HIỆN nguyên số lẻ đó, không làm tròn ngầm — số của họ, họ phải thấy đúng nó. */
+function fmtQty(row: { kind?: 'area' | 'count' }, n: number): string {
+  return row.kind === 'count' && Number.isInteger(n) ? String(n) : fmtM2(n);
 }
 
 export interface BoqSelectedCell {
@@ -152,7 +159,7 @@ export function BoqTable({ groups, errors, totalAmount, projectId, specExtra, on
         }}
       >
         {ov && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warning)', flexShrink: 0 }} />}
-        {field === 'm2' ? fmtM2(raw) : fmtVnd(raw)}
+        {field === 'm2' ? fmtQty(row, raw) : fmtVnd(raw)}
         {ov && (
           <button
             type="button"
@@ -176,13 +183,13 @@ export function BoqTable({ groups, errors, totalAmount, projectId, specExtra, on
         <thead>
           <tr style={{ position: 'sticky', top: 0, background: 'var(--panel)', zIndex: 2 }}>
             {[
-              '#', tr('Mã', 'Code'), tr('Hạng mục', 'Item'), tr('Quy cách', 'Spec'), tr('Đơn vị', 'Unit'), 'NCC',
+              '#', tr('Mã', 'Code'), tr('Ảnh', 'Image'), tr('Hạng mục', 'Item'), tr('Quy cách', 'Spec'), tr('Đơn vị', 'Unit'), 'NCC',
               tr('Khối lượng', 'Qty'), tr('Đơn giá ₫', 'Unit price ₫'), tr('Hao hụt %', 'Wastage %'), tr('Thành tiền ₫', 'Amount ₫'),
             ].map((h, i) => (
               <th
                 key={h + i}
                 style={{
-                  textAlign: i >= 6 ? 'right' : 'left', padding: '0 10px', height: 30, fontWeight: 600, fontSize: 11,
+                  textAlign: i >= 7 ? 'right' : 'left', padding: '0 10px', height: 30, fontWeight: 600, fontSize: 11,
                   color: 'var(--t4)', borderBottom: '1px solid var(--border-strong, var(--border))', whiteSpace: 'nowrap',
                 }}
               >
@@ -207,9 +214,30 @@ export function BoqTable({ groups, errors, totalAmount, projectId, specExtra, on
               {g.rows.map((row, i) => {
                 const extra = specExtra.get(row.matId);
                 return (
-                  <tr key={row.matId} style={{ height: 'var(--row, 28px)' }}>
+                  <tr key={`${row.kind ?? 'area'}:${row.matId}`} style={{ height: 'var(--row, 28px)' }}>
                     <td style={{ padding: '0 10px', color: 'var(--t4)', borderBottom: '1px solid var(--border)' }}>{i + 1}</td>
                     <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t4)', fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11 }}>{row.ma || '—'}</td>
+                    {/* G-M3-11 — cột ẢNH. Chưa có ảnh ⇒ ô trống CÓ VIỀN + gạch nối, không để hàng
+                        trông như "đã có ảnh" (hồ sơ gửi khách/xưởng đọc cột này là đọc cam kết). */}
+                    <td style={{ padding: '2px 10px', borderBottom: '1px solid var(--border)' }}>
+                      {extra?.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- ảnh từ /api/library/:id/file, kích thước cố định, không cần tối ưu next/image trong bảng
+                        <img
+                          src={extra.imageUrl}
+                          alt={tr(`Ảnh ${row.ten}`, `Image of ${row.ten}`)}
+                          loading="lazy"
+                          style={{ width: 34, height: 26, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)', display: 'block', background: 'var(--field)' }}
+                        />
+                      ) : (
+                        <span
+                          aria-hidden="true"
+                          title={tr('Chưa có ảnh trong kho vật liệu', 'No image in the material library')}
+                          style={{ width: 34, height: 26, display: 'grid', placeItems: 'center', borderRadius: 4, border: '1px dashed var(--border)', background: 'var(--field)', color: 'var(--t4)', fontSize: 11 }}
+                        >
+                          —
+                        </span>
+                      )}
+                    </td>
                     <td
                       onClick={() => goToModel(row.entityIds)}
                       title={tr('Bấm để xem trên bản vẽ', 'Click to view on the drawing')}
@@ -218,7 +246,9 @@ export function BoqTable({ groups, errors, totalAmount, projectId, specExtra, on
                       {row.ten}
                     </td>
                     <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t3)', fontSize: 12 }}>{extra?.quyCach ?? '—'}</td>
-                    <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t3)' }}>{extra?.unit ?? '—'}</td>
+                    {/* Đơn vị: ưu tiên `row.unit` do ENGINE quyết (m² cho vùng tô · cái/bộ cho món
+                        rời) — `specExtra.unit` chỉ là đơn vị KHAI trong kho, có thể lệch. */}
+                    <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t3)' }}>{row.unit ? boqUnitLabel(row.unit) : extra?.unit ?? '—'}</td>
                     <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t3)' }}>{row.ncc}</td>
                     <td style={{ padding: 0, borderBottom: '1px solid var(--border)' }}>{cell(row, 'm2')}</td>
                     <td style={{ padding: 0, borderBottom: '1px solid var(--border)' }}>{cell(row, 'donGia')}</td>
@@ -228,8 +258,13 @@ export function BoqTable({ groups, errors, totalAmount, projectId, specExtra, on
                 );
               })}
               <tr key={`sub-${g.key}`} style={{ background: 'color-mix(in srgb, var(--accent) 5%, var(--panel))' }}>
-                <td colSpan={6} style={{ padding: '0 10px', color: 'var(--t4)', fontSize: 11, fontWeight: 600, borderBottom: '1px solid var(--border-strong, var(--border))' }}>
+                {/* 7 = #, Mã, Ảnh, Hạng mục, Quy cách, Đơn vị, NCC — rồi 1 ô m², 2 ô trống, 1 ô tiền
+                    = 11 = BOQ_TABLE_COLUMN_COUNT. Lệch là vỡ cột (bug colSpan=9 cũ). */}
+                <td colSpan={7} style={{ padding: '0 10px', color: 'var(--t4)', fontSize: 11, fontWeight: 600, borderBottom: '1px solid var(--border-strong, var(--border))' }}>
                   {tr('Subtotal', 'Subtotal')} · {g.label}
+                  <span style={{ marginLeft: 6, fontWeight: 500, color: 'var(--t4)' }}>
+                    {tr('(m² — món tính theo cái không cộng vào cột này)', '(m² only — counted items are excluded from this column)')}
+                  </span>
                 </td>
                 <td style={{ padding: '0 10px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', borderBottom: '1px solid var(--border-strong, var(--border))' }}>{fmtM2(g.subtotalM2)}</td>
                 <td colSpan={2} style={{ borderBottom: '1px solid var(--border-strong, var(--border))' }} />

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <title>Đổi avatar — bản mẫu</title>
@@ -7,11 +7,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
-:root{
+:root,[data-theme="dark"]{
   --bg:#08080a; --panel:rgba(255,255,255,.045); --panel2:rgba(255,255,255,.028);
   --line:rgba(255,255,255,.10); --hair:rgba(255,255,255,.055);
   --t1:#f4f3f1; --t2:#9c9892; --t3:#666259;
   --accent:#6a57f5; --accent-soft:rgba(106,87,245,.16);
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:rgba(0,0,0,.035); --panel2:rgba(0,0,0,.02);
+  --line:rgba(0,0,0,.1); --hair:rgba(0,0,0,.06);
+  --t1:#211e19; --t2:#5c564b; --t3:#9a938a;
+  --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14);
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--t1);font-family:'Be Vietnam Pro',system-ui,sans-serif;font-size:14px;line-height:1.6}
@@ -253,6 +259,12 @@ rand.onclick=()=>{const r=n=>Math.floor(Math.random()*n);
   c={skin:r(6),hair:r(6),hairC:r(6),gls:r(4),hat:r(4),shirt:r(3),shirtC:r(6),exp:r(4),acc:r(4),bg:r(6)};
   paint();drawPane()};
 drawTabs();drawPane();paint();
+document.addEventListener('keydown', function (e) {
+  if (e.key === 't' || e.key === 'T') {
+    var r = document.documentElement
+    r.dataset.theme = r.dataset.theme === 'light' ? 'dark' : 'light'
+  }
+})
 </script>
 </body>
 </html>

@@ -10,7 +10,7 @@
 
 import { create } from 'zustand';
 import type { Doc, Entity, Layer, LineType, Viewport, HatchPattern, MarkupPin, PhotoEmbed, SiteImage, ZoneGroup, PaperKey, PaperOrientation } from './model';
-import { emptyDoc, ZONE_DEFAULT_OPACITY } from './model';
+import { emptyDoc, ZONE_DEFAULT_OPACITY, expandIdsByInsertGroup, entityGeomSignature } from './model';
 import { pasteEntities } from './geometry';
 import {
   cutHoleInWall as cutHoleInWallCmd,
@@ -20,6 +20,10 @@ import {
   type ArrayLinearOpts,
 } from './commands';
 import { syncHostedOpenings, expandDeleteWithHostedChildren } from './hosting';
+// A3 · G-M1-08 — neo poché vào đường bao. CÙNG KHUÔN `hosting.ts` (reconcile idempotent sau mọi
+// mutation + nở tập id lúc chọn/xoá), cố ý gọi cạnh nhau ở đúng các điểm dưới đây, KHÔNG dựng
+// đường mutation thứ hai. Xem đầu `lib/cad/poche.ts`.
+import { syncPocheAnchors, expandIdsWithPoche, propagatePocheEdits } from './poche';
 
 // Dev-only: expose store cho debugging (window.__cadStore) — cùng pattern với
 // window.__flowStore trong lib/store.ts, không lọt vào bản build production.
@@ -314,7 +318,16 @@ interface CadState {
    * `opts.n<=1` tắt mảng (xoá bậc). Cùng khuôn `cutHoleInWall`/`setEntityBevel`. */
   setEntityArrayLinear: (entityId: string, opts: ArrayLinearOpts) => void;
 
-  select: (ids: string[], additive?: boolean) => void;
+  /**
+   * A2 · G-M1-06 — `opts.insertGroup` (MỚI, mặc định `false`) nở tập chọn ra CẢ BẢN CHÈN chứa nó
+   * (`expandIdsByInsertGroup`, `model.ts`). Chữ ký cũ `select(ids, additive)` KHÔNG đổi nghĩa —
+   * mọi nơi gọi sẵn có chạy y như trước.
+   */
+  select: (ids: string[], additive?: boolean, opts?: { insertGroup?: boolean; outermostInsert?: boolean }) => void;
+  /** A2 — "bấm 1 hình = cầm cả cấu kiện". Lối gọi có TÊN cho UI, thay vì truyền cờ trần.
+   * `outermost` = leo tới bản chèn NGOÀI CÙNG (bấm cái ghế → cầm cả cụm bàn); mặc định `false`
+   * = đúng bản chèn của hình đó, xem `expandIdsByInsertGroup` (`model.ts`). */
+  selectInsertGroup: (ids: string[], additive?: boolean, outermost?: boolean) => void;
   clearSelection: () => void;
 
   /** Sprint 4 — copy-paste bàn phím: copySelection() chép các entity ĐANG chọn vào clipboard
@@ -515,7 +528,7 @@ export const useCadStore = create<CadState>((set, get) => ({
     // CÙNG lý do `addEntities` — đây mới là đường THẬT đặt cửa/cửa sổ (`CadCanvas.tsx` tool
     // "block" gọi `addEntity` đơn lẻ, không phải `addEntities`), bỏ sót ở đây = VIỆC 1 vô tác dụng
     // trên luồng đặt cửa thật.
-    set((s) => ({ doc: syncHostedOpenings({ ...s.doc, entities: [...s.doc.entities, e] }) }));
+    set((s) => ({ doc: syncPocheAnchors(syncHostedOpenings({ ...s.doc, entities: [...s.doc.entities, e] })) }));
   },
   addEntities: (es) => {
     if (!es.length) return;
@@ -524,7 +537,7 @@ export const useCadStore = create<CadState>((set, get) => ({
     // host (block cửa/cửa sổ MỚI thêm có thể vừa rơi vào 1 tường; tường MỚI thêm cũng có thể vừa
     // "nuốt" 1 cửa/cửa sổ đã đứng sẵn đó). `syncHostedOpenings` idempotent — gọi thừa không hại gì
     // khi `es` không đụng gì tới cửa/cửa sổ/tường.
-    set((s) => ({ doc: syncHostedOpenings({ ...s.doc, entities: [...s.doc.entities, ...es] }) }));
+    set((s) => ({ doc: syncPocheAnchors(syncHostedOpenings({ ...s.doc, entities: [...s.doc.entities, ...es] })) }));
   },
   updateEntities: (es) => {
     // Không sửa entity thuộc layer đang KHOÁ (thói quen CAD: layer khoá = bất khả xâm phạm).
@@ -535,7 +548,29 @@ export const useCadStore = create<CadState>((set, get) => ({
     const map = new Map(editable.map((e) => [e.id, e]));
     // Reconcile host — cửa/cửa sổ vừa bị KÉO (đổi `at`/`rot`) có thể đã rời tường cũ/sang tường
     // khác; xem comment `addEntities` ở trên.
-    set((s) => ({ doc: syncHostedOpenings({ ...s.doc, entities: s.doc.entities.map((e) => map.get(e.id) ?? e) }) }));
+    // A3 · G-M1-08 — `propagatePocheEdits` chạy TRƯỚC: đây là chỗ DUY NHẤT biết chắc nửa nào của
+    // cặp poché vừa bị người dùng sửa (`editable`), nên phải chép hình học sang nửa kia ngay tại
+    // đây; đứng sau `syncHostedOpenings` sẽ mất thông tin đó. Sửa cả cặp cùng lúc ⇒ hàm tự bỏ qua.
+    set((s) => {
+      // A3 · G-M1-07 — SỬA HÌNH LÀ RỜI KHỎI BẢN CHÈN. Hình vừa bị đổi hình học không còn là bản
+      // sao của định nghĩa block nữa; giữ `srcInsertId` thì lúc xuất nó sẽ bị gộp vào INSERT và
+      // ghi ra SAI hình. Gỡ `srcInsertId`, GIỮ `srcBlock` (vẫn cần biết "hình này từ block nào ra"
+      // cho báo cáo làm phẳng). Chỉ so VÂN TAY HÌNH HỌC (`entityGeomSignature`) — đổi màu/layer/
+      // gán `elementType` KHÔNG làm hình rời block.
+      const applied = {
+        ...s.doc,
+        entities: s.doc.entities.map((prev) => {
+          const next = map.get(prev.id);
+          if (!next) return prev;
+          if (next.srcInsertId === undefined) return next;
+          if (entityGeomSignature(next) === entityGeomSignature(prev)) return next;
+          const { srcInsertId: _left, ...rest } = next;
+          return rest as Entity;
+        }),
+      };
+      const propagated = propagatePocheEdits(applied, map.keys());
+      return { doc: syncPocheAnchors(syncHostedOpenings(propagated)) };
+    });
   },
   cutHoleInWall: (wallId, opts, kind = 'subtract') => {
     const wall = get().doc.entities.find((e) => e.id === wallId);
@@ -581,9 +616,11 @@ export const useCadStore = create<CadState>((set, get) => ({
     // "Xoá tường → xoá theo cửa/cửa sổ con" (kinh Revit, SO-KIEM-TONG §7 VIỆC 1) — mở rộng tập
     // xoá TRƯỚC khi lọc, rồi `syncHostedOpenings` dọn nốt cutter/ops mồ côi (cửa/cửa sổ bị xoá
     // trực tiếp cũng dọn được cutter của nó qua đường này, không cần nhánh riêng).
-    const expanded = expandDeleteWithHostedChildren(removable, get().doc);
+    // A3 — nở thêm nửa kia của cặp poché: xoá nét bao mà để lại mảng tô mồ côi (hoặc ngược lại)
+    // đúng là cái "sửa 1 chỗ vỡ chỗ khác" G-M1-08 nói tới.
+    const expanded = expandIdsWithPoche(expandDeleteWithHostedChildren(removable, get().doc), get().doc);
     set((s) => ({
-      doc: syncHostedOpenings({ ...s.doc, entities: s.doc.entities.filter((e) => !expanded.has(e.id)) }),
+      doc: syncPocheAnchors(syncHostedOpenings({ ...s.doc, entities: s.doc.entities.filter((e) => !expanded.has(e.id)) })),
       selection: [],
     }));
   },
@@ -591,25 +628,39 @@ export const useCadStore = create<CadState>((set, get) => ({
     const set0 = new Set(ids);
     if (!set0.size) return;
     get().snapshot();
-    const expanded = expandDeleteWithHostedChildren(set0, get().doc);
+    const expanded = expandIdsWithPoche(expandDeleteWithHostedChildren(set0, get().doc), get().doc);
     set((s) => ({
-      doc: syncHostedOpenings({ ...s.doc, entities: s.doc.entities.filter((e) => !expanded.has(e.id)) }),
+      doc: syncPocheAnchors(syncHostedOpenings({ ...s.doc, entities: s.doc.entities.filter((e) => !expanded.has(e.id)) })),
       selection: [],
     }));
   },
 
-  select: (ids, additive) =>
+  select: (ids, additive, opts) =>
     set((s) => {
       // KHÔNG cho chọn entity thuộc layer KHOÁ hoặc ĐANG ẨN (thói quen AutoCAD) → chặn luôn
       // mọi thao tác sửa/xoá/grip downstream vì selection rỗng.
       const locked = lockedLayerIds(s.doc);
       const byId = new Map(s.doc.entities.map((e) => [e.id, e]));
-      const allowed = ids.filter((id) => {
+      // A3 · G-M1-08 — chọn một nửa của cặp poché = cầm CẢ HAI (một mảng tường là MỘT vật, không
+      // phải "mảng tô" và "nét bao" rời nhau). Nở TRƯỚC bộ lọc layer khoá để nửa kia vẫn chịu đúng
+      // luật khoá như mọi entity khác.
+      const poched = expandIdsWithPoche(ids, s.doc);
+      // A2 · G-M1-06 — nở theo BẢN CHÈN. MẶC ĐỊNH TẮT có chủ đích: `select()` đang được gọi từ
+      // ~10 chỗ (`CadCanvas.tsx` 5 chỗ) cho đủ mọi việc — marquee, grip, chọn theo layer, chọn
+      // sau khi dán — bật ngầm cho tất cả sẽ đổi hành vi của những đường KHÔNG ai yêu cầu đổi.
+      // UI muốn "bấm 1 hình = cầm cả cấu kiện" thì gọi `selectInsertGroup()` phía dưới (tên nói
+      // rõ việc), hoặc `select(ids, additive, { insertGroup: true })`.
+      const widened = opts?.insertGroup
+        ? expandIdsByInsertGroup(poched, s.doc, { outermost: opts.outermostInsert })
+        : [...poched];
+      const allowed = widened.filter((id) => {
         const e = byId.get(id);
         return e ? !locked.has(e.layer) : false;
       });
       return { selection: additive ? Array.from(new Set([...s.selection, ...allowed])) : allowed };
     }),
+  selectInsertGroup: (ids, additive, outermost) =>
+    get().select(ids, additive, { insertGroup: true, outermostInsert: outermost }),
   clearSelection: () => set({ selection: [] }),
 
   copySelection: () => {

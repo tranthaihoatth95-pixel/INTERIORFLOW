@@ -18,7 +18,7 @@
  */
 
 import { computeBoq } from './compute';
-import type { Doc, HatchEntity } from '../cad/model';
+import type { Doc, HatchEntity, BlockEntity } from '../cad/model';
 import type { BoqResult, MaterialSpecLite } from './model';
 
 /**
@@ -27,13 +27,24 @@ import type { BoqResult, MaterialSpecLite } from './model';
  * đổi màu hiển thị/pattern hatch KHÔNG được kích hoạt tính lại vô ích (đúng tinh thần §4 "màu ≠
  * vật liệu"). Sắp theo id trước khi nối chuỗi — thứ tự entities trong mảng đổi (xoá rồi vẽ lại
  * đúng y hệt, undo/redo...) không làm đổi fingerprint.
+ *
+ * 06/08 (G-M3-09): THÊM `BlockEntity` — từ khi `computeBoq` đếm món rời, thêm/bớt/gán mã cho 1 cái
+ * ghế PHẢI làm BOQ tính lại. Bỏ sót chỗ này thì bug "báo giá thiếu âm thầm" quay lại dưới dạng
+ * "báo giá cũ dính trong cache". Món rời KHÔNG lấy toạ độ vào dấu vân tay (di chuyển cái ghế không
+ * đổi số lượng, không đổi tiền) — khác vùng tô, nơi toạ độ QUYẾT ĐỊNH diện tích.
  */
 export function boqFingerprint(doc: Doc): string {
-  const hatches = doc.entities.filter((e): e is HatchEntity => e.type === 'hatch');
-  const parts = hatches
-    .map((h) => `${h.id}|${h.specId ?? ''}|${h.points.map((p) => `${p.x},${p.y}`).join(';')}`)
-    .sort();
-  return parts.join('\n');
+  const parts: string[] = [];
+  for (const e of doc.entities) {
+    if (e.type === 'hatch') {
+      const h = e as HatchEntity;
+      parts.push(`h:${h.id}|${h.specId ?? ''}|${h.points.map((p) => `${p.x},${p.y}`).join(';')}`);
+    } else if (e.type === 'block') {
+      const b = e as BlockEntity;
+      parts.push(`b:${b.id}|${b.specId ?? ''}`);
+    }
+  }
+  return parts.sort().join('\n');
 }
 
 /** Fingerprint riêng cho `specs[]` — giá/hao hụt đổi ở ProductSpec (vd sync lại từ ATLAS) cũng

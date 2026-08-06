@@ -17,9 +17,11 @@ import type { Tool } from '@/lib/cad/store';
 import { useCadLiveStatus } from '@/lib/cad/live-status';
 import { useFlowStore } from '@/lib/store';
 import type { Entity, Pt, Viewport, DimEntity, LineEntity, MarkupPin, PhotoEmbed, Box, ZoneEntity } from '@/lib/cad/model';
-import { screenToWorld, worldToScreen, zoomAt, fitBox, docBox, dist, entityBox, ZONE_GROUP_META, CAMPATH_LAYER_NAME, CAMPATH_LAYER_COLOR } from '@/lib/cad/model';
+import { screenToWorld, worldToScreen, zoomAt, fitBox, dist, entityBox, ZONE_GROUP_META, CAMPATH_LAYER_NAME, CAMPATH_LAYER_COLOR } from '@/lib/cad/model';
 import { drawEntities, drawEntity } from '@/lib/cad/render';
 import { presentProjectionMemo } from '@/lib/cad/plan-present';
+// GỐC B3 (G-M1-04) — luật chọn khung nhìn "Xem vừa màn", thuần + test được bằng file DXF thật.
+import { zoomExtentsPlan, zoomFocusStatusLine, ZOOM_FULL_STATUS_LINE } from '@/lib/cad/import-summary';
 import { usePlanPresent, presentOptionsFrom } from './plan-present-store';
 import { createMarkupPin, createPhotoEmbed, nearestMarkup, nearestPhoto, formatMarkupTime } from '@/lib/cad/markup';
 import { findSnap, hitTest, idsInRect, type SnapResult } from '@/lib/cad/query';
@@ -115,6 +117,9 @@ interface Ix {
   // Cảm ứng — cờ "pointer gần nhất là ngón tay" cập nhật ở pointerdown/up, dùng để quyết định
   // hiện nút Xoá nổi (thiết bị không có bàn phím vật lý thì không dùng được phím Delete/Backspace).
   lastPointerWasTouch: boolean;
+  /** GỐC B3 — lần "Xem vừa màn" gần nhất đã CANH VÀO CỤM VẼ CHÍNH (bỏ bản sao để xa) hay chưa.
+   *  Bấm lần nữa khi cờ đang bật = xem toàn bộ. Là đường quay lại bắt buộc của G-M1-04. */
+  zoomedToCluster: boolean;
 }
 
 function css(varName: string, fallback: string): string {
@@ -313,6 +318,7 @@ export default function CadCanvas() {
     pointers: new Map(),
     pinch: null,
     lastPointerWasTouch: false,
+    zoomedToCluster: false,
   });
 
   // ── vòng vẽ rAF ──
@@ -436,11 +442,36 @@ export default function CadCanvas() {
     return { W: (c?.width ?? 1) / dpr, H: (c?.height ?? 1) / dpr, dpr };
   }
 
+  /**
+   * "Xem vừa màn" (phím F · nút toolbar · sự kiện `cad:zoom-extents`).
+   *
+   * GỐC B3 (`docs/GAP-IF.md` G-M1-04): trước đây luôn fit `docBox(doc)` = khung bao MỌI hình. Một
+   * bản sao cũ để xa trong model space (ca thật: cách gốc **12 km**) làm khung bao ra
+   * 12.311 × 15.492 m trong khi mặt bằng chỉ 34,7 × 28,1 m ⇒ bấm F xong màn hình gần như trống.
+   *
+   * Nay hỏi `zoomExtentsPlan()` (thuần, `lib/cad/import-summary.ts` — CÙNG luật với lúc nạp file,
+   * không có hai cách tính). Luật đầy đủ + lý do nằm trong docstring hàm đó; hai điểm quan trọng
+   * cho người dùng:
+   *  · Bản vẽ tay của chính người dùng KHÔNG bao giờ bị cắt — bộ lọc cụm chỉ nhận ra các layer hồ
+   *    sơ kỹ thuật (`A-Wall`/`A-Column`/…), gặp layer khác là trả `null` ⇒ chạy y hệt code cũ.
+   *  · LUÔN có đường quay lại: bấm F lần nữa thì xem toàn bộ (cờ `zoomedToCluster` bên dưới), và
+   *    thanh trạng thái nói thẳng điều đó — không để ai tưởng mình vừa mất hình.
+   */
   function zoomExtents() {
-    const { doc, setViewport } = useCadStore.getState();
+    const { doc, setViewport, setStatus } = useCadStore.getState();
     const { W, H } = screenSize();
-    const box = docBox(doc);
-    if (box) setViewport(fitBox(box, W, H, 80));
+    const wasFocused = ix.current.zoomedToCluster;
+    const plan = zoomExtentsPlan(doc, { preferFull: wasFocused });
+    if (!plan) return;
+    setViewport(fitBox(plan.box, W, H, 80));
+    if (plan.mode === 'mainCluster') {
+      ix.current.zoomedToCluster = true;
+      setStatus(zoomFocusStatusLine(plan.farEntities));
+    } else {
+      ix.current.zoomedToCluster = false;
+      // Chỉ nói khi vừa BỎ chế độ canh cụm — bản vẽ thường thì im lặng như cũ, không thêm nhiễu.
+      if (wasFocused) setStatus(ZOOM_FULL_STATUS_LINE);
+    }
     ix.current.redraw = true;
   }
 

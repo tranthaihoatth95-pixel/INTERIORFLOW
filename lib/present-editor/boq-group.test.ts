@@ -23,11 +23,11 @@ const doc: Doc = {
 };
 
 const rows: BoqRow[] = [
-  { matId: 'm1', ten: 'A', ncc: '', ma: '', m2: 10, donGia: 100_000, haoHutPhanTram: 0, thanhTien: 1_000_000, entityIds: ['h1'] },
-  { matId: 'm2', ten: 'B', ncc: '', ma: '', m2: 20, donGia: 200_000, haoHutPhanTram: 0, thanhTien: 4_000_000, entityIds: ['h2'] },
-  { matId: 'm3', ten: 'C', ncc: '', ma: '', m2: 5, donGia: 300_000, haoHutPhanTram: 0, thanhTien: 1_500_000, entityIds: ['h3'] },
-  { matId: 'm4', ten: 'D', ncc: '', ma: '', m2: 8, donGia: 50_000, haoHutPhanTram: 0, thanhTien: 400_000, entityIds: ['h4'] },
-  { matId: 'm5', ten: 'E-vắt-2-tầng', ncc: '', ma: '', m2: 3, donGia: 10_000, haoHutPhanTram: 0, thanhTien: 30_000, entityIds: ['h3', 'h5'] },
+  { matId: 'm1', ten: 'A', ncc: '', ma: '', m2: 10, qty: 10, unit: 'm2', kind: 'area', donGia: 100_000, haoHutPhanTram: 0, thanhTien: 1_000_000, entityIds: ['h1'] },
+  { matId: 'm2', ten: 'B', ncc: '', ma: '', m2: 20, qty: 20, unit: 'm2', kind: 'area', donGia: 200_000, haoHutPhanTram: 0, thanhTien: 4_000_000, entityIds: ['h2'] },
+  { matId: 'm3', ten: 'C', ncc: '', ma: '', m2: 5, qty: 5, unit: 'm2', kind: 'area', donGia: 300_000, haoHutPhanTram: 0, thanhTien: 1_500_000, entityIds: ['h3'] },
+  { matId: 'm4', ten: 'D', ncc: '', ma: '', m2: 8, qty: 8, unit: 'm2', kind: 'area', donGia: 50_000, haoHutPhanTram: 0, thanhTien: 400_000, entityIds: ['h4'] },
+  { matId: 'm5', ten: 'E-vắt-2-tầng', ncc: '', ma: '', m2: 3, qty: 3, unit: 'm2', kind: 'area', donGia: 10_000, haoHutPhanTram: 0, thanhTien: 30_000, entityIds: ['h3', 'h5'] },
 ];
 
 console.log('\n[1] nhóm đúng theo storey');
@@ -93,10 +93,10 @@ const roomDoc: Doc = {
 };
 
 const roomRows: BoqRow[] = [
-  { matId: 'r1', ten: 'Sàn ngủ', ncc: '', ma: '', m2: 10, donGia: 100_000, haoHutPhanTram: 0, thanhTien: 1_000_000, entityIds: ['hr1'] },
-  { matId: 'r2', ten: 'Sàn khách', ncc: '', ma: '', m2: 20, donGia: 200_000, haoHutPhanTram: 0, thanhTien: 4_000_000, entityIds: ['hr2'] },
-  { matId: 'r3', ten: 'Vắt 2 phòng', ncc: '', ma: '', m2: 3, donGia: 10_000, haoHutPhanTram: 0, thanhTien: 30_000, entityIds: ['hr1', 'hr2'] },
-  { matId: 'r4', ten: 'Không tìm thấy vùng tô', ncc: '', ma: '', m2: 1, donGia: 1_000, haoHutPhanTram: 0, thanhTien: 1_000, entityIds: ['khong-ton-tai'] },
+  { matId: 'r1', ten: 'Sàn ngủ', ncc: '', ma: '', m2: 10, qty: 10, unit: 'm2', kind: 'area', donGia: 100_000, haoHutPhanTram: 0, thanhTien: 1_000_000, entityIds: ['hr1'] },
+  { matId: 'r2', ten: 'Sàn khách', ncc: '', ma: '', m2: 20, qty: 20, unit: 'm2', kind: 'area', donGia: 200_000, haoHutPhanTram: 0, thanhTien: 4_000_000, entityIds: ['hr2'] },
+  { matId: 'r3', ten: 'Vắt 2 phòng', ncc: '', ma: '', m2: 3, qty: 3, unit: 'm2', kind: 'area', donGia: 10_000, haoHutPhanTram: 0, thanhTien: 30_000, entityIds: ['hr1', 'hr2'] },
+  { matId: 'r4', ten: 'Không tìm thấy vùng tô', ncc: '', ma: '', m2: 1, qty: 1, unit: 'm2', kind: 'area', donGia: 1_000, haoHutPhanTram: 0, thanhTien: 1_000, entityIds: ['khong-ton-tai'] },
 ];
 
 console.log('\n[5] nhóm theo phòng — gán đúng phòng GẦN NHẤT khi không có biên khép kín, cờ inferred=true');
@@ -130,7 +130,7 @@ console.log('\n[7] nhóm theo phòng — entityIds không khớp hatch nào ⇒ 
 console.log('\n[8] nhóm theo phòng — dự án KHÔNG có nhãn phòng nào ⇒ tất cả "Chưa gán phòng", không suy đoán mù');
 {
   const noRoomDoc: Doc = { entities: [hatchAt('h1', 0, 0)], layers: [] };
-  const rows: BoqRow[] = [{ matId: 'x', ten: 'X', ncc: '', ma: '', m2: 1, donGia: 1, haoHutPhanTram: 0, thanhTien: 1, entityIds: ['h1'] }];
+  const rows: BoqRow[] = [{ matId: 'x', ten: 'X', ncc: '', ma: '', m2: 1, qty: 1, unit: 'm2', kind: 'area', donGia: 1, haoHutPhanTram: 0, thanhTien: 1, entityIds: ['h1'] }];
   const groups = groupBoqRowsByRoom(rows, noRoomDoc);
   ok('1 nhóm "Chưa gán phòng"', groups.length === 1 && groups[0].label === NO_ROOM_LABEL);
   ok('KHÔNG bật inferred khi không có gì để suy đoán từ', groups[0].inferred === false);
@@ -148,6 +148,38 @@ console.log('\n[10] groupBoqRows(mode) điều phối đúng hàm');
 {
   ok('mode=storey', groupBoqRows(rows, doc, 'storey').length === groupBoqRowsByStorey(rows, doc).length);
   ok('mode=room', groupBoqRows(roomRows, roomDoc, 'room').length === groupBoqRowsByRoom(roomRows, roomDoc).length);
+}
+
+/* ═══ [11] G-M3-09 (06/08) — dòng ĐẾM (cái/bộ) KHÔNG cộng vào cột m², nhưng VẪN cộng tiền ═══ */
+console.log('\n[11] dòng đếm không làm bẩn subtotal m²');
+{
+  const mixDoc: Doc = { entities: [hatch('h1', 'GF'), { id: 'b1', type: 'block', layer: 'L', storey: 'GF', block: 'chair', at: { x: 0, y: 0 }, rot: 0, sx: 1, sy: 1 } as unknown as Entity], layers: [] };
+  const mixRows: BoqRow[] = [
+    { matId: 'san', ten: 'Sàn', ncc: '', ma: '', m2: 24.6, qty: 24.6, unit: 'm2', kind: 'area', donGia: 100_000, haoHutPhanTram: 0, thanhTien: 2_460_000, entityIds: ['h1'] },
+    { matId: 'ghe', ten: 'Ghế', ncc: '', ma: '', m2: 8, qty: 8, unit: 'cai', kind: 'count', donGia: 1_200_000, haoHutPhanTram: 0, thanhTien: 9_600_000, entityIds: ['b1'] },
+  ];
+  const g = groupBoqRowsByStorey(mixRows, mixDoc)[0];
+  ok('cả 2 dòng vẫn nằm trong nhóm (không giấu dòng nào)', g.rows.length === 2);
+  ok('subtotalM2 = 24.6 (KHÔNG phải 32.6 — không cộng 8 cái ghế vào m²)', g.subtotalM2 === 24.6);
+  ok('subtotalAmount VẪN cộng cả 2 = 12.060.000', g.subtotalAmount === 12_060_000);
+}
+
+/* ═══ [12] nhóm theo PHÒNG nhận cả MÓN RỜI (điểm đặt `at`), không dồn hết vào "Chưa gán phòng" ═══ */
+console.log('\n[12] món rời cũng được gán phòng theo điểm đặt');
+{
+  const d: Doc = {
+    entities: [
+      { id: 't1', type: 'text', layer: 'l-text', at: { x: 1000, y: 1000 }, text: 'PHÒNG ĂN', h: 200 } as unknown as Entity,
+      { id: 'b9', type: 'block', layer: 'L', block: 'chair', at: { x: 1100, y: 1100 }, rot: 0, sx: 1, sy: 1 } as unknown as Entity,
+    ],
+    layers: [],
+  };
+  const r: BoqRow[] = [
+    { matId: 'ghe', ten: 'Ghế', ncc: '', ma: '', m2: 4, qty: 4, unit: 'cai', kind: 'count', donGia: 1_000, haoHutPhanTram: 0, thanhTien: 4_000, entityIds: ['b9'] },
+  ];
+  const groups = groupBoqRowsByRoom(r, d);
+  ok('KHÔNG rơi vào "Chưa gán phòng"', groups[0]?.label !== NO_ROOM_LABEL);
+  ok('gán vào phòng có nhãn gần nhất', (groups[0]?.label ?? '').toUpperCase().includes('PHÒNG ĂN'));
 }
 
 console.log(`\nKẾT QUẢ: ${pass} pass, ${fail} fail`);

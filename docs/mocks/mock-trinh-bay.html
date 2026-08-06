@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="./support.js"></script>
 </head>
 <body>
 <x-dc>
@@ -40,7 +39,7 @@ a:hover{color:var(--accent-strong)}
 </style>
 </helmet>
 
-<div style="min-height:100vh;background:var(--bg);padding:36px 40px 72px;font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
+<div style="min-height:100vh;background:var(--bg);padding:36px 40px 72px;font-weight:400;font-size:14px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
 
   <div style="width:1440px;margin:0 auto 30px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
     <div style="min-width:0">
@@ -51,14 +50,14 @@ a:hover{color:var(--accent-strong)}
       </div>
       <div style="margin-top:8px;font-size:12px;color:var(--t3);max-width:820px;text-wrap:pretty">Chặng Trình bày · cùng khung sáu ổ với hai màn trước. Chọn loại hồ sơ, rồi mở soạn thảo ngay trong cùng khung.</div>
     </div>
-    <button onClick="{{ toggleTheme }}" style="height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font:600 12px inherit;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">{{ themeLabel }}</button>
+    <button id="themeToggleBtn" onclick="var r=document.documentElement,nx=r.dataset.theme==='light'?'dark':'light';r.dataset.theme=nx;this.textContent=nx==='light'?'☀️ Sáng':'🌙 Tối'" style="height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">🌙 Tối</button>
   </div>
 
   <div style="width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:44px">
 
     <div data-screen-label="01">
       <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">01</span>
+        <span style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">01</span>
         <span style="font-size:12px;font-weight:600;color:var(--t2)">Chọn loại hồ sơ</span>
         <span style="font-size:11px;color:var(--t4)">Năm thẻ lớn · bên dưới là hồ sơ gần đây · cột phải để trống</span>
       </div>
@@ -68,13 +67,13 @@ a:hover{color:var(--accent-strong)}
           <header style="grid-column:1/4;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 10px 0 12px;background:var(--panel);border-bottom:1px solid var(--border)">
             <div style="display:flex;align-items:center;gap:9px;min-width:0">
               <div style="width:20px;height:20px;border-radius:6px;background:var(--accent);flex:none"></div>
-              <span style="font-size:14px;font-weight:600;white-space:nowrap;letter-spacing:-.01em">{{ project }}</span>
+              <span style="font-size:14px;font-weight:600;white-space:nowrap;letter-spacing:-.01em">Dự án mẫu</span>
               <span style="display:inline-flex;align-items:center;height:15px;padding:0 5px;border-radius:5px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700">PLACEHOLDER</span>
             </div>
             <div style="display:inline-flex;background:var(--field);border-radius:10px;padding:2px">
-              <button style="border:0;background:transparent;color:var(--t3);font:400 12px inherit;padding:4px 16px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)" style-hover="color:var(--t1)">2D</button>
-              <button style="border:0;background:transparent;color:var(--t3);font:400 12px inherit;padding:4px 16px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)" style-hover="color:var(--t1)">3D</button>
-              <button style="border:0;background:var(--panel);color:var(--t1);font:600 12px inherit;padding:4px 16px;border-radius:8px;cursor:pointer;box-shadow:var(--shadow-node)">Trình bày</button>
+              <button style="border:0;background:transparent;color:var(--t3);font-weight:400;font-size:12px;padding:4px 16px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)" style-hover="color:var(--t1)">2D</button>
+              <button style="border:0;background:transparent;color:var(--t3);font-weight:400;font-size:12px;padding:4px 16px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)" style-hover="color:var(--t1)">3D</button>
+              <button style="border:0;background:var(--panel);color:var(--t1);font-weight:600;font-size:12px;padding:4px 16px;border-radius:8px;cursor:pointer;box-shadow:var(--shadow-node)">Trình bày</button>
             </div>
             <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px">
               <span style="font-size:11px;color:var(--t4)">Tự lưu</span>
@@ -90,44 +89,44 @@ a:hover{color:var(--accent-strong)}
               <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--accent-soft);border-left:2px solid var(--accent)">
                 <span style="width:10px;height:10px;border-radius:3px;background:var(--accent);flex:none"></span>
                 <span style="flex:1;font-size:12px;font-weight:600;color:var(--accent)">Tất cả hồ sơ</span>
-                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--accent)">23</span>
+                <span style="font-weight:400;font-size:10px;font-family:ui-monospace,Menlo,monospace;color:var(--accent)">23</span>
               </div>
               <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                 <span style="width:10px;height:10px;border-radius:3px;background:var(--t2);flex:none"></span>
                 <span style="flex:1;font-size:12px;color:var(--t2)">Thuyết trình</span>
-                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">6</span>
+                <span style="font-weight:400;font-size:10px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">6</span>
               </div>
               <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                 <span style="width:10px;height:10px;border-radius:3px;background:#c79a63;flex:none"></span>
                 <span style="flex:1;font-size:12px;color:var(--t2)">Bảng vật liệu</span>
-                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">4</span>
+                <span style="font-weight:400;font-size:10px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">4</span>
               </div>
               <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                 <span style="width:10px;height:10px;border-radius:3px;background:var(--success);flex:none"></span>
                 <span style="flex:1;font-size:12px;color:var(--t2)">Bảng khối lượng</span>
-                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">3</span>
+                <span style="font-weight:400;font-size:10px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">3</span>
               </div>
               <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                 <span style="width:10px;height:10px;border-radius:3px;background:var(--t2);flex:none"></span>
                 <span style="flex:1;font-size:12px;color:var(--t2)">Văn bản</span>
-                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">8</span>
+                <span style="font-weight:400;font-size:10px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">8</span>
               </div>
               <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                 <span style="width:10px;height:10px;border-radius:3px;background:var(--warning);flex:none"></span>
                 <span style="flex:1;font-size:12px;color:var(--t2)">Video</span>
-                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">2</span>
+                <span style="font-weight:400;font-size:10px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">2</span>
               </div>
 
               <div style="height:22px;display:flex;align-items:center;padding:14px 12px 0;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t5)">Trạng thái</div>
               <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                 <span style="width:7px;height:7px;border-radius:50%;background:var(--warning);flex:none"></span>
                 <span style="flex:1;font-size:12px;color:var(--t2)">Đang soạn</span>
-                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">5</span>
+                <span style="font-weight:400;font-size:10px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">5</span>
               </div>
               <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                 <span style="width:7px;height:7px;border-radius:50%;background:var(--success);flex:none"></span>
                 <span style="flex:1;font-size:12px;color:var(--t2)">Đã gửi khách</span>
-                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">18</span>
+                <span style="font-weight:400;font-size:10px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">18</span>
               </div>
             </div>
             <div style="height:30px;display:flex;align-items:center;padding:0 12px;border-top:1px solid var(--border);font-size:11px;color:var(--t4);flex:none">23 hồ sơ · PLACEHOLDER</div>
@@ -249,31 +248,31 @@ a:hover{color:var(--accent-strong)}
                   <div style="display:grid;grid-template-columns:1fr 150px 130px 150px;gap:12px;height:38px;align-items:center;padding:0 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                     <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:var(--success);flex:none"></span><span style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Khối lượng hoàn thiện tầng trệt</span></span>
                     <span style="font-size:12px;color:var(--t3)">Bảng khối lượng</span>
-                    <span style="font:400 12px ui-monospace,Menlo,monospace;color:var(--t3)">14:32</span>
+                    <span style="font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;color:var(--t3)">14:32</span>
                     <span style="font-size:12px;color:var(--t3)">Ngọc Trâm</span>
                   </div>
                   <div style="display:grid;grid-template-columns:1fr 150px 130px 150px;gap:12px;height:38px;align-items:center;padding:0 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                     <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:var(--accent);flex:none"></span><span style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Trình bày phương án hai cho khách</span></span>
                     <span style="font-size:12px;color:var(--t3)">Thuyết trình</span>
-                    <span style="font:400 12px ui-monospace,Menlo,monospace;color:var(--t3)">Hôm qua</span>
+                    <span style="font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;color:var(--t3)">Hôm qua</span>
                     <span style="font-size:12px;color:var(--t3)">Minh Khoa</span>
                   </div>
                   <div style="display:grid;grid-template-columns:1fr 150px 130px 150px;gap:12px;height:38px;align-items:center;padding:0 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                     <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:#c79a63;flex:none"></span><span style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Bảng vật liệu phòng khách</span></span>
                     <span style="font-size:12px;color:var(--t3)">Bảng vật liệu</span>
-                    <span style="font:400 12px ui-monospace,Menlo,monospace;color:var(--t3)">3 ngày</span>
+                    <span style="font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;color:var(--t3)">3 ngày</span>
                     <span style="font-size:12px;color:var(--t3)">Ngọc Trâm</span>
                   </div>
                   <div style="display:grid;grid-template-columns:1fr 150px 130px 150px;gap:12px;height:38px;align-items:center;padding:0 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                     <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:var(--t3);flex:none"></span><span style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Biên bản duyệt mẫu đợt một</span></span>
                     <span style="font-size:12px;color:var(--t3)">Văn bản</span>
-                    <span style="font:400 12px ui-monospace,Menlo,monospace;color:var(--t3)">5 ngày</span>
+                    <span style="font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;color:var(--t3)">5 ngày</span>
                     <span style="font-size:12px;color:var(--t3)">Thu Hà</span>
                   </div>
                   <div style="display:grid;grid-template-columns:1fr 150px 130px 150px;gap:12px;height:38px;align-items:center;padding:0 14px;cursor:pointer;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                     <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:var(--warning);flex:none"></span><span style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Phim đi xuyên căn hộ, bản nháp</span></span>
                     <span style="font-size:12px;color:var(--t3)">Video</span>
-                    <span style="font:400 12px ui-monospace,Menlo,monospace;color:var(--t3)">Tuần trước</span>
+                    <span style="font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;color:var(--t3)">Tuần trước</span>
                     <span style="font-size:12px;color:var(--t3)">Minh Khoa</span>
                   </div>
                 </div>
@@ -281,7 +280,7 @@ a:hover{color:var(--accent-strong)}
             </div>
 
             <div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:1px;padding:4px;border-radius:14px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
-              <button title="Tạo hồ sơ mới — N" style="height:var(--tap);padding:0 13px;display:flex;align-items:center;gap:7px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:600 12px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
+              <button title="Tạo hồ sơ mới — N" style="height:var(--tap);padding:0 13px;display:flex;align-items:center;gap:7px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:12px;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg>
                 Hồ sơ mới
               </button>
@@ -308,7 +307,7 @@ a:hover{color:var(--accent-strong)}
 
           <footer style="grid-column:1/4;display:flex;align-items:center;gap:14px;padding:0 10px 0 8px;background:var(--panel);border-top:1px solid var(--border)">
             <div style="display:flex;align-items:center;gap:6px;height:18px;padding:0 8px;border-radius:8px;background:var(--field);min-width:230px">
-              <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">›</span>
+              <span style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">›</span>
               <span style="font-size:11px;color:var(--t4)">Gõ lệnh hoặc tên hồ sơ rồi bấm Enter</span>
             </div>
             <span style="font-size:11px;color:var(--t3)">Chọn một loại hồ sơ để bắt đầu</span>
@@ -322,7 +321,7 @@ a:hover{color:var(--accent-strong)}
 
     <div data-screen-label="02">
       <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">02</span>
+        <span style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">02</span>
         <span style="font-size:12px;font-weight:600;color:var(--t2)">Đang soạn bảng khối lượng</span>
         <span style="font-size:11px;color:var(--t4)">Một ô đang sửa tay, có dấu hiệu nhỏ báo đã rời khỏi mô hình</span>
       </div>
@@ -332,14 +331,14 @@ a:hover{color:var(--accent-strong)}
           <header style="grid-column:1/4;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 10px 0 12px;background:var(--panel);border-bottom:1px solid var(--border)">
             <div style="display:flex;align-items:center;gap:9px;min-width:0">
               <div style="width:20px;height:20px;border-radius:6px;background:var(--accent);flex:none"></div>
-              <span style="font-size:14px;font-weight:600;white-space:nowrap;letter-spacing:-.01em">{{ project }}</span>
+              <span style="font-size:14px;font-weight:600;white-space:nowrap;letter-spacing:-.01em">Dự án mẫu</span>
               <span style="color:var(--t5)">›</span>
               <span style="font-size:12px;color:var(--t3);white-space:nowrap">Khối lượng hoàn thiện tầng trệt</span>
             </div>
             <div style="display:inline-flex;background:var(--field);border-radius:10px;padding:2px">
-              <button style="border:0;background:transparent;color:var(--t3);font:400 12px inherit;padding:4px 16px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)" style-hover="color:var(--t1)">2D</button>
-              <button style="border:0;background:transparent;color:var(--t3);font:400 12px inherit;padding:4px 16px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)" style-hover="color:var(--t1)">3D</button>
-              <button style="border:0;background:var(--panel);color:var(--t1);font:600 12px inherit;padding:4px 16px;border-radius:8px;cursor:pointer;box-shadow:var(--shadow-node)">Trình bày</button>
+              <button style="border:0;background:transparent;color:var(--t3);font-weight:400;font-size:12px;padding:4px 16px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)" style-hover="color:var(--t1)">2D</button>
+              <button style="border:0;background:transparent;color:var(--t3);font-weight:400;font-size:12px;padding:4px 16px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)" style-hover="color:var(--t1)">3D</button>
+              <button style="border:0;background:var(--panel);color:var(--t1);font-weight:600;font-size:12px;padding:4px 16px;border-radius:8px;cursor:pointer;box-shadow:var(--shadow-node)">Trình bày</button>
             </div>
             <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px">
               <span style="font-size:11px;color:var(--t4)">Tự lưu</span>
@@ -355,27 +354,27 @@ a:hover{color:var(--accent-strong)}
               <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--accent-soft);border-left:2px solid var(--accent)">
                 <span style="width:10px;height:10px;border-radius:3px;background:var(--accent);flex:none"></span>
                 <span style="flex:1;font-size:12px;font-weight:600;color:var(--accent)">Hoàn thiện tường</span>
-                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--accent)">6</span>
+                <span style="font-weight:400;font-size:10px;font-family:ui-monospace,Menlo,monospace;color:var(--accent)">6</span>
               </div>
               <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                 <span style="width:10px;height:10px;border-radius:3px;background:#c79a63;flex:none"></span>
                 <span style="flex:1;font-size:12px;color:var(--t2)">Hoàn thiện sàn</span>
-                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">4</span>
+                <span style="font-weight:400;font-size:10px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">4</span>
               </div>
               <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                 <span style="width:10px;height:10px;border-radius:3px;background:var(--t2);flex:none"></span>
                 <span style="flex:1;font-size:12px;color:var(--t2)">Trần và đèn</span>
-                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">5</span>
+                <span style="font-weight:400;font-size:10px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">5</span>
               </div>
               <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                 <span style="width:10px;height:10px;border-radius:3px;background:var(--success);flex:none"></span>
                 <span style="flex:1;font-size:12px;color:var(--t2)">Đồ rời</span>
-                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">7</span>
+                <span style="font-weight:400;font-size:10px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">7</span>
               </div>
               <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 12px;border-left:2px solid transparent;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
                 <span style="width:10px;height:10px;border-radius:3px;background:var(--warning);flex:none"></span>
                 <span style="flex:1;font-size:12px;color:var(--t2)">Nhân công</span>
-                <span style="font:400 10px ui-monospace,Menlo,monospace;color:var(--t5)">3</span>
+                <span style="font-weight:400;font-size:10px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">3</span>
               </div>
 
               <div style="height:22px;display:flex;align-items:center;padding:14px 12px 0;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t5)">Nguồn số liệu</div>
@@ -383,12 +382,12 @@ a:hover{color:var(--accent-strong)}
                 <div style="display:flex;align-items:center;gap:8px">
                   <span style="width:7px;height:7px;border-radius:50%;background:var(--success);flex:none"></span>
                   <span style="flex:1;font-size:11px;color:var(--t3)">Lấy từ mô hình</span>
-                  <span style="font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">22</span>
+                  <span style="font-weight:400;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t4)">22</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px">
                   <span style="width:7px;height:7px;border-radius:50%;background:var(--warning);flex:none"></span>
                   <span style="flex:1;font-size:11px;color:var(--t3)">Đã sửa tay</span>
-                  <span style="font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">3</span>
+                  <span style="font-weight:400;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t4)">3</span>
                 </div>
               </div>
             </div>
@@ -407,7 +406,7 @@ a:hover{color:var(--accent-strong)}
                   <span style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:20px;background:var(--field);color:var(--t3);font-size:11px">
                     <span style="width:6px;height:6px;border-radius:50%;background:var(--warning)"></span>3 ô đã sửa tay
                   </span>
-                  <button style="height:32px;padding:0 15px;display:flex;align-items:center;gap:7px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:600 12px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
+                  <button style="height:32px;padding:0 15px;display:flex;align-items:center;gap:7px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:12px;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
                     <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v8M5 8l3 3 3-3M3 13h10"></path></svg>
                     Xuất bảng tính
                   </button>
@@ -431,44 +430,44 @@ a:hover{color:var(--accent-strong)}
                   </div>
 
                   <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
-                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">01</span>
+                    <span style="padding:0 10px;font-weight:400;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t4)">01</span>
                     <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Sơn tường trong nhà, hai nước</span></span>
                     <span style="padding:0 10px;color:var(--t3)">mét vuông</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">184.20</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">92 000</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">16 946 400</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">184.20</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">92 000</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">16 946 400</span>
                   </div>
 
                   <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
-                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">02</span>
+                    <span style="padding:0 10px;font-weight:400;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t4)">02</span>
                     <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Ốp gỗ sồi mặt tường phòng khách</span></span>
                     <span style="padding:0 10px;color:var(--t3)">mét vuông</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">26.40</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">1 250 000</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">33 000 000</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">26.40</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">1 250 000</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">33 000 000</span>
                   </div>
 
                   <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;background:var(--accent-soft)">
-                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--accent)">03</span>
+                    <span style="padding:0 10px;font-weight:400;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--accent)">03</span>
                     <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--warning);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600">Bả matit và xử lý chân tường</span></span>
                     <span style="padding:0 10px;color:var(--t3)">mét dài</span>
                     <span style="padding:0 10px;position:relative;display:flex;align-items:center;justify-content:flex-end">
-                      <span style="position:relative;display:inline-flex;align-items:center;justify-content:flex-end;height:24px;min-width:78px;padding:0 8px;border-radius:8px;background:var(--card);border:1px solid var(--accent);box-shadow:0 0 0 3px var(--accent-soft);font:600 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">
+                      <span style="position:relative;display:inline-flex;align-items:center;justify-content:flex-end;height:24px;min-width:78px;padding:0 8px;border-radius:8px;background:var(--card);border:1px solid var(--accent);box-shadow:0 0 0 3px var(--accent-soft);font-weight:600;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">
                         48.60
                         <span style="position:absolute;top:-3px;right:-3px;width:7px;height:7px;border-radius:50%;background:var(--warning);border:1.5px solid var(--panel)"></span>
                       </span>
                     </span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">145 000</span>
-                    <span style="padding:0 10px;text-align:right;font:600 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">7 047 000</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">145 000</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:600;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">7 047 000</span>
                   </div>
 
                   <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
-                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">04</span>
+                    <span style="padding:0 10px;font-weight:400;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t4)">04</span>
                     <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Nẹp chân tường nhôm mờ</span></span>
                     <span style="padding:0 10px;color:var(--t3)">mét dài</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">52.80</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">186 000</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">9 820 800</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">52.80</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">186 000</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">9 820 800</span>
                   </div>
 
                   <div style="height:26px;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--card);border-bottom:1px solid var(--border)">
@@ -477,21 +476,21 @@ a:hover{color:var(--accent-strong)}
                   </div>
 
                   <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
-                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">05</span>
+                    <span style="padding:0 10px;font-weight:400;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t4)">05</span>
                     <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Sàn gỗ sồi ghép thanh, dày 15</span></span>
                     <span style="padding:0 10px;color:var(--t3)">mét vuông</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">44.75</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">1 480 000</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">66 230 000</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">44.75</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">1 480 000</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">66 230 000</span>
                   </div>
 
                   <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
-                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">06</span>
+                    <span style="padding:0 10px;font-weight:400;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t4)">06</span>
                     <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Gạch nung phòng tắm, chống trượt</span></span>
                     <span style="padding:0 10px;color:var(--t3)">mét vuông</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">9.80</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">620 000</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">6 076 000</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">9.80</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">620 000</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">6 076 000</span>
                   </div>
 
                   <div style="height:26px;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--card);border-bottom:1px solid var(--border)">
@@ -500,21 +499,21 @@ a:hover{color:var(--accent-strong)}
                   </div>
 
                   <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
-                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">07</span>
+                    <span style="padding:0 10px;font-weight:400;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t4)">07</span>
                     <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Trần thạch cao phẳng, khung chìm</span></span>
                     <span style="padding:0 10px;color:var(--t3)">mét vuông</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">72.95</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">385 000</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">28 085 750</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">72.95</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">385 000</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">28 085 750</span>
                   </div>
 
                   <div style="display:grid;grid-template-columns:44px 1fr 96px 128px 148px 168px;height:34px;align-items:center;border-bottom:1px solid var(--border);font-size:12px;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
-                    <span style="padding:0 10px;font:400 11px ui-monospace,Menlo,monospace;color:var(--t4)">08</span>
+                    <span style="padding:0 10px;font-weight:400;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t4)">08</span>
                     <span style="padding:0 10px;display:flex;align-items:center;gap:7px;min-width:0"><span style="width:6px;height:6px;border-radius:50%;background:var(--warning);flex:none"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Đèn thả trần bàn ăn, ba bóng</span></span>
                     <span style="padding:0 10px;color:var(--t3)">bộ</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">1</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">8 400 000</span>
-                    <span style="padding:0 10px;text-align:right;font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">8 400 000</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">1</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t2)">8 400 000</span>
+                    <span style="padding:0 10px;text-align:right;font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums">8 400 000</span>
                   </div>
                 </div>
 
@@ -524,7 +523,7 @@ a:hover{color:var(--accent-strong)}
                   <span></span>
                   <span></span>
                   <span></span>
-                  <span style="padding:0 10px;text-align:right;font:600 14px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">175 605 950</span>
+                  <span style="padding:0 10px;text-align:right;font-weight:600;font-size:14px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">175 605 950</span>
                 </div>
               </div>
             </div>
@@ -552,8 +551,8 @@ a:hover{color:var(--accent-strong)}
               <span style="width:7px;height:7px;border-radius:50%;background:var(--warning);flex:none;margin-top:5px"></span>
               <div style="min-width:0">
                 <div style="font-size:12px;font-weight:600;color:var(--t1)">Ô khối lượng đã sửa tay</div>
-                <div style="font-size:11px;color:var(--t4);margin-top:3px;line-height:1.5;text-wrap:pretty">Số này không còn theo mô hình. Mô hình cho <span style="font:400 11px ui-monospace,Menlo,monospace">44.20</span>.</div>
-                <button style="margin-top:8px;height:26px;padding:0 11px;border:1px solid var(--border);border-radius:8px;background:var(--panel);color:var(--t1);font:600 11px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover)">Lấy lại số từ mô hình</button>
+                <div style="font-size:11px;color:var(--t4);margin-top:3px;line-height:1.5;text-wrap:pretty">Số này không còn theo mô hình. Mô hình cho <span style="font-weight:400;font-size:11px;font-family:ui-monospace,Menlo,monospace">44.20</span>.</div>
+                <button style="margin-top:8px;height:26px;padding:0 11px;border:1px solid var(--border);border-radius:8px;background:var(--panel);color:var(--t1);font-weight:600;font-size:11px;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover)">Lấy lại số từ mô hình</button>
               </div>
             </div>
 
@@ -566,15 +565,15 @@ a:hover{color:var(--accent-strong)}
                 </div>
                 <div style="height:28px;background:var(--field);border:1px solid var(--accent);border-radius:10px;padding:0 9px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 0 0 3px var(--accent-soft)">
                   <span style="font-size:11px;font-weight:600;color:var(--accent)">Khối lượng</span>
-                  <span style="font:600 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--accent)">48.60</span>
+                  <span style="font-weight:600;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--accent)">48.60</span>
                 </div>
                 <div style="height:28px;background:var(--field);border-radius:10px;padding:0 9px;display:flex;align-items:center;justify-content:space-between">
                   <span style="font-size:11px;font-weight:600;color:var(--t4)">Đơn giá</span>
-                  <span style="font:400 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">145 000</span>
+                  <span style="font-weight:400;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">145 000</span>
                 </div>
                 <div style="height:28px;background:var(--field);border-radius:10px;padding:0 9px;display:flex;align-items:center;justify-content:space-between">
                   <span style="font-size:11px;font-weight:600;color:var(--t4)">Thành tiền</span>
-                  <span style="font:600 12px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">7 047 000</span>
+                  <span style="font-weight:600;font-size:12px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">7 047 000</span>
                 </div>
               </div>
             </div>
@@ -597,13 +596,13 @@ a:hover{color:var(--accent-strong)}
 
           <footer style="grid-column:1/4;display:flex;align-items:center;gap:14px;padding:0 10px 0 8px;background:var(--panel);border-top:1px solid var(--border)">
             <div style="display:flex;align-items:center;gap:6px;height:18px;padding:0 8px;border-radius:8px;background:var(--field);min-width:230px">
-              <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">›</span>
+              <span style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">›</span>
               <span style="font-size:11px;color:var(--t4)">Gõ lệnh hoặc số rồi bấm Enter</span>
             </div>
             <span style="font-size:11px;color:var(--t3)">Đang sửa ô Khối lượng, dòng 03</span>
             <span style="margin-left:auto;font-size:11px;color:var(--warning)">3 ô đã rời khỏi mô hình</span>
             <span style="font-size:11px;color:var(--t4)">25 dòng</span>
-            <span style="font:400 11px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t4)">Tổng 175 605 950 ₫</span>
+            <span style="font-weight:400;font-size:11px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t4)">Tổng 175 605 950 ₫</span>
             <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t4)"><span style="width:6px;height:6px;border-radius:50%;background:var(--success)"></span>Đã lưu 14:32</span>
           </footer>
 

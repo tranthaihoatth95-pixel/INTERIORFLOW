@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="./support.js"></script>
-</head>
-<body>
-<x-dc>
-<helmet>
+<title>IF · BangNetIn</title>
 <style>
+
 :root{--accent:#6a57f5;--accent-strong:#553ff3;--accent-soft:rgba(106,87,245,.14);--ease-apple:cubic-bezier(.32,.72,0,1);--dur-fast:.12s;--dur-base:.18s;--tap:32px;--tap-lg:44px;--on-accent:#ffffff}
 :root,[data-theme="dark"]{--panel:#141417;--card:#1a1a1e;--field:#202024;--hover:#2a2a30;--border:#2a2a31;--border-strong:#3d3d45;--t1:#f5f5f7;--t2:#d6d6db;--t3:#9e9ea8;--t4:#6e6e78;--t5:#4e4e57;--mat-hairline:rgba(255,255,255,.06);--pen:#f5f5f7}
 [data-theme="light"]{--panel:#faf8f4;--card:#ffffff;--field:#f4f1eb;--hover:#e9e5dd;--border:#e3ded4;--border-strong:#cbc4b6;--t1:#211e19;--t2:#47423a;--t3:#726c62;--t4:#9a938a;--t5:#b8b1a7;--mat-hairline:rgba(0,0,0,.05);--pen:#211e19}
@@ -16,9 +13,10 @@
 html,body{margin:0;color:var(--t1);-webkit-font-smoothing:antialiased}
 a{color:var(--accent);text-decoration:none}
 a:hover{color:var(--accent-strong)}
-</style>
-</helmet>
 
+</style>
+</head>
+<body>
 <div style="height:100%;display:flex;flex-direction:column;min-height:0;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif">
 
   <div style="padding:12px 12px 10px;border-bottom:1px solid var(--mat-hairline)">
@@ -27,60 +25,86 @@ a:hover{color:var(--accent-strong)}
   </div>
 
   <div style="flex:1;min-height:0;overflow:auto;padding:8px 6px">
-    <sc-for list="{{ layers }}" as="l" hint-placeholder-count="7">
+    
       <div style="display:grid;grid-template-columns:14px 1fr 46px 34px;gap:8px;align-items:center;height:var(--tap);padding:0 6px;border-radius:9px;transition:background var(--dur-fast) var(--ease-apple)" style-hover="background:var(--hover)">
-        <span style="width:10px;height:10px;border-radius:3px;background:{{ l.mau }}"></span>
-        <span style="min-width:0;font-size:12px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ l.ten }}</span>
-        <span style="height:20px;border-radius:6px;background:var(--field);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:10px;font-weight:600;color:var(--t2);font-variant-numeric:tabular-nums">{{ l.net }}</span>
+        <span style="width:10px;height:10px;border-radius:3px;background:#e5674f"></span>
+        <span style="min-width:0;font-size:12px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Tường chịu lực</span>
+        <span style="height:20px;border-radius:6px;background:var(--field);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:10px;font-weight:600;color:var(--t2);font-variant-numeric:tabular-nums">0.50</span>
         <span style="height:12px;display:flex;align-items:center;justify-content:flex-end">
-          <span style="width:28px;background:var(--pen);border-radius:2px;height:{{ l.day }}"></span>
+          <span style="width:28px;background:var(--pen);border-radius:2px;height:3px"></span>
         </span>
       </div>
-    </sc-for>
-  </div>
+    
+      <div style="display:grid;grid-template-columns:14px 1fr 46px 34px;gap:8px;align-items:center;height:var(--tap);padding:0 6px;border-radius:9px;transition:background var(--dur-fast) var(--ease-apple)" style-hover="background:var(--hover)">
+        <span style="width:10px;height:10px;border-radius:3px;background:#6a57f5"></span>
+        <span style="min-width:0;font-size:12px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Tường ngăn</span>
+        <span style="height:20px;border-radius:6px;background:var(--field);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:10px;font-weight:600;color:var(--t2);font-variant-numeric:tabular-nums">0.35</span>
+        <span style="height:12px;display:flex;align-items:center;justify-content:flex-end">
+          <span style="width:28px;background:var(--pen);border-radius:2px;height:2px"></span>
+        </span>
+      </div>
+    
+      <div style="display:grid;grid-template-columns:14px 1fr 46px 34px;gap:8px;align-items:center;height:var(--tap);padding:0 6px;border-radius:9px;transition:background var(--dur-fast) var(--ease-apple)" style-hover="background:var(--hover)">
+        <span style="width:10px;height:10px;border-radius:3px;background:#46b876"></span>
+        <span style="min-width:0;font-size:12px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Cửa và cửa sổ</span>
+        <span style="height:20px;border-radius:6px;background:var(--field);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:10px;font-weight:600;color:var(--t2);font-variant-numeric:tabular-nums">0.25</span>
+        <span style="height:12px;display:flex;align-items:center;justify-content:flex-end">
+          <span style="width:28px;background:var(--pen);border-radius:2px;height:2px"></span>
+        </span>
+      </div>
+    
+      <div style="display:grid;grid-template-columns:14px 1fr 46px 34px;gap:8px;align-items:center;height:var(--tap);padding:0 6px;border-radius:9px;transition:background var(--dur-fast) var(--ease-apple)" style-hover="background:var(--hover)">
+        <span style="width:10px;height:10px;border-radius:3px;background:#d9a34a"></span>
+        <span style="min-width:0;font-size:12px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Đồ đạc</span>
+        <span style="height:20px;border-radius:6px;background:var(--field);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:10px;font-weight:600;color:var(--t2);font-variant-numeric:tabular-nums">0.18</span>
+        <span style="height:12px;display:flex;align-items:center;justify-content:flex-end">
+          <span style="width:28px;background:var(--pen);border-radius:2px;height:1px"></span>
+        </span>
+      </div>
+    
+      <div style="display:grid;grid-template-columns:14px 1fr 46px 34px;gap:8px;align-items:center;height:var(--tap);padding:0 6px;border-radius:9px;transition:background var(--dur-fast) var(--ease-apple)" style-hover="background:var(--hover)">
+        <span style="width:10px;height:10px;border-radius:3px;background:#9e9ea8"></span>
+        <span style="min-width:0;font-size:12px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Kích thước</span>
+        <span style="height:20px;border-radius:6px;background:var(--field);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:10px;font-weight:600;color:var(--t2);font-variant-numeric:tabular-nums">0.13</span>
+        <span style="height:12px;display:flex;align-items:center;justify-content:flex-end">
+          <span style="width:28px;background:var(--pen);border-radius:2px;height:1px"></span>
+        </span>
+      </div>
+    
+      <div style="display:grid;grid-template-columns:14px 1fr 46px 34px;gap:8px;align-items:center;height:var(--tap);padding:0 6px;border-radius:9px;transition:background var(--dur-fast) var(--ease-apple)" style-hover="background:var(--hover)">
+        <span style="width:10px;height:10px;border-radius:3px;background:#a99cff"></span>
+        <span style="min-width:0;font-size:12px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Ký hiệu và ghi chú</span>
+        <span style="height:20px;border-radius:6px;background:var(--field);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:10px;font-weight:600;color:var(--t2);font-variant-numeric:tabular-nums">0.13</span>
+        <span style="height:12px;display:flex;align-items:center;justify-content:flex-end">
+          <span style="width:28px;background:var(--pen);border-radius:2px;height:1px"></span>
+        </span>
+      </div>
+    
+      <div style="display:grid;grid-template-columns:14px 1fr 46px 34px;gap:8px;align-items:center;height:var(--tap);padding:0 6px;border-radius:9px;transition:background var(--dur-fast) var(--ease-apple)" style-hover="background:var(--hover)">
+        <span style="width:10px;height:10px;border-radius:3px;background:#71717c"></span>
+        <span style="min-width:0;font-size:12px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Đường trục</span>
+        <span style="height:20px;border-radius:6px;background:var(--field);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:10px;font-weight:600;color:var(--t2);font-variant-numeric:tabular-nums">0.09</span>
+        <span style="height:12px;display:flex;align-items:center;justify-content:flex-end">
+          <span style="width:28px;background:var(--pen);border-radius:2px;height:1px"></span>
+        </span>
+      </div>
+      </div>
 
   <div style="padding:10px 12px;border-top:1px solid var(--mat-hairline);display:flex;flex-direction:column;gap:8px">
     <div style="display:flex;align-items:center;gap:9px">
-      <button onClick="{{ doiMau }}" aria-pressed="{{ laMau }}" style="flex:1;height:var(--tap);border:1px solid var(--border-strong);border-radius:10px;background:{{ nenMau }};color:{{ chuMau }};font-weight:600;font-size:11.5px;line-height:1.45;font-family:inherit;cursor:pointer;transition:background var(--dur-base) var(--ease-apple)">Bản màu</button>
-      <button onClick="{{ doiDen }}" aria-pressed="{{ laDen }}" style="flex:1;height:var(--tap);border:1px solid var(--border-strong);border-radius:10px;background:{{ nenDen }};color:{{ chuDen }};font-weight:600;font-size:11.5px;line-height:1.45;font-family:inherit;cursor:pointer;transition:background var(--dur-base) var(--ease-apple)">Đen trắng</button>
+      <button aria-pressed="true" style="flex:1;height:var(--tap);border:1px solid var(--border-strong);border-radius:10px;background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:11.5px;line-height:1.45;font-family:inherit;cursor:pointer;transition:background var(--dur-base) var(--ease-apple)">Bản màu</button>
+      <button aria-pressed="false" style="flex:1;height:var(--tap);border:1px solid var(--border-strong);border-radius:10px;background:var(--field);color:var(--t3);font-weight:600;font-size:11.5px;line-height:1.45;font-family:inherit;cursor:pointer;transition:background var(--dur-base) var(--ease-apple)">Đen trắng</button>
     </div>
-    <div style="font-size:10.5px;color:var(--t5);line-height:1.55">{{ ghiChu }}</div>
+    <div style="font-size:10.5px;color:var(--t5);line-height:1.55">Giữ màu layer để soát bản mềm. Trước khi giao khách, đổi sang đen trắng rồi kiểm lại độ đậm.</div>
   </div>
 </div>
-</x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:280,&quot;height&quot;:460}}">
-class Component extends DCLogic {
-  state = { den: false };
-  renderVals() {
-    const den = this.state.den;
-    const raw = [
-      { ten: 'Tường chịu lực', net: '0.50', mau: '#e5674f' },
-      { ten: 'Tường ngăn', net: '0.35', mau: '#6a57f5' },
-      { ten: 'Cửa và cửa sổ', net: '0.25', mau: '#46b876' },
-      { ten: 'Đồ đạc', net: '0.18', mau: '#d9a34a' },
-      { ten: 'Kích thước', net: '0.13', mau: '#9e9ea8' },
-      { ten: 'Ký hiệu và ghi chú', net: '0.13', mau: '#a99cff' },
-      { ten: 'Đường trục', net: '0.09', mau: '#71717c' }
-    ];
-    return {
-      layers: raw.map(l => ({
-        ten: l.ten, net: l.net,
-        mau: den ? 'var(--pen)' : l.mau,
-        day: Math.max(1, Math.round(parseFloat(l.net) * 6)) + 'px'
-      })),
-      laMau: !den, laDen: den,
-      nenMau: den ? 'var(--field)' : 'var(--accent-soft)',
-      chuMau: den ? 'var(--t3)' : 'var(--accent)',
-      nenDen: den ? 'var(--accent-soft)' : 'var(--field)',
-      chuDen: den ? 'var(--accent)' : 'var(--t3)',
-      doiMau: () => this.setState({ den: false }),
-      doiDen: () => this.setState({ den: true }),
-      ghiChu: den
-        ? 'Mọi layer về một màu mực. Nét mảnh nhất 0.09 mm — kiểm lại trên bản in thật, máy cũ có thể mất nét.'
-        : 'Giữ màu layer để soát bản mềm. Trước khi giao khách, đổi sang đen trắng rồi kiểm lại độ đậm.'
-    };
+<script>
+document.addEventListener('keydown', function (e) {
+  if (e.key === 't' || e.key === 'T') {
+    var r = document.documentElement
+    r.dataset.theme = r.dataset.theme === 'light' ? 'dark' : 'light'
   }
-}
+})
 </script>
 </body>
 </html>

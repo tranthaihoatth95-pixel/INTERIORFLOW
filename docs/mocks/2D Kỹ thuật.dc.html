@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="./support.js"></script>
-</head>
-<body>
-<x-dc>
-<helmet>
+<title>IF · 2D Kỹ thuật</title>
 <style>
+
 :root{
   --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
   --radius-sm:10px; --radius-md:14px; --radius-lg:20px; --radius-xl:28px;
@@ -38,9 +35,10 @@ html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:a
 a{color:var(--accent);text-decoration:none}
 a:hover{color:var(--accent-strong)}
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms !important}}
-</style>
-</helmet>
 
+</style>
+</head>
+<body>
 <div style="min-height:100vh;background:var(--bg);padding:36px 40px 72px;font-weight:400;font-size:14px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
 
   <div style="width:1440px;margin:0 auto 30px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
@@ -52,7 +50,7 @@ a:hover{color:var(--accent-strong)}
       </div>
       <div style="margin-top:8px;font-size:12px;color:var(--t3);max-width:820px;text-wrap:pretty">Chặng 2D · cùng khung sáu ổ với màn 3D. Ba khung dưới đây là cùng một màn hình ở ba thời điểm khác nhau.</div>
     </div>
-    <button onClick="{{ toggleTheme }}" style="height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;line-height:1.45;font-family:inherit;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">{{ themeLabel }}</button>
+    <button style="height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;line-height:1.45;font-family:inherit;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">Đổi sang nền Kem</button>
   </div>
 
   <div style="width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:44px">
@@ -69,7 +67,7 @@ a:hover{color:var(--accent-strong)}
           <header style="grid-column:1/4;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 10px 0 12px;background:var(--panel);border-bottom:1px solid var(--border)">
             <div style="display:flex;align-items:center;gap:9px;min-width:0">
               <div style="width:20px;height:20px;border-radius:6px;background:var(--accent);flex:none"></div>
-              <span style="font-size:14px;font-weight:600;white-space:nowrap;letter-spacing:-.01em">{{ project }}</span>
+              <span style="font-size:14px;font-weight:600;white-space:nowrap;letter-spacing:-.01em">Căn hộ Thảo Điền</span>
               <span style="display:inline-flex;align-items:center;height:15px;padding:0 5px;border-radius:5px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700">PLACEHOLDER</span>
             </div>
             <div style="display:inline-flex;background:var(--field);border-radius:10px;padding:2px">
@@ -305,7 +303,7 @@ a:hover{color:var(--accent-strong)}
           <header style="grid-column:1/4;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 10px 0 12px;background:var(--panel);border-bottom:1px solid var(--border)">
             <div style="display:flex;align-items:center;gap:9px;min-width:0">
               <div style="width:20px;height:20px;border-radius:6px;background:var(--accent);flex:none"></div>
-              <span style="font-size:14px;font-weight:600;white-space:nowrap;letter-spacing:-.01em">{{ project }}</span>
+              <span style="font-size:14px;font-weight:600;white-space:nowrap;letter-spacing:-.01em">Căn hộ Thảo Điền</span>
               <span style="display:inline-flex;align-items:center;height:15px;padding:0 5px;border-radius:5px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700">PLACEHOLDER</span>
             </div>
             <div style="display:inline-flex;background:var(--field);border-radius:10px;padding:2px">
@@ -486,7 +484,7 @@ a:hover{color:var(--accent-strong)}
           <header style="grid-column:1/4;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 10px 0 12px;background:var(--panel);border-bottom:1px solid var(--border)">
             <div style="display:flex;align-items:center;gap:9px;min-width:0">
               <div style="width:20px;height:20px;border-radius:6px;background:var(--accent);flex:none"></div>
-              <span style="font-size:14px;font-weight:600;white-space:nowrap;letter-spacing:-.01em">{{ project }}</span>
+              <span style="font-size:14px;font-weight:600;white-space:nowrap;letter-spacing:-.01em">Căn hộ Thảo Điền</span>
               <span style="display:inline-flex;align-items:center;height:15px;padding:0 5px;border-radius:5px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700">PLACEHOLDER</span>
             </div>
             <div style="display:inline-flex;background:var(--field);border-radius:10px;padding:2px">
@@ -678,23 +676,13 @@ a:hover{color:var(--accent-strong)}
 
   </div>
 </div>
-</x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Tối&quot;,&quot;Kem&quot;],&quot;default&quot;:&quot;Tối&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Giao diện&quot;},&quot;projectName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Căn hộ Thảo Điền&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Nội dung&quot;}}">
-class Component extends DCLogic {
-  state = { theme: null };
-  componentDidMount() { this.apply(); }
-  componentDidUpdate() { this.apply(); }
-  apply() { document.documentElement.dataset.theme = this.theme(); }
-  theme() { return this.state.theme || (this.props.theme === 'Kem' ? 'light' : 'dark'); }
-  renderVals() {
-    const t = this.theme();
-    return {
-      themeLabel: t === 'dark' ? 'Đổi sang nền Kem' : 'Đổi sang nền Tối',
-      toggleTheme: () => this.setState({ theme: t === 'dark' ? 'light' : 'dark' }),
-      project: this.props.projectName || 'Căn hộ Thảo Điền'
-    };
+<script>
+document.addEventListener('keydown', function (e) {
+  if (e.key === 't' || e.key === 'T') {
+    var r = document.documentElement
+    r.dataset.theme = r.dataset.theme === 'light' ? 'dark' : 'light'
   }
-}
+})
 </script>
 </body>
 </html>

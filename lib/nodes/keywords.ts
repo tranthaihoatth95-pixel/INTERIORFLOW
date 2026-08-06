@@ -68,6 +68,9 @@ export const NODE_KEYWORDS: Record<string, string[]> = {
   // `vision.measureobject` trước không có entry — search chỉ dựa vào title, mà title vừa đổi
   // ('Đo món đồ' → 'Ghi kích thước') nên phải khai tay, giữ luôn tên cũ + 'metrology'.
   'vision.measureobject': ['ghi kích thước', 'kích thước', 'đo món đồ', 'đo đạc', 'đo', 'rộng cao sâu', 'dimension', 'measure', 'metrology', 'size'],
+  // Bảng món (06/08) — người dùng gõ theo THỨ HỌ CẦN ("danh sách đồ", "bảng ff&e", "thống kê
+  // món", "số lượng"), không gõ 'util.ffetable'.
+  'util.ffetable': ['bảng món', 'danh sách món', 'danh sách đồ', 'liệt kê đồ', 'thống kê món', 'ff&e', 'ffe', 'schedule', 'furniture schedule', 'bảng nội thất', 'số lượng', 'đếm món', 'bảng kê', 'gom món'],
 
   // ---- Output ----
   'out.moodboard': ['moodboard', 'collage', 'bảng vật liệu', 'ghép nhiều ảnh', 'trang mood', 'board'],

@@ -14,11 +14,14 @@ import { detectFormat } from '@/lib/gateway/detect';
 import { routeFormat } from '@/lib/gateway/route';
 import { parseSpreadsheetFile, type ParsedSheet } from '@/lib/materials/warehouse/xlsx-parse';
 import {
-  guessMapping, loadSavedMapping, saveMapping, MATERIAL_FIELDS, MATERIAL_FIELD_LABEL,
+  guessMapping, loadSavedMapping, saveMapping, unmappedColumns, MATERIAL_FIELDS, MATERIAL_FIELD_LABEL,
   type ColumnMapping, type MaterialField,
 } from '@/lib/materials/warehouse/column-mapping';
-import { buildImportRows, runImport, uploadMatchedImages, type ImportRowResult } from '@/lib/materials/warehouse/apply-import';
-import { matchImagesBySku } from '@/lib/materials/warehouse/image-match';
+import { buildImportRows, guessImportKind, runImport, uploadMatchedImages, type ImportRowResult, type RunImportOutcome } from '@/lib/materials/warehouse/apply-import';
+import { IMPORT_KIND_LABEL } from '@/lib/materials/warehouse/dto';
+import { matchImagesForRows, imageFileToXlsxImage } from '@/lib/materials/warehouse/image-match';
+import { buildFfeSheet, ffeSheetToXlsxBuffer, type FfeSheetImage } from '@/lib/ffe/sheet';
+import { SPEC_KINDS } from '@/lib/server/specs';
 
 type Step = 'pick' | 'map' | 'importing' | 'done';
 
@@ -32,8 +35,26 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
   const [sheet, setSheet] = useState<ParsedSheet | null>(null);
   const [mapping, setMapping] = useState<ColumnMapping | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  /** Số dòng CÓ khai tên ảnh mà không tìm thấy file trong thư mục đã chọn — phải nói ra ở bước
+   * xong, không được im lặng (kiểm phản biện vòng 2, 06/08). */
+  const [imageMissCount, setImageMissCount] = useState(0);
+  /**
+   * Loại bản ghi cho cả lô (G-M3-07). Trước đây `runImport` ép cứng `'material'` ⇒ nhập bảng ghế
+   * bàn vào kho thì thành "vật liệu". Nay: máy ĐOÁN (`guessImportKind`, đặt lúc mở file), người
+   * nhập ĐỔI được. `kindGuessed` giữ giá trị máy đoán để câu giải thích dưới ô chọn nói đúng sự
+   * thật ngay cả sau khi người dùng đổi tay.
+   */
+  const [kind, setKind] = useState<string>('material');
+  const [kindGuessed, setKindGuessed] = useState<string>('material');
   const [progress, setProgress] = useState<{ done: number; total: number; phase: 'images' | 'rows' } | null>(null);
-  const [result, setResult] = useState<{ ok: number; failed: { rowIndex: number; name: string; error: string }[] } | null>(null);
+  /** Giữ TRỌN `RunImportOutcome` — kể cả `table` (`FfeTable`). Trước 06/08 kiểu state chỉ khai
+   * `{ok, failed}` nên `table` bị vứt ngay tại đây và không nơi nào trong app dùng tới nó. */
+  const [result, setResult] = useState<RunImportOutcome | null>(null);
+  /** File ảnh đã ghép cho từng dòng — giữ lại để XUẤT hồ sơ FF&E có ảnh mà không phải tải lại từ
+   * server (ảnh đang nằm sẵn trong bộ nhớ trình duyệt). Khoá = `FfeItem.id`. */
+  const [ffeImages, setFfeImages] = useState<Map<string, File>>(new Map());
+  const [exporting, setExporting] = useState(false);
+  const [exportNote, setExportNote] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -58,8 +79,12 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
         setFileError(tr('File không có dòng dữ liệu nào (chỉ có tiêu đề).', 'File has no data rows (header only).'));
         return;
       }
+      const nextMapping = loadSavedMapping(parsed.headers) ?? guessMapping(parsed.headers);
+      const guessed = guessImportKind(parsed, nextMapping);
       setSheet(parsed);
-      setMapping(loadSavedMapping(parsed.headers) ?? guessMapping(parsed.headers));
+      setMapping(nextMapping);
+      setKindGuessed(guessed);
+      setKind(guessed);
       setStep('map');
     } catch (e) {
       setFileError(e instanceof Error ? e.message : String(e));
@@ -69,6 +94,8 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
   const rows: ImportRowResult[] = sheet && mapping ? buildImportRows(sheet, mapping) : [];
   const validCount = rows.filter((r) => !r.error).length;
   const errorCount = rows.length - validCount;
+  const warnCount = rows.filter((r) => !r.error && r.warnings.length > 0).length;
+  const droppedColumns = sheet && mapping ? unmappedColumns(sheet.headers, mapping) : [];
 
   const setField = (field: MaterialField, colIndex: number | null) => {
     setMapping((prev) => (prev ? { ...prev, [field]: colIndex } : prev));
@@ -78,22 +105,77 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
     if (!sheet || !mapping) return;
     saveMapping(sheet.headers, mapping);
     setStep('importing');
-    let imageAssetIdBySku: Map<string, string> | undefined;
+    let imageAssetIdByRow: Map<number, string> | undefined;
+    const fileByItemId = new Map<string, File>();
     if (imageFiles.length > 0) {
-      const skus = rows.filter((r) => r.payload?.sku).map((r) => r.payload!.sku!);
-      const bySku = matchImagesBySku(imageFiles, skus);
-      if (bySku.size > 0) {
-        setProgress({ done: 0, total: bySku.size, phase: 'images' });
-        imageAssetIdBySku = await uploadMatchedImages(bySku, (done, total) => setProgress({ done, total, phase: 'images' }));
+      // Ghép theo DÒNG: cột "Ảnh" trước, SKU sau (`matchImagesForRows`). Trước 06/08 chỉ ghép
+      // theo SKU == tên file ⇒ bảng ghi `ghe-xoay.jpg` với SKU `CH-MESH-01` cho ra 0/5 ảnh.
+      const byRow = matchImagesForRows(
+        imageFiles,
+        rows.filter((r) => !r.error).map((r) => ({ rowIndex: r.rowIndex, sku: r.payload?.sku, imageRef: r.imageRef })),
+      );
+      // 06/08 (kiểm phản biện vòng 2) — dòng CÓ tên ảnh mà KHÔNG tìm thấy file phải được ĐẾM và
+      // NÓI RA. Trước đây im lặng: người dùng chọn đúng thư mục, đúng tên, ra 0 ảnh, không hiểu
+      // vì sao (ca thật: tên tiếng Việt NFD của macOS — đã vá ở `image-match.ts`, nhưng còn vô
+      // số cách hụt khác: gõ sai tên, để ảnh ở thư mục con khác, đuôi .webp…).
+      const wantImage = rows.filter((r) => !r.error && (r.imageRef ?? '').trim()).length;
+      setImageMissCount(Math.max(0, wantImage - byRow.size));
+      if (byRow.size > 0) {
+        setProgress({ done: 0, total: byRow.size, phase: 'images' });
+        imageAssetIdByRow = await uploadMatchedImages(byRow, (done, total) => setProgress({ done, total, phase: 'images' }));
+        for (const r of rows) {
+          const f = byRow.get(r.rowIndex);
+          if (f && r.ffe) fileByItemId.set(r.ffe.id, f);
+        }
       }
     }
     setProgress({ done: 0, total: validCount, phase: 'rows' });
     const outcome = await runImport(rows, {
-      imageAssetIdBySku,
+      kind,
+      imageAssetIdByRow,
       onProgress: (done, total) => setProgress({ done, total, phase: 'rows' }),
+      tableLabel: tr('FF&E — nhập từ bảng tính', 'FF&E — imported from spreadsheet'),
     });
     setResult(outcome);
+    setFfeImages(fileByItemId);
     setStep('done');
+  };
+
+  /**
+   * ① Cửa THẬT cho hồ sơ FF&E nhiều món (G-M3-04). Trước 06/08 `buildFfeSheet`/
+   * `ffeSheetToXlsxBuffer` có 0 nơi gọi — nghiệm thu "đưa CSV 5 món → ra bảng đủ 5 dòng có ảnh"
+   * chỉ chạy được bằng script, đúng cái bệnh "code có, mặt tiền không có" mà cả vòng này đang chữa.
+   */
+  const exportFfeSheet = async () => {
+    if (!result || exporting) return;
+    setExporting(true);
+    setExportNote(null);
+    let skipped = 0;
+    const images = new Map<string, FfeSheetImage>();
+    for (const [itemId, file] of ffeImages) {
+      const img = await imageFileToXlsxImage(file);
+      if (img) images.set(itemId, img);
+      else skipped += 1; // webp/gif/ảnh hỏng — Excel không nhận, PHẢI nói ra
+    }
+    try {
+      const sheet = buildFfeSheet(result.table.items, { title: tr('HỒ SƠ FF&E', 'FF&E SCHEDULE') });
+      const buf = await ffeSheetToXlsxBuffer(sheet, images);
+      const blob = new Blob([buf as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'FFE.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+      setExportNote(
+        skipped > 0
+          ? tr(`Đã tải hồ sơ. ${skipped} ảnh KHÔNG nhúng được (chỉ nhận PNG/JPEG).`, `Downloaded. ${skipped} image(s) could not be embedded (PNG/JPEG only).`)
+          : null,
+      );
+    } catch (e) {
+      setExportNote(tr('Không dựng được file hồ sơ FF&E.', 'Could not build the FF&E file.') + ` (${e instanceof Error ? e.message : String(e)})`);
+    }
+    setExporting(false);
   };
 
   return (
@@ -152,6 +234,35 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
 
           {step === 'map' && sheet && mapping && (
             <>
+              {/* Chọn loại bản ghi cho cả lô — G-M3-07. Đặt TRÊN bảng ghép cột vì nó quyết định
+                  cả lô sẽ nằm ở ngăn nào của kho, người dùng cần thấy trước khi ngó từng cột. */}
+              <div style={{ marginBottom: 14, padding: 10, borderRadius: 10, background: 'var(--field)', border: '1px solid var(--border)' }}>
+                <label htmlFor="import-kind" style={{ fontSize: 11, fontWeight: 600, color: 'var(--t3)', display: 'block', marginBottom: 4 }}>
+                  {tr('Nhập vào ngăn nào của kho', 'Which shelf of the warehouse')}
+                </label>
+                <select
+                  id="import-kind"
+                  value={kind}
+                  onChange={(e) => setKind(e.target.value)}
+                  style={{ width: '100%', height: 30, borderRadius: 7, border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)', fontSize: 12.5, padding: '0 8px' }}
+                >
+                  {SPEC_KINDS.map((k) => (
+                    <option key={k} value={k}>{tr(IMPORT_KIND_LABEL[k]?.vi ?? k, IMPORT_KIND_LABEL[k]?.en ?? k)}</option>
+                  ))}
+                </select>
+                <div style={{ marginTop: 5, fontSize: 11, color: 'var(--t4)' }}>
+                  {kind === kindGuessed
+                    ? tr(
+                        `Đoán theo dữ liệu: ${IMPORT_KIND_LABEL[kindGuessed]?.vi ?? kindGuessed}. Đổi được.`,
+                        `Guessed from the data: ${IMPORT_KIND_LABEL[kindGuessed]?.en ?? kindGuessed}. You can change it.`,
+                      )
+                    : tr(
+                        `Bạn đã đổi — máy đoán là ${IMPORT_KIND_LABEL[kindGuessed]?.vi ?? kindGuessed}.`,
+                        `You changed it — the guess was ${IMPORT_KIND_LABEL[kindGuessed]?.en ?? kindGuessed}.`,
+                      )}
+                </div>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
                 {MATERIAL_FIELDS.map((field) => (
                   <div key={field}>
@@ -173,6 +284,23 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                 ))}
               </div>
 
+              {/* ② Cột người dùng ĐƯA VÀO mà app KHÔNG nhận — trước 06/08 bị bỏ rơi lặng lẽ
+                  (`guessMapping` trả về "CỘT BỊ BỎ RƠI: [Ảnh]" mà màn hình không nói gì). */}
+              {droppedColumns.length > 0 && (
+                <div style={{ marginBottom: 12, padding: '8px 10px', borderRadius: 9, background: 'color-mix(in srgb, var(--warning) 12%, var(--field))', border: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t2)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <AlertTriangle size={12} style={{ color: 'var(--warning)' }} />
+                    {tr(`${droppedColumns.length} cột trong file KHÔNG được nhập:`, `${droppedColumns.length} column(s) in the file are NOT imported:`)}
+                  </div>
+                  <div style={{ marginTop: 4, fontSize: 11.5, color: 'var(--t3)' }}>
+                    {droppedColumns.map((c) => `"${c.header}"`).join(' · ')}
+                  </div>
+                  <div style={{ marginTop: 4, fontSize: 11, color: 'var(--t4)' }}>
+                    {tr('Ghép chúng vào một ô ở trên nếu cần — nếu không, dữ liệu của các cột này sẽ không vào kho.', 'Map them to a field above if you need them — otherwise this data will not enter the warehouse.')}
+                  </div>
+                </div>
+              )}
+
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                 <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t2)' }}>
                   {tr(`Xem trước ${Math.min(PREVIEW_COUNT, rows.length)}/${rows.length} dòng`, `Preview ${Math.min(PREVIEW_COUNT, rows.length)}/${rows.length} rows`)}
@@ -185,6 +313,11 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                     <AlertTriangle size={11} /> {tr(`${errorCount} dòng lỗi`, `${errorCount} error row(s)`)}
                   </span>
                 )}
+                {warnCount > 0 && (
+                  <span style={{ fontSize: 11.5, color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <AlertTriangle size={11} /> {tr(`${warnCount} dòng có cảnh báo (vẫn nhập)`, `${warnCount} row(s) with warnings (still imported)`)}
+                  </span>
+                )}
               </div>
 
               <div style={{ maxHeight: 260, overflow: 'auto', border: '1px solid var(--border)', borderRadius: 10 }}>
@@ -194,6 +327,8 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                       <th style={previewTh}>#</th>
                       <th style={previewTh}>{tr('Tên', 'Name')}</th>
                       <th style={previewTh}>{tr('Mã', 'SKU')}</th>
+                      <th style={previewTh}>{tr('SL', 'Qty')}</th>
+                      <th style={previewTh}>{tr('Phòng', 'Room')}</th>
                       <th style={previewTh}>{tr('Giá', 'Price')}</th>
                       <th style={previewTh}>{tr('Ghi chú', 'Note')}</th>
                     </tr>
@@ -204,8 +339,12 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                         <td style={previewTd}>{r.rowIndex + 1}</td>
                         <td style={previewTd}>{r.payload?.name ?? '—'}</td>
                         <td style={{ ...previewTd, fontFamily: 'ui-monospace, Menlo, monospace' }}>{r.payload?.sku ?? '—'}</td>
+                        <td style={previewTd}>{r.ffe ? `${r.ffe.qty} ${r.ffe.unit}` : '—'}</td>
+                        <td style={previewTd}>{r.ffe?.room ?? '—'}</td>
                         <td style={previewTd}>{r.payload?.priceVnd != null ? r.payload.priceVnd.toLocaleString('vi-VN') : '—'}</td>
-                        <td style={{ ...previewTd, color: r.error ? 'var(--danger)' : 'var(--t4)' }}>{r.error ?? ''}</td>
+                        <td style={{ ...previewTd, color: r.error ? 'var(--danger)' : r.warnings.length ? 'var(--warning)' : 'var(--t4)' }}>
+                          {r.error ?? r.warnings.join(' ')}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -214,7 +353,10 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
 
               <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t3)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <FolderInput size={13} /> {tr('Ảnh (tuỳ chọn) — kéo cả thư mục, ghép theo mã SKU trùng tên file', 'Images (optional) — drop a whole folder, matched by filename == SKU')}
+                  {/* 06/08 — nhãn cũ ghi "ghép theo mã SKU trùng tên file" nay SAI so với code:
+                      `matchImagesForRows` thử cột Ảnh TRƯỚC, hết mới tới SKU. Nhãn nói sai luật
+                      ghép làm người dùng đặt tên file kiểu khác rồi tưởng app hỏng. */}
+                  <FolderInput size={13} /> {tr('Ảnh (tuỳ chọn) — kéo cả thư mục, ghép theo cột Ảnh; không có thì theo mã SKU', 'Images (optional) — drop a whole folder, matched by the Image column, else by SKU')}
                 </div>
                 <button
                   type="button"
@@ -230,6 +372,17 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                   className="hidden"
                   onChange={(e) => setImageFiles(e.target.files ? Array.from(e.target.files) : [])}
                 />
+                {/* 06/08 — bảng CÓ cột Ảnh mà chưa chọn thư mục: trước đây im lặng, người dùng nhập
+                    xong thấy hồ sơ FF&E 0 ảnh mà không hiểu vì sao. Tên file trong bảng chỉ là CHỮ,
+                    không phải ảnh — phải nói ra chỗ này. */}
+                {mapping?.image != null && imageFiles.length === 0 && (
+                  <div style={{ fontSize: 11, color: 'var(--t4)', marginTop: 6, lineHeight: 1.5 }}>
+                    {tr(
+                      'Bảng có cột Ảnh nhưng đó mới là TÊN FILE — chọn thư mục ảnh thì hồ sơ FF&E mới có hình.',
+                      'The sheet has an Image column, but those are only FILE NAMES — pick the image folder to get pictures in the FF&E schedule.',
+                    )}
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -250,8 +403,64 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                 <>
                   <CheckCircle2 size={22} style={{ color: 'var(--accent)' }} />
                   <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>
-                    {tr(`Đã thêm ${result.ok} vật liệu`, `Added ${result.ok} material(s)`)}
+                    {tr(
+                      `Đã thêm ${result.ok} ${(IMPORT_KIND_LABEL[kind]?.vi ?? kind).toLowerCase()}`,
+                      `Added ${result.ok} ${(IMPORT_KIND_LABEL[kind]?.en ?? kind).toLowerCase()} item(s)`,
+                    )}
                   </span>
+                  {imageMissCount > 0 && (
+                    <span style={{ fontSize: 11.5, color: 'var(--t3)', textAlign: 'center', lineHeight: 1.5, maxWidth: 380 }}>
+                      {tr(
+                        `${imageMissCount} dòng có tên ảnh nhưng không tìm thấy file trong thư mục đã chọn — hồ sơ FF&E sẽ trống ảnh ở những dòng đó.`,
+                        `${imageMissCount} row(s) name an image that wasn't found in the chosen folder — those rows will have no picture in the FF&E schedule.`,
+                      )}
+                    </span>
+                  )}
+                  {/* Nói thẳng chỗ dữ liệu CHƯA vào kho được — luật §9 "cấm nút giả", và luật
+                      8-điều "luôn nói rõ máy vừa làm gì". Cột Phòng/Độ tin cậy đã khai trong
+                      prisma/schema.prisma nhưng chưa migrate (xem SPEC_ROOM_COLUMN_READY). */}
+                  {/* ③ — bổ sung "Số lượng" vào câu này: `MaterialWritePayload` KHÔNG có trường
+                      qty, nên cột Số lượng cũng KHÔNG vào kho, y hệt Phòng/Độ tin cậy. Trước
+                      06/08 câu này chỉ kể 2 cột đầu ⇒ người dùng ghép cột Số lượng xong tưởng đã
+                      lưu. Cả 3 đều sống trong `outcome.table` (hồ sơ FF&E dưới đây). */}
+                  {(mapping?.room != null || mapping?.confidence != null || mapping?.qty != null) && (
+                    <div style={{ fontSize: 11.5, color: 'var(--t4)', textAlign: 'center', maxWidth: 460 }}>
+                      {tr(
+                        `Cột ${[mapping?.qty != null && 'Số lượng', mapping?.room != null && 'Phòng', mapping?.confidence != null && 'Độ tin cậy'].filter(Boolean).join(', ')} chưa lưu được vào kho — kho chỉ giữ DANH MỤC (món này tồn tại, giá bao nhiêu). Chúng nằm trong hồ sơ FF&E tải về bên dưới.`,
+                        `${[mapping?.qty != null && 'Quantity', mapping?.room != null && 'Room', mapping?.confidence != null && 'Confidence'].filter(Boolean).join(', ')} are not stored in the warehouse — it only holds the catalogue. They live in the FF&E schedule you can download below.`,
+                      )}
+                    </div>
+                  )}
+
+                  {/* ① Cửa THẬT của hồ sơ FF&E nhiều món. Không có bảng ⇒ disabled KÈM LÝ DO
+                      (§9 cấm nút giả), không ẩn nút. */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+                    <button
+                      type="button"
+                      onClick={() => void exportFfeSheet()}
+                      disabled={result.table.items.length === 0 || exporting}
+                      style={{
+                        height: 30, padding: '0 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 600,
+                        border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)',
+                        cursor: result.table.items.length === 0 || exporting ? 'not-allowed' : 'pointer',
+                        opacity: result.table.items.length === 0 || exporting ? 0.55 : 1,
+                        display: 'flex', alignItems: 'center', gap: 6,
+                      }}
+                    >
+                      <FileSpreadsheet size={13} />
+                      {exporting
+                        ? tr('Đang dựng hồ sơ…', 'Building schedule…')
+                        : tr(`Tải hồ sơ FF&E (${result.table.items.length} món)`, `Download FF&E schedule (${result.table.items.length} item(s))`)}
+                    </button>
+                    {result.table.items.length === 0 && (
+                      <span style={{ fontSize: 11, color: 'var(--t4)', textAlign: 'center', maxWidth: 420 }}>
+                        {tr('Chưa có món nào vào kho nên chưa dựng được hồ sơ — sửa các dòng lỗi bên dưới rồi nhập lại.', 'No item made it into the warehouse, so there is nothing to build — fix the failed rows below and import again.')}
+                      </span>
+                    )}
+                    {exportNote && (
+                      <span style={{ fontSize: 11, color: 'var(--warning)', textAlign: 'center', maxWidth: 420 }}>{exportNote}</span>
+                    )}
+                  </div>
                   {result.failed.length > 0 && (
                     <div style={{ width: '100%', maxHeight: 180, overflow: 'auto', border: '1px solid var(--border)', borderRadius: 10, padding: 10 }}>
                       <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--danger)', marginBottom: 6 }}>

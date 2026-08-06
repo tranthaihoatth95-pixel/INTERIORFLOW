@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,20 +7,31 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{
+  :root,[data-theme="light"]{
     --accent:#6a57f5;
     --paper:#EFECE6;
-    --ink:#1c1c21;
+    --panel:#fff; --panel-rgb:255,255,255;
+    --ink:#1c1c21; --ink-rgb:28,28,33;
     --t2:#6a6d78;
     --glass:rgba(255,255,255,.55);
     --glass-border:rgba(255,255,255,.75);
     --shadow:0 18px 50px rgba(28,28,33,.14), 0 2px 8px rgba(28,28,33,.06);
   }
+  [data-theme="dark"]{
+    --accent:#6a57f5;
+    --paper:#0c0c0e;
+    --panel:#1a1a1e; --panel-rgb:26,26,30;
+    --ink:#f5f5f7; --ink-rgb:245,245,247;
+    --t2:#9e9ea8;
+    --glass:rgba(26,26,30,.72);
+    --glass-border:rgba(255,255,255,.10);
+    --shadow:0 18px 50px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.35);
+  }
   *{box-sizing:border-box;margin:0;padding:0}
   body{
     font-family:'Be Vietnam Pro',sans-serif;color:var(--ink);
     background:var(--paper);min-height:100vh;overflow-x:hidden;
-    background-image:radial-gradient(rgba(28,28,33,.07) 1px, transparent 1px);
+    background-image:radial-gradient(rgba(var(--ink-rgb),.07) 1px, transparent 1px);
     background-size:22px 22px;
   }
 
@@ -36,8 +47,8 @@
     padding:8px 14px;border-radius:10px;font-size:13px;font-weight:500;color:var(--t2);
     white-space:nowrap;cursor:pointer;display:flex;gap:7px;align-items:center;border:1px solid transparent;
   }
-  .tab:hover{background:rgba(255,255,255,.6);color:var(--ink)}
-  .tab.active{background:#fff;color:var(--ink);border-color:rgba(28,28,33,.08);box-shadow:0 2px 6px rgba(28,28,33,.08)}
+  .tab:hover{background:rgba(var(--panel-rgb),.6);color:var(--ink)}
+  .tab.active{background:var(--panel);color:var(--ink);border-color:rgba(var(--ink-rgb),.08);box-shadow:0 2px 6px rgba(var(--ink-rgb),.08)}
   .tab .dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
   .tab.pin{color:var(--accent);font-weight:600}
   .cr{font-size:10.5px;font-weight:600;background:rgba(106,87,245,.1);color:var(--accent);padding:2px 6px;border-radius:6px}
@@ -63,13 +74,13 @@
   .win-title{font-size:14.5px;font-weight:600}
   .win-sub{font-size:11.5px;color:var(--t2)}
   .win-acts{margin-left:auto;display:flex;gap:6px}
-  .wbtn{width:26px;height:26px;border-radius:8px;border:1px solid rgba(28,28,33,.1);background:rgba(255,255,255,.55);
+  .wbtn{width:26px;height:26px;border-radius:8px;border:1px solid rgba(var(--ink-rgb),.1);background:rgba(var(--panel-rgb),.55);
     display:grid;place-items:center;font-size:12px;color:var(--t2);cursor:pointer}
-  .wbtn:hover{color:var(--ink);background:#fff}
+  .wbtn:hover{color:var(--ink);background:var(--panel)}
 
   /* RUỘT — nội dung sắc nét, GÓC VUÔNG, không blur */
   .content{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .pane{background:#fff;border:1px solid rgba(28,28,33,.09)}
+  .pane{background:var(--panel);border:1px solid rgba(var(--ink-rgb),.09)}
   .pane .label{font-size:10.5px;font-weight:600;letter-spacing:.08em;color:var(--t2);padding:8px 10px 6px;text-transform:uppercase}
   .pane .img{aspect-ratio:4/3;position:relative;overflow:hidden;background:#fafaf8}
   .pane .img svg,.pane .img .fake{position:absolute;inset:0;width:100%;height:100%}
@@ -88,14 +99,14 @@
   .ctrls{padding:12px 4px 4px;display:flex;flex-direction:column;gap:11px}
   .slider{display:flex;align-items:center;gap:10px;font-size:12.5px}
   .slider .name{width:120px;color:var(--ink);font-weight:500}
-  .track{flex:1;height:5px;border-radius:99px;background:rgba(28,28,33,.12);position:relative}
+  .track{flex:1;height:5px;border-radius:99px;background:rgba(var(--ink-rgb),.12);position:relative}
   .fill{position:absolute;inset:0;right:auto;border-radius:99px;background:var(--accent)}
   .knob{position:absolute;top:50%;transform:translate(-50%,-50%);width:15px;height:15px;border-radius:50%;
-    background:#fff;border:1.5px solid var(--accent);box-shadow:0 1px 4px rgba(28,28,33,.25)}
+    background:#fff;border:1.5px solid var(--accent);box-shadow:0 1px 4px rgba(var(--ink-rgb),.25)}
   .val{width:34px;text-align:right;font-variant-numeric:tabular-nums;color:var(--t2);font-size:12px}
   .row{display:flex;gap:8px;align-items:center}
-  .chip{display:flex;gap:7px;align-items:center;font-size:12px;color:var(--t2);border:1px dashed rgba(28,28,33,.25);
-    padding:7px 11px;border-radius:10px;background:rgba(255,255,255,.4);cursor:pointer}
+  .chip{display:flex;gap:7px;align-items:center;font-size:12px;color:var(--t2);border:1px dashed rgba(var(--ink-rgb),.25);
+    padding:7px 11px;border-radius:10px;background:rgba(var(--panel-rgb),.4);cursor:pointer}
   .chip:hover{color:var(--ink);border-color:var(--accent)}
   .go{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--accent);color:#fff;border:none;
     font-family:inherit;font-size:13.5px;font-weight:600;padding:10px 20px;border-radius:12px;cursor:pointer;
@@ -121,7 +132,7 @@
   .mini .s{font-size:11px;color:var(--t2);margin-top:4px}
   .mini .port.in{left:-7px;top:50%}
   .mini:hover{border-color:var(--accent)}
-  .hint{position:absolute;z-index:9;font-size:11px;color:var(--t2);background:rgba(255,255,255,.6);
+  .hint{position:absolute;z-index:9;font-size:11px;color:var(--t2);background:rgba(var(--panel-rgb),.6);
     padding:4px 9px;border-radius:8px;backdrop-filter:blur(8px)}
 
   .caption{max-width:1100px;margin:0 auto 50px;padding:0 20px;font-size:12px;color:var(--t2);line-height:1.7}
@@ -225,5 +236,13 @@
   Nội dung hư cấu 100%.
 </div>
 
+<script>
+document.addEventListener('keydown', function (e) {
+  if (e.key === 't' || e.key === 'T') {
+    var r = document.documentElement
+    r.dataset.theme = r.dataset.theme === 'light' ? 'dark' : 'light'
+  }
+})
+</script>
 </body>
 </html>

@@ -12,9 +12,10 @@
  * `rgba()`. Ngày 05/08 tìm lại thấy 15 chỗ như vậy, trong đó 3 chỗ CHẠY THẬT trên UI:
  * 12 chỗ trong 5 nền động màn đăng nhập (`app/globals.css`), pill cảnh báo Larkbase ở màn
  * chọn dự án (`components/ProjectSelect.tsx`), băng "phiên đứt" ở màn đăng nhập
- * (`components/entry/LoginScreen.tsx`). ⇒ Quét CẢ hex LẪN bộ ba rgb, sau khi bỏ hết
- * khoảng trắng. Đây chính là luật N7 (`00-BAT-DAU-DOC-DAY.md §5`): grep phải đúng CHỈ BÁO
- * của việc đang kiểm, không phải chỉ báo gần đúng.
+ * (`components/entry/LoginScreen.tsx`). ⇒ Quét CẢ hex LẪN bộ ba rgb. Đây chính là luật N7
+ * (`00-BAT-DAU-DOC-DAY.md §5`): grep phải đúng CHỈ BÁO của việc đang kiểm, không phải chỉ
+ * báo gần đúng. (06/08 phải học lại đúng bài này một lần nữa ở cấp CÚ PHÁP — xem khối chú
+ * thích tại chỗ bóc số rgb bên dưới.)
  *
  * Phạm vi CỐ Ý: chỉ `lib/` `components/` `app/` = thứ được đóng gói và ship ra.
  * KHÔNG quét `docs/` (nơi GHI luật, bắt buộc phải nêu tên màu bị cấm — vd chính
@@ -68,27 +69,21 @@ interface Exemption {
 }
 
 /**
- * Miễn trừ CÓ LÝ DO — rà thủ công 05/08. Miễn trừ theo FILE (không theo dòng) vì các file
- * dưới đây là bảng màu, số dòng xê dịch mỗi lần thêm kiểu tóc/áo.
+ * Miễn trừ CÓ LÝ DO — rà thủ công 05/08, rà lại 06/08. Miễn trừ theo FILE (không theo dòng)
+ * vì các file dưới đây là bảng màu / bảng dữ liệu, số dòng xê dịch mỗi lần sửa.
  *
- * ⚠️ Đây là miễn trừ TẠM, KHÔNG phải phán quyết "màu này hợp lệ". Xem `docs/AUDIT-BRAND-PII.md`
- * mục 🟡 `lib/avatar.ts`: lập luận cũ là "avatar thuộc UI của app, LUẬT §4 cho app có nhận
- * diện riêng" — nhưng §4 nói nhận diện riêng của **InteriorFlow**, mà 3 màu này là của một
- * studio cụ thể, nên lập luận đó chưa đủ. Chưa đổi trong đợt 05/08 vì Hoà vừa chốt hướng
- * "avatar là ẢNH THẬT nhân viên, Memoji chỉ làm fallback" ⇒ phần này sắp đổi kiến trúc, sửa
- * màu bây giờ là sửa thứ sắp bị thay. CẦN TỔNG QUYẾT rồi gỡ khỏi danh sách này.
+ * 🟢 GỠ 06/08 — `lib/avatar.ts` + `components/avatar/AvatarRenderer.tsx` KHÔNG CÒN MIỄN TRỪ.
+ * Miễn trừ cũ dựa vào hai lập luận, cả hai đã hết hiệu lực:
+ *   ① "avatar thuộc UI của app, LUẬT §4 cho app có nhận diện riêng" — §4 nói nhận diện riêng
+ *      của **InteriorFlow**, mà 3 màu đó là của một studio khách, nên lập luận này chưa từng
+ *      đủ (chính docblock cũ đã tự nhận).
+ *   ② "avatar sắp đổi sang ảnh thật, sửa màu bây giờ là sửa thứ sắp bị thay" — nhưng Memoji
+ *      vẫn là FALLBACK sống, tức 3 màu đó vẫn ship ra pixel thật; và đợt đổi kiến trúc chưa
+ *      có ngày. Không thể để một vi phạm trung tính chờ vô thời hạn.
+ * TỔNG quyết 06/08: đổi hex, GIỮ NGUYÊN key (`navy`/`orange`/`white`) nên avatar người dùng
+ * đã lưu chỉ đổi sắc độ. Hai file nay nằm TRONG vùng quét — thêm lại màu cấm là đỏ ngay.
  */
 const EXEMPTIONS: Exemption[] = [
-  {
-    file: 'lib/avatar.ts',
-    reason:
-      'Bảng màu áo/nền avatar (SHIRT_COLORS navy/orange/white). Chờ TỔNG quyết cùng đợt đổi avatar sang ảnh thật — xem docblock trên.',
-  },
-  {
-    file: 'components/avatar/AvatarRenderer.tsx',
-    reason:
-      'Cùng bảng màu với lib/avatar.ts, vẽ trực tiếp trong SVG (7 chỗ). Cùng lý do chờ TỔNG quyết.',
-  },
   {
     file: 'lib/ai/chat-assist.test.ts',
     reason:
@@ -166,15 +161,30 @@ export function scanSource(file: string, src: string): Hit[] {
     const trimmed = lines[i].trim();
     if (!trimmed || isDocblockLine(trimmed)) continue;
     const upper = trimmed.toUpperCase();
-    // Bỏ khoảng trắng để bắt được mọi cách viết: rgba(240, 96, 32) ≡ rgba(240,96,32).
-    const packed = trimmed.replace(/\s+/g, '');
     for (const c of BRAND_COLORS) {
       if (upper.includes(c.hex)) {
         hits.push({ file, line: i + 1, color: c.name, form: 'hex', text: trimmed });
       }
-      if (packed.includes(`rgb(${c.rgb}`) || packed.includes(`rgba(${c.rgb}`)) {
-        hits.push({ file, line: i + 1, color: c.name, form: 'rgb', text: trimmed });
-      }
+    }
+    /* Dạng rgb/rgba — SỬA 06/08 sau vòng KIỂM PHẢN BIỆN.
+     *
+     * Bản cũ so chuỗi: bỏ hết khoảng trắng rồi tìm `rgb(240,96,32`. Cách đó chỉ bắt được ĐÚNG
+     * một lối viết. Ba cú pháp CSS HỢP LỆ và đang phổ biến đi thẳng qua, đã dựng lại từng ca:
+     *   · `RGBA(240,96,32,.5)`     — tên hàm viết HOA
+     *   · `rgb(240 96 32)`         — CSS Color 4, cách nhau bằng DẤU CÁCH (bỏ khoảng trắng
+     *                                 xong thành `rgb(2409632)`, không khớp gì nữa)
+     *   · `rgb(240 96 32 / 50%)`   — cú pháp alpha mới
+     * Đúng cùng loại lỗi mà docblock đầu file đã ghi ("quét hex là KHÔNG ĐỦ"), chỉ lùi một bậc.
+     * Nay BÓC SỐ ra khỏi lời gọi thay vì so chuỗi: mọi dấu phân cách (phẩy, cách, gạch chéo)
+     * đều được, không phân biệt hoa/thường.
+     *
+     * Giới hạn CÒN LẠI, ghi rõ để không ai tưởng đã kín: `hsl()` và `color(srgb …)` viết cùng
+     * một màu vẫn lọt — muốn bắt phải đổi hệ màu, đắt hơn hẳn. Chưa có ca thật nào trong repo
+     * dùng hai dạng đó; nếu sau này có, đây là chỗ phải sửa. */
+    for (const m of trimmed.matchAll(/rgba?\(([^)]*)\)/gi)) {
+      const nums = (m[1].match(/\d+(?:\.\d+)?/g) ?? []).slice(0, 3).join(',');
+      const c = BRAND_COLORS.find((b) => b.rgb === nums);
+      if (c) hits.push({ file, line: i + 1, color: c.name, form: 'rgb', text: trimmed });
     }
   }
   return hits;
@@ -227,6 +237,10 @@ function testScannerCatchesRealViolation() {
   const rgbHits = scanSource('fake.css', `  background: rgba(240, 96, 32, 0.28);\n  border: 1px solid rgb(0,40,80);`);
   ok('bắt dạng rgb/rgba kể cả có khoảng trắng (ca AUDIT-BRAND-PII bỏ sót)', rgbHits.length === 2 && rgbHits.every((h) => h.form === 'rgb'));
 
+  // 3 ca KIỂM PHẢN BIỆN 06/08 dựng ra và bản cũ để lọt hết — nay phải bắt được.
+  const cssModern = scanSource('fake.css', `  a{color:RGBA(240,96,32,.5)}\n  b{color:rgb(240 96 32)}\n  c{color:rgb(0 40 80 / 50%)}`);
+  ok('bắt RGBA( viết HOA · rgb() cách bằng DẤU CÁCH · cú pháp alpha `/` (3 ca từng lọt)', cssModern.length === 3);
+
   const commentHits = scanSource('fake.ts', ` * Trước đây là #F06020 / rgba(0, 40, 80, 0.4) — đã gỡ 05/08.\n  // navy cũ: #002850`);
   ok('CHÚ THÍCH được phép nêu tên màu đã gỡ (ghi lịch sử quyết định)', commentHits.length === 0);
 
@@ -237,11 +251,43 @@ function testScannerCatchesRealViolation() {
   const cleanHits = scanSource('fake.tsx', `  background: 'var(--accent)';\n  fill="#6a57f5"`);
   ok('nguồn sạch (token + accent IF) → 0 hit', cleanHits.length === 0);
 
-  ok('miễn trừ chỉ che ĐÚNG file được nêu', isExempt('lib/avatar.ts') && !isExempt('lib/avatar-other.ts'));
+  ok(
+    'miễn trừ chỉ che ĐÚNG file được nêu',
+    isExempt('lib/ai/chat-assist.test.ts') && !isExempt('lib/ai/chat-assist-other.test.ts'),
+  );
+}
+
+/* ── 3) khoá riêng 2 file avatar — thứ vừa được gỡ miễn trừ 06/08 ── */
+/**
+ * Vì sao tách thành bài kiểm RIÊNG thay vì tin vào [1]: [1] chỉ nói "0 vi phạm trong toàn
+ * vùng quét". Nếu mai có ai đổi `SCAN_DIRS`, đổi `SCAN_EXT`, hay đơn giản là ĐỔI TÊN file
+ * avatar, [1] vẫn xanh trong khi hai file này đã rơi ra ngoài lưới — im lặng, không ai biết.
+ * Bài này khẳng định hai điều RIÊNG BIỆT: (a) file THỰC SỰ nằm trong tập được quét,
+ * (b) nội dung nó sạch. Cùng cơ chế "miễn trừ chết" ở [1]: bắt lưới thủng, không chỉ bắt màu.
+ */
+const AVATAR_FILES = ['lib/avatar.ts', 'components/avatar/AvatarRenderer.tsx'];
+
+function testAvatarFilesAreScannedAndClean() {
+  console.log('\n[3] Hai file avatar — nằm TRONG lưới quét và sạch màu thương hiệu');
+
+  const files: string[] = [];
+  for (const d of SCAN_DIRS) walk(path.join(ROOT, d), files);
+  const scanned = new Set(files.map((abs) => path.relative(ROOT, abs)));
+
+  for (const rel of AVATAR_FILES) {
+    ok(`${rel} — nằm trong tập file được quét`, scanned.has(rel));
+    ok(`${rel} — KHÔNG còn nằm trong danh sách miễn trừ`, !isExempt(rel));
+
+    const abs = path.join(ROOT, rel);
+    const hits = fs.existsSync(abs) ? scanSource(rel, fs.readFileSync(abs, 'utf8')) : [];
+    for (const h of hits) console.log(`  FAIL - ${h.file}:${h.line} [${h.form}] màu ${h.color} — "${h.text.slice(0, 90)}"`);
+    ok(`${rel} — 0 màu thương hiệu (thấy ${hits.length})`, hits.length === 0);
+  }
 }
 
 testProductSourceIsNeutral();
 testScannerCatchesRealViolation();
+testAvatarFilesAreScannedAndClean();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

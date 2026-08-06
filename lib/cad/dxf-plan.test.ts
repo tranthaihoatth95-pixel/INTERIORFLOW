@@ -1,5 +1,5 @@
 /**
- * lib/cad/dxf-plan.test.ts — VIỆC 4 phiếu DXF Nam Long (05/08).
+ * lib/cad/dxf-plan.test.ts — VIỆC 4 phiếu DXF trên một bộ hồ sơ thật (05/08).
  * Chạy: `node_modules/.bin/sucrase-node lib/cad/dxf-plan.test.ts`
  *
  * Doc dựng bằng tay theo ĐÚNG hình dạng đo được ở 6 file thật (tên layer `A-Column`/`E-DimTruc`/
@@ -30,7 +30,7 @@ const poly = (layer: string, pts: [number, number][], closed = true): Entity =>
   ({ id: id(), type: 'polyline', layer: `l-${layer}`, points: pts.map(([x, y]) => ({ x, y })), closed });
 const doc = (entities: Entity[]): Doc => ({ entities, layers });
 
-console.log('\n[1] Cụm vẽ chính — bỏ bản sao parked xa (ca thật 04_TANG8: cách 12 km)');
+console.log('\n[1] Cụm vẽ chính — bỏ bản sao parked xa (ca thật ở một file sàn: cách 12 km)');
 {
   const near = [line('A-Column', 0, 0, 30_000, 0), line('A-Wall', 0, 0, 0, 25_000), line('A-Wall', 30_000, 0, 30_000, 25_000)];
   const far = [line('A-Wall', 12_000_000, 0, 12_010_000, 0), line('A-Wall', -2_700_000, 12_500_000, -2_690_000, 12_500_000)];
@@ -44,7 +44,7 @@ console.log('\n[1] Cụm vẽ chính — bỏ bản sao parked xa (ca thật 04_
   ok('doc không có layer công trình nào → null, không sập', mainClusterBox(doc([text('E-DimTruc', 0, 0, 'B')])) === null);
 }
 
-console.log('\n[2] Lưới cột — nhãn trục thật của Nam Long');
+console.log('\n[2] Lưới cột — nhãn trục lấy theo hình dạng thật của một bộ hồ sơ');
 {
   // trục X: nhãn chữ nằm CÙNG HÀNG (y = -28100), khoảng cách theo đúng nhịp đo được
   const xs: [string, number][] = [['B', 197_500], ['B1', 199_628], ['C', 205_890], ['D', 214_240], ['2D', 220_168], ['E', 222_700]];
@@ -84,8 +84,8 @@ console.log('\n[3] Lõi cứng — tách cụm, hai buồng thang hai đầu kh�
 /* §0h — MỌI SỐ DƯỚI ĐÂY LÀ HƯ CẤU (sàn 500 m² tròn, khung giấy 40×25 m).
  * Bản đầu của file này dùng đúng diện tích sàn thật + đúng kích thước khung giấy thật của bộ hồ sơ
  * khách. Đó là "số liệu dự án" — §0h HG3 xếp vào cột CẤM, và phép kiểm §0h #2 đòi grep số liệu
- * khách trong `lib/` ra 0. Số cụ thể nằm ở `docs/CHOT-DIEN-TICH-NAMLONG-2026-08-05.md` mục 1 —
- * đúng chỗ của nó. HÌNH DẠNG bài kiểm không đổi, chỉ đổi con số. */
+ * khách trong `lib/` ra 0. Số cụ thể nằm ở sổ chốt diện tích trong thư mục dữ liệu dự án
+ * `2407-Test/` (NGOÀI git) mục 1 — đúng chỗ của nó. HÌNH DẠNG bài kiểm không đổi, chỉ đổi con số. */
 console.log('\n[4] Diện tích khai trong khung tên');
 {
   ok('đọc "500 m2"', planDeclaredAreaM2(doc([text('A-Par-Glass', 0, 0, '500 m2')]))?.areaM2 === 500);
@@ -128,7 +128,7 @@ console.log('\n[5] Đối chiếu diện tích — KHÔNG bịa số khi thiếu
   ok('lệch quá 3% → gắn cờ nghi ngờ + ghi số lệch', cc.suspect === true && Math.abs((cc.deltaPercent ?? 0) - 20.0) < 0.1, String(cc.deltaPercent));
 
   /* VIỆC 2 phiếu S1 (05/08) — KHOÁ CÂU CHỮ.
-   * `docs/CHOT-DIEN-TICH-NAMLONG-2026-08-05.md` mục 2 chốt: hàm này KHÔNG phát hiện lỗi parser,
+   * Sổ chốt diện tích (thư mục `2407-Test/`, ngoài git) mục 2 chốt: hàm này KHÔNG phát hiện lỗi parser,
    * nó phát hiện RÁC TRONG FILE GỐC (định nghĩa block copy từ file khác còn sót trong BLOCKS,
    * mang con số của bản vẽ nguồn). Câu cũ — "nghi nạp thiếu hình hoặc chọn nhầm đường bao" — đổ
    * lỗi cho bộ đọc, khiến người dùng đi sửa nhầm thứ. */

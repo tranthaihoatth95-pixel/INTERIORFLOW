@@ -1,16 +1,16 @@
 /**
  * lib/cad/dxf-plan.ts — ĐỌC NGỮ NGHĨA MẶT BẰNG từ `Doc` vừa nạp bằng `parseDxfEx()`
- * (phiếu DXF Nam Long 05/08, VIỆC 4). Hàm THUẦN, test bằng
+ * (phiếu DXF 05/08 trên một bộ hồ sơ thật, VIỆC 4). Hàm THUẦN, test bằng
  * `node_modules/.bin/sucrase-node lib/cad/dxf-plan.test.ts`.
  *
  * ⛔ **KHÔNG SUY ĐOÁN THAY NGƯỜI DÙNG (K3).** Mọi hàm ở đây trả về CẢ kết quả LẪN nguồn/độ tin
  * cậy; không tìm thấy thì trả `null` + lý do, tuyệt đối không trả một con số "trông có vẻ đúng".
  * Bài học của chính phiên này: thử lấy diện tích sàn bằng bao lồi (convex hull) của lớp mặt dựng
- * → lệch **+37% (TANG11)** và **+50% (TANG12)** so với số ghi trong khung tên. Ship con số đó thì
+ * → lệch **+37%** và **+50%** (hai sàn trong bộ hồ sơ thật) so với số ghi trong khung tên. Ship số đó thì
  * mọi phép chia khu phía sau đều sai mà nhìn vẫn "có số". Nên `planAreaCrossCheck()` thà trả
  * `method:'none'` còn hơn.
  *
- * ⚠️ TÊN LAYER LÀ QUY ƯỚC CỦA BỘ HỒ SƠ, KHÔNG PHẢI CHUẨN NGÀNH. Bộ Nam Long dùng
+ * ⚠️ TÊN LAYER LÀ QUY ƯỚC CỦA BỘ HỒ SƠ, KHÔNG PHẢI CHUẨN NGÀNH. Bộ hồ sơ thật dùng để đo có
  * `A-Column`/`A-Wall`/`E-Stair`/`E-Wc`/`E-DimTruc`/`A-Par-Glass`. Hồ sơ studio khác sẽ khác ⇒ mọi
  * danh sách layer dưới đây đều là THAM SỐ mặc định, truyền đè được. Không hardcode vào thuật toán.
  */
@@ -60,7 +60,7 @@ function centroid(e: Entity): Pt | null {
 /**
  * KHUNG BAO CỦA CỤM VẼ CHÍNH — bỏ các bản sao parked xa trong model space.
  *
- * 🔴 BẮT BUỘC PHẢI CÓ, không phải phòng xa: `04_TANG8-TTT.dxf` chèn block "SDG" ba lần ở cách gốc
+ * 🔴 BẮT BUỘC PHẢI CÓ, không phải phòng xa: một file sàn (F2) chèn cùng một block ba lần ở cách gốc
  * **12 km** (đã đối chiếu file thô — đúng nội dung file). Khung bao thô của nó ra
  * **12.311 × 15.492 m**; lấy số đó đi tính bất cứ thứ gì đều vô nghĩa.
  *
@@ -294,19 +294,19 @@ const shoelaceM2 = (pts: Pt[]): number => {
 /**
  * Đối chiếu diện tích ghi trong khung tên với diện tích TÍNH TỪ HÌNH HỌC — phép tự kiểm rẻ mà chắc.
  *
- * ⚠️ **LỆCH KHÔNG CÓ NGHĨA LÀ NẠP SAI** (đổi cách diễn giải 05/08, `docs/CHOT-DIEN-TICH-NAMLONG-2026-08-05.md`
- * mục 2). Ca thật đã dựng nên luật này: một file tầng được copy từ tầng khác, người vẽ sửa khung
+ * ⚠️ **LỆCH KHÔNG CÓ NGHĨA LÀ NẠP SAI** (đổi cách diễn giải 05/08 — sổ chốt diện tích nằm trong
+ * thư mục dữ liệu dự án `2407-Test/`, NGOÀI git, mục 2). Ca thật đã dựng nên luật này: một file tầng được copy từ tầng khác, người vẽ sửa khung
  * tên hiển thị nhưng **định nghĩa block cũ còn sót trong section BLOCKS**, mang con số của tầng
  * nguồn. Hàm này phát hiện đúng — nó phát hiện **rác trong file gốc**, không phải lỗi bộ đọc.
  * ⇒ Câu cảnh báo phải hướng người dùng đi ĐỐI CHIẾU KHUNG TÊN, tuyệt đối KHÔNG viết "nạp sai"/
  * "lỗi đọc file" — viết vậy là đổ lỗi nhầm chỗ và người dùng sẽ đi sửa nhầm thứ.
  *
- * 🔴 **VỚI BỘ NAM LONG, VẾ "TÍNH TỪ HÌNH HỌC" HIỆN KHÔNG CÓ** — và đó là sự thật của FILE, không
+ * 🔴 **VỚI BỘ HỒ SƠ THẬT ĐÃ ĐO, VẾ "TÍNH TỪ HÌNH HỌC" HIỆN KHÔNG CÓ** — và đó là sự thật của FILE, không
  * phải thiếu sót của hàm này. Đã kiểm cả 6 file: đường polyline khép kín lớn duy nhất là khung
  * giấy trên layer `defpoints` (1.247 m² và 922 m², **y hệt nhau ở cả 6 sàn** ⇒ là khung bản vẽ,
  * không phải ranh giới sàn). Đường bao sàn được vẽ bằng nhiều đoạn thẳng rời trên `A-Wall`/
  * `A-Par-Glass`, muốn thành đa giác phải DÒ MẶT PHẲNG (planar face finding) — thuật toán riêng,
- * chưa làm. Bao lồi đã thử và BỊ LOẠI: lệch +37% (TANG11) / +50% (TANG12).
+ * chưa làm. Bao lồi đã thử và BỊ LOẠI: lệch +37% / +50% ở hai sàn.
  *
  * ⇒ Hàm trả `method:'none'` + `computedM2:null` và ghi lý do. Nơi gọi hiện "chưa đối chiếu được",
  * KHÔNG hiện một con số bịa (K3/N4).

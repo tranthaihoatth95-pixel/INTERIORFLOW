@@ -1,4 +1,17 @@
-export type DataType = 'image' | 'text' | 'mask' | 'number' | 'video';
+/**
+ * Kiểu dữ liệu chạy trên dây nối giữa các khối.
+ *
+ * `'table'` (thêm 06/08, G-M3-02 — xem `docs/GAP-IF.md`): BẢNG N MÓN. Trước đây luồng node chỉ
+ * có ảnh/chữ/mặt nạ/số/video ⇒ một DANH SÁCH món không tồn tại được như dữ liệu chạy giữa các
+ * khối, nên không khối nào xuất ra bảng món được; muốn có bảng phải chạy tay N lượt rồi gõ lại.
+ *
+ * ⚠️ RUỘT của `'table'` là `FfeTable` (`lib/ffe/item.ts`) đã **tuần tự hoá thành JSON string** —
+ * KHÔNG phải object. Lý do: `PortValue.value` là `string | number` (flow của người dùng được
+ * `JSON.stringify` nguyên cục vào localStorage/`graphJson`, xem `lib/store.ts`), đổi kiểu đó
+ * thành object là vỡ mọi file flow đã lưu. Mã hoá/giải mã ĐI QUA `lib/ffe/port.ts`
+ * (`encodeFfeTablePort`/`decodeFfeTablePort`) — không nơi nào tự `JSON.parse` tay.
+ */
+export type DataType = 'image' | 'text' | 'mask' | 'number' | 'video' | 'table';
 
 export interface PortDef {
   id: string;
@@ -137,6 +150,17 @@ export const DATA_TYPE_COLORS: Record<DataType, string> = {
   mask: '#f59e0b',
   number: '#34d399',
   video: '#fb7185', // hồng san hô — phân biệt luồng video với ảnh
+  /**
+   * Bảng món (06/08). KHÔNG chế hex mới (`LUAT-GIAO-DIEN-BAT-BUOC.md` L4 + `SPEC-DESIGN-SYSTEM-IF`):
+   * lấy đúng giá trị token `--accent-warm` đã có trong `app/globals.css:26` — token nâu ấm DUY NHẤT
+   * của hệ, vốn dành cho chỗ "cần một sắc ấm khác accent tím".
+   * Vì sao chọn nó: 5 màu port đang dùng hết 5 vùng sắc rõ rệt (tím · lam · hổ phách · lục · san
+   * hô); nâu ấm là sắc còn lại phân biệt được BẰNG MẮT ở chấm 8px, và "bảng/hồ sơ = giấy ấm" khớp
+   * ngôn ngữ tài liệu. ⚠️ Cạnh nối kiểu 'table' hiện vẽ nét LIỀN 1.5px giống 'mask' vì
+   * `edgeStyleFor()` (`lib/store.ts`) ngoài vùng file đợt này — xem báo cáo, cần thêm 'table' vào
+   * nhánh `isData` để thành nét đứt như text/number.
+   */
+  table: '#c79a63',
 };
 
 // Nhãn nhóm — quy chuẩn thoại 5 luật (2.2.69, 30/07): Việt dẫn · Anh theo, dùng trong

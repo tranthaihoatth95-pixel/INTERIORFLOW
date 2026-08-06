@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <title>Vitals — bản mẫu v2</title>
@@ -7,15 +7,20 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
-  :root{
+  :root,[data-theme="dark"]{
     --bg:#0c0c0e; --panel:#17171b; --panel2:#1f1f24; --line:#2a2a31; --hair:#232329;
     --t1:#f5f5f7; --t2:#d6d6db; --t3:#9a9aa4; --t4:#6e6e78;
     /* ĐỔI ở v2: bỏ tím (màu mặc định của mọi AI) → vàng ấm, họ hàng với --warm #9a7442 của IF */
     --ai:#f0b95e; --ai-hot:#ffe6b0; --ai-bg:#221c10; --ai-line:#3d3120; --mint:#7fe3c4;
   }
+  [data-theme="light"]{
+    --bg:#f2efe9; --panel:#faf8f4; --panel2:#fffefb; --line:#e3ded4; --hair:#ece7dd;
+    --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a;
+    --ai:#a6721c; --ai-hot:#7a5414; --ai-bg:#fbf1de; --ai-line:#e0cda3; --mint:#1f9d6b;
+  }
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{margin:0;background:#0a0a0c;font-family:'Be Vietnam Pro',system-ui,sans-serif;color:var(--t1);
+  body{margin:0;background:var(--bg);font-family:'Be Vietnam Pro',system-ui,sans-serif;color:var(--t1);
        display:flex;flex-direction:column;overflow:hidden}
   .note{padding:11px 16px;font-size:12.5px;line-height:1.6;color:var(--t3);background:#121216;border-bottom:1px solid var(--line)}
   .note b{color:var(--t1);font-weight:600}
@@ -195,5 +200,13 @@
 
 </div>
 
+<script>
+document.addEventListener('keydown', function (e) {
+  if (e.key === 't' || e.key === 'T') {
+    var r = document.documentElement
+    r.dataset.theme = r.dataset.theme === 'light' ? 'dark' : 'light'
+  }
+})
+</script>
 </body>
 </html>

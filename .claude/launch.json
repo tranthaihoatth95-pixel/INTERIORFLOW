@@ -18,6 +18,14 @@
       "cwd": "."
     },
     {
+      "name": "interiorflow-m3",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3006,
+      "autoPort": true,
+      "cwd": "."
+    },
+    {
       "name": "interiorflow-p2",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],

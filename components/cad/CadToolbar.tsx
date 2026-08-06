@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useCadStore, type Tool, type CadMode } from '@/lib/cad/store';
 import { useModKey, useModShiftKey } from '@/lib/kbd';
+import { useT } from '@/lib/i18n';
 import Tooltip from '@/components/ui/Tooltip';
 import Popover from '@/components/ui/Popover';
 
@@ -509,6 +510,15 @@ function GroupBlock({ label, children }: { label: string; children: React.ReactN
  * phần còn lại của toolbar — KHÔNG thêm màu mới, "đang chọn" GHOST (viền+nền accent nhạt, xem
  * 2.1.8.l 30/07 — không còn tô đặc như trước). */
 function ModeSwitch({ mode, onChange, pro }: { mode: CadMode; onChange: (m: CadMode) => void; pro: boolean }) {
+  // 06/08 (G-M4-02) — mặt nút TRƯỚC ĐÂY in khoá kỹ thuật `Sketch`/`Pro`/`Revit`; tên chính thức
+  // đã chốt lại bị đẩy vào tooltip. Nay ĐẢO: nút hiện TÊN CHÍNH THỨC, khoá kỹ thuật biến mất khỏi
+  // giao diện (vẫn giữ nguyên trong `onChange('sketch'|'pro'|'revit')` — đổi khoá là vỡ persist).
+  // Cặp nhãn [vi, en] lấy ĐÚNG theo khai báo mode-registry ở components/studio/CadStageScreen.tsx:
+  //   dòng 55 `'2d/sketch' → ['Sơ phác','Sketch']` · dòng 63 `'2d/pro' → ['Kỹ thuật','Technical']`.
+  // `revit` KHÔNG có mục riêng trong registry (gộp vào `'2d/pro'`, xem CadStageScreen.tsx:70-72)
+  // nên nhãn EN 'Interior' chọn cho khớp bộ. Không đọc thẳng registry vì nó chỉ được nạp khi module
+  // CadStageScreen chạy — toolbar còn dùng ở ngữ cảnh khác thì `getMode()` sẽ undefined.
+  const tr = useT();
   const segBtn = (active: boolean): React.CSSProperties => ({
     appearance: 'none',
     // 2.1.8.l (30/07) — bật KHÔNG tô đặc nữa: trên bản vẽ kỹ thuật, khối màu đặc thắng chính bản
@@ -541,19 +551,19 @@ function ModeSwitch({ mode, onChange, pro }: { mode: CadMode; onChange: (m: CadM
       {/* 05/08 VIỆC 2 — `title=` cũ gộp mô tả CẢ BA mode vào một chuỗi 3 câu treo trên khung bọc:
           trỏ vào nút nào cũng ra y hệt đoạn văn đó, người dùng phải tự dò câu nào nói về nút mình
           đang trỏ. Nay tách thành 3 Tooltip riêng, mỗi nút chỉ nói phần của nó. */}
-      <Tooltip label="Sơ phác" desc="Vẽ bằng ngón tay: bộ công cụ tối giản, nút cỡ lớn, có cụm nút cảm ứng thay phím tắt.">
+      <Tooltip label={tr('Sơ phác', 'Sketch')} desc="Vẽ bằng ngón tay: bộ công cụ tối giản, nút cỡ lớn, có cụm nút cảm ứng thay phím tắt.">
         <button type="button" onClick={() => onChange('sketch')} style={segBtn(mode === 'sketch')}>
-          Sketch
+          {tr('Sơ phác', 'Sketch')}
         </button>
       </Tooltip>
-      <Tooltip label="Kỹ thuật" desc="Tối ưu chuột + bàn phím: đủ công cụ CAD chính xác (toạ độ, ghi kích thước, Fillet/Chamfer, Array…).">
+      <Tooltip label={tr('Kỹ thuật', 'Technical')} desc="Tối ưu chuột + bàn phím: đủ công cụ CAD chính xác (toạ độ, ghi kích thước, Fillet/Chamfer, Array…).">
         <button type="button" onClick={() => onChange('pro')} style={segBtn(mode === 'pro')}>
-          Pro
+          {tr('Kỹ thuật', 'Technical')}
         </button>
       </Tooltip>
-      <Tooltip label="Nội thất" desc="Thêm bộ cấu kiện BIM nội thất, giữ nguyên mọi công cụ của Kỹ thuật.">
+      <Tooltip label={tr('Nội thất', 'Interior')} desc="Thêm bộ cấu kiện BIM nội thất, giữ nguyên mọi công cụ của Kỹ thuật.">
         <button type="button" onClick={() => onChange('revit')} style={segBtn(mode === 'revit')}>
-          Revit
+          {tr('Nội thất', 'Interior')}
         </button>
       </Tooltip>
     </div>

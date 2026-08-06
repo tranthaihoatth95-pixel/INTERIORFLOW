@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="./support.js"></script>
-</head>
-<body>
-<x-dc>
-<helmet>
+<title>IF · Nút tổng</title>
 <style>
+
 :root{
   --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14);
   --ease-apple:cubic-bezier(.32,.72,0,1); --tap:32px; --tap-lg:44px; --row:28px;
@@ -41,9 +38,10 @@ a{color:var(--accent);text-decoration:none}
 a:hover{color:var(--accent-strong)}
 @keyframes nt-halo{0%,100%{box-shadow:0 0 0 0 var(--accent-soft)}50%{box-shadow:0 0 0 6px var(--accent-soft)}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}}
-</style>
-</helmet>
 
+</style>
+</head>
+<body>
 <div style="min-height:100vh;background:var(--bg);padding:36px 40px 72px;font-weight:400;font-size:14px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
 
   <div style="width:1440px;margin:0 auto 30px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
@@ -55,7 +53,7 @@ a:hover{color:var(--accent-strong)}
       </div>
       <div style="margin-top:8px;font-size:12px;color:var(--t3);max-width:900px;text-wrap:pretty">Gom nhiều nút thành một công cụ dùng lại được. Chỉ những tham số bạn chọn mới hiện ra ngoài, phần còn lại nằm bên trong.</div>
     </div>
-    <button onClick="{{ toggleTheme }}" style="height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;line-height:1.45;font-family:inherit;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">{{ themeLabel }}</button>
+    <button style="height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;line-height:1.45;font-family:inherit;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">Đổi sang nền Kem</button>
   </div>
 
   <div style="width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:var(--gap-screen)">
@@ -603,23 +601,13 @@ a:hover{color:var(--accent-strong)}
         </div>
       </div>
     </div>
-
-</x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Tối&quot;,&quot;Kem&quot;],&quot;default&quot;:&quot;Tối&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Giao diện&quot;}}">
-class Component extends DCLogic {
-  state = { theme: null };
-  componentDidMount() { this.apply(); }
-  componentDidUpdate() { this.apply(); }
-  apply() { document.documentElement.dataset.theme = this.theme(); }
-  theme() { return this.state.theme || (this.props.theme === 'Kem' ? 'light' : 'dark'); }
-  renderVals() {
-    const t = this.theme();
-    return {
-      themeLabel: t === 'dark' ? 'Đổi sang nền Kem' : 'Đổi sang nền Tối',
-      toggleTheme: () => this.setState({ theme: t === 'dark' ? 'light' : 'dark' })
-    };
+<script>
+document.addEventListener('keydown', function (e) {
+  if (e.key === 't' || e.key === 'T') {
+    var r = document.documentElement
+    r.dataset.theme = r.dataset.theme === 'light' ? 'dark' : 'light'
   }
-}
+})
 </script>
 </body>
 </html>

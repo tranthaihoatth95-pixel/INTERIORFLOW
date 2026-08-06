@@ -2,7 +2,7 @@
  * lib/present-editor/boq-spec-extra.test.ts — kiểm JOIN quy cách/đơn vị (logic thuần). Chạy:
  *   node_modules/.bin/sucrase-node lib/present-editor/boq-spec-extra.test.ts
  */
-import { boqUnitLabel, boqQuyCach, buildBoqSpecExtraMap } from './boq-spec-extra';
+import { boqUnitLabel, boqQuyCach, buildBoqSpecExtraMap, boqImageUrl } from './boq-spec-extra';
 
 let pass = 0;
 let fail = 0;
@@ -38,6 +38,17 @@ console.log('\n[3] buildBoqSpecExtraMap');
   ok('map có đủ 2 key', m.size === 2);
   ok('spec-1 đúng unit', m.get('spec-1')?.unit === 'm²');
   ok('spec-2 quyCach từ kích thước', m.get('spec-2')?.quyCach === '100×200mm');
+}
+
+/* ═══ [4] G-M3-11 (06/08) — cột Ảnh ═══ */
+console.log('\n[4] boqImageUrl (cột Ảnh)');
+{
+  ok('có imageAssetId → URL /api/library/:id/file', boqImageUrl({ imageAssetId: 'asset-123' }) === '/api/library/asset-123/file');
+  ok('không có ảnh → null (bảng hiện Ô TRỐNG, KHÔNG ảnh giả)', boqImageUrl({ imageAssetId: null }) === null);
+  ok('chuỗi rỗng/khoảng trắng cũng là "chưa có ảnh"', boqImageUrl({ imageAssetId: '   ' }) === null);
+  ok('undefined → null', boqImageUrl({}) === null);
+  const m = buildBoqSpecExtraMap([{ id: 's', unit: 'cai', imageAssetId: 'a1' }]);
+  ok('map mang theo imageUrl', m.get('s')?.imageUrl === '/api/library/a1/file');
 }
 
 console.log(`\nKẾT QUẢ: ${pass} pass, ${fail} fail`);
