@@ -478,3 +478,118 @@ Hoà từ chối lời nhận lỗi suông, yêu cầu báo cáo lên Anthropic 
 huấn luyện trước khi dùng thương mại. Báo cáo: `BAO-CAO-LOI-ANTHROPIC-2026-08-06.md`, gửi qua nút
 phản hồi trong giao diện — phiên Cowork **không có kênh gửi trực tiếp**, và TỔNG đã nói rõ điều đó
 thay vì hứa suông.
+
+---
+
+## §0q — TASK LÀ PHÉP THỬ IF, KHÔNG PHẢI DELIVERABLE (Hoà đặt 06/08)
+
+> Nguyên văn Hoà: *"mục tiêu chính là xài IF để làm task, và từ task chỉ ra những lỗi IF không
+> làm được, sau đó update IF. Bạn đang vi phạm luật trung tính khi nghiêng về dự án."*
+
+**Vi phạm kiểu mới — nghiêng dự án.** Luật trung tính không chỉ cấm data khách vào repo. Nó còn
+cấm **để việc giải dự án THAY cho việc dựng app**. TỔNG đã tính 476 chỗ bằng tay, chốt tầng 9
+meeting, định vẽ stacking lên Miro — tức **làm kiến trúc sư hộ**. Mỗi lần TỔNG tự giải một bước
+của dự án là **che mất đúng cái lỗi IF cần lộ ra**.
+
+### Mô hình đúng
+
+```
+3 task  →  đi XUYÊN qua IF như một KTS thật đang dùng app
+mỗi bước:
+   IF làm được   → tốt, đi tiếp
+   IF làm KHÔNG được → đó là GAP → phiếu backlog IF → update IF → chạy lại
+sản phẩm dự án = SẢN PHẨM PHỤ. Sản phẩm CHÍNH = IF khá lên.
+```
+
+### Đường may KÉP (trung tính hai trục)
+
+| Thứ | Bản chất | Về đâu |
+|---|---|---|
+| **GAP** — "IF chưa có bảng stacking", "IF không đối chiếu được headcount vs diện tích" | lỗi/thiếu của SẢN PHẨM, trung tính | `docs/GAP-IF.md` (repo) |
+| **DATA** — "476 chỗ", "2.281 m²", tên phòng ban | dữ liệu MỘT khách | `2407-Test/` (ignored) |
+| **giải bằng tay** — TỔNG tự tính zoning, tự binh mặt bằng | **VI PHẠM** — che lỗi IF | ⛔ KHÔNG LÀM |
+
+### Phép kiểm §0q — trước mỗi việc dự án, hỏi:
+1. Việc này đang **bắt IF làm** hay **tôi đang làm hộ IF**?
+2. Nếu IF làm không được → đã ghi GAP chưa, hay tôi lặng lẽ giải tay?
+3. Kết quả cuối là **IF khá lên** hay chỉ là **một mặt bằng đẹp**?
+
+Nếu câu 3 ra "một mặt bằng đẹp" mà IF không khá hơn → đã nghiêng dự án, dừng lại.
+
+### §0q — LUẬT CỨNG (Hoà chốt 06/08, áp cho MỌI việc tương tự về sau)
+
+**TỔNG KHÔNG hỏi Hoà quyết định dự án/thiết kế.** 476 chỗ · bỏ 2F · xếp tầng nào · cụm gì ở đâu
+— đó là **input của task** hoặc **việc IF phải tự làm**, KHÔNG phải quyết định TỔNG gate để chờ.
+Mỗi lần TỔNG hỏi Hoà một quyết định thiết kế = đang bắt Hoà làm KTS hộ IF = nghiêng dự án.
+
+Đúng: gặp quyết định thiết kế → hoặc coi là **dữ liệu thử** (đưa vào IF), hoặc ghi **GAP** ("IF
+chưa tự quyết được X"). Cấm biến nó thành câu hỏi cho Hoà.
+
+**Token — luật cứng kèm theo:** cấm quét cả kho lớn (Drive, thư mục nhiều file) để "tìm xem có
+gì". Chỉ mở **đúng file** khi biết cần file nào. Không biết cần gì thì hỏi tên file, không quét mò.
+
+---
+
+## §0r — MỘT NGUỒN SỰ THẬT CHO VIỆC ĐANG CHỜ (Hoà chốt 06/08)
+
+> Nguyên văn Hoà: *"push những việc rải rác lên ngọn nguồn của sự thật để chống trôi, chống chôn vùi."*
+
+**Việc đang chờ KHÔNG được sống rải rác trong tin chat** — chat trôi, việc bị chôn, phiên sau lần
+không ra. Phải gom vào MỘT file **nguồn-sự-thật** trong repo: `docs/VIEC-DANG-CHO.md`. Luôn cập
+nhật, xếp theo thứ tự làm. Đây là **NGỌN** — chỗ ĐẦU TIÊN nhìn để biết còn gì.
+
+### Luật
+1. Việc mới phát sinh giữa chừng → **đẩy NGAY lên `VIEC-DANG-CHO.md`**, không để trong lời thoại.
+2. Việc xong → chuyển sang mục "đã xong" kèm timestamp, không xoá trắng (giữ vết).
+3. **Ledger phải TRUNG TÍNH** (nó ở trong repo sản phẩm). Việc chạm data khách → paste-block chi
+   tiết để ở `2407-Test/` (ignored); ledger chỉ **trỏ tới**, không chép tên khách/số liệu vào.
+4. **Chat là kênh, ledger là NGUỒN.** Chốt gì → ghi ledger. Chốt trong chat rồi thôi = sẽ trôi.
+
+### Cơ chế ép
+Mỗi lần TỔNG soạn việc mới mà không cập nhật ledger = việc đó **sẽ trôi**. Phép kiểm cuối mỗi
+vòng: "việc vừa bàn đã lên `VIEC-DANG-CHO.md` chưa?" — chưa thì chưa xong vòng.
+
+---
+
+## §0s — CẮT TOKEN THỪA (Hoà chốt 06/08)
+
+> *"nhìn tên là biết sứ mệnh"* — tên đã mã hoá việc thì đừng đọc lại, giải lại.
+
+1. **Tên = sứ mệnh** (§0l): nhìn tên phiên/file/gốc là biết việc → không đọc lại luật, không giải
+   lại nhiệm vụ.
+2. **Có nguồn sự thật thì TRỎ, không chép lại**: ledger `VIEC-DANG-CHO.md` · cây gia phả · sổ này.
+   Lặp nội dung đã có = đốt token.
+3. **Phiếu lean**: tên = mảng; ai cần luật tự tra bằng mã (§0i…§0s). Không nhét cả sổ vào phiếu.
+4. **TỔNG không lặp bối cảnh mỗi lượt**: câu ngắn, trỏ doc. Không kể lại thứ đã chốt.
+5. **Cơ chế ép**: mỗi lượt tự hỏi *"câu này lặp thứ đã có ở đâu đó không?"* — có thì cắt, trỏ tới.
+
+---
+
+## §0t — `grep -a` BẮT BUỘC (Hoà chốt 06/08)
+
+**Mọi lệnh tìm mã nguồn dùng `grep -rna`.** `grep` mặc định của phiên **nuốt tệp có byte điều
+khiển** → trả rỗng / exit 1 **IM LẶNG**.
+
+⇒ Kết luận *"0 nơi gọi"* / *"field chết"* / *"không ai dùng"* rút từ `grep` không có `-a` có thể
+là **DƯƠNG TÍNH GIẢ**. Ca bệnh: **G-M1-15** — M1 báo sai **2 lần** vì đúng cơ chế này.
+
+### Luật
+1. `-a` là bắt buộc, không phải tuỳ chọn. Quen tay gõ `grep -rn` = **kết luận không dùng được**.
+2. ⛔ **Cấm gõ byte điều khiển thô vào mã.** Nguồn gốc bệnh nằm ở đây — chặn từ gốc, không chỉ
+   chữa triệu chứng ở phía tìm kiếm.
+3. **Chạy lệnh quét** (đã có trong `M1-SUA-OUT` §3) và **báo tệp dính** — không im lặng bỏ qua.
+4. Nghiệm thu **V6**: kết luận "không nơi nào gọi" phải kèm **lệnh `grep -rna` đã chạy**, dán
+   nguyên văn, để người sau chạy lại kiểm được.
+
+---
+
+## §0u — GAP-IF: MỘT NGƯỜI GHI = COWORK-TỔNG (Hoà chốt 06/08)
+
+**Phiên fix KHÔNG sửa `GAP-IF` trực tiếp.** Đã gây revert thật: `M1-SUA` khai đã cập nhật, mở file
+ra vẫn **44 đỏ** — hai ngòi bút cùng ghi một sổ thì bản sau đè mất bản trước.
+
+### Luật
+1. Phiên ghi **delta GAP** vào **`M-OUT` của chính mình** (`M1-SUA-OUT`, `M2-…-OUT`…), không đụng
+   sổ chung.
+2. **TỔNG gộp về sổ một nguồn** `GAP-IF` — một ngòi bút duy nhất, không tranh chấp.
+3. Đây là §0r (**một nguồn sự thật**) áp cho sổ GAP: nhiều nơi ghi = mất việc, không phải nhanh hơn.
