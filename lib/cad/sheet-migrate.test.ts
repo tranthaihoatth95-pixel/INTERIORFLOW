@@ -147,6 +147,53 @@ function testOldIdfStillReadable() {
   ok('Sheet mới lấy tên theo project', sheet.name === 'Dự án test NC-13');
 }
 
+/* ── 9) VIỆC 1+3 (05/08) — gộp KHÔNG được bỏ rơi `levels`/`wallTypes` (nếu bỏ ⇒ levelId mồ côi) ── */
+function testLevelsAndWallTypesSurviveMerge() {
+  console.log('\n[9] Gộp giữ được Doc.levels/Doc.wallTypes — levelId/typeId KHÔNG thành mồ côi');
+  const mk = (eid: string, levelId?: string, typeId?: string): Doc => {
+    const d = lineDoc(eid, 0, 0, 3000, 0);
+    d.entities = d.entities.map((e) => ({ ...e, ...(levelId ? { levelId } : {}), ...(typeId ? { typeId } : {}) }));
+    return d;
+  };
+
+  const a = mk('ea', 'level-tret', 'wt-100');
+  a.levels = [{ id: 'level-tret', name: 'Trệt', elevationMm: 0, order: 0, inferred: true }];
+  a.wallTypes = [{ id: 'wt-100', name: 'Gạch 100', thicknessMm: 100, kind: 'interior' }];
+
+  const b = mk('eb', 'level-lau1', 'wt-220');
+  // Tờ 2 lặp lại tầng Trệt (cùng id — cùng một tầng thật) + thêm Lầu 1. Cả hai đều đánh order từ 0.
+  b.levels = [
+    { id: 'level-tret', name: 'Trệt', elevationMm: 0, order: 0, inferred: true },
+    { id: 'level-lau1', name: 'Lầu 1', elevationMm: 3600, order: 1 },
+  ];
+  b.wallTypes = [{ id: 'wt-220', name: 'Bao che 220', thicknessMm: 220, kind: 'exterior' }];
+
+  const { doc } = mergeIdfSheetsToDoc([
+    { id: 's-a', name: 'A', doc: a },
+    { id: 's-b', name: 'B', doc: b },
+  ]);
+
+  ok('levels được mang sang Doc gộp', !!doc.levels?.length);
+  ok('dedupe theo id — 2 tầng, không phải 3', doc.levels?.length === 2);
+  ok('giữ đúng cao độ thật, không bịa lại', doc.levels?.find((l) => l.id === 'level-lau1')?.elevationMm === 3600);
+  ok('giữ cờ inferred', doc.levels?.find((l) => l.id === 'level-tret')?.inferred === true);
+  ok('order đánh lại 0..n-1, không đụng số', doc.levels?.map((l) => l.order).join(',') === '0,1');
+
+  ok('wallTypes được mang sang, dedupe theo id', doc.wallTypes?.length === 2);
+  ok('giữ đúng bề dày type', doc.wallTypes?.find((t) => t.id === 'wt-220')?.thicknessMm === 220);
+
+  // Điểm cốt lõi: MỌI levelId/typeId trên entity sau khi gộp vẫn TRA ĐƯỢC.
+  const withLevel = doc.entities.filter((e) => e.levelId);
+  ok('cả 2 entity giữ levelId (không bị prefix như id entity)', withLevel.length === 2);
+  ok('MỌI levelId tra được trong doc.levels — KHÔNG mồ côi', withLevel.every((e) => doc.levels!.some((l) => l.id === e.levelId)));
+  ok('MỌI typeId tra được trong doc.wallTypes — KHÔNG mồ côi', doc.entities.filter((e) => e.typeId).every((e) => doc.wallTypes!.some((t) => t.id === e.typeId)));
+
+  // Doc cũ (không levels/wallTypes) — KHÔNG sinh mảng rỗng cho có.
+  const plain = mergeIdfSheetsToDoc([{ id: 's', name: 's', doc: lineDoc('e0', 0, 0, 1000, 0) }]);
+  ok('sheet không có levels → Doc gộp không mọc field levels', plain.doc.levels === undefined);
+  ok('sheet không có wallTypes → Doc gộp không mọc field wallTypes', plain.doc.wallTypes === undefined);
+}
+
 testNoDataLoss();
 testNoOverlap();
 testIdCollision();
@@ -155,6 +202,7 @@ testLayerDedup();
 testSheetShape();
 testEmptySheetInBetween();
 testOldIdfStillReadable();
+testLevelsAndWallTypesSurviveMerge();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

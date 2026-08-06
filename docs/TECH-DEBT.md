@@ -40,11 +40,24 @@
 - 🟡 1024px — Tệp chồng một phần Chạy flow ở route render. Pre-existing (`Header.tsx` cũ), không
   phải `7.3.31`. KHÔNG sửa bằng `overflow-hidden` (cắt popover — xem comment `Header.tsx` cũ dòng
   45-52). Tự hết khi dời Chạy flow khỏi bar theo `docs/TICKET-CHAY-FLOW-KHONG-GHIM-BAR-2026-07-30.md`.
-- 🟡 `findHatchBoundary` (dò biên phòng, gọi trong `lib/three/cad-to-obj.ts` `docToObjScene`) —
-  CODE CŨ, phát hiện khi bench 3D-1 (01/08): treo > 2 phút với 289 phòng nhỏ tách rời (1156 tường)
-  × 578 block nội thất — mỗi block gọi 1 lần, mỗi lần quét toàn bộ `traceDoc`. Bản vẽ thật hiếm
-  đạt mật độ này (chưa phải bug chặn) nhưng nếu có ca thật cần: cache biên phòng theo room thay vì
-  dò lại mỗi block, hoặc index không gian (spatial hash) cho `traceDoc`.
+- ✅ **ĐÃ SỬA (05/08, PHU)** ~~🟡 `findHatchBoundary` (dò biên phòng, gọi trong
+  `lib/three/cad-to-obj.ts` `docToObjScene`) — CODE CŨ, phát hiện khi bench 3D-1 (01/08): treo > 2
+  phút với 289 phòng nhỏ tách rời (1156 tường) × 578 block nội thất — mỗi block gọi 1 lần, mỗi lần
+  quét toàn bộ `traceDoc`.~~ Vá làm 2 đợt, cùng file `lib/cad/hatch.ts`:
+  1. (trước 05/08) `splitAtIntersections` quét O(n²) mọi cặp đoạn → **lưới không gian**. Khoá ở
+     `lib/cad/hatch-perf.test.ts` (43.200 đoạn: 29,6 s → 129 ms).
+  2. (05/08) phần CÒN LẠI, đúng cái TECH-DEBT này tả: mỗi lần hỏi dựng LẠI toàn bộ phân hoạch mặt
+     phẳng của CÙNG một bản vẽ. Tách `buildHatchFaceIndex()` (dựng 1 lần) + `pickHatchFace()`
+     (hỏi N lần); `findHatchBoundary` giữ nguyên chữ ký = dựng+hỏi, đúng cho lệnh H 1 điểm bấm.
+     Áp vào **5 vòng lặp**: `lib/three/cad-to-obj.ts:596` · `lib/cad/standards/checker.ts:117,370`
+     · `lib/cad/room-autolabel.ts:131`(dùng chung cho 2 vòng).
+     Số đo thật (1.156 phòng · 2.312 lần hỏi · 13.872 đoạn): **~173 s → 1,16 s** (dựng 1.038 ms +
+     hỏi 121 ms). Khoá ở `lib/cad/hatch-index.test.ts` — 14/14, gồm kiểm ĐỒNG NHẤT kết quả với
+     `findHatchBoundary` trên 133 điểm hỏi.
+  ⚠️ Kéo theo: trần `MAX_ROOMS_FOR_AREA` — "bản vẽ quá nhiều nhãn thì bỏ đo diện tích" ở
+  `lib/ai/doc-context.ts:35,60` (test `lib/ai/vitals-context.test.ts:143`) — sinh ra để NÉ đúng
+  chi phí này. Nay có thể nới, nhưng **CHƯA đụng ở phiên này**: ngoài phạm vi phiếu, và phải đo
+  lại ngưỡng trên bản đã vá trước khi đổi con số.
 - ✅ **ĐÃ SỬA (03/08 đêm)** ~~🔴 Mode "3D Thiết kế" KHÔNG autosave xuống IndexedDB~~ — phát hiện
   03/08 lúc verify browser NC-12 VIỆC 3 (nút "Khoét hốc"). Nguyên nhân gốc (đọc code): autosaver
   (`useCadStore.subscribe(...)` + `createSheetsAutosaver(...)`) sống TRONG

@@ -227,7 +227,7 @@ export default function ProjectOverviewPage() {
                     padding: '9px 14px',
                     borderRadius: 9,
                     border: 'none',
-                    background: 'var(--accent, #F06020)',
+                    background: 'var(--accent)',
                     color: '#fff',
                     cursor: 'pointer',
                     fontSize: 12.5,

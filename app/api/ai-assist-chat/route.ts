@@ -8,6 +8,8 @@ import {
   normalizeChatStage,
   sanitizeBrandContext,
 } from '@/lib/ai/chat-assist';
+import { sanitizeDocContext } from '@/lib/ai/doc-context';
+import { sanitizeViolations } from '@/lib/ai/violations-context';
 
 /**
  * app/api/ai-assist-chat — "Vitals AI" trên Gallery (thanh chat luôn hiện phía trên thẻ dự án):
@@ -29,6 +31,8 @@ export async function POST(req: Request) {
     messages?: unknown;
     stage?: unknown;
     brand?: unknown;
+    docContext?: unknown;
+    violations?: unknown;
   };
   const messages = sanitizeChatMessages(body?.messages);
   if (!messages) {
@@ -41,9 +45,15 @@ export async function POST(req: Request) {
   // Brand Kit sống ở localStorage client → client gửi kèm mỗi lượt. Không có = prompt tự nói
   // "dự án chưa có Brand Kit" (VIỆC 4 · docs/SPEC-VITALS-AI.md §2).
   const brand = sanitizeBrandContext(body?.brand);
+  // VIỆC 5 (05/08) — trạng thái bản vẽ + kết quả kiểm quy chuẩn. `Doc` sống ở client (CAD store,
+  // không qua server) nên client PHẢI gửi kèm bản TÓM TẮT, giống hệt đường đi của `brand` ở trên.
+  // Cả hai đi qua sanitize (cắt trần cứng, bỏ mục hỏng) — không tin payload client.
+  // Không gửi = 2 khối này rỗng, prompt y hệt trước, không hồi quy.
+  const docContext = sanitizeDocContext(body?.docContext);
+  const violations = sanitizeViolations(body?.violations);
 
   try {
-    const r = await completeTextTiered(buildChatPrompt(messages), chatSystemPromptFor(stage, brand), { maxTokens: 500 });
+    const r = await completeTextTiered(buildChatPrompt(messages), chatSystemPromptFor(stage, brand, docContext, violations), { maxTokens: 500 });
     const reply = r.text.trim();
     return NextResponse.json({ reply, _tier: r.tier, _model: r.model });
   } catch (err) {

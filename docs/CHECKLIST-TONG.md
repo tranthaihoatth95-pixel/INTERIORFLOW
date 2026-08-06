@@ -177,3 +177,65 @@ Design" giữ nguyên) · **Trình bày → Trình chiếu** (EN "Presenting" gi
 ZonePanel/…) đồng bộ theo — khoá kỹ thuật `concept/render/present`·`sketch/pro/revit`·`node/3d`
 GIỮ NGUYÊN TUYỆT ĐỐI. `components/ProjectSelect.tsx` (dòng "Cách dùng 2D Kỹ thuật · 3D Thiết kế
 · Trình bày?") CHƯA đổi — file thuộc vùng P5, bỏ qua tránh conflict, để P5 làm khi rảnh tay.
+
+---
+
+## SỔ Ô TRỐNG (`disabled` kèm lý do) — lập S5 05/08, luật §9
+
+**Cách lập:** quét AST-thô mọi `<button>` trong `components/**` + `app/**`, lọc `disabled` **TĨNH**
+(placeholder "chưa có tính năng"), **loại** `disabled={biến}` (trạng thái bận tạm thời) và **loại**
+class Tailwind `disabled:` (biến thể CSS, không phải prop). Lệnh tái lập ghi ở báo cáo phiên
+`docs/BAO-CAO-COWORK-UI.md` mục S5.
+
+**Kết quả: 18 ô trống tĩnh · 15 có lý do tại chỗ · 3 "thiếu" đều là DƯƠNG TÍNH GIẢ** (component
+nguyên thuỷ nhận `disabled` làm **prop truyền qua** — lý do thuộc về nơi GỌI, không thuộc primitive):
+`components/cad/CadCanvas.tsx:3437` · `components/form/shared.tsx:198` · `components/photo-editor/PhotoEditor.tsx:445`.
+
+> ⇒ **KHÔNG tìm thấy nút giả nào trong toàn app.** Không có `onClick={() => {}}`, không có nút vừa
+> thiếu handler vừa thiếu `disabled`. Luật §9 đang được giữ đúng — ghi lại để phiên sau khỏi quét lại.
+
+| Màn hình | Ô nào | Lý do chưa có | Phiên fill |
+|---|---|---|---|
+| Bảng màu | `colors/ColorMatchPanel.tsx:138` | Chưa nối — cần đường từ bảng màu sang BOQ/đơn hàng | chưa phân |
+| 3D · Cấu kiện | `render-studio/Command3DPanel.tsx:236` | Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ (8 khối tầng ⑥) | S2 |
+| 3D · Bản vẽ | `render-studio/SectionExtractPanel.tsx` — Ghi kích thước tự động | Chưa có bộ sinh kích thước từ nét cắt (`grep autoDimension` = 0). Ghi tay bằng DIM ở chặng 2D | chưa phân |
+| 3D · Bản vẽ | `render-studio/SectionExtractPanel.tsx` — Ký hiệu cao độ | Chưa có ký hiệu ▽ ±0.000 (`grep spotElevation` = 0). Cắt đứng đã cho tung độ = cao độ thật | chưa phân |
+| 3D · Bản vẽ | `render-studio/SectionExtractPanel.tsx` — Ký hiệu mặt cắt lên mặt bằng | Chưa có A-A/B-B đặt ngược lên mặt bằng (`grep sectionMarker` = 0). Cần EntityType ký hiệu riêng | chưa phân |
+| 3D · Bản vẽ | `render-studio/SectionExtractPanel.tsx` — Cắt lại khi khối đổi | Nét cắt là ẢNH CHỤP một lần, sửa khối 3D KHÔNG tự đổi nét (`grep liveSection` = 0) | chưa phân |
+| 3D · Bản vẽ | `render-studio/SectionExtractPanel.tsx` — Đưa thẳng vào tờ in | Chưa nối khung tên/tờ in (`grep sectionToSheet` = 0). Vào `Doc` rồi thì bố trí ở chặng 2D | chưa phân |
+| 2D · chọn cùng loại | `studio/SelectSameKindButton.tsx:44` | Chờ P3 — `selectedIds` phải sống ở tầng Doc (`SPEC-TANG-DU-LIEU-CAU-KIEN` §8 Đ3) | G4/S4 |
+| 2D · lớp hoàn thiện | `studio/WallFinishBox.tsx:73` | Cần chốt cách lưu vật liệu THEO TỪNG MẶT tường vào Doc (hiện 1 vật liệu chung/đoạn) | S4 |
+| Canvas node | `nodes/InteriorNode.tsx:140` | lý do có tại chỗ (Tooltip) — xem file:dòng | S2 |
+| Sửa ảnh | `photo-editor/PhotoToolbar.tsx:316` · `:360` | lý do có tại chỗ — xem file:dòng | chưa phân |
+| Trình chiếu | `present-editor/SlideSorter.tsx:423` · `SlideStrip.tsx:195` | lý do có tại chỗ — xem file:dòng | G4 |
+| Trình chiếu · toolbar | `present-editor/Toolbar.tsx:450` · `:496` | lý do có tại chỗ — xem file:dòng | G4 |
+| **Checkpoint duyệt (MỚI)** | `studio/Checkpoint.tsx:159` · `:289` · `:301` · `:313` | 4 ô CỐ Ý: không có `onCancel`/`onRetry`/`onEditParams`/chưa tick phần nào ⇒ nút tự mờ **kèm câu lý do riêng cho từng ca** | — (khuôn, nơi gọi truyền vào) |
+| **2D · Trình bày (MỚI, S4)** | `cad/PlanPresentPanel.tsx` ô `depth` | Chờ đường trích mặt đứng (S2). Phần tính toán ĐÃ XONG — `lib/cad/plan-depth.ts` (25/25 test); chưa màn nào gọi `elevationToEntities` (`lib/three/section-entities.ts:430`) nên không có mặt đứng để tô | S2 |
+| **2D · Trình bày (MỚI, S4)** | `cad/PlanPresentPanel.tsx` ô `blockdecor` | Cây/người hiện SINH BẰNG HÀM (`lib/cad/plan-present.ts` `derivePresentDecor`). Bộ block cây/người thuộc thư viện khối — mảng **S3**; nối xong thì thay được, không phải viết lại | S3 |
+| **2D · Trình bày (MỚI, S4)** | `cad/PlanPresentPanel.tsx` ô `exportpng` | Đường xuất PNG ép mọi nét về đen — `lib/cad/render.ts:620` `forceColor: '#111111'` ⇒ xuất ra mất sạch màu trình bày. Sửa `render.ts` NGOÀI vùng phiên S4 | chưa phân |
+| **2D · Trình bày (MỚI, S4)** | `cad/PlanPresentPanel.tsx` ô `brandpalette` | Chưa nối Brand Kit. Bảng màu ĐÃ là tham số truyền đè được (`PresentOptions.palette`, luật trung tính) — chỉ thiếu màn chọn | chưa phân |
+
+### 🔴 4 mock RỖNG lọt vào repo — `Canvas-9/10/13/15.dc.html`
+Cả 4 đúng **206 byte**, ruột là `<x-dc></x-dc>` **trống trơn** + gọi `./support.js` (file không tồn
+tại — đã ghi ở mục CHẶN CHUNG bên trên). **Canvas-9 và Canvas-10 ĐÃ được commit vào git**; 13/15 còn
+untracked. Chúng không phải mock — là bản export hỏng của công cụ thiết kế.
+- ⛔ **KHÔNG "sửa" bằng cách thêm `data-theme` cho qua cửa kiểm** — file rỗng mà PASS còn nguy hiểm
+  hơn file ĐỎ, vì nó báo "đã có mock" trong khi không có gì.
+- Đề xuất: **xoá cả 4** + export lại nếu thật sự cần. Và thêm **luật ĐỎ ⑥ MOCK-RỖNG** vào
+  `scripts/check-mocks.mjs` để bản export hỏng không lọt lần nữa (S5 KHÔNG tự sửa cửa kiểm —
+  ngoài mảng, cần TỔNG duyệt).
+
+## Changelog
+[05/08 S5] Lập **Sổ ô trống** ở trên (18 ô, 15 có lý do, 0 nút giả). Dựng
+`components/studio/Checkpoint.tsx` + `checkpoint-core.ts` — khung checkpoint duyệt DÙNG CHUNG cho
+S2/S3/S4 theo §0e KS1–KS5 (34/34 test). Phát hiện 4 mock rỗng `Canvas-9/10/13/15` (2 cái đã vào git).
+
+[05/08 S4] **Chế độ trình bày cho mặt bằng** — thêm **4 ô trống** vào sổ (nay 22 ô), mỗi ô lý do
+RIÊNG tại chỗ, 0 nút giả. Ống kính thứ hai của `Doc` (`lib/cad/plan-present.ts`) + leader ISO 128-22
+(`plan-leader.ts`) + phân lớp chiều sâu (`plan-depth.ts`) — 99/99 test. Leader cắm vào
+`Checkpoint` của S5 đúng hợp đồng (seed · undoLabel · preview ReactNode · onAccept(ids)).
+
+[05/08 S2 BUILD#1] Nối `computeHeights()` vào dựng khối (`lib/three/cad-to-obj.ts` — hết cảnh mọi
+tầng chồng ở cốt 0) · MOUNT `sectionToEntities`/`elevationToEntities` qua tab **Bản vẽ** của
+`Command3DPanel` (trước đó 0 nơi gọi) — checkpoint duyệt dùng **khung chung S5**
+`components/studio/Checkpoint.tsx`, KHÔNG đẻ khung riêng. Thêm 5 ô trống ở bảng trên.

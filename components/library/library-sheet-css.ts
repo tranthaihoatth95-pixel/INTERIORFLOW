@@ -16,13 +16,17 @@
 //  Ngoài ra `.mat-sheet` chưa có trong globals.css nên khai ở đây đúng công thức mock
 //  (= công thức `.mat-card` sẵn có: nền --mat-card + blur-strong).
 export const LIBRARY_SHEET_CSS = `
-.if-lib-root{--fs-2xs:11px}
+/* G4 (00-BAT-DAU-DOC-DAY §4): mọi cỡ chữ phải có line-height ≥1.5 — khai MỘT LẦN ở gốc để
+   các rule con chỉ khai font-size vẫn kế thừa đủ, không cắt dấu tiếng Việt. */
+.if-lib-root{--fs-2xs:11px;line-height:1.5}
 /* 🔴 SỬA 04/08 (Hoà chê "không thấy tầng"): sheet cũ nền --mat-card = trắng .82 ở theme Sáng,
    card lại nền --field #f4f1eb ⇒ hai lớp gần trùng, nhìn phẳng lì. Đổi sang thang 3 tầng
-   nền(--bg) < sheet(--panel) < card(--card). Giữ kính nhưng chỉ còn là GIA VỊ (6% trong suốt +
-   blur) — đúng SPEC-APPLE-MOTION-MATERIAL "kính là gia vị, đọc được TRƯỚC" (iOS 27 tự sửa). */
-.if-lib-root .mat-sheet{background:color-mix(in srgb, var(--panel) 94%, transparent);
-     backdrop-filter:saturate(180%) blur(var(--blur-strong));-webkit-backdrop-filter:saturate(180%) blur(var(--blur-strong))}
+   nền(--bg) < sheet(--panel) < card(--card).
+   🔴 SỬA 05/08 (Hoà, VIỆC 2 "card rời"): BỎ HẲN kính. Luật G9 liệt kê ".glass-float" CHỈ 4 chỗ và
+   LibrarySheet không nằm trong đó; G2 bắt lớp nổi nhiều chữ phải nền ĐẶC ≥92% (popover ≥96%).
+   Sheet này đặc kín 97% + KHÔNG "backdrop-filter" ⇒ (a) chữ không chồng nền, (b) không tốn thêm
+   1 tấm backdrop trên canvas WebGL (trần 4 tấm, G9), (c) không tạo backdrop-root khi chuyển động. */
+.if-lib-root .mat-sheet{background:color-mix(in srgb, var(--panel) 97%, transparent)}
 .if-lib-root *{box-sizing:border-box}
 
 /* 🔴 SỬA 04/08 (Hoà: "nền sau sheet phải tối xuống rõ"): z-index cũ 20/21 chép từ mock — nhưng
@@ -32,17 +36,39 @@ export const LIBRARY_SHEET_CSS = `
 /* Đậm thêm 12% so với token: --mat-overlay (Sáng chỉ .28) hợp với modal NHỎ; sheet này chiếm
    74% chiều cao nên nền còn lại phải lùi hẳn ra sau mới đọc được lớp trên. Vẫn lấy token làm
    MÀU gốc để đồng bộ theme, chỉ chồng thêm một lớp tối mỏng. */
+/* Lớp phủ: TỐI HƠN MỘT BẬC so với bản dính đáy (12% → 22%). Card nay rời hẳn khỏi 4 mép màn,
+   nền quanh nó lộ ra cả bốn phía nên phải lùi sâu hơn thì card mới "nổi" thành vật thể riêng. */
 .if-lib-root .scrim{position:fixed;inset:0;
-       background:linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.12)),var(--mat-overlay);opacity:0;pointer-events:none;z-index:90;
+       background:linear-gradient(rgba(0,0,0,.22),rgba(0,0,0,.22)),var(--mat-overlay);opacity:0;pointer-events:none;z-index:90;
        transition:opacity var(--dur-base) var(--ease-apple);border:0;padding:0}
 .if-lib-root .scrim[data-open="true"]{opacity:1;pointer-events:auto}
-.if-lib-root .lib{position:fixed;left:50%;bottom:0;transform:translate(-50%,100%);width:min(980px,94vw);height:min(560px,74vh);
-     border-radius:var(--radius-xl) var(--radius-xl) 0 0;border:1px solid var(--mat-hairline);border-bottom:0;
-     box-shadow:var(--shadow-sheet);z-index:91;display:flex;flex-direction:column;overflow:hidden;
-     transition:transform var(--dur-base) var(--ease-apple)}
-.if-lib-root .lib[data-open="true"]{transform:translate(-50%,0)}
-.if-lib-root .grab{height:16px;flex:none;display:flex;align-items:center;justify-content:center}
-.if-lib-root .grab i{width:34px;height:4px;border-radius:2px;background:var(--border-strong)}
+/* ═══ CARD RỜI (detached sheet, chuẩn iOS 15+) — Hoà chốt 05/08 ═══
+   Trước: dính đáy (bottom:0), chỉ bo 2 góc trên, rộng tới 980px.
+   Nay:  · cách đáy 14px (+ safe-area máy có notch/thanh home)
+         · bo ĐỦ BỐN GÓC cùng bán kính var(--radius-lg)=20px
+         · width min(720px, 100vw−24px) ⇒ màn rộng canh giữa không tràn, màn <640px tự còn
+           12px mỗi bên (một công thức lo cả hai, không cần media query thứ hai)
+         · bóng mạnh hơn vì card NỔI hẳn (shadow-sheet cũ có spread âm −12px, hợp với vật dính mép)
+   Chuyển động: KHÔNG dùng opacity — ".badge" bên trong có "backdrop-filter", mà G1 cấm animate
+   opacity trên phần tử có backdrop-filter VÀ MỌI TỔ TIÊN. Nên trạng thái đóng đẩy hẳn xuống dưới
+   mép màn (thay vì 24px như brief) để card không "hiện đứng im rồi mới nhích" — giữ nguyên
+   scale(.98)→1, 260ms vào / 200ms ra, cubic-bezier(.32,.72,0,1) như brief. */
+.if-lib-root .lib{position:fixed;left:50%;
+     bottom:calc(14px + env(safe-area-inset-bottom, 0px));
+     width:min(720px, calc(100vw - 24px));height:min(560px,74vh);
+     border-radius:var(--radius-lg);border:1px solid var(--mat-hairline);
+     box-shadow:0 12px 40px rgba(0,0,0,.34);z-index:91;display:flex;flex-direction:column;overflow:hidden;
+     transform-origin:50% 100%;
+     transform:translate(-50%, calc(100% + 14px + env(safe-area-inset-bottom, 0px))) scale(.98);
+     transition:transform 200ms cubic-bezier(.32,.72,0,1)}
+.if-lib-root .lib[data-open="true"]{transform:translate(-50%,0) scale(1);
+     transition-duration:260ms}
+/* Vùng kéo: vạch NHÌN vẫn 4px, nhưng vùng CHẠM cao 44px (§0c mảng 3 — ngón tay/găng tay công
+   trường). Kéo xuống quá ngưỡng = đóng; nút ✕ ở header là đường tương đương (K5/G8). */
+.if-lib-root .grab{height:44px;flex:none;display:flex;align-items:center;justify-content:center;
+     cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}
+.if-lib-root .grab:active{cursor:grabbing}
+.if-lib-root .grab i{width:38px;height:4px;border-radius:2px;background:var(--border-strong)}
 .if-lib-root .libh{flex:none;display:flex;align-items:center;gap:10px;padding:2px 14px 10px}
 .if-lib-root .libh h3{margin:0;font-size:var(--fs-md);font-weight:var(--fw-semi);letter-spacing:-.015em;color:var(--t1)}
 .if-lib-root .libh .cx{margin-left:auto;width:28px;height:28px;color:var(--t3);border-radius:8px;display:flex;
@@ -139,8 +165,29 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .pub:disabled{opacity:.45;cursor:not-allowed}
 .if-lib-root .hidden{display:none}
 
+/* MÀN HẸP (<640px) — card đã tự co còn 12px mỗi bên nhờ công thức width ở trên, nhưng RUỘT sheet
+   thì chưa: header (h3 + ô tìm 260px + segmented + ✕) và kệ 186px vốn dựng cho 980px nên tràn ra
+   ngoài rồi bị "overflow:hidden" cắt cụt (lỗi CÓ SẴN, không phải do đợt card-rời — chụp lại được
+   trên bản cũ vì width cũ min(980,94vw) ở 420px cũng chỉ còn 394px). Vá tại chỗ, không đụng nhánh
+   màn rộng: ô tìm xuống hàng riêng, kệ hẹp lại, lưới đổi bậc tối thiểu. */
+@media (max-width:640px){
+  .if-lib-root .libh{flex-wrap:wrap;padding:2px 12px 10px}
+  .if-lib-root .libh h3{flex:none}
+  .if-lib-root .srch{order:3;flex:1 1 100%;max-width:none}
+  .if-lib-root .shelf{width:132px;padding:4px}
+  .if-lib-root .grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;padding:10px 12px 14px}
+  .if-lib-root .it .th{height:62px}
+  .if-lib-root .libft{height:auto;min-height:38px;padding:8px 12px;flex-wrap:wrap}
+}
+
 @media (prefers-reduced-motion:reduce){
   .if-lib-root *{animation:none!important;transition-duration:.1s!important}
   .if-lib-root .it:hover{transform:none!important}
+  /* Hoà chốt: giảm chuyển động thì BỎ transform, chỉ đổi hiển thị. Card đứng đúng chỗ mở, ẩn/hiện
+     bằng "visibility" (KHÔNG phải opacity — G1, xem lý do ở khối ".lib" trên). "inert" sẵn có ở
+     TSX đã khoá tiêu điểm bàn phím khi đóng nên không có bẫy Tab. */
+  .if-lib-root .lib{transform:translate(-50%,0) scale(1)!important;visibility:hidden;transition:none!important}
+  .if-lib-root .lib[data-open="true"]{visibility:visible}
+  .if-lib-root .scrim{transition:none!important}
 }
 `;

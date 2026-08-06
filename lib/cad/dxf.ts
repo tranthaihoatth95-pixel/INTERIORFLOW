@@ -17,11 +17,35 @@
  *     BLOCK_RECORD riêng cho chúng.
  *
  * Đọc: LINE, LWPOLYLINE (+closed), POLYLINE/VERTEX (biến thể cũ), CIRCLE, ARC, TEXT, MTEXT,
- * DIMENSION (đọc lại đúng encoding app tự ghi), HATCH (đọc boundary path + pattern/scale/góc)
- * + tên layer + màu ACI cơ bản → Doc (đơn vị mm giữ nguyên như file). Entity lạ → BỎ QUA,
- * không ném lỗi.
+ * DIMENSION (đọc lại đúng encoding app tự ghi), HATCH (đọc boundary path + pattern/scale/góc),
+ * **INSERT + BLOCKS (làm phẳng, 05/08)** + tên layer + màu ACI cơ bản → Doc (đơn vị mm giữ
+ * nguyên như file). Entity lạ → BỎ QUA, **có ghi vào `DxfLoadReport.skipped`** (không im lặng).
  *
  * DXF là chuỗi cặp (groupCode, value) mỗi cặp 2 dòng. Ta duyệt tuyến tính, gom ENTITIES.
+ *
+ * ══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 VÌ SAO PHẢI ĐỌC INSERT (đo trên 6 file DXF THẬT của Nam Long, 05/08 — không phải suy đoán)
+ *
+ * Bản vẽ AutoCAD thật gói gần như TOÀN BỘ hình vào block. Số đo thật (đếm record theo code 0):
+ *
+ *   file              ENTITIES  parser cũ đọc được   BLOCKS: định nghĩa / INSERT lồng / hình bên trong
+ *   03_TANG5B  5,6MB       139        135 (97%)          494 / 535 / ~7.100
+ *   04_TANG8   6,6MB       100         92 (92%)          415 / 448 / ~7.200
+ *   05_TANG9   9,3MB       173        167 (96%)          488 / 601 / ~19.600
+ *   06_TANG10 27,7MB        97         92 (95%)          910 /1560 / ~34.000
+ *   07_TANG11 13,2MB        95         90 (95%)          489 / 538 / ~33.000
+ *   08_TANG12  5,5MB        24         19 (79%)          234 / 166 / ~5.400
+ *
+ * ⚠️ Con số "97% đọc được" là ẢO GIÁC NGUY HIỂM: mẫu số chỉ là 97–173 entity ở ENTITIES, mà
+ * phần lớn là DIMENSION (71–91 cái) + vài LINE. **Toàn bộ mặt bằng nằm trong 2–6 cái INSERT**
+ * trỏ vào BLOCKS chứa hàng chục nghìn hình. Bỏ INSERT = **mở file ra gần như TRỐNG TRƠN**, chứ
+ * không phải "mất cửa và thiết bị" như phiếu mô tả. Đây là đính chính có vật chứng (§0/N7).
+ *
+ * ⚠️ POLYLINE/VERTEX: docstring cũ (dòng ngay trên) ghi là ĐỌC ĐƯỢC — **SAI**. `buildEntity`
+ * trả `null` cho 'POLYLINE' từ đầu. Riêng 07_TANG11 có 2.700 POLYLINE + 19.583 VERTEX nằm trong
+ * BLOCKS ⇒ chỉ mở INSERT mà không gom VERTEX thì vẫn mất một mảng lớn. Nay gom thật (xem
+ * `collapsePolylines`).
+ * ══════════════════════════════════════════════════════════════════════════════════════════
  */
 
 import type { Doc, DimEntity, ElementType, Entity, HatchPattern, Layer, LineType, Pt } from './model';
@@ -168,6 +192,400 @@ function parseLayerDefs(pairs: Pair[]): Map<string, { color?: string; lineweight
   return defs;
 }
 
+/* ═══════════════════ BLOCKS + INSERT (VIỆC 1, 05/08) ═══════════════════ */
+
+/** Một record thô trong file: tên entity (code 0) + bảng group code → các giá trị. */
+interface DxfRecord {
+  kind: string;
+  g: Record<number, string[]>;
+}
+
+/** Định nghĩa 1 block trong section BLOCKS. `base` là group 10/20 của BLOCK — mọi hình bên trong
+ * được đo TỪ điểm này, nên lúc chèn phải trừ đi trước khi scale/xoay (đúng cách AutoCAD làm). */
+interface DxfBlockDef {
+  name: string;
+  base: Pt;
+  records: DxfRecord[];
+}
+
+/**
+ * Ma trận affine 2D [a b c d e f]: x' = a·x + c·y + e · y' = b·x + d·y + f.
+ *
+ * ⚠️ DÙNG MA TRẬN, KHÔNG dùng bộ ba (scale, rot, translate) như `block-library.ts:113`
+ * `transformPt` — với block LỒNG block, "co giãn không đều rồi xoay rồi lại co giãn không đều"
+ * KHÔNG biểu diễn được bằng bộ ba đó (toán học, không phải sở thích). Thứ tự nhân vẫn giữ đúng
+ * quy ước cũ (scale → rotate → translate) để hành vi khớp block vẽ tay.
+ */
+type Mat = [number, number, number, number, number, number];
+
+const MAT_ID: Mat = [1, 0, 0, 1, 0, 0];
+
+/** m2 ∘ m1 — áp m1 TRƯỚC rồi m2 (m1 là phép của block con, m2 của block cha). */
+function matMul(m2: Mat, m1: Mat): Mat {
+  return [
+    m2[0] * m1[0] + m2[2] * m1[1],
+    m2[1] * m1[0] + m2[3] * m1[1],
+    m2[0] * m1[2] + m2[2] * m1[3],
+    m2[1] * m1[2] + m2[3] * m1[3],
+    m2[0] * m1[4] + m2[2] * m1[5] + m2[4],
+    m2[1] * m1[4] + m2[3] * m1[5] + m2[5],
+  ];
+}
+
+function matApply(m: Mat, p: Pt): Pt {
+  return { x: m[0] * p.x + m[2] * p.y + m[4], y: m[1] * p.x + m[3] * p.y + m[5] };
+}
+
+/** Định thức — ÂM nghĩa là phép biến đổi có LẬT GƯƠNG (tỉ lệ âm ở group 41/42). Cung tròn bị lật
+ * thì chiều quét đảo, phải hoán vị góc đầu/cuối (xem `transformEntity`). */
+function matDet(m: Mat): number {
+  return m[0] * m[3] - m[1] * m[2];
+}
+
+/** Hệ số co giãn "trung bình" = căn |định thức| — dùng cho bán kính và chiều cao chữ. Với co giãn
+ * ĐỀU thì đây là con số đúng tuyệt đối; co giãn KHÔNG đều thì đường tròn đáng lẽ thành elip, ta
+ * xấp xỉ + ĐẾM vào cảnh báo (K3 — không im lặng bịa hình). */
+function matScaleMag(m: Mat): number {
+  return Math.sqrt(Math.abs(matDet(m))) || 1;
+}
+
+/** Gom các cặp trong [from,to) thành record theo mốc code 0. */
+function scanRecords(pairs: Pair[], from: number, to: number): DxfRecord[] {
+  const out: DxfRecord[] = [];
+  let i = from;
+  while (i < to) {
+    if (pairs[i].code !== 0) { i++; continue; }
+    const kind = pairs[i].value.trim().toUpperCase();
+    let j = i + 1;
+    const g: Record<number, string[]> = {};
+    while (j < to && pairs[j].code !== 0) {
+      (g[pairs[j].code] ||= []).push(pairs[j].value);
+      j++;
+    }
+    out.push({ kind, g });
+    i = j;
+  }
+  return out;
+}
+
+/**
+ * POLYLINE cũ (heavyweight): đỉnh nằm ở các record VERTEX ĐỨNG SAU, kết thúc bằng SEQEND. Parser
+ * tuyến tính cắt theo code 0 nên chúng rời nhau ⇒ gom lại thành MỘT record 'LWPOLYLINE' tổng hợp
+ * (10/20 = danh sách đỉnh, 70 = cờ đóng) để đường dựng entity phía sau chỉ cần biết một loại.
+ *
+ * Bỏ qua VERTEX là đỉnh điều khiển spline/mặt lưới (cờ 70 bit 16 "mesh vertex" hoặc bit 1 "extra
+ * vertex created by curve fit") — lấy chúng vào sẽ ra đường gãy sai hình.
+ */
+function collapsePolylines(recs: DxfRecord[]): DxfRecord[] {
+  const out: DxfRecord[] = [];
+  for (let i = 0; i < recs.length; i++) {
+    const r = recs[i];
+    if (r.kind !== 'POLYLINE') { out.push(r); continue; }
+    const xs: string[] = [];
+    const ys: string[] = [];
+    let j = i + 1;
+    for (; j < recs.length && recs[j].kind === 'VERTEX'; j++) {
+      const flags = parseInt(recs[j].g[70]?.[0] ?? '0', 10) || 0;
+      if (flags & 16) continue;           // đỉnh lưới 3D — không phải đường
+      if ((flags & 1) && !(flags & 8)) continue; // đỉnh do curve-fit sinh thêm
+      const x = recs[j].g[10]?.[0];
+      const y = recs[j].g[20]?.[0];
+      if (x !== undefined && y !== undefined) { xs.push(x); ys.push(y); }
+    }
+    if (j < recs.length && recs[j].kind === 'SEQEND') j++;
+    if (xs.length >= 2) {
+      out.push({ kind: 'LWPOLYLINE', g: { ...r.g, 10: xs, 20: ys } });
+    }
+    i = j - 1;
+  }
+  return out;
+}
+
+function findSection(pairs: Pair[], name: string): [number, number] {
+  for (let k = 0; k + 1 < pairs.length; k++) {
+    if (pairs[k].code === 2 && pairs[k].value.trim().toUpperCase() === name) {
+      for (let j = k + 1; j < pairs.length; j++) {
+        if (pairs[j].code === 0 && pairs[j].value.trim().toUpperCase() === 'ENDSEC') return [k + 1, j];
+      }
+      return [k + 1, pairs.length];
+    }
+  }
+  return [-1, -1];
+}
+
+/** Section BLOCKS → bảng tra tên block (CHỮ HOA, DXF không phân biệt hoa/thường ở tên block). */
+function parseBlockTable(pairs: Pair[]): Map<string, DxfBlockDef> {
+  const table = new Map<string, DxfBlockDef>();
+  const [a, b] = findSection(pairs, 'BLOCKS');
+  if (a < 0) return table;
+  const recs = collapsePolylines(scanRecords(pairs, a, b));
+  let cur: DxfBlockDef | null = null;
+  for (const r of recs) {
+    if (r.kind === 'BLOCK') {
+      const name = (r.g[2]?.[0] ?? '').trim();
+      cur = {
+        name,
+        base: { x: parseFloat(r.g[10]?.[0] ?? '0') || 0, y: parseFloat(r.g[20]?.[0] ?? '0') || 0 },
+        records: [],
+      };
+      if (name) table.set(name.toUpperCase(), cur);
+      continue;
+    }
+    if (r.kind === 'ENDBLK') { cur = null; continue; }
+    if (cur) cur.records.push(r);
+  }
+  return table;
+}
+
+/** Trần đệ quy block-trong-block. 8 theo phiếu — thực tế AutoCAD hiếm khi quá 3-4 cấp. */
+const MAX_BLOCK_DEPTH = 8;
+
+/** Thông số đọc từ 1 record INSERT. */
+interface InsertSpec {
+  name: string;
+  at: Pt;
+  sx: number;
+  sy: number;
+  rotRad: number;
+  cols: number;
+  rows: number;
+  colSpacing: number;
+  rowSpacing: number;
+}
+
+function readInsert(g: Record<number, string[]>): InsertSpec | null {
+  const name = (g[2]?.[0] ?? '').trim();
+  if (!name) return null;
+  const f = (code: number, def: number) => {
+    const v = g[code]?.[0];
+    const n = v === undefined ? def : parseFloat(v);
+    return Number.isFinite(n) ? n : def;
+  };
+  const i = (code: number, def: number) => {
+    const v = g[code]?.[0];
+    const n = v === undefined ? def : parseInt(v, 10);
+    return Number.isFinite(n) && n > 0 ? n : def;
+  };
+  // Tỉ lệ 0 là dữ liệu hỏng (AutoCAD không cho) — coi như 1, đừng làm sập hình về 1 điểm.
+  const sx = f(41, 1) || 1;
+  const sy = f(42, 1) || sx;
+  return {
+    name,
+    at: { x: f(10, 0), y: f(20, 0) },
+    sx,
+    sy,
+    rotRad: (f(50, 0) * Math.PI) / 180,
+    cols: i(70, 1),
+    rows: i(71, 1),
+    colSpacing: f(44, 0),
+    rowSpacing: f(45, 0),
+  };
+}
+
+/** Ma trận của MỘT bản sao (c,r) trong mảng array của INSERT, đã trừ base point của block. */
+function insertMatrix(spec: InsertSpec, base: Pt, col: number, row: number): Mat {
+  const cos = Math.cos(spec.rotRad);
+  const sin = Math.sin(spec.rotRad);
+  // Bước lặp array đo theo TRỤC ĐÃ XOAY của block (đúng AutoCAD: hàng/cột nghiêng theo block).
+  const ox = col * spec.colSpacing;
+  const oy = row * spec.rowSpacing;
+  const tx = spec.at.x + ox * cos - oy * sin;
+  const ty = spec.at.y + ox * sin + oy * cos;
+  // scale → rotate → translate (giữ đúng quy ước `blockLocalToWorld` của render.ts).
+  const scale: Mat = [spec.sx, 0, 0, spec.sy, -base.x * spec.sx, -base.y * spec.sy];
+  const rot: Mat = [cos, sin, -sin, cos, 0, 0];
+  const trans: Mat = [1, 0, 0, 1, tx, ty];
+  return matMul(trans, matMul(rot, scale));
+}
+
+/** Áp ma trận lên 1 Entity đã dựng (toạ độ local của block) → Entity mới ở toạ độ world. */
+function transformEntity(e: Entity, m: Mat, warn: { nonUniform: number }): Entity | null {
+  const k = matScaleMag(m);
+  const det = matDet(m);
+  const sx = Math.hypot(m[0], m[1]);
+  const sy = Math.hypot(m[2], m[3]);
+  if (Math.abs(sx - sy) > 1e-6 * Math.max(sx, sy)) warn.nonUniform += 1;
+
+  switch (e.type) {
+    case 'line':
+      return { ...e, a: matApply(m, e.a), b: matApply(m, e.b) };
+    case 'polyline':
+      return { ...e, points: e.points.map((p) => matApply(m, p)) };
+    case 'hatch':
+      return { ...e, points: e.points.map((p) => matApply(m, p)) };
+    case 'circle':
+      return { ...e, c: matApply(m, e.c), r: e.r * k };
+    case 'arc': {
+      // Biến đổi ĐIỂM ĐẦU/CUỐI rồi đọc lại góc — cách duy nhất đúng cho cả xoay lẫn lật gương
+      // (lật làm đảo chiều quét, nên phải hoán vị góc đầu↔cuối khi định thức âm).
+      const c = matApply(m, e.c);
+      const p1 = matApply(m, { x: e.c.x + e.r * Math.cos(e.a1), y: e.c.y + e.r * Math.sin(e.a1) });
+      const p2 = matApply(m, { x: e.c.x + e.r * Math.cos(e.a2), y: e.c.y + e.r * Math.sin(e.a2) });
+      const g1 = Math.atan2(p1.y - c.y, p1.x - c.x);
+      const g2 = Math.atan2(p2.y - c.y, p2.x - c.x);
+      return { ...e, c, r: e.r * k, a1: det < 0 ? g2 : g1, a2: det < 0 ? g1 : g2 };
+    }
+    case 'text':
+      return { ...e, at: matApply(m, e.at), h: e.h * k };
+    default:
+      // 'dim'/'block'/… trong block: hiếm và không có ngữ nghĩa rõ sau khi làm phẳng — bỏ, đã đếm
+      // ở `skipped` phía ngoài.
+      return null;
+  }
+}
+
+/** Bộ đếm dùng chung cho cả lần nạp — mọi con số trong `DxfLoadReport` đi ra từ đây. */
+interface LoadCounters {
+  entitiesRead: Record<string, number>;
+  blocksExpanded: Record<string, number>;
+  skipped: Record<string, number>;
+  warnings: string[];
+  nonUniform: { nonUniform: number };
+  missingBlocks: Set<string>;
+  tooDeep: Set<string>;
+}
+
+/**
+ * BÁO CÁO NẠP (VIỆC 2) — trả kèm Doc để nơi gọi hiện được "đã nạp gì / mất gì". Không có nó thì
+ * file mở ra thiếu một nửa mà người dùng không biết, đúng cái phiếu gọi là "im lặng nguy hiểm".
+ */
+export interface DxfLoadReport {
+  /** số Entity nạp được, tách theo `Entity['type']` (line/polyline/circle/arc/text/hatch/dim). */
+  entitiesRead: Record<string, number>;
+  /** số INSERT đã làm phẳng, tách theo TÊN BLOCK. */
+  blocksExpanded: Record<string, number>;
+  /** loại record DXF bị bỏ + số lượng (tên entity DXF viết hoa: VIEWPORT, SOLID, SPLINE…). */
+  skipped: Record<string, number>;
+  /** tên layer → số entity thuộc layer đó (sau khi làm phẳng). */
+  layers: Record<string, number>;
+  /** khung bao toàn bộ entity, đơn vị mm. undefined = không có entity nào. */
+  bbox?: { minX: number; minY: number; maxX: number; maxY: number };
+  /** block không tra được định nghĩa · lồng quá sâu · toạ độ bất thường · co giãn không đều. */
+  warnings: string[];
+  /** tổng số entity nạp được (tiện cho thanh trạng thái, khỏi cộng tay `entitiesRead`). */
+  totalEntities: number;
+}
+
+/**
+ * Làm phẳng 1 INSERT thành các Entity world. Trả về mảng rỗng khi block không tra được (đã ghi
+ * cảnh báo) — **KHÔNG đoán hình thay** (luật K3 của phiếu).
+ */
+function expandInsert(
+  spec: InsertSpec,
+  table: Map<string, DxfBlockDef>,
+  parent: Mat,
+  depth: number,
+  stack: string[],
+  ctx: { ensureLayer: (name: string, colorIdx?: number) => string; insertLayerName: string },
+  counters: LoadCounters,
+): Entity[] {
+  const key = spec.name.toUpperCase();
+  const def = table.get(key);
+  if (!def) {
+    counters.missingBlocks.add(spec.name);
+    return [];
+  }
+  if (depth > MAX_BLOCK_DEPTH || stack.includes(key)) {
+    counters.tooDeep.add(spec.name);
+    return [];
+  }
+
+  const out: Entity[] = [];
+  const nextStack = [...stack, key];
+  // Trần an toàn cho array điên rồ (file hỏng khai 70=99999) — 4096 bản sao là đã quá thừa cho
+  // mọi bản vẽ thật, mà vẫn đủ chặn treo trình duyệt.
+  const total = spec.cols * spec.rows;
+  if (total > 4096) {
+    counters.warnings.push(`INSERT "${spec.name}" khai mảng ${spec.cols}×${spec.rows} bản sao — bỏ qua (quá 4096).`);
+    return [];
+  }
+
+  for (let c = 0; c < spec.cols; c++) {
+    for (let r = 0; r < spec.rows; r++) {
+      const m = matMul(parent, insertMatrix(spec, def.base, c, r));
+      for (const rec of def.records) {
+        if (rec.kind === 'INSERT') {
+          const child = readInsert(rec.g);
+          if (!child) continue;
+          const childLayerRaw = (rec.g[8]?.[0] ?? '0').trim();
+          out.push(
+            ...expandInsert(child, table, m, depth + 1, nextStack, {
+              ...ctx,
+              // Layer '0' bên trong block THỪA KẾ layer của INSERT cha (quy tắc DXF thật).
+              insertLayerName: childLayerRaw === '0' ? ctx.insertLayerName : childLayerRaw,
+            }, counters),
+          );
+          continue;
+        }
+        const built = buildRecordEntity(rec, ctx, counters);
+        if (!built) {
+          if (rec.kind === 'DIMENSION') {
+            const spec = dimensionFallbackSpec(rec, table);
+            if (spec) {
+              counters.skipped.DIMENSION = Math.max(0, (counters.skipped.DIMENSION ?? 1) - 1);
+              out.push(...expandInsert(spec, table, m, depth + 1, nextStack, ctx, counters));
+            }
+          }
+          continue;
+        }
+        const t = transformEntity(built, m, counters.nonUniform);
+        if (t) out.push({ ...t, srcBlock: def.name });
+        else counters.skipped[rec.kind] = (counters.skipped[rec.kind] ?? 0) + 1;
+      }
+      counters.blocksExpanded[spec.name] = (counters.blocksExpanded[spec.name] ?? 0) + 1;
+    }
+  }
+  return out;
+}
+
+/**
+ * DIMENSION mà `buildEntity` không giải mã được (tức là do phần mềm KHÁC ghi, không phải encoding
+ * của `exportDxf` này) — vẫn còn một đường cứu: mọi DIMENSION đều tham chiếu một **block ẩn danh
+ * `*D…`** (group 2) chứa sẵn hình vẽ đã dựng của chính nó (đường gióng, mũi tên, chữ số). Vẽ lại
+ * từ block đó là đúng cách phần mềm CAD hiển thị, và cứu được 79–100 DIMENSION/file trong bộ Nam
+ * Long — phần lớn số đo lưới trục nằm ở đây.
+ *
+ * Toạ độ trong block ẩn danh đã là WORLD (base 0,0) ⇒ chèn ở gốc, tỉ lệ 1, không xoay.
+ */
+function dimensionFallbackSpec(rec: DxfRecord, table: Map<string, DxfBlockDef>): InsertSpec | null {
+  const name = (rec.g[2]?.[0] ?? '').trim();
+  if (!name || !table.has(name.toUpperCase())) return null;
+  return { name, at: { x: 0, y: 0 }, sx: 1, sy: 1, rotRad: 0, cols: 1, rows: 1, colSpacing: 0, rowSpacing: 0 };
+}
+
+/** Dựng Entity từ 1 record (dùng chung cho ENTITIES và cho hình bên trong block). */
+function buildRecordEntity(
+  rec: DxfRecord,
+  ctx: { ensureLayer: (name: string, colorIdx?: number) => string; insertLayerName?: string },
+  counters: LoadCounters,
+): Entity | null {
+  const g = rec.g;
+  const num = (code: number, idx = 0, def = 0): number => {
+    const v = g[code]?.[idx];
+    const f = v === undefined ? def : parseFloat(v);
+    return Number.isFinite(f) ? f : def;
+  };
+  const rawLayer = (g[8]?.[0] ?? '0').trim() || '0';
+  // Layer '0' trong block = "theo layer của INSERT" (ByBlock). Ngoài block thì '0' là layer thật.
+  const layerName = rawLayer === '0' && ctx.insertLayerName ? ctx.insertLayerName : rawLayer;
+  const colorIdx = g[62] ? parseInt(g[62][0], 10) : undefined;
+  const layerId = ctx.ensureLayer(layerName, colorIdx);
+  // 62 = 0 nghĩa là ByBlock → để undefined cho renderer lấy màu layer, đừng tô đen.
+  const color = colorIdx !== undefined && colorIdx > 0 ? aciToHex(colorIdx) : undefined;
+  try {
+    const ent = buildEntity(rec.kind, g, num, layerId, color);
+    if (!ent) {
+      counters.skipped[rec.kind] = (counters.skipped[rec.kind] ?? 0) + 1;
+      return null;
+    }
+    applyIfXdata(ent, g[1000]);
+    return ent;
+  } catch {
+    counters.skipped[rec.kind] = (counters.skipped[rec.kind] ?? 0) + 1;
+    return null;
+  }
+}
+
 /**
  * Parse text DXF → Doc. Không bao giờ throw: gặp lỗi cục bộ thì bỏ entity đó.
  *
@@ -177,28 +595,32 @@ function parseLayerDefs(pairs: Pair[]): Map<string, { color?: string; lineweight
  * Doc trả về chỉ chứa ĐÚNG layer thật sự xuất hiện trong file (fallback '0' nếu file rỗng).
  */
 export function parseDxf(text: string): Doc {
+  return parseDxfEx(text).doc;
+}
+
+/**
+ * Bản đầy đủ: trả Doc **kèm báo cáo nạp** (VIỆC 2). `parseDxf()` chỉ là lớp mỏng gọi hàm này để
+ * ~15 chỗ gọi cũ (`CadEditor.tsx:321`, `block-library.ts:88`, 3 file test…) không phải sửa.
+ */
+export function parseDxfEx(text: string): { doc: Doc; report: DxfLoadReport } {
   const doc: Doc = { entities: [], layers: [] };
   const layerSet = new Map<string, Layer>();
+  const counters: LoadCounters = {
+    entitiesRead: {},
+    blocksExpanded: {},
+    skipped: {},
+    warnings: [],
+    nonUniform: { nonUniform: 0 },
+    missingBlocks: new Set(),
+    tooDeep: new Set(),
+  };
 
   const pairs = tokenize(text);
-
-  let i = 0;
-  const n = pairs.length;
 
   // TABLES/LAYER — đọc trước để lấy màu/lineweight/linetype THẬT của layer (nếu file do chính
   // app này ghi — xem exportDxf). File khác không có bảng này vẫn parse được bình thường
   // (layerDefs rỗng → ensureLayer rơi về hành vi cũ, suy màu từ entity).
   const layerDefs = parseLayerDefs(pairs);
-
-  // tìm ENTITIES
-  let start = 0;
-  for (let k = 0; k + 1 < n; k++) {
-    if (pairs[k].code === 2 && pairs[k].value.trim().toUpperCase() === 'ENTITIES') {
-      start = k + 1;
-      break;
-    }
-  }
-  i = start;
 
   const ensureLayer = (name: string, colorIdx?: number): string => {
     const nm = name || '0';
@@ -220,51 +642,119 @@ export function parseDxf(text: string): Doc {
     return lay.id;
   };
 
-  while (i < n) {
-    const p = pairs[i];
-    if (p.code === 0) {
-      const kind = p.value.trim().toUpperCase();
-      if (kind === 'ENDSEC') break;
-      // gom các cặp của entity này đến code 0 kế tiếp
-      let j = i + 1;
-      const g: Record<number, string[]> = {};
-      while (j < n && pairs[j].code !== 0) {
-        (g[pairs[j].code] ||= []).push(pairs[j].value);
-        j++;
-      }
-      const num = (code: number, idx = 0, def = 0): number => {
-        const v = g[code]?.[idx];
-        const f = v === undefined ? def : parseFloat(v);
-        return Number.isFinite(f) ? f : def;
-      };
-      const str = (code: number, idx = 0, def = ''): string => g[code]?.[idx] ?? def;
-      const layerName = str(8, 0, '0');
-      const colorIdx = g[62] ? parseInt(g[62][0], 10) : undefined;
-      const layerId = ensureLayer(layerName, colorIdx);
-      const color = colorIdx !== undefined ? aciToHex(colorIdx) : undefined;
+  // BLOCKS đọc TRƯỚC ENTITIES — INSERT trong ENTITIES cần bảng tra đã sẵn sàng.
+  const blockTable = parseBlockTable(pairs);
 
-      try {
-        const ent = buildEntity(kind, g, num, layerId, color);
-        if (ent) {
-          // B1 (24/07, IF2-nền) — đọc lại XDATA storey/elementType do chính app ghi (xem
-          // xdataPairs ở exportDxf). File ngoài không có group 1000 → bỏ qua, 0 tác động.
-          applyIfXdata(ent, g[1000]);
-          doc.entities.push(ent);
-        }
-      } catch {
-        /* entity hỏng → bỏ qua, không crash */
+  const [entA, entB] = findSection(pairs, 'ENTITIES');
+  const records = entA < 0 ? [] : collapsePolylines(scanRecords(pairs, entA, entB));
+
+  for (const rec of records) {
+    if (rec.kind === 'ENDSEC') break;
+    if (rec.kind === 'INSERT') {
+      const spec = readInsert(rec.g);
+      if (!spec) { counters.skipped.INSERT = (counters.skipped.INSERT ?? 0) + 1; continue; }
+      const insertLayerName = (rec.g[8]?.[0] ?? '0').trim() || '0';
+      const flat = expandInsert(spec, blockTable, MAT_ID, 0, [], { ensureLayer, insertLayerName }, counters);
+      for (const e of flat) doc.entities.push(e);
+      continue;
+    }
+    const ent = buildRecordEntity(rec, { ensureLayer }, counters);
+    if (ent) { doc.entities.push(ent); continue; }
+    if (rec.kind === 'DIMENSION') {
+      const spec = dimensionFallbackSpec(rec, blockTable);
+      if (spec) {
+        counters.skipped.DIMENSION = Math.max(0, (counters.skipped.DIMENSION ?? 1) - 1);
+        const insertLayerName = (rec.g[8]?.[0] ?? '0').trim() || '0';
+        for (const e of expandInsert(spec, blockTable, MAT_ID, 0, [], { ensureLayer, insertLayerName }, counters)) doc.entities.push(e);
       }
-      i = j;
-    } else {
-      i++;
     }
   }
+
+  for (const e of doc.entities) counters.entitiesRead[e.type] = (counters.entitiesRead[e.type] ?? 0) + 1;
 
   // fallback: file rỗng/không có ENTITIES hợp lệ → vẫn trả về ít nhất 1 layer để currentLayer
   // (CadEditor.importDoc lấy d.layers[0]) không bị undefined.
   if (doc.layers.length === 0) doc.layers.push({ id: `l-0-${uid}`, name: '0', color: '#c8c4bc', visible: true, locked: false });
 
-  return doc;
+  return { doc, report: buildLoadReport(doc, counters) };
+}
+
+/**
+ * Ngưỡng "hình nằm xa vùng vẽ chính". 1 km — một sàn văn phòng thật rộng nhất cũng chỉ vài trăm
+ * mét, nên vượt 1 km gần như chắc chắn là bản sao cũ/rác parked xa trong model space.
+ *
+ * 🔴 CÓ THẬT, KHÔNG PHẢI PHÒNG XA: `04_TANG8-TTT.dxf` chèn block "SDG" **ba lần** ở
+ * (−12.197.655, −3.125.665) · (−12.197.655, 3.103.980) · (−2.754.482, 12.565.778) mm — tức cách
+ * gốc 12 km. Đã đối chiếu file thô: đúng là nội dung file, KHÔNG phải lỗi biến đổi của parser.
+ * Không cảnh báo thì khung bao ra 12.311 × 15.492 m và mọi phép tính diện tích sau đó vô nghĩa.
+ */
+const ABSURD_COORD_MM = 1e6;
+
+function buildLoadReport(doc: Doc, c: LoadCounters): DxfLoadReport {
+  const layers: Record<string, number> = {};
+  const nameOf = new Map(doc.layers.map((l) => [l.id, l.name]));
+  for (const e of doc.entities) {
+    const nm = nameOf.get(e.layer) ?? e.layer;
+    layers[nm] = (layers[nm] ?? 0) + 1;
+  }
+
+  const warnings = [...c.warnings];
+  if (c.missingBlocks.size) {
+    warnings.push(`Không tìm thấy định nghĩa cho ${c.missingBlocks.size} block: ${[...c.missingBlocks].slice(0, 8).join(', ')}${c.missingBlocks.size > 8 ? '…' : ''} — bỏ trống, KHÔNG đoán hình.`);
+  }
+  if (c.tooDeep.size) {
+    warnings.push(`${c.tooDeep.size} block lồng quá ${MAX_BLOCK_DEPTH} cấp hoặc tự tham chiếu vòng: ${[...c.tooDeep].slice(0, 8).join(', ')} — dừng ở đó.`);
+  }
+  if (c.nonUniform.nonUniform) {
+    warnings.push(`${c.nonUniform.nonUniform} hình bị co giãn KHÔNG ĐỀU khi chèn block — đường tròn/cung lấy bán kính trung bình nhân, có thể lệch so bản gốc.`);
+  }
+
+  const bbox = docBoxOfEntities(doc);
+  if (bbox && (Math.abs(bbox.minX) > ABSURD_COORD_MM || Math.abs(bbox.minY) > ABSURD_COORD_MM
+    || Math.abs(bbox.maxX) > ABSURD_COORD_MM || Math.abs(bbox.maxY) > ABSURD_COORD_MM)) {
+    warnings.push('Có hình nằm cách gốc toạ độ hơn 1 km — thường là bản sao cũ để xa trong model space. Khung bao và diện tích tính từ khung bao sẽ sai; dùng `planFootprint()` (`dxf-plan.ts`) để lấy đúng cụm vẽ chính.');
+  }
+
+  return {
+    entitiesRead: c.entitiesRead,
+    blocksExpanded: c.blocksExpanded,
+    skipped: c.skipped,
+    layers,
+    ...(bbox ? { bbox } : {}),
+    warnings,
+    totalEntities: doc.entities.length,
+  };
+}
+
+/** Khung bao — dùng `docBox()` sẵn có của `model.ts`, KHÔNG viết lại phép tính bbox lần thứ hai. */
+function docBoxOfEntities(doc: Doc): { minX: number; minY: number; maxX: number; maxY: number } | undefined {
+  if (!doc.entities.length) return undefined;
+  const b = docBox(doc);
+  if (!b || !Number.isFinite(b.minX) || !Number.isFinite(b.maxX)) return undefined;
+  return { minX: b.minX, minY: b.minY, maxX: b.maxX, maxY: b.maxY };
+}
+
+/**
+ * Làm sạch chuỗi MTEXT/TEXT về chữ người đọc.
+ *
+ * 🔴 BẮT ĐƯỢC KHI NẠP FILE THẬT: bản cũ chỉ xoá mã `\\fArial|b1|…;` nên khung tên ra
+ * `"{474 m2}"` — DÍNH NGUYÊN CẶP NGOẶC NHÓM. Mọi phép so chữ sau đó (đối chiếu diện tích, tìm
+ * tên phòng) đều trượt. MTEXT dùng `{}` để mở/đóng vùng định dạng, `\\P` xuống dòng, `%%d`/`%%c`/
+ * `%%p` là ° Ø ±.
+ *
+ * `raw2` = group 3 (phần đầu của MTEXT dài >250 ký tự, DXF cắt thành nhiều mảnh) — nối TRƯỚC
+ * group 1, đúng thứ tự spec, nếu không thì chữ dài bị đảo đoạn.
+ */
+export function cleanDxfText(raw1: string, raw2 = ''): string {
+  return (raw2 + raw1)
+    .replace(/\\P/g, ' ')            // xuống dòng → khoảng trắng (một dòng cho dễ so)
+    .replace(/\\[A-Za-z][^;\\]*;?/g, '') // \\fArial|b1|i0;  \\H0.75x;  \\C2;  \\pxqc;
+    .replace(/[{}]/g, '')             // ← cặp ngoặc nhóm định dạng
+    .replace(/%%[dD]/g, '°')
+    .replace(/%%[cC]/g, 'Ø')
+    .replace(/%%[pP]/g, '±')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function buildEntity(
@@ -285,9 +775,22 @@ function buildEntity(
       return { id: eid(), type: 'arc', layer, color, c: { x: num(10), y: num(20) }, r: num(40), a1, a2 };
     }
     case 'TEXT':
-    case 'MTEXT': {
-      const txt = (g[1]?.join('') ?? '').replace(/\\[A-Za-z0-9.|]+;?/g, '').trim();
+    case 'MTEXT':
+    case 'ATTRIB': {
+      // ATTRIB = giá trị thuộc tính của block (khung tên, mã phòng, số trục…) — trước bị bỏ hẳn,
+      // mà đúng chỗ đó mới có chữ người dùng cần. Cùng cấu trúc TEXT (1 = nội dung, 10/20, 40).
+      const txt = cleanDxfText(g[1]?.join('') ?? '', g[3]?.join('') ?? '');
+      if (!txt) return null;
       return { id: eid(), type: 'text', layer, color, at: { x: num(10), y: num(20) }, text: txt, h: num(40) || 250 };
+    }
+    case 'ELLIPSE': {
+      // 10/20 = tâm · 11/21 = VECTOR tới đầu trục lớn (tương đối tâm) · 40 = tỉ lệ trục nhỏ/lớn.
+      const c = { x: num(10), y: num(20) };
+      const mx = num(11);
+      const my = num(21);
+      const rx = Math.hypot(mx, my);
+      if (!(rx > 0)) return null;
+      return { id: eid(), type: 'ellipse', layer, color, c, rx, ry: rx * (num(40, 0, 1) || 1), rot: Math.atan2(my, mx) };
     }
     case 'DIMENSION': {
       // Đọc lại đúng encoding do exportDxf ghi (xem case 'dim' ở exportDxf) — KHÔNG cần parse
@@ -451,8 +954,45 @@ function dimBlockGeometry(e: DimEntity, lay: string, aci: number | undefined): s
   return out;
 }
 
-/** Ghi Doc → DXF ASCII (HEADER + TABLES/LAYER/BLOCK_RECORD + BLOCKS + ENTITIES). Mở sạch ở AutoCAD/BricsCAD/LibreCAD. */
+/**
+ * Báo cáo GHI file — đối xứng với `DxfLoadReport` của đường đọc (`parseDxfEx`).
+ *
+ * Vì sao cần (05/08, PHU): section BLOCKS mà `exportDxf` ghi ra CHỈ có boilerplate
+ * `*Model_Space`/`*Paper_Space` + block ẩn danh `*Dn` cho DIMENSION — không có đường nào ghi lại
+ * INSERT của người dùng. Mở một file có block rồi xuất lại ⇒ **hình còn nguyên nhưng cấu trúc
+ * block biến mất**, và trước phiên này app KHÔNG nói một câu nào. Đúng kiểu lỗi im lặng làm mất
+ * dữ liệu. Đo trên file thật của studio: 1 sàn = 10.035 entity, **10.015 entity đến từ block,
+ * 105 tên block khác nhau** — tức gần như TOÀN BỘ bản vẽ là block.
+ */
+export interface DxfExportReport {
+  /** tên block gốc → số entity đã làm phẳng ra từ block đó (đọc `Entity.srcBlock`, model.ts:312). */
+  flattenedBlocks: Record<string, number>;
+  /** số tên block khác nhau — bằng `Object.keys(flattenedBlocks).length`, để nơi gọi khỏi đếm lại. */
+  flattenedBlockCount: number;
+  /** câu hiện THẲNG cho người dùng. Rỗng = bản xuất không mất gì. */
+  warnings: string[];
+}
+
+/**
+ * Ghi Doc → DXF ASCII (HEADER + TABLES/LAYER/BLOCK_RECORD + BLOCKS + ENTITIES). Mở sạch ở
+ * AutoCAD/BricsCAD/LibreCAD.
+ *
+ * ⚠️ **LÀM PHẲNG BLOCK** — xem `DxfExportReport`. Muốn biết bản xuất có mất cấu trúc block không
+ * thì gọi `exportDxfEx()`; hàm này giữ chữ ký `(doc) => string` cho ~mọi nơi gọi cũ.
+ */
 export function exportDxf(doc: Doc): string {
+  return exportDxfEx(doc).dxf;
+}
+
+/**
+ * Bản đầy đủ: trả chuỗi DXF **kèm báo cáo ghi** — cùng khuôn `parseDxf`/`parseDxfEx` ở trên
+ * (`dxf.ts:597`), không phát minh cách thứ hai.
+ *
+ * K4 — KHÔNG thêm field mới nào: dấu vết block nguồn đã có sẵn ở `Entity.srcBlock`
+ * (`lib/cad/model.ts:312`, ghi tại `expandInsert` `dxf.ts:532`, đã có test `dxf-insert.test.ts:45,87`).
+ * Ở đây chỉ ĐỌC lại nó.
+ */
+export function exportDxfEx(doc: Doc): { dxf: string; report: DxfExportReport } {
   const out: string[] = [];
   const box = docBox(doc) ?? { minX: 0, minY: 0, maxX: 1000, maxY: 1000 };
 
@@ -747,7 +1287,34 @@ export function exportDxf(doc: Doc): string {
   }
 
   out.push(pair(0, 'ENDSEC'), pair(0, 'EOF'));
-  return out.join('\n');
+  return { dxf: out.join('\n'), report: buildExportReport(doc) };
+}
+
+/**
+ * Đếm entity đến từ block + dựng câu cảnh báo. Tách hàm riêng để test được mà không phải sinh cả
+ * chuỗi DXF, và để `exportDxfEx` giữ được một `return` duy nhất.
+ *
+ * Câu chữ theo `SPEC-NGON-NGU-CHI-DAN`: nói ĐIỀU ĐÃ XẢY RA + hệ quả cụ thể khi mở lại, KHÔNG lộ
+ * tên hàm/field nội bộ. Kèm tối đa 3 TÊN BLOCK để người dùng đối chiếu được với file gốc của họ —
+ * đây là dữ liệu chạy-thời-gian của chính họ, không phải thứ nằm trong repo (§0h).
+ */
+function buildExportReport(doc: Doc): DxfExportReport {
+  const flattenedBlocks: Record<string, number> = {};
+  for (const e of doc.entities) {
+    if (e.srcBlock === undefined) continue;
+    flattenedBlocks[e.srcBlock] = (flattenedBlocks[e.srcBlock] ?? 0) + 1;
+  }
+  const names = Object.keys(flattenedBlocks).sort();
+  const warnings: string[] = [];
+  if (names.length > 0) {
+    const sample = names.slice(0, 3).join(', ');
+    const them = names.length > 3 ? `, … và ${names.length - 3} block nữa` : '';
+    warnings.push(
+      `Bản vẽ gốc có ${names.length} block; bản xuất này đã làm phẳng — mở lại ở AutoCAD sẽ không còn ` +
+        `cấu trúc block. Hình vẽ giữ nguyên, nhưng không sửa hàng loạt qua block được nữa (${sample}${them}).`,
+    );
+  }
+  return { flattenedBlocks, flattenedBlockCount: names.length, warnings };
 }
 
 const VN_MAP: Record<string, string> = {

@@ -166,8 +166,13 @@ export function suggestRoomLightingPlan(doc: Doc, room: RoomInfo): RoomLightingP
   if (!kind) return null;
   const lighting = estimateLightingSuggestion(room.areaM2, kind);
   if (!lighting) return null;
-  const boundaryDoc = wallLikeDocForMep(doc);
-  const poly = findHatchBoundary(boundaryDoc, room.at);
+  // 05/08 (PHU) — DÙNG LẠI `room.poly` mà `findRoomLabels()` đã dò sẵn thay vì chạy lại DCEL.
+  // Đúng công dụng mà field đó sinh ra (xem `checker.ts` RoomInfo.poly: "để … lấy hình bao lòng
+  // phòng thật mà KHÔNG phải chạy lại DCEL lần 2") — trước đây `suggestRoomLightingPlans` lặp
+  // MỌI phòng nên chi phí đó nhân theo số phòng. Bộ lọc hình học của 2 nơi GIỐNG HỆT nhau (cùng
+  // bỏ 'dim'/'text'/layer trục — đối chiếu `wallLikeDocForMep` ngay trên với `checker.wallLikeDoc`)
+  // nên biên trả về là một. Vẫn giữ đường dò lại cho caller truyền `RoomInfo` tự chế không có poly.
+  const poly = room.poly ?? findHatchBoundary(wallLikeDocForMep(doc), room.at);
   const positions = poly ? suggestLightGridPositions(poly, lighting.recommendedDownlightCount) : [];
   return { roomName: room.name, roomAt: room.at, areaM2: room.areaM2, lighting, positions };
 }

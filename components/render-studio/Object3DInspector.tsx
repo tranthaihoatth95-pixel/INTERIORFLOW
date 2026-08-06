@@ -20,7 +20,10 @@ import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
 import { kindOfGroup, labelOfGroup, KIND_LABEL_VI, KIND_LABEL_EN, KIND_DOT } from '@/lib/render-studio/group-kind';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import { useCadStore } from '@/lib/cad/store';
+import { sortedLevels } from '@/lib/cad/levels';
 import { entityBox } from '@/lib/cad/model';
+import { assignLevelToEntities } from './doc-catalog';
+import { formatThousands } from './scene3d-ui';
 import { useT } from '@/lib/i18n';
 
 export function Object3DInspector() {
@@ -51,10 +54,7 @@ export function Object3DInspector() {
           <span className="font-mono text-[var(--t1)]">{selected.heightMm.toLocaleString('vi-VN')} mm</span>
         </div>
       )}
-      <div className="flex items-center justify-between rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 text-[11px]">
-        <span className="text-[var(--t4)]">{tr('Tầng', 'Storey')}</span>
-        <span className="text-[var(--t1)]">{selected.storey ?? tr('Chưa xếp', 'Unassigned')}</span>
-      </div>
+      <LevelRow storey={selected.storey} entityId={selected.entityId} />
 
       <div className="space-y-2 border-t border-[var(--mat-hairline)] pt-3">
         <span className="text-[10.5px] font-bold uppercase tracking-wide text-[var(--t4)]">{tr('Vật liệu', 'Material')}</span>
@@ -106,6 +106,49 @@ export function Object3DInspector() {
           : tr('Chưa chọn được trong khung nhìn 3D — chỉ xem thuộc tính.', 'Not selectable in the 3D view yet — properties only.')}
       </p>
     </div>
+  );
+}
+
+/**
+ * VIỆC 1 (05/08) — dòng "Tầng" nâng từ CHỮ CHẾT thành ô GÁN ĐƯỢC, ngay tại chỗ người dùng đang
+ * nhìn thuộc tính (khỏi phải sang Navigator). Chỉ đổi được khi khối truy được về một entity gốc
+ * (`entityId`) — nội thất/cửa sổ hôm nay chưa mang entityId xuống group (`cad-to-obj.ts:148`), ca
+ * đó giữ nguyên chữ đọc-thôi + nói rõ vì sao, không hiện ô select giả bấm không ăn.
+ */
+function LevelRow({ storey, entityId }: { storey?: string; entityId?: string }) {
+  const tr = useT();
+  const doc = useCadStore((s) => s.doc);
+  const levels = sortedLevels(doc);
+  const entity = entityId ? doc.entities.find((e) => e.id === entityId) : undefined;
+
+  if (!entity || levels.length === 0) {
+    return (
+      <div className="flex items-center justify-between rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-2 text-[11px] leading-[1.6]">
+        <span className="text-[var(--t4)]">{tr('Tầng', 'Level')}</span>
+        <span className="text-[var(--t1)]">{storey ?? tr('Chưa xếp', 'Unassigned')}</span>
+      </div>
+    );
+  }
+
+  return (
+    <label className="block rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-2.5 py-1.5">
+      <span className="text-[9px] font-bold uppercase leading-[1.6] tracking-wide text-[var(--t4)]">{tr('Tầng', 'Level')}</span>
+      <select
+        value={entity.levelId ?? ''}
+        onChange={(e) => {
+          const level = levels.find((l) => l.id === e.target.value);
+          if (level) assignLevelToEntities([entity.id], level);
+        }}
+        className="mt-0.5 h-[var(--tap)] w-full rounded-[8px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
+      >
+        <option value="">{storey ? tr(`— nhãn "${storey}", chưa gắn tầng —`, `— label "${storey}", no level —`) : tr('— chưa xếp tầng —', '— unassigned —')}</option>
+        {levels.map((l) => (
+          <option key={l.id} value={l.id}>
+            {l.name} · {formatThousands(l.elevationMm)} mm{l.inferred ? tr(' (suy đoán)', ' (inferred)') : ''}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 

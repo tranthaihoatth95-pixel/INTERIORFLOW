@@ -147,27 +147,40 @@ function testMigrationPath() {
   console.log('\n[6] Migration path — file idfVersion cũ vẫn parse được khi app "bump" version (giả lập, không đổi hằng số thật)');
 
   // migrateIdf thô — kiểm dispatcher độc lập với importIdf.
+  // 05/08 — bậc 1→2 KHÔNG còn là khung identity: nay sinh Doc.levels từ nhãn storey (VIỆC 1).
+  // Ruột phép nâng có test riêng đầy đủ ở `levels-idf-v2.test.ts`; ở đây chỉ kiểm DISPATCHER.
   const up = migrateIdf({ idfVersion: 1, meta: {}, sheets: [] }, 1, 2);
-  ok('migrateIdf nâng 1→2 thành công (khung identity)', up !== null && (up as unknown as { idfVersion: number }).idfVersion === 2);
+  ok('migrateIdf nâng 1→2 thành công (dispatcher)', up !== null && (up as unknown as { idfVersion: number }).idfVersion === 2);
 
   ok('migrateIdf: fromVersion CAO HƠN toVersion → null (không "hạ cấp")', migrateIdf({ idfVersion: 3 }, 3, 1) === null);
   ok('migrateIdf: đứt gãy giữa đường (thiếu bậc nâng) → null', migrateIdf({ idfVersion: 5 }, 5, 7) === null);
   ok('migrateIdf: không phải object → null', migrateIdf('not-an-object', 1, 2) === null);
 
-  // importIdf thật — file v1 export bình thường, rồi GIẢ LẬP app đang ở version 2 (test tự
-  // set/restore qua __setCurrentIdfVersionForTest, KHÔNG đổi hằng số IDF_VERSION thật trong code).
+  // importIdf thật — GIẢ LẬP app ở version CAO HƠN version file, để kiểm đường nâng cấp chạy thật.
+  // ⚠️ 05/08: trước đây chỗ này `exportIdf()` rồi giả lập app ở v2 — nhưng từ khi IDF_VERSION bump
+  // lên 2, file export RA ĐÃ LÀ v2 nên không còn bậc nào phải nâng, test tự lừa mình (vẫn xanh mà
+  // không kiểm gì). Nay dựng file ở ĐÚNG version thật hiện tại rồi giả lập app ở version+1.
   const doc = buildDoc(0);
   const json = exportIdf([{ id: 'cadsheet-0', name: 'Bản vẽ cũ', doc }]);
   ok('(sanity) file export ở đúng IDF_VERSION thật', JSON.parse(json).idfVersion === IDF_VERSION);
 
-  __setCurrentIdfVersionForTest(2);
+  __setCurrentIdfVersionForTest(IDF_VERSION + 1);
   try {
     const parsed = importIdf(json);
-    ok('file idfVersion=1 VẪN PARSE ĐƯỢC khi app giả lập ở version 2 (không còn từ chối thẳng)', parsed !== null);
-    ok('dữ liệu sheet giữ nguyên sau khi migrate', parsed?.sheets[0]?.doc.entities.length === 3);
+    // Bậc nâng IDF_VERSION→IDF_VERSION+1 CHƯA VIẾT (chưa có v3) ⇒ đứt gãy ⇒ null + lý do rõ.
+    // Đây chính là hành vi phải có: không im lặng nuốt file, không "nâng bừa".
+    ok('thiếu bậc nâng cho version tiếp theo → null (không nâng bừa)', parsed === null);
+    ok('… và có lý do cụ thể, không im lặng', (lastImportIdfError() ?? '').includes('Không nâng cấp được'));
   } finally {
     __setCurrentIdfVersionForTest(IDF_VERSION); // reset — KHÔNG để rò sang test khác
   }
+
+  // Đường nâng THẬT đang có (v1 → v2) — file v1 dựng tay, phải mở được ở app v2 hiện tại.
+  // (Nghiệm thu đầy đủ VIỆC 1e nằm ở `lib/cad/levels-idf-v2.test.ts`.)
+  const v1File = JSON.stringify({ idfVersion: 1, meta: {}, sheets: [{ id: 's0', name: 'Cũ', doc }] });
+  const upgraded = importIdf(v1File);
+  ok('file idfVersion=1 VẪN MỞ ĐƯỢC ở app v2 (điều kiện SỐNG)', upgraded !== null);
+  ok('dữ liệu sheet giữ nguyên sau khi migrate', upgraded?.sheets[0]?.doc.entities.length === 3);
 
   // File CAO HƠN version app (99 > IDF_VERSION thật) — vẫn `null` (không có đường hạ cấp), nhưng
   // KHÔNG còn im lặng: lastImportIdfError() phải có lý do cụ thể, không phải câu chung chung.

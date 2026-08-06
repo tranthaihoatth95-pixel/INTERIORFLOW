@@ -18,9 +18,12 @@
 import type { Doc, Entity, HatchEntity, BlockEntity, Pt, BuildOp } from '../cad/model';
 import { entityBox, blockToWorld, type Box } from '../cad/model';
 import { BLOCK_MAP } from '../cad/furniture';
-import { findHatchBoundary, polygonArea, pointInPolygon } from '../cad/hatch';
+import { buildHatchFaceIndex, pickHatchFace, collectBoundarySegments, polygonArea, pointInPolygon } from '../cad/hatch';
 import { effectiveBlockSize } from '../cad/shape-interactions';
 import { isHostableBlock, inferWallHost, OPENING_ELEVATION, estimateWallThicknessMm, DEFAULT_WALL_THICKNESS_MM } from '../cad/hosting';
+// 05/08 (S2 BUILD#1) — `lib/cad/levels.ts` đã trả đủ đáy/đỉnh/nguồn-từng-số từ trước nhưng render
+// KHÔNG gọi (grep 05/08: 0 nơi). Nối vào đây là đúng chỗ DUY NHẤT đọc cao độ để đùn khối.
+import { computeHeights } from '../cad/levels';
 import { hexToRgb } from '../gu/color-psychology';
 
 /** Diện tích CÓ DẤU (shoelace) — polygonArea của hatch.ts trả trị tuyệt đối nên tự tính. */
@@ -137,6 +140,16 @@ export interface SceneGroup {
   /** 3D-5 — cao độ (mm) ĐÃ DÙNG để đùn group tường này (đọc từ `entity.heightMm` hoặc mặc định
    * scene) — viewer 3D dùng số này làm mốc scale khi kéo-đẩy, KHÔNG tính lại từ hình học. */
   heightMm?: number;
+  /** 05/08 (S2 BUILD#1) — CAO ĐỘ ĐÁY (mm) group này đứng, giải từ `computeHeights()`
+   * (`lib/cad/levels.ts`): `baseConstraint` → `Level.elevationMm` → `entity.elevationMm` → 0.
+   * **undefined = đứng ở cốt 0** (giữ nguyên hành vi cũ cho mọi doc chưa khai tầng — không ghi
+   * `baseMm: 0` để không làm phình group của bản vẽ 1 tầng).
+   *
+   * K4 — nơi TIÊU THỤ có thật trong cùng phiên, không phải field treo:
+   *  · `lib/three/obj-scene-to-geometry.ts` `MassingWall.baseMm` (đọc ở `buildMassingWalls`)
+   *  · `components/three/Scene3DViewer.tsx` push-pull — scale.y phải neo quanh ĐÁY THẬT, không
+   *    quanh gốc 0, nếu không tường tầng 2 kéo cao sẽ trượt khỏi sàn tầng đó. */
+  baseMm?: number;
   /** SPEC-TANG-DU-LIEU-CAU-KIEN §2.3/L4 — group này được XẾP LOẠI bằng SUY ĐOÁN (tên layer),
    * không phải `elementType` khai báo. Cờ RUNTIME (không lưu vào `.idf`) để UI hiện badge
    * "suy đoán" (P3, chưa làm) — undefined = khai báo (chắc chắn) hoặc không áp dụng. */
@@ -281,7 +294,7 @@ class ObjBuilder {
   faces = 0;
   private posByIndex: number[][] = []; // posByIndex[i] = vị trí (m, Y-up) của vertex OBJ #(i+1)
   private groupList: SceneGroup[] = [];
-  private cur: { name: string; colorHex: string; tris: number[]; entityId?: string; heightMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]> } | null = null;
+  private cur: { name: string; colorHex: string; tris: number[]; entityId?: string; heightMm?: number; baseMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]> } | null = null;
 
   constructor(mtlFile: string) {
     this.lines.push('# InteriorFlow — OBJ sinh tất định từ bản vẽ CAD (mm → m)');
@@ -293,11 +306,11 @@ class ObjBuilder {
    * `storey` (SPEC-DUNG-3D-THONG-NHAT §5.1/D1) — tầng của entity gốc, group hình học tổng hợp
    * (Sàn/Phòng/Trần) không truyền. `ops`/`opCutters` (NC-12 §4.2/§4.3) — ngăn xếp dựng hình +
    * hình học cutter đã tam-giác-hoá sẵn (`boxPositionsMm`), tầng ba.js đọc để chạy CSG. */
-  object(name: string, mat: Mat, meta?: { entityId?: string; heightMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]> }) {
+  object(name: string, mat: Mat, meta?: { entityId?: string; heightMm?: number; baseMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]> }) {
     this.lines.push(`o ${name}`);
     this.lines.push(`usemtl ${mat.name}`);
     this.flushGroup();
-    this.cur = { name, colorHex: mat.hex, tris: [], entityId: meta?.entityId, heightMm: meta?.heightMm, inferred: meta?.inferred, storey: meta?.storey, specId: meta?.specId, ops: meta?.ops, opCutters: meta?.opCutters };
+    this.cur = { name, colorHex: mat.hex, tris: [], entityId: meta?.entityId, heightMm: meta?.heightMm, baseMm: meta?.baseMm, inferred: meta?.inferred, storey: meta?.storey, specId: meta?.specId, ops: meta?.ops, opCutters: meta?.opCutters };
   }
 
   private flushGroup() {
@@ -308,6 +321,7 @@ class ObjBuilder {
         positions: this.cur.tris,
         entityId: this.cur.entityId,
         heightMm: this.cur.heightMm,
+        baseMm: this.cur.baseMm,
         inferred: this.cur.inferred,
         storey: this.cur.storey,
         specId: this.cur.specId,
@@ -461,7 +475,7 @@ export function blockFootprint(b: BlockEntity): [Pt, Pt, Pt, Pt] | null {
  * cửa sổ có bệ cao; docstring cũ ở đây đã ghi trước "để dành khi có UI thật đòi hỏi", nay tới lúc
  * dùng), z1 = z0 + (`e.heightMm` ?? phần tường còn lại phía trên z0). KHÔNG dùng `clampWallHeight()`
  * — đó là ngưỡng cho TƯỜNG (2-6m), cutter có thể chỉ vài trăm mm. */
-function cutterPositionsMm(ref: string, doc: Doc, wallH: number): number[] | null {
+function cutterPositionsMm(ref: string, doc: Doc, wallH: number, wallBaseMm = 0): number[] | null {
   const e = doc.entities.find((x) => x.id === ref);
   if (!e) return null;
   let poly: Pt[];
@@ -477,21 +491,25 @@ function cutterPositionsMm(ref: string, doc: Doc, wallH: number): number[] | nul
   } else {
     return null;
   }
-  const z0 = e.elevationMm ?? 0;
-  const z1 = z0 + (e.heightMm ?? Math.max(0, wallH - z0));
-  return boxPositionsMm(poly, z0, z1);
+  // `elevationMm` của cutter là bệ đo TỪ CHÂN TƯỜNG (hosting.ts:121 ghi `elevationMm = sillMm`),
+  // KHÔNG phải từ ±0.000 công trình — cảnh báo này đã ghi sẵn ở `levels.ts:49`. Nên phải CỘNG
+  // đáy thật của tường chủ vào, nếu không tường tầng 2 lên cao mà lỗ cửa vẫn nằm ở tầng trệt.
+  const local0 = e.elevationMm ?? 0;
+  const localH = e.heightMm ?? Math.max(0, wallH - local0);
+  const z0 = wallBaseMm + local0;
+  return boxPositionsMm(poly, z0, z0 + localH);
 }
 
 /** NC-12 §4.3 — gom hình học cutter cho MỌI bậc `boolean` trong `ops` của 1 entity, khoá theo
  * đúng `withRef` (khớp field `SceneGroup.opCutters`). `undefined` nếu `ops` không có bậc boolean
  * nào hoặc không cutter nào tra được — `object()` nhận `undefined` cũng như không truyền gì. */
-function buildOpCutters(ops: BuildOp[] | undefined, doc: Doc, wallH: number): Record<string, number[]> | undefined {
+function buildOpCutters(ops: BuildOp[] | undefined, doc: Doc, wallH: number, wallBaseMm = 0): Record<string, number[]> | undefined {
   const boolOps = ops?.filter((op) => op.op === 'boolean');
   if (!boolOps?.length) return undefined;
   const out: Record<string, number[]> = {};
   for (const op of boolOps) {
     if (op.op !== 'boolean') continue;
-    const positions = cutterPositionsMm(op.withRef, doc, wallH);
+    const positions = cutterPositionsMm(op.withRef, doc, wallH, wallBaseMm);
     if (positions) out[op.withRef] = positions;
   }
   return Object.keys(out).length ? out : undefined;
@@ -589,9 +607,14 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     layers: doc.layers,
     entities: doc.entities.filter((e) => e.type !== 'block' && e.type !== 'text' && e.type !== 'dim' && e.type !== 'hatch'),
   };
+  // 05/08 (PHU) — DỰNG CHỈ MỤC MỘT LẦN, hỏi N lần. Bản cũ gọi `findHatchBoundary(traceDoc, b.at)`
+  // trong vòng lặp ⇒ mỗi món đồ dựng LẠI toàn bộ phân hoạch mặt phẳng của cùng một bản vẽ. Đo
+  // được: 289 phòng × 578 món = 12,2 s; 1.156 phòng × 2.312 món ≈ 173 s — đúng "treo >2 phút" ghi
+  // ở `docs/TECH-DEBT.md`. Bảng số đo đầy đủ + số sau khi vá ở docstring `HatchFaceIndex`.
+  const faceIndex = buildHatchFaceIndex(collectBoundarySegments(traceDoc));
   for (const b of furnitureBlocks) {
     try {
-      const poly = findHatchBoundary(traceDoc, b.at);
+      const poly = pickHatchFace(faceIndex, b.at);
       if (!poly || poly.length < 3) continue;
       const area = polygonArea(poly); // hatch.ts: trị tuyệt đối
       if (area < 1_000_000) continue; // < 1m² — nhiễu
@@ -612,12 +635,34 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
   // 3D-5) nếu có, không thì dùng cao mặc định scene H. Đây là NGUỒN DUY NHẤT cho cao độ tường —
   // Doc quyết, 3D chỉ đọc lại (luật một nguồn, `CHOT-HUONG-3D-2026-08-01.md`). ----
   wallHatches.forEach((h, i) => {
-    const wallH = clampWallHeight(h.heightMm ?? H);
+    // 05/08 (S2 BUILD#1) — TRƯỚC: `clampWallHeight(h.heightMm ?? H)` + `prism(..., 0, wallH)`, tức
+    // mọi tường đứng ở cốt 0 bất kể khai tầng gì ⇒ nhà nhiều tầng chồng lên nhau. NAY hỏi
+    // `computeHeights()` — nguồn DUY NHẤT đã giải xong `baseConstraint`/`Level`/`elevationMm`.
+    // Tương thích ngược tuyệt đối: doc chưa khai tầng ⇒ baseMm=0 và heightMm=`h.heightMm`, ra
+    // đúng hai con số cũ (test [10] `cad-to-obj.test.ts` khoá đúng điều này).
+    const hh = computeHeights(h, doc);
+    const baseMm = hh.baseMm;
+    let wallH: number;
+    if (hh.degenerate) {
+      // N4/§9 — KHÔNG dựng khối lộn ngược, cũng KHÔNG nuốt: dùng cao mặc định + nói thật.
+      warnings.push(
+        `Tường "${h.id}": tầng đỉnh thấp hơn hoặc bằng tầng đáy (cao ${hh.heightMm}mm) — đã dựng tạm cao mặc định ${clampWallHeight(H)}mm. Sửa lại ràng buộc cao độ.`,
+      );
+      wallH = clampWallHeight(H);
+    } else {
+      wallH = clampWallHeight(hh.heightMm ?? H);
+    }
+    if (hh.danglingLevelIds?.length) {
+      warnings.push(
+        `Tường "${h.id}" trỏ vào tầng đã xoá (${hh.danglingLevelIds.join(', ')}) — đã dựng ở cốt ${Math.round(baseMm)}mm theo bậc lùi. Gán lại tầng cho cấu kiện này.`,
+      );
+    }
     const inferred = h.elementType === undefined ? true : undefined;
-    const opCutters = buildOpCutters(h.ops, doc, wallH);
+    const opCutters = buildOpCutters(h.ops, doc, wallH, baseMm);
     builder.object(`Wall_${i + 1}`, mats.wall, {
       entityId: h.id,
       heightMm: wallH,
+      ...(baseMm !== 0 ? { baseMm } : {}),
       storey: h.storey,
       specId: h.specId,
       ops: h.ops,
@@ -628,8 +673,8 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     // `build-ops.ts`): bevel cần ĐA GIÁC gốc của tường, đã mất khi xuống tới triangle soup của
     // `SceneGroup.positions` — phải áp Ở ĐÂY, nơi còn `h.points`.
     const bevelOp = h.ops?.find((op): op is Extract<BuildOp, { op: 'extrude' }> => op.op === 'extrude' && (op.bevel ?? 0) > 0);
-    if (bevelOp) builder.prismBeveled(h.points, 0, wallH, bevelOp.bevel!);
-    else builder.prism(h.points, 0, wallH);
+    if (bevelOp) builder.prismBeveled(h.points, baseMm, baseMm + wallH, bevelOp.bevel!);
+    else builder.prism(h.points, baseMm, baseMm + wallH);
   });
 
   // ---- Trần (tuỳ chọn) ----
@@ -652,8 +697,13 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     // phát hiện lỗi này khi viết code (chưa từng lên browser) — chừa lại làm bằng chứng cho vòng
     // sau: muốn nội thất chọn được trong 3D phải mở rộng CẢ HAI hàm trên cho đúng, không phải chỉ
     // thêm entityId ở đây.
-    builder.object(`Furn_${i + 1}_${def.id}`, mats.furn, { storey: b.storey, specId: b.specId });
-    builder.box4(base, 0, furnitureHeightMm(def.id));
+    // 05/08 (S2 BUILD#1) — CHỈ dời ĐÁY theo tầng, chiều cao vẫn lấy `furnitureHeightMm(def.id)`
+    // như cũ: `computeHeights().topMm` của 1 BlockEntity nội thất hầu như luôn undefined (đồ đạc
+    // không khai `heightMm`), lấy nó sẽ là bịa. Đáy sai thì cái ghế nằm dưới sàn tầng 2 — nhìn
+    // thấy ngay; nên chỉ vá đúng cái sai, không nhân tiện đổi luôn chiều cao.
+    const fBase = computeHeights(b, doc).baseMm;
+    builder.object(`Furn_${i + 1}_${def.id}`, mats.furn, { storey: b.storey, specId: b.specId, ...(fBase !== 0 ? { baseMm: fBase } : {}) });
+    builder.box4(base, fBase, fBase + furnitureHeightMm(def.id));
   });
 
   // ---- Cửa/cửa sổ HOSTED (SO-KIEM-TONG §7) — lỗ đã khoét THẬT vào tường qua `ops[]` boolean ở
@@ -679,7 +729,14 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     if (!kind) return;
     const hostWallId = inferWallHost(b.at, doc, wallsById);
     const hostWall = hostWallId ? wallsById.get(hostWallId) : undefined;
-    const { sillMm, headMm } = OPENING_ELEVATION[kind];
+    const { sillMm: sillLocal, headMm: headLocal } = OPENING_ELEVATION[kind];
+    // 05/08 (S2 BUILD#1) — bệ/lanh-tô của cửa đo TỪ CHÂN TƯỜNG CHỦ (cùng quy ước cutter, xem
+    // `cutterPositionsMm`). Lấy đáy của ĐÚNG TƯỜNG CHỦ chứ không phải của bản thân khối cửa: lỗ
+    // đã khoét vào tường theo hệ của tường, cánh cửa phải lắp đúng vào lỗ đó. Không có tường chủ
+    // (cửa đứng rời) ⇒ về 0 như cũ.
+    const hostBaseMm = hostWall ? computeHeights(hostWall, doc).baseMm : 0;
+    const sillMm = hostBaseMm + sillLocal;
+    const headMm = hostBaseMm + headLocal;
     const width = effectiveBlockSize(b).w;
     const thickness = hostWall ? estimateWallThicknessMm(hostWall.points) : DEFAULT_WALL_THICKNESS_MM;
     const hw = width / 2;
@@ -690,7 +747,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
       // tấm kính mỏng LẮP VÀO lỗ — dày tối đa 30mm hoặc hết bề dày tường (tường rất mỏng), không
       // còn "đè tường" như khối proxy cũ (§ VIỆC 2).
       const paneT = Math.min(30, thickness) / 2;
-      builder.object(`Window_${windowIdx}`, mats.wall, { entityId: b.id, storey: b.storey, specId: b.specId });
+      builder.object(`Window_${windowIdx}`, mats.wall, { entityId: b.id, storey: b.storey, specId: b.specId, ...(hostBaseMm !== 0 ? { baseMm: hostBaseMm } : {}) });
       builder.box4(quad(b, -hw, hw, -paneT, paneT), sillMm, headMm);
       return;
     }
@@ -699,7 +756,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     // KHÔNG PBR (`docs/SPEC-3D-CORE.md` §6 — đẹp là việc D5, IF chỉ cần đúng hình học tối thiểu).
     doorIdx += 1;
     const frameT = Math.min(60, Math.max(20, hw)); // nẹp 60mm, tự co với cửa rất hẹp (hiếm)
-    const meta = { entityId: b.id, storey: b.storey, specId: b.specId };
+    const meta = { entityId: b.id, storey: b.storey, specId: b.specId, ...(hostBaseMm !== 0 ? { baseMm: hostBaseMm } : {}) };
     builder.object(`Door_${doorIdx}_khung`, mats.wall, meta);
     builder.box4(quad(b, -hw, -hw + frameT, -ht, ht), sillMm, headMm); // nẹp trái
     builder.box4(quad(b, hw - frameT, hw, -ht, ht), sillMm, headMm); // nẹp phải

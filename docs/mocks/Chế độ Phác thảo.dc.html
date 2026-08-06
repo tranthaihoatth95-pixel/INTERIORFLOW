@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14);
+  --ease-apple:cubic-bezier(.32,.72,0,1);
+  --dur-fast:.12s; --dur-base:.18s; --dur-slow:.32s;
+  --tap:32px; --tap-lg:44px; --tap-xl:56px; --row:28px;
+  --on-accent:#ffffff;
+}
+:root,[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --mat-card:rgba(26,26,30,.86); --mat-hairline:rgba(255,255,255,.08);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65); --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --success:#46b876; --warning:#d9a34a; --dots:rgba(255,255,255,.06);
+  --sheet:#15151a; --stroke:#f0efe9; --guide:rgba(139,124,247,.6);
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --mat-card:rgba(255,255,255,.88); --mat-hairline:rgba(0,0,0,.06);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22); --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --dots:rgba(33,30,25,.08); --sheet:#fbf9f4; --stroke:#26221b; --guide:rgba(106,87,245,.5);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--accent-strong)}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms !important}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--bg);padding:36px 40px 72px;font-weight:400;font-size:14px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
+
+  <div style="width:1440px;margin:0 auto 26px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="width:22px;height:22px;border-radius:7px;background:var(--accent);flex:none"></span>
+        <span style="font-size:20px;font-weight:600;letter-spacing:-.02em">Chế độ Phác thảo — bút và cử chỉ</span>
+        <span style="display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:6px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700;letter-spacing:.03em">VE-SKETCH-TOUCH</span>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--t3);max-width:920px;text-wrap:pretty">Vẽ thật bằng pointer events — nét theo lực nhấn, nhấn giữ 500 ms mở bảng tròn, giữ yên để nắn thẳng, tì tay không ra nét. Không dùng HTML5 Drag&amp;Drop; có nhánh pointercancel để lùi lại.</div>
+    </div>
+    <div style="display:flex;gap:8px;flex:none">
+      <button onClick="{{ xoaHet }}" style="height:var(--tap);padding:0 14px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;line-height:1.45;font-family:inherit;cursor:pointer;transition:background var(--dur-base) var(--ease-apple)" style-hover="background:var(--hover)">Xoá hết nét</button>
+      <button onClick="{{ doiTheme }}" style="height:var(--tap);padding:0 14px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;line-height:1.45;font-family:inherit;cursor:pointer;transition:background var(--dur-base) var(--ease-apple)" style-hover="background:var(--hover)">Đổi nền</button>
+    </div>
+  </div>
+
+  <div data-screen-label="01" style="width:1440px;margin:0 auto">
+    <div style="height:880px;border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-pop);background:var(--bg);display:flex;flex-direction:column">
+
+      <div style="height:42px;flex:none;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 10px 0 12px;background:var(--panel);border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:9px;min-width:0">
+          <span style="width:20px;height:20px;border-radius:6px;background:var(--accent);flex:none"></span>
+          <span style="font-size:14px;font-weight:600;white-space:nowrap;letter-spacing:-.01em">{{ project }}</span>
+        </div>
+        <div style="display:inline-flex;background:var(--field);border-radius:10px;padding:2px">
+          <button style="border:0;background:var(--panel);color:var(--t1);font-weight:600;font-size:12px;line-height:1.45;font-family:inherit;padding:4px 16px;border-radius:8px;cursor:pointer;box-shadow:var(--shadow-node)">Phác thảo</button>
+          <button style="border:0;background:transparent;color:var(--t3);font-weight:400;font-size:12px;line-height:1.45;font-family:inherit;padding:4px 16px;border-radius:8px;cursor:pointer">Mô hình</button>
+          <button style="border:0;background:transparent;color:var(--t3);font-weight:400;font-size:12px;line-height:1.45;font-family:inherit;padding:4px 16px;border-radius:8px;cursor:pointer">Giấy</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px">
+          <span style="font-size:11px;color:{{ mauBut }}">{{ nhanBut }}</span>
+          <span style="width:26px;height:26px;border-radius:50%;background:var(--field);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--t2)">NT</span>
+        </div>
+      </div>
+
+      <div style="flex:1;min-height:0;display:grid;grid-template-columns:76px 1fr 236px">
+
+        <div style="border-right:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0">
+          <sc-for list="{{ cuTo }}" as="c" hint-placeholder-count="6">
+            <button onClick="{{ c.chon }}" title="{{ c.ten }}" style="width:var(--tap-xl);height:var(--tap-xl);flex:none;border:1px solid {{ c.vien }};border-radius:16px;background:{{ c.nen }};color:{{ c.chu }};cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:background var(--dur-fast) var(--ease-apple)">
+              <span style="font-size:18px;font-weight:700;line-height:1">{{ c.icon }}</span>
+              <span style="font-size:8.5px;font-weight:600;letter-spacing:.03em">{{ c.ten }}</span>
+            </button>
+          </sc-for>
+          <span style="margin-top:auto;font-size:8.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--t5);text-align:center;line-height:1.5">56 px<br>không<br>hover</span>
+        </div>
+
+        <div onPointerDown="{{ xuong }}" onPointerMove="{{ di }}" onPointerUp="{{ len }}" onPointerCancel="{{ huy }}" style="position:relative;min-width:0;overflow:hidden;background:var(--sheet);background-image:radial-gradient(circle,var(--dots) 0 1px,transparent 1.4px);background-size:24px 24px;touch-action:none;cursor:crosshair">
+
+          <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none">
+            <sc-for list="{{ net }}" as="n" hint-placeholder-count="0">
+              <path d="{{ n.d }}" fill="none" stroke="{{ n.mau }}" stroke-width="{{ n.day }}" stroke-linecap="round" stroke-linejoin="round"></path>
+            </sc-for>
+            <sc-if value="{{ dangVe }}" hint-placeholder-val="{{ false }}">
+              <path d="{{ netTam }}" fill="none" stroke="var(--stroke)" stroke-width="{{ dayTam }}" stroke-linecap="round" stroke-linejoin="round"></path>
+            </sc-if>
+          </svg>
+
+          <sc-if value="{{ trong }}" hint-placeholder-val="{{ true }}">
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:32px;pointer-events:none">
+              <span style="width:64px;height:64px;border-radius:22px;background:var(--field);border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--t4)" stroke-width="1.5" stroke-linecap="round"><path d="M4 20l3.5-1 10-10-2.5-2.5-10 10z"></path><path d="M15 6.5l2.5 2.5"></path></svg>
+              </span>
+              <div>
+                <div style="font-size:15px;font-weight:600">Tờ trắng — bắt đầu vẽ</div>
+                <div style="margin-top:6px;font-size:12px;color:var(--t4);max-width:420px;text-wrap:pretty">Bút vẽ nét theo lực nhấn. Nhấn giữ nửa giây mở bảng tròn. Vẽ xong giữ yên đầu bút để nét tự nắn thẳng.</div>
+              </div>
+              <div style="display:flex;gap:8px;pointer-events:auto">
+                <button onClick="{{ veMau }}" style="height:var(--tap-lg);padding:0 18px;border:0;border-radius:12px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:13px;line-height:1.45;font-family:inherit;cursor:pointer;transition:background var(--dur-base) var(--ease-apple)" style-hover="background:var(--accent-strong)">Vẽ thử một nét</button>
+                <button onClick="{{ moTron }}" style="height:var(--tap-lg);padding:0 18px;border:1px solid var(--border-strong);border-radius:12px;background:var(--field);color:var(--t2);font-weight:600;font-size:13px;line-height:1.45;font-family:inherit;cursor:pointer;transition:background var(--dur-base) var(--ease-apple)" style-hover="background:var(--hover)">Xem bảng tròn</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ coTron }}" hint-placeholder-val="{{ false }}">
+            <dc-import name="BangTron" x="{{ tronX }}" y="{{ tronY }}" chon="{{ tronChon }}" hint-size="236px,236px"></dc-import>
+          </sc-if>
+
+          <sc-if value="{{ nanThang }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;left:50%;top:22px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 14px;border-radius:15px;background:var(--accent);color:var(--on-accent);font-size:12px;font-weight:700;pointer-events:none">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 12L14 4"></path></svg>Đã nắn thẳng
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ coBanTay }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;left:50%;bottom:88px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 13px;border-radius:14px;background:var(--field);border:1px solid var(--border-strong);color:var(--t3);font-size:11.5px;font-weight:600;pointer-events:none">Bỏ qua tì tay — vùng chạm rộng {{ soBanTay }} px</div>
+          </sc-if>
+
+          <div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:1px;padding:4px;border-radius:18px;background:var(--mat-card);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
+            <button onClick="{{ hoanTac }}" title="Hai ngón — hoàn tác" style="width:var(--tap-lg);height:var(--tap-lg);border:0;border-radius:14px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:background var(--dur-fast) var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 8H11a3 3 0 1 1 0 6H7"></path><path d="M6.6 5.4L4 8l2.6 2.6"></path></svg>
+              <span style="font-size:7.5px;font-weight:700;letter-spacing:.06em">2 NGÓN</span>
+            </button>
+            <button onClick="{{ lamLai }}" title="Ba ngón — làm lại" style="width:var(--tap-lg);height:var(--tap-lg);border:0;border-radius:14px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:background var(--dur-fast) var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 8H5a3 3 0 1 0 0 6h4"></path><path d="M9.4 5.4L12 8l-2.6 2.6"></path></svg>
+              <span style="font-size:7.5px;font-weight:700;letter-spacing:.06em">3 NGÓN</span>
+            </button>
+            <span style="width:1px;height:24px;background:var(--mat-hairline);margin:0 5px"></span>
+            <button onClick="{{ doiGom }}" title="Đầu kia bút là gôm" style="width:var(--tap-lg);height:var(--tap-lg);border:0;border-radius:14px;background:{{ nenGom }};color:{{ chuGom }};cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:background var(--dur-fast) var(--ease-apple)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 12.5h10"></path><path d="M5.5 10.5l4.5-4.5 3 3-4.5 4.5z"></path></svg>
+              <span style="font-size:7.5px;font-weight:700;letter-spacing:.06em">GÔM</span>
+            </button>
+            <button onClick="{{ moTron }}" title="Nhấn giữ 500 ms — bảng tròn" style="width:var(--tap-lg);height:var(--tap-lg);border:0;border-radius:14px;background:{{ nenTron }};color:{{ chuTron }};cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:background var(--dur-fast) var(--ease-apple)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.4"></circle><circle cx="8" cy="8" r="1.6" fill="currentColor" stroke="none"></circle></svg>
+              <span style="font-size:7.5px;font-weight:700;letter-spacing:.06em">TRÒN</span>
+            </button>
+          </div>
+        </div>
+
+        <div style="border-left:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;min-height:0;overflow:auto;padding:12px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:8px">Cử chỉ đang bật</div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <sc-for list="{{ cuChi }}" as="g" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;min-height:var(--tap);padding:5px 9px;border-radius:9px;background:var(--field)">
+                <span style="min-width:0">
+                  <span style="display:block;font-size:11.5px;font-weight:600;color:var(--t2)">{{ g.ten }}</span>
+                  <span style="display:block;font-size:10px;color:var(--t5);line-height:1.45">{{ g.mo }}</span>
+                </span>
+                <span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;font-weight:700;color:{{ g.mau }}">{{ g.so }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="margin-top:14px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:8px">Lực nhấn</div>
+          <div style="height:6px;border-radius:3px;background:var(--field);overflow:hidden"><span style="display:block;height:100%;background:var(--accent);width:{{ lucW }}"></span></div>
+          <div style="margin-top:6px;display:flex;justify-content:space-between;font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--t4)"><span>0.00</span><span style="color:var(--t2);font-weight:600">{{ luc }}</span><span>1.00</span></div>
+          <div style="margin-top:8px;font-size:10.5px;color:var(--t5);line-height:1.55;text-wrap:pretty">Nét mảnh nhất 1 px, đậm nhất 9 px. Chuột không có lực nhấn nên lấy mặc định 0.5.</div>
+
+          <div style="margin-top:auto;padding-top:12px">
+            <div style="font-size:10.5px;color:var(--t5);line-height:1.6">Đã vẽ <b style="color:var(--t2)">{{ soNet }}</b> nét · hoàn tác còn <b style="color:var(--t2)">{{ soLui }}</b> bước</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:26px;flex:none;display:flex;align-items:center;gap:14px;padding:0 10px 0 8px;background:var(--panel);border-top:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:6px;height:18px;padding:0 8px;border-radius:8px;background:var(--field);min-width:230px">
+          <span style="font-weight:600;font-size:11px;line-height:1.45;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">›</span>
+          <span style="font-size:11px;color:var(--t4)">Nhấn giữ 500 ms · ngưỡng trượt 8 px</span>
+        </div>
+        <span style="font-size:11px;color:var(--t3)">{{ dongTrang }}</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--t4)">{{ dongPhai }}</span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t4)"><span style="width:6px;height:6px;border-radius:50%;background:var(--success)"></span>Đã lưu 14:32</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;project&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Căn hộ Thảo Điền&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = {
+    theme: 'dark', cong: 0, gom: false,
+    net: [], lui: [], diem: null, luc: 0.5,
+    tron: null, tronChon: -1, nan: false, banTay: 0
+  };
+  GIU = 500; TRUOT = 8; PALM = 42;
+
+  componentDidMount() { this.apDung(); }
+  componentDidUpdate() { this.apDung(); }
+  componentWillUnmount() { this.dungHen(); }
+  apDung() { document.documentElement.setAttribute('data-theme', this.state.theme); }
+  dungHen() { clearTimeout(this.tGiu); clearTimeout(this.tDwell); clearTimeout(this.tNan); }
+
+  toaDo(e) {
+    const r = e.currentTarget.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+  laBanTay(e) {
+    return e.pointerType === 'touch' && (e.width > this.PALM || e.height > this.PALM);
+  }
+  duong(ds) {
+    if (!ds.length) return '';
+    return 'M' + ds.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' L');
+  }
+  thang(ds) {
+    const a = ds[0], b = ds[ds.length - 1];
+    return 'M' + a.x.toFixed(1) + ',' + a.y.toFixed(1) + ' L' + b.x.toFixed(1) + ',' + b.y.toFixed(1);
+  }
+  chot(d, day) {
+    this.setState(s => ({
+      net: s.net.concat([{ d, day, mau: s.gom ? 'var(--sheet)' : 'var(--stroke)' }]),
+      lui: [], diem: null
+    }));
+  }
+
+  renderVals() {
+    const s = this.state;
+    const day = 1 + s.luc * 8;
+    const cong = [
+      { icon: '✎', ten: 'Bút' },
+      { icon: '▱', ten: 'Hình' },
+      { icon: '⌒', ten: 'Cung' },
+      { icon: '⌫', ten: 'Gôm' },
+      { icon: '⤢', ten: 'Đo' },
+      { icon: 'T', ten: 'Chữ' }
+    ];
+
+    return {
+      project: this.props.project ?? 'Căn hộ Thảo Điền',
+      doiTheme: () => this.setState(x => ({ theme: x.theme === 'dark' ? 'light' : 'dark' })),
+      xoaHet: () => { this.dungHen(); this.setState({ net: [], lui: [], diem: null, tron: null, nan: false }); },
+
+      nhanBut: s.gom ? 'Đầu gôm đang chạm' : 'Bút — lực nhấn bật',
+      mauBut: s.gom ? 'var(--warning)' : 'var(--t4)',
+
+      cuTo: cong.map((c, i) => {
+        const on = i === s.cong;
+        return {
+          icon: c.icon, ten: c.ten,
+          nen: on ? 'var(--accent)' : 'var(--field)',
+          chu: on ? 'var(--on-accent)' : 'var(--t3)',
+          vien: on ? 'var(--accent-strong)' : 'var(--border)',
+          chon: () => this.setState({ cong: i, gom: i === 3 })
+        };
+      }),
+
+      net: s.net,
+      dangVe: !!(s.diem && s.diem.ds.length > 1),
+      netTam: s.diem ? (s.diem.nan ? this.thang(s.diem.ds) : this.duong(s.diem.ds)) : '',
+      dayTam: day,
+      trong: s.net.length === 0 && !s.diem,
+
+      xuong: (e) => {
+        if (this.laBanTay(e)) {
+          this.setState({ banTay: Math.round(Math.max(e.width, e.height)) });
+          clearTimeout(this.tPalm);
+          this.tPalm = setTimeout(() => this.setState({ banTay: 0 }), 1600);
+          return;
+        }
+        const p = this.toaDo(e);
+        const luc = e.pressure > 0 && e.pressure < 1 ? e.pressure : 0.5;
+        const gom = e.button === 5 || s.gom;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        this.setState({ diem: { ds: [p], goc: p, nan: false }, luc, gom, tron: null, nan: false });
+        clearTimeout(this.tGiu);
+        this.tGiu = setTimeout(() => {
+          const d = this.state.diem;
+          if (!d) return;
+          const l = d.ds[d.ds.length - 1];
+          if (Math.hypot(l.x - d.goc.x, l.y - d.goc.y) <= this.TRUOT) {
+            this.setState({ tron: d.goc, tronChon: -1, diem: null });
+          }
+        }, this.GIU);
+      },
+
+      di: (e) => {
+        if (this.state.tron) {
+          const p = this.toaDo(e);
+          const dx = p.x - this.state.tron.x, dy = p.y - this.state.tron.y;
+          const r = Math.hypot(dx, dy);
+          const i = r < 30 ? -1 : Math.round(((Math.atan2(dy, dx) * 180 / Math.PI) + 90 + 360) % 360 / 60) % 6;
+          if (i !== this.state.tronChon) this.setState({ tronChon: i });
+          return;
+        }
+        const d = this.state.diem;
+        if (!d) return;
+        const p = this.toaDo(e);
+        const luc = e.pressure > 0 && e.pressure < 1 ? e.pressure : this.state.luc;
+        d.ds.push(p);
+        this.setState({ diem: d, luc });
+        clearTimeout(this.tDwell);
+        this.tDwell = setTimeout(() => {
+          const cur = this.state.diem;
+          if (cur && cur.ds.length > 4) {
+            cur.nan = true;
+            this.setState({ diem: cur, nan: true });
+            clearTimeout(this.tNan);
+            this.tNan = setTimeout(() => this.setState({ nan: false }), 1200);
+          }
+        }, 520);
+      },
+
+      len: (e) => {
+        this.dungHen();
+        if (this.state.tron) {
+          const i = this.state.tronChon;
+          this.setState({ tron: null, tronChon: -1, cong: i >= 0 ? Math.min(i, 5) : this.state.cong, gom: i === 2 });
+          return;
+        }
+        const d = this.state.diem;
+        if (!d) return;
+        if (d.ds.length < 2) { this.setState({ diem: null }); return; }
+        this.chot(d.nan ? this.thang(d.ds) : this.duong(d.ds), day);
+      },
+
+      huy: () => { this.dungHen(); this.setState({ diem: null, tron: null, tronChon: -1, nan: false }); },
+
+      hoanTac: () => this.setState(x => x.net.length ? { net: x.net.slice(0, -1), lui: [x.net[x.net.length - 1]].concat(x.lui) } : {}),
+      lamLai: () => this.setState(x => x.lui.length ? { net: x.net.concat([x.lui[0]]), lui: x.lui.slice(1) } : {}),
+      doiGom: () => this.setState(x => ({ gom: !x.gom, cong: x.gom ? 0 : 3 })),
+      moTron: () => this.setState(x => ({ tron: x.tron ? null : { x: 470, y: 330 }, tronChon: -1 })),
+      veMau: () => this.chot('M120,300 C 260,180 420,420 560,270 S 760,120 880,240', 4.6),
+
+      coTron: !!s.tron,
+      tronX: s.tron ? s.tron.x : 0,
+      tronY: s.tron ? s.tron.y : 0,
+      tronChon: s.tronChon,
+      nanThang: s.nan,
+      coBanTay: s.banTay > 0,
+      soBanTay: s.banTay,
+
+      nenGom: s.gom ? 'var(--accent)' : 'transparent',
+      chuGom: s.gom ? 'var(--on-accent)' : 'var(--t2)',
+      nenTron: s.tron ? 'var(--accent)' : 'transparent',
+      chuTron: s.tron ? 'var(--on-accent)' : 'var(--t2)',
+
+      cuChi: [
+        { ten: 'Nhấn giữ mở bảng tròn', mo: 'giữ yên, không trượt quá ngưỡng', so: '500 ms', mau: 'var(--accent)' },
+        { ten: 'Ngưỡng trượt', mo: 'trượt quá thì thành nét, không mở bảng', so: '8 px', mau: 'var(--accent)' },
+        { ten: 'Giữ yên nắn thẳng', mo: 'dwell-to-rectify khi đang vẽ', so: '520 ms', mau: 'var(--accent)' },
+        { ten: 'Hai ngón hoàn tác', mo: 'ba ngón làm lại', so: '2 / 3', mau: 'var(--t3)' },
+        { ten: 'Bỏ tì tay', mo: 'vùng chạm rộng hơn ngưỡng thì bỏ qua', so: '> 42 px', mau: 'var(--warning)' },
+        { ten: 'Huỷ giữa nét', mo: 'pointercancel — lùi lại, không chốt nét', so: 'có', mau: 'var(--success)' }
+      ],
+
+      luc: s.luc.toFixed(2),
+      lucW: Math.round(s.luc * 100) + '%',
+      soNet: s.net.length,
+      soLui: s.lui.length,
+      dongTrang: 'Công cụ: ' + cong[s.cong].ten + (s.gom ? ' · đầu gôm' : '') + ' · nét ' + day.toFixed(1) + ' px',
+      dongPhai: s.net.length ? s.net.length + ' nét trên tờ' : 'tờ trắng'
+    };
+  }
+}
+</script>
+</body>
+</html>

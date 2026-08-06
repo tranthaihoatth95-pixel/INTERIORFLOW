@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkpoint duyệt — hợp đồng giao diện (S5 · 05/08)</title>
+<style>
+/* Token chép NGUYÊN VĂN từ app/globals.css — KHÔNG bịa màu mới, KHÔNG hex thương hiệu.
+   Luật chữ Việt: chỉ dùng font-size/font-weight RỜI, tuyệt đối không shorthand. */
+:root[data-theme="dark"], [data-theme="dark"] {
+  --bg:#0c0c0e; --panel:#141417; --field:#202024;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --warning:#d9a34a; --success:#46b876;
+}
+[data-theme="light"] {
+  --bg:#f2efe9; --panel:#faf8f4; --field:#f4f1eb;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --accent-soft:rgba(106,87,245,.12); --accent-ring:rgba(106,87,245,.5);
+  --warning:#9a6304; --success:#107043;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; padding:24px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter","Noto Sans",sans-serif;
+  font-size:13px;
+  background:#17171a;
+}
+.themes { display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; }
+.pane { flex:1 1 430px; background:var(--bg); border-radius:16px; padding:18px; }
+.pane-label {
+  font-size:10px; letter-spacing:.09em; color:var(--t4);
+  margin:0 0 12px; text-transform:uppercase;
+}
+.stack { display:grid; gap:14px; }
+
+/* ── khung checkpoint (khớp 1-1 components/studio/Checkpoint.tsx) ── */
+.cp { border:1px solid var(--border); border-radius:14px; background:var(--panel); padding:14px; }
+.cp-head { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+.cp-title { font-size:13px; font-weight:600; color:var(--t1); }
+.badge {
+  font-size:10px; letter-spacing:.06em; color:var(--accent);
+  background:var(--accent-soft); border:1px solid var(--accent-ring);
+  border-radius:999px; padding:2px 7px;
+}
+.pct { margin-left:auto; font-size:12px; color:var(--t3); font-variant-numeric:tabular-nums; }
+
+.track { height:4px; border-radius:999px; background:var(--field); overflow:hidden; }
+.fill { height:100%; border-radius:999px; background:var(--accent); }
+.status { margin:8px 0 0; font-size:11.5px; color:var(--t3); }
+
+.preview {
+  border:1px solid var(--border); border-radius:10px; background:var(--field);
+  min-height:120px; display:grid; place-items:center; overflow:hidden;
+}
+/* "sản phẩm thật" giả lập: sơ đồ 3 tường + 1 cửa, vẽ bằng SVG — KHÔNG phải câu mô tả */
+.preview svg { display:block; }
+
+dl.kv { margin:10px 0 0; display:grid; gap:4px; }
+.kv-row { display:flex; gap:8px; align-items:baseline; }
+.kv-row dt { margin:0; font-size:11px; color:var(--t4); min-width:92px; }
+.kv-row dd { margin:0; font-size:11.5px; color:var(--t2); font-variant-numeric:tabular-nums; }
+.kv-warn { color:var(--warning) !important; }
+
+.sec-head { display:flex; align-items:center; gap:8px; margin:12px 0 6px; }
+.sec-label { font-size:11px; letter-spacing:.04em; color:var(--t4); }
+ul.items { display:grid; gap:2px; margin:0; padding:0; list-style:none; }
+.item {
+  display:flex; align-items:center; gap:8px;
+  padding:5px 7px; border-radius:10px; background:var(--field); cursor:pointer;
+}
+.item input { accent-color:var(--accent); width:14px; height:14px; flex-shrink:0; margin:0; }
+.item-label { font-size:12px; color:var(--t1); }
+.item-detail { font-size:11.5px; color:var(--t3); font-variant-numeric:tabular-nums; }
+.item-why { margin-left:auto; color:var(--t4); display:inline-flex; }
+.item-why.mute { color:var(--t5); }
+
+.undo { margin:10px 0 0; font-size:11px; color:var(--t4); display:flex; gap:5px; align-items:flex-start; }
+
+.acts { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+.btn {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:6px 11px; border-radius:10px;
+  font-size:12px; font-weight:500; cursor:pointer;
+}
+.btn-primary { color:#fff; background:var(--accent); border:1px solid var(--accent-strong); }
+.btn-ghost { color:var(--t2); background:transparent; border:1px solid var(--border); }
+.btn[disabled] { cursor:not-allowed; opacity:.45; border-style:dashed; }
+.note { margin:16px 0 0; font-size:11px; color:var(--t4); line-height:1.6; }
+.note code { color:var(--t3); }
+</style>
+</head>
+<body>
+
+<div class="themes">
+
+  <!-- ══════════════ THEME TỐI ══════════════ -->
+  <section class="pane" data-theme="dark">
+    <p class="pane-label">Theme tối</p>
+    <div class="stack">
+
+      <!-- ① ĐANG LÀM — có % thật -->
+      <section class="cp">
+        <header class="cp-head">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6a57f5" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>
+          <span class="cp-title">Dựng tường từ mô tả</span>
+          <span class="pct">62%</span>
+        </header>
+        <div class="track"><div class="fill" style="width:62%"></div></div>
+        <p class="status">Đang dựng tường trục B…</p>
+        <div class="acts" style="justify-content:flex-end">
+          <button class="btn btn-ghost" type="button">✕ Huỷ</button>
+        </div>
+      </section>
+
+      <!-- ② XEM TRƯỚC + ③ QUYẾT -->
+      <section class="cp">
+        <header class="cp-head">
+          <span class="badge">XEM TRƯỚC</span>
+          <span class="cp-title">Dựng tường từ mô tả</span>
+        </header>
+
+        <div class="preview">
+          <svg width="260" height="120" viewBox="0 0 260 120">
+            <rect x="20" y="18" width="220" height="84" fill="none" stroke="#6a57f5" stroke-width="5"/>
+            <line x1="150" y1="18" x2="150" y2="102" stroke="#6a57f5" stroke-width="5"/>
+            <rect x="150" y="52" width="4" height="26" fill="#202024"/>
+            <path d="M154 52a26 26 0 0 1 26 26" fill="none" stroke="#9e9ea8" stroke-width="1.4" stroke-dasharray="3 3"/>
+            <text x="60" y="66" fill="#9e9ea8" font-size="10">Khách 18.2 m²</text>
+            <text x="176" y="66" fill="#9e9ea8" font-size="10">Ngủ 12.2</text>
+          </svg>
+        </div>
+
+        <dl class="kv">
+          <div class="kv-row"><dt>Tỉ lệ</dt><dd>1:50</dd></div>
+          <div class="kv-row"><dt>Dày tường</dt><dd>200 mm</dd></div>
+          <div class="kv-row"><dt>Seed</dt><dd>84120</dd></div>
+        </dl>
+
+        <div class="sec-head">
+          <span class="sec-label">NHẬN PHẦN NÀO</span>
+          <button class="btn btn-ghost" type="button" style="margin-left:auto;padding:3px 8px;font-size:11px">Bỏ chọn tất cả</button>
+        </div>
+        <ul class="items">
+          <li><label class="item"><input type="checkbox" checked><span class="item-label">Tường trục A</span><span class="item-detail">4200 mm</span><span class="item-why">ⓘ</span></label></li>
+          <li><label class="item"><input type="checkbox" checked><span class="item-label">Tường trục B</span><span class="item-detail">3600 mm</span><span class="item-why">ⓘ</span></label></li>
+          <li><label class="item"><input type="checkbox"><span class="item-label">Cửa P1</span><span class="item-detail">900 mm</span><span class="item-why mute">ⓘ</span></label></li>
+        </ul>
+
+        <p class="undo"><span>↩</span><span>Không nhận thì quay về: bản vẽ trước khi chạy AI (12 tường)</span></p>
+
+        <footer class="acts">
+          <button class="btn btn-primary" type="button">✓ Nhận 2 phần</button>
+          <button class="btn btn-ghost" type="button">↺ Làm lại</button>
+          <button class="btn btn-ghost" type="button">⚙ Sửa tham số rồi làm lại</button>
+        </footer>
+      </section>
+
+      <!-- ① không đo được % + ③ mọi nút disabled kèm lý do -->
+      <section class="cp">
+        <header class="cp-head">
+          <span class="badge">XEM TRƯỚC</span>
+          <span class="cp-title">Chưa tick phần nào — nút Nhận tự mờ</span>
+        </header>
+        <dl class="kv">
+          <div class="kv-row"><dt>Seed</dt><dd class="kv-warn">Bước này không dùng seed — chạy lại có thể ra khác.</dd></div>
+        </dl>
+        <footer class="acts">
+          <button class="btn btn-primary" type="button" disabled title="Chưa chọn phần nào — tick ít nhất 1 mục để nhận.">✓ Nhận</button>
+          <button class="btn btn-ghost" type="button" disabled title="Bước này chưa chạy lại tại chỗ được — đóng rồi chạy lại từ đầu.">↺ Làm lại</button>
+          <button class="btn btn-ghost" type="button" disabled title="Bước này chưa có bảng tham số sửa được.">⚙ Sửa tham số rồi làm lại</button>
+        </footer>
+      </section>
+
+    </div>
+  </section>
+
+  <!-- ══════════════ THEME SÁNG ══════════════ -->
+  <section class="pane" data-theme="light">
+    <p class="pane-label">Theme sáng</p>
+    <div class="stack">
+
+      <section class="cp">
+        <header class="cp-head">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6a57f5" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>
+          <span class="cp-title">Dựng tường từ mô tả</span>
+          <span class="pct">Đang chạy… 7s</span>
+        </header>
+        <!-- không đo được % ⇒ vạch vô định, KHÔNG bịa con số -->
+        <div class="track"><div class="fill" style="width:35%"></div></div>
+        <p class="status">Đang chờ máy chủ trả kết quả…</p>
+        <div class="acts" style="justify-content:flex-end">
+          <button class="btn btn-ghost" type="button" disabled title="Bước này chưa huỷ giữa chừng được — chờ chạy xong rồi bấm Làm lại.">✕ Huỷ</button>
+        </div>
+      </section>
+
+      <section class="cp">
+        <header class="cp-head">
+          <span class="badge">XEM TRƯỚC</span>
+          <span class="cp-title">Dựng tường từ mô tả</span>
+        </header>
+
+        <div class="preview">
+          <svg width="260" height="120" viewBox="0 0 260 120">
+            <rect x="20" y="18" width="220" height="84" fill="none" stroke="#6a57f5" stroke-width="5"/>
+            <line x1="150" y1="18" x2="150" y2="102" stroke="#6a57f5" stroke-width="5"/>
+            <rect x="150" y="52" width="4" height="26" fill="#f4f1eb"/>
+            <path d="M154 52a26 26 0 0 1 26 26" fill="none" stroke="#726c62" stroke-width="1.4" stroke-dasharray="3 3"/>
+            <text x="60" y="66" fill="#726c62" font-size="10">Khách 18.2 m²</text>
+            <text x="176" y="66" fill="#726c62" font-size="10">Ngủ 12.2</text>
+          </svg>
+        </div>
+
+        <dl class="kv">
+          <div class="kv-row"><dt>Tỉ lệ</dt><dd>1:50</dd></div>
+          <div class="kv-row"><dt>Dày tường</dt><dd>200 mm</dd></div>
+          <div class="kv-row"><dt>Seed</dt><dd>84120</dd></div>
+        </dl>
+
+        <div class="sec-head">
+          <span class="sec-label">NHẬN PHẦN NÀO</span>
+          <button class="btn btn-ghost" type="button" style="margin-left:auto;padding:3px 8px;font-size:11px">Bỏ chọn tất cả</button>
+        </div>
+        <ul class="items">
+          <li><label class="item"><input type="checkbox" checked><span class="item-label">Tường trục A</span><span class="item-detail">4200 mm</span><span class="item-why">ⓘ</span></label></li>
+          <li><label class="item"><input type="checkbox" checked><span class="item-label">Tường trục B</span><span class="item-detail">3600 mm</span><span class="item-why">ⓘ</span></label></li>
+          <li><label class="item"><input type="checkbox"><span class="item-label">Cửa P1</span><span class="item-detail">900 mm</span><span class="item-why mute">ⓘ</span></label></li>
+        </ul>
+
+        <p class="undo"><span>↩</span><span>Không nhận thì quay về: bản vẽ trước khi chạy AI (12 tường)</span></p>
+
+        <footer class="acts">
+          <button class="btn btn-primary" type="button">✓ Nhận 2 phần</button>
+          <button class="btn btn-ghost" type="button">↺ Làm lại</button>
+          <button class="btn btn-ghost" type="button">⚙ Sửa tham số rồi làm lại</button>
+        </footer>
+      </section>
+
+      <section class="cp">
+        <header class="cp-head">
+          <span class="badge">XEM TRƯỚC</span>
+          <span class="cp-title">Chưa tick phần nào — nút Nhận tự mờ</span>
+        </header>
+        <dl class="kv">
+          <div class="kv-row"><dt>Seed</dt><dd class="kv-warn">Bước này không dùng seed — chạy lại có thể ra khác.</dd></div>
+        </dl>
+        <footer class="acts">
+          <button class="btn btn-primary" type="button" disabled title="Chưa chọn phần nào — tick ít nhất 1 mục để nhận.">✓ Nhận</button>
+          <button class="btn btn-ghost" type="button" disabled title="Bước này chưa chạy lại tại chỗ được — đóng rồi chạy lại từ đầu.">↺ Làm lại</button>
+          <button class="btn btn-ghost" type="button" disabled title="Bước này chưa có bảng tham số sửa được.">⚙ Sửa tham số rồi làm lại</button>
+        </footer>
+      </section>
+
+    </div>
+  </section>
+
+</div>
+
+<p class="note" data-theme="dark" style="max-width:920px">
+  <strong style="color:#d6d6db">Hợp đồng giao diện</strong> cho <code>components/studio/Checkpoint.tsx</code> (S5, 05/08).
+  Ba trạng thái: ① ĐANG LÀM (tiến độ thật + huỷ) · ② XEM TRƯỚC (sản phẩm THẬT, không phải câu mô tả) · ③ QUYẾT.
+  Số liệu trong mock là <em>dự án hư cấu</em> (§0h) — không có dữ liệu khách nào.
+  Mọi ô mờ đều kèm câu lý do ngay tại chỗ (§9 — cấm nút giả).
+</p>
+
+</body>
+</html>

@@ -68,9 +68,13 @@ export const VN_ACCESSIBILITY: RuleGroup = {
     },
 
     // 2026-07-16: 3 rule mới (ramp/handrail/bãi đỗ xe NKT) — QCVN 10:2024/BXD (Thông tư
-    // 06/2024/TT-BXD). KHÔNG có entity 2D tương ứng trong model InteriorFlow (app thiết kế nội
-    // thất căn hộ, không có khái niệm ramp/handrail/bãi đỗ xe ngoài trời) — registry-only, xem
+    // 06/2024/TT-BXD). Model 2D InteriorFlow CHƯA có entity tương ứng (ramp = dữ liệu cao độ ·
+    // tay vịn = chi tiết mặt đứng · chỗ đỗ xe = khái niệm đếm được chưa có) — registry-only, xem
     // "SỔ TRẠNG THÁI NỐI DÂY" trong checker.ts.
+    // ⚠️ Sửa lý do 2026-08-05 (S6/T4): bản cũ ghi "app thiết kế nội thất căn hộ, không có khái
+    // niệm ramp/handrail/bãi đỗ xe ngoài trời" — SAI phạm vi. IF phục vụ dự án MỌI quy mô;
+    // khách sạn/văn phòng/retail đều có ram và chỗ đỗ xe NKT. Đây là NỢ KỸ THUẬT (thiếu entity),
+    // KHÔNG phải quyết định cắt phạm vi — phiên sau mở lại được, đừng đọc thành "đã đóng".
     {
       id: 'vn-access-ramp-slope-max',
       source: 'QCVN 10:2024/BXD (Thông tư 06/2024/TT-BXD) — Ramp/dốc thoải',
@@ -165,7 +169,7 @@ export const VN_ACCESSIBILITY: RuleGroup = {
       description: 'Bãi đỗ xe 51–100 chỗ: tối thiểu 2 chỗ dành cho người khuyết tật (NKT).',
       params: { totalSpacesMin: 51, totalSpacesMax: 100, minAccessibleSpaces: 2 },
       verified: false,
-      note: 'Chỉ 1 nguồn tóm tắt, chưa đọc trực tiếp bảng gốc PDF QCVN 10:2024/BXD — cần đối chiếu bản gốc (moc.gov.vn) trước khi dùng cho hồ sơ chính thức. Registry-only: InteriorFlow là app thiết kế nội thất căn hộ, không có khái niệm bãi đỗ xe ngoài trời trong scope — KHÔNG nối đo.',
+      note: 'Chỉ 1 nguồn tóm tắt, chưa đọc trực tiếp bảng gốc PDF QCVN 10:2024/BXD — cần đối chiếu bản gốc (moc.gov.vn) trước khi dùng cho hồ sơ chính thức. Registry-only vì model 2D CHƯA có entity chỗ đỗ xe để đếm/đo (nợ kỹ thuật, mở lại được) — KHÔNG nối đo. Không phải "ngoài phạm vi sản phẩm": IF làm dự án mọi quy mô, khách sạn/văn phòng/retail đều cần chỗ đỗ xe NKT.',
     },
     {
       id: 'vn-access-parking-min-spaces-101-150',
@@ -177,7 +181,7 @@ export const VN_ACCESSIBILITY: RuleGroup = {
       description: 'Bãi đỗ xe 101–150 chỗ: tối thiểu 3 chỗ dành cho người khuyết tật (NKT).',
       params: { totalSpacesMin: 101, totalSpacesMax: 150, minAccessibleSpaces: 3 },
       verified: false,
-      note: 'Chỉ 1 nguồn tóm tắt, chưa đọc trực tiếp bảng gốc PDF QCVN 10:2024/BXD — cần đối chiếu bản gốc (moc.gov.vn) trước khi dùng cho hồ sơ chính thức. Registry-only: InteriorFlow là app thiết kế nội thất căn hộ, không có khái niệm bãi đỗ xe ngoài trời trong scope — KHÔNG nối đo.',
+      note: 'Chỉ 1 nguồn tóm tắt, chưa đọc trực tiếp bảng gốc PDF QCVN 10:2024/BXD — cần đối chiếu bản gốc (moc.gov.vn) trước khi dùng cho hồ sơ chính thức. Registry-only vì model 2D CHƯA có entity chỗ đỗ xe để đếm/đo (nợ kỹ thuật, mở lại được) — KHÔNG nối đo. Không phải "ngoài phạm vi sản phẩm": IF làm dự án mọi quy mô, khách sạn/văn phòng/retail đều cần chỗ đỗ xe NKT.',
     },
     {
       id: 'vn-access-parking-min-spaces-over-200',
@@ -189,7 +193,7 @@ export const VN_ACCESSIBILITY: RuleGroup = {
       description: 'Bãi đỗ xe > 200 chỗ: tối thiểu 5 chỗ dành cho người khuyết tật (NKT), cộng thêm 1 chỗ cho mỗi 100 xe vượt quá 200.',
       params: { totalSpacesThreshold: 200, minAccessibleSpaces: 5, additionalSpacePer100Over: 1 },
       verified: false,
-      note: 'Chỉ 1 nguồn tóm tắt, chưa đọc trực tiếp bảng gốc PDF QCVN 10:2024/BXD — cần đối chiếu bản gốc (moc.gov.vn) trước khi dùng cho hồ sơ chính thức. Registry-only: InteriorFlow là app thiết kế nội thất căn hộ, không có khái niệm bãi đỗ xe ngoài trời trong scope — KHÔNG nối đo.',
+      note: 'Chỉ 1 nguồn tóm tắt, chưa đọc trực tiếp bảng gốc PDF QCVN 10:2024/BXD — cần đối chiếu bản gốc (moc.gov.vn) trước khi dùng cho hồ sơ chính thức. Registry-only vì model 2D CHƯA có entity chỗ đỗ xe để đếm/đo (nợ kỹ thuật, mở lại được) — KHÔNG nối đo. Không phải "ngoài phạm vi sản phẩm": IF làm dự án mọi quy mô, khách sạn/văn phòng/retail đều cần chỗ đỗ xe NKT.',
     },
     {
       id: 'vn-access-parking-side-clearance',
@@ -201,7 +205,7 @@ export const VN_ACCESSIBILITY: RuleGroup = {
       description: 'Chỗ đỗ xe NKT: khoảng đệm bên xe lăn tối thiểu 1.200mm (bãi <24 chỗ) hoặc 2.500mm (bãi >24 chỗ).',
       params: { sideClearanceMmSmallLot: 1200, sideClearanceMmLargeLot: 2500, lotSizeThreshold: 24 },
       verified: false,
-      note: 'Chỉ 1 nguồn tóm tắt, chưa đọc trực tiếp bảng gốc PDF QCVN 10:2024/BXD. Riêng số 2.500mm (bãi >24 chỗ) nên đối chiếu lại — có thể model tóm tắt nhầm đơn vị/ngữ cảnh, chênh lệch bất thường so với 1.200mm. Registry-only: InteriorFlow là app thiết kế nội thất căn hộ, không có khái niệm bãi đỗ xe ngoài trời trong scope — KHÔNG nối đo.',
+      note: 'Chỉ 1 nguồn tóm tắt, chưa đọc trực tiếp bảng gốc PDF QCVN 10:2024/BXD. Riêng số 2.500mm (bãi >24 chỗ) nên đối chiếu lại — có thể model tóm tắt nhầm đơn vị/ngữ cảnh, chênh lệch bất thường so với 1.200mm. Registry-only vì model 2D CHƯA có entity chỗ đỗ xe để đếm/đo (nợ kỹ thuật, mở lại được) — KHÔNG nối đo. Không phải "ngoài phạm vi sản phẩm": IF làm dự án mọi quy mô, khách sạn/văn phòng/retail đều cần chỗ đỗ xe NKT.',
     },
   ],
 };

@@ -122,3 +122,181 @@ Verify browser thật 1440×900, **kiểm Tối trước** (Tối là mặc đ�
 2. CHINH gắn 1 dòng `<LibrarySheet/>` vào `StageShell` + nút Navigator/ô Vật liệu → đóng yêu cầu #5.
 3. Nối `if:library-instantiate` / `if:library-apply` vào canvas thật (Render node · CAD block ·
    Present trang) — hiện mới phát sự kiện + toast, chưa có ai tiêu thụ.
+
+---
+
+# 05/08/2026 — PHIÊN S3 · BUILD #2: NỐI CỤM BÀN VÀO THƯ VIỆN BLOCK
+
+**V6 — CHƯA COMMIT.** Mảng đụng: `lib/cad/workstation-clusters.ts` · `lib/cad/block-library.ts` ·
+`components/library/*`. **KHÔNG đụng** `scripts/cad-library/**`, `public/cad-library/**`
+(mảng COWORK VẼ, theo phiếu sửa giữa phiên), `components/studio/*` (mảng S5 — chỉ IMPORT).
+
+## Việc đã làm
+
+**VIỆC 1 — mount 6 cụm.** Trước phiên: `grep -rn "workstation-clusters" app/ components/` = **0 dòng**.
+Nay có kệ **"Văn phòng · Cụm bàn"** trong sheet Thư viện (phím `L` / ⌘K "Mở Thư viện"), chỉ hiện ở
+chặng 2D. **VIỆC 2 bỏ** theo phiếu sửa. **VIỆC 3** — không gõ tay toạ độ nào, xem mục cuối.
+
+### grep chứng minh 6 cụm đã có nơi mount
+
+```
+$ grep -rn "workstation-clusters" app/ components/     # (bỏ các dòng docstring)
+components/library/ClusterPanel.tsx:66:} from '@/lib/cad/workstation-clusters';
+components/library/LibrarySheet.tsx:20:import { CLUSTER_SPECS } from '@/lib/cad/workstation-clusters';
+
+$ grep -rn "ClusterPanel" components/
+components/library/LibrarySheet.tsx:22:import { ClusterPanel } from './ClusterPanel';
+components/library/LibrarySheet.tsx:271:  <ClusterPanel onInserted={() => setOpen(false)} />
+components/library/ClusterPanel.tsx:166:export function ClusterPanel(…)
+```
+
+Chuỗi đủ: `AppShell.tsx:164 <LibrarySheet/>` → nút kệ `cad-clusters` (`LibrarySheet.tsx:239-247`)
+→ `ClusterPanel` (`LibrarySheet.tsx:267-271`) → `CLUSTER_SPECS` → 6 hàm sinh →
+`clusterPrimsToEntities()` (`block-library.ts:203`) → `useCadStore.addEntities()` (`store.ts:520`).
+
+### 6 cụm — số đo LẤY TỪ HÌNH HỌC THẬT (`primsBBox`), không khai tay
+
+| Cụm | Bao ngoài (kể cả ghế) | Chỗ | m²/chỗ riêng bàn | m²/chỗ cả lối đi | Entity |
+|---|---|---|---|---|---|
+| Chữ L xương sống | 2860×5600 | 8 | 2,00 | 2,98 | 49 |
+| Bench thẳng hàng | 2440×5600 | 8 | 1,71 | 2,69 | 41 |
+| Chữ Y — 6 chỗ | 6955×6263 | 6 | 7,26 | 11,64 | 33 |
+| Góc 120° — 6 chỗ | 3278×3520 | 6 | 1,92 | 4,03 | 31 |
+| Chữ thập — 4 chỗ | 2860×2860 | 4 | 2,04 | 4,54 | 22 |
+| Bàn họp 12 chỗ | 3980×2034 | 12 | 0,67 | 1,85 → **TCVN ĐẠT** | 49 |
+
+Tất cả sinh ra **polyline** — một cấp nét, không gán `color`/`lineweight` override, thừa hưởng layer
+`l-furniture`. Đúng điều 1 `00-PHAN-TICH-NGUON-THAM-CHIEU.md`: phân cấp 4:2:1 chỉ ở tầng bản vẽ.
+
+### Checkpoint — dùng khuôn chung S5, không tự đẻ
+
+`components/studio/Checkpoint.tsx` cắm đúng chỗ phiếu chỉ định (thả cụm xuống bản vẽ):
+
+| Điều | Cắm thế nào |
+|---|---|
+| KS1 `preview` | SVG dựng từ **chính `result.prims` sắp thả** + vùng chờ nét đứt + dòng đối chiếu TCVN. Không phải ảnh minh hoạ. |
+| KS1 `params` | 5 dòng số kiểm + toàn bộ núm máy vừa chạy |
+| KS2 `seed` | `clusterSeed(specId, values)` — băm FNV-1a bộ tham số. Cụm là hàm TẤT ĐỊNH nên seed = **dấu vân tham số**: cùng seed ⇔ cùng cụm. Đã ghi rõ trong docstring là không phải hạt ngẫu nhiên. |
+| KS3 `items` | **2 phần: "Bàn + vách" / "Ghế"**. Bỏ tick Ghế ⇒ entity ghế KHÔNG vào `Doc`. Chọn cách chia này vì bản vẽ bố trí kỹ thuật hay vẽ bàn mà bỏ ghế — thao tác nghề thật, không phải chia nhỏ cho có. |
+| KS4 `undoLabel` | "bản vẽ trước khi thả cụm (N đối tượng)", N đọc qua hook nên đúng theo thời điểm |
+| KS5 `why` | mỗi item + mỗi núm đều có `why` (nguồn của trị số) |
+| `onAccept(ids)` | chỉ ghép `deskPrims`/`chairPrims` theo ids đã tick. **Không có đường ghi cả mẻ.** |
+| `onRetry` | **CỐ TÌNH KHÔNG TRUYỀN** → Checkpoint tự hiện nút disabled kèm lý do. Cụm tất định nên "làm lại nguyên tham số cũ" ra đúng hình cũ ⇒ truyền vào là nút giả (§9). |
+| `phase` | luôn `'preview'` — cụm dựng trong ~1ms, không I/O. Bịa pha `running` + thanh tiến độ cho việc đó mới là giả. |
+
+## Đối chiếu nguồn thẩm mỹ — và một lỗi tôi suýt báo sai
+
+`clusterY()` mặc định cho **6955×6263**, trong khi `00-PHAN-TICH-NGUON-THAM-CHIEU.md` (nguồn `E1`)
+ghi **6955×6023**. Tôi đã định ghi "lệch 4%". Đo kỹ thì:
+
+- `deskEnvelopeMm` (bàn+vách) = **6955×6024** → khớp nguồn tới **1mm**
+- `sizeMm` (kể cả ghế) = **6955×6263** → rộng hơn 240mm vì ghế nhô ra theo trục Y
+
+⇒ **Không lệch.** 6955×6023 của nguồn là bao ngoài BÀN, đúng như `ClusterResult` đã ghi chú
+("ghế bị đẩy ra/đẩy vào nên không ai lấy làm kích thước cụm"). Đã viết rõ vào docstring
+`CLUSTER_Y_HUB_R_MM` để phiên sau không đo nhầm như tôi.
+
+Bàn họp 12 chỗ, pitch 478: dựng ra **2390×914** vs nguồn `D1` **2388×914** — lệch **2mm**, do
+94″ = 2387,6mm nên pitch đúng phải 477,52. Không chỉnh; ghi ra để biết.
+
+## Cần COWORK VẼ vẽ thêm (S3 không tự thêm — `manifest.json` là mảng của cowork)
+
+Manifest hiện **46 block / 11 nhóm · 0 block văn phòng**. Cụm bàn KHÔNG cần block tĩnh (sinh lúc
+chạy), nhưng mặt bằng văn phòng vẫn thiếu — đây là VIỆC 2 đã chuyển đi, ghi lại kèm kích thước:
+
+| Cần | Kích thước | Vì sao |
+|---|---|---|
+| Người nhìn từ trên | Ø450–550 (vai) | `B1`,`C1`,`D1`,`D2` đều có người. Không có người thì mặt bằng chết. |
+| Người mặt đứng | cao 1650–1750 | bản vẽ mặt đứng (`C1`,`C2`) |
+| Cây — tán tự do bất đối xứng | Ø800–1600 | ⛔ không răng cưa đều. Nguồn CC0: Temaki · Openclipart |
+| Thảm định vùng | Ø1600–2400, nét đứt | công cụ zoning (`B1`), không phải trang trí |
+| Ký hiệu ổ điện/mạng/công tắc | ~100–150 | nguồn QElectroTech (CC-BY, **phải ghi công**) |
+
+Trong lúc chờ: panel cụm KHÔNG hiện ô giả cho các món này — không có ô nào, nên không vi phạm §9.
+
+## Lỗi đã mắc trong phiên
+
+1. **Suýt báo sai `clusterY` lệch 4%** — đo `sizeMm` rồi so với con số nguồn vốn là `deskEnvelopeMm`.
+   Bắt được vì in cả hai ra trước khi viết. Bài học: `ClusterResult` có **hai** bao ngoài, đọc nhầm
+   là báo oan cho code đúng.
+2. **Tự đẻ checkpoint riêng** — vòng đầu tôi viết preview + nút "Thả vào bản vẽ" của riêng mình.
+   Phiếu sửa giữa phiên báo S5 đã dựng khuôn chung ⇒ phải gỡ ra làm lại theo `Checkpoint`. Nếu
+   phiếu tới muộn hơn thì repo đã có hai khuôn checkpoint lệch nhau.
+3. **Gọi `useCadStore.getState()` trong thân render** để lấy số entity cho `undoLabel` — không phản
+   ứng khi bản vẽ đổi, tức "lùi về đâu" sẽ nói sai số. Đổi sang hook `useCadStore((s) => …)`.
+4. **Sửa docstring N8 sai chiều** — docstring `workstation-clusters.ts` khai
+   "`00-PHAN-TICH-NGUON-THAM-CHIEU.md` không tồn tại". File NAY ĐÃ CÓ. Đã sửa lại + ghi rõ vẫn chưa
+   mở được ảnh gốc `E1`/`E2`/`D1` (`docs/reference/` chưa có), đối chiếu mới tới bảng số chưng cất.
+
+## Phát hiện ngoài phạm vi — ghi để phiên nối canvas biết
+
+`LIBRARY_INSTANTIATE_EVENT` / `if:library-instantiate`: `grep` toàn `app/ components/ lib/` chỉ có
+chỗ **PHÁT**, **0 nơi NGHE**. Tức kéo–thả món từ kệ hiện chỉ hiện toast, chưa rơi xuống bản vẽ.
+Kệ cụm bàn **không đi đường này** (gọi thẳng `addEntities`) nên thả là có hình ngay. Đã ghi cảnh
+báo tại chỗ khai hằng số trong `LibrarySheet.tsx`. Đây đúng là đề xuất #3 của báo cáo phiên trước —
+vẫn chưa ai làm.
+
+## Nghiệm thu — TRẠNG THÁI THẬT, có phần CHƯA chạy được
+
+| Phép kiểm | Kết quả |
+|---|---|
+| `workstation-clusters.test.ts` | **85 pass · 0 fail** (chạy lại SAU khi thêm `deskPrims`/`chairPrims` — không hồi quy; test không có assert so-khớp-nguyên-hình nên thêm field là an toàn) |
+| `sheet-migrate.test.ts` | 34 pass · 0 fail (mẫu đối chứng, không liên quan) |
+| Dựng 6 cụm qua `CLUSTER_SPECS` | cả 6 ra hình, ra entity, không throw — bảng số ở trên |
+| §0f TB4 "đổi dữ liệu, hình tự cập nhật?" | chữ L: 6/12/20 chỗ → 4200/8400/14000mm · bàn 1200/1400/1600 → 4800/5600/6400mm. **Có.** |
+| `npm run license:check` | **pass (exit 0)** |
+| `npx tsc --noEmit -p .` | ✅ **exit 0, sạch** — chạy SAU khi cắm `Checkpoint` |
+| Nghiệm thu trình duyệt thật | 🔴 **CHƯA LÀM** — xem dưới |
+
+### Ghi chú về `tsc`
+
+Chạy được sau vài lần thử — giữa phiên công cụ chạy lệnh gặp lỗi hạ tầng tạm thời
+("classifier temporarily unavailable") chặn riêng các lệnh `tsc` trong khi `grep`/`sucrase-node`/
+`license:check` vẫn chạy. Không liên quan tới code. Kết quả cuối: **exit 0**.
+
+## Nghiệm thu trình duyệt thật — ĐÃ LÀM (127.0.0.1:3000, chặng 2D, theme tối)
+
+Mở sheet bằng đúng cửa chung (`if:library-open`, `use-library-sheet.ts:19`), không dựng đường tắt riêng.
+
+| Kiểm | Kết quả đo |
+|---|---|
+| Kệ hiện đúng chỗ | `Văn phòng · Cụm bàn  6` nằm cuối nhóm "KỆ CHẶNG THIẾT KẾ 2D", trên "KỆ CHUNG" |
+| 6 cụm | hiện đủ 6 thẻ kèm mô tả; bấm đổi cụm ra đúng bộ núm của cụm đó |
+| §0f TB4 đổi dữ liệu → hình tự cập nhật | Số chỗ `8 → 16`: SVG vẽ lại ngay, dòng "Số chỗ" đổi theo. **Có.** |
+| KS1 xem trước | khung `XEM TRƯỚC` + SVG cụm + vùng chờ nét đứt |
+| KS1 tham số | đọc được: bao ngoài `2.860×5.600 mm` · riêng bàn `2.860×5.600` · 8 chỗ · `2` và `2.98` m²/chỗ |
+| KS2 seed | hiện `Seed 3861766789` |
+| KS3 duyệt phần | `Bàn + vách 17 nét · 2.860×5.600mm` · `Ghế 32 nét · 8 chỗ`. Bỏ tick Ghế → nút đổi **"Nhận 2 phần" → "Nhận 1 phần"**. Bỏ tick cả hai → nút **tự disabled** (`acceptGate`). |
+| KS4 lùi về đâu | "Không nhận thì quay về: bản vẽ trước khi thả cụm (**128 đối tượng**)" — số thật của bản vẽ đang mở |
+| §9 nút giả | `Làm lại` **disabled = true** (đúng chủ ý không truyền `onRetry`); `Nhận`/`Sửa tham số rồi làm lại` enabled |
+| Lỗi console | không có lỗi liên quan panel |
+
+🟡 **KHÔNG bấm "Nhận" trên máy thật.** Bản vẽ đang mở là của **phiên khác đang làm việc song song**
+(`Đang mở nơi khác`, 128 đối tượng) — chèn hình vào doc của họ là đúng thứ `STATUS.md` cấm lặp lại.
+Đường ghi đã verify headless thay thế: `clusterPrimsToEntities()` sinh **49 entity polyline** cho
+cụm chữ L 8 chỗ, đúng loại, đúng số. Sau khi đóng sheet đo lại: `entities 128 · past 0` ⇒ **không
+đụng gì vào bản vẽ của họ**.
+
+## 🔴 LỖI TỰ GÂY, BẮT ĐƯỢC LÚC NGHIỆM THU — đã sửa
+
+**Nút "Nhận" nằm ngoài màn, không bấm được.** Đo DOM lần đầu: `.libmain` `overflow-y: visible`,
+cao 447px trong khi nội dung 878px; đáy checkpoint ở **1136px** còn viewport chỉ **720px**. Nút
+`Nhận 2 phần` CÓ trong DOM nhưng không cuộn tới được ⇒ tính năng coi như chết.
+
+Nguyên nhân: `.libmain` là flex-column cao cố định, con của nó **phải tự claim** `flex:1` +
+`minHeight:0` + `overflow-y:auto` mới cuộn — đúng cách `.grid` đang làm
+(`library-sheet-css.ts:96`). Panel của tôi là `<div>` grid trần, không claim gì.
+
+Sửa (chỉ trong `ClusterPanel.tsx`, không đụng CSS chung): gốc panel `flex:1 · minHeight:0` +
+padding khớp `.grid`; **cả hai cột** `minHeight:0 · overflowY:auto`. Đo lại: cột phải
+`scrollHeight 892 > clientHeight 419 · canScroll true`, cuộn xuống thì nút Nhận nằm **trong**
+khung sheet (`btnInsideSheet: true`). Bài học ghi luôn vào comment: nhét thành phần CAO vào
+`.libmain` thì phải tự lo cuộn.
+
+## Nghiệm thu cuối — chạy lại sau khi sửa
+
+```
+npx tsc --noEmit -p .                          → TSC_EXIT=0
+lib/cad/workstation-clusters.test.ts           → 85 pass, 0 fail
+npm run license:check                          → LICENSE_EXIT=0
+```

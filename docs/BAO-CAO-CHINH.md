@@ -1857,3 +1857,157 @@ flow sang project người khác → 404, sang project mình → 200, gỡ (null
 **CHƯA LÀM** (ngoài phạm vi 3 việc được giao, ghi để phiên sau): §2.3a notebook dùng
 `Project.userId` thay `ProjectMember` (thành viên bị chặn oan) · §2.6 không rate limit đăng
 nhập · §2.4 còn `POST /api/specs` + `DELETE /api/comments?id=` chưa siết.
+
+---
+
+## [2026-08-05] S6 — DỌN NỢ NỀN CHUẨN (`lib/cad/standards/**`) — XONG 4/4, CHƯA COMMIT (V6)
+Nguồn việc: ticket cowork-nghiên cứu 05/08 qua brief TỔNG. **Tự grep lại cả 4 điểm trước khi sửa
+(N7) — cả 4 đều ĐÚNG như brief, không điểm nào lệch.**
+
+### VIỆC 1 🔴 — chiều thời gian cho `StandardRule` (T2)
+- `registry.ts:77-95` (`effectiveFrom` khai ở :87, `supersededBy` ở :95) — 2 field MỚI, cả hai **optional** (rule cũ không đặt ⇒ hành vi y nguyên):
+  `effectiveFrom?: string` (ISO `YYYY-MM-DD`) · `supersededBy?: string` (id rule thay thế).
+- `registry.ts:174-282` — `ResolvedRuleSet` (:184) · `resolveRulesAsOf()` (:230) · `getRulesEffectiveOn()` (:280):
+  loại rule chưa hiệu lực tại ngày mốc · loại rule đã bị thay · **GIỮ bản cũ + ghi chú khi bản
+  thay thế chưa hiệu lực tại ngày mốc** (đúng điều khoản chuyển tiếp QCVN 10:2024/BXD hiệu lực
+  01/02/2025). So ngày bằng so chuỗi ISO, **không dùng `Date`** (tránh lệch múi giờ ở biên ngày).
+- `checker.ts:249` — `checkStandards(doc, rules, opts?: { asOfDate })` (tra id nghiệp vụ ở :254-261). Tham số thứ 3 optional
+  ⇒ **28 lời gọi cũ trong `checker.test.ts` không phải sửa dòng nào**, chạy nguyên.
+- `checker.ts:41-47` — `Violation.asOfNote?` (optional): không khai ngày ⇒ mọi violation kèm câu
+  "đang dùng BỘ MỚI NHẤT"; đang áp bản cũ theo chuyển tiếp ⇒ kèm câu nêu rõ bản thay thế + ngày.
+  Gắn ở **1 chỗ** sau vòng đo (`checker.ts:438-445`), không sửa ~40 lời gọi `mkViolation`.
+- ⛔ **KHÔNG dùng `Date.now()`** ở bất kỳ nhánh nào — lý do ghi tại chỗ: lấy ngày hệ thống là kiểm
+  hồ sơ cũ bằng bộ số mới, sai âm thầm, không ai thấy.
+- 🔴 **K4 — DỪNG ĐÚNG CHỖ ĐƯỢC DẶN**: `Doc` (`model.ts:720+`) **KHÔNG có** chỗ lưu ngày thẩm định
+  (grep `thẩm định|appraisal|approvalDate` trong `lib/` = 0 dòng liên quan). **KHÔNG tự thêm field
+  vào `Doc`.** ⇒ `asOfDate` hiện chỉ nhận ngày do CALLER truyền; **chưa UI nào truyền**. Cần Hoà
+  chốt ngày thẩm định sống ở đâu (`Doc`? metadata dự án? per-sheet hay per-project?) rồi mới nối.
+- 🟡 **0 rule nào đang khai `effectiveFrom`** — cố ý. Muốn bật thật cho nhóm QCVN 10 thì phải có
+  **trị số QCVN 10:2014** để làm bản cũ; chưa tra được nguồn kiểm chứng ⇒ không bịa số (nguyên tắc
+  `verified` ở `registry.ts:9-13`). Khai `effectiveFrom` mà thiếu bản cũ sẽ **tắt câm** phép kiểm
+  tiếp cận cho dự án cũ mà không có gì thay — tệ hơn hiện trạng.
+- Test MỚI `lib/cad/standards/rule-effective-date.test.ts` — **35/35 pass**, 8 nhóm ca (chuyển
+  tiếp · sau ngày hiệu lực · không ngày · bộ không có chiều thời gian · dữ liệu vào hỏng · đường
+  nối `checkStandards` · không hồi quy · chuỗi thay thế nhiều đời + chuỗi vòng).
+
+### VIỆC 2 🟠 — 8 rule bị dán sai nhãn "ngoài scope" (T4)
+Sửa **đúng 7 chỗ** brief chỉ, ⛔ **không đụng 1 con số nào, không xoá rule nào, không đổi
+`verified` của rule nào** (diff chỉ chạm dòng comment/`note`):
+`checker.ts:458-467` (2 mục: ram · bãi đỗ xe) · `vn-accessibility.ts:70-77` (khối comment) ·
+`vn-accessibility.ts` 4 `note` bãi đỗ xe. Chữ mới nói đúng bản chất — *"model 2D CHƯA có entity
+ram/chỗ đỗ xe ⇒ NỢ KỸ THUẬT, mở lại được"*, kèm 1 dòng ⚠️ ghi rõ chữ cũ sai ở đâu để phiên sau
+không đọc thành "đã đóng". Rule tay vịn (`checker.ts:462-464`) vốn đã ghi lý do đúng — **không đụng**.
+
+### VIỆC 3 🟡 — `STANDARD_LINEWEIGHTS` lệch rule (T8)
+- `model.ts:42` (doc-comment :29-41) → thêm `1.4, 2.0` (7 → 9 giá trị), khớp `iso128-lineweight-set`
+  (`iso-drafting.ts:18-20`) vốn đã khai đủ 9 và tự trỏ ngược về hằng số này.
+- **Grep trước khi sửa** — không nơi nào giả định đúng 7 phần tử: `grep -rn STANDARD_LINEWEIGHTS`
+  ra 6 dòng, **5 dòng là comment** (`section-entities.ts:47`, `model.ts:53`, `pdf.ts:125`,
+  `iso-drafting.ts:18,23`) + 1 dòng khai báo. Không có `length === 7`, không có index cứng ngoài
+  `[0]` (vẫn là 0.13). ⇒ hằng số này hiện **không có nơi tiêu thụ trong code chạy**.
+- ⚠️ **Phát hiện kèm, NGOÀI vùng file S6 nên KHÔNG sửa**: `components/cad/CadEditor.tsx:732` chép
+  cứng đúng 7 giá trị cũ thay vì import hằng số ⇒ dropdown chọn nét của UI vẫn 7 mục, chưa có
+  1.4/2.0. Đã ghi cảnh báo này ngay tại `model.ts` để người sửa `CadEditor` sau thấy.
+
+### VIỆC 4 🟡 — `CLAUDE.md` mô tả sai hiện trạng (T9)
+`CLAUDE.md:33-38` — kiểm: `ls knowledge/` = **0 file**, `git ls-files knowledge` = **0 dòng**.
+Viết lại: nói thẳng thư mục RỖNG, tài liệu đã dời ra ngoài repo theo luật trung tính, kèm dòng ghi
+chú vì sao mục cũ nguy hiểm (đẻ ra "đề xuất lại thứ đã có" — N8). Đường dẫn `~/Downloads/_TTT-BRAND/`
+chép từ sổ 01/08, **ghi rõ CHƯA XÁC MINH LẠI** trong phiên này, không khẳng định chắc.
+
+### Nghiệm thu
+- `npx tsc --noEmit -p .`: **0 lỗi trong toàn bộ file của S6** (registry/checker/vn-accessibility/
+  model/test mới đều sạch). ⚠️ **ĐÍNH CHÍNH — repo KHÔNG sạch tuyệt đối**, nhưng cả 2 lỗi đều
+  NGOÀI vùng S6 và không do S6 gây ra:
+  · `__probe-dxf.ts(16,15)` TS2339 — file scratch untracked ở gốc repo của phiên khác (`?? ` trong
+    `git status`, docblock tự ghi *"Xoá sau khi đo"*), đọc `parseDxf(raw).doc` trong khi `parseDxf`
+    trả thẳng `Doc`. Có SẴN trước phiên này.
+  · `components/cad/PlanPresentPanel.tsx(224,22)` TS2304 `Cannot find name 'ghiNhan'` — **MỌC THÊM
+    giữa 2 lần chạy tsc cách nhau vài phút trong chính phiên này** ⇒ phiên khác đang sửa dở file đó.
+    Không đụng, không commit hộ (đúng luật hai-phiên-chung-`.git`).
+  ⇒ Lần chạy đầu tôi đọc nhầm là "sạch" vì lệnh có `| tail -20` nên `$?` là exit của `tail`, không
+    phải của `tsc`. Chạy lại không pipe: **exit=2**. Bài học: đừng lấy exit code sau pipe.
+- 5 file test cũ của `lib/cad/standards/` pass đủ: `checker` 62/62 · `fix-suggest` 21/21 ·
+  `room-type` 13/13 · `standards-intl` 22/22 · `wall-type` 20/20. Test mới 35/35.
+- Toàn repo: chỉ **1 fail CŨ đã biết** `lib/three/cad-to-obj.test.ts` (entityId nội thất, không
+  liên quan). `lib/cad/hatch-perf.test.ts` fail khi chạy 8 luồng song song nhưng **chạy riêng
+  22/22 pass** — là test đo THỜI GIAN, thua vì tranh CPU, không phải hồi quy (đã kiểm riêng).
+- Không verify browser: 4 việc đều là tầng dữ liệu/comment/hằng số, không đổi gì nhìn thấy được
+  trên màn hình (`asOfNote` chưa panel nào đọc — panel Kiểm chuẩn nên hiện, ghi trong doc-comment).
+
+### Lỗi đã mắc trong phiên (bắt buộc — HG6)
+1. 🔴 **Thiết kế hụt, test bắt được, không phải suy đoán**: bản `resolveRulesAsOf` đầu tiên của tôi
+   chạy đúng ở tầng registry nhưng **cơ chế thay thế rule vô dụng ở tầng checker** — `checker.ts`
+   tra rule bằng **id chết viết thẳng trong code** (`byId('vn-res-bedroom-min-area')`), mà rule thay
+   thế bắt buộc mang id KHÁC (id là khoá duy nhất) ⇒ bản mới **không bao giờ được đo**, phép kiểm
+   biến mất im lặng. Test [6]/[7] fail 4 ca mới lộ ra. Sửa: thêm `aliasByOldId` (id cũ → bản đang
+   hiệu lực, đi hết chuỗi nhiều đời, có trần lặp chống chuỗi vòng) + `byId()` rơi xuống bảng đó.
+   ⇒ Bài học: **viết test cho ĐƯỜNG NỐI THẬT, đừng chỉ test hàm thuần** — hàm thuần của tôi xanh
+   100% trong khi tính năng thực chất chết.
+2. 🟡 Suýt quên: đã định để mọi violation kèm `asOfNote` kể cả khi bộ rule không có chiều thời gian
+   ⇒ nhiễu vô nghĩa cho 100% dự án hiện tại. Sửa thành chỉ cảnh báo khi bộ rule THẬT SỰ có rule
+   khai `effectiveFrom`/`supersededBy` (test [4] chốt điều này).
+3. 🟡 **Báo cáo hụt 1 nhịp**: lần đầu tôi ghi "tsc sạch" dựa trên exit code của lệnh có `| tail`
+   — đó là exit của `tail`, không phải của `tsc`. Chạy lại không pipe mới thấy exit=2 (2 lỗi, cả
+   hai ngoài vùng S6). Đã sửa lại mục Nghiệm thu ngay trong phiên, trước khi bàn giao.
+
+### File đã sửa (V6 — KHÔNG commit, Hoà commit)
+`lib/cad/standards/registry.ts` · `lib/cad/standards/checker.ts` · `lib/cad/standards/vn-accessibility.ts` ·
+`lib/cad/standards/rule-effective-date.test.ts` (MỚI) · `lib/cad/model.ts` · `CLAUDE.md`.
+Không đụng file nào ngoài mảng được giao. Không xoá worktree `.worktrees/dot-b/` (việc của Hoà).
+
+### [2026-08-05] S6 · VIỆC 5 🟠 — dọn mock rỗng + luật ĐỎ ⑥ (S5 phát hiện, S6 sửa)
+Vì sao S6 làm chứ không phải S5: **người bị kiểm không sửa cửa kiểm** (S5 vừa bị chính
+`check-mocks.mjs` soi ra lỗi).
+
+**Kiểm lại brief trước khi xoá (N7) — đúng 100%**: 4 file `docs/mocks/Canvas-9|10|13|15.dc.html`
+đều **đúng 206 byte**, ruột `<x-dc></x-dc>` trống trơn, `<script src="./support.js">` mà
+`docs/mocks/support.js` **không tồn tại**. `git ls-files` xác nhận **Canvas-9 + Canvas-10 ĐÃ LỌT
+VÀO GIT**, Canvas-13/15 chỉ nằm trên đĩa (`??`).
+
+1. **Đã xoá cả 4 khỏi đĩa.** `git status` nay: `D docs/mocks/Canvas-9.dc.html` +
+   `D docs/mocks/Canvas-10.dc.html` (deletion **chưa stage** — V6, Hoà commit), 2 file untracked
+   biến mất hẳn. `ls docs/mocks | grep -ci canvas` = **0**.
+   ⚠️ **KHÔNG dùng `git rm` như phiếu ghi** — lý do: `.git/index.lock` đang tồn tại (kiểm theo §6.3:
+   **0 byte, tạo 21:08, lúc kiểm 22:04 = 56 phút ⇒ lock CHẾT**; `pgrep` chỉ thấy `git diff --numstat`
+   của editor, **không có `commit`/`add` nào chạy**). Việc này không cần index nên tôi xoá thẳng
+   trên đĩa thay vì gỡ lock của repo dùng chung — kết quả trên đĩa y hệt, `git commit -- <path>`
+   của Hoà vẫn ghi nhận deletion bình thường.
+   🔴 **Hoà cần biết: lock chết đó vẫn còn**, phiên sau chạm git sẽ vướng. Lệnh gỡ (chạy khi chắc
+   không phiên nào đang commit): `rm -f .git/index.lock`. Đây là lần thứ **6** (STATUS.md ghi 5 lần trước).
+
+2. **Luật ĐỎ ⑥ MOCK-RONG** vào `scripts/check-mocks.mjs`:
+   - Docblock đầu file: 5 → **6 luật**, mục ⑥ ghi đủ ca thật + **vì sao mock rỗng nguy hiểm hơn
+     mock thiếu**: nó ĐẾM ĐƯỢC trong `ls docs/mocks/` nên phiên sau tưởng "màn này có mock rồi",
+     mở ra trắng bóc, rồi tự chế — đúng cơ chế đẻ ra "làm lại thứ đã có" (N8).
+   - `MIN_MOCK_BYTES = 1024` + `bodyIsEmpty(src)` (bỏ chú thích + ruột script/style → bóc thẻ →
+     còn chữ không; không chữ thì xét số thẻ, `≤2` là rỗng). ĐỎ khi **dưới 1KB HOẶC thân trống**.
+   - **Ngưỡng chọn bằng ĐO, không bằng cảm tính**: quét 66 file — 4 file rỗng 206 byte, file THẬT
+     nhỏ nhất `mock-bottombar-redesign.html` **8.108 byte**. Khe 206↔8.108 rất rộng ⇒ 1.024 cách
+     file thật nhỏ nhất ~8 lần.
+   - Nhãn ĐỘNG (`label` nhận `src`, 5 luật cũ vẫn dùng chuỗi tĩnh) — in rõ trượt điều kiện nào +
+     số byte thật, người đọc bảng khỏi phải mở file ra đoán.
+
+**Nghiệm thu VIỆC 5**
+- Quét 62 file (66 − 4 đã xoá): luật ⑥ ra **0 dòng** ⇒ **0 bắt oan** trên toàn bộ mock thật.
+- **Test ngược (N3 — không tin luật chạy đúng nếu chưa thấy nó bắt)**: dựng lại file rỗng 137 byte
+  → ⑥ bắt, nhãn in `"chỉ 137 byte < 1024 + thân trang trống (không chữ, ≤2 thẻ)"`. Dựng tiếp file
+  **1.840 byte (VƯỢT ngưỡng) nhưng thân trống** → ⑥ vẫn bắt, nhãn chỉ nêu lý do thân trống ⇒ **hai
+  điều kiện hoạt động ĐỘC LẬP**, không phải một điều kiện gánh cả hai. Cả 2 file scratch đã xoá
+  (`ls` xác nhận không còn).
+- ⚠️ `node scripts/check-mocks.mjs` **exit 1 — nhưng ĐỎ SẴN TỪ TRƯỚC**, không do việc này: 39/62
+  file đỏ vì 5 luật CŨ (`LINK-CUC-BO` · `HANDLEBARS` · `FONT-SHORTHAND` · `THIEU-DATA-THEME` ·
+  745 lần vi phạm). Không đụng — ngoài phạm vi VIỆC 5, và `check:mocks` KHÔNG nằm trong `npm test`
+  (`package.json:15`) nên không chặn ai. Đống đỏ cũ đó nên có phiếu riêng.
+
+🔴 **PHÁT HIỆN KÈM — CHÍNH CỬA KIỂM KHÔNG NẰM TRONG GIT.** `git ls-files scripts/` liệt 10 file,
+**KHÔNG có `check-mocks.mjs`**; `git log -- scripts/check-mocks.mjs` = rỗng ⇒ file chỉ sống trên đĩa
+máy Hoà, `git status` báo `??`. Trong khi `package.json:13` khai `"check:mocks": "node
+scripts/check-mocks.mjs"` ⇒ **ai clone repo chạy `npm run check:mocks` sẽ lỗi "Cannot find module"**.
+Cửa kiểm bảo vệ mock lại tự nó không được bảo vệ. ⇒ Hoà cần `git add scripts/check-mocks.mjs` khi
+commit đợt này. (Không phải S6 gây ra — file chưa từng được commit lần nào.)
+
+**File đã sửa/xoá ở VIỆC 5 (V6 — KHÔNG commit)**
+`scripts/check-mocks.mjs` (sửa — nhưng đang UNTRACKED, xem dòng đỏ trên) · `docs/mocks/Canvas-9.dc.html`
++ `Canvas-10.dc.html` (xoá, tracked, deletion chưa stage) · `Canvas-13.dc.html` + `Canvas-15.dc.html`
+(xoá, untracked).

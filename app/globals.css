@@ -1419,3 +1419,32 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   pointer-events: none;
   white-space: nowrap;
 }
+
+/* ---------- Checkpoint duyệt (components/studio/Checkpoint.tsx, S5 05/08) ---------- */
+
+/* Thanh tiến độ VÔ ĐỊNH — dùng khi KHÔNG đo được phần trăm thật.
+   Cố tình trượt qua lại thay vì hiện một con số bịa: bài học P1 nhập DWG — % giả làm người
+   dùng tin sai vào thời gian còn lại, tệ hơn là không có %. Xem formatProgress() trong
+   components/studio/checkpoint-core.ts (null ⇒ hiện số giây, không hiện %). */
+@keyframes if-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(340%);
+  }
+}
+.if-indeterminate {
+  animation: if-indeterminate 1.25s ease-in-out infinite;
+}
+
+/* reduce-motion THẮNG TẤT CẢ (SPEC-APPLE-MOTION-MATERIAL): bỏ trượt, để vạch đứng yên —
+   vẫn thấy "đang chạy" nhờ dòng số giây bên trên, không cần chuyển động. */
+@media (prefers-reduced-motion: reduce) {
+  .if-indeterminate {
+    animation: none;
+    transform: none;
+    width: 100%;
+    opacity: 0.5;
+  }
+}

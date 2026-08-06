@@ -73,6 +73,26 @@ export interface StandardRule {
   region?: StandardRegion;
   /** Ràng buộc bắt buộc/tuỳ chỉnh (tuỳ chọn — rule cũ không đặt, coi như suy ra từ severity). */
   binding?: RuleBinding;
+  /**
+   * T2 (2026-08-05) — NGÀY BẮT ĐẦU HIỆU LỰC của trị số này, ISO `'YYYY-MM-DD'`. Tuỳ chọn: rule
+   * KHÔNG đặt = áp dụng cho mọi mốc thời gian (hành vi cũ nguyên vẹn).
+   *
+   * Vì sao cần: quy chuẩn VN có ĐIỀU KHOẢN CHUYỂN TIẾP. QCVN 10:2024/BXD (Thông tư 06/2024/TT-BXD)
+   * hiệu lực 01/02/2025, nhưng dự án đã thẩm định TRƯỚC mốc đó vẫn nghiệm thu theo QCVN 10:2014.
+   * ⇒ hai dự án mở cùng lúc trong app phải được kiểm bằng HAI bộ số khác nhau, và bộ nào đúng
+   * phụ thuộc ngày mốc CỦA DỰ ÁN — không phải ngày hôm nay. Đó là lý do `resolveRulesAsOf()`
+   * bên dưới nhận ngày từ caller và TUYỆT ĐỐI không gọi `Date.now()`: lấy ngày hệ thống là kiểm
+   * sai bộ số cho mọi hồ sơ cũ, âm thầm, không ai thấy.
+   */
+  effectiveFrom?: string;
+  /**
+   * T2 (2026-08-05) — `id` của rule THAY THẾ rule này. Tuỳ chọn; đặt trên rule CŨ, trỏ tới rule
+   * MỚI (rule mới nên có `effectiveFrom`). Rule cũ ngừng áp dụng KỂ TỪ ngày rule mới có hiệu lực,
+   * còn trước ngày đó thì rule cũ vẫn là bộ số đúng — chính là điều khoản chuyển tiếp.
+   * Trỏ tới id không tồn tại ⇒ bỏ qua (rule cũ giữ nguyên hiệu lực), không throw: registry trộn
+   * cả rule tuỳ biến của user, không đảm bảo toàn vẹn tham chiếu.
+   */
+  supersededBy?: string;
 }
 
 export interface RuleGroup {
@@ -154,4 +174,109 @@ export function getRulesByRegion(region: StandardRegion): StandardRule[] {
 export function getMandatoryRules(region?: StandardRegion): StandardRule[] {
   const base = region ? getRulesByRegion(region) : getAllRules();
   return base.filter((r) => r.binding === 'mandatory');
+}
+
+/* ────────────────────────────────────────────────────────────────────────────────────────────
+ * T2 (2026-08-05) — CHIỀU THỜI GIAN: chọn bộ rule đúng theo NGÀY MỐC CỦA DỰ ÁN.
+ * Xem doc-comment `effectiveFrom`/`supersededBy` ở `StandardRule` phía trên để biết vì sao.
+ * ──────────────────────────────────────────────────────────────────────────────────────────── */
+
+export interface ResolvedRuleSet {
+  /** Bộ rule còn hiệu lực tại `asOfDate` (hoặc bộ mới nhất khi không có ngày). */
+  rules: StandardRule[];
+  /** Ngày mốc đã dùng (`'YYYY-MM-DD'`), hoặc null khi caller không cung cấp/ngày sai định dạng. */
+  asOfDate: string | null;
+  /** Ghi chú CHUNG cần hiển thị cho người dùng. undefined = không có gì phải lưu ý. */
+  note?: string;
+  /** Ghi chú RIÊNG theo `rule.id` (VD rule cũ còn áp theo điều khoản chuyển tiếp). */
+  noteByRuleId: Record<string, string>;
+  /**
+   * Ánh xạ `id rule ĐÃ BỊ THAY` → `id rule ĐANG HIỆU LỰC` thay nó (đã đi hết chuỗi thay thế, VD
+   * 2014→2024→2031 thì cả 2 id cũ đều trỏ thẳng tới bản cuối).
+   *
+   * Vì sao PHẢI có: `checker.ts` tra rule bằng ID CHẾT viết thẳng trong code
+   * (`byId('vn-res-bedroom-min-area')`). Rule thay thế bắt buộc mang id KHÁC (id là khoá duy nhất
+   * toàn cục — xem doc-comment `id`), nên nếu không có bảng này thì bản mới sẽ KHÔNG BAO GIỜ được
+   * đo: `byId()` tra id cũ, bộ rule đã bỏ id cũ ⇒ phép kiểm im lặng biến mất. Đây là lỗi ĐÃ MẮC
+   * khi làm T2 — test [6]/[7] `rule-effective-date.test.ts` bắt được, không phải suy đoán.
+   * ⇒ id cũ đóng vai "khoá NGHIỆP VỤ" mà checker gọi tên; id mới là "khoá PHIÊN BẢN" của trị số.
+   */
+  aliasByOldId: Record<string, string>;
+}
+
+/** `'YYYY-MM-DD'` (chấp nhận chuỗi ISO dài hơn — cắt lấy 10 ký tự đầu). Sai định dạng ⇒ null.
+ * So sánh ngày bằng so sánh CHUỖI: đúng với ISO `YYYY-MM-DD` (từ điển = thứ tự thời gian), tránh
+ * kéo `Date` vào đây (`new Date('2025-02-01')` là UTC, lệch múi giờ ⇒ lệch 1 ngày ở biên). */
+function normalizeIsoDate(raw: string | null | undefined): string | null {
+  if (typeof raw !== 'string') return null;
+  const d = raw.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
+  const m = Number(d.slice(5, 7));
+  const day = Number(d.slice(8, 10));
+  if (m < 1 || m > 12 || day < 1 || day > 31) return null;
+  return d;
+}
+
+/**
+ * Lọc `rules` về đúng bộ áp dụng tại `asOfDate`:
+ *   - rule có `effectiveFrom` SAU ngày mốc ⇒ loại (lúc đó chưa có hiệu lực).
+ *   - rule bị `supersededBy` trỏ tới 1 rule ĐÃ có hiệu lực tại ngày mốc ⇒ loại (đã bị thay).
+ *   - rule bị thay nhưng rule thay thế CHƯA hiệu lực tại ngày mốc ⇒ GIỮ + gắn ghi chú chuyển tiếp.
+ *
+ * `asOfDate` rỗng/sai định dạng ⇒ dùng BỘ MỚI NHẤT (mọi rule chưa bị thay) + `note` cảnh báo, CHỈ
+ * khi bộ rule thật sự có chiều thời gian — dự án không khai ngày thì không phải nghe cảnh báo về
+ * thứ không tồn tại. KHÔNG có `Date.now()` ở đây: xem lý do trong doc-comment `effectiveFrom`.
+ */
+export function resolveRulesAsOf(rules: StandardRule[], asOfDate?: string | null): ResolvedRuleSet {
+  const at = normalizeIsoDate(asOfDate);
+  const byId = new Map(rules.map((r) => [r.id, r]));
+  const hasTimeDimension = rules.some((r) => r.effectiveFrom !== undefined || r.supersededBy !== undefined);
+  const noteByRuleId: Record<string, string> = {};
+  const aliasByOldId: Record<string, string> = {};
+  const out: StandardRule[] = [];
+  const dropped: StandardRule[] = [];
+
+  for (const r of rules) {
+    if (at !== null && r.effectiveFrom !== undefined) {
+      const from = normalizeIsoDate(r.effectiveFrom);
+      // effectiveFrom sai định dạng ⇒ coi như không khai (giữ rule), không âm thầm nuốt rule.
+      if (from !== null && from > at) continue;
+    }
+    const successor = r.supersededBy ? byId.get(r.supersededBy) : undefined;
+    if (successor) {
+      const sFrom = normalizeIsoDate(successor.effectiveFrom);
+      if (at === null || sFrom === null || sFrom <= at) {
+        dropped.push(r); // bản thay thế đã hiệu lực (hoặc đang lấy bộ mới nhất) ⇒ bỏ bản cũ
+        continue;
+      }
+      noteByRuleId[r.id] =
+        `Áp bản CŨ theo điều khoản chuyển tiếp: dự án lấy mốc ${at}, bản thay thế "${successor.id}"` +
+        ` chỉ có hiệu lực từ ${sFrom}.`;
+    }
+    out.push(r);
+  }
+
+  // Bảng ánh xạ id cũ → bản đang hiệu lực. Đi hết chuỗi thay thế; trần lặp = số rule để chuỗi
+  // vòng (A thay B, B thay A — dữ liệu tuỳ biến của user có thể sai) không treo vòng vô hạn.
+  const inForce = new Set(out.map((r) => r.id));
+  for (const r of dropped) {
+    let cur = r.supersededBy;
+    for (let i = 0; i < rules.length && cur; i += 1) {
+      if (inForce.has(cur)) { aliasByOldId[r.id] = cur; break; }
+      cur = byId.get(cur)?.supersededBy;
+    }
+  }
+
+  const note =
+    at === null && hasTimeDimension
+      ? 'Dự án chưa khai ngày mốc (ngày thẩm định/phê duyệt) — đang kiểm bằng BỘ QUY CHUẨN MỚI NHẤT.' +
+        ' Hồ sơ đã thẩm định trước ngày quy chuẩn mới có hiệu lực có thể vẫn được nghiệm thu theo bản cũ.'
+      : undefined;
+
+  return { rules: out, asOfDate: at, note, noteByRuleId, aliasByOldId };
+}
+
+/** Tiện dụng: bộ rule (built-in + tuỳ biến) còn hiệu lực tại 1 ngày mốc. */
+export function getRulesEffectiveOn(asOfDate?: string | null): StandardRule[] {
+  return resolveRulesAsOf(getAllRules(), asOfDate).rules;
 }

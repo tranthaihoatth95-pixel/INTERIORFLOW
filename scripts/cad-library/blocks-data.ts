@@ -12,6 +12,7 @@
  */
 
 import type { Prim } from '../../lib/cad/furniture';
+import type { Pt } from '../../lib/cad/model';
 
 export type Category =
   | 'phong-khach'
@@ -88,43 +89,172 @@ function octagon(w: number, h: number, cut: number): Prim {
 function hatchX(w: number, h: number): Prim[] {
   return [line(-w / 2, -h / 2, w / 2, h / 2), line(-w / 2, h / 2, w / 2, -h / 2)];
 }
+
+/* ═════════════════ helper CONG — thêm 06/08, VIỆC 4 ═════════════════
+ *
+ * LỖI CHUNG CẢ BỘ (đo thật 06/08): **41/46 block KHÔNG dùng arc nào**, trung vị **4 hình/block**.
+ * Nội thất mềm mà toàn nét thẳng thì luôn ra hình hộp. Bộ helper dưới đây là để chữa đúng chỗ đó.
+ *
+ * ⚠️ Giữ đúng §2 nguồn tham chiếu — **CHI TIẾT TIẾT CHẾ, gợi ý chứ không tả**: ghế là
+ * "mâm + lưng + 2 tay", KHÔNG chân sao, KHÔNG bánh xe. Thêm cong để đúng chất, không phải để
+ * thêm chi tiết.
+ */
+
+/** Hình chữ nhật BO GÓC thật (4 đoạn thẳng + 4 cung). Bán kính tự kẹp để không vượt nửa cạnh. */
+function roundedRect(x: number, y: number, w: number, h: number, r: number): Prim[] {
+  const rr = Math.max(0, Math.min(r, w / 2, h / 2));
+  if (rr === 0) return [rect(x, y, w, h)];
+  const x0 = x, y0 = y, x1 = x + w, y1 = y + h;
+  const HALF = Math.PI / 2;
+  return [
+    line(x0 + rr, y0, x1 - rr, y0),
+    line(x1, y0 + rr, x1, y1 - rr),
+    line(x1 - rr, y1, x0 + rr, y1),
+    line(x0, y1 - rr, x0, y0 + rr),
+    arc(x1 - rr, y0 + rr, rr, -HALF, 0),
+    arc(x1 - rr, y1 - rr, rr, 0, HALF),
+    arc(x0 + rr, y1 - rr, rr, HALF, Math.PI),
+    arc(x0 + rr, y0 + rr, rr, Math.PI, 1.5 * Math.PI),
+  ];
+}
+
+/** Elip xấp xỉ bằng đa giác kín — `Prim` không có kiểu elip, và poly thì DXF/SVG đều ăn thẳng. */
+function ellipse(cx: number, cy: number, rx: number, ry: number, n = 32): Prim {
+  const pts: Pt[] = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    pts.push({ x: cx + rx * Math.cos(a), y: cy + ry * Math.sin(a) });
+  }
+  return { k: 'poly', closed: true, pts };
+}
+
+/* ── ngẫu nhiên TẤT ĐỊNH (§0e KS2) ──
+ * Tán cây phải bất đối xứng, nhưng **sinh lại phải ra đúng hình cũ** — nếu không thì mỗi lần chạy
+ * generator lại ra một bộ .dxf/.svg khác, repo churn vô nghĩa và người dùng thấy cây đổi hình.
+ * ⛔ TUYỆT ĐỐI KHÔNG `Math.random()` trong file này.
+ */
+function hash32(s: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return h >>> 0;
+}
+function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Tán tự do BẤT ĐỐI XỨNG (nguồn mục 4: *"tán vẽ tự do bất đối xứng"*, và mục "Việc phải sửa ngay"
+ * số 4: *"tán tự do bất đối xứng, không răng cưa đều"*).
+ *
+ * Cách làm: bán kính mỗi thuỳ nhiễu quanh `r` theo PRNG có hạt giống, RỒI làm mượt bằng trung
+ * bình trượt 3 điểm — không làm mượt thì ra đúng "răng cưa" mà nguồn cấm.
+ */
+function canopy(cx: number, cy: number, r: number, lobes: number, wobble: number, seed: string): Prim {
+  const rnd = mulberry32(hash32(seed));
+  const n = Math.max(7, lobes);
+  const raw: number[] = [];
+  for (let i = 0; i < n; i++) raw.push(r * (1 + (rnd() * 2 - 1) * wobble));
+  const pts: Pt[] = [];
+  for (let i = 0; i < n; i++) {
+    const rSmooth = (raw[(i - 1 + n) % n] + raw[i] * 2 + raw[(i + 1) % n]) / 4;
+    const a = (i / n) * Math.PI * 2;
+    pts.push({ x: cx + rSmooth * Math.cos(a), y: cy + rSmooth * Math.sin(a) });
+  }
+  return { k: 'poly', closed: true, pts };
+}
 const SRC_SELF = 'tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)';
 const LIC_SELF = 'CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)';
 
 /* ───────────────────────── PHÒNG KHÁCH ───────────────────────── */
 
+/**
+ * SOFA nhìn từ trên.
+ *
+ * 🔴 **NÂNG CẤP 06/08.** Bản cũ toàn `rect` + `line` thẳng ⇒ ra hình hộp, không ra đồ mềm. Nay
+ * thêm đúng ba thứ nguồn tham chiếu yêu cầu: **tay có bo**, **lưng CONG**, **đệm ngồi bo góc**.
+ * Vẫn tiết chế — không vẽ đường chỉ, không vẽ nút bọc.
+ */
 function sofa(w: number, d: number, seats: number): Prim[] {
-  const arm = 120;
-  const backY = d / 2 - 140;
+  const arm = 150;
+  const backY = d / 2 - 150;
   const prims: Prim[] = [
-    box(w, d),
-    line(-w / 2, backY, w / 2, backY),
-    line(-w / 2 + arm, -d / 2, -w / 2 + arm, backY),
-    line(w / 2 - arm, -d / 2, w / 2 - arm, backY),
+    ...roundedRect(-w / 2, -d / 2, w, d, 90),                       // thân bo góc
+    // LƯNG CONG — cung rất thoải, võng nhẹ về phía người ngồi
+    arc(0, backY + w * 0.62, w * 0.63, Math.PI * 1.42, Math.PI * 1.58),
+    // hai tay: bo đầu ngoài
+    ...roundedRect(-w / 2 + 14, -d / 2 + 14, arm, d - 28 - 150, 60),
+    ...roundedRect(w / 2 - arm - 14, -d / 2 + 14, arm, d - 28 - 150, 60),
   ];
   const inner = w - arm * 2;
   const seatW = inner / seats;
+  const seatH = backY + d / 2 - 100;
   for (let i = 0; i < seats; i++) {
     const sx = -inner / 2 + i * seatW;
-    prims.push(rect(sx + 30, -d / 2 + 60, seatW - 60, backY - -d / 2 - 100));
+    prims.push(...roundedRect(sx + 30, -d / 2 + 60, seatW - 60, seatH, 55)); // đệm bo góc
   }
   return prims;
 }
 
+/**
+ * SOFA GÓC CHỮ L.
+ *
+ * 🔴 **NÂNG CẤP 06/08.** Bản cũ toàn `rect`/`line` thẳng — cùng bệnh hình hộp với `sofa()`. Nay
+ * dùng chung ngôn ngữ đã sửa ở `sofa()`: **thân bo góc · lưng cong · tay bo · đệm bo góc**.
+ * Bố cục giữ nguyên (nhánh ngang 2600×900 + chaise 900×1250 ghép góc trái) để không đổi cách
+ * người dùng đã quen đặt nó vào bản vẽ.
+ */
 function sofaL(): Prim[] {
-  // sofa góc chữ L: nhánh ngang 2600x900 + nhánh dọc (chaise) 900x1700, ghép ở góc trái-dưới
-  const prims: Prim[] = [];
-  prims.push(rect(-1300, -450, 2600, 900)); // thân ngang
-  prims.push(rect(-1300, -450, 900, -1250)); // chaise vươn xuống (âm h = vẽ xuống dưới)
-  prims.push(line(-1300 + 120, -450, -1300 + 120, 450 - 140));
-  prims.push(line(1300 - 120, -450, 1300 - 120, 450 - 140));
-  prims.push(rect(-1300 + 150, -450 + 60, 900, 900 - 100 - 140));
-  prims.push(rect(-1300 + 150 + 900, -450 + 60, 700, 900 - 100 - 140));
-  return prims;
+  const W = 2600, D = 900;          // nhánh ngang
+  const chaiseW = 900, chaiseL = 1250; // nhánh vươn xuống
+  const arm = 140;
+  const backY = D / 2 - 150;
+  const xL = -W / 2, yB = -D / 2;
+  return [
+    // thân: nhánh ngang + chaise, cùng bo góc
+    ...roundedRect(xL, yB, W, D, 80),
+    ...roundedRect(xL, yB - chaiseL, chaiseW, chaiseL + 40, 80),
+    // LƯNG CONG của nhánh ngang
+    arc(0, backY + W * 0.63, W * 0.64, Math.PI * 1.46, Math.PI * 1.54),
+    // tay phải (đầu hở của nhánh ngang) — chaise thay cho tay trái
+    ...roundedRect(W / 2 - arm - 14, yB + 14, arm, D - 28 - 150, 55),
+    // đệm ngồi: 1 tấm trên chaise + 2 tấm trên nhánh ngang
+    ...roundedRect(xL + 40, yB - chaiseL + 60, chaiseW - 80, chaiseL - 40, 50),
+    ...roundedRect(xL + 40, yB + 55, 780, backY - yB - 40, 50),
+    ...roundedRect(xL + 860, yB + 55, 800, backY - yB - 40, 50),
+  ];
 }
 
+/**
+ * GHẾ BÀNH — dựng theo ĐÚNG mẫu `G1` của `docs/00-PHAN-TICH-NGUON-THAM-CHIEU.md` §2:
+ * *"đường bao ngoài + 3–4 đường cong gợi nệm. Hết."*
+ *
+ * 🔴 **VẼ LẠI 06/08.** Bản cũ chỉ là `sofa(800,800,1)` — tức ghế bành và sofa 1 chỗ là cùng một
+ * hình, và đều là hộp. Nay là hàm riêng, đúng công thức G1, KHÔNG tái dùng `sofa()`.
+ * Kích thước lấy từ bảng đo ảnh `G2`: **rộng 630 · sâu 580** (dữ kiện ngành).
+ */
 function armchair(): Prim[] {
-  return sofa(800, 800, 1);
+  const W = 630, D = 580;
+  const arm = 115;          // bề dày tay
+  const backD = 130;        // bề dày lưng
+  const yBack = D / 2 - backD;   // mép trong của lưng
+  const yFront = -D / 2;
+  return [
+    // ① đường bao ngoài
+    ...roundedRect(-W / 2, -D / 2, W, D, 95),
+    // ② mép trong LƯNG — cung thoải, võng về phía người ngồi
+    arc(0, yBack + W * 1.05, W * 1.08, Math.PI * 1.463, Math.PI * 1.537),
+    // ③ + ④ mép trong hai TAY
+    line(-W / 2 + arm, yFront + 55, -W / 2 + arm, yBack),
+    line(W / 2 - arm, yFront + 55, W / 2 - arm, yBack),
+    // ⑤ mép trước đệm ngồi — cung nhẹ, phình ra phía trước
+    arc(0, yFront + 55 + W * 0.72, W * 0.75, Math.PI * 1.44, Math.PI * 1.56),
+  ];
 }
 
 function coffeeTable(): Prim[] {
@@ -144,10 +274,44 @@ function bookshelf(): Prim[] {
 
 /* ───────────────────────── PHÒNG ĂN ───────────────────────── */
 
+/**
+ * GHẾ ăn nhìn từ trên, có LƯNG và có HƯỚNG NGỒI.
+ *
+ * 🔴 **NÂNG CẤP 06/08.** Bản cũ là **một ô vuông rỗng** — không đọc được ghế quay mặt về đâu, mà
+ * hướng ngồi mới là thứ mặt bằng bố trí cần nói. Nay theo đúng §2 nguồn tham chiếu
+ * (*"1 mâm + 1 lưng cong + 2 tay"*, tiết chế): **mâm bo góc + lưng cong + 2 mẩu tay**.
+ * ⛔ Không chân sao, không bánh xe — nguồn ghi rõ bản vẽ thật không ai vẽ.
+ *
+ * `faceAngle` = hướng NGỒI (ghế quay mặt về phía đó), radian. Mọi điểm quay quanh `(cx,cy)` nên
+ * dùng được cho cả bàn chữ nhật lẫn bàn tròn — không cần hai hàm như trước.
+ */
+function chairAt(cx: number, cy: number, faceAngle: number): Prim[] {
+  const s = 420;                      // bề rộng ghế
+  const seat = s * 0.86;
+  const cos = Math.cos(faceAngle), sin = Math.sin(faceAngle);
+  // hệ LOCAL của ghế: +y là hướng NGỒI (nhìn về bàn), lưng ở -y
+  const T = (x: number, y: number): Pt => ({ x: cx + x * cos - y * sin, y: cy + x * sin + y * cos });
+  const TP = (p: Pt) => T(p.x, p.y);
+
+  const prims: Prim[] = [];
+  // mâm ngồi — bo góc, dựng ở local rồi quay
+  for (const pr of roundedRect(-seat / 2, -seat / 2, seat, seat * 0.9, 70)) {
+    if (pr.k === 'line') prims.push({ k: 'line', a: TP(pr.a), b: TP(pr.b) });
+    else if (pr.k === 'arc') prims.push({ k: 'arc', c: TP(pr.c), r: pr.r, a1: pr.a1 + faceAngle, a2: pr.a2 + faceAngle });
+  }
+  // lưng CONG ôm sau lưng người ngồi (phía -y local). Tâm cung đẩy RA SAU mâm và bán kính vừa đủ
+  // ôm bề rộng mâm ⇒ lưng DÍNH vào mâm. (Bản đầu 06/08 để r=0.56·seat, tâm -0.30·seat ⇒ cung phình
+  // ra ngoài thành một vành trăng RỜI phía sau ghế — nhìn không ra cái lưng.)
+  prims.push({ k: 'arc', c: T(0, -seat * 0.02), r: seat * 0.47, a1: faceAngle + Math.PI * 1.20, a2: faceAngle + Math.PI * 1.80 });
+  // 2 mẩu tay
+  prims.push({ k: 'line', a: T(-seat / 2, -seat * 0.10), b: T(-seat / 2, seat * 0.22) });
+  prims.push({ k: 'line', a: T(seat / 2, -seat * 0.10), b: T(seat / 2, seat * 0.22) });
+  return prims;
+}
+
+/** Giữ chữ ký cũ để chỗ gọi không phải đổi: `up=true` nghĩa là ghế ngồi quay XUỐNG (về bàn). */
 function diningChair(cx: number, cy: number, up: boolean): Prim[] {
-  const cw = 420, cd = 420;
-  const y0 = up ? cy : cy - cd;
-  return [rect(cx - cw / 2, y0, cw, cd)];
+  return chairAt(cx, up ? cy + 210 : cy - 210, up ? -Math.PI / 2 : Math.PI / 2);
 }
 
 function diningTableRect(seats: 4 | 6): Prim[] {
@@ -169,9 +333,10 @@ function diningTableRound(seats: 4): Prim[] {
   const prims: Prim[] = [circ(0, 0, r)];
   for (let i = 0; i < seats; i++) {
     const ang = (i / seats) * Math.PI * 2;
-    const cx = Math.cos(ang) * (r + 290);
-    const cy = Math.sin(ang) * (r + 290);
-    prims.push({ k: 'poly', closed: true, pts: chairSquareAt(cx, cy, ang) });
+    const cx = Math.cos(ang) * (r + 300);
+    const cy = Math.sin(ang) * (r + 300);
+    // ghế quay MẶT VÀO BÀN ⇒ hướng ngồi là ngược hướng bán kính (ang + π)
+    prims.push(...chairAt(cx, cy, ang + Math.PI));
   }
   return prims;
 }
@@ -209,14 +374,35 @@ function nightstand(): Prim[] {
   return [box(450, 400), line(-225, 0, 225, 0)];
 }
 
+/**
+ * TỦ ÁO nhìn từ trên.
+ *
+ * 🔴 **VẼ LẠI 06/08.** Bản cũ vẽ mỗi cánh bằng 2 đoạn thẳng chụm đỉnh ⇒ cả tủ thành **dãy răng
+ * cưa tam giác đều**, không phải ký hiệu tủ. Ký hiệu đúng của cánh mở là **cánh (đoạn thẳng
+ * vuông góc mặt tủ) + CUNG 90° quét từ bản lề** — cùng quy ước với ký hiệu cửa đi.
+ *
+ * ⚠️ **Bản lề đặt CÙNG MỘT BÊN, không so le.** Bản so le (thử 06/08) trông như **cái rèm**: hai
+ * cung gặp nhau ở giữa thành một đường liền, còn hai cánh thì nằm ĐÚNG TRÊN mép hông tủ nên vô
+ * hình — nhìn ra tủ cao gấp đôi chứ không ra cánh cửa. Cùng chiều thì mọi cánh (trừ cánh đầu) rơi
+ * vào vạch chia trong lòng tủ ⇒ thấy được, và các cung lặp cùng hướng đọc ngay ra "dãy cánh mở".
+ *
+ * ⚠️ Cung quét làm kích thước bao lớn hơn thân tủ (tủ 1200×600 ⇒ bao 1200×1200). Đó là **đúng quy
+ * ước sẵn có của thư viện này**, không phải lỗi: `arch-door-single` cũng khai 900×900 cho cánh
+ * cửa 900 — số khai là BỀ RỘNG BẢN VẼ kể cả cung, không phải bề rộng vật.
+ */
 function wardrobe(w: number, doors: 2 | 3): Prim[] {
   const d = 600;
-  const prims: Prim[] = [box(w, d), line(-w / 2, d / 2 - 40, w / 2, d / 2 - 40)];
+  const yFront = -d / 2;                       // mặt trước tủ (phía mở cánh)
+  const prims: Prim[] = [
+    box(w, d),
+    line(-w / 2, d / 2 - 40, w / 2, d / 2 - 40), // vạch thanh treo trong lòng tủ
+  ];
   const seg = w / doors;
+  const HALF = Math.PI / 2;
   for (let i = 0; i < doors; i++) {
-    const cx = -w / 2 + i * seg;
-    prims.push(line(cx, -d / 2, cx + seg / 2, d / 2 - 40));
-    prims.push(line(cx + seg, -d / 2, cx + seg / 2, d / 2 - 40));
+    const hinge = -w / 2 + i * seg;   // bản lề ở mép TRÁI mỗi cánh, mọi cánh mở CÙNG chiều
+    prims.push(line(hinge, yFront, hinge, yFront - seg)); // cánh mở vuông góc ra ngoài
+    prims.push(arc(hinge, yFront, seg, -HALF, 0));        // cung quét 90°
   }
   return prims;
 }
@@ -257,24 +443,45 @@ function cabinetRunL(): Prim[] {
 
 /* ───────────────────────── VỆ SINH ───────────────────────── */
 
+/**
+ * BỒN CẦU nhìn từ trên.
+ *
+ * 🔴 **VẼ LẠI 06/08.** Bản cũ là hộp chữ nhật + **đa giác 6 đỉnh nhọn** + 1 vòng tròn — nhìn ra
+ * con dấu, không ra bồn cầu. Nay đúng cấu tạo thật: **két nước chữ nhật (bo góc sau)** + **bầu
+ * dục thân bồn** + vành ngồi bên trong + cổ nối két với bồn.
+ *
+ * Kích thước: 380 rộng × 700 sâu — cỡ bồn cầu một khối phổ thông (dữ kiện ngành, §0h HG3).
+ * Gốc toạ độ đặt ở TÂM bao để thumbnail và mọi phép đặt block đều cân.
+ */
 function toilet(): Prim[] {
+  const W = 380, D = 700;
+  const cisH = 180;                    // két nước
+  const yTop = D / 2;                  // mép sau (lưng két)
+  const cisY = yTop - cisH;            // mép trước két
+  const bowlCy = -D / 2 + 240;         // tâm bầu dục thân bồn
   return [
-    rect(-190, 180, 380, 220),
-    { k: 'poly', closed: true, pts: [
-      { x: -170, y: 180 }, { x: 170, y: 180 }, { x: 200, y: -40 },
-      { x: 120, y: -220 }, { x: -120, y: -220 }, { x: -200, y: -40 },
-    ] },
-    circ(0, -30, 130),
+    ...roundedRect(-W / 2, cisY, W, cisH, 40),          // két nước
+    ellipse(0, bowlCy, W / 2 - 10, 240),                 // thân bồn — BẦU DỤC, không phải đa giác
+    ellipse(0, bowlCy + 10, W / 2 - 70, 185),            // vành ngồi
+    line(-70, cisY, -70, bowlCy + 215),                  // cổ nối
+    line(70, cisY, 70, bowlCy + 215),
   ];
 }
+/**
+ * BIDET nhìn từ trên.
+ *
+ * 🔴 **VẼ LẠI 06/08.** Cùng bệnh với bồn cầu (ngũ giác + tròn). Nay: **bầu dục thân** + vành +
+ * gờ vòi ở mép sau. Không két nước — đó chính là điểm phân biệt bidet với bồn cầu trên mặt bằng,
+ * bản cũ vẽ cả hai gần như y hệt nên nhìn không tách được.
+ * Kích thước 360 × 560 (nhỏ và ngắn hơn bồn cầu — đúng tỉ lệ thật).
+ */
 function bidet(): Prim[] {
+  const W = 360, D = 560;
+  const bowlCy = -D / 2 + 250;
   return [
-    rect(-160, 150, 320, 180),
-    { k: 'poly', closed: true, pts: [
-      { x: -140, y: 150 }, { x: 140, y: 150 }, { x: 160, y: -60 },
-      { x: 0, y: -180 }, { x: -160, y: -60 },
-    ] },
-    circ(0, -20, 100),
+    ellipse(0, bowlCy, W / 2, 250),            // thân
+    ellipse(0, bowlCy + 8, W / 2 - 60, 195),   // vành
+    ...roundedRect(-90, D / 2 - 70, 180, 70, 25), // gờ vòi ở mép sau (thay cho két nước)
   ];
 }
 function lavabo(): Prim[] {
@@ -333,33 +540,88 @@ function windowBay(): Prim[] {
 
 /* ───────────────────────── CÂY CẢNH ───────────────────────── */
 
+/**
+ * CHẬU CÂY nhìn từ trên.
+ *
+ * 🔴 **VẼ LẠI 06/08.** Bản cũ là `circ(r*0.35)` + `circ(r)` + vài cung đều = **hai vòng tròn đồng
+ * tâm (cái donut)**, không ai đọc ra cây. Nay: miệng chậu tròn (chậu THẬT tròn, giữ) + **tán bất
+ * đối xứng sinh bằng hàm có hạt giống** + 2–3 nhánh gợi khối lá. Hạt giống lấy từ chính bán kính
+ * ⇒ chậu nhỏ và chậu lớn ra hai dáng tán KHÁC nhau, nhưng mỗi cái luôn tái lập đúng (KS2).
+ */
 function pottedPlant(r: number, leaves: number): Prim[] {
-  const prims: Prim[] = [circ(0, 0, r * 0.35), circ(0, 0, r)];
-  for (let i = 0; i < leaves; i++) {
-    const a1 = (i / leaves) * Math.PI * 2;
-    prims.push(arc(0, 0, r * 0.75, a1, a1 + Math.PI / (leaves * 1.4)));
+  const seed = `pot-${r}-${leaves}`;
+  const rnd = mulberry32(hash32(seed));
+  const prims: Prim[] = [
+    circ(0, 0, r * 0.34),                                  // miệng chậu
+    canopy(0, 0, r * 0.92, leaves + 2, 0.26, seed),         // tán ngoài, bất đối xứng
+    canopy(0, 0, r * 0.62, leaves + 1, 0.22, `${seed}-in`), // lớp lá trong — gợi khối, không tả
+  ];
+  // 2–3 nhánh cong hướng ra ngoài; góc lệch ngẫu-nhiên-tất-định nên không đều tăm tắp
+  const branches = 2 + Math.floor(rnd() * 2);
+  for (let i = 0; i < branches; i++) {
+    const a = rnd() * Math.PI * 2;
+    prims.push(arc(Math.cos(a) * r * 0.3, Math.sin(a) * r * 0.3, r * 0.5, a - 0.7, a + 0.7));
   }
   return prims;
 }
+/**
+ * CÂY nhìn từ trên (tán lớn ngoài nhà).
+ *
+ * 🔴 **VẼ LẠI 06/08.** Bản cũ là 3 vòng tròn đồng tâm + 2 đường thập chia tư = **vòng ngắm súng**,
+ * không phải cây. Nay: 3 lớp tán bất đối xứng lồng nhau (hạt giống khác nhau nên không lớp nào
+ * lặp lại lớp nào) + gốc cây nhỏ ở tâm. Không đường thập.
+ */
 function treeTop(): Prim[] {
   const r = 900;
-  return [circ(0, 0, r), circ(0, 0, r * 0.65), circ(0, 0, r * 0.32), line(-r, 0, r, 0), line(0, -r, 0, r)];
+  return [
+    canopy(0, 0, r, 13, 0.20, 'tree-outer'),
+    canopy(0, 0, r * 0.68, 11, 0.24, 'tree-mid'),
+    canopy(0, 0, r * 0.36, 9, 0.28, 'tree-inner'),
+    circ(0, 0, r * 0.09), // gốc — chấm nhỏ, đủ để biết tâm cây, không phải tâm ngắm
+  ];
 }
 
 /* ───────────────────────── XE ───────────────────────── */
 
+/* ── XE ──
+ * 🔴 **VẼ LẠI 06/08.** Bản cũ: `carSedan` và `carSuv` là **CÙNG MỘT HÌNH** — cùng `octagon` +
+ * cùng 4 đường, chỉ khác vài chục mm kích thước. Đặt cạnh nhau trong thư viện thì không ai phân
+ * biệt được, mà đó chính là lý do tồn tại của hai block.
+ *
+ * Nay phân biệt bằng **DÁNG THẬT**, không chỉ bằng số đo:
+ *  · sedan — mũi và đuôi VÁT dài, ca-bin lùi về sau, thân thấp thuôn.
+ *  · SUV   — đầu/đuôi CẮT CỤT gần vuông, ca-bin dài phủ gần hết thân, có gờ nóc dọc.
+ * Cả hai dùng bo góc bằng cung (xe không có góc nhọn).
+ */
 function carSedan(): Prim[] {
+  const L = 4600, W = 1800;
+  const hx = L / 2, hy = W / 2;
   return [
-    octagon(4500, 1800, 500),
-    line(-1500, -900, -1500, 900), line(1200, -900, 1200, 900),
-    line(-900, -900, 1300, -900), line(-900, 900, 1300, 900),
+    // thân: mũi (phải) và đuôi (trái) vát dài, hai bên hông thẳng
+    { k: 'poly', closed: true, pts: [
+      { x: -hx + 260, y: -hy }, { x: hx - 420, y: -hy }, { x: hx - 60, y: -hy + 330 },
+      { x: hx, y: 0 }, { x: hx - 60, y: hy - 330 }, { x: hx - 420, y: hy },
+      { x: -hx + 260, y: hy }, { x: -hx, y: hy - 300 }, { x: -hx, y: -hy + 300 },
+    ] },
+    // ca-bin lùi về sau — nét đặc trưng của sedan
+    ...roundedRect(-1250, -hy + 190, 2100, W - 380, 240),
+    arc(850, 0, 620, -1.0, 1.0),      // kính lái cong
+    arc(-1250, 0, 520, Math.PI - 1.0, Math.PI + 1.0), // kính hậu cong
   ];
 }
 function carSuv(): Prim[] {
+  const L = 4700, W = 1950;
+  const hx = L / 2, hy = W / 2;
   return [
-    octagon(4700, 1950, 450),
-    line(-1600, -975, -1600, 975), line(1300, -975, 1300, 975),
-    line(-1000, -975, 1400, -975), line(-1000, 975, 1400, 975),
+    // thân: đầu/đuôi gần vuông, chỉ bo nhẹ — dáng hộp của SUV
+    ...roundedRect(-hx, -hy, L, W, 260),
+    // ca-bin DÀI, phủ gần hết thân
+    ...roundedRect(-1750, -hy + 170, 3200, W - 340, 200),
+    line(-1750, -hy + 170, -1750, hy - 170), // vách sau ca-bin
+    arc(1450, 0, 560, -1.05, 1.05),          // kính lái
+    // gờ nóc dọc — chi tiết chỉ SUV có, đủ để phân biệt ngay từ thumbnail
+    line(-1500, -hy + 380, 900, -hy + 380),
+    line(-1500, hy - 380, 900, hy - 380),
   ];
 }
 
@@ -411,7 +673,7 @@ function northArrow(): Prim[] {
 
 /* ───────────────────────── DANH SÁCH TỔNG ───────────────────────── */
 
-export const LIB_BLOCKS: LibBlockDef[] = [
+const RAW_BLOCKS: LibBlockDef[] = [
   // Phòng khách
   { id: 'living-sofa-2seat', name: 'Sofa 2 chỗ', category: 'phong-khach', w: 1600, h: 850, prims: sofa(1600, 850, 2), source: SRC_SELF, license: LIC_SELF },
   { id: 'living-sofa-3seat', name: 'Sofa 3 chỗ', category: 'phong-khach', w: 2100, h: 850, prims: sofa(2100, 850, 3), source: SRC_SELF, license: LIC_SELF },
@@ -480,3 +742,41 @@ export const LIB_BLOCKS: LibBlockDef[] = [
   // Ký hiệu
   { id: 'symbol-north', name: 'Ký hiệu hướng Bắc', category: 'ky-hieu', w: 800, h: 800, prims: northArrow(), source: SRC_SELF, license: LIC_SELF },
 ];
+
+/* ═════════════════ CHỐT KÍCH THƯỚC — thêm 06/08, VIỆC 4 ═════════════════
+ *
+ * 🔴 **LỖI ĐO ĐƯỢC 06/08:** `w`/`h` khai tay trong mảng trên **KHÔNG khớp hình thật** ở 4 block —
+ * `living-sofa-lshape` khai cao 1700 nhưng hình thật cao **2150** · `stairs-l-shape` khai 2400
+ * nhưng thật **3400** · `bath-bidet` 480/510 · `arch-window-bay` 300/360. Hai số đó đi THẲNG vào
+ * `manifest.json` và là kích thước mà panel Thư viện hiển thị cho người dùng ⇒ thư viện đang nói
+ * sai số đo. §0f TB1: *"Sai một con số thì mọi thứ phía sau vô nghĩa"*.
+ *
+ * ⇒ `LIB_BLOCKS` nay **ĐO LẠI từ chính `prims`**, số khai tay chỉ còn là ý định thiết kế. Block
+ * thêm về sau tự đúng, không phải nhớ cập nhật hai chỗ.
+ *
+ * (Sửa ở ĐÂY chứ không sửa `generate-library.ts` — phiếu cho phép sửa generator ĐÚNG MỘT chỗ là
+ * viewBox, không hơn.)
+ */
+function measurePrims(prims: Prim[]): { w: number; h: number } {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const grow = (p: Pt) => {
+    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+  };
+  for (const p of prims) {
+    if (p.k === 'line') { grow(p.a); grow(p.b); }
+    else if (p.k === 'poly') p.pts.forEach(grow);
+    else if (p.k === 'circle') { grow({ x: p.c.x - p.r, y: p.c.y - p.r }); grow({ x: p.c.x + p.r, y: p.c.y + p.r }); }
+    else if (p.k === 'arc') {
+      // lấy đúng các điểm generator sẽ vẽ (sampleArc n=16) — bao khít nét thật
+      for (let i = 0; i <= 16; i++) {
+        const a = p.a1 + ((p.a2 - p.a1) * i) / 16;
+        grow({ x: p.c.x + p.r * Math.cos(a), y: p.c.y + p.r * Math.sin(a) });
+      }
+    }
+  }
+  if (!Number.isFinite(minX)) return { w: 0, h: 0 };
+  return { w: Math.round(maxX - minX), h: Math.round(maxY - minY) };
+}
+
+export const LIB_BLOCKS: LibBlockDef[] = RAW_BLOCKS.map((b) => ({ ...b, ...measurePrims(b.prims) }));

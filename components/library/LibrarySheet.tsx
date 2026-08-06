@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, X, ArrowUp } from 'lucide-react';
 import { useT } from '@/lib/i18n';
@@ -17,7 +17,9 @@ import {
 } from '@/lib/library/shelves';
 import { useLibrarySheetState } from '@/lib/library/use-library-sheet';
 import { useLibraryLocalState } from '@/lib/library/local-state';
+import { CLUSTER_SPECS } from '@/lib/cad/workstation-clusters';
 import { RawStyle } from '@/components/filemanager/RawStyle';
+import { ClusterPanel } from './ClusterPanel';
 import { ItemThumb } from './ItemThumb';
 import { LIBRARY_SHEET_CSS } from './library-sheet-css';
 import { LibraryToastHost, pushLibraryToast } from './LibraryToast';
@@ -32,12 +34,21 @@ const STAGE_CAPTION: Record<StageKey, [string, string]> = {
   present: ['Kệ chặng Trình chiếu', 'Presenting stage shelf'],
 };
 
-/** Sự kiện cho canvas/inspector (NGOÀI vùng code G4) tiêu thụ — xem docs/BAO-CAO-G4-LIB.md. */
+/** Sự kiện cho canvas/inspector (NGOÀI vùng code G4) tiêu thụ — xem docs/BAO-CAO-G4-LIB.md.
+ * 🔴 05/08 (S3): `grep -rn "LIBRARY_INSTANTIATE_EVENT\|if:library-instantiate" app/ components/ lib/`
+ * → CHỈ có chỗ PHÁT, **0 nơi NGHE**. Tức kéo-thả món từ kệ hiện chỉ hiện toast chứ chưa rơi
+ * xuống bản vẽ thật. Kệ "Văn phòng · Cụm bàn" bên dưới KHÔNG đi đường này — nó gọi thẳng
+ * `useCadStore.addEntities()`, nên thả là có hình ngay. Ghi lại để phiên nối canvas biết. */
 export const LIBRARY_INSTANTIATE_EVENT = 'if:library-instantiate';
 export const LIBRARY_APPLY_EVENT = 'if:library-apply';
 
+/** id kệ cụm bàn — cục bộ, KHÔNG nằm trong `STAGE_SHELVES` (xem lý do ở chỗ render nút kệ). */
+const CLUSTER_SHELF_ID = 'cad-clusters';
+
 /**
- * THƯ VIỆN — sheet kính TRƯỢT LÊN từ đáy. Đây là **NƠI DUY NHẤT** của thư viện trong app
+ * THƯ VIỆN — CARD RỜI trượt lên từ đáy (detached sheet, Hoà chốt 05/08: "không dính bottom, raise
+ * lên là card rời bo 4 góc"). Nền ĐẶC, không kính — xem `library-sheet-css.ts`.
+ * Đây là **NƠI DUY NHẤT** của thư viện trong app
  * (Hoà chốt 03/08): không có trang `/library` riêng, không có panel thứ hai. Lý do: thư viện chỉ
  * có nghĩa khi KÉO được vào chỗ đang làm — sheet luôn có bàn làm việc thật nằm ngay dưới, còn
  * trang riêng thì không (nó đã phải chế ra "vùng thả mô phỏng", nay xoá hẳn).
@@ -73,6 +84,42 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   const sheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setMounted(true), []);
+
+  /* ───── Kéo vạch xuống để đóng (card rời, 05/08) ─────
+   * Trước đây `.grab` chỉ là vạch TRANG TRÍ — nhìn như kéo được nhưng không có handler nào, đúng
+   * kiểu "nút giả" §9 cấm. Nay nó kéo thật: theo ngón tay, thả quá ngưỡng thì đóng, chưa tới thì
+   * bật về. Vùng chạm 44px khai ở CSS (§0c mảng 3). Nút ✕ trong header là đường TƯƠNG ĐƯƠNG —
+   * kéo không bao giờ là đường duy nhất (G8/K5).
+   * Chỉ đụng `transform` (không `opacity`) để không tạo backdrop-root — xem G1 ở library-sheet-css. */
+  const dragRef = useRef<{ id: number; startY: number; dy: number } | null>(null);
+  const CLOSE_AFTER_PX = 96;
+
+  const onGrabDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!open) return;
+    dragRef.current = { id: e.pointerId, startY: e.clientY, dy: 0 };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    if (sheetRef.current) sheetRef.current.style.transition = 'none';
+  };
+
+  const onGrabMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current;
+    if (!d || d.id !== e.pointerId || !sheetRef.current) return;
+    // Chỉ cho kéo XUỐNG (âm = kéo lên, kẹp về 0) — sheet không cao thêm được.
+    d.dy = Math.max(0, e.clientY - d.startY);
+    sheetRef.current.style.transform = `translate(-50%, ${d.dy}px) scale(1)`;
+  };
+
+  const onGrabUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current;
+    if (!d || d.id !== e.pointerId) return;
+    dragRef.current = null;
+    if (sheetRef.current) {
+      // Trả về CSS: mở thì bật lại vị trí mở, đóng thì CSS tự trượt xuống bằng transition sẵn có.
+      sheetRef.current.style.transform = '';
+      sheetRef.current.style.transition = '';
+    }
+    if (d.dy > CLOSE_AFTER_PX) setOpen(false);
+  };
 
   // Đổi chặng → về kệ mặc định của chặng đó (mock: mỗi chặng có 1 `.shrow.on` riêng).
   useEffect(() => {
@@ -126,7 +173,16 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
         // phím, nếu không Tab vẫn chui vào sheet vô hình — lỗi a11y thật, không phải lý thuyết.
         {...(!open ? { inert: '' as unknown as boolean } : {})}
       >
-        <div className="grab"><i /></div>
+        <div
+          className="grab"
+          aria-hidden
+          onPointerDown={onGrabDown}
+          onPointerMove={onGrabMove}
+          onPointerUp={onGrabUp}
+          onPointerCancel={onGrabUp}
+        >
+          <i />
+        </div>
 
         <div className="libh">
           <h3>{tr('Thư viện', 'Library')}</h3>
@@ -173,6 +229,23 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                 <span className="c">{s.count}</span>
               </button>
             ))}
+            {/* KỆ "VĂN PHÒNG · CỤM BÀN" (phiếu S3 VIỆC 1) — đưa 6 hàm sinh cụm của
+               `lib/cad/workstation-clusters.ts` ra tay KTS (trước đó 0 nơi gọi).
+               Khai TẠI ĐÂY chứ không thêm vào `lib/library/shelves.ts`: kệ kia là danh mục món
+               TĨNH (`SheetItem` có ảnh/mã/phạm vi), còn cụm sinh LÚC CHẠY theo tham số nên không
+               có `SheetItem` nào mô tả đúng nó. Nhét vào đó sẽ phải bịa mã + ảnh giả.
+               Chỉ hiện ở chặng 2D — chặng khác không có `Doc` để thả cụm xuống. */}
+            {activeStage === 'cad' && (
+              <button
+                type="button"
+                className={shelfId === CLUSTER_SHELF_ID ? 'shrow on' : 'shrow'}
+                aria-current={shelfId === CLUSTER_SHELF_ID}
+                onClick={() => setShelfId(CLUSTER_SHELF_ID)}
+              >
+                {tr('Văn phòng · Cụm bàn', 'Office · Desk clusters')}
+                <span className="c">{CLUSTER_SPECS.length}</span>
+              </button>
+            )}
 
             {/* NHÓM DƯỚI — kệ chung, luôn có ở mọi chặng */}
             <div className="shcap">{tr('Kệ chung', 'Shared shelves')}</div>
@@ -191,6 +264,13 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
           </div>
 
           <div className="libmain">
+            {shelfId === CLUSTER_SHELF_ID ? (
+              /* Cụm bàn — panel riêng: có núm chỉnh + XEM TRƯỚC bắt buộc trước khi thả, nên không
+                 dùng lưới thẻ `.it` (thẻ chỉ hợp với món tĩnh bấm-là-dùng). Thả xong đóng sheet để
+                 KTS thấy ngay cụm vừa rơi xuống bản vẽ. */
+              <ClusterPanel onInserted={() => setOpen(false)} />
+            ) : (
+            <>
             <div className="chips" role="group" aria-label={tr('Lọc theo phạm vi', 'Filter by scope')}>
               {SCOPE_CHIPS.map((c) => (
                 <button
@@ -252,6 +332,8 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                 {tr('Đưa lên kệ', 'Publish to shelf')}
               </button>
             </div>
+            </>
+            )}
           </div>
         </div>
         )}

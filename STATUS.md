@@ -1,5 +1,31 @@
 # STATUS — InteriorFlow
 
+## ✅ XONG (05/08 — BẢNG MÀU SƠN: bỏ bảng Pantone 2310 mã, tầng màu CẮM RỜI, CHƯA COMMIT theo luật V6)
+Hoà chốt sau NC-16 (⚠️ **`docs/NC-16-BANG-MAU-SON.md` KHÔNG TỒN TẠI trong repo** — `find` + `git
+log --all` = 0; phiên này dùng phần tóm tắt trong brief). **VIỆC 1** `lib/colors/` MỚI: `types.ts`
+(ColorSource/ColorEntry, LƯU CẢ LAB) · `build.ts` (ghép cột + kiểm dòng, dùng CHUNG cho CSV lẫn
+Lark) · `user-csv.ts` (đọc .csv/.xlsx qua `parseSpreadsheetFile` CÓ SẴN + parser clipboard tự dò
+tab/phẩy/chấm-phẩy + mẫu CSV tải về) · `larkbase.ts` + `app/api/colors/lark/route.ts` (PULL-ONLY
+§309-313; **preview trả TÊN CỘT THẬT** để ghép cột NGAY TRONG IF — Hoà không mở được UI Larkbase)
+· `store.ts` (studio=localStorage · dự án=`colors.json` thư mục dự án, mẫu `brand-kit-disk.ts`) ·
+`registry.ts` (**chặn theo hãng / tắt nguồn lúc chạy** — env ∪ máy, gộp-thêm không ghi-đè ⇒ có thư
+yêu cầu gỡ thì đổi config, KHÔNG build lại app). **VIỆC 2** `deltaE2000` vào `color-psychology.ts`
+(ΔE76 GIỮ NGUYÊN cho `paletteMood`/gu — đổi là vỡ gu đã học) — verify **28/28 cặp kiểm chuẩn
+Sharma 2005**, lệch <5e-5; `nearestColor(hex, source)`/`nearestColors` trả TOP 3-5 kèm ΔE, ΔE>5 ⇒
+"không có màu nào đủ gần". **VIỆC 3** `pantone-tcx.json` (2310 mã) **XOÁ khỏi đĩa** (chưa stage —
+Hoà `git rm`); `trend.ts` = Color of the Year, **trần cứng 1 mục/năm + bắt buộc link nguồn, có test
+chặn**; LICENSE-NOTES §9 viết lại (ranh giới ở QUY MÔ bộ sưu tập, không ở việc hiển thị). **VIỆC 4**
+`disclaimer.ts` + `ColorAccuracyNotice` — **KHÔNG có nút tắt**, đứng cạnh mọi nút chỉ định/xuất.
+UI: `/colors` (mở từ nút "Bảng màu" header Kho vật liệu). `tsc` sạch · 161 test mới pass · `npm test`
+chỉ 1 fail CŨ đã biết (`cad-to-obj` entityId nội thất). Verify browser thật (127.0.0.1:3002, server
+riêng phiên này, đã tắt): dán CSV → đoán đúng 4/4 cột, 3 màu vào + báo đúng "Dòng 5" hỏng · tra màu
+ΔE 0/28.87/44.76 · ΔE 38.65 → hiện đúng câu "không đủ gần" · chặn hãng "NỘI BỘ" (khác hoa/thường) →
+0/3 màu tức thì · 2 theme · 0 lỗi console; đã xoá sạch dữ liệu test khỏi localStorage.
+🟡 **CHƯA VERIFY**: đường nạp tệp .xlsx/.csv thật qua hộp thoại (chỉ có test đơn vị) · đường Larkbase
+(thiếu env `LARK_*`, không gọi được API thật) · 11 link nguồn `trend.ts` chưa mở đối chiếu · mục
+**2026** cố ý ĐỂ TRỐNG, không đoán. ⚠️ `pantone-tcx.json` còn trong LỊCH SỬ git — cần `filter-repo`.
+**VIỆC 5** (ước lượng xin license RAL) = BÁO CÁO, không code — xem báo cáo phiên.
+
 ## ✅ XONG (05/08 — ĐẶT LẠI TÊN NODE: tách VI/EN · 6 nhóm quy trình · 5 tên sai ngành, CHƯA COMMIT theo luật V6)
 VIỆC 1: `NodeDefinition.titleEn` (mới, optional — `lib/types.ts`) · tách **46 nhãn** `'Việt · English'`
 → `title` chỉ tiếng Việt + `titleEn` ra TOOLTIP (bảng chọn node + mặt node trên canvas). EN interface

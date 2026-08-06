@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, LogOut, PanelsTopLeft, Boxes } from 'lucide-react';
+import { ArrowLeft, Check, LogOut, PanelsTopLeft, Boxes, ScrollText, Info } from 'lucide-react';
 import { resetAllRolloutLayouts } from '@/components/studio/Rollout';
 import { useFlowStore } from '@/lib/store';
 import { AiDependencySettings } from '@/components/settings/AiDependencySettings';
@@ -77,6 +77,44 @@ function MaterialsWarehouseRow() {
   );
 }
 
+/** `docs/LICENSE-NOTES.md §2/§4` — "Ngay (~0 chi phí)": trang "Third-party licenses" phải vào
+ * được từ Cài đặt VÀ từ màn About. Đặt cạnh `MaterialsWarehouseRow` — cùng nhóm "Nâng cao", cùng
+ * cách 1 dòng mô tả + 1 nút. `AboutRow` là lối vào THỨ HAI (qua `/settings/about`, tự dẫn tiếp
+ * sang licenses) — không mồ côi, N6 đã kiểm bằng mắt 2 nơi gọi này. */
+function LegalRows() {
+  const router = useRouter();
+  return (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <ScrollText size={13} /> Giấy phép bên thứ ba
+          </div>
+          <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--t2)' }}>
+            IF dùng một số mã nguồn mở — quan trọng nhất là GNU LibreDWG (GPL-3.0).
+          </p>
+        </div>
+        <button type="button" className="ghost" style={{ flexShrink: 0 }} onClick={() => router.push('/settings/licenses')}>
+          Xem giấy phép
+        </button>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <Info size={13} /> Giới thiệu InteriorFlow
+          </div>
+          <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--t2)' }}>
+            Phiên bản đang chạy, giấy phép bên thứ ba.
+          </p>
+        </div>
+        <button type="button" className="ghost" style={{ flexShrink: 0 }} onClick={() => router.push('/settings/about')}>
+          Mở
+        </button>
+      </div>
+    </>
+  );
+}
+
 export function PixelSettingsShell() {
   const router = useRouter();
   const user = useFlowStore((s) => s.user);
@@ -144,6 +182,7 @@ export function PixelSettingsShell() {
                   đúng SPEC-PANEL-ROLLOUT §2b "luôn nhìn thấy được". */}
               <ResetPanelLayoutRow />
               <MaterialsWarehouseRow />
+              <LegalRows />
               <AiDependencySettings />
               <GuModelSettings />
               <ExperienceSettings />

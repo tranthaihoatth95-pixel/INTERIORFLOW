@@ -1,6 +1,6 @@
-<svg viewBox="-1500 -1500 3000 3000" xmlns="http://www.w3.org/2000/svg">
-  <rect x="-1500" y="-1500" width="3000" height="3000" fill="#f7f4ee" />
-  <g transform="scale(1,-1)" stroke="#3d3a34" stroke-width="15" stroke-linejoin="round" stroke-linecap="round">
+<svg viewBox="-900 -2600 3200 4200" xmlns="http://www.w3.org/2000/svg">
+  <rect x="-900" y="-2600" width="3200" height="4200" fill="#f7f4ee" />
+  <g transform="scale(1,-1)" stroke="#3d3a34" stroke-width="21.25" stroke-linejoin="round" stroke-linecap="round">
     <path d="M-500 -1200 L500 -1200 L500 200 L-500 200 Z" fill="none" />
     <line x1="-500" y1="-966.67" x2="500" y2="-966.67" />
     <line x1="-500" y1="-733.33" x2="500" y2="-733.33" />

@@ -1,10 +1,9 @@
-<svg viewBox="-1140 -1140 2280 2280" xmlns="http://www.w3.org/2000/svg">
-  <rect x="-1140" y="-1140" width="2280" height="2280" fill="#f7f4ee" />
+<svg viewBox="-1080.64 -1226.87 2120.89 2326.07" xmlns="http://www.w3.org/2000/svg">
+  <rect x="-1080.64" y="-1226.87" width="2120.89" height="2326.07" fill="#f7f4ee" />
   <g transform="scale(1,-1)" stroke="#3d3a34" stroke-width="12" stroke-linejoin="round" stroke-linecap="round">
-    <circle cx="0" cy="0" r="900" fill="none" />
-    <circle cx="0" cy="0" r="585" fill="none" />
-    <circle cx="0" cy="0" r="288" fill="none" />
-    <line x1="-900" y1="0" x2="900" y2="0" />
-    <line x1="0" y1="-900" x2="0" y2="900" />
+    <path d="M796.42 0 L792.76 416.07 L573.49 830.84 L119.36 983.03 L-307.91 811.89 L-607.89 538.54 L-807.07 198.93 L-836.8 -206.25 L-660.89 -585.5 L-315.96 -833.13 L103.86 -855.36 L460.05 -666.5 L687.17 -360.65 Z" fill="none" />
+    <path d="M627.83 0 L489.72 314.73 L228.73 500.86 L-82.8 575.89 L-440.57 508.45 L-702.42 206.25 L-680.4 -199.78 L-411.68 -475.1 L-81.4 -566.13 L248.7 -544.57 L536.83 -345 Z" fill="none" />
+    <path d="M357.25 0 L236.57 198.51 L47.76 270.84 L-148.04 256.42 L-304.1 110.69 L-278.9 -101.51 L-127.99 -221.69 L48.33 -274.1 L264.76 -222.16 Z" fill="none" />
+    <circle cx="0" cy="0" r="81" fill="none" />
   </g>
 </svg>

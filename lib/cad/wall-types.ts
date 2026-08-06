@@ -21,7 +21,21 @@ import type { Doc, Entity, WallKind, WallRun, WallType } from './model';
  * bịa mặc định ở tầng này (N4); nơi gọi tự quyết lấy mặc định nào. */
 export type WallParamSource = 'instance' | 'type' | 'none';
 
+/** Tên các trường instance có thể ghi đè Type — dùng làm khoá trong `ResolvedWallParams.overridden`.
+ * Đúng tên field trên `Base`/`HatchEntity` để UI khỏi phải dịch tên qua lại. */
+export type OverridableWallField = 'wallThicknessMm' | 'wallKind' | 'specId';
+
 export interface ResolvedWallParams {
+  /**
+   * Danh sách trường mà **instance đang GHI ĐÈ Type** — rỗng `[]` = instance thuần theo Type (hoặc
+   * không gắn Type nào). UI dùng để chấm dấu "đã override" + nút "Trả về theo Type".
+   *
+   * ⚠️ CHỈ tính là override khi **có Type để mà đè**: entity không `typeId` thì mảng này LUÔN rỗng
+   * dù nó khai đủ 3 trường — vì lúc đó không có giá trị nào bị lấn át, gọi là "override" sẽ sai
+   * nghĩa và UI sẽ chấm dấu bừa lên mọi tường cũ. Muốn biết "giá trị này từ đâu ra" trong mọi
+   * trường hợp thì đọc `thicknessFrom`/`kindFrom`/`specIdFrom` (chi tiết hơn, 3 trạng thái).
+   */
+  overridden: OverridableWallField[];
   /** bề dày cuối (mm). undefined = chưa ai khai — với tường vẽ bằng lệnh WALL thì bề dày đã BAKED
    * vào hình học (xem docstring `Base.wallThicknessMm`), số ở đây chỉ là metadata KHAI BÁO. */
   thicknessMm?: number;
@@ -85,7 +99,17 @@ export function resolveWallParams(entity: Entity, doc: Doc): ResolvedWallParams 
   const specId = merge(instanceSpecId, type?.specId);
   const layers = type ? wallTypeLayerCheck(type) : {};
 
+  // `overridden` chỉ có nghĩa khi CÓ Type tra được — xem docstring field (không chấm dấu bừa lên
+  // tường cũ 100% instance).
+  const overridden: OverridableWallField[] = [];
+  if (type) {
+    if (thickness.from === 'instance' && type.thicknessMm !== undefined) overridden.push('wallThicknessMm');
+    if (kind.from === 'instance' && type.kind !== undefined) overridden.push('wallKind');
+    if (specId.from === 'instance' && type.specId !== undefined) overridden.push('specId');
+  }
+
   return {
+    overridden,
     ...(thickness.value === undefined ? {} : { thicknessMm: thickness.value }),
     thicknessFrom: thickness.from,
     ...(kind.value === undefined ? {} : { kind: kind.value }),
@@ -113,6 +137,7 @@ export function resolveWallParams(entity: Entity, doc: Doc): ResolvedWallParams 
  */
 export function resolveWallRunParams(run: WallRun, _doc: Doc): ResolvedWallParams {
   return {
+    overridden: [],
     thicknessMm: run.thicknessMm,
     thicknessFrom: 'instance',
     kindFrom: 'none',

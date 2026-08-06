@@ -25,7 +25,7 @@
  */
 
 import type { Doc, Entity, Pt } from './model';
-import { findHatchBoundary, polygonArea } from './hatch';
+import { buildHatchFaceIndex, pickHatchFace, collectBoundarySegments, polygonArea } from './hatch';
 import { BLOCK_MAP } from './furniture';
 import type { BlockGroup } from './shared-types';
 
@@ -125,6 +125,10 @@ function bboxOf(poly: Pt[]): { w: number; h: number } {
  */
 export function suggestRoomNames(doc: Doc): RoomNameSuggestion[] {
   const boundaryDoc = wallLikeDoc(doc);
+  // 05/08 (PHU) — MỘT chỉ mục cho CẢ HAI vòng lặp dưới (nhãn TEXT + block nội thất). Bản cũ gọi
+  // `findHatchBoundary(boundaryDoc, …)` trong từng vòng ⇒ dựng lại phân hoạch mặt phẳng của cùng
+  // một `boundaryDoc` (số nhãn + số block) lần. Số đo: docstring `HatchFaceIndex` (`hatch.ts`).
+  const faceIndex = buildHatchFaceIndex(collectBoundarySegments(boundaryDoc));
 
   // 1) các phòng ĐÃ có nhãn TEXT hợp lệ → biên của chúng bị loại khỏi đề xuất (đã có tên rồi).
   const labeledKeys = new Set<string>();
@@ -132,7 +136,7 @@ export function suggestRoomNames(doc: Doc): RoomNameSuggestion[] {
     if (e.type !== 'text') continue;
     const s = e.text.trim();
     if (s.length < 2 || /M2|M²/i.test(s) || !ROOM_NAME_RE.test(s)) continue;
-    const poly = findHatchBoundary(boundaryDoc, e.at);
+    const poly = pickHatchFace(faceIndex, e.at);
     if (poly) labeledKeys.add(polyKey(poly));
   }
 
@@ -147,7 +151,7 @@ export function suggestRoomNames(doc: Doc): RoomNameSuggestion[] {
   for (const e of doc.entities as Entity[]) {
     if (e.type !== 'block') continue;
     if (BLOCK_MAP[e.block]?.group === 'Kiến trúc') continue;
-    const poly = findHatchBoundary(boundaryDoc, e.at);
+    const poly = pickHatchFace(faceIndex, e.at);
     if (!poly || poly.length < 3) continue;
     const key = polyKey(poly);
     if (labeledKeys.has(key)) continue; // phòng này đã có nhãn — bỏ qua

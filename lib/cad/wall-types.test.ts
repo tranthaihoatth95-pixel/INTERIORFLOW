@@ -161,6 +161,50 @@ function testWallRun() {
   ok('nguồn khai đúng là instance (chưa nối Type — xem docstring)', r.thicknessFrom === 'instance');
 }
 
+/* ── [9] NGHIỆM THU NGUYÊN VĂN VIỆC 3e: 5 tường cùng type, override 1, đổi type → 4 đổi, 1 giữ ── */
+function testFiveWallsOneOverride() {
+  console.log('\n[9] NGHIỆM THU 3e — 5 tường cùng Type, override 1 → đổi Type: 4 đổi, 1 giữ');
+  const walls: Entity[] = [
+    hatch('t1', { typeId: 'wt-100' }),
+    hatch('t2', { typeId: 'wt-100' }),
+    hatch('t3', { typeId: 'wt-100', wallThicknessMm: 90 }), // ← tường DUY NHẤT bị override
+    hatch('t4', { typeId: 'wt-100' }),
+    hatch('t5', { typeId: 'wt-100' }),
+  ];
+
+  const before = docWith(walls);
+  ok('trước: cả 5 tường cùng Type "Gạch 100"', walls.every((w) => resolveWallParams(w, before).type?.id === 'wt-100'));
+  ok('trước: 4 tường không override = 100mm', [0, 1, 3, 4].every((i) => resolveWallParams(walls[i], before).thicknessMm === 100));
+  ok('trước: tường t3 override = 90mm', resolveWallParams(walls[2], before).thicknessMm === 90);
+  ok('trước: overridden[] rỗng ở 4 tường không đè', [0, 1, 3, 4].every((i) => resolveWallParams(walls[i], before).overridden.length === 0));
+  ok('trước: overridden[] của t3 = ["wallThicknessMm"]', resolveWallParams(walls[2], before).overridden.join(',') === 'wallThicknessMm');
+
+  // ĐỔI TYPE ở MỘT chỗ: 100 → 150.
+  const after = docWith(walls, [{ ...T_GACH100, thicknessMm: 150 }, T_BAO220]);
+  const got = walls.map((w) => resolveWallParams(w, after).thicknessMm);
+  ok('sau: ĐÚNG 4 tường đổi sang 150mm', got.filter((t) => t === 150).length === 4);
+  ok('sau: ĐÚNG 1 tường giữ nguyên 90mm (t3)', got.filter((t) => t === 90).length === 1 && got[2] === 90);
+  ok('sau: thứ tự đúng — t1,t2,t4,t5 = 150', got[0] === 150 && got[1] === 150 && got[3] === 150 && got[4] === 150);
+  ok('sau: t3 vẫn báo overridden, 4 tường kia vẫn rỗng', resolveWallParams(walls[2], after).overridden.length === 1 && resolveWallParams(walls[0], after).overridden.length === 0);
+  ok('KHÔNG sửa entity nào tại chỗ (Doc là nguồn duy nhất)', walls[2].wallThicknessMm === 90 && walls[0].wallThicknessMm === undefined);
+
+  // ⚠️ wallKind/wallThicknessMm KHÔNG bị xoá — nay đóng vai "giá trị override" (dặn của phiếu).
+  ok('field cũ wallThicknessMm còn sống, nay là giá trị override', walls[2].wallThicknessMm === 90);
+}
+
+/* ── [10] overridden[] — chỉ chấm dấu khi CÓ Type để mà đè ── */
+function testOverriddenSemantics() {
+  console.log('\n[10] overridden[] — không chấm dấu bừa lên tường 100% instance');
+  const doc = docWith([]);
+  ok('entity KHÔNG typeId dù khai đủ 3 field → overridden rỗng', resolveWallParams(hatch('a', { wallThicknessMm: 100, wallKind: 'interior', specId: 's' }), doc).overridden.length === 0);
+  ok('override cả 3 field trên Type có đủ 3 → overridden đủ 3', resolveWallParams(hatch('b', { typeId: 'wt-100', wallThicknessMm: 1, wallKind: 'exterior', specId: 's' }), doc).overridden.length === 3);
+  // Type KHÔNG khai specId ⇒ instance khai specId KHÔNG phải "đè" (không có gì để đè).
+  ok('Type thiếu specId → instance khai specId KHÔNG tính là override', resolveWallParams(hatch('c', { typeId: 'wt-220', specId: 's' }), doc).overridden.includes('specId') === false);
+  ok('… nhưng thicknessFrom vẫn nói đúng nguồn là instance', resolveWallParams(hatch('d', { typeId: 'wt-220', specId: 's' }), doc).specIdFrom === 'instance');
+  ok('typeId mồ côi → overridden rỗng (không có Type nào để đè)', resolveWallParams(hatch('e', { typeId: 'wt-xoa', wallThicknessMm: 90 }), doc).overridden.length === 0);
+  ok('overridden LUÔN là mảng, không bao giờ undefined', Array.isArray(resolveWallParams(hatch('f'), doc).overridden));
+}
+
 testLookup();
 testInstanceOnly();
 testTypeFallback();
@@ -169,6 +213,8 @@ testTypePropagation();
 testLayers();
 testDangling();
 testWallRun();
+testFiveWallsOneOverride();
+testOverriddenSemantics();
 
 console.log(`\nwall-types.test.ts — ${pass} pass, ${fail} fail`);
 if (fail) process.exit(1);

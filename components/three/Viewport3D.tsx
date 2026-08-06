@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useRef } from 'react';
 import type { Scene3DData } from '@/lib/three/cad-to-obj';
-import type { Scene3DMode, Scene3DCameraApi } from './Scene3DViewer';
+import type { Scene3DMode, Scene3DCameraApi, LightMarker } from './Scene3DViewer';
 import type { ViewDir } from './ViewCube3D';
 import { RawStyle } from './RawStyle';
 import { VE3D_CSS } from './ve3d-css';
@@ -19,7 +19,7 @@ const Scene3DViewer = dynamic(() => import('./Scene3DViewer'), {
 });
 const ViewCube3D = dynamic(() => import('./ViewCube3D'), { ssr: false });
 
-export type { ViewDir };
+export type { ViewDir, LightMarker };
 
 export interface Viewport3DProps {
   scene: Scene3DData;
@@ -31,6 +31,10 @@ export interface Viewport3DProps {
   /** kéo gizmo theo 1 trục (mm). Viewport KHÔNG tự ghi vào Doc — luật một nguồn. */
   onNudge?: (axis: 'x' | 'y' | 'z', deltaMm: number) => void;
   onPushPull?: (entityId: string, newHeightMm: number) => void;
+  /** VIỆC 3.c — dấu vị trí đèn kéo được (`Scene3DViewer.LightMarker`). Viewport chỉ CHUYỂN TIẾP,
+   * không tự dựng/ghi gì — cùng khuôn `onPushPull`. */
+  lightMarkers?: LightMarker[];
+  onLightMove?: (id: string, posCadMm: { x: number; y: number; z: number }) => void;
   label?: string;
   /** lưới sàn + chân trời (xem `Scene3DViewer.ground`) — mode Vẽ 3D bật, chỗ chụp ảnh tắt. */
   ground?: boolean;
@@ -67,6 +71,8 @@ export function Viewport3D({
   onViewChange,
   onNudge,
   onPushPull,
+  lightMarkers,
+  onLightMove,
   label = 'Khối xám · chưa vật liệu',
   ground = false,
   children,
@@ -83,6 +89,8 @@ export function Viewport3D({
         scene={scene}
         mode={mode}
         onPushPull={onPushPull}
+        lightMarkers={lightMarkers}
+        onLightMove={onLightMove}
         ground={ground}
         className="vpscene"
         cameraApiRef={cameraApiRef}

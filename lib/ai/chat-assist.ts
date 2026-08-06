@@ -7,6 +7,9 @@
  * client gửi kèm lịch sử ngắn mỗi lần gọi).
  */
 
+import { docContextPromptBlock, type DocContext } from './doc-context';
+import { violationsPromptBlock, type TopViolationsResult } from './violations-context';
+
 export type ChatRole = 'user' | 'assistant';
 export interface ChatTurn {
   role: ChatRole;
@@ -134,14 +137,24 @@ export function brandPromptBlock(brand: VitalsBrandContext | null): string {
 export function chatSystemPromptFor(
   stage: ChatStage | undefined,
   brand?: VitalsBrandContext | null,
+  doc?: DocContext | null,
+  violations?: TopViolationsResult | null,
 ): string {
   const s: ChatStage = stage ?? 'gallery';
+  // VIỆC 5c (05/08) — 2 khối MỚI, THÊM vào cuối, KHÔNG đụng 3 khối cũ (§0d: base prompt + brief
+  // chặng + nhận diện dự án đang chạy tốt, chỉ build lên). Cả hai tự trả '' khi không có dữ liệu
+  // ⇒ chữ ký cũ `chatSystemPromptFor(stage, brand)` ra prompt Y HỆT trước, không hồi quy.
+  const extra = [docContextPromptBlock(doc ?? null), violationsPromptBlock(violations ?? null)]
+    .filter(Boolean)
+    .join('\n\n');
+
   return (
     CHAT_SYSTEM_PROMPT +
     '\n\nNGỮ CẢNH CHẶNG: ' +
     STAGE_BRIEF[s] +
     '\n\n' +
     brandPromptBlock(brand ?? null) +
+    (extra ? '\n\n' + extra : '') +
     '\n\nGIỚI HẠN: tối đa 3 câu, đi thẳng vào vấn đề, không lan man.'
   );
 }

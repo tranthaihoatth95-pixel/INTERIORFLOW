@@ -23,7 +23,7 @@
  * không dựa vào may rủi thống kê. `BuildOp.withRef` (NC-12 boolean) được ánh xạ lại theo ĐÚNG bảng
  * đổi tên của sheet đó (tham chiếu chỉ có nghĩa trong cùng 1 Doc gốc, không xuyên sheet).
  */
-import type { Doc, Entity, Layer, MarkupPin, PhotoEmbed, Sheet, SiteImage, Viewport2D } from './model';
+import type { Doc, Entity, Layer, Level, MarkupPin, PhotoEmbed, Sheet, SiteImage, Viewport2D, WallType } from './model';
 import { docBox, defaultPaperOrientation, paperSizeMm, type PaperKey } from './model';
 import { translateEntity, translatePt } from './geometry';
 import { newId } from './store';
@@ -80,6 +80,16 @@ export function mergeIdfSheetsToDoc(sheets: IdfSheetData[], opts: MergeSheetsOpt
   const mergedMarkups: MarkupPin[] = [];
   const mergedPhotos: PhotoEmbed[] = [];
   const layerById = new Map<string, Layer>();
+  // VIỆC 1+3 (05/08) — `Doc.levels`/`Doc.wallTypes` gộp theo ĐÚNG khuôn `layerById` phía trên:
+  // dedupe theo `id`, sheet ĐẦU TIÊN thắng, **KHÔNG đổi tên có tiền tố**. Cố ý khác cách xử lý
+  // entity/markup/photo (bị prefix `s{i}-`) vì đây là DANH MỤC DÙNG CHUNG, không phải nội dung
+  // riêng của tờ: 2 tờ cùng nhãn tầng 'Trệt' phải ra ĐÚNG MỘT tầng sau khi gộp, y như 2 tờ cùng
+  // layer 'Tường' ra đúng một layer (`e.layer` cũng không hề bị đổi tên).
+  // ⚠️ THIẾU BƯỚC NÀY = MẤT DỮ LIỆU THẬT: từ khi bump `.idf` v2, migration sinh `levels` + gắn
+  // `levelId` lên entity; gộp mà bỏ rơi `levels` thì mọi `levelId` thành THAM CHIẾU MỒ CÔI
+  // (`computeHeights` sẽ trả `danglingLevelIds`) — cấu kiện rụng hết cao độ tầng.
+  const levelById = new Map<string, Level>();
+  const wallTypeById = new Map<string, WallType>();
   let mergedSiteImage: SiteImage | undefined;
 
   let cursorX = 0;
@@ -105,6 +115,8 @@ export function mergeIdfSheetsToDoc(sheets: IdfSheetData[], opts: MergeSheetsOpt
     }
 
     for (const l of doc.layers) if (!layerById.has(l.id)) layerById.set(l.id, { ...l });
+    for (const lv of doc.levels ?? []) if (!levelById.has(lv.id)) levelById.set(lv.id, { ...lv });
+    for (const wt of doc.wallTypes ?? []) if (!wallTypeById.has(wt.id)) wallTypeById.set(wt.id, { ...wt });
 
     for (const m of doc.markups ?? []) mergedMarkups.push(prefixMarkup(m, prefix, dx, dy));
     for (const p of doc.photos ?? []) mergedPhotos.push(prefixPhoto(p, prefix, dx, dy));
@@ -118,12 +130,23 @@ export function mergeIdfSheetsToDoc(sheets: IdfSheetData[], opts: MergeSheetsOpt
     cursorX += width + SHEET_GAP_MM;
   });
 
+  // `order` đánh LẠI 0..n-1 sau khi gộp: mỗi Doc gốc tự đánh từ 0 nên gộp thẳng sẽ đụng số
+  // (2 tờ đều có tầng `order:0`). Xếp theo (order cũ, cao độ) rồi đánh lại — giữ đúng ý đồ thứ tự
+  // của từng tờ, chỉ bỏ chỗ đụng. KHÔNG đụng `elevationMm` (số thật, không được bịa lại).
+  const mergedLevels = Array.from(levelById.values())
+    .sort((a, b) => a.order - b.order || a.elevationMm - b.elevationMm)
+    .map((lv, i) => ({ ...lv, order: i }));
+
+  const mergedWallTypes = Array.from(wallTypeById.values());
+
   const doc: Doc = {
     entities: mergedEntities,
     layers: Array.from(layerById.values()),
     ...(mergedMarkups.length ? { markups: mergedMarkups } : {}),
     ...(mergedPhotos.length ? { photos: mergedPhotos } : {}),
     ...(mergedSiteImage ? { siteImage: mergedSiteImage } : {}),
+    ...(mergedLevels.length ? { levels: mergedLevels } : {}),
+    ...(mergedWallTypes.length ? { wallTypes: mergedWallTypes } : {}),
   };
 
   const mergedBox = docBox(doc) ?? { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 };

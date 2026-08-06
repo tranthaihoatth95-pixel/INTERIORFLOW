@@ -968,3 +968,156 @@ npm test
 # 4. Merge xong + test sạch mới push
 git push origin nhanh-g4
 ```
+
+---
+
+# S2 · BUILD #1 — NỐI CHUỖI 3D VÀO ỨNG DỤNG (05/08/2026)
+
+**Nhiệm vụ: NỐI DÂY, không viết thuật toán mới.** Hai module đã xong nhưng 0 nơi gọi.
+Mảng: `lib/three/*` · `components/three/*` · `components/render-studio/*`. **KHÔNG COMMIT (V6).**
+
+## Khối mở phiếu (chạy trước khi gõ phím)
+
+```
+git log --oneline -5 -- lib/three/ components/three/ components/render-studio/
+  04fee65 3305001 da44da6 a40adf2 d57067a   ← không ai đang nằm trên vùng này
+npx tsc --noEmit                          → EXIT 0 (repo không đỏ sẵn)
+grep -rn "section-entities|sectionToEntities" app/ components/   → 0 dòng   ✅ khớp phiếu
+grep -n "prism(" lib/three/cad-to-obj.ts:637 → builder.prism(h.points, 0, wallH)  ✅ khớp phiếu
+```
+Không có tín hiệu "lạ lạ" nào — **phiếu chính xác 3/3 việc**, làm thẳng.
+
+---
+
+## VIỆC 1 · `computeHeights()` đã nối vào dựng khối
+
+| Chỗ sửa | Trước | Sau |
+|---|---|---|
+| `lib/three/cad-to-obj.ts` vòng lặp tường | `prism(h.points, 0, wallH)` — hằng số 0 | `computeHeights(h, doc)` → `prism(h.points, baseMm, baseMm + wallH)` |
+| `cutterPositionsMm()` | `z0 = e.elevationMm ?? 0` | `+ wallBaseMm` — lỗ cửa theo tường chủ, không nằm lại tầng trệt |
+| nội thất | `box4(base, 0, h)` | `box4(base, fBase, fBase + h)` — chỉ dời ĐÁY, giữ chiều cao theo loại đồ |
+| cửa/cửa sổ hosted | `sillMm`/`headMm` tuyệt đối | cộng đáy của **tường chủ** (cùng hệ với cutter) |
+
+**Xử `danglingLevelIds` — không nuốt:** đẩy vào `ObjScene.warnings`, câu nói rõ id tầng hỏng + đã
+dựng ở cốt nào. `degenerate` (đỉnh ≤ đáy) → dùng cao mặc định + cảnh báo, **không dựng khối lộn ngược**.
+
+**K4 — field mới có nơi tiêu thụ trong CÙNG phiên:** thêm `SceneGroup.baseMm`, đọc ở
+`lib/three/obj-scene-to-geometry.ts` (`MassingWall.baseMm`) và `components/three/Scene3DViewer.tsx`
+(push-pull: `scale.y` nay neo quanh đáy thật + bù `position.y`, không thì kéo tường tầng 2 sẽ tụt
+xuống dưới sàn).
+
+**Test mới:** `lib/three/cad-to-obj-levels.test.ts` — **25/25**. Khoá 6 nhóm: tương thích ngược
+(doc chưa khai tầng ra Y HỆT cũ, không ghi `baseMm`) · tường 2 cốt trong cùng scene · `baseConstraint`
+cộng đủ offset · tầng đã xoá · suy biến · nội thất theo tầng + không "lây" cốt.
+
+**`cad-to-obj.test.ts` giữ nguyên 74 pass / 1 fail** — đúng 1 fail CŨ đã biết (`entityId` nội thất),
+việc này KHÔNG làm nó đổi trạng thái.
+
+---
+
+## VIỆC 2 · `sectionToEntities` đã mount
+
+**Chuỗi mount (N6):**
+```
+lib/three/section-entities.ts (sectionReport · elevationToEntities)
+  → components/render-studio/SectionExtractPanel.tsx:31,32,109,116
+  → components/render-studio/Command3DPanel.tsx:128     (tab MỚI "Bản vẽ")
+  → components/render-studio/Render3DModeSkeleton.tsx:417
+  → components/home/HomeScreen.tsx:125                   ← chạm tới app thật
+```
+
+- **Lệnh "Cắt lớp ra bản vẽ 2D"** — chọn hướng (Mặt bằng z / Cắt dọc y / Cắt ngang x, gọi bằng
+  tiếng nghề chứ không bắt đọc 'x/y/z') + cao độ cắt, có ghi khoảng cao độ THẬT của mô hình để
+  không phải gõ số mù.
+- **Lệnh "Trích mặt đứng"** — chế độ `elevation` (`section-entities.ts:441`).
+- **Checkpoint duyệt** — xem phần "lỗi đã mắc" bên dưới.
+- **Layer đổi tên được** — 3 ô nhập, mặc định lấy `SECTION_LAYERS`; nơi mount ánh xạ sang layer thật
+  qua `ensureLayerByName` SẴN CÓ (không đẻ cơ chế layer thứ hai). Chỉ tạo layer cho nhóm THỰC SỰ có
+  nét được nhận — bỏ tick "nét xa" thì không sinh layer rỗng.
+- **K1** — không có `sync3DTo2D`: đọc scene (vốn tính từ chính `Doc`) rồi ghi entity mới vào **chính
+  `Doc` đó**. Một kho, hai ống kính.
+
+**Nới kiểu, không đổi logic:** `scene` của 3 hàm nới từ `ObjScene` → `SectionSourceScene =
+Pick<ObjScene,'groups'>` (grep: cả file chỉ đọc `scene.groups`). Lý do: `useScene3D()` giữ
+`Scene3DData` không có `obj`/`mtl`; bắt dựng lại `ObjScene` đầy đủ = tính lại cả scene lần hai.
+
+### Nghiệm thu browser thật (127.0.0.1:3000, "Dự án mẫu" + bản demo 117 entity)
+
+| Mốc | Số đo |
+|---|---|
+| entity trước khi cắt | **117** |
+| **trong lúc xem trước** | **117** — checkpoint giữ đúng lời hứa, chưa ghi một byte |
+| sau khi bấm Nhận | **197** |
+| trên layer mặt cắt | **69** (39 polyline + 30 hatch) = đúng con số nút hứa |
+| layer mới | `Mặt cắt · nét cắt` 0.70mm · `Mặt cắt · thấy` 0.35mm |
+
+Ảnh: `docs/screenshots/s2-01-tab-ban-ve.png` · `s2-02-xem-truoc.png` · `s2-03-da-nhan.png` ·
+`s2-04-net-tren-ban-ve-2d.png`.
+
+**Vênh +11 đã truy tới cùng, KHÔNG phải do việc này:** 197−117 = 80 nhưng nút hứa 69. Đối chứng:
+thêm **đúng 1** entity vô hại vào cùng doc cũng ra **+12**. ⇒ +11 là `syncHostedOpenings` bên trong
+`store.addEntities()` khoét lỗ cho cửa/cửa sổ có sẵn của bản demo ở lần `addEntities` đầu tiên —
+hành vi CÓ TRƯỚC. Đo thêm: `opsTrenLayerMatCat = 0`, tức entity mặt cắt KHÔNG bị gán quan hệ hosting.
+
+---
+
+## VIỆC 3 · Ô trống `disabled` kèm lý do (§9)
+
+5 ô thêm ở tab "Bản vẽ", mỗi ô lý do RIÊNG (grep chứng minh chưa có, chạy trước khi viết — tất cả = 0):
+
+| Ô | Lệnh grep | Kết quả |
+|---|---|---|
+| Ghi kích thước tự động | `grep -rn "autoDimension\|autoDim\|dimFromSection" lib/ components/` | 0 |
+| Ký hiệu cao độ | `grep -rn "spotElevation\|levelTag" lib/ components/` | 0 |
+| Ký hiệu mặt cắt lên mặt bằng | `grep -rn "sectionMarker\|sectionCallout" lib/ components/` | 0 |
+| Cắt lại khi khối đổi | `grep -rn "liveSection\|sectionLink\|reSection" lib/ components/` | 0 |
+| Đưa thẳng vào tờ in | `grep -rn "sectionToSheet\|matCatToSheet" lib/ components/` | 0 |
+
+Đã ghi 5 dòng vào `docs/CHECKLIST-TONG.md` mục "SỔ Ô TRỐNG". Không nút giả: cả 5 đều `disabled` thật.
+
+---
+
+## 🔴 LỖI ĐÃ MẮC TRONG PHIÊN
+
+1. **Tự đẻ khung duyệt riêng** — bản đầu tôi dựng `SectionPreviewOverlay` có modal + nút Nhận/Huỷ
+   của riêng nó. S5 vừa dựng `components/studio/Checkpoint.tsx` làm **khung chung cho S2/S3/S4**,
+   docstring ghi thẳng *"KHÔNG phiên nào tự đẻ khung duyệt riêng"*. Phát hiện lúc mở
+   `CHECKLIST-TONG.md` để ghi ô §9 thì thấy changelog của S5. **Đã thay**: khung là `Checkpoint`
+   (tick từng phần KS3 · seed KS2 · nhãn hoàn tác KS4 · `onAccept(ids)` chỉ ghi phần được tick),
+   file của tôi rút còn 2 vai — vỏ nổi (portal, vì panel 256px không đủ "thấy sản phẩm") và nội
+   dung `preview` (SVG vẽ đúng đám entity sắp ghi).
+2. **Tự chạy dev server thứ hai** — bật `next dev -p 3007` trong khi đã có server 3000, hai tiến
+   trình giành chung `.next` ⇒ hỏng build cache, trang treo spinner. Vi phạm đúng luật đã ghi trong
+   memory (`feedback-dev-server-ports`: kiểm `lsof` trước, dùng lại server sẵn có). Đã tắt server
+   thừa, verify lại trên 3000.
+3. **Test tôi viết sai chỗ chia dữ liệu** — `wallChain` trả XEN KẼ hatch/polyline nên `i % 2 === 0`
+   gán trúng cả 4 hatch, không còn tường nào ở cốt 0 để so sánh. Test FAIL đúng 1 dòng, đã sửa
+   thành chia theo thứ tự hatch và ghi bẫy vào comment.
+4. **Selector nghiệm thu neo `^...$` quá chặt** — 3 lần timeout vô ích trước khi đổi sang
+   `getByRole`. Không ảnh hưởng sản phẩm, chỉ tốn thời gian phiên.
+
+## Nghiệm thu
+
+```
+npx tsc --noEmit          → EXIT 0, không một dòng lỗi
+npm test                  → 5121 ok · 1 FAIL
+   FAIL duy nhất: "group nội thất mang đúng entityId của BlockEntity nguồn"
+   (lib/three/cad-to-obj.test.ts) — fail CŨ đã ghi ở STATUS.md, không đổi trạng thái vì việc này
+```
+Trước phiên: 1 FAIL cùng dòng đó. Sau phiên: vẫn đúng 1, **không hồi quy**.
+
+## File đã sửa (KHÔNG commit — Hoà commit)
+
+`lib/three/cad-to-obj.ts` · `lib/three/obj-scene-to-geometry.ts` · `lib/three/section-entities.ts` ·
+`lib/three/section-entities.test.ts` · `components/three/Scene3DViewer.tsx` ·
+`components/render-studio/Command3DPanel.tsx` · `components/render-studio/Render3DModeSkeleton.tsx` ·
+`docs/CHECKLIST-TONG.md`
+**Mới:** `lib/three/cad-to-obj-levels.test.ts` · `components/render-studio/SectionExtractPanel.tsx` ·
+`components/render-studio/SectionPreviewOverlay.tsx`
+
+## Còn treo
+- **Nét cắt là ảnh chụp một lần** — sửa khối 3D không tự cập nhật nét (ô trống #4). Cần quyết kiến
+  trúc: neo entity mặt cắt vào spec cắt rồi tính lại, hay để người dùng tự cắt lại.
+- **`Floor`/`Room_i` vẫn đùn ở cốt 0** — chúng là hình học TỔNG HỢP (bbox toàn tường / dò biên
+  runtime), không ứng với 1 entity nào để hỏi `computeHeights`. Nhà nhiều tầng sẽ chỉ có 1 bản sàn
+  ở cốt 0. Chờ §6 `RoomEntity`/slab entity mới gắn cốt đúng được.

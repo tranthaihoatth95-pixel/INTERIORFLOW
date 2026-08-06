@@ -18,6 +18,7 @@
  */
 
 import type { Doc, Entity, Pt } from './model';
+import type { Prim } from './furniture';
 import { parseDxf } from './dxf';
 
 export interface LibraryBlockMeta {
@@ -178,6 +179,49 @@ export function flattenBlockEntities(blockDoc: Doc, at: Pt, opts: InsertOptions 
       }
       default:
         // 'dim' / 'block' lồng nhau — block thư viện tự dựng không sinh ra các loại này.
+        break;
+    }
+  }
+  return out;
+}
+
+/* ───────────────────────── CỤM SINH BẰNG HÀM → Entity (phiếu S3 VIỆC 1) ───────────────────────── */
+
+/**
+ * `Prim[]` (hệ LOCAL mm, gốc TÂM — do `lib/cad/workstation-clusters.ts` sinh) → `Entity[]` đã đặt
+ * tại `at`, sẵn sàng `useCadStore.addEntities(...)` (1 nấc Undo cho cả cụm, `store.ts:520`).
+ *
+ * ▸ VÌ SAO KHÔNG ĐI ĐƯỜNG `BlockEntity`/`BLOCK_MAP` như `furniture.ts`: `BlockDef.prims` là hình
+ * TĨNH tra theo `blockId`. Cụm thì sinh theo tham số ⇒ mỗi lần thả là một hình khác nhau, không
+ * có `blockId` ổn định để tra ngược. Nếu đăng ký block động vào `BLOCK_MAP` lúc chạy thì bản vẽ
+ * lưu xong, mở lại sẽ trỏ vào `blockId` không còn tồn tại ⇒ **mất hình**. Làm phẳng thành entity
+ * thường thì lưu/mở/xuất DXF/PDF đều chạy bằng đường sẵn có, không thêm phụ thuộc nào.
+ *
+ * ▸ Dùng LẠI `transformPt()` ngay trên — CÙNG thứ tự scale → rotate → translate của
+ * `blockLocalToWorld` (`lib/cad/render.ts`), nên cụm xoay/lật giống hệt block DXF thư viện.
+ */
+export function clusterPrimsToEntities(prims: Prim[], at: Pt, opts: InsertOptions = {}): Entity[] {
+  const rot = opts.rot ?? 0;
+  const sx = opts.sx ?? 1;
+  const sy = opts.sy ?? sx;
+  const layer = opts.layer ?? 'l-furniture';
+  const scaleMag = Math.max(Math.abs(sx), Math.abs(sy));
+  const tp = (p: Pt) => transformPt(p, at, rot, sx, sy);
+
+  const out: Entity[] = [];
+  for (const pr of prims) {
+    switch (pr.k) {
+      case 'line':
+        out.push({ id: genId('clu'), type: 'line', layer, a: tp(pr.a), b: tp(pr.b) });
+        break;
+      case 'poly':
+        out.push({ id: genId('clu'), type: 'polyline', layer, closed: pr.closed ?? false, points: pr.pts.map(tp) });
+        break;
+      case 'circle':
+        out.push({ id: genId('clu'), type: 'circle', layer, c: tp(pr.c), r: pr.r * scaleMag });
+        break;
+      case 'arc':
+        out.push({ id: genId('clu'), type: 'arc', layer, c: tp(pr.c), r: pr.r * scaleMag, a1: pr.a1 + rot, a2: pr.a2 + rot });
         break;
     }
   }

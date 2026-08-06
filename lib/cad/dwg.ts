@@ -44,22 +44,19 @@
  * DUY NHẤT dừng được 1 lời gọi WASM đồng bộ đang chặn 1 luồng.
  */
 
-import type { Doc } from './model';
-import {
-  dwgRawDocToDoc,
-  describeDwgHeader,
-  dwgTimeoutMessage,
-  dwgCancelledMessage,
-  dwgProgressMessage,
-  DEFAULT_DWG_IMPORT_TIMEOUT_MS,
-} from './dwg-map';
-import type { DwgWorkerResponse, DwgStage } from './dwg-map';
+import { runDwgImport } from './dwg-map';
+import type { DwgWorkerLike, DwgStage, DwgImportResult, DwgImportOptions } from './dwg-map';
 // `useCadStore` CHỈ dùng để cập nhật status bar mặc định (xem docstring `openDwgFile` — lý do
 // làm ở đây thay vì CadEditor.tsx) — cùng khuôn import tĩnh đã có sẵn ở `cad3d-autosave-core.ts`/
 // `commands.ts`/`geometry.ts` (store.ts KHÔNG import ngược lại dwg.ts — không có vòng lặp).
 import { useCadStore } from './store';
 
 export { dwgRawDocToDoc, describeDwgHeader, dwgTimeoutMessage, dwgCancelledMessage, dwgProgressMessage, DEFAULT_DWG_IMPORT_TIMEOUT_MS } from './dwg-map';
+/* 05/08 (PHU) — mở cửa cho `CadEditor.tsx` đọc kết quả bung block mà KHÔNG phải import thẳng
+ * `dwg-map.ts` (file này là cửa công khai của tầng DWG, xem docstring đầu file). `flattenDwgRawDoc`
+ * export cho CLI/test gọi trực tiếp; `DEFAULT_FLATTEN_BUDGET_MS` để nơi gọi hiển thị/chỉnh trần. */
+export { flattenDwgRawDoc, DEFAULT_FLATTEN_BUDGET_MS, MAX_FLATTEN_ENTITIES } from './dwg-map';
+export type { DwgFlattenReport, DwgFlattenLimits } from './dwg-map';
 export type { DwgRawDoc, DwgStage } from './dwg-map';
 
 /**
@@ -70,9 +67,9 @@ export type { DwgRawDoc, DwgStage } from './dwg-map';
  * mồ côi cùng lúc; cái thứ 3 trở đi mới `terminate()` con CŨ NHẤT (chấp nhận rủi ro treo nhỏ đó,
  * đổi lấy chặn rò RAM vô hạn nếu người dùng bấm Huỷ liên tục).
  */
-const ORPHANED_DWG_WORKERS: Worker[] = [];
+const ORPHANED_DWG_WORKERS: DwgWorkerLike[] = [];
 
-function orphanDwgWorker(worker: Worker, fileName: string, stage: DwgStage, elapsedMs: number) {
+function orphanDwgWorker(worker: DwgWorkerLike, fileName: string, stage: DwgStage, elapsedMs: number) {
   worker.onmessage = null;
   worker.onerror = null;
   ORPHANED_DWG_WORKERS.push(worker);
@@ -85,37 +82,10 @@ function orphanDwgWorker(worker: Worker, fileName: string, stage: DwgStage, elap
   }
 }
 
-/** Bản sao CỐ Ý của `DwgWorkerMessage` (`dwg-worker.ts`) — KHÔNG import trực tiếp file đó (luật
- * cô lập GPL đã ghi ở đầu `dwg-worker.ts`: không ai được import module ấy). Cùng khuôn với
- * `DwgWorkerResponse`/`DwgRawDoc` đã trùng lặp có chủ đích giữa `dwg-map.ts` và `dwg-worker.ts`
- * từ trước — 2 bên giữ đồng bộ bằng tay, không type-check chéo được (đã ghi rõ ở `dwg-map.ts`). */
-type DwgWorkerMessage =
-  | { kind: 'progress'; stage: 'reading' | 'converting' }
-  | ({ kind: 'result' } & DwgWorkerResponse);
-
-export interface OpenDwgResult {
-  doc: Doc;
-  /** số entity KHÔNG map được (WIPEOUT/POINT/SPLINE… chưa hỗ trợ, hoặc HATCH boundary có cung) —
-   * hiện cho user biết bản vẽ vào app KHÔNG đầy đủ 100% so với file gốc. */
-  skippedEntityCount: number;
-  totalEntityCount: number;
-}
-
-export interface OpenDwgOptions {
-  /** ms trước khi HUỶ worker + reject nếu chưa có phản hồi — mặc định `DEFAULT_DWG_IMPORT_TIMEOUT_MS`
-   * (60s), chỉnh được cho file cực lớn hoặc máy chậm. */
-  timeoutMs?: number;
-  /** Huỷ giữa chừng theo yêu cầu người dùng (khác timeout tự động, cùng cơ chế bên trong:
-   * `worker.terminate()` — cách DUY NHẤT dừng lời gọi WASM đồng bộ đang chặn worker thread). Nơi
-   * gọi tự tạo `AbortController`, gọi `.abort()` khi có nút "Huỷ" — panel/nút đó CHƯA làm ở ticket
-   * này (ngoài vùng file cho phép, `lib/cad/dwg*.ts` · `lib/cad/dxf*.ts`), nhưng cơ chế đã sẵn. */
-  signal?: AbortSignal;
-  /** Báo tiến độ CÓ THẬT — giai đoạn (`reading`/`converting`, đúng lúc worker CHUYỂN giai đoạn)
-   * + elapsed-time đo từ main thread (không phải % giả, xem giải thích ở đầu file: thư viện
-   * không có hook progress nào). Gọi mỗi ~1s TỪ LÚC BẮT ĐẦU, không chờ worker phản hồi mới gọi —
-   * để "đang chạy" hiện được kể cả khi worker đang kẹt trong 1 lời gọi WASM không phản hồi. */
-  onProgress?: (info: { stage: DwgStage; elapsedMs: number }) => void;
-}
+/** Giữ nguyên tên cũ cho nơi gọi (`CadEditor.tsx`) — bản thân kiểu nay sống ở `dwg-map.ts` cùng
+ * vòng đời `runDwgImport`, không khai hai lần. */
+export type OpenDwgResult = DwgImportResult;
+export type OpenDwgOptions = DwgImportOptions;
 
 /**
  * Mở file .dwg qua Worker cô lập (dwg-worker.ts) → Doc. Không bao giờ throw ra "lỗi lạ" — mọi
@@ -123,103 +93,35 @@ export interface OpenDwgOptions {
  * message tiếng Việt dễ hiểu để UI hiển thị trực tiếp cho user (xem onImportDwgFile ở CadEditor.tsx).
  *
  * P1: mặc định LUÔN có timeout cứng (không cần `opts` — caller cũ `openDwgFile(f)` vẫn gọi y
- * nguyên, tự động được bảo vệ) + LUÔN cập nhật `useCadStore.status` mỗi giây trong lúc chờ (đúng
- * yêu cầu §3 "người dùng phải thấy nó đang chạy") — làm NGAY TẠI ĐÂY thay vì bắt CadEditor.tsx tự
- * nối `onProgress`, vì ticket này giới hạn vùng file `lib/cad/dwg*.ts`/`dxf*.ts`, không được sửa
- * component UI. `opts.onProgress`/`opts.signal` vẫn có sẵn cho UI thật (nút "Huỷ", thanh tiến độ
- * riêng) nối vào sau — việc đó cần sửa `CadEditor.tsx`, ngoài phạm vi ticket.
+ * nguyên, tự động được bảo vệ) + LUÔN cập nhật `useCadStore.status` mỗi giây trong lúc chờ.
+ *
+ * 05/08 (PHU q8): thân hàm chuyển hẳn sang `runDwgImport` (`dwg-map.ts`) để **test được** — file
+ * này có `import.meta` nên sucrase-node không require nổi, trước đó vòng đời timeout/huỷ 0 test.
+ * Ở đây chỉ còn 3 thứ THẬT SỰ thuộc trình duyệt: đẻ Worker · ghi status bar · hồ worker mồ côi.
  */
 export function openDwgFile(file: File, opts: OpenDwgOptions = {}): Promise<OpenDwgResult> {
-  const timeoutMs = opts.timeoutMs ?? DEFAULT_DWG_IMPORT_TIMEOUT_MS;
-
-  return new Promise((resolve, reject) => {
-    let worker: Worker;
+  const setStatus = (text: string) => {
     try {
-      worker = new Worker(new URL('./dwg-worker.ts', import.meta.url));
-    } catch (err) {
-      reject(new Error(`Không khởi tạo được worker đọc DWG: ${err instanceof Error ? err.message : String(err)}`));
-      return;
+      useCadStore.getState().setStatus(text);
+    } catch {
+      /* store chưa sẵn sàng (SSR/test) — bỏ qua */
     }
-
-    let settled = false;
-    let stage: DwgStage = 'spawning';
-    let headerInfo = '(chưa đọc được header)';
-    const startedAt = Date.now();
-    let onAbort: (() => void) | undefined;
-
-    const heartbeat = setInterval(() => {
-      const elapsedMs = Date.now() - startedAt;
-      opts.onProgress?.({ stage, elapsedMs });
-      // Mặc định LUÔN báo lên status bar CAD — xem docstring hàm vì sao làm ở đây thay vì
-      // CadEditor.tsx. `openDwgFile` chỉ được gọi từ trình duyệt thật (CLI/test gọi thẳng
-      // dwg-map.ts, không qua đây) nhưng vẫn phòng thủ — lỗi ở đây KHÔNG được chặn việc nhập file.
-      try {
-        useCadStore.getState().setStatus(dwgProgressMessage(file, stage, elapsedMs));
-      } catch {
-        /* store chưa sẵn sàng (SSR/test) — bỏ qua, không chặn import */
-      }
-    }, 1000);
-
-    // `orphan: true` CHỈ dùng cho đường Huỷ do người dùng bấm — xem `orphanDwgWorker` ở trên vì
-    // sao KHÔNG terminate() ở đây (khác timeout/lỗi worker, vẫn terminate() bình thường).
-    const finish = (settle: () => void, orphan = false) => {
-      if (settled) return;
-      settled = true;
-      clearInterval(heartbeat);
-      clearTimeout(hardTimeout);
-      if (opts.signal && onAbort) opts.signal.removeEventListener('abort', onAbort);
-      if (orphan) {
-        orphanDwgWorker(worker, file.name, stage, Date.now() - startedAt);
-      } else {
-        worker.terminate();
-      }
-      settle();
-    };
-
-    const hardTimeout = setTimeout(() => {
-      finish(() => reject(new Error(dwgTimeoutMessage(file, timeoutMs, stage, headerInfo))));
-    }, timeoutMs);
-
-    if (opts.signal) {
-      if (opts.signal.aborted) {
-        finish(() => reject(new Error(dwgCancelledMessage(file))), true);
-        return;
-      }
-      onAbort = () => finish(() => reject(new Error(dwgCancelledMessage(file))), true);
-      opts.signal.addEventListener('abort', onAbort);
-    }
-
-    worker.onerror = (ev) => {
-      finish(() => reject(new Error(`Worker đọc DWG lỗi: ${ev.message || 'không rõ nguyên nhân'}`)));
-    };
-
-    worker.onmessage = (ev: MessageEvent<DwgWorkerMessage>) => {
-      const msg = ev.data;
-      if (msg.kind === 'progress') {
-        stage = msg.stage; // chỉ cập nhật mốc — CHƯA settle, còn chờ 'result'
-        return;
-      }
-      finish(() => {
-        if (!msg.ok) {
-          reject(new Error(msg.error));
-          return;
-        }
-        resolve({
-          doc: dwgRawDocToDoc(msg.doc),
-          skippedEntityCount: msg.doc.skippedEntityCount,
-          totalEntityCount: msg.doc.totalEntityCount,
-        });
-      });
-    };
-
-    file
-      .arrayBuffer()
-      .then((buffer) => {
-        headerInfo = describeDwgHeader(buffer);
-        worker.postMessage({ buffer }, [buffer]);
-      })
-      .catch((err) => {
-        finish(() => reject(new Error(`Không đọc được nội dung file: ${err instanceof Error ? err.message : String(err)}`)));
-      });
+  };
+  return runDwgImport(file, opts, {
+    spawn: () => new Worker(new URL('./dwg-worker.ts', import.meta.url)) as unknown as DwgWorkerLike,
+    orphan: (worker, stage, elapsedMs) => orphanDwgWorker(worker, file.name, stage, elapsedMs),
+    // `openDwgFile` chỉ chạy trong trình duyệt thật (CLI/test gọi thẳng dwg-map.ts) nhưng vẫn
+    // phòng thủ — lỗi status bar KHÔNG được chặn việc nhập file.
+    onStatus: setStatus,
+  }).then((res) => {
+    // 05/08 (PHU) — bản vẽ bị CẮT NGẮN thì phải nói ra. Trước đây trần bung block cắt hoàn toàn
+    // im lặng: người dùng nhận bản vẽ thiếu hình và tưởng file gốc của mình hỏng.
+    // Đưa câu này ra ĐÂY (không phải `CadEditor.tsx`) vì `components/*` là vùng của phiên CHINH —
+    // status bar là đường duy nhất `lib/` tự nói được với người dùng, và nó đã có sẵn ở trên.
+    // ⚠️ Đây chỉ là mức TỐI THIỂU: câu cảnh báo trôi mất khi có status kế tiếp. Muốn hiện dai
+    // (banner/toast có nút "Hiểu rồi") thì phải đọc `res.flatten.message` ở `CadEditor.tsx` —
+    // việc của CHINH, đã ghi trong báo cáo phiên.
+    if (res.flatten.message) setStatus(res.flatten.message);
+    return res;
   });
 }

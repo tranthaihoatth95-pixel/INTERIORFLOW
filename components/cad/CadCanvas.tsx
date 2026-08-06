@@ -19,6 +19,8 @@ import { useFlowStore } from '@/lib/store';
 import type { Entity, Pt, Viewport, DimEntity, LineEntity, MarkupPin, PhotoEmbed, Box, ZoneEntity } from '@/lib/cad/model';
 import { screenToWorld, worldToScreen, zoomAt, fitBox, docBox, dist, entityBox, ZONE_GROUP_META, CAMPATH_LAYER_NAME, CAMPATH_LAYER_COLOR } from '@/lib/cad/model';
 import { drawEntities, drawEntity } from '@/lib/cad/render';
+import { presentProjectionMemo } from '@/lib/cad/plan-present';
+import { usePlanPresent, presentOptionsFrom } from './plan-present-store';
 import { createMarkupPin, createPhotoEmbed, nearestMarkup, nearestPhoto, formatMarkupTime } from '@/lib/cad/markup';
 import { findSnap, hitTest, idsInRect, type SnapResult } from '@/lib/cad/query';
 import { newId } from '@/lib/cad/store';
@@ -331,6 +333,16 @@ export default function CadCanvas() {
   // redraw khi store đổi (doc / viewport / selection / tool)
   useEffect(() => {
     const unsub = useCadStore.subscribe(() => {
+      ix.current.redraw = true;
+    });
+    return unsub;
+  }, []);
+
+  // S4 — ống kính trình bày sống ở store RIÊNG (components/cad/plan-present-store.ts, xem
+  // docstring ở đó vì sao không nhét vào Doc/useCadStore) ⇒ phải subscribe thêm, không thì bật
+  // công tắc mà canvas không vẽ lại.
+  useEffect(() => {
+    const unsub = usePlanPresent.subscribe(() => {
       ix.current.redraw = true;
     });
     return unsub;
@@ -2279,7 +2291,12 @@ export default function CadCanvas() {
     ctx.lineCap = 'round';
     // trong lúc kéo grip: vẽ bằng bản preview cục bộ (chưa commit store) thay cho bản gốc
     const gp = ix.current.gripDrag && ix.current.gripPreview;
-    const docToDraw = gp ? { ...st.doc, entities: st.doc.entities.map((e) => (e.id === ix.current.gripDrag!.entityId ? ix.current.gripPreview! : e)) } : st.doc;
+    const docBase = gp ? { ...st.doc, entities: st.doc.entities.map((e) => (e.id === ix.current.gripDrag!.entityId ? ix.current.gripPreview! : e)) } : st.doc;
+    // S4 — ỐNG KÍNH TRÌNH BÀY. `presentProjectionMemo()` trả Doc PHÙ DU (đổi màu/nét + cộng lớp
+    // trang trí phái sinh), **chỉ để vẽ, không bao giờ vào store** — cùng khuôn `docBase` phù du
+    // ngay trên (preview lúc kéo grip). K1: một Doc, hai ống kính. Xem lib/cad/plan-present.ts.
+    const pv = usePlanPresent.getState();
+    const docToDraw = pv.on ? presentProjectionMemo(docBase, presentOptionsFrom(pv)).doc : docBase;
     drawEntities(ctx, v, docToDraw, { stroke: t3, lineWidth: 1.3, text: true, dimStyle: st.dimStyle, realLineweight: true });
 
     // highlight selection

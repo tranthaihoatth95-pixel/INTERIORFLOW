@@ -19,8 +19,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { PointerEvent as ReactPointerEvent } from 'react';
-import { Boxes, Check, Hammer, Sparkles, X } from 'lucide-react';
+import type { PointerEvent as ReactPointerEvent, TouchEvent as ReactTouchEvent } from 'react';
+import { Boxes, Check, Hammer, Sparkles, Sun, X } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import { useCad3DAutosave } from '@/lib/cad/cad3d-autosave';
 import { useStageMode } from '@/lib/stage-mode';
@@ -31,6 +31,11 @@ import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
 import { Viewport3D, EMPTY_SCENE_3D } from '@/components/three/Viewport3D';
 import ModeSwitchBar from '@/components/render-studio/ModeSwitchBar';
 import Command3DPanel, { type Command3DTab } from '@/components/render-studio/Command3DPanel';
+import { SECTION_LAYER_KEYS, type SectionAcceptPayload } from '@/components/render-studio/SectionExtractPanel';
+import { SECTION_LAYERS } from '@/lib/three/section-entities';
+import { useLevelUi, UNASSIGNED_LEVEL, ROOM_LIGHT_KINDS, ROOM_LIGHT_DEFAULT_Z_MM } from '@/components/render-studio/scene3d-ui';
+import { addLevelToDoc, currentLighting, writeSun, writeRoomLights, patchRoomLight, newRoomLightId } from '@/components/render-studio/doc-catalog';
+import { buildLightRig, type RoomLight } from '@/lib/three/lighting';
 
 const GUIDE_HIDDEN_KEY = 'if.ve3d.guide_hidden_v1';
 const GUIDE_POS_KEY = 'if.ve3d.guide_pos_v1';
@@ -194,6 +199,130 @@ export default function Render3DModeSkeleton() {
 
   const scene = useScene3D();
 
+  /* ── VIỆC 3 + VIỆC 4 (§0c mảng 1 & 3): cử chỉ BA NGÓN xoay mặt trời + phím tắt của mode ── */
+  const hiddenLevels = useLevelUi((s) => s.hiddenLevels);
+  // Đèn đọc THẲNG từ Doc qua `buildLightRig()` của PHU — không có bản sao nào trong component này
+  // (K1 một nguồn). `rig` cho toạ độ tuyệt đối + màu Kelvin đã quy đổi, dùng luôn cho dấu đèn 3D.
+  const rig = buildLightRig(doc);
+  /** HUD góc nắng chỉ hiện TRONG LÚC đang xoay — không đắp thêm tấm thông tin thường trực lên
+   * canvas WebGL (G9: quá 4 tấm backdrop là giật; HUD này không dùng backdrop-filter). */
+  const [sunScrubbing, setSunScrubbing] = useState(false);
+  const sunGestureRef = useRef<{ startX: number; startAzimuth: number; width: number } | null>(null);
+
+  const lightMarkers = rig.rooms.map((r) => ({ id: r.id, posCadMm: r.posCadMm, colorHex: r.colorHex }));
+
+  /** Nhả tay sau khi kéo dấu đèn trong khung nhìn: viewer trả về toạ độ TUYỆT ĐỐI, còn
+   * `RoomLight.posMm.z` là cao độ TƯƠNG ĐỐI khi đèn gắn tầng (hợp đồng `lighting.ts:74`) ⇒ phải
+   * TRỪ LẠI cao độ tầng trước khi ghi, không thì mỗi lần kéo là đèn tự leo thêm một tầng. */
+  const handleLightMove = useCallback((id: string, posCadMm: { x: number; y: number; z: number }) => {
+    const resolved = buildLightRig(useCadStore.getState().doc).rooms.find((r) => r.id === id);
+    const dz = resolved?.levelElevationMm ?? 0;
+    patchRoomLight(id, { posMm: { x: posCadMm.x, y: posCadMm.y, z: posCadMm.z - dz } });
+  }, []);
+
+  const addRoomLight = useCallback(() => {
+    const lighting = currentLighting();
+    const def = ROOM_LIGHT_KINDS[0];
+    const b = useCadStore.getState().doc.entities.length ? scene?.bboxMm : undefined;
+    const light: RoomLight = {
+      id: newRoomLightId(lighting.rooms),
+      kind: def.id,
+      posMm: {
+        x: b ? Math.round((b.minX + b.maxX) / 2) : 0,
+        y: b ? Math.round((b.minY + b.maxY) / 2) : 0,
+        z: ROOM_LIGHT_DEFAULT_Z_MM[def.id],
+      },
+      lumens: def.lumens,
+      colorK: def.colorK,
+    };
+    writeRoomLights([...lighting.rooms, light]);
+  }, [scene]);
+
+  /**
+   * BA NGÓN kéo ngang = XOAY MẶT TRỜI sống (phiếu VIỆC 3.e, tham chiếu Nomad Sculpt: cử chỉ nhiều
+   * ngón đổi tham số môi trường mà không rời tay khỏi khung nhìn).
+   * ⚠️ `docs/NC-14-CAM-UNG.md` §3⑧ mà phiếu trỏ tới **KHÔNG CÓ NỘI DUNG** — file 6 dòng, ghi
+   * "CHỜ HOÀ DÁN NỘI DUNG". Làm theo mô tả trong phiếu, không theo NC-14 (N5, không giả vờ đã đọc).
+   * An toàn với orbit: `OrbitControls` chỉ khai `touches.ONE`/`touches.TWO`, chạm 3 ngón nó về
+   * trạng thái NONE ⇒ không tranh chấp. Kéo hết bề ngang ≈ 360° — một vòng nắng trong một nhịp tay.
+   */
+  const onViewportTouchStart = useCallback((e: ReactTouchEvent<HTMLDivElement>) => {
+    if (e.touches.length !== 3) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    sunGestureRef.current = {
+      startX: e.touches[0].clientX,
+      startAzimuth: currentLighting().sun.azimuthDeg,
+      width: rect.width || 1,
+    };
+    setSunScrubbing(true);
+  }, []);
+
+  const onViewportTouchMove = useCallback((e: ReactTouchEvent<HTMLDivElement>) => {
+    const g = sunGestureRef.current;
+    if (!g || e.touches.length !== 3) return;
+    const delta = ((e.touches[0].clientX - g.startX) / g.width) * 360;
+    writeSun({ azimuthDeg: (((g.startAzimuth + delta) % 360) + 360) % 360 });
+  }, []);
+
+  const onViewportTouchEnd = useCallback(() => {
+    if (!sunGestureRef.current) return;
+    sunGestureRef.current = null;
+    setSunScrubbing(false);
+  }, []);
+
+  /**
+   * VIỆC 4 · §0c MẢNG 1 — PHÍM TẮT CỦA MODE 3D, đăng ký ngay tại đây (mount/unmount cùng mode nên
+   * không rò ra chặng khác):
+   *   1…5      đổi tab bảng lệnh (Tạo · Sửa · Vật liệu · Camera · Đèn)
+   *   [ / ]    xoay mặt trời ∓5° — giữ Shift = 15° (quen tay Photoshop: ngoặc = chỉnh một tham
+   *            số đang cầm, không cần rời chuột khỏi khung nhìn)
+   *   Shift+N  thả một đèn phòng vào giữa cảnh
+   *   Shift+T  thêm một tầng
+   *
+   * ⚠️ CHƯA vào `lib/shortcuts.ts` (bảng ⌘? ) và `lib/commands/registry.ts` (⌘K + lệnh gõ) — hai
+   * file đó thuộc vùng cấm của phiên này; danh sách chính xác cần thêm nằm trong báo cáo phiên.
+   * Nên §0c mảng 1 mới đạt phần "bấm được + có tooltip ghi phím", CHƯA đạt phần "⌘K tìm ra lệnh".
+   *
+   * Bỏ qua khi con trỏ đang ở ô nhập (bảng đèn/tầng đầy input số) — không thì gõ "5" vào ô cao độ
+   * lại nhảy tab.
+   */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target;
+      if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
+
+      const stepDeg = e.shiftKey ? 15 : 5;
+      if (e.key === '[' || e.key === ']') {
+        const dir = e.key === ']' ? 1 : -1;
+        const cur = currentLighting().sun.azimuthDeg;
+        writeSun({ azimuthDeg: (((cur + dir * stepDeg) % 360) + 360) % 360 });
+        e.preventDefault();
+        return;
+      }
+      if (e.shiftKey && (e.key === 'N' || e.key === 'n')) {
+        addRoomLight();
+        setTab('den');
+        e.preventDefault();
+        return;
+      }
+      if (e.shiftKey && (e.key === 'T' || e.key === 't')) {
+        addLevelToDoc('Tầng mới');
+        e.preventDefault();
+        return;
+      }
+      const TAB_BY_KEY: Record<string, Command3DTab> = { '1': 'tao', '2': 'sua', '3': 'vatlieu', '4': 'camera', '5': 'den' };
+      const next = TAB_BY_KEY[e.key];
+      if (next) {
+        setTab(next);
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [addRoomLight]);
+
+
   const soKhoi = scene?.groups.length ?? 0;
   soKhoiRef.current = soKhoi;
   const coBanVe = doc.entities.length > 0;
@@ -201,9 +330,17 @@ export default function Render3DModeSkeleton() {
   // Lọc THẬT khỏi cảnh đưa vào Viewport3D theo tên group đang ẩn (state chia sẻ `useTree3DUi`,
   // xem trên) — không phải cờ trang trí. Không dùng useMemo riêng vì `hiddenGroupNames` đổi ít
   // (bấm tay), phép lọc rẻ, tính lại mỗi render cũng không đáng lo.
-  const visibleScene = !scene || hiddenGroupNames.size === 0
+  // VIỆC 1 — cộng thêm bộ lọc THEO TẦNG (`useLevelUi`, bật từ nút mắt trên dòng tiêu đề tầng ở
+  // `Object3DTree`). Hai bộ lọc ĐỘC LẬP và cùng chiều "ẩn": ẩn cả tầng không xoá dấu ẩn riêng của
+  // từng khối, bật lại tầng thì khối nào đang ẩn riêng vẫn ẩn (đúng cách Revit/AutoCAD hành xử).
+  const visibleScene = !scene || (hiddenGroupNames.size === 0 && hiddenLevels.size === 0)
     ? scene
-    : { ...scene, groups: scene.groups.filter((g) => !hiddenGroupNames.has(g.name)) };
+    : {
+        ...scene,
+        groups: scene.groups.filter(
+          (g) => !hiddenGroupNames.has(g.name) && !hiddenLevels.has(g.storey ?? UNASSIGNED_LEVEL),
+        ),
+      };
 
   // Chỉ group có entityId (hôm nay = tường, xem cảnh báo `cad-to-obj.ts`) mới đẩy tiếp thành
   // Viewport3D.selectedId — group khác chọn được để XEM thuộc tính (ở Object3DInspector) nhưng
@@ -277,6 +414,43 @@ export default function Render3DModeSkeleton() {
     { xong: daDatMayQuay, chu: 'Đặt máy quay' },
   ];
 
+  /**
+   * VIỆC 2 (S2 BUILD#1) — NGƯỜI DÙNG ĐÃ DUYỆT ở màn xem trước ⇒ giờ mới ghi vào `Doc`.
+   * Đây là điểm ghi DUY NHẤT của luồng cắt lớp; panel chỉ tính rồi hỏi (xem docstring
+   * `SectionExtractPanel`). K1 — ghi vào CHÍNH `Doc` đang mở, không có kho 3D riêng để đồng bộ.
+   *
+   * Layer: dùng `ensureLayerByName` SẴN CÓ của store (không đẻ cơ chế layer thứ hai). Tên do người
+   * dùng gõ ở panel ⇒ ánh xạ khoá kỹ thuật `S-CUT`/`S-VIEW`/`S-FAR` → id layer thật. Trùng tên với
+   * layer đang có thì DÙNG LẠI layer đó, không tạo bản sao.
+   */
+  const nhanMatCat = useCallback((p: SectionAcceptPayload) => {
+    const store = useCadStore.getState();
+    const idTheoKhoa: Record<string, string> = {};
+    // CHỈ tạo layer cho nhóm THỰC SỰ có nét được nhận — người dùng bỏ tick "nét xa", hoặc mặt cắt
+    // không có nét xa nào, thì đừng đẻ ra 1 layer rỗng nằm chật panel Lớp.
+    const dungKhoa = new Set(p.entities.map((e) => e.layer));
+    ([['cut', 0], ['view', 1], ['far', 2]] as const).forEach(([k, i]) => {
+      if (!dungKhoa.has(SECTION_LAYER_KEYS[k])) return;
+      const ten = p.layerNames[k].trim() || SECTION_LAYERS[i].name;
+      const id = store.ensureLayerByName(ten, SECTION_LAYERS[i].color, SECTION_LAYERS[i].lineType);
+      // bề dày nét không nằm trong chữ ký `ensureLayerByName` — vá ngay sau, chỉ khi lệch.
+      const dang = useCadStore.getState().doc.layers.find((l) => l.id === id);
+      if (dang && dang.lineweight !== SECTION_LAYERS[i].lineweight) {
+        useCadStore.getState().updateLayer(id, { lineweight: SECTION_LAYERS[i].lineweight });
+      }
+      idTheoKhoa[SECTION_LAYER_KEYS[k]] = id;
+    });
+    useCadStore.getState().addEntities(
+      p.entities.map((e) => ({ ...e, layer: idTheoKhoa[e.layer] ?? e.layer })),
+    );
+    useCadStore.getState().setStatus(
+      tr(
+        `${p.label} — đã nhận ${p.entities.length} nét vào bản vẽ. Mở chặng Thiết kế 2D để xem.`,
+        `${p.label} — ${p.entities.length} lines added to the drawing. Open the 2D Design stage to see them.`,
+      ),
+    );
+  }, [tr]);
+
   return (
     <div style={{ display: 'flex', width: '100%', height: '100%', minHeight: 0, background: 'var(--bg)' }}>
       <Command3DPanel
@@ -286,17 +460,50 @@ export default function Render3DModeSkeleton() {
         onTaoTuong={taoTuongMau}
         onTaoLanCan={taoLanCanMau}
         onPickMaterial={setMatDangCam}
+        scene={scene}
+        onNhanMatCat={nhanMatCat}
       />
 
-      <div ref={viewportWrapRef} style={{ position: 'relative', flex: 1, minWidth: 0, height: '100%' }}>
+      <div
+        ref={viewportWrapRef}
+        style={{ position: 'relative', flex: 1, minWidth: 0, height: '100%' }}
+        /* VIỆC 3.d — cử chỉ 3 ngón quét giờ nắng. Bắt ở đây (bọc NGOÀI canvas) chứ không bên
+           trong `Scene3DViewer`: file đó thuộc hạ tầng 3D dùng chung cho 4 nơi tiêu thụ, nhét cử
+           chỉ riêng của mode Vẽ 3D vào là bắt cả chỗ chụp ảnh/công trường chịu theo. */
+        onTouchStart={onViewportTouchStart}
+        onTouchMove={onViewportTouchMove}
+        onTouchEnd={onViewportTouchEnd}
+        onTouchCancel={onViewportTouchEnd}
+      >
         <Viewport3D
           scene={visibleScene ?? EMPTY_SCENE_3D}
           selectedId={viewportSelectedId}
           mode="massing"
           onPushPull={handlePushPull}
+          lightMarkers={lightMarkers}
+          onLightMove={handleLightMove}
           ground
           label={soKhoi > 0 ? 'Khối xám · chưa vật liệu' : 'Không gian trống'}
         >
+          {/* HUD giờ nắng — CHỈ hiện trong lúc 3 ngón đang quét (VIỆC 3.d). Nền đặc, không
+              backdrop-filter (G9: trần 4 tấm kính trên WebGL đã dùng hết cho toolbelt/nút Dựng
+              ảnh/ViewCube/Lightbox). */}
+          {sunScrubbing && (
+            <div
+              style={{
+                position: 'absolute', top: 18, left: '50%', transform: 'translateX(-50%)', zIndex: 7,
+                display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 999,
+                background: 'var(--panel)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-pop)',
+                pointerEvents: 'none',
+              }}
+            >
+              <Sun size={15} color={rig.sun.belowHorizon ? 'var(--t4)' : rig.sun.colorHex} />
+              <span style={{ fontSize: 15, lineHeight: 1.6, fontWeight: 600, color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>
+                {Math.round(currentLighting().sun.azimuthDeg)}° · {Math.round(currentLighting().sun.altitudeDeg)}°
+              </span>
+            </div>
+          )}
+
           {soKhoi === 0 && !welcomeHidden && (
             <div
               // pointer-events:none ⇒ overlay KHÔNG chặn orbit/pan; chỉ CARD bắt chuột (đường

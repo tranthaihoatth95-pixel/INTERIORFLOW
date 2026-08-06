@@ -125,12 +125,86 @@ trước khi:
 2. [ ] Trang "Third-party licenses" có đủ GPL-3 text + notices (nếu còn conveying).
 3. [ ] Quyết định dứt điểm về bản Electron (loại package / plugin user tự cài / tuân thủ đầy đủ).
 4. [ ] Quét transitive license sạch + có gate trong CI.
-5. [ ] **MỚI (§9)**: chốt 1 trong 3 hướng Pantone TCX trước khi hiển thị mã Pantone cho khách hàng
-   thật — hiện tại chỉ dùng nội bộ/dev là an toàn, RỦI RO nằm ở lúc bật tính năng cho user cuối.
+5. [x] **(§9) ĐÃ ĐÓNG 05/08**: bỏ hẳn bảng Pantone TCX 2310 mã; máy tra đổi sang nguồn cắm rời
+   (`lib/colors/`), app không kèm bảng màu của hãng nào. Việc CÒN LẠI: `git filter-repo` xoá
+   `pantone-tcx.json` khỏi lịch sử git + đối chiếu 11 link nguồn của `trend.ts` — xem §9.5.
 6. [ ] **MỚI (§10)**: KHÔNG nạp block CAD từ 7 nguồn cấm liệt kê ở §10 vào `lib/cad/furniture.ts`
    hay bất kỳ file thư viện block nào — kiểm bằng mắt mọi lần nhập block hàng loạt (C2a).
 
-## 9. Bảng Pantone TCX (`lib/gu/pantone-tcx.json`, F3b — 05/08) — nguồn CHƯA rõ giấy phép
+## 9. Bảng màu — ĐÃ BỎ BẢNG TRA, GIỮ THAM CHIẾU *(cập nhật 05/08 sau NC-16; bản cũ ở cuối mục)*
+
+> **Trạng thái: ĐÓNG.** Không còn bảng màu nào nhúng trong sản phẩm. Mục này giữ lại vì nó là
+> tiền lệ dùng cho MỌI dữ liệu biên soạn về sau (thư viện block, bảng vật liệu, danh mục NCC).
+
+### 9.1 Đã làm gì (05/08)
+
+| | Trước | Sau |
+|---|---|---|
+| Dữ liệu | `lib/gu/pantone-tcx.json` — **2310 mã** nhúng trong bundle | **XOÁ khỏi git.** App không kèm bảng của ai |
+| Hàm tra | `nearestPantone(hex)` — kho gắn cứng bên trong | `nearestColor(hex, source)` / `nearestColors(...)` — **nguồn cắm rời, nạp lúc chạy** |
+| Nguồn màu | (không có lựa chọn) | `lib/colors/` — CSV/Excel studio kéo vào · dán clipboard · pull Larkbase của studio |
+| Thước đo | ΔE\*76 | **ΔE00 (CIEDE2000)** — ΔE76 sai lệch cảm nhận ở vùng lam/lục |
+| Trend | (không có) | `lib/colors/trend.ts` — **vài mã/năm, mỗi mục BẮT BUỘC có link nguồn** |
+
+Hướng (c) của bản cũ ("đổi sang bảng tên trung tính ~2000 tên") **cũng bị loại**: tự đặt lại 2000
+tên vẫn là dựng một bộ sưu tập quy mô lớn, chỉ né được tên thương hiệu chứ không né được câu hỏi
+"bộ này lấy hình dạng từ đâu ra". Hướng đã chọn là **không giữ bộ sưu tập nào cả**.
+
+### 9.2 VÌ SAO ranh giới nằm ở QUY MÔ BỘ SƯU TẬP, không nằm ở việc hiển thị hay không
+
+Đây là điểm hay bị hiểu ngược ("chỉ cần đừng hiện tên hãng ra là xong") — không phải vậy:
+
+1. **Cái được bảo hộ là BỘ, không phải từng con số.** Một mã hex `#4a5d4e` là một sự kiện, không
+   ai độc quyền được. Nhưng *tuyển chọn và sắp xếp* vài nghìn màu thành một hệ — chọn màu nào,
+   bỏ màu nào, đặt cạnh nhau thế nào — là lao động biên soạn, và đó chính là lập luận
+   **"selection and arrangement"** mà Pantone dùng, và **Jotun dùng nguyên văn** (NC-16).
+2. **EU/EEA còn có thêm một tầng nữa: sui generis database right** (Directive 96/9/EC). Quyền này
+   tồn tại **ĐỘC LẬP với bản quyền** — nó bảo vệ *khoản đầu tư* để xây CSDL, nên kể cả khi lập
+   luận "selection and arrangement" thất bại thì việc rút **"phần đáng kể"** của bộ vẫn bị chặn.
+   **Dulux (AkzoNobel) và Jotun đều là công ty EU/EEA** ⇒ dính tầng này.
+3. **Dulux còn cấm thẳng bằng chữ**: điều khoản của họ **gọi đích danh việc scraping cho mục đích
+   thương mại** ⇒ NC-16 xếp Dulux là **rủi ro cao nhất** trong 6 hãng đã tra.
+4. Hệ quả logic: cùng một hành vi "hiển thị mã màu" có thể **hợp lệ ở quy mô nhỏ và vi phạm ở quy
+   mô lớn**. Nhắc "Pantone chọn Peach Fuzz làm màu của năm 2024", có dẫn nguồn, là **tham chiếu
+   biên tập** — báo chí làm mỗi ngày, không thay thế được sản phẩm của họ. Chép 2310 mã vào phần
+   mềm bán ra là **thay thế** chính thứ họ bán. Ranh giới là **QUY MÔ**, không phải màn hình.
+5. Vì vậy `lib/colors/trend.ts` có **trần cứng 1 mục/năm + bắt buộc `source`**, và có **test chặn**
+   (`registry.test.ts` §5) — luật viết trong comment thì người ta đọc xong quên, luật viết trong
+   test thì người ta không vượt qua được.
+
+### 9.3 Vì sao KHÔNG nhúng hãng nào, kể cả hãng "có vẻ dễ tính"
+
+Không tra được điều khoản của **mọi** hãng sơn trên thế giới, và điều khoản đổi bất cứ lúc nào mà
+không báo. Nhúng một hãng là mở tiền lệ cho phiên sau nhúng hãng thứ hai. Kiến trúc cắm rời khiến
+câu trả lời cho MỌI hãng giống nhau: *IF là cái máy tra, kho là của bạn.*
+
+### 9.4 Có thư yêu cầu gỡ thì làm gì — **đổi config, KHÔNG build lại app**
+
+Dữ liệu nằm ở máy từng studio nên "gỡ" không thể là chuyện phát hành bản mới. Ba mức, tác dụng ngay:
+
+| Mức | Cách | Ai làm |
+|---|---|---|
+| Máy lẻ | Màn `/colors` → **Chặn theo hãng** (gõ tên hãng) hoặc **Tắt** một bảng | studio, ngay trong IF |
+| Phát hành | Biến môi trường `NEXT_PUBLIC_IF_BLOCKED_COLOR_BRANDS` / `NEXT_PUBLIC_IF_DISABLED_COLOR_SOURCES` | vận hành, đổi env rồi khởi động lại |
+| Dứt điểm | Xoá tệp `colors.json` trong thư mục dự án / xoá nguồn ở tầng studio | studio |
+
+Env và cấu hình máy **HỢP với nhau, không ghi đè** (`mergeRegistryConfig`) ⇒ thứ đã chặn ở mức
+phát hành thì máy lẻ **không tự mở lại được**.
+
+### 9.5 Còn phải làm trước khi phát hành
+
+- [ ] `lib/colors/trend.ts`: **mở lại đủ 11 link nguồn để đối chiếu tên/mã/hex** — phiên code
+      05/08 soạn theo hiểu biết sẵn có, **chưa mở link nào** (sandbox không ra ngoài được).
+- [ ] Bổ sung mục **năm 2026** (đang khai ở `TREND_MISSING_YEARS`, cố ý để trống chứ không đoán).
+- [ ] `git filter-repo` xoá `lib/gu/pantone-tcx.json` khỏi **LỊCH SỬ** git — xoá ở HEAD chưa đủ,
+      tệp vẫn nằm trong các commit cũ (gộp chung một lần với việc dọn `/detech` + `__dwg-cancel-
+      test.dwg` đã ghi ở `STATUS.md`).
+- [ ] `docs/AUDIT-BRAND-PII.md`: thêm dòng "không nhúng bảng màu hãng nào" vào danh sách kiểm.
+
+<details>
+<summary>Bản cũ (F3b, 05/08 sáng) — giữ để tra lịch sử quyết định</summary>
+
+### (lưu trữ) 9. Bảng Pantone TCX (`lib/gu/pantone-tcx.json`, F3b — 05/08) — nguồn CHƯA rõ giấy phép
 
 **Việc**: `lib/gu/pantone.ts` `nearestPantone(hex)` tra mã Pantone TCX gần nhất theo ΔE*76 (LAB),
 dùng cho cột "Pantone" ở màn Moodboard (F3a). Dữ liệu ở `lib/gu/pantone-tcx.json` — **2310 mã**
@@ -162,6 +236,8 @@ giống cách §8 xử lý GPL):
 (c) Đổi hướng SẢN PHẨM: bỏ nhãn "Pantone", dùng bảng tên màu TỰ ĐẶT (giữ nguyên kiến trúc
     `nearestPantone`, chỉ đổi `pantone-tcx.json` sang bảng tên trung tính) — an toàn tuyệt đối,
     tốn công đặt lại ~2000 tên.
+
+</details>
 
 ## 10. Thư viện block CAD (C2a mở rộng `furniture.ts`) — 7 NGUỒN CẤM, đã đọc điều khoản gốc (05/08)
 

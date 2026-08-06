@@ -22,8 +22,9 @@
  */
 
 import type { Doc, Entity, Pt, RoomKind, WallKind } from '../model';
-import { findHatchBoundary, polygonArea, pointInPolygon } from '../hatch';
+import { buildHatchFaceIndex, pickHatchFace, collectBoundarySegments, polygonArea, pointInPolygon } from '../hatch';
 import type { StandardRule, Severity } from './registry';
+import { resolveRulesAsOf } from './registry';
 import { BLOCK_MAP } from '../furniture';
 import { effectiveBlockSize, WALL_LAYER_ID } from '../shape-interactions';
 
@@ -36,6 +37,14 @@ export interface Violation {
   verified: boolean;
   /** Vị trí để click-zoom tới (world mm) — undefined nếu không gắn được với 1 vị trí cụ thể. */
   at?: Pt;
+  /**
+   * T2 (2026-08-05) — lưu ý về MỐC THỜI GIAN của bộ quy chuẩn đã dùng để sinh vi phạm này:
+   * hoặc "dự án chưa khai ngày mốc, đang dùng bộ mới nhất", hoặc "đang áp bản cũ theo điều khoản
+   * chuyển tiếp". undefined = không có gì phải lưu ý (bộ rule không có chiều thời gian).
+   * Panel Kiểm chuẩn nên hiện dòng này cạnh `message` — người làm hồ sơ cần biết mình đang bị
+   * kiểm bằng bản quy chuẩn nào. Tuỳ chọn ⇒ code đọc Violation cũ không vỡ.
+   */
+  asOfNote?: string;
 }
 
 /** Xấp xỉ bề rộng NHỎ NHẤT của 1 đa giác (chiếu lên pháp tuyến từng cạnh, lấy nhỏ nhất) — đủ
@@ -109,13 +118,20 @@ function wallLikeDoc(doc: Doc): Doc {
 export function findRoomLabels(doc: Doc): RoomInfo[] {
   const texts = doc.entities.filter((e): e is Extract<Entity, { type: 'text' }> => e.type === 'text');
   const boundaryDoc = wallLikeDoc(doc);
+  // 05/08 (PHU) — DỰNG PHÂN HOẠCH MẶT PHẲNG MỘT LẦN cho cả vòng lặp. Bản cũ gọi
+  // `findHatchBoundary(boundaryDoc, t.at)` mỗi nhãn ⇒ mỗi nhãn dựng lại toàn bộ phân hoạch của
+  // CÙNG một `boundaryDoc`. Đây chính là lý do `lib/ai/doc-context.ts` phải đặt trần
+  // `MAX_ROOMS_FOR_AREA` — "bản vẽ quá nhiều nhãn thì bỏ đo diện tích" (`doc-context.ts:35,60`,
+  // test `lib/ai/vitals-context.test.ts:143`) — né triệu chứng chứ không chữa gốc.
+  // Số đo + cách vá: docstring `HatchFaceIndex` (`lib/cad/hatch.ts`).
+  const faceIndex = buildHatchFaceIndex(collectBoundarySegments(boundaryDoc));
   const rooms: RoomInfo[] = [];
   for (const t of texts) {
     const s = t.text.trim();
     if (s.length < 2) continue; // loại số bong bóng trục "1".."9"/"A".."Z" đơn ký tự
     if (/M2|M²/i.test(s)) continue; // loại text diện tích "12.2 m²"
     if (!ROOM_NAME_RE.test(s)) continue;
-    const poly = findHatchBoundary(boundaryDoc, t.at);
+    const poly = pickHatchFace(faceIndex, t.at);
     const kind = t.roomType ?? classifyRoom(s);
     rooms.push({
       name: s,
@@ -219,10 +235,28 @@ function mkViolation(r: StandardRule, message: string, at?: Pt): Violation {
 }
 
 /** Chạy toàn bộ rule đo được trên `doc`. Rule không có cách đo tự động (chưa đủ dữ liệu hình
- * học, VD chiều cao cửa) thì KHÔNG sinh violation — không đoán mò, không báo sai. */
-export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
+ * học, VD chiều cao cửa) thì KHÔNG sinh violation — không đoán mò, không báo sai.
+ *
+ * T2 (2026-08-05) — `opts.asOfDate` (`'YYYY-MM-DD'`) là NGÀY MỐC CỦA DỰ ÁN (ngày thẩm định/phê
+ * duyệt), dùng để chọn đúng bộ quy chuẩn theo điều khoản chuyển tiếp — xem `resolveRulesAsOf()`
+ * ở registry.ts. Không truyền ⇒ dùng bộ mới nhất và gắn `asOfNote` vào mọi violation để người
+ * dùng biết. ⚠️ TUYỆT ĐỐI không lấy ngày hệ thống làm mặc định: hồ sơ cũ sẽ bị kiểm bằng bộ số
+ * mới, sai âm thầm.
+ * 🔴 CHƯA NỐI ĐƯỢC TỚI DỮ LIỆU THẬT: `Doc` (model.ts) hiện KHÔNG có chỗ lưu ngày thẩm định, và
+ * phiên S6 cố ý KHÔNG tự thêm field vào `Doc` (luật K4 — chỉ thêm field khi đã có nơi tiêu thụ
+ * và đã chốt hình dạng dữ liệu). Vì vậy tham số này hiện chỉ nhận ngày do CALLER truyền vào;
+ * chưa UI nào truyền. Cần Hoà chốt ngày thẩm định sống ở đâu (Doc? metadata dự án?) rồi mới nối. */
+export function checkStandards(doc: Doc, rules: StandardRule[], opts?: { asOfDate?: string | null }): Violation[] {
   const violations: Violation[] = [];
-  const byId = (id: string) => rules.find((r) => r.id === id);
+  const resolved = resolveRulesAsOf(rules, opts?.asOfDate);
+  // Tra theo id NGHIỆP VỤ: id viết thẳng trong code bên dưới là "tên phép kiểm", còn trị số có
+  // thể đã sang phiên bản mới mang id khác ⇒ rơi xuống bảng aliasByOldId (xem registry.ts).
+  const byId = (id: string) => {
+    const direct = resolved.rules.find((r) => r.id === id);
+    if (direct) return direct;
+    const alias = resolved.aliasByOldId[id];
+    return alias ? resolved.rules.find((r) => r.id === alias) : undefined;
+  };
   const rooms = findRoomLabels(doc);
 
   for (const room of rooms) {
@@ -366,6 +400,8 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
   const rOutletKitchen = byId('vn-electrical-outlet-density-kitchen');
   if (rOutletRes || rOutletKitchen) {
     const boundaryDoc = wallLikeDoc(doc);
+    // Cùng lý do như trong `findRoomLabels` — dựng 1 lần, hỏi N lần (05/08, PHU).
+    const outletFaceIndex = buildHatchFaceIndex(collectBoundarySegments(boundaryDoc));
     const outletEntities = doc.entities.filter((e) => e.type === 'block' && e.block === 'outlet');
     for (const room of rooms) {
       if (room.areaM2 === null) continue;
@@ -373,7 +409,7 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
       if (kind !== 'bedroom' && kind !== 'living' && kind !== 'kitchen') continue;
       const rule = kind === 'kitchen' ? rOutletKitchen : rOutletRes;
       if (!rule) continue;
-      const poly = findHatchBoundary(boundaryDoc, room.at);
+      const poly = pickHatchFace(outletFaceIndex, room.at);
       if (!poly) continue; // không dò được biên — bỏ qua, không đoán mò (dù hiếm khi xảy ra ở đây)
       const count = outletEntities.filter((e) => e.type === 'block' && pointInPolygon(e.at, poly)).length;
       if (count < rule.params.minOutlets) {
@@ -396,6 +432,15 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
       if (ratio < rLw.params.minRatio) {
         violations.push(mkViolation(rLw, `Tỉ lệ nét đậm/mảnh hiện tại ≈${ratio.toFixed(1)}:1 < ${rLw.params.minRatio}:1 khuyến nghị (nét các layer quá đồng đều, khó phân biệt tường/kích thước khi in).`));
       }
+    }
+  }
+
+  // T2 — gắn lưu ý mốc thời gian (nếu có) vào từng violation. Làm 1 chỗ duy nhất ở đây thay vì
+  // sửa ~40 lời gọi mkViolation: ghi chú thuộc về BỘ RULE đã chọn, không thuộc phép đo hình học.
+  if (resolved.note || Object.keys(resolved.noteByRuleId).length > 0) {
+    for (const v of violations) {
+      const n = resolved.noteByRuleId[v.ruleId] ?? resolved.note;
+      if (n) v.asOfNote = n;
     }
   }
 
@@ -447,15 +492,23 @@ export function checkStandards(doc: Doc, rules: StandardRule[]): Violation[] {
  * CHƯA NỐI — registry-only, không có entity 2D tương ứng (D1.7 ramp/handrail/bãi đỗ xe NKT,
  * thêm 2026-07-16; + D1.7 cũ + nhóm chiếu sáng tham khảo):
  *   - vn-access-ramp-slope-max / vn-access-ramp-run-length-max / vn-access-ramp-clear-width-min /
- *     vn-access-ramp-turning-space (ramp/dốc thoải QCVN 10:2024/BXD): model 2D InteriorFlow không
- *     có entity ramp/dốc thoải — app thiết kế nội thất căn hộ, không có khái niệm ramp ngoài trời
- *     trong scope. Registry-only, không nối đo hình học.
+ *     vn-access-ramp-turning-space (ramp/dốc thoải QCVN 10:2024/BXD): model 2D InteriorFlow CHƯA
+ *     có entity ramp/dốc thoải (độ dốc là dữ liệu cao độ, top-view không lưu) — NỢ KỸ THUẬT, mở
+ *     lại được khi model có ramp. Registry-only, không nối đo hình học.
+ *     ⚠️ Sửa lý do 2026-08-05 (S6/T4): lý do cũ ghi "app thiết kế nội thất căn hộ, không có khái
+ *     niệm ramp ngoài trời TRONG SCOPE" — SAI phạm vi sản phẩm. IF phục vụ dự án MỌI quy mô
+ *     (khách sạn/văn phòng/retail đều có ram), xem chính comment "MỞ RỘNG scope ra ngoài
+ *     residential-only" ở mục intl-occupant-load-business-general phía trên cùng file này. Nhãn
+ *     "ngoài scope" đóng cửa vĩnh viễn một việc thực chất chỉ là thiếu entity.
  *   - vn-access-handrail-height / vn-access-handrail-extension / vn-access-handrail-wall-clearance
  *     (tay vịn QCVN 10:2024/BXD): không có entity tay vịn trong model (đây là chi tiết mặt đứng/
  *     elevation, model 2D chỉ lưu top-view). Registry-only, không nối đo hình học.
  *   - vn-access-parking-min-spaces-51-100 / -101-150 / -over-200 / vn-access-parking-side-clearance
- *     (bãi đỗ xe NKT QCVN 10:2024/BXD, verified=false — chỉ 1 nguồn tóm tắt): InteriorFlow không
- *     có khái niệm bãi đỗ xe ngoài trời trong scope. Registry-only, không nối đo hình học.
+ *     (bãi đỗ xe NKT QCVN 10:2024/BXD, verified=false — chỉ 1 nguồn tóm tắt): model 2D CHƯA có
+ *     entity chỗ đỗ xe (cần khái niệm "chỗ đỗ" đếm được + biên bãi để đo, chưa có cái nào) —
+ *     NỢ KỸ THUẬT, mở lại được. Registry-only, không nối đo hình học.
+ *     ⚠️ Sửa lý do 2026-08-05 (S6/T4): lý do cũ ghi "không có khái niệm bãi đỗ xe ngoài trời
+ *     TRONG SCOPE" — SAI phạm vi sản phẩm, cùng lỗi với mục ramp phía trên.
  *   - Neufert hospitality (D1.4) / Neufert office (D1.5) / QCVN 06 occupant load VN: CỐ TÌNH BỎ
  *     QUA, không thêm rule — xác nhận không đủ nguồn tin cậy độc lập trong lần rà soát 2026-07-16,
  *     không tự bịa số liệu.

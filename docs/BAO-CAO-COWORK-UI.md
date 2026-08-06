@@ -186,3 +186,141 @@ Bảng **file → dòng → chữ sai → chữ đúng** đã ghi vào `docs/moc
 - Mọi con số từ `grep -o | wc -l` / `grep -c` chạy trên file thật; token đối chiếu bằng cách grep thẳng `app/globals.css` (`--mat-panel:.68` dòng 93 · `--mat-card:.82` dòng 94 · `--accent-warm:#c79a63` dòng 26 · `--row:28px` dòng 61), không tin CSS chép trong mock.
 - **CHƯA VERIFY:** hiển thị thật 2 theme/hover (chặn bởi `support.js`) · tỉ số tương phản chữ trên kính (các số 62%/68%/72%/78% là **độ đục nền đọc từ CSS**, không phải tỉ số tương phản đo được) · nội dung `du-an`/`cai-dat`/`anh-dai-dien` (không có ruột).
 - KHÔNG chạy git. `docs/AUDIT-MOCK-MANPHU-2026-08-03.md` + 2 file docs sửa đang untracked/dirty — nhờ **CHINH** gom commit (hàng đợi 5b).
+
+---
+
+# S5 · BUILD #4 — KHUNG CHECKPOINT DUYỆT + RÀ NÚT GIẢ (05/08/2026)
+
+## 1 · Thành phần Checkpoint dùng chung — S2/S3/S4 GẮN VÀO ĐÂY
+
+**File:** `components/studio/Checkpoint.tsx` (UI) + `components/studio/checkpoint-core.ts` (phần thuần)
+**Mock hợp đồng:** `docs/mocks/mock-checkpoint-duyet.html` (PASS `check:mocks`, đủ 2 theme)
+**Test:** `components/studio/checkpoint-core.test.ts` — **34/34 pass**
+
+```tsx
+import { Checkpoint, toggleItem, type CheckpointItem } from '@/components/studio/Checkpoint';
+
+<Checkpoint
+  phase={phase}                    // 'running' | 'preview' | 'idle'
+  title="Dựng tường từ mô tả"
+  // ① ĐANG LÀM
+  progress={0.62}                  // null = CHƯA đo được ⇒ hiện số giây, KHÔNG bịa %
+  statusLine="Đang dựng tường trục B…"
+  onCancel={abort}
+  // ② XEM TRƯỚC — sản phẩm THẬT (ReactNode, cố tình không nhận string)
+  preview={<PlanThumb doc={draftDoc} />}
+  items={items} onItemsChange={setItems}
+  params={[{ label: 'Tỉ lệ', value: '1:50' }]}
+  seed={84120}                     // BẮT BUỘC — null = "không dùng seed", UI nói thẳng
+  undoLabel="bản vẽ trước khi chạy AI (12 tường)"   // BẮT BUỘC
+  // ③ QUYẾT
+  onAccept={(ids) => commitOnly(ids)}   // ⛔ CHỈ ghi `ids`, không ghi cả gói
+  onRetry={runAgain}                    // giữ NGUYÊN tham số cũ
+  onEditParams={() => setPanelOpen(true)}
+/>
+```
+
+**Vì sao `seed` và `undoLabel` KHÔNG optional:** để quên là **hỏng `tsc`**, không phải "quên thì thôi".
+Đây là cách ép KS2/KS4 chứ không nhắc suông.
+
+**KS1–KS5 (§0e) cài vào kiểu dữ liệu:**
+
+| KS | Cài ở đâu |
+|---|---|
+| KS1 dạng trung gian | `preview: ReactNode` + `params[]` — nhận `ReactNode` để không ai truyền câu *"đã tạo xong 12 đối tượng"* |
+| KS2 cùng vào → cùng ra | `seed` bắt buộc; `formatSeed(null)` in thẳng *"chạy lại có thể ra khác"* |
+| KS3 duyệt theo phần | `items[].selected` + `acceptGate()` chặn Nhận khi chưa tick |
+| KS4 lùi về đâu | `undoLabel` bắt buộc, hiện ngay trên hàng nút |
+| KS5 vì sao | `items[].why` → tooltip ⓘ; không có căn cứ thì **nói là không có**, không giấu |
+
+**Chống đường tắt:** `onAccept` trả **đúng `selectedIds`**. Nơi gọi phải ghi theo danh sách đó —
+không được cầm sẵn kết quả rồi ghi tất. `acceptGate()` chặn Nhận-khi-rỗng/chưa-tick kèm lý do.
+
+**Phụ thuộc mới thêm vào `app/globals.css`:** `.if-indeterminate` (vạch tiến độ vô định) + nhánh
+`prefers-reduced-motion`. Spinner **tái dùng `.pe-spin` có sẵn** (luật L6), không tạo keyframes trùng.
+
+## 2 · Rà nút giả — **KHÔNG TÌM THẤY NÚT GIẢ NÀO**
+
+Lệnh tái lập (AST-thô, quét `components/**` + `app/**`): xem `docs/CHECKLIST-TONG.md` mục *Sổ ô trống*.
+
+| Kiểm | Kết quả |
+|---|---|
+| `onClick={() => {}}` / noop trong `components/studio/` | **0** |
+| `<button>` thiếu CẢ `onClick` lẫn `disabled` trong `components/studio/` | **0** |
+| Ô `disabled` TĨNH (placeholder §9) toàn app | **18** — 15 có lý do tại chỗ |
+| `disabled` TĨNH thiếu lý do | **3 — cả 3 là DƯƠNG TÍNH GIẢ** |
+
+3 "thiếu lý do" (`cad/CadCanvas.tsx:3437` · `form/shared.tsx:198` · `photo-editor/PhotoEditor.tsx:445`)
+đều là **component nguyên thuỷ nhận `disabled` làm prop truyền qua** — lý do thuộc nơi GỌI, không
+thuộc primitive. Không sửa gì.
+
+> ⚠️ **Hai lỗi tôi tự mắc khi quét, đã sửa trước khi báo** (mục 6).
+
+## 3 · Mock — 🔴 phát hiện mới: 4 file RỖNG, 2 đã vào git
+
+`Canvas-9 · Canvas-10 · Canvas-13 · Canvas-15` (`.dc.html`) — cả 4 đúng **206 byte**, ruột
+`<x-dc></x-dc>` **trống trơn**. **Canvas-9/10 ĐÃ commit vào repo**; 13/15 còn untracked.
+
+- ⛔ **KHÔNG sửa cho qua cửa kiểm.** Thêm `data-theme` vào file rỗng thì nó PASS mà vẫn không có
+  ruột — nguy hiểm hơn để ĐỎ, vì bảng sẽ báo "đã có mock".
+- Đề xuất: **xoá cả 4** + thêm **luật ĐỎ ⑥ MOCK-RỖNG** vào `scripts/check-mocks.mjs`.
+  S5 **không tự sửa cửa kiểm** (ngoài mảng + brief cấm) — cần TỔNG duyệt.
+- 5 mock brief nêu (`Cài đặt`·`Chế độ Chuyên`·`Dự án`·`Nút tổng`·`Thư viện`) **đều PASS sẵn**, không phải sửa.
+
+`check:mocks` sau phiên: **66 file · 43 ĐỎ · 753 vi phạm** — y hệt trước phiên, **cộng 1 file mới của
+tôi và file đó PASS**. 43 ĐỎ là nợ cũ đã ghi ở audit 03/08 phía trên (gốc: `support.js` không tồn tại).
+
+## 4 · CHECKLIST-TONG
+
+Append mục **"SỔ Ô TRỐNG (`disabled` kèm lý do)"** + changelog. **179 → 222 dòng** (+43).
+Bảng: màn hình · ô nào · lý do chưa có · phiên fill.
+
+## 5 · Cửa kiểm
+
+| Cửa | Kết quả |
+|---|---|
+| `npx tsc --noEmit -p .` | **sạch phần S5** — 0 lỗi ở mọi file tôi đụng. ⚠️ Toàn repo còn **đúng 1 lỗi KHÔNG PHẢI của tôi**: `__probe-dxf.ts(16,15) TS2339 Property 'doc' does not exist on type 'Doc'` — file scratch **untracked**, mtime 05/08 21:34, của phiên khác đang làm DXF (S1). Loại file đó ra thì `tsc` **rỗng hoàn toàn**. Không đụng vào (ngoài mảng + luật hai-phiên-chung-git) |
+| `checkpoint-core.test.ts` | **34/34 pass** |
+| `npm run check:mocks` | mock mới **PASS**; tổng số ĐỎ **không tăng** |
+| Ảnh 2 theme | `docs/mocks/mock-checkpoint-duyet.html` — chụp cả tối+sáng, chữ Việt đủ dấu, ô mờ hiện đúng lý do |
+
+## 6 · LỖI TÔI MẮC TRONG PHIÊN (bắt buộc ghi)
+
+1. **Bộ quét nút giả sai 2 lần, suýt báo cáo số bịa.**
+   - Lần 1: regex bắt luôn class Tailwind `disabled:opacity-40` ⇒ đếm **47 ô** và **30 "thiếu lý do"**.
+   - Lần 2: cửa sổ tìm lý do quá hẹp + không hiểu `label={tr('vi','en')}` ⇒ báo nhầm cả
+     `Checkpoint.tsx:289` (chính tôi vừa viết, có Tooltip) là "chưa có lý do".
+   - Sửa: loại `className=`, đòi `disabled` đứng một mình (không theo sau `:` hoặc `=`), rồi **đọc tay
+     từng ca còn lại**. Số đúng: **18 / 15 / 0**. Bài học: kết quả grep là **phân loại sơ bộ**, không
+     phải kết luận — ca cuối phải đọc mắt.
+2. **Import sai kiểu export:** viết `import { Tooltip }` trong khi `components/ui/Tooltip.tsx` là
+   **default export**. `tsc` bắt được, đã sửa.
+3. **Suýt dựng trùng tài sản:** định thêm keyframes spinner `.if-spin` mới, grep ra `.pe-spin`
+   (`globals.css:371`) đã làm đúng việc đó ⇒ tái dùng (luật L6).
+4. **Regex trích lý do gây catastrophic backtracking**, treo 2 phút phải kill. Bỏ hẳn hướng tự động,
+   chuyển sang đọc tay — vì thế vài ô trong sổ ghi *"lý do có tại chỗ, xem file:dòng"* thay vì chép
+   nguyên câu. **Chưa trích đủ chữ lý do cho 7 ô** — ghi rõ, không giả vờ đã gom đủ.
+
+## 7 · N7 — chỗ brief lệch với code
+
+| Brief nói | Thực tế |
+|---|---|
+| "`docs/mocks/` hiện có **5** file HTML untracked" | **10** file untracked (thêm `2D Kỹ thuật`·`Bảng nút`·`Canvas-13`·`Canvas-15`·`Ảnh đại diện`) |
+| Mẫu đúng ở `Command3DPanel.tsx:125` và `:238` | Docstring ở **:123-125**, nút `disabled` thật ở **:236-244**. (§9 trong `00-BAT-DAU-DOC-DAY.md` ghi `:113,139` — **đã lỗi thời**, nên sửa) |
+| "dựng một thành phần checkpoint … ba trạng thái" | Đúng là **chưa có** (grep `Checkpoint` toàn repo = chỉ `lib/ai/providers/sd.ts`, nghĩa khác: checkpoint của model SD). **Nhưng** §0e KS1–KS5 trong `00-BAT-DAU-DOC-DAY.md` đã đặc tả sẵn yêu cầu này — tôi dựng theo KS1–KS5 chứ không tự nghĩ 3 trạng thái mới. Precedent gần nhất đã có: cặp Nhận/Bỏ + "Làm lại" ở `present-editor/LayoutShelf.tsx:226,368` |
+
+## 8 · CHƯA LÀM — nói thẳng
+
+- **Chưa gắn Checkpoint vào flow nào.** S5 dựng khuôn; S2/S3/S4 cắm. Vì vậy **chưa chứng minh được**
+  luật "không flow nào ghi thẳng vào `Doc`" — mới **tạo điều kiện** để giữ luật, chưa **cưỡng chế** được.
+  Muốn cưỡng chế thật thì cần chặn ở tầng ghi `Doc`, nằm ngoài mảng S5.
+- **Chưa port mock↔code parity** (VIỆC 3 ý 3) cho 5 mock PASS — hết ngân sách phiên, và 4/5 mock đó
+  thuộc màn của S2/S4.
+- **Chưa verify Checkpoint trong app thật** (chưa nơi nào mount). Ảnh 2 theme là từ **mock hợp đồng**,
+  không phải từ app đang chạy — nói rõ để không ai hiểu nhầm.
+- **V6: KHÔNG commit.** Toàn bộ nằm ở working tree, Hoà commit.
+
+**File S5 đụng:** `components/studio/Checkpoint.tsx` (mới) · `components/studio/checkpoint-core.ts` (mới) ·
+`components/studio/checkpoint-core.test.ts` (mới) · `docs/mocks/mock-checkpoint-duyet.html` (mới) ·
+`app/globals.css` (append 29 dòng) · `docs/CHECKLIST-TONG.md` (append) · `docs/BAO-CAO-COWORK-UI.md` (append).
+**Không đụng** file nào của S1/S2/S3/S4.

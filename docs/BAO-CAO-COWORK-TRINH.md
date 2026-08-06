@@ -187,3 +187,306 @@ nên **treo chờ Hoà/TỔNG**, không tự quyết (§4a).
   phải kết quả đã đo.
 - **Chờ người khác:** PHU (mini-DSL B11 · 2 điểm Video §8) · TỔNG/Hoà (2 câu §E phiếu BOQ + 3 câu §5 spec ống
   kính) · G4 nhận phiếu BOQ · CHINH commit gộp docs (§3-5b sổ tổng — phiên Cowork không chạy git).
+
+---
+
+# 05/08/2026 — PHIÊN S4 · BUILD #3: CHẾ ĐỘ TRÌNH BÀY CHO MẶT BẰNG
+
+> Mặt bằng kỹ thuật và mặt bằng cho khách xem là **cùng một `Doc`, hai cách hiển thị**.
+> Phiên này làm cái ống kính thứ hai. **V6 — KHÔNG COMMIT.**
+
+## 1 · Đã làm
+
+| Việc | File | Trạng thái |
+|---|---|---|
+| **1** Công thức mặt bằng trình bày (`B1`/`B2`) | `lib/cad/plan-present.ts` (MỚI, 470 dòng) | ✅ chạy thật trên app |
+| **2** Leader line ISO 128-22 | `lib/cad/plan-leader.ts` (MỚI, 300 dòng) | ✅ chạy thật, cắm Checkpoint S5 |
+| **3** Phân lớp độ đậm theo chiều sâu | `lib/cad/plan-depth.ts` (MỚI, 190 dòng) | 🟡 dữ liệu xong, nút `disabled` kèm lý do (chờ S2) |
+| **4** §9 vẽ cả phần chưa có | `components/cad/PlanPresentPanel.tsx` (MỚI) | ✅ 4 ô mờ, mỗi ô 1 lý do RIÊNG |
+
+Nối dây: `components/cad/plan-present-store.ts` (MỚI) · `LeaderPreview.tsx` (MỚI) ·
+`CadCanvas.tsx` (+2 chỗ) · `CadEditor.tsx` (+4 chỗ: import · state · nút toolbar · mount panel).
+
+**Không đụng** `lib/cad/dxf*` · `dwg*` · `hatch.ts` · `render.ts` · `store.ts` · `model.ts` ·
+`lib/three/*` · `workstation-clusters.ts` · `block-library.ts` · `public/cad-library/**` ·
+`components/studio/*` · `lib/present-editor/*` · `components/present*`.
+
+## 2 · Ảnh chụp — cùng một mặt bằng, hai ống kính
+
+Cùng bản vẽ demo (căn hộ mẫu HƯ CẤU của app, 128 đối tượng), cùng khung nhìn, chỉ khác công tắc:
+
+**Chế độ kỹ thuật** — nét trên nền tối, đồ đạc màu layer, không nền sàn, không cây/người/thảm.
+**Chế độ trình bày** — nền sàn xám rất nhạt · tường/lõi đen đặc · cây xanh là điểm màu duy nhất ·
+người nhìn từ trên · thảm định vùng nét đứt ôm cụm bàn ăn · đường bao hữu cơ.
+
+Tái lập đúng 4 bước: `127.0.0.1:3000/cad-editor` → **Bắt đầu ▸ Mở bản demo** → **Trình bày** →
+bấm công tắc **Chế độ trình bày**.
+
+⚠️ **KHÔNG kèm file PNG vào `docs/`** — đợt dọn 01/08 đã gỡ 21 ảnh (8,9 MB) khỏi `docs/` và chốt
+"gỡ ảnh, giữ report.md". Ảnh nằm trong transcript phiên. Nếu Hoà muốn có ảnh trong repo thì cần
+chốt lại chỗ chứa (đề xuất: ngoài repo, cùng chỗ `~/Downloads/interiorflow-reference/`).
+
+## 3 · Bằng chứng KHÔNG nhân đôi `Doc` (K1)
+
+```
+grep -rnE "sync[A-Z][a-zA-Z]*To[A-Z]" --include=*.ts --include=*.tsx lib components app
+→ 1 dòng DUY NHẤT: lib/present-editor/project-doc.ts:5 — là COMMENT liệt kê thứ BỊ CẤM,
+  không phải hàm. grep "syncDocToBoq" = đúng 1 dòng đó ⇒ hàm KHÔNG tồn tại.
+```
+
+Bằng chứng mạnh hơn, **đo trên app đang chạy** sau khi bật ống kính và vẽ đủ cây/người/thảm:
+
+```js
+window.__cadStore.getState().doc.entities.filter(e => e.id.startsWith('pv:')).length
+→ 0
+```
+
+`presentProjection()` trả một `Doc` **phù du**, dựng lại mỗi khung hình, **không bao giờ** vào
+store/`.idf`/IndexedDB — đúng khuôn `docToDraw` đã có sẵn ở `CadCanvas.tsx` (preview lúc kéo grip).
+Mọi entity phái sinh mang tiền tố `pv:`, có `stripPresentDecor()` làm chốt chặn.
+
+## 4 · Nghiệm thu
+
+- `npx tsc --noEmit -p .` → **0 lỗi toàn repo**.
+- `npm run check:mocks` → **0 vi phạm luật ĐỎ ⑤ (hex thương hiệu)**. 39 file ĐỎ / 745 vi phạm còn
+  lại là **mock CŨ trong `docs/mocks/`, không phải của phiên này** — phiên này không tạo/sửa mock nào.
+  `grep -niE "#F1ECE3|#002850|#F06020"` trên 6 file phiên này = **0**.
+- Test mới, hàm thuần, chạy bằng `sucrase-node`: **99/99 pass**
+  · `plan-present.test.ts` 39/39 · `plan-leader.test.ts` 35/35 · `plan-depth.test.ts` 25/25.
+- Verify browser thật (`127.0.0.1:3000`, bản vẽ demo): công tắc đảo được hai chiều, **0 lỗi console**.
+- Leader: **0 cặp cắt nhau** ở 4/8/12/16/24 nhãn (test) và **0 nhãn không đặt được** trên bản vẽ thật.
+
+## 5 · Danh sách ô `disabled` + lý do (§9 — đã ghi vào `CHECKLIST-TONG.md`, nay 222→226 dòng)
+
+| Ô | Lý do tại chỗ | Chờ ai |
+|---|---|---|
+| Phân lớp độ đậm | Chờ đường trích mặt đứng (S2). Phần tính đã xong (`plan-depth.ts`, 25/25 test); `grep elevationToEntities components/ app/` = **0** ⇒ chưa màn nào sinh ra mặt đứng | S2 |
+| Cây · người từ thư viện | Hiện sinh bằng hàm. Bộ block cây/người thuộc thư viện khối — mảng S3 | S3 |
+| Xuất PNG bản trình bày | `lib/cad/render.ts:620` `renderDocToDataURL` ép `forceColor:'#111111'` ⇒ xuất ra mất sạch màu. Sửa `render.ts` ngoài vùng phiên | chưa phân |
+| Bảng màu theo studio | Chưa nối Brand Kit. Bảng màu ĐÃ là tham số truyền đè (`PresentOptions.palette`) — chỉ thiếu màn chọn | chưa phân |
+
+Nút **"Đặt nhãn leader"** cũng `disabled` khi chưa chọn gì, kèm lý do *"Chọn vật thể cần ghi nhãn trước."*
+
+## 6 · Checkpoint S5 — cắm đúng hợp đồng
+
+Việc 1 (chế độ trình bày) **không cắm** checkpoint: nó chỉ đổi cách vẽ, không sinh entity, không ghi
+vào `Doc` — đúng như phiếu S5 nói. Việc 2 (leader) **có** cắm vì nó ghi thật vào `Doc`.
+
+Đo trên app thật, 6 đồ nội thất đang chọn:
+
+```
+XEM TRƯỚC (SVG hình học THẬT, không phải câu mô tả):
+  S O F A   3   C H Ỗ · G H Ế   B À N H · B À N   Ă N   6 · T Ủ   Á O · B Ế P   C H Ữ   I · G I Ư Ờ N G   Đ Ô I
+Tham số: Tỉ lệ in 1:100 · Tập góc 30°·45°·60° · Landing 20 × bề dày nét · Không đặt được: không có
+Seed: 3772151827                                    ← KS2, bắt buộc, hiện ra
+Không nhận thì quay về: bản vẽ trước khi đặt nhãn (128 đối tượng)   ← KS4, bắt buộc
+6 checkbox + "Bỏ chọn tất cả"                        ← KS3
+```
+
+**KS3 kiểm tận cùng:** bỏ tick 2 nhãn → nút tự đổi thành **"Nhận 4 phần"** → bấm Nhận →
+`doc.entities` tăng **đúng 12** (4 leader × 3 entity), và 4 nhãn ghi vào **đúng 4 cái còn tick**
+(Bàn ăn 6 · Tủ áo · Bếp chữ I · Giường đôi); 2 cái bỏ tick KHÔNG được ghi. `only` trong
+`leadersToEntities()` chặn hẳn đường "ghi cả mẻ".
+
+## 7 · LỖI ĐÃ MẮC TRONG PHIÊN (bắt buộc — §0h HG6)
+
+**Ba lỗi, cả ba chỉ lộ ra khi mở app thật. Test xanh trước đó không bắt được cái nào.**
+
+**① Thảm phủ kín cả căn.** Để `clusterGapMm = 2200` — trong căn hộ ~60 m² thì MỌI món đồ đều cách
+nhau dưới 2,2 m ⇒ phòng khách + bàn ăn + bếp + giường gộp thành MỘT cụm ⇒ một tấm thảm trùm hết,
+sai hẳn `B1` (thảm nằm dưới TỪNG cụm ghế). Sửa: hạ về **900** = bề rộng lối đi một người
+(`neufert-circulation-one-person` `minWidthMm:750`, làm tròn lên nấc lối đi chính) — *hai món mà
+lọt được một người đi giữa thì thuộc hai cụm khác nhau*. Số có căn cứ nghề, không phải chỉnh cho vừa mắt.
+
+**② Cây mọc ngoài nhà.** Cây đặt ở góc cụm + đệm thảm; cụm sát tường thì góc rơi RA NGOÀI công
+trình. Sửa: kẹp mọi trang trí vào khung kết cấu (`clampIn`). 🟡 **Khai thật giới hạn:** kẹp theo
+**khung bao** chứ không theo **đường bao sàn thật** — nhà không phải hình chữ nhật thì cây vẫn có
+thể nằm ngoài mép tường thật. Muốn đúng tuyệt đối phải dò mặt phẳng (planar face finding) — cùng
+đúng cái lỗ hổng `dxf-plan.ts:298` đã ghi. Chưa làm, không giấu.
+
+**③ Layer tiếng Việt CÓ DẤU trượt hết regex.** Đây là lỗi nặng nhất và là gốc của ① nhìn thấy trên
+màn. Bản vẽ demo đặt layer **"Tường" · "Trục" · "Ghi chú"**; regex gợi ý của tôi viết KHÔNG DẤU
+(`tuong`/`truc`/`ghi chu`) nên **không khớp cái nào** ⇒ 22 đường TRỤC rơi xuống nhánh mặc định và
+bị xếp thành **ĐỒ ĐẠC** ⇒ lưới trục dài 15 m bị kéo vào cụm. Sửa hai tầng, cả hai đều cần:
+1. `foldVietnamese()` — bỏ dấu trước khi so tên layer. **Bản vẽ tiếng Việt là ca THƯỜNG của sản
+   phẩm này, không phải ngoại lệ** — viết regex không dấu rồi quên fold là lỗi hệ thống, không phải sơ suất.
+2. `furnitureClusters()` nay CHỈ gom `type==='block'` hoặc `elementType==='furniture'` **khai báo**.
+   Nhánh mặc định của `classifyPresentRole` trả `'furniture'` cho mọi hình không căn cứ — dùng cái
+   đoán đó để gom cụm là vi phạm K3.
+
+**④ (không phải lỗi của tôi, nhưng do việc của tôi lộ ra):** `entityBox()` xấp xỉ **MỌI block thành
+±1200 mm cố định** (`lib/cad/model.ts`, *"đủ cho zoom-extents"*) — cái ghế 440 mm cũng đọc ra
+2400×2400. Đúng cho zoom-extents, **sai cho gom cụm**. Không sửa `entityBox` (đổi là hồi quy
+zoom-extents toàn app); viết `itemBox()` cục bộ đọc kích thước thật từ `BLOCK_MAP`, có áp `sx/sy`
+và góc xoay.
+
+**⑤ Lỗi trong chính TEST của tôi.** Bản test đầu cho ① dùng `sofa3` rộng 2,1 m đặt cách nhau 1,8 m
+⇒ hai bao CHỒNG nhau ⇒ test đỏ. Test đỏ là ĐÚNG, sai nằm ở dữ liệu test chứ không ở hàm. Suýt sửa
+nhầm hàm gom cụm. Đã ghi cảnh báo ngay trong test để người sau khỏi đi lại vết đó.
+
+Cả 5 nay đều có test canh (`plan-present.test.ts` mục [12] và [13]).
+
+## 8 · Phát hiện NGOÀI phạm vi — cần người khác xử
+
+🔴 **Nhãn leader làm hỏng số GFA.** Ghi 4 leader vào bản vẽ demo → thanh trạng thái nhảy từ
+**"GFA 58.5 m² · 5 phòng"** lên **"GFA 119.4 m² · 9 phòng (4 khác)"**. Nguyên nhân:
+`lib/cad/standards/checker.ts:109` `findRoomLabels()` coi **mọi TEXT lọt `ROOM_NAME_RE`** là một
+phòng — nhãn leader là text nên bị đếm thành phòng. Không phải bug do phiên này đẻ ra; phiên này
+chỉ làm nó lộ ra. **Không sửa** (`checker.ts` ngoài vùng, và sửa đúng cần lọc theo layer/vai — là
+quyết định kiến trúc, không phải vá). Xoá 4 leader thì số trả về 58.5 m² đúng như cũ.
+
+## 9 · Chưa verify — khai thật (N5)
+
+- **Phân lớp độ đậm chưa thấy bằng mắt**: đúng 25/25 test hàm thuần, nhưng chưa có mặt đứng thật
+  trong app để tô (chờ S2 mount `elevationToEntities`).
+- **Chưa thử biến thể `B2` "đảo trên nền be" trên bản vẽ thật** — có nút, có test, nhưng ảnh chụp
+  ở mục 2 là chế độ `flat` (`B1`). Nhãn tên khu trên đảo **cố ý để trống** khi chưa có nhãn thật
+  (K3: không tự bịa tên khu).
+- **Letter-spacing của nhãn leader làm bằng chèn THIN SPACE**, vì `TextEntity` không có trường
+  letter-spacing và thêm field mới cho một hiệu ứng trình bày là vi phạm K4. Đánh đổi: chuỗi vẽ ra
+  không tìm kiếm/sửa được như chuỗi gốc ⇒ `LeaderPlacement` luôn giữ `label` GỐC cạnh `labelDisplay`.
+  Ghi rõ trong docstring, không giấu.
+- **Hai `next dev` chung một `.next` thì cả hai hỏng**: server 3000 báo *"missing required error
+  components"* suốt lúc tôi chạy thêm server 3002; dừng 3002 thì 3000 tự lành ngay. Không phải bug
+  app — nhưng là bẫy vận hành thật cho các phiên song song, nên ghi lại.
+
+## 10 · File đã sửa/tạo (V6 — CHƯA COMMIT)
+
+```
+MỚI   lib/cad/plan-present.ts · plan-present.test.ts
+MỚI   lib/cad/plan-leader.ts  · plan-leader.test.ts
+MỚI   lib/cad/plan-depth.ts   · plan-depth.test.ts
+MỚI   components/cad/PlanPresentPanel.tsx · LeaderPreview.tsx · plan-present-store.ts
+SỬA   components/cad/CadCanvas.tsx   (import · subscribe store trình bày · 1 dòng chọn ống kính)
+SỬA   components/cad/CadEditor.tsx   (import · state · nút toolbar "Trình bày" · mount panel)
+SỬA   docs/CHECKLIST-TONG.md         (4 ô trống mới + 1 dòng changelog)
+SỬA   docs/BAO-CAO-COWORK-TRINH.md   (file này)
+```
+
+---
+
+# 06/08/2026 — PHIÊN S4 · VIỆC 4 (VẼ LẠI BỘ BLOCK) + VIỆC 5 (SỬA viewBox)
+
+> **V6 — KHÔNG COMMIT.**
+> ⚠️ **Vùng mảng:** phiếu S4 gốc ghi `public/cad-library/**` + `block-library.ts` là mảng **S3, cấm
+> đụng**. Hoà giao trực tiếp việc này nên tôi làm, sau khi kiểm va chạm: S3 đang sửa
+> `lib/cad/block-library.ts` (mtime 05/08 21:42, +44 dòng "cụm sinh bằng hàm") — **tôi KHÔNG đụng
+> file đó**; `scripts/cad-library/*` chưa ai chạm từ 11/07 nên tôi chỉ vào đúng đó.
+
+## 1 · VIỆC 5 — viewBox (sửa 1 chỗ, 46 cái cùng đúng)
+
+**Gốc lỗi:** `svgFromPrims()` dựng viewBox **đối xứng quanh gốc toạ độ** theo `w`/`h` KHAI BÁO
+(`viewBox = -W/2, -H/2, W, H`). Chỉ đúng khi hình được vẽ cân quanh gốc.
+
+Đo thật trước khi sửa: **9/46 block không cân** — `stairs-l-shape` lệch **860 mm** ·
+`kitchen-cabinet-l` 750 · `living-sofa-lshape` 625 · `arch-door-single` 450 · `arch-door-double` 375.
+
+**Sửa:** dựng viewBox từ **khung bao THẬT của chính `prims`** (`primsBBox()`, arc lấy đúng các điểm
+`sampleArc()` sẽ vẽ). Bẫy đã tránh: nhóm vẽ nằm trong `transform="scale(1,-1)"` nên dải Y nhìn thấy
+là `[-maxY, -minY]` — lấy nhầm `[minY, maxY]` là ảnh văng khỏi khung.
+
+⇒ Block thêm về sau **tự đúng**, không phải nhớ luật "vẽ cho cân quanh gốc".
+
+**🔴 Lỗi thứ hai tìm ra khi đo, TỔNG chưa nêu:** `w`/`h` khai tay **không khớp hình thật** ở 4 block
+— `living-sofa-lshape` khai cao 1700 nhưng thật **2150** · `stairs-l-shape` khai 2400 thật **3400** ·
+`bath-bidet` 480/510 · `arch-window-bay` 300/360. Hai số đó đi thẳng vào `manifest.json` và là kích
+thước panel Thư viện hiển thị ⇒ **thư viện đang nói sai số đo** (§0f TB1). Sửa: `LIB_BLOCKS` nay
+**đo lại từ `prims`** (`measurePrims()`), số khai tay chỉ còn là ý định thiết kế.
+Sửa trong `blocks-data.ts` chứ KHÔNG trong generator — phiếu cho phép sửa generator đúng 1 chỗ.
+
+## 2 · VIỆC 4 — 16 block vẽ lại / nâng cấp
+
+**SAI VẬT — vẽ lại từ đầu (9 block):**
+
+| Block | Trước | Sau |
+|---|---|---|
+| `plant-pot-small/large` | 2 vòng tròn đồng tâm (donut) | miệng chậu tròn + **2 lớp tán bất đối xứng sinh bằng hàm có hạt giống** + 2–3 nhánh cong |
+| `plant-tree-top` | 3 vòng tròn + 2 đường thập = **vòng ngắm súng** | 3 lớp tán bất đối xứng lồng nhau + gốc cây. Không đường thập |
+| `bath-toilet` | hộp + đa giác 6 đỉnh nhọn + tròn = con dấu | **két nước bo góc + bầu dục thân + vành ngồi + cổ nối** (380×700) |
+| `bath-bidet` | cùng bệnh, gần giống hệt bồn cầu | **bầu dục + vành + gờ vòi**, KHÔNG két nước — đó chính là điểm phân biệt với bồn cầu (360×560) |
+| `bedroom-wardrobe-2door/3door` | răng cưa tam giác đều | **cánh + cung quét 90°** mỗi cánh |
+| `vehicle-car-sedan/suv` | **CÙNG MỘT HÌNH** (cùng `octagon` + 4 đường) | sedan mũi/đuôi **vát dài**, ca-bin lùi sau, kính cong · SUV **cắt cụt**, ca-bin dài, **gờ nóc dọc** |
+
+**THÔ — nâng cấp (7 block):**
+
+| Block | Sửa gì |
+|---|---|
+| `dining-table-4/6/round-4` | ghế từ **ô vuông rỗng** → `chairAt()`: mâm bo góc + **lưng cong** + 2 mẩu tay, **có hướng ngồi**. Bàn tròn: ghế quay mặt vào bàn. Gộp `diningChair`+`chairSquareAt` thành một hàm quay được |
+| `living-sofa-2seat/3seat` | thân bo góc · **lưng cong** · tay bo đầu · đệm bo góc |
+| `living-sofa-lshape` | cùng ngôn ngữ trên, giữ nguyên bố cục để không đổi thói quen đặt block |
+| `living-armchair` | trước là `sofa(800,800,1)` (ghế bành = sofa, đều hộp). Nay hàm riêng theo **mẫu `G1`**: đường bao + 4 đường cong gợi nệm, cỡ **630×580** lấy từ bảng đo ảnh `G2` |
+
+**Lỗi chung cả bộ — đo trước/sau:**
+
+| | Trước | Sau |
+|---|---|---|
+| Block KHÔNG dùng arc nào | **41/46** | **28/46** |
+| Trung vị số hình/block | 4 | 5 |
+| Block lệch trong thumbnail | 9 | **0** (viewBox theo bao thật) |
+| `w`/`h` manifest sai so hình | 4 | **0** |
+
+Thêm bộ helper cong dùng chung: `roundedRect()` (4 thẳng + 4 cung) · `ellipse()` · `canopy()`
+(tán bất đối xứng, làm mượt trung bình trượt 3 điểm — không mượt thì ra đúng "răng cưa" mà nguồn cấm).
+
+## 3 · Nghiệm thu
+
+- `npx tsx scripts/cad-library/verify-library.ts` → **46/46 DXF parse lại đúng 100%** bằng
+  `lib/cad/dxf.ts`. Đây là thứ app thật đọc, quan trọng hơn thumbnail.
+- **TẤT ĐỊNH (KS2):** chạy generator 2 lần, `md5` file .dxf **giống hệt**. Tán cây bất đối xứng
+  nhưng sinh lại luôn ra đúng hình cũ — ⛔ không `Math.random()` dòng nào trong `blocks-data.ts`.
+- `npx tsc --noEmit -p .` → **0 lỗi toàn repo**.
+- 99/99 test của S4 hôm qua vẫn xanh (39+35+25) — không hồi quy.
+- **Nhìn tận mắt (NT2):** render cả 46 SVG ra lưới trong trình duyệt, 3 vòng (trước sửa · sau vòng 1
+  · sau vòng 2). Vòng cuối render **đúng cách `BlockLibraryDemo.tsx:257` render** — `<img src>` trỏ
+  vào dev server thật + `object-contain` trong ô cố định — cả 46 vào giữa ô, đọc được ở cỡ thumbnail.
+- Panel Thư viện trong app: mục "Ký hiệu · khối" đếm đúng **46**.
+
+## 4 · LỖI ĐÃ MẮC TRONG PHIÊN (§0h HG6)
+
+**Cả ba đều do tôi vẽ hỏng ở vòng 1, chỉ lộ ra khi RENDER RA NHÌN. Không lần nào test/tsc bắt được.**
+
+**① Ghế bành ra MẶT CƯỜI.** Vòng 1 tôi đặt 4 cung "gợi nệm" theo mẫu G1 nhưng chọn tâm/bán kính
+bậy: cung lưng + cung đệm thành hai nét cong ôm nhau như cái miệng, 2 cung tay thành hai con mắt.
+Sửa: bỏ cung tay, dùng **đường thẳng làm mép trong hai tay** (tay là khối chữ nhật, không phải cung),
+cung chỉ giữ cho lưng và mép đệm.
+
+**② Tủ áo ra CÁI RÈM.** Vòng 1 tôi đặt bản lề **so le** (cánh chẵn mở trái, cánh lẻ mở phải) vì nghĩ
+tủ thật làm vậy. Hậu quả: hai cung gặp nhau ở giữa thành một đường liền, **và hai cánh nằm ĐÚNG TRÊN
+mép hông tủ nên vô hình** ⇒ nhìn ra tủ cao gấp đôi, không ra cánh cửa. Sửa: bản lề **cùng một bên**,
+mọi cánh mở cùng chiều — cánh rơi vào vạch chia trong lòng tủ nên thấy được, cung lặp cùng hướng
+đọc ngay ra "dãy cánh mở".
+
+**③ Lưng ghế ăn thành VÀNH TRĂNG RỜI.** Vòng 1 để `r = 0.56·seat`, tâm đẩy ra sau `-0.30·seat` ⇒
+cung phình ra ngoài mâm, trông như một vành trăng nằm tách phía sau ghế. Sửa: tâm về sát mâm
+(`-0.02·seat`), bán kính `0.47·seat` ⇒ lưng dính vào mâm.
+
+**Bài học chung:** đây là việc THUẦN THỊ GIÁC — `tsc` xanh, test xanh, DXF parse 100% mà hình vẫn
+là mặt cười. Với block/ký hiệu thì **render ra nhìn là bước nghiệm thu duy nhất có giá trị**; ba
+vòng render mới ra bộ dùng được. Đúng tinh thần §0g NT2/NT3.
+
+## 5 · Chưa làm / khai thật (N5)
+
+- **Cung quét làm kích thước bao lớn hơn thân vật**: tủ 1200×600 ⇒ manifest ghi **1200×1200**. Đây
+  là **đúng quy ước sẵn có của thư viện** (`arch-door-single` cũng khai 900×900 cho cánh cửa 900):
+  số khai là bề rộng BẢN VẼ kể cả cung, không phải bề rộng vật. Nếu Hoà muốn tách hai số (footprint
+  vật vs extent bản vẽ) thì cần thêm trường `footprint` vào `LibBlockDef` — **chưa làm**, vì đó là
+  đổi hình dạng dữ liệu của thư viện, nên để Hoà/TỔNG quyết.
+- **Route `/cad-library-demo` không vào được** để nghiệm thu: nó khoá sau `NEXT_PUBLIC_DEMO=true`
+  (`app/cad-library-demo/page.tsx:14`). Không bật vì phải khởi động lại dev server đang dùng chung
+  với phiên khác (hôm qua đã đo: hai `next dev` chung một `.next` là cả hai hỏng). Thay bằng cách
+  render **y hệt cách component đó render** — nêu ở mục 3.
+- **`kitchen-island` nhìn còn yếu** (một ô vuông nhỏ + 1 chấm trong khung 2000×900) và
+  `bath-shower`/`stairs-straight` còn thô. **Không nằm trong danh sách TỔNG giao** nên tôi không tự
+  mở rộng phạm vi — ghi ra để đợt sau xử.
+- 28/46 block vẫn chưa dùng arc — phần lớn là thứ **đúng ra phải thẳng** (kệ, tủ, cột vuông, bàn chữ
+  nhật, ký hiệu). Không ép thêm cong cho đủ chỉ tiêu (§0f TB3: thẩm mỹ là HỆ QUẢ, không phải lớp phủ).
+
+## 6 · File đã sửa (V6 — CHƯA COMMIT)
+
+```
+SỬA  scripts/cad-library/generate-library.ts   (VIỆC 5 — primsBBox + viewBox theo bao thật; ĐÚNG 1 chỗ như phiếu cho phép)
+SỬA  scripts/cad-library/blocks-data.ts        (VIỆC 4 — helper cong + 10 hàm vẽ lại + measurePrims)
+SINH public/cad-library/**                     (46 .dxf + 46 .svg + manifest.json — chạy lại generator)
+SỬA  docs/BAO-CAO-COWORK-TRINH.md              (file này)
+KHÔNG ĐỤNG lib/cad/block-library.ts            (S3 đang sửa — xác nhận diff vẫn đúng 44 dòng của họ)
+```

@@ -17,7 +17,7 @@
 
 import type { Doc, Entity, Pt, Box } from './model';
 import { entityBox, nearestOnSeg } from './model';
-import { findHatchBoundary, polygonArea } from './hatch';
+import { buildHatchFaceIndex, pickHatchFace, collectBoundarySegments, polygonArea } from './hatch';
 import { classifyOperator, type OperatorProfile } from './operator-profile';
 
 /* ═══════════════════════ KIỂU ═══════════════════════ */
@@ -146,6 +146,9 @@ function centroidOf(poly: Pt[]): Pt {
 /** Dò các phòng CÓ BIÊN KÍN từ nhãn TEXT (findHatchBoundary trên doc đã lọc tường thật). */
 export function roomFeatures(doc: Doc): RoomFeature[] {
   const boundaryDoc = wallLike(doc);
+  // 05/08 (PHU) — dựng 1 lần, hỏi N lần (cùng vá với `checker.findRoomLabels`). Số đo +
+  // lý do: docstring `HatchFaceIndex` (`lib/cad/hatch.ts`).
+  const faceIndex = buildHatchFaceIndex(collectBoundarySegments(boundaryDoc));
   const rooms: RoomFeature[] = [];
   for (const e of doc.entities as Entity[]) {
     if (e.type !== 'text') continue;
@@ -153,7 +156,7 @@ export function roomFeatures(doc: Doc): RoomFeature[] {
     if (s.length < 2) continue;
     if (/M2|M²/i.test(s)) continue;
     if (!ROOM_LABEL_RE.test(s)) continue;
-    const poly = findHatchBoundary(boundaryDoc, e.at);
+    const poly = pickHatchFace(faceIndex, e.at);
     if (!poly || poly.length < 3) continue; // chỉ nhận phòng biên KÍN (khác operator-profile: ở đây cần poly thật)
     rooms.push({ name: s, at: e.at, poly, areaM2: polygonArea(poly) / 1e6, centroid: centroidOf(poly) });
   }

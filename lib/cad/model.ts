@@ -7,6 +7,12 @@
  * và không dính SSR.
  */
 
+// VIỆC 4 — CHỈ KIỂU (`import type` bị xoá hoàn toàn lúc biên dịch): `Doc.lighting` cần hình dạng
+// khai ở `lib/three/lighting.ts`, mà file đó lại đọc `Doc` từ đây. Nhập kiểu-thuần nên KHÔNG có
+// cạnh phụ thuộc chạy-thật nào giữa `lib/cad` và `lib/three` ⇒ không vòng lặp import, module này
+// vẫn THUẦN đúng như docstring trên.
+import type { DocLighting } from '../three/lighting';
+
 export interface Pt {
   x: number;
   y: number;
@@ -24,8 +30,16 @@ export type LineType = 'continuous' | 'hidden' | 'center' | 'dashed' | 'phantom'
  *   0.13/0.18 — mảnh: kích thước, hatch, nét khuất, trục lưới
  *   0.25/0.35 — trung: thiết bị/nội thất/cửa sổ/đường bao không cắt
  *   0.50/0.70 — đậm: tường bị mặt phẳng cắt qua (mặt bằng) + khung tên/khung bao
+ *   1.0/1.4/2.0 — rất đậm: hiếm dùng ở 1:50-1:100, có mặt để đủ dải chuẩn (khung bao khổ lớn
+ *   A0/A1, mặt cắt cấu tạo tỉ lệ 1:5-1:20, đường bao công trình trên tổng mặt bằng).
+ *
+ * 2026-08-05 (S6/T3) — BỔ SUNG 1.4 và 2.0 cho khớp dải đầy đủ ISO 128-2:2020, vốn đã được rule
+ * `iso128-lineweight-set` (lib/cad/standards/iso-drafting.ts:18-20) khai đủ 9 giá trị và tự trỏ
+ * ngược về hằng số này — trước đó hằng số chỉ có 7, rule trỏ vào thứ không khớp chính nó.
+ * ⚠️ `components/cad/CadEditor.tsx:732` chép cứng đúng 7 giá trị cũ thay vì import hằng số này
+ * (ngoài vùng file phiên S6, KHÔNG sửa) ⇒ dropdown chọn nét của UI vẫn 7 mục, chưa có 1.4/2.0.
  */
-export const STANDARD_LINEWEIGHTS = [0.13, 0.18, 0.25, 0.35, 0.5, 0.7, 1.0] as const;
+export const STANDARD_LINEWEIGHTS = [0.13, 0.18, 0.25, 0.35, 0.5, 0.7, 1.0, 1.4, 2.0] as const;
 
 /**
  * Chiều cao chữ chuẩn ISO 3098 (mm, ĐO TRÊN GIẤY sau khi in — không phải mm world lưu trong
@@ -289,6 +303,21 @@ interface Base {
    * TRÊN INSTANCE (`wallThicknessMm`/`wallKind`/`specId`) **THẮNG** giá trị của Type — xem
    * `lib/cad/wall-types.ts` `resolveWallParams()`. undefined = 100% instance như hôm nay. */
   typeId?: string;
+
+  /**
+   * VIỆC 1.5 phiếu DXF (05/08) — TÊN BLOCK gốc khi entity này sinh ra từ việc LÀM PHẲNG một
+   * INSERT của file DXF (`lib/cad/dxf.ts` `expandInsert`). Giữ tên block ĐỊNH NGHĨA TRỰC TIẾP
+   * (không phải cả chuỗi lồng) — đủ để truy ngược "hình này từ đâu ra" mà không phình bộ nhớ với
+   * bản vẽ hàng vạn entity.
+   *
+   * undefined = entity vẽ tay trong app, hoặc nằm thẳng ở section ENTITIES (không qua block).
+   * Additive: `.idf` cũ không có field này vẫn parse y nguyên.
+   *
+   * Nơi tiêu thụ (K4 — không khai field chết): `DxfLoadReport.blocksExpanded` đối soát theo tên ·
+   * `lib/cad/dxf-plan.ts` `planAreaCrossCheck()` loại hình khung tên/ghi chú ra khỏi đường bao ·
+   * test `dxf-insert.test.ts` khẳng định nhãn không rơi qua các cấp lồng.
+   */
+  srcBlock?: string;
 }
 
 /** NC-12 §4.2 — một bậc trong ngăn xếp dựng hình 3D. Thuần dữ liệu JSON, KHÔNG chứa hình học đã
@@ -734,6 +763,11 @@ export interface Doc {
   /** VIỆC 3 — catalog Type tường dùng chung trong bản vẽ này (xem `WallType`). undefined/rỗng =
    * chưa có type nào, tường 100% instance như trước. */
   wallTypes?: WallType[];
+  /** VIỆC 4 — nắng · bầu trời · đèn trong nhà (`lib/three/lighting.ts`). undefined = chưa cấu
+   * hình; `buildLightRig()` trả bộ mặc định, dựng hình không đổi.
+   * ⚠️ `import type` (chỉ KIỂU, bị xoá lúc biên dịch) nên KHÔNG tạo phụ thuộc chạy-thật
+   * `lib/cad` → `lib/three` — tránh vòng lặp import, vì `lighting.ts` lại đọc `Doc` từ file này. */
+  lighting?: DocLighting;
 }
 
 /* ───────────────────────── B1 — tỉ lệ bản vẽ chuẩn + khổ giấy (paper-space cơ bản) ───────────────────────── */

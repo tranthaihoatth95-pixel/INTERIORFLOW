@@ -2880,3 +2880,314 @@ Pathspec riêng — `git status` lúc này còn `docs/BAO-CAO-COWORK-UI.md` ·
 **Cả 3 lỗ 🔴 của `AUDIT-BACKEND-2026-08-03.md` đã xong** (R1 `7b6e4e6`, R2 `6705266`, R3 commit
 này) — hàng đợi còn lại của audit (🟡 Y1-Y12, 🟢 G1-G7) chưa động tới, phiên khác có vẻ đang làm
 Y1 song song (xem ghi chú ở mục lỗ #2).
+
+---
+
+# PHIÊN S1 · THỢ SỬA — MẢNG ĐỌC/GHI FILE CAD (05/08/2026, ~22:10)
+
+Mảng: `lib/cad/dxf.ts` · `dxf-plan.ts` · `dwg.ts` · `dwg-map.ts` · `hatch.ts` + test tương ứng.
+**V6 — KHÔNG COMMIT.** Working tree để bẩn, Hoà commit.
+
+## VIỆC 1 🔴 — `exportDxf` làm phẳng block mà không báo
+
+**Đã làm.** `exportDxfEx(doc) → { dxf, report }` (`lib/cad/dxf.ts`), cùng khuôn `parseDxf`/
+`parseDxfEx` sẵn có — không phát minh cách thứ hai. `exportDxf(doc) → string` GIỮ NGUYÊN chữ ký,
+nay chỉ là lớp mỏng gọi hàm đầy đủ ⇒ nơi gọi cũ (`components/cad/CadEditor.tsx:194`) không phải sửa.
+
+- `DxfExportReport` = `{ flattenedBlocks: Record<tên, số entity>, flattenedBlockCount, warnings }`
+- Đếm bằng cách ĐỌC `Entity.srcBlock` (`lib/cad/model.ts:312`, ghi tại `dxf.ts` `expandInsert`).
+  **K4 — không thêm field mới nào.**
+- Câu cảnh báo: *"Bản vẽ gốc có N block; bản xuất này đã làm phẳng — mở lại ở AutoCAD sẽ không còn
+  cấu trúc block. Hình vẽ giữ nguyên, nhưng không sửa hàng loạt qua block được nữa (tên1, tên2,
+  tên3, … và K block nữa)."*
+
+**⚠️ CẦN NỐI UI — phiên sở hữu `components/` cắm** (theo sửa phiếu của TỔNG, tôi KHÔNG tự nối):
+
+| Mục | Giá trị |
+|---|---|
+| Hàm gọi | `exportDxfEx(doc)` thay cho `exportDxf(doc)` |
+| Hình dạng | `{ dxf: string; report: { flattenedBlockCount: number; warnings: string[] } }` |
+| Chỗ hiển thị đề xuất | `components/cad/CadEditor.tsx:192-198` `doExportDxf()` — đổi `exportDxf(doc)` thành `const { dxf, report } = exportDxfEx(doc)`, dùng `dxf` cho `Blob`, rồi `if (report.warnings.length) useCadStore.getState().setStatus(report.warnings[0])` (cùng đường `doExportPng`/`onImportFile` đang dùng) |
+| Mức tối thiểu | status bar. Muốn dai hơn (banner có nút "Hiểu rồi") thì thuộc quyền phiên component |
+
+**Không cần Checkpoint** (khuôn `components/studio/Checkpoint.tsx` của S5): xuất DXF không sinh
+entity, không ghi vào `Doc`, không có bước AI — §0e KS1 nói về dạng trung gian TRƯỚC KHI thành sản
+phẩm; đây là thông báo hậu-kỳ về file người dùng đã chủ động bấm lưu.
+
+Test: `lib/cad/dxf-export-report.test.ts` (MỚI) — **20/20**.
+
+## VIỆC 2 🔴 — đổi cách diễn giải cảnh báo lệch diện tích
+
+**Đã làm.** `lib/cad/dxf-plan.ts` `planAreaCrossCheck()`: giữ nguyên cơ chế, đổi chữ.
+
+- Câu cũ: *"… — nghi nạp thiếu hình hoặc chọn nhầm đường bao."* → đổ lỗi cho bộ đọc.
+- Câu mới: *"… — nghi block mồ côi sót lại từ file nguồn khác. Đối chiếu khung tên trong PDF
+  trước khi tin số này."*
+- Docstring đầu hàm cũng sửa: bỏ câu *"lệch xa nghĩa là nạp sai hoặc thiếu"*, thay bằng ghi chú
+  nêu rõ hàm phát hiện **rác trong file gốc**, không phải lỗi parser (dẫn `CHOT-DIEN-TICH-…` mục 2).
+
+Test khoá chữ trong `lib/cad/dxf-plan.test.ts` — 4 ca mới: có "block mồ côi" · có "đối chiếu khung
+tên trong PDF" · **regex chặn** `nạp sai|nạp thiếu|lỗi đọc file|đọc sai` · vẫn giữ con số lệch.
+Tổng file: **28/28**.
+
+### 🔴 N7 — NHÁNH NÀY KHÔNG BAO GIỜ CHẠY VỚI FILE ĐÃ GÂY RA LUẬT
+
+Kiểm bằng file thật (`07_TANG11-TTT.dxf`, harness scratch đã xoá):
+
+```
+THÔ  · chuỗi "NNN m2" trong file: ["6m2","493 m2"]     ← có trong text file
+DOC  · text mang "NNN m2": []                          ← KHÔNG có entity nào
+DOC  · entity đến từ block: 10015 / 10035 · 105 tên block khác nhau
+HÀM  · planDeclaredAreaM2 = null
+HÀM  · planAreaCrossCheck = { declaredM2: null, computedM2: null, method: "none", suspect: false }
+```
+
+⇒ Block mồ côi **không lọt vào `Doc`** (đúng — không INSERT nào tham chiếu thì `expandInsert`
+không sinh entity). Nên `declaredM2` là `null`, nhánh so-lệch không chạy, câu vừa sửa **không hiện
+ra cho ca Nam Long**. Số `493` mà phiên trước tìm thấy là do **grep file thô**, không phải do
+`planAreaCrossCheck`.
+
+Câu mới vẫn đáng đổi (nó chạy cho file KHÁC có đủ cả hai vế), nhưng **muốn bắt đúng ca mồ côi thì
+phải phát hiện ở tầng đọc**: `parseDxfEx` biết block nào định nghĩa mà không ai INSERT.
+Đề xuất — **CHƯA LÀM, chờ TỔNG duyệt**: thêm `DxfLoadReport.orphanBlocks: string[]`. Nơi tiêu thụ
+đã có sẵn (`DxfLoadReport.warnings`), nên không phạm K4.
+
+## VIỆC 3 🔴 — đo bộ nhớ trình duyệt thật · **CHƯA ĐO ĐƯỢC (N5)**
+
+**Không có số. Không bịa số.** Lý do đo hụt, có vật chứng:
+
+1. `next dev` cổng 3002 lên `LISTEN` nhưng **không trả nổi một response nào trong 8,5 phút**
+   (`curl --max-time 120` rồi `--max-time 400` đều `HTTP 000`). Log chỉ dừng ở `✓ Starting...`,
+   không có dòng `compiled`.
+2. Nguyên nhân đo được: **máy quá tải** — `uptime` load average **47,27 / 49,26 / 43,78**;
+   nhiều phiên biên dịch song song.
+3. Thêm: `components/cad/CadEditor.tsx` (đúng màn nhập DXF cần đo) **đang bị phiên khác ghi giữa
+   chừng** — mtime 22:03, và một lần `tsc` của tôi bắt được `CadEditor.tsx(535,12) TS2304: Cannot
+   find name 'Trees'` rồi lần sau hết (đọc trúng lúc file đang ghi dở).
+
+### Bàn đo ĐÃ DỰNG SẴN — phiên sau chạy lại mất ~5 phút
+
+- Máy phục vụ file DXF có CORS: `scratchpad/dxf-server.mjs` (nghe `127.0.0.1:8899`, trỏ vào thư
+  mục hồ sơ NGOÀI repo — **cố ý không copy file khách vào `public/`**, §0h). Đã verify `HTTP 200`.
+- Đường đo: mở dự án → chặng 2D → chạy JS trong trang:
+  1. `performance.memory.usedJSHeapSize` làm mốc;
+  2. `fetch('http://127.0.0.1:8899/<tên>.dxf')` → `new File([text], nm)` → gán vào
+     `input[accept=".dxf"]` (`CadEditor.tsx:510`) qua `DataTransfer` → `dispatchEvent('change')`;
+     đường này chạy ĐÚNG luồng thật gồm cả `FileReader` (`CadEditor.tsx:318-330`);
+  3. đo lại → **1 sàn**;
+  4. lặp 6 file, mỗi lần đẩy `useCadStore.getState().doc` vào một mảng giữ tham chiếu ⇒ 6 `Doc`
+     cùng sống → đo → **6 sàn**.
+
+### Hai phát hiện đọc-code liên quan trực tiếp tới bộ nhớ (chưa cần chạy app)
+
+- `importDoc(d, mode)` **gọi `get().snapshot()`** (`lib/cad/store.ts:736-737`) ⇒ mỗi lần mở file
+  còn đẩy bản `Doc` CŨ vào ngăn xếp Undo. Mở 6 sàn liên tiếp không chỉ tốn 6 `Doc` mà còn cả lịch
+  sử hoàn tác. Đây là biến số mà con số Node 327 MB/sàn hoàn toàn không tính.
+- Luồng UI hiện tại luôn `'replace'` (`CadEditor.tsx:321`), nên "6 sàn mở cùng lúc" **chưa phải
+  đường người dùng đi được hôm nay** — `'merge'` có tồn tại (`store.ts:357`) nhưng không nút nào gọi.
+  ⇒ Câu hỏi "6 sàn ≈ 2 GB" hiện là câu hỏi về **thiết kế sắp tới**, không phải bug đang chặn.
+
+**Chưa đề xuất hướng xử** (nạp lười / hạ độ phân giải hatch / giới hạn số sàn) — phiếu bảo đo xong
+mới đề xuất, mà tôi chưa có số.
+
+## VIỆC 4 🟡 — xoá `__probe-dxf.ts`
+
+**Đã xoá.** Kiểm trước: `rg` toàn repo → **0 nơi import** (chỉ `docs/BAO-CAO-COWORK-UI.md:282`
+NHẮC TỚI nó trong báo cáo S5). Sau khi xoá, lỗi `__probe-dxf.ts(16,15) TS2339` biến mất.
+
+🔴 **Đính chính phiếu**: file đó **KHÔNG phải rác của phiên khác — chính tôi tạo ra ở đầu phiên
+này** để kiểm block mồ côi bằng file thật (N3), rồi quên dọn. S5 thấy nó lúc 21:34 và ghi đúng là
+"của phiên khác đang làm DXF (S1)" — S1 là tôi.
+
+## ĐÃ CÓ SẴN mà brief tưởng chưa có (N7)
+
+| Brief nói | Sự thật | Bằng chứng |
+|---|---|---|
+| *"Nếu tầng dữ liệu chưa giữ dấu vết nguồn INSERT → báo cáo, đừng tự thêm field"* | **Đã giữ sẵn** — không phải thêm gì | `lib/cad/model.ts:312` `srcBlock?: string` · ghi ở `dxf.ts` `expandInsert` · test `dxf-insert.test.ts:45,87` |
+| VIỆC 2 *"khi số trong DXF lệch số khung tên"* | Với file gây ra luật thì **không có số nào trong Doc** để mà lệch | đo ở mục VIỆC 2 trên |
+
+## 🔴 §0h — VẾT RÒ DỮ LIỆU KHÁCH ĐANG CÓ TRONG `lib/` (mảng của tôi)
+
+Phép kiểm §0h #1 (*grep tên khách trong repo trừ `docs/` → 0*) và #2 (*grep số liệu dự án trong
+`lib/` → 0*) **hiện KHÔNG đạt**:
+
+| File | Vết |
+|---|---|
+| `lib/cad/dxf-plan.ts:3,13,304` | tên khách 3 chỗ |
+| `lib/cad/dxf-plan.ts:9,309` | % lệch thật của 2 sàn khách |
+| `lib/cad/dxf-plan.ts:63` · `dxf.ts:686` | tên file hồ sơ khách |
+| `lib/cad/dxf.ts:27,33-37,45` | tên khách + **bảng 6 file: tên file · dung lượng · số block · số entity** |
+| `lib/cad/dxf-insert.test.ts:2,7` | tên khách 2 chỗ |
+| `lib/cad/dxf-plan.test.ts:2,47` | tên khách 2 chỗ |
+
+**Đã sửa phần thuộc VIỆC 2 + phần tôi tự viết ra**: `dxf-plan.test.ts` thay toàn bộ số thật (diện
+tích sàn, kích thước khung giấy) bằng số hư cấu — sàn 500 m², khung giấy 40×25 m; hình dạng bài
+kiểm không đổi, 28/28 vẫn xanh.
+
+**CHƯA sửa phần còn lại** — cố ý: đó là ~10 khối docstring do phiên DXF trước viết, đang
+uncommitted; viết lại hàng loạt trong lúc `.git` có nhiều phiên là rủi ro không đáng. **Cần TỔNG
+quyết** làm một lượt riêng.
+
+## LỖI ĐÃ MẮC TRONG PHIÊN (§0h HG6 — bắt buộc)
+
+1. **Để lại file rác `__probe-dxf.ts` ở gốc repo** làm `tsc` toàn repo đỏ, và S5 phải mất công ghi
+   vào báo cáo của họ là "lỗi không phải của tôi". Đúng ra phải xoá ngay sau khi đọc xong số đo,
+   hoặc đặt ngoài repo từ đầu. Đã xoá ở VIỆC 4.
+2. **Viết lại đúng số liệu khách vào comment §0h** — lúc genericize `dxf-plan.test.ts`, comment
+   giải thích của tôi chép nguyên diện tích sàn thật và kích thước khung giấy thật vào `lib/`,
+   tức là vi phạm đúng điều luật tôi đang thi hành. Đã sửa: comment nay trỏ sang
+   `docs/CHOT-DIEN-TICH-NAMLONG-2026-08-05.md` mục 1 thay vì lặp lại số.
+3. **Chạy `tsc --noEmit` toàn repo trong lúc máy load 47** — chính nó chiếm 190% CPU và góp phần
+   làm `next dev` không biên dịch nổi, tức tự tay chặn VIỆC 3 của mình. Lẽ ra đo bộ nhớ trước, tsc sau.
+4. **Đọc `tsc` một lần rồi kết luận** — bắt được `CadEditor.tsx TS2304 'Trees'` và suýt báo là lỗi
+   thật, trong khi `Trees` CÓ ở dòng import 22; đó là đọc trúng lúc phiên khác ghi dở. Chạy lại
+   mới rõ. N1: một lần đo chưa phải bằng chứng khi file đang bị phiên khác ghi.
+
+
+---
+
+# PHIÊN S1b · THỢ SỬA ĐỢT 2 — ĐO BỘ NHỚ TRÌNH DUYỆT THẬT (06/08/2026, ~00:2x)
+
+Nối tiếp phiên S1 cùng ngày. **V6 — KHÔNG COMMIT.**
+Điều kiện khác hẳn phiên trước: `uptime` load average **8,62** (phiên S1 là 47,27 nên `next dev`
+không biên dịch nổi). Dev server cổng 3000 của phiên khác **đã sẵn, HTTP 200 trong 2,7 s** ⇒
+**dùng lại, không đẻ server mới**.
+
+## VIỆC 1 🔴 — SỐ THẬT, 1 SÀN · **CÓ SỐ**
+
+Đường đo: đúng 5 bước ghi trong báo cáo S1 — `fetch` từ máy phục vụ NGOÀI repo (`127.0.0.1:8899`,
+`scratchpad/dxf-server.mjs`) → `new File` → gán `input[accept=".dxf"]` qua `DataTransfer` →
+`dispatchEvent('change')`. Đi ĐÚNG luồng thật: `FileReader` → `parseDxf` → `importDoc(doc,'replace')`.
+Đo bằng `performance.memory.usedJSHeapSize`; **không ép GC được** (không có `--expose-gc`) nên mỗi
+mốc lấy **MIN của 6 mẫu cách nhau 400 ms** — ước lượng sát "heap sống" nhất mà không ép được.
+
+| File | Dung lượng | Entity vào `Doc` | Mốc trước | Sau | **Hiệu** | Thời gian |
+|---|---|---|---|---|---|---|
+| sàn nhỏ nhất bộ | 5,3 MB | 2.984 | 152,6 MB | 167,2 MB | **+14,6 MB** | 1,0 s |
+| sàn lớn nhất bộ | 26,4 MB | 9.891 | 142,3 MB | 219,6 MB | **+77,3 MB** | 2,3 s |
+
+Trần heap trình duyệt đo được: **4.096 MB**.
+
+### 🔴 Con số Node 327 MB/sàn LỆCH ~15 LẦN so với thực tế trình duyệt
+
+Không phải "trình duyệt còn cộng `FileReader` nên tệ hơn" như giả định trong phiếu — **ngược lại**.
+327 MB gần như chắc chắn là **ĐỈNH lúc parse** (chuỗi file + mảng token trung gian), không phải
+phần `Doc` GIỮ LẠI. Bằng chứng: đỉnh đo được ở trình duyệt trong lúc chạy 6 sàn là **334,6 MB** —
+đúng bậc 327 MB — rồi tụt về 229,5 MB khi GC dọn phần trung gian.
+
+⇒ **Ước lượng "6 sàn ≈ 2 GB" là SAI.** Xem VIỆC 2.
+
+## VIỆC 2 🟡 — 6 SÀN · **ĐO ĐƯỢC, RẺ (~3 phút)**
+
+Nạp tuần tự cả 6 sàn, **giữ tham chiếu tới từng `Doc`** ⇒ 6 `Doc` cùng sống (mô phỏng đúng "6 sàn
+mở cùng lúc" về mặt bộ nhớ, dùng dữ liệu parse THẬT).
+
+| | |
+|---|---|
+| Mốc | **95,5 MB** |
+| Sau khi giữ đủ 6 `Doc` | **229,5 MB** |
+| **Hiệu — 6 sàn** | **+134,0 MB** |
+| Tổng entity 6 sàn | **57.044** |
+| Ngăn xếp Undo sau 6 lần mở | `past.length` = **6** |
+| Đỉnh tạm thời trong lúc chạy | **334,6 MB** |
+
+Heap sau từng bước: 136,8 → 150,8 → 215,5 → 199,9 → **334,6** → 247,0 → (ổn định) **229,5**.
+Đường cong lên-xuống là GC dọn phần trung gian của lượt parse trước, không phải nhiễu đo.
+
+**⇒ 6 sàn tốn 134 MB trên trần 4.096 MB = 3,3%. Không chạm ngưỡng 1,5 GB của phiếu. KHÔNG PHẢI
+VIỆC CHẶN.** Ước lượng cũ (327 × 6 ≈ 2 GB) cao gấp **~15 lần** thực đo.
+
+## VIỆC 3 🔴 — BA HƯỚNG, SAU KHI CÓ SỐ
+
+**Khuyến nghị: CHƯA LÀM HƯỚNG NÀO.** Có số rồi thì cả ba đều là tối ưu cho một vấn đề chưa tồn
+tại. Ghi đủ để TỔNG chốt, không tự chọn:
+
+| Hướng | Đổi gì | Rủi ro | Công |
+|---|---|---|---|
+| **Nạp lười** (chỉ parse phần đang nhìn) | Đập `parseDxf` một-phát thành parse theo lô + chỉ mục vùng; `Doc` thành nguồn có-thể-thiếu ⇒ **phá K1** ("ba ống kính soi vào MỘT nguồn") vì mọi nơi đọc `doc.entities` phải chịu được "chưa nạp xong" | 🔴 Cao — đụng bất biến kiến trúc nền. Mọi hàm đọc `Doc` (checker · BOQ · 3D · xuất) phải kiểm lại | Lớn (nhiều ngày) |
+| **Hạ độ phân giải hatch** | Giảm `arcSteps` khi làm phẳng cung (`collectBoundarySegments(doc, arcSteps = 24)`) | 🟡 Đổi **hình học thật**, không chỉ hiển thị — vi phạm §0f TB1 ("sai một con số thì mọi thứ phía sau vô nghĩa"). Diện tích/BOQ lệch theo | Nhỏ, nhưng sai chỗ |
+| **Giới hạn số sàn mở cùng lúc** | Thêm trần + câu báo ở đường mở file | 🟢 Thấp | Nhỏ |
+
+**Vì sao khuyên chưa làm:** 134 MB / 4.096 MB. Ba hướng trên đều đánh đổi **đúng** (K1, §0f TB1)
+lấy **bộ nhớ** — mà bộ nhớ đang dư 30 lần. §0f: ĐÚNG trước, tối ưu sau.
+
+**Nếu TỔNG vẫn muốn chặn sớm**, hướng rẻ và đúng nhất KHÔNG nằm trong ba hướng trên:
+**giới hạn ngăn xếp Undo**. `importDoc` gọi `snapshot()` (`lib/cad/store.ts`, grep
+`importDoc: (d, mode) => {` rồi đọc dòng `get().snapshot();`) ⇒ mở 6 file là 6 bản `Doc` cũ nằm
+trong `past` mà người dùng gần như không bao giờ Undo ngược về. Đó là khoản duy nhất trong phép đo
+này tăng tuyến tính mà **không phục vụ ai**.
+
+## VIỆC 4 🟡 — HAI FILE CHƯA AI SOI · **CÒN XANH**
+
+| File test | Kết quả |
+|---|---|
+| `lib/cad/dwg.test.ts` | 21 pass, 0 fail |
+| `lib/cad/dwg-import.test.ts` | 32 ok, 0 fail |
+| `lib/cad/dwg-flatten.test.ts` | 36 pass, 0 fail |
+| `lib/cad/dwg-flatten-guard.test.ts` | 28 ok, 0 fail |
+| `lib/cad/hatch.test.ts` | 45 ok, 0 fail |
+| `lib/cad/hatch-perf.test.ts` | 22 ok, 0 fail |
+| `lib/cad/hatch-index.test.ts` | 14 ok, 0 fail |
+| | **198 pass, 0 fail** |
+
+Không đỏ ⇒ không vá gì (N3).
+
+## BÀN GIAO S4 — nối `warnings` lên màn
+
+`exportDxfEx()` đã trả cảnh báo nhưng **chưa ai hiện nó**.
+
+- **Hàm**: `exportDxfEx(doc)` — grep `export function exportDxfEx` trong `lib/cad/dxf.ts`
+  (§0i: phiếu ghi `:983`, thực tế **`:995`** — số dòng đã trôi, dùng chuỗi grep).
+- **Hình dạng**: `{ dxf: string; report: { flattenedBlocks: Record<string, number>;
+  flattenedBlockCount: number; warnings: string[] } }`
+- **Chỗ nối**: `components/cad/CadEditor.tsx`, grep `const doExportDxf = () => {`.
+  Đổi `exportDxf(doc)` → `const { dxf, report } = exportDxfEx(doc)`, dùng `dxf` cho `Blob`, rồi
+  `if (report.warnings.length) useCadStore.getState().setStatus(report.warnings[0]);`
+  (cùng đường `setStatus` mà `onImportFile` đang dùng).
+- **Câu sẽ hiện**: *"Bản vẽ gốc có N block; bản xuất này đã làm phẳng — mở lại ở AutoCAD sẽ không
+  còn cấu trúc block. Hình vẽ giữ nguyên, nhưng không sửa hàng loạt qua block được nữa (…)."*
+- Không cần `<Checkpoint>`: xuất file không sinh entity, không ghi `Doc`, không có bước AI.
+
+## LỖI ĐÃ MẮC TRONG PHIÊN (bắt buộc)
+
+1. **Ghi đè bản vẽ của dự án đang mở bằng hồ sơ khách.** Đo bằng luồng thật nghĩa là
+   `importDoc(doc,'replace')` chạy thật ⇒ autosave đẩy 6 sàn hồ sơ khách xuống IndexedDB của trình
+   duyệt, và bản vẽ mẫu 128 entity của dự án đó **mất**. Đây đúng cái bẫy `SO-KIEM-TONG` §7b đã ghi
+   ("verify bằng tiêm store → luôn `addEntities()`, KHÔNG BAO GIỜ ghi đè trên route có autosave").
+   Tôi đọc luật đó rồi vẫn dính, vì lần này ghi đè đi qua **UI thật** chứ không qua `setState`.
+   **Đã dọn**: `reset()` → `doc.entities` = 0, `past` = 0, chờ autosave ghi bản rỗng. Dữ liệu khách
+   không còn trong IndexedDB. **Bản vẽ mẫu thì không khôi phục lại được** — cần Hoà biết.
+   ⇒ Luật nên bổ sung: đo/verify bằng file khách thì mở **dự án rác tạo riêng**, không mượn dự án sẵn.
+2. **Đặt trần `wait` sai** — gọi `computer{action:'wait', duration:15}` trong khi trần là 10 s; mất
+   một lượt gọi. Nhỏ, nhưng là kiểu không đọc giới hạn công cụ trước khi dùng.
+3. **Phiên S1 (cùng ngày) đã đúng khi không bịa số** — giữ lại đây làm đối chứng: nếu hôm đó đoán
+   bừa "6 sàn ~2 GB" theo phép nhân từ số Node thì đã sai gấp 15 lần và có thể kéo cả đội đi làm
+   nạp-lười — một việc lớn, phá K1, cho một vấn đề không tồn tại.
+
+## §0i — CHIẾU DÒNG LỆCH, ĐÃ SỬA TRONG PHIÊN
+
+- Phiếu S1b ghi `dxf.ts:983 exportDxfEx()` → thực tế **`:995`**. Chuỗi grep đúng:
+  `export function exportDxfEx`.
+- `dxf-plan.ts:361` — **đúng**, chuỗi grep: `nghi block mồ côi sót lại từ file nguồn khác`.
+
+## NGHIỆM THU
+
+- `npx tsc --noEmit -p .` → **`TSC_EXIT=0`, KHÔNG một dòng nào**. (Phiên S1 còn 1 lỗi ở
+  `lib/three/section-entities.test.ts` của S2 — nay S2 đã sửa xong.)
+- `npm test` → xem mục ngay dưới trong lần chạy cuối phiên.
+- Không sửa một dòng code nào trong phiên này — S1b thuần **đo + báo cáo**. File duy nhất đổi:
+  `docs/BAO-CAO-PHU.md`.
+
+### `npm test` — trước/sau phiên S1b
+
+```
+NPM_EXIT=1
+  FAIL - group nội thất mang đúng entityId của BlockEntity nguồn      ← 1 fail DUY NHẤT
+5063 dòng ok
+```
+
+**Đúng 1 fail, và là lỗi CŨ đã ghi sổ** (`SO-KIEM-TONG`, grep `group nội thất mang đúng entityId`):
+`lib/three/cad-to-obj.ts` không gán `entityId` cho Furn/Window sau merge `nhanh-g4`. **Vùng
+`lib/three/*` = mảng S2, cấm đụng.** Không phải hồi quy của phiên này — S1b không sửa dòng code nào.
+
+Số dòng `ok` tăng 5.063 (S1 đo 4.945) do các phiên khác thêm test trong ngày.

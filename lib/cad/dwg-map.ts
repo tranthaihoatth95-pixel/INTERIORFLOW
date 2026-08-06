@@ -73,12 +73,20 @@ export type DwgWorkerResponse = { ok: true; doc: DwgRawDoc } | { ok: false; erro
  * động tải máy mà vẫn đủ ngắn để không cảm giác "treo vĩnh viễn". */
 export const DEFAULT_DWG_IMPORT_TIMEOUT_MS = 60_000;
 
-export type DwgStage = 'spawning' | 'reading' | 'converting';
+/**
+ * `flattening` THÊM 05/08 (PHU, bug 2.1.6.d) — giai đoạn thứ TƯ, trước đây không tồn tại trong
+ * bảng này dù nó VẪN CHẠY: đó là `dwgRawDocToDoc()` bung INSERT/MINSERT/DIMENSION, chạy trên
+ * MAIN THREAD sau khi worker đã trả kết quả. Vì không có tên giai đoạn, nó cũng không có dòng
+ * trạng thái nào — người dùng thấy app đứng im ở chữ "convertEx" trong khi thật ra đang ở bước
+ * khác hẳn. Xem vết vá đầy đủ ở docstring `runDwgImport` mục "LỖ #3".
+ */
+export type DwgStage = 'spawning' | 'reading' | 'converting' | 'flattening';
 
 export const DWG_STAGE_LABEL: Record<DwgStage, string> = {
   spawning: 'đang khởi tạo worker đọc DWG',
   reading: 'đang đọc nhị phân DWG (dwg_read_data)',
   converting: 'đang chuyển sang danh sách đối tượng (convertEx) — bước hay chậm nhất',
+  flattening: 'đang bung block/xref ra hình thật',
 };
 
 /** Bảng mã phiên bản DWG (byte 0-5 file, "ACxxyy") → tên quen thuộc — CHỈ liệt các mã phổ biến
@@ -131,6 +139,221 @@ export function dwgCancelledMessage(file: { name: string }): string {
 /** Dùng cho cả progress callback lẫn heartbeat status bar mặc định (xem `openDwgFile` ở dwg.ts). */
 export function dwgProgressMessage(file: { name: string }, stage: DwgStage, elapsedMs: number): string {
   return `Đang đọc ${file.name}… (${DWG_STAGE_LABEL[stage]}, ${Math.round(elapsedMs / 1000)}s)`;
+}
+
+/* ═══════════ VÒNG ĐỜI 1 LƯỢT NHẬP DWG (tách khỏi dwg.ts 05/08, việc PHU q8) ═══════════
+ * VÌ SAO CHUYỂN XUỐNG ĐÂY: toàn bộ phần khó của bug 2.1.6.d (timeout · huỷ · tiến độ · thứ tự
+ * settle) nằm trong thân `openDwgFile`, mà `dwg.ts` chứa `import.meta.url` nên **không require
+ * được dưới sucrase-node** ⇒ trước phiên này KHÔNG một dòng nào của vòng đời đó có test
+ * (`dwg.test.ts` chỉ test được 4 hàm format chuỗi, tự ghi rõ lý do ở docstring của nó).
+ * Nay logic thuần nằm ở `runDwgImport` (file này, 0 `import.meta`, 0 DOM cứng) — `dwg.ts` chỉ còn
+ * là bộ nối: đẻ Worker thật + ghi status bar + giữ hồ worker mồ côi.
+ */
+
+/** Hình dạng TỐI THIỂU của Worker mà vòng đời cần — khai theo cấu trúc, KHÔNG buộc `lib.dom`,
+ * để test node dựng worker giả được. Worker thật của trình duyệt khớp sẵn hình dạng này. */
+export interface DwgWorkerLike {
+  postMessage(message: unknown, transfer?: unknown[]): void;
+  terminate(): void;
+  onmessage: ((ev: { data: DwgWorkerMessage }) => void) | null;
+  onerror: ((ev: { message?: string }) => void) | null;
+}
+
+/** Bản sao CỐ Ý của `DwgWorkerMessage` bên `dwg-worker.ts` (luật cô lập GPL: không bên nào được
+ * import bên kia — xem đầu `dwg-worker.ts`). Giữ đồng bộ bằng tay như `DwgRawDoc` đã làm. */
+export type DwgWorkerMessage =
+  | { kind: 'progress'; stage: 'reading' | 'converting' }
+  | ({ kind: 'result' } & DwgWorkerResponse);
+
+/** Phần của `File` mà vòng đời dùng tới — test truyền object thường, không cần File thật. */
+export interface DwgImportFile {
+  name: string;
+  size: number;
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+
+export interface DwgImportResult {
+  doc: Doc;
+  /** số entity KHÔNG map được (WIPEOUT/POINT/SPLINE… chưa hỗ trợ, hoặc HATCH boundary có cung) —
+   * hiện cho user biết bản vẽ vào app KHÔNG đầy đủ 100% so với file gốc. */
+  skippedEntityCount: number;
+  totalEntityCount: number;
+  /** Tường trình bước bung block/xref — `flatten.message` khác rỗng ⇒ bản vẽ vào KHÔNG đủ hình,
+   * PHẢI hiện câu đó cho người dùng (đừng nuốt: cắt ngắn im lặng = user tưởng file mình hỏng). */
+  flatten: DwgFlattenReport;
+}
+
+export interface DwgImportOptions {
+  /** ms trước khi HUỶ worker + reject nếu chưa có phản hồi — mặc định `DEFAULT_DWG_IMPORT_TIMEOUT_MS`. */
+  timeoutMs?: number;
+  /** ms trần cho RIÊNG bước bung block/xref — mặc định `DEFAULT_FLATTEN_BUDGET_MS`. Tách khỏi
+   * `timeoutMs` vì hai bước khác bản chất: bước worker cắt được bằng `setTimeout`, bước này
+   * đồng bộ nên phải tự cắt trong vòng lặp. */
+  flattenBudgetMs?: number;
+  /** Huỷ giữa chừng theo yêu cầu người dùng (nút "Huỷ" ở CadEditor). */
+  signal?: AbortSignal;
+  /** Tiến độ CÓ THẬT: giai đoạn worker báo + elapsed đo từ main thread, nhịp ~1s. */
+  onProgress?: (info: { stage: DwgStage; elapsedMs: number }) => void;
+}
+
+export interface DwgImportHost {
+  /** Đẻ worker đọc DWG (thật: `new Worker(new URL('./dwg-worker.ts', import.meta.url))`). */
+  spawn: () => DwgWorkerLike;
+  /** Người dùng bấm Huỷ ⇒ BỎ RƠI worker thay vì `terminate()` (Hoà chốt, SO-KIEM-TONG §11c —
+   * terminate() giữa `convertEx` treo cứng tab, tái hiện 3 lần trên file 9.7MB). CHỈ gọi khi
+   * worker ĐÃ NHẬN việc; worker chưa nhận buffer thì đang rảnh, `terminate()` an toàn hơn (không
+   * để lại worker mồ côi vô ích) — xem `startedWork` dưới. */
+  orphan: (worker: DwgWorkerLike, stage: DwgStage, elapsedMs: number) => void;
+  /** Ghi status bar mặc định mỗi nhịp heartbeat. Không có ⇒ bỏ qua. */
+  onStatus?: (text: string) => void;
+}
+
+/**
+ * Chạy 1 lượt nhập DWG. Không bao giờ throw "lỗi lạ" — mọi ngả (sai định dạng · hỏng · worker
+ * chết · quá giờ · bị huỷ) đều reject kèm câu tiếng Việt dựng sẵn để UI hiện thẳng.
+ *
+ * 🔴 SỬA 05/08 (PHU q8) — hai lỗ thứ tự settle mà bản trong `dwg.ts` mắc phải:
+ *  1. **Gửi việc cho worker SAU KHI đã settle.** `file.arrayBuffer()` là bất đồng bộ; nếu người
+ *     dùng bấm Huỷ (hoặc timeout nổ) trong lúc đọc buffer thì nhánh `.then` VẪN chạy tiếp và
+ *     `postMessage` cho worker vừa bị bỏ rơi ⇒ worker mồ côi bắt đầu `convertEx` **sau khi đã
+ *     huỷ**, ăn nguyên 1 lõi CPU mà không ai còn nghe kết quả (đúng rủi ro SO-KIEM-TONG §11d nêu:
+ *     "worker mồ côi có thể ăn nguyên 1 lõi vĩnh viễn"). Nay chặn bằng cờ `settled`.
+ *  2. **Bỏ rơi worker còn RẢNH.** `signal.aborted` ngay lúc vào hàm ⇒ worker chưa hề nhận buffer,
+ *     nhưng bản cũ vẫn đẩy nó vào hồ mồ côi (chiếm 1 trong 2 chỗ của hồ, và không bao giờ tự
+ *     chết vì nó chẳng có việc gì để xong). Nay chỉ bỏ rơi khi worker ĐÃ nhận việc.
+ *
+ * 🔴 **LỖ #3 — VÙNG KHÔNG AI CANH** (tìm ra 05/08, PHU; đây là chỗ "treo im lặng" thật sự).
+ * Bản cũ chạy `finish(() => resolve({ doc: dwgRawDocToDoc(msg.doc), … }))`. `finish()` **gỡ sạch
+ * bộ canh gác TRƯỚC khi hàm bung block chạy**: `clearInterval(heartbeat)` · `clearTimeout(
+ * hardTimeout)` · gỡ listener `abort`. Nghĩa là toàn bộ thời gian của `dwgRawDocToDoc` —
+ * chạy ĐỒNG BỘ trên main thread — không timeout nào cắt được, không dòng trạng thái nào nhúc
+ * nhích, nút Huỷ bấm không ăn. Đúng nghĩa "app đứng im, không biết vì sao".
+ *
+ * Điều này cũng ĐÍNH CHÍNH kết luận cũ ở `SO-KIEM-TONG` §11d ("`terminate()` không cắt được vòng
+ * WASM này"): tới bước đó **worker đã trả kết quả xong và đang rảnh**, nên `terminate()` tất
+ * nhiên không đổi gì — CPU lúc ấy nằm ở MAIN THREAD, không ở worker. Vật chứng phiên này:
+ * chạy libredwg-web ngoài trình duyệt trên **cả 34 file .dwg thật** của studio → **34/34 parse
+ * xong**, không file nào treo; riêng `01_BeachClub_TangHam.dwg` 9,3 MB (chính file đã làm treo
+ * tab 18 phút, xem §11d) parse hết **6 giây** (đọc 724 ms + convertEx 4.278 ms). Không có vòng
+ * lặp WASM vô hạn nào ở file đó.
+ *
+ * Vá: (a) đặt `stage = 'flattening'` + báo trạng thái **TRƯỚC** khi bung, để dòng chữ cuối cùng
+ * người dùng thấy đúng bước đang chạy chứ không đứng ở "convertEx"; (b) bung bằng
+ * `flattenDwgRawDoc` — trần thời gian nằm NGAY TRONG vòng lặp (`DEFAULT_FLATTEN_BUDGET_MS`), vì
+ * `setTimeout` không thể cắt một vòng lặp đồng bộ; (c) chỉ `finish()` SAU khi bung xong, để
+ * timeout/heartbeat/abort còn hiệu lực suốt bước cuối này.
+ */
+export function runDwgImport(file: DwgImportFile, opts: DwgImportOptions, host: DwgImportHost): Promise<DwgImportResult> {
+  const timeoutMs = opts.timeoutMs ?? DEFAULT_DWG_IMPORT_TIMEOUT_MS;
+
+  return new Promise<DwgImportResult>((resolve, reject) => {
+    let worker: DwgWorkerLike;
+    try {
+      worker = host.spawn();
+    } catch (err) {
+      reject(new Error(`Không khởi tạo được worker đọc DWG: ${err instanceof Error ? err.message : String(err)}`));
+      return;
+    }
+
+    let settled = false;
+    /** Worker đã được giao buffer chưa — quyết định "bỏ rơi" hay "terminate" (lỗ #2 ở trên). */
+    let startedWork = false;
+    let stage: DwgStage = 'spawning';
+    let headerInfo = '(chưa đọc được header)';
+    const startedAt = Date.now();
+    let onAbort: (() => void) | undefined;
+
+    const heartbeat = setInterval(() => {
+      const elapsedMs = Date.now() - startedAt;
+      opts.onProgress?.({ stage, elapsedMs });
+      try {
+        host.onStatus?.(dwgProgressMessage(file, stage, elapsedMs));
+      } catch {
+        /* store chưa sẵn sàng (SSR/test) — bỏ qua, KHÔNG chặn việc nhập file */
+      }
+    }, 1000);
+
+    /** `orphan: true` = đường HUỶ của người dùng. Nhánh timeout/lỗi vẫn `terminate()` như cũ —
+     * đổi nhánh đó là quyết định của Hoà (SO-KIEM-TONG §11d, 3 lựa chọn a/b/c chưa chốt). */
+    const finish = (settle: () => void, orphan = false) => {
+      if (settled) return;
+      settled = true;
+      clearInterval(heartbeat);
+      clearTimeout(hardTimeout);
+      if (opts.signal && onAbort) opts.signal.removeEventListener('abort', onAbort);
+      if (orphan && startedWork) {
+        host.orphan(worker, stage, Date.now() - startedAt);
+      } else {
+        worker.terminate();
+      }
+      settle();
+    };
+
+    const hardTimeout = setTimeout(() => {
+      finish(() => reject(new Error(dwgTimeoutMessage(file, timeoutMs, stage, headerInfo))));
+    }, timeoutMs);
+
+    if (opts.signal) {
+      if (opts.signal.aborted) {
+        finish(() => reject(new Error(dwgCancelledMessage(file))), true);
+        return;
+      }
+      onAbort = () => finish(() => reject(new Error(dwgCancelledMessage(file))), true);
+      opts.signal.addEventListener('abort', onAbort);
+    }
+
+    worker.onerror = (ev) => {
+      finish(() => reject(new Error(`Worker đọc DWG lỗi: ${ev.message || 'không rõ nguyên nhân'}`)));
+    };
+
+    worker.onmessage = (ev) => {
+      const msg = ev.data;
+      if (msg.kind === 'progress') {
+        stage = msg.stage; // chỉ cập nhật mốc — CHƯA settle, còn chờ 'result'
+        return;
+      }
+      if (!msg.ok) {
+        finish(() => reject(new Error(msg.error)));
+        return;
+      }
+      // LỖ #3 — bung block CÒN TRONG vùng canh gác: `finish()` (gỡ timeout/heartbeat/abort) dời
+      // xuống SAU bước này. Đổi stage + báo NGAY để dòng chữ cuối cùng người dùng thấy là bước
+      // đang thật sự chạy, không phải "convertEx" đã xong từ lâu.
+      stage = 'flattening';
+      opts.onProgress?.({ stage, elapsedMs: Date.now() - startedAt });
+      host.onStatus?.(dwgProgressMessage(file, stage, Date.now() - startedAt));
+      let flat: { doc: Doc; report: DwgFlattenReport };
+      try {
+        flat = flattenDwgRawDoc(msg.doc, { budgetMs: opts.flattenBudgetMs });
+      } catch (err) {
+        finish(() => reject(new Error(`Lỗi khi bung block/xref của ${file.name}: ${err instanceof Error ? err.message : String(err)}`)));
+        return;
+      }
+      finish(() => {
+        resolve({
+          doc: flat.doc,
+          skippedEntityCount: msg.doc.skippedEntityCount,
+          totalEntityCount: msg.doc.totalEntityCount,
+          flatten: flat.report,
+        });
+      });
+    };
+
+    file
+      .arrayBuffer()
+      .then((buffer) => {
+        // LỖ #1 (xem docstring): đã huỷ/quá giờ trong lúc đọc buffer ⇒ TUYỆT ĐỐI không giao việc
+        // nữa, nếu không worker (vừa bị bỏ rơi) sẽ nạp WASM rồi chạy convertEx cho một lượt nhập
+        // mà không còn ai nghe.
+        if (settled) return;
+        headerInfo = describeDwgHeader(buffer);
+        startedWork = true;
+        worker.postMessage({ buffer }, [buffer]);
+      })
+      .catch((err) => {
+        finish(() => reject(new Error(`Không đọc được nội dung file: ${err instanceof Error ? err.message : String(err)}`)));
+      });
+  });
 }
 
 /* ───────────────────────── mapping DwgRawDoc → Doc (giống pattern buildEntity/ensureLayer của
@@ -217,7 +440,45 @@ const MAT_ID: Mat = [1, 0, 0, 1, 0, 0];
 const MAX_INSERT_DEPTH = 8;
 /** Van an toàn: file xref bệnh lý (MINSERT lớn × block khổng lồ) không được nổ ra hàng triệu
  * entity làm treo tab — vượt ngưỡng thì dừng flatten, hình đã có vẫn giữ. */
-const MAX_FLATTEN_ENTITIES = 200_000;
+export const MAX_FLATTEN_ENTITIES = 200_000;
+
+/**
+ * Trần THỜI GIAN cho riêng bước bung block (05/08, PHU — bug 2.1.6.d).
+ *
+ * Vì sao trần SỐ LƯỢNG ở trên là chưa đủ: nó chỉ chặn được ca "nổ ra nhiều entity". Ca ngược lại
+ * — cây INSERT rất sâu/rộng nhưng mỗi nhánh sinh ÍT entity — vẫn tiêu thời gian mà không bao giờ
+ * chạm trần đếm. Đây là bước ĐỒNG BỘ trên main thread: `setTimeout` không cắt được nó (đã đo,
+ * xem `runDwgImport` "LỖ #3"), nên trần phải nằm NGAY TRONG vòng lặp, không nằm ngoài.
+ *
+ * 15 s chọn theo số đo thật của phiên này (bench `dwgRawDocToDoc`, máy Hoà):
+ *   - file thật lớn nhất trong 34 file .dwg của studio (dạng 24.000 entity · 1.546 block): **111 ms**
+ *   - ca bung tới ĐÚNG trần đếm 200.000 entity: **2,82 s** lúc máy rảnh
+ *   - CÙNG ca đó khi máy bận (`npm test` chạy song song 8 luồng): **> 6 s**
+ * Con số đầu tiên thử là 6 s và nó CẮT NHẦM ca 200.000 entity lúc máy bận (`dwg-flatten.test.ts`
+ * [11] đỏ thật một lần) — giữ lại ghi chép này để đừng ai hạ xuống nữa. 15 s ≈ 5× ca xấu nhất
+ * lúc rảnh, vẫn còn dư khi máy bận ⇒ file LÀNH không bao giờ chạm; file bệnh lý bị cắt trong
+ * mươi giây thay vì treo hàng chục phút. Trần này KHÔNG thay trần đếm — cái nào tới trước thì
+ * cắt, và `report.truncated` nói rõ là cái nào.
+ */
+export const DEFAULT_FLATTEN_BUDGET_MS = 15_000;
+/** Xem đồng hồ mỗi bấy nhiêu entity — đủ dày để cắt kịp, đủ thưa để không tốn gì đáng kể. */
+const FLATTEN_CLOCK_EVERY = 512;
+
+/** Giới hạn tiêm được cho `flattenDwgRawDoc` — mặc định dùng 2 hằng ở trên. `now` để test tất định. */
+export interface DwgFlattenLimits {
+  maxEntities?: number;
+  budgetMs?: number;
+  now?: () => number;
+}
+
+/** Bản tường trình bước bung block — `message` là câu HIỆN THẲNG cho người dùng (rỗng = trọn vẹn). */
+export interface DwgFlattenReport {
+  /** `none` = bung hết · `count` = chạm trần số lượng · `time` = chạm trần thời gian. */
+  truncated: 'none' | 'count' | 'time';
+  entityCount: number;
+  elapsedMs: number;
+  message: string;
+}
 
 function matMul(m1: Mat, m2: Mat): Mat {
   // m1 ∘ m2 — áp m2 trước rồi m1.
@@ -340,12 +601,50 @@ function dimFallbackText(re: Extract<DwgRawEntity, { type: 'DIMENSION' }>): stri
 /** Doc trả về CHỈ chứa layer thật sự xuất hiện trong entities (giống nguyên tắc parseDxf ở
  * dxf.ts — tránh dư layer rỗng khi import). INSERT/MINSERT/DIMENSION được flatten về world
  * space tại đây (xem khối chú thích ma trận phía trên). */
-export function dwgRawDocToDoc(raw: DwgRawDoc): Doc {
+export function dwgRawDocToDoc(raw: DwgRawDoc, limits?: DwgFlattenLimits): Doc {
+  return flattenDwgRawDoc(raw, limits).doc;
+}
+
+/**
+ * Bản ĐẦY ĐỦ của `dwgRawDocToDoc` — trả THÊM bản tường trình cắt ngắn.
+ *
+ * Tách ra (05/08, PHU) vì `dwgRawDocToDoc` còn được dùng NGOÀI repo (`~/Downloads/dwg2dxf`, xem
+ * `dwg.ts:14`) nên chữ ký cũ phải giữ nguyên 1 tham số. Trong app thì luôn gọi bản này: cắt ngắn
+ * mà KHÔNG nói ra là lỗi cùng họ với treo im lặng — người dùng nhận bản vẽ thiếu hình và tưởng
+ * file mình hỏng. Trước phiên này trần `MAX_FLATTEN_ENTITIES` cắt HOÀN TOÀN im lặng (`return`
+ * trần, không cờ, không đếm) — grep `MAX_FLATTEN_ENTITIES` trong bản cũ = 2 chỗ `return`, 0 chỗ báo.
+ */
+export function flattenDwgRawDoc(raw: DwgRawDoc, limits?: DwgFlattenLimits): { doc: Doc; report: DwgFlattenReport } {
   const doc: Doc = { entities: [], layers: [] };
   const layerById = new Map<string, Layer>();
   const layerDefByName = new Map<string, DwgRawLayer>();
   for (const l of raw.layers) layerDefByName.set(l.name, l);
   const blocks = raw.blocks ?? {};
+
+  const maxEntities = limits?.maxEntities ?? MAX_FLATTEN_ENTITIES;
+  const budgetMs = limits?.budgetMs ?? DEFAULT_FLATTEN_BUDGET_MS;
+  const now = limits?.now ?? Date.now;
+  const startedAt = now();
+  let truncated: DwgFlattenReport['truncated'] = 'none';
+  let sinceClock = 0;
+  /** Hết giờ chưa? Chỉ thật sự xem đồng hồ mỗi `FLATTEN_CLOCK_EVERY` lần hỏi. Một khi đã hết giờ
+   * thì GIỮ NGUYÊN kết luận (không hỏi lại) — nếu không, mọi nhánh đệ quy còn lại vẫn phải chạy
+   * tới lần bội số kế tiếp mới dừng. */
+  const outOfTime = (): boolean => {
+    if (truncated === 'time') return true;
+    if (++sinceClock < FLATTEN_CLOCK_EVERY) return false;
+    sinceClock = 0;
+    if (now() - startedAt < budgetMs) return false;
+    truncated = 'time';
+    return true;
+  };
+  const outOfRoom = (): boolean => {
+    if (doc.entities.length >= maxEntities) {
+      if (truncated === 'none') truncated = 'count';
+      return true;
+    }
+    return outOfTime();
+  };
 
   const ensureLayer = (name: string): string => {
     const nm = name || '0';
@@ -378,7 +677,7 @@ export function dwgRawDocToDoc(raw: DwgRawDoc): Doc {
   }
 
   const pushLeaf = (re: DwgRawEntity, ctx: InheritCtx) => {
-    if (doc.entities.length >= MAX_FLATTEN_ENTITIES) return;
+    if (outOfRoom()) return;
     const effLayer = re.layer === '0' && ctx.layer ? ctx.layer : re.layer;
     const effColor = 'colorIndex' in re && re.colorIndex === 0 && ctx.colorIndex !== undefined ? ctx.colorIndex : re.colorIndex;
     const layerId = ensureLayer(effLayer);
@@ -391,7 +690,7 @@ export function dwgRawDocToDoc(raw: DwgRawDoc): Doc {
   };
 
   const emit = (re: DwgRawEntity, m: Mat | null, depth: number, ctx: InheritCtx): void => {
-    if (doc.entities.length >= MAX_FLATTEN_ENTITIES) return;
+    if (outOfRoom()) return;
     if (re.type === 'INSERT') {
       if (depth >= MAX_INSERT_DEPTH) return; // chống block tự tham chiếu vòng lặp
       const blk = blocks[re.name];
@@ -452,5 +751,28 @@ export function dwgRawDocToDoc(raw: DwgRawDoc): Doc {
   for (const re of raw.entities) emit(re, null, 0, {});
 
   if (doc.layers.length === 0) doc.layers.push({ id: `l-0-${eid()}`, name: '0', color: '#c8c4bc', visible: true, locked: false });
-  return doc;
+  return { doc, report: flattenReport(truncated, doc.entities.length, now() - startedAt, maxEntities, budgetMs) };
+}
+
+/** Câu tường trình — viết theo `SPEC-NGON-NGU-CHI-DAN`: nói ĐIỀU ĐÃ XẢY RA + việc làm tiếp,
+ * không lộ tên hằng/hàm nội bộ ra giao diện. Rỗng khi bung trọn vẹn. */
+function flattenReport(
+  truncated: DwgFlattenReport['truncated'],
+  entityCount: number,
+  elapsedMs: number,
+  maxEntities: number,
+  budgetMs: number,
+): DwgFlattenReport {
+  let message = '';
+  if (truncated === 'count') {
+    message =
+      `Bản vẽ vượt ${maxEntities.toLocaleString('vi-VN')} đối tượng — đã dừng ở mức đó để app không đứng máy. ` +
+      `Hình đã vào vẫn dùng được nhưng CHƯA ĐỦ: tách bớt xref/block trong CAD gốc rồi nhập lại.`;
+  } else if (truncated === 'time') {
+    message =
+      `Bước bung block/xref chạy quá ${Math.round(budgetMs / 1000)} giây nên đã dừng lại — nhận được ` +
+      `${entityCount.toLocaleString('vi-VN')} đối tượng. Bản vẽ CHƯA ĐỦ hình: file này lồng block rất sâu, ` +
+      `hãy xuất phẳng (flatten/bind xref) từ CAD gốc rồi nhập lại.`;
+  }
+  return { truncated, entityCount, elapsedMs, message };
 }

@@ -75,6 +75,10 @@ export interface MassingWall {
   /** cao độ (mm) ĐÃ dùng để đùn group này lúc `docToObjScene()` chạy — mốc gốc để tính scale khi
    * kéo-đẩy (3D-5), KHÔNG suy lại từ hình học. */
   baseHeightMm: number;
+  /** 05/08 (S2 BUILD#1) — CỐT ĐÁY (mm) tường này đứng (`SceneGroup.baseMm`, giải từ
+   * `computeHeights()`). 0 = cốt ±0.000 như trước. Push-pull PHẢI neo scale quanh cốt này chứ
+   * không quanh gốc 0, nếu không tường tầng 2 vừa kéo cao vừa TRƯỢT XUỐNG khỏi sàn tầng đó. */
+  baseMm: number;
   geometry: THREE.BufferGeometry;
   colorHex: string;
 }
@@ -102,7 +106,7 @@ export function buildMassingWalls(scene: Scene3DData): MassingWall[] {
     // để 2 đường không lệch nhau (luật K1 "một nguồn"). Kéo-đẩy (push-pull) sau đó scale.y mesh
     // này tạm thời méo hố khoét trong lúc kéo — chấp nhận được, `pointerup` ghi `heightMm` mới
     // vào Doc rồi `useScene3D()` tính lại `scene` → hình cắt đúng lại (xem Scene3DViewer.tsx).
-    out.push({ entityId: g.entityId!, baseHeightMm: g.heightMm!, geometry: resolveGroupGeometry(g), colorHex: g.colorHex });
+    out.push({ entityId: g.entityId!, baseHeightMm: g.heightMm!, baseMm: g.baseMm ?? 0, geometry: resolveGroupGeometry(g), colorHex: g.colorHex });
   }
   return out;
 }

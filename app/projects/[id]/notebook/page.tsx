@@ -4,8 +4,11 @@
  * /projects/[id]/notebook — Project Notebook UI (Phase 1b MVP).
  *
  * Layout 3 cột desktop: Sources (30%) | Chat (50%) | Source viewer (20%).
- * Mobile: 1 cột, 3 tab. Design theo TTT quiet-luxury (Archivo, hairline 1px,
- * beige ground, cam #F06020 làm accent tiết chế, bo góc gần vuông).
+ * Mobile: 1 cột, 3 tab. Design theo hệ quiet-luxury của InteriorFlow (hairline 1px,
+ * mặt trang `--surface-page`, `--accent` làm nhấn tiết chế, bo góc gần vuông).
+ * 05/08 — LUẬT TRUNG TÍNH: trước đây khai `var(--surface-page, #F1ECE3)` mà
+ * `--surface-page` CHƯA từng được khai báo ⇒ fallback beige thương hiệu studio là
+ * màu chạy thật. Token nay có trong globals.css (2 theme), fallback hex đã bỏ.
  *
  * State/API do `useNotebook` hook chủ trì. Contract khớp với backend do
  * Agent P1a triển khai song song; nếu API chưa sẵn, hook fallback in-memory
@@ -39,7 +42,7 @@ export default function ProjectNotebookPage() {
         display: 'flex',
         flexDirection: 'column',
         height: '100dvh',
-        background: 'var(--surface-page, #F1ECE3)',
+        background: 'var(--surface-page)',
         color: 'var(--t1, #1E1B16)',
         fontFamily: 'var(--font-sans), system-ui, sans-serif',
       }}
@@ -52,7 +55,7 @@ export default function ProjectNotebookPage() {
           gap: 12,
           padding: '12px 20px',
           borderBottom: '1px solid var(--border)',
-          background: 'var(--surface-page, #F1ECE3)',
+          background: 'var(--surface-page)',
         }}
       >
         <button
@@ -134,7 +137,7 @@ export default function ProjectNotebookPage() {
               padding: '10px 8px',
               background: mobileTab === t.key ? 'var(--field, #FAF7F1)' : 'transparent',
               border: 'none',
-              borderBottom: mobileTab === t.key ? '2px solid var(--accent, #F06020)' : '2px solid transparent',
+              borderBottom: mobileTab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
               fontSize: 12,
               color: mobileTab === t.key ? 'var(--t1)' : 'var(--t2)',
               cursor: 'pointer',

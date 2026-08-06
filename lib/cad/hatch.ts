@@ -164,35 +164,142 @@ const EPS = 1e-6;
  *  - chồng lấn THẲNG HÀNG một phần: chiếu đầu mút đoạn kia lên đoạn này để cắt (phần trùng
  *    nhau sau đó bị loại bởi bước dedupe trong buildAtomicSegments).
  */
-function splitAtIntersections(segs: [Pt, Pt][]): [Pt, Pt][] {
-  const params: number[][] = segs.map(() => [0, 1]);
-  for (let i = 0; i < segs.length; i++) {
+/** Dưới ngưỡng này giữ nguyên vòng lặp đôi trần — đo được 400 đoạn = 23ms, dựng lưới còn tốn hơn.
+ * (Số đo đầy đủ ở docstring `splitAtIntersections`.) */
+const BROADPHASE_MIN_SEGS = 400;
+/** Trần số ô mỗi trục — chặn ca bệnh "1 đoạn dài xuyên cả bản vẽ" làm lưới phình vô hạn. */
+const BROADPHASE_MAX_CELLS_PER_AXIS = 256;
+
+/**
+ * Lọc thô bằng LƯỚI KHÔNG GIAN: gọi `visit(i, k)` cho MỌI cặp đoạn có bbox chạm nhau, mỗi cặp
+ * ĐÚNG MỘT LẦN. Cặp bbox rời nhau bị bỏ — chúng không thể giao nhau, cũng không thể chồng lấn
+ * thẳng hàng, nên bỏ đi không đổi kết quả (xem docstring `splitAtIntersections`).
+ *
+ * Chống trùng: một cặp có thể cùng nằm trong nhiều ô. Chỉ xử ở ô GÓC TRÊN-TRÁI của phần giao
+ * giữa hai dải ô — ô đó chắc chắn thuộc cả hai dải nên cặp không bao giờ bị bỏ sót, và chỉ khớp
+ * đúng một ô nên không lặp. (Rẻ hơn Set cặp: không cấp phát, không băm.)
+ */
+function forEachNearbyPair(segs: [Pt, Pt][], visit: (i: number, k: number) => void): void {
+  const n = segs.length;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let sumExtent = 0;
+  for (const [a, b] of segs) {
+    minX = Math.min(minX, a.x, b.x); maxX = Math.max(maxX, a.x, b.x);
+    minY = Math.min(minY, a.y, b.y); maxY = Math.max(maxY, a.y, b.y);
+    sumExtent += Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y));
+  }
+  const spanX = Math.max(maxX - minX, 1e-6);
+  const spanY = Math.max(maxY - minY, 1e-6);
+  // Ô ≈ chiều dài đoạn trung bình: đủ nhỏ để lọc mạnh, đủ lớn để đa số đoạn chỉ nằm 1-4 ô.
+  const cell = Math.max(
+    sumExtent / n || 1,
+    spanX / BROADPHASE_MAX_CELLS_PER_AXIS,
+    spanY / BROADPHASE_MAX_CELLS_PER_AXIS,
+    1e-6,
+  );
+  // +2 chỗ dư: chỉ số được DỜI +1 ngay dưới nên cột lớn nhất là ceil(spanX/cell)+1.
+  const cols = Math.max(1, Math.ceil(spanX / cell) + 2);
+
+  /* Dải ô của từng đoạn (bbox nới EPS để ca chạm-đúng-mép không rơi nhầm ô).
+   * ⚠️ DỜI +1: đoạn nằm sát mép trái/dưới có `min - minX - EPS` âm một chút ⇒ `floor` ra **-1**.
+   * Khoá ô là `y*cols + x`, nên x = -1 trùng khoá với (y-1, cols-1) — hai đoạn xa lắc bị gom
+   * chung rổ, và tệ hơn: luật "chỉ xử ở ô góc trên-trái" khi đó trỏ vào một ô KHÔNG tồn tại nên
+   * cặp bị bỏ QUA HẲN. Test đối chiếu `hatch-perf.test.ts` [1] bắt đúng lỗi này (lệch 1393 vs
+   * 1391 đoạn nguyên tử trên lưới trực giao) — giữ nguyên bẫy, đừng bỏ dời. */
+  const ix0 = new Int32Array(n), ix1 = new Int32Array(n), iy0 = new Int32Array(n), iy1 = new Int32Array(n);
+  const buckets = new Map<number, number[]>();
+  for (let i = 0; i < n; i++) {
     const [a, b] = segs[i];
-    for (let k = i + 1; k < segs.length; k++) {
-      const [c, d] = segs[k];
-      const r = infiniteLineIntersect(a, b, c, d);
-      if (r) {
-        if (r.t > EPS && r.t < 1 - EPS && r.u >= -EPS && r.u <= 1 + EPS) params[i].push(r.t);
-        if (r.u > EPS && r.u < 1 - EPS && r.t >= -EPS && r.t <= 1 + EPS) params[k].push(r.u);
-      } else {
-        // song song — chỉ quan tâm khi THẲNG HÀNG (điểm c nằm trên đường ab)
-        const abx = b.x - a.x;
-        const aby = b.y - a.y;
-        const ab2 = abx * abx + aby * aby;
-        if (ab2 < EPS) continue;
-        const perp = Math.abs(abx * (c.y - a.y) - aby * (c.x - a.x)) / Math.sqrt(ab2);
-        if (perp > 1e-4) continue;
-        const tOf = (p: Pt) => (abx * (p.x - a.x) + aby * (p.y - a.y)) / ab2;
-        for (const t of [tOf(c), tOf(d)]) if (t > EPS && t < 1 - EPS) params[i].push(t);
-        const cdx = d.x - c.x;
-        const cdy = d.y - c.y;
-        const cd2 = cdx * cdx + cdy * cdy;
-        if (cd2 < EPS) continue;
-        const uOf = (p: Pt) => (cdx * (p.x - c.x) + cdy * (p.y - c.y)) / cd2;
-        for (const u of [uOf(a), uOf(b)]) if (u > EPS && u < 1 - EPS) params[k].push(u);
+    const x0 = Math.floor((Math.min(a.x, b.x) - minX - EPS) / cell) + 1;
+    const x1 = Math.floor((Math.max(a.x, b.x) - minX + EPS) / cell) + 1;
+    const y0 = Math.floor((Math.min(a.y, b.y) - minY - EPS) / cell) + 1;
+    const y1 = Math.floor((Math.max(a.y, b.y) - minY + EPS) / cell) + 1;
+    ix0[i] = x0; ix1[i] = x1; iy0[i] = y0; iy1[i] = y1;
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const key = y * cols + x;
+        const arr = buckets.get(key);
+        if (arr) arr.push(i);
+        else buckets.set(key, [i]);
       }
     }
   }
+
+  for (const [key, list] of buckets) {
+    if (list.length < 2) continue;
+    const cx = key % cols;
+    const cy = (key - cx) / cols;
+    for (let p = 0; p < list.length; p++) {
+      const i = list[p];
+      for (let q = p + 1; q < list.length; q++) {
+        const k = list[q];
+        // bbox rời nhau ⇒ bỏ (đây mới là phép lọc thật; ô lưới chỉ để khỏi duyệt hết n²)
+        if (ix0[i] > ix1[k] || ix0[k] > ix1[i] || iy0[i] > iy1[k] || iy0[k] > iy1[i]) continue;
+        // chỉ xử ở ô góc trên-trái của phần giao — chống xử trùng cặp
+        if (Math.max(ix0[i], ix0[k]) !== cx || Math.max(iy0[i], iy0[k]) !== cy) continue;
+        visit(i, k);
+      }
+    }
+  }
+}
+
+/**
+ * 🔴 SỬA 05/08 (PHU q8, TECH-DEBT "findHatchBoundary treo >2 phút ở mật độ cao"):
+ * vòng lặp đôi dưới đây so MỌI CẶP đoạn của TOÀN bản vẽ ⇒ O(n²) với n = số đoạn biên
+ * (`collectBoundarySegments` gom mọi entity hiển thị, không lọc theo vị trí bấm). Đo thật trên
+ * mặt bằng lưới phòng (mỗi phòng 1 chữ nhật riêng + 2 món đồ):
+ *
+ * | đoạn biên | TRƯỚC |
+ * |---|---|
+ * | 1.200 | 49 ms |
+ * | 8.112 | 1,02 s |
+ * | 21.168 | 6,33 s |
+ * | 43.200 | 29,6 s |
+ * | 76.800 | **92,4 s** |
+ *
+ * Bản vẽ nhập từ DWG thật dễ vượt 50k đoạn ⇒ đúng triệu chứng "treo >2 phút" đã ghi sổ.
+ *
+ * CÁCH SỬA: lọc thô bằng LƯỚI KHÔNG GIAN — hai đoạn chỉ có thể giao/chồng nhau khi bbox của
+ * chúng chạm nhau, nên chỉ cần xét các cặp cùng rơi vào một ô lưới. **Không đổi kết quả**: bước
+ * cắt phía dưới gom `params[i]` qua `new Set(...)` + `sort()` nên THỨ TỰ đẩy tham số không ảnh
+ * hưởng đầu ra; các cặp bị lưới loại đều là cặp không thể sinh tham số hợp lệ (tham số của chúng
+ * rơi ngoài (0,1)). Có test đối chiếu cũ↔mới trên dữ liệu ngẫu nhiên: `hatch-perf.test.ts`.
+ */
+export function splitAtIntersections(segs: [Pt, Pt][], broadphaseMinSegs = BROADPHASE_MIN_SEGS): [Pt, Pt][] {
+  const params: number[][] = segs.map(() => [0, 1]);
+
+  const handlePair = (i: number, k: number) => {
+    const [a, b] = segs[i];
+    const [c, d] = segs[k];
+    const r = infiniteLineIntersect(a, b, c, d);
+    if (r) {
+      if (r.t > EPS && r.t < 1 - EPS && r.u >= -EPS && r.u <= 1 + EPS) params[i].push(r.t);
+      if (r.u > EPS && r.u < 1 - EPS && r.t >= -EPS && r.t <= 1 + EPS) params[k].push(r.u);
+      return;
+    }
+    // song song — chỉ quan tâm khi THẲNG HÀNG (điểm c nằm trên đường ab)
+    const abx = b.x - a.x;
+    const aby = b.y - a.y;
+    const ab2 = abx * abx + aby * aby;
+    if (ab2 < EPS) return;
+    const perp = Math.abs(abx * (c.y - a.y) - aby * (c.x - a.x)) / Math.sqrt(ab2);
+    if (perp > 1e-4) return;
+    const tOf = (p: Pt) => (abx * (p.x - a.x) + aby * (p.y - a.y)) / ab2;
+    for (const t of [tOf(c), tOf(d)]) if (t > EPS && t < 1 - EPS) params[i].push(t);
+    const cdx = d.x - c.x;
+    const cdy = d.y - c.y;
+    const cd2 = cdx * cdx + cdy * cdy;
+    if (cd2 < EPS) return;
+    const uOf = (p: Pt) => (cdx * (p.x - c.x) + cdy * (p.y - c.y)) / cd2;
+    for (const u of [uOf(a), uOf(b)]) if (u > EPS && u < 1 - EPS) params[k].push(u);
+  };
+
+  if (segs.length < broadphaseMinSegs) {
+    for (let i = 0; i < segs.length; i++) for (let k = i + 1; k < segs.length; k++) handlePair(i, k);
+  } else {
+    forEachNearbyPair(segs, handlePair);
+  }
+
   const out: [Pt, Pt][] = [];
   for (let i = 0; i < segs.length; i++) {
     const [a, b] = segs[i];
@@ -295,25 +402,81 @@ function enumerateFaces(atomic: [Pt, Pt][]): Pt[][] {
   return faces;
 }
 
-/** Dò biên vùng kín chứa `pick` từ tập đoạn thẳng biên khả dĩ `segs`. null nếu không tìm ra.
- * Trong mọi mặt hữu hạn chứa pick, trả mặt diện tích NHỎ NHẤT (vùng trong cùng). */
-export function traceHatchBoundary(segs: [Pt, Pt][], pick: Pt): Pt[] | null {
+/**
+ * Chỉ mục MẶT dựng SẴN cho một tập đoạn biên — dựng MỘT lần, hỏi N lần (05/08, PHU).
+ *
+ * Vì sao cần: `traceHatchBoundary` làm 3 việc, nhưng chỉ việc thứ 3 phụ thuộc `pick` —
+ * `buildAtomicSegments` (cắt giao điểm) và `enumerateFaces` (dựng DCEL) chỉ phụ thuộc `segs`.
+ * `docToObjScene` (`lib/three/cad-to-obj.ts`) gọi `findHatchBoundary` MỘT LẦN CHO MỖI món đồ
+ * nội thất ⇒ dựng lại toàn bộ phân hoạch mặt phẳng N lần cho cùng một bản vẽ.
+ *
+ * Số đo thật (bench phiên này, mặt bằng lưới phòng, mỗi phòng 1 chữ nhật + 2 món đồ):
+ *
+ *   lưới     phòng   lần hỏi   đoạn biên   1 lời gọi   N LỜI GỌI (bản cũ)
+ *   17×17      289       578       3.468       26 ms        12,2 s
+ *   24×24      576     1.152       6.912       17 ms        42,4 s
+ *   34×34    1.156     2.312      13.872      216 ms      ~173 s  ← "treo >2 phút" của TECH-DEBT
+ *   42×42    1.764     3.528      21.168       84 ms      ~353 s
+ *
+ * (Trần O(n²) của `splitAtIntersections` là chuyện KHÁC và đã vá trước đó — xem
+ * `hatch-perf.test.ts`. Bảng trên đo TRÊN bản đã có lưới không gian: phần còn lại thuần là
+ * "dựng lại N lần".)
+ */
+export interface HatchFaceIndex {
+  faces: Pt[][];
+  /** Diện tích từng mặt — tính sẵn để bước hỏi không gọi `polygonArea` lại mỗi lần. */
+  areas: number[];
+  /** bbox từng mặt, phẳng [minX,minY,maxX,maxY]×n — lọc thô trước `pointInPolygon` (đắt hơn nhiều). */
+  bboxes: Float64Array;
+}
+
+/** Dựng chỉ mục mặt từ tập đoạn biên. Rỗng ⇒ `faces` rỗng (mọi lần hỏi trả null, không nổ). */
+export function buildHatchFaceIndex(segs: [Pt, Pt][]): HatchFaceIndex {
   const atomic = buildAtomicSegments(segs);
-  if (!atomic.length) return null;
+  const faces = atomic.length ? enumerateFaces(atomic) : [];
+  const areas = faces.map(polygonArea);
+  const bboxes = new Float64Array(faces.length * 4);
+  faces.forEach((f, i) => {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of f) {
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    }
+    bboxes[i * 4] = minX; bboxes[i * 4 + 1] = minY; bboxes[i * 4 + 2] = maxX; bboxes[i * 4 + 3] = maxY;
+  });
+  return { faces, areas, bboxes };
+}
+
+/** Hỏi chỉ mục: mặt hữu hạn NHỎ NHẤT chứa `pick` (vùng trong cùng). null nếu không có. */
+export function pickHatchFace(index: HatchFaceIndex, pick: Pt): Pt[] | null {
   let best: Pt[] | null = null;
   let bestArea = Infinity;
-  for (const face of enumerateFaces(atomic)) {
-    if (!pointInPolygon(pick, face)) continue;
-    const area = polygonArea(face);
-    if (area < bestArea) {
-      bestArea = area;
-      best = face;
-    }
+  const { faces, areas, bboxes } = index;
+  for (let i = 0; i < faces.length; i++) {
+    // Mặt nhỏ hơn mới có cửa thắng — so diện tích TRƯỚC (1 phép so) rồi mới tới bbox rồi mới
+    // `pointInPolygon` (O(số đỉnh)). Thứ tự này rẻ dần từ trái sang phải, cố ý.
+    if (areas[i] >= bestArea) continue;
+    const b = i * 4;
+    if (pick.x < bboxes[b] || pick.x > bboxes[b + 2] || pick.y < bboxes[b + 1] || pick.y > bboxes[b + 3]) continue;
+    if (!pointInPolygon(pick, faces[i])) continue;
+    bestArea = areas[i];
+    best = faces[i];
   }
   return best;
 }
 
-/** Tiện ích 1-bước: dò biên trực tiếp từ Doc + pick-point (dùng cho lệnh H trong CadCanvas). */
+/** Dò biên vùng kín chứa `pick` từ tập đoạn thẳng biên khả dĩ `segs`. null nếu không tìm ra.
+ * Trong mọi mặt hữu hạn chứa pick, trả mặt diện tích NHỎ NHẤT (vùng trong cùng).
+ * Hỏi NHIỀU điểm trên CÙNG tập `segs` thì dùng `buildHatchFaceIndex` + `pickHatchFace` — hàm
+ * này dựng lại phân hoạch mỗi lần gọi (xem bảng số đo ở `HatchFaceIndex`). */
+export function traceHatchBoundary(segs: [Pt, Pt][], pick: Pt): Pt[] | null {
+  return pickHatchFace(buildHatchFaceIndex(segs), pick);
+}
+
+/** Tiện ích 1-bước: dò biên trực tiếp từ Doc + pick-point (dùng cho lệnh H trong CadCanvas —
+ * ở đó người dùng bấm MỘT điểm nên dựng-rồi-bỏ là đúng, không phí gì). */
 export function findHatchBoundary(doc: Doc, pick: Pt, arcSteps = 24): Pt[] | null {
   return traceHatchBoundary(collectBoundarySegments(doc, arcSteps), pick);
 }

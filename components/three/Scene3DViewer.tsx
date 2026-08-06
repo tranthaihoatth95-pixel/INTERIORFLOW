@@ -39,7 +39,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { buildMergedGeometries, buildMassingWalls, isMassingWallGroup } from '@/lib/three/obj-scene-to-geometry';
-import { clampWallHeight, type Scene3DData } from '@/lib/three/cad-to-obj';
+import { clampWallHeight, cadToThreeM, type Scene3DData } from '@/lib/three/cad-to-obj';
 import { camPathSampleToThree, sampleCamPathAt, EYE_HEIGHT_MM } from '@/lib/three/capture';
 import { sectionPlane, type SectionSpec } from '@/lib/three/section';
 import type { CamPathResult } from '@/lib/cad/campath';
@@ -56,6 +56,21 @@ export type Scene3DMode = 'orbit' | 'walk' | 'campath' | 'section' | 'massing';
 export interface Scene3DCameraApi {
   camera: THREE.PerspectiveCamera;
   controls: OrbitControls;
+}
+
+/**
+ * VIỆC 3.c (05/08) — DẤU VỊ TRÍ ĐÈN kéo được trong khung nhìn. Chỉ là **quả cầu đánh dấu**, KHÔNG
+ * phải nguồn sáng: khối vẫn `MeshBasicMaterial` không nhận ánh sáng (quyết định #3
+ * `SPEC-3D-CORE.md` §6, giữ nguyên). Đây là cách duy nhất "kéo đèn bằng gizmo" có nghĩa khi cảnh
+ * chưa hề có đèn thật.
+ *
+ * `posCadMm` là toạ độ **TUYỆT ĐỐI hệ CAD** (đã cộng cao độ tầng) — dùng thẳng `RigRoomLight.
+ * posCadMm` của `lib/three/lighting.ts`, không tự quy đổi lần thứ hai.
+ */
+export interface LightMarker {
+  id: string;
+  posCadMm: { x: number; y: number; z: number };
+  colorHex: string;
 }
 
 export interface Scene3DViewerProps {
@@ -77,6 +92,13 @@ export interface Scene3DViewerProps {
    * rắm, không hệ thống"). MẶC ĐỊNH TẮT vì mọi nơi CHỤP ẢNH (campath/capture/xuất) không được
    * dính lưới vào khung hình. */
   ground?: boolean;
+  /** VIỆC 3.c — dấu vị trí đèn (xem `LightMarker`). Bỏ trống = không vẽ dấu nào, hành vi y như
+   * trước với cả 4 nơi tiêu thụ khác (chụp ảnh · campath · công trường · D5). */
+  lightMarkers?: LightMarker[];
+  /** Nhả chuột sau khi kéo dấu đèn — gọi MỘT lần với toạ độ **tuyệt đối hệ CAD (mm)**. Component
+   * KHÔNG tự ghi vào Doc (luật một nguồn, cùng khuôn `onPushPull`); nơi gọi biết đèn có gắn tầng
+   * hay không nên nó tự trừ cao độ tầng ra trước khi ghi `RoomLight.posMm`. */
+  onLightMove?: (id: string, posCadMm: { x: number; y: number; z: number }) => void;
   className?: string;
   /** PHIẾU ĐỢT 7 NHÓM B — nơi ghi `{camera,controls}` sống cho ViewCube3D, xem comment
    * `Scene3DCameraApi` trên. Optional — nơi gọi không cần ViewCube (vd chụp ảnh) khỏi phải truyền. */
@@ -86,7 +108,7 @@ export interface Scene3DViewerProps {
 const IMPLEMENTED_MODES: Scene3DMode[] = ['orbit', 'campath', 'section', 'walk', 'massing'];
 const WALK_SPEED_M_PER_SEC = 1.5; // ~tốc độ đi bộ chậm, cùng cảm giác tempo với campath 1200mm/s
 
-export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame, onPushPull, ground = false, className, cameraApiRef }: Scene3DViewerProps) {
+export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame, onPushPull, lightMarkers, onLightMove, ground = false, className, cameraApiRef }: Scene3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const campathActive = mode === 'campath' && !!camPath?.samples.length;
   const sectionActive = mode === 'section' && !!sectionMm;
@@ -94,6 +116,18 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
   const massingActive = mode === 'massing';
   const onPushPullRef = useRef(onPushPull);
   onPushPullRef.current = onPushPull;
+  // VIỆC 3.c — đèn đi qua REF, KHÔNG qua deps của effect chính. Nếu cho `lightMarkers` vào deps
+  // thì mỗi lần kéo đèn 1px sẽ dựng lại TOÀN BỘ cảnh (hình học + camera + controls) — vừa giật
+  // vừa reset góc nhìn. Effect chính đăng ký `syncMarkersRef`, effect nhỏ bên dưới gọi lại nó.
+  const lightMarkersRef = useRef<LightMarker[]>(lightMarkers ?? []);
+  lightMarkersRef.current = lightMarkers ?? [];
+  const onLightMoveRef = useRef(onLightMove);
+  onLightMoveRef.current = onLightMove;
+  const syncMarkersRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    syncMarkersRef.current?.();
+  }, [lightMarkers]);
 
   useEffect(() => {
     if (!IMPLEMENTED_MODES.includes(mode)) {
@@ -234,10 +268,53 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     for (const w of massingWalls) {
       const material = new THREE.MeshBasicMaterial({ color: w.colorHex, side: THREE.DoubleSide });
       const mesh = new THREE.Mesh(w.geometry, material);
-      mesh.userData = { entityId: w.entityId, baseHeightMm: w.baseHeightMm };
+      mesh.userData = { entityId: w.entityId, baseHeightMm: w.baseHeightMm, baseMm: w.baseMm };
       massingMeshes.push(mesh);
       group.add(mesh);
     }
+
+    /* ── VIỆC 3.c — DẤU VỊ TRÍ ĐÈN (quả cầu + chân dọi xuống sàn) ────────────────────────────
+       `depthTest:false` + `renderOrder` cao: dấu đèn phải THẤY ĐƯỢC kể cả khi nằm sau tường —
+       đèn trần luôn bị chính trần/tường che, chôn nó vào khối thì không ai kéo được. Chân dọi
+       xuống z=0 để đọc được vị trí trên mặt bằng (chỉ nhìn quả cầu lơ lửng thì không biết nó
+       đứng đâu — bài học quen thuộc của gizmo 3D). */
+    const markerGroup = new THREE.Group();
+    three.add(markerGroup);
+    const markerMeshes: THREE.Mesh[] = [];
+    const markerJunk: { dispose(): void }[] = [];
+
+    function clearMarkers() {
+      for (const j of markerJunk) j.dispose();
+      markerJunk.length = 0;
+      markerMeshes.length = 0;
+      markerGroup.clear();
+    }
+
+    function syncMarkers() {
+      clearMarkers();
+      for (const lm of lightMarkersRef.current) {
+        const [x, y, z] = cadToThreeM(lm.posCadMm.x, lm.posCadMm.y, lm.posCadMm.z);
+
+        const geo = new THREE.SphereGeometry(0.085, 16, 12);
+        const mat = new THREE.MeshBasicMaterial({ color: lm.colorHex, depthTest: false, transparent: true, opacity: 0.95 });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(x, y, z);
+        mesh.renderOrder = 999;
+        mesh.userData = { lightId: lm.id };
+        markerGroup.add(mesh);
+        markerMeshes.push(mesh);
+        markerJunk.push(geo, mat);
+
+        const stemGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x, 0, z), new THREE.Vector3(x, y, z)]);
+        const stemMat = new THREE.LineBasicMaterial({ color: lm.colorHex, transparent: true, opacity: 0.35, depthTest: false });
+        const stem = new THREE.Line(stemGeo, stemMat);
+        stem.renderOrder = 998;
+        markerGroup.add(stem);
+        markerJunk.push(stemGeo, stemMat);
+      }
+    }
+    syncMarkers();
+    syncMarkersRef.current = syncMarkers;
 
     // Push-pull (3D-5) — kéo mặt TRÊN 1 tường = đổi cao độ. Tường luôn đùn từ đáy z(three.y)=0
     // (`docToObjScene` lăng trụ đứng z0=0) nên scale.y quanh gốc 0 co-giãn ĐÚNG chiều cao mới,
@@ -247,7 +324,8 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     const pointerNdc = new THREE.Vector2();
     const dragPlane = new THREE.Plane();
     const dragPoint = new THREE.Vector3();
-    let dragging: { mesh: THREE.Mesh; entityId: string; baseHeightMm: number } | null = null;
+    let dragging: { mesh: THREE.Mesh; entityId: string; baseHeightMm: number; baseM: number } | null = null;
+    let draggingLight: { mesh: THREE.Mesh; id: string; vertical: boolean } | null = null;
 
     function ndcFromEvent(e: PointerEvent) {
       const rect = renderer.domElement.getBoundingClientRect();
@@ -255,34 +333,94 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
       pointerNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     }
     function onPointerDown(e: PointerEvent) {
-      if (!massingMeshes.length) return;
+      if (!massingMeshes.length && !markerMeshes.length) return;
       ndcFromEvent(e);
       raycaster.setFromCamera(pointerNdc, camera);
+
+      // Dấu đèn ĐƯỢC ƯU TIÊN trước tường: nó nhỏ và `depthTest:false` nên luôn nổi trên mặt
+      // tường; bấm trúng nó mà lại đi kéo cao tường thì người dùng không hiểu chuyện gì xảy ra.
+      const lightHit = markerMeshes.length ? raycaster.intersectObjects(markerMeshes, false)[0] : undefined;
+      if (lightHit) {
+        const mesh = lightHit.object as THREE.Mesh;
+        const id = (mesh.userData as { lightId: string }).lightId;
+        // Không Shift = trượt trên MẶT PHẲNG NGANG ở đúng cao độ đèn (đổi vị trí trên mặt bằng).
+        // Giữ Shift = trượt trên MẶT PHẲNG ĐỨNG hướng về camera (đổi cao độ) — cùng quy ước
+        // "Shift đổi trục" mà push-pull/SketchUp/Blender đều dùng.
+        if (e.shiftKey) {
+          const camDir = new THREE.Vector3();
+          camera.getWorldDirection(camDir);
+          const n = new THREE.Vector3(camDir.x, 0, camDir.z);
+          if (n.lengthSq() < 1e-6) n.set(0, 0, 1);
+          dragPlane.setFromNormalAndCoplanarPoint(n.normalize(), mesh.position);
+        } else {
+          dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), mesh.position);
+        }
+        draggingLight = { mesh, id, vertical: e.shiftKey };
+        controls.enabled = false;
+        renderer.domElement.setPointerCapture(e.pointerId);
+        return;
+      }
+
+      if (!massingMeshes.length) return;
       const hit = raycaster.intersectObjects(massingMeshes, false)[0];
       if (!hit || !hit.face) return;
       const worldNormal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
       if (worldNormal.y < 0.5) return; // chỉ mặt TRÊN (đỉnh tường) mới có nghĩa "cao tường"
       const mesh = hit.object as THREE.Mesh;
-      const ud = mesh.userData as { entityId: string; baseHeightMm: number };
+      const ud = mesh.userData as { entityId: string; baseHeightMm: number; baseMm?: number };
       const camDir = new THREE.Vector3();
       camera.getWorldDirection(camDir);
       const planeNormal = new THREE.Vector3(camDir.x, 0, camDir.z);
       if (planeNormal.lengthSq() < 1e-6) planeNormal.set(0, 0, 1);
       planeNormal.normalize();
       dragPlane.setFromNormalAndCoplanarPoint(planeNormal, hit.point);
-      dragging = { mesh, entityId: ud.entityId, baseHeightMm: ud.baseHeightMm };
+      dragging = { mesh, entityId: ud.entityId, baseHeightMm: ud.baseHeightMm, baseM: (ud.baseMm ?? 0) / 1000 };
       controls.enabled = false;
       renderer.domElement.setPointerCapture(e.pointerId);
     }
     function onPointerMove(e: PointerEvent) {
+      if (draggingLight) {
+        ndcFromEvent(e);
+        raycaster.setFromCamera(pointerNdc, camera);
+        if (!raycaster.ray.intersectPlane(dragPlane, dragPoint)) return;
+        if (draggingLight.vertical) {
+          // Chỉ đổi cao độ; kẹp ≥0 để đèn không chui xuống dưới sàn tầng.
+          draggingLight.mesh.position.y = Math.max(0, dragPoint.y);
+        } else {
+          draggingLight.mesh.position.x = dragPoint.x;
+          draggingLight.mesh.position.z = dragPoint.z;
+        }
+        return;
+      }
       if (!dragging) return;
       ndcFromEvent(e);
       raycaster.setFromCamera(pointerNdc, camera);
       if (!raycaster.ray.intersectPlane(dragPlane, dragPoint)) return;
-      const newHeightM = Math.max(2, Math.min(6, dragPoint.y));
-      dragging.mesh.scale.y = newHeightM / (dragging.baseHeightMm / 1000);
+      // 05/08 (S2 BUILD#1) — tường KHÔNG còn luôn đùn từ 0: `computeHeights()` đặt đáy theo tầng.
+      // `dragPoint.y` là cao độ TUYỆT ĐỐI của con trỏ ⇒ chiều cao mới = trừ đi cốt đáy. Và scale.y
+      // co-giãn quanh GỐC 0 nên phải bù `position.y` để điểm ở cốt đáy đứng yên — không bù thì kéo
+      // tường tầng 2 sẽ tụt luôn cả tường xuống dưới sàn.
+      const newHeightM = Math.max(2, Math.min(6, dragPoint.y - dragging.baseM));
+      const s = newHeightM / (dragging.baseHeightMm / 1000);
+      dragging.mesh.scale.y = s;
+      dragging.mesh.position.y = dragging.baseM * (1 - s);
     }
     function onPointerUp(e: PointerEvent) {
+      if (draggingLight) {
+        const p = draggingLight.mesh.position;
+        // three (m, Y-lên) → CAD (mm, Y-Bắc): nghịch đảo `cadAxesToThree` = (x, z, -y) — viết
+        // ngay đây thay vì thêm hàm vào `lib/three/*` (vùng PHU). Đề nghị PHU xuất
+        // `threeMToCadMm()` để chỗ này gọi chung, xem báo cáo phiên.
+        onLightMoveRef.current?.(draggingLight.id, {
+          x: Math.round(p.x * 1000),
+          y: Math.round(-p.z * 1000),
+          z: Math.round(p.y * 1000),
+        });
+        draggingLight = null;
+        controls.enabled = !walkActive && !campathActive;
+        if (renderer.domElement.hasPointerCapture(e.pointerId)) renderer.domElement.releasePointerCapture(e.pointerId);
+        return;
+      }
       if (!dragging) return;
       const newHeightMm = clampWallHeight(Math.round((dragging.baseHeightMm * dragging.mesh.scale.y) / 10) * 10);
       onPushPullRef.current?.(dragging.entityId, newHeightMm);
@@ -290,12 +428,14 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
       controls.enabled = !walkActive && !campathActive;
       if (renderer.domElement.hasPointerCapture(e.pointerId)) renderer.domElement.releasePointerCapture(e.pointerId);
     }
-    if (massingActive) {
-      renderer.domElement.addEventListener('pointerdown', onPointerDown);
-      renderer.domElement.addEventListener('pointermove', onPointerMove);
-      renderer.domElement.addEventListener('pointerup', onPointerUp);
-      renderer.domElement.addEventListener('pointercancel', onPointerUp);
-    }
+    // Gắn LUÔN LUÔN (không còn gate `massingActive`): dấu đèn có thể xuất hiện ở mọi mode, và cả
+    // 3 handler đều tự thoát ngay khi không có tường-massing lẫn dấu đèn nào ⇒ 0 phí, 0 đổi hành
+    // vi cho campath/walk/section (đã kiểm: `onPointerDown` return sớm nên không nuốt cú click
+    // kích hoạt Pointer Lock của mode walk).
+    renderer.domElement.addEventListener('pointerdown', onPointerDown);
+    renderer.domElement.addEventListener('pointermove', onPointerMove);
+    renderer.domElement.addEventListener('pointerup', onPointerUp);
+    renderer.domElement.addEventListener('pointercancel', onPointerUp);
 
     function resize() {
       if (!container) return;
@@ -352,12 +492,12 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
       }
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
-      if (massingActive) {
-        renderer.domElement.removeEventListener('pointerdown', onPointerDown);
-        renderer.domElement.removeEventListener('pointermove', onPointerMove);
-        renderer.domElement.removeEventListener('pointerup', onPointerUp);
-        renderer.domElement.removeEventListener('pointercancel', onPointerUp);
-      }
+      renderer.domElement.removeEventListener('pointerdown', onPointerDown);
+      renderer.domElement.removeEventListener('pointermove', onPointerMove);
+      renderer.domElement.removeEventListener('pointerup', onPointerUp);
+      renderer.domElement.removeEventListener('pointercancel', onPointerUp);
+      syncMarkersRef.current = null;
+      clearMarkers();
       for (const b of built) {
         b.geometry.dispose();
       }

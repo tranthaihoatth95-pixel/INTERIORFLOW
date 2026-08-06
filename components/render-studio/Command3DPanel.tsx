@@ -26,8 +26,10 @@
 import { useState } from 'react';
 import {
   Plus, Pencil, Palette, Camera, Square, DoorClosed, AppWindow, TrendingUp,
-  CornerUpRight, RotateCw, Fence, Minus, PanelTop, Archive,
+  CornerUpRight, RotateCw, Fence, Minus, PanelTop, Archive, Lightbulb, Scissors,
 } from 'lucide-react';
+import type { Scene3DData } from '@/lib/three/cad-to-obj';
+import { SectionExtractPanel, type SectionAcceptPayload } from './SectionExtractPanel';
 import { useMaterials, type MaterialSpecLite } from '@/lib/render-studio/use-materials';
 import MaterialSphere from '@/components/three/MaterialSphere';
 import { darken, kindFromName, sceneForKind } from '@/components/three/material-preview';
@@ -35,6 +37,8 @@ import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import Tooltip from '@/components/ui/Tooltip';
+import { WallTypePanel3D } from './WallTypePanel3D';
+import { LightTab } from './LightTab';
 
 /**
  * Tab do NƠI MOUNT giữ (mode Vẽ 3D cần mở thẳng tab Tạo khi bấm "Dựng khối đầu tiên").
@@ -46,7 +50,9 @@ import Tooltip from '@/components/ui/Tooltip';
  * cần migrate dữ liệu cũ — đổi thẳng. `hien` bỏ khỏi union ở việc "MỘT THƯ VIỆN" (xem trên) — cây
  * dời sang Navigator, không còn là tab của panel này.
  */
-export type Command3DTab = 'tao' | 'sua' | 'vatlieu' | 'camera';
+// 05/08 (S2 BUILD#1) — thêm `banve`: chỗ RÚT ĐƯỜNG 2D ra khỏi khối 3D (`sectionToEntities`).
+// Xếp CUỐI vì đúng thứ tự nghề: dựng khối → sửa → vật liệu → máy quay → đèn → *rồi mới* ra hồ sơ.
+export type Command3DTab = 'tao' | 'sua' | 'vatlieu' | 'camera' | 'den' | 'banve';
 type Tab = Command3DTab;
 
 export interface Command3DPanelProps {
@@ -61,6 +67,10 @@ export interface Command3DPanelProps {
   onTaoLanCan?: () => void;
   /** báo lên nơi mount là người dùng ĐÃ chọn vật liệu — mode dùng để đánh dấu bước ②. */
   onPickMaterial?: (id: string) => void;
+  /** VIỆC 2 (S2 BUILD#1) — cảnh 3D đang hiện, để tab "Bản vẽ" cắt lớp. `null` = chưa có khối nào. */
+  scene?: Scene3DData | null;
+  /** người dùng đã DUYỆT ở màn xem trước → nơi mount ghi vào `Doc` (panel không tự ghi). */
+  onNhanMatCat?: (payload: SectionAcceptPayload) => void;
 }
 
 const TABS: { id: Tab; icon: typeof Plus; label: [string, string] }[] = [
@@ -68,6 +78,10 @@ const TABS: { id: Tab; icon: typeof Plus; label: [string, string] }[] = [
   { id: 'sua', icon: Pencil, label: ['Sửa', 'Edit'] },
   { id: 'vatlieu', icon: Palette, label: ['Vật liệu', 'Material'] },
   { id: 'camera', icon: Camera, label: ['Camera', 'Camera'] },
+  // VIỆC 3 (05/08) — nhóm "Đặt đèn" TRƯỚC PHIÊN NÀY KHÔNG TỒN TẠI (không tab, không nút). Xếp
+  // cuối theo đúng trình tự nghề: dựng khối → gán vật liệu → đặt máy quay → đánh đèn.
+  { id: 'den', icon: Lightbulb, label: ['Đèn', 'Light'] },
+  { id: 'banve', icon: Scissors, label: ['Bản vẽ', 'Drawing'] },
 ];
 
 export default function Command3DPanel({
@@ -77,6 +91,8 @@ export default function Command3DPanel({
   onTaoTuong,
   onTaoLanCan,
   onPickMaterial,
+  scene = null,
+  onNhanMatCat,
 }: Command3DPanelProps) {
   const setTab = onTabChange;
   const tr = useT();
@@ -95,7 +111,8 @@ export default function Command3DPanel({
                 'flex flex-1 flex-col items-center gap-1 px-0.5 py-2 text-[10px] transition-colors',
                 active ? 'font-semibold text-[var(--accent)] shadow-[inset_0_-2px_0_var(--accent)]' : 'text-[var(--t4)] hover:text-[var(--t2)]',
               )}
-              title={tr(label[0], label[1])}
+              /* `title=` gỡ 05/08 (VIỆC 2): nhãn tab ĐÃ hiện ngay dưới icon — `title=` chỉ lặp
+                 đúng chữ đó sau 1-2s chờ, không thêm thông tin nào. Tab không cần tooltip. */
             >
               <Icon size={14} />
               {tr(label[0], label[1])}
@@ -106,7 +123,10 @@ export default function Command3DPanel({
       <div className="flex-1 overflow-y-auto p-3">
         {tab === 'vatlieu' && <MaterialTab materials={materials} onPick={onPickMaterial} />}
         {tab === 'tao' && <CreateTab nhayNutTuong={nhayNutTuong} onTaoTuong={onTaoTuong} onTaoLanCan={onTaoLanCan} />}
-        {tab !== 'vatlieu' && tab !== 'tao' && <PlaceholderTab tab={tab} />}
+        {tab === 'sua' && <EditTab />}
+        {tab === 'den' && <LightTab />}
+        {tab === 'banve' && <SectionExtractPanel scene={scene} onNhan={onNhanMatCat} />}
+        {tab === 'camera' && <PlaceholderTab tab={tab} />}
       </div>
     </div>
   );
@@ -310,14 +330,18 @@ function MaterialTab({ materials, onPick }: { materials: MaterialSpecLite[]; onP
           const active = selectedId === m.id;
           const swatchColor = m.colorHex && /^#?[0-9a-fA-F]{6}$/.test(m.colorHex) ? m.colorHex : 'var(--border-strong)';
           return (
+            /* 05/08 VIỆC 2 — tên + SKU dưới ô đều `truncate`, nên tooltip là đường DUY NHẤT đọc
+               được tên đầy đủ. Bỏ `title=` (chậm, câm trên tablet — mà đây đúng là panel hay dùng
+               bằng bút). `side="right"` vì lưới 3 cột hẹp: tag canh giữa sẽ đè ô bên cạnh.
+               `w-full` cả span bọc lẫn nút — span của Tooltip là inline-flex, không tự giãn
+               bằng ô lưới. */
+            <Tooltip key={m.id} side="right" label={m.name} desc={m.sku ? `Mã: ${m.sku}` : undefined} style={{ width: '100%' }}>
             <button
-              key={m.id}
               onClick={() => { setSelectedId(m.id); onPick?.(m.id); }}
               className={cn(
-                'overflow-hidden rounded-[9px] border bg-[var(--field)] text-left transition-colors',
+                'w-full overflow-hidden rounded-[9px] border bg-[var(--field)] text-left transition-colors',
                 active ? 'border-[var(--accent)]' : 'border-[var(--border)] hover:border-[var(--accent-ring)]',
               )}
-              title={`${m.name}${m.sku ? ` · ${m.sku}` : ''}`}
             >
               {/* G4 (SPEC-VAT-LIEU-PBR-IF §2) — quả cầu render thật thay ô màu phẳng. ATLAS chưa
                   có cột PBR (việc PHU) → loại bề mặt suy từ TÊN, màu 2 tông từ colorHex; cảnh
@@ -339,6 +363,7 @@ function MaterialTab({ materials, onPick }: { materials: MaterialSpecLite[]; onP
               <p className="truncate px-1.5 py-1 text-[9px] font-medium text-[var(--t2)]">{m.name}</p>
               {m.sku && <p className="truncate px-1.5 pb-1 text-[8px] text-[var(--accent)]">{m.sku}</p>}
             </button>
+            </Tooltip>
           );
         })}
       </div>
@@ -351,7 +376,25 @@ function MaterialTab({ materials, onPick }: { materials: MaterialSpecLite[]; onP
 // "VIỆC MỘT THƯ VIỆN". `kindOfGroup`/`labelOfGroup`/`KIND_LABEL_*`/`KIND_DOT` dời sang
 // `lib/render-studio/group-kind.ts` để 2 file kia dùng chung, không lệch nhau.
 
-type PlaceholderKey = Exclude<Tab, 'vatlieu' | 'tao'>;
+/**
+ * VIỆC 2 (05/08) — tab "Sửa" thôi làm placeholder thuần: nay chở BẢNG LOẠI TƯỜNG (Type/Instance
+ * kiểu Revit, `WallTypePanel3D.tsx`). Câu chỉ đường cũ GIỮ NGUYÊN bên dưới bảng — nó vẫn đúng và
+ * vẫn cần (3 nút khoét hốc/vát cạnh/nhân bản dãy nằm ở Inspector bên phải, không phải ở đây).
+ */
+function EditTab() {
+  const tr = useT();
+  const [vi, en] = PLACEHOLDER_COPY.sua;
+  return (
+    <div className="space-y-3">
+      <WallTypePanel3D />
+      <p className="rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-2.5 text-[10.5px] leading-relaxed text-[var(--t4)]">
+        {tr(vi, en)}
+      </p>
+    </div>
+  );
+}
+
+type PlaceholderKey = Exclude<Tab, 'vatlieu' | 'tao' | 'den' | 'banve'>;
 
 // Camera GIỮ placeholder (không bịa ô nhập số vô chủ — spec §6.2 cần model camera thật trong Doc
 // trước, hôm nay chưa có; input "sống nhưng không lưu gì" tệ hơn câu "sắp có" trung thực).

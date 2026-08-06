@@ -31,9 +31,12 @@ Nếu 4 điều kiện đủ: `git worktree remove <path>` (KHÔNG `--force`) + 
 - Nếu gặp lỗi "autocompact thrashing" → nguyên nhân là file quá lớn hoặc quá nhiều file trong context. Báo ngay, KHÔNG tự retry liên tục.
 
 ## Project Knowledge
-Tài liệu tham chiếu đã load vào `knowledge/` (copy từ `~/Downloads/knowledge/`, 18/07):
+⛔ **`knowledge/` TRONG REPO LÀ RỖNG — đừng đi tìm tài liệu ở đó.** Kiểm 05/08: `ls knowledge/` = 0 file, `git ls-files knowledge` = 0 dòng. Thư mục rỗng còn lại chỉ là vỏ.
 
-**`knowledge/ttt-design-system/`** — hệ thiết kế TTT. ⚠️ CHỈ dùng khi làm **tài liệu/báo cáo CHO TTT**, KHÔNG áp vào sản phẩm (xem LUẬT NỀN TẢNG bên dưới).
+Bản `knowledge/ttt-design-system/` (hệ thiết kế TTT) **đã dời hẳn ra ngoài repo** theo LUẬT TRUNG TÍNH — nó là tài sản thương hiệu của MỘT studio, không được nằm trong sản phẩm bán ra (xem LUẬT NỀN TẢNG bên dưới + `docs/00-CHOT.md` mục "Dọn trung tính 01/08"). `.gitignore` đã chặn đường về.
+Cần tra nó khi làm **tài liệu/báo cáo CHO TTT** (KHÔNG áp vào sản phẩm) thì đọc từ ngoài repo — hỏi Hoà đường dẫn hiện tại; sổ 01/08 ghi `~/Downloads/_TTT-BRAND/`, chưa xác minh lại trong phiên này.
+
+> Ghi chú 05/08 (S6/T9): mục này TRƯỚC ĐÂY ghi *"Tài liệu tham chiếu đã load vào `knowledge/`"* — sai hiện trạng, khiến phiên sau tin là có tài liệu, đi tìm, không thấy, rồi tự suy diễn. Đó đúng là cơ chế đẻ ra "đề xuất lại thứ đã có" (luật N8).
 
 ### 📦 Dữ liệu tham khảo đã TÁCH RA NGOÀI repo (24/07)
 Theo Luật trung tính, các thư mục sau **không còn trong repo** (đã chuyển, KHÔNG xoá) — nằm ở **`~/Downloads/interiorflow-reference/`**:

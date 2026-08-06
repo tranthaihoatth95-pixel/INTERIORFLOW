@@ -19,7 +19,7 @@ import { useRouter } from 'next/navigation';
 import {
   FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Trash2, X, Command, Sparkles, Wand2,
   ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair, Tag, Check, Lightbulb, FileText, Save, Camera,
-  LayoutTemplate, FileSignature, Wrench, Ruler, ListOrdered, History, HardDrive,
+  LayoutTemplate, FileSignature, Wrench, Ruler, ListOrdered, History, HardDrive, Trees,
 } from 'lucide-react';
 import IOMenu from '@/components/ui/IOMenu';
 import MenuButton from '@/components/ui/MenuButton';
@@ -68,6 +68,9 @@ import CadCanvas from './CadCanvas';
 import MaterialPalette from './MaterialPalette';
 import AiBriefPanel from './AiBriefPanel';
 import { ZonePanel, ZonesLegend } from './ZonePanel';
+// S4 — ống kính TRÌNH BÀY của mặt bằng (cùng một Doc, cách vẽ thứ hai). Xem lib/cad/plan-present.ts.
+import PlanPresentPanel from './PlanPresentPanel';
+import { usePlanPresent } from './plan-present-store';
 import CamPathPanel from './CamPathPanel';
 import RevitSummaryPanel from './RevitSummaryPanel';
 // Hệ Legend C1+C2 (docs/PROPOSAL-LEGEND-SYSTEM.md) — panel Thống kê · Schedule + Chú giải.
@@ -133,6 +136,11 @@ export default function CadEditor() {
   useEffect(() => {
     if (cadTool === 'zone' || cadTool === 'arrow') setZonePanelClosed(false);
   }, [cadTool]);
+
+  // S4 — bảng ống kính Trình bày. Mở bằng nút trên thanh công cụ; KHÁC ZonePanel ở chỗ không gắn
+  // với tool nào (đây là cách NHÌN, không phải công cụ vẽ) nên chỉ đóng/mở bằng tay.
+  const [presentPanelOpen, setPresentPanelOpen] = useState(false);
+  const presentOn = usePlanPresent((s) => s.on);
 
   // D5 (`docs/BAO-CAO-CHINH.md`, gap C4) — CÙNG khuôn zonePanelClosed: hiện khi đang ở tool
   // "Đường cam" HOẶC Doc đã có ≥1 đường cam vẽ sẵn (mở lại xem/chỉnh sau khi rời tool), đóng được
@@ -507,6 +515,26 @@ export default function CadEditor() {
           ]}
         />
         <ScaleMenu />
+        {/* S4 — CÔNG TẮC "Chế độ trình bày". Để NGOÀI menu xổ (khác các mục trên) vì đây là thứ
+            bật/tắt liên tục khi làm việc và người dùng cần THẤY nó đang bật hay tắt mà không phải
+            mở menu ra xem. Trạng thái bật nhuộm accent — cùng quy ước `active` của MenuButton. */}
+        <button
+          type="button"
+          onClick={() => setPresentPanelOpen((o) => !o)}
+          title="Chế độ trình bày — cùng một bản vẽ, cách hiển thị cho khách xem (nền sàn, cây, người, thảm định vùng)"
+          aria-pressed={presentOn}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, height: 30, padding: '0 10px',
+            borderRadius: 8, cursor: 'pointer', fontSize: 12.5, lineHeight: 1.5,
+            border: `1px solid ${presentOn ? 'var(--accent)' : 'var(--border)'}`,
+            background: presentOn ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'transparent',
+            color: presentOn ? 'var(--accent)' : 'var(--t3)',
+            fontWeight: presentOn ? 650 : 400,
+          }}
+        >
+          <Trees size={14} />
+          Trình bày
+        </button>
         <input ref={fileRef} type="file" accept=".dxf" hidden onChange={onImportFile} />
         <input ref={dwgRef} type="file" accept=".dwg" hidden onChange={onImportDwgFile} />
         <input ref={idfRef} type="file" accept=".idf,.json,application/json" hidden onChange={onOpenIdfFile} />
@@ -533,6 +561,8 @@ export default function CadEditor() {
           <ZonePanel onClose={() => setZonePanelClosed(true)} onExportPresent={exportZoneMapToPresent} />
         )}
         <ZonesLegend />
+        {/* S4 — bảng ống kính Trình bày (công tắc + nhãn leader + ô §9 chưa làm được). */}
+        {presentPanelOpen && <PlanPresentPanel onClose={() => setPresentPanelOpen(false)} />}
         {/* D5 — Đường cam (V2): xem thử + chỉnh tay tốc độ/ống kính/điểm ngắm, hiện khi đang vẽ
             hoặc Doc đã có sẵn đường cam. */}
         {(cadTool === 'campath' || hasCampathEntity) && !camPathPanelClosed && (

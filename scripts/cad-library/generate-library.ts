@@ -68,11 +68,53 @@ function sampleArc(c: Pt, r: number, a1: number, a2: number, n = 16): Pt[] {
   return pts;
 }
 
+/**
+ * Khung bao THẬT của hình (mm). Arc lấy đúng các điểm mà `sampleArc()` sẽ vẽ ⇒ bao khít với nét
+ * thật, không hụt không thừa.
+ */
+function primsBBox(prims: Prim[]): { minX: number; minY: number; maxX: number; maxY: number } | null {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const grow = (p: Pt) => {
+    if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) return;
+    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+  };
+  for (const p of prims) {
+    if (p.k === 'line') { grow(p.a); grow(p.b); }
+    else if (p.k === 'poly') p.pts.forEach(grow);
+    else if (p.k === 'circle') { grow({ x: p.c.x - p.r, y: p.c.y - p.r }); grow({ x: p.c.x + p.r, y: p.c.y + p.r }); }
+    else if (p.k === 'arc') sampleArc(p.c, p.r, p.a1, p.a2).forEach(grow);
+  }
+  return Number.isFinite(minX) ? { minX, minY, maxX, maxY } : null;
+}
+
+/**
+ * Thumbnail SVG.
+ *
+ * 🔴 **SỬA 06/08 (VIỆC 5) — hình lệch trong ô.** Bản cũ dựng viewBox **ĐỐI XỨNG QUANH GỐC** theo
+ * `w`/`h` KHAI BÁO: `viewBox = (-W/2, -H/2, W, H)`. Nó chỉ đúng khi hình được vẽ cân quanh gốc.
+ * Đo thật trên 46 block: **9 block không cân** — `stairs-l-shape` lệch **860 mm**,
+ * `kitchen-cabinet-l` 750, `living-sofa-lshape` 625 — nên hình bị đẩy hẳn sang một bên ô.
+ * Tệ hơn: 4 block khai `w`/`h` KHÁC hình thật (`living-sofa-lshape` khai cao 1700 nhưng thật
+ * 2150) ⇒ viewBox dựng theo số khai còn CẮT MẤT hình.
+ *
+ * ⇒ Nay dựng viewBox từ **KHUNG BAO THẬT của chính `prims`**. Sửa một chỗ, 46 cái cùng đúng, và
+ * block thêm về sau tự đúng — không phải nhớ "vẽ cho cân quanh gốc" nữa.
+ *
+ * ⚠️ Chú ý trục: nhóm vẽ nằm trong `transform="scale(1,-1)"` (world Y-lên → SVG Y-xuống), nên
+ * dải Y nhìn thấy trong hệ SVG là `[-maxY, -minY]`, KHÔNG phải `[minY, maxY]`. Lấy nhầm là ảnh
+ * lộn ngược ra ngoài khung.
+ */
 function svgFromPrims(prims: Prim[], w: number, h: number): string {
-  const pad = Math.max(w, h) * 0.1 + 60;
-  const W = w + pad * 2;
-  const H = h + pad * 2;
-  const sw = Math.max(12, Math.max(w, h) / 160);
+  const bb = primsBBox(prims) ?? { minX: -w / 2, minY: -h / 2, maxX: w / 2, maxY: h / 2 };
+  const gw = Math.max(1, bb.maxX - bb.minX);
+  const gh = Math.max(1, bb.maxY - bb.minY);
+  const pad = Math.max(gw, gh) * 0.1 + 60;
+  const W = gw + pad * 2;
+  const H = gh + pad * 2;
+  const vbX = bb.minX - pad;
+  const vbY = -bb.maxY - pad; // ← lật trục: mép TRÊN của hình là -maxY sau scale(1,-1)
+  const sw = Math.max(12, Math.max(gw, gh) / 160);
   const fmt = (n: number) => (Math.round(n * 100) / 100).toString();
 
   const parts: string[] = [];
@@ -91,8 +133,8 @@ function svgFromPrims(prims: Prim[], w: number, h: number): string {
     }
   }
 
-  return `<svg viewBox="${fmt(-W / 2)} ${fmt(-H / 2)} ${fmt(W)} ${fmt(H)}" xmlns="http://www.w3.org/2000/svg">
-  <rect x="${fmt(-W / 2)}" y="${fmt(-H / 2)}" width="${fmt(W)}" height="${fmt(H)}" fill="#f7f4ee" />
+  return `<svg viewBox="${fmt(vbX)} ${fmt(vbY)} ${fmt(W)} ${fmt(H)}" xmlns="http://www.w3.org/2000/svg">
+  <rect x="${fmt(vbX)}" y="${fmt(vbY)}" width="${fmt(W)}" height="${fmt(H)}" fill="#f7f4ee" />
   <g transform="scale(1,-1)" stroke="#3d3a34" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round">
     ${parts.join('\n    ')}
   </g>

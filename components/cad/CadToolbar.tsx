@@ -28,6 +28,17 @@ function shortLabel(title: string): string {
   return title.split(' (')[0].split(' — ')[0].trim();
 }
 
+/** 05/08 VIỆC 2 — phần MÔ TẢ của nhãn: đúng khúc mà `shortLabel()` cắt bỏ, đưa xuống dòng thứ hai
+ * của tooltip. Trả `undefined` khi nhãn vốn đã ngắn (không có khúc nào) — để Tooltip khỏi in lại
+ * y hệt tiêu đề ở dòng dưới. Cắt bằng CÙNG hai dấu `shortLabel()` dùng, không tự chế luật thứ hai. */
+function labelDesc(title: string): string | undefined {
+  const dash = title.indexOf(' — ');
+  if (dash >= 0) return title.slice(dash + 3).trim() || undefined;
+  const paren = title.indexOf(' (');
+  if (paren >= 0) return title.slice(paren + 2).replace(/\)\s*$/, '').trim() || undefined;
+  return undefined;
+}
+
 /** Sprint 9 — nhớ lựa chọn Sketch/Pro qua các phiên (mặc định 'sketch' nếu chưa từng chọn hoặc
  * private mode/SSR chặn localStorage — xem pattern giống PresentEditor.tsx). */
 const LS_CAD_MODE = 'interiorflow.cad.mode';
@@ -160,16 +171,16 @@ export default function CadToolbar({
   // Hai khác biệt "cầm nắm" giữa 2 mode, gom về đúng 2 biến:
   //  - b()/icoS : Sketch nút 44px (chuẩn vùng chạm) · Pro nút 36px (mật độ gọn cho chuột — nâng
   //               34→36 theo nghiệm thu ticket "THANH TOOL 2D DESIGN": nút thường ≥36px).
-  //  - tip()    : Pro gắn thêm phím tắt vào tag hover (tay quen bàn phím thấy ngay phím cần gõ);
+  //  - phím tắt : Pro truyền `shortcut` cho Tooltip (tay quen bàn phím thấy ngay phím cần gõ);
   //               Sketch bỏ đi vì trên cảm ứng không có bàn phím để mà gõ phím tắt.
   // `big` (VIỆC 2) — 6 lệnh hay dùng TO hơn ~1.4 lần, luôn ≥44px dù mode nào.
   const b = (active: boolean, disabled = false, big = false) => btn(active, disabled, isPro, big);
   const icoS = isPro ? 17 : 19;
   const icoBig = isPro ? 20 : 24;
   const rowH = btnSize(isPro, false);
-  // VIỆC 4 — tooltip thống nhất "Nhãn (KHOÁ)" thay vì "Nhãn · KHOÁ" cũ, áp chung cho mọi nút dùng
-  // tip() (khoá lệnh gõ GIỮ NGUYÊN, chỉ đổi định dạng hiển thị).
-  const tip = (label: string, key?: string) => (isPro && key ? `${label} (${key})` : label);
+  // 05/08 VIỆC 2 — helper `tip()` cũ (nhét phím tắt vào CHUỖI nhãn: "Đường (L)") đã bỏ: Tooltip
+  // nay có ô `shortcut` riêng, phím tắt hiện dạng phím bấm bên phải tiêu đề thay vì lẫn vào tên.
+  // Khoá lệnh gõ (`it.key`) KHÔNG đổi — chỉ đổi cách bày.
 
   // Nạp lựa chọn Sketch/Pro đã lưu SAU mount (tránh lệch hydration SSR — cùng pattern
   // PresentEditor.tsx). Không có gì lưu (lần đầu/private mode) → giữ mặc định 'sketch' của store.
@@ -227,7 +238,7 @@ export default function CadToolbar({
           <Tooltip
             key={it.tool}
             label={shortLabel(it.label)}
-            desc={it.label !== shortLabel(it.label) ? it.label : undefined}
+            desc={labelDesc(it.label)}
             shortcut={isPro ? it.key : undefined}
           >
             <button type="button" onClick={() => setTool(it.tool)} style={b(on, false, isBig)}>
@@ -290,8 +301,12 @@ export default function CadToolbar({
                     key={it.tool}
                     side="right"
                     label={shortLabel(it.label)}
-                    desc={it.label !== shortLabel(it.label) ? it.label : undefined}
+                    desc={labelDesc(it.label)}
                     shortcut={it.key}
+                    /* Span bọc của Tooltip là `inline-flex` ⇒ nút bên trong co về bề rộng nội dung,
+                       làm `marginLeft:auto` của cột phím tắt hết đẩy được sang phải. Ép 100% cả
+                       hai tầng để hàng giữ nguyên hình dạng như trước khi bọc. */
+                    style={{ width: '100%' }}
                   >
                   <button
                     type="button"
@@ -303,6 +318,7 @@ export default function CadToolbar({
                       display: 'flex',
                       alignItems: 'center',
                       gap: 8,
+                      width: '100%',
                       padding: '7px 10px',
                       borderRadius: 8,
                       border: 'none',
@@ -368,13 +384,13 @@ export default function CadToolbar({
         <Group items={ARCH} />
       </GroupBlock>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: rowH }}>
-        <Tooltip label="Vật liệu">
-          <button type="button" onClick={onToggleMaterial} title="Vật liệu (Sprint 5) — chọn preset gạch/gỗ/đá/sơn cho Hatch" style={b(false)}>
+        <Tooltip label="Vật liệu" desc="Chọn preset gạch/gỗ/đá/sơn cho vùng Hatch">
+          <button type="button" onClick={onToggleMaterial} style={b(false)}>
             <Palette size={icoS} />
           </button>
         </Tooltip>
-        <Tooltip label={tip("Cửa đi", "D")}>
-          <button type="button" onClick={() => setPendingBlock('door')} title="Đặt cửa đi (D) — dùng block cửa có sẵn" style={b(pendingBlock === 'door')}>
+        <Tooltip label="Cửa đi" desc="Đặt cửa bằng block cửa có sẵn" shortcut={isPro ? 'D' : undefined}>
+          <button type="button" onClick={() => setPendingBlock('door')} style={b(pendingBlock === 'door')}>
             <DoorOpen size={icoS} />
           </button>
         </Tooltip>
@@ -394,65 +410,57 @@ export default function CadToolbar({
       <Group items={ANNOTATE} />
       <Group items={DIAGRAM} />
       <Divider h={rowH} />
-      <Tooltip label="Nội thất">
-        <button type="button" onClick={onToggleFurniture} title="Thư viện nội thất (block)" style={b(tool === 'block')}>
+      <Tooltip label="Nội thất" desc="Mở thư viện block nội thất để đặt vào bản vẽ">
+        <button type="button" onClick={onToggleFurniture} style={b(tool === 'block')}>
           <Sofa size={icoS} />
         </button>
       </Tooltip>
       <Divider h={rowH} />
       {/* snap + grid toggle — auto-snap là hành vi mặc định của "Sketch" (IF tự chỉnh), giữ hiện
           ở cả 2 mode. Polar tracking (bắt góc theo độ) là khái niệm CAD hơn → Pro-only. */}
-      <Tooltip label={`Bắt điểm: ${snap.enabled ? 'BẬT' : 'tắt'}`}>
-        <button
-          type="button"
-          onClick={() => setSnap({ enabled: !snap.enabled })}
-          title={`Bắt điểm (snap): ${snap.enabled ? 'BẬT' : 'tắt'} — endpoint/mid/center/quadrant/node/giao/vuông góc/tiếp tuyến/lưới`}
-          style={b(snap.enabled)}
-        >
+      <Tooltip
+        label={`Bắt điểm: ${snap.enabled ? 'BẬT' : 'tắt'}`}
+        desc="Bám điểm đầu/giữa/tâm/góc phần tư/nút/giao/vuông góc/tiếp tuyến/lưới"
+      >
+        <button type="button" onClick={() => setSnap({ enabled: !snap.enabled })} style={b(snap.enabled)}>
           <Magnet size={icoS} />
         </button>
       </Tooltip>
-      <Tooltip label={`Snap lưới: ${snap.grid ? 'BẬT' : 'tắt'}`}>
-        <button
-          type="button"
-          onClick={() => setSnap({ grid: !snap.grid })}
-          title={`Snap lưới: ${snap.grid ? 'BẬT' : 'tắt'}`}
-          style={b(snap.grid)}
-        >
+      <Tooltip label={`Snap lưới: ${snap.grid ? 'BẬT' : 'tắt'}`} desc="Ép con trỏ về mắt lưới khi vẽ">
+        <button type="button" onClick={() => setSnap({ grid: !snap.grid })} style={b(snap.grid)}>
           <Grid2x2 size={icoS} />
         </button>
       </Tooltip>
       {isPro && (
-        <Tooltip label={`Polar tracking: ${polarTracking ? 'BẬT' : 'tắt'}`}>
-          <button
-            type="button"
-            onClick={() => setPolarTracking(!polarTracking)}
-            title={`Polar tracking: ${polarTracking ? 'BẬT' : 'tắt'} — bắt góc ${polarStep}° (Shift = Ortho tuyệt đối, ưu tiên hơn)`}
-            style={b(polarTracking)}
-          >
+        <Tooltip
+          label={`Bắt góc: ${polarTracking ? 'BẬT' : 'tắt'}`}
+          desc={`Bám bội số ${polarStep}° khi kéo. Giữ Shift = ngang/dọc tuyệt đối, ưu tiên hơn.`}
+          shortcut="Shift"
+        >
+          <button type="button" onClick={() => setPolarTracking(!polarTracking)} style={b(polarTracking)}>
             <Compass size={icoS} />
           </button>
         </Tooltip>
       )}
       <Divider h={rowH} />
-      <Tooltip label={tip("Pan", "Space")}>
-        <button type="button" onClick={() => setTool('pan')} title="Pan (space kéo)" style={b(tool === 'pan')}>
+      <Tooltip label="Kéo màn hình" desc="Giữ phím cách rồi kéo chuột cũng được" shortcut="Space">
+        <button type="button" onClick={() => setTool('pan')} style={b(tool === 'pan')}>
           <Hand size={icoS} />
         </button>
       </Tooltip>
-      <Tooltip label={tip("Zoom Extents", "F")}>
-        <button type="button" onClick={() => fire('cad:zoom-extents')} title="Zoom Extents (F)" style={b(false)}>
+      <Tooltip label="Xem vừa màn" desc="Thu phóng để thấy trọn bản vẽ" shortcut="F">
+        <button type="button" onClick={() => fire('cad:zoom-extents')} style={b(false)}>
           <Maximize size={icoS} />
         </button>
       </Tooltip>
       <Divider h={rowH} />
-      <Tooltip label={tip("Undo", undoLabel)}>
-        <button type="button" onClick={undo} disabled={!past} title={`Undo (${undoLabel})`} style={b(false, !past)}>
+      <Tooltip label="Hoàn tác" shortcut={undoLabel}>
+        <button type="button" onClick={undo} disabled={!past} style={b(false, !past)}>
           <Undo2 size={icoS} />
         </button>
       </Tooltip>
-      <Tooltip label={tip("Redo", redoLabel)}>
-        <button type="button" onClick={redo} disabled={!future} title={`Redo (${redoLabel})`} style={b(false, !future)}>
+      <Tooltip label="Làm lại" shortcut={redoLabel}>
+        <button type="button" onClick={redo} disabled={!future} style={b(false, !future)}>
           <Redo2 size={icoS} />
         </button>
       </Tooltip>
@@ -529,17 +537,25 @@ function ModeSwitch({ mode, onChange, pro }: { mode: CadMode; onChange: (m: CadM
         padding: 2,
         gap: 1,
       }}
-      title="Sketch — vẽ bằng ngón tay (kiểu ArcSite): bộ công cụ tối giản, nút cỡ lớn, có cụm nút cảm ứng thay phím F8/F12/gõ lệnh/Space. Pro — tối ưu chuột + bàn phím: đủ công cụ CAD chính xác (toạ độ, Dimension, Fillet/Chamfer, Array…), nút gọn, tag hover kèm phím tắt. Revit — thêm shell cấu kiện BIM (IF2), giữ nguyên mọi công cụ Pro."
     >
-      <button type="button" onClick={() => onChange('sketch')} style={segBtn(mode === 'sketch')}>
-        Sketch
-      </button>
-      <button type="button" onClick={() => onChange('pro')} style={segBtn(mode === 'pro')}>
-        Pro
-      </button>
-      <button type="button" onClick={() => onChange('revit')} style={segBtn(mode === 'revit')}>
-        Revit
-      </button>
+      {/* 05/08 VIỆC 2 — `title=` cũ gộp mô tả CẢ BA mode vào một chuỗi 3 câu treo trên khung bọc:
+          trỏ vào nút nào cũng ra y hệt đoạn văn đó, người dùng phải tự dò câu nào nói về nút mình
+          đang trỏ. Nay tách thành 3 Tooltip riêng, mỗi nút chỉ nói phần của nó. */}
+      <Tooltip label="Sơ phác" desc="Vẽ bằng ngón tay: bộ công cụ tối giản, nút cỡ lớn, có cụm nút cảm ứng thay phím tắt.">
+        <button type="button" onClick={() => onChange('sketch')} style={segBtn(mode === 'sketch')}>
+          Sketch
+        </button>
+      </Tooltip>
+      <Tooltip label="Kỹ thuật" desc="Tối ưu chuột + bàn phím: đủ công cụ CAD chính xác (toạ độ, ghi kích thước, Fillet/Chamfer, Array…).">
+        <button type="button" onClick={() => onChange('pro')} style={segBtn(mode === 'pro')}>
+          Pro
+        </button>
+      </Tooltip>
+      <Tooltip label="Nội thất" desc="Thêm bộ cấu kiện BIM nội thất, giữ nguyên mọi công cụ của Kỹ thuật.">
+        <button type="button" onClick={() => onChange('revit')} style={segBtn(mode === 'revit')}>
+          Revit
+        </button>
+      </Tooltip>
     </div>
   );
 }

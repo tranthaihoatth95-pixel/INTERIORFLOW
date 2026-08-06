@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+:root{--accent:#6a57f5;--accent-soft:rgba(106,87,245,.14);--ease-apple:cubic-bezier(.32,.72,0,1);--dur-base:.18s;--tap:32px;--tap-lg:44px;
+  --paper:#f7f5f0; --paper-edge:#d8d2c6; --paper-ink:#2a251d; --paper-thin:rgba(42,37,29,.34); --paper-shadow:0 24px 60px -20px rgba(0,0,0,.6);
+  --vp-lock:#46b876; --vp-open:#d9a34a;
+}
+:root,[data-theme="dark"]{--field:#202024;--border:#2a2a31;--t1:#f5f5f7;--t3:#9e9ea8;--t4:#6e6e78;--t5:#4e4e57}
+[data-theme="light"]{--field:#f4f1eb;--border:#e3ded4;--t1:#211e19;--t3:#726c62;--t4:#9a938a;--t5:#b8b1a7}
+*{box-sizing:border-box}
+html,body{margin:0;color:var(--t1);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:#553ff3}
+</style>
+</helmet>
+
+<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:24px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif">
+
+  <div style="position:relative;width:{{ khoRong }};aspect-ratio:{{ tiLeTo }};background:var(--paper);border:1px solid var(--paper-edge);box-shadow:var(--paper-shadow);flex:none">
+
+    <div style="position:absolute;left:3.2%;top:4.5%;right:3.2%;bottom:4.5%;border:1px dashed var(--paper-thin);pointer-events:none"></div>
+    <span style="position:absolute;left:3.2%;top:1.2%;font-family:ui-monospace,Menlo,monospace;font-size:9px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--paper-thin)">vùng in được</span>
+
+    <div style="position:absolute;left:5.5%;top:8%;width:47%;height:52%;border:1.5px solid var(--accent);background:var(--accent-soft)">
+      <svg viewBox="0 0 300 170" preserveAspectRatio="xMidYMid meet" style="position:absolute;inset:6%;width:88%;height:88%">
+        <g style="fill:none;stroke:var(--paper-ink);stroke-width:2.4"><path d="M20 20h260v130H20z"></path><path d="M150 20v130"></path></g>
+        <g style="fill:none;stroke:var(--paper-ink);stroke-width:1"><path d="M20 100h130M60 20v40"></path><path d="M175 60h90v60h-90z"></path></g>
+        <g style="fill:none;stroke:var(--paper-thin);stroke-width:.7"><path d="M20 162h260M20 158v8M280 158v8"></path></g>
+        <text x="150" y="168" text-anchor="middle" style="font-family:ui-monospace,monospace;font-size:8px;fill:var(--paper-ink)">8 400</text>
+      </svg>
+      <span style="position:absolute;left:0;top:-19px;display:inline-flex;align-items:center;gap:6px;height:17px;padding:0 6px;border-radius:5px;background:var(--accent);color:#fff;font-family:ui-monospace,Menlo,monospace;font-size:9px;font-weight:700;letter-spacing:.1em">VP-01 · 1/50</span>
+      <span style="position:absolute;right:4px;top:4px;display:inline-flex;align-items:center;gap:4px;height:16px;padding:0 5px;border-radius:5px;background:var(--vp-lock);color:#0c0c0e;font-family:ui-monospace,Menlo,monospace;font-size:8px;font-weight:700">
+        <svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="7" width="9" height="6.5" rx="1"></rect><path d="M5.6 7V5.2a2.4 2.4 0 0 1 4.8 0V7"></path></svg>ĐÃ KHOÁ
+      </span>
+    </div>
+
+    <div style="position:absolute;left:5.5%;top:64%;width:47%;height:24%;border:1.5px solid var(--paper-thin)">
+      <svg viewBox="0 0 300 80" preserveAspectRatio="xMidYMid meet" style="position:absolute;inset:8%;width:84%;height:84%">
+        <g style="fill:none;stroke:var(--paper-ink);stroke-width:2.4"><path d="M20 60h260M30 60V22h240v38"></path></g>
+        <g style="fill:none;stroke:var(--paper-ink);stroke-width:1"><path d="M30 40h240M90 40v20M210 40v20"></path></g>
+      </svg>
+      <span style="position:absolute;left:0;top:-19px;display:inline-flex;align-items:center;gap:6px;height:17px;padding:0 6px;border-radius:5px;background:var(--field);color:var(--t3);font-family:ui-monospace,Menlo,monospace;font-size:9px;font-weight:700;letter-spacing:.1em">VP-02 · 1/50</span>
+      <span style="position:absolute;right:4px;top:4px;display:inline-flex;align-items:center;gap:4px;height:16px;padding:0 5px;border-radius:5px;background:var(--vp-open);color:#0c0c0e;font-family:ui-monospace,Menlo,monospace;font-size:8px;font-weight:700">CHƯA KHOÁ</span>
+    </div>
+
+    <div style="position:absolute;left:55.5%;top:8%;width:24%;height:24%;border:1.5px solid var(--paper-thin)">
+      <svg viewBox="0 0 120 90" preserveAspectRatio="xMidYMid meet" style="position:absolute;inset:10%;width:80%;height:80%">
+        <g style="fill:none;stroke:var(--paper-ink);stroke-width:2"><path d="M20 70h80M30 70V30h60v40"></path></g>
+        <g style="fill:none;stroke:var(--paper-ink);stroke-width:.8"><path d="M30 48h60M46 30v40"></path></g>
+      </svg>
+      <span style="position:absolute;left:0;top:-19px;display:inline-flex;align-items:center;height:17px;padding:0 6px;border-radius:5px;background:var(--field);color:var(--t3);font-family:ui-monospace,Menlo,monospace;font-size:9px;font-weight:700;letter-spacing:.1em">VP-03 · 1/20</span>
+    </div>
+
+    <div style="position:absolute;left:55.5%;top:36%;width:39%;height:24%;border:1px dashed var(--paper-thin);display:flex;align-items:center;justify-content:center">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:9px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--paper-thin)">chỗ trống — kéo khung nhìn vào</span>
+    </div>
+
+    <div style="position:absolute;right:3.2%;bottom:4.5%;width:39%;height:26%;border:1.5px solid var(--paper-ink);background:rgba(42,37,29,.04);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:9px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--paper-ink)">chỗ đặt khung tên</span>
+      <span style="font-size:10px;color:var(--paper-thin);text-align:center;max-width:78%;text-wrap:pretty">Nội dung do titleBlockPro() sinh — lib/cad/commands.ts:347. Mock không dựng lại.</span>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:960,&quot;height&quot;:620},&quot;kho&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;A0&quot;,&quot;A1&quot;,&quot;A2&quot;,&quot;A3&quot;],&quot;default&quot;:&quot;A3&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;doc&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const kho = this.props.kho ?? 'A3';
+    const doc = this.props.doc ?? false;
+    const canh = { A0: [1189, 841], A1: [841, 594], A2: [594, 420], A3: [420, 297] }[kho] || [420, 297];
+    const [d, n] = doc ? [canh[1], canh[0]] : canh;
+    return {
+      tiLeTo: d + ' / ' + n,
+      khoRong: doc ? 'min(62%, 560px)' : 'min(94%, 900px)'
+    };
+  }
+}
+</script>
+</body>
+</html>

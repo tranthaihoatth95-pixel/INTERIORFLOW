@@ -199,9 +199,13 @@ function testDimension() {
 function testFlattenCap() {
   console.log('\n[11] Van an toàn MAX_FLATTEN_ENTITIES');
   // 500×500 MINSERT của block 1 line = 250k > 200k → bị cắt, không treo
+  // 05/08 (PHU): `budgetMs: Infinity` — từ phiên này flatten có THÊM trần THỜI GIAN
+  // (`DEFAULT_FLATTEN_BUDGET_MS`, xem `dwg-flatten-guard.test.ts`). Ca này đo riêng trần ĐẾM nên
+  // phải cô lập biến kia, nếu không kết quả đổi theo tải máy: chạy `npm test` song song 8 luồng,
+  // lượt bung 200k entity vượt trần giờ TRƯỚC khi chạm 200k ⇒ test đỏ giả (đã dính thật 1 lần).
   const doc = dwgRawDocToDoc(rawDoc([
     ins('CHAIR', { x: 0, y: 0 }, { cols: 500, rows: 500, colSpacing: 10, rowSpacing: 10 }),
-  ], { CHAIR: lineBlock }));
+  ], { CHAIR: lineBlock }), { budgetMs: Infinity });
   ok('cắt tại 200000 entity', doc.entities.length === 200000);
 }
 

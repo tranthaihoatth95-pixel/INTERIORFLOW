@@ -156,9 +156,210 @@ Giao diện trở thành **cây gia phả nhìn thấy được** của toàn b�
 
 **Cách thi hành — bắt buộc:**
 1. Nghiên cứu (NC) xong → COWORK-UI/Claude Design **dựng ngay khung giao diện đủ CẢ những phần chưa code**.
-2. Phần chưa có tính năng: **nút/ô hiện dạng `disabled` KÈM LÝ DO tại chỗ** — *"Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ"*. **CẤM nút giả bấm không ra gì** (mẫu đúng đã có: `Command3DPanel.tsx:113,139`).
+2. Phần chưa có tính năng: **nút/ô hiện dạng `disabled` KÈM LÝ DO tại chỗ** — *"Chưa dựng được — hiện dùng Tường hoặc đùn từ bản vẽ"*. **CẤM nút giả bấm không ra gì** (mẫu đúng đã có: `Command3DPanel.tsx` — docstring nêu lý do *"thà nói thẳng chưa dựng được còn hơn nút bấm không ra gì"*, và nút `disabled` thật ngay dưới; **grep chuỗi đó, đừng tin số dòng**).
 3. Mỗi ô trống trên giao diện = **một dòng trong `CHECKLIST-TONG.md`**. Hai bên phải khớp 1-1; lệch là có thứ bị rớt.
 4. Phiên code KHÔNG được xoá ô trống cho gọn mắt — ô trống là **bằng chứng còn việc**. Muốn bỏ phải trình TỔNG kèm lý do.
 5. Áp cho CẢ hai app: IF và ArchiNote.
 
 **Ca bệnh làm luật này ra đời:** 6 tầng lệnh dựng hình 3D (`SPEC-DUNG-BO-LENH-3D`) nghiên cứu xong nhưng **giao diện chỉ có nút Tường** — 5 khối còn lại disabled, còn extrude/lathe/sweep/loft/boolean/symmetry/array **không hề xuất hiện trên màn**. Không ai nhìn ra đang thiếu gì cho tới khi Hoà tự nhớ ra và hỏi.
+
+---
+
+## §0e — QUYỀN KIỂM SOÁT (Hoà đặt 05/08)
+
+Kiến trúc sư và dân sáng tạo **KHÔNG ghét AI**. Họ ghét cảm giác mông lung — không chắc chắn, không kiểm soát được, sản phẩm ra không đồng nhất. Mọi flow, từ lớn đến nhỏ, phải trả lại quyền kiểm soát đó.
+
+**KS1 · DẠNG TRUNG GIAN** — mọi bước AI phải đi qua một dạng trung gian ĐỌC ĐƯỢC và SỬA ĐƯỢC trước khi thành sản phẩm cuối. Có sẵn để noi theo: `lib/cad/ai-assist.ts` `parseDescription()` → `LayoutSpec` → `layoutToEntities()`. `LayoutSpec` đã là dạng trung gian đúng — việc còn lại là cho nó lên giao diện.
+
+**KS2 · CÙNG ĐẦU VÀO → CÙNG KẾT QUẢ** — seed phải cố định và HIỆN RA giao diện. Đang vi phạm: `lib/ai/providers/comfyui.ts:84` random khi không truyền · `lib/ai/providers/sd.ts:80` seed `-1`. Người dùng phải đọc được seed, chép được, chạy lại ra đúng cái cũ.
+
+**KS3 · DUYỆT THEO PHẦN** — không duyệt cả gói. AI đề xuất 12 thay đổi thì chọn được 5, bỏ 7. Hộp thoại "Bạn có chắc không?" KHÔNG phải checkpoint — nó bắt người dùng chịu trách nhiệm cho thứ họ chưa được nhìn.
+
+**KS4 · LÙI ĐƯỢC VÀ THẤY LÙI VỀ ĐÂU** — hoàn tác phải nói rõ lùi về trạng thái nào.
+
+**KS5 · NÓI ĐƯỢC VÌ SAO** — máy đề xuất thì phải giải thích được căn cứ. Có sẵn để nuôi: `lib/cad/ai-layout-feedback.ts:61` `explainLayoutOption()`.
+
+**KIỂM ĐƯỢC** — mỗi tính năng có AI, trả lời 5 câu: thấy trước được gì? · chạy lại có ra như cũ không? · chọn được từng phần không? · lùi về đâu? · máy nói được vì sao không? Có câu nào "không" thì tính năng đó **chưa xong**.
+
+---
+
+## §0f — ĐÚNG TRƯỚC KHI ĐẸP (Hoà đặt 05/08)
+
+Kiến trúc sư chịu dùng IF khi nó cho thấy sự tinh tế — nhưng tinh tế phải **MỌC RA TỪ nguồn sự thật đã định nghĩa đúng**, không phải vẽ đè lên.
+
+> Thứ tự bất di bất dịch: **ĐÚNG → CÔNG NĂNG → THẨM MỸ**. Đảo thứ tự là ra sản phẩm đẹp mà không ai dùng được.
+> *"IF ship, kiến trúc sư mở lên mà cái gì cũng như con nít vẽ thì designer bái bai nó luôn."*
+
+**TB1 · ĐÚNG** là kích thước, tỉ lệ, khoảng cách, nhân trắc. Sai một con số thì mọi thứ phía sau vô nghĩa. Block đẹp mà kích thước sai còn **tệ hơn** block xấu mà đúng — vì nó lừa được người nhìn.
+
+**TB2 · NÉT KHÔNG PHẢI STYLE, NÉT LÀ THÔNG TIN.** Đậm nhạt mã hoá: cái gì bị cắt, cái gì nhìn thấy, cái gì khuất. Chọn nét theo "cho đẹp" là phá quy ước đọc bản vẽ — người trong nghề đọc ra ngay.
+
+**TB3 · THẨM MỸ LÀ HỆ QUẢ, KHÔNG PHẢI LỚP PHỦ.** Bo góc là bán kính thật của món đồ. Thảm đẹp vì nó thật sự định vùng. Mặt bằng đẹp vì lối đi đúng 700–900, vì clearance đúng, vì cụm bàn đúng nhịp cột.
+
+**TB4 · PHÉP THỬ — đổi dữ liệu, cái đẹp có tự cập nhật không?** Có → đó là thiết kế. Không, phải sửa tay → đó là **trang trí**, làm lại.
+
+| Đổi dữ liệu | Nếu đúng | Nếu chỉ là sơn |
+|---|---|---|
+| Bàn 1400×700 → 1600×800 | tỉ lệ tự đúng, giữ nhịp chi tiết | méo, vẽ lại |
+| Phòng họp 8 → 12 chỗ | bàn dài ra, clearance tự tính lại | sửa tay |
+| Sàn gỗ → sàn thảm | hatch tự đổi, chú thích tự cập nhật | vẽ lại |
+| Tỉ lệ 1/100 → 1/50 | LOD tự lên, nét tự đổi cấp | chữ đè nhau |
+
+**TB5 · MỌI THỨ ĐẸP PHẢI TRUY ĐƯỢC VỀ `Doc` (K1).** Không có đường tắt "vẽ cho đẹp rồi tính sau" — thứ vẽ đè lên sẽ chết ở lần đổi dữ liệu đầu tiên.
+
+**Đặt cạnh §0e:** người dùng phải thấy được cái **đúng** TRƯỚC, rồi mới duyệt cái **đẹp**. Duyệt cái đẹp trước là duyệt mù.
+
+---
+
+## §0g — NGUỒN THAM CHIẾU PHẢI MỞ ĐƯỢC (Hoà đặt 05/08)
+
+Không phiên nào được lấy **MÔ TẢ** của phiên trước làm nguồn. Mô tả qua vài lượt là méo — tam sao thất bản, mất gốc. Đây là dạng nặng hơn của N8: N8 chống *"tin suy luận hơn tin code"*, §0g chống *"tin lời kể hơn tin file"*.
+
+**NT1** — Nguồn tham chiếu là **FILE**: ảnh, SVG, DXF, file Figma, ảnh chụp màn. Thứ mở ra xem được, đo được, chụp lại được.
+
+**NT2** — Nói *"đã có sẵn / đã đúng chuẩn / đã làm rồi"* thì phải **MỞ FILE RA KIỂM** trước.
+*Ca bệnh 05/08:* 46 block DXF được coi là "thư viện chuẩn" suốt nhiều phiên. Mở ra: `living-armchair.dxf` = **471 byte**, 2 hình chữ nhật + 3 đường thẳng, **1 layer duy nhất**, **không có section TABLES** ⇒ không lineweight, không linetype. Suýt "học gu" từ nó.
+
+**NT3** — Mọi block/mock phải có **ẢNH CHỤP nằm cạnh file** trong repo. Mở thư mục là thấy nó ra sao, không cần chạy app. TỔNG render được bằng Chromium+Playwright trong container.
+
+**NT4** — **Design system là nguồn cứng.** Có nó thì hết cãi. Không có thì mỗi phiên tự bịa một chuẩn.
+
+**Nguồn thẩm mỹ hiện có:** `docs/IF-nguon-tham-chieu-tham-my.zip` (20 ảnh, 7 nhóm) + `docs/00-PHAN-TICH-NGUON-THAM-CHIEU.md`.
+
+---
+
+## §0h — HỌC GU RẠCH RÒI (Hoà đặt 05/08 — luật MỞ RỘNG của luật trung tính)
+
+IF là công cụ MVP sống nhờ **học gu**: máy học từ lựa chọn người dùng, thẩm thấu DNA, giữ gen trội, sửa sai sau bài học đầu, chắc tay dần. Chính vì thế **gu của MỘT dự án rất dễ chảy lậu vào SẢN PHẨM** — và đó là cách luật trung tính bị phá mà không ai thấy.
+
+> Luật trung tính cấm **hex màu và tên thương hiệu**.
+> §0h cấm thứ khó thấy hơn: **gu, tỉ lệ, thói quen bố trí, dữ liệu dự án** rò từ tầng dưới lên tầng trên.
+
+### Ba tầng — gu chảy XUỐNG được, chảy NGƯỢC LÊN thì KHÔNG
+
+| Tầng | Chứa gì | Sống ở đâu |
+|---|---|---|
+| ① **SẢN PHẨM** | block, template, ký hiệu, khung tên, chuẩn nét, luật hình học | repo IF — trung tính tuyệt đối |
+| ② **STUDIO** | logo, màu, font, bộ layer riêng, mẫu khung tên riêng | Brand Kit, `Doc.studioName` |
+| ③ **DỰ ÁN** | mặt bằng, headcount, vật liệu, gu khách, mood | file `.idf` |
+
+### HG1 · Mọi thứ học được phải mang NHÃN NGUỒN
+Không có gu "chung chung". Mỗi mẩu gu ghi rõ học từ tầng nào, chỉ áp lại trong đúng tầng đó hoặc thấp hơn. `lib/cad/ai-layout-feedback.ts:22,29` đã scope theo `userId` qua `cadLayoutOptionModelKey(userId)` — **GIỮ NGUYÊN, cấm bỏ scope, cấm thêm model gu toàn cục.**
+
+### HG2 · Ba câu hỏi trước khi đưa bất kỳ thứ gì vào repo
+1. Học từ đâu? 2. Áp vào đâu? 3. **Mở IF với dự án TRỐNG, có thấy dấu vết nó không?**
+Câu 3 là phép kiểm dứt điểm. Thấy dấu vết = đã rò.
+
+### HG3 · Được học gì từ dự án, không được học gì
+
+| ĐƯỢC | CẤM |
+|---|---|
+| Kích thước chuẩn ngành (1400×700, lối đi 700–900, ghế 450) — **dữ kiện, không bản quyền** | Tên phòng ban của khách |
+| Nguyên tắc bố trí (xếp theo độ riêng tư, quầy làm bản lề, thảm định vùng) — **luật nghề** | Số liệu dự án (số chỗ, m², chuẩn diện tích nội bộ của khách) |
+| Chuẩn nét, quy ước layer, ký hiệu — **quy ước ngành** | Bảng vật liệu của khách |
+| Cụm sinh bằng hàm — **hình học có quy luật** | Gu thẩm mỹ của một studio |
+
+### HG4 · Học gu ≠ sao chép hình
+Nguyên tắc + kích thước: tự do. Nét vẽ: không. Áp cho cả ảnh tham chiếu bên ngoài lẫn dự án đang làm. Xem `LICENSE-NOTES` — 7 nguồn cấm redistribute.
+
+### HG5 · Ba chỗ dễ rò nhất
+1. `lib/cad/ai-layout-feedback.ts` — perceptron gu → giữ scope theo user.
+2. `lib/cad/demo-plan.ts` · mock · seed → demo phải là dự án **HƯ CẤU**.
+3. **Phiếu TỔNG viết** — phiếu ghi "theo chuẩn <tên studio>" thì code làm theo. Phiếu phải viết trung tính: *"theo chuẩn studio đang mở"*.
+
+### HG6 · Nhắc lại lỗi đã gặp
+Mỗi handoff **BẮT BUỘC** có mục *"lỗi đã mắc"*. Không có mục đó = handoff không hợp lệ. Học gu chỉ chắc tay khi nhớ được mình đã sai ở đâu.
+
+### Phép kiểm §0h — chạy trước mỗi lần merge
+1. grep tên khách trong repo (trừ `docs/` và `.idf` mẫu) → **0**
+2. grep số liệu đặc thù dự án trong `lib/` và `components/` → **0**
+3. mở IF với dự án TRỐNG → block/template/gợi ý không mang dấu vết dự án nào
+4. model gu có scope theo user/project → **CÓ**
+
+---
+
+## §0i — CHIẾU DÒNG PHẢI KÈM CHUỖI GREP ĐƯỢC (TỔNG đặt 05/08)
+
+**Ca bệnh:** §9 ở trên trỏ `Command3DPanel.tsx:113,139`. Phiên S5 grep ra thực tế là `:123-125`
+và `:236-244` — file đã sửa, số dòng trôi, sổ luật trỏ vào chỗ trống. Sổ mà trỏ sai thì phiên sau
+đọc luật xong đi tìm mẫu, không thấy, rồi **tự nghĩ ra mẫu của mình** — đúng cơ chế đẻ ra bảy lần
+đề-xuất-thứ-đã-có.
+
+**Luật:**
+1. Mọi chiếu dòng trong `docs/` phải kèm **một chuỗi grep được** (tên hàm, một câu docstring),
+   không chỉ số dòng. Số dòng là tiện tra, chuỗi mới là địa chỉ thật.
+2. Phiên nào phát hiện chiếu dòng lệch → **sửa sổ ngay trong phiên đó**, không để dành. Ghi 1 dòng
+   changelog.
+3. Áp cho cả `CLAUDE.md`, phiếu giao việc, và mọi báo cáo.
+
+> **Lỗi gốc của TỔNG, ghi lại để không quên:** tôi viết §0e và §9 vào sổ, rồi soạn phiếu S5 theo
+> **trí nhớ** chứ không mở sổ ra đọc — nên phiếu bảo "dựng ba trạng thái" trong khi §0e đã đặc tả
+> sẵn **KS1–KS5**. S5 đọc luật trước khi gõ nên bắt được và dựng đúng KS. Nếu S5 làm theo phiếu thì
+> đã có một checkpoint sai đặc tả, và cả S2/S3/S4 cắm theo. **Sổ có luật mà người giao việc không
+> đọc thì luật vô dụng.** Từ nay: soạn phiếu = mở sổ, không nhớ lại.
+
+## §0j — QUYỀN KIỂM SOÁT: KHUÔN ĐÃ CÓ, CẤM ĐẺ CÁI THỨ HAI (TỔNG chốt 05/08)
+
+Checkpoint duyệt theo KS1–KS5 đã dựng xong, **đã xác minh có thật trên đĩa**:
+
+| File | Kích thước |
+|---|---|
+| `components/studio/Checkpoint.tsx` | 16.466 B |
+| `components/studio/checkpoint-core.ts` | 6.256 B — phần thuần |
+| `components/studio/checkpoint-core.test.ts` | 4.592 B — **34 phép kiểm** (`grep -c "ok("` = 35, trừ 1 dòng định nghĩa hàm) |
+| `docs/mocks/mock-checkpoint-duyet.html` | 14.227 B — mock hợp đồng, qua cửa kiểm |
+
+⛔ **Cấm mọi phiên tự dựng checkpoint riêng.** Import `Checkpoint` từ `components/studio/Checkpoint`.
+
+Bốn ràng buộc S5 ép bằng **kiểu dữ liệu**, không ép bằng lời nhắc — giữ nguyên, đừng nới:
+`seed` bắt buộc (KS2) · `undoLabel` bắt buộc (KS4) · `preview` nhận `ReactNode` **không nhận
+`string`** (bắt phải đưa sản phẩm thật, không đưa câu mô tả) · `onAccept(ids)` chỉ ghi phần đã tick
+(KS3). `progress={null}` ⇒ hiện số giây, **cấm bịa phần trăm**.
+
+**Còn nợ — nói thẳng:** khuôn mới **tạo điều kiện**, chưa **cưỡng chế**. Chưa có gì chặn một flow
+ghi thẳng vào `Doc` mà bỏ qua checkpoint. Cưỡng chế thật phải chặn ở tầng ghi `Doc` — việc kiến
+trúc, chưa giao, không nhét vào đợt đang chạy.
+
+---
+
+## §0k — GỬI LỆNH MỘT LOẠT, KHÔNG TRAO ĐỔI LẮT NHẮT (Hoà đặt 05/08)
+
+> Nguyên văn Hoà: *"vừa trao đổi vừa cop, nhảy qua lại trong khi cái máy đang hoạt động hết công
+> suất, phải có mốc chốt — khoá trao đổi xong dán lệnh một loạt để máy chạy. Dán ở đâu làm gì
+> tuần tự. Mình kiến trúc sư, không phải IT."*
+
+**Ca bệnh:** một buổi chiều 05/08 mất hơn một giờ vì TỔNG trả lời từng mẩu — Hoà đọc, chép, dán,
+chụp màn, gửi lại, chờ. Sáu vòng cho một việc `git commit`. Trong khi đó máy đang chạy 5 phiên
+song song, mỗi lần Hoà nhảy cửa sổ là một lần mất mạch.
+
+### Luật
+
+1. **Một phiên trao đổi có MỘT mốc chốt.** Bàn xong thì TỔNG soạn **một bảng lệnh trọn gói**, Hoà
+   dán một mạch, máy chạy. Không hỏi lại giữa chừng.
+2. **Mỗi lệnh phải ghi đủ ba thứ**: **dán vào đâu** (tên cửa sổ / phiên nào) · **nội dung dán
+   nguyên khối** · **xong thì biết là xong bằng dấu hiệu gì**.
+3. **Lệnh terminal phải là MỘT khối dán được**, nối bằng `&&` hoặc `;`. ⛔ Cấm bắt Hoà gõ từng
+   dòng rồi báo kết quả rồi mới đưa dòng sau — trừ khi bước sau **thật sự** phụ thuộc kết quả bước
+   trước, và khi đó phải nói thẳng *"chỗ này bắt buộc dừng vì …"*.
+4. **Viết cho kiến trúc sư, không viết cho IT.** Không giả định biết `pgrep`, `reflog`,
+   `--max-old-space-size`. Cần dùng thì giải thích một câu ngay tại chỗ.
+5. **TỔNG phải tự kiểm lệnh trước khi đưa.** Lỗi đã mắc trong chính buổi đó: đưa `pgrep -fl git`
+   (khớp cả chuỗi tham số) nên bắt nhầm Serena MCP `--from git+https://…` thành "git đang chạy",
+   làm Hoà dừng một vòng vô ích. Lệnh đúng là `pgrep -x git`.
+6. **Bảng lệnh gửi dạng FILE**, không rải trong lời thoại — để Hoà mở một chỗ, làm một mạch, đánh
+   dấu xong từng mục.
+
+### Mẫu bảng lệnh
+
+```
+① TERMINAL — cửa sổ "interiorflow"
+   [một khối dán được]
+   ✔ xong khi: thấy dòng "…"
+
+② PHIÊN CLAUDE CODE đang làm <mảng>
+   [nguyên văn khối dán]
+   ✔ xong khi: nó báo …
+
+③ THAO TÁC TAY (nếu có)
+   …
+```
