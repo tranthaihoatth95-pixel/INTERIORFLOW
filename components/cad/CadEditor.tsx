@@ -26,7 +26,7 @@ import MenuButton from '@/components/ui/MenuButton';
 import { useCadStore } from '@/lib/cad/store';
 import { useCadLiveStatus } from '@/lib/cad/live-status';
 import type { HatchPattern } from '@/lib/cad/model';
-import { parseDxf, exportDxf } from '@/lib/cad/dxf';
+import { parseDxf, exportDxfEx, type DxfExportReport } from '@/lib/cad/dxf';
 import { openDwgFile } from '@/lib/cad/dwg';
 import { renderDocToDataURL, renderZoneMapToDataURL } from '@/lib/cad/render';
 import { exportCadToPdf, DEFAULT_PDF_PAPER_MM, DEFAULT_PDF_MARGIN_MM } from '@/lib/cad/pdf';
@@ -77,6 +77,10 @@ import RevitSummaryPanel from './RevitSummaryPanel';
 import SchedulePanel from './SchedulePanel';
 // VIỆC 4 (Sprint ĐỔ NỀN 2) — T4: panel lịch sử Undo/Redo (past/future đã có sẵn ở lib/cad/store.ts).
 import HistoryPanel from './HistoryPanel';
+// §0e QUYỀN KIỂM SOÁT — khuôn duyệt DÙNG CHUNG của S5. Xuất DXF làm phẳng block là thay đổi
+// KHÔNG hoàn tác được ở phía file đã tải về, nên phải cho xem con số thật rồi mới quyết.
+import { Checkpoint } from '@/components/studio/Checkpoint';
+import type { CheckpointItem } from '@/components/studio/checkpoint-core';
 
 export default function CadEditor() {
   const router = useRouter();
@@ -102,6 +106,11 @@ export default function CadEditor() {
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [handoffMsg, setHandoffMsg] = useState('');
+  // Xuất DXF — bản đã sinh + báo cáo ghi, giữ ở state để checkpoint duyệt xong TẢI ĐÚNG CHUỖI ĐÓ
+  // (không sinh lại lần hai: bản vẽ có thể đã đổi giữa lúc người dùng đang đọc cảnh báo).
+  // `null` = không có lượt xuất nào đang chờ duyệt.
+  const [dxfExport, setDxfExport] = useState<{ dxf: string; report: DxfExportReport; total: number } | null>(null);
+  const [dxfExportItems, setDxfExportItems] = useState<CheckpointItem[]>([]);
   // P1 verify (04/08) — cơ chế signal/onProgress đã sẵn ở lib/cad/dwg.ts openDwgFile(), CHỈ thiếu
   // nút "Huỷ" thật nối vào UI (đúng mục "CHƯA LÀM" STATUS.md). Giữ AbortController ở state (không
   // ref) để nút Huỷ re-render đúng lúc — dwgImportAbort !== null nghĩa là đang có 1 lượt nhập DWG
@@ -197,12 +206,46 @@ export default function CadEditor() {
     const url = renderDocToDataURL(doc, 2000);
     downloadDataUrl(url, 'layout.png');
   };
-  const doExportDxf = () => {
-    const doc = useCadStore.getState().doc;
-    const blob = new Blob([exportDxf(doc)], { type: 'application/dxf' });
+  /** Tải chuỗi DXF về máy. Tách riêng vì có 2 đường gọi: xuất thẳng (không mất gì) và xuất sau
+   *  khi người dùng đã duyệt cảnh báo làm phẳng block ở checkpoint. */
+  const downloadDxfText = (dxf: string) => {
+    const blob = new Blob([dxf], { type: 'application/dxf' });
     const url = URL.createObjectURL(blob);
     downloadDataUrl(url, 'layout.dxf');
     setTimeout(() => URL.revokeObjectURL(url), 2000);
+  };
+  /**
+   * Xuất DXF — CÓ CHẶN CẢNH BÁO (05/08).
+   *
+   * TRƯỚC: gọi `exportDxf(doc)` (bản không báo cáo) rồi tải ngay. Bản vẽ nhập từ AutoCAD gần như
+   * toàn bộ là block — đo trên hồ sơ thật của studio: 1 sàn = 10.035 entity thì 10.015 đến từ
+   * block, 105 tên block — nên xuất lại là **mất sạch cấu trúc block mà app không nói một câu**.
+   * Lỗi im lặng làm mất dữ liệu.
+   *
+   * NAY: dùng `exportDxfEx` để cầm luôn `report`. Không có cảnh báo ⇒ tải thẳng như cũ, không
+   * thêm một cú bấm nào. Có cảnh báo ⇒ mở checkpoint (§0e) cho xem SỐ THẬT — bao nhiêu hình đến
+   * từ bao nhiêu block, tên block nào — rồi mới tải.
+   */
+  const doExportDxf = () => {
+    const doc = useCadStore.getState().doc;
+    const { dxf, report } = exportDxfEx(doc);
+    if (report.warnings.length === 0) {
+      downloadDxfText(dxf);
+      return;
+    }
+    setDxfExport({ dxf, report, total: doc.entities.length });
+    // KS3 — đúng MỘT phần duyệt được: file xuất là một khối, không tải nửa file. Không bịa thêm
+    // item giả (bỏ tick 1 block không làm được gì cho bản xuất) — luật 1 của Checkpoint: nơi gọi
+    // chỉ được ghi theo đúng danh sách `onAccept` trả về.
+    setDxfExportItems([
+      {
+        id: 'dxf',
+        label: 'Tải file DXF đã làm phẳng block',
+        detail: `${report.flattenedBlockCount} block · ${sumFlattened(report)} hình`,
+        why: report.warnings.join(' '),
+        selected: true,
+      },
+    ]);
   };
   // Sprint 7 — Việc 1: PDF vector (bản vẽ ĐANG MỞ — giống hành vi PNG/DXF ở trên, không phải
   // toàn bộ project nhiều sheet). Giới hạn OCG/layer ẩn-hiện: xem đầu file lib/cad/pdf.ts.
@@ -606,6 +649,20 @@ export default function CadEditor() {
         )}
         {/* 20/07: panel "AI mô tả — Đề bài chi tiết" thay ô nhập 1 dòng cũ — xem AiBriefPanel.tsx. */}
         {aiBriefOpen && <AiBriefPanel onClose={() => setAiBriefOpen(false)} />}
+        {/* Cảnh báo mất cấu trúc block khi xuất DXF — chỉ hiện khi báo cáo ghi CÓ cảnh báo. */}
+        {dxfExport && (
+          <DxfExportCheckpoint
+            data={dxfExport}
+            items={dxfExportItems}
+            onItemsChange={setDxfExportItems}
+            onClose={() => setDxfExport(null)}
+            onAccept={(ids) => {
+              // Luật 1 Checkpoint — chỉ làm đúng thứ nằm trong danh sách người dùng tick.
+              if (ids.includes('dxf')) downloadDxfText(dxfExport.dxf);
+              setDxfExport(null);
+            }}
+          />
+        )}
       </div>
 
       {/* command line + status */}
@@ -649,6 +706,120 @@ function ConfirmBar({ message, onOk, onCancel }: { message: string; onOk: () => 
     </div>
   );
 }
+
+/* ───────── Xuất DXF · checkpoint cảnh báo LÀM PHẲNG BLOCK ─────────
+ *
+ * Vì sao có: `exportDxfEx()` (lib/cad/dxf.ts) làm phẳng mọi INSERT — hình còn nguyên nhưng cấu
+ * trúc block mất hẳn, mở lại ở AutoCAD không sửa hàng loạt qua block được nữa. Trước phiên này
+ * app tải file luôn, không nói gì.
+ *
+ * Dùng ĐÚNG khuôn duyệt chung `components/studio/Checkpoint.tsx` (§0e), KHÔNG tự đẻ hộp cảnh báo
+ * riêng. Vỏ ngoài chỉ là panel nổi + nút ✕ — Checkpoint không có đường thoát nào ngoài [Nhận],
+ * mà ở đây "không tải nữa" phải là lựa chọn thật, nên đường thoát nằm ở vỏ.
+ * ───────── */
+function DxfExportCheckpoint({
+  data, items, onItemsChange, onAccept, onClose,
+}: {
+  data: { dxf: string; report: DxfExportReport; total: number };
+  items: CheckpointItem[];
+  onItemsChange: (next: CheckpointItem[]) => void;
+  onAccept: (ids: string[]) => void;
+  onClose: () => void;
+}) {
+  const { report, total } = data;
+  const fromBlocks = sumFlattened(report);
+  // Sắp theo SỐ HÌNH giảm dần — block nặng nhất nằm trên, đó là thứ người dùng cần nhìn trước.
+  const rows = Object.entries(report.flattenedBlocks).sort((a, b) => b[1] - a[1]);
+  const shown = rows.slice(0, 8);
+  return (
+    <div
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+      style={{
+        position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 40,
+        width: 'min(520px, calc(100% - 32px))', maxHeight: 'calc(100% - 100px)', overflowY: 'auto',
+        background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 12,
+        padding: 10, boxShadow: '0 8px 30px rgba(0,0,0,.22)',
+      }}
+    >
+      <div style={panelHead}>
+        <span>Xuất DXF</span>
+        <button type="button" onClick={onClose} style={miniBtn} title="Không tải nữa">
+          <X size={14} />
+        </button>
+      </div>
+      <Checkpoint
+        phase="preview"
+        title="Bản xuất này mất cấu trúc block"
+        // KS1 — SẢN PHẨM THẬT: bảng tên block + số hình đếm từ chính bản DXF vừa sinh, không phải
+        // câu "đã tạo xong". Đây là dữ liệu bản vẽ của người dùng, đọc lúc chạy (§0h).
+        preview={
+          <div style={{ width: '100%', padding: 12, alignSelf: 'stretch' }}>
+            <p style={{ margin: '0 0 8px', fontSize: 11.5, lineHeight: 1.5, color: 'var(--t2)' }}>
+              {report.warnings.join(' ')}
+            </p>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5 }}>
+              <thead>
+                <tr>
+                  <th style={dxfTh}>Tên block</th>
+                  <th style={{ ...dxfTh, textAlign: 'right' }}>Số hình</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map(([name, n]) => (
+                  <tr key={name}>
+                    <td style={dxfTd}>{name}</td>
+                    <td style={{ ...dxfTd, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{n}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {rows.length > shown.length && (
+              <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.5, color: 'var(--t4)' }}>
+                … và {rows.length - shown.length} block nữa.
+              </p>
+            )}
+          </div>
+        }
+        params={[
+          { label: 'Hình trong bản vẽ', value: `${total}` },
+          { label: 'Hình đến từ block', value: `${fromBlocks}` },
+          { label: 'Số tên block', value: `${report.flattenedBlockCount}` },
+          { label: 'Định dạng ghi', value: 'DXF ASCII · AutoCAD 2000 (AC1015)' },
+        ]}
+        // KS2 — bước này không sinh ngẫu nhiên: cùng bản vẽ luôn ra cùng file. Nói thẳng thay vì
+        // để `null` (câu mặc định của `null` là "chạy lại có thể ra khác" — sai với đường xuất file).
+        seed="Không dùng — cùng bản vẽ luôn ra cùng file"
+        undoLabel="Không tải file nữa — bản vẽ đang mở không đổi gì."
+        items={items}
+        onItemsChange={onItemsChange}
+        onAccept={onAccept}
+      />
+    </div>
+  );
+}
+
+/** Tổng số hình đã làm phẳng ra từ block — cộng từ chính báo cáo ghi, không đếm lại `doc`. */
+function sumFlattened(report: DxfExportReport): number {
+  return Object.values(report.flattenedBlocks).reduce((a, b) => a + b, 0);
+}
+
+const dxfTh: React.CSSProperties = {
+  textAlign: 'left',
+  fontWeight: 600,
+  color: 'var(--t4)',
+  padding: '0 0 4px',
+  borderBottom: '1px solid var(--border)',
+};
+const dxfTd: React.CSSProperties = {
+  color: 'var(--t2)',
+  padding: '3px 0',
+  lineHeight: 1.5,
+};
 
 /* ───────── Scale nhanh — 19/07: 3 nút rời (×0.1/×10/×25.4) gom vào 1 menu xổ, cùng ngôn ngữ
  * với các nhóm khác trên thanh file. Hành vi giữ nguyên: bấm 1 nấc → scaleAll(hệ số). ───────── */

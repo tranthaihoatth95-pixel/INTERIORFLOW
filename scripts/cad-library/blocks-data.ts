@@ -25,7 +25,8 @@ export type Category =
   | 'xe'
   | 'cau-thang'
   | 'cot'
-  | 'ky-hieu';
+  | 'ky-hieu'
+  | 'van-phong';
 
 export const CATEGORY_LABEL: Record<Category, string> = {
   'phong-khach': 'Phòng khách',
@@ -39,6 +40,7 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   'cau-thang': 'Cầu thang',
   cot: 'Cột',
   'ky-hieu': 'Ký hiệu',
+  'van-phong': 'Văn phòng',
 };
 
 export interface LibBlockDef {
@@ -671,6 +673,118 @@ function northArrow(): Prim[] {
   ];
 }
 
+/* ═══════════════════════ VĂN PHÒNG — ĐỢT 1 (06/08) ═══════════════════════
+ *
+ * Nhóm này dựng theo ĐÚNG `docs/00-PHAN-TICH-NGUON-THAM-CHIEU.md`:
+ *  · §1 — **MỘT cấp nét mảnh đều trong toàn block**. Không phân cấp đậm/nhạt bên trong block
+ *         (phân cấp chỉ xuất hiện khi block đặt vào bản vẽ cùng tường/dim).
+ *  · §2 — **chi tiết tiết chế, gợi chứ không tả**: ghế xoay = *"1 mâm + 1 lưng cong + 2 tay"*.
+ *         ⛔ KHÔNG chân sao, KHÔNG bánh xe, KHÔNG laptop/chuột/cốc (đó là LOD trình bày `D2`,
+ *         không phải block dùng lại).
+ * Trung tính: tên block mô tả VẬT + SỐ ĐO, không mang tên studio/dự án nào.
+ */
+
+/**
+ * Cung LƯNG ghế — đi qua đúng HAI GÓC SAU của mâm rồi phình ra sau `bulge` mm.
+ *
+ * Vì sao cần hàm riêng: bản vẽ tay đặt bán kính "áng chừng" thì lưng hoặc **rời hẳn khỏi mâm**
+ * (thành vành trăng lửng lơ — lỗi đã mắc ở `chairAt` bản đầu 06/08), hoặc **chìm hẳn vào trong
+ * mâm** (mất luôn cái lưng). Ràng buộc đi-qua-2-góc khử cả hai, và đúng với mọi bề rộng ghế.
+ *
+ * Hình học: tâm (0, yc), bán kính r, đỉnh cung ở `yRear - bulge`.
+ *   k = yc − yRear = (halfW² − bulge²) / (2·bulge) ;  r = (halfW² + bulge²) / (2·bulge)
+ */
+function chairBack(halfW: number, yRear: number, bulge: number): Prim {
+  const b = Math.max(1, bulge);
+  const r = (halfW * halfW + b * b) / (2 * b);
+  const yc = yRear + (halfW * halfW - b * b) / (2 * b);
+  const aRight = Math.atan2(yRear - yc, halfW);   // ∈ (−π/2, 0)
+  const aLeft = Math.atan2(yRear - yc, -halfW);   // ∈ (−π, −π/2)
+  return arc(0, yc, r, aLeft, aRight);            // quét qua đỉnh −π/2
+}
+
+/**
+ * BÀN LÀM VIỆC nhìn từ trên: mặt bàn bo góc nhẹ + **hộc tủ** gợi ở một đầu.
+ *
+ * Hộc tủ là thứ duy nhất phân biệt bàn làm việc với bàn họp/bàn trơn trên mặt bằng — giữ đúng
+ * một khối, không vẽ ngăn kéo, không vẽ tay nắm. Hộc đặt ở đầu TRÁI; cần bàn thuận tay kia thì
+ * lật block lúc đặt (thư viện không đẻ hai id chỉ để đổi chiều).
+ */
+function officeDesk(w: number, d: number): Prim[] {
+  const pedW = Math.min(420, w * 0.32);
+  const pedD = Math.min(500, d - 160);
+  return [
+    ...roundedRect(-w / 2, -d / 2, w, d, 30),
+    // hộc sát mép SAU (+y = phía tường), chừa khoảng chân phía trước — chính khoảng chừa đó nói
+    // đây là bàn LÀM VIỆC chứ không phải bàn trơn. (Bản đầu 06/08 để hộc canh đều 4 phía ⇒ ra
+    // "hình chữ nhật trong hình chữ nhật", không đọc ra công năng.)
+    ...roundedRect(-w / 2 + 80, d / 2 - 80 - pedD, pedW, pedD, 18),
+  ];
+}
+
+/**
+ * GHẾ XOAY — đúng công thức `A1` §2: **mâm + lưng cong + 2 tay. HẾT.**
+ * Hướng ngồi là +y (ghế quay mặt lên trên) để đặt trước bàn thì lật/quay theo nhu cầu.
+ */
+function officeChairSwivel(): Prim[] {
+  const sw = 480, sd = 460;                 // mâm ngồi
+  const yRear = -sd / 2;
+  const armW = 55, armL = 240;
+  return [
+    ...roundedRect(-sw / 2, yRear, sw, sd, 80),
+    // LƯNG: hai đầu cung cắm VÀO TRONG mâm (yRear + 30) rồi mới phình 100mm ra sau ⇒ cung xuyên
+    // qua đường bao mâm, nhìn ra "lưng dính vào ghế".
+    // 🔴 Bản đầu 06/08 cho hai đầu cung nằm đúng GÓC TOÁN HỌC của mâm, mà góc đó đã bị bo r=105
+    // ⇒ hai đầu cung hụt ra ngoài đường bo, thành **vành trăng rời** nằm dưới một khối bo tròn —
+    // đúng cái "mặt cười" phải tránh. Render ra ảnh mới thấy; tsc/test/DXF đều xanh.
+    chairBack(sw / 2 - 35, yRear + 30, 100),
+    // 2 TAY: hai tấm mỏng CHẠM mép mâm (bản đầu để rời 50mm ⇒ hai vạch lơ lửng, không ra tay ghế)
+    ...roundedRect(-sw / 2 - armW, -armL / 2, armW, armL, 22),
+    ...roundedRect(sw / 2, -armL / 2, armW, armL, 22),
+  ];
+}
+
+/** VÁCH NGĂN bàn làm việc: một thanh dày 60, hai đầu bo. Không hatch, không nét đôi. */
+function partitionPanel(len: number): Prim[] {
+  return roundedRect(-len / 2, -30, len, 60, 25);
+}
+
+/**
+ * TỦ HỒ SƠ THẤP (dưới tầm mắt) — nhìn từ trên thấy MẶT TỦ, nên không có cung quét cánh.
+ * Nét trong: mép mặt cánh phía trước + vạch chia cánh. Đúng 2 loại nét, không hơn.
+ */
+function fileCabinetLow(w: number): Prim[] {
+  const d = 450;
+  const doors = w <= 1000 ? 2 : 3;
+  const prims: Prim[] = [...roundedRect(-w / 2, -d / 2, w, d, 18)];
+  prims.push(line(-w / 2, -d / 2 + 45, w / 2, -d / 2 + 45)); // mép mặt cánh
+  const seg = w / doors;
+  for (let i = 1; i < doors; i++) prims.push(line(-w / 2 + i * seg, -d / 2, -w / 2 + i * seg, d / 2));
+  return prims;
+}
+
+/**
+ * TỦ HỒ SƠ CAO — cánh mở, ký hiệu **đoạn cánh + cung 90° từ bản lề**, y hệt `wardrobe()`.
+ *
+ * ⚠️ Bản lề **CÙNG MỘT BÊN** cho mọi cánh — đã thử so le ở tủ áo 06/08 và nó ra hình **cái rèm**
+ * (hai cung gặp nhau giữa thành một đường liền, hai cánh nằm đúng trên mép hông tủ nên vô hình).
+ * ⚠️ Cung quét làm khung bao lớn hơn thân tủ (800×450 ⇒ bao 800×850) — đúng quy ước sẵn có của
+ * thư viện này (`arch-door-single` khai 900×900 cho cánh cửa 900), không phải lỗi số đo.
+ */
+function fileCabinetTall(w: number, doors: 2 | 3): Prim[] {
+  const d = 450;
+  const yFront = -d / 2;
+  const prims: Prim[] = [box(w, d)];
+  const seg = w / doors;
+  const HALF = Math.PI / 2;
+  for (let i = 0; i < doors; i++) {
+    const hinge = -w / 2 + i * seg;
+    prims.push(line(hinge, yFront, hinge, yFront - seg));
+    prims.push(arc(hinge, yFront, seg, -HALF, 0));
+  }
+  return prims;
+}
+
 /* ───────────────────────── DANH SÁCH TỔNG ───────────────────────── */
 
 const RAW_BLOCKS: LibBlockDef[] = [
@@ -741,6 +855,16 @@ const RAW_BLOCKS: LibBlockDef[] = [
 
   // Ký hiệu
   { id: 'symbol-north', name: 'Ký hiệu hướng Bắc', category: 'ky-hieu', w: 800, h: 800, prims: northArrow(), source: SRC_SELF, license: LIC_SELF },
+
+  // Văn phòng — ĐỢT 1 (bàn · ghế · vách · tủ hồ sơ)
+  { id: 'ban-lam-viec-1400x700', name: 'Bàn làm việc 1400×700', category: 'van-phong', w: 1400, h: 700, prims: officeDesk(1400, 700), source: SRC_SELF, license: LIC_SELF },
+  { id: 'ban-lam-viec-1200x600', name: 'Bàn làm việc 1200×600', category: 'van-phong', w: 1200, h: 600, prims: officeDesk(1200, 600), source: SRC_SELF, license: LIC_SELF },
+  { id: 'ghe-xoay', name: 'Ghế xoay', category: 'van-phong', w: 600, h: 600, prims: officeChairSwivel(), source: SRC_SELF, license: LIC_SELF },
+  { id: 'vach-ngan-1400', name: 'Vách ngăn 1400 (dày 60)', category: 'van-phong', w: 1400, h: 60, prims: partitionPanel(1400), source: SRC_SELF, license: LIC_SELF },
+  { id: 'vach-ngan-1200', name: 'Vách ngăn 1200 (dày 60)', category: 'van-phong', w: 1200, h: 60, prims: partitionPanel(1200), source: SRC_SELF, license: LIC_SELF },
+  { id: 'tu-ho-so-thap-800', name: 'Tủ hồ sơ thấp 800', category: 'van-phong', w: 800, h: 450, prims: fileCabinetLow(800), source: SRC_SELF, license: LIC_SELF },
+  { id: 'tu-ho-so-thap-1200', name: 'Tủ hồ sơ thấp 1200', category: 'van-phong', w: 1200, h: 450, prims: fileCabinetLow(1200), source: SRC_SELF, license: LIC_SELF },
+  { id: 'tu-ho-so-cao-800', name: 'Tủ hồ sơ cao 800 (cánh mở)', category: 'van-phong', w: 800, h: 450, prims: fileCabinetTall(800, 2), source: SRC_SELF, license: LIC_SELF },
 ];
 
 /* ═════════════════ CHỐT KÍCH THƯỚC — thêm 06/08, VIỆC 4 ═════════════════

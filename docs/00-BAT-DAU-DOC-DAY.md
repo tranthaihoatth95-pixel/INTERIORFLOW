@@ -363,3 +363,118 @@ song song, mỗi lần Hoà nhảy cửa sổ là một lần mất mạch.
 ③ THAO TÁC TAY (nếu có)
    …
 ```
+
+---
+
+## §0l — TÊN PHIÊN = TÊN MẢNG (Hoà chốt 05/08)
+
+Tên phiên đang đặt bằng SỐ (`1`, `4`, `2`, `3`…) ⇒ không cách nào nhớ phiên nào nắm gì ⇒ dán
+nhầm lệnh. Luật một-mảng-một-thợ chỉ chạy được nếu **nhìn tên là biết mảng**.
+
+| Tên phiên | Mảng độc quyền |
+|---|---|
+| `S1-dxf` | `lib/cad/dxf*.ts` · `dwg*.ts` · `hatch.ts` · `lib/cad/render.ts` · `scratchpad/` |
+| `S2-3d` | `lib/three/*` · `components/three/*` · `components/render-studio/*` |
+| `S3-thuvien` | `workstation-clusters.ts` · `furniture.ts` · `block-library.ts` · `components/library/*` |
+| `S4-matbang` | `components/cad/*` · `lib/cad/plan-present.ts` · `plan-leader.ts` · `legend.ts` |
+| `S5-ui` | `components/studio/*` · `globals.css` · `docs/mocks/*` |
+| `S6-chuan` | `lib/cad/standards/**` · `lib/cad/model.ts` · `CLAUDE.md` |
+| `VE-block` | `scripts/cad-library/**` · `public/cad-library/**` |
+| `MOCK-kiem` | `docs/mocks/*` (chỉ cửa kiểm, không sửa tính năng) |
+
+**Luật:** mọi phiếu TỔNG soạn phải mở đầu bằng đúng một tên trong bảng. Hoà chỉ việc so tên cửa
+sổ. Tên ≤11 ký tự để hiện đủ trên thanh bên hẹp.
+
+⚠️ `VE-block` chạy trong **Claude Code**, không phải phiên Cowork — nó phải chạy
+`generate-library.ts` / `verify-library.ts` / `tsc` ngay trong repo. (TỔNG từng gọi nhầm là
+"COWORK-VẼ".)
+
+## §0m — THỨ THUẦN THỊ GIÁC PHẢI QUA MẮT NGƯỜI, CHIA ĐỢT (Hoà chốt 05/08)
+
+> Nguyên văn Hoà: *"chụp màn cho mình để mình xem sản phẩm, âm thầm vẽ đến khi sai mình không bắt được."*
+
+**Ca bệnh:** phiên `VE-block` tự khai — *"`tsc` xanh, test xanh, DXF parse 100% mà hình vẫn là mặt
+cười."* Ghế bành: 4 cung "gợi nệm" đặt bậy thành miệng + hai mắt. Tủ áo: bản lề so le thành cái
+rèm. Lưng ghế: thành vành trăng rời. **Ba lỗi, không cửa kiểm tự động nào bắt được.**
+
+**Luật — áp cho MỌI việc sinh hình (block, ký hiệu, mặt bằng trình bày, thumbnail):**
+1. ⛔ **Cấm vẽ liền một mạch rồi mới cho xem.** Chia đợt ≤8 món.
+2. Sau mỗi đợt: sinh lại → verify → **render TẤT CẢ ra MỘT ảnh PNG có nhãn** →
+   lưu `docs/screenshots/` → **DỪNG, chờ duyệt**.
+3. Báo cáo phải kèm **đường dẫn ảnh**, không chỉ kèm số.
+
+**Nghi vấn còn mở — rò gu qua ngữ cảnh, không qua code:** hệ vừa vẽ ~15 vòng mặt Memoji (mắt,
+miệng, tóc, kính — commit `83127a1`, `0bf0a84`, `0a9ddd0`, `2d07190`…) rồi quay sang vẽ ghế bằng
+cung và ra **mặt cười**. Điều tra git: block CAD chỉ có **1 commit riêng** (`91053f9`), avatar có
+~15 commit riêng, **không commit nào lẫn** (ngoài `985d31e` là commit gộp cả ngày của Hoà).
+⇒ Nếu có rò thì rò qua **ngữ cảnh phiên**, không qua code — và git không bắt được.
+⇒ Cách chặn duy nhất là luật đợt ở trên. Đây là §0h HG1 ở dạng khó thấy nhất.
+
+## §0n — NHỊP LÀM VIỆC BA BƯỚC (Hoà chốt 05/08)
+
+> Nguyên văn Hoà: *"mỗi lần chốt với nhau xong bạn phải lưu lại và cập nhật lưu lần nữa. Rồi mình chốt thì bạn soạn lệnh tuần tự mình dán."*
+
+```
+① TRAO ĐỔI  →  chốt được điều gì
+② TỔNG LƯU NGAY  →  ghi vào sổ này + ghi về máy, RỒI ĐỌC LẠI XÁC NHẬN ĐÃ VÀO
+③ HOÀ CHỐT  →  TỔNG soạn BẢNG LỆNH tuần tự (§0k)  →  Hoà dán một mạch
+```
+
+**Bước ② là bước hay bị bỏ nhất, và bỏ là mất.** Ca bệnh cùng ngày: TỔNG chốt quy ước tên phiên
+với Hoà, nói xong trong khung chat rồi đi soạn việc khác — **không ghi vào sổ**. Hoà phải nhắc.
+Thứ chỉ sống trong khung chat thì phiên sau không đọc được, và chat thì trôi.
+
+**Kiểm bước ②:** ghi xong phải `wc -c` lại file và `grep` đúng mã mục vừa thêm. Không đọc lại =
+chưa lưu.
+
+---
+
+## §0o — CẤM MÔ TẢ NGUỒN TỪ TRÍ NHỚ (Hoà đặt 06/08 — sau LẦN THỨ TÁM)
+
+> Nguyên văn Hoà: *"cấm mô tả từ trí nhớ không rõ ràng, cấm suy luận khi không đọc dữ liệu cụ thể.
+> Một phiên sai trên tám lần cùng một lỗi là không chấp nhận được."* — và: *"không nhận suông."*
+
+**Đây không phải luật mới. Đây là §0g + N1 + N7 + N8 bị phạm lần thứ tám.** Tách thành mục riêng
+vì nhắc lồng trong mục cũ đã chứng minh là không đủ.
+
+### Ca bệnh mới nhất (06/08)
+
+TỔNG duyệt `docs/screenshots/van-phong-dot-1.png`, phán *"`ghe-xoay` sai — mâm ngồi biến mất"*,
+và **đã soạn sẵn lệnh bắt `VE-block` vẽ lại**. Hoà chặn. Mở ảnh gốc
+`2407-Test/ref-tham-chieu/A2-cum-4-ban-chu-thap-net-ky-thuat.png` ra xem thì khối bo tròn to
+**chính là mâm ngồi**, cấu trúc block **đúng**. Nhận xét sai hoàn toàn.
+
+⇒ Nếu Hoà không chặn: **một phiên Opus bị đốt để phá thứ đang đúng.**
+
+### Luật
+
+1. ⛔ **Cấm nhận xét bất kỳ thứ gì thuộc về HÌNH khi chưa MỞ HÌNH RA XEM.** Đọc tên file · đọc
+   kích thước file · đọc bản phân tích cũ **của chính mình** — **KHÔNG tính là đã xem**.
+2. ⛔ **Cấm trích nguồn tham chiếu bằng lời kể.** Phải mở đúng file và **dán đường dẫn** vào nhận
+   xét, để người khác mở lại kiểm được.
+3. **Bẫy nguy hiểm nhất — bản phân tích của chính mình trở thành "nguồn" giả.** TỔNG từng đọc ảnh
+   thật một lần, viết `00-PHAN-TICH-NGUON-THAM-CHIEU.md`, rồi các lượt sau **trích bản phân tích
+   đó** thay vì mở lại ảnh. Bản tóm tắt KHÔNG thay được nguồn.
+4. **Nguồn thẩm mỹ nay nằm trên đĩa, mở được:** `2407-Test/ref-tham-chieu/`
+   `A1` thư viện cụm · `A2` **chuẩn nét kỹ thuật** · `D2` LOD cao · `E1`/`E2` cụm có dim ·
+   `G1`/`G2` ghế bành 3 hình chiếu · `00-PHAN-TICH-*.md`.
+   Nằm trong `2407-Test/` nên **.gitignore đã chặn** — không vào repo, đúng luật trung tính.
+5. **Phiếu giao việc vẽ phải ghi ĐƯỜNG DẪN ẢNH CỤ THỂ**, cấm ghi "theo ảnh tham chiếu".
+
+### Sổ đếm lỗi — chống chai lì
+
+Mỗi lần TỔNG phạm §0o: **thêm một dòng kèm ngày và ca bệnh**.
+
+| Lần | Ngày | Ca bệnh |
+|---|---|---|
+| 1–5 | 04–05/08 | 5 lần đề xuất xây thứ ĐÃ CÓ (`sectionToEntities` · 6 hàm cụm · `computeHeights` · `effectiveFrom` · `exportDxfEx`) |
+| 6 | 05/08 | kết luận 46 block "thô" từ **kích thước file**, chưa render ra nhìn |
+| 7 | 05/08 | nghi `components/library/*` sai mảng trước khi đọc `ClusterPanel.tsx` — phiên đó đang làm ĐÚNG |
+| 8 | 06/08 | phán `ghe-xoay` "mâm ngồi biến mất" — mở `A2` ra thì mâm vẫn ở đó |
+
+### Đã báo cáo Anthropic
+
+Hoà từ chối lời nhận lỗi suông, yêu cầu báo cáo lên Anthropic để đưa lớp lỗi này vào môi trường
+huấn luyện trước khi dùng thương mại. Báo cáo: `BAO-CAO-LOI-ANTHROPIC-2026-08-06.md`, gửi qua nút
+phản hồi trong giao diện — phiên Cowork **không có kênh gửi trực tiếp**, và TỔNG đã nói rõ điều đó
+thay vì hứa suông.

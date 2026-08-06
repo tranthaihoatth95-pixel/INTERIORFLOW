@@ -3191,3 +3191,87 @@ NPM_EXIT=1
 `lib/three/*` = mảng S2, cấm đụng.** Không phải hồi quy của phiên này — S1b không sửa dòng code nào.
 
 Số dòng `ok` tăng 5.063 (S1 đo 4.945) do các phiên khác thêm test trong ngày.
+
+---
+
+## [10:24 06/08] Bảng tra lớp trong `lib/cad/render.ts` — XONG (V6: KHÔNG COMMIT)
+
+**Bug**: 4 chỗ trong `render.ts` gọi `doc.layers.find((l) => l.id === e.layer)` **bên trong vòng
+lặp entity** — `render.ts:51` (màu) · `:58` (bề dày nét) · `:73` (nét đứt) · `:499` (lọc lớp ẩn).
+Chi phí O(entity × lớp) **mỗi khung hình**: với entity rải đều qua L lớp, mỗi khung tốn
+≈ `4 × N × (L+1)/2` phép so — N=200.000, L=40 là **≈16,4 triệu**; L=120 là **≈48,4 triệu**.
+(Con số 117 triệu trong đề bài ứng với bản vẽ ~290 lớp — vẫn cùng một cái sai, chỉ khác quy mô.)
+
+**Sửa**: `layerIndex(doc)` dựng `Map<layerId, Layer>` MỘT LẦN rồi tra O(1). 3 hàm phụ
+(`layerColor`/`effectiveLineWidthPx`/`effectiveLineDashPx`) nay nhận `LayerIndex` thay vì `Doc`;
+`drawEntity` lấy bảng 1 lần ở đầu, `drawEntities` lấy 1 lần cho vòng lọc lớp ẩn. Chữ ký công khai
+`drawEntity`/`drawEntities` **không đổi** — 6 chỗ gọi ngoài (`CadCanvas.tsx`, `BlockLibraryDemo.tsx`)
+không phải sửa gì.
+
+### Số đo TRƯỚC – SAU
+
+Bench `drawEntities()` trên **ctx GIẢ** (mọi lệnh vẽ no-op) ⇒ đo phần tra lớp + phân loại z-order,
+KHÔNG gồm raster thật của trình duyệt. A/B cùng điều kiện: bản TRƯỚC lấy từ `git show HEAD:lib/cad/
+render.ts`, **mỗi ca một tiến trình riêng** (chống GC ca trước làm nhiễu ca sau), entity rải đều
+qua các lớp. Máy lúc đo **load average 31,5** (dev server + phiên song song) ⇒ lấy **min-of-25
+khung, 3 lượt** làm số chính — nhiễu ngoài chỉ CỘNG thêm thời gian, không trừ đi, nên min bền hơn
+trung vị (xem ghi chú "phép đo hỏng" bên dưới).
+
+| Ca | TRƯỚC (ms/khung) | SAU (ms/khung) | Nhanh hơn |
+|---|---|---|---|
+| 50.000 entity × 8 lớp | **11,6** (11,9·11,7·11,6) | **9,2** (9,3·9,2·9,8) | 1,26× |
+| 200.000 entity × 8 lớp | **46,1** (47,4·84,0·46,1) | **35,9** (35,9·39,7·39,1) | 1,28× |
+| 200.000 entity × 40 lớp | **83,8** (87,5·87,2·83,8) | **34,4** (34,4·35,3·35,9) | 2,44× |
+| 200.000 entity × 120 lớp | **195,9** (204,0·195,9·199,1) | **39,6** (39,6·42,1·44,5) | **4,95×** |
+
+**Điều đáng giá hơn con số tuyệt đối**: sau khi sửa, thời gian **phẳng ~35-40 ms bất kể 8 hay 120
+lớp** (trước: 46 → 84 → 196 ms, tăng tuyến tính theo số lớp). Tức chi phí tra lớp đã rời khỏi vòng
+lặp thật sự, không chỉ nhỏ đi. ~35 ms còn lại là duyệt entity + gọi lệnh vẽ, không phải tra lớp.
+
+💭 **Phép đo hỏng (ghi lại để phiên sau không lặp)**: lượt đo đầu chạy **cả 4 ca trong 1 tiến
+trình** và lấy TRUNG VỊ → ra kết quả vô nghĩa (ca 50k×8 "chậm đi" 12,2 → 56,9 ms; có khung max
+5.870 ms). Nguyên nhân: 600.000 object dồn lại ⇒ GC của ca trước đè lên ca sau. Đã bỏ, làm lại
+theo cách trên. **Số trong bảng là của lượt đo thứ hai.**
+
+### Cache KHÔNG mù (điểm 4 của phiếu)
+
+`doc.layers` CÓ bị thay giữa chừng, theo 3 đường khác nhau — nên khoá cache là **chính mảng
+`doc.layers`** (`WeakMap`) kèm chốt chặn `n = layers.length`:
+- `store.ts` (`:646/:655/:662/:678`) luôn tạo **mảng mới** khi thêm/sửa/xoá lớp ⇒ khoá mới ⇒ dựng lại.
+- `dxf.ts:640` và `dwg-map.ts:667` **`push` thẳng vào mảng cũ** lúc nhập file ⇒ khoá KHÔNG đổi,
+  chốt độ dài bắt đúng ca này.
+- Sửa tại chỗ một `Layer` (vd `lay.visible = false`) không cần dựng lại — Map giữ **tham chiếu**
+  tới chính object đó.
+- `WeakMap` ⇒ Doc bị thu hồi thì bảng tra đi theo, không rò bộ nhớ.
+
+⚠️ **Lỗ hổng còn lại (đã cân nhắc, chấp nhận)**: thay một phần tử **giữ nguyên độ dài**
+(`layers[0] = layerKhác`) sẽ KHÔNG kích hoạt dựng lại. `grep` toàn repo hiện **0 chỗ** viết như
+vậy trên đường CAD. Nếu sau này có, phải đổi chốt sang phiên bản đếm (version counter) trong Doc.
+
+### Kiểm chứng
+
+- **`lib/cad/render-layer-index.test.ts` (MỚI, 8 ca) — 8 ok, 0 fail.** Trước đó `render.ts` **không
+  có một test nào** đụng tới (grep 189 file test = 0 chỗ import) — đây là lý do phải thêm: bằng
+  chứng đúng đắn không được nằm trong scratchpad `/private/tmp` (macOS xoá khi khởi động lại).
+  Phủ đủ 4 đường làm `layers` đổi + `drawEntity` gọi lẻ + hai Doc dùng chung layer không lây cache.
+- `npx tsc --noEmit -p .` (toàn repo) — **exit 0, sạch**.
+- `npm test` — `NPM_EXIT=1`, **5.091 dòng ok**, đúng **1 fail: `group nội thất mang đúng entityId
+  của BlockEntity nguồn`** = lỗi CŨ đã ghi sổ (`lib/three/cad-to-obj.ts`, mảng S2, không liên quan
+  render.ts). Không hồi quy mới. (Phiếu ghi "99/99" — repo thực tế nay là 189 file test.)
+- 🟡 **CHƯA verify trên trình duyệt thật**: bench chạy ctx giả trong Node, chưa mở app đo lại bằng
+  bản vẽ thật trên canvas. Phần raster của trình duyệt không đổi (không đụng lệnh vẽ nào), nhưng
+  con số ms/khung THẬT sẽ khác bảng trên.
+
+### Cùng lỗi, CHƯA sửa (ngoài phạm vi phiếu này — chỉ liệt kê)
+
+`doc.layers.find` quét tuyến tính trong vòng lặp entity còn ở: `lib/cad/query.ts:208/335/381` ·
+`lib/cad/pdf.ts:138/146/452` · `lib/cad/hatch.ts:131` · `lib/cad/plan-present.ts:272` ·
+`lib/cad/dxf.ts:1009`. `query.ts` là đường **hit-test theo con trỏ chuột** — đáng sửa tiếp nhất.
+
+### SẴN SÀNG COMMIT (V6 — Hoà chạy tay)
+
+```
+git add lib/cad/render.ts lib/cad/render-layer-index.test.ts docs/BAO-CAO-PHU.md
+git commit -- lib/cad/render.ts lib/cad/render-layer-index.test.ts docs/BAO-CAO-PHU.md \
+  -m "perf(cad): bang tra lop O(1) trong render.ts (200k entity x 120 lop: 196ms -> 40ms/khung)"
+```

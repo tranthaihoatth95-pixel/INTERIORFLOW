@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-05T22:19:41.061Z",
+  "generatedAt": "2026-08-06T03:02:51.746Z",
   "unit": "mm",
-  "count": 46,
+  "count": 54,
   "categories": [
     {
       "slug": "phong-khach",
@@ -47,6 +47,10 @@
     {
       "slug": "ky-hieu",
       "label": "Ký hiệu"
+    },
+    {
+      "slug": "van-phong",
+      "label": "Văn phòng"
     }
   ],
   "blocks": [
@@ -599,6 +603,102 @@
       "h": 800,
       "file": "/cad-library/ky-hieu/symbol-north.dxf",
       "thumb": "/cad-library/ky-hieu/symbol-north.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "ban-lam-viec-1400x700",
+      "name": "Bàn làm việc 1400×700",
+      "category": "van-phong",
+      "categoryLabel": "Văn phòng",
+      "w": 1400,
+      "h": 700,
+      "file": "/cad-library/van-phong/ban-lam-viec-1400x700.dxf",
+      "thumb": "/cad-library/van-phong/ban-lam-viec-1400x700.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "ban-lam-viec-1200x600",
+      "name": "Bàn làm việc 1200×600",
+      "category": "van-phong",
+      "categoryLabel": "Văn phòng",
+      "w": 1200,
+      "h": 600,
+      "file": "/cad-library/van-phong/ban-lam-viec-1200x600.dxf",
+      "thumb": "/cad-library/van-phong/ban-lam-viec-1200x600.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "ghe-xoay",
+      "name": "Ghế xoay",
+      "category": "van-phong",
+      "categoryLabel": "Văn phòng",
+      "w": 590,
+      "h": 530,
+      "file": "/cad-library/van-phong/ghe-xoay.dxf",
+      "thumb": "/cad-library/van-phong/ghe-xoay.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "vach-ngan-1400",
+      "name": "Vách ngăn 1400 (dày 60)",
+      "category": "van-phong",
+      "categoryLabel": "Văn phòng",
+      "w": 1400,
+      "h": 60,
+      "file": "/cad-library/van-phong/vach-ngan-1400.dxf",
+      "thumb": "/cad-library/van-phong/vach-ngan-1400.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "vach-ngan-1200",
+      "name": "Vách ngăn 1200 (dày 60)",
+      "category": "van-phong",
+      "categoryLabel": "Văn phòng",
+      "w": 1200,
+      "h": 60,
+      "file": "/cad-library/van-phong/vach-ngan-1200.dxf",
+      "thumb": "/cad-library/van-phong/vach-ngan-1200.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "tu-ho-so-thap-800",
+      "name": "Tủ hồ sơ thấp 800",
+      "category": "van-phong",
+      "categoryLabel": "Văn phòng",
+      "w": 800,
+      "h": 450,
+      "file": "/cad-library/van-phong/tu-ho-so-thap-800.dxf",
+      "thumb": "/cad-library/van-phong/tu-ho-so-thap-800.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "tu-ho-so-thap-1200",
+      "name": "Tủ hồ sơ thấp 1200",
+      "category": "van-phong",
+      "categoryLabel": "Văn phòng",
+      "w": 1200,
+      "h": 450,
+      "file": "/cad-library/van-phong/tu-ho-so-thap-1200.dxf",
+      "thumb": "/cad-library/van-phong/tu-ho-so-thap-1200.svg",
+      "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+    },
+    {
+      "id": "tu-ho-so-cao-800",
+      "name": "Tủ hồ sơ cao 800 (cánh mở)",
+      "category": "van-phong",
+      "categoryLabel": "Văn phòng",
+      "w": 800,
+      "h": 850,
+      "file": "/cad-library/van-phong/tu-ho-so-cao-800.dxf",
+      "thumb": "/cad-library/van-phong/tu-ho-so-cao-800.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
       "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
     }

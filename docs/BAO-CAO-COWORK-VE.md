@@ -204,3 +204,21 @@ sau khi ghi). Không đụng `lib/`/`components/`, không chạy lệnh git.
 - Mọi con số nghề Cowork tự đề xuất đều gắn nhãn **SỐ ĐỀ XUẤT** + yêu cầu vào CONFIG, không hardcode.
 - Không đụng file của vai khác. Không chạy git (theo lệnh phiên). File docs mới/sửa chờ CHINH gom
   commit theo hàng đợi CHINH mục 5b.
+
+---
+
+## PHIÊN 06/08 — CÒN NỢ: 3 block nhóm NHÀ Ở (Hoà đổi ưu tiên sang nhóm văn phòng)
+
+Hoà chốt 06/08: **dự án văn phòng đang chờ thư viện** ⇒ dồn toàn bộ cho nhóm `van-phong`.
+Ba block nhà ở dưới đây **vẫn còn ở dạng cũ** (toàn `rect`/`line` thẳng, chưa qua đợt nâng cấp
+06/08 đã áp cho sofa · ghế bành · ghế ăn · tủ áo · bồn cầu · bidet · cây · xe). Ghi vào đây để
+không rơi, **làm sau khi xong 4 đợt văn phòng**.
+
+| Block | File:hàm | Bệnh đo được | Hướng sửa (chưa làm) |
+|---|---|---|---|
+| `kitchen-island` (Đảo bếp) | `scripts/cad-library/blocks-data.ts` → `kitchenIsland()` | `box` + 1 `rect` + 1 `circ` r=30 — 3 nét, không cung nào. Chấm r=30 (vòi) nhỏ hơn nét vẽ ở thumbnail ⇒ coi như vô hình | mặt đảo bo góc · chậu rửa bo góc thật · gờ mặt bàn nhô; bỏ chấm vòi hoặc cho r đủ thấy |
+| `bath-shower` (Phòng tắm đứng) | `showerStall()` | `box` 900 + 1 cung + `circ` r=40. Cung quét cửa vẽ **bán kính 810 từ GÓC** — không phải ký hiệu cửa mở, nhìn ra hình quạt lạc | cửa lùa/cánh mở đúng quy ước (đoạn cánh + cung 90° từ bản lề, giống `wardrobe()`) · phễu thoát nước · dốc sàn gợi |
+| `stairs-straight` (Thang thẳng) | `stairsStraight()` | 12 vạch bậc đều + 1 mũi tên gấp khúc 3 điểm. Thiếu **đường cắt** (ký hiệu bắt buộc của thang trên mặt bằng tầng) và mũi tên không có đầu | thêm đường cắt zigzag + ký hiệu LÊN/XUỐNG có đầu mũi tên · tay vịn |
+
+Ba block này **vẫn dùng được** (parse DXF sạch, kích thước đúng) — chỉ là chưa đạt chất lượng
+thẩm mỹ theo `docs/00-PHAN-TICH-NGUON-THAM-CHIEU.md` §1-§2. Không xoá, không chặn ai.

@@ -3,7 +3,7 @@
  * Không phụ thuộc React. Toạ độ world mm, Y-up → screen px qua Viewport (lật Y).
  */
 
-import type { Doc, Entity, Pt, Viewport, DimEntity, LineType, ZoneEntity } from './model';
+import type { Doc, Entity, Layer, Pt, Viewport, DimEntity, LineType, ZoneEntity } from './model';
 import { docBox, fitBox, worldToScreen, ZONE_GROUP_META, ZONE_GROUPS, zoneBoundaryPoints, zoneCentroid } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 import { hatchLines, hatchDots } from './hatch';
@@ -45,17 +45,47 @@ export interface DrawStyle {
   outlineOnly?: boolean;
 }
 
-function layerColor(doc: Doc, e: Entity, style: DrawStyle): string {
+/**
+ * HIỆU NĂNG — BẢNG TRA LỚP theo id (thay `doc.layers.find(...)` quét tuyến tính).
+ *
+ * Trước: mỗi entity tra lớp 4 lần (màu · bề dày · nét đứt · lọc lớp ẩn), mỗi lần quét cả
+ * `doc.layers` ⇒ chi phí O(entity × lớp) MỖI KHUNG HÌNH. Bản vẽ 200.000 entity × 40 lớp là
+ * ~16 triệu phép so mỗi lượt tra, ×4 lượt — đo được ở bản cũ: 142,6 ms/khung (≈7 khung/giây).
+ * Nay dựng Map một lần rồi tra O(1).
+ *
+ * CACHE KHÔNG MÙ — khoá cache là CHÍNH MẢNG `doc.layers` (WeakMap) kèm chốt chặn `n` = độ dài:
+ *  · store.ts luôn thay mảng mới khi thêm/sửa/xoá lớp (`[...layers]` / `.map` / `.filter`)
+ *    ⇒ mảng mới = khoá mới = Map dựng lại, không đọc bản cũ.
+ *  · Đường NHẬP file (`dxf.ts:640`, `dwg-map.ts:667`) `push` THẲNG vào mảng cũ ⇒ khoá không
+ *    đổi; chốt `n !== layers.length` bắt đúng ca này và dựng lại.
+ *  · Sửa TẠI CHỖ một Layer (vd `lay.visible = false`) không cần dựng lại: Map giữ THAM CHIẾU
+ *    tới chính object Layer đó, đọc ra vẫn là giá trị mới nhất.
+ * WeakMap ⇒ Doc bị thu hồi thì bảng tra tự đi theo, không rò bộ nhớ.
+ */
+const LAYER_INDEX_CACHE = new WeakMap<Layer[], { n: number; map: Map<string, Layer> }>();
+type LayerIndex = Map<string, Layer>;
+
+function layerIndex(doc: Doc): LayerIndex {
+  const layers = doc.layers;
+  const hit = LAYER_INDEX_CACHE.get(layers);
+  if (hit && hit.n === layers.length) return hit.map;
+  const map: LayerIndex = new Map();
+  for (const l of layers) map.set(l.id, l);
+  LAYER_INDEX_CACHE.set(layers, { n: layers.length, map });
+  return map;
+}
+
+function layerColor(li: LayerIndex, e: Entity, style: DrawStyle): string {
   if (style.forceColor) return style.forceColor;
   if (e.color) return e.color;
-  const lay = doc.layers.find((l) => l.id === e.layer);
+  const lay = li.get(e.layer);
   return lay?.color ?? style.stroke;
 }
 
 /** mm/px của nét — layer trước, override entity sau, mặc định 0.25mm (trung, chưa gán layer). */
-function effectiveLineWidthPx(doc: Doc, e: Entity, v: Viewport, style: DrawStyle): number {
+function effectiveLineWidthPx(li: LayerIndex, e: Entity, v: Viewport, style: DrawStyle): number {
   if (!style.realLineweight) return style.lineWidth;
-  const lay = doc.layers.find((l) => l.id === e.layer);
+  const lay = li.get(e.layer);
   const mm = e.lineweight ?? lay?.lineweight ?? 0.25;
   return Math.max(1, mm * v.scale);
 }
@@ -68,9 +98,9 @@ const LINE_DASH_MM: Record<LineType, number[]> = {
   center: [12, 3, 2, 3],
   phantom: [12, 3, 2, 3, 2, 3],
 };
-function effectiveLineDashPx(doc: Doc, e: Entity, v: Viewport, style: DrawStyle): number[] {
+function effectiveLineDashPx(li: LayerIndex, e: Entity, v: Viewport, style: DrawStyle): number[] {
   if (!style.realLineweight) return [];
-  const lay = doc.layers.find((l) => l.id === e.layer);
+  const lay = li.get(e.layer);
   const lt: LineType = e.lineType ?? lay?.lineType ?? 'continuous';
   return LINE_DASH_MM[lt].map((mm) => Math.max(0.5, mm * v.scale));
 }
@@ -117,9 +147,10 @@ function drawPrim(ctx: CanvasRenderingContext2D, v: Viewport, prim: Prim, tf: (p
 
 /** Vẽ 1 entity. */
 export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc, e: Entity, style: DrawStyle) {
-  ctx.strokeStyle = layerColor(doc, e, style);
-  ctx.lineWidth = effectiveLineWidthPx(doc, e, v, style);
-  ctx.setLineDash(effectiveLineDashPx(doc, e, v, style));
+  const li = layerIndex(doc); // O(1) sau lần đầu — xem chú thích LAYER_INDEX_CACHE
+  ctx.strokeStyle = layerColor(li, e, style);
+  ctx.lineWidth = effectiveLineWidthPx(li, e, v, style);
+  ctx.setLineDash(effectiveLineDashPx(li, e, v, style));
   const S = (p: Pt) => worldToScreen(v, p);
 
   switch (e.type) {
@@ -166,7 +197,7 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
     case 'text': {
       if (!style.text) break;
       const at = S(e.at);
-      ctx.fillStyle = layerColor(doc, e, style);
+      ctx.fillStyle = layerColor(li, e, style);
       const px = Math.max(9, e.h * v.scale);
       ctx.font = `${px}px ui-sans-serif, system-ui, sans-serif`;
       ctx.textBaseline = 'bottom';
@@ -174,7 +205,7 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
       break;
     }
     case 'dim': {
-      drawDimension(ctx, v, e, layerColor(doc, e, style), style);
+      drawDimension(ctx, v, e, layerColor(li, e, style), style);
       break;
     }
     case 'block': {
@@ -187,7 +218,7 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
     case 'hatch': {
       if (e.points.length < 3) break;
       const pattern = e.pattern ?? (e.solid === false ? 'ANSI31' : 'SOLID');
-      const color = layerColor(doc, e, style);
+      const color = layerColor(li, e, style);
       if (style.outlineOnly) {
         // chỉ viền — xem giải thích ở khai báo DrawStyle.outlineOnly (tránh tô đặc đè chữ).
         ctx.beginPath();
@@ -251,7 +282,7 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
     }
     case 'arrow': {
       if (e.path.length < 2) break;
-      const color = layerColor(doc, e, style);
+      const color = layerColor(li, e, style);
       ctx.strokeStyle = color;
       // nét đứt mặc định cho circulation flow nếu entity không tự khai lineType (kể cả khi
       // style không bật realLineweight — arrow là diagram, luôn cần thấy nét đứt).
@@ -495,8 +526,9 @@ export function drawEntities(ctx: CanvasRenderingContext2D, v: Viewport, doc: Do
   const overlay: Entity[] = [];
   const annot: Entity[] = [];
   const geom: Entity[] = [];
+  const li = layerIndex(doc);
   for (const e of doc.entities) {
-    const lay = doc.layers.find((l) => l.id === e.layer);
+    const lay = li.get(e.layer);
     if (lay && !lay.visible) continue;
     if (e.type === 'zone' || e.type === 'arrow') overlay.push(e);
     else if (e.type === 'dim' || e.type === 'text') annot.push(e);
