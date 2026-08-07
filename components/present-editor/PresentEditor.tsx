@@ -58,7 +58,7 @@ import { slidesFromContent, coverKickerFromDeck } from '@/lib/present-editor/con
 import { evaluateDeck } from '@/lib/present-editor/layout-check';
 import { slidesFromReference, detectGridFromUrl } from '@/lib/present-editor/reference-layout';
 import type { GridGeometryInput } from '@/lib/present-editor/suggest';
-import { consumePresentHandoffWithIds } from '@/lib/present-editor/handoff';
+import { consumePresentHandoffWithIds, deckImagesWithIdsFromNodes } from '@/lib/present-editor/handoff';
 import { consumeCadPresentHandoff } from '@/lib/cad/present-handoff';
 import {
   stashPhotoEditorIn,
@@ -1055,27 +1055,37 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     ed.selectSlide(ed.deck.slides.length);
   }, [ed, gu, palette]);
 
-  /* M-EMPTY (07/08) — lối "Tạo từ ảnh đã dựng" của màn trống: thêm 1 trang TRẮNG THẬT (không
-   * template chữ mẫu) rồi mở picker ảnh; ảnh chọn xong rơi vào đúng trang vừa tạo qua
-   * `onAddImageUrl` (đường chèn ảnh CÓ SẴN của Toolbar, không chế đường thứ hai). */
+  /* M-EMPTY-2 (07/08, mock [BẢN CHỐT] `Bốn trạng thái rỗng.dc.html` màn 1d) — hai lối của màn
+   * trống, NỐI THẬT cả hai:
+   *  - "Tạo từ ảnh đã dựng": đọc ảnh render CỦA CHÍNH FLOW qua `deckImagesWithIdsFromNodes`
+   *    (đúng nguồn `pickStage` dùng khi bàn giao Render→Present, không chế nguồn thứ hai) —
+   *    mỗi ảnh thành MỘT trang trắng mang ảnh đó. 0 ảnh ⇒ nút KHOÁ + lý do (đúng mock).
+   *  - "Bắt đầu bằng slide trắng": 1 trang TRẮNG THẬT (elements rỗng — KHÔNG phải template
+   *    "Tiêu đề slide/Ý chính" của onAddSlide, mock đòi slide trống). */
   const trEmpty = useT();
-  const emptyImageInputRef = useRef<HTMLInputElement | null>(null);
-  const onAddSlideFromImage = useCallback(() => {
+  const flowNodes = useFlowStore((s) => s.nodes);
+  const builtImages = useMemo(() => deckImagesWithIdsFromNodes(flowNodes), [flowNodes]);
+  const onAddBlankSlide = useCallback(() => {
     ed.update((d) => {
       d.slides.push({ id: newId('sld'), background: '#ffffff', elements: [] });
     });
     ed.selectSlide(ed.deck.slides.length);
-    // mở picker SAU khi trang mới đã vào state — ảnh chọn xong rơi đúng trang này
-    window.setTimeout(() => emptyImageInputRef.current?.click(), 0);
   }, [ed]);
-  const onEmptyImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    e.target.value = '';
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => onAddImageUrl(String(reader.result));
-    reader.readAsDataURL(f);
-  };
+  const EMPTY_FROM_RENDER_CAP = 12;
+  const onAddSlidesFromRenders = useCallback(() => {
+    if (!builtImages.length) return;
+    const batch = builtImages.slice(0, EMPTY_FROM_RENDER_CAP);
+    ed.update((d) => {
+      for (const it of batch) {
+        d.slides.push({
+          id: newId('sld'),
+          background: '#ffffff',
+          elements: [makeImage(it.src, { frame: { x: 5, y: 12, w: 90, h: 84, rotation: 0 } })],
+        });
+      }
+    });
+    ed.selectSlide(ed.deck.slides.length);
+  }, [ed, builtImages]);
 
   const onDuplicateSlide = useCallback(
     (i: number) => {
@@ -1915,47 +1925,70 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
               watermark={ed.deck.watermark}
             />
           ) : (
-            /* M-EMPTY (07/08) — màn TRỐNG của chặng Trình chiếu (từ khi bỏ deck mẫu, người dùng
-             * mới vào đây là gặp màn này đầu tiên). Câu rõ đang trống + 2 lối đi TẠI CHỖ, nút có
-             * CHỮ (G6), song ngữ. "Tạo từ ảnh đã dựng" = tạo trang + mở picker ảnh (ảnh render
-             * từ chặng 3D bấm "Đưa sang Trình chiếu" cũng tự vào đây — present-handoff có sẵn). */
-            <div style={{ textAlign: 'center', color: 'var(--t4)', maxWidth: 380 }}>
-              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--t2)', marginBottom: 6, lineHeight: 1.5 }}>
-                {trEmpty('Chưa có slide nào', 'No slides yet')}
+            /* M-EMPTY-2 (07/08) — màn TRỐNG chặng Trình chiếu theo mock [BẢN CHỐT]
+             * `Bốn trạng thái rỗng.dc.html` màn 1d: tiêu đề/mô tả đúng chữ đã duyệt, 2 nút có
+             * CHỮ (G6); "Tạo từ ảnh đã dựng" KHOÁ kèm lý do khi flow chưa có ảnh render (đúng
+             * ngữ nghĩa khoá-kèm-lý-do của mock); nút còn bấm được mang accent. Song ngữ. */
+            <div style={{ textAlign: 'center', color: 'var(--t4)', maxWidth: 420 }}>
+              <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--t1)', marginBottom: 2, lineHeight: 1.5 }}>
+                {trEmpty('Hồ sơ trình khách', 'Client presentation')}
               </p>
-              <p style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
+              <p style={{ fontSize: 11.5, color: 'var(--t4)', marginBottom: 8, lineHeight: 1.5 }}>
+                {trEmpty('Client presentation', 'Hồ sơ trình khách')}
+              </p>
+              <p style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 16, color: 'var(--t2)' }}>
                 {trEmpty(
-                  'Hồ sơ trình chiếu đang trống. Tạo trang từ ảnh đã dựng ở chặng 3D, hoặc bắt đầu bằng một trang trắng — Magic ở cột trái dàn nhanh bố cục.',
-                  'This deck is empty. Create a page from a rendered image, or start with a blank page — use Magic on the left to lay out quickly.',
+                  'Ảnh đã dựng, mặt bằng và bảng vật liệu xếp thành một bộ khách xem được trên trình duyệt và ghi nhận xét thẳng lên slide.',
+                  'Renders, plans and material boards, in one set your client can comment on.',
                 )}
               </p>
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button
-                  onClick={onAddSlideFromImage}
-                  style={{
-                    padding: '10px 18px', borderRadius: 12, background: 'var(--accent-strong)',
-                    color: '#fff', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', lineHeight: 1.5,
-                  }}
-                >
-                  {trEmpty('Tạo từ ảnh đã dựng', 'Create from a rendered image')}
-                </button>
-                <button
-                  onClick={onAddSlide}
-                  style={{
-                    padding: '10px 18px', borderRadius: 12, background: 'var(--field)',
-                    color: 'var(--t1)', fontSize: 14, fontWeight: 600, border: '1px solid var(--border)', cursor: 'pointer', lineHeight: 1.5,
-                  }}
-                >
-                  {trEmpty('+ Trang trắng', '+ Blank page')}
-                </button>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                  <button
+                    onClick={onAddSlidesFromRenders}
+                    disabled={builtImages.length === 0}
+                    style={
+                      builtImages.length === 0
+                        ? {
+                            padding: '10px 18px', borderRadius: 12, background: 'var(--field)', color: 'var(--t4)',
+                            fontSize: 14, fontWeight: 600, border: '1px solid var(--border)', cursor: 'not-allowed', lineHeight: 1.5,
+                          }
+                        : {
+                            padding: '10px 18px', borderRadius: 12, background: 'var(--accent-strong)', color: '#fff',
+                            fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', lineHeight: 1.5,
+                          }
+                    }
+                  >
+                    {trEmpty('Tạo từ ảnh đã dựng', 'Build from renders')}
+                  </button>
+                  <span style={{ fontSize: 11, lineHeight: 1.6, color: builtImages.length === 0 ? 'var(--warning)' : 'var(--t4)' }}>
+                    {builtImages.length === 0
+                      ? trEmpty('Chưa có ảnh nào từ chặng Thiết kế 3D', 'No renders from the 3D stage yet')
+                      : trEmpty(`${builtImages.length} ảnh sẵn sàng`, `${builtImages.length} renders ready`)}
+                  </span>
+                </span>
+                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                  <button
+                    onClick={onAddBlankSlide}
+                    style={
+                      builtImages.length === 0
+                        ? {
+                            padding: '10px 18px', borderRadius: 12, background: 'var(--accent-strong)', color: '#fff',
+                            fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', lineHeight: 1.5,
+                          }
+                        : {
+                            padding: '10px 18px', borderRadius: 12, background: 'var(--field)', color: 'var(--t1)',
+                            fontSize: 14, fontWeight: 600, border: '1px solid var(--border)', cursor: 'pointer', lineHeight: 1.5,
+                          }
+                    }
+                  >
+                    {trEmpty('Bắt đầu bằng slide trắng', 'Start with a blank slide')}
+                  </button>
+                  <span style={{ fontSize: 11, lineHeight: 1.6, color: 'var(--t4)' }}>
+                    {trEmpty('Thêm ảnh và mặt bằng sau', 'Add images and plans later')}
+                  </span>
+                </span>
               </div>
-              <input
-                ref={emptyImageInputRef}
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={onEmptyImageFile}
-              />
             </div>
           )}
 

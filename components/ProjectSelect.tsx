@@ -1151,30 +1151,49 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
      đúng 1 tile "+ Dự án mới" đơn độc trôi nổi giữa carousel/grid rỗng (không có empty-state
      riêng). Chỉ 1 CTA thật ("Dự án mới", tái dùng `choose` sẵn có) — KHÔNG thêm nút "Mở bản vẽ
      có sẵn" của mock vì luồng nhập DWG đang treo (STATUS.md 2.1.6.d), chưa có gì đứng sau nút đó. */
+  /* M-EMPTY-2 (07/08) — chữ + 2 lối theo mock [BẢN CHỐT] `Bốn trạng thái rỗng.dc.html` màn 1a.
+     "Mở dự án từ máy" mock vẽ là nút bấm được, nhưng đường khôi phục .ifpack hiện chỉ sống trong
+     chặng Thiết kế 2D (`cad:ifpack-import-request` — CadSheets.tsx xử lý; Gallery chưa có đường
+     nạp tệp thành dự án) ⇒ theo luật §9/2c KHOÁ + LÝ DO thay vì nút chết. GAP ghi M-EMPTY-2-OUT. */
   const emptyBlock = (
-    <div className="flex max-w-sm flex-col items-center gap-4 rounded-[var(--radius-xl)] px-8 py-10 text-center" style={glass}>
+    <div className="flex max-w-md flex-col items-center gap-4 rounded-[var(--radius-xl)] px-8 py-10 text-center" style={glass}>
       <div className="grid h-14 w-14 place-items-center rounded-full" style={{ background: 'rgba(106,87,245,0.14)', color: ACCENT }}>
         <FolderPlus size={22} />
       </div>
       <div>
         <p className="text-[length:var(--fs-sm)] font-semibold text-[var(--t1)]">
-          {en ? 'No projects yet' : 'Chưa có dự án nào'}
+          {en ? 'Your project workspace' : 'Không gian dự án của bạn'}
         </p>
+        <p className="text-[11px] text-[var(--t4)]">{en ? 'Không gian dự án của bạn' : 'Your project workspace'}</p>
         <p className="mt-1.5 text-[length:var(--fs-xs)] leading-relaxed text-[var(--t4)]">
-          {en ? 'Create your first project to start drawing.' : 'Tạo dự án đầu tiên để bắt đầu vẽ.'}
+          {en
+            ? 'A project keeps drawings, 3D models and client files together.'
+            : 'Một dự án giữ bản vẽ, khối 3D và hồ sơ trình khách ở cùng một chỗ.'}
         </p>
       </div>
-      <motion.button
-        {...pressable}
-        type="button"
-        disabled={busy}
-        onClick={() => void choose({ kind: 'new' })}
-        className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--fs-xs)] font-semibold disabled:opacity-60"
-        style={{ background: ACCENT, color: '#fff' }}
-      >
-        {busy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-        {en ? 'New project' : 'Dự án mới'}
-      </motion.button>
+      <div className="flex flex-wrap items-center justify-center gap-2.5">
+        <motion.button
+          {...pressable}
+          type="button"
+          disabled={busy}
+          onClick={() => void choose({ kind: 'new' })}
+          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--fs-xs)] font-semibold disabled:opacity-60"
+          style={{ background: ACCENT, color: '#fff' }}
+        >
+          {busy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+          {en ? 'New project' : 'Tạo dự án mới'}
+        </motion.button>
+        <button
+          type="button"
+          disabled
+          title={en
+            ? 'Restoring a project from an .ifpack file currently lives in the 2D stage (File menu) — open a project first. Wiring it here is on the backlog.'
+            : 'Khôi phục dự án từ tệp .ifpack hiện nằm ở chặng Thiết kế 2D (menu Mở tệp) — mở một dự án trước. Nối thẳng vào đây đang trong hàng đợi.'}
+          className="cursor-not-allowed rounded-full border border-[var(--border)] px-4 py-2 text-[length:var(--fs-xs)] font-semibold text-[var(--t4)] opacity-70"
+        >
+          {en ? 'Open from disk' : 'Mở dự án từ máy'}
+        </button>
+      </div>
     </div>
   );
 

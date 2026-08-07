@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14);
+  --ease-apple:cubic-bezier(.32,.72,0,1); --tap:32px; --tap-lg:44px; --gap-screen:44px; --row:28px; --radius:14px;
+  --z-work:#6a57f5; --z-meet:#d9a34a; --z-common:#46b876;
+}
+:root,[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --mat-panel:rgba(20,20,23,.68); --mat-card:rgba(26,26,30,.62); --mat-hairline:rgba(255,255,255,.10);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65); --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --danger-soft:rgba(229,103,79,.14); --success-soft:rgba(70,184,118,.14);
+  --ink:rgba(245,245,247,.6); --dots:rgba(255,255,255,.07); --hatch:repeating-linear-gradient(45deg,#202024 0 9px,#1a1a1e 9px 18px);
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --mat-panel:rgba(250,248,244,.7); --mat-card:rgba(255,255,255,.66); --mat-hairline:rgba(33,30,25,.10);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22); --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --danger-soft:rgba(229,103,79,.12); --success-soft:rgba(70,184,118,.12);
+  --ink:rgba(33,30,25,.58); --dots:rgba(33,30,25,.10); --hatch:repeating-linear-gradient(45deg,#f4f1eb 0 9px,#ffffff 9px 18px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--accent-strong)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--bg);padding:36px 40px 72px;font-weight:400;font-size:14px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
+
+  <div style="width:1440px;margin:0 auto 30px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
+    <div style="min-width:0">
+      <div style="display:flex;align-items:center;gap:11px">
+        <div style="width:26px;height:26px;border-radius:8px;background:var(--accent);flex:none"></div>
+        <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.02em">Kết quả chia khu</h1>
+        <span style="display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:6px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700;letter-spacing:.03em">PLACEHOLDER</span>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--t3);max-width:900px;text-wrap:pretty">Mặt bằng tô màu theo khu: <span style="color:var(--z-work);font-weight:600">làm việc</span> · <span style="color:var(--z-meet);font-weight:600">họp</span> · <span style="color:var(--z-common);font-weight:600">chung</span>. Bảng bên phải đối chiếu từng khu với chuẩn diện tích trên mỗi người.</div>
+    </div>
+    <button onClick="{{ toggleTheme }}" style="height:var(--tap);padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;font-family:inherit;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">{{ themeLabel }}</button>
+  </div>
+
+  <div style="width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:var(--gap-screen)">
+
+    <div data-screen-label="01">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+        <span style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">01</span>
+        <span style="font-size:12px;font-weight:600;color:var(--t2)">Chia khu và bảng kiểm</span>
+        <span style="font-size:11px;color:var(--t4)">6 trên 7 khu đạt chuẩn · phòng họp lớn thiếu 0,1 m² mỗi chỗ</span>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-pop);background:var(--bg)">
+
+        <div style="display:flex;align-items:center;gap:0;height:78px;padding:0 24px;background:var(--panel);border-bottom:1px solid var(--border)">
+          <div style="display:flex;flex-direction:column;gap:2px;padding-right:28px">
+            <span style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t5)">Tổng diện tích</span>
+            <span style="font-size:24px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums">594 <span style="font-size:12px;font-weight:400;color:var(--t4)">m²</span></span>
+          </div>
+          <div style="width:1px;height:38px;background:var(--border)"></div>
+          <div style="display:flex;flex-direction:column;gap:2px;padding:0 28px">
+            <span style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t5)">Tổng chỗ</span>
+            <span style="font-size:24px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums">91 <span style="font-size:12px;font-weight:400;color:var(--t4)">chỗ</span></span>
+          </div>
+          <div style="width:1px;height:38px;background:var(--border)"></div>
+          <div style="display:flex;flex-direction:column;gap:2px;padding:0 28px">
+            <span style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t5)">Đạt chuẩn</span>
+            <span style="display:flex;align-items:baseline;gap:8px">
+              <span style="font-size:24px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--success)">86%</span>
+              <span style="font-size:11px;color:var(--t4)">6 / 7 khu</span>
+            </span>
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+            <button style="height:var(--tap);padding:0 14px;border:1px solid var(--border);border-radius:10px;background:var(--field);color:var(--t1);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover)">Chia lại</button>
+            <button style="height:var(--tap);padding:0 14px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">Chốt phương án</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 560px;height:660px">
+
+          <div style="position:relative;overflow:hidden;background:var(--bg);background-image:radial-gradient(circle,var(--dots) 0 1px,transparent 1.4px);background-size:22px 22px;border-right:1px solid var(--border)">
+            <svg viewBox="0 0 860 660" style="position:absolute;inset:0;width:100%;height:100%">
+              <g style="opacity:.2">
+                <rect x="60" y="60" width="380" height="240" style="fill:var(--z-work)"></rect>
+                <rect x="60" y="312" width="230" height="180" style="fill:var(--z-work)"></rect>
+                <rect x="452" y="60" width="200" height="130" style="fill:var(--z-meet)"></rect>
+                <rect x="452" y="202" width="95" height="98" style="fill:var(--z-meet)"></rect>
+                <rect x="557" y="202" width="95" height="98" style="fill:var(--z-meet)"></rect>
+                <rect x="664" y="60" width="136" height="240" style="fill:var(--z-common)"></rect>
+                <rect x="452" y="312" width="200" height="120" style="fill:var(--z-common)"></rect>
+                <rect x="664" y="312" width="136" height="120" style="fill:var(--z-common)"></rect>
+                <rect x="302" y="312" width="138" height="60" style="fill:var(--z-common)"></rect>
+              </g>
+              <g style="fill:none;stroke-width:1.6">
+                <rect x="60" y="60" width="380" height="240" style="stroke:var(--z-work)"></rect>
+                <rect x="60" y="312" width="230" height="180" style="stroke:var(--z-work)"></rect>
+                <rect x="452" y="60" width="200" height="130" style="stroke:var(--z-meet)"></rect>
+                <rect x="452" y="202" width="95" height="98" style="stroke:var(--z-meet)"></rect>
+                <rect x="557" y="202" width="95" height="98" style="stroke:var(--z-meet)"></rect>
+                <rect x="664" y="60" width="136" height="240" style="stroke:var(--z-common)"></rect>
+                <rect x="452" y="312" width="200" height="120" style="stroke:var(--z-common)"></rect>
+                <rect x="664" y="312" width="136" height="120" style="stroke:var(--z-common)"></rect>
+                <rect x="302" y="312" width="138" height="60" style="stroke:var(--z-common)"></rect>
+              </g>
+              <g style="fill:none;stroke:var(--ink);stroke-width:1.8"><rect x="44" y="44" width="772" height="480"></rect></g>
+              <g style="fill:none;stroke:var(--ink);stroke-width:1;opacity:.4"><path d="M44 524h772M60 504h740"></path></g>
+              <g style="fill:var(--t2);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif">
+                <text x="76" y="84" style="font-size:13px;font-weight:600">Khối làm việc A</text>
+                <text x="76" y="102" style="font-size:11px;fill:var(--t4)">186 m² · 30 chỗ</text>
+                <text x="76" y="336" style="font-size:13px;font-weight:600">Khối làm việc B</text>
+                <text x="76" y="354" style="font-size:11px;fill:var(--t4)">118 m² · 18 chỗ</text>
+                <text x="468" y="84" style="font-size:13px;font-weight:600">Phòng họp lớn</text>
+                <text x="468" y="102" style="font-size:11px;fill:var(--t4)">46 m² · 16 chỗ</text>
+                <text x="466" y="226" style="font-size:11px;font-weight:600">Họp nhỏ 1</text>
+                <text x="571" y="226" style="font-size:11px;font-weight:600">Họp nhỏ 2</text>
+                <text x="680" y="84" style="font-size:13px;font-weight:600">Lễ tân</text>
+                <text x="680" y="102" style="font-size:11px;fill:var(--t4)">+ lounge</text>
+                <text x="468" y="336" style="font-size:13px;font-weight:600">Pantry</text>
+                <text x="468" y="354" style="font-size:11px;fill:var(--t4)">32 m² · 14 chỗ</text>
+                <text x="680" y="336" style="font-size:12px;font-weight:600">Kho · kỹ thuật</text>
+                <text x="316" y="336" style="font-size:11px;font-weight:600">3 booth gọi điện</text>
+                <text x="316" y="470" style="font-size:11px;fill:var(--t4)">Lối đi và phụ trợ 108 m²</text>
+              </g>
+              <rect x="452" y="60" width="200" height="130" style="fill:none;stroke:var(--danger);stroke-width:2;stroke-dasharray:6 5"></rect>
+            </svg>
+
+            <div style="position:absolute;left:20px;bottom:18px;display:flex;gap:8px;align-items:center;padding:7px 11px;border-radius:12px;background:var(--mat-card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-node)">
+              <span style="display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--t2)"><span style="width:11px;height:11px;border-radius:3px;background:var(--z-work);opacity:.85"></span>Làm việc</span>
+              <span style="display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--t2)"><span style="width:11px;height:11px;border-radius:3px;background:var(--z-meet);opacity:.85"></span>Họp</span>
+              <span style="display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--t2)"><span style="width:11px;height:11px;border-radius:3px;background:var(--z-common);opacity:.85"></span>Chung</span>
+            </div>
+            <div style="position:absolute;right:20px;bottom:18px;display:inline-flex;align-items:center;gap:8px;height:26px;padding:0 11px;border-radius:13px;background:var(--card);border:1px solid var(--danger);box-shadow:var(--shadow-node);font-size:11px;color:var(--danger)">
+              <span style="width:6px;height:6px;border-radius:50%;background:var(--danger)"></span>1 khu chưa đạt chuẩn
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;min-height:0;background:var(--panel)">
+            <div style="height:42px;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid var(--border);flex:none">
+              <span style="flex:1;font-size:14px;font-weight:600;letter-spacing:-.01em">Bảng kiểm</span>
+              <span style="font-size:11px;color:var(--t4)">Chuẩn nội bộ · sửa được</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1.5fr 78px 62px 96px 76px;gap:0 10px;padding:10px 18px 8px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--t5)">
+              <span>Khu</span><span style="text-align:right">Diện tích</span><span style="text-align:right">Số chỗ</span><span style="text-align:right">Chuẩn</span><span style="text-align:right">Kết quả</span>
+            </div>
+
+            <div style="flex:1;min-height:0;overflow:hidden;padding:8px 18px;display:flex;flex-direction:column;gap:6px">
+
+              <div style="display:grid;grid-template-columns:1.5fr 78px 62px 96px 76px;gap:0 10px;align-items:center;height:40px;padding:0 11px;border-radius:11px;background:var(--card);border:1px solid var(--border)">
+                <span style="display:flex;align-items:center;gap:9px;min-width:0"><span style="width:9px;height:9px;border-radius:3px;background:var(--z-work);flex:none"></span><span style="font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Khối làm việc A</span></span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">186</span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">30</span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">6,2 / 6,0</span>
+                <span style="display:flex;justify-content:flex-end"><span style="display:inline-flex;align-items:center;height:20px;padding:0 9px;border-radius:7px;background:var(--success-soft);color:var(--success);font-size:10px;font-weight:700">ĐẠT</span></span>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1.5fr 78px 62px 96px 76px;gap:0 10px;align-items:center;height:40px;padding:0 11px;border-radius:11px;background:var(--card);border:1px solid var(--border)">
+                <span style="display:flex;align-items:center;gap:9px;min-width:0"><span style="width:9px;height:9px;border-radius:3px;background:var(--z-work);flex:none"></span><span style="font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Khối làm việc B</span></span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">118</span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">18</span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">6,6 / 6,0</span>
+                <span style="display:flex;justify-content:flex-end"><span style="display:inline-flex;align-items:center;height:20px;padding:0 9px;border-radius:7px;background:var(--success-soft);color:var(--success);font-size:10px;font-weight:700">ĐẠT</span></span>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1.5fr 78px 62px 96px 76px;gap:0 10px;align-items:center;height:40px;padding:0 11px;border-radius:11px;background:var(--card);border:1px solid var(--danger);box-shadow:0 0 0 3px var(--danger-soft)">
+                <span style="display:flex;align-items:center;gap:9px;min-width:0"><span style="width:9px;height:9px;border-radius:3px;background:var(--z-meet);flex:none"></span><span style="font-size:12px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Phòng họp lớn</span></span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">46</span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">16</span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--danger)">2,9 / 3,0</span>
+                <span style="display:flex;justify-content:flex-end"><span style="display:inline-flex;align-items:center;height:20px;padding:0 9px;border-radius:7px;background:var(--danger-soft);color:var(--danger);font-size:10px;font-weight:700">KHÔNG</span></span>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1.5fr 78px 62px 96px 76px;gap:0 10px;align-items:center;height:40px;padding:0 11px;border-radius:11px;background:var(--card);border:1px solid var(--border)">
+                <span style="display:flex;align-items:center;gap:9px;min-width:0"><span style="width:9px;height:9px;border-radius:3px;background:var(--z-meet);flex:none"></span><span style="font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Phòng họp nhỏ · 2 phòng</span></span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">34</span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">10</span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">3,4 / 3,0</span>
+                <span style="display:flex;justify-content:flex-end"><span style="display:inline-flex;align-items:center;height:20px;padding:0 9px;border-radius:7px;background:var(--success-soft);color:var(--success);font-size:10px;font-weight:700">ĐẠT</span></span>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1.5fr 78px 62px 96px 76px;gap:0 10px;align-items:center;height:40px;padding:0 11px;border-radius:11px;background:var(--card);border:1px solid var(--border)">
+                <span style="display:flex;align-items:center;gap:9px;min-width:0"><span style="width:9px;height:9px;border-radius:3px;background:var(--z-common);flex:none"></span><span style="font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Lễ tân và lounge</span></span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">58</span>
+                <span style="text-align:right;font-size:12px;color:var(--t5)">—</span>
+                <span style="text-align:right;font-size:12px;color:var(--t4)">8% sàn / 6%</span>
+                <span style="display:flex;justify-content:flex-end"><span style="display:inline-flex;align-items:center;height:20px;padding:0 9px;border-radius:7px;background:var(--success-soft);color:var(--success);font-size:10px;font-weight:700">ĐẠT</span></span>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1.5fr 78px 62px 96px 76px;gap:0 10px;align-items:center;height:40px;padding:0 11px;border-radius:11px;background:var(--card);border:1px solid var(--border)">
+                <span style="display:flex;align-items:center;gap:9px;min-width:0"><span style="width:9px;height:9px;border-radius:3px;background:var(--z-common);flex:none"></span><span style="font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Pantry</span></span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">32</span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">14</span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">2,3 / 2,0</span>
+                <span style="display:flex;justify-content:flex-end"><span style="display:inline-flex;align-items:center;height:20px;padding:0 9px;border-radius:7px;background:var(--success-soft);color:var(--success);font-size:10px;font-weight:700">ĐẠT</span></span>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1.5fr 78px 62px 96px 76px;gap:0 10px;align-items:center;height:40px;padding:0 11px;border-radius:11px;background:var(--card);border:1px solid var(--border)">
+                <span style="display:flex;align-items:center;gap:9px;min-width:0"><span style="width:9px;height:9px;border-radius:3px;background:var(--z-common);flex:none"></span><span style="font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Booth gọi điện · 3 buồng</span></span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">12</span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">3</span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)">4,0 / 3,5</span>
+                <span style="display:flex;justify-content:flex-end"><span style="display:inline-flex;align-items:center;height:20px;padding:0 9px;border-radius:7px;background:var(--success-soft);color:var(--success);font-size:10px;font-weight:700">ĐẠT</span></span>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1.5fr 78px 62px 96px 76px;gap:0 10px;align-items:center;height:40px;padding:0 11px;border-radius:11px;background:transparent;border:1px dashed var(--border-strong);opacity:.8">
+                <span style="display:flex;align-items:center;gap:9px;min-width:0"><span style="width:9px;height:9px;border-radius:3px;background:var(--hatch);border:1px solid var(--border-strong);flex:none"></span><span style="font-size:12px;color:var(--t3)">Lối đi và phụ trợ</span></span>
+                <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t3)">108</span>
+                <span style="text-align:right;font-size:12px;color:var(--t5)">—</span>
+                <span style="text-align:right;font-size:12px;color:var(--t4)">18% sàn</span>
+                <span style="display:flex;justify-content:flex-end;font-size:11px;color:var(--t5)">Không tính</span>
+              </div>
+
+              <div style="margin-top:6px;display:grid;grid-template-columns:1.5fr 78px 62px 96px 76px;gap:0 10px;align-items:center;height:42px;padding:0 11px;border-radius:11px;background:var(--field);border:1px solid var(--border-strong)">
+                <span style="font-size:12px;font-weight:600;color:var(--t1)">Tổng</span>
+                <span style="text-align:right;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--t1)">594</span>
+                <span style="text-align:right;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--t1)">91</span>
+                <span style="text-align:right;font-size:11px;color:var(--t4)">6,5 m²/người</span>
+                <span style="display:flex;justify-content:flex-end"><span style="display:inline-flex;align-items:center;height:20px;padding:0 9px;border-radius:7px;background:var(--success-soft);color:var(--success);font-size:10px;font-weight:700">86%</span></span>
+              </div>
+
+              <div style="margin-top:8px;border-radius:12px;background:var(--card);border:1px solid var(--border);padding:12px 13px;display:flex;gap:11px;align-items:flex-start">
+                <span style="width:7px;height:7px;border-radius:50%;background:var(--danger);flex:none;margin-top:6px"></span>
+                <div style="min-width:0">
+                  <div style="font-size:12px;font-weight:600;color:var(--t1)">Phòng họp lớn thiếu 1,6 m²</div>
+                  <div style="margin-top:4px;font-size:11px;color:var(--t3);text-wrap:pretty">Bỏ 1 chỗ ngồi hoặc nới vách sang phía lễ tân 0,8 m là đạt chuẩn 3,0 m² mỗi chỗ.</div>
+                  <div style="display:flex;gap:8px;margin-top:10px">
+                    <button style="height:var(--tap);padding:0 13px;border:1px solid var(--border);border-radius:10px;background:var(--field);color:var(--t1);font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s var(--ease-apple)" style-hover="background:var(--hover)">Bỏ 1 chỗ</button>
+                    <button style="height:var(--tap);padding:0 13px;border:1px solid var(--border);border-radius:10px;background:var(--field);color:var(--t1);font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s var(--ease-apple)" style-hover="background:var(--hover)">Nới vách 0,8 m</button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Tối&quot;,&quot;Kem&quot;],&quot;default&quot;:&quot;Tối&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Giao diện&quot;},&quot;projectName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Căn hộ Thảo Điền&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Nội dung&quot;}}">
+class Component extends DCLogic {
+  state = { theme: null };
+  componentDidMount() { this.apply(); }
+  componentDidUpdate() { this.apply(); }
+  apply() { document.documentElement.dataset.theme = this.theme(); }
+  theme() { return this.state.theme || (this.props.theme === 'Kem' ? 'light' : 'dark'); }
+  renderVals() {
+    const t = this.theme();
+    return {
+      themeLabel: t === 'dark' ? 'Đổi sang nền Kem' : 'Đổi sang nền Tối',
+      toggleTheme: () => this.setState({ theme: t === 'dark' ? 'light' : 'dark' }),
+      project: this.props.projectName || 'Căn hộ Thảo Điền'
+    };
+  }
+}
+</script>
+</body>
+</html>

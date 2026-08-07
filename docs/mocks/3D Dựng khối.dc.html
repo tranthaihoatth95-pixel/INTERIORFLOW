@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>InteriorFlow · 3D Dựng khối</title>
+<style>
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14); --on-accent:#ffffff;
+  --radius:14px;
+  --ease-apple:cubic-bezier(.32,.72,0,1);
+  --tap:32px; --row:28px; --gap:8px;
+}
+:root,[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#9a9aa4; --t5:#7c7c86;
+  --mat-panel:rgba(20,20,23,.94); --mat-hairline:rgba(255,255,255,.08);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65); --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876; --wood:#c79a63;
+  --face1:#2a2a30; --face2:#202024; --face3:#1a1a1e;
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#5f5951; --t4:#6c665c; --t5:#847d73;
+  --mat-panel:rgba(250,248,244,.95); --mat-hairline:rgba(0,0,0,.08);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22); --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --wood:#a97c46;
+  --face1:#ffffff; --face2:#faf8f4; --face3:#f4f1eb;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--accent-strong)}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms !important;animation-duration:.01ms !important}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--bg);padding:32px 40px 56px;font-weight:400;font-size:14px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
+
+  <div style="width:1440px;margin:0 auto 22px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
+    <div style="min-width:0">
+      <div style="display:flex;align-items:center;gap:11px">
+        <div style="width:26px;height:26px;border-radius:8px;background:var(--accent);flex:none"></div>
+        <h1 style="margin:0;font-size:28px;line-height:1.5;font-weight:600;letter-spacing:-.02em">Không gian 3D · Dựng khối</h1>
+      </div>
+      <div style="margin-top:6px;font-size:12px;line-height:1.6;color:var(--t3);max-width:820px;text-wrap:pretty">Một giao diện duy nhất, không có chế độ con. Bốn nút dưới đây chuyển cùng một màn hình sang bốn thời điểm khác nhau. Dữ liệu trong màn là dữ liệu mẫu.</div>
+    </div>
+    <button onClick="{{ toggleTheme }}" style="height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;line-height:1.5;font-family:inherit;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">{{ themeLabel }}</button>
+  </div>
+
+  <div style="width:1440px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:8px">
+    <button onClick="{{ go1 }}" style="height:34px;padding:0 15px;border:1px solid {{ bd1 }};border-radius:11px;background:{{ bg1 }};color:{{ fg1 }};font-weight:600;font-size:12px;line-height:1.5;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)">01 · Không chọn gì</button>
+    <button onClick="{{ go2 }}" style="height:34px;padding:0 15px;border:1px solid {{ bd2 }};border-radius:11px;background:{{ bg2 }};color:{{ fg2 }};font-weight:600;font-size:12px;line-height:1.5;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)">02 · Chọn khối</button>
+    <button onClick="{{ go3 }}" style="height:34px;padding:0 15px;border:1px solid {{ bd3 }};border-radius:11px;background:{{ bg3 }};color:{{ fg3 }};font-weight:600;font-size:12px;line-height:1.5;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)">03 · Kéo mặt 2 700</button>
+    <button onClick="{{ go4 }}" style="height:34px;padding:0 15px;border:1px solid {{ bd4 }};border-radius:11px;background:{{ bg4 }};color:{{ fg4 }};font-weight:600;font-size:12px;line-height:1.5;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)">04 · Dock công cụ mở rộng</button>
+    <span style="margin-left:auto;align-self:center;font-size:12px;line-height:1.6;color:var(--t3)">{{ stateNote }}</span>
+  </div>
+
+<div data-screen-label="3D Dựng khối" style="width:1440px;height:768px;margin:0 auto;border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-pop);display:grid;grid-template-rows:42px 1fr 26px;grid-template-columns:214px 1fr 236px;background:var(--bg);color:var(--t1);font-weight:400;font-size:14px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif">
+
+  <header style="grid-column:1/4;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 10px 0 12px;background:var(--panel);border-bottom:1px solid var(--border)">
+    <div style="display:flex;align-items:center;gap:9px;min-width:0">
+      <div style="width:20px;height:20px;border-radius:6px;background:var(--accent);flex:none"></div>
+      <span style="font-size:14px;line-height:1.5;font-weight:600;white-space:nowrap;letter-spacing:-.01em">{{ project }}</span>
+      <span style="display:inline-flex;align-items:center;height:17px;padding:0 6px;border-radius:5px;background:var(--field);color:var(--t3);font-size:10px;line-height:1.5;font-weight:700;letter-spacing:.03em">DỮ LIỆU MẪU</span>
+    </div>
+    <div style="display:inline-flex;background:var(--field);border-radius:10px;padding:2px">
+      <button style="border:0;background:transparent;color:var(--t3);font-weight:400;font-size:12px;line-height:1.5;font-family:inherit;padding:4px 14px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)" style-hover="color:var(--t1)">Vẽ</button>
+      <button style="border:0;background:var(--panel);color:var(--t1);font-weight:600;font-size:12px;line-height:1.5;font-family:inherit;padding:4px 14px;border-radius:8px;cursor:pointer;box-shadow:var(--shadow-node)">Dựng ảnh</button>
+      <button style="border:0;background:transparent;color:var(--t3);font-weight:400;font-size:12px;line-height:1.5;font-family:inherit;padding:4px 14px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)" style-hover="color:var(--t1)">Trình bày</button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px">
+      <span style="font-size:11px;line-height:1.5;color:var(--t3)">Tự lưu</span>
+      <div style="width:26px;height:26px;border-radius:50%;background:var(--field);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1.5;font-weight:600;color:var(--t2)">NT</div>
+    </div>
+  </header>
+
+  <nav style="background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0">
+    <div style="height:34px;display:flex;align-items:center;gap:6px;padding:0 6px 0 12px;border-bottom:1px solid var(--border);flex:none">
+      <span style="flex:1;font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3)">Đối tượng</span>
+      <button title="Thêm nhóm mới — N" style="width:24px;height:24px;border:0;border-radius:8px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg></button>
+      <button title="Thu gọn tất cả — Alt E" style="width:24px;height:24px;border:0;border-radius:8px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 6h10M3 10h10"></path></svg></button>
+    </div>
+
+    <div style="flex:1;min-height:0;overflow:hidden;padding:4px 0">
+
+      <div style="height:var(--row);display:flex;align-items:center;gap:6px;padding:0 8px;cursor:default;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--t3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(90deg)"><path d="M6 3.5 10.5 8 6 12.5"></path></svg>
+        <span style="flex:1;font-size:12px;line-height:1.5;font-weight:600;color:var(--t2)">Tầng trệt</span>
+        <span style="font-size:11px;line-height:1.5;color:var(--t4)">±0</span>
+      </div>
+
+      <div style="height:var(--row);display:flex;align-items:center;gap:6px;padding:0 8px 0 22px;cursor:default;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="var(--t3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(90deg)"><path d="M6 3.5 10.5 8 6 12.5"></path></svg>
+        <span style="flex:1;font-size:12px;line-height:1.5;color:var(--t3)">Phòng khách</span>
+      </div>
+
+      <sc-if value="{{ sel }}" hint-placeholder-val="{{ false }}">
+        <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 8px 0 34px;background:var(--accent-soft);border-left:2px solid var(--accent);cursor:default">
+          <span style="width:10px;height:10px;border-radius:3px;background:var(--accent);flex:none"></span>
+          <span style="flex:1;font-size:12px;line-height:1.5;font-weight:600;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Tường sau</span>
+          <button title="Ẩn dòng này — H" style="width:20px;height:20px;border:0;border-radius:6px;background:transparent;color:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 8s2.4-4 6.5-4 6.5 4 6.5 4-2.4 4-6.5 4S1.5 8 1.5 8Z"></path><circle cx="8" cy="8" r="1.9"></circle></svg></button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ noSel }}" hint-placeholder-val="{{ true }}">
+        <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 8px 0 36px;border-left:2px solid transparent;cursor:default;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+          <span style="width:10px;height:10px;border-radius:3px;background:var(--t2);flex:none"></span>
+          <span style="flex:1;font-size:12px;line-height:1.5;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Tường sau</span>
+          <button title="Ẩn dòng này — H" style="width:20px;height:20px;border:0;border-radius:6px;background:transparent;color:var(--t4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t2)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 8s2.4-4 6.5-4 6.5 4 6.5 4-2.4 4-6.5 4S1.5 8 1.5 8Z"></path><circle cx="8" cy="8" r="1.9"></circle></svg></button>
+        </div>
+      </sc-if>
+
+      <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 8px 0 36px;border-left:2px solid transparent;cursor:default;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+        <span style="width:10px;height:10px;border-radius:3px;background:var(--t2);flex:none"></span>
+        <span style="flex:1;font-size:12px;line-height:1.5;color:var(--t2)">Tường trái</span>
+        <button title="Ẩn dòng này — H" style="width:20px;height:20px;border:0;border-radius:6px;background:transparent;color:var(--t4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t2)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 8s2.4-4 6.5-4 6.5 4 6.5 4-2.4 4-6.5 4S1.5 8 1.5 8Z"></path><circle cx="8" cy="8" r="1.9"></circle></svg></button>
+      </div>
+
+      <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 8px 0 36px;border-left:2px solid transparent;cursor:default;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+        <span style="width:10px;height:10px;border-radius:3px;background:var(--wood);flex:none"></span>
+        <span style="flex:1;font-size:12px;line-height:1.5;color:var(--t2)">Sàn gỗ sồi</span>
+        <button title="Ẩn dòng này — H" style="width:20px;height:20px;border:0;border-radius:6px;background:transparent;color:var(--t4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t2)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 8s2.4-4 6.5-4 6.5 4 6.5 4-2.4 4-6.5 4S1.5 8 1.5 8Z"></path><circle cx="8" cy="8" r="1.9"></circle></svg></button>
+      </div>
+
+      <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 8px 0 36px;border-left:2px solid transparent;cursor:default;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+        <span style="width:10px;height:10px;border-radius:3px;background:var(--success);flex:none"></span>
+        <span style="flex:1;font-size:12px;line-height:1.5;color:var(--t2)">Sofa ba chỗ</span>
+        <button title="Ẩn dòng này — H" style="width:20px;height:20px;border:0;border-radius:6px;background:transparent;color:var(--t4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t2)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 8s2.4-4 6.5-4 6.5 4 6.5 4-2.4 4-6.5 4S1.5 8 1.5 8Z"></path><circle cx="8" cy="8" r="1.9"></circle></svg></button>
+      </div>
+
+      <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 8px 0 36px;border-left:2px solid transparent;cursor:default;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+        <span style="width:10px;height:10px;border-radius:3px;background:var(--success);flex:none"></span>
+        <span style="flex:1;font-size:12px;line-height:1.5;color:var(--t2)">Bàn trà tròn</span>
+        <button title="Ẩn dòng này — H" style="width:20px;height:20px;border:0;border-radius:6px;background:transparent;color:var(--t4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t2)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 8s2.4-4 6.5-4 6.5 4 6.5 4-2.4 4-6.5 4S1.5 8 1.5 8Z"></path><circle cx="8" cy="8" r="1.9"></circle></svg></button>
+      </div>
+
+      <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 8px 0 36px;border-left:2px solid transparent;cursor:default;opacity:.62;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+        <span style="width:10px;height:10px;border-radius:3px;background:var(--t5);flex:none"></span>
+        <span style="flex:1;font-size:12px;line-height:1.5;color:var(--t3)">Đèn thả trần</span>
+        <button title="Hiện lại dòng này — H" style="width:20px;height:20px;border:0;border-radius:6px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t2)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1.5 8s2.4-4 6.5-4 6.5 4 6.5 4-2.4 4-6.5 4S1.5 8 1.5 8Z"></path><path d="M3 13 13 3"></path></svg></button>
+      </div>
+
+      <div style="height:var(--row);display:flex;align-items:center;gap:6px;padding:0 8px 0 22px;cursor:default;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="var(--t3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(90deg)"><path d="M6 3.5 10.5 8 6 12.5"></path></svg>
+        <span style="flex:1;font-size:12px;line-height:1.5;color:var(--t3)">Bếp</span>
+      </div>
+
+      <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 8px 0 36px;border-left:2px solid transparent;cursor:default;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+        <span style="width:10px;height:10px;border-radius:3px;background:var(--success);flex:none"></span>
+        <span style="flex:1;font-size:12px;line-height:1.5;color:var(--t2)">Đảo bếp</span>
+        <button title="Ẩn dòng này — H" style="width:20px;height:20px;border:0;border-radius:6px;background:transparent;color:var(--t4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t2)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 8s2.4-4 6.5-4 6.5 4 6.5 4-2.4 4-6.5 4S1.5 8 1.5 8Z"></path><circle cx="8" cy="8" r="1.9"></circle></svg></button>
+      </div>
+
+      <div style="height:var(--row);display:flex;align-items:center;gap:8px;padding:0 8px 0 36px;border-left:2px solid transparent;cursor:default;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+        <span style="width:10px;height:10px;border-radius:3px;background:var(--wood);flex:none"></span>
+        <span style="flex:1;font-size:12px;line-height:1.5;color:var(--t2)">Tủ bếp dưới</span>
+        <button title="Ẩn dòng này — H" style="width:20px;height:20px;border:0;border-radius:6px;background:transparent;color:var(--t4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t2)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 8s2.4-4 6.5-4 6.5 4 6.5 4-2.4 4-6.5 4S1.5 8 1.5 8Z"></path><circle cx="8" cy="8" r="1.9"></circle></svg></button>
+      </div>
+
+      <div style="height:var(--row);display:flex;align-items:center;gap:6px;padding:0 8px;cursor:default;margin-top:2px;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--t3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5"></path></svg>
+        <span style="flex:1;font-size:12px;line-height:1.5;font-weight:600;color:var(--t2)">Tầng một</span>
+        <span style="font-size:11px;line-height:1.5;color:var(--t4)">+3 300</span>
+      </div>
+
+      <div style="height:var(--row);display:flex;align-items:center;gap:6px;padding:0 8px;cursor:default;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--t3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5"></path></svg>
+        <span style="flex:1;font-size:12px;line-height:1.5;font-weight:600;color:var(--t2)">Tầng mái</span>
+        <span style="font-size:11px;line-height:1.5;color:var(--t4)">+6 600</span>
+      </div>
+
+    </div>
+
+    <div style="height:30px;display:flex;align-items:center;padding:0 12px;border-top:1px solid var(--border);font-size:11px;line-height:1.5;color:var(--t3);flex:none">3 tầng · 24 khối · 1 đang ẩn</div>
+  </nav>
+
+  <main style="position:relative;background:var(--bg);overflow:hidden">
+
+    <svg viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" style="position:absolute;inset:0;width:100%;height:100%;display:block">
+      <g transform="matrix(.866 .5 -.866 .5 500 170)">
+        <rect x="0" y="0" width="360" height="270" style="fill:var(--panel)"></rect>
+        <path vector-effect="non-scaling-stroke" style="fill:none;stroke:var(--border);stroke-width:1" d="M0 0V270 M30 0V270 M60 0V270 M90 0V270 M120 0V270 M150 0V270 M180 0V270 M210 0V270 M240 0V270 M270 0V270 M300 0V270 M330 0V270 M360 0V270 M0 0H360 M0 30H360 M0 60H360 M0 90H360 M0 120H360 M0 150H360 M0 180H360 M0 210H360 M0 240H360 M0 270H360"></path>
+        <path vector-effect="non-scaling-stroke" style="fill:none;stroke:var(--border-strong);stroke-width:1.4" d="M0 0H360M0 0V270M0 270H360M360 0V270"></path>
+        <path vector-effect="non-scaling-stroke" style="fill:none;stroke:var(--danger);stroke-width:2;opacity:.85" d="M0 0H120"></path>
+        <path vector-effect="non-scaling-stroke" style="fill:none;stroke:var(--success);stroke-width:2;opacity:.85" d="M0 0V120"></path>
+      </g>
+      <path style="fill:none;stroke:var(--accent);stroke-width:2;opacity:.85" d="M500 170V80"></path>
+
+      <polygon points="508.7,175 274.8,310 274.8,190 508.7,55" style="fill:var(--face2);stroke:var(--border-strong);stroke-width:1"></polygon>
+      <polygon points="274.8,310 266.2,305 266.2,185 274.8,190" style="fill:var(--face3);stroke:var(--border-strong);stroke-width:1"></polygon>
+      <polygon points="508.7,55 274.8,190 266.2,185 500,50" style="fill:var(--face1);stroke:var(--border-strong);stroke-width:1"></polygon>
+
+      <sc-if value="{{ notExtruding }}" hint-placeholder-val="{{ true }}">
+        <g>
+          <polygon points="491.3,175 803.1,355 803.1,235 491.3,55" style="fill:var(--face2);stroke:var(--border-strong);stroke-width:1"></polygon>
+          <polygon points="500,170 491.3,175 491.3,55 500,50" style="fill:var(--face3);stroke:var(--border-strong);stroke-width:1"></polygon>
+          <polygon points="491.3,55 803.1,235 811.8,230 500,50" style="fill:var(--face1);stroke:var(--border-strong);stroke-width:1"></polygon>
+        </g>
+      </sc-if>
+
+      <sc-if value="{{ extruding }}" hint-placeholder-val="{{ false }}">
+        <g>
+          <polygon points="491.3,175 803.1,355 803.1,275 491.3,95" style="fill:var(--face2);stroke:var(--border-strong);stroke-width:1"></polygon>
+          <polygon points="500,170 491.3,175 491.3,95 500,90" style="fill:var(--face3);stroke:var(--border-strong);stroke-width:1"></polygon>
+          <polygon points="491.3,95 803.1,275 811.8,270 500,90" style="fill:var(--face1);stroke:var(--border-strong);stroke-width:1"></polygon>
+          <polygon points="491.3,95 803.1,275 803.1,235 491.3,55" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.4;stroke-dasharray:5 4"></polygon>
+          <polygon points="500,90 491.3,95 491.3,55 500,50" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.4;stroke-dasharray:5 4"></polygon>
+          <polygon points="491.3,55 803.1,235 811.8,230 500,50" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.6"></polygon>
+          <path style="fill:none;stroke:var(--accent);stroke-width:1;stroke-dasharray:4 5;opacity:.6" d="M500 200V18M456 24 862 258M811.8 380V206"></path>
+          <path style="fill:none;stroke:var(--accent);stroke-width:1.4" d="M470 50h-24M470 90h-24M458 50v40"></path>
+          <path d="M690 158l0 19 4.8-4.8 3.2 6.4 3.4-1.7-3.2-6.4 6.7-0.4z" style="fill:var(--t1);stroke:var(--bg);stroke-width:1.2;stroke-linejoin:round"></path>
+          <rect x="708" y="146" width="112" height="28" rx="10" style="fill:var(--card);stroke:var(--accent);stroke-width:1.5"></rect>
+          <text x="720" y="165" style="font-weight:600;font-size:14px;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;fill:var(--t1)">2 700</text>
+          <text x="775" y="165" style="font-weight:400;font-size:11px;font-family:-apple-system,'SF Pro Text',sans-serif;fill:var(--t3)">mi-li-mét</text>
+        </g>
+      </sc-if>
+
+      <sc-if value="{{ selected }}" hint-placeholder-val="{{ false }}">
+        <g>
+          <polygon points="491.3,175 803.1,355 803.1,235 491.3,55" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.8"></polygon>
+          <polygon points="500,170 491.3,175 491.3,55 500,50" style="fill:none;stroke:var(--accent);stroke-width:1.8"></polygon>
+          <polygon points="491.3,55 803.1,235 811.8,230 500,50" style="fill:none;stroke:var(--accent);stroke-width:1.8"></polygon>
+          <rect x="497" y="47" width="6" height="6" style="fill:var(--card);stroke:var(--accent);stroke-width:1.4"></rect>
+          <rect x="808.8" y="227" width="6" height="6" style="fill:var(--card);stroke:var(--accent);stroke-width:1.4"></rect>
+          <rect x="800.1" y="232" width="6" height="6" style="fill:var(--card);stroke:var(--accent);stroke-width:1.4"></rect>
+          <rect x="488.3" y="52" width="6" height="6" style="fill:var(--card);stroke:var(--accent);stroke-width:1.4"></rect>
+          <rect x="652.9" y="137" width="6" height="6" style="fill:var(--card);stroke:var(--accent);stroke-width:1.4"></rect>
+          <rect x="644.2" y="142" width="6" height="6" style="fill:var(--card);stroke:var(--accent);stroke-width:1.4"></rect>
+
+          <path style="fill:none;stroke:var(--danger);stroke-width:2.6;stroke-linecap:round" d="M651.6 202.5 721.9 242.5"></path>
+          <circle cx="721.9" cy="242.5" r="4.6" style="fill:var(--danger)"></circle>
+          <text x="731" y="252" style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;fill:var(--danger)">X</text>
+          <path style="fill:none;stroke:var(--success);stroke-width:2.6;stroke-linecap:round" d="M651.6 202.5 582.3 242.5"></path>
+          <circle cx="582.3" cy="242.5" r="4.6" style="fill:var(--success)"></circle>
+          <text x="563" y="252" style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;fill:var(--success)">Y</text>
+          <path style="fill:none;stroke:var(--accent);stroke-width:2.6;stroke-linecap:round" d="M651.6 202.5 651.6 122.5"></path>
+          <circle cx="651.6" cy="122.5" r="4.6" style="fill:var(--accent)"></circle>
+          <text x="659" y="119" style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;fill:var(--accent)">Z</text>
+          <polygon points="651.6,196 658,199.7 651.6,203.4 645.2,199.7" style="fill:var(--card);stroke:var(--accent);stroke-width:1.4"></polygon>
+        </g>
+      </sc-if>
+
+      <polygon points="383.1,255.5 504.3,325.5 452.4,355.5 331.1,285.5" style="fill:var(--face1);stroke:var(--border-strong);stroke-width:1"></polygon>
+      <polygon points="504.3,325.5 452.4,355.5 452.4,397.5 504.3,367.5" style="fill:var(--face2);stroke:var(--border-strong);stroke-width:1"></polygon>
+      <polygon points="452.4,355.5 331.1,285.5 331.1,327.5 452.4,397.5" style="fill:var(--face3);stroke:var(--border-strong);stroke-width:1"></polygon>
+
+      <polygon points="487,262.5 539,292.5 495.7,317.5 443.7,287.5" style="fill:var(--face1);stroke:var(--border-strong);stroke-width:1"></polygon>
+      <polygon points="539,292.5 495.7,317.5 495.7,337.5 539,312.5" style="fill:var(--face2);stroke:var(--border-strong);stroke-width:1"></polygon>
+      <polygon points="495.7,317.5 443.7,287.5 443.7,307.5 495.7,337.5" style="fill:var(--face3);stroke:var(--border-strong);stroke-width:1"></polygon>
+
+      <polygon points="651.6,270.5 738.2,320.5 694.9,345.5 608.3,295.5" style="fill:var(--face1);stroke:var(--border-strong);stroke-width:1"></polygon>
+      <polygon points="738.2,320.5 694.9,345.5 694.9,387.5 738.2,362.5" style="fill:var(--face2);stroke:var(--border-strong);stroke-width:1"></polygon>
+      <polygon points="694.9,345.5 608.3,295.5 608.3,337.5 694.9,387.5" style="fill:var(--face3);stroke:var(--border-strong);stroke-width:1"></polygon>
+    </svg>
+
+    <div style="position:absolute;left:18px;top:16px;display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 11px;border-radius:14px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-node);font-size:11px;line-height:1.5;color:var(--t3)">
+      <span style="width:6px;height:6px;border-radius:2px;background:var(--accent)"></span>
+      <span style="color:var(--t2);font-weight:600">Tầng trệt</span>
+      <span style="color:var(--t4)">›</span>
+      <span>Phòng khách</span>
+    </div>
+
+    <div style="position:absolute;right:18px;top:16px;width:106px">
+      <svg viewBox="0 0 106 106" style="width:106px;height:106px;display:block">
+        <polygon points="53,10 96,35 53,60 10,35" style="fill:var(--face1);stroke:var(--border-strong);stroke-width:1.2"></polygon>
+        <polygon points="10,35 53,60 53,96 10,71" style="fill:var(--face3);stroke:var(--border-strong);stroke-width:1.2"></polygon>
+        <polygon points="53,60 96,35 96,71 53,96" style="fill:var(--face2);stroke:var(--border-strong);stroke-width:1.2"></polygon>
+        <text x="53" y="38" text-anchor="middle" style="font-weight:700;font-size:9px;font-family:-apple-system,'SF Pro Text',sans-serif;letter-spacing:.06em;fill:var(--t3)">TRÊN</text>
+        <text x="31" y="82" text-anchor="middle" style="font-weight:700;font-size:9px;font-family:-apple-system,'SF Pro Text',sans-serif;letter-spacing:.06em;fill:var(--t3)">TRƯỚC</text>
+        <text x="75" y="82" text-anchor="middle" style="font-weight:700;font-size:9px;font-family:-apple-system,'SF Pro Text',sans-serif;letter-spacing:.06em;fill:var(--t3)">PHẢI</text>
+      </svg>
+      <div style="text-align:center;font-size:11px;line-height:1.5;color:var(--t3);margin-top:-2px">Góc nhìn trực giao</div>
+    </div>
+
+    <div style="position:absolute;left:20px;bottom:20px">
+      <svg viewBox="0 0 96 86" style="width:96px;height:86px;display:block">
+        <path style="fill:none;stroke:var(--danger);stroke-width:2;stroke-linecap:round" d="M40 52 74 72"></path>
+        <path style="fill:none;stroke:var(--success);stroke-width:2;stroke-linecap:round" d="M40 52 8 72"></path>
+        <path style="fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round" d="M40 52 40 14"></path>
+        <text x="79" y="79" style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;fill:var(--danger)">X</text>
+        <text x="0" y="79" style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;fill:var(--success)">Y</text>
+        <text x="45" y="14" style="font-weight:600;font-size:11px;font-family:ui-monospace,Menlo,monospace;fill:var(--accent)">Z</text>
+      </svg>
+    </div>
+
+    <button style="position:absolute;right:18px;bottom:18px;display:flex;align-items:center;gap:10px;height:52px;padding:0 18px 0 15px;border:0;border-radius:14px;background:var(--accent);color:var(--on-accent);cursor:pointer;box-shadow:var(--shadow-pop),0 0 0 4px var(--accent-soft);text-align:left;font-family:inherit;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
+      <svg width="20" height="20" viewBox="0 0 16 16"><path d="M8 1.2 9.7 5.9 14.4 7.6 9.7 9.3 8 14 6.3 9.3 1.6 7.6 6.3 5.9z" style="fill:currentColor"></path></svg>
+      <span style="display:flex;flex-direction:column">
+        <span style="font-size:14px;line-height:1.5;font-weight:600">Dựng ảnh AI</span>
+        <span style="font-size:11px;line-height:1.5;opacity:.82">4 ảnh · 8 tín dụng</span>
+      </span>
+    </button>
+
+    <sc-if value="{{ dockSmall }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:1px;padding:4px;border-radius:14px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
+        <sc-if value="{{ toolSelect }}" hint-placeholder-val="{{ true }}">
+          <button title="Chọn — V" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:var(--accent);color:var(--on-accent);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 16 16"><path d="M4 2.5 12.5 11 8.4 11.4 6.2 15z" style="fill:currentColor"></path></svg></button>
+        </sc-if>
+        <sc-if value="{{ extruding }}" hint-placeholder-val="{{ false }}">
+          <button title="Chọn — V" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16"><path d="M4 2.5 12.5 11 8.4 11.4 6.2 15z" style="fill:currentColor"></path></svg></button>
+        </sc-if>
+        <button title="Vẽ đường — L" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3.5 12.5 12.5 3.5"></path><circle cx="3.2" cy="12.8" r="1.5"></circle><circle cx="12.8" cy="3.2" r="1.5"></circle></svg></button>
+        <button title="Hình chữ nhật — R" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.5" y="4" width="11" height="8" rx="1"></rect></svg></button>
+        <div style="width:1px;height:20px;background:var(--mat-hairline);margin:0 5px"></div>
+        <sc-if value="{{ extruding }}" hint-placeholder-val="{{ false }}">
+          <button title="Kéo mặt — P" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:var(--accent);color:var(--on-accent);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"><path d="M2.5 9.5 8 12.5 13.5 9.5 8 6.5Z"></path><path d="M8 5V1.4M6.2 3.2 8 1.4l1.8 1.8"></path></svg></button>
+        </sc-if>
+        <sc-if value="{{ notExtruding }}" hint-placeholder-val="{{ true }}">
+          <button title="Kéo mặt — P" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"><path d="M2.5 9.5 8 12.5 13.5 9.5 8 6.5Z"></path><path d="M8 5V1.4M6.2 3.2 8 1.4l1.8 1.8"></path></svg></button>
+        </sc-if>
+        <button title="Di chuyển — M" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v12M2 8h12M8 2 6.4 3.7M8 2l1.6 1.7M8 14l-1.6-1.7M8 14l1.6-1.7M2 8l1.7-1.6M2 8l1.7 1.6M14 8l-1.7-1.6M14 8l-1.7 1.6"></path></svg></button>
+        <button title="Xoay — Q" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8a5 5 0 1 1-1.8-3.8"></path><path d="M13 1.8V5H9.8"></path></svg></button>
+        <div style="width:1px;height:20px;background:var(--mat-hairline);margin:0 5px"></div>
+        <button title="Thư viện đồ — 1" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="5" height="5" rx="1"></rect><rect x="9" y="2" width="5" height="5" rx="1"></rect><rect x="2" y="9" width="5" height="5" rx="1"></rect><rect x="9" y="9" width="5" height="5" rx="1"></rect></svg></button>
+        <button title="Vật liệu — B" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5.6"></circle><path d="M8 2.4a5.6 5.6 0 0 0 0 11.2z" style="fill:currentColor;stroke:none"></path></svg></button>
+        <div style="width:1px;height:20px;background:var(--mat-hairline);margin:0 5px"></div>
+        <button title="Thước đo — T" style="width:var(--tap);height:var(--tap);border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="5" width="13" height="6" rx="1"></rect><path d="M4.5 5v2.2M7 5v3M9.5 5v2.2M12 5v3"></path></svg></button>
+        <button onClick="{{ go4 }}" title="Mở rộng bảng công cụ — Tab" style="height:var(--tap);padding:0 11px;border:0;border-radius:10px;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit;font-size:11px;line-height:1.5;font-weight:600;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)"><svg width="15" height="15" viewBox="0 0 16 16"><circle cx="4" cy="8" r="1.3" style="fill:currentColor"></circle><circle cx="8" cy="8" r="1.3" style="fill:currentColor"></circle><circle cx="12" cy="8" r="1.3" style="fill:currentColor"></circle></svg>Thêm</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ dockOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);border-radius:20px;padding:6px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop)">
+        <div style="display:flex;flex-direction:column;gap:9px;padding:2px 0 4px">
+        <div style="display:flex;align-items:stretch">
+
+          <div style="padding:0 9px;display:flex;flex-direction:column;gap:5px">
+            <div style="font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);padding-left:3px">Chọn</div>
+            <div style="display:flex;gap:1px">
+              <button title="Chọn — V" style="width:66px;padding:6px 2px 4px;border:0;border-radius:10px;background:var(--accent);color:var(--on-accent);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit"><svg width="18" height="18" viewBox="0 0 16 16"><path d="M4 2.5 12.5 11 8.4 11.4 6.2 15z" style="fill:currentColor"></path></svg><span style="font-size:10px;line-height:1.5;white-space:nowrap">Chọn</span><span style="font-size:9px;line-height:1.5;opacity:.75">V</span></button>
+              <button title="Chọn hết cùng loại — Shift V" style="width:66px;padding:6px 2px 4px;border:0;border-radius:10px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="2" width="5" height="5" rx="1"></rect><rect x="9" y="2" width="5" height="5" rx="1" style="fill:currentColor"></rect><rect x="2" y="9" width="5" height="5" rx="1" style="fill:currentColor"></rect><rect x="9" y="9" width="5" height="5" rx="1"></rect></svg><span style="font-size:10px;line-height:1.5;white-space:nowrap;color:var(--t3)">Cùng loại</span><span style="font-size:9px;line-height:1.5;color:var(--t4)">⇧V</span></button>
+            </div>
+          </div>
+
+          <div style="width:1px;background:var(--mat-hairline);margin:4px 0"></div>
+
+          <div style="padding:0 9px;display:flex;flex-direction:column;gap:5px">
+            <div style="font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);padding-left:3px">Vẽ</div>
+            <div style="display:flex;gap:1px">
+              <button title="Vẽ đường — L" style="width:66px;padding:6px 2px 4px;border:0;border-radius:10px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3.5 12.5 12.5 3.5"></path><circle cx="3.2" cy="12.8" r="1.4"></circle><circle cx="12.8" cy="3.2" r="1.4"></circle></svg><span style="font-size:10px;line-height:1.5;white-space:nowrap;color:var(--t3)">Đường</span><span style="font-size:9px;line-height:1.5;color:var(--t4)">L</span></button>
+              <button title="Hình chữ nhật — R" style="width:66px;padding:6px 2px 4px;border:0;border-radius:10px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2.5" y="4" width="11" height="8" rx="1"></rect></svg><span style="font-size:10px;line-height:1.5;white-space:nowrap;color:var(--t3)">Chữ nhật</span><span style="font-size:9px;line-height:1.5;color:var(--t4)">R</span></button>
+              <button title="Vòng tròn — C" style="width:66px;padding:6px 2px 4px;border:0;border-radius:10px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="5.6"></circle></svg><span style="font-size:10px;line-height:1.5;white-space:nowrap;color:var(--t3)">Vòng tròn</span><span style="font-size:9px;line-height:1.5;color:var(--t4)">C</span></button>
+            </div>
+          </div>
+
+          <div style="width:1px;background:var(--mat-hairline);margin:4px 0"></div>
+
+          <div style="padding:0 9px;display:flex;flex-direction:column;gap:5px">
+            <div style="font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);padding-left:3px">Dựng khối</div>
+            <div style="display:flex;gap:1px">
+              <button title="Kéo mặt lên thành khối — P" style="width:66px;padding:6px 2px 4px;border:0;border-radius:10px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"><path d="M2.5 9.5 8 12.5 13.5 9.5 8 6.5Z"></path><path d="M8 5V1.4M6.2 3.2 8 1.4l1.8 1.8"></path></svg><span style="font-size:10px;line-height:1.5;white-space:nowrap;color:var(--t3)">Kéo mặt</span><span style="font-size:9px;line-height:1.5;color:var(--t4)">P</span></button>
+              <button title="Bo cạnh — F" style="width:66px;padding:6px 2px 4px;border:0;border-radius:10px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M3 13V7a4 4 0 0 1 4-4h6"></path><path d="M3 3h4M3 3v4" stroke-dasharray="2 2"></path></svg><span style="font-size:10px;line-height:1.5;white-space:nowrap;color:var(--t3)">Bo cạnh</span><span style="font-size:9px;line-height:1.5;color:var(--t4)">F</span></button>
+              <button title="Cắt khối — X" style="width:66px;padding:6px 2px 4px;border:0;border-radius:10px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2.5 8h11" stroke-dasharray="3 2"></path><path d="M8 2.5v11"></path></svg><span style="font-size:10px;line-height:1.5;white-space:nowrap;color:var(--t3)">Cắt khối</span><span style="font-size:9px;line-height:1.5;color:var(--t4)">X</span></button>
+            </div>
+          </div>
+
+        </div>
+        <div style="display:flex;align-items:stretch;border-top:1px solid var(--mat-hairline);padding-top:9px">
+
+          <div style="padding:0 9px;display:flex;flex-direction:column;gap:5px">
+            <div style="font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);padding-left:3px">Biến đổi</div>
+            <div style="display:flex;gap:1px">
+              <button title="Di chuyển — M" style="width:66px;padding:6px 2px 4px;border:0;border-radius:10px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v12M2 8h12M8 2 6.4 3.7M8 2l1.6 1.7M8 14l-1.6-1.7M8 14l1.6-1.7M2 8l1.7-1.6M2 8l1.7 1.6M14 8l-1.7-1.6M14 8l-1.7 1.6"></path></svg><span style="font-size:10px;line-height:1.5;white-space:nowrap;color:var(--t3)">Di chuyển</span><span style="font-size:9px;line-height:1.5;color:var(--t4)">M</span></button>
+              <button title="Xoay — Q" style="width:66px;padding:6px 2px 4px;border:0;border-radius:10px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8a5 5 0 1 1-1.8-3.8"></path><path d="M13 1.8V5H9.8"></path></svg><span style="font-size:10px;line-height:1.5;white-space:nowrap;color:var(--t3)">Xoay</span><span style="font-size:9px;line-height:1.5;color:var(--t4)">Q</span></button>
+              <button title="Nhân bản — D" style="width:66px;padding:6px 2px 4px;border:0;border-radius:10px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2.4" y="2.4" width="8" height="8" rx="1.6"></rect><rect x="5.6" y="5.6" width="8" height="8" rx="1.6"></rect></svg><span style="font-size:10px;line-height:1.5;white-space:nowrap;color:var(--t3)">Nhân bản</span><span style="font-size:9px;line-height:1.5;color:var(--t4)">D</span></button>
+            </div>
+          </div>
+
+          <div style="width:1px;background:var(--mat-hairline);margin:4px 0"></div>
+
+          <div style="padding:0 9px;display:flex;flex-direction:column;gap:5px">
+            <div style="font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);padding-left:3px">Đồ đạc</div>
+            <div style="display:flex;gap:1px">
+              <button title="Thư viện đồ — 1" style="width:66px;padding:6px 2px 4px;border:0;border-radius:10px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="2" width="5" height="5" rx="1"></rect><rect x="9" y="2" width="5" height="5" rx="1"></rect><rect x="2" y="9" width="5" height="5" rx="1"></rect><rect x="9" y="9" width="5" height="5" rx="1"></rect></svg><span style="font-size:10px;line-height:1.5;white-space:nowrap;color:var(--t3)">Thư viện</span><span style="font-size:9px;line-height:1.5;color:var(--t4)">1</span></button>
+              <button title="Vật liệu — B" style="width:66px;padding:6px 2px 4px;border:0;border-radius:10px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="5.6"></circle><path d="M8 2.4a5.6 5.6 0 0 0 0 11.2z" style="fill:currentColor;stroke:none"></path></svg><span style="font-size:10px;line-height:1.5;white-space:nowrap;color:var(--t3)">Vật liệu</span><span style="font-size:9px;line-height:1.5;color:var(--t4)">B</span></button>
+            </div>
+          </div>
+
+          <div style="width:1px;background:var(--mat-hairline);margin:4px 0"></div>
+
+          <div style="padding:0 9px;display:flex;flex-direction:column;gap:5px">
+            <div style="font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);padding-left:3px">Đo đạc</div>
+            <div style="display:flex;gap:1px">
+              <button title="Thước đo — T" style="width:66px;padding:6px 2px 4px;border:0;border-radius:10px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="5" width="13" height="6" rx="1"></rect><path d="M4.5 5v2.2M7 5v3M9.5 5v2.2M12 5v3"></path></svg><span style="font-size:10px;line-height:1.5;white-space:nowrap;color:var(--t3)">Thước</span><span style="font-size:9px;line-height:1.5;color:var(--t4)">T</span></button>
+              <button title="Đo góc — G" style="width:66px;padding:6px 2px 4px;border:0;border-radius:10px;background:transparent;color:var(--t2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover)"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2.5 13h11M2.5 13 11 4"></path><path d="M6.5 13a5 5 0 0 0 1.2-3.2"></path></svg><span style="font-size:10px;line-height:1.5;white-space:nowrap;color:var(--t3)">Góc</span><span style="font-size:9px;line-height:1.5;color:var(--t4)">G</span></button>
+            </div>
+          </div>
+
+        </div>
+        </div>
+        <div style="border-top:1px solid var(--mat-hairline);padding:7px 11px 3px;display:flex;align-items:center;gap:16px;font-size:11px;line-height:1.5;color:var(--t3);white-space:nowrap">
+          <span>Gõ số bất cứ lúc nào để nhập chính xác</span>
+          <span>Giữ Alt để nhân bản</span>
+          <button onClick="{{ go1 }}" style="margin-left:auto;height:24px;padding:0 10px;border:1px solid var(--mat-hairline);border-radius:8px;background:transparent;color:var(--t3);font-family:inherit;font-size:11px;line-height:1.5;font-weight:600;cursor:pointer;transition:background .12s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">Thu gọn · Tab</button>
+        </div>
+      </div>
+    </sc-if>
+
+  </main>
+
+  <aside style="background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;min-height:0;overflow:hidden">
+
+    <sc-if value="{{ noSel }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:0 28px;text-align:center">
+        <svg width="34" height="34" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.1"><path d="M2.5 5 8 2l5.5 3v6L8 14l-5.5-3z"></path><path d="M2.5 5 8 8l5.5-3M8 8v6"></path></svg>
+        <div style="font-size:12px;line-height:1.5;font-weight:600;color:var(--t2)">Chưa chọn vật thể nào</div>
+        <div style="font-size:11px;line-height:1.6;color:var(--t3);text-wrap:pretty">Bấm một khối trong khung nhìn để xem và sửa thuộc tính.</div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding:10px 12px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;line-height:1.5;color:var(--t4)">Mẹo</span>
+        <span style="font-size:11px;line-height:1.5;color:var(--t3)">Bấm hai lần để chọn cả nhóm</span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ sel }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column">
+
+        <div style="height:42px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--border);flex:none">
+          <span style="width:10px;height:10px;border-radius:3px;background:var(--accent);flex:none"></span>
+          <span style="flex:1;font-size:14px;line-height:1.5;font-weight:600;letter-spacing:-.01em">Khối tường</span>
+          <span style="display:inline-flex;align-items:center;height:17px;padding:0 6px;border-radius:5px;background:var(--accent-soft);color:var(--accent);font-size:10px;line-height:1.5;font-weight:700">ĐANG CHỌN</span>
+        </div>
+
+        <div style="padding:12px;border-bottom:1px solid var(--border)">
+          <div style="font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Kích thước</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="height:30px;background:var(--field);border:1px solid transparent;border-radius:10px;padding:0 9px;display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:11px;line-height:1.5;font-weight:600;color:var(--t3)">Dài</span>
+              <span style="font-weight:400;font-size:12px;line-height:1.5;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">5 200</span>
+            </div>
+            <div style="height:30px;background:var(--field);border:1px solid transparent;border-radius:10px;padding:0 9px;display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:11px;line-height:1.5;font-weight:600;color:var(--t3)">Dày</span>
+              <span style="font-weight:400;font-size:12px;line-height:1.5;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">200</span>
+            </div>
+            <sc-if value="{{ extruding }}" hint-placeholder-val="{{ false }}">
+              <div style="height:30px;background:var(--field);border:1px solid var(--accent);border-radius:10px;padding:0 9px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 0 0 3px var(--accent-soft)">
+                <span style="font-size:11px;line-height:1.5;font-weight:600;color:var(--accent)">Cao</span>
+                <span style="font-weight:600;font-size:12px;line-height:1.5;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--accent)">2 700</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ selected }}" hint-placeholder-val="{{ false }}">
+              <div style="height:30px;background:var(--field);border:1px solid transparent;border-radius:10px;padding:0 9px;display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:11px;line-height:1.5;font-weight:600;color:var(--t3)">Cao</span>
+                <span style="font-weight:400;font-size:12px;line-height:1.5;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t1)">2 700</span>
+              </div>
+            </sc-if>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:9px;font-size:11px;line-height:1.5;color:var(--t3)">
+            <span>Đơn vị mi-li-mét</span>
+            <span style="font-weight:400;font-size:11px;line-height:1.5;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t3)">14.04 m²</span>
+          </div>
+          <sc-if value="{{ extruding }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:9px;font-size:11px;line-height:1.6;color:var(--accent)">Đang kéo mặt lên · thả chuột để chốt</div>
+          </sc-if>
+        </div>
+
+        <div style="padding:12px;border-bottom:1px solid var(--border)">
+          <div style="font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:9px">Vật liệu</div>
+          <div style="display:flex;align-items:center;gap:11px">
+            <div style="width:56px;height:56px;border-radius:50%;flex:none;background:radial-gradient(circle at 34% 28%,var(--t1),var(--t3) 58%,var(--t4) 100%);box-shadow:var(--shadow-node)"></div>
+            <div style="min-width:0">
+              <div style="font-size:12px;line-height:1.5;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Sơn trắng ngà</div>
+              <div style="font-size:11px;line-height:1.5;color:var(--t3);margin-top:1px">Độ bóng 7% · bề mặt mịn</div>
+              <button style="margin-top:6px;height:26px;padding:0 11px;border:1px solid var(--border);border-radius:8px;background:var(--field);color:var(--t1);font-weight:600;font-size:11px;line-height:1.5;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover)">Đổi vật liệu</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:11px">
+            <span title="Sơn trắng ngà" style="width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 34% 28%,var(--t1),var(--t3));box-shadow:0 0 0 2px var(--accent);transition:transform .18s var(--ease-apple)" style-hover="transform:scale(1.04)"></span>
+            <span title="Gỗ sồi tự nhiên" style="width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 34% 28%,var(--wood),var(--t4));transition:transform .18s var(--ease-apple)" style-hover="transform:scale(1.04)"></span>
+            <span title="Bê tông mài" style="width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 34% 28%,var(--t3),var(--t5));transition:transform .18s var(--ease-apple)" style-hover="transform:scale(1.04)"></span>
+            <span title="Vải lanh mộc" style="width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 34% 28%,var(--t2),var(--t4));transition:transform .18s var(--ease-apple)" style-hover="transform:scale(1.04)"></span>
+          </div>
+        </div>
+
+        <div style="padding:12px;border-bottom:1px solid var(--border)">
+          <div style="font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Tầng</div>
+          <div style="height:30px;background:var(--field);border:1px solid transparent;border-radius:10px;padding:0 9px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" style-hover="background:var(--hover)">
+            <span style="font-size:12px;line-height:1.5;color:var(--t1)">Tầng trệt</span>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--t3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5 8 10.5 12 6.5"></path></svg>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:9px">
+            <span style="font-size:11px;line-height:1.5;color:var(--t3)">Cao độ chân tường</span>
+            <span style="font-weight:400;font-size:11px;line-height:1.5;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t3)">± 0</span>
+          </div>
+        </div>
+
+        <div style="padding:12px;border-bottom:1px solid var(--border)">
+          <div style="font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Cùng loại</div>
+          <button style="width:100%;height:34px;display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--border);border-radius:10px;background:var(--field);color:var(--t1);font-weight:600;font-size:12px;line-height:1.5;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="2" width="5" height="5" rx="1"></rect><rect x="9" y="2" width="5" height="5" rx="1" style="fill:currentColor"></rect><rect x="2" y="9" width="5" height="5" rx="1" style="fill:currentColor"></rect><rect x="9" y="9" width="5" height="5" rx="1"></rect></svg>
+            Chọn hết cùng loại
+          </button>
+          <div style="font-size:11px;line-height:1.6;color:var(--t3);margin-top:7px">12 khối tường cùng vật liệu, cả ba tầng</div>
+        </div>
+
+        <div style="padding:10px 12px;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:12px;line-height:1.5;color:var(--t2)">Khoá vị trí</span>
+          <span style="width:32px;height:19px;border-radius:20px;background:var(--field);border:1px solid var(--border);display:flex;align-items:center;padding:0 2px;cursor:pointer">
+            <span style="width:13px;height:13px;border-radius:50%;background:var(--t4)"></span>
+          </span>
+        </div>
+
+      </div>
+    </sc-if>
+
+  </aside>
+
+  <footer style="grid-column:1/4;display:flex;align-items:center;gap:14px;padding:0 10px 0 8px;background:var(--panel);border-top:1px solid var(--border)">
+    <div style="display:flex;align-items:center;gap:6px;height:19px;padding:0 8px;border-radius:8px;background:var(--field);min-width:230px">
+      <span style="font-weight:600;font-size:11px;line-height:1.5;font-family:ui-monospace,Menlo,monospace;color:var(--t4)">›</span>
+      <span style="font-size:11px;line-height:1.5;color:var(--t3)">Gõ lệnh hoặc số đo rồi bấm Enter</span>
+    </div>
+    <span style="font-size:11px;line-height:1.5;color:var(--t3)">{{ statusHint }}</span>
+    <span style="margin-left:auto;font-size:11px;line-height:1.5;color:var(--t3)">Bám điểm: Bật</span>
+    <span style="font-size:11px;line-height:1.5;color:var(--t3)">Tỉ lệ 1 : 50</span>
+    <span style="font-weight:400;font-size:11px;line-height:1.5;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t3)">1 000 mm</span>
+    <span style="display:flex;align-items:center;gap:6px;font-size:11px;line-height:1.5;color:var(--t3)"><span style="width:6px;height:6px;border-radius:50%;background:var(--success)"></span>Đã lưu 14:32</span>
+  </footer>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Tối&quot;,&quot;Kem&quot;],&quot;default&quot;:&quot;Tối&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Giao diện&quot;},&quot;touch&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Giao diện&quot;},&quot;projectName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Căn hộ Thảo Điền&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Nội dung&quot;}}">
+class Component extends DCLogic {
+  state = { s: 2, theme: null };
+  componentDidMount() { this.apply(); }
+  componentDidUpdate() { this.apply(); }
+  apply() {
+    const r = document.documentElement;
+    r.dataset.theme = this.theme();
+    const touch = !!this.props.touch;
+    r.style.setProperty('--tap', touch ? '44px' : '32px');
+    r.style.setProperty('--row', touch ? '40px' : '28px');
+  }
+  theme() { return this.state.theme || (this.props.theme === 'Kem' ? 'light' : 'dark'); }
+  renderVals() {
+    const s = this.state.s;
+    const t = this.theme();
+    const hints = {
+      1: 'Bấm vào một khối để chọn · lăn chuột để phóng to',
+      2: 'Đã chọn: Tường sau · nhấn Tab để đổi trục kéo',
+      3: 'Kéo mặt lên · gõ số rồi Enter để chốt chính xác',
+      4: 'Chọn công cụ · giữ chuột phải để xoay góc nhìn'
+    };
+    const notes = {
+      1: 'Cột phải trống kèm gợi ý ngắn',
+      2: 'Gizmo ba trục · cột phải hiện thuộc tính khối',
+      3: 'Ô nhập số nổi cạnh con trỏ · đường gióng bám cạnh',
+      4: 'Sáu nhóm công cụ kèm phím tắt'
+    };
+    const v = {};
+    for (let i = 1; i <= 4; i++) {
+      const on = s === i;
+      v['bg' + i] = on ? 'var(--accent)' : 'var(--panel)';
+      v['fg' + i] = on ? 'var(--on-accent)' : 'var(--t2)';
+      v['bd' + i] = on ? 'var(--accent)' : 'var(--border)';
+      v['go' + i] = () => this.setState({ s: i });
+    }
+    return Object.assign(v, {
+      sel: s === 2 || s === 3,
+      noSel: !(s === 2 || s === 3),
+      selected: s === 2,
+      extruding: s === 3,
+      notExtruding: s !== 3,
+      toolSelect: s !== 3,
+      dockOpen: s === 4,
+      dockSmall: s !== 4,
+      project: this.props.projectName || 'Căn hộ Thảo Điền',
+      statusHint: hints[s],
+      stateNote: notes[s],
+      themeLabel: t === 'dark' ? 'Đổi sang nền Kem' : 'Đổi sang nền Tối',
+      toggleTheme: () => this.setState({ theme: t === 'dark' ? 'light' : 'dark' })
+    });
+  }
+}
+</script>
+</body>
+</html>

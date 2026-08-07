@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>Bốn trạng thái rỗng — InteriorFlow [BẢN CHỐT]</title>
+<style>
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14); --on-accent:#ffffff;
+  --ease-apple:cubic-bezier(.32,.72,0,1);
+  --tap:32px; --tap-lg:44px; --tap-xl:56px; --row:32px;
+  --z-canvas:0; --z-overlay:10; --z-pop:30;
+}
+:root,[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#9a9aa4; --t5:#7c7c86;
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65); --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --stage:radial-gradient(110% 82% at 50% 6%,#16161c 0%,#0c0c0e 64%);
+  --glow:radial-gradient(58% 58% at 50% 44%,rgba(106,87,245,.16) 0%,rgba(106,87,245,0) 72%);
+  --dots:rgba(255,255,255,.06); --sheet:#131317;
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#5f5951; --t4:#6c665c; --t5:#847d73;
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22); --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --danger:#a83c25; --warning:#7a5410; --success:#256a42;
+  --stage:radial-gradient(110% 82% at 50% 6%,#fdfbf7 0%,#efebe3 64%);
+  --glow:radial-gradient(58% 58% at 50% 44%,rgba(106,87,245,.1) 0%,rgba(106,87,245,0) 72%);
+  --dots:rgba(0,0,0,.06); --sheet:#ffffff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--accent-strong)}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms !important;animation-duration:.01ms !important}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--bg);padding:32px 40px 56px;font-weight:400;font-size:14px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
+
+  <div style="width:1440px;margin:0 auto 22px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
+    <div style="min-width:0">
+      <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap">
+        <div style="width:26px;height:26px;border-radius:8px;background:var(--accent);flex:none"></div>
+        <h1 style="margin:0;font-size:28px;line-height:1.5;font-weight:600;letter-spacing:-.02em">Bốn trạng thái rỗng</h1>
+        <span style="font-size:13px;line-height:1.5;color:var(--t4)">Four empty states</span>
+        <span style="display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:6px;background:var(--accent);color:var(--on-accent);font-size:10px;line-height:1.5;font-weight:700;letter-spacing:.04em">BẢN CHỐT</span>
+      </div>
+      <div style="margin-top:6px;font-size:12px;line-height:1.6;color:var(--t3);max-width:900px;text-wrap:pretty">Người cài lần đầu thấy đúng bốn màn này. Không có dự án mẫu, không có tên khách, không có tên studio nào. Ô trống là lời mời làm việc tiếp, không phải lời xin lỗi.</div>
+    </div>
+    <button onClick="{{ toggleTheme }}" style="height:var(--tap);padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;line-height:1.5;font-family:inherit;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">{{ themeLabel }}</button>
+  </div>
+
+  <div style="width:1440px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:8px">
+    <button onClick="{{ go1 }}" style="height:34px;padding:0 15px;border:1px solid {{ bd1 }};border-radius:11px;background:{{ bg1 }};color:{{ fg1 }};font-weight:600;font-size:12px;line-height:1.5;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)">1a · Dự án</button>
+    <button onClick="{{ go2 }}" style="height:34px;padding:0 15px;border:1px solid {{ bd2 }};border-radius:11px;background:{{ bg2 }};color:{{ fg2 }};font-weight:600;font-size:12px;line-height:1.5;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)">1b · Thiết kế 2D</button>
+    <button onClick="{{ go3 }}" style="height:34px;padding:0 15px;border:1px solid {{ bd3 }};border-radius:11px;background:{{ bg3 }};color:{{ fg3 }};font-weight:600;font-size:12px;line-height:1.5;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)">1c · Thiết kế 3D</button>
+    <button onClick="{{ go4 }}" style="height:34px;padding:0 15px;border:1px solid {{ bd4 }};border-radius:11px;background:{{ bg4 }};color:{{ fg4 }};font-weight:600;font-size:12px;line-height:1.5;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)">1d · Trình chiếu</button>
+    <span style="margin-left:auto;align-self:center;font-size:12px;line-height:1.6;color:var(--t3)">{{ stateNote }}</span>
+  </div>
+
+<div data-screen-label="Trạng thái rỗng" style="width:1440px;height:768px;margin:0 auto;border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-pop);display:grid;grid-template-rows:42px 1fr 26px;background:var(--bg);color:var(--t1);font-weight:400;font-size:14px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif">
+
+  <header style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 10px 0 12px;background:var(--panel);border-bottom:1px solid var(--border)">
+    <div style="display:flex;align-items:center;gap:9px;min-width:0">
+      <div style="width:20px;height:20px;border-radius:6px;background:var(--accent);flex:none"></div>
+      <span style="font-size:14px;line-height:1.5;font-weight:600;white-space:nowrap;letter-spacing:-.01em">InteriorFlow</span>
+      <sc-if value="{{ inProject }}" hint-placeholder-val="{{ false }}">
+        <span style="display:flex;align-items:center;gap:9px;min-width:0">
+          <span style="font-size:11px;line-height:1.5;color:var(--t4)">›</span>
+          <span style="font-size:12px;line-height:1.5;color:var(--t3);white-space:nowrap">{{ tenDuAn }}</span>
+        </span>
+      </sc-if>
+    </div>
+    <sc-if value="{{ inProject }}" hint-placeholder-val="{{ false }}">
+      <div style="display:inline-flex;background:var(--field);border-radius:10px;padding:2px">
+        <button style="border:0;background:{{ nen2D }};color:{{ chu2D }};font-weight:{{ dam2D }};font-size:12px;line-height:1.5;font-family:inherit;padding:4px 14px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)">Thiết kế 2D</button>
+        <button style="border:0;background:{{ nen3D }};color:{{ chu3D }};font-weight:{{ dam3D }};font-size:12px;line-height:1.5;font-family:inherit;padding:4px 14px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)">Thiết kế 3D</button>
+        <button style="border:0;background:{{ nenTC }};color:{{ chuTC }};font-weight:{{ damTC }};font-size:12px;line-height:1.5;font-family:inherit;padding:4px 14px;border-radius:8px;cursor:pointer;transition:color .18s var(--ease-apple)">Trình chiếu</button>
+      </div>
+    </sc-if>
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px">
+      <span style="font-size:11px;line-height:1.5;color:var(--t3)">{{ nhanLuu }}</span>
+      <span style="width:26px;height:26px;border-radius:50%;background:var(--field);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--t3)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="5.6" r="2.7"></circle><path d="M2.9 14a5.1 5.1 0 0 1 10.2 0"></path></svg></span>
+    </div>
+  </header>
+
+  <main style="position:relative;min-height:0;overflow:hidden;background:var(--stage)">
+
+    <sc-if value="{{ s1 }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute;inset:0;display:grid;grid-template-columns:214px 1fr">
+
+        <nav style="background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0">
+          <div style="height:34px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid var(--border);font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);flex:none">Dự án · Projects</div>
+          <div style="flex:1;min-height:0;padding:12px;display:flex;flex-direction:column;gap:10px">
+            <div style="height:9px;width:64%;border-radius:5px;background:var(--field)"></div>
+            <div style="height:9px;width:48%;border-radius:5px;background:var(--field)"></div>
+            <div style="height:9px;width:56%;border-radius:5px;background:var(--field)"></div>
+            <div style="margin-top:6px;font-size:11px;line-height:1.6;color:var(--t4);text-wrap:pretty">Danh sách dự án hiện ở đây khi bạn tạo dự án đầu tiên.</div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding:11px 12px;flex:none;font-size:11px;line-height:1.5;color:var(--t3)">0 dự án</div>
+        </nav>
+
+        <div style="position:relative;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:40px">
+          <div style="position:absolute;inset:0;background:var(--glow);pointer-events:none"></div>
+          <div style="position:relative;z-index:var(--z-overlay);display:flex;flex-direction:column;align-items:center;gap:20px;max-width:600px;text-align:center">
+
+            <div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:4px">
+              <span style="width:74px;height:96px;border-radius:12px;border:1px solid var(--border);background:var(--card);box-shadow:var(--shadow-node);opacity:.5"></span>
+              <span style="width:86px;height:112px;border-radius:14px;border:1px solid var(--border);background:var(--card);box-shadow:var(--shadow-node);opacity:.72"></span>
+              <span style="width:74px;height:96px;border-radius:12px;border:1.5px dashed var(--accent);background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent)"><svg width="24" height="24" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3.4v9.2M3.4 8h9.2"></path></svg></span>
+            </div>
+
+            <div>
+              <h2 style="margin:0;font-size:26px;line-height:1.5;font-weight:600;letter-spacing:-.02em">Không gian dự án của bạn</h2>
+              <div style="margin-top:2px;font-size:14px;line-height:1.5;color:var(--t4)">Your project workspace</div>
+            </div>
+            <div style="font-size:14px;line-height:1.6;color:var(--t2);text-wrap:pretty;max-width:480px">
+              Một dự án giữ bản vẽ, khối 3D và hồ sơ trình khách ở cùng một chỗ.
+              <span style="display:block;margin-top:4px;font-size:12px;line-height:1.6;color:var(--t3)">A project keeps drawings, 3D models and client files together.</span>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:2px">
+              <button style="height:var(--tap-xl);padding:0 26px;border:0;border-radius:14px;background:var(--accent);color:var(--on-accent);font-weight:600;font-size:14px;line-height:1.5;font-family:inherit;cursor:pointer;box-shadow:0 0 0 4px var(--accent-soft);display:flex;align-items:center;gap:9px;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
+                <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 3.4v9.2M3.4 8h9.2"></path></svg>
+                Tạo dự án mới
+              </button>
+              <button style="height:var(--tap-xl);padding:0 22px;border:1px solid var(--border);border-radius:14px;background:var(--card);color:var(--t1);font-weight:600;font-size:14px;line-height:1.5;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover)">Mở dự án từ máy</button>
+            </div>
+            <div style="font-size:11px;line-height:1.6;color:var(--t4)">New project · Open from disk</div>
+
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ s2 }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;display:grid;grid-template-columns:214px 1fr 236px">
+
+        <nav style="background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0">
+          <div style="height:34px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid var(--border);font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);flex:none">Tờ trong hồ sơ</div>
+          <div style="flex:1;min-height:0;padding:14px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;text-align:center">
+            <span style="width:44px;height:56px;border-radius:4px;border:1.5px dashed var(--border-strong);background:var(--field)"></span>
+            <div style="font-size:11px;line-height:1.6;color:var(--t3);text-wrap:pretty">Mỗi bản vẽ là một tờ. Tờ đầu tiên hiện ở đây.</div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding:11px 12px;flex:none;font-size:11px;line-height:1.5;color:var(--t3)">0 tờ</div>
+        </nav>
+
+        <div style="position:relative;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:40px;background-image:radial-gradient(circle,var(--dots) 0 1px,transparent 1.4px);background-size:24px 24px">
+          <div style="position:absolute;inset:0;background:var(--glow);pointer-events:none"></div>
+          <div style="position:relative;z-index:var(--z-overlay);display:flex;flex-direction:column;align-items:center;gap:20px;max-width:620px;text-align:center">
+
+            <svg width="112" height="82" viewBox="0 0 112 82" style="display:block">
+              <rect x="0.75" y="0.75" width="110.5" height="80.5" rx="6" style="fill:var(--sheet);stroke:var(--border-strong);stroke-width:1.5;stroke-dasharray:7 6"></rect>
+              <g style="fill:none;stroke:var(--border-strong);stroke-width:1.4;opacity:.55">
+                <path d="M18 58h34V30h26"></path>
+                <path d="M52 30v-8"></path>
+              </g>
+              <circle cx="18" cy="58" r="3" style="fill:var(--accent)"></circle>
+              <circle cx="78" cy="30" r="3" style="fill:var(--accent);opacity:.45"></circle>
+            </svg>
+
+            <div>
+              <h2 style="margin:0;font-size:26px;line-height:1.5;font-weight:600;letter-spacing:-.02em">Bàn vẽ hai chiều</h2>
+              <div style="margin-top:2px;font-size:14px;line-height:1.5;color:var(--t4)">2D drafting table</div>
+            </div>
+            <div style="font-size:14px;line-height:1.6;color:var(--t2);text-wrap:pretty;max-width:500px">
+              Mặt bằng dựng ở đây là gốc cho khối 3D và bảng khối lượng về sau. Bắt đầu bằng bản vẽ người khác gửi, hoặc vẽ thẳng từ đầu.
+              <span style="display:block;margin-top:4px;font-size:12px;line-height:1.6;color:var(--t3)">Start from a drawing you received, or draw from scratch.</span>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:2px">
+              <button style="height:var(--tap-xl);padding:0 24px;border:0;border-radius:14px;background:var(--accent);color:var(--on-accent);font-weight:600;font-size:14px;line-height:1.5;font-family:inherit;cursor:pointer;box-shadow:0 0 0 4px var(--accent-soft);display:flex;align-items:center;gap:9px;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
+                <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 10v2.6a1.4 1.4 0 0 1-1.4 1.4H4a1.4 1.4 0 0 1-1.4-1.4V10"></path><path d="M8 10.4V2.6M5 5.6 8 2.6l3 3"></path></svg>
+                Nhập bản vẽ có sẵn
+              </button>
+              <button style="height:var(--tap-xl);padding:0 24px;border:1px solid var(--border);border-radius:14px;background:var(--card);color:var(--t1);font-weight:600;font-size:14px;line-height:1.5;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:9px;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover)">
+                <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 13.4 3.2 10 10.6 2.6a1.6 1.6 0 0 1 2.3 2.3L5.5 12.3z"></path></svg>
+                Vẽ mới
+              </button>
+            </div>
+            <div style="font-size:11px;line-height:1.6;color:var(--t4)">Import drawings · Draw new · Kéo tệp thả vào bàn vẽ cũng được</div>
+
+          </div>
+        </div>
+
+        <aside style="background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;padding:0 26px;text-align:center;min-height:0">
+          <svg width="30" height="30" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.1"><rect x="2" y="2" width="12" height="12" rx="2"></rect><path d="M2 6.4h12M6.4 6.4V14"></path></svg>
+          <div style="font-size:12px;line-height:1.5;font-weight:600;color:var(--t2)">Thuộc tính nét</div>
+          <div style="font-size:11px;line-height:1.6;color:var(--t3);text-wrap:pretty">Chọn một nét trên bàn vẽ để sửa lớp, độ dày và kiểu nét.</div>
+        </aside>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ s3 }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;display:grid;grid-template-columns:214px 1fr 236px">
+
+        <nav style="background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0">
+          <div style="height:34px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid var(--border);font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);flex:none">Đối tượng</div>
+          <div style="flex:1;min-height:0;padding:14px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;text-align:center">
+            <svg width="30" height="30" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.1" stroke-dasharray="3 2"><path d="M2.5 5 8 2l5.5 3v6L8 14l-5.5-3z"></path></svg>
+            <div style="font-size:11px;line-height:1.6;color:var(--t3);text-wrap:pretty">Tường, sàn và đồ đạc hiện thành cây đối tượng ở đây.</div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding:11px 12px;flex:none;font-size:11px;line-height:1.5;color:var(--t3)">0 khối</div>
+        </nav>
+
+        <div style="position:relative;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:40px">
+          <div style="position:absolute;inset:0;background:var(--glow);pointer-events:none"></div>
+          <div style="position:relative;z-index:var(--z-overlay);display:flex;flex-direction:column;align-items:center;gap:20px;max-width:620px;text-align:center">
+
+            <svg width="128" height="92" viewBox="0 0 128 92" style="display:block">
+              <g transform="matrix(.866 .5 -.866 .5 64 26)">
+                <path vector-effect="non-scaling-stroke" style="fill:none;stroke:var(--border-strong);stroke-width:1;opacity:.65" d="M0 0H72V72H0Z M18 0V72M36 0V72M54 0V72M0 18H72M0 36H72M0 54H72"></path>
+              </g>
+              <g style="fill:none;stroke:var(--accent);stroke-width:1.6;stroke-dasharray:6 5;opacity:.9">
+                <path d="M32 48 64 66 96 48 64 30Z"></path>
+              </g>
+              <path d="M64 28V8M57.6 14.4 64 8l6.4 6.4" style="fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"></path>
+            </svg>
+
+            <div>
+              <h2 style="margin:0;font-size:26px;line-height:1.5;font-weight:600;letter-spacing:-.02em">Không gian dựng khối</h2>
+              <div style="margin-top:2px;font-size:14px;line-height:1.5;color:var(--t4)">3D modelling space</div>
+            </div>
+            <div style="font-size:14px;line-height:1.6;color:var(--t2);text-wrap:pretty;max-width:520px">
+              Mặt bằng hai chiều nâng thẳng lên thành tường, sàn và trần. Nét vẽ tới đâu, khối dựng tới đó.
+              <span style="display:block;margin-top:4px;font-size:12px;line-height:1.6;color:var(--t3)">Walls, floors and ceilings rise straight from the 2D plan.</span>
+            </div>
+
+            <div style="display:flex;flex-direction:column;align-items:center;gap:9px;margin-top:2px">
+              <div style="display:flex;gap:10px">
+                <span style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                  <button disabled="disabled" style="height:var(--tap-xl);padding:0 24px;border:1px solid var(--border);border-radius:14px;background:var(--field);color:var(--t4);font-weight:600;font-size:14px;line-height:1.5;font-family:inherit;cursor:not-allowed;display:flex;align-items:center;gap:9px">
+                    <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><path d="M2.6 9.6 8 12.6l5.4-3L8 6.6Z"></path><path d="M8 4.8V1.4M6.2 3.2 8 1.4l1.8 1.8"></path></svg>
+                    Dựng khối từ mặt bằng 2D
+                  </button>
+                  <span style="font-size:11px;line-height:1.6;color:var(--warning)">Cần ít nhất một mặt bằng ở chặng Thiết kế 2D</span>
+                </span>
+                <span style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                  <button style="height:var(--tap-xl);padding:0 24px;border:0;border-radius:14px;background:var(--accent);color:var(--on-accent);font-weight:600;font-size:14px;line-height:1.5;font-family:inherit;cursor:pointer;box-shadow:0 0 0 4px var(--accent-soft);display:flex;align-items:center;gap:9px;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
+                    <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3.4v9.2M3.4 8h9.2"></path></svg>
+                    Vẽ mặt bằng trước
+                  </button>
+                  <span style="font-size:11px;line-height:1.6;color:var(--t4)">Mở chặng Thiết kế 2D</span>
+                </span>
+              </div>
+              <div style="font-size:11px;line-height:1.6;color:var(--t4)">Build from 2D plan · Draw a plan first</div>
+            </div>
+
+          </div>
+        </div>
+
+        <aside style="background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;padding:0 26px;text-align:center;min-height:0">
+          <svg width="30" height="30" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.1"><path d="M2.5 5 8 2l5.5 3v6L8 14l-5.5-3z"></path><path d="M2.5 5 8 8l5.5-3M8 8v6"></path></svg>
+          <div style="font-size:12px;line-height:1.5;font-weight:600;color:var(--t2)">Thuộc tính khối</div>
+          <div style="font-size:11px;line-height:1.6;color:var(--t3);text-wrap:pretty">Chọn một khối trong khung nhìn để xem kích thước và vật liệu.</div>
+        </aside>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ s4 }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;display:grid;grid-template-columns:214px 1fr 236px">
+
+        <nav style="background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0">
+          <div style="height:34px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid var(--border);font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);flex:none">Slide</div>
+          <div style="flex:1;min-height:0;padding:12px;display:flex;flex-direction:column;gap:8px">
+            <div style="height:52px;border-radius:8px;border:1.5px dashed var(--border-strong);background:var(--field)"></div>
+            <div style="height:52px;border-radius:8px;border:1px solid var(--border);background:var(--field);opacity:.5"></div>
+            <div style="height:52px;border-radius:8px;border:1px solid var(--border);background:var(--field);opacity:.28"></div>
+            <div style="margin-top:4px;font-size:11px;line-height:1.6;color:var(--t3);text-wrap:pretty">Slide xếp theo thứ tự khách sẽ xem.</div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding:11px 12px;flex:none;font-size:11px;line-height:1.5;color:var(--t3)">0 slide</div>
+        </nav>
+
+        <div style="position:relative;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:40px">
+          <div style="position:absolute;inset:0;background:var(--glow);pointer-events:none"></div>
+          <div style="position:relative;z-index:var(--z-overlay);display:flex;flex-direction:column;align-items:center;gap:20px;max-width:620px;text-align:center">
+
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="width:80px;height:52px;border-radius:7px;border:1px solid var(--border);background:var(--card);box-shadow:var(--shadow-node);opacity:.42"></span>
+              <span style="width:104px;height:68px;border-radius:9px;border:1.5px dashed var(--accent);background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent)"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3.4v9.2M3.4 8h9.2"></path></svg></span>
+              <span style="width:80px;height:52px;border-radius:7px;border:1px solid var(--border);background:var(--card);box-shadow:var(--shadow-node);opacity:.42"></span>
+            </div>
+
+            <div>
+              <h2 style="margin:0;font-size:26px;line-height:1.5;font-weight:600;letter-spacing:-.02em">Hồ sơ trình khách</h2>
+              <div style="margin-top:2px;font-size:14px;line-height:1.5;color:var(--t4)">Client presentation</div>
+            </div>
+            <div style="font-size:14px;line-height:1.6;color:var(--t2);text-wrap:pretty;max-width:520px">
+              Ảnh đã dựng, mặt bằng và bảng vật liệu xếp thành một bộ khách xem được trên trình duyệt và ghi nhận xét thẳng lên slide.
+              <span style="display:block;margin-top:4px;font-size:12px;line-height:1.6;color:var(--t3)">Renders, plans and material boards, in one set your client can comment on.</span>
+            </div>
+
+            <div style="display:flex;flex-direction:column;align-items:center;gap:9px;margin-top:2px">
+              <div style="display:flex;gap:10px">
+                <span style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                  <button disabled="disabled" style="height:var(--tap-xl);padding:0 24px;border:1px solid var(--border);border-radius:14px;background:var(--field);color:var(--t4);font-weight:600;font-size:14px;line-height:1.5;font-family:inherit;cursor:not-allowed;display:flex;align-items:center;gap:9px">
+                    <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="2" y="3" width="12" height="10" rx="1.6"></rect><path d="M2 10.4 5.6 7l3 2.8 2.4-2 3 2.6"></path></svg>
+                    Tạo từ ảnh đã dựng
+                  </button>
+                  <span style="font-size:11px;line-height:1.6;color:var(--warning)">Chưa có ảnh nào từ chặng Thiết kế 3D</span>
+                </span>
+                <span style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                  <button style="height:var(--tap-xl);padding:0 24px;border:0;border-radius:14px;background:var(--accent);color:var(--on-accent);font-weight:600;font-size:14px;line-height:1.5;font-family:inherit;cursor:pointer;box-shadow:0 0 0 4px var(--accent-soft);display:flex;align-items:center;gap:9px;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
+                    <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3.4v9.2M3.4 8h9.2"></path></svg>
+                    Bắt đầu bằng slide trắng
+                  </button>
+                  <span style="font-size:11px;line-height:1.6;color:var(--t4)">Thêm ảnh và mặt bằng sau</span>
+                </span>
+              </div>
+              <div style="font-size:11px;line-height:1.6;color:var(--t4)">Build from renders · Start with a blank slide</div>
+            </div>
+
+          </div>
+        </div>
+
+        <aside style="background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;padding:0 26px;text-align:center;min-height:0">
+          <svg width="30" height="30" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.1"><rect x="2" y="3" width="12" height="10" rx="1.6"></rect><path d="M5.4 6.2h5.2M5.4 9h3.4"></path></svg>
+          <div style="font-size:12px;line-height:1.5;font-weight:600;color:var(--t2)">Bố cục slide</div>
+          <div style="font-size:11px;line-height:1.6;color:var(--t3);text-wrap:pretty">Chọn một slide để đổi bố cục, tiêu đề và ghi chú trình bày.</div>
+        </aside>
+
+      </div>
+    </sc-if>
+
+  </main>
+
+  <footer style="display:flex;align-items:center;gap:14px;padding:0 12px;background:var(--panel);border-top:1px solid var(--border)">
+    <span style="font-size:11px;line-height:1.5;color:var(--t3)">{{ statusHint }}</span>
+    <span style="margin-left:auto;font-size:11px;line-height:1.5;color:var(--t3)">{{ chang }}</span>
+    <span style="display:flex;align-items:center;gap:6px;font-size:11px;line-height:1.5;color:var(--t3)"><span style="width:6px;height:6px;border-radius:50%;background:var(--t4)"></span>Chưa có gì để lưu</span>
+  </footer>
+
+</div>
+
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="18" fill="#6a57f5"/><g fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round"><rect x="36" y="36" width="48" height="48" rx="7" stroke-dasharray="8 7"/><path d="M60 50v20M50 60h20"/></g></svg></template>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Tối&quot;,&quot;Kem&quot;],&quot;default&quot;:&quot;Tối&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Giao diện&quot;},&quot;touch&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Giao diện&quot;}}">
+class Component extends DCLogic {
+  state = { s: 1, theme: null };
+  componentDidMount() { this.apply(); }
+  componentDidUpdate() { this.apply(); }
+  apply() {
+    const r = document.documentElement;
+    r.dataset.theme = this.theme();
+    const touch = !!this.props.touch;
+    r.style.setProperty('--tap', touch ? '44px' : '32px');
+    r.style.setProperty('--tap-lg', touch ? '52px' : '44px');
+    r.style.setProperty('--tap-xl', touch ? '64px' : '56px');
+  }
+  theme() { return this.state.theme || (this.props.theme === 'Kem' ? 'light' : 'dark'); }
+  renderVals() {
+    const s = this.state.s, t = this.theme();
+    const hints = {
+      1: 'Chưa có dự án nào · tạo dự án đầu tiên để bắt đầu',
+      2: 'Bàn vẽ trống · hai lối vào đều dẫn tới cùng một chỗ',
+      3: 'Chưa có khối nào · cần mặt bằng 2D trước',
+      4: 'Chưa có slide nào · dựng ảnh trước hoặc bắt đầu trắng'
+    };
+    const notes = {
+      1: 'Danh sách rỗng · thẻ tạo mới là lối chính',
+      2: 'Nhập bản vẽ hoặc vẽ mới · kéo thả có nút thay thế',
+      3: 'Nút chính bị khoá kèm lý do tại chỗ',
+      4: 'Nút chính bị khoá · vẫn có lối đi trắng'
+    };
+    const on = { nen: 'var(--panel)', chu: 'var(--t1)', dam: '600' };
+    const off = { nen: 'transparent', chu: 'var(--t3)', dam: '400' };
+    const tab = { 2: '2D', 3: '3D', 4: 'TC' };
+    const cur = tab[s];
+    const v = {};
+    for (let i = 1; i <= 4; i++) {
+      const sel = s === i;
+      v['bg' + i] = sel ? 'var(--accent)' : 'var(--panel)';
+      v['fg' + i] = sel ? 'var(--on-accent)' : 'var(--t2)';
+      v['bd' + i] = sel ? 'var(--accent)' : 'var(--border)';
+      v['go' + i] = () => this.setState({ s: i });
+    }
+    ['2D', '3D', 'TC'].forEach(k => {
+      const st = cur === k ? on : off;
+      v['nen' + k] = st.nen; v['chu' + k] = st.chu; v['dam' + k] = st.dam;
+    });
+    const chang = { 1: 'Chưa mở dự án nào', 2: 'Chặng Thiết kế 2D', 3: 'Chặng Thiết kế 3D', 4: 'Chặng Trình chiếu' };
+    return Object.assign(v, {
+      s1: s === 1, s2: s === 2, s3: s === 3, s4: s === 4,
+      inProject: s !== 1,
+      tenDuAn: '{{ tên dự án }}',
+      nhanLuu: s === 1 ? 'Chưa có dự án' : 'Tự lưu',
+      chang: chang[s],
+      statusHint: hints[s], stateNote: notes[s],
+      themeLabel: t === 'dark' ? 'Đổi sang nền Kem' : 'Đổi sang nền Tối',
+      toggleTheme: () => this.setState({ theme: t === 'dark' ? 'light' : 'dark' })
+    });
+  }
+}
+
+</script>
+</body>
+</html>

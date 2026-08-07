@@ -21,7 +21,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent, TouchEvent as ReactTouchEvent } from 'react';
 import { Boxes, Check, Hammer, Sparkles, Sun, X } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useCadStore } from '@/lib/cad/store';
+import { pickStage } from '@/lib/studio/stage-nav';
+import { useStageTransition } from '@/components/studio/StageTransitionProvider';
 import { useCad3DAutosave } from '@/lib/cad/cad3d-autosave';
 import { useStageMode } from '@/lib/stage-mode';
 import { useT } from '@/lib/i18n';
@@ -63,8 +66,16 @@ export default function Render3DModeSkeleton() {
   // (lib/sheets-persist.ts) vào Doc; mount/unmount đúng lúc mode 3D bật/tắt.
   useCad3DAutosave();
   const doc = useCadStore((s) => s.doc);
+  // T4 (P14) — bắt điểm 3D dùng ĐÚNG SnapSettings + gridStep của chặng 2D (K1, một bộ công tắc
+  // chung — bật/tắt Đầu mút/Giữa cạnh… ở 2D là 3D nghe theo). Không đẻ state snap thứ hai.
+  const snapSettings = useCadStore((s) => s.snap);
+  const gridStepMm = useCadStore((s) => s.gridStep);
   const { setMode } = useStageMode('render');
   const tr = useT();
+  // M-EMPTY-2 — dây điều hướng cho lối "Vẽ mặt bằng trước" của card màn trống (xem veMatBangTruoc).
+  const router = useRouter();
+  const pathname = usePathname();
+  const { begin } = useStageTransition();
   const [tab, setTab] = useState<Command3DTab>('vatlieu');
   const [nhayNutTuong, setNhayNutTuong] = useState(false);
   // VIỆC 2 (M-3D-OUT) — dock công cụ nổi đáy viewport, đúng mock "3D Dựng khối" trạng thái 03/04.
@@ -406,10 +417,20 @@ export default function Render3DModeSkeleton() {
     store.updateEntities(canDun.map((e) => ({ ...e, heightMm: 2700 })));
   }
 
-  /** Dựng khối đầu tiên: mở tab Tạo + nháy nút Tường (SPEC-NGON-NGU: chỉ đúng MỘT việc kế tiếp). */
-  function dungKhoiDauTien() {
+  /** Dựng khối tại chỗ: mở tab Tạo + nháy nút Tường (SPEC-NGON-NGU: chỉ đúng MỘT việc kế tiếp).
+   * M-EMPTY-2: nút "Dựng khối đầu tiên" trên card chào đã rời theo mock [BẢN CHỐT] (2 lối), nhưng
+   * cơ chế nháy-nút-Tường GIỮ NGUYÊN — vẫn là đường tại chỗ khi người dùng tự mở tab Tạo (X2). */
+  function dungKhoiTaiCho() {
     setTab('tao');
     setNhayNutTuong(true);
+  }
+  void dungKhoiTaiCho; // giữ hàm cho đường quay lại; tránh cảnh báo unused khi lint bật
+
+  /** M-EMPTY-2 (07/08, mock [BẢN CHỐT] màn 1c) — lối thoát "Vẽ mặt bằng trước": mở chặng Thiết
+   * kế 2D bằng ĐÚNG đường StageSwitcher đang đi (`pickStage`, lib/studio/stage-nav — origin
+   * 'render' → begin('concept') + push href cad), không chế đường điều hướng thứ hai. */
+  function veMatBangTruoc() {
+    pickStage('concept', { active: 'render', pathname, router, begin });
   }
 
   function taoTuongMau() {
@@ -521,6 +542,7 @@ export default function Render3DModeSkeleton() {
           lightMarkers={lightMarkers}
           onLightMove={handleLightMove}
           ground
+          snap3d={{ settings: snapSettings, gridStepMm }}
           label={soKhoi > 0 ? 'Khối xám · chưa vật liệu' : 'Không gian trống'}
         >
           {/* HUD giờ nắng — CHỈ hiện trong lúc 3 ngón đang quét (VIỆC 3.d). Nền đặc, không
@@ -575,38 +597,75 @@ export default function Render3DModeSkeleton() {
                 >
                   <X size={13} />
                 </button>
-                <p style={{ margin: 0, fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semi)', color: 'var(--t1)' }}>
-                  Bắt đầu dựng không gian
+                {/* M-EMPTY-2 (07/08) — chữ + 2 lối theo mock [BẢN CHỐT] `Bốn trạng thái rỗng.dc.html`
+                    màn 1c: "Dựng khối từ mặt bằng 2D" KHOÁ KÈM LÝ DO NHÌN THẤY khi chưa có bản vẽ
+                    (không chỉ title-hover như bản cũ) · "Vẽ mặt bằng trước" mở chặng 2D qua pickStage.
+                    Nút "Dựng khối đầu tiên" cũ rời card nhưng ĐƯỜNG TẠI CHỖ vẫn còn (Command panel
+                    Tạo → Tường) — X2 thoả ở mức màn, ghi nhận trong M-EMPTY-2-OUT. */}
+                <p style={{ margin: 0, fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semi)', color: 'var(--t1)', lineHeight: 1.5 }}>
+                  {tr('Không gian dựng khối', '3D modelling space')}
                 </p>
-                <p style={{ margin: '5px 0 14px', fontSize: 'var(--fs-2xs)', color: 'var(--t4)', lineHeight: 1.5 }}>
-                  Đùn khối lên từ bản vẽ có sẵn, hoặc dựng thẳng ở đây.
+                <p style={{ margin: '1px 0 0', fontSize: 10.5, color: 'var(--t4)', lineHeight: 1.5 }}>
+                  {tr('3D modelling space', 'Không gian dựng khối')}
                 </p>
-                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    onClick={dunTuBanVe}
-                    disabled={!coBanVe}
-                    title={coBanVe ? 'Đặt cao độ 2700mm cho nét tường chưa đùn' : 'Chưa có nét nào ở bản vẽ để đùn'}
-                    style={{
-                      height: 32, padding: '0 14px', borderRadius: 999, cursor: coBanVe ? 'pointer' : 'not-allowed',
-                      border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)',
-                      fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)', opacity: coBanVe ? 1 : 0.45,
-                    }}
-                  >
-                    Đùn từ bản vẽ
-                  </button>
-                  <button
-                    type="button"
-                    onClick={dungKhoiDauTien}
-                    style={{
-                      height: 32, padding: '0 14px', borderRadius: 999, cursor: 'pointer', border: '1px solid var(--accent)',
-                      background: 'var(--accent)', color: '#fff', fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)',
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                    }}
-                  >
-                    <Hammer size={13} strokeWidth={1.9} />
-                    Dựng khối đầu tiên
-                  </button>
+                <p style={{ margin: '6px 0 14px', fontSize: 'var(--fs-2xs)', color: 'var(--t3)', lineHeight: 1.6 }}>
+                  {tr(
+                    'Mặt bằng hai chiều nâng thẳng lên thành tường, sàn và trần. Nét vẽ tới đâu, khối dựng tới đó.',
+                    'Walls, floors and ceilings rise straight from the 2D plan.',
+                  )}
+                </p>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                  <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+                    <button
+                      type="button"
+                      onClick={dunTuBanVe}
+                      disabled={!coBanVe}
+                      style={
+                        coBanVe
+                          ? {
+                              height: 32, padding: '0 14px', borderRadius: 999, cursor: 'pointer', border: 0,
+                              background: 'var(--accent)', color: '#fff', fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)',
+                              display: 'inline-flex', alignItems: 'center', gap: 6,
+                            }
+                          : {
+                              height: 32, padding: '0 14px', borderRadius: 999, cursor: 'not-allowed',
+                              border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t4)',
+                              fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)',
+                            }
+                      }
+                    >
+                      {coBanVe && <Hammer size={13} strokeWidth={1.9} />}
+                      {tr('Dựng khối từ mặt bằng 2D', 'Build from 2D plan')}
+                    </button>
+                    {!coBanVe && (
+                      <span style={{ fontSize: 10.5, lineHeight: 1.6, color: 'var(--warning)' }}>
+                        {tr('Cần ít nhất một mặt bằng ở chặng Thiết kế 2D', 'Needs at least one plan in the 2D stage')}
+                      </span>
+                    )}
+                  </span>
+                  <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+                    <button
+                      type="button"
+                      onClick={veMatBangTruoc}
+                      style={
+                        coBanVe
+                          ? {
+                              height: 32, padding: '0 14px', borderRadius: 999, cursor: 'pointer',
+                              border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)',
+                              fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)',
+                            }
+                          : {
+                              height: 32, padding: '0 14px', borderRadius: 999, cursor: 'pointer', border: 0,
+                              background: 'var(--accent)', color: '#fff', fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)',
+                            }
+                      }
+                    >
+                      {tr('Vẽ mặt bằng trước', 'Draw a plan first')}
+                    </button>
+                    <span style={{ fontSize: 10.5, lineHeight: 1.6, color: 'var(--t4)' }}>
+                      {tr('Mở chặng Thiết kế 2D', 'Opens the 2D stage')}
+                    </span>
+                  </span>
                 </div>
               </div>
             </div>
