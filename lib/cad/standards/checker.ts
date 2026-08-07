@@ -105,7 +105,10 @@ export const ROOM_NAME_RE = /^[\p{Lu}0-9\s.+]+$/u;
  * hatch theo bất kỳ hình học nào họ chọn; bộ lọc này CHỈ áp dụng cho phép đo tự động của
  * checker, không đụng hành vi hatch.ts.
  */
-function wallLikeDoc(doc: Doc): Doc {
+// p3 (07/08, lib/review) — thêm `export`: bộ lọc này là ĐỊNH NGHĨA duy nhất của "hình học tường
+// thật cho phép đo tự động"; lib/review/luat/rules-3d.ts đo phòng cho luật độ rọi cần ĐÚNG bộ
+// lọc này — export để dùng chung thay vì chép 5 dòng rồi lệch nhau (K1). Không đổi hành vi.
+export function wallLikeDoc(doc: Doc): Doc {
   const axisLayerIds = new Set(doc.layers.filter((l) => l.name === 'Trục' || l.id === 'l-axis').map((l) => l.id));
   return {
     layers: doc.layers,
