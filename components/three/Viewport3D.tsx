@@ -40,6 +40,9 @@ export interface Viewport3DProps {
   label?: string;
   /** lưới sàn + chân trời (xem `Scene3DViewer.ground`) — mode Vẽ 3D bật, chỗ chụp ảnh tắt. */
   ground?: boolean;
+  /** T4 (P14) — bắt điểm 3D: SnapSettings của useCadStore + bước lưới mm. Viewport chỉ CHUYỂN
+   * TIẾP (cùng khuôn lightMarkers) — bỏ trống = không bắt, chỗ chụp ảnh không bị đụng. */
+  snap3d?: { settings: import('@/lib/cad/store').SnapSettings; gridStepMm: number } | null;
   /** lớp phủ riêng của nơi dùng (empty state, trình tự bước…) — nằm TRÊN cảnh, dưới ViewCube. */
   children?: React.ReactNode;
 }
@@ -77,6 +80,7 @@ export function Viewport3D({
   onLightMove,
   label = 'Khối xám · chưa vật liệu',
   ground = false,
+  snap3d = null,
   children,
 }: Viewport3DProps) {
   // PHIẾU ĐỢT 7 NHÓM B — cầu nối camera SỐNG cho ViewCube3D, xem comment `Scene3DCameraApi`
@@ -99,6 +103,7 @@ export function Viewport3D({
         lightMarkers={lightMarkers}
         onLightMove={onLightMove}
         ground={ground}
+        snap3d={snap3d}
         className="vpscene"
         cameraApiRef={cameraApiRef}
       />

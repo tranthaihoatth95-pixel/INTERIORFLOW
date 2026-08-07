@@ -320,9 +320,21 @@ export function findSnap3D(q: Snap3DQuery): Snap3DResult | null {
   if (!cands.length) return null;
   // thang ƯU TIÊN CỨNG THEO LOẠI — trong cùng loại mới so px (đúng luật snap-priority 2D)
   for (const kind of SNAP3D_PRIORITY) {
-    const inKind = cands.filter((c) => c.kind === kind);
+    let inKind = cands.filter((c) => c.kind === kind);
     if (!inKind.length) continue;
     inKind.sort((p, r) => p.d - r.d);
+    // Bắt được lúc VERIFY app thật (07/08): 'intersection' là bắt TRƯỢT dọc cạnh (liên tục) —
+    // giữ nguyên thang thì "Giữa cạnh" KHÔNG BAO GIỜ hiện được (giữa-cạnh nằm ngay trên cạnh,
+    // điểm trượt luôn lọt dung sai cùng lúc). Luật bổ sung: điểm ĐẶC BIỆT trên CÙNG đường
+    // (midpoint) thắng điểm TRƯỢT chung chung khi cả hai cùng lọt dung sai — cùng tinh thần
+    // SketchUp ("Midpoint" nổi trên "On Edge"), không đổi thứ tự thang giữa các loại RỜI nhau.
+    if (kind === 'intersection') {
+      const mids = cands.filter((c) => c.kind === 'midpoint');
+      if (mids.length) {
+        mids.sort((p, r) => p.d - r.d);
+        inKind = mids;
+      }
+    }
     const win = inKind[0];
     return {
       kind: win.kind,

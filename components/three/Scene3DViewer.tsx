@@ -39,6 +39,9 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { buildMergedGeometries, buildMassingWalls, isMassingWallGroup } from '@/lib/three/obj-scene-to-geometry';
+import { ensureBoundsTree, dropBoundsTree, installAcceleratedRaycast } from '@/lib/three/bvh';
+import { findSnap3D, lockToAxis, DEFAULT_SNAP_TOLERANCE_PX, type Snap3DKind, type CadAxis } from '@/lib/three/snap3d';
+import type { SnapSettings } from '@/lib/cad/store';
 import { clampWallHeight, cadToThreeM, type Scene3DData } from '@/lib/three/cad-to-obj';
 import { camPathSampleToThree, sampleCamPathAt, EYE_HEIGHT_MM } from '@/lib/three/capture';
 import { sectionPlane, type SectionSpec } from '@/lib/three/section';
@@ -125,13 +128,21 @@ export interface Scene3DViewerProps {
   /** PHIẾU ĐỢT 7 NHÓM B — nơi ghi `{camera,controls}` sống cho ViewCube3D, xem comment
    * `Scene3DCameraApi` trên. Optional — nơi gọi không cần ViewCube (vd chụp ảnh) khỏi phải truyền. */
   cameraApiRef?: MutableRefObject<Scene3DCameraApi | null>;
+  /** T4 (P14) — BẮT ĐIỂM 3D khi rê chuột (mode massing): truyền ĐÚNG SnapSettings của
+   * `useCadStore` (K1 — không đẻ settings thứ hai) + bước lưới mm. Bỏ trống = không bắt điểm,
+   * hành vi y như trước với campath/chụp ảnh/công trường. Đọc qua REF (như lightMarkers) —
+   * đổi công tắc snap không dựng lại cảnh. */
+  snap3d?: { settings: SnapSettings; gridStepMm: number } | null;
 }
 
 const IMPLEMENTED_MODES: Scene3DMode[] = ['orbit', 'campath', 'section', 'walk', 'massing'];
 const WALK_SPEED_M_PER_SEC = 1.5; // ~tốc độ đi bộ chậm, cùng cảm giác tempo với campath 1200mm/s
 
-export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame, onPushPull, lightMarkers, onLightMove, ground = false, className, cameraApiRef }: Scene3DViewerProps) {
+export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame, onPushPull, lightMarkers, onLightMove, ground = false, className, cameraApiRef, snap3d }: Scene3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // T4 — snap qua REF (cùng lý do lightMarkersRef): đổi công tắc không dựng lại cảnh.
+  const snap3dRef = useRef(snap3d ?? null);
+  snap3dRef.current = snap3d ?? null;
   const campathActive = mode === 'campath' && !!camPath?.samples.length;
   const sectionActive = mode === 'section' && !!sectionMm;
   const walkActive = mode === 'walk';
@@ -181,15 +192,31 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     const three = new THREE.Scene();
     three.background = new THREE.Color('#2a2d33');
 
-    // SÂN KHẤU (ground) — lưới sàn 1m/10m + sương xa làm ĐƯỜNG CHÂN TRỜI (lưới tan dần thay vì
-    // cắt cụt ở rìa). Chỉ thêm object, không đụng cách dựng khối/camera phía dưới.
+    // SÂN KHẤU (ground) — VIỆC 7 (P14): lưới ĐỔI MẬT ĐỘ THEO TẦM NHÌN kiểu SketchUp thay
+    // GridHelper(200,200) cố định — xa: ô 1m · gần: 100mm · rất gần: 10mm. 3 lưới dựng sẵn,
+    // tick() chỉ bật/tắt visible theo khoảng cách camera→target (rẻ, không dựng lại). 2 lưới mịn
+    // BÁM controls.target (làm tròn về mắt ô của chính nó để vạch không "trôi" khi pan) — không
+    // bám thì làm việc xa gốc toạ độ là mất lưới mịn. Sương xa giữ nguyên vai trò chân trời.
+    const gridJunk: { dispose(): void }[] = [];
+    let gridCoarse: THREE.GridHelper | null = null;
+    let gridMid: THREE.GridHelper | null = null;
+    let gridFine: THREE.GridHelper | null = null;
     if (ground) {
-      const grid = new THREE.GridHelper(200, 200, 0x5a6472, 0x3a4048);
-      const gridMat = grid.material as THREE.Material & { transparent: boolean; opacity: number; depthWrite: boolean };
-      gridMat.transparent = true;
-      gridMat.opacity = 0.55;
-      gridMat.depthWrite = false; // lưới nằm dưới khối, không "ăn" vào mặt khối khi nhìn xiên
-      three.add(grid);
+      const mkGrid = (sizeM: number, divisions: number, opacity: number) => {
+        const g = new THREE.GridHelper(sizeM, divisions, 0x5a6472, 0x3a4048);
+        const m = g.material as THREE.Material & { transparent: boolean; opacity: number; depthWrite: boolean };
+        m.transparent = true;
+        m.opacity = opacity;
+        m.depthWrite = false; // lưới nằm dưới khối, không "ăn" vào mặt khối khi nhìn xiên
+        three.add(g);
+        gridJunk.push(g.geometry, m);
+        return g;
+      };
+      gridCoarse = mkGrid(200, 200, 0.55); // ô 1 m — tầm nhìn xa (giữ đúng lưới cũ)
+      gridMid = mkGrid(20, 200, 0.35); // ô 100 mm — tầm gần
+      gridFine = mkGrid(2, 200, 0.3); // ô 10 mm — rất gần
+      gridMid.visible = false;
+      gridFine.visible = false;
       three.fog = new THREE.Fog(0x2a2d33, 18, 90);
     }
 
@@ -306,6 +333,70 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
       group.add(mesh);
     }
 
+    /* ── T1 (P14) — BVH cho mọi mesh bắn tia được (NC-12 §3.1). ensureBoundsTree idempotent;
+       dispose ở cleanup PHẢI dropBoundsTree trước geometry.dispose() (cây giữ mảng riêng).
+       Chỉ dựng ở mode massing (nơi duy nhất bắn tia mỗi pointermove hôm nay) — campath/chụp
+       ảnh không bắn tia, dựng cây là phí. Số đo cảnh IF thật: tổng ≤3,2ms — xem M-3D-NOI-OUT. */
+    const snapTargets: THREE.Mesh[] = [];
+    if (massingActive) {
+      for (const mesh of [...massingMeshes, ...(group.children.filter((c) => c instanceof THREE.Mesh) as THREE.Mesh[])]) {
+        if (!snapTargets.includes(mesh)) {
+          ensureBoundsTree(mesh.geometry as THREE.BufferGeometry);
+          snapTargets.push(mesh);
+        }
+      }
+    }
+
+    /* ── T4 (P14) — BẮT ĐIỂM 3D: dấu (vòng nhỏ) + CHỮ tiếng Việt (HTML, luật ② NC-12 §3.3),
+       ⇧ khoá loại đang bắt, X/Y/Z khoá trục khi đang kéo (luật ③). Dung sai px = nửa token
+       --tap đọc từ CSS thật, rơi về 22px nếu không đọc được (luật ①). */
+    installAcceleratedRaycast();
+    const tapToken = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tap'));
+    const snapTolerancePx = Number.isFinite(tapToken) && tapToken > 0 ? tapToken / 2 : DEFAULT_SNAP_TOLERANCE_PX;
+    const snapMarkerGeo = new THREE.SphereGeometry(0.03, 12, 8);
+    const snapMarkerMat = new THREE.MeshBasicMaterial({ color: '#6a57f5', depthTest: false, transparent: true, opacity: 0.95 });
+    const snapMarker = new THREE.Mesh(snapMarkerGeo, snapMarkerMat);
+    snapMarker.renderOrder = 1000;
+    snapMarker.visible = false;
+    three.add(snapMarker);
+    let snapLabelEl: HTMLDivElement | null = null;
+    if (massingActive) {
+      snapLabelEl = document.createElement('div');
+      snapLabelEl.style.cssText =
+        'position:absolute;pointer-events:none;z-index:6;padding:2px 7px;border-radius:6px;font-size:11px;line-height:1.5;' +
+        'background:rgba(20,18,26,.92);color:#efece6;border:1px solid rgba(255,255,255,.16);display:none;white-space:nowrap;';
+      container.appendChild(snapLabelEl);
+    }
+    let hoverSnapKind: Snap3DKind | null = null; // loại đang bắt — ⇧ khoá đúng loại này
+    let snapLockKind: Snap3DKind | null = null; // ≠null khi đang giữ ⇧
+    let axisLockKey: CadAxis | null = null; // X/Y/Z khi đang kéo
+    const axisGuideGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+    const axisGuideMat = new THREE.LineBasicMaterial({ color: '#ffffff', depthTest: false, transparent: true, opacity: 0.9 });
+    const axisGuide = new THREE.Line(axisGuideGeo, axisGuideMat);
+    axisGuide.renderOrder = 1000;
+    axisGuide.visible = false;
+    three.add(axisGuide);
+
+    function hideSnapUi() {
+      snapMarker.visible = false;
+      if (snapLabelEl) snapLabelEl.style.display = 'none';
+      hoverSnapKind = null;
+    }
+    function onSnapKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Shift' && hoverSnapKind) snapLockKind = hoverSnapKind; // ⇧ khoá suy luận ĐANG bắt
+      const k = e.key.toLowerCase();
+      if ((k === 'x' || k === 'y' || k === 'z') && (dragging || draggingLight)) {
+        axisLockKey = axisLockKey === k ? null : (k as CadAxis); // bấm lại = nhả khoá, chuẩn SketchUp
+      }
+    }
+    function onSnapKeyUp(e: KeyboardEvent) {
+      if (e.key === 'Shift') snapLockKind = null;
+    }
+    if (massingActive) {
+      window.addEventListener('keydown', onSnapKeyDown);
+      window.addEventListener('keyup', onSnapKeyUp);
+    }
+
     /* ── VIỆC 3.c — DẤU VỊ TRÍ ĐÈN (quả cầu + chân dọi xuống sàn) ────────────────────────────
        `depthTest:false` + `renderOrder` cao: dấu đèn phải THẤY ĐƯỢC kể cả khi nằm sau tường —
        đèn trần luôn bị chính trần/tường che, chôn nó vào khối thì không ai kéo được. Chân dọi
@@ -358,7 +449,7 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     const dragPlane = new THREE.Plane();
     const dragPoint = new THREE.Vector3();
     let dragging: { mesh: THREE.Mesh; entityId: string; baseHeightMm: number; baseM: number } | null = null;
-    let draggingLight: { mesh: THREE.Mesh; id: string; vertical: boolean } | null = null;
+    let draggingLight: { mesh: THREE.Mesh; id: string; vertical: boolean; startPos?: THREE.Vector3 } | null = null;
 
     function ndcFromEvent(e: PointerEvent) {
       const rect = renderer.domElement.getBoundingClientRect();
@@ -388,7 +479,8 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
         } else {
           dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), mesh.position);
         }
-        draggingLight = { mesh, id, vertical: e.shiftKey };
+        draggingLight = { mesh, id, vertical: e.shiftKey, startPos: mesh.position.clone() };
+        hideSnapUi();
         controls.enabled = false;
         renderer.domElement.setPointerCapture(e.pointerId);
         return;
@@ -419,9 +511,54 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
         if (draggingLight.vertical) {
           // Chỉ đổi cao độ; kẹp ≥0 để đèn không chui xuống dưới sàn tầng.
           draggingLight.mesh.position.y = Math.max(0, dragPoint.y);
+        } else if (axisLockKey && draggingLight.startPos) {
+          // luật ③ — X/Y/Z khoá trục khi kéo: chiếu điểm kéo lên trục CAD qua vị trí bắt đầu,
+          // vẽ đường dẫn đúng màu trục (X đỏ · Y lục · Z lam).
+          const locked = lockToAxis(draggingLight.startPos, dragPoint, axisLockKey);
+          draggingLight.mesh.position.copy(locked.point);
+          // đường dẫn chạy DỌC TRỤC qua điểm neo (trục CAD → three: X=(1,0,0) · Y=(0,0,−1) · Z=(0,1,0))
+          const dir = axisLockKey === 'x' ? new THREE.Vector3(1, 0, 0) : axisLockKey === 'y' ? new THREE.Vector3(0, 0, -1) : new THREE.Vector3(0, 1, 0);
+          axisGuideMat.color.set(locked.color);
+          axisGuideGeo.setFromPoints([
+            new THREE.Vector3().copy(draggingLight.startPos).addScaledVector(dir, -50),
+            new THREE.Vector3().copy(draggingLight.startPos).addScaledVector(dir, 50),
+          ]);
+          axisGuide.visible = true;
         } else {
           draggingLight.mesh.position.x = dragPoint.x;
           draggingLight.mesh.position.z = dragPoint.z;
+          axisGuide.visible = false;
+        }
+        return;
+      }
+      // T4 — BẮT ĐIỂM khi RÊ (không kéo gì): dấu + chữ tiếng Việt, ⇧ khoá loại đang bắt.
+      if (!dragging && massingActive && snapTargets.length && snap3dRef.current) {
+        ndcFromEvent(e);
+        raycaster.setFromCamera(pointerNdc, camera);
+        const rect = renderer.domElement.getBoundingClientRect();
+        const res = findSnap3D({
+          raycaster,
+          camera,
+          pointerPx: { x: e.clientX - rect.left, y: e.clientY - rect.top },
+          viewportPx: { w: rect.width, h: rect.height },
+          meshes: snapTargets,
+          snap: snap3dRef.current.settings,
+          tolerancePx: snapTolerancePx,
+          gridStepM: snap3dRef.current.gridStepMm / 1000,
+          lockKind: snapLockKind,
+        });
+        if (res) {
+          hoverSnapKind = res.kind;
+          snapMarker.position.copy(res.point);
+          snapMarker.visible = true;
+          if (snapLabelEl) {
+            snapLabelEl.textContent = snapLockKind ? `${res.label} — đang khoá ⇧` : res.label;
+            snapLabelEl.style.left = `${e.clientX - rect.left + 14}px`;
+            snapLabelEl.style.top = `${e.clientY - rect.top + 14}px`;
+            snapLabelEl.style.display = 'block';
+          }
+        } else {
+          hideSnapUi();
         }
         return;
       }
@@ -450,6 +587,8 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
           z: Math.round(p.y * 1000),
         });
         draggingLight = null;
+        axisLockKey = null;
+        axisGuide.visible = false;
         controls.enabled = !walkActive && !campathActive;
         if (renderer.domElement.hasPointerCapture(e.pointerId)) renderer.domElement.releasePointerCapture(e.pointerId);
         return;
@@ -507,6 +646,21 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
       } else {
         controls.update();
       }
+      // VIỆC 7 (P14) — lưới đổi mật độ theo tầm nhìn: xa ô 1m · gần thêm ô 100mm · rất gần thêm
+      // ô 10mm (chuẩn SketchUp — mắt ước lượng kích thước không cần đo). 2 lưới mịn bám target,
+      // làm tròn về mắt ô của CHÍNH NÓ để vạch đứng yên khi pan (không "trôi lưới").
+      if (gridCoarse) {
+        const d = camera.position.distanceTo(controls.target);
+        if (gridMid) {
+          gridMid.visible = d < 8;
+          gridMid.position.set(Math.round(controls.target.x / 0.1) * 0.1, 0.001, Math.round(controls.target.z / 0.1) * 0.1);
+        }
+        if (gridFine) {
+          gridFine.visible = d < 2;
+          gridFine.position.set(Math.round(controls.target.x / 0.01) * 0.01, 0.002, Math.round(controls.target.z / 0.01) * 0.01);
+        }
+        gridCoarse.visible = d >= 2; // rất gần thì tắt lưới thô cho đỡ rối vạch chồng vạch
+      }
       renderer.render(three, camera);
       onFrame?.(t);
       raf = requestAnimationFrame(tick);
@@ -531,6 +685,18 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
       renderer.domElement.removeEventListener('pointercancel', onPointerUp);
       syncMarkersRef.current = null;
       clearMarkers();
+      // T1/T4 (P14) — gỡ cây BVH TRƯỚC khi dispose geometry (cây giữ mảng riêng), gỡ UI snap.
+      if (massingActive) {
+        window.removeEventListener('keydown', onSnapKeyDown);
+        window.removeEventListener('keyup', onSnapKeyUp);
+      }
+      for (const m of snapTargets) dropBoundsTree(m.geometry as THREE.BufferGeometry);
+      if (snapLabelEl) container.removeChild(snapLabelEl);
+      snapMarkerGeo.dispose();
+      snapMarkerMat.dispose();
+      axisGuideGeo.dispose();
+      axisGuideMat.dispose();
+      for (const j of gridJunk) j.dispose();
       for (const b of built) {
         b.geometry.dispose();
       }
