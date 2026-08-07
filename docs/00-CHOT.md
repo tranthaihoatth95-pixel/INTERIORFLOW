@@ -718,3 +718,47 @@ một cách báo giá. Không phải chia cho đẹp.
 Ba việc chỉ làm được khi TÁCH hai trục: **lọc chéo** ("đồ mộc đóng ở bếp") · **bảng khối lượng theo
 thầu** (gom `millwork` gửi xưởng mộc) · **thumbnail đúng bản chất** (đồ mộc đóng vẽ CÓ TƯỜNG phía
 sau vì nó dính tường · đồ rời vẽ đứng tự do · chi tiết hoàn thiện vẽ MẶT CẮT — ba cách vẽ khác nhau).
+
+---
+
+## Chốt 07/08 (khuya, tiếp) — KHUNG KIỂM BA CHẶNG
+
+### 12 · HAI LỚP KIỂM, TUYỆT ĐỐI KHÔNG TRỘN
+Hoà nêu 07/08: muốn kiểm thêm *"đúng concept chưa · đèn đúng phối cảnh chưa"* ở chặng 2D,
+*"logic câu chuyện · kẽ hở · thẩm mỹ · bố cục"* ở chặng 2 và 3.
+
+| | **LỚP LUẬT** (đang có) | **LỚP GÓP Ý** (thêm) |
+|---|---|---|
+| Ví dụ | cửa thoát ≥800mm · hành lang ≥1200mm | bố cục lệch · ánh sáng không hợp |
+| Kết quả | đúng/sai, có số | *"theo nghề thì thường…"* |
+| Chạy 10 lần | giống nhau | mỗi lần một khác |
+| Dẫn nguồn | ✅ điều khoản | ⚠️ chỉ thông lệ |
+| Sai thì | có thể không nghiệm thu được | ý kiến, có thể cố ý |
+| Ai chạy | máy thuần, 0đ | AI |
+
+⛔ **Trộn hai lớp là hỏng cả hai.** App nói *"thiếu lối thoát hiểm"* và *"màu hơi lỗi mốt"* cùng
+giọng đỏ ⇒ người dùng học cách bỏ qua CẢ HAI. `CHOT-TACH-AI-VA-CHINH-TAY.md` §1 đã ghi:
+*"AI đoán, chỉnh tay chắc chắn — trộn hai thứ vào cùng một chỗ là lừa người dùng."*
+⇒ **Cùng một bảng, KHÁC DẤU**: luật → đỏ/vàng + dẫn điều khoản + nút sửa;
+góp ý → dấu Magic tím + glyph Vitals + chữ "gợi ý" + **không bao giờ chặn**.
+
+### 12.1 · Khung chung `lib/review/` cho cả ba chặng
+Không viết thêm luật (đã có 3.074 dòng / 11 bộ ở `lib/cad/standards/`). Chỉ dựng khung:
+`types.ts` (Finding: lớp · mục · nguồn · vị trí · cách sửa) · `luat/` cắm bộ luật theo chặng ·
+`gopy/` lớp AI. Một khung ⇒ một cách hiện, một cách sửa, MỘT CHỖ NGỒI cố định (4 luật chỗ ngồi).
+
+### 12.2 · Luật đo được thêm cho chặng 3D — KHÔNG cần AI
+đèn khớp bóng đổ (thuần hình học) · độ rọi theo công năng (`vn-lighting.ts` đã có, chưa nối 3D)
+· khối hở/mặt không kín.
+
+### 12.3 · Ba cấm cho lớp góp ý
+① **KHÔNG chấm điểm.** *"Bố cục 7/10"* vô nghĩa, người dùng sẽ cãi. Phải là CÂU QUAN SÁT
+   cụ thể, nói được lý do, sửa được ngay.
+② **KHÔNG nói xu hướng** trong đợt đầu — xu hướng đổi theo năm, mọi bảng xu hướng đều có chủ
+   sở hữu (IF vừa dọn Pantone đúng vì chuyện này). Muốn nói phải DẪN NGUỒN công bố công khai.
+③ **KHÔNG bao giờ chặn** — góp ý không được ngăn xuất file, giao hồ sơ.
+
+### 12.4 · Góp ý về concept CHẶN BỞI màn đề bài
+Máy không biết *"đúng concept chưa"* nếu không ai khai concept. Kiểm concept = **so với ĐỀ BÀI
+đã ghi**, không phải so với "cái đẹp chung chung". Màn đề bài đang là panel lọt trong màn vẽ
+(`G-M5-11`) ⇒ **làm màn đề bài trước, rồi mới làm góp ý concept.**

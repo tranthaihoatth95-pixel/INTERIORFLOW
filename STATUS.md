@@ -1,5 +1,20 @@
 # STATUS — InteriorFlow
 
+## ✅ XONG (08/08 rạng sáng — P14 · T1+T4: BVH + BẮT ĐIỂM 3D + mặt phẳng làm việc + lưới đổi mật độ, CHƯA COMMIT V6)
+Chi tiết → `docs/M-3D-NOI-OUT.md`. `three-mesh-bvh` 0.9.14 (MIT, đúng bản NC-12) qua cổng
+`lib/three/bvh.ts`; **đo cảnh IF thật** (trả lời CHƯA-VERIFY NC-12 §3.1): dựng BVH ≤3,2ms/39-67
+group, cảnh nhỏ raycast thường còn nhanh hơn (10 vs 16µs — BVH thắng ở cảnh LỚN như số NC-12).
+`lib/three/snap3d.ts` MỚI: thang 7 nấc cứng theo LOẠI + dung sai PIXEL (token --tap/2) + nhãn
+Việt + ⇧ khoá loại + X/Y/Z khoá trục màu + `workPlane` (VIỆC 3) — dùng NGUYÊN `SnapSettings`
+store 2D (K1, 0 diff lib/cad). Nối vào Scene3DViewer CHỈ mode massing (campath/chụp ảnh 0 đổi).
+VIỆC 7: lưới 1m/100mm/10mm theo tầm nhìn, bám target không trôi vạch. Test snap3d 28/28 ĐO toạ
+độ · tsc 0 · npm test 0 fail · check-chot 0 đỏ. Verify browser thật (3007, server riêng): rê ra
+đúng "Đầu mút"/"Giao tuyến"/"Lưới sàn" + dấu + chữ — bug "Giao tuyến che Giữa cạnh" bắt được lúc
+verify, đã sửa + test. Đã dọn 2 entity test khỏi Dự án mẫu. 🟡 Giữa cạnh/Tâm mặt/⇧/XYZ mới verify
+bằng test (camera demo không với tới — nút Toàn cảnh không fit lại, bug CŨ, báo chưa sửa).
+⬜ VIỆC 4-6 (VCB · mở cụm nút + 3 icon sai · nối 11 hàm build-ops) để phiếu sau đúng điều khoản
+cuối phiếu. 🔴 `ad2d23b` (Hoà, 22:02) cuốn bản GIỮA CHỪNG phiên này — phần chốt còn working tree.
+
 ## ✅ XONG (08/08 rạng sáng — P13 vòng 4: .idfc V2 "mọi thứ đều là .idfc", CHƯA COMMIT V6)
 Chi tiết → `docs/M-IDFC-2-OUT.md`. Theo chốt 07/08 khuya (00-CHOT.md mục 11): `IdfcFile` v2 =
 vỏ chung (meta có **kind** 11 loại, lighting→fixture) + RUỘT discriminated union 7 kiểu (⛔ không

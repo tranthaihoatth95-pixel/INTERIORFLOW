@@ -878,3 +878,36 @@ Kèm theo, TỔNG **PHẢI giữ `docs/00-DANG-CHO.md` là sổ duy nhất ghi p
 
 Sai đã phạm 07/08: phát 7 khối liền, không khối nào ghi số phiên ⇒ Hoà phải hỏi lại
 *"cái nào dán vô p nào? quy ước tên rồi làm sai hoài"*.
+
+## §0ad · FILE KHOÁ GIT BỎ LẠI — chặn TOÀN BỘ lệnh ghi, im lặng suốt 24 giờ (07/08)
+
+**Triệu chứng:** mọi `git add` / `git commit` / `git pull` đều trả cùng một câu:
+`fatal: Unable to create '.git/index.lock': File exists — Another git process seems to be running`.
+Nhưng KHÔNG có tiến trình git nào chạy thật.
+
+**Gốc:** git để lại `*.lock` khi một tiến trình bị ngắt giữa chừng. Ca 07/08 đo được **5 file**:
+```
+.git/index.lock                              ← tạo 06/08 22:15, phát hiện 07/08 22:00 (24 giờ)
+.git/objects/maintenance.lock
+.git/refs/heads/feat/pbr-material-schema.lock   ← trùng tên worktree đã xoá
+.git/refs/heads/feat/so-lenh-registry.lock      ← trùng tên worktree đã xoá
+.git/refs/tmp-main-sync.lock
+```
+Hai cái giữa mang tên đúng hai worktree bị xoá ⇒ đây là **xác của lần ngắt đó**, không phải
+ai đang chạy. Cùng họ với sự cố `_to_delete/` bên ArchiNote 19–20/07 (`ARCHINOTE-MAP.md §2.3`)
+— **nhiều phiên dùng chung một `.git`**.
+
+**Vì sao đắt:** nó im lặng. Chủ dự án chạy 7 lệnh liên tiếp, lệnh nào cũng "thất bại", và
+`git log` vẫn hiện commit cũ nên nhìn như chưa làm gì. Mất một lượt dài mới lần ra.
+
+**Luật:**
+1. Gặp `index.lock: File exists` ⇒ **kiểm tuổi file trước, đừng vội xoá**:
+   `ls -la .git/*.lock && ps aux | grep -c "[g]it "`. Tiến trình = 0 và file cũ hơn vài phút
+   ⇒ là xác, xoá được.
+2. **Quét ĐỦ 5 chỗ**, không chỉ `index.lock`: `find .git -name "*.lock"`.
+   Xoá mỗi `index.lock` thì `pull` vẫn chết ở `refs/*.lock`.
+3. **Sau khi xoá worktree, luôn quét lock còn sót** — thêm vào quy trình dọn worktree
+   ở `CLAUDE.md`.
+4. Lệnh gửi cho chủ dự án **bỏ dấu tiếng Việt và ký tự lạ** trong lời commit: zsh hiểu `!`
+   là lệnh lịch sử (`zsh: event not found`), và `*` không khớp thì cả dòng chết
+   (`zsh: no matches found`). Đã dính cả hai trong cùng một lượt.
