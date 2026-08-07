@@ -23,6 +23,7 @@
  *
  * File THUẦN: không React/DOM/Prisma/fetch — chạy được bằng sucrase-node như `lib/boq/model.ts`.
  */
+import { parseNumberCell } from './parse-number';
 
 /** Nguồn gốc của một món — luôn nói rõ máy vừa làm gì (8 luật vận hành, luật 6). */
 export type FfeSource =
@@ -45,8 +46,16 @@ export const FFE_CONFIDENCE_LABEL: Record<FfeConfidence, { vi: string; en: strin
 };
 
 /** Đơn vị ĐẾM (ra số nguyên cái/bộ) — phân biệt với đơn vị ĐO (m2/m/m3, tính theo hình học).
- * Chuẩn hoá trước khi so: bỏ dấu + thường hoá, nên 'Cái'/'cái'/'CAI' đều nhận. */
-export const FFE_COUNT_UNITS = ['cai', 'bo', 'chiec', 'pcs', 'set', 'ea', 'nos'] as const;
+ * Chuẩn hoá trước khi so: bỏ dấu + thường hoá, nên 'Cái'/'cái'/'CAI' đều nhận.
+ *
+ * 🔴 VÁ 06/08 — `tam` (tấm) và `cap` (cặp) THIẾU. `'tấm'` nằm ngay trong dropdown đơn vị của
+ * chính app (`FFE_UNIT_OPTIONS`, `lib/nodes/defs/ffe-table.ts`) mà `isCountUnit('tấm')` trả
+ * `false`: người dùng chọn đúng thứ IF mời chọn thì số lượng KHÔNG bị ép nguyên (đo được
+ * `normalizeQty('2.6','tấm') = 2.6`) và BOQ ném cảnh báo `unknown-unit` "IF chưa biết đơn vị này"
+ * cho đơn vị do chính IF đề nghị. `cặp` cùng họ (cặp cánh cửa, cặp đôn) — đếm được, thiếu nốt.
+ * ⛔ KHÔNG thêm `md` (mét dài): đó là đơn vị ĐO, thêm vào là mở đúng cái cửa `unit-mismatch`
+ * của `lib/boq/compute.ts` sinh ra để đóng. */
+export const FFE_COUNT_UNITS = ['cai', 'bo', 'chiec', 'tam', 'cap', 'pcs', 'set', 'ea', 'nos'] as const;
 
 /** Đơn vị mặc định khi không ai khai — món rời đếm bằng CÁI (không phải m²; đoán m² là gốc của
  * G-M3-09: bảng trông "đủ" mà thiếu tiền thật). */
@@ -167,10 +176,28 @@ export function __resetFfeIdSeq(): void {
  * Vá: không có CHỮ SỐ nào trong đầu vào ⇒ `null` ngay. Hệ quả có chủ ý: ô trống nay cũng trả
  * `null` ("chưa khai") thay vì 0 — caller nào muốn mặc định 1 thì tự đặt mặc định TRƯỚC khi gọi
  * (cả `defs/ffe-table.ts` lẫn `warehouse/apply-import.ts` đều làm vậy), chứ hàm này không được
- * tự bịa ra một con số. */
+ * tự bịa ra một con số.
+ *
+ * 🔴 VÁ VÒNG 2 (06/08) — hàm này TỪNG LÀ BỘ ĐỌC SỐ THỨ HAI của IF, và là bộ yếu hơn. Bộ lọc
+ * `replace(/[^\d.,-]/g,'').replace(',', '.')` không hiểu dấu ngăn nghìn, nên đo được:
+ *   `normalizeQty('1.200','cai') = 1` · `('2,450','cai') = 2` · `('1.234.567','cai') = null` ·
+ *   `('(1.500)','cai') = 2` (dấu ngoặc kế toán bị bóc, số âm thành dương) · `('50k') = 50` ·
+ *   `('2.45tr') = 2`
+ * trong khi `parseNumberCell` ở cửa nhập Excel đọc `1.200 → 1200` từ lâu. Hậu quả đã chạy thật:
+ * hồ sơ FF&E ra `1.2 m2 × 250.000 = 300.000đ` thay vì `1200 × 250.000 = 300.000.000đ`, **0 lỗi
+ * 0 cảnh báo** — sai 1000 lần mà bảng trông bình thường.
+ * Nay chuỗi đi qua ĐÚNG cỗ máy chung `lib/ffe/parse-number.ts` (một cỗ máy đọc số, không hai):
+ * dạng nhập nhằng ⇒ `undefined` ⇒ `null` ⇒ caller báo lỗi. Số truyền vào sẵn kiểu `number`
+ * (`lib/ffe/sheet.ts`, `lib/boq/compute.ts`) đi thẳng, không qua parser — không đổi hành vi. */
 export function normalizeQty(raw: unknown, unit: string): number | null {
-  if (typeof raw !== 'number' && !/\d/.test(String(raw ?? ''))) return null;
-  const n = typeof raw === 'number' ? raw : Number(String(raw).replace(/[^\d.,-]/g, '').replace(',', '.'));
+  let n: number;
+  if (typeof raw === 'number') {
+    n = raw;
+  } else {
+    const parsed = parseNumberCell(String(raw ?? ''));
+    if (parsed === undefined) return null;
+    n = parsed;
+  }
   if (!Number.isFinite(n) || n < 0) return null;
   return isCountUnit(unit) ? Math.round(n) : n;
 }
@@ -194,15 +221,41 @@ export function ffeLineAmount(item: FfeItem): number | null {
   return item.qty * item.priceVnd;
 }
 
-/** Gộp theo phòng, giữ thứ tự gặp lần đầu. Món không khai phòng vào khoá `''` (caller hiện
- * "Chưa gán phòng" — KHÔNG giấu, KHÔNG bỏ). */
+/** Khoá gộp phòng: bỏ khoảng trắng đầu/cuối, gộp khoảng trắng giữa, không phân biệt hoa/thường.
+ * KHÔNG bỏ dấu tiếng Việt — "Phòng ngủ" và "Phong ngu" là hai cách viết khác nhau của người dùng,
+ * gộp chúng lại là tự quyết hộ (và đụng cả ca tên phòng tiếng Anh/số hiệu). Chỉ gộp thứ CHẮC CHẮN
+ * là một: cùng chữ, khác cách gõ phím. */
+function roomKey(room: string): string {
+  return room.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+/**
+ * Gộp theo phòng, giữ thứ tự gặp lần đầu. Món không khai phòng vào khoá `''` (caller hiện
+ * "Chưa gán phòng" — KHÔNG giấu, KHÔNG bỏ).
+ *
+ * 🔴 VÁ 06/08 — trước đây gộp theo `room.trim()` NGUYÊN VĂN nên `"Phòng khách"` · `"phòng khách"`
+ * · `"Phòng  khách"` (hai dấu cách) ra **3 nhóm**: hồ sơ FF&E tách một phòng thành 3 mục, kèm 3
+ * dòng "Cộng…" — người đọc tưởng dự án có 3 phòng khách. Lỗi này gần như chắc chắn xảy ra khi
+ * bảng đến từ nhiều nguồn (gõ tay + nhập Excel + bốc từ ảnh).
+ * Nay gộp theo khoá đã chuẩn hoá (`roomKey`), NHƯNG **nhãn hiển thị lấy theo bản gặp ĐẦU TIÊN** —
+ * không tự viết hoa/viết lại chữ của người dùng (khoá Map = nhãn, đúng như `lib/ffe/sheet.ts`
+ * đang dùng làm `label`).
+ */
 export function groupByRoom(items: FfeItem[]): Map<string, FfeItem[]> {
   const m = new Map<string, FfeItem[]>();
+  /** khoá chuẩn hoá → nhãn gặp lần đầu (chính là khoá của Map trả về) */
+  const labelByKey = new Map<string, string>();
   for (const it of items) {
-    const key = (it.room ?? '').trim();
-    const arr = m.get(key);
+    const raw = (it.room ?? '').trim();
+    const key = roomKey(raw);
+    let label = labelByKey.get(key);
+    if (label === undefined) {
+      label = raw;
+      labelByKey.set(key, label);
+    }
+    const arr = m.get(label);
     if (arr) arr.push(it);
-    else m.set(key, [it]);
+    else m.set(label, [it]);
   }
   return m;
 }

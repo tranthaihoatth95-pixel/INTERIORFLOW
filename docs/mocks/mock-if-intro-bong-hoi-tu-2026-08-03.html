@@ -1,28 +1,26 @@
 <!DOCTYPE html>
-<html lang="vi" data-theme="dark">
+<html lang="vi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>InteriorFlow — Intro</title>
 <style>
 :root{
+  --ink:#14110d;
+  --cream:#f6f2ea;
   --plaster:#c9c0ae;
   --wood-lit:#e8e1d4;
   --wood-mid:#b5ab99;
   --wood-dark:#6e665a;
+  --ink-70:rgba(20,17,13,.70);
+  --ink-46:rgba(20,17,13,.46);
+  --ink-28:rgba(20,17,13,.28);
   --ttt-cam:rgba(240,96,32,.10);
   --ttt-navy:rgba(0,40,80,.22);
   --ui-font:"Be Vietnam Pro","Be Vietnam",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   --mono-font:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --ease-cine:cubic-bezier(.24,.8,.16,1);
 }
-/* cảnh mở màn (plaster/wood/ttt-cam/ttt-navy) GIỮ NGUYÊN cả 2 theme — ảnh dàn dựng cố định,
-   không phải chrome UI. Việc dọn màu TTT thuộc phạm vi CHOT-INTRO-VIDEO-2026-08-02.md (bỏ hẳn
-   intro code, thay video) — KHÔNG đụng ở đây, ngoài phạm vi sửa mock lần này. */
-:root,[data-theme="dark"]{--ink:#14110d;--cream:#f6f2ea;--ink-rgb:20,17,13;--cream-rgb:246,242,234;
-  --ink-70:rgba(var(--ink-rgb),.70);--ink-46:rgba(var(--ink-rgb),.46);--ink-28:rgba(var(--ink-rgb),.28)}
-[data-theme="light"]{--ink:#f6f2ea;--cream:#14110d;--ink-rgb:246,242,234;--cream-rgb:20,17,13;
-  --ink-70:rgba(var(--cream-rgb),.70);--ink-46:rgba(var(--cream-rgb),.46);--ink-28:rgba(var(--cream-rgb),.28)}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--ink);overflow:hidden}
 body{
@@ -70,7 +68,7 @@ a:hover{color:var(--ink-70)}
   inset:0;
   pointer-events:none;
   z-index:7;
-  background:radial-gradient(118% 92% at 48% 44%, rgba(var(--ink-rgb),0) 38%, rgba(var(--ink-rgb),.13) 72%, rgba(var(--ink-rgb),.34) 100%);
+  background:radial-gradient(118% 92% at 48% 44%, rgba(20,17,13,0) 38%, rgba(20,17,13,.13) 72%, rgba(20,17,13,.34) 100%);
 }
 .grain{
   position:absolute;
@@ -96,7 +94,7 @@ a:hover{color:var(--ink-70)}
   inset:0;
   z-index:2;
   pointer-events:none;
-  background:linear-gradient(100deg,rgba(var(--cream-rgb),0) 34%,rgba(255,252,246,.42) 50%,rgba(var(--cream-rgb),0) 66%);
+  background:linear-gradient(100deg,rgba(246,242,234,0) 34%,rgba(255,252,246,.42) 50%,rgba(246,242,234,0) 66%);
   mix-blend-mode:screen;
   opacity:0;
   transform:translate3d(-46%,0,0);
@@ -331,10 +329,10 @@ body.done .grain{
         </linearGradient>
 
         <linearGradient id="gGloss" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="rgba(var(--cream-rgb),0)"/>
+          <stop offset="0" stop-color="rgba(246,242,234,0)"/>
           <stop offset=".42" stop-color="rgba(255,252,246,.34)"/>
           <stop offset=".54" stop-color="rgba(255,255,250,.55)"/>
-          <stop offset="1" stop-color="rgba(var(--cream-rgb),0)"/>
+          <stop offset="1" stop-color="rgba(246,242,234,0)"/>
         </linearGradient>
 
         <linearGradient id="gNear" x1="680" y1="230" x2="1060" y2="420" gradientUnits="userSpaceOnUse">
@@ -397,7 +395,7 @@ body.done .grain{
       <!-- ① TRÁI · nét, nhìn từ trên xuống (plan view) -->
       <g class="sh sh1">
         <g transform="matrix(0.819,0.2652,0.3276,0.5616,716.3,238.2)" fill="none"
-           stroke="rgba(var(--ink-rgb),.62)" stroke-width="6">
+           stroke="rgba(20,17,13,.62)" stroke-width="6">
           <rect x="0" y="0" width="225" height="240" rx="14"/>
           <path d="M14,26 Q112.5,-4 211,26"/>
           <path d="M14,26 L14,8 M211,26 L211,8"/>
@@ -413,20 +411,20 @@ body.done .grain{
       <g class="sh sh3">
         <g transform="matrix(0.819,0.2652,0.3276,0.5616,680,180)">
           <rect x="-34" y="-34" width="300" height="512" fill="rgba(232,225,212,.18)"
-                stroke="rgba(var(--ink-rgb),.55)" stroke-width="7"/>
-          <g class="det" fill="none" stroke="rgba(var(--ink-rgb),.58)" stroke-width="6">
+                stroke="rgba(20,17,13,.55)" stroke-width="7"/>
+          <g class="det" fill="none" stroke="rgba(20,17,13,.58)" stroke-width="6">
             <rect x="0" y="0" width="225" height="24"/>
             <rect x="0" y="94" width="225" height="18"/>
             <rect x="0" y="185" width="225" height="22"/>
             <path d="M8,24 L8,185 M28,24 L28,185 M197,24 L197,185 M217,24 L217,185"/>
             <path d="M8,207 L8,410 M28,207 L28,410 M197,207 L197,410 M217,207 L217,410"/>
           </g>
-          <g class="det" fill="none" stroke="rgba(var(--ink-rgb),.44)" stroke-width="4.5">
+          <g class="det" fill="none" stroke="rgba(20,17,13,.44)" stroke-width="4.5">
             <path d="M0,440 L225,440"/>
             <path d="M0,428 L0,452 M225,428 L225,452"/>
             <path d="M-20,410 L-20,0 M-32,410 L-8,410 M-32,0 L-8,0"/>
           </g>
-          <g fill="none" stroke="rgba(var(--ink-rgb),.5)" stroke-width="5.5">
+          <g fill="none" stroke="rgba(20,17,13,.5)" stroke-width="5.5">
             <rect x="146" y="432" width="120" height="46"/>
             <path d="M146,447 L266,447 M146,462 L266,462 M186,432 L186,478"/>
           </g>
@@ -442,13 +440,13 @@ body.done .grain{
       <g class="blk">
         <!-- penumbra nối chân ghế sang vùng hình chiếu -->
         <ellipse cx="690" cy="348" rx="140" ry="48" transform="rotate(-20 690 348)"
-                 fill="rgba(var(--ink-rgb),.17)" filter="url(#blurFar)"/>
+                 fill="rgba(20,17,13,.17)" filter="url(#blurFar)"/>
         <g transform="translate(145,-60) scale(0.66)">
           <!-- bóng chân ghế: đậm sát điểm tiếp đất -->
-          <ellipse cx="500" cy="747" rx="30" ry="10" fill="rgba(var(--ink-rgb),.30)" filter="url(#blurFoot)"/>
-          <ellipse cx="690" cy="666" rx="30" ry="10" fill="rgba(var(--ink-rgb),.26)" filter="url(#blurFoot)"/>
-          <ellipse cx="296" cy="661" rx="30" ry="10" fill="rgba(var(--ink-rgb),.26)" filter="url(#blurFoot)"/>
-          <ellipse cx="487" cy="588" rx="30" ry="10" fill="rgba(var(--ink-rgb),.22)" filter="url(#blurFoot)"/>
+          <ellipse cx="500" cy="747" rx="30" ry="10" fill="rgba(20,17,13,.30)" filter="url(#blurFoot)"/>
+          <ellipse cx="690" cy="666" rx="30" ry="10" fill="rgba(20,17,13,.26)" filter="url(#blurFoot)"/>
+          <ellipse cx="296" cy="661" rx="30" ry="10" fill="rgba(20,17,13,.26)" filter="url(#blurFoot)"/>
+          <ellipse cx="487" cy="588" rx="30" ry="10" fill="rgba(20,17,13,.22)" filter="url(#blurFoot)"/>
 
           <!-- chân sau + trụ lưng -->
           <polygon points="478,177 496,177 493,588 481,588" fill="url(#wLegBack)"/>
@@ -457,11 +455,11 @@ body.done .grain{
           <!-- nan lưng ngang -->
           <path d="M292,344 L491,267 L491,283 L292,360 Z" fill="url(#wRail)"/>
           <path d="M288,255 Q392,213 495,175 L495,201 Q392,239 288,281 Z" fill="url(#wRail)"/>
-          <path d="M288,255 Q392,213 495,175" fill="none" stroke="rgba(var(--cream-rgb),.55)" stroke-width="1.4"/>
+          <path d="M288,255 Q392,213 495,175" fill="none" stroke="rgba(246,242,234,.55)" stroke-width="1.4"/>
 
           <!-- lưng ghế: mảng đặc cao trội, ghế ngồi nhìn ngang -->
           <polygon points="297,408 487,331 487,190 297,267" fill="url(#wLeft)"/>
-          <path d="M297,267 L487,190" fill="none" stroke="rgba(var(--cream-rgb),.4)" stroke-width="1.2"/>
+          <path d="M297,267 L487,190" fill="none" stroke="rgba(246,242,234,.4)" stroke-width="1.2"/>
 
           <!-- chân trước -->
           <polygon points="681,457 698,457 695,666 684,666" fill="url(#wLeg)"/>
@@ -470,13 +468,13 @@ body.done .grain{
           <polygon points="277,414 500,500 709,419 486,333" fill="url(#wTop)"/>
           <polygon points="277,414 500,500 500,538 277,452" fill="url(#wLeft)"/>
           <polygon points="500,500 709,419 709,457 500,538" fill="url(#wRight)"/>
-          <path d="M277,414 L500,500 L709,419" fill="none" stroke="rgba(var(--cream-rgb),.5)" stroke-width="1.2"/>
-          <path d="M277,414 L486,333 L709,419" fill="none" stroke="rgba(var(--cream-rgb),.34)" stroke-width="1"/>
-          <path d="M500,500 L500,538" fill="none" stroke="rgba(var(--ink-rgb),.24)" stroke-width="1.2"/>
+          <path d="M277,414 L500,500 L709,419" fill="none" stroke="rgba(246,242,234,.5)" stroke-width="1.2"/>
+          <path d="M277,414 L486,333 L709,419" fill="none" stroke="rgba(246,242,234,.34)" stroke-width="1"/>
+          <path d="M500,500 L500,538" fill="none" stroke="rgba(20,17,13,.24)" stroke-width="1.2"/>
 
           <!-- chân trước gần -->
           <polygon points="491,538 509,538 506,747 494,747" fill="url(#wLeg)"/>
-          <path d="M491,538 L494,747" fill="none" stroke="rgba(var(--cream-rgb),.42)" stroke-width="1"/>
+          <path d="M491,538 L494,747" fill="none" stroke="rgba(246,242,234,.42)" stroke-width="1"/>
         </g>
 
         <!-- độ nhám bề mặt gỗ -->

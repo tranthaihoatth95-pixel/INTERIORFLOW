@@ -55,6 +55,15 @@ export interface MaterialDef {
    */
   atlasRecordId?: string;
   /**
+   * P13 VIỆC 1 (07/08) — KHOÁ NỐI ba mảnh vật liệu (G-M17-01): matId của IF = `ProductSpec.sku`
+   * (mã ATLAS "Mã vật liệu" — tái dùng mã sẵn có, không đẻ hệ mã thứ hai). Preset khai trường này
+   * ⇒ `lib/materials/resolve.ts` `getMaterial(matId)` trả được cả ③ mảnh 2D này cùng ① PBR
+   * (`pbr-store.ts`) + ② thương mại (`/api/specs`). undefined = preset nội bộ chưa gắn mã kho —
+   * hành vi cũ y nguyên. KHÁC `atlasRecordId` (id RECORD Lark, đổi khi re-sync); `matId` là MÃ
+   * NGHIỆP VỤ người đọc hiểu (SW-TRV-BE…), bền qua sync.
+   */
+  matId?: string;
+  /**
    * PBR render-thật — `SPEC-VAT-LIEU-PBR-IF` §1/§4 (03/08, CHỐT). THÊM CỘT, KHÔNG PHÁ CỘT CŨ:
    * optional, mọi preset trong MATERIALS bên dưới KHÔNG cần sửa gì vẫn hợp lệ (texture CSS
    * procedural ở trên vẫn là preview 2D mặc định — `pbr` chỉ dùng khi dựng QUẢ CẦU xem trước

@@ -25,6 +25,42 @@
      khác (mọi accent khác trong app dùng --accent tím ở trên). */
   --accent-warm: #c79a63;
 
+  /* ---------- Màu CỔNG NỐI theo kiểu dữ liệu (port) ----------
+     Nguồn: `docs/mocks/Bảng nút.dc.html` :root — ảnh · mặt nạ · vật liệu · tham số.
+     Mock khai hex thẳng (#6a57f5 · #d9a34a · #46b876 · #9e9ea8) và CHỈ khai MỘT LẦN
+     ngoài khối theme ⇒ ở nền Kem 4 màu đó giữ nguyên giá trị nền Mực, sai tương phản.
+     Ở đây khai BÍ DANH của token thật (đúng `docs/AUDIT-MOCK-MANPHU-2026-08-03.md`
+     mục token + `LUAT-GIAO-DIEN-BAT-BUOC.md` L4 "cấm tự chế hex"):
+       • theme Tối  → resolve ra ĐÚNG 4 hex của mock, từng byte một;
+       • theme Sáng → tự lấy bản đủ tương phản (--warning/--success/--t3 nền Kem).
+     Lợi thêm: đổi --accent một chỗ thì cổng "ảnh" đổi theo, không lệch với chrome app. */
+  --p-img: var(--accent);
+  --p-mask: var(--warning);
+  --p-mat: var(--success);
+  --p-num: var(--t3);
+
+  /* ---------- NỀN TỐI SAU LỚP NỔI (scrim) ----------
+     Nguồn: :root của `docs/mocks/Nút tổng.dc.html` (dùng ở màn 02) và
+     `docs/mocks/Thư viện.dc.html` (dùng ở màn 01) — cả 2 mock khai `--scrim`
+     (Tối rgba(6,6,8,.58) · Sáng rgba(120,110,95,.26–.28)). Giá trị đó TRÙNG gần như từng
+     byte với `--mat-overlay` ĐÃ CÓ SẴN (Tối rgba(6,6,8,.56) · Sáng rgba(60,55,48,.28))
+     ⇒ khai BÍ DANH, KHÔNG đẻ token thứ hai gần-giống (hai token gần bằng nhau chắc chắn
+     sẽ lệch nhau sau vài lần sửa). */
+  --scrim: var(--mat-overlay);
+
+  /* ---------- CHẤM MÀU LOẠI KỆ (Thư viện) ----------
+     Nguồn: `docs/mocks/Thư viện.dc.html` màn 01, cột kệ 214px — 6 kệ chấm bằng
+     --accent · --t2 · --success · --t3 · --k-doc · --warning. 5/6 đã là token thật của app;
+     riêng `--k-doc` (nâu tài liệu — kệ "Mẫu hồ sơ") là MỚI.
+     Mock khai `--k-doc:#c79a63` MỘT LẦN ngoài khối theme ⇒ nền Kem giữ nguyên hex nền Mực,
+     chỉ còn ~2.1:1 trên --panel (#faf8f4) — chấm mờ tịt. Ở đây tách 2 theme:
+       • Tối  → #c79a63 (đúng từng byte của mock; 7.2:1 trên --panel #141417)
+       • Sáng → #8a6a44 (cùng hue cam-nâu, chỉ hạ độ sáng; 4.5:1 trên --panel #faf8f4)
+     CỐ Ý KHÔNG khai bí danh của `--accent-warm` dù trùng hex ở nền Mực: biến đó có luật
+     riêng ghi ngay phía trên ("CHỈ dùng cho nút hành động chính trên nền ẢNH — login"),
+     mượn sang đây là phá đúng luật đó. */
+  --k-doc: #c79a63;
+
   /* Bo góc kiểu Apple (nhịp 10 / 14 / 20 / 28) */
   --radius-sm: 10px;
   --radius-md: 14px;
@@ -58,6 +94,11 @@
      media query `(hover: none) and (pointer: coarse)` ngay dưới — TÁI DÙNG đúng điều
      kiện đã có ở khối .if-tooltip-static (dòng ~1030), không phát minh điều kiện mới. */
   --tap: 32px;
+  /* --tap-lg = ô chạm LỚN (nút hành động chính, nút bảng tròn). Nguồn: :root của
+     `docs/mocks/HopXuatPDF.dc.html` · `ToGiay.dc.html` · `BangTron.dc.html` — cả 3
+     khai --tap:32 + --tap-lg:44. KHÔNG override ở media cảm ứng: 44px vốn đã là cỡ
+     ngón tay, --tap mới là cái cần nở ra 44 khi chạm. */
+  --tap-lg: 44px;
   --row: 28px;
   --gap: 8px;
   --fs-2xs: 11px;
@@ -80,6 +121,29 @@
   --illus-accent: #6a57f5; /* = --accent, nhấn chính */
   --illus-deep: #1e2233; /* mực xanh trung tính — khối/bóng đậm */
   --illus-paper: #f2efe9; /* giấy kem trung tính — nền/mảng sáng */
+
+  /* ---------- MẶT GIẤY IN (làn C · in/giấy/xuất) ----------
+     Nguồn: :root của `docs/mocks/ToGiay.dc.html` · `HopXuatPDF.dc.html` (khai TRÙNG
+     KHỚP từng byte ở cả 2 file). Cố ý KHÔNG theo theme, cùng lý do khối --illus-*
+     ngay trên: đây là mô phỏng TỜ GIẤY THẬT sắp in ra — giấy không đổi màu theo
+     theme app, và nét mực phải giữ đúng tương phản trên nền giấy ở cả 2 theme.
+     Đây cũng là thứ người dùng đối chiếu với bản PDF thật (lib/cad/pdf.ts). */
+  --paper: #f7f5f0; /* mặt giấy */
+  --paper-edge: #d8d2c6; /* mép tờ */
+  --paper-ink: #2a251d; /* nét mực đậm */
+  --paper-thin: rgba(42, 37, 29, 0.34); /* nét mảnh / chữ phụ trên giấy */
+  --paper-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6); /* tờ giấy cỡ thật */
+  --paper-shadow-sm: 0 12px 30px -14px rgba(0, 0, 0, 0.6); /* tờ thu nhỏ trong hộp thoại xuất */
+
+  /* Bí danh trạng thái của làn in — mock khai --ok/--warn (đúng bằng hex của
+     --success/--warning bản Tối). Khai BÍ DANH thay vì hex mới, đúng lối --p-img
+     ở trên: theme Sáng tự lấy bản đủ tương phản, không kẹt lại màu nền Mực. */
+  --ok: var(--success);
+  --warn: var(--warning);
+  --vp-lock: var(--success); /* khung nhìn ĐÃ khoá tỉ lệ */
+  --vp-open: var(--warning); /* khung nhìn CHƯA khoá */
+  --pen: var(--t1); /* vạch minh hoạ độ đậm nét — mock dùng đúng giá trị --t1 cả 2 theme */
+  --on-accent: #ffffff; /* chữ/icon nằm TRÊN nền --accent (4.89:1, xem khối accent) */
 }
 @media (hover: none) and (pointer: coarse) {
   :root {
@@ -126,6 +190,17 @@
   --warning: #d9a34a;
   --success: #46b876;
 
+  /* ---------- Màu CỔNG NỐI 'text'/'video' (port, G-NB-03) ----------
+     Trước hex trần trong `lib/types.ts` `DATA_TYPE_COLORS` (#38bdf8 lam · #fb7185 san hô,
+     05/08 "5 màu port dùng hết 5 vùng sắc rõ rệt: tím·lam·hổ phách·lục·san hô") — không đổi
+     theo theme, y hệt lỗi --p-img/--p-mask từng có (khối comment §28 ở trên). KHÔNG tái dùng
+     --danger cho video dù cùng gam đỏ-hồng: --danger đã mang nghĩa "lỗi" (dây nối sai kiểu vẽ
+     đỏ, xem `docs/mocks/Bảng nút.dc.html` màn 01) — chấm video trùng màu báo lỗi sẽ gây lẫn.
+     Bản Tối GIỮ NGUYÊN đúng hex cũ (không đổi hành vi nhìn thấy hiện tại); bản Sáng hạ độ sáng
+     giữ nguyên hue, đạt ≥4.5:1 trên --panel (#faf8f4, đo được ~5,6:1 và ~5,9:1). */
+  --p-text: #38bdf8;
+  --p-video: #fb7185;
+
   /* Mặt "trang giấy" — vùng đọc/soạn tài liệu dài (Notebook). 05/08: biến này
      được 5 file components/notebook/* + app/projects/[id]/notebook,overview
      tham chiếu qua `var(--surface-page, #F1ECE3)` NHƯNG CHƯA TỪNG ĐƯỢC KHAI BÁO
@@ -166,6 +241,17 @@
   --danger: #c9341d;
   --warning: #9a6304;
   --success: #107043;
+
+  /* Cổng 'text'/'video' bản SÁNG — cùng hue lam/san hô, hạ độ sáng cho ≥4,5:1 trên --panel
+     (#faf8f4)/--card (#fff). Lý do đầy đủ ở khối khai --p-text/--p-video trong :root. */
+  --p-text: #0369a1;
+  --p-video: #be123c;
+
+  /* Chấm kệ "Mẫu hồ sơ" bản SÁNG — mock chỉ khai 1 lần (#c79a63) nên nền Kem bị mờ
+     (~2.1:1). Hạ độ sáng giữ nguyên hue cam-nâu → 4.5:1 trên --panel. Cố ý KHÁC
+     --warning bản Sáng (#9a6304, ngả ô-liu) để 2 kệ "Mẫu hồ sơ" / "Bộ nhận diện"
+     không lẫn chấm. Lý do đầy đủ ở khối khai --k-doc trong :root. */
+  --k-doc: #8a6a44;
 
   /* Trang giấy bản SÁNG — kem trung tính của IF (cùng họ --panel), xem lý do ở
      khối dark. */
@@ -302,6 +388,85 @@ body {
   .node-running-halo {
     animation: none;
     box-shadow: var(--shadow-pop), 0 0 0 2px var(--accent-ring);
+  }
+}
+
+/* Dây ĐANG CHẠY — nét đứt bò dọc dây (port `docs/mocks/Bảng nút.dc.html` màn 02:
+   `stroke-dasharray:6 6; opacity:.5; animation:bn-dash 1s linear infinite`).
+   `@keyframes bn-dash` chép NGUYÊN VĂN từ mock. Chỉ animate `stroke-dashoffset`
+   (thuộc tính paint, không layout) — cùng luật G1 với .node-running-halo ở trên.
+   Gắn class ở `components/FlowCanvas.tsx` (edge chảy vào node đang chạy/xếp hàng);
+   dây ĐANG KÉO dùng cùng keyframe qua `connectionLineStyle` inline. */
+@keyframes bn-dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+.react-flow__edge.bn-edge-running .react-flow__edge-path {
+  stroke-dasharray: 6 6;
+  opacity: 0.5;
+  animation: bn-dash 1s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .react-flow__edge.bn-edge-running .react-flow__edge-path {
+    animation: none;
+  }
+  /* Dây ĐANG KÉO đặt `animation` INLINE (`connectionLineStyle`, FlowCanvas) nên class trên không
+     với tới — phải tắt riêng ở đây, nếu không người tắt chuyển động vẫn thấy nét bò. */
+  .react-flow__connectionline .react-flow__edge-path,
+  .react-flow__connection-path {
+    animation: none !important;
+  }
+}
+
+/* Dây NỐI SAI KIỂU — `docs/mocks/Bảng nút.dc.html` màn 01 dòng 141: `stroke:var(--danger);
+   stroke-width:2; stroke-dasharray:6 5`. Màu + nét đặt inline ở `FlowCanvas.tsx` (phải thắng
+   `edgeStyleFor`); class này chỉ lo phần KHÔNG đặt được inline: dây sai luôn nổi lên trên dây
+   thường để không bị che, và không mờ đi như dây đang chạy. Cùng nguồn đếm với "M nối sai" ở
+   thanh trạng thái (`lib/nodes/edge-validity.ts`). */
+.react-flow__edge.bn-edge-bad {
+  z-index: 5;
+}
+.react-flow__edge.bn-edge-bad .react-flow__edge-path {
+  opacity: 1;
+}
+
+/* NÚT TỔNG đang chạy — quầng thở quanh mặt nút (port `docs/mocks/Nút tổng.dc.html`:
+   `@keyframes nt-halo` chép NGUYÊN VĂN từ :root của mock, không đổi 1 con số).
+   ⚠️ Khai thật: mock CHỈ khai keyframe này chứ KHÔNG gắn nó vào phần tử nào (grep -a
+   "nt-halo" trong file mock = đúng 1 dòng, chính là dòng @keyframes). Ở đây gắn cho
+   trạng thái CÓ THẬT gần nhất — mặt nút tổng lúc node con của nó đang chạy/xếp hàng
+   (`MacroNodeFace.tsx`), thay vì để keyframe chết trong CSS.
+   Chỉ animate box-shadow (thuộc tính paint) — cùng luật G1 với .node-running-halo:
+   KHÔNG animate opacity trên phần tử có backdrop-filter (mặt nút tổng là mat-card). */
+@keyframes nt-halo {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--accent-soft);
+  }
+  50% {
+    box-shadow: 0 0 0 6px var(--accent-soft);
+  }
+}
+/* Bản dùng thật: giữ nguyên viền tĩnh 5px accent-soft + shadow-pop của mặt nút (mock màn
+   03) rồi mới thở thêm — nếu chỉ chép nguyên keyframe thì lúc chạy box-shadow bị GHI ĐÈ,
+   mặt nút mất cả bóng đổ lẫn viền, nhìn như tụt một tầng. */
+.nt-macro-halo {
+  animation: nt-macro-halo-run 1.6s ease-in-out infinite;
+}
+@keyframes nt-macro-halo-run {
+  0%,
+  100% {
+    box-shadow: var(--shadow-pop), 0 0 0 5px var(--accent-soft);
+  }
+  50% {
+    box-shadow: var(--shadow-pop), 0 0 0 11px var(--accent-soft);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nt-macro-halo {
+    animation: none;
+    box-shadow: var(--shadow-pop), 0 0 0 8px var(--accent-soft);
   }
 }
 
@@ -621,7 +786,11 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
     0 12px 40px rgba(60, 52, 40, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
-/* nền ẢNH (tone dark cưỡng bức): card kính bản tối, VẪN rất trong */
+/* nền ẢNH (tone dark cưỡng bức): card kính bản tối, VẪN rất trong.
+   07/08: thêm `:root ` — selector cũ (0,2,0) THUA nhánh theme sáng :757 (0,3,0) ⇒ theme sáng +
+   ảnh nền ra card SỮA đè lên ảnh, trái chính comment dòng trên ("tone dark cưỡng bức"). Nay
+   (0,3,0) + đứng SAU = thắng khi hoà, đúng ý gốc. Cùng họ lỗi text-shadow 07/08 bên dưới. */
+:root [data-login-tone='dark'] .lq-card,
 [data-login-tone='dark'] .lq-card {
   background:
     linear-gradient(
@@ -650,9 +819,27 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
      (đang tốt, không phải "chữ trắng trong suốt") — reset lại ngay dưới. */
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
+/* 07/08 (Hoà bắt "shadow chữ hợp lý không?"): text-shadow trên CHỈ đúng cho CHỮ SÁNG nổi trên
+   nền tối/ảnh (đúng ngữ cảnh nó sinh ra 26/07). Ở card SỮA chữ MỰC (theme sáng, hoặc nền linen
+   tone light — cùng 2 selector đã đổi card sang sữa ở :757) bóng đen dưới chữ đen = NHOÈ VIỀN
+   ("Ghi nhớ đăng nhập"/"HOẶC TIẾP TỤC VỚI" trong ảnh Hoà). Luật đã có ở §.vitals-pop ("KHÔNG
+   text-shadow khi nền đã đặc") — nay áp cho chính .lq-content. */
+:root[data-theme='light'] .lq-card > .lq-content,
+[data-login-tone='light'] .lq-card > .lq-content {
+  text-shadow: none;
+}
+/* Nền ẢNH (tone dark cưỡng bức) THẮNG theme sáng — theme sáng mà nền là ảnh thì chữ vẫn trắng
+   trên ảnh, vẫn cần bóng. `:root ` đứng trước cho specificity (0,4,0) bằng nhánh theme sáng
+   trên, đặt SAU để thắng khi hoà — cùng bản vá "tone dark cưỡng bức" của .lq-card/.lq-field
+   (grep `cùng họ lỗi specificity`). */
+:root [data-login-tone='dark'] .lq-card > .lq-content {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
 /* Nút "Vào xưởng"/"Enter the studio" (submit COPPER) — GIỮ NGUYÊN, không ăn text-shadow của
-   .lq-content (chữ trên nền đặc COPPER, không phải chữ nổi trên kính trong suốt). */
-.lq-card > .lq-content button[type='submit'] {
+   .lq-content (chữ trên nền đặc COPPER, không phải chữ nổi trên kính trong suốt) — bất kể
+   theme/tone nên selector phải ≥ (0,4,0) của 2 nhánh trên. */
+.lq-card > .lq-content button[type='submit'],
+:root [data-login-tone='dark'] .lq-card > .lq-content button[type='submit'] {
   text-shadow: none;
 }
 
@@ -883,6 +1070,8 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   background: rgba(255, 255, 255, 0.55) !important;
   border-color: rgba(0, 0, 0, 0.1) !important;
 }
+/* 07/08: thêm `:root ` — cùng họ lỗi specificity với .lq-card tone dark (xem comment ở đó). */
+:root [data-login-tone='dark'] .lq-field,
 [data-login-tone='dark'] .lq-field {
   background: rgba(255, 255, 255, 0.07) !important;
   border-color: rgba(255, 255, 255, 0.13) !important;

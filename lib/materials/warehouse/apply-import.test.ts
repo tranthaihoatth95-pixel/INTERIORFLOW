@@ -213,5 +213,64 @@ console.log('\n[đuôi độ lớn] cấm bóc chữ làm sai độ lớn con s�
   ok('"(1.500.000)" đọc thành ÂM theo quy ước kế toán', parseNumberCell('(1.500.000)') === -1_500_000);
 }
 
+/* ═══ 🔴 VÒNG 3 (06/08) — ① MỘT cỗ máy đọc số cho cả cửa nhập lẫn số lượng ═══
+ * `parseNumberCell` nay sống ở `lib/ffe/parse-number.ts` và `normalizeQty` gọi CHÍNH NÓ. Trước
+ * đó ô "Số lượng" đi qua bộ đọc riêng, yếu hơn: `'1.200'` → **1** (thay vì 1200) ⇒ hồ sơ FF&E ra
+ * 300.000đ thay vì 300.000.000đ, 0 lỗi 0 cảnh báo. Khoá cả 2 chiều tại đúng cửa nhập Excel. */
+console.log('\n[vòng 3 ①] cột Số lượng đọc bằng đúng cỗ máy của cột Giá');
+{
+  const s = sheet(['Tên', 'Số lượng', 'ĐVT'], [
+    ['Gạch', '1.200', 'cái'],
+    ['Ván sàn', '2,450', 'cái'],
+    ['Dây điện', '1.234,5', 'm'],
+    ['Đèn', '50k', 'cái'],
+    ['Bàn', '(1.500)', 'cái'],
+  ]);
+  const rows = buildImportRows(s, guessMapping(s.headers));
+  ok('"1.200" → 1200 (trước: 1 — sai 1000 lần, im lặng)', rows[0].ffe?.qty === 1200);
+  ok('"2,450" → 2450 (trước: 2)', rows[1].ffe?.qty === 2450);
+  ok('"1.234,5" đơn vị ĐO → 1234.5 (trước: cả dòng bị loại)', rows[2].error === null && rows[2].ffe?.qty === 1234.5);
+  ok('"50k" vẫn TỪ CHỐI ồn ào (không đoán 50)', rows[3].error !== null && /Số lượng/.test(rows[3].error!));
+  ok('"(1.500)" số âm kế toán → loại, KHÔNG thành +2 như trước', rows[4].error !== null);
+  ok('cột Giá và cột Số lượng nay đọc y hệt nhau', parseNumberCell('1.200') === 1200);
+}
+
+/* ═══ 🔴 VÒNG 3 (06/08) — ⑦ ghép ĐÚNG cột rồi vẫn RƠI GIÁ TRỊ, im lặng ═══
+ * Đo được: `normalizeColorHex('Trắng sữa'|'Xám'|'RAL 9010'|'NCS S 1000-N') = undefined` và
+ * `parseConfidenceCell('Cao'|'Thấp'|'90%') = undefined` ⇒ dòng thật vào kho KHÔNG có `colorHex`,
+ * `warnings: []`. Bảng giá NCC Việt gần như không bao giờ ghi mã hex ⇒ cột "Màu" người ta bỏ
+ * công đưa vào bị nuốt gần như MỌI lần. */
+console.log('\n[vòng 3 ⑦] màu / độ tin cậy đọc không được thì phải NÓI + giữ chữ gốc');
+{
+  const s = sheet(['Tên', 'Màu sắc', 'Độ tin cậy'], [
+    ['Ghế', 'Trắng sữa', 'Cao'],
+    ['Bàn', 'RAL 9010', '90%'],
+    ['Đèn', '#C79A63', 'Suy đoán'],
+  ]);
+  const rows = buildImportRows(s, guessMapping(s.headers));
+
+  ok('màu chữ → dòng VẪN được nhập (không vứt vì một ô phụ)', rows[0].error === null);
+  ok('màu chữ → CÓ cảnh báo (trước: warnings rỗng)', rows[0].warnings.some((w) => /Màu "Trắng sữa"/.test(w)));
+  ok('màu chữ → chữ gốc GIỮ trong Ghi chú, không bốc hơi', rows[0].payload?.note === 'Màu: Trắng sữa');
+  ok('màu chữ → ô Màu vẫn TRỐNG (không đoán hex từ tên gọi)', rows[0].payload?.colorHex === undefined);
+  ok('độ tin cậy chữ lạ → CÓ cảnh báo', rows[0].warnings.some((w) => /Độ tin cậy "Cao"/.test(w)));
+  ok('độ tin cậy chữ lạ → chữ gốc giữ trong confidenceBasis (không nhét thêm vào note)',
+    rows[0].ffe?.confidenceBasis === 'Cao' && rows[0].ffe?.confidence === undefined);
+
+  ok('mã RAL cũng được giữ chữ + cảnh báo', rows[1].payload?.note === 'Màu: RAL 9010' && rows[1].warnings.length === 2);
+
+  ok('màu ĐỌC ĐƯỢC thì KHÔNG cảnh báo oan, không bẩn Ghi chú',
+    rows[2].payload?.colorHex === '#c79a63' && rows[2].payload?.note === undefined && rows[2].warnings.length === 0);
+  ok('độ tin cậy đọc được vẫn về đúng mức', rows[2].ffe?.confidence === 'inferred');
+}
+
+// ---- ⑦ ghi chú SẴN CÓ của người dùng không bị đè, chỉ nối thêm ----
+{
+  const s = sheet(['Tên', 'Ghi chú', 'Màu'], [['Ghế', 'Hàng đặt 30 ngày', 'Xám']]);
+  const rows = buildImportRows(s, guessMapping(s.headers));
+  ok('nối vào ghi chú cũ, không ghi đè', rows[0].payload?.note === 'Hàng đặt 30 ngày · Màu: Xám');
+  ok('món rời cũng mang ghi chú đã nối', rows[0].ffe?.note === 'Hàng đặt 30 ngày · Màu: Xám');
+}
+
 console.log(`\n${pass} pass, ${fail} fail`);
 if (fail > 0) process.exit(1);

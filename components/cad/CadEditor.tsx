@@ -19,11 +19,12 @@ import { useRouter } from 'next/navigation';
 import {
   FolderOpen, Download, ArrowRight, Eye, EyeOff, Lock, Unlock, Trash2, X, Command, Sparkles, Wand2,
   ShieldCheck, AlertTriangle, Info, ShieldAlert, Crosshair, Tag, Check, Lightbulb, FileText, Save, Camera,
-  LayoutTemplate, FileSignature, Wrench, Ruler, ListOrdered, History, HardDrive, Trees,
+  LayoutTemplate, FileSignature, Wrench, Ruler, ListOrdered, History, HardDrive, Trees, LayoutPanelTop,
 } from 'lucide-react';
 import IOMenu from '@/components/ui/IOMenu';
 import MenuButton from '@/components/ui/MenuButton';
 import { useCadStore } from '@/lib/cad/store';
+import { useT } from '@/lib/i18n';
 import { useCadLiveStatus } from '@/lib/cad/live-status';
 import type { HatchPattern } from '@/lib/cad/model';
 import { parseDxfEx, exportDxfEx, type DxfExportReport, type DxfLoadReport } from '@/lib/cad/dxf';
@@ -32,11 +33,12 @@ import { parseDxfEx, exportDxfEx, type DxfExportReport, type DxfLoadReport } fro
 // (`mainClusterBox`) và bộ đọc ngữ nghĩa mặt bằng (`planGridAxes`/`planCoreZones`/
 // `planAreaCrossCheck`). KHÔNG viết lại thuật toán ở đây.
 import {
-  mainClusterBox, planGridAxes, planCoreZones, planAreaCrossCheck,
+  planGridAxes, planCoreZones, planAreaCrossCheck,
   type PlanGrid, type CoreZone, type AreaCrossCheck, type Box as PlanBox,
 } from '@/lib/cad/dxf-plan';
 // Câu trạng thái + luật chọn khung nhìn (dùng CHUNG với phím F ở CadCanvas) — thuần, test được.
-import { importStatusLine, zoomExtentsPlan } from '@/lib/cad/import-summary';
+import { importStatusLine, zoomExtentsPlan, exportBlockSummary, inferSummaryLine, SKIPPED_LABELS } from '@/lib/cad/import-summary';
+import { openDxfFile } from '@/lib/cad/dxf-open';
 import { openDwgFile } from '@/lib/cad/dwg';
 import { renderDocToDataURL, renderZoneMapToDataURL } from '@/lib/cad/render';
 import { exportCadToPdf, DEFAULT_PDF_PAPER_MM, DEFAULT_PDF_MARGIN_MM } from '@/lib/cad/pdf';
@@ -71,6 +73,8 @@ import { suggestFix } from '@/lib/cad/standards/fix-suggest';
 import { exportStandardsReportPdf, extractProjectName, extractDrawnBy } from '@/lib/cad/standards-report';
 import { classifyOperator, rulesForOperator, type OperatorType } from '@/lib/cad/operator-profile';
 import { suggestRoomNames, type RoomNameSuggestion } from '@/lib/cad/room-autolabel';
+import { detectRooms, staleRoomBoundaries, type RoomDetection, type RoomProposal, type StaleRoomBoundary } from '@/lib/cad/room';
+import { findBrokenPocheePairs } from '@/lib/cad/poche';
 import {
   suggestRoomLightingPlans, suggestSwitchPositions, suggestCircuitGroups, suggestOutletPlacements,
   checkAcUnitBedProximity,
@@ -114,6 +118,11 @@ export default function CadEditor() {
   }, []);
   const [standardsOpen, setStandardsOpen] = useState(false);
   const [autoLabelOpen, setAutoLabelOpen] = useState(false);
+  const [roomDetectOpen, setRoomDetectOpen] = useState(false);
+  // M-EMPTY (07/08) — thẻ màn-trống chặng 2D (xem khối render dưới `<CadCanvas />`).
+  const t = useT();
+  const docIsEmpty = useCadStore((s) => s.doc.entities.length === 0);
+  const [emptyCardDismissed, setEmptyCardDismissed] = useState(false);
   const [mepOpen, setMepOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [titleBlockOpen, setTitleBlockOpen] = useState(false);
@@ -130,6 +139,8 @@ export default function CadEditor() {
   // ref) để nút Huỷ re-render đúng lúc — dwgImportAbort !== null nghĩa là đang có 1 lượt nhập DWG
   // chạy, bấm gọi .abort() → openDwgFile tự reject với dwgCancelledMessage().
   const [dwgImportAbort, setDwgImportAbort] = useState<AbortController | null>(null);
+  // G-M1-01 — cùng khuôn với DWG: khác null nghĩa là đang có một lượt nhập DXF chạy nền.
+  const [dxfImportAbort, setDxfImportAbort] = useState<AbortController | null>(null);
   // GỐC B1/B3 — BÁO CÁO NẠP DXF. `parseDxfEx()` trả sẵn 7 trường (lib/cad/dxf.ts:452) nhưng trước
   // phiên này màn CAD gọi bản mỏng `parseDxf()` rồi vứt báo cáo ⇒ người dùng không biết vừa mất gì
   // (G-M1-02). Giữ ở state để panel hiện được sau khi bản vẽ đã lên màn hình.
@@ -266,11 +277,16 @@ export default function CadEditor() {
     // KS3 — đúng MỘT phần duyệt được: file xuất là một khối, không tải nửa file. Không bịa thêm
     // item giả (bỏ tick 1 block không làm được gì cho bản xuất) — luật 1 của Checkpoint: nơi gọi
     // chỉ được ghi theo đúng danh sách `onAccept` trả về.
+    // G-M1-20 — nhãn phải nói ĐÚNG thứ vừa xảy ra. Câu cũ ("đã làm phẳng block") viết từ thời bộ
+    // ghi chưa dựng lại được block; nay nó giữ tới 91–457 khối mỗi file, nói vậy là doạ người dùng
+    // về một mất mát KHÔNG có thật. Câu do `exportBlockSummary()` đúc — hàm thuần, kiểm được bằng
+    // báo cáo thật, và là NƠI TIÊU THỤ của `insertsWritten`/`blockDefsWritten`/`preservedBlocks`.
+    const sum = exportBlockSummary(report);
     setDxfExportItems([
       {
         id: 'dxf',
-        label: 'Tải file DXF đã làm phẳng block',
-        detail: `${report.flattenedBlockCount} block · ${sumFlattened(report)} hình`,
+        label: sum.label,
+        detail: sum.detail,
         why: report.warnings.join(' '),
         selected: true,
       },
@@ -286,7 +302,7 @@ export default function CadEditor() {
     }
     st.setStatus('Đang dựng PDF vector…');
     try {
-      await exportCadToPdf(st.doc, 'layout.pdf', { title: 'InteriorFlow — Drafting CAD', dimStyle: st.dimStyle });
+      await exportCadToPdf(st.doc, 'layout.pdf', { title: 'InteriorFlow — Thiết kế 2D', dimStyle: st.dimStyle });
       st.setStatus('Đã xuất layout.pdf (PDF vector — nét/text thật, không phải ảnh).');
     } catch (err) {
       st.setStatus(`Lỗi xuất PDF: ${err instanceof Error ? err.message : String(err)}`);
@@ -303,6 +319,16 @@ export default function CadEditor() {
   // bắc cầu CustomEvent riêng, CadSheets.tsx (nơi giữ sheets[]) lắng nghe và gọi exportSheetSetPdf().
   const doExportSheetSetPdf = () => {
     window.dispatchEvent(new CustomEvent('cad:sheetset-pdf-export-request'));
+  };
+  /**
+   * Làn C (06/08) — mục "Xuất bộ hồ sơ" nay MỞ HỘP THOẠI trước (Màn 7: chọn khổ/hướng giấy · xem
+   * trước tờ · soát bảng nét · danh sách kiểm đọc từ Doc thật) thay vì xuất thẳng "mù". Vẫn CÙNG
+   * một đích: nút xuất trong hộp thoại phát lại đúng `cad:sheetset-pdf-export-request` ở trên, nên
+   * `doExportSheetSetPdf` giữ nguyên, không có đường xuất thứ hai. Hộp thoại mount ở CadSheets.tsx
+   * (nơi giữ sheets[]) — cùng lý do bắc cầu đã ghi ngay trên.
+   */
+  const doOpenPaperExport = () => {
+    window.dispatchEvent(new CustomEvent('cad:paper-export-dialog-request'));
   };
   const onOpenIdfFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -405,11 +431,18 @@ export default function CadEditor() {
    */
   const onImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
+    e.target.value = '';
     if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const { doc, report } = parseDxfEx(String(reader.result));
+    // G-M1-01 (06/08 vòng 2) — TRƯỚC: `FileReader` + `parseDxfEx()` chạy THẲNG trên luồng chính,
+    // không tiến độ, không huỷ. Máy bận thì tệp 5–27 MB đo được 12–68 giây đứng hình. NAY đi qua
+    // `openDxfFile()` → Worker riêng (`lib/cad/dxf-worker.ts`), thanh trạng thái đếm giây, và nút
+    // Huỷ dùng CHUNG khuôn với đường DWG có sẵn.
+    const controller = new AbortController();
+    setDxfImportAbort(controller);
+    openDxfFile(f, { signal: controller.signal })
+      .then(({ doc, report }) => {
+        setDxfImportAbort(null);
+        try {
         useCadStore.getState().importDoc(doc, 'replace');
 
         // ── B2 · cụm vẽ chính ──────────────────────────────────────────────────────────────
@@ -418,7 +451,10 @@ export default function CadEditor() {
         // đây: hai chỗ tự tính thì sớm muộn lệch nhau, người dùng nạp file thấy một khung, bấm F
         // lại thấy khung khác. Hàm đó trả `mode:'full'` khi bản vẽ không dùng quy ước layer công
         // trình nào nó biết ⇒ giữ NGUYÊN hành vi cũ, không đoán bừa.
-        const main = mainClusterBox(doc);
+        // 🔴 G-M1-04 vòng 2 — TRƯỚC ĐÂY chỗ này còn gọi RIÊNG `mainClusterBox(doc)` để nuôi panel,
+        // nên nút "Về cụm vẽ chính" trên panel bay tới một khung KHÁC khung lúc nạp (đo được:
+        // lệch trên 6/6 file — 40,2×36,0 m vs 28,5×26,2 m). Đúng cái bệnh mà chính comment bên
+        // dưới cảnh báo, chỉ là nó xảy ra ở ĐƯỜNG KHÁC. Nay panel dùng LẠI `view.box`.
         const view = zoomExtentsPlan(doc);
         const useCluster = view?.mode === 'mainCluster';
         if (view && useCluster) {
@@ -432,14 +468,22 @@ export default function CadEditor() {
         // vì một con số cộng gộp, và KHÔNG đếm các bản ghi bỏ đi cũng không mất gì trên bản vẽ
         // (SEQEND/ATTDEF/VIEWPORT — cộng vào là báo động giả). Bảng chi tiết đủ 7 trường vẫn nằm
         // trong panel "Báo cáo nạp bản vẽ" bên dưới.
+        // G-M2-02 vế "không màn nào báo hai bản đang lệch" — cặp poché RÁCH SẴN trong file
+        // (hai nửa của một tường đứng hai chỗ, bệnh cũ xảy ra trước khi có neo) phải LỘ MẶT ngay
+        // lúc nạp, vì 2D vẽ cả hai còn 3D chỉ dựng từ vùng tô ⇒ cùng bức tường hai vị trí tuỳ
+        // chặng. Không tự sửa (ghép mò là kéo nhầm mảng, K3) — chỉ nói cho người dùng biết.
+        const brokenPairs = findBrokenPocheePairs(useCadStore.getState().doc);
+        const brokenNote = brokenPairs.length > 0
+          ? ` ⚠ ${brokenPairs.length} tường có vùng tô LỆCH khỏi đường bao từ trong file — 3D sẽ dựng theo vùng tô, khác vị trí nét 2D. Chọn tường đó rồi dời lại cho khớp.`
+          : '';
         useCadStore.getState().setStatus(
-          importStatusLine({ fileName: f.name, report, farEntities: view?.farEntities ?? 0 }),
+          importStatusLine({ fileName: f.name, report, farEntities: view?.farEntities ?? 0 }) + brokenNote,
         );
         setDxfLoad({
           fileName: f.name,
           report,
-          clusterBox: main?.box ?? null,
-          droppedFar: main?.droppedFar ?? 0,
+          clusterBox: view?.mode === 'mainCluster' ? view.box : null,
+          droppedFar: view?.farEntities ?? 0,
           zoomedToCluster: useCluster,
           plan: null,
         });
@@ -455,12 +499,15 @@ export default function CadEditor() {
           const ms = Math.round(performance.now() - t0);
           setDxfLoad((prev) => (prev && prev.fileName === f.name ? { ...prev, plan: { grid, cores, area, ms } } : prev));
         }, 0);
-      } catch {
-        useCadStore.getState().setStatus('Không đọc được DXF (bỏ qua entity lạ).');
-      }
-    };
-    reader.readAsText(f);
-    e.target.value = '';
+        } catch {
+          useCadStore.getState().setStatus('Không đọc được DXF (bỏ qua entity lạ).');
+        }
+      })
+      .catch((err: unknown) => {
+        setDxfImportAbort(null);
+        // Câu lỗi/huỷ/quá giờ do `dxf-import.ts` đúc sẵn bằng chữ người dùng — hiện thẳng.
+        useCadStore.getState().setStatus(err instanceof Error ? err.message : 'Không mở được tệp DXF.');
+      });
   };
 
   // Mở DWG — parse chạy trong Web Worker cô lập (lib/cad/dwg-worker.ts, chứa dependency GPL
@@ -570,7 +617,7 @@ export default function CadEditor() {
         <IOMenu
           kind="import"
           size="sm"
-          title="Nhập / mở file vào chặng Drafting CAD"
+          title="Nhập / mở file vào chặng Thiết kế 2D"
           items={[
             { id: 'dxf', label: 'Mở DXF', sub: 'Bản vẽ AutoCAD trao đổi (.dxf)', icon: <FolderOpen size={15} />, onSelect: () => fileRef.current?.click() },
             { id: 'dwg', label: 'Mở DWG', sub: 'Parse trong Web Worker riêng — chưa hỗ trợ block INSERT/DIMENSION', icon: <FolderOpen size={15} />, onSelect: () => dwgRef.current?.click() },
@@ -583,13 +630,13 @@ export default function CadEditor() {
           kind="export"
           size="sm"
           align="left"
-          title="Xuất file từ chặng Drafting CAD"
+          title="Xuất file từ chặng Thiết kế 2D"
           items={[
             { id: 'png', label: 'PNG', sub: 'Ảnh raster nền trắng — bản vẽ đang mở', icon: <Download size={15} />, onSelect: doExportPng },
             { id: 'dxf', label: 'DXF', sub: 'Trao đổi với AutoCAD — bản vẽ đang mở', icon: <Download size={15} />, onSelect: doExportDxf },
             { id: 'pdf', label: 'PDF', sub: 'PDF vector (nét/text thật) — layer chưa ẩn/hiện được trong PDF', icon: <FileText size={15} />, onSelect: doExportPdf },
             { id: 'idf', label: '.idf', sub: 'File project JSON — TẤT CẢ sheet + metadata, để backup/chia sẻ', icon: <Save size={15} />, onSelect: doExportIdf },
-            { id: 'sheetset-pdf', label: 'Xuất bộ hồ sơ (PDF nhiều tờ)', sub: 'TẤT CẢ sheet gộp 1 PDF — mục lục đầu + mỗi tờ 1 trang, giữ khổ giấy/tỉ lệ riêng', icon: <ListOrdered size={15} />, onSelect: doExportSheetSetPdf },
+            { id: 'sheetset-pdf', label: 'Xuất bộ hồ sơ (PDF nhiều tờ)…', sub: 'Chọn khổ/hướng giấy · xem trước tờ · soát bảng nét, rồi xuất TẤT CẢ sheet gộp 1 PDF', icon: <ListOrdered size={15} />, onSelect: doOpenPaperExport },
             { id: 'ifpack', label: 'Sao lưu dự án (.ifpack)', sub: 'ZIP đầy đủ — bản vẽ + ảnh markup hiện trường, phục hồi lại được', icon: <Save size={15} />, onSelect: doExportIfpack },
             // 03/08 SPEC-APP-SHELL-CHUNG §2: 2 NÚT "Đưa sang…" to trên fileBar đã CẮT (trùng
             // segmented chuyển chặng ở header). NĂNG LỰC handoff-ảnh (stash ảnh bản vẽ sang
@@ -638,6 +685,7 @@ export default function CadEditor() {
             { id: 'schedule', label: 'Thống kê · Legend', sub: 'Bảng schedule tự đếm + khung chú giải ký hiệu — đóng dấu lên bản vẽ được', icon: <ListOrdered size={15} />, onSelect: () => setScheduleOpen((o) => !o), active: scheduleOpen },
             { id: 'standards', label: 'Kiểm chuẩn', sub: 'Đối chiếu TCVN/QCVN/ISO — chỉ đọc & đề xuất, không tự sửa', icon: <ShieldCheck size={15} />, onSelect: () => setStandardsOpen((o) => !o), active: standardsOpen },
             { id: 'autolabel', label: 'Gợi ý tên phòng', sub: 'Đoán tên phòng chưa có nhãn — chỉ đề xuất, bạn bấm Áp dụng', icon: <Tag size={15} />, onSelect: () => setAutoLabelOpen((o) => !o), active: autoLabelOpen },
+            { id: 'rooms', label: 'Nhận diện phòng', sub: 'Nhãn + tường → cấu kiện phòng thật: biên đóng băng, m² sống — duyệt từng phòng', icon: <LayoutPanelTop size={15} />, onSelect: () => setRoomDetectOpen((o) => !o), active: roomDetectOpen },
             { id: 'mep', label: 'MEP sơ cấp', sub: 'Gợi ý chiếu sáng/công tắc/ổ cắm/máy lạnh — chỉ đề xuất', icon: <Lightbulb size={15} />, onSelect: () => setMepOpen((o) => !o), active: mepOpen },
             { id: 'history', label: 'Lịch sử vẽ', sub: 'Xem lại các bước đã vẽ — click 1 bước để Undo/Redo tới đó', icon: <History size={15} />, onSelect: () => setHistoryOpen((o) => !o), active: historyOpen },
           ]}
@@ -673,6 +721,53 @@ export default function CadEditor() {
       {/* vùng canvas + panel */}
       <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
         <CadCanvas />
+        {/* M-EMPTY (07/08, Hoà chốt "bỏ dự án mẫu — app bắt đầu trống") — màn TRỐNG chặng 2D:
+            bản vẽ 0 entity thì nói rõ đang trống + 2 lối TẠI CHỖ (X2): nhập bản vẽ có sẵn (mở
+            đúng picker DXF sẵn có) / vẽ mới (đóng thẻ, canvas đã sẵn sàng vẽ). Card tự biến mất
+            khi có entity đầu tiên. pointerEvents chỉ trên thẻ — không chặn canvas phía sau. */}
+        {docIsEmpty && !emptyCardDismissed && (
+          <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', pointerEvents: 'none', zIndex: 5 }}>
+            <div
+              style={{
+                pointerEvents: 'auto', textAlign: 'center', maxWidth: 380, padding: '26px 28px',
+                borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
+                background: 'var(--panel)', boxShadow: '0 8px 32px rgba(0,0,0,.18)',
+              }}
+            >
+              <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: 'var(--t1)', lineHeight: 1.5 }}>
+                {t('Bản vẽ đang trống', 'This drawing is empty')}
+              </p>
+              <p style={{ margin: '6px 0 16px', fontSize: 12.5, color: 'var(--t3)', lineHeight: 1.6 }}>
+                {t(
+                  'Nhập bản vẽ CAD có sẵn để làm tiếp, hoặc vẽ mới ngay trên nền trống này.',
+                  'Import an existing CAD drawing to continue, or start drawing on this blank canvas.',
+                )}
+              </p>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  style={{
+                    padding: '9px 16px', borderRadius: 999, border: 'none', cursor: 'pointer',
+                    background: 'var(--accent)', color: '#fff', fontSize: 12.5, fontWeight: 600, lineHeight: 1.5,
+                  }}
+                >
+                  {t('Nhập bản vẽ có sẵn', 'Import existing drawing')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEmptyCardDismissed(true)}
+                  style={{
+                    padding: '9px 16px', borderRadius: 999, border: '1px solid var(--border)', cursor: 'pointer',
+                    background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, fontWeight: 600, lineHeight: 1.5,
+                  }}
+                >
+                  {t('Vẽ mới', 'Start drawing')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Toolbelt ổ ⑤ — CadToolbar + CadTouchDock KHÔNG còn nổi trong canvas: nay gộp thành
             dock kính giữa-dưới Stage (`CadToolbelt.tsx`), mount ở `CadStageScreen` qua prop
             `toolbelt` của AppShell. Nút Nội thất/Vật liệu bắc cầu về đây qua 2 CustomEvent
@@ -681,6 +776,7 @@ export default function CadEditor() {
         {materialOpen && <MaterialPalette onClose={() => setMaterialOpen(false)} />}
         {standardsOpen && <StandardsPanel onClose={() => setStandardsOpen(false)} />}
         {autoLabelOpen && <AutoLabelPanel onClose={() => setAutoLabelOpen(false)} />}
+        {roomDetectOpen && <RoomDetectPanel onClose={() => setRoomDetectOpen(false)} />}
         {mepOpen && <MepPanel onClose={() => setMepOpen(false)} />}
         {templateOpen && <TemplatePanel onClose={() => setTemplateOpen(false)} />}
         {titleBlockOpen && <TitleBlockPanel onClose={() => setTitleBlockOpen(false)} />}
@@ -709,12 +805,12 @@ export default function CadEditor() {
         )}
         {/* P1 verify (04/08) — nút "Huỷ" thật cho nhập DWG, cùng vị trí/khuôn handoffMsg. Chỉ hiện
             khi đang có 1 lượt openDwgFile() chạy (dwgImportAbort !== null). */}
-        {dwgImportAbort && (
+        {(dwgImportAbort || dxfImportAbort) && (
           <div style={{ position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 30, background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px 8px 14px', fontSize: 12.5, color: 'var(--t2)', display: 'flex', alignItems: 'center', gap: 10 }}>
-            Đang nhập DWG…
+            {dwgImportAbort ? 'Đang nhập DWG…' : 'Đang mở bản vẽ…'}
             <button
               type="button"
-              onClick={() => dwgImportAbort.abort()}
+              onClick={() => (dwgImportAbort ?? dxfImportAbort)?.abort()}
               style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--t1)', fontSize: 12, cursor: 'pointer' }}
             >
               <X size={13} /> Huỷ
@@ -841,11 +937,26 @@ function DxfExportCheckpoint({
       </div>
       <Checkpoint
         phase="preview"
-        title="Bản xuất này mất cấu trúc block"
+        // G-M1-20 — tiêu đề cũ ("Bản xuất này mất cấu trúc block") nay chỉ đúng khi KHÔNG giữ được
+        // khối nào. Giữ được rồi mà vẫn báo mất là nói ngược sự thật với người dùng.
+        title={report.insertsWritten > 0 ? 'Xem lại phần khối trước khi tải' : 'Bản xuất này mất cấu trúc block'}
         // KS1 — SẢN PHẨM THẬT: bảng tên block + số hình đếm từ chính bản DXF vừa sinh, không phải
         // câu "đã tạo xong". Đây là dữ liệu bản vẽ của người dùng, đọc lúc chạy (§0h).
         preview={
           <div style={{ width: '100%', padding: 12, alignSelf: 'stretch' }}>
+            {/* G-M1-20 — NƠI TIÊU THỤ của `insertsWritten`/`blockDefsWritten`/`preservedBlocks`:
+                nói phần GIỮ ĐƯỢC trước, rồi mới tới phần mất. Trước đây bản xuất giữ tới 457 khối
+                mà màn này chỉ kể phần mất — người dùng tưởng mình mất sạch. */}
+            {report.insertsWritten > 0 && (
+              <p style={{ margin: '0 0 8px', fontSize: 11.5, lineHeight: 1.5, color: 'var(--t1)' }}>
+                {/* CỐ Ý không nêu số "loại" ở đây: `blockDefsWritten` (định nghĩa GHI RA) và số tên
+                    trong `preservedBlocks` (tên block GỐC) là hai phép đếm khác nhau — một bản chèn
+                    co giãn không đều phải tách định nghĩa riêng nên 1 tên gốc có thể ra 2 định
+                    nghĩa. Hiện cả hai cạnh nhau là bắt người dùng đọc hai con số "loại" vênh nhau
+                    cho cùng một việc. Số loại chỉ hiện MỘT chỗ, ở dòng dưới cùng. */}
+                Giữ nguyên <b>{report.insertsWritten}</b> khối — mở lại ở phần mềm CAD vẫn sửa được theo khối.
+              </p>
+            )}
             <p style={{ margin: '0 0 8px', fontSize: 11.5, lineHeight: 1.5, color: 'var(--t2)' }}>
               {report.warnings.join(' ')}
             </p>
@@ -909,6 +1020,20 @@ function sumFlattened(report: DxfExportReport): number {
  * Chữ theo `docs/SPEC-NGON-NGU-CHI-DAN.md`: câu ngắn ≤12 từ, hành động trước, không jargon
  * ("entity" → "hình", "block" giữ vì đúng từ nhà nghề CAD), mỗi việc còn làm được đều có NÚT.
  * ───────── */
+/** `ElementType` → chữ người dùng đọc (G-M1-20). Cùng bộ từ với `schedule.ts` `ELEMENT_TYPE_LABELS`,
+ *  rút gọn còn tiếng Việt cho panel hẹp. */
+const ELEMENT_TYPE_VI: Record<string, string> = {
+  wall: 'Tường · vách',
+  column: 'Cột',
+  beam: 'Dầm',
+  door: 'Cửa đi',
+  window: 'Cửa sổ',
+  slab: 'Sàn',
+  space: 'Phòng · không gian',
+  furniture: 'Nội thất',
+  null: 'Không phải cấu kiện',
+};
+
 const DXF_TYPE_VI: Record<string, string> = {
   line: 'Đoạn thẳng',
   polyline: 'Đường nhiều đoạn',
@@ -944,6 +1069,12 @@ function DxfImportReportPanel({
   const blockNames = Object.keys(report.blocksExpanded).length;
   const blockInserts = Object.values(report.blocksExpanded).reduce((a, b) => a + b, 0);
   const layerCount = Object.keys(report.layers).length;
+  // G-M1-20 — `report.elementTypes` từ nay CÓ người đọc (K4). Cắt 6 lớp đầu: đủ để nhận ra máy
+  // đoán sai chỗ nào mà không biến panel thành bảng dài không ai đọc.
+  const inferLine = inferSummaryLine(report.elementTypes);
+  const inferAll = Object.entries(report.elementTypes.byLayer);
+  const inferRows = inferAll.slice(0, 6);
+  const inferHidden = inferAll.length - inferRows.length;
 
   return (
     <div
@@ -994,6 +1125,34 @@ function DxfImportReportPanel({
         </p>
       </Section>
 
+      {/* G-M1-20 · K4 — NƠI TIÊU THỤ của `report.elementTypes`. Máy vừa tự gán loại cấu kiện cho
+          hàng nghìn hình dựa trên TÊN LỚP; giấu chuyện đó đi thì người dùng tưởng bản vẽ vốn đã
+          khai sẵn. K3 buộc phải nói rõ là ĐOÁN, và đoán từ đâu, để họ còn sửa lại. */}
+      {inferLine && (
+        <Section title="Tự phân loại">
+          <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.55, color: 'var(--t2)' }}>{inferLine}</p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, marginTop: 6 }}>
+            <thead>
+              <tr>
+                <th style={dxfTh}>Lớp</th>
+                <th style={dxfTh}>Máy đoán là</th>
+              </tr>
+            </thead>
+            <tbody>
+              {inferRows.map(([lay, t]) => (
+                <tr key={lay}>
+                  <td style={dxfTd}>{lay}</td>
+                  <td style={dxfTd}>{ELEMENT_TYPE_VI[t] ?? t}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {inferHidden > 0 && (
+            <p style={{ margin: '6px 0 0', fontSize: 11, color: 'var(--t4)' }}>… và {inferHidden} lớp nữa.</p>
+          )}
+        </Section>
+      )}
+
       {skipRows.length > 0 && (
         <Section title="Bỏ qua — không có trên bản vẽ">
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5 }}>
@@ -1006,7 +1165,10 @@ function DxfImportReportPanel({
             <tbody>
               {skipRows.map(([k, n]) => (
                 <tr key={k}>
-                  <td style={dxfTd}>{k}</td>
+                  {/* Dùng CHUNG từ điển với thanh trạng thái (`SKIPPED_LABELS`) — trước đây bảng này
+                      in thẳng tên record DXF (`POINT`/`ATTDEF`/`SEQEND`) trong khi thanh trạng thái
+                      nói "điểm đánh dấu": cùng một việc, hai thứ tiếng, trên cùng một màn. */}
+                  <td style={dxfTd}>{SKIPPED_LABELS[k] ?? k}</td>
                   <td style={{ ...dxfTd, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{n}</td>
                 </tr>
               ))}
@@ -1870,6 +2032,118 @@ const reportLabel: React.CSSProperties = { display: 'block', fontSize: 9.5, colo
 const reportField: React.CSSProperties = { width: '100%', boxSizing: 'border-box', fontSize: 11.5, padding: '5px 7px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)' };
 const reportBtn: React.CSSProperties = { fontSize: 11.5, padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--t1)', cursor: 'pointer' };
 
+/* ───────── Panel Nhận diện phòng (G-M2-04, SPEC-TANG-DU-LIEU-CAU-KIEN §6.3) ─────────
+ * Nhãn TEXT + biên dò được → đề xuất RoomEntity (cấu kiện phòng THẬT: biên đóng băng, m² sống).
+ * Ba luật §6.3 giữ nguyên ở tầng UI: duyệt TỪNG phòng (không có "áp tất cả") · phòng dò không ra
+ * biên hiện LÝ DO (K3, không im lặng) · tường đổi chỉ BÁO biên cũ, bấm mới cập nhật (L5). */
+function RoomDetectPanel({ onClose }: { onClose: () => void }) {
+  const doc = useCadStore((s) => s.doc);
+  const replaceEntities = useCadStore((s) => s.replaceEntities);
+  const updateEntities = useCadStore((s) => s.updateEntities);
+  const [result, setResult] = useState<RoomDetection | null>(null);
+  const [stale, setStale] = useState<StaleRoomBoundary[] | null>(null);
+  const [msg, setMsg] = useState('');
+
+  const run = () => {
+    setResult(detectRooms(doc));
+    setStale(staleRoomBoundaries(doc));
+  };
+  const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 2200); };
+
+  const applyOne = (p: RoomProposal) => {
+    // MỘT bước Undo: phòng vào + nhãn TEXT cũ ra (giữ cả hai là hai con số cạnh nhau — đúng ca
+    // G-M2-03 "nhãn giữ nguyên, tổng chạy"). Undo trả nguyên trạng.
+    replaceEntities([p.replacesTextId], [p.room]);
+    setResult((prev) => (prev ? { ...prev, proposals: prev.proposals.filter((x) => x !== p) } : prev));
+    flash(`Đã tạo phòng "${p.room.name}" — nhãn m² từ nay tính từ biên, không còn là chữ chết.`);
+  };
+  const updateBoundary = (s: StaleRoomBoundary) => {
+    const room = doc.entities.find((e) => e.id === s.roomId);
+    if (!room || room.type !== 'room') return;
+    updateEntities([{ ...room, boundary: s.newBoundary }]);
+    setStale((prev) => (prev ? prev.filter((x) => x !== s) : prev));
+    flash(`Đã cập nhật biên "${s.name}" theo tường hiện tại.`);
+  };
+
+  const roomCount = doc.entities.filter((e) => e.type === 'room').length;
+  return (
+    <div style={{ ...panel, left: 12, top: 380, width: 360, maxHeight: '55vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={panelHead}>
+        <span>Nhận diện phòng</span>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button type="button" onClick={run} title="Dò phòng từ nhãn + tường" style={miniBtn}>
+            <Crosshair size={14} />
+          </button>
+          <button type="button" onClick={onClose} title="Đóng" style={miniBtn}>
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+      <div style={{ fontSize: 10.5, color: 'var(--t4)', padding: '0 6px 6px', lineHeight: 1.5 }}>
+        Biến nhãn phòng + tường quanh nó thành CẤU KIỆN PHÒNG: biên đóng băng, diện tích tính từ biên
+        (đổi biên là số đổi). Duyệt từng phòng — nhãn chữ cũ được thay bằng nhãn sống của phòng.
+        {roomCount > 0 && <> Đang có <b>{roomCount}</b> phòng trong bản vẽ.</>}
+      </div>
+      {msg && <div style={{ fontSize: 11, color: 'var(--accent)', padding: '0 6px 6px' }}>{msg}</div>}
+      <div style={{ overflowY: 'auto', flex: 1 }}>
+        {result === null && (
+          <div style={{ padding: '10px 8px', fontSize: 12, color: 'var(--t3)' }}>Chưa dò — bấm biểu tượng hồng tâm phía trên.</div>
+        )}
+        {result !== null && result.proposals.length === 0 && result.unresolved.length === 0 && (
+          <div style={{ padding: '10px 8px', fontSize: 12, color: 'var(--t3)' }}>
+            Không còn nhãn phòng nào để chuyển{result.alreadyRooms > 0 ? ` (${result.alreadyRooms} phòng đã nhận diện từ trước)` : ''}.
+          </div>
+        )}
+        {result?.proposals.map((p, i) => (
+          <div key={`${p.room.id}-${i}`} style={{ padding: '7px 8px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+            <span style={{ marginTop: 2 }}><LayoutPanelTop size={14} color="var(--accent)" /></span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: 'var(--t1)', lineHeight: 1.4 }}>{p.room.name}</div>
+              <div style={{ fontSize: 10, color: 'var(--t4)', marginTop: 2, lineHeight: 1.5 }}>{p.areaM2.toFixed(2)} m² · biên {p.room.boundary.length} đỉnh</div>
+            </div>
+            <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('cad:zoom-to', { detail: p.room.labelPos }))} title="Zoom tới phòng" style={miniBtn}>
+              <Crosshair size={13} />
+            </button>
+            <button type="button" onClick={() => applyOne(p)} title="Tạo phòng này (nhãn chữ cũ được thay bằng nhãn sống)" style={miniBtn}>
+              <Check size={13} />
+            </button>
+          </div>
+        ))}
+        {!!result?.unresolved.length && (
+          <div style={{ padding: '7px 8px', borderTop: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 10.5, fontWeight: 650, color: 'var(--warning)', marginBottom: 4, lineHeight: 1.5 }}>
+              {result.unresolved.length} nhãn KHÔNG dò được biên — các phòng này chưa vào tổng diện tích:
+            </div>
+            {result.unresolved.map((u) => (
+              <div key={u.textId} style={{ fontSize: 10.5, color: 'var(--t3)', padding: '3px 0', lineHeight: 1.5, display: 'flex', gap: 6 }}>
+                <span style={{ flex: 1 }}>· {u.name}</span>
+                <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('cad:zoom-to', { detail: u.at }))} title={u.reason} style={miniBtn}>
+                  <Crosshair size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {!!stale?.length && (
+          <div style={{ padding: '7px 8px', borderTop: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 10.5, fontWeight: 650, color: 'var(--warning)', marginBottom: 4, lineHeight: 1.5 }}>
+              {stale.length} phòng có biên CŨ so với tường hiện tại (số m² đang hiện là số theo biên cũ):
+            </div>
+            {stale.map((s) => (
+              <div key={s.roomId} style={{ fontSize: 10.5, color: 'var(--t3)', padding: '3px 0', lineHeight: 1.5, display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span style={{ flex: 1 }}>· {s.name}: {s.frozenAreaM2.toFixed(1)} → {s.currentAreaM2.toFixed(1)} m²</span>
+                <button type="button" onClick={() => updateBoundary(s)} style={{ ...miniBtn, width: 'auto', padding: '2px 8px', fontSize: 10.5 }}>
+                  Cập nhật biên
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ───────── Panel Gợi ý tên phòng (Sprint 4, C1.1) — CHỈ ĐỌC + ĐỀ XUẤT, không tự chèn ─────────
  * Dò các phòng CÓ BIÊN KÍN nhưng CHƯA có nhãn TEXT (room-autolabel.ts), đoán tên theo đồ nội
  * thất bên trong (hoặc diện tích/tỉ lệ nếu không có đồ nội thất đặc trưng). User PHẢI bấm "Áp
@@ -2709,16 +2983,49 @@ export function RoomTypeBox({ entity, onApply }: { entity: TextEntity; onApply: 
  * gán hiện rõ "chưa phân loại", không đoán mò từ hình học vì không có DCEL outer-boundary utility
  * nào trong app này để suy luận tường ngoài đáng tin cậy). Gán qua updateEntities (đã snapshot →
  * Undo được, tôn trọng layer khoá) — cùng pattern RoomTypeBox/BimAssignBox. */
+/** G-M2-08 — bề dày VẼ THẬT của một tường quad (mm): cạnh ngắn nhất của tứ giác poché. Chỉ đo
+ * được quad 4 đỉnh (tường đoạn chuẩn `wallSegment`); biên phức tạp hơn (chuỗi nối/vát góc) trả
+ * null — nói "không đo được", không đoán (K3). */
+function measuredWallThicknessMm(entity: Entity): number | null {
+  if (entity.type !== 'hatch' && !(entity.type === 'polyline' && entity.closed)) return null;
+  const pts = entity.points;
+  if (pts.length !== 4) return null;
+  let min = Infinity;
+  for (let i = 0; i < 4; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % 4];
+    min = Math.min(min, Math.hypot(b.x - a.x, b.y - a.y));
+  }
+  return Number.isFinite(min) && min > 0 ? min : null;
+}
+
 export function WallTypePanel({ entity, onApply }: { entity: Entity; onApply: (es: Entity[]) => void }) {
   const kind = entity.wallKind;
   const structural = entity.wallStructural ?? false;
   const [thickness, setThickness] = useState(entity.wallThicknessMm != null ? String(entity.wallThicknessMm) : '');
 
-  const applyThickness = () => {
-    const v = thickness.trim();
+  const applyThickness = (raw?: string) => {
+    const v = (raw ?? thickness).trim();
     const n = v === '' ? undefined : Number(v);
     onApply([{ ...entity, wallThicknessMm: n !== undefined && Number.isFinite(n) && n > 0 ? n : undefined }]);
   };
+  // G-M2-08 vế "ô khai chỉ ghi khi rời ô": nay gõ xong là TỰ GHI sau 500ms (debounce), không cần
+  // Enter/blur. Enter/blur vẫn ghi ngay như cũ.
+  const thicknessTimer = useRef<number | null>(null);
+  const onThicknessChange = (v: string) => {
+    setThickness(v);
+    if (thicknessTimer.current) window.clearTimeout(thicknessTimer.current);
+    thicknessTimer.current = window.setTimeout(() => applyThickness(v), 500);
+  };
+  useEffect(() => () => { if (thicknessTimer.current) window.clearTimeout(thicknessTimer.current); }, []);
+
+  // G-M2-08 vế chính "số khai ≠ hình vẽ, không ai đối chiếu": đo bề dày VẼ THẬT từ poché và so
+  // với số khai — lệch quá 5mm và quá 5% thì cảnh báo NGAY CẠNH Ô KHAI. Chỉ báo, không tự sửa
+  // bên nào (không rõ bên nào đúng — người dùng quyết).
+  const declared = entity.wallThicknessMm;
+  const measured = measuredWallThicknessMm(entity);
+  const mismatch = declared != null && measured != null
+    && Math.abs(declared - measured) > Math.max(5, declared * 0.05);
 
   return (
     <div style={{ ...panel, position: 'relative', width: '100%', padding: '8px 10px' }}>
@@ -2763,13 +3070,23 @@ export function WallTypePanel({ entity, onApply }: { entity: Entity; onApply: (e
           type="number"
           min={0}
           value={thickness}
-          onChange={(e) => setThickness(e.target.value)}
-          onBlur={applyThickness}
+          onChange={(e) => onThicknessChange(e.target.value)}
+          onBlur={() => applyThickness()}
           onKeyDown={(e) => { if (e.key === 'Enter') applyThickness(); }}
-          title="Độ dày tường khai báo (mm) — KHÔNG tự đo lại từ hình học (xem model.ts wallThicknessMm). Để trống = xoá gán."
-          style={{ flex: 1, fontSize: 11.5, padding: '4px 7px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', minWidth: 0 }}
+          title="Độ dày tường khai báo (mm) — gõ xong tự ghi sau nửa giây (Enter ghi ngay). Để trống = xoá gán."
+          style={{ flex: 1, fontSize: 11.5, padding: '4px 7px', borderRadius: 6, border: `1px solid ${mismatch ? 'var(--warning)' : 'var(--border)'}`, background: 'var(--field)', color: 'var(--t1)', minWidth: 0 }}
         />
       </div>
+      {measured != null && (
+        <div style={{ fontSize: 10, color: mismatch ? 'var(--warning)' : 'var(--t4)', marginTop: 5, lineHeight: 1.5 }}>
+          {mismatch ? (
+            <>⚠ Khai <b>{declared} mm</b> nhưng vùng tô vẽ <b>{Math.round(measured)} mm</b> — hai số đang lệch,
+            hồ sơ/BOQ sẽ không biết tin số nào. Sửa số khai hoặc vẽ lại tường cho khớp.</>
+          ) : (
+            <>Vẽ thực tế: ~{Math.round(measured)} mm{declared != null ? ' — khớp số khai.' : ' (chưa khai — số đo chỉ tham khảo).'}</>
+          )}
+        </div>
+      )}
     </div>
   );
 }

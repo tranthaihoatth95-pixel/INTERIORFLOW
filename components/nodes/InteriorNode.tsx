@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useRef } from 'react';
+import { memo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Play, Loader2, CircleAlert, CircleCheck, RotateCcw, ImagePlus, Paintbrush, X, Wand2, Frame } from 'lucide-react';
@@ -18,6 +18,7 @@ import { useSmartSelectStore } from '@/lib/smartselect/smartSelectStore';
 import { useWarpStore } from '@/lib/warp/warpStore';
 import { useSourceImage } from '@/lib/nodes/source-image';
 import CommentPin from '@/components/nodes/CommentPin';
+import { useT } from '@/lib/i18n';
 
 const PORT_GAP = 26;
 const PORT_TOP = 46;
@@ -40,6 +41,9 @@ export function ParamField({
   const fileRef = useRef<HTMLInputElement>(null);
   // Có ảnh ở input 'image' chưa — quyết định enable nút mở modal (mask / smart select / warp).
   const hasSourceImage = Boolean(useSourceImage(nodeId));
+  // G-M20-05: smartImportImage() decode ảnh lớn (TIFF/PSD/HEIC) có thể mất >1s — trước đây nút
+  // upload vẫn nhận click trong lúc đang decode (bấm lặp = 2 lượt import đua nhau ghi param).
+  const [importing, setImporting] = useState(false);
 
   if (param.kind === 'text') {
     return (
@@ -204,7 +208,8 @@ export function ParamField({
         onChange={async (e) => {
           const file = e.target.files?.[0];
           e.target.value = ''; // cho phép chọn lại cùng file sau khi lỗi
-          if (!file) return;
+          if (!file || importing) return;
+          setImporting(true);
           try {
             const { dataUrl, meta } = await smartImportImage(file);
             updateParam(nodeId, param.id, dataUrl);
@@ -214,25 +219,38 @@ export function ParamField({
             setConnectError(
               err instanceof SmartImportError ? err.message : 'Không nạp được ảnh vào node.',
             );
+          } finally {
+            setImporting(false);
           }
         }}
       />
       {hasImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={String(value)}
-          alt="input"
-          className="nodrag h-28 w-full cursor-pointer rounded-md object-cover"
-          onClick={() => fileRef.current?.click()}
-          loading="lazy"
-        />
+        <div className="relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={String(value)}
+            alt="input"
+            className={cn(
+              'nodrag h-28 w-full rounded-md object-cover',
+              importing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+            )}
+            onClick={() => !importing && fileRef.current?.click()}
+            loading="lazy"
+          />
+          {importing && (
+            <div className="pointer-events-none absolute inset-0 grid place-items-center">
+              <Loader2 size={18} className="animate-spin text-[var(--accent)]" />
+            </div>
+          )}
+        </div>
       ) : (
         <button
-          className="nodrag flex h-24 w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed border-[var(--border-strong)] text-[var(--t4)] transition hover:border-[var(--accent-ring)] hover:text-[var(--t2)]"
+          disabled={importing}
+          className="nodrag flex h-24 w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed border-[var(--border-strong)] text-[var(--t4)] transition hover:border-[var(--accent-ring)] hover:text-[var(--t2)] disabled:cursor-not-allowed disabled:opacity-60"
           onClick={() => fileRef.current?.click()}
         >
-          <ImagePlus size={18} />
-          <span className="text-[11px]">Upload / drag ảnh</span>
+          {importing ? <Loader2 size={18} className="animate-spin" /> : <ImagePlus size={18} />}
+          <span className="text-[11px]">{importing ? 'Đang nạp…' : 'Upload / drag ảnh'}</span>
         </button>
       )}
     </div>
@@ -248,6 +266,7 @@ function StatusIcon({ status }: { status: string }) {
 }
 
 function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
+  const tr = useT();
   const def = getDefinition(data.defType);
   const meta = CATEGORY_META[def.category];
   const deleteNode = useFlowStore((s) => s.deleteNode);
@@ -258,16 +277,32 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
      màn 03). CHỈ áp cho cổng target (input) — cổng nguồn không phải đích thả dây. */
   const connectFromType = useFlowStore((s) => s.connectFromType);
   const dragging = connectFromType !== null;
+  /* CHẤM TÍM "tham số đã đưa ra ngoài" (port `docs/mocks/Nút tổng.dc.html` màn 04 — 3 node con
+     có chấm ở góc phải tiêu đề + chú thích cuối khung "Chấm tím là tham số đã đưa ra ngoài").
+     CHỈ hiện khi nút tổng chứa node này ĐANG MỞ RA XEM (`!g.collapsed`): lúc thu gọn, node con
+     không nằm trên màn nên chấm vô nghĩa; chú thích trong khung mở cũng chỉ có ở trạng thái đó.
+     Chọn `some()` chứ không map cả bảng: mỗi node chỉ cần biết CÓ/KHÔNG, so sánh boolean nên
+     selector không tạo tham chiếu mới mỗi lần store đổi. */
+  const hasExposedParam = useFlowStore((s) =>
+    s.groups.some((g) => g.isMacro && !g.collapsed && (g.exposedParams ?? []).some((p) => p.nodeId === id)),
+  );
 
   return (
     <motion.div
       variants={nodePop}
       initial="hidden"
       animate="visible"
-      style={{ boxShadow: 'var(--shadow-pop)' }}
+      /* VIỀN CHỌN (port `docs/mocks/Nút tổng.dc.html` màn 01 "Đang chọn năm nút"): node được
+         chọn có viền 1.5px accent ĐẶC + quầng 4px accent-soft. Trước đây chỉ đổi màu viền sang
+         --accent-ring (accent pha 55% alpha) — ở nền Kem gần như không thấy, nên lúc quét chọn
+         5 nút để gom nút tổng không biết mình đang cầm những nút nào.
+         Quầng đi bằng box-shadow (thuộc tính paint), KHÔNG opacity — mat-card có backdrop-filter
+         (luật G1). Lúc node chạy, `.node-running-halo` là animation nên vẫn thắng inline style
+         này theo thứ tự tầng CSS — đúng ý: đang chạy thì tín hiệu "chạy" quan trọng hơn "chọn". */
+      style={{ boxShadow: selected ? 'var(--shadow-pop), 0 0 0 4px var(--accent-soft)' : 'var(--shadow-pop)' }}
       className={cn(
         'group relative mat-card w-64 rounded-[14px] border transition-colors',
-        selected ? 'border-[var(--accent-ring)]' : 'border-[var(--mat-hairline)]',
+        selected ? 'border-[1.5px] border-[var(--accent)]' : 'border-[var(--mat-hairline)]',
         status === 'error' && 'border-red-500/60',
         status === 'running' && 'node-running-halo',
       )}
@@ -285,6 +320,13 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
         <span className="flex-1 truncate text-[11.5px] font-medium tracking-[-.005em] text-[var(--t1)]" title={def.titleEn}>
           {def.title}
         </span>
+        {hasExposedParam && (
+          <span
+            aria-hidden
+            title={tr('Có tham số đưa ra ngoài mặt nút tổng', 'Has a parameter exposed on the macro node face')}
+            className="h-1.5 w-1.5 flex-none rounded-full bg-[var(--accent)]"
+          />
+        )}
         {status === 'queued' && (
           <span className="text-[10px] text-[var(--t4)]">đang chờ</span>
         )}
@@ -345,7 +387,10 @@ function InteriorNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
         <NodeExtras nodeId={id} data={data} />
       </div>
 
-      {/* ports */}
+      {/* ports — MÀU THEO KIỂU DỮ LIỆU. `DATA_TYPE_COLORS` (lib/types.ts) nay trả BIẾN token
+          `var(--p-img)`/`var(--p-mask)`/`var(--p-num)` (`app/globals.css`, port ① mock
+          `docs/mocks/Bảng nút.dc.html`) thay hex cứng ⇒ chấm cổng tự đổi theo theme Sáng/Tối
+          và theo --accent, không phải sửa 2 nơi. Viền `2px solid var(--bg)` giữ đúng mock. */}
       {def.inputs.map((port, i) => {
         const isMatch = port.dataType === connectFromType;
         return (

@@ -28,6 +28,7 @@ export function ChatPanel() {
   useEffect(() => {
     if (!open) return;
     let stop = false;
+    let warnedOffline = false; // log ĐÚNG 1 LẦN mỗi đợt đứt mạng — không spam console mỗi 3s
     const poll = async () => {
       try {
         const url = cursor.current ? `/api/chat?after=${encodeURIComponent(cursor.current)}` : '/api/chat';
@@ -39,8 +40,16 @@ export function ChatPanel() {
             setMessages((prev) => [...prev, ...body.messages].slice(-300));
           }
           setOnline(body.online);
+          warnedOffline = false; // mạng sống lại → cho phép log đợt đứt kế tiếp
         }
-      } catch {}
+      } catch (err) {
+        // Poll định kỳ, tự thử lại sau 3s — không bung lỗi ra UI cho một nhịp rớt mạng,
+        // nhưng KHÔNG nuốt im lặng (K5): ghi log 1 lần/đợt để soi được khi chat "đứng".
+        if (!warnedOffline) {
+          warnedOffline = true;
+          console.warn('[ChatPanel] Không gọi được /api/chat — sẽ tự thử lại mỗi 3s:', err);
+        }
+      }
       if (!stop) setTimeout(poll, 3000);
     };
     poll();

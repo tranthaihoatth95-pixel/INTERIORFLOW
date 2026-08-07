@@ -690,19 +690,21 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     const base = blockFootprint(b);
     if (!base) return;
     const def = BLOCK_MAP[b.block];
-    // ⚠️ KHÔNG truyền entityId ở đây (dù có b.id thật): `Scene3DViewer.tsx:201` loại MỌI group có
-    // entityId khỏi đường dựng hình TĨNH khi mode='massing' (coi đó là tường đang chỉnh), rồi
-    // `buildMassingWalls()` lại yêu cầu `heightMm` mới đưa vào đường TƯƠNG TÁC — group nội thất
-    // không có heightMm ⇒ rơi vào khe hở giữa hai đường, BIẾN MẤT khỏi cảnh hoàn toàn. Đã thử và
-    // phát hiện lỗi này khi viết code (chưa từng lên browser) — chừa lại làm bằng chứng cho vòng
-    // sau: muốn nội thất chọn được trong 3D phải mở rộng CẢ HAI hàm trên cho đúng, không phải chỉ
-    // thêm entityId ở đây.
+    // 07/08 (TỔNG) — GỠ CHỐT CHẶN CŨ, nay truyền entityId thật.
+    // Chốt cũ (giữ lại để hiểu vì sao từng thiếu): `Scene3DViewer.tsx` đời trước lọc scene tĩnh
+    // bằng `groups.filter(g => !g.entityId)` ⇒ gán entityId cho nội thất là nó BIẾN MẤT khỏi cảnh
+    // (không có `heightMm` nên `buildMassingWalls()` cũng không nhận) — rơi vào khe giữa hai đường.
+    // Nay khe đó đã bịt: `isMassingWallGroup()` (`lib/three/obj-scene-to-geometry.ts:92`) đòi CẢ
+    // `entityId` VÀ `heightMm`; `Scene3DViewer.tsx:253-255` lọc theo hàm đó. Nội thất có entityId
+    // nhưng không có heightMm ⇒ `false` ⇒ ở lại scene tĩnh. Hành vi này đã bị khoá bằng test riêng
+    // (`obj-scene-to-geometry.test.ts:37` Furn → false, `:50` Furn/Window không bị loại).
+    // ⇒ Vá khuyết §0.4, mở khoá chọn MỘT cái ghế trong 3D → nối lại Doc (Đ1, §8).
     // 05/08 (S2 BUILD#1) — CHỈ dời ĐÁY theo tầng, chiều cao vẫn lấy `furnitureHeightMm(def.id)`
     // như cũ: `computeHeights().topMm` của 1 BlockEntity nội thất hầu như luôn undefined (đồ đạc
     // không khai `heightMm`), lấy nó sẽ là bịa. Đáy sai thì cái ghế nằm dưới sàn tầng 2 — nhìn
     // thấy ngay; nên chỉ vá đúng cái sai, không nhân tiện đổi luôn chiều cao.
     const fBase = computeHeights(b, doc).baseMm;
-    builder.object(`Furn_${i + 1}_${def.id}`, mats.furn, { storey: b.storey, specId: b.specId, ...(fBase !== 0 ? { baseMm: fBase } : {}) });
+    builder.object(`Furn_${i + 1}_${def.id}`, mats.furn, { entityId: b.id, storey: b.storey, specId: b.specId, ...(fBase !== 0 ? { baseMm: fBase } : {}) });
     builder.box4(base, fBase, fBase + furnitureHeightMm(def.id));
   });
 

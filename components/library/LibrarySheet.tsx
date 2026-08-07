@@ -2,12 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, X, ArrowUp } from 'lucide-react';
+import { Search, X, ArrowUp, Plus } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import type { StageKey } from '@/lib/library/types';
+import { idfcKindOfThumb, THUMB_OF_IDFC_KIND, type ThumbKind } from '@/lib/library/thumb-kinds';
+import { buildSpecRows, missingSpecCount, matchSpec, type SpecSource } from '@/lib/library/spec-panel';
 import {
+  BAYS,
+  BAY_OF_SHELF,
   COMMON_SHELVES,
   DEFAULT_SHELF,
+  LIBRARY_DATA_IS_MOCK,
+  MATERIAL_GROUPS,
+  MATERIAL_GROUP_SHELF,
   SCOPE_BADGE_TEXT,
   SCOPE_CHIPS,
   STAGE_SHELVES,
@@ -15,6 +22,10 @@ import {
   type ScopeChip,
   type SheetItem,
 } from '@/lib/library/shelves';
+import { loadIdfcStore, type StoredIdfc } from '@/lib/library/idfc-store';
+import { getPbr } from '@/lib/materials/pbr-store';
+import { exportIdfc } from '@/lib/cad/idfc';
+import { resolveLibraryItem } from '@/lib/cad/library-item-resolve';
 import { useLibrarySheetState } from '@/lib/library/use-library-sheet';
 import { useLibraryLocalState } from '@/lib/library/local-state';
 import { CLUSTER_SPECS } from '@/lib/cad/workstation-clusters';
@@ -25,6 +36,7 @@ import { LIBRARY_SHEET_CSS } from './library-sheet-css';
 import { LibraryToastHost, pushLibraryToast } from './LibraryToast';
 import { PublishModal } from './PublishModal';
 import { BulkIngestMode } from './BulkIngestMode';
+import PanelFlank from '@/components/ui/PanelFlank';
 
 // 03/08 CHỐT TÊN vòng cuối (docs/CHOT-TEN-CHANG-MODE-2026-08-03.md) — "Vẽ"/"Dựng ảnh" là tên
 // round trước, nay đồng bộ theo bộ tên chính thức.
@@ -48,6 +60,29 @@ export const LIBRARY_APPLY_EVENT = 'if:library-apply';
 
 /** id kệ cụm bàn — cục bộ, KHÔNG nằm trong `STAGE_SHELVES` (xem lý do ở chỗ render nút kệ). */
 const CLUSTER_SHELF_ID = 'cad-clusters';
+
+/** BA NẤC CỠ THẺ (`00-CHOT.md` "TẤM THƯ VIỆN: NỚI 960px + BA NẤC CỠ THẺ", chốt 07/08 chiều) —
+ * D5 Render/Blender đều có núm chỉnh cỡ thẻ, không cố định một cỡ. NHỚ lựa chọn qua localStorage,
+ * GLOBAL cho cả app (không theo từng kệ/chặng) — chốt chỉ nói "nhớ lựa chọn", không nói theo phạm
+ * vi nào; một người dùng quen soi vân ở kệ vật liệu nhiều khả năng cũng muốn cỡ đó ở kệ khác. */
+type LibCardSize = 'sm' | 'md' | 'lg';
+const CARD_SIZE_KEY = 'if-library-card-size';
+const CARD_SIZE_OPTIONS: { id: LibCardSize; label: [string, string] }[] = [
+  { id: 'sm', label: ['Nhỏ', 'Small'] },
+  { id: 'md', label: ['Vừa', 'Medium'] },
+  { id: 'lg', label: ['Lớn', 'Large'] },
+];
+
+/** w×d×h chỉ hiện ở nấc Lớn (chốt: "dân thiết kế cần con số này trước tiên"). KHÔNG bịa số — bỏ
+ * hẳn kích thước còn thiếu thay vì hiện "—" (khác `.speccol` là bảng có nhãn cố định cho MỘT món
+ * đang xem kỹ; đây là dòng phụ trên hàng chục thẻ cùng lúc, thiếu 1 trong 3 số vẫn còn 2 số đúng
+ * đáng hiện hơn là một dòng toàn gạch ngang). Trả `null` khi cả 3 đều thiếu để không render dòng
+ * rỗng vô nghĩa. */
+function formatDims(w: number | null, d: number | null, h: number | null): string | null {
+  if (w == null && d == null && h == null) return null;
+  const part = (n: number | null) => (n == null ? '—' : String(Math.round(n)));
+  return `${part(w)}×${part(d)}×${part(h)} mm`;
+}
 
 /**
  * THƯ VIỆN — CARD RỜI trượt lên từ đáy (detached sheet, Hoà chốt 05/08: "không dính bottom, raise
@@ -80,12 +115,45 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   const activeStage: StageKey = stageOverride ?? stage;
   const [shelfId, setShelfId] = useState<string>(DEFAULT_SHELF[activeStage]);
   const [chip, setChip] = useState<ScopeChip>('all');
+  /** Nhóm vật liệu con đang lọc (`docs/mocks/Thư viện.dc.html` khối "NHÓM VẬT LIỆU").
+   *  null = không lọc; bấm lại nhóm đang chọn thì bỏ lọc (không cần thêm nút "Tất cả"). */
+  const [matGroup, setMatGroup] = useState<ThumbKind | null>(null);
+  /** Món ĐANG CHỌN — mở cột thông số ④ (`docs/mocks/Thư viện.dc.html`, khối CotThongSo). */
+  const [picked, setPicked] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [publishOpen, setPublishOpen] = useState(false);
   /** `/library/ingest` gộp thành 1 CHẾ ĐỘ của sheet (SPEC-NAVIGATION-MODEL §1) — không trang riêng. */
   const [mode, setMode] = useState<'browse' | 'ingest'>('browse');
   const [mounted, setMounted] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
+
+  /* BA NẤC CỠ THẺ — đọc localStorage bằng LAZY INITIALIZER (chạy đúng 1 lần lúc khởi tạo state),
+   * KHÔNG dùng effect-đọc riêng như bản đầu. Bản effect-đọc từng có RACE THẬT (bắt được lúc verify
+   * browser 07/08 tối): mount lại (đổi route CAD↔3D) → effect-đọc lấy 'lg' từ localStorage rồi
+   * `setCardSize('lg')`, nhưng effect-ghi (deps=[cardSize]) chạy CÙNG lượt commit đó với closure
+   * `cardSize` còn là 'md' (giá trị khởi tạo, state 'lg' mới chỉ được LỊCH, chưa áp) → ghi ĐÈ 'md'
+   * lên đúng lúc vừa đọc được 'lg', xoá mất lựa chọn vừa lưu. Lazy initializer đọc localStorage
+   * NGAY trong render đầu tiên (trước khi effect nào chạy) nên không còn hai nguồn ghi tranh nhau.
+   * `typeof window` guard vì đây là Client Component vẫn SSR ở server (không phải `dynamic(...,
+   * {ssr:false})`) — nhưng component chỉ thật sự HIỂN THỊ sau `mounted` (return null trước đó) nên
+   * lệch giá trị đọc được giữa server/client không gây hydration mismatch (output cả hai đều null). */
+  const [cardSize, setCardSize] = useState<LibCardSize>(() => {
+    if (typeof window === 'undefined') return 'md';
+    try {
+      const saved = window.localStorage.getItem(CARD_SIZE_KEY);
+      if (saved === 'sm' || saved === 'md' || saved === 'lg') return saved;
+    } catch {
+      // Sandbox/incognito chặn localStorage — im lặng giữ mặc định 'md', không phải lỗi cần báo.
+    }
+    return 'md';
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(CARD_SIZE_KEY, cardSize);
+    } catch {
+      // đã ghi lý do ở lazy initializer, không lặp lại
+    }
+  }, [cardSize]);
 
   useEffect(() => setMounted(true), []);
 
@@ -135,8 +203,115 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
     if (requestedShelf) setShelfId(requestedShelf);
   }, [requestedShelf]);
 
-  const items = useMemo(() => itemsFor(activeStage, shelfId, chip, query), [activeStage, shelfId, chip, query]);
+  // Đổi kệ → bỏ lọc nhóm vật liệu (nhóm chỉ có nghĩa trong kệ vật liệu; giữ lại sẽ thành bộ
+  // lọc vô hình làm lưới trống mà không thấy lý do).
+  useEffect(() => {
+    setMatGroup(null);
+  }, [shelfId]);
+
+  /* VIỆC 1 M-IDFC — kệ "Cấu kiện (.idfc)" đọc KHO THẬT (idfc-store, localStorage), không phải
+   * mock ITEMS_BY_SHELF. Nạp lại mỗi lần mở sheet (BulkIngestMode vừa nhập xong → đóng mode →
+   * thấy ngay). SheetItem dựng từ meta của file: kind 'block' (ô xem trước vẽ ký hiệu), scope
+   * 'studio' (kho localStorage là tầng studio — xem idfc-store.ts). */
+  const [idfcItems, setIdfcItems] = useState<StoredIdfc[]>([]);
+  useEffect(() => {
+    if (open) setIdfcItems(loadIdfcStore());
+  }, [open, mode]);
+  const items = useMemo(() => {
+    if (shelfId === 'common-idfc') {
+      const q = query.trim().toLowerCase();
+      return idfcItems
+        .map((s): SheetItem => ({
+          id: `idfc:${s.meta.code}`, shelfId: 'common-idfc', name: s.meta.name, code: s.meta.code,
+          kind: THUMB_OF_IDFC_KIND[s.meta.kind], scope: s.meta.scope ?? 'studio', mechanic: 'keo',
+        }))
+        .filter((i) => (chip === 'all' || chip === 'studio') && (!q || i.name.toLowerCase().includes(q) || i.code.toLowerCase().includes(q)));
+    }
+    return itemsFor(activeStage, shelfId, chip, query, matGroup);
+  }, [activeStage, shelfId, chip, query, matGroup, idfcItems]);
   const stageShelves = STAGE_SHELVES[activeStage];
+  /* Món đang chọn phải LUÔN nằm trong danh sách đang hiện — đổi kệ/lọc mà giữ lại thì cột thông
+     số tả một món không còn trên lưới, người dùng không đối chiếu được. Không cần effect riêng:
+     lấy từ chính `items` là tự đúng. */
+  const pickedItem = useMemo(() => items.find((i) => i.id === picked) ?? null, [items, picked]);
+
+  /* Cột thông số ④ — chốt 07/08 "trượt vào từ phải, 180–220ms, không giật/bật cụp". `.specwrap`
+   * (library-sheet-css.ts) animate WIDTH nên PHẢI còn nằm trong DOM suốt lúc đóng, không thể gỡ
+   * ngay khi `pickedItem` về null (React tháo DOM tức thì = mất hẳn khung hình đóng = đúng thứ
+   * Hoà gọi là "bật cụp"). `displayItem` giữ nội dung cũ sống thêm đúng một nhịp transition, gỡ
+   * hẳn khi `onTransitionEnd` báo widthđã về 0 — không hẹn giờ tay (setTimeout dễ lệch với
+   * `transition-duration:.1s` của `prefers-reduced-motion`). */
+  const [displayItem, setDisplayItem] = useState<SheetItem | null>(null);
+  useEffect(() => {
+    if (pickedItem) setDisplayItem(pickedItem);
+  }, [pickedItem]);
+  const specOpen = !!pickedItem;
+
+  /* G-A-01 (VIỆC 3, 07/08) — trước đây `buildSpecRows(displayItem)` gọi KHÔNG kèm `spec`, nên
+   * Hãng/Đơn vị/Giá LUÔN hiện "chưa có nguồn" dù `ProductSpec` khớp mã đã có sẵn trong DB (kiểm
+   * bằng `grep -n "buildSpecRows(displayItem)"` trước khi sửa: 1 tham số, xem lịch sử dòng này).
+   * Tải MỘT LẦN khi sheet mở lần đầu (không tải lại mỗi lần đổi món chọn) — cùng khuôn
+   * `MaterialsScreen.tsx` `fetch('/api/specs')`, không route riêng.
+   * `w`/`d`/`hUp` thêm vào (VIỆC 2, chốt 07/08 chiều) cho dòng kích thước ở nấc thẻ LỚN — API
+   * `GET /api/specs` (`lib/server/specs.ts` `specToDto`) đã trả sẵn 3 trường này, chỉ chưa được
+   * bắt ở đây; không cần sửa route hay `lib/`. */
+  const [specs, setSpecs] = useState<{ id: string; sku: string | null; brand: string | null; unit: string | null; priceVnd: number | null; w: number | null; d: number | null; hUp: number | null }[] | null>(null);
+  useEffect(() => {
+    if (!open || specs !== null) return;
+    let cancelled = false;
+    fetch('/api/specs')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && Array.isArray(data?.specs)) setSpecs(data.specs);
+      })
+      .catch(() => {
+        if (!cancelled) setSpecs([]); // lỗi mạng = coi như chưa có nguồn, KHÔNG chặn mở panel
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, specs]);
+
+  /** Cấu kiện .idfc đang xem (nếu món chọn thuộc kệ common-idfc) — nguồn commerce/pbr THẬT từ file. */
+  const displayIdfc = useMemo(
+    () => (displayItem?.shelfId === 'common-idfc' ? idfcItems.find((s) => `idfc:${s.meta.code}` === displayItem.id) ?? null : null),
+    [displayItem, idfcItems],
+  );
+
+  const displaySpecSource: SpecSource | undefined = useMemo(() => {
+    // .idfc mang sẵn mặt thương mại — ưu tiên nó (giá đi THEO FILE giữa các dự án, G-M16-03);
+    // thiếu thì rơi về khớp sku trong DB như cũ.
+    if (displayIdfc?.commerce) {
+      const c = displayIdfc.commerce;
+      return { supplier: c.brand ?? c.vendor ?? null, unit: c.unit ?? null, priceVnd: c.priceVnd ?? null };
+    }
+    if (!displayItem || !specs?.length) return undefined;
+    const hit = matchSpec(displayItem.code, specs);
+    if (!hit) return undefined;
+    return { supplier: hit.brand, unit: hit.unit, priceVnd: hit.priceVnd };
+  }, [displayItem, displayIdfc, specs]);
+
+  const displaySpecRows = useMemo(() => {
+    if (!displayItem) return [];
+    /* VIỆC 4 M-IDFC (G-M17-01 vòng 2) — nối tham số `surface` mà spec-panel.ts khai sẵn từ đầu
+     * nhưng 0 nơi truyền (M-VAT-LIEU-2-OUT bảng VIỆC 4): Độ nhám/Độ bóng đọc từ NGUỒN THẬT theo
+     * bảng nguồn-của-trường — MaterialPbr (kho pbr-store theo matId=code), .idfc nhúng pbr thì
+     * pbr nhúng thắng. Độ bóng CHỈ hiện khi có clearcoat thật (không suy 1−nhám — hai đại lượng
+     * vật lý khác nhau, bịa là sai kiểu N4). */
+    // v2: pbr nằm trong RUỘT theo loại — material mang thẳng, component mang qua geom3d.
+    const idfcPbr = displayIdfc?.body.type === 'material'
+      ? displayIdfc.body.pbr
+      : displayIdfc?.body.type === 'component'
+        ? (displayIdfc.body.geom3d?.pbr ?? (displayIdfc.body.geom3d?.matId ? getPbr(displayIdfc.body.geom3d.matId) : null))
+        : null;
+    const pbrHit = idfcPbr ?? getPbr(displayItem.code);
+    const surface = pbrHit
+      ? { roughness: pbrHit.roughness ?? null, gloss: pbrHit.clearcoat ? pbrHit.clearcoat.value : null }
+      : undefined;
+    return buildSpecRows(displayItem, displaySpecSource, surface);
+  }, [displayItem, displayIdfc, displaySpecSource]);
+  /** Nhãn kệ đang mở — dùng cho dòng đếm ở chân sheet ("N mục trong kệ …", mock thanh trạng thái). */
+  const activeShelf = [...stageShelves, ...COMMON_SHELVES].find((s) => s.id === shelfId);
 
   /**
    * 06/08 (G-M3-14) — SỬA LỜI BÁO NÓI DỐI. Trước: phát sự kiện xong là toast "Đã tạo bản làm
@@ -168,7 +343,7 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   if (!mounted) return null;
 
   return createPortal(
-    <div className="if-lib-root">
+    <div className="if-lib-root" data-card-size={cardSize}>
       <RawStyle css={LIBRARY_SHEET_CSS} />
 
       <button
@@ -205,6 +380,15 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
 
         <div className="libh">
           <h3>{tr('Thư viện', 'Library')}</h3>
+          {/* VIỆC 7b (07/08) — `ITEMS_BY_SHELF`/`count` là dữ liệu mẫu (lib/library/shelves.ts
+             chưa nối `/api/library` thật). Trước đây giao diện bày y như hàng thật (số đếm
+             1449/46/12…, mã món) — không cách nào người dùng phân biệt. Nhãn này là chỗ DUY NHẤT
+             cần gỡ khi nối kho thật (đi cùng `LIBRARY_DATA_IS_MOCK`). */}
+          {LIBRARY_DATA_IS_MOCK && (
+            <span className="mocktag" title={tr('Chưa nối kho thật — số đếm và món trên kệ là dữ liệu mẫu để dựng giao diện.', 'Not linked to the real catalog yet — shelf counts and items are sample data.')}>
+              {tr('Dữ liệu mẫu', 'Sample data')}
+            </span>
+          )}
           {mode === 'browse' && (
             <span className="srch">
               <Search size={13} strokeWidth={1.75} />
@@ -233,54 +417,87 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
           <BulkIngestMode onDone={() => setMode('browse')} />
         ) : (
         <div className="libbody">
+          {/* p3 07/08 — tay cầm thu/mở dùng chung (PanelFlank), Hoà chốt nhân bản mẫu chặng
+              Trình chiếu cho toàn hệ. Kệ 214px là panel TO NHẤT chưa thu được (đo 0/7 file). */}
+          <PanelFlank side="left" storageKey="library.shelf" label={tr('kệ thư viện', 'library shelves')}>
           <div className="shelf">
-            {/* NHÓM TRÊN — đổi theo chặng đang mở */}
-            <div className="shcap">{tr(STAGE_CAPTION[activeStage][0], STAGE_CAPTION[activeStage][1])}</div>
-            {stageShelves.map((s) => (
-              <button
-                type="button"
-                key={s.id}
-                className={s.id === shelfId ? 'shrow on' : 'shrow'}
-                aria-current={s.id === shelfId}
-                onClick={() => setShelfId(s.id)}
-              >
-                {tr(s.label[0], s.label[1])}
-                <span className="c">{s.count}</span>
-              </button>
-            ))}
-            {/* KỆ "VĂN PHÒNG · CỤM BÀN" (phiếu S3 VIỆC 1) — đưa 6 hàm sinh cụm của
-               `lib/cad/workstation-clusters.ts` ra tay KTS (trước đó 0 nơi gọi).
-               Khai TẠI ĐÂY chứ không thêm vào `lib/library/shelves.ts`: kệ kia là danh mục món
-               TĨNH (`SheetItem` có ảnh/mã/phạm vi), còn cụm sinh LÚC CHẠY theo tham số nên không
-               có `SheetItem` nào mô tả đúng nó. Nhét vào đó sẽ phải bịa mã + ảnh giả.
-               Chỉ hiện ở chặng 2D — chặng khác không có `Doc` để thả cụm xuống. */}
-            {activeStage === 'cad' && (
-              <button
-                type="button"
-                className={shelfId === CLUSTER_SHELF_ID ? 'shrow on' : 'shrow'}
-                aria-current={shelfId === CLUSTER_SHELF_ID}
-                onClick={() => setShelfId(CLUSTER_SHELF_ID)}
-              >
-                {tr('Văn phòng · Cụm bàn', 'Office · Desk clusters')}
-                <span className="c">{CLUSTER_SPECS.length}</span>
-              </button>
+            {/* VIỆC 2 M-IDFC (07/08, Hoà chốt "gộp về MỘT tấm, chia kệ theo loại") — cột kệ nhóm
+               theo 4 NGĂN Cấu kiện · Vật liệu · Node · Ảnh tham chiếu (+ ngăn tạm "Mẫu & hồ sơ"
+               cho kệ template chưa được chốt xếp đâu — xem BAYS, lib/library/shelves.ts). Kệ vẫn
+               TỰ LỌC THEO CHẶNG như cũ: danh sách đưa vào ngăn = kệ chặng đang mở ∪ kệ chung —
+               đổi chặng thì món trong ngăn đổi theo, ngăn là tầng NHÓM chứ không phải tầng dữ liệu.
+               Kệ "Văn phòng · Cụm bàn" (S3) giữ nguyên tính chất sinh-lúc-chạy, chỉ xếp vào ngăn
+               Cấu kiện qua BAY_OF_SHELF['cad-clusters'] — không nhét vào shelves.ts (lý do cũ:
+               cụm sinh theo tham số, không có SheetItem tĩnh nào mô tả đúng). */}
+            {BAYS.map((bay) => {
+              const inBay = [...stageShelves, ...COMMON_SHELVES].filter((s) => BAY_OF_SHELF[s.id] === bay.id);
+              const clusterHere = bay.id === 'cau-kien' && activeStage === 'cad';
+              if (!inBay.length && !clusterHere) return null;
+              return (
+                <div key={bay.id}>
+                  <div className="shcap">{tr(bay.label[0], bay.label[1])}</div>
+                  {inBay.map((s) => (
+                    <button
+                      type="button"
+                      key={s.id}
+                      className={s.id === shelfId ? 'shrow on' : 'shrow'}
+                      aria-current={s.id === shelfId}
+                      onClick={() => setShelfId(s.id)}
+                    >
+                      {/* chấm LOẠI kệ — port mock màn 01; màu đi từ token, xem `ShelfDef.dot`. */}
+                      <span className="dot" style={{ background: s.dot }} aria-hidden />
+                      {tr(s.label[0], s.label[1])}
+                      <span className="c">{s.id === 'common-idfc' ? idfcItems.length : (s.count ?? '—')}</span>
+                    </button>
+                  ))}
+                  {clusterHere && (
+                    <button
+                      type="button"
+                      className={shelfId === CLUSTER_SHELF_ID ? 'shrow on' : 'shrow'}
+                      aria-current={shelfId === CLUSTER_SHELF_ID}
+                      onClick={() => setShelfId(CLUSTER_SHELF_ID)}
+                    >
+                      <span className="dot" style={{ background: 'var(--t2)' }} aria-hidden />
+                      {tr('Văn phòng · Cụm bàn', 'Office · Desk clusters')}
+                      <span className="c">{CLUSTER_SPECS.length}</span>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* NHÓM VẬT LIỆU (mock màn 01) — chỉ hiện ở kệ vật liệu, lọc THẬT theo `kind` của món. */}
+            {shelfId === MATERIAL_GROUP_SHELF && (
+              <>
+                <div className="shcap">{tr('Nhóm vật liệu', 'Material groups')}</div>
+                {MATERIAL_GROUPS.map((g) => (
+                  <button
+                    type="button"
+                    key={g.kind}
+                    className={matGroup === g.kind ? 'subrow on' : 'subrow'}
+                    aria-pressed={matGroup === g.kind}
+                    onClick={() => setMatGroup((cur) => (cur === g.kind ? null : g.kind))}
+                  >
+                    {tr(g.label[0], g.label[1])}
+                  </button>
+                ))}
+              </>
             )}
 
-            {/* NHÓM DƯỚI — kệ chung, luôn có ở mọi chặng */}
-            <div className="shcap">{tr('Kệ chung', 'Shared shelves')}</div>
-            {COMMON_SHELVES.map((s) => (
-              <button
-                type="button"
-                key={s.id}
-                className={s.id === shelfId ? 'shrow on' : 'shrow'}
-                aria-current={s.id === shelfId}
-                onClick={() => setShelfId(s.id)}
-              >
-                {tr(s.label[0], s.label[1])}
-                <span className="c">{s.count}</span>
-              </button>
-            ))}
+            {/* CTA đáy cột kệ (mock màn 01: nút accent "Thêm vật liệu mới").
+                Nối vào chế độ "Nạp hàng loạt" CÓ SẴN của chính sheet này — không dựng đường nạp
+                thứ hai, và không để nút bấm-không-ra-gì (§9 cấm nút giả). Chỉ hiện ở kệ vật
+                liệu, đúng chỗ mock đặt nó. */}
+            {shelfId === MATERIAL_GROUP_SHELF && (
+              <div className="shelfcta">
+                <button type="button" className="pub" onClick={() => setMode('ingest')}>
+                  <Plus size={13} strokeWidth={2} />
+                  {tr('Thêm vật liệu mới', 'Add new material')}
+                </button>
+              </div>
+            )}
           </div>
+          </PanelFlank>
 
           <div className="libmain">
             {shelfId === CLUSTER_SHELF_ID ? (
@@ -304,17 +521,47 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
               ))}
             </div>
 
+            {/* BA NẤC CỠ THẺ (chốt 07/08 chiều) — hàng riêng, dồn phải, KHÔNG chung `.chips`
+                (xem lý do ở docblock `.densitybar` trong library-sheet-css.ts). Ẩn ở kệ cụm bàn
+                (nhánh ClusterPanel phía trên, không render tới đây) vì kệ đó không dùng lưới `.it`. */}
+            <div className="densitybar">
+              <span className="sizeseg" role="group" aria-label={tr('Cỡ thẻ', 'Card size')}>
+                {CARD_SIZE_OPTIONS.map((opt) => (
+                  <button
+                    type="button"
+                    key={opt.id}
+                    className={cardSize === opt.id ? 'on' : ''}
+                    aria-pressed={cardSize === opt.id}
+                    onClick={() => setCardSize(opt.id)}
+                  >
+                    {tr(opt.label[0], opt.label[1])}
+                  </button>
+                ))}
+              </span>
+            </div>
+
             <div className="grid">
               {items.length === 0 && (
                 <p className="empty">{tr('Không có món nào khớp bộ lọc.', 'Nothing matches this filter.')}</p>
               )}
-              {items.map((it) => (
+              {items.map((it) => {
+                /* w×d×h chỉ tính khi nấc LỚN đang bật (tránh dò khớp mã vô ích ở nấc khác) —
+                   xem `formatDims()` cho luật "không bịa số". */
+                const dims = cardSize === 'lg' && specs?.length ? matchSpec(it.code, specs) : undefined;
+                const dimsLabel = dims ? formatDims(dims.w, dims.d, dims.hUp) : null;
+                return (
+                /* Bấm = CHỌN (mở cột thông số ④), KHÔNG dùng luôn như trước. Mock đặt hành động
+                   vào cột thông số ("Dùng cho vật đang chọn"), và đó cũng là hành vi đúng: trước
+                   đây bấm nhầm một thẻ là ÁP THẲNG vật liệu lên vật đang chọn, không kịp xem
+                   mã/giá, không hoàn tác được trong tấm. Bấm lại thẻ đang chọn = bỏ chọn (đóng
+                   cột), khỏi cần nút đóng. Kéo–thả giữ nguyên; bấm đúp = dùng ngay (lối tắt cho
+                   người đã quen). */
                 <button
                   type="button"
                   key={it.id}
-                  className="it"
+                  className={it.id === picked ? 'it on' : 'it'}
                   draggable
-                  title={it.mechanic === 'ap' ? tr('Bấm để áp lên vật đang chọn', 'Click to apply to selection') : tr('Kéo ra bàn làm việc để dùng', 'Drag onto the workspace to use')}
+                  title={tr('Bấm để xem thông số · bấm đúp để dùng', 'Click for specs · double-click to use')}
                   onDragStart={(e) => {
                     e.dataTransfer.setData('application/x-if-library-item', it.id);
                     e.dataTransfer.effectAllowed = 'copy';
@@ -323,8 +570,9 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                     // Thả ra ngoài sheet = dùng món (canvas thật nối sau — xem báo cáo).
                     if (e.dataTransfer.dropEffect !== 'none') instantiate(it);
                   }}
-                  onClick={() => use(it)}
-                  onDoubleClick={() => pushLibraryToast(tr(`Xem trước: ${it.name} · ${it.code}`, `Preview: ${it.name} · ${it.code}`))}
+                  onClick={() => setPicked((cur) => (cur === it.id ? null : it.id))}
+                  onDoubleClick={() => use(it)}
+                  aria-pressed={picked === it.id}
                 >
                   {/* Ô xem trước theo BẬC THANG ảnh-thật → quả-cầu → vân-procedural (xem
                       `ItemThumb.tsx`); badge phạm vi đè lên trên, không đổi. */}
@@ -334,13 +582,26 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                   <span className="mt">
                     <span className="a" style={{ display: 'block' }}>{it.name}</span>
                     <span className="b" style={{ display: 'block' }}>{it.code}</span>
+                    {dimsLabel && <span className="dim" style={{ display: 'block' }}>{dimsLabel}</span>}
                   </span>
                 </button>
-              ))}
+                );
+              })}
             </div>
 
             <div className="libft">
-              <span>{tr('Kéo thẳng vào bàn làm việc để dùng · Bấm đúp để xem trước', 'Drag onto the workspace to use · Double-click to preview')}</span>
+              <span>{tr('Bấm để xem thông số · kéo thẳng vào bàn làm việc để dùng', 'Click for specs · drag onto the workspace to use')}</span>
+              {/* "N mục trong kệ …" — mock đặt câu này ở thanh trạng thái ⑥ của khung app; app
+                  thật chưa nối được Thư viện vào StatusBar (xem báo cáo), nên để ở chân sheet,
+                  cùng dòng chữ, cùng nghĩa. Đếm SỐ THẬT sau lọc, không phải `count` mock của kệ. */}
+              {activeShelf && (
+                <span className="cnt">
+                  {tr(
+                    `${items.length} mục trong kệ ${activeShelf.label[0]}`,
+                    `${items.length} items in ${activeShelf.label[1]}`,
+                  )}
+                </span>
+              )}
               {state.pending.length > 0 && (
                 <span title={state.pending.map((p) => p.name).join(', ')}>
                   {tr(`${state.pending.length} chờ duyệt`, `${state.pending.length} awaiting approval`)}
@@ -354,6 +615,110 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
             </>
             )}
           </div>
+
+          {/* ④ CỘT THÔNG SỐ — port `docs/mocks/Thư viện.dc.html` khối CotThongSo (06/08 nội hoá).
+              Wrapper `.specwrap` LUÔN trong DOM khi `displayItem` còn nội dung (kể cả đang đóng) —
+              xem docblock ".specwrap" trong `library-sheet-css.ts` cho lý do trượt-vào-từ-phải. */}
+          {displayItem && (
+            <div
+              className="specwrap"
+              data-open={specOpen}
+              onTransitionEnd={(e) => {
+                if (e.propertyName === 'width' && !specOpen) setDisplayItem(null);
+              }}
+            >
+              <div className="speccol">
+                <div className="sphead">
+                  <div className="spprev">
+                    <ItemThumb item={displayItem} />
+                  </div>
+                  <div className="spname">
+                    <b title={displayItem.name}>{displayItem.name}</b>
+                    <span className={displayItem.scope === 'studio' ? 'badge st' : 'badge'}>
+                      {SCOPE_BADGE_TEXT[displayItem.scope]}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="spsec">
+                  <div className="spcap">{tr('Thông số', 'Specs')}</div>
+                  {displaySpecRows.map((r) => (
+                    <div key={r.label[0]}>
+                      <div className="sprow">
+                        <span className="k">{tr(r.label[0], r.label[1])}</span>
+                        <span className={r.value === null ? 'v none' : 'v num'}>{r.value ?? '—'}</span>
+                      </div>
+                      {typeof r.bar === 'number' && (
+                        <div className="spbar">
+                          <i style={{ width: `${Math.round(Math.min(1, Math.max(0, r.bar)) * 100)}%` }} />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* §9: ô trống phải KÈM LÝ DO, không giấu đi cho gọn mắt. */}
+                {missingSpecCount(displaySpecRows) > 0 && (
+                  <div className="spwhy">
+                    {tr(
+                      'Ô “—” là chưa nối kho: hãng · đơn vị · giá nằm ở Kho vật liệu (khớp theo mã); độ nhám · độ bóng nằm ở vật liệu PBR. Chưa món nào trên kệ mẫu khớp mã trong kho.',
+                      'Each “—” means not linked yet: brand · unit · price live in the Materials warehouse (matched by code); roughness · gloss live in the PBR material. No demo shelf item matches a code in the warehouse yet.',
+                    )}
+                  </div>
+                )}
+
+                <div className="spact">
+                  <button type="button" className="primary" onClick={() => use(displayItem)}>
+                    {displayItem.mechanic === 'ap'
+                      ? tr('Dùng cho vật đang chọn', 'Apply to selection')
+                      : tr('Kéo ra bàn làm việc', 'Drag onto the workspace')}
+                  </button>
+                  <button type="button" className="ghost" onClick={() => instantiate(displayItem)}>
+                    {tr('Sửa bản sao', 'Edit a copy')}
+                  </button>
+                  {/* VIỆC 1 M-IDFC — XUẤT cấu kiện thành file .idfc gói đủ 3 mặt (G-M16-03):
+                     ① geom2d từ BlockDef thật (resolveLibraryItem — chỉ hiện nút khi resolve được,
+                     không hứa suông) · ② geom3d = PBR của matId=code nếu kho có · ③ commerce từ
+                     spec khớp sku. Tải xuống như file thường — mở lại bằng "Nạp hàng loạt". */}
+                  {(() => {
+                    const resolved = resolveLibraryItem({ name: displayItem.name, code: displayItem.code, kind: displayItem.kind }, null, specs ?? undefined);
+                    if (resolved?.via !== 'blockdef') return null;
+                    return (
+                      <button
+                        type="button"
+                        className="ghost"
+                        onClick={() => {
+                          const def = resolved.def;
+                          const pbrHit = getPbr(displayItem.code);
+                          const specHit = specs?.length ? matchSpec(displayItem.code, specs) : null;
+                          const json = exportIdfc({
+                            // v2: kind lên meta (trục ①, suy từ ThumbKind qua bảng ánh xạ), ruột component.
+                            meta: { name: displayItem.name, code: displayItem.code, kind: idfcKindOfThumb(displayItem.kind), scope: displayItem.scope, sourceLibraryId: displayItem.id },
+                            body: {
+                              type: 'component',
+                              geom2d: { group: def.group, w: def.w, h: def.h, prims: def.prims, variants: def.variants, anchors: def.anchors, clearance: def.clearance },
+                              geom3d: pbrHit ? { matId: displayItem.code, pbr: pbrHit } : undefined,
+                            },
+                            commerce: specHit
+                              ? { brand: specHit.brand ?? undefined, sku: specHit.sku ?? undefined, unit: specHit.unit ?? undefined, priceVnd: specHit.priceVnd ?? undefined }
+                              : undefined,
+                          });
+                          const a = document.createElement('a');
+                          a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+                          a.download = `${displayItem.code}.idfc`;
+                          a.click();
+                          URL.revokeObjectURL(a.href);
+                          pushLibraryToast(tr(`Đã xuất ${displayItem.code}.idfc`, `Exported ${displayItem.code}.idfc`));
+                        }}
+                      >
+                        {tr('Xuất .idfc', 'Export .idfc')}
+                      </button>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         )}
       </div>

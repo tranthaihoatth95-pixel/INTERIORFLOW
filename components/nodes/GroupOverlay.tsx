@@ -80,6 +80,17 @@ function MacroExpandedFrame({
           {tr('Thu gọn lại', 'Collapse')}
         </button>
       </div>
+
+      {/* Chú thích góc phải-dưới (port `Nút tổng.dc.html` màn 04). Chấm tím thật nằm ở tiêu đề
+          từng node con — xem `hasExposedParam` trong `InteriorNode.tsx`. CHỈ hiện khi nút tổng
+          này thực sự CÓ tham số đưa ra ngoài, không thì chú thích lại chỉ vào thứ không tồn tại.
+          Nền ĐẶC (--card), không kính — cùng lý do với khung cha: tránh kính lồng kính. */}
+      {(group.exposedParams ?? []).length > 0 && (
+        <span className="absolute bottom-[18px] right-[22px] inline-flex h-[26px] items-center gap-2 rounded-[14px] border border-[var(--border)] bg-[var(--card)] px-[11px] text-[11px] leading-[1.5] text-[var(--t3)]">
+          <span className="h-1.5 w-1.5 flex-none rounded-full bg-[var(--accent)]" />
+          {tr('Chấm tím là tham số đã đưa ra ngoài', 'A purple dot marks a parameter exposed outside')}
+        </span>
+      )}
     </div>
   );
 }

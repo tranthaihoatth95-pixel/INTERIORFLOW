@@ -139,6 +139,13 @@ export const metrologyNodes: NodeDefinition[] = [
       const knownWidthMmRaw = Number(params.knownWidthMm);
       const knownWidthMm = Number.isFinite(knownWidthMmRaw) && knownWidthMmRaw > 0 ? knownWidthMmRaw : undefined;
 
+      // G-M20-07: measureObjectTiered() chạy đồng bộ (vòng lặp pixel dò cạnh) — có thể mất >1s
+      // trên ảnh lớn, và onProgress() chỉ đổi STATE, không tự vẽ lại màn hình giữa lúc luồng JS
+      // đang bận. Báo 0.7 rồi NHƯỜNG một tick cho trình duyệt vẽ xong thanh tiến độ TRƯỚC khi
+      // chặn luồng — không vậy thanh chờ đứng yên ở 0.5 suốt quãng tính nặng nhất rồi nhảy thẳng 1.
+      onProgress(0.7);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
       const result = measureObjectTiered({
         category,
         silhouette,

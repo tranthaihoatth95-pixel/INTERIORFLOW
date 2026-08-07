@@ -26,12 +26,24 @@
  *     S5 KHÔNG tự sửa cửa kiểm vì chính S5 vừa bị cửa kiểm này soi ra lỗi.
  */
 
-import { readdirSync, readFileSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
 import { join, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const MOCKS_DIR = join(ROOT, 'docs', 'mocks')
+
+/**
+ * G-M5-17 (p3, 07/08) — tài sản hợp đồng giao diện nằm NGOÀI docs/mocks/ nhưng đang được tài
+ * liệu gọi là nguồn thiết kế (sổ chốt gọi seed là "nguồn sự thật cho công cụ dựng mock"; 2 trang
+ * đề xuất nằm ở GỐC repo). Quét kèm để con số "N trang" nói đúng sức khoẻ bộ hợp đồng.
+ * Đường dẫn tương đối từ ROOT; file không tồn tại thì bỏ qua êm (không phải lỗi).
+ */
+const EXTRA_ASSETS = [
+  'docs/IF-design-system-seed.html',
+  'if-chang2-mockup.html',
+  'if-vitals-visual.html',
+]
 
 /** Hex thương hiệu TTT — cấm tuyệt đối trong sản phẩm lẫn mock. */
 const TTT_HEX = ['#F1ECE3', '#002850', '#F06020']
@@ -67,6 +79,30 @@ function bodyIsEmpty(src) {
   const tagCount = (stripped.match(/<[a-zA-Z][^>]*>/g) || []).length
   return tagCount <= 2
 }
+
+/**
+ * G-M5-16 (p3, 07/08) — 5 luật mới, mỗi luật bắt đúng 1 kiểu hỏng ĐÃ ĐO ĐƯỢC tận mắt trước khi
+ * viết (số đo trong ngoặc là hiện trạng lúc thêm luật, để phiên sau biết luật không bịa):
+ *  ⑦ THEME-SAI-TU-VUNG — nhánh CSS gắn vào tên theme mà app KHÔNG BAO GIỜ phát ra. App chỉ đặt
+ *    `data-theme="light"|"dark"` (grep lib/+components/+app/ = 0 cho tên khác) ⇒ selector
+ *    `[data-theme="kem"]` (36 lần) / `"paper"` / `"night"` (3 mỗi loại) là mã chết: đặt theme
+ *    sáng lên trang đó nền vẫn tối, mà luật ④ cũ vẫn xanh vì chỉ tìm chuỗi `data-theme`.
+ *  ⑧ PLACEHOLDER-LO — chữ "PLACEHOLDER" lộ ra giao diện quá mức nhãn-vùng-tạm. Quy ước vùng tạm
+ *    (00-CHOT) cho phép MỘT badge nhỏ đánh dấu màn chưa chốt ⇒ trần 2; vượt trần (đã đo: 62 · 28 ·
+ *    23 · 21 chỗ/trang) là chữ mẫu chưa thay, không phải nhãn.
+ *  ⑨ RUOT-TEN-COMPONENT — thân trang in CHUỖI KHAI BÁO component (`&lt;TênComponent`) thay vì
+ *    hình thật, trái luật thumbnail-vẽ-thật (CHOT-AVATAR-MEMOJI). Đã đo: 1 trang.
+ *  ⑩ PHU-THUOC-MANG — script/link/@import/font nạp từ Internet ⇒ mock KHÔNG tự đủ (mất mạng là
+ *    mất icon/phông chữ Việt), và `@latest` làm hợp đồng trôi theo phiên bản. Đã đo: 8 trang +
+ *    1 trang ghim @latest. Khác luật ① (LINK-CUC-BO bắt đường dẫn cục bộ): luật này bắt đường
+ *    dẫn TỪ XA.
+ *  ⑪ TRUNG-TIEU-DE — luật XUYÊN FILE (chạy sau vòng quét, không nằm trong mảng RULES này):
+ *    ≥2 file cùng một <title> ⇒ không ai biết bản nào là chốt (đã đo: 3 trang CAD shell cùng
+ *    tiêu đề + 5 cặp đôi khác). Xem post-pass `checkDuplicateTitles()` dưới.
+ */
+const APP_THEMES = new Set(['light', 'dark'])
+const PLACEHOLDER_BADGE_MAX = 2
+const REMOTE_REF_RE = /<(?:script|link)\b[^>]*?\b(?:src|href)\s*=\s*["'](?:https?:)?\/\/[^"']+["']|@import\s+url\(\s*["']?(?:https?:)?\/\//gi
 
 const RULES = [
   {
@@ -120,17 +156,96 @@ const RULES = [
     },
     count: (src) => (Buffer.byteLength(src, 'utf8') < MIN_MOCK_BYTES || bodyIsEmpty(src) ? 1 : 0),
   },
+  {
+    id: 'THEME-SAI-TU-VUNG',
+    label: (src) => {
+      const names = [...new Set([...src.matchAll(/\[data-theme="([a-z-]+)"\]/g)].map((m) => m[1]).filter((n) => !APP_THEMES.has(n)))]
+      return `nhánh theme app không phát ra (${names.join(', ')}) — app chỉ có light/dark`
+    },
+    count: (src) => [...src.matchAll(/\[data-theme="([a-z-]+)"\]/g)].filter((m) => !APP_THEMES.has(m[1])).length,
+  },
+  {
+    id: 'PLACEHOLDER-LO',
+    label: (src) => {
+      const n = (src.match(/PLACEHOLDER/g) || []).length
+      return `chữ "PLACEHOLDER" lộ ${n} chỗ (trần nhãn-vùng-tạm = ${PLACEHOLDER_BADGE_MAX})`
+    },
+    count: (src) => {
+      const n = (src.match(/PLACEHOLDER/g) || []).length
+      return n > PLACEHOLDER_BADGE_MAX ? n : 0
+    },
+  },
+  {
+    id: 'RUOT-TEN-COMPONENT',
+    label: 'thân trang in chuỗi khai báo component (&lt;Tên…) thay vì hình thật',
+    count: (src) => (src.match(/&lt;[A-Z][a-zA-Z]+/g) || []).length,
+  },
+  {
+    id: 'PHU-THUOC-MANG',
+    label: (src) => {
+      const pinned = src.includes('@latest') ? ' + ghim @latest (hợp đồng trôi theo phiên bản)' : ''
+      return `nạp tài nguyên từ Internet — mock không tự đủ${pinned}`
+    },
+    count: (src) => {
+      const remote = [...src.matchAll(REMOTE_REF_RE)].length
+      // @latest chỉ tính khi có nạp mạng thật — chuỗi "@latest" trong văn bản thường không phải lỗi.
+      return remote > 0 ? remote + (src.includes('@latest') ? 1 : 0) : 0
+    },
+  },
 ]
 
-function listMocks() {
+/** Luật ⑪ TRUNG-TIEU-DE — xuyên file: gom theo <title>, nhóm ≥2 file là ĐỎ cả nhóm. */
+function checkDuplicateTitles(entries) {
+  const byTitle = new Map()
+  for (const e of entries) {
+    const m = e.src.match(/<title>([^<]*)<\/title>/i)
+    if (!m) continue
+    const t = m[1].trim()
+    if (!byTitle.has(t)) byTitle.set(t, [])
+    byTitle.get(t).push(e.name)
+  }
+  const dups = []
+  for (const [title, names] of byTitle) {
+    if (names.length >= 2) dups.push({ title, names })
+  }
+  return dups
+}
+
+/**
+ * G-M5-17 — quét ĐỆ QUY docs/mocks/ và KHÔNG lọc chỉ .html (trước: `readdirSync` phẳng +
+ * `.endsWith('.html')` ⇒ bỏ sót `_archinote/` (10 trang) và `if-design-system.pdf` — tài sản
+ * đang được git theo dõi mà con số "N trang sạch" không bao giờ đếm tới). File không phải
+ * HTML không chạy được luật chữ (PDF/PNG) — LIỆT KÊ vào tổng để nhìn thấy, luật chỉ áp cho
+ * .html/.htm.
+ */
+function walkDir(dir, base = '') {
   let names
   try {
-    names = readdirSync(MOCKS_DIR)
+    names = readdirSync(dir)
   } catch {
+    return []
+  }
+  const out = []
+  for (const n of names.sort()) {
+    const full = join(dir, n)
+    const rel = base ? `${base}/${n}` : n
+    if (statSync(full).isDirectory()) out.push(...walkDir(full, rel))
+    else out.push({ rel, full })
+  }
+  return out
+}
+
+function listMocks() {
+  if (!existsSync(MOCKS_DIR)) {
     console.error(`✖ Không đọc được thư mục: ${relative(ROOT, MOCKS_DIR)}`)
     process.exit(1)
   }
-  return names.filter((n) => n.toLowerCase().endsWith('.html')).sort()
+  const all = walkDir(MOCKS_DIR)
+  for (const rel of EXTRA_ASSETS) {
+    const full = join(ROOT, rel)
+    if (existsSync(full)) all.push({ rel: `(ngoài mocks) ${rel}`, full })
+  }
+  return all
 }
 
 /** Bảng chữ rộng cố định — không dùng ký tự vẽ khung để copy/dán vào báo cáo được. */
@@ -152,21 +267,37 @@ const files = listMocks()
 const rows = []
 const badFiles = new Set()
 let totalHits = 0
+const htmlEntries = []
+let nonHtmlCount = 0
 
-for (const name of files) {
-  const src = readFileSync(join(MOCKS_DIR, name), 'utf8')
+for (const { rel, full } of files) {
+  if (!/\.html?$/i.test(rel)) {
+    nonHtmlCount++
+    continue // PDF/ảnh/md — đếm vào tổng, luật chữ không áp được
+  }
+  const src = readFileSync(full, 'utf8')
+  htmlEntries.push({ name: rel, src })
   for (const rule of RULES) {
     const n = rule.count(src)
     if (n > 0) {
       const label = typeof rule.label === 'function' ? rule.label(src) : rule.label
-      rows.push([name, `${rule.id} — ${label}`, n])
-      badFiles.add(name)
+      rows.push([rel, `${rule.id} — ${label}`, n])
+      badFiles.add(rel)
       totalHits += n
     }
   }
 }
 
-console.log(`\ncheck-mocks — quét ${files.length} file trong docs/mocks/\n`)
+// Luật ⑪ — xuyên file, chạy sau khi đã đọc hết
+for (const d of checkDuplicateTitles(htmlEntries)) {
+  for (const name of d.names) {
+    rows.push([name, `TRUNG-TIEU-DE — ${d.names.length} file cùng <title> "${d.title}"`, 1])
+    badFiles.add(name)
+    totalHits += 1
+  }
+}
+
+console.log(`\ncheck-mocks — quét ${files.length} file (đệ quy, gồm ${nonHtmlCount} file không phải HTML) trong docs/mocks/ + ${EXTRA_ASSETS.length} tài sản ngoài\n`)
 
 if (rows.length === 0) {
   console.log('✓ Không file nào ĐỎ.\n')

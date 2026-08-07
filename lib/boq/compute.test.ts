@@ -202,25 +202,29 @@ console.log('\n[7b] 2 phòng liền kề chung 1 cạnh tường → KHÔNG báo
   ok('m² gộp đúng 9+9=18 (không mất phòng nào)', res.rows[0]?.m2 === 18);
 }
 
-/* ═══ [8] BOQ v2 — đơn giá theo đơn vị KHÁC m² → CHƯA hỗ trợ, khoá hành vi hiện tại tường minh ═══ */
-console.log('\n[8] spec.unit khác "m2" → CHƯA rẽ nhánh, vẫn tính theo diện tích (ghi rõ giới hạn)');
+/* ═══ [8] 🔴 VIẾT LẠI 06/08 vòng 3 — vùng tô neo vào mã bán theo MÉT DÀI ═══
+ *
+ * Bản trước của test này KHOÁ ĐÚNG CÁI BUG: nẹp chân tường bán 45.000đ/MÉT DÀI, gán cho vùng tô
+ * 6 m² ⇒ engine ra **270.000đ, errors: []**, và test tự ghi trong nhãn "SAI Ý NGHĨA... đây CHÍNH
+ * LÀ giới hạn cần biết". Một giới hạn ra TIỀN SAI mà không báo gì thì không phải giới hạn, là bug
+ * — đúng họ với `unit-mismatch` mà [15]/[18c] đã đóng cho hai chiều kia. Ba chiều một luật.
+ * (Chiều "đơn vị ĐO khác diện tích" là chiều CUỐI còn hở: đo được `unit='m'`/`'m3'`/`'kg'` đều ra
+ * 9 m² × đơn giá = 900.000đ với `errors: []`.) */
+console.log('\n[8] vùng tô neo vào mã bán theo MÉT DÀI → unit-mismatch (trước: 270.000đ, errors 0)');
 {
-  // ProductSpec.unit ('m2'|'m'|'cai'|'bo'|'m3'...) là field TỰ DO — compute.ts hiện KHÔNG đọc
-  // giá trị này để đổi cách tính (không có nhánh "tính theo chiều dài/số lượng/thể tích"). Test
-  // này KHOÁ hành vi v1/v2 hiện tại: dù spec khai unit='m' (mét dài, vd nẹp chân tường), engine
-  // vẫn tính theo m² vùng tô như bình thường — không throw, không tự "đoán" cách tính khác. Đây
-  // là quyết định phạm vi CÓ CHỦ Ý (xem BAO-CAO-PHU.md "Việc 3b") — KHÔNG tự thêm logic đo chiều
-  // dài/thể tích/số lượng khi chưa có ca yêu cầu rõ + chưa có nơi tiêu thụ (UI) cho việc đó.
   const NEP_CHAN_TUONG: MaterialSpecLite = {
     id: 'spec-nep-m', name: 'Nẹp chân tường nhôm', vendor: 'ABC', sku: 'NCT-01',
     unit: 'm', priceVnd: 45_000, wastagePercent: 0, // ý định thật: 45.000đ/MÉT DÀI
   };
   const h = rectHatch(2000, 3000, { specId: NEP_CHAN_TUONG.id }); // 6m² — KHÔNG phải 6m dài
   const res = computeBoq(docWith(h), [NEP_CHAN_TUONG]);
-  ok('vẫn ra 1 dòng (không throw/skip vì unit lạ)', res.rows.length === 1);
-  ok('m² vẫn = diện tích vùng tô (6), KHÔNG hiểu unit="m"', res.rows[0]?.m2 === 6);
-  ok('thành tiền = m² × đơn giá (6 × 45.000 = 270.000) — SAI Ý NGHĨA nếu đơn giá thật tính theo mét dài; đây CHÍNH LÀ giới hạn cần biết trước khi dùng cho vật liệu tính theo đơn vị khác m²',
-    res.rows[0]?.thanhTien === 270_000);
+  ok('KHÔNG ra dòng nào (trước: 1 dòng 270.000đ)', res.rows.length === 0);
+  ok('totalAmount = 0, không phải 270.000', res.totalAmount === 0);
+  const e = res.errors.find((x) => x.reason === 'unit-mismatch');
+  ok('có lỗi unit-mismatch (trước: errors rỗng)', !!e);
+  ok('câu lỗi nhắc đúng đơn vị người dùng khai', !!e?.message.includes('"m"'));
+  ok('câu lỗi chỉ RA HAI chỗ sửa được (kho vật liệu / bản vẽ)',
+    !!e?.message.includes('kho vật liệu') && !!e?.message.includes('bản vẽ'));
 }
 
 /* ═══ [9] G-M3-09 — CA ĐÃ ĐO THẬT: 1 vùng tô có giá + 1 món rời có specId+giá + 1 món rời KHÔNG
@@ -491,6 +495,142 @@ console.log('\n[18c] vùng tô neo vào mã bán theo CÁI — cấm nhân bừa
   const SAN: MaterialSpecLite = { id: 'spec-san', name: 'Sàn gỗ', vendor: null, sku: null, unit: 'm2', priceVnd: 1_000_000, wastagePercent: null };
   const okRes = computeBoq(docWith(rectHatch(1000, 1000, { specId: SAN.id })), [SAN]);
   ok('vật liệu m² vẫn tính bình thường (1 m² = 1.000.000)', okRes.rows.length === 1 && okRes.totalAmount === 1_000_000);
+}
+
+/* ═══════════ VÒNG 3 (06/08) — 3 đường "tiền sai / tiền tràn / đếm đôi" còn lại ═══════════ */
+
+/* ═══ [19] VÙNG TÔ × ĐƠN VỊ — 3 nhánh ĐỐI XỨNG với món rời ([15]/[16]) ═══
+ * Đo được trên bản trước (vùng tô 3000×3000, đơn giá 100.000):
+ *   unit='m'  → qty 9, unit "m2", 900.000đ, errors: []
+ *   unit='m3' → y hệt · unit='kg' → y hệt · unit='thùng' → y hệt (không cả cảnh báo)
+ * Nhánh vùng tô lúc đó MỚI CHỈ chặn `isCountUnit`. */
+console.log('\n[19] vùng tô: đơn vị ĐO khác diện tích → chặn · đơn vị LẠ → tính + cảnh báo');
+{
+  const mk = (id: string, unit: string | null): MaterialSpecLite => ({
+    id, name: `Vật liệu ${unit ?? '(không khai)'}`, vendor: null, sku: 'SKU-1',
+    unit, priceVnd: 100_000, wastagePercent: null,
+  });
+
+  // (b) đơn vị ĐO khác diện tích ⇒ KHÔNG tính, báo rõ
+  for (const u of ['m', 'md', 'm3', 'kg', 'lít']) {
+    const spec = mk(`spec-${u}`, u);
+    const res = computeBoq(docWith(rectHatch(3000, 3000, { specId: spec.id }, { x: 0, y: 0 })), [spec]);
+    ok(`đơn vị "${u}" → 0 dòng + unit-mismatch (trước: 9 m² × 100.000 = 900.000đ, errors 0)`,
+      res.rows.length === 0 && res.totalAmount === 0 && res.errors.some((e) => e.reason === 'unit-mismatch'));
+  }
+  // đơn vị ĐẾM (chiều đã đóng ở [18c]) vẫn chặn — không vá hỏng cái cũ
+  const dem = mk('spec-cai', 'cái');
+  ok('đơn vị ĐẾM vẫn chặn như [18c]',
+    computeBoq(docWith(rectHatch(3000, 3000, { specId: dem.id })), [dem]).errors.some((e) => e.reason === 'unit-mismatch'));
+
+  // (a) đơn vị DIỆN TÍCH hoặc KHÔNG khai ⇒ tính bình thường, KHÔNG đẻ cảnh báo oan
+  for (const u of ['m2', 'm²', 'sqm', 'M2', '', null] as (string | null)[]) {
+    const spec = mk(`spec-ok-${String(u)}`, u);
+    const res = computeBoq(docWith(rectHatch(3000, 3000, { specId: spec.id })), [spec]);
+    ok(`đơn vị ${JSON.stringify(u)} → vẫn tính 9 m² = 900.000đ, 0 lỗi`,
+      res.rows.length === 1 && res.rows[0]?.thanhTien === 900_000 && res.errors.length === 0);
+  }
+
+  // (c) đơn vị LẠ ⇒ VẪN tính theo m² nhưng phải nói ra
+  const thung = mk('spec-thung-area', 'thùng');
+  const resThung = computeBoq(docWith(rectHatch(3000, 3000, { specId: thung.id })), [thung]);
+  ok('đơn vị lạ "thùng" → VẪN có dòng (không chặn oan)', resThung.rows.length === 1);
+  ok('đơn vị lạ vẫn tính theo m² (9 × 100.000)', resThung.rows[0]?.thanhTien === 900_000);
+  const warn = resThung.errors.find((e) => e.reason === 'unknown-unit');
+  ok('CÓ cảnh báo unknown-unit (trước: im lặng hoàn toàn)', !!warn);
+  ok('cảnh báo GIỮ NGUYÊN chữ người dùng viết', !!warn?.message.includes('thùng'));
+}
+
+/* ═══ [20] KHỐI LƯỢNG IN RA phải tự nhân ra ĐÚNG thành tiền in cạnh nó ═══
+ * Đo được trên bản trước: vùng tô 3162×3162 → dòng in "10 m² · 1.000.000đ · **9.998.244đ**";
+ * nhân tay 10 × 1.000.000 = 10.000.000 ⇒ lệch 1.756đ, không một ghi chú. Nguyên nhân: dòng nhân
+ * từ diện tích THÔ (9.998244 m²) trong khi bảng in diện tích ĐÃ làm tròn. */
+console.log('\n[20] mỗi dòng tự nhân ra đúng số in trên bảng (trước: lệch 1.756đ)');
+{
+  const SPEC: MaterialSpecLite = {
+    id: 'spec-tron', name: 'Sàn gỗ', vendor: null, sku: null, unit: 'm2',
+    priceVnd: 1_000_000, wastagePercent: null,
+  };
+  const res = computeBoq(docWith(rectHatch(3162, 3162, { specId: SPEC.id })), [SPEC]);
+  const r = res.rows[0];
+  ok('khối lượng in ra vẫn là 10 m² (làm tròn 2 số lẻ, không đổi)', r?.qty === 10);
+  ok('thành tiền = 10 × 1.000.000 (trước: 9.998.244)', r?.thanhTien === 10_000_000);
+  ok('bấm máy tính trên chính 3 số của dòng ra đúng cột thành tiền',
+    Math.round((r?.qty ?? 0) * (1 + (r?.haoHutPhanTram ?? 0) / 100) * (r?.donGia ?? 0)) === r?.thanhTien);
+
+  // ...và có hao hụt thì vẫn đúng luật đó
+  const HH: MaterialSpecLite = { ...SPEC, id: 'spec-tron-hh', wastagePercent: 5 };
+  const r2 = computeBoq(docWith(rectHatch(3162, 3162, { specId: HH.id })), [HH]).rows[0];
+  ok('có hao hụt 5% vẫn tự nhân ra đúng (10 × 1.05 × 1.000.000)', r2?.thanhTien === 10_500_000);
+
+  // Chốt ngược: tổng vẫn = Σ thành tiền từng dòng (luật cũ không được vỡ).
+  const nhieu = computeBoq(
+    docWith(rectHatch(3162, 3162, { specId: SPEC.id }, { x: 0, y: 0 }), rectHatch(2000, 3000, { specId: HH.id }, { x: 50_000, y: 0 })),
+    [SPEC, HH],
+  );
+  ok('totalAmount vẫn = Σ thanhTien các dòng', nhieu.totalAmount === nhieu.rows.reduce((s, x) => s + x.thanhTien, 0));
+}
+
+/* ═══ [21] THÀNH TIỀN TRÀN SỐ — đầu vào hữu hạn, kết quả Infinity ═══
+ * Đo được trên bản trước: `wastagePercent = 1e308` → `thanhTien: Infinity`, `errors: 0`; xuất
+ * .xlsx cùng kết quả đó thì `buildXlsxBuffer` ném "giá trị số không hợp lệ tại J2: Infinity" —
+ * lỗi bằng tiếng lập trình viên, nổ đúng lúc người dùng bấm nút Xuất. `priceProblem` chỉ kiểm
+ * ĐẦU VÀO nên không bắt được ca này. */
+console.log('\n[21] thành tiền tràn số → invalid-price (trước: Infinity với errors 0)');
+{
+  const TRAN: MaterialSpecLite = {
+    id: 'spec-tran', name: 'Hao hụt bịa', vendor: null, sku: null, unit: 'm2',
+    priceVnd: 1e308, wastagePercent: 1e308,
+  };
+  const res = computeBoq(docWith(rectHatch(1000, 1000, { specId: TRAN.id })), [TRAN]);
+  ok('vùng tô: 0 dòng (trước: 1 dòng thanhTien Infinity)', res.rows.length === 0);
+  ok('vùng tô: totalAmount = 0, KHÔNG Infinity', res.totalAmount === 0 && Number.isFinite(res.totalAmount));
+  const e = res.errors.find((x) => x.reason === 'invalid-price');
+  ok('vùng tô: có lỗi invalid-price (lý do dùng chung — xem model.ts)', !!e);
+  ok('câu lỗi nói ra CẢ BA số đã nhân', !!e?.message.includes('khối lượng') && !!e?.message.includes('hao hụt') && !!e?.message.includes('đơn giá'));
+
+  const TRAN_ITEM: MaterialSpecLite = { ...TRAN, id: 'spec-tran-item', name: 'Ghế tràn', unit: 'cai' };
+  const res2 = computeBoq(docWith(blockItem({ specId: TRAN_ITEM.id })), [TRAN_ITEM]);
+  ok('món rời: 0 dòng + invalid-price (áp CẢ HAI nhánh)',
+    res2.rows.length === 0 && res2.errors.some((x) => x.reason === 'invalid-price'));
+  ok('món rời: tổng 0, không Infinity', res2.totalAmount === 0 && Number.isFinite(res2.totalAmount));
+
+  // Chốt ngược: số lớn nhưng VẪN hữu hạn thì không bị chặn oan.
+  const TO: MaterialSpecLite = { id: 'spec-to', name: 'Đá quý', vendor: null, sku: null, unit: 'm2', priceVnd: 9_000_000_000, wastagePercent: 10 };
+  const res3 = computeBoq(docWith(rectHatch(1000, 1000, { specId: TO.id })), [TO]);
+  ok('giá to nhưng hữu hạn vẫn tính bình thường', res3.rows.length === 1 && res3.errors.length === 0);
+}
+
+/* ═══ [22] HAI ĐỐI TƯỢNG CÙNG `id` — trước: cộng đôi im lặng ═══
+ * Đo được trên bản trước (`git show HEAD:lib/boq/compute.ts`):
+ *   2 hatch cùng id 'dup', ở HAI chỗ khác nhau → **1 dòng, qty 18 m², 1.800.000đ, errors: []**
+ *   2 block cùng id 'b'                        → **qty 2, 200.000đ, errors: []**
+ * (Hai hatch ĐÈ NHAU thì `overlapping-region` che mất ca này — nên nó im lặng đúng ở ca hay gặp
+ * nhất: gộp sheet / nhập file / undo lỗi làm nhân đôi bản ghi ở hai chỗ khác nhau.) */
+console.log('\n[22] entity trùng id → chỉ tính 1 lần + báo rõ (trước: cộng đôi im lặng)');
+{
+  const SAN: MaterialSpecLite = { id: 'spec-dup', name: 'Sàn', vendor: null, sku: null, unit: 'm2', priceVnd: 100_000, wastagePercent: null };
+  const a = rectHatch(3000, 3000, { specId: SAN.id, id: 'dup' } as Partial<HatchEntity>, { x: 0, y: 0 });
+  const b = rectHatch(3000, 3000, { specId: SAN.id, id: 'dup' } as Partial<HatchEntity>, { x: 20_000, y: 20_000 });
+  const res = computeBoq(docWith(a, b), [SAN]);
+  ok('chỉ tính 1 bản (9 m², KHÔNG phải 18)', res.rows.length === 1 && res.rows[0]?.qty === 9);
+  ok('tiền 900.000, không phải 1.800.000', res.rows[0]?.thanhTien === 900_000);
+  const e = res.errors.find((x) => x.reason === 'invalid-geometry' && x.message.includes('id TRÙNG'));
+  ok('CÓ lỗi báo trùng id (trước: errors rỗng)', !!e);
+  ok('lỗi nêu đúng id trùng', !!e?.message.includes('dup') && e?.entityIds[0] === 'dup');
+
+  const GHE: MaterialSpecLite = { id: 'spec-dup-ghe', name: 'Ghế', vendor: null, sku: null, unit: 'cai', priceVnd: 100_000, wastagePercent: null };
+  const res2 = computeBoq(docWith(blockItem({ id: 'bdup', specId: GHE.id }), blockItem({ id: 'bdup', specId: GHE.id })), [GHE]);
+  ok('món rời trùng id: qty 1 (trước: 2)', res2.rows[0]?.qty === 1 && res2.rows[0]?.thanhTien === 100_000);
+  ok('món rời trùng id: có báo', res2.errors.some((x) => x.reason === 'invalid-geometry' && x.message.includes('id TRÙNG')));
+
+  // Chốt ngược: id KHÁC nhau thì vẫn cộng đủ, không vá quá tay.
+  const okRes = computeBoq(
+    docWith(rectHatch(3000, 3000, { specId: SAN.id }, { x: 0, y: 0 }), rectHatch(3000, 3000, { specId: SAN.id }, { x: 20_000, y: 20_000 })),
+    [SAN],
+  );
+  ok('2 vùng tô id KHÁC nhau vẫn gộp đủ 18 m², không lỗi',
+    okRes.rows[0]?.qty === 18 && !okRes.errors.some((x) => x.reason === 'invalid-geometry' && x.message.includes('id TRÙNG')));
 }
 
 console.log(`\nKẾT QUẢ: ${pass} pass, ${fail} fail`);

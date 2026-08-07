@@ -117,8 +117,19 @@ function useLarkSummary(): LarkSummary | null {
 // submit vẫn giữ --accent-warm).
 const ACCENT = 'var(--accent)';
 
-/** 3 cover mặc định — cũng dùng làm fallback hash-cover khi flow chưa có coverUrl. */
-const COVERS = ['/covers/render_00.jpeg', '/covers/render_04.jpeg', '/covers/render_10.jpeg'];
+/** M-EMPTY (07/08, Hoà chốt "app xuất ra trung tính") — 3 bìa mặc định nay là GRADIENT vật liệu
+ * trừu tượng đóng gói SVG data-URI (đá ấm · đồng hun · khối xám), thay 3 ảnh render dự án KHÁCH
+ * cũ (/covers/render_*, AUDIT-BRAND-PII) theo đúng tiền lệ trung tính `TitleSequence.tsx`.
+ * Data-URI để mọi chỗ đang dùng `<img src>` / lưu vào `coverUrl` chạy y nguyên, không đổi khuôn. */
+const coverArt = (a: string, b: string, c: string): string =>
+  `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><defs><linearGradient id="g" x1="0" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="0.55" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></linearGradient></defs><rect width="400" height="300" fill="url(#g)"/></svg>`,
+  )}`;
+const COVERS = [
+  coverArt('#d8cbb8', '#b7a687', '#8f7f63'), // đá travertine ấm
+  coverArt('#c79a63', '#7d5a38', '#2e2318'), // đồng hun hoàng hôn
+  coverArt('#d9d4cb', '#9a938a', '#4a443c'), // khối xám dựng hình
+];
 
 function coverFor(id: string): string {
   let h = 0;

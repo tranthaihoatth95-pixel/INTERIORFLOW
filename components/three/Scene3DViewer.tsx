@@ -56,6 +56,28 @@ export type Scene3DMode = 'orbit' | 'walk' | 'campath' | 'section' | 'massing';
 export interface Scene3DCameraApi {
   camera: THREE.PerspectiveCamera;
   controls: OrbitControls;
+  /** G-M18-04 — đưa camera về khung bao trọn TOÀN CẢNH hiện tại (tính lại bbox mỗi lần gọi, không
+   * chỉ dùng số đo lúc mount). Không làm gì ở mode `walk`/`campath` (camera do 2 mode đó tự lái
+   * mỗi khung, "toàn cảnh" vô nghĩa khi đang đứng trong phòng/bám đường quay). */
+  fit: () => void;
+}
+
+/** Tính khung camera bao trọn `scene.bboxMm` — TÁCH RIÊNG khỏi effect mount để dùng lại được cho
+ * cả lúc dựng cảnh LẪN nút "Toàn cảnh" (G-M18-04): trước đây `camera.position.set()` chỉ chạy
+ * MỘT LẦN lúc mount, khối vẽ thêm sau không có đường nào đưa camera về lại — grep xác nhận
+ * `fitToScene|zoomExtents|zoomToFit|fitCamera|Toàn cảnh|Vừa khung` trong `components/three/` +
+ * `components/render-studio/` + `lib/three/` = 0 trước bản vá này (`GAP-IF.md` G-M18-04). Toán
+ * giữ NGUYÊN VĂN công thức cũ (03/08, phán quyết PHU) — chỉ đổi chỗ ở, không đổi số. */
+function fitCameraToScene(scene: Scene3DData, camera: THREE.PerspectiveCamera, controls: OrbitControls) {
+  const { minX, minY, maxX, maxY } = scene.bboxMm;
+  const cx = (minX + maxX) / 2 / 1000;
+  const cy = (minY + maxY) / 2 / 1000;
+  const halfDiag = Math.max(0.5, Math.hypot(maxX - minX, maxY - minY) / 2 / 1000);
+  const cz = scene.sizeM.h / 2;
+  camera.position.set(cx + halfDiag * 1.1, cz + halfDiag * 0.9, -cy + halfDiag * 1.1);
+  controls.target.set(cx, cz, -cy);
+  camera.updateProjectionMatrix();
+  controls.update();
 }
 
 /**
@@ -188,24 +210,35 @@ export default function Scene3DViewer({ scene, mode, camPath, sectionMm, onFrame
     // `walkControls`/tick() tự lái camera mỗi khung qua `cadToThreeM()` riêng, không đọc cx/cy/cz
     // ở khối này — fix chỉ đổi khung camera BAN ĐẦU lúc mount (orbit/section/massing hết lệch tâm,
     // walk đứng đúng vị trí trong mặt bằng thay vì lệch phía đối diện).
-    const halfDiag = Math.max(0.5, Math.hypot(maxX - minX, maxY - minY) / 2 / 1000);
     const cz = scene.sizeM.h / 2;
 
     if (walkActive) {
       // Đứng giữa mặt bằng, mắt cố định 1650mm (EYE_HEIGHT_MM, CÙNG số campath) — nhìn ngang.
       camera.position.set(cx, EYE_HEIGHT_MM / 1000, -cy);
       camera.lookAt(cx + 1, EYE_HEIGHT_MM / 1000, -cy);
-    } else {
-      camera.position.set(cx + halfDiag * 1.1, cz + halfDiag * 0.9, -cy + halfDiag * 1.1);
     }
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(cx, cz, -cy);
     controls.enableDamping = true;
     controls.enabled = !walkActive && !campathActive; // walk/campath tự lái camera, orbit nhường
+
+    // G-M18-04 — khung ban đầu bao trọn bbox (thay vì tự tính lại y hệt công thức ở đây): walk có
+    // vị trí đứng-trong-phòng riêng ở trên (KHÔNG fit), mọi mode khác dùng đúng 1 hàm dùng lại
+    // được cho cả nút "Toàn cảnh" bên dưới.
+    if (!walkActive) fitCameraToScene(scene, camera, controls);
     controls.update();
 
-    if (cameraApiRef) cameraApiRef.current = { camera, controls };
+    if (cameraApiRef) {
+      cameraApiRef.current = {
+        camera,
+        controls,
+        fit: () => {
+          if (walkActive || campathActive) return; // 2 mode này tự lái camera mỗi khung, fit vô nghĩa
+          fitCameraToScene(scene, camera, controls);
+        },
+      };
+    }
 
     // Mode walk (3D-4) — PointerLockControls chuẩn three (KHÔNG tự viết vector nhìn/di chuyển).
     // Cần cú click (kích hoạt Pointer Lock API) — hint phủ toàn khung, ẩn khi đã lock.

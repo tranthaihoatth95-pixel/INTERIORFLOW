@@ -44,7 +44,6 @@ import { goHomeConfirmed } from '@/lib/resume';
 import SessionWatch from '@/components/studio/SessionWatch';
 import ShortcutsPanel from '@/components/ShortcutsPanel';
 import { AppLogoMenu } from '@/components/studio/AppLogoMenu';
-import { HomeButton } from '@/components/studio/HomeButton';
 import { LeaveConfirmBar } from '@/components/studio/LeaveConfirmBar';
 import { LockScreen } from '@/components/studio/LockScreen';
 import { useLockScreen, lockScreenNow, getLockIdleMinutes } from '@/lib/lockscreen';
@@ -247,11 +246,16 @@ export function AppChrome({ active, logoMenu }: Props) {
       className={`mat-header relative z-30 flex items-center gap-2 border-b border-[var(--border)] px-2 sm:gap-3 sm:px-3 ${logoMenu ? 'h-[42px]' : 'h-12'}`}
       style={{ borderBottomColor: `color-mix(in srgb, ${tint} 55%, var(--border))` }}
     >
-      {/* VIỆC 1 UI (04/08, docs/SO-KIEM-TONG.md) — khi logo mở AppLogoMenu (không tự về Gallery
-          nữa), "đường về Gallery" mất lối: 4 mục trong menu chỉ mở panel đè lên, không mục nào
-          rời chặng. HomeButton (đã có sẵn, trước KHÔNG nơi nào mount) đứng BÊN TRÁI logo bù lại
-          đúng 1 lối đi thẳng — không viết nút mới. */}
-      {logoMenu && <HomeButton compact />}
+      {/* G-M22-03 (07/08, M-NHAN-OUT) — ĐÃ GỠ `<HomeButton compact />` từng đứng riêng ở đây
+          (VIỆC 1 UI, 04/08). Lý do lúc đó: "4 mục trong menu chỉ mở panel đè lên, không mục nào
+          rời chặng" — nhưng CÙNG NGÀY 04/08, `AppLogoMenu.tsx` cũng đã thêm mục đầu tiên
+          `goHomeItem` ("Về Thư viện dự án", gọi thẳng `goHomeConfirmed()`, đứng TRÊN vạch phân
+          cách, phía trên 4 mục Tổng quan/Dự án & Flow/Files/Thư viện) — làm ĐÚNG hành vi
+          HomeButton, tại ĐÚNG vị trí Hoà chốt 07/08 ("đặt PHÍA TRÊN mục Về Thư viện dự án" hoá ra
+          CHÍNH LÀ mục đó, không phải một mục thứ 6 riêng — đo lại bằng code, không theo số "6
+          mục" ghi trong GAP-IF.md cũ, xem M-NHAN-OUT.md). Hai nút cùng gọi `goHomeConfirmed()`,
+          đứng cạnh nhau — trùng vai thật (đúng HomeButton.tsx tự khai), gộp bằng cách XOÁ bản
+          đứng riêng, giữ bản trong menu. */}
       <button
         ref={logoRef}
         type="button"
@@ -342,9 +346,9 @@ export function AppChrome({ active, logoMenu }: Props) {
       {/* 03/08 SPEC-APP-SHELL-CHUNG §2 — CẮT khỏi header: "Việc ▾" → RenderDocBar (toolbar
           chặng render) · avatar UserChip (avatar duy nhất ở RAIL, mở AccountMenu —
           CHOT-AVATAR-MEMOJI §2). Nút ⌂ Home từng cắt vì "TRÙNG logo góc trái" — ĐÚNG khi logo tự
-          về Gallery (`logoMenu` false), nhưng SAI khi logo mở `AppLogoMenu` thay vào đó
-          (`logoMenu` true): logo không còn dẫn về Gallery nữa, `HomeButton` phía trên bù lại
-          đúng lối đó, KHÔNG còn trùng (VIỆC 1 UI, 04/08). */}
+          về Gallery (`logoMenu` false); khi logo mở `AppLogoMenu` thay vào đó (`logoMenu` true),
+          đường về Gallery nay sống trong CHÍNH menu đó (mục "Về Thư viện dự án", đầu danh sách —
+          xem comment ở nút logo phía trên, G-M22-03). */}
 
       {/* SessionWatch — universal (30/07, sửa lỗi: trước chỉ StudioBar có, route `/` không báo
           hết phiên giữa chừng). Dải báo fixed đáy màn, không chặn thao tác. */}

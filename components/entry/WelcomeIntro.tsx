@@ -8,7 +8,6 @@ import { easeApple } from '@/lib/motion';
 import { useT } from '@/lib/i18n';
 import { createFlow, openFlow } from '@/lib/workspace';
 import { applyCadHandoff } from '@/lib/cad/handoff';
-import { requestCadDemoSeed } from '@/lib/cad/seed-demo-flag';
 
 /**
  * components/entry/WelcomeIntro.tsx — TẦNG 1 onboarding "just-in-time" (thay bước 'gallery'
@@ -22,11 +21,9 @@ import { requestCadDemoSeed } from '@/lib/cad/seed-demo-flag';
  * Dạy "bức tranh lớn" (CAD→Render→Present dùng chung 1 dữ liệu) — KHÔNG dạy vị trí nút bấm
  * (đó là việc của Tầng 2 StageIntroCard, hiện lần đầu mỗi chặng).
  *
- * 2 nút hành động THẬT (không phải nút trang trí):
- *  - "Mở dự án mẫu để xem thử": tạo 1 flow trống → mở → gắn cờ seed-demo-flag → vào thẳng
- *    `/projects/[id]/cad` — CadEditor tự nạp buildDemoPlan() (mặt bằng mẫu có sẵn) lúc mount,
- *    y hệt nút "Mở bản demo" nội bộ CadEditor vẫn dùng — user thấy ngay 1 bản vẽ thật, không
- *    phải canvas trống.
+ * 1 nút hành động THẬT (M-EMPTY 07/08, Hoà chốt "bỏ hết dự án mẫu — app thật bắt đầu bằng
+ * card +"): nút "Mở dự án mẫu" (tạo flow + seed-demo-flag + buildDemoPlan) đã GỠ — người dùng
+ * mới không thấy dự án của ai cả.
  *  - "Tạo dự án của tôi": tạo 1 flow trống → mở → onEnter() (cùng hàm hoàn tất ProjectSelect
  *    đang dùng cho card "+ Dự án mới" — HomeScreen truyền prop này y hệt).
  */
@@ -43,7 +40,7 @@ export function WelcomeIntro({
 }) {
   const tr = useT();
   const router = useRouter();
-  const [busy, setBusy] = useState<'sample' | 'new' | null>(null);
+  const [busy, setBusy] = useState<'new' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleCreateNew = useCallback(async () => {
@@ -61,25 +58,6 @@ export function WelcomeIntro({
       setError(tr('Không tạo được dự án — thử lại.', 'Could not create the project — try again.'));
     }
   }, [busy, onDismiss, onEnter, tr]);
-
-  const handleOpenSample = useCallback(async () => {
-    if (busy) return;
-    setBusy('sample');
-    setError(null);
-    try {
-      const id = await createFlow(
-        tr('Dự án mẫu', 'Sample project'),
-        JSON.stringify({ nodes: [], edges: [] }),
-      );
-      await openFlow(id);
-      requestCadDemoSeed(); // CadEditor đọc cờ này lúc mount → tự nạp mặt bằng mẫu
-      onDismiss();
-      router.push(`/projects/${id}/cad`);
-    } catch {
-      setBusy(null);
-      setError(tr('Không mở được dự án mẫu — thử lại.', 'Could not open the sample project — try again.'));
-    }
-  }, [busy, onDismiss, router, tr]);
 
   return (
     <div className="fixed inset-0 z-[95] grid place-items-center p-4" data-welcome-intro>
@@ -131,16 +109,6 @@ export function WelcomeIntro({
           {error && <p className="mt-3 text-[12px] text-red-300">{error}</p>}
 
           <div className="mt-5 flex flex-col gap-2.5">
-            <button
-              type="button"
-              onClick={handleOpenSample}
-              disabled={busy !== null}
-              className="flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-medium text-white/85 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ border: '1px solid rgba(255,255,255,0.18)' }}
-            >
-              {busy === 'sample' && <Loader2 size={14} className="animate-spin" />}
-              {tr('Mở dự án mẫu để xem thử', 'Open the sample project to try it out')}
-            </button>
             <button
               type="button"
               onClick={handleCreateNew}

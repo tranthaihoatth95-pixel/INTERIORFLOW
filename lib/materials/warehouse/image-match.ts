@@ -63,6 +63,43 @@ export function matchImagesForRows(
   files: File[],
   rows: { rowIndex: number; sku?: string; imageRef?: string }[],
 ): Map<number, File> {
+  return matchImagesForRowsEx(files, rows).byRow;
+}
+
+/** Tên file bị trùng giữa nhiều thư mục — xem `matchImagesForRowsEx`. */
+export interface DuplicateImageName {
+  /** tên file (đã chuẩn hoá NFC + thường hoá), vd `ghe.jpg` */
+  name: string;
+  /** đường dẫn ĐẦY ĐỦ của mọi file mang tên đó, theo thứ tự người dùng đưa vào */
+  paths: string[];
+}
+
+export interface MatchImagesResult {
+  /** rowIndex → ảnh đã ghép (đúng như `matchImagesForRows` trả về). */
+  byRow: Map<number, File>;
+  /**
+   * Các TÊN FILE xuất hiện ở NHIỀU thư mục khác nhau trong lô người dùng kéo vào.
+   *
+   * 🔴 VÁ 06/08 vòng 3 — đo được: `phong-khach/ghe.jpg` + `phong-ngu/ghe.jpg` ⇒ **cả hai dòng
+   * lấy CÙNG MỘT ảnh** (bản nạp sau đè bản trước trong map khoá-theo-tên), không một tiếng báo.
+   * Đây là cách sắp thư mục ảnh phổ biến nhất của studio nội thất (một thư mục mỗi phòng), nên
+   * ca này không hiếm — nó là mặc định.
+   * Máy KHÔNG tự đoán ảnh nào đúng (không có căn cứ): nó ghép như cũ (bản gặp SAU CÙNG, giữ hành
+   * vi đã có test) và TRẢ RA danh sách này để tầng trên nói cho người dùng biết.
+   * ⚠️ Đường HIỂN THỊ còn thiếu: `components/materials/MaterialImportWizard.tsx` chưa đọc trường
+   * này (vùng `components/**` không thuộc đợt sửa này) — người dùng chưa nhìn thấy cảnh báo.
+   */
+  duplicateNames: DuplicateImageName[];
+}
+
+/**
+ * Bản đầy đủ của `matchImagesForRows` — trả thêm danh sách ảnh TRÙNG TÊN. Tách làm 2 hàm để
+ * caller cũ (`MaterialImportWizard`) không phải đổi gì; caller mới đọc `duplicateNames`.
+ */
+export function matchImagesForRowsEx(
+  files: File[],
+  rows: { rowIndex: number; sku?: string; imageRef?: string }[],
+): MatchImagesResult {
   /* 🔴 VÁ VÒNG 2 (kiểm phản biện 06/08) — CHUẨN HOÁ UNICODE. macOS/APFS trả tên file ở dạng NFD
      ("ghế" = g-h-ê-̂-́), Excel/người gõ tay ra NFC ("ghế" 1 ký tự) — hai chuỗi TRÔNG Y HỆT nhau,
      `===` thì khác nhau. Đo được: file `ghế.png` + ô ghi `ghế.png` ⇒ **0 ảnh khớp, không câu nào
@@ -71,29 +108,38 @@ export function matchImagesForRows(
 
   const byFullName = new Map<string, File>();
   const byStem = new Map<string, File>();
+  /** tên file (không kèm thư mục) → mọi đường dẫn mang tên đó — nguồn của `duplicateNames`. */
+  const pathsByName = new Map<string, string[]>();
   for (const f of files) {
     if (!isImageFile(f.name)) continue;
     const base = norm(f.name.slice(f.name.lastIndexOf('/') + 1));
     byFullName.set(base, f);
     byStem.set(norm(stem(f.name)), f);
+    const seen = pathsByName.get(base);
+    if (seen) seen.push(f.name);
+    else pathsByName.set(base, [f.name]);
+  }
+  const duplicateNames: DuplicateImageName[] = [];
+  for (const [name, paths] of pathsByName) {
+    if (paths.length > 1) duplicateNames.push({ name, paths });
   }
 
-  const out = new Map<number, File>();
+  const byRow = new Map<number, File>();
   for (const r of rows) {
     const ref = norm(r.imageRef ?? '');
     if (ref && !isDirectImageUrl(ref)) {
       const base = ref.slice(ref.lastIndexOf('/') + 1);
       const dot = base.lastIndexOf('.');
       const hit = byFullName.get(base) ?? byStem.get(dot > 0 ? base.slice(0, dot) : base);
-      if (hit) { out.set(r.rowIndex, hit); continue; }
+      if (hit) { byRow.set(r.rowIndex, hit); continue; }
     }
     const sku = norm(r.sku ?? '');
     if (sku) {
       const hit = byStem.get(sku);
-      if (hit) out.set(r.rowIndex, hit);
+      if (hit) byRow.set(r.rowIndex, hit);
     }
   }
-  return out;
+  return { byRow, duplicateNames };
 }
 
 /** Đọc 1 File ảnh thành data URL — dùng để gửi lên `POST /api/library` (contract dataUrl có sẵn,

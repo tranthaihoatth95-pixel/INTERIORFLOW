@@ -42,7 +42,8 @@ export const USAGES: { id: RefUsage; label: string; tone: string }[] = [
   { id: 'material', label: 'Vật liệu', tone: '#A8825A' },
   { id: 'furniture', label: 'Furniture / đồ rời', tone: '#7A9AA8' },
   { id: 'layout', label: 'Dàn trang / template', tone: '#B0885A' },
-  { id: 'cad', label: 'CAD / Bản vẽ', tone: '#9A6B84' },
+  // Nhãn theo chốt 07/08 (bỏ chữ "CAD" khỏi nhãn người dùng) — id 'cad' là KHOÁ LƯU, giữ nguyên.
+  { id: 'cad', label: 'Bản vẽ 2D (DXF/DWG)', tone: '#9A6B84' },
   { id: 'brief', label: 'Đầu bài / Brief', tone: '#8A8A8A' },
 ];
 

@@ -33,7 +33,13 @@ import { parseMeasurementPayload, splitMaterials, normalizeColorHex } from '../.
 
 /** Đơn vị chọn được trên khối. 4 đơn vị đầu là ĐẾM (`isCountUnit` bỏ dấu trước khi so nên 'cái'
  * nhận đúng), 3 đơn vị sau là ĐO. Giữ đúng bộ mã `ProductSpec.unit` cho phần đo ('m2'/'m'/'m3')
- * — không bịa hệ đơn vị thứ hai. */
+ * — không bịa hệ đơn vị thứ hai.
+ *
+ * ⚠️ Câu trên TỪNG SAI (06/08): `'tấm'` có trong danh sách này nhưng KHÔNG có trong
+ * `FFE_COUNT_UNITS` ⇒ `isCountUnit('tấm') = false`. Chọn 'tấm' thì số lượng không bị ép nguyên
+ * (`normalizeQty('2.6','tấm') = 2.6`) và BOQ ném cảnh báo "IF chưa biết đơn vị này" cho đúng đơn
+ * vị IF vừa mời chọn. Đã vá ở `lib/ffe/item.ts` (thêm `tam` + `cap`) nên câu trên NAY đúng —
+ * thêm đơn vị mới vào mảng này thì phải khai luôn bên `FFE_COUNT_UNITS`, hai chỗ đi cùng nhau. */
 export const FFE_UNIT_OPTIONS = ['cái', 'bộ', 'chiếc', 'tấm', 'm2', 'm', 'm3'];
 
 /** Người dùng ép mức tin cậy khi họ biết rõ hơn máy. 'Tự động' = lấy theo kết quả đo. */

@@ -22,7 +22,7 @@ import {
 export const ASSET_MIME = 'application/interiorflow-asset-url';
 
 export const LIBRARY_CATEGORIES = [
-  'CAD / Sketch',
+  'Thiết kế 2D / Sketch',
   'Ref nội thất',
   'Ref ngoại thất',
   'Style dàn trang',

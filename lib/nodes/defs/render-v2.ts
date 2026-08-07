@@ -289,7 +289,7 @@ export const renderV2Nodes: NodeDefinition[] = [
         // chọn (theme/trần/palette) sau mỗi lần ghi ngược heightMm vào Doc — tránh gọi lại
         // fetchGuProfile (mạng) trong modal + tránh lệch màu/trần so với lúc node chạy.
         _sceneOpts: { dataType: 'text', value: JSON.stringify({ wallHeightMm, theme, ceiling: params.ceiling === 'Có', palette }) },
-        _tier: tierPort('Tầng lõi tất định (CAD→OBJ extrude) — không AI'),
+        _tier: tierPort('Tầng lõi tất định (hình học 2D→OBJ extrude) — không AI'),
       };
     },
   },

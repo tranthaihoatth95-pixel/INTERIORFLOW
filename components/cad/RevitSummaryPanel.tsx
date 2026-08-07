@@ -20,14 +20,16 @@ import { ELEMENT_TYPE_OPTIONS, type ElementType } from '@/lib/cad/model';
 
 // left:12,top:70 đã bị ZonePanel chiếm (hiện khi tool zone/arrow, có thể trùng lúc đang ở mode
 // Revit) — neo từ ĐÁY bên trái để không đè, đối xứng với CamPathPanel (đáy-phải, D5).
+// 07/08 M-UI-CAD sửa VIỆC 3+4: đây là panel NHIỀU CHỮ nổi trên canvas — không nằm trong 4 chỗ
+// kính lỏng cho phép (G9, `.glass-float`), nên bỏ hẳn backdrop-filter và nâng nền lên ĐẶC 96%
+// (đúng luật `.vitals-pop`/G2 cho lớp nổi nhiều chữ) thay vì chỉ chạm ngưỡng tối thiểu 92%.
 const panel: React.CSSProperties = {
   position: 'absolute',
   left: 12,
   bottom: 90,
   zIndex: 21,
   width: 240,
-  background: 'color-mix(in srgb, var(--panel) 92%, transparent)',
-  backdropFilter: 'blur(14px)',
+  background: 'color-mix(in srgb, var(--panel) 96%, transparent)',
   border: '1px solid var(--border)',
   borderRadius: 12,
   padding: 10,
@@ -56,9 +58,9 @@ export default function RevitSummaryPanel() {
     <div style={panel}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
         <Boxes size={13} color="var(--accent)" />
-        <p style={{ fontSize: 10.5, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 650, color: 'var(--t3)' }}>Cấu kiện BIM</p>
+        <p style={{ fontSize: 11.5, lineHeight: 1.5, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 650, color: 'var(--t3)' }}>Cấu kiện BIM</p>
       </div>
-      <p style={{ fontSize: 11.5, color: 'var(--t2)', marginBottom: 8 }}>
+      <p style={{ fontSize: 11.5, lineHeight: 1.5, color: 'var(--t2)', marginBottom: 8 }}>
         Đã gán {assigned}/{total} đối tượng ({pct}%)
       </p>
       <div style={{ height: 4, borderRadius: 999, background: 'var(--field)', overflow: 'hidden', marginBottom: 10 }}>
@@ -69,15 +71,15 @@ export default function RevitSummaryPanel() {
           const n = byType.get(o.value) ?? 0;
           if (n === 0) return null;
           return (
-            <div key={o.value} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+            <div key={o.value} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, lineHeight: 1.5 }}>
               <span style={{ color: 'var(--t3)' }}>{o.label.split(' · ')[0]}</span>
               <span style={{ color: 'var(--t2)', fontWeight: 600 }}>{n}</span>
             </div>
           );
         })}
-        {assigned === 0 && <p style={{ fontSize: 10.5, color: 'var(--t4)' }}>Chọn đối tượng → gán &ldquo;Cấu kiện BIM&rdquo; ở panel bên phải để bắt đầu.</p>}
+        {assigned === 0 && <p style={{ fontSize: 11.5, lineHeight: 1.5, color: 'var(--t3)' }}>Chọn đối tượng → gán &ldquo;Cấu kiện BIM&rdquo; ở panel bên phải để bắt đầu.</p>}
       </div>
-      <p style={{ fontSize: 10, color: 'var(--t4)', marginTop: 10, lineHeight: 1.4 }}>
+      <p style={{ fontSize: 11.5, color: 'var(--t3)', marginTop: 10, lineHeight: 1.5 }}>
         Nền cho nhận IFC + va chạm (B3-B4, chưa làm) — mode Revit chỉ khác Pro ở chỗ hiện được bảng này.
       </p>
     </div>

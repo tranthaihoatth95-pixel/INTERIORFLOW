@@ -51,9 +51,10 @@
 import type { Doc, DimEntity, ElementType, Entity, HatchPattern, Layer, LineType, Pt } from './model';
 import {
   docBox, ellipseBoundaryPoints, zoneBoundaryPoints, zoneCentroid, ZONE_GROUP_META,
-  INSERT_ID_CELL_SEP, INSERT_ID_NEST_SEP,
+  INSERT_ID_CELL_SEP, INSERT_ID_NEST_SEP, roomCentroid,
 } from './model';
 import { inferElementTypes, type ElementInferRule } from './element-infer';
+import { polygonArea } from './hatch';
 import { BLOCK_MAP, type Prim } from './furniture';
 
 // Bảng màu ACI cơ bản (index → hex). Đủ 1..9 + vài mã hay gặp; ngoài bảng → xám.
@@ -617,8 +618,8 @@ function buildRecordEntity(
  * trong file đã bị bỏ dấu khi export (xem sanitizeName) nên không khớp lại tên có dấu gốc.
  * Doc trả về chỉ chứa ĐÚNG layer thật sự xuất hiện trong file (fallback '0' nếu file rỗng).
  */
-export function parseDxf(text: string): Doc {
-  return parseDxfEx(text).doc;
+export function parseDxf(text: string, opts: DxfParseOptions = {}): Doc {
+  return parseDxfEx(text, opts).doc;
 }
 
 /** Tuỳ chọn nạp — additive, mọi nơi gọi cũ `parseDxfEx(text)` giữ nguyên hành vi mặc định. */
@@ -1058,8 +1059,15 @@ export function exportDxf(doc: Doc): string {
 
 /* ═══════════ A3 · G-M1-07 — DỰNG LẠI BLOCK + INSERT LÚC XUẤT ═══════════ */
 
-/** Một định nghĩa BLOCK sẽ ghi ra; `entities` mang toạ độ WORLD của bản chèn CHUẨN (base 0,0). */
-interface ReblockDef { name: string; entities: Entity[] }
+/**
+ * Một định nghĩa BLOCK sẽ ghi ra; `entities` mang toạ độ WORLD của bản chèn CHUẨN (base 0,0).
+ *
+ * `nested` (06/08, vòng 2 G-M1-07) — INSERT của block CON nằm BÊN TRONG định nghĩa này. Đây là
+ * thứ giữ lại CÂY LỒNG: bản vẽ thật lồng tới **5 cấp** (đo trên 6 hồ sơ: 79–101 nút trong, 73–93
+ * gốc), bản xuất trước 06/08 ép tất cả về **1 cấp** — hình đúng, nhưng người nhận mất khả năng
+ * chọn/dời cả một cụm lớn như một vật.
+ */
+interface ReblockDef { name: string; entities: Entity[]; nested?: ReblockInsert[] }
 /** Một INSERT sẽ ghi ra. `sx`/`sy` tách riêng vì lật gương = `sy` âm (xem `solveSimilarity`). */
 interface ReblockInsert { defName: string; at: Pt; rotDeg: number; sx: number; sy: number }
 interface ReblockPlan {
@@ -1206,11 +1214,39 @@ function planReblock(doc: Doc, layerName: (id: string) => string, reserved: Iter
     plan.preserved[srcBlock] = (plan.preserved[srcBlock] ?? 0) + 1;
   };
 
+  /**
+   * G-M1-07 vòng 2 — GIỮ CÂY LỒNG.
+   *
+   * `srcInsertId` là một ĐƯỜNG DẪN: `i93/5/271` = bản chèn 271 nằm trong bản chèn 5, nằm trong bản
+   * chèn 93. Bản xuất trước đây đổ hết INSERT ra section ENTITIES ⇒ cây 5 cấp bẹp còn 1 cấp: hình
+   * vẫn đủ, nhưng người nhận không còn chọn/dời được cả một cụm lớn như MỘT vật.
+   *
+   * Nay mỗi bản chèn được ĐẶT VÀO ĐÚNG CHA của nó: cha là một định nghĩa BLOCK "nhóm" chứa INSERT
+   * của các con. Chỉ bản chèn ở gốc mới ra thẳng ENTITIES.
+   *
+   * ⚠️ NÓI THẲNG MỘT HỤT: **tên block của nút TRONG không lấy lại được** — bộ nạp chỉ ghi tên của
+   * định nghĩa TRỰC TIẾP chứa hình (`srcBlock`), không ghi chuỗi tên tổ tiên. Đo trên hồ sơ thật:
+   * 0/101 nút trong lấy được tên gốc. Nên nhóm phải đặt tên tự chế `IF_NHOM_n`. Cấu trúc đúng, tên
+   * thì không — muốn đúng cả tên phải sửa BỘ NẠP ghi thêm chuỗi tổ tiên (ghi thành GAP riêng, đừng
+   * lặng lẽ giả vờ là đủ).
+   */
+  const parentOf = (p: string): string => {
+    const k = p.lastIndexOf('/');
+    return k < 0 ? '' : p.slice(0, k);
+  };
+  const pending = new Map<string, ReblockInsert[]>();
+  const route = (path: string, ins: ReblockInsert) => {
+    const parent = parentOf(path);
+    if (!parent) { plan.inserts.push(ins); return; }
+    const list = pending.get(parent);
+    if (list) list.push(ins); else pending.set(parent, [ins]);
+  };
+
   for (const cluster of clusters.values()) {
     const [canon, ...rest] = cluster.groups;
     const defName = uniqueName(cluster.srcBlock);
     plan.defs.push({ name: defName, entities: canon });
-    plan.inserts.push({ defName, at: { x: 0, y: 0 }, rotDeg: 0, sx: 1, sy: 1 });
+    route(canon[0].srcInsertId as string, { defName, at: { x: 0, y: 0 }, rotDeg: 0, sx: 1, sy: 1 });
     take(canon, cluster.srcBlock);
 
     const canonPts = anchorsOf(canon);
@@ -1225,7 +1261,7 @@ function planReblock(doc: Doc, layerName: (id: string) => string, reserved: Iter
       const scalarsOk = fit !== null && canonScalars.length === qs.length
         && canonScalars.every((v, i) => Math.abs(v * fit!.k - qs[i]) <= REBLOCK_TOL_MM + Math.abs(qs[i]) * 1e-9);
       if (fit && scalarsOk) {
-        plan.inserts.push({
+        route(g[0].srcInsertId as string, {
           defName,
           at: { x: fit.tx, y: fit.ty },
           rotDeg: (fit.rotRad * 180) / Math.PI,
@@ -1236,12 +1272,35 @@ function planReblock(doc: Doc, layerName: (id: string) => string, reserved: Iter
         // Không quy về được phép biến đổi nào — cấp ĐỊNH NGHĨA RIÊNG, vẫn là block thật.
         const own = uniqueName(cluster.srcBlock);
         plan.defs.push({ name: own, entities: g });
-        plan.inserts.push({ defName: own, at: { x: 0, y: 0 }, rotDeg: 0, sx: 1, sy: 1 });
+        route(g[0].srcInsertId as string, { defName: own, at: { x: 0, y: 0 }, rotDeg: 0, sx: 1, sy: 1 });
       }
       take(g, cluster.srcBlock);
     }
   }
+
+  // Dựng các NHÓM từ dưới lên: con phải có định nghĩa trước khi cha trỏ vào. Sắp theo ĐỘ SÂU giảm
+  // dần để không bao giờ tạo INSERT trỏ vào một tên chưa tồn tại.
+  let grp = 0;
+  const depth = (p: string) => p.split('/').length;
+  for (const path of [...pending.keys()].sort((a, b) => depth(b) - depth(a))) {
+    const kids = pending.get(path);
+    if (!kids || !kids.length) continue;
+    grp += 1;
+    const name = uniqueName(`IF_NHOM_${grp}`);
+    plan.defs.push({ name, entities: [], nested: kids });
+    route(path, { defName: name, at: { x: 0, y: 0 }, rotDeg: 0, sx: 1, sy: 1 });
+  }
   return plan;
+}
+
+/** Một record INSERT — dùng chung cho section ENTITIES và cho INSERT lồng bên trong BLOCK. */
+function insertRecord(ins: ReblockInsert): string[] {
+  return [
+    pair(0, 'INSERT'), pair(8, '0'), pair(2, ins.defName),
+    pair(10, ins.at.x), pair(20, ins.at.y), pair(30, 0),
+    pair(41, ins.sx), pair(42, ins.sy), pair(43, Math.abs(ins.sx) || 1),
+    pair(50, ins.rotDeg),
+  ];
 }
 
 /**
@@ -1266,7 +1325,8 @@ export function exportDxfEx(doc: Doc): { dxf: string; report: DxfExportReport } 
     pair(0, 'ENDSEC'),
   );
 
-  const layerName = (id: string) => sanitizeName(doc.layers.find((l) => l.id === id)?.name ?? '0');
+  const uniqueLayerNames = buildUniqueLayerNames(doc.layers);
+  const layerName = (id: string) => uniqueLayerNames.get(id) ?? '0';
   const dimEntities = doc.entities.filter((e): e is DimEntity => e.type === 'dim');
   const dimBlockName = new Map<string, string>();
   dimEntities.forEach((e, i) => dimBlockName.set(e.id, `*D${i + 1}`));
@@ -1284,8 +1344,31 @@ export function exportDxfEx(doc: Doc): { dxf: string; report: DxfExportReport } 
     const writeLine = (a: Pt, b: Pt, lay: string, aci?: number, ovr: string[] = [], xd: string[] = []) => {
       sink.push(pair(0, 'LINE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(10, a.x), pair(20, a.y), pair(30, 0), pair(11, b.x), pair(21, b.y), pair(31, 0), ...xd);
     };
+    /**
+     * G-M1-18 (06/08) — LWPOLYLINE **PHẢI** có dấu lớp con `100`, khác mọi entity còn lại.
+     *
+     * Vật chứng: file do `exportDxf` ghi ra trước 06/08 **không mở được bằng bộ đọc DXF chuẩn**
+     * (`ezdxf`, cả chế độ cứu hộ) — hỏng 6/6 hồ sơ thật, trong khi chính file gốc mở tốt. Cô lập
+     * bằng file tối thiểu một-entity: LINE · CIRCLE · ARC · TEXT · DIMENSION đều mở sạch, chỉ
+     * `LWPOLYLINE` (và HATCH không pattern, vốn ghi biên bằng LWPOLYLINE) chết với
+     * `DXFStructureError: missing 'AcDbPolyline' subclass`.
+     *
+     * Vì sao riêng nó: file khai `$ACADVER = AC1015`, mà từ R13 trở đi bộ đọc dùng dấu `100` để
+     * biết CHỖ BẮT ĐẦU của dữ liệu riêng từng lớp. Với LWPOLYLINE, `90` (số đỉnh) và cặp `10/20`
+     * lặp lại phải nằm SAU `100 AcDbPolyline` — thiếu dấu này thì bộ đọc không biết đâu là đỉnh,
+     * và từ chối cả tệp chứ không chỉ entity đó. Các entity kia có bố cục cố định nên bộ đọc còn
+     * đoán được; LWPOLYLINE dài ngắn tuỳ số đỉnh nên không.
+     *
+     * Thứ tự bắt buộc: `100 AcDbEntity` **trước** thuộc tính chung (layer/màu), `100 AcDbPolyline`
+     * **trước** `90`. Parser của IF không đổi gì — nó gom group code vào bảng, mã 100 chỉ nằm đó.
+     *
+     * ⚠️ CỐ Ý chỉ sửa LWPOLYLINE. Thêm dấu lớp con cho các entity còn lại là ĐÚNG chuẩn hơn nhưng
+     * mỗi loại một chuỗi lớp riêng (ARC = `AcDbCircle` rồi `AcDbArc`; TEXT lặp `AcDbText` hai lần)
+     * — làm bừa dễ hỏng thứ đang chạy tốt. Đo trước, sửa sau: `dxf-openable.test.ts` là chỗ ghi
+     * lại kết quả đo cho từng loại.
+     */
     const writePoly = (pts: Pt[], closed: boolean, lay: string, aci?: number, ovr: string[] = [], xd: string[] = []) => {
-      sink.push(pair(0, 'LWPOLYLINE'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(90, pts.length), pair(70, closed ? 1 : 0));
+      sink.push(pair(0, 'LWPOLYLINE'), pair(100, 'AcDbEntity'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []), ...ovr, pair(100, 'AcDbPolyline'), pair(90, pts.length), pair(70, closed ? 1 : 0));
       pts.forEach((p) => sink.push(pair(10, p.x), pair(20, p.y)));
       sink.push(...xd);
     };
@@ -1415,20 +1498,29 @@ export function exportDxfEx(doc: Doc): { dxf: string; report: DxfExportReport } 
           break;
         case 'hatch': {
           if (e.points.length < 2) break;
-          if (!e.pattern) {
-            // Poché tường CŨ (WALL, không có `pattern`) → giữ nguyên hành vi cũ: đường bao
-            // LWPOLYLINE khép kín (không tô — ưu tiên an toàn cấu trúc file).
+          // G-M1-14 (07/08) — poché tường (WALL sinh `solid:true` KHÔNG có `pattern`,
+          // commands.ts `wallSegment`) TRƯỚC ĐÂY rơi vào fallback "đường bao LWPOLYLINE không tô"
+          // ⇒ vòng xuất→nhập biến mảng tô thành polyline trùng khít với đường bao thật, mất hẳn
+          // poché và mất luôn liên kết neo. Fallback đó viết từ thời HATCH export chưa an toàn;
+          // từ khi G-M1-18 thêm đủ dấu lớp con (ezdxf mở 6/6 file, 0 lỗi audit) thì hatch solid
+          // đi qua nhánh HATCH THẬT với tên pattern 'SOLID' được. Fallback chỉ còn cho hatch
+          // không-solid không-pattern (không có cách thể hiện — giữ biên, không bịa pattern).
+          const patternName = e.pattern ?? (e.solid ? 'SOLID' : undefined);
+          if (!patternName) {
             writePoly(e.points, true, lay, aci, ovr);
             break;
           }
           // Nấc 4 — entity HATCH THẬT (tên pattern ANSI31/ANSI32/ANSI37/SOLID/DOTS đều là tên
           // pattern chuẩn có sẵn trong thư viện acad.pat/ANSI.pat của AutoCAD).
-          const isSolid = e.pattern === 'SOLID';
+          const isSolid = patternName === 'SOLID';
           sink.push(
-            pair(0, 'HATCH'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []),
+            // G-M1-18 — HATCH cũng bắt buộc có dấu lớp con (bộ đọc chuẩn đòi đủ 3 lớp:
+            // AcDbEntity → AcDbHatch → dữ liệu biên). Thiếu là hỏng CẢ TỆP, không riêng entity này.
+            pair(0, 'HATCH'), pair(100, 'AcDbEntity'), pair(8, lay), ...(aci !== undefined ? [pair(62, aci)] : []),
+            pair(100, 'AcDbHatch'),
             pair(10, 0), pair(20, 0), pair(30, 0),
             pair(210, 0), pair(220, 0), pair(230, 1),
-            pair(2, e.pattern),
+            pair(2, patternName),
             pair(70, isSolid ? 1 : 0),
             pair(71, 0),
             pair(91, 1),
@@ -1472,12 +1564,28 @@ export function exportDxfEx(doc: Doc): { dxf: string; report: DxfExportReport } 
           if (e.headStart) head(e.path[1], e.path[0]);
           break;
         }
+        case 'room': {
+          // G-M2-04 — RoomEntity ra DXF dạng LWPOLYLINE biên + TEXT "TÊN — NN.NN m²" (lossy có
+          // chủ đích, giống zone: DXF ngoài không có khái niệm room của IF; `.idf` mới là format
+          // giữ nguyên cấu kiện). Diện tích ghi vào TEXT tính từ biên lúc xuất — đúng luật m² sống.
+          if (e.boundary.length < 3) break;
+          writePoly(e.boundary, true, lay, aci, ovr);
+          const at = roomCentroid(e);
+          const m2 = polygonArea(e.boundary) / 1e6;
+          sink.push(
+            pair(0, 'TEXT'), pair(100, 'AcDbEntity'), pair(8, lay), pair(100, 'AcDbText'),
+            pair(10, (e.labelPos ?? at).x), pair(20, (e.labelPos ?? at).y), pair(30, 0),
+            pair(40, 250), pair(1, `${e.name} — ${m2.toFixed(2)} m2`),
+          );
+          break;
+        }
         case 'zone': {
           const pts = zoneBoundaryPoints(e, 32);
           if (pts.length < 3) break;
           const zoneAci = hexToAci(e.color ?? ZONE_GROUP_META[e.group]?.color ?? '#9a9488');
           sink.push(
-            pair(0, 'HATCH'), pair(8, lay), pair(62, zoneAci),
+            pair(0, 'HATCH'), pair(100, 'AcDbEntity'), pair(8, lay), pair(62, zoneAci),
+            pair(100, 'AcDbHatch'),
             pair(10, 0), pair(20, 0), pair(30, 0),
             pair(210, 0), pair(220, 0), pair(230, 1),
             pair(2, 'SOLID'),
@@ -1520,7 +1628,7 @@ export function exportDxfEx(doc: Doc): { dxf: string; report: DxfExportReport } 
   out.push(pair(0, 'LAYER'), pair(2, '0'), pair(70, 0), pair(62, 7), pair(6, 'CONTINUOUS'), pair(370, 25));
   for (const l of doc.layers) {
     out.push(
-      pair(0, 'LAYER'), pair(2, sanitizeName(l.name)), pair(70, l.locked ? 4 : 0), pair(62, hexToAci(l.color)),
+      pair(0, 'LAYER'), pair(2, layerName(l.id)), pair(70, l.locked ? 4 : 0), pair(62, hexToAci(l.color)),
       pair(6, linetypeToDxfName(l.lineType)), pair(370, lineweightToDxfEnum(l.lineweight ?? 0.25)),
     );
   }
@@ -1562,6 +1670,8 @@ export function exportDxfEx(doc: Doc): { dxf: string; report: DxfExportReport } 
   for (const d of plan.defs) {
     out.push(pair(0, 'BLOCK'), pair(8, '0'), pair(2, d.name), pair(70, 0), pair(10, 0), pair(20, 0), pair(30, 0), pair(3, d.name), pair(1, ''));
     writeEntitiesInto(out, d.entities);
+    // G-M1-07 vòng 2 — INSERT của block CON, ghi BÊN TRONG định nghĩa cha: đây chính là cây lồng.
+    for (const ins of d.nested ?? []) out.push(...insertRecord(ins));
     out.push(pair(0, 'ENDBLK'), pair(8, '0'));
   }
   out.push(pair(0, 'ENDSEC'));
@@ -1572,14 +1682,7 @@ export function exportDxfEx(doc: Doc): { dxf: string; report: DxfExportReport } 
   writeEntitiesInto(out, plan.blockedIds.size ? doc.entities.filter((e) => !plan.blockedIds.has(e.id)) : doc.entities);
   // INSERT — luôn đặt trên layer '0': hình bên trong block đã khai layer riêng, nên layer của
   // INSERT chỉ còn ảnh hưởng tới hình khai layer '0', và '0' là đúng thứ chúng vốn có.
-  for (const ins of plan.inserts) {
-    out.push(
-      pair(0, 'INSERT'), pair(8, '0'), pair(2, ins.defName),
-      pair(10, ins.at.x), pair(20, ins.at.y), pair(30, 0),
-      pair(41, ins.sx), pair(42, ins.sy), pair(43, Math.abs(ins.sx) || 1),
-      pair(50, ins.rotDeg),
-    );
-  }
+  for (const ins of plan.inserts) out.push(...insertRecord(ins));
 
   out.push(pair(0, 'ENDSEC'), pair(0, 'EOF'));
   return { dxf: out.join('\n'), report: buildExportReport(doc, plan) };
@@ -1605,9 +1708,18 @@ function buildExportReport(doc: Doc, plan: ReblockPlan): DxfExportReport {
   if (names.length > 0) {
     const sample = names.slice(0, 3).join(', ');
     const them = names.length > 3 ? `, … và ${names.length - 3} block nữa` : '';
+    // G-M1-20 — câu này từng viết tuyệt đối ("bản xuất đã làm phẳng, mở lại sẽ KHÔNG CÒN cấu trúc
+    // block"). Từ 06/08 bộ ghi dựng lại được block thật, nên nói vậy là báo mất một thứ vẫn còn:
+    // đo trên hồ sơ thật, cùng một bản xuất giữ 91–457 khối mà vẫn có vài trăm hình bị rã. Phải
+    // tách hai vế, và chỉ nói "mất hết" khi thật sự không giữ được khối nào.
+    const flatEnts = Object.values(flattenedBlocks).reduce((a, b) => a + b, 0);
     warnings.push(
-      `Bản vẽ gốc có ${names.length} block; bản xuất này đã làm phẳng — mở lại ở AutoCAD sẽ không còn ` +
-        `cấu trúc block. Hình vẽ giữ nguyên, nhưng không sửa hàng loạt qua block được nữa (${sample}${them}).`,
+      plan.inserts.length > 0
+        ? `Giữ được ${plan.inserts.length} khối, nhưng ${flatEnts} hình thuộc ${names.length} block đã bị rã ` +
+          `thành nét rời (thường do bị sửa/dời sau khi nhập). Phần rã vẫn đủ hình, chỉ không sửa hàng ` +
+          `loạt qua block được nữa (${sample}${them}).`
+        : `Bản vẽ gốc có ${names.length} block; bản xuất này đã làm phẳng — mở lại ở AutoCAD sẽ không còn ` +
+          `cấu trúc block. Hình vẽ giữ nguyên, nhưng không sửa hàng loạt qua block được nữa (${sample}${them}).`,
     );
   }
   return {
@@ -1655,4 +1767,28 @@ function deburr(s: string): string {
 function sanitizeName(name: string): string {
   const ascii = deburr((name || '0').trim()).replace(/\s+/g, '_').replace(/[^A-Za-z0-9_-]/g, '');
   return ascii || '0';
+}
+
+/**
+ * G-M1-13 (07/08) — `sanitizeName()` một mình có thể ĐỤNG TÊN: lớp `"A B"` và `"A_B"` cùng ra
+ * `"A_B"` ⇒ file DXF trước đây chỉ còn MỘT layer trong bảng `LAYER`, entity của lớp bị đụng tên
+ * vẫn còn nhưng group 8 trỏ vào layer đã bị GỘP MẤT — không cảnh báo, tái hiện được: 2 lớp → 1.
+ *
+ * Sửa bằng cách gán tên DUY NHẤT theo TỪNG `Doc` (không sửa `sanitizeName` — nó vẫn đúng cho tên
+ * đơn lẻ, vd tên block ở `planReblock`): lớp trùng tên sau khi rút gọn thì lớp đến SAU nhận hậu tố
+ * `_2`, `_3`,… Map trả về dùng CHUNG cho cả bảng `LAYER` (group 2) lẫn `layerName(id)` mà mọi
+ * entity group 8 tra theo — một nguồn duy nhất, không còn hai chỗ tự gọi `sanitizeName` rời nhau.
+ */
+function buildUniqueLayerNames(layers: Doc['layers']): Map<string, string> {
+  const out = new Map<string, string>();
+  const used = new Set<string>(['0']); // '0' luôn dành cho layer mặc định ở trên
+  for (const l of layers) {
+    const base = sanitizeName(l.name);
+    let name = base;
+    let n = 2;
+    while (used.has(name)) name = `${base}_${n++}`;
+    used.add(name);
+    out.set(l.id, name);
+  }
+  return out;
 }

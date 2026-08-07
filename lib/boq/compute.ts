@@ -46,6 +46,11 @@ const MEASURE_UNITS = new Set([
   'kg', 'tan', 'tấn', 'ton', 'lit', 'lít', 'l',
 ]);
 
+/** Đơn vị DIỆN TÍCH — tập con của `MEASURE_UNITS`, là đơn vị DUY NHẤT hợp với cách tính của
+ * nhánh VÙNG TÔ (cộng m² rồi nhân đơn giá). Đơn vị đo khác (m dài, m³, kg, lít…) mà đem nhân với
+ * số mét vuông là tiền bịa — xem nhánh vùng tô bên dưới. */
+const AREA_UNITS = new Set(['m2', 'm²', 'sqm']);
+
 function normUnitLoose(u: string): string {
   return u.normalize('NFC').toLowerCase().trim();
 }
@@ -84,9 +89,17 @@ function priceProblem(spec: MaterialSpecLite): string | null {
 }
 
 /** Làm tròn m² về 2 chữ số thập phân — đủ độ chính xác cho báo giá, tránh số lẻ dài vô nghĩa
- * khi hiện lên bảng/XLSX. Tổng `totalAmount` cộng từ `thanhTien` ĐÃ làm tròn của từng dòng (không
- * cộng số chưa làm tròn rồi mới làm tròn tổng) — nhất quán với việc Hoà mở bảng ra cộng tay từng
- * dòng phải ra đúng con số tổng hiển thị. */
+ * khi hiện lên bảng/XLSX.
+ *
+ * LUẬT SỐ HỌC CỦA BẢNG (06/08 vòng 3, sửa cho khớp sự thật): **mọi con số in ra bảng đều tự
+ * kiểm tay được**.
+ *  · từng dòng: `thanhTien = round(m2 ĐÃ LÀM TRÒN × (1 + hao hụt%) × đơn giá)` — lấy máy tính bấm
+ *    đúng ba số in trên dòng đó phải ra đúng cột thành tiền (± làm tròn về đồng);
+ *  · tổng: `totalAmount` cộng từ `thanhTien` ĐÃ làm tròn của từng dòng (không cộng số thô rồi mới
+ *    làm tròn tổng) — cộng tay cả cột ra đúng số tổng.
+ * Trước bản vá, dòng nhân từ diện tích THÔ nên bảng in "10 m² · 1.000.000đ · 9.998.244đ" (lệch
+ * 1.756đ so với 10 × 1.000.000) mà không ghi chú gì — người đọc báo giá không có cách nào biết
+ * mình bấm máy sai hay bảng sai. */
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
@@ -94,6 +107,16 @@ function round2(n: number): number {
 /** Thành tiền làm tròn về đồng (VND không có đơn vị nhỏ hơn 1đ trong thực tế báo giá). */
 function roundVnd(n: number): number {
   return Math.round(n);
+}
+
+/**
+ * Câu lỗi khi phép nhân TRÀN (`Infinity`/`NaN`) dù mọi đầu vào đều là số hữu hạn — vd
+ * `wastagePercent = 1e308`. Nói rõ ba số đã nhân để người dùng biết số nào bịa ra kết quả đó.
+ * (06/08 vòng 3: trước đây `thanhTien: Infinity` lọt ra với `errors: []`, và `buildXlsxBuffer`
+ * ném lỗi bằng tiếng lập trình viên đúng lúc người dùng bấm "Xuất .xlsx".)
+ */
+function overflowMessage(what: string, name: string, qty: number, wastage: number, price: number): string {
+  return `${what} "${name}": phép tính thành tiền TRÀN SỐ (khối lượng ${qty} × hao hụt ${wastage}% × đơn giá ${price}) — kết quả không còn là một số tiền có thật nên KHÔNG tính vào BOQ. Kiểm lại đơn giá và hao hụt % trong kho vật liệu (một trong hai đang lớn bất thường), rồi tính lại.`;
 }
 
 /** Tâm hình học ĐƠN GIẢN (trung bình cộng toạ độ đỉnh) — KHÔNG phải centroid diện-tích-trọng-số
@@ -186,6 +209,9 @@ export function classifyBlock(b: BlockEntity): BoqBlockClass {
  * truyền vào, KHÔNG fetch bên trong (giữ THUẦN).
  *
  * Luật lỗi (không tính bừa):
+ *  - hai đối tượng CÙNG `id` → chỉ tính bản gặp đầu tiên, bản sau bỏ + 1 `BoqError`
+ *    reason='invalid-geometry' (06/08 vòng 3 — trước đó cộng đôi im lặng; vì sao dùng chung lý do
+ *    `invalid-geometry` thay vì lý do riêng: xem docblock của nó trong `./model.ts`).
  *  - `HatchEntity` không có `specId` (hoặc chuỗi rỗng) → gộp chung 1 `BoqError`
  *    reason='missing-specId', KHÔNG vào rows/totalAmount.
  *  - `BlockEntity` (món rời) không có `specId` → gộp chung 1 `BoqError`
@@ -205,8 +231,30 @@ export function classifyBlock(b: BlockEntity): BoqBlockClass {
 export function computeBoq(doc: Doc, specs: MaterialSpecLite[]): BoqResult {
   const specById = new Map(specs.map((s) => [s.id, s]));
 
-  const hatches = doc.entities.filter((e): e is HatchEntity => e.type === 'hatch');
-  const allBlocks = doc.entities.filter((e): e is BlockEntity => e.type === 'block');
+  /* ───────── KHỬ TRÙNG `id` (06/08 vòng 3) ─────────
+     `Doc.entities` là mảng, KHÔNG có ràng buộc id duy nhất. Gộp nhiều sheet
+     (`mergeIdfSheetsToDoc`), nhập file, hay một lần undo lỗi đều có thể để lọt hai bản ghi cùng
+     id. Trước đây `computeBoq` cộng cả hai: đo được 2 hatch cùng id ⇒ **18 m² thay vì 9**, 2
+     block cùng id ⇒ **qty 2 thay vì 1**, `errors: []`. Không phải "vẽ chồng" (đã có
+     `overlapping-region` cho ca đó) mà là MỘT đối tượng bị đếm hai lần.
+     Luật: giữ bản GẶP ĐẦU TIÊN, bỏ các bản sau, và NÓI RA đã bỏ mấy bản — không im. */
+  const scanned = doc.entities.filter(
+    (e): e is HatchEntity | BlockEntity => e.type === 'hatch' || e.type === 'block',
+  );
+  const seenEntityIds = new Set<string>();
+  const duplicateEntityIds: string[] = [];
+  const uniqueScanned: (HatchEntity | BlockEntity)[] = [];
+  for (const e of scanned) {
+    if (seenEntityIds.has(e.id)) {
+      duplicateEntityIds.push(e.id);
+      continue;
+    }
+    seenEntityIds.add(e.id);
+    uniqueScanned.push(e);
+  }
+
+  const hatches = uniqueScanned.filter((e): e is HatchEntity => e.type === 'hatch');
+  const allBlocks = uniqueScanned.filter((e): e is BlockEntity => e.type === 'block');
   // ⑤ (KIỂM PHẢN BIỆN 06/08) — KHÔNG phải block nào cũng là "hàng hoá đếm tiền". Bản vẽ thật có
   // hàng chục block cửa/cửa sổ + ký hiệu; gom hết vào lỗi "chưa gán mã hàng" thì lỗi luôn nổ với
   // số to và người dùng học cách bỏ qua đúng cái cảnh báo mình vừa dựng lên.
@@ -246,6 +294,15 @@ export function computeBoq(doc: Doc, specs: MaterialSpecLite[]): BoqResult {
 
   const rows: BoqRow[] = [];
   const errors: BoqError[] = [];
+
+  if (duplicateEntityIds.length) {
+    const unique = Array.from(new Set(duplicateEntityIds));
+    errors.push({
+      reason: 'invalid-geometry',
+      entityIds: unique,
+      message: `${duplicateEntityIds.length} đối tượng trên bản vẽ mang id TRÙNG với đối tượng khác (${unique.length} id: ${unique.slice(0, 5).join(', ')}${unique.length > 5 ? '…' : ''}) — mỗi id chỉ được tính MỘT lần nên bản gặp sau đã bị bỏ. Nếu đây thật sự là hai món/hai vùng tô khác nhau thì bản vẽ đang thiếu mất khối lượng của bản bị bỏ: vẽ lại (hoặc copy–paste lại) đối tượng đó để nó nhận id mới rồi tính lại BOQ.`,
+    });
+  }
 
   if (missingSpecIdIds.length) {
     errors.push({
@@ -327,15 +384,35 @@ export function computeBoq(doc: Doc, specs: MaterialSpecLite[]): BoqResult {
        một cái ghế (unit 'cái') cho vùng tô sàn vẫn ra tiền: đo được **9 m² × 2.450.000 =
        22.050.000đ với errors: []**. Chiều này còn dễ xảy ra hơn chiều kia (chọn nhầm mã trong
        danh sách kho khi tô sàn). Cùng một luật: đơn vị không khớp cách tính ⇒ KHÔNG tính, báo rõ. */
+    /* ĐƠN VỊ của nhánh VÙNG TÔ — 3 nhánh, ĐỐI XỨNG với nhánh món rời bên dưới (06/08 vòng 3).
+       Bản trước chỉ chặn đơn vị ĐẾM, nên đơn vị ĐO KHÁC diện tích vẫn nhân im lặng: đo được
+       vùng tô 3000×3000 với `unit='m'` → **qty 9, unit "m2", 900.000đ, errors: []**; y hệt với
+       'm3' và 'thùng'. "9 m² × đơn giá mỗi MÉT DÀI" là tiền bịa hệt như "1 cái × đơn giá mỗi m²".
+         (a) đơn vị DIỆN TÍCH ('m2'/'m²'/'sqm') hoặc RỖNG (chưa khai) → tính như cũ;
+         (b) đơn vị ĐẾM hoặc đơn vị ĐO khác diện tích ('m','md','m3','kg','lít'…) → CHẶN;
+         (c) đơn vị LẠ ('thùng','kiện'…) → VẪN tính theo m² nhưng cảnh báo, giữ nguyên chữ người
+             dùng viết (cùng luật với món rời: không nuốt thông tin ATLAS đã gửi). */
     const areaUnit = (spec.unit ?? '').trim();
-    if (areaUnit && isCountUnit(areaUnit)) {
+    const areaUnitNorm = normUnitLoose(areaUnit);
+    if (areaUnit && !AREA_UNITS.has(areaUnitNorm)) {
+      if (isCountUnit(areaUnit) || MEASURE_UNITS.has(areaUnitNorm)) {
+        const cachTinh = isCountUnit(areaUnit)
+          ? `đếm từng ${areaUnit}, không phải tính theo diện tích`
+          : `đo theo ${areaUnit}, không phải theo diện tích`;
+        errors.push({
+          reason: 'unit-mismatch',
+          entityIds,
+          matId: specId,
+          message: `${entityIds.length} vùng tô đang neo vào "${spec.name}" — mã này khai đơn vị "${areaUnit}" (${cachTinh}). Vùng tô chỉ ra được SỐ MÉT VUÔNG, nhân nó với đơn giá mỗi ${areaUnit} sẽ ra con số vô nghĩa nên KHÔNG tính vào BOQ. Sửa ở MỘT trong hai chỗ: đổi đơn vị của mã "${spec.sku || spec.name}" trong kho vật liệu về m², hoặc gỡ mã này khỏi vùng tô (nếu đây là món đặt rời thì đặt nó thành KHỐI trên bản vẽ, BOQ sẽ đếm theo ${areaUnit}).`,
+        });
+        continue;
+      }
       errors.push({
-        reason: 'unit-mismatch',
+        reason: 'unknown-unit',
         entityIds,
         matId: specId,
-        message: `Vùng tô đang neo vào "${spec.name}" — mã này khai đơn vị "${areaUnit}" (đếm từng cái), không phải đơn vị tính theo diện tích. Nhân số mét vuông với đơn giá mỗi ${areaUnit} sẽ ra con số vô nghĩa nên KHÔNG tính vào BOQ. Nếu đây là món đặt rời thì đặt nó thành KHỐI trên bản vẽ; nếu là vật liệu thì sửa đơn vị trong kho về m².`,
+        message: `Vật liệu "${spec.name}" khai đơn vị "${areaUnit}" — IF chưa biết đơn vị này nên vẫn tính theo DIỆN TÍCH vùng tô (m²) và ghi "m2" trong bảng. Dòng VẪN được tính; hãy đối chiếu đơn giá có đúng là giá cho mỗi mét vuông không, nếu không thì sửa đơn vị trong kho vật liệu.`,
       });
-      continue;
     }
 
     // Việc 3a (02/08) — chồng lấn trước khi cộng diện tích: 2+ vùng CÙNG vật liệu đè lên nhau
@@ -356,7 +433,26 @@ export function computeBoq(doc: Doc, specs: MaterialSpecLite[]): BoqResult {
     const areaM2Raw = group.reduce((sum, h) => sum + polygonArea(h.points) / MM2_PER_M2, 0);
     const wastage = spec.wastagePercent ?? 0;
     const m2 = round2(areaM2Raw);
-    const thanhTien = roundVnd(areaM2Raw * (1 + wastage / 100) * spec.priceVnd);
+    /* 🔴 VÁ 06/08 vòng 3 — nhân từ `m2` ĐÃ LÀM TRÒN, không từ `areaM2Raw`. Trước đây bảng in
+       "10 m² · 1.000.000đ · thành tiền 9.998.244đ" (vùng tô 3162×3162): mỗi dòng KHÔNG tự nhân
+       ra được con số in ngay cạnh nó, lệch 1.756đ mà không một ghi chú. Docblock `round2` ở đầu
+       file vốn hứa "Hoà mở bảng ra cộng tay từng dòng phải ra đúng tổng" — nay dòng cũng NHÂN
+       tay ra đúng, không chỉ cộng. Đánh đổi có chủ ý: diện tích thật bị làm tròn 2 số lẻ trước
+       khi tính tiền (sai số ≤ 0,005 m² mỗi dòng) — đổi lấy một bảng KIỂM TAY ĐƯỢC. */
+    const thanhTien = roundVnd(m2 * (1 + wastage / 100) * spec.priceVnd);
+
+    // Đầu vào hữu hạn vẫn có thể cho ra kết quả tràn (vd hao hụt 1e308) — `priceProblem` chỉ soi
+    // ĐẦU VÀO. Không có chốt này thì `thanhTien: Infinity` lọt ra với `errors: []`. Dùng chung lý
+    // do `invalid-price` (cùng việc phải làm: sửa giá/hao hụt trong kho) — xem `./model.ts`.
+    if (!Number.isFinite(thanhTien)) {
+      errors.push({
+        reason: 'invalid-price',
+        entityIds,
+        matId: specId,
+        message: overflowMessage('Vật liệu', spec.name, m2, wastage, spec.priceVnd),
+      });
+      continue;
+    }
 
     rows.push({
       matId: specId,
@@ -445,6 +541,17 @@ export function computeBoq(doc: Doc, specs: MaterialSpecLite[]): BoqResult {
     const qty = normalizeQty(group.length, unit) ?? group.length;
     const wastage = spec.wastagePercent ?? 0;
     const thanhTien = roundVnd(qty * (1 + wastage / 100) * spec.priceVnd);
+
+    // Cùng chốt tràn số như nhánh vùng tô — áp CẢ HAI nhánh, không nhánh nào được ra `Infinity`.
+    if (!Number.isFinite(thanhTien)) {
+      errors.push({
+        reason: 'invalid-price',
+        entityIds,
+        matId: specId,
+        message: overflowMessage('Món', spec.name, qty, wastage, spec.priceVnd),
+      });
+      continue;
+    }
 
     rows.push({
       matId: specId,

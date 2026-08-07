@@ -12,15 +12,11 @@
  *      ảnh hero = image element to nhất HOẶC ảnh nền. Nếu slide thiên về ảnh (không có text
  *      role title/body) → fallback PptxSlideImage full-bleed (render từ model).
  *
- *      QUYẾT ĐỊNH PHẠM VI (PS-4): PPTX LUÔN xuất khổ 16:9, BẤT KỂ `deck.stagePreset` đang
- *      chọn khổ gì. `lib/pptx.ts` định vị mọi text/ảnh bằng SỐ INCH TUYỆT ĐỐI neo cứng vào
- *      canvas 13.333×7.5in (lề/cột/cỡ chữ tính point cố định) — nếu đổi kích thước khung
- *      PPTX theo A4/A3 dọc, các con số neo cứng đó (vd `SLIDE_H - 0.6` cho footer, `SLIDE_W
- *      * 0.56` cho cột ảnh) sẽ lệch tỉ lệ nặng (khổ càng khác 16:9 càng rõ) vì chúng được
- *      tinh chỉnh RIÊNG cho tỉ lệ ngang rộng — sửa đúng cho mọi khổ cần viết lại toàn bộ
- *      hệ toạ độ của lib/pptx.ts (ngoài phạm vi PS-4). "Giữ 16:9" là lựa chọn AN TOÀN hơn
- *      trong 2 lựa chọn spec cho phép ("giữ 16:9 HOẶC map khổ gần nhất") — UI nhắc rõ điều
- *      này ở StagePresetPanel + menu Xuất (components/ui/IOMenu.tsx).
+ *      ~~QUYẾT ĐỊNH PHẠM VI (PS-4): PPTX LUÔN xuất khổ 16:9~~ — **HUỶ 07/08 (p12, lỗi Hoà
+ *      báo: đổi A3 dọc thấy đúng trên màn, xuất ra 16:9 ngang — vi phạm CÁI THẤY = CÁI
+ *      XUẤT)**. Lý do cũ (số inch neo cứng trong lib/pptx.ts) đã hết: mọi toạ độ nay đi qua
+ *      `geomFor()` — tỉ lệ hoá theo khổ tham chiếu, 16:9 ra y hệt cũ, A4/A3 ra ĐÚNG khổ
+ *      giấy thật (inch = PAPER_SIZE_MM/25.4). PPTX nay đọc `deck.stagePreset` giống PDF.
  *
  * PDF khổ giấy thật theo dpi (`exportDeckToPdfAtPaperSize`, P3 01/08): CHỈ chạy được với khổ
  *     A4/A3 (`PAPER_SIZE_MM`) — trang PDF đúng mm thật (không phải px màn hình như hàm PDF
@@ -338,9 +334,8 @@ export async function exportDeckToPptxFromModel(deck: EditorDeck): Promise<PptxE
         fontFaces: mapped.fontFaces,
       });
     } else {
-      // ảnh-first → render full-bleed. CHỦ Ý dùng stage MẶC ĐỊNH (16:9) — KHÔNG truyền
-      // deck.stagePreset — xem "QUYẾT ĐỊNH PHẠM VI" ở đầu file (PPTX luôn 16:9).
-      const imageDataUrl = await renderEditorSlide(slide, deck.fonts, deck.watermark);
+      // ảnh-first → render full-bleed ĐÚNG khổ deck (07/08 p12 — trước cố ý 16:9, xem đầu file).
+      const imageDataUrl = await renderEditorSlide(slide, deck.fonts, deck.watermark, stageFor(deck.stagePreset));
       out.push({ kind: 'image', imageDataUrl });
     }
   }
@@ -351,11 +346,17 @@ export async function exportDeckToPptxFromModel(deck: EditorDeck): Promise<PptxE
     .filter((f) => usedFaces.has(f.face))
     .map((f) => ({ face: f.face, dataUrl: f.dataUrl }));
 
+  // Khổ trang PPTX theo deck (07/08 p12): A4/A3 = kích thước giấy THẬT đổi mm→inch;
+  // 16:9 (hoặc preset lạ) = bỏ trống → lib/pptx dùng 13.333×7.5 như cũ.
+  const paperMm = deck.stagePreset ? PAPER_SIZE_MM[deck.stagePreset] : undefined;
+  const pageSize = paperMm ? { w: paperMm.w / 25.4, h: paperMm.h / 25.4 } : undefined;
+
   return exportDeckToPptx(out, {
     fileName: deck.project || deck.brand || 'deck',
     title: deck.project || deck.brand || 'deck',
     author: deck.brand,
     embedFonts,
+    pageSize,
   });
 }
 

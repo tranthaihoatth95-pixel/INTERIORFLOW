@@ -30,18 +30,22 @@ công khai, installer, app store — **đều là "conveying"** theo GPL-3 §0.
 - **⛔ KHÔNG GHI ĐƯỢC DWG.** Build của package dùng `--disable-write`; upstream LibreDWG chỉ
   ghi được r1.2–r2000 và còn "highly unstable". Roadmap IF2 cần export DWG ⇒ phải là ODA SDK.
 
-## 2. Trạng thái tuân thủ hiện tại — CHƯA ĐỦ để phát hành thương mại
+## 2. Trạng thái tuân thủ hiện tại — 4/4 nghĩa vụ ĐÃ CÓ CODE THẬT, còn 1 chỗ trống chờ Hoà
+
+> Cập nhật 07/08 (phiên nghiệm thu cuối, đối chiếu `docs/M-PHAP-LY-OUT.md` — p6 đã verify bằng
+> trình duyệt thật + grep, phiên nghiệm thu đọc lại file code xác nhận). Bảng cũ ghi ⬜ CHƯA là
+> trạng thái 28/07, đã lỗi thời.
 
 | Nghĩa vụ GPL-3 | Điều | Trạng thái |
 |---|---|---|
-| Kèm bản GPL-3 cho người nhận | §4 | ⬜ **CHƯA LÀM — cần trang "Third-party licenses" trong app (việc code, giao Claude Code)** |
-| Giữ nguyên copyright/license notice | §4, §5(a) | ⬜ CHƯA hiện cho user |
-| Cung cấp Corresponding Source (hoặc written offer) | §6 | ⬜ CHƯA |
-| Ghi rõ phần nào dưới GPL | §5(a) | 🟡 Có trong docs nội bộ (file này) — CHƯA hiện trong app |
+| Kèm bản GPL-3 cho người nhận | §4 | ✅ Trang `/settings/licenses` (`app/settings/licenses/page.tsx`) nhúng toàn văn GPL-3 (`lib/legal/gpl-3-0-text.ts`, 689 dòng, tải nguyên văn 06/08) — vào được từ Cài đặt → Giới thiệu VÀ Cài đặt → Nâng cao |
+| Giữ nguyên copyright/license notice | §4, §5(a) | ✅ `lib/legal/third-party-licenses.ts` `GPL_COPYRIGHT_NOTICE` (MLight Lee + GNU LibreDWG/FSF) hiện trên trang licenses |
+| Cung cấp Corresponding Source (hoặc written offer) | §6 | 🟡 Đã chọn đường §6(b) written offer (`GPL_WRITTEN_OFFER`, cam kết ≥3 năm) — **CHƯA đủ hiệu lực**: `contactPlaceholder` chưa có kênh liên hệ thật, app tự hiện banner đỏ cảnh báo. **Chờ Hoà chốt kênh liên hệ công khai trước khi phát hành.** |
+| Ghi rõ phần nào dưới GPL | §5(a) | ✅ `GPL_SCOPE_FILES` (đúng 2 mục: `lib/cad/dwg-worker.ts` + `public/wasm/libredwg-web.wasm`) hiện thành bảng trên trang licenses |
 
-> Đúng luật E4 của `IF-MASTER-TREE.md` ("cột Code là sự thật duy nhất"): viết xong file docs này
-> KHÔNG có nghĩa là app đã tuân thủ — 4 dòng trên vẫn ⬜ cho tới khi có code thật. Xem
-> `docs/HANDOFF-COWORK-2026-07-28.md` cho việc cần Claude Code làm tiếp.
+> Ranh giới code vẫn sạch (p6 grep 07/08): đúng **1** chỗ import GPL thật —
+> `lib/cad/dwg-worker.ts:277` (dynamic import trong worker); mọi chỗ khác khớp từ khoá chỉ là
+> comment. `license:check` đã nối vào `npm test` làm cửa CI.
 
 **Đường phát sinh conveying hiện tại:**
 1. **Web**: `public/wasm/libredwg-web.wasm` (9 MB) + bundle worker → tải xuống browser của user.
@@ -90,9 +94,13 @@ vi phạm license nhiều.
 Đã rà **34 dep trực tiếp** (25/07): 25 MIT, 4 Apache-2.0, 1 BSD-3-Clause, 1 ISC,
 `jszip` dual `(MIT OR GPL-3.0-or-later)` → **ta chọn MIT** (phải ghi rõ trong attributions).
 **Không có** AGPL/SSPL/LGPL-static. `@mlightcad/libredwg-web` là dependency copyleft **duy nhất**.
-Nợ còn lại: chưa quét transitive dependencies (~1000 pkg) — chạy
-`license-checker-rseidelsohn --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;CC0-1.0;Unlicense;Python-2.0;BlueOak-1.0.0'`
-một lần trước khi phát hành thương mại, và đưa vào CI.
+~~Nợ còn lại: chưa quét transitive dependencies (~1000 pkg)~~ — **ĐÍNH CHÍNH 07/08 (p12, đóng
+G-M10-03 điểm ①)**: quét transitive ĐÃ CHẠY TỰ ĐỘNG từ trước — `package.json` script
+`license:check` (`license-checker-rseidelsohn --production --onlyAllow 'MIT;ISC;Apache-2.0;…'`)
+được nối làm bước ĐẦU của `npm run test`, nghĩa là mọi lần chạy test là một lần gate license
+(fail là test đỏ). CI server riêng (GitHub Actions…) thì repo CHƯA có (`ls .github/workflows` =
+không tồn tại, đo 07/08) — nên checklist mục 4 bên dưới vẫn để ngỏ đúng: gate đã có ở tầng
+`npm test`, chưa có ở tầng CI độc lập.
 
 ## 6. Giới hạn kỹ thuật của DWG import (không liên quan license)
 

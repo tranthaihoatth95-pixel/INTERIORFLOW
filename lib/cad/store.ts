@@ -153,7 +153,7 @@ export type CadStage = 'sketch' | 'technical' | 'bim';
  * (backward-compat với UI Sketch/Pro cũ) — kể cả CREA vẫn có thể bật Pro override để mượn tool.
  */
 export function shouldShowProTools(role: CadRole, stage: CadStage, cadMode: CadMode): boolean {
-  if (cadMode === 'pro' || cadMode === 'revit') return true; // override thủ công (backward-compat) — revit = siêu tập của pro
+  if (cadMode === 'pro' || cadMode === 'revit') return true; // 07/08 Hoà chốt: người dùng TỰ BẤM CHỌN mode — đây là ĐƯỜNG CHÍNH, không phải override. revit = siêu tập của pro
   if (role === 'owner') return true; // ACCESS-CONTROL M1: owner full quyền mọi chặng
   return (role === 'drafter' || role === 'bim') && (stage === 'technical' || stage === 'bim');
 }
@@ -304,6 +304,10 @@ interface CadState {
   updateEntities: (es: Entity[]) => void;
   deleteSelected: () => void;
   removeIds: (ids: string[]) => void;
+  /** G-M2-04 — thêm + gỡ trong MỘT snapshot (một bước Undo). Ca dùng: duyệt "Nhận diện phòng"
+   * (thêm RoomEntity + gỡ TextEntity nhãn cũ — tách 2 action là 2 bước Undo, lùi nửa chừng ra
+   * trạng thái vừa có phòng vừa có nhãn chết). Gỡ đi qua expand poché/hosted như removeIds. */
+  replaceEntities: (removeIds: string[], add: Entity[]) => void;
 
   /** NC-12 VIỆC 3 — khoét/hợp/giao 1 khối vào tường `wallId` (`lib/cad/commands.ts` `cutHoleInWall`
    * thuần, đây chỉ ghi vào Doc + 1 snapshot undo, cùng khuôn `onPushPull`/§4.4). Không tìm thấy
@@ -634,6 +638,18 @@ export const useCadStore = create<CadState>((set, get) => ({
       selection: [],
     }));
   },
+  replaceEntities: (ids, add) => {
+    if (!ids.length && !add.length) return;
+    get().snapshot();
+    const expanded = expandIdsWithPoche(expandDeleteWithHostedChildren(new Set(ids), get().doc), get().doc);
+    set((s) => ({
+      doc: syncPocheAnchors(syncHostedOpenings({
+        ...s.doc,
+        entities: [...s.doc.entities.filter((e) => !expanded.has(e.id)), ...add],
+      })),
+      selection: [],
+    }));
+  },
 
   select: (ids, additive, opts) =>
     set((s) => {
@@ -786,11 +802,21 @@ export const useCadStore = create<CadState>((set, get) => ({
 
   importDoc: (d, mode) => {
     get().snapshot();
+    // G-M1-20 (07/08) — TRƯỚC ĐÂY chỗ này set thẳng `d` mà KHÔNG reconcile, trong khi mọi đường
+    // nạp Doc từ ngoài (DXF/DWG/demo/template — CadEditor.tsx) đều đi qua đây. Hậu quả: file vừa
+    // nạp xong chưa có `hostId` nào được backfill ⇒ chọn mảng tô không cầm theo đường bao, và bug
+    // "dời một nửa, nửa kia đứng yên" tái hiện cho tới lần SỬA đầu tiên (updateEntities mới là
+    // chỗ đầu tiên gọi reconcile). Nay reconcile ngay lúc nạp — cùng cặp hàm mọi mutation khác
+    // đang gọi (addEntity/addEntities/updateEntities/xoá), không đường thứ hai.
     set((s) =>
       mode === 'replace'
-        ? { doc: d, selection: [], currentLayer: d.layers[0]?.id ?? s.currentLayer }
+        ? {
+            doc: syncPocheAnchors(syncHostedOpenings(d)),
+            selection: [],
+            currentLayer: d.layers[0]?.id ?? s.currentLayer,
+          }
         : {
-            doc: {
+            doc: syncPocheAnchors(syncHostedOpenings({
               entities: [...s.doc.entities, ...d.entities],
               layers: mergeLayers(s.doc.layers, d.layers),
               // giữ markup/photo hiện có khi merge (nhánh 'replace' ở trên đã thay nguyên `d`,
@@ -799,7 +825,7 @@ export const useCadStore = create<CadState>((set, get) => ({
               photos: s.doc.photos ?? [],
               // Zone tool — giữ ảnh aerial hiện có khi merge (giống markup/photo).
               siteImage: s.doc.siteImage,
-            },
+            })),
           },
     );
   },
@@ -921,6 +947,12 @@ function scaleEntity(e: Entity, f: number): Entity {
         ...(e.ellipse
           ? { ellipse: { ...e.ellipse, c: { x: e.ellipse.c.x * f, y: e.ellipse.c.y * f }, rx: e.ellipse.rx * f, ry: e.ellipse.ry * f } }
           : {}),
+        ...(e.labelPos ? { labelPos: { x: e.labelPos.x * f, y: e.labelPos.y * f } } : {}),
+      };
+    case 'room':
+      return {
+        ...e,
+        boundary: e.boundary.map((p) => ({ x: p.x * f, y: p.y * f })),
         ...(e.labelPos ? { labelPos: { x: e.labelPos.x * f, y: e.labelPos.y * f } } : {}),
       };
   }

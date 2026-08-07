@@ -20,9 +20,8 @@
  */
 
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import PresentSheets from '@/components/present-editor/PresentSheets';
-import { makeSampleDeck } from '@/lib/present-editor/sample';
 import { AppShell } from '@/components/studio/AppShell';
 import { PresentNavigator } from '@/components/present-editor/PresentNavigator';
 import { BoqScreen } from '@/components/present-editor/boq/BoqScreen';
@@ -37,13 +36,41 @@ import { effectiveUserId } from '@/lib/resume';
 import { useT } from '@/lib/i18n';
 
 export default function PresentStageScreen() {
-  const [deck] = useState(makeSampleDeck);
   const [mode, setMode] = useState<'deck' | 'boq'>('deck');
   // Route studio KHÔNG nạp `user` vào store khi vào bằng hard-reload/URL trực tiếp — rơi về
   // lastUserId (cùng pattern PresentSheets.tsx/ResumeTracker), nếu không StageIntroCard im
   // lặng không bao giờ hiện cho user mở thẳng `/projects/[id]/present`.
   const storeUserId = useFlowStore((s) => s.user?.id);
   const userId = effectiveUserId(storeUserId);
+  const setUser = useFlowStore((s) => s.setUser);
+  /**
+   * 06/08 VÒNG 2 — NÚT GIẢ, bắt được khi nghiệm thu G-M3-09 trên app thật.
+   * Màn BOQ chỉ render khi `mode === 'boq' && userId`. Vào THẲNG `/projects/[id]/present`
+   * (hard-reload, dán link, hoặc điều hướng không đi qua Home) thì `useFlowStore.hydrate()` chưa
+   * chạy lần nào và `lastUserId` trong localStorage cũng rỗng ⇒ `userId` rỗng ⇒ bấm "Bảng khối
+   * lượng (BOQ)" **KHÔNG có gì xảy ra, không một dòng báo** — đúng thứ luật §9 cấm ("cấm nút giả
+   * bấm không ra gì"). Đo được: `window.__flowStore.getState().user` = undefined, click 3 lần,
+   * màn hình đứng nguyên ở deck.
+   * Chữa tại gốc thay vì báo lỗi cho người dùng: phiên đăng nhập VẪN CÒN (cookie hợp lệ), chỉ là
+   * store chưa biết — hỏi `/api/auth/me` một lần rồi nạp vào store. Dùng đúng endpoint
+   * `SessionWatch` đang dùng, không chế đường xác thực thứ hai.
+   */
+  useEffect(() => {
+    if (storeUserId) return;
+    let bỏ = false;
+    void (async () => {
+      try {
+        const r = await fetch('/api/auth/me');
+        if (!r.ok) return; // 401 = chưa đăng nhập thật; SessionWatch lo việc báo, không báo hai lần
+        const j = await r.json().catch(() => null);
+        const u = j?.user ?? j;
+        if (!bỏ && u?.id) setUser(u);
+      } catch {
+        /* mạng đứt — không kết luận gì, giữ nguyên trạng thái */
+      }
+    })();
+    return () => { bỏ = true; };
+  }, [storeUserId, setUser]);
   // `/projects/[id]/present` cho `id` thật; route toàn cục cũ `/present-editor` không có — B0
   // (`getProjectDoc`) coi projectId rỗng là "chưa xác định dự án", trả source:'none' đúng nghĩa.
   const params = useParams<{ id?: string }>();
@@ -65,8 +92,10 @@ export default function PresentStageScreen() {
         {mode === 'boq' && userId ? (
           <BoqScreen projectId={projectId} userId={userId} />
         ) : (
-          /* Tầng multi-sheet (phụ-thêm): thanh tab + PresentEditor. 1 sheet ⇒ y hệt bản cũ. */
-          <PresentSheets initialDeck={deck} />
+          /* Tầng multi-sheet (phụ-thêm): thanh tab + PresentEditor. 1 sheet ⇒ y hệt bản cũ.
+           * 07/08 (M-EMPTY) — KHÔNG truyền initialDeck: màn Trình chiếu THẬT bắt đầu RỖNG
+           * (trước đây chạy bằng makeSampleDeck — deck mẫu, vi phạm chốt "bỏ hết dự án mẫu"). */
+          <PresentSheets />
         )}
       </StageEnter>
       <ChatPanel />

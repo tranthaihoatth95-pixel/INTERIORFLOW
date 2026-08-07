@@ -15,7 +15,7 @@
  * giữ swatch phẳng (đúng ngữ cảnh bản vẽ)" — vân procedural đúng tinh thần đó hơn ảnh cầu 3D.
  */
 
-import { Armchair, AppWindow, Cuboid, DoorOpen, Droplets, FileText, Gem, LayoutTemplate, PaintRoller, Ruler, Shirt, TreePine } from 'lucide-react';
+import { Aperture, Armchair, AppWindow, Cloud, Cuboid, DoorOpen, Droplets, FileText, Gem, LayoutTemplate, Moon, PaintRoller, Ruler, Shirt, Sun, Sunrise, TreePine } from 'lucide-react';
 import MaterialSphere from '@/components/three/MaterialSphere';
 import { sceneForKind, type PreviewKind } from '@/components/three/material-preview';
 import { KIND_LABEL, isMaterialKind, thumbTexture, tintFor, type ThumbKind } from '@/lib/library/thumb-kinds';
@@ -35,6 +35,13 @@ const ICON: Record<ThumbKind, typeof TreePine> = {
   misc: Ruler,
   page: FileText,
   sheet: LayoutTemplate, // "bố cục", rõ nghĩa hơn Frame (nhìn ra dấu # vô nghĩa khi verify)
+  // VIỆC 7b (07/08) — icon RIÊNG cho từng preset ánh sáng, cùng lý do vân riêng ở thumbTexture:
+  // nhìn icon cũng phải đoán được đây là ánh sáng gì, không chỉ đoán qua vân nền.
+  'light-gold': Sun,
+  'light-overcast': Cloud,
+  'light-night': Moon,
+  'light-dawn': Sunrise,
+  'light-studio': Aperture,
 };
 
 /** Chỉ KỆ VẬT LIỆU mới lên quả cầu. Kệ khác dù món có loại vật liệu (vd. "Bảng màu ấm" loại sơn

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
+import { linkLarkAccountToUser, unlinkLarkAccount } from '@/lib/integrations/lark-bridge';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,12 +42,8 @@ export async function POST(req: Request) {
   const target = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
   if (!target) return NextResponse.json({ error: 'Không tìm thấy User.' }, { status: 404 });
 
-  const map = await prisma.larkUserMap.upsert({
-    where: { larkAccount },
-    update: { userId },
-    create: { larkAccount, userId },
-  });
-  return NextResponse.json({ ok: true, map: { larkAccount: map.larkAccount, userId: map.userId } });
+  await linkLarkAccountToUser(larkAccount, userId);
+  return NextResponse.json({ ok: true, map: { larkAccount, userId } });
 }
 
 /** DELETE — gỡ 1 ánh xạ (sửa nhầm). Body { larkAccount }. */
@@ -57,6 +54,6 @@ export async function DELETE(req: Request) {
   const body = await req.json().catch(() => ({}));
   const larkAccount = typeof body?.larkAccount === 'string' ? body.larkAccount.trim() : '';
   if (!larkAccount) return NextResponse.json({ error: 'Thiếu larkAccount.' }, { status: 400 });
-  await prisma.larkUserMap.delete({ where: { larkAccount } }).catch(() => {});
+  await unlinkLarkAccount(larkAccount);
   return NextResponse.json({ ok: true });
 }

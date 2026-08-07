@@ -1,20 +1,28 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { UploadCloud, FileText, X } from 'lucide-react';
+import { UploadCloud, FileText, Box, X } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { pushLibraryToast } from './LibraryToast';
+import { importIdfc, lastImportIdfcError, type ParsedIdfc } from '@/lib/cad/idfc';
+import { saveIdfcItems } from '@/lib/library/idfc-store';
 
 interface Dropped {
   id: string;
   name: string;
   size: number;
   kind: string;
+  /** VIỆC 1 M-IDFC (07/08) — riêng tệp `.idfc` được ĐỌC THẬT ngay lúc thả: parse qua
+   * `importIdfc`, hợp lệ thì giữ dữ liệu chờ "Đưa vào kho", hỏng thì mang thông báo lỗi CỤ THỂ
+   * (`lastImportIdfcError`) hiện ngay trên dòng — không đợi tới lúc bấm nút mới báo. Các loại tệp
+   * khác giữ hành vi cũ (chỉ nhận diện loại). */
+  idfc?: ParsedIdfc;
+  error?: string;
 }
 
 const KIND_BY_EXT: Record<string, string> = {
   jpg: 'Ảnh', jpeg: 'Ảnh', png: 'Ảnh', webp: 'Ảnh', gif: 'Ảnh',
-  dwg: 'Bản vẽ', dxf: 'Bản vẽ', idf: 'Dự án IF',
+  dwg: 'Bản vẽ', dxf: 'Bản vẽ', idf: 'Dự án IF', idfc: 'Cấu kiện IF',
   pdf: 'Tài liệu', docx: 'Tài liệu', pptx: 'Trình bày',
   xlsx: 'Bảng tính', csv: 'Bảng tính',
   mp4: 'Video', mov: 'Video', zip: 'Gói', ifpack: 'Gói dự án',
@@ -48,15 +56,28 @@ export function BulkIngestMode({ onDone }: { onDone: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const add = (list: FileList) => {
-    setFiles((prev) => [
-      ...prev,
-      ...Array.from(list).map((f) => ({
+    for (const f of Array.from(list)) {
+      const base: Dropped = {
         id: `${f.name}-${f.size}-${Math.random().toString(36).slice(2, 7)}`,
         name: f.name,
         size: f.size,
         kind: kindOf(f.name),
-      })),
-    ]);
+      };
+      if (base.kind === 'Cấu kiện IF') {
+        // đọc + parse ngay — lỗi báo tại dòng, kèm lý do thật từ importIdfc
+        void f.text().then((txt) => {
+          const parsed = importIdfc(txt);
+          setFiles((prev) => [
+            ...prev,
+            parsed
+              ? { ...base, idfc: parsed }
+              : { ...base, error: lastImportIdfcError() ?? tr('File .idfc không đọc được.', 'Cannot read this .idfc file.') },
+          ]);
+        });
+      } else {
+        setFiles((prev) => [...prev, base]);
+      }
+    }
   };
 
   return (
@@ -99,8 +120,18 @@ export function BulkIngestMode({ onDone }: { onDone: () => void }) {
         <div className="droplist">
           {files.map((f) => (
             <div className="droprow" key={f.id}>
-              <FileText size={13} strokeWidth={1.75} />
-              <span className="n">{f.name}</span>
+              {f.idfc ? <Box size={13} strokeWidth={1.75} /> : <FileText size={13} strokeWidth={1.75} />}
+              <span className="n">
+                {f.name}
+                {f.idfc && (
+                  <span style={{ color: 'var(--success)', marginLeft: 6, fontSize: 11 }}>
+                    ✓ {f.idfc.meta.name} · {f.idfc.meta.code}
+                  </span>
+                )}
+                {f.error && (
+                  <span style={{ color: 'var(--warning)', marginLeft: 6, fontSize: 11 }}>{f.error}</span>
+                )}
+              </span>
               <span className="k">{f.kind}</span>
               <span className="s">{fmt(f.size)}</span>
               <button
@@ -123,7 +154,20 @@ export function BulkIngestMode({ onDone }: { onDone: () => void }) {
           className="pub"
           disabled={files.length === 0}
           onClick={() => {
-            pushLibraryToast(tr(`Đã đưa ${files.length} tệp vào kho — chờ chủ studio duyệt`, `Sent ${files.length} file(s) to the store — awaiting approval`));
+            // .idfc hợp lệ vào kho cấu kiện THẬT (idfc-store → kệ "Cấu kiện"); tệp hỏng KHÔNG
+            // vào; loại khác giữ hành vi mock cũ (đường ingest thật của chúng chưa có backend).
+            const good = files.filter((f) => f.idfc).map((f) => f.idfc!);
+            if (good.length) {
+              saveIdfcItems(good);
+              pushLibraryToast(tr(
+                `Đã nhập ${good.length} cấu kiện .idfc vào kệ Cấu kiện`,
+                `Imported ${good.length} .idfc component(s) to the Components shelf`,
+              ));
+            }
+            const rest = files.length - good.length - files.filter((f) => f.error).length;
+            if (rest > 0) {
+              pushLibraryToast(tr(`Đã đưa ${rest} tệp vào kho — chờ chủ studio duyệt`, `Sent ${rest} file(s) to the store — awaiting approval`));
+            }
             setFiles([]);
             onDone();
           }}

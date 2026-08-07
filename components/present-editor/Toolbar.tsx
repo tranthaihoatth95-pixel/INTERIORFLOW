@@ -51,6 +51,9 @@ import { useDismissable } from '@/lib/useDismissable';
 import Tooltip from '@/components/ui/Tooltip';
 import type { EditorSlide, ShapeKind } from '@/lib/present-editor/model';
 import type { AlignMode as GroupAlignMode } from '@/lib/present-editor/align';
+// Làn C (in/giấy/xuất) — mục "Xuất PDF theo tờ giấy…" mở ExportPdfDialog (Màn 7). Dialog tự
+// portal ra document.body, không cần đổi layout Toolbar để chứa nó.
+import ExportPdfDialog from '@/components/print/ExportPdfDialog';
 
 interface Props {
   onAddText: () => void;
@@ -115,6 +118,10 @@ export default function Toolbar(p: Props) {
   // L4 — cụm Sắp xếp gom vào popover (xem chú thích tại nút).
   const [arrangeOpen, setArrangeOpen] = useState(false);
   const arrangeBtnRef = useRef<HTMLSpanElement>(null);
+  // Làn C — hộp thoại "Xuất PDF theo tờ giấy…" (Màn 7). Toolbar chưa có Sheet[]/checklist thật
+  // của chặng Trình chiếu trong props hiện tại — dùng placeholder tối thiểu (1 "tờ" = trang đang
+  // mở, checklist rỗng thay vì bịa mục giả) cho tới khi có phiên nối dữ liệu thật sâu hơn.
+  const [pdfSheetsOpen, setPdfSheetsOpen] = useState(false);
 
   // P6b bước 1 — gating cụm "Sắp xếp", CÙNG công thức Inspector.tsx đang dùng (không bịa công
   // thức khác cho 2 chỗ hiện cùng 1 khái niệm) — xem Inspector.tsx dòng ~204-213/425-431.
@@ -240,7 +247,31 @@ export default function Toolbar(p: Props) {
             disabled: !p.printReady,
             disabledReason: 'Chỉ xuất được ở khổ giấy A4/A3 — đổi khổ trong "Khổ trình bày" trước (16:9 là khổ màn hình, không phải khổ in).',
           },
+          {
+            id: 'pdf-sheets',
+            label: 'Xuất PDF theo tờ giấy…',
+            sub: 'Chọn khổ/hướng giấy · xem trước tờ · kiểm bảng nét in trước khi xuất',
+            icon: <FileDown size={15} />,
+            onSelect: () => setPdfSheetsOpen(true),
+          },
         ]}
+      />
+      <ExportPdfDialog
+        open={pdfSheetsOpen}
+        sheets={[{ id: 'current', label: 'Trang hiện tại' }]}
+        // Ở chặng Trình chiếu, khổ giấy KHÔNG do hộp thoại này quyết định — nó lấy theo "Khổ trình
+        // bày" của hồ sơ (`deck.stagePreset` → `PAPER_SIZE_MM`, PresentEditor.tsx:400). Khoá lại kèm
+        // lý do, KHÔNG để người dùng bấm A0/Dọc rồi file xuất ra vẫn y nguyên (luật §9 cấm nút giả).
+        paperLockedReason='Khổ giấy ở chặng Trình chiếu lấy theo "Khổ trình bày" của hồ sơ — đổi ở đó.'
+        onExportAll={() => {
+          setPdfSheetsOpen(false);
+          p.onExportPdf();
+        }}
+        onExportCurrent={() => {
+          setPdfSheetsOpen(false);
+          p.onExportPdf();
+        }}
+        onClose={() => setPdfSheetsOpen(false)}
       />
       <Divider />
       <Btn onClick={p.onAddText} title="Thêm chữ">
@@ -393,8 +424,12 @@ export default function Toolbar(p: Props) {
       </ArrangePopover>
       )}
       <Divider />
-      <Btn onClick={p.onToggleTemplates} active={p.templatesOpen} title="Chọn mẫu bố cục">
-        <LayoutTemplate size={15} /> Mẫu
+      {/* 07/08 (p12, chốt 01/08 §3c): TemplatePicker + LayoutShelf đã gộp làm MỘT — tên chính
+          thức "Bố cục" (nhãn cũ trên nút + tab panel ghi "Magic" là hai tên cho một thứ;
+          không nhắc nguyên văn nhãn cũ ở đây để cửa kiểm PHEU-AI-TEN-MAGIC quét chuỗi không
+          báo nhầm vào comment lịch sử). */}
+      <Btn onClick={p.onToggleTemplates} active={p.templatesOpen} title="Bố cục — mẫu dàn trang, bấm là áp">
+        <LayoutTemplate size={15} /> Bố cục
       </Btn>
 
       <Divider />

@@ -71,6 +71,11 @@ model Project {
   // ══ MỚI (docs/RESEARCH-HOME-GALLERY-DASHBOARD.md §2.1) ══ — "Mã DA" bên Larkbase, gán TUỲ
   // CHỌN lúc tạo/sửa dự án ("Liên kết Larkbase"). Optional — không phải Project nào cũng có
   // mã Larkbase (dự án mới trong IF trước khi phòng dự án tạo task tương ứng bên Larkbase).
+  // ⚠️ DEPRECATED-ĐANG-CHUYỂN (07/08, p12 — G-M9-01/§0v "lõi không mang tên nhà cung cấp"):
+  // cột này là tên nhà cung cấp nằm trong bảng LÕI. Đích đến: ExternalRef{system:'lark',
+  // entityType:'project', entityId:Project.id, externalId:<mã DA>} — backfill bằng
+  // scripts/migrate-lark-project-code-to-external-ref.ts SAU khi ExternalRef migrate.
+  // KHÔNG xoá cột lúc này (KS4 + còn 13 file đọc nó — grep 07/08, xem docs/M-DATA-OUT.md).
   larkProjectCode String?
 
   // ══ MỚI (ACCESS-CONTROL M1, docs/RESEARCH-ACCESS-CONTROL.md §2.3) — additive, có default
@@ -94,6 +99,9 @@ model Project {
   flows    Flow[]
   notebook ProjectNotebook?
   members  ProjectMember[]
+  // M-SCOPE VIỆC 2 (07/08) — xem khối chú thích TASK_TABLES_READY phía cuối file.
+  tasks          Task[]
+  workflowStates WorkflowState[]
 
   @@index([larkProjectCode])
   @@index([deletedAt])
@@ -410,10 +418,28 @@ model ProductSpec {
   // lib/ffe/item.ts). Hai cột dưới là chỗ cho ca THỰC DỤNG: studio nhập nguyên bảng FF&E của MỘT
   // dự án vào kho và muốn giữ nguyên cột phòng; KHÔNG phải chỗ để nhét mọi lần xuất hiện. Nhiều
   // dự án cùng dùng một món thì món ở FfeItem, không nhân bản ProductSpec ra.
-  // 🔴 CHƯA CHẠY `prisma migrate` (luật: sandbox không khoá được file SQLite + phiên khác đang
-  // chạy dev server trên cùng dev.db). Prisma client CHƯA generate ⇒ TUYỆT ĐỐI KHÔNG tham chiếu
-  // `room`/`confidence` qua prisma.productSpec.* cho tới khi chủ dự án chạy lệnh migrate tay —
-  // cờ chặn: `SPEC_ROOM_COLUMN_READY` trong `lib/server/specs.ts`.
+  // 🔴🔴 CHƯA CHẠY `prisma migrate` — HAI CỘT DƯỚI ĐANG LÀ MỘT QUẢ MÌN, ĐỌC KỸ TRƯỚC KHI LÀM GÌ.
+  //
+  // ⚠️ ĐÍNH CHÍNH 06/08 (vòng 3): cảnh báo cũ ở đây ghi nguy cơ là "vỡ tsc / đừng tham chiếu
+  // room/confidence qua prisma.productSpec.*" — SAI BẢN CHẤT, và sai theo hướng làm người đọc yên
+  // tâm. Sự thật đã chứng minh: **Prisma tự SELECT MỌI cột scalar đã khai trong schema**, không
+  // cần ai viết tên cột ra cả. Nên chỉ cần MỘT lần `npx prisma generate` chạy (kể cả do
+  // `npm install` gọi `postinstall`, không ai chủ động gõ) mà DB chưa `db push` là **mọi lệnh
+  // đọc/ghi ProductSpec CHẾT Ở RUNTIME**:
+  //     The column `main.ProductSpec.room` does not exist in the current database.
+  // Kéo theo: kho vật liệu · BOQ · `/api/specs` · ATLAS sync — tức gần như cả nhánh vật tư.
+  // Cờ `SPEC_ROOM_COLUMN_READY` (`lib/server/specs.ts`) KHÔNG cứu được ca này: nó chỉ chặn code
+  // của IF đụng vào 2 cột, không chặn được câu SELECT do chính Prisma sinh ra.
+  //
+  // ⇒ TUYỆT ĐỐI KHÔNG xoá 2 cột (schema là hợp đồng đã chốt, G-M3-08) và KHÔNG chạy migrate qua
+  //   sandbox (FUSE không khoá được file SQLite — xem `docs/00-CHOT.md` LUẬT VẬN HÀNH).
+  // ⇒ Chủ dự án chạy TRÊN MÁY THẬT, theo đúng thứ tự này, khi không có dev server nào đang mở:
+  //       sqlite3 dev.db ".backup 'dev.db.bak-truoc-room-confidence'"
+  //       npx prisma db push        # hoặc: npx prisma migrate dev --name productspec-room-confidence
+  //       npx prisma generate
+  //   Xong thì gỡ cờ `SPEC_ROOM_COLUMN_READY` và xoá luôn khối cảnh báo này.
+  // ⇒ Trong lúc chờ: KHÔNG chạy `npm install`/`prisma generate` trên máy có dữ liệu thật nếu chưa
+  //   sẵn sàng `db push` ngay sau đó — hai lệnh đó phải đi liền nhau.
   room       String? // phòng/khu vực, chuỗi tự do theo nhãn phòng trên bản vẽ — KHÔNG ép enum
   confidence String? // 'measured' | 'inferred' | 'manual' (khớp FfeConfidence, lib/ffe/item.ts)
 
@@ -429,6 +455,13 @@ model ProductSpec {
 // Phân quyền app KHÔNG phụ thuộc bảng này (đã chốt tách biệt hoàn toàn — ProjectMember riêng,
 // xem RESEARCH-ACCESS-CONTROL.md); đây chỉ để HIỂN THỊ (tooltip chức danh/phòng ban, cột
 // "Chủ trì" trong bảng phẳng) và pre-fill gợi ý sau này, không quyết quyền truy cập.
+//
+// ⚠️ DEPRECATED-ĐANG-CHUYỂN (M-SCOPE VIỆC 3, 07/08) — bảng cầu ID này đang được thay thế dần
+// bởi `ExternalRef{system:'lark', entityType:'person'}` (L-EXT1, §0v). Ghi/đọc MỚI phải qua
+// `lib/integrations/lark-bridge.ts` (dual-write: vẫn ghi bảng này làm nguồn chính hôm nay +
+// ghi thêm ExternalRef khi bảng đó đã migrate) — KHÔNG gọi `prisma.larkUserMap.*` trực tiếp ở
+// route mới. GIỮ NGUYÊN bảng này (KS4, lùi được) — chỉ xoá sau khi ExternalRef đã là nguồn
+// chính ổn định VÀ đã chạy xong script chép dữ liệu (xem lark-bridge.ts docblock).
 model LarkUserMap {
   id          String   @id @default(cuid())
   larkAccount String   @unique
@@ -436,4 +469,119 @@ model LarkUserMap {
   createdAt   DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// L-EXT1 · BẢNG CẦU ID HỆ NGOÀI — §0v "lõi không mang tên nhà cung cấp" (Hoà chốt 06/08)
+//
+// Vì sao có bảng này: hôm nay tên MỘT nhà cung cấp đang nằm trong TÊN CỘT của bảng lõi (8 cột,
+// §0v liệt kê đủ). Đổi/mất nhà cung cấp ⇒ phẫu thuật lõi + migrate + sửa hàng chục file. Ví von
+// của §0v: đang mượn cột chịu lực của nhà hàng xóm, đúng ra nó phải là giàn giáo — tháo được mà
+// nhà vẫn đứng.
+//
+// Từ nay: ID của MỌI hệ ngoài nằm ở ĐÂY, không đẻ cột mới trong bảng lõi. `system` là chuỗi tự do
+// do adapter khai, cố ý KHÔNG enum — thêm nhà cung cấp mới không phải đụng schema.
+//
+// ⛔ 8 cột cũ GIỮ NGUYÊN, KHÔNG migrate dữ liệu đợt này (§0v: "chỉ ngừng đẻ mới"). Đây là đường
+//    SONG SONG, chưa ai đọc/ghi — xem `lib/integrations/external-ref.ts`.
+//
+// ⚠️ Khối chú thích này CỐ Ý không viết literal tên nhà cung cấp: phép kiểm §0v là
+//    phép grep tên nhà cung cấp trong file này đếm THÔ theo dòng, nên chỉ cần nhắc tên trong
+//    comment là con số phồng lên và phiên sau tưởng có cột mới. Phép kiểm đúng (đếm KHAI BÁO
+//    TRƯỜNG, bỏ comment) nằm ở `lib/integrations/external-ref.test.ts`.
+//
+// 🔴 CHƯA CHẠY MIGRATE. Bảng này chưa tồn tại trong `dev.db`. Mọi hàm đụng tới nó đều chặn sau cờ
+//    `EXTERNAL_REF_TABLE_READY` (`lib/integrations/external-ref.ts`) — cùng lối `SPEC_ROOM_COLUMN_READY`
+//    (`lib/server/specs.ts`). Lệnh cho chủ dự án chạy trên máy thật: xem `docs/M-APPLY-C-OUT.md` §10.
+// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// M-SCOPE VIỆC 2 (07/08) — Task nội bộ + WorkflowState. Trước đây IF không có model
+// "việc" nào của riêng mình — chỉ có `LarkTaskRef` (mirror pull-only từ Larkbase, xem
+// khối chú thích phía trên). Hai model dưới đây là NGUỒN SỰ THẬT nội bộ IF, độc lập Lark.
+//
+// ⚠️ status KHÔNG phải String tự do đối chiếu bằng mắt — dựng riêng `WorkflowState` để mỗi
+//    dự án tự khai bộ trạng thái của MÌNH (tên/thứ tự/cột nào coi là "xong"), tránh việc
+//    "Đang làm" viết hoa lệch "đang làm" làm vỡ cột Kanban. Vẫn trung tính: app không áp đặt
+//    bộ trạng thái cứng.
+// ⚠️ Task.projectId KHÔNG được đọc/ghi qua `Project.currentStage` hay `lib/phases.ts` — ba
+//    chặng concept/render/present là PIPELINE kỹ thuật của IF (2D/3D/Trình chiếu), KHÔNG phải
+//    giai đoạn hợp đồng ngành (Ý tưởng→Cơ sở→Kỹ thuật→Thi công→Giám sát). Trùng tên là bẫy,
+//    xem cảnh báo trong phiếu M-SCOPE VIỆC 2.
+//
+// 🔴 CHƯA CHẠY MIGRATE — 2 bảng này chưa tồn tại trong `dev.db`. Cùng lối chặn `ExternalRef`
+//    ở trên: mọi hàm đụng tới đều chặn sau cờ `TASK_TABLES_READY` (`lib/server/tasks.ts`).
+//    Lệnh cho chủ dự án chạy trên máy thật (không dev server nào đang mở):
+//      sqlite3 dev.db ".backup 'dev.db.bak-truoc-task'"
+//      npx prisma db push   # hoặc: npx prisma migrate dev --name task-workflow-state
+//      npx prisma generate
+//    rồi đổi TASK_TABLES_READY thành true.
+// ─────────────────────────────────────────────────────────────────────────────
+model WorkflowState {
+  id        String   @id @default(cuid())
+  projectId String
+  name      String // "Chưa làm" | "Đang làm" | "Xong" ... — dự án tự khai, không ép enum
+  order     Int      @default(0) // thứ tự cột hiển thị (trái→phải)
+  isActive  Boolean  @default(true) // false = ngừng dùng (giữ lịch sử, KHÔNG xoá — KS4)
+  isDone    Boolean  @default(false) // cột này = "coi như xong việc" (đóng-mở báo cáo tiến độ)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@index([projectId])
+}
+
+model Task {
+  id          String    @id @default(cuid()) // id do IF sinh — KHÔNG phải id Lark
+  projectId   String
+  title       String
+  statusId    String
+  assigneeIds String    @default("") // JSON string[] User.id — nhiều người phụ trách 1 việc
+  startAt     DateTime?
+  dueAt       DateTime?
+  order       Int       @default(0) // thứ tự trong cột (kéo-thả)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status  WorkflowState @relation(fields: [statusId], references: [id])
+
+  @@index([projectId])
+  @@index([statusId])
+}
+
+model ExternalRef {
+  id String @id @default(cuid())
+
+  /// mã hệ ngoài do adapter khai (`lib/integrations/registry.ts`). Chuỗi tự do, cố ý KHÔNG enum.
+  system String
+
+  /// id bản ghi BÊN HỆ NGOÀI (vd record_id của Larkbase).
+  externalId String
+
+  /// loại thực thể LÕI IDF — vd 'task' | 'project' | 'person' | 'material'.
+  entityType String
+
+  /// id thực thể lõi IDF (id do IF sinh, không phải id hệ ngoài).
+  entityId String
+
+  /// M-SCOPE VIỆC 4 (07/08) — CHỐNG VÒNG LẶP ĐỒNG BỘ 2 CHIỀU. `lastWriteBy` = ai ghi lần cuối
+  /// vào cặp (system, externalId) này: 'idf' (IF vừa đẩy ra hệ ngoài) hoặc chính `system` đó
+  /// (hệ ngoài vừa đẩy ngược vào IF). `lastWriteAt` = lúc ghi đó. Bên nhận đổi từ hệ ngoài PHẢI
+  /// tự hỏi: "mình vừa ghi cái này ra chưa quá 60s trước?" — có thì BỎ QUA (chính là tiếng vọng
+  /// của lần ghi đó, không phải thay đổi mới) — xem `lib/integrations/anti-loop.ts`.
+  /// null = chưa từng ghi qua đường 2 chiều này (chỉ đọc/pull một chiều, như hôm nay).
+  lastWriteBy String?
+  lastWriteAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// một bản ghi hệ ngoài chỉ trỏ tới đúng một thực thể lõi — khoá idempotent khi sync lại,
+  /// thay vai trò mà cột `*RecordId @unique` mang tên nhà cung cấp đang gánh trong các bảng lõi.
+  @@unique([system, externalId])
+  /// chiều ngược: từ thực thể lõi tra ra mọi id ngoài của nó.
+  @@index([entityType, entityId])
+  @@index([system])
 }

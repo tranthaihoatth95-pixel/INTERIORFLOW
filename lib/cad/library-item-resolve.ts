@@ -26,6 +26,7 @@
 
 import { BLOCKS, type BlockDef } from './furniture';
 import type { LibraryBlockMeta, LibraryManifest } from './block-library';
+import { matchSpec } from '../library/spec-panel';
 
 /** Hình lát tối thiểu của món trên kệ (`SheetItem` của `lib/library/shelves.ts`) — chỉ nhận 3
  * trường cần cho việc đối chiếu, để module này không phụ thuộc tầng UI. */
@@ -37,9 +38,17 @@ export interface LibraryItemRef {
   kind?: string;
 }
 
+/** Bản ghi kho vật liệu tối thiểu cần để đối chiếu — khớp DTO thật của `GET /api/specs`
+ * (`lib/server/specs.ts` `specToDto`), chỉ khai 2 trường dùng tới để module này không phụ thuộc
+ * tầng server. */
+export interface SpecRef {
+  id: string;
+  sku?: string | null;
+}
+
 export type ResolvedLibraryItem =
-  | { via: 'blockdef'; def: BlockDef; keepsIdentity: true; approximate: boolean }
-  | { via: 'manifest'; meta: LibraryBlockMeta; keepsIdentity: false; approximate: boolean };
+  | { via: 'blockdef'; def: BlockDef; keepsIdentity: true; approximate: boolean; specId?: string }
+  | { via: 'manifest'; meta: LibraryBlockMeta; keepsIdentity: false; approximate: boolean; specId?: string };
 
 /** Loại món trên kệ CÓ THỂ là hình vẽ thả xuống bản vẽ được. Vật liệu/hatch/preset/theme thì
  * KHÔNG (chúng đi đường "áp lên vật đang chọn" — `LIBRARY_APPLY_EVENT`, việc khác). */
@@ -109,16 +118,28 @@ function matchByName<T extends { name: string; id: string }>(
 /**
  * Đối chiếu món trên kệ với hai kho hình. Ưu tiên `BLOCKS` (giữ danh tính) rồi mới tới manifest.
  * `manifest` null/undefined (chưa tải xong) ⇒ chỉ tra được kho ①, KHÔNG coi là "không có".
+ *
+ * `specs` (G-A-01, VIỆC 3 07/08) — kho vật liệu/thương mại thật (`GET /api/specs`), optional.
+ * Khớp `item.code` ↔ `ProductSpec.sku` — CÙNG hàm `matchSpec()` mà cột thông số ④ của tấm Thư
+ * viện đã dùng (`lib/library/spec-panel.ts`), để "món hiện thông số gì" và "món thả xuống mang
+ * specId gì" LUÔN đồng nhất, không phải hai đường so khớp khác nhau ra hai kết quả lệch nhau.
+ * Không truyền `specs` (caller cũ) ⇒ hành vi y nguyên, `specId` luôn `undefined`.
  */
-export function resolveLibraryItem(item: LibraryItemRef, manifest?: LibraryManifest | null): ResolvedLibraryItem | null {
+export function resolveLibraryItem(
+  item: LibraryItemRef,
+  manifest?: LibraryManifest | null,
+  specs?: readonly SpecRef[],
+): ResolvedLibraryItem | null {
   if (item.kind && !(DROPPABLE_ITEM_KINDS as readonly string[]).includes(item.kind)) return null;
 
+  const specId = specs?.length ? matchSpec(item.code, specs)?.id : undefined;
+
   const def = matchByName(BLOCKS, item);
-  if (def) return { via: 'blockdef', def: def.hit, keepsIdentity: true, approximate: def.approximate };
+  if (def) return { via: 'blockdef', def: def.hit, keepsIdentity: true, approximate: def.approximate, specId };
 
   if (manifest?.blocks?.length) {
     const meta = matchByName(manifest.blocks, item);
-    if (meta) return { via: 'manifest', meta: meta.hit, keepsIdentity: false, approximate: meta.approximate };
+    if (meta) return { via: 'manifest', meta: meta.hit, keepsIdentity: false, approximate: meta.approximate, specId };
   }
   return null;
 }

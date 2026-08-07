@@ -10,8 +10,10 @@ import { useRouter } from 'next/navigation';
 import { Plus, FileSpreadsheet, Search, Loader2, Palette } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import type { MaterialSpecDto } from '@/lib/materials/warehouse/dto';
+import { IMPORT_KIND_LABEL } from '@/lib/materials/warehouse/dto';
 import { MaterialTable } from './MaterialTable';
 import { MaterialFormModal } from './MaterialFormModal';
+import { MaterialPbrEditor } from './MaterialPbrEditor';
 import { MaterialImportWizard } from './MaterialImportWizard';
 import { EmptyState } from '@/components/ui/EmptyState';
 
@@ -22,13 +24,26 @@ export function MaterialsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
+  /** '' = mọi loại. Khoá dùng đúng `ProductSpec.kind` ('material' | 'furniture' | …), nhãn lấy từ
+   * `IMPORT_KIND_LABEL` — cùng nguồn chữ với ô chọn ngăn của cửa nhập, không chép tay lần hai. */
+  const [kindFilter, setKindFilter] = useState('');
   const [editing, setEditing] = useState<MaterialSpecDto | null | 'new'>(null);
   const [importing, setImporting] = useState(false);
+  /** VIỆC 5 PHẦN B — món đang mở lớp chỉnh chất liệu render (4 núm, `MaterialPbrEditor`). */
+  const [pbrEditing, setPbrEditing] = useState<MaterialSpecDto | null>(null);
 
+  /**
+   * 06/08 VÒNG 2 — BỎ `?kind=material` HARD-CODE. Bắt được khi nghiệm thu G-M3-07: cửa nhập cho
+   * chọn ngăn "Nội thất rời"/"Đèn"/"Đồ gỗ đóng"… (và tự đoán đúng), nhập xong báo "Đã thêm 2 nội
+   * thất rời" — nhưng màn kho này chỉ hỏi `kind=material` nên **hàng vừa nhập biến mất khỏi màn
+   * hình duy nhất xem được kho**. Người dùng thấy đúng cảnh "nhập xong không thấy đâu", tưởng mất.
+   * Nay nạp MỌI loại rồi lọc phía client bằng ô "Loại" (mặc định: tất cả) — cùng lối với ô "Hãng"
+   * đã có, không thêm vòng gọi API mỗi lần đổi bộ lọc.
+   */
   const load = async () => {
     setError(null);
     try {
-      const res = await fetch('/api/specs?kind=material');
+      const res = await fetch('/api/specs');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const j = await res.json();
       setItems(j.specs ?? []);
@@ -48,6 +63,7 @@ export function MaterialsScreen() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (items ?? []).filter((m) => {
+      if (kindFilter && m.kind !== kindFilter) return false;
       if (brandFilter && m.brand !== brandFilter) return false;
       if (!q) return true;
       return (
@@ -56,7 +72,7 @@ export function MaterialsScreen() {
         (m.brand ?? '').toLowerCase().includes(q)
       );
     });
-  }, [items, query, brandFilter]);
+  }, [items, query, brandFilter, kindFilter]);
 
   const onDelete = async (m: MaterialSpecDto) => {
     if (!window.confirm(tr(`Xoá "${m.name}"? Không hoàn tác được.`, `Delete "${m.name}"? This cannot be undone.`))) return;
@@ -87,6 +103,21 @@ export function MaterialsScreen() {
             style={{ flex: 1, background: 'transparent', border: 0, outline: 'none', fontSize: 12.5, color: 'var(--t1)' }}
           />
         </div>
+
+        {/* Ô LOẠI — đứng trước ô Hãng vì nó quyết định "đang xem ngăn nào của kho". Luôn hiện
+            (không ẩn theo dữ liệu như ô Hãng): người vừa nhập nội thất rời phải nhìn thấy ngay có
+            đường xem chúng, không phải đoán. */}
+        <select
+          value={kindFilter}
+          onChange={(e) => setKindFilter(e.target.value)}
+          aria-label={tr('Lọc theo loại', 'Filter by type')}
+          style={{ height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t2)', fontSize: 12.5, padding: '0 8px' }}
+        >
+          <option value="">{tr('Tất cả loại', 'All types')}</option>
+          {Object.entries(IMPORT_KIND_LABEL).map(([k, label]) => (
+            <option key={k} value={k}>{tr(label.vi, label.en)}</option>
+          ))}
+        </select>
 
         {brands.length > 0 && (
           <select
@@ -145,7 +176,17 @@ export function MaterialsScreen() {
           />
         </div>
       ) : (
-        <MaterialTable items={filtered} onEdit={setEditing} onDelete={(m) => void onDelete(m)} />
+        <MaterialTable items={filtered} onEdit={setEditing} onDelete={(m) => void onDelete(m)} onEditPbr={setPbrEditing} />
+      )}
+
+      {pbrEditing?.sku && (
+        <MaterialPbrEditor
+          matId={pbrEditing.sku}
+          name={pbrEditing.name}
+          /* gợi ý loại khi chưa từng chỉnh: ghép note + tên — nguồn chữ duy nhất mô tả món có sẵn */
+          categoryHint={[pbrEditing.note, pbrEditing.name].filter(Boolean).join(' ')}
+          onClose={() => setPbrEditing(null)}
+        />
       )}
 
       {editing !== null && (

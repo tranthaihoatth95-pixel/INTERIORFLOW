@@ -426,6 +426,8 @@ export function scaleEntityAbout(e: Entity, base: Pt, f: number): Entity {
         ...(e.ellipse ? { ellipse: { ...e.ellipse, c: s(e.ellipse.c), rx: e.ellipse.rx * f, ry: e.ellipse.ry * f } } : {}),
         ...(e.labelPos ? { labelPos: s(e.labelPos) } : {}),
       };
+    case 'room':
+      return { ...e, boundary: e.boundary.map(s), ...(e.labelPos ? { labelPos: s(e.labelPos) } : {}) };
   }
 }
 
@@ -495,6 +497,8 @@ export function stretchEntity(e: Entity, w: StretchWindow, dx: number, dy: numbe
         ...(e.ellipse ? { ellipse: { ...e.ellipse, c: mv(e.ellipse.c) } } : {}),
         ...(e.labelPos ? { labelPos: mv(e.labelPos) } : {}),
       };
+    case 'room':
+      return { ...e, boundary: e.boundary.map(mv), ...(e.labelPos ? { labelPos: mv(e.labelPos) } : {}) };
   }
 }
 

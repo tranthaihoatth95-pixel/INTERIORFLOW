@@ -30,6 +30,7 @@ import { AppCommandPalette } from '@/components/studio/AppCommandPalette';
 import { Dashboard } from '@/components/Dashboard';
 import { FlowsPanel } from '@/components/FlowsPanel';
 import { LibrarySheet } from '@/components/library/LibrarySheet';
+import { FlankStrip } from '@/components/ui/PanelFlank';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import type { StageKey } from '@/lib/library/types';
 import { tweenBase } from '@/lib/motion';
@@ -150,6 +151,14 @@ export function AppShell({
             </div>
           )}
         </div>
+        {/* p3 (07/08, PanelFlank) — trước đây ẩn Inspector qua phím I là MẤT TÍCH (không tay cầm
+            nào trên màn để mở lại, chỉ ai nhớ phím mới thoát). Nay: đang CÓ vật được chọn mà
+            Inspector bị ẩn ⇒ hiện dải tay cầm 14px ở mép phải (cùng hình hài PanelFlank toàn hệ).
+            Không có vật chọn (inspector=undefined) thì vẫn ẩn HẲN như thiết kế gốc — dải lúc đó
+            là nút bấm-không-ra-gì, phạm §9. */}
+        {Boolean(inspector) && inspectorHidden && (
+          <FlankStrip side="right" open={false} onClick={() => setInspectorHidden(false)} label="bảng thuộc tính" hotkey={active === 'cad' ? '⇧I' : 'I'} />
+        )}
         <InspectorSlot title={inspectorTitle} sub={inspectorSub} onClose={onCloseInspector} hotkey={active === 'cad' ? '⇧I' : 'I'}>
           {inspectorHidden ? undefined : inspector}
         </InspectorSlot>

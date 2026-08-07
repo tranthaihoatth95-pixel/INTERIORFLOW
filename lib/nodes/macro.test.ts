@@ -74,7 +74,12 @@ const nodes = [A, B, C];
 console.log('collectExposableParams — gom đủ tham số 3 node, không sập khi 1 node lạ');
 const rows = collectExposableParams(nodes, ['a', 'b', 'c'], lookupDef);
 ok('có ít nhất 1 dòng cho mỗi 3 node', new Set(rows.map((r) => r.nodeId)).size === 3);
-ok('mỗi dòng có dotColor dạng hex', rows.every((r) => /^#/.test(r.dotColor)));
+// 06/08 — hợp đồng màu ĐỔI: `DATA_TYPE_COLORS` nay trả BIẾN token `var(--p-*)` cho các kiểu có
+// trong mock Bảng nút (image/mask/number), hex chỉ còn ở text/video/table. Test khoá lại đúng
+// điều thật sự cần: dotColor là MÀU CSS DÙNG ĐƯỢC (hex hoặc var(--…)), không rỗng — chứ không
+// khoá riêng dạng hex nữa (khoá dạng hex = cấm token hoá, ngược luật L4).
+ok('mỗi dòng có dotColor là màu CSS dùng được (hex hoặc var(--…))',
+  rows.every((r) => /^#[0-9a-f]{3,8}$/i.test(r.dotColor) || /^var\(--[\w-]+\)$/.test(r.dotColor)));
 const rowsWithBad = collectExposableParams([...nodes, node('x', 'khong.ton.tai')], ['a', 'b', 'c', 'x'], lookupDef);
 ok('defType lạ bị bỏ qua, không throw, không thêm dòng nào', rowsWithBad.length === rows.length);
 

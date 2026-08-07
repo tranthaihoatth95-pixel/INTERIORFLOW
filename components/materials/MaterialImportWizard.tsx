@@ -417,17 +417,18 @@ export function MaterialImportWizard({ onClose, onImported }: { onClose: () => v
                     </span>
                   )}
                   {/* Nói thẳng chỗ dữ liệu CHƯA vào kho được — luật §9 "cấm nút giả", và luật
-                      8-điều "luôn nói rõ máy vừa làm gì". Cột Phòng/Độ tin cậy đã khai trong
-                      prisma/schema.prisma nhưng chưa migrate (xem SPEC_ROOM_COLUMN_READY). */}
-                  {/* ③ — bổ sung "Số lượng" vào câu này: `MaterialWritePayload` KHÔNG có trường
-                      qty, nên cột Số lượng cũng KHÔNG vào kho, y hệt Phòng/Độ tin cậy. Trước
-                      06/08 câu này chỉ kể 2 cột đầu ⇒ người dùng ghép cột Số lượng xong tưởng đã
-                      lưu. Cả 3 đều sống trong `outcome.table` (hồ sơ FF&E dưới đây). */}
-                  {(mapping?.room != null || mapping?.confidence != null || mapping?.qty != null) && (
+                      8-điều "luôn nói rõ máy vừa làm gì".
+                      🟢 SỬA 06/08 VÒNG 2: câu cũ kể CẢ BA cột (Số lượng · Phòng · Độ tin cậy) là
+                      "chưa lưu được" — nay SAI với 2 cột sau: `ProductSpec` đã có cột
+                      `room`/`confidence` thật (chủ dự án chạy `db push`), payload đã gửi, nên
+                      chúng lưu được và còn nguyên sau khi đóng tab. Chỉ còn SỐ LƯỢNG là không vào
+                      kho — và đó là CỐ Ý (danh mục dùng chung nhiều dự án thì không giữ số lượng
+                      của một dự án). Để nguyên câu cũ = nói dối theo chiều ngược lại. */}
+                  {mapping?.qty != null && (
                     <div style={{ fontSize: 11.5, color: 'var(--t4)', textAlign: 'center', maxWidth: 460 }}>
                       {tr(
-                        `Cột ${[mapping?.qty != null && 'Số lượng', mapping?.room != null && 'Phòng', mapping?.confidence != null && 'Độ tin cậy'].filter(Boolean).join(', ')} chưa lưu được vào kho — kho chỉ giữ DANH MỤC (món này tồn tại, giá bao nhiêu). Chúng nằm trong hồ sơ FF&E tải về bên dưới.`,
-                        `${[mapping?.qty != null && 'Quantity', mapping?.room != null && 'Room', mapping?.confidence != null && 'Confidence'].filter(Boolean).join(', ')} are not stored in the warehouse — it only holds the catalogue. They live in the FF&E schedule you can download below.`,
+                        'Cột Số lượng không lưu vào kho — kho giữ DANH MỤC (món này tồn tại, giá bao nhiêu), còn số lượng là của từng dự án. Nó nằm trong hồ sơ FF&E tải về bên dưới. Phòng và Độ tin cậy thì đã lưu vào kho.',
+                        'Quantity is not stored in the warehouse — the warehouse holds the catalogue (what exists, at what price); quantity belongs to a project. It lives in the FF&E schedule below. Room and Confidence are saved to the warehouse.',
                       )}
                     </div>
                   )}

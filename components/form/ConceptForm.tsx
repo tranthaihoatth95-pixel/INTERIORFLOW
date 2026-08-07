@@ -24,7 +24,7 @@ import {
   type Placement,
 } from '@/lib/moodboard-boards';
 import { DraftBoard } from './DraftBoard';
-import { downloadImage } from '@/lib/present-demo';
+import { downloadImage } from '@/lib/present-render';
 import {
   BigButton,
   ErrorNote,

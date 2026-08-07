@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { renderMaterialPreview, type PreviewSpec } from './material-preview';
+import { renderMaterialPreviewAsync, type PreviewSpec } from './material-preview';
 
 interface Props {
   spec: PreviewSpec;
@@ -41,16 +41,20 @@ export default function MaterialSphere({ spec, fallback, size = 96, resolution =
 
   useEffect(() => {
     let alive = true;
-    // đẩy ra sau frame hiện tại — mở panel có N ô không khựng vì render đồng loạt
+    // đẩy ra sau frame hiện tại — mở panel có N ô không khựng vì render đồng loạt.
+    // VIỆC 3 M-VAT-LIEU-2: có `spec.pbr` (map là ảnh, phải chờ decode) đi đường async; không có
+    // thì async đó tương đương bản sync — một nhánh gọi cho cả hai, fallback giữ nguyên lúc chờ.
     const t = requestAnimationFrame(() => {
-      const u = renderMaterialPreview(spec, size, resolution);
-      if (alive) setUrl(u);
+      void renderMaterialPreviewAsync(spec, size, resolution).then((u) => {
+        if (alive) setUrl(u);
+      });
     });
     return () => {
       alive = false;
       cancelAnimationFrame(t);
     };
-    // spec là object literal mỗi render — key theo các trường thật để không render lại vô ích
+    // spec là object literal mỗi render — key theo các trường thật để không render lại vô ích;
+    // pbr đổi được nhận qua spec.id (caller phải trộn pbrCacheKey/phiên bản vào id — editor làm vậy)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spec.id, spec.kind, spec.scene, spec.colorA, spec.colorB, size, resolution]);
 

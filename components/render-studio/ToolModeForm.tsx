@@ -559,40 +559,52 @@ function MeasurementExportButton({
 }) {
   const flowName = useFlowStore((s) => s.flowName);
   const [busy, setBusy] = useState(false);
+  // VIỆC 5 (07/08, G-M13-01) — trước đây `await exportMeasurementSpecSheet(...)` không có `catch`:
+  // dựng file hỏng (canvas lỗi, disk full…) thì nút kẹt "Đang dựng…" rồi im lặng, không báo, không
+  // lùi được (đúng luật §5 N3/§4 G6). Bắt lỗi tại chỗ, hiện dòng đỏ ngay dưới nút.
+  const [error, setError] = useState<string | null>(null);
   return (
-    <button
-      type="button"
-      disabled={busy}
-      onClick={async () => {
-        setBusy(true);
-        try {
-          const studioName = getActiveBrandKit()?.name ?? '';
-          await exportMeasurementSpecSheet({
-            photoDataUrl: imageDataUrl,
-            result: measurement,
-            methodLine: `Tầng ${measurement.aiTier} · ${measurement.aiTierName} · ${measurement.tierLabel} · độ tin ${measurement.confidencePercent}%`,
-            projectName: flowName,
-            studioName,
-          });
-        } finally {
-          setBusy(false);
-        }
-      }}
-      style={{
-        marginTop: 12,
-        width: '100%',
-        padding: '9px',
-        borderRadius: 8,
-        border: '1px solid var(--border)',
-        background: 'transparent',
-        color: 'var(--t2)',
-        fontSize: 12.5,
-        fontWeight: 600,
-        cursor: busy ? 'not-allowed' : 'pointer',
-      }}
-    >
-      {busy ? 'Đang dựng spec sheet…' : '⬇ Xuất Spec Sheet'}
-    </button>
+    <div>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setError(null);
+          try {
+            const studioName = getActiveBrandKit()?.name ?? '';
+            await exportMeasurementSpecSheet({
+              photoDataUrl: imageDataUrl,
+              result: measurement,
+              methodLine: `Tầng ${measurement.aiTier} · ${measurement.aiTierName} · ${measurement.tierLabel} · độ tin ${measurement.confidencePercent}%`,
+              projectName: flowName,
+              studioName,
+            });
+          } catch (e) {
+            setError(e instanceof Error ? e.message : 'Không dựng được Spec Sheet — thử lại.');
+          } finally {
+            setBusy(false);
+          }
+        }}
+        style={{
+          marginTop: 12,
+          width: '100%',
+          padding: '9px',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'transparent',
+          color: 'var(--t2)',
+          fontSize: 12.5,
+          fontWeight: 600,
+          cursor: busy ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {busy ? 'Đang dựng spec sheet…' : '⬇ Xuất Spec Sheet'}
+      </button>
+      {error && (
+        <div style={{ marginTop: 6, fontSize: 11, color: 'var(--danger)', lineHeight: 1.5 }}>{error}</div>
+      )}
+    </div>
   );
 }
 

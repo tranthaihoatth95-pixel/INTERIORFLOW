@@ -41,7 +41,7 @@ import { useEffect, useRef, useState } from 'react';
 import CadEditor from './CadEditor';
 import BackupRecoveryModal from './BackupRecoveryModal';
 import SheetTabBar, { type SheetTab } from '@/components/studio/SheetTabBar';
-import { useCadStore, newId } from '@/lib/cad/store';
+import { useCadStore, newId, type Tool } from '@/lib/cad/store';
 import type { Doc, Viewport, Sheet, PaperKey, PaperOrientation } from '@/lib/cad/model';
 import { emptyDoc, docBox, paperSizeMm, defaultPaperOrientation } from '@/lib/cad/model';
 import { getLastUserId, loadResume, saveResume } from '@/lib/resume';
@@ -58,11 +58,21 @@ import { rootFolderChosen, getProjectFolderHandle, writeTextFile, readTextFile }
 import { resolveSourceOfTruth, createDiskWriter, watchProjectPresence, type DiskWriter } from '@/lib/disk-sync';
 import { useProjectPresence } from '@/lib/project-presence-ui';
 import { ensureProjectScope } from '@/lib/project-scope';
-import { exportSheetSetPdf } from '@/lib/cad/pdf';
+import { exportSheetSetPdf, exportCadToPdf } from '@/lib/cad/pdf';
+/**
+ * Làn C (in/giấy/xuất) — hộp thoại "Xuất PDF theo tờ giấy" (Màn 7) mount Ở ĐÂY chứ không ở
+ * `CadEditor.tsx`, vì đây mới là nơi giữ `sheets[]` THẬT (CadEditor không có — xem chú thích
+ * `onExportSheetSetPdf` bên dưới, đã sẵn cơ chế bắc cầu bằng CustomEvent cho đúng lý do này).
+ * Khác chặng Trình chiếu (khổ giấy do hồ sơ quyết ⇒ khoá): ở đây khổ giấy là THẬT trong `Doc`
+ * nên KHÔNG truyền `paperLockedReason` — người dùng đổi được, và đổi là ghi thẳng vào Doc.
+ */
+import ExportPdfDialog from '@/components/print/ExportPdfDialog';
+import { buildExportChecks } from '@/lib/print/export-checks';
 import { buildIfpack, restoreIfpack } from '@/lib/cad/ifpack';
 import { startAutoBackup, type AutoBackupSession } from '@/lib/cad/auto-backup';
 import { backfillRoomTypes } from '@/lib/cad/standards/checker';
 import { syncHostedOpenings } from '@/lib/cad/hosting';
+import { syncPocheAnchors } from '@/lib/cad/poche';
 import { useSheetsBucketId } from '@/lib/scope';
 import { markBucketHydrated } from '@/lib/cad/cad-doc-hydration';
 import { useFlowStore } from '@/lib/store';
@@ -258,13 +268,16 @@ function docAndSheetsFromIdf(idfSheets: IdfSheetData[]): { doc: Doc; sheets: She
     const doc = emptyDoc();
     return { doc, sheets: [defaultSheet('Bản vẽ 1', doc)] };
   }
+  // G-M1-21 (07/08) — trước đây phễu này reconcile HOSTING (cửa/cửa sổ) mà QUÊN poché: `.idf` cũ
+  // không có `hostId` nạp lên là mảng tô mồ côi cho tới lần sửa đầu tiên — đúng bệnh G-M1-20 của
+  // `importDoc`, chỉ khác cửa vào. Nay gọi CẶP hàm y hệt mọi mutation trong store (poche.ts:13).
   if (idfSheets.length === 1) {
-    const doc = syncHostedOpenings(backfillRoomTypes(idfSheets[0].doc));
+    const doc = syncPocheAnchors(syncHostedOpenings(backfillRoomTypes(idfSheets[0].doc)));
     return { doc, sheets: [defaultSheet(idfSheets[0].name, doc, idfSheets[0].id)] };
   }
   const cleaned = idfSheets.map((s) => ({ ...s, doc: backfillRoomTypes(s.doc) }));
   const merged = mergeIdfSheetsToDoc(cleaned);
-  return { doc: syncHostedOpenings(merged.doc), sheets: [merged.sheet] };
+  return { doc: syncPocheAnchors(syncHostedOpenings(merged.doc)), sheets: [merged.sheet] };
 }
 
 /** Bản ghi 1-sheet để xuất/ghi đĩa (.idf/.ifpack/backup) — LUÔN đúng 1 phần tử mang trọn Doc
@@ -305,6 +318,11 @@ export default function CadSheets() {
   const [sheets, setSheets] = useState<Sheet[]>(() => [defaultSheet('Bản vẽ 1', emptyDoc(), 'cadsheet-0')]);
   const [activeId, setActiveId] = useState('cadsheet-0');
   const [backupBrowserOpen, setBackupBrowserOpen] = useState(false);
+  // Làn C — Màn 7. `paperTick` chỉ để ép tính lại danh sách kiểm khi người dùng đổi khổ giấy trong
+  // hộp thoại: nguồn sự thật là `Doc` trong store (không phải state của hộp thoại), mà store này
+  // đọc bằng `getState()` ở component này chứ không subscribe.
+  const [paperExportOpen, setPaperExportOpen] = useState(false);
+  const [paperTick, setPaperTick] = useState(0);
 
   // ---- Persistence (J-3): refs gương cho autosaver đọc mà không re-subscribe ----
   const userIdRef = useRef<string | null>(null);
@@ -799,10 +817,15 @@ export default function CadSheets() {
       useCadStore.getState().setStatus(`Đã lưu — ${hhmm}`);
     };
 
+    // Làn C — CadEditor (nơi có menu Xuất) không giữ sheets[], nên bắc cầu bằng CustomEvent y hệt
+    // các đường trên, KHÔNG mở cơ chế thứ hai.
+    const onOpenPaperExport = () => setPaperExportOpen(true);
+
     window.addEventListener('cad:ifpack-import-request', onRestoreIfpack);
     window.addEventListener('cad:backup-restore-request', onRestoreFromBackup);
     window.addEventListener('cad:backup-browse-open', onOpenBackupBrowser);
     window.addEventListener('cad:sheetset-pdf-export-request', onExportSheetSetPdf);
+    window.addEventListener('cad:paper-export-dialog-request', onOpenPaperExport);
     window.addEventListener('cad:force-save-request', onForceSave);
     return () => {
       window.removeEventListener('cad:idf-export-request', onExportIdf);
@@ -812,6 +835,7 @@ export default function CadSheets() {
       window.removeEventListener('cad:ifpack-import-request', onRestoreIfpack);
       window.removeEventListener('cad:backup-restore-request', onRestoreFromBackup);
       window.removeEventListener('cad:backup-browse-open', onOpenBackupBrowser);
+      window.removeEventListener('cad:paper-export-dialog-request', onOpenPaperExport);
       window.removeEventListener('cad:force-save-request', onForceSave);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -831,6 +855,13 @@ export default function CadSheets() {
       />
       {/* CadEditor tự có flex:1 → là con trực tiếp của cột này để giãn đầy. */}
       <CadEditor />
+      <PaperExportDialogHost
+        open={paperExportOpen}
+        tick={paperTick}
+        sheets={sheets}
+        onClose={() => setPaperExportOpen(false)}
+        onPaperChanged={() => setPaperTick((n) => n + 1)}
+      />
       {backupBrowserOpen && (
         <BackupRecoveryModal
           projectId={bucketIdRef.current || userIdRef.current || 'local'}
@@ -839,5 +870,86 @@ export default function CadSheets() {
         />
       )}
     </div>
+  );
+}
+
+/**
+ * Làn C — cầu nối giữa hộp thoại Màn 7 (`components/print/*`, thuần trình bày) và dữ liệu CAD THẬT.
+ *
+ * Ba thứ ở chặng 2D là thật, khác hẳn chặng Trình chiếu (nơi mới chỉ có 1 "tờ" giả lập):
+ *  · **Sheet[]** — đúng số tab bản vẽ đang mở, đúng tên người dùng đặt.
+ *  · **Khổ giấy** — đọc `Doc.paperKey/paperOrientation`; đổi trong hộp thoại là ghi thẳng vào Doc
+ *    qua `setPrintSettings` (CÙNG đường mà ô chọn khổ giấy trong Inspector CadEditor dùng, không
+ *    mở đường thứ hai) ⇒ PDF xuất ra đúng khổ vừa chọn, và khung tên/tỉ lệ cũng theo đó.
+ *  · **Danh sách kiểm** — `buildExportChecks()` đo từ chính Doc đó (nét, layer thừa, tỉ lệ có lọt
+ *    khổ, khoảng cách tới gốc 0,0), không phải 5 dòng "✓ đã chạy" cứng như mock.
+ *
+ * Không tự dựng PDF: 2 nút xuất gọi lại đúng 2 đường đã có (`exportSheetSetPdf` cho cả bộ,
+ * `exportCadToPdf` cho tờ đang mở).
+ */
+function PaperExportDialogHost({
+  open,
+  tick,
+  sheets,
+  onClose,
+  onPaperChanged,
+}: {
+  open: boolean;
+  /** đổi giá trị = tín hiệu "khổ giấy vừa đổi, tính lại danh sách kiểm". */
+  tick: number;
+  sheets: Sheet[];
+  onClose: () => void;
+  onPaperChanged: () => void;
+}) {
+  const doc = useCadStore.getState().doc;
+  const paper: PaperKey = doc.paperKey ?? 'A3';
+  const orientation: PaperOrientation = doc.paperOrientation ?? defaultPaperOrientation(paper);
+  // `tick` cố ý nằm trong biểu thức: nó là lý do duy nhất khiến khối này chạy lại sau khi người
+  // dùng đổi khổ giấy (doc đọc bằng getState(), không subscribe).
+  const checks = open ? buildExportChecks(doc, paper, orientation) : [];
+  void tick;
+
+  return (
+    <ExportPdfDialog
+      open={open}
+      sheets={sheets.map((s) => ({ id: s.id, label: s.name }))}
+      initialPaper={paper}
+      initialOrientation={orientation}
+      checks={checks}
+      onPaperChange={(p, o) => {
+        useCadStore.getState().setPrintSettings({ paperKey: p, paperOrientation: o });
+        onPaperChanged();
+      }}
+      onExportAll={() => {
+        onClose();
+        window.dispatchEvent(new CustomEvent('cad:sheetset-pdf-export-request'));
+      }}
+      onExportCurrent={() => {
+        onClose();
+        const st = useCadStore.getState();
+        st.setStatus('Đang dựng PDF vector…');
+        void exportCadToPdf(st.doc, 'layout.pdf', { title: useFlowStore.getState().flowName || 'InteriorFlow — Drafting CAD', dimStyle: st.dimStyle })
+          .then(() => st.setStatus('Đã xuất layout.pdf — tờ đang mở.'))
+          .catch((err) => st.setStatus(`Lỗi xuất PDF: ${err instanceof Error ? err.message : String(err)}`));
+      }}
+      onPickTool={(toolId) => {
+        // VIỆC 4 (07/08, G-M13-03) — `RadialToolMenu` (Màn 9) chọn CÔNG CỤ CAD THẬT, không phải
+        // engine vẽ tay mới. 'undo' gọi thẳng useCadStore.undo(); các id còn lại map sang Tool
+        // gần nghĩa nhất đã có sẵn trong lib/cad/store.ts (KHÔNG đẻ tool mới).
+        onClose();
+        const st = useCadStore.getState();
+        const TOOL_MAP: Record<string, Tool> = {
+          pen: 'polyline',
+          shape: 'rect',
+          eraser: 'select',
+          measure: 'measure',
+          text: 'text',
+        };
+        if (toolId === 'undo') { st.undo(); return; }
+        const t = TOOL_MAP[toolId];
+        if (t) st.setTool(t);
+      }}
+      onClose={onClose}
+    />
   );
 }

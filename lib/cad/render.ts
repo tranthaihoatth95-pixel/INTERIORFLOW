@@ -3,10 +3,11 @@
  * Không phụ thuộc React. Toạ độ world mm, Y-up → screen px qua Viewport (lật Y).
  */
 
-import type { Doc, Entity, Layer, Pt, Viewport, DimEntity, LineType, ZoneEntity } from './model';
-import { docBox, fitBox, worldToScreen, ZONE_GROUP_META, ZONE_GROUPS, zoneBoundaryPoints, zoneCentroid } from './model';
+import type { Doc, Entity, Layer, Pt, Viewport, DimEntity, LineType, ZoneEntity, RoomEntity } from './model';
+import { docBox, fitBox, worldToScreen, ZONE_GROUP_META, ZONE_GROUPS, zoneBoundaryPoints, zoneCentroid, roomCentroid } from './model';
 import { BLOCK_MAP, type Prim } from './furniture';
 import { hatchLines, hatchDots } from './hatch';
+import { roomLabel } from './room';
 
 /** Dim style tối thiểu dùng khi vẽ (mặc định nếu không truyền — xem store.ts DimStyle). */
 export interface DimStyle {
@@ -314,7 +315,57 @@ export function drawEntity(ctx: CanvasRenderingContext2D, v: Viewport, doc: Doc,
       drawZone(ctx, v, e, style);
       break;
     }
+    case 'room': {
+      drawRoom(ctx, v, e, style);
+      break;
+    }
   }
+}
+
+/**
+ * G-M2-04/G-M2-03 — vẽ 1 RoomEntity: biên nét đứt mảnh (phòng là DỮ LIỆU, không phải nét thi
+ * công đậm) + nhãn TÊN + m² SỐNG. Con số diện tích KHÔNG lấy từ chữ nào — tính lại từ
+ * `boundary` qua `roomLabel()` (`lib/cad/room.ts`) mỗi lần vẽ ⇒ biên đổi là số đổi, hết cảnh
+ * "nhãn giữ nguyên, tổng chạy" đo được ở GAP-IF G-M2-03.
+ */
+function drawRoom(ctx: CanvasRenderingContext2D, v: Viewport, r: RoomEntity, style: DrawStyle) {
+  if (r.boundary.length < 3) return;
+  const S = (p: Pt) => worldToScreen(v, p);
+  const color = style.forceColor ?? r.color ?? '#8b8578';
+  ctx.beginPath();
+  r.boundary.forEach((p, i) => {
+    const s = S(p);
+    if (i === 0) ctx.moveTo(s.x, s.y);
+    else ctx.lineTo(s.x, s.y);
+  });
+  ctx.closePath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([6, 4]);
+  ctx.globalAlpha = 0.7;
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+  if (!style.text) return;
+  const { title, area } = roomLabel(r);
+  const at = S(r.labelPos ?? roomCentroid(r));
+  const px = Math.max(10, Math.min(24, 240 * v.scale));
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  // cùng khuôn halo của drawZone — đọc được trên mọi nền
+  ctx.font = `700 ${px}px Archivo, ui-sans-serif, system-ui, sans-serif`;
+  ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+  ctx.lineWidth = Math.max(2, px * 0.22);
+  ctx.strokeText(title, at.x, at.y);
+  ctx.fillStyle = '#1E1B16';
+  ctx.fillText(title, at.x, at.y);
+  const px2 = px * 0.72;
+  ctx.font = `500 ${px2}px "JetBrains Mono", ui-monospace, monospace`;
+  ctx.lineWidth = Math.max(1.5, px2 * 0.22);
+  ctx.strokeText(area, at.x, at.y + px * 1.05);
+  ctx.fillStyle = 'rgba(30,27,22,0.78)';
+  ctx.fillText(area, at.x, at.y + px * 1.05);
 }
 
 /** Màu fill của zone: override entity.color nếu có, không thì theo nhóm chức năng. */

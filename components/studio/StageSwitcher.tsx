@@ -25,12 +25,13 @@ import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PencilRuler, Box, Presentation } from 'lucide-react';
 import type { Phase } from '@/lib/phases';
-import { PHASES, phaseLabel } from '@/lib/phases';
+import { PHASES } from '@/lib/phases';
 import { useCadStore } from '@/lib/cad/store';
 import { useFlowStore } from '@/lib/store';
 import { springSheet, pressable, easeApple } from '@/lib/motion';
 import { createStageDragTracker } from '@/lib/input/stage-drop';
 import { useVitalsUi } from '@/lib/vitals-ui';
+import { useT } from '@/lib/i18n';
 import Tooltip from '@/components/ui/Tooltip';
 import VitalsGesturePanel, { markVitalsUsed, wasVitalsUsed } from './VitalsGesture';
 
@@ -39,18 +40,13 @@ const ICON: Record<Phase, typeof PencilRuler> = { concept: PencilRuler, render: 
 
 /**
  * 7.3.31 (30/07) — bản CHỮ ĐẬM RỘNG NHẤT mỗi nút chặng CÓ THỂ hiện, dùng làm `data-label` ghost
- * (xem `.stage-btn::before` ở globals.css) để chiếm sẵn chỗ, không đổi bề rộng khi active/
- * inactive hay khi đổi cadStage. Render/Present chỉ có 1 nhãn — dùng chính nó. 2D Kỹ thuật có
- * 2 biến thể theo cadStage (`phaseLabel()`, lib/phases.ts — 03/08 CHỐT TÊN vòng cuối, bim gộp
- * chung nhãn với technical) — '2D Kỹ thuật · Kỹ thuật' dài hơn '2D Kỹ thuật · Sơ phác', dùng cố
- * định làm ghost dù cadStage đang là gì (cadStage hiện luôn = 'sketch' trong thực tế —
- * `setStage()` KHÔNG được gọi ở đâu trong UI, `cadStageFromProjectStage()` chỉ có trong test —
- * nên đây là phòng xa cho lúc field này được nối thật, không đổi gì hôm nay).
- * 04/08 [P7 ĐỔI TÊN] — 2D Kỹ thuật→Thiết kế 2D · 3D Thiết kế→Thiết kế 3D · Trình bày→Trình
- * chiếu (chỉ đổi nhãn, `phaseLabel()` là nguồn thật — xem lib/phases.ts).
+ * (xem `.stage-btn::before` ở globals.css) để chiếm sẵn chỗ, không đổi bề rộng khi active/inactive.
+ * 07/08 [G-M15-02] — nút chặng CHỈ ghi tên CHẶNG (`p.label`), KHÔNG còn gộp tên MODE (Sơ phác/Kỹ
+ * thuật) — đó là 2 khái niệm khác nhau, mode đã có dải chọn riêng ở thanh công cụ dưới. Ghost
+ * width nay chính là `p.label`, không cần bảng riêng theo cadStage nữa.
  */
 const WIDEST_LABEL: Record<Phase, string> = {
-  concept: 'Thiết kế 2D · Kỹ thuật',
+  concept: 'Thiết kế 2D',
   render: 'Thiết kế 3D',
   present: 'Trình chiếu',
 };
@@ -73,6 +69,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   const currentProjectId = useFlowStore((s) => s.currentProjectId);
   const currentFlowId = useFlowStore((s) => s.currentFlowId);
   const router = useRouter();
+  const tr = useT();
 
   const dockRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HTMLDivElement>(null);
@@ -119,7 +116,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         window.clearTimeout(t1);
         window.clearTimeout(t2);
       };
-    } catch {}
+    } catch {/* localStorage bị chặn (chế độ riêng tư) — hint/cờ không nhớ được, không chặn việc */}
   }, []);
 
   const onHandlePointerDown = useCallback(
@@ -140,7 +137,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
 
       try {
         el.setPointerCapture(e.pointerId);
-      } catch {}
+      } catch {/* pointer đã rời/huỷ giữa chừng — capture không còn để giữ/nhả, bỏ qua an toàn */}
 
       const onMove = (ev: PointerEvent) => {
         const dx = ev.clientX - startX;
@@ -153,7 +150,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
           markVitalsUsed();
           try {
             localStorage.setItem(FIRST_DONE_KEY, '1');
-          } catch {}
+          } catch {/* localStorage bị chặn (chế độ riêng tư) — hint/cờ không nhớ được, không chặn việc */}
         } else if (v === 'notebook-full') {
           // Kéo lần 2 — bỏ popover, mở NotebookLM full modal (route hiện có).
           setPanelOpen(false);
@@ -161,7 +158,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
           markVitalsUsed();
           try {
             localStorage.setItem(FIRST_DONE_KEY, '1');
-          } catch {}
+          } catch {/* localStorage bị chặn (chế độ riêng tư) — hint/cờ không nhớ được, không chặn việc */}
           const id = currentProjectId || currentFlowId || 'default';
           router.push(`/projects/${id}/notebook`);
           cleanup();
@@ -181,7 +178,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         window.removeEventListener('pointercancel', onUp);
         try {
           el.releasePointerCapture(e.pointerId);
-        } catch {}
+        } catch {/* pointer đã rời/huỷ giữa chừng — capture không còn để giữ/nhả, bỏ qua an toàn */}
       };
       window.addEventListener('pointermove', onMove);
       window.addEventListener('pointerup', onUp);
@@ -213,7 +210,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         markVitalsUsed();
         try {
           localStorage.setItem(FIRST_DONE_KEY, '1');
-        } catch {}
+        } catch {/* localStorage bị chặn (chế độ riêng tư) — hint/cờ không nhớ được, không chặn việc */}
       }
     }
     window.addEventListener('keydown', onKey);
@@ -225,7 +222,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
     if (!hintTooltip) return;
     try {
       if (localStorage.getItem(FIRST_DONE_KEY) === '1') setHintTooltip(false);
-    } catch {}
+    } catch {/* localStorage bị chặn (chế độ riêng tư) — hint/cờ không nhớ được, không chặn việc */}
   }, [hintTooltip, dragging]);
 
   const handleWidth = 24;
@@ -244,7 +241,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
         {PHASES.map((p, i) => {
           const Icon = ICON[p.id];
           const on = p.id === active;
-          const name = phaseLabel(p.id, p.id === 'concept' ? cadStage : undefined);
+          const name = tr(p.label, p.labelEn);
           const soon = p.id === 'concept' && (cadStage === 'technical' || cadStage === 'bim');
           return (
             /* VIỆC 2 (05/08) — bỏ `title=` HTML: trễ 1-2s, không tách được tên/mô tả, và CÂM trên
@@ -274,7 +271,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
                 border: 'none',
                 fontSize: 12.5,
                 fontWeight: on ? 600 : 500,
-                color: on ? 'var(--t1)' : 'var(--t4)',
+                color: on ? 'var(--t1)' : 'var(--t3)',
                 background: 'transparent',
                 cursor: on ? 'default' : 'pointer',
                 whiteSpace: 'nowrap',
@@ -296,7 +293,7 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
                 />
               )}
               <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Icon size={13} strokeWidth={on ? 2.2 : 2} /> {phaseLabel(p.id, p.id === 'concept' ? cadStage : undefined)}
+                <Icon size={13} strokeWidth={on ? 2.2 : 2} /> {name}
                 {/* IF2-nền — badge "Coming soon · IF2" khi CAD ở chặng kỹ thuật/BIM mà tính năng
                     thật (BIM viewer/IFC/clash) chưa build. Đặt ngay cạnh nhãn pill để hoạ viên/
                     khách demo hiểu là tính năng sắp có, không phải lỗi. Class chấm bé xíu, không

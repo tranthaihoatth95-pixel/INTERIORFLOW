@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14);
+  --ease-apple:cubic-bezier(.32,.72,0,1); --tap:32px; --tap-lg:44px; --gap-screen:44px; --row:38px; --radius:14px;
+  --l-1:#6a57f5; --l-2:#d9a34a; --l-3:#46b876; --l-4:#e5674f; --l-5:#4aa3d9;
+}
+:root,[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --mat-panel:rgba(20,20,23,.68); --mat-card:rgba(26,26,30,.62); --mat-hairline:rgba(255,255,255,.10);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65); --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+  --danger-soft:rgba(229,103,79,.14); --warn-soft:rgba(217,163,74,.12); --success-soft:rgba(70,184,118,.14);
+  --ink:rgba(245,245,247,.6); --dots:rgba(255,255,255,.07); --hatch:repeating-linear-gradient(45deg,#202024 0 9px,#1a1a1e 9px 18px);
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --mat-panel:rgba(250,248,244,.7); --mat-card:rgba(255,255,255,.66); --mat-hairline:rgba(33,30,25,.10);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22); --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+  --danger-soft:rgba(229,103,79,.12); --warn-soft:rgba(217,163,74,.16); --success-soft:rgba(70,184,118,.12);
+  --ink:rgba(33,30,25,.58); --dots:rgba(33,30,25,.10); --hatch:repeating-linear-gradient(45deg,#f4f1eb 0 9px,#ffffff 9px 18px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--accent-strong)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--bg);padding:36px 40px 72px;font-weight:400;font-size:14px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
+
+  <div style="width:1440px;margin:0 auto 30px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
+    <div style="min-width:0">
+      <div style="display:flex;align-items:center;gap:11px">
+        <div style="width:26px;height:26px;border-radius:8px;background:var(--accent);flex:none"></div>
+        <h1 style="margin:0;font-size:28px;line-height:1.5;font-weight:600;letter-spacing:-.02em">Bảng việc</h1>
+        <span style="display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:6px;background:var(--field);color:var(--t4);font-size:9px;line-height:1.5;font-weight:700;letter-spacing:.03em">PLACEHOLDER</span>
+      </div>
+      <div style="margin-top:8px;font-size:12px;line-height:1.5;color:var(--t3);max-width:900px;text-wrap:pretty">Bốn cột trạng thái, kéo thẻ sang cột khác để đổi trạng thái. Thẻ ghi nhãn màu theo loại việc, dự án, người phụ trách và hạn; hạn trễ chuyển sang màu báo.</div>
+    </div>
+    <button onClick="{{ toggleTheme }}" style="height:var(--tap);padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font-weight:600;font-size:12px;line-height:1.5;font-family:inherit;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">{{ themeLabel }}</button>
+  </div>
+
+  <div style="width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:var(--gap-screen)">
+    <div data-screen-label="01">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+        <span style="font-weight:600;font-size:11px;line-height:1.5;font-family:ui-monospace,Menlo,monospace;color:var(--t5)">01</span>
+        <span style="font-size:12px;line-height:1.5;font-weight:600;color:var(--t2)">Bảng việc theo cột</span>
+        <span style="font-size:11px;line-height:1.5;color:var(--t4)">Đang lọc 1 dự án và 1 người · một thẻ đang được kéo sang Chờ duyệt</span>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-pop);background:var(--bg)">
+        <div style="display:grid;grid-template-rows:42px 56px 1fr 26px;grid-template-columns:1fr;height:800px">
+          <header style="grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--border)">
+            <div style="width:20px;height:20px;border-radius:6px;background:var(--accent);flex:none"></div>
+            <span style="font-size:14px;line-height:1.5;font-weight:600;letter-spacing:-.01em">{{ project }}</span>
+            <span style="color:var(--t5)">›</span>
+            <span style="font-size:12px;line-height:1.5;color:var(--t3)">Bảng việc · tuần 32</span>
+            <span style="margin-left:auto;font-size:11px;line-height:1.5;color:var(--t4)">Tự lưu</span>
+            <div style="width:26px;height:26px;border-radius:50%;background:var(--field);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1.5;font-weight:600;color:var(--t2)">NT</div>
+          </header>
+
+          <div style="display:flex;align-items:center;gap:10px;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--border)">
+            <div style="display:inline-flex;background:var(--field);border-radius:10px;padding:2px">
+              <button style="border:0;background:var(--panel);color:var(--t1);font-weight:600;font-size:12px;line-height:1.5;font-family:inherit;padding:5px 14px;border-radius:8px;cursor:pointer;box-shadow:var(--shadow-node)">Bảng</button>
+              <button style="border:0;background:transparent;color:var(--t3);font-size:12px;line-height:1.5;font-family:inherit;padding:5px 14px;border-radius:8px;cursor:pointer">Tiến độ</button>
+              <button style="border:0;background:transparent;color:var(--t3);font-size:12px;line-height:1.5;font-family:inherit;padding:5px 14px;border-radius:8px;cursor:pointer">Lịch</button>
+            </div>
+            <div style="height:var(--tap);display:flex;align-items:center;gap:9px;padding:0 12px;border:1px solid var(--accent);border-radius:10px;background:var(--accent-soft);cursor:pointer">
+              <span title="Lọc theo dự án" aria-label="Lọc theo dự án" style="display:flex;align-items:center;color:var(--accent);flex:none"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2.5 5.5A1.5 1.5 0 0 1 4 4h2.3l1.2 1.5H12A1.5 1.5 0 0 1 13.5 7v4A1.5 1.5 0 0 1 12 12.5H4A1.5 1.5 0 0 1 2.5 11z"></path></svg></span>
+              <span style="font-size:12px;line-height:1.5;font-weight:600;color:var(--accent)">Căn hộ Thảo Điền</span>
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round"><path d="M4 6.5 8 10.5 12 6.5"></path></svg>
+            </div>
+            <div style="height:var(--tap);display:flex;align-items:center;gap:9px;padding:0 12px;border:1px solid var(--border);border-radius:10px;background:var(--field);cursor:pointer">
+              <span title="Lọc theo người" aria-label="Lọc theo người" style="display:flex;align-items:center;color:var(--t4);flex:none"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="5.6" r="2.4"></circle><path d="M3.6 13c0-2.4 2-4 4.4-4s4.4 1.6 4.4 4"></path></svg></span>
+              <span style="display:flex;align-items:center">
+                <button title="Đang lọc theo Ngọc Trâm · 9 việc" aria-label="Bỏ lọc theo Ngọc Trâm" style="width:24px;height:24px;padding:0;border:0;border-radius:50%;background:#6a57f5;box-shadow:0 0 0 2px var(--accent-strong);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff;font-family:inherit;cursor:pointer">NT</button>
+                <button title="Lọc theo Minh Hoàng · 6 việc" aria-label="Lọc theo Minh Hoàng" style="margin-left:-6px;width:24px;height:24px;padding:0;border:0;border-radius:50%;background:#4aa3d9;box-shadow:0 0 0 1.5px var(--field);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff;font-family:inherit;cursor:pointer;opacity:.55;transition:opacity .15s var(--ease-apple)" style-hover="opacity:1">MH</button>
+                <button title="Lọc theo Quốc Duy · 4 việc" aria-label="Lọc theo Quốc Duy" style="margin-left:-6px;width:24px;height:24px;padding:0;border:0;border-radius:50%;background:#46b876;box-shadow:0 0 0 1.5px var(--field);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff;font-family:inherit;cursor:pointer;opacity:.55;transition:opacity .15s var(--ease-apple)" style-hover="opacity:1">QD</button>
+              </span>
+              <span style="font-size:12px;line-height:1.5;color:var(--t1)">Ngọc Trâm</span>
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.6" stroke-linecap="round"><path d="M4 6.5 8 10.5 12 6.5"></path></svg>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;height:var(--tap);padding:0 12px;border:1px solid var(--border);border-radius:10px;background:var(--field);min-width:200px">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5 14 14" stroke-linecap="round"></path></svg>
+              <span style="flex:1;font-size:12px;line-height:1.5;color:var(--t4)">Tìm việc</span>
+            </div>
+            <span style="margin-left:auto;display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:8px;background:var(--danger-soft);color:var(--danger);font-size:11px;line-height:1.5;font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:var(--danger)"></span>2 việc trễ hạn</span>
+            <button style="height:var(--tap);padding:0 14px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-size:12px;line-height:1.5;font-weight:600;font-family:inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">Thêm việc</button>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:16px;min-height:0;background:var(--bg);background-image:radial-gradient(circle,var(--dots) 0 1px,transparent 1.4px);background-size:22px 22px">
+            <div style="display:flex;flex-direction:column;min-height:0;border-radius:14px;background:var(--panel);border:1px solid var(--border);overflow:hidden">
+              <div style="height:40px;display:flex;align-items:center;gap:9px;padding:0 12px;border-bottom:1px solid var(--border);flex:none">
+                <span style="width:8px;height:8px;border-radius:50%;background:var(--t4);flex:none"></span>
+                <span style="font-size:12px;line-height:1.5;font-weight:600;color:var(--t1)">Cần làm</span>
+                <span style="font-size:11px;line-height:1.5;font-variant-numeric:tabular-nums;color:var(--t4)">5</span>
+                <span title="3 người đang có việc ở cột Cần làm" aria-label="3 người đang có việc ở cột Cần làm" style="margin-left:auto;display:flex;align-items:center">
+                  <span style="width:20px;height:20px;border-radius:50%;background:#4aa3d9;box-shadow:0 0 0 1.5px var(--panel);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff">MH</span>
+                  <span style="margin-left:-7px;width:20px;height:20px;border-radius:50%;background:#6a57f5;box-shadow:0 0 0 1.5px var(--panel);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff">NT</span>
+                  <span style="margin-left:-7px;width:20px;height:20px;border-radius:50%;background:#46b876;box-shadow:0 0 0 1.5px var(--panel);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff">QD</span>
+                </span>
+                <button aria-label="Thêm thẻ" title="Thêm thẻ vào Cần làm" style="margin-left:8px;width:24px;height:24px;border:1px solid var(--border);border-radius:8px;background:var(--field);color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"></path></svg>
+                </button>
+              </div>
+              <div style="flex:1;min-height:0;overflow:hidden;padding:10px;display:flex;flex-direction:column;gap:9px">
+              <div draggable="true" style="border-radius:12px;background:var(--card);border:1px solid var(--border);padding:11px 12px;cursor:grab;display:flex;flex-direction:column;gap:8px;transition:border-color .15s var(--ease-apple)" style-hover="border-color:var(--border-strong)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:19px;padding:0 8px;border-radius:6px;background:var(--field);font-size:10px;line-height:1.5;font-weight:700;color:var(--t3)"><span style="width:6px;height:6px;border-radius:2px;background:var(--l-2)"></span>Hồ sơ</span>
+                  <span style="margin-left:auto;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;color:var(--t4)">12/8</span>
+                </div>
+                <div style="font-size:12.5px;line-height:1.5;font-weight:600;color:var(--t1);text-wrap:pretty">Bóc tách vật liệu bếp và tủ áo</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;min-width:0;font-size:10.5px;line-height:1.5;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Căn hộ Thảo Điền</span>
+                  <span style="width:20px;height:20px;border-radius:50%;background:#4aa3d9;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff;flex:none">MH</span>
+                </div>
+              </div>
+              <div draggable="true" style="border-radius:12px;background:var(--card);border:1px solid var(--border);padding:11px 12px;cursor:grab;display:flex;flex-direction:column;gap:8px;transition:border-color .15s var(--ease-apple)" style-hover="border-color:var(--border-strong)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:19px;padding:0 8px;border-radius:6px;background:var(--field);font-size:10px;line-height:1.5;font-weight:700;color:var(--t3)"><span style="width:6px;height:6px;border-radius:2px;background:var(--l-1)"></span>Thiết kế</span>
+                  <span style="margin-left:auto;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;color:var(--t4)">13/8</span>
+                </div>
+                <div style="font-size:12.5px;line-height:1.5;font-weight:600;color:var(--t1);text-wrap:pretty">Phối màu lại phòng ngủ nhỏ theo góp ý khách</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;min-width:0;font-size:10.5px;line-height:1.5;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Căn hộ Thảo Điền</span>
+                  <span style="width:20px;height:20px;border-radius:50%;background:#6a57f5;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff;flex:none">NT</span>
+                </div>
+              </div>
+              <div draggable="true" style="border-radius:12px;background:var(--card);border:1px solid var(--border);padding:11px 12px;cursor:grab;display:flex;flex-direction:column;gap:8px;transition:border-color .15s var(--ease-apple)" style-hover="border-color:var(--border-strong)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:19px;padding:0 8px;border-radius:6px;background:var(--field);font-size:10px;line-height:1.5;font-weight:700;color:var(--t3)"><span style="width:6px;height:6px;border-radius:2px;background:var(--l-3)"></span>Hiện trường</span>
+                  <span style="margin-left:auto;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;color:var(--t4)">14/8</span>
+                </div>
+                <div style="font-size:12.5px;line-height:1.5;font-weight:600;color:var(--t1);text-wrap:pretty">Đo lại thông tầng khu bếp</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;min-width:0;font-size:10.5px;line-height:1.5;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Nhà phố Bình Thạnh</span>
+                  <span style="width:20px;height:20px;border-radius:50%;background:#46b876;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff;flex:none">QD</span>
+                </div>
+              </div>
+              <div draggable="true" style="border-radius:12px;background:var(--card);border:1px solid var(--border);padding:11px 12px;cursor:grab;display:flex;flex-direction:column;gap:8px;transition:border-color .15s var(--ease-apple)" style-hover="border-color:var(--border-strong)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:19px;padding:0 8px;border-radius:6px;background:var(--field);font-size:10px;line-height:1.5;font-weight:700;color:var(--t3)"><span style="width:6px;height:6px;border-radius:2px;background:var(--l-2)"></span>Hồ sơ</span>
+                  <span style="margin-left:auto;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;color:var(--t4)">16/8</span>
+                </div>
+                <div style="font-size:12.5px;line-height:1.5;font-weight:600;color:var(--t1);text-wrap:pretty">Cập nhật bảng nét in cho bộ mặt bằng</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;min-width:0;font-size:10.5px;line-height:1.5;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Căn hộ Thảo Điền</span>
+                  <span style="width:20px;height:20px;border-radius:50%;background:#4aa3d9;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff;flex:none">MH</span>
+                </div>
+              </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;min-height:0;border-radius:14px;background:var(--panel);border:1px solid var(--border);overflow:hidden">
+              <div style="height:40px;display:flex;align-items:center;gap:9px;padding:0 12px;border-bottom:1px solid var(--border);flex:none">
+                <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none"></span>
+                <span style="font-size:12px;line-height:1.5;font-weight:600;color:var(--t1)">Đang làm</span>
+                <span style="font-size:11px;line-height:1.5;font-variant-numeric:tabular-nums;color:var(--t4)">4</span>
+                <span title="3 người đang có việc ở cột Đang làm" aria-label="3 người đang có việc ở cột Đang làm" style="margin-left:auto;display:flex;align-items:center">
+                  <span style="width:20px;height:20px;border-radius:50%;background:#6a57f5;box-shadow:0 0 0 1.5px var(--panel);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff">NT</span>
+                  <span style="margin-left:-7px;width:20px;height:20px;border-radius:50%;background:#46b876;box-shadow:0 0 0 1.5px var(--panel);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff">QD</span>
+                  <span style="margin-left:-7px;width:20px;height:20px;border-radius:50%;background:var(--field);border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:var(--t3)">+1</span>
+                </span>
+                <button aria-label="Thêm thẻ" title="Thêm thẻ vào Đang làm" style="margin-left:8px;width:24px;height:24px;border:1px solid var(--border);border-radius:8px;background:var(--field);color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"></path></svg>
+                </button>
+              </div>
+              <div style="flex:1;min-height:0;overflow:hidden;padding:10px;display:flex;flex-direction:column;gap:9px">
+              <div draggable="true" style="border-radius:12px;background:var(--card);border:1px solid var(--border);padding:11px 12px;cursor:grab;display:flex;flex-direction:column;gap:8px;transition:border-color .15s var(--ease-apple)" style-hover="border-color:var(--border-strong)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:19px;padding:0 8px;border-radius:6px;background:var(--field);font-size:10px;line-height:1.5;font-weight:700;color:var(--t3)"><span style="width:6px;height:6px;border-radius:2px;background:var(--l-1)"></span>Thiết kế</span>
+                  <span style="margin-left:auto;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;color:var(--warning)">Hôm nay</span>
+                </div>
+                <div style="font-size:12.5px;line-height:1.5;font-weight:600;color:var(--t1);text-wrap:pretty">Dựng ảnh phòng khách góc nhìn từ ban công</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;min-width:0;font-size:10.5px;line-height:1.5;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Căn hộ Thảo Điền</span>
+                  <span style="width:20px;height:20px;border-radius:50%;background:#6a57f5;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff;flex:none">NT</span>
+                </div>
+              </div>
+              <div draggable="true" style="border-radius:12px;background:var(--card);border:1px solid var(--border);padding:11px 12px;cursor:grab;display:flex;flex-direction:column;gap:8px;transition:border-color .15s var(--ease-apple)" style-hover="border-color:var(--border-strong)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:19px;padding:0 8px;border-radius:6px;background:var(--field);font-size:10px;line-height:1.5;font-weight:700;color:var(--t3)"><span style="width:6px;height:6px;border-radius:2px;background:var(--l-4)"></span>Gấp</span>
+                  <span style="margin-left:auto;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;color:var(--danger)">Trễ 2 ngày</span>
+                </div>
+                <div style="font-size:12.5px;line-height:1.5;font-weight:600;color:var(--t1);text-wrap:pretty">Chốt mã đá bàn đảo với nhà cung cấp</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;min-width:0;font-size:10.5px;line-height:1.5;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Căn hộ Thảo Điền</span>
+                  <span style="width:20px;height:20px;border-radius:50%;background:#46b876;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff;flex:none">QD</span>
+                </div>
+              </div>
+              <div style="border-radius:12px;background:var(--card);border:1px dashed var(--border-strong);padding:11px 12px;opacity:.6;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;gap:6px;height:19px;padding:0 8px;border-radius:6px;background:var(--field);font-size:10px;line-height:1.5;font-weight:700;color:var(--t4)"><span style="width:6px;height:6px;border-radius:2px;background:var(--l-5)"></span>Kỹ thuật</span></div>
+                <div style="font-size:12.5px;line-height:1.5;font-weight:600;color:var(--t3)">Kiểm tra kích thước cửa lùa</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;min-width:0;font-size:10.5px;line-height:1.5;color:var(--t4)">Chưa giao ai</span>
+                  <span title="Chưa giao ai" aria-label="Chưa giao ai" style="width:20px;height:20px;border-radius:50%;border:1.5px dashed var(--border-strong);flex:none"></span>
+                </div>
+              </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;min-height:0;border-radius:14px;background:var(--panel);border:1px solid var(--border);overflow:hidden">
+              <div style="height:40px;display:flex;align-items:center;gap:9px;padding:0 12px;border-bottom:1px solid var(--border);flex:none">
+                <span style="width:8px;height:8px;border-radius:50%;background:var(--warning);flex:none"></span>
+                <span style="font-size:12px;line-height:1.5;font-weight:600;color:var(--t1)">Chờ duyệt</span>
+                <span style="font-size:11px;line-height:1.5;font-variant-numeric:tabular-nums;color:var(--t4)">3</span>
+                <span title="2 người đang chờ duyệt" aria-label="2 người đang chờ duyệt" style="margin-left:auto;display:flex;align-items:center">
+                  <span style="width:20px;height:20px;border-radius:50%;background:#4aa3d9;box-shadow:0 0 0 1.5px var(--panel);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff">MH</span>
+                  <span style="margin-left:-7px;width:20px;height:20px;border-radius:50%;background:#6a57f5;box-shadow:0 0 0 1.5px var(--panel);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff">NT</span>
+                </span>
+                <button aria-label="Thêm thẻ" title="Thêm thẻ vào Chờ duyệt" style="margin-left:8px;width:24px;height:24px;border:1px solid var(--border);border-radius:8px;background:var(--field);color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"></path></svg>
+                </button>
+              </div>
+              <div style="flex:1;min-height:0;overflow:hidden;padding:10px;display:flex;flex-direction:column;gap:9px">
+              <div style="height:82px;border-radius:12px;border:1.5px dashed var(--accent);background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1.5;font-weight:600;color:var(--accent)">Thả vào đây</div>
+              <div draggable="true" style="border-radius:12px;background:var(--card);border:1px solid var(--border);padding:11px 12px;cursor:grab;display:flex;flex-direction:column;gap:8px;transition:border-color .15s var(--ease-apple)" style-hover="border-color:var(--border-strong)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:19px;padding:0 8px;border-radius:6px;background:var(--field);font-size:10px;line-height:1.5;font-weight:700;color:var(--t3)"><span style="width:6px;height:6px;border-radius:2px;background:var(--l-2)"></span>Hồ sơ</span>
+                  <span style="margin-left:auto;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;color:var(--t4)">15/8</span>
+                </div>
+                <div style="font-size:12.5px;line-height:1.5;font-weight:600;color:var(--t1);text-wrap:pretty">Bộ mặt bằng kỹ thuật bản 04</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;min-width:0;font-size:10.5px;line-height:1.5;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Căn hộ Thảo Điền</span>
+                  <span title="Nhóm Kỹ thuật · 3 người · 6 việc" aria-label="Giao cho nhóm Kỹ thuật · 3 người" style="display:flex;align-items:center;flex:none">
+                    <span style="width:20px;height:20px;border-radius:50%;background:#4aa3d9;box-shadow:0 0 0 1.5px var(--card);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff">MH</span>
+                    <span style="margin-left:-7px;width:20px;height:20px;border-radius:50%;background:#46b876;box-shadow:0 0 0 1.5px var(--card);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff">QD</span>
+                    <span style="margin-left:-7px;width:20px;height:20px;border-radius:50%;background:var(--field);border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:var(--t3)">+1</span>
+                  </span>
+                </div>
+              </div>
+              <div draggable="true" style="border-radius:12px;background:var(--card);border:1px solid var(--border);padding:11px 12px;cursor:grab;display:flex;flex-direction:column;gap:8px;transition:border-color .15s var(--ease-apple)" style-hover="border-color:var(--border-strong)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:19px;padding:0 8px;border-radius:6px;background:var(--field);font-size:10px;line-height:1.5;font-weight:700;color:var(--t3)"><span style="width:6px;height:6px;border-radius:2px;background:var(--l-1)"></span>Thiết kế</span>
+                  <span style="margin-left:auto;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;color:var(--t4)">15/8</span>
+                </div>
+                <div style="font-size:12.5px;line-height:1.5;font-weight:600;color:var(--t1);text-wrap:pretty">Moodboard vật liệu phòng khách</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;min-width:0;font-size:10.5px;line-height:1.5;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Nhà phố Bình Thạnh</span>
+                  <span style="width:20px;height:20px;border-radius:50%;background:#6a57f5;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff;flex:none">NT</span>
+                </div>
+              </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;min-height:0;border-radius:14px;background:var(--panel);border:1px solid var(--border);overflow:hidden">
+              <div style="height:40px;display:flex;align-items:center;gap:9px;padding:0 12px;border-bottom:1px solid var(--border);flex:none">
+                <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex:none"></span>
+                <span style="font-size:12px;line-height:1.5;font-weight:600;color:var(--t1)">Xong</span>
+                <span style="font-size:11px;line-height:1.5;font-variant-numeric:tabular-nums;color:var(--t4)">12</span>
+                <span title="Cả nhóm đã xong việc ở cột này" aria-label="Cả nhóm đã xong việc ở cột này" style="margin-left:auto;display:flex;align-items:center">
+                  <span style="width:20px;height:20px;border-radius:50%;background:#6a57f5;box-shadow:0 0 0 1.5px var(--panel);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff">NT</span>
+                  <span style="margin-left:-7px;width:20px;height:20px;border-radius:50%;background:#46b876;box-shadow:0 0 0 1.5px var(--panel);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff">QD</span>
+                  <span style="margin-left:-7px;width:20px;height:20px;border-radius:50%;background:var(--field);border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:var(--t3)">+2</span>
+                </span>
+                <button aria-label="Thêm thẻ" title="Thêm thẻ vào Xong" style="margin-left:8px;width:24px;height:24px;border:1px solid var(--border);border-radius:8px;background:var(--field);color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"></path></svg>
+                </button>
+              </div>
+              <div style="flex:1;min-height:0;overflow:hidden;padding:10px;display:flex;flex-direction:column;gap:9px">
+              <div draggable="true" style="border-radius:12px;background:var(--card);border:1px solid var(--border);padding:11px 12px;cursor:grab;display:flex;flex-direction:column;gap:8px;transition:border-color .15s var(--ease-apple)" style-hover="border-color:var(--border-strong)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:19px;padding:0 8px;border-radius:6px;background:var(--field);font-size:10px;line-height:1.5;font-weight:700;color:var(--t3)"><span style="width:6px;height:6px;border-radius:2px;background:var(--l-1)"></span>Thiết kế</span>
+                  <span style="margin-left:auto;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;color:var(--t5)">8/8</span>
+                </div>
+                <div style="font-size:12.5px;line-height:1.5;font-weight:600;color:var(--t1);text-wrap:pretty">Bố trí mặt bằng phương án B</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;min-width:0;font-size:10.5px;line-height:1.5;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Căn hộ Thảo Điền</span>
+                  <span style="width:20px;height:20px;border-radius:50%;background:#6a57f5;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff;flex:none">NT</span>
+                </div>
+              </div>
+              <div draggable="true" style="border-radius:12px;background:var(--card);border:1px solid var(--border);padding:11px 12px;cursor:grab;display:flex;flex-direction:column;gap:8px;transition:border-color .15s var(--ease-apple)" style-hover="border-color:var(--border-strong)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:19px;padding:0 8px;border-radius:6px;background:var(--field);font-size:10px;line-height:1.5;font-weight:700;color:var(--t3)"><span style="width:6px;height:6px;border-radius:2px;background:var(--l-3)"></span>Hiện trường</span>
+                  <span style="margin-left:auto;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;color:var(--t5)">2/8</span>
+                </div>
+                <div style="font-size:12.5px;line-height:1.5;font-weight:600;color:var(--t1);text-wrap:pretty">Khảo sát và chụp hiện trạng</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;min-width:0;font-size:10.5px;line-height:1.5;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Căn hộ Thảo Điền</span>
+                  <span style="width:20px;height:20px;border-radius:50%;background:#46b876;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff;flex:none">QD</span>
+                </div>
+              </div>
+              <div draggable="true" style="border-radius:12px;background:var(--card);border:1px solid var(--border);padding:11px 12px;cursor:grab;display:flex;flex-direction:column;gap:8px;transition:border-color .15s var(--ease-apple)" style-hover="border-color:var(--border-strong)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:19px;padding:0 8px;border-radius:6px;background:var(--field);font-size:10px;line-height:1.5;font-weight:700;color:var(--t3)"><span style="width:6px;height:6px;border-radius:2px;background:var(--l-2)"></span>Hồ sơ</span>
+                  <span style="margin-left:auto;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;color:var(--t5)">6/8</span>
+                </div>
+                <div style="font-size:12.5px;line-height:1.5;font-weight:600;color:var(--t1);text-wrap:pretty">Danh mục đèn và công tắc</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;min-width:0;font-size:10.5px;line-height:1.5;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Căn hộ Thảo Điền</span>
+                  <span style="width:20px;height:20px;border-radius:50%;background:#4aa3d9;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1.5;font-weight:700;color:#fff;flex:none">MH</span>
+                </div>
+              </div>
+              </div>
+            </div>
+            <div style="position:absolute"></div>
+          </div>
+
+          <footer style="display:flex;align-items:center;gap:14px;padding:0 12px;background:var(--panel);border-top:1px solid var(--border)">
+            <span style="font-size:11px;line-height:1.5;color:var(--t4)">24 việc · đang lọc theo 1 dự án và 1 người</span>
+            <span style="margin-left:auto;font-size:11px;line-height:1.5;color:var(--t4)">Kéo thẻ sang cột khác để đổi trạng thái</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:11px;line-height:1.5;color:var(--t4)"><span style="width:6px;height:6px;border-radius:50%;background:var(--success)"></span>Đã lưu 10:02</span>
+          </footer>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Tối&quot;,&quot;Kem&quot;],&quot;default&quot;:&quot;Tối&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Giao diện&quot;},&quot;projectName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Căn hộ Thảo Điền&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Nội dung&quot;}}">
+class Component extends DCLogic {
+  state = { theme: null };
+  componentDidMount() { this.apply(); }
+  componentDidUpdate() { this.apply(); }
+  apply() { document.documentElement.dataset.theme = this.theme(); }
+  theme() { return this.state.theme || (this.props.theme === 'Kem' ? 'light' : 'dark'); }
+  renderVals() {
+    const t = this.theme();
+    return {
+      themeLabel: t === 'dark' ? 'Đổi sang nền Kem' : 'Đổi sang nền Tối',
+      toggleTheme: () => this.setState({ theme: t === 'dark' ? 'light' : 'dark' }),
+      project: this.props.projectName || 'Căn hộ Thảo Điền'
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -30,6 +30,27 @@ import {
 export type ScopeSyncStatus = 'idle' | 'syncing' | 'ready' | 'missing' | 'error';
 
 /**
+ * M-SCOPE VIỆC 5 (07/08) — `[id]` trong URL nhận CẢ Flow.id lẫn Project.id (`resolveFlowForRouteId`
+ * ở trên cố ý khớp cả hai). Khi status='missing', UI KHÔNG được hiện màn trắng im lặng — phải NÓI
+ * RÕ đây là dự án THẬT chưa có bản vẽ nào (còn sửa được tại chỗ) hay id không khớp gì cả (đường
+ * dẫn hỏng/đã xoá — sửa tại chỗ vô nghĩa, phải điều hướng đi nơi khác).
+ */
+export interface ScopeMissingInfo {
+  kind: 'empty-project' | 'unknown';
+  projectName?: string;
+}
+
+export async function describeMissingScope(routeId: string): Promise<ScopeMissingInfo> {
+  try {
+    const { projects } = await fetchFlows();
+    const p = projects.find((pr) => pr.id === routeId);
+    return p ? { kind: 'empty-project', projectName: p.name } : { kind: 'unknown' };
+  } catch {
+    return { kind: 'unknown' };
+  }
+}
+
+/**
  * "Dự án đang hoạt động" để REDIRECT từ route toàn cục cũ (`/cad-editor`…).
  * Thứ tự: store (điều hướng trong phiên) → resume-state theo user gần nhất
  * (mở lại tab/bookmark). Null = user mới/chưa mở dự án nào → giữ hành vi cũ.
@@ -127,4 +148,29 @@ export function useProjectScopeSync(routeId: string, stage?: StageSegment): Scop
   }, [routeId, stage, router]);
 
   return status;
+}
+
+/**
+ * M-SCOPE VIỆC 5 — dùng CẠNH `useProjectScopeSync`. Chỉ fetch khi `status==='missing'` (không
+ * tốn request ở đường 'ready' bình thường, vốn chiếm tuyệt đại đa số lượt vào trang).
+ * Trả `null` khi chưa cần hỏi (status khác 'missing') hoặc đang chờ trả lời.
+ */
+export function useScopeMissingInfo(routeId: string, status: ScopeSyncStatus): ScopeMissingInfo | null {
+  const [info, setInfo] = useState<ScopeMissingInfo | null>(null);
+
+  useEffect(() => {
+    if (status !== 'missing' || !routeId) {
+      setInfo(null);
+      return;
+    }
+    let alive = true;
+    void describeMissingScope(routeId).then((r) => {
+      if (alive) setInfo(r);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [routeId, status]);
+
+  return info;
 }

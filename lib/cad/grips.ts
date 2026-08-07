@@ -122,6 +122,8 @@ export function gripsOf(e: Entity): Grip[] {
       }
       return [];
     }
+    case 'room':
+      return e.boundary.map((p, i) => ({ entityId: e.id, kind: 'vertex' as const, index: i, pt: p }));
   }
 }
 

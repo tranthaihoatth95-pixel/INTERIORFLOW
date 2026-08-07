@@ -17,6 +17,10 @@
 
 import type { Doc, Entity, Pt } from './model';
 import { entityBox } from './model';
+// G-M1-05 (07/08) — dò-mặt-phẳng đã có sẵn trong checker (phân hoạch mặt phẳng của hatch.ts),
+// KHÔNG viết thuật toán thứ hai. Xem nhánh 'roomSum' trong planAreaCrossCheck.
+import { findRoomLabels } from './standards/checker';
+import { ringKey } from './poche';
 
 /* ═══════════════════════ 0 · CỤM VẼ CHÍNH ═══════════════════════ */
 
@@ -273,8 +277,9 @@ export function planDeclaredAreaM2(doc: Doc): { areaM2: number; source: string }
 export interface AreaCrossCheck {
   declaredM2: number | null;
   computedM2: number | null;
-  /** cách tính diện tích: đường bao khép kín thật · chưa có cách nào đáng tin. */
-  method: 'closedBoundary' | 'none';
+  /** cách tính diện tích: đường bao khép kín thật · tổng LÒNG PHÒNG dò từ nhãn (G-M1-05, xem
+   * ghi chú roomSum trong hàm) · chưa có cách nào đáng tin. */
+  method: 'closedBoundary' | 'roomSum' | 'none';
   /** |computed − declared| / declared, đơn vị %. null khi thiếu một trong hai vế. */
   deltaPercent: number | null;
   /** vượt `tolerancePercent` (mặc định 3% theo phiếu) ⇒ true. */
@@ -342,7 +347,62 @@ export function planAreaCrossCheck(
     .sort((a, b) => b.m2 - a.m2);
 
   if (!candidates.length) {
-    notes.push('Không có đường bao khép kín nào dùng được làm ranh giới sàn (đã loại khung giấy layer defpoints). Ranh giới đang là các đoạn rời — cần dò mặt phẳng, chưa làm.');
+    // G-M1-05 (07/08) — "cần dò mặt phẳng, chưa làm" của bản cũ nay ĐÃ CÓ: tái dùng
+    // `findRoomLabels` (phân hoạch mặt phẳng `buildHatchFaceIndex`, hatch.ts) — đúng thuật toán
+    // "dò mặt phẳng khép kín từ đoạn rời" mà docstring trên đòi. Tổng ra là LÒNG PHÒNG (net,
+    // trong mép tường) nên LUÔN NHỎ HƠN GFA khung tên (gross, tính cả tường/lõi) — ghi rõ là
+    // hai đại lượng khác nhau, KHÔNG coi chênh lệch đó là đáng ngờ. Đáng ngờ thật = lòng phòng
+    // LỚN HƠN GFA khai (vật lý không thể) ⇒ suspect. Phòng dò không ra biên được ĐẾM VÀ NÓI RA
+    // (K3 — trước đây chúng im lặng rơi khỏi tổng, đúng vế G-M2-04).
+    // Hai bộ lọc SINH TỪ SỐ ĐO trên file thật (không phải phòng xa):
+    //  (a) nhãn THUẦN SỐ ("14"·"6175"·"2425") là số trục/chữ kích thước lọt qua ROOM_NAME_RE
+    //      (regex nhận cả số) — không phải tên phòng, loại khỏi phép cộng ngay từ đầu.
+    //  (b) NHIỀU nhãn rơi vào CÙNG một mặt (8 số trục cùng nằm trên mặt sàn 451,8 m² ⇒ cộng
+    //      trùng 8 lần thành 3.614 m²) — khử trùng theo `ringKey` của mặt, mỗi mặt đếm MỘT lần.
+    const rooms = findRoomLabels(doc).filter((r) => !/^[\d\s.,+]+$/.test(r.name));
+    const resolved = rooms.filter((r) => r.areaM2 !== null && r.poly);
+    const seenFaces = new Set<string>();
+    const dedup = resolved.filter((r) => {
+      const k = ringKey(r.poly!);
+      if (seenFaces.has(k)) return false;
+      seenFaces.add(k);
+      return true;
+    });
+    const dupCount = resolved.length - dedup.length;
+    // Chốt chặn phòng-nổ, MINH BẠCH: phòng NỘI THẤT đơn lẻ > 2.000 m² gần như chắc là mặt rò
+    // (biên thoát qua khe cửa ra cả sàn) — LOẠI khỏi tổng và NÓI RA (K3, không im lặng rơi).
+    const ROOM_SUM_MAX_SINGLE_M2 = 2000;
+    const withPoly = dedup.filter((r) => (r.areaM2 ?? 0) <= ROOM_SUM_MAX_SINGLE_M2);
+    const blown = dedup.length - withPoly.length;
+    if (withPoly.length) {
+      const roomSum = withPoly.reduce((s, r) => s + (r.areaM2 ?? 0), 0);
+      const missing = rooms.length - resolved.length;
+      if (dupCount > 0) notes.push(`${dupCount} nhãn trùng mặt với nhãn khác (nhiều chữ trong cùng một phòng) — mỗi mặt chỉ đếm một lần.`);
+      if (blown > 0) {
+        notes.push(`${blown} nhãn dò ra mặt lớn hơn ${ROOM_SUM_MAX_SINGLE_M2} m² (nghi biên rò ra ngoài phòng) — đã LOẠI khỏi tổng, không cộng bừa.`);
+      }
+      notes.push(
+        `Tổng LÒNG PHÒNG dò từ ${withPoly.length} nhãn phòng: ${roomSum.toFixed(1)} m² — số NET trong mép tường, ` +
+          'sẽ nhỏ hơn diện tích khung tên (tính cả tường/lõi/ban công). Hai đại lượng khác nhau, đừng trừ thẳng cho nhau.',
+      );
+      if (missing > 0) {
+        notes.push(`${missing} nhãn phòng KHÔNG dò được biên kín (tường chưa khép vòng quanh nhãn) — các phòng đó chưa nằm trong tổng trên.`);
+      }
+      const overGross = declared !== null && roomSum > declared.areaM2 * (1 + tol / 100);
+      if (overGross) {
+        notes.push(`Lòng phòng (${roomSum.toFixed(1)} m²) LỚN HƠN diện tích khai trong khung tên (${declared!.areaM2} m²) — vật lý không thể, nghi khung tên sai hoặc biên dò lệch.`);
+      }
+      return {
+        declaredM2: declared?.areaM2 ?? null,
+        computedM2: roomSum,
+        method: 'roomSum',
+        // net-vs-gross không so trực tiếp được ⇒ không trả deltaPercent (trả là mời người ta so).
+        deltaPercent: null,
+        suspect: overGross,
+        notes,
+      };
+    }
+    notes.push('Không có đường bao khép kín nào dùng được làm ranh giới sàn (đã loại khung giấy layer defpoints), và không có nhãn phòng nào dò được biên để cộng lòng phòng.');
     return {
       declaredM2: declared?.areaM2 ?? null,
       computedM2: null,

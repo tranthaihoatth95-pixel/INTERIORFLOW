@@ -114,8 +114,8 @@ export default function StagePresetPanel({ current, onClose, onApply }: Props) {
 
         <p style={{ fontSize: 11, color: 'var(--t4)', lineHeight: 1.55 }}>
           Đổi khổ sẽ TỰ DÀN LẠI (compact reflow) vị trí tiêu đề/ảnh/nội dung cho vừa tỉ lệ mới
-          — không phải AI, giữ nguyên chữ/ảnh gốc, chỉ đổi vị trí/kích thước. Xuất PowerPoint
-          (.pptx) luôn giữ khổ 16:9 (không theo khổ đã chọn ở đây).
+          — không phải AI, giữ nguyên chữ/ảnh gốc, chỉ đổi vị trí/kích thước. Mọi đường xuất
+          (PDF, PNG, PowerPoint) đều ra đúng khổ đang chọn ở đây.
         </p>
       </div>
     </div>

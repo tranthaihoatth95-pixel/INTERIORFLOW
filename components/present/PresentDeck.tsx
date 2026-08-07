@@ -1,10 +1,11 @@
 'use client';
 /**
- * components/present/PresentDeck.tsx — Bọc PresentViewer + tự render deck mẫu.
+ * components/present/PresentDeck.tsx — Bọc PresentViewer + render deck ra slide.
  *
  * Dựng slide bằng renderDeck (pipeline app) trong useEffect (tránh chạm window ở
  * render body → an toàn hydration). Cấp sẵn nút Download PDF / Moodboard PNG.
- * Dùng cho route /present và cho Present mode overlay trong app.
+ * Dùng cho Present mode overlay trong app (route showcase /present + DEMO_DECK đã gỡ
+ * 07/08 — M-EMPTY, Hoà chốt "bỏ hết dự án mẫu").
  */
 import { useEffect, useState } from 'react';
 import PresentViewer from './PresentViewer';
@@ -16,10 +17,11 @@ import {
   buildDeckPdf,
   downloadPdf,
   downloadImage,
-} from '@/lib/present-demo';
+} from '@/lib/present-render';
 
 export interface PresentDeckProps {
-  /** deck để trình chiếu; mặc định deck DEMO mẫu (Atelier Nord, hư cấu). */
+  /** deck để trình chiếu (không truyền và không có `imageSlides` thì không có gì chạy —
+   * deck DEMO mặc định đã gỡ 07/08). */
   deck?: PresentDeckData;
   /** slide ĐÃ render sẵn (dataURL) — vd từ node Export Deck của flow thật; ưu tiên hơn `deck`. */
   imageSlides?: string[];

@@ -1,0 +1,91 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bản đồ phủ thiết kế IF</title>
+<style>
+  :root{--bg:#0f1115;--ink:#e7e9ee;--mut:#9aa1ad;--dim:#6b727e;--line:#242a34;--card:#161922;
+    --ok:#4ea88b;--or:#d9a441;--mi:#c8635f;--new:#6f7bd6;--okbg:#14312a;--mibg:#2c1917;--newbg:#1a1e30;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);padding:22px 26px 60px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;font-size:14px;line-height:1.5}
+  h1{font-size:20px;font-weight:650;margin:0 0 2px}
+  .sub{color:var(--mut);font-size:12.5px;margin-bottom:8px}
+  .cnt{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;font-size:12px}
+  .pill{border-radius:20px;padding:3px 12px;font-weight:600}
+  .p-ok{background:var(--okbg);color:var(--ok)} .p-mi{background:var(--mibg);color:var(--mi)} .p-new{background:var(--newbg);color:var(--new)}
+  .grp{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 15px;margin-bottom:12px}
+  .grp.gap{border-color:#4a2b2b}
+  .gh{font-size:14px;font-weight:680;margin:0 0 9px;display:flex;align-items:baseline;gap:9px}
+  .gh .k{color:var(--dim);font-size:11px;font-weight:500}
+  .row{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{display:inline-flex;gap:7px;align-items:center;background:#0d1017;border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:12.5px}
+  .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .d-ok{background:var(--ok)} .d-mi{background:var(--mi)} .d-new{background:var(--new)} .d-or{background:var(--or)}
+  .tag{font-size:9.5px;color:var(--dim);margin-left:2px}
+  .law{margin-top:16px;background:#12211c;border:1px solid #24463a;border-radius:8px;padding:8px 12px;font-size:11.5px;color:var(--ok)}
+  .foot{color:var(--dim);font-size:11px;margin-top:14px;text-align:right}
+</style></head><body>
+  <h1>🗺 Bản đồ phủ thiết kế IF — mọi màn, chống quên</h1>
+  <div class="sub">Rà toàn app (routes + components + specs) đối chiếu Claude Design · 06/08/2026</div>
+  <div class="cnt">
+    <span class="pill p-ok">✅ có .dc: 10</span>
+    <span class="pill p-new">🆕 đang vẽ (4 brief): 4</span>
+    <span class="pill p-mi">🔴 CẦN Claude Design: ~24</span>
+  </div>
+
+  <div class="grp"><div class="gh">✏️ VẼ / CAD</div><div class="row">
+    <span class="chip"><span class="dot d-ok"></span>2D Kỹ thuật</span>
+    <span class="chip"><span class="dot d-ok"></span>Chế độ Chuyên</span>
+    <span class="chip"><span class="dot d-ok"></span>Phác thảo</span>
+    <span class="chip"><span class="dot d-mi"></span>Render / 3D<span class="tag">mock ve3d</span></span>
+    <span class="chip"><span class="dot d-mi"></span>Photo editor</span></div></div>
+
+  <div class="grp"><div class="gh">🔗 LUỒNG NODE</div><div class="row">
+    <span class="chip"><span class="dot d-ok"></span>Bảng nút</span>
+    <span class="chip"><span class="dot d-ok"></span>Nút tổng</span></div></div>
+
+  <div class="grp"><div class="gh">📚 THƯ VIỆN / KHO</div><div class="row">
+    <span class="chip"><span class="dot d-ok"></span>Thư viện</span>
+    <span class="chip"><span class="dot d-mi"></span>Kho vật liệu</span>
+    <span class="chip"><span class="dot d-mi"></span>Bảng màu</span></div></div>
+
+  <div class="grp"><div class="gh">🖨 TRÌNH BÀY / XUẤT</div><div class="row">
+    <span class="chip"><span class="dot d-ok"></span>Hộp xuất PDF</span>
+    <span class="chip"><span class="dot d-ok"></span>Bảng nét in</span>
+    <span class="chip"><span class="dot d-ok"></span>Bảng tròn</span>
+    <span class="chip"><span class="dot d-ok"></span>Tờ giấy</span>
+    <span class="chip"><span class="dot d-mi"></span>Luồng trình chiếu<span class="tag">một phần</span></span></div></div>
+
+  <div class="grp gap"><div class="gh">🧑‍💼 WORKSPACE / QUẢN LÝ CÔNG VIỆC <span class="k">← lỗ hổng lớn nhất · cần một mẻ design RIÊNG, đầy đủ</span></div><div class="row">
+    <span class="chip"><span class="dot d-or"></span>Bảng Kanban<span class="tag">CÓ code CHỈ ĐỌC · LarkPanels.tsx:176 — thiếu .dc + đường ghi ngược</span></span>
+    <span class="chip"><span class="dot d-mi"></span>Gantt / tiến độ<span class="tag">timeline — 0 tuyệt đối (grep gantt = 0)</span></span>
+    <span class="chip"><span class="dot d-or"></span>Tổng quan dự án<span class="tag">CÓ code · Dashboard.tsx, 3 ổ mount — chưa .dc</span></span>
+    <span class="chip"><span class="dot d-mi"></span>Chat nhóm / Cộng tác<span class="tag">chỉ ghi chú rời · 0 dep realtime — 2 mock collab tả chặng Dựng ảnh, KHÔNG phải chat nhóm</span></span>
+    <span class="chip"><span class="dot d-or"></span>Vitals (AI)<span class="tag">CÓ code studio/Vitals* · 3 spec — chưa .dc</span></span>
+    <span class="chip"><span class="dot d-or"></span>Notebook<span class="tag">CÓ code + trang + 3 đường vào — chưa .dc</span></span>
+    <span class="chip"><span class="dot d-or"></span>Knowledge base<span class="tag">CÓ lib/notebook/rag.ts + spec — chưa .dc</span></span>
+    <span class="chip"><span class="dot d-or"></span>Lịch / nhắc việc<span class="tag">CÓ dữ liệu lark-tasks (deadline) — chưa có màn, chưa .dc</span></span></div>
+    <div style="margin-top:9px;font-size:11.5px;color:var(--mut);border-top:1px dashed var(--line);padding-top:8px">
+      ⚠️ <b style="color:var(--or)">Đếm lại 06/08 (grep -a)</b> — 3 chấm trước đây ghi SAI "CHƯA có gì" trong khi code đang chạy.
+      Lỗ THẬT không phải "8 màn trắng" mà là: <b>Gantt=0</b> · <b>Kanban chỉ đọc ⇒ lớp VIỆC không sửa được việc</b> ·
+      <b>0 hạ tầng nhiều người</b> (chặn chat nhóm) · 6 màn có ruột chưa có vỏ.
+      Thứ tự đúng: chốt realtime → mở đường ghi ngược → mới vẽ. Chi tiết + chứng cứ file:dòng →
+      <code>docs/AUDIT-WORKSPACE-SYNCWORK-2026-08-06.md</code>
+    </div></div>
+
+  <div class="grp gap"><div class="gh">🖥 HỆ THỐNG / VỎ APP</div><div class="row">
+    <span class="chip"><span class="dot d-mi"></span>Trang chủ (Home)</span>
+    <span class="chip"><span class="dot d-mi"></span>File manager<span class="tag">mock tep</span></span>
+    <span class="chip"><span class="dot d-mi"></span>Cài đặt<span class="tag">mock cai-dat</span></span>
+    <span class="chip"><span class="dot d-or"></span>Avatar<span class="tag">M4 code, chưa .dc</span></span>
+    <span class="chip"><span class="dot d-mi"></span>Trang chia sẻ</span>
+    <span class="chip"><span class="dot d-or"></span>Intro / onboarding<span class="tag">một phần</span></span>
+    <span class="chip"><span class="dot d-mi"></span>Đăng nhập</span></div></div>
+
+  <div class="grp"><div class="gh">🆕 FRONTIER — 4 brief đang vẽ ở Claude Design</div><div class="row">
+    <span class="chip"><span class="dot d-new"></span>Nhận đề bài</span>
+    <span class="chip"><span class="dot d-new"></span>Inspector cấu kiện</span>
+    <span class="chip"><span class="dot d-new"></span>Kết quả Zoning</span>
+    <span class="chip"><span class="dot d-new"></span>Bảng N món FF&E</span></div></div>
+
+  <div class="law">⚖ Chống quên: mọi màn 🔴 đều CẦN Claude Design lên lớp trước khi apply. Ưu tiên **Workspace/Cộng tác** (chat nhóm + quản lý công việc) vì đó là hệ bị sót nặng nhất. ✅ = có .dc · 🔴 = thiếu · 🆕 = đang vẽ · 🟠 = có code chưa .dc.</div>
+  <div class="foot">Rà toàn app · trung tính · 06/08/2026</div>
+</body></html>

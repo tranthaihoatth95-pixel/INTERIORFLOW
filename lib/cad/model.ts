@@ -79,7 +79,10 @@ export type EntityType =
   // các type này nên parse/render như cũ, không breaking.
   | 'ellipse'
   | 'arrow'
-  | 'zone';
+  | 'zone'
+  // G-M2-04 (07/08, SPEC-TANG-DU-LIEU-CAU-KIEN §6): PHÒNG là một thứ có thật trong dữ liệu.
+  // Additive — `.idf` cũ không có type này vẫn parse/render như cũ.
+  | 'room';
 
 /**
  * IF2-nền — phân loại phần tử BIM/IFC 4.0 (Quyết định 258/QĐ-TTg). Optional để `.idf` cũ
@@ -785,6 +788,54 @@ export function zoneCentroid(z: ZoneEntity): Pt {
   return { x: sx / pts.length, y: sy / pts.length };
 }
 
+/**
+ * G-M2-04 (07/08) — PHÒNG là CẤU KIỆN THẬT trong `Doc`, theo đúng `SPEC-TANG-DU-LIEU-CAU-KIEN`
+ * §6.2. Trước đây "phòng" sống ở 3 dạng rời không dạng nào là bản chính (nhãn TEXT không biên ·
+ * ZoneEntity là lớp PHÂN TÍCH đè lên · polygon dò lại mỗi lần dựng 3D, không id) ⇒ không chỗ nào
+ * treo được trần/sàn/phào, diện tích là chữ chết (G-M2-03), sàn không tính được từ hình học
+ * (G-M1-05).
+ *
+ * BẤT BIẾN — đọc kỹ trước khi sửa:
+ *  - `boundary` là biên KÍN ĐÃ ĐÓNG BĂNG lúc tạo phòng (dò bằng `pickHatchFace`, xem
+ *    `lib/cad/room.ts` `detectRooms`) — từ đó biên là DỮ LIỆU, không phải phép đoán chạy lại mỗi
+ *    frame. Tường đổi ⇒ UI hiện "biên cũ so với tường" (`roomBoundaryStale`), người dùng bấm cập
+ *    nhật, KHÔNG tự sửa (luật L5 ghi-ngược-chỉ-qua-lệnh).
+ *  - Diện tích KHÔNG lưu — mọi ống kính tính từ `boundary` qua `roomAreaM2()` (một nguồn, hết
+ *    cảnh nhãn m² chết G-M2-03).
+ *  - KHÁC `ZoneEntity`: zone là lớp phân tích trình bày (opacity, nhóm màu); room là cấu kiện
+ *    dữ liệu (IfcSpace). Không trộn (xem bảng so sánh trong spec §6.2).
+ *  - Field vật liệu phòng (floorSpecId/ceilingSpecId/skirtingSpecId/ceilingHeightMm trong spec)
+ *    CHƯA khai ở đây — luật K4/L7: chưa có ống kính nào tiêu thụ (3D lens ngoài vùng phiên khai
+ *    field này). Thêm khi nơi tiêu thụ có thật, đừng khai trước.
+ */
+export interface RoomEntity extends Base {
+  type: 'room';
+  /** IfcSpace — `detectRooms` luôn gán 'space'. Kiểu để rộng `ElementType` (không siết literal)
+   * vì panel BIM gán hàng loạt (`BimAssignBox`) áp chung mọi entity đang chọn — siết ở đây là
+   * vỡ kiểu chỗ đó; ngữ nghĩa đúng vẫn là 'space', ghi ở docstring thay vì ở type. */
+  elementType?: ElementType;
+  /** Biên KÍN của lòng phòng, mm world — sự thật duy nhất về biên (xem docstring trên). */
+  boundary: Pt[];
+  /** Tên phòng, quy ước chữ hoa như nhãn TEXT cũ — "PHÒNG KHÁCH". */
+  name: string;
+  /** Công năng — TÁI DÙNG RoomKind đã có (không đẻ union mới). */
+  roomKind?: RoomKind;
+  /** Vị trí nhãn trên bản vẽ; thiếu = centroid boundary. */
+  labelPos?: Pt;
+}
+
+/** Centroid trung bình đỉnh của biên phòng — vị trí nhãn mặc định (cùng công thức zoneCentroid). */
+export function roomCentroid(r: RoomEntity): Pt {
+  if (!r.boundary.length) return { x: 0, y: 0 };
+  let sx = 0;
+  let sy = 0;
+  for (const p of r.boundary) {
+    sx += p.x;
+    sy += p.y;
+  }
+  return { x: sx / r.boundary.length, y: sy / r.boundary.length };
+}
+
 export type Entity =
   | LineEntity
   | PolylineEntity
@@ -797,7 +848,8 @@ export type Entity =
   | HatchEntity
   | EllipseEntity
   | ArrowEntity
-  | ZoneEntity;
+  | ZoneEntity
+  | RoomEntity;
 
 /**
  * Sprint 7 — Việc 3 (Markup overlay): ghim ghi chú KH đặt trên bản vẽ. KHÔNG phải hình học
@@ -1146,6 +1198,9 @@ export function entityBox(e: Entity): Box {
       break;
     case 'zone':
       zoneBoundaryPoints(e).forEach((p) => growBox(box, p));
+      break;
+    case 'room':
+      e.boundary.forEach((p) => growBox(box, p));
       break;
   }
   return box;

@@ -142,10 +142,22 @@ export interface ZoomExtentsPlan {
   farEntities: number;
 }
 
-/** Khung nhìn phải rộng hơn cụm chính bao nhiêu lần thì mới đáng bỏ bản sao xa. */
+/** Khung nhìn phải rộng hơn phần giữ lại bao nhiêu lần thì mới đáng bỏ bản sao xa. */
 const FOCUS_MIN_RATIO = 4;
-/** Nới cụm chính ra bao nhiêu phần cạnh dài để ôm trọn kích thước/ghi chú vẽ quanh mặt bằng. */
-const FOCUS_MARGIN_RATIO = 0.25;
+/**
+ * "XA VÔ LÝ" = tâm hình cách tâm cụm chính quá bao nhiêu LẦN CỠ CỤM.
+ *
+ * 🔴 Con số 30 là ĐO ĐƯỢC, không phải chọn cho đẹp (G-M1-04 vòng 2, 6 hồ sơ thật). Phân bố
+ * khoảng cách (đơn vị = cỡ cụm): nội dung bình thường — bảng ghi chú, khung tên, bản vẽ khác cùng
+ * tệp — nằm ở **0,4–13,8**; còn bản sao parked thật sự (cách gốc 12 km) nằm ở **353–358**. Giữa
+ * hai vùng đó là một khoảng trống rất rộng, nên ngưỡng 30 tách sạch mà không cần tinh chỉnh.
+ *
+ * ⚠️ Luật CŨ (nới cụm 25% rồi bỏ mọi thứ ngoài vùng nới) sai ở chỗ nó cắt theo VÙNG chứ không
+ * theo ĐỘ XA VÔ LÝ: đo được nó bật ở **6/6 file** và giấu **31–76%** số hình — tức là giấu cả
+ * bảng ghi chú và các bản vẽ khác trong cùng tệp, thứ người dùng đang muốn xem. Nay chỉ bỏ đúng
+ * cái đáng bỏ.
+ */
+const ABSURD_FAR_RATIO = 30;
 
 const areaOf = (b: Box): number => Math.max(0, b.maxX - b.minX) * Math.max(0, b.maxY - b.minY);
 
@@ -177,18 +189,21 @@ export function zoomExtentsPlan(doc: Doc, opts: { preferFull?: boolean } = {}): 
   const cluster = mainClusterBox(doc);
   if (!cluster) return { box: full, mode: 'full', farEntities: 0 };
 
-  const margin = Math.max(cluster.box.maxX - cluster.box.minX, cluster.box.maxY - cluster.box.minY) * FOCUS_MARGIN_RATIO;
-  const grown: Box = {
-    minX: cluster.box.minX - margin, minY: cluster.box.minY - margin,
-    maxX: cluster.box.maxX + margin, maxY: cluster.box.maxY + margin,
-  };
+  const cx = (cluster.box.minX + cluster.box.maxX) / 2;
+  const cy = (cluster.box.minY + cluster.box.maxY) / 2;
+  const size = Math.max(cluster.box.maxX - cluster.box.minX, cluster.box.maxY - cluster.box.minY);
+  if (size <= 0) return { box: full, mode: 'full', farEntities: 0 };
+  const limit = size * ABSURD_FAR_RATIO;
 
   const focus: Box = { ...cluster.box };
   let far = 0;
   for (const e of doc.entities) {
     const b = entityBox(e);
     if (!Number.isFinite(b.minX) || !Number.isFinite(b.maxX)) continue;
-    if (b.minX >= grown.minX && b.maxX <= grown.maxX && b.minY >= grown.minY && b.maxY <= grown.maxY) {
+    const ex = (b.minX + b.maxX) / 2;
+    const ey = (b.minY + b.maxY) / 2;
+    if (Math.abs(ex - cx) <= limit && Math.abs(ey - cy) <= limit) {
+      // GIỮ: nới khung ra ôm trọn nó. Ghi chú, khung tên, bản vẽ khác trong cùng tệp đều vào đây.
       focus.minX = Math.min(focus.minX, b.minX);
       focus.minY = Math.min(focus.minY, b.minY);
       focus.maxX = Math.max(focus.maxX, b.maxX);
@@ -198,6 +213,8 @@ export function zoomExtentsPlan(doc: Doc, opts: { preferFull?: boolean } = {}): 
     }
   }
 
+  // Không có hình nào xa vô lý ⇒ khung nhìn = khung đầy, KHÔNG giấu gì (đây là ca của mọi tệp bình thường).
+  if (far === 0) return { box: full, mode: 'full', farEntities: 0 };
   if (areaOf(full) < FOCUS_MIN_RATIO * areaOf(focus)) return { box: full, mode: 'full', farEntities: 0 };
   return { box: focus, mode: 'mainCluster', farEntities: far };
 }
@@ -213,3 +230,56 @@ export function zoomFocusStatusLine(farEntities: number): string {
 
 /** Câu báo khi người dùng bấm lần hai để xem toàn bộ. */
 export const ZOOM_FULL_STATUS_LINE = 'Đang xem toàn bộ bản vẽ, kể cả hình để xa.';
+
+/* ═══════════════════ 3 · CÂU CHO Ô DUYỆT TRƯỚC KHI XUẤT DXF (G-M1-20) ═══════════════════ */
+
+/**
+ * Ô duyệt trước khi xuất DXF từng ghi cứng **"Tải file DXF đã làm phẳng block — mở lại ở AutoCAD
+ * sẽ không còn cấu trúc block"**. Câu đó ĐÚNG cho tới 06/08, sau đó thì SAI: bộ ghi nay dựng lại
+ * block thật (đo trên hồ sơ thật: 91–457 bản chèn, 25–31 định nghĩa block mỗi file, bộ đọc DXF
+ * độc lập duyệt sạch 0 lỗi). Nói với người dùng rằng họ sắp mất thứ họ KHÔNG mất là lỗi nặng
+ * ngang nói họ giữ được thứ đã mất — cả hai đều khiến họ quyết định sai.
+ *
+ * Hàm THUẦN, tách khỏi component để kiểm được bằng `sucrase-node` với báo cáo thật.
+ * Bốn field `insertsWritten`/`blockDefsWritten`/`preservedBlocks`/`flattenedBlocks` trước đây khai
+ * ra rồi bỏ đó (không nơi nào đọc) — đây là nơi tiêu thụ của chúng (K4).
+ */
+export function exportBlockSummary(report: {
+  insertsWritten: number;
+  blockDefsWritten: number;
+  preservedBlocks: Record<string, number>;
+  flattenedBlocks: Record<string, number>;
+  flattenedBlockCount: number;
+}): { label: string; detail: string } {
+  const flatEnts = Object.values(report.flattenedBlocks).reduce((a, b) => a + b, 0);
+  const keptNames = Object.keys(report.preservedBlocks).length;
+
+  // Không giữ được khối nào → giữ nguyên câu cũ, vì lúc đó nó đúng.
+  if (report.insertsWritten === 0) {
+    return {
+      label: 'Tải file DXF — các khối bị rã thành nét rời',
+      detail: `${viNum(report.flattenedBlockCount)} khối · ${viNum(flatEnts)} hình`,
+    };
+  }
+
+  const kept = `Giữ ${viNum(report.insertsWritten)} khối (${viNum(keptNames)} loại)`;
+  return {
+    label: flatEnts > 0 ? 'Tải file DXF — giữ được phần lớn khối' : 'Tải file DXF — giữ nguyên khối',
+    detail: flatEnts > 0
+      ? `${kept} · ${viNum(flatEnts)} hình bị rã thành nét rời`
+      : `${kept} · không hình nào bị rã`,
+  };
+}
+
+/**
+ * Câu cho mục "Tự phân loại" trong panel báo cáo nạp — nơi tiêu thụ của `report.elementTypes`
+ * (K4: field khai xong phải có người đọc).
+ *
+ * ⛔ K3 — phải nói rõ đây là MÁY ĐOÁN, và đoán bằng gì. Người dùng có quyền biết để mà sửa lại;
+ * giấu chuyện đoán đi thì con số trông như do họ khai.
+ */
+export function inferSummaryLine(elementTypes: { inferredCount: number; byLayer: Record<string, string> }): string | null {
+  if (!elementTypes.inferredCount) return null;
+  const layers = Object.keys(elementTypes.byLayer).length;
+  return `Máy đoán ${viNum(elementTypes.inferredCount)} hình theo tên ${viNum(layers)} lớp. Kiểm lại rồi sửa nếu sai.`;
+}

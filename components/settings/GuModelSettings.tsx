@@ -127,8 +127,8 @@ export function GuModelSettings() {
       <h2 className="text-[15px] font-semibold text-[var(--t1)]">{tr('Bộ học Gu', 'Gu learning model')}</h2>
       <p className="mt-1 text-[12px] text-[var(--t4)]">
         {tr(
-          'Học từ lượt Nhận/Bỏ gợi ý bố trí CAD của bạn — riêng theo tài khoản, lưu trên máy chủ.',
-          'Learns from your Accept/Reject picks on CAD layout suggestions — per account, stored on the server.',
+          'Học từ lượt Nhận/Bỏ gợi ý bố trí ở Thiết kế 2D của bạn — riêng theo tài khoản, lưu trên máy chủ.',
+          'Learns from your Accept/Reject picks on 2D Design layout suggestions — per account, stored on the server.',
         )}
       </p>
 

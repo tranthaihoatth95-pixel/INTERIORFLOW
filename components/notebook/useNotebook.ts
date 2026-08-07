@@ -51,6 +51,16 @@ function newId(prefix: string) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
+/**
+ * G-M20-09 (07/08) — 3/4 chỗ gọi API notebook đọc thẳng thân JSON không kiểm `res.ok` trước
+ * ⇒ lỗi HTTP (404/500) có body JSON hợp lệ (vd `{error:'...'}`) đọc được BÌNH THƯỜNG, `data?.answer`
+ * ra `undefined ?? ''` = câu trả lời RỖNG thay vì báo lỗi. Hàm thuần này tách riêng để test được
+ * bằng `sucrase-node` (không cần dựng `Response`/DOM thật) — chỉ 1 nơi quyết định câu chữ lỗi.
+ */
+export function httpErrorMessage(status: number, context: string): string {
+  return `${context} — máy chủ trả lỗi HTTP ${status}`;
+}
+
 export function useNotebook(projectId: string) {
   const [sources, setSources] = useState<NotebookSource[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -116,6 +126,7 @@ export function useNotebook(projectId: string) {
         setSources((prev) => [optimistic, ...prev]);
         try {
           const res = await fetch(`/api/notebook/${projectId}/source`, { method: 'POST', body: fd });
+          if (!res.ok) throw new Error(httpErrorMessage(res.status, 'Tải nguồn lên'));
           const data = await res.json();
           setSources((prev) =>
             prev.map((s) => (s.id === optimistic.id ? { ...optimistic, id: data.sourceId ?? optimistic.id, status: data.status ?? 'processing' } : s)),
@@ -150,6 +161,7 @@ export function useNotebook(projectId: string) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           });
+          if (!res.ok) throw new Error(httpErrorMessage(res.status, 'Thêm nguồn'));
           const data = await res.json();
           setSources((prev) => [
             {
@@ -224,6 +236,7 @@ export function useNotebook(projectId: string) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ question, stage }),
           });
+          if (!res.ok) throw new Error(httpErrorMessage(res.status, 'Hỏi Notebook'));
           const data = await res.json();
           const cits: Citation[] = Array.isArray(data?.sources) ? data.sources : [];
           const mode: 'grounded' | 'general' | undefined =

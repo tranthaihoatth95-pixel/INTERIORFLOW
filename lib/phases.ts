@@ -11,6 +11,11 @@ export interface PhaseMeta {
   /** icon key — component tự map (tránh phụ thuộc lucide ở lib) */
   icon: Phase;
   label: string;
+  /** 07/08 [M-NHAN-OUT] — nhãn EN đúng CHỐT NGÔN NGỮ (`docs/00-CHOT.md`): concept→'2D Design'
+   * · render→'3D Design' · present→'Presenting'. Trước đây `label` chỉ có 1 chuỗi VI, verify
+   * browser (đổi `lang='en'` qua `useFlowStore`) bắt được `StageSwitcher.tsx` vẫn hiện tiếng Việt
+   * ở giao diện EN — field này + `useT()` ở nơi gọi sửa đúng chỗ đó. */
+  labelEn: string;
   /** 1 dòng trên entry / tooltip */
   tagline: string;
   blurb: string;
@@ -33,8 +38,15 @@ export const PHASES: PhaseMeta[] = [
     id: 'concept',
     icon: 'concept',
     label: 'Thiết kế 2D',
-    tagline: 'Import CAD 2D · vẽ sơ phác · bố trí furniture',
-    blurb: 'Dựng mặt bằng 2D: mở/vẽ CAD, bố trí nội thất, rồi đưa layout sang Thiết kế 3D tô vật liệu.',
+    labelEn: '2D Design',
+    // 07/08 [G-M15 việc 5] — rà theo docs/00-CHOT.md "ĐỊNH NGHĨA BA CHẶNG" (07/08 Hoà chốt):
+    // chặng này có 2 mode Sơ phác ↔ Chuyên (Chuyên = gồm luôn Revit 2D) — tagline cũ thiếu cả hai.
+    tagline: 'Sơ phác ↔ Chuyên (gồm Revit 2D) · vẽ mặt bằng · bố trí nội thất',
+    // G-M15-06 — bỏ chữ "CAD" khỏi nhãn (Hoà chốt 07/08 "có cad là sai thôi"); đo lại (N8):
+    // `.blurb` KHÔNG có nơi render nào trong app hiện tại (`grep -rn "\.blurb\b"` chỉ khớp field
+    // khác tên trùng ở AiDependencySettings.tsx, không phải PhaseMeta) — sửa trước để không tái
+    // sinh lỗi khi có phiên sau nối nó vào UI.
+    blurb: 'Dựng mặt bằng 2D: mở/vẽ Thiết kế 2D, bố trí nội thất, rồi đưa layout sang Thiết kế 3D tô vật liệu.',
     // Chặng này chạy ở route riêng (/cad-editor), không có node ưu tiên trên canvas.
     featured: [],
     demo: 'concept',
@@ -47,7 +59,10 @@ export const PHASES: PhaseMeta[] = [
     id: 'render',
     icon: 'render',
     label: 'Thiết kế 3D',
-    tagline: 'Clay → photoreal · chỉnh cục bộ',
+    labelEn: '3D Design',
+    // 07/08 [G-M15 việc 5] — tagline cũ thiếu Revit 3D + dựng khối (chốt 07/08: mọi thứ 3D của
+    // Revit đẩy sang chặng này, cùng với dựng khối tinh thần 3ds Max).
+    tagline: 'Dựng khối (gồm Revit 3D) · Clay → photoreal · chỉnh cục bộ',
     blurb: 'Sản xuất phối cảnh: clay/sketch → AI photoreal, đổi vật liệu, ánh sáng, upscale.',
     featured: [
       'input.image',
@@ -84,6 +99,7 @@ export const PHASES: PhaseMeta[] = [
     id: 'present',
     icon: 'present',
     label: 'Trình chiếu',
+    labelEn: 'Presenting',
     tagline: 'Slide · board · spec vật liệu',
     blurb: 'Đóng gói cho khách: dàn slide 16:9, board, xuất deck PDF, chú thích vật liệu.',
     featured: ['slide.concept', 'slide.composer', 'slide.deck', 'out.board', 'out.gallery', 'util.annotate'],
@@ -126,22 +142,18 @@ export function isPhase(v: unknown): v is Phase {
 }
 
 /**
- * IF2-nền — nhãn hiển thị của chặng, TỰ ĐỔI theo CAD stage cho phase 'concept':
- *   stage='sketch'    → 'Thiết kế 2D · Sơ phác'
- *   stage='technical' → 'Thiết kế 2D · Kỹ thuật'
- *   stage='bim'       → 'Thiết kế 2D · Kỹ thuật' (BIM/cấu kiện KHÔNG còn là mode/chặng riêng
- *                        từ 03/08 CHỐT TÊN vòng cuối — nay là TẦNG DỮ LIỆU nằm dưới cả ba
- *                        chặng, xem CHOT-TEN-CHANG-MODE-2026-08-03.md — nên dùng chung nhãn
- *                        'Kỹ thuật' với 'technical', KHÔNG bịa nhãn "BIM" cho người dùng thấy)
- * 04/08 [P7 ĐỔI TÊN] — tiền tố '2D Kỹ thuật' → 'Thiết kế 2D' (xem PHASES[0] ở trên), hậu tố
- * '· Sơ phác'/'· Kỹ thuật' GIỮ NGUYÊN (đó là tên MODE, không phải tên chặng).
- * Các phase khác giữ nguyên label tĩnh trong PHASES. `cadStage` optional để không phá caller cũ
- * (thiếu ⇒ fallback về `PHASE_MAP[id].label` như trước).
+ * 07/08 [G-M15-02, M-NHAN-OUT] — TRƯỚC ĐÂY gộp tên CHẶNG với tên MODE thành một chuỗi
+ * ('Thiết kế 2D · Sơ phác'/'Thiết kế 2D · Kỹ thuật'). Chốt 07/08 (`docs/00-CHOT.md`) tách rõ:
+ * tên chặng và tên mode là HAI THỨ khác nhau, không dán vào nhau trên một nhãn — mode đã có dải
+ * chọn riêng ở thanh công cụ dưới (`Sơ phác · Kỹ thuật · Nội thất`). Đo lại (N8): hàm này KHÔNG
+ * có nơi gọi nào trong app (`grep -rn "phaseLabel(" --include=*.tsx --include=*.ts .` chỉ ra
+ * đúng 1 kết quả — chính định nghĩa; `StageSwitcher.tsx` dùng thẳng `p.label` tĩnh, KHÔNG gọi hàm
+ * này) — không phải bug đang hiện cho người dùng, nhưng chữ ký cũ SAI theo chốt mới nên sửa luôn
+ * để phiên sau lỡ gọi không tái sinh lỗi. `cadStage` giữ tham số (không phá chữ ký) nhưng KHÔNG
+ * còn ảnh hưởng chuỗi trả về — luôn trả đúng `PHASE_MAP[id].label`.
  */
-export function phaseLabel(id: Phase, cadStage?: 'sketch' | 'technical' | 'bim'): string {
-  if (id !== 'concept' || !cadStage) return PHASE_MAP[id].label;
-  if (cadStage === 'technical' || cadStage === 'bim') return 'Thiết kế 2D · Kỹ thuật';
-  return 'Thiết kế 2D · Sơ phác';
+export function phaseLabel(id: Phase, _cadStage?: 'sketch' | 'technical' | 'bim'): string {
+  return PHASE_MAP[id].label;
 }
 
 /**

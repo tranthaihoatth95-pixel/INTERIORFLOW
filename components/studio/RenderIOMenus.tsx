@@ -59,7 +59,7 @@ export function RenderIOMenus() {
     }
     setBusy('pdf');
     try {
-      const { buildDeckPdf, downloadPdf } = await import('@/lib/present-demo');
+      const { buildDeckPdf, downloadPdf } = await import('@/lib/present-render');
       const uri = await buildDeckPdf(slides, 'interiorflow-deck.pdf');
       downloadPdf(uri, 'interiorflow-deck.pdf');
       flash(true, `Đã xuất PDF — ${slides.length} slide.`);

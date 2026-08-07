@@ -479,15 +479,18 @@ function Divider({ h = 22 }: { h?: number }) {
 
 /** VIỆC 1 — nhãn nhóm kiểu ribbon: 10px, UPPERCASE, tracking .18em, --t4, đặt DƯỚI hàng nút
  * (toolbelt IF nổi TRÊN canvas, không phải cố định trên đầu màn hình như ribbon Office). */
+// 07/08 M-UI-CAD VIỆC 7 (cùng họ VIỆC 1+2+5 của RevitSummaryPanel — nhãn nhóm chữ Việt có dấu
+// "VẼ · CẤU KIỆN · SỬA · ĐO & GHI CHÚ" trước 10px/line-height:1 cắt dấu + var(--t4) trượt tương
+// phản trên nền panel): nâng ≥11.5px, line-height ≥1.5, đổi sang --t3.
 function GroupLabel({ children }: { children: string }) {
   return (
     <span
       style={{
-        fontSize: 10,
-        lineHeight: 1,
+        fontSize: 11.5,
+        lineHeight: 1.5,
         textTransform: 'uppercase',
-        letterSpacing: '.18em',
-        color: 'var(--t4)',
+        letterSpacing: '.14em',
+        color: 'var(--t3)',
         marginTop: 3,
         whiteSpace: 'nowrap',
       }}

@@ -33,7 +33,7 @@ const ctx = new Proxy({} as Record<string, unknown>, {
   },
 }) as unknown as CanvasRenderingContext2D;
 
-const V: Viewport = { scale: 0.05, tx: 0, ty: 0 } as Viewport;
+const V: Viewport = { scale: 0.05, panX: 0, panY: 0 };
 /** realLineweight:true ⇒ đi qua CẢ 3 đường tra lớp (màu · bề dày · nét đứt). */
 const STYLE = { stroke: '#111111', lineWidth: 1, text: false, realLineweight: true };
 const ent = (id: string, layer: string) =>

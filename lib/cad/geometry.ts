@@ -96,6 +96,8 @@ export function translateEntity(e: Entity, dx: number, dy: number): Entity {
         ...(e.ellipse ? { ellipse: { ...e.ellipse, c: t(e.ellipse.c) } } : {}),
         ...(e.labelPos ? { labelPos: t(e.labelPos) } : {}),
       };
+    case 'room':
+      return { ...e, boundary: e.boundary.map(t), ...(e.labelPos ? { labelPos: t(e.labelPos) } : {}) };
   }
 }
 
@@ -140,6 +142,8 @@ export function rotateEntity(e: Entity, c: Pt, ang: number): Entity {
         ...(e.ellipse ? { ellipse: { ...e.ellipse, c: r(e.ellipse.c), rot: (e.ellipse.rot ?? 0) + ang } } : {}),
         ...(e.labelPos ? { labelPos: r(e.labelPos) } : {}),
       };
+    case 'room':
+      return { ...e, boundary: e.boundary.map(r), ...(e.labelPos ? { labelPos: r(e.labelPos) } : {}) };
   }
 }
 
@@ -179,6 +183,8 @@ export function mirrorEntity(e: Entity, o: Pt, phi: number): Entity {
         ...(e.ellipse ? { ellipse: { ...e.ellipse, c: m(e.ellipse.c), rot: 2 * phi - (e.ellipse.rot ?? 0) } } : {}),
         ...(e.labelPos ? { labelPos: m(e.labelPos) } : {}),
       };
+    case 'room':
+      return { ...e, boundary: e.boundary.map(m), ...(e.labelPos ? { labelPos: m(e.labelPos) } : {}) };
   }
 }
 

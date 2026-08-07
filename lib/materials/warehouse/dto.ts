@@ -31,6 +31,12 @@ export interface MaterialSpecDto {
   ownerId: string | null;
   supplierId: string | null;
   verified: boolean;
+  /** 06/08 VÒNG 2 (G-M3-08) — 2 cột `room`/`confidence` nay CÓ THẬT trong DB (chủ dự án đã chạy
+   * `prisma db push` + `generate`; `PRAGMA table_info(ProductSpec)` = 34 cột) và `specToDto()` đã
+   * trả về. Khai ở đây để bảng kho ĐỌC được — trước đó phòng/độ tin cậy chỉ sống trong state màn
+   * hình của cửa nhập, đóng tab là mất. */
+  room: string | null;
+  confidence: string | null;
 }
 
 /** "Nguồn" (cột phiếu VIỆC 3) — suy từ dữ liệu có sẵn, KHÔNG thêm cột DB mới (VIỆC 1 chỉ khai
@@ -76,6 +82,15 @@ export interface MaterialWritePayload {
   materials?: string[];
   finishes?: string[];
   colorHex?: string;
+  /** 06/08 VÒNG 2 (G-M3-08): `room` = phòng/khu vực · `confidence` = mức tin của các SỐ
+   * ('measured' | 'inferred' | 'manual', khớp `FfeConfidence`). `specNormalize()` đã ép kiểu 2
+   * trường này từ khi cờ `SPEC_ROOM_COLUMN_READY` bật — thiếu chúng trong payload là lý do phòng
+   * vẫn rơi dù đường xuống DB đã thông.
+   * ⚠️ `qty` KHÔNG có ở đây và sẽ không có: `ProductSpec` là DANH MỤC ("món này tồn tại, giá bao
+   * nhiêu"), số lượng là chuyện của LẦN XUẤT HIỆN trong một dự án ⇒ nó sống ở `FfeItem.qty`. Nhét
+   * số lượng vào danh mục là thứ đẻ ra "1 mã hàng 2 số lượng khác nhau ở 2 dự án". */
+  room?: string;
+  confidence?: string;
 }
 
 /**

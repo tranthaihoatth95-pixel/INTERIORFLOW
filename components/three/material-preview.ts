@@ -22,6 +22,8 @@
 
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import type { MaterialPbr } from '@/lib/materials/schema';
+import { loadPbrTextures, buildPbrMaterial, pbrCacheKey, type PbrTextureSet } from '@/lib/three/pbr-three';
 
 export type PreviewKind = 'wood' | 'stone' | 'metal' | 'paint' | 'fabric' | 'glass';
 export type PreviewScene = 'sphere' | 'floor' | 'fabric' | 'glass';
@@ -34,6 +36,13 @@ export interface PreviewSpec {
   colorB: string;
   kind: PreviewKind;
   scene?: PreviewScene; // bỏ trống = tự chọn theo kind
+  /**
+   * VIỆC 3 phiếu M-VAT-LIEU-2 (07/08) — PBR THẬT (schema PHU đã có, đúng lời hẹn ghi ở đầu
+   * file). Có trường này ⇒ vật liệu dựng từ `buildPbrMaterial` (`lib/three/pbr-three.ts`, đọc đủ
+   * 7 map + uvScaleMm), bảng `kind` chỉ còn quyết định CẢNH; map là ảnh nên phải đi đường
+   * `renderMaterialPreviewAsync`. Bỏ trống ⇒ đường cũ theo `kind`, mọi caller cũ y nguyên.
+   */
+  pbr?: MaterialPbr;
 }
 
 /** matId ATLAS mock: W- gỗ · S- đá · M- kim loại · P- sơn · F- vải · G- kính. */
@@ -258,13 +267,27 @@ const cache = new Map<string, string>();
  * Trả null khi WebGL không có (caller giữ swatch phẳng làm fallback).
  */
 export function renderMaterialPreview(spec: PreviewSpec, size = 96, resolution: 0.25 | 0.5 | 1 = 1): string | null {
+  return renderCore(spec, undefined, size, resolution);
+}
+
+/**
+ * Đường PBR THẬT (map là ảnh ⇒ phải chờ decode): tải trước mọi map qua cache
+ * (`loadPbrTextures`) rồi mới render — cùng lõi `renderCore`, cùng cache PNG. Không có
+ * `spec.pbr` thì tương đương bản sync (không thêm chi phí). Trả null khi WebGL tắt.
+ */
+export async function renderMaterialPreviewAsync(spec: PreviewSpec, size = 96, resolution: 0.25 | 0.5 | 1 = 1): Promise<string | null> {
+  const tex = spec.pbr ? await loadPbrTextures(spec.pbr) : undefined;
+  return renderCore(spec, tex, size, resolution);
+}
+
+function renderCore(spec: PreviewSpec, tex: PbrTextureSet | undefined, size = 96, resolution: 0.25 | 0.5 | 1 = 1): string | null {
   // Nấc phân giải vẫn là van chi phí, nhưng phải nhân DPR và có SÀN — verify 04/08 cho thấy
   // 120px ô × nấc 25% = 30px nguồn, phóng lên màn Retina thành vệt mờ, mất hẳn highlight/Fresnel
   // (đúng thứ khiến quả cầu có nghĩa). Cache theo key nên mỗi tham số chỉ render 1 lần ⇒ sàn 96px
   // rẻ hơn nhiều so với cái giá "ảnh xấu".
   const dpr = typeof window === 'undefined' ? 1 : Math.min(window.devicePixelRatio || 1, 2);
   const px = Math.max(96, Math.round(size * resolution * dpr));
-  const key = `${spec.id}|${spec.scene ?? 'auto'}|${spec.kind}|${spec.colorA}|${spec.colorB}|${px}`;
+  const key = `${spec.id}|${spec.scene ?? 'auto'}|${spec.kind}|${spec.colorA}|${spec.colorB}|${px}|${spec.pbr ? pbrCacheKey(spec.pbr) : '-'}`;
   const hit = cache.get(key);
   if (hit) return hit;
 
@@ -274,7 +297,8 @@ export function renderMaterialPreview(spec: PreviewSpec, size = 96, resolution: 
     const sceneType = spec.scene ?? sceneForKind(spec.kind);
     const s = r.scenes[sceneType] ?? buildScene(r, sceneType);
 
-    const mat = materialFromSpec(spec);
+    // PBR thật (spec.pbr + texture đã tải) thắng bảng suy theo kind — kind lúc đó chỉ chọn CẢNH.
+    const mat = spec.pbr ? buildPbrMaterial(spec.pbr, tex ?? {}) : materialFromSpec(spec);
     s.target.material = mat;
 
     // Render 2× rồi THU NHỎ bằng canvas 2D: rìa cầu và vệt highlight nét hơn hẳn so với render
@@ -290,8 +314,12 @@ export function renderMaterialPreview(spec: PreviewSpec, size = 96, resolution: 
     ctx.drawImage(r.renderer.domElement, 0, 0, big, big, 0, 0, px, px);
     const url = down.toDataURL('image/png');
 
-    // dọn theo lượt: renderer/env/geometry/nền dùng chung, material+map của lượt này bỏ
-    (mat.map as THREE.Texture | null)?.dispose();
+    // dọn theo lượt: renderer/env/geometry/nền dùng chung, material + map CỦA LƯỢT NÀY bỏ.
+    // Đường pbr: các map là CLONE (buildPbrMaterial clone để đổi repeat) — dispose an toàn,
+    // texture gốc vẫn sống trong cache `pbr-three.ts` cho lượt sau.
+    for (const t of [mat.map, mat.roughnessMap, mat.metalnessMap, mat.normalMap, mat.aoMap, mat.bumpMap]) {
+      (t as THREE.Texture | null)?.dispose();
+    }
     mat.dispose();
     cache.set(key, url);
     return url;

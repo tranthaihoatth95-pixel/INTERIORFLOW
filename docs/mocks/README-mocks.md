@@ -204,3 +204,23 @@ Append-only. Mỗi ô là số đo bằng lệnh. **Chưa file nào port đượ
 `ls docs/mocks/support.js` → không có, nhưng **16 file** khai `<script src="./support.js">`: 7 mock trên + `mock-2d-ky-thuat` · `mock-3d-frame` · `mock-3d-thong-nhat` · `mock-trinh-bay` · `mock-an-bang-theo-doi` · `mock-an-ghi-chu-viet-tay` · `mock-an-so-tay` · `mock-an-thu-vien-tri-thuc` · `Vitals v2.dc`.
 ⇒ nút đổi theme không chạy · **131 `style-hover` chết** · `{{ project }}`/`{{ themeLabel }}` in ra nguyên ngoặc.
 ⇒ **Tiêu chí "đủ 2 theme" của mọi mock export Claude Design mới verify ở mức KHAI BÁO CSS — CHƯA VERIFY được bằng mắt.** Cần TỔNG/Hoà xin lại `support.js` cùng lúc với 3 file export hỏng.
+
+---
+
+## ✅ ĐÃ PORT VÀO APP — cụm IN / GIẤY / XUẤT (làn C, 06/08/2026)
+**Đừng port lại 4 file này.** Đây là câu trả lời cho G-M5-03 ("nhiều mock cùng tả một màn, không bản
+nào ghi bản chốt"): 4 mock dưới là **bản chốt ĐÃ THÀNH CODE**, muốn đổi giao diện thì sửa component,
+không dựng mock mới chồng lên. Append-only, không sửa dòng cũ.
+
+| Mock | Đã thành | Ghi chú port |
+|---|---|---|
+| `HopXuatPDF.dc.html` | `components/print/ExportPdfDialog.tsx` | Render đủ **5 khổ A0–A4** (mock chỉ vẽ 4). Cột "Khổ giấy" **mở khoá ở chặng 2D** (khổ là thật trong `Doc`), **khoá kèm lý do ở chặng Trình chiếu** (khổ do "Khổ trình bày" của hồ sơ quyết). 5 dòng kiểm cứng của mock **thay bằng đo thật** — `lib/print/export-checks.ts` |
+| `BangNetIn.dc.html` | `components/print/LineweightTable.tsx` | **Bỏ chữ "Checklist TTT"** khỏi dòng mô tả (LUẬT TRUNG TÍNH — mock chép lại lỗi thương hiệu, giữ nguyên ý lời nhắc). 7 hàng của mock là dữ liệu mẫu `DEMO_LINEWEIGHT_ROWS` |
+| `BangTron.dc.html` | `components/print/RadialToolMenu.tsx` | Glyph `✎ ▱ ⌫ ↺ ⤢` → **icon lucide** (LUẬT GIAO DIỆN ②). ⚠️ `@keyframes` của mock chỉ có `scale()` — **bản mock ĐÚNG NHƯNG SAI KHI ĐƯA VÀO REACT**: animation thắng inline style nên nuốt mất `translate(-50%,-50%)`, đĩa nhảy lệch 118px. Code đã vá + `lib/print/radial.test.ts` chặn hồi quy |
+| `ToGiay.dc.html` | `components/print/PaperSheetFrame.tsx` | Tỉ lệ giấy tính từ `paperSizeMm` thật (mock hardcode `420/297`). **Bỏ câu "Nội dung do titleBlockPro() sinh — lib/cad/commands.ts"** khỏi UI (jargon nội bộ, `SPEC-NGON-NGU-CHI-DAN`). Ô "chỗ trống" thành prop, không vẽ cứng |
+
+**Token 4 mock này đã vào `app/globals.css`**: `--paper*` (5 biến) · `--tap-lg` · `--on-accent`; còn
+`--ok/--warn/--vp-lock/--vp-open/--pen` khai **bí danh** của `--success/--warning/--t1` để nền Kem tự
+lấy bản đủ tương phản. Mock nào sau này dùng lại các biến đó thì **đã có sẵn**, đừng khai lại cục bộ.
+
+Chi tiết port + nghiệm thu: `docs/M-APPLY-C-OUT.md`.

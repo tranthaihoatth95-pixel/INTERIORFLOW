@@ -83,7 +83,7 @@ export const SCOPE_META: Record<ScopeLevel, { label: string; bg: string; fg: str
 };
 
 export const STAGE_META: Record<StageKey, { label: string }> = {
-  cad: { label: 'CAD' },
-  render: { label: 'Render' },
-  present: { label: 'Present' },
+  cad: { label: 'Thiết kế 2D' },
+  render: { label: 'Thiết kế 3D' },
+  present: { label: 'Trình chiếu' },
 };

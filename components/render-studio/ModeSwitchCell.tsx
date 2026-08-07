@@ -30,7 +30,7 @@ export default function ModeSwitchCell() {
       type="button"
       onClick={() => setMode(active ? 'render' : 'model3d')}
       aria-pressed={active}
-      title={active ? tr('Về Render + Mood + Collab', 'Back to Render + Mood + Collab') : tr('Vẽ 3D — khối đùn từ bản vẽ CAD, đẩy-kéo cao độ', 'Draw 3D — massing extruded from the CAD drawing')}
+      title={active ? tr('Về Render + Mood + Collab', 'Back to Render + Mood + Collab') : tr('Vẽ 3D — khối đùn từ bản vẽ Thiết kế 2D, đẩy-kéo cao độ', 'Draw 3D — massing extruded from the 2D Design drawing')}
       className="flex shrink-0 items-center gap-1.5 rounded-[17px] px-2 text-[12px] font-medium text-[var(--t2)]"
       style={{ height: 34 }}
     >

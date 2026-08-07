@@ -24,8 +24,13 @@ export const SPEC_KINDS = ['furniture', 'material', 'lighting', 'millwork', 'fix
  * KHI NÀO BẬT: sau khi chủ dự án chạy migrate xong + `prisma generate`, đổi cờ này thành `true`
  * rồi thêm `room: str(b.room)` / `confidence: str(b.confidence)` vào `specNormalize` + `specPatch`,
  * và 2 dòng tương ứng vào `specToDto`. Chưa migrate mà bật cờ = vỡ ngay ở lần ghi đầu tiên.
+ *
+ * ✅ ĐÃ MỞ KHOÁ 06/08 — chủ dự án chạy `prisma db push` + `prisma generate` trên máy thật.
+ * Kiểm bằng dữ liệu, không bằng lời khai:
+ *   `PRAGMA table_info(ProductSpec)` → **34 cột, có `room` và `confidence`**.
+ * Cờ đổi sang `true`; ba đường (`specNormalize` · `specPatch` · `specToDto`) đã nối hai trường.
  */
-export const SPEC_ROOM_COLUMN_READY = false;
+export const SPEC_ROOM_COLUMN_READY = true;
 
 export function specSafeArr(s: string): string[] {
   try {
@@ -58,6 +63,7 @@ export function specToDto(s: {
   unit?: string | null; priceVnd?: DecimalLike | null; wastagePercent?: DecimalLike | null;
   packagingSpec?: string | null; altSku?: string | null; styleTags?: string | null;
   scope?: string; ownerId?: string | null; supplierId?: string | null; verified?: boolean;
+  room?: string | null; confidence?: string | null;
 }) {
   return {
     id: s.id,
@@ -96,6 +102,10 @@ export function specToDto(s: {
     ownerId: s.ownerId ?? null,
     supplierId: s.supplierId ?? null,
     verified: s.verified ?? false,
+    // G-M3-08 (mở khoá 06/08) — đường ĐỌC cho phòng/khu vực + độ tin cậy. Nơi tiêu thụ: bảng
+    // FF&E theo phòng và thống kê "phòng này gồm những món nào" (đúng K4 — có nơi tiêu thụ mới thêm).
+    room: s.room ?? null,
+    confidence: s.confidence ?? null,
   };
 }
 
@@ -141,6 +151,10 @@ export function specNormalize(b: Record<string, unknown>, kind: string, name: st
     unit: str(b.unit),
     priceVnd: dec(b.priceVnd),
     supplierId: str(b.supplierId),
+    // G-M3-08 (mở khoá 06/08) — phòng/khu vực + độ tin cậy. Chuỗi tự do, KHÔNG ép enum:
+    // nhãn phòng lấy theo bản vẽ của từng hồ sơ, ép enum là rớt dữ liệu người dùng.
+    room: str(b.room),
+    confidence: str(b.confidence),
     scope: 'studio',
     ownerId,
   };
@@ -150,7 +164,8 @@ export function specNormalize(b: Record<string, unknown>, kind: string, name: st
  * KHÔNG sửa được qua đây (chuyển chủ sở hữu không phải tính năng đợt này). */
 export function specPatch(b: Record<string, unknown>) {
   const out: Record<string, unknown> = {};
-  const strKeys = ['nameEn', 'brand', 'sku', 'vendor', 'colorHex', 'imageAssetId', 'drawingBlock', 'priceNote', 'currency', 'note', 'unit', 'supplierId'];
+  // `room` + `confidence` thêm 06/08 (G-M3-08 mở khoá) — cùng nhóm chuỗi, không cần nhánh riêng.
+  const strKeys = ['nameEn', 'brand', 'sku', 'vendor', 'colorHex', 'imageAssetId', 'drawingBlock', 'priceNote', 'currency', 'note', 'unit', 'supplierId', 'room', 'confidence'];
   for (const k of strKeys) if (k in b) out[k] = str(b[k]);
   for (const k of ['w', 'd', 'hUp']) if (k in b) out[k] = int(b[k]);
   if ('priceVnd' in b) out.priceVnd = dec(b.priceVnd);

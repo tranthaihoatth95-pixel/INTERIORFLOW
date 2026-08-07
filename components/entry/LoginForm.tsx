@@ -42,6 +42,45 @@ const ACCENT_WARM = 'var(--accent-warm)';
 type Mode = 'login' | 'register';
 type Providers = { google: boolean; apple: boolean; microsoft: boolean };
 
+/**
+ * Đọc thân phản hồi thành JSON MỘT CÁCH AN TOÀN (07/08, G-AUTH-01).
+ *
+ * Lỗi cũ: `const body = await res.json()` đứng TRƯỚC `if (!res.ok)`. Khi máy chủ trả trang lỗi
+ * HTML (500 của Next, hoặc 404 khi route chưa dựng xong), `res.json()` NỔ NGAY tại dòng đó, nên
+ * câu `throw new Error(body.error ?? 'Có lỗi xảy ra.')` — vốn viết đúng ý — KHÔNG BAO GIỜ chạy tới.
+ * Người dùng nhận nguyên văn `Unexpected token '<', "<!DOCTYPE"... is not valid JSON` (Hoà chụp
+ * được trên bản Electron đóng gói, cổng 3777), một câu vô nghĩa với người ngoài ngành và giấu mất
+ * lỗi thật của máy chủ.
+ *
+ * Nay: luôn trả về một object có `error` đọc được, kể cả khi thân phản hồi không phải JSON —
+ * để nhánh `!res.ok` phía sau làm đúng việc của nó. Đúng luật K5 (không nuốt lỗi im lặng) và
+ * G6 (câu báo lỗi phải nói được cho người dùng biết chuyện gì).
+ */
+async function readJsonSafe(
+  res: Response,
+  en: boolean,
+): Promise<{ error?: string; user?: { id?: string } }> {
+  const raw = await res.text();
+  try {
+    return JSON.parse(raw) as { error?: string; user?: { id?: string } };
+  } catch {
+    // Không phải JSON ⇒ gần như chắc chắn là trang lỗi HTML của máy chủ.
+    const looksHtml = /^\s*<(!doctype|html)/i.test(raw);
+    const detail = looksHtml
+      ? en
+        ? `Server returned an error page (HTTP ${res.status}).`
+        : `Máy chủ trả về trang lỗi (HTTP ${res.status}).`
+      : en
+        ? `Unreadable server response (HTTP ${res.status}).`
+        : `Phản hồi máy chủ không đọc được (HTTP ${res.status}).`;
+    return {
+      error: en
+        ? `${detail} Please try again; if it keeps happening, restart the app.`
+        : `${detail} Thử lại giúp; nếu vẫn vậy thì khởi động lại ứng dụng.`,
+    };
+  }
+}
+
 export function LoginForm({
   onAuthed,
   reduce,
@@ -108,7 +147,7 @@ export function LoginForm({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ identifier, password, remember }),
         });
-        const body = await res.json();
+        const body = await readJsonSafe(res, en);
         if (!res.ok) throw new Error(body.error ?? (en ? 'Something went wrong.' : 'Có lỗi xảy ra.'));
         await afterAuth(body.user);
       } else {
@@ -122,7 +161,7 @@ export function LoginForm({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        const body = await res.json();
+        const body = await readJsonSafe(res, en);
         if (!res.ok) throw new Error(body.error ?? (en ? 'Something went wrong.' : 'Có lỗi xảy ra.'));
         // register công khai đã set cookie session phía server → vào thẳng
         await afterAuth(body.user);
@@ -267,9 +306,13 @@ export function LoginForm({
         lang={lang}
       />
 
-      {/* B-2: Ghi nhớ đăng nhập + quên mật khẩu (chỉ hướng dẫn — không có luồng reset) */}
+      {/* B-2: Ghi nhớ đăng nhập + quên mật khẩu (chỉ hướng dẫn — không có luồng reset).
+          07/08: +gap-x-4 (hở tối thiểu 16px kể cả khi justify-between hết chỗ) + flex-wrap
+          (container quá hẹp thì "Quên mật khẩu?" xuống dòng thay vì dính liền thành một câu —
+          ảnh Hoà 07/08; KHÔNG tái hiện được ở 1280/375 VI/EN — gap đo 102.6/45.6/≈34px — nên
+          đây là lưới đỡ cho ngữ cảnh hẹp hơn chưa dò ra, không phải fix nguyên nhân gốc). */}
       {mode === 'login' && (
-        <div className="flex items-center justify-between pt-0.5">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 pt-0.5">
           <label className="relative flex cursor-pointer select-none items-center gap-2">
             <input
               type="checkbox"

@@ -1,4 +1,36 @@
 # 00 · BẮT ĐẦU ĐỌC ĐÂY — mọi phiên, mọi vai, đọc trước khi làm bất cứ gì
+
+> # ⛔⛔ LUẬT SỐ 0 — KIỂM TRƯỚC KHI PHÁT NGÔN ⛔⛔
+> **Hoà ghim cứng 07/08. Đứng TRÊN mọi luật khác. Không ngoại lệ, không "lần này khác".**
+>
+> ## Cấm phát ngôn bất kỳ câu nào dưới đây khi CHƯA chạy lệnh kiểm:
+> | Định nói | Bắt buộc chạy TRƯỚC |
+> |---|---|
+> | "chưa làm / chưa dán / còn thiếu" | `sed -n '<dòng>p' <file>` + `find docs -name "M-*OUT*.md" -mmin -40` |
+> | "đã xong / đã sửa / đã đóng" | mở đúng file, đọc đúng dòng — **không tin báo cáo** (N1) |
+> | bất kỳ CON SỐ nào | chạy lệnh đếm, rồi **kiểm tay 3 mẫu** (§0y) |
+> | "sót việc / phiên X quên" | `grep "VIỆC N" <phiên>-OUT.md` TRƯỚC, rồi mới kiểm file |
+> | "dán phiếu này" | §0z — kiểm đã dán chưa, kiểm phiên có đang chạy không |
+> | "file/hàm/mã X là…" | `grep -rna` ra bằng chứng — cấm mô tả từ trí nhớ (§0o) |
+>
+> ## Ba câu tự hỏi trước khi gõ phím
+> 1. **Câu này tôi ĐO hay tôi NHỚ?** Nhớ ⇒ chưa được nói.
+> 2. **Lệnh tôi vừa chạy có đúng chỉ báo không?** Regex bắt hụt `export default`? `grep -c` đếm
+>    dòng chứ không đếm việc? (§0y — sai 4 lần trong ngày 07/08 vì đúng chỗ này)
+> 3. **Con số này nghe quá tốt hoặc quá xấu không?** Có ⇒ gần như chắc sai, kiểm lại.
+>
+> ## Đã trả giá — đừng lặp
+> | Ngày | Ca | Hoà nói |
+> |---|---|---|
+> | 06/08 23:00 | báo PHU sót việc, PHU đã xong từ trước | *"nó xong từ nãy rồi bắt dán đi dán lại hoài v"* |
+> | 07/08 | báo "146 chỗ vi phạm line-height" — regex sai, thật ra ĐẠT | — |
+> | 07/08 | báo "30 file chết · 6.573 dòng" — regex không bắt `export default`, thật ra **0** | — |
+> | 07/08 | khẳng định `/render` bị đá về `/cad` — ảnh chụp là **tab khác** | — |
+> | 07/08 | đưa lại phiếu Hoà **đã dán rồi** | *"mày bị 1 lỗi bị hoài vậy, mày bị ngu hả"* |
+>
+> **Thà im 30 giây chạy lệnh, còn hơn nói một câu sai rồi bắt Hoà dọn.**
+> Không kiểm được ⇒ ghi thẳng **"CHƯA VERIFY"** + lý do (N5). Cấm đoán, cấm suy luận thay đo.
+
 **Lập 03/08/2026 bởi COWORK-TỔNG theo lệnh Hoà: "lưu lại hết, mỗi phiên đọc, nhớ những luật chúng ta đã đặt ra".**
 File này là CỬA VÀO. Đọc hết file này (3 phút) rồi mới mở file khác.
 
@@ -593,3 +625,256 @@ ra vẫn **44 đỏ** — hai ngòi bút cùng ghi một sổ thì bản sau đ�
    sổ chung.
 2. **TỔNG gộp về sổ một nguồn** `GAP-IF` — một ngòi bút duy nhất, không tranh chấp.
 3. Đây là §0r (**một nguồn sự thật**) áp cho sổ GAP: nhiều nơi ghi = mất việc, không phải nhanh hơn.
+
+---
+
+## §0v — LÕI KHÔNG MANG TÊN NHÀ CUNG CẤP (Hoà chốt 06/08)
+
+Luật trung tính lâu nay chống **thương hiệu KHÁCH** lọt vào sản phẩm (§0h). §0v chống thứ cùng
+bệnh mà chưa ai gọi tên: **nhà cung cấp HẠ TẦNG lọt vào xương dữ liệu**.
+
+**Ca bệnh — đo 06/08 bằng `grep -rna`:** 45 file dính chuỗi `lark`, nặng nhất là schema lõi —
+`prisma/schema.prisma:319` `larkRecordId String @unique` (khoá đối chiếu) · `:321` `larkProjectName`
+· `:322` `larkProjectCode` · `:344` `larkAccount @unique` · `:74` `larkProjectCode` trên `Project`.
+⇒ Tên một nhà cung cấp đang nằm trong **tên cột** của mô hình dữ liệu lõi. Đổi nhà cung cấp =
+phẫu thuật lõi + migrate + sửa 29 file code.
+
+> Ví von: Larkbase đang được dùng như **cột chịu lực mượn của nhà hàng xóm**. Nhà đứng được,
+> nhưng hàng xóm dỡ nhà thì mình sập. Đúng ra nó phải là **giàn giáo** — dựng xong thì tháo,
+> nhà vẫn đứng.
+
+### L-EXT1 · Lõi trung tính
+⛔ **Cấm thêm cột mang tên nhà cung cấp vào `prisma/schema.prisma`.** ID của hệ ngoài để trong
+bảng cầu `ExternalRef { system, externalId, entityType, entityId }`, khoá `@@unique([system, externalId])`.
+Cột `lark*` cũ **giữ nguyên** (gỡ ngay là rủi ro vô ích) — chỉ **ngừng đẻ mới**.
+
+Ba tầng đúng:
+```
+① LÕI IDF        Task · Project · Person · Material — id do IDF sinh, 0 tên nhà cung cấp
+② BẢNG CẦU       ExternalRef — "task X ↔ record Y của hệ Z"
+③ ADAPTER        lib/integrations/providers/lark.ts + registry.ts:37 REGISTRY  ← ĐÃ ĐÚNG, giữ
+```
+Tầng ③ đã làm đúng pattern rồi. Hỏng ở ① và ②.
+
+### L-EXT2 · Hai app cùng nhà nói chuyện bằng `.idf`, KHÔNG qua Lark
+`docs/ARCHINOTE-MAP.md:17` — *"Hai app hiện KHÔNG chung định dạng dữ liệu nào. Kênh chung mà spec
+chủ ý là **Lark Base**"* · `:130` — *"Toàn bộ ở Lark, không có bản sao local. **Mất mạng = trắng màn.**"*
+
+⇒ Một dịch vụ ngoài đang là **khớp nối duy nhất giữa hai app đều của mình**. Lark chết thì cả hệ
+IDF chết theo. `.idf` chưa gánh việc đó (`grep -na "external\|source\|origin" lib/cad/idf.ts` = 0).
+
+**Vai Larkbase hạ xuống:** từ *"XƯƠNG SỐNG DỮ LIỆU"* → **"nguồn dữ liệu ngoài, thay được"**.
+Chính chữ "xương sống" trong sổ đang tự hợp thức hoá việc coupling.
+
+### Vì sao vẫn GIỮ Larkbase (không phải bỏ)
+Dữ liệu nhân sự/dự án/việc đang sống ở đó · business-ops (hoá đơn · công nợ · chấm công) đã chốt
+**không kéo vào IF** nên phải có chỗ chứa · tự xây tầng nhân sự + quyền là 3–6 tháng, không đáng
+đổi lúc này. Giữ **vai**, bỏ **coupling**.
+
+### Phép kiểm §0v
+1. `grep -na "lark" prisma/schema.prisma` — **số không được tăng** so với lần đo trước (06/08: 10 dòng)
+2. Code mới đọc/ghi ID ngoài phải đi qua `ExternalRef`, không đọc thẳng cột `lark*`
+3. Đường IF↔ArchiNote phải là `.idf`, không phải Lark
+
+---
+
+## §0w — SỔ PHIẾU ĐÃ PHÁT (TỔNG chốt 06/08 22:58, sau ca hai-phiên-một-việc)
+
+**Ca bệnh, có vật chứng:** tối 06/08 chạy **5 phiên Code** chứ không phải 4. Hai phiếu chồng
+phạm vi cùng port mock *"Bảng nút"* — `docs/M-NODE-BOARD-OUT.md` (ghi 22:28) và
+`docs/M-APPLY-A-OUT.md` (22:37, LÀN A gồm *Bảng nút · Nút tổng · Thư viện*).
+
+Chính hai phiên đó tự khai:
+- `M-APPLY-A-OUT.md:176` — *"Phiếu Làn A được dán vào **HAI phiên** cùng lúc."*
+- `:182` — lúc 19:54 nó thấy 3 màn của phiếu mình **đã có người làm gần xong**, kết luận
+  *"ít nhất **3 làn** cùng ghi một working tree"*, và tự quyết **không sửa chồng**.
+- `M-NODE-BOARD-OUT.md:6` — *"Phiên khác sửa song song `components/library/*`,
+  `lib/library/shelves.ts`, `components/nodes/Macro*.tsx` **và cùng file `app/globals.css`**"*.
+
+⇒ **Không mất việc** (cả hai xử lý tử tế), nhưng **làm hai lần một việc** — và limit Code cạn
+gấp đôi. Đêm đó giao diện báo *"Approaching weekly usage limit · Resets Tue, Aug 11"*.
+
+### Gốc bệnh
+KHÔNG phải ai giao nhầm. Là **không có sổ nào ghi phiếu nào đã phát cho cửa sổ nào**.
+`VIEC-DANG-CHO.md` ghi **việc**, không ghi **phiếu đã phát**. Phiếu "Bảng nút" và phiếu "LÀN A"
+chồng phạm vi mà không ai thấy. Đây là §0r (một nguồn sự thật) còn thiếu một cuốn sổ.
+
+### Luật
+1. **Mỗi phiếu phát ra ghi MỘT DÒNG** vào `docs/SO-PHIEU-DA-PHAT.md`:
+   `ngày giờ · dán cửa sổ nào · phủ mock/mảng nào · file M-OUT đích`.
+2. **Trước khi soạn phiếu mới: đọc sổ đó trước.** Phủ trùng mock/mảng đã phát ⇒ **DỪNG**,
+   gộp vào phiếu cũ hoặc thu hẹp phạm vi. Không phát chồng.
+3. **Phiếu phủ theo MOCK, không chỉ theo thư mục.** Ca này hai phiếu khác thư mục
+   (`components/nodes` vs `components/library`) nhưng **cùng một mock** ⇒ vẫn đụng nhau.
+4. **Mỗi phiếu Code phải mở đầu bằng cửa kiểm tự động** — dán nguyên văn:
+   ```
+   TRƯỚC KHI GÕ: ls -la docs/M*OUT*.md
+   Thấy M-OUT nào sửa trong 30 PHÚT gần đây mà chạm mảng/mock của bạn ⇒ DỪNG, báo,
+   ĐỪNG LÀM. Hai phiên cùng một việc đốt limit gấp đôi và không thêm giá trị nào.
+   ```
+5. **Đo phiên còn chạy hay không phải nhìn CẢ HAI**: file code **và** file `M-OUT`.
+   Sai đã mắc 06/08 22:24: TỔNG đo file code thấy im 56 phút, kết luận "cả 4 đã ngưng" —
+   nhưng M-OUT vẫn được ghi tới **22:44**, chúng đang viết báo cáo. Đúng ca **N7**:
+   grep phải đúng chỉ báo của việc đang kiểm, không phải chỉ báo gần đúng.
+
+---
+
+## §0x — BẢNG ĐỐI CHIẾU MẢNG: soạn bảng lệnh phải QUÉT THƯ MỤC, không dựa trí nhớ
+
+**Ca sinh ra luật này — 07/08.** TỔNG soạn bảng lệnh đợt 2 gồm 4 phiếu, tự tin là đã phủ hết.
+Hoà hỏi *"nhánh dựng 3D có vẻ như quên nữa r"* → đo lại: mảng 3D có **12.737 dòng / 64 file**,
+bảng lệnh nhắc tới nó **0 lần**. Sổ GAP cũng chỉ có 2 dòng cho nó (CAD 156 file có 20 dòng).
+
+**Vì sao lọt.** TỔNG soạn phiếu theo *danh sách lỗ hổng đang nhớ*, không theo *danh sách thư mục
+đang có*. Mảng nào không ai kêu ca thì không vào đầu — và mảng 3D không ai kêu vì **chưa ai đi
+soi nó**. Im lặng bị đọc nhầm thành lành.
+
+> Ví von: kiểm hồ sơ bằng cách đọc danh mục bản vẽ mình tự gõ, thay vì mở thư mục đếm file.
+> Bản vẽ nào quên gõ vào danh mục thì vĩnh viễn không ai biết là thiếu.
+
+### Luật
+Trước khi soạn BẤT KỲ bảng lệnh nhiều phiếu nào, chạy đối chiếu này và **dán kết quả vào bảng lệnh**:
+
+```bash
+# ① mọi mảng code có thật, kèm khối lượng
+for d in lib/* components/*; do [ -d "$d" ] && \
+  printf "%-30s %3d file %7d dòng\n" "$d" \
+  "$(find $d -name '*.ts*' | wc -l)" "$(find $d -name '*.ts*' -exec cat {} + 2>/dev/null | wc -l)"; \
+done | sort -k3 -rn | head -25
+
+# ② mảng nào có mặt trong bảng lệnh vừa soạn
+grep -oE 'lib/[a-z-]+|components/[a-z-]+' <bảng-lệnh>.md | sort -u
+```
+**① trừ ② = danh sách bị bỏ quên.** Mảng nào trên 1.000 dòng mà không có trong ②
+⇒ DỪNG, giải trình bằng chữ vì sao bỏ, đừng im lặng bỏ qua.
+
+### Chỉ báo nghi ngờ — "im lặng ≠ lành"
+Mảng nào có tỷ lệ này thì gần như chắc chắn **chưa ai soi**, không phải đã ổn:
+| Chỉ báo | Ngưỡng nghi |
+|---|---|
+| dòng code ÷ dòng GAP | > 2.000 dòng / 1 dòng sổ (3D: 6.400/1 · CAD: 800/1) |
+| test ÷ file ở lớp giao diện | = 0 |
+| dòng động cơ ÷ dòng vỏ | > 50 (3D: 12.737 / 161 = **79**) |
+
+### Áp dụng ngược cho các mảng còn lại
+Chạy ① ngay sau khi đọc luật này. Mảng nào lọt lưới ⇒ mở phiếu bù, đánh dấu
+🔴 *"phiếu bù lỗ TỔNG bỏ sót"* như `Đ2-5`, để lần sau tra sổ còn thấy vết.
+
+---
+
+## §0y — SAI BA LẦN CÙNG MỘT KIỂU TRONG MỘT NGÀY: tin vào grep chưa kiểm chứng
+
+**07/08, TỔNG mắc đúng một lỗi ba lần:**
+| # | Việc | Chỉ báo sai | Hậu quả |
+|---|---|---|---|
+| 1 | Soi mock 3 màn 22:27 | regex `1\.[0-4][0-9]?\|1` — nhánh `\|1` bắt trúng số 1 trong `1.5` | suýt báo "146 chỗ vi phạm line-height", thật ra đạt chuẩn |
+| 2 | Truy mock của 4 ảnh Hoà gửi | `grep -c` đếm **dòng khớp**, không đếm **chức năng khớp** | khẳng định nhầm file, phải đính chính |
+| 3 | Soi 16 mảng | regex không bắt `export default function` | báo "30 file chết · 6.573 dòng", thật ra **0** |
+
+**Gốc chung:** viết một biểu thức tìm kiếm, thấy ra con số, rồi **báo luôn** — không lấy 2–3 mẫu
+kiểm tay xem con số đó có nghĩa đúng như mình tưởng không.
+
+> Ví von: đo bằng thước chưa hiệu chuẩn. Số đọc ra rất tự tin, và sai đều.
+
+### Luật
+Trước khi báo BẤT KỲ con số nào rút ra từ grep/script:
+1. **Lấy 3 mẫu, kiểm tay.** Mẫu lớn nhất + mẫu ngẫu nhiên + mẫu nhỏ nhất. Cả 3 khớp mới được báo.
+2. **Đọc lại chính biểu thức mình vừa viết**, hỏi: nó bắt hụt dạng viết nào?
+   Với TypeScript, tối thiểu phải nghĩ tới: `export default` · `export {a as b}` ·
+   barrel `index.ts` · dynamic `import()` · JSX `<Tên/>` · đường dẫn `@/...` trỏ thư mục.
+3. **Con số nghe quá tốt hoặc quá xấu thì gần như chắc là sai.** "6.573 dòng code chết" trong repo
+   có kỷ luật N6 và 0,9% mồ côi là **mâu thuẫn nội tại** — đáng lẽ phải dừng lại ngay lúc đó.
+4. Báo rồi mới phát hiện sai ⇒ **đính chính trong cùng lượt**, ghi rõ "kết quả trước BỎ", không im.
+
+---
+
+## §0z — TRƯỚC KHI BẢO HOÀ DÁN: KIỂM ĐÃ DÁN CHƯA
+
+**Ca 07/08:** TỔNG soạn phiếu vá `G-M15-07 ①`, Hoà dán. Vài phút sau TỔNG **đưa lại đúng phiếu đó**
+và bảo "dán phiên này". Hoà: *"cái đó tao dán gòi, mày bị 1 lỗi bị hoài vậy"*.
+Cùng gốc với ca 06/08 23:00 (báo PHU sót việc trong khi PHU đã xong).
+
+**Gốc:** TỔNG trả lời câu "dán phiên nào" bằng **danh sách phiếu đã soạn**, không bằng
+**trạng thái thật của repo**.
+
+### Luật — 3 lệnh, chạy TRƯỚC mỗi lần nói "dán cái này"
+```bash
+# ① file đích đã sửa chưa
+sed -n '<dòng>p' <file-phiếu-nhắm-tới>
+# ② báo cáo đích có mục đó chưa
+grep -c "<mã GAP>" docs/M-*-OUT.md
+# ③ có phiên nào đang ghi trong 40 phút qua
+find docs -name "M-*OUT*.md" -mmin -40
+```
+**③ có kết quả ⇒ phiên ĐANG CHẠY ⇒ KHÔNG đưa phiếu mới cho vùng đó.**
+File đích chưa đổi mà báo cáo vừa được ghi = đang làm dở, **không phải chưa dán**.
+
+### Và: hỏi "dán phiên nào" ⇒ trả lời bằng BẢNG, không bằng phiếu
+Đúng: *"5 phiên đang chạy. 3 phiếu còn lại chặn bởi X·Y·Z. Không còn gì để dán."*
+Sai: dán lại nguyên khối lệnh đã đưa.
+
+---
+
+## §0aa · MỘT THƯ MỤC `.next` — MỘT SERVER (chốt 07/08, sau 2 lần dính cùng ngày)
+
+**Triệu chứng đánh lừa:** `tsc` sạch · hàm export đúng · grep thấy đủ — mà trình duyệt vẫn báo
+`X is not a function`, hoặc route có trang thật vẫn trả 404.
+
+**Gốc:** nhiều `npm run dev` cùng chạy trên CÙNG một thư mục repo ⇒ dùng chung `.next/`, ghi đè
+manifest và chunk của nhau. Một trang có thể kẹt lại bản build CŨ trong khi trang khác đã mới.
+
+**Bằng chứng đo được (ca 07/08, `/projects/[id]/present`):**
+```
+lib/project-scope.ts:158        export function useScopeMissingInfo   ← CÓ
+git show HEAD:lib/project-scope.ts | grep -c useScopeMissingInfo → 0  ← code mới, chưa commit
+grep -rl useScopeMissingInfo .next/static/chunks/
+  → app/settings/page.js · app/materials/page.js · app/page.js
+  → KHÔNG có app/projects/[id]/present/page.js                        ← chunk kẹt bản cũ
+```
+
+**Luật:**
+1. Một thư mục repo = **một** dev server. Cần chạy song song thì mỗi phiên **một worktree riêng**
+   (worktree có `.next` riêng), KHÔNG đổi port trên cùng thư mục.
+2. Trước khi kết luận "lỗi code" từ lỗi runtime trình duyệt, **bắt buộc** chạy:
+   `grep -rl "<tênHàm>" .next/static/chunks/ | grep "<đườngDẫnTrang>"`
+   Rỗng ⇒ lỗi build cache, KHÔNG phải lỗi code. Đừng đi sửa code.
+3. Gỡ: tắt hết server → `rm -rf .next` → mở lại **một** server → đợi `✓ Ready`.
+4. Ca họ hàng đã ghi: `G-M4-01` (404 giả trên dev server chạy lâu). Cùng một họ bệnh —
+   **dev server không phải nguồn sự thật về code.**
+
+## §0ab · SỔ GAP LÀ ẢNH CHỤP, KHÔNG PHẢI SỰ THẬT (chốt 07/08, sau 2 lần Hoà phải chặn)
+
+Mỗi dòng trong `docs/GAP-IF.md` là kết quả đo **tại thời điểm ghi**. Phiên khác sửa xong
+thường KHÔNG cập nhật lại (§0u chỉ cho TỔNG ghi) ⇒ sổ **luôn cũ hơn repo**.
+
+**Luật: trước khi phát phiếu bảo ai đó LÀM một việc, phải đo lại rằng việc đó CHƯA làm.**
+
+| Định phát phiếu | Bắt buộc chạy trước |
+|---|---|
+| "vẽ mock màn X" | `ls docs/mocks/` + tìm theo TÊN MÀN, không chỉ grep nội dung |
+| "hàm Y chưa có" | `grep -rn "Y" --include=*.ts --include=*.tsx . \| grep -v .worktrees` |
+| "chưa nối UI" | tìm nơi mount THẬT, kể cả gọi gián tiếp qua API route (bẫy `computeBoq` 07/08) |
+| "test chưa có" | `find . -name '*.test.ts' \| xargs grep -l "<tên>"` |
+
+Ca 07/08: sổ ghi "67 trang mock, grep màn X = 0". Đo lại: **96 file**, có `X.dc.html` nằm đó.
+Suýt phát phiếu vẽ lại 13 màn đã có. Hoà chặn.
+Ca cùng ngày trước đó: so chuỗi sai dạng chuẩn hoá (NFC vs NFD) ⇒ báo "16/16 mock thiếu",
+Hoà bác: *"sai. toàn bộ các mock bạn kêu thiếu -> đã có, check"*. **Dùng `unicodedata.normalize('NFC')` khi so tên file tiếng Việt.**
+
+## §0ac · PHIẾU PHẢI TỰ KHAI DÁN VÀO ĐÂU (chốt 07/08 — Hoà phải nhắc 2 lần)
+
+Mỗi khối lệnh TỔNG phát ra **PHẢI mở đầu bằng đúng một dòng**:
+
+```
+DÁN VÀO: p<số>   ·   vùng sở hữu: <đường dẫn>
+```
+
+Lý do: Hoà copy khối rồi dán ngay, không đối chiếu bảng ở tin nhắn khác. Bảng map riêng
+là thứ dễ lạc nhất khi cuộn lại — và **dán sai phiên đắt gấp nhiều lần** vì hai phiên
+cùng sửa một vùng sẽ đè code của nhau.
+
+Kèm theo, TỔNG **PHẢI giữ `docs/00-DANG-CHO.md` là sổ duy nhất ghi phiên nào đang cầm phiếu nào**
+(§0r + §0w). Trước khi phát phiếu mới: đọc sổ đó, kiểm phiên định giao có đang cầm việc khác không.
+
+Sai đã phạm 07/08: phát 7 khối liền, không khối nào ghi số phiên ⇒ Hoà phải hỏi lại
+*"cái nào dán vô p nào? quy ước tên rồi làm sai hoài"*.

@@ -5,7 +5,7 @@
  * Chạy: node_modules/.bin/sucrase-node lib/boq/xlsx.test.ts
  */
 import JSZip from 'jszip';
-import { boqResultToXlsxBuffer } from './xlsx';
+import { boqResultToXlsxBuffer, buildXlsxBuffer, sanitizeSheetName } from './xlsx';
 import type { BoqResult } from './model';
 
 let pass = 0;
@@ -171,6 +171,60 @@ async function main() {
   const countSheet = await (await JSZip.loadAsync(countBuf)).files['xl/worksheets/sheet1.xml'].async('string');
   ok('khối lượng dùng style số NGUYÊN (s="5"), không phải m² 2 số lẻ', /<c r="F2" s="5"><v>8<\/v><\/c>/.test(countSheet));
   ok('đơn vị ghi "cai"', countSheet.includes('<t xml:space="preserve">cai</t>'));
+
+  /* ═══ [12] 🔴 VÒNG 3 (06/08) — KÝ TỰ ĐIỀU KHIỂN LÀM HỎNG FILE .xlsx ═══
+   * Đo được: tên món chứa `\x01` (lọt vào rất tự nhiên khi copy từ phần mềm kế toán/PDF/ERP) ⇒
+   * zip vẫn dựng ra, nhưng `xml.dom.minidom` báo `not well-formed (invalid token)` ⇒ **Excel báo
+   * file hỏng** và không ai lần ra nguyên nhân là một ký tự vô hình trong một ô. */
+  console.log('\n[12] ký tự điều khiển bị lọc, XML không vỡ');
+  {
+    const ctrlBuf = await boqResultToXlsxBuffer({
+      rows: [{
+        matId: 'm1', ten: 'Ghế xoay', ncc: 'AB', ma: '', m2: 1, qty: 1, unit: 'm2',
+        kind: 'area', donGia: 1, haoHutPhanTram: 0, thanhTien: 1, entityIds: [],
+      }],
+      errors: [],
+      totalAmount: 1,
+    });
+    const ctrlSheet = await (await JSZip.loadAsync(ctrlBuf)).files['xl/worksheets/sheet1.xml'].async('string');
+    ok('KHÔNG còn ký tự điều khiển nào lọt vào XML (trước: lọt nguyên xi ⇒ file hỏng)',
+      !/[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(ctrlSheet));
+    ok('chữ người dùng ĐỌC ĐƯỢC vẫn giữ nguyên, chỉ vứt thứ vô hình',
+      ctrlSheet.includes('Ghế xoay') && ctrlSheet.includes('AB'));
+
+    // Chốt ngược: tab/xuống dòng/emoji là ký tự HỢP LỆ, không được vạ lây.
+    const okBuf = await boqResultToXlsxBuffer({
+      rows: [{
+        matId: 'm2', ten: 'Gỗ sồi\tloại A\nlô 2 ✅', ncc: '', ma: '', m2: 1, qty: 1, unit: 'm2',
+        kind: 'area', donGia: 1, haoHutPhanTram: 0, thanhTien: 1, entityIds: [],
+      }],
+      errors: [],
+      totalAmount: 1,
+    });
+    const okSheet = await (await JSZip.loadAsync(okBuf)).files['xl/worksheets/sheet1.xml'].async('string');
+    ok('tab · xuống dòng · emoji KHÔNG bị lọc oan', okSheet.includes('Gỗ sồi\tloại A\nlô 2 ✅'));
+  }
+
+  /* ═══ [13] TÊN SHEET — Excel cấm `/ \ ? * [ ] :` và giới hạn 31 ký tự ═══
+   * Hôm nay caller chỉ truyền 'BOQ'/'FF&E' nên chưa nổ; ai đặt tên sheet theo TÊN DỰ ÁN là file
+   * mở ra hỏng ngay, mà lỗi lại hiện ở Excel chứ không ở IF. Đo được trên bản trước: tên ghi
+   * nguyên "Dự án A/B [2026]: bảng khối lượng chi tiết phần thô" — dài 51, còn đủ ký tự cấm. */
+  console.log('\n[13] tên sheet được làm sạch theo luật Excel');
+  {
+    const nameOf = async (name: string) => {
+      const b = await buildXlsxBuffer({ name, colWidths: [10], rows: [{ cells: [{ t: 'text', v: 'x' }] }] });
+      const wb = await (await JSZip.loadAsync(b)).files['xl/workbook.xml'].async('string');
+      return /<sheet name="([^"]*)"/.exec(wb)?.[1] ?? '';
+    };
+    ok('trực tiếp: bỏ ký tự cấm + cắt 31', sanitizeSheetName('Dự án A/B [2026]: bảng khối lượng chi tiết') === 'Dự án A B 2026 bảng khối lượng');
+    ok('tên rỗng → "Sheet1" (Excel không nhận tên rỗng)', sanitizeSheetName('   ') === 'Sheet1');
+    ok('tên hợp lệ giữ NGUYÊN VĂN', sanitizeSheetName('BOQ') === 'BOQ' && sanitizeSheetName('FF&E') === 'FF&E');
+
+    const written = await nameOf('Dự án A/B [2026]: bảng khối lượng chi tiết phần thô');
+    ok('ghi ra file: không còn ký tự Excel cấm (trước: còn đủ)', !/[/\\?*[\]:]/.test(written));
+    ok('ghi ra file: không quá 31 ký tự (trước: 51)', written.length <= 31);
+    ok('BOQ/FF&E hiện tại không đổi tên tab (không hồi quy)', (await nameOf('BOQ')) === 'BOQ');
+  }
 
   console.log(`\nKẾT QUẢ: ${pass} pass, ${fail} fail`);
   if (fail) process.exit(1);

@@ -27,11 +27,15 @@
  * luôn-hiện riêng (VitalsChatBubble), gộp 2 kiến trúc khác nhau ngoài phạm vi đợt này.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, Save, ShieldAlert, HardDriveDownload, Users } from 'lucide-react';
 import { useFlowStore } from '@/lib/store';
+import { useT } from '@/lib/i18n';
+import { getDefinition } from '@/lib/nodes/registry';
+import { countBoardNodes, countMistypedEdges } from '@/lib/nodes/edge-validity';
 import { useCadLiveStatus } from '@/lib/cad/live-status';
 import { useCadStore, type SnapSettings } from '@/lib/cad/store';
+import { useStageMode } from '@/lib/stage-mode';
 import { useSaveStatus } from '@/lib/save-status';
 import { useProjectPresence } from '@/lib/project-presence-ui';
 import { useVitalsUi } from '@/lib/vitals-ui';
@@ -75,8 +79,12 @@ function formatHHMM(ts: number): string {
 }
 
 export default function StatusBar({ stage, hidden }: Props) {
+  const tr = useT();
   const flowName = useFlowStore((s) => s.flowName);
   const flowRuns = useFlowStore((s) => s.flowRuns);
+  const boardNodes = useFlowStore((s) => s.nodes);
+  const boardEdges = useFlowStore((s) => s.edges);
+  const boardGroups = useFlowStore((s) => s.groups);
   const cursorWorld = useCadLiveStatus((s) => s.cursorWorld);
   const lastViolationCount = useCadLiveStatus((s) => s.lastViolationCount);
   const snap = useCadStore((s) => s.snap);
@@ -123,6 +131,28 @@ export default function StatusBar({ stage, hidden }: Props) {
   // 2.2.86 (30/07) — đếm theo FlowRun (lượt chạy), khớp badge "Việc" ở AppChrome.tsx (Luật Đồng
   // Bộ #6, tránh 2 mặt tiền đếm khác đơn vị — trước đếm Job/node lẻ, ra số khác badge trên bar).
   const jobsActive = stage === 'render' ? flowRuns.filter((r) => r.status === 'running' || r.status === 'queued').length : 0;
+
+  /* ③ `docs/mocks/Bảng nút.dc.html` — "N nút · M nối sai" (mock: sidebar đáy "7 nút · 1 nối sai"
+     + footer nhắc lại bằng chữ đỏ). Chỉ chặng 3D (bảng nút) mới có khái niệm này; 2 chặng kia
+     dùng `nodes`/`edges` cho việc khác nên không hiện. Đếm bằng `lib/nodes/edge-validity.ts`
+     (hàm thuần, có test) — CÙNG luật so kiểu với `isValidConnection` ở FlowCanvas, không viết
+     luật thứ hai. `useMemo` vì `nodes` đổi tham chiếu mỗi lần kéo node. */
+  // Chặng 'render' có HAI mode shell (`lib/stage-mode.ts`): 'render' = bảng nút · 'model3d' =
+  // Vẽ 3D. Bảng nút mới có khái niệm "nút / nối sai" — ở Vẽ 3D con số này là dữ liệu của màn
+  // khác, hiện lên là nói dối ngữ cảnh. `useStageMode` gọi vô điều kiện (Rules of Hooks); ở
+  // chặng CAD nó chỉ đọc thêm 1 field store, không ảnh hưởng gì.
+  const renderStageMode = useStageMode('render').mode;
+  const showBoardCount = stage === 'render' && renderStageMode === 'render';
+  // `boardGroups` cần cho phép đếm: nút tổng THU GỌN không có node trong `nodes[]` (mặt nút vẽ từ
+  // `groups[]`, xem `GroupOverlay`), node con thì mang cờ `hidden` — xem `countBoardNodes`.
+  const nodeCount = useMemo(
+    () => (showBoardCount ? countBoardNodes(boardNodes, boardGroups) : 0),
+    [showBoardCount, boardNodes, boardGroups],
+  );
+  const mistypedCount = useMemo(
+    () => (showBoardCount ? countMistypedEdges(boardNodes, boardEdges, getDefinition) : 0),
+    [showBoardCount, boardNodes, boardEdges],
+  );
   const showSave = (stage === 'concept' || stage === 'present') && saveState !== 'idle';
   const showStandards = stage === 'concept' && lastViolationCount !== null;
   // B4 (4.1.d) — 'off' (chưa bật lưu trữ dự án) KHÔNG hiện gì, đúng thiết kế opt-in.
@@ -263,6 +293,24 @@ export default function StatusBar({ stage, hidden }: Props) {
 
       {/* PHẢI — trạng thái hệ thống */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'flex-end', flex: 1, minWidth: 0 }}>
+        {showBoardCount && (
+          <span
+            style={{ whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}
+            title={
+              mistypedCount > 0
+                ? tr(
+                    'Dây nối hai đầu khác kiểu dữ liệu — dây đó vẽ đỏ đứt đoạn trên bảng, xoá rồi nối lại đúng cổng',
+                    'These links join two different data types — they are drawn red and dashed on the board; delete and reconnect to the right port',
+                  )
+                : tr('Số khối trên bảng nút (không kể giấy nhớ)', 'Blocks on the node board (sticky notes not counted)')
+            }
+          >
+            {tr(`${nodeCount} nút`, `${nodeCount} nodes`)}{' '}
+            <span style={{ color: mistypedCount > 0 ? 'var(--danger)' : 'var(--t4)' }}>
+              · {tr(`${mistypedCount} nối sai`, `${mistypedCount} bad links`)}
+            </span>
+          </span>
+        )}
         {stage === 'render' && jobsActive > 0 && (
           <span style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
             <Loader2 size={12} className="animate-spin" /> {jobsActive} đang render

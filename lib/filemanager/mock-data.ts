@@ -43,17 +43,17 @@ export const FM_FOLDERS: FmFolder[] = [
   { id: 'nord-output', parentId: 'proj-nord', name: '05-output', root: 'projects', permission: 'rw' },
   { id: 'nord-archive', parentId: 'proj-nord', name: '_archive', root: 'projects', permission: 'rw' },
 
-  // Projects/2026-06 Detech Complex — dự án 2, đồng bộ Drive (icon nguồn khác local)
+  // Projects/2026-06 Riverside Office — dự án 2, đồng bộ Drive (icon nguồn khác local)
   {
-    id: 'proj-detech',
+    id: 'proj-riverside',
     parentId: 'root-projects',
-    name: '2026-06 Detech Complex',
+    name: '2026-06 Riverside Office',
     root: 'projects',
     permission: 'rw',
     collaboratorIds: ['u-chi'],
     source: 'drive',
   },
-  { id: 'detech-input', parentId: 'proj-detech', name: '01-input', root: 'projects', permission: 'rw', source: 'drive' },
+  { id: 'riverside-input', parentId: 'proj-riverside', name: '01-input', root: 'projects', permission: 'rw', source: 'drive' },
 
   // Library/*
   { id: 'lib-materials', parentId: 'root-library', name: 'Materials', root: 'library', permission: 'rw' },
@@ -209,11 +209,11 @@ export const FM_FILES: FmFile[] = [
     description: 'Bản sửa lần 2 — lưu trữ tham khảo.',
   },
 
-  // detech-input — Drive-synced project, khác nguồn
+  // riverside-input — Drive-synced project, khác nguồn
   {
-    id: 'f-detech-input-1',
-    folderId: 'detech-input',
-    name: 'Detech-brief-khach.pdf',
+    id: 'f-riverside-input-1',
+    folderId: 'riverside-input',
+    name: 'brief-khach.pdf',
     ext: 'pdf',
     kind: 'pdf',
     sizeBytes: 1_800_000,

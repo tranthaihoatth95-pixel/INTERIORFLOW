@@ -4,7 +4,9 @@
 > **Present KHÔNG PHẢI Canva/Figma/Photoshop thu nhỏ.**
 > Việc của Present = lấy dữ liệu mặt bằng CAD (chặng 1) + ảnh render (chặng 2)
 > → dựng **slide/board trình khách**: ảnh, mặt bằng, chú thích vật liệu, chữ →
-> xuất PDF/PPTX/PNG, gói trong ≤5 sheet. Human-in-the-loop: AI cho ĐIỂM XUẤT PHÁT,
+> xuất PDF/PPTX/PNG. ~~gói trong ≤5 sheet~~ (trần 5 GỠ HẲN — Hoà chốt 07/08 "bỏ vụ gói
+> trong 5 sheet ở tất cả các chặng"; code đã gỡ từ D2 đợt 8 04/08, số trang do NỘI DUNG
+> quyết định). Human-in-the-loop: AI cho ĐIỂM XUẤT PHÁT,
 > designer sửa tự do.
 >
 > **Benchmark tham chiếu**: Gamma (auto-layout) · Canva (Brand Kit/template) ·
@@ -23,7 +25,7 @@
 ## KẾT LUẬN NGẮN (đọc trước)
 
 Present **đã là một trình dàn trang thật, không phải khung sườn**. Đã có: model
-slide đầy đủ, canvas kéo–thả–resize–xoay + guide căn, 25 template (nhiều template
+slide đầy đủ, canvas kéo–thả–resize–xoay + guide căn, bộ template dựng sẵn (nhiều template
 **đặc thù nội thất**: mặt bằng, bảng vật liệu, moodboard, so sánh before/after),
 bộ chuẩn định lượng `DECK_STANDARDS` (đã rút từ Gamma/Canva/Figma), guardrail
 trống/chật/tràn, gợi ý bố cục + perceptron học, xuất PDF/PPTX(chữ sửa được)/PNG,
@@ -63,7 +65,9 @@ review-với-khách (share deck + ghi chú + version).
 
 ## P-B — TEMPLATE & THƯ VIỆN BỐ CỤC
 
-25 template dựng sẵn (`templates.ts`), gom theo **category** (Bìa & Mở đầu · Nội dung
+Template dựng sẵn (`templates.ts` — con số 25 KHÔNG phải giới hạn: Hoà chốt 07/08 template
+là KHO MỞ, người dùng tự lưu bố cục nhà làm qua nút "Lưu mẫu" LayoutShelf →
+`lib/present-editor/custom-templates.ts`, không trần số lượng), gom theo **category** (Bìa & Mở đầu · Nội dung
 · Moodboard & Vật liệu · Kỹ thuật · Trưng bày) và **kệ 4 hàng cuộn ngang** (Bìa / Bìa phụ
 / Nội dung / Trang kết).
 
@@ -154,7 +158,7 @@ riêng **`/photo-editor`** — chỉnh raster không phá huỷ kiểu Photoshop
 | F.2 | Xuất PNG từng slide | ✅ | `export.ts` exportDeckToPng |
 | F.3 | Xuất PPTX — **chữ vẫn sửa được** (map role→SlideContent) + fallback ảnh full-bleed | ✅ | `export.ts` exportDeckToPptxFromModel + `lib/pptx` |
 | F.4 | Handoff Render→Present (sessionStorage + mem fallback, consume-once) | ✅ | `handoff.ts` |
-| F.5 | Multi-sheet ≤5 + persist IndexedDB | ✅ | `PresentSheets.tsx` + sheets-persist |
+| F.5 | Multi-sheet + persist IndexedDB (~~≤5~~ trần gỡ D2 04/08, chốt lại 07/08) | ✅ | `PresentSheets.tsx` + sheets-persist |
 | F.6 | Motion: transition (fade/slide/push/zoom/rise) + reveal + trình chiếu + "áp cả deck" | ✅ | `motion-present.ts`, `MotionPanel.tsx`, `SlidePlayer.tsx` |
 
 ---
@@ -188,7 +192,7 @@ riêng **`/photo-editor`** — chỉnh raster không phá huỷ kiểu Photoshop
 
 | # | Tính năng | Trạng thái | Bằng chứng / ghi chú |
 |---|---|---|---|
-| I.1 | **Bảng deck** (thư viện nhiều deck: mở lại/nhân bản/xoá, thumbnail) | 🆕 | CHƯA có. `Gallery` = ảnh render (`lib/gallery.ts`), `Dashboard` liệt kê Dự án+Flow **không có deck Present**, `sheets-persist` = **1 record/(userId,route)** = 1 workspace ≤5 sheet. Việc = **PS-9** |
+| I.1 | **Bảng deck** (thư viện nhiều deck: mở lại/nhân bản/xoá, thumbnail) | 🆕 | CHƯA có. `Gallery` = ảnh render (`lib/gallery.ts`), `Dashboard` liệt kê Dự án+Flow **không có deck Present**, `sheets-persist` = **1 record/(userId,route)** = 1 workspace nhiều sheet (~~≤5~~ trần gỡ D2 04/08). Việc = **PS-9** |
 | I.2 | **Thư viện tài sản** (ảnh/render/logo/ảnh vật liệu dùng chung, tag) | 🔜 | rời rạc: `Gallery` + `LibraryPickerModal` + Reference (`templatesFromLibrary`). Gộp = **PS-10**; nối hook `materials.ts:46 photoUrl?` (ảnh vật liệu thật) |
 | I.3 | **Mẫu hồ sơ hành chánh 1 trang A4** (memo/đề xuất/thư/biên bản chữ-layout) | 🆕 | dùng lại canvas+text+shape+A4(PS-4)+PDF. Việc = **PS-11** (CHẶN bởi PS-4) |
 | I.4 | **Form hành chánh CÓ BẢNG** (hoá đơn dòng-mục, BOQ) | ⛔/hoãn | `ElementKind='image'\|'text'\|'shape'` (`model.ts:17`) — **không có element bảng**. REDIRECT sang `du-toan-noi-that` hoặc hoãn tới khi quyết định thêm element bảng |
@@ -217,7 +221,7 @@ riêng **`/photo-editor`** — chỉnh raster không phá huỷ kiểu Photoshop
 ## ⛔ KHÔNG LÀM (chủ đích — feature-parity theater cho việc dựng deck)
 
 - Figma: vector pen, prototyping/interaction, dev-mode/code export, **hệ component +
-  variant + props đầy đủ** (deck ≤5 sheet + template một-lần đã đủ; instance liên kết chỉ
+  variant + props đầy đủ** (deck ít sheet + template một-lần đã đủ; instance liên kết chỉ
   cần cho logo/ảnh dùng lại — gộp vào D.10, không dựng cả engine component).
 - Canva: định dạng mạng xã hội, video editor, print-on-demand marketplace, Magic Resize
   full (chỉ cần vài khổ cố định).

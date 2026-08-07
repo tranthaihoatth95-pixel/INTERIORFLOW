@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<style>
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3;
+  --ice:#8fd6ff; --warm:#f3b79c; --deep:#5b46e8;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --ease-in:cubic-bezier(.16,.9,.24,1);
+  --stage:#08080c;
+}
+:root,[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--accent-strong)}
+@keyframes vg-spin{to{transform:rotate(360deg)}}
+@keyframes vg-streak{0%,100%{transform:scaleX(.42);opacity:.55}50%{transform:scaleX(1);opacity:1}}
+@keyframes vg-pulse{0%{box-shadow:0 0 0 0 rgba(143,214,255,.32)}70%{box-shadow:0 0 0 18px rgba(143,214,255,0)}100%{box-shadow:0 0 0 0 rgba(143,214,255,0)}}
+@keyframes vg-dim{0%,100%{opacity:.5}50%{opacity:.92}}
+@keyframes vg-bob{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4%) scale(1.03)}}
+@keyframes vg-pool{0%,100%{transform:scaleX(.86);opacity:.8}50%{transform:scaleX(1.06);opacity:1}}
+@keyframes vg-in-ring{0%{transform:scale(1.8) rotate(-240deg);opacity:0}52%{opacity:1}100%{transform:scale(1) rotate(0deg);opacity:1}}
+@keyframes vg-ring-idle{to{transform:rotate(360deg)}}
+@keyframes vg-in-pop{0%,40%{transform:scale(.18);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes vg-in-rise{0%{transform:translateY(22%) scale(.93);opacity:0}100%{transform:translateY(0) scale(1);opacity:1}}
+@keyframes vg-fall{
+  0%{transform:translateY(-270%) scale(.7,1.4);opacity:0}
+  18%{opacity:1}
+  42%{transform:translateY(0) scale(1.3,.7)}
+  58%{transform:translateY(-115%) scale(.88,1.16)}
+  74%{transform:translateY(0) scale(1.14,.88)}
+  87%{transform:translateY(-42%) scale(.96,1.05)}
+  100%{transform:translateY(0) scale(1);opacity:1}
+}
+@keyframes vg-tail{0%,10%{opacity:0;transform:scaleY(.2)}26%{opacity:.95;transform:scaleY(1.05)}44%{opacity:.5;transform:scaleY(.7)}60%,100%{opacity:0;transform:scaleY(.15)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important}}
+</style>
+</helmet>
+
+<section style="padding:36px 40px 64px;display:flex;flex-direction:column;gap:22px;font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif">
+
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
+    <div style="min-width:0">
+      <div style="display:flex;align-items:center;gap:11px">
+        <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.02em">Avatar Vitals · ba hướng</h1>
+        <span style="display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:6px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700;letter-spacing:.03em">LƯỢT 1</span>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--t3);max-width:940px;text-wrap:pretty">Tím lùi xuống làm nền, đỉnh sáng chuyển sang một sắc đối. Hạt mảnh như bụi sáng, không thành chấm thô. Trạng thái <b style="font-weight:600;color:var(--t2)">đang nghĩ</b> là vệt sáng kéo dài. Bấm <b style="font-weight:600;color:var(--t2)">Gọi lại</b> ở mỗi thẻ để xem cách nó xuất hiện. Trả lời bằng mã <a href="#1b">1b</a>.</div>
+    </div>
+    <button onClick="{{ toggleTheme }}" style="height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font:600 12px inherit;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">{{ themeLabel }}</button>
+  </div>
+
+  <div style="display:flex;gap:18px;flex-wrap:nowrap;align-items:flex-start;width:max-content">
+
+    <div id="1a" style="width:412px;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:9px">
+        <span style="display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:6px;background:var(--accent);color:#fff;font:700 10px ui-monospace,Menlo,monospace">1a</span>
+        <span style="font-size:14px;font-weight:600;letter-spacing:-.01em">Vành bụi sáng</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--t4)">tím → xanh băng</span>
+      </div>
+
+      <div style="height:250px;border-radius:14px;background:var(--stage);display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <div style="position:relative;width:176px;height:176px">
+          <div data-appear style="position:absolute;inset:0;animation:vg-in-ring 1.5s var(--ease-in) both">
+            <div style="position:absolute;inset:-18%;border-radius:50%;background:radial-gradient(circle,rgba(106,87,245,.30),rgba(106,87,245,.07) 52%,transparent 72%);filter:blur(10px)"></div>
+            <div style="position:absolute;inset:0;border-radius:50%;background-image:radial-gradient(circle,#dcd7ff 0 .7px,transparent 1.2px);background-size:5px 5px;-webkit-mask:radial-gradient(circle,transparent 45%,#000 54%,#000 65%,transparent 77%);mask:radial-gradient(circle,transparent 45%,#000 54%,#000 65%,transparent 77%);animation:vg-spin 52s linear infinite"></div>
+            <div style="position:absolute;inset:0;border-radius:50%;background-image:radial-gradient(circle,var(--ice) 0 .6px,transparent 1px);background-size:7px 7px;opacity:.6;-webkit-mask:radial-gradient(circle,transparent 47%,#000 56%,#000 63%,transparent 73%);mask:radial-gradient(circle,transparent 47%,#000 56%,#000 63%,transparent 73%);animation:vg-spin 31s linear infinite reverse"></div>
+            <div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 0deg,rgba(214,234,255,.75) 40deg,transparent 92deg);-webkit-mask:radial-gradient(circle,transparent 46%,#000 55%,#000 64%,transparent 75%);mask:radial-gradient(circle,transparent 46%,#000 55%,#000 64%,transparent 75%);mix-blend-mode:screen;animation:vg-spin 5.4s linear infinite"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        <div style="border-radius:14px;background:var(--stage);padding:11px;display:flex;flex-direction:column;align-items:center;gap:9px">
+          <div style="position:relative;width:62px;height:62px">
+            <div style="position:absolute;inset:0;border-radius:50%;background-image:radial-gradient(circle,#dcd7ff 0 .6px,transparent 1px);background-size:4px 4px;opacity:.5;-webkit-mask:radial-gradient(circle,transparent 45%,#000 54%,#000 65%,transparent 77%);mask:radial-gradient(circle,transparent 45%,#000 54%,#000 65%,transparent 77%);animation:vg-spin 64s linear infinite"></div>
+          </div>
+          <span style="font-size:11px;color:var(--t4)">Nghỉ</span>
+        </div>
+        <div style="border-radius:14px;background:var(--stage);padding:11px;display:flex;flex-direction:column;align-items:center;gap:9px">
+          <div style="position:relative;width:62px;height:62px;display:flex;align-items:center;justify-content:center">
+            <div style="position:absolute;width:78px;height:11px;border-radius:99px;background:linear-gradient(90deg,transparent,var(--accent) 18%,var(--ice) 42%,#fff 52%,var(--ice) 62%,var(--accent) 84%,transparent);filter:blur(4px);animation:vg-streak 1.6s var(--ease-apple) infinite"></div>
+            <div style="position:absolute;width:40px;height:2px;border-radius:99px;background:#eaf4ff;filter:blur(.6px);animation:vg-streak 1.6s var(--ease-apple) infinite"></div>
+          </div>
+          <span style="font-size:11px;color:var(--t4)">Đang nghĩ</span>
+        </div>
+        <div style="border-radius:14px;background:var(--stage);padding:11px;display:flex;flex-direction:column;align-items:center;gap:9px">
+          <div style="position:relative;width:62px;height:62px">
+            <div style="position:absolute;inset:0;border-radius:50%;background-image:radial-gradient(circle,#fff 0 .7px,transparent 1.1px);background-size:4px 4px;-webkit-mask:radial-gradient(circle,transparent 45%,#000 54%,#000 65%,transparent 77%);mask:radial-gradient(circle,transparent 45%,#000 54%,#000 65%,transparent 77%);animation:vg-spin 9s linear infinite"></div>
+            <div style="position:absolute;inset:24%;border-radius:50%;animation:vg-pulse 1.4s linear infinite"></div>
+          </div>
+          <span style="font-size:11px;color:var(--t4)">Trả lời</span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;height:40px;padding:0 10px;border-radius:14px;background:var(--stage)">
+        <span style="display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 11px 0 5px;border-radius:20px;background:rgba(106,87,245,.16);color:#dcd7ff;font-size:11px;font-weight:600">
+          <span style="width:20px;height:20px;border-radius:50%;background-image:radial-gradient(circle,#dcd7ff 0 .55px,transparent .9px);background-size:3px 3px;-webkit-mask:radial-gradient(circle,transparent 40%,#000 52%,#000 66%,transparent 78%);mask:radial-gradient(circle,transparent 40%,#000 52%,#000 66%,transparent 78%);animation:vg-spin 16s linear infinite"></span>
+          Vitals
+        </span>
+        <span style="font-size:11px;color:#6e6e78">Viên 20 px trên thanh trạng thái</span>
+        <button onClick="{{ replayA }}" style="margin-left:auto;height:24px;padding:0 11px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:rgba(255,255,255,.05);color:#d6d6db;font:600 11px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:rgba(255,255,255,.12)">Gọi lại</button>
+      </div>
+
+      <div style="font-size:11px;color:var(--t4);line-height:1.6;text-wrap:pretty">Hàng nghìn hạt bụi cỡ một điểm ảnh xếp thành vành, một con sóng sáng chạy vòng quanh. Mảnh, tĩnh, không đòi chú ý.</div>
+    </div>
+
+    <div id="1b" style="width:412px;background:var(--panel);border:1px solid var(--accent);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:14px;box-shadow:0 0 0 4px rgba(106,87,245,.14)">
+      <div style="display:flex;align-items:center;gap:9px">
+        <span style="display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:6px;background:var(--accent);color:#fff;font:700 10px ui-monospace,Menlo,monospace">1b</span>
+        <span style="font-size:14px;font-weight:600;letter-spacing:-.01em">Giọt rơi vào vành</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--t4)">tím → trắng lam</span>
+      </div>
+
+      <div style="height:250px;border-radius:14px;background:var(--stage);display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <div style="position:relative;width:176px;height:176px">
+          <div data-appear style="position:absolute;inset:0;animation:vg-in-ring 1.5s var(--ease-in) both">
+            <div style="position:absolute;inset:-16%;border-radius:50%;background:radial-gradient(circle,rgba(120,150,255,.30),rgba(91,70,232,.10) 50%,transparent 70%);filter:blur(12px)"></div>
+            <div style="position:absolute;inset:4%;border-radius:50%;background:conic-gradient(from 205deg,#241b6b,var(--ice) 24%,#ffffff 46%,#dbe6ff 58%,#3a2ba8 78%,#241b6b);-webkit-mask:radial-gradient(circle,transparent 69%,#000 72%);mask:radial-gradient(circle,transparent 69%,#000 72%);filter:drop-shadow(0 0 14px rgba(150,180,255,.6));animation:vg-spin 16s linear infinite"></div>
+            <div style="position:absolute;inset:9%;border-radius:50%;background:radial-gradient(circle at 50% 36%,#1b1830,#0a0a12 72%);box-shadow:inset 0 0 30px rgba(0,0,0,.95),inset 0 10px 24px rgba(130,150,255,.12)"></div>
+          </div>
+          <div data-appear style="position:absolute;left:50%;bottom:19%;width:44px;height:8px;margin-left:-22px;border-radius:50%;background:radial-gradient(ellipse at 50% 50%,#ffffff,rgba(190,214,255,.5) 55%,transparent 78%);filter:blur(1.6px);animation:vg-fall 1.5s var(--ease-in) both,vg-pool 3.6s var(--ease-apple) 1.5s infinite"></div>
+          <div data-appear style="position:absolute;left:50%;top:50%;width:14px;height:88px;margin:-88px 0 0 -7px;background:linear-gradient(180deg,#ffffff,rgba(198,220,255,.5) 55%,rgba(198,220,255,.12));clip-path:polygon(40% 0%,60% 0%,100% 100%,0% 100%);filter:blur(1.2px);transform-origin:top center;animation:vg-tail 1.5s var(--ease-in) both"></div>
+          <div data-appear style="position:absolute;left:50%;top:50%;width:21px;height:21px;margin:-10.5px 0 0 -10.5px;animation:vg-fall 1.5s var(--ease-in) both,vg-bob 3.6s var(--ease-apple) 1.5s infinite">
+            <span style="display:block;width:100%;height:100%;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:radial-gradient(circle at 50% 36%,#fff,#eaf1ff 50%,#b6cbff);box-shadow:0 0 28px 8px rgba(160,190,255,.5)"></span>
+          </div>
+          <div style="position:absolute;left:8%;right:8%;top:104%;height:44px;border-radius:50%;background:radial-gradient(ellipse at 50% 0%,rgba(140,170,255,.24),transparent 68%);filter:blur(6px)"></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        <div style="border-radius:14px;background:var(--stage);padding:11px;display:flex;flex-direction:column;align-items:center;gap:9px">
+          <div style="position:relative;width:62px;height:62px">
+            <div style="position:absolute;inset:4%;border-radius:50%;background:conic-gradient(from 205deg,#1d1750,#6d7fc4 28%,#c9d6f5 46%,#4b3fae 74%,#1d1750);opacity:.6;-webkit-mask:radial-gradient(circle,transparent 71%,#000 75%);mask:radial-gradient(circle,transparent 71%,#000 75%);animation:vg-spin 38s linear infinite"></div>
+            <div style="position:absolute;inset:9%;border-radius:50%;background:radial-gradient(circle at 50% 36%,#161327,#0a0a12 72%)"></div>
+            <div style="position:absolute;left:50%;top:44%;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50% 50% 50% 0;background:#b9c8f0;opacity:.65;transform:rotate(-45deg)"></div>
+          </div>
+          <span style="font-size:11px;color:var(--t4)">Nghỉ</span>
+        </div>
+        <div style="border-radius:14px;background:var(--stage);padding:11px;display:flex;flex-direction:column;align-items:center;gap:9px">
+          <div style="position:relative;width:62px;height:62px;display:flex;align-items:center;justify-content:center">
+            <div style="position:absolute;width:78px;height:13px;border-radius:99px;background:linear-gradient(90deg,transparent,var(--deep) 16%,var(--ice) 40%,#fff 52%,#dbe6ff 64%,var(--deep) 86%,transparent);filter:blur(4px);animation:vg-streak 1.5s var(--ease-apple) infinite"></div>
+            <div style="position:absolute;width:44px;height:2px;border-radius:99px;background:#fff;filter:blur(.6px);animation:vg-streak 1.5s var(--ease-apple) infinite"></div>
+          </div>
+          <span style="font-size:11px;color:var(--t4)">Đang nghĩ</span>
+        </div>
+        <div style="border-radius:14px;background:var(--stage);padding:11px;display:flex;flex-direction:column;align-items:center;gap:9px">
+          <div style="position:relative;width:62px;height:62px">
+            <div style="position:absolute;inset:4%;border-radius:50%;background:conic-gradient(from 205deg,#241b6b,var(--ice) 24%,#fff 46%,#dbe6ff 58%,#241b6b);-webkit-mask:radial-gradient(circle,transparent 71%,#000 75%);mask:radial-gradient(circle,transparent 71%,#000 75%);animation:vg-spin 4.6s linear infinite"></div>
+            <div style="position:absolute;inset:9%;border-radius:50%;background:radial-gradient(circle at 50% 36%,#1b1830,#0a0a12 72%)"></div>
+            <div style="position:absolute;left:50%;top:44%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50% 50% 50% 0;background:#fff;box-shadow:0 0 14px 4px rgba(160,190,255,.55);transform:rotate(-45deg)"></div>
+            <div style="position:absolute;inset:22%;border-radius:50%;animation:vg-pulse 1.3s linear infinite"></div>
+          </div>
+          <span style="font-size:11px;color:var(--t4)">Trả lời</span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;height:40px;padding:0 10px;border-radius:14px;background:var(--stage)">
+        <span style="display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 11px 0 5px;border-radius:20px;background:rgba(106,87,245,.16);color:#dbe6ff;font-size:11px;font-weight:600">
+          <span style="position:relative;width:20px;height:20px;flex:none">
+            <span style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 205deg,#241b6b,var(--ice) 26%,#fff 46%,#241b6b);-webkit-mask:radial-gradient(circle,transparent 67%,#000 73%);mask:radial-gradient(circle,transparent 67%,#000 73%);animation:vg-spin 15s linear infinite"></span>
+            <span style="position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50% 50% 50% 0;background:#fff;transform:rotate(-45deg)"></span>
+          </span>
+          Vitals
+        </span>
+        <span style="font-size:11px;color:#6e6e78">Viên 20 px trên thanh trạng thái</span>
+        <button onClick="{{ replayB }}" style="margin-left:auto;height:24px;padding:0 11px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:rgba(255,255,255,.05);color:#d6d6db;font:600 11px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:rgba(255,255,255,.12)">Gọi lại</button>
+      </div>
+
+      <div style="font-size:11px;color:var(--t4);line-height:1.6;text-wrap:pretty">Vành mảnh xoay tới, giọt sáng rơi xuống, nảy hai nhịp rồi đọng thành vũng ở đáy. Dứt khoát, dễ nhớ nhất.</div>
+    </div>
+
+    <div id="1c" style="width:412px;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:9px">
+        <span style="display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:6px;background:var(--accent);color:#fff;font:700 10px ui-monospace,Menlo,monospace">1c</span>
+        <span style="font-size:14px;font-weight:600;letter-spacing:-.01em">Cầu chân trời</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--t4)">tím → hồng đào</span>
+      </div>
+
+      <div style="height:250px;border-radius:14px;background:var(--stage);display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <div style="position:relative;width:176px;height:176px">
+          <div data-appear style="position:absolute;inset:0;animation:vg-in-rise 1.4s var(--ease-in) both">
+            <div style="position:absolute;inset:-14%;border-radius:50%;background:radial-gradient(circle at 50% 62%,rgba(243,183,156,.24),rgba(106,87,245,.10) 48%,transparent 70%);filter:blur(14px)"></div>
+            <div style="position:absolute;inset:0;border-radius:50%;background:linear-gradient(180deg,#4a4f86 0%,#6a57f5 26%,#a7b3e0 44%,#f3b79c 51%,#241d33 55%,#0e0c14 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.42),0 18px 44px -14px rgba(243,183,156,.28)"></div>
+            <div style="position:absolute;inset:0;border-radius:50%;background:radial-gradient(120% 70% at 50% 8%,rgba(255,255,255,.42),transparent 56%)"></div>
+            <div style="position:absolute;left:6%;right:6%;top:50.4%;height:2px;background:linear-gradient(90deg,transparent,#ffd9c4,transparent);filter:blur(.8px)"></div>
+          </div>
+          <div data-appear style="position:absolute;inset:-16%;border-radius:50%;background-image:radial-gradient(circle,#f3b79c 0 .6px,transparent 1px);background-size:6px 6px;opacity:.55;-webkit-mask:radial-gradient(circle closest-side,transparent 86%,#000 90%,#000 96%,transparent 100%);mask:radial-gradient(circle closest-side,transparent 86%,#000 90%,#000 96%,transparent 100%);animation:vg-in-pop 1.4s var(--ease-in) both,vg-spin 40s linear 1.4s infinite"></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        <div style="border-radius:14px;background:var(--stage);padding:11px;display:flex;flex-direction:column;align-items:center;gap:9px">
+          <div style="position:relative;width:62px;height:62px">
+            <div style="position:absolute;inset:0;border-radius:50%;background:linear-gradient(180deg,#3c3f6b 0%,#514496 28%,#8f99c4 45%,#c99a83 51%,#1e1a2a 55%,#0c0b11 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.24)"></div>
+          </div>
+          <span style="font-size:11px;color:var(--t4)">Nghỉ</span>
+        </div>
+        <div style="border-radius:14px;background:var(--stage);padding:11px;display:flex;flex-direction:column;align-items:center;gap:9px">
+          <div style="position:relative;width:62px;height:62px;display:flex;align-items:center;justify-content:center">
+            <div style="position:absolute;width:78px;height:12px;border-radius:99px;background:linear-gradient(90deg,transparent,var(--accent) 18%,#ffd9c4 44%,#fff 52%,var(--warm) 62%,var(--accent) 84%,transparent);filter:blur(4px);animation:vg-streak 1.6s var(--ease-apple) infinite"></div>
+            <div style="position:absolute;width:42px;height:2px;border-radius:99px;background:#fff2e8;filter:blur(.6px);animation:vg-streak 1.6s var(--ease-apple) infinite"></div>
+          </div>
+          <span style="font-size:11px;color:var(--t4)">Đang nghĩ</span>
+        </div>
+        <div style="border-radius:14px;background:var(--stage);padding:11px;display:flex;flex-direction:column;align-items:center;gap:9px">
+          <div style="position:relative;width:62px;height:62px">
+            <div style="position:absolute;inset:0;border-radius:50%;background:linear-gradient(180deg,#4a4f86 0%,#6a57f5 26%,#a7b3e0 44%,#f3b79c 51%,#241d33 55%,#0e0c14 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.5),0 0 22px -4px rgba(243,183,156,.5)"></div>
+            <div style="position:absolute;inset:0;border-radius:50%;animation:vg-pulse 1.3s linear infinite"></div>
+          </div>
+          <span style="font-size:11px;color:var(--t4)">Trả lời</span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;height:40px;padding:0 10px;border-radius:14px;background:var(--stage)">
+        <span style="display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 11px 0 5px;border-radius:20px;background:rgba(106,87,245,.16);color:#ffd9c4;font-size:11px;font-weight:600">
+          <span style="width:18px;height:18px;border-radius:50%;background:linear-gradient(180deg,#4a4f86 0%,#6a57f5 26%,#a7b3e0 44%,#f3b79c 51%,#241d33 55%,#0e0c14 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)"></span>
+          Vitals
+        </span>
+        <span style="font-size:11px;color:#6e6e78">Viên 20 px trên thanh trạng thái</span>
+        <button onClick="{{ replayC }}" style="margin-left:auto;height:24px;padding:0 11px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:rgba(255,255,255,.05);color:#d6d6db;font:600 11px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:rgba(255,255,255,.12)">Gọi lại</button>
+      </div>
+
+      <div style="font-size:11px;color:var(--t4);line-height:1.6;text-wrap:pretty">Một khối cầu có đường chân trời: nửa trên tím lam, viền ấm mỏng ở giữa, nửa dưới chìm. Trầm và sang.</div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Tối&quot;,&quot;Kem&quot;],&quot;default&quot;:&quot;Tối&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Giao diện&quot;}}">
+class Component extends DCLogic {
+  state = { theme: null };
+  componentDidMount() { this.apply(); }
+  componentDidUpdate() { this.apply(); }
+  apply() {
+    document.documentElement.dataset.theme = this.theme();
+  }
+  theme() {
+    return this.state.theme || (this.props.theme === 'Kem' ? 'light' : 'dark');
+  }
+  replay(id) {
+    const root = document.getElementById(id);
+    if (!root) return;
+    root.querySelectorAll('[data-appear]').forEach(el => {
+      const a = el.style.animation;
+      el.style.animation = 'none';
+      void el.offsetWidth;
+      el.style.animation = a;
+    });
+  }
+  renderVals() {
+    const t = this.theme();
+    return {
+      themeLabel: t === 'dark' ? 'Đổi sang nền Kem' : 'Đổi sang nền Tối',
+      toggleTheme: () => this.setState({ theme: t === 'dark' ? 'light' : 'dark' }),
+      replayA: () => this.replay('1a'),
+      replayB: () => this.replay('1b'),
+      replayC: () => this.replay('1c')
+    };
+  }
+}
+</script>
+</body>
+</html>

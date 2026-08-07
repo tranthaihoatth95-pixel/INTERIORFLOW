@@ -12,11 +12,16 @@
 
 import { useParams } from 'next/navigation';
 import CadStageScreen from '@/components/studio/CadStageScreen';
-import { useProjectScopeSync } from '@/lib/project-scope';
+import { useProjectScopeSync, useScopeMissingInfo } from '@/lib/project-scope';
+import { ProjectScopeEmptyState } from '@/components/studio/ProjectScopeEmptyState';
 
 export default function ProjectCadPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? '';
-  useProjectScopeSync(id, 'cad');
+  const status = useProjectScopeSync(id, 'cad');
+  const missingInfo = useScopeMissingInfo(id, status);
+  if (status === 'missing' && missingInfo) {
+    return <ProjectScopeEmptyState routeId={id} stage="cad" info={missingInfo} />;
+  }
   return <CadStageScreen />;
 }

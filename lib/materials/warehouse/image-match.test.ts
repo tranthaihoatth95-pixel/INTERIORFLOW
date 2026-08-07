@@ -3,7 +3,7 @@
  * Chạy: node_modules/.bin/sucrase-node lib/materials/warehouse/image-match.test.ts
  * Node ≥20 có global `File` (undici) — không cần jsdom cho test này.
  */
-import { matchImagesBySku, matchImagesForRows, isDirectImageUrl } from './image-match';
+import { matchImagesBySku, matchImagesForRows, matchImagesForRowsEx, isDirectImageUrl } from './image-match';
 
 let pass = 0;
 let fail = 0;
@@ -104,6 +104,40 @@ console.log('\n[NFC/NFD] tên file tiếng Việt phải khớp bất kể dạn
   const f2 = fakeFile(nfc('tủ hồ sơ.png'));
   const hit2 = matchImagesForRows([f2], [{ rowIndex: 0, imageRef: nfd('tủ hồ sơ') }]);
   ok('chiều ngược lại + thiếu đuôi file vẫn khớp', hit2.get(0) === f2);
+}
+
+/* ═══ 🔴 VÒNG 3 (06/08) — ẢNH TRÙNG TÊN Ở HAI THƯ MỤC ⇒ gán nhầm ảnh, im lặng ═══
+ * Đo được: `phong-khach/ghe.jpg` + `phong-ngu/ghe.jpg` ⇒ **cả 2 dòng lấy CÙNG MỘT ảnh** (bản nạp
+ * sau đè bản trước trong map khoá-theo-tên), không một câu nào giải thích. Một thư mục mỗi phòng
+ * là cách sắp ảnh phổ biến NHẤT của studio nội thất ⇒ đây là ca mặc định, không phải ca hiếm.
+ * Máy KHÔNG tự đoán ảnh nào đúng (không có căn cứ): ghép như cũ + TRẢ RA danh sách trùng để tầng
+ * trên nói cho người dùng. */
+console.log('\n[vòng 3] ảnh trùng tên ở 2 thư mục — phải TRẢ RA, không im');
+{
+  const a = fakeFile('phong-khach/ghe.jpg');
+  const b = fakeFile('phong-ngu/ghe.jpg');
+  const rows = [{ rowIndex: 0, imageRef: 'phong-khach/ghe.jpg' }, { rowIndex: 1, imageRef: 'phong-ngu/ghe.jpg' }];
+
+  const cu = matchImagesForRows([a, b], rows);
+  ok('TÁI HIỆN: 2 dòng vẫn nhận CÙNG một ảnh (hành vi giữ nguyên, có chủ ý)', cu.get(0) === cu.get(1));
+
+  const ex = matchImagesForRowsEx([a, b], rows);
+  ok('byRow y hệt hàm cũ (tương thích ngược)', ex.byRow.get(0) === cu.get(0) && ex.byRow.size === cu.size);
+  ok('CÓ danh sách trùng (trước: không có đường nào để biết)', ex.duplicateNames.length === 1);
+  ok('nêu đúng tên file trùng', ex.duplicateNames[0].name === 'ghe.jpg');
+  ok('liệt kê ĐỦ 2 đường dẫn để người dùng tự phân biệt',
+    ex.duplicateNames[0].paths.length === 2
+    && ex.duplicateNames[0].paths.includes('phong-khach/ghe.jpg')
+    && ex.duplicateNames[0].paths.includes('phong-ngu/ghe.jpg'));
+
+  // Chốt ngược: tên khác nhau thì KHÔNG báo trùng oan; file không phải ảnh không tính.
+  const sach = matchImagesForRowsEx([fakeFile('a/ghe.jpg'), fakeFile('b/ban.jpg'), fakeFile('c/ghe.txt')], []);
+  ok('tên khác nhau → không báo trùng oan', sach.duplicateNames.length === 0);
+
+  // Trùng tên trong CÙNG thư mục nhưng khác đuôi (ghe.jpg/ghe.png) KHÔNG tính là trùng tên file
+  // đầy đủ — đó là ca `matchImagesBySku` đã có luật riêng (giữ bản sau cùng).
+  const khacDuoi = matchImagesForRowsEx([fakeFile('ghe.jpg'), fakeFile('ghe.png')], []);
+  ok('cùng tên khác ĐUÔI không bị gộp vào danh sách trùng', khacDuoi.duplicateNames.length === 0);
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);

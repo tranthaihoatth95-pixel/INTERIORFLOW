@@ -11,8 +11,9 @@
     "start": "next start",
     "lint": "next lint",
     "check:mocks": "node scripts/check-mocks.mjs",
+    "check:chot": "node scripts/check-chot.mjs",
     "license:check": "license-checker-rseidelsohn --production --onlyAllow 'MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;CC0-1.0;OFL-1.1;LGPL-3.0-or-later;Zlib;BlueOak-1.0.0;0BSD;Python-2.0' --excludePackages 'interiorflow@0.1.0;@mlightcad/libredwg-web@0.7.7;caniuse-lite@1.0.30001800' --summary",
-    "test": "npm run license:check && find . -name '*.test.ts' -not -path '*/node_modules/*' -not -path '*/.worktrees/*' -not -name 'edgecase-concurrency.test.ts' -print0 | xargs -0 -n1 -P8 sh -c 'node_modules/.bin/sucrase-node \"$0\"'",
+    "test": "npm run license:check && npm run check:chot && find . -name '*.test.ts' -not -path '*/node_modules/*' -not -path '*/.worktrees/*' -not -name 'edgecase-concurrency.test.ts' -print0 | xargs -0 -n1 -P8 sh -c 'node_modules/.bin/sucrase-node \"$0\"'",
     "postinstall": "prisma generate",
     "electron": "electron .",
     "electron:dev": "cross-env ELECTRON_START_URL=http://localhost:3000 concurrently -k -n NEXT,ELECTRON -c blue,magenta \"next dev\" \"wait-on tcp:3000 && electron .\"",
@@ -100,6 +101,17 @@
       "!node_modules/.bin/**",
       "!prisma/*.db*",
       "!**/*.map"
+    ],
+    "extraResources": [
+      {
+        "from": "node_modules/.prisma",
+        "to": "app/node_modules/.prisma",
+        "filter": [
+          "**/*",
+          "!**/*.db",
+          "!**/*.db-journal"
+        ]
+      }
     ],
     "asar": false,
     "extraMetadata": {

@@ -250,7 +250,7 @@ export const PHASE_USAGES: Record<RefPhase, string[]> = {
 
 /** category thư viện được ưu tiên theo chặng (khớp LIBRARY_CATEGORIES). */
 export const PHASE_CATEGORIES: Record<RefPhase, string[]> = {
-  concept: ['CAD / Sketch'],
+  concept: ['Thiết kế 2D / Sketch'],
   render: ['Ref nội thất', 'Ref ngoại thất', 'Vật liệu / Texture'],
   present: ['Style dàn trang', 'Ref nội thất'],
 };

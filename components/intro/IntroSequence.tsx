@@ -69,7 +69,7 @@ export function IntroSequence() {
   }, [state.phase, state.done]);
 
   const finish = () => {
-    try { localStorage.setItem('if_intro_seen_v1', '1'); } catch {}
+    try { localStorage.setItem('if_intro_seen_v1', '1'); } catch {/* localStorage bị chặn (riêng tư) — intro sẽ hiện lại lần sau, vô hại */}
     dispatch({ type: 'finish' });
     setTimeout(() => router.push('/login'), 300);
   };

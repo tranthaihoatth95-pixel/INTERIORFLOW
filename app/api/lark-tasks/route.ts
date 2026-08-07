@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
+import { listLarkUserMap } from '@/lib/integrations/lark-bridge';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,7 @@ export async function GET() {
   const [tasks, persons, userMap] = await Promise.all([
     prisma.larkTaskRef.findMany({ orderBy: { deadline: 'asc' } }),
     prisma.larkPersonRef.findMany({ orderBy: { fullName: 'asc' } }),
-    prisma.larkUserMap.findMany(),
+    listLarkUserMap(), // M-SCOPE VIỆC 3 — cầu ID qua lark-bridge.ts, không đọc thẳng LarkUserMap nữa
   ]);
 
   const codeMap = new Map<string, string>();

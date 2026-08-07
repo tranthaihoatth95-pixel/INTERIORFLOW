@@ -9,7 +9,7 @@
  * → lưu vào deckRef → commit vào sheet trước khi đổi tab.
  *
  * PERSISTENCE (J-3 Sprint 2 — quyết định #6 "nhớ chính xác từng sheet"):
- * cả bộ sheet (deck + tên, TRẦN 5) serialize vào IndexedDB theo khoá
+ * cả bộ sheet (deck + tên — trần 5 ĐÃ GỠ ở D2 đợt 8, xem addSheet) serialize vào IndexedDB theo khoá
  * `userId::/present-editor` (lib/sheets-persist). Reload → khôi phục đúng bộ sheet +
  * sheet đang mở (ưu tiên resume.sheetId của lib/resume nếu còn tồn tại). Autosave
  * debounce ≥1s nghe onDeckChange + thao tác tab. PresentEditor chỉ mount SAU khi
@@ -77,7 +77,9 @@ const ROUTE = '/present-editor' as const;
 const BLANK_PALETTE = ['#EFE9DC', '#C2AD86', '#8A6A3A', '#6E4A2E', '#3B352F', '#28211A'];
 
 interface Props {
-  initialDeck: EditorDeck;
+  /** Deck khởi đầu. BỎ TRỐNG (mặc định từ 07/08 — Hoà chốt "bỏ hết dự án mẫu") = deck RỖNG
+   * 0 slide: người dùng mới thấy màn "Chưa có slide" của PresentEditor, không thấy deck của ai. */
+  initialDeck?: EditorDeck;
 }
 
 interface Sheet extends SheetTab {
@@ -218,7 +220,14 @@ async function resolveAndSyncPresentDisk(
 let seq = 1;
 const nextId = () => `presheet-${seq++}`;
 
-export default function PresentSheets({ initialDeck }: Props) {
+export default function PresentSheets({ initialDeck: initialDeckProp }: Props) {
+  // 07/08 (M-EMPTY, Hoà chốt "bỏ hết dự án mẫu — app thật bắt đầu trống"): không truyền deck
+  // khởi đầu ⇒ deck RỖNG 0 slide (khác `blankDeck` có sẵn 1 trang trắng — 0 slide để
+  // PresentEditor hiện đúng màn "Chưa có slide" với lối đi tiếp, thay vì một trang trắng câm).
+  // useState giữ deck ổn định qua re-render (blankDeck sinh id mới mỗi lần gọi).
+  const [initialDeck] = useState<EditorDeck>(
+    () => initialDeckProp ?? { ...blankDeck(1), slides: [] },
+  );
   const [sheets, setSheets] = useState<Sheet[]>([
     { id: 'presheet-0', name: 'Hồ sơ 1', deck: initialDeck },
   ]);

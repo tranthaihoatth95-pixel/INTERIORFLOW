@@ -98,15 +98,6 @@ export function deleteCustomTemplate(id: string): void {
   write(read().filter((t) => t.id !== id));
 }
 
-export function renameCustomTemplate(id: string, name: string): void {
-  const list = read();
-  const idx = list.findIndex((t) => t.id === id);
-  if (idx < 0) return;
-  const next = [...list];
-  next[idx] = { ...next[idx], name: name.trim() || next[idx].name, updatedAt: Date.now() };
-  write(next);
-}
-
 /* ---------------------- PHẦN THUẦN (build lại thành EditorSlide) ---------------------- */
 
 function isText(e: SlideElement): e is TextElement {
@@ -170,7 +161,3 @@ export function toEditorTemplate(ct: CustomTemplate): EditorTemplate {
   };
 }
 
-/** Tiện ích: toàn bộ template tự lưu, đã bọc EditorTemplate (mới nhất trước). */
-export function customTemplatesAsEditorTemplates(): EditorTemplate[] {
-  return getCustomTemplates().map(toEditorTemplate);
-}

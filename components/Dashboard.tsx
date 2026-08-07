@@ -364,7 +364,7 @@ export function Dashboard({
                     teamById={teamById}
                   />
                 ) : tab === 'kanban' ? (
-                  <LarkKanbanTab data={larkData} filterCode={larkFilterCode} />
+                  <LarkKanbanTab data={larkData} filterCode={larkFilterCode} onMoved={reloadLark} />
                 ) : (
                   <>
                     {/* ACCESS-CONTROL M1 — quyền nội bộ IF (ProjectMember), tách khỏi roster

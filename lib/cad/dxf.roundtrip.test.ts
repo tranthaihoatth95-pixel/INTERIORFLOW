@@ -16,6 +16,8 @@ import { exportDxf, parseDxf } from './dxf';
 import { emptyDoc, dist } from './model';
 import type { Doc, Entity } from './model';
 import { newId } from './store';
+import { wallSegment } from './commands';
+import { syncPocheAnchors, findBrokenPocheePairs } from './poche';
 
 let pass = 0;
 let fail = 0;
@@ -119,7 +121,11 @@ function testDim() {
 
 /* ── 3) hatch — poché tường CŨ (không pattern) vs HATCH thật (Nấc 4, có pattern) ── */
 function testHatch() {
-  console.log('\n[3] Hatch — poché tường (không pattern) → LWPOLYLINE biên; pattern (Nấc 4) → HATCH entity thật');
+  // G-M1-14 (07/08) — ĐỔI HÀNH VI CÓ CHỦ ĐÍCH: dòng ok đầu tiên TRƯỚC ĐÂY khoá "hatch solid không
+  // pattern → LWPOLYLINE biên", tức khoá đúng cái bệnh (poché không sống sót vòng xuất→nhập, mảng
+  // tô biến thành polyline trùng khít đường bao). Nay hatch SOLID xuất thành HATCH thật; fallback
+  // polyline chỉ còn cho hatch không-solid không-pattern.
+  console.log('\n[3] Hatch — solid/pattern → HATCH entity thật; không-solid không-pattern → LWPOLYLINE biên');
   const doc: Doc = emptyDoc();
   const wall = doc.layers[0].id;
   doc.entities.push({
@@ -131,7 +137,9 @@ function testHatch() {
   });
   const dxf = exportDxf(doc);
   const back = parseDxf(dxf);
-  ok('1 hatch (không pattern) → 1 POLYLINE khép kín 4 đỉnh (hành vi cũ giữ nguyên)', back.entities.length === 1 && back.entities[0].type === 'polyline' && back.entities[0].closed && back.entities[0].points.length === 4);
+  const pocheBack = back.entities[0];
+  ok('hatch solid (poché tường) → HATCH thật, round-trip vẫn là hatch solid 4 đỉnh',
+    back.entities.length === 1 && pocheBack.type === 'hatch' && pocheBack.solid === true && pocheBack.points.length === 4);
 
   const doc2: Doc = emptyDoc();
   const lay2 = doc2.layers[0].id;
@@ -232,6 +240,48 @@ function testLineweightRoundtrip() {
   ok('layer Truc: lineType round-trip = center', axisBack?.lineType === 'center');
 }
 
+/* ── 8) G-M1-13 — hai layer đụng tên SAU khi bỏ dấu/rút gọn không được gộp mất ── */
+function testLayerNameCollision() {
+  console.log('\n[8] G-M1-13 — layer "A B" và "A_B" cùng ra "A_B" sau sanitizeName KHÔNG được gộp');
+  const doc: Doc = emptyDoc();
+  const l1 = { id: newId('l'), name: 'A B', color: '#ffffff', visible: true, locked: false };
+  const l2 = { id: newId('l'), name: 'A_B', color: '#ffffff', visible: true, locked: false };
+  doc.layers.push(l1, l2);
+  doc.entities.push(
+    { id: newId('e'), type: 'line', layer: l1.id, a: { x: 0, y: 0 }, b: { x: 1000, y: 0 } },
+    { id: newId('e'), type: 'line', layer: l2.id, a: { x: 0, y: 0 }, b: { x: 0, y: 1000 } },
+  );
+  const dxf = exportDxf(doc);
+  const back = parseDxf(dxf);
+  const namesBack = back.layers.map((l) => l.name);
+  ok('cả 2 layer đều có mặt trong LAYER table (không gộp mất)', new Set(namesBack).size >= 2);
+  const line1Back = back.entities.find((e) => e.type === 'line' && e.a?.x === 0 && e.b?.x === 1000);
+  const line2Back = back.entities.find((e) => e.type === 'line' && e.a?.x === 0 && e.b?.y === 1000 && e.b?.x === 0);
+  ok('hai LINE vẫn thuộc HAI layer khác nhau', !!line1Back && !!line2Back && line1Back.layer !== line2Back.layer);
+}
+
+/* ── 9) G-M1-14 — cặp poché tường sống sót vòng xuất→nhập (kết hợp G-M1-13 + G-M1-20) ── */
+function testPocheSurvivesRoundtrip() {
+  console.log('\n[9] G-M1-14 — poché tường xuất DXF rồi nạp lại VẪN neo được vào đường bao');
+  const doc: Doc = emptyDoc();
+  const wallLayer = doc.layers.find((l) => l.name === 'Tường')!.id;
+  const [hatch, poly] = wallSegment({ x: 0, y: 0 }, { x: 4000, y: 0 }, 200, wallLayer);
+  doc.entities.push(hatch, poly);
+
+  // vòng xuất → nhập, rồi reconcile đúng như importDoc (G-M1-20) làm lúc nạp
+  const back = syncPocheAnchors(parseDxf(exportDxf(doc)));
+  const hatchBack = back.entities.find(
+    (e): e is Extract<Entity, { type: 'hatch' }> => e.type === 'hatch',
+  );
+  const polyBack = back.entities.find((e) => e.type === 'polyline');
+  ok('cả 2 nửa đều sống sót vòng xuất→nhập', !!hatchBack && !!polyBack);
+  ok('hatch và polyline vẫn CÙNG layer (tên đã bỏ dấu nhất quán)',
+    !!hatchBack && !!polyBack && hatchBack.layer === polyBack.layer);
+  ok('mảng tô neo lại được vào đường bao sau reconcile',
+    !!hatchBack && !!polyBack && (hatchBack as { hostId?: string }).hostId === polyBack.id);
+  ok('không có cặp rách nào', findBrokenPocheePairs(back).length === 0);
+}
+
 testSimpleShapes();
 testDim();
 testHatch();
@@ -239,6 +289,8 @@ testBlock();
 testStructure();
 testLineweightRoundtrip();
 testLayerRouting();
+testLayerNameCollision();
+testPocheSurvivesRoundtrip();
 
 console.log(`\n${pass} ok, ${fail} fail`);
 if (fail > 0) process.exit(1);

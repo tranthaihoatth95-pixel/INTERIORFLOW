@@ -18,6 +18,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useT } from '@/lib/i18n';
 import { usePlayStatus } from '@/lib/present-editor/play-status';
 import type {
   EditorDeck,
@@ -334,7 +335,7 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
         backgroundImage: null,
         elements: [
           makeText({
-            text: 'Bản vẽ CAD · CAD Layout',
+            text: 'Bản vẽ kỹ thuật · Thiết kế 2D',
             role: 'kicker',
             frame: { x: 6, y: 4, w: 70, h: 6, rotation: 0 },
             fontSize: 2.6,
@@ -1054,6 +1055,28 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
     ed.selectSlide(ed.deck.slides.length);
   }, [ed, gu, palette]);
 
+  /* M-EMPTY (07/08) — lối "Tạo từ ảnh đã dựng" của màn trống: thêm 1 trang TRẮNG THẬT (không
+   * template chữ mẫu) rồi mở picker ảnh; ảnh chọn xong rơi vào đúng trang vừa tạo qua
+   * `onAddImageUrl` (đường chèn ảnh CÓ SẴN của Toolbar, không chế đường thứ hai). */
+  const trEmpty = useT();
+  const emptyImageInputRef = useRef<HTMLInputElement | null>(null);
+  const onAddSlideFromImage = useCallback(() => {
+    ed.update((d) => {
+      d.slides.push({ id: newId('sld'), background: '#ffffff', elements: [] });
+    });
+    ed.selectSlide(ed.deck.slides.length);
+    // mở picker SAU khi trang mới đã vào state — ảnh chọn xong rơi đúng trang này
+    window.setTimeout(() => emptyImageInputRef.current?.click(), 0);
+  }, [ed]);
+  const onEmptyImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => onAddImageUrl(String(reader.result));
+    reader.readAsDataURL(f);
+  };
+
   const onDuplicateSlide = useCallback(
     (i: number) => {
       ed.update((d) => {
@@ -1720,8 +1743,10 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
             >
               {/* tab head */}
               <div style={{ display: 'flex', gap: 4, padding: '10px 12px 0' }}>
+                {/* 07/08 (p12): tab đổi "Magic"→"Bố cục" — một thứ một tên (chốt 01/08 §3c);
+                    "Magic" giữ cho phần AI sinh bên trong LayoutShelf, không phải tên cái kệ. */}
                 <TabBtn active={tab === 'layout'} onClick={() => setTab('layout')} icon={<LayoutTemplate size={13} />}>
-                  Magic
+                  Bố cục
                 </TabBtn>
                 <TabBtn active={tab === 'reference'} onClick={() => setTab('reference')} icon={<Images size={13} />}>
                   Reference
@@ -1890,29 +1915,47 @@ export default function PresentEditor({ initialDeck, onDeckChange }: Props) {
               watermark={ed.deck.watermark}
             />
           ) : (
-            // Chưa có trang nào (deck rỗng) — KHÔNG để trống void, mời tạo trang trắng.
-            <div style={{ textAlign: 'center', color: 'var(--t4)', maxWidth: 340 }}>
-              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--t2)', marginBottom: 6 }}>
-                Chưa có trang nào
+            /* M-EMPTY (07/08) — màn TRỐNG của chặng Trình chiếu (từ khi bỏ deck mẫu, người dùng
+             * mới vào đây là gặp màn này đầu tiên). Câu rõ đang trống + 2 lối đi TẠI CHỖ, nút có
+             * CHỮ (G6), song ngữ. "Tạo từ ảnh đã dựng" = tạo trang + mở picker ảnh (ảnh render
+             * từ chặng 3D bấm "Đưa sang Trình chiếu" cũng tự vào đây — present-handoff có sẵn). */
+            <div style={{ textAlign: 'center', color: 'var(--t4)', maxWidth: 380 }}>
+              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--t2)', marginBottom: 6, lineHeight: 1.5 }}>
+                {trEmpty('Chưa có slide nào', 'No slides yet')}
               </p>
-              <p style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 16 }}>
-                Bắt đầu bằng 1 trang trắng, hoặc chọn <b>Magic</b> ở cột trái để dàn nhanh.
+              <p style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
+                {trEmpty(
+                  'Hồ sơ trình chiếu đang trống. Tạo trang từ ảnh đã dựng ở chặng 3D, hoặc bắt đầu bằng một trang trắng — Magic ở cột trái dàn nhanh bố cục.',
+                  'This deck is empty. Create a page from a rendered image, or start with a blank page — use Magic on the left to lay out quickly.',
+                )}
               </p>
-              <button
-                onClick={onAddSlide}
-                style={{
-                  padding: '10px 18px',
-                  borderRadius: 12,
-                  background: 'var(--accent-strong)',
-                  color: '#fff',
-                  fontSize: 14,
-                  fontWeight: 600,
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                + Thêm trang trắng
-              </button>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button
+                  onClick={onAddSlideFromImage}
+                  style={{
+                    padding: '10px 18px', borderRadius: 12, background: 'var(--accent-strong)',
+                    color: '#fff', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', lineHeight: 1.5,
+                  }}
+                >
+                  {trEmpty('Tạo từ ảnh đã dựng', 'Create from a rendered image')}
+                </button>
+                <button
+                  onClick={onAddSlide}
+                  style={{
+                    padding: '10px 18px', borderRadius: 12, background: 'var(--field)',
+                    color: 'var(--t1)', fontSize: 14, fontWeight: 600, border: '1px solid var(--border)', cursor: 'pointer', lineHeight: 1.5,
+                  }}
+                >
+                  {trEmpty('+ Trang trắng', '+ Blank page')}
+                </button>
+              </div>
+              <input
+                ref={emptyImageInputRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={onEmptyImageFile}
+              />
             </div>
           )}
 

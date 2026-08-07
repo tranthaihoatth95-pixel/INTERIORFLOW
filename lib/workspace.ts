@@ -42,11 +42,19 @@ export async function openFlow(id: string) {
     );
 }
 
-export async function createFlow(name: string, graphJson?: string): Promise<string> {
+/**
+ * G-M14-01 (07/08, p12) — GỐC của 40 flow mồ côi: hàm này TRƯỚC ĐÂY không có tham số `projectId`
+ * dù POST /api/flows đã đọc `body.projectId` + kiểm quyền đầy đủ từ lâu (route.ts:88-99) — nghĩa
+ * là server chờ sẵn mà client không có cách nào truyền. 5 điểm gọi (đo ở `docs/M-SCOPE-OUT.md`
+ * VIỆC 1) đều tạo flow trần. Thêm `projectId?` (optional — caller cũ gọi 2 tham số chạy y nguyên),
+ * để các luồng tạo "dự án" thật sự gắn flow vào Project ngay lúc sinh, khỏi cần `assignProject`
+ * vá sau. 4 điểm gọi ở `components/` thuộc phiên khác (p3) — phiếu riêng sẽ truyền tham số này.
+ */
+export async function createFlow(name: string, graphJson?: string, projectId?: string | null): Promise<string> {
   const res = await fetch('/api/flows', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, graphJson }),
+    body: JSON.stringify({ name, graphJson, projectId: projectId ?? undefined }),
   });
   const body = await res.json();
   if (!res.ok) throw new Error(body.error ?? 'Không tạo được flow.');
@@ -140,9 +148,17 @@ export async function bootstrapWorkspace() {
     const { nodes, edges, flowName, user } = useFlowStore.getState();
     const carryOver = !user || localFlowBelongsTo(user.id);
     if (!carryOver) useFlowStore.setState({ nodes: [], edges: [], flowName: 'Untitled flow' });
+    const firstName = carryOver ? flowName || 'Untitled flow' : 'Untitled flow';
+    // G-M14-01 (07/08, p12) — bootstrapWorkspace là 1 trong 5 điểm tạo flow TRẦN sinh ra flow mồ
+    // côi (M-SCOPE-OUT VIỆC 1 mục 2): tài khoản mới đăng nhập lần đầu nhận ngay 1 flow không
+    // thuộc Project nào. Nay tạo Project bọc ngoài TRƯỚC rồi gắn flow đầu tiên vào — tài khoản
+    // mới không còn đẻ mồ côi. Project tạo thất bại (mạng/API) thì vẫn tạo flow trần như cũ —
+    // onboarding không được chết vì thiếu vỏ Project (flow đó gán tay lại được qua FlowsPanel).
+    const project = await createProject(firstName).catch(() => null);
     const id = await createFlow(
-      carryOver ? flowName || 'Untitled flow' : 'Untitled flow',
+      firstName,
       JSON.stringify(carryOver ? { nodes, edges } : { nodes: [], edges: [] }),
+      project?.id ?? null,
     );
     store.setCurrentFlowId(id);
   } catch {

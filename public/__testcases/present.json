@@ -29,8 +29,8 @@
     "label": "Composer Nội dung + ảnh — content JSON + styleref + hero",
     "inputs": {
       "content": "{\"kicker\":\"01 — Vật liệu\",\"title\":\"Đá ấm, gỗ trầm, đồng hun\",\"body\":\"- Travertine\\n- Gỗ óc chó\\n- Đồng hun\"}",
-      "styleref": "/detech/mat-palette.png",
-      "hero": "/detech/lobby-water.png"
+      "styleref": "/demo/mood2.jpg",
+      "hero": "/demo/mood3.jpg"
     },
     "params": { "layout": "Nội dung + ảnh", "fonts": "Modern", "mode": "Sáng", "pageNo": "02" },
     "expect": { "expectNoJob": true, "expectOutputKeys": ["image"] }

@@ -179,5 +179,87 @@ ok('emptyMapping mọi field null', Object.values(emptyMapping()).every((v) => v
   ok('② tiêu đề đúng bằng "Hình" vẫn nhận (khớp nguyên cụm)', m3.image === 1);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// 06/08 VÒNG 3 — CỘT BỊ CƯỚP: từ khoá 3-4 ký tự vẫn khớp-chuỗi-con, và field đứng TRƯỚC trong
+// `MATERIAL_FIELDS` vồ mất cột của field đặc hiệu hơn. 14 ca dưới đây đều ĐÃ CHẠY THẬT trên bản
+// cũ và cho ra đúng kết quả sai ghi trong nhãn. Mỗi ca khoá 2 chiều: cột X KHÔNG được vào ô Y,
+// và cột ĐÚNG phải vào đúng ô của nó.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+console.log('\n[vòng 3] cột bị cướp — 14 ca đo được');
+
+/** Đo cả 2 chiều cho gọn: `nots` = cặp [field, chỉ số cột KHÔNG được nhận], `musts` = cặp đúng. */
+function check(
+  label: string,
+  headers: string[],
+  nots: [keyof ReturnType<typeof emptyMapping>, number][],
+  musts: [keyof ReturnType<typeof emptyMapping>, number | null][],
+) {
+  const m = guessMapping(headers);
+  for (const [f, col] of nots) {
+    ok(`${label} · "${headers[col]}" KHÔNG vào ô ${String(f)}`, m[f] !== col);
+  }
+  for (const [f, col] of musts) {
+    ok(`${label} · ${String(f)} ${col === null ? '= trống' : `← "${headers[col]}"`}`, m[f] === col);
+  }
+}
+
+// ① cột giá bị cột "đánh giá"/"gia công" cướp — ô đánh giá ghi `4,5` ⇒ cả kho vào giá 4 đồng
+check('①', ['Tên hàng', 'Đánh giá', 'Giá bán lẻ'], [['priceVnd', 1]], [['priceVnd', 2], ['name', 0]]);
+check('②', ['Tên hàng', 'Gia công', 'Giá NCC'], [['priceVnd', 1]], [['priceVnd', 2]]);
+// ③ 'sau' trong "sau thuế" cướp ô Sâu
+check('③', ['Tên', 'Đơn giá sau thuế', 'Chiều sâu (mm)'], [['d', 1]], [['priceVnd', 1], ['d', 2]]);
+// ④⑤ 'cao' trong "báo cáo"/"cao su" cướp ô Cao
+check('④', ['Tên', 'Báo cáo tồn kho', 'Chiều cao (mm)'], [['hUp', 1]], [['hUp', 2]]);
+check('⑤', ['Tên', 'Cao su', 'Chiều cao (mm)'], [['hUp', 1]], [['hUp', 2]]);
+// ⑥ 'dai' trong "đại lý" cướp ô Sâu
+check('⑥', ['Tên', 'Đại lý phân phối', 'Chiều sâu (mm)'], [['d', 1]], [['d', 2]]);
+// ⑦ 'rong' trong "trọng lượng" cướp ô Rộng
+check('⑦', ['Tên', 'Trọng lượng', 'Chiều rộng (mm)'], [['w', 1]], [['w', 2]]);
+// ⑧ THÀNH TIỀN vào ô đơn giá, còn "Unit Price" (đơn giá tiếng Anh) lại vào ô Đơn vị
+check('⑧', ['Extended Price', 'Product Name', 'Unit Price'], [['unit', 2], ['priceVnd', 0]], [['priceVnd', 2], ['name', 1], ['unit', null]]);
+// ⑨ "Item Code" là MÃ, không phải TÊN
+check('⑨', ['Item Code', 'Item Name', 'Price'], [['name', 0]], [['sku', 0], ['name', 1], ['priceVnd', 2]]);
+// ⑩⑪ 'ma' trong "mã màu"/"bản mã thép" cướp ô SKU
+{
+  const m = guessMapping(['Tên', 'Mã màu', 'Màu sắc']);
+  ok('⑩ · "Mã màu" KHÔNG vào ô sku', m.sku !== 1);
+  ok('⑩ · màu về đúng ô Màu', m.colorHex === 1 || m.colorHex === 2);
+}
+check('⑪', ['Tên', 'Bản mã thép', 'Mã SP'], [['sku', 1]], [['sku', 2]]);
+// ⑫ 4 tiêu đề chứa 'hàng' nhưng không nói về HÃNG
+check('⑫a', ['Tên', 'Số lượng hàng', 'Đơn giá'], [['brand', 1]], [['qty', 1], ['priceVnd', 2]]);
+check('⑫b', ['Tên', 'Nhóm hàng', 'Đơn giá'], [['brand', 1]], [['brand', null], ['priceVnd', 2]]);
+check('⑫c', ['Tên', 'Hàng tồn', 'Đơn giá'], [['brand', 1]], [['brand', null]]);
+check('⑫d', ['Tên', 'Số đơn hàng', 'Đơn giá'], [['brand', 1]], [['brand', null]]);
+// ⑬ "Khu vực" (đứng trước) cướp ô Phòng, cột "Phòng" thật bị bỏ rơi
+check('⑬', ['Tên món', 'Khu vực', 'Phòng', 'Số lượng'], [['room', 1]], [['room', 2], ['qty', 3]]);
+
+// ---- cột bị chặn phải RƠI vào danh sách "app không nhận" để người dùng ghép tay, không biến mất ----
+{
+  const headers = ['Tên', 'Nhóm hàng', 'Đơn giá'];
+  const dropped = unmappedColumns(headers, guessMapping(headers));
+  ok('cột bị cụm chặn loại ra vẫn được LIỆT KÊ cho người dùng ghép tay',
+    dropped.length === 1 && dropped[0].header === 'Nhóm hàng');
+}
+
+// ---- không vá quá tay: tiêu đề THẬT vẫn phải nhận đúng ----
+{
+  const m = guessMapping(['Tên', 'Hãng sản xuất', 'Đánh giá sao', 'Đơn giá', 'Cao (H mm)']);
+  ok('không quá tay · "Hãng sản xuất" vẫn → brand', m.brand === 1);
+  ok('không quá tay · "Đơn giá" vẫn → priceVnd', m.priceVnd === 3);
+  ok('không quá tay · "Cao (H mm)" vẫn → hUp', m.hUp === 4);
+  const m2 = guessMapping(['Thương hiệu', 'Trọng lượng (kg)', 'Rộng (mm)']);
+  ok('không quá tay · "Thương hiệu" → brand', m2.brand === 0);
+  ok('không quá tay · "Rộng (mm)" → w, "Trọng lượng (kg)" bỏ rơi', m2.w === 2);
+}
+
+// ---- kết quả TẤT ĐỊNH: cùng đầu vào → cùng mapping (không phụ thuộc thứ tự duyệt) ----
+{
+  const headers = ['Tên món', 'Khu vực', 'Phòng', 'Số lượng', 'Đơn giá', 'Ảnh'];
+  const a = JSON.stringify(guessMapping(headers));
+  const b = JSON.stringify(guessMapping(headers));
+  ok('gọi 2 lần ra y hệt', a === b);
+}
+
 console.log(`\n${pass} pass, ${fail} fail`);
 if (fail > 0) process.exit(1);

@@ -144,21 +144,46 @@ export interface InteriorNodeData extends Record<string, unknown> {
   note?: string;
 }
 
+/**
+ * Màu cổng nối theo kiểu dữ liệu. Dùng CHUNG cho chấm cổng (`InteriorNode`/`MacroNodeFace`) và
+ * MÀU DÂY (`edgeStyleFor`, `lib/store.ts`) — một bảng, không hai mặt tiền lệch màu.
+ *
+ * 06/08 — port `docs/mocks/Bảng nút.dc.html` ①: 3 kiểu có mặt trong mock đổi sang BIẾN token
+ * `--p-img`/`--p-mask`/`--p-num` (`app/globals.css`, khai bí danh của --accent/--warning/--t3)
+ * thay hex cứng ⇒ đổi theme Sáng/Tối là màu cổng đổi theo, đúng L4 "cấm hex tự chế".
+ * Giá trị resolve ở theme Tối = đúng hex mock (#6a57f5 · #d9a34a · #9e9ea8).
+ *
+ * ⚠️ Còn hex: `text`/`video` KHÔNG có trong mock (mock chỉ vẽ 4 loại cổng) và `table` cố ý ghim
+ * đúng giá trị `--accent-warm` (có test khoá, `lib/ffe/port.test.ts`) — đổi 3 dòng đó là quyết
+ * định thiết kế mới, ngoài phạm vi việc này.
+ * ⚠️ Biến thứ 4 của mock — `--p-mat` ("Vật liệu") — CHƯA có nơi tiêu thụ: `DataType` hiện không
+ * có kiểu 'material' (xem `DataType` đầu file). Biến vẫn khai trong globals.css theo đúng mock,
+ * dùng được ngay khi thêm kiểu đó; không bịa một DataType mới chỉ để lấp chỗ.
+ */
 export const DATA_TYPE_COLORS: Record<DataType, string> = {
-  image: '#8b7cf7',
-  text: '#38bdf8',
-  mask: '#f59e0b',
-  number: '#34d399',
-  video: '#fb7185', // hồng san hô — phân biệt luồng video với ảnh
+  image: 'var(--p-img)',
+  // G-NB-03: trước hex trần '#38bdf8' — nền Kem giữ nguyên giá trị nền Mực (chấm mờ, không
+  // đổi theo theme). Nay dùng token `--p-text` (app/globals.css), theo đúng lối bí danh của
+  // --p-img/--p-mask/--p-num ở trên: Tối giữ đúng hex cũ, Sáng có bản đủ tương phản riêng.
+  text: 'var(--p-text)',
+  mask: 'var(--p-mask)',
+  number: 'var(--p-num)',
+  // G-NB-03: trước hex trần '#fb7185' (hồng san hô — phân biệt luồng video với ảnh), cùng lỗi
+  // không đổi theo theme. Nay dùng token `--p-video`.
+  video: 'var(--p-video)',
   /**
    * Bảng món (06/08). KHÔNG chế hex mới (`LUAT-GIAO-DIEN-BAT-BUOC.md` L4 + `SPEC-DESIGN-SYSTEM-IF`):
    * lấy đúng giá trị token `--accent-warm` đã có trong `app/globals.css:26` — token nâu ấm DUY NHẤT
    * của hệ, vốn dành cho chỗ "cần một sắc ấm khác accent tím".
    * Vì sao chọn nó: 5 màu port đang dùng hết 5 vùng sắc rõ rệt (tím · lam · hổ phách · lục · san
    * hô); nâu ấm là sắc còn lại phân biệt được BẰNG MẮT ở chấm 8px, và "bảng/hồ sơ = giấy ấm" khớp
-   * ngôn ngữ tài liệu. ⚠️ Cạnh nối kiểu 'table' hiện vẽ nét LIỀN 1.5px giống 'mask' vì
-   * `edgeStyleFor()` (`lib/store.ts`) ngoài vùng file đợt này — xem báo cáo, cần thêm 'table' vào
-   * nhánh `isData` để thành nét đứt như text/number.
+   * ngôn ngữ tài liệu.
+   * (07/08, p2 — đính chính ghi chú cũ ở đây: `edgeStyleFor()` trong `lib/store.ts` NAY ĐÃ có
+   * 'table' trong nhánh `isData` ⇒ cạnh bảng vẽ NÉT ĐỨT đúng nhóm text/number rồi, việc "cần thêm"
+   * mà bản 06/08 ghi đã xong — đừng sửa lại lần nữa.)
+   * ⚠️ Còn đúng một điều: '#c79a63' là hex trần lấy theo giá trị `--accent-warm` bản Tối — nền Kem
+   * không có bản riêng (cùng lớp bệnh G-NB-03 đã sửa cho text/video). Đổi sang token cần khai
+   * `--p-table` 2 theme ở globals.css trước, chưa làm trong đợt này.
    */
   table: '#c79a63',
 };

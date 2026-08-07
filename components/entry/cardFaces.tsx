@@ -22,18 +22,18 @@ function Card({ children, bg }: { children: React.ReactNode; bg: string }) {
 }
 
 /**
- * CoverPhoto — mặt thẻ ẢNH RENDER mẫu, phủ đầy khung + nhãn chặng nhỏ.
- * Ảnh nằm ở public/covers/ → Next serve tại "/covers/render_XX.jpeg".
+ * CoverArt — mặt thẻ GRADIENT vật liệu trừu tượng + nhãn chặng nhỏ.
+ * M-EMPTY (07/08): thay CoverPhoto cũ (ảnh public/covers/render_* — render dự án KHÁCH,
+ * AUDIT-BRAND-PII) theo đúng tiền lệ trung tính của intro `TitleSequence.tsx` ("bỏ ảnh render
+ * dự án khách thật, thay bằng GRADIENT vật liệu trừu tượng — đá · đồng · gỗ, không thương hiệu").
  */
-function CoverPhoto({ src, label }: { src: string; label: string }) {
+function CoverArt({ art, label }: { art: string; label: string }) {
   return (
-    <div style={{ width: W, height: H }} className="relative bg-[#1a1712]">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt="" className="h-full w-full object-cover" draggable={false} />
+    <div style={{ width: W, height: H, background: art }} className="relative">
       {/* scrim đáy cho nhãn tách nền */}
       <div
         className="absolute inset-x-0 bottom-0 h-1/2"
-        style={{ background: 'linear-gradient(0deg, rgba(15,12,9,0.85), transparent)' }}
+        style={{ background: 'linear-gradient(0deg, rgba(15,12,9,0.55), transparent)' }}
       />
       <div
         className="absolute bottom-2.5 left-3 text-[8px] uppercase"
@@ -115,8 +115,8 @@ export const presentationFaces = [
       ))}
     </div>
   </Card>,
-  // mặt trước: ẢNH THẬT — phối cảnh hero để trình khách
-  <CoverPhoto key="p-cover" src="/covers/render_00.jpeg" label="Present · Deck" />,
+  // mặt trước: gradient đồng-hun ấm (trừu tượng, trung tính)
+  <CoverArt key="p-cover" art="linear-gradient(160deg, #c79a63 0%, #7d5a38 52%, #2e2318 100%)" label="Present · Deck" />,
 ];
 
 /* ---------- Concept: moodboard · vật liệu · pre-concept ---------- */
@@ -166,8 +166,8 @@ export const conceptFaces = [
       </div>
     </div>
   </Card>,
-  // mặt trước: ẢNH THẬT — vật liệu đá travertine ấm cho moodboard concept
-  <CoverPhoto key="c-cover" src="/covers/render_04.jpeg" label="Concept · Material" />,
+  // mặt trước: gradient đá travertine ấm (trừu tượng, trung tính)
+  <CoverArt key="c-cover" art="linear-gradient(160deg, #d8cbb8 0%, #b7a687 55%, #8f7f63 100%)" label="Concept · Material" />,
 ];
 
 /* ---------- 3D Render: phối cảnh nội thất ---------- */
@@ -214,6 +214,6 @@ export const renderFaces = [
   <Card key="r3" bg="#000">
     <Room h1={20} h2={28} />
   </Card>,
-  // mặt trước: ẢNH THẬT — phối cảnh render khối trắng (đang dựng hình)
-  <CoverPhoto key="r-cover" src="/covers/render_10.jpeg" label="Render · 3D" />,
+  // mặt trước: gradient xám khối trắng lúc hoàng hôn (trừu tượng, trung tính)
+  <CoverArt key="r-cover" art="linear-gradient(200deg, #d9d4cb 0%, #9a938a 48%, #4a443c 100%)" label="Render · 3D" />,
 ];

@@ -113,12 +113,18 @@ export function MacroCreateDialog({ selectedIds, onClose }: { selectedIds: strin
         initial="hidden"
         animate="visible"
         exit="exit"
-        className="fixed inset-0 z-50 grid place-items-center bg-black/45 p-6"
+        /* `--scrim` thay `bg-black/45` — mock màn 02 phủ nền bằng `var(--scrim)`; token đó là
+           bí danh của `--mat-overlay` nên nền Kem tự có bản riêng, không kẹt màu đen nền Mực. */
+        className="fixed inset-0 z-50 grid place-items-center bg-[var(--scrim)] p-6"
       >
         <motion.div
           ref={wrapRef}
           variants={glassPop}
-          className="mat-card flex max-h-[85vh] w-full max-w-[760px] flex-col overflow-hidden rounded-[var(--radius-lg,20px)] border border-[var(--mat-hairline)] shadow-[var(--shadow-pop)]"
+          /* Bo 28px (`--radius-xl`) đúng mock màn 02 — trước là 20px.
+             Nền GIỮ `mat-card` (không đổi sang `mat-panel` như mock): blur khớp (cả hai 40px)
+             nhưng mat-card đục hơn (.82 vs .68), và hộp này dày chữ ⇒ luật G2 "lớp nổi nhiều
+             chữ phải nền đặc" thắng con số của mock. */
+          className="mat-card flex max-h-[85vh] w-full max-w-[760px] flex-col overflow-hidden rounded-[var(--radius-xl)] border border-[var(--mat-hairline)] shadow-[var(--shadow-pop)]"
         >
           {/* Header */}
           <div className="flex h-[52px] shrink-0 items-center gap-2.5 border-b border-[var(--mat-hairline)] px-5">
@@ -228,15 +234,25 @@ export function MacroCreateDialog({ selectedIds, onClose }: { selectedIds: strin
                         <span className="truncate text-[12px] leading-[1.5] text-[var(--t2)]">{row.nodeTitle}</span>
                       </span>
                       <span className="truncate text-[12px] leading-[1.5] text-[var(--t3)]">{row.originalLabel}</span>
-                      <input
-                        value={row.label}
-                        disabled={!row.exposed}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          setRows((prev) => prev.map((r, j) => (j === i ? { ...r, label: v } : r)));
-                        }}
-                        className="h-7 w-full rounded-[10px] border-0 bg-[var(--field)] px-2.5 text-[12px] leading-[1.5] text-[var(--t1)] outline-none disabled:text-[var(--t4)]"
-                      />
+                      {/* Hàng ĐÃ TẮT: mock (`docs/mocks/Nút tổng.dc.html:227,243,264`) thay ô nhập bằng
+                          chữ tĩnh "Giữ bên trong" — nói thẳng tham số đó ở lại bên trong nút tổng.
+                          Trước đây ô nhập disabled vẫn hiện TÊN GỐC mờ đi: người dùng thấy một ô
+                          trông-như-sửa-được mà gõ không ăn, và không có câu nào giải thích vì sao.
+                          Giữ NGUYÊN hình hộp (h28 · bo 10 · nền --field) để hàng không nhảy khi bật/tắt. */}
+                      {row.exposed ? (
+                        <input
+                          value={row.label}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setRows((prev) => prev.map((r, j) => (j === i ? { ...r, label: v } : r)));
+                          }}
+                          className="h-7 w-full rounded-[10px] border-0 bg-[var(--field)] px-2.5 text-[12px] leading-[1.5] text-[var(--t1)] outline-none"
+                        />
+                      ) : (
+                        <span className="flex h-7 w-full items-center rounded-[10px] bg-[var(--field)] px-2.5 text-[12px] leading-[1.5] text-[var(--t4)]">
+                          {tr('Giữ bên trong', 'Kept inside')}
+                        </span>
+                      )}
                       <span className="flex justify-end">
                         <button
                           type="button"
@@ -250,7 +266,8 @@ export function MacroCreateDialog({ selectedIds, onClose }: { selectedIds: strin
                             row.exposed ? 'justify-end bg-[var(--accent)]' : 'justify-start border border-[var(--border)] bg-[var(--field)]',
                           )}
                         >
-                          <span className={cn('h-[18px] w-[18px] rounded-full', row.exposed ? 'bg-white' : 'bg-[var(--t4)]')} />
+                          {/* núm công tắc: nền accent → dùng token chữ-trên-accent, không #fff cứng */}
+                          <span className={cn('h-[18px] w-[18px] rounded-full', row.exposed ? 'bg-[var(--on-accent)]' : 'bg-[var(--t4)]')} />
                         </button>
                       </span>
                     </div>
@@ -275,7 +292,7 @@ export function MacroCreateDialog({ selectedIds, onClose }: { selectedIds: strin
             <button
               type="button"
               onClick={create}
-              className="h-8 rounded-[10px] bg-[var(--accent)] px-4.5 text-[12px] font-semibold leading-[1.5] text-white transition-colors hover:bg-[var(--accent-strong)]"
+              className="h-8 rounded-[10px] bg-[var(--accent)] px-4.5 text-[12px] font-semibold leading-[1.5] text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-strong)]"
             >
               {tr('Tạo nút tổng', 'Create macro node')}
             </button>

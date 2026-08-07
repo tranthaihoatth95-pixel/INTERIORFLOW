@@ -319,7 +319,8 @@ const THEME_KEY = 'interiorflow.theme';
  */
 export function edgeStyleFor(dataType: string | undefined) {
   const dt = (dataType ?? 'image') as keyof typeof DATA_TYPE_COLORS;
-  const color = DATA_TYPE_COLORS[dt] ?? '#8b7cf7';
+  // Fallback = cùng màu cổng 'image' (biến token, không hex cứng — xem DATA_TYPE_COLORS).
+  const color = DATA_TYPE_COLORS[dt] ?? 'var(--p-img)';
   const isVisual = dt === 'image' || dt === 'video';
   // 'table' (bảng món FF&E, thêm 06/08) chở DỮ LIỆU chứ không chở hình ⇒ nét đứt cùng nhóm
   // text/number. Bỏ sót ở đây thì cạnh bảng vẽ nét liền như mask, người dùng đọc nhầm là luồng ảnh.
@@ -462,26 +463,26 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     set({ workspace });
     try {
       localStorage.setItem('interiorflow.workspace', workspace);
-    } catch {}
+    } catch {/* localStorage bị chặn (chế độ riêng tư/iframe) — chỉ mất tiện nghi ghi nhớ, không chặn việc */}
   },
   setViewMode: (viewMode) => set({ viewMode }),
   setAiTier: (aiTier) => {
     set({ aiTier });
     try {
       localStorage.setItem('interiorflow.aiTier', String(aiTier));
-    } catch {}
+    } catch {/* localStorage bị chặn (chế độ riêng tư/iframe) — chỉ mất tiện nghi ghi nhớ, không chặn việc */}
   },
   setOneAiEngine: (oneAiEngine) => {
     set({ oneAiEngine });
     try {
       localStorage.setItem('interiorflow.oneAiEngine', oneAiEngine);
-    } catch {}
+    } catch {/* localStorage bị chặn (chế độ riêng tư/iframe) — chỉ mất tiện nghi ghi nhớ, không chặn việc */}
   },
   setOneAiRuntime: (oneAiRuntime) => {
     set({ oneAiRuntime });
     try {
       localStorage.setItem('interiorflow.oneAiRuntime', oneAiRuntime);
-    } catch {}
+    } catch {/* localStorage bị chặn (chế độ riêng tư/iframe) — chỉ mất tiện nghi ghi nhớ, không chặn việc */}
   },
 
   loadGraph: (graphJson, name, flowId, shareToken, projectId) => {
@@ -543,7 +544,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     set({ themePref });
     try {
       localStorage.setItem(THEME_KEY, themePref);
-    } catch {}
+    } catch {/* localStorage bị chặn (chế độ riêng tư/iframe) — chỉ mất tiện nghi ghi nhớ, không chặn việc */}
     get().applyTheme();
   },
   applyTheme: () => {
@@ -558,7 +559,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     set({ lang });
     try {
       localStorage.setItem(LANG_KEY, lang);
-    } catch {}
+    } catch {/* localStorage bị chặn (chế độ riêng tư/iframe) — chỉ mất tiện nghi ghi nhớ, không chặn việc */}
     if (typeof document !== 'undefined') document.documentElement.lang = lang;
   },
   toggleLang: () => get().setLang(get().lang === 'vi' ? 'en' : 'vi'),
@@ -568,30 +569,30 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     try {
       const pref = localStorage.getItem(THEME_KEY) as ThemePref | null;
       if (pref === 'auto' || pref === 'light' || pref === 'dark') set({ themePref: pref });
-    } catch {}
+    } catch {/* localStorage bị chặn (chế độ riêng tư/iframe) — chỉ mất tiện nghi ghi nhớ, không chặn việc */}
     try {
       const l = localStorage.getItem(LANG_KEY);
       if (isLang(l)) {
         set({ lang: l });
         if (typeof document !== 'undefined') document.documentElement.lang = l;
       }
-    } catch {}
+    } catch {/* localStorage bị chặn (chế độ riêng tư/iframe) — chỉ mất tiện nghi ghi nhớ, không chặn việc */}
     try {
       const t = Number(localStorage.getItem('interiorflow.aiTier'));
       if (isAiTier(t)) set({ aiTier: t });
-    } catch {}
+    } catch {/* localStorage bị chặn (chế độ riêng tư/iframe) — chỉ mất tiện nghi ghi nhớ, không chặn việc */}
     try {
       const e = localStorage.getItem('interiorflow.oneAiEngine');
       if (isOneAiEngine(e)) set({ oneAiEngine: e });
       const r = localStorage.getItem('interiorflow.oneAiRuntime');
       if (isOneAiRuntime(r)) set({ oneAiRuntime: r });
-    } catch {}
+    } catch {/* localStorage bị chặn (chế độ riêng tư/iframe) — chỉ mất tiện nghi ghi nhớ, không chặn việc */}
     try {
       // chặng làm việc — migrate tên cũ 'presentation' → 'present'
       const raw = localStorage.getItem('interiorflow.workspace');
       const ws = raw === 'presentation' ? 'present' : raw;
       if (isPhase(ws)) set({ workspace: ws });
-    } catch {}
+    } catch {/* localStorage bị chặn (chế độ riêng tư/iframe) — chỉ mất tiện nghi ghi nhớ, không chặn việc */}
     get().applyTheme();
     try {
       const raw = localStorage.getItem(SAVE_KEY);

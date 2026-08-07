@@ -90,9 +90,23 @@ export type BoqErrorReason =
   | 'specId-both-kinds'
   /* ─── 4 lý do dưới đây thêm ở vòng KIỂM PHẢN BIỆN 06/08: cùng họ "tiền sai mà KHÔNG có lỗi"
      với G-M3-09 — engine cho ra con số TRÔNG NHƯ ĐÚNG. Nguyên tắc: thà báo lỗi còn hơn ra số sai. */
-  /** Vùng tô có `specId` nhưng hình học KHÔNG có diện tích (dưới 3 đỉnh, hoặc các đỉnh thẳng hàng
-   * ⇒ `polygonArea` = 0). Trước đây ra 1 dòng `0.00 m²`, thành tiền 0đ, `errors: []` — bảng trông
-   * đủ, tiền thiếu. */
+  /**
+   * ĐỐI TƯỢNG TRÊN BẢN VẼ tự nó không dùng được để tính khối lượng ⇒ bị loại khỏi phép tính. Hai
+   * ca, cùng một việc phải làm (soi đúng những đối tượng đó trên bản vẽ rồi sửa/xoá):
+   *  (a) vùng tô có `specId` nhưng hình học KHÔNG có diện tích (dưới 3 đỉnh, hoặc các đỉnh thẳng
+   *      hàng ⇒ `polygonArea` = 0). Trước đây ra 1 dòng `0.00 m²`, thành tiền 0đ, `errors: []` —
+   *      bảng trông đủ, tiền thiếu.
+   *  (b) (06/08 vòng 3) hai đối tượng mang CÙNG một `id` — `Doc.entities` là mảng, không có ràng
+   *      buộc id duy nhất, nên gộp sheet/nhập file/undo lỗi đều có thể để lọt bản trùng. Trước đây
+   *      `computeBoq` cộng cả hai: đo được 2 vùng tô cùng id ⇒ **18 m²/1.800.000đ thay vì
+   *      9 m²/900.000đ**, 2 block cùng id ⇒ **qty 2 thay vì 1**, `errors: []`. Nay giữ bản gặp
+   *      ĐẦU TIÊN, bỏ bản sau, và nói rõ đã bỏ mấy bản.
+   * ⚠️ Vì sao (b) KHÔNG có lý do riêng: mọi `BoqErrorReason` mới đều phải khai thêm một nhánh
+   * `case` trong `actionLabel()` (`components/present-editor/boq/BoqErrors.tsx` — switch KHÔNG có
+   * `default`, thiếu nhánh là vỡ `tsc` toàn repo), mà `components/**` nằm ngoài vùng file của đợt
+   * sửa này. Việc còn thiếu, làm khi đụng được vùng đó: tách `'duplicate-entity-id'` thành lý do
+   * riêng + thêm 1 `case` ở `actionLabel` (nhãn nút: "Xem N đối tượng trùng id").
+   */
   | 'invalid-geometry'
   /** MÓN RỜI trỏ vào spec khai đơn vị ĐO (m2/m/m3/kg…). "1 cái × đơn giá mỗi m²" là con số bịa.
    * KHÔNG tạo dòng — bắt người dùng sửa đơn vị trong kho hoặc gỡ mã khỏi món. */
@@ -100,9 +114,18 @@ export type BoqErrorReason =
   /** Đơn vị IF chưa biết ('thùng', 'kiện'…). VẪN tạo dòng và GIỮ NGUYÊN chữ người dùng viết (không
    * nuốt thành 'cai'), nhưng cảnh báo để họ đối chiếu đơn giá có đúng theo đơn vị đó không. */
   | 'unknown-unit'
-  /** `priceVnd`/`wastagePercent` ÂM hoặc không phải số hữu hạn (NaN/undefined lọt qua JSON, hoặc
-   * người dùng gõ `-100000` ở cửa nhập Excel). Trước đây ra thành tiền ÂM / `NaN`, tổng `NaN`,
-   * `errors: []`. */
+  /**
+   * TIỀN không tính được vì SỐ hỏng. Hai ca:
+   *  (a) `priceVnd`/`wastagePercent` ÂM hoặc không phải số hữu hạn (NaN/undefined lọt qua JSON,
+   *      hoặc người dùng gõ `-100000` ở cửa nhập Excel). Trước đây ra thành tiền ÂM / `NaN`,
+   *      tổng `NaN`, `errors: []`.
+   *  (b) (06/08 vòng 3) KẾT QUẢ phép nhân TRÀN SỐ (`Infinity`) dù mọi ĐẦU VÀO đều hữu hạn — vd
+   *      `wastagePercent = 1e308`: `priceProblem` cho qua vì nó chỉ soi đầu vào, `thanhTien` ra
+   *      `Infinity` với `errors: []`, rồi `buildXlsxBuffer` NÉM LỖI bằng tiếng lập trình viên
+   *      đúng lúc người dùng bấm "Xuất .xlsx". Nay chặn tại nguồn, câu lỗi nêu rõ 3 số đã nhân.
+   * Cùng một việc phải làm (sửa giá/hao hụt trong kho vật liệu) nên dùng chung lý do — nhãn nút
+   * "Sửa trong kho vật liệu" của `BoqErrors.tsx` đúng cho cả hai.
+   */
   | 'invalid-price';
 
 /** 1 lỗi/vùng KHÔNG tính được — thay vì tính bừa hoặc âm thầm bỏ qua. */

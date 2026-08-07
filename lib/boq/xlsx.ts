@@ -31,13 +31,43 @@ import type { BoqResult } from './model';
 
 const XML_HEADER = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
 
+/**
+ * Ký tự ĐIỀU KHIỂN mà XML 1.0 KHÔNG cho phép ở bất cứ đâu, kể cả dạng thực thể `&#1;`. Giữ lại
+ * đúng 3 ký tự hợp lệ: tab `\x09`, xuống dòng `\x0A`, về đầu dòng `\x0D`.
+ *
+ * 🔴 VÁ 06/08 vòng 3 — đo được: tên món chứa `\x01` (ký tự này lọt vào rất tự nhiên khi người ta
+ * copy từ phần mềm kế toán/PDF/ERP) ⇒ zip vẫn dựng ra, nhưng `xml.dom.minidom` báo
+ * `not well-formed (invalid token)` ⇒ **Excel báo "file hỏng"** và không ai lần ra nguyên nhân là
+ * một ký tự vô hình trong một ô. Lọc BỎ hẳn (không thay bằng dấu gì): giữ nguyên chữ người dùng
+ * đọc được, chỉ vứt thứ vốn không hiện lên màn hình.
+ * (`&`, `<`, `>`, `"`, `'`, emoji, xuống dòng, tab đã đúng từ trước — không đụng.)
+ */
+const XML_ILLEGAL_CONTROL_CHARS = /[\x00-\x08\x0B\x0C\x0E-\x1F]/g;
+
 function xmlEscape(s: string): string {
   return s
+    .replace(XML_ILLEGAL_CONTROL_CHARS, '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
+}
+
+/** Excel CẤM 7 ký tự trong tên sheet (`/ \ ? * [ ] :`) và giới hạn 31 ký tự; tên rỗng cũng không
+ * hợp lệ. Hôm nay caller chỉ truyền 'BOQ'/'FF&E' nên chưa nổ — nhưng ai đặt tên sheet theo TÊN DỰ
+ * ÁN ("Dự án A/B [2026]: bảng khối lượng…") là file mở ra hỏng ngay, mà lỗi lại hiện ở Excel chứ
+ * không ở IF. Làm sạch tại cửa: bỏ ký tự cấm, gộp khoảng trắng, cắt 31 ký tự, rỗng thì rơi về
+ * 'Sheet1'. Cố ý KHÔNG ném lỗi — tên tab là thứ trang trí, không đáng chặn cả file xuất. */
+export function sanitizeSheetName(name: string): string {
+  const cleaned = name
+    .replace(XML_ILLEGAL_CONTROL_CHARS, '')
+    .replace(/[/\\?*[\]:]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 31)
+    .trim();
+  return cleaned || 'Sheet1';
 }
 
 /** Số cột (1-based) → chữ cột Excel (1→A, 27→AA…) — đủ dùng, bảng BOQ chỉ 8 cột nên không cần
@@ -280,7 +310,7 @@ export async function buildXlsxBuffer(spec: XlsxSheetSpec): Promise<Uint8Array> 
   const zip = new JSZip();
   zip.file('[Content_Types].xml', contentTypesXml(images));
   zip.file('_rels/.rels', ROOT_RELS_XML);
-  zip.file('xl/workbook.xml', workbookXml(spec.name));
+  zip.file('xl/workbook.xml', workbookXml(sanitizeSheetName(spec.name)));
   zip.file('xl/_rels/workbook.xml.rels', WORKBOOK_RELS_XML);
   zip.file('xl/styles.xml', STYLES_XML);
   zip.file('xl/worksheets/sheet1.xml', buildSheetXml(spec, images.length > 0));

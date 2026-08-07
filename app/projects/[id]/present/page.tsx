@@ -10,11 +10,16 @@
 
 import { useParams } from 'next/navigation';
 import PresentStageScreen from '@/components/present-editor/PresentStageScreen';
-import { useProjectScopeSync } from '@/lib/project-scope';
+import { useProjectScopeSync, useScopeMissingInfo } from '@/lib/project-scope';
+import { ProjectScopeEmptyState } from '@/components/studio/ProjectScopeEmptyState';
 
 export default function ProjectPresentPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? '';
-  useProjectScopeSync(id, 'present');
+  const status = useProjectScopeSync(id, 'present');
+  const missingInfo = useScopeMissingInfo(id, status);
+  if (status === 'missing' && missingInfo) {
+    return <ProjectScopeEmptyState routeId={id} stage="present" info={missingInfo} />;
+  }
   return <PresentStageScreen />;
 }

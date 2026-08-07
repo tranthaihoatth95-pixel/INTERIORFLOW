@@ -269,25 +269,39 @@ export default function PhotoEditor({ initialDoc, onWriteBack }: Props) {
   }, [ed]);
 
   /* --------------------------- mask lớp: tiện ích --------------------------- */
+  // 07/08 G-M20-08 — nhánh này trước KHÔNG try/catch + KHÔNG trạng thái chờ, lệch chuẩn so với
+  // `onExport`/`onWriteBackClick` liền kề trong CÙNG file (busy + try/catch/finally + alert lỗi).
+  // `loadImage`/`getContext('2d')!`/canvas đều có thể ném lỗi (ảnh hỏng, canvas null trên trình
+  // duyệt lạ) — lỗi rơi thẳng vào unhandled promise rejection, người dùng không biết vì sao mask
+  // không đổi. Nay bọc đúng khuôn: `busy` khoá nút trong lúc chạy, lỗi báo rõ thay vì im lặng.
   const onInvertMask = useCallback(() => {
     // đảo mask của lớp chọn — làm ở canvas rồi commit
     const l = ed.selected;
     if (!l || !l.mask) return;
+    setBusy('mask');
     (async () => {
-      const img = await loadImage(l.mask!);
-      const c = document.createElement('canvas');
-      c.width = ed.doc.width;
-      c.height = ed.doc.height;
-      const ctx = c.getContext('2d')!;
-      ctx.drawImage(img, 0, 0, c.width, c.height);
-      const data = ctx.getImageData(0, 0, c.width, c.height);
-      for (let i = 0; i < data.data.length; i += 4) {
-        data.data[i] = 255 - data.data[i];
-        data.data[i + 1] = 255 - data.data[i + 1];
-        data.data[i + 2] = 255 - data.data[i + 2];
+      try {
+        const img = await loadImage(l.mask!);
+        const c = document.createElement('canvas');
+        c.width = ed.doc.width;
+        c.height = ed.doc.height;
+        const ctx = c.getContext('2d');
+        if (!ctx) throw new Error('Không lấy được context 2D của canvas.');
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        const data = ctx.getImageData(0, 0, c.width, c.height);
+        for (let i = 0; i < data.data.length; i += 4) {
+          data.data[i] = 255 - data.data[i];
+          data.data[i + 1] = 255 - data.data[i + 1];
+          data.data[i + 2] = 255 - data.data[i + 2];
+        }
+        ctx.putImageData(data, 0, 0);
+        onCommitLayerMask(l.id, c.toDataURL('image/png'));
+      } catch (e) {
+        console.error('[PhotoEditor] đảo mask lỗi', e);
+        alert('Không đảo được mask (ảnh mask có thể hỏng). Thử lại hoặc xoá mask rồi vẽ lại.');
+      } finally {
+        setBusy(null);
       }
-      ctx.putImageData(data, 0, 0);
-      onCommitLayerMask(l.id, c.toDataURL('image/png'));
     })();
   }, [ed.selected, ed.doc.width, ed.doc.height, onCommitLayerMask]);
 

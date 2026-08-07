@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   ReactFlow,
   Background,
@@ -14,19 +13,17 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useFlowStore, type FlowNode, type Tool, type DrawTool } from '@/lib/store';
-import { stageTransition } from '@/lib/motion';
-import { DEFAULT_PHASE } from '@/lib/phases';
 import { getDefinition, NODE_DEFINITIONS } from '@/lib/nodes/registry';
 import { nodeScore } from '@/lib/nodes/search';
+import { findMistypedEdges } from '@/lib/nodes/edge-validity';
 import { InteriorNode } from '@/components/nodes/InteriorNode';
 import { nodeIconFor } from '@/components/nodes/NodeIcons';
 import { NoteNode } from '@/components/nodes/NoteNode';
 import { BottomToolbar } from '@/components/BottomToolbar';
-import DemoLauncher from '@/components/DemoLauncher';
 import { DND_MIME, MAT_MIME, MINDMAP_MIME } from '@/components/NodeLibraryPanel';
 import { instantiateConceptMindmap, MINDMAP_TEMPLATE_ID } from '@/lib/render-studio/mindmap-templates';
 import { ASSET_MIME } from '@/components/LibraryPanel';
-import { CATEGORY_META, type NodeCategory, type NodeDefinition } from '@/lib/types';
+import { CATEGORY_META, DATA_TYPE_COLORS, type NodeCategory, type NodeDefinition } from '@/lib/types';
 import { PresenceBar } from '@/components/collab/PresenceBar';
 import { GroupOverlay } from '@/components/nodes/GroupOverlay';
 import { MacroSelectionToolbar } from '@/components/nodes/MacroSelectionToolbar';
@@ -78,7 +75,6 @@ export function FlowCanvas() {
   const addNode = useFlowStore((s) => s.addNode);
   const addNote = useFlowStore((s) => s.addNote);
   const snapshot = useFlowStore((s) => s.snapshot);
-  const workspace = useFlowStore((s) => s.workspace);
   const setPanel = useFlowStore((s) => s.setPanel);
   const updateParam = useFlowStore((s) => s.updateParam);
   const currentFlowId = useFlowStore((s) => s.currentFlowId);
@@ -352,6 +348,7 @@ export function FlowCanvas() {
   /* Kéo dây từ 1 cổng — ghi kiểu dữ liệu cổng nguồn vào store để InteriorNode tô sáng cổng
      nhận cùng kiểu / mờ cổng khác kiểu trong lúc kéo (mock-if-bang-nut.html màn 03). */
   const setConnectFromType = useFlowStore((s) => s.setConnectFromType);
+  const connectFromType = useFlowStore((s) => s.connectFromType);
   const onConnectStart: OnConnectStart = useCallback(
     (_event, { nodeId, handleId }) => {
       if (!nodeId || !handleId) return;
@@ -364,6 +361,65 @@ export function FlowCanvas() {
     [setConnectFromType],
   );
   const onConnectEnd = useCallback(() => setConnectFromType(null), [setConnectFromType]);
+
+  /* ② `docs/mocks/Bảng nút.dc.html` màn 02 — DÂY ĐANG CHẠY vẽ nét đứt bò dọc dây
+     (`@keyframes bn-dash` + `.bn-edge-running`, app/globals.css). "Đang chạy" = dây CHẢY VÀO
+     một node đang chạy/xếp hàng: đúng ảnh trong mock (node nguồn đã "Xong", dây tới node đang
+     render mới chạy nét). Node nguồn đang chạy thì chưa có gì để chảy đi ⇒ không tính.
+     Chỉ THÊM class, không đụng `style` của cạnh (màu/độ dày vẫn do `edgeStyleFor` quyết). */
+  const busyNodeIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const n of nodes) {
+      const st = n.data?.run?.status;
+      if (st === 'running' || st === 'queued') s.add(n.id);
+    }
+    return s;
+  }, [nodes]);
+  /* ③ (vế thứ hai) `docs/mocks/Bảng nút.dc.html` màn 01, dòng 141 — DÂY NỐI SAI KIỂU vẽ
+     `stroke:var(--danger); stroke-dasharray:6 5`, và caption màn 01 nói rõ "hiện đỏ đứt đoạn".
+     Thanh trạng thái đếm "M nối sai" (StatusBar) mà bảng không chỉ được dây nào thì con số đó là
+     ngõ cụt — người dùng biết có lỗi, không biết lỗi ở đâu. Dùng CHUNG `findMistypedEdges` với
+     StatusBar (một luật so kiểu, `lib/nodes/edge-validity.ts`), không viết luật thứ hai.
+     Màu/nét đặt INLINE vì `edgeStyleFor` (lib/store.ts) cũng đặt inline — class sẽ thua. */
+  const mistypedEdgeIds = useMemo(() => {
+    const found = findMistypedEdges(nodes, edges, getDefinition);
+    return new Set(found.map((m) => m.edgeId));
+  }, [nodes, edges]);
+
+  const renderEdges = useMemo(() => {
+    if (busyNodeIds.size === 0 && mistypedEdgeIds.size === 0) return edges;
+    return edges.map((e) =>
+      mistypedEdgeIds.has(e.id)
+        ? {
+            ...e,
+            className: [e.className, 'bn-edge-bad'].filter(Boolean).join(' '),
+            style: { ...e.style, stroke: 'var(--danger)', strokeDasharray: '6 5' },
+          }
+        : busyNodeIds.has(e.target)
+        ? {
+            ...e,
+            className: [e.className, 'bn-edge-running'].filter(Boolean).join(' '),
+            // `edgeStyleFor` (lib/store.ts) gán `strokeDasharray:'6 3'` INLINE cho luồng dữ liệu
+            // (text/number/table) — inline luôn thắng class ⇒ phải ghi đè tại đây, không thể để
+            // CSS lo. Dây ảnh/video/mask không có dasharray inline nên nhận '6 6' của class;
+            // ghi đè ở đây cho cả hai loại thì mẫu nét đồng nhất đúng mock (6 6).
+            style: { ...e.style, strokeDasharray: '6 6' },
+          }
+        : e,
+    );
+  }, [edges, busyNodeIds, mistypedEdgeIds]);
+
+  /* Dây ĐANG KÉO: cùng nét đứt chạy, và mang MÀU CỔNG nguồn (`--p-*` theo kiểu dữ liệu) thay
+     cho hex tím cứng cũ — nhìn là biết đang kéo luồng ảnh hay luồng tham số. */
+  const connectionLineStyle = useMemo(
+    () => ({
+      stroke: connectFromType ? DATA_TYPE_COLORS[connectFromType] : 'var(--p-img)',
+      strokeWidth: 2,
+      strokeDasharray: '6 6',
+      animation: 'bn-dash 1s linear infinite',
+    }),
+    [connectFromType],
+  );
 
   const notice = useFlowStore((s) => s.notice);
   const setNotice = useFlowStore((s) => s.setNotice);
@@ -548,7 +604,7 @@ export function FlowCanvas() {
       <style>{`.flow-canvas-wrap .react-flow__attribution{background:transparent;font-size:9px;opacity:.55}`}</style>
       <ReactFlow<FlowNode>
         nodes={nodes}
-        edges={edges}
+        edges={renderEdges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
@@ -593,7 +649,7 @@ export function FlowCanvas() {
            góc phải dưới là chỗ MiniMap, khi map ẩn chữ đứng trơ một mình (Hoà chê 04/08). */
         attributionPosition="bottom-left"
         defaultEdgeOptions={{ type: 'default' }}
-        connectionLineStyle={{ stroke: '#8b7cf7', strokeWidth: 2 }}
+        connectionLineStyle={connectionLineStyle}
         className={tool === 'pan' ? 'cursor-grab' : tool === 'select' ? '' : 'cursor-crosshair'}
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="var(--dots)" />
@@ -829,14 +885,12 @@ export function FlowCanvas() {
         </div>
       )}
 
-      {/* empty state — mở đầu bằng demo THỰC TẾ LỌC theo chặng. Đổi chặng → cụm demo
-          fade/trồi mượt (mask cảm giác đổi nội dung), key theo workspace. */}
+      {/* empty state — M-EMPTY (07/08, Hoà chốt "bỏ hết dự án mẫu"): cụm DemoLauncher
+          ("bắt đầu bằng 1 demo thực tế") đã GỠ cùng lib/demos/* — app thật bắt đầu trống,
+          chỉ còn 1 câu mời + nút mở Thư viện khối (khuôn "Trống" SPEC-NGON-NGU §2 giữ nguyên). */}
       {nodes.length === 0 && (
         <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center">
           <div className="max-w-[520px] text-center">
-            {/* G4-1a (đêm 04/08, BAO-CAO-DEM mục 5) — khuôn "Trống" SPEC-NGON-NGU §2: 1 câu mời
-                + NÚT bắt đầu. Bỏ jargon "Node Library" (từ điển §3: node = khối; tên thật trên
-                UI là "Thư viện khối", xem NodeLibraryPanel). */}
             <p className="text-sm text-[var(--t4)]">Canvas đang trống — kéo khối từ Thư viện vào đây</p>
             <button
               type="button"
@@ -845,18 +899,6 @@ export function FlowCanvas() {
             >
               Mở Thư viện khối
             </button>
-            <p className="mt-3 text-xs text-[var(--t5)]">hoặc bắt đầu bằng 1 demo thực tế:</p>
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={workspace ?? DEFAULT_PHASE}
-                variants={stageTransition}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-              >
-                <DemoLauncher />
-              </motion.div>
-            </AnimatePresence>
           </div>
         </div>
       )}

@@ -10,8 +10,11 @@
  *     đoán theo dữ liệu, người nhập chọn đè trên UI (`MaterialImportWizard`).
  * (2) G-M3-05/08 — mỗi dòng nay dựng SONG SONG hai thứ:
  *       · `payload` → `ProductSpec` (DANH MỤC: món này tồn tại, giá bao nhiêu) — đi vào DB;
- *       · `ffe`     → `FfeItem`     (LẦN XUẤT HIỆN: mấy cái, ở phòng nào, tin tới đâu) — KHÔNG
- *         đi vào DB đợt này, xem `SPEC_ROOM_COLUMN_READY` ở `lib/server/specs.ts`.
+ *       · `ffe`     → `FfeItem`     (LẦN XUẤT HIỆN: mấy cái, ở phòng nào, tin tới đâu).
+ *     🟢 CẬP NHẬT 06/08 VÒNG 2: `room` + `confidence` NAY ĐI VÀO DB THẬT (chủ dự án đã chạy
+ *     `prisma db push` + `generate`, cờ `SPEC_ROOM_COLUMN_READY` = true) — xem chỗ dựng `payload`.
+ *     Riêng `qty` vẫn CHỈ sống ở `ffe`: `ProductSpec` là danh mục dùng chung nhiều dự án, số
+ *     lượng là của từng dự án — không có cột, và cố ý không thêm.
  *     Đây KHÔNG phải hai nguồn sự thật cạnh tranh: chúng là hai tầng khác nhau của cùng một món,
  *     nối nhau bằng `specId` sau khi tạo xong (`runImport` gắn lại id thật trả về từ API).
  */
@@ -22,6 +25,7 @@ import { uploadMaterialImage, isDirectImageUrl } from './image-match';
 import { makeFfeItem, normalizeQty, isCountUnit, FFE_DEFAULT_UNIT, type FfeConfidence, type FfeItem, type FfeTable } from '../../ffe/item';
 import { emptyFfeTable } from '../../ffe/port';
 import { splitMaterials, normalizeColorHex } from '../../ffe/from-measurement';
+import { parseNumberCell } from '../../ffe/parse-number';
 
 export interface ImportRowResult {
   rowIndex: number; // 0-based, tính TỪ dòng dữ liệu đầu tiên (không tính header)
@@ -43,64 +47,15 @@ export interface ImportRowResult {
 }
 
 /**
- * Đọc một ô SỐ. Nhận được cả `2.450.000`, `2,450,000`, `2 450 000`, `2450000 VND`, `2.450.000 đ`,
- * `1.234,5`.
- *
- * ⑥ (KIỂM PHẢN BIỆN 06/08) — trước đây `'2.450.000 đ'` trả `undefined` ⇒ `buildImportRows` VỨT CẢ
- * DÒNG. Bảng giá NCC Việt Nam ghi kèm "đ"/"VND" là chuyện thường; vứt cả món chỉ vì cái đuôi tiền
- * tệ là quá tay, trong khi hệ thống đã có sẵn ngữ nghĩa `priceVnd = null` = "chưa có giá" và bảng
- * FF&E đã có ô hiện đúng chữ đó.
- *
- * Cách đọc: bỏ ký hiệu tiền tệ + chữ cái + khoảng trắng → còn lại chỉ số/dấu. Nếu có CẢ `.` và
- * `,` thì dấu ĐỨNG SAU là dấu thập phân (hợp cả `1.234,5` kiểu VN lẫn `1,234.5` kiểu Anh–Mỹ).
- * Nếu chỉ có một loại dấu và nó phân nhóm 3 chữ số (`2.450.000`) thì đó là dấu ngăn NGHÌN.
+ * Bộ đọc số nay sống ở `lib/ffe/parse-number.ts` — MỘT cỗ máy dùng chung cho cả cửa nhập Excel
+ * lẫn `normalizeQty` (`lib/ffe/item.ts`). Trước 06/08 hai nơi có HAI bộ đọc khác nhau, và bộ yếu
+ * hơn lại đứng đúng chỗ tính tiền: đo được `normalizeQty('1.200','cai') = 1` trong khi
+ * `parseNumberCell('1.200') = 1200` ⇒ hồ sơ FF&E ra 300.000đ thay vì 300.000.000đ, 0 lỗi 0
+ * cảnh báo. Một cỗ máy đọc số, không hai — mọi luật đọc/từ chối nay ghi ở đúng một chỗ.
+ * Re-export tại đây để caller/test cũ (`import { parseNumberCell } from './apply-import'`) không
+ * phải đổi đường import.
  */
-/** Đuôi ĐƯỢC PHÉP bỏ đi vì KHÔNG đổi ĐỘ LỚN con số: ký hiệu tiền tệ, đơn vị đếm, và `mm` (đúng
- * bằng đơn vị của chính cột kích thước). Danh sách CÓ HẠN, cố ý.
- * ⛔ KHÔNG có `m`/`cm`/`m2` ở đây: cột khai là mm mà ô ghi `1,5m` thì con số thật là 1500, bóc chữ
- * `m` đi rồi nhận 1,5 chính là kiểu sai âm thầm mà bản vá này sinh ra để diệt. Thà từ chối ồn ào. */
-const HARMLESS_NUMBER_SUFFIX = /^(đ|d|vnd|₫|\$|vnđ|dong|đồng|mm|cái|cai|chiếc|chiec|bộ|bo|pcs)$/i;
-
-export function parseNumberCell(v: string): number | undefined {
-  const raw = v.trim();
-  if (!raw) return undefined;
-
-  /* 🔴 VÁ VÒNG 2 (kiểm phản biện 06/08) — bản trước bóc SẠCH mọi chữ trước khi đọc số, nên đuôi
-     ĐỘ LỚN bị nuốt và ra số sai mà KHÔNG báo gì: `2.45tr` → **2,45đ** · `2tr5` → 25đ · `1,5 triệu`
-     → 1,5đ · `50k` → 50đ · `1e3` → 13 (bản CŨ ra đúng 1000 — hồi quy thuần) · `(1.500.000)` →
-     **+1.500.000** (lách luôn chốt giá-âm vì dấu ngoặc đã bị bóc). Cùng parser này dùng cho w/d/h:
-     `1,5m` → w = 1.5 mm thay vì 1500.
-     Số SAI mà trông như đúng nguy hiểm hơn hẳn số bị từ chối — trước bản vá cả 6 ca này đều bị
-     TỪ CHỐI (ồn ào, người dùng sửa được). Nay: chỉ bỏ những đuôi KHÔNG đổi độ lớn; còn lại từ
-     chối. Hậu tố độ lớn (tr/triệu/k/tỷ) cố ý CHƯA hỗ trợ — quy đổi ngầm số tiền là việc phải
-     Hoà chốt, không phải thứ tự quyết trong một bản vá. */
-  const accounting = /^\(\s*[\d.,\s]+\s*\)$/.test(raw); // (1.500.000) = âm, quy ước kế toán
-  const core = accounting ? raw.replace(/[()]/g, '') : raw;
-  const leftover = core.replace(/[\d.,\-\s ]/g, '').trim();
-  if (leftover && !HARMLESS_NUMBER_SUFFIX.test(leftover)) return undefined;
-
-  let s = core.replace(/[^\d.,\-]/g, '');
-  if (!s || !/\d/.test(s)) return undefined;
-  if (accounting) s = `-${s}`;
-
-  const lastDot = s.lastIndexOf('.');
-  const lastComma = s.lastIndexOf(',');
-  if (lastDot >= 0 && lastComma >= 0) {
-    const decimalSep = lastDot > lastComma ? '.' : ',';
-    const groupSep = decimalSep === '.' ? ',' : '.';
-    s = s.split(groupSep).join('').replace(decimalSep, '.');
-  } else {
-    const sep = lastDot >= 0 ? '.' : lastComma >= 0 ? ',' : '';
-    if (sep) {
-      const parts = s.split(sep);
-      // mọi nhóm sau dấu đều đúng 3 chữ số ⇒ dấu ngăn NGHÌN (2.450.000); ngược lại ⇒ thập phân
-      const isGrouping = parts.length > 1 && parts.slice(1).every((p) => /^\d{3}$/.test(p));
-      s = isGrouping ? parts.join('') : parts.join('.');
-    }
-  }
-  const n = Number(s);
-  return Number.isFinite(n) ? n : undefined;
-}
+export { parseNumberCell };
 
 function numOrUndef(v: string): number | undefined {
   return parseNumberCell(v);
@@ -179,13 +134,39 @@ export function buildImportRows(sheet: ParsedSheet, mapping: ColumnMapping): Imp
 
     const materials = splitMaterials(get(row, 'materials'));
     const finishes = splitMaterials(get(row, 'finishes'));
-    const colorHex = normalizeColorHex(get(row, 'colorHex'));
     const w = numOrUndef(get(row, 'w'));
     const d = numOrUndef(get(row, 'd'));
     const hUp = numOrUndef(get(row, 'hUp'));
     const sku = get(row, 'sku') || undefined;
-    const note = get(row, 'note') || undefined;
     const imageRef = get(row, 'image') || undefined;
+
+    /* ─── MÀU + ĐỘ TIN CẬY: ghép ĐÚNG CỘT rồi vẫn RƠI GIÁ TRỊ, im lặng (vá 06/08 vòng 3) ───
+       Đo được: `normalizeColorHex('Trắng sữa'|'Xám'|'RAL 9010'|'NCS S 1000-N') = undefined` và
+       `parseConfidenceCell('Cao'|'Thấp'|'90%') = undefined` ⇒ dòng thật đi vào kho KHÔNG có
+       `colorHex`, `warnings: []`. Bảng giá NCC Việt gần như không bao giờ ghi mã hex — nghĩa là
+       cột "Màu" người ta bỏ công đưa vào bị nuốt gần như MỌI lần, không một tiếng báo.
+       Hai cột xử lý KHÁC NHAU, có lý do:
+        · MÀU — chữ gốc KHÔNG còn chỗ nào giữ (`ProductSpec` chỉ có `colorHex` dạng #rrggbb).
+          Nếu chỉ cảnh báo thì chữ "Trắng sữa" mất hẳn khỏi kho. ⇒ cảnh báo VÀ gộp nguyên văn vào
+          `note` theo khuôn "Màu: Trắng sữa" (note là text tự do, cả 2 tầng đều có) — người dùng
+          vẫn tra được, và ngày IF có bảng màu thì đó là dữ liệu để đối chiếu.
+          ⛔ KHÔNG đoán hex từ tên màu ("xám" → #808080): swatch sai làm khách đặt nhầm hàng, đúng
+          lý do `normalizeColorHex` trả `undefined` ngay từ đầu.
+        · ĐỘ TIN CẬY — chữ gốc ĐÃ được giữ nguyên trong `FfeItem.confidenceBasis` (dòng dưới), nên
+          chỉ cần CẢNH BÁO là đủ; nhét thêm vào `note` là ghi hai lần cùng một thứ. */
+    const colorRaw = get(row, 'colorHex');
+    const colorHex = normalizeColorHex(colorRaw);
+    const confidenceRaw = get(row, 'confidence');
+    const confidence = parseConfidenceCell(confidenceRaw);
+    const noteParts = [get(row, 'note')];
+    if (colorRaw && !colorHex) {
+      warnings.push(`Màu "${colorRaw}" không phải mã màu dạng #rrggbb — món vẫn được nhập, chữ gốc giữ trong Ghi chú, ô Màu để trống (IF không đoán mã màu từ tên gọi).`);
+      noteParts.push(`Màu: ${colorRaw}`);
+    }
+    if (confidenceRaw && !confidence) {
+      warnings.push(`Độ tin cậy "${confidenceRaw}" không khớp mức nào của IF (Đo được / Suy đoán / Nhập tay) — món vẫn được nhập, chữ gốc giữ làm căn cứ, mức tin để TRỐNG.`);
+    }
+    const note = noteParts.filter(Boolean).join(' · ') || undefined;
 
     const payload: MaterialWritePayload = {
       name,
@@ -200,6 +181,14 @@ export function buildImportRows(sheet: ParsedSheet, mapping: ColumnMapping): Imp
       materials,
       finishes,
       colorHex,
+      /* 06/08 VÒNG 2 (G-M3-08) — PHÒNG + ĐỘ TIN CẬY nay xuống được DB thật. Trước hôm nay 2 giá
+         trị này CHỈ nằm trong `ffe` (dưới) = state màn hình ⇒ nhập 100 món rồi đóng tab là mất
+         sạch. Cột `room`/`confidence` đã có trong `ProductSpec` (chủ dự án chạy `db push` 06/08)
+         và `specNormalize()` đã ép kiểu chúng — chỉ còn thiếu đúng 2 dòng này để nối.
+         `confidence` gửi MỨC đã nhận ra được; chữ gốc không khớp mức nào ('Cao', '90%') thì để
+         TRỐNG + đã cảnh báo ở trên, KHÔNG bịa mức — mức tin bịa còn tệ hơn không có mức tin. */
+      room: get(row, 'room') || undefined,
+      confidence,
     };
 
     const ffe = makeFfeItem({
@@ -208,8 +197,8 @@ export function buildImportRows(sheet: ParsedSheet, mapping: ColumnMapping): Imp
       unit,
       sku,
       room: get(row, 'room') || undefined,
-      confidence: parseConfidenceCell(get(row, 'confidence')),
-      confidenceBasis: get(row, 'confidence') || undefined,
+      confidence,
+      confidenceBasis: confidenceRaw || undefined,
       materials,
       finish: finishes?.[0],
       colorHex,
@@ -228,9 +217,10 @@ export function buildImportRows(sheet: ParsedSheet, mapping: ColumnMapping): Imp
   });
 }
 
-/** Gom món rời của cả lô thành MỘT bảng — thứ mang `phòng`/`độ tin cậy`/`số lượng` mà
- * `ProductSpec` chưa có chỗ chứa (xem `SPEC_ROOM_COLUMN_READY`). Dòng hỏng bị bỏ, đúng như
- * dòng hỏng không được gửi lên API. */
+/** Gom món rời của cả lô thành MỘT bảng — tầng LẦN XUẤT HIỆN của lô vừa nhập. Từ 06/08 vòng 2,
+ * `phòng`/`độ tin cậy` đã có cột riêng trong `ProductSpec` nên không còn phụ thuộc bảng này để
+ * khỏi mất; `số lượng` thì vẫn CHỈ có ở đây (danh mục không giữ số lượng — xem docblock đầu file).
+ * Dòng hỏng bị bỏ, đúng như dòng hỏng không được gửi lên API. */
 export function buildFfeTable(rows: ImportRowResult[], label?: string): FfeTable {
   const table = emptyFfeTable(label);
   for (const r of rows) if (r.ffe && !r.error) table.items.push(r.ffe);

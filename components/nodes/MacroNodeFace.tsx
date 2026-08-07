@@ -20,8 +20,95 @@ import { terminalNodeIds, totalCreditCost } from '@/lib/nodes/macro';
 import { ParamField } from '@/components/nodes/InteriorNode';
 import { DATA_TYPE_COLORS, type ParamDef } from '@/lib/types';
 import { useT } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
 const ICON_MAP: Record<string, typeof Box> = { box: Box, sun: CircleDot, layers: LayersIcon, sparkle: Sparkle, grid: Grid3x3 };
+
+/**
+ * HÀNG THAM SỐ TRÊN MẶT NÚT TỔNG — port `docs/mocks/Nút tổng.dc.html` màn 03 (dòng 313-342).
+ *
+ * Vì sao KHÔNG dùng tiếp `ParamField` (`InteriorNode.tsx`) như trước: `ParamField` xếp nhãn IN HOA
+ * 10px NẰM TRÊN + control tràn ngang — đúng cho node thường (rộng 256px, mỗi node vài tham số),
+ * nhưng mặt nút tổng gom tham số của NHIỀU node con nên cao gấp đôi mock và 4 tham số đã tràn khỏi
+ * khung 300px. Mock xếp NGANG: nhãn cố định 96px bên trái · control bên phải · hàng cao đúng 30px.
+ *
+ * KHÔNG sửa `ParamField` mà viết hàng riêng tại đây: hai bề mặt có ràng buộc khác nhau (node thường
+ * cần chỗ cho textarea/nút mở modal), sửa chung sẽ kéo theo cả canvas node thường.
+ *
+ * 4 kiểu tham số mở modal (`image`/`mask`/`annotate`/`sketch`/`smartmask`/`corners`) KHÔNG có hàng
+ * ngang trong mock — chúng cần nút bấm mở cửa sổ, nhét vào ô 28px là bấm hụt. Những kiểu đó rơi về
+ * `ParamField` cũ, KHÔNG bịa bố cục mock chưa vẽ.
+ */
+function MacroParamRow({ nodeId, param, value }: { nodeId: string; param: ParamDef; value: string | number }) {
+  const updateParam = useFlowStore((s) => s.updateParam);
+
+  if (param.kind !== 'text' && param.kind !== 'select' && param.kind !== 'slider') {
+    return <ParamField nodeId={nodeId} param={param} value={value} />;
+  }
+
+  return (
+    <div className="flex h-[30px] items-center gap-2.5">
+      <span className="w-24 flex-none truncate text-[11px] leading-[1.5] text-[var(--t4)]" title={param.label}>
+        {param.label}
+      </span>
+
+      {param.kind === 'slider' &&
+        (() => {
+          // node cũ (autosave) có thể thiếu param mới → value undefined → NaN. Fallback về default,
+          // cùng cách `ParamField` đã xử lý — không để hàng hiện "NaN".
+          const sv = value == null || Number.isNaN(Number(value)) ? param.default : Number(value);
+          /* "tối đa N" (mock dòng 340) chỉ hiện với thang ĐẾM (bước nguyên ≥1: số ảnh, số bản…).
+             Thang liên tục (0.05 · 0.1 …) thì trần là con số vô nghĩa với người dùng, mock cũng
+             không ghi ở hàng "Độ đậm nét vẽ". Một luật, đọc thẳng từ `param.step`, không bảng cứng. */
+          const isCount = Number.isInteger(param.step) && param.step >= 1;
+          return (
+            <>
+              <input
+                type="range"
+                className="nodrag h-1 min-w-0 flex-1 accent-[var(--accent)]"
+                min={param.min}
+                max={param.max}
+                step={param.step}
+                value={sv}
+                onChange={(e) => updateParam(nodeId, param.id, Number(e.target.value))}
+              />
+              <span className="w-[30px] flex-none text-right font-mono text-[11px] leading-[1.45] text-[var(--t2)]">
+                {isCount ? sv : sv.toFixed(2)}
+              </span>
+              {isCount && (
+                <span className="flex-none text-[10px] leading-[1.5] text-[var(--t5)]">
+                  {`tối đa ${param.max}`}
+                </span>
+              )}
+            </>
+          );
+        })()}
+
+      {param.kind === 'select' && (
+        <select
+          className="nodrag h-7 min-w-0 flex-1 rounded-[10px] border-0 bg-[var(--field)] px-2.5 text-[11px] leading-[1.5] text-[var(--t1)] outline-none"
+          value={String(value)}
+          onChange={(e) => updateParam(nodeId, param.id, e.target.value)}
+        >
+          {param.options.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+      )}
+
+      {param.kind === 'text' && (
+        <input
+          className="nodrag h-7 min-w-0 flex-1 rounded-[10px] border-0 bg-[var(--field)] px-2.5 text-[11px] leading-[1.5] text-[var(--t1)] placeholder-[var(--t5)] outline-none"
+          placeholder={param.placeholder}
+          value={String(value)}
+          onChange={(e) => updateParam(nodeId, param.id, e.target.value)}
+        />
+      )}
+    </div>
+  );
+}
 
 export function MacroNodeFace({ group }: { group: NodeGroup }) {
   const tr = useT();
@@ -35,20 +122,38 @@ export function MacroNodeFace({ group }: { group: NodeGroup }) {
   const Icon = ICON_MAP[group.icon ?? ''] ?? Box;
   const credit = totalCreditCost(nodes, group.nodeIds, getDefinition);
   const exposed = group.exposedParams ?? [];
+  /* Quầng thở `nt-halo` (`docs/mocks/Nút tổng.dc.html`, xem `.nt-macro-halo` trong globals.css).
+     Thu gọn thì không thấy được node con chạy tới đâu — quầng này là tín hiệu DUY NHẤT còn lại. */
+  const busy = nodes.some(
+    (n) => group.nodeIds.includes(n.id) && ((n.data as { run?: { status?: string } }).run?.status === 'running' || (n.data as { run?: { status?: string } }).run?.status === 'queued'),
+  );
 
   const run = async () => {
-    const terminals = terminalNodeIds(group.nodeIds, edges);
-    for (const id of terminals) {
-      // Tuần tự, không Promise.all — các nhánh có thể chia sẻ node upstream, chạy song song sẽ
-      // gọi runNode() trùng lặp trên cùng node đó (đua ghi run-state).
-      await runNode(id);
+    // Chặn bấm lặp: `disabled={busy}` dưới nút đã khoá phần lớn, đây là lớp phòng thủ thứ hai
+    // cho khoảng hở giữa lúc bấm và lúc React re-render cập nhật `busy` (G-M20-04).
+    if (busy) return;
+    try {
+      const terminals = terminalNodeIds(group.nodeIds, edges);
+      for (const id of terminals) {
+        // Tuần tự, không Promise.all — các nhánh có thể chia sẻ node upstream, chạy song song sẽ
+        // gọi runNode() trùng lặp trên cùng node đó (đua ghi run-state).
+        await runNode(id);
+      }
+      bumpGroupUsage(group.id);
+    } catch (err) {
+      // Trước: lỗi đồng bộ (vd getDefinition ném lỗi trước khi kịp enqueue) rơi thành unhandled
+      // rejection — không ai biết, bumpGroupUsage không chạy, nút vẫn im lặng (G-M20-04). Dùng
+      // ĐÚNG kênh báo lỗi đã có của canvas (connectError, FlowCanvas.tsx:880), không tự chế toast.
+      useFlowStore.getState().setConnectError(err instanceof Error ? err.message : String(err));
     }
-    bumpGroupUsage(group.id);
   };
 
   return (
     <div
-      className="nodrag mat-card absolute w-[300px] overflow-hidden rounded-[20px] border-[1.5px] border-[var(--accent)] shadow-[var(--shadow-pop),0_0_0_5px_var(--accent-soft)]"
+      className={cn(
+        'nodrag mat-card absolute w-[300px] overflow-hidden rounded-[20px] border-[1.5px] border-[var(--accent)] shadow-[var(--shadow-pop),0_0_0_5px_var(--accent-soft)]',
+        busy && 'nt-macro-halo',
+      )}
       style={{ transform: `translate(${cx - 150}px, ${cy - 60}px)`, zIndex: 5, pointerEvents: 'auto' }}
     >
       <div className="flex h-11 items-center gap-2.5 border-b border-[var(--mat-hairline)] px-3">
@@ -90,7 +195,7 @@ export function MacroNodeFace({ group }: { group: NodeGroup }) {
             if (!param) return null;
             const value = (child.data as { params: Record<string, string | number> }).params[ep.paramId] ?? '';
             return (
-              <ParamField
+              <MacroParamRow
                 key={`${ep.nodeId}.${ep.paramId}`}
                 nodeId={ep.nodeId}
                 param={{ ...param, label: ep.label } as ParamDef}
@@ -102,9 +207,15 @@ export function MacroNodeFace({ group }: { group: NodeGroup }) {
         <button
           type="button"
           onClick={run}
-          className="mt-0.5 h-8 rounded-[10px] bg-[var(--accent)] text-[12px] font-semibold leading-[1.5] text-white transition-colors hover:bg-[var(--accent-strong)]"
+          disabled={busy}
+          title={busy ? tr('Đang chạy…', 'Running…') : undefined}
+          /* `--on-accent` thay `text-white`: mock ghi #fff nhưng app đã có token cho đúng
+             việc này (chữ trên nền accent) — L4 cấm hex tự chế, kể cả #fff.
+             `disabled:opacity-60 disabled:cursor-not-allowed`: khoá bấm-lặp (G-M20-04) — quầng
+             `nt-macro-halo` ở thẻ báo "đang chạy" nhưng bản thân nút vẫn nhận click trước đây. */
+          className="mt-0.5 h-8 rounded-[10px] bg-[var(--accent)] text-[12px] font-semibold leading-[1.5] text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-[var(--accent)]"
         >
-          {tr('Chạy nút tổng', 'Run macro node')}
+          {busy ? tr('Đang chạy…', 'Running…') : tr('Chạy nút tổng', 'Run macro node')}
         </button>
       </div>
 

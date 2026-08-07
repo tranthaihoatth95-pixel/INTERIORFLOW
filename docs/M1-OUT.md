@@ -183,3 +183,207 @@ coi là nhị phân = **0** · `npx tsc --noEmit -p .` **exit 0** (chỉ còn 1 
 Còn lại, **chưa tự sửa vì cần Hoà quyết**: ~20 đường dẫn ảnh render dự án khách trong
 `lib/present-editor/demo-enso-sample.ts` (`CLAUDE.md` ghi "user đã cho phép giữ") và đường dẫn máy
 cá nhân trong chú thích `lib/cad/dwg*.ts`.
+
+---
+
+# PHẦN 3 — CHẶN MÁU + MỞ KHOÁ GIÁ TRỊ LÕI (06/08, theo thứ tự Hoà chốt)
+
+## ① G-M1-19 · hồi quy đang sống — ĐÓNG
+
+`lib/cad/block-library.ts` nay nạp block thư viện với `inferRules: null`. Đo trên **54 file .dxf
+thật** của kho:
+
+| | block bị gán loại | hình bị gán sai |
+|---|---|---|
+| trước | **30/54** | 461 (455 `space` + 6 `column`) |
+| sau | **0/54** | 0 |
+
+`parseDxf()` được nới thêm tham số tuỳ chọn (additive, mọi nơi gọi cũ giữ nguyên) để chỗ này tắt
+được bộ suy mà không phải đổi kiến trúc.
+
+Khoá bằng `lib/cad/block-library-infer.test.ts` — cố ý khoá **cả hai vế**: [1] hành vi trên 54 file
+thật, [2] `block-library.ts` phải THẬT SỰ truyền tuỳ chọn (thiếu vế này thì ai đó gỡ tuỳ chọn đi mà
+test vẫn xanh, vì test tự truyền). Kèm ca đối chứng: bật bộ suy lên thì bệnh cũ phải tái hiện —
+test không có răng thì sớm muộn cũng thành trang trí.
+
+## ② G-M1-18 · blocker — ĐÓNG, và nó cũng đóng luôn nghiệm thu G-M1-07
+
+Hai chỗ thiếu dấu lớp con, cô lập bằng file tối thiểu một-entity:
+`LWPOLYLINE` thiếu `100 AcDbPolyline` · `HATCH` thiếu `100 AcDbHatch`.
+
+Đo lại bằng `ezdxf` (bộ đọc DXF độc lập) trên 6 file thật nạp-rồi-xuất:
+
+| | trước | sau |
+|---|---|---|
+| mở được | **0/6** (kể cả chế độ cứu hộ) | **6/6**, **0 lỗi audit** |
+| INSERT trong file ra | — | 91–457 |
+| định nghĩa BLOCK | — | 25–31 |
+| **hình sau khi BUNG khối** | — | **12.274 · 11.775 · 10.085 · 9.891 · 10.035 · 2.984** |
+
+Cột cuối khớp **tuyệt đối** với số entity trong `Doc` ⇒ từ nay lời hứa "giao bản vẽ cho người khác
+sửa tiếp" có bằng chứng từ **phần mềm ngoài**, không còn là lập luận vòng tròn "parser của IF đọc
+được file của IF". CỐ Ý chỉ vá 2 loại này: LINE · CIRCLE · ARC · TEXT · DIMENSION đo được là mở
+sạch dù không có dấu lớp con, thêm bừa dễ hỏng thứ đang chạy tốt.
+Khoá bằng `lib/cad/dxf-openable.test.ts` (20 ca — có ca canh THỨ TỰ dấu, và ca chứng minh bản vá
+không đụng 3 loại kia).
+
+## ③ G-M1-20 · nhãn nói ngược + 4 field chết — ĐÓNG
+
+Ba câu nói ngược sự thật, sửa cả ba (đo trên báo cáo thật, không sửa theo cảm tính):
+- nhãn nút tải: *"đã làm phẳng block"* → **"giữ được phần lớn khối · Giữ N khối (M loại) · K hình bị rã"**
+- tiêu đề hộp duyệt: *"Bản xuất này mất cấu trúc block"* → **"Xem lại phần khối trước khi tải"** (chỉ giữ câu cũ khi thật sự giữ được 0 khối)
+- câu cảnh báo trong `dxf.ts` — **chỗ này chỉ lộ ra khi verify browser**, hai câu kia sửa xong rồi mà nó vẫn ghi *"mở lại ở AutoCAD sẽ không còn cấu trúc block"* ngay bên dưới dòng "giữ nguyên 3 khối".
+
+Bốn field hết chết: `insertsWritten` · `blockDefsWritten` · `preservedBlocks` → hộp duyệt xuất DXF ·
+`elementTypes` → mục **"Tự phân loại"** mới trong panel báo cáo nạp (K3: nói thẳng là MÁY ĐOÁN,
+đoán theo tên lớp nào, để người dùng còn sửa). Tiện tay: bảng "Bỏ qua" nay dùng CHUNG từ điển với
+thanh trạng thái (`SKIPPED_LABELS`) — trước đó cùng một việc hiện hai thứ tiếng trên cùng một màn.
+
+**Verify browser thật** (server riêng cổng 3001, dự án test tạo riêng rồi xoá): panel hiện đúng
+"Máy đoán 7 hình theo tên 1 lớp" + bảng `A-Wall → tường · vách`; bảng bỏ qua hiện "điểm đánh dấu 2 ·
+hình elip 1"; hộp duyệt xuất DXF hiện đủ 3 câu mới, khớp nhau. 0 lỗi console do việc này.
+Dọn sạch: flow test đã xoá (18 → 17, đúng số trước phiên), server đã tắt.
+
+`npx tsc --noEmit -p .` sạch (chỉ còn 1 lỗi có sẵn ở `render-layer-index.test.ts`).
+Test: `dxf-openable` 20 · `block-library-infer` 5 · `dxf-export-report` 20 · `dxf-reblock` 50 ·
+`dxf.roundtrip` 46 · `element-infer` 35 — **0 fail**.
+
+---
+
+# PHẦN 4 — VÒNG 2: 4 ĐỎ CÒN TREO (06/08 đêm)
+
+> V6: KHÔNG commit. Không đụng `lib/boq` · `lib/ffe` · `lib/materials` · `components/materials` ·
+> `components/nodes` · `components/library` · `components/print`.
+> ⚠️ `docs/GAP-IF.md` có bị sửa **TRƯỚC** khi lệnh cấm đụng tới nó về (cập nhật trạng thái 3 dòng
+> G-M1-18/19/20 của vòng 1). Từ lúc nhận lệnh thì không đụng nữa. Nói ra để khỏi tưởng là lén.
+
+## BƯỚC 0 — grep, dán nguyên văn
+
+```
+$ grep -rn "zoomExtents\|mainClusterBox" lib/cad/ components/cad/     (bỏ *.test.ts)
+lib/cad/import-summary.ts:26   import { mainClusterBox } from './dxf-plan';
+lib/cad/import-summary.ts:172  export function zoomExtentsPlan(...)
+lib/cad/dxf-plan.ts:71         export function mainClusterBox(...)
+lib/cad/dxf-plan.ts:326        const main = mainClusterBox(doc);
+components/cad/CadCanvas.tsx:24,401,460,464   zoomExtentsPlan / zoomExtents()
+components/cad/CadEditor.tsx:35,426,427       mainClusterBox + zoomExtentsPlan   ← HAI NGUỒN
+$ grep -rn "Worker\|AbortController" lib/cad/dxf.ts lib/cad/dwg*.ts
+lib/cad/dxf.ts        → 0 dòng            ← đường DXF KHÔNG có worker, không có huỷ
+lib/cad/dwg.ts:70,111 → ORPHANED_DWG_WORKERS · new Worker(new URL('./dwg-worker.ts'…))
+lib/cad/dwg-worker.ts → worker thật
+```
+Grep xác nhận đúng hai chẩn đoán: **`CadEditor` gọi `mainClusterBox` RIÊNG** (nguồn thứ hai) và
+**`dxf.ts` không có worker/huỷ nào**.
+
+## ① G-M1-08 · neo vùng tô cho hồ sơ NHẬP VÀO — ĐÓNG
+
+Vòng 1 tôi kết luận *"hồ sơ thật không có nửa đường bao để neo"*. **Kết luận đó SAI.** Đo lại
+từng cái cột: một cột = **1 đường bao 4 đỉnh + 10 mảng tô 5 đỉnh**, cùng lớp, cùng bản chèn, 4
+đỉnh đầu trùng khít tới phần nghìn mm. Đỉnh thứ 5 là **điểm chia cạnh** phần mềm CAD tự chèn.
+
+Hai luật cũ chặn mất, cả hai đều đúng-cho-ca-cũ: `sameRing` đòi **bằng số đỉnh** (4 vs 5 ⇒ "khác
+vòng"), và **"1 chủ ↔ 1 con"** (neo được 1/10, dời cột thì 9 mảng ở lại).
+
+| | mảng tô | neo được TRƯỚC | neo được SAU | đường bao có con | nhiều con nhất |
+|---|---|---|---|---|---|
+| F1 | 126 | **0** | **90** | 9 | 10 |
+| F2 | 161 | **0** | **90** | 9 | 10 |
+| F3 | 147 | **0** | **80** | 8 | 10 |
+| F4 | 139 | **0** | **80** | 8 | 10 |
+| F5 | 137 | **0** | **90** | 9 | 10 |
+| F6 | 138 | **0** | **90** | 9 | 10 |
+
+Ca bệnh gốc chạy thật trên file: **dời đường bao 1 cột +1000mm → 10/10 mảng tô đi theo đúng vị trí
+mới** · chọn 1 mảng tô → nở ra đủ 11 hình. Phần chưa neo (36–71 mảng/file, lớp `htch`/`A-Hatch`)
+**thật sự không có đường bao nào trong tệp** — để yên, không bịa chủ (K3).
+Sửa: `normalizeRing()` mới + `sameRing` bỏ điều kiện bằng-số-đỉnh + `pochePartnerIds()` (1 chủ ↔ N
+con) trong `lib/cad/poche.ts`. Test mới `poche-import.test.ts` 19 ca (có ca "đỉnh lệch 2,6 mm là
+hình THẬT, không được bào mất" và 3 ca chống neo bừa). `poche.test.ts` cũ 30/30 vẫn xanh.
+
+## ② G-M1-04 · zoom cụm chính — ĐÓNG
+
+Gốc thứ nhất: `CadEditor` gọi `mainClusterBox` riêng để nuôi panel ⇒ nút "Về cụm vẽ chính" bay tới
+khung khác khung lúc nạp. Nay panel dùng lại `view.box` — **một nguồn tính duy nhất**.
+
+Gốc thứ hai: luật cũ cắt theo VÙNG (nới cụm 25% rồi bỏ mọi thứ ngoài) nên giấu cả bảng ghi chú và
+các bản vẽ khác trong cùng tệp. Nay cắt theo **ĐỘ XA VÔ LÝ**, ngưỡng lấy từ số đo: nội dung bình
+thường nằm ở **0,4–13,8 lần cỡ cụm**, bản sao parked thật nằm ở **353–358 lần** — chọn 30.
+
+| | % hình bị giấu TRƯỚC | SAU | khung nhìn SAU |
+|---|---|---|---|
+| F1 | 76,3% | **0%** | 226×71 m (toàn bộ) |
+| F2 | 74,1% | **13,1%** | 351×105 m (bỏ 1.542 hình cách 12 km) |
+| F3 | 71,3% | **0%** | 466×105 m |
+| F4 | 72,7% | **0%** | 301×135 m |
+| F5 | 71,6% | **0%** | 185×135 m |
+| F6 | 31,4% | **0%** | 313×81 m |
+
+F2 là tệp DUY NHẤT có bản sao parked thật — và đó đúng là tệp phải canh cụm: khung bao thô
+12.311×15.492 m → 351×105 m (**gấp 5.184 lần diện tích**). 5 tệp còn lại về **mode `full`, 0% giấu**.
+
+## ③ G-M1-07 phần còn lại · cây lồng — ĐÓNG (kèm một hụt nói thẳng)
+
+`srcInsertId` vốn là ĐƯỜNG DẪN (`i93/5/271`). Bản xuất cũ đổ hết INSERT ra `ENTITIES` ⇒ cây bẹp
+còn 1 cấp. Nay mỗi bản chèn được đặt vào đúng cha; chỉ bản chèn gốc mới ra thẳng `ENTITIES`.
+
+Nghiệm thu bằng **`ezdxf`** (đúng chuẩn đã lập ở vòng 1) — bung block ĐỆ QUY:
+
+| | độ sâu cây TRƯỚC → SAU | định nghĩa BLOCK | INSERT ở gốc | bung đệ quy | audit |
+|---|---|---|---|---|---|
+| F1 | 1 → **5** | 335 | 94 | **12.274** | 0 lỗi |
+| F2 | 1 → **5** | 277 | 80 | **11.775** | 0 lỗi |
+| F3 | 1 → **5** | 273 | 74 | **10.085** | 0 lỗi |
+| F4 | 1 → **5** | 269 | 74 | **9.891** | 0 lỗi |
+| F5 | 1 → **5** | 271 | 74 | **10.035** | 0 lỗi |
+| F6 | 1 → **5** | 56 | 3 | **2.984** | 0 lỗi |
+
+Cột "bung đệ quy" khớp **tuyệt đối** số entity trong `Doc` ⇒ không mất hình. Vòng xuất–nạp bằng
+parser IF: entity 6/6 khớp, loại hình khớp, **số entity từng lớp khớp 100%** (sau khi chuẩn hoá
+tên lớp — phần đổi tên là lỗi CŨ, đã ghi từ vòng 1, không phải hồi quy).
+
+🔴 **HỤT, nói thẳng**: **tên block của nút TRONG không lấy lại được** — bộ nạp chỉ ghi tên định
+nghĩa TRỰC TIẾP chứa hình, không ghi chuỗi tên tổ tiên. Đo: **0/101 nút trong** lấy được tên gốc,
+nên nhóm phải đặt tên tự chế `IF_NHOM_n`. **Cấu trúc đúng, tên thì không.** Muốn đúng cả tên phải
+sửa BỘ NẠP ghi thêm chuỗi tổ tiên — việc riêng, chưa làm.
+
+## ④ G-M1-01 · worker + tiến độ + huỷ cho DXF — ĐÓNG (một mục nghiệm thu đo kiểu khác)
+
+3 tệp mới, đúng khuôn đường DWG đã chốt: `dxf-worker.ts` (worker) · `dxf-import.ts` (**vòng đời
+THUẦN**, test được) · `dxf-open.ts` (vỏ trình duyệt, chứa `import.meta.url`). `CadEditor` bỏ
+`FileReader`+parse trên luồng chính, dùng `openDxfFile()`; nút Huỷ dùng CHUNG thanh với đường DWG.
+
+- **Tiến độ = giai đoạn + số giây, KHÔNG phải phần trăm.** `parseDxfEx` là một vòng quét duy nhất;
+  bịa thanh % chạy đều là nói dối (K3). Test khoá luôn điều này (`không có % giả trong câu`).
+- **Huỷ = BỎ RƠI worker**, không `terminate()` ngay — cùng luật Hoà đã chốt cho DWG.
+- Test `dxf-import.test.ts` **23 ca** với worker giả + đồng hồ giả: đường thuận · nhịp tiến độ ·
+  huỷ (kèm "không terminate") · huỷ trước khi chạy · quá giờ (nêu tên tệp + giai đoạn) · worker
+  lỗi · worker chết · không đẻ nổi worker · câu chữ không lộ jargon.
+
+**Verify trình duyệt thật** (server riêng 3001, tệp thử 18 MB và 26 MB tự sinh — KHÔNG dùng hồ sơ
+khách):
+
+| đo | kết quả |
+|---|---|
+| luồng chính sau khi thả tệp 18 MB | trả lời sau **77 ms**, lần kế **2 ms** (trước: đứng hình cả quãng parse) |
+| thanh "Đang mở bản vẽ… [Huỷ]" | **có thật trong DOM** lúc đang nhập |
+| bấm Huỷ | trạng thái đổi thành **"Đã huỷ mở tệp."**, thanh biến mất, bản vẽ không bị thay |
+| 26 MB | nạp xong bình thường, panel báo cáo hiện đủ |
+
+🟡 **Chưa chụp được ẢNH đúng khoảnh khắc thanh Huỷ đang hiện** — và lý do chính là bản vá: qua
+worker, tệp 18–26 MB phân tích xong **dưới 1 giây**, ngắn hơn một vòng gọi chụp màn hình. Bằng
+chứng thay thế là đọc DOM trực tiếp lúc đang nhập (thấy nút) + trạng thái sau khi bấm. Ghi đúng
+mức đã đạt, không nói quá.
+
+🔴 **Phát hiện phụ, quan trọng cho việc sau**: thử tệp tự sinh **400.000 entity** thì luồng chính
+vẫn treo >30 giây — nhưng **không phải ở khâu phân tích**: nút cổ chai chuyển sang việc chuyển
+`Doc` từ worker về (structured clone) + `importDoc` + vẽ lại. Hồ sơ thật chỉ 10–12 nghìn entity nên
+chưa chạm ngưỡng này. Worker giải đúng phần nó nhận, phần còn lại là việc khác.
+
+## Kiểm tổng
+
+`npx tsc --noEmit -p .` — **chỉ còn đúng 1 lỗi có sẵn** (`render-layer-index.test.ts:36`, commit
+`752fb54` của phiên khác), không thêm lỗi mới.
+13 bộ test chạy lại: `poche` 30 · `poche-import` 19 · `dxf-import` 23 · `dxf-reblock` 50 ·
+`dxf-openable` 20 · `dxf.roundtrip` 46 · `dxf-insert` 38 · `dxf-export-report` 20 · `dxf-plan` 28 ·
+`element-infer` 35 · `block-library-infer` 5 · `cad-core-b1` 45 · `hatch` 45 — **0 fail**.
+Dọn: flow test đã xoá từ vòng trước, bản vẽ thử đã xoá khỏi cache, server đã tắt.

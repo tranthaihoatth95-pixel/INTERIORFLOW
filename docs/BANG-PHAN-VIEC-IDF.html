@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bảng phân việc & quy trình — IDF</title>
+<style>
+  :root{
+    --bg:#0f1115;--ink:#e7e9ee;--mut:#9aa1ad;--dim:#6b727e;--line:#2a2f39;--card:#161922;
+    --ok:#4ea88b;--or:#d9a441;--mi:#c8635f;--acc:#6f7bd6;--run:#5bb0c9;
+    --okbg:#14312a;--orbg:#2b2410;--mibg:#2c1917;--runbg:#0f2530;--holdbg:#241f2e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);padding:22px 26px 60px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;font-size:14px;line-height:1.5}
+  h1{font-size:20px;font-weight:650;margin:0 0 2px}
+  .sub{color:var(--mut);font-size:12.5px;margin-bottom:16px}
+  .tag{display:inline-flex;gap:6px;align-items:center;border-radius:20px;padding:3px 11px;font-size:11px;font-weight:600}
+  .tag.live{background:var(--runbg);color:var(--run)}
+  /* quy trình pipeline */
+  .flowbar{background:#101a1f;border:1px solid #1e3540;border-radius:12px;padding:12px 15px;margin-bottom:18px}
+  .flowbar h3{margin:0 0 10px;font-size:13px;color:var(--run)}
+  .steps{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+  .step{flex:1;min-width:130px;background:#0c151a;border:1px solid #1e3540;border-radius:9px;padding:8px 10px;position:relative}
+  .step .n{color:var(--run);font-weight:700;font-size:11px}
+  .step .s{font-size:11.5px;margin-top:2px}
+  .step .g{font-size:10px;color:var(--dim);margin-top:3px}
+  .step.gate{background:var(--okbg);border-color:#2b5546}
+  .step.gate .n{color:var(--ok)}
+  .v6{margin-top:10px;font-size:11px;color:var(--or)}
+  /* bảng phân việc */
+  .sec{margin-top:18px}
+  .sec-h{font-size:14px;font-weight:680;margin:0 0 8px;display:flex;align-items:baseline;gap:9px}
+  .sec-h .k{color:var(--dim);font-size:11px;font-weight:500}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;color:var(--mut);font-weight:600;font-size:11px;padding:6px 9px;border-bottom:1px solid var(--line)}
+  td{padding:8px 9px;border-bottom:1px solid #1c2029;vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  .task{font-weight:600}
+  .who{color:var(--acc);font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
+  .st{display:inline-flex;gap:6px;align-items:center;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;white-space:nowrap}
+  .st-run{background:var(--runbg);color:var(--run)} .st-wait{background:var(--orbg);color:var(--or)}
+  .st-hold{background:var(--holdbg);color:var(--acc)} .st-done{background:var(--okbg);color:var(--ok)}
+  .st-todo{background:#1c2029;color:var(--mut)}
+  .cp{color:var(--mut);font-size:11.5px}
+  .cp b{color:var(--ok)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:18px;font-size:11.5px;color:var(--mut)}
+  .legend .st{font-size:10.5px}
+  .law{margin-top:16px;background:#12211c;border:1px solid #24463a;border-radius:8px;padding:8px 12px;font-size:11.5px;color:var(--ok)}
+  .foot{color:var(--dim);font-size:11px;margin-top:16px;text-align:right}
+</style></head>
+<body>
+  <h1>⚙ Bảng phân việc &amp; quy trình — IDF <span class="tag live">● luôn hiện</span></h1>
+  <div class="sub">Ai làm gì · tên task · checkpoint nghiệm thu mỗi chặng · KHÔNG thuộc cây (cây = thiết kế app; bảng này = quy trình việc) · 06/08/2026</div>
+
+  <!-- QUY TRÌNH -->
+  <div class="flowbar">
+    <h3>⇅ QUY TRÌNH — một task đi từ đâu tới đâu</h3>
+    <div class="steps">
+      <div class="step"><div class="n">1 · TỔNG</div><div class="s">Soạn phiếu (mảng riêng, chống va chạm)</div><div class="g">không code</div></div>
+      <div class="step"><div class="n">2 · PHIÊN</div><div class="s">Nhận phiếu → phóng 2 agent</div><div class="g">1 làm · 1 phản biện</div></div>
+      <div class="step"><div class="n">3 · LÀM</div><div class="s">N7 grep -a trước · token 0-hardcode</div><div class="g">đúng mảng, không lấn</div></div>
+      <div class="step gate"><div class="n">✅ 4 · CHECKPOINT</div><div class="s">Nghiệm thu N6: chạy/render THẬT</div><div class="g">file đổi ≠ xong</div></div>
+      <div class="step"><div class="n">5 · M-OUT</div><div class="s">Ghi kết quả + nợ</div><div class="g">KHÔNG sửa GAP-IF (§0u)</div></div>
+      <div class="step gate"><div class="n">✅ 6 · TỔNG gộp</div><div class="s">Đối chiếu → cập nhật cây + sổ</div><div class="g">chốt mấy/N khớp thật</div></div>
+    </div>
+    <div class="v6">⚖ V6 — phiên KHÔNG commit. Hoà commit. · Mỗi phiên 1 agent làm + 1 agent phản biện độc lập.</div>
+  </div>
+
+  <!-- A · APPLY DESIGN -->
+  <div class="sec">
+    <div class="sec-h">A · Apply Claude Design → code <span class="k">task hoàn thành IF, không phải tính năng</span></div>
+    <table>
+      <tr><th style="width:24%">Task</th><th style="width:16%">Ai làm</th><th style="width:14%">Trạng thái</th><th>✅ Checkpoint nghiệm thu</th></tr>
+      <tr><td class="task">LÀN A · apply node+thư viện <span class="cp">(Bảng nút·Nút tổng·Thư viện)</span></td><td class="who">phiên apply-node</td><td><span class="st st-run">🔄 thả (nay)</span></td><td class="cp">3 màn render <b>khớp .dc</b> · Bảng nút xong 3 lệch (cổng màu·dây chạy·nối sai)</td></tr>
+      <tr><td class="task">LÀN C · apply in/giấy/xuất <span class="cp">(PDF·NétIn·Tròn·ToGiay)</span></td><td class="who">phiên apply-in-giay</td><td><span class="st st-run">🔄 thả (nay)</span></td><td class="cp">4 màn render <b>khớp .dc</b> + nút mở ra đúng</td></tr>
+      <tr><td class="task">LÀN B · apply CAD+mode <span class="cp">(2D·Chuyên·Phác thảo)</span></td><td class="who">phiên apply-cad</td><td><span class="st st-hold">🔒 chờ M1</span></td><td class="cp">3 màn khớp .dc · <b>mode sketch/pro vẫn chạy</b></td></tr>
+    </table>
+  </div>
+
+  <!-- B · SỬA IF -->
+  <div class="sec">
+    <div class="sec-h">B · Sửa IF — đóng đỏ GAP <span class="k">task = phép thử, không nghiêng dự án (§0q)</span></div>
+    <table>
+      <tr><th style="width:24%">Task</th><th style="width:16%">Ai làm</th><th style="width:14%">Trạng thái</th><th>✅ Checkpoint nghiệm thu</th></tr>
+      <tr><td class="task">M1 · lõi-cad Gốc A + B</td><td class="who">phiên M1</td><td><span class="st st-run">🔄 đang chạy</span></td><td class="cp">đóng đỏ = <b>tính năng chạy thật</b> (N6) · nay: G-M1-06,09 xong · 07 điều kiện · 08,13 nợ</td></tr>
+      <tr><td class="task">Fix Gốc C · món rời/BOQ/FF&E <span class="cp">(lib/ffe·boq·materials·vision)</span></td><td class="who">phiên fix-gocc</td><td><span class="st st-run">🔄 thả (nay)</span></td><td class="cp">nhập FF&E không rơi cột · món rời <b>lên BOQ có SL</b> · xlsx có ảnh · <span style="color:var(--or)">2 bug im lặng trước</span></td></tr>
+      <tr><td class="task">Đỏ M3 dính lib/cad + M2 poché</td><td class="who">—</td><td><span class="st st-hold">🔒 chờ M1</span></td><td class="cp">block/thư viện/auto-layout/poché đụng lib/cad M1 giữ</td></tr>
+      <tr><td class="task">M4·M5 (chẩn đoán)</td><td class="who">—</td><td><span class="st st-done">✅ chẩn đoán</span></td><td class="cp">đỏ M5 (màn UI) = <b>chính LÀN A/C apply design</b> đóng</td></tr>
+    </table>
+  </div>
+
+  <!-- C · ĐẤU NỐI -->
+  <div class="sec">
+    <div class="sec-h">C · Đấu nối hệ sinh thái <span class="k">connector = tính năng repo · DATA khách → .idf, không vào repo</span></div>
+    <table>
+      <tr><th style="width:24%">Task</th><th style="width:16%">Ai làm</th><th style="width:14%">Trạng thái</th><th>✅ Checkpoint nghiệm thu</th></tr>
+      <tr><td class="task">M7 · Larkbase — pull nhân sự/dự án</td><td class="who">phiên larkbase</td><td><span class="st st-todo">📝 phiếu xong · GIỮ</span></td><td class="cp">pull thật 1 bảng NS + 1 dự án · <b>grep tên khách lib/=0</b></td></tr>
+      <tr><td class="task">M6 · ArchiNote — đọc map → cầu .idf</td><td class="who">phiên archinote</td><td><span class="st st-todo">📝 phiếu xong · GIỮ</span></td><td class="cp">bảng schema .idf khớp/lệch · <b>1 .idf nạp được vào IF</b></td></tr>
+    </table>
+  </div>
+
+  <!-- D · SỔ / DỌN -->
+  <div class="sec">
+    <div class="sec-h">D · Giữ sổ &amp; dọn <span class="k">TỔNG + Hoà</span></div>
+    <table>
+      <tr><th style="width:24%">Task</th><th style="width:16%">Ai làm</th><th style="width:14%">Trạng thái</th><th>✅ Checkpoint nghiệm thu</th></tr>
+      <tr><td class="task">Dọn trung tính lib/ (tên khách)</td><td class="who">phiên (khi public)</td><td><span class="st st-wait">⏳ chưa</span></td><td class="cp"><b>grep tên khách lib/ = 0</b> · chỉ bắt buộc trước khi public</td></tr>
+      <tr><td class="task">Chốt sổ GAP-IF</td><td class="who">TỔNG</td><td><span class="st st-wait">⏳ sau fix</span></td><td class="cp">GAP-IF khớp M-OUT thật · một ngòi bút (§0u)</td></tr>
+      <tr><td class="task">Dọn ổ (~1.5G: dist-installer·.next)</td><td class="who">Hoà</td><td><span class="st st-wait">⏳ tuỳ</span></td><td class="cp">ổ &lt; 90% (nay 91%) · các cache tái tạo được</td></tr>
+    </table>
+  </div>
+
+  <div class="legend">
+    <span><span class="st st-run">🔄 đang chạy</span></span>
+    <span><span class="st st-wait">⏳ chờ/chưa</span></span>
+    <span><span class="st st-hold">🔒 chờ phụ thuộc</span></span>
+    <span><span class="st st-todo">📝 phiếu xong</span></span>
+    <span><span class="st st-done">✅ xong chặng</span></span>
+  </div>
+  <div class="law">⚖ <b>LUẬT</b>: 2 bản đồ song song &amp; <b>luôn hiện</b> — Cây (thiết kế app) + Bảng này (quy trình việc). Task chỉ chấm trạng thái, KHÔNG trộn vào cây.</div>
+  <div class="foot">Bảng phân việc IDF · trung tính · cập nhật khi có M-OUT mới · 06/08/2026</div>
+</body></html>

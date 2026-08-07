@@ -7,6 +7,8 @@ import type { Scene3DMode, Scene3DCameraApi, LightMarker } from './Scene3DViewer
 import type { ViewDir } from './ViewCube3D';
 import { RawStyle } from './RawStyle';
 import { VE3D_CSS } from './ve3d-css';
+import { useT } from '@/lib/i18n';
+import { Maximize } from 'lucide-react';
 
 /**
  * `Scene3DViewer`/`ViewCube3D` kéo theo `three` (~170KB gzip) ⇒ BẮT BUỘC nạp động, `ssr:false`
@@ -80,6 +82,11 @@ export function Viewport3D({
   // PHIẾU ĐỢT 7 NHÓM B — cầu nối camera SỐNG cho ViewCube3D, xem comment `Scene3DCameraApi`
   // (`Scene3DViewer.tsx`). Viewport3D chỉ CHUYỂN TIẾP ref, không tự đọc/ghi vào đây.
   const cameraApiRef = useRef<Scene3DCameraApi | null>(null);
+  const tr = useT();
+  // G-M18-04 — walk/campath tự lái camera mỗi khung (xem `Scene3DCameraApi.fit`), nút mờ đi kèm
+  // lý do thay vì ẩn hẳn (đúng §9 "disabled kèm lý do", không phải nút giả vì 2 mode này thật sự
+  // không có khái niệm "toàn cảnh").
+  const fitDisabled = mode === 'walk' || mode === 'campath';
 
   return (
     <div className="if-ve3d vp3d">
@@ -106,6 +113,21 @@ export function Viewport3D({
       {/* P5 (04/08): kính lỏng `.glass-float` — 1 trong ĐÚNG 4 chỗ được phép (ViewCube), luật ở
           globals.css. Khối vuông → bo mặc định var(--radius-lg) của class. */}
       <ViewCube3D className="viewcube glass-float" cameraApiRef={cameraApiRef} onPick={onViewChange} />
+
+      {/* G-M18-04 — đưa camera về khung bao trọn toàn cảnh. Chữ THẬT (G6 — nút hành động, không
+          icon-hoá), dưới ViewCube. */}
+      <button
+        type="button"
+        className="fitbtn"
+        disabled={fitDisabled}
+        onClick={() => cameraApiRef.current?.fit()}
+        title={fitDisabled
+          ? tr('Chế độ này camera tự lái mỗi khung — không có "toàn cảnh"', 'This mode drives the camera every frame — no "fit view" here')
+          : tr('Đưa camera về khung bao trọn mọi khối', 'Bring the camera back to frame all blocks')}
+      >
+        <Maximize size={13} strokeWidth={2} />
+        {tr('Toàn cảnh', 'Fit view')}
+      </button>
 
       {/* ── Trục toạ độ (góc dưới trái) — X đỏ · Y xanh lá · Z xanh dương, đúng mock ── */}
       <svg className="axisg" viewBox="0 0 90 90" aria-label="Trục toạ độ X Y Z">

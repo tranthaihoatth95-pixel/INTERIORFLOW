@@ -129,7 +129,12 @@ export function BoqScreen({ projectId, userId }: { projectId: string; userId: st
     fetch('/api/specs')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (alive && data?.specs) setSpecExtra(buildBoqSpecExtraMap(data.specs)); })
-      .catch(() => {});
+      .catch((err) => {
+        // Cột Quy cách/Đơn vị/Ảnh chỉ là JOIN hiển thị phụ (xem comment §121 ở trên) — không
+        // chặn bảng BOQ chính khi hỏng, nhưng KHÔNG được nuốt lỗi im lặng (luật G-M20-02):
+        // ghi log kèm lý do để phiên sau/console điều tra biết vì sao 3 cột đó trống.
+        console.warn('[BoqScreen] Không tải được /api/specs — cột Quy cách/Đơn vị/Ảnh sẽ trống:', err);
+      });
     return () => { alive = false; };
   }, []);
 

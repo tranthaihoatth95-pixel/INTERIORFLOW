@@ -1,5 +1,83 @@
 # STATUS — InteriorFlow
 
+## ✅ XONG (08/08 rạng sáng — P13 vòng 4: .idfc V2 "mọi thứ đều là .idfc", CHƯA COMMIT V6)
+Chi tiết → `docs/M-IDFC-2-OUT.md`. Theo chốt 07/08 khuya (00-CHOT.md mục 11): `IdfcFile` v2 =
+vỏ chung (meta có **kind** 11 loại, lighting→fixture) + RUỘT discriminated union 7 kiểu (⛔ không
+interface phẳng) + commerce bỏ kind. **IDFC_VERSION 1→2, IDFC_MIGRATIONS lần đầu có entry thật**
+— test 36/36 (9 test riêng migration: furniture/lighting/material/no-commerce; material cũ giữ
+geom2d ở symbol2d, KS4). Verify UI thật (3000): thả 1 lần 3 file — v1 CŨ đọc được xuyên migration
+(kệ hiện + giá 120tr + Roughness 0.45), v2 asset (không geom2d) vào được, file video-mang-ruột-
+component bị CHẶN kèm câu lỗi union chính xác. ThumbKind hết vai phân loại → ánh xạ n→1 sang
+IdfcKind (`idfcKindOfThumb`), 5 thumb `light-*` tạm map asset — **chờ Hoà quyết kind `preset`**.
+VIỆC 4 (sidebar theo kind) + VIỆC 5 (lỗi thẻ a-e) ĐỂ PHIẾU SAU theo đúng điều khoản cuối phiếu —
+không làm dở. tsc exit 0 · npm test 0 fail · check-chot không tăng đỏ (35 cũ, 0 dính file phiên).
+⚠️ Suýt-sự-cố: git stash trong cây chung để đo HEAD — lệnh fail vô hại, nhưng RÚT LUẬT: cấm
+stash/checkout khi nhiều phiên chung working tree.
+
+## ✅ XONG (07/08 đêm — P13 vòng 3: .idfc CÓ NƠI TIÊU THỤ + tấm Thư viện 4 ngăn, CHƯA COMMIT V6)
+Chi tiết → `docs/M-IDFC-OUT.md`. Format .idfc (P7) đo xong thấy ĐỦ — không sửa; nối 2 đầu dây
+thiếu: NHẬP (BulkIngestMode parse thật ngay lúc thả, lỗi cụ thể tại dòng, lưu `lib/library/
+idfc-store.ts` MỚI upsert theo mã) · KỆ THẬT `common-idfc` đếm số thật, cột thông số ưu tiên
+commerce TRONG FILE (verify: giá 120tr/cái + Unit "cái" chỉ có trong file, DB đang "—") · XUẤT
+(nút "Xuất .idfc" chỉ hiện khi resolve được BlockDef, gói đủ 3 mặt + pbr kho). VIỆC 4: nối
+`surface` vào spec-panel — Roughness 0.45 + bar hiện từ pbr nhúng, Gloss "—" đúng (không suy
+1−nhám). Cột kệ nhóm 4 NGĂN chốt (+ ngăn tạm "Mẫu & hồ sơ" cho 8 kệ template — CHỜ HOÀ XẾP).
+G-M19-01 (3 nấc thẻ) đo ra ĐÃ LÀM từ chiều — chỉ verify chụp 3 nấc, không code lại. Verify vân
+TRƯỚC/SAU (cầu trơn → vân gỗ). tsc 0 lỗi TOÀN REPO. Dọn sạch localStorage test trên 3000.
+G-M3-15 (54 block) chừa cho p2 — không đụng, tầng dữ liệu ngăn Cấu kiện sẵn chỗ.
+
+## ✅ XONG (07/08 tối muộn — P13 vòng 2: ẢNH VÂN vật liệu G-M17-03, CHƯA COMMIT V6)
+Chi tiết → `docs/M-VAT-LIEU-2-OUT.md`. `MaterialPbr` +4 trường (`baseColorMapUrl` **sRGB** ·
+roughness/metallicMapUrl linear · `uvScaleMm` mm thật — thiếu là gạch 600mm thành 3m) ·
+`lib/three/pbr-three.ts` MỚI = nơi DUY NHẤT gán colorSpace/repeat (texture cache + clone trước khi
+đổi repeat) · quả cầu đi `renderMaterialPreviewAsync` (caller cũ y nguyên) · editor 6 nút nạp ảnh
++ ô bước lặp vân. Verify browser thật (server 3000 dùng lại): quả cầu SW-TRV-BE từ MÀU TRƠN →
+CÓ VÂN travertine sau khi nạp ảnh qua đúng input UI; uvScale 250mm → vân mịn hẳn; 0 lỗi console;
+không để dấu vết localStorage. VIỆC 4: bảng đối chiếu mock `Thư viện.dc.html` ↔ code (9 dòng) —
+đáng chú ý: cột thông số ④ có sẵn dòng Độ nhám/Độ bóng nhưng `buildSpecRows` gọi 2 tham số nên
+LUÔN "—", nay đã có nguồn thật `getPbr(matId)`, nối 1 dòng ở `LibrarySheet.tsx:260` (chờ vùng
+library hết kẹt phiên). ⚠️ `ve3d-css.ts` bị phiên khác ghi backtick vào template literal lúc
+16:23 (lần 3 trong ngày họ bệnh này) — họ tự sửa sau 90s, tôi không đụng; đề nghị luật:
+**file `*-css.ts` cấm backtick trong comment**.
+
+## ✅ XONG (07/08 — LOGIN UI: text-shadow đúng ngữ cảnh + specificity tone dark, CHƯA COMMIT theo V6)
+Phiên sở hữu `globals.css` khối `.lq-*` + `LoginForm.tsx`. VIỆC 1: shadow `.lq-content` nay CHỈ
+áp cho chữ trắng trên nền tối/ảnh — tắt ở theme sáng/linen (card sữa chữ mực hết nhoè viền, ca
+ảnh Hoà), chọn phương án selector theme/tone vì phương án class đòi sửa LoginScreen ngoài vùng.
+PHÁT SINH cùng họ: `[data-login-tone='dark']` thua specificity nhánh theme sáng → theme sáng +
+ảnh nền ra card SỮA đè ảnh — vá `:root ` prefix cho cả `.lq-card` lẫn `.lq-field`. VIỆC 2 "dính
+Quên mật khẩu": KHÔNG tái hiện được (gap đo 102.6/45.6/≈34px ở 1280/375/EN) — vá lưới đỡ
+flex-wrap+gap-x-4, cần Hoà cho ngữ cảnh nếu còn thấy. VIỆC 3: `adaptive-contrast` shadowCss đúng
+tone (không cùng họ). Verify browser thật 127.0.0.1:3000 (server sẵn, HMR) đủ 4 trạng thái
+computed + chụp màn, 0 lỗi console, tsc exit 0. Báo cáo: `docs/M-LOGIN-UI-OUT.md`.
+
+## ✅ XONG (07/08 tối — P13 VẬT LIỆU: khoá nối matId + editor 4 núm + probe 3 cửa nạp, CHƯA COMMIT V6)
+Chi tiết đủ → `docs/M-VAT-LIEU-OUT.md`. Chốt: **matId = `ProductSpec.sku`** (tái dùng mã ATLAS,
+KHÔNG cột DB mới, không migrate) · `lib/materials/resolve.ts` `getMaterial()` trả 3 mảnh, thiếu=null
+(9/9 test) · VIỆC 5: `material-edit.ts` (11 loại, metallic/specular KHOÁ, 46/46 test — roughness
+từng loại khoá cứng bằng test vào `pbr-from-category`) + `MaterialPbrEditor.tsx` mount MaterialTable
+(10/10 hàng), verify browser thật 3006: gỗ→kim loại metallic tự nhảy 0→1 + quả cầu đổi thật, kính
+mở núm Độ trong, 2 theme, lưu localStorage `if.materials.pbr.v1` · VIỆC 6 probe: cửa ② Excel THÔNG
+(246 test) · cửa ③ /api/library THÔNG (POST/DELETE 200, 0 rác) · cửa ① ATLAS TẮC (403 non-admin +
+Lark 131006 treo từ 04/08, chờ Hoà) — CHƯA nạp 30 món (đúng lệnh probe trước) · VIỆC 7: (b) P7 làm
+rồi (kiểm code, không làm lại), (a)+(c) treo vì vùng components/library đang nhiều phiên ghi chồng.
+🔴 Sửa 2 bug CHẶN ngoài phiếu ở `library-sheet-css.ts`: (1) tấm Thư viện đóng xong vẫn che nguyên
+màn (bản card-nổi quên ẩn — thêm visibility trễ 200ms, đúng G1); (2) backtick trong comment CSS
+"SỬA 07/08 CHIỀU" nằm trong template literal → GÃY BUILD mọi route mount AppShell — đã gỡ; luật:
+file đó CẤM backtick. ⚠️ 5 dev server chung `.next` giẫm manifest nhau (route 200→404 xen kẽ).
+PBR chưa nối vào scene 3D (`components/three` tự khai chờ) — việc phiên vùng đó.
+
+## ✅ XONG (07/08 — BỘ LỆNH DỰNG HÌNH build-ops G-M17-02, CHƯA COMMIT theo luật V6)
+Phiên sở hữu `lib/three/build-ops.ts`+`csg.ts`: thêm 10 lệnh engine tham số MM THẬT —
+`prismBeveledEx`/`prismChamfered`/`filletPolygonMm` (VIỆC 1, bán kính+segments+chọn cạnh
+all/vertical/top) · `arrayGrid`/`arrayRadial`/`mirrorGeometry` (VIỆC 2) · `sweepProfile` (miter
+phân giác)/`revolveProfile` (LatheGeometry)/`loftSections` (VIỆC 3) · `prismTapered` (VIỆC 4) +
+`offsetPolygonInwardMm` (offset THẬT — phát hiện `insetPolygonMm` cũ chỉ lùi mặt 0,707d, bevel cũ
+vát non ~29%, KHÔNG tự sửa, chờ TỔNG quyết). Test 51/51 đo toạ độ/bbox thật · tsc -p . exit 0 ·
+`csg.ts` đọc không cần sửa · fail duy nhất còn lại = cad-to-obj entityId CŨ. Ảnh nghiệm thu N6
+render từ chính BufferGeometry: `docs/screenshots/build-ops-dot1-2026-08-07.png` (+.svg có nhãn).
+🟡 CHƯA nối `ops[]`/UI (BuildOp ở `lib/cad/model.ts` ngoài vùng) — báo cáo đủ: `docs/M-BUILD-OPS-OUT.md`.
+
 ## ✅ XONG (05/08 — BẢNG MÀU SƠN: bỏ bảng Pantone 2310 mã, tầng màu CẮM RỜI, CHƯA COMMIT theo luật V6)
 Hoà chốt sau NC-16 (⚠️ **`docs/NC-16-BANG-MAU-SON.md` KHÔNG TỒN TẠI trong repo** — `find` + `git
 log --all` = 0; phiên này dùng phần tóm tắt trong brief). **VIỆC 1** `lib/colors/` MỚI: `types.ts`

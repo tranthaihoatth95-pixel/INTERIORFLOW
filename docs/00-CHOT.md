@@ -185,3 +185,536 @@ chat bị nén là mất.*
 **Luật X4 — THIẾU DỮ LIỆU THÌ SUY, KHÔNG CHẶN.** Dựng ở 3D mà chưa khai `elementType` ⇒ suy đoán + gắn cờ `inferred` (K3), KHÔNG bắt người dùng khai trước mới cho dựng.
 [03/08 🔴 ĐÍNH CHÍNH — Hoà BÁC đề xuất của TỔNG] Câu "KHÔNG lấy modifier stack của Max / boolean / mesh chi tiết" trong `CHOT-TEN-CHANG-MODE §5` **SAI, HUỶ BỎ**. Hoà: *"dựng nội thất mà không có mấy cái đó là vứt"*. Lý do TỔNG sai: nghĩ AI vẽ ảnh cuối nên khỏi cần dựng sâu — quên rằng **đồ nội thất mới là thứ hình phức tạp nhất** (chân bàn tiện, tay vịn cầu thang, phào chỉ, nan chớp, gờ chỉ tủ). **PHẢI CÓ đủ gia phả lệnh dựng hình**, xem `SPEC-DUNG-BO-LENH-3D` (§ bảng 6 tầng). Camera cũng phải đạt mức V-Ray (tiêu cự mm · chỉnh đứng 2 điểm tụ · DOF · safe frame · tỉ lệ khung · đường quay) — *"cái đó rất cần cho góc nhìn, view, video"*.
 [03/08 Hoà đặt LUẬT §9 THIẾT KẾ TRƯỚC — TÍNH NĂNG FILL SAU] Nghiên cứu xong phải **vẽ ngay lên giao diện** (kể cả phần chưa code, để `disabled` kèm lý do), tính năng điền vào sau. Giao diện = **cây gia phả nhìn thấy được** của toàn bộ tính năng ⇒ chống bỏ sót ở cấp nhìn-thấy-được, mạnh hơn checklist trong file. Mỗi ô trống trên giao diện = 1 dòng CHECKLIST-TONG, khớp 1-1. **Cấm nút giả bấm không ra gì. Cấm xoá ô trống cho gọn mắt** — ô trống là bằng chứng còn việc. Chi tiết: `00-BAT-DAU-DOC-DAY.md §9`.
+
+---
+
+## CHỐT 07/08 — Thư viện: bố cục tấm (phương án A)
+
+**Bối cảnh, có số:** mock vẽ 3 cột `kệ 214 + lưới 1fr + thông số 236`, nhưng tấm chốt rộng
+**720px** ⇒ `720 − 186 − 236 = 298px` cho lưới (~2 thẻ/hàng). Ba cột **không sống chung được**
+ở 720. Nguồn: `M-APPLY-A-OUT.md` §A3.2 điểm 6 + §A3.3.
+
+### Hoà chốt: **PHƯƠNG ÁN A**
+| | |
+|---|---|
+| Bề rộng tấm | **giữ 720px** — đúng chốt 05/08 "card rời", không nới |
+| Cột thông số | **chỉ hiện khi ĐANG CHỌN món**, trượt vào từ phải |
+| Lưới lúc duyệt | 534px (~4 thẻ/hàng) |
+| Lưới lúc chọn | 298px (~2 thẻ/hàng) |
+| Cột kệ | **214px** (mock mới) — 186 chỉ là số chép từ `mock-if-3chang.html` cũ (`library-sheet-css.ts:4-6` tự khai "port nguyên văn"), KHÔNG phải chốt của Hoà |
+
+**Lý do chọn A, ghi lại để phiên sau không mở lại:**
+1. *Duyệt* và *so thông số* là hai động tác khác nhau, khác lúc — không cần chung một khung nhìn.
+2. B (nới 960) trả giá lớn để đổi lấy **4px**: lưới 538 so với 534 của A lúc duyệt, mà tấm
+   chiếm 67% màn 1440 ⇒ thôi là "card rời", trái chốt 05/08.
+3. C (đưa thông số ra panel phải) phá ngữ cảnh — mắt phải nhảy ra/vào mỗi lần so một mẫu.
+
+### ⚠️ ĐIỀU KIỆN KÈM THEO — A chỉ đúng nếu chuyển cảnh ÊM
+Cột thông số vào/ra phải **trượt ngang 180–220ms**, lưới co giãn theo, **không giật, không bật cụp**.
+Bật cụp thì người dùng thấy "màn hình tự đổi ý" — lúc đó B mới hơn. Nhánh
+`prefers-reduced-motion` thì hiện thẳng, không trượt.
+
+⇒ `G-A-05` (mock cãi chốt) phần **bề rộng + cột kệ** ĐÓNG. Phần còn lại của A3.6
+(cột thông số chưa có dữ liệu thật, nhám/bóng ở kho khác) vẫn treo — việc khác.
+
+### Bổ sung 07/08 — "card rời" nghĩa là NỔI LÊN TẠI CHỖ, không trượt từ đáy
+Hoà minh hoạ bằng màn *Phiên bản hồ sơ*: các thẻ "Bản 04 / 03 / 02" **nổi rời, hở cả 4 mép**.
+
+**Kiểm code hiện tại** (`components/library/library-sheet-css.ts`) — mới đúng một nửa:
+| Điểm | Nay | Đạt? |
+|---|---|---|
+| Bo 4 góc `--radius-lg` (`:59`) | có | ✅ |
+| Hở đáy `bottom: calc(14px + safe-area)` (`:57`) | có | ✅ |
+| `transform-origin: 50% 100%` (`:61`) | gốc phóng ở **mép dưới** | ❌ |
+| `translate(-50%, calc(100% + 14px…)) → translate(-50%,0)` (`:62,64`) | **trượt cả thân từ dưới màn lên** | ❌ |
+
+Chú thích `:46` tự khai *"Trước: dính đáy (bottom:0), chỉ bo 2 góc trên"* ⇒ đã bỏ dính, nhưng
+**giữ nguyên cách vào của ngăn kéo**. Hình rời mà chuyển động vẫn bò từ đáy ⇒ mắt vẫn đọc ra
+"ngăn kéo", không phải "thẻ nổi".
+
+**Chốt cách vào:**
+```
+transform-origin: 50% 50%
+đóng:  translate(-50%, 10px) scale(.97)
+mở:    translate(-50%, 0)    scale(1)
+200ms cubic-bezier(.32,.72,0,1)   ← giữ nguyên đường cong đang dùng
+```
+Nhích **10px**, không nhích cả chiều cao tấm. Tấm xuất hiện ĐÚNG CHỖ nó sẽ đứng, chỉ nảy nhẹ.
+Giữ scrim tối nền sau (đã có, `:41`). `prefers-reduced-motion` ⇒ hiện thẳng, bỏ transform.
+
+⚠️ Không dùng animate `opacity` trên tấm (luật G1) — chỉ `transform`.
+⇒ Việc CODE, mảng `components/library` (`3·apply-node`). Ghi vào phiếu vòng 2.
+
+**Vì sao KHÔNG dính đáy — lý do, để phiên sau không "sửa lại cho tiện tay":**
+Sheet dính đáy là ngôn ngữ của **điện thoại** — nó dán vào cạnh dưới vì đó là vùng ngón cái với tới.
+Apple cũng bỏ dính từ iOS 15 (sheet thành card thụt vào, bo 4 góc). Trên **macOS thì chưa bao giờ
+dính**: Save panel · Preferences · Quick Look đều nổi giữa màn.
+IF chạy **Electron trên desktop** — chuột không có "vùng ngón cái" ⇒ không có cớ dán cạnh dưới,
+mà dán thì thành thanh chắn hết chiều ngang. ⇒ **Nổi giữa là đúng cho desktop.**
+Nếu sau này có bản chạm/tablet, đó là quyết định RIÊNG, phải mở lại chốt này — không tự suy ra.
+
+### [07/08 Hoà chốt] ARCHINOTE HOÃN — dồn sức cho IF
+> *"archinote chưa code. xử if trước"*
+
+ArchiNote chưa có dòng code nào ⇒ **không nằm trong đợt 2–6**, không thiết kế trước cho nó,
+không thêm field "để dành". `G-M9-02` `G-M9-03` hạ xuống ⚪ hoãn (sổ còn 58 đỏ).
+
+**Cửa cho ArchiNote đã chừa sẵn, miễn phí:** `ExternalRef.system` (`schema.prisma:485`) là chuỗi
+tự do, cố ý KHÔNG enum. Sau này ArchiNote nối vào chỉ là thêm `system='archinote'` — 0 sửa lõi,
+0 migrate. Đó là lợi ích của luật §0v (lõi không mang tên nhà cung cấp) đã trả trước rồi.
+⇒ Làm thêm gì cho ArchiNote lúc này là **nợ kỹ thuật cho một thứ chưa tồn tại**.
+
+---
+
+## [07/08 Hoà chốt] ĐỊNH NGHĨA BA CHẶNG — bản cuối, thay mọi mô tả trước
+
+### Tên chuẩn (song ngữ)
+| # | Việt | Anh | ID trong code (GIỮ NGUYÊN) |
+|---|---|---|---|
+| ① | **Thiết kế 2D** | **2D Design** | `concept` |
+| ② | **Thiết kế 3D** | **3D Design** | `render` |
+| ③ | **Trình chiếu** | **Presenting** | `present` |
+
+⚠️ ID `concept` / `render` / `present` **KHÔNG đổi** — đổi ID là vỡ localStorage, route, DB.
+Chỉ đổi NHÃN hiển thị. (Cùng luật đã áp lần đổi tên 04/08, `lib/phases.ts:28-32`.)
+
+### Ranh giới từng chặng — ai làm gì
+
+**① Thiết kế 2D · 2D Design** — có **HAI MODE bên trong**:
+| Mode | Việt | Anh | Làm gì |
+|---|---|---|---|
+| `sketch` | Sơ phác | Sketch mode | vẽ nhanh, phác ý, không ràng buộc |
+| `pro` | Chuyên | Pro mode | vẽ kỹ thuật — **bao gồm luôn Revit**: mọi thứ **2D của Revit** tương tác Ở ĐÂY |
+
+**② Thiết kế 3D · 3D Design**
+- Mọi thứ **3D của Revit** đẩy sang chặng này
+- **Dựng khối** — tinh thần 3ds Max
+- Có **render**, và có **mode 3D dựng**
+
+**③ Trình chiếu · Presenting**
+- Nơi **trình bày những gì hai chặng kia đã làm**. Không sản xuất mới, chỉ đóng gói.
+
+### 🔴 LỖI NHÃN ĐANG CÓ — phải sửa
+Thanh chặng hiện hiển thị **"Thiết kế 2D · Sơ phác"** — **gộp tên CHẶNG với tên MODE vào một nút.**
+Sai cấu trúc: "Thiết kế 2D" là CHẶNG, "Sơ phác/Chuyên" là MODE **bên trong** chặng đó.
+⇒ Nút chặng chỉ được ghi **"Thiết kế 2D"**. Mode chọn ở chỗ khác (đã có sẵn dải
+`Sơ phác · Kỹ thuật · Nội thất` ở thanh công cụ dưới — nhìn thấy trên màn 11:40).
+⇒ dòng sổ `G-M15-02`.
+
+### Ba mô tả `tagline` hiện tại cũng cần rà lại theo chốt này
+| Chặng | tagline hiện (`lib/phases.ts`) | khớp chốt? |
+|---|---|---|
+| `concept:36` | *"Import CAD 2D · vẽ sơ phác · bố trí furniture"* | thiếu **Revit 2D** và thiếu khái niệm **2 mode** |
+| `render:51` | *"Clay → photoreal · chỉnh cục bộ"* | thiếu **Revit 3D** và **dựng khối** |
+| `present:88` | *"Slide · board · spec vật liệu"* | ✅ khớp |
+
+### ⚠️ ĐỐI CHIẾU với `docs/IF1_IF2_BIGPICTURE.md` (19-20/07) — LỆCH 4 CHỖ
+
+**🔴 Lệch 1 — HAI BỘ "3 CHẶNG" KHÁC NHAU, CÙNG MỘT CHỮ.** Bẫy từ vựng nặng nhất.
+| Nguồn | "3 chặng" nghĩa là gì |
+|---|---|
+| `IF1_IF2_BIGPICTURE.md:41-48` | 3 chặng của **IF2**: ① CAD kỹ thuật ② BIM/IFC 4.0 ③ Viewer 3D web + clash/section-cut |
+| **Chốt 07/08 (bản này)** | 3 chặng của **IF**: ① Thiết kế 2D ② Thiết kế 3D ③ Trình chiếu |
+⇒ Phiên nào đọc BIGPICTURE trước sẽ hiểu "chặng 3" = Viewer 3D, không phải Trình chiếu.
+**Từ nay: "chặng" CHỈ dùng cho bộ ①②③ của chốt này.** Bộ của IF2 phải gọi là **"mảng IF2"**,
+không được gọi là chặng. Ai gặp chữ "chặng" trong file cũ phải đọc lại ngữ cảnh, đừng suy ra.
+
+**🔴 Lệch 2 — mode: người dùng CHỌN hay app TỰ ĐỔI?**
+`BIGPICTURE:22-25` ghi: *"Người dùng KHÔNG tự chọn mode bằng tay — tự động theo role + stage
+(auto mode-switch, not user-toggled)"*.
+Nhưng màn hình thật 11:40 **có dải cho người dùng bấm**: `Sơ phác · Kỹ thuật · Nội thất`
+(thanh công cụ dưới, `components/cad/`). Và chốt 07/08 nói Thiết kế 2D **có 2 mode** — hàm ý chọn được.
+⇒ **Trái ngược trực tiếp. Cần Hoà chốt lại** — xem mục hỏi cuối.
+
+**🟡 Lệch 3 — 3ds Max**
+`BIGPICTURE:57-59`: *"dùng Blender (free) + Cycles thay 3ds Max/V-Ray… Không xây 'app 3ds Max' riêng"*.
+Chốt 07/08: *"dựng khối giống 3D max"*.
+⇒ Đọc là **giống về CÁCH THAO TÁC dựng khối**, KHÔNG phải xây lại 3ds Max. Nhân lõi vẫn Blender.
+Ghi rõ ở đây để phiên sau không hiểu thành "làm app 3ds Max".
+
+**🟡 Lệch 4 — Revit chưa có chỗ trong BIGPICTURE**
+BIGPICTURE nhắc "Revit" đúng **1 lần**, không giao vai trò. Chốt 07/08 giao rõ:
+Revit **2D** → chặng ①(mode Chuyên) · Revit **3D** → chặng ②.
+⇒ BIGPICTURE cần bổ sung, hoặc đánh dấu là bản cũ.
+
+### ✅ [07/08 Hoà chốt] MODE: **NGƯỜI DÙNG TỰ BẤM CHỌN**
+> *"người dùng tự bấm chọn."* · *"ở thiết kế 3D cũng vậy"*
+
+**Áp cho CẢ HAI chặng có mode:**
+| Chặng | Mode | Ai đổi |
+|---|---|---|
+| ① Thiết kế 2D | Sơ phác · Chuyên (gồm Revit 2D) | **người dùng bấm** |
+| ② Thiết kế 3D | Dựng khối · Render | **người dùng bấm** |
+
+⇒ `IF1_IF2_BIGPICTURE.md:22-25` — *"Người dùng KHÔNG tự chọn mode bằng tay — tự động theo
+role + stage (auto mode-switch, not user-toggled)"* — **BỊ HUỶ**, đó là bản 20/07.
+Vai trò (`role`) vẫn dùng cho **quyền hạn** (ai được sửa gì), KHÔNG dùng để **đổi mode thay người dùng**.
+
+**Code hiện tại đã ĐÚNG hướng** — không cần đại phẫu:
+`lib/cad/store.ts:155-159` `shouldShowProTools(role, stage, cadMode)`:
+```
+:156  if (cadMode === 'pro' || cadMode === 'revit') return true;   ← người dùng bấm, THẮNG trước
+:157  if (role === 'owner') return true;
+:158  return (role==='drafter'||role==='bim') && (stage==='technical'||stage==='bim');
+```
+Dòng `:156` đặt TRƯỚC hai dòng role ⇒ lựa chọn thủ công luôn được ưu tiên. Đúng chốt.
+Comment ở `:156` gọi nó là *"override thủ công (backward-compat)"* — **sai chữ**: nay nó là
+**đường CHÍNH**, không phải override. Sửa comment. ⇒ `G-M15-05`.
+
+### 🔴 [07/08 Hoà chốt] BỎ CHỮ "CAD" KHỎI MỌI NHÃN NGƯỜI DÙNG THẤY
+> *"có cad là sai thôi"*
+
+"CAD" là từ nghề của dân kỹ thuật, không phải ngôn ngữ sản phẩm. Nhãn phải là **Thiết kế 2D**.
+
+⚠️ **CHỈ đổi NHÃN. TUYỆT ĐỐI không đổi tên code** — `lib/cad/` · `components/cad/` ·
+`useCadStore` · `CadMode` · route `/projects/[id]/cad` · khoá localStorage **GIỮ NGUYÊN**.
+Đổi tên kỹ thuật là vỡ route, vỡ localStorage, vỡ DB — không đáng.
+
+**14 chỗ hiển thị chữ CAD, đã grep** (`G-M15-06`):
+| File:dòng | Chuỗi |
+|---|---|
+| `lib/phases.ts:37` | blurb *"mở/vẽ CAD"* |
+| `components/present-editor/PresentEditor.tsx:337` | `'Bản vẽ CAD · CAD Layout'` |
+| `components/render-studio/ModeSwitchCell.tsx:33` | *"khối đùn từ bản vẽ CAD"* |
+| `components/LibraryPanel.tsx:25` | `'CAD / Sketch'` |
+| `lib/library/types.ts:86` | `cad: { label: 'CAD' }` |
+| `lib/refingest.ts:45` | `label: 'CAD / Bản vẽ'` |
+| `lib/library/shelves.ts:155` | *"Dự toán live-link CAD"* |
+| `app/library/ingest/page.tsx:16,291` | badge `'CAD'` + *"…/ Excel / CAD vào đây"* |
+| `components/settings/GuModelSettings.tsx:130,131` | *"gợi ý bố trí CAD"* / *"CAD layout suggestions"* |
+| `lib/nodes/registry.ts:210` | *"sketch hoặc CAD export"* |
+| `lib/nodes/defs/render-v2.ts:292` | *"CAD→OBJ extrude"* |
+
+> ⚖️ Cân nhắc: vài chỗ nói về **định dạng tệp** (DWG/DXF) thì chữ "CAD" vẫn đúng nghĩa —
+> vd `app/library/ingest` (kéo-thả tệp CAD), `lib/refingest.ts` (phân loại tệp).
+> Chỗ nào chỉ **CHẶNG LÀM VIỆC** thì bắt buộc đổi thành "Thiết kế 2D".
+> Phiên sửa phải phân loại từng dòng, KHÔNG thay thế hàng loạt.
+
+---
+
+## [07/08 Hoà chốt] `.idfc` — ĐƠN VỊ CẤU KIỆN + GỘP THƯ VIỆN VỀ MỘT TẤM
+
+### ① Format `.idfc` — một tệp = MỘT CẤU KIỆN
+| | Phạm vi | Ví von |
+|---|---|---|
+| `.idf` | **một DỰ ÁN** — mặt bằng, tầng, mọi bản chèn | Revit `.rvt` |
+| **`.idfc`** | **một CẤU KIỆN** — dùng lại được ở mọi dự án | Revit `.rfa` |
+
+**KHÔNG phá luật `10a` "cấm đẻ format thứ hai"** — câu đó nhắm vào *ArchiNote đẻ schema riêng
+cho cùng một dự án*. `.idf` và `.idfc` là **hai CẤP ĐỘ** của cùng một hệ, không phải hai format
+cho cùng một thứ.
+
+### Vì sao cần — hiện một cấu kiện đang bị CHẺ LÀM ĐÔI (đo 07/08)
+| Phần | Ở đâu | Có gì | Thiếu gì |
+|---|---|---|---|
+| Hình học | `public/cad-library/manifest.json` — **54 block `.dxf`**, 12 nhóm | nét vẽ | **0 dữ liệu** — không mã, giá, vật liệu |
+| Tham số | `lib/cad/workstation-clusters.ts` — `CLUSTER_SPECS` **20 mục** | kích thước | **không lưu ra tệp được** (sinh trong code) |
+| Dữ liệu | `model ProductSpec` (DB) — kind · name · brand · sku · vendor · w/d/hUp · materials · finishes | dữ liệu | **0 hình học** |
+
+⇒ Ghế trong `ProductSpec` và ghế trong `.dxf` là **hai thứ khác nhau, không sợi dây nào nối**.
+Đó là gốc của `G-A-01` (*"chọn vật liệu xong không dùng được"*).
+**`.idfc` gói cả ba lại làm một.**
+
+### ② Gộp THƯ VIỆN về MỘT TẤM DUY NHẤT
+Hiện có **năm** khái niệm rời nhau (đo 07/08):
+| Nơi | dòng | test | Là gì |
+|---|---|---|---|
+| `lib/library/` | 795 | 1 | *"Master Library / Kệ — KHÔNG lộ ra UI"* (`types.ts:15`) |
+| `components/library/` | 1.599 | **0** | tấm Thư viện mới (`LibrarySheet`) |
+| `components/LibraryPanel.tsx` | — | 0 | panel cũ |
+| `components/NodeLibraryPanel.tsx` | — | 0 | thư viện **node** |
+| `components/cad-library/` | 318 | **0** | tự khai *"DEMO độc lập"* (`BlockLibraryDemo.tsx:2`) |
+
+**Chốt: gộp HẾT về một tấm**, chia kệ theo loại — **Cấu kiện · Vật liệu · Node · Ảnh tham chiếu**.
+Khớp `docs/SPEC-STAGE-LIBRARIES.md` (kệ theo chặng, chốt 02/08).
+⇒ `G-M16-01` · `G-M16-02`
+
+### ③ [07/08 Hoà chốt — BỔ SUNG QUAN TRỌNG] `.idfc` GÓI ĐỦ CẢ BA CHẶNG + GIÁ + TIẾN ĐỘ
+> *"nó gói luôn cả 3D của món đó nữa… mỗi chặng thông tin của idfc đều có thể hiểu:
+> chặng 1 CAD/Revit, chặng 2 3D render, chặng 3 giá"*
+> *"thay đổi 1 thứ trong cấu kiện là các chặng update theo kèm giá và tiến độ"*
+
+**Đây là luật K1 áp XUỐNG CẤP CẤU KIỆN.** K1 nói ba chặng là ba ống kính soi vào MỘT nguồn.
+`.idfc` làm đúng thế ở quy mô một món: **một cấu kiện = một nguồn, ba chặng đọc ba mặt của nó.**
+
+```
+                    ┌──────────  MỘT tệp .idfc  ──────────┐
+                    │   ghế / tủ / thiết bị vệ sinh …     │
+                    └───────────────┬─────────────────────┘
+        ┌───────────────────────────┼───────────────────────────┐
+   ① Thiết kế 2D              ② Thiết kế 3D               ③ Trình chiếu
+   ký hiệu · block CAD        khối 3D · vật liệu PBR       giá · thông số
+   dữ liệu Revit-style        để render                    bày cho khách
+        └───────────────────────────┼───────────────────────────┘
+                    SỬA MỘT CHỖ ⇒ CẢ BA CẬP NHẬT
+                    kéo theo:  💰 GIÁ    📅 TIẾN ĐỘ
+```
+
+#### Ba mặt của một `.idfc`
+| Chặng | `.idfc` cấp gì | Code ĐÃ CÓ (đo 07/08) | Thiếu |
+|---|---|---|---|
+| ① Thiết kế 2D | ký hiệu 2D · block CAD · dữ liệu kiểu Revit | 54 block `public/cad-library/*.dxf` · `lib/cad/block-library.ts` · `library-item-resolve.ts` | không mang dữ liệu |
+| ② Thiết kế 3D | khối 3D · vật liệu PBR · để render | `lib/three/cad-to-obj.ts` (2D→3D extrude) · `csg.ts` · `lighting.ts` · `lib/materials/pbr-from-category.ts` (`inferPbrFromCategory`) · `export-d5.ts` · `export-vray.ts` | 3D suy từ mặt bằng, KHÔNG gắn vào cấu kiện |
+| ③ Trình chiếu | giá · thông số bày cho khách | `ProductSpec.priceVnd` (Decimal, số thật) · `priceNote` (text) · `wastagePercent` | không nối từ bản chèn ngược về |
+| **Tiến độ** | mỗi cấu kiện gắn việc & mốc | 🔴 **KHÔNG có model nào** — chỉ `LarkTaskRef` (mirror hệ ngoài, chỉ đọc) | **thiếu hẳn** |
+
+#### Luồng lan truyền — điểm ăn tiền của sản phẩm
+Đổi vật liệu ghế từ sồi sang óc chó ⇒ **một thao tác, năm nơi tự đổi**:
+```
+.idfc (ghế)  ─┬─→ ① bản vẽ 2D    ký hiệu vật liệu · ghi chú đổi theo
+              ├─→ ② phối cảnh 3D  PBR đổi ⇒ render ra gỗ óc chó
+              ├─→ ③ hồ sơ khách   thông số + ảnh đổi theo
+              ├─→ 💰 BOQ/dự toán  đơn giá đổi ⇒ tổng tiền tự tính lại
+              └─→ 📅 tiến độ      đổi vật liệu ⇒ đổi thời gian đặt hàng/thi công
+```
+> Ví von: hôm nay đổi vật liệu ghế thì phải sửa bản vẽ, sửa file 3D, sửa bảng giá, báo lại tiến độ
+> — **bốn nơi, bốn lần, và luôn sót một chỗ**. `.idfc` biến bốn lần thành **một lần**.
+> Đây là thứ Revit·SketchUp·D5 KHÔNG có (họ phải xuất–nhập giữa các app).
+
+#### ⚠️ Ba ràng buộc kỹ thuật
+1. **Một chiều, không hai chiều.** `.idfc` → các chặng. Chặng KHÔNG ghi ngược vào `.idfc` gốc
+   (sửa ghế ở dự án A không được đổi ghế mẫu của cả kho). Muốn đổi mẫu gốc phải vào Thư viện,
+   có xác nhận. Luật KS3 (duyệt từng phần) + KS4 (lùi được).
+2. **Bản chèn giữ liên kết + giữ ĐÈ cục bộ.** Dự án này muốn ghế cao 450 thay vì 420 ⇒ ghi đè
+   tại bản chèn, KHÔNG đổi `.idfc`. Dùng `srcInsertId` đã có (`model.ts`, G-M1-06/07/18 đã đóng).
+3. **Tiến độ phụ thuộc `model Task`** — chưa có (`G-M10-01`, phiếu P1). ⇒ **`.idfc` làm trước
+   phần ①②③ + giá; phần tiến độ nối SAU khi P1 xong.** Đừng chặn nhau.
+
+⇒ `G-M16-03` · `G-M16-04`
+
+#### ⚠️ BỔ SUNG 07/08 — `.idfc` áp cho CẢ BA LOẠI, và VẬT LIỆU là gốc
+Hoà chốt: *"logic vật liệu → sử dụng trong thư viện — đây là nguồn vật liệu chung… đổi 1 vật liệu
+→ các dữ kiện khác đổi theo, tương tự furniture và Fit-out cũng vậy"*.
+
+| Loại | Gói gì |
+|---|---|
+| **Vật liệu** | thông số kỹ thuật · texture (PBR) · đặc tính · nhà cung cấp · giá · kỹ thuật thi công |
+| **Furniture** | y như trên + hình học + tham số |
+| **Fit-out** | y như trên |
+⇒ **Vật liệu là GỐC** — furniture cũng làm bằng vật liệu, nên sửa vật liệu là furniture đổi theo.
+
+**🔴 Hiện trạng đo 07/08 — vật liệu bị chẻ BA, không mảnh nào biết mảnh nào** (`G-M17-01`):
+| Mảnh | Ở đâu | Có | Thiếu |
+|---|---|---|---|
+| THỊ GIÁC | `lib/materials/schema.ts` `MaterialPbr` | 14 thông số PBR chuẩn glTF | 0 giá · 0 NCC · 0 thi công |
+| THƯƠNG MẠI | `ProductSpec` (DB) | vendor·supplierId·priceVnd·wastagePercent·packagingSpec | 0 thông số render |
+| 2D | `lib/cad/materials.ts:29` `MaterialDef` | hatch·color·tones | **0 khoá nối ProductSpec** |
+`grep "ProductSpec" lib/materials/*.ts` = **2 dòng COMMENT, 0 code nối**.
+
+⚠️ **Luật 2.1.9.i (30/07) cố ý tách hai bên — và nó CÓ LÝ**: render engine không cần biết giá;
+giá đổi hằng ngày còn texture thì không. ⇒ **Cách sửa KHÔNG phải nhồi giá vào PBR.**
+Cách đúng: **thêm KHOÁ NỐI** để một cấu kiện `.idfc` trỏ được tới cả ba mảnh.
+Ba mảnh giữ nguyên vai trò, chỉ thêm dây.
+
+---
+
+## [07/08 chiều — TỔNG quyết, Hoà uỷ quyền] TẤM THƯ VIỆN: NỚI 960px + BA NẤC CỠ THẺ
+
+> Hoà: *"card bị nhỏ, cảm giác quá bó hẹp không cần thiết"* · *"nghiên cứu app tương tự → bạn quyết"*
+
+### Đo hiện trạng 07/08 (`components/library/library-sheet-css.ts`)
+```
+tấm      min(720px, 100vw−24px)   :61
+cột kệ   214px                     :97
+padding  12px 14px                 :134
+lưới     minmax(122px,1fr) gap 11  :135
+```
+⇒ lưới còn **478px** ⇒ `478 ÷ (122+11)` ≈ 3,5 ⇒ **3 cột, thẻ ~141px**.
+Ảnh xem trước ~141×80px — quá nhỏ để phân biệt vân gỗ sồi với óc chó.
+
+### Tra ngành — D5 Render và Blender ĐỀU có núm chỉnh cỡ thẻ
+Không app nào cố định một cỡ. Lý do: cùng một thư viện, lúc cần **lướt nhanh 40 món**,
+lúc cần **soi kỹ một vân**. ⇒ Sáng nay tôi chốt sai hướng: đi tìm *một cỡ đúng*,
+trong khi ngành để **người dùng tự chỉnh**.
+
+### ✅ QUYẾT ĐỊNH
+**① Nới tấm 720 → 960px.** Mock gốc vẽ 980. Số 720 là TỔNG tự hạ sáng 07/08 vì tưởng cột
+thông số chiếm chỗ thường trực — nhưng cột đó CHỈ hiện khi chọn món (chốt phương án A),
+nên lúc duyệt tấm rộng được. Lưới: 478 → **718px**.
+⚠️ Giữ `min(…, 100vw−24px)` — màn hẹp vẫn không tràn.
+
+**② BA NẤC CỠ THẺ** — người dùng bấm chọn, NHỚ lựa chọn (localStorage):
+| Nấc | `minmax` | Cột (lưới 718) | Dùng khi |
+|---|---|---|---|
+| Nhỏ | 122px | 5 | lướt nhanh, biết mình tìm gì |
+| **Vừa** ⭐ mặc định | **168px** | **4** | cân bằng |
+| Lớn | 232px | 3 | soi vân, chọn vật liệu |
+Mặc định **Vừa**: ảnh ~168×95 — đủ phân biệt vân. Cỡ 141px hiện tại thì không.
+
+**③ Nấc LỚN hiện thêm kích thước `w×d×h`** — chốt 07/08 nói dân thiết kế cần con số này
+trước tiên. Thẻ nhỏ không đủ chỗ; thẻ lớn thì có.
+
+### Không đổi
+· cột kệ **214px** (chốt sáng 07/08) · tấm nổi giữa, KHÔNG dính đáy ·
+· cột thông số CHỈ hiện khi đang chọn món, trượt vào từ phải ·
+· chuyển cảnh 180–220ms, êm
+⇒ `G-M19-01`
+
+---
+
+## Chốt 07/08 (tối) — CHẶNG 3 & giới hạn đầu ra
+
+Hoà chốt trực tiếp, **đảo ngược một số chốt cũ**. Chốt cũ nào trái với dưới đây đều HẾT HIỆU LỰC.
+
+### 1. BỎ giới hạn "gói trong ≤5 sheet" — ở TẤT CẢ các chặng
+Nguyên văn: *"bỏ vụ gói trong 5 sheet ở tất cả các chặng, ko gói nữa"*.
+`docs/IF-PRESENT-STAGE-SPEC.md` mở đầu bằng *"xuất PDF/PPTX/PNG, gói trong ≤5 sheet"* — **hết hiệu lực**.
+Hồ sơ nội thất thật có bao nhiêu trang thì ra bấy nhiêu; số trang do NỘI DUNG quyết định, không do
+một con số đặt sẵn. Mọi chỗ trong code/spec còn ép trần 5 phải gỡ.
+
+### 2. LÀM auto-deck 1 click — người duyệt cuối + sửa được
+Nguyên văn: *"chốt làm auto-deck 1 click - người duyệt cuối + edit"*.
+⚠️ **Đảo ngược** mục ⛔ KHÔNG LÀM trong `IF-PRESENT-STAGE-SPEC.md` (*"auto-deck-from-nothing 1-click
+(Magic Design không người duyệt)"*). Lý do chốt cũ là "không người duyệt"; nay có **người duyệt cuối
++ sửa tự do** nên rào đó không còn. Human-in-the-loop giữ nguyên — máy dựng xong, người xem và sửa,
+KHÔNG tự xuất bản.
+
+### 3. BỎ giới hạn 25 template
+Nguyên văn: *"25 template kia ko nên giới hạn trong 25 - bỏ giới hạn"*.
+Template là kho mở, người dùng tự thêm/tự lưu (nối với gap "lưu template tự tạo" đã ghi trong spec).
+
+### 4. Bố cục TỰ CHUYỂN khổ — A3/A4, ngang/dọc — **ĐANG BỊ LỖI**
+Nguyên văn: *"BỐ CỤC AUTO CHUYỂN ĐỔI TỪ A3 A4, NGANG DỌC V.V.... ĐANG BỊ LỖI"*.
+Đây là BÁO LỖI, không phải yêu cầu tính năng mới — Hoà đã thấy nó chạy sai. Phải đo và sửa.
+
+### 5. Giải mâu thuẫn dàn trang ↔ chiếu đa đích — LÀM CẢ HAI
+Nguyên văn: *"giải mâu thuẫn dàn trang - chiếu đa đích, cái nào cũng hay"*.
+Hai hướng KHÔNG loại trừ nhau: `.idf` là cây cú pháp (nguồn sự thật), chặng 3 chiếu nó ra nhiều đích
+(PDF · PPTX · XLSX · MP4 · bản in), và **trình dàn trang là MỘT trong các đích đó** — đích duy nhất
+cho người sửa tay. Xem `docs/TU-VAN-CHANG-3-VA-IF2-2026-07-30.md`.
+
+### 6. Đào lại nghiên cứu video editor đã chốt
+`docs/SPEC-TRINH-VIDEO-EDITOR.md` — cần đọc lại và nối vào bức tranh chặng 3 mới.
+
+---
+
+## Chốt 07/08 (tối, tiếp) — TRIẾT LÝ NỀN CỦA TOÀN APP
+
+### 7. ⭐ CẢ APP LÀ PIPELINE CÓ NGƯỜI TRONG VÒNG LẶP — luật nền, đứng trên mọi luật khác
+
+Hoà chốt nguyên văn:
+> *"Thật ra cả tổng app đều là những FLOW lớn nhỏ được thiết kế dạng PIPELINE có human-in-loop.
+> AI đóng vai trò LINH HOẠT trong chuỗi — có khi tạo nội dung cho người duyệt, có khi tham vấn
+> cho người tạo nội dung. Nhưng ĐÍCH ĐẾN thì phải cho NGƯỜI EDIT ĐƯỢC để không bị động."*
+
+Ba hệ quả bắt buộc, áp cho MỌI tính năng từ nay:
+
+**① AI có hai vai, không cố định vai nào:**
+   · *người sản xuất* — máy dựng trước, người duyệt và sửa (auto-deck, gợi ý bố cục, suy loại cấu kiện)
+   · *người tham vấn* — người dựng, máy góp ý (kiểm chuẩn, cảnh báo lệch, gợi ý vật liệu)
+   Cùng một tính năng có thể đổi vai tuỳ ngữ cảnh. KHÔNG ép một vai cứng cho cả app.
+
+**② ĐÍCH ĐẾN PHẢI SỬA ĐƯỢC — đây là luật cứng, không có ngoại lệ.**
+   Mọi thứ máy sinh ra ở bước cuối phải mở ra sửa được bằng tay. Xuất ra file chết
+   (người dùng không sửa được, phải quay lại làm lại từ đầu) = **BỊ ĐỘNG** = sai thiết kế.
+   Áp cụ thể: PPTX xuất ra chữ phải sửa được (đã có) · MP4 phải mở lại trong trình dựng
+   (spec video §1) · bảng tính phải sửa ô · bản in phải chỉnh trang · deck phải kéo thả lại.
+
+**③ Không bước nào được là hộp đen một chiều.** Mỗi bước trong chuỗi phải có: xem trước ·
+   sửa · lùi lại. Trái luật này là trái §KS3 (duyệt từng phần) + §KS4 (lùi được) đã chốt.
+
+### 8. Chặng 3 = ĐA ĐÍCH, không phải chỉ deck ảnh — **và việc này ĐÃ SPEC, đang bị HOÃN**
+Hoà: *"đâu phải chỉ present hình ảnh, còn video, pptx, trình chiếu HTML, bảng tính…"*
+⚠️ Đo 07/08: **5 loại hồ sơ ĐÃ CHỐT VÀ ĐỦ SPEC** — Deck · Bảng vật liệu A3 · BOQ · Văn bản · Video
+(`docs/BAO-CAO-COWORK-TRINH.md:3,61,66`). Màn chọn loại là **H4**, đang **HOÃN theo chỉ đạo cũ**
+(`802f808` *"hết chuỗi H, H4 hoãn"*). ⇒ Việc cần làm KHÔNG phải thiết kế mới, mà là **BỎ HOÃN H4**
+và dựng màn chọn đích đến. Bổ sung so với spec cũ: **trình chiếu HTML** (loại thứ 6, chưa có spec).
+
+### 9. Logo IF màu tím là SAI
+Hoà chốt 07/08. Cần bộ nhận diện riêng cho InteriorFlow, KHÔNG dùng màu accent tím của giao diện
+làm logo. 🔶 CHỜ HOÀ cấp hướng màu/hình thay thế.
+
+### 10. Tay cầm thu/mở panel của chặng Trình chiếu = MẪU CHUNG cho toàn app
+Hoà chốt 07/08: *"thanh này ở chặng presenting làm rất tốt nên áp dụng cho toàn hệ thống có thiết kế tương tự"*.
+
+**Mẫu:** dải dọc mảnh sát mép panel, giữa có mũi tên `›` / `‹`. Bấm là panel thu vào / mở ra.
+Ưu điểm khiến nó đáng nhân bản: chiếm gần như 0 diện tích khi không dùng · vị trí đoán được
+(luôn ở mép panel) · một cú bấm, không menu · thu rồi vẫn thấy tay cầm để mở lại (không "mất tích").
+
+**Áp cho mọi panel bên trong app.** Đo 07/08 — hiện rất lệch:
+| Vùng | file có cơ chế thu/mở |
+|---|---|
+| `components/library/` | **0/7** ⚠️ tấm Thư viện, panel to nhất |
+| `components/cad/` | 2/20 |
+| `components/render-studio/` | 2/18 |
+| `components/studio/` | 3/31 |
+| `components/nodes/` | 5/10 |
+| `components/dashboard/` | 1/2 |
+
+⇒ Việc: tách tay cầm thành **một component dùng chung** (không chép code 6 lần), rồi lắp vào mọi
+panel bên. Trạng thái thu/mở phải **nhớ được** giữa các phiên làm việc.
+
+---
+
+## Chốt 07/08 (khuya) — ⭐ MỌI THỨ TRONG THƯ VIỆN ĐỀU LÀ `.idfc`
+
+Hoà chốt nguyên văn:
+> *"Theo mình tất cả đều là idfc thì hợp lý hơn, gom gọn gàng lại và phân loại rõ ra. Mỗi một mẫu
+> trong thư viện kể cả video hay template đều ở dạng cấu kiện hết. Như vậy mới liên kết mật thiết
+> với nhau, và đúng tinh thần dữ liệu linh hoạt."*
+
+⚠️ **Đảo ngược cách làm hiện tại**: mỗi kệ đang có định dạng riêng, cơ chế riêng.
+
+### 11.1 · Vì sao
+Gom về một định dạng thì **mọi cơ chế chung chỉ viết MỘT lần**: version + bảng nâng cấp · phạm vi
+(chung/studio/dự án/chặng) · thumbnail · tìm kiếm · "đưa lên kệ" · quyền · nhập/xuất.
+Hiện mỗi kệ tự làm lấy — đó là lý do kệ Mẫu trang không có thumbnail thật còn kệ Vật liệu thì có.
+Và **liên kết chéo** mới là phần đắt nhất: mẫu trang tham chiếu vật liệu · video tham chiếu cấu kiện
+· bộ nhận diện dùng chung cả hồ sơ. Khác định dạng thì không tham chiếu chéo được.
+
+### 11.2 · Cấu trúc — VỎ CHUNG + RUỘT THEO LOẠI (bắt buộc)
+⛔ **KHÔNG làm thành một interface phẳng với mọi trường optional.** `IdfcFile` hiện bắt buộc có
+`geom2d`; mẫu video không có hình học 2D. Nhét hết vào một kiểu rồi để optional ⇒ kiểu 40 trường mà
+mỗi loại dùng 5, máy không kiểm được gì, mọi hàm phải `if (x.geom2d)` khắp nơi.
+
+```
+IdfcFile
+├── meta        ← VỎ CHUNG, mọi loại đều có
+│   id · tên · mã · kind · phạm vi · thẻ · phòng? · người tạo · ngày
+├── body        ← RUỘT, đổi theo kind (discriminated union)
+│   component  → geom2d · geom3d? · params?
+│   material   → pbr · hatch2d?
+│   page       → slide            (mẫu trang · bảng vật liệu A3 · biểu mẫu dự toán)
+│   video      → shots · nhạc?
+│   doc        → template văn bản
+│   asset      → ảnh tham chiếu
+│   brandkit   → logo · màu · font
+├── commerce?   ← giá, chỉ loại nào bán được
+└── progress?   ← tiến độ, chờ `model Task` (P1)
+```
+Vỏ chung ⇒ tính năng chung viết một lần. Ruột theo loại ⇒ máy vẫn kiểm được "video KHÔNG được có
+`geom2d`". Đây là discriminated union — cách TypeScript làm đúng cho ca này.
+
+### 11.3 · Ba điểm Hoà đã gật (07/08)
+**① `geom2d` chuyển từ bắt buộc → vào `body`.** Đây là ĐỔI CẤU TRÚC FILE. `IDFC_MIGRATIONS`
+(`lib/cad/idfc.ts`) hiện RỖNG ở v1 — đây là lần đầu phải dùng nó thật. Không phải đổi một dòng.
+Phải có hàm nâng v1→v2 + test round-trip cho file cũ.
+
+**② Chữ "C" trong `.idfc` đọc là CONTENT, không còn là Component.** Vì video và văn bản cũng là
+`.idfc`. Giữ nguyên phần mở rộng tệp (đã quen, đã có code), chỉ định nghĩa lại nghĩa trong sổ này
+để phiên sau không cãi.
+
+**③ Sidebar Thư viện gộp lại, chia theo `kind`.** Nhóm "Cấu kiện (.idfc)" riêng biệt BIẾN MẤT —
+vì mọi thứ đều là nó. Bốn nhóm hiện tại (CẤU KIỆN · VẬT LIỆU · ẢNH THAM CHIẾU · MẪU & HỒ SƠ)
+thay bằng danh sách theo `kind`.
+
+### 11.4 · Hai trục phân loại — độc lập, KHÔNG trộn
+**Trục ① LOẠI (`kind`) — *nó là cái gì*.** Dùng cho thumbnail · lọc · bảng khối lượng · chia thầu:
+| kind | Việt | Gồm | Ai thi công |
+|---|---|---|---|
+| `material` | Vật liệu hoàn thiện | gỗ · đá · sơn · vải · kim loại · kính · gạch | thầu hoàn thiện |
+| `furniture` | Đồ rời | bàn · ghế · sofa · giường · tủ rời | mua sẵn / đặt xưởng |
+| `millwork` | Đồ mộc đóng | tủ bếp · tủ áo âm tường · kệ liền tường · quầy · vách gỗ | xưởng mộc, đo tại chỗ |
+| `fitout` | Chi tiết hoàn thiện | phào chỉ · nẹp · ốp tường · trần thả · tay nắm | thầu hoàn thiện |
+| `fixture` | Thiết bị cố định | đèn · thiết bị vệ sinh · vòi · bếp · điều hoà | thầu M&E |
+| `soft` | Đồ vải | rèm · thảm · gối · ga | mua riêng |
+| `page` · `video` · `doc` · `asset` · `brandkit` | (mẫu & hồ sơ) | — | — |
+Sáu loại đầu đúng cách hồ sơ nội thất **chia thầu** — mỗi loại một nhà thầu, một dòng hợp đồng,
+một cách báo giá. Không phải chia cho đẹp.
+
+**Trục ② PHÒNG — *dùng ở đâu*.** Giữ `BlockGroup` 10 nhóm. ĐỘC LẬP với trục ①: một cái đèn
+(`fixture`) dùng ở cả phòng khách lẫn phòng ngủ.
+
+Ba việc chỉ làm được khi TÁCH hai trục: **lọc chéo** ("đồ mộc đóng ở bếp") · **bảng khối lượng theo
+thầu** (gom `millwork` gửi xưởng mộc) · **thumbnail đúng bản chất** (đồ mộc đóng vẽ CÓ TƯỜNG phía
+sau vì nó dính tường · đồ rời vẽ đứng tự do · chi tiết hoàn thiện vẽ MẶT CẮT — ba cách vẽ khác nhau).

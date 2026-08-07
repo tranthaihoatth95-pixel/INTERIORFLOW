@@ -143,6 +143,15 @@ export const VE3D_CSS = `
 .if-ve3d .vpnote{position:absolute;left:14px;bottom:14px;z-index:4;font-size:10.5px;
   border-radius:var(--radius-sm);padding:5px 9px;max-width:250px;line-height:1.45}
 .if-ve3d .vpnote b{color:#fff}
+/* G-M18-04 — nút "Toàn cảnh". CÙNG lý do màu cố định của .vpover trên (nền cảnh #2a2d33 luôn
+   tối bất kể theme) NHƯNG KHÔNG backdrop-filter (G9: cảnh này đã có sẵn ViewCube + vplabel/vpnote
+   dùng blur, thêm 1 tấm nữa là vượt ngân sách hiệu năng WebGL — dùng nền đặc thay kính). */
+.if-ve3d .fitbtn{position:absolute;right:12px;top:120px;z-index:4;display:flex;align-items:center;
+  gap:6px;height:var(--tap);padding:0 11px;border-radius:var(--radius-sm);
+  background:rgba(20,22,26,.92);border:1px solid rgba(255,255,255,.14);color:#e8e8ee;
+  font-size:var(--fs-2xs);font-weight:600;line-height:1.5;cursor:pointer;font-family:inherit}
+.if-ve3d .fitbtn:hover{background:rgba(32,35,40,.92)}
+.if-ve3d .fitbtn:disabled{opacity:.4;cursor:not-allowed}
 /* ══════ OBJECT PROPERTIES (ổ ④ inspector) ══════ */
 .if-ve3d.objp{width:100%;height:100%;overflow-y:auto;background:var(--panel);padding:12px;
   display:flex;flex-direction:column;gap:12px}

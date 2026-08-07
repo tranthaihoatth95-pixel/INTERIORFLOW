@@ -27,7 +27,7 @@ function readStoredView(): ToolModeView {
   try {
     const v = localStorage.getItem(VIEW_KEY);
     if (v === 'home' || v === 'form' || v === 'canvas') return v;
-  } catch {}
+  } catch {/* localStorage bị chặn (chế độ riêng tư) — dùng mặc định, không chặn việc */}
   return 'home';
 }
 
@@ -45,7 +45,7 @@ function persist(view: ToolModeView, cardId: string | null) {
     localStorage.setItem(VIEW_KEY, view);
     if (cardId) localStorage.setItem(CARD_KEY, cardId);
     else localStorage.removeItem(CARD_KEY);
-  } catch {}
+  } catch {/* localStorage bị chặn (chế độ riêng tư) — dùng mặc định, không chặn việc */}
 }
 
 interface ToolModeUiState {

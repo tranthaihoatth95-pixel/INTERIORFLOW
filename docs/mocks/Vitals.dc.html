@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+:root{
+  --accent:#6a57f5; --accent-strong:#553ff3; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+  --radius-sm:10px; --radius-md:14px; --radius-lg:20px; --radius-xl:28px;
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:20px; --fs-xl:28px;
+  --fw-normal:400; --fw-semi:600;
+  --blur:22px; --blur-strong:40px;
+  --ease-apple:cubic-bezier(.32,.72,0,1); --dur-fast:.18s; --dur-base:.32s;
+  --tap:32px; --row:28px; --gap:8px;
+  --chat-bg:#0c0c0e; --chat-panel:#141417; --chat-card:#1a1a1e; --chat-field:#202024;
+  --chat-t1:#f5f5f7; --chat-t2:#d6d6db; --chat-t3:#9e9ea8; --chat-t4:#6e6e78;
+  --chat-line:rgba(255,255,255,.06);
+  --accent-lit:#a99bff; --accent-hot:#e4dfff;
+  --gl-sphere:radial-gradient(circle at 36% 30%,rgba(150,134,255,.30),rgba(48,42,96,.55) 42%,rgba(12,12,22,.94) 72%),radial-gradient(circle at 62% 78%,rgba(106,87,245,.20),transparent 58%);
+  --gl-sphere-shadow:inset -1px -2px 10px rgba(0,0,0,.7),inset 6px 5px 22px rgba(140,124,255,.13);
+  --gl-rim:inset 2px 3px 0 -1.2px rgba(196,186,255,.55),0 0 22px -4px rgba(106,87,245,.42);
+  --gl-blend:screen; --gl-arc:#8c7cff; --gl-soft:.5;
+  --gl-dot:radial-gradient(circle,#fff 0%,var(--accent-hot) 32%,var(--accent) 72%,transparent 78%);
+  --gl-dot-shadow:0 0 9px 1px rgba(150,134,255,.8);
+}
+[data-theme="light"]{
+  --gl-sphere:#ffffff;
+  --gl-sphere-shadow:none;
+  --gl-rim:0 6px 18px -8px rgba(60,52,40,.35),inset 0 0 0 1px #e3ded4;
+  --gl-blend:normal; --gl-arc:#6a57f5; --gl-soft:.16;
+  --gl-dot:radial-gradient(circle,#6a57f5 0%,#6a57f5 60%,transparent 72%);
+  --gl-dot-shadow:none;
+}
+:root,[data-theme="dark"]{
+  --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024; --hover:#2a2a30;
+  --border:#2a2a31; --border-strong:#3d3d45;
+  --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+  --mat-panel:rgba(20,20,23,.68); --mat-card:rgba(26,26,30,.82); --mat-hairline:rgba(255,255,255,.06);
+  --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65); --shadow-node:0 6px 20px -8px rgba(0,0,0,.6);
+  --danger:#e5674f; --warning:#d9a34a; --success:#46b876;
+}
+[data-theme="light"]{
+  --bg:#f2efe9; --panel:#faf8f4; --card:#ffffff; --field:#f4f1eb; --hover:#e9e5dd;
+  --border:#e3ded4; --border-strong:#cbc4b6;
+  --t1:#211e19; --t2:#47423a; --t3:#726c62; --t4:#9a938a; --t5:#b8b1a7;
+  --mat-panel:rgba(250,248,244,.7); --mat-card:rgba(255,255,255,.82); --mat-hairline:rgba(0,0,0,.05);
+  --shadow-pop:0 10px 30px -10px rgba(60,52,40,.22); --shadow-node:0 6px 18px -8px rgba(60,52,40,.2);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--accent-strong)}
+@keyframes vt-travel{to{offset-distance:100%}}
+@keyframes vt-depth{0%{transform:scale(1);opacity:1}25%{transform:scale(.5);opacity:.38}50%{transform:scale(1);opacity:1}75%{transform:scale(1.55);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes vt-spin{to{transform:rotate(360deg)}}
+@keyframes vt-pulseout{0%{box-shadow:0 0 0 0 rgba(106,87,245,.45)}70%{box-shadow:0 0 0 15px rgba(106,87,245,0)}100%{box-shadow:0 0 0 0 rgba(106,87,245,0)}}
+@keyframes vt-bar{0%,100%{transform:scaleY(.28)}50%{transform:scaleY(1)}}
+@keyframes vt-wave{0%,100%{transform:scaleY(.34)}45%{transform:scaleY(1)}}
+@keyframes vt-breathe{0%,100%{opacity:.28;transform:scale(.78)}50%{opacity:1;transform:scale(1)}}
+@keyframes vt-ring{0%,100%{box-shadow:0 0 0 0 var(--accent-soft)}50%{box-shadow:0 0 0 6px var(--accent-soft)}}
+@keyframes vt-sweep{0%{transform:translateX(-130%)}100%{transform:translateX(240%)}}
+@keyframes vt-pop{0%{opacity:0;transform:scale(.96) translateY(-6px)}70%{opacity:1;transform:scale(1.008) translateY(0)}100%{transform:scale(1)}}
+@keyframes vt-type{0%,100%{opacity:.25}50%{opacity:1}}
+[data-motion="off"] *{animation:none !important}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--bg);padding:36px 40px 72px;font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:var(--t1)">
+
+  <div style="width:1180px;margin:0 auto 30px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
+    <div style="min-width:0">
+      <div style="display:flex;align-items:center;gap:11px">
+        <div style="width:26px;height:26px;border-radius:8px;background:var(--accent);flex:none"></div>
+        <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.02em">Vitals</h1>
+        <span style="display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:6px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700;letter-spacing:.03em">PLACEHOLDER</span>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--t3);max-width:800px;text-wrap:pretty">Trợ lý của app, sống trong một viên nhỏ ở góc header. Không bao giờ chiếm màn hình. Một sắc tím duy nhất. Trạng thái nói bằng số hạt và tốc độ quỹ đạo, không bằng màu.</div>
+    </div>
+    <button onClick="{{ toggleTheme }}" style="height:32px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--t2);font:600 12px inherit;cursor:pointer;flex:none;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover);color:var(--t1)">{{ themeLabel }}</button>
+  </div>
+
+  <div style="width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:44px">
+
+    <div data-screen-label="01">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">01</span>
+        <span style="font-size:12px;font-weight:600;color:var(--t2)">Viên Vitals · bốn trạng thái</span>
+        <span style="font-size:11px;color:var(--t4)">Số hạt là kênh thông tin · liếc một cái là biết</span>
+      </div>
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:20px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:13px">
+            <div style="position:relative;width:96px;height:96px;isolation:isolate">
+              <div style="position:absolute;inset:8%;border-radius:50%;background:var(--gl-sphere);box-shadow:var(--gl-sphere-shadow)"></div>
+              <div style="position:absolute;inset:8%;border-radius:50%;box-shadow:var(--gl-rim)"></div>
+              <div style="position:absolute;inset:0;mix-blend-mode:var(--gl-blend)">
+                <div style="position:absolute;inset:0;transform:rotate(18deg)">
+                  <svg viewBox="0 0 96 96" style="position:absolute;inset:0;overflow:visible"><ellipse cx="48" cy="48" rx="40" ry="15" style="fill:none;stroke:var(--gl-arc);stroke-width:2.6;filter:blur(3px);opacity:var(--gl-soft)"></ellipse></svg>
+                  <span style="position:absolute;left:0;top:0;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:var(--gl-dot);box-shadow:var(--gl-dot-shadow);offset-rotate:0deg;offset-path:path('M 8,48 A 40,15 0 1,1 88,48 A 40,15 0 1,1 8,48');animation:vt-travel 20s linear infinite,vt-depth 20s linear infinite"></span>
+                  <span style="position:absolute;left:0;top:0;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--gl-dot);opacity:.42;offset-rotate:0deg;offset-path:path('M 8,48 A 40,15 0 1,1 88,48 A 40,15 0 1,1 8,48');animation:vt-travel 20s linear infinite,vt-depth 20s linear infinite;animation-delay:-.055s"></span>
+                </div>
+                <div style="position:absolute;inset:0;transform:rotate(-62deg)">
+                  <span style="position:absolute;left:0;top:0;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:var(--gl-dot);box-shadow:var(--gl-dot-shadow);offset-rotate:0deg;offset-path:path('M 11,48 A 37,14 0 1,1 85,48 A 37,14 0 1,1 11,48');animation:vt-travel 20s linear infinite,vt-depth 20s linear infinite;animation-delay:-9.4s"></span>
+                  <span style="position:absolute;left:0;top:0;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--gl-dot);opacity:.42;offset-rotate:0deg;offset-path:path('M 11,48 A 37,14 0 1,1 85,48 A 37,14 0 1,1 11,48');animation:vt-travel 20s linear infinite,vt-depth 20s linear infinite;animation-delay:-9.46s"></span>
+                </div>
+              </div>
+            </div>
+            <span style="display:inline-flex;align-items:center;height:18px;padding:0 9px;border-radius:20px;background:var(--field);color:var(--t3);font:600 10px ui-monospace,Menlo,monospace">2 hạt</span>
+            <div style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 12px 0 6px;border-radius:20px;background:var(--field);color:var(--t4)">
+              <span style="width:19px;height:19px;flex:none;opacity:.75">
+                <svg width="19" height="19" viewBox="0 0 20 20" style="display:block;overflow:visible">
+                  <circle cx="10" cy="10" r="8.4" style="fill:none;stroke:currentColor;stroke-width:1.1;opacity:.34"></circle>
+                  <g style="transform-box:view-box;transform-origin:10px 10px;animation:vt-spin 20s linear infinite"><ellipse cx="10" cy="10" rx="8.4" ry="3.3" style="fill:none;stroke:currentColor;stroke-width:1.15"></ellipse><circle cx="18.4" cy="10" r="1.7" style="fill:currentColor"></circle></g>
+                  <g style="transform-box:view-box;transform-origin:10px 10px;animation:vt-spin 26s linear infinite reverse"><ellipse cx="10" cy="10" rx="8.4" ry="3.3" transform="rotate(62 10 10)" style="fill:none;stroke:currentColor;stroke-width:1.15"></ellipse><circle cx="6" cy="2.6" r="1.5" style="fill:currentColor"></circle></g>
+                </svg>
+              </span>
+              <span style="font-size:11px;font-weight:600">Vitals</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--t1)">Nghỉ</div>
+            <div style="font-size:11px;color:var(--t4);margin-top:4px;line-height:1.5;text-wrap:pretty">Hai hạt, vòng chậm. Có sự sống, không đòi chú ý.</div>
+          </div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:13px">
+            <div style="position:relative;width:96px;height:96px;isolation:isolate">
+              <div style="position:absolute;inset:8%;border-radius:50%;background:var(--gl-sphere);box-shadow:var(--gl-sphere-shadow)"></div>
+              <div style="position:absolute;inset:8%;border-radius:50%;box-shadow:var(--gl-rim)"></div>
+              <div style="position:absolute;inset:0;mix-blend-mode:var(--gl-blend)">
+                <div style="position:absolute;inset:0;transform:rotate(20deg)">
+                  <svg viewBox="0 0 96 96" style="position:absolute;inset:0;overflow:visible"><ellipse cx="48" cy="48" rx="40" ry="15" style="fill:none;stroke:var(--gl-arc);stroke-width:3;filter:blur(3px);opacity:var(--gl-soft)"></ellipse><ellipse cx="48" cy="48" rx="40" ry="15" style="fill:none;stroke:var(--gl-arc);stroke-width:.85;opacity:.62"></ellipse></svg>
+                  <span style="position:absolute;left:0;top:0;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:var(--gl-dot);box-shadow:var(--gl-dot-shadow);offset-rotate:0deg;offset-path:path('M 8,48 A 40,15 0 1,1 88,48 A 40,15 0 1,1 8,48');animation:vt-travel 9.3s linear infinite,vt-depth 9.3s linear infinite"></span>
+                  <span style="position:absolute;left:0;top:0;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--gl-dot);opacity:.42;offset-rotate:0deg;offset-path:path('M 8,48 A 40,15 0 1,1 88,48 A 40,15 0 1,1 8,48');animation:vt-travel 9.3s linear infinite,vt-depth 9.3s linear infinite;animation-delay:-.055s"></span>
+                  <span style="position:absolute;left:0;top:0;width:3.6px;height:3.6px;margin:-1.8px 0 0 -1.8px;border-radius:50%;background:var(--gl-dot);opacity:.18;offset-rotate:0deg;offset-path:path('M 8,48 A 40,15 0 1,1 88,48 A 40,15 0 1,1 8,48');animation:vt-travel 9.3s linear infinite,vt-depth 9.3s linear infinite;animation-delay:-.11s"></span>
+                </div>
+                <div style="position:absolute;inset:0;transform:rotate(-58deg)">
+                  <svg viewBox="0 0 96 96" style="position:absolute;inset:0;overflow:visible"><ellipse cx="48" cy="48" rx="37" ry="14" style="fill:none;stroke:var(--gl-arc);stroke-width:2.4;filter:blur(3px);opacity:var(--gl-soft)"></ellipse></svg>
+                  <span style="position:absolute;left:0;top:0;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:var(--gl-dot);box-shadow:var(--gl-dot-shadow);offset-rotate:0deg;offset-path:path('M 11,48 A 37,14 0 1,1 85,48 A 37,14 0 1,1 11,48');animation:vt-travel 9.3s linear infinite,vt-depth 9.3s linear infinite;animation-delay:-4.3s"></span>
+                  <span style="position:absolute;left:0;top:0;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--gl-dot);opacity:.42;offset-rotate:0deg;offset-path:path('M 11,48 A 37,14 0 1,1 85,48 A 37,14 0 1,1 11,48');animation:vt-travel 9.3s linear infinite,vt-depth 9.3s linear infinite;animation-delay:-4.36s"></span>
+                </div>
+                <div style="position:absolute;inset:0;transform:rotate(86deg)">
+                  <span style="position:absolute;left:0;top:0;width:6.4px;height:6.4px;margin:-3.2px 0 0 -3.2px;border-radius:50%;background:var(--gl-dot);box-shadow:var(--gl-dot-shadow);offset-rotate:0deg;offset-path:path('M 13,48 A 35,12 0 1,1 83,48 A 35,12 0 1,1 13,48');animation:vt-travel 9.3s linear infinite,vt-depth 9.3s linear infinite;animation-delay:-7s"></span>
+                  <span style="position:absolute;left:0;top:0;width:4.6px;height:4.6px;margin:-2.3px 0 0 -2.3px;border-radius:50%;background:var(--gl-dot);opacity:.42;offset-rotate:0deg;offset-path:path('M 13,48 A 35,12 0 1,1 83,48 A 35,12 0 1,1 13,48');animation:vt-travel 9.3s linear infinite,vt-depth 9.3s linear infinite;animation-delay:-7.06s"></span>
+                </div>
+              </div>
+            </div>
+            <span style="display:inline-flex;align-items:center;height:18px;padding:0 9px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font:600 10px ui-monospace,Menlo,monospace">3 hạt</span>
+            <div style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 12px 0 6px;border-radius:20px;background:var(--accent-soft);color:var(--accent);animation:vt-ring 1.8s var(--ease-apple) infinite">
+              <span style="width:19px;height:19px;flex:none">
+                <svg width="19" height="19" viewBox="0 0 20 20" style="display:block;overflow:visible">
+                  <circle cx="10" cy="10" r="8.4" style="fill:none;stroke:currentColor;stroke-width:1.1;opacity:.34"></circle>
+                  <g style="transform-box:view-box;transform-origin:10px 10px;animation:vt-spin 9.3s linear infinite"><ellipse cx="10" cy="10" rx="8.4" ry="3.3" style="fill:none;stroke:currentColor;stroke-width:1.15"></ellipse><circle cx="18.4" cy="10" r="1.7" style="fill:currentColor"></circle></g>
+                  <g style="transform-box:view-box;transform-origin:10px 10px;animation:vt-spin 9.3s linear infinite reverse"><ellipse cx="10" cy="10" rx="8.4" ry="3.3" transform="rotate(62 10 10)" style="fill:none;stroke:currentColor;stroke-width:1.15"></ellipse><circle cx="6" cy="2.6" r="1.5" style="fill:currentColor"></circle><circle cx="14" cy="17.4" r="1.4" style="fill:currentColor"></circle></g>
+                </svg>
+              </span>
+              <span style="font-size:11px;font-weight:600">Đang nghe</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--t1)">Đang nghe</div>
+            <div style="font-size:11px;color:var(--t4);margin-top:4px;line-height:1.5;text-wrap:pretty">Hạt thứ ba xuất hiện, cung dài ra, vòng sáng thở.</div>
+          </div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:13px">
+            <div style="position:relative;width:96px;height:96px;isolation:isolate">
+              <div style="position:absolute;inset:8%;border-radius:50%;background:var(--gl-sphere);box-shadow:var(--gl-sphere-shadow)"></div>
+              <div style="position:absolute;inset:8%;border-radius:50%;box-shadow:var(--gl-rim)"></div>
+              <div style="position:absolute;inset:0;mix-blend-mode:var(--gl-blend)">
+                <div style="position:absolute;inset:0;transform:rotate(0deg)">
+                  <svg viewBox="0 0 96 96" style="position:absolute;inset:0;overflow:visible"><ellipse cx="48" cy="48" rx="40" ry="16" style="fill:none;stroke:var(--gl-arc);stroke-width:3;filter:blur(3px);opacity:var(--gl-soft)"></ellipse><ellipse cx="48" cy="48" rx="40" ry="16" style="fill:none;stroke:var(--gl-arc);stroke-width:.8;opacity:.6"></ellipse></svg>
+                  <span style="position:absolute;left:0;top:0;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:var(--gl-dot);box-shadow:var(--gl-dot-shadow);offset-rotate:0deg;offset-path:path('M 8,48 A 40,16 0 1,1 88,48 A 40,16 0 1,1 8,48');animation:vt-travel 3.7s linear infinite,vt-depth 3.7s linear infinite"></span>
+                  <span style="position:absolute;left:0;top:0;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--gl-dot);opacity:.42;offset-rotate:0deg;offset-path:path('M 8,48 A 40,16 0 1,1 88,48 A 40,16 0 1,1 8,48');animation:vt-travel 3.7s linear infinite,vt-depth 3.7s linear infinite;animation-delay:-.055s"></span>
+                </div>
+                <div style="position:absolute;inset:0;transform:rotate(72deg)">
+                  <svg viewBox="0 0 96 96" style="position:absolute;inset:0;overflow:visible"><ellipse cx="48" cy="48" rx="40" ry="16" style="fill:none;stroke:var(--gl-arc);stroke-width:2.6;filter:blur(3px);opacity:var(--gl-soft)"></ellipse></svg>
+                  <span style="position:absolute;left:0;top:0;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:var(--gl-dot);box-shadow:var(--gl-dot-shadow);offset-rotate:0deg;offset-path:path('M 8,48 A 40,16 0 1,1 88,48 A 40,16 0 1,1 8,48');animation:vt-travel 3.7s linear infinite,vt-depth 3.7s linear infinite;animation-delay:-.74s"></span>
+                  <span style="position:absolute;left:0;top:0;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--gl-dot);opacity:.42;offset-rotate:0deg;offset-path:path('M 8,48 A 40,16 0 1,1 88,48 A 40,16 0 1,1 8,48');animation:vt-travel 3.7s linear infinite,vt-depth 3.7s linear infinite;animation-delay:-.8s"></span>
+                </div>
+                <div style="position:absolute;inset:0;transform:rotate(144deg)">
+                  <svg viewBox="0 0 96 96" style="position:absolute;inset:0;overflow:visible"><ellipse cx="48" cy="48" rx="40" ry="16" style="fill:none;stroke:var(--gl-arc);stroke-width:2.6;filter:blur(3px);opacity:var(--gl-soft)"></ellipse></svg>
+                  <span style="position:absolute;left:0;top:0;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:var(--gl-dot);box-shadow:var(--gl-dot-shadow);offset-rotate:0deg;offset-path:path('M 8,48 A 40,16 0 1,1 88,48 A 40,16 0 1,1 8,48');animation:vt-travel 3.7s linear infinite,vt-depth 3.7s linear infinite;animation-delay:-1.48s"></span>
+                </div>
+                <div style="position:absolute;inset:0;transform:rotate(216deg)">
+                  <svg viewBox="0 0 96 96" style="position:absolute;inset:0;overflow:visible"><ellipse cx="48" cy="48" rx="40" ry="16" style="fill:none;stroke:var(--gl-arc);stroke-width:2.6;filter:blur(3px);opacity:var(--gl-soft)"></ellipse></svg>
+                  <span style="position:absolute;left:0;top:0;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:var(--gl-dot);box-shadow:var(--gl-dot-shadow);offset-rotate:0deg;offset-path:path('M 8,48 A 40,16 0 1,1 88,48 A 40,16 0 1,1 8,48');animation:vt-travel 3.7s linear infinite,vt-depth 3.7s linear infinite;animation-delay:-2.22s"></span>
+                </div>
+                <div style="position:absolute;inset:0;transform:rotate(288deg)">
+                  <svg viewBox="0 0 96 96" style="position:absolute;inset:0;overflow:visible"><ellipse cx="48" cy="48" rx="40" ry="16" style="fill:none;stroke:var(--gl-arc);stroke-width:2.6;filter:blur(3px);opacity:var(--gl-soft)"></ellipse></svg>
+                  <span style="position:absolute;left:0;top:0;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:var(--gl-dot);box-shadow:var(--gl-dot-shadow);offset-rotate:0deg;offset-path:path('M 8,48 A 40,16 0 1,1 88,48 A 40,16 0 1,1 8,48');animation:vt-travel 3.7s linear infinite,vt-depth 3.7s linear infinite;animation-delay:-2.96s"></span>
+                </div>
+              </div>
+            </div>
+            <span style="display:inline-flex;align-items:center;height:18px;padding:0 9px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font:600 10px ui-monospace,Menlo,monospace">5 hạt</span>
+            <div style="position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 12px 0 6px;border-radius:20px;background:var(--field);color:var(--t2)">
+              <span style="position:absolute;inset:0;width:45%;background:linear-gradient(90deg,transparent,var(--hover),transparent);animation:vt-sweep 1.6s linear infinite"></span>
+              <span style="position:relative;width:19px;height:19px;flex:none">
+                <svg width="19" height="19" viewBox="0 0 20 20" style="display:block;overflow:visible">
+                  <circle cx="10" cy="10" r="8.4" style="fill:none;stroke:currentColor;stroke-width:1.1;opacity:.34"></circle>
+                  <g style="transform-box:view-box;transform-origin:10px 10px;animation:vt-spin 3.7s linear infinite"><ellipse cx="10" cy="10" rx="8.4" ry="3.3" style="fill:none;stroke:currentColor;stroke-width:1.15"></ellipse><circle cx="18.4" cy="10" r="1.7" style="fill:currentColor"></circle><circle cx="1.6" cy="10" r="1.5" style="fill:currentColor"></circle></g>
+                  <g style="transform-box:view-box;transform-origin:10px 10px;animation:vt-spin 3.7s linear infinite reverse"><ellipse cx="10" cy="10" rx="8.4" ry="3.3" transform="rotate(62 10 10)" style="fill:none;stroke:currentColor;stroke-width:1.15"></ellipse><circle cx="6" cy="2.6" r="1.5" style="fill:currentColor"></circle><circle cx="14" cy="17.4" r="1.4" style="fill:currentColor"></circle></g>
+                </svg>
+              </span>
+              <span style="position:relative;font-size:11px;font-weight:600">Đang nghĩ</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--t1)">Đang nghĩ</div>
+            <div style="font-size:11px;color:var(--t4);margin-top:4px;line-height:1.5;text-wrap:pretty">Năm vòng lệch đều bảy hai độ, chạy đều như máy.</div>
+          </div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:13px">
+            <div style="position:relative;width:96px;height:96px;isolation:isolate">
+              <div style="position:absolute;inset:8%;border-radius:50%;background:var(--gl-sphere);box-shadow:var(--gl-sphere-shadow)"></div>
+              <div style="position:absolute;inset:8%;border-radius:50%;box-shadow:var(--gl-rim)"></div>
+              <div style="position:absolute;inset:0;mix-blend-mode:var(--gl-blend)">
+                <div style="position:absolute;inset:0;transform:rotate(14deg)">
+                  <svg viewBox="0 0 96 96" style="position:absolute;inset:0;overflow:visible"><ellipse cx="48" cy="48" rx="41" ry="17" style="fill:none;stroke:var(--gl-arc);stroke-width:3.2;filter:blur(3px);opacity:var(--gl-soft)"></ellipse><ellipse cx="48" cy="48" rx="41" ry="17" style="fill:none;stroke:var(--gl-arc);stroke-width:.95;opacity:.75"></ellipse></svg>
+                  <span style="position:absolute;left:0;top:0;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:var(--gl-dot);box-shadow:var(--gl-dot-shadow);offset-rotate:0deg;offset-path:path('M 7,48 A 41,17 0 1,1 89,48 A 41,17 0 1,1 7,48');animation:vt-travel 1.3s linear infinite,vt-depth 1.3s linear infinite"></span>
+                  <span style="position:absolute;left:0;top:0;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--gl-dot);opacity:.42;offset-rotate:0deg;offset-path:path('M 7,48 A 41,17 0 1,1 89,48 A 41,17 0 1,1 7,48');animation:vt-travel 1.3s linear infinite,vt-depth 1.3s linear infinite;animation-delay:-.055s"></span>
+                  <span style="position:absolute;left:0;top:0;width:3.6px;height:3.6px;margin:-1.8px 0 0 -1.8px;border-radius:50%;background:var(--gl-dot);opacity:.18;offset-rotate:0deg;offset-path:path('M 7,48 A 41,17 0 1,1 89,48 A 41,17 0 1,1 7,48');animation:vt-travel 1.3s linear infinite,vt-depth 1.3s linear infinite;animation-delay:-.11s"></span>
+                </div>
+                <div style="position:absolute;inset:0;transform:rotate(-66deg)">
+                  <span style="position:absolute;left:0;top:0;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:var(--gl-dot);box-shadow:var(--gl-dot-shadow);offset-rotate:0deg;offset-path:path('M 11,48 A 37,14 0 1,1 85,48 A 37,14 0 1,1 11,48');animation:vt-travel 1.3s linear infinite,vt-depth 1.3s linear infinite;animation-delay:-.43s"></span>
+                  <span style="position:absolute;left:0;top:0;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--gl-dot);opacity:.42;offset-rotate:0deg;offset-path:path('M 11,48 A 37,14 0 1,1 85,48 A 37,14 0 1,1 11,48');animation:vt-travel 1.3s linear infinite,vt-depth 1.3s linear infinite;animation-delay:-.49s"></span>
+                </div>
+                <div style="position:absolute;inset:0;transform:rotate(88deg)">
+                  <span style="position:absolute;left:0;top:0;width:6.4px;height:6.4px;margin:-3.2px 0 0 -3.2px;border-radius:50%;background:var(--gl-dot);box-shadow:var(--gl-dot-shadow);offset-rotate:0deg;offset-path:path('M 13,48 A 35,12 0 1,1 83,48 A 35,12 0 1,1 13,48');animation:vt-travel 1.3s linear infinite,vt-depth 1.3s linear infinite;animation-delay:-.86s"></span>
+                </div>
+              </div>
+              <div style="position:absolute;inset:8%;border-radius:50%;animation:vt-pulseout 1.3s linear infinite"></div>
+            </div>
+            <span style="display:inline-flex;align-items:center;height:18px;padding:0 9px;border-radius:20px;background:var(--accent);color:#fff;font:600 10px ui-monospace,Menlo,monospace">3 hạt · xung</span>
+            <div style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 12px 0 6px;border-radius:20px;background:var(--accent);color:#fff;box-shadow:var(--shadow-node)">
+              <span style="width:19px;height:19px;flex:none">
+                <svg width="19" height="19" viewBox="0 0 20 20" style="display:block;overflow:visible">
+                  <circle cx="10" cy="10" r="8.4" style="fill:none;stroke:currentColor;stroke-width:1.1;opacity:.4"></circle>
+                  <g style="transform-box:view-box;transform-origin:10px 10px;animation:vt-spin 1.3s linear infinite"><ellipse cx="10" cy="10" rx="8.4" ry="3.3" style="fill:none;stroke:currentColor;stroke-width:1.15"></ellipse><circle cx="18.4" cy="10" r="1.7" style="fill:currentColor"></circle></g>
+                  <g style="transform-box:view-box;transform-origin:10px 10px;animation:vt-spin 1.3s linear infinite reverse"><ellipse cx="10" cy="10" rx="8.4" ry="3.3" transform="rotate(62 10 10)" style="fill:none;stroke:currentColor;stroke-width:1.15"></ellipse><circle cx="6" cy="2.6" r="1.5" style="fill:currentColor"></circle><circle cx="14" cy="17.4" r="1.4" style="fill:currentColor"></circle></g>
+                </svg>
+              </span>
+              <span style="font-size:11px;font-weight:600">Đang trả lời</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--t1)">Đang trả lời</div>
+            <div style="font-size:11px;color:var(--t4);margin-top:4px;line-height:1.5;text-wrap:pretty">Rút còn ba hạt, thêm xung sáng lan từ tâm ra.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div data-screen-label="02">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">02</span>
+        <span style="font-size:12px;font-weight:600;color:var(--t2)">Thẻ kết quả</span>
+        <span style="font-size:11px;color:var(--t4)">Popover kính nhỏ, nổi ngay dưới viên · trả lời ngắn, một thẻ nhúng, dòng nguồn</span>
+      </div>
+      <div style="height:520px;border:1px solid var(--border);border-radius:20px;overflow:hidden;background:var(--bg);position:relative">
+
+        <div style="height:42px;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--border)">
+          <div style="width:20px;height:20px;border-radius:6px;background:var(--accent)"></div>
+          <span style="font-size:14px;font-weight:600;letter-spacing:-.01em">{{ project }}</span>
+          <span style="display:inline-flex;align-items:center;height:15px;padding:0 5px;border-radius:5px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700">PLACEHOLDER</span>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+            <div style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 12px 0 6px;border-radius:20px;background:var(--accent);color:#fff;box-shadow:var(--shadow-node)">
+              <span style="width:19px;height:19px;flex:none">
+                <svg width="19" height="19" viewBox="0 0 20 20" style="display:block;overflow:visible">
+                  <circle cx="10" cy="10" r="8.4" style="fill:none;stroke:currentColor;stroke-width:1.1;opacity:.4"></circle>
+                  <g style="transform-box:view-box;transform-origin:10px 10px;animation:vt-spin 1.3s linear infinite"><ellipse cx="10" cy="10" rx="8.4" ry="3.3" style="fill:none;stroke:currentColor;stroke-width:1.15"></ellipse><circle cx="18.4" cy="10" r="1.7" style="fill:currentColor"></circle></g>
+                  <g style="transform-box:view-box;transform-origin:10px 10px;animation:vt-spin 1.3s linear infinite reverse"><ellipse cx="10" cy="10" rx="8.4" ry="3.3" transform="rotate(62 10 10)" style="fill:none;stroke:currentColor;stroke-width:1.15"></ellipse><circle cx="6" cy="2.6" r="1.5" style="fill:currentColor"></circle><circle cx="14" cy="17.4" r="1.4" style="fill:currentColor"></circle></g>
+                </svg>
+              </span>
+              <span style="font-size:11px;font-weight:600">Đang trả lời</span>
+            </div>
+            <div style="width:26px;height:26px;border-radius:50%;background:var(--field);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--t2)">NT</div>
+          </div>
+        </div>
+
+        <div style="position:absolute;right:52px;top:52px;width:344px;border-radius:20px;padding:6px;background:var(--mat-panel);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop);animation:vt-pop .32s var(--ease-apple) both">
+          <div style="padding:10px 10px 12px">
+            <div style="font-size:14px;line-height:1.5;color:var(--t1);text-wrap:pretty">Bản dựng sáng nhất là bản số 3, chụp lúc 16 giờ.</div>
+          </div>
+          <div style="border-radius:14px;background:var(--mat-card);border:1px solid var(--mat-hairline);padding:8px">
+            <div style="height:148px;border-radius:10px;border:1px solid var(--border);background:repeating-linear-gradient(45deg,var(--field) 0 9px,var(--card) 9px 18px);display:flex;align-items:center;justify-content:center">
+              <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--t3);background:var(--mat-card);padding:4px 8px;border-radius:5px">PLACEHOLDER</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:9px 3px 2px">
+              <span style="width:8px;height:8px;border-radius:3px;background:var(--accent);flex:none"></span>
+              <span style="font-size:12px;font-weight:600;color:var(--t1);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Phòng khách · bản dựng 3</span>
+              <span style="font:400 11px ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--t4)">16:04</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:7px;padding:10px 10px 4px">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--t5)" stroke-width="1.4"><path d="M3 2.5h7l3 3v8H3z"></path><path d="M5.5 8.5h5M5.5 11h3.5"></path></svg>
+            <span style="font-size:11px;color:var(--t4);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Nguồn: 3 bản dựng trong dự án · PLACEHOLDER</span>
+          </div>
+          <div style="display:flex;gap:6px;padding:8px 4px 4px">
+            <button style="flex:1;height:32px;border:1px solid var(--mat-hairline);border-radius:14px;background:var(--mat-card);color:var(--t1);font:600 12px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--hover)">Mở hội thoại</button>
+            <button style="flex:1;height:32px;border:0;border-radius:14px;background:var(--accent);color:#fff;font:600 12px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">Chèn vào bảng</button>
+          </div>
+        </div>
+
+        <div style="position:absolute;left:40px;bottom:36px;max-width:300px;font-size:11px;color:var(--t5);line-height:1.6;text-wrap:pretty">Thẻ tự đóng khi bấm ra ngoài. Kéo mép dưới xuống để thành hội thoại.</div>
+
+      </div>
+    </div>
+
+    <div data-screen-label="03">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">03</span>
+        <span style="font-size:12px;font-weight:600;color:var(--t2)">Hội thoại</span>
+        <span style="font-size:11px;color:var(--t4)">Kéo thẻ xuống thành khung chat, nằm trên bề mặt tối riêng</span>
+      </div>
+      <div style="height:700px;border:1px solid var(--border);border-radius:20px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column">
+
+        <div style="height:42px;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--border);flex:none">
+          <div style="width:20px;height:20px;border-radius:6px;background:var(--accent)"></div>
+          <span style="font-size:14px;font-weight:600;letter-spacing:-.01em">{{ project }}</span>
+          <span style="display:inline-flex;align-items:center;height:15px;padding:0 5px;border-radius:5px;background:var(--field);color:var(--t4);font-size:9px;font-weight:700">PLACEHOLDER</span>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+            <div style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 12px 0 6px;border-radius:20px;background:var(--accent-soft);color:var(--accent)">
+              <span style="width:19px;height:19px;flex:none">
+                <svg width="19" height="19" viewBox="0 0 20 20" style="display:block;overflow:visible">
+                  <circle cx="10" cy="10" r="8.4" style="fill:none;stroke:currentColor;stroke-width:1.1;opacity:.34"></circle>
+                  <g style="transform-box:view-box;transform-origin:10px 10px;animation:vt-spin 20s linear infinite"><ellipse cx="10" cy="10" rx="8.4" ry="3.3" style="fill:none;stroke:currentColor;stroke-width:1.15"></ellipse><circle cx="18.4" cy="10" r="1.7" style="fill:currentColor"></circle></g>
+                  <g style="transform-box:view-box;transform-origin:10px 10px;animation:vt-spin 26s linear infinite reverse"><ellipse cx="10" cy="10" rx="8.4" ry="3.3" transform="rotate(62 10 10)" style="fill:none;stroke:currentColor;stroke-width:1.15"></ellipse><circle cx="6" cy="2.6" r="1.5" style="fill:currentColor"></circle></g>
+                </svg>
+              </span>
+              <span style="font-size:11px;font-weight:600">Vitals</span>
+            </div>
+            <div style="width:26px;height:26px;border-radius:50%;background:var(--field);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--t2)">NT</div>
+          </div>
+        </div>
+
+        <div style="flex:1;min-height:0;background:var(--chat-bg);display:flex;justify-content:flex-end;padding:20px 40px 20px 20px;position:relative">
+
+          <div style="position:absolute;left:44px;top:34px;max-width:280px;color:var(--chat-t4);font-size:11px;line-height:1.7;text-wrap:pretty">
+            <div style="font-size:12px;font-weight:600;color:var(--chat-t2);margin-bottom:6px">Bề mặt tối riêng</div>
+            Hội thoại tách hẳn khỏi nền sáng của app, để mắt nghỉ khi đọc dài. Viên trên header vẫn giữ nguyên chỗ.
+          </div>
+
+          <div style="width:404px;height:100%;border-radius:20px;background:var(--chat-panel);border:1px solid var(--chat-line);box-shadow:var(--shadow-pop);display:flex;flex-direction:column;overflow:hidden">
+
+            <div style="flex:none;padding:8px 0 0;display:flex;flex-direction:column;align-items:center;gap:8px">
+              <span style="width:36px;height:4px;border-radius:2px;background:var(--chat-field)"></span>
+              <div style="width:100%;height:34px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--chat-line)">
+                <span style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>
+                <span style="font-size:12px;font-weight:600;color:var(--chat-t1)">Vitals</span>
+                <span style="font-size:11px;color:var(--chat-t4)">Phiên hôm nay</span>
+                <button style="margin-left:auto;width:24px;height:24px;border:0;border-radius:8px;background:transparent;color:var(--chat-t4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--chat-field);color:var(--chat-t1)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
+              </div>
+            </div>
+
+            <div style="flex:1;min-height:0;overflow:hidden;padding:14px;display:flex;flex-direction:column;gap:10px">
+
+              <div style="display:flex;justify-content:flex-end">
+                <div style="max-width:76%;padding:9px 13px;border-radius:18px 18px 6px 18px;background:var(--accent);color:#fff;font-size:13px;line-height:1.5">Vật liệu nào hợp với sàn gỗ sồi?</div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:7px;align-items:flex-start">
+                <div style="max-width:82%;padding:9px 13px;border-radius:18px 18px 18px 6px;background:var(--chat-card);color:var(--chat-t1);font-size:13px;line-height:1.5;text-wrap:pretty">Hai vật liệu trong thư viện hợp nhất với sàn gỗ sồi.</div>
+                <div style="display:flex;gap:7px">
+                  <div style="width:146px;border-radius:14px;background:var(--chat-card);border:1px solid var(--chat-line);padding:9px;display:flex;align-items:center;gap:9px">
+                    <span style="width:28px;height:28px;border-radius:50%;flex:none;background:radial-gradient(circle at 34% 28%,#c79a63,#8a6a44)"></span>
+                    <span style="min-width:0">
+                      <span style="display:block;font-size:11px;font-weight:600;color:var(--chat-t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Gỗ sồi ấm</span>
+                      <span style="display:block;font-size:9px;font-weight:700;color:var(--chat-t4)">PLACEHOLDER</span>
+                    </span>
+                  </div>
+                  <div style="width:146px;border-radius:14px;background:var(--chat-card);border:1px solid var(--chat-line);padding:9px;display:flex;align-items:center;gap:9px">
+                    <span style="width:28px;height:28px;border-radius:50%;flex:none;background:radial-gradient(circle at 34% 28%,#f5f5f7,#9e9ea8)"></span>
+                    <span style="min-width:0">
+                      <span style="display:block;font-size:11px;font-weight:600;color:var(--chat-t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Vữa trắng ngà</span>
+                      <span style="display:block;font-size:9px;font-weight:700;color:var(--chat-t4)">PLACEHOLDER</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex;justify-content:flex-end">
+                <div style="max-width:76%;padding:9px 13px;border-radius:18px 18px 6px 18px;background:var(--accent);color:#fff;font-size:13px;line-height:1.5">Cho mình xem tệp dự án gốc.</div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:7px;align-items:flex-start">
+                <div style="width:236px;border-radius:14px;background:var(--chat-card);border:1px solid var(--chat-line);padding:10px;display:flex;align-items:center;gap:10px">
+                  <span style="width:30px;height:34px;border-radius:8px;flex:none;background:var(--chat-field);display:flex;align-items:center;justify-content:center">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="1.4"><path d="M3.5 2.5h6l3 3v8h-9z"></path><path d="M6 8.5h4M6 11h2.5"></path></svg>
+                  </span>
+                  <span style="min-width:0;flex:1">
+                    <span style="display:block;font-size:12px;font-weight:600;color:var(--chat-t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Thảo Điền · bản gốc</span>
+                    <span style="display:block;font-size:10px;color:var(--chat-t4);margin-top:1px">24,6 MB · PLACEHOLDER</span>
+                  </span>
+                  <button style="width:26px;height:26px;border:0;border-radius:8px;background:var(--chat-field);color:var(--chat-t2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s var(--ease-apple)" style-hover="background:var(--accent);color:#fff"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v8M5 8l3 3 3-3"></path></svg></button>
+                </div>
+                <div style="max-width:82%;padding:9px 13px;border-radius:18px 18px 18px 6px;background:var(--chat-card);color:var(--chat-t1);font-size:13px;line-height:1.5">Tệp gốc nằm trong thư mục Bản vẽ của dự án.</div>
+              </div>
+
+              <div style="display:flex;justify-content:flex-end">
+                <div style="max-width:76%;padding:9px 13px;border-radius:18px 18px 6px 18px;background:var(--accent);color:#fff;font-size:13px;line-height:1.5">Dựng lại phòng khách lúc hoàng hôn.</div>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:5px;padding:9px 13px;border-radius:18px 18px 18px 6px;background:var(--chat-card);align-self:flex-start">
+                <span style="width:5px;height:5px;border-radius:50%;background:var(--chat-t3);animation:vt-type 1.3s var(--ease-apple) infinite"></span>
+                <span style="width:5px;height:5px;border-radius:50%;background:var(--chat-t3);animation:vt-type 1.3s var(--ease-apple) infinite;animation-delay:-.22s"></span>
+                <span style="width:5px;height:5px;border-radius:50%;background:var(--chat-t3);animation:vt-type 1.3s var(--ease-apple) infinite;animation-delay:-.44s"></span>
+              </div>
+
+            </div>
+
+            <div style="flex:none;padding:6px;border-top:1px solid var(--chat-line)">
+              <div style="display:flex;align-items:center;gap:6px;height:40px;padding:0 6px 0 12px;border-radius:14px;background:var(--chat-card)">
+                <span style="flex:1;font-size:12px;color:var(--chat-t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Hỏi Vitals bất cứ điều gì về dự án</span>
+                <button title="Nói bằng giọng nói — Cmd G" style="width:30px;height:30px;border:0;border-radius:10px;background:var(--accent-soft);color:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent);color:#fff">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="5.6" y="1.8" width="4.8" height="8" rx="2.4"></rect><path d="M3.2 7.4a4.8 4.8 0 0 0 9.6 0M8 12.2v2"></path></svg>
+                </button>
+                <button title="Gửi — Enter" style="width:30px;height:30px;border:0;border-radius:10px;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3M4.5 6.5 8 3l3.5 3.5"></path></svg>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div data-screen-label="04">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+        <span style="font:600 11px ui-monospace,Menlo,monospace;color:var(--t5)">04</span>
+        <span style="font-size:12px;font-weight:600;color:var(--t2)">Phiên cũ</span>
+        <span style="font-size:11px;color:var(--t4)">Lưới thẻ tóm tắt theo dự án · ô tìm và nút tạo phiên mới</span>
+      </div>
+      <div style="height:620px;border:1px solid var(--border);border-radius:20px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column">
+
+        <div style="height:42px;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--border);flex:none">
+          <div style="width:20px;height:20px;border-radius:6px;background:var(--accent)"></div>
+          <span style="font-size:14px;font-weight:600;letter-spacing:-.01em">{{ project }}</span>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+            <div style="display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 12px 0 6px;border-radius:20px;background:var(--field);color:var(--t4)">
+              <span style="width:19px;height:19px;flex:none;opacity:.8">
+                <svg width="19" height="19" viewBox="0 0 20 20" style="display:block;overflow:visible">
+                  <circle cx="10" cy="10" r="8.4" style="fill:none;stroke:currentColor;stroke-width:1.1;opacity:.34"></circle>
+                  <g style="transform-box:view-box;transform-origin:10px 10px;animation:vt-spin 20s linear infinite"><ellipse cx="10" cy="10" rx="8.4" ry="3.3" style="fill:none;stroke:currentColor;stroke-width:1.15"></ellipse><circle cx="18.4" cy="10" r="1.7" style="fill:currentColor"></circle></g>
+                  <g style="transform-box:view-box;transform-origin:10px 10px;animation:vt-spin 26s linear infinite reverse"><ellipse cx="10" cy="10" rx="8.4" ry="3.3" transform="rotate(62 10 10)" style="fill:none;stroke:currentColor;stroke-width:1.15"></ellipse><circle cx="6" cy="2.6" r="1.5" style="fill:currentColor"></circle></g>
+                </svg>
+              </span>
+              <span style="font-size:11px;font-weight:600">Vitals</span>
+            </div>
+            <div style="width:26px;height:26px;border-radius:50%;background:var(--field);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--t2)">NT</div>
+          </div>
+        </div>
+
+        <div style="flex:1;min-height:0;padding:24px 28px;display:flex;flex-direction:column;gap:18px">
+
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="min-width:0">
+              <div style="font-size:20px;font-weight:600;letter-spacing:-.01em">Phiên đã hỏi</div>
+              <div style="font-size:11px;color:var(--t4);margin-top:2px">18 phiên trong 4 dự án · PLACEHOLDER</div>
+            </div>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+              <div style="display:flex;align-items:center;gap:8px;height:32px;width:250px;padding:0 12px;border-radius:10px;background:var(--field);border:1px solid transparent;transition:border-color .18s var(--ease-apple)" style-focus-within="border-color:var(--accent)">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5 14 14" stroke-linecap="round"></path></svg>
+                <span style="font-size:12px;color:var(--t4)">Tìm trong phiên đã hỏi</span>
+              </div>
+              <button style="height:32px;padding:0 15px;display:flex;align-items:center;gap:7px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:600 12px inherit;cursor:pointer;transition:background .18s var(--ease-apple)" style-hover="background:var(--accent-strong)">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg>
+                Phiên mới
+              </button>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s var(--ease-apple),box-shadow .2s var(--ease-apple)" style-hover="transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-pop)">
+              <div style="height:86px;border-bottom:1px solid var(--border);background:repeating-linear-gradient(45deg,var(--field) 0 9px,var(--card) 9px 18px);display:flex;align-items:center;justify-content:center">
+                <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--t4);background:var(--mat-card);padding:3px 7px;border-radius:5px">PLACEHOLDER</span>
+              </div>
+              <div style="padding:11px 12px 12px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="width:7px;height:7px;border-radius:2px;background:var(--accent)"></span>
+                  <span style="font-size:11px;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Căn hộ Thảo Điền</span>
+                </div>
+                <div style="font-size:13px;font-weight:600;margin-top:6px;line-height:1.4;text-wrap:pretty">Vật liệu nào hợp với sàn gỗ sồi?</div>
+                <div style="font-size:11px;color:var(--t4);margin-top:5px;line-height:1.5;text-wrap:pretty">Hai vật liệu trong thư viện hợp nhất với sàn.</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:9px;font-size:11px;color:var(--t5)"><span>8 câu hỏi</span><span>·</span><span>Hôm qua</span></div>
+              </div>
+            </div>
+
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s var(--ease-apple),box-shadow .2s var(--ease-apple)" style-hover="transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-pop)">
+              <div style="height:86px;border-bottom:1px solid var(--border);background:repeating-linear-gradient(45deg,var(--field) 0 9px,var(--card) 9px 18px);display:flex;align-items:center;justify-content:center">
+                <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--t4);background:var(--mat-card);padding:3px 7px;border-radius:5px">PLACEHOLDER</span>
+              </div>
+              <div style="padding:11px 12px 12px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="width:7px;height:7px;border-radius:2px;background:var(--accent)"></span>
+                  <span style="font-size:11px;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Biệt thự Long An</span>
+                </div>
+                <div style="font-size:13px;font-weight:600;margin-top:6px;line-height:1.4;text-wrap:pretty">Bản dựng nào sáng nhất?</div>
+                <div style="font-size:11px;color:var(--t4);margin-top:5px;line-height:1.5;text-wrap:pretty">Bản số 3, chụp lúc 16 giờ, hướng tây nam.</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:9px;font-size:11px;color:var(--t5)"><span>5 câu hỏi</span><span>·</span><span>3 ngày trước</span></div>
+              </div>
+            </div>
+
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s var(--ease-apple),box-shadow .2s var(--ease-apple)" style-hover="transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-pop)">
+              <div style="height:86px;border-bottom:1px solid var(--border);background:repeating-linear-gradient(45deg,var(--field) 0 9px,var(--card) 9px 18px);display:flex;align-items:center;justify-content:center">
+                <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--t4);background:var(--mat-card);padding:3px 7px;border-radius:5px">PLACEHOLDER</span>
+              </div>
+              <div style="padding:11px 12px 12px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="width:7px;height:7px;border-radius:2px;background:var(--accent)"></span>
+                  <span style="font-size:11px;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Văn phòng Quận 1</span>
+                </div>
+                <div style="font-size:13px;font-weight:600;margin-top:6px;line-height:1.4;text-wrap:pretty">Ước tính chi phí trần gỗ?</div>
+                <div style="font-size:11px;color:var(--t4);margin-top:5px;line-height:1.5;text-wrap:pretty">Khoảng 32 287 500 ₫ cho 84 mét vuông trần.</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:9px;font-size:11px;color:var(--t5)"><span>12 câu hỏi</span><span>·</span><span>Tuần trước</span></div>
+              </div>
+            </div>
+
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s var(--ease-apple),box-shadow .2s var(--ease-apple)" style-hover="transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-pop)">
+              <div style="height:86px;border-bottom:1px solid var(--border);background:repeating-linear-gradient(45deg,var(--field) 0 9px,var(--card) 9px 18px);display:flex;align-items:center;justify-content:center">
+                <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--t4);background:var(--mat-card);padding:3px 7px;border-radius:5px">PLACEHOLDER</span>
+              </div>
+              <div style="padding:11px 12px 12px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="width:7px;height:7px;border-radius:2px;background:var(--accent)"></span>
+                  <span style="font-size:11px;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Nhà phố Đà Nẵng</span>
+                </div>
+                <div style="font-size:13px;font-weight:600;margin-top:6px;line-height:1.4;text-wrap:pretty">Bếp thiếu ánh sáng ở đâu?</div>
+                <div style="font-size:11px;color:var(--t4);margin-top:5px;line-height:1.5;text-wrap:pretty">Góc đảo bếp phía bắc, thiếu khoảng 180 lux.</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:9px;font-size:11px;color:var(--t5)"><span>4 câu hỏi</span><span>·</span><span>Tuần trước</span></div>
+              </div>
+            </div>
+
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s var(--ease-apple),box-shadow .2s var(--ease-apple)" style-hover="transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-pop)">
+              <div style="height:86px;border-bottom:1px solid var(--border);background:repeating-linear-gradient(45deg,var(--field) 0 9px,var(--card) 9px 18px);display:flex;align-items:center;justify-content:center">
+                <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--t4);background:var(--mat-card);padding:3px 7px;border-radius:5px">PLACEHOLDER</span>
+              </div>
+              <div style="padding:11px 12px 12px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="width:7px;height:7px;border-radius:2px;background:var(--accent)"></span>
+                  <span style="font-size:11px;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Studio Hà Nội</span>
+                </div>
+                <div style="font-size:13px;font-weight:600;margin-top:6px;line-height:1.4;text-wrap:pretty">Kê lại sofa cho rộng lối đi?</div>
+                <div style="font-size:11px;color:var(--t4);margin-top:5px;line-height:1.5;text-wrap:pretty">Dời sofa lùi 400, lối đi rộng thành 1 100.</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:9px;font-size:11px;color:var(--t5)"><span>9 câu hỏi</span><span>·</span><span>2 tuần trước</span></div>
+              </div>
+            </div>
+
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s var(--ease-apple),box-shadow .2s var(--ease-apple)" style-hover="transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-pop)">
+              <div style="height:86px;border-bottom:1px solid var(--border);background:repeating-linear-gradient(45deg,var(--field) 0 9px,var(--card) 9px 18px);display:flex;align-items:center;justify-content:center">
+                <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--t4);background:var(--mat-card);padding:3px 7px;border-radius:5px">PLACEHOLDER</span>
+              </div>
+              <div style="padding:11px 12px 12px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="width:7px;height:7px;border-radius:2px;background:var(--accent)"></span>
+                  <span style="font-size:11px;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Chung cư Bình Dương</span>
+                </div>
+                <div style="font-size:13px;font-weight:600;margin-top:6px;line-height:1.4;text-wrap:pretty">Gộp ba bản dựng thành một bảng?</div>
+                <div style="font-size:11px;color:var(--t4);margin-top:5px;line-height:1.5;text-wrap:pretty">Đã gộp thành bảng trình bày, chờ bạn duyệt.</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:9px;font-size:11px;color:var(--t5)"><span>6 câu hỏi</span><span>·</span><span>Tháng trước</span></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Tối&quot;,&quot;Kem&quot;],&quot;default&quot;:&quot;Tối&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Giao diện&quot;},&quot;motion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Giao diện&quot;},&quot;projectName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;vp bank&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Nội dung&quot;}}">
+class Component extends DCLogic {
+  state = { theme: null };
+  componentDidMount() { this.apply(); }
+  componentDidUpdate() { this.apply(); }
+  apply() {
+    const r = document.documentElement;
+    r.dataset.theme = this.theme();
+    r.dataset.motion = this.props.motion === false ? 'off' : 'on';
+  }
+  theme() {
+    return this.state.theme || (this.props.theme === 'Kem' ? 'light' : 'dark');
+  }
+  renderVals() {
+    const t = this.theme();
+    return {
+      themeLabel: t === 'dark' ? 'Đổi sang nền Kem' : 'Đổi sang nền Tối',
+      toggleTheme: () => this.setState({ theme: t === 'dark' ? 'light' : 'dark' }),
+      project: this.props.projectName || 'Căn hộ Thảo Điền'
+    };
+  }
+}
+</script>
+</body>
+</html>

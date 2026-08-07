@@ -31,6 +31,9 @@ import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
 import { Viewport3D, EMPTY_SCENE_3D } from '@/components/three/Viewport3D';
 import ModeSwitchBar from '@/components/render-studio/ModeSwitchBar';
 import Command3DPanel, { type Command3DTab } from '@/components/render-studio/Command3DPanel';
+import ToolDock3D from '@/components/render-studio/ToolDock3D';
+import { openLibrarySheet } from '@/lib/library/use-library-sheet';
+import PanelFlank from '@/components/ui/PanelFlank';
 import { SECTION_LAYER_KEYS, type SectionAcceptPayload } from '@/components/render-studio/SectionExtractPanel';
 import { SECTION_LAYERS } from '@/lib/three/section-entities';
 import { useLevelUi, UNASSIGNED_LEVEL, ROOM_LIGHT_KINDS, ROOM_LIGHT_DEFAULT_Z_MM } from '@/components/render-studio/scene3d-ui';
@@ -64,6 +67,8 @@ export default function Render3DModeSkeleton() {
   const tr = useT();
   const [tab, setTab] = useState<Command3DTab>('vatlieu');
   const [nhayNutTuong, setNhayNutTuong] = useState(false);
+  // VIỆC 2 (M-3D-OUT) — dock công cụ nổi đáy viewport, đúng mock "3D Dựng khối" trạng thái 03/04.
+  const [dockOpen, setDockOpen] = useState(false);
   const [matDangCam, setMatDangCam] = useState<string | null>(null);
   // VIỆC "MỘT THƯ VIỆN" (`PHIEU-CODE-IF-DOT6`, 05/08) — cây đối tượng + panel thuộc tính dời sang
   // Navigator/Inspector (`Object3DTree.tsx`/`Object3DInspector.tsx`, ổ SIBLING của AppShell, xem
@@ -322,6 +327,35 @@ export default function Render3DModeSkeleton() {
     return () => window.removeEventListener('keydown', onKey);
   }, [addRoomLight]);
 
+  /**
+   * VIỆC 4 (M-3D-OUT, G-M2-05) — ⌘Z/⌘⇧Z chặng 3D trước đây KHÔNG BẮT ĐƯỢC PHÍM GÌ (im lặng, đo
+   * 2 lần theo GAP-IF.md). Doc là MỘT nguồn chung 2D/3D (K1) — `useCadStore.undo()/redo()` đã
+   * hoạt động đúng trên đúng entity 3D dựng ra (push wall/railing mẫu đều qua `addEntities` đẩy
+   * `past`), thiếu duy nhất là KHÔNG CÓ listener nào gọi nó trong mode này (khác `CadCanvas.tsx`
+   * đã bắt phím này cho chặng 2D). Bù listener riêng (giữ tách khỏi effect trên — effect trên cố
+   * ý bỏ qua mọi phím có metaKey/ctrlKey). Có báo trạng thái khi KHÔNG còn gì để hoàn tác/làm lại
+   * — đúng luật "im lặng là lỗi", không để ⌘Z bấm xong không biết có tác dụng hay không.
+   */
+  useEffect(() => {
+    const onUndoKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+      const el = e.target;
+      if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
+      const k = e.key.toLowerCase();
+      if (k !== 'z' && k !== 'y') return;
+      e.preventDefault();
+      const store = useCadStore.getState();
+      if (k === 'y' || (k === 'z' && e.shiftKey)) {
+        if (store.future.length === 0) { store.setStatus(tr('Không còn gì để làm lại.', 'Nothing to redo.')); return; }
+        store.redo();
+      } else {
+        if (store.past.length === 0) { store.setStatus(tr('Không còn gì để hoàn tác.', 'Nothing to undo.')); return; }
+        store.undo();
+      }
+    };
+    window.addEventListener('keydown', onUndoKey);
+    return () => window.removeEventListener('keydown', onUndoKey);
+  }, [tr]);
 
   const soKhoi = scene?.groups.length ?? 0;
   soKhoiRef.current = soKhoi;
@@ -453,16 +487,20 @@ export default function Render3DModeSkeleton() {
 
   return (
     <div style={{ display: 'flex', width: '100%', height: '100%', minHeight: 0, background: 'var(--bg)' }}>
-      <Command3DPanel
-        tab={tab}
-        onTabChange={setTab}
-        nhayNutTuong={nhayNutTuong}
-        onTaoTuong={taoTuongMau}
-        onTaoLanCan={taoLanCanMau}
-        onPickMaterial={setMatDangCam}
-        scene={scene}
-        onNhanMatCat={nhanMatCat}
-      />
+      {/* p3 (07/08) — tay cầm thu/mở dùng chung PanelFlank (Hoà chốt nhân bản mẫu Trình chiếu).
+          Bảng lệnh 256px là panel bên duy nhất của mode 3D chưa thu được (đo 2/18 render-studio). */}
+      <PanelFlank side="left" storageKey="render3d.command-panel" label={tr('bảng lệnh 3D', '3D command panel')}>
+        <Command3DPanel
+          tab={tab}
+          onTabChange={setTab}
+          nhayNutTuong={nhayNutTuong}
+          onTaoTuong={taoTuongMau}
+          onTaoLanCan={taoLanCanMau}
+          onPickMaterial={setMatDangCam}
+          scene={scene}
+          onNhanMatCat={nhanMatCat}
+        />
+      </PanelFlank>
 
       <div
         ref={viewportWrapRef}
@@ -700,6 +738,13 @@ export default function Render3DModeSkeleton() {
           <Sparkles size={16} strokeWidth={2} color="var(--accent)" />
           {tr('Dựng ảnh', 'Render')}
         </button>
+
+        <ToolDock3D
+          open={dockOpen}
+          onToggleOpen={() => setDockOpen((o) => !o)}
+          onOpenLibrary={() => openLibrarySheet({ stage: 'render' })}
+          onOpenMaterialTab={() => setTab('vatlieu')}
+        />
 
         <ModeSwitchBar />
       </div>

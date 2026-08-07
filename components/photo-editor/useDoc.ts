@@ -9,7 +9,10 @@
  */
 
 import { useCallback, useMemo, useReducer } from 'react';
-import { type PhotoDoc, type Layer, cloneDoc } from '@/lib/photo-editor/model';
+// 07/08 G-M12-01 — relative path (không phải `@/...`) CỐ Ý: test file (`useDoc.test.ts`) require
+// trực tiếp qua sucrase-node (không có tsconfig-paths), alias `@/` chỉ resolve được qua webpack
+// của Next.js. Hành vi runtime giống hệt — `tsconfig.json` khai `"@/*": ["./*"]`.
+import { type PhotoDoc, type Layer, cloneDoc } from '../../lib/photo-editor/model';
 
 interface State {
   doc: PhotoDoc;
@@ -27,7 +30,10 @@ type Action =
 
 const MAX_HISTORY = 40;
 
-function reducer(state: State, action: Action): State {
+// 07/08 G-M12-01 — export CHỈ để test (`useDoc.test.ts`): đây là lõi undo/redo, đúng "đường mất
+// dữ liệu" cao nhất trong photo-editor (bug ở đây = mất thao tác chỉnh sửa của người dùng, không
+// báo lỗi gì). Không đổi hành vi — `useDoc()` vẫn dùng `reducer` y nguyên qua `useReducer`.
+export function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'commit':
       return {

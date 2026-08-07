@@ -86,7 +86,14 @@ export async function loadBlockDoc(meta: LibraryBlockMeta, baseUrl = ''): Promis
   const res = await fetch(`${baseUrl}${meta.file}`);
   if (!res.ok) throw new Error(`Không tải được block '${meta.id}' (HTTP ${res.status})`);
   const text = await res.text();
-  const doc = parseDxf(text);
+  // 🔴 `inferRules: null` = TẮT bộ suy `elementType` theo tên layer (G-M1-19, hồi quy 06/08).
+  // Bộ suy sinh ra cho MẶT BẰNG nạp vào, nơi tên layer mô tả CẤU KIỆN. Ở thư viện block thì tên
+  // layer mô tả PHÒNG CHỨA ĐỒ (`NT_VAN_PHONG`, `NT_PHONG_KHACH`, `NT_PHONG_NGU`) nên luật "phòng"
+  // khớp và gán sofa · giường · bàn làm việc · tủ hồ sơ thành `space` — đo được 28/54 block. Hậu
+  // quả có thật, không phải lý thuyết: `plan-present.ts` xếp `space` vào `role:'annotation'` ⇒ thả
+  // đồ từ Thư viện vào bản vẽ rồi trình bày mặt bằng thì cả cụm bị coi là GHI CHÚ.
+  // Block thư viện muốn khai loại thì khai TƯỜNG MINH trong `LibraryBlockMeta`, không đoán qua layer (K3).
+  const doc = parseDxf(text, { inferRules: null });
   docCache.set(meta.id, doc);
   return doc;
 }

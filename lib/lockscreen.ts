@@ -11,6 +11,7 @@
  */
 
 import { create } from 'zustand';
+import { useSaveStatus } from './save-status';
 
 interface LockScreenState {
   locked: boolean;
@@ -24,6 +25,9 @@ export const useLockScreen = create<LockScreenState>((set) => ({
   unlock: () => set({ locked: false }),
 }));
 
+/** Trần an toàn nếu autosave kẹt/không bao giờ báo xong — không được khoá treo mãi. */
+const FORCE_SAVE_MAX_WAIT_MS = 2000;
+
 /**
  * Khoá màn — ÉP AUTOSAVE CHẠY TRƯỚC (yêu cầu cứng của VIỆC 3: "khoá màn KHÔNG được làm mất
  * việc đang làm"). Tái dùng ĐÚNG 2 sự kiện ép-lưu sẵn có — 'cad:force-save-request'
@@ -32,14 +36,35 @@ export const useLockScreen = create<LockScreenState>((set) => ({
  * hại gì nếu chặng đó không mount — không ai nghe thì rơi vào chỗ trống); chặng Dựng
  * (flow-graph) chưa có khái niệm "ép lưu" riêng (đúng hiện trạng `lib/shortcuts.ts` VIỆC 2).
  *
- * Đợi 1 nhịp ngắn (200ms) trước khi thật sự khoá — đủ cho debounce/IndexedDB kịp ghi (cùng tinh
- * thần "optimistic status" `CadSheets.tsx` `onForceSave` đã dùng, không có promise nào để await
- * xuyên qua CustomEvent).
+ * G-M20-06: bản trước khoá cứng sau 200ms CỐ ĐỊNH — không biết autosave có kịp ghi xong hay
+ * chưa (nguy cơ mất dữ liệu nếu ghi lâu hơn 200ms; phí thời gian nếu không có gì để lưu). Sửa
+ * bằng cách đợi TÍN HIỆU THẬT thay vì đoán một con số: `useSaveStatus` (lib/save-status.ts) là
+ * trạng thái CHUNG mà cả CAD lẫn Present đã ghi vào qua `onSavingChange` từ trước (KHÔNG dựng
+ * cơ chế theo dõi mới, không cần sửa CadSheets.tsx/PresentSheets.tsx) — nếu đang `'saving'` thì
+ * đợi tới khi rời trạng thái đó, có trần `FORCE_SAVE_MAX_WAIT_MS` phòng autosave kẹt/không mount.
+ * Không có gì đang lưu (ca phổ biến nhất) ⇒ khoá gần như ngay, không đợi vô ích.
  */
 export function lockScreenNow(): void {
   window.dispatchEvent(new CustomEvent('cad:force-save-request'));
   window.dispatchEvent(new CustomEvent('present:force-save-request'));
-  window.setTimeout(() => useLockScreen.getState().lock(), 200);
+
+  if (useSaveStatus.getState().status !== 'saving') {
+    useLockScreen.getState().lock();
+    return;
+  }
+
+  let settled = false;
+  const finish = () => {
+    if (settled) return;
+    settled = true;
+    window.clearTimeout(safety);
+    unsubscribe();
+    useLockScreen.getState().lock();
+  };
+  const unsubscribe = useSaveStatus.subscribe((s) => {
+    if (s.status !== 'saving') finish();
+  });
+  const safety = window.setTimeout(finish, FORCE_SAVE_MAX_WAIT_MS);
 }
 
 /* ---------- Số phút tự khoá khi không thao tác — theo user, chỉnh được ở Cài đặt ---------- */

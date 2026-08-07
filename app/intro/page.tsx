@@ -19,7 +19,7 @@ export default function IntroPage() {
         router.replace('/login');
         return;
       }
-    } catch {}
+    } catch {/* localStorage bị chặn (chế độ riêng tư) — coi như chưa xem intro, cho xem lại */}
     setReady(true);
   }, [router]);
 

@@ -1,0 +1,93 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<title>Soi app IF — 07/08 15:32</title>
+<style>
+*{box-sizing:border-box} body{margin:0;padding:28px;background:#f4f1ec;color:#211e19;
+font:14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.w{max-width:1180px;margin:0 auto} h1{font-size:22px;font-weight:650;margin:0 0 4px;line-height:1.4}
+.sub{font-size:12.5px;color:#6b6660;margin-bottom:24px;line-height:1.6}
+.g{display:grid;gap:12px;margin-bottom:14px} .g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(400px,1fr))}
+.c{background:#faf8f4;border:1px solid #e0dbd4;border-radius:13px;padding:15px 16px}
+.k{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:#8a8580;line-height:1.5;margin-bottom:6px}
+.v{font-size:26px;font-weight:650;line-height:1.25} .u{font-size:12px;color:#6b6660;line-height:1.6;margin-top:3px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-weight:600;color:#8a8580;font-size:11px;letter-spacing:.05em;
+text-transform:uppercase;padding:0 8px 7px 0;line-height:1.5}
+td{padding:6px 8px 6px 0;border-top:1px solid #eae5de;line-height:1.6;vertical-align:top}
+.r{color:#c0392b;font-weight:600} .ok{color:#2d7a4f;font-weight:600} .w2{color:#b8873a;font-weight:600}
+code{background:#efece7;padding:1px 5px;border-radius:4px;font-size:11.5px;font-family:ui-monospace,monospace}
+.h{font-size:15px;font-weight:650;margin:22px 0 10px;line-height:1.5}
+.f{font-size:11.5px;color:#8a8580;margin-top:26px;padding-top:14px;border-top:1px solid #e0dbd4;line-height:1.7}
+</style></head><body><div class="w">
+
+<h1>Soi app InteriorFlow</h1>
+<div class="sub">Sinh lúc 07/08/2026 15:32 · mọi con số đọc từ repo/DB tại thời điểm chạy, không lấy từ sổ.<br>
+Chạy lại: <code>python3 scripts/soi-app.py</code></div>
+
+<div class="g g4">
+  <div class="c"><div class="k">Sổ GAP</div><div class="v r">85<span style="font-size:15px;color:#8a8580;font-weight:400"> đỏ / 125</span></div>
+    <div class="u">✅19 · 🟡11 · 🟠7 · ⚪3</div></div>
+  <div class="c"><div class="k">Dòng code</div><div class="v">150,540</div>
+    <div class="u">690 file nguồn</div></div>
+  <div class="c"><div class="k">Flow mồ côi</div>
+    <div class="v r">43<span style="font-size:15px;color:#8a8580;font-weight:400"> / 44</span></div>
+    <div class="u">8 dự án · 4 rác <code>__nb:</code></div></div>
+  <div class="c"><div class="k">Git</div><div class="v" style="font-size:19px">main</div>
+    <div class="u">200 file đang sửa</div></div>
+</div>
+
+<div class="h">Che phủ test theo tầng</div>
+<div class="g g4"><div class="c"><div class="k">lib/</div>
+    <div class="v" style="color:#2d7a4f">43%</div>
+    <div class="u">71,745 dòng nguồn · 31,322 dòng test<br>213 file test / 361 file</div>
+    <div style="margin-top:8px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:43%;background:#2d7a4f"></div></div></div></div><div class="c"><div class="k">components/</div>
+    <div class="v" style="color:#c0392b">0%</div>
+    <div class="u">71,750 dòng nguồn · 170 dòng test<br>2 file test / 235 file</div>
+    <div style="margin-top:8px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:0%;background:#c0392b"></div></div></div></div><div class="c"><div class="k">app/</div>
+    <div class="v" style="color:#c0392b">0%</div>
+    <div class="u">7,045 dòng nguồn · 0 dòng test<br>0 file test / 94 file</div>
+    <div style="margin-top:8px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:0%;background:#c0392b"></div></div></div></div></div><div class="h">Mảng đáng ngờ — tỷ lệ dòng code trên 1 dòng sổ</div>
+<div class="c"><div style="font-size:11.5px;color:#6b6660;margin-bottom:10px;line-height:1.6">
+Ngưỡng §0x: <b>trên 2.000 dòng cho 1 dòng sổ ⇒ mảng đó chưa ai soi</b>, không phải đã ổn. 0 test ở lớp giao diện là chỉ báo thứ hai.</div>
+<table><tr><th>Mảng</th><th>Dòng</th><th>Test</th><th>Dòng sổ</th><th>Tỷ lệ</th></tr><tr><td><code>components/entry</code></td><td>2,322</td>
+    <td class="ok">1</td><td>1</td><td class="r">2,322:1</td></tr><tr><td><code>components/present-editor</code></td><td>13,696</td>
+    <td class="r">0</td><td>6</td><td class="r">2,282:1</td></tr><tr><td><code>components/render-studio</code></td><td>5,419</td>
+    <td class="r">0</td><td>3</td><td class="w2">1,806:1</td></tr><tr><td><code>components/avatar</code></td><td>1,744</td>
+    <td class="r">0</td><td>1</td><td class="w2">1,744:1</td></tr><tr><td><code>lib/present-editor</code></td><td>9,325</td>
+    <td class="ok">34</td><td>6</td><td class="w2">1,554:1</td></tr><tr><td><code>lib/integrations</code></td><td>1,356</td>
+    <td class="ok">2</td><td>1</td><td class="w2">1,356:1</td></tr><tr><td><code>lib/server</code></td><td>1,109</td>
+    <td class="ok">8</td><td>1</td><td class="w2">1,109:1</td></tr><tr><td><code>components/photo-editor</code></td><td>2,205</td>
+    <td class="r">0</td><td>2</td><td class="w2">1,102:1</td></tr><tr><td><code>components/studio</code></td><td>5,785</td>
+    <td class="ok">1</td><td>6</td><td class="w2">964:1</td></tr><tr><td><code>lib/three</code></td><td>2,972</td>
+    <td class="ok">9</td><td>4</td><td class="">743:1</td></tr><tr><td><code>components/print</code></td><td>1,309</td>
+    <td class="r">0</td><td>2</td><td class="">654:1</td></tr><tr><td><code>lib/nodes</code></td><td>3,997</td>
+    <td class="ok">8</td><td>7</td><td class="">571:1</td></tr><tr><td><code>components/intro</code></td><td>1,016</td>
+    <td class="r">0</td><td>2</td><td class="">508:1</td></tr><tr><td><code>lib/photo-editor</code></td><td>1,009</td>
+    <td class="ok">2</td><td>2</td><td class="">504:1</td></tr></table></div><div class="h">Phiếu</div><div class="c"><table><tr><th>Phiếu</th><th>Việc</th><th>Trạng thái</th><th>Chặn bởi</th></tr><tr><td><b>P0</b></td><td>`Nhãn và màu StageSwitcher`</td><td class='ok'>✅ **XONG** — kiểm chéo 5/5. Còn nợ `G-M15-07` (3 chỗ)</td><td style='color:#8a8580'>—</td></tr><tr><td><b>P1</b></td><td>`p1. Flow projectId gốc và Ta…`</td><td class=''>🟢 **ĐANG CHẠY**</td><td style='color:#8a8580'>—</td></tr><tr><td><b>P2</b></td><td>`p2 Kiểm tra 16 mảng code`</td><td class=''>🟢 **ĐANG CHẠY**</td><td style='color:#8a8580'>—</td></tr><tr><td><b>P3</b></td><td>*(chưa mở)*</td><td class='w2'>⏸ **CHỜ MOCK**</td><td style='color:#8a8580'>Claude Design chưa xuất `3D Dựng khối.dc</td></tr><tr><td><b>P4</b></td><td>`p4. Nối UI cho BOQ, xuất…`</td><td class=''>🟢 **ĐANG CHẠY**</td><td style='color:#8a8580'>—</td></tr><tr><td><b>P5</b></td><td>`p5. thư viện: sửa animation…`</td><td class=''>🟢 **ĐANG CHẠY**</td><td style='color:#8a8580'>—</td></tr><tr><td><b>P6</b></td><td>*(chưa mở)*</td><td class=''>⏸ **CHƯA DÁN**</td><td style='color:#8a8580'>**Hoà chưa quyết giấy phép DWG**</td></tr><tr><td><b>P7</b></td><td>*(chưa mở)*</td><td class=''>⏸ **CHƯA DÁN**</td><td style='color:#8a8580'>⚠️ **đụng P5** — xem cảnh báo dưới</td></tr><tr><td><b>P8</b></td><td>*(chưa mở)*</td><td class=''>⏸ **DÁN ĐƯỢC NGAY**</td><td style='color:#8a8580'>— · Claude Design, 0 phiên code</td></tr><tr><td><b>P9</b></td><td>*(chưa mở)*</td><td class=''>⏸ **DÁN ĐƯỢC NGAY**</td><td style='color:#8a8580'>— · `lib/cad` 0 phiên giữ</td></tr></table></div><div class="h">Sổ GAP theo mảng</div><div class="c"><table><tr><th>Mã</th><th>Đỏ</th><th>Tổng</th><th></th></tr><tr><td><code>G-M1</code></td><td class="r">9</td><td>20</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:45%;background:#b8873a"></div></div></td></tr><tr><td><code>G-M3</code></td><td class="r">9</td><td>17</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:52%;background:#b8873a"></div></div></td></tr><tr><td><code>G-M5</code></td><td class="r">14</td><td>17</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:82%;background:#c0392b"></div></div></td></tr><tr><td><code>G-M20</code></td><td class="r">9</td><td>13</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:69%;background:#c0392b"></div></div></td></tr><tr><td><code>G-M2</code></td><td class="r">9</td><td>10</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:90%;background:#c0392b"></div></div></td></tr><tr><td><code>G-M15</code></td><td class="r">6</td><td>7</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:85%;background:#c0392b"></div></div></td></tr><tr><td><code>G-M10</code></td><td class="r">6</td><td>6</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:100%;background:#c0392b"></div></div></td></tr><tr><td><code>G-M8</code></td><td class="r">4</td><td>5</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:80%;background:#c0392b"></div></div></td></tr><tr><td><code>G-M16</code></td><td class="r">4</td><td>4</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:100%;background:#c0392b"></div></div></td></tr><tr><td><code>G-M9</code></td><td class="r">1</td><td>3</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:33%;background:#b8873a"></div></div></td></tr><tr><td><code>G-A</code></td><td class="r">3</td><td>3</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:100%;background:#c0392b"></div></div></td></tr><tr><td><code>G-M13</code></td><td class="r">2</td><td>3</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:66%;background:#c0392b"></div></div></td></tr><tr><td><code>G-NB</code></td><td class="r">1</td><td>3</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:33%;background:#b8873a"></div></div></td></tr><tr><td><code>G-M4</code></td><td class="ok">0</td><td>2</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:0%;background:#b8873a"></div></div></td></tr><tr><td><code>G-C</code></td><td class="r">2</td><td>2</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:100%;background:#c0392b"></div></div></td></tr><tr><td><code>G-M11</code></td><td class="ok">0</td><td>2</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:0%;background:#b8873a"></div></div></td></tr><tr><td><code>G-M14</code></td><td class="r">2</td><td>2</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:100%;background:#c0392b"></div></div></td></tr><tr><td><code>G-M17</code></td><td class="r">1</td><td>2</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:50%;background:#b8873a"></div></div></td></tr><tr><td><code>G-M18</code></td><td class="r">1</td><td>2</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:50%;background:#b8873a"></div></div></td></tr><tr><td><code>G-M12</code></td><td class="r">1</td><td>1</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:100%;background:#c0392b"></div></div></td></tr><tr><td><code>G-M19</code></td><td class="r">1</td><td>1</td>
+    <td style="width:180px"><div style="height:5px;background:#e6e1da;border-radius:3px;overflow:hidden"><div style="height:100%;width:100%;background:#c0392b"></div></div></td></tr></table></div>
+
+<div class="f">
+<b>Không đo được ở đây</b> — cần mở app thật: hiệu năng lúc chạy · bố cục ở màn hẹp · thao tác nào chậm khó chịu.<br>
+<b>Nguồn:</b> <code>docs/GAP-IF.md</code> · <code>docs/00-DANG-CHO.md</code> · <code>prisma/dev.db</code> · <code>git</code><br>
+<b>Git gần nhất:</b> 8a850f5 WIP: mẻ 06/08, chưa dọn trung tính
+</div></div></body></html>

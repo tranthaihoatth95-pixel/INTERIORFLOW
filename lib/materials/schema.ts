@@ -37,6 +37,25 @@ export interface MaterialPbr {
   heightUrl?: string;
   /** Ambient occlusion map. */
   aoUrl?: string;
+  /**
+   * G-M17-03 (07/08, Hoà bắt bằng mắt): ẢNH MÀU của vật liệu — gỗ/đá/vải/gạch đều cần VÂN,
+   * `baseColor` một mã màu chỉ ra quả cầu trơn. Có map thì map THẮNG, `baseColor` thành tint/
+   * fallback (đúng glTF: baseColorFactor × baseColorTexture).
+   * ⚠️ NẠP **sRGB** — KHÁC HẲN normal/height/ao/roughness/metallic (linear). Đặt nhầm colorSpace
+   * ở đây là màu lệch TOÀN CỤC (ảnh bị gamma hai lần, nhạt bệch hoặc cháy tối) — xem
+   * `lib/three/pbr-three.ts` nơi duy nhất gán colorSpace.
+   */
+  baseColorMapUrl?: string;
+  /** Roughness map, NẠP LINEAR — kênh xám, trắng=nhám. Có map thì `roughness` thành hệ số nhân. */
+  roughnessMapUrl?: string;
+  /** Metallic map, NẠP LINEAR — kênh xám, trắng=kim loại. Có map thì `metallic` thành hệ số nhân. */
+  metallicMapUrl?: string;
+  /**
+   * BƯỚC LẶP VÂN tính bằng MM THẬT trên bề mặt — 1 chu kỳ ảnh phủ w×h mm. Không có nó thì viên
+   * gạch 600mm hiện thành 3m (ảnh kéo giãn theo UV mặc định, sai tỉ lệ ngay khi nhìn).
+   * Áp cho CẢ 7 map (baseColor/roughness/metallic/normal/height/ao dùng chung một lưới UV).
+   */
+  uvScaleMm?: { w: number; h: number };
   emissive?: {
     /** sRGB. */
     color: SrgbHex;
@@ -69,6 +88,13 @@ export interface MaterialPbr {
    * true, đúng yêu cầu spec §4-2: "Ghi rõ đây là giá trị suy đoán, người dùng chỉnh sau."
    */
   suyDoan?: boolean;
+  /**
+   * VIỆC 5 PHẦN B (07/08) — LOẠI vật liệu (núm ① của lớp chỉnh gọn), 1 trong 11 id
+   * `MATERIAL_TYPES` (`material-edit.ts`). Metadata cấp app, KHÔNG thuộc chuẩn glTF — export
+   * engine (`export-vray.ts`/`export-d5.ts`) BỎ QUA trường này. Nơi tiêu thụ (K4): editor 4 núm
+   * (`components/materials/MaterialPbrEditor.tsx`) + chọn cảnh quả cầu xem trước.
+   */
+  typeId?: string;
 }
 
 /**

@@ -36,7 +36,7 @@ type Work = {
 };
 
 // 6 "bức tranh" — 03/08 fix trung tính (AUDIT-BRAND-PII 🔴): bỏ ảnh render dự án khách thật
-// (/detech/*), thay bằng GRADIENT vật liệu trừu tượng (đá · đồng · gỗ · nước — tông trung tính,
+// (thư mục ảnh khách đã xoá hẳn 07/08), thay bằng GRADIENT vật liệu trừu tượng (đá · đồng · gỗ · nước — tông trung tính,
 // không thương hiệu nào). Card giữ nguyên bố cục/caption; khi có bộ ảnh license thì chỉ cần thay
 // field `art` bằng ảnh, không đổi cấu trúc.
 const WORKS: Work[] = [
@@ -178,7 +178,7 @@ export function TitleSequence({ onFinish }: { onFinish: () => void }) {
       }}
     >
       {/* ===== NỀN PHÒNG GALLERY — 03/08 fix trung tính: gradient tối ấm thay ảnh khách
-          (trước là /detech/meditation.jpg blur 26px — blur sâu vậy thì gradient cho hiệu quả
+          (trước là một ảnh render khách blur 26px — blur sâu vậy thì gradient cho hiệu quả
           thị giác tương đương, không cần ảnh). Giữ nhịp thở scale y nguyên. ===== */}
       <motion.div
         aria-hidden

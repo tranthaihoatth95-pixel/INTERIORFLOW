@@ -5,7 +5,7 @@
  * "ảnh · mã · tên · hãng · kích thước · giá · đơn vị · nguồn". Cùng phong cách inline-style +
  * biến `var(--t*)` như `components/present-editor/boq/BoqTable.tsx` (nhất quán design tokens).
  */
-import { Image as ImageIcon, Pencil, Trash2 } from 'lucide-react';
+import { Image as ImageIcon, Pencil, Trash2, Orbit } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { dimensionLabel, imageUrlOf, materialSourceLabel, type MaterialSpecDto } from '@/lib/materials/warehouse/dto';
 
@@ -17,10 +17,14 @@ export function MaterialTable({
   items,
   onEdit,
   onDelete,
+  onEditPbr,
 }: {
   items: MaterialSpecDto[];
   onEdit: (m: MaterialSpecDto) => void;
   onDelete: (m: MaterialSpecDto) => void;
+  /** VIỆC 5 PHẦN B — mở lớp chỉnh chất liệu render (4 núm). Chỉ gọi được khi món CÓ SKU
+   * (matId = sku, xem `lib/materials/pbr-store.ts`); món không mã thì nút không render. */
+  onEditPbr?: (m: MaterialSpecDto) => void;
 }) {
   const tr = useT();
 
@@ -31,7 +35,7 @@ export function MaterialTable({
           <tr style={{ position: 'sticky', top: 0, background: 'var(--panel)', zIndex: 1 }}>
             {[
               '', tr('Mã', 'Code'), tr('Tên', 'Name'), tr('Hãng', 'Brand'), tr('Kích thước', 'Size'),
-              tr('Giá', 'Price'), tr('Đơn vị', 'Unit'), tr('Nguồn', 'Source'), '',
+              tr('Giá', 'Price'), tr('Đơn vị', 'Unit'), tr('Phòng', 'Room'), tr('Nguồn', 'Source'), '',
             ].map((h, i) => (
               <th
                 key={h + i}
@@ -82,9 +86,18 @@ export function MaterialTable({
                   {m.priceVnd != null ? `${fmtVnd(m.priceVnd)} ₫` : (m.priceNote || '—')}
                 </td>
                 <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t3)' }}>{m.unit || '—'}</td>
+                {/* 06/08 VÒNG 2 (G-M3-08) — cột PHÒNG. Đây là chỗ NHÌN THẤY được rằng phòng đã
+                    lưu thật xuống DB: nhập bảng có cột Phòng → tải lại trang → chữ vẫn còn. Trước
+                    đó phòng chỉ sống trong state của cửa nhập, đóng tab là mất mà không ai biết. */}
+                <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t3)' }}>{m.room || '—'}</td>
                 <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t4)', fontSize: 11.5 }}>{tr(src.vi, src.en)}</td>
                 <td style={{ padding: '0 6px', borderBottom: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                    {onEditPbr && m.sku && (
+                      <button type="button" onClick={() => onEditPbr(m)} aria-label={tr('Chất liệu render', 'Render material')} title={tr('Chất liệu render (PBR)', 'Render material (PBR)')} style={iconBtn}>
+                        <Orbit size={13} />
+                      </button>
+                    )}
                     <button type="button" onClick={() => onEdit(m)} aria-label={tr('Sửa', 'Edit')} style={iconBtn}>
                       <Pencil size={13} />
                     </button>
@@ -98,7 +111,7 @@ export function MaterialTable({
           })}
           {items.length === 0 && (
             <tr>
-              <td colSpan={9} style={{ padding: '32px 10px', textAlign: 'center', color: 'var(--t4)', fontSize: 12.5 }}>
+              <td colSpan={10} style={{ padding: '32px 10px', textAlign: 'center', color: 'var(--t4)', fontSize: 12.5 }}>
                 {tr('Không có vật liệu nào khớp.', 'No materials match.')}
               </td>
             </tr>

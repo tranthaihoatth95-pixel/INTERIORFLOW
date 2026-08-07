@@ -1,5 +1,14 @@
 # IF1 + IF2 — Bức tranh tổng (đối chiếu STATUS hiện tại)
 
+> 🔴 **ĐÍNH CHÍNH TỪ VỰNG (07/08, G-M15-03, `docs/M-NHAN-OUT.md`)** — file này (viết 20/07) dùng
+> chữ **"chặng"** cho một bộ HOÀN TOÀN KHÁC bộ "chặng" mà `docs/00-CHOT.md` chốt sau này (07/08):
+> đây là ① CAD kỹ thuật ② BIM/IFC 4.0 ③ Viewer 3D + clash/section-cut (§3 dưới); còn chốt 07/08
+> gọi 3 chặng IF là ① Thiết kế 2D ② Thiết kế 3D ③ Trình chiếu (`concept`/`render`/`present`).
+> **BỘ CHỐT 07/08 THẮNG** — chữ "chặng" từ nay CHỈ dùng cho bộ đó (đã lên `StageSwitcher.tsx`,
+> `lib/phases.ts`, mọi UI người dùng thấy). Bộ ba mục ở §3 dưới đây đổi tên gọi thành **"3 mảng
+> IF2"**, không còn gọi là "chặng" — tránh phiên nào đọc file này trước sẽ hiểu nhầm "chặng 3" là
+> Viewer 3D thay vì Trình chiếu.
+
 > File này do phiên Cowork/kiến trúc-sư-trưởng (Claude) viết ngày 2026-07-20, tổng hợp
 > toàn bộ quyết định kiến trúc IF1+IF2 đã thống nhất với Hoà. Claude Code: đọc file này
 > TRƯỚC, rồi đối chiếu với STATUS.md + CHANGELOG.md hiện tại của bạn, tự liệt kê:
@@ -38,9 +47,9 @@ Nhiều dự án chạy song song (khác pha) nên không team nào ngồi chờ
 pipeline (sequential relay), KHÔNG phải real-time multiplayer (không làm CRDT/Yjs kiểu
 Figma ở giai đoạn này).
 
-## 3. 3 Chặng IF2 (đã research code thật 2026-07-19)
+## 3. 3 mảng IF2 (đã research code thật 2026-07-19; ĐỔI TÊN từ "3 Chặng IF2" 07/08, xem đính chính đầu file — chữ "chặng" nay dành riêng cho bộ chốt 07/08)
 
-| Chặng | Đã có (tái dùng) | Làm mới |
+| Mảng | Đã có (tái dùng) | Làm mới |
 |---|---|---|
 | 1 · CAD kỹ thuật | DXF round-trip, dimension, hatch, standards checker TCVN/QCVN/Neufert/NFPA (`lib/cad/standards/`) | DWG export (hiện chỉ import) |
 | 2 · BIM/IFC 4.0 | Cầu Blender headless (`lib/server/blender.ts` + `obj2fbx.py`), pipeline Doc→OBJ (`lib/three/cad-to-obj.ts`) | Gắn IfcOpenShell/Bonsai; mở rộng `model.ts` thêm `storey?`/`elementType?` (optional, backward-compatible) — FBX hiện chỉ là mesh trơn không ngữ nghĩa |

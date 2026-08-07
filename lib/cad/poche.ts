@@ -48,11 +48,73 @@ function isPocheSide(e: Entity): e is PocheSide {
  * của cùng một quad tường có thể được ghi theo thứ tự khác nhau (và `transformEntity` của DXF có
  * thể lật gương ⇒ đảo chiều). Làm tròn theo `POCHE_MATCH_TOL_MM` trước khi ghép chuỗi.
  */
+/**
+ * Sai số coi một đỉnh là "thẳng hàng, thừa" (mm). Rộng hơn `POCHE_MATCH_TOL_MM` rất nhiều vì đây
+ * là sai số HÌNH HỌC của bản vẽ thật (điểm chia cạnh do phần mềm CAD tự chèn), không phải sai số
+ * dấu phẩy động. 0,5 mm ở tỉ lệ 1:50 là 0,01 mm trên giấy — không mắt nào thấy.
+ */
+export const POCHE_COLLINEAR_TOL_MM = 0.5;
+
+/**
+ * Bỏ đỉnh THỪA của một vòng: đỉnh trùng đỉnh liền trước, và đỉnh nằm THẲNG HÀNG giữa hai đỉnh kề
+ * (không đổi hình, chỉ đổi cách kể).
+ *
+ * 🔴 VÌ SAO PHẢI CÓ — đo trên hồ sơ thật, không phải phòng xa (G-M1-08 vòng 2). Một cái cột trong
+ * bản vẽ nhập vào gồm **1 đường bao 4 đỉnh + 9 mảng tô 5 đỉnh**, tất cả CÙNG một bản chèn, CÙNG
+ * lớp, và 4 đỉnh đầu TRÙNG KHÍT tới từng phần nghìn mm. Đỉnh thứ 5 của mảng tô là một điểm nằm
+ * GIỮA cạnh trên — phần mềm CAD chèn vào khi cắt cạnh, không thêm hình gì. Chỉ vì cái đỉnh thừa
+ * đó mà `ringKey` ra hai chuỗi khác nhau ⇒ **0/126 mảng tô neo được**, và kết luận cũ ("hồ sơ thật
+ * không có nửa đường bao để neo") là SAI: đường bao có, chỉ là bộ so trùng quá cứng.
+ *
+ * THUẦN. Vòng < 3 đỉnh trả nguyên; không bao giờ trả về ít hơn 3 đỉnh (vòng suy biến giữ nguyên
+ * để nơi gọi tự loại, đừng biến nó thành đoạn thẳng sau lưng người ta).
+ */
+export function normalizeRing(points: Pt[], tolMm = POCHE_COLLINEAR_TOL_MM): Pt[] {
+  if (points.length < 3) return points;
+  // ① bỏ đỉnh trùng liền kề (kể cả đỉnh cuối trùng đỉnh đầu — vòng "đóng bằng cách lặp đỉnh")
+  const uniq: Pt[] = [];
+  for (const p of points) {
+    const last = uniq[uniq.length - 1];
+    if (last && Math.hypot(p.x - last.x, p.y - last.y) <= tolMm) continue;
+    uniq.push(p);
+  }
+  while (uniq.length > 1 && Math.hypot(uniq[0].x - uniq[uniq.length - 1].x, uniq[0].y - uniq[uniq.length - 1].y) <= tolMm) {
+    uniq.pop();
+  }
+  if (uniq.length < 3) return points;
+
+  // ② bỏ đỉnh thẳng hàng — lặp cho tới khi không bỏ được nữa (ba đỉnh thừa liên tiếp cũng sạch)
+  let ring = uniq;
+  let removed = true;
+  while (removed && ring.length > 3) {
+    removed = false;
+    const keep: Pt[] = [];
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[(i - 1 + ring.length) % ring.length];
+      const b = ring[i];
+      const c = ring[(i + 1) % ring.length];
+      // khoảng cách từ b tới đoạn a→c; nhỏ hơn sai số ⇒ b không mang hình gì
+      const dx = c.x - a.x;
+      const dy = c.y - a.y;
+      const L = Math.hypot(dx, dy);
+      const d = L === 0 ? Math.hypot(b.x - a.x, b.y - a.y) : Math.abs(dy * (b.x - a.x) - dx * (b.y - a.y)) / L;
+      if (d <= tolMm && ring.length - (keep.length === i ? 0 : 1) > 3) {
+        // chỉ bỏ khi vòng còn ≥ 3 đỉnh sau khi bỏ
+        if (ring.length - 1 >= 3) { removed = true; continue; }
+      }
+      keep.push(b);
+    }
+    if (removed) ring = keep;
+  }
+  return ring.length >= 3 ? ring : points;
+}
+
 export function ringKey(points: Pt[]): string {
-  if (points.length < 3) return '';
+  const norm = normalizeRing(points);
+  if (norm.length < 3) return '';
   const q = (n: number) => Math.round(n / POCHE_MATCH_TOL_MM);
   const forms: string[] = [];
-  for (const dir of [points, [...points].reverse()]) {
+  for (const dir of [norm, [...norm].reverse()]) {
     // chuẩn hoá điểm bắt đầu: xoay vòng sao cho đỉnh "nhỏ nhất" đứng đầu
     let best = 0;
     for (let i = 1; i < dir.length; i++) {
@@ -66,9 +128,15 @@ export function ringKey(points: Pt[]): string {
   return forms.sort()[0];
 }
 
-/** Hai bộ điểm có trùng khít không (dùng `ringKey`, nên bất biến điểm-bắt-đầu/chiều-quay). */
+/**
+ * Hai bộ điểm có trùng khít không (dùng `ringKey`, nên bất biến điểm-bắt-đầu/chiều-quay).
+ *
+ * ⚠️ KHÔNG so `a.length !== b.length` nữa (bỏ 06/08, vòng 2): hai vòng CÙNG hình có thể khác số
+ * đỉnh vì một bên mang đỉnh thẳng-hàng thừa — đó chính là ca 4 đỉnh vs 5 đỉnh của hồ sơ thật.
+ * `ringKey` đã chuẩn hoá qua `normalizeRing`, so khoá là đủ và đúng hơn.
+ */
 export function sameRing(a: Pt[], b: Pt[]): boolean {
-  if (a.length !== b.length || a.length < 3) return false;
+  if (a.length < 3 || b.length < 3) return false;
   const k = ringKey(a);
   return k !== '' && k === ringKey(b);
 }
@@ -81,17 +149,31 @@ export function sameRing(a: Pt[], b: Pt[]): boolean {
  * lần cho cả Doc; gọi dò ở đây sẽ thành O(n²) mỗi lần UI hỏi một entity).
  */
 export function pochePartnerId(doc: Doc, entityId: string): string | undefined {
+  return pochePartnerIds(doc, entityId)[0];
+}
+
+/**
+ * MỌI nửa kia — vì một đường bao có thể mang NHIỀU mảng tô.
+ *
+ * 🔴 Đo trên hồ sơ thật (06/08, vòng 2): một cái cột = **1 đường bao + 9 mảng tô** chồng nhau,
+ * cùng vòng, khác `pattern` (ANSI31 ×6 · ANSI37 · SOLID · DOTS) — người vẽ chồng nhiều lớp gạch để
+ * ra sắc độ mong muốn. Luật cũ "1 chủ ↔ 1 con" neo được đúng 1 trong 9 ⇒ dời cột thì 8 mảng còn
+ * lại ở lại chỗ cũ. Đó vẫn là đúng cái bệnh G-M1-08, chỉ đỡ hơn về số lượng.
+ *
+ * Chiều ngược lại VẪN LÀ MỘT: mỗi mảng tô có đúng một `hostId`. Ràng buộc chống mơ hồ nay nằm ở
+ * phía CHỦ (hai đường bao trùng vòng trên cùng lớp ⇒ không neo, xem `syncPocheAnchors` ③).
+ */
+export function pochePartnerIds(doc: Doc, entityId: string): string[] {
   const e = doc.entities.find((x) => x.id === entityId);
-  if (!e) return undefined;
+  if (!e) return [];
   if (e.type === 'hatch' && e.hostId) {
     const host = doc.entities.find((x) => x.id === e.hostId);
-    return host?.type === 'polyline' ? host.id : undefined;
+    return host?.type === 'polyline' ? [host.id] : [];
   }
   if (e.type === 'polyline') {
-    const child = doc.entities.find((x) => x.type === 'hatch' && x.hostId === e.id);
-    return child?.id;
+    return doc.entities.filter((x) => x.type === 'hatch' && x.hostId === e.id).map((x) => x.id);
   }
-  return undefined;
+  return [];
 }
 
 /**
@@ -118,30 +200,27 @@ export function syncPocheAnchors(doc: Doc): Doc {
     else candidates.set(k, [e.id]);
   }
 
-  const takenHost = new Set<string>();
   let changed = false;
   const next: Entity[] = doc.entities.map((e) => {
     if (e.type !== 'hatch') return e;
 
-    // ① + ② liên kết đang có còn hợp lệ không
+    // ① liên kết đang có còn hợp lệ không (chủ còn sống và đúng là đường bao)
     if (e.hostId) {
       const host = byId.get(e.hostId);
-      if (host?.type === 'polyline' && !takenHost.has(host.id)) {
-        takenHost.add(host.id);
-        return e;
-      }
+      if (host?.type === 'polyline') return e;
       changed = true;
       const { hostId: _drop, ...rest } = e;
       return rest as Entity;
     }
 
-    // ③ backfill cho dữ liệu cũ — chỉ khi ĐÚNG MỘT ứng viên chưa bị nhận
+    // ② backfill — chỉ khi có ĐÚNG MỘT đường bao trùng vòng trên cùng lớp.
+    // Nhiều mảng tô cùng nhận một đường bao là HỢP LỆ (xem `pochePartnerIds`); mơ hồ là khi có
+    // NHIỀU ĐƯỜNG BAO trùng vòng — lúc đó không biết neo vào cái nào, thà không neo (K3).
     const k = `${e.layer}|${ringKey(e.points)}`;
-    const free = (candidates.get(k) ?? []).filter((id) => !takenHost.has(id));
-    if (free.length !== 1) return e;
-    takenHost.add(free[0]);
+    const hosts = candidates.get(k) ?? [];
+    if (hosts.length !== 1) return e;
     changed = true;
-    return { ...e, hostId: free[0] };
+    return { ...e, hostId: hosts[0] };
   });
 
   return changed ? { ...doc, entities: next } : doc;
@@ -156,17 +235,24 @@ export function syncPocheAnchors(doc: Doc): Doc {
  */
 export function expandIdsWithPoche(ids: Iterable<string>, doc: Doc): Set<string> {
   const out = new Set(ids);
-  const hatchByHost = new Map<string, string>();
+  // 1 chủ → NHIỀU con (hồ sơ thật: 9 mảng tô chồng trên 1 đường bao cột).
+  const hatchesByHost = new Map<string, string[]>();
   for (const e of doc.entities) {
-    if (e.type === 'hatch' && e.hostId) hatchByHost.set(e.hostId, e.id);
+    if (e.type !== 'hatch' || !e.hostId) continue;
+    const list = hatchesByHost.get(e.hostId);
+    if (list) list.push(e.id);
+    else hatchesByHost.set(e.hostId, [e.id]);
   }
   const byId = new Map(doc.entities.map((e) => [e.id, e]));
   for (const id of [...out]) {
     const e = byId.get(id);
     if (!e) continue;
-    if (e.type === 'hatch' && e.hostId && byId.has(e.hostId)) out.add(e.hostId);
-    const child = hatchByHost.get(id);
-    if (child) out.add(child);
+    if (e.type === 'hatch' && e.hostId && byId.has(e.hostId)) {
+      out.add(e.hostId);
+      // anh em cùng chủ đi theo luôn — nếu không, dời mảng tô này thì 8 mảng kia ở lại
+      for (const sib of hatchesByHost.get(e.hostId) ?? []) out.add(sib);
+    }
+    for (const child of hatchesByHost.get(id) ?? []) out.add(child);
   }
   return out;
 }
@@ -196,12 +282,14 @@ export function propagatePocheEdits(doc: Doc, changedIds: Iterable<string>): Doc
   for (const id of changed) {
     const e = byId.get(id);
     if (!e || !isPocheSide(e)) continue;
-    const partnerId = pochePartnerId(doc, id);
-    if (!partnerId || changed.has(partnerId)) continue;
-    const partner = byId.get(partnerId);
-    if (!partner || !isPocheSide(partner)) continue;
-    if (sameRing(e.points, partner.points)) continue; // đã khớp, không sinh Doc mới vô ích
-    patch.set(partnerId, e.points.map((p) => ({ x: p.x, y: p.y })));
+    // MỌI nửa kia — sửa đường bao cột thì cả 9 mảng tô phải đi theo, không chỉ mảng đầu tiên.
+    for (const partnerId of pochePartnerIds(doc, id)) {
+      if (changed.has(partnerId)) continue;
+      const partner = byId.get(partnerId);
+      if (!partner || !isPocheSide(partner)) continue;
+      if (sameRing(e.points, partner.points)) continue; // đã khớp, không sinh Doc mới vô ích
+      patch.set(partnerId, e.points.map((p) => ({ x: p.x, y: p.y })));
+    }
   }
 
   if (!patch.size) return doc;

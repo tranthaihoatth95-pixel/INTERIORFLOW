@@ -63,6 +63,8 @@ function entEndpoints(e: Entity): Pt[] {
       return e.path;
     case 'zone':
       return zoneBoundaryPoints(e, 16);
+    case 'room':
+      return e.boundary;
   }
 }
 
@@ -182,6 +184,12 @@ export function entSegments(e: Entity): [Pt, Pt][] {
     }
     case 'zone': {
       const p = zoneBoundaryPoints(e);
+      const segs: [Pt, Pt][] = [];
+      for (let i = 0; i < p.length; i++) segs.push([p[i], p[(i + 1) % p.length]]);
+      return segs;
+    }
+    case 'room': {
+      const p = e.boundary;
       const segs: [Pt, Pt][] = [];
       for (let i = 0; i < p.length; i++) segs.push([p[i], p[(i + 1) % p.length]]);
       return segs;
@@ -365,6 +373,7 @@ export function hitTest(doc: Doc, world: Pt, tolMm: number): string | null {
         break;
       case 'arrow':
       case 'zone':
+      case 'room':
         for (const [a, b] of entSegments(e)) consider(e.id, nearestOnSeg(world, a, b).d);
         break;
     }
