@@ -4,6 +4,11 @@ node_modules
 .env.local
 uploads/
 prisma/dev.db*
+# 08/08 — CSDL sạch để nghiệm thu (scripts/db-sach.mjs). Mẫu `dev.db*` ở trên KHÔNG bắt được
+# tên này (dev-sach ≠ dev.db), nên nó suýt lọt vào commit. Mọi tệp .db đều là dữ liệu máy, không
+# phải mã nguồn — chặn cả họ cho chắc.
+prisma/*.db
+prisma/*.db-journal
 build.log
 .claude/
 *.tsbuildinfo

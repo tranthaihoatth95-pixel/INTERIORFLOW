@@ -1,74 +1,103 @@
 /**
- * lib/server/tasks.test.ts — M-SCOPE VIỆC 2 (07/08).
+ * lib/server/tasks.test.ts — VIẾT LẠI 08/08 (p12 NỀN DỮ LIỆU, VIỆC 1 ④).
  *
- * 🔴 Bảng Task/WorkflowState CHƯA có trong dev.db (xem TASK_TABLES_READY ở tasks.ts) — test này
- * KHÔNG chạm DB thật, chỉ kiểm: (1) cửa chặn còn đứng đúng chỗ · (2) schema khai đủ field ·
- * (3) mọi hàm public ném lỗi rõ ràng thay vì âm thầm trả rỗng khi cờ còn tắt.
- * Nghiệm thu N6 "tạo→đổi status→đọc lại" CHỈ chạy được SAU khi chủ dự án bật cờ trên máy thật —
- * xem lệnh trong docblock tasks.ts, KHÔNG bịa output ở đây.
+ * Bản cũ (M-SCOPE 07/08) kiểm "cờ TASK_TABLES_READY còn false + mọi hàm ném lỗi rõ" — đúng cho
+ * lúc bảng CHƯA migrate. Nay bảng `Task`/`WorkflowState` ĐÃ CÓ THẬT trong `dev.db`
+ * (migration `20260808000002_them_workflowstate_task_externalref`) và cờ đã bật ⇒ test đổi vai:
+ * INTEGRATION TEST chạy trọn vòng đời trên Prisma THẬT (tạo user+project tạm → gieo trạng thái
+ * mặc định → tạo việc → đổi trạng thái → đọc lại → xoá), tự dọn sạch cuối bài — CÙNG khuôn
+ * `credits.test.ts` (file liền kề, cũng Prisma thật + temp row + cleanup).
+ *
+ * Chạy: node_modules/.bin/sucrase-node lib/server/tasks.test.ts
  */
 import assert from 'node:assert';
-import fs from 'node:fs';
-import path from 'node:path';
+import { prisma } from './db';
 import { TASK_TABLES_READY, listWorkflowStates, listTasks, createTask, updateTask, deleteTask } from './tasks';
 
 let pass = 0;
-function test(name: string, fn: () => void) {
-  fn();
-  pass++;
-  console.log(`  ✓ ${name}`);
-}
-async function testAsync(name: string, fn: () => Promise<void>) {
-  await fn();
-  pass++;
-  console.log(`  ✓ ${name}`);
-}
-
-test('cờ TASK_TABLES_READY vẫn false — chưa ai bật ẩu trước khi migrate', () => {
-  assert.strictEqual(TASK_TABLES_READY, false);
-});
-
-const SCHEMA_PATH = path.resolve(__dirname, '../../prisma/schema.prisma');
-const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
-
-test('schema khai đủ model Task với statusId + projectId', () => {
-  const m = schema.match(/model Task \{[\s\S]*?\n\}/);
-  assert.ok(m, 'model Task không tìm thấy');
-  const body = m![0];
-  for (const f of ['projectId', 'title', 'statusId', 'assigneeIds', 'startAt', 'dueAt', 'order']) {
-    assert.ok(new RegExp(`\\b${f}\\b`).test(body), `thiếu field ${f}`);
-  }
-});
-
-test('schema khai đủ model WorkflowState với isDone/isActive', () => {
-  const m = schema.match(/model WorkflowState \{[\s\S]*?\n\}/);
-  assert.ok(m, 'model WorkflowState không tìm thấy');
-  const body = m![0];
-  for (const f of ['projectId', 'name', 'order', 'isActive', 'isDone']) {
-    assert.ok(new RegExp(`\\b${f}\\b`).test(body), `thiếu field ${f}`);
-  }
-});
-
-async function assertThrowsClear(fn: () => Promise<unknown>) {
-  let threw = false;
-  try {
-    await fn();
-  } catch (e) {
-    threw = true;
-    assert.ok(e instanceof Error && /db push|prisma generate|dev\.db/.test(e.message), 'lỗi phải nói rõ cách sửa');
-  }
-  assert.ok(threw, 'phải ném lỗi khi TASK_TABLES_READY=false, không được âm thầm trả rỗng');
+function ok(label: string) {
+  pass += 1;
+  console.log(`  ✓ ${label}`);
 }
 
 async function main() {
-  await testAsync('listWorkflowStates ném lỗi rõ khi bảng chưa migrate', () => assertThrowsClear(() => listWorkflowStates('p1')));
-  await testAsync('listTasks ném lỗi rõ khi bảng chưa migrate', () => assertThrowsClear(() => listTasks('p1')));
-  await testAsync('createTask ném lỗi rõ khi bảng chưa migrate', () =>
-    assertThrowsClear(() => createTask({ projectId: 'p1', title: 'x' })),
-  );
-  await testAsync('updateTask ném lỗi rõ khi bảng chưa migrate', () => assertThrowsClear(() => updateTask('t1', 'p1', { title: 'y' })));
-  await testAsync('deleteTask ném lỗi rõ khi bảng chưa migrate', () => assertThrowsClear(() => deleteTask('t1', 'p1')));
-  console.log(`${pass}/${pass} pass (lib/server/tasks.test.ts)`);
+  assert.strictEqual(TASK_TABLES_READY, true);
+  ok('cờ TASK_TABLES_READY = true (bảng đã migrate 08/08, không còn là cờ chặn)');
+
+  // user + project tạm — email đóng dấu test để không lẫn dữ liệu thật; dọn ở finally.
+  const user = await prisma.user.create({
+    data: {
+      email: `test-tasks-${Date.now()}-${Math.random().toString(36).slice(2)}@test.local`,
+      name: 'Test Tasks',
+      passwordHash: 'x',
+    },
+  });
+  const project = await prisma.project.create({
+    data: { userId: user.id, name: 'Test Tasks Project', lastEditedBy: user.id },
+  });
+  try {
+    // ① gieo trạng thái mặc định lần đầu
+    const states = await listWorkflowStates(project.id);
+    assert.strictEqual(states.length, 4);
+    assert.deepStrictEqual(
+      states.map((s) => s.name),
+      ['Chưa làm', 'Đang làm', 'Chờ duyệt', 'Xong'],
+    );
+    assert.strictEqual(states[3].isDone, true);
+    ok('listWorkflowStates gieo đúng 4 trạng thái mặc định, "Xong" mang isDone=true');
+
+    const again = await listWorkflowStates(project.id);
+    assert.strictEqual(again.length, 4);
+    ok('gọi lại KHÔNG gieo trùng — vẫn đúng 4 trạng thái (idempotent)');
+
+    // ② tạo việc — không truyền statusId thì rơi vào trạng thái đầu
+    const t = await createTask({ projectId: project.id, title: 'Việc test p12' });
+    assert.strictEqual(t.statusId, states[0].id);
+    assert.strictEqual(t.title, 'Việc test p12');
+    ok('createTask không truyền statusId → tự vào trạng thái đầu ("Chưa làm")');
+
+    // ③ đổi trạng thái sang "Đang làm" rồi đọc lại từ DB — vòng N6 tạo→đổi→đọc
+    await updateTask(t.id, project.id, { statusId: states[1].id });
+    const list = await listTasks(project.id);
+    assert.strictEqual(list.length, 1);
+    assert.strictEqual(list[0].statusId, states[1].id);
+    ok('updateTask đổi status → listTasks đọc lại từ DB thấy đúng trạng thái mới');
+
+    // ④ statusId của PROJECT KHÁC phải bị chặn (luật đầu file tasks.ts)
+    const otherProject = await prisma.project.create({
+      data: { userId: user.id, name: 'Test Tasks Project B', lastEditedBy: user.id },
+    });
+    try {
+      const otherStates = await listWorkflowStates(otherProject.id);
+      let threw = false;
+      try {
+        await updateTask(t.id, project.id, { statusId: otherStates[0].id });
+      } catch {
+        threw = true;
+      }
+      assert.ok(threw, 'statusId khác project phải bị từ chối');
+      ok('updateTask chặn statusId thuộc project khác (không phải "trạng thái lạ" mà là lỗi)');
+    } finally {
+      await prisma.$executeRawUnsafe(`DELETE FROM WorkflowState WHERE projectId = '${otherProject.id}'`);
+      await prisma.project.delete({ where: { id: otherProject.id } });
+    }
+
+    // ⑤ xoá việc
+    await deleteTask(t.id, project.id);
+    const empty = await listTasks(project.id);
+    assert.strictEqual(empty.length, 0);
+    ok('deleteTask xoá thật — listTasks về 0');
+  } finally {
+    // dọn SẠCH — task xoá theo cascade project; WorkflowState cũng cascade; user xoá cuối.
+    await prisma.project.delete({ where: { id: project.id } }).catch(() => {});
+    await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+    await prisma.$disconnect();
+  }
+
+  console.log(`${pass}/${pass} pass (lib/server/tasks.test.ts — integration, dev.db thật, đã tự dọn)`);
 }
 
-main();
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

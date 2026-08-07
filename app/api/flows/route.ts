@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
 import { assertProjectAccess, accessErrorPayload } from '@/lib/server/access';
+import { ensureDraftProject } from '@/lib/server/draft-project';
 import { HIDDEN_NOTEBOOK_PREFIX } from '@/lib/notebook/resolveProject';
 
 /** Danh sách flow của user (kèm project). Card dự án cần thêm coverUrl + status + roster team. */
@@ -98,11 +99,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'projectId không hợp lệ.' }, { status: 400 });
   }
 
+  // 08/08 (p12 NỀN DỮ LIỆU, G-M14-01) — BỊT ĐƯỜNG ĐẺ MỒ CÔI: trước đây `projectId=null` được
+  // ghi thẳng vào DB (45/46 flow mồ côi đo 08/08 đều sinh từ cửa này). Nay không nói rõ dự án
+  // nào ⇒ rơi vào dự án "Nháp" của chính user (get-or-create, lib/server/draft-project.ts) —
+  // không còn lối nào tạo được Flow không có dự án chủ qua API.
+  const projectId = newProjectId ?? (await ensureDraftProject(user.id));
+
   const flow = await prisma.flow.create({
     data: {
       userId: user.id,
       name: String(body.name ?? 'Untitled flow'),
-      projectId: newProjectId,
+      projectId,
       graphJson: typeof body.graphJson === 'string' ? body.graphJson : '{"nodes":[],"edges":[]}',
       lastEditedBy: user.id,
     },

@@ -6,20 +6,17 @@
  *    không phải "trạng thái lạ".
  * ⚠️ KHÔNG đọc/ghi `Project.currentStage`/`lib/phases.ts` ở đây — xem cảnh báo trong phiếu.
  *
- * 🔴 CHƯA CHẠY MIGRATE — 2 bảng `Task`/`WorkflowState` mới có trong schema, CHƯA có trong
- *    `dev.db` (cùng lối `ExternalRef`, xem `lib/integrations/external-ref.ts`). Mọi hàm ở đây
- *    ném lỗi rõ cho tới khi cờ `TASK_TABLES_READY` bật. Lệnh cho chủ dự án chạy trên máy thật:
- *      sqlite3 dev.db ".backup 'dev.db.bak-truoc-task'"
- *      npx prisma db push   # hoặc: npx prisma migrate dev --name task-workflow-state
- *      npx prisma generate
- *    rồi đổi TASK_TABLES_READY thành true (dòng dưới đây) — kiểm bằng dữ liệu:
- *    `sqlite3 dev.db ".tables"` phải thấy `Task` và `WorkflowState`.
+ * ✅ ĐÃ MIGRATE 08/08 (p12 NỀN DỮ LIỆU) — bảng `Task`/`WorkflowState` nay CÓ THẬT trong
+ *    `dev.db` (migration `20260808000002_them_workflowstate_task_externalref`, sinh bằng
+ *    `prisma migrate diff` + áp bằng `prisma db execute` + `migrate resolve` — đường giữ dữ
+ *    liệu, KHÔNG reset; backup `prisma/dev.db.bak-p12-nendl-2026-08-08`). Cờ dưới đã bật;
+ *    `tasks.test.ts` nay là INTEGRATION TEST chạy CRUD thật trên dev.db (tự dọn cuối bài).
  */
 
 import { prisma } from './db';
 
-/** Xem khối chú thích đầu file. `false` cho tới khi bảng có thật trong `dev.db`. */
-export const TASK_TABLES_READY = false;
+/** Xem khối chú thích đầu file. Bật 08/08 sau khi migration áp thật vào `dev.db`. */
+export const TASK_TABLES_READY = true;
 
 export interface WorkflowStateRow {
   id: string;
@@ -83,6 +80,15 @@ function tables(what: string): { task: TaskDelegate; workflowState: WorkflowStat
     throw new Error(`[Task] Cờ đã bật nhưng Prisma client chưa biết bảng Task/WorkflowState — thiếu "npx prisma generate". (${what})`);
   }
   return { task: p.task, workflowState: p.workflowState };
+}
+
+/** 08/08 (p12) — statusId phải thuộc ĐÚNG project (hợp đồng docblock đầu file, nay có code kiểm). */
+async function assertStatusBelongsToProject(statusId: string, projectId: string): Promise<void> {
+  const { workflowState } = tables('assertStatusBelongsToProject');
+  const st = await workflowState.findUnique({ where: { id: statusId } });
+  if (!st || st.projectId !== projectId) {
+    throw new Error('[Task] statusId không thuộc bộ trạng thái của project này.');
+  }
 }
 
 /** 4 trạng thái mặc định gieo cho project mới chưa từng khai bộ trạng thái riêng. */
@@ -166,6 +172,11 @@ export async function createTask(input: CreateTaskInput): Promise<TaskRow> {
     const first = states.find((s) => s.isActive) ?? states[0];
     if (!first) throw new Error('[Task] project chưa có WorkflowState nào (kể cả mặc định).');
     statusId = first.id;
+  } else {
+    // 08/08 (p12) — hợp đồng đầu file ("statusId sai project là lỗi") trước đây CHỈ nằm trong
+    // docblock, code không kiểm ⇒ truyền statusId của project khác vẫn ghi êm. Vá cả 2 cửa
+    // (create/update) bằng cùng 1 hàm kiểm.
+    await assertStatusBelongsToProject(statusId, input.projectId);
   }
   const created = await task.create({
     data: {
@@ -198,7 +209,10 @@ export async function updateTask(id: string, projectId: string, patch: UpdateTas
   if (!existing || existing.projectId !== projectId) throw new Error('[Task] không tìm thấy trong project này.');
   const data: Record<string, unknown> = {};
   if (patch.title !== undefined) data.title = patch.title.trim();
-  if (patch.statusId !== undefined) data.statusId = patch.statusId;
+  if (patch.statusId !== undefined) {
+    await assertStatusBelongsToProject(patch.statusId, projectId); // xem chú thích ở createTask
+    data.statusId = patch.statusId;
+  }
   if (patch.assigneeIds !== undefined) data.assigneeIds = JSON.stringify(patch.assigneeIds);
   if (patch.startAt !== undefined) data.startAt = patch.startAt ? new Date(patch.startAt) : null;
   if (patch.dueAt !== undefined) data.dueAt = patch.dueAt ? new Date(patch.dueAt) : null;

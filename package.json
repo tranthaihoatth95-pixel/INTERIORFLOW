@@ -100,7 +100,9 @@
       "!.next/cache/**",
       "!node_modules/.bin/**",
       "!prisma/*.db*",
-      "!**/*.map"
+      "!**/*.map",
+      "!node_modules/.prisma/client/libquery_engine-linux-*",
+      "!node_modules/@prisma/engines/*linux*"
     ],
     "extraResources": [
       {

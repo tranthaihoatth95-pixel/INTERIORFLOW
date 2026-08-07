@@ -4,7 +4,11 @@ generator client {
   // Query cho bản đóng gói .exe chạy trên Windows. Bắt buộc để bản cài Windows có
   // libquery_engine-windows.dll.node. Build .exe CHUẨN vẫn nên chạy NATIVE trên máy Windows
   // (npm ci ở đó tự lấy cả schema-engine-windows.exe cho `prisma db push` lúc app khởi động).
-  binaryTargets = ["native", "windows"]
+  // 08/08 (p12 NỀN DỮ LIỆU VIỆC 3): +2 target Linux ARM để test Prisma chạy được trong hộp cát/
+  // CI Linux (trước đó gãy: "Prisma Client could not locate the Query Engine for runtime
+  // linux-arm64-openssl-3.0.x ... generated for darwin-arm64"). Kích thước tăng ghi ở
+  // docs/M-NEN-DL-OUT.md — TỔNG quyết có giữ cho gói .dmg hay tách generate riêng cho CI.
+  binaryTargets = ["native", "windows", "linux-arm64-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x"]
 }
 
 // SQLite cho bản chạy nội bộ / LAN — lên cloud chỉ cần đổi provider sang postgresql (Supabase)
