@@ -97,16 +97,52 @@ if (!THAT) {
   process.exit(0);
 }
 
-let xong = 0;
+/**
+ * ⚠️ BẪY ĐÃ DÍNH MỘT LẦN (08/08) — vì sao phải `-c core.precomposeunicode=false`:
+ *
+ * Bản đầu của tệp này gọi thẳng `git rm --cached -- <đường dẫn NFD>`. Trên macOS,
+ * `core.precomposeunicode = true` khiến git **tự đổi tham số NFD thành NFC trước khi xử lý**
+ * ⇒ nó gỡ nhầm bản NFC, còn bản NFD vẫn nằm nguyên trong chỉ mục. Lệnh `git add` ngay sau đó
+ * dựng lại bản NFC từ đĩa. Kết quả: số cặp trùng KHÔNG giảm mà TĂNG từ 7 lên 27, trong khi
+ * script vẫn in "✅ Đã gỡ 7/7".
+ *
+ * Hai bài học đã sửa ngay trong tệp này:
+ *   ① Tắt precompose cho ĐÚNG lệnh gỡ, để git nhận đúng từng byte tên tệp.
+ *   ② KHÔNG ĐƯỢC in "đã xong" khi chưa đo lại. Đọc lại chỉ mục và đếm; số không về 0 thì
+ *      báo THẤT BẠI. Đây chính là luật N1 (báo cáo ≠ bằng chứng) áp lên chính con script.
+ */
+let goDuoc = 0;
 for (const m of canGo) {
   try {
-    execFileSync('git', ['rm', '--cached', '--', m.duongDan], { stdio: 'pipe' });
-    xong++;
+    execFileSync(
+      'git',
+      ['-c', 'core.precomposeunicode=false', 'update-index', '--force-remove', '--', m.duongDan],
+      { stdio: 'pipe' },
+    );
+    goDuoc++;
   } catch (e) {
     console.error(`  ❌ không gỡ được: ${m.khoa}\n     ${String(e.stderr || e).slice(0, 160)}`);
   }
 }
 
-console.log(`\n✅ Đã gỡ ${xong}/${canGo.length} đường dẫn thừa khỏi chỉ mục.`);
-console.log('   Tệp trên đĩa còn nguyên. Xem lại bằng: git status --short');
-console.log('   Rồi commit như bình thường.');
+// ── ĐO LẠI, KHÔNG TIN LỆNH VỪA CHẠY ─────────────────────────────────────────
+const sau = new Map();
+for (const m of docChiMuc()) {
+  const k = m.duongDan.normalize('NFC');
+  if (!sau.has(k)) sau.set(k, []);
+  sau.get(k).push(m);
+}
+const conTrung = [...sau.values()].filter((v) => v.length > 1).length;
+
+console.log(`\nĐã gọi lệnh gỡ  : ${goDuoc}/${canGo.length}`);
+console.log(`Cặp trùng TRƯỚC : ${capTrung.length}`);
+console.log(`Cặp trùng SAU   : ${conTrung}`);
+
+if (conTrung === 0) {
+  console.log('\n✅ SẠCH. Tệp trên đĩa còn nguyên, chỉ chỉ mục được dọn.');
+  console.log('   Xem lại: git status --short   →   rồi commit.');
+} else {
+  console.log(`\n❌ THẤT BẠI — vẫn còn ${conTrung} cặp trùng. ĐỪNG commit.`);
+  console.log('   Chạy lại lệnh chạy khô để xem còn cặp nào, rồi báo TỔNG.');
+  process.exit(1);
+}
