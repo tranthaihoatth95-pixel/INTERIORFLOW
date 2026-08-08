@@ -10,11 +10,11 @@
       "cwd": "."
     },
     {
-      "name": "interiorflow-p3c-worktree",
+      "name": "interiorflow-p3mock-worktree",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--", "-p", "3012"],
       "port": 3012,
-      "cwd": ".worktrees/p3c"
+      "cwd": ".worktrees/p3-mock"
     }
   ]
 }
