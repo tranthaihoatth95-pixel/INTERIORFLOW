@@ -22,6 +22,9 @@ import { useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Loader2, Maximize2, Send, X } from 'lucide-react';
 import type { ChatTurn } from '@/lib/ai/chat-assist';
+import { summarizeDoc, type DocContext } from '@/lib/ai/doc-context';
+import { topViolations, type TopViolationsResult } from '@/lib/ai/violations-context';
+import { useCadStore } from '@/lib/cad/store';
 import type { Phase } from '@/lib/phases';
 import { easeApple } from '@/lib/motion';
 import { useFlowStore } from '@/lib/store';
@@ -43,15 +46,48 @@ const ACCENT = 'var(--accent)';
  * gợi ý theo chặng, 3 nút sẵn mỗi chặng"). Câu chữ đổi từ kiểu HỎI KIỂM ("Đạt TCVN chưa?") sang
  * kiểu RA VIỆC ("kiểm chuẩn tờ này") theo `SPEC-NGON-NGU-CHI-DAN` luật 1 (hành động trước).
  *
- * ⚠️ **CÒN GIẢ, CHƯA NỐI NGỮ CẢNH** (N5 — khai thật): ba câu này là bảng TĨNH theo chặng, chưa
- * đọc tài liệu đang mở. Ô 6.8 ("gợi ý theo ĐỐI TƯỢNG đang chọn") cần `docContext` của PHU —
- * `rg -n "docContext" lib components app` = **0 kết quả** lúc viết dòng này, nên chưa nối được.
- * Khi PHU xong: thay bảng này bằng hàm `suggestionsFor(stage, docContext)`, giữ nguyên phần UI. */
+ * 08/08 (DOI-CHIEU-42-SPEC §1#2) — `docContext` NAY ĐÃ NỐI vào payload gửi server (xem
+ * `buildVitalsDocPayload` bên dưới): Vitals đọc được tóm tắt bản vẽ + selection + kết quả kiểm
+ * quy chuẩn. Riêng BA GỢI Ý này vẫn là bảng TĨNH theo chặng — nâng thành
+ * `suggestionsFor(stage, docContext)` (ô 6.8, gợi ý theo đối tượng đang chọn) là việc RIÊNG,
+ * chưa làm ở phiên nối payload này. */
 const STAGE_SUGGESTIONS: Record<Phase, [string, string, string]> = {
   concept: ['kiểm chuẩn tờ này', 'phòng nào chưa có vật liệu', 'xuất PDF'],
   render: ['đặt đèn nắng chiều', 'vật liệu sàn phòng ngủ', 'render thử'],
   present: ['sinh bảng khối lượng', 'thêm trang bìa', 'xuất hồ sơ khách'],
 };
+
+/**
+ * VIỆC A (08/08 — DOI-CHIEU-42-SPEC §1#2) — tóm tắt bản vẽ + kiểm quy chuẩn gửi kèm payload.
+ * Server ĐÃ nhận sẵn 2 field này (`ai-assist-chat/route.ts:52-53` sanitize cả hai); đây là đầu
+ * dây CLIENT còn thiếu. Đọc `useCadStore.getState()` NGAY LÚC GỬI (không subscribe — panel chat
+ * không cần re-render theo từng nét vẽ), dùng nguyên API sẵn: `summarizeDoc` tự chặn bước đo
+ * diện tích khi bản vẽ quá nặng (`MAX_ROOMS_FOR_AREA`, vì `findHatchBoundary` có thể treo —
+ * TECH-DEBT.md); khi nó đã phải bỏ đo (`areasSkipped`) thì CŨNG BỎ `topViolations` — checker đi
+ * qua đúng `findRoomLabels` đó, cùng rủi ro treo, cùng ngưỡng, không đẻ ngưỡng thứ hai.
+ *
+ * Selection CHỈ gửi khi đang ở chặng Thiết kế 2D (`concept`) — selection sống trong CAD store,
+ * sang chặng 3D/Trình chiếu nó là trạng thái CŨ của canvas không còn trước mặt người dùng, gửi
+ * lên là Vitals nói về thứ họ không nhìn thấy. Doc thì gửi ở cả 3 chặng (luật X1: một Doc chung,
+ * chặng nào cũng đọc nó). Doc rỗng → trả {} — prompt y hệt trước, không hồi quy.
+ */
+function buildVitalsDocPayload(stage: Phase): {
+  docContext?: DocContext;
+  violations?: TopViolationsResult;
+} {
+  const st = useCadStore.getState();
+  const doc = st.doc;
+  if (!doc || !Array.isArray(doc.entities) || doc.entities.length === 0) return {};
+
+  const docContext = summarizeDoc(
+    doc,
+    stage === 'concept' && st.selection.length ? { selectedIds: st.selection } : {},
+  );
+  if (docContext.areasSkipped) return { docContext }; // bản vẽ nặng — bỏ kiểm, tránh treo (xem trên)
+
+  const violations = topViolations(doc);
+  return violations.total > 0 ? { docContext, violations } : { docContext };
+}
 
 /** Lịch sử hội thoại sống ở mức MODULE — panel unmount không mất, reload mới mất. */
 let vitalsSession: ChatTurn[] = [];
@@ -152,7 +188,15 @@ export default function VitalsGesturePanel({
         headers: { 'Content-Type': 'application/json' },
         // `brand`: Brand Kit đang chọn (localStorage — backend không đọc được). Chưa có kit →
         // null, Vitals sẽ nói thẳng là dự án chưa có nhận diện thay vì bịa màu/font.
-        body: JSON.stringify({ messages: next, stage, brand: brandContextForVitals() }),
+        // `docContext`/`violations` (VIỆC A 08/08): tóm tắt bản vẽ + kiểm quy chuẩn, tính tươi
+        // ngay lúc gửi — xem docstring `buildVitalsDocPayload`. Doc rỗng → 2 field vắng mặt,
+        // payload y hệt bản cũ.
+        body: JSON.stringify({
+          messages: next,
+          stage,
+          brand: brandContextForVitals(),
+          ...buildVitalsDocPayload(stage),
+        }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -197,11 +241,22 @@ export default function VitalsGesturePanel({
 
   const hasThread = messages.length > 0 || sending || !!error;
 
-  /* 05/08 VIỆC 1 (b) — nguồn thật DUY NHẤT hiện có là `sending` (đang chờ fetch, không streaming)
-   * → map thẳng 'answering' (khớp nhãn VitalsTyping cũ). 'listening'/'thinking' chưa có nguồn
-   * thật (không voice input, không streaming 2 pha) nên không gán ở đây — xem comment đầu
-   * VitalsStateBadge.tsx. */
-  const vitalsState: VitalsState = sending ? 'answering' : 'idle';
+  /* VIỆC B (08/08 — DOI-CHIEU-42-SPEC §1#13) — nguồn THẬT cho trạng thái "Có việc cần xem":
+   * đếm lỗi + cảnh báo quy chuẩn của bản vẽ đang mở, tính MỘT LẦN mỗi lượt mở panel (không chạy
+   * checker theo từng render — checker duyệt cả Doc). Không có doc / bản vẽ nặng bỏ kiểm / 0 vi
+   * phạm → 0, chấm về 'idle' như cũ. */
+  const [pendingIssues, setPendingIssues] = useState(0);
+  useEffect(() => {
+    if (!open) return;
+    const v = buildVitalsDocPayload(stage).violations;
+    setPendingIssues(v ? v.countsBySeverity.error + v.countsBySeverity.warning : 0);
+  }, [open, stage]);
+
+  /* 05/08 VIỆC 1 (b) — `sending` (đang chờ fetch, không streaming) → 'answering' (khớp nhãn
+   * VitalsTyping cũ). 'listening'/'thinking' chưa có nguồn thật (không voice input, không
+   * streaming 2 pha) nên không gán ở đây — xem comment đầu VitalsStateBadge.tsx.
+   * 08/08 thêm 'alert' khi bản vẽ có lỗi/cảnh báo quy chuẩn chưa xử lý (nguồn thật ở trên). */
+  const vitalsState: VitalsState = sending ? 'answering' : pendingIssues > 0 ? 'alert' : 'idle';
 
   return (
     <motion.div

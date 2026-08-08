@@ -8,6 +8,12 @@
  * `nghỉ` chấm mờ thở chậm · `đang nghe` vòng sáng lan theo nhịp · `đang nghĩ` hạt quay quanh
  * chấm · `đang trả lời` viên tím đặc, chấm trắng đập nhanh.
  *
+ * 08/08 (DOI-CHIEU-42-SPEC §1#13) — thêm trạng thái thứ 5 `alert` "Có việc cần xem", NGOẠI LỆ
+ * MÀU có chủ đích: dùng token `--accent-warm` sẵn có (KHÔNG chế hex mới, luật L4) để cảnh báo
+ * tách hẳn khỏi 4 trạng thái hoạt động màu accent — cùng lý do lớp LUẬT ≠ lớp GÓP Ý (00-CHOT
+ * §12). Nguồn thật: số lỗi/cảnh báo quy chuẩn của bản vẽ đang mở (VitalsGesture đếm qua
+ * `topViolations`), không phải trạng thái trang trí.
+ *
  * Nguồn thật hiện có: `VitalsGesture.tsx` chỉ có MỘT tín hiệu thật — `sending` (đang chờ phản
  * hồi fetch, không streaming) → map thẳng vào 'answering' (khớp nhãn `VitalsTyping` cũ "Vitals
  * đang trả lời…"). 'listening'/'thinking' CHƯA có nguồn dữ liệu thật (không có voice input,
@@ -20,13 +26,14 @@
  * thuộc màu.
  */
 
-export type VitalsState = 'idle' | 'listening' | 'thinking' | 'answering';
+export type VitalsState = 'idle' | 'listening' | 'thinking' | 'answering' | 'alert';
 
 const STATE_LABEL: Record<VitalsState, string> = {
   idle: 'Nghỉ',
   listening: 'Đang nghe',
   thinking: 'Đang nghĩ',
   answering: 'Đang trả lời',
+  alert: 'Có việc cần xem',
 };
 
 /** Chỉ chấm — dùng lồng vào chrome có sẵn (header popover, pill StatusBar…). */

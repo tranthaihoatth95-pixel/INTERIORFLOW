@@ -932,8 +932,11 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   .vitals-typing-fallback { display: inline; }
 }
 
-/* ---------- Vitals — 4 trạng thái (VIỆC 1 (b), 05/08) ----------
-   Phân biệt bằng CHUYỂN ĐỘNG + ĐỘ SÁNG, một sắc --accent duy nhất (xem VitalsStateBadge.tsx).
+/* ---------- Vitals — 4 trạng thái (VIỆC 1 (b), 05/08) + trạng thái 5 `alert` (08/08) ----------
+   4 trạng thái hoạt động phân biệt bằng CHUYỂN ĐỘNG + ĐỘ SÁNG, một sắc --accent (xem
+   VitalsStateBadge.tsx). `alert` "Có việc cần xem" (DOI-CHIEU-42-SPEC §1#13) là NGOẠI LỆ MÀU
+   có chủ đích: token --accent-warm sẵn có (globals.css:26, không chế hex mới) — cảnh báo phải
+   tách khỏi màu hoạt động, cùng tinh thần tách lớp LUẬT/GÓP Ý (00-CHOT §12).
    prefers-reduced-motion: animation tắt (khung dưới), nhưng opacity/kích thước tĩnh mỗi trạng
    thái đã khác nhau sẵn nên vẫn phân biệt được — không animation nào là ĐIỀU KIỆN DUY NHẤT
    để nhận ra trạng thái. */
@@ -966,6 +969,14 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   color: #fff;
   box-shadow: 0 2px 3px rgba(0, 0, 0, 0.25), 0 8px 18px -8px var(--accent-ring);
 }
+/* Có việc cần xem — nền = --accent-warm #c79a63 pha alpha (cùng lối rgba trần của --accent ở
+   keyframes vitals-state-ring bên dưới, không phải hex mới); NHÃN giữ --t2 vì #c79a63 trên nền
+   Kem chỉ ~2.1:1 (đo ở ghi chú --k-doc, globals.css:56) — chữ màu warm sẽ mờ tịt ở theme sáng.
+   Màu warm nói bằng CHẤM + nền viên, chữ vẫn đọc được ở cả 2 theme. */
+.vitals-state-badge--alert {
+  background: rgba(199, 154, 99, 0.16);
+  color: var(--t2);
+}
 
 .vitals-state-dot {
   display: inline-block;
@@ -990,6 +1001,21 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   background: var(--accent);
   opacity: 1;
   animation: vitals-state-beat 0.82s ease-in-out infinite;
+}
+/* Có việc cần xem — chấm ẤM (--accent-warm) duy nhất khác sắc, vòng lan chậm 2.2s: cần chú ý
+   nhưng không khẩn cấp (chậm hơn hẳn nhịp "đang nghe" 1.6s). rgba(199,154,99,…) = đúng RGB của
+   --accent-warm #c79a63 — cần alpha nên viết trần, cùng lối rgba(106,87,245,0) của --accent
+   trong vitals-state-ring ngay dưới. */
+.vitals-state-dot--alert {
+  background: var(--accent-warm);
+  opacity: 1;
+  box-shadow: 0 0 0 0 rgba(199, 154, 99, 0.5);
+  animation: vitals-state-warm-ring 2.2s ease-out infinite;
+}
+@keyframes vitals-state-warm-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(199, 154, 99, 0.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(199, 154, 99, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(199, 154, 99, 0); }
 }
 @keyframes vitals-state-breathe {
   0%, 100% { opacity: 0.3; transform: scale(0.8); }
@@ -1039,13 +1065,16 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   .vitals-state-dot--idle,
   .vitals-state-dot--listening,
   .vitals-state-dot--answering,
+  .vitals-state-dot--alert,
   .vitals-state-orbit-satellite {
     animation: none !important;
   }
   /* Khung tĩnh sau khi tắt animation vẫn khác nhau: nghỉ mờ · nghe có viền vòng cố định ·
-     trả lời phóng to nhẹ cố định · nghĩ giữ 2 chấm (hình khối, không cần motion). */
+     trả lời phóng to nhẹ cố định · nghĩ giữ 2 chấm (hình khối, không cần motion) · cảnh báo
+     giữ viền vòng ẤM cố định (khác sắc --accent-ring của "nghe", không cần motion để phân biệt). */
   .vitals-state-dot--listening { box-shadow: 0 0 0 3px var(--accent-ring); }
   .vitals-state-dot--answering { transform: scale(1.15); }
+  .vitals-state-dot--alert { box-shadow: 0 0 0 3px rgba(199, 154, 99, 0.35); }
 }
 
 /* Giọt kính Vitals: SVG teardrop dùng feGaussianBlur — GPU compose + subpixel mượt,

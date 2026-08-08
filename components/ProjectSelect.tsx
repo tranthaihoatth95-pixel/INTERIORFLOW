@@ -459,6 +459,13 @@ export function ProjectSelect({ onEnter }: { onEnter: () => void }) {
         headers: { 'Content-Type': 'application/json' },
         // `brand`: Brand Kit đang chọn (localStorage — backend không đọc được). Chưa có kit →
         // null, Vitals nói thẳng là chưa có nhận diện thay vì bịa màu/font (VIỆC 4).
+        // 08/08 (DOI-CHIEU-42-SPEC §1#2) — CỐ Ý KHÔNG gửi `docContext`/`violations` ở đây. Gallery
+        // là màn CHỌN dự án, không mở một `Doc` cụ thể nào; `stage:'gallery'` còn không khớp kiểu
+        // `Phase` mà `buildVitalsDocPayload` (VitalsGesture.tsx) nhận. Thêm vào: `useCadStore`
+        // KHÔNG được hydrate lại khi vào thẳng Gallery (ghi rõ ở STATUS.md mục "PHÁT HIỆN QUAN
+        // TRỌNG") — gửi `doc` ở đây rất dễ là dữ liệu CŨ của dự án trước đó còn sót trong store,
+        // Vitals sẽ nói về một bản vẽ người dùng không nhìn thấy. Đúng cảnh giới đã đặt trong
+        // VitalsGesture: doc chỉ đáng tin khi có route CAD thật đứng sau nó.
         body: JSON.stringify({ messages: next, stage: 'gallery', brand: brandContextForVitals() }),
       });
       const j = await res.json().catch(() => ({}));
