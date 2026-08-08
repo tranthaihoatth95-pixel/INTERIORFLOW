@@ -121,6 +121,10 @@ export default function ToolDock3D({ open, onToggleOpen, onOpenLibrary, onOpenMa
     },
   ];
 
+  // 08/08 — port ĐÚNG mock (đọc trọn docs/mocks/"3D Dựng khối.dc.html" trước khi sửa, luật L1):
+  // mock định nghĩa hover CHO MỌI nút kể cả disabled-trên-mock (nó không có khái niệm disabled,
+  // engine hôm nay có) — `.dock-icon-btn` (globals.css) làm phần hover thật CSS làm được mà JSX
+  // inline style không làm được. Nút `active` vẫn tô nền accent tĩnh, không cần hover riêng.
   const itemBtnStyle = (item: DockGroupItem, compact: boolean): React.CSSProperties => ({
     width: compact ? 32 : 66,
     height: compact ? 32 : undefined,
@@ -128,7 +132,7 @@ export default function ToolDock3D({ open, onToggleOpen, onOpenLibrary, onOpenMa
     border: 0,
     borderRadius: 10,
     background: item.active ? 'var(--accent)' : 'transparent',
-    color: item.active ? 'var(--on-accent)' : item.disabled ? 'var(--t5)' : 'var(--t2)',
+    color: item.active ? 'var(--on-accent)' : item.disabled ? 'var(--t5)' : 'var(--t3)',
     cursor: item.disabled ? 'not-allowed' : item.onClick ? 'pointer' : 'default',
     display: 'flex',
     flexDirection: compact ? 'row' : 'column',
@@ -144,19 +148,21 @@ export default function ToolDock3D({ open, onToggleOpen, onOpenLibrary, onOpenMa
     const flat = groups.flatMap((g, gi) => g.items.map((it) => ({ ...it, groupIdx: gi })));
     return (
       <div
-        className="vitals-pop"
+        className="mat-panel"
         style={{
           position: 'absolute', left: '50%', bottom: 76, transform: 'translateX(-50%)', zIndex: 6,
-          display: 'flex', alignItems: 'center', gap: 1, padding: 4,
+          display: 'flex', alignItems: 'center', gap: 1, padding: 4, borderRadius: 14,
+          border: '1px solid var(--mat-hairline)', boxShadow: 'var(--shadow-pop)',
         }}
       >
         {flat.map((item, i) => (
           <span key={item.key} style={{ display: 'flex', alignItems: 'center' }}>
             {i > 0 && item.groupIdx !== flat[i - 1].groupIdx && (
-              <span style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 5px' }} />
+              <span style={{ width: 1, height: 20, background: 'var(--mat-hairline)', margin: '0 5px' }} />
             )}
             <button
               type="button"
+              className="dock-icon-btn"
               title={item.title}
               disabled={item.disabled}
               onClick={item.onClick}
@@ -166,9 +172,10 @@ export default function ToolDock3D({ open, onToggleOpen, onOpenLibrary, onOpenMa
             </button>
           </span>
         ))}
-        <span style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 5px' }} />
+        <span style={{ width: 1, height: 20, background: 'var(--mat-hairline)', margin: '0 5px' }} />
         <button
           type="button"
+          className="dock-icon-btn"
           onClick={onToggleOpen}
           title={tr('Mở rộng bảng công cụ — Tab', 'Expand the tool panel — Tab')}
           style={{
@@ -188,8 +195,11 @@ export default function ToolDock3D({ open, onToggleOpen, onOpenLibrary, onOpenMa
   const rows = [groups.slice(0, 3), groups.slice(3)];
   return (
     <div
-      className="vitals-pop"
-      style={{ position: 'absolute', left: '50%', bottom: 76, transform: 'translateX(-50%)', zIndex: 6, padding: 6 }}
+      className="mat-panel"
+      style={{
+        position: 'absolute', left: '50%', bottom: 76, transform: 'translateX(-50%)', zIndex: 6, padding: 6,
+        borderRadius: 14, border: '1px solid var(--mat-hairline)', boxShadow: 'var(--shadow-pop)',
+      }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9, padding: '2px 0 4px' }}>
         {rows.map((row, ri) => (
@@ -197,12 +207,12 @@ export default function ToolDock3D({ open, onToggleOpen, onOpenLibrary, onOpenMa
             key={ri}
             style={{
               display: 'flex', alignItems: 'stretch',
-              ...(ri > 0 ? { borderTop: '1px solid var(--border)', paddingTop: 9 } : {}),
+              ...(ri > 0 ? { borderTop: '1px solid var(--mat-hairline)', paddingTop: 9 } : {}),
             }}
           >
             {row.map((g, gi) => (
               <span key={g.title} style={{ display: 'flex' }}>
-                {gi > 0 && <span style={{ width: 1, background: 'var(--border)', margin: '4px 0' }} />}
+                {gi > 0 && <span style={{ width: 1, background: 'var(--mat-hairline)', margin: '4px 0' }} />}
                 <div style={{ padding: '0 9px', display: 'flex', flexDirection: 'column', gap: 5 }}>
                   <div style={{ fontSize: 11, lineHeight: 1.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t3)', paddingLeft: 3 }}>
                     {tr(g.title, g.titleEn)}
@@ -212,6 +222,7 @@ export default function ToolDock3D({ open, onToggleOpen, onOpenLibrary, onOpenMa
                       <button
                         key={item.key}
                         type="button"
+                        className="dock-icon-btn"
                         title={item.title}
                         disabled={item.disabled}
                         onClick={item.onClick}
@@ -235,11 +246,12 @@ export default function ToolDock3D({ open, onToggleOpen, onOpenLibrary, onOpenMa
           </div>
         ))}
       </div>
-      <div style={{ borderTop: '1px solid var(--border)', padding: '7px 11px 3px', display: 'flex', alignItems: 'center', gap: 16, fontSize: 11, lineHeight: 1.5, color: 'var(--t3)', whiteSpace: 'nowrap' }}>
+      <div style={{ borderTop: '1px solid var(--mat-hairline)', padding: '7px 11px 3px', display: 'flex', alignItems: 'center', gap: 16, fontSize: 11, lineHeight: 1.5, color: 'var(--t3)', whiteSpace: 'nowrap' }}>
         <span>{tr('Gõ số bất cứ lúc nào để nhập chính xác', 'Type a number any time for precise input')}</span>
         <span>{tr('Giữ Alt để nhân bản', 'Hold Alt to duplicate')}</span>
         <button
           type="button"
+          className="dock-icon-btn"
           onClick={onToggleOpen}
           style={{
             marginLeft: 'auto', height: 24, padding: '0 10px', border: '1px solid var(--border)', borderRadius: 8,

@@ -358,6 +358,17 @@ body {
   backdrop-filter: saturate(180%) blur(var(--blur));
   -webkit-backdrop-filter: saturate(180%) blur(var(--blur));
 }
+/* 08/08 — port ĐÚNG mock `docs/mocks/3D Dựng khối.dc.html` (ToolDock3D): mock định nghĩa
+   `style-hover="background:var(--hover);color:var(--t1)"` cho từng nút — JSX inline style KHÔNG
+   làm được :hover, phải có class thật. Dùng chung mọi dock nút icon kiểu SketchUp toàn app
+   (không riêng ToolDock3D) — tránh chế lại lần hai. */
+.dock-icon-btn {
+  transition: background 0.12s var(--ease-apple), color 0.12s var(--ease-apple);
+}
+.dock-icon-btn:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--t1);
+}
 .mat-card {
   background: var(--mat-card);
   backdrop-filter: saturate(180%) blur(var(--blur-strong));
@@ -859,11 +870,16 @@ input[type='range']:not(.if-slider) { accent-color: var(--accent); }
   position: relative;
   border-radius: 16px;
   overflow: hidden;
-  /* nền ĐẶC 96% — đục hơn ngưỡng 92% yêu cầu, vẫn thấy thoáng nhẹ nền sau ở rìa blur */
-  background: color-mix(in srgb, var(--panel) 96%, transparent);
+  /* 08/08 — Hoà chê "xám đục": hạ về ĐÚNG sàn 92% (luật G2, không xuống thấp hơn — chữ dày phải
+     giữ tương phản) thay vì 96% cũ, cho thoáng blur rõ hơn ở rìa. KHÔNG đổi sang backdrop-filter
+     mới/thêm tấm kính — trần 4 chỗ .glass-float trên canvas 3D đã dùng hết (xem comment
+     ToolDock3D.tsx), thêm tấm thứ 5 rủi ro giật WebGL. Gờ sáng viền trên kiểu Apple (mượn công
+     thức .glass-float) để đỡ "phẳng" — đây là phần thật sự gây cảm giác "đục", không phải opacity. */
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--border-strong);
+  border-top-color: color-mix(in srgb, var(--t1) 22%, var(--border-strong));
   box-shadow: var(--shadow-pop), 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 /* Lớp phủ tối 8% phía sau — tách popover khỏi nền rối, KHÔNG chặn thao tác (pointer-events:none)

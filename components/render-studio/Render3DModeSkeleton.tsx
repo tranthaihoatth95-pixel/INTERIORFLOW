@@ -768,25 +768,26 @@ export default function Render3DModeSkeleton() {
           )}
         </Viewport3D>
 
-        {/* VIỆC 2 (SPEC-DUNG-3D-THONG-NHAT §7.1, 05/08) — nút "Dựng ảnh" tím nổi, góc phải-dưới,
-            trên ModeSwitchBar. Tên đúng CHỮ spec dùng ("Dựng ảnh", không phải "Dựng ảnh AI" —
-            mock còn ghi kiểu cũ, xem BAO-CAO-G4 mục 4 chỗ nhãn chặng cũ đã sửa khi port).
-            §7.2 chốt hành vi ĐẦY ĐỦ là gạt mode + dựng SẴN chuỗi 3 node đã nối dây (camera →
-            cad2fbx → ai.clay2render) — nhưng chính spec tự ghi "⚠️ CHƯA VERIFY: chưa có hàm dựng-
-            sẵn-node-graph từ ngoài (addNodes với dây nối sẵn)". KHÔNG bịa phần đó. Nút hôm nay
-            làm ĐÚNG phần đã xác nhận có thật: gạt sang mode `node` CÙNG chặng qua `useStageMode`
-            (không đổi chặng, không mất ngữ cảnh — đúng luật "một sổ, nhiều mặt hiện") — người
-            dùng tự kéo 3 khối có sẵn trong Thư viện. Dựng-sẵn-chuỗi là việc kế tiếp, có chủ. */}
+        {/* 08/08 — Hoà chốt trực tiếp: nút này TRÙNG HỆT công tắc "Vẽ 3D" tắt (cả hai chỉ gọi
+            `setMode('render')`, cùng về Bảng dựng) — gốc là vì việc dựng-sẵn-chuỗi node ở VIỆC 2
+            cũ (SPEC-DUNG-3D-THONG-NHAT §7.2) CHƯA BAO GIỜ làm, nút rơi lại đúng hành vi trùng.
+            ĐỔI VAI: đây là chỗ đứng cho "Dựng khối · Magic" (docs/SPEC-MAGIC-DUNG-KHOI-3D.md,
+            ĐƯỜNG B đã chốt hướng 00-CHOT.md PHẦN 6§②) — mô tả tự nhiên → bộ THAM SỐ thấy được,
+            sửa được → lệnh dựng hình TẤT ĐỊNH (build-ops.ts, vừa mở khoá 08/08) chạy ra khối/mesh
+            CHI TIẾT (một vật thể). Phân vai với công tắc "Vẽ 3D": công tắc = TỔNG THỂ (đổi cả
+            khung nhìn Node↔3D); nút này = CHI TIẾT (sinh một khối trong khung nhìn đang có).
+            CHƯA NỐI ENGINE THẬT — luật CLAUDE.md #2 "không có spec thì không code": spec vừa
+            soạn, chưa duyệt. Disabled + lý do thay vì bịa hành vi (§9, cấm nút giả). */}
         <button
           type="button"
-          onClick={() => setMode('render')}
-          /* P5 (04/08): kính lỏng `.glass-float--bar` — 1 trong ĐÚNG 4 chỗ được phép (nút "Dựng
-             ảnh"), luật ở globals.css. Nền accent đặc cũ → kính; nhận diện tím dồn vào chữ+icon
-             (đạt tương phản nhờ blur + shadow của class, nhãn chỉ 1 dòng — đúng giới hạn kính). */
+          disabled
+          /* P5 (04/08): kính lỏng `.glass-float--bar` — 1 trong ĐÚNG 4 chỗ được phép (nút này),
+             luật ở globals.css. Giữ dù disabled — đây là chỗ đứng cố định cho Magic, không phải
+             xoá khỏi giao diện (§9 "cấm xoá ô trống cho gọn mắt"). */
           className="glass-float glass-float--bar"
           title={tr(
-            'Sang bảng dựng (Node) để lắp chuỗi camera → khối 3D → render AI. Dựng sẵn dây nối — việc kế tiếp, chưa làm.',
-            'Switch to the Node board to assemble camera → 3D block → render AI. Pre-wired chain — not built yet.',
+            'Dựng khối Magic — mô tả bằng lời → bộ tham số thấy được, sửa được → khối dựng đúng số. Đang soạn spec (docs/SPEC-MAGIC-DUNG-KHOI-3D.md), chưa nối.',
+            'Magic build — describe in words → a visible, editable parameter set → block built to exact numbers. Spec being drafted, not wired yet.',
           )}
           /* ⑥ p14 (Hoà 08/08, đo DOM 1440×900): bottom:76 đặt nút HÀNH ĐỘNG này ĐÈ lên nút "Thêm"
              của dock công cụ (dock 1240–1313 · nút này x=1300, cùng hàng y≈754) — hành động và
@@ -795,11 +796,11 @@ export default function Render3DModeSkeleton() {
           style={{
             position: 'absolute', right: 18, bottom: 132, zIndex: 6,
             height: 38, padding: '0 18px', display: 'flex', alignItems: 'center', gap: 9,
-            color: 'var(--t1)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            color: 'var(--t3)', fontSize: 13, fontWeight: 600, cursor: 'not-allowed', opacity: 0.55,
           }}
         >
-          <Sparkles size={16} strokeWidth={2} color="var(--accent)" />
-          {tr('Dựng ảnh', 'Render')}
+          <Sparkles size={16} strokeWidth={2} color="var(--t3)" />
+          {tr('Dựng khối · Magic', 'Magic build')}
         </button>
 
         <ToolDock3D
