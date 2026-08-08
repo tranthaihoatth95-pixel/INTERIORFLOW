@@ -79,31 +79,87 @@ function hashGroup(g: SceneGroup): string {
 
 const meshCache = new Map<string, { hash: string; geom: THREE.BufferGeometry }>();
 
+/** MỞ KHO 08/08 — bậc "THAY-HÌNH-GỐC" (xem docstring union `BuildOp`, `lib/cad/model.ts`): thay vì
+ * modify hình học ĐÃ có (như boolean/array/mirror), 5 bậc này TỰ DỰNG base geometry từ tham số
+ * NƯỚNG sẵn trong chính op (đa giác/tiết diện/đường dẫn), bỏ qua `g.positions` gốc. Tối đa 1 bậc
+ * loại này/entity có tác dụng — nếu Doc lỡ có ≥2 (không nên xảy ra, `commands.ts` luôn xoá hết các
+ * bậc cùng nhóm trước khi thêm bậc mới), lấy bậc ĐẦU TIÊN gặp trong mảng, các bậc sau bị bỏ qua
+ * lặng lẽ (N4 — không sập, không đoán). */
+type ShapeReplacingOp = Extract<BuildOp, { op: 'taper' } | { op: 'bevelEx' } | { op: 'sweep' } | { op: 'revolve' } | { op: 'loft' }>;
+
+function isShapeReplacingOp(op: BuildOp): op is ShapeReplacingOp {
+  return op.op === 'taper' || op.op === 'bevelEx' || op.op === 'sweep' || op.op === 'revolve' || op.op === 'loft';
+}
+
+/** Dựng base geometry từ 1 bậc "thay-hình-gốc" — cao độ (z0/z1) đọc SỐNG từ `g.baseMm`/`g.heightMm`
+ * (không nướng, xem docstring union `BuildOp`); mặc định 2700mm khi group không mang `heightMm`
+ * (group KHÔNG qua nhánh này khi thiếu `ops` nên hằng số này chỉ là lưới đỡ phòng thủ, không phải
+ * đường chạy thật — mọi group có `ops` từ `cad-to-obj.ts` hôm nay đều có `heightMm` kèm theo). */
+function buildShapeGeometry(op: ShapeReplacingOp, g: SceneGroup): THREE.BufferGeometry {
+  switch (op.op) {
+    case 'taper': {
+      const z0 = g.baseMm ?? 0;
+      const z1 = z0 + (g.heightMm ?? 2700);
+      return prismTapered(op.polyMm, z0, z1, op.topInsetMm);
+    }
+    case 'bevelEx': {
+      const z0 = g.baseMm ?? 0;
+      const z1 = z0 + (g.heightMm ?? 2700);
+      return prismBeveledEx(op.polyMm, z0, z1, { radiusMm: op.radiusMm, segments: op.segments, edges: op.edges });
+    }
+    case 'sweep':
+      return sweepProfile(op.profileMm, op.pathMm, { closed: op.closed });
+    case 'revolve':
+      return revolveProfile(op.profileMm, { centerXMm: op.centerXMm, centerYMm: op.centerYMm, segments: op.segments, sweepDeg: op.sweepDeg });
+    case 'loft':
+      return loftSections(op.sections);
+    default: {
+      const _exhaustive: never = op;
+      void _exhaustive;
+      return geometryOf(g.positions);
+    }
+  }
+}
+
 /**
- * Hình học CUỐI của 1 `SceneGroup`, ÁP `ops` boolean + arrayLinear nếu có (theo ĐÚNG thứ tự khai
- * trong `ops[]`: boolean trước, mảng SAU CÙNG — nhân bản khối ĐÃ khoét, không phải nhân bản rồi
- * khoét từng bản, khớp trực giác "modifier stack" đọc từ trên xuống của NC-12 §4.2). Group không
- * có `ops` (đa số — tường chưa khoét/chưa mảng, sàn, nội thất…) đi thẳng qua `geometryOf`, KHÔNG
- * cache (đã rẻ sẵn). Group có `ops`: cache theo `entityId` (rơi về `name` nếu thiếu — group có
- * `ops` luôn có `entityId` trong `cad-to-obj.ts` hôm nay, đây là lưới đỡ), vô hiệu khi
- * `hashGroup()` đổi.
+ * Hình học CUỐI của 1 `SceneGroup`, ÁP TOÀN BỘ `ops` nếu có, theo ĐÚNG thứ tự "modifier stack"
+ * NC-12 §4.2 (đọc từ trên xuống ý NGHĨA, không phải thứ tự khai trong mảng):
+ *   1. bậc THAY-HÌNH-GỐC (taper/bevelEx/sweep/revolve/loft, MỞ KHO 08/08) — thế chỗ base geometry.
+ *   2. boolean (khoét/hợp/giao) — trên base đã có ở bước 1 (hoặc `g.positions` nếu không có bậc 1).
+ *   3. mirror (MỞ KHO 08/08) — đối xứng SAU khi đã khoét, TRƯỚC khi nhân bản (một cặp đối xứng là
+ *      1 đơn vị để nhân bản tiếp, đúng trực giác modifier stack Blender/Max).
+ *   4. arrayLinear (2 bậc = lưới, xem `applyArrayOps`) rồi arrayRadial (MỞ KHO 08/08) — nhân bản
+ *      SAU CÙNG, không phải khoét/gương từng bản riêng.
+ * Group không có `ops` (đa số — tường chưa sửa/chưa mảng, sàn, nội thất…) đi thẳng qua
+ * `geometryOf`, KHÔNG cache (đã rẻ sẵn). Group có `ops`: cache theo `entityId` (rơi về `name` nếu
+ * thiếu — group có `ops` luôn có `entityId` trong `cad-to-obj.ts` hôm nay, đây là lưới đỡ), vô
+ * hiệu khi `hashGroup()` đổi.
  *
- * `op.op === 'extrude'` KHÔNG xử lý ở đây — bevel cần ĐA GIÁC gốc của entity (đã mất khi xuống
- * tới triangle soup `g.positions`), áp thẳng ở `cad-to-obj.ts` (`ObjBuilder.prismBeveled`, nơi
- * còn `h.points`) TRƯỚC khi hình học tới được `SceneGroup` này. `h` không dùng (mm cao khai báo
- * lúc đặt bevel — xem `setEntityBevel`, `lib/cad/commands.ts`).
+ * `op.op === 'extrude'` KHÔNG xử lý ở đây — bevel ĐƠN GIẢN (1 đoạn, chỉ cạnh trên) cần ĐA GIÁC gốc
+ * SỐNG của entity (đã mất khi xuống tới triangle soup `g.positions`), áp thẳng ở `cad-to-obj.ts`
+ * (`ObjBuilder.prismBeveled`, nơi còn `h.points`) TRƯỚC khi hình học tới được `SceneGroup` này. `h`
+ * không dùng (mm cao khai báo lúc đặt bevel — xem `setEntityBevel`, `lib/cad/commands.ts`). Bậc
+ * `bevelEx` (MỞ KHO 08/08, đa giác NƯỚNG trong chính op) là bản NÂNG CAO xử lý Ở ĐÂY — 2 cơ chế
+ * cùng tồn tại, đặt `bevelEx` sẽ THAY hẳn base geometry (bước 1) nên nếu wall còn giữ
+ * `extrude.bevel` cũ, kết quả nhìn thấy là của `bevelEx` (base đã bị thế chỗ trước khi tới bước 2+).
  */
 export function resolveGroupGeometry(g: SceneGroup): THREE.BufferGeometry {
-  const booleans = g.ops?.filter((op) => op.op === 'boolean') ?? [];
-  const arrayOps = g.ops?.filter((op): op is Extract<BuildOp, { op: 'arrayLinear' }> => op.op === 'arrayLinear') ?? [];
-  if (!booleans.length && !arrayOps.length) return geometryOf(g.positions);
+  const ops = g.ops ?? [];
+  const booleans = ops.filter((op) => op.op === 'boolean');
+  const arrayLinearOps = ops.filter((op): op is Extract<BuildOp, { op: 'arrayLinear' }> => op.op === 'arrayLinear');
+  const arrayRadialOps = ops.filter((op): op is Extract<BuildOp, { op: 'arrayRadial' }> => op.op === 'arrayRadial');
+  const mirrorOps = ops.filter((op): op is Extract<BuildOp, { op: 'mirror' }> => op.op === 'mirror');
+  const shapeOp = ops.find(isShapeReplacingOp);
+  if (!booleans.length && !arrayLinearOps.length && !arrayRadialOps.length && !mirrorOps.length && !shapeOp) {
+    return geometryOf(g.positions);
+  }
 
   const key = g.entityId ?? g.name;
   const hash = hashGroup(g);
   const cached = meshCache.get(key);
   if (cached && cached.hash === hash) return cached.geom;
 
-  let geom = geometryOf(g.positions);
+  let geom = shapeOp ? buildShapeGeometry(shapeOp, g) : geometryOf(g.positions);
   for (const op of booleans) {
     if (op.op !== 'boolean') continue;
     const cutterPositions = g.opCutters?.[op.withRef];
@@ -111,7 +167,13 @@ export function resolveGroupGeometry(g: SceneGroup): THREE.BufferGeometry {
     const cutterGeom = geometryOf(cutterPositions);
     geom = booleanOp(geom, cutterGeom, op.kind);
   }
-  geom = applyArrayOps(geom, arrayOps);
+  for (const op of mirrorOps) {
+    geom = mirrorGeometry(geom, { axis: op.axis, atMm: op.atMm, withOriginal: op.withOriginal });
+  }
+  geom = applyArrayOps(geom, arrayLinearOps);
+  for (const op of arrayRadialOps) {
+    geom = arrayRadial(geom, { n: op.n, centerXMm: op.centerXMm, centerYMm: op.centerYMm, sweepDeg: op.sweepDeg });
+  }
   meshCache.set(key, { hash, geom });
   return geom;
 }

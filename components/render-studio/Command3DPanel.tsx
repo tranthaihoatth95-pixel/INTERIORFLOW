@@ -33,6 +33,7 @@ import { useStageTransition } from '@/components/studio/StageTransitionProvider'
 import {
   Plus, Pencil, Palette, Camera, Square, DoorClosed, AppWindow, TrendingUp,
   CornerUpRight, RotateCw, Fence, Minus, PanelTop, Archive, Lightbulb, Scissors,
+  Disc, Triangle, Spline, Layers,
 } from 'lucide-react';
 import type { Scene3DData } from '@/lib/three/cad-to-obj';
 import { SectionExtractPanel, type SectionAcceptPayload } from './SectionExtractPanel';
@@ -45,6 +46,8 @@ import { cn } from '@/lib/utils';
 import Tooltip from '@/components/ui/Tooltip';
 import { WallTypePanel3D } from './WallTypePanel3D';
 import { LightTab } from './LightTab';
+import { entityBox } from '@/lib/cad/model';
+import { setEntityArrayRadial, setEntityMirror, setEntityBevelEx, setEntityTaper, setEntitySweep } from '@/lib/cad/commands';
 
 /**
  * Tab do NƠI MOUNT giữ (mode Vẽ 3D cần mở thẳng tab Tạo khi bấm "Dựng khối đầu tiên").
@@ -216,9 +219,12 @@ const NHOM_CAU_KIEN: CellDef[] = [
   },
 ];
 
-/** nhóm ③ BIẾN ĐỔI — trạng thái đo thật từng lệnh (không nút giả): Array sống (mở mục Array tab
- * Sửa) · Extrude/Bevel/Boolean sống Ở CHỖ KHÁC (lý do trỏ đúng nơi) · Chamfer/Mirror/Sweep engine
- * VIẾT XONG (build-ops.ts) nhưng chưa có bậc BuildOp trong Doc — GAP model.ts, ngoài vùng p14. */
+/** nhóm ③ BIẾN ĐỔI — trạng thái đo thật từng lệnh (không nút giả). MỞ KHO 08/08
+ * (`docs/DOI-CHIEU-42-SPEC-2026-08-08.md` §1#1): `BuildOp` union có 6 biến thể mới +
+ * `resolveGroupGeometry` nối đủ (`lib/three/build-ops.ts`) ⇒ Array/Array Radial/Mirror/Chamfer-
+ * Fillet/Taper/Sweep nay SỐNG (mở mục tương ứng ở tab Sửa) · Extrude/Bevel/Boolean vẫn sống Ở CHỖ
+ * KHÁC (lý do trỏ đúng nơi, không đổi) · Revolve/Loft VẪN MỜ — engine xong nhưng cần UI vẽ tiết
+ * diện nhiều điểm mà `Command3DPanel`/viewport chưa có (N5, ngoài vùng phiếu này). */
 const NHOM_BIEN_DOI: CellDef[] = [
   {
     id: 'extrude', en: 'Extrude', vi: 'đùn khối', icon: TrendingUp,
@@ -234,14 +240,9 @@ const NHOM_BIEN_DOI: CellDef[] = [
       'Already works — select a wall, the Bevel action lives in the right-side Inspector.',
     ],
   },
-  {
-    id: 'chamfer', en: 'Chamfer', vi: 'vát phẳng cạnh', icon: CornerUpRight,
-    reason: [
-      'Engine viết xong (prismChamfered) — còn thiếu chỗ LƯU tham số trong Doc (bậc BuildOp mới, ngoài vùng phiếu này).',
-      'Engine done (prismChamfered) — missing a BuildOp slot in the Doc to persist parameters.',
-    ],
-  },
+  { id: 'chamfer', en: 'Chamfer / Fillet', vi: 'vát phẳng / bo tròn cạnh', icon: CornerUpRight, lam: true },
   { id: 'array', en: 'Array', vi: 'lặp khối theo lưới', icon: RotateCw, lam: true },
+  { id: 'arrayradial', en: 'Array Radial', vi: 'lặp khối theo vòng tròn', icon: Disc, lam: true },
   {
     id: 'boolean', en: 'Boolean', vi: 'khoét / hợp khối', icon: Scissors,
     reason: [
@@ -249,18 +250,21 @@ const NHOM_BIEN_DOI: CellDef[] = [
       'Already works — Cut-hole lives in the right-side Inspector; doors/windows auto-cut with it.',
     ],
   },
+  { id: 'mirror', en: 'Mirror', vi: 'đối xứng', icon: Square, lam: true },
+  { id: 'taper', en: 'Taper', vi: 'thu nhỏ dần lên đỉnh', icon: Triangle, lam: true },
+  { id: 'sweep', en: 'Sweep', vi: 'quét tiết diện (phào chỉ)', icon: Minus, lam: true },
   {
-    id: 'mirror', en: 'Mirror', vi: 'đối xứng', icon: Square,
+    id: 'revolve', en: 'Revolve', vi: 'xoay tiết diện (chân bàn tiện)', icon: Spline,
     reason: [
-      'Engine viết xong (mirrorGeometry) — còn thiếu chỗ LƯU tham số trong Doc (bậc BuildOp mới, ngoài vùng phiếu này).',
-      'Engine done (mirrorGeometry) — missing a BuildOp slot in the Doc to persist parameters.',
+      'Engine viết xong (revolveProfile) + có chỗ lưu (bậc BuildOp) — còn thiếu UI vẽ tiết diện nhiều điểm (bán kính×cao), chưa có công cụ nhập trên khung nhìn.',
+      'Engine done (revolveProfile) + persisted (BuildOp slot) — still missing a multi-point profile editor UI in the viewport.',
     ],
   },
   {
-    id: 'sweep', en: 'Sweep', vi: 'quét tiết diện (phào chỉ)', icon: Minus,
+    id: 'loft', en: 'Loft', vi: 'nối nhiều tiết diện (chụp đèn côn)', icon: Layers,
     reason: [
-      'Engine viết xong (sweepProfile) — cần bậc BuildOp + đường dẫn trong Doc; phào chỉ sẽ dùng lệnh này.',
-      'Engine done (sweepProfile) — needs a BuildOp slot + path reference in the Doc; mouldings will use it.',
+      'Engine viết xong (loftSections) + có chỗ lưu (bậc BuildOp) — còn thiếu UI nhập ≥2 tiết diện ở nhiều cao độ.',
+      'Engine done (loftSections) + persisted (BuildOp slot) — still missing UI to enter ≥2 sections at different heights.',
     ],
   },
 ];
@@ -304,15 +308,27 @@ function CreateTab({
     { id: 'circle', en: 'Circle', vi: 'vòng tròn', tool: 'circle' },
     { id: 'polygon', en: 'Polygon', vi: 'đa giác', tool: 'polyline' },
   ];
+  // MỞ KHO 08/08 — chamfer/arrayradial/mirror/taper/sweep đều mở tab Sửa (một ổ ghi mỗi lệnh,
+  // cùng lý do `array` đã ghi — form nhập số cần chỗ rộng hơn 1 ô lưới vuông ở tab Tạo).
   const HANDLER: Partial<Record<string, (() => void) | undefined>> = {
     tuong: onTaoTuong,
     lancan: onTaoLanCan,
     array: () => onTabChange?.('sua'), // Array sống ở mục Array tab Sửa (một ổ ghi, không nhân đôi form)
+    arrayradial: () => onTabChange?.('sua'),
+    mirror: () => onTabChange?.('sua'),
+    chamfer: () => onTabChange?.('sua'),
+    taper: () => onTabChange?.('sua'),
+    sweep: () => onTabChange?.('sua'),
   };
   const TIP: Partial<Record<string, [string, string]>> = {
     tuong: ['Đoạn 4m, dày 220 — sửa được sau', '4m segment, 220 thick — editable'],
     lancan: ['9 cột 60×60mm cách 300mm — chưa có tay vịn ngang (N5)', '9 posts 60×60mm at 300mm spacing — no top rail yet (N5)'],
     array: ['Mở mục Array (tab Sửa) — hoặc gõ thẳng: array 3x2 1200,900', 'Opens the Array section (Edit tab) — or type: array 3x2 1200,900'],
+    arrayradial: ['Mở mục Array Radial (tab Sửa)', 'Opens the Array Radial section (Edit tab)'],
+    mirror: ['Mở mục Mirror (tab Sửa)', 'Opens the Mirror section (Edit tab)'],
+    chamfer: ['Mở mục Chamfer / Fillet (tab Sửa)', 'Opens the Chamfer / Fillet section (Edit tab)'],
+    taper: ['Mở mục Taper (tab Sửa)', 'Opens the Taper section (Edit tab)'],
+    sweep: ['Mở mục Sweep (tab Sửa)', 'Opens the Sweep section (Edit tab)'],
   };
 
   const cell = ({ id, en, vi, icon: Icon, lam, reason }: CellDef) => {
@@ -474,6 +490,13 @@ function EditTab({ scene }: { scene?: Scene3DData | null }) {
     <div className="space-y-3">
       <WallTypePanel3D />
       <ArrayGridSection scene={scene ?? null} />
+      {/* MỞ KHO 08/08 (`docs/DOI-CHIEU-42-SPEC-2026-08-08.md` §1#1) — 4 mục "Biến đổi" nâng cao,
+          cùng khuôn ArrayGridSection ở trên (1 ổ ghi, chọn khối rồi mở panel này). */}
+      <ArrayRadialSection scene={scene ?? null} />
+      <MirrorSection scene={scene ?? null} />
+      <BevelExSection scene={scene ?? null} />
+      <TaperSection scene={scene ?? null} />
+      <SweepSection scene={scene ?? null} />
       <p className="rounded-[10px] border border-dashed border-[var(--border)] px-2.5 py-2.5 text-[10.5px] leading-relaxed text-[var(--t4)]">
         {tr(vi, en)}
       </p>
@@ -589,6 +612,363 @@ function ArrayGridSection({ scene }: { scene: Scene3DData | null }) {
               {tr('Cần ít nhất 2 hàng hoặc 2 cột mới thành lưới.', 'Needs at least 2 rows or 2 columns to form a grid.')}
             </p>
           )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════ MỞ KHO 08/08 — 4 mục "Biến đổi" nâng cao ═══════════════════════
+ * `docs/DOI-CHIEU-42-SPEC-2026-08-08.md` §1#1: 9 hàm engine `lib/three/build-ops.ts` viết xong+test
+ * 07/08 nay có chỗ LƯU (`BuildOp` union mới, `lib/cad/model.ts`) + panel THẬT — cùng khuôn
+ * `ArrayGridSection` phía trên (chọn khối trên khung nhìn → mở mục tương ứng ở đây, ghi qua
+ * `useCadStore.updateEntities` ⇒ Ctrl+Z lùi được, KS4). Revolve/Loft KHÔNG có mục ở đây — cần UI vẽ
+ * tiết diện nhiều điểm mà `Command3DPanel`/`Object3DTree` chưa có (ngoài vùng phiếu, xem 2 ô mờ
+ * "Revolve"/"Loft" trong `NHOM_BIEN_DOI` — lý do lộ đúng chỗ đó, không giấu).
+ */
+
+/** DÙNG CHUNG cho 5 mục dưới — cùng điều kiện hợp lệ `ArrayGridSection` đã dùng (group phải có
+ * `entityId` VÀ `heightMm`: `ops` chỉ chảy qua nhánh khối đùn ở `cad-to-obj.ts`). Gom 1 chỗ để
+ * không chép lại 3 dòng giống hệt nhau × 5 lần. */
+function useSelected3DEntity(scene: Scene3DData | null) {
+  const selectedName = useTree3DUi((s) => s.selectedName);
+  const group = scene?.groups.find((gr) => gr.name === selectedName) ?? null;
+  const entityId = group?.entityId && group.heightMm ? group.entityId : null;
+  const entity = useCadStore((s) => (entityId ? s.doc.entities.find((e) => e.id === entityId) : undefined));
+  return { group, entityId, entity };
+}
+
+/** LÝ DO KHOÁ LỘ MẶT dùng chung — cùng câu `ArrayGridSection` (bài học màn rỗng 07/08, không giấu
+ * trong tooltip). */
+function NoSelectionNote({ group, tr }: { group: unknown; tr: (vi: string, en: string) => string }) {
+  return (
+    <p className="rounded-[8px] border border-dashed border-[var(--border)] px-2 py-2 text-[10.5px] leading-relaxed text-[var(--t4)]">
+      {group
+        ? tr(
+            'Khối đang chọn chưa áp được — hiện chỉ áp cho khối đùn có cao độ (tường, khối dựng).',
+            'This block isn’t supported yet — only extruded blocks with a height (walls, massing) work.',
+          )
+        : tr('Chưa chọn khối — bấm một khối trên khung nhìn trước.', 'No block selected — click a block in the viewport first.')}
+    </p>
+  );
+}
+
+const numCls =
+  'w-full rounded-[7px] border border-[var(--border)] bg-[var(--field)] px-1.5 py-1 text-right text-[11px] tabular-nums text-[var(--t1)] outline-none focus:border-[var(--accent-ring)]';
+const labCls = 'text-[9px] font-medium leading-[1.5] text-[var(--t4)]';
+const sectionTitle = (en: string) => (
+  <p className="px-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--t2)]">{en}</p>
+);
+const applyBtnCls = (enabled: boolean) =>
+  cn(
+    'flex-1 rounded-[8px] border px-2 py-1.5 text-[10.5px] font-semibold transition-colors',
+    enabled
+      ? 'border-[var(--accent-ring)] bg-[var(--accent-soft)] text-[var(--accent)] hover:border-[var(--accent)]'
+      : 'cursor-not-allowed border-dashed border-[var(--border)] text-[var(--t5)]',
+  );
+const removeBtnCls =
+  'rounded-[8px] border border-[var(--border)] px-2 py-1.5 text-[10.5px] font-medium text-[var(--t3)] transition-colors hover:border-[var(--accent-ring)] hover:text-[var(--accent)]';
+
+/** Array Radial — mảng vòng tròn quanh trục đứng. Tâm mặc định = TÂM bbox của khối đang chọn
+ * (`entityBox`, không bắt gõ tay — cùng cách `ArrayAction` Object3DInspector suy trục dài tường). */
+function ArrayRadialSection({ scene }: { scene: Scene3DData | null }) {
+  const tr = useT();
+  const { group, entityId, entity } = useSelected3DEntity(scene);
+  const box = entity ? entityBox(entity) : null;
+  const defCx = box && Number.isFinite(box.minX) ? Math.round((box.minX + box.maxX) / 2) : 0;
+  const defCy = box && Number.isFinite(box.minY) ? Math.round((box.minY + box.maxY) / 2) : 0;
+  const [n, setN] = useState(6);
+  const [cx, setCx] = useState(defCx);
+  const [cy, setCy] = useState(defCy);
+  const [sweepDeg, setSweepDeg] = useState(360);
+  const current = entity?.ops?.find((op) => op.op === 'arrayRadial') as { n: number } | undefined;
+
+  const apply = (on: boolean) => {
+    if (!entity) return;
+    const updated = setEntityArrayRadial(entity, on ? { n, centerXMm: cx, centerYMm: cy, sweepDeg } : null);
+    useCadStore.getState().updateEntities([updated]);
+    useCadStore.getState().setStatus(on ? `Array Radial ×${n} — Ctrl+Z để lùi` : 'Đã gỡ Array Radial — Ctrl+Z để lùi');
+  };
+
+  return (
+    <div className="space-y-2 rounded-[10px] border border-[var(--border)] p-2">
+      {sectionTitle('Array Radial')}
+      <p className="-mt-1 px-0.5 text-[9px] leading-[1.5] text-[var(--t4)]">
+        {tr('nhân bản vòng tròn quanh 1 tâm', 'repeat around a center point in a circle')}
+      </p>
+      {!entityId ? (
+        <NoSelectionNote group={group} tr={tr} />
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-1.5">
+            <label className={labCls}>
+              {tr('Số bản', 'Count')}
+              <input type="number" min={2} className={numCls} value={n} onChange={(e) => setN(Number(e.target.value))} />
+            </label>
+            <label className={labCls}>
+              {tr('Góc quét (độ)', 'Sweep (deg)')}
+              <input type="number" step={5} className={numCls} value={sweepDeg} onChange={(e) => setSweepDeg(Number(e.target.value))} />
+            </label>
+            <label className={labCls}>
+              {tr('Tâm X (mm)', 'Center X (mm)')}
+              <input type="number" step={50} className={numCls} value={cx} onChange={(e) => setCx(Number(e.target.value))} />
+            </label>
+            <label className={labCls}>
+              {tr('Tâm Y (mm)', 'Center Y (mm)')}
+              <input type="number" step={50} className={numCls} value={cy} onChange={(e) => setCy(Number(e.target.value))} />
+            </label>
+          </div>
+          <div className="flex gap-1.5">
+            <button type="button" disabled={n <= 1} onClick={() => apply(true)} className={applyBtnCls(n > 1)}>
+              Array Radial
+            </button>
+            {current && (
+              <button type="button" onClick={() => apply(false)} title={tr('gỡ mảng đã áp', 'remove the applied array')} className={removeBtnCls}>
+                Remove
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Mirror — đối xứng gương qua 1 mặt phẳng vuông góc trục CAD. `atMm` mặc định = TÂM bbox theo
+ * trục đang chọn (đổi trục thì đổi luôn mặc định, đỡ phải tính tay). */
+function MirrorSection({ scene }: { scene: Scene3DData | null }) {
+  const tr = useT();
+  const { group, entityId, entity } = useSelected3DEntity(scene);
+  const box = entity ? entityBox(entity) : null;
+  const [axis, setAxis] = useState<'x' | 'y' | 'z'>('x');
+  const centerFor = (a: 'x' | 'y' | 'z') => {
+    if (!box || !Number.isFinite(box.minX)) return 0;
+    if (a === 'x') return Math.round((box.minX + box.maxX) / 2);
+    if (a === 'y') return Math.round((box.minY + box.maxY) / 2);
+    return 0; // trục z (cao độ) — không có bbox Z ở entityBox 2D, mặc định 0
+  };
+  const [atMm, setAtMm] = useState(() => centerFor('x'));
+  const [withOriginal, setWithOriginal] = useState(true);
+  const current = entity?.ops?.find((op) => op.op === 'mirror') as { axis: string } | undefined;
+
+  const apply = (on: boolean) => {
+    if (!entity) return;
+    const updated = setEntityMirror(entity, on ? { axis, atMm, withOriginal } : null);
+    useCadStore.getState().updateEntities([updated]);
+    useCadStore.getState().setStatus(on ? `Mirror qua trục ${axis} — Ctrl+Z để lùi` : 'Đã gỡ Mirror — Ctrl+Z để lùi');
+  };
+
+  return (
+    <div className="space-y-2 rounded-[10px] border border-[var(--border)] p-2">
+      {sectionTitle('Mirror')}
+      <p className="-mt-1 px-0.5 text-[9px] leading-[1.5] text-[var(--t4)]">
+        {tr('đối xứng gương qua 1 mặt phẳng', 'mirror across a plane')}
+      </p>
+      {!entityId ? (
+        <NoSelectionNote group={group} tr={tr} />
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-1.5">
+            <label className={labCls}>
+              {tr('Trục gương', 'Mirror axis')}
+              <select
+                className={numCls + ' text-left'}
+                value={axis}
+                onChange={(e) => {
+                  const a = e.target.value as 'x' | 'y' | 'z';
+                  setAxis(a);
+                  setAtMm(centerFor(a));
+                }}
+              >
+                <option value="x">X</option>
+                <option value="y">Y</option>
+                <option value="z">Z ({tr('cao độ', 'elevation')})</option>
+              </select>
+            </label>
+            <label className={labCls}>
+              {tr('Vị trí mặt gương (mm)', 'Plane position (mm)')}
+              <input type="number" step={10} className={numCls} value={atMm} onChange={(e) => setAtMm(Number(e.target.value))} />
+            </label>
+          </div>
+          <label className="flex items-center gap-1.5 px-0.5 text-[10px] text-[var(--t3)]">
+            <input type="checkbox" checked={withOriginal} onChange={(e) => setWithOriginal(e.target.checked)} />
+            {tr('Giữ bản gốc (tủ đôi)', 'Keep the original (twin cabinet)')}
+          </label>
+          <div className="flex gap-1.5">
+            <button type="button" onClick={() => apply(true)} className={applyBtnCls(true)}>
+              Mirror
+            </button>
+            {current && (
+              <button type="button" onClick={() => apply(false)} title={tr('gỡ mirror đã áp', 'remove the applied mirror')} className={removeBtnCls}>
+                Remove
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+const BEVEL_EX_EDGE_OPTS: { value: 'all' | 'vertical' | 'top'; vi: string; en: string }[] = [
+  { value: 'top', vi: 'cạnh trên', en: 'top' },
+  { value: 'vertical', vi: '4 góc đứng', en: 'vertical' },
+  { value: 'all', vi: 'cả hai', en: 'both' },
+];
+
+/** Chamfer / Fillet — bo/vát nâng cao (`bevelEx`, `prismBeveledEx`): `segments=1` = vát phẳng
+ * (chamfer), `segments>=2` = bo tròn (fillet/bevel). MỘT mục cho cả hai — chỉ khác số đoạn chia. */
+function BevelExSection({ scene }: { scene: Scene3DData | null }) {
+  const tr = useT();
+  const { group, entityId, entity } = useSelected3DEntity(scene);
+  const [radiusMm, setRadiusMm] = useState(30);
+  const [segments, setSegments] = useState(1);
+  const [edges, setEdges] = useState<'all' | 'vertical' | 'top'>('top');
+  const current = entity?.ops?.find((op) => op.op === 'bevelEx') as { radiusMm: number } | undefined;
+
+  const apply = (on: boolean) => {
+    if (!entity) return;
+    const updated = setEntityBevelEx(entity, { radiusMm: on ? radiusMm : 0, segments, edges });
+    useCadStore.getState().updateEntities([updated]);
+    useCadStore.getState().setStatus(on ? `${segments <= 1 ? 'Chamfer' : 'Fillet'} ${radiusMm}mm — Ctrl+Z để lùi` : 'Đã gỡ — Ctrl+Z để lùi');
+  };
+
+  return (
+    <div className="space-y-2 rounded-[10px] border border-[var(--border)] p-2">
+      {sectionTitle('Chamfer / Fillet')}
+      <p className="-mt-1 px-0.5 text-[9px] leading-[1.5] text-[var(--t4)]">
+        {tr('vát phẳng (1 đoạn) hoặc bo tròn (≥2 đoạn) cạnh khối', 'flat chamfer (1 segment) or rounded fillet (≥2 segments)')}
+      </p>
+      {!entityId ? (
+        <NoSelectionNote group={group} tr={tr} />
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-1.5">
+            <label className={labCls}>
+              {tr('Bán kính (mm)', 'Radius (mm)')}
+              <input type="number" min={1} className={numCls} value={radiusMm} onChange={(e) => setRadiusMm(Number(e.target.value))} />
+            </label>
+            <label className={labCls}>
+              {tr('Số đoạn chia', 'Segments')}
+              <input type="number" min={1} className={numCls} value={segments} onChange={(e) => setSegments(Math.max(1, Number(e.target.value)))} />
+            </label>
+            <label className={labCls + ' col-span-2'}>
+              {tr('Cạnh', 'Edges')}
+              <select className={numCls + ' text-left'} value={edges} onChange={(e) => setEdges(e.target.value as 'all' | 'vertical' | 'top')}>
+                {BEVEL_EX_EDGE_OPTS.map((o) => (
+                  <option key={o.value} value={o.value}>{tr(o.vi, o.en)}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="flex gap-1.5">
+            <button type="button" disabled={radiusMm <= 0} onClick={() => apply(true)} className={applyBtnCls(radiusMm > 0)}>
+              {segments <= 1 ? 'Chamfer' : 'Fillet'}
+            </button>
+            {current && (
+              <button type="button" onClick={() => apply(false)} title={tr('gỡ đã áp', 'remove the applied edge')} className={removeBtnCls}>
+                Remove
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Taper — lăng trụ thu nhỏ dần lên đỉnh (chân bàn côn). */
+function TaperSection({ scene }: { scene: Scene3DData | null }) {
+  const tr = useT();
+  const { group, entityId, entity } = useSelected3DEntity(scene);
+  const [topInsetMm, setTopInsetMm] = useState(20);
+  const current = entity?.ops?.find((op) => op.op === 'taper') as { topInsetMm: number } | undefined;
+
+  const apply = (on: boolean) => {
+    if (!entity) return;
+    const updated = setEntityTaper(entity, on ? topInsetMm : 0);
+    useCadStore.getState().updateEntities([updated]);
+    useCadStore.getState().setStatus(on ? `Taper ${topInsetMm}mm — Ctrl+Z để lùi` : 'Đã gỡ Taper — Ctrl+Z để lùi');
+  };
+
+  return (
+    <div className="space-y-2 rounded-[10px] border border-[var(--border)] p-2">
+      {sectionTitle('Taper')}
+      <p className="-mt-1 px-0.5 text-[9px] leading-[1.5] text-[var(--t4)]">
+        {tr('thu nhỏ dần lên đỉnh (chân bàn côn)', 'narrow toward the top (tapered leg)')}
+      </p>
+      {!entityId ? (
+        <NoSelectionNote group={group} tr={tr} />
+      ) : (
+        <>
+          <label className={labCls}>
+            {tr('Co đỉnh (mm mỗi phía)', 'Top inset (mm per side)')}
+            <input type="number" min={1} className={numCls} value={topInsetMm} onChange={(e) => setTopInsetMm(Number(e.target.value))} />
+          </label>
+          <div className="flex gap-1.5">
+            <button type="button" disabled={topInsetMm <= 0} onClick={() => apply(true)} className={applyBtnCls(topInsetMm > 0)}>
+              Taper
+            </button>
+            {current && (
+              <button type="button" onClick={() => apply(false)} title={tr('gỡ Taper đã áp', 'remove the applied taper')} className={removeBtnCls}>
+                Remove
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Sweep — MVP tiết diện CHỮ NHẬT (width×height) quét dọc đường bao/đường tim của chính khối đang
+ * chọn (`entityFootprintMm`/`entityPathMm`, `lib/cad/commands.ts` `setEntitySweep`). Đủ cho phào
+ * chỉ/nẹp vuông áp quanh 1 tường; tiết diện tuỳ ý (đa giác nhiều điểm) CHƯA có UI vẽ — engine
+ * (`sweepProfile`) đã sẵn cho khi UI đó có, không cần đổi lại op. */
+function SweepSection({ scene }: { scene: Scene3DData | null }) {
+  const tr = useT();
+  const { group, entityId, entity } = useSelected3DEntity(scene);
+  const [widthMm, setWidthMm] = useState(50);
+  const [heightMm, setHeightMm] = useState(80);
+  const current = entity?.ops?.find((op) => op.op === 'sweep') as { profileMm: unknown } | undefined;
+
+  const apply = (on: boolean) => {
+    if (!entity) return;
+    const updated = setEntitySweep(entity, on ? { widthMm, heightMm } : null);
+    useCadStore.getState().updateEntities([updated]);
+    useCadStore.getState().setStatus(on ? `Sweep ${widthMm}×${heightMm}mm — Ctrl+Z để lùi` : 'Đã gỡ Sweep — Ctrl+Z để lùi');
+  };
+
+  return (
+    <div className="space-y-2 rounded-[10px] border border-[var(--border)] p-2">
+      {sectionTitle('Sweep')}
+      <p className="-mt-1 px-0.5 text-[9px] leading-[1.5] text-[var(--t4)]">
+        {tr('quét tiết diện chữ nhật dọc đường bao khối (phào chỉ)', 'sweep a rectangular profile along the block outline (moulding)')}
+      </p>
+      {!entityId ? (
+        <NoSelectionNote group={group} tr={tr} />
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-1.5">
+            <label className={labCls}>
+              {tr('Rộng (mm)', 'Width (mm)')}
+              <input type="number" min={1} className={numCls} value={widthMm} onChange={(e) => setWidthMm(Number(e.target.value))} />
+            </label>
+            <label className={labCls}>
+              {tr('Cao (mm)', 'Height (mm)')}
+              <input type="number" min={1} className={numCls} value={heightMm} onChange={(e) => setHeightMm(Number(e.target.value))} />
+            </label>
+          </div>
+          <div className="flex gap-1.5">
+            <button type="button" disabled={widthMm <= 0 || heightMm <= 0} onClick={() => apply(true)} className={applyBtnCls(widthMm > 0 && heightMm > 0)}>
+              Sweep
+            </button>
+            {current && (
+              <button type="button" onClick={() => apply(false)} title={tr('gỡ Sweep đã áp', 'remove the applied sweep')} className={removeBtnCls}>
+                Remove
+              </button>
+            )}
+          </div>
         </>
       )}
     </div>

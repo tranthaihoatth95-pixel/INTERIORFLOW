@@ -445,11 +445,51 @@ export function expandIdsByInsertGroup(
 
 /** NC-12 §4.2 — một bậc trong ngăn xếp dựng hình 3D. Thuần dữ liệu JSON, KHÔNG chứa hình học đã
  * tính (xem docstring `Base.ops`). `withRef`/`pathRef`/`sectionRefs` là id của entity KHÁC trong
- * CÙNG `Doc` (K1 — một nguồn, không type hình học riêng). */
+ * CÙNG `Doc` (K1 — một nguồn, không type hình học riêng).
+ *
+ * MỞ KHO 08/08 (`docs/DOI-CHIEU-42-SPEC-2026-08-08.md` §1#1) — 6 biến thể MỚI, đủ nuôi 9 hàm
+ * engine THUẦN đã viết xong+test 07/08 (`lib/three/build-ops.ts`, tầng ③④⑤ `SPEC-DUNG-BO-LENH-3D`)
+ * mà trước đó 0 nơi gọi vì union chỉ có 3 biến thể cũ. ADDITIVE — 3 biến thể cũ (`extrude`/
+ * `boolean`/`arrayLinear`) giữ NGUYÊN VĂN, `.idf` cũ chỉ chứa 3 biến thể đó vẫn parse/chạy y hệt
+ * (JSON thuần, discriminant `op` không đổi tên field nào đã có — xem test round-trip
+ * `build-ops.test.ts` "MỞ KHO — .idf cũ (chỉ 3 op cũ)…").
+ *
+ * `arrayRadial`/`mirror` là bậc MODIFIER (chạy TRÊN hình học đã có, không cần biết đa giác gốc) —
+ * cùng tầng với `arrayLinear`, xem thứ tự modifier stack ở `resolveGroupGeometry`.
+ *
+ * `bevelEx`/`taper`/`sweep`/`revolve`/`loft` là bậc THAY-HÌNH-GỐC (replace) — 5 hàm này cần dữ
+ * liệu hình học (đa giác/tiết diện/đường dẫn) mà `SceneGroup` (`lib/three/cad-to-obj.ts`) KHÔNG
+ * giữ lại sau khi tam-giác-hoá (chỉ còn `positions` phẳng). Khác `extrude.bevel` (đọc `h.points`
+ * SỐNG tại `cad-to-obj.ts`, file đó ngoài vùng đợt mở kho này) — 5 bậc trên NƯỚNG (bake) hình học
+ * cần thiết NGAY LÚC người dùng đặt lệnh (`lib/cad/commands.ts` `setEntityTaper`/`setEntityBevelEx`
+ * đọc đa giác của entity tại thời điểm gọi), lưu thẳng vào tham số của op. Đánh đổi: đa giác gốc
+ * đổi SAU khi đặt lệnh (sửa tay tường) không tự cập nhật lại — cùng lớp giới hạn với `h` (tham
+ * khảo, không phải nguồn đọc lại) đã ghi ở `extrude`. Cao độ (z0/z1) vẫn đọc SỐNG từ
+ * `SceneGroup.heightMm`/`baseMm` — không nướng, đổi tầng/kéo cao vẫn cập nhật đúng. */
 export type BuildOp =
   | { op: 'extrude'; h: number; bevel?: number }
   | { op: 'boolean'; kind: 'union' | 'subtract' | 'intersect'; withRef: string }
-  | { op: 'arrayLinear'; n: number; dx: number; dy: number; dz: number };
+  | { op: 'arrayLinear'; n: number; dx: number; dy: number; dz: number }
+  /** Mảng VÒNG TRÒN quanh trục đứng qua (centerXMm,centerYMm) — `lib/three/build-ops.ts` `arrayRadial`. */
+  | { op: 'arrayRadial'; n: number; centerXMm: number; centerYMm: number; sweepDeg?: number }
+  /** Đối xứng gương qua mặt phẳng vuông góc 1 trục CAD tại `atMm` — `build-ops.ts` `mirrorGeometry`. */
+  | { op: 'mirror'; axis: 'x' | 'y' | 'z'; atMm: number; withOriginal?: boolean }
+  /** Bo/vát cạnh NÂNG CAO (nhiều đoạn chia, chọn cạnh trên/đứng/cả hai) — khác `extrude.bevel` (vát
+   * phẳng đơn giản, 1 đoạn, chỉ cạnh trên). `polyMm` = đa giác đáy NƯỚNG lúc đặt lệnh (xem docstring
+   * union phía trên). `build-ops.ts` `prismBeveledEx`. */
+  | { op: 'bevelEx'; polyMm: Pt[]; radiusMm: number; segments: number; edges: 'all' | 'vertical' | 'top' }
+  /** Lăng trụ thu nhỏ dần lên đỉnh (chân bàn côn) — `polyMm` đáy NƯỚNG lúc đặt lệnh. `build-ops.ts`
+   * `prismTapered`. */
+  | { op: 'taper'; polyMm: Pt[]; topInsetMm: number }
+  /** Quét tiết diện dọc đường dẫn (phào chỉ, tay vịn) — `profileMm`/`pathMm` NƯỚNG lúc đặt lệnh
+   * (không đọc lại hình entity gốc). `build-ops.ts` `sweepProfile`. */
+  | { op: 'sweep'; profileMm: Pt[]; pathMm: { x: number; y: number; z?: number }[]; closed?: boolean }
+  /** Xoay tiết diện quanh trục đứng (chân bàn tiện, lọ) — `profileMm` do người dùng khai (chưa có
+   * UI vẽ tiết diện nhiều điểm, xem `Command3DPanel.tsx`). `build-ops.ts` `revolveProfile`. */
+  | { op: 'revolve'; profileMm: Pt[]; centerXMm: number; centerYMm: number; segments?: number; sweepDeg?: number }
+  /** Nối chuỗi tiết diện ở nhiều cao độ (chụp đèn côn, đảo bếp vát) — mọi tiết diện PHẢI cùng số
+   * đỉnh (xem `loftSections`). `build-ops.ts` `loftSections`. */
+  | { op: 'loft'; sections: { polyMm: Pt[]; zMm: number }[] };
 
 export interface LineEntity extends Base {
   type: 'line';

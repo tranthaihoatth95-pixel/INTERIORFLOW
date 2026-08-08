@@ -10,7 +10,8 @@
  * CadEditor/CadCanvas không phình.
  */
 
-import type { Doc, Entity, Box, Pt, WallRun, WallLocationLine } from './model';
+import type { Doc, Entity, Box, Pt, WallRun, WallLocationLine, BuildOp } from './model';
+import { entityBox } from './model';
 import { newId } from './store';
 import { BLOCK_MAP } from './furniture';
 
@@ -651,4 +652,181 @@ export function railingPosts(
       ? { ...e, heightMm, ops: [{ op: 'arrayLinear' as const, n: count, dx: ux * spacingMm, dy: uy * spacingMm, dz: 0 }] }
       : e,
   );
+}
+
+/* ═══════════════════════ MỞ KHO 08/08 — 6 bậc BuildOp mới (`lib/cad/model.ts`) ═══════════════════════
+ * `docs/DOI-CHIEU-42-SPEC-2026-08-08.md` §1#1. Cùng khuôn `setEntityBevel`/`setEntityArrayLinear`
+ * phía trên: SỬA-tại-chỗ (gọi lại là THAY giá trị, không cộng dồn 2 bậc cùng loại), THUẦN (không
+ * đụng store), `n<=0`/tham số rỗng = XOÁ bậc (không để lại rác).
+ *
+ * 5 bậc "thay-hình-gốc" (taper/bevelEx/sweep/revolve/loft — xem docstring union `BuildOp`) MUTUALLY
+ * EXCLUSIVE — chỉ 1 bậc loại này có tác dụng/entity (`resolveGroupGeometry` chỉ đọc bậc ĐẦU tiên
+ * gặp). `clearShapeOps()` xoá HẾT cả 5 loại trước khi thêm bậc mới, tránh Doc tồn rác 2 bậc thay-
+ * hình-gốc mâu thuẫn nhau (vd vừa taper vừa bevelEx) mà không hàm nào báo lỗi.
+ */
+
+const SHAPE_REPLACING_KINDS = new Set(['taper', 'bevelEx', 'sweep', 'revolve', 'loft']);
+
+function clearShapeOps(ops: BuildOp[] | undefined): BuildOp[] {
+  return (ops ?? []).filter((op) => !SHAPE_REPLACING_KINDS.has(op.op));
+}
+
+/** Footprint 2D (đa giác kín, mm world) của 1 entity — dùng NƯỚNG `polyMm` khi đặt bậc "thay-hình-
+ * gốc" (xem docstring union `BuildOp` — cao độ đọc SỐNG, chỉ đa giác là nướng). CHÉP CỤC BỘ 3 dạng
+ * rect/hatch/polyline (cùng logic `cutterPositionsMm` ở `lib/three/cad-to-obj.ts` đọc cho cutter)
+ * — KHÔNG import file đó vào đây (tránh vòng phụ thuộc lib/cad → lib/three, K1: chỉ chiều ngược lại
+ * được phép). `null` nếu entity không mang hình đa giác kín (line/circle/arc/text/dim/block…). */
+export function entityFootprintMm(e: Entity): Pt[] | null {
+  if (e.type === 'rect') {
+    return [
+      { x: e.x, y: e.y },
+      { x: e.x + e.w, y: e.y },
+      { x: e.x + e.w, y: e.y + e.h },
+      { x: e.x, y: e.y + e.h },
+    ];
+  }
+  if (e.type === 'hatch' && e.points.length >= 3) return e.points;
+  if (e.type === 'polyline' && e.closed && e.points.length >= 3) return e.points;
+  return null;
+}
+
+/** Đường dẫn (mm world, MỞ — không cần khép kín) dùng NƯỚNG `pathMm` cho bậc `sweep`. Rộng hơn
+ * `entityFootprintMm` (nhận cả polyline hở, cả `line` 2 điểm) — quét tiết diện dọc 1 đoạn tường
+ * thẳng vẫn hợp lệ, không cần đường khép kín như footprint khoét/taper. */
+function entityPathMm(e: Entity): { x: number; y: number; z?: number }[] | null {
+  if (e.type === 'polyline' && e.points.length >= 2) return e.points;
+  if (e.type === 'hatch' && e.points.length >= 2) return e.points;
+  if (e.type === 'line') return [e.a, e.b];
+  return null;
+}
+
+/** Đặt/xoá bậc `{op:'taper'}` — `polyMm` NƯỚNG từ `entityFootprintMm(entity)` lúc gọi. Entity không
+ * có đa giác (line/circle/block…) ⇒ trả nguyên `entity`, không sập (N4). `topInsetMm<=0` = tắt. */
+export function setEntityTaper(entity: Entity, topInsetMm: number): Entity {
+  const rest = clearShapeOps(entity.ops);
+  if (topInsetMm <= 0) return { ...entity, ops: rest.length ? rest : undefined };
+  const poly = entityFootprintMm(entity);
+  if (!poly) return entity;
+  return { ...entity, ops: [...rest, { op: 'taper', polyMm: poly, topInsetMm }] };
+}
+
+export interface BevelExOpts {
+  radiusMm: number;
+  segments: number;
+  edges: 'all' | 'vertical' | 'top';
+}
+
+/** Đặt/xoá bậc `{op:'bevelEx'}` (bo/vát nâng cao — nhiều đoạn chia, chọn cạnh) — cùng khuôn
+ * `setEntityTaper`. `radiusMm<=0` = tắt. */
+export function setEntityBevelEx(entity: Entity, opts: BevelExOpts): Entity {
+  const rest = clearShapeOps(entity.ops);
+  if (opts.radiusMm <= 0) return { ...entity, ops: rest.length ? rest : undefined };
+  const poly = entityFootprintMm(entity);
+  if (!poly) return entity;
+  return {
+    ...entity,
+    ops: [...rest, { op: 'bevelEx', polyMm: poly, radiusMm: opts.radiusMm, segments: Math.max(1, Math.round(opts.segments)), edges: opts.edges }],
+  };
+}
+
+export interface SweepOpts {
+  /** bề rộng tiết diện chữ nhật (mm) — MVP: chưa có UI vẽ tiết diện tuỳ ý (đa giác bất kỳ), chỉ
+   * chữ nhật đơn giản (đủ cho phào chỉ/nẹp vuông). `profileMm` bên trong op vẫn là đa giác đầy đủ
+   * (engine `sweepProfile` không biết/không cần biết nó là chữ nhật) — nới UI sau không cần đổi op. */
+  widthMm: number;
+  heightMm: number;
+}
+
+/** Đặt/xoá bậc `{op:'sweep'}` — MVP tiết diện CHỮ NHẬT (widthMm×heightMm, tâm theo trục path) quét
+ * dọc `entityPathMm(entity)` NƯỚNG lúc gọi. Entity không có đường dẫn (block/text/dim/circle không
+ * polyline hoá được…) hoặc tham số ≤0 ⇒ trả nguyên `entity`/xoá bậc, không sập. */
+export function setEntitySweep(entity: Entity, opts: SweepOpts | null): Entity {
+  const rest = clearShapeOps(entity.ops);
+  if (!opts || opts.widthMm <= 0 || opts.heightMm <= 0) return { ...entity, ops: rest.length ? rest : undefined };
+  const path = entityPathMm(entity);
+  if (!path || path.length < 2) return entity;
+  const half = opts.widthMm / 2;
+  const profileMm: Pt[] = [
+    { x: -half, y: 0 },
+    { x: half, y: 0 },
+    { x: half, y: opts.heightMm },
+    { x: -half, y: opts.heightMm },
+  ];
+  const closed = (entity.type === 'polyline' && entity.closed) || entity.type === 'hatch';
+  return { ...entity, ops: [...rest, { op: 'sweep', profileMm, pathMm: path, closed }] };
+}
+
+export interface RevolveOpts {
+  /** tiết diện (x = bán kính ≥0 mm, y = cao độ mm) — CHƯA có UI vẽ tiết diện nhiều điểm (N5, xem
+   * `Command3DPanel.tsx` — nút "Revolve" giữ mờ), hàm này sẵn sàng cho khi UI đó có. */
+  profileMm: Pt[];
+  segments?: number;
+  sweepDeg?: number;
+}
+
+/** Đặt/xoá bậc `{op:'revolve'}` — tâm trục (`centerXMm`/`centerYMm`) suy từ TÂM bbox của chính
+ * entity (`entityBox`, `lib/cad/model.ts`) — không cần người dùng gõ tay, cùng cách `ArrayAction`
+ * (Object3DInspector) suy trục dài tường từ bbox. */
+export function setEntityRevolve(entity: Entity, opts: RevolveOpts | null): Entity {
+  const rest = clearShapeOps(entity.ops);
+  if (!opts || opts.profileMm.length < 2) return { ...entity, ops: rest.length ? rest : undefined };
+  const box = entityBox(entity);
+  const centerXMm = Number.isFinite(box.minX) ? (box.minX + box.maxX) / 2 : 0;
+  const centerYMm = Number.isFinite(box.minY) ? (box.minY + box.maxY) / 2 : 0;
+  return {
+    ...entity,
+    ops: [
+      ...rest,
+      { op: 'revolve', profileMm: opts.profileMm, centerXMm, centerYMm, ...(opts.segments !== undefined ? { segments: opts.segments } : {}), ...(opts.sweepDeg !== undefined ? { sweepDeg: opts.sweepDeg } : {}) },
+    ],
+  };
+}
+
+export interface LoftSectionInput {
+  polyMm: Pt[];
+  zMm: number;
+}
+
+/** Đặt/xoá bậc `{op:'loft'}` — CHƯA có UI nhập nhiều tiết diện (N5, xem `Command3DPanel.tsx` — nút
+ * "Loft" giữ mờ), hàm sẵn sàng cho khi UI đó có. `sections.length<2` = tắt (loft cần ≥2 tiết diện). */
+export function setEntityLoft(entity: Entity, sections: LoftSectionInput[] | null): Entity {
+  const rest = clearShapeOps(entity.ops);
+  if (!sections || sections.length < 2) return { ...entity, ops: rest.length ? rest : undefined };
+  return { ...entity, ops: [...rest, { op: 'loft', sections }] };
+}
+
+/* ─────────────────────── MỞ KHO 08/08 — bậc MODIFIER mới (arrayRadial/mirror) ─────────────────────── */
+
+export interface ArrayRadialOpts {
+  n: number;
+  centerXMm: number;
+  centerYMm: number;
+  sweepDeg?: number;
+}
+
+/** Đặt/xoá bậc `{op:'arrayRadial'}` — cùng luật SỬA-tại-chỗ `setEntityArrayLinear`. `n<=1` = tắt. */
+export function setEntityArrayRadial(entity: Entity, opts: ArrayRadialOpts | null): Entity {
+  const rest = (entity.ops ?? []).filter((op) => op.op !== 'arrayRadial');
+  if (!opts || opts.n <= 1) return { ...entity, ops: rest.length ? rest : undefined };
+  return {
+    ...entity,
+    ops: [
+      ...rest,
+      { op: 'arrayRadial', n: Math.round(opts.n), centerXMm: opts.centerXMm, centerYMm: opts.centerYMm, ...(opts.sweepDeg !== undefined ? { sweepDeg: opts.sweepDeg } : {}) },
+    ],
+  };
+}
+
+export interface MirrorOpts {
+  axis: 'x' | 'y' | 'z';
+  atMm: number;
+  withOriginal?: boolean;
+}
+
+/** Đặt/xoá bậc `{op:'mirror'}` — cùng luật SỬA-tại-chỗ. `opts=null` = tắt (không có "atMm<=0" vô
+ * nghĩa ở đây — 0 là một mặt gương hợp lệ, khác `n<=1`/`radiusMm<=0`). */
+export function setEntityMirror(entity: Entity, opts: MirrorOpts | null): Entity {
+  const rest = (entity.ops ?? []).filter((op) => op.op !== 'mirror');
+  if (!opts) return { ...entity, ops: rest.length ? rest : undefined };
+  return { ...entity, ops: [...rest, { op: 'mirror', axis: opts.axis, atMm: opts.atMm, withOriginal: opts.withOriginal }] };
 }

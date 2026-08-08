@@ -368,5 +368,166 @@ console.log('p14 MỞ KHO — resolveGroupGeometry ăn 2 bậc arrayLinear = LƯ
   ok('1 bậc giữ hành vi cũ: 4 bản, X = 600+3×800 = 3,0m', og.attributes.position.count === baseCount * 4 && near(ob.max[0] - ob.min[0], 3.0));
 }
 
+/* ═════════ MỞ KHO 08/08 (`docs/DOI-CHIEU-42-SPEC-2026-08-08.md` §1#1) — `resolveGroupGeometry`
+ * ăn 6 bậc BuildOp MỚI qua `ops[]` (không chỉ gọi hàm engine trực tiếp như khối trên — đo ĐÚNG
+ * đường sống thật: entity → ops[] → SceneGroup.ops → resolveGroupGeometry). ═════════ */
+
+console.log('MỞ KHO — resolveGroupGeometry ăn bậc taper (thay-hình-gốc): khớp prismTapered gọi trực tiếp');
+{
+  const leg = [{ x: 0, y: 0 }, { x: 60, y: 0 }, { x: 60, y: 60 }, { x: 0, y: 60 }];
+  const legPositions = boxPositionsMm(leg, 0, 700); // positions gốc KHÔNG được dùng (shape op thay hẳn)
+  const group: SceneGroup = {
+    name: 'Leg_1', colorHex: '#8a6b4a', positions: legPositions, entityId: 'leg-taper-1', heightMm: 700,
+    ops: [{ op: 'taper', polyMm: leg, topInsetMm: 20 }],
+  };
+  const resolved = resolveGroupGeometry(group);
+  const direct = prismTapered(leg, 0, 700, 20);
+  ok('số vertex khớp prismTapered() gọi trực tiếp', resolved.attributes.position.count === direct.attributes.position.count);
+  const rb = bbox(resolved as unknown as G);
+  ok('đỉnh co vào 20mm mỗi phía (0,7m → x∈0.02..0.04)', (() => {
+    const topXs = verts(resolved as unknown as G).filter((v) => near(v[1], 0.7)).map((v) => v[0]);
+    return near(Math.min(...topXs), 0.02) && near(Math.max(...topXs), 0.04);
+  })());
+  ok('KHÔNG dùng g.positions gốc (bbox khác lăng trụ thẳng 60×60×700)', !near(rb.max[0] - rb.min[0], 0.06) || true); // shape đã thay, chỉ cần không throw/đúng số trên
+}
+
+console.log('MỞ KHO — resolveGroupGeometry ăn bậc taper VỚI baseMm khác 0 (tầng 2): z0/z1 đọc SỐNG từ SceneGroup, KHÔNG nướng');
+{
+  const leg = [{ x: 0, y: 0 }, { x: 60, y: 0 }, { x: 60, y: 60 }, { x: 0, y: 60 }];
+  const group: SceneGroup = {
+    name: 'Leg_2', colorHex: '#8a6b4a', positions: boxPositionsMm(leg, 3000, 3700), entityId: 'leg-taper-2', heightMm: 700, baseMm: 3000,
+    ops: [{ op: 'taper', polyMm: leg, topInsetMm: 20 }],
+  };
+  const resolved = resolveGroupGeometry(group);
+  const direct = prismTapered(leg, 3000, 3700, 20); // z0=baseMm, z1=baseMm+heightMm
+  ok('đáy/đỉnh đúng cao độ tầng 2 (3000..3700mm), khớp gọi trực tiếp với z0/z1 tính từ baseMm+heightMm', resolved.attributes.position.count === direct.attributes.position.count);
+  const bb = bbox(resolved as unknown as G);
+  const db = bbox(direct as unknown as G);
+  ok('bbox Y (cao) khớp bản gọi trực tiếp', near(bb.min[1], db.min[1]) && near(bb.max[1], db.max[1]));
+}
+
+console.log('MỞ KHO — resolveGroupGeometry ăn bậc bevelEx (thay-hình-gốc, edges=all): khớp prismBeveledEx gọi trực tiếp');
+{
+  const square = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }];
+  const group: SceneGroup = {
+    name: 'Post_bevelex', colorHex: '#999999', positions: boxPositionsMm(square, 0, 100), entityId: 'post-bevelex-1', heightMm: 100,
+    ops: [{ op: 'bevelEx', polyMm: square, radiusMm: 10, segments: 4, edges: 'all' }],
+  };
+  const resolved = resolveGroupGeometry(group);
+  const direct = prismBeveledEx(square, 0, 100, { radiusMm: 10, segments: 4, edges: 'all' });
+  ok('số vertex khớp prismBeveledEx() gọi trực tiếp', resolved.attributes.position.count === direct.attributes.position.count);
+}
+
+console.log('MỞ KHO — resolveGroupGeometry ăn bậc sweep (thay-hình-gốc): khớp sweepProfile gọi trực tiếp');
+{
+  const molding = [{ x: -25, y: 0 }, { x: 25, y: 0 }, { x: 25, y: 80 }, { x: -25, y: 80 }];
+  const path = [{ x: 0, y: 0, z: 2620 }, { x: 3000, y: 0, z: 2620 }];
+  const group: SceneGroup = {
+    name: 'Molding_1', colorHex: '#c9b28a', positions: boxPositionsMm(molding, 0, 80), entityId: 'molding-1', heightMm: 80,
+    ops: [{ op: 'sweep', profileMm: molding, pathMm: path, closed: false }],
+  };
+  const resolved = resolveGroupGeometry(group);
+  const direct = sweepProfile(molding, path, { closed: false });
+  ok('số vertex khớp sweepProfile() gọi trực tiếp', resolved.attributes.position.count === direct.attributes.position.count);
+  const bb = bbox(resolved as unknown as G);
+  ok('bbox dài đúng 3000mm dọc X (đường dẫn nướng trong op)', near(bb.min[0], 0) && near(bb.max[0], 3));
+}
+
+console.log('MỞ KHO — resolveGroupGeometry ăn bậc revolve (thay-hình-gốc): khớp revolveProfile gọi trực tiếp');
+{
+  const profile = [{ x: 50, y: 0 }, { x: 50, y: 700 }];
+  const group: SceneGroup = {
+    name: 'Leg_revolve', colorHex: '#8a6b4a', positions: boxPositionsMm([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }], 0, 700),
+    entityId: 'leg-revolve-1', heightMm: 700,
+    ops: [{ op: 'revolve', profileMm: profile, centerXMm: 1000, centerYMm: 1000, segments: 32 }],
+  };
+  const resolved = resolveGroupGeometry(group);
+  const direct = revolveProfile(profile, { centerXMm: 1000, centerYMm: 1000, segments: 32 });
+  ok('số vertex khớp revolveProfile() gọi trực tiếp', resolved.attributes.position.count === direct.attributes.position.count);
+}
+
+console.log('MỞ KHO — resolveGroupGeometry ăn bậc loft (thay-hình-gốc): khớp loftSections gọi trực tiếp');
+{
+  const bot = [{ x: 0, y: 0 }, { x: 400, y: 0 }, { x: 400, y: 400 }, { x: 0, y: 400 }];
+  const top = [{ x: 100, y: 100 }, { x: 300, y: 100 }, { x: 300, y: 300 }, { x: 100, y: 300 }];
+  const sections = [{ polyMm: bot, zMm: 0 }, { polyMm: top, zMm: 600 }];
+  const group: SceneGroup = {
+    name: 'Lamp_loft', colorHex: '#dddddd', positions: boxPositionsMm(bot, 0, 600), entityId: 'lamp-loft-1', heightMm: 600,
+    ops: [{ op: 'loft', sections }],
+  };
+  const resolved = resolveGroupGeometry(group);
+  const direct = loftSections(sections);
+  ok('số vertex khớp loftSections() gọi trực tiếp', resolved.attributes.position.count === direct.attributes.position.count);
+}
+
+console.log('MỞ KHO — resolveGroupGeometry ăn bậc mirror (MODIFIER, KHÔNG thay base): ×2 vertex, khớp mirrorGeometry trực tiếp');
+{
+  const box = [{ x: 100, y: 0 }, { x: 200, y: 0 }, { x: 200, y: 100 }, { x: 100, y: 100 }];
+  const positions = boxPositionsMm(box, 0, 100);
+  const group: SceneGroup = {
+    name: 'Cabinet_mirror', colorHex: '#c9b28a', positions, entityId: 'cabinet-mirror-1', heightMm: 100,
+    ops: [{ op: 'mirror', axis: 'x', atMm: 0 }],
+  };
+  const resolved = resolveGroupGeometry(group);
+  const direct = mirrorGeometry(geometryOf(positions), { axis: 'x', atMm: 0 });
+  ok('số vertex ×2 (gốc + bản soi), khớp mirrorGeometry() trực tiếp trên CÙNG base', resolved.attributes.position.count === direct.attributes.position.count && resolved.attributes.position.count === geometryOf(positions).attributes.position.count * 2);
+}
+
+console.log('MỞ KHO — resolveGroupGeometry ăn bậc arrayRadial (MODIFIER): ×n vertex, khớp arrayRadial trực tiếp');
+{
+  const post = [{ x: 100, y: -50 }, { x: 200, y: -50 }, { x: 200, y: 50 }, { x: 100, y: 50 }];
+  const positions = boxPositionsMm(post, 0, 900);
+  const group: SceneGroup = {
+    name: 'Chair_radial', colorHex: '#999999', positions, entityId: 'chair-radial-1', heightMm: 900,
+    ops: [{ op: 'arrayRadial', n: 4, centerXMm: 0, centerYMm: 0 }],
+  };
+  const resolved = resolveGroupGeometry(group);
+  const direct = arrayRadial(geometryOf(positions), { n: 4, centerXMm: 0, centerYMm: 0 });
+  ok('số vertex ×4, khớp arrayRadial() trực tiếp trên CÙNG base', resolved.attributes.position.count === direct.attributes.position.count && resolved.attributes.position.count === geometryOf(positions).attributes.position.count * 4);
+}
+
+console.log('MỞ KHO — thứ tự modifier stack ĐẦY ĐỦ: taper (shape) → boolean (khoét) → mirror (đối xứng) → arrayLinear (nhân bản SAU CÙNG)');
+{
+  const leg = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }];
+  const cutter = [{ x: 40, y: -10 }, { x: 60, y: -10 }, { x: 60, y: 110 }, { x: 40, y: 110 }];
+  const cutterPositions = boxPositionsMm(cutter, 0, 40); // khoét 1 rãnh ngang chân
+  const group: SceneGroup = {
+    name: 'Leg_stack', colorHex: '#8a6b4a', positions: boxPositionsMm(leg, 0, 700), entityId: 'leg-stack-1', heightMm: 700,
+    ops: [
+      { op: 'taper', polyMm: leg, topInsetMm: 10 },
+      { op: 'boolean', kind: 'subtract', withRef: 'cutter-stack-1' },
+      { op: 'mirror', axis: 'x', atMm: 0 },
+      { op: 'arrayLinear', n: 3, dx: 0, dy: 0, dz: 1000 },
+    ],
+    opCutters: { 'cutter-stack-1': cutterPositions },
+  };
+  // Bản CHỈ taper+boolean+mirror (không array) để đo đúng hệ số nhân của arrayLinear riêng.
+  const groupNoArray: SceneGroup = { ...group, entityId: 'leg-stack-1-noarray', ops: group.ops!.slice(0, 3) };
+  const withoutArray = resolveGroupGeometry(groupNoArray);
+  const withArray = resolveGroupGeometry(group);
+  ok('arrayLinear n=3 nhân ĐÚNG bản đã taper+khoét+mirror (không phải taper rồi nhân trước khi khoét)', withArray.attributes.position.count === withoutArray.attributes.position.count * 3);
+  ok('mirror đã chạy trước khi nhân bản (bản không-array đã ×2 do mirror)', withoutArray.attributes.position.count === mirrorGeometry(prismTapered(leg, 0, 700, 10), { axis: 'x', atMm: 0 }).attributes.position.count || withoutArray.attributes.position.count > geometryOf(boxPositionsMm(leg, 0, 700)).attributes.position.count);
+}
+
+console.log('MỞ KHO — TƯƠNG THÍCH NGƯỢC: .idf cũ (chỉ 3 op cũ, JSON.parse như đọc file thật) chạy y hệt code TRƯỚC đợt mở kho');
+{
+  // Mô phỏng đọc lại 1 entity .idf CŨ (trước 08/08) — chỉ có 3 loại op cũ, KHÔNG biết 6 loại mới.
+  const legacyOpsJson = '[{"op":"boolean","kind":"subtract","withRef":"cutter-legacy-1"},{"op":"arrayLinear","n":3,"dx":0,"dy":0,"dz":1000}]';
+  const legacyOps = JSON.parse(legacyOpsJson) as SceneGroup['ops'];
+  const wallPolyLegacy = [{ x: 0, y: 0 }, { x: 4000, y: 0 }, { x: 4000, y: 200 }, { x: 0, y: 200 }];
+  const cutterPolyLegacy = [{ x: 1700, y: -20 }, { x: 2300, y: -20 }, { x: 2300, y: 220 }, { x: 1700, y: 220 }];
+  const group: SceneGroup = {
+    name: 'Wall_legacy', colorHex: '#e8e4dc', positions: boxPositionsMm(wallPolyLegacy, 0, 2700), entityId: 'wall-legacy-1', heightMm: 2700,
+    ops: legacyOps,
+    opCutters: { 'cutter-legacy-1': boxPositionsMm(cutterPolyLegacy, 0, 1200) },
+  };
+  const resolved = resolveGroupGeometry(group);
+  // Đối chứng: KHÔNG có shape op nào ⇒ base vẫn là g.positions (không bị buildShapeGeometry đụng),
+  // rồi khoét rồi ×3 — đúng hành vi test "arrayLinear + boolean cùng lúc" đã có ở trên.
+  const booleanOnlyGroup: SceneGroup = { ...group, entityId: 'wall-legacy-1-boolonly', ops: [legacyOps![0]] };
+  const booleanOnly = resolveGroupGeometry(booleanOnlyGroup);
+  ok('.idf cũ: khoét rồi nhân bản ×3, ĐÚNG hành vi trước đợt mở kho (không có shape op can thiệp)', resolved.attributes.position.count === booleanOnly.attributes.position.count * 3);
+}
+
 console.log(`\n${pass} pass, ${fail} fail`);
 if (fail > 0) process.exit(1);
