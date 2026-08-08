@@ -233,6 +233,79 @@ Phần gán mã tay (VIỆC 4) verify được bằng mắt khi server ổn đ�
 dropdown "Chọn trong kho vật liệu…" dưới dòng lý do "—" → chọn xong cột thông số cập nhật ngay +
 nút "Bỏ gán" trả về đúng trạng thái tự khớp theo mã như trước.
 
+## VÒNG 3 (cùng ngày, Hoà giao "VIỆC TIẾP") — `.idfc` v3 + VIỆC 5 lỗi thẻ a-e
+
+Bối cảnh: vòng 2 **đã được phiên điều phối kiểm độc lập và commit** (`b6da511`) — 4 file cũ
+(`LibrarySheet.tsx`/`library-sheet-css.ts`/`local-state.ts`/`M-THU-VIEN-OUT.md`) **KHÔNG ghi lại**,
+chỉ append tiếp. Phát hiện: một phiên khác (song song, ngoài kiểm soát) đã tiếp tục nâng
+`lib/cad/idfc.ts` lên **v2 thật sự** (vỏ chung/ruột theo loại discriminated union, khác bản v1 tôi
+viết ở vòng 1) và nối nút "Xuất .idfc" — **giữ nguyên, không revert** (§0d giữ-cái-đang-tốt).
+
+### VIỆC A — `.idfc` v3: thêm kind `preset`
+
+`IDFC_VERSION` 2→3. `IdfcKind` +`'preset'` (12 loại). `BODY_TYPE_OF_KIND.preset='preset'`.
+`IdfcBody` +`{type:'preset', params:Record<string,unknown>}` — khởi điểm tối thiểu đúng kỷ luật
+K4 (kệ "Preset dựng ảnh" hôm nay chỉ có tên/mã, chưa có bộ tham số ánh sáng/camera thật để đóng
+gói — `lib/lighting/` đang code bởi phiên khác, ngoài vùng sở hữu). Migration `migrateV2ToV3`
+thuần bump version (additive, không đổi hình dạng 11 kind cũ). `thumb-kinds.ts`:
+`idfcKindOfThumb()` 5 thumb `light-*` đổi từ mượn tạm `'asset'` sang đúng `'preset'`;
+`THUMB_OF_IDFC_KIND.preset='light-studio'`; thêm `IDFC_KIND_LABEL` (12 nhãn VI/EN). Sidebar
+`LibrarySheet.tsx`: thêm "ngăn theo loại" (`idfcKindFilter`, cùng cơ chế `matGroup` đã có cho kệ
+vật liệu) trong kệ "Cấu kiện (.idfc)" — lọc `idfcItems` theo `IdfcKind` thật, 12 chip nhãn từ
+`IDFC_KIND_LABEL`.
+
+Test `idfc.test.ts`: 44/44 (thêm round-trip `preset` + `bodyError` thiếu params + ruột sai loại +
+`migrateIdfc` trực tiếp v2→v3 + v1→v3 xuyên 2 bậc + bảng loại 12 kind). `tsc` sạch.
+
+### VIỆC B — VIỆC 5 (p13): lỗi thẻ a-e — TÌM RA GỐC "5a", ĐO TRƯỚC KHI SỬA
+
+Nguồn: `docs/M-IDFC-2-OUT.md:16` ("5a chữ cắt cụt chưa tìm được gốc") + `docs/GAP-IF.md`
+`G-THUMB-01` (mô tả chi tiết nhất, 07/08, TRƯỚC khi có 3 nấc cỡ thẻ).
+
+**Đo lại bằng browser thật** (127.0.0.1:3000, phím ⇧L mở Thư viện, kệ "Ký hiệu · khối") — tái hiện
+được: nấc **Vừa** không hiện MỘT chữ tên/mã nào trên cả 12 thẻ. Đào gốc bằng `getBoundingClientRect()`
++ `getComputedStyle()` trực tiếp trên DOM thật (không đoán):
+
+1. **Lớp lỗi ①** — `.if-lib-root .it .mt` (khối bọc tên+mã) là `<span>`, **chưa từng có
+   `display:block`** trong CSS ⇒ mặc định `inline`, không đẩy chiều cao card cha (`.it`,
+   `overflow:hidden`) theo nội dung thật. Vá: `display:block`.
+2. **Lớp lỗi ②** (chỉ lộ ra SAU khi vá ①, đo tiếp) — `.it` là grid item, mặc định
+   `align-items:stretch`. Track `auto` của CSS Grid tính theo "automatic minimum size" — với item
+   `overflow:hidden`, đặc tả Grid quy định giá trị này là **0**, khiến track tự co về ~72px thay
+   vì 148px thật cần; item bị stretch ép NGƯỢC về đúng 72px, phần dư (`.mt`) bị cắt. Vá bước 1:
+   `align-items:start` (chống stretch) — nhưng ĐO LẠI vẫn sai: track vẫn chỉ 72px, item 148px giờ
+   TRÀN xuống, bị **hàng sau đè lên** (đo `card0.bottom=499` > `card3.top=423.75` — chồng lấn thật,
+   không phải suy đoán). Vá dứt điểm: `grid-auto-rows:max-content` — đo lại `card0.bottom=499`,
+   `card3.top=510`, đúng khoảng cách gap 11px, hết chồng.
+
+3 chỗ sửa, cả 3 đều `components/library/library-sheet-css.ts`:
+- `.if-lib-root .grid` — thêm `grid-auto-rows:max-content;align-items:start`.
+- `.if-lib-root .it .mt` — thêm `display:block`.
+
+**⚠️ Sự cố tự gây trong lúc sửa (ghi thật, không giấu)**: viết comment giải thích có dùng dấu
+backtick (`` ` ``) — đúng lỗi CẤM đã ghi trong STATUS.md cho file `*-css.ts` (nội dung CSS nằm
+trong template literal, backtick giữa comment đóng chuỗi sớm ⇒ vỡ build "Expected a semicolon").
+Phạm **2 lần liên tiếp** (mỗi lần tự phát hiện qua "Build Error" hiện ngay khi reload, tự sửa
+trong vòng 1 phút). Đã thêm dòng cấm ngay trong comment tại chỗ để không quên lần 3.
+
+**Verify N6 — browser thật, cả 3 nấc, sau khi sạch lỗi**: Nhỏ/Vừa/Lớn đều hiện đúng tên+mã, không
+cắt, không chồng hàng (vd "Cửa 1 cánh 800 · DOOR-S-800", "Sofa 3 chỗ · SOFA-3S"…). `get_page_text`
+xác nhận đủ 12/12 món có text. `tsc` sạch, 3 file test không hồi quy (32+33+44 pass).
+
+⚠️ **Console log của tab trình duyệt vẫn trả về lỗi backtick CŨ** (buffer tích luỹ, không tự xoá
+giữa các lần reload) dù file trên đĩa đã sạch (`grep -c '` (10, chẵn, đúng cặp mở/đóng template
+literal) và ảnh chụp/`get_page_text` xác nhận trang chạy đúng — không tô hồng, ghi rõ để phiên sau
+đừng hoảng khi thấy log cũ.
+
+### File đụng vòng 3
+| File | Việc |
+|---|---|
+| `lib/cad/idfc.ts` | VIỆC A — v3, kind preset |
+| `lib/cad/idfc.test.ts` | VIỆC A — 44 test (+8 mới) |
+| `lib/library/thumb-kinds.ts` | VIỆC A — idfcKindOfThumb→preset, IDFC_KIND_LABEL mới |
+| `components/library/LibrarySheet.tsx` | VIỆC A — ngăn lọc theo IdfcKind trong kệ .idfc |
+| `components/library/library-sheet-css.ts` | VIỆC B — 3 rule sửa gốc G-THUMB-01/5a |
+
 ## Hàng đợi cho phiên sau (V7)
 
 1. Nối `.idfc` (VIỆC 2) vào luồng THẬT — export ở `PublishModal.tsx` (đã có cửa "publish"), import

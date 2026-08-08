@@ -1,7 +1,7 @@
 /**
- * lib/cad/idfc.test.ts — V2 (vỏ chung + ruột union): round-trip v2 · NÂNG CẤP v1→v2 (lần đầu
- * IDFC_MIGRATIONS có entry thật — phần rủi ro nhất của phiếu M-IDFC-2) · union chặn ruột sai loại
- * · 3 ràng buộc. Chạy: node_modules/.bin/sucrase-node lib/cad/idfc.test.ts
+ * lib/cad/idfc.test.ts — V3 (vỏ chung + ruột union + kind `preset`): round-trip v3 · NÂNG CẤP
+ * v1→v2→v3 (2 bậc nối tiếp, file v1 cũ phải xuyên được cả hai) · union chặn ruột sai loại · 3
+ * ràng buộc. Chạy: node_modules/.bin/sucrase-node lib/cad/idfc.test.ts
  */
 import {
   exportIdfc,
@@ -30,14 +30,14 @@ const geom2d: IdfcGeom2d = {
   prims: [{ k: 'poly', pts: [{ x: 0, y: 0 }, { x: 800, y: 0 }, { x: 800, y: 450 }, { x: 0, y: 450 }], closed: true }],
 };
 
-console.log('V2 round-trip — component (furniture) đủ 3 mặt + vỏ chung mới');
+console.log('V3 round-trip — component (furniture) đủ 3 mặt + vỏ chung mới');
 {
   const json = exportIdfc({
     meta: { name: 'Ghế thử', code: 'CHAIR-T1', kind: 'furniture', scope: 'studio', tags: ['ghế'], room: 'Phòng khách' },
     body: { type: 'component', geom2d, geom3d: { heightMm: 720, matId: 'W-102' } },
     commerce: { brand: 'Thử', sku: 'CHAIR-T1', unit: 'cái', priceVnd: 1500000 },
   });
-  ok('idfcVersion xuất = 2', JSON.parse(json).idfcVersion === IDFC_VERSION && IDFC_VERSION === 2);
+  ok('idfcVersion xuất = 3', JSON.parse(json).idfcVersion === IDFC_VERSION && IDFC_VERSION === 3);
   const back = importIdfc(json);
   ok('đọc lại được', back !== null);
   ok('kind ở META (trục ①)', back?.meta.kind === 'furniture');
@@ -47,7 +47,7 @@ console.log('V2 round-trip — component (furniture) đủ 3 mặt + vỏ chung 
   ok('giá sống sót', back?.commerce?.priceVnd === 1500000);
 }
 
-console.log('V2 round-trip — material (pbr là ruột chính)');
+console.log('V3 round-trip — material (pbr là ruột chính)');
 {
   const json = exportIdfc({
     meta: { name: 'Đá thử', code: 'STN-T1', kind: 'material' },
@@ -58,7 +58,7 @@ console.log('V2 round-trip — material (pbr là ruột chính)');
   ok('pbr + hatch2d sống sót', back?.body.type === 'material' && back.body.pbr.roughness === 0.5 && back.body.hatch2d?.hatchPattern === 'ANSI32');
 }
 
-console.log('V2 round-trip — asset (KHÔNG có geom2d, đúng nghĩa union)');
+console.log('V3 round-trip — asset (KHÔNG có geom2d, đúng nghĩa union)');
 {
   const json = exportIdfc({
     meta: { name: 'Ảnh mẫu', code: 'REF-001', kind: 'asset' },
@@ -68,30 +68,55 @@ console.log('V2 round-trip — asset (KHÔNG có geom2d, đúng nghĩa union)');
   ok('đọc lại được, ruột asset', back?.body.type === 'asset' && back.body.imageUrl.startsWith('data:'));
 }
 
-console.log('UNION CHẶN RUỘT SAI LOẠI — điểm ăn tiền của v2 (interface phẳng không làm được)');
+console.log('UNION CHẶN RUỘT SAI LOẠI — điểm ăn tiền của thiết kế v2/v3 (interface phẳng không làm được)');
 {
   const wrong = JSON.stringify({
-    idfcVersion: 2,
+    idfcVersion: 3,
     meta: { name: 'Video thử', code: 'VID-01', kind: 'video', createdAt: 'x', modifiedAt: 'x', appVersion: 'x' },
     body: { type: 'component', geom2d },
   });
   ok('video + ruột component ⇒ null', importIdfc(wrong) === null);
   ok('lý do nêu đúng loại và ruột', /video/.test(lastImportIdfcError() ?? '') && /component/.test(lastImportIdfcError() ?? ''));
   const noShots = JSON.stringify({
-    idfcVersion: 2,
+    idfcVersion: 3,
     meta: { name: 'V', code: 'VID-02', kind: 'video', createdAt: 'x', modifiedAt: 'x', appVersion: 'x' },
     body: { type: 'video' },
   });
   ok('video thiếu shots ⇒ null + lý do', importIdfc(noShots) === null && /shots|cảnh/.test(lastImportIdfcError() ?? ''));
   const badKind = JSON.stringify({
-    idfcVersion: 2,
+    idfcVersion: 3,
     meta: { name: 'X', code: 'X-01', kind: 'khong-co', createdAt: 'x', modifiedAt: 'x', appVersion: 'x' },
     body: { type: 'asset', imageUrl: 'a' },
   });
   ok('kind lạ ⇒ null + lý do', importIdfc(badKind) === null && /không hợp lệ/.test(lastImportIdfcError() ?? ''));
 }
 
-console.log('MIGRATION v1→v2 — file v1 CŨ (geom2d ở GỐC, kind trong commerce) đọc được nguyên vẹn');
+console.log('V3 round-trip — preset dựng ảnh (kind mới, ruột "preset")');
+{
+  const json = exportIdfc({
+    meta: { name: 'Nắng chiều', code: 'PRE-GOLD', kind: 'preset' },
+    body: { type: 'preset', params: { azimuthDeg: 210, altitudeDeg: 12, kelvin: 2800 } },
+  });
+  const back = importIdfc(json);
+  ok('đọc lại được, ruột preset', back?.body.type === 'preset');
+  ok('params sống sót (khởi điểm tối thiểu, K4)', back?.body.type === 'preset' && back.body.params.kelvin === 2800);
+
+  const noParams = JSON.stringify({
+    idfcVersion: IDFC_VERSION,
+    meta: { name: 'X', code: 'PRE-X', kind: 'preset', createdAt: 'x', modifiedAt: 'x', appVersion: 'x' },
+    body: { type: 'preset' },
+  });
+  ok('preset thiếu params ⇒ null + lý do', importIdfc(noParams) === null && /params|tham số/.test(lastImportIdfcError() ?? ''));
+
+  const wrongBody = JSON.stringify({
+    idfcVersion: IDFC_VERSION,
+    meta: { name: 'X', code: 'PRE-Y', kind: 'preset', createdAt: 'x', modifiedAt: 'x', appVersion: 'x' },
+    body: { type: 'asset', imageUrl: 'a' },
+  });
+  ok('preset + ruột asset (sai loại) ⇒ null', importIdfc(wrongBody) === null);
+}
+
+console.log('MIGRATION v1→v2→v3 — file v1 CŨ (geom2d ở GỐC, kind trong commerce) đọc được nguyên vẹn xuyên 2 bậc nâng');
 {
   // fixture chép ĐÚNG cấu trúc exportIdfc v1 sinh ra (git history idfc.ts trước phiếu này)
   const v1Furniture = JSON.stringify({
@@ -145,8 +170,19 @@ console.log('migrateIdfc trực tiếp — cùng khuôn idf.ts');
   const v1 = { idfcVersion: 1, meta: { name: 'A', code: 'A-1' }, geom2d, commerce: { kind: 'millwork' } };
   const m = migrateIdfc(v1, 1, 2);
   ok('nâng 1→2: idfcVersion 2 + kind millwork', (m as unknown as { idfcVersion: number })?.idfcVersion === 2 && m?.meta.kind === 'millwork');
-  ok('đứt gãy (nâng tới version chưa có hàm) ⇒ null', migrateIdfc(v1, 1, 99) === null);
+  ok('đứt gãy (nâng tới version chưa có hàm) ⇒ null', migrateIdfc(v1, 1, 999) === null);
   ok('fromVersion > toVersion ⇒ null', migrateIdfc(v1, 3, 2) === null);
+
+  // v2→v3 (VIỆC .idfc v3, 08/08): thuần bump — kiểm ĐÚNG cả file KHÔNG bị biến dạng, không chỉ
+  // "chạy không lỗi" (mutation test tinh thần: nếu ai lỡ tay đổi meta/body trong hàm bump, ca này bắt được).
+  const v2 = { idfcVersion: 2, meta: { name: 'B', code: 'B-1', kind: 'furniture' }, body: { type: 'component', geom2d } };
+  const m2 = migrateIdfc(v2, 2, 3);
+  ok('nâng 2→3: idfcVersion 3', (m2 as unknown as { idfcVersion: number })?.idfcVersion === 3);
+  ok('nâng 2→3: meta/body KHÔNG đổi hình dạng (thuần bump, additive)', m2?.meta.kind === 'furniture' && m2?.body.type === 'component');
+
+  // v1→v3 trực tiếp qua migrateIdfc (không qua importIdfc) — xuyên đúng 2 bậc liên tiếp.
+  const m13 = migrateIdfc(v1, 1, 3);
+  ok('nâng 1→3 (2 bậc nối tiếp): idfcVersion 3 + kind millwork còn nguyên', (m13 as unknown as { idfcVersion: number })?.idfcVersion === 3 && m13?.meta.kind === 'millwork');
 }
 
 console.log('version tương lai — từ chối có lý do');
@@ -158,24 +194,25 @@ console.log('version tương lai — từ chối có lý do');
 console.log('__setCurrentIdfcVersionForTest — cô lập, không rò giữa test');
 {
   __setCurrentIdfcVersionForTest(1);
-  const v2File = JSON.stringify({ idfcVersion: 2, meta: { name: 'X', code: 'X', kind: 'asset', createdAt: 'x', modifiedAt: 'x', appVersion: 'x' }, body: { type: 'asset', imageUrl: 'a' } });
-  ok('app giả lập v1 gặp file v2 ⇒ từ chối (mới hơn)', importIdfc(v2File) === null);
+  const v3File = JSON.stringify({ idfcVersion: 3, meta: { name: 'X', code: 'X', kind: 'asset', createdAt: 'x', modifiedAt: 'x', appVersion: 'x' }, body: { type: 'asset', imageUrl: 'a' } });
+  ok('app giả lập v1 gặp file v3 ⇒ từ chối (mới hơn)', importIdfc(v3File) === null);
   __setCurrentIdfcVersionForTest(IDFC_VERSION);
-  ok('trả lại version thật thì đọc lại được', importIdfc(v2File) !== null);
+  ok('trả lại version thật thì đọc lại được', importIdfc(v3File) !== null);
 }
 
-console.log('bảng loại — bất biến khai báo (chốt 11.4)');
+console.log('bảng loại — bất biến khai báo (chốt 11.4 + preset v3 08/08)');
 {
-  ok('đủ 11 kind', IDFC_KINDS.length === 11);
+  ok('đủ 12 kind (11 chốt 11.4 + preset)', IDFC_KINDS.length === 12);
   ok('mọi kind có ruột trong BODY_TYPE_OF_KIND', IDFC_KINDS.every((k) => typeof BODY_TYPE_OF_KIND[k] === 'string'));
   ok('lighting KHÔNG còn là kind', !(IDFC_KINDS as readonly string[]).includes('lighting'));
-  ok('6 loại bán được đúng chốt', SELLABLE_KINDS.length === 6 && SELLABLE_KINDS.includes('soft') && !SELLABLE_KINDS.includes('page'));
+  ok('preset CÓ mặt và mang ruột "preset"', (IDFC_KINDS as readonly string[]).includes('preset') && BODY_TYPE_OF_KIND.preset === 'preset');
+  ok('6 loại bán được đúng chốt — preset KHÔNG bán được', SELLABLE_KINDS.length === 6 && SELLABLE_KINDS.includes('soft') && !SELLABLE_KINDS.includes('page') && !(SELLABLE_KINDS as readonly string[]).includes('preset'));
 }
 
 console.log('JSON hỏng/thiếu — không throw');
 {
   ok('chuỗi rác ⇒ null', importIdfc('{{{') === null);
-  ok('thiếu meta.name ⇒ null + lý do', importIdfc(JSON.stringify({ idfcVersion: 2, meta: { code: 'X' }, body: { type: 'asset', imageUrl: 'a' } })) === null && /tên hoặc mã/.test(lastImportIdfcError() ?? ''));
+  ok('thiếu meta.name ⇒ null + lý do', importIdfc(JSON.stringify({ idfcVersion: 3, meta: { code: 'X' }, body: { type: 'asset', imageUrl: 'a' } })) === null && /tên hoặc mã/.test(lastImportIdfcError() ?? ''));
 }
 
 console.log(`\n${pass} pass, ${fail} fail`);

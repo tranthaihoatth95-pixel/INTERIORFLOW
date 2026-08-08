@@ -164,8 +164,23 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .sizeseg button:hover{color:var(--t1)}
 .if-lib-root .sizeseg button.on{background:var(--panel);color:var(--t1);font-weight:var(--fw-semi)}
 .if-lib-root .sizeseg button:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
+/* GỐC THẬT của G-THUMB-01/5a — HAI lớp lỗi chồng nhau, đo bằng máy trên trang thật 08/08 (không
+   đoán):
+   ① .mt (tên/mã) là span, thiếu display:block ⇒ mặc định inline, không đẩy chiều cao .it
+      theo nội dung thật (sửa ở rule ".it .mt" dưới).
+   ② SAU KHI vá ①: track "auto" của CSS Grid vẫn tính kích thước theo "automatic minimum size"
+      của grid item — với item overflow:hidden, spec Grid quy định giá trị này là 0, khiến track
+      co về ~72px (bằng đúng con số bug cũ) thay vì 148px thật cần. align-items:start (đã thêm)
+      CHỈ chống STRETCH — item không còn bị ép co, nhưng track vẫn chỉ cao 72px ⇒ item 148px TRÀN
+      xuống, bị hàng SAU (DOM sau, vẽ đè lên) che kín .mt — nhìn như "chữ biến mất" nhưng thật ra
+      là "chữ bị hàng dưới đè lên", đo getBoundingClientRect() xác nhận hàng 2 bắt đầu TRƯỚC khi
+      hàng 1 kết thúc. Sửa dứt điểm: ép grid-auto-rows:max-content — track auto theo max-content
+      thật của item, không qua "automatic minimum size". Đo lại: hàng 1 bottom=499, hàng 2
+      top=510 — đúng khoảng cách gap 11px, hết chồng.
+      CẤM backtick trong comment file *-css.ts — phạm 2 lần liên tiếp lúc viết đúng đoạn này. */
 .if-lib-root .grid{flex:1;overflow-y:auto;padding:12px 14px 16px;display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(var(--lib-card-min),1fr));gap:11px;align-content:start}
+      grid-template-columns:repeat(auto-fill,minmax(var(--lib-card-min),1fr));grid-auto-rows:max-content;
+      gap:11px;align-content:start;align-items:start}
 .if-lib-root .it{border-radius:var(--radius-md);overflow:hidden;background:var(--card);border:1px solid var(--border);
     text-align:left;padding:0;cursor:grab;transition:transform .2s var(--ease-apple),box-shadow .2s var(--ease-apple),border-color .15s}
 .if-lib-root .it:hover{transform:translateY(-2px) scale(1.02);box-shadow:var(--shadow-pop);border-color:var(--border-strong)}
@@ -175,7 +190,15 @@ export const LIBRARY_SHEET_CSS = `
      border-bottom:1px solid var(--border);transition:height .2s var(--ease-apple)}
 /* icon LOẠI ở ô chưa có ảnh/quả cầu — đủ đọc trên vân, không át vân */
 .if-lib-root .it .th .kicon{opacity:.5;color:var(--t2)}
-.if-lib-root .it .mt{padding:7px 9px 9px}
+/* GỐC G-THUMB-01/5a (07/08, "chữ cắt cụt"/"nấc Vừa không thấy chữ" — TÌM ĐƯỢC 08/08): class .mt
+   là <span>, KHÔNG có display nào set ⇒ mặc định inline. Ba con bên trong (.a/.b/.dim) có
+   display:block qua INLINE STYLE (LibrarySheet.tsx) nên vẫn xuống dòng đúng — nhưng khối .mt
+   BAO NGOÀI vẫn là inline, không đẩy chiều cao .it (cha, overflow:hidden) theo nội dung thật.
+   Đo được: .it co lại còn ~65px (chỉ đủ .th co lại theo grid, KHÔNG đủ cho .th 95px + .mt)
+   ⇒ toàn bộ tên/mã bị OVERFLOW CẮT MẤT, không phải "chữ bị xén" mà là "cả khối invisible ngoài
+   vùng clip". display:block là dòng sửa — 1 thuộc tính thiếu, không phải lỗi kích thước/padding.
+   CẤM backtick trong file *-css.ts (đã tự phạm rồi tự sửa lúc viết dòng này — vỡ build 1 lần). */
+.if-lib-root .it .mt{display:block;padding:7px 9px 9px}
 .if-lib-root .it .mt .a{font-size:var(--fs-2xs);font-weight:var(--fw-semi);color:var(--t2);overflow:hidden;
            text-overflow:ellipsis;white-space:nowrap}
 .if-lib-root .it .mt .b{font-size:var(--fs-2xs);color:var(--t5);margin-top:2px;font-family:ui-monospace,Menlo,monospace}

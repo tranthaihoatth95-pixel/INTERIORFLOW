@@ -14,7 +14,13 @@
  *               "video KHÔNG được có geom2d" thay vì 40 trường optional mỗi loại dùng 5.
  *   commerce? ← giá — CHỈ loại bán được (`SELLABLE_KINDS`).
  *   progress? ← tiến độ — CHƯA KHAI (luật K4: `model Task` chưa có, phiếu P1; thêm bằng migration
- *               v3 khi có nơi tiêu thụ — ràng buộc 3 bên dưới).
+ *               sau khi có nơi tiêu thụ — ràng buộc 3 bên dưới).
+ *
+ * V3 (08/08, `00-CHOT.md` mục 08/08 — ĐÃ DUYỆT) — thêm `IdfcKind` thứ 12: **`preset`**. Kệ
+ * "Preset dựng ảnh" (`shelves.ts` `render-preset`, 5 mục thật: Nắng chiều/Trời phủ mây/Đèn đêm/
+ * Nắng sớm/Studio trắng — VIỆC 7b) là NƠI TIÊU THỤ thật (K4) — trước v3, 5 thumb `light-*` phải
+ * tạm mượn kind `asset` (xem `thumb-kinds.ts` — không đúng bản chất, chỉ là chỗ đỗ tạm). V3 gỡ
+ * chỗ mượn đó, `light-*` nay map đúng `preset`.
  *
  * HAI TRỤC PHÂN LOẠI (chốt 11.4, ĐỘC LẬP không trộn):
  *   ① `meta.kind` — *nó là cái gì* (11 loại, 6 loại đầu đúng cách hồ sơ nội thất CHIA THẦU).
@@ -39,7 +45,7 @@ import type { Prim } from './furniture';
 import type { BlockGroup, ShapeVariant, SnapAnchor, ClearanceZone } from './shared-types';
 import type { MaterialPbr } from '../materials/schema';
 
-export const IDFC_VERSION = 2 as const;
+export const IDFC_VERSION = 3 as const;
 export const IDFC_APP_VERSION = 'interiorflow-1.0.0';
 
 // Giống hệt cơ chế `currentIdfVersion` của idf.ts — tách hằng số THẬT (IDFC_VERSION, quyết định
@@ -54,16 +60,19 @@ export function __setCurrentIdfcVersionForTest(v: number) {
 
 /* ═══════════════ TRỤC ① — LOẠI (kind): "nó là cái gì" ═══════════════ */
 
-/** 11 loại chốt 11.4 — 6 loại đầu là cách hồ sơ nội thất CHIA THẦU (mỗi loại một nhà thầu, một
- * dòng hợp đồng); 5 loại sau là mẫu & hồ sơ. `lighting` cũ (v1) GỘP vào `fixture` (đèn = thiết bị
- * cố định, thầu M&E) — migration v1→v2 tự đổi. */
+/** 12 loại (11 chốt 11.4 + `preset` v3) — 6 loại đầu là cách hồ sơ nội thất CHIA THẦU (mỗi loại
+ * một nhà thầu, một dòng hợp đồng); 6 loại sau là mẫu & hồ sơ (KHÔNG bán được, xem
+ * `SELLABLE_KINDS`). `lighting` cũ (v1) GỘP vào `fixture` (đèn = thiết bị cố định, thầu M&E) —
+ * migration v1→v2 tự đổi. `preset` (v3) — cấu hình dựng ảnh (ánh sáng/khí quyển/máy quay), KHÔNG
+ * phải cấu kiện vật lý nên không chia thầu, cũng không phải "mẫu trang/hồ sơ" (page/doc) — tự nó
+ * là một trục riêng, xem `IdfcBody` case `'preset'`. */
 export type IdfcKind =
   | 'material' | 'furniture' | 'millwork' | 'fitout' | 'fixture' | 'soft'
-  | 'page' | 'video' | 'doc' | 'asset' | 'brandkit';
+  | 'page' | 'video' | 'doc' | 'asset' | 'brandkit' | 'preset';
 
 export const IDFC_KINDS: readonly IdfcKind[] = [
   'material', 'furniture', 'millwork', 'fitout', 'fixture', 'soft',
-  'page', 'video', 'doc', 'asset', 'brandkit',
+  'page', 'video', 'doc', 'asset', 'brandkit', 'preset',
 ];
 
 /** Loại BÁN ĐƯỢC — chỉ những loại này được mang `commerce` (chốt 11.2 "giá, chỉ loại nào bán
@@ -75,7 +84,7 @@ export const SELLABLE_KINDS: readonly IdfcKind[] = ['material', 'furniture', 'mi
 export const BODY_TYPE_OF_KIND: Record<IdfcKind, IdfcBody['type']> = {
   material: 'material',
   furniture: 'component', millwork: 'component', fitout: 'component', fixture: 'component', soft: 'component',
-  page: 'page', video: 'video', doc: 'doc', asset: 'asset', brandkit: 'brandkit',
+  page: 'page', video: 'video', doc: 'doc', asset: 'asset', brandkit: 'brandkit', preset: 'preset',
 };
 
 /* ═══════════════ VỎ CHUNG ═══════════════ */
@@ -146,7 +155,12 @@ export interface IdfcHatch2d {
  * chi tiết (mẫu trang sống trong deck editor p12 · video trong SPEC-VIDEO · brandkit trong
  * brand-kit.json). Khai KHỞI ĐIỂM TỐI THIỂU đủ để (a) nhánh union TỒN TẠI — máy chặn được "video
  * không được có geom2d" ngay từ v2, (b) file không mất dữ liệu (`payload` giữ nguyên JSON gốc).
- * Mở rộng shape chi tiết = migration v3 khi nối nơi tiêu thụ thật — KHÔNG đoán trước schema.
+ * Mở rộng shape chi tiết = migration khi nối nơi tiêu thụ thật — KHÔNG đoán trước schema.
+ *
+ * `preset` (v3) CÙNG kỷ luật K4: kệ "Preset dựng ảnh" hôm nay chỉ có tên/mã (`shelves.ts`), CHƯA
+ * có bộ tham số ánh sáng/camera thật nào để đóng gói (`lib/lighting/`/`lib/three/lighting.ts`
+ * đang code — NGOÀI vùng sở hữu phiên này). `params: Record<string,unknown>` là khởi điểm tối
+ * thiểu giữ chỗ, KHÔNG bịa trước shape `{sun, kelvin, …}` — khi tầng lighting xong sẽ đặc tả lại.
  */
 export type IdfcBody =
   | { type: 'component'; geom2d: IdfcGeom2d; geom3d?: IdfcGeom3d; params?: ShapeVariant[] }
@@ -162,7 +176,8 @@ export type IdfcBody =
   | { type: 'video'; shots: unknown[]; music?: string }
   | { type: 'doc'; template: Record<string, unknown> }
   | { type: 'asset'; imageUrl: string; wPx?: number; hPx?: number; caption?: string }
-  | { type: 'brandkit'; logoUrl?: string; colors: string[]; fonts?: string[] };
+  | { type: 'brandkit'; logoUrl?: string; colors: string[]; fonts?: string[] }
+  | { type: 'preset'; params: Record<string, unknown> };
 
 /** ③ mặt Trình chiếu/thương mại — khuôn con `ProductSpec`. V2 BỎ `kind` (đã lên `meta.kind` —
  * một sự thật một chỗ); `priceVnd` để `number` (JSON không có Decimal — tầng ghi DB tự đổi). */
@@ -233,10 +248,21 @@ function migrateV1ToV2(f: Record<string, unknown>): Record<string, unknown> {
 }
 
 /**
+ * v2 → v3 — THUẦN BUMP VERSION. `preset` là kind MỚI THÊM (additive), không đổi ý nghĩa/hình dạng
+ * bất kỳ trường nào của 11 kind cũ ⇒ không có dữ liệu nào cần biến đổi. Vẫn khai hàm thật (không
+ * bỏ trống bảng) để `migrateIdfc` đi được trọn đường v1→v2→v3 cho file v1 cũ (test round-trip
+ * `idfc.test.ts` "v1 xuyên 2 lần nâng cấp").
+ */
+function migrateV2ToV3(f: Record<string, unknown>): Record<string, unknown> {
+  return { ...f, idfcVersion: 3 };
+}
+
+/**
  * Bảng nâng cấp — mỗi khoá `fromV` nâng ĐÚNG 1 bậc, cùng khuôn `IDF_MIGRATIONS` (idf.ts).
  */
 const IDFC_MIGRATIONS: Record<number, (f: Record<string, unknown>) => Record<string, unknown>> = {
   1: migrateV1ToV2,
+  2: migrateV2ToV3,
 };
 
 export function migrateIdfc(
@@ -333,6 +359,9 @@ function bodyError(kind: IdfcKind, body: unknown): string | null {
       return null;
     case 'brandkit':
       if (!Array.isArray(body.colors)) return 'File .idfc bộ nhận diện thiếu bảng màu.';
+      return null;
+    case 'preset':
+      if (!isPlainObject(body.params)) return 'File .idfc preset dựng ảnh thiếu phần tham số (params).';
       return null;
     default:
       return 'Ruột .idfc không thuộc loại nào app biết.';

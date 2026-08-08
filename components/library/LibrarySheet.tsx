@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { Search, X, ArrowUp, Plus } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import type { StageKey } from '@/lib/library/types';
-import { idfcKindOfThumb, THUMB_OF_IDFC_KIND, type ThumbKind } from '@/lib/library/thumb-kinds';
+import { idfcKindOfThumb, IDFC_KIND_LABEL, THUMB_OF_IDFC_KIND, type ThumbKind } from '@/lib/library/thumb-kinds';
 import { buildSpecRows, missingSpecCount, matchSpec, type SpecSource } from '@/lib/library/spec-panel';
 import {
   BAYS,
@@ -24,7 +24,7 @@ import {
 } from '@/lib/library/shelves';
 import { loadIdfcStore, type StoredIdfc } from '@/lib/library/idfc-store';
 import { getPbr } from '@/lib/materials/pbr-store';
-import { exportIdfc } from '@/lib/cad/idfc';
+import { exportIdfc, IDFC_KINDS, type IdfcKind } from '@/lib/cad/idfc';
 import { resolveLibraryItem } from '@/lib/cad/library-item-resolve';
 import { useLibrarySheetState } from '@/lib/library/use-library-sheet';
 import { useLibraryLocalState } from '@/lib/library/local-state';
@@ -118,6 +118,11 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   /** Nhóm vật liệu con đang lọc (`docs/mocks/Thư viện.dc.html` khối "NHÓM VẬT LIỆU").
    *  null = không lọc; bấm lại nhóm đang chọn thì bỏ lọc (không cần thêm nút "Tất cả"). */
   const [matGroup, setMatGroup] = useState<ThumbKind | null>(null);
+  /** VIỆC .idfc v3 (08/08) — ngăn lọc theo `IdfcKind` TRONG kệ "Cấu kiện (.idfc)"
+   * (`common-idfc` gom MỌI loại .idfc đã nhập vào một kệ, xem `idfcItems`) — cùng cơ chế
+   * `matGroup` ở trên (chọn lại = bỏ lọc), khác Ở CHỖ trục lọc là `IdfcKind` (12 loại thật của
+   * file), không phải `ThumbKind` (hình thức ô xem trước). */
+  const [idfcKindFilter, setIdfcKindFilter] = useState<IdfcKind | null>(null);
   /** Món ĐANG CHỌN — mở cột thông số ④ (`docs/mocks/Thư viện.dc.html`, khối CotThongSo). */
   const [picked, setPicked] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -204,9 +209,10 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   }, [requestedShelf]);
 
   // Đổi kệ → bỏ lọc nhóm vật liệu (nhóm chỉ có nghĩa trong kệ vật liệu; giữ lại sẽ thành bộ
-  // lọc vô hình làm lưới trống mà không thấy lý do).
+  // lọc vô hình làm lưới trống mà không thấy lý do). Cùng lý do cho ngăn theo IdfcKind.
   useEffect(() => {
     setMatGroup(null);
+    setIdfcKindFilter(null);
   }, [shelfId]);
 
   /* VIỆC 1 M-IDFC — kệ "Cấu kiện (.idfc)" đọc KHO THẬT (idfc-store, localStorage), không phải
@@ -221,6 +227,7 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
     if (shelfId === 'common-idfc') {
       const q = query.trim().toLowerCase();
       return idfcItems
+        .filter((s) => !idfcKindFilter || s.meta.kind === idfcKindFilter)
         .map((s): SheetItem => ({
           id: `idfc:${s.meta.code}`, shelfId: 'common-idfc', name: s.meta.name, code: s.meta.code,
           kind: THUMB_OF_IDFC_KIND[s.meta.kind], scope: s.meta.scope ?? 'studio', mechanic: 'keo',
@@ -228,7 +235,7 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
         .filter((i) => (chip === 'all' || chip === 'studio') && (!q || i.name.toLowerCase().includes(q) || i.code.toLowerCase().includes(q)));
     }
     return itemsFor(activeStage, shelfId, chip, query, matGroup);
-  }, [activeStage, shelfId, chip, query, matGroup, idfcItems]);
+  }, [activeStage, shelfId, chip, query, matGroup, idfcItems, idfcKindFilter]);
   const stageShelves = STAGE_SHELVES[activeStage];
   /* Món đang chọn phải LUÔN nằm trong danh sách đang hiện — đổi kệ/lọc mà giữ lại thì cột thông
      số tả một món không còn trên lưới, người dùng không đối chiếu được. Không cần effect riêng:
@@ -472,6 +479,27 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                 </div>
               );
             })}
+
+            {/* NGĂN THEO LOẠI (.idfc v3, 08/08) — chỉ hiện ở kệ "Cấu kiện (.idfc)" (`common-idfc`
+               gom MỌI IdfcKind vào một kệ, khác kệ vật liệu chỉ có 6 loại vật liệu). Cùng cơ chế
+               bấm-lại-để-bỏ-lọc như NHÓM VẬT LIỆU ngay dưới — dùng chung class `.subrow`, không
+               dựng CSS thứ hai. */}
+            {shelfId === 'common-idfc' && (
+              <>
+                <div className="shcap">{tr('Ngăn theo loại', 'By kind')}</div>
+                {IDFC_KINDS.map((k) => (
+                  <button
+                    type="button"
+                    key={k}
+                    className={idfcKindFilter === k ? 'subrow on' : 'subrow'}
+                    aria-pressed={idfcKindFilter === k}
+                    onClick={() => setIdfcKindFilter((cur) => (cur === k ? null : k))}
+                  >
+                    {tr(IDFC_KIND_LABEL[k][0], IDFC_KIND_LABEL[k][1])}
+                  </button>
+                ))}
+              </>
+            )}
 
             {/* NHÓM VẬT LIỆU (mock màn 01) — chỉ hiện ở kệ vật liệu, lọc THẬT theo `kind` của món. */}
             {shelfId === MATERIAL_GROUP_SHELF && (

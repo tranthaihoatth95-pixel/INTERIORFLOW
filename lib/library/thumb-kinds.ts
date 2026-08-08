@@ -206,13 +206,15 @@ export const KIND_LABEL: Record<ThumbKind, [string, string]> = {
 /* ═══════════ VIỆC 3 phiếu M-IDFC-2 (07/08 khuya) — ÁNH XẠ ThumbKind ↔ IdfcKind ═══════════
  *
  * Trước phiếu này có BA hệ phân loại chồng chéo không ánh xạ được nhau (ThumbKind 12 ·
- * IdfcMeta.kind v1 5 · BlockGroup 10). Chốt 11.4: `IdfcKind` (lib/cad/idfc.ts, 11 loại) là trục
+ * IdfcMeta.kind v1 5 · BlockGroup 10). Chốt 11.4: `IdfcKind` (lib/cad/idfc.ts) là trục
  * DUY NHẤT "nó là cái gì"; BlockGroup giữ làm trục ② "dùng ở đâu" — ĐỘC LẬP, không trộn.
  * ThumbKind từ nay là HÌNH THỨC Ô XEM TRƯỚC, không phải hệ phân loại: ánh xạ THUMB→KIND là
  * n→1 (6 thumb vật liệu wood/stone/… đều là kind 'material'), chiều ngược KIND→THUMB chọn một
- * hình thức mặc định. 5 thumb `light-*` là preset dựng ảnh — thứ CHƯA có kind trong chốt 11.4
- * (không phải cấu kiện, không phải mẫu hồ sơ) ⇒ tạm map 'asset', ghi rõ chờ Hoà bổ sung loại
- * "preset" nếu cần (M-IDFC-2-OUT), KHÔNG tự đẻ kind ngoài chốt.
+ * hình thức mặc định.
+ *
+ * 🔴 08/08 — `.idfc` lên v3, thêm `IdfcKind` thứ 12 **`preset`** (00-CHOT.md mục 08/08, ĐÃ
+ * DUYỆT). 5 thumb `light-*` (preset dựng ảnh) TRƯỚC đây phải mượn tạm `asset` vì chốt 11.4 chưa
+ * có kind riêng cho chúng — nay gỡ chỗ mượn, map đúng `preset`.
  */
 import type { IdfcKind } from '../cad/idfc';
 
@@ -228,7 +230,7 @@ export function idfcKindOfThumb(t: ThumbKind): IdfcKind {
       return 'furniture';
     case 'page': case 'sheet': return 'page';
     case 'light-gold': case 'light-overcast': case 'light-night': case 'light-dawn': case 'light-studio':
-      return 'asset'; // preset dựng ảnh — chưa có kind riêng trong chốt 11.4, xem docstring
+      return 'preset'; // v3 — kind riêng cho preset dựng ảnh, không còn mượn 'asset'
   }
 }
 
@@ -247,4 +249,24 @@ export const THUMB_OF_IDFC_KIND: Record<IdfcKind, ThumbKind> = {
   doc: 'sheet',
   asset: 'misc',
   brandkit: 'sheet',
+  // 'light-studio' (phẳng đều, trung tính) làm mặc định — không chọn tông màu mạnh (gold/night)
+  // để đại diện chung cho MỌI preset, tránh ngụ ý sai "preset nào cũng ấm/tối".
+  preset: 'light-studio',
+};
+
+/** Nhãn tiếng Việt · English cho `IdfcKind` — nơi tiêu thụ: ngăn lọc theo loại của kệ
+ * "Cấu kiện (.idfc)" (`LibrarySheet.tsx`, VIỆC .idfc v3 08/08). Thứ tự khớp `IDFC_KINDS`. */
+export const IDFC_KIND_LABEL: Record<IdfcKind, [string, string]> = {
+  material: ['Vật liệu', 'Material'],
+  furniture: ['Đồ rời', 'Furniture'],
+  millwork: ['Đồ mộc đóng', 'Millwork'],
+  fitout: ['Chi tiết hoàn thiện', 'Fit-out'],
+  fixture: ['Thiết bị cố định', 'Fixture'],
+  soft: ['Đồ vải', 'Soft furnishing'],
+  page: ['Mẫu trang', 'Page template'],
+  video: ['Mẫu video', 'Video template'],
+  doc: ['Văn bản', 'Document'],
+  asset: ['Ảnh tham chiếu', 'Reference asset'],
+  brandkit: ['Bộ nhận diện', 'Brand kit'],
+  preset: ['Preset dựng ảnh', 'Render preset'],
 };
