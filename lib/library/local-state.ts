@@ -15,9 +15,17 @@ interface LocalState {
   usageDelta: Record<string, number>;
   pending: PublishDraft[];
   comments: Record<string, CommentEntry[]>;
+  /**
+   * VIỆC 4 (G-A-01 mở rộng, 08/08) — `SheetItem.id → ProductSpec.id`, gán TAY khi mã không tự
+   * khớp (`matchSpec(code, specs)` trả undefined). Cục bộ, KHÔNG ghi lên `ProductSpec.sku` —
+   * PATCH đó cần quyền admin (`app/api/specs/[id]/route.ts requireAdmin`, đúng luật T1/T2 "kế
+   * toán/dữ liệu giá dùng chung không sửa tuỳ tiện"), còn gán mã ở đây là việc CÁ NHÂN, ai xem
+   * kệ cũng làm được. Lùi được: `unlinkSpec` xoá đúng key (KS4).
+   */
+  specLinks: Record<string, string>;
 }
 
-const EMPTY: LocalState = { usageDelta: {}, pending: [], comments: {} };
+const EMPTY: LocalState = { usageDelta: {}, pending: [], comments: {}, specLinks: {} };
 
 function readStorage(): LocalState {
   if (typeof window === 'undefined') return EMPTY;
@@ -78,6 +86,20 @@ export function useLibraryLocalState() {
     return entry;
   };
 
+  /** Gán tay `itemId` → `specId`. Ghi đè liên kết cũ nếu có (đổi ý chọn spec khác). */
+  const linkSpec = (itemId: string, specId: string) => {
+    mutate((prev) => ({ ...prev, specLinks: { ...prev.specLinks, [itemId]: specId } }));
+  };
+
+  /** Bỏ gán — quay lại tự khớp theo mã (KS4: lùi được, không phải xoá vĩnh viễn gì của kho chung). */
+  const unlinkSpec = (itemId: string) => {
+    mutate((prev) => {
+      const next = { ...prev.specLinks };
+      delete next[itemId];
+      return { ...prev, specLinks: next };
+    });
+  };
+
   const addComment = (itemId: string, text: string) => {
     const entry: CommentEntry = {
       id: `c-${Math.random().toString(36).slice(2, 8)}`,
@@ -91,5 +113,5 @@ export function useLibraryLocalState() {
     }));
   };
 
-  return { state, hydrated, bumpUsage, addPublishDraft, addComment };
+  return { state, hydrated, bumpUsage, addPublishDraft, addComment, linkSpec, unlinkSpec };
 }

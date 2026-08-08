@@ -193,6 +193,9 @@ export const LIBRARY_SHEET_CSS = `
        color:var(--t3);font-size:9px;font-weight:700;display:flex;align-items:center;
        letter-spacing:.03em}
 .if-lib-root .badge.st{color:var(--accent-warm)}
+/* VIỆC 7 (08/08) — dấu hiệu "có tham số": GÓC ĐỐI DIỆN badge phạm vi (dưới-trái, không đè lên
+   nhau) + tông --success (đặc tính TỐT của món, khác badge phạm vi chỉ là metadata trung tính). */
+.if-lib-root .badge.param{top:auto;right:auto;bottom:6px;left:6px;color:var(--success)}
 .if-lib-root .libft{flex:none;height:38px;display:flex;align-items:center;gap:10px;padding:0 14px;
        border-top:1px solid var(--mat-hairline);font-size:var(--fs-2xs);color:var(--t4)}
 /* "N mục trong kệ …" — dồn về phải, đứng trước nút "Đưa lên kệ". Cách dồn: CHỈ dòng gợi ý đầu
@@ -253,6 +256,16 @@ export const LIBRARY_SHEET_CSS = `
 .if-lib-root .speccol .spbar i{display:block;height:100%;border-radius:2px;background:var(--accent)}
 .if-lib-root .speccol .spwhy{padding:10px 12px;font-size:var(--fs-2xs);line-height:1.5;color:var(--t4);
        border-bottom:1px solid var(--mat-hairline)}
+/* VIỆC 4 (08/08) — hàng gán mã tay, cùng viền dưới với .spwhy (cùng vùng "chưa nối kho"). Line-
+   height 1,5 đúng G4 (chữ Việt có dấu chồng). select/button dùng --tap cho vùng chạm ≥44 theo
+   G8 (không phải đường duy nhất — kéo thả vẫn còn, đây chỉ là lối thay thế khi khớp tự động thua). */
+.if-lib-root .speccol .splink{padding:10px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;
+       font-size:var(--fs-2xs);line-height:1.5;color:var(--t3);border-bottom:1px solid var(--mat-hairline)}
+.if-lib-root .speccol .splink select{height:var(--tap);max-width:100%;border-radius:8px;border:1px solid var(--border);
+       background:var(--field);color:var(--t1);font:inherit;font-size:var(--fs-2xs);padding:0 8px}
+.if-lib-root .speccol .splink button{height:26px;padding:0 9px;border-radius:8px;border:1px solid var(--border);
+       background:var(--field);color:var(--t2);font:inherit;font-size:var(--fs-2xs);cursor:pointer}
+.if-lib-root .speccol .splink button:hover{background:var(--hover);color:var(--t1)}
 .if-lib-root .speccol .spact{margin-top:auto;padding:12px;display:flex;flex-direction:column;gap:7px}
 .if-lib-root .speccol .spact button{width:100%;height:var(--tap);border-radius:10px;border:0;cursor:pointer;
        font-size:var(--fs-xs);font-weight:var(--fw-semi);font-family:inherit;

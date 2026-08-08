@@ -110,7 +110,7 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
   const tr = useT();
   // CHINH-4: truyền stage để hook xử va phím L theo chặng (§4e — CAD: ⇧L, chặng khác: L trần).
   const { open, setOpen, shelfId: requestedShelf, stageOverride } = useLibrarySheetState(stage);
-  const { state, addPublishDraft } = useLibraryLocalState();
+  const { state, addPublishDraft, linkSpec, unlinkSpec } = useLibraryLocalState();
 
   const activeStage: StageKey = stageOverride ?? stage;
   const [shelfId, setShelfId] = useState<string>(DEFAULT_SHELF[activeStage]);
@@ -255,7 +255,7 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
    * `w`/`d`/`hUp` thêm vào (VIỆC 2, chốt 07/08 chiều) cho dòng kích thước ở nấc thẻ LỚN — API
    * `GET /api/specs` (`lib/server/specs.ts` `specToDto`) đã trả sẵn 3 trường này, chỉ chưa được
    * bắt ở đây; không cần sửa route hay `lib/`. */
-  const [specs, setSpecs] = useState<{ id: string; sku: string | null; brand: string | null; unit: string | null; priceVnd: number | null; w: number | null; d: number | null; hUp: number | null }[] | null>(null);
+  const [specs, setSpecs] = useState<{ id: string; name: string; sku: string | null; brand: string | null; unit: string | null; priceVnd: number | null; w: number | null; d: number | null; hUp: number | null }[] | null>(null);
   useEffect(() => {
     if (!open || specs !== null) return;
     let cancelled = false;
@@ -278,6 +278,12 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
     [displayItem, idfcItems],
   );
 
+  /** VIỆC 4 (G-A-01 mở rộng, 08/08) — gán TAY thắng khớp mã tự động khi người dùng đã chọn (họ
+   * chọn có chủ đích, không để máy tự đoán lại đè lên); `.idfc` file-embedded vẫn đứng trên cùng
+   * (dữ liệu đi THEO FILE, không phải lựa chọn cục bộ của người xem). */
+  const linkedSpecId = displayItem ? state.specLinks[displayItem.id] : undefined;
+  const linkedSpec = linkedSpecId ? specs?.find((s) => s.id === linkedSpecId) : undefined;
+
   const displaySpecSource: SpecSource | undefined = useMemo(() => {
     // .idfc mang sẵn mặt thương mại — ưu tiên nó (giá đi THEO FILE giữa các dự án, G-M16-03);
     // thiếu thì rơi về khớp sku trong DB như cũ.
@@ -285,11 +291,12 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
       const c = displayIdfc.commerce;
       return { supplier: c.brand ?? c.vendor ?? null, unit: c.unit ?? null, priceVnd: c.priceVnd ?? null };
     }
+    if (linkedSpec) return { supplier: linkedSpec.brand, unit: linkedSpec.unit, priceVnd: linkedSpec.priceVnd };
     if (!displayItem || !specs?.length) return undefined;
     const hit = matchSpec(displayItem.code, specs);
     if (!hit) return undefined;
     return { supplier: hit.brand, unit: hit.unit, priceVnd: hit.priceVnd };
-  }, [displayItem, displayIdfc, specs]);
+  }, [displayItem, displayIdfc, specs, linkedSpec]);
 
   const displaySpecRows = useMemo(() => {
     if (!displayItem) return [];
@@ -549,6 +556,14 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                    xem `formatDims()` cho luật "không bịa số". */
                 const dims = cardSize === 'lg' && specs?.length ? matchSpec(it.code, specs) : undefined;
                 const dimsLabel = dims ? formatDims(dims.w, dims.d, dims.hUp) : null;
+                /* VIỆC 7 (phần còn thiếu, 08/08) — dấu hiệu cấu kiện CÓ THAM SỐ (co giãn được,
+                   `BlockDef.variants`, xem `SHAPE-SCHEMA.md` B2.5) khác HÌNH CỨNG. Cùng gate
+                   nấc LỚN như dims phía trên — tránh gọi `resolveLibraryItem` cho mọi thẻ ở mọi
+                   nấc (dò khớp tên là việc không rẻ, chạy hàng chục thẻ mỗi lần đổi bộ lọc). Chỉ
+                   kho ① (`BLOCKS`, giữ danh tính) mới có field `variants` — kho ②(.dxf) không có
+                   khái niệm biến thể nên không tính, KHÔNG đoán bừa "có tham số" cho nó. */
+                const paramHit = cardSize === 'lg' ? resolveLibraryItem({ name: it.name, code: it.code, kind: it.kind }, null) : null;
+                const hasVariants = paramHit?.via === 'blockdef' && !!paramHit.def.variants?.length;
                 return (
                 /* Bấm = CHỌN (mở cột thông số ④), KHÔNG dùng luôn như trước. Mock đặt hành động
                    vào cột thông số ("Dùng cho vật đang chọn"), và đó cũng là hành vi đúng: trước
@@ -578,6 +593,11 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                       `ItemThumb.tsx`); badge phạm vi đè lên trên, không đổi. */}
                   <ItemThumb item={it}>
                     <span className={it.scope === 'studio' ? 'badge st' : 'badge'}>{SCOPE_BADGE_TEXT[it.scope]}</span>
+                    {hasVariants && (
+                      <span className="badge param" title={tr('Có biến thể kích thước — co giãn được', 'Has size variants — resizable')}>
+                        {tr('Tham số', 'Param')}
+                      </span>
+                    )}
                   </ItemThumb>
                   <span className="mt">
                     <span className="a" style={{ display: 'block' }}>{it.name}</span>
@@ -663,6 +683,42 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
                     {tr(
                       'Ô “—” là chưa nối kho: hãng · đơn vị · giá nằm ở Kho vật liệu (khớp theo mã); độ nhám · độ bóng nằm ở vật liệu PBR. Chưa món nào trên kệ mẫu khớp mã trong kho.',
                       'Each “—” means not linked yet: brand · unit · price live in the Materials warehouse (matched by code); roughness · gloss live in the PBR material. No demo shelf item matches a code in the warehouse yet.',
+                    )}
+                  </div>
+                )}
+
+                {/* VIỆC 4 (G-A-01 mở rộng, 08/08) — mã trên kệ và mã kho lệch nhau thì KHÔNG bắt
+                   người dùng chờ ai đó sửa dữ liệu; cho họ tự chỉ đúng món trong kho ngay tại đây.
+                   Cục bộ (localStorage qua `linkSpec`/`unlinkSpec`, KHÔNG ghi `ProductSpec.sku` —
+                   PATCH đó cần quyền admin, xem `local-state.ts`). KS3: chọn rõ ràng, không tự
+                   đoán. KS4: "Bỏ gán" đưa về đúng trạng thái tự khớp theo mã như trước. */}
+                {!displayIdfc?.commerce && !!specs?.length && (
+                  <div className="splink">
+                    {linkedSpec ? (
+                      <>
+                        <span>{tr('Đã gán tay: ', 'Manually linked: ')}<b>{linkedSpec.name}</b></span>
+                        <button type="button" className="ghost" onClick={() => unlinkSpec(displayItem.id)}>
+                          {tr('Bỏ gán', 'Unlink')}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <label htmlFor="lib-spec-link-select">
+                          {tr('Mã không khớp tự động? Gán tay:', "Code didn't auto-match? Link it:")}
+                        </label>
+                        <select
+                          id="lib-spec-link-select"
+                          value=""
+                          onChange={(e) => {
+                            if (e.target.value) linkSpec(displayItem.id, e.target.value);
+                          }}
+                        >
+                          <option value="" disabled>{tr('Chọn trong kho vật liệu…', 'Pick from the warehouse…')}</option>
+                          {specs.map((s) => (
+                            <option key={s.id} value={s.id}>{s.name}{s.sku ? ` · ${s.sku}` : ''}</option>
+                          ))}
+                        </select>
+                      </>
                     )}
                   </div>
                 )}

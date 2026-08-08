@@ -165,6 +165,74 @@ không liên quan — thuộc làn khác).
 - **VIỆC 9 (G-A-05 mock cãi chốt)** — cùng lý do VIỆC 8, `M-APPLY-C-OUT.md` VIỆC 4 (07/08) ghi đã
   đóng phần lớn. CHƯA VERIFY lại trong phiên này.
 
+## VÒNG 2 (cùng ngày, Hoà bảo "làm tiếp cho xong") — VIỆC 8·9·7·4
+
+⚠️ **Va chạm hai-phiên-chung-git giữa vòng 1 và vòng 2**: mở lại `components/library/LibrarySheet.tsx`
+thấy đã có sẵn (KHÔNG phải tôi viết): "BA NẤC CỠ THẺ" (`CARD_SIZE_OPTIONS`/`cardSize`/`formatDims`,
+đúng chốt `00-CHOT.md` "TẤM THƯ VIỆN: NỚI 960px + BA NẤC CỠ THẺ") + `.idfc` đã nâng lên **v2**
+(vỏ chung/ruột theo loại, `IDFC_KINDS` 11 loại) + nút "Xuất .idfc" đã nối vào cột thông số. Đây là
+việc THẬT, có test (`idfc.test.ts` nay 36/36, không phải 23 tôi viết ban đầu), `tsc` sạch —
+**KHÔNG revert, không viết đè** (§0d giữ-cái-đang-tốt). Chỉ thêm additive lên trên.
+
+### VIỆC 8 — verify lại G-A-04 (KHÔNG cần sửa)
+`grep -n "dc-import" "docs/mocks/Thư viện.dc.html"` → **0 kết quả sống**, chỉ 2 dòng comment
+`[06/08 · gỡ G-A-04]` xác nhận đã nội hoá. **Đúng như M-APPLY-C-OUT.md ghi — xác nhận lại, không sửa.**
+
+### VIỆC 9 — verify lại G-A-05 (KHÔNG cần sửa)
+`library-sheet-css.ts:109` `.shelf{width:214px}` (không phải 186) · `:69-70`
+`transform-origin:50% 50%` + `translate(-50%,10px) scale(.97)` (nổi tại chỗ, không phải ngăn kéo
+dính đáy) · 186px chỉ còn trong 2 dòng comment lịch sử. **Đúng như M-APPLY-C-OUT.md ghi — xác
+nhận lại, không sửa.**
+
+### VIỆC 7 — phần còn thiếu: dấu hiệu "có tham số"
+Phần w×d×h (chốt lớn) **đã có sẵn** (xem cảnh báo va chạm trên). Phần phiếu gốc còn đòi mà chưa
+ai làm: *"dấu hiệu cấu kiện có tham số (co giãn) vs hình cứng"*. Thêm:
+- `LibrarySheet.tsx` (trong `.map` render lưới, gate `cardSize==='lg'` — cùng nhịp hiệu năng với
+  `dims` đã có, không gọi `resolveLibraryItem` cho mọi thẻ ở mọi nấc): `hasVariants = resolveLibraryItem(...).via==='blockdef' && !!def.variants?.length`.
+- Badge `.badge.param` (`library-sheet-css.ts`, góc dưới-trái, tông `--success`, đối xứng với badge
+  phạm vi góc trên-phải) — chữ "Tham số"/"Param", tooltip giải thích. Chỉ kho ① (`BLOCKS`, giữ
+  danh tính) tính được field `variants`; kho ②(.dxf phẳng) **không đoán bừa** "có tham số".
+
+### VIỆC 4 — màn gán mã tay khi kệ ↔ kho vật liệu không khớp tự động
+Thêm cơ chế LOCAL (không PATCH `ProductSpec.sku` — cửa đó **chặn admin**, `app/api/specs/[id]/route.ts`
+`requireAdmin`, đúng luật T1/T2 tiền/giá dùng chung không sửa tuỳ tiện):
+- `lib/library/local-state.ts` — thêm `specLinks: Record<itemId, specId>` vào `LocalState` +
+  `linkSpec()`/`unlinkSpec()` (KS4: gán rồi vẫn bỏ gán được, không phải hành động một chiều).
+- `LibrarySheet.tsx` — `displaySpecSource` giờ có 3 tầng ưu tiên: **`.idfc` file-embedded** (cao
+  nhất, dữ liệu đi theo file) → **gán tay** (`state.specLinks`) → **khớp mã tự động** (`matchSpec`,
+  thấp nhất, có thể sai). Khối `.splink` mới (dưới dòng lý do "—", `missingSpecCount>0`): chưa
+  gán thì hiện `<select>` liệt kê toàn bộ `specs` đã tải, chọn xong gọi `linkSpec` ngay (KS3: chọn
+  rõ ràng, không tự đoán); đã gán thì hiện "Đã gán tay: <tên> · Bỏ gán".
+- CSS `.splink` (`library-sheet-css.ts`) — cùng khối `.speccol`, vùng chạm `select`/`button` dùng
+  `--tap` (≥44px, G8: đây là lối THAY THẾ chứ không phải đường duy nhất — kéo thả vẫn nguyên).
+
+### Kiểm tĩnh vòng 2
+`npx tsc --noEmit -p .` — **sạch** (chỉ còn lỗi CŨ `render-layer-index.test.ts`, không liên quan).
+`spec-panel.test.ts` 32/32 · `library-item-resolve.test.ts` 33/33 · `idfc.test.ts` 36/36 — không
+hồi quy.
+
+### 🔴 CHƯA VERIFY browser vòng 2 — nói thật, không bịa ảnh
+Server dùng chung `127.0.0.1:3000` (nhiều phiên khác đang ghi file đồng thời — HMR liên tục 404
+`main-app.js`/`app-pages-internals.js`/`layout.css` do version-hash lệch giữa các lần build) —
+**thử lại 6 lần trong ~40 giây, trang vẫn kẹt ở spinner, không load được để chụp**. Đây là hiện
+tượng hạ tầng dùng chung (nhiều Claude Code session cùng sửa file trong repo không-worktree), không
+phải lỗi trong code của tôi (bằng chứng: `tsc` sạch, logic mới bám ĐÚNG khuôn `dims`/`resolveLibraryItem`
+đã verify sống ở vòng 1).
+
+**Kiểm bằng script thuần thay browser** (`resolveLibraryItem` không đụng DOM, chạy được ngoài
+trình duyệt) — chạy `itemsFor()` qua MỌI kệ mock hiện có, đối chiếu `def.variants`:
+**0/12+ món trên mọi kệ hiện tại khớp được với 1 trong 3 block CÓ `variants`** trong `furniture.ts`
+(`sofaCorner`/`bedS`/`bedD`) — tên trên kệ mock ("Giường 1m6", "Sofa 3 chỗ"…) không đủ khớp tên
+với "Sofa góc"/"Giường đơn"/"Giường đôi". ⇒ **Badge "Tham số" đúng logic nhưng KHÔNG có cơ hội
+hiện ra với bộ dữ liệu mock đang có** — không phải lỗi code, là giới hạn dữ liệu mẫu (cùng họ vấn
+đề VIỆC 7b: mock không đại diện đủ trường hợp thật). Phiên sau muốn thấy badge sống: đổi 1 dòng
+`ITEMS_BY_SHELF['cad-kyhieu']` (`shelves.ts`) thành `['Sofa góc', 'SOFA-CN', 'furniture']` (khớp
+đúng tên `sofaCorner`) để verify, hoặc chờ kho thật có block mang biến thể đúng tên.
+
+Phần gán mã tay (VIỆC 4) verify được bằng mắt khi server ổn định: mở món chưa khớp mã → thấy
+dropdown "Chọn trong kho vật liệu…" dưới dòng lý do "—" → chọn xong cột thông số cập nhật ngay +
+nút "Bỏ gán" trả về đúng trạng thái tự khớp theo mã như trước.
+
 ## Hàng đợi cho phiên sau (V7)
 
 1. Nối `.idfc` (VIỆC 2) vào luồng THẬT — export ở `PublishModal.tsx` (đã có cửa "publish"), import
