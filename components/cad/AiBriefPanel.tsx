@@ -24,7 +24,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ThumbsUp, ThumbsDown, X, Sparkles, Wand2, FolderOpen, Check, AlertTriangle, MousePointerClick } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, X, Sparkles, Wand2, FolderOpen, Check, AlertTriangle, MousePointerClick, FileText, Loader2 } from 'lucide-react';
 import { useDismissable } from '@/lib/useDismissable';
 import { useCadStore } from '@/lib/cad/store';
 import { docBox, type Doc } from '@/lib/cad/model';
@@ -39,6 +39,17 @@ import { loadGuModelFromServer, saveGuModelToServer } from '@/lib/gu/gu-model-sy
 import { cadLayoutOptionModelKey, layoutOptionFeatures, explainLayoutOption, type LayoutOptionSignal } from '@/lib/cad/ai-layout-feedback';
 import { useFlowStore } from '@/lib/store';
 import { effectiveUserId } from '@/lib/resume';
+import {
+  briefFileKind,
+  normalizeBriefText,
+  briefLoadedMessage,
+  briefEmptyPdfMessage,
+  briefEmptyTextMessage,
+  briefWordMessage,
+  briefUnsupportedMessage,
+  briefExtractFailedMessage,
+  BRIEF_FILE_ACCEPT,
+} from '@/lib/cad/brief-file';
 
 interface Props {
   onClose: () => void;
@@ -122,6 +133,48 @@ export default function AiBriefPanel({ onClose }: Props) {
   // vẫn nhớ trạng thái (không phải khoá lâu dài — chỉ sống trong tab).
   const [baselineOn, setBaselineOn] = useState(draftCache.baselineOn);
   const panelRef = useRef<HTMLDivElement | null>(null);
+  // §1#9 (08/08, SPEC-BRIEF-INTAKE bước ②) — nạp ĐỀ BÀI từ tệp .pdf/.txt/.md. Text trích ra chỉ
+  // ĐỔ VÀO Ô brief cho người dùng đọc/sửa, KHÔNG tự chạy generate (human-in-the-loop, luật nền
+  // 00-CHOT mục 7). .docx CHƯA nhận — repo không có bộ đọc Word, xem docstring lib/cad/brief-file.ts.
+  const briefFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [briefFileBusy, setBriefFileBusy] = useState(false);
+  const [briefFileNotice, setBriefFileNotice] = useState<{ tone: 'ok' | 'warn' | 'error'; text: string } | null>(null);
+
+  /** Đọc tệp đề bài → trích text (extractPdf của notebook, KHÔNG viết parser mới) → chuẩn hoá/
+   * cắt (brief-file.ts) → đổ vào ô brief. Mọi nhánh lỗi ra thông điệp có tên tệp + việc làm tiếp. */
+  const onBriefFilePicked = async (file: File) => {
+    const kind = briefFileKind(file.name);
+    if (kind === 'word') { setBriefFileNotice({ tone: 'error', text: briefWordMessage(file.name) }); return; }
+    if (kind === 'unknown') { setBriefFileNotice({ tone: 'error', text: briefUnsupportedMessage(file.name) }); return; }
+    setBriefFileBusy(true);
+    setBriefFileNotice(null);
+    try {
+      let raw = '';
+      let pageCount: number | undefined;
+      if (kind === 'pdf') {
+        // unpdf chạy được mọi runtime (serverless build của pdf.js) — extractPdf tự dynamic-import
+        // nên bundle client không nặng thêm khi chưa dùng.
+        const { extractPdf } = await import('@/lib/notebook/extract');
+        const res = await extractPdf(new Uint8Array(await file.arrayBuffer()));
+        raw = res.fullText;
+        pageCount = res.pages.length;
+      } else {
+        raw = await file.text();
+      }
+      const norm = normalizeBriefText(raw);
+      if (!norm.text) {
+        setBriefFileNotice({ tone: 'error', text: kind === 'pdf' ? briefEmptyPdfMessage(file.name) : briefEmptyTextMessage(file.name) });
+        return;
+      }
+      setBrief(norm.text); // đổ vào ô — người dùng sửa rồi TỰ bấm "Tạo phương án", không auto-run
+      setResults(null); // kết quả cũ (nếu có) thuộc đề bài cũ — dọn để không gây hiểu nhầm
+      setBriefFileNotice({ tone: norm.truncated ? 'warn' : 'ok', text: briefLoadedMessage(file.name, norm, pageCount) });
+    } catch (err) {
+      setBriefFileNotice({ tone: 'error', text: briefExtractFailedMessage(file.name, err) });
+    } finally {
+      setBriefFileBusy(false);
+    }
+  };
 
   // (0a, 31/07) khoá bộ học Gu THEO NGƯỜI DÙNG — máy chung studio không còn trộn trọng số.
   const storeUserId = useFlowStore((s) => s.user?.id);
@@ -426,6 +479,48 @@ export default function AiBriefPanel({ onClose }: Props) {
 
         {/* ═════════ BƯỚC 3 — ĐỀ BÀI → OPTION ═════════ */}
         <label style={label}>3 · Đề bài chi tiết từ chủ đầu tư (nhiều đoạn)</label>
+
+        {/* §1#9 (08/08) — nạp từ tệp PDF/txt/md thay vì chỉ gõ tay. Chỉ ĐỔ VÀO ô bên dưới,
+            người dùng đọc/sửa rồi mới tự bấm "Tạo phương án" (human-in-the-loop, 00-CHOT mục 7). */}
+        <input
+          ref={briefFileInputRef}
+          type="file"
+          accept={BRIEF_FILE_ACCEPT}
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = ''; // cho phép chọn lại CÙNG tệp lần nữa (đổi rồi nạp lại)
+            if (f) void onBriefFilePicked(f);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => briefFileInputRef.current?.click()}
+          disabled={briefFileBusy}
+          style={{ ...smallBtn, marginBottom: 6, opacity: briefFileBusy ? 0.6 : 1 }}
+          title="Nạp đề bài từ tệp .pdf/.txt/.md — trích chữ rồi đổ vào ô bên dưới để bạn đọc/sửa, KHÔNG tự chạy"
+        >
+          {briefFileBusy ? <Loader2 size={12} className="pe-spin" /> : <FileText size={12} />}
+          {briefFileBusy ? 'Đang đọc tệp…' : 'Nạp đề bài từ tệp'}
+        </button>
+        {briefFileNotice && (
+          <div
+            style={{
+              fontSize: 10.5,
+              lineHeight: 1.45,
+              padding: '5px 8px',
+              borderRadius: 6,
+              marginBottom: 6,
+              color:
+                briefFileNotice.tone === 'error' ? 'var(--danger)' : briefFileNotice.tone === 'warn' ? 'var(--warning)' : 'var(--success)',
+              background: 'var(--field)',
+              border: '1px solid var(--border)',
+            }}
+          >
+            {briefFileNotice.text}
+          </div>
+        )}
+
         <textarea
           value={brief}
           onChange={(e) => setBrief(e.target.value)}
