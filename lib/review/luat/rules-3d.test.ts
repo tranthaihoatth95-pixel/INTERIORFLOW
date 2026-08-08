@@ -4,11 +4,11 @@
  * (import TƯƠNG ĐỐI toàn chuỗi — cùng lý do boq-group.ts từng vỡ vì alias '@/').
  */
 import { luat3d, luatDenHinhHoc, luatDoRoi, luatKhoiHo, UF_UOC_LUONG } from './rules-3d';
-import { luatCad } from './cad';
+import { luatCad, violationToFinding } from './cad';
 import { gopy } from '../gopy';
 import { review3d } from '../index';
 import { emptyDoc } from '../../cad/model';
-import type { Doc, LineEntity, TextEntity, PolylineEntity } from '../../cad/model';
+import type { Doc, LineEntity, TextEntity, PolylineEntity, BlockEntity } from '../../cad/model';
 import { DEFAULT_SUN, DEFAULT_SKY, type RoomLight } from '../../three/lighting';
 
 let pass = 0;
@@ -102,12 +102,44 @@ console.log('\n[7] adapter 2D — Violation của checker dịch đủ trường
 {
   const doc = emptyDoc();
   doc.entities.push(...rectWalls(0, 0, 2500, 3000));
-  doc.entities.push(label({ x: 1250, y: 1500 }, 'PHÒNG NGỦ'));
+  const nhan = label({ x: 1250, y: 1500 }, 'PHÒNG NGỦ');
+  doc.entities.push(nhan);
   const f = luatCad(doc);
   const v = f.find((x) => x.ruleId === 'vn-res-bedroom-min-area');
   ok('phòng ngủ 7.5m² → finding lớp luật', !!v);
   ok('muc thuộc {do, vang}', f.every((x) => x.muc === 'do' || x.muc === 'vang'));
   ok('vị trí zoom-tới đi theo', !!v?.viTri?.mm);
+  // p3c (08/08) — luật đo PHÒNG mang entityId = id nhãn TEXT tên phòng (pick-point dò biên):
+  // ReviewPanel select được đúng vật, không chỉ zoom toạ độ.
+  ok('luật đo phòng: entityId = id nhãn phòng', v?.viTri?.entityId === nhan.id);
+}
+
+console.log('\n[8] p3c — entityId xuyên suốt checker → violationToFinding (2D select được)');
+{
+  // (a) luật đo BLOCK: cửa chính 'door' scale 0.8 → 720mm < 900mm QCVN 10 → entityId = id block.
+  const doc = emptyDoc();
+  const cua: BlockEntity = { id: 'b-cua-hep', type: 'block', layer: 'l-furn', block: 'door', at: { x: 500, y: 500 }, rot: 0, sx: 0.8, sy: 0.8 };
+  doc.entities.push(cua);
+  const f = luatCad(doc);
+  const vCua = f.find((x) => x.ruleId === 'vn-access-door-main-min-width');
+  ok('cửa 720mm → vi phạm bề rộng cửa chính', !!vCua);
+  ok('luật đo block: entityId = id chính block cửa', vCua?.viTri?.entityId === 'b-cua-hep');
+
+  // (b) round-trip adapter thuần — cả 3 tổ hợp at/entityId, không bịa khi cả hai thiếu.
+  const goc = { ruleId: 'r-test', source: 'TEST §1', severity: 'warning' as const, category: 'test', message: 'm', verified: true };
+  const duCaHai = violationToFinding({ ...goc, at: { x: 1, y: 2 }, entityId: 'e-9' });
+  ok('at + entityId → viTri mang đủ cả hai', duCaHai.viTri?.mm?.x === 1 && duCaHai.viTri?.entityId === 'e-9');
+  const chiId = violationToFinding({ ...goc, entityId: 'e-9' });
+  ok('chỉ entityId (không at) → viTri vẫn có, select được', chiId.viTri?.entityId === 'e-9' && chiId.viTri?.mm === undefined);
+  const trong = violationToFinding(goc);
+  ok('không at không entityId → viTri = undefined (không bịa)', trong.viTri === undefined);
+
+  // (c) luật cấp BẢN VẼ (iso128 tỉ lệ nét theo layer) — không có entity ⇒ entityId phải trống.
+  const docNet = emptyDoc();
+  docNet.layers = docNet.layers.map((l) => ({ ...l, lineweight: 0.25 })); // nét đồng đều → vi phạm tỉ lệ
+  docNet.entities.push(...rectWalls(0, 0, 3000, 3000));
+  const vNet = luatCad(docNet).find((x) => x.ruleId === 'iso128-thick-thin-ratio');
+  ok('luật cấp bản vẽ: KHÔNG bịa entityId', !vNet || vNet.viTri?.entityId === undefined);
 }
 
 console.log(`\nKẾT QUẢ: ${pass} pass · ${fail} fail`);

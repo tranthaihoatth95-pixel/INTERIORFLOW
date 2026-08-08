@@ -38,6 +38,14 @@ export interface Violation {
   /** Vị trí để click-zoom tới (world mm) — undefined nếu không gắn được với 1 vị trí cụ thể. */
   at?: Pt;
   /**
+   * p3c (08/08, TỔNG duyệt) — id ENTITY gây lỗi, để UI ngoài zoom còn SELECT được đúng vật
+   * (ReviewPanel gọi `useCadStore.select([entityId])`). ADDITIVE — optional, code đọc Violation
+   * cũ không vỡ. Quy ước điền: luật đo PHÒNG → id nhãn TEXT tên phòng (pick-point của phép dò
+   * biên, vật gần nhất người dùng chỉnh được); luật đo BLOCK (cửa…) → id chính block đó.
+   * KHÔNG BỊA: luật cấp bản vẽ (vd iso128 tỉ lệ nét theo layer) không có entity ⇒ để trống.
+   */
+  entityId?: string;
+  /**
    * T2 (2026-08-05) — lưu ý về MỐC THỜI GIAN của bộ quy chuẩn đã dùng để sinh vi phạm này:
    * hoặc "dự án chưa khai ngày mốc, đang dùng bộ mới nhất", hoặc "đang áp bản cũ theo điều khoản
    * chuyển tiếp". undefined = không có gì phải lưu ý (bộ rule không có chiều thời gian).
@@ -87,6 +95,10 @@ export interface RoomInfo {
    * chưa gán (dữ liệu cũ/chưa backfill). Tính 1 lần trong `findRoomLabels()`, mọi nơi gọi PHẢI
    * dùng field này thay vì tự gọi lại `classifyRoom()`. */
   kind: RoomKind;
+  /** p3c (08/08) — id của TextEntity nhãn tên phòng (pick-point đã dò biên). ADDITIVE, optional
+   * để RoomInfo dựng tay ở test/consumer cũ không vỡ. Dùng làm `Violation.entityId` cho luật đo
+   * phòng — select nhãn là select được "phòng" (Doc không có entity phòng riêng). */
+  labelId?: string;
 }
 
 // TOÀN chữ hoa Unicode (khớp cả chữ Việt có dấu hoa)/số/khoảng trắng/dấu chấm/dấu cộng — lọc
@@ -143,6 +155,7 @@ export function findRoomLabels(doc: Doc): RoomInfo[] {
       minWidthMm: poly ? polygonMinWidth(poly) : null,
       poly: poly ?? undefined,
       kind,
+      labelId: t.id,
     });
   }
   return rooms;
@@ -233,8 +246,8 @@ export function wallKindSummary(doc: Doc): Record<WallKind, number> & { unclassi
   return { exterior, interior, unclassified };
 }
 
-function mkViolation(r: StandardRule, message: string, at?: Pt): Violation {
-  return { ruleId: r.id, source: r.source, severity: r.severity, category: r.category, message, verified: r.verified, at };
+function mkViolation(r: StandardRule, message: string, at?: Pt, entityId?: string): Violation {
+  return { ruleId: r.id, source: r.source, severity: r.severity, category: r.category, message, verified: r.verified, at, entityId };
 }
 
 /** Chạy toàn bộ rule đo được trên `doc`. Rule không có cách đo tự động (chưa đủ dữ liệu hình
@@ -269,22 +282,22 @@ export function checkStandards(doc: Doc, rules: StandardRule[], opts?: { asOfDat
     if (kind === 'bedroom') {
       const r = byId('vn-res-bedroom-min-area');
       if (r && room.areaM2 < r.params.minAreaM2) {
-        violations.push(mkViolation(r, `Phòng ngủ "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² < ${r.params.minAreaM2}m² tối thiểu.`, room.at));
+        violations.push(mkViolation(r, `Phòng ngủ "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² < ${r.params.minAreaM2}m² tối thiểu.`, room.at, room.labelId));
       }
     } else if (kind === 'wc') {
       const r = byId('vn-res-wc-min-area');
       if (r && room.areaM2 < r.params.minAreaM2) {
-        violations.push(mkViolation(r, `WC "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² < ${r.params.minAreaM2}m² khuyến nghị.`, room.at));
+        violations.push(mkViolation(r, `WC "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² < ${r.params.minAreaM2}m² khuyến nghị.`, room.at, room.labelId));
       }
     } else if (kind === 'kitchen') {
       const r = byId('vn-res-kitchen-dining-min-area');
       if (r && room.areaM2 < r.params.minAreaM2) {
-        violations.push(mkViolation(r, `Bếp "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² < ${r.params.minAreaM2}m² khuyến nghị (lưu ý: nếu bếp+ăn tách biệt, đây chỉ là diện tích riêng bếp — quy chuẩn gốc tính GỘP bếp+ăn).`, room.at));
+        violations.push(mkViolation(r, `Bếp "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² < ${r.params.minAreaM2}m² khuyến nghị (lưu ý: nếu bếp+ăn tách biệt, đây chỉ là diện tích riêng bếp — quy chuẩn gốc tính GỘP bếp+ăn).`, room.at, room.labelId));
       }
     } else if (kind === 'living') {
       const r = byId('vn-res-living-min-area');
       if (r && room.areaM2 < r.params.minAreaM2) {
-        violations.push(mkViolation(r, `Phòng khách "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² < ${r.params.minAreaM2}m² tham khảo (số liệu kinh nghiệm, chưa trích dẫn được điều khoản TCVN cụ thể).`, room.at));
+        violations.push(mkViolation(r, `Phòng khách "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² < ${r.params.minAreaM2}m² tham khảo (số liệu kinh nghiệm, chưa trích dẫn được điều khoản TCVN cụ thể).`, room.at, room.labelId));
       }
 
       // 2026-07-16: occupant load ước tính (IBC/NFPA "Residential" 18.58 m²/người) — nối cho
@@ -302,6 +315,7 @@ export function checkStandards(doc: Doc, rules: StandardRule[], opts?: { asOfDat
           rOccupant,
           `Phòng khách "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² → ước tính chứa được ~${estOccupants.toFixed(2)} người theo hệ số IBC/NFPA (Residential, ${rOccupant.params.m2PerOccupant} m²/người) — CHỈ mang tính tham khảo, KHÔNG dùng thay occupant load calc chính thức cho hồ sơ PCCC.`,
           room.at,
+          room.labelId,
         ));
       }
     } else if (kind === 'office') {
@@ -319,6 +333,7 @@ export function checkStandards(doc: Doc, rules: StandardRule[], opts?: { asOfDat
           rOffice,
           `Văn phòng "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² → ước tính chứa được ~${estLow.toFixed(2)}–${estHigh.toFixed(2)} người theo hệ số IBC/NFPA (Business – general, dải ${p.m2PerOccupantLow}–${p.m2PerOccupantHigh} m²/người) — SỐ LIỆU CHƯA THỐNG NHẤT giữa 2 nguồn IBC/NFPA, dùng cận trên/dưới để tham khảo, KHÔNG dùng thay occupant load calc chính thức cho hồ sơ PCCC.`,
           room.at,
+          room.labelId,
         ));
       }
     } else if (kind === 'assembly') {
@@ -333,12 +348,13 @@ export function checkStandards(doc: Doc, rules: StandardRule[], opts?: { asOfDat
           rAssembly,
           `Phòng họp/hội trường "${room.name}": diện tích ${room.areaM2.toFixed(1)}m² → ước tính chứa được ~${estOccupants.toFixed(2)} người theo hệ số IBC/NFPA (Assembly – bàn & ghế, ${rAssembly.params.m2PerOccupant} m²/người, giả định mặc định có bàn ghế) — CHỈ mang tính tham khảo, KHÔNG dùng thay occupant load calc chính thức cho hồ sơ PCCC.`,
           room.at,
+          room.labelId,
         ));
       }
     } else if (kind === 'corridor') {
       const r = byId('vn-fire-corridor-min-width-general');
       if (r && room.minWidthMm !== null && room.minWidthMm < r.params.minWidthMm) {
-        violations.push(mkViolation(r, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${r.params.minWidthMm}mm tối thiểu.`, room.at));
+        violations.push(mkViolation(r, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${r.params.minWidthMm}mm tối thiểu.`, room.at, room.labelId));
       }
 
       // 2026-07-15: nối thêm 3 rule quốc tế/Neufert đo được bằng CHÍNH bề rộng hành lang đã đo
@@ -346,22 +362,22 @@ export function checkStandards(doc: Doc, rules: StandardRule[], opts?: { asOfDat
       // "SỔ TRẠNG THÁI NỐI DÂY" cuối file cho lý do các rule Neufert/NFPA/QCVN06 KHÁC chưa nối.
       const rIntlEgress = byId('intl-egress-corridor-min-width');
       if (rIntlEgress && room.minWidthMm !== null && room.minWidthMm < rIntlEgress.params.minWidthMmGeneral) {
-        violations.push(mkViolation(rIntlEgress, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rIntlEgress.params.minWidthMmGeneral}mm tối thiểu theo IBC 2021 §1020.2 (đường thoát nạn chung, chưa xét sprinkler/số người).`, room.at));
+        violations.push(mkViolation(rIntlEgress, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rIntlEgress.params.minWidthMmGeneral}mm tối thiểu theo IBC 2021 §1020.2 (đường thoát nạn chung, chưa xét sprinkler/số người).`, room.at, room.labelId));
       }
       const rNeufert1 = byId('neufert-circulation-one-person');
       if (rNeufert1 && room.minWidthMm !== null && room.minWidthMm < rNeufert1.params.minWidthMm) {
-        violations.push(mkViolation(rNeufert1, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rNeufert1.params.minWidthMm}mm — dưới mức tối thiểu cho 1 người đi qua thoải mái (Neufert/Metric Handbook).`, room.at));
+        violations.push(mkViolation(rNeufert1, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rNeufert1.params.minWidthMm}mm — dưới mức tối thiểu cho 1 người đi qua thoải mái (Neufert/Metric Handbook).`, room.at, room.labelId));
       }
       const rNeufert2 = byId('neufert-circulation-two-persons');
       if (rNeufert2 && room.minWidthMm !== null && room.minWidthMm < rNeufert2.params.minWidthMm) {
-        violations.push(mkViolation(rNeufert2, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rNeufert2.params.minWidthMm}mm — dưới mức tiện dụng cho 2 người tránh nhau (Neufert/Metric Handbook).`, room.at));
+        violations.push(mkViolation(rNeufert2, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rNeufert2.params.minWidthMm}mm — dưới mức tiện dụng cho 2 người tránh nhau (Neufert/Metric Handbook).`, room.at, room.labelId));
       }
 
       // 2026-07-15: rule D1.7 accessibility (QCVN 10:2024/BXD) hành lang 2 chiều tránh xe lăn —
       // cùng cơ chế room.minWidthMm đã đo ở trên, chỉ khác ngưỡng/nguồn.
       const rAccessCorridor = byId('vn-access-corridor-two-way-min-width');
       if (rAccessCorridor && room.minWidthMm !== null && room.minWidthMm < rAccessCorridor.params.minWidthMm) {
-        violations.push(mkViolation(rAccessCorridor, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rAccessCorridor.params.minWidthMm}mm tối thiểu để 2 người/xe lăn tránh nhau (QCVN 10:2024/BXD).`, room.at));
+        violations.push(mkViolation(rAccessCorridor, `Hành lang "${room.name}": bề rộng đo được ≈${Math.round(room.minWidthMm)}mm < ${rAccessCorridor.params.minWidthMm}mm tối thiểu để 2 người/xe lăn tránh nhau (QCVN 10:2024/BXD).`, room.at, room.labelId));
       }
     }
   }
@@ -385,10 +401,10 @@ export function checkStandards(doc: Doc, rules: StandardRule[], opts?: { asOfDat
       const realWidthMm = w * Math.abs(e.sx || 1);
       if (e.block === 'door') {
         if (rDoorMain && realWidthMm < rDoorMain.params.minWidthMm) {
-          violations.push(mkViolation(rDoorMain, `Cửa chính (block "${e.block}"): bề rộng ≈${Math.round(realWidthMm)}mm < ${rDoorMain.params.minWidthMm}mm tối thiểu (QCVN 10:2024/BXD).`, e.at));
+          violations.push(mkViolation(rDoorMain, `Cửa chính (block "${e.block}"): bề rộng ≈${Math.round(realWidthMm)}mm < ${rDoorMain.params.minWidthMm}mm tối thiểu (QCVN 10:2024/BXD).`, e.at, e.id));
         }
       } else if (rDoorRoom && realWidthMm < rDoorRoom.params.minWidthMm) {
-        violations.push(mkViolation(rDoorRoom, `Cửa phòng chức năng (block "${e.block}"): bề rộng ≈${Math.round(realWidthMm)}mm < ${rDoorRoom.params.minWidthMm}mm tối thiểu (QCVN 10:2024/BXD).`, e.at));
+        violations.push(mkViolation(rDoorRoom, `Cửa phòng chức năng (block "${e.block}"): bề rộng ≈${Math.round(realWidthMm)}mm < ${rDoorRoom.params.minWidthMm}mm tối thiểu (QCVN 10:2024/BXD).`, e.at, e.id));
       }
     }
   }
@@ -421,6 +437,7 @@ export function checkStandards(doc: Doc, rules: StandardRule[], opts?: { asOfDat
           rule,
           `${kindLabel} "${room.name}": đếm được ${count} ổ cắm điện < ${rule.params.minOutlets} khuyến nghị (TCVN 9206:2012, khoảng ${rule.params.minOutlets}-${rule.params.maxOutlets} ổ/phòng).`,
           room.at,
+          room.labelId,
         ));
       }
     }

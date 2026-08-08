@@ -20,7 +20,9 @@ export function violationToFinding(v: Violation): FindingLuat {
     nguon: v.asOfNote ? `${v.source} · ${v.asOfNote}` : v.source,
     ruleId: v.ruleId,
     moTa: v.message,
-    viTri: v.at ? { mm: v.at } : undefined,
+    // p3c (08/08) — mang `entityId` qua (Violation.entityId, checker.ts): ReviewPanel select được
+    // đúng vật thay vì chỉ zoom toạ độ. Không bịa: cả hai thiếu ⇒ viTri = undefined như cũ.
+    viTri: v.at || v.entityId ? { mm: v.at, entityId: v.entityId } : undefined,
     chuaKiemChung: v.verified === false ? true : undefined,
   };
 }
