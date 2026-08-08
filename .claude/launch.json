@@ -10,52 +10,18 @@
       "cwd": "."
     },
     {
-      "name": "interiorflow-verify",
+      "name": "interiorflow-p14-worktree",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3001,
-      "autoPort": true,
-      "cwd": "."
+      "runtimeArgs": ["run", "dev", "--", "-p", "3013"],
+      "port": 3013,
+      "cwd": ".worktrees/p14"
     },
     {
-      "name": "interiorflow-m3",
+      "name": "interiorflow-p3c-worktree",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3006,
-      "autoPort": true,
-      "cwd": "."
-    },
-    {
-      "name": "interiorflow-p2",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3002,
-      "autoPort": true,
-      "cwd": "."
-    },
-    {
-      "name": "interiorflow-mscope",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3005,
-      "autoPort": true,
-      "cwd": "."
-    },
-    {
-      "name": "interiorflow-phaply",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3007,
-      "autoPort": true,
-      "cwd": "."
-    },
-    {
-      "name": "interiorflow-h1",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3008,
-      "autoPort": true,
-      "cwd": "."
+      "runtimeArgs": ["run", "dev", "--", "-p", "3012"],
+      "port": 3012,
+      "cwd": ".worktrees/p3c"
     }
   ]
 }

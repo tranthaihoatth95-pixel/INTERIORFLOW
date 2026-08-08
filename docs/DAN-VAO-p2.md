@@ -44,26 +44,37 @@ npm test
 
 ---
 
-## VIỆC 1 — 27 chỗ còn nhắc trần "5 sheet"
+## VIỆC 1 — trần "5 sheet" · ⚠️ **PHẦN LỚN ĐÃ LÀM RỒI, ĐỌC KỸ TRƯỚC KHI ĐỘNG TAY**
 
-Hoà **chốt 07/08**: bỏ giới hạn ≤5 sheet ở **TẤT CẢ** chặng (xem `docs/00-CHOT.md` mục 1).
-Nhưng còn 27 chỗ nhắc. Đo lại — đừng tin số này:
+> **Sửa 08/08 sau khi TỔNG đo lại.** Bản phiếu đầu ghi *"27 chỗ phải dọn"* — **số đó sai**,
+> nó gộp cả `docs/` (biên bản lịch sử) vào cùng một rổ với code. Đo lại cho đúng:
 
-```bash
-grep -rniE "≤ ?5 sheet|5 sheet|toi da 5 (to|trang|sheet)" --include=*.ts --include=*.tsx --include=*.md . | grep -v node_modules
+```
+MAX_SHEETS   →  ĐÃ GỠ HẲN từ 04/08 (D2 đợt 8)
+                bằng chứng: lib/cad/model.ts:1316 · lib/cad/sheet-migrate.ts:7
+"5 sheet" trong code (.ts/.tsx)  →  chỉ còn 2 chỗ, CẢ HAI LÀ COMMENT
+"5 sheet" trong docs (.md)       →  45 chỗ — BIÊN BẢN, GIỮ NGUYÊN HẾT
 ```
 
-Phân **ba loại**, xử **khác nhau**:
+**Việc thật còn lại chỉ có hai dòng chữ:**
 
-| Loại | Cách nhận ra | Xử |
+| `file:dòng` | Nội dung | Xử |
 |---|---|---|
-| **① Chặn thật trong code** | `if (sheets.length >= 5)`, hằng số `MAX_SHEETS = 5` | **Gỡ chặn.** Cần trần vì lý do kỹ thuật (bộ nhớ) thì đặt trần **cao và khai rõ lý do**, không phải 5 |
-| **② Chữ hiện cho người dùng** | nhãn, tooltip, câu cảnh báo | Sửa lời cho **khớp hành vi mới** |
-| **③ Ghi chép lịch sử trong `docs/`** | báo cáo cũ, sổ chốt | **GIỮ NGUYÊN** — sổ là biên bản, không sửa quá khứ |
+| `components/studio/SheetTabBar.tsx:217` | comment `…thật ra là "sheet 1 / trần 5 sheet"…` | Sửa lời cho khớp hiện trạng (không còn trần) |
+| `lib/present-editor/custom-templates.ts:12` | docstring `Slot hoá … đủ dùng cho deck ≤5 sheet` | Nếu slot-hoá **thật sự** chỉ chạy tốt tới 5 sheet thì **giữ**, nhưng đổi lời cho rõ đó là *giới hạn của thuật toán slot*, **không phải trần sản phẩm** |
 
-⚠️ Nhầm loại ③ thành loại ② là **xoá dấu vết quyết định**. Đọc kỹ ngữ cảnh trước khi sửa.
+**Rồi tự đi tìm chặn ẩn** — chặn có thể không mang chữ "5 sheet":
 
-Ghi bảng **ba cột** vào OUT: `file:dòng` · loại · đã xử ra sao.
+```bash
+grep -rnE "sheets\.length\s*>=?\s*[0-9]|MAX_SHEET|maxSheets|limit.*[Ss]heet" --include=*.ts --include=*.tsx . | grep -v node_modules | grep -v '\.test\.'
+```
+
+TỔNG chạy lệnh này ra **0 chặn thật** (chỉ có `sheets.length > 1` để quyết định nút Đóng —
+đúng nghiệp vụ, không phải trần). Đo lại; ra khác thì đó mới là việc.
+
+⛔ **KHÔNG sửa 45 chỗ trong `docs/`.** Sổ là biên bản. Sửa quá khứ là xoá dấu vết quyết định.
+
+Ghi vào OUT: bảng 2 dòng đã sửa + kết quả lệnh tìm chặn ẩn.
 
 ---
 
@@ -140,10 +151,14 @@ hai cách đếm, hai con số, không ai biết cái nào thật).
 
 | # | Đích |
 |---|---|
-| 1 | `wc -w STATUS.md` **< 800** |
-| 2 | Số chỗ nhắc "5 sheet" **trong code** (không tính `docs/`) = **0**, hoặc còn lại có lý do kỹ thuật ghi rõ |
+| 1 | `wc -w STATUS.md` **< 800** ← *đây mới là việc chính của phiếu này* |
+| 2 | 2 comment "5 sheet" đã sửa lời · lệnh tìm chặn ẩn ra **0 chặn thật** |
 | 3 | Hai thước đếm **thống nhất**, hoặc giải thích được vì sao khác |
 | 4 | `tsc` 0 lỗi · `check-chot` 0/0 · `npm test` không thêm lỗi |
+
+> ⚖️ **Cân lại trọng tâm:** VIỆC 1 hoá ra chỉ là 2 dòng comment (`MAX_SHEETS` đã gỡ từ 04/08).
+> **VIỆC 2 — cắt `STATUS.md` từ 8 674 xuống dưới 800 từ — mới là phần nặng và đáng giá nhất.**
+> Dồn sức vào đó.
 
 ---
 

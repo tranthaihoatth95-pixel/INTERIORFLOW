@@ -1,5 +1,39 @@
 # STATUS — InteriorFlow
 
+## ✅ XONG (08/08 sáng — KIỂM BÀN GIAO + vá soi-that + dọn server, CHƯA COMMIT V6)
+Đối chiếu `BAN-GIAO-TAT-CA-2026-08-08.md` bằng máy: mọi số khớp (tsc 0 · check-chot 0 · worktree
+5/5 ĐẦY — p7 ĐÃ mở đang chạy 3007). **Vá regex N5 `scripts/soi-that.mjs`** (loại dòng có ⬜/❌/THÊM):
+❌ 20→6, kiểm tay 6 dòng → **CHỈ 1 ĐỎ THẬT = `openingsWidthOnBoundary()`** (SPEC-VE-REVIT T4 — trừ
+bề rộng cửa khỏi chu vi; `hatch.ts` mới có `openingsAreaInPolygon` diện tích). 5 dòng kia: đổi tên
+(`inferElementTypes` lib/cad/element-infer.ts:1 có test+dxf.ts gọi · `matId` · `priceVnd`) hoặc chữ
+bảng không phải định danh (`NEXT_PUBLIC_`/`ENUM` — LARK_* đã đúng server-only, 0 lộ client).
+Mock đếm máy: 80 html + 10 `_archinote` (30 `.dc.html`); `support.js` ĐÃ CÓ (7303aee) + 3 export
+hỏng đã export lại (422/271/265 dòng) — README-mocks đã append đính chính. **Dọn server §0aa**: repo
+chính chạy 2 server (3000 launch.json + 3001 rác từ 06:51) → kill 3001, 3000 hồi 200 ổn định
+(KHÔNG đụng 65040 phiên .idfc + 3007 p7 + 3012 p3c). Verify app browser thật (3000, demo): login →
+Gallery → 3D mode 3D → 2D, 0 lỗi console; lỗi ③ Khối-cơ-bản-chết còn nguyên main (đúng, p14 chưa
+merge). 🟡 LỆCH CHỐT PHÁT HIỆN, chưa sửa (vùng cad đang nhiều phiên): dải mode 2D còn 3 nút
+"Sơ phác·Kỹ thuật·Nội thất" — chốt 07/08 chỉ còn 2; intro clipart cũ vẫn chạy (chốt 02/08 bỏ);
+Gallery 3 thẻ trùng tên "Dự án mẫu" trong dev.db.
+
+## ✅ XONG (08/08 — p14 vòng 2 MỞ KHO + 6 việc soi, worktree `.worktrees/p14` nhánh `feat/p14-build-ops-ui`, CHƯA COMMIT V6)
+Chi tiết → `docs/M-BUILD-OPS-2-OUT.md` **trong worktree**. Phân 11 hàm build-ops A/B/C có lý do
+nghề: A=`arrayGrid` ĐÃ NỐI (2 bậc `arrayLinear` đơn trục trong `ops[]` = lưới — không cần BuildOp
+mới, `.idf` cũ đọc y nguyên; `applyArrayOps` build-ops.ts; test 59/59 đo bbox) · B=offset/fillet
+(cha gọi nội bộ sẵn) · C=8 hàm chờ **bậc BuildOp mới ở model.ts — GAP cho TỔNG** (vùng cấm phiếu).
+MỘT nguồn ghi `lib/render-studio/array-grid-ops.ts` cho 2 cửa: panel Sửa (mục **Array** EN+VI,
+khoá lộ lý do, Ctrl+Z lùi được — ảnh trước/sau) + **dòng nhập nhanh kiểu SketchUp** góc dưới phải
+viewport (`QuickCommandBox` Viewport3D — gõ `array 3x2 1200,900` Enter, verify thật cả chuỗi).
+6 việc soi 08/08: ① viền cạnh sạch (mergeVertices + EdgesGeometry 15° — tường phẳng đúng 4 cạnh,
+0 chéo, ảnh; gốc bệnh là soup chưa hàn, không phải Wireframe) · ② camera 3/4 (fit đổi sang
+Box3.setFromObject từ mesh THẬT + gọi SAU khi dựng — bboxMm là bbox 2D không biết bản Array) ·
+③ bỏ nhóm Khối cơ bản chết, 3 nhóm động tác Draw-then-extrude/Cấu kiện/Modify (nhóm đầu 0 nút
+xám, Rectangle/Circle/Polygon sống qua pickStage) · ④ tên lệnh EN + chốt ghi `00-CHOT.md` dòng
+cuối · ⑤ như trên · ⑥ "Dựng ảnh" nâng bottom 76→132 (đo DOM: đang ĐÈ nút Thêm của dock 1240-1313).
+tsc worktree 0 · npm test 0 fail · check-chot 0 đỏ · dọn 3 entity test. 🟡 CHƯA VERIFY: Enter phím
+thật (CDP không kích React — cần 1 lần gõ tay) · click khung nhìn không set selection (bug cũ, GAP).
+Server 3013 của worktree đã dừng cuối phiên. Việc 7 (Magic đường B) không làm — chờ phiếu riêng.
+
 ## ✅ XONG (08/08 rạng sáng — P14 · T1+T4: BVH + BẮT ĐIỂM 3D + mặt phẳng làm việc + lưới đổi mật độ, CHƯA COMMIT V6)
 Chi tiết → `docs/M-3D-NOI-OUT.md`. `three-mesh-bvh` 0.9.14 (MIT, đúng bản NC-12) qua cổng
 `lib/three/bvh.ts`; **đo cảnh IF thật** (trả lời CHƯA-VERIFY NC-12 §3.1): dựng BVH ≤3,2ms/39-67

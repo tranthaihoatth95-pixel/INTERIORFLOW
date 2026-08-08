@@ -49,6 +49,15 @@ npm test
 
 > ⚠️ Phiếu này **ít viết code, nhiều NHÌN**. Đầu ra chính là **ảnh chụp**, không phải diff.
 
+> ⛔ **ĐỪNG LÀM LẠI VIỆC ĐÃ XONG** (kiểm bằng máy 08/08):
+> - **Chữ trên 4 màn rỗng ĐÃ bám mock** — cả 4 tệp mang dấu mốc `M-EMPTY-2` (tiêu đề · mô tả ·
+>   nhãn nút · song ngữ · lý do khoá lộ mặt · kéo-thả đã nối thật). **Không sửa lại chữ.**
+> - **`PanelFlank` ĐÃ lắp 3 vùng**: `AppShell.tsx` · `LibrarySheet.tsx` · `Render3DModeSkeleton.tsx`.
+>   **Không lắp lại, không chế dải thứ hai.**
+>
+> Việc của phiếu này là thứ **chưa ai làm**: nhìn bằng mắt để soi **bố cục · khoảng cách ·
+> thứ bậc thị giác** (ba thứ đọc mã không thấy được), và **xác minh** tay cầm panel chạy thật.
+
 ---
 
 ## VIỆC 1 — Vì sao phải làm lại
@@ -116,12 +125,20 @@ Bước nào sai thì sửa, ghi `file:dòng`.
 
 ---
 
-## VIỆC 4 — 10 mock còn lại
+## VIỆC 4 — rà 60 mock HTML thuần
 
-10 tệp `.dc.html` **không** tham chiếu `support.js` — là HTML thuần, mở được bình thường.
+> **Sửa 08/08:** bản phiếu đầu ghi *"10 mock còn lại"* — **số đó sai**. Đo lại:
+> `docs/mocks/` có **80 tệp HTML**, trong đó **20 cần `support.js`** · **60 là HTML thuần**.
 
-Rà nhanh: có màn nào **đã dựng code mà chưa từng đối chiếu** không?
-Liệt kê vào OUT cho TỔNG. **Không tự làm** — chỉ liệt kê.
+60 tệp HTML thuần mở bằng `file://` là chạy bình thường, không dính lỗi chồng trạng thái.
+
+**Chỉ LIỆT KÊ, không tự sửa** — việc này là để TỔNG biết còn nợ gì:
+
+1. Màn nào **đã dựng code rồi mà chưa từng đối chiếu** với mock?
+2. Mock nào **không còn màn nào tương ứng** trong app (mock chết)?
+
+Ghi hai danh sách vào OUT. Nếu quá 60 tệp mà không đủ thời gian, làm **20 tệp mới nhất trước**
+(`ls -t docs/mocks/*.html | head -20`) và khai rõ đã rà tới đâu (N5).
 
 ---
 

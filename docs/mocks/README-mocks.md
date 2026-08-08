@@ -224,3 +224,10 @@ không dựng mock mới chồng lên. Append-only, không sửa dòng cũ.
 lấy bản đủ tương phản. Mock nào sau này dùng lại các biến đó thì **đã có sẵn**, đừng khai lại cục bộ.
 
 Chi tiết port + nghiệm thu: `docs/M-APPLY-C-OUT.md`.
+
+---
+
+## ✅ CẬP NHẬT 08/08 (phiên kiểm bàn giao) — 2 mục 🔴 phía trên ĐÃ HẾT HIỆU LỰC
+- **`support.js` ĐÃ CÓ** (10KB, 07/08 22:41, commit `7303aee`) — mục "🔴 CHẶN CHUNG: support.js KHÔNG TỒN TẠI" lỗi thời. 24 tệp khai `support.js` (tăng từ 16 do thêm export `.dc.html` mới).
+- **3 export hỏng ĐÃ export lại đủ ruột**: `_archinote/mock-if-du-an.html` 22→422 dòng · `mock-if-cai-dat.html` 26→271 · `mock-if-anh-dai-dien.html` 60→265. Mục 🔴 EXPORT HỎNG trong AUDIT A4 lỗi thời cho 3 file này (nội dung ruột chưa audit lại token — việc riêng).
+- Đếm máy 08/08: **80 tệp `.html` ở `docs/mocks/` (30 là `.dc.html`) + 10 tệp trong `_archinote/` = 90**. Verify browser thật `Thư viện.dc.html`: render đủ 2 lớp, không lộ `{{ }}`.

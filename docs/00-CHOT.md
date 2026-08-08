@@ -762,3 +762,4 @@ Không viết thêm luật (đã có 3.074 dòng / 11 bộ ở `lib/cad/standard
 Máy không biết *"đúng concept chưa"* nếu không ai khai concept. Kiểm concept = **so với ĐỀ BÀI
 đã ghi**, không phải so với "cái đẹp chung chung". Màn đề bài đang là panel lọt trong màn vẽ
 (`G-M5-11`) ⇒ **làm màn đề bài trước, rồi mới làm góp ý concept.**
+[08/08 Hoà chốt — THUẬT NGỮ LỆNH DỰNG HÌNH GIỮ TIẾNG ANH] Array·Bevel·Chamfer·Loft·Sweep·Revolve·Mirror·Fillet·Offset·Extrude·Boolean là thuật ngữ nghề quốc tế (dân 3ds Max/SketchUp đọc là hiểu, IF là sản phẩm global — dịch VI bắt họ dịch ngược trong đầu). Cách hiện: nút ghi TÊN ANH dòng chính + dòng nhỏ giải thích tiếng Việt (vd "Array / lặp khối theo lưới"). RANH GIỚI: CHỈ áp cho tên LỆNH DỰNG HÌNH — tên chặng (Thiết kế 2D/3D/Trình chiếu), điều hướng, trạng thái, câu giải thích vẫn VI/EN theo ngôn ngữ giao diện. Mẫu áp đầu tiên: mục Array ở Command3DPanel tab Sửa + dòng nhập nhanh Viewport3D (nhánh feat/p14-build-ops-ui).
