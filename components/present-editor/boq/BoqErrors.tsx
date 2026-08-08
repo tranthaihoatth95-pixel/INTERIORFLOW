@@ -38,6 +38,14 @@ function actionLabel(err: BoqError, tr: (vi: string, en: string) => string): str
   }
 }
 
+/** mock `.errbar u` (§2, pin 2) — bấm cuộn xuống khối dòng lỗi cuối bảng, đúng `data-boq-error-
+ * anchor` đặt ở dòng lỗi ĐẦU TIÊN trong `BoqErrorRows` bên dưới. Không cần prop/ref xuyên qua
+ * `BoqScreen.tsx` (banner và bảng nằm khác component) — DOM query trong 1 lần click, không đụng
+ * `lib/present-editor/*`. */
+export function scrollToBoqErrorRows(): void {
+  document.querySelector('[data-boq-error-anchor="true"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 export function BoqErrorBanner({ errors }: { errors: BoqError[] }) {
   const tr = useT();
   if (!errors.length) return null;
@@ -49,8 +57,11 @@ export function BoqErrorBanner({ errors }: { errors: BoqError[] }) {
         borderRadius: 10, padding: '7px 12px', fontSize: 13, color: 'var(--t1)',
       }}
     >
-      <AlertTriangle size={15} style={{ color: 'var(--danger)', flexShrink: 0 }} />
-      {tr(`${errors.length} vùng chưa vào tổng`, `${errors.length} region(s) not counted`)}
+      <AlertTriangle size={17} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+      {tr(`${errors.length} vùng chưa vào tổng — `, `${errors.length} region(s) not counted — `)}
+      <u onClick={scrollToBoqErrorRows} style={{ cursor: 'pointer', textUnderlineOffset: 2 }}>
+        {tr('xem dòng lỗi cuối bảng', 'see error rows below')}
+      </u>
     </div>
   );
 }
@@ -79,16 +90,20 @@ export function BoqErrorRows({ errors, projectId, columns }: { errors: BoqError[
   return (
     <>
       {errors.map((err, i) => (
-        <tr key={`${err.reason}-${err.matId ?? i}`} style={{ background: 'color-mix(in srgb, var(--danger) 8%, var(--panel))' }}>
+        <tr
+          key={`${err.reason}-${err.matId ?? i}`}
+          data-boq-error-anchor={i === 0 ? 'true' : undefined}
+          style={{ background: 'color-mix(in srgb, var(--danger) 8%, var(--panel))' }}
+        >
           <td colSpan={columns} style={{ padding: '0 10px', height: 'var(--row, 28px)', color: 'var(--t2)', fontSize: 13 }}>
-            <AlertTriangle size={12} style={{ color: 'var(--danger)', display: 'inline-block', verticalAlign: -2, marginRight: 6 }} />
+            <AlertTriangle size={12} style={{ color: 'var(--danger)', display: 'inline-block', verticalAlign: -3, marginRight: 5 }} />
             {err.message}
             <button
               type="button"
               onClick={() => onAction(err)}
               style={{
                 height: 22, padding: '0 9px', marginLeft: 8, border: 0, borderRadius: 7,
-                background: 'var(--danger)', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                background: 'var(--danger)', color: '#fff', fontSize: 9.5, fontWeight: 600, cursor: 'pointer',
               }}
             >
               {actionLabel(err, tr)}
