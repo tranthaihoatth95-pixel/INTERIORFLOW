@@ -16,7 +16,7 @@ import {
   Radius, Diameter, DraftingCompass, ChevronsRight, GitBranch, PaintBucket,
   CircleDashed, LocateFixed, Palette, StickyNote,
   Pentagon, Ellipse, Donut, SplinePointer, Slash, Divide,
-  Blend, MoveUpRight, Video, ArrowDownRight,
+  Blend, MoveUpRight, Video, ArrowDownRight, Pipette,
 } from 'lucide-react';
 import { useCadStore, type Tool, type CadMode } from '@/lib/cad/store';
 import { useModKey, useModShiftKey } from '@/lib/kbd';
@@ -399,6 +399,7 @@ export default function CadToolbar({
       <Divider h={rowH} />
       <GroupBlock label="SỬA">
         <Group items={EDIT} />
+        <EyedropperButton isPro={isPro} />
       </GroupBlock>
       {isPro && <Divider h={rowH} />}
       {isPro && <Group items={MODIFY} />}
@@ -506,6 +507,40 @@ function GroupBlock({ label, children }: { label: string; children: React.ReactN
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{children}</div>
       <GroupLabel>{label}</GroupLabel>
     </div>
+  );
+}
+
+/**
+ * VIỆC "ống hút thuộc tính" (`lib/cad/eyedropper.ts`, SPEC-LENH-VE-IF §4 khuyết ① "rẻ mà được
+ * yêu nhất" — AutoCAD MATCHPROP): copy lớp/nét/matId từ 1 đối tượng sang nhiều đối tượng khác.
+ *
+ * KHÔNG phải 1 `Tool` trong union `lib/cad/store.ts` — đây là lệnh CHỒNG lên tool hiện tại
+ * (giống cách người dùng vẫn ở 'select' trong lúc MATCHPROP chạy), nên không đi qua `setTool()`
+ * như mọi nút khác trong `Group`. Bật/tắt qua CustomEvent 'cad:eyedropper-toggle' — CadCanvas.tsx
+ * tự bắt sự kiện, chạy vòng click nguồn→đích, và tự huỷ (Esc/đổi tool) rồi báo NGƯỢC qua
+ * 'cad:eyedropper-cancelled' để nút này tắt sáng đúng lúc dù người dùng không bấm lại chính nút.
+ */
+function EyedropperButton({ isPro }: { isPro: boolean }) {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const onCancelled = () => setOn(false);
+    window.addEventListener('cad:eyedropper-cancelled', onCancelled);
+    return () => window.removeEventListener('cad:eyedropper-cancelled', onCancelled);
+  }, []);
+  const icoS = isPro ? 17 : 19;
+  return (
+    <Tooltip label="Ống hút thuộc tính" desc="Copy lớp · nét · vật liệu từ 1 đối tượng sang nhiều đối tượng khác (MATCHPROP)">
+      <button
+        type="button"
+        onClick={() => {
+          setOn((v) => !v);
+          fire('cad:eyedropper-toggle');
+        }}
+        style={btn(on, false, isPro)}
+      >
+        <Pipette size={icoS} />
+      </button>
+    </Tooltip>
   );
 }
 

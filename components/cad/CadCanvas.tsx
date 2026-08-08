@@ -59,6 +59,10 @@ import {
 import { gripsOf, hitTestGrip, applyGripMove, type Grip } from '@/lib/cad/grips';
 import { findHatchBoundary } from '@/lib/cad/hatch';
 import { BLOCK_MAP } from '@/lib/cad/furniture';
+// VIỆC "ống hút thuộc tính" — SPEC-LENH-VE-IF §4 khuyết ① (kho §1#5 trong DOI-CHIEU-42-SPEC).
+import { matchPropsOne } from '@/lib/cad/eyedropper';
+// VIỆC "gõ số sau thao tác" (VCB) — SPEC-LENH-VE-IF §4 khuyết ② (kho §1#6 trong DOI-CHIEU-42-SPEC).
+import { parseVcbToken, applyVcbToMoveCopy } from '@/lib/commands/vcb';
 import {
   autoSnapToWall,
   detectCollisions,
@@ -120,6 +124,35 @@ interface Ix {
   /** GỐC B3 — lần "Xem vừa màn" gần nhất đã CANH VÀO CỤM VẼ CHÍNH (bỏ bản sao để xa) hay chưa.
    *  Bấm lần nữa khi cờ đang bật = xem toàn bộ. Là đường quay lại bắt buộc của G-M1-04. */
   zoomedToCluster: boolean;
+  /** VIỆC "ống hút thuộc tính" (lib/cad/eyedropper.ts, MATCHPROP) — KHÔNG phải 1 `Tool` trong
+   * union (lệnh CHỒNG lên tool hiện tại, bật/tắt qua CustomEvent 'cad:eyedropper-toggle' từ
+   * CadToolbar.tsx). `active` = đang chờ click nguồn/đích; `sourceId` = null cho tới khi đã lấy
+   * được đối tượng nguồn (click đầu tiên), sau đó mỗi click tiếp theo là 1 đích (lặp lại được,
+   * giống MATCHPROP thật — không giới hạn 1 đích duy nhất). */
+  eyedropper: { active: boolean; sourceId: string | null };
+  /** VIỆC "gõ số sau thao tác" kiểu VCB (lib/commands/vcb.ts) — kết quả move/copy 2-click GẦN
+   * NHẤT, giữ NGUYÊN entity gốc (snapshot TRƯỚC lần dịch chuyển đầu tiên) để mỗi lần gõ số mới
+   * tính lại từ 0 (không cộng dồn sai số qua nhiều lần chỉnh, đúng docstring `applyVcbToMoveCopy`).
+   * null khi: chưa từng move/copy trong phiên vẽ hiện tại, hoặc vừa Esc/đổi tool (xem 2 chỗ reset).
+   */
+  lastMoveCopy: {
+    isCopy: boolean;
+    /** id đang được CHỌN (st.selection) — không đổi qua các lần chỉnh VCB. */
+    sourceIds: string[];
+    /** snapshot hình học TRƯỚC lần dịch chuyển đầu tiên — mọi lần VCB tính lại từ đây. */
+    originals: Entity[];
+    /** id các entity ĐANG hiển thị kết quả hiện tại (copy: đổi mỗi lần re-apply vì entity cũ bị
+     * gỡ + entity mới được tạo; move: luôn = sourceIds vì move không tạo id mới). */
+    currentIds: string[];
+    /** hướng đơn vị đã kéo lúc đầu (từ P0→P1 của cú 2-click gốc) — VCB chỉ đổi khoảng cách/số
+     * lượng, KHÔNG đổi hướng (đúng SketchUp VCB). (0,0) khi P0===P1 (kéo tại chỗ, không hướng). */
+    ux: number;
+    uy: number;
+    /** khoảng cách GỐC đã kéo tay — mẫu số cho token `/N` (chia đều GIỮ NGUYÊN tổng khoảng này). */
+    baseSpanMm: number;
+    /** kế hoạch ĐANG áp dụng — đổi sau mỗi lần gõ số qua `applyVcbToMoveCopy`. */
+    plan: { copyCount: number; stepMm: number };
+  } | null;
 }
 
 function css(varName: string, fallback: string): string {
@@ -319,6 +352,8 @@ export default function CadCanvas() {
     pinch: null,
     lastPointerWasTouch: false,
     zoomedToCluster: false,
+    eyedropper: { active: false, sourceId: null },
+    lastMoveCopy: null,
   });
 
   // ── vòng vẽ rAF ──
@@ -362,6 +397,17 @@ export default function CadCanvas() {
       if (s.tool !== prev) {
         prev = s.tool;
         if (s.tool !== 'select' && s.tool !== 'pan') ix.current.lastTool = s.tool;
+        // VCB "gõ số sau thao tác" (lib/commands/vcb.ts) chỉ có ý nghĩa NGAY SAU 1 move/copy vừa
+        // chốt — đổi sang tool khác (kể cả bấm lại Move/Copy để bắt đầu lượt MỚI) làm mất căn cứ
+        // "đã kéo theo hướng nào" của lượt cũ, xoá để khỏi áp nhầm VCB cũ vào ngữ cảnh mới.
+        ix.current.lastMoveCopy = null;
+        // Ống hút (lib/cad/eyedropper.ts) là lệnh CHỒNG lên tool hiện tại, không phải bản thân
+        // 1 tool — đổi tool (kể cả bấm phím tắt L/M/CO khi đang armed) coi như huỷ phiên ống hút,
+        // giống cách Escape huỷ (xem nhánh Escape bên dưới) — báo ngược cho nút toolbar tắt sáng.
+        if (ix.current.eyedropper.active) {
+          ix.current.eyedropper = { active: false, sourceId: null };
+          window.dispatchEvent(new CustomEvent('cad:eyedropper-cancelled'));
+        }
       }
     });
     return unsub;
@@ -433,6 +479,31 @@ export default function CadCanvas() {
     };
     window.addEventListener('cad:goto-box', onGotoBox);
     return () => window.removeEventListener('cad:goto-box', onGotoBox);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // VIỆC "ống hút thuộc tính" (MATCHPROP, SPEC-LENH-VE-IF §4 khuyết ①) — nút ở CadToolbar.tsx
+  // phát 'cad:eyedropper-toggle' (không đi qua `st.tool`, xem docstring field `eyedropper` ở Ix).
+  useEffect(() => {
+    const onToggle = () => {
+      const st = useCadStore.getState();
+      if (ix.current.eyedropper.active) {
+        // đang bật thì bấm lại nút = huỷ (giống Esc), KHÔNG áp thêm property nào.
+        ix.current.eyedropper = { active: false, sourceId: null };
+        st.setStatus(toolHint(st.tool));
+      } else {
+        // Ống hút không phải tool trong `Tool` union nên có thể được bật GIỮA CHỪNG 1 lệnh khác
+        // đang chờ điểm — dọn sạch buffer điểm/số dở dang trước, tránh click đầu tiên của ống hút
+        // lẫn vào state cũ (pts/dynBuf) của lệnh trước đó.
+        ix.current.pts = [];
+        ix.current.dynBuf = '';
+        ix.current.eyedropper = { active: true, sourceId: null };
+        st.setStatus('Ống hút thuộc tính (MATCHPROP): click đối tượng NGUỒN — Esc để huỷ.');
+      }
+      ix.current.redraw = true;
+    };
+    window.addEventListener('cad:eyedropper-toggle', onToggle);
+    return () => window.removeEventListener('cad:eyedropper-toggle', onToggle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -637,6 +708,44 @@ export default function CadCanvas() {
       return;
     }
     if (e.button !== 0) return;
+
+    // Ống hút thuộc tính (MATCHPROP) — chặn TRƯỚC switch theo tool: đây là lệnh CHỒNG lên tool
+    // hiện tại (thường vẫn là 'select' trong lúc dùng), không phải 1 nhánh của switch theo `tool`.
+    if (ix.current.eyedropper.active) {
+      const hitId = hitTest(st.doc, ix.current.cursorWorld, tolMm());
+      if (!hitId) {
+        st.setStatus(
+          ix.current.eyedropper.sourceId
+            ? 'Ống hút: click TRÚNG một đối tượng để áp — hoặc Esc để thoát.'
+            : 'Ống hút: click TRÚNG một đối tượng làm NGUỒN — hoặc Esc để thoát.',
+        );
+        return;
+      }
+      if (!ix.current.eyedropper.sourceId) {
+        ix.current.eyedropper.sourceId = hitId;
+        st.setStatus('Ống hút: đã lấy nguồn — click từng đối tượng ĐÍCH để áp (lặp lại được), Esc khi xong.');
+        ix.current.redraw = true;
+        return;
+      }
+      if (hitId === ix.current.eyedropper.sourceId) {
+        st.setStatus('Ống hút: đây chính là nguồn — click một đối tượng KHÁC làm đích.');
+        return;
+      }
+      const source = st.doc.entities.find((en) => en.id === ix.current.eyedropper.sourceId);
+      if (!source) {
+        // nguồn vừa bị xoá/undo giữa chừng phiên ống hút — không còn gì để áp.
+        ix.current.eyedropper.sourceId = null;
+        st.setStatus('Ống hút: đối tượng nguồn không còn — click lại 1 đối tượng làm nguồn mới.');
+        return;
+      }
+      const target = st.doc.entities.find((en) => en.id === hitId);
+      if (target) {
+        st.updateEntities([matchPropsOne(source, target)]);
+        st.setStatus(`Ống hút: đã áp thuộc tính lên "${target.type}" — click đích tiếp theo hoặc Esc khi xong.`);
+      }
+      ix.current.redraw = true;
+      return;
+    }
 
     if (st.tool === 'select') {
       // Sprint 7 — Việc 3/4: ghim markup/ảnh KHÔNG phải entity nên không vào hitTest/selection
@@ -999,6 +1108,14 @@ export default function CadCanvas() {
         else st.setLengthenDelta(n);
         st.setStatus(`Đã đặt tham số = ${n}mm.`);
       }
+      ix.current.dynBuf = '';
+      return;
+    }
+    // VIỆC "gõ số sau thao tác" (VCB) — CHỈ áp dụng SAU khi 1 move/copy 2-click đã CHỐT XONG
+    // (pts rỗng). Còn đang kéo điểm 2 (pts.length>0) thì đây vẫn là numeric-input-khi-vẽ cũ ở
+    // nhánh cuối hàm này (gõ độ dài cho điểm ĐANG chờ), không phải VCB chỉnh-lại-sau-khi-xong.
+    if ((st.tool === 'move' || st.tool === 'copy') && ix.current.pts.length === 0 && ix.current.lastMoveCopy && ix.current.dynBuf) {
+      applyVcbEdit(ix.current.dynBuf);
       ix.current.dynBuf = '';
       return;
     }
@@ -1869,13 +1986,82 @@ export default function CadCanvas() {
       const dy = P[1].y - P[0].y;
       const sel = new Set(st.selection);
       const targets = st.doc.entities.filter((e) => sel.has(e.id));
+      const baseSpanMm = Math.hypot(dx, dy);
+      // Hướng đơn vị đã kéo — VIỆC "gõ số sau thao tác" (VCB, lib/commands/vcb.ts) tái dùng
+      // ĐÚNG hướng này cho mọi lần chỉnh lại sau, chỉ đổi khoảng cách/số lượng dọc theo nó.
+      const ux = baseSpanMm > 0 ? dx / baseSpanMm : 0;
+      const uy = baseSpanMm > 0 ? dy / baseSpanMm : 0;
+      let currentIds: string[];
       if (isCopy) {
-        st.addEntities(targets.map((e) => translateEntity(withNewId(e), dx, dy)));
+        const created = targets.map((e) => translateEntity(withNewId(e), dx, dy));
+        st.addEntities(created);
+        currentIds = created.map((e) => e.id);
       } else {
-        st.updateEntities(targets.map((e) => translateEntity(e, dx, dy)));
+        const updated = targets.map((e) => translateEntity(e, dx, dy));
+        st.updateEntities(updated);
+        currentIds = updated.map((e) => e.id);
       }
+      ix.current.lastMoveCopy = {
+        isCopy,
+        sourceIds: targets.map((e) => e.id),
+        originals: targets,
+        currentIds,
+        ux,
+        uy,
+        baseSpanMm,
+        plan: { copyCount: 1, stepMm: baseSpanMm },
+      };
       ix.current.pts = [];
     }
+  }
+
+  /**
+   * VIỆC "gõ số sau thao tác" kiểu VCB (lib/commands/vcb.ts) — gọi từ `commitEnter()` khi tool
+   * đang là move/copy, KHÔNG còn điểm nào đang chờ (`pts.length===0`, tức 1 cú 2-click move/copy
+   * VỪA chốt xong) và còn `ix.current.lastMoveCopy`. Luôn tính lại từ `originals` (snapshot TRƯỚC
+   * lần dịch chuyển đầu tiên) — KHÔNG cộng dồn lên kết quả lần chỉnh trước (đúng docstring
+   * `applyVcbToMoveCopy`: tránh trôi số qua nhiều lần gõ).
+   *
+   * `3x`/`/N` (nhân bản/chia đều) CHỈ có nghĩa khi đang Chép (isCopy) — Dời không tạo thêm bản,
+   * gõ 2 token này lúc đang Dời bị từ chối kèm lý do thay vì âm thầm bỏ qua.
+   */
+  function applyVcbEdit(raw: string) {
+    const state = ix.current.lastMoveCopy;
+    if (!state) return;
+    const st = useCadStore.getState();
+    const token = parseVcbToken(raw);
+    if (token.kind === 'invalid') {
+      st.setStatus(`VCB: "${raw}" không hợp lệ — gõ số (mm), "3x" (nhân bản) hoặc "/3" (chia đều).`);
+      return;
+    }
+    if (!state.isCopy && token.kind !== 'value') {
+      st.setStatus('VCB: nhân bản/chia đều chỉ áp dụng khi đang Chép (CO) — Dời (M) chỉ nhận khoảng cách.');
+      return;
+    }
+    const plan = applyVcbToMoveCopy(state.plan, token, state.baseSpanMm);
+    const results: Entity[] = [];
+    for (let i = 1; i <= plan.copyCount; i++) {
+      const dx = state.ux * plan.stepMm * i;
+      const dy = state.uy * plan.stepMm * i;
+      for (const e of state.originals) {
+        results.push(translateEntity(state.isCopy ? withNewId(e) : e, dx, dy));
+      }
+    }
+    if (state.isCopy) {
+      // 1 snapshot undo cho cả gỡ-bản-cũ + thêm-bản-mới (giống mọi "sửa tham số" khác trong file
+      // này, xem `setEntityBevel`/`cutHoleInWall` ở store.ts) — không phải 2 bước rời rạc.
+      st.replaceEntities(state.currentIds, results);
+      st.select(state.sourceIds);
+    } else {
+      st.updateEntities(results);
+    }
+    state.currentIds = results.map((e) => e.id);
+    state.plan = plan;
+    st.setStatus(
+      plan.copyCount > 1
+        ? `VCB: ${plan.copyCount} bản, mỗi bước ${Math.round(plan.stepMm)}mm — gõ số khác để chỉnh tiếp.`
+        : `VCB: khoảng cách ${Math.round(plan.stepMm)}mm — gõ số khác để chỉnh tiếp.`,
+    );
   }
 
   function handleRotate(w: Pt, shift: boolean) {
@@ -2118,6 +2304,13 @@ export default function CadCanvas() {
         ix.current.gripDrag = null;
         ix.current.gripPreview = null;
         ix.current.angularFirst = null;
+        // VCB "gõ số sau thao tác" — thao tác kế tiếp (kể cả Esc trần) làm mất căn cứ chỉnh lại.
+        ix.current.lastMoveCopy = null;
+        // Ống hút thuộc tính — Esc huỷ phiên đang chờ nguồn/đích, báo ngược cho nút toolbar tắt sáng.
+        if (ix.current.eyedropper.active) {
+          ix.current.eyedropper = { active: false, sourceId: null };
+          window.dispatchEvent(new CustomEvent('cad:eyedropper-cancelled'));
+        }
         st.clearSelection();
         st.setTool('select');
         ix.current.redraw = true;
@@ -2192,6 +2385,21 @@ export default function CadCanvas() {
         window.dispatchEvent(new CustomEvent('cad:cmd-key', { detail: e.key }));
         return;
       }
+      // VCB "3x"/"/3" (lib/commands/vcb.ts, khuyết ② SPEC-LENH-VE-IF §4) — 'x'/'X' (nhân bản)
+      // và '/' (chia đều) KHÔNG nằm trong bộ ký tự dynamic-input chung ngay dưới đây (chỉ số +
+      // .,@- — dùng cho toạ độ/độ dài của MỌI tool). Mở rộng THÊM đúng 2 ký tự này, nhưng CHỈ khi
+      // đang thật sự ở ngữ cảnh VCB (move/copy vừa 2-click xong, chờ chỉnh lại) — không đổi hành
+      // vi gõ số của tool khác (Line/Circle/... không bao giờ cần "x"/"/" trong buffer của chúng).
+      if (
+        (st.tool === 'move' || st.tool === 'copy') &&
+        ix.current.pts.length === 0 &&
+        ix.current.lastMoveCopy &&
+        (e.key === 'x' || e.key === 'X' || e.key === '/')
+      ) {
+        ix.current.dynBuf += e.key.toLowerCase() === 'x' ? 'x' : e.key;
+        st.setStatus(`VCB: ${ix.current.dynBuf} (Enter để chốt — "Nx" nhân bản N bản, "/N" chia đều N phần)`);
+        return;
+      }
       // dynamic input số — Việc 1 (Sprint 10): mở rộng ký tự cho phép gõ toạ độ kiểu AutoCAD
       // "X,Y" (tuyệt đối) / "@dx,dy" (tương đối) bên cạnh số đơn (độ dài) như cũ.
       if (/[0-9.,@-]/.test(e.key)) {
@@ -2199,6 +2407,11 @@ export default function CadCanvas() {
         const coord = parseCoordInput(ix.current.dynBuf);
         if (coord?.kind === 'abs') st.setStatus(`Toạ độ tuyệt đối: ${ix.current.dynBuf} (Enter để chốt)`);
         else if (coord?.kind === 'rel') st.setStatus(`Toạ độ tương đối: ${ix.current.dynBuf} (Enter để chốt)`);
+        // dynBuf chỉ chứa 'x'/'/' khi nhánh VCB phía trên vừa cho phép (ngữ cảnh move/copy đã
+        // 2-click xong) — số gõ TIẾP theo 'x'/'/' đó vẫn phải hiện đúng nhãn VCB, không phải
+        // nhãn "Nhập độ dài" chung (tránh lẫn với numeric-input-khi-vẽ của Line/Circle/...).
+        else if (ix.current.dynBuf.includes('x') || ix.current.dynBuf.includes('/'))
+          st.setStatus(`VCB: ${ix.current.dynBuf} (Enter để chốt — "Nx" nhân bản N bản, "/N" chia đều N phần)`);
         else st.setStatus(`Nhập độ dài: ${ix.current.dynBuf} mm (Enter để chốt)`);
         return;
       }
@@ -2212,6 +2425,8 @@ export default function CadCanvas() {
             const coord = parseCoordInput(ix.current.dynBuf);
             if (coord?.kind === 'abs') st.setStatus(`Toạ độ tuyệt đối: ${ix.current.dynBuf} (Enter để chốt)`);
             else if (coord?.kind === 'rel') st.setStatus(`Toạ độ tương đối: ${ix.current.dynBuf} (Enter để chốt)`);
+            else if (ix.current.dynBuf.includes('x') || ix.current.dynBuf.includes('/'))
+              st.setStatus(`VCB: ${ix.current.dynBuf} (Enter để chốt — "Nx" nhân bản N bản, "/N" chia đều N phần)`);
             else st.setStatus(`Nhập độ dài: ${ix.current.dynBuf} mm (Enter để chốt)`);
           } else {
             st.setStatus(toolHint(st.tool));
