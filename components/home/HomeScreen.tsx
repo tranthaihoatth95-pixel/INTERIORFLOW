@@ -689,9 +689,13 @@ export default function HomeScreen({ projectRouteId }: { projectRouteId?: string
               `<Render3DModeSkeleton/>`). */}
           <ModeShell
             hideBuiltInSwitcher
+            // Nhãn KHÔNG hiện ra màn hình (hideBuiltInSwitcher=true, xem ModeShell.tsx) nhưng vẫn
+            // đồng bộ với `defineMode('3d/node'|'3d/3d', {label:[...]})` đầu file + chốt nhãn mode
+            // chặng 2 "Node ↔ 3D" (docs/00-CHOT.md 07/08, RÀ NHÃN README-mocks.md dòng 116-123: mock
+            // ghi "Vẽ 3D" là nhãn CŨ, đúng phải là "3D") — trước đây lệch cả hai chuỗi.
             modes={[
-              { value: 'render', label: 'Render + Mood + Collab' },
-              { value: 'model3d', label: 'Vẽ 3D' },
+              { value: 'render', label: 'Node' },
+              { value: 'model3d', label: '3D' },
             ]}
             active={renderMode}
             onChange={setRenderMode}

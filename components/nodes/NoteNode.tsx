@@ -11,11 +11,18 @@ function NoteNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
   const updateNote = useFlowStore((s) => s.updateNote);
   const deleteNode = useFlowStore((s) => s.deleteNode);
   return (
+    // Port mock-mood-collab-g2 `.sticky` (docs/mocks/mock-mood-collab-g2-2026-08-03.html:241) —
+    // nền mix từ `--warning` + `--card` (KHÔNG hex mới, đúng chú thích mock + luật ③ "màu qua CSS
+    // var app, cấm hex cứng"). Trước đây dùng thẳng bảng màu amber-* của Tailwind (bg-amber-200,
+    // border-amber-500…) — đó LÀ hex cứng trá hình (không theo theme token), đổi sang color-mix
+    // (khuôn đã dùng ở ProjectSelect.tsx/TaskBoardScreen.tsx/MaterialPbrEditor.tsx…).
     <div
-      className={cn(
-        'group relative w-52 rounded-lg border bg-amber-200/95 p-2 shadow-lg shadow-black/30',
-        selected ? 'border-amber-500' : 'border-amber-300/60',
-      )}
+      className={cn('group relative w-52 rounded-lg border p-2')}
+      style={{
+        background: 'color-mix(in srgb, var(--warning) 26%, var(--card))',
+        borderColor: selected ? 'var(--accent-ring)' : 'color-mix(in srgb, var(--warning) 45%, transparent)',
+        boxShadow: 'var(--shadow-node)',
+      }}
     >
       {/* G2 phần (2) — comment neo vào sticky note này. */}
       <CommentPin nodeId={id} />
@@ -23,12 +30,12 @@ function NoteNodeInner({ id, data, selected }: NodeProps<FlowNode>) {
       <button
         title="Xoá ghi chú"
         onClick={() => deleteNode(id)}
-        className="nodrag absolute right-1 top-1 grid h-5 w-5 place-items-center rounded text-amber-800/70 opacity-0 transition hover:bg-amber-900/15 hover:text-amber-950 group-hover:opacity-100"
+        className="nodrag absolute right-1 top-1 grid h-5 w-5 place-items-center rounded text-[var(--t3)] opacity-0 transition hover:bg-[var(--hover)] hover:text-[var(--t1)] group-hover:opacity-100"
       >
         <X size={12} />
       </button>
       <textarea
-        className="nodrag h-24 w-full resize-none bg-transparent text-xs leading-snug text-amber-950 placeholder-amber-700/50 outline-none"
+        className="nodrag h-24 w-full resize-none bg-transparent text-xs leading-snug text-[var(--t1)] placeholder-[var(--t4)] outline-none"
         placeholder="Ghi chú…"
         value={data.note ?? ''}
         onChange={(e) => updateNote(id, e.target.value)}
