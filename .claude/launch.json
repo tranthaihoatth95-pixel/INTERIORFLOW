@@ -10,13 +10,6 @@
       "cwd": "."
     },
     {
-      "name": "interiorflow-p14-worktree",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "-p", "3013"],
-      "port": 3013,
-      "cwd": ".worktrees/p14"
-    },
-    {
       "name": "interiorflow-p3c-worktree",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--", "-p", "3012"],
