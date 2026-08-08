@@ -29,7 +29,7 @@
  */
 
 import type { Doc, Entity, Pt } from './model';
-import { dist } from './model';
+import { dist, nearestOnSeg } from './model';
 import { entSegments } from './query';
 import { infiniteLineIntersect } from './modify';
 import { blockInfo } from './schedule';
@@ -120,6 +120,55 @@ export function openingsAreaInPolygon(entities: Entity[], poly: Pt[], thresholdM
     const heightMm = OPENING_STANDARD_HEIGHT_MM[e.elementType];
     const areaM2 = (w * heightMm) / 1e6;
     if (areaM2 >= thresholdM2) total += areaM2;
+  }
+  return total;
+}
+
+/**
+ * T4 (SPEC-VE-REVIT-MODE §A7.2) — dung sai (mm) để coi một cửa/cửa sổ là "nằm TRÊN biên" polygon:
+ * khoảng cách từ điểm chèn block tới cạnh gần nhất ≤ số này. 150 = nửa bề dày tường phổ biến
+ * (SỐ ĐỀ XUẤT của spec, chưa ai đo lại) — vào CONFIG theo tiền lệ `BOQ_OPENING_MIN_AREA_M2` (T15),
+ * không hard-code trong thân hàm.
+ */
+export const OPENING_BOUNDARY_TOL_MM = 150;
+
+/**
+ * T4 (SPEC-VE-REVIT-MODE §A7.2) — tổng BỀ RỘNG (mm) các lỗ mở nằm TRÊN BIÊN `poly`, để TRỪ khỏi
+ * chu vi khi tính m dài len chân tường / phào: phòng cạnh 5000 có cửa 900 giữa cạnh ⇒ len phải là
+ * 5000−900=4100 — `edgeMask` của `polygonPerimeter` bật/tắt CẢ cạnh nên không diễn đạt được ca này.
+ * Đối xứng với `openingsAreaInPolygon` (diện tích ↔ bề rộng): cùng chỉ nhận block ĐÃ PHÂN LOẠI
+ * (`elementType==='door'|'window'`), rộng qua `blockInfo()` (TÁI DÙNG, cùng nguồn cột w bảng thống
+ * kê), block lạ không có `w` → bỏ qua không đoán mò. Khác một điểm: điều kiện KHÔNG phải "trong
+ * polygon" mà là "trên biên" — khoảng cách `block.at` → cạnh gần nhất ≤ `tolMm` (`nearestOnSeg`
+ * model.ts, TÁI DÙNG — không viết phép chiếu mới).
+ *
+ * ⚠️ Rẽ nhánh theo LOẠI PHÀO qua `kinds` — spec cấm "trừ mù": len chân tường chỉ trừ CỬA ĐI
+ * (mặc định `['door']` — cửa sổ có bệ, len vẫn chạy dưới); loại phào nào cần trừ cả cửa sổ
+ * (vd nẹp ốp tường cao kịch trần) thì caller truyền `['door','window']` một cách CÓ Ý THỨC.
+ *
+ * Cách dùng dự kiến (spec §A7.6, BOQ nhánh m dài — T5 CHƯA tồn tại nên hàm này chưa có caller):
+ *   m_dài = (polygonPerimeter(poly, mask) − openingsWidthOnBoundary(entities, poly)) / 1000
+ */
+export function openingsWidthOnBoundary(
+  entities: Entity[],
+  poly: Pt[],
+  tolMm = OPENING_BOUNDARY_TOL_MM,
+  kinds: ReadonlyArray<'door' | 'window'> = ['door'],
+): number {
+  let total = 0;
+  for (const e of entities) {
+    if (e.type !== 'block') continue;
+    if (e.elementType !== 'door' && e.elementType !== 'window') continue;
+    if (!kinds.includes(e.elementType)) continue;
+    let minD = Infinity;
+    for (let i = 0; i < poly.length; i++) {
+      const { d } = nearestOnSeg(e.at, poly[i], poly[(i + 1) % poly.length]);
+      if (d < minD) minD = d;
+    }
+    if (minD > tolMm) continue;
+    const { w } = blockInfo(e);
+    if (!w) continue;
+    total += w;
   }
   return total;
 }
