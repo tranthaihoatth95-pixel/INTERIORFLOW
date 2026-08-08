@@ -32,6 +32,7 @@ import { CLUSTER_SPECS } from '@/lib/cad/workstation-clusters';
 import { RawStyle } from '@/components/filemanager/RawStyle';
 import { ClusterPanel } from './ClusterPanel';
 import { ItemThumb } from './ItemThumb';
+import { MaterialFormModal } from '@/components/materials/MaterialFormModal';
 import { LIBRARY_SHEET_CSS } from './library-sheet-css';
 import { LibraryToastHost, pushLibraryToast } from './LibraryToast';
 import { PublishModal } from './PublishModal';
@@ -279,6 +280,15 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
     };
   }, [open, specs]);
 
+  /* 08/08 — mock màn 01 muốn CTA "Thêm vật liệu mới" mở panel TẠO TAY theo template (form 1 món),
+     KHÁC với "Nạp hàng loạt" (thả nhiều file — vẫn giữ nguyên làm tab riêng, không xoá, đúng
+     nguyên tắc không xoá đường đã có). Đây là 2 nhu cầu thật khác nhau (tay-nhập-1-món vs
+     thả-nhiều-file), không phải trùng "một cỗ máy hai cửa" — MaterialFormModal (components/
+     materials/, tái dùng nguyên, không viết form thứ hai) đã tồn tại đúng cho ca này.
+     POST tạo mới KHÔNG cần quyền admin (chỉ PATCH/DELETE sửa-xoá món có sẵn mới cần —
+     app/api/specs/[id]/route.ts requireAdmin) — đã kiểm trước khi nối, an toàn cho mọi user. */
+  const [showAddMaterial, setShowAddMaterial] = useState(false);
+
   /** Cấu kiện .idfc đang xem (nếu món chọn thuộc kệ common-idfc) — nguồn commerce/pbr THẬT từ file. */
   const displayIdfc = useMemo(
     () => (displayItem?.shelfId === 'common-idfc' ? idfcItems.find((s) => `idfc:${s.meta.code}` === displayItem.id) ?? null : null),
@@ -519,13 +529,12 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
               </>
             )}
 
-            {/* CTA đáy cột kệ (mock màn 01: nút accent "Thêm vật liệu mới").
-                Nối vào chế độ "Nạp hàng loạt" CÓ SẴN của chính sheet này — không dựng đường nạp
-                thứ hai, và không để nút bấm-không-ra-gì (§9 cấm nút giả). Chỉ hiện ở kệ vật
-                liệu, đúng chỗ mock đặt nó. */}
+            {/* CTA đáy cột kệ (mock màn 01: nút accent "Thêm vật liệu mới") — mở form TẠO TAY 1
+                món (MaterialFormModal), đúng ý mock. "Nạp hàng loạt" giữ nguyên làm tab riêng
+                (không xoá đường đã có) cho ca thả nhiều file. Chỉ hiện ở kệ vật liệu. */}
             {shelfId === MATERIAL_GROUP_SHELF && (
               <div className="shelfcta">
-                <button type="button" className="pub" onClick={() => setMode('ingest')}>
+                <button type="button" className="pub" onClick={() => setShowAddMaterial(true)}>
                   <Plus size={13} strokeWidth={2} />
                   {tr('Thêm vật liệu mới', 'Add new material')}
                 </button>
@@ -817,6 +826,17 @@ export function LibrarySheet({ stage = 'render' }: { stage?: StageKey }) {
           pushLibraryToast(tr(`Đã gửi "${draft.name}" — chờ chủ studio duyệt`, `Sent "${draft.name}" — awaiting studio owner approval`));
         }}
       />
+
+      {showAddMaterial && (
+        <MaterialFormModal
+          editing={null}
+          onClose={() => setShowAddMaterial(false)}
+          onSaved={() => {
+            setShowAddMaterial(false);
+            setSpecs(null); // ép effect ở trên fetch lại — món mới hiện ngay trên kệ
+          }}
+        />
+      )}
 
       <LibraryToastHost />
     </div>,
