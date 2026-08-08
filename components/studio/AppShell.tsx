@@ -31,6 +31,7 @@ import { Dashboard } from '@/components/Dashboard';
 import { FlowsPanel } from '@/components/FlowsPanel';
 import { LibrarySheet } from '@/components/library/LibrarySheet';
 import { FlankStrip } from '@/components/ui/PanelFlank';
+import ReviewPanel from '@/components/review/ReviewPanel';
 import { openLibrarySheet } from '@/lib/library/use-library-sheet';
 import type { StageKey } from '@/lib/library/types';
 import { tweenBase } from '@/lib/motion';
@@ -162,6 +163,13 @@ export function AppShell({
         <InspectorSlot title={inspectorTitle} sub={inspectorSub} onClose={onCloseInspector} hotkey={active === 'cad' ? '⇧I' : 'I'}>
           {inspectorHidden ? undefined : inspector}
         </InspectorSlot>
+        {/* p3c (08/08) — BẢNG KIỂM ba chặng (lib/review): MỘT chỗ ngồi duy nhất cho cả app
+            (CHOT-TACH-AI §4 luật ①), mép phải ngoài cùng, sau Inspector. Panel tự đọc chặng đang
+            mở → gọi đúng review2d/review3d/reviewDeck; mặc định THU (PanelFlank nhớ lựa chọn).
+            Chỉ 3 chặng thiết kế — /files và /settings không có gì để kiểm. */}
+        {(active === 'cad' || active === 'render' || active === 'present') && (
+          <ReviewPanel stage={active} />
+        )}
       </div>
       {bottomExtra}
       {statusBar}
