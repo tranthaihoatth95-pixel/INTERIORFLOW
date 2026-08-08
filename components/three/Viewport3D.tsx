@@ -1,7 +1,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
+import { applyArrayGrid, parseArrayCommand } from '@/lib/render-studio/array-grid-ops';
 import type { Scene3DData } from '@/lib/three/cad-to-obj';
 import type { Scene3DMode, Scene3DCameraApi, LightMarker } from './Scene3DViewer';
 import type { ViewDir } from './ViewCube3D';
@@ -172,6 +174,101 @@ export function Viewport3D({
       <div className="vpnote vpover">
         Khối xám trơn — chưa vật liệu, chưa đèn. Vật liệu chỉ lưu <b>matId</b>; ảnh thật do D5 dựng.
       </div>
+
+      {mode === 'massing' && <QuickCommandBox scene={scene} />}
+    </div>
+  );
+}
+
+/**
+ * ③ (Hoà chốt 08/08) — DÒNG NHẬP NHANH kiểu SketchUp Measurements box / 3ds Max Type-in: góc
+ * DƯỚI PHẢI khung nhìn, gõ lệnh → Enter, tay không rời chuột. Panel bên GIỮ NGUYÊN (đúng cho xem
+ * lại/sửa sau) — cả hai cửa ghi qua MỘT logic `applyArrayGrid` (lib/render-studio/array-grid-ops).
+ *
+ * Bắt phím kiểu SketchUp: đang không focus ô nhập nào mà gõ chữ/số ⇒ ký tự rơi thẳng vào dòng
+ * này (không phải click). An toàn với phím X/Y/Z khoá trục của viewer: các phím đó chỉ có tác
+ * dụng KHI ĐANG KÉO (guard dragging trong Scene3DViewer) — đang kéo thì không ai gõ lệnh.
+ * Lệnh hiểu được hôm nay: `array CxR [dx[,dy]]` (mm, mặc định 1200/900). Tên lệnh giữ EN (②).
+ */
+function QuickCommandBox({ scene }: { scene: Scene3DData }) {
+  const tr = useT();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [value, setValue] = useState('');
+  const [msg, setMsg] = useState<{ text: string; err: boolean } | null>(null);
+  const selectedName = useTree3DUi((s) => s.selectedName);
+  const entityId = (() => {
+    const g = scene.groups.find((gr) => gr.name === selectedName);
+    return g?.entityId && g.heightMm ? g.entityId : null;
+  })();
+
+  useEffect(() => {
+    // gõ phím khi không có ô nhập nào đang focus ⇒ dồn vào dòng lệnh (chuẩn SketchUp)
+    function onKey(e: KeyboardEvent) {
+      const ae = document.activeElement;
+      const typingElsewhere = ae instanceof HTMLElement && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable);
+      if (typingElsewhere || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key.length === 1 && /[\p{L}\p{N} x×@,./]/u.test(e.key)) {
+        inputRef.current?.focus();
+        setValue((v) => v + e.key);
+        e.preventDefault();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const run = () => {
+    const grid = parseArrayCommand(value);
+    if (!grid) {
+      setMsg({ text: tr('Chưa hiểu — thử: array 3x2 1200,900', 'Not recognized — try: array 3x2 1200,900'), err: true });
+      return;
+    }
+    if (!entityId) {
+      setMsg({ text: tr('Chưa chọn khối — bấm một khối trước.', 'No block selected — click a block first.'), err: true });
+      return;
+    }
+    applyArrayGrid(entityId, grid);
+    setMsg({ text: `Array ${grid.cols}×${grid.rows} — Ctrl+Z ${tr('để lùi', 'to undo')}`, err: false });
+    setValue(''); // gõ lệnh mới là CHỈNH LẠI được (áp lại thay bậc cũ, đúng tinh thần VCB)
+  };
+
+  return (
+    <div
+      style={{
+        position: 'absolute', right: 12, bottom: 40, zIndex: 6, width: 236,
+        display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end',
+      }}
+    >
+      {msg && (
+        <div
+          style={{
+            padding: '2px 8px', borderRadius: 6, fontSize: 10.5, lineHeight: 1.5, maxWidth: 236,
+            background: 'color-mix(in srgb, var(--panel) 96%, transparent)',
+            border: `1px solid ${msg.err ? 'var(--danger, #e5484d)' : 'var(--border-strong)'}`,
+            color: msg.err ? 'var(--danger, #e5484d)' : 'var(--t3)',
+          }}
+        >
+          {msg.text}
+        </div>
+      )}
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') run();
+          if (e.key === 'Escape') { setValue(''); setMsg(null); inputRef.current?.blur(); }
+          e.stopPropagation(); // không cho phím lệnh rơi xuống viewer (WASD/⇧/XYZ)
+        }}
+        placeholder={tr('Lệnh · array 3x2 1200,900', 'Command · array 3x2 1200,900')}
+        aria-label={tr('Dòng nhập lệnh nhanh', 'Quick command input')}
+        style={{
+          width: 236, padding: '4px 8px', borderRadius: 7, fontSize: 11, lineHeight: 1.5,
+          fontVariantNumeric: 'tabular-nums',
+          background: 'color-mix(in srgb, var(--panel) 96%, transparent)',
+          border: '1px solid var(--border-strong)', color: 'var(--t1)', outline: 'none',
+        }}
+      />
     </div>
   );
 }

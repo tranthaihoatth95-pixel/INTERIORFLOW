@@ -314,5 +314,59 @@ console.log('VIỆC 4 — prismTapered: chân bàn côn 60×60 → co 20mm ở �
   ok('inset quá đà → rơi về lăng trụ thẳng (đỉnh vẫn 0..60)', near(Math.min(...flatTop), 0) && near(Math.max(...flatTop), 0.06));
 }
 
+console.log('p14 MỞ KHO — resolveGroupGeometry ăn 2 bậc arrayLinear = LƯỚI (đường sống arrayGrid)');
+{
+  const postPoly14 = [
+    { x: 0, y: 0 },
+    { x: 600, y: 0 },
+    { x: 600, y: 600 },
+    { x: 0, y: 600 },
+  ];
+  const single: SceneGroup = {
+    name: 'Post_p14',
+    colorHex: '#888888',
+    positions: boxPositionsMm(postPoly14, 0, 750),
+    entityId: 'post-p14',
+    heightMm: 750,
+  };
+  const baseCount = resolveGroupGeometry(single).attributes.position.count;
+  const grid: SceneGroup = {
+    ...single,
+    entityId: 'post-p14-grid',
+    ops: [
+      { op: 'arrayLinear', n: 3, dx: 1200, dy: 0, dz: 0 },
+      { op: 'arrayLinear', n: 2, dx: 0, dy: 900, dz: 0 },
+    ],
+  };
+  const gg = resolveGroupGeometry(grid);
+  ok('số đỉnh = gốc × 3 × 2', gg.attributes.position.count === baseCount * 6);
+  const bb = bbox(gg as unknown as G);
+  // CAD X → three x: bề rộng = 600 + 2×1200 = 3000mm; CAD Y → three z: 600 + 1×900 = 1500mm
+  ok('bbox X = 3,0m (600 + 2 bước 1200)', near(bb.max[0] - bb.min[0], 3.0));
+  ok('bbox theo CAD-Y = 1,5m (600 + 1 bước 900)', near(Math.abs(bb.max[2] - bb.min[2]), 1.5));
+  ok('cao giữ nguyên 750mm', near(bb.max[1] - bb.min[1], 0.75));
+
+  // ĐỐI CHỨNG: 2 bậc CHÉO trục (không đi được arrayGrid) → đường repeatGeometry tuần tự, cùng luật
+  const skew: SceneGroup = {
+    ...single,
+    entityId: 'post-p14-skew',
+    ops: [
+      { op: 'arrayLinear', n: 3, dx: 1200, dy: 300, dz: 0 },
+      { op: 'arrayLinear', n: 2, dx: 0, dy: 900, dz: 0 },
+    ],
+  };
+  const sg = resolveGroupGeometry(skew);
+  ok('bậc chéo trục: vẫn nhân đủ 3×2 bản (đường tuần tự)', sg.attributes.position.count === baseCount * 6);
+  const sb = bbox(sg as unknown as G);
+  ok('bbox chéo: X = 600+2×1200 = 3,0m', near(sb.max[0] - sb.min[0], 3.0));
+  ok('bbox chéo: CAD-Y = 600+2×300+1×900 = 2,1m', near(Math.abs(sb.max[2] - sb.min[2]), 2.1));
+
+  // 1 bậc như cũ — không hồi quy hành vi arrayLinear đơn
+  const one: SceneGroup = { ...single, entityId: 'post-p14-one', ops: [{ op: 'arrayLinear', n: 4, dx: 800, dy: 0, dz: 0 }] };
+  const og = resolveGroupGeometry(one);
+  const ob = bbox(og as unknown as G);
+  ok('1 bậc giữ hành vi cũ: 4 bản, X = 600+3×800 = 3,0m', og.attributes.position.count === baseCount * 4 && near(ob.max[0] - ob.min[0], 3.0));
+}
+
 console.log(`\n${pass} pass, ${fail} fail`);
 if (fail > 0) process.exit(1);
