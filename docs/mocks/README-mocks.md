@@ -16,6 +16,16 @@
 | `mock-trinh-boq-2026-08-04.html` | BOQ editor theo `SPEC-TRINH-BOQ-EDITOR` — summary-bar·6 kiểu cột·badge sửa-tay·dòng lỗi (đợt 3.①) |
 | `mock-trinh-video-2026-08-04.html` | Video editor theo `SPEC-TRINH-VIDEO-EDITOR` — shot có tên·3 tầng·collapsed·beat snap·MP4 0-credit (đợt 3.②) |
 
+## ✅ CẬP NHẬT 08/08 (phiên đối chiếu-port, phát hiện dòng ⬆️ lỗi thời)
+- **`mock-cad-shell-v5.html` KHÔNG còn hiện hành** — đã đổi tên `mock-cad-shell-v5_cu.html` từ 06/08
+  (`8a850f5`), chính file đó tự ghi *"ĐỪNG PORT file này"*. **Thay bằng 3 file `.dc.html` mới hơn
+  (07/08, `7303aee`)**: `2D Kỹ thuật.dc.html` · `Chế độ Chuyên.dc.html` · `Chế độ Phác thảo.dc.html`
+  — 3 trạng thái của CÙNG một shell (khoá kỹ thuật sketch/pro), mỗi file tự ghi rõ "Thay thế: …".
+- `mock-cad-revit-2026-08-03.html` — README dòng 176 (mục RÀ NHÃN, còn nguyên) đã tự nhận **không
+  tự quyết được** vì mode "Cấu kiện" nó vẽ nay không còn tồn tại (chốt 07/08: chặng 2D chỉ 2 mode
+  Sơ phác/Chuyên). Quyết định 08/08: **coi là tham khảo lịch sử, KHÔNG port** — nội dung Revit summary
+  panel còn giá trị nào thì đã/sẽ nằm trong 3 file mới ở trên, không cần port file gốc riêng.
+
 ## 🕰 LỊCH SỬ — đạt token nhưng đã có bản mới hơn, không port
 | File | Bị thay bởi |
 |---|---|
