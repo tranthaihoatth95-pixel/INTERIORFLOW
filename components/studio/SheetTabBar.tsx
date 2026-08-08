@@ -213,10 +213,11 @@ export default function SheetTabBar({
 
       <div style={{ flex: 1 }} />
       <span style={{ fontSize: 11, color: 'var(--t4)', flex: '0 0 auto', paddingRight: 4 }}>
-        {/* L1 (phiếu 03/08): mẫu "1/5" đánh lừa — người đọc tưởng "trang 1 trong 5 trang tài
-            liệu", thật ra là "sheet 1 / trần 5 sheet", trong khi dải dưới có 8 slide. Bên gọi
-            truyền `status` để nói đúng đơn vị của mình (Present: "8 slide"). Không truyền
-            `status`: có `max` thì giữ mẫu cũ, không trần (D2) thì chỉ đếm. */}
+        {/* L1 (phiếu 03/08): mẫu "1/5" từng đánh lừa — người đọc tưởng "trang 1 trong 5 trang
+            tài liệu", thật ra là "sheet 1 / N" của cái trần 5 sheet CŨ (trần đó đã gỡ hẳn ở
+            D2 đợt 8, 04/08 — nay không giới hạn số sheet). Bên gọi truyền `status` để nói đúng
+            đơn vị của mình (Present: "8 slide"). Không truyền `status`: prop `max` chỉ còn cho
+            ca hãn hữu bên gọi tự đặt trần riêng; mặc định không trần — chỉ đếm. */}
         {status ?? (max != null ? `${sheets.length}/${max}` : `${sheets.length} sheet`)}
       </span>
     </div>

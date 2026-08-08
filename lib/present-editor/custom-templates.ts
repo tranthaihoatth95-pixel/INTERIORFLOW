@@ -9,7 +9,9 @@
  * Persist localStorage, tái dùng ĐÚNG pattern brand-kit.ts/custom-fonts.ts: đọc/ghi JSON,
  * guard `typeof window`, im lặng khi lỗi (localStorage đầy/chặn).
  *
- * Slot hoá (đơn giản, đủ dùng cho deck ≤5 sheet):
+ * Slot hoá — thuật toán ĐƠN GIẢN, chạy theo TỪNG SLIDE (không nhìn thấy và không phụ thuộc
+ * số sheet của deck; câu cũ "đủ dùng cho deck ≤5 sheet" là tàn dư thời còn trần 5 — trần đã
+ * gỡ ở D2 đợt 8, 04/08, thuật toán này không phải trần sản phẩm):
  *   - text role 'title'/'kicker' → ghi đè bằng ctx.title/ctx.kicker khi có; KHÔNG có thì giữ
  *     nguyên chữ đã "nướng" lúc chụp — cùng quy ước với build() của BUILTIN_TEMPLATES.
  *   - text role 'body' → ghi đè bằng ctx.body (nối bullet "• ", giống textBlocks() trong
