@@ -7,9 +7,8 @@
 
 ## 🟡 ĐANG CHẠY
 
-- **p13/.idfc** (cây chính) — gộp Thư viện về `.idfc` v2: `docs/M-IDFC-2-OUT.md` · `M-THU-VIEN-OUT.md`.
-  Working tree còn 4 file dở của phiên này (`components/library/*` · `lib/library/local-state.ts`) —
-  **chưa commit, đừng đụng**. Chờ Hoà quyết kind `preset` cho 5 thumb `light-*`.
+- ~~p13/.idfc~~ **XONG + ĐÃ COMMIT** (chiều 08/08): specLinks gán tay + badge Tham số kiểm độc lập
+  101 test rồi commit; kind `preset` DUYỆT thêm ở v3 (00-CHOT 08/08). Working tree SẠCH.
 - **p7** (worktree `interiorflow-wt-p7`, server 3007) — lighting·camera·phím tắt, phiếu
   `docs/DAN-VAO-p7.md`, phiên riêng của Hoà đang/sắp chạy.
 - Sổ phiếu đã phát → `docs/SO-PHIEU-DA-PHAT.md` (§0w — đọc TRƯỚC khi soạn phiếu mới).
