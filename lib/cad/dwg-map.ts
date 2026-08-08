@@ -273,8 +273,12 @@ export function runDwgImport(file: DwgImportFile, opts: DwgImportOptions, host: 
       }
     }, 1000);
 
-    /** `orphan: true` = đường HUỶ của người dùng. Nhánh timeout/lỗi vẫn `terminate()` như cũ —
-     * đổi nhánh đó là quyết định của Hoà (SO-KIEM-TONG §11d, 3 lựa chọn a/b/c chưa chốt). */
+    /** `orphan: true` = bỏ rơi worker thay vì `terminate()` (chỉ khi worker ĐÃ nhận việc —
+     * `startedWork`; còn rảnh thì terminate an toàn hơn). Áp cho CẢ đường Huỷ của người dùng
+     * LẪN nhánh timeout tự động — §11d chốt hướng (a) ngày 08/08 (Hoà uỷ quyền kỹ thuật):
+     * `terminate()` giữa `convertEx` treo cứng tab, tái hiện 3 lần trên file 9.7MB (§11c),
+     * nên không còn nhánh nào được terminate một worker đang cày WASM. Nhánh LỖI worker báo
+     * về (`msg.ok=false`, `onerror`) vẫn terminate — lúc đó worker đã dừng việc, không kẹt. */
     const finish = (settle: () => void, orphan = false) => {
       if (settled) return;
       settled = true;
@@ -290,7 +294,7 @@ export function runDwgImport(file: DwgImportFile, opts: DwgImportOptions, host: 
     };
 
     const hardTimeout = setTimeout(() => {
-      finish(() => reject(new Error(dwgTimeoutMessage(file, timeoutMs, stage, headerInfo))));
+      finish(() => reject(new Error(dwgTimeoutMessage(file, timeoutMs, stage, headerInfo))), true);
     }, timeoutMs);
 
     if (opts.signal) {

@@ -106,8 +106,10 @@ async function testTreoVinhVien() {
   ok('thông báo có PHIÊN BẢN DWG đọc từ header', msg.includes('AutoCAD 2018–2024'));
   ok('thông báo nói rõ ĐANG Ở GIAI ĐOẠN NÀO', msg.includes('đọc nhị phân') || msg.includes('chuyển sang danh sách'));
   ok('thông báo có gợi ý xử lý cho người dùng', msg.includes('thử lại với file'));
-  ok('worker bị terminate() khi quá giờ (không phải bỏ rơi)', s.worker.terminated === 1);
-  ok('KHÔNG đẩy vào hồ mồ côi ở nhánh timeout (đúng thiết kế hiện tại)', s.orphaned.length === 0);
+  // §11d chốt hướng (a) 08/08: nhánh timeout cũng BỎ RƠI worker đang cày (terminate giữa
+  // convertEx treo cứng tab — §11c tái hiện 3 lần). Worker rảnh vẫn terminate (test [4]/[5]).
+  ok('worker đang cày bị BỎ RƠI khi quá giờ, KHÔNG terminate (§11d hướng a)', s.worker.terminated === 0);
+  ok('đẩy đúng 1 suất vào hồ mồ côi ở nhánh timeout', s.orphaned.length === 1);
   ok('mặc định 60s vẫn là hằng số công khai', DEFAULT_DWG_IMPORT_TIMEOUT_MS === 60_000);
 }
 
