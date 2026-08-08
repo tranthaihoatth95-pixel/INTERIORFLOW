@@ -83,6 +83,15 @@ export interface MaterialPbr {
   /** [mở rộng §1] Vải/sợi — ánh sheen ở rìa (nhung, lụa…). 0–1. */
   sheen?: number;
   /**
+   * L6 (08/08) — HỆ SỐ PHẢN XẠ ánh sáng của bề mặt (light reflectance value / ρ), 0(hút hết)–1
+   * (phản xạ hết). Dùng cho tính toán CHIẾU SÁNG (hệ số sử dụng UF theo phản xạ trần/tường/sàn
+   * trong phương pháp quang thông — `lib/lighting/lux.ts`), KHÔNG phải tham số render glTF nên
+   * export engine (`export-vray.ts`/`export-d5.ts`) bỏ qua.
+   * ⚠️ BẢN 1 của `roomLuxEstimate` CHƯA đọc trường này — UF đang là tham số tay có mặc định
+   * ngành (0.4). Khai chỗ trước để bản sau tính UF thật theo zonal cavity không phải migrate.
+   */
+  reflectance?: number;
+  /**
    * Đánh dấu các trường ở trên là GIÁ TRỊ SUY ĐOÁN (vd từ `inferPbrFromCategory` khi ATLAS chưa
    * có dữ liệu PBR đo thật) — KHÔNG PHẢI đo/nhập tay. UI phải hiện rõ badge/ghi chú khi cờ này
    * true, đúng yêu cầu spec §4-2: "Ghi rõ đây là giá trị suy đoán, người dùng chỉnh sau."

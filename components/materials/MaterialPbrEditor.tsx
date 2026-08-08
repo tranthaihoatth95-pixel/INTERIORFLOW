@@ -12,10 +12,12 @@
  * ngôn ngữ giao diện, không sáng tác khung mới.
  */
 import { useMemo, useRef, useState } from 'react';
-import { X, Lock, Upload, ChevronRight, Sparkles, RotateCcw } from 'lucide-react';
+import { X, Lock, Upload, ChevronRight, Sparkles, RotateCcw, Download } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import type { MaterialPbr } from '@/lib/materials/schema';
 import { DEFAULT_PBR } from '@/lib/materials/schema';
+import { toVRayMtl } from '@/lib/materials/export-vray';
+import { toD5Material } from '@/lib/materials/export-d5';
 import {
   MATERIAL_TYPES,
   materialTypeOf,
@@ -70,6 +72,13 @@ export function MaterialPbrEditor({
   });
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+  /**
+   * §1#7 (08/08) — bản PBR ĐÃ LƯU trong pbr-store: nguồn duy nhất cho 2 nút Xuất V-Ray/D5.
+   * Xuất bản ĐÃ LƯU chứ không xuất state đang gõ dở — file tải về phải khớp cái kho đang giữ
+   * (cùng cái quả cầu ở Thư viện/scene sẽ đọc), không phải bản nháp chưa bấm Lưu. Chưa từng
+   * lưu (chỉ có suy đoán) → nút khoá kèm lý do (luật §9: disabled phải nói vì sao).
+   */
+  const [savedPbr, setSavedPbr] = useState<MaterialPbr | null>(() => getPbr(matId));
   const normalRef = useRef<HTMLInputElement>(null);
   const aoRef = useRef<HTMLInputElement>(null);
   const heightRef = useRef<HTMLInputElement>(null);
@@ -97,11 +106,38 @@ export function MaterialPbrEditor({
 
   const save = () => {
     savePbr(matId, pbr);
+    setSavedPbr(pbr);
     setSavedFlash(true);
   };
   const reset = () => {
     removePbr(matId); // KS4 — lùi về "chưa có PBR"
+    setSavedPbr(null);
     update({ ...inferPbrFromCategory(categoryHint ?? name) });
+  };
+
+  /**
+   * Xuất tham số engine (§1#7 — mở kho `toVRayMtl`/`toD5Material`, trước giờ 0 caller).
+   * File là JSON THAM SỐ (đuôi .vray.json/.d5mat.json) — KHÔNG phải file .vrmat nhị phân của
+   * Chaos hay format nội bộ D5: 2 hàm export tự khai trong docblock "ai nối vào engine thật tự
+   * map object trả về sang SDK", nên đặt đuôi .vrmat giả là lừa người dùng mở bằng V-Ray thật.
+   * Khuôn tải Blob chép theo `ColorMatchPanel.tsx:52` (cùng họ a.click + revokeObjectURL).
+   */
+  const exportEngine = (engine: 'vray' | 'd5') => {
+    if (!savedPbr) return;
+    const fallback = savedPbr.baseColor ?? '#9a9a9a'; // cùng fallback màu với quả cầu preview
+    const payload = {
+      format: engine === 'vray' ? 'if-vraymtl-params@1' : 'if-d5-material-params@1',
+      matId,
+      name,
+      exportedAt: new Date().toISOString(),
+      data: engine === 'vray' ? toVRayMtl(savedPbr, fallback) : toD5Material(savedPbr, fallback),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${matId}.${engine === 'vray' ? 'vray' : 'd5mat'}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   };
 
   const mapBtn = (which: MapField, ref: React.RefObject<HTMLInputElement>, label: string) => (
@@ -249,6 +285,30 @@ export function MaterialPbrEditor({
             </div>
           </div>
         )}
+
+        {/* §1#7 — 2 cửa xuất engine, đứng NGAY trong lớp chỉnh PBR (đây là nơi duy nhất người
+            dùng nhìn thấy/sửa PBR của matId đang chọn — xuất phải đứng cạnh nguồn, không rải ra
+            bảng kho nơi mỗi hàng phải tự dò localStorage mới biết có gì để xuất). */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          {(['vray', 'd5'] as const).map((engine) => (
+            <button key={engine} type="button" disabled={!savedPbr} onClick={() => exportEngine(engine)}
+              title={!savedPbr
+                ? tr('Chưa có chất liệu đã lưu cho mã này — bấm "Lưu chất liệu" trước rồi mới xuất được.',
+                    'No saved material for this SKU yet — press "Save material" first, then export.')
+                : savedPbr !== pbr
+                  ? tr('Xuất bản ĐÃ LƯU (chỉnh sửa đang dở chưa lưu sẽ không vào file).',
+                      'Exports the SAVED version (unsaved edits are not included).')
+                  : tr('Tải file JSON tham số cho engine render.', 'Download the engine parameter JSON file.')}
+              style={{ height: 30, padding: '0 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--field)', color: savedPbr ? 'var(--t2)' : 'var(--t4)', fontSize: 12, fontWeight: 600, cursor: savedPbr ? 'pointer' : 'not-allowed', opacity: savedPbr ? 1 : 0.55, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <Download size={12} /> {engine === 'vray' ? tr('Xuất V-Ray', 'Export V-Ray') : tr('Xuất D5', 'Export D5')}
+            </button>
+          ))}
+          {!savedPbr && (
+            <span style={{ fontSize: 11.5, color: 'var(--t4)', lineHeight: 1.4 }}>
+              {tr('Khoá vì chưa lưu — lưu rồi mới có gì để xuất.', 'Locked until saved — nothing to export yet.')}
+            </span>
+          )}
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button type="button" onClick={reset} title={tr('Xoá bản chỉnh, quay về suy đoán', 'Discard edits, back to inferred')}
