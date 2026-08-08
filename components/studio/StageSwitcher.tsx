@@ -100,6 +100,8 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
   const [originPx, setOriginPx] = useState<number | null>(null);
   const [handleActive, setHandleActive] = useState(false); // hover HOẶC onboarding highlight
   const [hintTooltip, setHintTooltip] = useState(false);
+  // 08/08 — hover màu chữ nút chặng, port `mock-if-3chang.html` `.seg button:hover`.
+  const [hoveredPhase, setHoveredPhase] = useState<Phase | null>(null);
 
   // Onboarding lần đầu — chỉ chạy client, đọc localStorage đồng bộ.
   useEffect(() => {
@@ -231,18 +233,33 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+      {/* 08/08 — PORT `docs/mocks/mock-if-3chang.html` `.seg` (nguồn sự thật theo `00-CHOT.md`
+          "QUY TRÌNH DESIGN"): segmented control PHẲNG (field bg, không kính/blur/border) — khác
+          class `.if-dock` cũ (Sprint 2 C-3, ngôn ngữ kính mờ, tài liệu FINAL_ARCHITECTURE_REPORT
+          đã lỗi thời, không nằm trong 00-CHOT). Override tại chỗ bằng inline style (đè `.if-dock`
+          trong globals.css) vì phạm vi việc này CHỈ được sửa file này, không đụng globals.css. */}
       <div
         ref={dockRef}
         className="if-dock"
         role="tablist"
         aria-label="Chặng làm việc"
-        style={{ position: 'relative' }}
+        style={{
+          position: 'relative',
+          gap: 0,
+          padding: 2,
+          borderRadius: 'var(--radius-sm)',
+          background: 'var(--field)',
+          border: 'none',
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none',
+        }}
       >
         {PHASES.map((p, i) => {
           const Icon = ICON[p.id];
           const on = p.id === active;
           const name = tr(p.label, p.labelEn);
           const soon = p.id === 'concept' && (cadStage === 'technical' || cadStage === 'bim');
+          const hovered = hoveredPhase === p.id;
           return (
             /* VIỆC 2 (05/08) — bỏ `title=` HTML: trễ 1-2s, không tách được tên/mô tả, và CÂM trên
                cảm ứng (§0c mảng 3). Tooltip dùng chung cho luôn phím tắt ⌘1/⌘2/⌘3 (đăng ký thật ở
@@ -263,15 +280,20 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
               aria-selected={on}
               {...pressable}
               onClick={() => onPick(p.id)}
+              onMouseEnter={() => setHoveredPhase(p.id)}
+              onMouseLeave={() => setHoveredPhase((cur) => (cur === p.id ? null : cur))}
               className="stage-btn"
               data-label={WIDEST_LABEL[p.id]}
               style={{
-                padding: '6px 12px',
-                borderRadius: 9,
+                padding: '5px 15px',
+                borderRadius: 8,
                 border: 'none',
-                fontSize: 12.5,
-                fontWeight: on ? 600 : 500,
-                color: on ? 'var(--t1)' : 'var(--t3)',
+                fontSize: 'var(--fs-xs)',
+                // mock `.seg button{color:t3} :hover{color:t2} .on{color:t1,fw:600}` — inline vì
+                // element là `motion.button`, class scope của styled-jsx không gắn vào (đã thử,
+                // không nhận), nên dùng state hover thật (cùng công thức `handleActive` phía trên).
+                fontWeight: on ? 'var(--fw-semi)' : 'var(--fw-normal)',
+                color: on ? 'var(--t1)' : hovered ? 'var(--t2)' : 'var(--t3)',
                 background: 'transparent',
                 cursor: on ? 'default' : 'pointer',
                 whiteSpace: 'nowrap',
@@ -284,10 +306,9 @@ export default function StageSwitcher({ active, onPick, photoContext }: Props) {
                   style={{
                     position: 'absolute',
                     inset: 0,
-                    borderRadius: 9,
-                    background: 'var(--card)',
-                    boxShadow:
-                      'inset 0 0 0 1px var(--border), 0 1px 2px rgba(0,0,0,.1), 0 3px 8px -2px rgba(0,0,0,.12)',
+                    borderRadius: 8,
+                    background: 'var(--panel)',
+                    boxShadow: 'var(--shadow-node)',
                     zIndex: 0,
                   }}
                 />

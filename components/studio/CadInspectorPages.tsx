@@ -7,26 +7,33 @@
  * rollout thì cuộn mệt, layout nhảy khi đổi loại vật).
  *
  * Tập trang theo selection (§2c):
- *   · 1 khối (block)      → trang "Khối" (thông tin/biến thể + BIM chung 1 nhóm rollout)
- *   · 1 nhãn phòng (text) → trang "Phòng" (công năng + BIM)
- *   · 1 tường (wall-like) → trang "Tường" (loại tường + BIM)
- *   · mọi selection       → trang "Chung" (BIM · IFC — áp cho mọi entity, kể cả chọn nhiều)
+ *   · 1 khối (block)          → trang "Khối" (thông tin/biến thể + BIM chung 1 nhóm rollout)
+ *   · 1 nhãn phòng (text)     → trang "Phòng" (công năng + BIM)
+ *   · 1 cấu kiện phòng (room) → trang "Phòng" (diện tích/chu vi thật + công năng + BIM) — VIỆC
+ *     PORT 08/08 (`docs/mocks/2D Kỹ thuật.dc.html` màn 03 "Đang chọn một phòng"): trước đây
+ *     `RoomEntity` (type:'room', sinh từ "Nhận diện phòng") KHÔNG có trang riêng — rơi vào trang
+ *     "Chung" chỉ có BIM, mất hẳn Diện tích/Chu vi dù dữ liệu THẬT đã có sẵn (`roomAreaM2()`,
+ *     `lib/cad/room.ts`). Khác `roomLabelEntity` (nhãn TEXT rời — không có `boundary`).
+ *   · 1 tường (wall-like)     → trang "Tường" (loại tường + BIM)
+ *   · mọi selection           → trang "Chung" (BIM · IFC — áp cho mọi entity, kể cả chọn nhiều)
  * Chọn NHIỀU loại khác nhau → chỉ còn trang "Chung" (luật §2c dòng cuối).
  *
- * `kindKey` nhớ bố cục rollout THEO LOẠI VẬT ('cad.block'/'cad.room'/'cad.wall'/'cad.generic'),
- * đúng §2b — KHÔNG theo sub-mode.
+ * `kindKey` nhớ bố cục rollout THEO LOẠI VẬT ('cad.block'/'cad.room'/'cad.roomentity'/
+ * 'cad.wall'/'cad.generic'), đúng §2b — KHÔNG theo sub-mode.
  *
  * Nội dung box tái dùng NGUYÊN các component đã có (BimAssignBox/RoomTypeBox/WallTypePanel từ
  * CadEditor + ShapeInfoPanel từ ShapePalette) — CHINH chỉ thêm lớp trình bày, không viết lại
  * logic gán (đúng "một cỗ máy nhiều mặt tiền").
  */
 
-import { Info, Home, BrickWall, Armchair } from 'lucide-react';
+import { Info, Home, BrickWall, Armchair, Ruler } from 'lucide-react';
 import { useCadStore } from '@/lib/cad/store';
 import { BimAssignBox, RoomTypeBox, WallTypePanel } from '@/components/cad/CadEditor';
 import { ShapeInfoPanel } from '@/components/ShapePalette';
 import { BLOCK_MAP } from '@/lib/cad/furniture';
 import { ROOM_NAME_RE, isWallLikeEntity } from '@/lib/cad/standards/checker';
+import { ROOM_KIND_OPTIONS } from '@/lib/cad/model';
+import { roomAreaM2 } from '@/lib/cad/room';
 import { InspectorPages, type InspectorPage } from '@/components/studio/InspectorPages';
 import { RolloutGroup, Rollout } from '@/components/studio/Rollout';
 import WallFinishBox from '@/components/studio/WallFinishBox';
