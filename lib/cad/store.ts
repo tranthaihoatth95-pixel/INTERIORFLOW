@@ -148,9 +148,10 @@ export type CadStage = 'sketch' | 'technical' | 'bim';
 
 /**
  * IF2-nền — điều kiện HIỂN THỊ tool Pro theo role + stage (mở rộng gate cũ vốn chỉ theo cadMode).
- * Đúng nguyên tắc BIGPICTURE §1: hoạ viên (drafter) hoặc team BIM ở chặng kỹ thuật/BIM mới thấy
- * bộ công cụ Pro; CREA ở chặng sketch chỉ thấy sketch tool. `cadMode='pro'` là OVERRIDE thủ công
- * (backward-compat với UI Sketch/Pro cũ) — kể cả CREA vẫn có thể bật Pro override để mượn tool.
+ * ⚠️ 07/08 Hoà chốt (docs/00-CHOT.md "MODE: NGƯỜI DÙNG TỰ BẤM CHỌN") — G-M15-05: lựa chọn tay
+ * `cadMode` là ĐƯỜNG CHÍNH (dòng đầu hàm, thắng trước), KHÔNG phải "override backward-compat"
+ * như câu BIGPICTURE §1 cũ (auto mode theo role+stage — đã BỊ HUỶ). Role/stage chỉ còn là lưới
+ * mở thêm: drafter/bim ở chặng technical/bim thấy Pro dù đang để sketch; owner thấy mọi chặng.
  */
 export function shouldShowProTools(role: CadRole, stage: CadStage, cadMode: CadMode): boolean {
   if (cadMode === 'pro' || cadMode === 'revit') return true; // 07/08 Hoà chốt: người dùng TỰ BẤM CHỌN mode — đây là ĐƯỜNG CHÍNH, không phải override. revit = siêu tập của pro

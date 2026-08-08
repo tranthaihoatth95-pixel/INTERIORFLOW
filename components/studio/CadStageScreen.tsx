@@ -60,7 +60,9 @@ defineMode('2d/sketch', {
 });
 defineMode('2d/pro', {
   stage: 'cad',
-  label: ['Kỹ thuật', 'Technical'],
+  // 08/08 — nhãn theo chốt 07/08 "ĐỊNH NGHĨA BA CHẶNG" (docs/00-CHOT.md): pro = "Chuyên | Pro
+  // mode", gồm luôn Revit 2D. Chỉ đổi NHÃN — id `'2d/pro'` và khoá cadMode giữ nguyên.
+  label: ['Chuyên', 'Pro'],
   navigator: CAD_NAVIGATOR,
   canvas: CAD_CANVAS,
   shelves: ['cad-kyhieu', 'cad-sheet', 'cad-room', 'cad-hatch', 'cad-form'],

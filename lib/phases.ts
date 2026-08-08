@@ -145,7 +145,9 @@ export function isPhase(v: unknown): v is Phase {
  * 07/08 [G-M15-02, M-NHAN-OUT] — TRƯỚC ĐÂY gộp tên CHẶNG với tên MODE thành một chuỗi
  * ('Thiết kế 2D · Sơ phác'/'Thiết kế 2D · Kỹ thuật'). Chốt 07/08 (`docs/00-CHOT.md`) tách rõ:
  * tên chặng và tên mode là HAI THỨ khác nhau, không dán vào nhau trên một nhãn — mode đã có dải
- * chọn riêng ở thanh công cụ dưới (`Sơ phác · Kỹ thuật · Nội thất`). Đo lại (N8): hàm này KHÔNG
+ * chọn riêng ở thanh công cụ dưới (08/08: dải này còn 2 nút `Sơ phác ↔ Chuyên` theo chốt 07/08
+ * "ĐỊNH NGHĨA BA CHẶNG"; nút "Nội thất"/khoá `revit` đã bỏ khỏi UI, khoá vẫn sống trong store).
+ * Đo lại (N8): hàm này KHÔNG
  * có nơi gọi nào trong app (`grep -rn "phaseLabel(" --include=*.tsx --include=*.ts .` chỉ ra
  * đúng 1 kết quả — chính định nghĩa; `StageSwitcher.tsx` dùng thẳng `p.label` tĩnh, KHÔNG gọi hàm
  * này) — không phải bug đang hiện cho người dùng, nhưng chữ ký cũ SAI theo chốt mới nên sửa luôn

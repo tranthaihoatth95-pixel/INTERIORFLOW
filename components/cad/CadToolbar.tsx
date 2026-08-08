@@ -515,12 +515,17 @@ function GroupBlock({ label, children }: { label: string; children: React.ReactN
 function ModeSwitch({ mode, onChange, pro }: { mode: CadMode; onChange: (m: CadMode) => void; pro: boolean }) {
   // 06/08 (G-M4-02) — mặt nút TRƯỚC ĐÂY in khoá kỹ thuật `Sketch`/`Pro`/`Revit`; tên chính thức
   // đã chốt lại bị đẩy vào tooltip. Nay ĐẢO: nút hiện TÊN CHÍNH THỨC, khoá kỹ thuật biến mất khỏi
-  // giao diện (vẫn giữ nguyên trong `onChange('sketch'|'pro'|'revit')` — đổi khoá là vỡ persist).
-  // Cặp nhãn [vi, en] lấy ĐÚNG theo khai báo mode-registry ở components/studio/CadStageScreen.tsx:
-  //   dòng 55 `'2d/sketch' → ['Sơ phác','Sketch']` · dòng 63 `'2d/pro' → ['Kỹ thuật','Technical']`.
-  // `revit` KHÔNG có mục riêng trong registry (gộp vào `'2d/pro'`, xem CadStageScreen.tsx:70-72)
-  // nên nhãn EN 'Interior' chọn cho khớp bộ. Không đọc thẳng registry vì nó chỉ được nạp khi module
-  // CadStageScreen chạy — toolbar còn dùng ở ngữ cảnh khác thì `getMode()` sẽ undefined.
+  // giao diện (vẫn giữ nguyên trong `onChange('sketch'|'pro')` — đổi khoá là vỡ persist).
+  // 08/08 — theo chốt 07/08 "ĐỊNH NGHĨA BA CHẶNG" (docs/00-CHOT.md): chặng 2D chỉ còn HAI mode
+  // hiển thị `Sơ phác ↔ Chuyên` (bảng: sketch = "Sơ phác | Sketch mode" · pro = "Chuyên | Pro
+  // mode" — Chuyên "bao gồm luôn Revit 2D"). Nút thứ ba "Nội thất" (bấm ra khoá `revit`) BỎ khỏi
+  // UI; khoá kỹ thuật `revit` GIỮ NGUYÊN trong type/store/persist (CadMode, LS_CAD_MODE) — người
+  // dùng cũ còn lưu cadMode='revit' vẫn chạy như 'pro' (shouldShowProTools coi revit = pro,
+  // lib/cad/store.ts:156) và nút "Chuyên" sáng cho họ (`mode==='pro'||mode==='revit'` dưới đây).
+  // Cặp nhãn [vi, en] khớp khai báo mode-registry ở components/studio/CadStageScreen.tsx:
+  //   `'2d/sketch' → ['Sơ phác','Sketch']` · `'2d/pro' → ['Chuyên','Pro']`.
+  // Không đọc thẳng registry vì nó chỉ được nạp khi module CadStageScreen chạy — toolbar còn
+  // dùng ở ngữ cảnh khác thì `getMode()` sẽ undefined.
   const tr = useT();
   const segBtn = (active: boolean): React.CSSProperties => ({
     appearance: 'none',
@@ -559,14 +564,11 @@ function ModeSwitch({ mode, onChange, pro }: { mode: CadMode; onChange: (m: CadM
           {tr('Sơ phác', 'Sketch')}
         </button>
       </Tooltip>
-      <Tooltip label={tr('Kỹ thuật', 'Technical')} desc="Tối ưu chuột + bàn phím: đủ công cụ CAD chính xác (toạ độ, ghi kích thước, Fillet/Chamfer, Array…).">
-        <button type="button" onClick={() => onChange('pro')} style={segBtn(mode === 'pro')}>
-          {tr('Kỹ thuật', 'Technical')}
-        </button>
-      </Tooltip>
-      <Tooltip label={tr('Nội thất', 'Interior')} desc="Thêm bộ cấu kiện BIM nội thất, giữ nguyên mọi công cụ của Kỹ thuật.">
-        <button type="button" onClick={() => onChange('revit')} style={segBtn(mode === 'revit')}>
-          {tr('Nội thất', 'Interior')}
+      {/* `mode==='revit'` cũng sáng nút này — persist cũ cadMode='revit' không bị "không nút
+          nào bật" (revit = siêu tập của pro, xem comment đầu ModeSwitch). */}
+      <Tooltip label={tr('Chuyên', 'Pro')} desc="Tối ưu chuột + bàn phím: đủ công cụ CAD chính xác (toạ độ, ghi kích thước, Fillet/Chamfer, Array…) + bộ cấu kiện BIM nội thất (Revit 2D).">
+        <button type="button" onClick={() => onChange('pro')} style={segBtn(mode === 'pro' || mode === 'revit')}>
+          {tr('Chuyên', 'Pro')}
         </button>
       </Tooltip>
     </div>
