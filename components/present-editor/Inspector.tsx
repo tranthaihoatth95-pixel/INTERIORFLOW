@@ -1403,7 +1403,7 @@ function RecipeStatus({
         onClick={handleRefresh}
         disabled={busy}
         style={{ ...ghostBtn, opacity: busy ? 0.6 : 1 }}
-        title="Dựng lại ảnh này từ bản vẽ CAD hiện tại (Doc sống) — KHÔNG phải bản chụp cũ"
+        title="Dựng lại ảnh này từ bản vẽ Thiết kế 2D hiện tại (Doc sống) — KHÔNG phải bản chụp cũ"
       >
         <RefreshCw size={12} /> {busy ? 'Đang làm mới…' : 'Làm mới từ bản vẽ'}
       </button>

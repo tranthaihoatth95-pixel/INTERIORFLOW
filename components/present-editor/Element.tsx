@@ -524,7 +524,7 @@ function ImageInner({ el, assetStale }: { el: ImageElement; assetStale?: boolean
       {assetStale && (
         <span
           aria-hidden
-          title="Bản vẽ CAD đã đổi từ lúc ảnh này được dựng — mở Inspector để làm mới."
+          title="Bản vẽ Thiết kế 2D đã đổi từ lúc ảnh này được dựng — mở Inspector để làm mới."
           style={{
             position: 'absolute',
             top: 6,
