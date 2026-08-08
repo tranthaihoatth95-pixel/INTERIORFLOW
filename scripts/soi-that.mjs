@@ -83,9 +83,16 @@ function timDinhDanh(ten) {
 /** Đếm số nơi GỌI một định danh, ngoài chính tệp khai nó — để biết đã mount chưa (N6). */
 function demNoiGoi(ten, fileKhai) {
   let n = 0;
-  const re = new RegExp(`\\b${ten}\\b`);
+  const re = new RegExp(`\\b${ten}\\b`, 'g');
   for (const { p, src } of MA) {
-    if (p === fileKhai) continue;
+    if (p === fileKhai) {
+      // VÁ 08/08 (2 agent đối chiếu cùng bắt): hàm khai VÀ gọi trong cùng file từng bị đếm là
+      // "0 nơi gọi" (drawSnap CadCanvas:2360, DRAG_ACTIVE_THRESHOLD_PX Element:205 = báo động
+      // giả). Heuristic: xuất hiện >1 lần trong chính file khai = có nơi dùng nội bộ.
+      const m = src.match(re);
+      if (m && m.length > 1) n++;
+      continue;
+    }
     if (re.test(src)) n++;
   }
   return n;
