@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, LogOut, PanelsTopLeft, Boxes, ScrollText, Info } from 'lucide-react';
+import { ArrowLeft, Check, LogOut, PanelsTopLeft, Boxes, ClipboardList, ScrollText, Info } from 'lucide-react';
 import { resetAllRolloutLayouts } from '@/components/studio/Rollout';
 import { useFlowStore } from '@/lib/store';
 import { AiDependencySettings } from '@/components/settings/AiDependencySettings';
@@ -72,6 +72,33 @@ function MaterialsWarehouseRow() {
         onClick={() => router.push('/materials')}
       >
         Mở kho vật liệu
+      </button>
+    </div>
+  );
+}
+
+/** 08/08 (`docs/DOI-CHIEU-42-SPEC-2026-08-08.md §1#4`) — lối vào MÀN "BẢNG VIỆC" (`/tasks`, nền
+ * `Task`/`WorkflowState` đã migrate xong nhưng chưa có client nào gọi — màn này là client đầu
+ * tiên). Đặt cạnh `MaterialsWarehouseRow` — cùng nhóm "Nâng cao", cùng khuôn 1 dòng mô tả + 1 nút. */
+function TaskBoardRow() {
+  const router = useRouter();
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)', display: 'flex', alignItems: 'center', gap: 7 }}>
+          <ClipboardList size={13} /> Bảng việc
+        </div>
+        <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--t2)' }}>
+          Việc theo dự án, chia cột trạng thái — thêm/sửa/xoá/đổi trạng thái.
+        </p>
+      </div>
+      <button
+        type="button"
+        className="ghost"
+        style={{ flexShrink: 0 }}
+        onClick={() => router.push('/tasks')}
+      >
+        Mở bảng việc
       </button>
     </div>
   );
@@ -182,6 +209,7 @@ export function PixelSettingsShell() {
                   đúng SPEC-PANEL-ROLLOUT §2b "luôn nhìn thấy được". */}
               <ResetPanelLayoutRow />
               <MaterialsWarehouseRow />
+              <TaskBoardRow />
               <LegalRows />
               <AiDependencySettings />
               <GuModelSettings />
