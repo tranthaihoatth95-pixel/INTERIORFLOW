@@ -27,6 +27,15 @@ import type {
 import { effectiveListStyle, DEFAULT_ELEMENT_FILTER } from '@/lib/present-editor/model';
 import type { LinkedAsset } from '@/lib/present-editor/model';
 import { useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation';
+import { useFlowStore } from '@/lib/store';
+import { effectiveUserId } from '@/lib/resume';
+import { getProjectDoc } from '@/lib/present-editor/project-doc';
+import {
+  computeCadPlanFingerprint,
+  renderRecipeImage,
+  isLinkedAssetStale,
+} from '@/lib/present-editor/linked-asset-recipe';
 import {
   addCustomFont,
   getLibraryFonts,
@@ -119,6 +128,16 @@ interface Props {
   onCreateAsset?: () => void;
   onAttachAsset?: (assetId: string) => void;
   onDetachAsset?: () => void;
+  /**
+   * T2 (`docs/SPEC-TRINH-ONG-KINH-DU-LIEU.md` §3) — asset có `recipe` vừa được "Làm mới từ bản
+   * vẽ" render lại: áp `dataUrl`+`fingerprint` mới vào REGISTRY (`deck.linkedAssets`, qua
+   * `applyRecipeRefresh`) để MỌI element khác đang dùng chung `assetId` cùng cập nhật — không chỉ
+   * ảnh đang chọn. Optional: PresentEditor.tsx CHƯA nối callback này ở phiên 08/08 (ngoài vùng
+   * file được giao — xem báo cáo phiên). Thiếu callback này, nút "Làm mới từ bản vẽ" vẫn hoạt
+   * động ĐÚNG cho riêng ảnh đang chọn (qua `onUpdateSelected`), chỉ không lan sang slide khác
+   * dùng chung asset — KHÔNG phải nút giả, chỉ hẹp phạm vi hơn dự tính đầy đủ của T2.
+   */
+  onRefreshAsset?: (assetId: string, dataUrl: string, fingerprint: string) => void;
   /* ---- ô quản lý layer ---- */
   selectedIds: string[];
   onSelect: (id: string) => void;
@@ -149,6 +168,7 @@ export default function Inspector({
   onCreateAsset,
   onAttachAsset,
   onDetachAsset,
+  onRefreshAsset,
   selectedIds,
   onSelect,
   onReorderElement,
@@ -342,6 +362,7 @@ export default function Inspector({
           onCreateAsset={onCreateAsset}
           onAttachAsset={onAttachAsset}
           onDetachAsset={onDetachAsset}
+          onRefreshAsset={onRefreshAsset}
         />
       )}
       {selected.kind === 'shape' && (
@@ -1050,6 +1071,7 @@ function ImageInspector({
   onCreateAsset,
   onAttachAsset,
   onDetachAsset,
+  onRefreshAsset,
 }: {
   el: ImageElement;
   palette: string[];
@@ -1060,10 +1082,13 @@ function ImageInspector({
   onCreateAsset?: () => void;
   onAttachAsset?: (assetId: string) => void;
   onDetachAsset?: () => void;
+  onRefreshAsset?: (assetId: string, dataUrl: string, fingerprint: string) => void;
 }) {
   const crop = el.crop;
   // asset khác (không phải asset chính ảnh này) — để gợi ý "dùng lại" trong dropdown.
   const otherAssets = linkedAssets.filter((a) => a.id !== el.assetId);
+  // T2 — asset CHÍNH của ảnh đang chọn (nếu có), để đọc `recipe` (§3 SPEC-TRINH-ONG-KINH-DU-LIEU).
+  const currentAsset = linkedAssets.find((a) => a.id === el.assetId);
   const diskPathInputRef = useRef<HTMLInputElement>(null);
   const onPickUpdatedFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1150,6 +1175,9 @@ function ImageInspector({
                 <button type="button" onClick={onDetachAsset} style={ghostBtn} title="Tách ảnh này ra khỏi tài sản chung">
                   <Unlink size={12} /> Gỡ liên kết
                 </button>
+              )}
+              {currentAsset?.recipe && (
+                <RecipeStatus asset={currentAsset} onUpdate={onUpdate} onRefreshAsset={onRefreshAsset} />
               )}
             </>
           ) : (
@@ -1274,6 +1302,112 @@ function ImageInspector({
       </button>
       <FillOverlayControls el={el} onUpdate={onUpdate} palette={palette} />
     </Panel>
+  );
+}
+
+/**
+ * T2 (`docs/SPEC-TRINH-ONG-KINH-DU-LIEU.md` §3) — trạng thái "ảnh có công thức" của asset đang
+ * chọn: báo cờ CŨ khi Doc CAD nguồn đã đổi từ lúc render (so `boqFingerprint` đã lưu với vân tay
+ * SỐNG, qua `getProjectDoc` — CÙNG cầu dữ liệu T1 đã dùng cho BOQ, không dựng đường đọc Doc thứ
+ * hai) + nút "Làm mới từ bản vẽ" (dựng lại ảnh bằng ĐÚNG công thức, `renderRecipeImage`).
+ *
+ * KHÔNG tự động chạy khi mount — chỉ ĐO (đọc, không sinh phụ) mỗi khi `asset.recipe`/dự án đổi,
+ * đúng luật L5 "không ghi ngược/tự đổi sau lưng". `projectId` đọc từ URL (`useParams`, CÙNG cách
+ * `components/present-editor/PresentStageScreen.tsx` lấy — route `/projects/[id]/present`) —
+ * KHÔNG cần PresentEditor.tsx truyền prop mới (ngoài vùng file được sửa của việc này).
+ *
+ * GIỚI HẠN ĐÃ BIẾT (khai thật, không giấu): thiếu `onRefreshAsset` (PresentEditor.tsx CHƯA nối,
+ * xem ghi chú ở `Props.onRefreshAsset` phía trên) → nút này CHỈ cập nhật ảnh đang chọn qua
+ * `onUpdate`, KHÔNG lan sang các slide KHÁC đang dùng chung `assetId` — registry (`deck.
+ * linkedAssets`) không đổi nên badge "cũ" có thể hiện lại đúng ở CÁC INSTANCE KHÁC cho tới khi
+ * PresentEditor.tsx nối `onRefreshAsset` (xem báo cáo phiên cho đoạn code cần thêm).
+ */
+function RecipeStatus({
+  asset,
+  onUpdate,
+  onRefreshAsset,
+}: {
+  asset: LinkedAsset;
+  onUpdate: (m: (el: ImageElement) => void, live?: boolean) => void;
+  onRefreshAsset?: (assetId: string, dataUrl: string, fingerprint: string) => void;
+}) {
+  const recipe = asset.recipe;
+  const params = useParams<{ id?: string }>();
+  // recipe.projectId (dự án LÚC TẠO ảnh) ưu tiên hơn URL hiện tại (ảnh có thể chèn chéo dự án) —
+  // rơi về URL khi recipe chưa từng khai projectId (không nên xảy ra, nhưng không throw).
+  const projectId = recipe?.projectId || params?.id || '';
+  const storeUserId = useFlowStore((s) => s.user?.id);
+  const userId = effectiveUserId(storeUserId) ?? '';
+  const [stale, setStale] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setError(null);
+    if (!recipe || !projectId) { setStale(null); return; }
+    void (async () => {
+      const { doc, source } = await getProjectDoc(userId, projectId);
+      if (cancelled) return;
+      // source === 'none' → không xác định được Doc SỐNG (chưa từng mở Thiết kế 2D trong phiên
+      // này) — KHÔNG kết luận "cũ" khi không chắc (§ tinh thần isLinkedAssetStale, tránh báo sai).
+      setStale(source === 'none' ? null : isLinkedAssetStale(asset, computeCadPlanFingerprint(doc)));
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, userId, recipe?.fingerprint, asset.updatedAt]);
+
+  if (!recipe) return null;
+
+  async function handleRefresh() {
+    setBusy(true);
+    setError(null);
+    try {
+      if (!projectId) {
+        setError('Chưa xác định được dự án nguồn — mở lại Thiết kế 2D của dự án này rồi thử lại.');
+        return;
+      }
+      const { doc, source } = await getProjectDoc(userId, projectId);
+      if (source === 'none') {
+        setError('Không đọc được bản vẽ CAD của dự án này trong phiên hiện tại — mở lại chặng ' +
+          'Thiết kế 2D một lần (để nạp bản vẽ), rồi quay lại đây bấm "Làm mới từ bản vẽ".');
+        return;
+      }
+      const dataUrl = renderRecipeImage(doc, recipe as NonNullable<LinkedAsset['recipe']>);
+      if (!dataUrl) {
+        setError('Không dựng được ảnh từ bản vẽ (bản vẽ trống hoặc lỗi khi vẽ lại) — kiểm tra ' +
+          'Thiết kế 2D còn nội dung không.');
+        return;
+      }
+      const fingerprint = computeCadPlanFingerprint(doc);
+      onUpdate((im) => { im.src = dataUrl; });
+      onRefreshAsset?.(asset.id, dataUrl, fingerprint);
+      setStale(false);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      {stale && (
+        <p style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: 'var(--warning)', lineHeight: 1.4, margin: '6px 0' }}>
+          <AlertTriangle size={12} /> Bản vẽ đã đổi từ lúc chèn ảnh này.
+        </p>
+      )}
+      {error && (
+        <p style={{ fontSize: 10.5, color: '#c0392b', lineHeight: 1.4, margin: '4px 0' }}>{error}</p>
+      )}
+      <button
+        type="button"
+        onClick={handleRefresh}
+        disabled={busy}
+        style={{ ...ghostBtn, opacity: busy ? 0.6 : 1 }}
+        title="Dựng lại ảnh này từ bản vẽ CAD hiện tại (Doc sống) — KHÔNG phải bản chụp cũ"
+      >
+        <RefreshCw size={12} /> {busy ? 'Đang làm mới…' : 'Làm mới từ bản vẽ'}
+      </button>
+    </>
   );
 }
 

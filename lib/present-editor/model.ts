@@ -419,6 +419,36 @@ export interface DeckWatermark {
 }
 
 /**
+ * T2 (`docs/SPEC-TRINH-ONG-KINH-DU-LIEU.md` §3 "Ảnh dẫn xuất phải mang công thức") — CÔNG THỨC
+ * để dựng lại 1 `LinkedAsset` từ Doc CAD SỐNG, chỉ áp cho nhóm 🟨 "ẢNH CÓ CÔNG THỨC" trong bảng
+ * phân loại §2 của spec đó (mặt bằng/zone-map dán vào deck) — KHÔNG áp cho ảnh render 3D/ảnh
+ * chụp thật (🟩 ẢNH, không có Doc nào đứng sau để tái tạo). `kind` khớp đúng 2 hàm xuất ảnh THUẦN
+ * đã có sẵn ở `lib/cad/render.ts` (renderDocToDataURL / renderZoneMapToDataURL, xem
+ * `lib/present-editor/linked-asset-recipe.ts#renderRecipeImage`) — không phát minh cách render
+ * thứ ba.
+ */
+export interface LinkedAssetRecipe {
+  kind: 'cad-plan' | 'zone-map';
+  /** dự án NGUỒN của bản vẽ — recipe neo theo dự án lúc TẠO ảnh, không phải dự án đang mở lúc
+   * xem lại (chèn ảnh chéo dự án vẫn refresh đúng bản vẽ gốc). */
+  projectId: string;
+  /** sheet nguồn, nếu dự án có nhiều bản vẽ (câu hỏi treo §5 #2 của spec) — bỏ trống = sheet
+   * đang hoạt động lúc render (đủ cho đa số dự án 1-sheet hiện nay). */
+  sheetId?: string;
+  /** độ rộng ảnh render (px, tham số `maxPx` của renderDocToDataURL/renderZoneMapToDataURL) —
+   * giữ lại để "Làm mới từ bản vẽ" ra đúng độ nét như lúc tạo, không đoán lại. */
+  widthPx: number;
+  /**
+   * Vân tay Doc (`boqFingerprint`, `lib/boq/cache.ts` — CHỈ IMPORT, không đụng file đó) tại
+   * THỜI ĐIỂM ảnh này được render lần gần nhất. So với vân tay Doc HIỆN TẠI (tính lại mỗi lần
+   * cần biết) để phát hiện "bản vẽ đã đổi từ lúc chèn ảnh" — KHÔNG tự động render lại (L5: không
+   * ghi ngược/tự đổi sau lưng), chỉ báo cờ, người dùng tự bấm "Làm mới". Rỗng = chưa đo được lúc
+   * tạo (asset vẫn hợp lệ, chỉ không so sánh được — không chặn gì).
+   */
+  fingerprint: string;
+}
+
+/**
  * Tài sản liên kết (PS-3) — gộp "smart object" (Photoshop) + "component instance"
  * (Figma) làm MỘT khái niệm: nhiều `ImageElement.assetId` (ở nhiều slide khác nhau) trỏ
  * chung 1 bản ghi ở đây. Sửa `src` một lần (qua `setLinkedAssetSrc`, lib/present-editor/
@@ -432,6 +462,13 @@ export interface LinkedAsset {
   /** tên gợi nhớ để chọn lại trong panel (vd "Logo TTT", "Ảnh render sảnh"). */
   name?: string;
   updatedAt: number;
+  /**
+   * T2 — bỏ trống = ảnh KHÔNG sinh từ Doc CAD (render 3D/ảnh chụp — hợp lệ, KHÔNG phải lỗi, xem
+   * bảng phân loại §2 SPEC-TRINH-ONG-KINH-DU-LIEU). Có giá trị = ảnh "có công thức": Inspector
+   * cho phép "Làm mới từ bản vẽ" + cảnh báo khi Doc đã đổi từ lúc render. Additive — asset cũ
+   * (mọi asset trước 08/08) không có field này vẫn hoạt động y nguyên như trước.
+   */
+  recipe?: LinkedAssetRecipe;
 }
 
 /**

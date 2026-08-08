@@ -121,7 +121,12 @@ export function detachElement(deck: EditorDeck, slideId: string, elementId: stri
  */
 export function setLinkedAssetSrc(deck: EditorDeck, assetId: string, src: string): EditorDeck {
   const prev = deck.linkedAssets?.[assetId];
-  const asset: LinkedAsset = { id: assetId, name: prev?.name, src, updatedAt: Date.now() };
+  // T2 (SPEC-TRINH-ONG-KINH-DU-LIEU §3) — GIỮ `recipe` qua mỗi lần đổi src (vd round-trip
+  // /photo-editor không liên quan gì tới recipe). Trước khi có field này hàm luôn bỏ field lạ
+  // (không tồn tại) nên hành vi CŨ (asset không recipe) không đổi; recipe.fingerprint chỉ được
+  // cập nhật CÓ CHỦ Ý qua applyRecipeRefresh() (lib/present-editor/linked-asset-recipe.ts), không
+  // phải ở đây — đổi src bằng đường khác (vd sửa tay) KHÔNG ngầm coi là "đã làm mới theo công thức".
+  const asset: LinkedAsset = { id: assetId, name: prev?.name, src, updatedAt: Date.now(), recipe: prev?.recipe };
   return {
     ...deck,
     linkedAssets: { ...(deck.linkedAssets ?? {}), [assetId]: asset },

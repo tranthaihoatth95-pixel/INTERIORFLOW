@@ -71,6 +71,16 @@ interface Props {
   overImage?: boolean;
   /** chuột phải trên element → mở menu ngữ cảnh. */
   onContextMenu?: (e: React.MouseEvent) => void;
+  /**
+   * T2 (`docs/SPEC-TRINH-ONG-KINH-DU-LIEU.md` §3) — ẢNH này liên kết tới 1 `LinkedAsset` có
+   * `recipe` (sinh từ Doc CAD) VÀ Doc đã đổi từ lúc render → hiện badge góc "Cũ hơn bản vẽ".
+   * Chỉ có Ý NGHĨA cho `el.kind === 'image'`, bỏ qua ở text/shape. Optional — CHƯA caller nào
+   * (EditorCanvas.tsx) tính + truyền cờ này ở phiên 08/08 (đo staleness cần `deck.linkedAssets` +
+   * vân tay Doc sống, Element.tsx không có 2 thứ đó — ngoài vùng file được sửa của việc này, xem
+   * báo cáo phiên). Component ĐÃ SẴN SÀNG dùng ngay khi được nối, không đổi hành vi khi vắng mặt
+   * (mọi ảnh hiện tại render y hệt trước — additive).
+   */
+  assetStale?: boolean;
   /** P5/2.2.91 — báo NGOÀI (EditorCanvas) khi thao tác kéo (di chuyển HOẶC tay nắm resize/xoay)
    * đã vượt ngưỡng ~4px, để toolbar-nổi-theo-selection (TextToolbar…) tự thu lại — KHÔNG gọi ở
    * pointerdown (bấm để CHỌN sẽ làm thanh chớp tắt, xem `useFloatingToolbarVisibility.ts`).
@@ -126,6 +136,7 @@ export default function Element({
   overImage,
   onContextMenu,
   onDragActiveChange,
+  assetStale,
 }: Props) {
   // Giữ bản mới nhất qua ref — dragState sống suốt 1 lượt kéo (không phụ thuộc re-render), gọi
   // callback qua ref để không phải liệt kê onDragActiveChange vào dep của các hàm pointer* bên
@@ -341,7 +352,7 @@ export default function Element({
       }}
       onContextMenu={onContextMenu}
     >
-      <Inner el={el} fonts={fonts} overImage={overImage} />
+      <Inner el={el} fonts={fonts} overImage={overImage} assetStale={assetStale} />
 
       {selected && (
         <div
@@ -426,13 +437,16 @@ export function Inner({
   el,
   fonts,
   overImage,
+  assetStale,
 }: {
   el: SlideElement;
   fonts: string;
   /** chữ này có nằm CHỒNG lên một ảnh phía dưới không (xem `textOverImage`). */
   overImage?: boolean;
+  /** T2 — xem docblock `assetStale` ở `Props` của `Element` (component mặc định) phía trên. */
+  assetStale?: boolean;
 }) {
-  if (el.kind === 'image') return <ImageInner el={el} />;
+  if (el.kind === 'image') return <ImageInner el={el} assetStale={assetStale} />;
   if (el.kind === 'shape') return <ShapeInner el={el} />;
   return <TextInner el={el} fonts={fonts} overImage={overImage} />;
 }
@@ -459,7 +473,7 @@ export function textOverImage(
   return false;
 }
 
-function ImageInner({ el }: { el: ImageElement }) {
+function ImageInner({ el, assetStale }: { el: ImageElement; assetStale?: boolean }) {
   const crop = el.crop || { x: 0, y: 0, w: 1, h: 1 };
   // Mô phỏng crop bằng background-size/position (cover trong khung).
   const bgSize = `${(1 / crop.w) * 100}% ${(1 / crop.h) * 100}%`;
@@ -503,6 +517,35 @@ function ImageInner({ el }: { el: ImageElement }) {
             pointerEvents: 'none',
           }}
         />
+      )}
+      {/* T2 (SPEC-TRINH-ONG-KINH-DU-LIEU §3) — badge "ảnh có công thức đã cũ hơn bản vẽ". Cùng
+          khuôn cảnh báo `--warning` đã dùng ở BoqTable.tsx (chip "suy đoán theo vị trí") — không
+          bịa màu/kiểu mới. `pointerEvents:none` — không cản kéo/resize/chọn ảnh phía dưới. */}
+      {assetStale && (
+        <span
+          aria-hidden
+          title="Bản vẽ CAD đã đổi từ lúc ảnh này được dựng — mở Inspector để làm mới."
+          style={{
+            position: 'absolute',
+            top: 6,
+            right: 6,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '3px 7px',
+            borderRadius: 999,
+            background: 'var(--warning)',
+            color: '#1a1400',
+            fontSize: 10,
+            fontWeight: 700,
+            lineHeight: 1,
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+            zIndex: 3,
+          }}
+        >
+          Cũ hơn bản vẽ
+        </span>
       )}
     </>
   );
