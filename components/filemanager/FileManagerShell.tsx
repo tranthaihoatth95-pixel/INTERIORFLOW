@@ -6,13 +6,59 @@ import { childFolders, filesInFolder, folderPath, folderStats, storageByRoot } f
 import { useFileManagerLocalState, kindFromName } from '@/lib/filemanager/local-state';
 import type { FmFile, FmFileKind } from '@/lib/filemanager/types';
 import { formatBytes, FM_KIND_LABEL } from '@/lib/filemanager/types';
-import { listRealFiles, realFsMessage, writeFileToRoot, type RealFsFailure } from '@/lib/filemanager/real-fs';
+import {
+  listRealFiles,
+  realFsMessage,
+  writeFileToRoot,
+  deleteFileFromRoot,
+  renameFileInRoot,
+  readFileFromRoot,
+  type RealFsFailure,
+} from '@/lib/filemanager/real-fs';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
+import {
+  EMPTY_SELECTION,
+  clickSelect,
+  moveFocus,
+  contextSelect,
+  pruneSelection,
+  type SelectionState,
+} from '@/lib/filemanager/selection';
 import { RawStyle } from './RawStyle';
 import { FILES_MOCK_CSS } from './files-mock-css';
+import { FmContextMenu, type FmMenuTarget } from './FmContextMenu';
 
 type ViewMode = 'grid' | 'list';
 type InspTab = 'mota' | 'binhluan';
+
+/** SPEC-MAT-DO-CON-TRO §5 chốt 3: nhớ lựa chọn NGƯỜI DÙNG đã bấm; chưa bấm lần nào thì đọc
+ *  `matchMedia('(hover: none) and (pointer: coarse)')` — ĐÚNG điều kiện đã dùng ở
+ *  `globals.css:1030`, không phát minh cách phát hiện cảm ứng khác. */
+const VIEW_PREF_KEY = 'interiorflow.filemanager_g4.view_pref_v1';
+
+function readViewPref(): ViewMode | null {
+  try {
+    const raw = window.localStorage.getItem(VIEW_PREF_KEY);
+    return raw === 'grid' || raw === 'list' ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+/** File THẬT trên đĩa (đọc qua File System Access, xem `real-fs.ts`) — id luôn `real-<tên>`
+ *  (gán ở `refreshReal()` dưới). Chỉ nhóm này có nội dung thật đứng sau để đổi tên/tải xuống. */
+function isRealDiskFile(f: FmFile): boolean {
+  return f.id.startsWith('real-');
+}
+
+/** Bản ghi tải-lên-trong-phiên CHƯA ghi được xuống đĩa (fallback lúc `writeFileToRoot` lỗi, xem
+ *  `runUpload`) — không có Blob thật đứng sau, nhưng bản ghi này XOÁ được (nó chỉ là state). */
+function isSessionUploadStub(f: FmFile): boolean {
+  return f.id.startsWith('up-');
+}
+
+const REASON_MOCK_ONLY = 'Đây là dữ liệu mẫu minh hoạ, không có file thật để đổi/tải/xoá.';
+const REASON_NEEDS_DISK = 'Chỉ dùng được với file đã ghi thật xuống đĩa (chưa ghi được — xem cảnh báo phía trên).';
 
 interface UploadingItem {
   id: string;
@@ -77,8 +123,9 @@ interface Props {
 }
 
 export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
-  const [view, setView] = useState<ViewMode>('grid');
-  const [selected, setSelected] = useState<FmFile | null>(null);
+  // Khởi tạo tĩnh 'list' (khớp SSR — server luôn coi là desktop) rồi tự đổi sau mount nếu có
+  // lựa chọn đã lưu hoặc máy là cảm ứng — tránh lệch hydration giữa server/client (§5 chốt 3).
+  const [view, setViewState] = useState<ViewMode>('list');
   const [insTab, setInsTab] = useState<InspTab>('mota');
   const [draft, setDraft] = useState('');
   const [uploading, setUploading] = useState<UploadingItem[]>([]);
@@ -87,16 +134,38 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
   const [fsNote, setFsNote] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [kindFilter, setKindFilter] = useState<FmFileKind | 'all'>('all');
+  const [sel, setSel] = useState<SelectionState>(EMPTY_SELECTION);
+  const [ctxTarget, setCtxTarget] = useState<FmMenuTarget | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const saved = readViewPref();
+    if (saved) {
+      setViewState(saved);
+      return;
+    }
+    const touchOnly = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    setViewState(touchOnly ? 'grid' : 'list');
+  }, []);
+
+  const setView = (v: ViewMode) => {
+    setViewState(v);
+    try {
+      window.localStorage.setItem(VIEW_PREF_KEY, v);
+    } catch {
+      // quota/private-mode — chỉ mất việc NHỚ lựa chọn, không chặn đổi view trong phiên
+    }
+  };
+
   const setCurrentFolderId = (id: string | null) => {
-    setSelected(null);
+    setSel(EMPTY_SELECTION);
     setSearch('');
     setKindFilter('all');
+    setCtxTarget(null);
     onSelectFolder(id);
   };
 
-  const { state, addComment, addUploadedFile } = useFileManagerLocalState();
+  const { state, addComment, addUploadedFile, removeUploadedFile } = useFileManagerLocalState();
 
   const path = useMemo(() => folderPath(currentFolderId), [currentFolderId]);
   const subfolders = useMemo(() => childFolders(currentFolderId), [currentFolderId]);
@@ -124,6 +193,133 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
     const q = search.trim().toLowerCase();
     return files.filter((f) => (kindFilter === 'all' || f.kind === kindFilter) && (!q || f.name.toLowerCase().includes(q)));
   }, [files, search, kindFilter]);
+
+  const visibleIds = useMemo(() => filteredFiles.map((f) => f.id), [filteredFiles]);
+
+  // Danh sách hiển thị đổi (đổi thư mục/tìm/lọc) → gạt id không còn thấy khỏi tập chọn
+  // (`lib/filemanager/selection.ts` `pruneSelection`, đúng SPEC-MAT-DO-CON-TRO §4#1).
+  useEffect(() => {
+    setSel((prev) => pruneSelection(visibleIds, prev));
+  }, [visibleIds]);
+
+  /** Panel chi tiết bên phải luôn theo mục đang có TIÊU ĐIỂM (`focusId`) — click thường/mũi tên
+   *  đều dời tiêu điểm nên đều tự cập nhật panel; ⌘-click/shift-click chọn nhiều thì panel theo
+   *  mục bấm/tới SAU CÙNG (đúng hành vi Finder — panel không hiện được nhiều file 1 lúc). */
+  const selected = useMemo(() => filteredFiles.find((f) => f.id === sel.focusId) ?? null, [filteredFiles, sel.focusId]);
+
+  const onFileActivate = useCallback(
+    (f: FmFile, mods: { shift?: boolean; toggle?: boolean } = {}) => {
+      setSel((prev) => clickSelect(visibleIds, prev, f.id, mods));
+    },
+    [visibleIds],
+  );
+
+  const onFileContextMenu = useCallback(
+    (e: React.MouseEvent, f: FmFile) => {
+      e.preventDefault();
+      setSel((prev) => contextSelect(visibleIds, prev, f.id));
+      const MENU_W = 176;
+      const MENU_H = 116;
+      const x = Math.min(e.clientX, window.innerWidth - MENU_W - 8);
+      const y = Math.min(e.clientY, window.innerHeight - MENU_H - 8);
+      setCtxTarget({ fileId: f.id, fileName: f.name, x, y });
+    },
+    [visibleIds],
+  );
+
+  const handleRename = useCallback(
+    async (fileId: string, newName: string) => {
+      const f = filteredFiles.find((x) => x.id === fileId);
+      if (!f || !isRealDiskFile(f)) return;
+      const res = await renameFileInRoot(pathSegments, f.name, newName);
+      if (res.ok) await refreshReal();
+      else setFsNote(realFsMessage(res.reason as RealFsFailure));
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filteredFiles, pathSegments],
+  );
+
+  const handleDownload = useCallback(
+    async (fileId: string) => {
+      const f = filteredFiles.find((x) => x.id === fileId);
+      if (!f || !isRealDiskFile(f)) return;
+      const res = await readFileFromRoot(pathSegments, f.name);
+      if (!res.ok) {
+        setFsNote(realFsMessage(res.reason as RealFsFailure));
+        return;
+      }
+      const url = URL.createObjectURL(res.value);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = f.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    },
+    [filteredFiles, pathSegments],
+  );
+
+  /** Xoá 1 hay nhiều file đã chọn — dùng chung cho menu chuột phải (1 file) và phím Delete
+   *  (cả cụm đang chọn). Xác nhận 1 lần bằng `window.confirm` — cùng khuôn `MaterialsScreen.tsx`/
+   *  `TaskBoardScreen.tsx`, không phát minh hộp thoại riêng cho màn này. */
+  const handleDeleteMany = useCallback(
+    async (ids: string[]) => {
+      const targets = ids
+        .map((id) => filteredFiles.find((f) => f.id === id))
+        .filter((f): f is FmFile => !!f && (isRealDiskFile(f) || isSessionUploadStub(f)));
+      if (targets.length === 0) {
+        setFsNote(REASON_MOCK_ONLY);
+        return;
+      }
+      const label = targets.length === 1 ? `"${targets[0]!.name}"` : `${targets.length} file đã chọn`;
+      if (!window.confirm(`Xoá ${label}? Không hoàn tác được.`)) return;
+      let ioFailed = false;
+      for (const f of targets) {
+        if (isRealDiskFile(f)) {
+          const res = await deleteFileFromRoot(pathSegments, f.name);
+          if (!res.ok) ioFailed = true;
+        } else {
+          removeUploadedFile(f.id);
+        }
+      }
+      if (ioFailed) setFsNote(realFsMessage('io'));
+      await refreshReal();
+      setSel((prev) => ({ ...prev, selectedIds: prev.selectedIds.filter((id) => !targets.some((t) => t.id === id)) }));
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filteredFiles, pathSegments, removeUploadedFile],
+  );
+
+  // Bàn phím: mũi tên dời tiêu điểm (Shift = nới dải) · Enter thu về đúng 1 mục đang tiêu điểm ·
+  // Delete/Backspace xoá cả cụm đang chọn. Bỏ qua khi đang gõ trong ô input/textarea (thanh tìm,
+  // ô đổi tên) — không được nuốt phím gõ chữ thường (SPEC-MAT-DO-CON-TRO §4#2).
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const t = e.target;
+      if (t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (visibleIds.length === 0) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        setSel((prev) => moveFocus(visibleIds, prev, 1, e.shiftKey));
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setSel((prev) => moveFocus(visibleIds, prev, -1, e.shiftKey));
+      } else if (e.key === 'Enter') {
+        setSel((prev) => (prev.focusId ? { selectedIds: [prev.focusId], anchorId: prev.focusId, focusId: prev.focusId } : prev));
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        setSel((prev) => {
+          if (prev.selectedIds.length > 0) {
+            e.preventDefault();
+            void handleDeleteMany(prev.selectedIds);
+          }
+          return prev;
+        });
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [visibleIds, handleDeleteMany]);
 
   /** Đọc lại file thật dưới thư mục đang mở. */
   const refreshReal = useCallback(async () => {
@@ -216,8 +412,9 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
     <button
       type="button"
       key={f.id}
-      className={`filerow${selected?.id === f.id ? ' sel' : ''}`}
-      onClick={() => setSelected(f)}
+      className={`filerow${sel.selectedIds.includes(f.id) ? ' sel' : ''}`}
+      onClick={(e) => onFileActivate(f, { shift: e.shiftKey, toggle: e.metaKey || e.ctrlKey })}
+      onContextMenu={(e) => onFileContextMenu(e, f)}
     >
       <span className="ficon">{(f.ext || '—').toUpperCase().slice(0, 4)}</span>
       <span className="fnamecell">{f.name}</span>
@@ -226,6 +423,10 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
       <span className="fsize">{formatBytes(f.sizeBytes)}</span>
     </button>
   );
+
+  const ctxFile = ctxTarget ? filteredFiles.find((f) => f.id === ctxTarget.fileId) ?? null : null;
+  const ctxIsReal = !!ctxFile && isRealDiskFile(ctxFile);
+  const ctxIsUploadStub = !!ctxFile && isSessionUploadStub(ctxFile);
 
   return (
     <div className="if-files-outer">
@@ -359,8 +560,9 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
                   <button
                     type="button"
                     key={f.id}
-                    className={`filecard${selected?.id === f.id ? ' sel' : ''}`}
-                    onClick={() => setSelected(f)}
+                    className={`filecard${sel.selectedIds.includes(f.id) ? ' sel' : ''}`}
+                    onClick={(e) => onFileActivate(f, { shift: e.shiftKey, toggle: e.metaKey || e.ctrlKey })}
+                    onContextMenu={(e) => onFileContextMenu(e, f)}
                   >
                     <span className="fcthumb"><FileThumb f={f} /></span>
                     <span className="fcbody">
@@ -474,7 +676,19 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--t3)' }}>File trong thư mục</span>
                       {files.slice(0, 3).map((f) => (
-                        <button key={f.id} type="button" onClick={() => setSelected(f)} className="quickfile">
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => {
+                            // Lối tắt này đọc từ `files` KHÔNG lọc — bỏ bộ lọc/tìm trước để file
+                            // vừa chọn chắc chắn nằm trong `visibleIds`, không thì `clickSelect`
+                            // (đòi id có mặt trong danh sách truyền vào) sẽ lặng lẽ không làm gì.
+                            setSearch('');
+                            setKindFilter('all');
+                            setSel(clickSelect(files.map((x) => x.id), EMPTY_SELECTION, f.id));
+                          }}
+                          className="quickfile"
+                        >
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
                           <span style={{ color: 'var(--t3)', flexShrink: 0 }}>{formatBytes(f.sizeBytes)}</span>
                         </button>
@@ -540,6 +754,20 @@ export function FileManagerShell({ currentFolderId, onSelectFolder }: Props) {
           )}
         </div>
       </div>
+
+      <FmContextMenu
+        target={ctxTarget}
+        onDismiss={() => setCtxTarget(null)}
+        canRename={ctxIsReal}
+        canDownload={ctxIsReal}
+        canDelete={ctxIsReal || ctxIsUploadStub}
+        renameReason={ctxIsReal ? '' : ctxIsUploadStub ? REASON_NEEDS_DISK : REASON_MOCK_ONLY}
+        downloadReason={ctxIsReal ? '' : ctxIsUploadStub ? REASON_NEEDS_DISK : REASON_MOCK_ONLY}
+        deleteReason={REASON_MOCK_ONLY}
+        onRename={handleRename}
+        onDownload={handleDownload}
+        onDelete={(fileId) => void handleDeleteMany([fileId])}
+      />
     </div>
   );
 }

@@ -150,3 +150,68 @@ export async function listRealFiles(segments: string[]): Promise<RealFsResult<Re
     return { ok: false, reason: 'io' };
   }
 }
+
+interface RemovableDirHandle {
+  removeEntry: (name: string, opts?: { recursive?: boolean }) => Promise<void>;
+}
+
+/** Đọc 1 File THẬT (Blob đủ nội dung) — dùng để tải xuống lại qua `URL.createObjectURL`.
+ *  Cùng `walk()`/`getFileHandle` đã dùng ở `writeFileToRoot`, không đường đọc thứ hai. */
+export async function readFileFromRoot(segments: string[], name: string): Promise<RealFsResult<File>> {
+  const root = await readyRoot();
+  if (!root.ok) return root;
+  const dir = await walk(root.value, segments, false);
+  if (!dir.ok) return dir;
+  try {
+    const handle = await (dir.value as unknown as DirHandleLike).getFileHandle(safeSegment(name), { create: false });
+    const file = await handle.getFile();
+    return { ok: true, value: file };
+  } catch {
+    return { ok: false, reason: 'io' };
+  }
+}
+
+/** Xoá 1 file THẬT khỏi `<gốc>/<segments…>/<name>` — `removeEntry` là API chuẩn của
+ *  FileSystemDirectoryHandle, không phải cơ chế tự chế. Không đệ quy (chỉ xoá file, không xoá thư
+ *  mục con) — đúng phạm vi màn Files hiện tại (nút Xoá chỉ hiện cho dòng FILE, không cho thư mục). */
+export async function deleteFileFromRoot(segments: string[], name: string): Promise<RealFsResult<void>> {
+  const root = await readyRoot();
+  if (!root.ok) return root;
+  const dir = await walk(root.value, segments, false);
+  if (!dir.ok) return dir;
+  try {
+    await (dir.value as unknown as RemovableDirHandle).removeEntry(safeSegment(name));
+    return { ok: true, value: undefined };
+  } catch {
+    return { ok: false, reason: 'io' };
+  }
+}
+
+/**
+ * Đổi tên 1 file THẬT — File System Access API không có `rename()` portable (chỉ Chrome rất mới
+ * có `move()` sau lưng cờ thử nghiệm), nên làm bằng 3 bước đã sẵn có ở file này: đọc nội dung cũ
+ * (`getFile`) → ghi vào tên mới (`getFileHandle`+`createWritable`, giống `writeFileToRoot`) → xoá
+ * tên cũ (`removeEntry`, giống `deleteFileFromRoot`). Không tạo cơ chế mới, chỉ ghép 3 hàm nguyên
+ * tử đã có. Nếu ghi tên mới xong mà xoá tên cũ lỗi (hiếm) thì trả lỗi — người dùng sẽ thấy 2 file,
+ * KHÔNG mất dữ liệu (an toàn hơn xoá-trước-ghi-sau).
+ */
+export async function renameFileInRoot(segments: string[], oldName: string, newName: string): Promise<RealFsResult<void>> {
+  const root = await readyRoot();
+  if (!root.ok) return root;
+  const dir = await walk(root.value, segments, false);
+  if (!dir.ok) return dir;
+  const safeNew = safeSegment(newName);
+  if (!safeNew || safeNew === safeSegment(oldName)) return { ok: false, reason: 'io' };
+  try {
+    const oldHandle = await (dir.value as unknown as DirHandleLike).getFileHandle(safeSegment(oldName), { create: false });
+    const file = await oldHandle.getFile();
+    const newHandle = await (dir.value as unknown as DirHandleLike).getFileHandle(safeNew, { create: true });
+    const w = await newHandle.createWritable();
+    await w.write(file);
+    await w.close();
+    await (dir.value as unknown as RemovableDirHandle).removeEntry(safeSegment(oldName));
+    return { ok: true, value: undefined };
+  } catch {
+    return { ok: false, reason: 'io' };
+  }
+}

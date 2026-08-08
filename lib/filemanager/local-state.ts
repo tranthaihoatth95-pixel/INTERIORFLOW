@@ -97,5 +97,12 @@ export function useFileManagerLocalState() {
     return entry;
   };
 
-  return { state, addComment, addUploadedFile };
+  /** Bỏ 1 bản ghi tải-lên-trong-phiên (id `up-…`, xem `addUploadedFile`) — dùng cho nút Xoá ở
+   *  menu chuột phải khi file đó chưa từng ghi thật xuống đĩa (`real-fs.ts` không biết gì về nó,
+   *  nên không có hàm đĩa nào để gọi — xoá đúng nơi nó được tạo ra). */
+  const removeUploadedFile = (fileId: string) => {
+    mutate((prev) => ({ ...prev, uploaded: prev.uploaded.filter((f) => f.id !== fileId) }));
+  };
+
+  return { state, addComment, addUploadedFile, removeUploadedFile };
 }

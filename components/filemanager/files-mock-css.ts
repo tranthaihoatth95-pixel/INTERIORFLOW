@@ -15,7 +15,9 @@
 //
 // Rail riêng ĐÃ XOÁ khỏi file này 03/08 — `/files` dùng chung `components/LeftRail.tsx` toàn app.
 export const FILES_MOCK_CSS = `
-.if-files-app{display:flex;height:100%;max-width:1440px;margin:0 auto;color:var(--t1);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+/* 08/08 — bỏ trần 1440px theo SPEC-MAT-DO-CON-TRO §4.6 (màn 27"/4K bị bỏ trống 2 bên);
+   1720 là trần MỀM mới của spec, lưới file auto-fill tự giãn thêm cột. */
+.if-files-app{display:flex;height:100%;max-width:min(1720px,100%);margin:0 auto;color:var(--t1);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 .if-files-app *{box-sizing:border-box}
 
 .if-files-app .main{flex:1;display:flex;flex-direction:column;padding:26px 30px 22px 18px;min-width:0;position:relative}
@@ -188,6 +190,19 @@ export const FILES_MOCK_CSS = `
 .if-files-app .quickfile{display:flex;justify-content:space-between;gap:8px;background:var(--field);border:0;border-left:2px solid transparent;border-radius:var(--radius-sm);padding:6px 9px;font-size:11.5px;color:var(--t1);cursor:pointer;text-align:left;transition:background-color .1s}
 .if-files-app .quickfile:hover{background:var(--hover)}
 .if-files-app .quickfile:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
+
+/* Menu chuột phải (FmContextMenu.tsx) — SPEC-MAT-DO-CON-TRO §4#1. Portal ra body nên KHÔNG
+   nằm trong .if-files-app, phải tự khai nền/màu (không thừa hưởng .if-files-app *{box-sizing}). */
+.fm-ctxmenu{position:fixed;z-index:70;min-width:168px;padding:5px;border-radius:var(--radius-md);background:var(--mat-panel);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid var(--mat-hairline);box-shadow:var(--shadow-pop);display:flex;flex-direction:column;gap:1px;box-sizing:border-box}
+.fm-ctxmenu button{display:flex;align-items:center;gap:9px;width:100%;border:0;background:none;border-radius:var(--radius-sm);padding:7px 9px;font-size:12px;color:var(--t1);text-align:left;cursor:pointer;transition:background-color .1s}
+.fm-ctxmenu button:hover:not(:disabled){background:var(--hover)}
+.fm-ctxmenu button:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--accent)}
+.fm-ctxmenu button:disabled{color:var(--t4);cursor:not-allowed}
+.fm-ctxmenu button.danger{color:var(--danger)}
+.fm-ctxmenu button.danger:disabled{color:var(--t4)}
+.fm-ctxrename{padding:2px}
+.fm-ctxrename input{width:100%;box-sizing:border-box;border-radius:var(--radius-sm);padding:7px 9px;font-size:12px;background:var(--field);color:var(--t1);border:1px solid var(--accent)}
+.fm-ctxrename input:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent-soft)}
 
 .if-files-outer{height:100%;background:var(--bg)}
 
